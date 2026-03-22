@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
 ;лл					                                 лл
-;лл				ZR3_56	                                 лл
+;лл				ZR356FUL                                 лл
 ;лл					                                 лл
 ;лл      Created:   22-Mar-26		                                 лл
 ;лл      Code type: zero start		                                 лл
@@ -18,13 +18,13 @@ include  srmacros.inc
 
 ; The following equates show data references outside the range of the program.
 
-data_1e		equ	5500h			;*
-data_2e		equ	5515h			;*
-data_3e		equ	0CC0h			;*
-data_4e		equ	5B01h			;*
-data_5e		equ	5D01h			;*
-data_6e		equ	5E15h			;*
-data_7e		equ	80A9h			;*
+data_1e		equ	0CC0h			;*
+data_2e		equ	5B01h			;*
+data_3e		equ	5D01h			;*
+data_4e		equ	5E15h			;*
+data_5e		equ	80A9h			;*
+data_6e		equ	5500h			;*
+data_7e		equ	5515h			;*
 data_21e	equ	2804h			;*
 data_22e	equ	2B38h			;*
 data_23e	equ	300Ch			;*
@@ -53,9 +53,12 @@ seg_a		segment	byte public
 
 		org	0
 
-ZR3_56		proc	far
+ZR356FUL	proc	far
 
 start:
+;*		jc	loc_3			;*Jump if carry Set
+		db	 72h, 18h		;  Fixup - byte match
+		add	[bx+si],al
 		add	byte ptr data_9,al
 		dec	si
 		add	ah,[bp+di-80h]
@@ -72,158 +75,156 @@ start:
 		db	0DBh, 30h,0E2h, 0Ah,0E5h, 0Ch
 		db	0E6h,0EAh,0E7h, 2Ah,0F9h, 50h
 		db	0FFh,0FFh
-		db	 39h, 2Fh, 0Ah, 39h
-data_8		dw	2B01h			; Data table (indexed access)
-		db	 39h, 01h,0BFh, 00h, 02h, 2Ah
-		db	0FFh
-data_9		dw	2B00h			; Data table (indexed access)
-		db	 39h, 06h, 80h, 39h, 01h, 80h
-		db	 39h, 01h,0E8h, 00h, 80h, 00h
-		db	0FEh, 00h, 80h, 00h,0FFh, 80h
-		db	0E0h, 00h,0FFh,0EAh,0FAh, 39h
-		db	 00h,0BFh, 00h, 02h, 00h, 2Fh
-		db	 39h, 01h, 0Ah, 39h, 14h,0FFh
-		db	 80h,0E0h, 00h,0FEh, 00h, 80h
-		db	 00h,0E8h, 00h, 80h, 00h, 80h
-		db	 39h, 01h, 80h, 39h, 01h, 80h
-		db	 39h, 0Ah, 03h, 00h, 02h, 00h
-		db	 0Fh, 00h, 02h, 9Ch, 00h, 02h
-		db	 00h
-		db	 30h, 3Ch
-data_10		dw	820h			; Data table (indexed access)
-		db	 00h,0CCh, 39h, 00h, 03h, 0Ch
-		db	 39h, 01h, 03h, 00h, 02h,0F0h
-		db	 3Fh, 80h
-		db	28h
-data_11		dw	239h
-		db	0C0h, 00h, 80h, 00h, 0Ch, 00h
-		db	 08h, 39h, 03h,0F0h, 30h,0A0h
-		db	 20h, 0Ch, 00h, 08h, 39h, 03h
-		db	0C0h,0CFh, 80h, 00h, 0Ch,0CFh
-		db	 39h, 01h, 03h, 00h, 02h, 0Ch
-		db	0C0h, 39h, 01h, 0Fh, 00h, 02h
-		db	 33h, 30h, 20h, 39h, 04h,0C3h
-		db	 00h, 82h, 00h, 03h, 39h, 00h
-		db	0CCh, 00h, 80h, 00h, 03h,0C0h
-		db	 00h, 80h,0CCh, 39h, 05h,0DBh
-		db	 00h
-data_12		dw	2000h
-		db	 03h, 00h, 02h, 00h,0F0h, 00h
-		db	 20h, 39h, 07h, 03h
-data_13		dw	200h			; Data table (indexed access)
-		db	 39h, 03h,0C0h, 00h, 80h, 39h
-		db	 00h, 03h, 00h, 02h, 39h, 03h
-		db	 3Ch, 00h, 20h,0DBh, 00h, 20h
-		db	 39h, 03h, 03h, 0Ch, 02h, 08h
-		db	 39h, 06h, 30h, 00h, 20h, 00h
-		db	 9Ch, 00h, 4Eh, 00h,0C0h, 00h
-		db	 80h, 00h, 03h, 39h, 02h, 0Ch
-		db	 00h, 08h, 00h,0C0h, 00h, 80h
-		db	 00h, 03h, 00h, 02h, 39h, 0Ah
-		db	 03h, 00h, 02h, 00h,0C0h, 00h
-		db	 80h, 00h,0F0h, 00h,0A0h, 00h
-		db	0F0h, 00h, 80h, 00h, 03h, 00h
-		db	 02h, 39h, 08h, 03h, 00h, 02h
-		db	0DBh, 00h, 91h, 00h, 39h, 0Fh
+data_8		dw	2F39h			; Data table (indexed access)
+		db	 0Ah, 39h, 01h, 2Bh, 39h, 01h
+		db	0BFh
+data_9		dw	200h			; Data table (indexed access)
+		db	 2Ah,0FFh, 00h, 2Bh, 39h, 06h
+		db	 80h, 39h, 01h, 80h, 39h, 01h
+		db	0E8h, 00h, 80h, 00h,0FEh, 00h
+		db	 80h, 00h,0FFh, 80h,0E0h, 00h
+		db	0FFh,0EAh,0FAh, 39h, 00h,0BFh
+		db	 00h, 02h, 00h, 2Fh, 39h, 01h
+		db	 0Ah, 39h, 14h,0FFh, 80h,0E0h
+		db	 00h,0FEh, 00h, 80h, 00h,0E8h
+		db	 00h, 80h, 00h, 80h, 39h, 01h
+		db	 80h, 39h, 01h, 80h, 39h, 0Ah
+		db	 03h, 00h, 02h, 00h, 0Fh, 00h
+		db	 02h, 9Ch, 00h
+data_10		dw	2			; Data table (indexed access)
+		db	 30h, 3Ch, 20h, 08h, 00h,0CCh
+		db	 39h, 00h, 03h, 0Ch, 39h, 01h
+		db	 03h, 00h, 02h
+data_11		dw	3FF0h
+		db	 80h, 28h, 39h, 02h,0C0h, 00h
+		db	 80h, 00h, 0Ch, 00h, 08h, 39h
+		db	 03h,0F0h, 30h,0A0h, 20h, 0Ch
+		db	 00h, 08h, 39h, 03h,0C0h,0CFh
+		db	 80h, 00h, 0Ch,0CFh, 39h, 01h
+		db	 03h, 00h, 02h, 0Ch,0C0h, 39h
+		db	 01h, 0Fh, 00h, 02h, 33h, 30h
+		db	 20h, 39h, 04h,0C3h, 00h, 82h
+		db	 00h, 03h, 39h, 00h,0CCh, 00h
+		db	 80h, 00h, 03h,0C0h, 00h, 80h
+		db	0CCh
+data_12		dw	539h
+		db	0DBh, 00h, 00h, 20h, 03h, 00h
+		db	 02h, 00h,0F0h, 00h
+data_13		dw	3920h			; Data table (indexed access)
+		db	 07h, 03h, 00h, 02h, 39h, 03h
+		db	0C0h, 00h, 80h, 39h, 00h, 03h
+		db	 00h, 02h, 39h, 03h, 3Ch, 00h
+		db	 20h,0DBh, 00h, 20h, 39h, 03h
+		db	 03h, 0Ch, 02h, 08h, 39h, 06h
+		db	 30h, 00h, 20h, 00h, 9Ch, 00h
+		db	 4Eh, 00h,0C0h, 00h, 80h, 00h
+		db	 03h, 39h, 02h, 0Ch, 00h, 08h
+		db	 00h,0C0h, 00h, 80h, 00h, 03h
+		db	 00h, 02h, 39h, 0Ah, 03h, 00h
+		db	 02h, 00h,0C0h, 00h, 80h, 00h
+		db	0F0h, 00h,0A0h, 00h,0F0h, 00h
+		db	 80h, 00h, 03h, 00h, 02h, 39h
+		db	 08h, 03h, 00h, 02h,0DBh, 00h
+		db	 91h, 00h, 39h, 0Fh, 1Fh, 39h
+		db	 01h
+data_14		dw	39FDh			; Data table (indexed access)
+		db	 00h, 03h,0FEh, 39h, 00h, 06h
+		db	0F8h, 39h, 00h, 0Dh,0E8h, 00h
+		db	 05h, 39h, 0Ah,0D0h, 39h, 01h
+		db	 52h, 39h, 01h, 8Ah, 40h, 39h
+		db	 01h, 20h, 39h, 01h, 10h,0A0h
+		db	 00h, 0Dh, 90h, 00h, 03h, 0Dh
+		db	 40h, 00h, 05h, 06h, 40h, 39h
+		db	 00h, 03h, 39h, 02h,0A0h, 39h
+		db	 01h, 15h, 39h, 09h, 10h,0C0h
+		db	 39h, 00h, 10h,0A0h, 39h, 00h
+		db	 20h, 39h, 01h, 40h, 39h, 00h
+		db	 02h, 39h, 01h, 50h, 39h, 16h
 		db	 1Fh, 39h, 01h,0FDh, 39h, 00h
-		db	 03h
-data_14		dw	39FEh			; Data table (indexed access)
-		db	 00h, 06h,0F8h, 39h, 00h, 0Dh
-		db	0E8h, 00h, 05h, 39h, 0Ah,0D0h
-		db	 39h, 01h, 52h, 39h, 01h, 8Ah
-		db	 40h, 39h, 01h, 20h, 39h, 01h
-		db	 10h,0A0h, 00h, 0Dh, 90h, 00h
-		db	 03h, 0Dh, 40h, 00h, 05h, 06h
-		db	 40h, 39h, 00h, 03h, 39h, 02h
-		db	0A0h, 39h, 01h, 15h, 39h, 09h
-		db	 10h,0C0h, 39h, 00h, 10h,0A0h
-		db	 39h, 00h, 20h, 39h, 01h, 40h
-		db	 39h, 00h, 02h, 39h, 01h, 50h
-		db	 39h, 16h, 1Fh, 39h, 01h,0FDh
-		db	 39h, 00h, 03h,0FEh, 39h, 00h
-		db	 06h,0F8h, 00h, 05h, 0Dh,0E8h
-		db	 00h, 13h, 39h, 0Ah,0D0h, 39h
-		db	 01h, 52h, 39h, 01h, 8Ah, 40h
-		db	 39h, 01h, 20h, 50h, 39h, 00h
-		db	 10h,0A8h, 00h, 0Dh, 90h, 00h
-		db	 2Fh, 0Dh, 40h, 00h, 17h, 06h
-		db	 40h, 00h, 0Ah, 03h, 39h, 02h
-		db	0A0h, 39h, 01h, 15h, 39h, 09h
-		db	 10h,0D0h, 39h, 00h, 10h,0A8h
-		db	 39h, 00h, 20h, 40h, 39h, 00h
-		db	 40h, 39h, 00h, 02h, 39h, 01h
-		db	 50h, 39h, 16h, 1Fh, 39h, 01h
-		db	0FDh, 39h, 00h, 03h,0FEh, 00h
-		db	 01h, 06h,0F8h, 00h, 07h, 0Dh
-		db	0E9h, 00h, 16h, 39h, 0Ah,0D0h
-		db	 39h, 01h, 52h, 39h, 01h, 8Ah
-		db	 40h, 20h, 39h, 00h, 20h,0F5h
-		db	 00h, 40h, 10h,0BAh, 00h, 0Dh
-		db	 92h, 00h, 2Dh, 0Dh, 45h, 00h
-		db	 3Ah, 06h, 40h, 00h, 1Fh, 03h
-		db	 39h, 00h, 0Ah, 00h,0A0h, 39h
-		db	 01h, 15h, 39h, 08h, 80h, 10h
-		db	 7Dh, 00h, 40h, 10h,0BAh, 39h
-		db	 00h, 20h,0D4h, 39h, 00h, 40h
-		db	0A0h, 00h, 02h, 39h, 01h, 50h
-		db	 39h, 0Ch, 32h, 39h, 01h, 08h
-		db	 00h, 03h, 00h, 03h, 00h, 08h
-		db	 00h, 06h, 39h, 01h, 0Fh, 00h
-		db	 20h, 00h, 1Fh, 00h, 20h, 00h
-		db	 1Fh, 39h, 01h, 3Fh, 39h, 00h
-		db	 32h, 00h,0C0h, 00h,0C8h, 00h
-		db	0A0h, 00h,0A0h, 00h, 80h, 00h
-		db	0ACh, 39h, 01h,0B8h, 39h, 01h
-		db	0BAh, 39h, 01h,0AAh, 39h, 01h
-		db	0EAh, 39h, 02h, 3Fh, 39h, 01h
-		db	 0Ah, 00h, 03h, 00h, 03h, 00h
-		db	 02h, 00h, 02h, 00h, 0Fh, 00h
-		db	 0Fh, 00h, 0Ch, 00h, 0Ch, 39h
-		db	 08h,0AAh, 00h,0C0h, 00h,0E8h
-		db	 00h,0B0h, 00h,0B0h, 00h,0D0h
-		db	 00h,0D0h, 00h,0BCh, 00h,0BCh
-		db	 00h, 0Ch, 00h, 0Ch, 39h, 22h
-		db	 03h, 00h, 08h, 00h, 07h, 39h
-		db	 0Ch, 03h, 39h, 01h, 03h,0C0h
-		db	 39h, 00h, 3Ch, 30h, 8Eh, 00h
-		db	 7Eh, 3Ch, 02h, 00h,0EEh, 80h
-		db	 39h, 01h, 3Fh, 39h, 01h, 3Eh
-		db	 39h, 01h, 3Ah, 00h,0FCh, 00h
-		db	0FEh, 0Eh,0ECh, 0Eh,0EEh, 08h
-		db	0B8h, 08h,0B8h, 00h, 20h, 00h
-		db	 20h, 00h,0E0h, 00h,0E0h, 39h
-		db	 00h,0BAh, 80h, 39h, 00h,0EAh
-		db	 39h, 01h,0AAh, 39h, 01h,0A8h
-		db	 39h, 01h,0A0h, 39h, 20h, 08h
-		db	 00h, 07h, 00h, 80h, 00h, 7Fh
-		db	 39h, 00h, 03h,0EAh, 39h, 14h
-		db	0F0h, 30h, 39h, 00h,0A8h,0C0h
-		db	 39h, 00h,0AAh, 30h, 00h, 0Ah
-		db	 03h,0AAh, 00h, 2Ah, 00h,0AAh
-		db	 30h,0ABh, 30h,0ABh, 0Fh, 38h
-		db	 0Ch, 3Bh, 02h, 20h, 02h, 2Eh
-		db	 3Ah,0A0h, 3Ah,0AAh, 39h, 06h
-		db	0A0h, 00h,0A2h, 00h,0A8h, 00h
-		db	0A8h,0F0h,0A8h, 00h,0ABh, 39h
-		db	 01h,0FAh, 39h, 01h,0A8h, 39h
-		db	 01h, 80h, 39h, 0Fh, 0Ch, 30h
-		db	 0Ch, 30h, 0Ch,0C0h, 0Ch,0C3h
-		db	 0Fh, 00h, 2Ch, 00h, 0Ch, 20h
-		db	 3Ch, 22h, 0Eh,0E8h, 3Eh,0EAh
-		db	 00h,0AEh, 28h,0AEh, 39h, 0Ch
-		db	0E0h, 39h, 01h,0BEh, 39h, 01h
-		db	0AFh, 80h, 39h, 00h,0AAh,0E0h
+		db	 03h,0FEh, 39h, 00h, 06h,0F8h
+		db	 00h, 05h, 0Dh,0E8h, 00h, 13h
+		db	 39h, 0Ah,0D0h, 39h, 01h, 52h
+		db	 39h, 01h, 8Ah, 40h, 39h, 01h
+		db	 20h, 50h, 39h, 00h, 10h,0A8h
+		db	 00h, 0Dh, 90h, 00h, 2Fh, 0Dh
+		db	 40h, 00h, 17h, 06h, 40h, 00h
+		db	 0Ah, 03h, 39h, 02h,0A0h, 39h
+		db	 01h, 15h, 39h, 09h, 10h,0D0h
+		db	 39h, 00h, 10h,0A8h, 39h, 00h
+		db	 20h, 40h, 39h, 00h, 40h, 39h
+		db	 00h, 02h, 39h, 01h, 50h, 39h
+		db	 16h, 1Fh, 39h, 01h,0FDh, 39h
+		db	 00h, 03h,0FEh, 00h, 01h, 06h
+		db	0F8h, 00h, 07h, 0Dh,0E9h, 00h
+		db	 16h, 39h, 0Ah,0D0h, 39h, 01h
+		db	 52h, 39h, 01h, 8Ah, 40h, 20h
+		db	 39h, 00h, 20h,0F5h, 00h, 40h
+		db	 10h,0BAh, 00h, 0Dh, 92h, 00h
+		db	 2Dh, 0Dh, 45h, 00h, 3Ah, 06h
+		db	 40h, 00h, 1Fh, 03h, 39h, 00h
+		db	 0Ah, 00h,0A0h, 39h, 01h, 15h
+		db	 39h, 08h, 80h, 10h, 7Dh, 00h
+		db	 40h, 10h,0BAh, 39h, 00h, 20h
+		db	0D4h, 39h, 00h, 40h,0A0h, 00h
+		db	 02h, 39h, 01h, 50h, 39h, 0Ch
+		db	 32h, 39h, 01h, 08h, 00h, 03h
+		db	 00h, 03h, 00h, 08h, 00h, 06h
+		db	 39h, 01h, 0Fh, 00h, 20h, 00h
+		db	 1Fh, 00h, 20h, 00h, 1Fh, 39h
+		db	 01h, 3Fh, 39h, 00h, 32h, 00h
+		db	0C0h, 00h,0C8h, 00h,0A0h, 00h
+		db	0A0h, 00h, 80h, 00h,0ACh, 39h
+		db	 01h,0B8h, 39h, 01h,0BAh, 39h
+		db	 01h,0AAh, 39h, 01h,0EAh, 39h
+		db	 02h, 3Fh, 39h, 01h, 0Ah, 00h
+		db	 03h, 00h, 03h, 00h, 02h, 00h
+		db	 02h, 00h, 0Fh, 00h, 0Fh, 00h
+		db	 0Ch, 00h, 0Ch, 39h, 08h,0AAh
+		db	 00h,0C0h, 00h,0E8h, 00h,0B0h
+		db	 00h,0B0h, 00h,0D0h, 00h,0D0h
+		db	 00h,0BCh, 00h,0BCh, 00h, 0Ch
+		db	 00h, 0Ch, 39h, 22h, 03h, 00h
+		db	 08h, 00h, 07h, 39h, 0Ch, 03h
+		db	 39h, 01h, 03h,0C0h, 39h, 00h
+		db	 3Ch, 30h, 8Eh, 00h, 7Eh, 3Ch
+		db	 02h, 00h,0EEh, 80h, 39h, 01h
+		db	 3Fh, 39h, 01h, 3Eh, 39h, 01h
+		db	 3Ah, 00h,0FCh, 00h,0FEh, 0Eh
+		db	0ECh, 0Eh,0EEh, 08h,0B8h, 08h
+		db	0B8h, 00h, 20h, 00h, 20h, 00h
+		db	0E0h, 00h,0E0h, 39h, 00h,0BAh
+		db	 80h, 39h, 00h,0EAh, 39h, 01h
+		db	0AAh, 39h, 01h,0A8h, 39h, 01h
+		db	0A0h, 39h, 20h, 08h, 00h, 07h
+		db	 00h, 80h, 00h, 7Fh, 39h, 00h
+		db	 03h,0EAh, 39h, 14h,0F0h, 30h
+		db	 39h, 00h,0A8h,0C0h, 39h, 00h
+		db	0AAh, 30h, 00h, 0Ah, 03h,0AAh
+		db	 00h, 2Ah, 00h,0AAh, 30h,0ABh
+		db	 30h,0ABh, 0Fh, 38h, 0Ch, 3Bh
+		db	 02h, 20h, 02h, 2Eh, 3Ah,0A0h
+		db	 3Ah,0AAh, 39h, 06h,0A0h, 00h
+		db	0A2h, 00h,0A8h, 00h,0A8h,0F0h
+		db	0A8h, 00h,0ABh, 39h, 01h,0FAh
+		db	 39h, 01h,0A8h, 39h, 01h, 80h
+		db	 39h, 0Fh, 0Ch, 30h, 0Ch, 30h
+		db	 0Ch,0C0h, 0Ch,0C3h, 0Fh, 00h
+		db	 2Ch, 00h, 0Ch, 20h, 3Ch, 22h
+		db	 0Eh,0E8h, 3Eh,0EAh, 00h,0AEh
+		db	 28h,0AEh, 39h, 0Ch,0E0h, 39h
+		db	 01h,0BEh, 39h, 01h,0AFh, 80h
 data_15		dw	39h			; Data table (indexed access)
-		db	0A0h, 30h, 00h,0BBh, 08h,0BBh
-		db	 00h, 2Ah, 00h, 2Ah, 39h, 01h
-		db	 3Ah, 39h, 00h, 0Ch,0E3h, 39h
-		db	 00h, 03h, 0Ch, 39h, 01h, 82h
-		db	 39h, 06h, 80h, 00h, 80h, 30h
-		db	0E0h, 00h,0E0h, 00h,0AAh, 00h
-		db	0AAh, 39h, 01h, 80h, 39h, 13h
-		db	 40h, 39h, 00h
+		db	0AAh,0E0h, 39h, 00h,0A0h, 30h
+		db	 00h,0BBh, 08h,0BBh, 00h, 2Ah
+		db	 00h, 2Ah, 39h, 01h, 3Ah, 39h
+		db	 00h, 0Ch,0E3h, 39h, 00h, 03h
+		db	 0Ch, 39h, 01h, 82h, 39h, 06h
+		db	 80h, 00h, 80h, 30h,0E0h, 00h
+		db	0E0h, 00h,0AAh, 00h,0AAh, 39h
+		db	 01h, 80h, 39h, 13h, 40h, 39h
+		db	 00h
 
-locloop_3:
+locloop_4:
 		add	ds:data_28e[bx+si],ax
 		add	al,ds:data_21e[bx+si]
 ;*		add	bx,ax
@@ -263,38 +264,38 @@ locloop_3:
 		db	0E0h,0AAh, 00h,0AAh, 28h, 39h
 		db	 0Fh,0C3h, 00h,0C3h, 00h,0CCh
 		db	 00h,0CCh, 00h,0F0h, 00h,0C0h
-		db	 00h,0C2h, 00h,0C2h, 00h,0EEh
+		db	 00h,0C2h
 data_16		db	0
-		db	0EEh, 00h, 08h, 02h, 8Bh, 39h
-		db	 00h, 06h, 8Fh, 08h, 10h, 02h
-		db	 2Fh, 39h, 0Ch,0C0h, 39h, 01h
-		db	0E0h, 39h, 01h,0F0h, 00h, 08h
-		db	 00h,0B8h, 00h, 0Eh, 00h, 5Eh
-		db	 39h, 00h, 40h, 1Ah,0BAh, 39h
-		db	 00h, 1Ah,0F5h, 39h, 00h, 28h
-		db	0E8h, 39h, 00h, 2Bh,0D0h, 39h
-		db	 00h, 2Bh,0C0h, 39h, 00h, 23h
-		db	 39h, 01h, 0Ch, 39h, 03h, 0Ah
-		db	 80h,0AAh, 80h, 00h, 20h, 38h
-		db	 20h, 00h, 60h,0C0h, 60h, 39h
-		db	 00h, 20h, 39h, 1Eh,0C0h, 39h
-		db	 00h, 03h,0C0h, 39h, 00h, 0Ch
-		db	 3Ch, 00h,0E0h, 3Ch,0EFh, 00h
-		db	 80h, 03h,0BAh, 39h, 18h, 80h
-		db	 39h, 01h,0A0h, 39h, 01h, 03h
-		db	0AEh, 39h, 01h,0EBh, 39h, 01h
-		db	0EAh, 39h, 01h, 3Ah, 39h, 01h
-		db	 0Ah, 39h, 0Ch,0A8h, 39h, 01h
-		db	0A8h, 39h, 01h,0A8h, 00h, 3Fh
-		db	 00h,0BFh, 00h, 3Bh,0B0h,0BBh
-		db	0B0h, 2Eh, 20h, 2Eh, 20h, 08h
-		db	 00h, 08h, 00h, 0Bh, 00h, 0Bh
-		db	 39h, 14h, 08h, 0Ch, 07h, 00h
-		db	 20h, 03h, 1Eh, 39h, 00h, 0Ch
-		db	0FAh, 39h, 14h,0F0h, 39h, 01h
-		db	0AAh
+		db	0C2h, 00h,0EEh, 00h,0EEh, 00h
+		db	 08h, 02h, 8Bh, 39h, 00h, 06h
+		db	 8Fh, 08h, 10h, 02h, 2Fh, 39h
+		db	 0Ch,0C0h, 39h, 01h,0E0h, 39h
+		db	 01h,0F0h, 00h, 08h, 00h,0B8h
+		db	 00h, 0Eh, 00h, 5Eh, 39h, 00h
+		db	 40h, 1Ah,0BAh, 39h, 00h, 1Ah
+		db	0F5h, 39h, 00h, 28h,0E8h, 39h
+		db	 00h, 2Bh,0D0h, 39h, 00h, 2Bh
+		db	0C0h, 39h, 00h, 23h, 39h, 01h
+		db	 0Ch, 39h, 03h, 0Ah, 80h,0AAh
+		db	 80h, 00h, 20h, 38h, 20h, 00h
+		db	 60h,0C0h, 60h, 39h, 00h, 20h
+		db	 39h, 1Eh,0C0h, 39h, 00h, 03h
+		db	0C0h, 39h, 00h, 0Ch, 3Ch, 00h
+		db	0E0h, 3Ch,0EFh, 00h, 80h, 03h
+		db	0BAh, 39h, 18h, 80h, 39h, 01h
+		db	0A0h, 39h, 01h, 03h,0AEh, 39h
+		db	 01h,0EBh, 39h, 01h,0EAh, 39h
+		db	 01h, 3Ah, 39h, 01h, 0Ah, 39h
+		db	 0Ch,0A8h, 39h, 01h,0A8h, 39h
+		db	 01h,0A8h, 00h, 3Fh, 00h,0BFh
+		db	 00h, 3Bh,0B0h,0BBh,0B0h, 2Eh
+		db	 20h, 2Eh, 20h, 08h, 00h, 08h
+		db	 00h, 0Bh, 00h, 0Bh, 39h, 14h
+		db	 08h, 0Ch, 07h, 00h, 20h, 03h
+		db	 1Eh, 39h, 00h, 0Ch,0FAh, 39h
+		db	 14h,0F0h, 39h, 01h,0AAh
 		db	39h
-loc_5:
+loc_6:
 		add	ss:data_10[bp+si],bp
 		or	al,[bx+si]
 		retf	2A00h
@@ -399,13 +400,13 @@ loc_5:
 		db	 00h, 03h, 00h, 43h, 00h
 		db	43h
 
-locloop_6:
+locloop_7:
 ;*		add	[bx+0],dh
 		db	 00h, 77h, 00h		;  Fixup - byte match
 		db	 77h, 00h, 10h, 00h,0D1h, 40h
 		db	 39h, 00h,0F1h
 		db	 20h, 39h
-loc_7:
+loc_8:
 ;*		add	ah,bh
 		db	 00h,0FCh		;  Fixup - byte match
 		push	ax
@@ -443,7 +444,7 @@ loc_7:
 ;*		add	ah,cl
 		db	 00h,0CCh		;  Fixup - byte match
 		add	ds:data_29e[bx+si],ch
-		add	bp,ss:data_1e[bp+si]
+		add	bp,ss:data_6e[bp+si]
 		push	cs
 		mov	ds:data_30e,al
 		sbb	data_13[bx+si],bp
@@ -455,21 +456,21 @@ loc_7:
 		db	 10h,0FFh		;  Fixup - byte match
 		inc	bp
 		adc	[bx+si],cl
-		jnp	loc_7			; Jump if not parity
+		jnp	loc_8			; Jump if not parity
 		lds	ax,dword ptr [bx+si]	; Load seg:offset ptr
-		loopnz	locloop_6		; Loop if zf=0, cx>0
+		loopnz	locloop_7		; Loop if zf=0, cx>0
 
 		pop	word ptr [bx+si+60h]
 		sbb	[bp+si],cl
-		mov	al,ds:data_3e
+		mov	al,ds:data_1e
 		add	ch,byte ptr ds:[5702h][bx+si]
-		add	ah,ds:data_4e[bx+si]
+		add	ah,ds:data_2e[bx+si]
 		push	cs
 		mov	[di],al
 		jbe	$+3Ch			; Jump if below or =
-		mov	al,ds:data_6e
-		cmp	ch,ss:data_2e[bp+si]
-		cmp	ch,ss:data_2e[bp+si]
+		mov	al,ds:data_4e
+		cmp	ch,ss:data_7e[bp+si]
+		cmp	ch,ss:data_7e[bp+si]
 		db	 3Eh,0AAh, 15h, 55h, 0Fh,0FAh
 		db	 05h,0FAh, 39h, 08h,0C0h, 00h
 		db	 80h, 00h, 70h, 00h, 08h, 00h
@@ -533,106 +534,107 @@ loc_7:
 		db	 06h, 06h, 20h,0A0h, 2Ah,0AAh
 		db	 33h, 00h, 33h, 00h, 2Ah, 00h
 		db	 15h, 00h,0AAh, 80h, 55h, 40h
-		db	 8Ah,0A0h, 75h, 50h, 39h, 09h
-		db	 03h, 39h, 01h, 03h
-data_18		db	0
-		db	 28h, 00h, 16h, 00h, 80h, 00h
-		db	 6Fh, 08h, 0Ah, 06h,0A0h, 2Ah
-		db	0AAh, 10h,0A2h, 2Ah, 80h,0D4h
-		db	 80h, 0Ah,0A0h,0E4h, 00h, 22h
-		db	0A8h, 9Dh, 08h, 8Ah,0AAh, 75h
-		db	 02h, 2Ah,0AAh,0D4h, 02h, 9Eh
-		db	 00h, 50h, 02h, 9Eh, 00h, 00h
-		db	 0Ah,0AAh,0A8h,0AAh,0A8h, 39h
-		db	 07h, 08h, 00h, 06h, 39h, 01h
-		db	 0Ah, 39h, 16h, 08h, 00h, 06h
-		db	 00h, 80h, 00h, 8Ah, 00h, 33h
-		db	 00h, 33h, 00h, 2Ah, 00h, 15h
-		db	 00h,0AAh, 80h, 55h, 40h, 8Ah
-		db	0A0h, 75h, 50h, 39h, 03h, 02h
-		db	 00h, 01h, 39h, 01h, 02h, 39h
-		db	 16h, 02h, 00h, 81h, 80h, 39h
-		db	 00h, 82h, 80h, 82h, 00h, 82h
-		db	 00h, 30h,0C0h, 30h,0C0h, 0Ah
-		db	 80h, 05h, 40h, 2Ah,0A0h, 15h
-		db	 50h, 22h,0A8h, 5Dh, 54h, 39h
-		db	 09h, 03h, 00h, 02h, 00h, 0Dh
-		db	 00h, 20h, 00h, 1Eh, 4Eh, 00h
-		db	 01h,0ADh, 20h, 2Ah, 1Ah, 80h
-		db	0EAh,0AAh, 4Ah, 2Ah, 0Ah, 80h
-		db	0B5h, 00h, 22h,0A0h,0D9h, 20h
-		db	 22h,0A0h, 9Dh, 20h, 0Ah,0A0h
-		db	0B5h, 20h,0AAh,0A0h, 54h, 20h
-		db	0AAh,0A0h, 40h, 20h,0AAh,0A0h
-		db	 00h,0A0h,0AAh, 80h,0AAh, 80h
-		db	 39h, 07h, 06h, 00h, 09h, 00h
-		db	 20h, 00h, 50h, 01h, 39h, 00h
-		db	 80h, 39h, 02h, 01h, 20h, 39h
-		db	 00h, 02h, 70h, 00h, 30h, 39h
-		db	 06h, 80h, 00h, 70h, 00h, 04h
-		db	 00h, 0Bh, 39h, 00h, 80h, 00h
-		db	 40h, 39h, 01h, 30h, 00h, 10h
-		db	 00h, 08h, 7Dh, 08h, 3Ch,0C5h
-		db	 00h,0D3h, 00h, 50h, 1Dh, 55h
+		db	 8Ah,0A0h
+		db	 75h, 50h, 39h, 09h
+data_18		db	3
+		db	 39h, 01h, 03h, 00h, 28h, 00h
+		db	 16h, 00h, 80h, 00h, 6Fh, 08h
+		db	 0Ah, 06h,0A0h, 2Ah,0AAh, 10h
+		db	0A2h, 2Ah, 80h,0D4h, 80h, 0Ah
+		db	0A0h,0E4h, 00h, 22h,0A8h, 9Dh
+		db	 08h, 8Ah,0AAh, 75h, 02h, 2Ah
+		db	0AAh,0D4h, 02h, 9Eh, 00h, 50h
+		db	 02h, 9Eh, 00h, 00h, 0Ah,0AAh
+		db	0A8h,0AAh,0A8h, 39h, 07h, 08h
+		db	 00h, 06h, 39h, 01h, 0Ah, 39h
+		db	 16h, 08h, 00h, 06h, 00h, 80h
+		db	 00h, 8Ah, 00h, 33h, 00h, 33h
+		db	 00h, 2Ah, 00h, 15h, 00h,0AAh
+		db	 80h, 55h, 40h, 8Ah,0A0h, 75h
+		db	 50h, 39h, 03h, 02h, 00h, 01h
+		db	 39h, 01h, 02h, 39h, 16h, 02h
+		db	 00h, 81h, 80h, 39h, 00h, 82h
+		db	 80h, 82h, 00h, 82h, 00h, 30h
+		db	0C0h, 30h,0C0h, 0Ah, 80h, 05h
+		db	 40h, 2Ah,0A0h, 15h, 50h, 22h
+		db	0A8h, 5Dh, 54h, 39h, 09h, 03h
+		db	 00h, 02h, 00h, 0Dh, 00h, 20h
+		db	 00h, 1Eh, 4Eh, 00h, 01h,0ADh
+		db	 20h, 2Ah, 1Ah, 80h,0EAh,0AAh
+		db	 4Ah, 2Ah, 0Ah, 80h,0B5h, 00h
+		db	 22h,0A0h,0D9h, 20h, 22h,0A0h
+		db	 9Dh, 20h, 0Ah,0A0h,0B5h, 20h
+		db	0AAh,0A0h, 54h, 20h,0AAh,0A0h
+		db	 40h, 20h,0AAh,0A0h, 00h,0A0h
+		db	0AAh, 80h,0AAh, 80h, 39h, 07h
+		db	 06h, 00h, 09h, 00h, 20h, 00h
+		db	 50h, 01h, 39h, 00h, 80h, 39h
+		db	 02h, 01h, 20h, 39h, 00h, 02h
+		db	 70h, 00h, 30h, 39h, 06h, 80h
+		db	 00h, 70h, 00h, 04h, 00h, 0Bh
+		db	 39h, 00h, 80h, 00h, 40h, 39h
+		db	 01h, 30h, 00h, 10h, 00h, 08h
+		db	 7Dh, 08h, 3Ch,0C5h, 00h,0D3h
+		db	 00h, 50h, 1Dh, 55h, 39h, 00h
+		db	 29h, 82h, 02h, 40h, 55h, 05h
+		db	 02h,0C0h, 28h, 08h, 00h, 80h
+		db	 01h, 54h, 39h, 01h, 18h, 00h
+		db	 02h, 39h, 01h, 03h,0AAh,0A0h
+		db	 0Ah, 06h, 55h, 50h, 05h, 03h
+		db	0ABh,0A8h, 08h, 03h, 45h, 54h
+		db	 00h, 02h, 8Eh,0A8h, 00h, 02h
+		db	 05h, 40h, 39h, 00h, 1Ah, 39h
+		db	 03h, 68h, 39h, 08h, 36h, 00h
+		db	 49h, 39h, 06h, 01h, 20h, 39h
+		db	 00h, 02h, 70h, 00h, 30h, 04h
+		db	0D0h, 00h, 50h, 39h, 06h, 40h
+		db	 00h,0A0h, 00h, 08h, 00h, 16h
+		db	 00h, 01h, 00h, 02h, 80h, 39h
+		db	 01h, 60h, 00h, 20h, 00h, 10h
+		db	 7Dh, 00h, 1Ch, 08h, 1Dh, 55h
 		db	 39h, 00h, 29h, 82h, 02h, 40h
-		db	 55h, 05h, 02h,0C0h, 28h, 08h
-		db	 00h, 80h, 01h, 54h, 39h, 01h
-		db	 18h, 00h, 02h, 39h, 01h, 03h
-		db	0AAh,0A0h, 0Ah, 06h, 55h, 50h
-		db	 05h, 03h,0ABh,0A8h, 08h, 03h
-		db	 45h, 54h, 00h, 02h, 8Eh,0A8h
-		db	 00h, 02h, 05h, 40h, 39h, 00h
-		db	 1Ah, 39h, 03h, 68h, 39h, 08h
-		db	 36h, 00h, 49h, 39h, 06h, 01h
-		db	 20h, 39h, 00h, 02h, 70h, 00h
-		db	 30h, 04h,0D0h, 00h, 50h, 39h
-		db	 06h, 40h, 00h,0A0h, 00h, 08h
-		db	 00h, 16h, 00h, 01h, 00h, 02h
-		db	 80h, 39h, 01h, 60h, 00h, 20h
-		db	 00h, 10h, 7Dh, 00h, 1Ch, 08h
-		db	 1Dh, 55h, 39h, 00h, 29h, 82h
-		db	 02h, 40h, 55h, 05h, 02h,0C0h
-		db	 28h, 38h, 00h, 80h, 00h,0D0h
-		db	 00h, 06h, 00h, 20h, 00h, 08h
-		db	 39h, 06h,0AAh,0A8h, 0Ah, 04h
-		db	 55h, 50h, 05h, 06h,0ABh,0A8h
-		db	 08h, 02h, 47h, 54h, 00h, 02h
-		db	 86h,0A8h, 39h, 00h, 01h, 40h
-		db	 39h, 01h,0A0h, 39h, 02h, 01h
-		db	0A0h, 39h, 01h, 08h, 00h, 04h
-		db	 00h, 02h, 00h, 01h, 39h, 04h
-		db	 01h, 20h, 39h, 00h, 02h, 70h
-		db	 00h, 30h, 04h,0D0h, 00h, 50h
-		db	 1Dh, 55h, 39h, 0Ah,0C0h, 00h
-		db	 30h, 00h, 08h, 00h, 06h, 00h
-		db	 01h, 80h, 00h, 40h, 00h, 30h
-		db	0FDh, 10h, 1Ch, 0Ch,0AAh,0A0h
-		db	 0Ah, 06h, 29h, 82h, 02h, 40h
-		db	 55h, 05h, 02h,0C0h, 28h, 0Ah
-		db	 00h, 80h, 05h, 54h,0D0h, 39h
-		db	 0Fh, 55h, 50h, 05h, 06h,0AAh
-		db	0A8h, 0Ah, 03h, 1Dh, 54h, 04h
-		db	 02h, 3Ah,0A8h, 39h, 00h, 1Dh
-		db	 50h, 39h, 00h, 02h,0A8h, 00h
-		db	 02h, 39h, 01h, 05h, 39h, 03h
-		db	 40h, 39h, 01h, 20h, 00h, 10h
-		db	 00h, 0Ch, 00h, 03h, 39h, 06h
-		db	 01h, 20h, 39h, 00h, 02h, 70h
-		db	 00h, 30h, 04h,0D3h, 00h, 50h
-		db	 39h, 0Ah, 64h, 00h, 9Bh,0C0h
-		db	 00h, 10h, 00h, 68h, 3Dh, 08h
-		db	 0Ch, 04h,0EAh,0A0h, 0Ah, 06h
-		db	 55h, 50h, 05h, 02h, 39h, 0Fh
-		db	 30h, 00h, 10h, 02h, 3Ch, 01h
-		db	0B4h, 00h, 2Eh, 02h, 2Eh, 3Ch
-		db	 2Ah, 1Ch, 2Ah, 39h, 1Ah,0F0h
-		db	 00h,0D0h, 00h,0FFh,0EFh, 7Fh
-		db	0EFh,0FFh,0BAh, 04h,0BAh,0FFh
-		db	0EBh, 11h, 2Bh, 3Fh,0FBh, 04h
-		db	 59h, 3Fh,0FBh, 15h, 79h, 03h
-		db	0EBh, 01h, 69h, 00h,0EAh, 00h
-		db	0EAh, 03h,0ABh, 03h,0A9h,0AFh
-		db	 00h,0ADh, 00h,0FAh,0C0h
+		db	 55h, 05h, 02h,0C0h, 28h, 38h
+		db	 00h, 80h, 00h,0D0h, 00h, 06h
+		db	 00h, 20h, 00h, 08h, 39h, 06h
+		db	0AAh,0A8h, 0Ah, 04h, 55h, 50h
+		db	 05h, 06h,0ABh,0A8h, 08h, 02h
+		db	 47h, 54h, 00h, 02h, 86h,0A8h
+		db	 39h, 00h, 01h, 40h, 39h, 01h
+		db	0A0h, 39h, 02h, 01h,0A0h, 39h
+		db	 01h, 08h, 00h, 04h, 00h, 02h
+		db	 00h, 01h, 39h, 04h, 01h, 20h
+		db	 39h, 00h, 02h, 70h, 00h, 30h
+		db	 04h,0D0h, 00h, 50h, 1Dh, 55h
+		db	 39h, 0Ah,0C0h, 00h, 30h, 00h
+		db	 08h, 00h, 06h, 00h, 01h, 80h
+		db	 00h, 40h, 00h, 30h,0FDh, 10h
+		db	 1Ch, 0Ch,0AAh,0A0h, 0Ah, 06h
+		db	 29h, 82h, 02h, 40h, 55h, 05h
+		db	 02h,0C0h, 28h, 0Ah, 00h, 80h
+		db	 05h, 54h,0D0h, 39h, 0Fh, 55h
+		db	 50h, 05h, 06h,0AAh,0A8h, 0Ah
+		db	 03h, 1Dh, 54h, 04h, 02h, 3Ah
+		db	0A8h, 39h, 00h, 1Dh, 50h, 39h
+		db	 00h, 02h,0A8h, 00h, 02h, 39h
+		db	 01h, 05h, 39h, 03h, 40h, 39h
+		db	 01h, 20h, 00h, 10h, 00h, 0Ch
+		db	 00h, 03h, 39h, 06h, 01h, 20h
+		db	 39h, 00h, 02h, 70h, 00h, 30h
+		db	 04h,0D3h, 00h, 50h, 39h, 0Ah
+		db	 64h, 00h, 9Bh,0C0h, 00h, 10h
+		db	 00h, 68h, 3Dh, 08h, 0Ch, 04h
+		db	0EAh,0A0h, 0Ah, 06h, 55h, 50h
+		db	 05h, 02h, 39h, 0Fh, 30h, 00h
+		db	 10h, 02h, 3Ch, 01h,0B4h, 00h
+		db	 2Eh, 02h, 2Eh, 3Ch, 2Ah, 1Ch
+		db	 2Ah, 39h, 1Ah,0F0h, 00h,0D0h
+		db	 00h,0FFh,0EFh, 7Fh,0EFh,0FFh
+		db	0BAh, 04h,0BAh,0FFh,0EBh, 11h
+		db	 2Bh, 3Fh,0FBh, 04h, 59h, 3Fh
+		db	0FBh, 15h, 79h, 03h,0EBh, 01h
+		db	 69h, 00h,0EAh, 00h,0EAh, 03h
+		db	0ABh, 03h,0A9h,0AFh, 00h,0ADh
+		db	 00h,0FAh,0C0h
 		db	0FAh,0C0h
 		db	0FFh,0B0h, 5Fh, 90h,0EBh,0F8h
 		db	0EBh,0F8h,0EEh,0E8h,0EEh,0E8h
@@ -838,109 +840,109 @@ data_18		db	0
 		db	 00h,0DAh,0AAh, 20h, 00h, 65h
 		db	 56h, 30h, 00h,0B0h, 2Ah, 00h
 		db	 08h, 75h, 59h, 20h, 05h, 4Ah
-		db	 85h, 39h, 00h,0D5h, 00h, 80h
-		db	 00h
-		db	 68h, 44h
-data_19		dw	39h			; Data table (indexed access)
-		db	0D4h, 30h, 80h, 00h, 60h,0A0h
-		db	 39h, 00h,0C0h, 39h, 01h,0C0h
-		db	 00h, 08h, 00h, 48h, 15h, 39h
-		db	 01h, 0Bh,0C0h, 00h,0C2h, 03h
-		db	 39h, 00h, 01h, 81h, 39h, 01h
-		db	0B1h, 39h, 01h, 40h, 39h, 08h
-		db	 01h, 39h, 00h, 01h, 08h, 22h
-		db	 00h, 02h, 00h, 05h, 00h, 9Fh
-		db	 00h, 87h, 39h, 00h, 01h, 1Eh
-		db	 00h, 10h,0C0h, 2Dh, 39h, 00h
-		db	 78h, 3Ah, 00h, 01h, 3Ch, 35h
-		db	 14h, 00h, 6Bh,0C4h, 80h, 00h
-		db	 57h,0F8h, 39h, 00h,0BAh,0AAh
-		db	 39h, 00h,0D5h, 56h, 39h, 00h
-		db	0A8h, 43h, 1Dh, 00h, 5Dh, 21h
-		db	 6Ah, 00h,0EAh, 11h,0A8h, 10h
-		db	0ABh, 20h, 08h, 06h, 16h, 26h
-		db	 04h, 09h, 0Bh, 15h, 04h, 00h
-		db	 0Bh, 49h, 39h, 00h, 27h,0B2h
-		db	 01h, 00h, 02h,0D4h, 39h, 00h
-		db	 09h,0AAh, 39h, 00h, 20h, 55h
-		db	 39h, 00h, 04h, 06h, 44h, 00h
-		db	 5Eh, 88h, 10h, 00h, 4Dh, 68h
-		db	 41h, 04h, 9Ah, 82h, 5Bh, 90h
-		db	 5Bh, 80h, 02h,0A8h, 3Ah,0A8h
-		db	 00h, 10h, 95h, 50h, 39h, 00h
-		db	 54h, 39h, 01h,0AAh, 39h, 02h
-		db	 3Fh, 01h, 00h, 02h,0D4h, 04h
-		db	 01h, 0Bh, 82h, 39h, 00h, 1Eh
-		db	 05h, 00h, 48h, 38h, 50h, 00h
-		db	0C0h, 32h,0D0h, 02h, 41h, 24h
-		db	 49h, 04h, 10h, 2Ah, 10h, 39h
-		db	 00h, 68h, 39h, 03h, 40h, 00h
-		db	0B1h, 80h, 39h, 00h, 04h, 60h
-		db	 39h, 00h, 03h,0CDh, 00h, 00h
-		db	 20h, 80h, 00h, 20h, 08h, 28h
-		db	 40h, 00h, 41h, 0Ch, 05h, 04h
-		db	 0Bh, 44h, 00h, 21h, 0Eh, 41h
-		db	 00h, 08h, 03h, 36h, 00h, 01h
-		db	 40h, 8Eh, 20h, 00h, 40h, 00h
-		db	 0Ah, 02h, 35h, 05h, 00h,0A0h
-		db	 0Fh, 50h, 39h, 00h, 01h,0FFh
-		db	 02h, 08h, 05h, 04h, 10h, 48h
-		db	 6Ch, 40h, 00h, 10h, 00h, 28h
-		db	 82h, 40h, 72h,0A0h, 39h, 01h
-		db	 18h, 63h, 00h, 55h, 60h, 39h
-		db	 00h, 7Fh, 39h, 03h, 20h, 00h
-		db	 14h, 39h, 01h, 14h, 00h, 06h
-		db	 00h, 06h, 39h, 00h,0C0h, 00h
-		db	0C0h, 39h, 07h, 3Eh, 00h, 01h
-		db	 04h,0EAh, 08h, 15h, 39h, 06h
-		db	 02h, 00h, 01h, 40h, 34h, 00h
-		db	 35h, 40h,0C0h, 00h,0C0h, 39h
-		db	 07h, 81h, 00h, 42h, 39h, 00h
-		db	0BAh, 00h, 45h, 13h, 6Ah, 20h
-		db	 95h, 08h,0AAh, 07h, 55h, 32h
-		db	0AAh, 0Dh, 55h, 8Eh, 2Ah, 71h
-		db	0D5h,0AAh,0BAh, 55h, 55h, 2Ah
-		db	0FEh, 15h, 54h, 02h,0FFh, 01h
-		db	 55h, 20h, 10h,0D0h, 20h, 80h
-		db	 00h, 70h, 00h, 28h, 00h,0D4h
-		db	 00h, 22h, 80h,0DDh, 70h,0A8h
-		db	 28h, 57h,0D4h, 9Eh, 00h, 55h
-		db	 55h,0AAh,0A8h, 15h, 54h,0D5h
-		db	 00h, 55h, 40h, 39h, 12h, 10h
-		db	 00h, 20h, 39h, 10h, 40h, 00h
-		db	 80h, 39h, 03h, 01h, 00h, 02h
-data_20		db	40h
-		db	 00h, 80h, 39h, 03h, 01h, 00h
-		db	 02h, 39h, 00h, 40h, 00h, 80h
-		db	 00h, 04h, 00h, 08h,0B7h, 00h
-		db	 63h, 00h, 00h, 14h, 00h, 28h
-		db	 00h, 02h, 00h, 0Dh, 00h, 08h
-		db	 00h, 37h, 02h,0AAh, 0Dh, 55h
-		db	 28h,0AAh, 17h, 55h, 39h, 02h
-		db	 04h, 10h, 08h, 20h, 3Eh, 00h
-		db	 01h, 00h,0EAh, 81h, 15h, 42h
-		db	 2Ah, 40h,0D5h, 40h,0AAh, 90h
-		db	 55h, 50h,0AAh, 50h, 55h, 50h
-		db	0FDh, 40h, 55h, 7Ch, 39h, 03h
-		db	 20h, 00h, 10h, 20h, 00h, 10h
-		db	 00h, 08h, 00h, 04h, 39h, 03h
-		db	 80h, 00h, 40h, 39h, 03h, 08h
-		db	 00h, 04h, 00h, 02h, 00h, 01h
-		db	 39h, 04h, 82h, 00h, 41h, 20h
-		db	 00h, 10h, 39h, 08h, 08h, 00h
-		db	 04h, 39h, 17h,0A0h, 00h, 50h
-		db	 02h,0AAh, 01h, 55h, 0Ah,0A2h
-		db	 05h, 5Dh, 39h, 07h, 02h, 00h
-		db	 01h, 39h, 0Ah, 20h, 00h,0D0h
-		db	 00h, 82h, 00h, 7Dh,0C0h, 39h
-		db	 07h, 01h, 00h, 40h, 00h, 02h
-		db	 0Ah, 10h, 03h, 80h, 01h,0A5h
-		db	 1Ch, 64h, 04h,0E1h,0E0h, 02h
-		db	0A7h,0F6h, 7Eh, 08h, 72h, 79h
-		db	 39h, 02h, 81h,0C0h, 01h
+		db	 85h, 39h, 00h,0D5h, 00h
+data_19		dw	80h			; Data table (indexed access)
+		db	 68h, 44h, 39h, 00h,0D4h, 30h
+		db	 80h, 00h, 60h,0A0h, 39h, 00h
+		db	0C0h, 39h, 01h,0C0h, 00h, 08h
+		db	 00h, 48h, 15h, 39h, 01h, 0Bh
+		db	0C0h, 00h,0C2h, 03h, 39h, 00h
+		db	 01h, 81h, 39h, 01h,0B1h, 39h
+		db	 01h, 40h, 39h, 08h, 01h, 39h
+		db	 00h, 01h, 08h, 22h, 00h, 02h
+		db	 00h, 05h, 00h, 9Fh, 00h, 87h
+		db	 39h, 00h, 01h, 1Eh, 00h, 10h
+		db	0C0h, 2Dh, 39h, 00h, 78h, 3Ah
+		db	 00h, 01h, 3Ch, 35h, 14h, 00h
+		db	 6Bh,0C4h, 80h, 00h, 57h,0F8h
+		db	 39h, 00h,0BAh,0AAh, 39h, 00h
+		db	0D5h, 56h, 39h, 00h,0A8h, 43h
+		db	 1Dh, 00h, 5Dh, 21h, 6Ah, 00h
+		db	0EAh, 11h,0A8h, 10h,0ABh, 20h
+		db	 08h, 06h, 16h, 26h, 04h, 09h
+		db	 0Bh, 15h, 04h, 00h, 0Bh, 49h
+		db	 39h, 00h, 27h,0B2h, 01h, 00h
+		db	 02h,0D4h, 39h, 00h, 09h,0AAh
+		db	 39h, 00h, 20h, 55h, 39h, 00h
+		db	 04h, 06h, 44h, 00h, 5Eh, 88h
+		db	 10h, 00h, 4Dh, 68h, 41h, 04h
+		db	 9Ah, 82h, 5Bh, 90h, 5Bh, 80h
+		db	 02h,0A8h, 3Ah,0A8h, 00h, 10h
+		db	 95h, 50h, 39h, 00h, 54h, 39h
+		db	 01h,0AAh, 39h, 02h, 3Fh, 01h
+		db	 00h, 02h,0D4h, 04h, 01h, 0Bh
+		db	 82h, 39h, 00h, 1Eh, 05h, 00h
+		db	 48h, 38h, 50h, 00h,0C0h, 32h
+		db	0D0h, 02h, 41h, 24h, 49h, 04h
+		db	 10h, 2Ah, 10h, 39h, 00h, 68h
+		db	 39h, 03h, 40h, 00h,0B1h, 80h
+		db	 39h, 00h, 04h, 60h, 39h, 00h
+		db	 03h,0CDh, 00h, 00h, 20h, 80h
+		db	 00h, 20h, 08h, 28h, 40h, 00h
+		db	 41h, 0Ch, 05h, 04h, 0Bh, 44h
+		db	 00h, 21h, 0Eh, 41h, 00h, 08h
+		db	 03h, 36h, 00h, 01h, 40h, 8Eh
+		db	 20h, 00h, 40h, 00h, 0Ah, 02h
+		db	 35h, 05h, 00h,0A0h, 0Fh, 50h
+		db	 39h, 00h, 01h,0FFh, 02h, 08h
+		db	 05h, 04h, 10h, 48h, 6Ch, 40h
+		db	 00h, 10h, 00h, 28h, 82h, 40h
+		db	 72h,0A0h, 39h, 01h, 18h, 63h
+		db	 00h, 55h, 60h, 39h, 00h, 7Fh
+		db	 39h, 03h, 20h, 00h, 14h, 39h
+		db	 01h, 14h, 00h, 06h, 00h, 06h
+		db	 39h, 00h,0C0h, 00h,0C0h, 39h
+		db	 07h, 3Eh, 00h, 01h, 04h,0EAh
+		db	 08h, 15h, 39h, 06h, 02h, 00h
+		db	 01h, 40h, 34h, 00h, 35h, 40h
+		db	0C0h, 00h,0C0h, 39h, 07h, 81h
+		db	 00h, 42h, 39h, 00h,0BAh, 00h
+		db	 45h, 13h, 6Ah, 20h, 95h, 08h
+		db	0AAh, 07h, 55h, 32h,0AAh, 0Dh
+		db	 55h, 8Eh, 2Ah, 71h,0D5h,0AAh
+		db	0BAh, 55h, 55h, 2Ah,0FEh, 15h
+		db	 54h, 02h,0FFh, 01h, 55h, 20h
+		db	 10h,0D0h, 20h, 80h, 00h, 70h
+		db	 00h, 28h, 00h,0D4h, 00h, 22h
+		db	 80h,0DDh, 70h,0A8h, 28h, 57h
+		db	0D4h, 9Eh, 00h, 55h, 55h,0AAh
+		db	0A8h, 15h, 54h,0D5h, 00h, 55h
+		db	 40h, 39h, 12h, 10h, 00h, 20h
+		db	 39h, 10h, 40h, 00h, 80h
+		db	39h
+data_20		db	3
+		db	 01h, 00h, 02h, 40h, 00h, 80h
+		db	 39h, 03h, 01h, 00h, 02h, 39h
+		db	 00h, 40h, 00h, 80h, 00h, 04h
+		db	 00h, 08h,0B7h, 00h, 63h, 00h
+		db	 00h, 14h, 00h, 28h, 00h, 02h
+		db	 00h, 0Dh, 00h, 08h, 00h, 37h
+		db	 02h,0AAh, 0Dh, 55h, 28h,0AAh
+		db	 17h, 55h, 39h, 02h, 04h, 10h
+		db	 08h, 20h, 3Eh, 00h, 01h, 00h
+		db	0EAh, 81h, 15h, 42h, 2Ah, 40h
+		db	0D5h, 40h,0AAh, 90h, 55h, 50h
+		db	0AAh, 50h, 55h, 50h,0FDh, 40h
+		db	 55h, 7Ch, 39h, 03h, 20h, 00h
+		db	 10h, 20h, 00h, 10h, 00h, 08h
+		db	 00h, 04h, 39h, 03h, 80h, 00h
+		db	 40h, 39h, 03h, 08h, 00h, 04h
+		db	 00h, 02h, 00h, 01h, 39h, 04h
+		db	 82h, 00h, 41h, 20h, 00h, 10h
+		db	 39h, 08h, 08h, 00h, 04h, 39h
+		db	 17h,0A0h, 00h, 50h, 02h,0AAh
+		db	 01h, 55h, 0Ah,0A2h, 05h, 5Dh
+		db	 39h, 07h, 02h, 00h, 01h, 39h
+		db	 0Ah, 20h, 00h,0D0h, 00h, 82h
+		db	 00h, 7Dh,0C0h, 39h, 07h, 01h
+		db	 00h, 40h, 00h, 02h, 0Ah, 10h
+		db	 03h, 80h, 01h,0A5h, 1Ch, 64h
+		db	 04h,0E1h,0E0h, 02h,0A7h,0F6h
+		db	 7Eh, 08h, 72h, 79h, 39h, 02h
+		db	 81h,0C0h, 01h
 		db	40h
-loc_8:
-;*		add	byte ptr ds:data_7e[bx+si],0Ch
+loc_9:
+;*		add	byte ptr ds:data_5e[bx+si],0Ch
 		db	 82h, 80h,0A9h, 80h, 0Ch	;  Fixup - byte match
 		or	cl,0A0h
 		mov	cl,3
@@ -954,7 +956,7 @@ loc_8:
 		or	dx,ax
 		std				; Set direction flag
 		ror	byte ptr [bx],1		; Rotate
-;*		loopnz	locloop_9		;*Loop if zf=0, cx>0
+;*		loopnz	locloop_10		;*Loop if zf=0, cx>0
 
 		db	0E0h, 0Fh		;  Fixup - byte match
 		cmpsw				; Cmp [si] to es:[di]
@@ -984,14 +986,14 @@ loc_8:
 		db	 01h, 09h, 39h, 00h, 04h, 56h
 		db	 39h, 00h, 01h, 2Fh, 39h, 00h
 		db	 40h, 7Fh, 39h, 00h
-loc_10:
+loc_11:
 		add	ax,397Fh
 		add	[si+39h],al
 		add	[bx+si],sp
 		adc	bh,[bx+di]
 		add	[bx+si],dh
 		cmp	byte ptr [bx+di],0
-loc_11:
+loc_12:
 		inc	bp
 		adc	bh,[bx+di]
 		add	ss:data_25e[bp+di],ch
@@ -1001,7 +1003,7 @@ loc_11:
 			                        ;* No entry point to code
 		out	dx,ax			; port 0, DMA-1 bas&add ch 0
 		mov	di,data_27e
-		jmp	short loc_11
+		jmp	short loc_12
 		db	 00h, 01h, 12h,0EFh, 00h, 14h
 		db	 0Ah, 7Fh, 06h, 40h, 17h,0CFh
 		db	0D0h, 00h,0D7h,0FFh, 30h, 14h
@@ -1009,8 +1011,8 @@ loc_11:
 		db	 00h, 5Eh, 00h, 5Fh, 3Eh,0A0h
 		db	 26h,0A0h, 08h, 04h, 7Ch, 5Ch
 		db	 04h, 0Eh
-loc_12:
-		jge	loc_12			; Jump if > or =
+loc_13:
+		jge	loc_13			; Jump if > or =
 		add	[bx],cl
 		jle	$+81h			; Jump if < or =
 		add	cl,bh
@@ -1298,7 +1300,7 @@ loc_12:
 		db	 40h,0D5h, 30h, 00h, 30h,0EBh
 		db	 88h, 83h,0C0h,0C8h, 18h
 
-ZR3_56		endp
+ZR356FUL	endp
 
 seg_a		ends
 

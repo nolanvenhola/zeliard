@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
 ;ÛÛ					                                 ÛÛ
-;ÛÛ				ZR2_50	                                 ÛÛ
+;ÛÛ				ZR250FUL                                 ÛÛ
 ;ÛÛ					                                 ÛÛ
 ;ÛÛ      Created:   22-Mar-26		                                 ÛÛ
 ;ÛÛ      Code type: zero start		                                 ÛÛ
@@ -25,34 +25,33 @@ data_4e		equ	4000h			;*
 data_5e		equ	4CE6h			;*
 data_6e		equ	53C0h			;*
 data_7e		equ	8000h			;*
-data_72e	equ	3004h			;*
-data_73e	equ	3006h			;*
-data_74e	equ	3008h			;*
-data_75e	equ	3010h			;*
-data_76e	equ	3020h			;*
-data_77e	equ	3022h			;*
-data_78e	equ	3024h			;*
-data_79e	equ	3028h			;*
-data_80e	equ	302Eh			;*
-data_81e	equ	3030h			;*
-data_82e	equ	4000h			;*
-data_83e	equ	6630h			;*
-data_84e	equ	6632h			;*
-data_85e	equ	6634h			;*
-data_86e	equ	6635h			;*
-data_87e	equ	6636h			;*
-data_88e	equ	6637h			;*
-data_89e	equ	6820h			;*
-data_90e	equ	6965h			;*
-data_91e	equ	6967h			;*
-data_92e	equ	6968h			;*
-data_93e	equ	6969h			;*
-data_94e	equ	696Bh			;*
-data_95e	equ	696Ch			;*
-data_96e	equ	8000h			;*
-data_97e	equ	807Dh			;*
-data_98e	equ	80DDh			;*
-data_99e	equ	8152h			;*
+data_73e	equ	3004h			;*
+data_74e	equ	3006h			;*
+data_75e	equ	3008h			;*
+data_76e	equ	3010h			;*
+data_77e	equ	3020h			;*
+data_78e	equ	3022h			;*
+data_79e	equ	3024h			;*
+data_80e	equ	3028h			;*
+data_81e	equ	302Eh			;*
+data_82e	equ	3030h			;*
+data_83e	equ	4000h			;*
+data_84e	equ	6630h			;*
+data_85e	equ	6632h			;*
+data_86e	equ	6634h			;*
+data_87e	equ	6635h			;*
+data_88e	equ	6636h			;*
+data_89e	equ	6637h			;*
+data_90e	equ	6820h			;*
+data_91e	equ	6965h			;*
+data_92e	equ	6967h			;*
+data_93e	equ	6968h			;*
+data_94e	equ	6969h			;*
+data_95e	equ	696Bh			;*
+data_96e	equ	696Ch			;*
+data_97e	equ	8000h			;*
+data_98e	equ	807Dh			;*
+data_99e	equ	80DDh			;*
 data_100e	equ	815Dh			;*
 data_101e	equ	8173h			;*
 data_102e	equ	8194h			;*
@@ -69,24 +68,22 @@ seg_a		segment	byte public
 
 		org	0
 
-ZR2_50		proc	far
+ZR250FUL	proc	far
 
 start:
-		add	ah,[bx+si-6]
-		mov	sp,2000h
-		sti				; Enable interrupts
-		mov	word ptr cs:data_83e,6AA8h
-		mov	ax,6
-		call	word ptr cs:data_74e
-		push	cs
-		pop	es
-		mov	si,data_99e
-		mov	di,data_103e
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		jmp	short loc_1
+		db	 00h, 00h, 02h, 60h,0FAh,0BCh
+		db	 00h, 20h,0FBh, 2Eh,0C7h, 06h
+		db	 30h, 66h,0A8h, 6Ah,0B8h, 06h
+		db	 00h, 2Eh,0FFh, 16h, 08h, 30h
+		db	 0Eh, 07h,0BEh, 52h, 81h,0BFh
+		db	 00h,0A0h,0B0h
+loc_1:
+		add	ch,data_38
+		or	al,1
 		mov	es,cs:data_106e
 		mov	si,data_103e
-		mov	di,data_82e
+		mov	di,data_83e
 		call	sub_9
 		push	cs
 		pop	es
@@ -96,14 +93,14 @@ start:
 		call	word ptr cs:[10Ch]
 		mov	es,cs:data_106e
 		mov	si,data_103e
-		mov	di,data_96e
+		mov	di,data_97e
 		call	sub_9
 		mov	es,cs:data_106e
-		mov	di,data_82e
+		mov	di,data_83e
 		mov	al,0FFh
 		mov	bx,0B18h
 		mov	cx,1858h
-		call	word ptr cs:data_72e
+		call	word ptr cs:data_73e
 		mov	ax,cs
 		add	ax,2000h
 		mov	es,ax
@@ -118,13 +115,13 @@ start:
 		mov	al,0FFh
 		mov	bx,2D71h
 		mov	cx,1858h
-		call	word ptr cs:data_72e
+		call	word ptr cs:data_73e
 		mov	byte ptr cs:data_104e,0
 		mov	al,0FFh
 		call	sub_1
 		mov	cx,59h
 
-locloop_1:
+locloop_2:
 		push	cx
 		mov	ax,cs
 		add	ax,2000h
@@ -145,11 +142,11 @@ locloop_1:
 		mov	bh,2Dh			; '-'
 		mov	di,0
 		mov	cx,1858h
-		call	word ptr cs:data_75e
+		call	word ptr cs:data_76e
 		mov	al,0Ah
 		call	sub_1
 		pop	cx
-		loop	locloop_1		; Loop if cx > 0
+		loop	locloop_2		; Loop if cx > 0
 
 		push	cs
 		pop	es
@@ -164,7 +161,7 @@ locloop_1:
 		mov	di,0
 		call	sub_9
 		mov	di,0
-		call	word ptr cs:data_79e
+		call	word ptr cs:data_80e
 		call	sub_3
 		push	cs
 		pop	es
@@ -174,18 +171,18 @@ locloop_1:
 		call	word ptr cs:[10Ch]
 		mov	es,cs:data_106e
 		mov	si,data_103e
-		mov	di,data_82e
+		mov	di,data_83e
 		call	sub_9
 		mov	ax,1
-		call	word ptr cs:data_76e
+		call	word ptr cs:data_77e
 		mov	ax,7
-		call	word ptr cs:data_74e
+		call	word ptr cs:data_75e
 		mov	es,cs:data_106e
-		mov	di,data_82e
+		mov	di,data_83e
 		mov	al,0FFh
 		mov	bx,1D12h
 		mov	cx,1C64h
-		call	word ptr cs:data_72e
+		call	word ptr cs:data_73e
 		call	sub_3
 		push	cs
 		pop	es
@@ -195,13 +192,13 @@ locloop_1:
 		call	word ptr cs:[10Ch]
 		mov	es,cs:data_106e
 		mov	si,data_103e
-		mov	di,data_82e
+		mov	di,data_83e
 		call	sub_9
-		mov	di,data_82e
+		mov	di,data_83e
 		mov	bx,1610h
 		mov	cx,2468h
 		mov	al,5
-		call	word ptr cs:data_77e
+		call	word ptr cs:data_78e
 		call	sub_3
 		push	cs
 		pop	es
@@ -211,7 +208,7 @@ locloop_1:
 		call	word ptr cs:[10Ch]
 		mov	es,cs:data_106e
 		mov	si,data_103e
-		mov	di,data_82e
+		mov	di,data_83e
 		call	sub_9
 		push	cs
 		pop	es
@@ -221,28 +218,28 @@ locloop_1:
 		call	word ptr cs:[10Ch]
 		mov	es,cs:data_106e
 		mov	si,data_103e
-		mov	di,data_96e
+		mov	di,data_97e
 		call	sub_9
 		xor	ax,ax			; Zero register
-		call	word ptr cs:data_76e
+		call	word ptr cs:data_77e
 		mov	ax,6
-		call	word ptr cs:data_74e
+		call	word ptr cs:data_75e
 		mov	bx,0A15h
 		mov	cx,1A5Dh
-		call	word ptr cs:data_78e
+		call	word ptr cs:data_79e
 		mov	es,cs:data_106e
-		mov	di,data_82e
+		mov	di,data_83e
 		mov	bx,0B18h
 		mov	cx,1858h
-		call	word ptr cs:data_75e
+		call	word ptr cs:data_76e
 		mov	bx,2C15h
 		mov	cx,1A5Dh
-		call	word ptr cs:data_78e
+		call	word ptr cs:data_79e
 		mov	es,cs:data_106e
-		mov	di,data_96e
+		mov	di,data_97e
 		mov	bx,2D18h
 		mov	cx,1858h
-		call	word ptr cs:data_75e
+		call	word ptr cs:data_76e
 		call	sub_3
 		push	cs
 		pop	es
@@ -252,14 +249,14 @@ locloop_1:
 		call	word ptr cs:[10Ch]
 		mov	es,cs:data_106e
 		mov	si,data_103e
-		mov	di,data_96e
+		mov	di,data_97e
 		call	sub_9
 		mov	es,cs:data_106e
-		mov	di,data_96e
+		mov	di,data_97e
 		mov	al,0FFh
 		mov	bx,2D18h
 		mov	cx,1858h
-		call	word ptr cs:data_72e
+		call	word ptr cs:data_73e
 		call	sub_3
 		push	cs
 		pop	es
@@ -269,7 +266,7 @@ locloop_1:
 		call	word ptr cs:[10Ch]
 		mov	es,cs:data_106e
 		mov	si,data_103e
-		mov	di,data_82e
+		mov	di,data_83e
 		call	sub_9
 		push	cs
 		pop	es
@@ -279,24 +276,24 @@ locloop_1:
 		call	word ptr cs:[10Ch]
 		mov	es,cs:data_106e
 		mov	si,data_103e
-		mov	di,data_96e
+		mov	di,data_97e
 		call	sub_9
 		mov	ax,2
-		call	word ptr cs:data_76e
+		call	word ptr cs:data_77e
 		mov	ax,7
-		call	word ptr cs:data_74e
+		call	word ptr cs:data_75e
 		mov	es,cs:data_106e
-		mov	di,data_82e
+		mov	di,data_83e
 		mov	al,0FFh
 		mov	bx,0B12h
 		mov	cx,1A64h
-		call	word ptr cs:data_72e
+		call	word ptr cs:data_73e
 		mov	es,cs:data_106e
-		mov	di,data_96e
+		mov	di,data_97e
 		mov	al,0FFh
 		mov	bx,3325h
 		mov	cx,1251h
-		call	word ptr cs:data_72e
+		call	word ptr cs:data_73e
 		call	sub_3
 		mov	es,cs:data_106e
 		mov	di,data_4e
@@ -307,37 +304,37 @@ locloop_1:
 		mov	al,55h			; 'U'
 		mov	cx,64h
 
-locloop_2:
+locloop_3:
 		push	cx
 		mov	cx,1Ah
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
 		ror	al,1			; Rotate
 		pop	cx
-		loop	locloop_2		; Loop if cx > 0
+		loop	locloop_3		; Loop if cx > 0
 
 		xor	al,al			; Zero register
 		mov	di,4000h
 		mov	bx,0B12h
 		mov	cx,1A64h
-		call	word ptr cs:data_72e
+		call	word ptr cs:data_73e
 		call	sub_3
 		mov	al,0FFh
 		mov	bx,0
 		mov	cx,50C8h
-		call	word ptr cs:data_73e
-		jmp	loc_51
+		call	word ptr cs:data_74e
+		jmp	loc_52
 
-ZR2_50		endp
+ZR250FUL	endp
 
 ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 ;                              SUBROUTINE
 ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 
 sub_1		proc	near
-loc_3:
+loc_4:
 		call	sub_2
 		cmp	cs:data_104e,al
-		jb	loc_3			; Jump if below
+		jb	loc_4			; Jump if below
 		mov	byte ptr cs:data_104e,0
 		retn
 sub_1		endp
@@ -366,36 +363,36 @@ sub_2		endp
 
 sub_3		proc	near
 		mov	byte ptr cs:data_104e,0
-loc_4:
+loc_5:
 		mov	al,10h
 		call	sub_1
-loc_5:
+loc_6:
 		push	cs
 		pop	ds
-		mov	si,ds:data_83e
+		mov	si,ds:data_84e
 		lodsb				; String [si] to al
-		mov	ds:data_83e,si
+		mov	ds:data_84e,si
 		test	al,80h
-		jz	loc_6			; Jump if zero
-		jmp	loc_10
-loc_6:
-		cmp	al,20h			; ' '
-		je	loc_7			; Jump if equal
-		cmp	al,2Eh			; '.'
-		je	loc_7			; Jump if equal
-		cmp	al,2Ch			; ','
-		je	loc_7			; Jump if equal
-		cmp	al,22h			; '"'
-		je	loc_7			; Jump if equal
-		cmp	al,27h			; '''
-		je	loc_7			; Jump if equal
-		mov	ah,ds:data_88e
-		mov	ds:data_108e,ah
+		jz	loc_7			; Jump if zero
+		jmp	loc_11
 loc_7:
+		cmp	al,20h			; ' '
+		je	loc_8			; Jump if equal
+		cmp	al,2Eh			; '.'
+		je	loc_8			; Jump if equal
+		cmp	al,2Ch			; ','
+		je	loc_8			; Jump if equal
+		cmp	al,22h			; '"'
+		je	loc_8			; Jump if equal
+		cmp	al,27h			; '''
+		je	loc_8			; Jump if equal
+		mov	ah,ds:data_89e
+		mov	ds:data_108e,ah
+loc_8:
 		push	ax
-		mov	bx,ds:data_84e
+		mov	bx,ds:data_85e
 		add	bx,4
-		mov	al,ds:data_85e
+		mov	al,ds:data_86e
 		mov	dl,0Ah
 		mul	dl			; ax = reg * al
 		add	ax,8Fh
@@ -405,7 +402,7 @@ loc_7:
 		mov	bl,al
 		sub	bl,20h			; ' '
 		xor	bh,bh			; Zero register
-		mov	dl,ds:data_97e[bx]
+		mov	dl,ds:data_98e[bx]
 		mov	dh,bh
 		pop	bx
 		push	ax
@@ -415,168 +412,168 @@ loc_7:
 		push	cx
 		inc	bx
 		inc	cx
-		mov	ah,ds:data_86e
-		call	word ptr cs:data_81e
+		mov	ah,ds:data_87e
+		call	word ptr cs:data_82e
 		pop	cx
 		pop	bx
 		pop	ax
-		mov	ah,ds:data_87e
-		call	word ptr cs:data_81e
+		mov	ah,ds:data_88e
+		call	word ptr cs:data_82e
 		pop	ax
 		mov	bl,al
 		sub	bl,20h			; ' '
 		xor	bh,bh			; Zero register
-		mov	cl,ds:data_98e[bx]
+		mov	cl,ds:data_99e[bx]
 		mov	ch,bh
-		add	ds:data_84e,cx
+		add	ds:data_85e,cx
 		cmp	al,20h			; ' '
-		je	loc_8			; Jump if equal
-		jmp	loc_4
-loc_8:
-		mov	si,ds:data_83e
+		je	loc_9			; Jump if equal
+		jmp	loc_5
+loc_9:
+		mov	si,ds:data_84e
 		call	sub_4
-		mov	dx,ds:data_84e
+		mov	dx,ds:data_85e
 		add	dx,cx
 		cmp	dx,138h
-		jb	loc_9			; Jump if below
-		jmp	loc_30
-loc_9:
-		jmp	loc_4
+		jb	loc_10			; Jump if below
+		jmp	loc_31
 loc_10:
-		cmp	al,0FFh
-		jne	loc_11			; Jump if not equal
-		retn
+		jmp	loc_5
 loc_11:
-		cmp	al,0FDh
+		cmp	al,0FFh
 		jne	loc_12			; Jump if not equal
 		retn
 loc_12:
+		cmp	al,0FDh
+		jne	loc_13			; Jump if not equal
+		retn
+loc_13:
 		mov	ah,al
 		and	ah,0F0h
 		cmp	ah,80h
-		jne	loc_13			; Jump if not equal
-		jmp	loc_38
-loc_13:
-		cmp	ah,90h
 		jne	loc_14			; Jump if not equal
-		jmp	loc_34
-loc_14:
-		cmp	ah,0A0h
-		jne	loc_15			; Jump if not equal
-		jmp	loc_36
-loc_15:
-		cmp	ah,0B0h
-		jne	loc_16			; Jump if not equal
 		jmp	loc_39
+loc_14:
+		cmp	ah,90h
+		jne	loc_15			; Jump if not equal
+		jmp	loc_35
+loc_15:
+		cmp	ah,0A0h
+		jne	loc_16			; Jump if not equal
+		jmp	loc_37
 loc_16:
-		cmp	ah,0C0h
+		cmp	ah,0B0h
 		jne	loc_17			; Jump if not equal
-		jmp	loc_41
+		jmp	loc_40
 loc_17:
+		cmp	ah,0C0h
+		jne	loc_18			; Jump if not equal
+		jmp	loc_42
+loc_18:
 		mov	bx,701h
 		cmp	al,0FBh
-		jne	loc_18			; Jump if not equal
-		jmp	loc_28
-loc_18:
+		jne	loc_19			; Jump if not equal
+		jmp	loc_29
+loc_19:
 		mov	bx,700h
 		cmp	al,0FAh
-		jne	loc_19			; Jump if not equal
-		jmp	loc_28
-loc_19:
+		jne	loc_20			; Jump if not equal
+		jmp	loc_29
+loc_20:
 		mov	bx,602h
 		cmp	al,0F9h
-		je	loc_28			; Jump if equal
+		je	loc_29			; Jump if equal
 		cmp	al,0F5h
-		jne	loc_20			; Jump if not equal
-		jmp	loc_32
-loc_20:
-		cmp	al,0F6h
 		jne	loc_21			; Jump if not equal
 		jmp	loc_33
 loc_21:
+		cmp	al,0F6h
+		jne	loc_22			; Jump if not equal
+		jmp	loc_34
+loc_22:
 		xor	ah,ah			; Zero register
 		cmp	al,0F7h
-		je	loc_29			; Jump if equal
+		je	loc_30			; Jump if equal
 		inc	ah
 		cmp	al,0F3h
-		je	loc_29			; Jump if equal
+		je	loc_30			; Jump if equal
 		inc	ah
 		cmp	al,0F2h
-		je	loc_29			; Jump if equal
+		je	loc_30			; Jump if equal
 		inc	ah
 		cmp	al,0F1h
-		je	loc_29			; Jump if equal
+		je	loc_30			; Jump if equal
 		cmp	al,0FEh
-		je	loc_31			; Jump if equal
-		mov	ah,ds:data_88e
-		mov	byte ptr ds:data_88e,0
+		je	loc_32			; Jump if equal
+		mov	ah,ds:data_89e
+		mov	byte ptr ds:data_89e,0
 		cmp	al,0F0h
-		jne	loc_22			; Jump if not equal
-		jmp	loc_4
-loc_22:
-		mov	byte ptr ds:data_88e,3Dh	; '='
-		cmp	al,0EFh
 		jne	loc_23			; Jump if not equal
-		jmp	loc_4
+		jmp	loc_5
 loc_23:
-		mov	byte ptr ds:data_88e,3Eh	; '>'
-		cmp	al,0EEh
+		mov	byte ptr ds:data_89e,3Dh	; '='
+		cmp	al,0EFh
 		jne	loc_24			; Jump if not equal
-		jmp	loc_4
+		jmp	loc_5
 loc_24:
-		mov	byte ptr ds:data_88e,3Fh	; '?'
-		cmp	al,0EDh
+		mov	byte ptr ds:data_89e,3Eh	; '>'
+		cmp	al,0EEh
 		jne	loc_25			; Jump if not equal
-		jmp	loc_4
+		jmp	loc_5
 loc_25:
-		mov	byte ptr ds:data_88e,40h	; '@'
-		cmp	al,0ECh
+		mov	byte ptr ds:data_89e,3Fh	; '?'
+		cmp	al,0EDh
 		jne	loc_26			; Jump if not equal
-		jmp	loc_4
+		jmp	loc_5
 loc_26:
-		mov	byte ptr ds:data_88e,41h	; 'A'
-		cmp	al,0EBh
+		mov	byte ptr ds:data_89e,40h	; '@'
+		cmp	al,0ECh
 		jne	loc_27			; Jump if not equal
-		jmp	loc_4
+		jmp	loc_5
 loc_27:
-		mov	ds:data_88e,ah
-		jmp	loc_4
+		mov	byte ptr ds:data_89e,41h	; 'A'
+		cmp	al,0EBh
+		jne	loc_28			; Jump if not equal
+		jmp	loc_5
 loc_28:
-		mov	ds:data_86e,bl
-		mov	ds:data_87e,bh
-		jmp	loc_4
+		mov	ds:data_89e,ah
+		jmp	loc_5
 loc_29:
-		mov	word ptr ds:data_84e,0
-		mov	ds:data_85e,ah
-		jmp	loc_4
+		mov	ds:data_87e,bl
+		mov	ds:data_88e,bh
+		jmp	loc_5
 loc_30:
-		mov	word ptr ds:data_84e,0
-		inc	byte ptr ds:data_85e
-		jmp	loc_4
+		mov	word ptr ds:data_85e,0
+		mov	ds:data_86e,ah
+		jmp	loc_5
 loc_31:
+		mov	word ptr ds:data_85e,0
+		inc	byte ptr ds:data_86e
+		jmp	loc_5
+loc_32:
 		mov	bx,8Fh
 		mov	cx,5039h
 		xor	al,al			; Zero register
-		call	word ptr cs:data_62
+		call	word ptr cs:data_63
 		xor	ah,ah			; Zero register
-		jmp	short loc_29
-loc_32:
-		mov	al,0F0h
-		call	sub_1
-		jmp	loc_4
+		jmp	short loc_30
 loc_33:
 		mov	al,0F0h
 		call	sub_1
-		mov	al,0F0h
-		call	sub_1
-		mov	al,0F0h
-		call	sub_1
-		jmp	loc_4
+		jmp	loc_5
 loc_34:
+		mov	al,0F0h
+		call	sub_1
+		mov	al,0F0h
+		call	sub_1
+		mov	al,0F0h
+		call	sub_1
+		jmp	loc_5
+loc_35:
 		mov	es,cs:data_106e
 		and	al,0Fh
 		cmp	al,6
-		jae	loc_35			; Jump if above or =
+		jae	loc_36			; Jump if above or =
 		mov	ah,1Bh
 		mul	ah			; ax = reg * al
 		add	ax,ax
@@ -588,9 +585,9 @@ loc_34:
 		mov	di,ax
 		mov	bx,1350h
 		mov	cx,920h
-		call	word ptr cs:data_75e
-		jmp	loc_5
-loc_35:
+		call	word ptr cs:data_76e
+		jmp	loc_6
+loc_36:
 		sub	al,6
 		mov	ah,21h			; '!'
 		mul	ah			; ax = reg * al
@@ -602,23 +599,23 @@ loc_35:
 		mov	di,ax
 		mov	bx,1238h
 		mov	cx,0B10h
-		call	word ptr cs:data_75e
-		jmp	loc_5
-loc_36:
+		call	word ptr cs:data_76e
+		jmp	loc_6
+loc_37:
 		push	cs
 		pop	es
 		and	al,0Fh
 		cmp	al,3
-		jae	loc_37			; Jump if above or =
+		jae	loc_38			; Jump if above or =
 		mov	ah,0A5h
 		mul	ah			; ax = reg * al
 		add	ax,7437h
 		mov	di,ax
 		mov	bx,3548h
 		mov	cx,50Bh
-		call	word ptr cs:data_75e
-		jmp	loc_5
-loc_37:
+		call	word ptr cs:data_76e
+		jmp	loc_6
+loc_38:
 		sub	al,3
 		mov	ah,0A8h
 		mul	ah			; ax = reg * al
@@ -626,9 +623,9 @@ loc_37:
 		mov	di,ax
 		mov	bx,343Eh
 		mov	cx,708h
-		call	word ptr cs:data_75e
-		jmp	loc_5
-loc_38:
+		call	word ptr cs:data_76e
+		jmp	loc_6
+loc_39:
 		mov	es,cs:data_106e
 		and	al,0Fh
 		mov	ah,3Fh			; '?'
@@ -640,13 +637,13 @@ loc_38:
 		mov	di,ax
 		mov	bx,3850h
 		mov	cx,718h
-		call	word ptr cs:data_75e
-		jmp	loc_5
-loc_39:
+		call	word ptr cs:data_76e
+		jmp	loc_6
+loc_40:
 		mov	es,cs:data_106e
 		and	al,0Fh
 		cmp	al,6
-		jae	loc_40			; Jump if above or =
+		jae	loc_41			; Jump if above or =
 		mov	ah,51h			; 'Q'
 		mul	ah			; ax = reg * al
 		add	ax,ax
@@ -656,9 +653,9 @@ loc_39:
 		mov	di,ax
 		mov	bx,3450h
 		mov	cx,918h
-		call	word ptr cs:data_75e
-		jmp	loc_5
-loc_40:
+		call	word ptr cs:data_76e
+		jmp	loc_6
+loc_41:
 		sub	al,6
 		mov	ah,2Dh			; '-'
 		mul	ah			; ax = reg * al
@@ -670,9 +667,9 @@ loc_40:
 		mov	di,ax
 		mov	bx,3338h
 		mov	cx,0A18h
-		call	word ptr cs:data_75e
-		jmp	loc_5
-loc_41:
+		call	word ptr cs:data_76e
+		jmp	loc_6
+loc_42:
 		and	al,0Fh
 		push	cs
 		pop	es
@@ -682,8 +679,8 @@ loc_41:
 		mov	di,ax
 		mov	bx,3840h
 		mov	cx,208h
-		call	word ptr cs:data_75e
-		jmp	loc_5
+		call	word ptr cs:data_76e
+		jmp	loc_6
 sub_3		endp
 
 
@@ -693,59 +690,59 @@ sub_3		endp
 
 sub_4		proc	near
 		xor	cx,cx			; Zero register
-loc_42:
+loc_43:
 		lodsb				; String [si] to al
 		cmp	al,20h			; ' '
-		jne	loc_43			; Jump if not equal
-		retn
-loc_43:
-		cmp	al,0FFh
 		jne	loc_44			; Jump if not equal
 		retn
 loc_44:
-		cmp	al,0FEh
+		cmp	al,0FFh
 		jne	loc_45			; Jump if not equal
 		retn
 loc_45:
-		cmp	al,0FDh
+		cmp	al,0FEh
 		jne	loc_46			; Jump if not equal
 		retn
 loc_46:
-		cmp	al,0F7h
+		cmp	al,0FDh
 		jne	loc_47			; Jump if not equal
 		retn
 loc_47:
-		cmp	al,0F3h
+		cmp	al,0F7h
 		jne	loc_48			; Jump if not equal
 		retn
 loc_48:
-		cmp	al,0F2h
+		cmp	al,0F3h
 		jne	loc_49			; Jump if not equal
 		retn
 loc_49:
-		cmp	al,0F1h
+		cmp	al,0F2h
 		jne	loc_50			; Jump if not equal
 		retn
 loc_50:
+		cmp	al,0F1h
+		jne	loc_51			; Jump if not equal
+		retn
+loc_51:
 		or	al,al			; Zero ?
-		js	loc_42			; Jump if sign=1
+		js	loc_43			; Jump if sign=1
 		sub	al,20h			; ' '
-		jc	loc_42			; Jump if carry Set
+		jc	loc_43			; Jump if carry Set
 		mov	bl,al
 		xor	bh,bh			; Zero register
-		add	cl,cs:data_98e[bx]
+		add	cl,cs:data_99e[bx]
 		adc	ch,bh
-		jmp	short loc_42
+		jmp	short loc_43
 sub_4		endp
 
 			                        ;* No entry point to code
 		test	al,6Ah			; 'j'
 		db	0, 0, 0, 0, 0, 0
-loc_51:
+loc_52:
 		cli				; Disable interrupts
 		mov	sp,2000h
 		sti				; Enable interrupts
-		mov	byte ptr ds:data_95e,0
+		mov	byte ptr ds:data_96e,0
 		mov	si,81E0h
 		mov	es,cs:data_106e
 		mov	di,3000h
@@ -779,18 +776,18 @@ loc_51:
 		mov	al,2
 		call	word ptr cs:[10Ch]
 		mov	ax,7
-		call	word ptr cs:data_74e
+		call	word ptr cs:data_75e
 		push	ds
 		mov	ds,cs:data_106e
 		mov	si,3000h
 		xor	ax,ax			; Zero register
 		int	60h			; ??INT Non-standard interrupt
 		pop	ds
-		mov	word ptr ds:data_90e,787Eh
+		mov	word ptr ds:data_91e,787Eh
 		call	sub_5
-loc_52:
+loc_53:
 		call	sub_8
-		jmp	short loc_52
+		jmp	short loc_53
 
 ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 ;                              SUBROUTINE
@@ -798,151 +795,151 @@ loc_52:
 
 sub_5		proc	near
 		mov	byte ptr ds:data_104e,0
-loc_53:
-		mov	si,ds:data_90e
-		lodsb				; String [si] to al
-		mov	ds:data_90e,si
-		cmp	al,0F7h
-		je	loc_64			; Jump if equal
-		cmp	al,0F8h
-		jne	loc_54			; Jump if not equal
-		jmp	loc_65
 loc_54:
-		cmp	al,0F9h
+		mov	si,ds:data_91e
+		lodsb				; String [si] to al
+		mov	ds:data_91e,si
+		cmp	al,0F7h
+		je	loc_65			; Jump if equal
+		cmp	al,0F8h
 		jne	loc_55			; Jump if not equal
 		jmp	loc_66
 loc_55:
-		cmp	al,0FAh
+		cmp	al,0F9h
 		jne	loc_56			; Jump if not equal
-		jmp	loc_68
+		jmp	loc_67
 loc_56:
-		cmp	al,0FBh
+		cmp	al,0FAh
 		jne	loc_57			; Jump if not equal
 		jmp	loc_69
 loc_57:
-		cmp	al,0FCh
+		cmp	al,0FBh
 		jne	loc_58			; Jump if not equal
 		jmp	loc_70
 loc_58:
-		cmp	al,0FDh
+		cmp	al,0FCh
 		jne	loc_59			; Jump if not equal
 		jmp	loc_71
 loc_59:
-		cmp	al,0FEh
+		cmp	al,0FDh
 		jne	loc_60			; Jump if not equal
-		jmp	loc_74
-loc_60:
-		cmp	al,0FFh
-		jne	loc_61			; Jump if not equal
-		jmp	loc_73
-loc_61:
-		cmp	al,9
-		jne	loc_62			; Jump if not equal
 		jmp	loc_72
+loc_60:
+		cmp	al,0FEh
+		jne	loc_61			; Jump if not equal
+		jmp	loc_75
+loc_61:
+		cmp	al,0FFh
+		jne	loc_62			; Jump if not equal
+		jmp	loc_74
 loc_62:
+		cmp	al,9
+		jne	loc_63			; Jump if not equal
+		jmp	loc_73
+loc_63:
 		push	ax
 		xor	al,al			; Zero register
 		call	sub_6
-		mov	al,ds:data_92e
+		mov	al,ds:data_93e
 		mov	cl,0Eh
 		mul	cl			; ax = reg * al
 		mov	cl,al
 		add	cl,90h
-		mov	bl,ds:data_91e
+		mov	bl,ds:data_92e
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		add	bx,bx
 		add	bx,bx
 		pop	ax
 		mov	ah,7
-		call	word ptr cs:data_81e
-		inc	byte ptr ds:data_91e
-loc_63:
+		call	word ptr cs:data_82e
+		inc	byte ptr ds:data_92e
+loc_64:
 		mov	al,0FFh
 		call	sub_6
-		mov	al,ds:data_94e
+		mov	al,ds:data_95e
 		call	sub_7
-		jmp	loc_53
-loc_64:
+		jmp	loc_54
+loc_65:
 		call	sub_8
 		test	byte ptr ds:data_105e,0FFh
-		jz	loc_64			; Jump if zero
+		jz	loc_65			; Jump if zero
 		mov	byte ptr ds:data_105e,0
 		mov	word ptr ds:data_107e,0
-		jmp	loc_53
-loc_65:
-		lodsw				; String [si] to ax
-		mov	ds:data_90e,si
-		mov	ds:data_93e,ax
-		jmp	loc_53
+		jmp	loc_54
 loc_66:
+		lodsw				; String [si] to ax
+		mov	ds:data_91e,si
+		mov	ds:data_94e,ax
+		jmp	loc_54
+loc_67:
 		xor	al,al			; Zero register
 		call	sub_6
-loc_67:
+loc_68:
 		call	sub_8
 		mov	ax,ds:data_107e
-		cmp	ax,ds:data_93e
-		jb	loc_67			; Jump if below
+		cmp	ax,ds:data_94e
+		jb	loc_68			; Jump if below
 		mov	word ptr ds:data_107e,0
-		jmp	loc_53
-loc_68:
-		lodsb				; String [si] to al
-		mov	ds:data_90e,si
-		mov	ds:data_94e,al
-		jmp	loc_53
+		jmp	loc_54
 loc_69:
-		lodsw				; String [si] to ax
-		mov	ds:data_92e,al
-		mov	ds:data_91e,ah
-		mov	ds:data_90e,si
-		jmp	loc_53
+		lodsb				; String [si] to al
+		mov	ds:data_91e,si
+		mov	ds:data_95e,al
+		jmp	loc_54
 loc_70:
+		lodsw				; String [si] to ax
+		mov	ds:data_93e,al
+		mov	ds:data_92e,ah
+		mov	ds:data_91e,si
+		jmp	loc_54
+loc_71:
 		mov	bx,8Ch
 		mov	cx,503Ch
 		xor	al,al			; Zero register
-		call	word ptr cs:data_62
-		mov	byte ptr ds:data_91e,0
+		call	word ptr cs:data_63
 		mov	byte ptr ds:data_92e,0
-		jmp	loc_53
-loc_71:
-		xor	al,al			; Zero register
-		call	sub_6
-		mov	byte ptr ds:data_91e,0
-		inc	byte ptr ds:data_92e
-		jmp	loc_53
+		mov	byte ptr ds:data_93e,0
+		jmp	loc_54
 loc_72:
 		xor	al,al			; Zero register
 		call	sub_6
-		add	byte ptr ds:data_91e,4
-		and	byte ptr ds:data_91e,0FCh
-		jmp	loc_63
+		mov	byte ptr ds:data_92e,0
+		inc	byte ptr ds:data_93e
+		jmp	loc_54
+loc_73:
+		xor	al,al			; Zero register
+		call	sub_6
+		add	byte ptr ds:data_92e,4
+		and	byte ptr ds:data_92e,0FCh
+		jmp	loc_64
 
 ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 
 sub_6:
 		push	ax
-		mov	al,ds:data_92e
+		mov	al,ds:data_93e
 		mov	cl,0Eh
 		mul	cl			; ax = reg * al
 		add	al,90h
-		mov	ah,ds:data_91e
+		mov	ah,ds:data_92e
 		add	ah,ah
 		mov	bx,ax
 		pop	ax
-		jmp	word ptr cs:data_80e
-loc_73:
-		xor	al,al			; Zero register
-		call	sub_6
-		retn
+		jmp	word ptr cs:data_81e
 loc_74:
 		xor	al,al			; Zero register
 		call	sub_6
-		mov	bl,ds:data_95e
+		retn
+loc_75:
+		xor	al,al			; Zero register
+		call	sub_6
+		mov	bl,ds:data_96e
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		call	word ptr ds:data_89e[bx]	;*
-		inc	byte ptr ds:data_95e
-		jmp	loc_53
+		call	word ptr ds:data_90e[bx]	;*
+		inc	byte ptr ds:data_96e
+		jmp	loc_54
 sub_5		endp
 
 			                        ;* No entry point to code
@@ -1002,10 +999,10 @@ sub_5		endp
 ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 
 sub_7		proc	near
-loc_75:
+loc_76:
 		call	sub_8
 		cmp	cs:data_104e,al
-		jb	loc_75			; Jump if below
+		jb	loc_76			; Jump if below
 		mov	byte ptr cs:data_104e,0
 		retn
 sub_7		endp
@@ -1033,7 +1030,7 @@ sub_8		endp
 
 sub_9		proc	near
 		call	sub_10
-		jmp	short loc_80
+		jmp	short loc_81
 
 ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 
@@ -1045,26 +1042,26 @@ sub_10:
 		mov	bp,si
 		add	si,cx
 
-locloop_76:
+locloop_77:
 		push	cx
 		xor	al,al			; Zero register
 		mov	cx,8
 
-locloop_77:
+locloop_78:
 		rol	byte ptr ds:[bp],1	; Rotate
-		jc	loc_78			; Jump if carry Set
+		jc	loc_79			; Jump if carry Set
 		stosb				; Store al to es:[di]
-		loop	locloop_77		; Loop if cx > 0
+		loop	locloop_78		; Loop if cx > 0
 
-		jmp	short loc_79
-loc_78:
-		movsb				; Mov [si] to es:[di]
-		loop	locloop_77		; Loop if cx > 0
-
+		jmp	short loc_80
 loc_79:
+		movsb				; Mov [si] to es:[di]
+		loop	locloop_78		; Loop if cx > 0
+
+loc_80:
 		inc	bp
 		pop	cx
-		loop	locloop_76		; Loop if cx > 0
+		loop	locloop_77		; Loop if cx > 0
 
 		pop	cx
 		add	cx,cx
@@ -1072,10 +1069,10 @@ loc_79:
 		add	cx,cx
 		pop	di
 		retn
-loc_80:
+loc_81:
 		xor	dh,dh			; Zero register
 
-locloop_81:
+locloop_82:
 		xor	al,al			; Zero register
 		rcl	byte ptr es:[di],1	; Rotate thru carry
 		adc	al,al
@@ -1112,38 +1109,38 @@ locloop_81:
 		or	ah,dh
 		mov	al,ah
 		stosb				; Store al to es:[di]
-		loop	locloop_81		; Loop if cx > 0
+		loop	locloop_82		; Loop if cx > 0
 
 		retn
 sub_9		endp
 
-loc_82:
+loc_83:
 		test	byte ptr [si],40h	; '@'
-		jz	loc_86			; Jump if zero
+		jz	loc_87			; Jump if zero
 		lodsw				; String [si] to ax
 		xchg	ah,al
 		mov	cx,ax
 		cmp	ax,0FFFFh
-		jne	loc_83			; Jump if not equal
+		jne	loc_84			; Jump if not equal
 		retn
-loc_83:
+loc_84:
 		and	cx,3FFFh
 		test	ax,8000h
-		jz	loc_85			; Jump if zero
-loc_84:
+		jz	loc_86			; Jump if zero
+loc_85:
 		lodsb				; String [si] to al
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
-		jmp	short loc_82
-loc_85:
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		jmp	short loc_82
+		jmp	short loc_83
 loc_86:
+		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+		jmp	short loc_83
+loc_87:
 		lodsb				; String [si] to al
 		mov	cl,al
 		and	cx,3Fh
 		test	al,80h
-		jz	loc_85			; Jump if zero
-		jmp	short loc_84
+		jz	loc_86			; Jump if zero
+		jmp	short loc_85
 
 ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 ;                              SUBROUTINE
@@ -1185,34 +1182,34 @@ sub_11		endp
 		mov	di,data_5e
 		mov	cx,35h
 
-locloop_87:
+locloop_88:
 		push	cx
 		push	di
 		mov	cx,13h
 
-locloop_88:
+locloop_89:
 		lodsw				; String [si] to ax
 		or	es:[di],ax
 		or	es:data_3e[di],ax
 		or	es:data_6e[di],ax
 		inc	di
 		inc	di
-		loop	locloop_88		; Loop if cx > 0
+		loop	locloop_89		; Loop if cx > 0
 
 		pop	di
 		add	di,50h
 		pop	cx
-		loop	locloop_87		; Loop if cx > 0
+		loop	locloop_88		; Loop if cx > 0
 
 		mov	di,data_5e
 		mov	cx,35h
 
-locloop_89:
+locloop_90:
 		push	cx
 		push	di
 		mov	cx,13h
 
-locloop_90:
+locloop_91:
 		lodsw				; String [si] to ax
 		not	ax
 		and	es:[di],ax
@@ -1220,12 +1217,12 @@ locloop_90:
 		and	es:data_6e[di],ax
 		inc	di
 		inc	di
-		loop	locloop_90		; Loop if cx > 0
+		loop	locloop_91		; Loop if cx > 0
 
 		pop	di
 		add	di,50h
 		pop	cx
-		loop	locloop_89		; Loop if cx > 0
+		loop	locloop_90		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1621,76 +1618,78 @@ locloop_90:
 		db	 29h, 80h, 00h, 61h, 03h, 77h
 		db	 7Fh, 77h, 00h, 00h, 3Fh, 03h
 		db	0DDh,0D4h, 5Dh,0C0h, 03h, 6Ah
-		db	 03h, 77h,0FFh, 77h, 08h, 01h
-		db	0FDh, 03h,0DFh,0FDh,0C5h, 18h
-		db	0F1h, 78h, 78h, 27h,0FFh,0FFh
-		db	 1Fh,0F8h, 5Bh,0BFh,0FFh,0F4h
-		db	 07h,0C0h, 1Eh, 26h,0F7h,0FFh
-		db	 40h, 01h,0CCh, 00h, 00h, 7Fh
-		db	0FFh,0F0h, 23h, 90h, 27h, 41h
-		db	 7Bh,0FFh,0F8h, 17h, 82h, 23h
-		db	0B0h, 73h,0FFh,0F4h, 5Fh,0CEh
-		db	 23h,0EAh,0F3h,0FFh,0FFh,0FFh
-		db	 8Eh, 63h,0FFh,0E3h,0FFh,0FFh
-		db	0E7h, 1Ch, 71h, 50h, 78h, 22h
-		db	0A0h, 0Bh, 17h,0D8h, 02h,0AFh
-		db	0FDh, 00h, 07h,0C0h, 16h, 00h
-		db	 57h,0FFh, 00h, 01h,0CCh, 00h
-		db	 00h, 2Fh,0FFh,0F0h, 23h, 90h
-		db	 25h, 41h, 53h,0FFh,0F8h, 17h
-		db	 82h, 22h,0B0h, 63h,0FFh,0F4h
-		db	 5Fh,0CEh, 23h,0EAh,0D3h,0FFh
-		db	0FFh,0FFh, 8Eh, 63h,0FFh,0A3h
-		db	0FFh,0FFh,0E7h, 1Ch, 20h, 00h
-		db	 70h, 00h, 00h, 02h, 02h, 88h
-		db	 00h, 0Dh,0D8h, 00h, 01h, 40h
-		db	 02h, 00h, 07h, 77h, 00h, 01h
-		db	 40h, 00h, 00h, 05h,0DDh, 80h
-		db	 01h, 80h, 00h, 00h, 03h, 77h
-		db	 40h, 03h, 00h, 00h, 00h, 03h
-		db	0DDh,0D0h, 0Dh,0C0h, 03h, 40h
-		db	 03h, 77h,0FFh, 77h, 08h, 01h
-		db	0FDh, 03h,0DFh,0FDh,0C5h, 18h
-		db	0F1h, 78h, 78h, 27h,0E7h, 5Fh
-		db	 1Fh,0F9h,0EFh,0BFh,0FFh, 3Fh
-		db	0F7h,0C0h, 1Eh,0BFh,0F7h,0FFh
-		db	0FFh,0FFh,0CCh, 00h, 7Fh,0FFh
-		db	0FFh, 9Fh,0E1h, 90h, 27h, 3Fh
-		db	 7Bh,0FFh,0C0h, 03h, 82h, 23h
-		db	 00h, 73h,0FFh,0F0h, 0Fh,0CEh
-		db	 23h,0C0h,0F3h,0FFh,0FFh,0FFh
-		db	 8Eh, 63h,0FFh,0E3h,0FFh,0FFh
-		db	0E7h, 1Ch, 71h, 50h, 78h, 22h
-		db	0A2h, 0Ah, 17h,0D8h,0AAh,0AFh
-		db	0FDh, 1Dh, 23h, 40h, 16h, 18h
-		db	 57h,0FFh,0BAh, 41h,0CCh, 00h
-		db	 30h, 2Fh,0FFh, 94h, 01h, 90h
-		db	 25h, 00h, 13h,0FFh,0C0h, 03h
-		db	 82h, 22h, 00h, 63h,0FFh,0F0h
-		db	 0Fh,0CEh, 23h,0C0h,0D3h,0FFh
-		db	0FFh,0FFh, 8Eh, 63h,0FFh,0A3h
-		db	0FFh,0FFh,0E7h, 1Ch,0AAh,0AAh
-		db	 5Fh, 55h,0B1h,0AAh, 56h, 54h
-		db	 0Ah,0A0h, 05h, 00h, 80h, 00h
-		db	 40h, 00h,0FFh,0FFh,0FFh,0FFh
-		db	0F9h,0FFh, 7Fh,0FEh, 1Fh,0F0h
-		db	 8Fh, 83h,0C0h, 07h,0C0h, 1Eh
-		db	0FFh,0FFh,0E6h,0FFh,0E0h, 7Fh
-		db	 79h,0FCh, 1Fh,0F0h, 8Fh, 80h
-		db	0C0h, 05h,0C0h, 0Ah,0AAh,0AAh
-		db	 55h,0D5h,0A0h, 2Ah, 56h, 54h
-		db	 0Ah,0A0h, 05h, 00h, 80h, 00h
-		db	 40h, 00h,0FFh,0FFh,0FFh,0FFh
-		db	0FFh,0FFh, 7Fh,0FEh, 1Fh,0F0h
-		db	 8Fh, 83h,0C0h, 07h,0C0h, 1Eh
-		db	0FFh,0FFh,0E4h, 7Fh,0FFh,0FFh
-		db	 79h,0FCh, 1Fh,0F0h, 8Fh, 80h
-		db	0C0h, 05h,0C0h, 0Ah,0FEh,0F7h
-		db	0F8h, 00h, 04h,0FEh,0FCh,0FBh
-		db	 01h, 11h,0FAh, 00h, 53h, 54h
-		db	 41h, 46h, 46h,0F9h,0FCh,0F8h
-		db	 20h, 01h,0F9h,0FCh,0FAh, 07h
-		db	0F8h, 25h, 05h,0FDh
+		db	 03h
+data_38		db	77h
+		db	0FFh, 77h, 08h, 01h,0FDh, 03h
+		db	0DFh,0FDh,0C5h, 18h,0F1h, 78h
+		db	 78h, 27h,0FFh,0FFh, 1Fh,0F8h
+		db	 5Bh,0BFh,0FFh,0F4h, 07h,0C0h
+		db	 1Eh, 26h,0F7h,0FFh, 40h, 01h
+		db	0CCh, 00h, 00h, 7Fh,0FFh,0F0h
+		db	 23h, 90h, 27h, 41h, 7Bh,0FFh
+		db	0F8h, 17h, 82h, 23h,0B0h, 73h
+		db	0FFh,0F4h, 5Fh,0CEh, 23h,0EAh
+		db	0F3h,0FFh,0FFh,0FFh, 8Eh, 63h
+		db	0FFh,0E3h,0FFh,0FFh,0E7h, 1Ch
+		db	 71h, 50h, 78h, 22h,0A0h, 0Bh
+		db	 17h,0D8h, 02h,0AFh,0FDh, 00h
+		db	 07h,0C0h, 16h, 00h, 57h,0FFh
+		db	 00h, 01h,0CCh, 00h, 00h, 2Fh
+		db	0FFh,0F0h, 23h, 90h, 25h, 41h
+		db	 53h,0FFh,0F8h, 17h, 82h, 22h
+		db	0B0h, 63h,0FFh,0F4h, 5Fh,0CEh
+		db	 23h,0EAh,0D3h,0FFh,0FFh,0FFh
+		db	 8Eh, 63h,0FFh,0A3h,0FFh,0FFh
+		db	0E7h, 1Ch, 20h, 00h, 70h, 00h
+		db	 00h, 02h, 02h, 88h, 00h, 0Dh
+		db	0D8h, 00h, 01h, 40h, 02h, 00h
+		db	 07h, 77h, 00h, 01h, 40h, 00h
+		db	 00h, 05h,0DDh, 80h, 01h, 80h
+		db	 00h, 00h, 03h, 77h, 40h, 03h
+		db	 00h, 00h, 00h, 03h,0DDh,0D0h
+		db	 0Dh,0C0h, 03h, 40h, 03h, 77h
+		db	0FFh, 77h, 08h, 01h,0FDh, 03h
+		db	0DFh,0FDh,0C5h, 18h,0F1h, 78h
+		db	 78h, 27h,0E7h, 5Fh, 1Fh,0F9h
+		db	0EFh,0BFh,0FFh, 3Fh,0F7h,0C0h
+		db	 1Eh,0BFh,0F7h,0FFh,0FFh,0FFh
+		db	0CCh, 00h, 7Fh,0FFh,0FFh, 9Fh
+		db	0E1h, 90h, 27h, 3Fh, 7Bh,0FFh
+		db	0C0h, 03h, 82h, 23h, 00h, 73h
+		db	0FFh,0F0h, 0Fh,0CEh, 23h,0C0h
+		db	0F3h,0FFh,0FFh,0FFh, 8Eh, 63h
+		db	0FFh,0E3h,0FFh,0FFh,0E7h, 1Ch
+		db	 71h, 50h, 78h, 22h,0A2h, 0Ah
+		db	 17h,0D8h,0AAh,0AFh,0FDh, 1Dh
+		db	 23h, 40h, 16h, 18h, 57h,0FFh
+		db	0BAh, 41h,0CCh, 00h, 30h, 2Fh
+		db	0FFh, 94h, 01h, 90h, 25h, 00h
+		db	 13h,0FFh,0C0h, 03h, 82h, 22h
+		db	 00h, 63h,0FFh,0F0h, 0Fh,0CEh
+		db	 23h,0C0h,0D3h,0FFh,0FFh,0FFh
+		db	 8Eh, 63h,0FFh,0A3h,0FFh,0FFh
+		db	0E7h, 1Ch,0AAh,0AAh, 5Fh, 55h
+		db	0B1h,0AAh, 56h, 54h, 0Ah,0A0h
+		db	 05h, 00h, 80h, 00h, 40h, 00h
+		db	0FFh,0FFh,0FFh,0FFh,0F9h,0FFh
+		db	 7Fh,0FEh, 1Fh,0F0h, 8Fh, 83h
+		db	0C0h, 07h,0C0h, 1Eh,0FFh,0FFh
+		db	0E6h,0FFh,0E0h, 7Fh, 79h,0FCh
+		db	 1Fh,0F0h, 8Fh, 80h,0C0h, 05h
+		db	0C0h, 0Ah,0AAh,0AAh, 55h,0D5h
+		db	0A0h, 2Ah, 56h, 54h, 0Ah,0A0h
+		db	 05h, 00h, 80h, 00h, 40h, 00h
+		db	0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
+		db	 7Fh,0FEh, 1Fh,0F0h, 8Fh, 83h
+		db	0C0h, 07h,0C0h, 1Eh,0FFh,0FFh
+		db	0E4h, 7Fh,0FFh,0FFh, 79h,0FCh
+		db	 1Fh,0F0h, 8Fh, 80h,0C0h, 05h
+		db	0C0h, 0Ah,0FEh,0F7h,0F8h, 00h
+		db	 04h,0FEh,0FCh,0FBh, 01h, 11h
+		db	0FAh, 00h, 53h, 54h, 41h, 46h
+		db	 46h,0F9h,0FCh,0F8h, 20h, 01h
+		db	0F9h,0FCh,0FAh, 07h,0F8h, 25h
+		db	 05h,0FDh
 		db	9, 'PRODUCER - JAPANESE VERSION'
 		db	0FDh
 		db	9, 9, 9, 9, '   Mitsuhiro Mazda'
@@ -1858,10 +1857,10 @@ locloop_90:
 		db	'tuvwxyz{|}'
 		db	24 dup (0)
 		db	 7Eh, 7Fh, 80h, 81h, 82h, 83h
-		db	 84h, 85h, 86h, 87h
-data_62		dw	8988h
-		db	 00h, 00h, 00h, 00h, 0Fh, 8Ah
-		db	 8Bh, 8Ch, 00h
+data_63		dw	8584h
+		db	 86h, 87h, 88h, 89h, 00h, 00h
+		db	 00h, 00h, 0Fh, 8Ah, 8Bh, 8Ch
+		db	 00h
 		db	13 dup (0)
 		db	 2Fh, 8Dh, 8Eh, 8Fh, 90h, 91h
 		db	 92h, 93h, 94h, 95h, 96h, 97h
