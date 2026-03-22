@@ -1,72 +1,88 @@
 #!/usr/bin/env python3
 """
 Extract chunks from Zeliard SAR archive files.
+
 SAR format:
-  - First 0xA0 bytes: table of 40 32-bit little-endian offsets
-  - Data sections at each offset
+  - 0x00–0x9F : Primary offset table — 40 x 4-byte LE offsets (chunks 0-39)
+  - 0xA0–(first_chunk-1) : Extended offset table — additional 4-byte LE offsets
+                           (zelres2 has 18 extras = chunks 40-57,
+                            zelres3 has 56 extras = chunks 40-95)
+  - Chunk data at each offset: [4-byte LE size_field][size_field bytes of data]
+  - All chunks (primary and extended) use the same 4-byte header format.
 """
 
 import struct
 import os
-import sys
+
 
 def extract_sar(sar_filename, output_dir):
-    """Extract all chunks from a SAR file."""
+    """Extract all chunks from a SAR file, including extended chunks."""
     print(f"Processing {sar_filename}...")
 
-    # Create output directory
     os.makedirs(output_dir, exist_ok=True)
 
     with open(sar_filename, 'rb') as f:
-        # Read entire file
         data = f.read()
-        file_size = len(data)
+    file_size = len(data)
 
-        # Read offset table (40 entries of 4 bytes each = 160 bytes = 0xA0)
-        offsets = []
-        for i in range(40):
-            offset_bytes = data[i*4:(i+1)*4]
-            offset = struct.unpack('<I', offset_bytes)[0]
-            offsets.append(offset)
+    # --- Primary offset table (40 entries, always at 0x00–0x9F) ---
+    primary_offsets = [
+        struct.unpack('<I', data[i*4:(i+1)*4])[0]
+        for i in range(40)
+    ]
 
-        print(f"  Found {len(offsets)} offsets")
+    # --- Extended offset table (between 0xA0 and first primary chunk) ---
+    first_chunk_offset = primary_offsets[0]   # where chunk_00 lives
+    gap_bytes = data[0xA0:first_chunk_offset]
+    ext_count = len(gap_bytes) // 4
+    ext_offsets = [
+        struct.unpack('<I', gap_bytes[i*4:(i+1)*4])[0]
+        for i in range(ext_count)
+    ]
 
-        # Extract each chunk
-        for i in range(len(offsets)):
-            start = offsets[i]
+    all_offsets = primary_offsets + ext_offsets
+    total = len(all_offsets)
+    print(f"  Primary chunks : 40")
+    if ext_count:
+        print(f"  Extended chunks: {ext_count}  (chunk_40 … chunk_{39+ext_count})")
+    print(f"  Total          : {total}")
 
-            if start == 0 or start >= file_size:
-                print(f"  Chunk {i:02d}: Invalid (offset=0x{start:08x})")
-                continue
+    # --- Extract every chunk ---
+    extracted = 0
+    for i, start in enumerate(all_offsets):
+        if start == 0 or start >= file_size:
+            print(f"  Chunk {i:02d}: Invalid offset 0x{start:08x}, skipping")
+            continue
 
-            # Read size_field from the first 4 bytes of the chunk header
-            if start + 4 > file_size:
-                print(f"  Chunk {i:02d}: Too short to read size_field")
-                continue
+        if start + 4 > file_size:
+            print(f"  Chunk {i:02d}: Too short to read size_field, skipping")
+            continue
 
-            size_field = struct.unpack('<I', data[start:start+4])[0]
-            end = start + 4 + size_field  # header(4) + data(size_field)
+        size_field = struct.unpack('<I', data[start:start+4])[0]
+        end = start + 4 + size_field
 
-            if end > file_size:
-                print(f"  Chunk {i:02d}: size_field extends beyond file, clamping")
-                end = file_size
+        if end > file_size:
+            print(f"  Chunk {i:02d}: size_field extends beyond file, clamping")
+            end = file_size
 
-            chunk_size = end - start
+        chunk_data = data[start:end]
+        out_path   = os.path.join(output_dir, f"chunk_{i:02d}.bin")
 
-            # Extract chunk: header(4) + data(size_field) — exact bytes, no padding
-            chunk_data = data[start:end]
+        with open(out_path, 'wb') as out:
+            out.write(chunk_data)
 
-            output_filename = os.path.join(output_dir, f"chunk_{i:02d}.bin")
-            with open(output_filename, 'wb') as out:
-                out.write(chunk_data)
+        label = "(extended)" if i >= 40 else ""
+        print(f"  Chunk {i:02d}: offset=0x{start:06x}  size={len(chunk_data):7,d} bytes {label}")
+        extracted += 1
 
-            print(f"  Chunk {i:02d}: offset=0x{start:08x}, size_field={size_field:6d}, total={chunk_size:6d} bytes -> {output_filename}")
+    print(f"  Extracted {extracted}/{total} chunks -> {output_dir}")
+
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Extract chunks from Zeliard SAR archives")
-    parser.add_argument("--sar-dir",  default=".", help="Directory containing zelres*.sar files (default: .)")
-    parser.add_argument("--out-dir",  default=None, help="Base output directory (default: same as --sar-dir)")
+    parser.add_argument("--sar-dir", default=".", help="Directory containing zelres*.sar files")
+    parser.add_argument("--out-dir", default=None,  help="Base output directory (default: same as --sar-dir)")
     args = parser.parse_args()
 
     out_base = args.out_dir or args.sar_dir
@@ -74,7 +90,7 @@ if __name__ == "__main__":
     for sar_name in ["zelres1.sar", "zelres2.sar", "zelres3.sar"]:
         sar_path = os.path.join(args.sar_dir, sar_name)
         if os.path.exists(sar_path):
-            base_name = os.path.splitext(sar_name)[0]
+            base_name  = os.path.splitext(sar_name)[0]
             output_dir = os.path.join(out_base, f"{base_name}_extracted")
             extract_sar(sar_path, output_dir)
             print()

@@ -1,92 +1,100 @@
 #!/usr/bin/env python3
 """
 Pack chunks into Zeliard SAR archive files.
+
 SAR format:
-  - First 0xA0 bytes: primary offset table (40 x 4-byte LE offsets)
-  - Optional extended offset table between 0xA0 and first chunk
-    (zelres2 has 72 extra bytes, zelres3 has 224 extra bytes — these are
-     additional offsets pointing into the trailing sprite/image data)
-  - Chunk data sections at each offset
-  - Optional trailing data (sprite/image blocks) after the last chunk
+  - 0x00–0x9F : Primary offset table — 40 x 4-byte LE offsets (chunks 0-39)
+  - 0xA0–(first_chunk-1) : Extended offset table — additional 4-byte LE offsets
+                           pointing to extended chunks (40+)
+  - All chunk data at each offset: [4-byte LE size_field][size_field bytes]
 """
 
 import struct
 import os
-import sys
 
 
-def pack_sar(chunk_dir, output_sar, ref_sar=None):
+def pack_sar(chunk_dir, output_sar):
     """Pack all chunks from a directory into a SAR file.
 
-    ref_sar: path to the original SAR file.  When provided:
-      - The extended offset table (any bytes between the 40-entry primary
-        table at 0xA0 and the first chunk) is copied verbatim.
-      - The trailing data (after the last chunk) is copied verbatim.
-      - Chunk start offsets are calculated to match ref_sar's layout.
-    Without ref_sar, chunks start immediately at 0xA0 (suitable for
-    zelres1 which has no extended header or trailing data).
+    Reads chunk_00.bin … chunk_NN.bin from chunk_dir.
+    The first 40 files become the primary offset table (0x00–0x9F).
+    Any additional files (chunk_40.bin, chunk_41.bin, …) become the
+    extended offset table and are appended after all primary chunk data.
     """
 
     print(f"Packing {chunk_dir} -> {output_sar}...")
 
-    # Collect all chunk files
-    chunks = []
-    for i in range(40):
-        chunk_file = os.path.join(chunk_dir, f"chunk_{i:02d}.bin")
-        if os.path.exists(chunk_file):
-            with open(chunk_file, 'rb') as f:
-                data = f.read()
-            chunks.append((i, data))
-        else:
-            chunks.append((i, b''))
-            print(f"  Chunk {i:02d}: EMPTY (missing file)")
+    # Discover all chunk files
+    all_chunks = []
+    i = 0
+    while True:
+        path = os.path.join(chunk_dir, f"chunk_{i:02d}.bin")
+        if not os.path.exists(path):
+            break
+        with open(path, 'rb') as f:
+            all_chunks.append(f.read())
+        i += 1
 
-    if len(chunks) != 40:
-        print(f"Error: Expected 40 chunks, found {len(chunks)}")
-        return False
+    n_total    = len(all_chunks)
+    n_primary  = min(n_total, 40)
+    n_extended = n_total - n_primary
 
-    # Read reference SAR for extended header and trailing data
-    gap_bytes    = b''
-    trailing     = b''
-    first_offset = 0xA0  # default: chunks start right after primary table
+    print(f"  Primary chunks : {n_primary}")
+    if n_extended:
+        print(f"  Extended chunks: {n_extended}  (chunk_40 … chunk_{n_total-1})")
+    print(f"  Total          : {n_total}")
 
-    if ref_sar and os.path.exists(ref_sar):
-        with open(ref_sar, 'rb') as f:
-            ref_data = f.read()
+    primary  = all_chunks[:40]
+    extended = all_chunks[40:]
 
-        first_offset = struct.unpack('<I', ref_data[0:4])[0]
-        gap_bytes    = ref_data[0xA0:first_offset]
+    # Pad primary table to 40 entries if fewer files exist
+    while len(primary) < 40:
+        primary.append(b'')
 
-        # Find where the last chunk ends to locate trailing data
-        ref_offsets = [struct.unpack('<I', ref_data[i*4:(i+1)*4])[0] for i in range(40)]
-        valid = [(o, struct.unpack('<I', ref_data[o:o+4])[0])
-                 for o in ref_offsets if 0 < o < len(ref_data) - 4]
-        if valid:
-            last_off, last_sf = max(valid, key=lambda x: x[0])
-            trail_start = last_off + 4 + last_sf
-            trailing    = ref_data[trail_start:]
+    # Calculate where primary chunks start:
+    # primary table = 0xA0 bytes
+    # extended table = n_extended * 4 bytes
+    first_chunk_offset = 0xA0 + n_extended * 4
 
     # Build primary offset table
-    offset_table   = []
-    current_offset = first_offset
-    for i, chunk_data in chunks:
-        offset_table.append(current_offset)
-        current_offset += len(chunk_data)
+    primary_offsets = []
+    pos = first_chunk_offset
+    for data in primary:
+        primary_offsets.append(pos)
+        pos += len(data)
 
-    total = current_offset + len(trailing)
-    extra = (f"  [extended_hdr={len(gap_bytes)}B  trailing={len(trailing):,}B]"
-             if gap_bytes or trailing else "")
-    print(f"  Total SAR size: {total:,d} bytes ({total/1024:.1f} KB){extra}")
+    # Extended chunk data follows primary chunks
+    extended_start = pos
 
-    # Write SAR
+    # Build extended offset table
+    ext_offsets = []
+    for data in extended:
+        ext_offsets.append(pos)
+        pos += len(data)
+
+    total = pos
+    extra = f"  [ext_hdr={n_extended*4}B  ext_data={sum(len(d) for d in extended):,}B]" if extended else ""
+    print(f"  Total SAR size : {total:,d} bytes ({total/1024:.1f} KB){extra}")
+
     with open(output_sar, 'wb') as f:
-        for offset in offset_table:
-            f.write(struct.pack('<I', offset))
-        assert f.tell() == 0xA0, f"Primary table should be 0xA0 bytes, got {f.tell()}"
-        f.write(gap_bytes)
-        for i, chunk_data in chunks:
-            f.write(chunk_data)
-        f.write(trailing)
+        # Primary offset table (40 × 4 bytes = 0xA0)
+        for off in primary_offsets:
+            f.write(struct.pack('<I', off))
+        assert f.tell() == 0xA0
+
+        # Extended offset table (n_extended × 4 bytes)
+        for off in ext_offsets:
+            f.write(struct.pack('<I', off))
+
+        assert f.tell() == first_chunk_offset
+
+        # Primary chunk data
+        for data in primary:
+            f.write(data)
+
+        # Extended chunk data
+        for data in extended:
+            f.write(data)
 
     print(f"  Created: {output_sar}")
     return True
@@ -97,25 +105,21 @@ def main():
     parser = argparse.ArgumentParser(description="Pack Zeliard SAR archives from chunk directories")
     parser.add_argument("chunk_dir",  nargs="?", help="Directory of chunk_XX.bin files")
     parser.add_argument("output_sar", nargs="?", help="Output .sar file")
-    parser.add_argument("--ref-sar",  help="Original .sar for extended header / trailing data")
     parser.add_argument("--sar-dir",  default=".", help="Directory of original .sar files (auto mode)")
     parser.add_argument("--out-dir",  default=None, help="Output directory (auto mode)")
     args = parser.parse_args()
 
     if args.chunk_dir:
-        # Manual mode
         out = args.output_sar or args.chunk_dir.replace("_extracted", ".sar")
-        pack_sar(args.chunk_dir, out, ref_sar=args.ref_sar)
+        pack_sar(args.chunk_dir, out)
     else:
-        # Auto mode
         print("=== SAR Packer ===\n")
         out_base = args.out_dir or "."
         for name in ["zelres1", "zelres2", "zelres3"]:
             chunk_dir  = os.path.join(out_base, name) if args.out_dir else f"{name}_extracted"
             output_sar = os.path.join(out_base, f"{name}.sar") if args.out_dir else f"{name}.sar"
-            ref        = os.path.join(args.sar_dir, f"{name}.sar")
             if os.path.isdir(chunk_dir):
-                pack_sar(chunk_dir, output_sar, ref_sar=ref if os.path.exists(ref) else None)
+                pack_sar(chunk_dir, output_sar)
                 print()
             else:
                 print(f"Warning: {chunk_dir} not found\n")
