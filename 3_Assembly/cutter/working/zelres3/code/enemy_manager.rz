@@ -1,4 +1,0 @@
-# Rizin analysis script for enemy_manager
-# Usage: rizin -b 16 -i enemy_manager.rz chunk_32.bin
-e asm.bits=16
-aaa

@@ -1,6 +1,0 @@
-dlopen
-dlsym
-dlclose
-mmap
-LoadLibrary
-GetProcAddress

@@ -1,4 +1,0 @@
-# Rizin analysis script for enemy_goblin
-# Usage: rizin -b 16 -i enemy_goblin.rz chunk_13.bin
-e asm.bits=16
-aaa

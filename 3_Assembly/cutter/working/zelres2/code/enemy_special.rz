@@ -1,4 +1,0 @@
-# Rizin analysis script for enemy_special
-# Usage: rizin -b 16 -i enemy_special.rz chunk_17.bin
-e asm.bits=16
-aaa

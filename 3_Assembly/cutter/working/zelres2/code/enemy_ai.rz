@@ -1,4 +1,0 @@
-# Rizin analysis script for enemy_ai
-# Usage: rizin -b 16 -i enemy_ai.rz chunk_06.bin
-e asm.bits=16
-aaa

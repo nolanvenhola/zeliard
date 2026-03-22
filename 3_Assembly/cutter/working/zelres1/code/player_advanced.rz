@@ -1,4 +1,0 @@
-# Rizin analysis script for player_advanced
-# Usage: rizin -b 16 -i player_advanced.rz chunk_06.bin
-e asm.bits=16
-aaa

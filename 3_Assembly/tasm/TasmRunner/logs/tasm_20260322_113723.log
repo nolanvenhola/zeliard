@@ -1,0 +1,22 @@
+Starting TASM assembly at 2026-03-22 11:37:23 AM
+Input file: ../working/drivers/stick.asm
+Generated DOSBox config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_a17e1eec932d45bb93e2c397adc08496.conf
+Running DOSBox...
+
+DOSBox version 0.74-3
+Copyright 2002-2019 DOSBox Team, published under GNU GPL.
+---
+CONFIG:Loading primary settings from config file C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_a17e1eec932d45bb93e2c397adc08496.conf
+
+Windows dpi/blurry apps scaling detected! The screen might be too large or not
+show properly, please see the DOSBox options file (fullresolution) for details.
+
+MIDI:Opened device:win32
+SHELL:Redirect output to "tasm_output_stick.txt"
+
+DOSBox exited with code: 0
+✗ Not found: C:\Projects\Zeliard\3_Assembly\tasm\working\drivers\stick.obj
+✓ Created: C:\Projects\Zeliard\3_Assembly\tasm\working\drivers\stick.lst
+✗ Not found: stick.exe or stick.com
+Deleted temporary config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_a17e1eec932d45bb93e2c397adc08496.conf
+Assembly completed with exit code: 1

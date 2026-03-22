@@ -1,4 +1,0 @@
-# Rizin analysis script for trigger_events
-# Usage: rizin -b 16 -i trigger_events.rz chunk_31.bin
-e asm.bits=16
-aaa

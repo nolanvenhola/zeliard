@@ -1,4 +1,0 @@
-# Rizin analysis script for level_loader
-# Usage: rizin -b 16 -i level_loader.rz chunk_00.bin
-e asm.bits=16
-aaa

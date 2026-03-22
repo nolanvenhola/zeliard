@@ -1,4 +1,0 @@
-# Rizin analysis script for animation_system
-# Usage: rizin -b 16 -i animation_system.rz chunk_05.bin
-e asm.bits=16
-aaa

@@ -1,4 +1,0 @@
-# Rizin analysis script for town_npc
-# Usage: rizin -b 16 -i town_npc.rz chunk_20.bin
-e asm.bits=16
-aaa

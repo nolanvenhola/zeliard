@@ -1,0 +1,23 @@
+Starting TASM assembly at 2026-03-22 12:31:10 PM
+Input file: c:\Projects\Zeliard\3_Assembly\tasm\working\zelres2\code\206ENAIE.asm
+Generated DOSBox config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_21f494fa1d3c458aa5722f1262c1eee6.conf
+Running DOSBox...
+
+DOSBox version 0.74-3
+Copyright 2002-2019 DOSBox Team, published under GNU GPL.
+---
+CONFIG:Loading primary settings from config file C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_21f494fa1d3c458aa5722f1262c1eee6.conf
+
+Windows dpi/blurry apps scaling detected! The screen might be too large or not
+show properly, please see the DOSBox options file (fullresolution) for details.
+
+MIDI:Opened device:win32
+SHELL:Redirect output to "tasm_output_206ENAIE.txt"
+SHELL:Redirect output to "tasm_output_206ENAIE.txt"
+
+DOSBox exited with code: 0
+✓ Created: c:\Projects\Zeliard\3_Assembly\tasm\working\zelres2\code\206ENAIE.obj
+✓ Created: c:\Projects\Zeliard\3_Assembly\tasm\working\zelres2\code\206ENAIE.lst
+✓ Created: c:\Projects\Zeliard\3_Assembly\tasm\working\zelres2\code\206ENAIE.bin (9056 bytes, stripped 512B MZ header)
+Deleted temporary config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_21f494fa1d3c458aa5722f1262c1eee6.conf
+Assembly completed with exit code: 0

@@ -1,4 +1,0 @@
-# Rizin analysis script for vga_decompressor
-# Usage: rizin -b 16 -i vga_decompressor.rz chunk_07.bin
-e asm.bits=16
-aaa

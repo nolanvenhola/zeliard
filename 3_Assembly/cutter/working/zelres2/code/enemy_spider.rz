@@ -1,4 +1,0 @@
-# Rizin analysis script for enemy_spider
-# Usage: rizin -b 16 -i enemy_spider.rz chunk_09.bin
-e asm.bits=16
-aaa

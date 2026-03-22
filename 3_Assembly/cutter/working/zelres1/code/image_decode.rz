@@ -1,4 +1,0 @@
-# Rizin analysis script for image_decode
-# Usage: rizin -b 16 -i image_decode.rz chunk_03.bin
-e asm.bits=16
-aaa

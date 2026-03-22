@@ -1,4 +1,0 @@
-# Rizin analysis script for palette_graphics
-# Usage: rizin -b 16 -i palette_graphics.rz chunk_05.bin
-e asm.bits=16
-aaa

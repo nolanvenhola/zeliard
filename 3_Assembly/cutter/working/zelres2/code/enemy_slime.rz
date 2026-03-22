@@ -1,4 +1,0 @@
-# Rizin analysis script for enemy_slime
-# Usage: rizin -b 16 -i enemy_slime.rz chunk_07.bin
-e asm.bits=16
-aaa

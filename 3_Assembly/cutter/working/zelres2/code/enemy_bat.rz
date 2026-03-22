@@ -1,4 +1,0 @@
-# Rizin analysis script for enemy_bat
-# Usage: rizin -b 16 -i enemy_bat.rz chunk_08.bin
-e asm.bits=16
-aaa

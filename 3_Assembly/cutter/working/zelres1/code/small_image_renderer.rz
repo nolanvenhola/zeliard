@@ -1,4 +1,0 @@
-# Rizin analysis script for small_image_renderer
-# Usage: rizin -b 16 -i small_image_renderer.rz chunk_11.bin
-e asm.bits=16
-aaa

@@ -1,4 +1,0 @@
-# Rizin analysis script for physics_subsystems
-# Usage: rizin -b 16 -i physics_subsystems.rz chunk_03.bin
-e asm.bits=16
-aaa

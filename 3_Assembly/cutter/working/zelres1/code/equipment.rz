@@ -1,4 +1,0 @@
-# Rizin analysis script for equipment
-# Usage: rizin -b 16 -i equipment.rz chunk_02.bin
-e asm.bits=16
-aaa

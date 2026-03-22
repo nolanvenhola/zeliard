@@ -1,6 +1,0 @@
-NAME=PE: #2331
-FILE=bins/pe/2331
-ARGS=-A
-CMDS=q!
-EXPECT=
-RUN

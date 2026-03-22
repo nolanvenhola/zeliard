@@ -1,4 +1,0 @@
-# Rizin analysis script for large_image_renderer
-# Usage: rizin -b 16 -i large_image_renderer.rz chunk_10.bin
-e asm.bits=16
-aaa

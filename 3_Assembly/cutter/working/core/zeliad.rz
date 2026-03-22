@@ -1,4 +1,0 @@
-# Rizin analysis script for zeliad
-# Usage: rizin -b 16 -i zeliad.rz zeliad.exe
-e asm.bits=16
-aaa

@@ -1,4 +1,0 @@
-# Rizin analysis script for tile_collision
-# Usage: rizin -b 16 -i tile_collision.rz chunk_16.bin
-e asm.bits=16
-aaa

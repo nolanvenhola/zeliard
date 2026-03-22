@@ -1,4 +1,0 @@
-# Rizin analysis script for boss_patterns
-# Usage: rizin -b 16 -i boss_patterns.rz chunk_35.bin
-e asm.bits=16
-aaa

@@ -1,4 +1,0 @@
-# Rizin analysis script for physics_engine
-# Usage: rizin -b 16 -i physics_engine.rz chunk_04.bin
-e asm.bits=16
-aaa

@@ -1,2 +1,0 @@
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`

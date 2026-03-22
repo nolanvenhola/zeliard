@@ -1,4 +1,0 @@
-# Rizin analysis script for opening_scene
-# Usage: rizin -b 16 -i opening_scene.rz chunk_00.bin
-e asm.bits=16
-aaa

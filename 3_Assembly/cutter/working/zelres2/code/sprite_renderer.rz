@@ -1,4 +1,0 @@
-# Rizin analysis script for sprite_renderer
-# Usage: rizin -b 16 -i sprite_renderer.rz chunk_02.bin
-e asm.bits=16
-aaa

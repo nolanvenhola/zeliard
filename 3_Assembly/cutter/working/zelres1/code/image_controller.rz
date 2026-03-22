@@ -1,4 +1,0 @@
-# Rizin analysis script for image_controller
-# Usage: rizin -b 16 -i image_controller.rz chunk_01.bin
-e asm.bits=16
-aaa

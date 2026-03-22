@@ -1,4 +1,0 @@
-# Rizin analysis script for level_renderer
-# Usage: rizin -b 16 -i level_renderer.rz chunk_14.bin
-e asm.bits=16
-aaa

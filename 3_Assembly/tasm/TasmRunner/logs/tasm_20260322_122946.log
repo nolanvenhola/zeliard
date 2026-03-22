@@ -1,0 +1,22 @@
+Starting TASM assembly at 2026-03-22 12:29:46 PM
+Input file: c:\Projects\Zeliard\3_Assembly\tasm\working\zelres2\code\200MGAME.asm
+Generated DOSBox config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_196c36212d224043ae6e3eb9d5f4f771.conf
+Running DOSBox...
+
+DOSBox version 0.74-3
+Copyright 2002-2019 DOSBox Team, published under GNU GPL.
+---
+CONFIG:Loading primary settings from config file C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_196c36212d224043ae6e3eb9d5f4f771.conf
+
+Windows dpi/blurry apps scaling detected! The screen might be too large or not
+show properly, please see the DOSBox options file (fullresolution) for details.
+
+MIDI:Opened device:win32
+SHELL:Redirect output to "tasm_output_200MGAME.txt"
+
+DOSBox exited with code: 0
+✗ Not found: c:\Projects\Zeliard\3_Assembly\tasm\working\zelres2\code\200MGAME.obj
+✓ Created: c:\Projects\Zeliard\3_Assembly\tasm\working\zelres2\code\200MGAME.lst
+✗ Not found: 200MGAME.exe or 200MGAME.com
+Deleted temporary config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_196c36212d224043ae6e3eb9d5f4f771.conf
+Assembly completed with exit code: 1

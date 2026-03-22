@@ -1,4 +1,0 @@
-# Rizin analysis script for npc_interaction
-# Usage: rizin -b 16 -i npc_interaction.rz chunk_26.bin
-e asm.bits=16
-aaa

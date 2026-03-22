@@ -1,4 +1,0 @@
-# Rizin analysis script for player_stats
-# Usage: rizin -b 16 -i player_stats.rz chunk_04.bin
-e asm.bits=16
-aaa

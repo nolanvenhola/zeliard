@@ -1,5 +1,0 @@
-NAME=PE: corkami b.exe - open
-FILE=bins/pe/b.exe
-CMDS=q!
-EXPECT=
-RUN

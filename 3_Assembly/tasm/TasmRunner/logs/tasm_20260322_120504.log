@@ -1,0 +1,21 @@
+Starting TASM assembly at 2026-03-22 12:05:04 PM
+Input file: ../working/zelres1/code/image_decoder_b.asm
+Generated DOSBox config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_06b6b10c8ff04a80a51b8cf2a08ec131.conf
+Running DOSBox...
+
+DOSBox version 0.74-3
+Copyright 2002-2019 DOSBox Team, published under GNU GPL.
+---
+CONFIG:Loading primary settings from config file C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_06b6b10c8ff04a80a51b8cf2a08ec131.conf
+
+Windows dpi/blurry apps scaling detected! The screen might be too large or not
+show properly, please see the DOSBox options file (fullresolution) for details.
+
+MIDI:Opened device:win32
+SHELL:Redirect output to "tasm_output_image_decoder_b.txt"
+
+DOSBox exited with code: 0
+✗ Not found: C:\Projects\Zeliard\3_Assembly\tasm\bin\zelres1\image_decoder_b.obj
+✗ Not found: image_decoder_b.exe or image_decoder_b.com
+Deleted temporary config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_06b6b10c8ff04a80a51b8cf2a08ec131.conf
+Assembly completed with exit code: 1

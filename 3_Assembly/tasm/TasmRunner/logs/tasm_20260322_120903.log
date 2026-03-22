@@ -1,0 +1,21 @@
+Starting TASM assembly at 2026-03-22 12:09:03 PM
+Input file: ../working/zelres1/code/opening_scene_ZR1_00.asm
+Generated DOSBox config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_55d72c2ed0464b67a987a17bb66ac3dc.conf
+Running DOSBox...
+
+DOSBox version 0.74-3
+Copyright 2002-2019 DOSBox Team, published under GNU GPL.
+---
+CONFIG:Loading primary settings from config file C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_55d72c2ed0464b67a987a17bb66ac3dc.conf
+
+Windows dpi/blurry apps scaling detected! The screen might be too large or not
+show properly, please see the DOSBox options file (fullresolution) for details.
+
+MIDI:Opened device:win32
+SHELL:Redirect output to "tasm_output_opening_scene_ZR1_00.txt"
+
+DOSBox exited with code: 0
+✗ Not found: C:\Projects\Zeliard\3_Assembly\tasm\working\zelres1\code\opening_scene_ZR1_00.obj
+✗ Not found: opening_scene_ZR1_00.exe or opening_scene_ZR1_00.com
+Deleted temporary config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_55d72c2ed0464b67a987a17bb66ac3dc.conf
+Assembly completed with exit code: 1

@@ -12,3 +12,5 @@ archive
 MONOGAME_AUTHENTIC/.idea
 4_Resources/GrpViewer/__pycache__
 3_Assembly/cutter/source/.github
+3_Assembly/cutter/source/.vscode
+3_Assembly/cutter/source/dist

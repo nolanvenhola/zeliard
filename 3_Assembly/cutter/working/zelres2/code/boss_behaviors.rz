@@ -1,4 +1,0 @@
-# Rizin analysis script for boss_behaviors
-# Usage: rizin -b 16 -i boss_behaviors.rz chunk_16.bin
-e asm.bits=16
-aaa

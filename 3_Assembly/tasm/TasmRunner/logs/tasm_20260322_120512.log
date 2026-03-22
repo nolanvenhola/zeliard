@@ -1,0 +1,21 @@
+Starting TASM assembly at 2026-03-22 12:05:12 PM
+Input file: ../working/zelres1/code/player_advanced.asm
+Generated DOSBox config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_6cd46683c3e846a086728edc8ed2c228.conf
+Running DOSBox...
+
+DOSBox version 0.74-3
+Copyright 2002-2019 DOSBox Team, published under GNU GPL.
+---
+CONFIG:Loading primary settings from config file C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_6cd46683c3e846a086728edc8ed2c228.conf
+
+Windows dpi/blurry apps scaling detected! The screen might be too large or not
+show properly, please see the DOSBox options file (fullresolution) for details.
+
+MIDI:Opened device:win32
+SHELL:Redirect output to "tasm_output_player_advanced.txt"
+
+DOSBox exited with code: 0
+✗ Not found: C:\Projects\Zeliard\3_Assembly\tasm\bin\zelres1\player_advanced.obj
+✗ Not found: player_advanced.exe or player_advanced.com
+Deleted temporary config: C:\Users\nvenh\AppData\Local\Temp\dosbox_tasm_6cd46683c3e846a086728edc8ed2c228.conf
+Assembly completed with exit code: 1

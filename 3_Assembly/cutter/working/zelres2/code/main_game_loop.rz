@@ -1,4 +1,0 @@
-# Rizin analysis script for main_game_loop
-# Usage: rizin -b 16 -i main_game_loop.rz chunk_00.bin
-e asm.bits=16
-aaa

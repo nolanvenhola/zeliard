@@ -1,4 +1,0 @@
-# Rizin analysis script for utilities_a
-# Usage: rizin -b 16 -i utilities_a.rz chunk_24.bin
-e asm.bits=16
-aaa

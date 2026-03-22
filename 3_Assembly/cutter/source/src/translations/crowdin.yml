@@ -1,6 +1,0 @@
-commit_message: New automated translations %original_file_name% from Crowdin
-append_commit_message: false
-
-files:
-  - source: Translations.ts
-    translation: cutter_%locale_with_underscore%.ts

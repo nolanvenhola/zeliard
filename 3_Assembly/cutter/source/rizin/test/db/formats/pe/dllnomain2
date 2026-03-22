@@ -1,5 +1,0 @@
-NAME=PE: corkami dllnomain2.dll - open
-FILE=bins/pe/dllnomain2.dll
-CMDS=q!
-EXPECT=
-RUN

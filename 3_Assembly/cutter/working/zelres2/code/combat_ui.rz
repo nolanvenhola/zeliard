@@ -1,4 +1,0 @@
-# Rizin analysis script for combat_ui
-# Usage: rizin -b 16 -i combat_ui.rz chunk_01.bin
-e asm.bits=16
-aaa

@@ -1,4 +1,0 @@
-# Rizin analysis script for enemy_behavior
-# Usage: rizin -b 16 -i enemy_behavior.rz chunk_22.bin
-e asm.bits=16
-aaa

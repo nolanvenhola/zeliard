@@ -1,4 +1,0 @@
-# Rizin analysis script for boss_ai
-# Usage: rizin -b 16 -i boss_ai.rz chunk_34.bin
-e asm.bits=16
-aaa

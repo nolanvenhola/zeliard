@@ -1,4 +1,0 @@
-option('glibc_dir',
-	type: 'string',
-	value: '',
-	description: 'Path to the glibc source tree (used for internal headers)')
