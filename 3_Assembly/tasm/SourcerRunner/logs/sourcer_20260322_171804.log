@@ -1,0 +1,11 @@
+Starting Sourcer disassembly at 2026-03-22 5:18:04 PM
+Input file: c:/Projects/Zeliard/3_Assembly/tasm/working/zelres3/code/ZR3_56.bin
+Generated DOSBox config: C:\Users\nvenh\AppData\Local\Temp\dosbox_sourcer_f0b539bfa1f045b4adc8487aad3a0da2.conf
+Running DOSBox...
+
+Launching DOSBox with Sourcer - press keys manually (I, filename, F, T×9, P×7, G)
+
+DOSBox exited with code: 0
+✓ Created: c:\Projects\Zeliard\3_Assembly\tasm\working\zelres3\code\ZR3_56.asm (42,487 bytes)
+Deleted temporary config: C:\Users\nvenh\AppData\Local\Temp\dosbox_sourcer_f0b539bfa1f045b4adc8487aad3a0da2.conf
+Disassembly completed with exit code: 0

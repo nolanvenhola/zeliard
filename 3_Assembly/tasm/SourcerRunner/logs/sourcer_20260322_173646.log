@@ -1,0 +1,11 @@
+Starting Sourcer disassembly at 2026-03-22 5:36:46 PM
+Input file: ../working/zelres2/code/ZR250FUL.bin
+Generated DOSBox config: C:\Users\nvenh\AppData\Local\Temp\dosbox_sourcer_eb1359b229554e40a416553fe94fb3ed.conf
+Running DOSBox...
+
+Launching DOSBox with Sourcer - press keys manually (I, filename, F, T×9, P×7, G)
+
+DOSBox exited with code: 0
+✓ Created: C:\Projects\Zeliard\3_Assembly\tasm\working\zelres2\code\ZR250FUL.asm (46,935 bytes)
+Deleted temporary config: C:\Users\nvenh\AppData\Local\Temp\dosbox_sourcer_eb1359b229554e40a416553fe94fb3ed.conf
+Disassembly completed with exit code: 0
