@@ -32,11 +32,12 @@ gvar_input_fn_ofs	equ	0FF0Ch		; Input handler function offset
 gvar_input_fn_seg	equ	0FF0Eh		; Input handler function segment
 gvar_gfx_fn_ofs		equ	0FF10h		; Graphics handler function offset
 gvar_gfx_fn_seg		equ	0FF12h		; Graphics handler function segment
-gvar_game_phase		equ	0FF14h		; Game phase/state
-gvar_skip_flag		equ	0FF15h		; Skip flag
-gvar_timer_flag		equ	0FF16h		; Timer flag
-gvar_timer_counter	equ	0FF17h		; Timer counter
-gvar_skip_input		equ	0FF18h		; Input skip flag (byte at 0xFF1D)
+gvar_gfx_mode		equ	0FF14h		; Graphics/display mode
+gvar_game_phase		equ	0FF15h		; Game phase/state
+gvar_skip_flag		equ	0FF16h		; Skip flag
+gvar_timer_flag		equ	0FF17h		; Timer flag
+gvar_timer_counter	equ	0FF18h		; Timer counter
+gvar_skip_input		equ	0FF1Dh		; Input skip flag
 gvar_state_a		equ	0FF1Dh		; Game state variable A
 gvar_state_b		equ	0FF1Eh		; Game state variable B
 gvar_state_c		equ	0FF1Fh		; Game state variable C
@@ -45,7 +46,7 @@ gvar_sound_flag		equ	0FF27h		; Sound enabled flag
 gvar_key_pressed	equ	0FF28h		; Key pressed scancode
 gvar_game_seg		equ	0FF2Ch		; Game data segment
 gvar_save_filename	equ	0FF33h		; Save file name (8 bytes)
-gvar_save_flag		equ	0FF34h		; Save file flag
+gvar_save_flag		equ	0FF33h		; Save file flag
 gvar_music_flag_a	equ	0FF38h		; Music state A
 gvar_music_flag_b	equ	0FF39h		; Music state B
 gvar_music_flag_c	equ	0FF3Ah		; Music state C
@@ -57,8 +58,8 @@ gvar_joystick_flag	equ	0FF43h		; Joystick enabled flag
 gvar_save_name_buf	equ	0FF6Ch		; Save file name buffer (8 bytes)
 gvar_volume_a		equ	0FF74h		; Volume/audio setting A
 gvar_volume_b		equ	0FF75h		; Volume/audio setting B
-gvar_old_int09_ofs	equ	0FF78h		; Saved INT 09h offset
-gvar_old_int09_seg	equ	0FF79h		; Saved INT 09h segment (word at +1)
+gvar_old_int09_ofs	equ	0FF79h		; Saved INT 09h offset
+gvar_old_int09_seg	equ	0FF7Bh		; Saved INT 09h segment
 gvar_old_int61_ofs	equ	0FF7Bh		; Saved INT 61h offset
 PSP_cmd_size		equ	80h
 PSP_cmd_line		equ	81h
@@ -218,14 +219,13 @@ skip_music_init:
 		mov	byte ptr es:gvar_music_flag_a,0
 		mov	byte ptr es:gvar_music_flag_b,0
 		mov	byte ptr es:gvar_music_flag_c,0
-		mov	byte ptr es:gvar_music_flag_d,0
 		mov	byte ptr es:gvar_joystick_flag,0
 		mov	byte ptr es:gvar_palette_flag,0
-		mov	byte ptr es:gvar_music_flag_d+1,0
+		mov	byte ptr es:gvar_music_flag_d,0
 		mov	byte ptr es:gvar_volume_a,0
 		mov	byte ptr es:gvar_debug_mode,0
 		mov	byte ptr es:gvar_debug_val,0
-		mov	byte ptr es:gvar_music_flag_a-2,0
+		mov	byte ptr es:[0FF78h],0
 		mov	al,cs:joystick_enabled
 		mov	es:gvar_last_key,al
 		mov	al,cs:music_enabled
@@ -257,7 +257,7 @@ not_lowercase:
 
 save_name_done:
 		mov	al,cs:graphics_mode
-		mov	es:gvar_game_phase,al
+		mov	es:gvar_gfx_mode,al
 		mov	ax,word ptr cs:game_entry_seg
 		add	ax,1000h
 		mov	es:gvar_game_seg,ax
@@ -1060,8 +1060,8 @@ has_savefile	db	0			; 0xFF if command-line save file
 saved_sp	dw	0			; Saved SP for EXEC
 saved_ss	dw	0			; Saved SS for EXEC
 
-exec_param_block db	23h			; EXEC parameter block
-		db	 29h,0D4h, 08h
+exec_param_block db	00h			; EXEC parameter block (env seg = 0)
+		db	 00h,0D4h, 08h
 		dw	seg_a
 		db	0D7h, 08h
 		dw	seg_a
@@ -1085,7 +1085,7 @@ seg_a		ends
 
 stack_seg_b	segment	word stack 'STACK'
 
-		db	8192 dup (0)
+		db	8192 dup (?)
 
 stack_seg_b	ends
 

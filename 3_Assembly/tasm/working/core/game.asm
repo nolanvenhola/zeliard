@@ -26,7 +26,7 @@ music_player_fn	equ	18ABh			; Music player function
 gfx_call_a	equ	201Ch			; Graphics driver call A
 gfx_call_b	equ	201Eh			; Graphics driver call B
 gfx_call_c	equ	2020h			; Graphics driver call C
-gfx_palette_fn	equ	203Eh			; Palette setup function
+sound_load_track_fn equ	203Eh			; Sound driver: load/init music track
 loaded_code_a	equ	3000h			; Loaded chunk code entry A
 tile_gfx_base	equ	37A4h			; Tile graphics base address
 font_gfx_base	equ	3EA4h			; Font graphics base address
@@ -37,7 +37,7 @@ gfx_mode_tbl_cga equ	0A2D1h			; CGA graphics mode chunk refs
 gfx_mode_tbl_all equ	0A31Ah			; All modes chunk ref table
 level_system_ref equ	0A3D3h			; Level system chunk references
 level_data_ref	equ	0A3F2h			; Level data chunk references
-music_track_tbl	equ	0A456h			; Music track table
+palette_base_tbl equ	0A456h			; Palette base RGB color table (8 triplets for set_vga_palette)
 game_init_fn	equ	0A470h			; Game initialization function ptr
 save_mode_flag	equ	0A474h			; Save/new game mode flag
 level_chunk_ref equ	0A474h			; Level chunk reference (same addr)
@@ -412,7 +412,7 @@ game		endp
 ;  load_music_tracks - Load all configured music tracks
 ;
 ;  Reads music track count from [ds:0xA0], iterates through track table
-;  at music_track_tbl (0xA456), and calls palette function for each.
+;  at level_data_ref (0xA3F2), and calls sound driver track-load fn for each.
 ;  Track 8 gets special flag (AL=1) for background music.
 ;==========================================================================
 
@@ -431,13 +431,13 @@ load_track_loop:
 		push	bx
 		mov	dx,bx
 		add	bx,bx
-		mov	bx,ds:level_data_ref[bx] ; Get track chunk ref
+		mov	bx,ds:level_system_ref[bx] ; Get track chunk ref
 		xor	al,al
 		cmp	dx,8			; Track 8 = background music
 		jne	not_bg_music
 		mov	al,1			; Flag for background track
 not_bg_music:
-		call	word ptr cs:gfx_palette_fn ; Load/init track
+		call	word ptr cs:sound_load_track_fn ; Load/init track via sound driver
 		pop	bx
 		inc	bx
 		pop	cx
@@ -498,7 +498,7 @@ palette_base_loop:
 		lodsb				; Blue base
 		mov	ah,al
 		push	si
-		mov	si,music_track_tbl	; Shade offset table
+		mov	si,palette_base_tbl	; Base RGB color table (8 triplets)
 		mov	cx,8			; 8 shades per base
 
 ;  For each shade: add offset to base RGB, program DAC register

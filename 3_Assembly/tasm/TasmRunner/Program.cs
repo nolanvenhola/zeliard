@@ -55,6 +55,7 @@ class Program
         Console.WriteLine("  --link                 Link after assembly (default: true)");
         Console.WriteLine("  --no-link              Skip linking step");
         Console.WriteLine("  --keep-conf            Keep temporary DOSBox config file");
+        Console.WriteLine("  --bin                  Strip MZ header after linking; output raw .bin instead of .exe");
         Console.WriteLine();
         Console.WriteLine("Examples:");
         Console.WriteLine("  TasmRunner test.asm");
@@ -110,6 +111,9 @@ class Program
                     break;
                 case "--keep-conf":
                     config.KeepConf = true;
+                    break;
+                case "--bin":
+                    config.OutputBin = true;
                     break;
             }
         }
@@ -246,10 +250,19 @@ class Program
             {
                 if (File.Exists(exeFile))
                 {
-                    Log($"✓ Created: {exeFile}", logFile);
-
-                    // Fix MZ header memory allocation for Sourcer-generated ASM files
-                    FixMZHeader(exeFile, logFile);
+                    if (config.OutputBin)
+                    {
+                        // Strip MZ header: save raw code section as .bin, delete .exe
+                        var binFile = Path.Combine(outputDir, baseName + ".bin");
+                        ExtractBin(exeFile, binFile, logFile);
+                        File.Delete(exeFile);
+                    }
+                    else
+                    {
+                        Log($"✓ Created: {exeFile}", logFile);
+                        // Fix MZ header memory allocation for Sourcer-generated ASM files
+                        FixMZHeader(exeFile, logFile);
+                    }
                 }
                 else if (File.Exists(comFile))
                 {
@@ -261,11 +274,12 @@ class Program
                 }
             }
 
-            // Return 0 if obj file was created (and exe/com if linking), 1 otherwise
+            // Return 0 if obj file was created (and exe/com/bin if linking), 1 otherwise
             bool success = File.Exists(objFile);
             if (config.Link)
             {
-                success = success && (File.Exists(exeFile) || File.Exists(comFile));
+                var binFile = Path.Combine(outputDir, baseName + ".bin");
+                success = success && (File.Exists(exeFile) || File.Exists(comFile) || File.Exists(binFile));
             }
             return success ? 0 : 1;
         }
@@ -373,10 +387,43 @@ class Program
         return confFile;
     }
 
+    static void ExtractBin(string exeFile, string binFile, string logFile)
+    {
+        // Strip the MZ header from a TLINK-produced EXE and write the raw code section
+        // as a .bin file. Used for game.bin and driver .bin files which are loaded
+        // directly into memory segments by zeliad.exe with no header.
+        try
+        {
+            var data = File.ReadAllBytes(exeFile);
+            if (data.Length < 28 || data[0] != 'M' || data[1] != 'Z')
+                throw new Exception("Not a valid MZ executable");
+
+            ushort headerParas = BitConverter.ToUInt16(data, 8);
+            int headerBytes = headerParas * 16;
+            var code = data[headerBytes..];
+
+            File.WriteAllBytes(binFile, code);
+            Log($"✓ Created: {binFile} ({code.Length} bytes, stripped {headerBytes}B MZ header)", logFile);
+        }
+        catch (Exception ex)
+        {
+            Log($"✗ ExtractBin failed: {ex.Message}", logFile);
+        }
+    }
+
     static void FixMZHeader(string exeFile, string logFile)
     {
-        // Fix TLINK's incorrect min/max memory allocation for Sourcer-generated code
-        // TLINK defaults to min=0, max=65535, but Sourcer code needs min=max=513
+        // Patch TLINK-generated MZ header to match the original Zeliard EXE.
+        //
+        // TLINK 2.01 produces slightly different header values than the linker
+        // used to build the original zeliad.exe:
+        //   - min_alloc / max_alloc: TLINK uses 0xFFFF for max; original used 0x0201
+        //   - reloc_table_off: TLINK 2.01 puts it at 0x3E; original was 0x1E
+        //   - reloc_count / last_page_bytes: minor version differences
+        //
+        // We fix min_alloc and max_alloc (straightforward patch).
+        // reloc_table_off, reloc_count, and last_page_bytes are TLINK version
+        // artifacts that cannot be corrected without rewriting the reloc table.
         try
         {
             var data = File.ReadAllBytes(exeFile);
@@ -384,23 +431,29 @@ class Program
             if (data.Length < 28 || data[0] != 'M' || data[1] != 'Z')
                 return; // Not a valid MZ executable
 
-            // Read current min/max allocation (offset 10 and 12, little-endian words)
-            ushort minAlloc = BitConverter.ToUInt16(data, 10);
-            ushort maxAlloc = BitConverter.ToUInt16(data, 12);
+            bool patched = false;
 
-            // Only patch if it has the broken TLINK defaults
-            if (minAlloc == 0 && maxAlloc == 0xFFFF)
+            // Fix min_alloc (offset 0x0A) — TLINK leaves this as code-size derived;
+            // original zeliad.exe uses 0x0201 (513 paragraphs = stack 512 + 1)
+            ushort minAlloc = BitConverter.ToUInt16(data, 0x0A);
+            ushort maxAlloc = BitConverter.ToUInt16(data, 0x0C);
+            const ushort targetAlloc = 0x0201;
+
+            if (minAlloc != targetAlloc)
             {
-                // Set to 513 paragraphs (matches original ZELIAD.exe)
-                // This is stack size (512 paras) + 1 para for program
-                ushort targetAlloc = 0x0201; // 513 paragraphs = 8208 bytes
+                BitConverter.GetBytes(targetAlloc).CopyTo(data, 0x0A);
+                patched = true;
+            }
+            if (maxAlloc != targetAlloc)
+            {
+                BitConverter.GetBytes(targetAlloc).CopyTo(data, 0x0C);
+                patched = true;
+            }
 
-                BitConverter.GetBytes(targetAlloc).CopyTo(data, 10); // Min allocation
-                BitConverter.GetBytes(targetAlloc).CopyTo(data, 12); // Max allocation
-
+            if (patched)
+            {
                 File.WriteAllBytes(exeFile, data);
-
-                Log($"  → Fixed MZ header: min/max memory = {targetAlloc} paragraphs (8208 bytes)", logFile);
+                Log($"  → Fixed MZ header: min/max alloc = 0x{targetAlloc:X4} ({targetAlloc} paragraphs)", logFile);
             }
         }
         catch (Exception ex)
@@ -420,5 +473,6 @@ class Program
         public string TlinkArgs { get; set; } = "";
         public bool Link { get; set; }
         public bool KeepConf { get; set; }
+        public bool OutputBin { get; set; }
     }
 }

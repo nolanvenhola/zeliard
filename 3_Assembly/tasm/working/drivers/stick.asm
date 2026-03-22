@@ -70,6 +70,43 @@ herc_video_seg	equ	0B000h			; Hercules video segment
 zero_offset	equ	0			; Zero constant
 dialog_text_ofs	equ	0E34h			; Dialog text offset
 
+; Game state / segment addresses referenced by Sourcer auto-names
+data_51e	equ	02000h
+data_52e	equ	02022h
+data_53e	equ	02026h
+data_54e	equ	02028h
+data_55e	equ	0202Ah
+data_56e	equ	0444Dh
+data_57e	equ	0FF00h
+data_58e	equ	0FF04h
+data_59e	equ	0FF09h
+data_60e	equ	0FF0Ah
+data_61e	equ	0FF0Ch
+data_62e	equ	0FF10h
+data_63e	equ	0FF16h
+data_64e	equ	0FF17h
+data_65e	equ	0FF18h
+data_66e	equ	0FF1Ah
+data_67e	equ	0FF1Bh
+data_68e	equ	0FF1Dh
+data_69e	equ	0FF1Eh
+data_70e	equ	0FF1Fh
+data_72e	equ	0FF27h
+data_73e	equ	0FF28h
+data_74e	equ	0FF29h
+data_75e	equ	0FF33h
+data_76e	equ	0FF3Bh
+data_77e	equ	0FF48h
+data_78e	equ	0FF49h
+data_79e	equ	0FF50h
+data_80e	equ	0FF74h
+data_81e	equ	0FF75h
+data_82e	equ	0FF78h
+data_83e	equ	0FF79h
+data_84e	equ	0B000h
+data_85e	equ	00000h
+data_86e	equ	00E34h
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 

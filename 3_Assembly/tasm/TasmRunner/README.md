@@ -44,6 +44,43 @@ The executable is completely self-contained and portable. Copy the entire output
 
 ## Usage
 
+### Zeliard — Compile to raw .bin (game.bin and all drivers)
+
+Use `--bin --output` to strip the MZ header and place output in `tasm/bin/`:
+
+```bash
+# Run from 3_Assembly/tasm/TasmRunner/
+dotnet run -- ../working/core/game.asm       --bin --output ../bin
+dotnet run -- ../working/core/zeliad.asm           --output ../bin
+dotnet run -- ../working/drivers/gmmcga.asm  --bin --output ../bin
+dotnet run -- ../working/drivers/gmcga.asm   --bin --output ../bin
+dotnet run -- ../working/drivers/gmega.asm   --bin --output ../bin
+dotnet run -- ../working/drivers/gmhgc.asm   --bin --output ../bin
+dotnet run -- ../working/drivers/gmtga.asm   --bin --output ../bin
+dotnet run -- ../working/drivers/stdply.asm  --bin --output ../bin
+dotnet run -- ../working/drivers/stick.asm   --bin --output ../bin
+```
+
+Final outputs land in `3_Assembly/tasm/bin/`:
+- `zeliad.exe` — main loader (EXE with MZ header)
+- `game.bin`, `gmmcga.bin`, `gmcga.bin`, `gmega.bin`, `gmhgc.bin`, `gmtga.bin`, `stdply.bin`, `stick.bin` — raw code segments
+
+The `--bin` flag strips the 512-byte MZ header from the TLINK output and writes
+the raw code section as `<name>.bin` (the intermediate `.exe` is deleted).
+
+### Zeliard — Compile zeliad.asm (the working command)
+
+Run from `3_Assembly/tasm/TasmRunner/`:
+
+```bash
+# Prerequisite: srmacros.inc must be next to the .asm file
+cp ../working/srmacros.inc ../working/core/
+
+dotnet run -- ../working/core/zeliad.asm
+```
+
+Output: `3_Assembly/tasm/working/core/zeliad.exe` (and `.obj`, `.lst`)
+
 ### Basic Usage
 
 ```bash
@@ -97,6 +134,7 @@ TasmRunner myfile.asm --output ./build --tasm-args "/zi /l /m" --logdir ./logs
 | `--link` | Link after assembly | `true` |
 | `--no-link` | Skip linking step | - |
 | `--keep-conf` | Don't delete temp DOSBox config | false |
+| `--bin` | Strip MZ header; output raw `.bin` instead of `.exe` | false |
 
 ### TASM Arguments Reference
 
@@ -227,7 +265,17 @@ echo "Assembly succeeded!"
 - Run DOSBox manually with the config to see detailed errors
 - Check the log file for complete output
 
-### ".obj file not created"
+### ".obj file not created" / "Can't locate file: srmacros.inc"
+- Every Zeliard `.asm` file requires `srmacros.inc` in the same directory
+- The master copy lives at `3_Assembly/tasm/working/srmacros.inc`
+- Copy it next to the `.asm` file before assembling:
+  ```bash
+  cp 3_Assembly/tasm/working/srmacros.inc 3_Assembly/tasm/working/core/
+  ```
+- Or specify an include path with `--tasm-args "/l /Ipath"` where `path` is the DOS drive+dir containing `srmacros.inc`
+- Note: TASM writes fatal errors to **stderr**, not stdout, so they won't appear in `tasm_output_<name>.txt` — use `--keep-conf` and run DOSBox manually to see them
+
+### ".obj file not created" (other causes)
 - Check TASM syntax errors in the log
 - Verify TASM arguments are correct
 - Ensure output directory exists and is writable
