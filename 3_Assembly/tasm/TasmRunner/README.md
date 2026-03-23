@@ -68,6 +68,42 @@ Final outputs land in `3_Assembly/tasm/bin/`:
 The `--bin` flag strips the 512-byte MZ header from the TLINK output and writes
 the raw code section as `<name>.bin` (the intermediate `.exe` is deleted).
 
+### Zeliard — Compile all SAR code chunks
+
+Each zelres code chunk is named `X##PPPPP.asm` (1-char zelres number + 2-digit chunk + 5-char purpose).
+The compiled `.bin` goes directly into the corresponding `bin/zelresN/` chunk folder.
+
+```bash
+# Run from 3_Assembly/tasm/TasmRunner/
+# srmacros.inc is already present in each code/ directory
+
+# ZELRES1 (14 code chunks)
+for f in ../working/zelres1/code/1*.asm; do
+    dotnet run -- "$f" --bin --output ../bin/zelres1
+done
+
+# ZELRES2 (21 code chunks, including 250GMENG)
+for f in ../working/zelres2/code/2*.asm; do
+    dotnet run -- "$f" --bin --output ../bin/zelres2
+done
+
+# ZELRES3 (13 code chunks, including 356LVGRP)
+for f in ../working/zelres3/code/3*.asm; do
+    dotnet run -- "$f" --bin --output ../bin/zelres3
+done
+```
+
+After recompiling code chunks, rebuild the SAR archives:
+
+```bash
+# Run from the repo root (c:/Projects/Zeliard/)
+python3 2_SAR/Tools/pack_sar.py \
+    --sar-dir 1_OriginalGame \
+    --out-dir 3_Assembly/tasm/bin
+```
+
+This produces byte-perfect `zelres1.sar`, `zelres2.sar`, `zelres3.sar` in `bin/`.
+
 ### Zeliard — Compile zeliad.asm (the working command)
 
 Run from `3_Assembly/tasm/TasmRunner/`:
