@@ -169,24 +169,24 @@ Each SAR file has two offset tables:
 | ne80.grp | 34 | ne80.grp | Unused enemy sprites |
 | ne81.grp | 35 | ne81.grp | Unused enemy sprites |
 | dialogue.bin | 37 | — | NPC dialogue data |
-| **chunk_40.bin** | 40 | — | Extended — purpose unknown |
-| **chunk_41.bin** | 41 | — | Extended — purpose unknown |
-| **chunk_42.bin** | 42 | — | Extended — purpose unknown |
-| **chunk_43.bin** | 43 | — | Extended — purpose unknown |
-| **chunk_44.bin** | 44 | — | Extended — purpose unknown |
-| **chunk_45.bin** | 45 | — | Extended — purpose unknown |
-| **chunk_46.bin** | 46 | — | Extended — purpose unknown |
-| **chunk_47.bin** | 47 | — | Extended — purpose unknown |
-| **chunk_48.bin** | 48 | — | Extended — purpose unknown |
-| **chunk_49.bin** | 49 | — | Extended — purpose unknown |
+| npc_nec40.bin | 40 | — | NEC PC-98 NPC behavior data (no VGA equivalent) |
+| npc_dlg41.bin | 41 | — | Bilingual NPC dialogue (NEC=Japanese, VGA=English: "Crest of Glory…") |
+| npc_nec42.bin | 42 | — | NEC PC-98 NPC behavior data |
+| npc_nec43.bin | 43 | — | NEC PC-98 NPC behavior data |
+| npc_nec44.bin | 44 | — | NEC PC-98 NPC behavior data |
+| npc_nec45.bin | 45 | — | NEC PC-98 NPC behavior data |
+| mgt1.msd | 46 | MGT1.MSD | Music — town BGM track 1 (MSD format, raw) |
+| mgt2.msd | 47 | MGT2.MSD | Music — town BGM track 2 |
+| ugm1.msd | 48 | UGM1.MSD | Music — underground/dungeon BGM 1 |
+| ugm2.msd | 49 | UGM2.MSD | Music — underground/dungeon BGM 2 (short) |
 | *(chunk_50 = 250GMENG.asm — code)* | | | |
-| **chunk_51.bin** | 51 | — | Extended — fill_buffer opcode-6 sprite tiles (10720B decompressed) |
-| **chunk_52.bin** | 52 | — | Extended — purpose unknown |
-| **chunk_53.bin** | 53 | — | Extended — purpose unknown |
-| **chunk_54.bin** | 54 | — | Extended — purpose unknown |
-| **chunk_55.bin** | 55 | — | Extended — purpose unknown |
-| **chunk_56.bin** | 56 | — | Extended — purpose unknown |
-| **chunk_57.bin** | 57 | — | Extended — purpose unknown |
+| chunk_51.bin | 51 | FMAN.GRP | Field NPC character sprites (fill_buffer-6, 10720B decompressed) |
+| roka.grp | 52 | ROKA.GRP | Corridor/hallway background (raw, ~584×72 px) |
+| image53.grp | 53 | — | Large background art |
+| dchr.grp | 54 | DCHR.GRP | Dungeon character sprites |
+| encnt.grp | 55 | ENCNT.GRP | Encounter screen background |
+| image56.grp | 56 | — | Small sprite/icon graphic |
+| roka2.grp | 57 | ROKA2.GRP | Second corridor background variant |
 
 ---
 
@@ -240,62 +240,62 @@ Each SAR file has two offset tables:
 | dialogue_merchant.bin | 36 | Merchant/shop text |
 | dialogue_extra.bin | 38 | Additional dialogue |
 | ending_sequence.bin | 39 | Ending sequence (217KB) |
-| **chunk_40.bin** | 40 | Extended — purpose unknown |
-| **chunk_41.bin** | 41 | Extended — purpose unknown |
-| **chunk_42.bin** | 42 | Extended — purpose unknown |
-| **chunk_43.bin** | 43 | Extended — purpose unknown |
-| **chunk_44.bin** | 44 | Extended — purpose unknown |
-| **chunk_45.bin** | 45 | Extended — purpose unknown |
-| **chunk_46.bin** | 46 | Extended — purpose unknown |
-| **chunk_47.bin** | 47 | Extended — purpose unknown |
-| **chunk_48.bin** | 48 | Extended — purpose unknown |
-| **chunk_49.bin** | 49 | Extended — purpose unknown |
-| **chunk_50.bin** | 50 | Extended — purpose unknown |
-| **chunk_51.bin** | 51 | Extended — purpose unknown |
-| **chunk_52.bin** | 52 | Extended — purpose unknown |
-| **chunk_53.bin** | 53 | Extended — purpose unknown |
-| **chunk_54.bin** | 54 | Extended — purpose unknown |
-| **chunk_55.bin** | 55 | Extended — purpose unknown |
+| lvl_code40.bin | 40 | — | Level code module |
+| hut_code.bin | 41 | — | Level code — "In the Hut" (inn/hut room) |
+| calien.bin | 42 | — | Level code — "Cavern of Caliente" (fire cavern) |
+| tilemap43.bin | 43 | — | Level code + VGA tilemap data (decompresses to 22346B) |
+| tilemap44.bin | 44 | — | Level code + VGA tilemap data (decompresses to 7233B) |
+| lvl_code45.bin | 45 | — | Level code module |
+| lvl_code46.bin | 46 | — | Level code module |
+| finalcvn.bin | 47 | — | Level code — "Cavern of Final" |
+| absorcvn.bin | 48 | — | Level code — "Cavern of Absorption" |
+| jashiin1.bin | 49 | — | Level code — Jashiin's room (final boss chamber, module 1) |
+| jashiin2.bin | 50 | — | Level code — Jashiin's room (module 2) |
+| tileani.bin | 51 | — | Tile animation frame index table (decompresses to 8176B) |
+| tilepal.bin | 52 | — | Tileset palette/attribute table |
+| dman.grp | 53 | DMAN.GRP | Dungeon manager player sprite |
+| sprite54.grp | 54 | — | Small character sprite |
+| vgareg55.bin | 55 | — | VGA register/palette data sequence |
 | *(chunk_56 = 356LVGRP.asm — code)* | | |
-| **chunk_57.bin** | 57 | Extended — purpose unknown |
-| **chunk_58.bin** | 58 | Extended — purpose unknown |
-| **chunk_59.bin** | 59 | Extended — purpose unknown |
-| **chunk_60.bin** | 60 | Extended — purpose unknown |
-| **chunk_61.bin** | 61 | Extended — purpose unknown |
-| **chunk_62.bin** | 62 | Extended — purpose unknown |
-| **chunk_63.bin** | 63 | Extended — purpose unknown |
-| **chunk_64.bin** | 64 | Extended — purpose unknown |
-| **chunk_65.bin** | 65 | Extended — purpose unknown |
-| **chunk_66.bin** | 66 | Extended — purpose unknown |
-| **chunk_67.bin** | 67 | Extended — purpose unknown |
-| **chunk_68.bin** | 68 | Extended — purpose unknown |
-| **chunk_69.bin** | 69 | Extended — purpose unknown |
-| **chunk_70.bin** | 70 | Extended — purpose unknown |
-| **chunk_71.bin** | 71 | Extended — purpose unknown |
-| **chunk_72.bin** | 72 | Extended — purpose unknown |
-| **chunk_73.bin** | 73 | Extended — purpose unknown |
-| **chunk_74.bin** | 74 | Extended — purpose unknown |
-| **chunk_75.bin** | 75 | Extended — purpose unknown |
-| **chunk_76.bin** | 76 | Extended — purpose unknown |
-| **chunk_77.bin** | 77 | Extended — purpose unknown |
-| **chunk_78.bin** | 78 | Extended — purpose unknown |
-| **chunk_79.bin** | 79 | Extended — purpose unknown |
-| **chunk_80.bin** | 80 | Extended — purpose unknown |
-| **chunk_81.bin** | 81 | Extended — purpose unknown |
-| **chunk_82.bin** | 82 | Extended — purpose unknown |
-| **chunk_83.bin** | 83 | Extended — purpose unknown |
-| **chunk_84.bin** | 84 | Extended — purpose unknown |
-| **chunk_85.bin** | 85 | Extended — purpose unknown |
-| **chunk_86.bin** | 86 | Extended — purpose unknown |
-| **chunk_87.bin** | 87 | Extended — purpose unknown |
-| **chunk_88.bin** | 88 | Extended — purpose unknown |
-| **chunk_89.bin** | 89 | Extended — purpose unknown |
-| **chunk_90.bin** | 90 | Extended — purpose unknown |
-| **chunk_91.bin** | 91 | Extended — purpose unknown |
-| **chunk_92.bin** | 92 | Extended — purpose unknown |
-| **chunk_93.bin** | 93 | Extended — purpose unknown |
-| **chunk_94.bin** | 94 | Extended — purpose unknown |
-| **chunk_95.bin** | 95 | Extended — purpose unknown |
+| enp1.grp | 57 | ENP1.GRP | Enemy encounter background 1 |
+| enp2.grp | 58 | ENP2.GRP | Enemy encounter background 2 |
+| enp3.grp | 59 | ENP3.GRP | Enemy encounter background 3 |
+| enp4.grp | 60 | ENP4.GRP | Enemy encounter background 4 |
+| enp5.grp | 61 | ENP5.GRP | Enemy encounter background 5 |
+| enp6.grp | 62 | ENP6.GRP | Enemy encounter background 6 |
+| enp7.grp | 63 | ENP7.GRP | Enemy encounter background 7 |
+| enp8.grp | 64 | ENP8.GRP | Enemy encounter background 8 |
+| crab.grp | 65 | CRAB.GRP | Crab enemy combat sprites |
+| tako.grp | 66 | TAKO.GRP | Octopus (tako) enemy sprites |
+| tori.grp | 67 | TORI.GRP | Bird (tori) enemy sprites |
+| zela.grp | 68 | ZELA.GRP | Zeliard-type enemy sprites |
+| meda.grp | 69 | MEDA.GRP | Medusa enemy sprites |
+| lega.grp | 70 | LEGA.GRP | Lega enemy sprites |
+| drgn.grp | 71 | DRGN.GRP | Dragon enemy sprites |
+| akma.grp | 72 | AKMA.GRP | Akuma/Devil enemy sprites |
+| mao1.grp | 73 | MAO1.GRP | Jashiin (final boss) sprites |
+| mpp1.grp | 74 | MPP1.GRP | Map page tile attributes 1 |
+| mpp2.grp | 75 | MPP2.GRP | Map page tile attributes 2 |
+| mpp3.grp | 76 | MPP3.GRP | Map page tile attributes 3 |
+| mpp4.grp | 77 | MPP4.GRP | Map page tile attributes 4 |
+| mpp5.grp | 78 | MPP5.GRP | Map page tile attributes 5 |
+| mpp6.grp | 79 | MPP6.GRP | Map page tile attributes 6 |
+| mpp7.grp | 80 | MPP7.GRP | Map page tile attributes 7 |
+| mpp8.grp | 81 | MPP8.GRP | Map page tile attributes 8 |
+| mpp9.grp | 82 | MPP9.GRP | Map page tile attributes 9 |
+| mppa.grp | 83 | MPPA.GRP | Map page tile attributes A |
+| mppb.grp | 84 | MPPB.GRP | Map page tile attributes B (VGA register data) |
+| mus1.msd | 85 | MUS1.MSD | Music — dungeon track 1 (MSD format) |
+| mus2.msd | 86 | MUS2.MSD | Music — dungeon track 2 |
+| mus3.msd | 87 | MUS3.MSD | Music — dungeon track 3 |
+| mus4.msd | 88 | MUS4.MSD | Music — dungeon track 4 |
+| mus5.msd | 89 | MUS5.MSD | Music — dungeon track 5 |
+| mus6.msd | 90 | MUS6.MSD | Music — dungeon track 6 (longest) |
+| mus7.msd | 91 | MUS7.MSD | Music — dungeon track 7 |
+| mus8.msd | 92 | MUS8.MSD | Music — dungeon track 8 |
+| mbos.msd | 93 | MBOS.MSD | Music — boss battle theme |
+| mfan.msd | 94 | MFAN.MSD | Music — fanfare/level clear jingle |
+| mmao.msd | 95 | MMAO.MSD | Music — Jashiin final boss theme |
 
 ---
 
