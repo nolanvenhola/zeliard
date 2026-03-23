@@ -1,7 +1,7 @@
 # ZELRES2/Chunk_00 - Main Game Systems Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_00.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/main_game_loop.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/200MGAME.asm`
 **Size**: 16,384 bytes (16KB)
 **Disassembly Lines**: 6,601 lines
 **Purpose**: Core game loop, main systems, UI rendering, state management

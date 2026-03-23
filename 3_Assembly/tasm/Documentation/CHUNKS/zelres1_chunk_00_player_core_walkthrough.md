@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_00 - Opening Scene + Player Core Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_00.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/opening_scene.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/100OPSCN.asm`
 **Size**: 13,865 bytes (13.5 KB)
 **Disassembly Lines**: 5,824 lines
 **Purpose**: Opening cinematic sequence + Player initialization and core systems

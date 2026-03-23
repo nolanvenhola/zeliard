@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_30 - Small Utility Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_30.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/utilities_b.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/130UTILB.asm`
 **Size**: 429 bytes (0.4 KB)
 **Disassembly Lines**: 1,258 lines
 **Purpose**: Specialized utility functions, likely debug/test helpers

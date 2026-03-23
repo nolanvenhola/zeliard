@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_31 - Advanced Level Utilities Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_31.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/trigger_events.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/331TREVT.asm`
 **Size**: 400 bytes (0.4KB)
 **Disassembly Lines**: 3,702 lines
 **Purpose**: Advanced level processing, pathfinding helpers, trigger zones

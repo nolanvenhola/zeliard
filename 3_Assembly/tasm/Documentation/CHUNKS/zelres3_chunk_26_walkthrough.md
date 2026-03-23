@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_26 - Alternate Display/Town Layout Data Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_26.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/npc_interaction.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/326NPCIT.asm`
 **Size**: 4,266 bytes (4.2KB)
 **Disassembly Lines**: ~32,000 lines
 **Purpose**: Alternate town layouts, secondary coordinate tables, level-specific positioning data

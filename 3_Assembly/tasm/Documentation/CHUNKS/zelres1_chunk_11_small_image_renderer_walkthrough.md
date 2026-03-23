@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_11 - Small Image Renderer (32×18) Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_11.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/small_image_renderer.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/111SIMGR.asm`
 **Size**: 5,329 bytes (5.3KB)
 **Disassembly Lines**: 2,549 lines
 **Purpose**: Renders small 32×18 character images using 4-plane VGA bitplane decoder

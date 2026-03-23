@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_22 - Enemy Behavior/NPC Interaction System Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_22.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/enemy_behavior.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/322ENBHV.asm`
 **Size**: 7,118 bytes (6.95KB)
 **Disassembly Lines**: ~3,200 lines
 **Purpose**: Enemy AI behaviors, NPC dialogue, interaction systems

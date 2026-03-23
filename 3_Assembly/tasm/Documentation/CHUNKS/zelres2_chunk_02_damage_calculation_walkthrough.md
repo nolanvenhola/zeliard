@@ -1,7 +1,7 @@
 # ZELRES2/Chunk_02 - Sprite Animation & Enemy Rendering Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_02.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/sprite_renderer.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/202SPRTR.asm`
 **Size**: 24,576 bytes (24KB)
 **Disassembly Lines**: 4,068 lines
 **Purpose**: Enemy sprite rendering, animation frame management, VGA bitplane blitting

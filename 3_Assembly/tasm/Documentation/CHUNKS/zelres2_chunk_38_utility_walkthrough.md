@@ -1,7 +1,7 @@
 # ZELRES2/Chunk_38 - Utility Functions Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_38.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/utility_b.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/238UTILB.asm`
 **Size**: 400 bytes (0.4KB)
 **Disassembly Lines**: 1,564 lines
 **Purpose**: Miscellaneous utility functions and data tables

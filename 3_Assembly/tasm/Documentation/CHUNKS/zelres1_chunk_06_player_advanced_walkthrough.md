@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_06 - Advanced Player Systems Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_06.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/player_advanced.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/106PLADV.asm`
 **Size**: 7,229 bytes (7.1 KB)
 **Disassembly Lines**: 2,946 lines
 **Purpose**: Advanced gameplay systems - Combat, Magic, Level progression

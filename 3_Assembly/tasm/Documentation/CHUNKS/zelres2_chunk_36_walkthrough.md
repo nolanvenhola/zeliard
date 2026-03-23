@@ -1,7 +1,7 @@
 # ZELRES2/Chunk_36 - Story Text System Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_36.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/utility_a.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/236UTILA.asm`
 **Size**: 2,048 bytes (2KB)
 **Disassembly Lines**: 972 lines
 **Purpose**: Story dialogue and narrative text display system

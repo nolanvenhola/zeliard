@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_16 - Level Utility Functions Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_16.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/tile_collision.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/316TILCL.asm`
 **Size**: 400 bytes (0.4KB)
 **Disassembly Lines**: 1,257 lines
 **Purpose**: Level-specific utility functions and collision detection helpers

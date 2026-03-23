@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_07 - VGA Mode 13h Decompressor Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_07.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/vga_decompressor.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/107VGADC.asm`
 **Size**: 3,884 bytes (3.9KB)
 **Disassembly Lines**: 1,927 lines
 **Purpose**: Decompresses and renders .grp images using VGA Mode 13h (256-color) compatible techniques

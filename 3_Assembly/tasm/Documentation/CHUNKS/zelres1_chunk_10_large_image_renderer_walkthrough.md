@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_10 - Large Image Renderer (48×34) Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_10.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/large_image_renderer.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/110LIMGR.asm`
 **Size**: 5,380 bytes (5.4KB)
 **Disassembly Lines**: 2,507 lines
 **Purpose**: Renders large 48×34 character images using 4-plane VGA bitplane decoder

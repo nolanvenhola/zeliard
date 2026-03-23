@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_09 - Image Decoder B Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_09.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/image_decoder_b.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/109IMGDB.asm`
 **Size**: 4,318 bytes (4.3KB)
 **Disassembly Lines**: 2,048 lines
 **Purpose**: Variant image decoder with different compression strategy

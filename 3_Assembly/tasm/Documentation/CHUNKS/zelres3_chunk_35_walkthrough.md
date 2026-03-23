@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_35 - Town Event System/Boss Intro Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_35.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/boss_patterns.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/335BOSPT.asm`
 **Size**: 6,380 bytes (6.23KB)
 **Disassembly Lines**: ~2,900 lines
 **Purpose**: Town event management, boss introduction sequences, story progression

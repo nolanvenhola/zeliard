@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_04 - Stats & Attributes Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_04.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/player_stats.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/104PLSTS.asm`
 **Size**: 12,851 bytes (12.6 KB)
 **Disassembly Lines**: 4,053 lines
 **Purpose**: Player stats, leveling formulas, attribute calculations

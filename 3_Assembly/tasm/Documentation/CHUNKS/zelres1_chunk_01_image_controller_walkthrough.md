@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_01 - Master Image Controller Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_01.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/image_controller.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/101IMGCT.asm`
 **Size**: 5,632 bytes (5.5KB)
 **Disassembly Lines**: 2,602 lines
 **Purpose**: Master controller for opening scene image rendering - dispatches to appropriate decoder and renderer

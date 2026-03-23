@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_24 - Utility Functions Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_24.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/utilities_a.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/124UTILA.asm`
 **Size**: 3,603 bytes (3.5 KB)
 **Disassembly Lines**: 1,995 lines
 **Purpose**: Common utility functions, helpers, math routines

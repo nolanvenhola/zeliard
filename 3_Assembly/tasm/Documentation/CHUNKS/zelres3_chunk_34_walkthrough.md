@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_34 - Complex AI/Boss Behavior System Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_34.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/boss_ai.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/334BOSAI.asm`
 **Size**: 7,464 bytes (7.3KB)
 **Disassembly Lines**: ~3,739 lines
 **Purpose**: Complex enemy AI, boss behavior patterns, advanced combat logic

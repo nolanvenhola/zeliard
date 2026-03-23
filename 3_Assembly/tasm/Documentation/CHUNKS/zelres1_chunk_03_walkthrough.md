@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_03 - VGA Graphics Renderer (CGA Mode) Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_03.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/image_decode.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/103IMGDC.asm`
 **Size**: 8,192 bytes (8KB)
 **Disassembly Lines**: 3,702 lines
 **Purpose**: VGA graphics rendering engine for CGA-style bitplane graphics

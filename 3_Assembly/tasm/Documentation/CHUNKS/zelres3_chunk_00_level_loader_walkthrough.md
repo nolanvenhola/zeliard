@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_00 - Level Loader/Manager Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_00.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/level_loader.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/300LVLLD.asm`
 **Size**: 3,032 bytes (3KB)
 **Disassembly Lines**: 522 lines
 **Purpose**: Level loading, initialization, resource management

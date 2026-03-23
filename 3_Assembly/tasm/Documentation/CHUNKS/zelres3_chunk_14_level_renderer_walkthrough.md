@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_14 - Level Tilemap Renderer Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_14.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/level_renderer.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/314LVLRD.asm`
 **Size**: 2,076 bytes (2KB)
 **Disassembly Lines**: 870 lines
 **Purpose**: Tilemap rendering, camera scrolling, tile lookup

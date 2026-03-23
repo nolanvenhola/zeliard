@@ -1,7 +1,7 @@
 # ZELRES2/Chunk_06 - Enemy AI & Pattern Behaviors Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_06.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/enemy_ai.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/206ENAIE.asm`
 **Size**: 21,504 bytes (21KB)
 **Disassembly Lines**: 4,146 lines
 **Purpose**: Enemy AI decision trees, movement patterns, attack behaviors

@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_08 - Image Decoder A Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_08.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/image_decoder_a.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/108IMGDA.asm`
 **Size**: 4,477 bytes (4.5KB)
 **Disassembly Lines**: 2,095 lines
 **Purpose**: Alternative image decompression format for opening scene backgrounds

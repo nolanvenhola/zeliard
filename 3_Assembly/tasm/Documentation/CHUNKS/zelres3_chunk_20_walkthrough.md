@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_20 - Display/Rendering Data Tables Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_20.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/town_npc.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/320TWNPC.asm`
 **Size**: 6,144 bytes (6.0KB)
 **Disassembly Lines**: ~46,644 lines
 **Purpose**: Display coordinate tables, sprite positioning data, tile arrangement patterns

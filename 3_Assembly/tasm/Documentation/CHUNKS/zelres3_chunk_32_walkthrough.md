@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_32 - Enemy Manager/Town Systems Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_32.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/enemy_manager.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/332ENMGR.asm`
 **Size**: 7,985 bytes (7.8KB)
 **Disassembly Lines**: ~3,600 lines
 **Purpose**: Enemy spawn management, town system coordination, entity pooling

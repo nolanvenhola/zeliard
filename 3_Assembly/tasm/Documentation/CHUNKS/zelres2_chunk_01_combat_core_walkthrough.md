@@ -1,7 +1,7 @@
 # ZELRES2/Chunk_01 - Combat Core System Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_01.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/combat_ui.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/201CBTUI.asm`
 **Size**: 11KB
 **Purpose**: Core combat system - weapon management, attack handling, spell system
 **Load Address**: CS:zr2_01 (0x0000)

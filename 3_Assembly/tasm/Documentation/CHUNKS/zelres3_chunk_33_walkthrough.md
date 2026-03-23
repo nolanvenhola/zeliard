@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_33 - Compact Data Table / String Table Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_33.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/utility_small.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/333UTILS.asm`
 **Size**: 623 bytes (0.6KB)
 **Disassembly Lines**: ~460 lines
 **Purpose**: Compact lookup table, string offsets, or compressed data indices

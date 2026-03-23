@@ -1,7 +1,7 @@
 # ZELRES2/Chunk_05 - Animation & CGA Graphics System Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_05.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/animation_system.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/205ANIMS.asm`
 **Size**: 9.7KB (9,932 bytes)
 **Disassembly Lines**: 4,483 lines
 **Purpose**: Character animation system, CGA graphics mode rendering, sprite management

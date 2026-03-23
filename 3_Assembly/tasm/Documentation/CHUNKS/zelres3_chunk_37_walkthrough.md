@@ -1,7 +1,7 @@
 # ZELRES3/Chunk_37 - Menu/UI State Table Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres3_extracted/chunk_37.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres3/code/utility_tiny.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres3/code/337UTINY.asm`
 **Size**: 770 bytes (0.75KB)
 **Disassembly Lines**: ~437 lines
 **Purpose**: Menu state machine, UI flow control, button/cursor position tables

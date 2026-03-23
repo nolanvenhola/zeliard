@@ -1,7 +1,7 @@
 # ZELRES1/Chunk_02 - Equipment & Inventory Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_02.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/equipment.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/102EQUIP.asm`
 **Size**: 6,174 bytes (6.0 KB)
 **Disassembly Lines**: 3,510 lines
 **Purpose**: Equipment management, inventory system, item effects

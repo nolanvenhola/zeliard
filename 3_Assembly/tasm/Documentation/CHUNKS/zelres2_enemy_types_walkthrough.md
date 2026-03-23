@@ -442,7 +442,7 @@ jmp word near [cs:bx+<table_offset>]
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_07.bin
-**Assembly**: zelres2/code/enemy_slime.asm
+**Assembly**: zelres2/code/207SLIME.asm
 
 ### Initialization
 
@@ -515,7 +515,7 @@ Uses **3-plane bitplane rendering** (offset slime_func_2 (0xd4)-0x144):
 
 **Size**: ~3KB
 **Binary**: zelres2_extracted/chunk_08.bin
-**Assembly**: zelres2/code/enemy_bat.asm
+**Assembly**: zelres2/code/208ENBAT.asm
 
 ### Unique Features
 
@@ -572,7 +572,7 @@ Uses **sine wave approximation** for flight path:
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_09.bin
-**Assembly**: zelres2/code/enemy_spider.asm
+**Assembly**: zelres2/code/209ESPDR.asm
 
 ### Special Mechanic: Wall Walking
 
@@ -622,7 +622,7 @@ Uses **7×6 sprite format** (offset orc_func_1 (0x156)):
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_10.bin
-**Assembly**: zelres2/code/enemy_skeleton.asm
+**Assembly**: zelres2/code/210ESKEL.asm
 
 ### Combat Behavior
 
@@ -693,7 +693,7 @@ Skeleton raises shield when:
 
 **Size**: ~3KB
 **Binary**: zelres2_extracted/chunk_12.bin
-**Assembly**: zelres2/code/enemy_ghost.asm
+**Assembly**: zelres2/code/212EGHST.asm
 
 ### Unique Ability: Phasing
 
@@ -769,7 +769,7 @@ From data tables at offset 0xD2-0xDB:
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_13.bin
-**Assembly**: zelres2/code/enemy_goblin.asm
+**Assembly**: zelres2/code/213EGOBL.asm
 
 ### Combat Style
 
@@ -853,7 +853,7 @@ Goblin maintains optimal distance:
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_14.bin
-**Assembly**: zelres2/code/enemy_orc.asm
+**Assembly**: zelres2/code/214ENORC.asm
 
 ### Role: Heavy Infantry
 
@@ -938,7 +938,7 @@ AOE attack when player gets too close:
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_15.bin
-**Assembly**: zelres2/code/enemy_wizard.asm
+**Assembly**: zelres2/code/215EWZRD.asm
 
 ### Spell System
 
@@ -1061,7 +1061,7 @@ Player can interrupt during Phase 1-2 to cancel spell.
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_16.bin
-**Assembly**: zelres2/code/boss_behaviors.asm
+**Assembly**: zelres2/code/216BOSSB.asm
 
 ### Purpose: Shared Boss Systems
 
@@ -1193,7 +1193,7 @@ Prevents escape during boss fight:
 
 **Size**: ~1KB
 **Binary**: zelres2_extracted/chunk_17.bin
-**Assembly**: zelres2/code/enemy_special.asm
+**Assembly**: zelres2/code/217ESPCI.asm
 
 ### Purpose: Elite Variants
 

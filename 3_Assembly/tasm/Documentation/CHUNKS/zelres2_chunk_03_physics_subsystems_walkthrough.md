@@ -1,7 +1,7 @@
 # ZELRES2/Chunk_03 - Tile Map Collision & State Management Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_03.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/physics_subsystems.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/203PHYSS.asm`
 **Size**: 23,552 bytes (23KB)
 **Disassembly Lines**: 4,146 lines
 **Purpose**: Collision map updates, tile state transitions, platform rendering (CGA mode)
