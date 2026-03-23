@@ -1,9 +1,9 @@
 # ZELRES2/Chunk_39 - Data Tables Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_39.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/chunk_39.asm`
-**Size**: 400 bytes (0.4KB)
-**Disassembly Lines**: 49,754 lines (mostly data, not code)
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/239DTATB.asm`
+**Size**: 3,418 bytes (3.4KB) — raw db dump (original Sourcer had 7000+ errors)
+**Disassembly Lines**: 241 lines (raw db output — not disassembled code)
 **Purpose**: Large data tables for game assets, enemy stats, level configuration
 **Load Address**: CS:0x6000 (typical)
 **Priority**: ⭐ LOW (Data only)

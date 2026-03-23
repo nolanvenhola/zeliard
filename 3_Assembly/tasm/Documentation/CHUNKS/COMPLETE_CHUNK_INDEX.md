@@ -65,7 +65,7 @@
 |-------|------|------|---------------|---------|
 | 00 | 200MGAME.asm | 16KB | zelres2_chunk_00_walkthrough.md | Core game loop |
 | 01 | 201CBTUI.asm | 3.6KB | zelres2_chunk_01_combat_core_walkthrough.md | Combat UI/HUD |
-| 02 | 202SPRTR.asm | 8.6KB | zelres2_chunk_02_damage_calculation_walkthrough.md | Sprite renderer |
+| 02 | 202SPRTR.asm | 8.6KB | zelres2_chunk_02_sprite_renderer_walkthrough.md | Sprite renderer |
 | 03 | 203PHYSS.asm | 9KB | zelres2_chunk_03_physics_subsystems_walkthrough.md | Physics subsystems |
 | 04 | 204PHYSE.asm | 8.9KB | zelres2_chunk_04_physics_walkthrough.md | Physics engine |
 | 05 | 205ANIMS.asm | 9.9KB | zelres2_chunk_05_animation_system_walkthrough.md | Animation system |
