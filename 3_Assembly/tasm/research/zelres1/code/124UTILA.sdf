@@ -1,0 +1,64 @@
+
+                  ฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+                          SOURCER DEFINITION FILE
+                  ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+
+ ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ Section 1: CONTROL INFORMATION   ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+
+Analysis Options = a b c d e f g h i j k l m n o p q r s t u v w x y z
+2nd Options page = a b c d e f g h i j k l m
+uP               = 8088
+File format      = asm
+Keep segments    = Def
+Label type       = Decimal
+Remarks          = All
+Segment display  = Hex
+Target Assembler = TASM-2.X, byte match
+Input filename   = zr1_24.bin
+Code style       = Zero start
+Drive (output)   = W
+Output filename  = zr1_24.asm
+Passes           = 9
+Xref             = OFF
+
+
+
+ ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ Section 2: RANGE DEFINITION      ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+
+ ออออ Segments ออออออออออออออออออออออออออ
+
+  begin       end        default     seg   seg                           seg
+ seg:off      off      ds      es    type  size                         value
+ -------      ----   ------  ------  ----- -----                        -----
+seg_a:0000    10E0   seg_a   seg_a   auto  use16                       ; 2923
+
+ ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ Section 3: REFERENCE DEFINITIONS ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+
+ ออออ Subroutines อออออออออออออออออออออออ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+
+ ออออ Locations อออออออออออออออออออออออออ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0000   loc, far		start
+seg_a:0235   loc			        ; loc_1
+seg_a:0238   loc			        ; loc_2
+seg_a:023C   loc			        ; loc_3
+seg_a:02AB   loc			        ; loc_4
+seg_a:02AE   loc			        ; loc_5
+seg_a:0379   loc			        ; locloop_6
+seg_a:08C4   loc			        ; locloop_7
+seg_a:10CA   loc			        ; loc_9
+
+ ออออ Data Items ออออออออออออออออออออออออ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:00FE   db				        ; data_1
+seg_a:0118   db				        ; data_2
+seg_a:0266   db				        ; data_3
+seg_a:0328   db				        ; data_4
+seg_a:047C   db				        ; data_5
+seg_a:0D2E   db				        ; data_6
+2923:690C    dw, equ			        ; data_7e
+2923:F744    dw, osf, equ		        ; data_8e

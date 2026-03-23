@@ -1,0 +1,103 @@
+
+                  ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+                          SOURCER DEFINITION FILE
+                  ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+
+ ±±±±±±±±±±±±±±±±±± Section 1: CONTROL INFORMATION   ±±±±±±±±±±±±±±±±±±
+
+Analysis Options = a b c d e f g h i j k l m n o p q r s t u v w x y z
+2nd Options page = a b c d e f g h i j k l m
+uP               = 8088
+File format      = asm
+Keep segments    = Def
+Label type       = Decimal
+Remarks          = All
+Segment display  = Hex
+Target Assembler = TASM-2.X, byte match
+Input filename   = zr2_16.bin
+Code style       = Zero start
+Drive (output)   = W
+Output filename  = zr2_16.asm
+Passes           = 9
+Xref             = OFF
+
+
+
+ ±±±±±±±±±±±±±±±±±± Section 2: RANGE DEFINITION      ±±±±±±±±±±±±±±±±±±
+
+ ÍÍÍÍ Segments ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+
+  begin       end        default     seg   seg                           seg
+ seg:off      off      ds      es    type  size                         value
+ -------      ----   ------  ------  ----- -----                        -----
+seg_a:0000    0513   seg_a   seg_a   auto  use16                       ; 2923
+
+ ±±±±±±±±±±±±±±±±±± Section 3: REFERENCE DEFINITIONS ±±±±±±±±±±±±±±±±±±
+
+ ÍÍÍÍ Subroutines ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0063   sub			        ; sub_1
+seg_a:0079   sub			        ; sub_2
+seg_a:0163   sub			        ; sub_3
+seg_a:0173   sub			        ; sub_4
+seg_a:0183   sub			        ; sub_5
+seg_a:01AE   sub			        ; sub_6
+seg_a:0233   sub			        ; sub_7
+
+ ÍÍÍÍ Locations ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0000   loc, far		start
+seg_a:0050   loc			        ; loc_1
+seg_a:005E   loc			        ; loc_2
+seg_a:0063   loc			        ; loc_3
+seg_a:0105   loc			        ; loc_4
+seg_a:011F   loc			        ; loc_5
+seg_a:0149   forced, od seg_a
+seg_a:014C   forced, od seg_a
+seg_a:0160   loc			        ; loc_6
+seg_a:0168   loc			        ; loc_7
+seg_a:0178   loc			        ; loc_8
+seg_a:0192   loc			        ; locloop_9
+seg_a:0196   loc			        ; locloop_10
+seg_a:01AE   forced, od seg_a
+seg_a:01B7   loc			        ; locloop_11
+seg_a:01BB   loc			        ; locloop_12
+seg_a:023B   loc			        ; loc_13
+seg_a:0243   loc			        ; loc_14
+seg_a:0261   loc			        ; locloop_15
+seg_a:0265   loc			        ; locloop_16
+
+ ÍÍÍÍ Data Items ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0085   db				        ; data_1
+seg_a:0086   dw				        ; data_2
+seg_a:0090   dw				        ; data_3
+seg_a:009D   db				        ; data_4
+seg_a:00AB   db				        ; data_5
+seg_a:00B2   dw				        ; data_6
+seg_a:00B4   db				        ; data_7
+seg_a:011A   dw, osn			        ; data_8
+2923:068E    db, equ			        ; data_18e
+2923:2000    dw, osn, equ		        ; data_19e
+2923:2002    dw, osn, equ		        ; data_20e
+2923:2008    dw, osn, equ		        ; data_21e
+2923:2010    dw, osn, equ		        ; data_22e
+2923:2012    dw, osn, equ		        ; data_23e
+2923:2016    dw, osn, equ		        ; data_24e
+2923:2018    dw, osn, equ		        ; data_25e
+2923:2040    dw, oln, equ		        ; data_26e
+2923:2044    dw, osn, equ		        ; data_27e
+2923:3016    dw, osn, equ		        ; data_28e
+2923:6004    dw, osn, equ		        ; data_29e
+2923:A080    dw, equ			        ; data_30e
+2923:A1CF    db, equ			        ; data_31e
+2923:A505    db, equ			        ; data_32e
+2923:FF1A    db, equ			        ; data_33e
+2923:FF2C    dw, equ			        ; data_34e
+2923:FF4C    dw, equ			        ; data_35e
+2923:FF4E    db, equ			        ; data_36e
+2923:FF4F    db, equ			        ; data_37e
+2923:FF50    dw, equ			        ; data_38e

@@ -1,0 +1,98 @@
+
+                  ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+                          SOURCER DEFINITION FILE
+                  ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+
+ ±±±±±±±±±±±±±±±±±± Section 1: CONTROL INFORMATION   ±±±±±±±±±±±±±±±±±±
+
+Analysis Options = a b c d e f g h i j k l m n o p q r s t u v w x y z
+2nd Options page = a b c d e f g h i j k l m
+uP               = 8088
+File format      = asm
+Keep segments    = Def
+Label type       = Decimal
+Remarks          = All
+Segment display  = Hex
+Target Assembler = TASM-2.X, byte match
+Input filename   = game.bin
+Code style       = Zero start
+Drive (output)   = W
+Output filename  = game.asm
+Passes           = 9
+Xref             = OFF
+
+
+
+ ±±±±±±±±±±±±±±±±±± Section 2: RANGE DEFINITION      ±±±±±±±±±±±±±±±±±±
+
+ ÍÍÍÍ Segments ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+
+  begin       end        default     seg   seg                           seg
+ seg:off      off      ds      es    type  size                         value
+ -------      ----   ------  ------  ----- -----                        -----
+seg_a:0000    0475   seg_a   seg_a   auto  use16                       ; 2923
+
+ ±±±±±±±±±±±±±±±±±± Section 3: REFERENCE DEFINITIONS ±±±±±±±±±±±±±±±±±±
+
+ ÍÍÍÍ Subroutines ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:03A5   sub			        ; sub_1
+seg_a:03E5   sub			        ; sub_2
+
+ ÍÍÍÍ Locations ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0000   loc, far		start
+seg_a:0097   loc			        ; loc_1
+seg_a:019F   forced, od seg_a
+seg_a:01A7   loc			        ; loc_2
+seg_a:01B1   forced, od seg_a
+seg_a:01B9   loc			        ; loc_3
+seg_a:01C3   forced, od seg_a
+seg_a:01CB   loc			        ; loc_4
+seg_a:03AD   loc			        ; loc_5
+seg_a:03B5   loc			        ; locloop_6
+seg_a:03C8   loc			        ; loc_7
+seg_a:0425   loc			        ; locloop_8
+seg_a:0430   forced, od seg_a
+seg_a:0436   loc			        ; locloop_9
+
+ ÍÍÍÍ Data Items ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+2923:18AB    db, equ			        ; data_10e
+2923:201C    dw, osn, equ		        ; data_11e
+2923:201E    dw, osn, equ		        ; data_12e
+2923:2020    dw, osn, equ		        ; data_13e
+2923:203E    dw, osn, equ		        ; data_14e
+2923:3000    dw, osn, equ		        ; data_15e
+2923:37A4    db, equ			        ; data_16e
+2923:3EA4    db, equ			        ; data_17e
+2923:6000    dw, oln, equ		        ; data_18e
+2923:6002    dw, oln, equ		        ; data_19e
+2923:A288    dw, equ			        ; data_20e
+2923:A2D1    dw, equ			        ; data_21e
+2923:A31A    dw, equ			        ; data_22e
+2923:A3D3    dw, equ			        ; data_23e
+2923:A3F2    dw, equ			        ; data_24e
+2923:A456    db, equ			        ; data_25e
+2923:A470    dw, osf, equ		        ; data_26e
+2923:A474    dw, equ			        ; data_28e
+2923:C000    dw, equ			        ; data_29e
+2923:FF08    db, equ			        ; data_30e
+2923:FF14    db, equ			        ; data_31e
+2923:FF36    db, equ			        ; data_32e
+2923:FF38    db, equ			        ; data_33e
+2923:FF39    db, equ			        ; data_34e
+2923:FF3A    db, equ			        ; data_35e
+2923:FF3C    db, equ			        ; data_36e
+2923:FF3D    db, equ			        ; data_37e
+2923:FF3E    db, equ			        ; data_38e
+2923:FF40    db, equ			        ; data_39e
+2923:FF42    db, equ			        ; data_40e
+2923:FF43    db, equ			        ; data_41e
+2923:FF44    db, equ			        ; data_42e
+2923:FF4B    db, equ			        ; data_43e
+2923:FF74    db, equ			        ; data_44e
+2923:FF77    db, equ			        ; data_45e

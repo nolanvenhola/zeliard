@@ -1,0 +1,108 @@
+
+                  ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+                          SOURCER DEFINITION FILE
+                  ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+
+ ±±±±±±±±±±±±±±±±±± Section 1: CONTROL INFORMATION   ±±±±±±±±±±±±±±±±±±
+
+Analysis Options = a b c d e f g h i j k l m n o p q r s t u v w x y z
+2nd Options page = a b c d e f g h i j k l m
+uP               = 8088
+File format      = asm
+Keep segments    = Def
+Label type       = Decimal
+Remarks          = All
+Segment display  = Hex
+Target Assembler = TASM-2.X, byte match
+Input filename   = zr2_14.bin
+Code style       = Zero start
+Drive (output)   = W
+Output filename  = zr2_14.asm
+Passes           = 9
+Xref             = OFF
+
+
+
+ ±±±±±±±±±±±±±±±±±± Section 2: RANGE DEFINITION      ±±±±±±±±±±±±±±±±±±
+
+ ÍÍÍÍ Segments ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+
+  begin       end        default     seg   seg                           seg
+ seg:off      off      ds      es    type  size                         value
+ -------      ----   ------  ------  ----- -----                        -----
+seg_a:0000    03E9   seg_a   seg_a   auto  use16                       ; 2923
+
+ ±±±±±±±±±±±±±±±±±± Section 3: REFERENCE DEFINITIONS ±±±±±±±±±±±±±±±±±±
+
+ ÍÍÍÍ Subroutines ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0071   sub			        ; sub_1
+seg_a:0156   sub			        ; sub_2
+seg_a:01DB   sub			        ; sub_3
+seg_a:01FE   sub			        ; sub_4
+seg_a:028C   sub			        ; sub_5
+
+ ÍÍÍÍ Locations ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0000   loc, far		start
+seg_a:005E   loc			        ; loc_1
+seg_a:006C   loc			        ; loc_2
+seg_a:0092   loc			        ; loc_3
+seg_a:009D   loc			        ; loc_4
+seg_a:00B6   loc			        ; loc_5
+seg_a:00C2   loc			        ; loc_6
+seg_a:00D1   forced, od seg_a
+seg_a:00D4   forced, od seg_a
+seg_a:00E8   loc			        ; loc_ret_7
+seg_a:00EE   loc			        ; loc_8
+seg_a:00FB   loc			        ; loc_9
+seg_a:010D   loc			        ; locloop_11
+seg_a:0111   loc			        ; locloop_12
+seg_a:0128   loc			        ; loc_13
+seg_a:0156   forced, od seg_a
+seg_a:015F   loc			        ; locloop_14
+seg_a:0163   loc			        ; locloop_15
+seg_a:01E3   loc			        ; loc_16
+seg_a:01F9   loc			        ; loc_17
+seg_a:020E   forced, od seg_a
+seg_a:0218   loc			        ; locloop_18
+seg_a:021C   loc			        ; locloop_19
+seg_a:0228   loc			        ; loc_20
+seg_a:024A   loc			        ; loc_21
+seg_a:0256   forced, od seg_a
+seg_a:0260   loc			        ; locloop_22
+seg_a:0264   loc			        ; locloop_23
+seg_a:0270   loc			        ; loc_24
+seg_a:0299   loc			        ; loc_25
+
+ ÍÍÍÍ Data Items ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0090   dw, oln			        ; data_1
+2923:068E    dw, equ			        ; data_13e
+2923:2000    dw, osn, equ		        ; data_14e
+2923:2002    dw, osn, equ		        ; data_15e
+2923:2008    dw, osn, equ		        ; data_16e
+2923:2010    dw, osn, equ		        ; data_17e
+2923:2012    dw, osn, equ		        ; data_18e
+2923:2018    dw, osn, equ		        ; data_19e
+2923:2040    dw, oln, equ		        ; data_20e
+2923:2044    dw, osn, equ		        ; data_21e
+2923:3016    dw, osn, equ		        ; data_22e
+2923:6004    dw, osn, equ		        ; data_23e
+2923:A078    dw, equ			        ; data_24e
+2923:A089    db, equ			        ; data_25e
+2923:A0CB    db, equ			        ; data_26e
+2923:A177    db, equ			        ; data_27e
+2923:A234    db, equ			        ; data_28e
+2923:A27C    db, equ			        ; data_29e
+2923:A3E4    db, equ			        ; data_30e
+2923:A3E5    db, equ			        ; data_31e
+2923:FF1A    db, equ			        ; data_32e
+2923:FF2C    dw, equ			        ; data_33e
+2923:FF4C    dw, equ			        ; data_34e
+2923:FF4E    db, equ			        ; data_35e
+2923:FF4F    db, equ			        ; data_36e
+2923:FF50    dw, equ			        ; data_37e

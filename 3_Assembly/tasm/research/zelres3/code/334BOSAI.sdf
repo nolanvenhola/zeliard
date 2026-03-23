@@ -1,0 +1,76 @@
+
+                  ฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+                          SOURCER DEFINITION FILE
+                  ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+
+ ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ Section 1: CONTROL INFORMATION   ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+
+Analysis Options = a b c d e f g h i j k l m n o p q r s t u v w x y z
+2nd Options page = a b c d e f g h i j k l m
+uP               = 8088
+Math uP code     = ON
+File format      = asm
+Keep segments    = Def
+Label type       = Decimal
+Remarks          = All
+Segment display  = Hex
+Target Assembler = TASM-2.X, byte match
+Input filename   = zr3_34.bin
+Code style       = Zero start
+Drive (output)   = W
+Output filename  = zr3_34.asm
+Passes           = 9
+Xref             = OFF
+
+
+
+ ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ Section 2: RANGE DEFINITION      ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+
+ ออออ Segments ออออออออออออออออออออออออออ
+
+  begin       end        default     seg   seg                           seg
+ seg:off      off      ds      es    type  size                         value
+ -------      ----   ------  ------  ----- -----                        -----
+seg_a:0000    1D04   seg_a   seg_a   auto  use16                       ; 2923
+
+ ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ Section 3: REFERENCE DEFINITIONS ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+
+ ออออ Subroutines อออออออออออออออออออออออ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+
+ ออออ Locations อออออออออออออออออออออออออ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0000   loc, far		start
+seg_a:000E   forced, od seg_a
+seg_a:0189   loc			        ; loc_ret_1
+seg_a:0296   loc			        ; locloop_2
+seg_a:0306   loc			        ; locloop_3
+seg_a:0C13   loc			        ; locloop_4
+seg_a:118A   loc			        ; locloop_5
+seg_a:11DC   loc			        ; locloop_6
+seg_a:11FC   loc			        ; locloop_8
+seg_a:122D   loc			        ; locloop_9
+seg_a:13AD   loc			        ; locloop_10
+seg_a:13E6   loc			        ; locloop_11
+seg_a:1451   loc			        ; locloop_12
+
+ ออออ Data Items ออออออออออออออออออออออออ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+0000:2001    dw, equ			        ; data_1e
+0000:53C3    dw, equ			        ; data_2e
+seg_a:0135   dw, r 2			        ; data_3
+seg_a:01C3   dw, r 4			        ; data_4
+seg_a:07C3   dw, r 4			        ; data_5
+seg_a:0DC3   dw, r 2			        ; data_6
+seg_a:0FC3   dw				        ; data_7
+seg_a:11C3   dw				        ; data_8
+2923:2FD9    dd, equ			        ; data_9e
+2923:43C3    dw, equ			        ; data_10e
+2923:53C3    dw, equ, r 4		        ; data_11e
+2923:63C3    dw, equ, r 4		        ; data_12e
+2923:69D7    db, equ			        ; data_13e
+2923:C4C3    dd, equ			        ; data_14e
+2923:DDC3    dw, equ, r 4		        ; data_15e

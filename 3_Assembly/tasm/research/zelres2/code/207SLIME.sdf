@@ -1,0 +1,250 @@
+
+                  ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+                          SOURCER DEFINITION FILE
+                  ‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
+
+ ±±±±±±±±±±±±±±±±±± Section 1: CONTROL INFORMATION   ±±±±±±±±±±±±±±±±±±
+
+Analysis Options = a b c d e f g h i j k l m n o p q r s t u v w x y z
+2nd Options page = a b c d e f g h i j k l m
+uP               = 8088
+File format      = asm
+Keep segments    = Def
+Label type       = Decimal
+Remarks          = All
+Segment display  = Hex
+Target Assembler = TASM-2.X, byte match
+Input filename   = zr2_07.bin
+Code style       = Zero start
+Drive (output)   = W
+Output filename  = zr2_07.asm
+Passes           = 9
+Xref             = OFF
+
+
+
+ ±±±±±±±±±±±±±±±±±± Section 2: RANGE DEFINITION      ±±±±±±±±±±±±±±±±±±
+
+ ÕÕÕÕ Segments ÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕ
+
+  begin       end        default     seg   seg                           seg
+ seg:off      off      ds      es    type  size                         value
+ -------      ----   ------  ------  ----- -----                        -----
+seg_a:0000    2929   seg_a   seg_a   auto  use16                       ; 2923
+
+ ±±±±±±±±±±±±±±±±±± Section 3: REFERENCE DEFINITIONS ±±±±±±±±±±±±±±±±±±
+
+ ÕÕÕÕ Subroutines ÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:00D4   sub			        ; sub_1
+seg_a:0298   sub			        ; sub_2
+seg_a:0319   sub			        ; sub_3
+seg_a:0352   sub			        ; sub_4
+seg_a:03A1   sub			        ; sub_5
+seg_a:03B7   sub			        ; sub_6
+seg_a:03E5   sub			        ; sub_7
+seg_a:040B   sub			        ; sub_8
+seg_a:1B40   sub			        ; sub_9
+
+ ÕÕÕÕ Locations ÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0000   loc, far		start
+seg_a:00AF   loc			        ; loc_6
+seg_a:010A   loc			        ; loc_7
+seg_a:010C   loc			        ; loc_8
+seg_a:0163   loc			        ; loc_9
+seg_a:0165   loc			        ; loc_10
+seg_a:016F   loc			        ; locloop_11
+seg_a:01A2   forced, od seg_a
+seg_a:01A6   loc			        ; loc_12
+seg_a:01EE   loc			        ; loc_13
+seg_a:01F0   loc			        ; loc_14
+seg_a:01FA   loc			        ; locloop_15
+seg_a:0227   forced, od seg_a
+seg_a:0247   loc			        ; loc_16
+seg_a:026C   loc			        ; loc_17
+seg_a:026E   loc			        ; loc_18
+seg_a:02EB   loc			        ; loc_19
+seg_a:02ED   loc			        ; loc_20
+seg_a:0311   loc			        ; loc_21
+seg_a:031E   loc			        ; locloop_22
+seg_a:0387   loc			        ; locloop_23
+seg_a:0395   forced, od seg_a
+seg_a:039E   forced, od A000
+seg_a:03A4   loc			        ; locloop_24
+seg_a:03BA   loc			        ; locloop_25
+seg_a:03E0   forced, od B800
+seg_a:03E8   loc			        ; locloop_26
+seg_a:03EF   loc			        ; locloop_27
+seg_a:0407   loc			        ; loc_28
+seg_a:0411   loc			        ; loc_29
+seg_a:043D   loc			        ; loc_30
+seg_a:0443   loc			        ; loc_31
+seg_a:0458   loc			        ; loc_32
+seg_a:045E   loc			        ; loc_33
+seg_a:0471   loc			        ; loc_34
+seg_a:047E   loc			        ; loc_35
+seg_a:0492   loc			        ; loc_36
+seg_a:0494   loc			        ; loc_37
+seg_a:04F1   loc			        ; locloop_39
+seg_a:216D   forced, od seg_a
+
+ ÕÕÕÕ Data Items ÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+008C:0499    db, equ			        ; data_1e
+seg_a:0380   dw				        ; data_15
+seg_a:0602   db				        ; data_20
+seg_a:0811   db				        ; data_21
+seg_a:0828   db				        ; data_22
+seg_a:0841   dw				        ; data_23
+seg_a:0844   db				        ; data_25
+seg_a:0880   db				        ; data_26
+seg_a:08A3   db				        ; data_27
+seg_a:0A08   db				        ; data_28
+seg_a:0A11   dw				        ; data_29
+seg_a:0A14   dw				        ; data_31
+seg_a:0A20   db				        ; data_32
+seg_a:0A41   dw				        ; data_33
+seg_a:0A82   db				        ; data_34
+seg_a:0A88   db				        ; data_35
+seg_a:0A92   db				        ; data_36
+seg_a:0AA0   db				        ; data_37
+seg_a:0AA8   dw				        ; data_38
+seg_a:0B0A   db				        ; data_39
+seg_a:0B41   db				        ; data_40
+seg_a:0F00   db				        ; data_41
+seg_a:0F02   db				        ; data_42
+seg_a:1102   db				        ; data_43
+seg_a:1103   dw				        ; data_44
+seg_a:110A   db				        ; data_45
+seg_a:1122   db				        ; data_46
+seg_a:1141   dw				        ; data_47
+seg_a:1143   db				        ; data_49
+seg_a:1183   dw				        ; data_50
+seg_a:118A   dw				        ; data_51
+seg_a:118E   dw				        ; data_53
+seg_a:11A0   db				        ; data_55
+seg_a:11A2   dw				        ; data_56
+seg_a:11A8   db				        ; data_57
+seg_a:11BA   dw				        ; data_58
+seg_a:1220   db				        ; data_59
+seg_a:12AB   dw				        ; data_60
+seg_a:17EA   db				        ; data_61
+seg_a:2020   dw				        ; data_62
+seg_a:2022   dw				        ; data_63
+seg_a:2041   dw				        ; data_64
+seg_a:2043   dw				        ; data_65
+seg_a:2045   db				        ; data_66
+seg_a:2049   dw				        ; data_67
+seg_a:2080   db				        ; data_68
+seg_a:20A2   db				        ; data_69
+seg_a:20AE   db				        ; data_70
+seg_a:2220   dw				        ; data_71
+seg_a:2238   db				        ; data_72
+seg_a:2241   dw				        ; data_73
+seg_a:2280   db				        ; data_74
+seg_a:228A   dw				        ; data_75
+seg_a:2841   db				        ; data_77
+seg_a:2843   dw				        ; data_78
+seg_a:28A8   dw				        ; data_79
+seg_a:28E8   dw, r 2			        ; data_80
+2923:2A08    db, equ			        ; data_82e
+2923:2A41    db, equ			        ; data_83e
+2923:2E02    db, equ			        ; data_84e
+2923:36EA    dw, olf, equ		        ; data_85e
+2923:3A41    db, equ			        ; data_86e
+2923:3AA8    dw, equ			        ; data_87e
+2923:4102    dw, equ			        ; data_88e
+2923:4108    dw, equ			        ; data_89e
+2923:410A    db, equ			        ; data_90e
+2923:4111    db, equ			        ; data_91e
+2923:4113    dw, equ			        ; data_92e
+2923:4120    dw, equ			        ; data_93e
+2923:4128    db, equ			        ; data_94e
+2923:412E    db, equ			        ; data_95e
+2923:4180    db, equ			        ; data_96e
+2923:4188    db, equ			        ; data_97e
+2923:41A0    db, equ			        ; data_98e
+2923:41A2    dw, equ			        ; data_99e
+2923:41A8    db, equ			        ; data_100e
+2923:41CB    dw, equ			        ; data_101e
+2923:41EB    db, equ			        ; data_102e
+2923:4202    dw, equ			        ; data_103e
+2923:420A    db, equ			        ; data_104e
+2923:4220    db, equ			        ; data_105e
+2923:423A    db, equ			        ; data_106e
+2923:4280    db, equ			        ; data_107e
+2923:428A    db, equ			        ; data_108e
+2923:42A0    db, equ			        ; data_109e
+2923:42A3    dw, equ			        ; data_110e
+2923:42E2    db, equ			        ; data_111e
+2923:4308    db, equ			        ; data_112e
+2923:4320    dw, equ			        ; data_113e
+2923:4380    db, equ			        ; data_114e
+2923:4382    db, equ			        ; data_115e
+2923:4688    db, equ			        ; data_116e
+2923:4880    dw, equ			        ; data_117e
+2923:4B01    dw, equ			        ; data_118e
+2923:6000    db, equ			        ; data_119e
+2923:8002    db, equ			        ; data_120e
+2923:800A    db, equ			        ; data_121e
+2923:800B    db, equ			        ; data_122e
+2923:8022    db, equ			        ; data_123e
+2923:802E    db, equ			        ; data_124e
+2923:803A    db, equ			        ; data_125e
+2923:8041    db, equ			        ; data_126e
+2923:8043    dw, equ			        ; data_127e
+2923:8045    db, equ			        ; data_129e
+2923:8080    db, equ			        ; data_130e
+2923:808A    db, equ			        ; data_131e
+2923:8228    db, equ			        ; data_132e
+2923:822A    db, equ			        ; data_133e
+2923:8242    dw, equ			        ; data_134e
+2923:8820    dw, equ			        ; data_135e
+2923:8841    db, equ			        ; data_136e
+2923:8888    dw, equ			        ; data_137e
+2923:88FB    dw, equ			        ; data_138e
+2923:8A02    db, equ			        ; data_139e
+2923:8A41    dw, equ			        ; data_140e
+2923:8EFA    dw, equ			        ; data_141e
+2923:99A2    db, equ			        ; data_142e
+2923:A000    db, equ			        ; data_143e
+2923:A02A    dw, equ			        ; data_144e
+2923:A041    db, equ			        ; data_145e
+2923:A042    dw, equ			        ; data_146e
+2923:A044    db, equ			        ; data_147e
+2923:A0A0    db, equ			        ; data_148e
+2923:A202    db, equ			        ; data_149e
+2923:A211    dw, equ			        ; data_150e
+2923:A214    dw, equ			        ; data_151e
+2923:A241    db, equ			        ; data_152e
+2923:A2A0    dw, equ			        ; data_153e
+2923:A2FA    db, equ			        ; data_154e
+2923:A3AB    dw, equ			        ; data_155e
+2923:A80A    db, equ			        ; data_156e
+2923:A811    db, equ			        ; data_157e
+2923:A812    dw, equ			        ; data_158e
+2923:A82B    dw, equ			        ; data_159e
+2923:AB83    dw, equ			        ; data_160e
+2923:AFBA    dw, equ			        ; data_161e
+2923:BAA0    dw, equ			        ; data_162e
+2923:BABB    dw, equ			        ; data_163e
+2923:C050    db, equ			        ; data_164e
+2923:C0EC    db, equ			        ; data_165e
+2923:CA22    db, equ			        ; data_166e
+2923:CA91    db, equ			        ; data_167e
+2923:CB22    dw, equ			        ; data_168e
+2923:E241    dw, equ			        ; data_169e
+2923:E2A0    dw, equ			        ; data_170e
+2923:E808    db, equ			        ; data_171e
+2923:E8BA    dw, equ			        ; data_172e
+2923:E8EB    db, equ			        ; data_173e
+2923:EA41    dw, equ			        ; data_174e
+2923:EA8E    dw, equ			        ; data_175e
+2923:FA91    dw, equ			        ; data_176e
+2923:FBF0    db, equ			        ; data_177e
+A000:3BF0    db, equ			        ; data_178e
+B800:6778    db, equ			        ; data_179e
