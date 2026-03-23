@@ -1,243 +1,266 @@
-# Complete Chunk Index - All 120 Chunks Documented
+# Complete Chunk Index
 
-**Status**: 100% Complete
-**Last Updated**: 2026-02-10
-
----
-
-## ZELRES1.SAR - 40 Chunks
-
-### CODE Chunks (14 total)
-
-| Chunk | Size | Documentation | Type |
-|-------|------|---------------|------|
-| 00 | 14KB | zelres1_chunk_00_player_core_walkthrough.md (38KB) | Opening scene & player |
-| 01 | 5.5KB | zelres1_chunk_01_image_controller_walkthrough.md (47KB) | Image controller |
-| 02 | 8KB | zelres1_chunk_02_equipment_walkthrough.md (27KB) | Equipment system |
-| 03 | 8KB | zelres1_chunk_03_walkthrough.md (29KB) | Image decode |
-| 04 | 9KB | zelres1_chunk_04_stats_walkthrough.md (22KB) | Player stats |
-| 05 | 8KB | zelres1_chunk_05_walkthrough.md (28KB) | Palette & graphics |
-| 06 | 12KB | zelres1_chunk_06_player_advanced_walkthrough.md (44KB) | Advanced player |
-| 07 | 3.9KB | zelres1_chunk_07_vga_decompressor_walkthrough.md (27KB) | VGA decompressor |
-| 08 | 4.5KB | zelres1_chunk_08_image_decoder_a_walkthrough.md (15KB) | Image decoder A |
-| 09 | 4.3KB | zelres1_chunk_09_image_decoder_b_walkthrough.md (13KB) | Image decoder B |
-| 10 | 5.4KB | zelres1_chunk_10_large_image_renderer_walkthrough.md (17KB) | Large images (48×34) |
-| 11 | 5.3KB | zelres1_chunk_11_small_image_renderer_walkthrough.md (17KB) | Small images (32×18) |
-| 24 | 4KB | zelres1_chunk_24_utilities_walkthrough.md (17KB) | Utilities |
-| 30 | 3KB | zelres1_chunk_30_utility_walkthrough.md (13KB) | Small utility |
-
-**Total**: 14 walkthroughs covering 14 code chunks ✅
-
-### DATA Chunks (26 total)
-
-| Chunks | Documentation | Type |
-|--------|---------------|------|
-| 12 | zelres1_data_chunks_reference.md (37KB) | Font bitmaps |
-| 13-23 | zelres1_data_chunks_reference.md | .grp images (opening scenes) |
-| 16 | zelres1_data_chunks_reference.md | Player/NPC sprites |
-| 25-29, 31-37 | zelres1_data_chunks_reference.md | .grp images (title, ending) |
-| 38-39 | zelres1_data_chunks_reference.md | Animation/coordinate tables |
-
-**Total**: 1 consolidated reference covering 26 data chunks ✅
+**Total chunks**: 194 (zelres1: 40, zelres2: 58, zelres3: 96)
+**Code chunks**: 57
+**Data chunks**: 137
+**Last Updated**: 2026-03-22
 
 ---
 
-## ZELRES2.SAR - 40 Chunks
+## ZELRES1.SAR — 40 Chunks (primary only, no extended table)
 
-### CODE Chunks (20 total)
+### Code Chunks (14)
 
-| Chunk | Size | Documentation | Type |
-|-------|------|---------------|------|
-| 00 | 16KB | zelres2_chunk_00_walkthrough.md (29KB) | Main game loop |
-| 01 | 11KB | zelres2_chunk_01_combat_core_walkthrough.md (37KB) | Combat UI |
-| 02 | 24KB | zelres2_chunk_02_damage_calculation_walkthrough.md (20KB) | Sprite rendering |
-| 03 | 23KB | zelres2_chunk_03_physics_subsystems_walkthrough.md (34KB) | Physics subsystems |
-| 04 | 20KB | zelres2_chunk_04_physics_walkthrough.md (34KB) | Physics engine |
-| 05 | 25KB | zelres2_chunk_05_animation_system_walkthrough.md (33KB) | Animation/CGA |
-| 06 | 21KB | zelres2_chunk_06_ai_behaviors_walkthrough.md (23KB) | Enemy AI |
-| 07 | 10KB | zelres2_enemy_types_walkthrough.md (29KB) | Enemy: Slime |
-| 08 | 9.5KB | zelres2_enemy_types_walkthrough.md | Enemy: Bat |
-| 09 | 8KB | zelres2_enemy_types_walkthrough.md | Enemy: Spider |
-| 10 | 2KB | zelres2_enemy_types_walkthrough.md | Enemy: Skeleton |
-| 12 | 7KB | zelres2_enemy_types_walkthrough.md | Enemy: Ghost |
-| 13 | 3.3KB | zelres2_enemy_types_walkthrough.md | Enemy: Goblin |
-| 14 | 1KB | zelres2_enemy_types_walkthrough.md | Enemy: Orc |
-| 15 | 4.6KB | zelres2_enemy_types_walkthrough.md | Enemy: Wizard |
-| 16 | 1.3KB | zelres2_enemy_types_walkthrough.md | Boss behaviors |
-| 17 | 7KB | zelres2_enemy_types_walkthrough.md | Special enemy |
-| 36 | 2KB | zelres2_chunk_36_walkthrough.md (21KB) | Utility |
-| 38 | 3KB | zelres2_chunk_38_utility_walkthrough.md (4.4KB) | Utility |
-| 39 | 103KB | zelres2_chunk_39_utility_walkthrough.md (8KB) | Data tables/text |
+| Chunk | File | Size | Documentation | Purpose |
+|-------|------|------|---------------|---------|
+| 00 | 100OPSCN.asm | 14KB | zelres1_chunk_00_player_core_walkthrough.md | Opening scene, player init |
+| 01 | 101IMGCT.asm | 5.5KB | zelres1_chunk_01_image_controller_walkthrough.md | Image rendering pipeline |
+| 02 | 102EQUIP.asm | 8KB | zelres1_chunk_02_equipment_walkthrough.md | Equipment/inventory |
+| 03 | 103IMGDC.asm | 8KB | zelres1_chunk_03_walkthrough.md | Image decoding |
+| 04 | 104PLSTS.asm | 9KB | zelres1_chunk_04_stats_walkthrough.md | Player stats |
+| 05 | 105PALGT.asm | 8KB | zelres1_chunk_05_walkthrough.md | Palette & graphics |
+| 06 | 106PLADV.asm | 12KB | zelres1_chunk_06_player_advanced_walkthrough.md | Advanced player mechanics |
+| 07 | 107VGADC.asm | 3.9KB | zelres1_chunk_07_vga_decompressor_walkthrough.md | VGA decompressor |
+| 08 | 108IMGDA.asm | 4.5KB | zelres1_chunk_08_image_decoder_a_walkthrough.md | Image decoder A |
+| 09 | 109IMGDB.asm | 4.3KB | zelres1_chunk_09_image_decoder_b_walkthrough.md | Image decoder B |
+| 10 | 110LIMGR.asm | 5.4KB | zelres1_chunk_10_large_image_renderer_walkthrough.md | 48×34 image renderer |
+| 11 | 111SIMGR.asm | 5.3KB | zelres1_chunk_11_small_image_renderer_walkthrough.md | 32×18 image renderer |
+| 24 | 124UTILA.asm | 4KB | zelres1_chunk_24_utilities_walkthrough.md | Utilities A |
+| 30 | 130UTILB.asm | 3KB | zelres1_chunk_30_utility_walkthrough.md | Utilities B |
 
-**Total**: 11 walkthroughs covering 20 code chunks ✅
-- 10 individual walkthroughs (00-06, 36, 38-39)
-- 1 consolidated walkthrough (enemy_types covers 07-17)
+### Data Chunks (26)
 
-### DATA Chunks (20 total)
-
-| Chunks | Documentation | Type |
-|--------|---------------|------|
-| 11 | zelres2_data_chunks_reference.md (21KB) | Driver filename table |
-| 18-25 | zelres2_data_chunks_reference.md | Gameplay sprites (format 0x06) |
-| 26 | zelres2_data_chunks_reference.md | Enemy/projectile sprites |
-| 27-35 | zelres2_data_chunks_reference.md | More gameplay sprites |
-| 37 | zelres2_data_chunks_reference.md | NPC dialogue |
-
-**Total**: 1 consolidated reference covering 20 data chunks ✅
-
----
-
-## ZELRES3.SAR - 40 Chunks
-
-### CODE Chunks (12 total)
-
-| Chunk | Size | Documentation | Type |
-|-------|------|---------------|------|
-| 00 | 1.5KB | zelres3_chunk_00_level_loader_walkthrough.md (34KB) | Level loader |
-| 14 | 2KB | zelres3_chunk_14_level_renderer_walkthrough.md (17KB) | Level renderer |
-| 16 | 3KB | zelres3_chunk_16_utility_walkthrough.md (8.8KB) | Tile collision |
-| 20 | 6KB | zelres3_chunk_20_walkthrough.md (13KB) | Town/NPC systems |
-| 22 | 7KB | zelres3_chunk_22_walkthrough.md (41KB) | Enemy behavior |
-| 26 | 4KB | zelres3_chunk_26_walkthrough.md (18KB) | NPC interaction |
-| 31 | 7KB | zelres3_chunk_31_utility_walkthrough.md (12KB) | Trigger/event system |
-| 32 | 8KB | zelres3_chunk_32_walkthrough.md (31KB) | Enemy manager |
-| 33 | 623B | zelres3_chunk_33_walkthrough.md (15KB) | Small utility |
-| 34 | 7KB | zelres3_chunk_34_walkthrough.md (33KB) | Boss AI system |
-| 35 | 6KB | zelres3_chunk_35_walkthrough.md (35KB) | Boss behaviors |
-| 37 | 770B | zelres3_chunk_37_walkthrough.md (19KB) | Small utility |
-
-**Total**: 12 walkthroughs covering 12 code chunks ✅
-
-### DATA Chunks (28 total)
-
-| Chunks | Documentation | Type |
-|--------|---------------|------|
-| 01-08 | zelres3_level_maps_reference.md (23KB) | Level maps (8 cavern areas) |
-| 09-10 | zelres3_level_maps_reference.md | Connecting tunnels |
-| 11-13, 15 | zelres3_level_maps_reference.md | Town maps (4 towns) |
-| 17-19 | zelres3_level_maps_reference.md | Boss arenas |
-| 21 | zelres3_dialogue_reference.md (30KB) | Area 1 dialogue |
-| 23-25 | zelres3_dialogue_reference.md | Area 2-4 dialogue |
-| 27-30 | zelres3_dialogue_reference.md | Area 5-8 dialogue |
-| 36 | zelres3_dialogue_reference.md | Merchant/shop text |
-| 38 | zelres3_dialogue_reference.md | Additional dialogue |
-| 39 | zelres3_dialogue_reference.md | Ending sequence (217KB!) |
-
-**Total**: 2 consolidated references covering 28 data chunks ✅
+| Chunks | File(s) | Documentation | Content |
+|--------|---------|---------------|---------|
+| 12 | font.bin | zelres1_data_chunks_reference.md | Bitmap font data |
+| 13 | image_13.grp | zelres1_data_chunks_reference.md | Opening image |
+| 14 | nec.grp | zelres1_data_chunks_reference.md | NEC logo |
+| 15 | hou.grp | zelres1_data_chunks_reference.md | Opening scene image |
+| 16 | sprites.bin | zelres1_data_chunks_reference.md | Player/NPC sprite data |
+| 17 | dmaou.grp | zelres1_data_chunks_reference.md | Demon king Jashiin |
+| 18 | zopn.msd | zelres1_data_chunks_reference.md | Opening music |
+| 19 | ttl1.grp | zelres1_data_chunks_reference.md | Title screen part 1 |
+| 20 | ttl2.grp | zelres1_data_chunks_reference.md | Title screen part 2 |
+| 21 | ttl3.grp | zelres1_data_chunks_reference.md | Title screen part 3 |
+| 22 | image_22.grp | zelres1_data_chunks_reference.md | Opening image |
+| 23 | waku.grp | zelres1_data_chunks_reference.md | Window frame graphics |
+| 25 | hime.grp | zelres1_data_chunks_reference.md | Princess Felicia portrait |
+| 26 | isi.grp | zelres1_data_chunks_reference.md | Stone/rock graphics |
+| 27 | oui.grp | zelres1_data_chunks_reference.md | King portrait |
+| 28 | sei.grp | zelres1_data_chunks_reference.md | Fairy/spirit sprite |
+| 29–33 | yuu1-4.grp, yuup.grp | zelres1_data_chunks_reference.md | Hero animations + portrait |
+| 34 | oup.grp | zelres1_data_chunks_reference.md | Ending image |
+| 35 | maop.grp | zelres1_data_chunks_reference.md | Map/ending scene |
+| 36–37 | image_36/37.grp | zelres1_data_chunks_reference.md | Ending images |
+| 38 | anim_table.bin | zelres1_data_chunks_reference.md | Animation frame data |
+| 39 | zend.msd | zelres1_data_chunks_reference.md | Ending music |
 
 ---
 
-## Summary: All 120 Chunks Accounted For
+## ZELRES2.SAR — 58 Chunks (40 primary + 18 extended)
 
-### Code Chunks: 46 total
-- **ZELRES1**: 14 chunks → 14 individual walkthroughs ✅
-- **ZELRES2**: 20 chunks → 11 walkthroughs (10 individual + 1 consolidated) ✅
-- **ZELRES3**: 12 chunks → 12 individual walkthroughs ✅
+### Code Chunks (21)
 
-**Total code walkthroughs**: 37 files
+| Chunk | File | Size | Documentation | Purpose |
+|-------|------|------|---------------|---------|
+| 00 | 200MGAME.asm | 16KB | zelres2_chunk_00_walkthrough.md | Core game loop |
+| 01 | 201CBTUI.asm | 3.6KB | zelres2_chunk_01_combat_core_walkthrough.md | Combat UI/HUD |
+| 02 | 202SPRTR.asm | 8.6KB | zelres2_chunk_02_damage_calculation_walkthrough.md | Sprite renderer |
+| 03 | 203PHYSS.asm | 9KB | zelres2_chunk_03_physics_subsystems_walkthrough.md | Physics subsystems |
+| 04 | 204PHYSE.asm | 8.9KB | zelres2_chunk_04_physics_walkthrough.md | Physics engine |
+| 05 | 205ANIMS.asm | 9.9KB | zelres2_chunk_05_animation_system_walkthrough.md | Animation system |
+| 06 | 206ENAIE.asm | 9KB | zelres2_chunk_06_ai_behaviors_walkthrough.md | Enemy AI framework |
+| 07 | 207SLIME.asm | 10.5KB | zelres2_enemy_types_walkthrough.md | Enemy: Slime |
+| 08 | 208ENBAT.asm | 9.6KB | zelres2_enemy_types_walkthrough.md | Enemy: Bat |
+| 09 | 209ESPDR.asm | 8.1KB | zelres2_enemy_types_walkthrough.md | Enemy: Spider |
+| 10 | 210ESKEL.asm | 2KB | zelres2_enemy_types_walkthrough.md | Enemy: Skeleton |
+| 12 | 212EGHST.asm | 7.2KB | zelres2_enemy_types_walkthrough.md | Enemy: Ghost |
+| 13 | 213EGOBL.asm | 3.4KB | zelres2_enemy_types_walkthrough.md | Enemy: Goblin |
+| 14 | 214ENORC.asm | 1KB | zelres2_enemy_types_walkthrough.md | Enemy: Orc |
+| 15 | 215EWZRD.asm | 4.7KB | zelres2_enemy_types_walkthrough.md | Enemy: Wizard |
+| 16 | 216BOSSB.asm | 1.3KB | zelres2_enemy_types_walkthrough.md | Boss behaviors |
+| 17 | 217ESPCI.asm | 7KB | zelres2_enemy_types_walkthrough.md | Special enemy |
+| 36 | 236UTILA.asm | 2.2KB | zelres2_chunk_36_walkthrough.md | Utility A |
+| 38 | 238UTILB.asm | 3.2KB | zelres2_chunk_38_utility_walkthrough.md | Utility B |
+| 39 | 239DTATB.asm | 3.4KB | zelres2_chunk_39_utility_walkthrough.md | Data tables (raw db) |
+| **50** | **250GMENG.asm** | **8.7KB** | *(no walkthrough yet)* | **Extended — gameplay engine; calls CS:[10Ch] + driver fns** |
 
-### Data Chunks: 74 total
-- **ZELRES1**: 26 chunks → 1 consolidated reference ✅
-- **ZELRES2**: 20 chunks → 1 consolidated reference ✅
-- **ZELRES3**: 28 chunks → 2 consolidated references (maps + dialogue) ✅
+### Primary Data Chunks (19)
 
-**Total data references**: 4 files
+| Chunks | File(s) | Documentation | Content |
+|--------|---------|---------------|---------|
+| 11 | driver_table.bin | zelres2_data_chunks_reference.md | Driver filename table |
+| 18–26 | sprites_18–26.bin | zelres2_data_chunks_reference.md | Gameplay sprite sets |
+| 27 | waku.grp | zelres2_data_chunks_reference.md | Window frame sprites |
+| 28 | sei.grp | zelres2_data_chunks_reference.md | Player/fairy sprites |
+| 29 | yuup.grp | zelres2_data_chunks_reference.md | Jump animation |
+| 30 | seip.grp | zelres2_data_chunks_reference.md | Player attack animation |
+| 31 | himp.grp | zelres2_data_chunks_reference.md | Hit/impact effects |
+| 32 | new1.grp | zelres2_data_chunks_reference.md | Enemy type 1 sprites |
+| 33 | new2.grp | zelres2_data_chunks_reference.md | Enemy type 2 sprites |
+| 34 | ne80.grp | zelres2_data_chunks_reference.md | Unused enemy sprites |
+| 35 | ne81.grp | zelres2_data_chunks_reference.md | Unused enemy sprites |
+| 37 | dialogue.bin | zelres2_data_chunks_reference.md | NPC dialogue |
 
----
+### Extended Data Chunks (17) — chunks 40–57
 
-## Complete File List
+| Chunk | File | Content |
+|-------|------|---------|
+| 40 | npc_nec40.bin | NEC PC-98 NPC behavior data (no VGA equivalent) |
+| 41 | npc_dlg41.bin | Bilingual NPC dialogue — VGA=English text ("Crest of Glory…") |
+| 42 | npc_nec42.bin | NEC PC-98 NPC behavior data |
+| 43 | npc_nec43.bin | NEC PC-98 NPC behavior data |
+| 44 | npc_nec44.bin | NEC PC-98 NPC behavior data |
+| 45 | npc_nec45.bin | NEC PC-98 NPC behavior data |
+| 46 | mgt1.msd | Music — town BGM track 1 (MSD format, raw AL=3) |
+| 47 | mgt2.msd | Music — town BGM track 2 |
+| 48 | ugm1.msd | Music — underground/dungeon BGM 1 |
+| 49 | ugm2.msd | Music — underground/dungeon BGM 2 (short) |
+| ~~50~~ | *(250GMENG.asm — code above)* | |
+| 51 | chunk_51.bin | FMAN.GRP — field NPC sprites (fill_buffer-6, 10720B decompressed) |
+| 52 | roka.grp | Corridor/hallway background (~584×72 px) |
+| 53 | image53.grp | Large background art |
+| 54 | dchr.grp | Dungeon character sprites |
+| 55 | encnt.grp | Encounter screen background |
+| 56 | image56.grp | Small sprite/icon graphic |
+| 57 | roka2.grp | Second corridor background variant |
 
-### In Documentation/GAME_ENGINE/CHUNKS/ (45 files):
-
-**ZELRES1 Walkthroughs** (14):
-```
-zelres1_chunk_00_player_core_walkthrough.md
-zelres1_chunk_01_image_controller_walkthrough.md
-zelres1_chunk_02_equipment_walkthrough.md
-zelres1_chunk_03_walkthrough.md
-zelres1_chunk_04_stats_walkthrough.md
-zelres1_chunk_05_walkthrough.md
-zelres1_chunk_06_player_advanced_walkthrough.md
-zelres1_chunk_07_vga_decompressor_walkthrough.md
-zelres1_chunk_08_image_decoder_a_walkthrough.md
-zelres1_chunk_09_image_decoder_b_walkthrough.md
-zelres1_chunk_10_large_image_renderer_walkthrough.md
-zelres1_chunk_11_small_image_renderer_walkthrough.md
-zelres1_chunk_24_utilities_walkthrough.md
-zelres1_chunk_30_utility_walkthrough.md
-```
-
-**ZELRES2 Walkthroughs** (11):
-```
-zelres2_chunk_00_walkthrough.md
-zelres2_chunk_01_combat_core_walkthrough.md
-zelres2_chunk_02_damage_calculation_walkthrough.md
-zelres2_chunk_03_physics_subsystems_walkthrough.md
-zelres2_chunk_04_physics_walkthrough.md
-zelres2_chunk_05_animation_system_walkthrough.md
-zelres2_chunk_06_ai_behaviors_walkthrough.md
-zelres2_chunk_36_walkthrough.md
-zelres2_chunk_38_utility_walkthrough.md
-zelres2_chunk_39_utility_walkthrough.md
-zelres2_enemy_types_walkthrough.md (covers chunks 07-17)
-```
-
-**ZELRES3 Walkthroughs** (12):
-```
-zelres3_chunk_00_level_loader_walkthrough.md
-zelres3_chunk_14_level_renderer_walkthrough.md
-zelres3_chunk_16_utility_walkthrough.md
-zelres3_chunk_20_walkthrough.md
-zelres3_chunk_22_walkthrough.md
-zelres3_chunk_26_walkthrough.md
-zelres3_chunk_31_utility_walkthrough.md
-zelres3_chunk_32_walkthrough.md
-zelres3_chunk_33_walkthrough.md
-zelres3_chunk_34_walkthrough.md
-zelres3_chunk_35_walkthrough.md
-zelres3_chunk_37_walkthrough.md
-```
-
-**Data References** (4):
-```
-zelres1_data_chunks_reference.md (26 data chunks)
-zelres2_data_chunks_reference.md (20 data chunks)
-zelres3_level_maps_reference.md (19 level chunks)
-zelres3_dialogue_reference.md (9 dialogue chunks)
-```
-
-**Support** (4):
-```
-README.md
-SUMMARY.md
-CHUNK_VERIFICATION_REPORT.md
-UNKNOWN_CHUNKS_CLASSIFIED.md
-```
+See `zelres2_extended_chunks_reference.md` for detailed format analysis.
 
 ---
 
-## Verification: All 120 Chunks
+## ZELRES3.SAR — 96 Chunks (40 primary + 56 extended)
 
-✅ **46 CODE chunks** = 37 walkthrough files (some consolidated)
-✅ **74 DATA chunks** = 4 reference files (all consolidated)
-✅ **Total 120 chunks** = 41 documentation files
+### Code Chunks (13)
 
-**Every single chunk in Zeliard is now fully documented!**
+| Chunk | File | Size | Documentation | Purpose |
+|-------|------|------|---------------|---------|
+| 00 | 300LVLLD.asm | 1.5KB | zelres3_chunk_00_level_loader_walkthrough.md | Level loading system |
+| 14 | 314LVLRD.asm | 2KB | zelres3_chunk_14_level_renderer_walkthrough.md | Level tile renderer |
+| 16 | 316TILCL.asm | 3KB | zelres3_chunk_16_utility_walkthrough.md | Tile collision |
+| 20 | 320TWNPC.asm | 6.5KB | zelres3_chunk_20_walkthrough.md | Town/NPC systems |
+| 22 | 322ENBHV.asm | 7.1KB | zelres3_chunk_22_walkthrough.md | Enemy behavior |
+| 26 | 326NPCIT.asm | 4.5KB | zelres3_chunk_26_walkthrough.md | NPC interaction |
+| 31 | 331TREVT.asm | 7.6KB | zelres3_chunk_31_utility_walkthrough.md | Trigger/event system |
+| 32 | 332ENMGR.asm | 8KB | zelres3_chunk_32_walkthrough.md | Enemy manager |
+| 33 | 333UTILS.asm | 623B | zelres3_chunk_33_walkthrough.md | Small utility |
+| 34 | 334BOSAI.asm | 7.4KB | zelres3_chunk_34_walkthrough.md | Boss AI system |
+| 35 | 335BOSPT.asm | 6.4KB | zelres3_chunk_35_walkthrough.md | Boss attack patterns |
+| 37 | 337UTINY.asm | 770B | zelres3_chunk_37_walkthrough.md | Tiny utility |
+| **56** | **356LVGRP.asm** | **6.3KB** | *(no walkthrough yet)* | **Extended — level graphics; INT 10h BIOS calls** |
+
+### Primary Data Chunks (27)
+
+| Chunks | File(s) | Documentation | Content |
+|--------|---------|---------------|---------|
+| 01–08 | map_caverns, map_boss1-3, map_deeper_caverns, map_forest, map_ice_caverns, map_graveyard | zelres3_level_maps_reference.md | Cavern areas + boss arenas 1-3 |
+| 09–10 | map_gold_caverns, map_flame_caverns | zelres3_level_maps_reference.md | Connecting areas |
+| 11–13, 15 | map_muralla/satono/bosque/helada_town | zelres3_level_maps_reference.md | Town maps |
+| 17–19 | map_boss4-6_arena | zelres3_level_maps_reference.md | Boss arenas 4-6 |
+| 21, 23–25, 27–30, 36, 38–39 | dialogue_area1-8, dialogue_merchant, dialogue_extra, ending_sequence | zelres3_dialogue_reference.md | Dialogue + ending |
+
+### Extended Data Chunks (55) — chunks 40–95
+
+#### Level Code Modules (chunks 40–50)
+| Chunk | File | Content |
+|-------|------|---------|
+| 40 | lvl_code40.bin | Level code module |
+| 41 | hut_code.bin | Level code — "In the Hut" (inn room) |
+| 42 | calien.bin | Level code — "Cavern of Caliente" (fire cavern) |
+| 43 | tilemap43.bin | Level code + VGA tilemap (decompresses to 22346B) |
+| 44 | tilemap44.bin | Level code + VGA tilemap (decompresses to 7233B) |
+| 45 | lvl_code45.bin | Level code module |
+| 46 | lvl_code46.bin | Level code module |
+| 47 | finalcvn.bin | Level code — "Cavern of Final" |
+| 48 | absorcvn.bin | Level code — "Cavern of Absorption" |
+| 49 | jashiin1.bin | Level code — Jashiin's room (final boss chamber, module 1) |
+| 50 | jashiin2.bin | Level code — Jashiin's room (module 2) |
+
+#### Tile System Data (chunks 51–55)
+| Chunk | File | Content |
+|-------|------|---------|
+| 51 | tileani.bin | Tile animation frame index table (8176B decompressed) |
+| 52 | tilepal.bin | Tileset palette/attribute table |
+| 53 | dman.grp | DMAN.GRP — dungeon manager player sprite |
+| 54 | sprite54.grp | Small character sprite |
+| 55 | vgareg55.bin | VGA register/palette data sequence |
+
+#### *(chunk 56 = 356LVGRP.asm — code)*
+
+#### Enemy Encounter Backgrounds (chunks 57–64)
+| Chunk | File | Content |
+|-------|------|---------|
+| 57 | enp1.grp | ENP1.GRP — encounter background 1 |
+| 58 | enp2.grp | ENP2.GRP — encounter background 2 |
+| 59 | enp3.grp | ENP3.GRP — encounter background 3 |
+| 60 | enp4.grp | ENP4.GRP — encounter background 4 |
+| 61 | enp5.grp | ENP5.GRP — encounter background 5 |
+| 62 | enp6.grp | ENP6.GRP — encounter background 6 |
+| 63 | enp7.grp | ENP7.GRP — encounter background 7 |
+| 64 | enp8.grp | ENP8.GRP — encounter background 8 |
+
+#### Enemy Combat Sprites (chunks 65–73)
+| Chunk | File | Enemy |
+|-------|------|-------|
+| 65 | crab.grp | Crab |
+| 66 | tako.grp | Octopus (tako) |
+| 67 | tori.grp | Bird (tori) |
+| 68 | zela.grp | Zeliard-type enemy |
+| 69 | meda.grp | Medusa |
+| 70 | lega.grp | Lega |
+| 71 | drgn.grp | Dragon |
+| 72 | akma.grp | Akuma/Devil |
+| 73 | mao1.grp | Jashiin (MAO1 — final boss) |
+
+#### Map Page Tile Attributes (chunks 74–84)
+| Chunk | File | Content |
+|-------|------|---------|
+| 74 | mpp1.grp | Map page tile attributes 1 |
+| 75 | mpp2.grp | Map page tile attributes 2 |
+| 76 | mpp3.grp | Map page tile attributes 3 |
+| 77 | mpp4.grp | Map page tile attributes 4 |
+| 78 | mpp5.grp | Map page tile attributes 5 |
+| 79 | mpp6.grp | Map page tile attributes 6 |
+| 80 | mpp7.grp | Map page tile attributes 7 |
+| 81 | mpp8.grp | Map page tile attributes 8 |
+| 82 | mpp9.grp | Map page tile attributes 9 |
+| 83 | mppa.grp | Map page tile attributes A |
+| 84 | mppb.grp | Map page tile attributes B |
+
+#### Music Sequences (chunks 85–95) — MSD format, raw AL=3
+| Chunk | File | Content |
+|-------|------|---------|
+| 85 | mus1.msd | MUS1.MSD — dungeon music track 1 |
+| 86 | mus2.msd | MUS2.MSD — dungeon music track 2 |
+| 87 | mus3.msd | MUS3.MSD — dungeon music track 3 |
+| 88 | mus4.msd | MUS4.MSD — dungeon music track 4 |
+| 89 | mus5.msd | MUS5.MSD — dungeon music track 5 |
+| 90 | mus6.msd | MUS6.MSD — dungeon music track 6 (longest) |
+| 91 | mus7.msd | MUS7.MSD — dungeon music track 7 |
+| 92 | mus8.msd | MUS8.MSD — dungeon music track 8 |
+| 93 | mbos.msd | MBOS.MSD — boss battle theme |
+| 94 | mfan.msd | MFAN.MSD — fanfare/level clear jingle |
+| 95 | mmao.msd | MMAO.MSD — Jashiin final boss theme |
+
+See `zelres3_extended_chunks_reference.md` for detailed format analysis.
 
 ---
 
-## Quick Lookup
+## Summary
 
-**Need documentation for chunk_XX?**
+| Resource | Code | Data | Total | Extended |
+|----------|------|------|-------|----------|
+| ZELRES1 | 14 | 26 | 40 | none |
+| ZELRES2 | 21 | 37 | 58 | 18 (chunks 40–57) |
+| ZELRES3 | 13 | 83 | 96 | 56 (chunks 40–95) |
+| **Total** | **57** | **146** | **194** | **74** |
 
-1. Check if it's CODE:
-   - Look in `zelres*_chunk_XX_*_walkthrough.md`
-   - Or in `zelres2_enemy_types_walkthrough.md` (if ZELRES2 chunks 07-17)
+**Walkthroughs**: 37 individual + 4 consolidated references + 2 extended references
+**All 57 code chunks compile byte-perfect. All 3 SAR files rebuild byte-perfect.**
 
-2. Check if it's DATA:
-   - ZELRES1: See `zelres1_data_chunks_reference.md`
-   - ZELRES2: See `zelres2_data_chunks_reference.md`
-   - ZELRES3 maps: See `zelres3_level_maps_reference.md`
-   - ZELRES3 dialogue: See `zelres3_dialogue_reference.md`
+### Naming Convention (SAR code files)
 
-**All 120 chunks are documented - nothing is missing!**
+`X##PPPPP.asm` — 8.3 format
+- `X` = zelres number (1/2/3)
+- `##` = zero-padded chunk number
+- `PPPPP` = 5-char purpose abbreviation
