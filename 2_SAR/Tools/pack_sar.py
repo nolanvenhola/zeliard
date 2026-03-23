@@ -13,27 +13,50 @@ import struct
 import os
 
 
+def _discover_chunks(chunk_dir):
+    """Return list of (chunk_index, data) sorted by chunk index.
+
+    Supports two naming schemes:
+      - Legacy:  chunk_00.bin, chunk_01.bin, …
+      - New 8.3: X##PPPPP.bin  (e.g. 112FONTS.bin, 200MGAME.bin)
+    """
+    import re
+    entries = {}  # chunk_index -> bytes
+
+    for fname in os.listdir(chunk_dir):
+        if not fname.lower().endswith('.bin'):
+            continue
+        stem = fname[:-4]  # strip .bin
+
+        # New naming: X##PPPPP  (8 chars: 1 zelres digit + 2 chunk digits + 5 purpose)
+        m = re.match(r'^[123](\d{2})\w{5}$', stem)
+        if m:
+            idx = int(m.group(1))
+            with open(os.path.join(chunk_dir, fname), 'rb') as f:
+                entries[idx] = f.read()
+            continue
+
+        # Legacy naming: chunk_NN
+        m = re.match(r'^chunk_(\d+)$', stem)
+        if m:
+            idx = int(m.group(1))
+            with open(os.path.join(chunk_dir, fname), 'rb') as f:
+                entries[idx] = f.read()
+
+    return [entries[i] for i in sorted(entries)]
+
+
 def pack_sar(chunk_dir, output_sar):
     """Pack all chunks from a directory into a SAR file.
 
-    Reads chunk_00.bin … chunk_NN.bin from chunk_dir.
-    The first 40 files become the primary offset table (0x00–0x9F).
-    Any additional files (chunk_40.bin, chunk_41.bin, …) become the
-    extended offset table and are appended after all primary chunk data.
+    Reads chunk files from chunk_dir using either legacy (chunk_NN.bin)
+    or new 8.3 (X##PPPPP.bin) naming.  Files are ordered by chunk index.
+    The first 40 become the primary offset table; extras become extended.
     """
 
     print(f"Packing {chunk_dir} -> {output_sar}...")
 
-    # Discover all chunk files
-    all_chunks = []
-    i = 0
-    while True:
-        path = os.path.join(chunk_dir, f"chunk_{i:02d}.bin")
-        if not os.path.exists(path):
-            break
-        with open(path, 'rb') as f:
-            all_chunks.append(f.read())
-        i += 1
+    all_chunks = _discover_chunks(chunk_dir)
 
     n_total    = len(all_chunks)
     n_primary  = min(n_total, 40)
