@@ -21,3 +21,6 @@ MONOGAME_AUTHENTIC/.idea
 3_Assembly/tasm/working/**/*.SDF
 2_SAR/Tools/__pycache__/
 2_SAR/ExtractedChunks/**/*_decomp.bin
+3_Assembly/tasm/research/**/*.LST
+3_Assembly/tasm/research/**/*.OBJ
+3_Assembly/tasm/research/**/*.SDF
