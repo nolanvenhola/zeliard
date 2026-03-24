@@ -442,14 +442,14 @@ jmp word near [cs:bx+<table_offset>]
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_07.bin
-**Assembly**: zelres2/code/207SLIME.asm
+**Assembly**: zelres2/code/207MURLA.asm
 
 ### Initialization
 
 ```assembly
 00000000: Initialize graphics mode
 0000002F: Load sprite data at offset 0x2926
-00000051: Set up grid-based rendering (0x380d = 56×13 grid)
+00000051: Set up grid-based rendering (0x380d = 56Ã—13 grid)
 00000074: Display intro animation
 ```
 
@@ -515,7 +515,7 @@ Uses **3-plane bitplane rendering** (offset slime_func_2 (0xd4)-0x144):
 
 **Size**: ~3KB
 **Binary**: zelres2_extracted/chunk_08.bin
-**Assembly**: zelres2/code/208ENBAT.asm
+**Assembly**: zelres2/code/208SATNO.asm
 
 ### Unique Features
 
@@ -572,7 +572,7 @@ Uses **sine wave approximation** for flight path:
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_09.bin
-**Assembly**: zelres2/code/209ESPDR.asm
+**Assembly**: zelres2/code/209BOSQE.asm
 
 ### Special Mechanic: Wall Walking
 
@@ -609,7 +609,7 @@ Web projectiles:
 
 ### Rendering
 
-Uses **7×6 sprite format** (offset orc_func_1 (0x156)):
+Uses **7Ã—6 sprite format** (offset orc_func_1 (0x156)):
 
 ```assembly
 0156: mov cx,0x7   ; 7 frames per row
@@ -622,7 +622,7 @@ Uses **7×6 sprite format** (offset orc_func_1 (0x156)):
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_10.bin
-**Assembly**: zelres2/code/210ESKEL.asm
+**Assembly**: zelres2/code/210HELDA.asm
 
 ### Combat Behavior
 
@@ -693,7 +693,7 @@ Skeleton raises shield when:
 
 **Size**: ~3KB
 **Binary**: zelres2_extracted/chunk_12.bin
-**Assembly**: zelres2/code/212EGHST.asm
+**Assembly**: zelres2/code/212TUMBA.asm
 
 ### Unique Ability: Phasing
 
@@ -769,7 +769,7 @@ From data tables at offset 0xD2-0xDB:
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_13.bin
-**Assembly**: zelres2/code/213EGOBL.asm
+**Assembly**: zelres2/code/213DORDO.asm
 
 ### Combat Style
 
@@ -853,7 +853,7 @@ Goblin maintains optimal distance:
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_14.bin
-**Assembly**: zelres2/code/214ENORC.asm
+**Assembly**: zelres2/code/214LLAMA.asm
 
 ### Role: Heavy Infantry
 
@@ -938,7 +938,7 @@ AOE attack when player gets too close:
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_15.bin
-**Assembly**: zelres2/code/215EWZRD.asm
+**Assembly**: zelres2/code/215PUREZ.asm
 
 ### Spell System
 
@@ -975,7 +975,7 @@ Wizard cycles through 4 spell types:
 00CA:   goto Update
 ```
 
-Explosion hits 3×3 tile area for 2 damage.
+Explosion hits 3Ã—3 tile area for 2 damage.
 
 ### Spell 1: Ice Lance
 
