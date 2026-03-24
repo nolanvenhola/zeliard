@@ -7,7 +7,7 @@
 
 ---
 
-## ZELRES1.SAR â€” 40 Chunks (primary only, no extended table)
+## ZELRES1.SAR Ã¢â‚¬â€� 40 Chunks (primary only, no extended table)
 
 ### Code Chunks (14)
 
@@ -23,8 +23,8 @@
 | 07 | 107VGADC.asm | 3.9KB | zelres1_chunk_07_vga_decompressor_walkthrough.md | VGA decompressor |
 | 08 | 108IMGDA.asm | 4.5KB | zelres1_chunk_08_image_decoder_a_walkthrough.md | Image decoder A |
 | 09 | 109IMGDB.asm | 4.3KB | zelres1_chunk_09_image_decoder_b_walkthrough.md | Image decoder B |
-| 10 | 110LIMGR.asm | 5.4KB | zelres1_chunk_10_large_image_renderer_walkthrough.md | 48Ã—34 image renderer |
-| 11 | 111SIMGR.asm | 5.3KB | zelres1_chunk_11_small_image_renderer_walkthrough.md | 32Ã—18 image renderer |
+| 10 | 110LIMGR.asm | 5.4KB | zelres1_chunk_10_large_image_renderer_walkthrough.md | 48Ãƒâ€”34 image renderer |
+| 11 | 111SIMGR.asm | 5.3KB | zelres1_chunk_11_small_image_renderer_walkthrough.md | 32Ãƒâ€”18 image renderer |
 | 24 | 124UTILA.asm | 4KB | zelres1_chunk_24_utilities_walkthrough.md | Utilities A |
 | 30 | 130UTILB.asm | 3KB | zelres1_chunk_30_utility_walkthrough.md | Utilities B |
 
@@ -48,16 +48,16 @@
 | 26 | isi.grp | zelres1_data_chunks_reference.md | Stone/rock graphics |
 | 27 | oui.grp | zelres1_data_chunks_reference.md | King portrait |
 | 28 | sei.grp | zelres1_data_chunks_reference.md | Fairy/spirit sprite |
-| 29â€“33 | yuu1-4.grp, yuup.grp | zelres1_data_chunks_reference.md | Hero animations + portrait |
+| 29Ã¢â‚¬â€œ33 | yuu1-4.grp, yuup.grp | zelres1_data_chunks_reference.md | Hero animations + portrait |
 | 34 | oup.grp | zelres1_data_chunks_reference.md | Ending image |
 | 35 | maop.grp | zelres1_data_chunks_reference.md | Map/ending scene |
-| 36â€“37 | image_36/37.grp | zelres1_data_chunks_reference.md | Ending images |
+| 36Ã¢â‚¬â€œ37 | image_36/37.grp | zelres1_data_chunks_reference.md | Ending images |
 | 38 | anim_table.bin | zelres1_data_chunks_reference.md | Animation frame data |
 | 39 | zend.msd | zelres1_data_chunks_reference.md | Ending music |
 
 ---
 
-## ZELRES2.SAR â€” 58 Chunks (40 primary + 18 extended)
+## ZELRES2.SAR Ã¢â‚¬â€� 58 Chunks (40 primary + 18 extended)
 
 ### Code Chunks (21)
 
@@ -78,19 +78,19 @@
 | 13 | 213DORDO.asm | 3.4KB | zelres2_enemy_types_walkthrough.md | Enemy: Goblin |
 | 14 | 214LLAMA.asm | 1KB | zelres2_enemy_types_walkthrough.md | Enemy: Orc |
 | 15 | 215PUREZ.asm | 4.7KB | zelres2_enemy_types_walkthrough.md | Enemy: Wizard |
-| 16 | 216BOSSB.asm | 1.3KB | zelres2_enemy_types_walkthrough.md | Boss behaviors |
-| 17 | 217ESPCI.asm | 7KB | zelres2_enemy_types_walkthrough.md | Special enemy |
+| 16 | 216CNGJO.asm | 1.3KB | zelres2_enemy_types_walkthrough.md | Boss behaviors |
+| 17 | 217PULPO.asm | 7KB | zelres2_enemy_types_walkthrough.md | Special enemy |
 | 36 | 236UTILA.asm | 2.2KB | zelres2_chunk_36_walkthrough.md | Utility A |
 | 38 | 238UTILB.asm | 3.2KB | zelres2_chunk_38_utility_walkthrough.md | Utility B |
 | 39 | 239DTATB.asm | 3.4KB | zelres2_chunk_39_utility_walkthrough.md | Data tables (raw db) |
-| **50** | **250GMENG.asm** | **8.7KB** | *(no walkthrough yet)* | **Extended â€” gameplay engine; calls CS:[10Ch] + driver fns** |
+| **50** | **250GMENG.asm** | **8.7KB** | *(no walkthrough yet)* | **Extended Ã¢â‚¬â€� gameplay engine; calls CS:[10Ch] + driver fns** |
 
 ### Primary Data Chunks (19)
 
 | Chunks | File(s) | Documentation | Content |
 |--------|---------|---------------|---------|
 | 11 | driver_table.bin | zelres2_data_chunks_reference.md | Driver filename table |
-| 18â€“26 | sprites_18â€“26.bin | zelres2_data_chunks_reference.md | Gameplay sprite sets |
+| 18Ã¢â‚¬â€œ26 | sprites_18Ã¢â‚¬â€œ26.bin | zelres2_data_chunks_reference.md | Gameplay sprite sets |
 | 27 | waku.grp | zelres2_data_chunks_reference.md | Window frame sprites |
 | 28 | sei.grp | zelres2_data_chunks_reference.md | Player/fairy sprites |
 | 29 | yuup.grp | zelres2_data_chunks_reference.md | Jump animation |
@@ -102,23 +102,23 @@
 | 35 | ne81.grp | zelres2_data_chunks_reference.md | Unused enemy sprites |
 | 37 | dialogue.bin | zelres2_data_chunks_reference.md | NPC dialogue |
 
-### Extended Data Chunks (17) â€” chunks 40â€“57
+### Extended Data Chunks (17) Ã¢â‚¬â€� chunks 40Ã¢â‚¬â€œ57
 
 | Chunk | File | Content |
 |-------|------|---------|
 | 40 | npc_nec40.bin | NEC PC-98 NPC behavior data (no VGA equivalent) |
-| 41 | npc_dlg41.bin | Bilingual NPC dialogue â€” VGA=English text ("Crest of Gloryâ€¦") |
+| 41 | npc_dlg41.bin | Bilingual NPC dialogue Ã¢â‚¬â€� VGA=English text ("Crest of GloryÃ¢â‚¬Â¦") |
 | 42 | npc_nec42.bin | NEC PC-98 NPC behavior data |
 | 43 | npc_nec43.bin | NEC PC-98 NPC behavior data |
 | 44 | npc_nec44.bin | NEC PC-98 NPC behavior data |
 | 45 | npc_nec45.bin | NEC PC-98 NPC behavior data |
-| 46 | mgt1.msd | Music â€” town BGM track 1 (MSD format, raw AL=3) |
-| 47 | mgt2.msd | Music â€” town BGM track 2 |
-| 48 | ugm1.msd | Music â€” underground/dungeon BGM 1 |
-| 49 | ugm2.msd | Music â€” underground/dungeon BGM 2 (short) |
-| ~~50~~ | *(250GMENG.asm â€” code above)* | |
-| 51 | chunk_51.bin | FMAN.GRP â€” field NPC sprites (fill_buffer-6, 10720B decompressed) |
-| 52 | roka.grp | Corridor/hallway background (~584Ã—72 px) |
+| 46 | mgt1.msd | Music Ã¢â‚¬â€� town BGM track 1 (MSD format, raw AL=3) |
+| 47 | mgt2.msd | Music Ã¢â‚¬â€� town BGM track 2 |
+| 48 | ugm1.msd | Music Ã¢â‚¬â€� underground/dungeon BGM 1 |
+| 49 | ugm2.msd | Music Ã¢â‚¬â€� underground/dungeon BGM 2 (short) |
+| ~~50~~ | *(250GMENG.asm Ã¢â‚¬â€� code above)* | |
+| 51 | chunk_51.bin | FMAN.GRP Ã¢â‚¬â€� field NPC sprites (fill_buffer-6, 10720B decompressed) |
+| 52 | roka.grp | Corridor/hallway background (~584Ãƒâ€”72 px) |
 | 53 | image53.grp | Large background art |
 | 54 | dchr.grp | Dungeon character sprites |
 | 55 | encnt.grp | Encounter screen background |
@@ -129,7 +129,7 @@ See `zelres2_extended_chunks_reference.md` for detailed format analysis.
 
 ---
 
-## ZELRES3.SAR â€” 96 Chunks (40 primary + 56 extended)
+## ZELRES3.SAR Ã¢â‚¬â€� 96 Chunks (40 primary + 56 extended)
 
 ### Code Chunks (13)
 
@@ -147,59 +147,59 @@ See `zelres2_extended_chunks_reference.md` for detailed format analysis.
 | 34 | 334BOSAI.asm | 7.4KB | zelres3_chunk_34_walkthrough.md | Boss AI system |
 | 35 | 335BOSPT.asm | 6.4KB | zelres3_chunk_35_walkthrough.md | Boss attack patterns |
 | 37 | 337UTINY.asm | 770B | zelres3_chunk_37_walkthrough.md | Tiny utility |
-| **56** | **356LVGRP.asm** | **6.3KB** | *(no walkthrough yet)* | **Extended â€” level graphics; INT 10h BIOS calls** |
+| **56** | **356LVGRP.asm** | **6.3KB** | *(no walkthrough yet)* | **Extended Ã¢â‚¬â€� level graphics; INT 10h BIOS calls** |
 
 ### Primary Data Chunks (27)
 
 | Chunks | File(s) | Documentation | Content |
 |--------|---------|---------------|---------|
-| 01â€“08 | map_caverns, map_boss1-3, map_deeper_caverns, map_forest, map_ice_caverns, map_graveyard | zelres3_level_maps_reference.md | Cavern areas + boss arenas 1-3 |
-| 09â€“10 | map_gold_caverns, map_flame_caverns | zelres3_level_maps_reference.md | Connecting areas |
-| 11â€“13, 15 | map_muralla/satono/bosque/helada_town | zelres3_level_maps_reference.md | Town maps |
-| 17â€“19 | map_boss4-6_arena | zelres3_level_maps_reference.md | Boss arenas 4-6 |
-| 21, 23â€“25, 27â€“30, 36, 38â€“39 | dialogue_area1-8, dialogue_merchant, dialogue_extra, ending_sequence | zelres3_dialogue_reference.md | Dialogue + ending |
+| 01Ã¢â‚¬â€œ08 | map_caverns, map_boss1-3, map_deeper_caverns, map_forest, map_ice_caverns, map_graveyard | zelres3_level_maps_reference.md | Cavern areas + boss arenas 1-3 |
+| 09Ã¢â‚¬â€œ10 | map_gold_caverns, map_flame_caverns | zelres3_level_maps_reference.md | Connecting areas |
+| 11Ã¢â‚¬â€œ13, 15 | map_muralla/satono/bosque/helada_town | zelres3_level_maps_reference.md | Town maps |
+| 17Ã¢â‚¬â€œ19 | map_boss4-6_arena | zelres3_level_maps_reference.md | Boss arenas 4-6 |
+| 21, 23Ã¢â‚¬â€œ25, 27Ã¢â‚¬â€œ30, 36, 38Ã¢â‚¬â€œ39 | dialogue_area1-8, dialogue_merchant, dialogue_extra, ending_sequence | zelres3_dialogue_reference.md | Dialogue + ending |
 
-### Extended Data Chunks (55) â€” chunks 40â€“95
+### Extended Data Chunks (55) Ã¢â‚¬â€� chunks 40Ã¢â‚¬â€œ95
 
-#### Level Code Modules (chunks 40â€“50)
+#### Level Code Modules (chunks 40Ã¢â‚¬â€œ50)
 | Chunk | File | Content |
 |-------|------|---------|
 | 40 | lvl_code40.bin | Level code module |
-| 41 | hut_code.bin | Level code â€” "In the Hut" (inn room) |
-| 42 | calien.bin | Level code â€” "Cavern of Caliente" (fire cavern) |
+| 41 | hut_code.bin | Level code Ã¢â‚¬â€� "In the Hut" (inn room) |
+| 42 | calien.bin | Level code Ã¢â‚¬â€� "Cavern of Caliente" (fire cavern) |
 | 43 | tilemap43.bin | Level code + VGA tilemap (decompresses to 22346B) |
 | 44 | tilemap44.bin | Level code + VGA tilemap (decompresses to 7233B) |
 | 45 | lvl_code45.bin | Level code module |
 | 46 | lvl_code46.bin | Level code module |
-| 47 | finalcvn.bin | Level code â€” "Cavern of Final" |
-| 48 | absorcvn.bin | Level code â€” "Cavern of Absorption" |
-| 49 | jashiin1.bin | Level code â€” Jashiin's room (final boss chamber, module 1) |
-| 50 | jashiin2.bin | Level code â€” Jashiin's room (module 2) |
+| 47 | finalcvn.bin | Level code Ã¢â‚¬â€� "Cavern of Final" |
+| 48 | absorcvn.bin | Level code Ã¢â‚¬â€� "Cavern of Absorption" |
+| 49 | jashiin1.bin | Level code Ã¢â‚¬â€� Jashiin's room (final boss chamber, module 1) |
+| 50 | jashiin2.bin | Level code Ã¢â‚¬â€� Jashiin's room (module 2) |
 
-#### Tile System Data (chunks 51â€“55)
+#### Tile System Data (chunks 51Ã¢â‚¬â€œ55)
 | Chunk | File | Content |
 |-------|------|---------|
 | 51 | tileani.bin | Tile animation frame index table (8176B decompressed) |
 | 52 | tilepal.bin | Tileset palette/attribute table |
-| 53 | dman.grp | DMAN.GRP â€” dungeon manager player sprite |
+| 53 | dman.grp | DMAN.GRP Ã¢â‚¬â€� dungeon manager player sprite |
 | 54 | sprite54.grp | Small character sprite |
 | 55 | vgareg55.bin | VGA register/palette data sequence |
 
-#### *(chunk 56 = 356LVGRP.asm â€” code)*
+#### *(chunk 56 = 356LVGRP.asm Ã¢â‚¬â€� code)*
 
-#### Enemy Encounter Backgrounds (chunks 57â€“64)
+#### Enemy Encounter Backgrounds (chunks 57Ã¢â‚¬â€œ64)
 | Chunk | File | Content |
 |-------|------|---------|
-| 57 | enp1.grp | ENP1.GRP â€” encounter background 1 |
-| 58 | enp2.grp | ENP2.GRP â€” encounter background 2 |
-| 59 | enp3.grp | ENP3.GRP â€” encounter background 3 |
-| 60 | enp4.grp | ENP4.GRP â€” encounter background 4 |
-| 61 | enp5.grp | ENP5.GRP â€” encounter background 5 |
-| 62 | enp6.grp | ENP6.GRP â€” encounter background 6 |
-| 63 | enp7.grp | ENP7.GRP â€” encounter background 7 |
-| 64 | enp8.grp | ENP8.GRP â€” encounter background 8 |
+| 57 | enp1.grp | ENP1.GRP Ã¢â‚¬â€� encounter background 1 |
+| 58 | enp2.grp | ENP2.GRP Ã¢â‚¬â€� encounter background 2 |
+| 59 | enp3.grp | ENP3.GRP Ã¢â‚¬â€� encounter background 3 |
+| 60 | enp4.grp | ENP4.GRP Ã¢â‚¬â€� encounter background 4 |
+| 61 | enp5.grp | ENP5.GRP Ã¢â‚¬â€� encounter background 5 |
+| 62 | enp6.grp | ENP6.GRP Ã¢â‚¬â€� encounter background 6 |
+| 63 | enp7.grp | ENP7.GRP Ã¢â‚¬â€� encounter background 7 |
+| 64 | enp8.grp | ENP8.GRP Ã¢â‚¬â€� encounter background 8 |
 
-#### Enemy Combat Sprites (chunks 65â€“73)
+#### Enemy Combat Sprites (chunks 65Ã¢â‚¬â€œ73)
 | Chunk | File | Enemy |
 |-------|------|-------|
 | 65 | crab.grp | Crab |
@@ -210,9 +210,9 @@ See `zelres2_extended_chunks_reference.md` for detailed format analysis.
 | 70 | lega.grp | Lega |
 | 71 | drgn.grp | Dragon |
 | 72 | akma.grp | Akuma/Devil |
-| 73 | mao1.grp | Jashiin (MAO1 â€” final boss) |
+| 73 | mao1.grp | Jashiin (MAO1 Ã¢â‚¬â€� final boss) |
 
-#### Map Page Tile Attributes (chunks 74â€“84)
+#### Map Page Tile Attributes (chunks 74Ã¢â‚¬â€œ84)
 | Chunk | File | Content |
 |-------|------|---------|
 | 74 | mpp1.grp | Map page tile attributes 1 |
@@ -227,20 +227,20 @@ See `zelres2_extended_chunks_reference.md` for detailed format analysis.
 | 83 | mppa.grp | Map page tile attributes A |
 | 84 | mppb.grp | Map page tile attributes B |
 
-#### Music Sequences (chunks 85â€“95) â€” MSD format, raw AL=3
+#### Music Sequences (chunks 85Ã¢â‚¬â€œ95) Ã¢â‚¬â€� MSD format, raw AL=3
 | Chunk | File | Content |
 |-------|------|---------|
-| 85 | mus1.msd | MUS1.MSD â€” dungeon music track 1 |
-| 86 | mus2.msd | MUS2.MSD â€” dungeon music track 2 |
-| 87 | mus3.msd | MUS3.MSD â€” dungeon music track 3 |
-| 88 | mus4.msd | MUS4.MSD â€” dungeon music track 4 |
-| 89 | mus5.msd | MUS5.MSD â€” dungeon music track 5 |
-| 90 | mus6.msd | MUS6.MSD â€” dungeon music track 6 (longest) |
-| 91 | mus7.msd | MUS7.MSD â€” dungeon music track 7 |
-| 92 | mus8.msd | MUS8.MSD â€” dungeon music track 8 |
-| 93 | mbos.msd | MBOS.MSD â€” boss battle theme |
-| 94 | mfan.msd | MFAN.MSD â€” fanfare/level clear jingle |
-| 95 | mmao.msd | MMAO.MSD â€” Jashiin final boss theme |
+| 85 | mus1.msd | MUS1.MSD Ã¢â‚¬â€� dungeon music track 1 |
+| 86 | mus2.msd | MUS2.MSD Ã¢â‚¬â€� dungeon music track 2 |
+| 87 | mus3.msd | MUS3.MSD Ã¢â‚¬â€� dungeon music track 3 |
+| 88 | mus4.msd | MUS4.MSD Ã¢â‚¬â€� dungeon music track 4 |
+| 89 | mus5.msd | MUS5.MSD Ã¢â‚¬â€� dungeon music track 5 |
+| 90 | mus6.msd | MUS6.MSD Ã¢â‚¬â€� dungeon music track 6 (longest) |
+| 91 | mus7.msd | MUS7.MSD Ã¢â‚¬â€� dungeon music track 7 |
+| 92 | mus8.msd | MUS8.MSD Ã¢â‚¬â€� dungeon music track 8 |
+| 93 | mbos.msd | MBOS.MSD Ã¢â‚¬â€� boss battle theme |
+| 94 | mfan.msd | MFAN.MSD Ã¢â‚¬â€� fanfare/level clear jingle |
+| 95 | mmao.msd | MMAO.MSD Ã¢â‚¬â€� Jashiin final boss theme |
 
 See `zelres3_extended_chunks_reference.md` for detailed format analysis.
 
@@ -251,8 +251,8 @@ See `zelres3_extended_chunks_reference.md` for detailed format analysis.
 | Resource | Code | Data | Total | Extended |
 |----------|------|------|-------|----------|
 | ZELRES1 | 14 | 26 | 40 | none |
-| ZELRES2 | 21 | 37 | 58 | 18 (chunks 40â€“57) |
-| ZELRES3 | 13 | 83 | 96 | 56 (chunks 40â€“95) |
+| ZELRES2 | 21 | 37 | 58 | 18 (chunks 40Ã¢â‚¬â€œ57) |
+| ZELRES3 | 13 | 83 | 96 | 56 (chunks 40Ã¢â‚¬â€œ95) |
 | **Total** | **57** | **146** | **194** | **74** |
 
 **Walkthroughs**: 37 individual + 4 consolidated references + 2 extended references
@@ -260,7 +260,7 @@ See `zelres3_extended_chunks_reference.md` for detailed format analysis.
 
 ### Naming Convention (SAR code files)
 
-`X##PPPPP.asm` â€” 8.3 format
+`X##PPPPP.asm` Ã¢â‚¬â€� 8.3 format
 - `X` = zelres number (1/2/3)
 - `##` = zero-padded chunk number
 - `PPPPP` = 5-char purpose abbreviation
