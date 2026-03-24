@@ -18,17 +18,18 @@ def _discover_chunks(chunk_dir):
 
     Supports two naming schemes:
       - Legacy:  chunk_00.bin, chunk_01.bin, …
-      - New 8.3: X##PPPPP.bin  (e.g. 112FONTS.bin, 200MGAME.bin)
+      - New 8.3: X##PPPPP.ext  (e.g. 112FONTS.bin, 301MAPCA.mdt, 385MUS1S.msd)
+    Any file extension is accepted as long as the stem matches.
     """
     import re
     entries = {}  # chunk_index -> bytes
 
     for fname in os.listdir(chunk_dir):
-        if not fname.lower().endswith('.bin'):
+        stem, ext = os.path.splitext(fname)
+        if not ext:
             continue
-        stem = fname[:-4]  # strip .bin
 
-        # New naming: X##PPPPP  (8 chars: 1 zelres digit + 2 chunk digits + 5 purpose)
+        # New naming: X##PPPPP  (8 chars stem: 1 zelres digit + 2 chunk digits + 5 purpose)
         m = re.match(r'^[123](\d{2})\w{5}$', stem)
         if m:
             idx = int(m.group(1))
