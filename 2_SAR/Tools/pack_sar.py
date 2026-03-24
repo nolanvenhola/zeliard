@@ -29,8 +29,8 @@ def _discover_chunks(chunk_dir):
         if not ext:
             continue
 
-        # New naming: X##PPPPP  (8 chars stem: 1 zelres digit + 2 chunk digits + 5 purpose)
-        m = re.match(r'^[123](\d{2})\w{5}$', stem)
+        # New naming: X##PPPP(P)  (7-8 chars stem: 1 zelres digit + 2 chunk digits + 4-5 purpose)
+        m = re.match(r'^[123](\d{2})\w{1,5}$', stem)
         if m:
             idx = int(m.group(1))
             with open(os.path.join(chunk_dir, fname), 'rb') as f:
