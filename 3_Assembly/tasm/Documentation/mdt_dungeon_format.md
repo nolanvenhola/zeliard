@@ -1,0 +1,137 @@
+# MDT Dungeon Map File Format
+
+**Source**: Confirmed by binary analysis against `MP10.MDT` (Cavern of Malicia)
+**Verified**: Cavern name string "Cavern of Malicia" found at expected offset, all pointer values match.
+
+---
+
+## Overview
+
+`.MDT` files are dungeon map data files loaded at segment offset `0xC000` at runtime.
+All pointer values stored in the header are **absolute offsets within the loaded segment**
+(i.e. a pointer value of `0xD555` means segment offset `0xD555`, which is file offset `0xD555 - 0xC000 = 0x1555`).
+
+Dungeon height is always **64 tiles**. Width varies per dungeon.
+
+---
+
+## Header (18 bytes at file offset 0x0000 = segment offset 0xC000)
+
+| File Offset | Seg Offset | Size | Description |
+|-------------|------------|------|-------------|
+| 0x00 | 0xC000 | 2 | Unknown (pointer — points near end of file) |
+| 0x02 | 0xC002 | 2 | Dungeon width in tiles (height always = 64) |
+| 0x04 | 0xC004 | 2 | Pointer → vertical platforms array |
+| 0x06 | 0xC006 | 2 | Pointer → air stream objects array |
+| 0x08 | 0xC008 | 2 | Pointer → horizontal platforms array |
+| 0x0A | 0xC00A | 2 | Pointer → doors array |
+| 0x0C | 0xC00C | 2 | Pointer → accomplished items check array |
+| 0x0E | 0xC00E | 2 | Pointer → cavern name renderer data |
+| 0x10 | 0xC010 | 2 | Pointer → monsters array |
+
+---
+
+## Data Sections
+
+All arrays are terminated with a `0xFFFF` stop marker word.
+
+### Vertical Platforms
+**Entry size: 3 bytes**
+
+| Offset | Size | Description |
+|--------|------|-------------|
+| 0 | 1 | X tile position |
+| 1 | 1 | Y tile position |
+| 2 | 1 | Flags |
+
+### Air Stream Objects
+**Entry size: 3 bytes** — exact field layout TBD
+
+### Horizontal Platforms
+**Entry size: 7 bytes**
+
+| Offset | Size | Description |
+|--------|------|-------------|
+| 0 | 1 | X tile position |
+| 1 | 1 | Type / flags |
+| 2 | 1 | Y tile position |
+| 3 | 1 | Width in tiles |
+| 4-6 | 3 | Additional flags |
+
+### Doors
+**Entry size: 12 bytes** — exact field layout TBD
+
+### Accomplished Items Check
+**Entry size: variable** — TBD, stop marker = `0xFFFF`
+
+### Cavern Name Renderer
+Contains the ASCII cavern name string (null-terminated) plus rendering parameters.
+Confirmed: `MP10.MDT` contains "Cavern of Malicia\t" at file offset 0x1617.
+
+### Monsters
+**Entry size: 16 bytes** — some monsters occupy 2 consecutive records (32 bytes total).
+Stop marker = `0xFFFF`.
+`MP10.MDT` (Cavern of Malicia) has 54 monster entries.
+
+---
+
+## Map Index (from stick.bin reference table)
+
+| File | zelres | chunk | Town | Cavern |
+|------|--------|-------|------|--------|
+| MP10.MDT | zelres3 | 20 | Muralla | Malicia |
+| MP1D.MDT | zelres3 | 21 | ? | ? |
+| MP20.MDT | zelres3 | 22 | Satono | Peligro |
+| MP21.MDT | zelres3 | 23 | ? | ? |
+| MP2D.MDT | zelres3 | 24 | ? | ? |
+| MP30.MDT | zelres3 | 25 | Bosque | Madera/Riza |
+| MP31.MDT | zelres3 | 26 | ? | ? |
+| MP3D.MDT | zelres3 | 27 | ? | ? |
+| MP40.MDT | zelres3 | 28 | Helada | Escarcha/Glacial |
+| MP41.MDT | zelres3 | 29 | ? | ? |
+| MP4D.MDT | zelres3 | 30 | ? | ? |
+| MP50.MDT | zelres3 | 31 | Tumba | Corroer/Cementar |
+| MP51.MDT | zelres3 | 32 | ? | ? |
+| MP5D.MDT | zelres3 | 33 | ? | ? |
+| MP60.MDT | zelres3 | 34 | Dorado | Tesoro/Plata |
+| MP61.MDT | zelres3 | 35 | ? | ? |
+| MP62.MDT | zelres3 | 36 | ? | ? |
+| MP6D.MDT | zelres3 | 37 | ? | ? |
+| MP70.MDT | zelres3 | 38 | Llama | Caliente/Reaccion/Corroer |
+| MP71.MDT | zelres3 | 39 | ? | ? |
+| MP72.MDT | zelres3 | 40 | ? | ? |
+| MP73.MDT | zelres3 | 41 | ? | ? |
+| MP7D.MDT | zelres3 | 42 | ? | ? |
+| MP80.MDT | zelres3 | 43 | Pureza | Absor/Millagro/Desleal/Faltar/Final |
+| MP81.MDT | zelres3 | 44 | ? | ? |
+| MP82.MDT | zelres3 | 45 | ? | ? |
+| MP83.MDT | zelres3 | 46 | ? | ? |
+| MP84.MDT | zelres3 | 47 | ? | ? |
+| MP8D.MDT | zelres3 | 48 | ? | ? |
+| MP90.MDT | zelres3 | 49 | Esco | Final |
+| MPA0.MDT | zelres3 | 50 | ? | ? |
+
+### Overworld Town Maps (zelres2)
+
+| File | zelres | chunk | Town |
+|------|--------|-------|------|
+| CMAP.MDT | zelres2 | 36 | ? (Castillo?) |
+| MRMP.MDT | zelres2 | 37 | Muralla |
+| STMP.MDT | zelres2 | 38 | Satono |
+| BSMP.MDT | zelres2 | 39 | Bosque |
+| HLMP.MDT | zelres2 | 40 | Helada |
+| TMMP.MDT | zelres2 | 41 | Tumba |
+| DRMP.MDT | zelres2 | 42 | Dorado |
+| LLMP.MDT | zelres2 | 43 | Llama |
+| PRMP.MDT | zelres2 | 44 | Pureza |
+| ESMP.MDT | zelres2 | 45 | Esco |
+
+---
+
+## Notes
+
+- The map index prefix encodes world/section: `1x` = Muralla, `2x` = Satono, `3x` = Bosque,
+  `4x` = Helada, `5x` = Tumba, `6x` = Dorado, `7x` = Llama, `8x` = Pureza, `9x` = Esco, `Ax` = ?
+- The suffix digit (0, 1, 2, 3, D) likely indicates sub-area type within a world
+  (`D` may = "dungeon exit" or "deep" section)
+- Overworld town maps (xxMP.MDT) may use a different internal format from dungeon maps
