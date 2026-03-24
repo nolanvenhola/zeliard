@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 1
 106PLADV.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 2
 106PLADV.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     106	      =	3002		     data_68e	     equ     3002h		     ;*
     107	      =	3004		     data_69e	     equ     3004h		     ;*
     108	      =	3006		     data_70e	     equ     3006h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 3
 106PLADV.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     160	      =	7C5D		     data_122e	     equ     7C5Dh		     ;*
     161	      =	7C5E		     data_123e	     equ     7C5Eh		     ;*
     162	      =	7C5F		     data_124e	     equ     7C5Fh		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 4
 106PLADV.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     214	      =	0049		     data_176e	     equ     49h
     215	      =	0083		     data_177e	     equ     83h
     216	      =	00C2		     data_178e	     equ     0C2h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 5
 106PLADV.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     268
     269	0000			     zr1_06	     proc    far
     270
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 6
 106PLADV.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     322	0086  75 33				     jnz     loc_8		     ; Jump if not zero
     323	0088  F6 06 7C45 01			     test    byte ptr ds:data_105e,1
     324	008D  74 0C				     jz	     loc_7		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 7
 106PLADV.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     376	0126  2E: FF 16	2018			     call    word ptr cs:data_57e
     377	012B			     loc_9:
     378	012B  F6 06 0093 FF			     test    byte ptr ds:[93h],0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 8
 106PLADV.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     430	01B3  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
     431	01B5  E8 06F8				     call    player_multiply_2
     432	01B8  F6 06 7C44 FF			     test    byte ptr ds:data_185e,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 9
 106PLADV.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     484	0238			     loc_20:
     485	0238  80 0E 00E7 01			     or	     byte ptr ds:[0E7h],1
     486	023D  C6 06 7C4B FF			     mov     byte ptr ds:data_109e,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 10
 106PLADV.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     538	02AB  88 64 05				     mov     [si+5],ah
     539	02AE  88 44 02				     mov     [si+2],al
     540	02B1  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 11
 106PLADV.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     592	0316  80 7F 10 FD			     cmp     byte ptr [bx+10h],0FDh
     593	031A  74 01				     je	     loc_27		     ; Jump if equal
     594	031C  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 12
 106PLADV.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     646	0386  B9 1658				     mov     cx,1658h
     647	0389  2E: FF 16	2026			     call    word ptr cs:data_61e
     648	038E  C6 06 FF1D 00			     mov     byte ptr ds:data_154e,0
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 13
 106PLADV.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     700	0404  50				     push    ax
     701	0405  B1 0A				     mov     cl,0Ah
     702	0407  F6 E1				     mul     cl			     ; ax = reg	* al
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 14
 106PLADV.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     754	0472  E9 01DC				     jmp     loc_70
     755	0475			     loc_45:
     756	0475  3C FF				     cmp     al,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 15
 106PLADV.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     808	04EF  FE 06 7C54			     inc     byte ptr ds:data_192e
     809	04F3  80 3E 7C54 08			     cmp     byte ptr ds:data_192e,8
     810	04F8  75 20				     jne     loc_50		     ; Jump if not equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 16
 106PLADV.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     862	0577  74 01				     jz	     loc_54		     ; Jump if zero
     863	0579  C3				     retn
     864	057A			     loc_54:
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 17
 106PLADV.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     916	05EA  33 C9				     xor     cx,cx		     ; Zero register
     917	05EC			     loc_62:
     918	05EC  AC				     lodsb			     ; String [si] to al
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 18
 106PLADV.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
     970	0640  5A				     pop     dx
     971	0641  5E				     pop     si
     972	0642  59				     pop     cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 19
 106PLADV.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1024	06B7  81 C3 1832			     add     bx,1832h
    1025	06BB  53				     push    bx
    1026	06BC  B9 1219				     mov     cx,1219h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 20
 106PLADV.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1078	0733  0A DB				     or	     bl,bl		     ; Zero ?
    1079	0735  75 01				     jnz     loc_82		     ; Jump if not zero
    1080	0737  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 21
 106PLADV.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1132	0782  E2 F0				     loop    locloop_84		     ; Loop if cx > 0
    1133
    1134	0784  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 22
 106PLADV.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1186	0803  03 DB				     add     bx,bx
    1187	0805  03 DB				     add     bx,bx
    1188	0807  03 1E FF2A			     add     bx,ds:data_159e
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 23
 106PLADV.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1240	0883  32 ED				     xor     ch,ch		     ; Zero register
    1241	0885  46				     inc     si
    1242
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 24
 106PLADV.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1294	08BE  8A 0E FF33			     mov     cl,ds:data_161e
    1295	08C2  B0 04				     mov     al,4
    1296	08C4  F6 E1				     mul     cl			     ; ax = reg	* al
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 25
 106PLADV.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1348				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
    1349
    1350	093C			     player_process_loop	     proc    near
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 26
 106PLADV.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1402	0979  0E				     push    cs
    1403	097A  07				     pop     es
    1404	097B  33 C0				     xor     ax,ax		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 27
 106PLADV.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1456	09E5  07				     pop     es
    1457	09E6  BF 7C7A				     mov     di,data_132e
    1458	09E9  8A 44 F8				     mov     al,[si-8]
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 28
 106PLADV.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1510				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
    1511				     ;				    SUBROUTINE
    1512				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 29
 106PLADV.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1564
    1565	0AA9			     player_func_23:
    1566	0AA9  A0 FF14				     mov     al,ds:data_208e
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 30
 106PLADV.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1618	0AFC  75 01				     jnz     loc_121		     ; Jump if not zero
    1619	0AFE  C3				     retn
    1620	0AFF			     loc_121:
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 31
 106PLADV.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1672	0B58  80 8A 1E 83 00 80			     db	      80h, 8Ah,	1Eh, 83h, 00h, 80h
    1673	0B5E  C3 04 32 FF 03 1E			     db	     0C3h, 04h,	32h,0FFh, 03h, 1Eh
    1674	0B64  80 00 3B DA 72 6C			     db	      80h, 00h,	3Bh,0DAh, 72h, 6Ch
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 32
 106PLADV.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1726	0BD9  04 10				     add     al,10h
    1727	0BDB  88 44 04				     mov     [si+4],al
    1728	0BDE  8A E8				     mov     ch,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 33
 106PLADV.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1780	0C33			     loc_137:
    1781	0C33  8B 1C				     mov     bx,[si]
    1782				     ;*		     cmp     bx,0FFFFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 34
 106PLADV.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1834	0C86  BE 6CA4				     mov     si,data_95e
    1835	0C89  2E: FF 16	200E			     call    word ptr cs:data_52e
    1836	0C8E  BE 6CAC				     mov     si,data_96e
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 35
 106PLADV.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1888	0CE0  74 03				     jz	     loc_144		     ; Jump if zero
    1889				     ;*		     jmp     loc_160		     ;*
    1890	0CE2  E9 17 03				     db	     0E9h, 17h,	03h	     ;	Fixup -	byte match
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 36
 106PLADV.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1942	0D52  2E: 8E 06	FF2C			     mov     es,cs:data_160e
    1943	0D57  BF 4000				     mov     di,4000h
    1944	0D5A  B0 02				     mov     al,2
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 37
 106PLADV.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    1996	0DDE  23 4D 50 41 54 2E	47+		     db	     '#MPAT.GRP'
    1997	      52 50
    1998	0DE7  00 01				     db	     0,	1
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 38
 106PLADV.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2050	0E54  48				     dec     ax
    2051	0E55  39 04				     cmp     [si],ax
    2052	0E57  74 06				     je	     loc_154		     ; Jump if equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 39
 106PLADV.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2104	0EE5  C6 06 FF1A 28			     mov     byte ptr ds:data_153e,28h	     ; '('
    2105	0EEA  E8 F9C6				     call    player_func_14
    2106	0EED  C6 06 FF1D 00			     mov     byte ptr ds:data_154e,0
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 40
 106PLADV.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2158	0FA1			     loc_158:
    2159	0FA1  C6 06 FF24 04			     mov     byte ptr ds:data_156e,4
    2160	0FA6  B4 86				     mov     ah,86h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 41
 106PLADV.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2212	1029  79 04				     jns     loc_162		     ; Jump if not sign
    2213	102B  03 06 C002			     add     ax,ds:data_137e
    2214	102F			     loc_162:
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 42
 106PLADV.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2266	1097  8B 36 FF4C			     mov     si,ds:data_215e
    2267	109B  AC				     lodsb			     ; String [si] to al
    2268	109C  89 36 FF4C			     mov     ds:data_215e,si
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 43
 106PLADV.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2320	1103  58				     pop     ax
    2321	1104  53				     push    bx
    2322	1105  8A D8				     mov     bl,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 44
 106PLADV.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2374	117F  72 11				     jb	     loc_181		     ; Jump if below
    2375	1181  E8 00E9				     call    player_check_state_2
    2376	1184  51				     push    cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 45
 106PLADV.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2428	11D6  32 C0				     xor     al,al		     ; Zero register
    2429	11D8  2E: FF 16	2000			     call    word ptr cs:data_47e
    2430	11DD  C6 06 7C52 00			     mov     byte ptr ds:data_113e,0
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 46
 106PLADV.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2482	1241  3C 0C				     cmp     al,0Ch
    2483	1243  74 14				     je	     loc_189		     ; Jump if equal
    2484	1245  8A E0				     mov     ah,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 47
 106PLADV.asm
 
 
@@ -2771,7 +2771,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2536	1292  3C 0D				     cmp     al,0Dh
    2537	1294  75 05				     jne     loc_195		     ; Jump if not equal
    2538	1296  33 D2				     xor     dx,dx		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 48
 106PLADV.asm
 
 
@@ -2830,7 +2830,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2590	12F2  B9 000A				     mov     cx,0Ah
    2591	12F5  E8 0041				     call    player_func_42
    2592	12F8  AA				     stosb			     ; Store al	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 49
 106PLADV.asm
 
 
@@ -2889,7 +2889,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2644	1333  50				     push    ax
    2645	1334  8A C6				     mov     al,dh
    2646	1336  AA				     stosb			     ; Store al	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 50
 106PLADV.asm
 
 
@@ -2948,7 +2948,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2698	137E  24 03				     and     al,3
    2699	1380  3C 01				     cmp     al,1
    2700	1382  75 69				     jne     loc_212		     ; Jump if not equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 51
 106PLADV.asm
 
 
@@ -3007,7 +3007,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2752	13ED  3C 02				     cmp     al,2
    2753	13EF  74 01				     je	     loc_213		     ; Jump if equal
    2754	13F1  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 52
 106PLADV.asm
 
 
@@ -3066,7 +3066,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2806	1461  C6 06 FF1A 00			     mov     byte ptr ds:data_211e,0
    2807	1466  59				     pop     cx
    2808	1467  E2 C5				     loop    locloop_216	     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 53
 106PLADV.asm
 
 
@@ -3125,7 +3125,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2860
    2861				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
    2862				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 54
 106PLADV.asm
 
 
@@ -3184,7 +3184,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2914	1508  58				     pop     ax
    2915	1509  A2 FF52				     mov     ds:data_216e,al
    2916	150C  88 26 FF53			     mov     ds:data_217e,ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 55
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 55
 106PLADV.asm
 
 
@@ -3243,7 +3243,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    2968	1554  8B D8				     mov     bx,ax
    2969	1556  03 C0				     add     ax,ax
    2970	1558  03 C0				     add     ax,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 56
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 56
 106PLADV.asm
 
 
@@ -3302,7 +3302,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3022	15B3  2E: F6 06	7C64 FF			     test    byte ptr cs:data_128e,0FFh
    3023	15B9  74 0F				     jz	     loc_229		     ; Jump if zero
    3024	15BB  BF FF6C				     mov     di,data_172e
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 57
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 57
 106PLADV.asm
 
 
@@ -3361,7 +3361,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3076	1645  BB 0080				     mov     bx,80h
    3077	1648  B1 4C				     mov     cl,4Ch		     ; 'L'
    3078	164A  2E: FF 16	202A			     call    word ptr cs:data_63e
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 58
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 58
 106PLADV.asm
 
 
@@ -3420,7 +3420,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3130	16E0  0E				     push    cs
    3131	16E1  07				     pop     es
    3132	16E2  BF 7C67				     mov     di,data_129e
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 59
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 59
 106PLADV.asm
 
 
@@ -3479,7 +3479,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3184	175A			     loc_240:
    3185	175A  32 E4				     xor     ah,ah		     ; Zero register
    3186	175C  8B C8				     mov     cx,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 60
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 60
 106PLADV.asm
 
 
@@ -3538,7 +3538,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3238				     ;				    SUBROUTINE
    3239				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
    3240
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 61
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 61
 106PLADV.asm
 
 
@@ -3597,7 +3597,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3292	1816  50				     push    ax
    3293	1817  8A C4				     mov     al,ah
    3294	1819  32 E4				     xor     ah,ah		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 62
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 62
 106PLADV.asm
 
 
@@ -3656,7 +3656,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3346	188C  75 25				     jnz     loc_254		     ; Jump if not zero
    3347	188E  E2 FB				     loop    locloop_252	     ; Loop if cx > 0
    3348
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 63
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 63
 106PLADV.asm
 
 
@@ -3715,7 +3715,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3400	190A  5E				     pop     si
    3401	190B  E8 FEB9				     call    player_func_51
    3402	190E  C6 06 FF1D 00			     mov     byte ptr ds:data_212e,0
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 64
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 64
 106PLADV.asm
 
 
@@ -3774,7 +3774,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3454	1992  A8 08				     test    al,8
    3455	1994  75 FA				     jnz     loc_263		     ; Jump if not zero
    3456	1996  C6 06 FF29 00			     mov     byte ptr ds:data_214e,0
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 65
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 65
 106PLADV.asm
 
 
@@ -3833,7 +3833,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3508	1A0F  02 CA				     add     cl,dl
    3509	1A11  80 E9 02				     sub     cl,2
    3510	1A14  8A 2E FF6A			     mov     ch,ds:data_221e
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 66
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 66
 106PLADV.asm
 
 
@@ -3892,7 +3892,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3562	1A8B  8A D1				     mov     dl,cl
    3563	1A8D  02 C9				     add     cl,cl
    3564	1A8F  02 C9				     add     cl,cl
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 67
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 67
 106PLADV.asm
 
 
@@ -3951,7 +3951,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3616	1B06  A0 7C5E				     mov     al,ds:data_123e
    3617	1B09  03 C0				     add     ax,ax
    3618	1B0B  03 C0				     add     ax,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 68
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 68
 106PLADV.asm
 
 
@@ -4010,7 +4010,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3670	1B7C  B0 FF				     mov     al,0FFh
    3671	1B7E  E8 FF30				     call    player_func_55
    3672	1B81  E8 FF9A				     call    player_func_56
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 69
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 69
 106PLADV.asm
 
 
@@ -4058,7 +4058,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 1
    3713
    3714
    3715						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 70
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 70
 Symbol Table
 
 
@@ -4066,9 +4066,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "106PLADV"
-??TIME				  Text	 "12:29:04"
+??TIME				  Text	 "00:08:51"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -4117,7 +4117,7 @@ DATA_137E			  Number C002
 DATA_138E			  Number C004
 DATA_139E			  Number C007
 DATA_140E			  Number C009
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 71
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 71
 Symbol Table
 
 
@@ -4176,7 +4176,7 @@ DATA_191E			  Number 7C53
 DATA_192E			  Number 7C54
 DATA_193E			  Number 7C56
 DATA_194E			  Number 7C57
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 72
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 72
 Symbol Table
 
 
@@ -4235,7 +4235,7 @@ DATA_64E			  Number 2038
 DATA_65E			  Number 2040
 DATA_66E			  Number 2042
 DATA_67E			  Number 278B
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 73
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 73
 Symbol Table
 
 
@@ -4294,7 +4294,7 @@ LOCLOOP_249			  Near	 SEG_A:180D
 LOCLOOP_252			  Near	 SEG_A:188B
 LOCLOOP_256			  Near	 SEG_A:18F8
 LOCLOOP_270			  Near	 SEG_A:19F6
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 74
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 74
 Symbol Table
 
 
@@ -4353,7 +4353,7 @@ LOC_143				  Near	 SEG_A:0CD9
 LOC_144				  Near	 SEG_A:0CE5
 LOC_145				  Near	 SEG_A:0CF9
 LOC_146				  Near	 SEG_A:0CFE
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 75
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 75
 Symbol Table
 
 
@@ -4412,7 +4412,7 @@ LOC_196				  Near	 SEG_A:12C4
 LOC_197				  Near	 SEG_A:12C9
 LOC_199				  Near	 SEG_A:1309
 LOC_20				  Near	 SEG_A:0238
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 76
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 76
 Symbol Table
 
 
@@ -4471,7 +4471,7 @@ LOC_258				  Near	 SEG_A:1935
 LOC_259				  Near	 SEG_A:1952
 LOC_26				  Near	 SEG_A:02D3
 LOC_260				  Near	 SEG_A:1959
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 77
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 77
 Symbol Table
 
 
@@ -4530,7 +4530,7 @@ LOC_53				  Near	 SEG_A:0561
 LOC_54				  Near	 SEG_A:057A
 LOC_55				  Near	 SEG_A:05A5
 LOC_56				  Near	 SEG_A:05AF
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 78
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 78
 Symbol Table
 
 
@@ -4589,7 +4589,7 @@ PLAYER_FUNC_1			  Near	 SEG_A:0243
 PLAYER_FUNC_12			  Near	 SEG_A:0894
 PLAYER_FUNC_14			  Near	 SEG_A:08B3
 PLAYER_FUNC_17			  Near	 SEG_A:0954
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 79
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 79
 Symbol Table
 
 
@@ -4648,7 +4648,7 @@ CALLF
 CALLFX
 CALLS
 JMPN
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:05	    Page 80
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:52	    Page 80
 Symbol Table
 
 

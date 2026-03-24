@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 1
 gmhgc.asm
 
 
@@ -57,7 +57,7 @@ gmhgc.asm
 1    52				     ;
 1    53
 1    54				     callf	     macro   location
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 2
 gmhgc.asm
 
 
@@ -116,7 +116,7 @@ gmhgc.asm
     106	      =	BB23		     data_34e	     equ     0BB23h		     ;*
     107	      =	F500		     data_35e	     equ     0F500h		     ;*
     108	      =	F502		     data_36e	     equ     0F502h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 3
 gmhgc.asm
 
 
@@ -175,7 +175,7 @@ gmhgc.asm
     160	0051  E9 0092				     jmp     loc_8
     161	0054			     loc_2:
     162	0054  57				     push    di
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 4
 gmhgc.asm
 
 
@@ -234,7 +234,7 @@ gmhgc.asm
     214	00B0  8A FD				     mov     bh,ch
     215	00B2  80 EF 02				     sub     bh,2
     216	00B5			     loc_6:
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 5
 gmhgc.asm
 
 
@@ -293,7 +293,7 @@ gmhgc.asm
     268	0103  75 E8				     jnz     loc_9		     ; Jump if not zero
     269	0105  C3				     retn
     270	0106			     clear_screen	     endp
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 6
 gmhgc.asm
 
 
@@ -352,7 +352,7 @@ gmhgc.asm
     322	0146  8E C0				     mov     es,ax
     323	0148  BE 21D6				     mov     si,data_18e
     324	014B  B9 0008				     mov     cx,8
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 7
 gmhgc.asm
 
 
@@ -411,7 +411,7 @@ gmhgc.asm
     376	01BA  D0 C0				     rol     al,1		     ; Rotate
     377	01BC  D0 C0				     rol     al,1		     ; Rotate
     378	01BE  59				     pop     cx
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 8
 gmhgc.asm
 
 
@@ -470,7 +470,7 @@ gmhgc.asm
     430	0202  03 C2				     add     ax,dx
     431	0204  80 C7 14				     add     bh,14h
     432	0207  8A D7				     mov     dl,bh
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 9
 gmhgc.asm
 
 
@@ -529,7 +529,7 @@ gmhgc.asm
     484
     485	025B			     plot_pixel		     proc    near
     486	025B  2E: F6 06	22D5 FF			     test    byte ptr cs:data_19e,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 10
 gmhgc.asm
 
 
@@ -588,7 +588,7 @@ gmhgc.asm
     538	02C8  72 07				     jb	     loc_34		     ; Jump if below
     539	02CA  26: 20 05				     and     es:[di],al
     540	02CD  81 C7 A05A			     add     di,0A05Ah
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 11
 gmhgc.asm
 
 
@@ -647,7 +647,7 @@ gmhgc.asm
     592	0332  B4 AA				     mov     ah,0AAh
     593	0334  E8 0057				     call    fill_vertical_line
     594	0337  FE CB				     dec     bl
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 12
 gmhgc.asm
 
 
@@ -706,7 +706,7 @@ gmhgc.asm
     646	037A  D1 EB				     shr     bx,1		     ; Shift w/zeros fill
     647	037C  D1 EB				     shr     bx,1		     ; Shift w/zeros fill
     648	037E  80 E1 07				     and     cl,7
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 13
 gmhgc.asm
 
 
@@ -765,7 +765,7 @@ gmhgc.asm
     700	03E8  1E				     push    ds
     701	03E9  56				     push    si
     702	03EA  80 E3 03				     and     bl,3
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 14
 gmhgc.asm
 
 
@@ -824,7 +824,7 @@ gmhgc.asm
     754	042B  D1 E0				     shl     ax,1		     ; Shift w/zeros fill
     755	042D  8B F0				     mov     si,ax
     756	042F  03 36 F504			     add     si,ds:data_37e
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 15
 gmhgc.asm
 
 
@@ -883,7 +883,7 @@ gmhgc.asm
     808	04A1  80 F9 06				     cmp     cl,6
     809	04A4  74 01				     je	     loc_53		     ; Jump if equal
     810	04A6  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 16
 gmhgc.asm
 
 
@@ -942,7 +942,7 @@ gmhgc.asm
     862	050E  B8 37BB				     mov     ax,37BBh
     863	0511  BB FF01				     mov     bx,data_39e
     864	0514  E8 00B0				     call    render_tilemap_large
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 17
 gmhgc.asm
 
 
@@ -1001,7 +1001,7 @@ gmhgc.asm
     916				     ;				    SUBROUTINE
     917				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
     918				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 18
 gmhgc.asm
 
 
@@ -1060,7 +1060,7 @@ gmhgc.asm
     970	05B8  03 C3				     add     ax,bx
     971	05BA			     loc_60:
     972	05BA  02 D1				     add     dl,cl
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 19
 gmhgc.asm
 
 
@@ -1119,7 +1119,7 @@ gmhgc.asm
    1024	05EF  59				     pop     cx
    1025	05F0  5B				     pop     bx
    1026	05F1  8A C5				     mov     al,ch
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 20
 gmhgc.asm
 
 
@@ -1178,7 +1178,7 @@ gmhgc.asm
    1078	0640  32 E4				     xor     ah,ah		     ; Zero register
    1079	0642  03 C0				     add     ax,ax
    1080	0644  03 C0				     add     ax,ax
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 21
 gmhgc.asm
 
 
@@ -1237,7 +1237,7 @@ gmhgc.asm
    1132	06B2  8B E8				     mov     bp,ax
    1133	06B4  B8 B000				     mov     ax,0B000h
    1134	06B7  8E C0				     mov     es,ax
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 22
 gmhgc.asm
 
 
@@ -1296,7 +1296,7 @@ gmhgc.asm
    1186	0753  EB 03				     jmp     short loc_74
    1187
    1188	0755			     locloop_73:
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 23
 gmhgc.asm
 
 
@@ -1355,7 +1355,7 @@ gmhgc.asm
    1240	07BE  32 E4				     xor     ah,ah		     ; Zero register
    1241	07C0  B9 00C0				     mov     cx,0C0h
    1242	07C3  F7 E1				     mul     cx			     ; dx:ax = reg * ax
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 24
 gmhgc.asm
 
 
@@ -1414,7 +1414,7 @@ gmhgc.asm
    1294				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1295				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1296				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 25
 gmhgc.asm
 
 
@@ -1473,7 +1473,7 @@ gmhgc.asm
    1348	094C  81 C5 A05A			     add     bp,0A05Ah
    1349	0950			     loc_79:
    1350	0950  59				     pop     cx
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 26
 gmhgc.asm
 
 
@@ -1532,7 +1532,7 @@ gmhgc.asm
    1402	09B8  01 01 03 02 00 03			     db	     1,	1, 3, 2, 0, 3
    1403	09BE  02 01 01 01 03 02			     db	     2,	1, 1, 1, 3, 2
    1404	09C4  03 03 02 02 03 03			     db	     3,	3, 2, 2, 3, 3
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 27
 gmhgc.asm
 
 
@@ -1591,7 +1591,7 @@ gmhgc.asm
    1456	0A26  B8 B000				     mov     ax,0B000h
    1457	0A29  8E C0				     mov     es,ax
    1458	0A2B  B9 0008				     mov     cx,8
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 28
 gmhgc.asm
 
 
@@ -1650,7 +1650,7 @@ gmhgc.asm
    1510	0A8E  B9 0008				     mov     cx,8
    1511
    1512	0A91			     locloop_85:
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 29
 gmhgc.asm
 
 
@@ -1709,7 +1709,7 @@ gmhgc.asm
    1564	0AEE  72 04				     jb	     loc_89		     ; Jump if below
    1565	0AF0  81 C6 A05A			     add     si,0A05Ah
    1566	0AF4			     loc_89:
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 30
 gmhgc.asm
 
 
@@ -1768,7 +1768,7 @@ gmhgc.asm
    1618	0B4F  32 FF				     xor     bh,bh		     ; Zero register
    1619	0B51  8A EF				     mov     ch,bh
    1620
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 31
 gmhgc.asm
 
 
@@ -1827,7 +1827,7 @@ gmhgc.asm
    1672	0BAC  2E: 80 06	2E84 08			     add     byte ptr cs:data_27e,8
    1673	0BB2  2E: 8A 0E	2E84			     mov     cl,cs:data_27e
    1674	0BB7  2E: 8B 1E	2E82			     mov     bx,cs:data_26e
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 32
 gmhgc.asm
 
 
@@ -1886,7 +1886,7 @@ gmhgc.asm
    1726										     ;*	No entry point to code
    1727	0C18  53				     push    bx
    1728	0C19  33 DB				     xor     bx,bx		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 33
 gmhgc.asm
 
 
@@ -1945,7 +1945,7 @@ gmhgc.asm
    1780	0C81  57				     push    di
    1781	0C82  A0 2E7F				     mov     al,ds:data_23e
    1782	0C85  B9 0005				     mov     cx,5
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 34
 gmhgc.asm
 
 
@@ -2004,7 +2004,7 @@ gmhgc.asm
    1834	0D15  26: 89 05				     mov     es:[di],ax
    1835	0D18  26: 8B 46	02			     mov     ax,es:[bp+2]
    1836	0D1C  26: 89 45	02			     mov     es:[di+2],ax
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 35
 gmhgc.asm
 
 
@@ -2063,7 +2063,7 @@ gmhgc.asm
    1888				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1889				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1890				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 36
 gmhgc.asm
 
 
@@ -2122,7 +2122,7 @@ gmhgc.asm
    1942				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1943				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1944				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 37
 gmhgc.asm
 
 
@@ -2158,7 +2158,7 @@ gmhgc.asm
    1973
    1974
    1975						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 38
 Symbol Table
 
 
@@ -2166,9 +2166,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "gmhgc	  "
-??TIME				  Text	 "11:45:31"
+??TIME				  Text	 "00:07:48"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -2217,7 +2217,7 @@ FADE_SCREEN_ROW			  Near	 SEG_A:01CA
 FILL_HORIZONTAL_LINE		  Near	 SEG_A:00AB
 FILL_RECTANGLE			  Near	 SEG_A:0C7D
 FILL_VERTICAL_LINE		  Near	 SEG_A:038E
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 39
 Symbol Table
 
 
@@ -2276,7 +2276,7 @@ LOC_3				  Near	 SEG_A:0066
 LOC_31				  Near	 SEG_A:02B3
 LOC_32				  Near	 SEG_A:02B7
 LOC_34				  Near	 SEG_A:02D1
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 40
 Symbol Table
 
 
@@ -2335,7 +2335,7 @@ LOC_93				  Near	 SEG_A:0B72
 LOC_94				  Near	 SEG_A:0B8B
 LOC_95				  Near	 SEG_A:0B91
 LOC_96				  Near	 SEG_A:0BAC
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:31	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:48	    Page 41
 Symbol Table
 
 

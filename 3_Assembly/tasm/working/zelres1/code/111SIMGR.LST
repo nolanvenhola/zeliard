@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 1
 111SIMGR.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 2
 111SIMGR.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     106	      =	6000		     data_33e	     equ     6000h		     ;*
     107	      =	A000		     data_34e	     equ     0A000h		     ;*
     108	      =	C00F		     data_35e	     equ     0C00Fh		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 3
 111SIMGR.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     160	003D			     locloop_1:
     161	003D  51				     push    cx
     162	003E  56				     push    si
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 4
 111SIMGR.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     214	009D  E8 013C				     call    simg_func_4
     215	00A0			     loc_7:
     216	00A0  FE C3				     inc     bl
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 5
 111SIMGR.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     268	00F2  02 C0				     add     al,al
     269	00F4  02 C0				     add     al,al
     270	00F6  02 C0				     add     al,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 6
 111SIMGR.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     322	013A  57				     push    di
     323	013B  56				     push    si
     324	013C  53				     push    bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 7
 111SIMGR.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     376	01B1  59				     pop     cx
     377	01B2  E2 C8				     loop    locloop_18		     ; Loop if cx > 0
     378
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 8
 111SIMGR.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     430	0207			     loc_23:
     431	0207  4F				     dec     di
     432	0208  4E				     dec     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 9
 111SIMGR.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     484	026F  D1 EA				     shr     dx,1		     ; Shift w/zeros fill
     485	0271  D1 EA				     shr     dx,1		     ; Shift w/zeros fill
     486	0273  02 E4				     add     ah,ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 10
 111SIMGR.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     538	02CF  57				     push    di
     539	02D0  06				     push    es
     540	02D1  2E: 8E 06	FF2C			     mov     es,cs:data_40e
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 11
 111SIMGR.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     592	0324  AC				     lodsb			     ; String [si] to al
     593	0325  8A D8				     mov     bl,al
     594	0327  8A FA				     mov     bh,dl
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 12
 111SIMGR.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     646	039E  74 12				     jz	     loc_40		     ; Jump if zero
     647	03A0  56				     push    si
     648	03A1  53				     push    bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 13
 111SIMGR.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     700	0418			     simg_multiply	     endp
     701
     702
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 14
 111SIMGR.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     754	0484  B8 A000				     mov     ax,0A000h
     755	0487  8E C0				     mov     es,ax
     756	0489  8E D8				     mov     ds,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 15
 111SIMGR.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     808
     809				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
     810				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 16
 111SIMGR.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     862	0504  78 02				     js	     loc_50		     ; Jump if sign=1
     863	0506  B2 04				     mov     dl,4
     864	0508			     loc_50:
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 17
 111SIMGR.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     916	0551  83 C6 03				     add     si,3
     917	0554  EB 00				     jmp     short loc_53
     918
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 18
 111SIMGR.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
     970	05A4  51				     push    cx
     971	05A5  AC				     lodsb			     ; String [si] to al
     972	05A6  1E				     push    ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 19
 111SIMGR.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1024	05F8  5F				     pop     di
    1025	05F9  5E				     pop     si
    1026	05FA  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 20
 111SIMGR.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1078	065C  8B FE				     mov     di,si
    1079	065E  83 EE 10				     sub     si,10h
    1080	0661  B9 0068				     mov     cx,68h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 21
 111SIMGR.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1132	06C8  5E				     pop     si
    1133	06C9  81 C6 0140			     add     si,140h
    1134	06CD  FE C8				     dec     al
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 22
 111SIMGR.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1186	0733  B8 0140				     mov     ax,140h
    1187	0736  F7 E3				     mul     bx			     ; dx:ax = reg * ax
    1188	0738  5F				     pop     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 23
 111SIMGR.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1240	0795  B8 0140				     mov     ax,140h
    1241	0798  F7 E3				     mul     bx			     ; dx:ax = reg * ax
    1242	079A  5F				     pop     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 24
 111SIMGR.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1294
    1295	0808  C3				     retn
    1296										     ;*	No entry point to code
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 25
 111SIMGR.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1348	0854  5E				     pop     si
    1349	0855  1F				     pop     ds
    1350	0856  EB F1				     jmp     short loc_71
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 26
 111SIMGR.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1402	089E  F3> AB				     rep     stosw		     ; Rep when	cx >0 Store ax to es:[di]
    1403	08A0  58				     pop     ax
    1404	08A1  5A				     pop     dx
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 27
 111SIMGR.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1456	08E8  03 C0				     add     ax,ax
    1457	08EA  03 C0				     add     ax,ax
    1458	08EC  03 C0				     add     ax,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 28
 111SIMGR.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1510	0934			     simg_func_22	     proc    near
    1511	0934  B1 0F				     mov     cl,0Fh
    1512	0936  BB 4240				     mov     bx,4240h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 29
 111SIMGR.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1564				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
    1565
    1566	0993			     simg_func_24	     proc    near
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 30
 111SIMGR.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1618	09E9  8B F0				     mov     si,ax
    1619	09EB  0E				     push    cs
    1620	09EC  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 31
 111SIMGR.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1672	0A44  C3				     retn
    1673										     ;*	No entry point to code
    1674	0A45  B8 A000				     mov     ax,0A000h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 32
 111SIMGR.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1726	0A9D  8E D8				     mov     ds,ax
    1727	0A9F  BE 0000				     mov     si,data_44e
    1728
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 33
 111SIMGR.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1780	0B06  8C C8				     mov     ax,cs
    1781	0B08  05 3000				     add     ax,3000h
    1782	0B0B  8E C0				     mov     es,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 34
 111SIMGR.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1834	0B6E  2E: A3 3CA7			     mov     cs:data_24e,ax
    1835	0B72  E8 00BD				     call    simg_process_loop_3
    1836	0B75  26: C6 46	00 00			     mov     byte ptr es:[bp],0
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 35
 111SIMGR.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1888	0BE0			     locloop_97:
    1889	0BE0  51				     push    cx
    1890	0BE1  AD				     lodsw			     ; String [si] to ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 36
 111SIMGR.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1942	0C44  2E: D1 06	3CA7			     rol     word ptr cs:data_24e,1  ; Rotate
    1943	0C49  13 C0				     adc     ax,ax
    1944	0C4B  AB				     stosw			     ; Store ax	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 37
 111SIMGR.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    1996	0C9C			     simg_scan_loop	     endp
    1997
    1998	0C9C  0857*(00)				     db	     2135 dup (0)
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 38
 111SIMGR.asm
 
 
@@ -2192,7 +2192,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 1
    2002
    2003
    2004						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 39
 Symbol Table
 
 
@@ -2200,9 +2200,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "111SIMGR"
-??TIME				  Text	 "12:29:33"
+??TIME				  Text	 "00:09:19"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -2251,7 +2251,7 @@ DATA_49E			  Number 128E
 DATA_4E				  Number D000
 DATA_50E			  Number 3200
 DATA_51E			  Number 3C9C
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 40
 Symbol Table
 
 
@@ -2310,7 +2310,7 @@ LOC_10				  Near	 SEG_A:00B8
 LOC_101				  Near	 SEG_A:0C93
 LOC_11				  Near	 SEG_A:00C0
 LOC_12				  Near	 SEG_A:00C8
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 41
 Symbol Table
 
 
@@ -2369,7 +2369,7 @@ LOC_80				  Near	 SEG_A:0925
 LOC_81				  Near	 SEG_A:097C
 LOC_82				  Near	 SEG_A:098A
 LOC_83				  Near	 SEG_A:098E
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:33	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:19	    Page 42
 Symbol Table
 
 

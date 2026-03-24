@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 1
 124UTILA.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
 1    52				     ;	are used!  (macro CALLF)
 1    53				     ;
 1    54
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 2
 124UTILA.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     106	0030  0E FC 00 00 E7 C0			     db	      0Eh,0FCh,	00h, 00h,0E7h,0C0h
     107	0036  00 0A DC 00 00 AB			     db	      00h, 0Ah,0DCh, 00h, 00h,0ABh
     108	003C  C0 00 08 3C 00 00			     db	     0C0h, 00h,	08h, 3Ch, 00h, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 3
 124UTILA.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     160	0161  D8 40 16 0C 8C 01			     db	     0D8h, 40h,	16h, 0Ch, 8Ch, 01h
     161	0167  01 3D 80 00 13 98			     db	      01h, 3Dh,	80h, 00h, 13h, 98h
     162	016D  00 01 21 80 00 1A			     db	      00h, 01h,	21h, 80h, 00h, 1Ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 4
 124UTILA.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     214	0250  C4 4D BE				     les     cx,dword ptr [di-42h]   ; Load seg:offset ptr
     215	0253  98				     cbw			     ; Convrt byte to word
     216	0254  84 DB				     test    bl,bl
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 5
 124UTILA.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     268	032F  FF 78 00 3F F7 80			     db	     0FFh, 78h,	00h, 3Fh,0F7h, 80h
     269	0335  03 FE 78 00 7F E7			     db	      03h,0FEh,	78h, 00h, 7Fh,0E7h
     270	033B  80 05 EE F8 00 5D			     db	      80h, 05h,0EEh,0F8h, 00h, 5Dh
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 6
 124UTILA.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     322	0438  9A 0A AA B8 60 01			     db	      9Ah, 0Ah,0AAh,0B8h, 60h, 01h
     323	043E  E1 E0 5C 48 2A AA			     db	     0E1h,0E0h,	5Ch, 48h, 2Ah,0AAh
     324	0444  B0 30 01 E0 F0 B8			     db	     0B0h, 30h,	01h,0E0h,0F0h,0B8h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 7
 124UTILA.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     376	0573  B0 55 60 0C 30 CA			     db	     0B0h, 55h,	60h, 0Ch, 30h,0CAh
     377	0579  15 59 9A 70 11 01			     db	      15h, 59h,	9Ah, 70h, 11h, 01h
     378	057F  AE 66 B9 55 20 0C			     db	     0AEh, 66h,0B9h, 55h, 20h, 0Ch
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 8
 124UTILA.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     430	06B7  03 18 50 1B 04 12			     db	      03h, 18h,	50h, 1Bh, 04h, 12h
     431	06BD  2D 55 20 03 18 1E			     db	      2Dh, 55h,	20h, 03h, 18h, 1Eh
     432	06C3  01 B0 04 5D 55 C0			     db	      01h,0B0h,	04h, 5Dh, 55h,0C0h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 9
 124UTILA.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     484	07FB  80 C0 63 0A 40 80			     db	      80h,0C0h,	63h, 0Ah, 40h, 80h
     485	0801  60 36 14 82 C0 30			     db	      60h, 36h,	14h, 82h,0C0h, 30h
     486	0807  0A 14 79 01 60 18			     db	      0Ah, 14h,	79h, 01h, 60h, 18h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 10
 124UTILA.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     538	0912  0C 37 B0 A9 CA 19			     db	      0Ch, 37h,0B0h,0A9h,0CAh, 19h
     539	0918  9B C6 D1 66 B8 62			     db	      9Bh,0C6h,0D1h, 66h,0B8h, 62h
     540	091E  2C 03 0C D8 DA AF			     db	      2Ch, 03h,	0Ch,0D8h,0DAh,0AFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 11
 124UTILA.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     592	0A56  A1 6F 7F 99 E7 BF			     db	     0A1h, 6Fh,	7Fh, 99h,0E7h,0BFh
     593	0A5C  C0 0F D1 3F 10 23			     db	     0C0h, 0Fh,0D1h, 3Fh, 10h, 23h
     594	0A62  04 2C 03 7E 50 6C			     db	      04h, 2Ch,	03h, 7Eh, 50h, 6Ch
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 12
 124UTILA.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     646	0B9A  0C 08 1C 39 F0 18			     db	      0Ch, 08h,	1Ch, 39h,0F0h, 18h
     647	0BA0  11 7E 79 94 60 6C			     db	      11h, 7Eh,	79h, 94h, 60h, 6Ch
     648	0BA6  0C 0C C3 40 2C 39			     db	      0Ch, 0Ch,0C3h, 40h, 2Ch, 39h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 13
 124UTILA.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     700	0CDE  02 8A A0 A7 94 0C			     db	      02h, 8Ah,0A0h,0A7h, 94h, 0Ch
     701	0CE4  C1 2C D0 40 08 08			     db	     0C1h, 2Ch,0D0h, 40h, 08h, 08h
     702	0CEA  80 20 15 55 55 04			     db	      80h, 20h,	15h, 55h, 55h, 04h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 14
 124UTILA.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     754	0E19  7C 98 49 80 04 73			     db	      7Ch, 98h,	49h, 80h, 04h, 73h
     755	0E1F  5D 40 04 85 55 48			     db	      5Dh, 40h,	04h, 85h, 55h, 48h
     756	0E25  01 21 5E 35 18 F6			     db	      01h, 21h,	5Eh, 35h, 18h,0F6h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 15
 124UTILA.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     808	0F5D  22 8A E0 26 20 03			     db	      22h, 8Ah,0E0h, 26h, 20h, 03h
     809	0F63  10 A1 6F 78 05 15			     db	      10h,0A1h,	6Fh, 78h, 05h, 15h
     810	0F69  15 C0 49 40 06 02			     db	      15h,0C0h,	49h, 40h, 06h, 02h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 16
 124UTILA.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     862	10A1  36 06 05 06 A0 B9			     db	      36h, 06h,	05h, 06h,0A0h,0B9h
     863	10A7  BC 0C C1 80 05 06			     db	     0BCh, 0Ch,0C1h, 80h, 05h, 06h
     864	10AD  A0 AC DE 03 18 C0			     db	     0A0h,0ACh,0DEh, 03h, 18h,0C0h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 17
 124UTILA.asm
 
 
@@ -971,7 +971,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 1
     886
     887
     888						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:38	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:24	    Page 18
 Symbol Table
 
 
@@ -979,9 +979,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "124UTILA"
-??TIME				  Text	 "12:29:38"
+??TIME				  Text	 "00:09:24"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A

@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 1
 OS00.ASM
 
 
@@ -57,7 +57,7 @@ OS00.ASM
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 2
 OS00.ASM
 
 
@@ -116,7 +116,7 @@ OS00.ASM
     106	      =	6D5C		     data_146e	     equ     6D5Ch		     ;*
     107	      =	6D5D		     data_147e	     equ     6D5Dh		     ;*
     108	      =	75A0		     data_148e	     equ     75A0h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 3
 OS00.ASM
 
 
@@ -175,7 +175,7 @@ OS00.ASM
     160	0019  2E: FF 16	0000			     call    word ptr cs:data_51
 **Error** OS00.ASM(95) Undefined symbol: DATA_51
     161	001E  0E				     push    cs
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 4
 OS00.ASM
 
 
@@ -234,7 +234,7 @@ OS00.ASM
     209	00BC  E8 029D				     call    scene_scan_loop
     210	00BF  B8 0002				     mov     ax,2
     211	00C2  2E: FF 16	0000			     call    word ptr cs:data_92
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 5
 OS00.ASM
 
 
@@ -293,7 +293,7 @@ OS00.ASM
     258	015E  0A C0				     or	     al,al		     ; Zero ?
     259	0160  74 13				     jz	     loc_2		     ; Jump if zero
     260	0162  56				     push    si
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 6
 OS00.ASM
 
 
@@ -352,7 +352,7 @@ OS00.ASM
     312	01F8  2E: FF 16	010C			     call    word ptr cs:[10Ch]
     313	01FD  BE 955D				     mov     si,data_160e
     314	0200  2E: 8E 06	FF2C			     mov     es,cs:data_177e
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 7
 OS00.ASM
 
 
@@ -411,7 +411,7 @@ OS00.ASM
     363	02A5			     locloop_3:
     364	02A5  51				     push    cx
     365	02A6  C6 06 FF1A 00			     mov     byte ptr ds:data_172e,0
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 8
 OS00.ASM
 
 
@@ -470,7 +470,7 @@ OS00.ASM
     417
     418				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
     419				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 9
 OS00.ASM
 
 
@@ -529,7 +529,7 @@ OS00.ASM
     471				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
     472
     473	035C			     scene_scan_loop	     proc    near
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 10
 OS00.ASM
 
 
@@ -588,7 +588,7 @@ OS00.ASM
     525	03BD  74 2A				     je	     loc_17		     ; Jump if equal
     526	03BF  E8 000E				     call    scene_func_5
     527	03C2  2E: 38 06	FF1A			     cmp     cs:data_172e,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 11
 OS00.ASM
 
 
@@ -647,7 +647,7 @@ OS00.ASM
     577	0450  2E: FF 16	0000			     call    word ptr cs:data_92
 **Error** OS00.ASM(512)	Undefined symbol: DATA_92
     578	0455  E8 0043				     call    scene_func_7
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 12
 OS00.ASM
 
 
@@ -706,7 +706,7 @@ OS00.ASM
     629	04CD  5E				     pop     si
     630	04CE  80 7C FF FF			     cmp     byte ptr [si-1],0FFh
     631	04D2  75 D5				     jne     loc_22		     ; Jump if not equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 13
 OS00.ASM
 
 
@@ -765,7 +765,7 @@ OS00.ASM
     682	0583  0E				     push    cs
     683	0584  07				     pop     es
     684	0585  BE 959F				     mov     si,data_163e
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 14
 OS00.ASM
 
 
@@ -824,7 +824,7 @@ OS00.ASM
     734	062A  BE 9551				     mov     si,9551h
     735	062D  BF A000				     mov     di,0A000h
     736	0630  B0 02				     mov     al,2
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 15
 OS00.ASM
 
 
@@ -883,7 +883,7 @@ OS00.ASM
     788	06CF  0E				     push    cs
     789	06D0  07				     pop     es
     790	06D1  BE 95B4				     mov     si,data_164e
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 16
 OS00.ASM
 
 
@@ -942,7 +942,7 @@ OS00.ASM
     838	076C  E8 05F3				     call    scene_process_loop
     839	076F  BF 4000				     mov     di,data_137e
     840	0772  BB 1610				     mov     bx,1610h
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 17
 OS00.ASM
 
 
@@ -1001,7 +1001,7 @@ OS00.ASM
     890	080D  BB 0A15				     mov     bx,0A15h
     891	0810  B9 1A5D				     mov     cx,1A5Dh
     892	0813  2E: FF 16	3024r			     call    word ptr cs:data_106
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 18
 OS00.ASM
 
 
@@ -1060,7 +1060,7 @@ OS00.ASM
     943	08B7  E8 0151				     call    scene_func_8
     944	08BA  5B				     pop     bx
     945	08BB  5A				     pop     dx
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 19
 OS00.ASM
 
 
@@ -1119,7 +1119,7 @@ OS00.ASM
     996	093F  BF 4000				     mov     di,data_137e
     997	0942  E8 041D				     call    scene_process_loop
     998	0945  2E: 8E 06	FF2C			     mov     es,cs:data_177e
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 20
 OS00.ASM
 
 
@@ -1178,7 +1178,7 @@ OS00.ASM
 **Error** OS00.ASM(972)	Undefined symbol: DATA_89
    1048	09EF  B8 0001				     mov     ax,1
    1049	09F2  2E: FF 16	0000			     call    word ptr cs:data_92
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 21
 OS00.ASM
 
 
@@ -1237,7 +1237,7 @@ OS00.ASM
    1099	0A65  BF A000				     mov     di,0A000h
    1100	0A68  B0 03				     mov     al,3
    1101	0A6A  2E: FF 16	010C			     call    word ptr cs:[10Ch]
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 22
 OS00.ASM
 
 
@@ -1296,7 +1296,7 @@ OS00.ASM
    1153	0ACF  8A 97 947D			     mov     dl,ds:data_155e[bx]
    1154	0AD3  8A F7				     mov     dh,bh
    1155	0AD5  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 23
 OS00.ASM
 
 
@@ -1355,7 +1355,7 @@ OS00.ASM
    1207	0B41  E9 0137				     jmp     loc_60
    1208	0B44			     loc_41:
    1209	0B44  BB 0701				     mov     bx,701h
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 24
 OS00.ASM
 
 
@@ -1414,7 +1414,7 @@ OS00.ASM
    1261	0BB6  3C ED				     cmp     al,0EDh
    1262	0BB8  75 03				     jne     loc_49		     ; Jump if not equal
    1263	0BBA  E9 FEC2				     jmp     loc_31
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 25
 OS00.ASM
 
 
@@ -1473,7 +1473,7 @@ OS00.ASM
    1315	0C3B  03 C0				     add     ax,ax
    1316	0C3D  03 C0				     add     ax,ax
    1317	0C3F  03 C0				     add     ax,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 26
 OS00.ASM
 
 
@@ -1532,7 +1532,7 @@ OS00.ASM
    1369	0CBA  BB 1238				     mov     bx,1238h
    1370	0CBD  B9 0B10				     mov     cx,0B10h
    1371	0CC0  2E: FF 16	3010r			     call    word ptr cs:data_96
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 27
 OS00.ASM
 
 
@@ -1591,7 +1591,7 @@ OS00.ASM
    1423	0D04  12 EF				     adc     ch,bh
    1424	0D06  EB C2				     jmp     short loc_62
    1425	0D08			     scene_check_state		     endp
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 28
 OS00.ASM
 
 
@@ -1650,7 +1650,7 @@ OS00.ASM
    1477
    1478				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    1479				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 29
 OS00.ASM
 
 
@@ -1709,7 +1709,7 @@ OS00.ASM
    1531	0D9D  12 C0				     adc     al,al
    1532	0D9F  32 F0				     xor     dh,al
    1533	0DA1  8A E6				     mov     ah,dh
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 30
 OS00.ASM
 
 
@@ -1768,7 +1768,7 @@ OS00.ASM
    1585	0DF9  A9 8000				     test    ax,8000h
    1586	0DFC  74 05				     jz	     loc_83		     ; Jump if zero
    1587	0DFE			     loc_82:
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 31
 OS00.ASM
 
 
@@ -1827,7 +1827,7 @@ OS00.ASM
    1639
    1640	0E53			     scene_func_17	     proc    near
    1641	0E53  57				     push    di
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 32
 OS00.ASM
 
 
@@ -1886,7 +1886,7 @@ OS00.ASM
    1693	0E91  5B				     pop     bx
    1694	0E92  C3				     retn
    1695	0E93			     copy_buffer	     endp
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 33
 OS00.ASM
 
 
@@ -1945,7 +1945,7 @@ OS00.ASM
    1747	0EDB  C3				     retn
    1748	0EDC			     scene_process_loop_2	     endp
    1749
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 34
 OS00.ASM
 
 
@@ -2004,7 +2004,7 @@ OS00.ASM
    1801	0F43  1F				     pop     ds
    1802	0F44  C3				     retn
    1803	0F45			     scene_process_loop_3	     endp
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 35
 OS00.ASM
 
 
@@ -2063,7 +2063,7 @@ OS00.ASM
    1855
    1856				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    1857				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 36
 OS00.ASM
 
 
@@ -2122,7 +2122,7 @@ OS00.ASM
    1908	1064  6F 66 20 63 6F 6D	70+		     db	     'of compassion for	humankind,', 0Dh
    1909	      61 73 73 69 6F 6E	20+
    1910	      66 6F 72 20 68 75	6D+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 37
 OS00.ASM
 
 
@@ -2181,7 +2181,7 @@ OS00.ASM
    1962	      65 72 2E 0D 0D 20
    1963	11BF  20 20 20 57 69 74	68+		     db	     '	 With the help of the holy cry'
    1964	      20 74 68 65 20 68	65+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 38
 OS00.ASM
 
 
@@ -2240,7 +2240,7 @@ OS00.ASM
    2016	      74 69 3A 0D
    2017	1312  20 20 20 20 20 20	20+		     db	     '			  The Age of D'
    2018	      20 20 20 20 20 20	20+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 39
 OS00.ASM
 
 
@@ -2299,7 +2299,7 @@ OS00.ASM
    2070	1454  20 20 20 20 20 20	20+		     db	     '	     ',	0Dh, '		     Z'
    2071	      0D 20 20 20 20 20	20+
    2072	      20 20 20 20 20 20	20+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 40
 OS00.ASM
 
 
@@ -2358,7 +2358,7 @@ OS00.ASM
    2124	      6F 73 68 69 20 41	7A+
    2125	      75 6D 69 20 20 20	0D+
    2126	      0D 45
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 41
 OS00.ASM
 
 
@@ -2417,7 +2417,7 @@ OS00.ASM
    2178	1703  20 20 20 20 20 20	20+		     db	     '		   Hiromi Ohba	    ', 0Dh
    2179	      20 20 20 20 20 20	48+
    2180	      69 72 6F 6D 69 20	4F+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 42
 OS00.ASM
 
 
@@ -2476,7 +2476,7 @@ OS00.ASM
    2232	      20 20 20 20 20 20	20+
    2233	      20 20 20
    2234	1865  20 20 20 20 20 52	61+		     db	     '	   Ray E. Nakazato    ', 0Dh, '	'
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 43
 OS00.ASM
 
 
@@ -2535,7 +2535,7 @@ OS00.ASM
    2286	      53 20 43 6F 2E 2C	4C+
    2287	      74 64 2E 2F 20 54	6F+
    2288	      6D 6F 79 75 6B 69	20+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 44
 OS00.ASM
 
 
@@ -2594,7 +2594,7 @@ OS00.ASM
    2340	      73 61 64 20
    2341	1AFD  72 61 69 6E 2E			     db	     'rain.'
    2342	1B02  F5 F5 F5 F5 FE F3			     db	     0F5h,0F5h,0F5h,0F5h,0FEh,0F3h
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 45
 OS00.ASM
 
 
@@ -2653,7 +2653,7 @@ OS00.ASM
    2394	      64 3F 22
    2395	1C31  F0 F6 FE F5 F3 FA			     db	     0F0h,0F6h,0FEh,0F5h,0F3h,0FAh
    2396	1C37  4A 75 73 74 20 61	73+		     db	     'Just as the princess spoke these'
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 46
 OS00.ASM
 
 
@@ -2712,7 +2712,7 @@ OS00.ASM
    2448	      61 6E 64 20 6C 61	6B+
    2449	      65 73 20 64 69 73	61+
    2450	      70 70 65 61 72 65	64+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 47
 OS00.ASM
 
 
@@ -2771,7 +2771,7 @@ OS00.ASM
    2502	      61 20 74 65 72 72	69+
    2503	      66 79 69 6E 67 20	76+
    2504	      6F 69 63 65
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 48
 OS00.ASM
 
 
@@ -2830,7 +2830,7 @@ OS00.ASM
    2556	      6F 74 20 6D 61 6B	65+
    2557	      20 74 68 65 20 6D	69+
    2558	      73 74 61 6B
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 49
 OS00.ASM
 
 
@@ -2889,7 +2889,7 @@ OS00.ASM
    2610	      67 64 6F 6D 20 77	65+
    2611	      70 74 20 61
    2612	20F8  74 20 74 68 65 20	74+		     db	     't	the terrible fate of their cou'
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 50
 OS00.ASM
 
 
@@ -2948,7 +2948,7 @@ OS00.ASM
    2664	2231  6E 67 20 67 72 69	65+		     db	     'ng grieved'
    2665	      76 65 64
    2666	223B  2C 20				     db	     ',	'
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 51
 OS00.ASM
 
 
@@ -3007,7 +3007,7 @@ OS00.ASM
    2718	      74 20 76 65
    2719	2381  6E 74 75 72 65 20	69+		     db	     'nture into the labyrinths	and re'
    2720	      6E 74 6F 20 74 68	65+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 52
 OS00.ASM
 
 
@@ -3066,7 +3066,7 @@ OS00.ASM
    2772	24C1  54 68 65 20 6D 61	6E+		     db	     'The man who is destined to fight'
    2773	      20 77 68 6F 20 69	73+
    2774	      20 64 65 73 74 69	6E+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 53
 OS00.ASM
 
 
@@ -3125,7 +3125,7 @@ OS00.ASM
    2826	      68 65 72 20
    2827	2619  74 65 72 72 69 62	6C+		     db	     'terrible curse."'
    2828	      65 20 63 75 72 73	65+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 54
 OS00.ASM
 
 
@@ -3184,7 +3184,7 @@ OS00.ASM
    2880	      20 68 61 73
    2881	2754  20 74 68 65 20 53	70+		     db	     ' the Spirit led me here?"'
    2882	      69 72 69 74 20 6C	65+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 55
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 55
 OS00.ASM
 
 
@@ -3243,7 +3243,7 @@ OS00.ASM
    2934	2870  68 65 20 80 6D 61			     db	      68h, 65h,	20h, 80h, 6Dh, 61h
    2935	2876  84 6E 20 83 6F 84			     db	      84h, 6Eh,	20h, 83h, 6Fh, 84h
    2936	287C  66 20 81 64 65 73			     db	      66h, 20h,	81h, 64h, 65h, 73h
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 56
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 56
 OS00.ASM
 
 
@@ -3302,7 +3302,7 @@ OS00.ASM
    2988	29B4  6C 69 92 67 68 93			     db	      6Ch, 69h,	92h, 67h, 68h, 93h
    2989	29BA  74 20 94 93 6F 66			     db	      74h, 20h,	94h, 93h, 6Fh, 66h
    2990	29C0  20 91 74 68 65 20			     db	      20h, 91h,	74h, 68h, 65h, 20h
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 57
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 57
 OS00.ASM
 
 
@@ -3361,7 +3361,7 @@ OS00.ASM
    3042	2AF8  6E 83 63 65 20 81			     db	      6Eh, 83h,	63h, 65h, 20h, 81h
    3043	2AFE  74 68 65 20 80 73			     db	      74h, 68h,	65h, 20h, 80h, 73h
    3044	2B04  61 84 6E 83 64 85			     db	      61h, 84h,	6Eh, 83h, 64h, 85h
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 58
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 58
 OS00.ASM
 
 
@@ -3420,7 +3420,7 @@ OS00.ASM
    3096	      65 20 6D 65 3F 20	20+
    3097	      44 6F 6E 27 74 20	62+
    3098	      65 20 61
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 59
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 59
 OS00.ASM
 
 
@@ -3479,7 +3479,7 @@ OS00.ASM
    3150	      20 62 75 74
    3151	2D60  20 79 6F 75 20 6D	75+		     db	     ' you must	promise	not to bore me'
    3152	      73 74 20 70 72 6F	6D+
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 60
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 60
 OS00.ASM
 
 
@@ -3538,7 +3538,7 @@ OS00.ASM
    3204	2E79  6F 90 72 20 95 61			     db	      6Fh, 90h,	72h, 20h, 95h, 61h
    3205	2E7F  93 6C 6C 21 99 94			     db	      93h, 6Ch,	6Ch, 21h, 99h, 94h
    3206	2E85  22 F5 F5 F5 F5 FE			     db	      22h,0F5h,0F5h,0F5h,0F5h,0FEh
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 61
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 61
 OS00.ASM
 
 
@@ -3597,7 +3597,7 @@ OS00.ASM
    3258	      68 2E 22
    3259	2FBB  F5 F5 F5 F0 FD FE			     db	     0F5h,0F5h,0F5h,0F0h,0FDh,0FEh
    3260	2FC1  F3 FA				     db	     0F3h,0FAh
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 62
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 62
 OS00.ASM
 
 
@@ -3656,7 +3656,7 @@ OS00.ASM
    3312	30AE  04 49 20 01 73 68			     db	      04h, 49h,	20h, 01h, 73h, 68h
    3313	30B4  61 03 6C 6C 20 77			     db	      61h, 03h,	6Ch, 6Ch, 20h, 77h
    3314	30BA  04 61 6B 03 65 FF			     db	      04h, 61h,	6Bh, 03h, 65h,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 63
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 63
 OS00.ASM
 
 
@@ -3715,7 +3715,7 @@ OS00.ASM
    3366	32CA  20*(00)				     db	     32	dup (0)
    3367	32EA  54 55 56				     db	      54h, 55h,	56h
    3368	32ED  1F*(00)				     db	     31	dup (0)
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 64
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 64
 OS00.ASM
 
 
@@ -3774,7 +3774,7 @@ OS00.ASM
    3420	34DF  01 00 05 04 04 04			     db	     1,	0, 5, 4, 4, 4
    3421	34E5  06 08 05 03 04 04			     db	     6,	8, 5, 3, 4, 4
    3422	34EB  06 06 06 05 06 08			     db	     6,	6, 6, 5, 6, 8
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 65
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 65
 OS00.ASM
 
 
@@ -3833,7 +3833,7 @@ OS00.ASM
    3474	35E2  23 79 75 75 32 2E	67+		     db	     '#yuu2.grp'
    3475	      72 70
    3476	35EB  00 00				     db	     0,	0
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 66
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 66
 OS00.ASM
 
 
@@ -3865,7 +3865,7 @@ OS00.ASM
    3501
    3502
    3503						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 67
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 67
 Symbol Table
 
 
@@ -3873,9 +3873,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "OS00	  "
-??TIME				  Text	 "12:10:42"
+??TIME				  Text	 "00:09:32"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -3924,7 +3924,7 @@ DATA_160E			  Number 955D
 DATA_161E			  Number 9573
 DATA_162E			  Number 957E
 DATA_163E			  Number 959F
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 68
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 68
 Symbol Table
 
 
@@ -3983,7 +3983,7 @@ LOCLOOP_75			  Near	 SEG_A:0D76
 LOCLOOP_79			  Near	 SEG_A:0D93
 LOCLOOP_86			  Near	 SEG_A:0EB7
 LOCLOOP_87			  Near	 SEG_A:0EBB
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 69
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 69
 Symbol Table
 
 
@@ -4042,7 +4042,7 @@ LOC_58				  Near	 SEG_A:0C2C
 LOC_59				  Near	 SEG_A:0C5A
 LOC_6				  Near	 SEG_A:02DF
 LOC_60				  Near	 SEG_A:0C7B
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 70
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 70
 Symbol Table
 
 
@@ -4100,7 +4100,7 @@ SCENE_SCAN_LOOP_2		  Near	 SEG_A:0D08
 START				  Near	 SEG_A:0000
 TARGET				  Number 5432
 ZR1_00				  Far	 SEG_A:0000
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 71
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 71
 Symbol Table
 
 
@@ -4117,7 +4117,7 @@ JMPS
 Groups & Segments		  Bit Size Align  Combine Class
 
 SEG_A				  16  362D Byte	  Public
-Turbo Assembler	 Version 2.01	     03/22/26 12:10:43	    Page 72
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:33	    Page 72
 Error Summary
 
 

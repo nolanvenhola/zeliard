@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 1
 204PHYSE.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 2
 204PHYSE.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     106	      =	4FEC		     data_77e	     equ     4FECh		     ;*
     107	      =	4FED		     data_78e	     equ     4FEDh		     ;*
     108	      =	4FEF		     data_79e	     equ     4FEFh		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 3
 204PHYSE.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     160	      =	6000		     data_132e	     equ     6000h
     161	      =	A058		     data_133e	     equ     0A058h
     162	      =	A05A		     data_134e	     equ     0A05Ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 4
 204PHYSE.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     214	007C  43				     inc     bx
     215	007D  F6 04 80				     test    byte ptr [si],80h
     216	0080  74 03				     jz	     loc_10		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 5
 204PHYSE.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     268	00D9  E8 005A				     call    physics_func_1
     269	00DC			     loc_19:
     270	00DC  43				     inc     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 6
 204PHYSE.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     322				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
     323				     ;				    SUBROUTINE
     324				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 7
 204PHYSE.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     376	0194  C6 45 FF FE			     mov     byte ptr [di-1],0FEh
     377	0198  F6 06 4FF7 01			     test    byte ptr ds:data_84e,1
     378	019D  75 01				     jnz     loc_34		     ; Jump if not zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 8
 204PHYSE.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     430	01FE  C3				     retn
     431	01FF			     loc_39:
     432	01FF  8A 44 FF				     mov     al,[si-1]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 9
 204PHYSE.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     484	0261  2C 25				     sub     al,25h		     ; '%'
     485	0263  3C 04				     cmp     al,4
     486	0265  72 01				     jb	     loc_44		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 10
 204PHYSE.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     538	02C6  E2 EB				     loop    locloop_46		     ; Loop if cx > 0
     539
     540	02C8  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 11
 204PHYSE.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     592	0322  5E				     pop     si
     593	0323  5F				     pop     di
     594	0324  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 12
 204PHYSE.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     646	0368  8B FB				     mov     di,bx
     647	036A  81 C7 E900			     add     di,data_102e
     648	036E  BB 5009				     mov     bx,data_87e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 13
 204PHYSE.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     700	03D1  E8 030B				     call    physics_multiply_3
     701	03D4  83 C6 02				     add     si,2
     702	03D7  58				     pop     ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 14
 204PHYSE.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     754	043D  81 C2 A05A			     add     dx,0A05Ah
     755	0441			     loc_63:
     756	0441  80 3E 4FEA 01			     cmp     byte ptr ds:data_75e,1
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 15
 204PHYSE.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     808	04B7  88 05				     mov     [di],al
     809	04B9  BD 5009				     mov     bp,data_87e
     810	04BC  E8 00BB				     call    physics_func_7
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 16
 204PHYSE.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     862	0535  79 03				     jns     loc_70		     ; Jump if not sign
     863	0537  E8 019E				     call    physics_get_value
     864	053A			     loc_70:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 17
 204PHYSE.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     916	0597  56				     push    si
     917	0598  57				     push    di
     918	0599  52				     push    dx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 18
 204PHYSE.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
     970	05F6  0E				     push    cs
     971	05F7  1F				     pop     ds
     972	05F8  B8 B000				     mov     ax,0B000h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 19
 204PHYSE.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1024	063F  26: 09 05				     or	     es:[di],ax
    1025	0642  45				     inc     bp
    1026	0643  45				     inc     bp
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 20
 204PHYSE.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1078	0687  D0 EB				     shr     bl,1		     ; Shift w/zeros fill
    1079	0689  D0 EB				     shr     bl,1		     ; Shift w/zeros fill
    1080	068B  D0 EB				     shr     bl,1		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 21
 204PHYSE.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1132				     ;				    SUBROUTINE
    1133				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
    1134
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 22
 204PHYSE.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1186	0721  3E: F6 46	05 20			     test    byte ptr ds:[bp+5],20h  ; ' '
    1187	0726  74 02				     jz	     loc_85		     ; Jump if zero
    1188	0728  04 03				     add     al,3
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 23
 204PHYSE.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1240	077A  AA				     stosb			     ; Store al	to es:[di]
    1241	077B			     loc_93:
    1242	077B  2E: FF 16	011A			     call    word ptr cs:[11Ah]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 24
 204PHYSE.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1294	07DB  03 C0				     add     ax,ax
    1295	07DD  05 04FD				     add     ax,4FDh
    1296	07E0  33 C9				     xor     cx,cx		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 25
 204PHYSE.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1348	0842  83 C6 04				     add     si,4
    1349	0845  E9 FF69				     jmp     loc_95
    1350										     ;*	No entry point to code
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 26
 204PHYSE.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1402	093E  00 3C				     add     [si],bh
    1403				     ;*		     pop     cs			     ; Dangerous-8088 only
    1404	0940  0F				     db	     0Fh		     ;	Fixup -	byte match
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 27
 204PHYSE.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1456	099A  47				     inc     di
    1457	099B  E2 F2				     loop    locloop_107	     ; Loop if cx > 0
    1458
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 28
 204PHYSE.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1510	0A03  E8 FCD9				     call    physics_multiply_3
    1511	0A06  46				     inc     si
    1512	0A07  46				     inc     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 29
 204PHYSE.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1564	0A77  BE 61B9				     mov     si,61B9h
    1565	0A7A			     loc_117:
    1566	0A7A  F6 06 FF40 FF			     test    byte ptr ds:data_120e,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 30
 204PHYSE.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1618	0AEC  EB 1E				     jmp     short loc_124
    1619	0AEE			     loc_123:
    1620	0AEE  F6 06 FF38 FF			     test    byte ptr ds:data_115e,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 31
 204PHYSE.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1672	0B7A  FE C9				     dec     cl
    1673	0B7C  74 1D				     jz	     loc_130		     ; Jump if zero
    1674	0B7E  B8 0036				     mov     ax,36h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 32
 204PHYSE.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1726	0BF5  50				     push    ax
    1727	0BF6  E8 00D0				     call    physics_func_21
    1728	0BF9  B1 24				     mov     cl,24h		     ; '$'
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 33
 204PHYSE.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1780	0C6A			     loc_142:
    1781	0C6A  03 F0				     add     si,ax
    1782	0C6C			     loc_143:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 34
 204PHYSE.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1834	0CC8  C3				     retn
    1835	0CC9			     physics_multiply_4		     endp
    1836
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 35
 204PHYSE.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1888	0D11  1F				     pop     ds
    1889	0D12  C3				     retn
    1890	0D13			     loc_151:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 36
 204PHYSE.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1942	0D6F  8A 0E 0084			     mov     cl,byte ptr ds:[84h]
    1943	0D73  B0 24				     mov     al,24h		     ; '$'
    1944	0D75  F6 E1				     mul     cl			     ; ax = reg	* al
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 37
 204PHYSE.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    1996	0DCA  E9 029B				     jmp     loc_194
    1997	0DCD			     loc_158:
    1998	0DCD  04 0A				     add     al,0Ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 38
 204PHYSE.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2050	0E50			     loc_166:
    2051	0E50  8A 1E FF46			     mov     bl,ds:data_126e
    2052	0E54  FE CB				     dec     bl
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 39
 204PHYSE.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2104	0ECC  81 EF 40B4			     sub     di,40B4h
    2105	0ED0  73 04				     jnc     loc_174		     ; Jump if carry=0
    2106	0ED2  81 C7 5FA6			     add     di,5FA6h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 40
 204PHYSE.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2158
    2159				     ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
    2160
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 41
 204PHYSE.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2212	0F82  A5				     movsw			     ; Mov [si]	to es:[di]
    2213	0F83  5E				     pop     si
    2214	0F84  81 C7 A052			     add     di,0A052h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 42
 204PHYSE.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2266	0FE1  C6 06 FF44 FF			     mov     byte ptr ds:data_124e,0FFh
    2267	0FE6  06				     push    es
    2268	0FE7  1E				     push    ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 43
 204PHYSE.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2320
    2321	1050  5E				     pop     si
    2322	1051			     loc_193:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 44
 204PHYSE.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2374	1095  47				     inc     di
    2375	1096  59				     pop     cx
    2376	1097  E2 F5				     loop    locloop_198	     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 45
 204PHYSE.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2428	10F0  72 0A				     jb	     loc_203		     ; Jump if below
    2429	10F2  26: 21 1D				     and     es:[di],bx
    2430	10F5  26: 09 05				     or	     es:[di],ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 46
 204PHYSE.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2482
    2483	1156			     physics_multiply_6		     proc    near
    2484	1156  80 3D FF				     cmp     byte ptr [di],0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 47
 204PHYSE.asm
 
 
@@ -2771,7 +2771,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2536	11C2  1F				     pop     ds
    2537	11C3  C3				     retn
    2538
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 48
 204PHYSE.asm
 
 
@@ -2830,7 +2830,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2590				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
    2591
    2592	121E			     physics_func_31	     proc    near
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 49
 204PHYSE.asm
 
 
@@ -2889,7 +2889,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2644	1276  A2 4FE2				     mov     ds:data_70e,al
    2645	1279  88 26 4FE3			     mov     byte ptr ds:data_70e+1,ah
    2646	127D  E8 022C				     call    physics_scan_loop_2
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 50
 204PHYSE.asm
 
 
@@ -2948,7 +2948,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2698	12DF  52				     push    dx
    2699	12E0  53				     push    bx
    2700	12E1  E8 0029				     call    physics_func_35
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 51
 204PHYSE.asm
 
 
@@ -3007,7 +3007,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2752	1326  8A D3				     mov     dl,bl
    2753	1328  E8 0004				     call    physics_func_36
    2754	132B  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 52
 204PHYSE.asm
 
 
@@ -3066,7 +3066,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2806	137C  EB 02				     jmp     short loc_228
    2807	137E			     loc_227:
    2808	137E  B4 C0				     mov     ah,0C0h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 53
 204PHYSE.asm
 
 
@@ -3125,7 +3125,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2860	13CE  32 E4				     xor     ah,ah		     ; Zero register
    2861	13D0  03 F8				     add     di,ax
    2862	13D2  8A E2				     mov     ah,dl
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 54
 204PHYSE.asm
 
 
@@ -3184,7 +3184,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2914	1432  22 26 4FF7			     and     ah,ds:data_84e
    2915	1436  26: 20 35				     and     es:[di],dh
    2916	1439  26: 08 25				     or	     es:[di],ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 55
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 55
 204PHYSE.asm
 
 
@@ -3243,7 +3243,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    2968	1485  50				     push    ax
    2969	1486  2E: FF 16	0110			     call    word ptr cs:[110h]
    2970	148B  2E: FF 16	0112			     call    word ptr cs:[112h]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 56
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 56
 204PHYSE.asm
 
 
@@ -3302,7 +3302,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3022	14E4  59				     pop     cx
    3023	14E5  E2 D0				     loop    locloop_248	     ; Loop if cx > 0
    3024
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 57
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 57
 204PHYSE.asm
 
 
@@ -3361,7 +3361,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3076
    3077				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
    3078				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 58
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 58
 204PHYSE.asm
 
 
@@ -3420,7 +3420,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3130	1591  E2 E9				     loop    locloop_257	     ; Loop if cx > 0
    3131
    3132	1593  5F				     pop     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 59
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 59
 204PHYSE.asm
 
 
@@ -3479,7 +3479,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3184	164B  B9 001C				     mov     cx,1Ch
    3185
    3186	164E			     locloop_261:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 60
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 60
 204PHYSE.asm
 
 
@@ -3538,7 +3538,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3238	16AB			     physics_multiply_8		     endp
    3239
    3240
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 61
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 61
 204PHYSE.asm
 
 
@@ -3597,7 +3597,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3292	1706  B1 03				     mov     cl,3
    3293	1708  C3				     retn
    3294	1709			     loc_269:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 62
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 62
 204PHYSE.asm
 
 
@@ -3656,7 +3656,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3346	175C  08 19				     or	     [bx+di],bl
    3347	175E  54				     push    sp
    3348	175F  59				     pop     cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 63
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 63
 204PHYSE.asm
 
 
@@ -3715,7 +3715,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3400	18D1  01 02 01 02 01 02			     db	      01h, 02h,	01h, 02h, 01h, 02h
    3401	18D7  01 02 01 02 03 04			     db	      01h, 02h,	01h, 02h, 03h, 04h
    3402	18DD  03 04 03 04 03 04			     db	      03h, 04h,	03h, 04h, 03h, 04h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 64
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 64
 204PHYSE.asm
 
 
@@ -3774,7 +3774,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3454	1982			     loc_275:
    3455	1982  E2 DE				     loop    locloop_274	     ; Loop if cx > 0
    3456
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 65
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 65
 204PHYSE.asm
 
 
@@ -3833,7 +3833,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3508	1ACE  46 4C 8B F0 BD 04			     db	      46h, 4Ch,	8Bh,0F0h,0BDh, 04h
    3509	1AD4  00 8A C3 24 03 02			     db	      00h, 8Ah,0C3h, 24h, 03h, 02h
    3510	1ADA  C0 A2 F8 4F D1 EB			     db	     0C0h,0A2h,0F8h, 4Fh,0D1h,0EBh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 66
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 66
 204PHYSE.asm
 
 
@@ -3892,7 +3892,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3562	1B31  D3 EB				     shr     bx,cl		     ; Shift w/zeros fill
    3563	1B33  32 C0				     xor     al,al		     ; Zero register
    3564	1B35  D3 E8				     shr     ax,cl		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 67
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 67
 204PHYSE.asm
 
 
@@ -3951,7 +3951,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3616	1C47  23*(00)				     db	     35	dup (0)
    3617	1C6A  92 4A AA EB 00			     db	      92h, 4Ah,0AAh,0EBh, 00h
    3618	1C6F  22*(00)				     db	     34	dup (0)
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 68
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 68
 204PHYSE.asm
 
 
@@ -4010,7 +4010,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3670	1E4A  33 C0				     xor     ax,ax		     ; Zero register
    3671	1E4C  8A C3				     mov     al,bl
    3672	1E4E  05 001C				     add     ax,1Ch
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 69
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 69
 204PHYSE.asm
 
 
@@ -4069,7 +4069,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3724	1EAC  8B D8				     mov     bx,ax
    3725	1EAE  D1 EB				     shr     bx,1		     ; Shift w/zeros fill
    3726	1EB0  0B C3				     or	     ax,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 70
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 70
 204PHYSE.asm
 
 
@@ -4128,7 +4128,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3778				     ;				    SUBROUTINE
    3779				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
    3780
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 71
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 71
 204PHYSE.asm
 
 
@@ -4187,7 +4187,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3832				     ;*				lock pop     cs			     ; Dangerous-8088 only
    3833	1F69  F0 0F				     db	     0F0h, 0Fh		     ;	Fixup -	byte match
    3834	1F6B  F0> 30 0C						lock xor     [si],cl
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 72
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 72
 204PHYSE.asm
 
 
@@ -4246,7 +4246,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3886	1FCB  0A 0B				     or	     cl,[bp+di]
    3887	1FCD  09 0C				     or	     [si],cx
    3888	1FCF  0E				     push    cs
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 73
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 73
 204PHYSE.asm
 
 
@@ -4270,7 +4270,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 1
    3905
    3906
    3907						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 74
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 74
 Symbol Table
 
 
@@ -4278,9 +4278,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "204PHYSE"
-??TIME				  Text	 "12:30:54"
+??TIME				  Text	 "00:10:16"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -4329,7 +4329,7 @@ DATA_4E				  Number 8640
 DATA_5E				  Number 8690
 DATA_60E			  Number 317E
 DATA_61E			  Number 37A2
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 75
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 75
 Symbol Table
 
 
@@ -4388,7 +4388,7 @@ LOCLOOP_179			  Near	 SEG_A:0F45
 LOCLOOP_181			  Near	 SEG_A:0F6E
 LOCLOOP_183			  Near	 SEG_A:0FB7
 LOCLOOP_184			  Near	 SEG_A:0FBB
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 76
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 76
 Symbol Table
 
 
@@ -4447,7 +4447,7 @@ LOC_115				  Near	 SEG_A:0A22
 LOC_116				  Near	 SEG_A:0A69
 LOC_117				  Near	 SEG_A:0A7A
 LOC_118				  Near	 SEG_A:0A9F
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 77
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 77
 Symbol Table
 
 
@@ -4506,7 +4506,7 @@ LOC_167				  Near	 SEG_A:0E71
 LOC_168				  Near	 SEG_A:0E7B
 LOC_169				  Near	 SEG_A:0E9A
 LOC_170				  Near	 SEG_A:0EB4
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 78
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 78
 Symbol Table
 
 
@@ -4565,7 +4565,7 @@ LOC_232				  Near	 SEG_A:13B0
 LOC_233				  Near	 SEG_A:13B6
 LOC_234				  Near	 SEG_A:13BC
 LOC_235				  Near	 SEG_A:13C3
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 79
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 79
 Symbol Table
 
 
@@ -4624,7 +4624,7 @@ LOC_44				  Near	 SEG_A:0268
 LOC_45				  Near	 SEG_A:0274
 LOC_47				  Near	 SEG_A:02C6
 LOC_48				  Near	 SEG_A:02CE
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 80
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 80
 Symbol Table
 
 
@@ -4683,7 +4683,7 @@ LOC_RET_214			  Near	 SEG_A:1257
 MATH_CALC			  Near	 SEG_A:1E4A
 PHYSICS_CHECK_STATE		  Near	 SEG_A:0730
 PHYSICS_EXTRACT_BITS		  Near	 SEG_A:13A5
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 81
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 81
 Symbol Table
 
 
@@ -4741,7 +4741,7 @@ CALLFX
 CALLS
 JMPN
 JMPS
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:55	    Page 82
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:17	    Page 82
 Symbol Table
 
 

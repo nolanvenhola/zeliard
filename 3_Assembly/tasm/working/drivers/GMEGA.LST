@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 1
 gmega.asm
 
 
@@ -57,7 +57,7 @@ gmega.asm
 1    52				     ;
 1    53
 1    54				     callf	     macro   location
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 2
 gmega.asm
 
 
@@ -116,7 +116,7 @@ gmega.asm
     106	      =	D92B		     data_33e	     equ     0D92Bh		     ;*
     107	      =	DEA2		     data_34e	     equ     0DEA2h		     ;*
     108	      =	E52A		     data_35e	     equ     0E52Ah		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 3
 gmega.asm
 
 
@@ -175,7 +175,7 @@ gmega.asm
     160	004E  32 FF 03 C3 8B F8			     db	      32h,0FFh,	03h,0C3h, 8Bh,0F8h
     161	0054  58 0A C0 75 03 E9			     db	      58h, 0Ah,0C0h, 75h, 03h,0E9h
     162	005A  9D 00				     db	      9Dh, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 4
 gmega.asm
 
 
@@ -234,7 +234,7 @@ gmega.asm
     214	00A7  57				     push    di
     215	00A8  F7 D0				     not     ax
     216	00AA  26: 86 05				     xchg    es:[di],al
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 5
 gmega.asm
 
 
@@ -293,7 +293,7 @@ gmega.asm
     268				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     269				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     270
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 6
 gmega.asm
 
 
@@ -352,7 +352,7 @@ gmega.asm
     322	0147  83 C7 50				     add     di,50h
     323	014A  59				     pop     cx
     324	014B  E2 E3				     loop    locloop_7		     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 7
 gmega.asm
 
 
@@ -411,7 +411,7 @@ gmega.asm
     376	0197  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
     377										     ;	al = 8,	data bit mask
     378	0198  B9 0038				     mov     cx,38h
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 8
 gmega.asm
 
 
@@ -470,7 +470,7 @@ gmega.asm
     430	01F2  D2 E8				     shr     al,cl		     ; Shift w/zeros fill
     431	01F4  F6 DF				     neg     bh
     432	01F6  80 C7 03				     add     bh,3
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 9
 gmega.asm
 
 
@@ -529,7 +529,7 @@ gmega.asm
     484										     ;	al = 8,	data bit mask
     485	0246			     loc_19:
     486	0246  BA 03C4				     mov     dx,3C4h
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 10
 gmega.asm
 
 
@@ -588,7 +588,7 @@ gmega.asm
     538	02A2  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
     539	02A3  32 C0				     xor     al,al		     ; Zero register
     540	02A5  26: 86 05				     xchg    es:[di],al
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 11
 gmega.asm
 
 
@@ -647,7 +647,7 @@ gmega.asm
     592	0311			     loc_26:
     593	0311  58				     pop     ax
     594	0312  0A C0				     or	     al,al		     ; Zero ?
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 12
 gmega.asm
 
 
@@ -706,7 +706,7 @@ gmega.asm
     646	0376  75 F1				     jnz     loc_33		     ; Jump if not zero
     647	0378  C3				     retn
     648
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 13
 gmega.asm
 
 
@@ -765,7 +765,7 @@ gmega.asm
     700										     ;*	No entry point to code
     701	03B3  2E: C6 06	2E93 01			     mov     byte ptr cs:data_24e,1
     702	03B9  2E: C6 06	2E94 05			     mov     byte ptr cs:data_25e,5
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 14
 gmega.asm
 
 
@@ -824,7 +824,7 @@ gmega.asm
     754	0418  F6 E1				     mul     cl			     ; ax = reg	* al
     755	041A  03 F8				     add     di,ax
     756	041C  AC				     lodsb			     ; String [si] to al
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 15
 gmega.asm
 
 
@@ -883,7 +883,7 @@ gmega.asm
     808	045B  D1 E0				     shl     ax,1		     ; Shift w/zeros fill
     809	045D  8B F0				     mov     si,ax
     810	045F  0E				     push    cs
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 16
 gmega.asm
 
 
@@ -942,7 +942,7 @@ gmega.asm
     862										     ;*	No entry point to code
     863	04BB  BB 0210				     mov     bx,210h
     864	04BE  32 C0				     xor     al,al		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 17
 gmega.asm
 
 
@@ -1001,7 +1001,7 @@ gmega.asm
     916	0531  75 01				     jnz     loc_42		     ; Jump if not zero
     917	0533  C3				     retn
     918	0534			     loc_42:
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 18
 gmega.asm
 
 
@@ -1060,7 +1060,7 @@ gmega.asm
     970	0572  BB 4240				     mov     bx,4240h
     971	0575  E8 003E				     call    modulo_divide_bcd
     972	0578  2E: 88 35				     mov     cs:[di],dh
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 19
 gmega.asm
 
 
@@ -1119,7 +1119,7 @@ gmega.asm
    1024				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1025				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1026				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 20
 gmega.asm
 
 
@@ -1178,7 +1178,7 @@ gmega.asm
    1078	060D  5F				     pop     di
    1079	060E  59				     pop     cx
    1080	060F  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 21
 gmega.asm
 
 
@@ -1237,7 +1237,7 @@ gmega.asm
    1132	0654  80 E4 AA				     and     ah,0AAh
    1133	0657  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
    1134										     ;	al = 8,	data bit mask
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 22
 gmega.asm
 
 
@@ -1296,7 +1296,7 @@ gmega.asm
    1186	06B6  83 C7 50				     add     di,50h
    1187	06B9  FE C9				     dec     cl
    1188	06BB  75 D0				     jnz     loc_54		     ; Jump if not zero
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 23
 gmega.asm
 
 
@@ -1355,7 +1355,7 @@ gmega.asm
    1240	0727  AD				     lodsw			     ; String [si] to ax
    1241	0728  26: 88 46	00			     mov     es:[bp],al
    1242	072C  26: 88 66	01			     mov     es:[bp+1],ah
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 24
 gmega.asm
 
 
@@ -1414,7 +1414,7 @@ gmega.asm
    1294	079A  1E				     push    ds
    1295	079B  BE 27BB				     mov     si,data_1e
    1296	079E  0A C0				     or	     al,al		     ; Zero ?
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 25
 gmega.asm
 
 
@@ -1473,7 +1473,7 @@ gmega.asm
    1348	0899  32 E4 B9 C0 00 F7			     db	      32h,0E4h,0B9h,0C0h, 00h,0F7h
    1349	089F  E1 03 06 04 E2 8B			     db	     0E1h, 03h,	06h, 04h,0E2h, 8Bh
    1350	08A5  F0 E8 02 00 1F C3			     db	     0F0h,0E8h,	02h, 00h, 1Fh,0C3h
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 26
 gmega.asm
 
 
@@ -1532,7 +1532,7 @@ gmega.asm
    1402	08F8  AD				     lodsw			     ; String [si] to ax
    1403	08F9  8B F8				     mov     di,ax
    1404	08FB  AD				     lodsw			     ; String [si] to ax
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 27
 gmega.asm
 
 
@@ -1591,7 +1591,7 @@ gmega.asm
    1456
    1457				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1458				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 28
 gmega.asm
 
 
@@ -1650,7 +1650,7 @@ gmega.asm
    1510	09A7  32 DB				     xor     bl,bl		     ; Zero register
    1511	09A9  2E: 8A 0E	2E94			     mov     cl,cs:data_25e
    1512	09AE  D3 EB				     shr     bx,cl		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 29
 gmega.asm
 
 
@@ -1709,7 +1709,7 @@ gmega.asm
    1564	0A0C  BA 03CE				     mov     dx,3CEh
    1565	0A0F  B8 0105				     mov     ax,105h
    1566	0A12  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 30
 gmega.asm
 
 
@@ -1768,7 +1768,7 @@ gmega.asm
    1618	0A60  B0 00				     mov     al,0
    1619	0A62  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
    1620	0A63  8B CB				     mov     cx,bx
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 31
 gmega.asm
 
 
@@ -1827,7 +1827,7 @@ gmega.asm
    1672	0AB8			     locloop_68:
    1673	0AB8  51				     push    cx
    1674	0AB9  57				     push    di
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 32
 gmega.asm
 
 
@@ -1886,7 +1886,7 @@ gmega.asm
    1726	0B10  2E: 8A 26	2E93			     mov     ah,cs:data_24e
    1727	0B15  E8 FE40				     call    render_text_char_alt
    1728	0B18  5E				     pop     si
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 33
 gmega.asm
 
 
@@ -1945,7 +1945,7 @@ gmega.asm
    1780	0B7D  5E				     pop     si
    1781	0B7E  5F				     pop     di
    1782	0B7F  83 C6 50				     add     si,50h
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 34
 gmega.asm
 
 
@@ -2004,7 +2004,7 @@ gmega.asm
    1834	0BD8  B0 FF				     mov     al,0FFh
    1835	0BDA  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
    1836	0BDB  E8 0007				     call    fill_rectangle
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 35
 gmega.asm
 
 
@@ -2063,7 +2063,7 @@ gmega.asm
    1888	0C1E  BA 03CE				     mov     dx,3CEh
    1889	0C21  B8 0205				     mov     ax,205h
    1890	0C24  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 36
 gmega.asm
 
 
@@ -2122,7 +2122,7 @@ gmega.asm
    1942										     ;	al = 3,	data rotate
    1943	0C88  B0 08				     mov     al,8
    1944	0C8A  EE				     out     dx,al		     ; port 3CEh, EGA graphic index
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 37
 gmega.asm
 
 
@@ -2181,7 +2181,7 @@ gmega.asm
    1996	0CFA  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
    1997	0CFB  B0 04				     mov     al,4
    1998	0CFD  26: 86 45	02			     xchg    es:[di+2],al
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 38
 gmega.asm
 
 
@@ -2240,7 +2240,7 @@ gmega.asm
    2050	0DA4  77 F7				     ja	     loc_80		     ; Jump if above
    2051	0DA6  00 00				     add     [bx+si],al
    2052				     ;*		     div     word ptr [bx+0]	     ; ax,dxrem=dx:ax/data
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 39
 gmega.asm
 
 
@@ -2299,7 +2299,7 @@ gmega.asm
    2104	0E8E  59				     pop     cx
    2105	0E8F  E2 E3				     loop    locloop_81		     ; Loop if cx > 0
    2106
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 40
 gmega.asm
 
 
@@ -2312,7 +2312,7 @@ gmega.asm
    2112
    2113
    2114						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 41
 Symbol Table
 
 
@@ -2320,9 +2320,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "gmega	  "
-??TIME				  Text	 "11:45:25"
+??TIME				  Text	 "00:07:42"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -2371,7 +2371,7 @@ GMEGA				  Far	 SEG_A:0000
 INIT_TIMESTAMP			  Near	 SEG_A:0551
 INT_DIVIDE_BCD			  Near	 SEG_A:05CF
 LOCLOOP_10			  Near	 SEG_A:0172
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 42
 Symbol Table
 
 
@@ -2430,7 +2430,7 @@ LOC_38				  Near	 SEG_A:040E
 LOC_4				  Near	 SEG_A:00D0
 LOC_40				  Near	 SEG_A:0470
 LOC_41				  Near	 SEG_A:04B9
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:25	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:42	    Page 43
 Symbol Table
 
 

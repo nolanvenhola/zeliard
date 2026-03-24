@@ -58,42 +58,40 @@ def gather_jobs():
 # ── Build single DOSBox conf that compiles everything ────────────────────────
 def build_dosbox_conf(jobs, work_dir, conf_path):
     """
-    Copy all .asm + srmacros.inc to work_dir, write a DOSBox conf
-    that compiles every file with TASM + TLINK in one session.
+    Copy all .asm + srmacros.inc to work_dir.
+    Write a BUILD.BAT with all TASM/TLINK commands.
+    Write a minimal DOSBox conf that just mounts drives and calls BUILD.BAT.
     """
     srmacros = WORKING / 'srmacros.inc'
     shutil.copy2(srmacros, work_dir / 'SRMACROS.INC')
 
-    lines = [
+    # Write BUILD.BAT in the work dir
+    bat_lines = ['@echo off']
+    for asm, _ in jobs:
+        shutil.copy2(asm, work_dir / asm.name)
+        stem = asm.stem
+        bat_lines += [
+            f'echo {asm.name}',
+            f'tasm /l {asm.name} > NUL',
+            f'if not exist {stem}.OBJ echo FAILED: {asm.name} >> BUILD_ERR.TXT',
+            f'if exist {stem}.OBJ tlink /c /x {stem}.OBJ, {stem}.EXE > NUL',
+        ]
+    bat_lines += ['echo Done.']
+    (work_dir / 'BUILD.BAT').write_text('\r\n'.join(bat_lines) + '\r\n')
+
+    # Minimal autoexec — just mount and call the batch
+    conf = '\n'.join([
         '[autoexec]',
         '@echo off',
         f'mount t "{TASM_DIR}"',
         f'mount w "{work_dir}"',
         'set PATH=T:\\',
         'w:',
+        'call BUILD.BAT',
+        'exit',
         '',
-    ]
-
-    for asm, _ in jobs:
-        stem = asm.stem
-        # Copy .asm to flat work dir
-        shutil.copy2(asm, work_dir / asm.name)
-
-        lines += [
-            f'echo Assembling {asm.name}...',
-            f'tasm /l {asm.name}',
-            f'if errorlevel 1 goto err_{stem}',
-            f'tlink /c /x {stem}.obj, {stem}.exe',
-            f'if errorlevel 1 goto err_{stem}',
-            f'goto ok_{stem}',
-            f':err_{stem}',
-            f'echo FAILED: {asm.name} >> BUILD_ERR.TXT',
-            f':ok_{stem}',
-            '',
-        ]
-
-    lines += ['echo Build complete.', 'exit', '']
-    conf_path.write_text('\n'.join(lines))
+    ])
+    conf_path.write_text(conf)
 
 # ── Run DOSBox ────────────────────────────────────────────────────────────────
 def run_dosbox(conf_path):

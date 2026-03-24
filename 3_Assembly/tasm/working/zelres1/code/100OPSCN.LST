@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 1
 100OPSCN.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 2
 100OPSCN.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     106	      =	653D		     data_139e	     equ     653Dh		     ;*
     107	      =	653F		     data_140e	     equ     653Fh		     ;*
     108	      =	6A73		     data_141e	     equ     6A73h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 3
 100OPSCN.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     160	0004  02 60 FA				     add     ah,[bx+si-6]
     161	0007  BC 2000				     mov     sp,2000h
     162	000A  FB				     sti			     ; Enable interrupts
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 4
 100OPSCN.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     214	00B4  BF 4000				     mov     di,data_137e
     215	00B7  2E: FF 16	3002			     call    word ptr cs:data_89
     216	00BC  E8 029D				     call    scene_scan_loop
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 5
 100OPSCN.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     268	0163  FE C8				     dec     al
     269	0165  BB 1720				     mov     bx,1720h
     270	0168  2E: FF 16	3014r			     call    word ptr cs:data_98
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 6
 100OPSCN.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     322	0205  BF 3000r				     mov     di,offset data_87+32h   ; (' ')
     323	0208  B0 05				     mov     al,5
     324	020A  2E: FF 16	010C			     call    word ptr cs:[10Ch]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 7
 100OPSCN.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     376	02B2  50				     push    ax
     377	02B3  8A C4				     mov     al,ah
     378	02B5  2E: FF 16	301Er			     call    word ptr cs:data_103
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 8
 100OPSCN.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     430				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     431				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     432				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 9
 100OPSCN.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     484				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
     485				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     486				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 10
 100OPSCN.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     538				     ;				    SUBROUTINE
     539				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
     540				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 11
 100OPSCN.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     592	042E  C6 06 FF1A 00			     mov     byte ptr ds:data_172e,0
     593	0433  1E				     push    ds
     594	0434  2E: 8E 1E	FF2C			     mov     ds,cs:data_177e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 12
 100OPSCN.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     646	04B2  51				     push    cx
     647	04B3  8B C1				     mov     ax,cx
     648	04B5  F7 D8				     neg     ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 13
 100OPSCN.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     700	0565  07				     pop     es
     701	0566  BE 9594				     mov     si,9594h
     702	0569  BF A000				     mov     di,0A000h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 14
 100OPSCN.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     754	060D  B8 0006				     mov     ax,6
     755	0610  2E: FF 16	3008			     call    word ptr cs:data_92
     756	0615  BB 0410				     mov     bx,410h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 15
 100OPSCN.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     808	06B5  B0 03				     mov     al,3
     809	06B7  E8 07D9				     call    scene_multiply_2
     810	06BA  8C C8				     mov     ax,cs
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 16
 100OPSCN.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     862	075A  B0 02				     mov     al,2
     863	075C  2E: FF 16	010C			     call    word ptr cs:[10Ch]
     864	0761  2E: 8E 06	FF2C			     mov     es,cs:data_177e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 17
 100OPSCN.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     916	0800  2E: FF 16	3020r			     call    word ptr cs:data_104
     917	0805  B8 0006				     mov     ax,6
     918	0808  2E: FF 16	3008			     call    word ptr cs:data_92
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 18
 100OPSCN.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
     970	08B0  2E: FF 16	3024r			     call    word ptr cs:data_106
     971	08B5  B0 0F				     mov     al,0Fh
     972	08B7  E8 0151				     call    scene_func_8
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 19
 100OPSCN.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1024	093C  BE A000				     mov     si,data_168e
    1025	093F  BF 4000				     mov     di,data_137e
    1026	0942  E8 041D				     call    scene_process_loop
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 20
 100OPSCN.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1078	09F2  2E: FF 16	3008			     call    word ptr cs:data_92
    1079	09F7  BE 7338				     mov     si,7338h
    1080	09FA  E8 030B				     call    scene_scan_loop_2
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 21
 100OPSCN.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1132	0A65  BF A000				     mov     di,0A000h
    1133	0A68  B0 03				     mov     al,3
    1134	0A6A  2E: FF 16	010C			     call    word ptr cs:[10Ch]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 22
 100OPSCN.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1186	0AC7  53				     push    bx
    1187	0AC8  8A D8				     mov     bl,al
    1188	0ACA  80 EB 20				     sub     bl,20h		     ; ' '
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 23
 100OPSCN.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1240	0B39  E9 00F0				     jmp     loc_58
    1241	0B3C			     loc_40:
    1242	0B3C  80 FC 90				     cmp     ah,90h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 24
 100OPSCN.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1294	0BAC  75 03				     jne     loc_48		     ; Jump if not equal
    1295	0BAE  E9 FECE				     jmp     loc_31
    1296	0BB1			     loc_48:
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 25
 100OPSCN.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1348	0C33  3C 06				     cmp     al,6
    1349	0C35  73 23				     jae     loc_59		     ; Jump if above or	=
    1350	0C37  B4 15				     mov     ah,15h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 26
 100OPSCN.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1402	0CB1  03 C0				     add     ax,ax
    1403	0CB3  03 C0				     add     ax,ax
    1404	0CB5  05 6D00				     add     ax,6D00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 27
 100OPSCN.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1456	0CF3			     loc_70:
    1457	0CF3  0A C0				     or	     al,al		     ; Zero ?
    1458	0CF5  78 D3				     js	     loc_62		     ; Jump if sign=1
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 28
 100OPSCN.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1510	0D49  B9 50A0				     mov     cx,50A0h
    1511	0D4C  2E: FF 16	300Er			     call    word ptr cs:data_95
    1512	0D51  B0 1C				     mov     al,1Ch
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 29
 100OPSCN.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1564	0D84  45				     inc     bp
    1565	0D85  59				     pop     cx
    1566	0D86  E2 E8				     loop    locloop_74		     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 30
 100OPSCN.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1618
    1619
    1620				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 31
 100OPSCN.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1672	0E1B  BF 0000				     mov     di,data_179e
    1673	0E1E  B9 1650				     mov     cx,1650h
    1674	0E21  33 C0				     xor     ax,ax		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 32
 100OPSCN.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1726	0E66  5F				     pop     di
    1727	0E67  57				     push    di
    1728	0E68  81 C7 0EE0			     add     di,data_4e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 33
 100OPSCN.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1780	0E96  BA 0CC0				     mov     dx,0CC0h
    1781	0E99  F7 E2				     mul     dx			     ; dx:ax = reg * ax
    1782	0E9B  05 AB40				     add     ax,0AB40h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 34
 100OPSCN.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1834				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1835				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1836				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 35
 100OPSCN.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1888
    1889				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1890				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 36
 100OPSCN.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1942
    1943				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1944				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 37
 100OPSCN.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    1996	      6F 74 20 61 20 73	68+
    1997	      72 65 64 0D 20 20	20+
    1998	      20 20 20
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 38
 100OPSCN.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2050	      65 61 74
    2051	11AB  69 6E 67 20 74 68	69+		     db	     'ing this monster.', 0Dh, 0Dh, ' '
    2052	      73 20 6D 6F 6E 73	74+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 39
 100OPSCN.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2104	      53 69 78 74 68 20	42+
    2105	      6F 6F 6B 20 6F 66	20+
    2106	      45 73 6D 65 73 61	6E+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 40
 100OPSCN.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2158	      73 79 20 41 63 74	69+
    2159	      6F 6E 20 47 61 6D	65+
    2160	      20 20 20 20
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 41
 100OPSCN.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2212	      20 20 20 20 20 20	20+
    2213	      20 20 20
    2214	15A4  20 20 4D 61 73 61	74+		     db	     '	Masatoshi Azumi	  ', 0Dh, 0Dh, 'E'
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 42
 100OPSCN.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2266	      61 20 20 20 20 20	0D+
    2267	      20 20 20 20 20 20	20+
    2268	      20 20 20
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 43
 100OPSCN.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2320	      73 75 62 75
    2321	184D  63 68 69 20 20 20	20+		     db	     'chi    ',	0Dh, '		      '
    2322	      0D 20 20 20 20 20	20+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 44
 100OPSCN.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2374	      37 20 62 79 20 20	0D+
    2375	      20 20 47
    2376	19A3  41 4D 45 20 41 52	54+		     db	     'AME ARTS Co.,Ltd./ Tomoyuki Shim'
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 45
 100OPSCN.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2428	      20 77 61 74 63 68	69+
    2429	      6E 67 20 74 68 69	73+
    2430	      20 64 61 72 6B 2C	20+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 46
 100OPSCN.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2482	      20 20 57 69 6C 6C	20+
    2483	      69 74 20 6E
    2484	1C27  65 76 65 72 20 65	6E+		     db	     'ever end?"'
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 47
 100OPSCN.asm
 
 
@@ -2771,7 +2771,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2536	      64 2E 20
    2537	1D6B  F3				     db	     0F3h
    2538	1D6C  52 69 76 65 72 73	20+		     db	     'Rivers and lakes disappeared ben'
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 48
 100OPSCN.asm
 
 
@@ -2830,7 +2830,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2590	1E90  FD				     db	     0FDh
    2591	1E91  61 6E 64 20 73 75	64+		     db	     'and suddenly, a terrifying voice'
    2592	      64 65 6E 6C 79 2C	20+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 49
 100OPSCN.asm
 
 
@@ -2889,7 +2889,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2644	      59 6F 75 72
    2645	1FE0  20 66 61 74 68 65	72+		     db	     ' father will not make the	mistak'
    2646	      20 77 69 6C 6C 20	6E+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 50
 100OPSCN.asm
 
 
@@ -2948,7 +2948,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2698	      6F 6E 63 65
    2699	20BA  2D 66 65 72 74 69	6C+		     db	     '-fertile land into desert.'
    2700	      65 20 6C 61 6E 64	20+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 51
 100OPSCN.asm
 
 
@@ -3007,7 +3007,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2752	      20 70 65 6F
    2753	2203  70 6C 65 20 73 6F	6F+		     db	     'ple soon awakened	another	power.'
    2754	      6E 20 61 77 61 6B	65+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 52
 100OPSCN.asm
 
 
@@ -3066,7 +3066,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2806	2341  68 65 72 65 20 69	73+		     db	     'here is but one way to stop this'
    2807	      20 62 75 74 20 6F	6E+
    2808	      65 20 77 61 79 20	74+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 53
 100OPSCN.asm
 
 
@@ -3125,7 +3125,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2860	      2C 20 74 68 65 72	65+
    2861	      20 69 73 20 6F 6E	65+
    2862	      20 77 69 74 68 20	74+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 54
 100OPSCN.asm
 
 
@@ -3184,7 +3184,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2914	25D9  74 68 69 73 20 6C	61+		     db	     'this land	to its former beauty, '
    2915	      6E 64 20 74 6F 20	69+
    2916	      74 73 20 66 6F 72	6D+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 55
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 55
 100OPSCN.asm
 
 
@@ -3243,7 +3243,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    2968	      6E 20 74 68 65 20	6B+
    2969	      69 6E 67 64 6F 6D	2E+
    2970	      2E 2E
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 56
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 56
 100OPSCN.asm
 
 
@@ -3302,7 +3302,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3022	      67 20 46 65 6C 69	73+
    3023	      68 69 6B 61 2E
    3024	283A  F5 F5 F5 FE EE FD			     db	     0F5h,0F5h,0F5h,0FEh,0EEh,0FDh
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 57
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 57
 100OPSCN.asm
 
 
@@ -3361,7 +3361,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3076	      65 20 4B 69 6E 67	2E+
    3077	      20
    3078	297E  FB F5 F5 F5 F3 EF			     db	     0FBh,0F5h,0F5h,0F5h,0F3h,0EFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 58
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 58
 100OPSCN.asm
 
 
@@ -3420,7 +3420,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3130	2AB6  66 65 20 93 74 6F			     db	      66h, 65h,	20h, 93h, 74h, 6Fh
    3131	2ABC  20 92 74 68 93 69			     db	      20h, 92h,	74h, 68h, 93h, 69h
    3132	2AC2  73 20 90 74 61 97			     db	      73h, 20h,	90h, 74h, 61h, 97h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 59
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 59
 100OPSCN.asm
 
 
@@ -3479,7 +3479,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3184	      20 68 69 64 65 6F	75+
    3185	      73 20 73 68 61 70	65+
    3186	      2E
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 60
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 60
 100OPSCN.asm
 
 
@@ -3538,7 +3538,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3238	      74 20 49 20 6E 65	65+
    3239	      64 20 61 20 6C 69	74+
    3240	      74 6C 65 20 61 6D	75+
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 61
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 61
 100OPSCN.asm
 
 
@@ -3597,7 +3597,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3292	2E51  20 90 75 94 6E 90			     db	      20h, 90h,	75h, 94h, 6Eh, 90h
    3293	2E57  64 65 72 20 91 74			     db	      64h, 65h,	72h, 20h, 91h, 74h
    3294	2E5D  68 65 20 90 65 61			     db	      68h, 65h,	20h, 90h, 65h, 61h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 62
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 62
 100OPSCN.asm
 
 
@@ -3656,7 +3656,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3346	      79 20 79 65 61 72	73+
    3347	      20 73 69
    3348	2F68  6E 63 65 20 61 20	73+		     db	     'nce a stray mortal has wandered '
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 63
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 63
 100OPSCN.asm
 
 
@@ -3715,7 +3715,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3400	      74 73 20 65
    3401	305C  6E 64 21 22			     db	     'nd!"'
    3402	3060  F5 F5 F5 FF 58 25			     db	     0F5h,0F5h,0F5h,0FFh, 58h, 25h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 64
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 64
 100OPSCN.asm
 
 
@@ -3774,7 +3774,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3454	3197  3E 3F 40 41			     db	      3Eh, 3Fh,	40h, 41h
    3455	319B  1E*(00)				     db	     30	dup (0)
    3456	31B9  42 43 44 45			     db	      42h, 43h,	44h, 45h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 65
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 65
 100OPSCN.asm
 
 
@@ -3833,7 +3833,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3508	3482  02 02 03 01 00 00			     db	     2,	2, 3, 1, 0, 0
    3509	3488  02 02 03 01 01 01			     db	     2,	2, 3, 1, 1, 1
    3510	348E  02 02 00 01 02 01			     db	     2,	2, 0, 1, 2, 1
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 66
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 66
 100OPSCN.asm
 
 
@@ -3892,7 +3892,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3562	      72 70
    3563	35A2  00 00 0E 61 6D 65			     db	      00h, 00h,	0Eh, 61h, 6Dh, 65h
    3564	35A8  2E 67 72 70 00 00			     db	      2Eh, 67h,	72h, 70h, 00h, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 67
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 67
 100OPSCN.asm
 
 
@@ -3939,7 +3939,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 1
    3604
    3605
    3606						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 68
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 68
 Symbol Table
 
 
@@ -3947,9 +3947,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "100OPSCN"
-??TIME				  Text	 "12:28:23"
+??TIME				  Text	 "00:08:11"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -3998,7 +3998,7 @@ DATA_160E			  Number 955D
 DATA_161E			  Number 9573
 DATA_162E			  Number 957E
 DATA_163E			  Number 959F
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 69
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 69
 Symbol Table
 
 
@@ -4057,7 +4057,7 @@ LOCLOOP_28			  Near	 SEG_A:0A00
 LOCLOOP_3			  Near	 SEG_A:02A5
 LOCLOOP_72			  Near	 SEG_A:0D1E
 LOCLOOP_73			  Near	 SEG_A:0D43
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 70
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 70
 Symbol Table
 
 
@@ -4116,7 +4116,7 @@ LOC_53				  Near	 SEG_A:0BE7
 LOC_54				  Near	 SEG_A:0BF4
 LOC_55				  Near	 SEG_A:0C01
 LOC_56				  Near	 SEG_A:0C12
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 71
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 71
 Symbol Table
 
 
@@ -4175,7 +4175,7 @@ SCENE_PROCESS_LOOP_3		  Near	 SEG_A:0EDC
 SCENE_PROCESS_LOOP_4		  Near	 SEG_A:0F45
 SCENE_PROCESS_LOOP_5		  Near	 SEG_A:0FB0
 SCENE_SCAN_LOOP			  Near	 SEG_A:035C
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:24	    Page 72
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:12	    Page 72
 Symbol Table
 
 

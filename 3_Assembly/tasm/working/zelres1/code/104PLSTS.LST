@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 1
 104PLSTS.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 2
 104PLSTS.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     106	      =	4C13		     data_64e	     equ     4C13h		     ;*
     107	      =	5255		     data_65e	     equ     5255h		     ;*
     108	      =	5500		     data_66e	     equ     5500h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 3
 104PLSTS.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     160	005E  D1 E9				     db	     0D1h,0E9h
     161
     162	0060			     locloop_2:
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 4
 104PLSTS.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     214	00C8  E8 1A1D				     call    stats_process_loop_4
     215	00CB  AB				     stosw			     ; Store ax	to es:[di]
     216	00CC  E2 D9				     loop    locloop_3		     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 5
 104PLSTS.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     268	0127  23 DA				     and     bx,dx
     269	0129  2E: 89 1E	4C03			     mov     cs:data_54e,bx
     270	012E  2E: A3 4C01			     mov     cs:data_53e,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 6
 104PLSTS.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     322	019F  C3				     retn
     323
     324	01A0			     zr1_04	     endp
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 7
 104PLSTS.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     376	0221  5F				     pop     di
     377	0222  5E				     pop     si
     378	0223  59				     pop     cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 8
 104PLSTS.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     430
     431	0277			     locloop_19:
     432	0277  AC				     lodsb			     ; String [si] to al
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 9
 104PLSTS.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     484	02CD  C3				     retn
     485										     ;*	No entry point to code
     486	02CE  57				     push    di
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 10
 104PLSTS.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     538	0329  C3				     retn
     539	032A			     loc_28:
     540	032A  74 2B				     jz	     loc_30		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 11
 104PLSTS.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     592	037E  51				     push    cx
     593	037F  53				     push    bx
     594	0380  B2 A0				     mov     dl,0A0h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 12
 104PLSTS.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     646	03E3  8B CB				     mov     cx,bx
     647
     648	03E5			     locloop_32:
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 13
 104PLSTS.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     700	0447  E8 169E				     call    stats_process_loop_4
     701	044A  AB				     stosw			     ; Store ax	to es:[di]
     702	044B  E2 D9				     loop    locloop_35		     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 14
 104PLSTS.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     754	0499  A4				     movsb			     ; Mov [si]	to es:[di]
     755	049A  A4				     movsb			     ; Mov [si]	to es:[di]
     756	049B  32 C0				     xor     al,al		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 15
 104PLSTS.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     808	050F  E8 00A1				     call    copy_buffer
     809	0512  5E				     pop     si
     810	0513  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 16
 104PLSTS.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     862	057E  8B 7C 05				     mov     di,[si+5]
     863	0581  8B 4C 07				     mov     cx,[si+7]
     864	0584  1E				     push    ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 17
 104PLSTS.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     916	05D4  5E				     pop     si
     917	05D5  C3				     retn
     918	05D6			     copy_buffer	     endp
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 18
 104PLSTS.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
     970	0612  2E: A3 4C01			     mov     cs:data_53e,ax
     971	0616  8A 24				     mov     ah,[si]
     972	0618  2E: A3 4BFF			     mov     cs:data_52e,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 19
 104PLSTS.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1024
    1025	06AD  5B				     pop     bx
    1026	06AE  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 20
 104PLSTS.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1078	0733  B9 0050				     mov     cx,50h
    1079	0736  F3> AB				     rep     stosw		     ; Rep when	cx >0 Store ax to es:[di]
    1080	0738  5F				     pop     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 21
 104PLSTS.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1132	0783			     loc_65:
    1133	0783  04 28				     add     al,28h		     ; '('
    1134	0785  8A C8				     mov     cl,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 22
 104PLSTS.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1186	07DD  05 0000				     add     ax,0
    1187	07E0  8B F0				     mov     si,ax
    1188	07E2  56				     push    si
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 23
 104PLSTS.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1240	0856  26: 09 05				     or	     es:[di],ax
    1241	0859  E8 12E2				     call    stats_func_20
    1242	085C  26: 21 45	02			     and     es:[di+2],ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 24
 104PLSTS.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1294	08DC  8E C0				     mov     es,ax
    1295	08DE  BF 0288				     mov     di,288h
    1296	08E1  BE 3B04				     mov     si,data_46e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 25
 104PLSTS.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1348	093C  B0 18				     mov     al,18h
    1349	093E  E8 005E				     call    stats_func_7
    1350	0941  81 C7 00A0			     add     di,0A0h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 26
 104PLSTS.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1402	098B  E8 0011				     call    stats_func_7
    1403	098E  4F				     dec     di
    1404	098F  4F				     dec     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 27
 104PLSTS.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1456	0A00			     loc_92:
    1457	0A00  2E: 8A 3E	4C09			     mov     bh,cs:data_57e
    1458	0A05  D0 CF				     ror     bh,1		     ; Rotate
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 28
 104PLSTS.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1510	0A90  C0 E0 E0 E0 2B 01			     db	     0C0h,0E0h,0E0h,0E0h, 2Bh, 01h
    1511	0A96  01 01 03 03 03 03			     db	      01h, 01h,	03h, 03h, 03h, 03h
    1512	0A9C  D4 84 84 84 03 03			     db	     0D4h, 84h,	84h, 84h, 03h, 03h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 29
 104PLSTS.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1564	0C49  8B 04				     mov     ax,[si]
    1565	0C4B  86 E0				     xchg    ah,al
    1566	0C4D  2E: A3 4BFF			     mov     cs:data_52e,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 30
 104PLSTS.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1618	0CC4  5B				     pop     bx
    1619	0CC5  59				     pop     cx
    1620	0CC6  2E: 80 06	4C0A 08			     add     byte ptr cs:data_58e,8
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 31
 104PLSTS.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1672	0D3C  47				     inc     di
    1673	0D3D  47				     inc     di
    1674	0D3E  2E: FE 06	4C09			     inc     byte ptr cs:data_57e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 32
 104PLSTS.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1726	0DB6  E2 D4				     loop    locloop_107	     ; Loop if cx > 0
    1727
    1728	0DB8  B9 0001				     mov     cx,1
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 33
 104PLSTS.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1780
    1781	0DFD			     stats_get_value	     proc    near
    1782	0DFD  26: C7 45	FD 4444			     mov     word ptr es:[di-3],4444h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 34
 104PLSTS.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1834	0E82  2E: 8E 1E	4C13			     mov     ds,cs:data_64e
    1835	0E87  B9 0044				     mov     cx,44h
    1836
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 35
 104PLSTS.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1888	0EF0  E8 000D				     call    stats_process_loop
    1889	0EF3			     loc_116:
    1890	0EF3  2E: 80 3E	FF1A 04			     cmp     byte ptr cs:data_71e,4
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 36
 104PLSTS.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1942	0F51  E8 0B94				     call    stats_process_loop_4
    1943	0F54  AB				     stosw			     ; Store ax	to es:[di]
    1944	0F55  E2 E3				     loop    locloop_118	     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 37
 104PLSTS.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    1996
    1997	0FB9			     locloop_121:
    1998	0FB9  26: C6 05	30			     mov     byte ptr es:[di],30h    ; '0'
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 38
 104PLSTS.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2050	1031			     fill_buffer_2	     proc    near
    2051	1031  AA				     stosb			     ; Store al	to es:[di]
    2052	1032  B0 FF				     mov     al,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 39
 104PLSTS.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2104	108E  8B F8				     mov     di,ax
    2105	1090  58				     pop     ax
    2106	1091  3D 0014				     cmp     ax,14h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 40
 104PLSTS.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2158	1114  26: 81 25	0F00			     and     word ptr es:[di],0F00h
    2159	1119  26: 09 05				     or	     es:[di],ax
    2160	111C  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 41
 104PLSTS.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2212	117A  B9 002F				     mov     cx,2Fh
    2213	117D  73 32				     jnc     loc_134		     ; Jump if carry=0
    2214	117F  B9 0007				     mov     cx,7
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 42
 104PLSTS.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2266	11E3  2E: A3 4BFD			     mov     cs:data_51e,ax
    2267	11E7  C3				     retn
    2268	11E8  00 01 04 05 07 07			     db	      00h, 01h,	04h, 05h, 07h, 07h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 43
 104PLSTS.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2320	131A  0D 0D 05 0D 06 0D			     db	      0Dh, 0Dh,	05h, 0Dh, 06h, 0Dh
    2321	1320  05 0D 0D 0D 0D 0D			     db	      05h, 0Dh,	0Dh, 0Dh, 0Dh, 0Dh
    2322	1326  06 0D 00 01 04 05			     db	      06h, 0Dh,	00h, 01h, 04h, 05h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 44
 104PLSTS.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2374	1449  04 01 07 01 07 00			     db	     4,	1, 7, 1, 7, 0
    2375	144F  07				     db	     7
    2376	1450  08*(00)				     db	     8 dup (0)
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 45
 104PLSTS.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2428	1601  07*(00)				     db	     7 dup (0)
    2429	1608  04 05 0C 05 08 05			     db	      04h, 05h,	0Ch, 05h, 08h, 05h
    2430	160E  06 0C 00				     db	      06h, 0Ch,	00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 46
 104PLSTS.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2482	17BB  0D 03 0B 0A 0B 03			     db	      0Dh, 03h,	0Bh, 0Ah, 0Bh, 03h
    2483	17C1  0A 0D 0D 0A 0B 0A			     db	      0Ah, 0Dh,	0Dh, 0Ah, 0Bh, 0Ah
    2484	17C7  0B 06 02 06 06 06			     db	      0Bh, 06h,	02h, 06h, 06h, 06h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 47
 104PLSTS.asm
 
 
@@ -2771,7 +2771,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2536	18FF  09 01 09 05 05 03			     db	      09h, 01h,	09h, 05h, 05h, 03h
    2537	1905  0B 05 09 04 05 0C			     db	      0Bh, 05h,	09h, 04h, 05h, 0Ch
    2538	190B  06 04 08 06 0C 04			     db	      06h, 04h,	08h, 06h, 0Ch, 04h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 48
 104PLSTS.asm
 
 
@@ -2830,7 +2830,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2590	1A38  04 0C 05 0C 0D 0C			     db	      04h, 0Ch,	05h, 0Ch, 0Dh, 0Ch
    2591	1A3E  07 0C 00				     db	      07h, 0Ch,	00h
    2592	1A41  07*(00)				     db	     7 dup (0)
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 49
 104PLSTS.asm
 
 
@@ -2889,7 +2889,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2644				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
    2645
    2646	1B3E			     stats_func_20	     proc    near
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 50
 104PLSTS.asm
 
 
@@ -2948,7 +2948,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2698	1BB9  59				     pop     cx
    2699	1BBA  E2 E7				     loop    locloop_138	     ; Loop if cx > 0
    2700
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 51
 104PLSTS.asm
 
 
@@ -3003,7 +3003,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 1
    2748
    2749
    2750						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 52
 Symbol Table
 
 
@@ -3011,9 +3011,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "104PLSTS"
-??TIME				  Text	 "12:28:51"
+??TIME				  Text	 "00:08:38"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -3062,7 +3062,7 @@ DATA_71E			  Number FF1A
 DATA_72E			  Number FF2C
 DATA_73E			  Number 0000
 DATA_74E			  Number 1A6E
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 53
 Symbol Table
 
 
@@ -3121,7 +3121,7 @@ LOCLOOP_57			  Near	 SEG_A:0692
 LOCLOOP_58			  Near	 SEG_A:06E6
 LOCLOOP_59			  Near	 SEG_A:0716
 LOCLOOP_62			  Near	 SEG_A:0750
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 54
 Symbol Table
 
 
@@ -3180,7 +3180,7 @@ LOC_43				  Near	 SEG_A:0514
 LOC_45				  Near	 SEG_A:0560
 LOC_46				  Near	 SEG_A:0566
 LOC_49				  Near	 SEG_A:05AD
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 55
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 55
 Symbol Table
 
 
@@ -3239,7 +3239,7 @@ STATS_MULTIPLY_4		  Near	 SEG_A:107B
 STATS_PROCESS_LOOP		  Near	 SEG_A:0F00
 STATS_PROCESS_LOOP_2		  Near	 SEG_A:0F30
 STATS_PROCESS_LOOP_3		  Near	 SEG_A:0FAC
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:52	    Page 56
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:39	    Page 56
 Symbol Table
 
 

@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 1
 130UTILB.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
 1    52				     ;	are used!  (macro CALLF)
 1    53				     ;
 1    54
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 2
 130UTILB.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     106	000C  01 A0 8714			     add     ds:data_16e[bx+si],sp
     107	0010  00 04				     add     [si],al
     108	0012  05 FF57				     add     ax,0FF57h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 3
 130UTILB.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     160	010E  00 01 00 06 03 83			     db	      00h, 01h,	00h, 06h, 03h, 83h
     161	0114  00 02 1F FC 83 00			     db	      00h, 02h,	1Fh,0FCh, 83h, 00h
     162	011A  0A 1E 00 60 3B 40			     db	      0Ah, 1Eh,	00h, 60h, 3Bh, 40h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 4
 130UTILB.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     214	0249  81 E1 86 00 1A 6B			     db	      81h,0E1h,	86h, 00h, 1Ah, 6Bh
     215	024F  06 80 00 80 68 E0			     db	      06h, 80h,	00h, 80h, 68h,0E0h
     216	0255  00 03 D0 00 10 03			     db	      00h, 03h,0D0h, 00h, 10h, 03h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 5
 130UTILB.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     268	0386  82 80 02 18 60 83			     db	      82h, 80h,	02h, 18h, 60h, 83h
     269	038C  00 02 03 C4 83 00			     db	      00h, 02h,	03h,0C4h, 83h, 00h
     270	0392  0C 40 10 08 01 03			     db	      0Ch, 40h,	10h, 08h, 01h, 03h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 6
 130UTILB.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     322	04C1  3F D0 85 00 01 08			     db	      3Fh,0D0h,	85h, 00h, 01h, 08h
     323	04C7  87 00 08 02 00 7A			     db	      87h, 00h,	08h, 02h, 00h, 7Ah
     324	04CD  8E 80 3F F8 04 82			     db	      8Eh, 80h,	3Fh,0F8h, 04h, 82h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 7
 130UTILB.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     376	0600  0200		     data_9	     dw	     200h		     ; Data table (indexed access)
     377	0602  01 F8 87 00 01 02			     db	      01h,0F8h,	87h, 00h, 01h, 02h
     378	0608  82 00 01 B0 86 00			     db	      82h, 00h,	01h,0B0h, 86h, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 8
 130UTILB.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     430	06CE  57 FD 00 01 9E 17			     db	      57h,0FDh,	00h, 01h, 9Eh, 17h
     431	06D4  C0 03 00 01 FC 86			     db	     0C0h, 03h,	00h, 01h,0FCh, 86h
     432	06DA  00 04 03 C0 01 F8			     db	      00h, 04h,	03h,0C0h, 01h,0F8h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 9
 130UTILB.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     484	0804  C3 2F F8 17 85 60			     db	     0C3h, 2Fh,0F8h, 17h, 85h, 60h
     485	080A  00 17 80 17 80 1F			     db	      00h, 17h,	80h, 17h, 80h, 1Fh
     486	0810  E0 00				     db	     0E0h, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 10
 130UTILB.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     538	0908  41 80 0A FF F0 60			     db	      41h, 80h,	0Ah,0FFh,0F0h, 60h
     539	090E  FC 0C 00 F0 82 00			     db	     0FCh, 0Ch,	00h,0F0h, 82h, 00h
     540	0914  01 3E 82 00 06 03			     db	      01h, 3Eh,	82h, 00h, 06h, 03h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 11
 130UTILB.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     592	0A4C  00 02 2F C0 84 00			     db	      00h, 02h,	2Fh,0C0h, 84h, 00h
     593	0A52  02 07 C0 86 00 05			     db	      02h, 07h,0C0h, 86h, 00h, 05h
     594	0A58  01 83 85 7F F0 82			     db	      01h, 83h,	85h, 7Fh,0F0h, 82h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 12
 130UTILB.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     646	0AF9  5F FF C0 88 00 10			     db	      5Fh,0FFh,0C0h, 88h, 00h, 10h
     647	0AFF  0E 1E 0B F8 00 7F			     db	      0Eh, 1Eh,	0Bh,0F8h, 00h, 7Fh
     648	0B05  EA AA AB FF 00 03			     db	     0EAh,0AAh,0ABh,0FFh, 00h, 03h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 13
 130UTILB.asm
 
 
@@ -721,7 +721,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 1
     656
     657
     658						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:42	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:28	    Page 14
 Symbol Table
 
 
@@ -729,9 +729,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "130UTILB"
-??TIME				  Text	 "12:29:42"
+??TIME				  Text	 "00:09:28"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A

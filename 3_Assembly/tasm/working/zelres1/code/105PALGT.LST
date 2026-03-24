@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 1
 105PALGT.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 2
 105PALGT.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     106	      =	4507		     data_40e	     equ     4507h		     ;*
     107	      =	4508		     data_41e	     equ     4508h		     ;*
     108	      =	450B		     data_42e	     equ     450Bh		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 3
 105PALGT.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     160
     161	0060			     locloop_1:
     162	0060  3E: 8B 02				     mov     ax,ds:[bp+si]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 4
 105PALGT.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     214	00C8  2E: A3 44FB			     mov     cs:data_33e,ax
     215	00CC  E8 139E				     call    pal_process_loop
     216	00CF  AB				     stosw			     ; Store ax	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 5
 105PALGT.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     268	0129  86 E0				     xchg    ah,al
     269	012B  8B D3				     mov     dx,bx
     270	012D  23 D0				     and     dx,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 6
 105PALGT.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     322	0197  1F				     pop     ds
     323	0198  58				     pop     ax
     324	0199  2E: C7 06	450B 3239		     mov     word ptr cs:data_42e,3239h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 7
 105PALGT.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     376	021F  03 F0				     add     si,ax
     377	0221  81 C7 0140			     add     di,140h
     378	0225  FE C9				     dec     cl
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 8
 105PALGT.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     430	026F  22 C4				     and     al,ah
     431	0271  26: 08 05				     or	     es:[di],al
     432	0274  47				     inc     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 9
 105PALGT.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     484	02BB  5F				     pop     di
     485	02BC  C3				     retn
     486										     ;*	No entry point to code
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 10
 105PALGT.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     538	0322  83 C7 08				     add     di,8
     539	0325  EB B5				     jmp     short loc_18
     540
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 11
 105PALGT.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     592	0376  8A DF				     mov     bl,bh
     593	0378  32 FF				     xor     bh,bh		     ; Zero register
     594	037A  03 DB				     add     bx,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 12
 105PALGT.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     646	03CE  8E C0				     mov     es,ax
     647	03D0  BF 0000				     mov     di,0
     648	03D3  2E: C7 06	4501 0000		     mov     word ptr cs:data_36e,0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 13
 105PALGT.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     700	0433  81 C7 0140			     add     di,140h
     701	0437  E2 F2				     loop    locloop_28		     ; Loop if cx > 0
     702
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 14
 105PALGT.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     754	0496  89 4C 07				     mov     [si+7],cx
     755	0499  8A 44 04				     mov     al,[si+4]
     756	049C  02 44 0A				     add     al,[si+0Ah]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 15
 105PALGT.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     808	0509  33 DB				     xor     bx,bx		     ; Zero register
     809	050B  8A 5C 0D				     mov     bl,[si+0Dh]
     810	050E  03 DB				     add     bx,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 16
 105PALGT.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     862	057F  E2 DB				     loop    locloop_37		     ; Loop if cx > 0
     863
     864	0581  BE A000				     mov     si,data_49e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 17
 105PALGT.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     916	05BD  03 C9				     add     cx,cx
     917	05BF  03 C9				     add     cx,cx
     918	05C1  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 18
 105PALGT.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
     970	0616  75 C7				     jnz     loc_42		     ; Jump if not zero
     971	0618  59				     pop     cx
     972	0619  5F				     pop     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 19
 105PALGT.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1024	06B6  F7 E2				     mul     dx			     ; dx:ax = reg * ax
    1025	06B8  05 97C0				     add     ax,97C0h
    1026	06BB  2E: 8E 1E	FF2C			     mov     ds,cs:data_53e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 20
 105PALGT.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1078	0732  59				     pop     cx
    1079	0733  E2 E0				     loop    locloop_46		     ; Loop if cx > 0
    1080
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 21
 105PALGT.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1132	077D  03 C1				     add     ax,cx
    1133	077F  05 4000				     add     ax,4000h
    1134	0782  50				     push    ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 22
 105PALGT.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1186	07DD  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
    1187	07DF  BF 5191				     mov     di,data_46e
    1188	07E2  B9 0044				     mov     cx,44h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 23
 105PALGT.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1240	085C  26: 09 45	04			     or	     es:[di+4],ax
    1241	0860  E8 0C4C				     call    pal_func_21
    1242	0863  26: 21 45	06			     and     es:[di+6],ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 24
 105PALGT.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1294										     ;*	No entry point to code
    1295	08EA  8B D8				     mov     bx,ax
    1296	08EC  03 DB				     add     bx,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 25
 105PALGT.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1348	095C			     loc_66:
    1349	095C  33 C9				     xor     cx,cx		     ; Zero register
    1350	095E  8A C8				     mov     cl,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 26
 105PALGT.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1402
    1403	09AF			     locloop_73:
    1404	09AF  51				     push    cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 27
 105PALGT.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1456	0A21  E8 0A49				     call    pal_process_loop
    1457	0A24  AB				     stosw			     ; Store ax	to es:[di]
    1458	0A25  E8 0A45				     call    pal_process_loop
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 28
 105PALGT.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1510	0AB7  D4 84 84 84 03 03			     db	     0D4h, 84h,	84h, 84h, 03h, 03h
    1511	0ABD  03 03 84 84 84 84			     db	      03h, 03h,	84h, 84h, 84h, 84h
    1512	0AC3  03 02 00 00 84 85			     db	      03h, 02h,	00h, 00h, 84h, 85h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 29
 105PALGT.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1564	0C68  2E: A3 44FB			     mov     cs:data_33e,ax
    1565	0C6C  03 F5				     add     si,bp
    1566	0C6E			     loc_79:
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 30
 105PALGT.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1618	0CE3  E8 001D				     call    pal_multiply_3
    1619	0CE6  5E				     pop     si
    1620	0CE7  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 31
 105PALGT.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1672	0D64  A5				     movsw			     ; Mov [si]	to es:[di]
    1673	0D65  A5				     movsw			     ; Mov [si]	to es:[di]
    1674	0D66  83 EF 04				     sub     di,4
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 32
 105PALGT.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1726	0DE6  E2 CA				     loop    locloop_88		     ; Loop if cx > 0
    1727
    1728	0DE8  B9 0001				     mov     cx,1
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 33
 105PALGT.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1780	0E32  26: C7 45	FF 0202			     mov     word ptr es:[di-1],202h
    1781	0E38  C3				     retn
    1782	0E39			     vga_operation2	     endp
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 34
 105PALGT.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1834	0EB9			     locloop_91:
    1835	0EB9  51				     push    cx
    1836	0EBA  2E: C6 06	FF1A 00			     mov     byte ptr cs:data_52e,0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 35
 105PALGT.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1888	0F28  72 F8				     jb	     loc_95		     ; Jump if below
    1889	0F2A  59				     pop     cx
    1890	0F2B  E2 8C				     loop    locloop_91		     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 36
 105PALGT.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1942	0F84  2E: A3 44FB			     mov     cs:data_33e,ax
    1943	0F88  E8 04E2				     call    pal_process_loop
    1944	0F8B  AB				     stosw			     ; Store ax	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 37
 105PALGT.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    1996				     ;				    SUBROUTINE
    1997				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
    1998
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 38
 105PALGT.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    2050	1074  E8 0001				     call    fill_buffer_2
    2051	1077  C3				     retn
    2052	1078			     vga_operation5	     endp
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 39
 105PALGT.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    2104	10C2			     vga_operation7	     proc    near
    2105	10C2  50				     push    ax
    2106	10C3  8A D8				     mov     bl,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 40
 105PALGT.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    2158	1140  E8 032A				     call    pal_process_loop
    2159	1143  AB				     stosw			     ; Store ax	to es:[di]
    2160	1144  E2 DF				     loop    locloop_109	     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 41
 105PALGT.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    2212	11A4  50				     push    ax
    2213	11A5  8A D8				     mov     bl,al
    2214	11A7  B0 2F				     mov     al,2Fh		     ; '/'
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 42
 105PALGT.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    2266	1217  B9 0008				     mov     cx,8
    2267
    2268	121A			     locloop_114:
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 43
 105PALGT.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    2320	126E  02 C7				     add     al,bh
    2321	1270  EE				     out     dx,al		     ; port 3C9h, VGA pel data reg
    2322	1271  EB 00				     jmp     short $+2		     ; delay for I/O
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 44
 105PALGT.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    2374	134D  00 00 00 00 00 0F			     db	      00h, 00h,	00h, 00h, 00h, 0Fh
    2375	1353  0F 00 00 0F 00 0F			     db	      0Fh, 00h,	00h, 0Fh, 00h, 0Fh
    2376	1359  00 0F 0F 00 0F 0F			     db	      00h, 0Fh,	0Fh, 00h, 0Fh, 0Fh
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 45
 105PALGT.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    2428	146E  B9 0002				     mov     cx,2
    2429
    2430	1471			     locloop_118:
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 46
 105PALGT.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    2482	14E2  2E FF 26 22 20			     db	      2Eh,0FFh,	26h, 22h, 20h
    2483
    2484				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 47
 105PALGT.asm
 
 
@@ -2743,7 +2743,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 1
    2508
    2509
    2510						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 48
 Symbol Table
 
 
@@ -2751,9 +2751,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "105PALGT"
-??TIME				  Text	 "12:28:58"
+??TIME				  Text	 "00:08:45"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -2802,7 +2802,7 @@ DATA_51E			  Number F500
 DATA_52E			  Number FF1A
 DATA_53E			  Number FF2C
 DATA_54E			  Number 0000
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 49
 Symbol Table
 
 
@@ -2861,7 +2861,7 @@ LOCLOOP_69			  Near	 SEG_A:097B
 LOCLOOP_71			  Near	 SEG_A:0994
 LOCLOOP_73			  Near	 SEG_A:09AF
 LOCLOOP_78			  Near	 SEG_A:0C5B
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 50
 Symbol Table
 
 
@@ -2920,7 +2920,7 @@ LOC_64				  Near	 SEG_A:0949
 LOC_65				  Near	 SEG_A:0950
 LOC_66				  Near	 SEG_A:095C
 LOC_68				  Near	 SEG_A:0977
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:59	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:46	    Page 51
 Symbol Table
 
 

@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:41	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:03	    Page 1
 stdply.asm
 
 
@@ -57,7 +57,7 @@ stdply.asm
 1    52				     ;	This saves one byte, and is slightly faster.  If the assembler you are
 1    53				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
 1    54				     ;	macros are used	to code	the same information.  In other	words, the binary
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:41	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:03	    Page 2
 stdply.asm
 
 
@@ -116,7 +116,7 @@ stdply.asm
     106				     ;--------------------------------------------------------------------------
     107				     ;	Player Movement	Parameters
     108				     ;	Walk speed, acceleration, jump height, etc.
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:41	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:03	    Page 3
 stdply.asm
 
 
@@ -158,7 +158,7 @@ stdply.asm
     143
     144
     145						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:41	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:03	    Page 4
 Symbol Table
 
 
@@ -166,9 +166,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "stdply  "
-??TIME				  Text	 "11:45:41"
+??TIME				  Text	 "00:08:03"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A

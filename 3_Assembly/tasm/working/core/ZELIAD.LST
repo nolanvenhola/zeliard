@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 1
 zeliad.asm
 
 
@@ -57,7 +57,7 @@ zeliad.asm
 1    52				     ;	macros are used	to code	the same information.  In other	words, the binary
 1    53				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
 1    54				     ;	are used!  (macro CALLF)
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 2
 zeliad.asm
 
 
@@ -116,7 +116,7 @@ zeliad.asm
     106	      =	FF1D		     gvar_state_a	     equ     0FF1Dh	     ; Game state variable A
     107	      =	FF1E		     gvar_state_b	     equ     0FF1Eh	     ; Game state variable B
     108	      =	FF1F		     gvar_state_c	     equ     0FF1Fh	     ; Game state variable C
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 3
 zeliad.asm
 
 
@@ -175,7 +175,7 @@ zeliad.asm
     160	0009  CD 20				     int     20h		     ; Exit if DOS < 2.0
     161
     162	000B			     dos_version_ok:
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 4
 zeliad.asm
 
 
@@ -234,7 +234,7 @@ zeliad.asm
     214	007D			     memory_allocated:
     215	007D  A3 08AFr				     mov     word ptr game_entry_seg,ax
     216	0080  E8 0302				     call    flush_keyboard
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 5
 zeliad.asm
 
 
@@ -293,7 +293,7 @@ zeliad.asm
     268	011E  26: 8C 1E	FF7B			     mov     es:gvar_old_int09_seg,ds
     269	0123  26: C6 06	FF16 00			     mov     byte ptr es:gvar_skip_flag,0
     270	0129  26: C6 06	FF17 00			     mov     byte ptr es:gvar_timer_flag,0
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 6
 zeliad.asm
 
 
@@ -352,7 +352,7 @@ zeliad.asm
     322
     323	01F2			     save_name_done:
     324	01F2  2E: A0 08E7r			     mov     al,cs:graphics_mode
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 7
 zeliad.asm
 
 
@@ -411,7 +411,7 @@ zeliad.asm
     376	0264  FA				     cli
     377	0265  0E				     push    cs
     378	0266  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 8
 zeliad.asm
 
 
@@ -470,7 +470,7 @@ zeliad.asm
     430						     ;--- Return from game ---
     431									     ;*	No entry point to code
     432	02D9  50				     push    ax
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 9
 zeliad.asm
 
 
@@ -529,7 +529,7 @@ zeliad.asm
     484	0332  1F				     pop     ds
     485
     486	0333			     print_error_name:
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 10
 zeliad.asm
 
 
@@ -588,7 +588,7 @@ zeliad.asm
     538	0385  52				     push    dx
     539	0386			     flush_loop:
     540	0386  B2 FF				     mov     dl,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 11
 zeliad.asm
 
 
@@ -647,7 +647,7 @@ zeliad.asm
     592	03CA			     line_done:
     593	03CA  F8				     clc			     ; Clear CF	(success)
     594	03CB  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 12
 zeliad.asm
 
 
@@ -706,7 +706,7 @@ zeliad.asm
     646	040C  57				     push    di
     647	040D  B9 0003				     mov     cx,3
     648	0410  F3> A6				     repe    cmpsb
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 13
 zeliad.asm
 
 
@@ -765,7 +765,7 @@ zeliad.asm
     700	046D  C6 06 08E8r FF			     mov     byte ptr music_enabled,0FFh
     701	0472  C3				     retn
     702
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 14
 zeliad.asm
 
 
@@ -824,7 +824,7 @@ zeliad.asm
     754	04C6  65 73				     db	      65h, 73h
     755	04C8  6E		     str_no	     db	     6Eh
     756	04C9  6F				     db	     6Fh
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 15
 zeliad.asm
 
 
@@ -883,7 +883,7 @@ zeliad.asm
     808	0500  8B 15				     mov     dx,[di]		     ; Get load	offset
     809	0502  B9 FFFF				     mov     cx,0FFFFh
     810	0505  06				     push    es
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 16
 zeliad.asm
 
 
@@ -942,7 +942,7 @@ zeliad.asm
     862	0540  EB F3				     jmp     short print_filename
     863
     864	0542			     show_error_code:
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 17
 zeliad.asm
 
 
@@ -1001,7 +1001,7 @@ zeliad.asm
     916	0597  CD 10				     int     10h
     917	0599  C3				     retn
     918
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 18
 zeliad.asm
 
 
@@ -1060,7 +1060,7 @@ zeliad.asm
     970	05E4  33 C0				     xor     ax,ax
     971	05E6  B9 4000				     mov     cx,4000h
     972	05E9  F3> AB				     rep     stosw		     ; Clear video memory
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 19
 zeliad.asm
 
 
@@ -1119,7 +1119,7 @@ zeliad.asm
    1024	062A  47				     inc     di
    1025
    1026	062B			     next_arg_char:
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 20
 zeliad.asm
 
 
@@ -1178,7 +1178,7 @@ zeliad.asm
    1078	      21 0D 0A 24
    1079	06FF  4E 6F 74 20 65 6E	6F+		     db	     'Not enough memory	to run ', 27h, 'Z'
    1080	      75 67 68 20 6D 65	6D+
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 21
 zeliad.asm
 
 
@@ -1237,7 +1237,7 @@ zeliad.asm
    1132	0802  36 08 43 08 00 01			     db	      36h, 08h,	43h, 08h, 00h, 01h
    1133
    1134						     ; Driver file entries: {load_offset, filename, 0}
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 22
 zeliad.asm
 
 
@@ -1296,7 +1296,7 @@ zeliad.asm
    1186	08C6  00		     exec_param_block db     00h		     ; EXEC parameter block (env seg = 0)
    1187	08C7  00 D4 08				     db	      00h,0D4h,	08h
    1188	08CA  0000s				     dw	     seg_a
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 23
 zeliad.asm
 
 
@@ -1330,7 +1330,7 @@ zeliad.asm
    1215
    1216
    1217						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 24
 Symbol Table
 
 
@@ -1338,9 +1338,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "zeliad  "
-??TIME				  Text	 "11:31:37"
+??TIME				  Text	 "00:07:30"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 STACK_SEG_B
@@ -1389,7 +1389,7 @@ GVAR_GFX_FN_OFS			  Number FF10
 GVAR_GFX_FN_SEG			  Number FF12
 GVAR_GFX_MODE			  Number FF14
 GVAR_INPUT_FN_OFS		  Number FF0C
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 25
 Symbol Table
 
 
@@ -1448,7 +1448,7 @@ MUSIC_ENABLED			  Byte	 SEG_A:08E8
 MUSIC_IS_MT32			  Near	 SEG_A:046D
 MUSIC_NAME_OK			  Near	 SEG_A:0457
 NEXT_ARG_CHAR			  Near	 SEG_A:062B
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 26
 Symbol Table
 
 
@@ -1507,7 +1507,7 @@ TRY_3CHAR_MODES			  Near	 SEG_A:0404
 TRY_4CHAR_MODES			  Near	 SEG_A:03DF
 TRY_NO				  Near	 SEG_A:04B4
 VIDEO_MODE_TABLE		  Word	 SEG_A:0588
-Turbo Assembler	 Version 2.01	     03/22/26 11:31:37	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:30	    Page 27
 Symbol Table
 
 

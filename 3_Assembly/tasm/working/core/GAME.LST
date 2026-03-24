@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 1
 game.asm
 
 
@@ -57,7 +57,7 @@ game.asm
 1    52				     ;	This saves one byte, and is slightly faster.  If the assembler you are
 1    53				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
 1    54				     ;	macros are used	to code	the same information.  In other	words, the binary
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 2
 game.asm
 
 
@@ -116,7 +116,7 @@ game.asm
     106				     set_vga_palette)
     107	      =	A470		     game_init_fn    equ     0A470h		     ; Game initialization function ptr
     108	      =	A474		     save_mode_flag  equ     0A474h		     ; Save/new	game mode flag
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 3
 game.asm
 
 
@@ -175,7 +175,7 @@ game.asm
     160	0006  8E D8				     mov     ds,ax
     161	0008  0E				     push    cs
     162	0009  07				     pop     es
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 4
 game.asm
 
 
@@ -234,7 +234,7 @@ game.asm
     214	007E  74 17				     jz	     start_new_game
     215
     216						     ; --- LOAD	SAVED GAME ---
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 5
 game.asm
 
 
@@ -293,7 +293,7 @@ game.asm
     268	00F5  BF C000				     mov     di,0C000h
     269	00F8  B0 03				     mov     al,3
     270	00FA  2E: FF 16	010C			     call    word ptr cs:[10Ch]
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 6
 game.asm
 
 
@@ -352,7 +352,7 @@ game.asm
     322	0173  A3 A472				     mov     word ptr ds:game_init_fn+2,ax ; Set segment for game init
     323	0176  8E C0				     mov     es,ax
     324	0178  BF 0000				     mov     di,0
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 7
 game.asm
 
 
@@ -411,7 +411,7 @@ game.asm
     376	01EF  B1 0B				     mov     cl,0Bh
     377	01F1  F6 E1				     mul     cl			     ; Calculate chunk ref offset
     378	01F3  8B F0				     mov     si,ax
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 8
 game.asm
 
 
@@ -470,7 +470,7 @@ game.asm
     430	027A  00 00 01				     db	     0,	0, 1
     431	027D  6F 70 64 65 6D 6F	2E+		     db	     'opdemo.bin'	     ; Opening demo
     432	      62 69 6E
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 9
 game.asm
 
 
@@ -529,7 +529,7 @@ game.asm
     484	0362  00 01				     db	     0,	1
     485	0364  2F 4D 47 54 31 2E	4D+		     db	     '/MGT1.MSD'	     ; MT-32 music track 1
     486	      53 44
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 10
 game.asm
 
 
@@ -588,7 +588,7 @@ game.asm
     538	03CE  43				     inc     bx
     539	03CF  59				     pop     cx
     540	03D0  E2 E3				     loop    load_track_loop
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 11
 game.asm
 
 
@@ -647,7 +647,7 @@ game.asm
     592	0429  AC				     lodsb			     ; Green base
     593	042A  8A D0				     mov     dl,al
     594	042C  AC				     lodsb			     ; Blue base
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 12
 game.asm
 
 
@@ -698,7 +698,7 @@ game.asm
     638
     639
     640						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 13
 Symbol Table
 
 
@@ -706,9 +706,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "game	  "
-??TIME				  Text	 "11:45:12"
+??TIME				  Text	 "00:07:34"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -757,7 +757,7 @@ SAVE_DATA_BASE			  Number C000
 SAVE_MODE_FLAG			  Number A474
 SET_VGA_PALETTE			  Near	 SEG_A:03E5
 SKIP_GFX_INIT_A			  Near	 SEG_A:01A7
-Turbo Assembler	 Version 2.01	     03/22/26 11:45:12	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:07:34	    Page 14
 Symbol Table
 
 

@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 1
 201CBTUI.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 2
 201CBTUI.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     106	      =	AAB8		     data_57e	     equ     0AAB8h		     ;*
     107	      =	AAF3		     data_58e	     equ     0AAF3h		     ;*
     108	      =	AB62		     data_59e	     equ     0AB62h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 3
 201CBTUI.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     160	0027  B0 FF				     mov     al,0FFh
     161	0029  2E: FF 16	2000			     call    word ptr cs:data_33e
     162	002E  5E				     pop     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 4
 201CBTUI.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     214	0092  F6 06 ADFA FF			     test    byte ptr ds:data_66e,0FFh
     215	0097  75 1F				     jnz     loc_9		     ; Jump if not zero
     216	0099  FE C1				     inc     cl
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 5
 201CBTUI.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     268	0107  FE 06 ADFB			     inc     byte ptr ds:data_67e
     269	010B  B0 02				     mov     al,2
     270	010D  E8 006F				     call    combat_func_2
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 6
 201CBTUI.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     322
     323				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
     324				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 7
 201CBTUI.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     376	01E9  FE C0				     inc     al
     377	01EB  8A 26 ADFC			     mov     ah,ds:data_68e
     378	01EF  FE CC				     dec     ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 8
 201CBTUI.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     430	0265  24 0C				     and     al,0Ch
     431	0267  75 FA				     jnz     loc_24		     ; Jump if not zero
     432	0269  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 9
 201CBTUI.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     484	02CB  E8 078E				     call    combat_func_22
     485	02CE  73 01				     jnc     loc_33		     ; Jump if carry=0
     486	02D0  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 10
 201CBTUI.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     538	0340			     combat_func_5	     proc    near
     539	0340  BB AE10				     mov     bx,data_77e
     540	0343  A0 AE00				     mov     al,ds:data_72e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 11
 201CBTUI.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     592	03A7  E9 FF21				     jmp     loc_32
     593	03AA			     loc_41:
     594	03AA  88 0E ADF9			     mov     ds:data_65e,cl
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 12
 201CBTUI.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     646	042C  BB 00A6				     mov     bx,0A6h
     647	042F			     loc_46:
     648	042F  F6 07 FF				     test    byte ptr [bx],0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 13
 201CBTUI.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     700	04E4  FE 06 00E4			     inc     byte ptr ds:[0E4h]
     701	04E8  E8 0387				     call    combat_func_16
     702	04EB  E9 00F0				     jmp     loc_53
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 14
 201CBTUI.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     754	05B7  C3				     retn
     755
     756				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 15
 201CBTUI.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     808				     ;				    SUBROUTINE
     809				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
     810
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 16
 201CBTUI.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     862	0660  75 F4				     jnz     loc_56		     ; Jump if not zero
     863	0662  0A C9				     or	     cl,cl		     ; Zero ?
     864	0664  74 02				     jz	     loc_58		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 17
 201CBTUI.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     916	06C8  BB 0054				     mov     bx,54h
     917	06CB  B1 71				     mov     cl,71h		     ; 'q'
     918	06CD  BE AA92				     mov     si,0AA92h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 18
 201CBTUI.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
     970	072F  03 DB				     add     bx,bx
     971	0731  8B B7 AAF3			     mov     si,ds:data_58e[bx]
     972	0735  BB 005C				     mov     bx,5Ch
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 19
 201CBTUI.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1024	07B7  BB 3469				     mov     bx,3469h
    1025	07BA  32 C9				     xor     cl,cl		     ; Zero register
    1026	07BC  2E: FF 16	2038			     call    word ptr cs:data_47e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 20
 201CBTUI.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1078	083E  5E				     pop     si
    1079	083F  5B				     pop     bx
    1080	0840  81 C3 0600			     add     bx,600h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 21
 201CBTUI.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1132	08AE  2E: FF 26	2022			     jmp     word ptr cs:data_39e
    1133
    1134				     ;ﬂﬂﬂﬂ External Entry into Subroutine ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 22
 201CBTUI.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1186	0920  BB 009E				     mov     bx,9Eh
    1187	0923  B1 12				     mov     cl,12h
    1188	0925  BE AA92				     mov     si,0AA92h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 23
 201CBTUI.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1240	0986  58				     pop     ax
    1241	0987  8A C4				     mov     al,ah
    1242	0989  52				     push    dx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 24
 201CBTUI.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1294	09E0  8A F1				     mov     dh,cl
    1295	09E2  AD				     lodsw			     ; String [si] to ax
    1296	09E3  8B D8				     mov     bx,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 25
 201CBTUI.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1348	0A2E  00 AC C00A			     add     ds:data_78e[si],ch
    1349	0A32  75 01				     jnz     loc_77		     ; Jump if not zero
    1350	0A34  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 26
 201CBTUI.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1402	0A90  F9				     stc			     ; Set carry flag
    1403	0A91  74 01				     jz	     loc_82		     ; Jump if zero
    1404	0A93  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 27
 201CBTUI.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1456	      65 6E 20 46 72 75	69+
    1457	      74 2E 00
    1458	0BA6  20 20 20 20 20 61	20+		     db	     '	   a Elixir of Kashi.',	0
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 28
 201CBTUI.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1510	0CD0  20 20 20 20 20 66	65+		     db	     '	   feather'
    1511	      61 74 68 65 72
    1512	0CDC  00 E5 AC F9 AC 10			     db	      00h,0E5h,0ACh,0F9h,0ACh, 10h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 29
 201CBTUI.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1564	0DF9  2D 5E				     db	     '-^'
    1565	0DFB  17				     db	     17h
    1566	0DFC  25*(00)				     db	     37	dup (0)
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 30
 201CBTUI.asm
 
 
@@ -1720,7 +1720,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 1
    1570
    1571
    1572						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 31
 Symbol Table
 
 
@@ -1728,9 +1728,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "201CBTUI"
-??TIME				  Text	 "12:30:32"
+??TIME				  Text	 "00:09:55"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -1779,7 +1779,7 @@ DATA_50E			  Number 2040
 DATA_51E			  Number A00B
 DATA_52E			  Number A0C4
 DATA_53E			  Number A2B9
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 32
 Symbol Table
 
 
@@ -1838,7 +1838,7 @@ LOC_23				  Near	 SEG_A:020D
 LOC_24				  Near	 SEG_A:0263
 LOC_25				  Near	 SEG_A:0281
 LOC_26				  Near	 SEG_A:0290
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 33
 Symbol Table
 
 
@@ -1897,7 +1897,7 @@ LOC_8				  Near	 SEG_A:00B2
 LOC_80				  Near	 SEG_A:0A83
 LOC_81				  Near	 SEG_A:0A8A
 LOC_82				  Near	 SEG_A:0A94
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:32	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:55	    Page 34
 Symbol Table
 
 

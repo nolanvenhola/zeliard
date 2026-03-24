@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 1
 250GMENG.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
 1    52				     ;	are used!  (macro CALLF)
 1    53				     ;
 1    54
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 2
 250GMENG.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     106	      =	6634		     data_86e	     equ     6634h		     ;*
     107	      =	6635		     data_87e	     equ     6635h		     ;*
     108	      =	6636		     data_88e	     equ     6636h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 3
 250GMENG.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     160	004B  BE A000				     mov     si,data_103e
     161	004E  BF 8000				     mov     di,data_97e
     162	0051  E8 091D				     call    sub_9
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 4
 250GMENG.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     214	00D8  E2 C7				     loop    locloop_2		     ; Loop if cx > 0
     215
     216	00DA  0E				     push    cs
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 5
 250GMENG.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     268	0179  0E				     push    cs
     269	017A  07				     pop     es
     270	017B  BE 8152				     mov     si,8152h
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 6
 250GMENG.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     322	0228  BB 2D18				     mov     bx,2D18h
     323	022B  B9 1858				     mov     cx,1858h
     324	022E  2E: FF 16	3004			     call    word ptr cs:data_73e
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 7
 250GMENG.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     376	02CA  D0 C8				     ror     al,1		     ; Rotate
     377	02CC  59				     pop     cx
     378	02CD  E2 F5				     loop    locloop_3		     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 8
 250GMENG.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     430	031C  2E: C6 06	FF1A 00			     mov     byte ptr cs:data_104e,0
     431	0322			     loc_5:
     432	0322  B0 10				     mov     al,10h
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 9
 250GMENG.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     484	038C  58				     pop     ax
     485	038D  8A 26 6636			     mov     ah,ds:data_88e
     486	0391  2E: FF 16	3030			     call    word ptr cs:data_82e
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 10
 250GMENG.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     538	03FF  BB 0701				     mov     bx,701h
     539	0402  3C FB				     cmp     al,0FBh
     540	0404  75 03				     jne     loc_19		     ; Jump if not equal
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 11
 250GMENG.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     592	0475  E9 FEAA				     jmp     loc_5
     593	0478			     loc_26:
     594	0478  C6 06 6637 40			     mov     byte ptr ds:data_89e,40h	     ; '@'
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 12
 250GMENG.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     646	04FA  03 C0				     add     ax,ax
     647	04FC  03 C0				     add     ax,ax
     648	04FE  03 C0				     add     ax,ax
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 13
 250GMENG.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     700	057B  03 C0				     add     ax,ax
     701	057D  05 98C0				     add     ax,98C0h
     702	0580  8B F8				     mov     di,ax
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 14
 250GMENG.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     754				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
     755
     756	05F4			     sub_4	     proc    near
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 15
 250GMENG.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     808	063D  BC 2000				     mov     sp,2000h
     809	0640  FB				     sti			     ; Enable interrupts
     810	0641  C6 06 696C 00			     mov     byte ptr ds:data_96e,0
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 16
 250GMENG.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     862	06D1  C6 06 FF1A 00			     mov     byte ptr ds:data_104e,0
     863	06D6			     loc_54:
     864	06D6  8B 36 6965			     mov     si,ds:data_91e
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 17
 250GMENG.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     916	073C  03 DB				     add     bx,bx
     917	073E  03 DB				     add     bx,bx
     918	0740  58				     pop     ax
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 18
 250GMENG.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
     970	07CB  32 C0				     xor     al,al		     ; Zero register
     971	07CD  E8 001E				     call    sub_6
     972	07D0  C6 06 6967 00			     mov     byte ptr ds:data_92e,0
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 19
 250GMENG.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1024	0872  FD 00 1F BB 08 0B			     db	     0FDh, 00h,	1Fh,0BBh, 08h, 0Bh
    1025	0878  B9 9A 39 2E FF 16			     db	     0B9h, 9Ah,	39h, 2Eh,0FFh, 16h
    1026	087E  06 30 2E 8E 06 2C			     db	      06h, 30h,	2Eh, 8Eh, 06h, 2Ch
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 20
 250GMENG.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1078				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
    1079
    1080	095A			     sub_8	     proc    near
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 21
 250GMENG.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1132	0998  03 C9				     add     cx,cx
    1133	099A  03 C9				     add     cx,cx
    1134	099C  03 C9				     add     cx,cx
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 22
 250GMENG.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1186	09FA  86 E0				     xchg    ah,al
    1187	09FC  8B C8				     mov     cx,ax
    1188	09FE  3D FFFF				     cmp     ax,0FFFFh
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 23
 250GMENG.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1240										     ;*	No entry point to code
    1241	0A56  1E				     push    ds
    1242	0A57  06				     push    es
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 24
 250GMENG.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1294	0AAC  F0 FA F3				     db	     0F0h,0FAh,0F3h
    1295	0AAF  41 74 20 6C 6F 6E	67+		     db	     'At long last, Jashiin was	destro'
    1296	      20 6C 61 73 74 2C	20+
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 25
 250GMENG.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1348	0BEF  20 A0 64 65 66 65			     db	      20h,0A0h,	64h, 65h, 66h, 65h
    1349	0BF5  61 A1 74 A2 69 6E			     db	      61h,0A1h,	74h,0A2h, 69h, 6Eh
    1350	0BFB  67 20 A1 4A 61 73			     db	      67h, 20h,0A1h, 4Ah, 61h, 73h
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 26
 250GMENG.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1402	      75 20 69 6E 20 6D	79
    1403	0D28  20 61 72 6D 73 20	61+		     db	     ' arms and	hear your sweet	voice!'
    1404	      6E 64 20 68 65 61	72+
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 27
 250GMENG.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1456	      72 6C 61 6E 64 20	6F+
    1457	      6E 63 65 20 61 67	61+
    1458	      69 6E 2E
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 28
 250GMENG.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1510	0FA6  68 65 80 72 65 20			     db	      68h, 65h,	80h, 72h, 65h, 20h
    1511	0FAC  80 61 72 65 20 81			     db	      80h, 61h,	72h, 65h, 20h, 81h
    1512	0FB2  6D 61 84 6E 79 20			     db	      6Dh, 61h,	84h, 6Eh, 79h, 20h
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 29
 250GMENG.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1564	10E4  49 B8 20 B7 B5 77			     db	      49h,0B8h,	20h,0B7h,0B5h, 77h
    1565	10EA  B6 B0 61 73 20 B3			     db	     0B6h,0B0h,	61h, 73h, 20h,0B3h
    1566	10F0  68 6F 70 B2 69 B4			     db	      68h, 6Fh,	70h,0B2h, 69h,0B4h
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 30
 250GMENG.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1618	1228  F5 F5 F5 FD FE F3			     db	     0F5h,0F5h,0F5h,0FDh,0FEh,0F3h
    1619	122E  FA				     db	     0FAh
    1620	122F  46 6F 72 20 69 66	20+		     db	     'For if he	heard those words, he '
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 31
 250GMENG.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1672	      72 73 65 6C 66 2C	20
    1673	136A  F5 F2 FB				     db	     0F5h,0F2h,0FBh
    1674	136D  22 48 65 20 77 69	6C+		     db	     '"He will return.	'
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 32
 250GMENG.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1726	14A6  00 1F FC FF A0 7F			     db	      00h, 1Fh,0FCh,0FFh,0A0h, 7Fh
    1727	14AC  FF F1 7F FF FF FF			     db	     0FFh,0F1h,	7Fh,0FFh,0FFh,0FFh
    1728	14B2  FC 3F F0 83 FF F8			     db	     0FCh, 3Fh,0F0h, 83h,0FFh,0F8h
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 33
 250GMENG.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1780	15EA  23 F8 07 FC FF 30			     db	      23h,0F8h,	07h,0FCh,0FFh, 30h
    1781	15F0  00 1F FC FF A0 7F			     db	      00h, 1Fh,0FCh,0FFh,0A0h, 7Fh
    1782	15F6  FF F1 7F FF FF FF			     db	     0FFh,0F1h,	7Fh,0FFh,0FFh,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 34
 250GMENG.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1834	1724  23 90 27 41 7B FF			     db	      23h, 90h,	27h, 41h, 7Bh,0FFh
    1835	172A  F8 17 82 23 B0 73			     db	     0F8h, 17h,	82h, 23h,0B0h, 73h
    1836	1730  FF F4 5F CE 23 EA			     db	     0FFh,0F4h,	5Fh,0CEh, 23h,0EAh
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 35
 250GMENG.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1888	1868  7F FE 1F F0 8F 83			     db	      7Fh,0FEh,	1Fh,0F0h, 8Fh, 83h
    1889	186E  C0 07 C0 1E FF FF			     db	     0C0h, 07h,0C0h, 1Eh,0FFh,0FFh
    1890	1874  E4 7F FF FF 79 FC			     db	     0E4h, 7Fh,0FFh,0FFh, 79h,0FCh
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 36
 250GMENG.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1942	198B  09 09 09 09 09 20	4D+		     db	     9,	9, 9, 9, 9, ' Marti McKenna'
    1943	      61 72 74 69 20 4D	63+
    1944	      4B 65 6E 6E 61
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 37
 250GMENG.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    1996	      75
    1997	1AA4  6D 69 20 48 6F 6E	6D+		     db	     'mi Honma'
    1998	      61
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 38
 250GMENG.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    2050	1BAC  53 45 52 56 49 4E	47+		     db	     'SERVING MONSTERS'
    2051	      20 4D 4F 4E 53 54	45+
    2052	      52 53
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 39
 250GMENG.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    2104	1CAF  39 30 20 47 41 4D	45+		     db	     '90 GAME ARTS'
    2105	      20 41 52 54 53
    2106	1CBB  FD				     db	     0FDh
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 40
 250GMENG.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    2158	1EC8  52 53				     db	      52h, 53h
    2159	1ECA  20*(00)				     db	     32	dup (0)
    2160	1EEA  54 55 56				     db	      54h, 55h,	56h
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 41
 250GMENG.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    2212	20D3  00 01 01 00 00 00			     db	     0,	1, 1, 0, 0, 0
    2213	20D9  01 01 01 02 00 03			     db	     1,	1, 1, 2, 0, 3
    2214	20DF  01 00 05 04 04 04			     db	     1,	0, 5, 4, 4, 4
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 42
 250GMENG.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    2266	      72 70
    2267	21CE  00 01				     db	     0,	1
    2268	21D0  34 65 6E 37 32 2E	67+		     db	     '4en72.grp'
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:45	    Page 43
 250GMENG.asm
 
 
@@ -2486,206 +2486,4 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 1
    2271	21DB  39 66 69 6E 2E 67	72+		     db	     '9fin.grp'
    2272	      70
    2273	21E3  00 00				     db	     0,	0
-   2274	21E5  27 7A 65 6E 64 2E	6D+		     db	     27h, 'zend.msd'
-   2275	      73 64
-   2276	21EE  00				     db	     0
-   2277
-   2278	21EF			     seg_a	     ends
-   2279
-   2280
-   2281
-   2282						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 44
-Symbol Table
-
-
-
-
-Symbol Name			  Type	 Value
-
-??DATE				  Text	 "03/22/26"
-??FILENAME			  Text	 "250GMENG"
-??TIME				  Text	 "17:37:53"
-??VERSION			  Number 0201
-@CPU				  Text	 0101H
-@CURSEG				  Text	 SEG_A
-@FILENAME			  Text	 250GMENG
-@WORDSIZE			  Text	 2
-DATA_100E			  Number 815D
-DATA_101E			  Number 8173
-DATA_102E			  Number 8194
-DATA_103E			  Number A000
-DATA_104E			  Number FF1A
-DATA_105E			  Number FF21
-DATA_106E			  Number FF2C
-DATA_107E			  Number FF50
-DATA_108E			  Number FF75
-DATA_1E				  Number 0000
-DATA_2E				  Number 18D8
-DATA_38				  Byte	 SEG_A:16FF
-DATA_3E				  Number 29E0
-DATA_4E				  Number 4000
-DATA_5E				  Number 4CE6
-DATA_63				  Word	 SEG_A:2000
-DATA_6E				  Number 53C0
-DATA_73E			  Number 3004
-DATA_74E			  Number 3006
-DATA_75E			  Number 3008
-DATA_76E			  Number 3010
-DATA_77E			  Number 3020
-DATA_78E			  Number 3022
-DATA_79E			  Number 3024
-DATA_7E				  Number 8000
-DATA_80E			  Number 3028
-DATA_81E			  Number 302E
-DATA_82E			  Number 3030
-DATA_83E			  Number 4000
-DATA_84E			  Number 6630
-DATA_85E			  Number 6632
-DATA_86E			  Number 6634
-DATA_87E			  Number 6635
-DATA_88E			  Number 6636
-DATA_89E			  Number 6637
-DATA_90E			  Number 6820
-DATA_91E			  Number 6965
-DATA_92E			  Number 6967
-DATA_93E			  Number 6968
-DATA_94E			  Number 6969
-DATA_95E			  Number 696B
-DATA_96E			  Number 696C
-DATA_97E			  Number 8000
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 45
-Symbol Table
-
-
-
-DATA_98E			  Number 807D
-DATA_99E			  Number 80DD
-LOCLOOP_2			  Near	 SEG_A:00A1
-LOCLOOP_3			  Near	 SEG_A:02C4
-LOCLOOP_77			  Near	 SEG_A:097F
-LOCLOOP_78			  Near	 SEG_A:0985
-LOCLOOP_82			  Near	 SEG_A:09A2
-LOCLOOP_88			  Near	 SEG_A:0A66
-LOCLOOP_89			  Near	 SEG_A:0A6B
-LOCLOOP_90			  Near	 SEG_A:0A8A
-LOCLOOP_91			  Near	 SEG_A:0A8F
-LOC_1				  Near	 SEG_A:0023
-LOC_10				  Near	 SEG_A:03C5
-LOC_11				  Near	 SEG_A:03C8
-LOC_12				  Near	 SEG_A:03CD
-LOC_13				  Near	 SEG_A:03D2
-LOC_14				  Near	 SEG_A:03DF
-LOC_15				  Near	 SEG_A:03E7
-LOC_16				  Near	 SEG_A:03EF
-LOC_17				  Near	 SEG_A:03F7
-LOC_18				  Near	 SEG_A:03FF
-LOC_19				  Near	 SEG_A:0409
-LOC_20				  Near	 SEG_A:0413
-LOC_21				  Near	 SEG_A:0421
-LOC_22				  Near	 SEG_A:0428
-LOC_23				  Near	 SEG_A:0454
-LOC_24				  Near	 SEG_A:0460
-LOC_25				  Near	 SEG_A:046C
-LOC_26				  Near	 SEG_A:0478
-LOC_27				  Near	 SEG_A:0484
-LOC_28				  Near	 SEG_A:0490
-LOC_29				  Near	 SEG_A:0497
-LOC_30				  Near	 SEG_A:04A2
-LOC_31				  Near	 SEG_A:04AF
-LOC_32				  Near	 SEG_A:04BC
-LOC_33				  Near	 SEG_A:04CD
-LOC_34				  Near	 SEG_A:04D5
-LOC_35				  Near	 SEG_A:04E7
-LOC_36				  Near	 SEG_A:0513
-LOC_37				  Near	 SEG_A:0534
-LOC_38				  Near	 SEG_A:0553
-LOC_39				  Near	 SEG_A:056C
-LOC_4				  Near	 SEG_A:02F2
-LOC_40				  Near	 SEG_A:0590
-LOC_41				  Near	 SEG_A:05B8
-LOC_42				  Near	 SEG_A:05D9
-LOC_43				  Near	 SEG_A:05F6
-LOC_44				  Near	 SEG_A:05FC
-LOC_45				  Near	 SEG_A:0601
-LOC_46				  Near	 SEG_A:0606
-LOC_47				  Near	 SEG_A:060B
-LOC_48				  Near	 SEG_A:0610
-LOC_49				  Near	 SEG_A:0615
-LOC_5				  Near	 SEG_A:0322
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 46
-Symbol Table
-
-
-
-LOC_50				  Near	 SEG_A:061A
-LOC_51				  Near	 SEG_A:061F
-LOC_52				  Near	 SEG_A:063C
-LOC_53				  Near	 SEG_A:06CC
-LOC_54				  Near	 SEG_A:06D6
-LOC_55				  Near	 SEG_A:06EA
-LOC_56				  Near	 SEG_A:06F1
-LOC_57				  Near	 SEG_A:06F8
-LOC_58				  Near	 SEG_A:06FF
-LOC_59				  Near	 SEG_A:0706
-LOC_6				  Near	 SEG_A:0327
-LOC_60				  Near	 SEG_A:070D
-LOC_61				  Near	 SEG_A:0714
-LOC_62				  Near	 SEG_A:071B
-LOC_63				  Near	 SEG_A:0722
-LOC_64				  Near	 SEG_A:074C
-LOC_65				  Near	 SEG_A:075A
-LOC_66				  Near	 SEG_A:0772
-LOC_67				  Near	 SEG_A:077D
-LOC_68				  Near	 SEG_A:0782
-LOC_69				  Near	 SEG_A:0797
-LOC_7				  Near	 SEG_A:0339
-LOC_70				  Near	 SEG_A:07A2
-LOC_71				  Near	 SEG_A:07B1
-LOC_72				  Near	 SEG_A:07CB
-LOC_73				  Near	 SEG_A:07DC
-LOC_74				  Near	 SEG_A:0806
-LOC_75				  Near	 SEG_A:080C
-LOC_76				  Near	 SEG_A:0949
-LOC_79				  Near	 SEG_A:0990
-LOC_8				  Near	 SEG_A:0355
-LOC_80				  Near	 SEG_A:0993
-LOC_81				  Near	 SEG_A:09A0
-LOC_83				  Near	 SEG_A:09F4
-LOC_84				  Near	 SEG_A:0A04
-LOC_85				  Near	 SEG_A:0A0D
-LOC_86				  Near	 SEG_A:0A12
-LOC_87				  Near	 SEG_A:0A16
-LOC_9				  Near	 SEG_A:03AF
-START				  Near	 SEG_A:0000
-SUB_1				  Near	 SEG_A:02F2
-SUB_10				  Near	 SEG_A:0976
-SUB_11				  Near	 SEG_A:0A22
-SUB_2				  Near	 SEG_A:0303
-SUB_3				  Near	 SEG_A:031C
-SUB_4				  Near	 SEG_A:05F4
-SUB_5				  Near	 SEG_A:06D1
-SUB_6				  Near	 SEG_A:07EE
-SUB_7				  Near	 SEG_A:0949
-SUB_8				  Near	 SEG_A:095A
-SUB_9				  Near	 SEG_A:0971
-TARGET				  Number 5432
-ZR250FUL			  Far	 SEG_A:0000
-Turbo Assembler	 Version 2.01	     03/22/26 17:37:54	    Page 47
-Symbol Table
-
-
-
-
-Macro Name
-
-CALLF
-CALLFX
-CALLS
-JMPN
-JMPS
-
-Groups & Segments		  Bit Size Align  Combine Class
-
-SEG_A				  16  21EF Byte	  Public
-
+   2274	21E5  27 7A 6

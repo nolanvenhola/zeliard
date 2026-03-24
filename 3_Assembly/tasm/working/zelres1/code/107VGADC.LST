@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 1
 107VGADC.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 2
 107VGADC.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     106	      =	FF2A		     data_30e	     equ     0FF2Ah		     ;*
     107	      =	FF2C		     data_31e	     equ     0FF2Ch		     ;*
     108	      =	FF57		     data_32e	     equ     0FF57h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 3
 107VGADC.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     160	004D  4E				     dec     si
     161	004E  4E				     dec     si
     162	004F  B0 02				     mov     al,2
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 4
 107VGADC.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     214	00AE  74 03				     jz	     loc_8		     ; Jump if zero
     215	00B0  E8 008C				     call    vgadec_func_3
     216	00B3			     loc_8:
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 5
 107VGADC.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     268	0107  B8 A000				     mov     ax,0A000h
     269	010A  8E C0				     mov     es,ax
     270	010C  8E D8				     mov     ds,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 6
 107VGADC.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     322	014F  A4				     movsb			     ; Mov [si]	to es:[di]
     323	0150  06				     push    es
     324	0151  1E				     push    ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 7
 107VGADC.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     376	01B6  26: 89 45	FE			     mov     es:[di-2],ax
     377	01BA  4F				     dec     di
     378	01BB  4F				     dec     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 8
 107VGADC.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     430	020B  A4				     movsb			     ; Mov [si]	to es:[di]
     431	020C  03 FB				     add     di,bx
     432	020E  03 F3				     add     si,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 9
 107VGADC.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     484	0260  B8 0050				     mov     ax,50h
     485	0263  F6 E3				     mul     bl			     ; ax = reg	* al
     486	0265  D1 E0				     shl     ax,1		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 10
 107VGADC.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     538	02D1  47				     inc     di
     539	02D2			     loc_24:
     540	02D2  26: 8A 05				     mov     al,es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 11
 107VGADC.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     592	0330  8B D8				     mov     bx,ax
     593	0332  AD				     lodsw			     ; String [si] to ax
     594	0333  8B C8				     mov     cx,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 12
 107VGADC.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     646	0398  1E				     push    ds
     647	0399  0E				     push    cs
     648	039A  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 13
 107VGADC.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     700	03E2  B0 01				     mov     al,1
     701	03E4  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
     702	03E5  A5				     movsw			     ; Mov [si]	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 14
 107VGADC.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     754	044D  5B				     pop     bx
     755	044E  2E: 8E 06	FF2C			     mov     es,cs:data_31e
     756	0453  BE 3BB4				     mov     si,data_18e
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 15
 107VGADC.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     808	04BB  26: 88 05				     mov     es:[di],al
     809	04BE  26: 88 45	01			     mov     es:[di+1],al
     810	04C2  26: 88 45	07			     mov     es:[di+7],al
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 16
 107VGADC.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     862	052E  5E				     pop     si
     863	052F			     loc_41:
     864	052F  83 C6 08				     add     si,8
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 17
 107VGADC.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     916				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
     917				     ;				    SUBROUTINE
     918				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 18
 107VGADC.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
     970
     971	05B3  C3				     retn
     972	05B4			     vga_operation1	     endp
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 19
 107VGADC.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1024				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
    1025				     ;				    SUBROUTINE
    1026				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 20
 107VGADC.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1078	0644  1E				     push    ds
    1079	0645  56				     push    si
    1080	0646  26: 8A 46	00			     mov     al,es:[bp]
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 21
 107VGADC.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1132	0693  BA 03C4				     mov     dx,3C4h
    1133	0696  B8 0702				     mov     ax,702h
    1134	0699  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 22
 107VGADC.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1186	06E7  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
    1187	06E8  B0 01				     mov     al,1
    1188	06EA  26: 86 45	01			     xchg    es:[di+1],al
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 23
 107VGADC.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1240	0740  FD				     std			     ; Set direction flag
    1241	0741  BE 2CA3				     mov     si,data_40e
    1242	0744  B0 08				     mov     al,8
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 24
 107VGADC.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1294	079A  BE 04A3				     mov     si,data_36e
    1295	079D  B0 10				     mov     al,10h
    1296	079F			     loc_55:
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 25
 107VGADC.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1348	07F5  83 C6 04				     add     si,4
    1349	07F8  B9 0034				     mov     cx,34h
    1350	07FB  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 26
 107VGADC.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1402	084E  8B F0				     mov     si,ax
    1403	0850  81 C6 8000			     add     si,data_2e
    1404	0854  B0 50				     mov     al,50h		     ; 'P'
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 27
 107VGADC.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1456	08A8  B8 A000				     mov     ax,0A000h
    1457	08AB  8E C0				     mov     es,ax
    1458	08AD  BE 38B9				     mov     si,data_14e
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 28
 107VGADC.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1510	0901  C3				     retn
    1511										     ;*	No entry point to code
    1512	0902  56				     push    si
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 29
 107VGADC.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1564	094E  E8 0007				     call    vga_operation8
    1565	0951  5E				     pop     si
    1566	0952  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 30
 107VGADC.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1618	0996  BF 3BBC				     mov     di,data_21e
    1619	0999  33 C0				     xor     ax,ax		     ; Zero register
    1620	099B  B9 00C8				     mov     cx,0C8h
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 31
 107VGADC.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1672	09E5			     vgadec_process_loop	     proc    near
    1673	09E5  FE C0				     inc     al
    1674	09E7  75 01				     jnz     loc_71		     ; Jump if not zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 32
 107VGADC.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1726
    1727	0A35  07*(00)				     db	     7 dup (0)
    1728
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 33
 107VGADC.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1780	0A98  02 D1				     add     dl,cl
    1781	0A9A  C3				     retn
    1782	0A9B			     vgadec_func_23	     endp
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 34
 107VGADC.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1834	0AE3  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
    1835	0AE5  5E				     pop     si
    1836	0AE6  5F				     pop     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 35
 107VGADC.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1888	0B3C  57				     push    di
    1889	0B3D  56				     push    si
    1890	0B3E  8B CB				     mov     cx,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 36
 107VGADC.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1942	0B8E  B9 0038				     mov     cx,38h
    1943
    1944	0B91			     locloop_84:
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 37
 107VGADC.asm
 
 
@@ -2158,7 +2158,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 1
    1973
    1974
    1975						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 38
 Symbol Table
 
 
@@ -2166,9 +2166,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "107VGADC"
-??TIME				  Text	 "12:29:12"
+??TIME				  Text	 "00:08:59"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -2217,7 +2217,7 @@ DATA_46E			  Number 3EE0
 DATA_47E			  Number 3F10
 DATA_4E				  Number 8100
 LOCLOOP_1			  Near	 SEG_A:0044
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 39
 Symbol Table
 
 
@@ -2276,7 +2276,7 @@ LOC_41				  Near	 SEG_A:052F
 LOC_42				  Near	 SEG_A:056F
 LOC_43				  Near	 SEG_A:0581
 LOC_44				  Near	 SEG_A:0586
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 40
 Symbol Table
 
 
@@ -2335,7 +2335,7 @@ VGA_OPERATION8			  Near	 SEG_A:0958
 VGA_OPERATION9			  Near	 SEG_A:09B8
 VGA_OPERATION_2			  Near	 SEG_A:063C
 ZR1_07				  Far	 SEG_A:0000
-Turbo Assembler	 Version 2.01	     03/22/26 12:29:12	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:59	    Page 41
 Symbol Table
 
 

@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 1
 102EQUIP.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 2
 102EQUIP.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     106	      =	4AB0		     data_83e	     equ     4AB0h		     ;*
     107	      =	4AB2		     data_84e	     equ     4AB2h		     ;*
     108	      =	4DD4		     data_85e	     equ     4DD4h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 3
 102EQUIP.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     160	0032  BD 40 87 4A 50 53			     db	     0BDh, 40h,	87h, 4Ah, 50h, 53h
     161	0038  51 1E				     db	      51h, 1Eh
     162	003A			     loc_1:
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 4
 102EQUIP.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     214	00A1  3E: 8B 02				     mov     ax,ds:[bp+si]
     215	00A4  2E: A3 4AA6			     mov     cs:data_75e,ax
     216	00A8  D1 ED				     shr     bp,1		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 5
 102EQUIP.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     268	0112  8B CD				     mov     cx,bp
     269	0114  D1 E9				     shr     cx,1		     ; Shift w/zeros fill
     270
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 6
 102EQUIP.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     322	017C  8A DF				     mov     bl,bh
     323	017E  32 FF				     xor     bh,bh		     ; Zero register
     324	0180  03 FB				     add     di,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 7
 102EQUIP.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     376	01FC  03 DB				     add     bx,bx
     377	01FE  2E: 8B 9F	32D4			     mov     bx,cs:data_65e[bx]
     378	0203  2E: FF 16	4AAE			     call    word ptr cs:data_81e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 8
 102EQUIP.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     430	0262  C3				     retn
     431	0263			     loc_16:
     432	0263  56				     push    si
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 9
 102EQUIP.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     484
     485	02AF  59				     pop     cx
     486	02B0  5F				     pop     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 10
 102EQUIP.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     538	0318  AC				     lodsb			     ; String [si] to al
     539	0319  E8 0010				     call    equip_process_loop
     540	031C  26: 89 15				     mov     es:[di],dx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 11
 102EQUIP.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     592	0366  B9 1FD8				     mov     cx,1FD8h
     593	0369  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
     594	036B  5E				     pop     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 12
 102EQUIP.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     646	03C4  81 C7 2000			     add     di,2000h
     647	03C8  81 FF 4000			     cmp     di,4000h
     648	03CC  72 04				     jb	     loc_30		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 13
 102EQUIP.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     700	042A  8A DF				     mov     bl,bh
     701	042C  32 FF				     xor     bh,bh		     ; Zero register
     702	042E  03 FB				     add     di,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 14
 102EQUIP.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     754	047E  C6 06 FF1A 00			     mov     byte ptr ds:data_91e,0
     755	0483			     loc_37:
     756	0483  BE A000				     mov     si,data_88e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 15
 102EQUIP.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     808	04FD  8E C0				     mov     es,ax
     809	04FF  8B F7				     mov     si,di
     810	0501  8B FD				     mov     di,bp
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 16
 102EQUIP.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     862	0565  72 F8				     jb	     loc_45		     ; Jump if below
     863	0567  2E: C6 06	FF1A 00			     mov     byte ptr cs:data_91e,0
     864	056D  BE A000				     mov     si,data_88e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 17
 102EQUIP.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     916	05BC  81 FE 4000			     cmp     si,4000h
     917	05C0  72 04				     jb	     loc_50		     ; Jump if below
     918	05C2  81 C6 C050			     add     si,0C050h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 18
 102EQUIP.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
     970	0605  51				     push    cx
     971	0606  8A CD				     mov     cl,ch
     972	0608  32 ED				     xor     ch,ch		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 19
 102EQUIP.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1024	0697  AB				     stosw			     ; Store ax	to es:[di]
    1025	0698  E2 ED				     loop    locloop_56		     ; Loop if cx > 0
    1026
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 20
 102EQUIP.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1078	0704  5B				     pop     bx
    1079	0705  FE C7				     inc     bh
    1080	0707  59				     pop     cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 21
 102EQUIP.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1132	0759  B9 0008				     mov     cx,8
    1133
    1134	075C			     locloop_63:
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 22
 102EQUIP.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1186	07BC  D0 E8				     shr     al,1		     ; Shift w/zeros fill
    1187	07BE  1B FF				     sbb     di,di
    1188	07C0  81 E7 2000			     and     di,2000h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 23
 102EQUIP.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1240	082E			     loc_68:
    1241	082E  AC				     lodsb			     ; String [si] to al
    1242	082F  0A C0				     or	     al,al		     ; Zero ?
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 24
 102EQUIP.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1294
    1295	0890  81 C7 FF60			     add     di,data_94e
    1296	0894  AC				     lodsb			     ; String [si] to al
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 25
 102EQUIP.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1348	08D9  2E: 80 3E	FF1A 0C			     cmp     byte ptr cs:data_91e,0Ch
    1349	08DF  72 F8				     jb	     loc_85		     ; Jump if below
    1350	08E1  EB 90				     jmp     short loc_76
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 26
 102EQUIP.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1402	0949  00 00 00 03 80 80			     db	      00h, 00h,	00h, 03h, 80h, 80h
    1403	094F  8A 88 03 03 03 03			     db	      8Ah, 88h,	03h, 03h, 03h, 03h
    1404	0955  88 88 88 88 03 03			     db	      88h, 88h,	88h, 88h, 03h, 03h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 27
 102EQUIP.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1456	0B18  30 8E C0 BF 00 00			     db	      30h, 8Eh,0C0h,0BFh, 00h, 00h
    1457	0B1E  2E C7 06 A8 4A 00			     db	      2Eh,0C7h,	06h,0A8h, 4Ah, 00h
    1458	0B24  00 2E C7 06 A2 4A			     db	      00h, 2Eh,0C7h, 06h,0A2h, 4Ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 28
 102EQUIP.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1510
    1511	0BB1			     locloop_94:
    1512	0BB1  51				     push    cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 29
 102EQUIP.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1564	0C22  8A C7				     mov     al,bh
    1565	0C24  2E: 02 06	4AAF			     add     al,byte ptr cs:data_81e+1
    1566	0C29  2E: 38 06	4AAA			     cmp     cs:data_77e,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 30
 102EQUIP.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1618	0C8F  26: 80 0D	30			     or	     byte ptr es:[di],30h    ; '0'
    1619	0C93  26: 80 25	F0			     and     byte ptr es:[di],0F0h
    1620	0C97  26: 80 49	FF 0C			     or	     byte ptr es:[bx+di-1],0Ch
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 31
 102EQUIP.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1672	0CF8  81 C7 2000			     add     di,2000h
    1673	0CFC  81 FF 4000			     cmp     di,4000h
    1674	0D00  72 04				     jb	     loc_103		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 32
 102EQUIP.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1726	0D61  B9 2F58				     mov     cx,2F58h
    1727	0D64  E9 F670				     jmp     loc_31
    1728										     ;*	No entry point to code
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 33
 102EQUIP.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1780	0DDC  F6 E3				     mul     bl			     ; ax = reg	* al
    1781	0DDE  50				     push    ax
    1782	0DDF  D0 EB				     shr     bl,1		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 34
 102EQUIP.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1834	0E40			     equip_process_loop_2	     endp
    1835
    1836
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 35
 102EQUIP.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1888	0EB1  C3				     retn
    1889	0EB2			     equip_process_loop_3	     endp
    1890
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 36
 102EQUIP.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1942	0F26  26: C6 45	19 0C			     mov     byte ptr es:[di+19h],0Ch
    1943	0F2B  83 C7 50				     add     di,50h
    1944	0F2E  E2 F2				     loop    locloop_118	     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 37
 102EQUIP.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    1996
    1997				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
    1998				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 38
 102EQUIP.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2050	0FF1  8A 84 14EEr			     mov     al,byte ptr data_53[si]
    2051	0FF5  2E: A3 4AA4			     mov     cs:data_74e,ax
    2052	0FF9  AC				     lodsb			     ; String [si] to al
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 39
 102EQUIP.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2104	1066			     extract_bits_3	     proc    near
    2105	1066  50				     push    ax
    2106	1067  8A D8				     mov     bl,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 40
 102EQUIP.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2158	10DB  58				     pop     ax
    2159	10DC  8A E0				     mov     ah,al
    2160	10DE  B9 0008				     mov     cx,8
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 41
 102EQUIP.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2212	11D1  00 00 00 00 03 03			     db	     0,	0, 0, 0, 3, 3
    2213	11D7  03 03 00 00 00 00			     db	     3,	3, 0, 0, 0, 0
    2214	11DD  03 03 03 03 00 00			     db	     3,	3, 3, 3, 0, 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 42
 102EQUIP.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2266	1339  09*(00)				     db	     9 dup (0)
    2267	1342  01 01 03 01 03 00			     db	     1,	1, 3, 1, 3, 0
    2268	1348  03 00				     db	     3,	0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 43
 102EQUIP.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2320	14B4  01 01 01 02 02 02			     db	     1,	1, 1, 2, 2, 2
    2321	14BA  02 02 02 01 01 02			     db	     2,	2, 2, 1, 1, 2
    2322	14C0  02 01 01 01 01 01			     db	     2,	1, 1, 1, 1, 1
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 44
 102EQUIP.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2374	15EC  02 03 03 03 03 03			     db	     2,	3, 3, 3, 3, 3
    2375	15F2  01 03 03 03 03 03			     db	     1,	3, 3, 3, 3, 3
    2376	15F8  03 03 01 03 02 03			     db	     3,	3, 1, 3, 2, 3
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 45
 102EQUIP.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2428	172F  02 03 00 02 02 02			     db	     2,	3, 0, 2, 2, 2
    2429	1735  02 02 03 02 00 03			     db	     2,	2, 3, 2, 0, 3
    2430	173B  03 03 03 03 03 03			     db	     3,	3, 3, 3, 3, 3
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 46
 102EQUIP.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2482	1873  03 03 00 03 03 03			     db	     3,	3, 0, 3, 3, 3
    2483	1879  03 01 02 02 03 03			     db	     3,	1, 2, 2, 3, 3
    2484	187F  03 03 00 00 00 00			     db	     3,	3, 0, 0, 0, 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 47
 102EQUIP.asm
 
 
@@ -2771,7 +2771,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2536	19B7  02 02 02 02 02 02			     db	     2,	2, 2, 2, 2, 2
    2537	19BD  01 01 02 02 01 01			     db	     1,	1, 2, 2, 1, 1
    2538	19C3  01 03 01 01 03 03			     db	     1,	3, 1, 1, 3, 3
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 48
 102EQUIP.asm
 
 
@@ -2830,7 +2830,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2590	1A52  B8 B800				     mov     ax,0B800h
    2591	1A55  8E D8				     mov     ds,ax
    2592	1A57  33 F6				     xor     si,si		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 49
 102EQUIP.asm
 
 
@@ -2877,7 +2877,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 1
    2632
    2633
    2634						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 50
 Symbol Table
 
 
@@ -2885,9 +2885,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "102EQUIP"
-??TIME				  Text	 "12:28:36"
+??TIME				  Text	 "00:08:24"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -2936,7 +2936,7 @@ DATA_89E			  Number C050
 DATA_90E			  Number F500
 DATA_91E			  Number FF1A
 DATA_92E			  Number FF2C
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 51
 Symbol Table
 
 
@@ -2995,7 +2995,7 @@ LOCLOOP_29			  Near	 SEG_A:03B9
 LOCLOOP_3			  Near	 SEG_A:009F
 LOCLOOP_32			  Near	 SEG_A:03FA
 LOCLOOP_34			  Near	 SEG_A:0440
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 52
 Symbol Table
 
 
@@ -3054,7 +3054,7 @@ LOC_26				  Near	 SEG_A:0327
 LOC_30				  Near	 SEG_A:03D2
 LOC_31				  Near	 SEG_A:03D7
 LOC_33				  Near	 SEG_A:041B
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 53
 Symbol Table
 
 
@@ -3110,7 +3110,7 @@ LOC_RET_14			  Near	 SEG_A:023B
 START				  Near	 SEG_A:0000
 TARGET				  Number 5432
 ZR1_02				  Far	 SEG_A:0000
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:37	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:25	    Page 54
 Symbol Table
 
 

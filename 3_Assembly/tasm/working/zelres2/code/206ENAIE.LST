@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 1
 206ENAIE.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 2
 206ENAIE.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     106	      =	4FF3		     data_73e	     equ     4FF3h		     ;*
     107	      =	4FF4		     data_74e	     equ     4FF4h		     ;*
     108	      =	4FF5		     data_75e	     equ     4FF5h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 3
 206ENAIE.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     160
     161						     org     0
     162
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 4
 206ENAIE.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     214	0072  43				     inc     bx
     215	0073  F6 04 80				     test    byte ptr [si],80h
     216	0076  74 03				     jz	     loc_6		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 5
 206ENAIE.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     268	00D0  74 03				     jz	     loc_15		     ; Jump if zero
     269	00D2  E8 0053				     call    ai_func_1
     270	00D5			     loc_15:
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 6
 206ENAIE.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     322	0128			     zr2_06	     endp
     323
     324				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 7
 206ENAIE.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     376	017C  9E				     sahf			     ; Store ah	into flags
     377				     ;*		     xor     sp,dx
     378	017D  31 D4				     db	      31h,0D4h		     ;	Fixup -	byte match
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 8
 206ENAIE.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     430	01DF  73 16				     jae     loc_36		     ; Jump if above or	=
     431	01E1  C6 45 FF FE			     mov     byte ptr [di-1],0FEh
     432	01E5  F6 06 4FFF 01			     test    byte ptr ds:data_82e,1
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 9
 206ENAIE.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     484	0246			     loc_39:
     485	0246  C6 45 FF FE			     mov     byte ptr [di-1],0FEh
     486	024A  F6 06 4FFF 01			     test    byte ptr ds:data_82e,1
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 10
 206ENAIE.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     538	029C  F6 E1				     mul     cl			     ; ax = reg	* al
     539	029E  05 8030				     add     ax,8030h
     540	02A1  8B F0				     mov     si,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 11
 206ENAIE.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     592	02FF  A5				     movsw			     ; Mov [si]	to es:[di]
     593	0300  81 C7 0138			     add     di,data_120e
     594	0304  81 C6 0138			     add     si,138h
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 12
 206ENAIE.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     646	0341  8A 0C				     mov     cl,[si]
     647	0343  83 C6 25				     add     si,25h
     648	0346  E8 11BB				     call    ai_func_44
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 13
 206ENAIE.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     700	039E  E8 033B				     call    vga_operation0
     701	03A1  46				     inc     si
     702	03A2  46				     inc     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 14
 206ENAIE.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     754	03E9  53				     push    bx
     755	03EA  53				     push    bx
     756	03EB  BB 5010				     mov     bx,data_84e
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 15
 206ENAIE.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     808	0460  79 03				     jns     loc_58		     ; Jump if not sign
     809	0462  E8 0270				     call    ai_get_value
     810	0465			     loc_58:
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 16
 206ENAIE.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     862	04E3			     loc_61:
     863	04E3  5B				     pop     bx
     864	04E4  5F				     pop     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 17
 206ENAIE.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     916	0556  74 11				     je	     loc_66		     ; Jump if equal
     917	0558  46				     inc     si
     918	0559  46				     inc     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 18
 206ENAIE.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
     970
     971				     ;ï¿½ï¿½ï¿½ï¿½ External Entry into Subroutine						   +
     972				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 19
 206ENAIE.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1024	0606  BE FA00				     mov     si,data_123e
    1025	0609  B8 A000				     mov     ax,0A000h
    1026	060C  8E D8				     mov     ds,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 20
 206ENAIE.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1078
    1079				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1080				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 21
 206ENAIE.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1132				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1133				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1134				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 22
 206ENAIE.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1186	0692  A5				     movsw			     ; Mov [si]	to es:[di]
    1187	0693  A5				     movsw			     ; Mov [si]	to es:[di]
    1188	0694  A5				     movsw			     ; Mov [si]	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 23
 206ENAIE.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1240	06CD			     fill_buffer	     proc    near
    1241	06CD  33 C0				     xor     ax,ax		     ; Zero register
    1242	06CF  B9 0020				     mov     cx,20h
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 24
 206ENAIE.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1294	0712  03 00				     add     ax,[bx+si]
    1295	0714  8B F0				     mov     si,ax
    1296	0716  AC				     lodsb			     ; String [si] to al
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 25
 206ENAIE.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1348	0767  02 06 4FF2			     add     al,ds:data_72e
    1349	076B  3C FF				     cmp     al,0FFh
    1350	076D  75 02				     jne     loc_85		     ; Jump if not equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 26
 206ENAIE.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1402	07C5  AA				     stosb			     ; Store al	to es:[di]
    1403	07C6  83 C7 1A				     add     di,1Ah
    1404	07C9  AA				     stosb			     ; Store al	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 27
 206ENAIE.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1456	0843  AD				     lodsw			     ; String [si] to ax
    1457	0844  86 E0				     xchg    ah,al
    1458	0846  E8 084D				     call    ai_func_30
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 28
 206ENAIE.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1510	0914  FF FF C0 00 FF FF			     db	     0FFh,0FFh,0C0h, 00h,0FFh,0FFh
    1511	091A  00 00 2F F4			     db	      00h, 00h,	2Fh,0F4h
    1512	091E  0A*(00)				     db	     10	dup (0)
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 29
 206ENAIE.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1564	09B1  AB				     stosw			     ; Store ax	to es:[di]
    1565	09B2  AA				     stosb			     ; Store al	to es:[di]
    1566	09B3  BF 5000				     mov     di,data_83e
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 30
 206ENAIE.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1618	0A17  C6 06 4FF2 00			     mov     byte ptr ds:data_72e,0
    1619	0A1C  BE 5014				     mov     si,5014h
    1620	0A1F  BF 5000				     mov     di,data_83e
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 31
 206ENAIE.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1672	0A7E  56				     push    si
    1673	0A7F  E8 FC5A				     call    vga_operation0
    1674	0A82  8A 0C				     mov     cl,[si]
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 32
 206ENAIE.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1726	0AF8			     loc_109:
    1727	0AF8  A0 FF3F				     mov     al,ds:data_112e
    1728	0AFB  D0 E8				     shr     al,1		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 33
 206ENAIE.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1780	0B6C  B9 0006				     mov     cx,6
    1781	0B6F  C6 06 4FF2 03			     mov     byte ptr ds:data_72e,3
    1782	0B74  E8 0169				     call    vga_operation2
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 34
 206ENAIE.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1834	0BFE  E8 00DF				     call    vga_operation2
    1835	0C01  F6 06 00E8 FF			     test    byte ptr ds:[0E8h],0FFh
    1836	0C06  74 01				     jz	     loc_123		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 35
 206ENAIE.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1888	0C76  EB 07				     jmp     short loc_129
    1889	0C78			     loc_128:
    1890	0C78  FE CA				     dec     dl
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 36
 206ENAIE.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1942				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1943				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1944
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 37
 206ENAIE.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    1996	0D26			     vga_operation3	     proc    near
    1997	0D26  A0 0093				     mov     al,byte ptr ds:[93h]
    1998	0D29  0A C0				     or	     al,al		     ; Zero ?
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 38
 206ENAIE.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2050	0D77  0A C0				     or	     al,al		     ; Zero ?
    2051	0D79  79 03				     jns     loc_143		     ; Jump if not sign
    2052	0D7B  E8 F957				     call    ai_get_value
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 39
 206ENAIE.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2104	0DD6  F6 E1				     mul     cl			     ; ax = reg	* al
    2105	0DD8  8A 0E 0083			     mov     cl,byte ptr ds:[83h]
    2106	0DDC  80 C1 04				     add     cl,4
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 40
 206ENAIE.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2158	0E26  75 06				     jnz     loc_149		     ; Jump if not zero
    2159	0E28  E8 0102				     call    vga_operation6
    2160	0E2B  E9 02C6				     jmp     loc_175
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 41
 206ENAIE.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2212	0EA8  BF B18A				     mov     di,0B18Ah
    2213	0EAB  BE B07E				     mov     si,0B07Eh
    2214	0EAE  EB 26				     jmp     short loc_156
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 42
 206ENAIE.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2266	0F28  5B				     pop     bx
    2267	0F29  5F				     pop     di
    2268	0F2A  5E				     pop     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 43
 206ENAIE.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2320
    2321	0F68			     vga_operation8:
    2322	0F68  1E				     push    ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 44
 206ENAIE.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2374	0FC8  E2 EC				     loop    locloop_164	     ; Loop if cx > 0
    2375
    2376	0FCA  83 C6 20				     add     si,20h
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 45
 206ENAIE.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2428	1035  03 36 B000			     add     si,ds:data_5e
    2429	1039  B9 0008				     mov     cx,8
    2430
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 46
 206ENAIE.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2482
    2483	1095  36				     db	     36h		     ; byte preceding ai_func_30
    2484	1096			     ai_func_30:
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 47
 206ENAIE.asm
 
 
@@ -2771,7 +2771,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2536	10F9  74 01				     jz	     loc_176		     ; Jump if zero
    2537	10FB  C3				     retn
    2538	10FC			     loc_176:
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 48
 206ENAIE.asm
 
 
@@ -2830,7 +2830,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2590
    2591	114F			     locloop_180:
    2592	114F  51				     push    cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 49
 206ENAIE.asm
 
 
@@ -2889,7 +2889,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2644
    2645	11BA			     locloop_187:
    2646	11BA  51				     push    cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 50
 206ENAIE.asm
 
 
@@ -2948,7 +2948,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2698	1204  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
    2699	1206  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
    2700	1208  1B C0				     sbb     ax,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 51
 206ENAIE.asm
 
 
@@ -3007,7 +3007,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2752	1265  8A D8				     mov     bl,al
    2753	1267  8A FA				     mov     bh,dl
    2754	1269  D1 EA				     shr     dx,1		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 52
 206ENAIE.asm
 
 
@@ -3066,7 +3066,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2806				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    2807				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    2808				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 53
 206ENAIE.asm
 
 
@@ -3125,7 +3125,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2860	1328  E9 0156				     jmp     loc_212
    2861
    2862				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 54
 206ENAIE.asm
 
 
@@ -3184,7 +3184,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2914	1378  53				     push    bx
    2915	1379  E8 0029				     call    vga_operation_2
    2916	137C  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 55
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 55
 206ENAIE.asm
 
 
@@ -3243,7 +3243,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    2968	13BB  5A				     pop     dx
    2969	13BC  52				     push    dx
    2970	13BD  53				     push    bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 56
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 56
 206ENAIE.asm
 
 
@@ -3302,7 +3302,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3022
    3023
    3024				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 57
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 57
 206ENAIE.asm
 
 
@@ -3361,7 +3361,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3076	143F			     ai_multiply_4	     proc    near
    3077	143F  52				     push    dx
    3078	1440  32 E4				     xor     ah,ah		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 58
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 58
 206ENAIE.asm
 
 
@@ -3420,7 +3420,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3130	1489  B9 0008				     mov     cx,8
    3131
    3132	148C			     locloop_213:
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 59
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 59
 206ENAIE.asm
 
 
@@ -3479,7 +3479,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3184	14DF  FE CB				     dec     bl
    3185	14E1  32 FF				     xor     bh,bh		     ; Zero register
    3186	14E3  03 DB				     add     bx,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 60
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 60
 206ENAIE.asm
 
 
@@ -3538,7 +3538,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3238	151E  2E: C7 06	4FF5 1210		     mov     word ptr cs:data_75e,1210h
    3239	1525  BE 4588				     mov     si,data_62e
    3240	1528  BF 3230				     mov     di,3230h
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 61
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 61
 206ENAIE.asm
 
 
@@ -3597,7 +3597,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3292	1589  1F				     pop     ds
    3293	158A  5E				     pop     si
    3294	158B  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 62
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 62
 206ENAIE.asm
 
 
@@ -3656,7 +3656,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3346				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    3347				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    3348				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 63
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 63
 206ENAIE.asm
 
 
@@ -3715,7 +3715,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3400	1682  D0 EA				     shr     dl,1		     ; Shift w/zeros fill
    3401	1684  26: 88 55	01			     mov     es:[di+1],dl
    3402	1688  03 DB				     add     bx,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 64
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 64
 206ENAIE.asm
 
 
@@ -3774,7 +3774,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3454	16F9  B4 02				     mov     ah,2
    3455	16FB  C3				     retn
    3456										     ;*	No entry point to code
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 65
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 65
 206ENAIE.asm
 
 
@@ -3833,7 +3833,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3508	1748  08 09				     or	     [bx+di],cl
    3509	174A  0A 19				     or	     bl,[bx+di]
    3510	174C  3D 2761				     cmp     ax,2761h
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 66
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 66
 206ENAIE.asm
 
 
@@ -3892,7 +3892,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3562	      22
    3563	17E7  07				     db	     7
    3564	17E8  08 09 0A 09 0A 1B	46+		     db	     8,	9, 0Ah,	9, 0Ah,	1Bh, 'FJNSX'
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 67
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 67
 206ENAIE.asm
 
 
@@ -3951,7 +3951,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3616	1964  AD				     lodsw			     ; String [si] to ax
    3617	1965  8B D0				     mov     dx,ax
    3618	1967  E8 000F				     call    ai_process_loop_5
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 68
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 68
 206ENAIE.asm
 
 
@@ -4010,7 +4010,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3670	19B5			     locloop_240:
    3671	19B5  AD				     lodsw			     ; String [si] to ax
    3672	19B6  86 E0				     xchg    ah,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 69
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 69
 206ENAIE.asm
 
 
@@ -4069,7 +4069,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3724	1A74  00 00 0C 00 00 00			     db	      00h, 00h,	0Ch, 00h, 00h, 00h
    3725	1A7A  0E 00 00 00 1C 00			     db	      0Eh, 00h,	00h, 00h, 1Ch, 00h
    3726	1A80  00 00 0C 00 00 00			     db	      00h, 00h,	0Ch, 00h, 00h, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 70
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 70
 206ENAIE.asm
 
 
@@ -4128,7 +4128,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3778	1B8F  51				     push    cx
    3779	1B90  57				     push    di
    3780	1B91  B9 0002				     mov     cx,2
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 71
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 71
 206ENAIE.asm
 
 
@@ -4187,7 +4187,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3832	1C54  00 00 01 00 00 00			     db	      00h, 00h,	01h, 00h, 00h, 00h
    3833	1C5A  01				     db	      01h
    3834	1C5B  07*(00)				     db	     7 dup (0)
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 72
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 72
 206ENAIE.asm
 
 
@@ -4246,7 +4246,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3886	1E43  00 97 00 00 00 0F			     db	      00h, 97h,	00h, 00h, 00h, 0Fh
    3887	1E49  00 00 00 1F 00 00			     db	      00h, 00h,	00h, 1Fh, 00h, 00h
    3888	1E4F  00 39 00 00 00 E1			     db	      00h, 39h,	00h, 00h, 00h,0E1h
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 73
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 73
 206ENAIE.asm
 
 
@@ -4305,7 +4305,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3940	1F3D  E8 002E				     call    ai_scan_loop
    3941	1F40  26: 88 56	00			     mov     es:[bp],dl
    3942	1F44  45				     inc     bp
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 74
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 74
 206ENAIE.asm
 
 
@@ -4364,7 +4364,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    3994	1F81  3C 03				     cmp     al,3
    3995	1F83  74 02				     je	     loc_248		     ; Jump if equal
    3996	1F85  32 C0				     xor     al,al		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 75
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 75
 206ENAIE.asm
 
 
@@ -4408,7 +4408,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 1
    4033
    4034
    4035						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 76
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 76
 Symbol Table
 
 
@@ -4416,9 +4416,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "206ENAIE"
-??TIME				  Text	 "12:57:07"
+??TIME				  Text	 "00:10:34"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -4467,7 +4467,7 @@ DATA_106E			  Number FF36
 DATA_107E			  Number FF37
 DATA_108E			  Number FF38
 DATA_109E			  Number FF39
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 77
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 77
 Symbol Table
 
 
@@ -4526,7 +4526,7 @@ DATA_85E			  Number 5011
 DATA_86E			  Number 5014
 DATA_87E			  Number 501D
 DATA_88E			  Number 511D
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 78
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 78
 Symbol Table
 
 
@@ -4585,7 +4585,7 @@ LOCLOOP_241			  Near	 SEG_A:1B8A
 LOCLOOP_242			  Near	 SEG_A:1B8F
 LOCLOOP_243			  Near	 SEG_A:1B94
 LOCLOOP_244			  Near	 SEG_A:1F04
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 79
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 79
 Symbol Table
 
 
@@ -4644,7 +4644,7 @@ LOC_130				  Near	 SEG_A:0C83
 LOC_131				  Near	 SEG_A:0CA5
 LOC_132				  Near	 SEG_A:0CA9
 LOC_133				  Near	 SEG_A:0CC3
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 80
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 80
 Symbol Table
 
 
@@ -4703,7 +4703,7 @@ LOC_197				  Near	 SEG_A:138C
 LOC_198				  Near	 SEG_A:1393
 LOC_199				  Near	 SEG_A:139A
 LOC_2				  Near	 SEG_A:005A
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 81
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 81
 Symbol Table
 
 
@@ -4762,7 +4762,7 @@ LOC_43				  Near	 SEG_A:0286
 LOC_46				  Near	 SEG_A:02EE
 LOC_48				  Near	 SEG_A:0310
 LOC_5				  Near	 SEG_A:0071
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 82
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 82
 Symbol Table
 
 
@@ -4821,7 +4821,7 @@ VGA_OPERATION3			  Near	 SEG_A:0D26
 VGA_OPERATION4			  Near	 SEG_A:0DD0
 VGA_OPERATION5			  Near	 SEG_A:0DFF
 VGA_OPERATION6			  Near	 SEG_A:0F2D
-Turbo Assembler	 Version 2.01	     03/22/26 12:57:08	    Page 83
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:35	    Page 83
 Symbol Table
 
 

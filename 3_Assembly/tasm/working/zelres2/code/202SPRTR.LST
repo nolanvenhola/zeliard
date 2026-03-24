@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 1
 202SPRTR.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 2
 202SPRTR.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     106	      =	5078		     data_76e	     equ     5078h		     ;*
     107	      =	5079		     data_77e	     equ     5079h		     ;*
     108	      =	507A		     data_78e	     equ     507Ah		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 3
 202SPRTR.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     160
     161	0000			     start:
     162	0000  97				     xchg    di,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 4
 202SPRTR.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     214
     215	008A  F6 04 80				     test    byte ptr [si],80h
     216	008D  74 03				     jz	     loc_6		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 5
 202SPRTR.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     268	00E5  74 03				     jz	     loc_16		     ; Jump if zero
     269	00E7  E8 003E				     call    sprite_func_1
     270	00EA			     loc_16:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 6
 202SPRTR.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     322	013E  EB 1A				     jmp     short loc_24
     323	0140			     loc_23:
     324	0140  26: FE 45	FF			     inc     byte ptr es:[di-1]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 7
 202SPRTR.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     376	019F  2C 1D				     sub     al,1Dh
     377	01A1  3C 06				     cmp     al,6
     378	01A3  72 01				     jb	     loc_29		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 8
 202SPRTR.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     430	0203  74 3B				     je	     loc_37		     ; Jump if equal
     431	0205  B3 39				     mov     bl,39h		     ; '9'
     432	0207  3C 0F				     cmp     al,0Fh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 9
 202SPRTR.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     484	026A  04 25				     add     al,25h		     ; '%'
     485	026C  88 44 FF				     mov     [si-1],al
     486	026F  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 10
 202SPRTR.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     538	02C4  B0 01				     mov     al,1
     539	02C6  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
     540	02C7  A5				     movsw			     ; Mov [si]	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 11
 202SPRTR.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     592	0318  03 F3				     add     si,bx
     593	031A  A4				     movsb			     ; Mov [si]	to es:[di]
     594	031B  A4				     movsb			     ; Mov [si]	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 12
 202SPRTR.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     646	0361  80 3E E900 FF			     cmp     byte ptr ds:data_89e,0FFh
     647	0366  75 01				     jne     loc_45		     ; Jump if not equal
     648	0368  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 13
 202SPRTR.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     700	03CC  AD				     lodsw			     ; String [si] to ax
     701	03CD  89 07				     mov     [bx],ax
     702	03CF  8A C1				     mov     al,cl
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 14
 202SPRTR.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     754	0421  B0 FF				     mov     al,0FFh
     755	0423  86 05				     xchg    [di],al
     756	0425  88 07				     mov     [bx],al
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 15
 202SPRTR.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     808	0497  5B				     pop     bx
     809	0498  5F				     pop     di
     810	0499  5E				     pop     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 16
 202SPRTR.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     862	0513  57				     push    di
     863	0514  53				     push    bx
     864	0515  53				     push    bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 17
 202SPRTR.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     916	058D			     loc_60:
     917	058D  E8 0033				     call    sprite_func_8
     918	0590			     loc_61:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 18
 202SPRTR.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
     970	05D2			     loc_65:
     971	05D2  8A C8				     mov     cl,al
     972	05D4  8A C4				     mov     al,ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 19
 202SPRTR.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1024	0633  F6 E1				     mul     cl			     ; ax = reg	* al
    1025	0635  05 8000				     add     ax,8000h
    1026	0638  8B F0				     mov     si,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 20
 202SPRTR.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1078	068A  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
    1079										     ;	al = 3,	data rotate
    1080	068B  B0 08				     mov     al,8
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 21
 202SPRTR.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1132	06D9  B9 0008				     mov     cx,8
    1133
    1134	06DC			     locloop_68:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 22
 202SPRTR.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1186				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    1187				     ;				    SUBROUTINE
    1188				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 23
 202SPRTR.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1240
    1241	0772			     locloop_69:
    1242	0772  B0 01				     mov     al,1
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 24
 202SPRTR.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1294				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    1295				     ;				    SUBROUTINE
    1296				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 25
 202SPRTR.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1348	0802  3C 0E				     cmp     al,0Eh
    1349	0804  73 01				     jae     loc_73		     ; Jump if above or	=
    1350	0806  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 26
 202SPRTR.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1402	0867			     sprite_check_state		     endp
    1403
    1404										     ;*	No entry point to code
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 27
 202SPRTR.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1456	08CE  BA 03C4				     mov     dx,3C4h
    1457	08D1  B8 0702				     mov     ax,702h
    1458	08D4  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 28
 202SPRTR.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1510	0936  10*(00)				     db	     16	dup (0)
    1511	0946  0B D0 00 00 5F FA			     db	      0Bh,0D0h,	00h, 00h, 5Fh,0FAh
    1512	094C  00 00 7F FE 00 00			     db	      00h, 00h,	7Fh,0FEh, 00h, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 29
 202SPRTR.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1564
    1565	0A2C  E0 01				     db	     0E0h, 01h		     ;	Fixup -	byte match
    1566	0A2E			     loc_84:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 30
 202SPRTR.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1618	0A87			     loc_89:
    1619	0A87  A0 0084				     mov     al,byte ptr ds:[84h]
    1620	0A8A  32 E4				     xor     ah,ah		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 31
 202SPRTR.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1672	0AF1  F6 45 04 FF			     test    byte ptr [di+4],0FFh
    1673	0AF5  74 0E				     jz	     loc_95		     ; Jump if zero
    1674	0AF7  8A 45 04				     mov     al,[di+4]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 32
 202SPRTR.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1726	0B6B  D0 E8				     shr     al,1		     ; Shift w/zeros fill
    1727	0B6D  B1 09				     mov     cl,9
    1728	0B6F  F6 E1				     mul     cl			     ; ax = reg	* al
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 33
 202SPRTR.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1780	0BDF  04 02				     add     al,2
    1781	0BE1  24 03				     and     al,3
    1782	0BE3  A8 01				     test    al,1
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 34
 202SPRTR.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1834	0C73  74 09				     je	     loc_110		     ; Jump if equal
    1835	0C75			     loc_109:
    1836	0C75  A0 00E7				     mov     al,byte ptr ds:[0E7h]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 35
 202SPRTR.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1888	0CE7  EB 66				     jmp     short loc_123
    1889	0CE9			     loc_116:
    1890	0CE9  A0 FF3F				     mov     al,ds:data_106e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 36
 202SPRTR.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1942	0D5E  EB 0A				     jmp     short locloop_125
    1943	0D60			     loc_124:
    1944	0D60  B9 0009				     mov     cx,9
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 37
 202SPRTR.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    1996	0DA8  A0 0093				     mov     al,byte ptr ds:[93h]
    1997	0DAB  0A C0				     or	     al,al		     ; Zero ?
    1998	0DAD  75 01				     jnz     loc_127		     ; Jump if not zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 38
 202SPRTR.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2050	0DFE  E8 F998				     call    sprite_get_value
    2051	0E01			     loc_132:
    2052	0E01  50				     push    ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 39
 202SPRTR.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2104	0E6B  07				     pop     es
    2105	0E6C  B9 0003				     mov     cx,3
    2106
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 40
 202SPRTR.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2158	0EBB			     loc_140:
    2159	0EBB  06				     push    es
    2160	0EBC  56				     push    si
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 41
 202SPRTR.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2212	0F49  75 06				     jnz     loc_145		     ; Jump if not zero
    2213	0F4B  BF B17E				     mov     di,data_3e
    2214	0F4E  BE B01E				     mov     si,0B01Eh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 42
 202SPRTR.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2266	0FAF  56				     push    si
    2267	0FB0  53				     push    bx
    2268	0FB1  E8 003D				     call    vga_operation4
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 43
 202SPRTR.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2320	1000  BA 03C4				     mov     dx,3C4h
    2321	1003  B8 0702				     mov     ax,702h
    2322	1006  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 44
 202SPRTR.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2374	1056  32 FF				     xor     bh,bh		     ; Zero register
    2375	1058  03 DB				     add     bx,bx
    2376	105A  C7 87 5097 0000			     mov     word ptr ds:data_82e[bx],0
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 45
 202SPRTR.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2428	10C6  56				     push    si
    2429	10C7  BB 0280				     mov     bx,280h
    2430	10CA  3C FF				     cmp     al,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 46
 202SPRTR.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2482	1135  26: 86 05				     xchg    es:[di],al
    2483	1138  8A C4				     mov     al,ah
    2484	113A  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 47
 202SPRTR.asm
 
 
@@ -2771,7 +2771,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2536	1192  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
    2537										     ;	al = 5,	mode
    2538	1193  B8 FF08				     mov     ax,0FF08h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 48
 202SPRTR.asm
 
 
@@ -2830,7 +2830,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2590	11DA  51				     push    cx
    2591	11DB  57				     push    di
    2592	11DC  E8 F551				     call    sprite_func_12
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 49
 202SPRTR.asm
 
 
@@ -2889,7 +2889,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2644	1227  AD				     lodsw			     ; String [si] to ax
    2645	1228  8B E8				     mov     bp,ax
    2646	122A  0B C1				     or	     ax,cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 50
 202SPRTR.asm
 
 
@@ -2948,7 +2948,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2698	1287  B8 FF08				     mov     ax,0FF08h
    2699	128A  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
    2700										     ;	al = 8,	data bit mask
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 51
 202SPRTR.asm
 
 
@@ -3007,7 +3007,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2752	12EA			     vga_operation7	     proc    near
    2753	12EA  80 3D FF				     cmp     byte ptr [di],0FFh
    2754	12ED  75 01				     jne     loc_174		     ; Jump if not equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 52
 202SPRTR.asm
 
 
@@ -3066,7 +3066,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2806	1350  46				     inc     si
    2807	1351  E8 0005				     call    vga_operation8
    2808	1354  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 53
 202SPRTR.asm
 
 
@@ -3125,7 +3125,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2860	13A5  C3				     retn
    2861	13A6			     vga_operation7	     endp
    2862
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 54
 202SPRTR.asm
 
 
@@ -3184,7 +3184,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2914	143E  29 8A D0 A0 68 50			     db	      29h, 8Ah,0D0h,0A0h, 68h, 50h
    2915	1444  2C 09 8A F8 04 29			     db	      2Ch, 09h,	8Ah,0F8h, 04h, 29h
    2916	144A  8A F0				     db	      8Ah,0F0h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 55
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 55
 202SPRTR.asm
 
 
@@ -3243,7 +3243,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    2968	1484  BA 03C4				     mov     dx,3C4h
    2969	1487  B8 0702				     mov     ax,702h
    2970	148A  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 56
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 56
 202SPRTR.asm
 
 
@@ -3302,7 +3302,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3022	14CD  72 01				     jb	     loc_185		     ; Jump if below
    3023	14CF  C3				     retn
    3024	14D0			     loc_185:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 57
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 57
 202SPRTR.asm
 
 
@@ -3361,7 +3361,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3076
    3077				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    3078				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 58
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 58
 202SPRTR.asm
 
 
@@ -3420,7 +3420,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3130	1575			     loc_201:
    3131	1575  80 E2 03				     and     dl,3
    3132	1578  74 13				     jz	     loc_204		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 59
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 59
 202SPRTR.asm
 
 
@@ -3479,7 +3479,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3184	15CC  C3				     retn
    3185	15CD			     loc_208:
    3186	15CD  22 C4				     and     al,ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 60
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 60
 202SPRTR.asm
 
 
@@ -3538,7 +3538,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3238	1620  BA 03CE				     mov     dx,3CEh
    3239	1623  B8 1803				     mov     ax,1803h
    3240	1626  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 61
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 61
 202SPRTR.asm
 
 
@@ -3597,7 +3597,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3292	1672  8B F8				     mov     di,ax
    3293	1674  81 C7 046C			     add     di,46Ch
    3294	1678  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 62
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 62
 202SPRTR.asm
 
 
@@ -3656,7 +3656,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3346	16C6  BF 0C8C				     mov     di,data_117e
    3347	16C9  B8 A000				     mov     ax,0A000h
    3348	16CC  8E C0				     mov     es,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 63
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 63
 202SPRTR.asm
 
 
@@ -3715,7 +3715,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3400	171B  1F				     pop     ds
    3401	171C  59				     pop     cx
    3402	171D  E2 C8				     loop    locloop_218	     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 64
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 64
 202SPRTR.asm
 
 
@@ -3774,7 +3774,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3454	17D1  51				     push    cx
    3455	17D2  AC				     lodsb			     ; String [si] to al
    3456	17D3  56				     push    si
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 65
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 65
 202SPRTR.asm
 
 
@@ -3833,7 +3833,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3508	1828  B0 02				     mov     al,2
    3509	182A  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
    3510	182B  AD				     lodsw			     ; String [si] to ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 66
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 66
 202SPRTR.asm
 
 
@@ -3892,7 +3892,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3562				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    3563				     ;				    SUBROUTINE
    3564				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 67
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 67
 202SPRTR.asm
 
 
@@ -3951,7 +3951,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3616	1919  21 22				     and     [bp+si],sp
    3617	191B  23 24				     and     sp,[si]
    3618	191D  21 22				     and     [bp+si],sp
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 68
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 68
 202SPRTR.asm
 
 
@@ -4010,7 +4010,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3670	1A15  76 78 7A 7B 31 32	2F+		     db	     'vxz{12/-367<'
    3671	      2D 33 36 37 3C
    3672	1A21  00				     db	     0
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 69
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 69
 202SPRTR.asm
 
 
@@ -4069,7 +4069,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3724	1B38  32 FF				     xor     bh,bh		     ; Zero register
    3725	1B3A  03 DB				     add     bx,bx
    3726	1B3C  8B B7 4B88			     mov     si,ds:data_61e[bx]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 70
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 70
 202SPRTR.asm
 
 
@@ -4128,7 +4128,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3778	1B8D  4B				     dec     bx
    3779	1B8E  94				     xchg    sp,ax
    3780	1B8F  4B				     dec     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 71
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 71
 202SPRTR.asm
 
 
@@ -4187,7 +4187,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3832	1CC2  E2 05 5A 4D 8B F0			     db	     0E2h, 05h,	5Ah, 4Dh, 8Bh,0F0h
    3833	1CC8  BD 01 00 EB 0E 24			     db	     0BDh, 01h,	00h,0EBh, 0Eh, 24h
    3834	1CCE  01 8A E0 32 C0 05			     db	      01h, 8Ah,0E0h, 32h,0C0h, 05h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 72
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 72
 202SPRTR.asm
 
 
@@ -4246,7 +4246,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3886
    3887	1D4C  5F				     pop     di
    3888	1D4D  83 C7 04				     add     di,4
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 73
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 73
 202SPRTR.asm
 
 
@@ -4305,7 +4305,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3940	1EA5  01 00 00 00 01 00			     db	      01h, 00h,	00h, 00h, 01h, 00h
    3941	1EAB  00 01 01 00 00 00			     db	      00h, 01h,	01h, 00h, 00h, 00h
    3942	1EB1  82 00 00 00 AB 00			     db	      82h, 00h,	00h, 00h,0ABh, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 74
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 74
 202SPRTR.asm
 
 
@@ -4362,7 +4362,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 1
    3992
    3993
    3994						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 75
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 75
 Symbol Table
 
 
@@ -4370,9 +4370,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "202SPRTR"
-??TIME				  Text	 "12:30:37"
+??TIME				  Text	 "00:09:59"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -4421,7 +4421,7 @@ DATA_65E			  Number 5069
 DATA_66E			  Number 506B
 DATA_67E			  Number 506D
 DATA_68E			  Number 506E
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 76
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 76
 Symbol Table
 
 
@@ -4480,7 +4480,7 @@ LOCLOOP_211			  Near	 SEG_A:1636
 LOCLOOP_212			  Near	 SEG_A:163B
 LOCLOOP_217			  Near	 SEG_A:16E3
 LOCLOOP_218			  Near	 SEG_A:16E7
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 77
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 77
 Symbol Table
 
 
@@ -4539,7 +4539,7 @@ LOC_13				  Near	 SEG_A:00D5
 LOC_130				  Near	 SEG_A:0DEC
 LOC_131				  Near	 SEG_A:0DF3
 LOC_132				  Near	 SEG_A:0E01
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 78
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 78
 Symbol Table
 
 
@@ -4598,7 +4598,7 @@ LOC_193				  Near	 SEG_A:1528
 LOC_194				  Near	 SEG_A:152D
 LOC_195				  Near	 SEG_A:1533
 LOC_196				  Near	 SEG_A:1539
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 79
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 79
 Symbol Table
 
 
@@ -4657,7 +4657,7 @@ LOC_51				  Near	 SEG_A:0467
 LOC_52				  Near	 SEG_A:046D
 LOC_53				  Near	 SEG_A:0494
 LOC_54				  Near	 SEG_A:0497
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 80
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 80
 Symbol Table
 
 
@@ -4716,7 +4716,7 @@ SPRITE_FUNC_3			  Near	 SEG_A:039E
 SPRITE_FUNC_30			  Near	 SEG_A:13B5
 SPRITE_FUNC_37			  Near	 SEG_A:16A9
 SPRITE_FUNC_4			  Near	 SEG_A:03E2
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:38	    Page 81
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:00	    Page 81
 Symbol Table
 
 

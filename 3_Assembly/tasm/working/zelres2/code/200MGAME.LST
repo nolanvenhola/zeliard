@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 1
 200MGAME.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 2
 200MGAME.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     106	      =	8581		     data_107e	     equ     8581h		     ;*
     107	      =	85C2		     data_108e	     equ     85C2h		     ;*
     108	      =	85EE		     data_109e	     equ     85EEh		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 3
 200MGAME.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     160	      =	9F1A		     data_161e	     equ     9F1Ah		     ;*
     161	      =	9F1C		     data_162e	     equ     9F1Ch		     ;*
     162	      =	9F1D		     data_163e	     equ     9F1Dh		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 4
 200MGAME.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     214	      =	FF1A		     data_215e	     equ     0FF1Ah		     ;*
     215	      =	FF1D		     data_216e	     equ     0FF1Dh		     ;*
     216	      =	FF1E		     data_217e	     equ     0FF1Eh		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 5
 200MGAME.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     268	0046			     loc_1:
     269	0046  FA				     cli			     ; Disable interrupts
     270	0047  BC 2000				     mov     sp,2000h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 6
 200MGAME.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     322	00ED  51				     push    cx
     323	00EE  C6 06 FF1A 00			     mov     byte ptr ds:data_215e,0
     324	00F3			     loc_4:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 7
 200MGAME.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     376	016F  53				     push    bx
     377	0170  2E: FF 16	200A			     call    word ptr cs:[200Ah]
     378	0175  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 8
 200MGAME.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     430	021D  2E: FF 16	2044			     call    word ptr cs:[2044h]
     431	0222  1F				     pop     ds
     432	0223  C7 06 9F1A 0018			     mov     word ptr ds:data_161e,18h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 9
 200MGAME.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     484	02B9  FE 06 9F0A			     inc     byte ptr ds:data_148e
     485	02BD  80 3E 9F0A 02			     cmp     byte ptr ds:data_148e,2
     486	02C2  75 05				     jne     loc_18		     ; Jump if not equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 10
 200MGAME.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     538	034E  3C 05				     cmp     al,5
     539	0350  75 03				     jne     loc_22		     ; Jump if not equal
     540	0352  E9 02E3				     jmp     loc_78
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 11
 200MGAME.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     592	03C4			     loc_31:
     593	03C4  3C 08				     cmp     al,8
     594	03C6  75 03				     jne     loc_32		     ; Jump if not equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 12
 200MGAME.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     646	041E  F6 06 9F01 FF			     test    byte ptr ds:data_141e,0FFh
     647	0423  75 1F				     jnz     loc_41		     ; Jump if not zero
     648	0425  BE 9F0E				     mov     si,data_152e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 13
 200MGAME.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     700	04AC  F6 06 9F09 FF			     test    byte ptr ds:data_147e,0FFh
     701	04B1  75 03				     jnz     loc_50		     ; Jump if not zero
     702	04B3  E9 067C				     jmp     loc_169
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 14
 200MGAME.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     754	050F  74 01				     jz	     loc_58		     ; Jump if zero
     755	0511  C3				     retn
     756	0512			     loc_58:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 15
 200MGAME.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     808	0589  C6 06 FF3D FF			     mov     byte ptr ds:data_233e,0FFh
     809	058E  A0 9F0D				     mov     al,ds:data_151e
     810	0591  D0 E8				     shr     al,1		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 16
 200MGAME.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     862	05FD			     loc_74:
     863	05FD  E8 07B5				     call    vga_operation8
     864	0600  83 EE 23				     sub     si,23h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 17
 200MGAME.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     916	0678			     loc_84:
     917	0678  E8 0723				     call    vga_operation7
     918	067B  75 10				     jnz     loc_85		     ; Jump if not zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 18
 200MGAME.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
     970	06E3			     locloop_92:
     971	06E3  83 C6 24				     add     si,24h
     972	06E6  E8 069D				     call    vga_operation5
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 19
 200MGAME.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1024	074C  4E				     dec     si
    1025	074D  A1 0080				     mov     ax,word ptr ds:[80h]
    1026	0750  05 0024				     add     ax,24h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 20
 200MGAME.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1078	07BB  75 01				     jnz     loc_105		     ; Jump if not zero
    1079	07BD  C3				     retn
    1080	07BE			     loc_105:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 21
 200MGAME.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1132	083B			     loc_114:
    1133	083B  80 26 00C2 FD			     and     byte ptr ds:[0C2h],0FDh
    1134	0840  A0 FF39				     mov     al,ds:data_230e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 22
 200MGAME.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1186	0891  8A 04				     mov     al,[si]
    1187	0893  E8 0589				     call    game_func_42
    1188	0896  F9				     stc			     ; Set carry flag
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 23
 200MGAME.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1240	090C  83 C3 23				     add     bx,23h
    1241	090F  8B C3				     mov     ax,bx
    1242	0911  2B 06 C002			     sub     ax,ds:data_187e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 24
 200MGAME.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1294				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    1295				     ;				    SUBROUTINE
    1296				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 25
 200MGAME.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1348	09D3  B8 69E0				     mov     ax,69E0h
    1349	09D6  50				     push    ax
    1350	09D7  F6 06 00C2 01			     test    byte ptr ds:[0C2h],1
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 26
 200MGAME.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1402	0A44  74 B0				     jz	     loc_145		     ; Jump if zero
    1403	0A46  80 26 00C2 FD			     and     byte ptr ds:[0C2h],0FDh
    1404	0A4B  E8 FDDA				     call    game_func_17
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 27
 200MGAME.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1456	0AB1  E9 FD9C				     jmp     loc_116
    1457	0AB4			     loc_161:
    1458	0AB4  A0 009E				     mov     al,byte ptr ds:[9Eh]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 28
 200MGAME.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1510	0B30  EB D6				     jmp     short loc_166
    1511
    1512				     ;ﬂﬂﬂﬂ External Entry into Subroutine ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 29
 200MGAME.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1564	0B93  73 01				     jnc     loc_175		     ; Jump if carry=0
    1565	0B95  C3				     retn
    1566	0B96			     loc_175:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 30
 200MGAME.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1618	0BCF  BF 8018				     mov     di,data_2e
    1619	0BD2  B2 02				     mov     dl,2
    1620	0BD4  B9 0004				     mov     cx,4
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 31
 200MGAME.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1672				     ;*		     cmp     di,0FFFFh
    1673	0C18  83 FF FF				     db	      83h,0FFh,0FFh	     ;	Fixup -	byte match
    1674	0C1B  74 16				     jz	     loc_190		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 32
 200MGAME.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1726	0C65  BB 2310				     mov     bx,2310h
    1727	0C68  B0 80				     mov     al,80h
    1728	0C6A  B5 67				     mov     ch,67h		     ; 'g'
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 33
 200MGAME.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1780	0CC9  40				     inc     ax
    1781	0CCA  3B 06 C002			     cmp     ax,ds:data_187e
    1782	0CCE  75 05				     jne     loc_195		     ; Jump if not equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 34
 200MGAME.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1834
    1835										     ;*	No entry point to code
    1836	0D1B  27				     daa			     ; Decimal adjust
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 35
 200MGAME.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1888
    1889				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    1890				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 36
 200MGAME.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1942	0DB5			     vga_operation8	     proc    near
    1943	0DB5  A0 0084				     mov     al,byte ptr ds:[84h]
    1944	0DB8  B1 24				     mov     cl,24h		     ; '$'
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 37
 200MGAME.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    1996	0DF7  57				     push    di
    1997	0DF8  51				     push    cx
    1998	0DF9  2E: 8E 06	FF2C			     mov     es,cs:data_219e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 38
 200MGAME.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2050				     ;				    SUBROUTINE
    2051				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
    2052
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 39
 200MGAME.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2104	0EB8  E8 FF14				     call    vga_operation9
    2105	0EBB  72 0C				     jc	     loc_218		     ; Jump if carry Set
    2106	0EBD  A8 60				     test    al,60h		     ; '`'
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 40
 200MGAME.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2158	0F22			     loc_225:
    2159	0F22  E8 FE90				     call    vga_operation8
    2160	0F25  BB 0090				     mov     bx,90h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 41
 200MGAME.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2212	0F9D  EB D3				     jmp     short loc_229
    2213	0F9F			     game_func_44	     endp
    2214
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 42
 200MGAME.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2266	1014  A2 FF35				     mov     ds:data_226e,al
    2267	1017  E8 0738				     call    game_check_state_4
    2268	101A  E8 1195				     call    game_func_85
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 43
 200MGAME.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2320	10B5  EB 17				     jmp     short loc_243
    2321	10B7			     loc_242:
    2322	10B7  F6 06 FF3C FF			     test    byte ptr ds:data_232e,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 44
 200MGAME.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2374	1158			     loc_249:
    2375	1158  50				     push    ax
    2376	1159  2E: FF 16	0110			     call    word ptr cs:[110h]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 45
 200MGAME.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2428	11F6  E8 1F87				     call    game_func_120
    2429	11F9  C6 06 9F1E FF			     mov     byte ptr ds:data_164e,0FFh
    2430	11FE			     loc_255:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 46
 200MGAME.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2482
    2483	126A			     locloop_262:
    2484	126A  51				     push    cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 47
 200MGAME.asm
 
 
@@ -2771,7 +2771,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2536	12EF  89 44 FE				     mov     [si-2],ax
    2537	12F2  E2 F7				     loop    locloop_266	     ; Loop if cx > 0
    2538
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 48
 200MGAME.asm
 
 
@@ -2830,7 +2830,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2590	136C  A1 0080				     mov     ax,word ptr ds:[80h]
    2591	136F  8A 1E 0083			     mov     bl,byte ptr ds:[83h]
    2592	1373  32 FF				     xor     bh,bh		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 49
 200MGAME.asm
 
 
@@ -2889,7 +2889,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2644	13CA  BF 8020				     mov     di,data_4e
    2645	13CD  B9 0004				     mov     cx,4
    2646
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 50
 200MGAME.asm
 
 
@@ -2948,7 +2948,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2698	1415  8A C8				     mov     cl,al
    2699	1417  51				     push    cx
    2700	1418  AC				     lodsb			     ; String [si] to al
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 51
 200MGAME.asm
 
 
@@ -3007,7 +3007,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2752				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
    2753
    2754	1480			     game_multiply_2	     proc    near
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 52
 200MGAME.asm
 
 
@@ -3066,7 +3066,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2806	14D0  75 05				     jnz     loc_287		     ; Jump if not zero
    2807	14D2  C6 06 9F17 FF			     mov     byte ptr ds:data_158e,0FFh
    2808	14D7			     loc_287:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 53
 200MGAME.asm
 
 
@@ -3125,7 +3125,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2860	1552			     loc_291:
    2861	1552  53				     push    bx
    2862	1553  57				     push    di
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 54
 200MGAME.asm
 
 
@@ -3184,7 +3184,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2914	15A0			     loc_297:
    2915	15A0  BF 9F0E				     mov     di,data_152e
    2916	15A3  8A 05				     mov     al,[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 55
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 55
 200MGAME.asm
 
 
@@ -3243,7 +3243,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    2968	160C			     loc_303:
    2969	160C  E8 007A				     call    game_func_60
    2970	160F  C6 06 FF75 08			     mov     byte ptr ds:data_246e,8
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 56
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 56
 200MGAME.asm
 
 
@@ -3302,7 +3302,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3022	1674  C3				     retn
    3023	1675			     loc_308:
    3024	1675  24 0F				     and     al,0Fh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 57
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 57
 200MGAME.asm
 
 
@@ -3361,7 +3361,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3076
    3077	16BC			     game_func_62	     proc    near
    3078	16BC  8A 04				     mov     al,[si]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 58
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 58
 200MGAME.asm
 
 
@@ -3420,7 +3420,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3130	1712  74 09				     jz	     loc_317		     ; Jump if zero
    3131	1714  3A C7				     cmp     al,bh
    3132	1716  75 01				     jne     loc_316		     ; Jump if not equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 59
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 59
 200MGAME.asm
 
 
@@ -3479,7 +3479,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3184	175F  A0 0083				     mov     al,byte ptr ds:[83h]
    3185	1762  04 04				     add     al,4
    3186	1764  8A E0				     mov     ah,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 60
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 60
 200MGAME.asm
 
 
@@ -3538,7 +3538,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3238	17DB  11*(0F)				     db	     17	dup (0Fh)
    3239	17EC  14*(0E)				     db	     20	dup (0Eh)
    3240	1800  0D 0D 0D 0D 0D 0D	0D		     db	     0Dh, 0Dh, 0Dh, 0Dh, 0Dh, 0Dh, 0Dh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 61
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 61
 200MGAME.asm
 
 
@@ -3597,7 +3597,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3292	18F8  24 07				     and     al,7
    3293	18FA  04 61				     add     al,61h		     ; 'a'
    3294	18FC  A2 79B6				     mov     ds:data_103e,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 62
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 62
 200MGAME.asm
 
 
@@ -3656,7 +3656,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3346	1963  75 F7				     jnz     loc_337		     ; Jump if not zero
    3347	1965  5E				     pop     si
    3348	1966  83 C6 05				     add     si,5
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 63
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 63
 200MGAME.asm
 
 
@@ -3715,7 +3715,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3400	19A5  73 01				     jnc     loc_341		     ; Jump if carry=0
    3401	19A7  C3				     retn
    3402	19A8			     loc_341:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 64
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 64
 200MGAME.asm
 
 
@@ -3774,7 +3774,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3454	1A8D  E8 F302				     call    vga_operation6
    3455	1A90  80 3C 4A				     cmp     byte ptr [si],4Ah	     ; 'J'
    3456	1A93  74 19				     je	     loc_344		     ; Jump if equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 65
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 65
 200MGAME.asm
 
 
@@ -3833,7 +3833,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3508	1AF8  EB EC				     jmp     short loc_348
    3509	1AFA			     loc_351:
    3510	1AFA  58				     pop     ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 66
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 66
 200MGAME.asm
 
 
@@ -3892,7 +3892,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3562	1B81  B0 01				     mov     al,1
    3563	1B83  2E: FF 16	010C			     call    word ptr cs:[10Ch]
    3564	1B88  F6 06 00C4 80			     test    byte ptr ds:[0C4h],80h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 67
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 67
 200MGAME.asm
 
 
@@ -3951,7 +3951,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3616	1C24  B0 03				     mov     al,3
    3617	1C26  2E: FF 16	010C			     call    word ptr cs:[10Ch]
    3618	1C2B  2E: FF 16	A000			     call    word ptr cs:data_181e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 68
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 68
 200MGAME.asm
 
 
@@ -4010,7 +4010,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3670	1CBD  BB 406E				     mov     bx,406Eh
    3671	1CC0  B9 001A				     mov     cx,1Ah
    3672
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 69
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 69
 200MGAME.asm
 
 
@@ -4069,7 +4069,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3724	1D4B  2E: FF 16	2044			     call    word ptr cs:[2044h]
    3725	1D50  2E: FF 16	302Ar			     call    word ptr cs:data_89
    3726	1D55  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 70
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 70
 200MGAME.asm
 
 
@@ -4128,7 +4128,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3778	1DC8  05 FFF0				     add     ax,0FFF0h
    3779	1DCB  0A E4				     or	     ah,ah		     ; Zero ?
    3780	1DCD  79 04				     jns     loc_367		     ; Jump if not sign
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 71
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 71
 200MGAME.asm
 
 
@@ -4187,7 +4187,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3832	1E21  F6 06 0098 FF			     test    byte ptr ds:[98h],0FFh
    3833	1E26  F9				     stc			     ; Set carry flag
    3834	1E27  75 01				     jnz     loc_370		     ; Jump if not zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 72
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 72
 200MGAME.asm
 
 
@@ -4246,7 +4246,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3886
    3887				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    3888				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 73
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 73
 200MGAME.asm
 
 
@@ -4305,7 +4305,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3940	1EFD  88 1E 9EFE			     mov     ds:data_138e,bl
    3941	1F01  B0 0B				     mov     al,0Bh
    3942	1F03  F6 E3				     mul     bl			     ; ax = reg	* al
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 74
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 74
 200MGAME.asm
 
 
@@ -4364,7 +4364,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    3994	1F86			     vga_operation_2	     endp
    3995
    3996
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 75
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 75
 200MGAME.asm
 
 
@@ -4423,7 +4423,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4048	1FDE  EB D9				     jmp     short loc_380
    4049	1FE0			     game_scan_loop_4		     endp
    4050
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 76
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 76
 200MGAME.asm
 
 
@@ -4482,7 +4482,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4102	202C  5A				     pop     dx
    4103	202D  8B DE				     mov     bx,si
    4104	202F  83 C6 23				     add     si,23h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 77
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 77
 200MGAME.asm
 
 
@@ -4541,7 +4541,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4156
    4157	2078			     game_func_80	     proc    near
    4158	2078  F6 06 FF39 FF			     test    byte ptr ds:data_230e,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 78
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 78
 200MGAME.asm
 
 
@@ -4600,7 +4600,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4210
    4211	20DE			     locloop_400:
    4212	20DE  52				     push    dx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 79
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 79
 200MGAME.asm
 
 
@@ -4659,7 +4659,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4264	213E  EB F2				     jmp     short loc_402
    4265	2140			     loc_404:
    4266	2140  E8 01B9				     call    game_func_87
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 80
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 80
 200MGAME.asm
 
 
@@ -4718,7 +4718,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4318	2183  B2 43				     mov     dl,43h		     ; 'C'
    4319
    4320	2185			     locloop_409:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 81
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 81
 200MGAME.asm
 
 
@@ -4777,7 +4777,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4372	21CC  4B				     dec     bx
    4373	21CD  4B				     dec     bx
    4374	21CE  0A FF				     or	     bh,bh		     ; Zero ?
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 82
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 82
 200MGAME.asm
 
 
@@ -4836,7 +4836,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4426	2232  E8 EB3D				     call    vga_operation4
    4427	2235  B9 0003				     mov     cx,3
    4428	2238  B2 46				     mov     dl,46h		     ; 'F'
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 83
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 83
 200MGAME.asm
 
 
@@ -4895,7 +4895,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4480	228A  A1 C002				     mov     ax,ds:data_187e
    4481	228D  48				     dec     ax
    4482	228E			     loc_427:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 84
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 84
 200MGAME.asm
 
 
@@ -4954,7 +4954,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4534	22E6  8A 16 0083			     mov     dl,byte ptr ds:[83h]
    4535	22EA  80 C2 04				     add     dl,4
    4536	22ED  B9 0003				     mov     cx,3
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 85
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 85
 200MGAME.asm
 
 
@@ -5013,7 +5013,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4588	232C  73 01				     jnc     loc_438		     ; Jump if carry=0
    4589	232E  93				     xchg    bx,ax
    4590	232F			     loc_438:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 86
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 86
 200MGAME.asm
 
 
@@ -5072,7 +5072,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4642	2373			     loc_443:
    4643	2373  56				     push    si
    4644	2374  E8 0080				     call    game_func_92
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 87
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 87
 200MGAME.asm
 
 
@@ -5131,7 +5131,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4696	23DF  BE EB80				     mov     si,data_210e
    4697	23E2			     loc_446:
    4698	23E2  80 3C FF				     cmp     byte ptr [si],0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 88
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 88
 200MGAME.asm
 
 
@@ -5190,7 +5190,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4750
    4751	2426			     copy_buffer_2	     proc    near
    4752	2426  BE EB80				     mov     si,data_210e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 89
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 89
 200MGAME.asm
 
 
@@ -5249,7 +5249,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4804	2482  C3				     retn
    4805	2483			     loc_456:
    4806	2483  8A 44 01				     mov     al,[si+1]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 90
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 90
 200MGAME.asm
 
 
@@ -5308,7 +5308,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4858	24F4  74 1C				     je	     loc_464		     ; Jump if equal
    4859	24F6  0A C0				     or	     al,al		     ; Zero ?
    4860	24F8  74 11				     jz	     loc_463		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 91
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 91
 200MGAME.asm
 
 
@@ -5367,7 +5367,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4912	2571  C6 06 FF75 0A			     mov     byte ptr ds:data_246e,0Ah
    4913	2576  C3				     retn
    4914	2577			     game_scan_loop_7		     endp
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 92
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 92
 200MGAME.asm
 
 
@@ -5426,7 +5426,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    4966	25BD  FF 97 85C2			     call    word ptr ds:data_108e[bx]	     ;*
    4967	25C1  80 64 01 3F			     and     byte ptr [si+1],3Fh     ; '?'
    4968	25C5  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 93
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 93
 200MGAME.asm
 
 
@@ -5485,7 +5485,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5020	262F  B9 000D				     mov     cx,0Dh
    5021	2632  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
    5022	2634  B0 FF				     mov     al,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 94
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 94
 200MGAME.asm
 
 
@@ -5544,7 +5544,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5074	2667			     game_multiply_4	     proc    near
    5075	2667  24 3F				     and     al,3Fh		     ; '?'
    5076	2669  8A DC				     mov     bl,ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 95
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 95
 200MGAME.asm
 
 
@@ -5603,7 +5603,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5128	26D3  B0 66				     mov     al,66h		     ; 'f'
    5129	26D5  81 E7 7FFF			     and     di,7FFFh
    5130	26D9  56				     push    si
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 96
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 96
 200MGAME.asm
 
 
@@ -5662,7 +5662,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5182	272A  02 06 0082			     add     al,byte ptr ds:[82h]
    5183	272E  E8 E641				     call    vga_operation4
    5184	2731  87 F7				     xchg    si,di
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 97
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 97
 200MGAME.asm
 
 
@@ -5721,7 +5721,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5236	277A  F6 47 04 20			     test    byte ptr [bx+4],20h     ; ' '
    5237	277E  74 01				     jz	     loc_490		     ; Jump if zero
    5238	2780  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 98
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 98
 200MGAME.asm
 
 
@@ -5780,7 +5780,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5290	27EA  C6 06 FF3C FF			     mov     byte ptr ds:data_232e,0FFh
    5291	27EF  C6 06 FF75 17			     mov     byte ptr ds:data_246e,17h
    5292	27F4  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 99
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 99
 200MGAME.asm
 
 
@@ -5839,7 +5839,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5344	287A  02 C4				     add     al,ah
    5345	287C  32 E4				     xor     ah,ah		     ; Zero register
    5346	287E  03 06 0080			     add     ax,word ptr ds:[80h]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 100
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 100
 200MGAME.asm
 
 
@@ -5898,7 +5898,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5398	2907  59				     pop     cx
    5399	2908  E2 F6				     loop    locloop_503	     ; Loop if cx > 0
    5400
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 101
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 101
 200MGAME.asm
 
 
@@ -5957,7 +5957,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5452	2975  B9 0004				     mov     cx,4
    5453	2978			     loc_509:
    5454				     ;*		     cmp     word ptr [si],0FFFFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 102
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 102
 200MGAME.asm
 
 
@@ -6016,7 +6016,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5506	29E6  45				     inc     bp
    5507	29E7  3E: 02 5E	00			     add     bl,ds:[bp]
    5508	29EB  80 E3 3F				     and     bl,3Fh		     ; '?'
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 103
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 103
 200MGAME.asm
 
 
@@ -6075,7 +6075,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5560
    5561
    5562				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 104
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 104
 200MGAME.asm
 
 
@@ -6134,7 +6134,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5614	2AB0  C3				     retn
    5615	2AB1			     game_func_110	     endp
    5616
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 105
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 105
 200MGAME.asm
 
 
@@ -6193,7 +6193,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5668	2B28  FE 44 05				     inc     byte ptr [si+5]
    5669	2B2B  80 7C 04 03			     cmp     byte ptr [si+4],3
    5670	2B2F  74 34				     je	     loc_527		     ; Jump if equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 106
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 106
 200MGAME.asm
 
 
@@ -6252,7 +6252,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5722
    5723	2BA0  C3				     retn
    5724	2BA1			     loc_530:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 107
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 107
 200MGAME.asm
 
 
@@ -6311,7 +6311,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5776				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    5777				     ;				    SUBROUTINE
    5778				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 108
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 108
 200MGAME.asm
 
 
@@ -6370,7 +6370,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5830	2C52  C3				     retn
    5831	2C53			     game_scan_loop_9		     endp
    5832
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 109
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 109
 200MGAME.asm
 
 
@@ -6429,7 +6429,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5884	2CFF  7D 7E 73 74 75 76	67+		     db	     '}~stuvghijklmnopqrstuvwxyz{|}~'
    5885	      68 69 6A 6B 6C 6D	6E+
    5886	      6F 70 71 72 73 74	75+
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 110
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 110
 200MGAME.asm
 
 
@@ -6488,7 +6488,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5938	2D8E  86 05				     xchg    [di],al
    5939	2D90  88 87 ED20			     mov     ds:data_211e[bx],al
    5940	2D94			     loc_548:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 111
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 111
 200MGAME.asm
 
 
@@ -6547,7 +6547,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    5992	2DF5  F6 44 04 18			     test    byte ptr [si+4],18h
    5993	2DF9  75 05				     jnz     loc_554		     ; Jump if not zero
    5994	2DFB  2E: FF 26	A000			     jmp     word ptr cs:data_181e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 112
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 112
 200MGAME.asm
 
 
@@ -6606,7 +6606,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6046	2E9A  80 EC 03				     sub     ah,3
    6047	2E9D  80 E4 3F				     and     ah,3Fh		     ; '?'
    6048	2EA0  3A 26 FF35			     cmp     ah,ds:data_226e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 113
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 113
 200MGAME.asm
 
 
@@ -6665,7 +6665,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6100	2F0B  8A 44 09				     mov     al,[si+9]
    6101	2F0E  A8 10				     test    al,10h
    6102	2F10  74 0A				     jz	     loc_567		     ; Jump if zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 114
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 114
 200MGAME.asm
 
 
@@ -6724,7 +6724,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6154	2FE3  B8 0064				     mov     ax,64h
    6155	2FE6  E8 0197				     call    game_func_120
    6156	2FE9  E9 0164				     jmp     loc_588
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 115
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 115
 200MGAME.asm
 
 
@@ -6783,7 +6783,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6208	3078  74 04				     jz	     loc_575		     ; Jump if zero
    6209	307A  FE 44 0A				     inc     byte ptr [si+0Ah]
    6210	307D  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 116
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 116
 200MGAME.asm
 
 
@@ -6842,7 +6842,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6262
    6263	30D7			     game_func_118:
    6264	30D7  52				     push    dx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 117
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 117
 200MGAME.asm
 
 
@@ -6901,7 +6901,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6316				     ;ﬂﬂﬂﬂ External Entry into Subroutine ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    6317
    6318	3150			     game_func_119:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 118
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 118
 200MGAME.asm
 
 
@@ -6960,7 +6960,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6370	319D			     loc_592:
    6371	319D  8A 64 02				     mov     ah,[si+2]
    6372	31A0  80 C4 02				     add     ah,2
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 119
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 119
 200MGAME.asm
 
 
@@ -7019,7 +7019,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6424	31ED  F5				     cmc			     ; Complement carry
    6425	31EE  73 01				     jnc     loc_600		     ; Jump if carry=0
    6426	31F0  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 120
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 120
 200MGAME.asm
 
 
@@ -7078,7 +7078,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6478				     ;ﬂﬂﬂﬂ External Entry into Subroutine ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    6479
    6480	3238			     game_func_124:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 121
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 121
 200MGAME.asm
 
 
@@ -7137,7 +7137,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6532	327E  E8 0002				     call    game_func_126
    6533	3281  EB 25				     jmp     short loc_624
    6534
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 122
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 122
 200MGAME.asm
 
 
@@ -7196,7 +7196,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6586	32C3  73 01				     jnc     loc_626		     ; Jump if carry=0
    6587	32C5  C3				     retn
    6588	32C6			     loc_626:
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 123
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 123
 200MGAME.asm
 
 
@@ -7255,7 +7255,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6640				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
    6641				     ;				    SUBROUTINE
    6642				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 124
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 124
 200MGAME.asm
 
 
@@ -7314,7 +7314,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6694	335C  FE C9				     dec     cl
    6695	335E  FE C9				     dec     cl
    6696	3360  F8				     clc			     ; Clear carry flag
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 125
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 125
 200MGAME.asm
 
 
@@ -7373,7 +7373,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6748	33A6  83 C6 48				     add     si,48h
    6749	33A9  E8 D9DA				     call    vga_operation5
    6750	33AC  87 F7				     xchg    si,di
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 126
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 126
 200MGAME.asm
 
 
@@ -7432,7 +7432,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6802	33FB			     loc_642:
    6803	33FB  87 F7				     xchg    si,di
    6804	33FD  83 EE 24				     sub     si,24h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 127
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 127
 200MGAME.asm
 
 
@@ -7491,7 +7491,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6856	3455  C3				     retn
    6857	3456			     game_func_135	     endp
    6858
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 128
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 128
 200MGAME.asm
 
 
@@ -7550,7 +7550,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6910	349E  8B 44 02				     mov     ax,[si+2]
    6911	34A1  E8 D8CE				     call    vga_operation4
    6912	34A4  4F				     dec     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 129
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 129
 200MGAME.asm
 
 
@@ -7609,7 +7609,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    6964	34F1			     loc_653:
    6965	34F1  57				     push    di
    6966	34F2  51				     push    cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 130
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 130
 200MGAME.asm
 
 
@@ -7668,7 +7668,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7018	3546  72 06				     jb	     loc_660		     ; Jump if below
    7019	3548  80 FB 20				     cmp     bl,20h		     ; ' '
    7020	354B  73 01				     jae     loc_660		     ; Jump if above or	=
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 131
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 131
 200MGAME.asm
 
 
@@ -7727,7 +7727,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7072	35C1  88 5C 03				     mov     [si+3],bl
    7073	35C4  88 5C 13				     mov     [si+13h],bl
    7074	35C7  8A 44 0D				     mov     al,[si+0Dh]
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 132
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 132
 200MGAME.asm
 
 
@@ -7786,7 +7786,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7126	3648  C6 44 18 00			     mov     byte ptr [si+18h],0
    7127	364C  80 64 17 F0			     and     byte ptr [si+17h],0F0h
    7128	3650  8A 1E FF4A			     mov     bl,ds:data_244e
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 133
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 133
 200MGAME.asm
 
 
@@ -7845,7 +7845,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7180	36A7  2B 06 0080			     sub     ax,word ptr ds:[80h]
    7181	36AB  73 11				     jnc     loc_671		     ; Jump if carry=0
    7182	36AD  B8 0023				     mov     ax,23h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 134
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 134
 200MGAME.asm
 
 
@@ -7904,7 +7904,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7234				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
    7235
    7236	3719			     game_func_143	     proc    near
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 135
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 135
 200MGAME.asm
 
 
@@ -7963,7 +7963,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7288				     ;*		     call    far ptr game_func_155	     ;*
    7289	378C  9A				     db	     9Ah
    7290	378D  9497 8E97				     dw	     9497h, 8E97h	     ;	Fixup -	byte match
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 136
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 136
 200MGAME.asm
 
 
@@ -8022,7 +8022,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7342	3809  8A 01				     mov     al,[bx+di]
    7343	380B  8A 64 07				     mov     ah,[si+7]
    7344	380E  80 E4 F0				     and     ah,0F0h
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 137
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 137
 200MGAME.asm
 
 
@@ -8081,7 +8081,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7396	3876  3C 09				     cmp     al,9
    7397	3878  75 01				     jne     loc_689		     ; Jump if not equal
    7398	387A  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 138
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 138
 200MGAME.asm
 
 
@@ -8140,7 +8140,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7450	38D5  C3				     retn
    7451	38D6			     loc_696:
    7452				     ;*		     cmp     word ptr [di+0Bh],0FFFFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 139
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 139
 200MGAME.asm
 
 
@@ -8199,7 +8199,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7504	396D  3C 03				     cmp     al,3
    7505	396F  74 DB				     je	     loc_701		     ; Jump if equal
    7506	3971  A2 00E7				     mov     byte ptr ds:[0E7h],al
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 140
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 140
 200MGAME.asm
 
 
@@ -8258,7 +8258,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7558	39FB  A3 9F1A				     mov     ds:data_161e,ax
    7559	39FE  8B 36 C000			     mov     si,ds:data_186e
    7560	3A02  46				     inc     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 141
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 141
 200MGAME.asm
 
 
@@ -8317,7 +8317,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7612	3AF6  FF 06 00				     db	     0FFh, 06h,	00h
    7613	3AF9  59 6F 75 20 67 65	74+		     db	     'You get the Hero\s Crest.'
    7614	      20 74 68 65 20 48	65+
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 142
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 142
 200MGAME.asm
 
 
@@ -8376,7 +8376,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7666	3C0D  3A 52 4F 4B 41 2E	47+		     db	     ':ROKA.GRP'
    7667	      52 50
    7668	3C16  00 02				     db	     0,	2
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 143
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 143
 200MGAME.asm
 
 
@@ -8435,7 +8435,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7720	3CD8  45 41 49 32 2E 42	49+		     db	     'EAI2.BIN'
    7721	      4E
    7722	3CE0  00 02 0B				     db	      00h, 02h,	0Bh
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 144
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 144
 200MGAME.asm
 
 
@@ -8494,7 +8494,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7774	3D9D  41 43 52 41 42 2E	47+		     db	     'ACRAB.GRP'
    7775	      52 50
    7776	3DA6  00 02				     db	     0,	2
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 145
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 145
 200MGAME.asm
 
 
@@ -8553,7 +8553,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7828	3E63  31 55 47 4D 31 2E	4D+		     db	     '1UGM1.MSD'
    7829	      53 44
    7830	3E6C  00 01				     db	     0,	1
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 146
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 146
 200MGAME.asm
 
 
@@ -8606,7 +8606,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 1
    7876
    7877
    7878						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 147
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 147
 Symbol Table
 
 
@@ -8614,9 +8614,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "200MGAME"
-??TIME				  Text	 "12:30:17"
+??TIME				  Text	 "00:09:40"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -8665,7 +8665,7 @@ DATA_136E			  Number 9EF9
 DATA_137E			  Number 9EFA
 DATA_138E			  Number 9EFE
 DATA_139E			  Number 9EFF
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 148
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 148
 Symbol Table
 
 
@@ -8724,7 +8724,7 @@ DATA_190E			  Number C008
 DATA_191E			  Number C00A
 DATA_192E			  Number C00C
 DATA_193E			  Number C00E
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 149
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 149
 Symbol Table
 
 
@@ -8783,7 +8783,7 @@ DATA_243E			  Number FF47
 DATA_244E			  Number FF4A
 DATA_245E			  Number FF4B
 DATA_246E			  Number FF75
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 150
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 150
 Symbol Table
 
 
@@ -8842,7 +8842,7 @@ GAME_FUNC_113			  Near	 SEG_A:2BD4
 GAME_FUNC_115			  Near	 SEG_A:2C53
 GAME_FUNC_116			  Near	 SEG_A:2D1D
 GAME_FUNC_117			  Near	 SEG_A:2DB2
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 151
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 151
 Symbol Table
 
 
@@ -8901,7 +8901,7 @@ GAME_FUNC_63			  Near	 SEG_A:16FA
 GAME_FUNC_65			  Near	 SEG_A:18DB
 GAME_FUNC_66			  Near	 SEG_A:18E1
 GAME_FUNC_68			  Near	 SEG_A:1985
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 152
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 152
 Symbol Table
 
 
@@ -8960,7 +8960,7 @@ LOCLOOP_194			  Near	 SEG_A:0CC3
 LOCLOOP_216			  Near	 SEG_A:0EB3
 LOCLOOP_217			  Near	 SEG_A:0EB7
 LOCLOOP_258			  Near	 SEG_A:123A
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 153
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 153
 Symbol Table
 
 
@@ -9019,7 +9019,7 @@ LOC_106				  Near	 SEG_A:07C0
 LOC_107				  Near	 SEG_A:07CA
 LOC_108				  Near	 SEG_A:07DE
 LOC_109				  Near	 SEG_A:07F7
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 154
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 154
 Symbol Table
 
 
@@ -9078,7 +9078,7 @@ LOC_157				  Near	 SEG_A:0A9B
 LOC_158				  Near	 SEG_A:0AA9
 LOC_159				  Near	 SEG_A:0AAC
 LOC_16				  Near	 SEG_A:028E
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 155
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 155
 Symbol Table
 
 
@@ -9137,7 +9137,7 @@ LOC_209				  Near	 SEG_A:0E3A
 LOC_21				  Near	 SEG_A:0321
 LOC_210				  Near	 SEG_A:0E47
 LOC_211				  Near	 SEG_A:0E74
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 156
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 156
 Symbol Table
 
 
@@ -9196,7 +9196,7 @@ LOC_260				  Near	 SEG_A:124E
 LOC_261				  Near	 SEG_A:1262
 LOC_263				  Near	 SEG_A:1279
 LOC_264				  Near	 SEG_A:128B
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 157
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 157
 Symbol Table
 
 
@@ -9255,7 +9255,7 @@ LOC_318				  Near	 SEG_A:1724
 LOC_319				  Near	 SEG_A:1731
 LOC_32				  Near	 SEG_A:03CB
 LOC_320				  Near	 SEG_A:1735
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 158
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 158
 Symbol Table
 
 
@@ -9314,7 +9314,7 @@ LOC_37				  Near	 SEG_A:0403
 LOC_370				  Near	 SEG_A:1E2A
 LOC_371				  Near	 SEG_A:1E40
 LOC_372				  Near	 SEG_A:1E49
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 159
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 159
 Symbol Table
 
 
@@ -9373,7 +9373,7 @@ LOC_425				  Near	 SEG_A:227D
 LOC_426				  Near	 SEG_A:2284
 LOC_427				  Near	 SEG_A:228E
 LOC_428				  Near	 SEG_A:2298
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 160
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 160
 Symbol Table
 
 
@@ -9432,7 +9432,7 @@ LOC_477				  Near	 SEG_A:264D
 LOC_478				  Near	 SEG_A:2655
 LOC_479				  Near	 SEG_A:265C
 LOC_48				  Near	 SEG_A:04A6
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 161
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 161
 Symbol Table
 
 
@@ -9491,7 +9491,7 @@ LOC_535				  Near	 SEG_A:2BF8
 LOC_536				  Near	 SEG_A:2BFB
 LOC_537				  Near	 SEG_A:2C0B
 LOC_538				  Near	 SEG_A:2C13
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 162
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 162
 Symbol Table
 
 
@@ -9550,7 +9550,7 @@ LOC_588				  Near	 SEG_A:3150
 LOC_589				  Near	 SEG_A:315B
 LOC_59				  Near	 SEG_A:051A
 LOC_590				  Near	 SEG_A:3164
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 163
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 163
 Symbol Table
 
 
@@ -9609,7 +9609,7 @@ LOC_638				  Near	 SEG_A:33B7
 LOC_639				  Near	 SEG_A:33C1
 LOC_64				  Near	 SEG_A:0559
 LOC_640				  Near	 SEG_A:33DA
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 164
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 164
 Symbol Table
 
 
@@ -9668,7 +9668,7 @@ LOC_69				  Near	 SEG_A:05BE
 LOC_690				  Near	 SEG_A:3886
 LOC_691				  Near	 SEG_A:38A8
 LOC_692				  Near	 SEG_A:38AA
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 165
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 165
 Symbol Table
 
 
@@ -9727,7 +9727,7 @@ VGA_OPERATION0			  Near	 SEG_A:0C9C
 VGA_OPERATION1			  Near	 SEG_A:0CF1
 VGA_OPERATION2			  Near	 SEG_A:0D0A
 VGA_OPERATION3			  Near	 SEG_A:0D5B
-Turbo Assembler	 Version 2.01	     03/22/26 12:30:20	    Page 166
+Turbo Assembler	 Version 2.01	     03/24/26 00:09:43	    Page 166
 Symbol Table
 
 

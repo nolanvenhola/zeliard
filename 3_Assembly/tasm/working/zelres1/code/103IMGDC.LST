@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 1
 103IMGDC.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 2
 103IMGDC.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     106	      =	4C60		     data_76e	     equ     4C60h		     ;*
     107	      =	4C62		     data_78e	     equ     4C62h		     ;*
     108	      =	4C64		     data_79e	     equ     4C64h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 3
 103IMGDC.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     160	006C  E8 1B1D				     call    imgdec_process_loop_5
     161	006F  AB				     stosw			     ; Store ax	to es:[di]
     162	0070  E2 EE				     loop    locloop_1		     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 4
 103IMGDC.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     214	00CD  8B F8				     mov     di,ax
     215	00CF  5E				     pop     si
     216	00D0  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 5
 103IMGDC.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     268	013E  E8 0036				     call    imgdec_func_1
     269	0141			     loc_4:
     270	0141  2E: C6 06	4C5F FF			     mov     byte ptr cs:data_75e,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 6
 103IMGDC.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     322	01B1  81 C7 2000			     add     di,2000h
     323	01B5  81 FF 6000			     cmp     di,6000h
     324	01B9  72 09				     jb	     loc_9		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 7
 103IMGDC.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     376	022C  8A CD				     mov     cl,ch
     377	022E  32 ED				     xor     ch,ch		     ; Zero register
     378
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 8
 103IMGDC.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     430	0274  74 02				     jz	     loc_19		     ; Jump if zero
     431	0276  0A E2				     or	     ah,dl
     432	0278			     loc_19:
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 9
 103IMGDC.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     484	02BC  59				     pop     cx
     485	02BD  5F				     pop     di
     486	02BE  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 10
 103IMGDC.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     538
     539	0326			     locloop_28:
     540	0326  02 C0				     add     al,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 11
 103IMGDC.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     592	037F  83 C6 00				     add     si,0
     593	0382  8B E8				     mov     bp,ax
     594	0384  81 C5 4000			     add     bp,data_91e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 12
 103IMGDC.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     646
     647	03CE			     loc_32:
     648	03CE  1E				     push    ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 13
 103IMGDC.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     700	042B  8B CB				     mov     cx,bx
     701	042D  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
     702	042F  5F				     pop     di
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 14
 103IMGDC.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     754	0481  74 7A				     jz	     loc_41		     ; Jump if zero
     755	0483  8A 44 0D				     mov     al,[si+0Dh]
     756	0486  3A 44 0E				     cmp     al,[si+0Eh]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 15
 103IMGDC.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     808	04FD			     loc_41:
     809	04FD  59				     pop     cx
     810	04FE  83 C6 0F				     add     si,0Fh
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 16
 103IMGDC.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     862	0568  51				     push    cx
     863	0569  8B 6C 01				     mov     bp,[si+1]
     864	056C  8B 7C 05				     mov     di,[si+5]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 17
 103IMGDC.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     916	05BF  59				     pop     cx
     917	05C0  5E				     pop     si
     918	05C1  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 18
 103IMGDC.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
     970	05F5  F6 E1				     mul     cl			     ; ax = reg	* al
     971	05F7  8B D8				     mov     bx,ax
     972	05F9  2E: C7 06	4C5A 0000		     mov     word ptr cs:data_71e,0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 19
 103IMGDC.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1024	064F  20 06 00 93 20 06			     db	      20h, 06h,	00h, 93h, 20h, 06h
    1025	0655  80 94 20 06 00 96			     db	      80h, 94h,	20h, 06h, 00h, 96h
    1026	065B  18 04 C0 96 18			     db	      18h, 04h,0C0h, 96h, 18h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 20
 103IMGDC.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1078	06F6  5B				     pop     bx
    1079	06F7  1F				     pop     ds
    1080	06F8  BF 0000				     mov     di,data_1e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 21
 103IMGDC.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1132	0746  32 ED				     xor     ch,ch		     ; Zero register
    1133	0748  03 C1				     add     ax,cx
    1134	074A  05 4000				     add     ax,4000h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 22
 103IMGDC.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1186	07A8  81 C6 1A6E			     add     si,data_89e
    1187	07AC  B9 0022				     mov     cx,22h
    1188	07AF  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 23
 103IMGDC.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1240	0813  2E: A3 4C58			     mov     cs:data_70e,ax
    1241	0817  2E: A3 4C54			     mov     cs:data_68e,ax
    1242	081B  E8 136E				     call    imgdec_process_loop_5
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 24
 103IMGDC.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1294	0880  C3				     retn
    1295										     ;*	No entry point to code
    1296	0881  8B D8				     mov     bx,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 25
 103IMGDC.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1348	08F3  E8 00A5				     call    imgdec_func_9
    1349	08F6  4F				     dec     di
    1350	08F7  EB F5				     jmp     short loc_81
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 26
 103IMGDC.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1402	0951  0A C0				     or	     al,al		     ; Zero ?
    1403	0953  75 01				     jnz     loc_91		     ; Jump if not zero
    1404	0955  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 27
 103IMGDC.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1456	09A1  03 C0				     add     ax,ax
    1457	09A3  03 C0				     add     ax,ax
    1458	09A5  03 C0				     add     ax,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 28
 103IMGDC.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1510	0A2D  AA 00 00 00 00 FF			     db	     0AAh, 00h,	00h, 00h, 00h,0FFh
    1511	0A33  02 02 AA 00 00 00			     db	      02h, 02h,0AAh, 00h, 00h, 00h
    1512	0A39  00 FF 80 80 AA 00			     db	      00h,0FFh,	80h, 80h,0AAh, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 29
 103IMGDC.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1564	0BFC  58 4C 00 00 8B CD			     db	      58h, 4Ch,	00h, 00h, 8Bh,0CDh
    1565	0C02  D1 E9				     db	     0D1h,0E9h
    1566
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 30
 103IMGDC.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1618	0C7A  E8 001D				     call    imgdec_multiply_3
    1619	0C7D  5E				     pop     si
    1620	0C7E  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 31
 103IMGDC.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1672	0CF3			     loc_110:
    1673	0CF3  47				     inc     di
    1674	0CF4  2E: FE 06	4C5C			     inc     byte ptr cs:data_72e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 32
 103IMGDC.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1726	0D5B  81 FF 6000			     cmp     di,6000h
    1727	0D5F  72 04				     jb	     loc_114		     ; Jump if below
    1728	0D61  81 C7 A05A			     add     di,data_84e
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 33
 103IMGDC.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1780	0DDD  26: 80 0D	3F			     or	     byte ptr es:[di],3Fh    ; '?'
    1781	0DE1  47				     inc     di
    1782	0DE2  8B CB				     mov     cx,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 34
 103IMGDC.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1834
    1835
    1836				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 35
 103IMGDC.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1888	0EB9  03 3E 4C62			     add     di,ds:data_78e
    1889	0EBD  E8 014F				     call    imgdec_process_loop_4
    1890	0EC0  B8 B000				     mov     ax,0B000h
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 36
 103IMGDC.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1942	0F2C  73 05				     jae     loc_124		     ; Jump if above or	=
    1943	0F2E  E8 0045				     call    imgdec_scan_loop_2
    1944	0F31  EB 03				     jmp     short loc_125
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 37
 103IMGDC.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    1996	0F82  8A 84 5500			     mov     al,ds:data_81e[si]
    1997	0F86  2E: A3 4C58			     mov     cs:data_70e,ax
    1998	0F8A  8A 84 2A80			     mov     al,ds:data_57e[si]
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 38
 103IMGDC.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2050	1000  81 C7 1FFF			     add     di,1FFFh
    2051	1004  81 FF 6000			     cmp     di,data_95e
    2052	1008  72 01				     jb	     loc_133		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 39
 103IMGDC.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2104	106F  81 C7 2A80			     add     di,data_57e
    2105	1073  B8 FC3F				     mov     ax,0FC3Fh
    2106	1076  E8 001B				     call    fill_buffer_2
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 40
 103IMGDC.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2158	10D1			     loc_138:
    2159	10D1  2E: 80 3E	FF1A 04			     cmp     byte ptr cs:data_86e,4
    2160	10D7  72 F8				     jb	     loc_138		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 41
 103IMGDC.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2212	113C  5F				     pop     di
    2213	113D  E2 D6				     loop    locloop_141	     ; Loop if cx > 0
    2214
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 42
 103IMGDC.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2266	11B8  2E: 8E 1E	4C64			     mov     ds,cs:data_79e
    2267	11BD  B9 0039				     mov     cx,39h
    2268
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 43
 103IMGDC.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2320	1229  AD				     lodsw			     ; String [si] to ax
    2321	122A  2E: A3 4C54			     mov     cs:data_68e,ax
    2322	122E  E8 095B				     call    imgdec_process_loop_5
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 44
 103IMGDC.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2374	1282  F7 E1				     mul     cx			     ; dx:ax = reg * ax
    2375	1284  05 4288				     add     ax,4288h
    2376	1287  2E: A3 4C52			     mov     cs:data_67e,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 45
 103IMGDC.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2428	13BD  02 00 02 00 01 02			     db	     2,	0, 2, 0, 1, 2
    2429	13C3  02 00				     db	     2,	0
    2430	13C5  0C*(00)				     db	     12	dup (0)
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 46
 103IMGDC.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2482	1547  02 00				     db	     2,	0
    2483	1549  0F*(00)				     db	     15	dup (0)
    2484	1558  01 00				     db	     1,	0
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 47
 103IMGDC.asm
 
 
@@ -2771,7 +2771,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2536	169F  03 01 01 01 01 00			     db	     3,	1, 1, 1, 1, 0
    2537	16A5  01 02 02 01 01 01			     db	     1,	2, 2, 1, 1, 1
    2538	16AB  01 00 02 02 03 01			     db	     1,	0, 2, 2, 3, 1
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 48
 103IMGDC.asm
 
 
@@ -2830,7 +2830,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2590	17E3  03 01 01 01 01 01			     db	     3,	1, 1, 1, 1, 1
    2591	17E9  01 03 03 02 01 02			     db	     1,	3, 3, 2, 1, 2
    2592	17EF  03 02 03 03 03 02			     db	     3,	2, 3, 3, 3, 2
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 49
 103IMGDC.asm
 
 
@@ -2889,7 +2889,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2644	1926  02 02 01 01 01 01			     db	     2,	2, 1, 1, 1, 1
    2645	192C  02 02 02 03 01 01			     db	     2,	2, 2, 3, 1, 1
    2646	1932  02 02 00 02 02 02			     db	     2,	2, 0, 2, 2, 2
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 50
 103IMGDC.asm
 
 
@@ -2948,7 +2948,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2698	1A6A  03 03 02 01 02 03			     db	     3,	3, 2, 1, 2, 3
    2699	1A70  03 03 03 03 02 01			     db	     3,	3, 3, 3, 2, 1
    2700	1A76  02 02 03 03 03 03			     db	     2,	2, 3, 3, 3, 3
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 51
 103IMGDC.asm
 
 
@@ -3007,7 +3007,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2752	1B8C			     imgdec_process_loop_5	     proc    near
    2753	1B8C  51				     push    cx
    2754	1B8D  56				     push    si
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 52
 103IMGDC.asm
 
 
@@ -3066,7 +3066,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2806	1C04  81 C6 A05A			     add     si,0A05Ah
    2807	1C08			     loc_157:
    2808	1C08  59				     pop     cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 53
 103IMGDC.asm
 
 
@@ -3121,7 +3121,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 1
    2856
    2857
    2858						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 54
 Symbol Table
 
 
@@ -3129,9 +3129,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "103IMGDC"
-??TIME				  Text	 "12:28:43"
+??TIME				  Text	 "00:08:31"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -3180,7 +3180,7 @@ DATA_87E			  Number FF2C
 DATA_88E			  Number 0000
 DATA_89E			  Number 1A6E
 DATA_90E			  Number 1A8E
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 55
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 55
 Symbol Table
 
 
@@ -3239,7 +3239,7 @@ LOCLOOP_17			  Near	 SEG_A:0269
 LOCLOOP_18			  Near	 SEG_A:0272
 LOCLOOP_2			  Near	 SEG_A:009F
 LOCLOOP_21			  Near	 SEG_A:029B
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 56
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 56
 Symbol Table
 
 
@@ -3298,7 +3298,7 @@ LOC_127				  Near	 SEG_A:0F72
 LOC_129				  Near	 SEG_A:0FA7
 LOC_131				  Near	 SEG_A:0FD8
 LOC_133				  Near	 SEG_A:100B
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 57
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 57
 Symbol Table
 
 
@@ -3357,7 +3357,7 @@ LOC_76				  Near	 SEG_A:08B7
 LOC_77				  Near	 SEG_A:08C2
 LOC_78				  Near	 SEG_A:08CC
 LOC_79				  Near	 SEG_A:08DE
-Turbo Assembler	 Version 2.01	     03/22/26 12:28:44	    Page 58
+Turbo Assembler	 Version 2.01	     03/24/26 00:08:32	    Page 58
 Symbol Table
 
 

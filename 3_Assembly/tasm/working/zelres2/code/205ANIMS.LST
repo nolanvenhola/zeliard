@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 1
 205ANIMS.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 2
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 2
 205ANIMS.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     106	      =	523D		     data_68e	     equ     523Dh		     ;*
     107	      =	523F		     data_69e	     equ     523Fh		     ;*
     108	      =	5241		     data_70e	     equ     5241h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 3
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 3
 205ANIMS.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     160	0000			     zr2_05	     proc    far
     161
     162	0000			     start:
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 4
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 4
 205ANIMS.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     214	0064  E8 040C				     call    anim_func_4
     215	0067			     loc_5:
     216	0067  46				     inc     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 5
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 5
 205ANIMS.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     268	00C3  AC				     lodsb			     ; String [si] to al
     269	00C4  0A C0				     or	     al,al		     ; Zero ?
     270	00C6  79 03				     jns     loc_15		     ; Jump if not sign
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 6
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 6
 205ANIMS.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     322	0110  74 03				     je	     loc_25		     ; Jump if equal
     323	0112  E8 0013				     call    anim_func_1
     324	0115			     loc_25:
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 7
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 7
 205ANIMS.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     376
     377										     ;*	No entry point to code
     378				     ;*		     jp	     loc_34		     ;*Jump if parity=1
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 8
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 8
 205ANIMS.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     430	01D4  8A 44 FF				     mov     al,[si-1]
     431	01D7  2C 2C				     sub     al,2Ch		     ; ','
     432	01D9  3C 02				     cmp     al,2
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 9
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 9
 205ANIMS.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     484	023C  FE C0				     inc     al
     485	023E  04 33				     add     al,33h		     ; '3'
     486	0240  8A D8				     mov     bl,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 10
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 10
 205ANIMS.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     538	029B  8B F0				     mov     si,ax
     539	029D  2E: 8E 1E	FF2C			     mov     ds,cs:data_94e
     540	02A2  B8 B800				     mov     ax,0B800h
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 11
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 11
 205ANIMS.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     592	030F  81 FE 8000			     cmp     si,8000h
     593	0313  72 04				     jb	     loc_53		     ; Jump if below
     594	0315  81 C6 80A0			     add     si,data_115e
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 12
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 12
 205ANIMS.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     646	0393  81 C7 1FFC			     add     di,1FFCh
     647	0397  81 FF 8000			     cmp     di,8000h
     648	039B  72 04				     jb	     loc_62		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 13
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 13
 205ANIMS.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     700	0408  72 04				     jb	     loc_69		     ; Jump if below
     701	040A  81 C7 80A0			     add     di,data_115e
     702	040E			     loc_69:
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 14
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 14
 205ANIMS.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     754	0461  E8 03EE				     call    anim_multiply_3
     755	0464  83 C6 03				     add     si,3
     756	0467  58				     pop     ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 15
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 15
 205ANIMS.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     808
     809	04B9			     anim_func_5	     proc    near
     810	04B9  80 3E E91B FF			     cmp     byte ptr ds:data_90e,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 16
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 16
 205ANIMS.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     862	0520  03 16 5231			     add     dx,ds:data_59e
     863	0524  80 3E 5255 FF			     cmp     byte ptr ds:data_75e,0FFh
     864	0529  74 1B				     je	     loc_79		     ; Jump if equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 17
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 17
 205ANIMS.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     916	058F  BB 5259				     mov     bx,data_77e
     917	0592  8A 04				     mov     al,[si]
     918	0594  88 47 01				     mov     [bx+1],al
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 18
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 18
 205ANIMS.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
     970	0614  8A D8				     mov     bl,al
     971	0616  8A FA				     mov     bh,dl
     972	0618  5A				     pop     dx
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 19
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 19
 205ANIMS.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1024	0676			     anim_func_8:
    1025	0676  3E: 80 7E	00 FF			     cmp     byte ptr ds:[bp],0FFh
    1026	067B  74 1D				     je	     loc_90		     ; Jump if equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 20
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 20
 205ANIMS.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1078	06D3  80 E3 7F				     and     bl,7Fh
    1079	06D6  32 FF				     xor     bh,bh		     ; Zero register
    1080	06D8  03 DB				     add     bx,bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 21
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 21
 205ANIMS.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1132	072C  5D				     pop     bp
    1133	072D  EB 00				     jmp     short $+2		     ; delay for I/O
    1134
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 22
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 22
 205ANIMS.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1186				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
    1187
    1188	076D			     extract_bits	     proc    near
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 23
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 23
 205ANIMS.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1240	07D6  81 C7 80A0			     add     di,data_115e
    1241	07DA			     loc_96:
    1242	07DA  A5				     movsw			     ; Mov [si]	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 24
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 24
 205ANIMS.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1294	083D			     copy_buffer	     proc    near
    1295	083D  B9 0010				     mov     cx,10h
    1296	0840  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 25
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 25
 205ANIMS.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1348	0881  80 E3 1F				     and     bl,1Fh
    1349	0884  02 DB				     add     bl,bl
    1350	0886  32 FF				     xor     bh,bh		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 26
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 26
 205ANIMS.asm
 
 
@@ -1532,7 +1532,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1402	08E1  3C FF				     cmp     al,0FFh
    1403	08E3  75 02				     jne     loc_110		     ; Jump if not equal
    1404	08E5  B0 04				     mov     al,4
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 27
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 27
 205ANIMS.asm
 
 
@@ -1591,7 +1591,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1456	0944  B0 FE				     mov     al,0FEh
    1457	0946  AA				     stosb			     ; Store al	to es:[di]
    1458	0947  AA				     stosb			     ; Store al	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 28
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 28
 205ANIMS.asm
 
 
@@ -1650,7 +1650,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1510	09B8  E8 0818				     call    anim_func_27
    1511	09BB  F7 D5				     not     bp
    1512	09BD  26: 21 6D	06			     and     es:[di+6],bp
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 29
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 29
 205ANIMS.asm
 
 
@@ -1709,7 +1709,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1564	0AAB  C0 00 FF FF 00 00			     db	     0C0h, 00h,0FFh,0FFh, 00h, 00h
    1565	0AB1  0F F0 00 00 3F FC			     db	      0Fh,0F0h,	00h, 00h, 3Fh,0FCh
    1566	0AB7  00 03 FF FF C0 0F			     db	      00h, 03h,0FFh,0FFh,0C0h, 0Fh
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 30
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 30
 205ANIMS.asm
 
 
@@ -1768,7 +1768,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1618	0B56  03 C9				     add     cx,cx
    1619	0B58  03 C9				     add     cx,cx
    1620	0B5A  03 C1				     add     ax,cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 31
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 31
 205ANIMS.asm
 
 
@@ -1827,7 +1827,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1672	0BC0  8A 04				     mov     al,[si]
    1673	0BC2  5E				     pop     si
    1674	0BC3  E9 02F5				     jmp     loc_164
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 32
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 32
 205ANIMS.asm
 
 
@@ -1886,7 +1886,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1726	0C38  F6 E1				     mul     cl			     ; ax = reg	* al
    1727	0C3A  5E				     pop     si
    1728	0C3B  03 F0				     add     si,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 33
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 33
 205ANIMS.asm
 
 
@@ -1945,7 +1945,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1780	0CAC  03 F0				     add     si,ax
    1781	0CAE  EB 14				     jmp     short loc_138
    1782	0CB0			     loc_137:
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 34
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 34
 205ANIMS.asm
 
 
@@ -2004,7 +2004,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1834	0D3F			     loc_143:
    1835	0D3F  03 F0				     add     si,ax
    1836	0D41			     loc_144:
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 35
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 35
 205ANIMS.asm
 
 
@@ -2063,7 +2063,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1888	0DB3  05 0024				     add     ax,24h
    1889	0DB6  8A 16 FF41			     mov     dl,ds:data_107e
    1890	0DBA  FE CA				     dec     dl
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 36
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 36
 205ANIMS.asm
 
 
@@ -2122,7 +2122,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1942				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
    1943				     ;				    SUBROUTINE
    1944				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 37
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 37
 205ANIMS.asm
 
 
@@ -2181,7 +2181,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    1996	0E76  75 01				     jnz     loc_160		     ; Jump if not zero
    1997	0E78  C3				     retn
    1998	0E79			     loc_160:
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 38
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 38
 205ANIMS.asm
 
 
@@ -2240,7 +2240,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2050	0EC9			     loc_165:
    2051	0EC9  50				     push    ax
    2052	0ECA  8A 1E 523A			     mov     bl,ds:data_65e
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 39
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 39
 205ANIMS.asm
 
 
@@ -2299,7 +2299,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2104
    2105	0F3F			     locloop_167:
    2106	0F3F  A5				     movsw			     ; Mov [si]	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 40
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 40
 205ANIMS.asm
 
 
@@ -2358,7 +2358,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2158	0F8E  53				     push    bx
    2159	0F8F  2E: 8E 06	FF2C			     mov     es,cs:data_94e
    2160	0F94  FE 06 FF46			     inc     byte ptr ds:data_112e
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 41
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 41
 205ANIMS.asm
 
 
@@ -2417,7 +2417,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2212	1021  26: 8B 19				     mov     bx,es:[bx+di]
    2213	1024  89 1E 5241			     mov     ds:data_70e,bx
    2214	1028  8A C3				     mov     al,bl
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 42
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 42
 205ANIMS.asm
 
 
@@ -2476,7 +2476,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2266	1086  5E				     pop     si
    2267	1087  5F				     pop     di
    2268	1088  07				     pop     es
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 43
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 43
 205ANIMS.asm
 
 
@@ -2535,7 +2535,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2320	10E2  C3				     retn
    2321
    2322				     ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 44
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 44
 205ANIMS.asm
 
 
@@ -2594,7 +2594,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2374	1145  33 DB				     xor     bx,bx		     ; Zero register
    2375	1147  2E: 8A 1E	0092			     mov     bl,byte ptr cs:[92h]
    2376	114C  FE CB				     dec     bl
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 45
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 45
 205ANIMS.asm
 
 
@@ -2653,7 +2653,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2428	11C0  E2 D3				     loop    locloop_194	     ; Loop if cx > 0
    2429
    2430	11C2  5E				     pop     si
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 46
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 46
 205ANIMS.asm
 
 
@@ -2712,7 +2712,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2482	1219			     loc_199:
    2483	1219  80 E7 0F				     and     bh,0Fh
    2484	121C  0A D7				     or	     dl,bh
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 47
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 47
 205ANIMS.asm
 
 
@@ -2771,7 +2771,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2536	1286  C6 06 FF37 FF			     mov     byte ptr ds:data_100e,0FFh
    2537	128B			     loc_207:
    2538	128B  06				     push    es
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 48
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 48
 205ANIMS.asm
 
 
@@ -2830,7 +2830,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2590	12D9  0A C0				     or	     al,al		     ; Zero ?
    2591	12DB  74 03				     jz	     loc_211		     ; Jump if zero
    2592	12DD  26: 88 05				     mov     es:[di],al
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 49
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 49
 205ANIMS.asm
 
 
@@ -2889,7 +2889,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2644
    2645	1345  83 C6 04				     add     si,4
    2646	1348  E8 03A6				     call    anim_func_41
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 50
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 50
 205ANIMS.asm
 
 
@@ -2948,7 +2948,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2698	13A8  57				     push    di
    2699	13A9  2E: A0 5243			     mov     al,cs:data_72e
    2700	13AD  24 03				     and     al,3
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 51
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 51
 205ANIMS.asm
 
 
@@ -3007,7 +3007,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2752	1410  C3				     retn
    2753	1411			     anim_multiply_5	     endp
    2754
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 52
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 52
 205ANIMS.asm
 
 
@@ -3066,7 +3066,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2806	145B  88 26 5230			     mov     byte ptr ds:data_57e+1,ah
    2807	145F  E8 0206				     call    anim_scan_loop
    2808	1462  C6 06 5243 EE			     mov     byte ptr ds:data_72e,0EEh
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 53
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 53
 205ANIMS.asm
 
 
@@ -3125,7 +3125,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2860	14C2  53				     push    bx
    2861	14C3  E8 0029				     call    anim_func_35
    2862	14C6  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 54
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 54
 205ANIMS.asm
 
 
@@ -3184,7 +3184,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2914	150A  E8 0004				     call    anim_func_36
    2915	150D  5B				     pop     bx
    2916	150E  5A				     pop     dx
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 55
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 55
 205ANIMS.asm
 
 
@@ -3243,7 +3243,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    2968	155F  81 C7 2000			     add     di,2000h
    2969	1563  81 FF 8000			     cmp     di,8000h
    2970	1567  72 04				     jb	     loc_239		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 56
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 56
 205ANIMS.asm
 
 
@@ -3302,7 +3302,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3022	15B0  80 E2 01				     and     dl,1
    3023	15B3  74 04				     jz	     loc_247		     ; Jump if zero
    3024	15B5  B4 FF				     mov     ah,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 57
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 57
 205ANIMS.asm
 
 
@@ -3361,7 +3361,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3076	1615  53				     push    bx
    3077	1616  04 0E				     add     al,0Eh
    3078	1618  8A F8				     mov     bh,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 58
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 58
 205ANIMS.asm
 
 
@@ -3420,7 +3420,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3130
    3131	1673			     locloop_253:
    3132	1673  51				     push    cx
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 59
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 59
 205ANIMS.asm
 
 
@@ -3479,7 +3479,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3184	16CA  74 1C				     je	     loc_257		     ; Jump if equal
    3185	16CC  FE CB				     dec     bl
    3186	16CE  32 FF				     xor     bh,bh		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 60
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 60
 205ANIMS.asm
 
 
@@ -3538,7 +3538,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3238	1720			     locloop_260:
    3239	1720  51				     push    cx
    3240	1721  B9 001C				     mov     cx,1Ch
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 61
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 61
 205ANIMS.asm
 
 
@@ -3597,7 +3597,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3292	178D  31 36 3B 40 00 01			     db	      31h, 36h,	3Bh, 40h, 00h, 01h
    3293	1793  03 06 08 0A 0E 11			     db	      03h, 06h,	08h, 0Ah, 0Eh, 11h
    3294	1799  06 08 18 0E 1E 04			     db	      06h, 08h,	18h, 0Eh, 1Eh, 04h
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 62
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 62
 205ANIMS.asm
 
 
@@ -3656,7 +3656,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3346	1830  F6 E1				     mul     cl			     ; ax = reg	* al
    3347	1832  05 8000				     add     ax,8000h
    3348	1835  8B F0				     mov     si,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 63
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 63
 205ANIMS.asm
 
 
@@ -3715,7 +3715,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3400	188A  03 DB				     add     bx,bx
    3401	188C  2E: FF 97	489D			     call    word ptr cs:data_54e[bx]	     ;*
    3402	1891  03 D2				     add     dx,dx
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 64
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 64
 205ANIMS.asm
 
 
@@ -3774,7 +3774,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3454	18E3  B5 01				     mov     ch,1
    3455	18E5  80 F9 03				     cmp     cl,3
    3456	18E8  74 6C				     je	     loc_274		     ; Jump if equal
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 65
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 65
 205ANIMS.asm
 
 
@@ -3833,7 +3833,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3508	1956  8A CD				     mov     cl,ch
    3509	1958  C3				     retn
    3510										     ;*	No entry point to code
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 66
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 66
 205ANIMS.asm
 
 
@@ -3892,7 +3892,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3562	19D2  34 51 56 5B 5F 65	67+		     db	     '4QV[_eg/-'
    3563	      2F 2D
    3564	19DB  1D 1E 1F 20 1D 1E			     db	      1Dh, 1Eh,	1Fh, 20h, 1Dh, 1Eh
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 67
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 67
 205ANIMS.asm
 
 
@@ -3951,7 +3951,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3616	1B63  20 F6 E1 05 00 60			     db	      20h,0F6h,0E1h, 05h, 00h, 60h
    3617	1B69  8B F0 2E 8E 1E 2C			     db	      8Bh,0F0h,	2Eh, 8Eh, 1Eh, 2Ch
    3618	1B6F  FF B8 00 B8 8E C0			     db	     0FFh,0B8h,	00h,0B8h, 8Eh,0C0h
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 68
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 68
 205ANIMS.asm
 
 
@@ -4010,7 +4010,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3670	1BE9  26: 09 55	06			     or	     es:[di+6],dx
    3671	1BED  81 C7 2000			     add     di,2000h
    3672	1BF1  81 FF 8000			     cmp     di,8000h
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 69
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 69
 205ANIMS.asm
 
 
@@ -4069,7 +4069,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3724	1D0B  00 1E 00 00 00 1F			     db	      00h, 1Eh,	00h, 00h, 00h, 1Fh
    3725	1D11  00 00 00 1E 00 00			     db	      00h, 00h,	00h, 1Eh, 00h, 00h
    3726	1D17  00 1F 00 00 00 1F			     db	      00h, 1Fh,	00h, 00h, 00h, 1Fh
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 70
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 70
 205ANIMS.asm
 
 
@@ -4128,7 +4128,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3778	1DA8  E2 C8				     loop    locloop_279	     ; Loop if cx > 0
    3779
    3780	1DAA  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 71
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 71
 205ANIMS.asm
 
 
@@ -4187,7 +4187,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3832	1E59  01 00 00 00 40 04			     db	      01h, 00h,	00h, 00h, 40h, 04h
    3833	1E5F  00 00 01 00 00 00			     db	      00h, 00h,	01h, 00h, 00h, 00h
    3834	1E65  01				     db	      01h
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 72
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 72
 205ANIMS.asm
 
 
@@ -4246,7 +4246,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3886	2048  00 00 00 07 10 04			     db	      00h, 00h,	00h, 07h, 10h, 04h
    3887	204E  00 97 00 00 00 0F			     db	      00h, 97h,	00h, 00h, 00h, 0Fh
    3888	2054  00 00 00 1F 00 00			     db	      00h, 00h,	00h, 1Fh, 00h, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 73
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 73
 205ANIMS.asm
 
 
@@ -4305,7 +4305,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3940	2147  8B C2				     mov     ax,dx
    3941	2149  86 E0				     xchg    ah,al
    3942	214B  AB				     stosw			     ; Store ax	to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 74
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 74
 205ANIMS.asm
 
 
@@ -4364,7 +4364,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    3994	2198  02 D2				     add     dl,dl
    3995	219A  0A D0				     or	     dl,al
    3996	219C  E2 E2				     loop    locloop_286	     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 75
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 75
 205ANIMS.asm
 
 
@@ -4423,7 +4423,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    4048	21E2  00 07 04 02 07 0F			     db	      00h, 07h,	04h, 02h, 07h, 0Fh
    4049	21E8  0C 0E 04 0C 0C 0E			     db	      0Ch, 0Eh,	04h, 0Ch, 0Ch, 0Eh
    4050	21EE  02 0E 0E 0A 00 04			     db	      02h, 0Eh,	0Eh, 0Ah, 00h, 04h
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 76
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 76
 205ANIMS.asm
 
 
@@ -4446,7 +4446,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 1
    4066
    4067
    4068						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 77
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 77
 Symbol Table
 
 
@@ -4454,9 +4454,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/24/26"
 ??FILENAME			  Text	 "205ANIMS"
-??TIME				  Text	 "12:31:02"
+??TIME				  Text	 "00:10:25"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -4505,7 +4505,7 @@ ANIM_PROCESS_LOOP_4		  Near	 SEG_A:215B
 ANIM_PROCESS_LOOP_5		  Near	 SEG_A:219F
 ANIM_SCAN_LOOP			  Near	 SEG_A:1668
 ANIM_SCAN_LOOP_2		  Near	 SEG_A:217D
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 78
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 78
 Symbol Table
 
 
@@ -4564,7 +4564,7 @@ DATA_79E			  Number 5362
 DATA_7E				  Number D000
 DATA_80E			  Number 5562
 DATA_81E			  Number 5682
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 79
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 79
 Symbol Table
 
 
@@ -4623,7 +4623,7 @@ LOCLOOP_261			  Near	 SEG_A:1724
 LOCLOOP_262			  Near	 SEG_A:1740
 LOCLOOP_264			  Near	 SEG_A:1810
 LOCLOOP_265			  Near	 SEG_A:1814
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 80
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 80
 Symbol Table
 
 
@@ -4682,7 +4682,7 @@ LOC_136				  Near	 SEG_A:0C92
 LOC_137				  Near	 SEG_A:0CB0
 LOC_138				  Near	 SEG_A:0CC4
 LOC_139				  Near	 SEG_A:0CCF
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 81
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 81
 Symbol Table
 
 
@@ -4741,7 +4741,7 @@ LOC_195				  Near	 SEG_A:11BF
 LOC_196				  Near	 SEG_A:11C3
 LOC_197				  Near	 SEG_A:11F6
 LOC_198				  Near	 SEG_A:11FB
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 82
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 82
 Symbol Table
 
 
@@ -4800,7 +4800,7 @@ LOC_250				  Near	 SEG_A:1604
 LOC_251				  Near	 SEG_A:1641
 LOC_252				  Near	 SEG_A:1668
 LOC_256				  Near	 SEG_A:169E
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 83
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 83
 Symbol Table
 
 
@@ -4859,7 +4859,7 @@ LOC_62				  Near	 SEG_A:03A1
 LOC_63				  Near	 SEG_A:03AF
 LOC_64				  Near	 SEG_A:03B7
 LOC_65				  Near	 SEG_A:03CE
-Turbo Assembler	 Version 2.01	     03/22/26 12:31:03	    Page 84
+Turbo Assembler	 Version 2.01	     03/24/26 00:10:26	    Page 84
 Symbol Table
 
 
