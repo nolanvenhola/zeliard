@@ -1,0 +1,3465 @@
+------------
+THE OFFICIAL
+------------
+-------------
+---> Z E L I A R D <---   
+-------------
+--------------------------------
+(F)requently (A)sked (Q)uestions
+--------------------------------
+
+---------------------------------------------------------------------
+ABOUT THIS FAQ
+---------------------------------------------------------------------
+
+- DATE (this version was last updated on): 8/24/2001  
+- VERSION: 1.2
+- AUTHOR: Alan Franciškovic
+- E-MAIL ADDRESS: ivan.franciskovic@rijeka.crosig.hr 
+
+Note: This is my father's address, at work, because I don't have my 
+own. Should there be anything that I should know, send me mail to 
+this address and my father will print the mail out and give it to me. 
+Then, I'll update my FAQ or write to you, if you need my help with 
+something about Zeliard or the FAQ. Be sure to leave your address 
+when you leave me mail, so that I can contact you. Should I get an 
+address in the future, I'll make a new version and put it there, 
+along with my father's address. 
+
+---------------------------------------------------------------------
+REVISION HISTORY
+---------------------------------------------------------------------
+
+v1.0. (27.7.01.) - First version of the FAQ
+v1.1. (21.8.01.) - Made some updates, corrections and additions
+v1.2. (24.8.01.) - Added a few more things
+
+---------------------------------------------------------------------
+INTRODUCTION
+---------------------------------------------------------------------
+
+This is a FAQ that helps people understand Zeliard. I sincerely hope 
+that I haven't missed anything important to say and that this is all 
+the information needed to obtain for a good playing experience. To 
+achieve a more stylus effect to the FAQ, I've added some tables and 
+much add-on information about many things, which make them fully 
+described in exact and accurate detail. The things that are marked 
+with one or more asterisks "*" are explained under the table in a 
+more detailed way. Still, everything is described, whether in the 
+table, or not. I have written at least a few sentences about every 
+single detail. I've even written a walkthrough of the entire game, 
+which covers everything in it, but it's pretty much a copy of 
+another, shorter FAQ. Still, I received permission to write it. The 
+boss defeating part is also not my own work. Much is, but I copied 
+some things, although I was given permission to do so. The FAQ isn't 
+written in a question-answer form, but all the questions that exist 
+are answered. This would be only a description of the game, but since 
+people asked all the things I wrote about (and it includes a copied 
+FAQ (walkthrough) and one that I mainly modified in my version (boss 
+FAQ)), it is a FAQ. I'll get to the point now and begin the FAQ.
+
+IMPORTANT: I'm NOT responsible if this FAQ promotes ANY illegal 
+activities or actions. Proceed reading at your own risk. YOU'll 
+answer for those activities/actions and NOT me. 
+
+---------------------------------------------------------------------
+DISCLAIMER
+---------------------------------------------------------------------
+
+The table describes what you can do with the FAQ under all the 
+mentioned conditions or what you can't do with it, EVER. The "You 
+can" and "You can't" parts are short for: "You can do this with the 
+FAQ" and "You can't do this with the FAQ". You must obey EVERY 
+condition in EVERY way, otherwise you will be ILLEGALLY using the 
+FAQ. Each condition is equally important. Example: if the table says 
+"You can read it if you have time and like to read it", you MUST have 
+time AND like to read it; if all conditions aren't fulfilled, your 
+action is still illegal. ALL conditions of ALL actions must be 
+obeyed. If there are two things you can do under one set of 
+conditions, for both are required all the conditions mentioned. The 
+example says that you can READ the FAQ: You can JUST read it. If 
+something isn't mentioned, it's CERTAINLY forgotten and stands under 
+the "You can't" do it part. The conditions are ONLY there for the 
+"You can" part. If you want to do something unmentioned, mail me.
+
+This FAQ is copyright 2001 Alan Franciškovic. All rights reserved. 
+
+YOU CAN:
+CONDITION(S):
+YOU CAN'T:
+- Read it
+1. Always
+- Make money off it 
+- Make copies of it
+1. If it stays the same
+- Damage it in any way
+- Use it to make your own 
+FAQ about Zeliard based 
+on the information that 
+is written here
+1. If you credit me 
+2. If you change 
+3. With my permission
+4. If you write in-depth
+- Edit it in any way; 
+  therefore: You can't 
+  change anything that is
+  written here
+- Announce it to friends,
+- or on web-sites
+1. With my permission
+2. Without critics
+- Re-write it and claim 
+  it was originally yours 
+
+---------------------------------------------------------------------
+CREDITS (SHORT OVERVIEW):
+---------------------------------------------------------------------
+
+TO:
+FOR:
+1. My mother
+- Helping me with the final world
+2. NeoZenogias
+- Letting me include the walkthrough
+3. Sashanan (Peter Butter)
+- Inspiring me for the boss part
+
+---------------------------------------------------------------------
+CONTENTS
+---------------------------------------------------------------------
+
+1. Story
+2. Bosses
+   2.1. Location of bosses
+   2.2. Almas worth for bosses
+   2.3. Boss defeating information
+        2.3.1. Cangrejo
+        2.3.2. Pulpo
+        2.3.3. Pollo
+        2.3.4. Agar
+        2.3.5. Vista
+               2.3.5.1. With the Knight's Sword
+               2.3.5.2. Without the Knight's Sword
+        2.3.6. Tarso
+        2.3.7. Paguro
+        2.3.8. Dragon
+        2.3.9. Alguien
+        2.3.10. Jashiin
+3. Power-ups
+   3.1. Gold
+        3.1.1. Different amounts of gold
+   3.2. Almas orb
+   3.3. Recovery potions
+        3.3.1. Red potion
+        3.3.2. Blue potion
+4. Description of underlings
+   4.1. Nature
+   4.1.1. Muralla Town
+          4.1.1.1. Toads
+          4.1.1.2. Slugs
+          4.1.1.3. Bats
+          4.1.1.4. Rats
+   4.1.2. Satono Town
+          4.1.2.1. Blue slime creatures
+          4.1.2.2. Read toads 
+          4.1.2.3. Trolls
+   4.1.3. Bosque Village
+          4.1.3.1. Earth worms
+          4.1.3.2. Bugs
+          4.1.3.3. Crabs
+          4.1.3.4. Clay balls
+   4.1.4. Helada Town
+          4.1.4.1. Turtles
+          4.1.4.2. Green slime creatures
+          4.1.4.3. Arrows
+   4.1.5. Tumba Town
+          4.1.5.1. Red slime creatures
+          4.1.5.2. Eyeballs
+          4.1.5.3. Evil women
+          4.1.5.4. Bats
+   4.1.6. Dorado Town
+          4.1.6.1. Red Ghosts
+          4.1.6.2. Condors
+          4.1.6.3. Evil women
+   4.1.7. Llama Town
+          4.1.7.1. Fire creatures
+          4.1.7.2. Trolls
+          4.1.7.3. Rats
+   4.1.8. Pureza Town
+          4.1.8.1. Lave slime creatures
+          4.1.8.2. Bugs
+          4.1.8.3. Medusas
+          4.1.8.4. Blue ghosts 
+   4.2. Almas worth for underlings  
+5. Towns
+   5.1. Bank
+        5.1.1. Three kinds of Almas balls
+        5.1.2. Different Almas exchange ratios
+   5.2. Weapon Shop
+        5.2.1. Description of weapon items
+               5.2.1.1. Swords
+                        5.2.1.1.1. Wise Man's Sword
+                        5.2.1.1.2. Spirit Sword
+                        5.2.1.1.3. Knight's Sword
+                        5.2.1.1.4. Illumination Sword
+               5.2.1.2. Shields
+                        5.2.1.2.1. Clay Shield
+                        5.2.1.2.2. Wise Man's Shield
+                        5.2.1.2.3. Stone Shield
+                        5.2.1.2.4. Honor Shield
+                        5.2.1.2.5. Light Shield
+                        5.2.1.2.6. Titanium Shield
+        5.2.2. Limitation of buying weapon items
+   5.3. Magic Shop
+        5.3.1. Description of magic items
+               5.3.1.1. Ken'Ko Potion
+               5.3.1.2. Ju-enn Fruit
+               5.3.1.3. Magia Stone
+               5.3.1.4. Sabre Oil
+               5.3.1.5. Kioku Feather
+               5.3.1.6. Elixir of Kashi
+               5.3.1.7. Chikara Powder
+               5.3.1.8. Holy Water of Acero
+        5.3.2. Limitation of buying magic items
+   5.4. Inn
+        5.4.1. Different fees 
+        5.4.2. Church vs. inn
+   5.5. Sages
+        5.5.1. Number of times each sage will upgrade your powers
+        5.5.2. Names of all the sages
+6. Unmentioned parts of the inventory screen
+   6.1. Spells
+        6.1.1 Names and meaning of spells
+   6.2. Keys
+        6.2.1. Normal Keys
+        6.2.2. "Lion's Head Key"
+   6.3. Shoes
+        6.3.1. Types and description of shoes
+               6.3.1.1. Ruzeria Shoes
+               6.3.1.2. Pirika Shoes
+               6.3.1.3. Silkarn Shoes
+               6.3.1.4. Asbestos Cape
+   6.4. Crests
+        6.4.1. Hero's Crest
+        6.4.2. Glory (Family Crest, Crest of Honor)
+        6.4.3. Elf Crest
+7. Walkthrough of the entire game
+   7.1. Muralla Town/Cavern of Malicia
+   7.2. Satono Town/Cavern of Peligro
+   7.3. Bosque Village/Cavern of Madera/Riza
+   7.4. Helada Town/Cavern of Escarcha/Glacial
+   7.5. Tumba Town/Cavern of Corroer/Cementar
+   7.6. Dorado Town/Cavern of Tesoro/Plata
+   7.7. Llama Town/Cavern of Caliente/Reaccion/Corroer
+   7.8. Pureza Town/Cavern of Absor/Millagro/Desleal/Faltar/Final
+8. Other, special things to mention
+   8.1. Gelroid
+   8.2. The secret items
+        8.2.1. The secret sword and the free swords
+        8.2.2. The secret shield
+   8.3. The secret shoes-the Feruza Shoes
+   8.4. The secret village-the Esco Village
+        8.4.1. Cost of magic
+        8.4.2. Cost of weaponry 
+   8.5. Comand line parameter  
+   8.6. Shortcuts
+        8.6.1. Muralla Town/Cavern of Malicia
+        8.6.2. Satono Town/Cavern of Peligro
+        8.6.3. Bosque Village/Cavern of Madera/Riza
+        8.6.4. Helada Town/Cavern of Escarcha/Glacial
+        8.6.5. Tumba Town/Cavern of Corroer/Cementar
+        8.6.6. Dorado Town/Cavern of Tesoro/Plata
+        8.6.7. Llama Town/Cavern of Caliente/Reaccion/Corroer
+    8.6.8. Pureza Town/Cavern of Absor/Millagro/Desleal/Faltar/Final
+9. Cheats 
+   9.1. Hex cheat
+   9.2. Zeliard trainer-Zeltrain
+   9.3. Other FAQs
+        9.3.1. Walkthrough
+        9.3.2. Boss strategy
+10. Tips and tricks (general)
+    10.1. Zeliard's too hard
+    10.2. Zeliard's too easy
+11. Keystroke help
+12. Conclusion
+
+---------------------------------------------------------------------
+1. STORY
+---------------------------------------------------------------------
+
+Zeliard is a screen scrolling, action-fantasy-adventure game in which 
+the player has to rescue the princess, Felicia that was turned to 
+stone. Her father, the King, prayed to the Holy Spirit and one-day it 
+appeared. Leaving him speechless, it told him that a brave warrior 
+will arrive to his castle and help him reclaim the Holy Crystals, 
+called "Tears of Esmesanty", with which he can seize power over the 
+daemon that represents the Age of Darkness, the Emperor of Chaos, 
+Jashiin. Those Tears are actually tears of the king and the people of 
+the land of Zeliard. Those tears became crystals and were stolen by 
+Jashiin, who was reborn, after being defeated and sealed under Earth 
+for 2000 years. He added his power to theirs and created the other 
+creatures, to make sure nothing could stop him from his revenge to 
+the princess and, indirectly, her ancestors and descendants. The main 
+character, the man you control is a brave knight bearing the name of 
+Duke Garland. He must go into deep labyrinths and defeat eight of 
+Jashiin's most deadly minions, and then face the final foe, Jashiin, 
+himself.
+
+---------------------------------------------------------------------
+2. BOSSES
+---------------------------------------------------------------------
+
+A boss is the most powerful creature in a world, that guards it and 
+the Tear of Esmesanty entrusted to him by Jashiin. Jashiin also holds 
+one, but much bigger and prettier. Paguro is a monster, but not a 
+boss, because he doesn't guard a world or a Tear of Esmesanty. He 
+allows you to get the Elf Crest and makes the game have more 
+"colorful adventure". Anyway, here, you can find out where each one 
+is, how many Almas they're worth and detailed information on bringing 
+each one of ten of these down (Paguro included).
+
+---------------------------------------------------------------------
+2.1. LOCATION OF BOSSES
+---------------------------------------------------------------------
+
+Here is all the information you will need about the types of bosses 
+in the game. Paguro is not a boss, but is listed, because he matches 
+the criteria of definition for others, although he doesn't posses 
+(guard) a Tear of Esmesanty. Both the town and cavern are mentioned 
+as well as name and description of each one. Now you can see what 
+kind of boss opponent you're facing in each world. They are all 
+giants, for harder moving around of the player and less area to dodge 
+the attacks, as well as less space to escape them.
+
+Here is the table explaining that:
+  
+
+PLACE
+BOSS
+1. Muralla Town (Cavern of Malicia)                      
+Cangrejo (Giant Crab)
+2. Satono Town (Cavern of Peligro)                        
+Pulpo (Giant Octopus)
+3. Bosque Village (Cavern of Riza)
+Pollo (Giant Chicken)
+4. Helada Town (Cavern of Glacial)                         
+Agar (Giant Ice Cube)
+5. Tumba Town (Cavern of Cementar) 
+Vista (Giant Fish)
+6. Dorado Town (Cavern of Tesoro) 
+Tarso (Titan)
+7. Llama Town (Hut)                                   
+Paguro (Giant Flaming Cube)
+8. Llama Town (Cavern of Caliente)                      
+Dragon (what do you thing)
+9. Pureza Town (Cavern of Absor) 
+Alguien (Giant Bat)
+10. Esco Village (Cavern of Final) 
+Jashiin (Giant Man-like Daemon)
+
+---------------------------------------------------------------------
+2.2. ALMAS WORTH FOR BOSSES
+---------------------------------------------------------------------
+
+There is a special worth of Almas that you get after defeating each 
+of Jashiin's deadly monsters. There are nine of them, of which each 
+one holds and guards a Holy Crystal, a Tear of Esmesanty, except 
+Paguro. Each one of those that do, guard a world and you can't pass 
+it without defeating them. Each monster is worth a different amount 
+of Almas, and later monsters are harder to destroy and are worth more 
+Almas. Here is the Almas worth of each monster you kill. 
+
+Jashiin isn't worth any Almas because you will win after beating him; 
+you can't return to a city and exchange it, so there is no logic to 
+it. 
+
+Note: Tarso and Paguro have the Almas needed for the Asbestos Cape. 
+It costs 2500 Almas, which is much more than what Tarso give you, 
+after you have defeated him (1500 Almas). This is not a rule, but you 
+(probably) can't gather 1000 Almas in the caverns without the cape 
+because you can't stand the heat. Also, you can't talk to the people 
+in Llama Town without the Elf Crest. You get it after defeating 
+Paguro, and their words may effect your whole future in the game, 
+because this part is tricky and is a preparation for the kookiest 
+world of them all, Absor/Desleal/Millagro/Faltar/Final. Here you may 
+be surprised of air currents... Wait 'till you start walking through 
+walls... (This may shake your confidence that you can do it. There is 
+a walkthrough available, which includes the final world, as well.) 
+
+BOSS
+WORTH OF ALMAS
+1. Cangrejo 
+150
+2. Pulpo                                                                         
+200
+3. Pollo                                                                          
+500
+4. Agar                                                                          
+600
+5. Vista                                                                          
+800
+6. Tarso 
+1500
+7. Paguro                                                                       
+1600
+8. Dragon                                                                       
+2500
+9. Alguien 
+3800
+
+---------------------------------------------------------------------
+2.3. BOSS DEFEATING INFORMATION
+---------------------------------------------------------------------
+
+Main guidelines:
+
+>	Rest before a fight
+>	Carry healing and other items
+>	Have the best weaponry
+>	Practice some manuovers that are difficult and useful
+>	Train and get used to several quick and hard-to-do moves
+>	Get the most life. This also increases your spell number and sword 
+damage. Combining Sabre Oils and this is a cheap way to win. 
+
+It's a darn shame, but you will find out that the spell given to you 
+in every next town is just what you needed to defeat the previous 
+monster earlier, so the monsters serve as tests to your skills-if you 
+don't pass, you don't continue. (I just hate that rule that reminds 
+me of school!) 
+
+Note: I have to give Sashanan (Peter Butter) credit; were it not for 
+him, I wouldn't even have written the boss part; he inspired me. I 
+used only some of his information and copied it to my FAQ, as well as 
+being granted the permission to do so, so the FAQ is legally 
+submitted. Sashanan's e-mail address is sashanan@hetnet.nl
+
+IMPORTANT: DO NOT touch bosses with a Magia Stone after defeating 
+them. This drains the Magia Stone within very little time.
+
+The advantages and weaknesses of the monsters are as follows for each 
+one:
+
+---------------------------------------------------------------------
+2.3.1. CANGREJO
+---------------------------------------------------------------------
+
+Watch out when he decides to jump! He will take a lot of space from 
+you if you let him do it. Watch him carefully and when he bends, 
+either attack him or try to run under him (not advised because he'll 
+spit on you!). If you attack him continuously, he will retreat and 
+even if he does jump, avoid him and start over. Attack immediately. A 
+Magia Stone or a Wise Man's Sword and/or Sabre Oil(s) kill him before 
+you even notice it. 
+
+---------------------------------------------------------------------
+2.3.2. PULPO
+---------------------------------------------------------------------
+
+You can enter the door and rest or concentrate, because he can't 
+attack before he gets hit twice (I advise that you continue beating 
+him until he starts blinking his eyes and firing spittle). Although 
+he can't move at all, the spittle that he shoots is deadly and you 
+have to jump over them or take massive damage (maybe even lose your 
+life!). It has full range. When you attack him, jump in front of him.
+The Magia Stone will kill him before he has a chance to attack.
+
+---------------------------------------------------------------------
+2.3.3. POLLO
+---------------------------------------------------------------------
+
+Beware when he decides to fly. When he squawks twice, he will shoot a 
+dart you can't always block, so you have to bend. When he squawks 
+four times, he will take off and fly, chase you, and take half the 
+space you have. It's best to fire a Saeta spell to counter him 
+because he will land then. Also, try aiming for the head to inflict 
+more damage upon him, wgether with the sword or the spell. Here, 
+there is a tricky move that does massive damage: When he flyies, 
+press your back against the left wall and stab your sword on his head 
+when he lands. Also, you can get behind him, but when you hurt him, 
+he'll back off, and you'll pass right through him. That's PAINFUL!
+
+
+---------------------------------------------------------------------
+2.3.4. AGAR
+---------------------------------------------------------------------
+
+He also has a nasty habit of jumping to take your precious territory. 
+He can shoot a bit of ice at you, but this time, you can block it 
+with a bigger shield (so buy the Honor Shield). When he shakes a few 
+times, he will jump and try to stomp you. I say it's best to fire a 
+Fuego spell for him to land on, so that he gets hurt. Also, he'll 
+retreat 'till it stops "melting" him. If you fire one when you corner 
+him, he'll suffer the entire spell and won't be able to jump because 
+this is a very "hot" idea. It's much trickier to attack him with the 
+Fuego Spell than with the Saeta Spell that will simply chase him 
+away, but the Saeta Spell will not hurt him considerably (don't even 
+think about Espada!). The Magia Stone disables his phisical attacks.
+
+---------------------------------------------------------------------
+2.3.5. VISTA
+---------------------------------------------------------------------
+
+The Sage says that Vista simply can't be defeated without the 
+Knight's Sword, but I did it, so any skilled player can. You just 
+need to have a little more time, patience and luck. 
+
+---------------------------------------------------------------------
+2.3.5.1. WITHOUT THE KNIGHT'S SWORD
+---------------------------------------------------------------------
+
+The strategy is this: While she swoops down, fire a Lanzar spell to 
+harm her (she'll do it after she reaches a corner or you run under 
+her). The Magia Stone will prevent her to bite you, but watch out for 
+the spittle acid. Use some Sabre Oils and put it on your sword. The 
+Saeta spell may help and the Fuego is useful, but it is tricky to do 
+it right. I think you should rely on other methods.
+
+---------------------------------------------------------------------
+2.3.5.2. WITH THE KNIGHT'S SWORD
+---------------------------------------------------------------------
+
+This is simple. Jump and attack her with the sword because it'll 
+reach and hurt her since it's longer than the Spirit Sword. You can 
+use the Lanzar Spell, but the Sword is enough. She'll be gone before 
+you get hurt considerably, so there is no need for Ju-enn Fruit or a 
+Magia Stone.
+
+---------------------------------------------------------------------
+2.3.6. TARSO
+---------------------------------------------------------------------
+
+He'll punch and kick the life out of you unless you get out of his 
+way and get him by either Lanzar or Rascar. The sword is reliable if 
+you attack continuously, but run for your life when he tosses an orb. 
+You will notice his attack by seeing a lot of dust by his foot and an 
+energy orb hurdling towards you. Avoid it and continue beating him. 
+And so on. When he tries to step on you, hit him, but do so at your 
+own risk :)
+
+
+
+
+
+
+---------------------------------------------------------------------
+2.3.7. PAGURO
+---------------------------------------------------------------------
+
+Actually, Paguro isn't a boss. He lives in the largest house in Llama 
+Town. He's very resilient, but the sage Saied will teach you the Agua 
+Spell, which alone is enough to make him wish that he was never born 
+and kill him. You don't have to kill him, if you don't want to, but I 
+advise that you do (you'll get the Elf Crest and 1600 Almas, as well 
+as the ability to talk to the inhabitance of Llama Town.
+
+---------------------------------------------------------------------
+2.3.8. DRAGON
+---------------------------------------------------------------------
+
+He's a real copy of Godzilla added to Zeliard. Watch the angle he'll 
+throw his "Flames of fury" at you. If he shoots straight, you can 
+bend and avoid it. If he shoots in an inclined angle, try running 
+away or toward him. If you go toward him, attack him with the sword, 
+or Agua Spells. If he shoots vertically, just run away. Level him 
+with Agua spells and pray that you'll survive long enough to finish 
+him off with your sword (or another spell, perhaps Rascar will come 
+in handy because he's so large). Don't try jumping at all and, if you 
+have to suffer his fire, do it with the shield. Maybe someone'll 
+think that the Asbestos Cape'll protect them from his fire... The 
+Magia Stone is preferred in this battle, along with a lot of Ju-enn 
+Fruits and Agua Spells, this is the hardest of all enemies to kill, 
+so you can be really proud of yourself when you defeat him. 
+
+---------------------------------------------------------------------
+2.3.9. ALGUIEN
+---------------------------------------------------------------------
+       
+He reminds me of a pterodactyl, but he's a bat. He'll put up a good 
+fight, but with Guerra on the job, he's (burnt) toast. It takes about 
+three to kill him. Just watch out for the straw-like breath attack 
+coming from his mouth. It's unavoidable in most cases, if you're 
+skillful and lucky enough to dodge it, at least those few times you 
+can. Sorry, but, believe me, even if you're a scientist or something, 
+you won't want to study this strange overgrown bat at close range. 
+Not to worry, though. Invent a Guerra and he's already gone in the 
+way of the dodo, extinct.   
+
+---------------------------------------------------------------------
+2.3.10. JASHIIN
+---------------------------------------------------------------------
+
+He too is considered pretty tricky and tough, but again, with Guerra 
+at the right time, he doesn't have a good chance of survival. At the 
+beginning of the battle, he will be invisible. That means that you 
+can run around because he will try to get as close to you as he can 
+and touching him with your back (or front if you don't have a shield) 
+is VERY painful. It takes about fifteen unmissed Guerras to kill him, 
+but you can use the Fairy Enchantment Flame Sword. Just make sure 
+that you save two or three Guerras for the time when he's about to 
+start regenerating his life. That'll show him who's the "boss" around 
+here :). Watch out for his disappearing from time to time; he will be 
+visible for about a second each time he disappears. He shoots two 
+attacks. When he stands up, he'll throw a Fuego at you. When he 
+kneels down, he will fire a Lanzar. Avoid him and attack. At all 
+costs, don't let him regenerate his life. He does it when there is 
+only a fifth of his life left and he'll stand up, lose the ability to 
+disappear, and jump if cornered. He'll also run away from you. If he 
+gets his life back, you will have to start the whole battle over 
+again. 
+
+---------------------------------------------------------------------
+3. POWER-UPS
+---------------------------------------------------------------------
+
+Along the way, Duke Garland finds many objects, which help him on his 
+mission. (Example: Recovery potions, gold, or Almas orbs). They are 
+hidden or protected, as they are valuable. The Almas are also 
+collected when you kill one of Jashiin's monsters or defeat one of 
+his henchmen. The Almas are a part of Jashiin's power and are used 
+for money in your quest, but they are also used for medicine and 
+other useful things by the inhabitance of the towns. When you gather 
+the Almas, go to town, enter the bank and choose "Exchange Almas". 
+You will find out that in Tumba and Llama an Almas is worth is a 
+different amount of money. In Tumba, an Almas is worth two golds and 
+in Llama, four Almas are worth two golds. The towns that have an 
+equal amount of gold worth for an Almas are Murala, Satono and Pureza 
+(6), Bosque and Esco (8) and Helada and Dorado (4). Additionally, 
+saving Almas in Muralla and Satono for exchange into gold in Bosque 
+means that you get two more golds for each Almas, with the only 
+condition is surviving without buying anything. Plus, the Sage will 
+raise your lifeline and spell levels because the Almas are the only 
+condition for it. The secret is this: Upon gathering the first couple 
+of hundred, she will give you the first raise. Each time for her to 
+raise it again, you must have double the Almas you had the last time. 
+That's what made my skills so sharp; in the places above Dorado Town, 
+I had to spend many long hours trying to get the Almas required for 
+additional magic and life. Eventually, I wanted to explore new places 
+and thusly, get many Almas quickly. If I wanted to make it, I had to 
+learn to be patient and concentrated. I hoped that the saying "It's 
+worst just before it's best" would come true and it did. The good 
+side is that the Almas balls are worth more Almas (Almas balls 
+contain more Almas). 
+
+---------------------------------------------------------------------
+3.1. GOLD
+---------------------------------------------------------------------
+
+Throughout the caverns, gold is stashed away in boxes. It will help 
+you in a financial crisis. Just make sure you make it to town, or 
+you'll lose it all. 
+
+---------------------------------------------------------------------
+3.1.1. DIFFERENT AMOUNTS OF GOLD
+---------------------------------------------------------------------
+
+The boxes contain different amounts of gold in them. In the early 
+caverns it's smaller, and vice-versa. The possible amounts are: 50, 
+100, 500 and 1000 golds.
+
+---------------------------------------------------------------------
+3.2. ALMAS ORB
+---------------------------------------------------------------------
+
+In the entire game, there is only one Almas orb worth 100 Almas that 
+doesn't come from a defeated foe, but a wall. When passing Malicia, 
+after entering the green door to Peligro, go left, up and left and 
+slash the wall. (If you don't know what I'm talking about, consult 
+the walkthrough.)
+
+
+---------------------------------------------------------------------
+3.3. RECOVERY POTIONS
+---------------------------------------------------------------------
+
+These potions improve your health. They can be found in a box or 
+buried in a wall. You don't have to take them and you can also save 
+them for later, if you don't need them. There are two kinds of 
+potions: red and blue (the blue one looks like water). They heal 
+differently. There are many of them.
+
+---------------------------------------------------------------------
+3.3.1. RED POTION
+---------------------------------------------------------------------
+
+This one is found in the early caverns. It restores about as much 
+life as a Ken'Ko Potion. It isn't very useful, but the life capacity 
+you have for the lasting of them being available is restored almost 
+completely.
+
+---------------------------------------------------------------------
+3.3.2. BLUE POTION
+---------------------------------------------------------------------
+
+The blue potion is like a Ju-enn Fruit. It will heal you completely, 
+no matter how long or short your life bar is. You can't find a better 
+way to heal; it's free and it restores your full strength.
+
+Note: In the final world, there are MANY of the blue potions and they 
+are buried in a wall, but the strange thing is that they are in the 
+UPPER side of the wall. Slashing the sword all the time upwards (and 
+sometimes you have to jump also) will make a couple of them fall on 
+your thirsty tongue. This world is kooky in many ways.
+
+---------------------------------------------------------------------
+4. DESCRIPTION OF UNDERLINGS
+---------------------------------------------------------------------
+
+This part of information reveals advantages and weaknesses for each 
+small monster you often meet in the caverns. It's useful to know if 
+you're exploring the caverns, so that you won't be surprised because 
+of the special abilities some of them posses, but you can exploit 
+their weaknesses and easily prevail over any number of them. Many of 
+them are very special, in a specific way, so I suggest that you read 
+this before going into the labyrinths where these underlings can 
+easily kill you if you don't know their nature. I listed them under a 
+town, not a cavern, because from the third world, there are two or 
+more caverns under a town (look at the last one! [see the 
+walkthrough]).
+
+---------------------------------------------------------------------
+4.1. NATURE
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+4.1.1. MURALLA TOWN
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+4.1.1.1. TOADS
+---------------------------------------------------------------------
+
+The toads are fast and harmful when attacking. They're some of the 
+most dangerous enemies in the Malicia Caverns.
+
+---------------------------------------------------------------------
+4.1.1.2. SLUGS
+---------------------------------------------------------------------
+
+These creatures are slow, but are persistent and won't be destroyed 
+easily. You'd better have the Wise Man's Sword when facing these 
+bores. Unfortunately, they're the least of your problems and aren't 
+valuable.
+
+---------------------------------------------------------------------
+4.1.1.3. BATS
+---------------------------------------------------------------------
+
+The bats are also hard to kill. They swoop down periodically from the 
+roof and follow you until they hit a low ceiling or you. They can be 
+painful and frustrating, since you have to wait for them to swoop 
+down again to get a chance to kill them. This takes a whole lot of 
+time.
+
+---------------------------------------------------------------------
+4.1.1.4. RATS
+---------------------------------------------------------------------
+
+They're even faster than toads, but are worth the most Almas in 
+Malicia. The interesting thing here is that they either leave 10 
+Almas or none. They can be hard to avoid, but are pretty easy to 
+kill. 
+
+---------------------------------------------------------------------
+4.1.2. SATONO TOWN
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+4.1.2.1. BLUE SLIME CREATURES 
+---------------------------------------------------------------------
+
+These little foes like to tease the player. They're pretty confused 
+and don't know which way to go. It's easy to kill them if you posses 
+the Wise Man's Sword, which makes most enemies wish that they were 
+never born.
+
+---------------------------------------------------------------------
+4.1.2.2. BATS
+---------------------------------------------------------------------
+
+The bats are similar to the ones in the Cavern of Malicia, but 
+slightly more endurable. These bats appear in far larger numbers than 
+before, so be very careful not to let one surprise you and make you 
+lose much life. They aren't that hard to kill, especially if you have 
+the Wise Man's Sword.
+
+---------------------------------------------------------------------
+4.1.2.3. RED TOADS
+---------------------------------------------------------------------
+
+Read toads are far more dangerous than the green ones. They shoot low 
+spittle and can be painful and frustrating, since the Stone Shield is 
+small.
+
+
+
+
+---------------------------------------------------------------------
+4.1.2.4. TROLLS
+---------------------------------------------------------------------
+
+These creatures are the most resilient ones in the early caverns, 
+maybe those before Tumba, but they appear in very small numbers. They 
+run away and shoot little axes at you, because they're nothing but 
+lousy cowards that don't even have the guts to face you in a fair 
+fight.
+
+---------------------------------------------------------------------
+4.1.3. BOSQUE VILLAGE
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+4.1.3.1. EARTHWORMS
+---------------------------------------------------------------------
+
+The earthworms are visible, but untouchable while burrowed. They can 
+move while in the ground and when they come out, you can kill them. 
+They shoot spit at you, so don't turn away. They aren't very hard to 
+slaughter, although they're tricky. 
+
+---------------------------------------------------------------------
+4.1.3.2. BUGS
+---------------------------------------------------------------------
+
+The bugs are the most powerful creatures here, so be careful. They 
+jump and can cause you unforeseeable damage. They die easily, though.
+
+---------------------------------------------------------------------
+4.1.3.3. CRABS
+---------------------------------------------------------------------
+
+The crabs are dangerous, but easy to kill. They come after you when 
+you approach their vicinity. They stand next to the wall, usually 
+guarding a door.
+
+---------------------------------------------------------------------
+4.1.3.4. CLAY BALLS
+---------------------------------------------------------------------
+
+These creatures are insufferable. They walk on walls and ceilings and 
+drop on you or hit you. They form legs in order to walk on the walls. 
+They give poor Almas and cause plenty of trouble. You can easily 
+dispose of them, if you manage to hit them at the right time. That 
+isn't easy, but there aren't that many of them. They're what I like 
+to call "trouble with a capital "T"". 
+
+---------------------------------------------------------------------
+4.1.4. HELADA TOWN
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+4.4.1. TURTLES
+---------------------------------------------------------------------
+
+The turtles are some of the worst creatures here. They can jump when 
+they enclose themselves in their shell and collide with you if they 
+turn their shell up side down. They're very hard to kill and they can 
+hurt you badly if they collide with you and you don't get the message 
+on time.
+
+---------------------------------------------------------------------
+4.4.2. GREEN SLIME CREATURES
+---------------------------------------------------------------------
+
+They're the most endurable creatures here. After you hit them, 
+they'll produce another creature by themselves. They don't give much 
+Almas, but aren't fast and don't cause much damage in spite of this 
+little trick. They die easily, if you use the Fuego Spell and they 
+don't reproduce themselves, because they don't have time.
+
+---------------------------------------------------------------------
+4.4.3. ARROWS
+---------------------------------------------------------------------
+
+They circle around small pieces of ground at great speed. They're 
+very painful and hard to kill, because it's hard to hit them on time 
+and/or place. The only "bright side" here is that they appear in very 
+small numbers.
+
+---------------------------------------------------------------------
+4.5. TUMBA TOWN
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+4.5.1. RED SLIME CREATURES
+---------------------------------------------------------------------
+
+These creatures are much worse than the green ones. They reproduce 
+themselves upon contact with a sword or spell besides Fuego and 
+Lanzar, and are even harder to kill with the Fuego Spell. The "bad 
+news" is that the swords don't harm them. Upon close range, to kill 
+them, two Fuego Spells are required. The Magia Stone only acts like 
+ordinary swords and makes it much worse. Only the Fairy Flame 
+Enchantment Sword can kill them (besides the two spells). They live 
+in the Gelroid and are painful as well as they appear in large 
+numbers.
+
+---------------------------------------------------------------------
+4.5.2. EYEBALLS
+---------------------------------------------------------------------
+
+The eyeballs can speed up their movement and go twice as fast. This 
+can hurt you a lot. They don't give up easily, but it isn't very hard 
+to kill them. If you're scared of collision, try using the Lanzar 
+Spell to kill them on long range. That'll work!
+
+---------------------------------------------------------------------
+4.5.3. EVIL WOMEN
+---------------------------------------------------------------------
+
+They're the worst of the present enemies. The superior and more 
+beautiful enemy is in the Gold Caverns. These women try to take Duke 
+Garland from the princess. That's why they hurt him. They're 
+incredibly hard to destroy, but there aren't many of them. They're 
+the first of the creatures that are worth 100 Almas. They shoot spit 
+at you, which is painful. You can't harm them if you attack down; hit 
+the head to kill them.
+
+
+
+
+
+
+---------------------------------------------------------------------
+4.5.4. BATS
+---------------------------------------------------------------------
+
+They're very similar to the bats in the earlier caverns, but are much 
+more powerful. They're just as frustrating, though. They swoop down 
+in a different way, otherwise, not much of a change. 
+
+---------------------------------------------------------------------
+4.6. DORADO TOWN
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+4.6.1. RED GHOSTS
+---------------------------------------------------------------------
+
+Do you believe in ghosts? You should, at least in these. They can be 
+nasty. If you hit them with the Knight's Sword, they'll disappear for 
+a short while and you won't be able to harm them, although you can 
+see them, but only slightly. Therefore, buy the Illumination Sword.
+
+---------------------------------------------------------------------
+4.6.2. CONDORS
+---------------------------------------------------------------------
+
+These little creatures can speed up to twice the speed at any time. 
+They're easily destroyed, if you can catch them.
+
+---------------------------------------------------------------------
+4.6.3. EVIL WOMEN
+---------------------------------------------------------------------
+
+These are the worst foes in the Gold Caverns. Just like those in the 
+Rotten Caverns, but much more powerful. They also disappear after 
+shooting a heart at you and are prettier than the previous ones (if 
+it means anything). To kill them, hit the head, otherwise you won't 
+hurt them. Even the Illumination Sword takes two unmissed shots to 
+kill them and you have to be quick, because they disappear right 
+after attacking, just like Jashiin. They can put your survival in 
+doubt, especially when they appear on you. Luckily, there are very 
+few of them, so meeting one is a rare occurrence, but also, staying 
+with them is a deathwish. 
+
+---------------------------------------------------------------------
+4.7. LLAMA TOWN
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+4.7.1. FIRE CREATURES
+---------------------------------------------------------------------
+
+These are the mightiest of foes in this world (the Fire Caverns). 
+They shoot something harmful at you and can hurt you if you touch 
+them. You have to hit their head, just like the women before, to kill 
+them.
+
+---------------------------------------------------------------------
+4.7.2. TROLLS
+---------------------------------------------------------------------
+
+These trolls are cowards, as well. They run away from you just like 
+the trolls in the Peligro cavern, but these are far more powerful and 
+endurable. They also shoot darts and a lot of them and quickly. Wait 
+for a period when they stop and kill them with the sword.
+
+---------------------------------------------------------------------
+4.7.3. RATS
+---------------------------------------------------------------------
+
+The rats are very fast and valuable. They appear in great numbers, 
+especially in the labyrinth of Corroer. They can hurt you very much.
+
+---------------------------------------------------------------------
+4.8. PUREZA TOWN
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+4.8.1. LAVA SLIME CREATURES (Not quite sure)
+---------------------------------------------------------------------
+
+They shoot on two sides. On the left, green spit, and on the right, 
+red, which is much more painful. They are hard to kill, but any enemy 
+can be destroyed with one blow of the Fairy Flame Enchantment Sword. 
+They are very slow, but shoot on whichever the side you're on. There 
+are many of them. 
+
+---------------------------------------------------------------------
+4.8.2. BUGS
+---------------------------------------------------------------------
+
+There is nothing special about them, except their wacky looks. They 
+are pretty harmful, so be careful.
+
+---------------------------------------------------------------------
+4.8.3. MEDUSAS 
+---------------------------------------------------------------------
+
+These creatures can "take it out of you". You have to hit the head to 
+inflict damage. If they touch your back, well, it's been nice knowing 
+you (if you have a full lifeline, it should take about 5 times to 
+kill you). They even damage the Titanium Shield greatly. 
+
+---------------------------------------------------------------------
+4.8.4. BLUE GHOSTS
+---------------------------------------------------------------------
+
+These little creatures are like the Red Ghosts you met in the Gold 
+Caverns, but are much more powerful. They're harmful and hard to 
+kill, but they're slow and worth a lot of Almas. 
+
+---------------------------------------------------------------------
+4.2. ALMAS WORTH FOR UNDERLINGS
+---------------------------------------------------------------------
+
+The table displays the Almas worth for underlings. This is a quick 
+way to decide which monsters are worth going back to fight again. The 
+table displays the monsters with the town of habitat and the Almas 
+that it leaves. In the table, I've written "Almas 1" and "Almas 2" 
+instead of "Almas Worth 1" and "Almas Worth 2" because there was no 
+space. It means the first and second worth of Almas a creature can 
+leave, because some of them can leave two kinds. The first amount is 
+smaller and the second one is bigger.
+
+Note: Every monster can sometimes explode instead of leaving Almas. 
+Some do it more often than others. I don't really know why it is like 
+that. My guess is that more valuable creatures explode more often, 
+but I don't know for sure. In fact, I think that there is no rule to 
+this occasion. Maybe every fifth one or so explodes. Also, some 
+explode one after another, but many more continually leave Almas. 
+Besides, I don't think it's actually that rare. I'd say about third 
+or fourth, but I think that there is no combination; you may never 
+know which ones will explode. I highly think so, but it just MAY be 
+any other way.
+
+NAME
+TOWN
+ALMAS 1
+ALMAS 2
+- Slug
+Muralla Town
+1
+-
+- Toad
+Muralla Town
+1
+-
+- Bat
+Muralla Town
+1
+10
+- Rat
+Muralla Town
+10
+-
+- Blue Slime 
+Satono Town
+1
+-
+- Troll
+Satono Town
+10
+-
+- Bat
+Satono Town
+1
+10
+- Red Toad
+Satono Town
+1
+10
+- Bug
+Bosque Village
+1
+10
+- Crab
+Bosque Village
+10
+-
+- Clay Ball
+Bosque Village
+1
+-
+- Earthworm
+Bosque Village
+1
+-
+- Turtle
+Helada Town
+1
+10
+- Green Slime
+Helada Town
+1
+-
+- Arrow
+Helada Town
+1
+10
+- Red Slime
+Tumba Town
+1
+10
+- Bluish Person
+Tumba Town
+10
+100
+- Eyeball
+Tumba Town
+1
+10
+- Bat
+Tumba Town
+1
+10
+- Red Ghost
+Dorado Town
+10
+-
+- Kondor
+Dorado Town
+10
+-
+- Evil Woman
+Dorado Town
+100
+-
+- Fire Creature
+Llama Town
+10
+100
+- Troll
+Llama Town
+10
+100
+- Rat
+Llama Town
+10
+100
+- Lava Slime Creature
+Pureza Town
+10
+100
+- Bug
+Pureza Town
+10
+-
+- Blue Ghost
+Pureza Town
+10
+100
+- Octopus
+Pureza Town
+100
+-
+
+
+---------------------------------------------------------------------
+5. TOWNS
+---------------------------------------------------------------------
+
+Here are the details on each building in a town.
+
+---------------------------------------------------------------------
+5.1. BANK
+---------------------------------------------------------------------
+
+The banks are places where you trade your Almas into gold. Each town 
+has a different exchange ratio, which is all written below. In this 
+building, you can also check the amount of gold you have and deposit 
+and withdraw a certain amount.
+
+
+
+
+
+
+---------------------------------------------------------------------
+5.1.1. DIFFERENT ALMAS EXCHANGE RATIOS
+---------------------------------------------------------------------
+
+Here is the table that informs you about which amount of money 1 
+Almas is worth in each place. In Llama, you must have at least four 
+Almas in order to get any gold, but you get two, instead of one gold. 
+The Almas not exchanged will be left aside, in the space where your 
+number of Almas is displayed. If you had 10 Almas, you will get an 
+exchange into 2 gold and after getting another 10, into 4, without a 
+leftover Almas. 
+         
+TOWN
+WORTH OF ALMAS
+1. Muralla Town
+1=6
+2. Satono Town
+1=6
+3. Bosque Village
+1=8
+4. Helada Town
+1=4
+5. Tumba Town
+1=2
+6. Dorado Town
+1=4
+7. Llama Town
+4=2
+8. Pureza Town
+1=6
+9.Esco Village
+1=8
+
+---------------------------------------------------------------------
+5.1.2. THREE KINDS OF ALMAS BALLS
+---------------------------------------------------------------------
+
+The Almas balls are worth one, ten or a hundred Almas, but each one 
+looks different. Those worth one Almas are gray on the outside and 
+have a red glow inside. Those worth ten have a gray edge and green 
+glow and those worth a hundred are red outside and have a green glow. 
+
+---------------------------------------------------------------------
+5.2. WEAPON SHOP
+---------------------------------------------------------------------
+
+In the game, there are many swords and shields, which Duke Garland 
+can buy. Each item costs differently because those that cost more are 
+more powerful or effective against enemies. In each town, you can buy 
+a new sword OR shield. Note that those that have been presented in a 
+previous town cost less in the next, because it's hard to survive 
+without them when passing the old one, and less effective in the new 
+one. Inferior swords in each new town require greater skill of the 
+player and such shields, greater indurance (effort and skill). Items 
+have a hold (pause) for the lasting of two cities. (There is no new 
+item (sword OR shield in the next town)).
+
+Here is a list of swords and shields that are in the game. From worse 
+to better, but you can't buy each of them in every town. (The 
+limitations are written below.) The table is separated in two parts, 
+in the small and big swords, and small and big shields. The big 
+swords are twice the size, and big shields are twice higher. 
+
+SWORD
+SHIELD
+1. *Training Sword
+1. Clay Shield
+2. Wise Man's Sword
+2. Wise Man's Shield
+3. Spirit Sword
+3. Stone Shield
+BIG SWORDS
+BIG SHIELDS
+4. Knight's Sword
+4. Honor Shield
+5. Illumination Sword
+5. Light Shield
+6. Enchantment Sword
+6. Titanium Shield
+ 
+---------------------------------------------------------------------
+5.2.1. DESCRIPTION OF WEAPON ITEMS
+---------------------------------------------------------------------
+
+Here's the description of every weapon item in the game. Now you can 
+know what's worth buying. Later, you can know the price.
+
+---------------------------------------------------------------------
+5.2.1.1. SWORDS
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+5.2.1.1.1. WISE MAN'S SWORD
+---------------------------------------------------------------------
+
+This sword isn't much better than the Training Sword. It isn't 
+recommended or special, but it's worth to have it as it's pretty 
+cheap. This is a useful sword, although it doesn't have great value. 
+However, until the Spirit Sword is presented, this sword will cover 
+and solve your entire enemy destroying problems. 
+
+---------------------------------------------------------------------
+5.2.1.1.2. SPIRIT SWORD
+---------------------------------------------------------------------
+
+The Spirit Sword is much more powerful than the Wise Man's Sword. 
+It's a high-grade product and a valuable sword. It can be very handy 
+and it is easy to defeat enemies with it. It's a wise choice to have 
+it in battle. It's first presented in Bosque Village.
+
+---------------------------------------------------------------------
+5.2.1.1.3. KNIGHT'S SWORD
+---------------------------------------------------------------------
+
+The Knight's Sword is a much longer sword and a very efficient sword. 
+It packs a far more powerful punch than the earlier ones. This sword 
+won't disappoint you-it's very useful against any enemy. It's one of 
+the best swords you are able to buy. You get it in exchange for the 
+Glory Crest from the salesman in Tumba, and it's buyable afterwards. 
+
+---------------------------------------------------------------------
+5.2.1.1.4. ILLUMINATION SWORD
+---------------------------------------------------------------------
+
+This is the best sword you can buy. It's very useful and powerful. 
+Other swords pale in comparison to this one. Even the Knight's Sword 
+becomes pretty lousy and useless once you get the hang of it. The 
+price is very high, but this sword is like no other. Nothing comes 
+close to matching it's might and power. The only sword better than 
+this one is the legendary Fairy Flame Enchantment Sword. It's first 
+presented in Dorado. 
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------
+5.2.1.2. SHIELDS
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+5.2.1.2.1. CLAY SHIELD
+---------------------------------------------------------------------
+
+This shield has very limited defensive capability. It's small and 
+pretty useless. I think that it isn't even worth trying it out, 
+regardless of the fact that it costs almost nothing; it does nothing 
+as well.
+
+---------------------------------------------------------------------
+5.2.1.2.2. WISE MAN'S SHIELD
+---------------------------------------------------------------------
+
+It's only slightly better than the Clay shield. Long ago, a well-
+known hero used it for a short time, which proves that it's very 
+obsolete.
+
+---------------------------------------------------------------------
+5.2.1.2.3. STONE SHIELD
+---------------------------------------------------------------------
+
+This shield is more durable than the Wise Man's Shield. It isn't very 
+special, but it's worth to have it, even though it has its 
+disadvantages. It's first presented in Satono Town. 
+
+---------------------------------------------------------------------
+5.2.1.2.4. HONOR SHIELD
+---------------------------------------------------------------------
+
+The Honor Shield is a superior shield. It's bigger and protects the 
+entire front of you, so no high or low attack will penetrate it. It's 
+strong and light and easy to use. This shield is the least a brave 
+man should have. It's first presented in Helada Town.
+
+---------------------------------------------------------------------
+5.2.1.2.5. LIGHT SHIELD
+---------------------------------------------------------------------
+
+This is not an ordinary shield. It's not made of common iron. It's 
+made of magic metal called Megane, and is pretty much unbreakable. It 
+has the same hit points as the Honor Shield, but is way more durable. 
+This is one of the best shields available. It's first presented in 
+Dorado Town.
+
+---------------------------------------------------------------------
+5.2.1.2.6. TITANIUM SHIELD
+---------------------------------------------------------------------
+
+The Titanium shield is the best buyable shield. This shield is light 
+as a feather and hard as a diamond. It has double hit points than the 
+Light Shield, and can protect you much more than it can. It's first 
+presented in Llama Town. You can't lose with this one.
+
+
+
+
+
+
+
+---------------------------------------------------------------------
+5.2.2. LIMITATION OF BUYING WEAPON ITEMS
+---------------------------------------------------------------------
+
+This part of information is linked with the limitations of buying 
+swords or shields in every town. Even though you can find out for 
+yourself, this table can be used for a quick reference. For every 
+next item, the town's name is repeated because there is no room for 
+another item. Every town doesn't have all items, but you can sell the 
+things you own. You'll get the money based on his item or, if the 
+salesman doesn't have it, its original price. In this way, every town 
+can have every item. Esco Village already has everything, and it's 
+all cheap, so by selling, you'll just make money. The Esco Village is 
+an ideal place to buy swords or shield, because they're cheap, but 
+the trouble is that the salesman will only give you the price which 
+is half of what you bought it for. Another problem is that you can't 
+buy the Fairy Flame Enchantment Sword in the Esco Village. 
+Additionally, you can't get a description of this item there, even if 
+you sell it. Here you can find it out, enhanced, improved and 
+compacted into a single place, without having to ask of the 
+description of each item itself; that would take a lot of precious 
+time that this FAQ saves. Enjoy!
+
+Note: You can get these items with the Hex editor, following the 
+description of the Hex editor cheat, mentioned (but not described) in 
+the 9.1. part. Also available with ZelTrain, more quickly and more 
+simply. This is mentioned at part 9.2.
+
+TOWN
+SWORD
+COST
+TOWN
+SHIELD
+COST
+- Muralla Town
+Training Sw.
+400
+Muralla Town 
+Clay Shield
+50
+- Muralla Town
+Wise M. Sw.
+1500
+Muralla Town
+Wise M. Sh.
+150
+- Satono Town
+Training Sw.
+800
+Satono Town
+Clay Shield
+50
+- Satono Town
+Wise M. Sw.
+1500
+Satono Town
+Wise M. Sh.
+150
+- Bosque Village
+Training Sw.
+800
+Satono Town
+Stone Shield
+2980
+- Bosque Village
+Wise M. Sw.
+1500
+Bosque Village
+Clay Shield
+5
+- Bosque Village
+Spirit Sword
+6800
+Bosque Village
+Wise M. Sh.
+150
+- Helada Town
+Training Sw.
+400
+Bosque Village
+Stone Shield
+2380
+- Helada Town
+Wise M. Sw.
+3000
+Helada Town
+Wise M. Sh.
+50
+- Helada Town
+Spirit Sword
+5440
+Helada Town
+Stone Shield
+1780
+- Tumba Town
+Wise M. Sw.
+3000
+Helada Town
+Honor Sh.
+9800
+- Tumba Town
+Spirit Sword
+4760
+Tumba Town
+Stone Shield
+1780
+- Dorado Town
+Spirit Sword
+3400
+Tumba Town
+Honor Sh.
+7840
+- Dorado Town
+Knight's Sw.
+7840
+Dorado Town
+Stone Shield
+890
+- Dorado Town
+Illumin. Sw.
+69800
+Dorado Town
+Honor Sh.
+5880
+- Llama Town
+Spirit Sword
+1360
+Dorado Town
+Light Shield
+14800
+- Llama Town
+Knight's Sw.
+5880
+Llama Town
+Honor Sh.
+5880
+- Llama Town
+Illumin. Sw.
+34800
+Llama Town
+Light Shield
+10360
+- Pureza Town
+Training Sw.
+100
+Llama Town
+Titanium Sh.
+39800
+- Pureza Town
+Wise M. Sw.
+1000
+Pureza Town
+Honor Sh.
+3920
+- Pureza Town
+Spirit Sword
+1360
+Pureza Town
+Light Shield
+7400
+- Pureza Town
+Knight's Sw.
+3920
+Pureza Town
+Titanium Sh.
+31800
+- Pureza Town
+Illumin. Sw.
+32800
+-
+-
+-
+
+---------------------------------------------------------------------
+5.3. MAGIC ITEMS
+---------------------------------------------------------------------
+
+In each town, there is a shop where you can buy useful artifacts to 
+help you in your mission. For example, the Magia Stone is an item 
+that will guard you in a measure. It surrounds your aura and hurts 
+enemies that touch it. It doesn't always spare you of all enemies, so 
+be careful not to rely on it too much! And don't collide with enemies 
+at a great rate of speed or you will get hurt, because it doesn't 
+always have a stone in the place that your enemy is approaching. When 
+the Magia Stone begins to weaken, there will be fewer stones in a 
+turn of the spell. That's the sign for you to start heading for town 
+or be careful not to be surprised when it wears off completely. This 
+table describes every item in a short way.  
+
+ITEM 
+DESCRIPTION
+- Elixir of Kashi
+- Restores a magic spell's full strength
+- Chikara Powder
+- Restores all magic spells' full strength
+- Ken'Ko Potion
+- Restores very little life
+- Ju-enn Fruit
+- Restores life to full capacity
+- Magia Stone
+- Protects the person's aura
+- Kioku Feather
+- Brings you to Muralla Town
+- Sabre Oil
+- Increases the sword's offensive power
+- Holy Water of Acero
+- Restores 100 H(it) P(oints) to a shield
+
+---------------------------------------------------------------------
+5.3.1. DESCRIPTION OF MAGIC ITEMS
+---------------------------------------------------------------------
+
+Here is all the information about the magic items. Even though you 
+can find out in the magic shop, I want to have a full FAQ. I like to 
+have everything in one place. The full description of every magic 
+item:
+
+---------------------------------------------------------------------
+5.3.1.1. KEN'KO POTION
+---------------------------------------------------------------------
+
+This is a blend of junkel fruit and Ripodi leaf. It covers loss of 
+very little health, but is very cheap. It is used as a mild health 
+tonic, but is not really recommended; the Ju'enn Fruit is a great 
+alternative. 
+
+---------------------------------------------------------------------
+5.3.1.2. JU-ENN FRUIT
+---------------------------------------------------------------------
+
+This item restores the person's life to its full capacity. Its 
+usefulness depends on the amount of life in need to recover and is 
+used best when the person is in danger of dying. The trees on which 
+this fruit grows bear once every ten years. They cost much more than 
+Ken'Ko Potions, but if you are close to dying on a high level of life 
+capacity, a Ju'enn Fruit is a lot better than all the Ken'Ko Potions 
+you can carry and it's much cheaper.
+
+---------------------------------------------------------------------
+5.3.1.3. MAGIA STONE
+---------------------------------------------------------------------
+
+The Magia Stone is probably the most useful of all the items. The 
+Magia Stone protects the aura that living beings exude. It surrounds 
+the aura to protect it from the interference of other auras. Its 
+purpose is protection against contact of the person equipped with it 
+and the enemy. It consists of stones that rotate around the person 
+and hit anything touching it. Upon hitting an enemy, it loses some 
+magic power, but it takes many, many hits for it to start visibly 
+weaken. In a turn, it goes from two to four stones. In a different 
+area (which you enter after going through a door) it'll turn in 
+another way. (There are two ways). When entering town, you'll lose it 
+completely. When it begins wearing off, there will be utmost three 
+stones. After a few more attacks, it'll weaken to only two and, 
+eventually, one. In such a case, an enemy attack could severely 
+damage you, because it takes time for the stone to rotate the whole 
+way. The Magia Stone is always one space out from the body, so it 
+only protects you from approaching enemies. If an enemy should 
+penetrate it, only it's falling behind will make him be hit, but by 
+then, it maybe too late. 
+
+---------------------------------------------------------------------
+5.3.1.4. SABRE OIL
+---------------------------------------------------------------------
+
+This item increases the strength of the current sword and makes its 
+attack much more deadly for the lasting of the magic. It's best to 
+use it for enemies that are hard to kill, or a cover for an inferior 
+sword because you can't buy a better one. Additionally, using more of 
+these makes the sword incredibly strong. The Sabre Oil is very 
+expensive, but also, very useful.
+
+---------------------------------------------------------------------
+5.3.1.5. KIOKU FEATHER
+---------------------------------------------------------------------
+
+This feather remembers the voice of the last wise man that spoke to 
+you. Particularly, it brings you back to the guard of Muralla Town 
+and is most useful when the person has doubts about surviving or has 
+any reason to return to Muralla Town or simply, get out of the 
+caverns.
+
+---------------------------------------------------------------------
+5.3.1.6. ELIXIR OF KASHI
+---------------------------------------------------------------------
+
+This is made from a broth of mistletoe simmered on a night of a full 
+moon. It restores all spells of a single type. It's bitter, but 
+cheap. Its best use is when you have a spell that you wish to use 
+again, but only it, or a few of them. When battling a tough monster, 
+if you only use some spells, and wish to save a Chikara Powder, use 
+some Elixirs of Kashi instead.
+
+---------------------------------------------------------------------
+5.3.1.7. CHIKARA POWDER
+---------------------------------------------------------------------
+
+The Chikara Powder is the best choice for restoration of magic 
+spells. It's a mixture of powdered dragon scales and crushed Wise 
+Man's Stone steamed for one hundred days. It'll fully restore all the 
+magic powers that you possess and is best for using when you have 
+used up all of your magic spells, such as when dealing with a 
+resilient foe.  
+
+---------------------------------------------------------------------
+5.3.1.8. HOLY WATER OF ACERO
+---------------------------------------------------------------------
+
+The Holy water of Acero is a liquefied metal made of mercury and 
+iron. If you paint it on a shield weakened by battle, it will regain 
+100 points of damage to it. It's useful for saving a shield from 
+breaking. 
+
+Many of these items are extremely useful. Not having them can be very 
+dangerous. For example, if you are about to loose your life and don't 
+have a Ju-enn Fruit or even a Kioku Feather, you are in big trouble, 
+especially if you're far from the town and/or have a lot of gold and 
+are in a very dangerous area. The only possible way that it can be 
+worse is if you haven't saved the game for a long time. There are a 
+few things you should know about some of the items:
+
+- Don't use the Magia Stone in the Rotten Caverns. It'll make new red 
+slime creatures and won't hurt them. It just wastes it and is 
+dangerous.
+
+- If you have a very little health bar, when hurt, use a Ken'Ko 
+Potion instead of a Ju-enn Fruit. This is a simple way to save a lot 
+of money.
+Also, if you have a huge life bar, use a Ju-enn Fruit instead of a 
+whole bunch of Ken'Ko Potions which won't restore much of your life, 
+because you can't store more than five of them.  
+
+- Don't use the Chikara Powder if you have used up only one magic 
+power. Use an Elixir of Kashi. Also, don't use the Elixir of Kashi if 
+you haven't used up the entire power. If you have a lot of powers 
+drained, use a Chikara Powder. This saves a lot of money.
+
+---------------------------------------------------------------------
+5.3.2. LIMITATION OF BUYING MAGIC ITEMS
+---------------------------------------------------------------------
+
+Here's a table that shows the items in a Magic Shop for each town. By 
+selling form different towns, you can have every item everywhere. The 
+item will have the price it had it the town you bought it in. Esco 
+has every item, including a really cheap price. That price is written 
+above. If you sell an item from a town that had it to a town that has 
+it also, you won't make a difference, except that the saleswoman will 
+give you the sell price for her own item. To make all this clearer, 
+let me make an example. If you buy a Magia Stone in Bosque Village 
+for 1500 golds and sell it in Muralla Town, you'll get only 500 golds 
+resale because the Magia Stone costs only 1000 golds there. In this 
+manner, by selling a Magia Stone bought in Muralla in Bosque, you'll 
+get 750 golds, which is 3/4 of the price, instead of just half. 
+
+Note that each shop doesn't have every item, but by selling from town 
+to town, you can have all items in every shop (town). It will have 
+the price it had in the town you bought it in.
+
+Now you can know the price of every item in each town, so that you 
+can make such combinations to get better value and save money! It's 
+all with the help of this table below. It indicates the price of each 
+item in each town or village. The prices of the same items increase 
+greatly when in later towns. This is because it is supposed that you 
+already have enough gold to afford it. This is extremely useful. 
+Luckily, there isn't a thing I've missed here, so here it is. This 
+table is one of the most difficult things to write in this document. 
+I hope you'll appreciate the effort I've spent in the doing of it. As 
+I said, here it is.
+
+This table shows which items are available in each town with their 
+cost.
+
+
+
+
+
+
+
+TOWN
+ITEM
+COST
+- Muralla Town
+Magia Stone
+1000
+- Muralla Town
+Ken'Ko Potion
+50
+- Muralla Town
+Sabre Oil
+1200
+- Satono Town
+Ken'Ko Potion
+50 
+- Satono Town
+Elixir of Kashi
+60
+- Satono Town
+Holy Water of Acero
+100
+- Satono Town
+Sabre Oil
+1200
+- Bosque Village
+Ju-enn Fruit
+240
+- Bosque Village
+Elixir of Kashi
+60
+- Bosque Village
+Magia Stone
+1500
+- Bosque Village
+Sabre Oil
+1200
+- Bosque Village
+Kioku Feather
+350
+- Helada Town
+Ju-enn Fruit
+300
+- Helada Town
+Elixir of Kashi
+120
+- Helada Town
+Chikara Powder
+320
+- Helada Town
+Magia Stone
+1500
+- Helada Town
+Holy Water of Acero
+100
+- Helada Town
+Sabre Oil
+1200
+- Helada Town
+Kioku Feather
+350
+- Tumba Town
+Ju-enn Fruit
+600
+- Tumba Town
+Magia Stone
+2000
+- Tumba Town
+Sabre Oil
+2000
+- Dorado Town
+Ju-enn Fruit
+600
+- Dorado Town
+Chikara Powder
+480
+- Dorado Town
+Magia Stone
+2000
+- Dorado Town
+Holy Water of Acero
+200
+- Llama Town 
+Ju-enn Fruit
+900
+- Llama Town 
+Magia Stone
+2500
+- Llama Town 
+Sabre Oil
+2400
+- Llama Town 
+Kioku Feather
+350
+- Pureza Town
+Kioku Feather
+350
+
+---------------------------------------------------------------------
+5.4. INN
+---------------------------------------------------------------------
+
+Besides Muralla Town and Esco Village that have churches, the other 
+places have inns, places in which you rest, but the innkeeper will 
+charge you for your rest. That price grows in every following place, 
+in Satono through Pureza. The table shows the prices. 
+
+---------------------------------------------------------------------
+5.4.1. DIFFERENT FEES
+---------------------------------------------------------------------
+
+TOWN
+FEE
+1.Satono Town
+30 golds
+2.Bosque Village 
+50 golds
+3.Helada Town
+70 golds
+4.Tumba Town
+100 golds
+5.Dorado Town
+150 golds
+6.Llama Town
+200 golds
+7.Pureza town
+400 golds
+
+
+
+
+
+
+---------------------------------------------------------------------
+5.4.2. INN VS. CHURCH
+---------------------------------------------------------------------
+
+The churches are obviously the solutions to all your financial 
+problem concerning recovery. The problem is that there are only two 
+churches-in Muralla and in Esco. Using a Kioku Feather would be a 
+remedy and having the Pirika, Silkarn and Feruza Shoes would be an 
+enhancement. There is also an alternative: resting in a safe spot 
+with the speed on the highest level.
+
+---------------------------------------------------------------------
+5.5. SAGES
+---------------------------------------------------------------------
+
+In each town, there is a sage, a woman that tells you your task in 
+the current land, raises your power and saves your game. The 
+exception village is Esco, where there is no sage and you can't save 
+your game. There is a Church, like in Muralla, instead of an Inn (You 
+don't have to pay for your recovery). This is a sort of a secret 
+place where everything is cheap and the people give you useful advice 
+concerning your path to Jashiin, but they are hard-to-solve mysteries 
+which are part of the thrill of the game. The thinking and seeking of 
+the answers to those mysteries is up to you. The Sage will reinforce 
+your powers if you have fought enough and gathered enough experience.
+
+---------------------------------------------------------------------
+5.5.1. NUMBER OF TIMES EACH SAGE WILL UPGRADE YOUR POWERS
+---------------------------------------------------------------------
+
+This table shows the number of times Duke Garland can receive 
+increases in power in each town. The Sages will raise your power, but 
+under the condition that you have enough "*experience". 
+
+*Note: The explanation for this is written above, in the POWER-UPS 
+section.
+
+TOWN
+NUMBER OF RAISES
+1. Muralla Town
+3
+2. Satono Town
+3
+3. Bosque Village
+3
+4. Helada Town
+3
+5. Tumba Town
+2
+6. Dorado Town
+3
+7. Llama Town
+4
+
+In Pureza Town there may be countless power raises because I never 
+came to a stop here. I don't think it can ever stop, because there is 
+no continuing after that world and no other Sages after that one. 
+
+After raising your powers as much as she can, the Sage will no longer 
+be able to do so. This means that you have to defeat the boss 
+opponent with what you have and ask the Sage in the new town for a 
+raise to a higher level. If she can't raise them any more, but you 
+don't have the experience, she'll say that you don't have enough 
+experience (in one of the three ways that are written below) and, 
+when you gather sufficient experience, she'll say this:
+
+"I can no longer impart the power of the Spirits to you. Continue 
+your quest, you'll soon find others to help you."
+If the Sage is going to grant you a new level of power, her message 
+will be this: 
+
+"The light of the Spirits is bursting forth within you. Indeed, your 
+power has grown."
+
+If you don't have the experience needed, she'll say one of these 
+three messages. 
+
+She will say the first one is if you barely have any of the 
+experience needed:
+
+"Your experience is lacking. Persevere in your quest."
+
+The second one is told if you have a lot of experience, but not close 
+to that what you need to have:
+
+"You must accumulate more experience."
+
+She'll say the third one if you're really close, but still don't have 
+all the experience needed:
+
+"I can see the faint light of the Spirits in you. You must endure a 
+little longer." 
+
+---------------------------------------------------------------------
+5.5.2. NAMES OF ALL THE SAGES
+---------------------------------------------------------------------
+
+In every town, there is a different Sage. The new ones are more 
+powerful because they can raise your power to a greater level. Their 
+names are as follows in the table below. 
+
+This table displays the names of each one of them with the town in 
+which she resides.
+  
+TOWN
+NAME
+1.Muralla Town
+Marid
+2.Satono Town
+Yasmin
+3.Bosque Village
+Hajjar
+4.Helada Town
+Chiriga
+5.Tumba Town
+Hisham
+6.Dorado Town
+Maryam
+7.Llama Town
+Saied
+8.Pureza Town
+Indihar
+
+---------------------------------------------------------------------
+6. UNMENTIONED PARTS OF THE INVENTORY SCREEN
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+6.1. SPELLS
+---------------------------------------------------------------------
+
+The spells are found at the top of the screen. They are offensive 
+items. An overview of the kinds of spells would be this:
+
+
+
+
+
+
+
+
+SPELL
+CHARACTERISTICS
+1. Espada
+- Short distance, stops upon contact
+2. Saeta
+- Long range
+3. Fuego
+- Short range, long lasting
+4. Lanzar
+- Long range
+5. Rascar
+- Falls from top to bottom of the screen
+6. Agua
+- Long range, high
+7. Guerra
+- Covers entire screen
+
+---------------------------------------------------------------------
+6.1.1. NAMES AND MEANING OF SPELLS
+---------------------------------------------------------------------
+
+SPELL
+MEANING
+1. Espada
+- Throwing swords
+2. Saeta
+- Arrows
+3. Fuego
+- Fire
+4. Lanzar
+- Flame
+5. Rascar
+- Falling rocks
+6. Agua
+- Water
+7. Guerra
+- War
+
+---------------------------------------------------------------------
+6.2. KEYS
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+6.2.1. NORMAL KEYS
+---------------------------------------------------------------------
+
+The keys are what you open locked doors with. Here are the numbers of 
+keys in the accompanying town. This doesn't include boss doors, or 
+any that are mentioned in this table. 
+
+TOWN
+NUMBER
+TOWN LOCKED
+PASSAGE LOCKED
+1. Muralla Town
+0
+No
+Yes
+2. Satono Town
+1
+No
+Yes
+3. Bosque Village
+0
+No
+Yes
+4. Helada Town
+1
+Yes
+No
+5. Tumba Town
+1
+No
+No
+6. Dorado Town
+1*
+Yes
+No
+7. Llama Town
+2
+No
+No
+8. Pureza Town
+2**
+No
+Yes**
+
+*Locked with "Lion's Head Key", see the next paragraph.
+**The second key is for a passage door, but only for another part of 
+that world
+
+---------------------------------------------------------------------
+6.2.2. "LION'S HEAD KEY"
+---------------------------------------------------------------------
+
+This is a unique key. It's required for opening the green door in the 
+Gold Caverns, but the key itself is in the final world. It's also the 
+type of key that would open the blue door in the Cavern of Final, but 
+there is no second one; the door is meant to be locked, from when you 
+enter, to eternity (the only way you could repeat the journey is if 
+you lose the duel, but after beating Alguien again, the same thing 
+happens). Only with ZelTrain can you get another key. In such a case, 
+you'd appear inside Alguien!
+
+
+---------------------------------------------------------------------
+6.3. SHOES
+---------------------------------------------------------------------
+
+I mentioned earlier in this document, a special kind of shoes which 
+you need to find, the Feruza Shoes. There are also three other types 
+of shoes and a cape, which you get in every following town, after 
+Bosque Village (Starts in Helada). 
+
+The shoes are as follows with their description:                                            
+         
+SHOES
+DESCRIPTION
+1. Ruzeria Shoes
+- Help you walk on ice (you don't slip)
+2. Pirika Shoes
+- Protect you from Gelroid, thorns and hot liquids 
+3. Silkarn Shoes
+- Allow you to scale slopes
+4. Asbestos Cape
+- Protects you from getting hot in the Fire Caverns
+5. Feruza Shoes
+- Allow you to jump twice higher
+
+These shoes are found in the middle of the inventory screen and can 
+be worn at any time. You will have to put them on each time you want 
+to achieve the desired affect the certain shoes represent, because 
+just having them does nothing. This also means that you don't have to 
+wear any of them. The Pirika, Silkarn and the Feruza shoes are very 
+useful when passing thorough different lands because wearing them 
+shortens and eases the way. The reason of that is that the game is 
+designed to have slopes, long fires, thorns or Gelroid or high ropes 
+or places where you don't have the shoes needed to get to a place 
+without going the entire long way.
+
+---------------------------------------------------------------------
+6.3.1. RUZERIA SHOES
+---------------------------------------------------------------------
+
+The Ruzeria Shoes' purpose is enabling Duke Garland to avoid slipping 
+on ice, which can cause trouble like falling onto thorns or bumping 
+into Agar. They are the only shoes that you don't have a strict 
+obligation for having. I succeeded in passing the Ice caverns without 
+them, but believe me, no matter how hard it is to find them, it's 
+worth it. 
+
+---------------------------------------------------------------------
+6.3.2. PIRIKA SHOES
+---------------------------------------------------------------------
+
+These shoes are one of the three that are of high use for a shorter 
+way back to the world that you failed to pass (or died for another 
+reason without proceeding to the next world), or that are needed to 
+pass some of the way in another world. They protect you from getting 
+hurt whenever you step into either Gelroid, thorns or a hot 
+substance. They are required for passing the Rotten caverns. Without 
+them, the Gelroid will disable your advance, so like-no like, you 
+must have them. An interesting detail is that they are above a slope 
+on the easily accessible side and that the shoes in the very next 
+land are the Silkarn shoes, which enable you to climb them. 
+
+---------------------------------------------------------------------
+6.3.3. SILKARN SHOES
+---------------------------------------------------------------------
+
+The valiancy of these shoes is extremely high. Without them, worlds 
+above Tumba can't be passed. There are numerous slopes in each world, 
+so these are the most important. Still, most of them are in the Gold 
+Caverns, because, that's their original world. You can find out a 
+detail about these shoes when repeating your journey through the Ice 
+caverns. The slopes there are frozen, so you'll slip and you can't 
+wear the Ruzeria Shoes and the Silkarn Shoes at the same time. 
+However, this doesn't always happen. Sometimes, you'll be able to 
+climb it and sometimes not. I wonder why that is. 
+
+---------------------------------------------------------------------
+6.3.4. ASBESTOS CAPE
+---------------------------------------------------------------------
+
+This is a pretty unique piece of clothing. It's meant only to be used 
+(and it only is needed) in the Fire Caverns. The problem is that you 
+have to wear it all the time and passing this world requires the 
+Silkarn and Pirika Shoes, so you'll lose some of your life anyway. 
+After trying it, I realized that you get hot faster than recover lost 
+life points, so, even if you remain still, you won't be able to 
+survive through this part without it. Considering the long way 
+(including the labyrinth) and many enemies, you have no chance of 
+making it alive. Plus, the guardian monster is the toughest in the 
+game (Dragon is the most resilient, most powerful and most dangerous 
+boss enemy in the entire game, even worse than Jashiin because you 
+don't have the Guerra Spell). This is not found in the caverns. You 
+buy it from an inhabitant of Llama Town for 2500 Almas.
+
+---------------------------------------------------------------------
+6.4. CRESTS
+---------------------------------------------------------------------
+
+On the right part of the inventory, there are, besides swords, keys 
+and shields, "Crests". They have a certain meaning in the game and 
+are well hidden or protected because they're part of the game and 
+without them, you can't travel to a certain place that follows. These 
+are:
+  
+NAME
+VALIANCY
+1. Hero's Crest
+Allows you to encounter Pollo
+2. *Glory (Family) Crest
+Allows you to get the Knight's Sword
+3. **Elf Crest
+Allows you to talk to the people of Llama Town 
+
+*The Glory Crest is not needed because you can defeat Vista without 
+the Knight's Sword, but it's much more difficult that way. In other 
+words, it exists only for players with little skill, patience, or 
+luck, but it makes the game less dull (the Knight's Sword is free).
+
+**The Elf Crest is unneeded unless you are curious of information in 
+Llama Town, but the people there say useful things and, if you're 
+playing for the first time, you should know their advice. Also, by 
+defeating Paguro, you get the Almas needed for the Asbestos Cape.
+
+---------------------------------------------------------------------
+6.4.1. HERO'S CREST
+---------------------------------------------------------------------
+
+This crest is the first one. It's also the ONLY one that you HAVE to 
+find. It lets you pass the third world and continue.
+
+Note: If you get it with Zeltrain, it won't have any effect; the 
+guard won't fall for the fake one.
+
+
+
+
+---------------------------------------------------------------------
+6.4.2. GLORY (FAMILY) CREST
+---------------------------------------------------------------------
+
+This crest is not really needed, as it is proven that Vista can be 
+defeated without the Knight's Sword. I think the makers of Zeliard 
+have goofed. Anyway, the crest makes the salesman in Tumba give you 
+the Knight's Sword in exchange for it.
+
+---------------------------------------------------------------------
+6.4.3. ELF CREST
+---------------------------------------------------------------------
+
+This crest is also unneeded. It just allows you to talk to the people 
+in Llama Town. You get it when you beat Paguro.
+
+---------------------------------------------------------------------
+7. WALKTHROUGH OF THE ENTIRE GAME
+---------------------------------------------------------------------
+
+This part tells you everything about passing each world in detail. It 
+will familiarize you with the process of finding each object or 
+secret in every one of eight worlds. It also provides the name of the 
+boss(es) and the items that exist in the current world on the very 
+beginning. This is undoubtedly the most important part of the FAQ by 
+far. This information alone will solve all the problems you have in 
+the game, but the rest is interesting, non the less. This walkthrough 
+consists mainly of "up", "down", "left", or "right", but it can be 
+followed easily that way. 
+
+Note: This walkthrough is mainly copied data from an already existing 
+FAQ, but the last world was not described there, so some parts of 
+information are original and, besides, make my FAQ a full one. I 
+received permission from the original author of the walkthrough, so 
+this part is legally written by all the guidelines mentioned at the 
+web site "how to write a FAQ for GameFAQs". That is why I HAVE to 
+give a HUGE thanks to the original author, NeoZenogias. His e-mail 
+address is Braekdown3@aol.com. 
+
+---------------------------------------------------------------------
+7.1. MURALLA TOWN/CAVERN OF MALICIA
+---------------------------------------------------------------------
+
+-Boss: Cangrejo the crab
+-Secrets: Two hidden potions
+
+After the opening sequence make your way to the castle, which is 
+incidentally right in front of you. Talk to the king and he'll give 
+you 1000 golds. After you leave the palace, go to the shrine to see 
+the princess. After that, go to town, where you can visit each shop. 
+Instead of upgrading your sword or buying a shield, the best thing to 
+buy is the Magia Stone, which costs exactly 1000 golds, or you can 
+save the money. When you are ready, you may enter the cavern at the 
+right end of the town. 
+
+The first thing to do here is equip the Magia Stone in the item 
+screen. When you have done this, go to the left and down a rope. Kill 
+the monsters and grab the chest. Then jump onto the green platform 
+and make it go up until you can jump of to the right. Go right until 
+you come to a rope. Go down, but don't use the chest unless you need 
+to. Go down, then right, when you see a rope, go down, then left and 
+up and grab the key. This is a good resting-place, just watch for the 
+bats.
+
+After you get the key go back down the rope and right. Climb this 
+rope and right again. Go down the rope and to the right. Climb this 
+rope. If you need it, there is a potion of full healing in the wall. 
+Just jump onto the platform and ride it to the top. Slash the wall 
+and get the potion (as I said, if you need it). Get off the rope on 
+the first left and follow it all the way. You will come to an 
+unclimbable slope. But you'll see two doors. Climb the rope near the 
+slope to the top. Grab the rope next to it and get on the path. Go 
+right and climb the rope. Carefully jump the pit and continue. Climb 
+the rope and make your way over the spikes. Soon you'll come to a 
+platform to go across. This area is great for picking up Almas while 
+running back and forth because the monsters will regenerate.
+
+Climb the rope and go trough the door. You'll come to a new cavern. 
+You can't do much here right now, but someday. Go left over the rope 
+and go up the next rope. Then go to the left of the rope and slash 
+the wall. Buried in it is an orb worth 100 Almas. Go back and down 
+the rope. To the left is another door. Go through it and carefully 
+cross the platform. Climb the rope and go right. Climb the next one 
+and go left. When you climb the next rope, climb it. To your right is 
+a red door that makes noise. This is a sign of a door, in which a 
+boss lives and is prepared to fight you. (It is advised that you save 
+your game before encountering a boss enemy and, in this case, just 
+jump to the right, climb the rope and go right to reach the town). 
+When you're ready, open the door and fight a one-on-one battle with 
+the giant crab, Cangrejo. Grab the key and go through the blue door. 
+Enter the door on your left, which is the entrance to Satono Town. 
+
+---------------------------------------------------------------------
+7.2. SATONO TOWN/CAVERN OF PELIGRO
+---------------------------------------------------------------------
+
+-Boss: Pulpo the octopus
+-Secrets: hidden potions in the wall
+
+When you first arrive in Satono make your way to the Sages hut 
+immediately. She'll teach you a new spell. Save your game. If in need 
+to do so, visit the shops. When you're ready, enter the cavern of 
+Peligro.
+
+The first thing you'll want to do when you enter Peligro is to find 
+as many of the keys as possible. When you leave the town, go left and 
+climb the rope. Climb to the top and go right. Don't follow the rope 
+all the way down. Get off to the right path you first see. Get on the 
+platform and ride it to the right. Climb the rope that you see after 
+getting off the platform and grab the key. Go back down the rope and 
+get on the green platform. Go down until it stops. Get off and climb 
+the rope down. Fall off the ledge to the right. After you fall go 
+left. Watch out for the trolls; they can be tricky. Climb the rope 
+down and touch the blue stone. It will tell you to be careful of the 
+box. If you touch the box, it'll turn into a very dangerous bat. 
+After you kill it, you get a full heal potion.
+
+From where you are get on the rope and climb up. Go to the left until 
+you come to the rope. To the left side of the rope is a healing 
+potion in the wall. Go down the rope and go left. On the ground is a 
+key. Grab it and go back the way you came. When you get to the area 
+where the blue stone is, follow the large rope all the way down. Go 
+right and climb the ropes. Enter the door. Go left, cross the 
+platforms and cross the platforms. Soon you'll come to a door. Enter 
+it and cross the platform on the left. Climb the ropes down cross the 
+other platform on the right. Here will be another encounter door, 
+which you can enter. You can heal yourself here, instead of outside, 
+because Pulpo can't move (he's stuck) and it's "crowded" outside. 
+When you're ready, start attacking Pulpo. (See the instructions below 
+to see details how to beat him, in the advantages-weaknesses of 
+monsters part of the tips and tricks section). Enter the door and 
+then enter the door on the right. This will bring you to the cavern 
+of Madera/Riza. Go left and then go down. The door on the left is the 
+entrance to Bosque Village. Enter it.  
+
+---------------------------------------------------------------------
+7.3. BOSQUE VILLAGE/CAVERN OF MADERA/RIZA
+---------------------------------------------------------------------
+
+-Boss: Pollo
+-Items: Hero's Crest
+
+Upon entering the village, talk to the Sage who'll teach you a new 
+spell. Save your game. Your health bar should be about at the half 
+way mark. If it isn't, gather more experience. 
+
+Go to the weapon store here and buy the Spirit Sword. If you go to 
+the left, you'll notice a guard at the other exit. He is in league 
+with Jashiin, but, not to reveal it, he claims that a Spirit came to 
+him in a dream and told him not to allow anyone to pass without the 
+Hero's Crest, which Jashiin hid in the Forest Caverns. Your mission 
+is to get it and, upon passing the guard, destroy Pollo.
+
+In Madera, jump to the right instead of going down the rope and go 
+through the door. Go left and move the platform all the way up. When 
+you reach the top level, go right and down the rope. Go through the 
+door. Climb the rope to your right and go through the door. To your 
+right is a very thin green area. Run across quickly and without 
+stopping. Then go through the door. Climb the rope to your right. Go 
+right and slash the trunk to reveal the Hero's Crest.
+
+Go back to where you first went to Riza. Go right and down the rope. 
+Then go left off the ledge. Go right again across the rope and 
+through the door. Climb down the rope to your right. Go left and down 
+the other rope. Go right to find the key. Then go back to town the 
+way you came.
+
+Do what you need to prepare for the boss battle. Go left and the 
+guard will let you pass. Go right and off the ledge. The door to the 
+right is the entrance to Pollo's room. When you prevail, enter the 
+door. Go right and then you'll find yourself in the Ice Caverns.  
+
+---------------------------------------------------------------------
+7.4. HELADA TOWN/CAVERN OF ESCARCHA/GLACIAL
+---------------------------------------------------------------------
+
+-Boss: Agar
+-Items: Ruzeria Shoes
+
+When you enter, go left and through the door. You'll need a key to 
+open the locked door on the right, across the platform. Fall off the 
+ledge and go to the left to another platform. Carefully cross it and 
+go all the way left and down the rope. Go right and get on the 
+platform, which will take you to the ledge with the key. Make your 
+way back to the door and go through. Go right and follow the 
+platforms right and down the rope. Go right and down another rope. Go 
+left and up the rope and you'll be before Helada Town. Visit the Sage 
+and save. Here, you can buy the Honor Shield, which will guard you 
+from Agar's ice attack and is much more indurable than earlier 
+shields. When you're done, exit the town from the left side. When you 
+go to the Ice Caverns again, you'll find out that you'll slip on the 
+ice and that the icicles will fall from the roof periodically.
+
+You will find yourself in Glacial. Go to the left and down the rope. 
+Go right and down another. Wait for a platform and ride it to the 
+right, climbing off onto the rope. After you climb the rope, go right 
+and down another rope. Run to the right, ducking at the last second. 
+You'll fall onto the pair of boots. Those are the Ruzeria Shoes, 
+which help you walk on ice, because they prevent slipping and 
+sliding. Equip the Ruzeria Shoes and go left and then down the rope. 
+
+When you climb down the rope, go left. Climb the rope and go left 
+again. When you get to the rope to the far left, climb down. When the 
+moving platform is under, jump on it and go through the door to the 
+right. You'll once again be in Escarcha. Go right and get on the 
+moving platforms. Continue going right until you come to a rope. 
+Climb the rope and, after you cross the platforms, climb another. Go 
+right and cross the platform. Climb the rope and go right and climb 
+the next two ropes. Go left and cross the platforms. Climb the rope 
+and go right, across the platform and enter the door. 
+
+This will take you back to Glacial. Climb down the rope to your left 
+and go left. Jump through the hole by. To do this, you must unequip 
+the Ruzeria Shoes. Quickly put them on and you will fall in front of 
+a boss door. Kill Agar and go through the door. Now you're in the 
+Rotten Caverns. Go right and up the rope. Then go right again and 
+through the entrance to Tumba Town.
+
+---------------------------------------------------------------------
+7.5. TUMBA TOWN/CAVERN OF CORROER/CEMENTAR
+---------------------------------------------------------------------
+
+-Boss: Vista
+-Items: Pirika Shoes, Family (Glory) Crest
+
+When you enter the Tumba Town, visit the Sage and do the rest what 
+you need and want. In the Weapon Shop, the salesman will refuse to 
+sell you the Knight's Sword. The Sage says that you can't defeat 
+Vista without it, but it is possible, since I done it and without 
+that many complications (details on defeating Vista are written 
+below, including the description on defeating her without the 
+Knight's Sword). When you're ready, go back out the way you came in. 
+
+When you leave town, go down the rope to the right and left. Climb 
+down the rope and go left again. When you get to the wall, you can go 
+through it. Go down the rope to the left and go right. Get on the 
+green platform and move it up until you find a spot where you can go 
+through the wall. Climb the rope and cross the platforms and go 
+through the door. Go left and up the rope and then left again. Get on 
+the platform and go left again and down until you get to a door. Go 
+through, then right, climb up and go right again. Climb the rope and 
+go left. Grab and equip the Pirika Shoes. 
+Go down the slope and up the rope. Go left until you see the town. Go 
+up the rope and enter the town. You should save your game. When 
+you're done, exit the town from the left side. 
+
+When you arrive in Corroer, go left and up the rope. Then go right, 
+through the wall, and into the door. Go right, down the rope, left 
+and down the rope all the way to the bottom. Go left and don't fall 
+into the hole. Get on the platform and climb the rope. Go left and 
+grab the key. Get on the platform and move it down. Go left and up 
+the rope. Get on the platform and go right. Then go through the door. 
+
+Go left and down the rope. Enter the town to save, repair the shield, 
+etc. When you exit the town from the left, go right and then down the 
+rope. Follow the path left and then right until you get to the six 
+ropes. Carefully make your way across them until you get to the door. 
+Unlock it and go through. Go right all the way and then down the 
+rope. Grab the key (and the Crest, if you want the Sword (You can 
+have the Crest, but you won't be able to do anything in the Weapon 
+Shop (in Tumba) until you trade it for the Knight's Sword)). (To 
+return to the town, go up the rope, then left, through the door, fall 
+down to the right, go left, jump the hole and then left again. Climb 
+the rope and the town is on the left.)
+
+When you are ready, leave the town, (or just follow these directions 
+leading from the town) exit from the right. Go down the rope and 
+follow the path left, down and right. Enter the door to the left. Go 
+right until you get to a rope. Climb it and go left all the way, then 
+up and right. Go up and then left. Climb the rope and grab the full 
+heal potion in the wall. Go left and fight Vista. After beating her, 
+go through the door. Now you're in the Gold Caverns. You'll need to 
+find a key to open the door to Dorado Town. From the door you came 
+through, go down the rope to your right and cross the platforms to 
+get the key. Go back to the entrance door, climb the rope and go 
+left. Climb another and enter the town.
+
+---------------------------------------------------------------------
+7.6. DORADO TOWN/CAVERN OF TESORO/PLATA(/ARRUGIA*)
+---------------------------------------------------------------------
+
+-Boss: Tarso
+-Items: Silkarn Shoes
+
+Upon entering the town, visit the Sage. By now, your health bar 
+should be about 3/4 of the way to full. If not, gather more 
+experience. When you finish looking around the town, exit to the 
+right, where you came from.
+
+The first thing you'll need to do is find the Silkarn Shoes. These 
+will allow you to climb the slopes. Go down the rope to the right of 
+the entrance to the town and then go left and down the ropes. Keep 
+going down until you are on top of the extremely long ledge, which 
+looks like gold. Wait for the moving platform and get on. Ride it 
+until you get to the second thick rope. Climb the rope all the way to 
+the top. Go left and get on the moving platform. Climb the ropes and 
+go right. You'll see another platform, but don't go on it. Drop down 
+and go through the door instead. 
+
+Climb the rope to your left and continue going left. Climb the rope 
+just so that you can get onto the platform. Ride the platform and go 
+to the door on the right. Go through it and ride the platform all the 
+way up. Continue going up 'till you find the chest containing the 
+Silkarn Shoes. Take and equip the shoes. Get back on the platform and 
+ride it down. Go back to the entrance of Dorado Town. From there, go 
+down the rope to the right (or just go to it in the first place) and 
+go down the right rope. After going down, you'll come to a moving 
+platform. Get on it and go through the door on the left. 
+
+From here, go up to the rope to your right. Go right and you'll find 
+a moving platform. Get on it and go right. Destroy the block in your 
+way. Go down the rope to your right. Go down the rope directly under 
+the last one. Go left and up the slope. Drop down into the hole and 
+move the green platform down until it is in the place with the 
+others. Get off and go to the right. Ride the moving platform and 
+climb the rope to the right. Get onto the green platform to your 
+right and move it up. When you get to the blocks that are all in a 
+row, run across them quickly. Go through the door to your right and 
+to the left you'll see the moving platform. Ignore it and drop down. 
+Go through the door.
+
+From here, climb the rope to your right and you'll find the key. Go 
+back down and down the green platform. Go back to the town. (The way 
+back is simple because you lowered the platform. The high places can 
+be seen from a known place but can only be reached after a long 
+process throughout the mazes of the caverns. When you finish in the 
+town, exit from the left side. Go left and on the platform. When you 
+reach the rope on the left, climb it and go right. Ride the other 
+moving platform across. Go down the slope and climb the rope to the 
+right. Get on the platform and grab the rope when you get under it. 
+Climb it to the top, go left and climb another. Get to the platform. 
+Time your fall from the platform to the other one. Go left and climb 
+down the rope. Then, jump on the platform. Climb the ropes until you 
+reach the ledge where you can't see the platform. Once you make it, 
+enter the door to the right. 
+
+Go left and down until you come to the boss door. Enter and fight 
+Tarso. After you beat him, go through the door, climb the slope and 
+enter the door to the left. You'll appear in the Fire Caverns. Go 
+right across the rope and go through the entrance door to Llama Town.
+
+*The cavern of Arrugia is the place where you go when you unlock the 
+green door. It's in the Gold Caverns, although it's impenetrable 
+without the Lion's Head key, which you get two worlds later, in the 
+final world of Absor.
+
+---------------------------------------------------------------------
+7.7. LLAMA TOWN/CAVERN OF CALIENTE/REACCION/CORROER
+---------------------------------------------------------------------
+
+-Boss: Dragon 
+-Items: Asbestos Cape, Elf Crest
+
+The first thing you'll notice in Llama is that nobody won't talk to 
+you before you get the Elf Crest and to do that you must defeat 
+Paguro. That is because some of Jashiin's monsters have been 
+pretending to be heroes and wreaking havoc upon Llama Town. The 
+Elder, Myuuza will tell you that and won't believe you that you 
+aren't one of them. If you want to get the Crest, you must literally 
+fight for it. Going right, you'll find a house with a woman yelling 
+that there is a monster in her house. If you want the Crest, enter 
+the house and fight with Paguro. At the right end of the town, a 
+citizen will offer you his Asbestos Cape, which you must buy because 
+of the heat. He'll sell it to you for 2500 Almas and defeating Paguro 
+will get you all the Almas required (in addition to Tarso's Almas 
+reward).
+When you're ready to leave town, go out the right exit door.
+
+Note: You'll need to change the shoes here often. Sometimes you need 
+the Pirika Shoes and sometimes the Silkarn Shoes. Whenever you take 
+the Asbestos Cape off, you'll quickly have to put it on, as soon as 
+you're done using the Silkarn Shoes or the Pirika Shoes, because of 
+the heat. (I trust that by now you know that the Silkarn Shoes are 
+used for scaling slopes and the Pirika Shoes for protection against 
+thorns, Gelroid and boiling liquids or anything that would hurt you 
+if you step in it, for that matter.)
+
+Upon exiting the town, go right and down the green platform. When you 
+reach the first ledge, get off. Climb the slope and then the rope. 
+Grab the key on the left and fall. Move the green platform down and 
+go right. An air current will take you to where you first came into 
+this world. Go right and down the rope. You'll see a key on the left 
+side of the hole. Fall down and unlock the door. 
+
+There is a chest near that door containing 1000 golds. Go right and 
+down the rope and right again. In this covered area is the chest.
+
+From here go left and jump into the flames and fall down the hole. Go 
+through the door and go right. Fall down the small ledge on the right 
+and jump over the small pit. Grab the key on the right. Fall down to 
+the right and enter the previously locked door. Cross the flames, 
+cross the platform and go up the rope. To your right are platforms 
+that fall down as soon as you step on them. Even if you fail, stand 
+on the edge and jump to the right. You'll make it to the edge of the 
+other side. Climb the ropes and go over the other falling platforms. 
+This time, stand next to the first one and jump far to the left. 
+You'll touch the other platform, but you'll be able to jump to 
+safety. If you don't succeed, go through the door at the back (right, 
+down) and try again. Climb the rope to the left. Ignore the door on 
+the far right. It's there just to trick you so that you'll go back 
+all the way. Don't ever go through it, unless you want to go back. 
+Climb the slopes. Cross the moving platforms and go right. Don't go 
+through this door either. Stand on the left side of the block and 
+right of the rest of the wall. Jump and go through the door to the 
+right.
+
+From here go left and you'll see a whole bunch of platforms. Get on 
+the second one and make it move two steps lower and jump on the one 
+to the left from the middle. Make this one go up about three times or 
+so, until it looks like you'll hit the ceiling once you jump. If you 
+do this right, you'll make it to the edge of the last platform. 
+Adjust its position and jump onto the rope on the left. Then go 
+through the door and go right. 
+
+Go down the slope and right again. Jump and an air current will take 
+you away and you'll land on the ground. Wait for the platform and 
+cross it to the other side. (You won't be able to jump on it, so you 
+have to drop.) Take the platform all the way down. Go left and up. 
+Wait for the platform and ride it. Take the other one and ride that 
+one also. Climb the ropes and go left (an air current will take you 
+to the ground). Even though there are two platforms, just jump onto 
+the high one and bend. Get off to the right and cross the platform. 
+Climb the rope and go right. Go through the door and you'll find 
+yourself in the labyrinth. 
+
+Once there, go right and down the rope to the right and go right. 
+Climb the rope and go left. Climb the other rope. Go left and up. Go 
+left and climb the rope. Go left again and climb this rope. Go left 
+once again and climb that rope as well. Then go right and up. Then go 
+right and up again. Go left and down and left again and enter the 
+door. Climb the ropes and cross the falling platforms. Grab the full 
+heal potion on the left and go through the door and fight Dragon.
+
+When you beat him, go through the door and go all the way down the 
+rope and right. Enter Pureza Town. This is the last town with the 
+Sage, and this is the last world. It's written below how to get to 
+Esco Village.
+
+
+
+---------------------------------------------------------------------
+7.8. PUREZA TOWN/CAVERN OF ABSOR/MILLAGRO/DESLEAL/FALTAR/FINAL
+---------------------------------------------------------------------
+
+-Boss: Alguien, Jashiin
+-Items: The Fairy Flame Enchantment Sword, the Feruza Shoes
+ 
+The first thing you need to do here is find the Lion's Head Key. When 
+you exit the town on the left, go left and up the rope. Go right and 
+ride the platform. Go down the rope and up the other. You won't be 
+able to see the small hole through which you must jump, but when 
+you're about half way, jump down. If you go all the way left, there 
+is a chest of 500 golds. When you get the key, go back to town. Go 
+right and enter the last building. After going to Dorado, exit on the 
+right. Now you can unlock the green door. Go right and down the rope. 
+Then again right and down, then right. Unlock the door, grab the 
+goodies and brake the fake wall on the left. Climb the rope to the 
+right and pick up the chests worth each 1000 golds. Go right and fall 
+down. Go right and down again. Go right and enter the town. 
+
+When you're done here, exit and go left. Pass the locked door and 
+fall down. Climb the rope on the right and go right. Fall down from 
+the platforms and go left. Go through the door. Go down and make the 
+platform go up. Then fall down and go left. Go up and then right and 
+through the door. Go left then down and then left and up. Go left and 
+grab the key. Go back to the locked door that you passed when first 
+leaving town. 
+
+Once you've unlocked it and gone through, go left and then down the 
+platform to the first path to the right. Go right and then up. Go 
+left and cross the platforms. Go up the rope and proceed to the 
+right. Climb the rope and go left. Go up the rope and right. Here, 
+you need to jump in front of the right rope. An air current will take 
+you to the purple door. Go through and go left. Now, jump in front of 
+the rope to the left. Here, you can go through a wall. Go through the 
+green door on the right. Go right, then up the rope and right and up 
+another. Go left and up and then right. Jump to the right of the 
+upper door, where you can go through the wall again, only this time, 
+to the upper side. On the left is the Esco Village.
+
+After you finish here, go right and fall down. Go through the door 
+and then left. Fall down and go up the rope to the left. Go left and 
+jump in front of the rope. Here, another air current will take you up 
+and you'll go to the left side. Go left, then down and left again. Go 
+through the door. Go left and down and then right. Then go down, and 
+right, across the platform. Grab the key and go back to the blue 
+door. When you enter the door, you'll find yourself in a new place. 
+You were supposed to go back to the door on the right of Esco 
+Village, but this door is unique. An old man in the village speaks 
+about it. Go left, down and right, unlock the locked passage door.
+
+Go right and up the rope. Go right again and down the other. Go right 
+and up this rope. Go right again and then up again. Go left and 
+through the door. Go right and grab the key. Then go left and then up 
+and right again. Grab the recovery potion hidden in the wall and when 
+you're ready, fight Alguien. After you beat him, go through the door. 
+You'll notice that you can't go back because the door is locked. Go 
+right and get the key. Go up the rope and go left. Go through the 
+door, fight the final battle with Jashiin and go through the door. 
+Duke Garland'll faint, but that's supposed to happen. You'll appear 
+in Muralla Town, in Felishika's Castle. Enter the shrine of the 
+princess on the right and the Tears of Esmesanty will bring her back 
+to life and restore her true form. The Holy Spirit'll send Duke 
+Garland on another mission, separating them for now. The story ends, 
+but without a happy ending...
+
+Note: If anybody knows whether a sequel to the story (game) exists, 
+please mail me. 
+
+Note: I have to give my mother credit. She's the one that showed me 
+the trick of proceeding the way in this world. If she hadn't, I'd 
+never pass it.
+
+---------------------------------------------------------------------
+8. OTHER, SPECIAL THINGS TO MENTION
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+8.1. GELROID
+---------------------------------------------------------------------
+
+The Gelroid is a blue fluid found in the Rotten Caverns. It's a 
+substance that sucks the life energy of anyone stepping into it and, 
+the longer you stand, the more you get hurt. Plus, the path between 
+the Gelroid and ground is very long so that you can't make it to the 
+other side without wearing the Pirika shoes because the Gelroid will 
+finish you off long before then. There are also many red slime 
+creatures in the Gelroid. They get in your way and slow you down, as 
+well as hurting you themselves. 
+
+---------------------------------------------------------------------
+8.2. THE SECRET ITEMS
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+8.2.1. SECRET AND FREE SWORDS
+---------------------------------------------------------------------
+
+The Training Sword is the sword you start with, so you don't have to 
+buy it. However, you can buy it because, to test your skill, get 
+money, or a similar reason, after buying a new sword, you can sell it 
+and get the Training Sword back. 
+
+The Enchantment Sword is a secret sword. You get it in Dorado Town, 
+when you unlock a door with a special "Lion's Head Key" (Pureza). 
+Once the door is opened, grab the Feruza Shoes and the Enchantment 
+Sword and fall down (brake the fake wall, first), run toward a rope, 
+climb it and get three thousand gold. Climb another one and grab the 
+recovery potion. If you go through the door, which you must, you will 
+appear in Pureza, Absor. 
+
+This sword is the most powerful sword. It gives off peculiar light 
+and can vanquish any smaller foe with a single blow. 
+
+---------------------------------------------------------------------
+8.2.2. THE SECRET SHIELD
+---------------------------------------------------------------------
+
+The Power Shield is a not really a shield. I just makes the shield 
+hit points go to maximum level. It doesn't even have a picture. With 
+ZelTrain, you can get it with number 3. 
+
+
+
+
+
+---------------------------------------------------------------------
+8.3. THE SECRET SHOES-THE FERUZA SHOES
+---------------------------------------------------------------------
+
+You can't make it to Jashiin without the Feruza Shoes, and in Dorado 
+(in future visits), you have to suffer a lot more than with these. 
+Even though they are hidden, you must have them. This also means that 
+you have to find the Enchantment Sword, but it can't be bought in any 
+town, so it's a secret sword. These shoes are part of the three that 
+make passing through worlds a piece of cake. They grant you the 
+ability to jump twice as high as you did before. They are needed 
+because you can't climb the rope in the Cavern of Final without them. 
+You're unable to jump that high without them and reach the rope, 
+which you have to climb to get to Jashiin's room in which he is 
+challenging you to a duel in a final battle. There are other such 
+places, but this is the most important one.
+
+---------------------------------------------------------------------
+8.4. THE SECRET VILLAGE-THE ESCO VILLAGE
+---------------------------------------------------------------------
+
+I mentioned it before, but this time, I'll explain more fully: The 
+Esco Village is a secret place completely unneeded to find. I 
+wouldn't have heard of it, were it not for the man in Pureza and I 
+wouldn't have found it were it not for my mother. Nevertheless, it's 
+a great place. It only doesn't have a sage, so you can't save.
+
+---------------------------------------------------------------------
+8.4.1. COST OF MAGIC
+---------------------------------------------------------------------
+
+These tables shows you how cheap the items are. This one is for 
+magic:
+
+ITEM
+COST
+- Ken'Ko Potion
+2
+- Ju-enn Fruit
+200
+- Elixir of Kashi
+40
+- Chikara Powder
+280
+- Magia Stone
+800
+- Sabre Oil
+1000
+- Kioku Feather
+150
+- Holy Water of Acero
+80
+
+This table shows the price of weaponry items:
+
+SWORD 
+COST
+SHIELD
+COST
+- Training Sword
+10
+- Clay Shield
+2
+- Wise Man's Sword
+100
+- Wise Man's Shield
+10
+- Spirit Sword
+680
+- Stone Shield
+298
+- Knight's Sword
+1960
+- Honor Shield
+1960
+- Illumination Sw.
+29800
+- Light Shield
+5920
+-
+-
+- Titanium Shield
+23800
+
+---------------------------------------------------------------------
+8.5. COMAND LINE PARAMETER
+---------------------------------------------------------------------
+
+You can start the game from a saved game (.usr) file, without the 
+intro and other junk that keeps you waiting. Just type "Zeliard <.usr 
+file> and your game will start STARAIGHT from that place.
+
+Example: "Zeliard alan". Type this if your .usr file is called "alan" 
+and your game'll commense from the place where you'd load it from 
+with F7. 
+
+---------------------------------------------------------------------
+8.6. SHORTCUTS
+---------------------------------------------------------------------
+
+The shortcuts are places where you can go once you have the Silkarn 
+and/or Feruza Shoes, instead of the whole way. Here are the most 
+important ones, for each world.
+
+---------------------------------------------------------------------
+8.6.1. MURALLA TOWN/CAVERN OF MALICIA
+---------------------------------------------------------------------
+
+Go right from town. Go down and right to the first path. Go down and 
+climb the slope with either of the shoes. Proceed to Satono Town.
+
+---------------------------------------------------------------------
+8.6.2. SATONO TOWN/CAVERN OF PELIGRO
+---------------------------------------------------------------------
+
+No real shortcuts here. There are a few by passing slopes with the 
+Silkarn Shoes, but aren't special. Takes less time with the normal 
+path, than this way.
+
+---------------------------------------------------------------------
+8.6.3. BOSQUE VILLAGE/CAVERN OF MADERA/RIZA
+---------------------------------------------------------------------
+
+The only shortcut here is exiting the town from the left and going to 
+Helada. This isn't actually a shortcut; shoes aren't required and you 
+have to pass here. Still, it's worth to know.
+
+---------------------------------------------------------------------
+8.6.4. HELADA TOWN/CAVERN OF ESCARCHA/GLACIAL
+---------------------------------------------------------------------
+
+1.	Shortcut: When coming here, go right and down, then left and down. 
+Crossing the thorns, go right and fall. You'll come to a slope. 
+Climb it with the Silkarn Shoes and get on the platform. Grab the 
+rope and enter the town, which you'll see from the top of the 
+rope.
+
+2.	Shortcut: Go right from town and ride the platform. Go through the 
+green door and fall down. Climb the slope with either shoes and 
+continue.
+
+---------------------------------------------------------------------
+8.6.5. TUMBA TOWN/CAVERN OF CORROER/CEMENTAR
+---------------------------------------------------------------------
+
+No real shortcuts here. But, going left, up and right from town, 
+enter the purple door and climb the slope. I don't know whether it 
+really shortens the way, but, just to be safe...
+
+
+
+
+
+
+
+---------------------------------------------------------------------
+8.6.6. DORADO TOWN/CAVERN OF TESORO/PLATA
+---------------------------------------------------------------------
+
+1. Shortcut: *Feruza Shoes: When exiting from the left, use them to 
+climb the right rope and, when proceeding, jump on the rope after the 
+platform you have to bend while riding.
+
+*Note: You can skip this. The second shortcut explains why and how.
+
+2.	Shortcut: **Feruza Shoes: Enter the green door that was once 
+locked with the Lion's Head Key. Jump over the wall (break it 
+first) and continue. You'll appear in Absor.
+
+---------------------------------------------------------------------
+8.6.7. LLAMA TOWN/CAVERN OF CALIENTE/REACCION/CORROER
+--------------------------------------------------------------------
+
+1.	Shortcut: Feruza Shoes: Go to the twin red doors. Go right and 
+jump onto the stone slab. Continue the path until you get to 
+Absor.
+
+2.	Shortcut: **Feruza Shoes: Enter the green door that was once 
+locked with the Lion's Head Key. Jump over the wall (break it 
+first) and continue. You'll appear in Absor.
+
+**Note: This is available for both worlds.
+
+---------------------------------------------------------------------
+9. CHEATS
+---------------------------------------------------------------------
+
+Cheater's heaven exists in this FAQ. The three ways to cheat in 
+Zeliard are: Hex cheats, Zeliard trainer and reading two other 
+Zeliard FAQs.
+
+---------------------------------------------------------------------
+9.1. HEX CHEATS
+---------------------------------------------------------------------
+
+This cheat enables you to edit the memory of Zeliard and supply 
+yourself with various 
+things found in Zeliard. For this you need the ZelEdit.
+
+This can be found at: http://www.cheatingdome.com/pc/2710p.htm 
+(offset list).
+
+I don't know exactly the site for ZelEdit itself, but I suggest that 
+you type "zeliard editor" in the search engine and pick a site. After 
+a couple of tries, you get to the wanted page, but it's there for 
+sure. 
+
+About the editor: You must start it in DOS mode because you'll have 
+to type "Zedit" and the name of the .usr file for it to start, which 
+you can't do from Windows.
+
+Example: Typing "Zedit alan" will allow you to edit the saved game 
+called alan.
+
+This is what it can edit: (not showing details, see the offset list)
+
+1.	Which sword you have
+2.	Which shield you have
+3.	How many crystals (jewels) you have
+4.	Which crests you have
+5.	Which (and how many) magic spells you have and how many you can 
+have maximum
+6.	How many life you have and how many you (currently) can have
+7.	Which and how many use items you have.
+
+This is not all. As I said, visit the site. This is only a short 
+list/overview. Also, there are some notes that you need to know.
+
+---------------------------------------------------------------------
+9.2. ZELIARD TRAINER-ZELTRAIN
+---------------------------------------------------------------------
+
+This trainer enables you little less options, but it doesn't require 
+any special program-just ZelTrain itself. This is a really great 
+trainer.
+
+You can find it on the site: http://www.avault.com... (I don't know 
+the rest, but type this and go to the Z letter and pick Zeliard and 
+then Zeliard trainer).
+Here is (in short) what this trainer can do:
+
+KEY 
+PURPOSE
+1. 1
+Get better sword
+2. 2
+Get better shield
+3. 3
+Max out shield hit points
+4. 4
+Get key (up to 9)
+5. 5
+Get Lion's Head Key (up to 9)
+6. 6
+Toggle Hero's Crest on/off
+7. 7
+Toggle Glory (Honor, Family) Crest on/off
+8. 8
+Toggle Elf Crest on/off
+9. 9
+Add magic spell (and max it out)
+10. 0
+Add wear item
+11. -
+Add use item
+12. =
+Get max money in bank (9,999,999 gold)
+
+---------------------------------------------------------------------
+9.3. OTHER FAQs
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+9.3.1. WALKTHROUGH
+---------------------------------------------------------------------
+
+Written by NeoZenogias, a step-by-step guide through the entire game. 
+You can find it here, though, in the 7. part-Walkthrough of the 
+entire game. This one includes the walkthrough of the final world as 
+well, which is the only world of problem, but practically nobody 
+knows how to pass it. I do. How's that for a competition?
+
+---------------------------------------------------------------------
+9.3.2. BOSS STRATEGY
+---------------------------------------------------------------------
+
+Written by Peter Butter (alias Sashanan), a foolproof :) way to 
+explain how to prepare for a boss fight and how to slaughter each 
+one. My part is shorter; a different guide for only beating the 
+bosses. This one I didn't win; his is better, so you can skip this 
+part in my FAQ and download his boss FAQ. I admit defeat. (Boo-hoo!)
+
+Both these FAQs can be found at the GameFAQs site at: 
+http://db.gamefaqs.com... (search)
+
+---------------------------------------------------------------------
+10. TIPS AND TRICKS (GENERAL)
+---------------------------------------------------------------------
+
+Last, but not least, I would like to mention some tips and tricks 
+that make the game easier but also, much more fun, less boring and 
+frustrating. 
+
+>	You can rest in safe spots. If you stand still, you will regain 
+your strength. In this manner, you can also defend yourself by 
+attacking with your sword while standing ground and not bending or 
+jumping. Plus, you can speed up (and slow down, of course) the 
+game by pressing F9 and typing a number from 0 to 9. This is cool 
+and takes you very little time to recover, but make sure you won't 
+be attacked while increasing speed (ESPECIALLY ON THE 9 LEVEL).
+ 
+>	Save your game often. If you die, you'll have to travel all the 
+way back from Muralla Town. Additionally, you'll lose half the 
+Almas and all the gold you were carrying. After saving the game, 
+you can load it at any time by pressing F7 and writing the name of 
+the saved file. If you want to start a completely new game, press 
+F7 and then space. After adjusting the game you're loading, just 
+press enter (this includes restarting as well). 
+
+>	If possible, buy the Magia Stone. It will give you an extra edge 
+while collecting Almas and more than likely, get you out of some 
+nasty situations. It's very useful against the deadliest opponents 
+or for going deep into the labyrinths. If it starts weakening, 
+"head for the hills" or "run for your life" (go back to town), 
+because you'll soon lose it.  
+
+>	Try to find the shoes of the place you're in as soon as possible. 
+Then you won't have to worry about the nasty parts of the cavern 
+that you just can't pass without them. Some jokes: (Ouch, that 
+hurt, who put that thorn below my foot [that's a thorn in the 
+side!]). (Wilma, where are my shoes). (It's too hot - my rear's on 
+fire). (I've heard of quicksand, but live water? - quickwater, I 
+guess).
+
+>	Unless you are a player of great skill, you might want to buy new 
+swords and shields in every new town and receive higher powers as 
+soon as possible, so collect those Almas!
+
+>	Be careful not to venture to deep into the caverns if you don't 
+know the way. If you loose your way, the creatures that dwell 
+there will kill you before you can even see the exit.
+
+>	Having the Magia Stone and Ju-enn Fruit (if possible, more than 
+one) will make it easier for you to survive while collecting Almas 
+and exploring the caverns. The Elixir of Kashi (or Chikara Powder) 
+and Holy Water of Acero are also important, especially if you're 
+going to battle the "Final foes" of which particularly hard ones 
+that require a lot of magic spells because they have a long 
+lifeline. I'm accenting on Dragon.   
+
+>	If you feel that you could die any minute, use the Kioku Feather 
+to return to Muralla Town where you can rest free of charge. The 
+way back is boring, but having the Silkarn, Pirika and Feruza 
+Shoes will shorten the way. (Plus, the Bosque Village is a great 
+place to trade all your hard-earned Almas.)
+
+>	Repair your shield often. Repairing the most damage you can have 
+on the biggest shield is nothing compared to the amount of money 
+you have to pay for the new one (even a lot worse shield, which is 
+much cheaper). Plus, the next shield will cost more because you 
+won't get any trade-in money for your old one. Regardless of its 
+damage, it's the same price. If you can survive to the next town 
+with the old one, the new one will cost less. This is also true 
+for swords, but you don't have to repair them at all.    
+
+>	The small monsters reappear when you leave the screen they were on 
+or enter a door. A few places exist for you to gather Almas 
+quickly. Such places are in Madera and Tesoro caverns. In Madera, 
+go right and down. Enter the door on the right and use the Magia 
+Stone. Repeat going back and forth through the door and gather the 
+Almas of the fallen bird and crab. In Tesoro, go right and down, 
+and right again, until you get to the two platforms (see them). On 
+the right, there are two ghosts, an eagle, and an evil woman. 
+After you beat them, go off somewhere and return in a short while 
+(about a minute or two). They'll all reappear and you can repeat 
+the battle; they are all worth plenty of Almas. (Use the Magia 
+Stone to defeat them more easily.)  
+
+More of these places exist, but these are the two best ones. Another 
+place, for an example, is in the Malicia Cavern. (This area is far 
+from town, but you can consult the walkthrough for details on getting 
+here.) When you're just outside of the door leading to the Peligro 
+Cavern, go right and down, and right again. The bats on the roof are 
+valuable, as there are many in a group. The slug, toad and rat on the 
+left can be your amusement while you wait for the bats' reappearance 
+(or you can enter the door and go back).
+
+>	When you enter a new world, go straight to town and try to reach 
+it as soon as possible because you will be weakened by the boss 
+opponent you just fought and the underlings are much stronger 
+there.
+
+>	You should talk to all the citizens. They may have useful 
+information.
+
+>	Remember, although Jashiin is a deadly opponent, the Guerra spell 
+will damage him and so will the Enchantment Sword. Beware his 
+power to disappear and to regenerate his life. 
+ 
+>	The Sabre Oil will increase your sword's strength and is useful 
+for defeating the toughest monsters. While it seems completely 
+obsolete, it's a handy trick and more than one can be used at the 
+same time.
+
+>	Because you don't have the Guerra spell when facing him, Dragon is 
+probably the toughest, most endurable and most dangerous enemy. 
+The Agua spell is precious in this matter so be accurate and quick 
+when attacking him with it. Don't rely on the sword or anything 
+else; only the Magia Stone will, hopefully and if you don't fry, 
+level him before further attacking. So fight long and hard in this 
+part of the way because you're going to need a lot of life and 
+magic to survive when facing this horrible monster which is well 
+known for his insufferable resilience. And also, getting to him 
+requires either luck (a good guess of the way), craftiness (making 
+a map of the labyrinth), memory (remembering the way), or patience 
+(not giving up if you fail). 
+
+>	As I just said, before meeting Dragon, there is a maze of air 
+currents, some will block your way, and others will push you back 
+to another part of the labyrinth. Patience or remembering the way 
+is DEFINITELY required.  
+
+>	This is the way you should go to encounter Dragon. To get to the 
+labyrinth, go through the door, which you unlocked with the first 
+key. Continue going (and climb the slopes, as well) and ride the 
+stone to the other side. When you see a purple-symbol door, jump 
+into the air, under an opening. Go through the blue door (unlock 
+it first) and go left. Arrange the stone slabs so you can make it 
+to the rope. Climb it and go through the blue door. Go right and 
+ride the slab. Go down and get on another. On your left is a rope. 
+Climb it and jump. Get on the high slab and bend. Go on the one to 
+the right to get to the green door and follow the drawing, which 
+starts at the bottom of the picture. Then go left, climb the slabs 
+and then the ropes. You will see a red door, which is the entrance 
+to Dragon's challenge room. Here are two things you should know 
+about the labyrinth so I hope you'll remember them. Since I need 
+to be specific to the last word:
+
+>	The last key in Llama, which opens Dragon's door, is in the 
+labyrinth. There are two ways to get it, the simple and the 
+complicated way. 
+
+- The simple one is: You can jump through the nearest hole to the 
+first green door. You'll fall onto the box where the key is kept.
+
+- And now, the complicated way: When following the correct path, the 
+only blue door you'll see is the sign from which you'll know the 
+location of the key. Upon sighting it, go right and you'll see a box 
+in which the key is stored. Don't be fooled because you'll pass to 
+another part of the labyrinth, which makes you think that you've made 
+a mistake. Actually, it does make you repeat the whole way, but 
+without the key, the previous trip is in vane. (It makes you have to 
+get used to the labyrinth; either make a map or remember the way).
+
+>	There are many rats in the labyrinth so I suggest that you be 
+aware how annoying their pushing you and making you fall and 
+repeat the whole way can be. Try using the Magia Stone. That'll 
+prevent them to knock you off a rope or push you to another side. 
+At least sometimes it will.
+
+>	Getting to Agar without the Ruzeria Shoes is INSUFERABLE. (You'll 
+probably slip and fall onto the thorns!)
+
+>	Getting to Vista without the Pirika Shoes is SUICIDE. (The Gelroid 
+will prove to be a real sucker! - Suck the life out of you.)   
+
+>	Getting to Tarso without the Silkarn Shoes is POSSIBLE (but when 
+you beat him, you can't proceed, so you have to repeat the battle 
+and find the shoes (I call it double trouble). (You'll find out 
+that you need to have the shoes for not slipping on the slopes). 
+
+>	Getting to Dragon without the Asbestos Cape makes Duke Garland 
+feel like Duke-Hard Boiled Soup-Garland (Burnt supper) before he 
+can say, "It's too hot!" (It's also impossible).
+
+>	Getting to Jashiin without the Feruza Shoes is NERVE-WRECKING. 
+(When you beat Alguien and go through the door, find out that you 
+can't jump high enough, you'll probably pull your hair out or jump 
+out the window (plus, you can't go back).
+
+>	Try to collect as much Almas in Muralla and Satono so that you can 
+trade all of it into money (gold) in Bosque Village. (You get two 
+more gold for every Almas if you save it for Bosque and not 
+exchange in Muralla or Satono). Also, every Almas you collect is 
+calculated and accounted for your life raises, so you'll 
+appreciate it in higher towns.
+
+---------------------------------------------------------------------
+10.1. ZELIARD'S TOO HARD
+---------------------------------------------------------------------
+
+(Starting the Zeliard troubleshooter):
+
+>	I can never find keys and/or shoes and get to town with them 
+before getting killed by the damn underlings.
+
+Suggestions for fixing the problem:
+
+1.	Explore the caverns with ZelTrain and get to the key or shoe, 
+start the game, and get to it, then quickly go to town.
+
+2.	Gather experience. You'll be more durable against them.
+
+3.	Get a Magia Stone and a couple Ju-enn Fruits. This'll kill the 
+monsters and heal you in case you really lose a lot of life.
+
+4.	Use a Kioku Feather after grabbing the items.
+
+5. See parts 4 and 7 of the FAQ.
+
+>	I get killed by the bosses whenever I fight them.
+
+Suggestions for fixing the problem:
+
+1.	See part 2 of the FAQ.
+ 
+>	I can't get experience quickly enough.
+
+Suggestions for fixing the problem:
+
+1.	Find some spots in which you can get Almas easily and quickly.
+
+2.	Survive to high worlds with little life and begin the fast build 
+up of Almas.
+
+3.	In the Madera Cavern (mentioned in the part 10 [general tips and 
+tricks]), get the Magia Stone, speed up to 9 and go through the 
+door back and forth as mentioned.
+
+Other things causing the problems are mentioned here also, but aren't 
+important enough to be mentioned here (repeated). Search the FAQ.
+
+---------------------------------------------------------------------
+10.2. ZELIARD'S TOO EASY
+---------------------------------------------------------------------
+
+Bored with the game? Like a challenge? Think you've done it? Well, 
+just try some of these things and it'll all be harder than it was...
+
+>	Never save (except places where you leave the game). In other 
+words, whenever you don't like your position, get out of the 
+situation without loading to a better one.
+
+>	Try to complete the game with NEVER getting a raise of power. This 
+is the toughest of them all, other suggestions aren't needed once 
+you've done this, but, just in case... (I've made it to Dragon and 
+am having trouble, but my life is as it was in the first place.)
+
+>	Never use magic or Use items.
+
+>	Try skipping the Ruzeria Shoes (and still not raising your life is 
+a great combination).
+
+>	Use high speeds while fighting bosses (would you believe that I've 
+defeated Pollo a few times on 9 speed? [well, maximum life and 
+magic (spells), but still, try it]).
+
+>	This is one I didn't even dream of doing, but if you're really a 
+pro, try this: Fight Dragon with the Training Sword, no shield, 
+least life, no magic or Use items. This one can't be done, but try 
+(I have the best shield and sword, best Use items, least life and 
+magic items and still can't seem to do it yet (need practice).
+
+---------------------------------------------------------------------
+11. KEYSTROKE HELP
+---------------------------------------------------------------------
+
+My final word before I proclaim this document a full one, here are 
+the basics of playing Zeliard on a keyboard:
+
+>	Use the Arrow keys to move around in the game.
+ 
+>	Use the Space bar to attack with your sword (if you press it along 
+with the upper arrow, you'll swing the sword all the way around 
+and if you press it with the down arrow while falling, you can 
+stab your enemies). If you press it with both arrows, he'll remain 
+on the ground and swing the sword. If an enemy is right above him, 
+just pressing space will make him swing it, although he won't 
+jump. 
+
+>	Use the Alt key to fire your spell.
+
+>	Use the Escape key to pause the game (you can also do it with the 
+pause key, but you won't see the pause sign on the upper part of 
+the screen). 
+
+>	Use the F7 key to load your game and type the name of the saved 
+game. After that, press the affirmative key, "y" (in MS-Dos, the 
+keyboard is configured to swap the "y" and "z" keys, so you have 
+to press the "z" key instead).
+
+>	Use Ctrl. + q to exit the game
+
+>	Use F2 to toggle sound FX on/off
+
+>	Use F1 to toggle music on/off
+
+>	Use Enter (Return) to open the inventory screen
+
+>	Use the Arrow keys to move around the inventory
+
+>	Use the Space bar to accept an action while in a building 
+
+>	Use the Space bar while in an inventory screen to accept a "Use" 
+item
