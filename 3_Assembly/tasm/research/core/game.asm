@@ -106,8 +106,10 @@ start:
 		add	es:[di+2],di
 		add	es:[di+4],di
 
-		; Call loaded chunk initialization
-		call	word ptr cs:[120h]
+		; Call loaded chunk initialization, then install flat-file loader
+		call	flat_init_wrapper	; replaces: call word ptr cs:[120h]
+		nop				; padding (was 5-byte indirect call)
+		nop
 
 		; Clear all game state variables
 		xor	al,al
@@ -536,6 +538,342 @@ palette_shade_loop:
 		db	 1Fh, 1Fh, 00h, 1Fh, 00h, 1Fh
 		db	0C3h,0C3h, 00h, 00h, 00h, 30h
 		db	 00h, 00h
+
+
+;==========================================================================
+;
+;  flat_init_wrapper - Call fight.bin init then install the flat-file loader
+;
+;  Replaces the original "call word ptr cs:[120h]" at game startup.
+;  fight.bin init installs its own SAR loader at CS:[010Ch]; we immediately
+;  overwrite that pointer with flat_file_loader so all subsequent chunk
+;  loads go to flat files instead of SAR archives.
+;
+;==========================================================================
+
+flat_init_wrapper	proc	near
+		call	word ptr cs:[120h]		; fight.bin initialisation (original)
+		mov	word ptr cs:[10Ch], offset flat_file_loader ; install our loader
+		retn
+flat_init_wrapper	endp
+
+
+;==========================================================================
+;
+;  flat_file_loader - Load a chunk from a flat file on disk
+;
+;  Called with same convention as fight.bin SAR loader:
+;    AL  = function (2=load+decomp, 3=load raw, 4=open archive, 1=load level)
+;    DS:SI -> [archive_0idx byte, chunk_1indexed byte]
+;    ES:DI = destination buffer
+;
+;  AL=4 (open archive) and AL=1 (load level) are no-ops — flat files need
+;  no archive open step and level loading falls through to original code.
+;  AL=2 and AL=3 both read the pre-decompressed file; no distinction needed.
+;
+;==========================================================================
+
+FFL_ENTRY_SZ	equ	24		; bytes per filename table entry (max 23 + null)
+
+flat_file_loader	proc	near
+		cmp	al,4			; open archive = no-op
+		je	ffl_ret
+		cmp	al,1			; load level = no-op (uses original path)
+		je	ffl_ret
+
+		; AL=2 or AL=3: load flat file
+		push	ax
+		push	bx
+		push	cx
+		push	dx
+		push	si
+		push	di
+		push	ds
+		push	es
+
+		; Compute filename table pointer: base + chunk_0idx * FFL_ENTRY_SZ
+		xor	bh,bh
+		mov	bl,byte ptr [si]	; BL = archive index (0-2)
+		mov	cl,byte ptr [si+1]	; CL = chunk 1-indexed
+		dec	cl			; CL = chunk 0-indexed
+		xor	ch,ch
+
+		; BX = archive base offset
+		cmp	bl,0
+		je	ffl_arc0
+		cmp	bl,1
+		je	ffl_arc1
+		mov	bx, offset ffl_names_z3	; archive 2 (zelres3)
+		jmp	short ffl_got_base
+ffl_arc0:
+		mov	bx, offset ffl_names_z1	; archive 0 (zelres1)
+		jmp	short ffl_got_base
+ffl_arc1:
+		mov	bx, offset ffl_names_z2	; archive 1 (zelres2)
+
+ffl_got_base:
+		; DX = BX + CX * FFL_ENTRY_SZ
+		mov	ax,FFL_ENTRY_SZ
+		mul	cx			; AX = chunk_0idx * 24
+		add	bx,ax			; BX = table base + chunk offset
+
+		push	cs
+		pop	ds
+		mov	dx,bx			; DS:DX = null-terminated filename
+
+		; Open file (read-only)
+		mov	ax,3D00h
+		int	21h
+		jc	ffl_error
+
+		mov	bx,ax			; BX = file handle
+
+		; Read entire file to ES:DI
+		push	es
+		pop	ds			; DS = destination segment
+		mov	dx,di			; DS:DX = destination
+		mov	cx,0FFFFh		; read up to 64 KB
+		mov	ah,3Fh
+		int	21h
+
+		; Close file
+		mov	ah,3Eh
+		int	21h
+
+		pop	es
+		pop	ds
+		pop	di
+		pop	si
+		pop	dx
+		pop	cx
+		pop	bx
+		pop	ax
+ffl_ret:
+		retn
+
+ffl_error:
+		; File open failed — restore stack and return
+		; (game will likely crash, but at least registers are clean)
+		pop	es
+		pop	ds
+		pop	di
+		pop	si
+		pop	dx
+		pop	cx
+		pop	bx
+		pop	ax
+		retn
+flat_file_loader	endp
+
+
+;==========================================================================
+;  Flat-file filename tables
+;  Format: null-terminated path string, padded to FFL_ENTRY_SZ (24) bytes
+;  Paths are relative to current directory (ZELRES1\, ZELRES2\, ZELRES3\)
+;==========================================================================
+
+; ── zelres1 (archive 0, 40 chunks) ────────────────────────────────────────
+ffl_names_z1	label	byte
+		db 'ZELRES1\opdemo.bin',  0,0,0,0,0  ; chunk_00
+		db 'ZELRES1\gdega.bin',   0,0,0,0,0,0 ; chunk_01
+		db 'ZELRES1\gdcga.bin',   0,0,0,0,0,0 ; chunk_02
+		db 'ZELRES1\gdhgc.bin',   0,0,0,0,0,0 ; chunk_03
+		db 'ZELRES1\gdtga.bin',   0,0,0,0,0,0 ; chunk_04
+		db 'ZELRES1\gdmcga.bin',  0,0,0,0,0  ; chunk_05
+		db 'ZELRES1\town.bin',    0,0,0,0,0,0,0 ; chunk_06
+		db 'ZELRES1\gtega.bin',   0,0,0,0,0,0 ; chunk_07
+		db 'ZELRES1\gtcga.bin',   0,0,0,0,0,0 ; chunk_08
+		db 'ZELRES1\gthgc.bin',   0,0,0,0,0,0 ; chunk_09
+		db 'ZELRES1\gttga.bin',   0,0,0,0,0,0 ; chunk_10
+		db 'ZELRES1\gtmcga.bin',  0,0,0,0,0  ; chunk_11
+		db 'ZELRES1\font.grp',    0,0,0,0,0,0,0 ; chunk_12
+		db 'ZELRES1\ame.grp',     0,0,0,0,0,0,0,0 ; chunk_13
+		db 'ZELRES1\dmaou.grp',   0,0,0,0,0,0 ; chunk_14
+		db 'ZELRES1\hime.grp',    0,0,0,0,0,0,0 ; chunk_15
+		db 'ZELRES1\himp.grp',    0,0,0,0,0,0,0 ; chunk_16
+		db 'ZELRES1\hou.grp',     0,0,0,0,0,0,0,0 ; chunk_17
+		db 'ZELRES1\isi.grp',     0,0,0,0,0,0,0,0 ; chunk_18
+		db 'ZELRES1\maop.grp',    0,0,0,0,0,0,0 ; chunk_19
+		db 'ZELRES1\ne80.grp',    0,0,0,0,0,0,0 ; chunk_20
+		db 'ZELRES1\ne81.grp',    0,0,0,0,0,0,0 ; chunk_21
+		db 'ZELRES1\nec.grp',     0,0,0,0,0,0,0,0 ; chunk_22
+		db 'ZELRES1\new1.grp',    0,0,0,0,0,0,0 ; chunk_23
+		db 'ZELRES1\new2.grp',    0,0,0,0,0,0,0 ; chunk_24
+		db 'ZELRES1\oui.grp',     0,0,0,0,0,0,0,0 ; chunk_25
+		db 'ZELRES1\oup.grp',     0,0,0,0,0,0,0,0 ; chunk_26
+		db 'ZELRES1\sei.grp',     0,0,0,0,0,0,0,0 ; chunk_27
+		db 'ZELRES1\seip.grp',    0,0,0,0,0,0,0 ; chunk_28
+		db 'ZELRES1\ttl1.grp',    0,0,0,0,0,0,0 ; chunk_29
+		db 'ZELRES1\ttl2.grp',    0,0,0,0,0,0,0 ; chunk_30
+		db 'ZELRES1\ttl3.grp',    0,0,0,0,0,0,0 ; chunk_31
+		db 'ZELRES1\waku.grp',    0,0,0,0,0,0,0 ; chunk_32
+		db 'ZELRES1\yuu1.grp',    0,0,0,0,0,0,0 ; chunk_33
+		db 'ZELRES1\yuu2.grp',    0,0,0,0,0,0,0 ; chunk_34
+		db 'ZELRES1\yuu3.grp',    0,0,0,0,0,0,0 ; chunk_35
+		db 'ZELRES1\yuu4.grp',    0,0,0,0,0,0,0 ; chunk_36
+		db 'ZELRES1\yuup.grp',    0,0,0,0,0,0,0 ; chunk_37
+		db 'ZELRES1\zend.msd',    0,0,0,0,0,0,0 ; chunk_38
+		db 'ZELRES1\zopn.msd',    0,0,0,0,0,0,0 ; chunk_39
+
+; ── zelres2 (archive 1, 58 chunks) ────────────────────────────────────────
+ffl_names_z2	label	byte
+		db 'ZELRES2\fight.bin',   0,0,0,0,0,0 ; chunk_00
+		db 'ZELRES2\select.bin',  0,0,0,0,0  ; chunk_01
+		db 'ZELRES2\gfega.bin',   0,0,0,0,0,0 ; chunk_02
+		db 'ZELRES2\gfcga.bin',   0,0,0,0,0,0 ; chunk_03
+		db 'ZELRES2\gfhgc.bin',   0,0,0,0,0,0 ; chunk_04
+		db 'ZELRES2\gftga.bin',   0,0,0,0,0,0 ; chunk_05
+		db 'ZELRES2\gfmcga.bin',  0,0,0,0,0  ; chunk_06
+		db 'ZELRES2\mole.bin',    0,0,0,0,0,0,0 ; chunk_07
+		db 'ZELRES2\YMPD.BIN',    0,0,0,0,0,0,0 ; chunk_08
+		db 'ZELRES2\CKPD.BIN',    0,0,0,0,0,0,0 ; chunk_09
+		db 'ZELRES2\KINGPRO.BIN', 0,0,0,0  ; chunk_10
+		db 'ZELRES2\OMOYPRO.BIN', 0,0,0,0  ; chunk_11
+		db 'ZELRES2\ARMRPRO.BIN', 0,0,0,0  ; chunk_12
+		db 'ZELRES2\BANKPRO.BIN', 0,0,0,0  ; chunk_13
+		db 'ZELRES2\CHURPRO.BIN', 0,0,0,0  ; chunk_14
+		db 'ZELRES2\DRUGPRO.BIN', 0,0,0,0  ; chunk_15
+		db 'ZELRES2\INNAPRO.BIN', 0,0,0,0  ; chunk_16
+		db 'ZELRES2\KENJPRO.BIN', 0,0,0,0  ; chunk_17
+		db 'ZELRES2\KING.GRP',    0,0,0,0,0,0,0 ; chunk_18
+		db 'ZELRES2\OMOYA.GRP',   0,0,0,0,0,0 ; chunk_19
+		db 'ZELRES2\ARMOR.GRP',   0,0,0,0,0,0 ; chunk_20
+		db 'ZELRES2\BANK.GRP',    0,0,0,0,0,0,0 ; chunk_21
+		db 'ZELRES2\CHURCH.GRP',  0,0,0,0,0  ; chunk_22
+		db 'ZELRES2\DRUG.GRP',    0,0,0,0,0,0,0 ; chunk_23
+		db 'ZELRES2\INN.GRP',     0,0,0,0,0,0,0,0 ; chunk_24
+		db 'ZELRES2\KENJYA.GRP',  0,0,0,0,0  ; chunk_25
+		db 'ZELRES2\sword.grp',   0,0,0,0,0,0 ; chunk_26
+		db 'ZELRES2\itemp.grp',   0,0,0,0,0,0 ; chunk_27
+		db 'ZELRES2\magic.grp',   0,0,0,0,0,0 ; chunk_28
+		db 'ZELRES2\MMAN.GRP',    0,0,0,0,0,0,0 ; chunk_29
+		db 'ZELRES2\CMAN.GRP',    0,0,0,0,0,0,0 ; chunk_30
+		db 'ZELRES2\TMAN.GRP',    0,0,0,0,0,0,0 ; chunk_31
+		db 'ZELRES2\INNA.GRP',    0,0,0,0,0,0,0 ; chunk_32
+		db 'ZELRES2\CPAT.GRP',    0,0,0,0,0,0,0 ; chunk_33
+		db 'ZELRES2\MPAT.GRP',    0,0,0,0,0,0,0 ; chunk_34
+		db 'ZELRES2\DPAT.GRP',    0,0,0,0,0,0,0 ; chunk_35
+		db 'ZELRES2\CMAP.MDT',    0,0,0,0,0,0,0 ; chunk_36
+		db 'ZELRES2\MRMP.MDT',    0,0,0,0,0,0,0 ; chunk_37
+		db 'ZELRES2\STMP.MDT',    0,0,0,0,0,0,0 ; chunk_38
+		db 'ZELRES2\BSMP.MDT',    0,0,0,0,0,0,0 ; chunk_39
+		db 'ZELRES2\HLMP.MDT',    0,0,0,0,0,0,0 ; chunk_40
+		db 'ZELRES2\TMMP.MDT',    0,0,0,0,0,0,0 ; chunk_41
+		db 'ZELRES2\DRMP.MDT',    0,0,0,0,0,0,0 ; chunk_42
+		db 'ZELRES2\LLMP.MDT',    0,0,0,0,0,0,0 ; chunk_43
+		db 'ZELRES2\PRMP.MDT',    0,0,0,0,0,0,0 ; chunk_44
+		db 'ZELRES2\ESMP.MDT',    0,0,0,0,0,0,0 ; chunk_45
+		db 'ZELRES2\MGT1.MSD',    0,0,0,0,0,0,0 ; chunk_46
+		db 'ZELRES2\MGT2.MSD',    0,0,0,0,0,0,0 ; chunk_47
+		db 'ZELRES2\UGM1.MSD',    0,0,0,0,0,0,0 ; chunk_48
+		db 'ZELRES2\UGM2.MSD',    0,0,0,0,0,0,0 ; chunk_49
+		db 'ZELRES2\enddemo.bin', 0,0,0,0  ; chunk_50
+		db 'ZELRES2\en72.grp',    0,0,0,0,0,0,0 ; chunk_51
+		db 'ZELRES2\end4.grp',    0,0,0,0,0,0,0 ; chunk_52
+		db 'ZELRES2\end5.grp',    0,0,0,0,0,0,0 ; chunk_53
+		db 'ZELRES2\end6.grp',    0,0,0,0,0,0,0 ; chunk_54
+		db 'ZELRES2\end7.grp',    0,0,0,0,0,0,0 ; chunk_55
+		db 'ZELRES2\fin.grp',     0,0,0,0,0,0,0,0 ; chunk_56
+		db 'ZELRES2\ROKA.GRP',    0,0,0,0,0,0,0 ; chunk_57
+
+; ── zelres3 (archive 2, 96 chunks) ────────────────────────────────────────
+ffl_names_z3	label	byte
+		db 'ZELRES3\ROKADEMO.BIN',0,0,0  ; chunk_00
+		db 'ZELRES3\EAI1.BIN',    0,0,0,0,0,0,0 ; chunk_01
+		db 'ZELRES3\EAI2.BIN',    0,0,0,0,0,0,0 ; chunk_02
+		db 'ZELRES3\EAI3.BIN',    0,0,0,0,0,0,0 ; chunk_03
+		db 'ZELRES3\EAI4.BIN',    0,0,0,0,0,0,0 ; chunk_04
+		db 'ZELRES3\EAI5.BIN',    0,0,0,0,0,0,0 ; chunk_05
+		db 'ZELRES3\EAI6.BIN',    0,0,0,0,0,0,0 ; chunk_06
+		db 'ZELRES3\EAI7.BIN',    0,0,0,0,0,0,0 ; chunk_07
+		db 'ZELRES3\EAI8.BIN',    0,0,0,0,0,0,0 ; chunk_08
+		db 'ZELRES3\CRAB.BIN',    0,0,0,0,0,0,0 ; chunk_09
+		db 'ZELRES3\TAKO.BIN',    0,0,0,0,0,0,0 ; chunk_10
+		db 'ZELRES3\TORI.BIN',    0,0,0,0,0,0,0 ; chunk_11
+		db 'ZELRES3\ZELA.BIN',    0,0,0,0,0,0,0 ; chunk_12
+		db 'ZELRES3\MEDA.BIN',    0,0,0,0,0,0,0 ; chunk_13
+		db 'ZELRES3\LEGA.BIN',    0,0,0,0,0,0,0 ; chunk_14
+		db 'ZELRES3\ZEL2.BIN',    0,0,0,0,0,0,0 ; chunk_15
+		db 'ZELRES3\DRGN.BIN',    0,0,0,0,0,0,0 ; chunk_16
+		db 'ZELRES3\AKMA.BIN',    0,0,0,0,0,0,0 ; chunk_17
+		db 'ZELRES3\MAO1.BIN',    0,0,0,0,0,0,0 ; chunk_18
+		db 'ZELRES3\MAO2.BIN',    0,0,0,0,0,0,0 ; chunk_19
+		db 'ZELRES3\MP10.MDT',    0,0,0,0,0,0,0 ; chunk_20
+		db 'ZELRES3\MP1D.MDT',    0,0,0,0,0,0,0 ; chunk_21
+		db 'ZELRES3\MP20.MDT',    0,0,0,0,0,0,0 ; chunk_22
+		db 'ZELRES3\MP21.MDT',    0,0,0,0,0,0,0 ; chunk_23
+		db 'ZELRES3\MP2D.MDT',    0,0,0,0,0,0,0 ; chunk_24
+		db 'ZELRES3\MP30.MDT',    0,0,0,0,0,0,0 ; chunk_25
+		db 'ZELRES3\MP31.MDT',    0,0,0,0,0,0,0 ; chunk_26
+		db 'ZELRES3\MP3D.MDT',    0,0,0,0,0,0,0 ; chunk_27
+		db 'ZELRES3\MP40.MDT',    0,0,0,0,0,0,0 ; chunk_28
+		db 'ZELRES3\MP41.MDT',    0,0,0,0,0,0,0 ; chunk_29
+		db 'ZELRES3\MP4D.MDT',    0,0,0,0,0,0,0 ; chunk_30
+		db 'ZELRES3\MP50.MDT',    0,0,0,0,0,0,0 ; chunk_31
+		db 'ZELRES3\MP51.MDT',    0,0,0,0,0,0,0 ; chunk_32
+		db 'ZELRES3\MP5D.MDT',    0,0,0,0,0,0,0 ; chunk_33
+		db 'ZELRES3\MP60.MDT',    0,0,0,0,0,0,0 ; chunk_34
+		db 'ZELRES3\MP61.MDT',    0,0,0,0,0,0,0 ; chunk_35
+		db 'ZELRES3\MP62.MDT',    0,0,0,0,0,0,0 ; chunk_36
+		db 'ZELRES3\MP6D.MDT',    0,0,0,0,0,0,0 ; chunk_37
+		db 'ZELRES3\MP70.MDT',    0,0,0,0,0,0,0 ; chunk_38
+		db 'ZELRES3\MP71.MDT',    0,0,0,0,0,0,0 ; chunk_39
+		db 'ZELRES3\MP72.MDT',    0,0,0,0,0,0,0 ; chunk_40
+		db 'ZELRES3\MP73.MDT',    0,0,0,0,0,0,0 ; chunk_41
+		db 'ZELRES3\MP7D.MDT',    0,0,0,0,0,0,0 ; chunk_42
+		db 'ZELRES3\MP80.MDT',    0,0,0,0,0,0,0 ; chunk_43
+		db 'ZELRES3\MP81.MDT',    0,0,0,0,0,0,0 ; chunk_44
+		db 'ZELRES3\MP82.MDT',    0,0,0,0,0,0,0 ; chunk_45
+		db 'ZELRES3\MP83.MDT',    0,0,0,0,0,0,0 ; chunk_46
+		db 'ZELRES3\MP84.MDT',    0,0,0,0,0,0,0 ; chunk_47
+		db 'ZELRES3\MP8D.MDT',    0,0,0,0,0,0,0 ; chunk_48
+		db 'ZELRES3\MP90.MDT',    0,0,0,0,0,0,0 ; chunk_49
+		db 'ZELRES3\MPA0.MDT',    0,0,0,0,0,0,0 ; chunk_50
+		db 'ZELRES3\FMAN.GRP',    0,0,0,0,0,0,0 ; chunk_51
+		db 'ZELRES3\ROKA.GRP',    0,0,0,0,0,0,0 ; chunk_52
+		db 'ZELRES3\DMAN.GRP',    0,0,0,0,0,0,0 ; chunk_53
+		db 'ZELRES3\DCHR.GRP',    0,0,0,0,0,0,0 ; chunk_54
+		db 'ZELRES3\ENCNT.GRP',   0,0,0,0,0,0 ; chunk_55
+		db 'ZELRES3\ENP1.GRP',    0,0,0,0,0,0,0 ; chunk_56
+		db 'ZELRES3\ENP2.GRP',    0,0,0,0,0,0,0 ; chunk_57
+		db 'ZELRES3\ENP3.GRP',    0,0,0,0,0,0,0 ; chunk_58
+		db 'ZELRES3\ENP4.GRP',    0,0,0,0,0,0,0 ; chunk_59
+		db 'ZELRES3\ENP5.GRP',    0,0,0,0,0,0,0 ; chunk_60
+		db 'ZELRES3\ENP6.GRP',    0,0,0,0,0,0,0 ; chunk_61
+		db 'ZELRES3\ENP7.GRP',    0,0,0,0,0,0,0 ; chunk_62
+		db 'ZELRES3\ENP8.GRP',    0,0,0,0,0,0,0 ; chunk_63
+		db 'ZELRES3\CRAB.GRP',    0,0,0,0,0,0,0 ; chunk_64
+		db 'ZELRES3\TAKO.GRP',    0,0,0,0,0,0,0 ; chunk_65
+		db 'ZELRES3\TORI.GRP',    0,0,0,0,0,0,0 ; chunk_66
+		db 'ZELRES3\ZELA.GRP',    0,0,0,0,0,0,0 ; chunk_67
+		db 'ZELRES3\MEDA.GRP',    0,0,0,0,0,0,0 ; chunk_68
+		db 'ZELRES3\LEGA.GRP',    0,0,0,0,0,0,0 ; chunk_69
+		db 'ZELRES3\DRGN.GRP',    0,0,0,0,0,0,0 ; chunk_70
+		db 'ZELRES3\AKMA.GRP',    0,0,0,0,0,0,0 ; chunk_71
+		db 'ZELRES3\MAO1.GRP',    0,0,0,0,0,0,0 ; chunk_72
+		db 'ZELRES3\MAO2.GRP',    0,0,0,0,0,0,0 ; chunk_73
+		db 'ZELRES3\MPP1.GRP',    0,0,0,0,0,0,0 ; chunk_74
+		db 'ZELRES3\MPP2.GRP',    0,0,0,0,0,0,0 ; chunk_75
+		db 'ZELRES3\MPP3.GRP',    0,0,0,0,0,0,0 ; chunk_76
+		db 'ZELRES3\MPP4.GRP',    0,0,0,0,0,0,0 ; chunk_77
+		db 'ZELRES3\MPP5.GRP',    0,0,0,0,0,0,0 ; chunk_78
+		db 'ZELRES3\MPP6.GRP',    0,0,0,0,0,0,0 ; chunk_79
+		db 'ZELRES3\MPP7.GRP',    0,0,0,0,0,0,0 ; chunk_80
+		db 'ZELRES3\MPP8.GRP',    0,0,0,0,0,0,0 ; chunk_81
+		db 'ZELRES3\MPP9.GRP',    0,0,0,0,0,0,0 ; chunk_82
+		db 'ZELRES3\MPPA.GRP',    0,0,0,0,0,0,0 ; chunk_83
+		db 'ZELRES3\MPPB.GRP',    0,0,0,0,0,0,0 ; chunk_84
+		db 'ZELRES3\MUS1.MSD',    0,0,0,0,0,0,0 ; chunk_85
+		db 'ZELRES3\MUS2.MSD',    0,0,0,0,0,0,0 ; chunk_86
+		db 'ZELRES3\MUS3.MSD',    0,0,0,0,0,0,0 ; chunk_87
+		db 'ZELRES3\MUS4.MSD',    0,0,0,0,0,0,0 ; chunk_88
+		db 'ZELRES3\MUS5.MSD',    0,0,0,0,0,0,0 ; chunk_89
+		db 'ZELRES3\MUS6.MSD',    0,0,0,0,0,0,0 ; chunk_90
+		db 'ZELRES3\MUS7.MSD',    0,0,0,0,0,0,0 ; chunk_91
+		db 'ZELRES3\MUS8.MSD',    0,0,0,0,0,0,0 ; chunk_92
+		db 'ZELRES3\MBOS.MSD',    0,0,0,0,0,0,0 ; chunk_93
+		db 'ZELRES3\MFAN.MSD',    0,0,0,0,0,0,0 ; chunk_94
+		db 'ZELRES3\MMAO.MSD',    0,0,0,0,0,0,0 ; chunk_95
 
 seg_a		ends
 
