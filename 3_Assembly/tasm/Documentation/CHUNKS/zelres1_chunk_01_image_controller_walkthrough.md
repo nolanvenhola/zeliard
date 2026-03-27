@@ -1,12 +1,12 @@
 # ZELRES1/Chunk_01 - Master Image Controller Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_01.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/101IMGCT.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/101GDEGA.asm`
 **Size**: 5,632 bytes (5.5KB)
 **Disassembly Lines**: 2,602 lines
 **Purpose**: Master controller for opening scene image rendering - dispatches to appropriate decoder and renderer
 **Load Address**: CS:0x3000 (loaded by zelres1/chunk_00)
-**Priority**: ⭐⭐⭐ CRITICAL (Opening scene graphics backbone)
+**Priority**: â­�â­�â­� CRITICAL (Opening scene graphics backbone)
 
 ## Overview
 
@@ -15,7 +15,7 @@
 ### What This Chunk Does
 
 1. **Image Format Detection** - Determines which decoder to call (chunk_07, 08, or 09)
-2. **Renderer Selection** - Chooses between large (48×34) and small (32×18) renderers (chunks 10 and 11)
+2. **Renderer Selection** - Chooses between large (48Ã—34) and small (32Ã—18) renderers (chunks 10 and 11)
 3. **VGA Register Programming** - Configures Graphics Controller (0x03CE) and Sequencer (0x03C4)
 4. **Bitplane Manipulation** - Sets up 4-plane EGA/VGA bitplane modes
 5. **Text Rendering** - Displays text overlays on images
@@ -55,56 +55,56 @@
 ## Architecture Diagram
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│         ZELRES1/Chunk_01 - Master Image Controller           │
-│                                                                │
-│  Entry Point Dispatch                                         │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │  0x004E: 3-plane image renderer (1/2/4 bitplanes)  │────┐ │
-│  │  0x00A2: 3-plane image renderer alt (plane select)  │    │ │
-│  │  0x0102: Single-plane renderer                      │    │ │
-│  │  0x012A: Another single-plane variant               │    │ │
-│  │  0x0151: Masked transparent blit                    │    │ │
-│  └──────────────────────────────────────────────────────┘    │ │
-│                                                                │ │
-│  Core VGA Programming (0x01C5-0x0273)                        │ │
-│  ┌──────────────────────────────────────────────────────┐    │ │
-│  │ - Setup VGA address (screen pos → A000:offset)      │<───┘ │
-│  │ - Configure bitplane write mask via Sequencer       │      │
-│  │ - Configure read plane via Graphics Controller      │      │
-│  │ - Call function pointer [cs:0x4216] for actual draw │      │
-│  │ - Timer-based scanline rendering (8 passes)         │      │
-│  └──────────────────────────────────────────────────────┘      │
-│                                                                │
-│  Bitplane Copy Functions (0x0274-0x02AA)                     │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │ 0x0274: Single plane fill (bitmask write)           │    │
-│  │ 0x028F: Masked plane copy (source & bitmask)        │    │
-│  └──────────────────────────────────────────────────────┘    │
-│                                                                │
-│  Text Rendering System (0x02BA-0x09AF)                       │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │ - Font data at 0xF500 (8x8 pixel font)              │    │
-│  │ - String parsing (0x20=space, 0xFF=end)             │    │
-│  │ - Buffer at CS:0x421C for rendered text             │    │
-│  │ - Bitplane render with mask/blend operations        │    │
-│  └──────────────────────────────────────────────────────┘    │
-│                                                                │
-│  Title Screen Rendering (0x081A-0x0902)                      │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │ - Logo sprite array at CS:0xA000 (9 sprites)        │    │
-│  │ - Sprite animation system (frame advance)           │    │
-│  │ - Double-buffered sprite composition                │    │
-│  └──────────────────────────────────────────────────────┘    │
-│                                                                │
-│  Image Copy/Scroll Functions (0x0346-0x0FFF+)                │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │ - VGA-to-VGA block copy (scrolling)                 │    │
-│  │ - System-to-VGA bitplane copy (3-plane)             │    │
-│  │ - Wipe effects (line-by-line with timing)           │    │
-│  │ - Box drawing (decorative borders)                  │    │
-│  └──────────────────────────────────────────────────────┘    │
-└──────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚         ZELRES1/Chunk_01 - Master Image Controller           â”‚
+â”‚                                                                â”‚
+â”‚  Entry Point Dispatch                                         â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚  0x004E: 3-plane image renderer (1/2/4 bitplanes)  â”‚â”€â”€â”€â”€â”� â”‚
+â”‚  â”‚  0x00A2: 3-plane image renderer alt (plane select)  â”‚    â”‚ â”‚
+â”‚  â”‚  0x0102: Single-plane renderer                      â”‚    â”‚ â”‚
+â”‚  â”‚  0x012A: Another single-plane variant               â”‚    â”‚ â”‚
+â”‚  â”‚  0x0151: Masked transparent blit                    â”‚    â”‚ â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚ â”‚
+â”‚                                                                â”‚ â”‚
+â”‚  Core VGA Programming (0x01C5-0x0273)                        â”‚ â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚ â”‚
+â”‚  â”‚ - Setup VGA address (screen pos â†’ A000:offset)      â”‚<â”€â”€â”€â”˜ â”‚
+â”‚  â”‚ - Configure bitplane write mask via Sequencer       â”‚      â”‚
+â”‚  â”‚ - Configure read plane via Graphics Controller      â”‚      â”‚
+â”‚  â”‚ - Call function pointer [cs:0x4216] for actual draw â”‚      â”‚
+â”‚  â”‚ - Timer-based scanline rendering (8 passes)         â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                                                                â”‚
+â”‚  Bitplane Copy Functions (0x0274-0x02AA)                     â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚ 0x0274: Single plane fill (bitmask write)           â”‚    â”‚
+â”‚  â”‚ 0x028F: Masked plane copy (source & bitmask)        â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                                                                â”‚
+â”‚  Text Rendering System (0x02BA-0x09AF)                       â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚ - Font data at 0xF500 (8x8 pixel font)              â”‚    â”‚
+â”‚  â”‚ - String parsing (0x20=space, 0xFF=end)             â”‚    â”‚
+â”‚  â”‚ - Buffer at CS:0x421C for rendered text             â”‚    â”‚
+â”‚  â”‚ - Bitplane render with mask/blend operations        â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                                                                â”‚
+â”‚  Title Screen Rendering (0x081A-0x0902)                      â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚ - Logo sprite array at CS:0xA000 (9 sprites)        â”‚    â”‚
+â”‚  â”‚ - Sprite animation system (frame advance)           â”‚    â”‚
+â”‚  â”‚ - Double-buffered sprite composition                â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                                                                â”‚
+â”‚  Image Copy/Scroll Functions (0x0346-0x0FFF+)                â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚ - VGA-to-VGA block copy (scrolling)                 â”‚    â”‚
+â”‚  â”‚ - System-to-VGA bitplane copy (3-plane)             â”‚    â”‚
+â”‚  â”‚ - Wipe effects (line-by-line with timing)           â”‚    â”‚
+â”‚  â”‚ - Box drawing (decorative borders)                  â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -156,7 +156,7 @@ Renders images with 1, 2, or 4 bitplanes active. Used for images with varying co
     mov word [cs:0x4216],0x3071  ; Function to call for each scanline
 
     pop ax                       ; Restore AL (bitplane config)
-    call 0x01C5                  ; → VGA address calculation & render
+    call 0x01C5                  ; â†’ VGA address calculation & render
 
     ; Restore normal VGA mode:
     mov ax,0x0003                ; Function 3
@@ -196,16 +196,16 @@ Core rendering engine - calculates VGA framebuffer address from screen coordinat
     push di
 
     ; Calculate VGA offset from BX (BH=row, BL=col):
-    mov ax,0x0050                ; 80 bytes per scanline (320 pixels ÷ 4)
-    mul bl                       ; AX = row × 80
+    mov ax,0x0050                ; 80 bytes per scanline (320 pixels Ã· 4)
+    mul bl                       ; AX = row Ã— 80
     mov bl,bh                    ; BL = column
     xor bh,bh                    ; BX = column index
-    add ax,bx                    ; AX = row×80 + column = VGA offset
+    add ax,bx                    ; AX = rowÃ—80 + column = VGA offset
     mov di,ax                    ; DI = VGA destination offset
 
     ; Calculate source data stride:
     mov al,ch                    ; AL = image width
-    mul cl                       ; AX = width × height = total pixels
+    mul cl                       ; AX = width Ã— height = total pixels
     mov [cs:0x4214],ax           ; Store stride (bytes between planes)
 
     pop si                       ; SI = source data (from stack)
@@ -216,12 +216,12 @@ Core rendering engine - calculates VGA framebuffer address from screen coordinat
     mov byte [cs:0x4213],0x00    ; Clear alpha flag
     or al,al                     ; Check AL (0=no alpha, FF=alpha)
     jnz 0x01EE                   ; Jump if alpha enabled
-    call 0x01F9                  ; → Single-pass render
+    call 0x01F9                  ; â†’ Single-pass render
     jmp 0x01F8                   ; Done
 
 0x01EE:  ; Alpha-enabled (two-pass):
     mov byte [cs:0x4213],0xFF    ; Set alpha flag
-    call 0x01F9                  ; → First pass (background)
+    call 0x01F9                  ; â†’ First pass (background)
     pop ds
     ret
 ```
@@ -260,7 +260,7 @@ Core rendering engine - calculates VGA framebuffer address from screen coordinat
     mov ah,[cs:bx+0x32A7]        ; AH = bitplane mask from table
 
     ; Call the actual draw routine via function pointer:
-    call word [cs:0x4216]        ; → Draw one scanline
+    call word [cs:0x4216]        ; â†’ Draw one scanline
 
     inc byte [cs:0x4210]         ; Next scanline in pass
 
@@ -426,10 +426,10 @@ Copies image data to VGA with bitplane masking.
     push si
     push di
     xor ah,ah
-    add ax,ax                    ; AX = char × 2
-    add ax,ax                    ; AX = char × 4
-    add ax,ax                    ; AX = char × 8
-    add ax,ax                    ; AX = char × 16 (16 bytes per char)
+    add ax,ax                    ; AX = char Ã— 2
+    add ax,ax                    ; AX = char Ã— 4
+    add ax,ax                    ; AX = char Ã— 8
+    add ax,ax                    ; AX = char Ã— 16 (16 bytes per char)
     add ax,[0xF500]              ; AX += font base address
     mov si,ax                    ; SI = font glyph data
 
@@ -449,7 +449,7 @@ Copies image data to VGA with bitplane masking.
 
 **Font Format**:
 - **Location**: [0xF500] points to font data
-- **Size**: 8×8 pixels per character, 16 bytes total (2 bytes × 8 scanlines)
+- **Size**: 8Ã—8 pixels per character, 16 bytes total (2 bytes Ã— 8 scanlines)
 - **Buffer**: CS:0x421C stores rendered text for transfer to VGA
 - **Characters**: ASCII 0x20-0xFF supported (minus 0x20 offset)
 
@@ -460,12 +460,12 @@ Copies image data to VGA with bitplane masking.
 ```assembly
 0x02F9:  ; Transfer text buffer to VGA
     mov dl,0x50                  ; DL = 80 (VGA scanline width)
-    mul dl                       ; AX = row × 80
+    mul dl                       ; AX = row Ã— 80
     add ax,0x421C                ; AX = buffer offset for row
     mov si,ax                    ; SI = source in buffer
 
     mov al,bl                    ; AL = screen column
-    mul dl                       ; AX = column × 80 (wait, this is wrong...)
+    mul dl                       ; AX = column Ã— 80 (wait, this is wrong...)
     mov bl,bh                    ; BL = row (swapped?)
     xor bh,bh
     add ax,bx                    ; AX = VGA offset
@@ -545,7 +545,7 @@ The title screen uses an array of 9 animated sprites:
 ```assembly
 0x081A:  ; Title screen animation main loop
     mov bx,ax                    ; BX = animation table index
-    add bx,bx                    ; BX = index × 2 (word table)
+    add bx,bx                    ; BX = index Ã— 2 (word table)
 
     ; Load animation parameters:
     mov al,[bx+0x3B63]           ; AL = parameter 1
@@ -571,7 +571,7 @@ The title screen uses an array of 9 animated sprites:
     lodsb                        ; AL = pattern byte
     or al,al                     ; End marker?
     jz 0x0853                    ; Done
-    call 0x0903                  ; → Draw border segment
+    call 0x0903                  ; â†’ Draw border segment
     add di,0x0140                ; Next row (320 pixels = 0x140 bytes)
     jmp 0x0845
 
@@ -595,7 +595,7 @@ The title screen uses an array of 9 animated sprites:
 0x0899:  ; Delay loop
     push cx
     mov al,0x18                  ; AL = animation effect code
-    call 0x0903                  ; → Apply effect
+    call 0x0903                  ; â†’ Apply effect
     add di,0x0140                ; Next row
     pop cx
     loop 0x0899
@@ -629,9 +629,9 @@ The title screen uses an array of 9 animated sprites:
     push si
     dec al                       ; AL = effect index - 1
     xor ah,ah
-    add ax,ax                    ; × 2
-    add ax,ax                    ; × 4
-    add ax,ax                    ; × 8 (8 bytes per effect pattern)
+    add ax,ax                    ; Ã— 2
+    add ax,ax                    ; Ã— 4
+    add ax,ax                    ; Ã— 8 (8 bytes per effect pattern)
     add ax,0x39AC                ; Add effect table base
     mov si,ax                    ; SI = effect pattern data
 
@@ -728,7 +728,7 @@ Used for smooth scrolling effects without redrawing from system memory.
 
     ; Calculate destination VGA offset:
     mov ax,0x0050                ; 80 bytes per line
-    mul bl                       ; AX = row × 80
+    mul bl                       ; AX = row Ã— 80
     mov bl,bh                    ; BL = column
     xor bh,bh
     add ax,bx                    ; AX = offset
@@ -736,13 +736,13 @@ Used for smooth scrolling effects without redrawing from system memory.
 
     ; Calculate source data size:
     mov al,ch                    ; AL = width
-    mul cl                       ; AX = width × height
+    mul cl                       ; AX = width Ã— height
     mov [cs:0x4214],ax           ; Store size
 
     pop si                       ; SI = source (from original ES:DI)
     pop ds                       ; DS = source segment
 
-    call 0x0365                  ; → Do the copy
+    call 0x0365                  ; â†’ Do the copy
     pop ds
     ret
 
@@ -788,7 +788,7 @@ Used for smooth scrolling effects without redrawing from system memory.
     out dx,al
     push si
     push di
-    add si,[cs:0x4214]           ; SI += stride × 2
+    add si,[cs:0x4214]           ; SI += stride Ã— 2
     add si,[cs:0x4214]
     mov cx,bx
     rep movsb                    ; Copy plane 2
@@ -830,7 +830,7 @@ Used for smooth scrolling effects without redrawing from system memory.
     movsw                        ; Copy X position (from SI)
     stosw                        ; Store calculated VGA offset
     mov ax,0x0101
-    stosw                        ; Store frame size (1×1 default)
+    stosw                        ; Store frame size (1Ã—1 default)
     movsb                        ; Copy X velocity
     movsb                        ; Copy Y velocity
     xor al,al
@@ -848,7 +848,7 @@ Used for smooth scrolling effects without redrawing from system memory.
 ```
 
 **Sprite Data Layout**:
-- **576 bytes per sprite** (0x0240): Enough for 48×34 pixels, 3 planes
+- **576 bytes per sprite** (0x0240): Enough for 48Ã—34 pixels, 3 planes
 - **CS:0x3000 base**: Sprite graphics loaded here by chunk_00
 - **9 sprite slots**: Title screen uses up to 9 simultaneous sprites
 
@@ -881,8 +881,8 @@ Used for smooth scrolling effects without redrawing from system memory.
 0x0402:  ; Calculate frame data offset
     xor bx,bx
     mov bl,[si+0x0D]             ; BL = current frame
-    add bx,bx                    ; BX = frame × 2
-    add bx,bx                    ; BX = frame × 4
+    add bx,bx                    ; BX = frame Ã— 2
+    add bx,bx                    ; BX = frame Ã— 4
     mov cx,[bx+0x35AF]           ; CX = frame size from table
     mov [si+0x07],cx             ; Store in sprite record
 
@@ -897,19 +897,19 @@ Used for smooth scrolling effects without redrawing from system memory.
     mov [si+0x03],al             ; Store new X
     mov dl,al                    ; DL = X
 
-    ; Calculate VGA offset (Y×80 + X):
+    ; Calculate VGA offset (YÃ—80 + X):
     xor ah,ah
-    add ax,ax                    ; × 2
-    add ax,ax                    ; × 4
-    add ax,ax                    ; × 8
-    mov bp,ax                    ; BP = Y × 8
-    add ax,ax                    ; × 16
-    add ax,ax                    ; × 32
-    add ax,bp                    ; × 40
-    add ax,ax                    ; × 80
+    add ax,ax                    ; Ã— 2
+    add ax,ax                    ; Ã— 4
+    add ax,ax                    ; Ã— 8
+    mov bp,ax                    ; BP = Y Ã— 8
+    add ax,ax                    ; Ã— 16
+    add ax,ax                    ; Ã— 32
+    add ax,bp                    ; Ã— 40
+    add ax,ax                    ; Ã— 80
     mov dl,dh                    ; DL = X (swapped earlier?)
     xor dh,dh
-    add ax,dx                    ; AX = Y×80 + X
+    add ax,dx                    ; AX = YÃ—80 + X
     mov [si+0x05],ax             ; Store VGA offset
 
     ; Check bounds (don't render if off-screen):
@@ -937,7 +937,7 @@ Used for smooth scrolling effects without redrawing from system memory.
     mov ax,0x0004                ; Read Plane = 0
     out dx,ax
 
-    call 0x0596                  ; → Render plane 0
+    call 0x0596                  ; â†’ Render plane 0
 
     mov dx,0x3C4
     mov ax,0x0202                ; Map Mask = plane 1
@@ -946,7 +946,7 @@ Used for smooth scrolling effects without redrawing from system memory.
     mov ax,0x0104                ; Read Plane = 1
     out dx,ax
 
-    call 0x0596                  ; → Render plane 1
+    call 0x0596                  ; â†’ Render plane 1
 
     pop si
     pop ds
@@ -1040,10 +1040,10 @@ Used for scene transitions in opening sequence.
     ; Calculate current scanline offset:
     mov ax,0x0044                ; 68 total
     sub ax,cx                    ; AX = current scanline from top
-    add ax,ax                    ; × 2
+    add ax,ax                    ; Ã— 2
     push ax
     mov bl,0x50                  ; 80 bytes per line
-    mul bl                       ; AX = scanline × 80
+    mul bl                       ; AX = scanline Ã— 80
     mov di,ax                    ; DI = VGA offset
     add ax,[cs:0x4218]           ; AX += source base
     mov si,ax                    ; SI = source offset
@@ -1055,17 +1055,17 @@ Used for scene transitions in opening sequence.
     cmp ax,0x0071                ; After line 113?
     jnc 0x0E58                   ; Use simple copy
 
-    call 0x0EB9                  ; → Masked copy (transparency)
+    call 0x0EB9                  ; â†’ Masked copy (transparency)
     jmp 0x0E5B
 
 0x0E58:
-    call 0x0E90                  ; → Simple 3-plane copy
+    call 0x0E90                  ; â†’ Simple 3-plane copy
 
 0x0E5B:  ; Repeat for bottom-up wipe
     pop cx
     push cx
     mov ax,cx                    ; AX = remaining lines
-    add ax,ax                    ; × 2
+    add ax,ax                    ; Ã— 2
     dec ax                       ; -1 for symmetry
     push ax
     mov bl,0x50
@@ -1198,7 +1198,7 @@ Used for scene transitions in opening sequence.
 
     ; Top border:
     mov ax,0xFC3F                ; AH=0xFC (pattern), AL=0x3F (end)
-    call 0x0FA9                  ; → Draw horizontal line
+    call 0x0FA9                  ; â†’ Draw horizontal line
     add di,0x0036                ; Move to content area
 
     ; Vertical borders (91 scanlines):
@@ -1268,20 +1268,20 @@ Used for scene transitions in opening sequence.
 | `0x4216` | 2 bytes | Function pointer for scanline renderer |
 | `0x4218` | 2 bytes | Temporary DI storage (destination offset) |
 | `0x421A` | 2 bytes | Temporary ES storage (destination segment) |
-| `0x421C` | 800 bytes | Text rendering buffer (80×10 character buffer) |
-| `0xA000` | 135 bytes | Sprite array (9 sprites × 15 bytes) |
+| `0x421C` | 800 bytes | Text rendering buffer (80Ã—10 character buffer) |
+| `0xA000` | 135 bytes | Sprite array (9 sprites Ã— 15 bytes) |
 
 ### Data Segments
 
 | Segment | Base | Purpose |
 |---------|------|---------|
-| CS:0x3000 | +0 | Sprite graphics data (9 sprites × 576 bytes) |
-| CS:0xF500 | +0 | Font data (96 chars × 16 bytes = 1536 bytes) |
+| CS:0x3000 | +0 | Sprite graphics data (9 sprites Ã— 576 bytes) |
+| CS:0xF500 | +0 | Font data (96 chars Ã— 16 bytes = 1536 bytes) |
 | CS:0x32A7 | +0 | Bitplane mask tables (even scanlines) |
 | CS:0x32AF | +0 | Bitplane mask tables (odd scanlines) |
 | CS:0x35AD | +0 | Animation frame size table |
 | CS:0x35AF | +0 | Animation frame data table |
-| CS:0x39AC | +0 | Border/effect pattern table (24 patterns × 8 bytes) |
+| CS:0x39AC | +0 | Border/effect pattern table (24 patterns Ã— 8 bytes) |
 | CS:0x3A6C | +0 | Border definition data |
 | CS:0x3B30 | +0 | Animation timing sequence |
 | CS:0x3B63 | +0 | Title screen parameter table |
@@ -1332,10 +1332,10 @@ call [chunk_08_base + 0x000]  ; Decode alternate format
 call [chunk_09_base + 0x000]  ; Decode variant format
 
 ; Chunk_10 (Large renderer):
-call [chunk_10_base + 0x000]  ; Render 48×34 images
+call [chunk_10_base + 0x000]  ; Render 48Ã—34 images
 
 ; Chunk_11 (Small renderer):
-call [chunk_11_base + 0x000]  ; Render 32×18 images
+call [chunk_11_base + 0x000]  ; Render 32Ã—18 images
 ```
 
 ---
@@ -1350,7 +1350,7 @@ Operation Breakdown (per frame):
 Text Rendering:
 - Font lookup:           10 cycles per character
 - Buffer copy:           5 cycles per byte
-- VGA transfer:          1200 cycles (80 bytes × 3 planes × 5 cycles)
+- VGA transfer:          1200 cycles (80 bytes Ã— 3 planes Ã— 5 cycles)
 
 Sprite Animation:
 - Position update:       50 cycles per sprite
@@ -1361,7 +1361,7 @@ Sprite Animation:
 Image Rendering:
 - VGA address calc:      200 cycles
 - Scanline setup:        50 cycles per line
-- Bitplane write:        100 cycles per line × planes
+- Bitplane write:        100 cycles per line Ã— planes
 - For 200-line image:    ~40,000 cycles
 
 Total frame time: ~60,000 cycles = ~15ms on 4.77 MHz 8088
@@ -1386,7 +1386,7 @@ Total frame time: ~60,000 cycles = ~15ms on 4.77 MHz 8088
 // Output: DI = VGA offset (0x0000-0x3FFF)
 uint16_t calculate_vga_offset(uint8_t row, uint8_t col) {
     return (row * 80) + col;
-    // Note: 320 pixels per line ÷ 4 bytes per plane = 80 bytes per line
+    // Note: 320 pixels per line Ã· 4 bytes per plane = 80 bytes per line
 }
 ```
 
@@ -1397,7 +1397,7 @@ uint16_t calculate_vga_offset(uint8_t row, uint8_t col) {
 // Input: width, height in pixels
 // Output: bytes from start of plane 0 to start of plane 1
 uint16_t calculate_stride(uint8_t width, uint8_t height) {
-    return width * height;  // Each plane is width × height bytes
+    return width * height;  // Each plane is width Ã— height bytes
 }
 ```
 
@@ -1423,8 +1423,8 @@ void update_sprite_frame(Sprite* spr) {
 - **zelres1/chunk_07**: VGA Mode 13h decompressor (called via function pointer)
 - **zelres1/chunk_08**: Image decoder A (alternate format)
 - **zelres1/chunk_09**: Image decoder B (variant format)
-- **zelres1/chunk_10**: Large image renderer (48×34 pixels)
-- **zelres1/chunk_11**: Small image renderer (32×18 pixels)
+- **zelres1/chunk_10**: Large image renderer (48Ã—34 pixels)
+- **zelres1/chunk_11**: Small image renderer (32Ã—18 pixels)
 - **gmmcga.bin**: Graphics driver providing hardware abstraction
 
 ---
@@ -1433,14 +1433,14 @@ void update_sprite_frame(Sprite* spr) {
 
 **ZELRES1/Chunk_01** is the master dispatcher for all opening scene graphics:
 
-- ⭐ **Format detection**: Determines which decoder to call based on image properties
-- ⭐ **Renderer selection**: Routes to appropriate renderer (large/small/masked)
-- ⭐ **VGA programming**: Expert-level control of Sequencer and Graphics Controller
-- ⭐ **Bitplane manipulation**: Hardware-accelerated transparency and masking
-- ⭐ **Text rendering**: Full character system with 8×8 font
-- ⭐ **Sprite animation**: 9 simultaneous sprites with velocity-based movement
-- ⭐ **Wipe effects**: Sophisticated scene transitions with timing
-- ⭐ **Box drawing**: Decorative borders with gradient effects
+- â­� **Format detection**: Determines which decoder to call based on image properties
+- â­� **Renderer selection**: Routes to appropriate renderer (large/small/masked)
+- â­� **VGA programming**: Expert-level control of Sequencer and Graphics Controller
+- â­� **Bitplane manipulation**: Hardware-accelerated transparency and masking
+- â­� **Text rendering**: Full character system with 8Ã—8 font
+- â­� **Sprite animation**: 9 simultaneous sprites with velocity-based movement
+- â­� **Wipe effects**: Sophisticated scene transitions with timing
+- â­� **Box drawing**: Decorative borders with gradient effects
 
 **Critical for Port**: This chunk demonstrates advanced VGA programming techniques that are essential for understanding Zeliard's visual effects. The bitplane manipulation, timer-based animation, and hardware-assisted masking must be replicated in MonoGame using shaders or equivalent techniques.
 

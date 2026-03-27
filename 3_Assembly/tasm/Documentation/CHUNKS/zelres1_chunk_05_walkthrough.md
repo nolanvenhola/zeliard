@@ -1,12 +1,12 @@
 # ZELRES1/Chunk_05 - VGA Graphics Renderer (256-Color Mode) Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_05.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/105PALGT.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/105GDMCA.asm`
 **Size**: 8,192 bytes (8KB)
 **Disassembly Lines**: 4,066 lines
 **Purpose**: VGA 256-color (Mode 13h) graphics rendering engine
 **Load Address**: CS:0x6000 (typical)
-**Priority**: ⭐⭐⭐ CRITICAL - Modern graphics mode
+**Priority**: â­�â­�â­� CRITICAL - Modern graphics mode
 
 ---
 
@@ -57,47 +57,47 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│      ZELRES1/Chunk_05 (VGA 256-Color Renderer)             │
-│                                                               │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │     Direct Pixel Rendering (No Bitplane Decode)   │     │
-│  │  ┌──────────────────────────────────────────────┐ │     │
-│  │  │  Linear framebuffer: A000:0000-0xFFFF        │ │     │
-│  │  │  320×200 = 64,000 pixels                     │ │     │
-│  │  │  1 byte per pixel (256 colors)               │ │     │
-│  │  └──────────────────────────────────────────────┘ │     │
-│  └────────────────────────────────────────────────────┘     │
-│                        │                                     │
-│                        ├─> Sprite Renderers                 │
-│                        │   ┌──────────────────────────┐     │
-│                        │   │ Opaque (0x023D)          │     │
-│                        │   │ Transparent (0x027B)     │     │
-│                        │   │ Masked (0x02A1)          │     │
-│                        │   │ 4× pixel doubling        │     │
-│                        │   └──────────────────────────┘     │
-│                        │                                     │
-│                        ├─> Animation System (0x043B)        │
-│                        │   ┌──────────────────────────┐     │
-│                        │   │ 9 sprite slots @ 0xA000  │     │
-│                        │   │ 320-byte scanline stride │     │
-│                        │   │ VGA Mode 13h addressing  │     │
-│                        │   └──────────────────────────┘     │
-│                        │                                     │
-│                        ├─> Text Renderer (0x02CC)           │
-│                        │   ┌──────────────────────────┐     │
-│                        │   │ 8×8 font @ 0xF500        │     │
-│                        │   │ 4× pixel expansion       │     │
-│                        │   │ Anti-aliased edges       │     │
-│                        │   └──────────────────────────┘     │
-│                        │                                     │
-│                        └─> VGA Framebuffer                  │
-│                            ┌──────────────────────────┐     │
-│                            │ A000:0000 (Mode 13h)     │     │
-│                            │ Linear addressing        │     │
-│                            │ 64,000 bytes             │     │
-│                            └──────────────────────────┘     │
-└─────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚      ZELRES1/Chunk_05 (VGA 256-Color Renderer)             â”‚
+â”‚                                                               â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚     Direct Pixel Rendering (No Bitplane Decode)   â”‚     â”‚
+â”‚  â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”� â”‚     â”‚
+â”‚  â”‚  â”‚  Linear framebuffer: A000:0000-0xFFFF        â”‚ â”‚     â”‚
+â”‚  â”‚  â”‚  320Ã—200 = 64,000 pixels                     â”‚ â”‚     â”‚
+â”‚  â”‚  â”‚  1 byte per pixel (256 colors)               â”‚ â”‚     â”‚
+â”‚  â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â”œâ”€> Sprite Renderers                 â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                        â”‚   â”‚ Opaque (0x023D)          â”‚     â”‚
+â”‚                        â”‚   â”‚ Transparent (0x027B)     â”‚     â”‚
+â”‚                        â”‚   â”‚ Masked (0x02A1)          â”‚     â”‚
+â”‚                        â”‚   â”‚ 4Ã— pixel doubling        â”‚     â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â”œâ”€> Animation System (0x043B)        â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                        â”‚   â”‚ 9 sprite slots @ 0xA000  â”‚     â”‚
+â”‚                        â”‚   â”‚ 320-byte scanline stride â”‚     â”‚
+â”‚                        â”‚   â”‚ VGA Mode 13h addressing  â”‚     â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â”œâ”€> Text Renderer (0x02CC)           â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                        â”‚   â”‚ 8Ã—8 font @ 0xF500        â”‚     â”‚
+â”‚                        â”‚   â”‚ 4Ã— pixel expansion       â”‚     â”‚
+â”‚                        â”‚   â”‚ Anti-aliased edges       â”‚     â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â””â”€> VGA Framebuffer                  â”‚
+â”‚                            â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                            â”‚ A000:0000 (Mode 13h)     â”‚     â”‚
+â”‚                            â”‚ Linear addressing        â”‚     â”‚
+â”‚                            â”‚ 64,000 bytes             â”‚     â”‚
+â”‚                            â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -119,7 +119,7 @@
 | `0x0654` | Load background image (large) | AL=image ID |
 | `0x06AF` | Load background image (small) | AL=image ID |
 | `0x070B` | Clear screen | Fills A000:0000 with pattern |
-| `0x0736` | Render NPC character grid | SI=char data, 25×34 grid |
+| `0x0736` | Render NPC character grid | SI=char data, 25Ã—34 grid |
 | `0x07B8` | Render text with shadow | AL=row, BX=position |
 | `0x08EA` | Display message box | AX=message ID |
 
@@ -233,7 +233,7 @@ render_sprite_opaque_256:
 
     ; Calculate buffer size
     mov al,ch               ; Width
-    mul cl                  ; × Height
+    mul cl                  ; Ã— Height
     mov bp,ax               ; BP = total pixels
 
     ; Setup segments
@@ -305,7 +305,7 @@ render_sprite_transparent_256:
 
     mov cl,ch                   ; CL = width (doubled)
     xor ch,ch
-    shl cx,2                    ; × 4 (4 pixels per byte)
+    shl cx,2                    ; Ã— 4 (4 pixels per byte)
 
 .pixel_loop:
     lodsb                       ; Load pixel
@@ -447,7 +447,7 @@ calc_vga_offset_256:
 ## Section 5: Text Rendering (0x02CC)
 
 ### Purpose
-Renders ASCII text using 8×8 font with 4× pixel expansion (32×32 output).
+Renders ASCII text using 8Ã—8 font with 4Ã— pixel expansion (32Ã—32 output).
 
 ### Implementation
 
@@ -471,7 +471,7 @@ render_text_string_256:
     push si
     push di
     xor ah,ah
-    shl ax,3                ; × 8 bytes per char
+    shl ax,3                ; Ã— 8 bytes per char
     add ax,[0xf500]         ; Add font base
     mov si,ax
     mov cx,0x8              ; 8 rows
@@ -479,7 +479,7 @@ render_text_string_256:
 .row_loop:
     push cx
     lodsb                   ; Load row bitmap
-    call expand_byte_4x     ; Expand to 4× width
+    call expand_byte_4x     ; Expand to 4Ã— width
     mov [es:di],dx          ; Write pixels
     call expand_byte_4x
     mov [es:di+0x2],dx
@@ -509,10 +509,10 @@ expand_byte_4x:
     ret
 ```
 
-**4× Pixel Expansion**:
-- 1 bit → 2 pixels wide × 4 rows tall
+**4Ã— Pixel Expansion**:
+- 1 bit â†’ 2 pixels wide Ã— 4 rows tall
 - Creates smooth, anti-aliased appearance
-- 8×8 font → 32×32 output
+- 8Ã—8 font â†’ 32Ã—32 output
 
 ---
 
@@ -521,8 +521,8 @@ expand_byte_4x:
 ### Large Background (0x0654)
 
 **Parameters**: AL = image ID
-**Size**: 336×48 pixels (16,128 bytes)
-**Source**: CS:0xAB40 + (image_id × 0x0CC0)
+**Size**: 336Ã—48 pixels (16,128 bytes)
+**Source**: CS:0xAB40 + (image_id Ã— 0x0CC0)
 
 ```assembly
 load_large_background_256:
@@ -545,7 +545,7 @@ load_large_background_256:
     mov word [cs:0x4501],0x0
     mov word [cs:0x44ff],0x0
 
-    ; Decode 816 words (3264 bytes = 816 × 4 pixels)
+    ; Decode 816 words (3264 bytes = 816 Ã— 4 pixels)
     mov cx,0x330
 .decode_loop:
     mov ax,[si+0x660]       ; Plane 2 (offset)
@@ -658,7 +658,7 @@ clear_screen_256:
 ## Section 8: NPC Character Rendering (0x0736)
 
 ### Purpose
-Renders character portraits in a 25×34 grid at 8×8 pixels each.
+Renders character portraits in a 25Ã—34 grid at 8Ã—8 pixels each.
 
 ```assembly
 render_npc_grid_256:
@@ -726,7 +726,7 @@ render_npc_char_256:
     mov di,ax
     pop si
 
-    ; Copy 8×8 sprite (3 planes)
+    ; Copy 8Ã—8 sprite (3 planes)
     mov cx,0x3
 .plane_loop:
     push cx
@@ -748,8 +748,8 @@ render_npc_char_256:
 ```
 
 **Grid Layout**:
-- 25 rows × 34 columns
-- 8×8 pixels per character
+- 25 rows Ã— 34 columns
+- 8Ã—8 pixels per character
 - 320-byte scanline stride
 
 ---
@@ -762,7 +762,7 @@ Displays bordered message boxes with 256-color gradients.
 ```assembly
 display_message_box_256:
     mov bx,ax
-    shl bx,1                ; BX = message_id × 2
+    shl bx,1                ; BX = message_id Ã— 2
     mov al,[bx+0x3c16]      ; Load border color 1
     mov [0x4506],al
     mov al,[bx+0x3c17]      ; Load border color 2
@@ -788,11 +788,11 @@ display_message_box_256:
     ; ... (similar to Chunk_03 but with 320-byte stride)
 
 render_border_char_256:
-    ; Render 8×8 character with color gradient
+    ; Render 8Ã—8 character with color gradient
     push si
     dec al
     xor ah,ah
-    shl ax,3                ; × 8 bytes
+    shl ax,3                ; Ã— 8 bytes
     add ax,0x3a5f           ; Font base
     mov si,ax
 
@@ -821,14 +821,14 @@ render_border_char_256:
     or [0x44ff],ax
 
 .done:
-    ; Decode and write 4× expanded pixels
+    ; Decode and write 4Ã— expanded pixels
     call 0x146d             ; Pixel 0,1
     stosw
     call 0x146d             ; Pixel 2,3
     stosw
     add di,0x13c            ; Next scanline
 
-    ; ... (repeat for 8 rows with 4× expansion)
+    ; ... (repeat for 8 rows with 4Ã— expansion)
 
     pop si
     ret
@@ -858,8 +858,8 @@ render_border_char_256:
 | `0x4508` | 1 byte | Transparency flag |
 | `0x450B` | 2 bytes | Function pointer for rendering |
 | `0x4511` | 1600 bytes | Text buffer (expanded) |
-| `0xA000` | 135 bytes | Animation slots (9 × 15 bytes) |
-| `0xF500` | 768 bytes | 8×8 font (96 chars × 8 bytes) |
+| `0xA000` | 135 bytes | Animation slots (9 Ã— 15 bytes) |
+| `0xF500` | 768 bytes | 8Ã—8 font (96 chars Ã— 8 bytes) |
 
 ### External Memory References
 
@@ -878,11 +878,11 @@ render_border_char_256:
 
 ```
 Operation               CGA Mode    Mode 13h    Speedup
-──────────────────────────────────────────────────────────
-Set pixel               ~15 cycles  ~8 cycles   1.9×
-Draw horizontal line    ~25 cycles  ~12 cycles  2.1×
-Copy sprite (100px)     ~800 cycles ~400 cycles 2.0×
-Clear screen            ~12ms       ~6ms        2.0×
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+Set pixel               ~15 cycles  ~8 cycles   1.9Ã—
+Draw horizontal line    ~25 cycles  ~12 cycles  2.1Ã—
+Copy sprite (100px)     ~800 cycles ~400 cycles 2.0Ã—
+Clear screen            ~12ms       ~6ms        2.0Ã—
 ```
 
 ### Memory Access Patterns
@@ -952,7 +952,7 @@ Rendering at 18.2 Hz (55ms per frame):
 - Text rendering:        4ms (7%)
 - Background draw:      20ms (36%)
 - Vsync wait:            5ms (9%)
-                        ───────
+                        â”€â”€â”€â”€â”€â”€â”€
                 Total:  55ms (100%)
 ```
 
@@ -960,7 +960,7 @@ Rendering at 18.2 Hz (55ms per frame):
 
 1. **Linear addressing** - No bank switching overhead
 2. **Direct memcpy** - Sequential byte transfers
-3. **4× pixel expansion** - Reuses decoded data
+3. **4Ã— pixel expansion** - Reuses decoded data
 4. **Palette effects** - Change colors without redraw
 5. **Double-buffering** - Smooth animation
 
@@ -980,15 +980,15 @@ Rendering at 18.2 Hz (55ms per frame):
 
 **ZELRES1/Chunk_05** is the modern 256-color VGA renderer:
 
-- ✅ **Mode 13h graphics** - 320×200, 256 colors, linear framebuffer
-- ✅ **Direct pixel access** - No bitplane complexity at display level
-- ✅ **Sprite rendering** - Opaque, transparent, masked with 4× expansion
-- ✅ **Animation system** - 9 slots with 320-byte scanline stride
-- ✅ **Text rendering** - 4× expanded characters with anti-aliasing
-- ✅ **Background loading** - Full-screen 256-color images
-- ✅ **Message boxes** - Color gradients and smooth borders
-- ✅ **Performance** - 2× faster than CGA mode due to linear addressing
+- âœ… **Mode 13h graphics** - 320Ã—200, 256 colors, linear framebuffer
+- âœ… **Direct pixel access** - No bitplane complexity at display level
+- âœ… **Sprite rendering** - Opaque, transparent, masked with 4Ã— expansion
+- âœ… **Animation system** - 9 slots with 320-byte scanline stride
+- âœ… **Text rendering** - 4Ã— expanded characters with anti-aliasing
+- âœ… **Background loading** - Full-screen 256-color images
+- âœ… **Message boxes** - Color gradients and smooth borders
+- âœ… **Performance** - 2Ã— faster than CGA mode due to linear addressing
 
-**Critical for Port**: This chunk represents the "enhanced" graphics mode. Understanding the Mode 13h linear framebuffer, palette management, and 4× pixel expansion is essential for implementing high-quality graphics in MonoGame.
+**Critical for Port**: This chunk represents the "enhanced" graphics mode. Understanding the Mode 13h linear framebuffer, palette management, and 4Ã— pixel expansion is essential for implementing high-quality graphics in MonoGame.
 
 **Size**: 8KB of optimized 256-color rendering for 1990s VGA hardware!

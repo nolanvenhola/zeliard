@@ -1,12 +1,12 @@
 # ZELRES1/Chunk_09 - Image Decoder B Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_09.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/109IMGDB.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/109GTHGC.asm`
 **Size**: 4,318 bytes (4.3KB)
 **Disassembly Lines**: 2,048 lines
 **Purpose**: Variant image decoder with different compression strategy
 **Load Address**: Variable (loaded by chunk_00)
-**Priority**: ⭐⭐ HIGH (Opening scene decoder variant B)
+**Priority**: â­�â­� HIGH (Opening scene decoder variant B)
 
 ## Overview
 
@@ -61,38 +61,38 @@
 ## Architecture Diagram
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│       ZELRES1/Chunk_09 - Image Decoder B (Delta-Heavy)       │
-│                                                                │
-│  Entry Point (0x0000)                                         │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ - Check compression format (byte 5)                 │      │
-│  │ - Format 8: Delta-RLE hybrid                        │      │
-│  │ - Format 9: Pure delta encoding                     │      │
-│  └────────────────────────────────────────────────────┘      │
-│                ↓                                              │
-│  Stage 1: Simplified RLE (0x0020-0x0100)                     │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ - Simple [count][value] pairs                       │      │
-│  │ - No escape markers, fixed format                   │      │
-│  │ - Inline delta values                               │      │
-│  └────────────────────────────────────────────────────┘      │
-│                ↓                                              │
-│  Stage 2: Streaming Delta Decode (0x0100-0x0250)            │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ - Read base value + delta stream                    │      │
-│  │ - Running sum: value = prev + delta                 │      │
-│  │ - No bitmap control (always decode)                 │      │
-│  │ - Outputs interleaved bitplanes                     │      │
-│  └────────────────────────────────────────────────────┘      │
-│                ↓                                              │
-│  Direct Rendering (0x0250-0x03FF)                            │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ - Stream directly to VGA (no buffering)             │      │
-│  │ - Scanline-at-a-time rendering                      │      │
-│  │ - Optimized for sequential access                   │      │
-│  └────────────────────────────────────────────────────┘      │
-└──────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚       ZELRES1/Chunk_09 - Image Decoder B (Delta-Heavy)       â”‚
+â”‚                                                                â”‚
+â”‚  Entry Point (0x0000)                                         â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ - Check compression format (byte 5)                 â”‚      â”‚
+â”‚  â”‚ - Format 8: Delta-RLE hybrid                        â”‚      â”‚
+â”‚  â”‚ - Format 9: Pure delta encoding                     â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                â†“                                              â”‚
+â”‚  Stage 1: Simplified RLE (0x0020-0x0100)                     â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ - Simple [count][value] pairs                       â”‚      â”‚
+â”‚  â”‚ - No escape markers, fixed format                   â”‚      â”‚
+â”‚  â”‚ - Inline delta values                               â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                â†“                                              â”‚
+â”‚  Stage 2: Streaming Delta Decode (0x0100-0x0250)            â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ - Read base value + delta stream                    â”‚      â”‚
+â”‚  â”‚ - Running sum: value = prev + delta                 â”‚      â”‚
+â”‚  â”‚ - No bitmap control (always decode)                 â”‚      â”‚
+â”‚  â”‚ - Outputs interleaved bitplanes                     â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                â†“                                              â”‚
+â”‚  Direct Rendering (0x0250-0x03FF)                            â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ - Stream directly to VGA (no buffering)             â”‚      â”‚
+â”‚  â”‚ - Scanline-at-a-time rendering                      â”‚      â”‚
+â”‚  â”‚ - Optimized for sequential access                   â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -142,7 +142,7 @@ Running value:
   0x00: Write 0x00 (DH=0x00)
   +0x02: Write 0x02 (DH=0x02)
   +0xFF: Write 0x01 (DH=0x01, 0xFF is -1)
-  RLE: Write 0x15 × 2 (DH=0x15)
+  RLE: Write 0x15 Ã— 2 (DH=0x15)
 
 Output: [0x00] [0x02] [0x01] [0x15] [0x15]
 ```
@@ -376,8 +376,8 @@ Chunk_08 (Bitmap + XOR):
 Chunk_09 (Delta-Heavy):
 - Best for: Gradients, smooth transitions
 - Compression: 8:1 typical
-- Speed: 400 cycles per pixel (2× faster!)
-- Buffer: ~4KB (4× smaller)
+- Speed: 400 cycles per pixel (2Ã— faster!)
+- Buffer: ~4KB (4Ã— smaller)
 ```
 
 **Trade-off**:
@@ -425,11 +425,11 @@ use_chunk_09:
 
 **ZELRES1/Chunk_09** optimizes for speed over compression:
 
-- ⭐ **Delta-first strategy**: Better for gradients than sparse data
-- ⭐ **Streaming architecture**: Minimal buffering reduces memory pressure
-- ⭐ **Interleaved bitplanes**: Natural for scanline rendering
-- ⭐ **2× faster than chunk_08**: Trade compression for speed
-- ⭐ **Simplified format**: Easier to decode, less branching
+- â­� **Delta-first strategy**: Better for gradients than sparse data
+- â­� **Streaming architecture**: Minimal buffering reduces memory pressure
+- â­� **Interleaved bitplanes**: Natural for scanline rendering
+- â­� **2Ã— faster than chunk_08**: Trade compression for speed
+- â­� **Simplified format**: Easier to decode, less branching
 
 **Critical for Port**: Understanding when to use chunk_09 vs chunk_08 helps optimize modern decoders. Use delta encoding for photographs, bitmap encoding for UI.
 

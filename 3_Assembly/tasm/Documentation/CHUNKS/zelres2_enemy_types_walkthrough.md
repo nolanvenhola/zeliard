@@ -442,14 +442,14 @@ jmp word near [cs:bx+<table_offset>]
 
 **Size**: ~2KB
 **Binary**: zelres2_extracted/chunk_07.bin
-**Assembly**: zelres2/code/207MURLA.asm
+**Assembly**: zelres2/code/207MOLEB.asm
 
 ### Initialization
 
 ```assembly
 00000000: Initialize graphics mode
 0000002F: Load sprite data at offset 0x2926
-00000051: Set up grid-based rendering (0x380d = 56Ãƒâ€”13 grid)
+00000051: Set up grid-based rendering (0x380d = 56ÃƒÆ’Ã¢â‚¬â€�13 grid)
 00000074: Display intro animation
 ```
 
@@ -609,7 +609,7 @@ Web projectiles:
 
 ### Rendering
 
-Uses **7Ãƒâ€”6 sprite format** (offset orc_func_1 (0x156)):
+Uses **7ÃƒÆ’Ã¢â‚¬â€�6 sprite format** (offset orc_func_1 (0x156)):
 
 ```assembly
 0156: mov cx,0x7   ; 7 frames per row
@@ -975,7 +975,7 @@ Wizard cycles through 4 spell types:
 00CA:   goto Update
 ```
 
-Explosion hits 3Ãƒâ€”3 tile area for 2 damage.
+Explosion hits 3ÃƒÆ’Ã¢â‚¬â€�3 tile area for 2 damage.
 
 ### Spell 1: Ice Lance
 

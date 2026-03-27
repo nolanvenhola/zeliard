@@ -1,12 +1,12 @@
 # ZELRES2/Chunk_05 - Animation & CGA Graphics System Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_05.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/205ANIMS.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/205GFTGA.asm`
 **Size**: 9.7KB (9,932 bytes)
 **Disassembly Lines**: 4,483 lines
 **Purpose**: Character animation system, CGA graphics mode rendering, sprite management
 **Load Address**: CS:0x6000 (typical)
-**Priority**: ⭐⭐⭐ CRITICAL
+**Priority**: â­�â­�â­� CRITICAL
 
 ## Overview
 
@@ -69,39 +69,39 @@
 ## Architecture Diagram
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│        ZELRES2/Chunk_05 (Animation & CGA System)           │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │        Initialization (0x002C-0x00AF)              │   │
-│  │  - Clear sprite tracking table (0x5262, 128 bytes) │   │
-│  │  - Initialize frame counter (0x5243)                │   │
-│  │  - Set base address (0x5231 = 0x41F8)              │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                        │                                     │
-│                        ├─> Load Animation Data              │
-│                        │   ┌──────────────────────────┐     │
-│                        │   │ Read sprite references   │     │
-│                        │   │ Load frame data          │     │
-│                        │   │ Decode bitplane format   │     │
-│                        │   └──────────────────────────┘     │
-│                        │                                     │
-│                        ├─> Animation Loop (0x00BB-0x0127)   │
-│                        │   ┌──────────────────────────┐     │
-│                        │   │ Compare prev/curr state  │     │
-│                        │   │ Increment frame counters │     │
-│                        │   │ Cycle animations         │     │
-│                        │   │ Call sprite renderer     │     │
-│                        │   └──────────────────────────┘     │
-│                        │                                     │
-│                        └─> CGA Rendering (0x0272-0x0435)    │
-│                            ┌──────────────────────────┐     │
-│                            │ Map to B800:0000 (CGA)   │     │
-│                            │ Handle interlaced scan   │     │
-│                            │ 4-color palette mapping  │     │
-│                            │ Sprite blitting          │     │
-│                            └──────────────────────────┘     │
-└────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚        ZELRES2/Chunk_05 (Animation & CGA System)           â”‚
+â”‚                                                              â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚        Initialization (0x002C-0x00AF)              â”‚   â”‚
+â”‚  â”‚  - Clear sprite tracking table (0x5262, 128 bytes) â”‚   â”‚
+â”‚  â”‚  - Initialize frame counter (0x5243)                â”‚   â”‚
+â”‚  â”‚  - Set base address (0x5231 = 0x41F8)              â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â”œâ”€> Load Animation Data              â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                        â”‚   â”‚ Read sprite references   â”‚     â”‚
+â”‚                        â”‚   â”‚ Load frame data          â”‚     â”‚
+â”‚                        â”‚   â”‚ Decode bitplane format   â”‚     â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â”œâ”€> Animation Loop (0x00BB-0x0127)   â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                        â”‚   â”‚ Compare prev/curr state  â”‚     â”‚
+â”‚                        â”‚   â”‚ Increment frame counters â”‚     â”‚
+â”‚                        â”‚   â”‚ Cycle animations         â”‚     â”‚
+â”‚                        â”‚   â”‚ Call sprite renderer     â”‚     â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â””â”€> CGA Rendering (0x0272-0x0435)    â”‚
+â”‚                            â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                            â”‚ Map to B800:0000 (CGA)   â”‚     â”‚
+â”‚                            â”‚ Handle interlaced scan   â”‚     â”‚
+â”‚                            â”‚ 4-color palette mapping  â”‚     â”‚
+â”‚                            â”‚ Sprite blitting          â”‚     â”‚
+â”‚                            â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -119,7 +119,7 @@ The chunk is entered at offset 0x002C, which performs initialization:
 0x0031  pop es                  ; ES = CS (code segment for data access)
 0x0032  mov di,0x5262           ; DI = sprite tracking table
 0x0035  xor ax,ax               ; AX = 0
-0x0037  mov cx,0x80             ; CX = 128 (64 sprites × 2 bytes)
+0x0037  mov cx,0x80             ; CX = 128 (64 sprites Ã— 2 bytes)
 0x003A  rep stosw               ; Clear sprite tracking table
 ```
 
@@ -378,7 +378,7 @@ The chunk is entered at offset 0x002C, which performs initialization:
 ```
 
 **State Machine**:
-- `0xFC` → `0xFF`: Sprite being erased
+- `0xFC` â†’ `0xFF`: Sprite being erased
 - `0xFE`: Sprite active and rendering
 - `0xFF`: Sprite slot empty
 - Other values: Sprite ID (animation frame)
@@ -414,7 +414,7 @@ The chunk is entered at offset 0x002C, which performs initialization:
 0x0193  ret                     ; Don't update on even frames
 
 0x0194  inc al                  ; Frame++
-0x0196  and al,0x1              ; Wrap: 0→1→0→1
+0x0196  and al,0x1              ; Wrap: 0â†’1â†’0â†’1
 0x0198  add al,0x1B             ; Add base ID back
 0x019A  mov [si-0x1],al         ; Store new frame
 0x019D  ret
@@ -451,14 +451,14 @@ The chunk is entered at offset 0x002C, which performs initialization:
 
 ; Advance frame:
 0x01C0  inc al                  ; Frame++
-0x01C2  and al,0x3              ; Wrap: 0→1→2→3→0
+0x01C2  and al,0x3              ; Wrap: 0â†’1â†’2â†’3â†’0
 0x01C4  add al,0x1D             ; Add base ID
 0x01C6  mov [si-0x1],al         ; Store frame
 0x01C9  ret
 
 ; Frames 4-5 (transition frames):
 0x01CA  inc al                  ; Frame++
-0x01CC  and al,0x1              ; Toggle: 4↔5
+0x01CC  and al,0x1              ; Toggle: 4â†”5
 0x01CE  add al,0x21             ; Base ID 0x21
 0x01D0  mov [si-0x1],al
 0x01D3  ret
@@ -518,7 +518,7 @@ The chunk is entered at offset 0x002C, which performs initialization:
 0x0215  cmp al,0x10             ; Current 0x10?
 0x0217  jz 0x242
 
-; Reverse mapping (0x33+ → 0x0C+):
+; Reverse mapping (0x33+ â†’ 0x0C+):
 0x0219  sub al,0x33             ; Adjust to 0-based
 0x021B  jnc 0x21E               ; Continue if >= 0x33
 0x021D  ret
@@ -559,7 +559,7 @@ The chunk is entered at offset 0x002C, which performs initialization:
 ```
 
 **State Mapping**:
-- `0x0C-0x10` ↔ `0x33-0x3D`: Bidirectional state transitions
+- `0x0C-0x10` â†” `0x33-0x3D`: Bidirectional state transitions
 - Handles attack sequences, jumps, special moves
 - Frame counter gates animation speed (half-rate)
 
@@ -580,7 +580,7 @@ The chunk is entered at offset 0x002C, which performs initialization:
 0x0267  ret
 
 0x0268  inc al                  ; Frame++
-0x026A  and al,0x3              ; Wrap: 0→1→2→3→0
+0x026A  and al,0x3              ; Wrap: 0â†’1â†’2â†’3â†’0
 0x026C  add al,0x25             ; Add base ID
 0x026E  mov [si-0x1],al         ; Store frame
 0x0271  ret
@@ -610,7 +610,7 @@ The chunk is entered at offset 0x002C, which performs initialization:
 ; Rendering path:
 0x0280  mov bl,al               ; BL = sprite ID
 0x0282  xor bh,bh               ; BH = 0
-0x0284  add bx,bx               ; BX = sprite_id × 2
+0x0284  add bx,bx               ; BX = sprite_id Ã— 2
 0x0286  test word [bx+0x5262],0xFFFF ; Check if cached
 0x028C  jnz 0x2D2               ; Jump to copy if cached
 
@@ -618,7 +618,7 @@ The chunk is entered at offset 0x002C, which performs initialization:
 0x028E  dec al                  ; Adjust sprite ID
 0x0290  mov [bx+0x5262],di      ; Cache display position
 0x0294  mov cl,0x20             ; CL = 32 (sprite stride)
-0x0296  mul cl                  ; AX = sprite_id × 32
+0x0296  mul cl                  ; AX = sprite_id Ã— 32
 0x0298  add ax,0x8030           ; Add sprite data base
 0x029B  mov si,ax               ; SI = sprite data pointer
 0x029D  mov ds,word [cs:0xFF2C] ; DS = sprite data segment
@@ -654,7 +654,7 @@ The chunk is entered at offset 0x002C, which performs initialization:
 - CGA uses interlaced scan lines
 - Even scan lines: B800:0000-B800:1FFF
 - Odd scan lines: B800:2000-B800:3FFF
-- Each sprite: 4 pixels wide × 8 pixels tall
+- Each sprite: 4 pixels wide Ã— 8 pixels tall
 - 2 bytes per row (4 pixels at 2 bits each)
 
 #### CGA Interlace Calculation
@@ -683,7 +683,7 @@ The code adds 0x1FFC (8188) to skip to next line:
 0x02D9  mov es,ax               ; ES = B800
 0x02DB  mov ds,ax               ; DS = B800 (copy within video memory)
 
-; Copy sprite (8 rows × 4 bytes):
+; Copy sprite (8 rows Ã— 4 bytes):
 0x02DD  movsw                   ; Row 0 (even), 2 bytes
 0x02DE  movsw                   ; Row 0, 2 bytes
 0x02DF  add di,0x1FFC           ; Next scan line
@@ -715,7 +715,7 @@ The code adds 0x1FFC (8188) to skip to next line:
 0x03B6  ret
 ```
 
-**Optimization**: Once a sprite is rendered, subsequent frames copy from video memory instead of re-decoding from data (2-3× faster).
+**Optimization**: Once a sprite is rendered, subsequent frames copy from video memory instead of re-decoding from data (2-3Ã— faster).
 
 ---
 
@@ -874,8 +874,8 @@ The code adds 0x1FFC (8188) to skip to next line:
 | `B800:0000-B800:1FFF` | Even | Even scan lines (0, 2, 4, ...) |
 | `B800:2000-B800:3FFF` | Odd | Odd scan lines (1, 3, 5, ...) |
 
-**Screen Resolution**: 320×200 pixels, 4 colors (2 bits per pixel)
-**Bytes per row**: 80 bytes (320 pixels ÷ 4 pixels/byte)
+**Screen Resolution**: 320Ã—200 pixels, 4 colors (2 bits per pixel)
+**Bytes per row**: 80 bytes (320 pixels Ã· 4 pixels/byte)
 **Interlace stride**: 0x2000 bytes (switches between even/odd banks)
 
 ---
@@ -903,10 +903,10 @@ The code translates EGA 16-color sprite data to CGA 4-color format:
 ```c
 // Pseudo-code for color mapping:
 uint8_t MapEGAtoCGA(uint8_t ega_color) {
-    if (ega_color == 0x00) return 0; // Black → Black
-    if (ega_color < 0x08) return 1;  // Dark colors → Cyan/Green
-    if (ega_color < 0x0E) return 2;  // Medium → Magenta/Red
-    return 3;                         // Bright → White/Yellow
+    if (ega_color == 0x00) return 0; // Black â†’ Black
+    if (ega_color < 0x08) return 1;  // Dark colors â†’ Cyan/Green
+    if (ega_color < 0x0E) return 2;  // Medium â†’ Magenta/Red
+    return 3;                         // Bright â†’ White/Yellow
 }
 ```
 
@@ -920,7 +920,7 @@ uint8_t MapEGAtoCGA(uint8_t ega_color) {
 |---------------|---------------|-------|
 | Full Speed | 18.2 FPS | No gating |
 | Half Speed | 9.1 FPS | Gated by frame counter LSB |
-| Walking (4-frame) | ~7.3 FPS | 4 frames × 2 updates = ~8 ticks |
+| Walking (4-frame) | ~7.3 FPS | 4 frames Ã— 2 updates = ~8 ticks |
 | Random Hold | 6-9 FPS | Frame 0 holds randomly |
 
 ---
@@ -929,7 +929,7 @@ uint8_t MapEGAtoCGA(uint8_t ega_color) {
 
 ### Rendering Optimizations
 
-1. **Sprite Caching**: Once rendered, sprites are copied from video memory instead of re-decoded (2-3× faster)
+1. **Sprite Caching**: Once rendered, sprites are copied from video memory instead of re-decoded (2-3Ã— faster)
 2. **Delta Compression**: Only sprites that changed are updated (`cmpsb` comparison)
 3. **Interlaced Blitting**: Optimized for CGA interlaced scan lines
 4. **Frame Gating**: Half-speed animations reduce CPU load
@@ -947,7 +947,7 @@ Typical breakdown (CGA mode):
 - Cache management:          2ms (4%)
 - Overhead:                  2ms (4%)
 - Unused budget:            20ms (36%)
-                            ───────
+                            â”€â”€â”€â”€â”€â”€â”€
                     Total:  55ms (100%)
 ```
 
@@ -969,7 +969,7 @@ Typical breakdown (CGA mode):
 // Game engine loads sprite data:
 mov ds,[cs:0xFF2C]          // Set data segment
 mov si,sprite_id * 32 + 0x8030 // Calculate sprite data offset
-// Sprite data is 32 bytes per frame (8×4 pixels, 2 bitplanes)
+// Sprite data is 32 bytes per frame (8Ã—4 pixels, 2 bitplanes)
 ```
 
 ### Calls from Main Loop (ZELRES2/Chunk_00)
@@ -1003,14 +1003,14 @@ call [cs:0x5000]            // Animation update function
 
 **ZELRES2/Chunk_05** is the CGA-compatible animation and rendering system:
 
-- ✅ **Animation State Machine** with 5 different animation types
-- ✅ **CGA Graphics Mode** rendering to B800:0000 (4-color mode)
-- ✅ **Interlaced Scan Lines** optimized blitting for CGA hardware
-- ✅ **Sprite Caching** for 2-3× rendering performance
-- ✅ **Delta Compression** updates only changed sprites
-- ✅ **Frame Gating** for half-speed animations
-- ✅ **Random Variation** in walk cycles for natural movement
-- ✅ **Level-Specific Handlers** for unique behaviors (levels 5-8)
+- âœ… **Animation State Machine** with 5 different animation types
+- âœ… **CGA Graphics Mode** rendering to B800:0000 (4-color mode)
+- âœ… **Interlaced Scan Lines** optimized blitting for CGA hardware
+- âœ… **Sprite Caching** for 2-3Ã— rendering performance
+- âœ… **Delta Compression** updates only changed sprites
+- âœ… **Frame Gating** for half-speed animations
+- âœ… **Random Variation** in walk cycles for natural movement
+- âœ… **Level-Specific Handlers** for unique behaviors (levels 5-8)
 
 **Critical for Port**: This chunk provides backward compatibility with CGA systems. Modern ports can skip CGA rendering but should preserve the animation state machine logic for accurate timing and behavior.
 

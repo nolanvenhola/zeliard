@@ -1,12 +1,12 @@
 # ZELRES2/Chunk_06 - Enemy AI & Pattern Behaviors Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_06.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/206ENAIE.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/206GFMCA.asm`
 **Size**: 21,504 bytes (21KB)
 **Disassembly Lines**: 4,146 lines
 **Purpose**: Enemy AI decision trees, movement patterns, attack behaviors
 **Load Address**: CS:0x6000 (typical)
-**Priority**: ⭐⭐⭐ CRITICAL
+**Priority**: â­�â­�â­� CRITICAL
 
 ---
 
@@ -70,27 +70,27 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│           ZELRES2/Chunk_06 (Enemy AI Behaviors)             │
-│                                                              │
-│  ┌────────────────────────────────────────────────────┐    │
-│  │  AI State Machine (0x0030-0x00AF)                  │    │
-│  │  • Patrol → Aggro → Attack → Retreat              │    │
-│  │  • State stored in enemy struct [0xe900+]         │    │
-│  └────────────────────────────────────────────────────┘    │
-│                         │                                    │
-│         ┌───────────────┼───────────────┐                  │
-│         │               │               │                   │
-│         ↓               ↓               ↓                   │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐          │
-│  │  Ground AI │  │  Flying AI │  │  Boss AI   │          │
-│  │  (0x0030)  │  │  (0x02CA)  │  │  (0x05C0)  │          │
-│  │            │  │            │  │            │          │
-│  │ • Patrol   │  │ • Sine arc │  │ • Phase 1  │          │
-│  │ • Chase    │  │ • Dive     │  │ • Phase 2  │          │
-│  │ • Melee    │  │ • Strafe   │  │ • Berserk  │          │
-│  └────────────┘  └────────────┘  └────────────┘          │
-└─────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚           ZELRES2/Chunk_06 (Enemy AI Behaviors)             â”‚
+â”‚                                                              â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚  AI State Machine (0x0030-0x00AF)                  â”‚    â”‚
+â”‚  â”‚  â€¢ Patrol â†’ Aggro â†’ Attack â†’ Retreat              â”‚    â”‚
+â”‚  â”‚  â€¢ State stored in enemy struct [0xe900+]         â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                         â”‚                                    â”‚
+â”‚         â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�                  â”‚
+â”‚         â”‚               â”‚               â”‚                   â”‚
+â”‚         â†“               â†“               â†“                   â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�          â”‚
+â”‚  â”‚  Ground AI â”‚  â”‚  Flying AI â”‚  â”‚  Boss AI   â”‚          â”‚
+â”‚  â”‚  (0x0030)  â”‚  â”‚  (0x02CA)  â”‚  â”‚  (0x05C0)  â”‚          â”‚
+â”‚  â”‚            â”‚  â”‚            â”‚  â”‚            â”‚          â”‚
+â”‚  â”‚ â€¢ Patrol   â”‚  â”‚ â€¢ Sine arc â”‚  â”‚ â€¢ Phase 1  â”‚          â”‚
+â”‚  â”‚ â€¢ Chase    â”‚  â”‚ â€¢ Dive     â”‚  â”‚ â€¢ Phase 2  â”‚          â”‚
+â”‚  â”‚ â€¢ Melee    â”‚  â”‚ â€¢ Strafe   â”‚  â”‚ â€¢ Berserk  â”‚          â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜          â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -142,7 +142,7 @@
 0x0181  jc 0x186            ; Yes, process patrol
 0x0183  ret                 ; No, exit
 
-; Two-state patrol (idle ↔ walk):
+; Two-state patrol (idle â†” walk):
 0x0186  mov byte [di-0x1],0xfe  ; Mark AI updating
 0x018A  test byte [0x4fff],0x1  ; Check frame timer bit 0
 0x018F  jnz 0x192               ; Update on odd frames
@@ -221,7 +221,7 @@
 0x01FD  jz 0x240            ; Yes, set BL=0x33
 0x01FF  mov bl,0x36         ; Try next state
 0x0201  cmp al,0xd
-0x0203  jz 0x240            ; State 0x0D → BL=0x36
+0x0203  jz 0x240            ; State 0x0D â†’ BL=0x36
     ; ... (multiple state checks for 0x0C, 0x0F, 0x10, 0x33-0x3D)
 
 0x0240  mov byte [di-0x1],0xfe  ; Mark updating
@@ -233,9 +233,9 @@
 ```
 
 **Object State Transitions**:
-- Doors: closed (0x0C) → opening (0x0D-0x0F) → open (0x10)
-- Chests: closed (0x33) → opening (0x34-0x35) → open (0x36)
-- Switches: off (0x3C) ↔ on (0x3D)
+- Doors: closed (0x0C) â†’ opening (0x0D-0x0F) â†’ open (0x10)
+- Chests: closed (0x33) â†’ opening (0x34-0x35) â†’ open (0x36)
+- Switches: off (0x3C) â†” on (0x3D)
 
 ---
 
@@ -283,7 +283,7 @@
 Y_final = base_Y + sin(frame_counter * 16) * amplitude
 ```
 - Creates smooth up/down motion
-- Period ≈ 16 frames (0.88 seconds at 18.2 Hz)
+- Period â‰ˆ 16 frames (0.88 seconds at 18.2 Hz)
 - Amplitude set by level data
 
 ---
@@ -573,14 +573,14 @@ Y_final = base_Y + sin(frame_counter * 16) * amplitude
 
 | Address | Size | Purpose |
 |---------|------|---------|
-| `0x501d` | 512 bytes | Enemy state array (32 enemies × 16 bytes) |
+| `0x501d` | 512 bytes | Enemy state array (32 enemies Ã— 16 bytes) |
 | `0x4feb` | 2 bytes | Base screen rendering offset |
 | `0x4fff` | 1 byte | AI frame timer (increments each tick) |
 | `0x5010` | 16 bytes | Boss state buffer |
 | `0x5014` | 16 bytes | Boss attack parameters |
 | `0xe900` | 32 bytes | Primary enemy data buffer |
 | `0xe91b` | 32 bytes | Boss data buffer |
-| `0xeda0` | 128 bytes | Retreat position table (32 enemies × 4 bytes) |
+| `0xeda0` | 128 bytes | Retreat position table (32 enemies Ã— 4 bytes) |
 
 ### AI Function Jump Table (0x3176+)
 
@@ -692,13 +692,13 @@ public class EnemyAI
 
 **ZELRES2/Chunk_06** is the enemy AI brain:
 
-- ✅ **State machines** (Patrol → Aggro → Attack → Retreat)
-- ✅ **Movement patterns** (ground patrol, flying arcs, jumping)
-- ✅ **Proximity detection** (aggro ranges 2-8 tiles)
-- ✅ **Attack patterns** (melee, ranged, multi-projectile)
-- ✅ **Boss behaviors** (3-phase attack sequences)
-- ✅ **Retreat logic** (health-based withdrawal)
-- ✅ **Randomization** (attack timing, patrol pauses)
+- âœ… **State machines** (Patrol â†’ Aggro â†’ Attack â†’ Retreat)
+- âœ… **Movement patterns** (ground patrol, flying arcs, jumping)
+- âœ… **Proximity detection** (aggro ranges 2-8 tiles)
+- âœ… **Attack patterns** (melee, ranged, multi-projectile)
+- âœ… **Boss behaviors** (3-phase attack sequences)
+- âœ… **Retreat logic** (health-based withdrawal)
+- âœ… **Randomization** (attack timing, patrol pauses)
 
 **Critical for Port**: The AI state machine and attack timing must be replicated precisely to maintain the original game's difficulty curve and enemy behavior feel.
 

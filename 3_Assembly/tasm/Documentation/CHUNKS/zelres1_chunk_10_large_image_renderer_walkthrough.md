@@ -1,27 +1,27 @@
-# ZELRES1/Chunk_10 - Large Image Renderer (48×34) Walkthrough
+# ZELRES1/Chunk_10 - Large Image Renderer (48Ã—34) Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_10.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/110LIMGR.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/110GTTGA.asm`
 **Size**: 5,380 bytes (5.4KB)
 **Disassembly Lines**: 2,507 lines
-**Purpose**: Renders large 48×34 character images using 4-plane VGA bitplane decoder
+**Purpose**: Renders large 48Ã—34 character images using 4-plane VGA bitplane decoder
 **Load Address**: Variable (loaded by chunk_00)
-**Priority**: ⭐⭐⭐ CRITICAL (Opening scene large image renderer)
+**Priority**: â­�â­�â­� CRITICAL (Opening scene large image renderer)
 
 ## Overview
 
-**ZELRES1/Chunk_10** is the 4-plane bitplane decoder referenced in the memory as the "large image renderer" (CS:0x4469 in chunk_00). It converts decompressed 4-plane bitplane data into VGA-displayable pixels for large background images (48 columns × 34 rows = 1,632 characters = 384×272 pixels).
+**ZELRES1/Chunk_10** is the 4-plane bitplane decoder referenced in the memory as the "large image renderer" (CS:0x4469 in chunk_00). It converts decompressed 4-plane bitplane data into VGA-displayable pixels for large background images (48 columns Ã— 34 rows = 1,632 characters = 384Ã—272 pixels).
 
 ### What This Chunk Does
 
 1. **4-Plane Bitplane Decoding** - Reads 4 bitplanes (IRGB: Intensity, Red, Green, Blue)
-2. **Large Image Layout** - Handles 48×34 character grid (384×272 pixels)
+2. **Large Image Layout** - Handles 48Ã—34 character grid (384Ã—272 pixels)
 3. **VGA Write Mode Programming** - Uses Write Mode 0 (CPU data direct)
 4. **Planar Output** - Writes to VGA using planar addressing
-5. **Scanline Interleaving** - Processes 8×8 character tiles
+5. **Scanline Interleaving** - Processes 8Ã—8 character tiles
 6. **Timing Control** - Frame-limited for smooth display
 
-**Key Difference from Chunk_11**: Chunk_10 handles larger images (48×34) vs chunk_11 (32×18). Same algorithm, different dimensions.
+**Key Difference from Chunk_11**: Chunk_10 handles larger images (48Ã—34) vs chunk_11 (32Ã—18). Same algorithm, different dimensions.
 
 ---
 
@@ -58,54 +58,54 @@
 ## Architecture Diagram
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│   ZELRES1/Chunk_10 - Large Image Renderer (48×34, 4-plane)   │
-│                                                                │
-│  Entry Point (0x0000)                                         │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ - Input: SI = 4-plane bitplane data                │      │
-│  │ - Input: BX = screen position (BH=row, BL=col)     │      │
-│  │ - Input: CX = size (CH=width, CL=height in chars)  │      │
-│  │ - Calculate plane stride (width × height)          │      │
-│  └────────────────────────────────────────────────────┘      │
-│                ↓                                              │
-│  Plane Stride Calculation (0x0020-0x0050)                    │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ stride = CH × CL × 8 (each char is 8 scanlines)    │      │
-│  │ plane0_offset = SI + 0                              │      │
-│  │ plane1_offset = SI + stride                         │      │
-│  │ plane2_offset = SI + stride × 2                     │      │
-│  │ plane3_offset = SI + stride × 3                     │      │
-│  └────────────────────────────────────────────────────┘      │
-│                ↓                                              │
-│  VGA Setup (0x0050-0x0100)                                   │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ - Calculate VGA destination: row×80 + col           │      │
-│  │ - Set Sequencer Map Mask for each plane             │      │
-│  │ - Set Graphics Controller Read Plane Select         │      │
-│  │ - Write Mode 0 (direct CPU write)                   │      │
-│  └────────────────────────────────────────────────────┘      │
-│                ↓                                              │
-│  Character Loop (0x0100-0x0300)                              │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ For each character (48×34 = 1632 chars):            │      │
-│  │   - Read 8 bytes from plane 0 (8 scanlines)        │      │
-│  │   - Read 8 bytes from plane 1                       │      │
-│  │   - Read 8 bytes from plane 2                       │      │
-│  │   - Read 8 bytes from plane 3                       │      │
-│  │   - Decode bitplanes into pixels                    │      │
-│  │   - Write to VGA with plane masking                 │      │
-│  └────────────────────────────────────────────────────┘      │
-│                ↓                                              │
-│  Bitplane Decoder (0x0300-0x0450)                            │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ For each scanline (8 per character):                │      │
-│  │   For each bit (8 pixels per byte):                 │      │
-│  │     pixel = (plane3 << 3) | (plane2 << 2) |         │      │
-│  │             (plane1 << 1) | plane0                   │      │
-│  │     Write pixel to VGA via plane select              │      │
-│  └────────────────────────────────────────────────────┘      │
-└──────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚   ZELRES1/Chunk_10 - Large Image Renderer (48Ã—34, 4-plane)   â”‚
+â”‚                                                                â”‚
+â”‚  Entry Point (0x0000)                                         â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ - Input: SI = 4-plane bitplane data                â”‚      â”‚
+â”‚  â”‚ - Input: BX = screen position (BH=row, BL=col)     â”‚      â”‚
+â”‚  â”‚ - Input: CX = size (CH=width, CL=height in chars)  â”‚      â”‚
+â”‚  â”‚ - Calculate plane stride (width Ã— height)          â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                â†“                                              â”‚
+â”‚  Plane Stride Calculation (0x0020-0x0050)                    â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ stride = CH Ã— CL Ã— 8 (each char is 8 scanlines)    â”‚      â”‚
+â”‚  â”‚ plane0_offset = SI + 0                              â”‚      â”‚
+â”‚  â”‚ plane1_offset = SI + stride                         â”‚      â”‚
+â”‚  â”‚ plane2_offset = SI + stride Ã— 2                     â”‚      â”‚
+â”‚  â”‚ plane3_offset = SI + stride Ã— 3                     â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                â†“                                              â”‚
+â”‚  VGA Setup (0x0050-0x0100)                                   â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ - Calculate VGA destination: rowÃ—80 + col           â”‚      â”‚
+â”‚  â”‚ - Set Sequencer Map Mask for each plane             â”‚      â”‚
+â”‚  â”‚ - Set Graphics Controller Read Plane Select         â”‚      â”‚
+â”‚  â”‚ - Write Mode 0 (direct CPU write)                   â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                â†“                                              â”‚
+â”‚  Character Loop (0x0100-0x0300)                              â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ For each character (48Ã—34 = 1632 chars):            â”‚      â”‚
+â”‚  â”‚   - Read 8 bytes from plane 0 (8 scanlines)        â”‚      â”‚
+â”‚  â”‚   - Read 8 bytes from plane 1                       â”‚      â”‚
+â”‚  â”‚   - Read 8 bytes from plane 2                       â”‚      â”‚
+â”‚  â”‚   - Read 8 bytes from plane 3                       â”‚      â”‚
+â”‚  â”‚   - Decode bitplanes into pixels                    â”‚      â”‚
+â”‚  â”‚   - Write to VGA with plane masking                 â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                â†“                                              â”‚
+â”‚  Bitplane Decoder (0x0300-0x0450)                            â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ For each scanline (8 per character):                â”‚      â”‚
+â”‚  â”‚   For each bit (8 pixels per byte):                 â”‚      â”‚
+â”‚  â”‚     pixel = (plane3 << 3) | (plane2 << 2) |         â”‚      â”‚
+â”‚  â”‚             (plane1 << 1) | plane0                   â”‚      â”‚
+â”‚  â”‚     Write pixel to VGA via plane select              â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -126,7 +126,7 @@
 
     ; Calculate VGA destination offset:
     mov ax,0x0050                ; 80 bytes per scanline
-    mul bl                       ; AX = row × 80
+    mul bl                       ; AX = row Ã— 80
     mov bl,bh                    ; BL = column
     xor bh,bh
     add ax,bx                    ; AX = VGA offset
@@ -134,11 +134,11 @@
 
     ; Calculate plane stride:
     mov al,ch                    ; AL = width
-    mul cl                       ; AX = width × height (characters)
+    mul cl                       ; AX = width Ã— height (characters)
     mov bp,ax                    ; BP = char count
-    shl ax,0                     ; × 2
-    shl ax,0                     ; × 4
-    shl ax,0                     ; × 8 (scanlines per char)
+    shl ax,0                     ; Ã— 2
+    shl ax,0                     ; Ã— 4
+    shl ax,0                     ; Ã— 8 (scanlines per char)
     mov [plane_stride],ax        ; Store stride (bytes between planes)
 
     ; Setup source pointers:
@@ -147,9 +147,9 @@
     add si,ax
     mov [plane1_ptr],si          ; Plane 1 = plane 0 + stride
     add si,ax
-    mov [plane2_ptr],si          ; Plane 2 = plane 0 + stride×2
+    mov [plane2_ptr],si          ; Plane 2 = plane 0 + strideÃ—2
     add si,ax
-    mov [plane3_ptr],si          ; Plane 3 = plane 0 + stride×3
+    mov [plane3_ptr],si          ; Plane 3 = plane 0 + strideÃ—3
 
     ; Setup VGA:
     mov ax,0xA000
@@ -162,10 +162,10 @@
 ```
 
 **Large Image Dimensions**:
-- **48 characters wide**: 384 pixels (48 × 8)
-- **34 characters tall**: 272 pixels (34 × 8)
+- **48 characters wide**: 384 pixels (48 Ã— 8)
+- **34 characters tall**: 272 pixels (34 Ã— 8)
 - **Total**: 1,632 characters = 13,056 scanlines = 104,448 pixels
-- **Bitplane data**: 104,448 pixels ÷ 8 = 13,056 bytes per plane
+- **Bitplane data**: 104,448 pixels Ã· 8 = 13,056 bytes per plane
 - **Total size**: 52,224 bytes (52KB) for 4 planes
 
 ---
@@ -210,7 +210,7 @@
 
 ```assembly
 0x0100:  ; Process all characters
-    mov cx,bp                    ; CX = character count (48×34)
+    mov cx,bp                    ; CX = character count (48Ã—34)
 
 0x0105:  ; Character loop
     push cx
@@ -239,7 +239,7 @@
     inc bp
 
     ; Decode 8 pixels:
-    call decode_bitplane_byte    ; → Decode and write to VGA
+    call decode_bitplane_byte    ; â†’ Decode and write to VGA
 
     ; Next VGA scanline:
     add di,0x50                  ; 80 bytes per scanline
@@ -326,7 +326,7 @@ decode_bitplane_byte:
     ; Now DL = 4-bit pixel value (0-15)
 
     ; Write pixel using planar addressing:
-    call write_vga_pixel         ; → Write DL to [ES:BP]
+    call write_vga_pixel         ; â†’ Write DL to [ES:BP]
     inc bp                       ; Next pixel
 
     pop cx
@@ -362,7 +362,7 @@ write_vga_pixel:
     out dx,al
     mov al,[temp_pixel]
     and al,0x01                  ; Isolate bit 0
-    neg al                       ; 0→0x00, 1→0xFF
+    neg al                       ; 0â†’0x00, 1â†’0xFF
     mov [es:bp],al               ; Write to VGA
 
     ; Write bit 1 (plane 1):
@@ -425,7 +425,7 @@ For better performance, the actual implementation writes entire scanlines plane-
 **Performance**:
 - **Bitplane-at-a-time**: 200 cycles per character (optimized)
 - **Pixel-at-a-time**: 800 cycles per character (reference)
-- **Total**: 1,632 chars × 200 = 326,400 cycles ≈ 68ms @ 4.77 MHz
+- **Total**: 1,632 chars Ã— 200 = 326,400 cycles â‰ˆ 68ms @ 4.77 MHz
 
 ---
 
@@ -435,7 +435,7 @@ For better performance, the actual implementation writes entire scanlines plane-
 
 | Address | Size | Purpose |
 |---------|------|---------|
-| `plane_stride` | 2 bytes | Bytes per plane (width × height × 8) |
+| `plane_stride` | 2 bytes | Bytes per plane (width Ã— height Ã— 8) |
 | `plane0_ptr` | 2 bytes | Current offset in plane 0 |
 | `plane1_ptr` | 2 bytes | Current offset in plane 1 |
 | `plane2_ptr` | 2 bytes | Current offset in plane 2 |
@@ -463,12 +463,12 @@ call chunk_10_base                ; Render large image
 ### Large vs Small Images
 
 ```
-Chunk_10 (48×34 = 1,632 chars):
+Chunk_10 (48Ã—34 = 1,632 chars):
 - Total pixels: 104,448
 - Render time: ~68ms @ 4.77 MHz
 - Bitplane data: 52KB
 
-Chunk_11 (32×18 = 576 chars):
+Chunk_11 (32Ã—18 = 576 chars):
 - Total pixels: 36,864
 - Render time: ~24ms @ 4.77 MHz
 - Bitplane data: 18KB
@@ -485,12 +485,12 @@ Chunk_11 (32×18 = 576 chars):
 
 **ZELRES1/Chunk_10** is the workhorse renderer for large opening scene backgrounds:
 
-- ⭐ **4-plane bitplane decoder**: Handles EGA/VGA planar format
-- ⭐ **Large image support**: 384×272 pixels (48×34 characters)
-- ⭐ **Optimized rendering**: Plane-at-a-time for speed
-- ⭐ **Direct VGA writes**: No intermediate buffering
-- ⭐ **Scanline interleaving**: Natural 8×8 character tiles
-- ⭐ **Timing control**: Frame-limited for smooth display
+- â­� **4-plane bitplane decoder**: Handles EGA/VGA planar format
+- â­� **Large image support**: 384Ã—272 pixels (48Ã—34 characters)
+- â­� **Optimized rendering**: Plane-at-a-time for speed
+- â­� **Direct VGA writes**: No intermediate buffering
+- â­� **Scanline interleaving**: Natural 8Ã—8 character tiles
+- â­� **Timing control**: Frame-limited for smooth display
 
 **Critical for Port**: Understanding 4-plane bitplane format is essential for decoding original Zeliard assets. Modern ports can convert to RGBA but must decode bitplanes first.
 

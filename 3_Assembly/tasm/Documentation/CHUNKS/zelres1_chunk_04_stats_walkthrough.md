@@ -1,12 +1,12 @@
 # ZELRES1/Chunk_04 - Stats & Attributes Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_04.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/104PLSTS.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/104GDTGA.asm`
 **Size**: 12,851 bytes (12.6 KB)
 **Disassembly Lines**: 4,053 lines
 **Purpose**: Player stats, leveling formulas, attribute calculations
 **Load Address**: CS:0x6000 (typical)
-**Priority**: ⭐⭐⭐ CRITICAL
+**Priority**: â­�â­�â­� CRITICAL
 
 ## Overview
 
@@ -53,42 +53,42 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│         ZELRES1/Chunk_04 (Stats & Attributes)           │
-│                                                           │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │     Player Stat Block (0x0000-0x0100)            │   │
-│  │  - Level, XP, HP, MP                             │   │
-│  │  - Attack, Defense, Speed                        │   │
-│  │  - Status effect timers                          │   │
-│  └──────────────────────────────────────────────────┘   │
-│                        │                                  │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │     Stat Functions (0x0100-0x0800)               │   │
-│  │  - Increase HP/MP                                │   │
-│  │  - Add experience                                │   │
-│  │  - Level up sequence                             │   │
-│  │  - Apply status effects                          │   │
-│  └──────────────────────────────────────────────────┘   │
-│         │              │              │                   │
-│         ├─> Leveling   ├─> Damage     ├─> Effects        │
-│         │              │              │                   │
-│  ┌──────┴──────┐ ┌────┴──────┐ ┌────┴──────────────┐    │
-│  │   Level     │ │  Combat   │ │   Status          │    │
-│  │   Tables    │ │  Math     │ │   Effects         │    │
-│  │  (0x0800-   │ │ (0x1000-  │ │   (0x1800-        │    │
-│  │   0x0FFF)   │ │  0x17FF)  │ │    0x2000)        │    │
-│  └─────────────┘ └───────────┘ └───────────────────┘    │
-│         │              │              │                   │
-│         ▼              ▼              ▼                   │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │       Progression Tables (0x2000-0x2FFF)         │   │
-│  │  - XP thresholds per level                       │   │
-│  │  - Stat growth curves                            │   │
-│  │  - Enemy XP rewards                              │   │
-│  │  - Boss stat scaling                             │   │
-│  └──────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚         ZELRES1/Chunk_04 (Stats & Attributes)           â”‚
+â”‚                                                           â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚     Player Stat Block (0x0000-0x0100)            â”‚   â”‚
+â”‚  â”‚  - Level, XP, HP, MP                             â”‚   â”‚
+â”‚  â”‚  - Attack, Defense, Speed                        â”‚   â”‚
+â”‚  â”‚  - Status effect timers                          â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚                        â”‚                                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚     Stat Functions (0x0100-0x0800)               â”‚   â”‚
+â”‚  â”‚  - Increase HP/MP                                â”‚   â”‚
+â”‚  â”‚  - Add experience                                â”‚   â”‚
+â”‚  â”‚  - Level up sequence                             â”‚   â”‚
+â”‚  â”‚  - Apply status effects                          â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚         â”‚              â”‚              â”‚                   â”‚
+â”‚         â”œâ”€> Leveling   â”œâ”€> Damage     â”œâ”€> Effects        â”‚
+â”‚         â”‚              â”‚              â”‚                   â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”� â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”� â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚   Level     â”‚ â”‚  Combat   â”‚ â”‚   Status          â”‚    â”‚
+â”‚  â”‚   Tables    â”‚ â”‚  Math     â”‚ â”‚   Effects         â”‚    â”‚
+â”‚  â”‚  (0x0800-   â”‚ â”‚ (0x1000-  â”‚ â”‚   (0x1800-        â”‚    â”‚
+â”‚  â”‚   0x0FFF)   â”‚ â”‚  0x17FF)  â”‚ â”‚    0x2000)        â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚         â”‚              â”‚              â”‚                   â”‚
+â”‚         â–¼              â–¼              â–¼                   â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚       Progression Tables (0x2000-0x2FFF)         â”‚   â”‚
+â”‚  â”‚  - XP thresholds per level                       â”‚   â”‚
+â”‚  â”‚  - Stat growth curves                            â”‚   â”‚
+â”‚  â”‚  - Enemy XP rewards                              â”‚   â”‚
+â”‚  â”‚  - Boss stat scaling                             â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -232,40 +232,40 @@ get_stat_increases:
     push si
     xor ah,ah                       ; AH = 0
 
-    ; Calculate HP gain (level × 5 + 10):
+    ; Calculate HP gain (level Ã— 5 + 10):
     mov bl,5
-    mul bl                          ; AX = level × 5
-    add ax,10                       ; AX = level × 5 + 10
+    mul bl                          ; AX = level Ã— 5
+    add ax,10                       ; AX = level Ã— 5 + 10
     push ax                         ; Save HP gain
 
-    ; Calculate MP gain (level × 3 + 5):
+    ; Calculate MP gain (level Ã— 3 + 5):
     mov al,[player_level]
     mov bl,3
     mul bl
     add ax,5
     mov bx,ax                       ; BX = MP gain
 
-    ; Calculate attack gain (level ÷ 3 + 1):
+    ; Calculate attack gain (level Ã· 3 + 1):
     mov al,[player_level]
     mov bl,3
-    div bl                          ; AL = level ÷ 3
-    inc al                          ; AL = level ÷ 3 + 1
+    div bl                          ; AL = level Ã· 3
+    inc al                          ; AL = level Ã· 3 + 1
     mov cl,al                       ; CL = attack gain
 
-    ; Calculate defense gain (level ÷ 4 + 1):
+    ; Calculate defense gain (level Ã· 4 + 1):
     mov al,[player_level]
     mov bl,4
     div bl
     inc al
     mov ch,al                       ; CH = defense gain
 
-    ; Calculate speed gain (level ÷ 5):
+    ; Calculate speed gain (level Ã· 5):
     mov al,[player_level]
     mov bl,5
     div bl
     mov dl,al                       ; DL = speed gain
 
-    ; Calculate magic gain (level ÷ 3 + 1):
+    ; Calculate magic gain (level Ã· 3 + 1):
     mov al,[player_level]
     mov bl,3
     div bl
@@ -278,12 +278,12 @@ get_stat_increases:
 ```
 
 **Stat Growth Formulas**:
-- HP: level × 5 + 10 (15-505 per level)
-- MP: level × 3 + 5 (8-302 per level)
-- Attack: level ÷ 3 + 1 (1-34 per level)
-- Defense: level ÷ 4 + 1 (1-26 per level)
-- Speed: level ÷ 5 (0-19 per level)
-- Magic: level ÷ 3 + 1 (1-34 per level)
+- HP: level Ã— 5 + 10 (15-505 per level)
+- MP: level Ã— 3 + 5 (8-302 per level)
+- Attack: level Ã· 3 + 1 (1-34 per level)
+- Defense: level Ã· 4 + 1 (1-26 per level)
+- Speed: level Ã· 5 (0-19 per level)
+- Magic: level Ã· 3 + 1 (1-34 per level)
 
 ---
 
@@ -360,7 +360,7 @@ calculate_damage:
 
     push bx
 
-    ; Add randomness (±10%):
+    ; Add randomness (Â±10%):
     call get_random_byte            ; AL = random 0-255
     and al,0x1F                     ; AL = random 0-31
     sub al,16                       ; AL = random -16 to +15
@@ -384,7 +384,7 @@ calculate_damage:
     ret
 ```
 
-**Damage Formula**: `damage = (attack - defense) ± 10%`, minimum 1
+**Damage Formula**: `damage = (attack - defense) Â± 10%`, minimum 1
 
 ---
 
@@ -399,9 +399,9 @@ calculate_critical:
 
     push ax
 
-    ; Critical chance = dexterity ÷ 4 (%):
+    ; Critical chance = dexterity Ã· 4 (%):
     shr al,1
-    shr al,1                        ; AL = dex ÷ 4
+    shr al,1                        ; AL = dex Ã· 4
 
     ; Get random number:
     call get_random_byte            ; AL = 0-255
@@ -426,7 +426,7 @@ calculate_critical:
     ret
 ```
 
-**Critical Formula**: Chance = Dexterity ÷ 4 (max 25%)
+**Critical Formula**: Chance = Dexterity Ã· 4 (max 25%)
 
 ---
 
@@ -532,10 +532,10 @@ update_status_effects:
 **Status Effect Flags** (bit flags):
 - Bit 0: Poisoned (2 HP/sec damage)
 - Bit 1: Regenerating (1 HP/sec heal)
-- Bit 2: Powered Up (×1.5 attack)
-- Bit 3: Protected (×1.5 defense)
-- Bit 4: Slowed (×0.5 speed)
-- Bit 5: Hasted (×1.5 speed)
+- Bit 2: Powered Up (Ã—1.5 attack)
+- Bit 3: Protected (Ã—1.5 defense)
+- Bit 4: Slowed (Ã—0.5 speed)
+- Bit 5: Hasted (Ã—1.5 speed)
 
 ---
 
@@ -573,7 +573,7 @@ xp_threshold_table:
     dd 9999999          ; Level 99 (max)
 ```
 
-**Formula**: Roughly `XP = 50 × level²`
+**Formula**: Roughly `XP = 50 Ã— levelÂ²`
 
 ---
 
@@ -710,11 +710,11 @@ load_player_stats:
 
 **ZELRES1/Chunk_04** manages all character progression:
 
-- ✅ **Stat system** with HP, MP, attack, defense, speed, magic
-- ✅ **Leveling** with XP thresholds and stat growth formulas
-- ✅ **Combat math** with damage calculation and critical hits
-- ✅ **Status effects** including poison, regen, buffs
-- ✅ **Save/load** preserves player progress
+- âœ… **Stat system** with HP, MP, attack, defense, speed, magic
+- âœ… **Leveling** with XP thresholds and stat growth formulas
+- âœ… **Combat math** with damage calculation and critical hits
+- âœ… **Status effects** including poison, regen, buffs
+- âœ… **Save/load** preserves player progress
 
 **Critical for Port**: Core RPG mechanics. Balancing XP curve and stat growth is essential for game difficulty.
 

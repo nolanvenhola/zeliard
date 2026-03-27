@@ -1,12 +1,12 @@
 # ZELRES1/Chunk_07 - VGA Mode 13h Decompressor Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_07.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/107VGADC.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/107GTEGA.asm`
 **Size**: 3,884 bytes (3.9KB)
 **Disassembly Lines**: 1,927 lines
 **Purpose**: Decompresses and renders .grp images using VGA Mode 13h (256-color) compatible techniques
 **Load Address**: Variable (loaded by chunk_00 as needed)
-**Priority**: ⭐⭐⭐ CRITICAL (Opening scene image decompressor)
+**Priority**: â­�â­�â­� CRITICAL (Opening scene image decompressor)
 
 ## Overview
 
@@ -14,7 +14,7 @@
 
 ### What This Chunk Does
 
-1. **Tile-Based Decompression** - Breaks images into 8×8 character tiles
+1. **Tile-Based Decompression** - Breaks images into 8Ã—8 character tiles
 2. **Tile Dictionary** - Caches up to 256 unique tiles (CS:0x8100) to avoid redundant rendering
 3. **Tile Reuse Detection** - Uses lookup table (CS:0x3D4C) to find previously rendered tiles
 4. **3-Plane Rendering** - Renders tiles in EGA 3-plane format (red, green, blue)
@@ -52,55 +52,55 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│       ZELRES1/Chunk_07 - VGA Mode 13h Decompressor          │
-│                                                               │
-│  Entry Point (0x0060)                                        │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │ - Clear tile lookup table (CS:0x3D4C, 256 words)   │     │
-│  │ - Check for format 0xFD (special intro sequence)   │     │
-│  │ - Initialize buffer pointer [0x3BB1]=0x186C        │     │
-│  │ - Start decompression at source + 0x20             │     │
-│  └────────────────────────────────────────────────────┘     │
-│                ↓                                             │
-│  Main Decompress Loop (0x0090-0x00E3)                       │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │ - Process 28 columns (0x1C) per pass                │     │
-│  │ - Compare source byte to 8 reference bytes          │     │
-│  │ - Dispatch to appropriate tile handler based on     │     │
-│  │   match result (tile copy vs new tile render)       │     │
-│  │ - Increment column, check if row complete           │     │
-│  └────────────────────────────────────────────────────┘     │
-│                ↓                                             │
-│  Tile Handlers (0x013F-0x021C)                              │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │ 0x013F: New tile (3-plane render from CS:0x8100)   │     │
-│  │ 0x021C: Indexed tile (palette remap + render)      │     │
-│  │ 0x0136: Marker check (0xFD = special command)      │     │
-│  └────────────────────────────────────────────────────┘     │
-│                ↓                                             │
-│  Tile Rendering Functions (0x02EF-0x03B9)                   │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │ 0x02EF: Type 0 (full 3-plane tile)                 │     │
-│  │ 0x032B: Type 1 (masked plane 1+2, solid plane 0)   │     │
-│  │ 0x0366: Type 2 (masked plane 0, solid plane 1+2)   │     │
-│  │ 0x0398: Type 3 (copy from buffer, plane 0+2 only)  │     │
-│  │ 0x03BA: Intro sequence (6 special tiles)           │     │
-│  └────────────────────────────────────────────────────┘     │
-│                                                               │
-│  Selective Update (0x00E4-0x0135)                           │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │ - Check [0x83] for target row                       │     │
-│  │ - If match, copy from CS:0x3E80 buffer to VGA       │     │
-│  │ - Used for horizontal scrolling effects             │     │
-│  └────────────────────────────────────────────────────┘     │
-│                                                               │
-│  Special Intro Handler (0x04D1+)                            │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │ - Handles format 0xFD (opening logo animation)      │     │
-│  │ - Custom decompression for intro tiles              │     │
-│  └────────────────────────────────────────────────────┘     │
-└─────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚       ZELRES1/Chunk_07 - VGA Mode 13h Decompressor          â”‚
+â”‚                                                               â”‚
+â”‚  Entry Point (0x0060)                                        â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚ - Clear tile lookup table (CS:0x3D4C, 256 words)   â”‚     â”‚
+â”‚  â”‚ - Check for format 0xFD (special intro sequence)   â”‚     â”‚
+â”‚  â”‚ - Initialize buffer pointer [0x3BB1]=0x186C        â”‚     â”‚
+â”‚  â”‚ - Start decompression at source + 0x20             â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                â†“                                             â”‚
+â”‚  Main Decompress Loop (0x0090-0x00E3)                       â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚ - Process 28 columns (0x1C) per pass                â”‚     â”‚
+â”‚  â”‚ - Compare source byte to 8 reference bytes          â”‚     â”‚
+â”‚  â”‚ - Dispatch to appropriate tile handler based on     â”‚     â”‚
+â”‚  â”‚   match result (tile copy vs new tile render)       â”‚     â”‚
+â”‚  â”‚ - Increment column, check if row complete           â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                â†“                                             â”‚
+â”‚  Tile Handlers (0x013F-0x021C)                              â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚ 0x013F: New tile (3-plane render from CS:0x8100)   â”‚     â”‚
+â”‚  â”‚ 0x021C: Indexed tile (palette remap + render)      â”‚     â”‚
+â”‚  â”‚ 0x0136: Marker check (0xFD = special command)      â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                â†“                                             â”‚
+â”‚  Tile Rendering Functions (0x02EF-0x03B9)                   â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚ 0x02EF: Type 0 (full 3-plane tile)                 â”‚     â”‚
+â”‚  â”‚ 0x032B: Type 1 (masked plane 1+2, solid plane 0)   â”‚     â”‚
+â”‚  â”‚ 0x0366: Type 2 (masked plane 0, solid plane 1+2)   â”‚     â”‚
+â”‚  â”‚ 0x0398: Type 3 (copy from buffer, plane 0+2 only)  â”‚     â”‚
+â”‚  â”‚ 0x03BA: Intro sequence (6 special tiles)           â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                                                               â”‚
+â”‚  Selective Update (0x00E4-0x0135)                           â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚ - Check [0x83] for target row                       â”‚     â”‚
+â”‚  â”‚ - If match, copy from CS:0x3E80 buffer to VGA       â”‚     â”‚
+â”‚  â”‚ - Used for horizontal scrolling effects             â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                                                               â”‚
+â”‚  Special Intro Handler (0x04D1+)                            â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚ - Handles format 0xFD (opening logo animation)      â”‚     â”‚
+â”‚  â”‚ - Custom decompression for intro tiles              â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -121,7 +121,7 @@
     mov si,[0xFF2A]              ; SI = source data pointer
     cmp byte [si+0x1D],0xFD      ; Check format marker at +0x1D
     jnz 0x0079                   ; Not special format
-    call 0x04D1                  ; → Handle special intro sequence
+    call 0x04D1                  ; â†’ Handle special intro sequence
 
 0x0079:  ; Standard format
     mov word [0x3BB1],0x186C     ; Buffer offset = 0x186C (VGA position)
@@ -131,7 +131,7 @@
     pop es
     mov di,0xE000                ; DI = decompression buffer
     mov byte [0x3BB3],0x00       ; Current row = 0
-    call 0x00E4                  ; → Check selective update
+    call 0x00E4                  ; â†’ Check selective update
 ```
 
 **Key Variables**:
@@ -140,7 +140,7 @@
 - **[0x3BB3]**: Current row being processed (0-27)
 - **[0x83]**: Target row for selective update (0xFF = update all)
 - **CS:0x3D4C**: Tile lookup table (256 words, VGA offset for each tile)
-- **CS:0x8100**: Tile data cache (256 tiles × 48 bytes = 12KB)
+- **CS:0x8100**: Tile data cache (256 tiles Ã— 48 bytes = 12KB)
 
 ---
 
@@ -153,7 +153,7 @@
     ; Compare source byte to 8 reference bytes and dispatch:
     cmpsb                        ; Compare [DS:SI] to [ES:DI], SI++, DI++
     jz 0x009B                    ; Match ref 0, skip to next
-    call 0x021C                  ; → No match, handle indexed tile
+    call 0x021C                  ; â†’ No match, handle indexed tile
 
 0x009B:
     inc bl                       ; Column++
@@ -171,7 +171,7 @@
     inc bl
     cmpsb                        ; Compare to ref 3
     jz 0x00B3
-    call 0x013F                  ; → Different handler for ref 3
+    call 0x013F                  ; â†’ Different handler for ref 3
 
     ; ... (pattern continues for refs 4-7)
 
@@ -184,8 +184,8 @@
 ```
 
 **Decoding Logic**:
-- Image broken into 28 columns × 28 rows = 784 tiles total
-- Each tile is 8×8 pixels (2 bytes wide × 8 scanlines)
+- Image broken into 28 columns Ã— 28 rows = 784 tiles total
+- Each tile is 8Ã—8 pixels (2 bytes wide Ã— 8 scanlines)
 - Source stream contains tile indices (0-255)
 - 8 "reference bytes" act as quick-match tests
 - If source byte matches a reference, tile can be skipped or reused
@@ -216,10 +216,10 @@ Used for scrolling effects - only updates one row at a time.
 
     ; Calculate VGA destination:
     mov al,[0x83]                ; AL = row index
-    add al,al                    ; × 2
+    add al,al                    ; Ã— 2
     xor ah,ah
     mov di,ax
-    add di,0x24EC                ; DI = base + row × 2
+    add di,0x24EC                ; DI = base + row Ã— 2
     mov ax,0xA000
     mov es,ax                    ; ES = VGA segment
 
@@ -239,7 +239,7 @@ Used for scrolling effects - only updates one row at a time.
     mov cx,0x0002                ; 2 scanline pairs
 0x0122:  ; Copy loop
     push cx
-    call 0x058B                  ; → Copy tile scanline
+    call 0x058B                  ; â†’ Copy tile scanline
     add di,0xF882                ; Next destination (wraps around)
     pop cx
     loop 0x0122
@@ -289,17 +289,17 @@ Renders a new tile from the tile data cache.
 
     ; Calculate VGA offset from column (BL):
     mov ax,0x0050                ; 80 bytes per line
-    mul bl                       ; AX = column × 80
-    shl ax,0                     ; × 2 (shift left)
-    shl ax,0                     ; × 4
-    shl ax,0                     ; × 8 (now column × 640)
+    mul bl                       ; AX = column Ã— 80
+    shl ax,0                     ; Ã— 2 (shift left)
+    shl ax,0                     ; Ã— 4
+    shl ax,0                     ; Ã— 8 (now column Ã— 640)
     add ax,[0x3BB1]              ; Add base offset
     mov di,ax                    ; DI = VGA destination
 
     ; Check if tile already in cache:
     mov bl,dl                    ; BL = tile index
     xor bh,bh
-    add bx,bx                    ; BX = index × 2 (word offset)
+    add bx,bx                    ; BX = index Ã— 2 (word offset)
     test word [bx+0x3D4C],0xFFFF ; Lookup table entry non-zero?
     jnz 0x01CA                   ; Already cached, reuse
 
@@ -307,8 +307,8 @@ Renders a new tile from the tile data cache.
     mov [bx+0x3D4C],di           ; Store VGA offset in lookup
 
     ; Calculate tile data offset:
-    mov ax,0x0030                ; 48 bytes per tile (8×8 × 3 planes ÷ 4)
-    mul dl                       ; AX = tile × 48
+    mov ax,0x0030                ; 48 bytes per tile (8Ã—8 Ã— 3 planes Ã· 4)
+    mul dl                       ; AX = tile Ã— 48
     mov si,ax
     add si,0x8100                ; SI = CS:0x8100 + offset (tile cache)
 
@@ -322,7 +322,7 @@ Renders a new tile from the tile data cache.
     mov ax,0xA000
     mov es,ax                    ; ES = VGA
 
-    ; Render 4 scanlines × 3 planes:
+    ; Render 4 scanlines Ã— 3 planes:
     mov bx,0x004E                ; 78 bytes (skip to next line)
     mov cx,0x0004                ; 4 scanline pairs
 
@@ -374,8 +374,8 @@ Renders a new tile from the tile data cache.
 
 **Tile Cache Structure**:
 - **Location**: CS:0x8100 to CS:0x8100+0x3000 (12KB)
-- **Format**: 256 tiles × 48 bytes per tile
-- **Layout**: 3 planes × 16 bytes per plane (8 scanlines × 2 bytes)
+- **Format**: 256 tiles Ã— 48 bytes per tile
+- **Layout**: 3 planes Ã— 16 bytes per plane (8 scanlines Ã— 2 bytes)
 - **Lookup**: CS:0x3D4C[tile_index] = VGA offset (0 if not cached)
 
 ---
@@ -472,15 +472,15 @@ Handles tiles with palette remapping.
     mov al,dh
     dec al                       ; AL = type - 1 (0-3)
     and al,0x03                  ; Mask to 0-3
-    add al,al                    ; × 2 (word offset)
+    add al,al                    ; Ã— 2 (word offset)
     mov di,ax
     mov ax,[di+0x32EB]           ; AX = handler address from table
     push ax                      ; Save handler address
 
     ; Calculate VGA destination:
     mov ax,0x0050
-    mul bl                       ; Column × 80
-    shl ax,0                     ; × 8 (column × 640)
+    mul bl                       ; Column Ã— 80
+    shl ax,0                     ; Ã— 8 (column Ã— 640)
     shl ax,0
     shl ax,0
     add ax,[0x3BB1]              ; Add base offset
@@ -488,14 +488,14 @@ Handles tiles with palette remapping.
 
     ; Calculate tile data offset:
     mov ax,0x0030
-    mul dl                       ; Tile × 48
+    mul dl                       ; Tile Ã— 48
     mov si,ax
     add si,0x8100                ; SI = tile data
 
     ; Calculate buffer offset for type handlers:
     mov ax,0x0060                ; 96 bytes per row
-    mul byte [0x3BB3]            ; × current row
-    shl bl,0                     ; Column × 32
+    mul byte [0x3BB3]            ; Ã— current row
+    shl bl,0                     ; Column Ã— 32
     shl bl,0
     shl bl,0
     shl bl,0
@@ -745,7 +745,7 @@ Handles the opening logo/intro animation with custom tiles.
     out dx,al
     inc dx
 
-    ; Render 8 scanlines × 3 planes:
+    ; Render 8 scanlines Ã— 3 planes:
     mov cx,0x0008
 0x03E2:  ; Scanline loop
     ; Plane 1:
@@ -790,9 +790,9 @@ Handles the opening logo/intro animation with custom tiles.
 |---------|------|---------|
 | `0x3BB1` | 2 bytes | Current VGA base offset (column position) |
 | `0x3BB3` | 1 byte | Current row index (0-27) |
-| `0x3D4C` | 512 bytes | Tile lookup table (256 entries × 2 bytes) |
+| `0x3D4C` | 512 bytes | Tile lookup table (256 entries Ã— 2 bytes) |
 | `0x3E80` | Variable | Row buffer for selective updates |
-| `0x8100` | 12KB | Tile data cache (256 tiles × 48 bytes) |
+| `0x8100` | 12KB | Tile data cache (256 tiles Ã— 48 bytes) |
 | `0x32EB` | 8 bytes | Handler function pointer table (4 handlers) |
 
 ### Data Segment References
@@ -834,8 +834,8 @@ Without Cache:
 - 784 tiles: 784,000 cycles = ~164ms on 4.77 MHz 8088
 
 With Cache (50% reuse):
-- New tile: 1000 cycles × 392 = 392,000 cycles
-- Cached tile: 200 cycles × 392 = 78,400 cycles
+- New tile: 1000 cycles Ã— 392 = 392,000 cycles
+- Cached tile: 200 cycles Ã— 392 = 78,400 cycles
 - Total: 470,400 cycles = ~98ms (40% faster)
 ```
 
@@ -843,10 +843,10 @@ With Cache (50% reuse):
 
 ```
 Full Screen Redraw:
-- 784 tiles × 200 cycles = 156,800 cycles = ~33ms
+- 784 tiles Ã— 200 cycles = 156,800 cycles = ~33ms
 
 Single Row Update:
-- 28 tiles × 200 cycles = 5,600 cycles = ~1.2ms (27× faster)
+- 28 tiles Ã— 200 cycles = 5,600 cycles = ~1.2ms (27Ã— faster)
 ```
 
 ---
@@ -875,13 +875,13 @@ call [cs:0x3008]                 ; Set palette (if driver supports)
 
 **ZELRES1/Chunk_07** demonstrates advanced tile-based rendering:
 
-- ⭐ **Tile caching**: 256-tile dictionary avoids redundant rendering
-- ⭐ **VGA latching**: Hardware-accelerated tile copying
-- ⭐ **Selective updates**: Enables smooth scrolling with minimal CPU use
-- ⭐ **4 rendering modes**: Optimized for different transparency/blend needs
-- ⭐ **Palette remapping**: Runtime color substitution for effects
-- ⭐ **RLE compression**: Compact tile index stream
-- ⭐ **Buffer management**: Sophisticated use of VGA as working memory
+- â­� **Tile caching**: 256-tile dictionary avoids redundant rendering
+- â­� **VGA latching**: Hardware-accelerated tile copying
+- â­� **Selective updates**: Enables smooth scrolling with minimal CPU use
+- â­� **4 rendering modes**: Optimized for different transparency/blend needs
+- â­� **Palette remapping**: Runtime color substitution for effects
+- â­� **RLE compression**: Compact tile index stream
+- â­� **Buffer management**: Sophisticated use of VGA as working memory
 
 **Critical for Port**: The tile cache and latch copy techniques demonstrate how Zeliard achieved smooth graphics on slow hardware. Modern equivalents would be texture atlases and GPU blit operations.
 

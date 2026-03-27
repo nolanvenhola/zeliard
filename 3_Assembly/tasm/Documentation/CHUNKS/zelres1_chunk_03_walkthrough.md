@@ -1,12 +1,12 @@
 # ZELRES1/Chunk_03 - VGA Graphics Renderer (CGA Mode) Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_03.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/103IMGDC.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/103GDHGC.asm`
 **Size**: 8,192 bytes (8KB)
 **Disassembly Lines**: 3,702 lines
 **Purpose**: VGA graphics rendering engine for CGA-style bitplane graphics
 **Load Address**: CS:0x6000 (typical)
-**Priority**: ⭐⭐⭐ CRITICAL - Core graphics system
+**Priority**: â­�â­�â­� CRITICAL - Core graphics system
 
 ---
 
@@ -54,45 +54,45 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│        ZELRES1/Chunk_03 (VGA Graphics Renderer)             │
-│                                                               │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │     Bitplane Decoders (0x1B8C core function)      │     │
-│  │  ┌──────────────────────────────────────────────┐ │     │
-│  │  │  2-bit → 4-color palette (0x4C54-0x4C5A)    │ │     │
-│  │  │  3-bit → 8-color palette (0x4C54-0x4C58)    │ │     │
-│  │  │  XOR mode for shadows/transparency          │ │     │
-│  │  └──────────────────────────────────────────────┘ │     │
-│  └────────────────────────────────────────────────────┘     │
-│                        │                                     │
-│                        ├─> Sprite Renderers                 │
-│                        │   ┌──────────────────────────┐     │
-│                        │   │ Opaque (0x021D)          │     │
-│                        │   │ Transparent (0x025A)     │     │
-│                        │   │ Masked (0x02AA)          │     │
-│                        │   └──────────────────────────┘     │
-│                        │                                     │
-│                        ├─> Animation System (0x044E)        │
-│                        │   ┌──────────────────────────┐     │
-│                        │   │ 9 sprite slots @ 0xA000  │     │
-│                        │   │ Frame counter, velocity  │     │
-│                        │   │ Position tracking        │     │
-│                        │   └──────────────────────────┘     │
-│                        │                                     │
-│                        ├─> Text Renderer (0x02DE)           │
-│                        │   ┌──────────────────────────┐     │
-│                        │   │ 8x8 font @ 0xF500        │     │
-│                        │   │ ASCII 0x20-0xFF          │     │
-│                        │   └──────────────────────────┘     │
-│                        │                                     │
-│                        └─> VGA Framebuffer                  │
-│                            ┌──────────────────────────┐     │
-│                            │ B000:0000 (CGA mode)     │     │
-│                            │ Interleaved scanlines    │     │
-│                            │ 8192-byte banks          │     │
-│                            └──────────────────────────┘     │
-└─────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚        ZELRES1/Chunk_03 (VGA Graphics Renderer)             â”‚
+â”‚                                                               â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚     Bitplane Decoders (0x1B8C core function)      â”‚     â”‚
+â”‚  â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”� â”‚     â”‚
+â”‚  â”‚  â”‚  2-bit â†’ 4-color palette (0x4C54-0x4C5A)    â”‚ â”‚     â”‚
+â”‚  â”‚  â”‚  3-bit â†’ 8-color palette (0x4C54-0x4C58)    â”‚ â”‚     â”‚
+â”‚  â”‚  â”‚  XOR mode for shadows/transparency          â”‚ â”‚     â”‚
+â”‚  â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â”œâ”€> Sprite Renderers                 â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                        â”‚   â”‚ Opaque (0x021D)          â”‚     â”‚
+â”‚                        â”‚   â”‚ Transparent (0x025A)     â”‚     â”‚
+â”‚                        â”‚   â”‚ Masked (0x02AA)          â”‚     â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â”œâ”€> Animation System (0x044E)        â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                        â”‚   â”‚ 9 sprite slots @ 0xA000  â”‚     â”‚
+â”‚                        â”‚   â”‚ Frame counter, velocity  â”‚     â”‚
+â”‚                        â”‚   â”‚ Position tracking        â”‚     â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â”œâ”€> Text Renderer (0x02DE)           â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                        â”‚   â”‚ 8x8 font @ 0xF500        â”‚     â”‚
+â”‚                        â”‚   â”‚ ASCII 0x20-0xFF          â”‚     â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                        â”‚                                     â”‚
+â”‚                        â””â”€> VGA Framebuffer                  â”‚
+â”‚                            â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚                            â”‚ B000:0000 (CGA mode)     â”‚     â”‚
+â”‚                            â”‚ Interleaved scanlines    â”‚     â”‚
+â”‚                            â”‚ 8192-byte banks          â”‚     â”‚
+â”‚                            â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -162,11 +162,11 @@ decode_pixel:
 - **2-plane mode**: 4 colors (2 bits per pixel)
   - Plane 0 @ `0x4C54`: Least significant bit
   - Plane 1 @ `0x4C56`: Most significant bit
-  - Result: `00 01 10 11` → colors 0-3
+  - Result: `00 01 10 11` â†’ colors 0-3
 
 - **3-plane mode**: 8 colors (3 bits per pixel)
   - Adds Plane 2 @ `0x4C58`
-  - Result: `000 001 010 011 100 101 110 111` → colors 0-7
+  - Result: `000 001 010 011 100 101 110 111` â†’ colors 0-7
 
 - **4-plane mode**: 16 colors (4 bits per pixel)
   - Adds Plane 3 @ `0x4C5A`
@@ -189,7 +189,7 @@ render_sprite_opaque:
 
     ; Calculate buffer size
     mov al,ch               ; Width
-    mul cl                  ; × Height
+    mul cl                  ; Ã— Height
     mov bp,ax               ; BP = total pixels
 
     ; Setup segments
@@ -340,7 +340,7 @@ animation_system_update:
     ; Get frame data pointer
     xor bx,bx
     mov bl,[si+0x0d]        ; BL = current frame
-    shl bx,2                ; × 4
+    shl bx,2                ; Ã— 4
     mov cx,[bx+0x3647]      ; Load frame size
     mov [si+0x7],cx         ; Store size
 
@@ -367,7 +367,7 @@ animation_system_update:
     ror bl,1
     and bl,0x60             ; Bank bits
     mov ah,0x5a
-    mul ah                  ; × 90 (bytes per row)
+    mul ah                  ; Ã— 90 (bytes per row)
     add ah,bl
     add ax,dx               ; Final offset
     mov [si+0x5],ax         ; Store VGA offset
@@ -430,7 +430,7 @@ render_text_string:
     push si
     push di
     xor ah,ah
-    shl ax,3                ; × 8 (8 bytes per char)
+    shl ax,3                ; Ã— 8 (8 bytes per char)
     add ax,[0xf500]         ; Add font base
     mov si,ax
     mov cx,0x8              ; 8 rows
@@ -470,7 +470,7 @@ expand_byte:
 ```
 
 **Font Format**:
-- 8×8 pixels per character
+- 8Ã—8 pixels per character
 - ASCII 0x20-0xFF (96 characters)
 - 1-bit per pixel (foreground/background)
 - Stored at CS:0xF500
@@ -484,8 +484,8 @@ expand_byte:
 The VGA framebuffer in CGA-compatible mode uses interleaved scanlines:
 
 ```
-B000:0000-0x1FFF  → Even scanlines (0, 2, 4, ...)
-B000:2000-0x3FFF  → Odd scanlines (1, 3, 5, ...)
+B000:0000-0x1FFF  â†’ Even scanlines (0, 2, 4, ...)
+B000:2000-0x3FFF  â†’ Odd scanlines (1, 3, 5, ...)
 ```
 
 ### Transfer Function (imgdec_process_loop_2 (0x0177))
@@ -579,8 +579,8 @@ transfer_to_vga:
 ### Large Background (0x0669)
 
 **Parameters**: AL = image ID
-**Size**: 336×48 pixels (16,128 bytes)
-**Source**: CS:0xAB40 + (image_id × 0x0CC0)
+**Size**: 336Ã—48 pixels (16,128 bytes)
+**Source**: CS:0xAB40 + (image_id Ã— 0x0CC0)
 
 ```assembly
 load_large_background:
@@ -625,8 +625,8 @@ load_large_background:
 
 ### Small Background (0x06B5)
 
-**Size**: 144×36 pixels (5,184 bytes)
-**Source**: CS:0x97C0 + (image_id × 0x0480)
+**Size**: 144Ã—36 pixels (5,184 bytes)
+**Source**: CS:0x97C0 + (image_id Ã— 0x0480)
 
 Similar to large background but with smaller dimensions.
 
@@ -635,7 +635,7 @@ Similar to large background but with smaller dimensions.
 ## Section 7: NPC Character Rendering (0x0701)
 
 ### Purpose
-Renders character portraits in a 25×34 grid layout.
+Renders character portraits in a 25Ã—34 grid layout.
 
 ```assembly
 render_npc_grid:
@@ -703,7 +703,7 @@ render_npc_char:
     mov di,ax
     pop si
 
-    ; Copy 8×8 sprite (3 planes)
+    ; Copy 8Ã—8 sprite (3 planes)
     mov cx,0x3
 .plane_loop:
     push cx
@@ -725,8 +725,8 @@ render_npc_char:
 ```
 
 **Grid Layout**:
-- 25 rows × 34 columns
-- 8×8 pixels per character
+- 25 rows Ã— 34 columns
+- 8Ã—8 pixels per character
 - Stored at CS:0x4000 in buffer
 
 ---
@@ -830,12 +830,12 @@ display_message_box:
     jmp .animate
 
 render_border_char:
-    ; Render 8×8 character with pattern mask
+    ; Render 8Ã—8 character with pattern mask
     push si
     push di
     dec al
     xor ah,ah
-    shl ax,3                ; × 8 bytes
+    shl ax,3                ; Ã— 8 bytes
     add ax,0x3a0b           ; Font base
     mov si,ax
 
@@ -910,9 +910,9 @@ render_border_char:
 | `0x4C5E` | 1 byte | Render mode flags |
 | `0x4C5F` | 1 byte | Transparency flag (0=opaque, 0xFF=transparent) |
 | `0x4C60` | 2 bytes | Function pointer for rendering |
-| `0x4C66` | 400 bytes | Text buffer (20×20 chars) |
-| `0xA000` | 135 bytes | Animation slots (9 × 15 bytes) |
-| `0xF500` | 768 bytes | 8×8 font (96 chars × 8 bytes) |
+| `0x4C66` | 400 bytes | Text buffer (20Ã—20 chars) |
+| `0xA000` | 135 bytes | Animation slots (9 Ã— 15 bytes) |
+| `0xF500` | 768 bytes | 8Ã—8 font (96 chars Ã— 8 bytes) |
 
 ### External Memory References
 
@@ -956,7 +956,7 @@ wait_vsync:
 
 **Timing**:
 - Timer frequency: 18.2 Hz (55ms per tick)
-- Wait time: 20 ticks × 55ms ≈ 1.1 seconds
+- Wait time: 20 ticks Ã— 55ms â‰ˆ 1.1 seconds
 - Used for animation frame delays
 
 ### Scanline Interleaving
@@ -982,21 +982,21 @@ The bitplane decoder produces 4-bit indices (0-15) which map to VGA palette:
 
 ```
 2-plane mode (4 colors):
-    00 → Palette 0 (background)
-    01 → Palette 1 (foreground 1)
-    10 → Palette 2 (foreground 2)
-    11 → Palette 3 (foreground 3)
+    00 â†’ Palette 0 (background)
+    01 â†’ Palette 1 (foreground 1)
+    10 â†’ Palette 2 (foreground 2)
+    11 â†’ Palette 3 (foreground 3)
 
 3-plane mode (8 colors):
-    000 → Palette 0
-    001 → Palette 1
+    000 â†’ Palette 0
+    001 â†’ Palette 1
     ...
-    111 → Palette 7
+    111 â†’ Palette 7
 
 4-plane mode (16 colors):
-    0000 → Palette 0
+    0000 â†’ Palette 0
     ...
-    1111 → Palette 15
+    1111 â†’ Palette 15
 ```
 
 Palette data loaded via graphics driver function at CS:0x3028.
@@ -1015,7 +1015,7 @@ Typical rendering at 18.2 Hz (55ms per frame):
 - Animation update:       8ms (15%)
 - Text rendering:         5ms (9%)
 - Vsync wait:            2ms (4%)
-                        ───────
+                        â”€â”€â”€â”€â”€â”€â”€
                 Total:  55ms (100%)
 ```
 
@@ -1043,14 +1043,14 @@ Typical rendering at 18.2 Hz (55ms per frame):
 
 **ZELRES1/Chunk_03** is the CGA-compatible VGA renderer:
 
-- ✅ **Bitplane decoding** - 2/3/4-plane formats to palette indices
-- ✅ **Sprite rendering** - Opaque, transparent, masked modes
-- ✅ **Animation system** - 9 slots with velocity and frames
-- ✅ **Text rendering** - 8×8 font with ASCII 0x20-0xFF
-- ✅ **VGA framebuffer** - CGA-compatible interleaved scanlines
-- ✅ **Background loading** - Large (336×48) and small (144×36) images
-- ✅ **Message boxes** - Bordered dialogs with animated decorations
-- ✅ **Vsync timing** - Uses DOS 18.2 Hz timer for frame pacing
+- âœ… **Bitplane decoding** - 2/3/4-plane formats to palette indices
+- âœ… **Sprite rendering** - Opaque, transparent, masked modes
+- âœ… **Animation system** - 9 slots with velocity and frames
+- âœ… **Text rendering** - 8Ã—8 font with ASCII 0x20-0xFF
+- âœ… **VGA framebuffer** - CGA-compatible interleaved scanlines
+- âœ… **Background loading** - Large (336Ã—48) and small (144Ã—36) images
+- âœ… **Message boxes** - Bordered dialogs with animated decorations
+- âœ… **Vsync timing** - Uses DOS 18.2 Hz timer for frame pacing
 
 **Critical for Port**: This chunk defines the low-level graphics rendering. Understanding bitplane formats, VGA addressing, and timing is essential for replicating authentic visual behavior in MonoGame.
 

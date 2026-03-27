@@ -1,12 +1,12 @@
 # ZELRES2/Chunk_00 - Main Game Systems Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_00.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/200MGAME.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/200FIGHT.asm`
 **Size**: 16,384 bytes (16KB)
 **Disassembly Lines**: 6,601 lines
 **Purpose**: Core game loop, main systems, UI rendering, state management
 **Load Address**: CS:0x6000 (typical)
-**Priority**: ⭐⭐⭐ CRITICAL
+**Priority**: â­�â­�â­� CRITICAL
 
 ## Overview
 
@@ -139,47 +139,47 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│            ZELRES2/Chunk_00 (Main Systems)              │
-│                                                           │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │          Main Game Loop (0x0046)                 │   │
-│  │  - Runs at 18.2 Hz (INT 08h timer)              │   │
-│  │  - Frame counter and timing                      │   │
-│  │  - State machine dispatcher                      │   │
-│  └──────────────────────────────────────────────────┘   │
-│                        │                                  │
-│                        ├─> State: PLAYING                │
-│                        │   ┌────────────────────────┐    │
-│                        │   │ Update Player          │    │
-│                        │   │ Update Enemies         │    │
-│                        │   │ Update Physics         │    │
-│                        │   │ Check Collisions       │    │
-│                        │   │ Update Particles       │    │
-│                        │   │ Render Frame           │    │
-│                        │   │ Render HUD             │    │
-│                        │   └────────────────────────┘    │
-│                        │                                  │
-│                        ├─> State: PAUSED                 │
-│                        │   ┌────────────────────────┐    │
-│                        │   │ Display Pause Menu     │    │
-│                        │   │ Wait for Input         │    │
-│                        │   └────────────────────────┘    │
-│                        │                                  │
-│                        ├─> State: GAME_OVER              │
-│                        │   ┌────────────────────────┐    │
-│                        │   │ Display Game Over      │    │
-│                        │   │ High Score Entry       │    │
-│                        │   │ Return to Title        │    │
-│                        │   └────────────────────────┘    │
-│                        │                                  │
-│                        └─> State: LEVEL_COMPLETE         │
-│                            ┌────────────────────────┐    │
-│                            │ Display Stats          │    │
-│                            │ Save Progress          │    │
-│                            │ Load Next Level        │    │
-│                            └────────────────────────┘    │
-└─────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚            ZELRES2/Chunk_00 (Main Systems)              â”‚
+â”‚                                                           â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚          Main Game Loop (0x0046)                 â”‚   â”‚
+â”‚  â”‚  - Runs at 18.2 Hz (INT 08h timer)              â”‚   â”‚
+â”‚  â”‚  - Frame counter and timing                      â”‚   â”‚
+â”‚  â”‚  - State machine dispatcher                      â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚                        â”‚                                  â”‚
+â”‚                        â”œâ”€> State: PLAYING                â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚                        â”‚   â”‚ Update Player          â”‚    â”‚
+â”‚                        â”‚   â”‚ Update Enemies         â”‚    â”‚
+â”‚                        â”‚   â”‚ Update Physics         â”‚    â”‚
+â”‚                        â”‚   â”‚ Check Collisions       â”‚    â”‚
+â”‚                        â”‚   â”‚ Update Particles       â”‚    â”‚
+â”‚                        â”‚   â”‚ Render Frame           â”‚    â”‚
+â”‚                        â”‚   â”‚ Render HUD             â”‚    â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                        â”‚                                  â”‚
+â”‚                        â”œâ”€> State: PAUSED                 â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚                        â”‚   â”‚ Display Pause Menu     â”‚    â”‚
+â”‚                        â”‚   â”‚ Wait for Input         â”‚    â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                        â”‚                                  â”‚
+â”‚                        â”œâ”€> State: GAME_OVER              â”‚
+â”‚                        â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚                        â”‚   â”‚ Display Game Over      â”‚    â”‚
+â”‚                        â”‚   â”‚ High Score Entry       â”‚    â”‚
+â”‚                        â”‚   â”‚ Return to Title        â”‚    â”‚
+â”‚                        â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                        â”‚                                  â”‚
+â”‚                        â””â”€> State: LEVEL_COMPLETE         â”‚
+â”‚                            â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚                            â”‚ Display Stats          â”‚    â”‚
+â”‚                            â”‚ Save Progress          â”‚    â”‚
+â”‚                            â”‚ Load Next Level        â”‚    â”‚
+â”‚                            â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -262,8 +262,8 @@ The chunk is entered at offset game_func_116 (0x0046), which is the main initial
 
 **Decision Tree**:
 ```
-[0xFF34] == 0 ? → Load existing game (jump to 0x17D)
-[0xFF34] != 0 ? → Start new game (continue to 0x86)
+[0xFF34] == 0 ? â†’ Load existing game (jump to 0x17D)
+[0xFF34] != 0 ? â†’ Start new game (continue to 0x86)
 ```
 
 ---
@@ -279,7 +279,7 @@ The chunk is entered at offset game_func_116 (0x0046), which is the main initial
 ; Calculate resource offset:
 0x0093  mov al,[0xC8]            ; AL = level ID
 0x0096  mov bl,0x0B              ; BL = 11 (struct size?)
-0x0098  mul bl                   ; AX = level_id × 11
+0x0098  mul bl                   ; AX = level_id Ã— 11
 0x009A  add ax,0x9E53            ; Add base offset
 0x009D  mov si,ax                ; SI = resource table pointer
 
@@ -369,8 +369,8 @@ The chunk is entered at offset game_func_116 (0x0046), which is the main initial
 **Timing Analysis**:
 - Each loop waits 65 timer ticks
 - Timer frequency: 18.2 Hz
-- Wait time per loop: 65 / 18.2 ≈ 3.57 seconds
-- Total animation: 6 × 3.57 ≈ 21.4 seconds
+- Wait time per loop: 65 / 18.2 â‰ˆ 3.57 seconds
+- Total animation: 6 Ã— 3.57 â‰ˆ 21.4 seconds
 
 ---
 
@@ -387,7 +387,7 @@ The chunk is entered at offset game_func_116 (0x0046), which is the main initial
 
 ; Calculate palette data offset:
 0x0127  mov bl,0x0B              ; BL = 11 (palette size)
-0x0129  mul bl                   ; AX = palette_id × 11
+0x0129  mul bl                   ; AX = palette_id Ã— 11
 0x012B  add ax,0x9D8D            ; Add palette base address
 0x012E  mov si,ax                ; SI = palette data pointer
 
@@ -680,8 +680,8 @@ render_health_bar:
 
     ; Calculate percentage:
     mov dx,0
-    mul word [bar_width]        ; health × bar_width
-    div bx                      ; ÷ max_health
+    mul word [bar_width]        ; health Ã— bar_width
+    div bx                      ; Ã· max_health
     mov cx,ax                   ; CX = filled pixels
 
     ; Draw filled portion (red/green gradient):
@@ -717,7 +717,7 @@ render_score:
     mov dx,[score_high]         ; High word of score
 
     ; Convert to decimal digits:
-    call convert_to_decimal     ; → 6 digit array
+    call convert_to_decimal     ; â†’ 6 digit array
 
     ; Render each digit:
     mov si,digits
@@ -999,7 +999,7 @@ Typical breakdown:
 - Collision detection:    6ms  (11%)
 - Rendering:             18ms (33%)
 - HUD rendering:          2ms  (4%)
-                         ───────
+                         â”€â”€â”€â”€â”€â”€â”€
                 Total:   55ms (100%)
 ```
 
@@ -1027,13 +1027,13 @@ Typical breakdown:
 
 **ZELRES2/Chunk_00** is the orchestrator of Zeliard's gameplay:
 
-- ✅ **Main game loop** at 18.2 Hz (synchronized with DOS timer)
-- ✅ **State machine** for game states (playing, paused, menu, etc.)
-- ✅ **System coordinator** calls player, enemy, physics, rendering
-- ✅ **HUD rendering** draws health, mana, score, lives
-- ✅ **Save/load system** persists game progress to `.USR` files
-- ✅ **Resource management** loads levels, graphics, music dynamically
-- ✅ **Event system** processes game events (item pickup, level complete)
+- âœ… **Main game loop** at 18.2 Hz (synchronized with DOS timer)
+- âœ… **State machine** for game states (playing, paused, menu, etc.)
+- âœ… **System coordinator** calls player, enemy, physics, rendering
+- âœ… **HUD rendering** draws health, mana, score, lives
+- âœ… **Save/load system** persists game progress to `.USR` files
+- âœ… **Resource management** loads levels, graphics, music dynamically
+- âœ… **Event system** processes game events (item pickup, level complete)
 
 **Critical for Port**: This chunk defines the game loop structure. Understanding its flow is essential for replicating Zeliard's timing, state management, and system coordination in MonoGame.
 

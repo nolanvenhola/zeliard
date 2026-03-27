@@ -1,12 +1,12 @@
 # ZELRES1/Chunk_06 - Advanced Player Systems Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_06.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/106PLADV.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/106TOWNB.asm`
 **Size**: 7,229 bytes (7.1 KB)
 **Disassembly Lines**: 2,946 lines
 **Purpose**: Advanced gameplay systems - Combat, Magic, Level progression
 **Load Address**: CS:0x6000 (typical)
-**Priority**: ⭐⭐⭐ CRITICAL
+**Priority**: â­�â­�â­� CRITICAL
 
 ## Overview
 
@@ -73,43 +73,43 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│      ZELRES1/Chunk_06 (Advanced Player Systems)         │
-│                                                           │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │     Initialization & Entry (0x0000-0x0242)       │   │
-│  │  - Reset combat state                            │   │
-│  │  - Initialize magic system                       │   │
-│  │  - Load player data from save                    │   │
-│  │  - Setup function pointers                       │   │
-│  └──────────────────────────────────────────────────┘   │
-│                        │                                  │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │      Main Update Loop (0x0200-0x0242)            │   │
-│  │  - Read input state                              │   │
-│  │  - Process attack button                         │   │
-│  │  - Process magic button                          │   │
-│  │  - Update invincibility timer                    │   │
-│  │  - Call subsystem updates                        │   │
-│  └──────────────────────────────────────────────────┘   │
-│         │              │              │                   │
-│         ├─> Attack?    ├─> Magic?     ├─> Check State    │
-│         │              │              │                   │
-│  ┌──────┴──────┐ ┌────┴──────┐ ┌────┴──────────────┐    │
-│  │   Combat    │ │   Magic   │ │   Level System    │    │
-│  │  (0x0243-   │ │ (0x0785-  │ │   (0x0C2F-        │    │
-│  │   0x0784)   │ │  0x0E2C)  │ │    0x0CB8)        │    │
-│  └─────────────┘ └───────────┘ └───────────────────┘    │
-│         │              │              │                   │
-│         ▼              ▼              ▼                   │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │     Graphics Helper (0x08B0-0x0DF2)              │   │
-│  │  - Render sword sprite                           │   │
-│  │  - Render spell effects                          │   │
-│  │  - Flash player on hit                           │   │
-│  │  - Level-up animation                            │   │
-│  └──────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚      ZELRES1/Chunk_06 (Advanced Player Systems)         â”‚
+â”‚                                                           â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚     Initialization & Entry (0x0000-0x0242)       â”‚   â”‚
+â”‚  â”‚  - Reset combat state                            â”‚   â”‚
+â”‚  â”‚  - Initialize magic system                       â”‚   â”‚
+â”‚  â”‚  - Load player data from save                    â”‚   â”‚
+â”‚  â”‚  - Setup function pointers                       â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚                        â”‚                                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚      Main Update Loop (0x0200-0x0242)            â”‚   â”‚
+â”‚  â”‚  - Read input state                              â”‚   â”‚
+â”‚  â”‚  - Process attack button                         â”‚   â”‚
+â”‚  â”‚  - Process magic button                          â”‚   â”‚
+â”‚  â”‚  - Update invincibility timer                    â”‚   â”‚
+â”‚  â”‚  - Call subsystem updates                        â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚         â”‚              â”‚              â”‚                   â”‚
+â”‚         â”œâ”€> Attack?    â”œâ”€> Magic?     â”œâ”€> Check State    â”‚
+â”‚         â”‚              â”‚              â”‚                   â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”� â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”� â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚   Combat    â”‚ â”‚   Magic   â”‚ â”‚   Level System    â”‚    â”‚
+â”‚  â”‚  (0x0243-   â”‚ â”‚ (0x0785-  â”‚ â”‚   (0x0C2F-        â”‚    â”‚
+â”‚  â”‚   0x0784)   â”‚ â”‚  0x0E2C)  â”‚ â”‚    0x0CB8)        â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚         â”‚              â”‚              â”‚                   â”‚
+â”‚         â–¼              â–¼              â–¼                   â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚     Graphics Helper (0x08B0-0x0DF2)              â”‚   â”‚
+â”‚  â”‚  - Render sword sprite                           â”‚   â”‚
+â”‚  â”‚  - Render spell effects                          â”‚   â”‚
+â”‚  â”‚  - Flash player on hit                           â”‚   â”‚
+â”‚  â”‚  - Level-up animation                            â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -364,15 +364,15 @@
 ; Calculate player data offset:
 0x015B  A0 80 00            mov al,[0x80]              ; AL = player ID
 0x015E  32 E4               xor ah,ah                  ; AH = 0
-0x0160  D1 E0               shl ax,1                   ; AX × 2
-0x0162  D1 E0               shl ax,1                   ; AX × 4
-0x0164  D1 E0               shl ax,1                   ; AX × 8
+0x0160  D1 E0               shl ax,1                   ; AX Ã— 2
+0x0162  D1 E0               shl ax,1                   ; AX Ã— 4
+0x0164  D1 E0               shl ax,1                   ; AX Ã— 8
 0x0166  05 17 C0            add ax,0xc017              ; Add base offset
 0x0169  A3 2A FF            mov [0xff2a],ax            ; Store player ptr
 ```
 
 **Player Data Structure**: 8 bytes per entity
-- Offset calculation: `0xC017 + (player_id × 8)`
+- Offset calculation: `0xC017 + (player_id Ã— 8)`
 - Result stored in `[0xff2a]` for quick access
 
 ---
@@ -577,9 +577,9 @@
 0x025B  03 16 80 00         add dx,[0x80]              ; Add player X
 
 ; Calculate entity pointer:
-0x025F  02 DB               add bl,bl                  ; BL × 2
-0x0261  02 DB               add bl,bl                  ; BL × 4
-0x0263  02 DB               add bl,bl                  ; BL × 8
+0x025F  02 DB               add bl,bl                  ; BL Ã— 2
+0x0261  02 DB               add bl,bl                  ; BL Ã— 4
+0x0263  02 DB               add bl,bl                  ; BL Ã— 8
 0x0265  80 C3 05            add bl,0x5                 ; Add offset
 0x0268  03 1E 2A FF         add bx,[0xff2a]            ; Add player base ptr
 
@@ -700,9 +700,9 @@
 0x02FC  03 16 80 00         add dx,[0x80]              ; Add X position
 
 ; Calculate map offset:
-0x0300  02 DB               add bl,bl                  ; BL × 2
-0x0302  02 DB               add bl,bl                  ; BL × 4
-0x0304  02 DB               add bl,bl                  ; BL × 8
+0x0300  02 DB               add bl,bl                  ; BL Ã— 2
+0x0302  02 DB               add bl,bl                  ; BL Ã— 4
+0x0304  02 DB               add bl,bl                  ; BL Ã— 8
 0x0306  80 C3 05            add bl,0x5
 0x0309  03 1E 2A FF         add bx,[0xff2a]            ; Add player ptr
 
@@ -796,14 +796,14 @@
 0x07A7  C6 06 87 00 01      mov byte [0x87],0x1        ; Casting flag = 1
 0x07AC  8A 0E 86 00         mov cl,[0x86]              ; CL = spell ID
 0x07B0  B5 00               mov ch,0x0                 ; CH = 0
-0x07B2  D1 E1               shl cx,1                   ; CX × 2
+0x07B2  D1 E1               shl cx,1                   ; CX Ã— 2
 0x07B4  8B F1               mov si,cx                  ; SI = offset
 0x07B6  FF A4 20 08         jmp word near [si+0x820]   ; Jump to spell handler
 ```
 
 **Spell Jump Table**: At CS:0x0820
 - Each spell ID has 2-byte pointer to handler function
-- Example: Spell 0 → `[0x820]`, Spell 1 → `[0x822]`, etc.
+- Example: Spell 0 â†’ `[0x820]`, Spell 1 â†’ `[0x822]`, etc.
 
 ---
 
@@ -863,7 +863,7 @@ spell_fire:
 ; Check ability type:
 0x0805  8A 0E 89 00         mov cl,[0x89]              ; CL = ability ID
 0x0809  B5 00               mov ch,0x0
-0x080B  D1 E1               shl cx,1                   ; CX × 2
+0x080B  D1 E1               shl cx,1                   ; CX Ã— 2
 0x080D  8B F1               mov si,cx
 0x080F  FF A4 40 09         jmp word near [si+0x940]   ; Jump to ability
 ```
@@ -933,9 +933,9 @@ double_jump:
 0x0AA4  3C FE               cmp al,0xfe                ; Empty?
 0x0AA6  74 09               jz .empty
 0x0AA8  32 E4               xor ah,ah                  ; AH = 0
-0x0AAA  D1 E0               shl ax,1                   ; AX × 2
-0x0AAC  D1 E0               shl ax,1                   ; AX × 4
-0x0AAE  D1 E0               shl ax,1                   ; AX × 8
+0x0AAA  D1 E0               shl ax,1                   ; AX Ã— 2
+0x0AAC  D1 E0               shl ax,1                   ; AX Ã— 4
+0x0AAE  D1 E0               shl ax,1                   ; AX Ã— 8
 0x0AB0  8B F0               mov si,ax                  ; SI = entity ptr
 0x0AB2  C3                  ret
 .empty:
@@ -965,7 +965,7 @@ double_jump:
         ; Load level threshold:
         mov cl,[0x94]           ; CL = current level
         xor ch,ch
-        shl cx,1                ; CX × 2 (word offset)
+        shl cx,1                ; CX Ã— 2 (word offset)
         mov si,cx
         mov bx,[si+0xD00]       ; BX = XP needed for level
 
@@ -1001,18 +1001,18 @@ double_jump:
         ; Calculate stat increases:
         mov al,[0x94]           ; AL = new level
         mov bl,0x3
-        mul bl                  ; AX = level × 3
+        mul bl                  ; AX = level Ã— 3
 
         ; Increase max HP:
-        add word [0x96],ax      ; Max HP += level × 3
+        add word [0x96],ax      ; Max HP += level Ã— 3
         mov ax,[0x96]
         mov [0x98],ax           ; Current HP = max HP
 
         ; Increase max mana:
         mov al,[0x94]
         mov bl,0x2
-        mul bl                  ; AX = level × 2
-        add word [0x9a],ax      ; Max mana += level × 2
+        mul bl                  ; AX = level Ã— 2
+        add word [0x9a],ax      ; Max mana += level Ã— 2
         mov ax,[0x9a]
         mov [0x9c],ax           ; Current mana = max mana
 
@@ -1107,7 +1107,7 @@ double_jump:
 | Offset | Purpose |
 |--------|---------|
 | `0x0820` | Spell jump table base |
-| `0x0820+n×2` | Spell N handler pointer |
+| `0x0820+nÃ—2` | Spell N handler pointer |
 | `0x0ABC` | Update HUD mana bar |
 
 ### Ability Functions
@@ -1115,7 +1115,7 @@ double_jump:
 | Offset | Purpose |
 |--------|---------|
 | `0x0940` | Ability jump table base |
-| `0x0940+n×2` | Ability N handler pointer |
+| `0x0940+nÃ—2` | Ability N handler pointer |
 
 ### Graphics Functions (gmmcga)
 
@@ -1170,13 +1170,13 @@ call [cs:0x????]  // Calculate damage
 
 **ZELRES1/Chunk_06** implements advanced gameplay systems:
 
-- ✅ **Combat system** with sword hitbox detection and damage calculation
-- ✅ **Magic system** with mana management and spell casting
-- ✅ **Level-up system** with XP thresholds and stat increases
-- ✅ **Special abilities** like double jump and dash
-- ✅ **Collision detection** for attacks and movement
-- ✅ **Hit effects** and visual feedback
-- ✅ **Equipment bonuses** applied to stats
+- âœ… **Combat system** with sword hitbox detection and damage calculation
+- âœ… **Magic system** with mana management and spell casting
+- âœ… **Level-up system** with XP thresholds and stat increases
+- âœ… **Special abilities** like double jump and dash
+- âœ… **Collision detection** for attacks and movement
+- âœ… **Hit effects** and visual feedback
+- âœ… **Equipment bonuses** applied to stats
 
 **Critical for Port**: This chunk defines core gameplay feel. The combat system's hitbox detection, magic casting timing, and level progression are essential for authentic gameplay.
 

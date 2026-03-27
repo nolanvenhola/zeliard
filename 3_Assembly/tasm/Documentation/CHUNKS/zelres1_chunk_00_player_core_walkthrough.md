@@ -1,12 +1,12 @@
 # ZELRES1/Chunk_00 - Opening Scene + Player Core Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_00.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/100OPSCN.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/100OPDMO.asm`
 **Size**: 13,865 bytes (13.5 KB)
 **Disassembly Lines**: 5,824 lines
 **Purpose**: Opening cinematic sequence + Player initialization and core systems
 **Load Address**: CS:0x6000 (typical)
-**Priority**: ⭐⭐⭐ CRITICAL
+**Priority**: â­�â­�â­� CRITICAL
 
 ## Overview
 
@@ -51,64 +51,64 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│         ZELRES1/Chunk_00 (Opening + Player Core)        │
-│                                                           │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │          Opening Sequence (0x0000-0x04ED)        │   │
-│  │  - Story text scroll                             │   │
-│  │  - Image slideshow (nec.grp, hime.grp, etc.)    │   │
-│  │  - Jashiin's speech                              │   │
-│  │  - Title screen                                  │   │
-│  │  - Music playback                                │   │
-│  └──────────────────────────────────────────────────┘   │
-│                        │                                  │
-│                        ├─> Skip Handler (ESC/ENTER)      │
-│                        │                                  │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │      Title Screen + Menu (0x0410-0x04ED)         │   │
-│  │  - Title logo display                            │   │
-│  │  - Menu: New Game / Continue / Options           │   │
-│  │  - Name entry screen                             │   │
-│  │  - Difficulty selection                          │   │
-│  └──────────────────────────────────────────────────┘   │
-│                        │                                  │
-│                        ├─> New Game Selected             │
-│                        │                                  │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │    Player Initialization (0x0500-0x0A1B)         │   │
-│  │  - Clear player state variables                  │   │
-│  │  - Set starting position                         │   │
-│  │  - Initialize inventory                          │   │
-│  │  - Load player sprites                           │   │
-│  │  - Setup animation tables                        │   │
-│  └──────────────────────────────────────────────────┘   │
-│                        │                                  │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │     Animation State Machine (0x0A20-0x0CCF)      │   │
-│  │  - Walking animation (8 frames)                  │   │
-│  │  - Jumping animation (4 frames)                  │   │
-│  │  - Attacking animation (6 frames)                │   │
-│  │  - Hit reaction (3 frames)                       │   │
-│  │  - Death animation (8 frames)                    │   │
-│  └──────────────────────────────────────────────────┘   │
-│                        │                                  │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │     Graphics Utilities (0x0CD0-0x0FAF)           │   │
-│  │  - Sprite decompression                          │   │
-│  │  - Bitplane decoding                             │   │
-│  │  - Screen blit functions                         │   │
-│  │  - Masking and transparency                      │   │
-│  └──────────────────────────────────────────────────┘   │
-│                        │                                  │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │       Text Data (0x0FF0-0x353C)                  │   │
-│  │  - Opening story text (English)                  │   │
-│  │  - Character names                               │   │
-│  │  - Location names                                │   │
-│  │  - Copyright notice                              │   │
-│  └──────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚         ZELRES1/Chunk_00 (Opening + Player Core)        â”‚
+â”‚                                                           â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚          Opening Sequence (0x0000-0x04ED)        â”‚   â”‚
+â”‚  â”‚  - Story text scroll                             â”‚   â”‚
+â”‚  â”‚  - Image slideshow (nec.grp, hime.grp, etc.)    â”‚   â”‚
+â”‚  â”‚  - Jashiin's speech                              â”‚   â”‚
+â”‚  â”‚  - Title screen                                  â”‚   â”‚
+â”‚  â”‚  - Music playback                                â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚                        â”‚                                  â”‚
+â”‚                        â”œâ”€> Skip Handler (ESC/ENTER)      â”‚
+â”‚                        â”‚                                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚      Title Screen + Menu (0x0410-0x04ED)         â”‚   â”‚
+â”‚  â”‚  - Title logo display                            â”‚   â”‚
+â”‚  â”‚  - Menu: New Game / Continue / Options           â”‚   â”‚
+â”‚  â”‚  - Name entry screen                             â”‚   â”‚
+â”‚  â”‚  - Difficulty selection                          â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚                        â”‚                                  â”‚
+â”‚                        â”œâ”€> New Game Selected             â”‚
+â”‚                        â”‚                                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚    Player Initialization (0x0500-0x0A1B)         â”‚   â”‚
+â”‚  â”‚  - Clear player state variables                  â”‚   â”‚
+â”‚  â”‚  - Set starting position                         â”‚   â”‚
+â”‚  â”‚  - Initialize inventory                          â”‚   â”‚
+â”‚  â”‚  - Load player sprites                           â”‚   â”‚
+â”‚  â”‚  - Setup animation tables                        â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚                        â”‚                                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚     Animation State Machine (0x0A20-0x0CCF)      â”‚   â”‚
+â”‚  â”‚  - Walking animation (8 frames)                  â”‚   â”‚
+â”‚  â”‚  - Jumping animation (4 frames)                  â”‚   â”‚
+â”‚  â”‚  - Attacking animation (6 frames)                â”‚   â”‚
+â”‚  â”‚  - Hit reaction (3 frames)                       â”‚   â”‚
+â”‚  â”‚  - Death animation (8 frames)                    â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚                        â”‚                                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚     Graphics Utilities (0x0CD0-0x0FAF)           â”‚   â”‚
+â”‚  â”‚  - Sprite decompression                          â”‚   â”‚
+â”‚  â”‚  - Bitplane decoding                             â”‚   â”‚
+â”‚  â”‚  - Screen blit functions                         â”‚   â”‚
+â”‚  â”‚  - Masking and transparency                      â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚                        â”‚                                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚       Text Data (0x0FF0-0x353C)                  â”‚   â”‚
+â”‚  â”‚  - Opening story text (English)                  â”‚   â”‚
+â”‚  â”‚  - Character names                               â”‚   â”‚
+â”‚  â”‚  - Location names                                â”‚   â”‚
+â”‚  â”‚  - Copyright notice                              â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -668,7 +668,7 @@ decompress_rle:
 0x0E93  1E                  push ds
 0x0E94  32 E4               xor ah,ah              ; AH = 0
 0x0E96  BA C0 0C            mov dx,0xcc0           ; DX = 3264 (image size)
-0x0E99  F7 E2               mul dx                 ; AX = image_id × 3264
+0x0E99  F7 E2               mul dx                 ; AX = image_id Ã— 3264
 0x0E9B  05 40 AB            add ax,0xab40          ; Add base address
 0x0E9E  2E 8E 1E 2C FF      mov ds,word [cs:0xff2c]
 0x0EA3  8B F0               mov si,ax              ; SI = image data
@@ -981,13 +981,13 @@ call [cs:0x????]  // Setup sword collision, magic system
 
 **ZELRES1/Chunk_00** is the game's introduction and player foundation:
 
-- ✅ **Opening cinematic** with story text, slideshow, speech (~2-3 minutes)
-- ✅ **Title screen** with menu system and music
-- ✅ **Skip system** allows bypassing cutscene with ESC/ENTER
-- ✅ **Player initialization** sets up starting state
-- ✅ **Animation system** manages 10+ animation states with frame timing
-- ✅ **Graphics utilities** for RLE decompression, bitplane blitting, masking
-- ✅ **Text data** contains full English story and dialogue
+- âœ… **Opening cinematic** with story text, slideshow, speech (~2-3 minutes)
+- âœ… **Title screen** with menu system and music
+- âœ… **Skip system** allows bypassing cutscene with ESC/ENTER
+- âœ… **Player initialization** sets up starting state
+- âœ… **Animation system** manages 10+ animation states with frame timing
+- âœ… **Graphics utilities** for RLE decompression, bitplane blitting, masking
+- âœ… **Text data** contains full English story and dialogue
 
 **Critical for Port**: This chunk defines the game's first impression (opening) and player core systems. The animation state machine and graphics utilities are essential for proper player rendering. Understanding the bitplane compositing is crucial for sprite display.
 

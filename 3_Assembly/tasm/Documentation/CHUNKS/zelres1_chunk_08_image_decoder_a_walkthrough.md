@@ -1,12 +1,12 @@
 # ZELRES1/Chunk_08 - Image Decoder A Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_08.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/108IMGDA.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/108GTCGA.asm`
 **Size**: 4,477 bytes (4.5KB)
 **Disassembly Lines**: 2,095 lines
 **Purpose**: Alternative image decompression format for opening scene backgrounds
 **Load Address**: Variable (loaded by chunk_00)
-**Priority**: ⭐⭐⭐ CRITICAL (Opening scene decoder variant)
+**Priority**: â­�â­�â­� CRITICAL (Opening scene decoder variant)
 
 ## Overview
 
@@ -54,42 +54,42 @@
 ## Architecture Diagram
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│       ZELRES1/Chunk_08 - Image Decoder A (Two-Stage)         │
-│                                                                │
-│  Entry Point (0x0000)                                         │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ - Check compression format (byte 5 of chunk)       │      │
-│  │ - Format 6: Table-based RLE                        │      │
-│  │ - Format 7: Escape-byte RLE                        │      │
-│  │ - Format 0: Raw (no compression)                   │      │
-│  └────────────────────────────────────────────────────┘      │
-│                ↓                                              │
-│  Stage 1: RLE Decompression (0x0020-0x0150)                  │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ Format 7: [marker][value][count] → value×(count+3) │      │
-│  │ Format 6: Prefix table of [old,new] pairs + 0xFFFF  │      │
-│  │           terminator, then substitution decode       │      │
-│  │ Output: Compressed bitplane data                    │      │
-│  └────────────────────────────────────────────────────┘      │
-│                ↓                                              │
-│  Stage 2: Bitmap + XOR Decode (0x0150-0x0300)               │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ - Read control byte count (word)                    │      │
-│  │ - Read control bytes (1=literal, 0=zero)            │      │
-│  │ - Expand with zeros based on control bits           │      │
-│  │ - XOR differential: val ^= prev_val                 │      │
-│  │ - Running state DH for 2-bit pair decode            │      │
-│  └────────────────────────────────────────────────────┘      │
-│                ↓                                              │
-│  4-Plane Renderer (0x0300-0x04FF)                            │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │ - Separate bitplanes (4 planes from decompressed)   │      │
-│  │ - Write to VGA A000:0000 or buffer                  │      │
-│  │ - Optional horizontal mirroring                     │      │
-│  │ - Scanline-by-scanline rendering with timing        │      │
-│  └────────────────────────────────────────────────────┘      │
-└──────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚       ZELRES1/Chunk_08 - Image Decoder A (Two-Stage)         â”‚
+â”‚                                                                â”‚
+â”‚  Entry Point (0x0000)                                         â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ - Check compression format (byte 5 of chunk)       â”‚      â”‚
+â”‚  â”‚ - Format 6: Table-based RLE                        â”‚      â”‚
+â”‚  â”‚ - Format 7: Escape-byte RLE                        â”‚      â”‚
+â”‚  â”‚ - Format 0: Raw (no compression)                   â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                â†“                                              â”‚
+â”‚  Stage 1: RLE Decompression (0x0020-0x0150)                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ Format 7: [marker][value][count] â†’ valueÃ—(count+3) â”‚      â”‚
+â”‚  â”‚ Format 6: Prefix table of [old,new] pairs + 0xFFFF  â”‚      â”‚
+â”‚  â”‚           terminator, then substitution decode       â”‚      â”‚
+â”‚  â”‚ Output: Compressed bitplane data                    â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                â†“                                              â”‚
+â”‚  Stage 2: Bitmap + XOR Decode (0x0150-0x0300)               â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ - Read control byte count (word)                    â”‚      â”‚
+â”‚  â”‚ - Read control bytes (1=literal, 0=zero)            â”‚      â”‚
+â”‚  â”‚ - Expand with zeros based on control bits           â”‚      â”‚
+â”‚  â”‚ - XOR differential: val ^= prev_val                 â”‚      â”‚
+â”‚  â”‚ - Running state DH for 2-bit pair decode            â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â”‚                â†“                                              â”‚
+â”‚  4-Plane Renderer (0x0300-0x04FF)                            â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�      â”‚
+â”‚  â”‚ - Separate bitplanes (4 planes from decompressed)   â”‚      â”‚
+â”‚  â”‚ - Write to VGA A000:0000 or buffer                  â”‚      â”‚
+â”‚  â”‚ - Optional horizontal mirroring                     â”‚      â”‚
+â”‚  â”‚ - Scanline-by-scanline rendering with timing        â”‚      â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -132,7 +132,7 @@
 **Format 7 Example**:
 ```
 Input:  [0xAA] [0xAA][0x15][0x0A] [0x20] [0xAA][0x00][0x05]
-Output: [0x15 × 13] [0x20] [0x00 × 8]
+Output: [0x15 Ã— 13] [0x20] [0x00 Ã— 8]
         ^(count+3=13)           ^(count+3=8)
 ```
 
@@ -421,7 +421,7 @@ Output: [0x00, 0x03, 0x00, 0x00]
 
 | Address | Size | Purpose |
 |---------|------|---------|
-| `table_buffer` | 512 bytes | Format 6 substitution table (256 entries × 2) |
+| `table_buffer` | 512 bytes | Format 6 substitution table (256 entries Ã— 2) |
 | `control_buffer` | ~1KB | Bitmap control bytes (stage 2) |
 | `expanded_buffer` | ~8KB | Zero-filled expanded data |
 | `final_buffer` | ~8KB | XOR-decoded final bitplane data |
@@ -443,7 +443,7 @@ mov di,output_buffer             ; DI = destination
 call chunk_08_base               ; Decompress
 
 ; Then call chunk_10 or chunk_11 to render:
-call chunk_10_base               ; Render 48×34 image
+call chunk_10_base               ; Render 48Ã—34 image
 ```
 
 ---
@@ -467,7 +467,7 @@ Total: ~16:1 compression for typical opening scene images
 ```
 
 **Compression Example**:
-- Original: 64KB (320×200 pixels)
+- Original: 64KB (320Ã—200 pixels)
 - After RLE: 32KB
 - After Bitmap: 8KB
 - After XOR: 4KB (final .grp size)
@@ -478,12 +478,12 @@ Total: ~16:1 compression for typical opening scene images
 
 **ZELRES1/Chunk_08** implements the two-stage decompression documented in OPENING_SCENE_ANALYSIS.md:
 
-- ⭐ **Format-specific RLE**: Handles escape-byte and table-based compression
-- ⭐ **Bitmap-controlled zero-fill**: Efficiently encodes large zero regions
-- ⭐ **XOR differential**: Exploits pixel coherence for additional compression
-- ⭐ **4-plane separation**: Outputs EGA/VGA compatible bitplane format
-- ⭐ **Direct VGA rendering**: Can render or buffer for post-processing
-- ⭐ **Horizontal mirroring**: Enables symmetrical backgrounds with half storage
+- â­� **Format-specific RLE**: Handles escape-byte and table-based compression
+- â­� **Bitmap-controlled zero-fill**: Efficiently encodes large zero regions
+- â­� **XOR differential**: Exploits pixel coherence for additional compression
+- â­� **4-plane separation**: Outputs EGA/VGA compatible bitplane format
+- â­� **Direct VGA rendering**: Can render or buffer for post-processing
+- â­� **Horizontal mirroring**: Enables symmetrical backgrounds with half storage
 
 **Critical for Port**: This two-stage algorithm achieves excellent compression ratios critical for fitting Zeliard on floppy disks. Modern ports can use PNG/JPEG but understanding this helps decode original assets.
 

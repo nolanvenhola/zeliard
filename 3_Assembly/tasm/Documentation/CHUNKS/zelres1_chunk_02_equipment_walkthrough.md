@@ -1,12 +1,12 @@
 # ZELRES1/Chunk_02 - Equipment & Inventory Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres1_extracted/chunk_02.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres1/code/102EQUIP.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres1/code/102GDCGA.asm`
 **Size**: 6,174 bytes (6.0 KB)
 **Disassembly Lines**: 3,510 lines
 **Purpose**: Equipment management, inventory system, item effects
 **Load Address**: CS:0x6000 (typical)
-**Priority**: ⭐⭐⭐ CRITICAL
+**Priority**: â­�â­�â­� CRITICAL
 
 ## Overview
 
@@ -50,41 +50,41 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│        ZELRES1/Chunk_02 (Equipment & Inventory)         │
-│                                                           │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │      Inventory Data Structure (0x0000-0x0035)    │   │
-│  │  - 32 item slots (16 bytes each)                 │   │
-│  │  - Item ID, quantity, flags                      │   │
-│  │  - Equipment slots (weapon, armor, etc.)         │   │
-│  └──────────────────────────────────────────────────┘   │
-│                        │                                  │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │    Graphics Functions (0x0036-0x01A3)            │   │
-│  │  - Draw inventory screen                         │   │
-│  │  - Render item icons                             │   │
-│  │  - Highlight selected item                       │   │
-│  │  - Draw equipment slots                          │   │
-│  └──────────────────────────────────────────────────┘   │
-│         │              │              │                   │
-│         ├─> Draw       ├─> Render     ├─> Update         │
-│         │              │              │                   │
-│  ┌──────┴──────┐ ┌────┴──────┐ ┌────┴──────────────┐    │
-│  │  Item Mgmt  │ │  Equip    │ │   Stat Calc       │    │
-│  │  (0x01A4-   │ │  System   │ │   (0x0C00-        │    │
-│  │   0x08FF)   │ │ (0x0900-  │ │    0x0FFF)        │    │
-│  │             │ │  0x0BFF)  │ │                   │    │
-│  └─────────────┘ └───────────┘ └───────────────────┘    │
-│         │              │              │                   │
-│         ▼              ▼              ▼                   │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │       Item Data Tables (0x1000-0x17FF)           │   │
-│  │  - Item definitions (name, stats, cost)          │   │
-│  │  - Equipment bonuses                             │   │
-│  │  - Special effect handlers                       │   │
-│  └──────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚        ZELRES1/Chunk_02 (Equipment & Inventory)         â”‚
+â”‚                                                           â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚      Inventory Data Structure (0x0000-0x0035)    â”‚   â”‚
+â”‚  â”‚  - 32 item slots (16 bytes each)                 â”‚   â”‚
+â”‚  â”‚  - Item ID, quantity, flags                      â”‚   â”‚
+â”‚  â”‚  - Equipment slots (weapon, armor, etc.)         â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚                        â”‚                                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚    Graphics Functions (0x0036-0x01A3)            â”‚   â”‚
+â”‚  â”‚  - Draw inventory screen                         â”‚   â”‚
+â”‚  â”‚  - Render item icons                             â”‚   â”‚
+â”‚  â”‚  - Highlight selected item                       â”‚   â”‚
+â”‚  â”‚  - Draw equipment slots                          â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â”‚         â”‚              â”‚              â”‚                   â”‚
+â”‚         â”œâ”€> Draw       â”œâ”€> Render     â”œâ”€> Update         â”‚
+â”‚         â”‚              â”‚              â”‚                   â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”� â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”� â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚  Item Mgmt  â”‚ â”‚  Equip    â”‚ â”‚   Stat Calc       â”‚    â”‚
+â”‚  â”‚  (0x01A4-   â”‚ â”‚  System   â”‚ â”‚   (0x0C00-        â”‚    â”‚
+â”‚  â”‚   0x08FF)   â”‚ â”‚ (0x0900-  â”‚ â”‚    0x0FFF)        â”‚    â”‚
+â”‚  â”‚             â”‚ â”‚  0x0BFF)  â”‚ â”‚                   â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚         â”‚              â”‚              â”‚                   â”‚
+â”‚         â–¼              â–¼              â–¼                   â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�   â”‚
+â”‚  â”‚       Item Data Tables (0x1000-0x17FF)           â”‚   â”‚
+â”‚  â”‚  - Item definitions (name, stats, cost)          â”‚   â”‚
+â”‚  â”‚  - Equipment bonuses                             â”‚   â”‚
+â”‚  â”‚  - Special effect handlers                       â”‚   â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -96,7 +96,7 @@
 **Purpose**: Stores all player inventory and equipment data
 
 ```
-Inventory Array: 32 slots × 16 bytes = 512 bytes
+Inventory Array: 32 slots Ã— 16 bytes = 512 bytes
 
 Each Slot (16 bytes):
   +0x00: Item ID (word)           ; 0xFFFF = empty slot
@@ -172,7 +172,7 @@ draw_inventory:
 
 ; Calculate screen position:
 0x003A  8A C5               mov al,ch              ; AL = width
-0x003C  F6 E1               mul cl                 ; AX = width × height
+0x003C  F6 E1               mul cl                 ; AX = width Ã— height
 0x003E  8B E8               mov bp,ax              ; BP = total size
 
 ; Setup segments:
@@ -190,7 +190,7 @@ draw_inventory:
 
 ; Copy loop:
 0x005C  8B CD               mov cx,bp              ; CX = size
-0x005E  D1 E9               shr cx,1               ; CX ÷ 2 (words)
+0x005E  D1 E9               shr cx,1               ; CX Ã· 2 (words)
 
 .copy_loop:
 0x0060  3E 8B 02            mov ax,[ds:si]         ; AX = source word
@@ -225,7 +225,7 @@ draw_item_slot:
 0x007F  1E                  push ds
 
 ; Similar structure to draw_inventory but smaller region
-; Draws 16×16 pixel icon + item name
+; Draws 16Ã—16 pixel icon + item name
 
 0x0080  8A C5               mov al,ch
 0x0082  F6 E1               mul cl
@@ -273,11 +273,11 @@ calc_screen_pos:
 0x016D  57                  push di
 
 ; Convert (row, col) to linear offset:
-0x016E  D0 EB               shr bl,1               ; BL ÷ 2
+0x016E  D0 EB               shr bl,1               ; BL Ã· 2
 0x0170  1B FF               sbb di,di              ; DI = carry flag
 0x0172  81 E7 00 20         and di,0x2000          ; Mask to segment
 0x0176  B0 50               mov al,0x50            ; AL = 80 (row size)
-0x0178  F6 E3               mul bl                 ; AX = row × 80
+0x0178  F6 E3               mul bl                 ; AX = row Ã— 80
 0x017A  03 F8               add di,ax              ; DI += row offset
 0x017C  8A DF               mov bl,bh              ; BL = column
 0x017E  32 FF               xor bh,bh              ; BH = 0
@@ -506,7 +506,7 @@ equip_item:
     ; Calculate equipment slot:
     xor ah,ah
     mov cl,4
-    shl ax,cl                   ; AX = slot × 16
+    shl ax,cl                   ; AX = slot Ã— 16
     add ax,equipment_base       ; Add base address
     mov di,ax                   ; DI = equipment slot
 
@@ -697,7 +697,7 @@ get_item_stats:
     ; Calculate table offset:
     sub ax,1                    ; Zero-based index
     mov cl,6
-    mul cl                      ; AX = index × 6 (3 words)
+    mul cl                      ; AX = index Ã— 6 (3 words)
     add ax,item_stat_table
     mov si,ax                   ; SI = stats pointer
 
@@ -861,8 +861,8 @@ process_item_effects:
 
 | Address | Size | Purpose |
 |---------|------|---------|
-| `0x4A00` | 512 bytes | Inventory array (32 slots × 16 bytes) |
-| `0x4C00` | 96 bytes | Equipment slots (6 slots × 16 bytes) |
+| `0x4A00` | 512 bytes | Inventory array (32 slots Ã— 16 bytes) |
+| `0x4C00` | 96 bytes | Equipment slots (6 slots Ã— 16 bytes) |
 | `0x4C60` | 32 bytes | Quick access pointers |
 | `0x4C80` | 16 bytes | Inventory flags (sorting, etc.) |
 
@@ -870,10 +870,10 @@ process_item_effects:
 
 | Address | Size | Purpose |
 |---------|------|---------|
-| `0x5000` | 768 bytes | Item stat table (128 items × 6 bytes) |
-| `0x5300` | 2048 bytes | Item name table (128 items × 16 bytes) |
-| `0x5B00` | 512 bytes | Item price table (128 items × 4 bytes) |
-| `0x5D00` | 256 bytes | Item type table (128 items × 2 bytes) |
+| `0x5000` | 768 bytes | Item stat table (128 items Ã— 6 bytes) |
+| `0x5300` | 2048 bytes | Item name table (128 items Ã— 16 bytes) |
+| `0x5B00` | 512 bytes | Item price table (128 items Ã— 4 bytes) |
+| `0x5D00` | 256 bytes | Item type table (128 items Ã— 2 bytes) |
 
 ---
 
@@ -881,12 +881,12 @@ process_item_effects:
 
 **ZELRES1/Chunk_02** provides complete inventory management:
 
-- ✅ **32-slot inventory** with stacking and sorting
-- ✅ **6 equipment slots** (weapon, armor, shield, helmet, 2 accessories)
-- ✅ **Stat calculation** applies all equipment bonuses
-- ✅ **Special effects** like HP regeneration
-- ✅ **Shop system** for buying/selling
-- ✅ **Enchantment system** for item upgrades
+- âœ… **32-slot inventory** with stacking and sorting
+- âœ… **6 equipment slots** (weapon, armor, shield, helmet, 2 accessories)
+- âœ… **Stat calculation** applies all equipment bonuses
+- âœ… **Special effects** like HP regeneration
+- âœ… **Shop system** for buying/selling
+- âœ… **Enchantment system** for item upgrades
 
 **Critical for Port**: Essential for RPG mechanics. Stat calculations and equipment bonuses directly affect combat effectiveness.
 

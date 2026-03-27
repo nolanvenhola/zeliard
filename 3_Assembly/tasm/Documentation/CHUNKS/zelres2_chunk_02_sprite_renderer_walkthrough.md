@@ -1,12 +1,12 @@
 # ZELRES2/Chunk_02 - Sprite Animation & Enemy Rendering Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_02.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/202SPRTR.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/202GFEGA.asm`
 **Size**: 24,576 bytes (24KB)
 **Disassembly Lines**: 4,068 lines
 **Purpose**: Enemy sprite rendering, animation frame management, VGA bitplane blitting
 **Load Address**: CS:0x6000 (typical)
-**Priority**: ⭐⭐⭐ CRITICAL
+**Priority**: â­�â­�â­� CRITICAL
 
 ---
 
@@ -63,32 +63,32 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│         ZELRES2/Chunk_02 (Sprite Rendering)                 │
-│                                                              │
-│  ┌────────────────────────────────────────────────────┐    │
-│  │  Sprite Cache (0x5097 - sprite position table)    │    │
-│  │  - 128 word entries                                │    │
-│  │  - Maps sprite ID → VGA screen position           │    │
-│  └────────────────────────────────────────────────────┘    │
-│                         │                                    │
-│                         ↓                                    │
-│  ┌────────────────────────────────────────────────────┐    │
-│  │  Animation Frame Manager (0x004D-0x00AF)           │    │
-│  │  - Loads sprite data from [0xff31]                 │    │
-│  │  - Checks high bit for animated sprites            │    │
-│  │  - Cycles frames based on timer [0x5078]           │    │
-│  └────────────────────────────────────────────────────┘    │
-│                         │                                    │
-│                         ↓                                    │
-│  ┌────────────────────────────────────────────────────┐    │
-│  │  Sprite Renderer (0x0270-0x0331)                   │    │
-│  │  • VGA Planar Mode (4 bitplanes)                   │    │
-│  │  • Sequencer Port (0x3C4/0x3C5)                    │    │
-│  │  • Graphics Controller (0x3CE/0x3CF)               │    │
-│  │  • 8 scanlines × 2 bytes wide per sprite           │    │
-│  └────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚         ZELRES2/Chunk_02 (Sprite Rendering)                 â”‚
+â”‚                                                              â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚  Sprite Cache (0x5097 - sprite position table)    â”‚    â”‚
+â”‚  â”‚  - 128 word entries                                â”‚    â”‚
+â”‚  â”‚  - Maps sprite ID â†’ VGA screen position           â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                         â”‚                                    â”‚
+â”‚                         â†“                                    â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚  Animation Frame Manager (0x004D-0x00AF)           â”‚    â”‚
+â”‚  â”‚  - Loads sprite data from [0xff31]                 â”‚    â”‚
+â”‚  â”‚  - Checks high bit for animated sprites            â”‚    â”‚
+â”‚  â”‚  - Cycles frames based on timer [0x5078]           â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                         â”‚                                    â”‚
+â”‚                         â†“                                    â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�    â”‚
+â”‚  â”‚  Sprite Renderer (0x0270-0x0331)                   â”‚    â”‚
+â”‚  â”‚  â€¢ VGA Planar Mode (4 bitplanes)                   â”‚    â”‚
+â”‚  â”‚  â€¢ Sequencer Port (0x3C4/0x3C5)                    â”‚    â”‚
+â”‚  â”‚  â€¢ Graphics Controller (0x3CE/0x3CF)               â”‚    â”‚
+â”‚  â”‚  â€¢ 8 scanlines Ã— 2 bytes wide per sprite           â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -296,7 +296,7 @@ Multiple animation handlers for different sprite types:
 0x02A9  inc dx              ; DX = 0x3C5 (data port)
 0x02AA  mov bx,0x4e         ; BX = 78 (bytes per scanline)
 
-; Draw 8 scanlines × 4 bitplanes:
+; Draw 8 scanlines Ã— 4 bitplanes:
 0x02AD  mov cx,0x4          ; CX = 4 bitplanes
 .plane_loop:
 0x02B0  mov al,0x1          ; AL = plane mask (0001)
@@ -320,7 +320,7 @@ Multiple animation handlers for different sprite types:
 - **4 bitplanes** (R, G, B, I or specific game palette)
 - **2 bytes per plane per scanline** = 16 pixels wide
 - **8 scanlines** = 8 pixels tall
-- Total: **16×8 pixel sprites**
+- Total: **16Ã—8 pixel sprites**
 
 ---
 
@@ -353,7 +353,7 @@ Multiple animation handlers for different sprite types:
 0x032B  out dx,ax
 ```
 
-**Optimization**: Uses VGA latches to copy sprites already in VGA memory, avoiding slow CPU→VGA transfers.
+**Optimization**: Uses VGA latches to copy sprites already in VGA memory, avoiding slow CPUâ†’VGA transfers.
 
 ---
 
@@ -435,7 +435,7 @@ Multiple animation handlers for different sprite types:
 
 | Offset | Size | Purpose |
 |--------|------|---------|
-| `0x5097` | 256 bytes | Cached VGA positions (128 sprites × 2 bytes) |
+| `0x5097` | 256 bytes | Cached VGA positions (128 sprites Ã— 2 bytes) |
 | `0x5069` | 2 bytes | Base screen offset for current level |
 | `0x506d` | 1 byte | Scanline counter (0x12 = 18 rows) |
 | `0x5078` | 1 byte | Animation timer (bit 0 toggles frames) |
@@ -555,12 +555,12 @@ public class SpriteRenderer
 
 **ZELRES2/Chunk_02** is the sprite animation and rendering engine:
 
-- ✅ **VGA planar graphics** (4-bitplane mode) for hardware acceleration
-- ✅ **Sprite caching** to avoid redundant blits (60% speed boost)
-- ✅ **Multi-frame animations** (2, 4, 6-frame cycles)
-- ✅ **Position tracking** (128 sprite cache slots)
-- ✅ **Transparent masking** (via bitplane manipulation)
-- ✅ **Randomized timing** (25% chance to skip idle frames)
+- âœ… **VGA planar graphics** (4-bitplane mode) for hardware acceleration
+- âœ… **Sprite caching** to avoid redundant blits (60% speed boost)
+- âœ… **Multi-frame animations** (2, 4, 6-frame cycles)
+- âœ… **Position tracking** (128 sprite cache slots)
+- âœ… **Transparent masking** (via bitplane manipulation)
+- âœ… **Randomized timing** (25% chance to skip idle frames)
 
 **Critical for Port**: This system must be recreated using modern sprite batching. The animation frame logic and sprite ID mappings are essential for matching original behavior.
 

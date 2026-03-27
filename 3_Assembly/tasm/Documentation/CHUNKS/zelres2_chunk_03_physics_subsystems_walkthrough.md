@@ -1,12 +1,12 @@
 # ZELRES2/Chunk_03 - Tile Map Collision & State Management Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_03.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/203PHYSS.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/203GFCGA.asm`
 **Size**: 23,552 bytes (23KB)
 **Disassembly Lines**: 4,146 lines
 **Purpose**: Collision map updates, tile state transitions, platform rendering (CGA mode)
 **Load Address**: Variable (dynamically loaded)
-**Priority**: ⭐⭐⭐ CRITICAL (Collision & platform rendering)
+**Priority**: â­�â­�â­� CRITICAL (Collision & platform rendering)
 
 ---
 
@@ -53,10 +53,10 @@
 
 ### What This Chunk Does
 
-1. **CGA Tile Rendering** - 320×200 4-color CGA graphics mode
+1. **CGA Tile Rendering** - 320Ã—200 4-color CGA graphics mode
 2. **Collision Map Sync** - Updates 0xE900 collision buffer (identical to chunk_04)
 3. **Moving Platform Support** - Special handling for dynamic platforms
-4. **Dual Monitor Support** - CGA composite (160×200) vs RGB (320×200)
+4. **Dual Monitor Support** - CGA composite (160Ã—200) vs RGB (320Ã—200)
 5. **Tile Animation (CGA)** - Same animation logic as chunk_04, different rendering
 6. **Platform Edge Detection** - Calculates where player can stand on moving tiles
 7. **Tile State Transitions** - Switch triggers, door states, platform movement
@@ -78,57 +78,57 @@
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│      ZELRES2/Chunk_03 (CGA Tile Renderer & Collision)       │
-│                                                               │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │        Entry Point (0x0032) - Initialize           │     │
-│  │  - Clear sprite cache at 0x509F (128 words)        │     │
-│  │  - Initialize screen row pointer 0x506D = 0x023C   │     │
-│  │  - Load map base from [0xFF31] - 0x21              │     │
-│  └────────────────────────────────────────────────────┘     │
-│                         │                                     │
-│                         ▼                                     │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │    Main Tile Update Loop (0x0050-0x0127)           │     │
-│  │  • Scan tile table at SI (map data pointer)        │     │
-│  │  • Check if tile MSB set (0x80) → needs update     │     │
-│  │  • Process 6 rows of tiles (0x5E-0x8A loop)        │     │
-│  │  • Each row: 4 tile columns checked                │     │
-│  │  • Call update handlers based on tile type          │     │
-│  │                                                      │     │
-│  │  Update Frequency: Every frame for changed tiles    │     │
-│  └────────────────────────────────────────────────────┘     │
-│                         │                                     │
-│                         ├─> Animated Tiles (0x0422-0x04A2)   │
-│                         │   • Water tiles (0x1B-0x1C)        │
-│                         │   • Lava/fire (0x1D-0x22)          │
-│                         │   • Switches (0x2C-0x2D)           │
-│                         │   • Conveyor belts (0x25-0x28)     │
-│                         │   • Cycle animation frame          │
-│                         │                                     │
-│                         ├─> CGA Sprite Blitter (0x0270)      │
-│                         │   • Load from zelres2 segment      │
-│                         │   • Decode 2-bit CGA format        │
-│                         │   • Cache at 0x509F (sprite pool)  │
-│                         │   • 16×8 CGA bitplane data         │
-│                         │   • Handle composite vs RGB mode   │
-│                         │                                     │
-│                         └─> Platform Renderer (0x0684-0x080D) │
-│                             • Moving platform detection       │
-│                             • Edge collision calculation     │
-│                             • Platform sprite overlay        │
-│                             • Velocity transfer to player    │
-│                                                               │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │    CGA Address Calculator (differs from chunk_04)  │     │
-│  │  • Input: BX=column, BH=row                        │     │
-│  │  • CGA memory: 0xB800:0x0000 (mode 0x04 or 0x06) │     │
-│  │  • Interleaved scan lines (0x2000 offset)         │     │
-│  │  • Different wrap: 0x4000 boundary (16KB)          │     │
-│  │  • Returns DI=CGA memory address                   │     │
-│  └────────────────────────────────────────────────────┘     │
-└─────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚      ZELRES2/Chunk_03 (CGA Tile Renderer & Collision)       â”‚
+â”‚                                                               â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚        Entry Point (0x0032) - Initialize           â”‚     â”‚
+â”‚  â”‚  - Clear sprite cache at 0x509F (128 words)        â”‚     â”‚
+â”‚  â”‚  - Initialize screen row pointer 0x506D = 0x023C   â”‚     â”‚
+â”‚  â”‚  - Load map base from [0xFF31] - 0x21              â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                         â”‚                                     â”‚
+â”‚                         â–¼                                     â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚    Main Tile Update Loop (0x0050-0x0127)           â”‚     â”‚
+â”‚  â”‚  â€¢ Scan tile table at SI (map data pointer)        â”‚     â”‚
+â”‚  â”‚  â€¢ Check if tile MSB set (0x80) â†’ needs update     â”‚     â”‚
+â”‚  â”‚  â€¢ Process 6 rows of tiles (0x5E-0x8A loop)        â”‚     â”‚
+â”‚  â”‚  â€¢ Each row: 4 tile columns checked                â”‚     â”‚
+â”‚  â”‚  â€¢ Call update handlers based on tile type          â”‚     â”‚
+â”‚  â”‚                                                      â”‚     â”‚
+â”‚  â”‚  Update Frequency: Every frame for changed tiles    â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                         â”‚                                     â”‚
+â”‚                         â”œâ”€> Animated Tiles (0x0422-0x04A2)   â”‚
+â”‚                         â”‚   â€¢ Water tiles (0x1B-0x1C)        â”‚
+â”‚                         â”‚   â€¢ Lava/fire (0x1D-0x22)          â”‚
+â”‚                         â”‚   â€¢ Switches (0x2C-0x2D)           â”‚
+â”‚                         â”‚   â€¢ Conveyor belts (0x25-0x28)     â”‚
+â”‚                         â”‚   â€¢ Cycle animation frame          â”‚
+â”‚                         â”‚                                     â”‚
+â”‚                         â”œâ”€> CGA Sprite Blitter (0x0270)      â”‚
+â”‚                         â”‚   â€¢ Load from zelres2 segment      â”‚
+â”‚                         â”‚   â€¢ Decode 2-bit CGA format        â”‚
+â”‚                         â”‚   â€¢ Cache at 0x509F (sprite pool)  â”‚
+â”‚                         â”‚   â€¢ 16Ã—8 CGA bitplane data         â”‚
+â”‚                         â”‚   â€¢ Handle composite vs RGB mode   â”‚
+â”‚                         â”‚                                     â”‚
+â”‚                         â””â”€> Platform Renderer (0x0684-0x080D) â”‚
+â”‚                             â€¢ Moving platform detection       â”‚
+â”‚                             â€¢ Edge collision calculation     â”‚
+â”‚                             â€¢ Platform sprite overlay        â”‚
+â”‚                             â€¢ Velocity transfer to player    â”‚
+â”‚                                                               â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚    CGA Address Calculator (differs from chunk_04)  â”‚     â”‚
+â”‚  â”‚  â€¢ Input: BX=column, BH=row                        â”‚     â”‚
+â”‚  â”‚  â€¢ CGA memory: 0xB800:0x0000 (mode 0x04 or 0x06) â”‚     â”‚
+â”‚  â”‚  â€¢ Interleaved scan lines (0x2000 offset)         â”‚     â”‚
+â”‚  â”‚  â€¢ Different wrap: 0x4000 boundary (16KB)          â”‚     â”‚
+â”‚  â”‚  â€¢ Returns DI=CGA memory address                   â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -209,7 +209,7 @@
 0x0088  loop 0x5e               ; Next row (6 times)
 ```
 
-**Plain English**: Process 6 rows × 4 tiles = 24 tiles per frame. Check each tile's update flag (bit 7). If set, call the CGA tile renderer at extract_bits (0x45f). The loop structure is identical to chunk_04, just different function addresses.
+**Plain English**: Process 6 rows Ã— 4 tiles = 24 tiles per frame. Check each tile's update flag (bit 7). If set, call the CGA tile renderer at extract_bits (0x45f). The loop structure is identical to chunk_04, just different function addresses.
 
 ---
 
@@ -257,7 +257,7 @@
 
 **Collision Map Format** (identical between chunk_03 and chunk_04):
 ```
-0xE900-0xE91B = 28 bytes per row × 18 rows = 504 bytes total
+0xE900-0xE91B = 28 bytes per row Ã— 18 rows = 504 bytes total
 Each byte encodes:
   0xFF = solid tile (wall, floor)
   0xFE = semi-solid (platform, ladder top)
@@ -376,7 +376,7 @@ Each byte encodes:
 0x01E6  ret
 
 0x01E7  inc al                  ; Toggle switch
-0x01E9  and al,0x1              ; 0 ↔ 1
+0x01E9  and al,0x1              ; 0 â†” 1
 0x01EB  add al,0x2c             ; Add base
 0x01ED  mov [si-0x1],al
 0x01F0  ret
@@ -436,7 +436,7 @@ Each byte encodes:
 0x028C  dec al                  ; Adjust tile ID
 0x028E  mov [bx+0x509f],di      ; Store CGA address in cache
 0x0292  mov cl,0x10             ; CL = 16
-0x0294  mul cl                  ; AX = tile_id × 16 (sprite offset)
+0x0294  mul cl                  ; AX = tile_id Ã— 16 (sprite offset)
 0x0296  add ax,0x8030           ; Add base sprite address
 0x0299  mov si,ax               ; SI = source address
 0x029B  mov ds,word [cs:0xff2c] ; DS = zelres2 segment
@@ -444,7 +444,7 @@ Each byte encodes:
 0x02A3  mov es,ax
 0x02A5  mov cx,0x4              ; 4 scan line pairs (8 rows total)
 
-; CGA blit loop (4 iterations × 2 rows each):
+; CGA blit loop (4 iterations Ã— 2 rows each):
 0x02A8  movsw                   ; Copy 2 bytes (row 1)
 0x02A9  add di,0x1ffe           ; Next scan line (+0x2000 - 2)
 0x02AD  cmp di,0x4000           ; Check for CGA wrap (16KB boundary)
@@ -540,7 +540,7 @@ CGA memory is organized differently due to the 4-color limitation (2 bits/pixel 
 0x0421  ret
 ```
 
-**Plain English**: Fill a 16×8 pixel tile area with zeros (black). Write 2 bytes per row (8 rows total), handling CGA bank wraparound after every 16KB.
+**Plain English**: Fill a 16Ã—8 pixel tile area with zeros (black). Write 2 bytes per row (8 rows total), handling CGA bank wraparound after every 16KB.
 
 ---
 
@@ -589,7 +589,7 @@ CGA memory is organized differently due to the 4-color limitation (2 bits/pixel 
 0x0687  mov bl,al               ; BL = platform sprite ID
 0x0689  xor bh,bh
 0x068B  mov cl,0x10
-0x068D  mul cl                  ; AX = sprite_id × 16
+0x068D  mul cl                  ; AX = sprite_id Ã— 16
 0x068F  add ax,0x8030           ; Add base offset
 0x0692  mov si,ax               ; SI = sprite source
 0x0694  mov ds,word [cs:0xff2c] ; DS = zelres2 segment
@@ -636,7 +636,7 @@ CGA memory is organized differently due to the 4-color limitation (2 bits/pixel 
 0x0768  mov bl,[si+0x1]         ; BL = platform X position (tile units)
 0x076B  mov bh,0x0              ; BH = 0 (sub-tile precision)
 0x076D  mov cl,[si+0x2]         ; CL = platform width (tiles)
-0x0770  shl cl,0x1              ; CL *= 2 (convert to pixels × 8)
+0x0770  shl cl,0x1              ; CL *= 2 (convert to pixels Ã— 8)
 0x0772  mov ch,0x0              ; CH = 0
 
 ; Calculate right edge:
@@ -711,14 +711,14 @@ CGA Framebuffer:
 0xB800:0x4000 - Memory wrap point (16KB per bank, not 24KB like EGA)
 
 Collision Map (shared with chunk_04):
-0xE900-0xE91B - 28 columns × 18 rows = 504 bytes
+0xE900-0xE91B - 28 columns Ã— 18 rows = 504 bytes
   0xFF = solid
   0xFE = platform/semi-solid
   0xFC = hazard
   0x00-0x7F = passable
 
 Particle Array (shared with chunk_04):
-0xEDA0-0xEDFF - 32 particles × 4 bytes = 128 bytes
+0xEDA0-0xEDFF - 32 particles Ã— 4 bytes = 128 bytes
   Byte 0: X position (0-27)
   Byte 1: Y position (0-17)
   Byte 2: Type (0-7)
@@ -747,8 +747,8 @@ Particle Array (shared with chunk_04):
 ### With CGA Display Hardware
 
 - **4-color palette**: Uses CGA's 4-color mode (2 bits per pixel)
-- **Composite mode**: May support 160×200 composite artifact colors
-- **RGB mode**: Standard 320×200 CGA with cyan/magenta/white palette
+- **Composite mode**: May support 160Ã—200 composite artifact colors
+- **RGB mode**: Standard 320Ã—200 CGA with cyan/magenta/white palette
 - **Interleaved scan**: Even rows at zr2_03 (0x0000)-0x1FFF, odd at 0x2000-0x3FFF
 
 ---
@@ -870,7 +870,7 @@ spriteBatch.End();
 
 ### CGA Memory Layout (Mode 0x04/0x06)
 
-- **Resolution**: 320×200 pixels, 4 colors (mode 0x04) or 640×200 BW (mode 0x06)
+- **Resolution**: 320Ã—200 pixels, 4 colors (mode 0x04) or 640Ã—200 BW (mode 0x06)
 - **Bytes per row**: 0x28 (40 bytes = 160 pixels in 4-color mode, 2 pixels/byte)
 - **Interleaving**: Even rows at zr2_03 (0x0000)-0x1FFF, odd at 0x2000-0x3FFF
 - **Next row offset**: +0x2000 (toggle between banks)
@@ -880,8 +880,8 @@ spriteBatch.End();
 
 ```
 1. Platform edges calculated: left = X, right = X + width
-2. Player X converted from fixed-point (16.8) to tile units (÷256)
-3. Check: left ≤ player_X ≤ right
+2. Player X converted from fixed-point (16.8) to tile units (Ã·256)
+3. Check: left â‰¤ player_X â‰¤ right
 4. If true: set platform flag, store platform velocity
 5. Physics engine reads flag, adds platform velocity to player velocity
 6. Result: Player moves with platform (conveyor, moving platform)

@@ -1,12 +1,12 @@
 # ZELRES2/Chunk_04 - Tile Map Animation & Physics Updates Walkthrough
 
 **File**: `2_SAR/ExtractedChunks/zelres2_extracted/chunk_04.bin`
-**Disassembly**: `3_Assembly/tasm/working/zelres2/code/204PHYSE.asm`
+**Disassembly**: `3_Assembly/tasm/working/zelres2/code/204GFHGC.asm`
 **Size**: 20,480 bytes (20KB)
 **Disassembly Lines**: 4,073 lines
 **Purpose**: Animated tile updates, map state changes, tile-based collision rendering
 **Load Address**: Variable (dynamically loaded)
-**Priority**: ⭐⭐⭐ CRITICAL (Core gameplay visuals and collision)
+**Priority**: â­�â­�â­� CRITICAL (Core gameplay visuals and collision)
 
 ---
 
@@ -59,7 +59,7 @@
 
 1. **Animated Tile Updates** - Water, lava, conveyor belts, trap switches
 2. **Map State Rendering** - Updates VGA framebuffer when tiles change
-3. **Tile Sprite Management** - Loads 16×8 pixel tile sprites from zelres2
+3. **Tile Sprite Management** - Loads 16Ã—8 pixel tile sprites from zelres2
 4. **Collision Visualization** - Renders tile collision changes to screen
 5. **Tile Table Processing** - Scans 0xE900-0xE91B region for changed tiles
 6. **VGA Bitplane Rendering** - 4-plane EGA/VGA tile blitting
@@ -72,55 +72,55 @@ This is the "visual update" layer that sits between the physics/collision engine
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│         ZELRES2/Chunk_04 (Tile Animation & Updates)         │
-│                                                               │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │        Entry Point (0x0032) - Initialize           │     │
-│  │  - Clear tile sprite cache at 0x5016 (128 words)   │     │
-│  │  - Initialize screen row pointer 0x4FE4 = 0x04FD   │     │
-│  │  - Load map base from [0xFF31] - 0x21              │     │
-│  └────────────────────────────────────────────────────┘     │
-│                         │                                     │
-│                         ▼                                     │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │    Main Tile Update Loop (0x0050-0x0135)           │     │
-│  │  • Scan tile table at SI (map data pointer)        │     │
-│  │  • Check if tile MSB set (0x80) → needs update     │     │
-│  │  • Process 6 rows of tiles (0x5E-0x8A loop)        │     │
-│  │  • Each row: 4 tile columns checked                │     │
-│  │  • Call update handlers based on tile type          │     │
-│  │                                                      │     │
-│  │  Update Frequency: Every frame for changed tiles    │     │
-│  └────────────────────────────────────────────────────┘     │
-│                         │                                     │
-│                         ├─> Animated Tiles (0x0327-0x03A7)   │
-│                         │   • Water tiles (0x1B-0x1C)        │
-│                         │   • Lava/fire (0x1D-0x22)          │
-│                         │   • Switches (0x2C-0x2D)           │
-│                         │   • Conveyor belts (0x25-0x28)     │
-│                         │   • Cycle animation frame          │
-│                         │                                     │
-│                         ├─> Tile Sprite Loader (0x027E)      │
-│                         │   • Load from zelres2 segment      │
-│                         │   • Decode 4-plane EGA format      │
-│                         │   • Cache at 0x5016 (sprite pool)  │
-│                         │   • 16×8 bitplane data             │
-│                         │                                     │
-│                         └─> VGA Renderer (0x05A7-0x061A)     │
-│                             • Tile position → VGA address     │
-│                             • 4-plane bitplane blit          │
-│                             • Handle screen wraparound       │
-│                             • Update collision mask          │
-│                                                               │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │    Tile-to-VGA Address Calculator (0x1E4A)         │     │
-│  │  • Input: BX=column, BH=row                        │     │
-│  │  • VGA memory: 0xB000:0x0000 (EGA mode 0x0E)     │     │
-│  │  • Interleaved scan lines (0x2000 offset)         │     │
-│  │  • Returns DI=VGA memory address                   │     │
-│  └────────────────────────────────────────────────────┘     │
-└─────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�
+â”‚         ZELRES2/Chunk_04 (Tile Animation & Updates)         â”‚
+â”‚                                                               â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚        Entry Point (0x0032) - Initialize           â”‚     â”‚
+â”‚  â”‚  - Clear tile sprite cache at 0x5016 (128 words)   â”‚     â”‚
+â”‚  â”‚  - Initialize screen row pointer 0x4FE4 = 0x04FD   â”‚     â”‚
+â”‚  â”‚  - Load map base from [0xFF31] - 0x21              â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                         â”‚                                     â”‚
+â”‚                         â–¼                                     â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚    Main Tile Update Loop (0x0050-0x0135)           â”‚     â”‚
+â”‚  â”‚  â€¢ Scan tile table at SI (map data pointer)        â”‚     â”‚
+â”‚  â”‚  â€¢ Check if tile MSB set (0x80) â†’ needs update     â”‚     â”‚
+â”‚  â”‚  â€¢ Process 6 rows of tiles (0x5E-0x8A loop)        â”‚     â”‚
+â”‚  â”‚  â€¢ Each row: 4 tile columns checked                â”‚     â”‚
+â”‚  â”‚  â€¢ Call update handlers based on tile type          â”‚     â”‚
+â”‚  â”‚                                                      â”‚     â”‚
+â”‚  â”‚  Update Frequency: Every frame for changed tiles    â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â”‚                         â”‚                                     â”‚
+â”‚                         â”œâ”€> Animated Tiles (0x0327-0x03A7)   â”‚
+â”‚                         â”‚   â€¢ Water tiles (0x1B-0x1C)        â”‚
+â”‚                         â”‚   â€¢ Lava/fire (0x1D-0x22)          â”‚
+â”‚                         â”‚   â€¢ Switches (0x2C-0x2D)           â”‚
+â”‚                         â”‚   â€¢ Conveyor belts (0x25-0x28)     â”‚
+â”‚                         â”‚   â€¢ Cycle animation frame          â”‚
+â”‚                         â”‚                                     â”‚
+â”‚                         â”œâ”€> Tile Sprite Loader (0x027E)      â”‚
+â”‚                         â”‚   â€¢ Load from zelres2 segment      â”‚
+â”‚                         â”‚   â€¢ Decode 4-plane EGA format      â”‚
+â”‚                         â”‚   â€¢ Cache at 0x5016 (sprite pool)  â”‚
+â”‚                         â”‚   â€¢ 16Ã—8 bitplane data             â”‚
+â”‚                         â”‚                                     â”‚
+â”‚                         â””â”€> VGA Renderer (0x05A7-0x061A)     â”‚
+â”‚                             â€¢ Tile position â†’ VGA address     â”‚
+â”‚                             â€¢ 4-plane bitplane blit          â”‚
+â”‚                             â€¢ Handle screen wraparound       â”‚
+â”‚                             â€¢ Update collision mask          â”‚
+â”‚                                                               â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”�     â”‚
+â”‚  â”‚    Tile-to-VGA Address Calculator (0x1E4A)         â”‚     â”‚
+â”‚  â”‚  â€¢ Input: BX=column, BH=row                        â”‚     â”‚
+â”‚  â”‚  â€¢ VGA memory: 0xB000:0x0000 (EGA mode 0x0E)     â”‚     â”‚
+â”‚  â”‚  â€¢ Interleaved scan lines (0x2000 offset)         â”‚     â”‚
+â”‚  â”‚  â€¢ Returns DI=VGA memory address                   â”‚     â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
@@ -200,7 +200,7 @@ This is the "visual update" layer that sits between the physics/collision engine
 0x0088  loop 0x5e               ; Next row (6 times)
 ```
 
-**Plain English**: Process 6 rows of tiles, with each row having 4 tiles. For every tile, check if its update flag (bit 7) is set. If so, call the tile update function at physics_process_loop (0x364). The BX register tracks the column index, and SI advances through the map data. This creates a 6×4 = 24-tile scanning window.
+**Plain English**: Process 6 rows of tiles, with each row having 4 tiles. For every tile, check if its update flag (bit 7) is set. If so, call the tile update function at physics_process_loop (0x364). The BX register tracks the column index, and SI advances through the map data. This creates a 6Ã—4 = 24-tile scanning window.
 
 ---
 
@@ -248,7 +248,7 @@ This is the "visual update" layer that sits between the physics/collision engine
 
 **Collision Map Layout**:
 ```
-0xE900-0xE91B = 28 bytes per row × 18 rows = 504 bytes total
+0xE900-0xE91B = 28 bytes per row Ã— 18 rows = 504 bytes total
 Each byte encodes:
   0xFF = solid tile
   0xFE = partially solid (platform, ladder)
@@ -309,7 +309,7 @@ Each byte encodes:
 0x01A9  ret
 ```
 
-**Plain English**: Water tiles use IDs 0x1B and 0x1C (2 frames). Check if the current tile is in this range. If so, mark it as semi-solid (0xFE collision type), then check the global frame counter. On odd frames only, toggle between the two water animation frames (0x1B ↔ 0x1C). This creates a 30fps animation (60 ÷ 2 = 30fps wave effect).
+**Plain English**: Water tiles use IDs 0x1B and 0x1C (2 frames). Check if the current tile is in this range. If so, mark it as semi-solid (0xFE collision type), then check the global frame counter. On odd frames only, toggle between the two water animation frames (0x1B â†” 0x1C). This creates a 30fps animation (60 Ã· 2 = 30fps wave effect).
 
 ---
 
@@ -367,7 +367,7 @@ Each byte encodes:
 0x01F4  ret
 
 0x01F5  inc al                  ; Toggle switch
-0x01F7  and al,0x1              ; 0 ↔ 1
+0x01F7  and al,0x1              ; 0 â†” 1
 0x01F9  add al,0x2c             ; Add base
 0x01FB  mov [si-0x1],al
 0x01FE  ret
@@ -390,15 +390,15 @@ Each byte encodes:
 
 0x0207  mov bl,0x33             ; BL = target tile 0x33
 0x0209  cmp al,0x0e             ; Check if current is 0x0E
-0x020B  jz 0x24e                ; → Transform to 0x33
+0x020B  jz 0x24e                ; â†’ Transform to 0x33
 
 0x020D  mov bl,0x36             ; BL = 0x36
 0x020F  cmp al,0x0d             ; Check if 0x0D
-0x0211  jz 0x24e                ; → Transform to 0x36
+0x0211  jz 0x24e                ; â†’ Transform to 0x36
 
 ; (Pattern continues for all 8 directions)
 ; Each direction ID maps to a specific target:
-; 0x0E → 0x33, 0x0D → 0x36, 0x0F → 0x39, 0x0C → 0x3C, 0x10 → 0x3D
+; 0x0E â†’ 0x33, 0x0D â†’ 0x36, 0x0F â†’ 0x39, 0x0C â†’ 0x3C, 0x10 â†’ 0x3D
 ; And reverse mappings for rotation cycle
 
 0x024E  mov byte [di-0x1],0xfe  ; Semi-solid
@@ -462,7 +462,7 @@ Each byte encodes:
 0x0297  dec al                  ; Adjust tile ID
 0x0299  mov [bx+0x5016],di      ; Store VGA address in cache
 0x029D  mov cl,0x10             ; CL = 16
-0x029F  mul cl                  ; AX = tile_id × 16 (sprite offset)
+0x029F  mul cl                  ; AX = tile_id Ã— 16 (sprite offset)
 0x02A1  add ax,0x8030           ; Add base sprite address
 0x02A4  mov si,ax               ; SI = source address
 0x02A6  mov ds,word [cs:0xff2c] ; DS = zelres2 segment
@@ -481,7 +481,7 @@ Each byte encodes:
 0x02C6  loop 0x2b3              ; Next row
 ```
 
-**Plain English**: Each tile sprite is 16 bytes (16×8 pixels, 2 bytes per row × 8 rows). Check if the tile is already cached in the 256-byte sprite pool at 0x5016. If not, calculate its offset in zelres2 (tile_id × 16 + 0x8030), load the data from DS:SI, and blit it to the VGA framebuffer at ES:DI. Handle VGA's interleaved scan lines by adding 0x2000 to DI after each row, and wrap to the next bank at 0x6000.
+**Plain English**: Each tile sprite is 16 bytes (16Ã—8 pixels, 2 bytes per row Ã— 8 rows). Check if the tile is already cached in the 256-byte sprite pool at 0x5016. If not, calculate its offset in zelres2 (tile_id Ã— 16 + 0x8030), load the data from DS:SI, and blit it to the VGA framebuffer at ES:DI. Handle VGA's interleaved scan lines by adding 0x2000 to DI after each row, and wrap to the next bank at 0x6000.
 
 ---
 
@@ -545,7 +545,7 @@ Each byte encodes:
 0x0326  ret
 ```
 
-**Plain English**: If the tile ID is 0, fill the 16×8 pixel area with zeros (black tile). Write 2 bytes of 0 per row, handling VGA wraparound just like the sprite blit.
+**Plain English**: If the tile ID is 0, fill the 16Ã—8 pixel area with zeros (black tile). Write 2 bytes of 0 per row, handling VGA wraparound just like the sprite blit.
 
 ---
 
@@ -558,15 +558,15 @@ Each byte encodes:
         ; OUTPUT: DI = VGA memory address (segment 0xB000)
 
         ; VGA Mode 0x0E layout:
-        ; - 320×200 pixels, 16 colors
+        ; - 320Ã—200 pixels, 16 colors
         ; - 2 pixels per byte (4-bit packed)
         ; - Interleaved scan lines every 0x2000 bytes
         ; - Even rows: 0x0000-0x1FFF
         ; - Odd rows: 0x2000-0x3FFF
         ; - Screen wraps at 0x6000 (24KB per plane)
 
-        ; Calculate: DI = (row × 0x28 + col) × 2 + bank_offset
-        ; Where bank_offset = (row & 1) × 0x2000
+        ; Calculate: DI = (row Ã— 0x28 + col) Ã— 2 + bank_offset
+        ; Where bank_offset = (row & 1) Ã— 0x2000
 ```
 
 **Plain English**: Convert a tile coordinate (column, row) into the actual VGA memory address. Each tile is 2 bytes wide in VGA memory, and rows alternate between two 8KB banks (even rows at zr2_04 (0x0000)-0x1FFF, odd rows at 0x2000-0x3FFF). The function returns the address in DI for use by the sprite blitter.
@@ -681,19 +681,19 @@ VGA Framebuffer:
 
 Tile Sprite Data (zelres2 segment):
 [DS:0x8030] - Base tile sprite array
-  Each sprite: 16 bytes (2 bytes/row × 8 rows)
+  Each sprite: 16 bytes (2 bytes/row Ã— 8 rows)
   Format: 4-plane EGA bitplane data
   Encoding: 2 pixels per byte, packed 4-bit color indices
 
 Collision Map:
-0xE900-0xE91B - 28 columns × 18 rows = 504 bytes
+0xE900-0xE91B - 28 columns Ã— 18 rows = 504 bytes
   0xFF = solid
   0xFE = platform/semi-solid
   0xFC = hazard (water/lava)
   0x00-0x7F = passable
 
 Particle Array:
-0xEDA0-0xEDFF - 32 particles × 4 bytes = 128 bytes
+0xEDA0-0xEDFF - 32 particles Ã— 4 bytes = 128 bytes
   Byte 0: X position (0-27)
   Byte 1: Y position (0-17)
   Byte 2: Type (0-7)
@@ -751,7 +751,7 @@ Particle Array:
 ### 4. Particle Spawner
 - **32 particle maximum** (4 bytes each)
 - **12.5% spawn chance** per frame per spawner tile
-- **Random offsets**: ±1 tile position
+- **Random offsets**: Â±1 tile position
 - **Types**: Smoke (3), sparks, bubbles, debris
 
 ---
@@ -763,7 +763,7 @@ Particle Array:
 ```csharp
 public class TileAnimationSystem
 {
-    // Sprite cache (tile ID → Texture2D)
+    // Sprite cache (tile ID â†’ Texture2D)
     private Dictionary<byte, Texture2D> _spriteCache;
 
     // Tile animation states
@@ -839,7 +839,7 @@ public class TileAnimationSystem
             _spriteCache[tileId] = sprite;
         }
 
-        // Draw at position (16×8 tile size)
+        // Draw at position (16Ã—8 tile size)
         Rectangle destRect = new Rectangle(
             position.X * 16,
             position.Y * 8,
@@ -885,7 +885,7 @@ public enum TileType
 
 ### VGA Memory Layout (EGA Mode 0x0E)
 
-- **Resolution**: 320×200 pixels, 16 colors
+- **Resolution**: 320Ã—200 pixels, 16 colors
 - **Bytes per row**: 0x28 (40 bytes = 80 pixels)
 - **Interleaving**: Even rows at zr2_04 (0x0000)-0x1FFF, odd at 0x2000-0x3FFF
 - **Next row offset**: +0x2000 (toggle between banks)
@@ -893,9 +893,9 @@ public enum TileType
 
 ### Tile Sprite Format
 
-- **Size**: 16×8 pixels = 16 bytes per tile
+- **Size**: 16Ã—8 pixels = 16 bytes per tile
 - **Encoding**: 4-plane bitplane (EGA/VGA standard)
-- **Bitplane 0-3**: Each plane = 1 bit per pixel × 8 rows
+- **Bitplane 0-3**: Each plane = 1 bit per pixel Ã— 8 rows
 - **Color**: 4 bits = 16 colors (RGBI model)
 - **Packed**: 2 bytes per row (8 pixels wide, 2 bits per pixel per plane)
 
