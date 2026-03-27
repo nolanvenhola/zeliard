@@ -20,7 +20,11 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 
 
-; External references - addresses in other loaded segments
+; zeliad loads game.bin at this offset in the game segment.
+; All internal labels use: GAME_CODE_BASE + (offset label)
+GAME_CODE_BASE  equ     0A000h
+
+; Runtime addresses in other loaded segments (fixed at load time, not linkable)
 
 music_player_fn	equ	18ABh			; Music player function
 gfx_call_a	equ	201Ch			; Graphics driver call A
@@ -32,18 +36,21 @@ tile_gfx_base	equ	37A4h			; Tile graphics base address
 font_gfx_base	equ	3EA4h			; Font graphics base address
 loaded_code_b	equ	6000h			; Loaded chunk code entry B
 loaded_code_b_fn equ	6002h			; Loaded chunk function B
-gfx_mode_tbl_ega equ	0A288h			; EGA graphics mode chunk refs
-gfx_mode_tbl_cga equ	0A2D1h			; CGA graphics mode chunk refs
-gfx_mode_tbl_all equ	0A31Ah			; All modes chunk ref table
-level_system_ref equ	0A3D3h			; Level system chunk references
-level_data_ref	equ	0A3F2h			; Level data chunk references
-palette_base_tbl equ	0A456h			; Palette base RGB color table (8 triplets for set_vga_palette)
-game_init_fn	equ	0A470h			; Game initialization function ptr
-save_mode_flag	equ	0A474h			; Save/new game mode flag
-level_chunk_ref equ	0A474h			; Level chunk reference (same addr)
 save_data_base	equ	0C000h			; Save data load address
 
-; Game state variables (0xFF00+ range, shared with zeliad.exe)
+; Internal data table addresses — calculated from labels defined later in this file.
+; Adding/removing code above a label automatically updates its absolute address.
+gfx_mode_tbl_ega equ	GAME_CODE_BASE + (offset gfx_mode_tbl_ega_lbl)
+gfx_mode_tbl_cga equ	GAME_CODE_BASE + (offset gfx_mode_tbl_cga_lbl)
+gfx_mode_tbl_all equ	GAME_CODE_BASE + (offset gfx_mode_tbl_all_lbl)
+level_system_ref equ	GAME_CODE_BASE + (offset level_system_ref_lbl)
+level_data_ref	equ	GAME_CODE_BASE + (offset level_data_ref_lbl)
+palette_base_tbl equ	GAME_CODE_BASE + (offset palette_base_tbl_lbl)
+game_init_fn	equ	GAME_CODE_BASE + (offset game_init_fn_lbl)
+save_mode_flag	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
+level_chunk_ref	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
+
+; Game state variables (0xFF00+ in game segment, shared with zeliad.exe)
 gvar_timer_ticks equ	0FF08h			; Timer tick counter
 gvar_game_phase	equ	0FF14h			; Current game phase / graphics mode
 gvar_music_vol	equ	0FF36h			; Music volume setting
@@ -357,7 +364,9 @@ skip_gfx_init_c:
 		db	'town.bin'		; Town data
 		db	0, 0, 1
 		db	'opdemo.bin'		; Opening demo
-		db	 00h, 94h,0A2h,0A0h,0A2h,0A0h
+		db	 00h			; null terminator
+gfx_mode_tbl_ega_lbl	label	word
+		db	 94h,0A2h,0A0h,0A2h,0A0h
 		db	0A2h,0ACh,0A2h,0B8h,0A2h,0C5h
 		db	0A2h, 01h, 03h
 		db	'gfega.bin'		; Chunk 3: font/frame (EGA)
@@ -369,7 +378,9 @@ skip_gfx_init_c:
 		db	'gfmcga.bin'		; Chunk 7: font/frame (MCGA)
 		db	0, 1, 6
 		db	'gftga.bin'		; Chunk 6: font/frame (TGA)
-		db	 00h,0DDh,0A2h,0E9h,0A2h,0E9h
+		db	 00h			; null terminator
+gfx_mode_tbl_cga_lbl	label	word
+		db	0DDh,0A2h,0E9h,0A2h,0E9h
 		db	0A2h,0F5h,0A2h, 01h,0A3h, 0Eh
 		db	0A3h, 00h
 		db	8, 'gtega.bin'		; Chunk 8: tile graphics (EGA)
@@ -381,7 +392,9 @@ skip_gfx_init_c:
 		db	0Ch, 'gtmcga.bin'	; Chunk 12: tile graphics (MCGA)
 		db	 00h, 00h, 0Bh
 		db	'gttga.bin'		; Chunk 11: tile graphics (TGA)
-		db	 00h, 26h,0A3h, 32h,0A3h, 32h
+		db	 00h			; null terminator
+gfx_mode_tbl_all_lbl	label	word
+		db	 26h,0A3h, 32h,0A3h, 32h
 		db	0A3h, 3Eh,0A3h, 4Ah,0A3h, 57h
 		db	0A3h, 00h, 02h
 		db	'gdega.bin'		; Chunk 2: graphics driver (EGA)
@@ -449,6 +462,7 @@ not_bg_music:
 load_music_tracks endp
 
 		; Padding / unknown data
+level_system_ref_lbl	label	word
 		db	 00h, 0Fh, 00h, 3Dh, 00h, 15h
 		db	 00h, 37h, 00h, 1Bh, 00h, 31h
 		db	 00h, 21h, 00h, 2Bh, 00h
@@ -471,6 +485,7 @@ set_vga_palette	proc	near
 set_vga_palette	endp
 
 		; Jump table + palette setup code (mode-specific handlers)
+level_data_ref_lbl	label	word
 		db	0FEh,0A3h, 1Ah,0A4h, 1Ah,0A4h
 		db	 6Fh,0A4h, 1Bh,0A4h, 6Eh,0A4h
 
@@ -532,11 +547,15 @@ palette_shade_loop:
 		retn
 
 		; Default shade offsets (8 RGB triplets: black to white ramp)
+palette_base_tbl_lbl	label	byte
 		db	 00h, 00h, 00h, 1Fh, 1Fh, 1Fh
 		db	 1Fh, 00h, 00h, 00h, 1Fh, 00h
 		db	 00h, 1Fh, 1Fh, 00h, 00h, 1Fh
 		db	 1Fh, 1Fh, 00h, 1Fh, 00h, 1Fh
-		db	0C3h,0C3h, 00h, 00h, 00h, 30h
+		db	0C3h,0C3h		; retn padding
+game_init_fn_lbl	label	dword		; game init far pointer (offset:seg)
+		db	 00h, 00h, 00h, 30h	; = 0x3000:0x0000 (loaded_code_a)
+save_mode_flag_lbl	label	word		; new/load game flag + level chunk ref
 		db	 00h, 00h
 
 

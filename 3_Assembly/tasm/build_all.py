@@ -62,8 +62,11 @@ def build_dosbox_conf(jobs, work_dir, conf_path):
     Write a BUILD.BAT with all TASM/TLINK commands.
     Write a minimal DOSBox conf that just mounts drives and calls BUILD.BAT.
     """
-    srmacros = WORKING / 'srmacros.inc'
-    shutil.copy2(srmacros, work_dir / 'SRMACROS.INC')
+    shutil.copy2(WORKING / 'srmacros.inc', work_dir / 'SRMACROS.INC')
+    # Copy any extra .inc files present in the working dir root
+    for inc in WORKING.glob('*.inc'):
+        if inc.name.lower() != 'srmacros.inc':
+            shutil.copy2(inc, work_dir / inc.name.upper())
 
     # Write BUILD.BAT in the work dir
     bat_lines = ['@echo off']
