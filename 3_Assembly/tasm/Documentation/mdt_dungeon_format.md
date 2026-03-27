@@ -19,7 +19,8 @@ Dungeon height is always **64 tiles**. Width varies per dungeon.
 
 | File Offset | Seg Offset | Size | Description |
 |-------------|------------|------|-------------|
-| 0x00 | 0xC000 | 2 | Unknown (pointer — points near end of file) |
+| 0x00 | 0xC000 | 1 | Unknown/Flags (bit0: 1=regular cavern, 0=boss) |
+| 0x01 | 0xC001 | 1 | Unknown |
 | 0x02 | 0xC002 | 2 | Dungeon width in tiles (height always = 64) |
 | 0x04 | 0xC004 | 2 | Pointer → vertical platforms array |
 | 0x06 | 0xC006 | 2 | Pointer → air stream objects array |
@@ -40,9 +41,8 @@ All arrays are terminated with a `0xFFFF` stop marker word.
 
 | Offset | Size | Description |
 |--------|------|-------------|
-| 0 | 1 | X tile position |
-| 1 | 1 | Y tile position |
-| 2 | 1 | Flags |
+| 0 | 2 | X tile position |
+| 2 | 1 | Y tile position |
 
 ### Air Stream Objects
 **Entry size: 3 bytes** — exact field layout TBD
@@ -53,13 +53,23 @@ All arrays are terminated with a `0xFFFF` stop marker word.
 | Offset | Size | Description |
 |--------|------|-------------|
 | 0 | 1 | X tile position |
-| 1 | 1 | Type / flags |
-| 2 | 1 | Y tile position |
-| 3 | 1 | Width in tiles |
-| 4-6 | 3 | Additional flags |
+| 1 | 1 | Speed (0x80 = fast, 0x40 = normal) |
+| 2 | 1 | bits 0-5: Y tile position, bit 6: paused, bit 7: direction (0=R, 1=L) |
+| 3 | 2 | X min tile position |
+| 5 | 2 | X max tile position |
 
 ### Doors
 **Entry size: 12 bytes** — exact field layout TBD
+
+| Offset | Size | Description |
+|--------|------|-------------|
+| 0 | 2 | X0 tile position |
+| 2 | 1 | Y0 tile position |
+| 3 | 2 | Flags, TBD |
+| 5 | 2 | X1 (destination) |
+| 7 | 1 | Y1 (destination), if 0xFF then leads to town |
+| 8 | 1 | Flags: bit0 = 1 if Lion Head key needed |
+| 9-11 | 3 | Unknown |
 
 ### Accomplished Items Check
 **Entry size: variable** — TBD, stop marker = `0xFFFF`
@@ -68,10 +78,20 @@ All arrays are terminated with a `0xFFFF` stop marker word.
 Contains the ASCII cavern name string (null-terminated) plus rendering parameters.
 Confirmed: `MP10.MDT` contains "Cavern of Malicia\t" at file offset 0x1617.
 
-### Monsters
+### Monsters/Items (potions, chests, etc.)
 **Entry size: 16 bytes** — some monsters occupy 2 consecutive records (32 bytes total).
 Stop marker = `0xFFFF`.
 `MP10.MDT` (Cavern of Malicia) has 54 monster entries.
+
+| Offset | Size | Description |
+|--------|------|-------------|
+| 0 | 2 | X current tile position |
+| 2 | 1 | Y current tile position |
+| 3-10 | 8 | Unknown |
+| 11 | 2 | Spawn X tile position |
+| 13 | 1 | Spawn Y tile position and flags |
+| 14 | 1 | Type |
+| 15 | 1 | Unknown |
 
 ---
 
