@@ -36,8 +36,6 @@ loaded_code_b_fn equ	6002h			; Loaded chunk function B
 ; Using GAME_CODE_BASE + (offset label) makes these auto-update
 ; when code is added or removed above each label.
 GAME_CODE_BASE  equ     0A000h
-DRIVER_TEST_BASE equ 02000h
-test_driver_equ equ DRIVER_TEST_BASE + (offset level_system_ref_lbl)
 gfx_mode_tbl_ega equ	GAME_CODE_BASE + (offset gfx_mode_tbl_ega_lbl)
 gfx_mode_tbl_cga equ	GAME_CODE_BASE + (offset gfx_mode_tbl_cga_lbl)
 gfx_mode_tbl_all equ	GAME_CODE_BASE + (offset gfx_mode_tbl_all_lbl)
