@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 1
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 1
 gmtga.asm
 
 
@@ -57,7 +57,7 @@ gmtga.asm
 1    52				     ;
 1    53
 1    54				     callf	     macro   location
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 2
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 2
 gmtga.asm
 
 
@@ -116,7 +116,7 @@ gmtga.asm
     106	      =	EB22		     data_35e	     equ     0EB22h		     ;*
     107	      =	F500		     data_36e	     equ     0F500h		     ;*
     108	      =	F502		     data_37e	     equ     0F502h		     ;*
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 3
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 3
 gmtga.asm
 
 
@@ -175,7 +175,7 @@ gmtga.asm
     160	007D  03 DB				     add     bx,bx
     161	007F  32 ED				     xor     ch,ch		     ; Zero register
     162
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 4
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 4
 gmtga.asm
 
 
@@ -234,7 +234,7 @@ gmtga.asm
     214				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     215				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     216				     ;				    SUBROUTINE
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 5
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 5
 gmtga.asm
 
 
@@ -293,7 +293,7 @@ gmtga.asm
     268	0111  5F				     pop     di
     269	0112  81 C7 2000			     add     di,2000h
     270	0116  81 FF 8000			     cmp     di,8000h
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 6
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 6
 gmtga.asm
 
 
@@ -352,7 +352,7 @@ gmtga.asm
     322	0171			     loc_15:
     323	0171  B9 0048				     mov     cx,48h
     324
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 7
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 7
 gmtga.asm
 
 
@@ -411,7 +411,7 @@ gmtga.asm
     376	01D1  D0 EB				     shr     bl,1		     ; Shift w/zeros fill
     377	01D3  B8 00A0				     mov     ax,0A0h
     378	01D6  F6 E3				     mul     bl			     ; ax = reg	* al
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 8
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 8
 gmtga.asm
 
 
@@ -470,7 +470,7 @@ gmtga.asm
     430				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     431				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     432
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 9
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 9
 gmtga.asm
 
 
@@ -529,7 +529,7 @@ gmtga.asm
     484	0291  26: 20 05				     and     es:[di],al
     485	0294  81 C7 2000			     add     di,2000h
     486	0298  81 FF 8000			     cmp     di,8000h
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 10
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 10
 gmtga.asm
 
 
@@ -588,7 +588,7 @@ gmtga.asm
     538	02FF  B7 05				     mov     bh,5
     539	0301  B0 AA				     mov     al,0AAh
     540	0303  B4 FF				     mov     ah,0FFh
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 11
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 11
 gmtga.asm
 
 
@@ -647,7 +647,7 @@ gmtga.asm
     592	0347  8A CB				     mov     cl,bl
     593	0349  D1 EB				     shr     bx,1		     ; Shift w/zeros fill
     594	034B  D1 EB				     shr     bx,1		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 12
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 12
 gmtga.asm
 
 
@@ -706,7 +706,7 @@ gmtga.asm
     646	03AB  83 E3 01				     and     bx,1
     647	03AE  03 FB				     add     di,bx
     648	03B0  8A D9				     mov     bl,cl
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 13
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 13
 gmtga.asm
 
 
@@ -765,7 +765,7 @@ gmtga.asm
     700
     701	0401  C3				     retn
     702
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 14
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 14
 gmtga.asm
 
 
@@ -824,7 +824,7 @@ gmtga.asm
     754	0451  F7 D2				     not     dx
     755	0453  26: 21 1D				     and     es:[di],bx
     756	0456  26: 21 55	02			     and     es:[di+2],dx
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 15
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 15
 gmtga.asm
 
 
@@ -883,7 +883,7 @@ gmtga.asm
     808				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     809				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     810
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 16
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 16
 gmtga.asm
 
 
@@ -942,7 +942,7 @@ gmtga.asm
     862	0523  1E				     push    ds
     863	0524  33 DB				     xor     bx,bx		     ; Zero register
     864	0526  2E: 8A 1E	009D			     mov     bl,byte ptr cs:[9Dh]
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 17
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 17
 gmtga.asm
 
 
@@ -1001,7 +1001,7 @@ gmtga.asm
     916	0582  2E: C6 05	FF			     mov     byte ptr cs:[di],0FFh
     917	0586  47				     inc     di
     918	0587  E2 F2				     loop    locloop_54		     ; Loop if cx > 0
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 18
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 18
 gmtga.asm
 
 
@@ -1060,7 +1060,7 @@ gmtga.asm
     970	05D9			     loc_56:
     971	05D9  2A D1				     sub     dl,cl
     972	05DB  72 10				     jc	     loc_59		     ; Jump if carry Set
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 19
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 19
 gmtga.asm
 
 
@@ -1119,7 +1119,7 @@ gmtga.asm
    1024	0610  E8 083B				     call    bitplane_to_pixels
    1025	0613  8B F8				     mov     di,ax
    1026	0615  32 ED				     xor     ch,ch		     ; Zero register
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 20
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 20
 gmtga.asm
 
 
@@ -1178,7 +1178,7 @@ gmtga.asm
    1078	065A  E2 E6				     loop    locloop_61		     ; Loop if cx > 0
    1079
    1080	065C  59				     pop     cx
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 21
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 21
 gmtga.asm
 
 
@@ -1237,7 +1237,7 @@ gmtga.asm
    1132	06CC  8B E8				     mov     bp,ax
    1133	06CE  B8 B800				     mov     ax,0B800h
    1134	06D1  8E C0				     mov     es,ax
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 22
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 22
 gmtga.asm
 
 
@@ -1296,7 +1296,7 @@ gmtga.asm
    1186
    1187	076C			     locloop_69:
    1188	076C  E9 FF67				     jmp     loc_67
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 23
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 23
 gmtga.asm
 
 
@@ -1355,7 +1355,7 @@ gmtga.asm
    1240	07D7  B9 00C0				     mov     cx,0C0h
    1241	07DA  F7 E1				     mul     cx			     ; dx:ax = reg * ax
    1242	07DC  03 06 E20A			     add     ax,ds:data_4e
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 24
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 24
 gmtga.asm
 
 
@@ -1414,7 +1414,7 @@ gmtga.asm
    1294				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1295				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1296
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 25
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 25
 gmtga.asm
 
 
@@ -1473,7 +1473,7 @@ gmtga.asm
    1348
    1349				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1350				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 26
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 26
 gmtga.asm
 
 
@@ -1532,7 +1532,7 @@ gmtga.asm
    1402				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1403				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1404
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 27
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 27
 gmtga.asm
 
 
@@ -1591,7 +1591,7 @@ gmtga.asm
    1456	0A3F  E8 FA80				     call    extract_bitplane_bit
    1457	0A42  F6 D4				     not     ah
    1458	0A44  26: 20 25				     and     es:[di],ah
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 28
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 28
 gmtga.asm
 
 
@@ -1650,7 +1650,7 @@ gmtga.asm
    1510	0AA8			     loc_81:
    1511	0AA8  81 C6 2000			     add     si,2000h
    1512	0AAC  81 FE 8000			     cmp     si,8000h
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 29
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 29
 gmtga.asm
 
 
@@ -1709,7 +1709,7 @@ gmtga.asm
    1564	0B0D  1F				     pop     ds
    1565	0B0E  C3				     retn
    1566										     ;*	No entry point to code
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 30
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 30
 gmtga.asm
 
 
@@ -1768,7 +1768,7 @@ gmtga.asm
    1618	0B76  3C FF				     cmp     al,0FFh
    1619	0B78  75 01				     jne     loc_88		     ; Jump if not equal
    1620	0B7A  C3				     retn
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 31
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 31
 gmtga.asm
 
 
@@ -1827,7 +1827,7 @@ gmtga.asm
    1672	0BDB  81 C7 2000			     add     di,2000h
    1673	0BDF  81 FF 8000			     cmp     di,8000h
    1674	0BE3  72 04				     jb	     loc_92		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 32
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 32
 gmtga.asm
 
 
@@ -1886,7 +1886,7 @@ gmtga.asm
    1726	0C3B  B9 0002				     mov     cx,2
    1727
    1728	0C3E			     locloop_96:
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 33
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 33
 gmtga.asm
 
 
@@ -1945,7 +1945,7 @@ gmtga.asm
    1780	0C96  0A C4				     or	     al,ah
    1781	0C98  26: 20 05				     and     es:[di],al
    1782	0C9B  AC				     lodsb			     ; String [si] to al
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 34
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 34
 gmtga.asm
 
 
@@ -2004,7 +2004,7 @@ gmtga.asm
    1834	0D2E  19 91 54 00 00 00			     db	      19h, 91h,	54h, 00h, 00h, 00h
    1835	0D34  00 04 49 91 C0 00			     db	      00h, 04h,	49h, 91h,0C0h, 00h
    1836	0D3A  00 00 00 00 4C CC			     db	      00h, 00h,	00h, 00h, 4Ch,0CCh
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 35
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 35
 gmtga.asm
 
 
@@ -2063,7 +2063,7 @@ gmtga.asm
    1888	0DF3  E2 D8				     loop    locloop_102	     ; Loop if cx > 0
    1889
    1890	0DF5  C3				     retn
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 36
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 36
 gmtga.asm
 
 
@@ -2122,7 +2122,7 @@ gmtga.asm
    1942	0E3D  8B C2				     mov     ax,dx
    1943	0E3F  86 E0				     xchg    ah,al
    1944	0E41  AB				     stosw			     ; Store ax	to es:[di]
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 37
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 37
 gmtga.asm
 
 
@@ -2170,7 +2170,7 @@ gmtga.asm
    1985
    1986
    1987						     end     start
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 38
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 38
 Symbol Table
 
 
@@ -2178,9 +2178,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/24/26"
+??DATE				  Text	 "03/27/26"
 ??FILENAME			  Text	 "gmtga	  "
-??TIME				  Text	 "00:07:58"
+??TIME				  Text	 "10:34:39"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -2229,7 +2229,7 @@ FILL_VERTICAL_LINE		  Near	 SEG_A:035F
 GMTGA				  Far	 SEG_A:0000
 INIT_TIMESTAMP			  Near	 SEG_A:0572
 INT_DIVIDE_BCD			  Near	 SEG_A:05F0
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 39
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 39
 Symbol Table
 
 
@@ -2288,7 +2288,7 @@ LOC_29				  Near	 SEG_A:028B
 LOC_3				  Near	 SEG_A:0098
 LOC_31				  Near	 SEG_A:02A2
 LOC_32				  Near	 SEG_A:02BF
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 40
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 40
 Symbol Table
 
 
@@ -2347,7 +2347,7 @@ LOC_95				  Near	 SEG_A:0C35
 LOC_97				  Near	 SEG_A:0C57
 LOC_RET_4			  Near	 SEG_A:00C9
 MODULO_DIVIDE_BCD		  Near	 SEG_A:05D7
-Turbo Assembler	 Version 2.01	     03/24/26 00:07:58	    Page 41
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:39	    Page 41
 Symbol Table
 
 
