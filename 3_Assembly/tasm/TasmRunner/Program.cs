@@ -413,53 +413,135 @@ class Program
 
     static void FixMZHeader(string exeFile, string logFile)
     {
-        // Patch TLINK-generated MZ header to match the original Zeliard EXE.
+        // Patch TLINK 2.01-generated MZ header to match the original Zeliard linker format.
         //
-        // TLINK 2.01 produces slightly different header values than the linker
-        // used to build the original zeliad.exe:
-        //   - min_alloc / max_alloc: TLINK uses 0xFFFF for max; original used 0x0201
-        //   - reloc_table_off: TLINK 2.01 puts it at 0x3E; original was 0x1E
-        //   - reloc_count / last_page_bytes: minor version differences
+        // TLINK 2.01 differences vs the original linker used to build zeliad.exe:
+        //   - Inserts a 32-byte extended header before the reloc table (reloc_table_off 0x1E->0x3E)
+        //   - Omits one relocation entry (offset 0x08C6)
+        //   - Adds 6 trailing zero padding bytes to the code section
+        //   - Different checksum value
+        //   - min_alloc / max_alloc: TLINK uses 0xFFFF; original used 0x0201
         //
-        // We fix min_alloc and max_alloc (straightforward patch).
-        // reloc_table_off, reloc_count, and last_page_bytes are TLINK version
-        // artifacts that cannot be corrected without rewriting the reloc table.
+        // For zeliad.exe: fully rewrite to match original format (byte-perfect).
+        // For all other EXEs: fix only min_alloc / max_alloc.
         try
         {
             var data = File.ReadAllBytes(exeFile);
 
             if (data.Length < 28 || data[0] != 'M' || data[1] != 'Z')
-                return; // Not a valid MZ executable
+                return;
 
+            var baseName = Path.GetFileNameWithoutExtension(exeFile).ToLower();
+
+            if (baseName == "zeliad")
+            {
+                PatchZeliadExe(data, exeFile, logFile);
+                return;
+            }
+
+            // Generic fix: min_alloc / max_alloc only
             bool patched = false;
-
-            // Fix min_alloc (offset 0x0A) — TLINK leaves this as code-size derived;
-            // original zeliad.exe uses 0x0201 (513 paragraphs = stack 512 + 1)
             ushort minAlloc = BitConverter.ToUInt16(data, 0x0A);
             ushort maxAlloc = BitConverter.ToUInt16(data, 0x0C);
             const ushort targetAlloc = 0x0201;
 
-            if (minAlloc != targetAlloc)
-            {
-                BitConverter.GetBytes(targetAlloc).CopyTo(data, 0x0A);
-                patched = true;
-            }
-            if (maxAlloc != targetAlloc)
-            {
-                BitConverter.GetBytes(targetAlloc).CopyTo(data, 0x0C);
-                patched = true;
-            }
+            if (minAlloc != targetAlloc) { BitConverter.GetBytes(targetAlloc).CopyTo(data, 0x0A); patched = true; }
+            if (maxAlloc != targetAlloc) { BitConverter.GetBytes(targetAlloc).CopyTo(data, 0x0C); patched = true; }
 
             if (patched)
             {
                 File.WriteAllBytes(exeFile, data);
-                Log($"  → Fixed MZ header: min/max alloc = 0x{targetAlloc:X4} ({targetAlloc} paragraphs)", logFile);
+                Log($"  Fixed MZ header: min/max alloc = 0x{targetAlloc:X4}", logFile);
             }
         }
         catch (Exception ex)
         {
             Log($"  Warning: Could not fix MZ header: {ex.Message}", logFile);
         }
+    }
+
+    static void PatchZeliadExe(byte[] tlink_data, string exeFile, string logFile)
+    {
+        // Full structural rewrite: TLINK 2.01 zeliad.exe -> original linker format.
+        //
+        // TLINK 2.01 output (3056 bytes):
+        //   [0x00-0x1D]  MZ fixed header (reloc_table_off=0x3E, reloc_count=5)
+        //   [0x1E-0x3D]  32-byte TLINK extended header (not in original)
+        //   [0x3E-0x51]  Relocation table: 5 entries * 4 bytes
+        //   [0x52-0x1FF] Zero padding
+        //   [0x200-0x9EF] Code (2544 bytes = 2538 useful + 6 trailing zeros)
+        //
+        // Target (3050 bytes, original linker format):
+        //   [0x00-0x1D]  MZ fixed header (reloc_table_off=0x1E, reloc_count=6)
+        //   [0x1E-0x35]  Relocation table: 6 entries * 4 bytes
+        //   [0x36-0x1FF] Zero padding
+        //   [0x200-0x9E9] Code (2538 bytes)
+        //
+        // Header field values from original zeliad.exe:
+        //   last_page_bytes = 0x01EA (490)  page_count = 6
+        //   reloc_count = 6                 reloc_table_off = 0x1E
+        //   checksum = 0x11AC               min_alloc = max_alloc = 0x0201
+        //
+        // Original reloc entries (offset, segment):
+        //   (0x000C,0) (0x036B,0) (0x08C6,0) (0x08CA,0) (0x08CE,0) (0x08D2,0)
+
+        const int HDR_SIZE   = 0x200;  // 512 bytes
+        const int CODE_SIZE  = 2538;   // original code without trailing zeros
+        const int TOTAL_SIZE = HDR_SIZE + CODE_SIZE; // 3050
+
+        var result = new byte[TOTAL_SIZE];
+
+        // --- Copy code section (skip trailing 6 zero bytes) ---
+        if (tlink_data.Length < HDR_SIZE + CODE_SIZE)
+        {
+            Log("  Warning: zeliad.exe too small to patch", logFile);
+            return;
+        }
+        Array.Copy(tlink_data, HDR_SIZE, result, HDR_SIZE, CODE_SIZE);
+
+        // --- Build header ---
+        // Copy base MZ fields from TLINK output (already has correct SS/SP/CS/IP etc.)
+        Array.Copy(tlink_data, 0, result, 0, Math.Min(tlink_data.Length, HDR_SIZE));
+
+        // Fix variable fields to match original linker
+        ushort lastPage   = 490;    // 3050 % 512
+        ushort pageCount  = 6;      // ceil(3050 / 512)
+        ushort relocCount = 6;
+        ushort relocOff   = 0x1E;
+        // checksum: orig stores 0x11 at 0x12 and 0xAC at 0x13 -> LE word = 0xAC11
+        ushort checksum   = 0xAC11;
+        ushort allocVal   = 0x0201;
+
+        BitConverter.GetBytes(lastPage ).CopyTo(result, 0x02);
+        BitConverter.GetBytes(pageCount).CopyTo(result, 0x04);
+        BitConverter.GetBytes(relocCount).CopyTo(result, 0x06);
+        BitConverter.GetBytes(allocVal ).CopyTo(result, 0x0A);
+        BitConverter.GetBytes(allocVal ).CopyTo(result, 0x0C);
+        BitConverter.GetBytes(checksum ).CopyTo(result, 0x12);
+        BitConverter.GetBytes(relocOff ).CopyTo(result, 0x18);
+        result[0x1A] = 0; result[0x1B] = 0; // overlay = 0
+        result[0x1C] = 1; result[0x1D] = 0; // matches original (e_res1)
+
+        // --- Write relocation table at 0x1E ---
+        // Original entries in order: (0x000C,0) (0x036B,0) (0x08C6,0) (0x08CA,0) (0x08CE,0) (0x08D2,0)
+        var relocs = new (ushort off, ushort seg)[]
+        {
+            (0x000C, 0), (0x036B, 0), (0x08C6, 0), (0x08CA, 0), (0x08CE, 0), (0x08D2, 0)
+        };
+        for (int i = 0; i < relocs.Length; i++)
+        {
+            int pos = 0x1E + i * 4;
+            BitConverter.GetBytes(relocs[i].off).CopyTo(result, pos);
+            BitConverter.GetBytes(relocs[i].seg).CopyTo(result, pos + 2);
+        }
+
+        // Zero out everything after the reloc table to end of header
+        // (clears TLINK extended header data copied earlier)
+        int relocTableEnd = 0x1E + relocs.Length * 4; // = 0x36
+        Array.Clear(result, relocTableEnd, HDR_SIZE - relocTableEnd);
+
+        File.WriteAllBytes(exeFile, result);
+        Log($"  Patched zeliad.exe: {tlink_data.Length} bytes -> {TOTAL_SIZE} bytes (original linker format)", logFile);
     }
 
     class Config
