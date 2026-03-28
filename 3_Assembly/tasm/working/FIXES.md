@@ -19,9 +19,7 @@ converted to proper assembler syntax for readability:
 
 ### Absolute FAR jumps — need investigation before touching
 These contain `0xEA` (JMP FAR opcode) at what appears to be instruction
-boundaries. Most in the high-hit-count files (207MOLEB, 208SATNO, 209BOSQE)
-are almost certainly **sprite/bitplane data** misread by Sourcer. The low-count
-ones are plausible real far jumps:
+boundaries. The low-count files are plausible real far jumps:
 
 | File | Line | Decoded target | Notes |
 |------|------|----------------|-------|
@@ -32,6 +30,28 @@ ones are plausible real far jumps:
 | `zelres2/code/200FIGHT.asm` | 4903 | 4CFE:D885 | Possibly real |
 | `zelres3/code/356LVGRP.asm` | 257,391,487,626,694,800,861,923 | Various | BIOS/boot calls? |
 | `zelres3/code/356LVGRP.asm` | 750 | **000F:07C0** | Looks like BIOS warm boot vector |
+
+### Town building programs — embedded sprite data (207MOLEB, 208SATNO, 209BOSQE)
+
+These three files (mole.bin, YMPD.BIN, CKPD.BIN) are the town building programs
+for specific towns. They are NOT town map data — the actual town overworld maps
+are the `.mdt` files in zelres2 chunks 36-45 (STMP.MDT = Satono, BSMP.MDT = Bosque, etc.).
+
+The high count of apparent `0xEA` "JMP FAR" patterns in these files is because
+they contain **embedded sprite graphics** for shop/building interiors (NPC sprites,
+counter graphics, etc.). The `0xAA`, `0xEE`, `0xBF` byte patterns are classic
+Zeliard sprite bitplane values, not code.
+
+To properly annotate these files the code/data sections need to be separated first:
+- Use execution tracing (DOSBox MCP) to identify which bytes actually execute
+- Annotate data sections with explicit `db` labels and section headers
+- This is a prerequisite for understanding the building interaction logic
+
+| File | Original name | Town | `0xEA` count | Status |
+|------|--------------|------|-------------|--------|
+| `207MOLEB.asm` | mole.bin | (underground movement) | 42 | Data — skip for now |
+| `208SATNO.asm` | YMPD.BIN | Satono (town 2) | 57 | Data — skip for now |
+| `209BOSQE.asm` | CKPD.BIN | Bosque (town 3) | 16 | Data — skip for now |
 
 ---
 
