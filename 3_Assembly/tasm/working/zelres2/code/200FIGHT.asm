@@ -4859,6 +4859,7 @@ game_func_96		endp
 		test	bx,ds:data_116e[bx+di]
 		test	bx,ds:data_180e[bx]
 		test	bx,data_90[bx]
+loc_2598:
 		inc	sp
 		add	[di+1],si
 		retn
@@ -4874,7 +4875,8 @@ game_func_96		endp
 		inc	al
 		and	al,3Fh			; '?'
 ;*		jmp	short loc_469		;*
-		db	0EBh,0ECh		;  Fixup - byte match
+		jmp	short loc_2598
+		db	00Ch			; was: db 0EBh, 0ECh
 
 ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 ;                              SUBROUTINE
