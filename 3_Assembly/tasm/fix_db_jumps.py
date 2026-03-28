@@ -46,6 +46,15 @@ def parse_lst(lst_text):
             offset_table.append((int(m.group(1)), m.group(3), m.group(4).lower()))
             continue
 
+        # Also capture plain labels: "   lnum   XXXX   label_name:" (no proc/endp keyword)
+        m_lbl = re.match(r'\s+(\d+)\s+([0-9A-F]{4})\s+(\w+):\s*$', line)
+        if m_lbl:
+            off  = int(m_lbl.group(2), 16)
+            name = m_lbl.group(3)
+            if off not in offset_to_label:
+                offset_to_label[off] = name
+            continue
+
         # db lines with assembled bytes → look for encoded jumps
         # TASM outputs hex bytes in UPPERCASE in the dump column,
         # preventing false matches with instruction mnemonics like 'db'.
