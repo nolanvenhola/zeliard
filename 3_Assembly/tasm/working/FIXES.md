@@ -48,13 +48,11 @@ memory accesses conflict with typed segment-relative EQUs.
 
 ---
 
-## 3. zelres1/code missing chunk 11
+## 3. ~~zelres2 chunk_11 missing~~ ✓ DONE
 
-zelres2 chunk_11 (OMOYPRO.BIN, souvenir shop program) has no corresponding
-.asm file in zelres2/code/. No 211XXXXX.asm exists.
-
-- Binary exists: `bin/zelres2/211XXXXX.bin` — **verify if it's present**
-- Needs Sourcer disassembly pass
+zelres2 chunk_11 (OMOYPRO.BIN) was misclassified as data (211DRVTB.bin).
+Fixed: Sourcer disassembly produced 211OMOYP.asm, verified bit-perfect,
+moved from zelres2/data to zelres2/code. SAR rebuilds remain bit-perfect.
 
 ---
 
