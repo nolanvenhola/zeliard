@@ -1265,38 +1265,16 @@ loc_75:
 		xor	al,0
 		adc	dl,[bp+di+45h]
 		dec	sp
-		inc	bp
-		inc	bx
-		push	sp
-		sub	ax,414Dh
-		inc	di
-		dec	cx
-		inc	bx
-		cmp	al,[bx+si]
-		xor	al,0
-		inc	bx
-		push	di
-		inc	bp
-		inc	cx
-		push	dx
-		cmp	al,[bx+si]
-		xor	al,0
-;*		jno	loc_79			;*Jump if not overflw
-		db	 71h, 55h		;  Fixup - byte match
-		push	bx
-		inc	bp
-		cmp	al,[bx+si]
-		mov	ax,4300h
-		dec	cx
-		dec	si
-		push	si
-		inc	bp
-		dec	si
-		push	sp
-		dec	di
-		push	dx
-		pop	cx
-		db	00h				; null terminator (end of INVENTORY string)
+; Building menu command table: null-terminated strings
+; Format: each entry is a shortcut key char + command name + ":" + null
+		db	'T-MAGIC:', 0		; 0x0A18: 'T' key -> MAGIC
+		db	'4', 0			; 0x0A21: shortcut key '4'
+		db	'CWEAR:', 0		; 0x0A23: 'C' key -> WEAR
+		db	'4', 0			; 0x0A2A: shortcut key '4'
+		db	071h, 'USE:', 0		; 0x0A2C: 0x71 key -> USE
+		db	0B8h, 0			; 0x0A32: (non-printable key)
+		db	'CINVENTORY', 0		; 0x0A34: 'C' key -> INVENTORY
+		db	00h				; 0x0A3E: null terminator
 sub_0A2F:					; string-scan function entry point
 loc_0A2F:
 		lodsb				; load byte from [DS:SI], advance SI
