@@ -18,8 +18,50 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zeliard.inc
 
+
 ; Additional zeliad-only constants not in zeliard.inc
-gvar_old_int61_ofs	equ	0FF7Bh		; Saved INT 61h offset (alias)
+
+gvar_chunk_load_fn	equ	0FF00h		; Chunk loader function pointer
+gvar_chunk_load_seg	equ	0FF02h		; Chunk loader code segment
+gvar_old_int08_ofs	equ	0FF04h		; Saved INT 08h offset
+gvar_old_int08_seg	equ	0FF06h		; Saved INT 08h segment
+gvar_timer_ticks	equ	0FF08h		; Timer tick counter (byte)
+gvar_key_released	equ	0FF09h		; Key released flag
+gvar_last_key		equ	0FF0Ah		; Last key scancode
+gvar_key_state		equ	0FF0Bh		; Current key state
+gvar_input_fn_ofs	equ	0FF0Ch		; Input handler function offset
+gvar_input_fn_seg	equ	0FF0Eh		; Input handler function segment
+gvar_gfx_fn_ofs		equ	0FF10h		; Graphics handler function offset
+gvar_gfx_fn_seg		equ	0FF12h		; Graphics handler function segment
+gvar_gfx_mode		equ	0FF14h		; Graphics/display mode
+gvar_game_phase		equ	0FF15h		; Game phase/state
+gvar_skip_flag		equ	0FF16h		; Skip flag
+gvar_timer_flag		equ	0FF17h		; Timer flag
+gvar_timer_counter	equ	0FF18h		; Timer counter
+gvar_skip_input		equ	0FF1Dh		; Input skip flag
+gvar_state_a		equ	0FF1Dh		; Game state variable A
+gvar_state_b		equ	0FF1Eh		; Game state variable B
+gvar_state_c		equ	0FF1Fh		; Game state variable C
+gvar_enable_all		equ	0FF26h		; Enable all flag (0xFF=enabled)
+gvar_sound_flag		equ	0FF27h		; Sound enabled flag
+gvar_key_pressed	equ	0FF28h		; Key pressed scancode
+gvar_game_seg		equ	0FF2Ch		; Game data segment
+gvar_save_filename	equ	0FF33h		; Save file name (8 bytes)
+gvar_save_flag		equ	0FF33h		; Save file flag
+gvar_music_flag_a	equ	0FF38h		; Music state A
+gvar_music_flag_b	equ	0FF39h		; Music state B
+gvar_music_flag_c	equ	0FF3Ah		; Music state C
+gvar_music_flag_d	equ	0FF3Bh		; Music state D
+gvar_palette_flag	equ	0FF3Ch		; Palette state
+gvar_debug_mode		equ	0FF40h		; Debug mode flag
+gvar_debug_val		equ	0FF42h		; Debug value
+gvar_joystick_flag	equ	0FF43h		; Joystick enabled flag
+gvar_save_name_buf	equ	0FF6Ch		; Save file name buffer (8 bytes)
+gvar_volume_a		equ	0FF74h		; Volume/audio setting A
+gvar_volume_b		equ	0FF75h		; Volume/audio setting B
+gvar_old_int09_ofs	equ	0FF79h		; Saved INT 09h offset
+gvar_old_int09_seg	equ	0FF7Bh		; Saved INT 09h segment
+gvar_old_int61_ofs	equ	0FF7Bh		; Saved INT 61h offset
 PSP_cmd_size		equ	80h
 PSP_cmd_line		equ	81h
 zero_offset		equ	0
@@ -275,20 +317,16 @@ load_gfx_driver:
 		int	21h			; Set INT 23h (Ctrl+C = ignore)
 
 		mov	ds,word ptr cs:game_entry_seg
-;*		mov	dx,offset loc_2		;*
-		db	0BAh, 03h, 01h
+		mov	dx,isr_timer			; stick.bin timer stub
 		mov	ax,2508h
 		int	21h			; Set INT 08h (timer handler)
-;*		mov	dx,offset loc_1		;*
-		db	0BAh, 00h, 01h
+		mov	dx,isr_keyboard			; stick.bin keyboard stub
 		mov	ax,2509h
 		int	21h			; Set INT 09h (keyboard handler)
-;*		mov	dx,offset loc_3		;*
-		db	0BAh, 06h, 01h
+		mov	dx,isr_critical			; stick.bin critical-error stub
 		mov	ax,2524h
 		int	21h			; Set INT 24h (critical error)
-;*		mov	dx,offset loc_4		;*
-		db	0BAh, 09h, 01h
+		mov	dx,isr_music			; stick.bin music stub
 		mov	ax,2561h
 		int	21h			; Set INT 61h (music handler)
 
@@ -301,8 +339,7 @@ load_gfx_driver:
 		mov	es:gvar_input_fn_seg,ds
 		mov	word ptr es:gvar_gfx_fn_ofs,1100h
 		mov	es:gvar_gfx_fn_seg,ds
-;*		mov	dx,offset loc_5		;*
-		db	0BAh, 03h, 01h
+		mov	dx,isr_timer			; stick.bin game-services stub
 		mov	ax,2560h
 		int	21h			; Set INT 60h (game services)
 

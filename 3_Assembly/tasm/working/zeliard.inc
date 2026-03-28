@@ -59,3 +59,12 @@ gvar_volume_a           equ     0FF74h  ; Volume A
 gvar_volume_b           equ     0FF75h  ; Volume B
 gvar_old_int09_ofs      equ     0FF79h  ; Saved INT 09h offset
 gvar_old_int09_seg      equ     0FF7Bh  ; Saved INT 09h segment
+
+; stick.bin ISR stub offsets in the game segment.
+; stick.bin is loaded at ISR_STUBS_BASE in game_entry_seg.
+; These are the entry points zeliad installs as interrupt handlers.
+ISR_STUBS_BASE          equ     0100h   ; stick.bin load offset in game_entry_seg
+isr_keyboard            equ     0100h   ; INT 09h keyboard handler stub
+isr_timer               equ     0103h   ; INT 08h timer handler stub
+isr_critical            equ     0106h   ; INT 24h critical error stub
+isr_music               equ     0109h   ; INT 61h music handler stub

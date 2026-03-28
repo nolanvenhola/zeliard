@@ -64,7 +64,7 @@ correct bytes but wrong names. All 28 renamed to match original filenames
 
 ---
 
-## 5. zeliad.asm hardcoded interrupt handler offsets
+## 5. ~~zeliad.asm hardcoded interrupt handler offsets~~ ✓ DONE
 
 zeliad.asm uses raw `db 0BAh, xx, xx` to encode `MOV DX, 0x0100/0x0103/0x0106/0x0109`
 pointing at game.bin's interrupt handler stubs. These reference `stick.bin`'s

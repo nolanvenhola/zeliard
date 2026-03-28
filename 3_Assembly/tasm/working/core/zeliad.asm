@@ -16,9 +16,10 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zeliard.inc
 
 
-; Game state variables (in loaded game.bin segment at 0xFF00+)
+; Additional zeliad-only constants not in zeliard.inc
 
 gvar_chunk_load_fn	equ	0FF00h		; Chunk loader function pointer
 gvar_chunk_load_seg	equ	0FF02h		; Chunk loader code segment
@@ -316,20 +317,16 @@ load_gfx_driver:
 		int	21h			; Set INT 23h (Ctrl+C = ignore)
 
 		mov	ds,word ptr cs:game_entry_seg
-;*		mov	dx,offset loc_2		;*
-		db	0BAh, 03h, 01h
+		mov	dx,isr_timer			; stick.bin timer stub
 		mov	ax,2508h
 		int	21h			; Set INT 08h (timer handler)
-;*		mov	dx,offset loc_1		;*
-		db	0BAh, 00h, 01h
+		mov	dx,isr_keyboard			; stick.bin keyboard stub
 		mov	ax,2509h
 		int	21h			; Set INT 09h (keyboard handler)
-;*		mov	dx,offset loc_3		;*
-		db	0BAh, 06h, 01h
+		mov	dx,isr_critical			; stick.bin critical-error stub
 		mov	ax,2524h
 		int	21h			; Set INT 24h (critical error)
-;*		mov	dx,offset loc_4		;*
-		db	0BAh, 09h, 01h
+		mov	dx,isr_music			; stick.bin music stub
 		mov	ax,2561h
 		int	21h			; Set INT 61h (music handler)
 
@@ -342,8 +339,7 @@ load_gfx_driver:
 		mov	es:gvar_input_fn_seg,ds
 		mov	word ptr es:gvar_gfx_fn_ofs,1100h
 		mov	es:gvar_gfx_fn_seg,ds
-;*		mov	dx,offset loc_5		;*
-		db	0BAh, 03h, 01h
+		mov	dx,isr_timer			; stick.bin game-services stub
 		mov	ax,2560h
 		int	21h			; Set INT 60h (game services)
 
