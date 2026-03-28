@@ -56,11 +56,11 @@ moved from zelres2/data to zelres2/code. SAR rebuilds remain bit-perfect.
 
 ---
 
-## 4. zelres1 data file ordering (unresolved)
+## 4. ~~zelres1 data file ordering~~ ✓ DONE
 
-The friend's filename list (alphabetical order: ame, dmaou, hime, himp, hou...)
-differs from our byte-matched ordering. Needs verification against actual SAR
-chunk content to confirm correct assignment.
+Confirmed by binary string refs in 100OPDMO.bin: all 28 data chunks had
+correct bytes but wrong names. All 28 renamed to match original filenames
+(ame.grp, dmaou.grp, hime.grp, etc.). zelres1.sar remains bit-perfect.
 
 ---
 
