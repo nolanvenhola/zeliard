@@ -664,8 +664,7 @@ loc_50:
 		jmp	loc_53
 			                        ;* No entry point to code
 		push	ax
-;*		add	[bp+si+0],bl
-		db	 00h, 5Ah, 00h		;  Fixup - byte match
+		add	[bp+si+0],bl			; was: db 00h, 5Ah, 00h
 		db	 64h, 00h, 6Eh, 00h, 73h, 00h
 		db	 78h, 00h, 0Eh, 07h,0C6h, 06h
 		db	 75h,0FFh, 0Eh,0C6h, 06h, 84h

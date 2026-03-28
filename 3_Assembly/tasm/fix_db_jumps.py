@@ -19,6 +19,23 @@ JUMP_OPCODES = {
     0xE9: ('jmp',  3, 'near', 'rel16'),
     0xE8: ('call', 3, 'near', 'rel16'),
     0xEB: ('jmp',  2, 'short','rel8'),
+    # Conditional short jumps (all 2-byte rel8)
+    0x70: ('jo',   2, 'short', 'rel8'),
+    0x71: ('jno',  2, 'short', 'rel8'),
+    0x72: ('jc',   2, 'short', 'rel8'),
+    0x73: ('jnc',  2, 'short', 'rel8'),
+    0x74: ('jz',   2, 'short', 'rel8'),
+    0x75: ('jnz',  2, 'short', 'rel8'),
+    0x76: ('jbe',  2, 'short', 'rel8'),
+    0x77: ('ja',   2, 'short', 'rel8'),
+    0x78: ('js',   2, 'short', 'rel8'),
+    0x79: ('jns',  2, 'short', 'rel8'),
+    0x7A: ('jp',   2, 'short', 'rel8'),
+    0x7B: ('jnp',  2, 'short', 'rel8'),
+    0x7C: ('jl',   2, 'short', 'rel8'),
+    0x7D: ('jge',  2, 'short', 'rel8'),
+    0x7E: ('jle',  2, 'short', 'rel8'),
+    0x7F: ('jg',   2, 'short', 'rel8'),
 }
 
 # ── helpers ───────────────────────────────────────────────────────────────
@@ -242,10 +259,15 @@ def fix_file(asm_path, lst_path, dry_run=False):
         if lbl is None:
             continue  # no label for this target — skip replacement
 
-        # TASM 2.x: use 'jmp short' for 0xEB, plain 'jmp' for 0xE9 (auto near/short),
-        # 'call' for 0xE8. ('jmp near label' is not valid TASM 2.x syntax.)
+        # TASM 2.x instruction encoding:
+        #   jmp short label  (0xEB - forced short)
+        #   jmp label        (0xE9 - TASM auto-selects near/short)
+        #   call label       (0xE8 - near call)
+        #   jz/jnz/etc label (0x70-0x7F - conditional short, no 'short' keyword needed)
         if opcode == 0xEB:
             instr = f'\t\t{mnemonic}\tshort {lbl}'
+        elif 0x70 <= opcode <= 0x7F:
+            instr = f'\t\t{mnemonic}\t{lbl}'  # conditional: no 'short' needed
         else:
             instr = f'\t\t{mnemonic}\t{lbl}'
 
