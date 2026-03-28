@@ -43,7 +43,7 @@ RENAMES = {
     ("zelres1/data", "zend.msd"):        "139ZENMS.bin",
 
     # ---- zelres2 ----
-    ("zelres2/data", "driver_table.bin"): "211DRVTB.bin",
+    # ("zelres2/data", "driver_table.bin"): "211DRVTB.bin",  # FIXED: was misclassified; now 211OMOYP.asm in code/
     ("zelres2/data", "sprites_18.bin"):   "218SPRTS.bin",
     ("zelres2/data", "sprites_19.bin"):   "219SPRTS.bin",
     ("zelres2/data", "sprites_20.bin"):   "220SPRTS.bin",
