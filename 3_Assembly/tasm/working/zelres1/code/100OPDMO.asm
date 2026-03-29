@@ -1945,10 +1945,8 @@ scene_process_loop_5		endp
 		db	'e people of the kingdom.'
 		db	0F5h,0F5h,0F5h,0F5h
 loc_93:
-		jmp	short loc_93
-			                        ;* No entry point to code
-		cmc				; Complement carry
-		db	0F3h,0FBh,0A0h, 22h, 57h
+		db	0EBh, 0FEh		; script ctrl: EB FE
+		db	0F5h, 0F3h,0FBh,0A0h, 22h, 57h
 		db	'hat a dreadful storm!  Will it n'
 		db	'ever end?"'
 		db	0F0h,0F6h,0FEh,0F5h,0F3h,0FAh
@@ -2022,9 +2020,7 @@ scene_func_26		proc	near
 ;���� External Entry into Subroutine ��������������������������������������
 
 scene_func_27:
-		cmc				; Complement carry
-		cmc				; Complement carry
-		db	0FEh,0FDh,0F3h
+		db	0F5h, 0F5h, 0FEh, 0FDh, 0F3h
 		db	'The rain of sand continued for 1'
 		db	'08 days and transformed the once'
 		db	'-fertile land into desert.'
@@ -2118,10 +2114,7 @@ scene_func_27:
 ;���� External Entry into Subroutine ��������������������������������������
 
 scene_func_29:
-		cmc				; Complement carry
-		cmc				; Complement carry
-		cmc				; Complement carry
-		db	0FEh,0F0h,0F3h,0FAh
+		db	0F5h, 0F5h, 0F5h, 0FEh, 0F0h, 0F3h, 0FAh
 		db	'Guided by the light of the Spiri'
 		db	't, brave Duke Garland had journe'
 		db	'yed many days to the land of Zel'
@@ -2350,8 +2343,7 @@ scene_func_30:
 ;���� External Entry into Subroutine ��������������������������������������
 
 scene_func_31:
-		xchg	sp,ax
-		db	 6Eh, 93h, 64h, 20h, 93h, 66h
+		db	094h, 6Eh, 93h, 64h, 20h, 93h, 66h
 		db	 6Fh, 90h, 72h, 20h, 95h, 61h
 		db	 93h, 6Ch, 6Ch, 21h, 99h, 94h
 		db	 22h,0F5h,0F5h,0F5h,0F5h,0FEh
