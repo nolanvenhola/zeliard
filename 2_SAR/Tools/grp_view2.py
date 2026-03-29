@@ -44,16 +44,6 @@ def _load_vga_palette(name='P2_Title'):
 
 VGA_PAL = _load_vga_palette('P2_Title')
 
-def _nibble_pal():
-    lut = {}
-    for b in range(256):
-        hi, lo = (b >> 4) & 0xF, b & 0xF
-        c1, c2 = VGA_PAL[hi * 17], VGA_PAL[lo * 17]
-        lut[b] = ((c1[0]+c2[0])//2, (c1[1]+c2[1])//2, (c1[2]+c2[2])//2)
-    lut[0] = VGA_PAL[0]
-    return lut
-
-NIBBLE_PAL = _nibble_pal()
 
 # ── decoding pipeline ─────────────────────────────────────────────────────────
 
@@ -179,21 +169,6 @@ def decode_grp(data: bytes, cl: int):
     return interleaved, rows, cl
 
 
-def render_grp_decode(interleaved: bytes, rows: int, cl: int) -> Image.Image:
-    """Pre-blit nibble-pair render buffer view."""
-    w_bytes = cl * 4
-    w_px = w_bytes * 2
-    img = Image.new('RGB', (w_px, rows), (0, 0, 0))
-    px = img.load()
-    for y in range(rows):
-        for x in range(w_bytes):
-            idx = y * w_bytes + x
-            if idx < len(interleaved):
-                b = interleaved[idx]
-                px[x * 2,     y] = NIBBLE_PAL.get(b & 0xF0, (0,0,0))
-                px[x * 2 + 1, y] = NIBBLE_PAL.get(b & 0x0F, (0,0,0))
-    return img
-
 
 # ── viewer app ────────────────────────────────────────────────────────────────
 
@@ -203,8 +178,7 @@ class GrpViewer:
         self.filepath = filepath
         self.cl = cl
         self.zoom = 2
-        self._photo_decode = None
-        self._photo_vga = None
+        self._photo = None
         self._interleaved = None
         self._rows = 0
 
@@ -245,27 +219,16 @@ class GrpViewer:
         self.status = tk.Label(self.root, text='', anchor='w', relief=tk.SUNKEN)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
 
-        # Two panels side by side: grp_decode (left) and vga_scale (right)
-        panels = tk.Frame(self.root)
-        panels.pack(fill=tk.BOTH, expand=True)
-
-        left = tk.LabelFrame(panels, text='grp_decode', bg='#1a1a1a', fg='white')
-        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.canvas_decode = tk.Canvas(left, bg='#1a1a1a')
-        vsb_l = ttk.Scrollbar(left, orient=tk.VERTICAL, command=self.canvas_decode.yview)
-        self.canvas_decode.configure(yscrollcommand=vsb_l.set)
-        vsb_l.pack(side=tk.RIGHT, fill=tk.Y)
-        self.canvas_decode.pack(fill=tk.BOTH, expand=True)
-        self.canvas_decode.bind('<MouseWheel>', lambda e: self.canvas_decode.yview_scroll(-1*(e.delta//120), 'units'))
-
-        right = tk.LabelFrame(panels, text='vga_scale', bg='#1a1a1a', fg='white')
-        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.canvas_vga = tk.Canvas(right, bg='#1a1a1a')
-        vsb_r = ttk.Scrollbar(right, orient=tk.VERTICAL, command=self.canvas_vga.yview)
-        self.canvas_vga.configure(yscrollcommand=vsb_r.set)
-        vsb_r.pack(side=tk.RIGHT, fill=tk.Y)
-        self.canvas_vga.pack(fill=tk.BOTH, expand=True)
-        self.canvas_vga.bind('<MouseWheel>', lambda e: self.canvas_vga.yview_scroll(-1*(e.delta//120), 'units'))
+        frame = tk.Frame(self.root)
+        frame.pack(fill=tk.BOTH, expand=True)
+        self.canvas = tk.Canvas(frame, bg='#1a1a1a')
+        vsb = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self.canvas.yview)
+        hsb = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=self.canvas.xview)
+        self.canvas.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        hsb.pack(side=tk.BOTTOM, fill=tk.X)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas.bind('<MouseWheel>', lambda e: self.canvas.yview_scroll(-1*(e.delta//120), 'units'))
 
     def _decode(self):
         self._interleaved, self._rows, _ = decode_grp(self.data, self.cl)
@@ -282,33 +245,20 @@ class GrpViewer:
             pass
 
         if self._interleaved is None:
-            for c in (self.canvas_decode, self.canvas_vga):
-                c.delete('all')
-                c.create_text(10, 10, text='No image', fill='white', anchor='nw')
+            self.canvas.delete('all')
+            self.canvas.create_text(10, 10, text='No image', fill='white', anchor='nw')
             return
 
-        z = self.zoom
-
-        # grp_decode panel
-        img_d = render_grp_decode(self._interleaved, self._rows, self.cl)
-        if img_d:
-            w, h = img_d.size[0] * z, img_d.size[1] * z
-            scaled = img_d.resize((w, h), Image.NEAREST)
-            self._photo_decode = ImageTk.PhotoImage(scaled)
-            self.canvas_decode.delete('all')
-            self.canvas_decode.create_image(0, 0, anchor='nw', image=self._photo_decode)
-            self.canvas_decode.configure(scrollregion=(0, 0, w, h))
-
-        # vga_scale panel
         antialias = self.antialias_var.get()
-        img_v = apply_exact_blit(self._interleaved, antialias=antialias)
-        if img_v:
-            w, h = img_v.size[0] * z, img_v.size[1] * z
-            scaled = img_v.resize((w, h), Image.NEAREST)
-            self._photo_vga = ImageTk.PhotoImage(scaled)
-            self.canvas_vga.delete('all')
-            self.canvas_vga.create_image(0, 0, anchor='nw', image=self._photo_vga)
-            self.canvas_vga.configure(scrollregion=(0, 0, w, h))
+        img = apply_exact_blit(self._interleaved, antialias=antialias)
+        if img:
+            z = self.zoom
+            w, h = img.size[0] * z, img.size[1] * z
+            scaled = img.resize((w, h), Image.NEAREST)
+            self._photo = ImageTk.PhotoImage(scaled)
+            self.canvas.delete('all')
+            self.canvas.create_image(0, 0, anchor='nw', image=self._photo)
+            self.canvas.configure(scrollregion=(0, 0, w, h))
 
     def _on_cl_change(self):
         try:
