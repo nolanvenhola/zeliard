@@ -1920,8 +1920,7 @@ scene_process_loop_5		endp
 		db	'Once, long ago, a terrible storm'
 		db	' came to the land of Zeliard. '
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h
-		db	 44h, 61h, 72h, 6Bh
-		db	' clouds filled the sky; lightnin'
+		db	'Dark clouds filled the sky; lightnin'
 		db	'g flashed and thunder crashed. '
 		db	0F2h
 		db	'Day after day, rain poured from '
@@ -1946,8 +1945,8 @@ scene_process_loop_5		endp
 		db	0F5h,0F5h,0F5h,0F5h
 loc_93:
 		db	0EBh, 0FEh		; script ctrl: EB FE
-		db	0F5h, 0F3h,0FBh,0A0h, 22h, 57h
-		db	'hat a dreadful storm!  Will it n'
+		db	0F5h, 0F3h, 0FBh, 0A0h
+		db	'"What a dreadful storm!  Will it n'
 		db	'ever end?"'
 		db	0F0h,0F6h,0FEh,0F5h,0F3h,0FAh
 		db	'Just as the princess spoke these'
@@ -1962,8 +1961,7 @@ loc_93:
 		db	'In an instant, the green hills a'
 		db	'nd plains turned a dusty brown. '
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h
-		db	 54h, 72h
-		db	'ees and flowers crumpled and wer'
+		db	'Trees and flowers crumpled and wer'
 		db	'e buried. '
 		db	0F3h
 		db	'Rivers and lakes disappeared ben'
@@ -2015,7 +2013,7 @@ data_49		db	'As the words of the demon resoun'
 ;��������������������������������������������������������������������������
 
 scene_func_26		proc	near
-		std				; Set direction flag
+		db	0FDh			; script ctrl: FD
 
 ;���� External Entry into Subroutine ��������������������������������������
 
