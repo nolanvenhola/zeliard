@@ -106,7 +106,7 @@ orc_func_1		endp
 			                        ;* No entry point to code
 		in	ax,0A0h			; port 0A0h ??I/O Non-standard
 ;*		and	byte ptr ds:data_25e[bx+si],99h
-		db	 82h,0A0h, 89h,0A0h, 99h	;  Fixup - byte match
+				and byte ptr [bx+si-5F77h],99h			; was: db 082h,0A0h,089h,0A0h,099h
 		mov	al,ds:data_26e
 		mov	word ptr ds:data_34e,0A36Ah
 		retn

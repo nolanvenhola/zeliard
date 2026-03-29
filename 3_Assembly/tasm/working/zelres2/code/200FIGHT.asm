@@ -923,7 +923,7 @@ loc_94:
 loc_95:
 		dec	word ptr ds:[80h]
 ;*		cmp	word ptr ds:[80h],0FFFFh
-		db	 83h, 3Eh, 80h, 00h,0FFh	;  Fixup - byte match
+				cmp word ptr [80h],-1			; was: db 083h,03Eh,080h,000h,0FFh
 		jnz	loc_96			; Jump if not zero
 		mov	ax,ds:data_187e
 		dec	ax
@@ -1595,7 +1595,7 @@ game_func_27		proc	near
 loc_186:
 		mov	di,[si]
 ;*		cmp	di,0FFFFh
-		db	 83h,0FFh,0FFh		;  Fixup - byte match
+				cmp di,-1			; was: db 083h,0FFh,0FFh
 		jnz	loc_187			; Jump if not zero
 		retn
 loc_187:
@@ -1606,14 +1606,14 @@ loc_187:
 loc_188:
 		mov	di,[si]
 ;*		cmp	di,0FFFFh
-		db	 83h,0FFh,0FFh		;  Fixup - byte match
+				cmp di,-1			; was: db 083h,0FFh,0FFh
 		jz	loc_190			; Jump if zero
 		add	si,4
 		jmp	short loc_188
 loc_189:
 		mov	di,[si]
 ;*		cmp	di,0FFFFh
-		db	 83h,0FFh,0FFh		;  Fixup - byte match
+				cmp di,-1			; was: db 083h,0FFh,0FFh
 		jz	loc_190			; Jump if zero
 		mov	ax,[si+2]
 		mov	[di],ax
@@ -2213,7 +2213,7 @@ loc_238:
 		mov	byte ptr ds:data_227e,0
 		mov	byte ptr ds:data_155e,0
 ;*		call	game_func_55			;*
-		db	0E8h,0E3h, 04h		;  Fixup - byte match
+				call 1524h			; was: db 0E8h,0E3h,004h
 		call	word ptr cs:data_74
 		call	copy_buffer_2
 		call	game_scan_loop_8
@@ -3028,11 +3028,11 @@ game_func_62		endp
 
 			                        ;* No entry point to code
 ;*		aam	76h			; 'v' undocumented inst
-		db	0D4h, 76h		;  Fixup - byte match
+				aam 76h			; was: db 0D4h,076h
 ;*                         lock	jbe	loc_313			;*Jump if below or =
-		db	0F0h, 76h,0EAh		;  Fixup - byte match
+				lock jna 16C2h			; was: db 0F0h,076h,0EAh
 ;*		jbe	loc_313			;*Jump if below or =
-		db	 76h,0E8h		;  Fixup - byte match
+				jna 16C2h			; was: db 076h,0E8h
 		dec	dx
 		out	dx,ax			; port 0FFFFh ??I/O Non-standard
 		call	game_func_13
@@ -3423,7 +3423,7 @@ loc_347:
 		mov	si,ds:data_191e
 loc_348:
 ;*		cmp	word ptr [si],0FFFFh
-		db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
 		jnz	loc_349			; Jump if not zero
 		retn
 loc_349:
@@ -3455,7 +3455,7 @@ loc_353:
 loc_354:
 		mov	bx,[si+9]
 ;*		cmp	bx,0FFFFh
-		db	 83h,0FBh,0FFh		;  Fixup - byte match
+				cmp bx,-1			; was: db 083h,0FBh,0FFh
 		jz	loc_355			; Jump if zero
 		mov	al,[si+0Bh]
 		or	[bx],al
@@ -4369,9 +4369,9 @@ game_func_85		endp
 			                        ;* No entry point to code
 		dec	dx
 ;*		adc	byte ptr [bp+si-7Eh],52h	; 'R'
-		db	 82h, 52h, 82h, 52h	;  Fixup - byte match
+				adc byte ptr [bp+si-7Eh],52h			; was: db 082h,052h,082h,052h
 ;*		xor	dh,6
-		db	 82h,0F6h, 06h		;  Fixup - byte match
+				xor dh,6h			; was: db 082h,0F6h,006h
 		pop	es
 		lahf				; Load ah from flags
 		add	[di+1],si
@@ -4871,7 +4871,7 @@ loc_2598:
 		dec	al
 		and	al,3Fh			; '?'
 ;*		jmp	short loc_469		;*
-		db	0EBh,0F2h		;  Fixup - byte match
+				jmp 2593h			; was: db 0EBh,0F2h
 			                        ;* No entry point to code
 		inc	al
 		and	al,3Fh			; '?'
@@ -4902,7 +4902,7 @@ game_func_97		endp
 
 			                        ;* No entry point to code
 ;*		aad	85h			; undocumented inst
-		db	0D5h, 85h		;  Fixup - byte match
+				aad 85h			; was: db 0D5h,085h
 		rol	byte ptr ds:data_109e[di],cl	; Rotate
 		db	0DEh, 85h,0E1h, 85h,0E4h, 85h
 		db	0EAh, 85h,0D8h, 85h,0FEh, 4Ch
@@ -5199,7 +5199,7 @@ sub_27B4:
 		push	es
 		popf				; Pop flags
 ;*		add	bh,bh
-		db	 00h,0FFh		;  Fixup - byte match
+				add bh,bh			; was: db 000h,0FFh
 		jnz	loc_492			; Jump if not zero
 		retn
 loc_492:
@@ -5326,7 +5326,7 @@ loc_502:
 locloop_503:
 		push	cx
 ;*		call	game_func_108			;*
-		db	0E8h, 4Dh,0FFh		;  Fixup - byte match
+				call 2854h			; was: db 0E8h,04Dh,0FFh
 		add	si,10h
 		pop	cx
 		loop	locloop_503		; Loop if cx > 0
@@ -5385,7 +5385,7 @@ game_func_109		proc	near
 		mov	cx,4
 loc_509:
 ;*		cmp	word ptr [si],0FFFFh
-		db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
 		jnz	loc_510			; Jump if not zero
 		retn
 loc_510:
@@ -5567,7 +5567,7 @@ game_func_111		endp
 		jmp	word ptr ds:[8AC6h][bx]	;*
 			                        ;* No entry point to code
 ;*		aam	8Ah			; undocumented inst
-		db	0D4h, 8Ah		;  Fixup - byte match
+				aam 8Ah			; was: db 0D4h,08Ah
 		db	0F7h, 8Ah, 09h, 8Bh,0F7h, 8Ah
 		db	 64h, 8Bh, 83h, 8Bh, 9Ch, 8Bh
 		db	0F6h, 44h, 03h, 80h, 74h, 03h
@@ -6241,7 +6241,7 @@ loc_588:
 loc_589:
 		mov	di,[si+0Bh]
 ;*		cmp	di,0FFFFh
-		db	 83h,0FFh,0FFh		;  Fixup - byte match
+				cmp di,-1			; was: db 083h,0FFh,0FFh
 		jnz	loc_590			; Jump if not zero
 		retn
 loc_590:
@@ -7203,8 +7203,7 @@ loc_678:
 		jmp	word ptr ds:data_120e[bx]	;*
 			                        ;* No entry point to code
 ;*		call	far ptr game_func_155		;*
-		db	9Ah
-		dw	9497h, 8E97h		;  Fixup - byte match
+				call	far ptr 9497h:8E97h			; was: db 09Ah + dw 097h,094h,097h,08Eh
 		xchg	di,ax
 		call	game_func_122
 		jmp	loc_599
@@ -7361,13 +7360,13 @@ game_multiply_5		endp
 		db	0C0h
 loc_695:
 ;*		cmp	word ptr [di],0FFFFh
-		db	 83h, 3Dh,0FFh		;  Fixup - byte match
+				cmp word ptr [di],-1			; was: db 083h,03Dh,0FFh
 		stc				; Set carry flag
 		jnz	loc_696			; Jump if not zero
 		retn
 loc_696:
 ;*		cmp	word ptr [di+0Bh],0FFFFh
-		db	 83h, 7Dh, 0Bh,0FFh	;  Fixup - byte match
+				cmp word ptr [di+0Bh],-1			; was: db 083h,07Dh,00Bh,0FFh
 		jnz	loc_697			; Jump if not zero
 		cmp	byte ptr [di+1],0FFh
 		je	loc_698			; Jump if equal

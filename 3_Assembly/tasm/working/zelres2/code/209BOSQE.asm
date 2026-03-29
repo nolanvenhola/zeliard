@@ -599,8 +599,7 @@ spider_func_6		endp
 			                        ;* No entry point to code
 		mov	cl,36h			; '6'
 ;*		jmp	far ptr loc_57		;*
-		db	0EAh
-		dw	0EA36h, 6336h		;  Fixup - byte match
+				jmp	far ptr 0EA36h:6336h			; was: db 0EAh + dw 036h,0EAh,036h,063h
 			                        ;* No entry point to code
 		aaa				; Ascii adjust
 		db	0F3h, 37h, 51h, 38h,0B8h, 50h
@@ -930,7 +929,7 @@ locloop_52:
 		or	ss:data_61e[bp+si],cl
 		mov	dx,12AEh
 ;*		or	al,dh
-		db	 08h,0F0h		;  Fixup - byte match
+				or al,dh			; was: db 008h,0F0h
 		add	byte ptr [bp+si],0A0h
 		add	ah,[bp+si]
 		inc	cx
@@ -940,7 +939,7 @@ locloop_52:
 		inc	byte ptr [bp+si-50h]
 		add	al,[bx+di-5Eh]
 ;*		add	byte ptr [bx+di-60h],22h	; '"'
-		db	 82h, 41h,0A0h, 22h	;  Fixup - byte match
+				add byte ptr [bx+di-60h],22h			; was: db 082h,041h,0A0h,022h
 		adc	[bp+si],sp
 		scasb				; Scan es:[di] for al
 		inc	cx
@@ -958,7 +957,7 @@ locloop_52:
 		add	al,[bx+di-5Eh]
 		and	byte ptr [bp+si],80h
 ;*		or	byte ptr ss:[211h][bp+si],8Ch
-		db	 82h, 8Ah, 11h, 02h, 8Ch	;  Fixup - byte match
+				or byte ptr [bp+si+211h],8Ch			; was: db 082h,08Ah,011h,002h,08Ch
 		adc	[bp+di],sp
 		inc	dx
 		mov	al,ds:data_40e
@@ -974,11 +973,11 @@ locloop_52:
 		call	$+412Dh
 		test	al,80h
 ;*		adc	dx,bp
-		db	 11h,0EAh		;  Fixup - byte match
+				adc dx,bp			; was: db 011h,0EAh
 		adc	ss:data_26e[bp+si],ax
 		mov	ah,ds:data_57e[bx+si]
 ;*		add	byte ptr [bx+di+2Ah],20h	; ' '
-		db	 82h, 41h, 2Ah, 20h	;  Fixup - byte match
+				add byte ptr [bx+di+2Ah],20h			; was: db 082h,041h,02Ah,020h
 		sub	ch,ds:data_26e[bx+si]
 		mov	al,[bx+di+2Ch]
 		add	al,[bx+di-55h]
@@ -986,20 +985,18 @@ locloop_52:
 		mov	al,ds:data_59e
 		inc	cx
 ;*		or	al,11h
-		db	 80h,0C8h, 11h		;  Fixup - byte match
+				or al,11h			; was: db 080h,0C8h,011h
 		or	ch,[bx+si]
 		mov	al,[bp+si-58h]
 		mov	al,ds:data_44e[bx+si]
 ;*		jmp	far ptr loc_3		;*
-		db	0EAh
-		dw	0A282h, 1241h		;  Fixup - byte match
+				jmp	far ptr 0A282h:1241h			; was: db 0EAh + dw 082h,0A2h,041h,012h
 			                        ;* No entry point to code
 		or	ch,ds:data_28e[bx+si]
 		inc	cx
 		mov	[bx+si],cl
 ;*		jmp	far ptr loc_60		;*
-		db	0EAh
-		dw	8811h, 0A880h		;  Fixup - byte match
+				jmp	far ptr 8811h:0A880h			; was: db 0EAh + dw 011h,088h,080h,0A8h
 			                        ;* No entry point to code
 		or	ch,ds:data_53e[bx+si]
 		or	byte ptr ds:data_58e[bx+si],0Ah
@@ -1030,8 +1027,7 @@ locloop_52:
 		mov	al,2
 		and	dl,[bx+di]
 ;*		jmp	far ptr loc_59		;*
-		db	0EAh
-		dw	42CAh, 8B8Ah		;  Fixup - byte match
+				jmp	far ptr 42CAh:8B8Ah			; was: db 0EAh + dw 0CAh,042h,08Ah,08Bh
 		db	0C8h, 28h, 20h,0A8h, 41h,0FAh
 		db	 41h,0EAh, 41h,0A8h, 0Ah, 2Ah
 		db	 41h,0ABh, 41h, 8Ah, 88h, 80h

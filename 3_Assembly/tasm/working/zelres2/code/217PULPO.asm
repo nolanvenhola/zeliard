@@ -119,7 +119,7 @@ start:
 		push	es
 		mov	al,ds:data_81e
 ;*		add	bh,al
-		db	 00h,0C7h		;  Fixup - byte match
+				add bh,al			; was: db 000h,0C7h
 		push	es
 		adc	bh,byte ptr ss:data_21+0Ah[bp+di]	; ('ll upon the Spirits and ')
 		call	special_process_loop_2
@@ -267,7 +267,7 @@ loc_8:
 		je	loc_8			; Jump if equal
 		mov	byte ptr ds:data_112e,0FFh
 ;*		call	special_func_4			;*
-		db	0E8h, 43h, 00h		;  Fixup - byte match
+				call 204h			; was: db 0E8h,043h,000h
 		call	word ptr cs:data_82e
 		call	special_check_state
 		add	ax,ax

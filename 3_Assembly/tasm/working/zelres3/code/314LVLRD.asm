@@ -205,7 +205,7 @@ loc_4:
 		inc	byte ptr ds:data_25e
 		add	si,10h
 ;*		jmp	short loc_2		;*
-		db	0EBh,0C4h		;  Fixup - byte match
+				jmp 235h			; was: db 0EBh,0C4h
 loc_5:
 		mov	si,ds:data_45e
 		mov	word ptr [si],0FFFFh
@@ -634,7 +634,7 @@ lvrender_func_4		endp
 loc_47:
 		cmp	byte ptr ds:data_27e,28h	; '('
 ;*		jae	loc_50			;*Jump if above or =
-		db	 73h, 4Dh		;  Fixup - byte match
+				jnc 6C6h			; was: db 073h,04Dh
 		mov	byte ptr ds:data_48e,0FFh
 		inc	byte ptr ds:data_27e
 		cmp	byte ptr ds:data_27e,0Ah
@@ -666,9 +666,9 @@ loc_49:
 		add	ax,0C605h
 		push	es
 ;*		xor	bh,bh			; Zero register
-		db	 30h,0FFh		;  Fixup - byte match
+				xor bh,bh			; was: db 030h,0FFh
 ;*		inc	bx
-		db	0FFh,0C3h		;  Fixup - byte match
+				inc bx			; was: db 0FFh,0C3h
 		db	0DCh,0A6h,0E3h,0A6h,0ECh,0A6h
 		db	0F6h,0A6h, 01h,0A7h, 0Ch,0A7h
 		db	 18h,0A7h, 22h,0A7h, 2Eh,0A7h

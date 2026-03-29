@@ -28,7 +28,7 @@ start:
 		lodsb				; String [si] to al
 		or	al,0
 ;*		add	bl,dl
-		db	 00h,0D3h		;  Fixup - byte match
+				add bl,dl			; was: db 000h,0D3h
 		db	0C6h,0D7h, 00h,0D8h,0C6h, 02h
 		db	0E7h,0C6h,0EFh,0C6h, 00h,0C7h
 		db	 0Ch,0C7h, 72h,0CCh,0CFh,0C6h

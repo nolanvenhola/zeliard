@@ -254,7 +254,7 @@ ghost_func_3		endp
 		pop	cx
 		cmpsw				; Cmp [si] to es:[di]
 ;*		jo	loc_4			;*Jump if overflow=1
-		db	 70h,0A8h		;  Fixup - byte match
+				jo 0D5h			; was: db 070h,0A8h
 		sub	byte ptr ds:data_87e[bx+si],0E8h
 		rol	byte ptr [bx],cl	; Rotate
 		mov	bx,data_68e
@@ -287,7 +287,7 @@ loc_8:
 		test	byte ptr ds:data_109e,0FFh
 		jnz	loc_9			; Jump if not zero
 ;*		call	ghost_func_5			;*
-		db	0E8h, 76h, 05h		;  Fixup - byte match
+				call 70Ah			; was: db 0E8h,076h,005h
 		mov	si,0B1FFh
 loc_9:
 		mov	ds:data_123e,si
@@ -725,7 +725,7 @@ loc_29:
 			                        ;* No entry point to code
 		push	ds
 ;*		add	[bx+si+0],dl
-		db	 00h, 50h, 00h		;  Fixup - byte match
+				add [bx+si+0h],dl			; was: db 000h,050h,000h
 		db	0B4h, 00h, 2Ch, 01h, 2Ch, 01h
 		db	 58h, 02h,0C6h, 06h, 23h,0BCh
 		db	 00h,0F6h, 06h, 26h,0BCh,0FFh
@@ -755,15 +755,15 @@ loc_32:
 		pop	es
 		pop	es
 ;*		inc	si
-		db	0FFh,0C6h		;  Fixup - byte match
+				inc si			; was: db 0FFh,0C6h
 		push	es
 		sbb	bh,bh
 ;*		add	al,ch
-		db	 00h,0E8h		;  Fixup - byte match
+				add al,ch			; was: db 000h,0E8h
 		add	[bp+si],ax
 		cmp	byte ptr ds:data_121e,96h
 ;*		jb	loc_33			;*Jump if below
-		db	 72h,0F6h		;  Fixup - byte match
+				jc 70Fh			; was: db 072h,0F6h
 		retn
 			                        ;* No entry point to code
 		call	word ptr cs:data_66e

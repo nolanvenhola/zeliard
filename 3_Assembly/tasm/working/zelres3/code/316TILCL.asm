@@ -76,7 +76,7 @@ zr3_16		proc	far
 start:
 		test	ax,0Bh
 ;*		add	ch,bl
-		db	 00h,0DDh		;  Fixup - byte match
+				add ch,bl			; was: db 000h,0DDh
 		mov	ds:data_32e,al
 		db	12 dup (0)
 		db	 28h, 1Eh, 1Eh, 1Eh, 1Eh, 1Eh
@@ -109,7 +109,7 @@ data_5		db	71h			; Data table (indexed access)
 loc_1:
 		mov	bl,75h			; 'u'
 ;*		add	[bx+0],dh
-		db	 00h, 77h, 00h		;  Fixup - byte match
+				add [bx+0h],dh			; was: db 000h,077h,000h
 		db	 76h, 00h, 78h, 79h, 00h,0A6h
 		db	 9Fh, 87h,0A1h, 00h, 99h
 data_6		db	87h			; Data table (indexed access)
@@ -129,14 +129,14 @@ data_6		db	87h			; Data table (indexed access)
 loc_2:
 		test	sp,ds:data_18e[bx]
 ;*		add	data_6[bx+di],0B4h
-		db	 82h, 81h,0AEh, 00h,0B4h	;  Fixup - byte match
+				add byte ptr [bx+di+0AEh],0B4h			; was: db 082h,081h,0AEh,000h,0B4h
 		rol	sp,cl			; Rotate
 		xchg	sp,ax
 ;*		add	bl,dl
-		db	 00h,0D3h		;  Fixup - byte match
+				add bl,dl			; was: db 000h,0D3h
 		add	data_5[si],dl
 ;*		test	si,[si+0]
-		db	 85h, 74h, 00h		;  Fixup - byte match
+				test [si+0h],si			; was: db 085h,074h,000h
 		db	 00h, 00h, 00h,0DFh,0E8h,0E9h
 		db	 00h,0E0h,0E1h,0EAh,0EAh, 00h
 		db	0E2h,0E2h,0EAh,0EBh
@@ -236,7 +236,7 @@ loc_5:
 		db	0C6h, 06h, 5Ah,0AAh, 00h
 loc_6:
 ;*		cmp	word ptr [si],0FFFFh
-		db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
 		jz	loc_9			; Jump if zero
 		mov	ax,[si]
 		call	word ptr cs:data_16e
@@ -322,7 +322,7 @@ loc_16:
 		test	byte ptr ds:data_49e,0FFh
 		jz	loc_17			; Jump if zero
 ;*		jmp	loc_30			;*
-		db	0E9h,0E6h, 00h		;  Fixup - byte match
+				jmp 4C6h			; was: db 0E9h,0E6h,000h
 loc_17:
 		add	byte ptr ds:data_46e,80h
 		jnc	loc_20			; Jump if carry=0
@@ -415,7 +415,7 @@ loc_29:
 		add	ax,[bp+si]
 		add	[bp+di],ax
 ;*		cmp	dh,6
-		db	 82h,0FEh, 06h		;  Fixup - byte match
+				cmp dh,6h			; was: db 082h,0FEh,006h
 		db	 63h,0AAh,0A0h, 63h,0AAh, 24h
 		db	 01h, 02h, 06h, 62h,0AAh,0A2h
 		db	 5Bh,0AAh,0A0h, 63h,0AAh, 3Ch
@@ -904,14 +904,14 @@ loc_63:
 		and	[bp+di],al
 ;*		loopnz	locloop_64		;*Loop if zf=0, cx>0
 
-		db	0E0h, 2Eh		;  Fixup - byte match
+				loopne 0A75h			; was: db 0E0h,02Eh
 		add	ax,4900h
 		stosb				; Store al to es:[di]
 		les	cx,dword ptr [bx+di]	; Load seg:offset ptr
 		adc	word ptr ss:[600h][bp+di],di
 		inc	sp
 ;*		jc	loc_65			;*Jump if carry Set
-		db	 72h, 61h		;  Fixup - byte match
+				jc 0AB5h			; was: db 072h,061h
 		db	 67h, 6Fh, 6Eh
 		db	342 dup (0)
 

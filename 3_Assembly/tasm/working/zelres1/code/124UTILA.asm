@@ -150,8 +150,7 @@ loc_3:
 		cbw				; Convrt byte to word
 		test	bl,bl
 ;*		jmp	far ptr loc_10		;*
-		db	0EAh
-		dw	4D88h, 0E83Eh		;  Fixup - byte match
+				jmp	far ptr 4D88h:0E83Eh			; was: db 0EAh + dw 088h,04Dh,03Eh,0E8h
 			                        ;* No entry point to code
 		test	dl,bl
 		in	al,dx			; port 0, DMA-1 bas&add ch 0

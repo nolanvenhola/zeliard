@@ -107,14 +107,13 @@ skel_func_1		endp
 			                        ;* No entry point to code
 		in	al,0A0h			; port 0A0h ??I/O Non-standard
 ;*		call	far ptr skel_func_8		;*
-		db	9Ah
-		dw	0D4A0h, 92A0h		;  Fixup - byte match
+				call	far ptr 0D4A0h:92A0h			; was: db 09Ah + dw 0A0h,0D4h,0A0h,092h
 		mov	al,ds:data_31e
 		mov	ah,data_17[bx+si]
 		popf				; Pop flags
 		cmpsw				; Cmp [si] to es:[di]
 ;*		inc	bx
-		db	0FFh,0C3h		;  Fixup - byte match
+				inc bx			; was: db 0FFh,0C3h
 		xor	al,al			; Zero register
 		mov	ds:data_40e,al
 		jmp	loc_21

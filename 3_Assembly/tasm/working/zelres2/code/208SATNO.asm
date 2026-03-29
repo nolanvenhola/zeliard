@@ -1615,7 +1615,7 @@ loc_53:
 		test	al,0AAh
 		stosw				; Store ax to es:[di]
 ;*		add	ah,bh
-		db	 00h,0FCh		;  Fixup - byte match
+				add ah,bh			; was: db 000h,0FCh
 ;*		pop	cs			; Dangerous-8088 only
 		db	0Fh			;  Fixup - byte match
 		retn
@@ -1624,12 +1624,12 @@ loc_53:
 		sti				; Enable interrupts
 		scasb				; Scan es:[di] for al
 ;*		sub	byte ptr ss:data_15e[bp+di],0CFh
-		db	 82h,0ABh, 30h, 3Ch,0CFh	;  Fixup - byte match
+				sub byte ptr [bp+di+3C30h],0CFh			; was: db 082h,0ABh,030h,03Ch,0CFh
 		out	dx,al			; port 0, DMA-1 bas&add ch 0
 ;*		sub	byte ptr [bp+si],0
-		db	 82h, 2Ah, 00h		;  Fixup - byte match
+				sub byte ptr [bp+si],0h			; was: db 082h,02Ah,000h
 ;*		add	al,dh
-		db	 00h,0F0h		;  Fixup - byte match
+				add al,dh			; was: db 000h,0F0h
 		db	0FFh,0FFh,0FFh,0FCh,0CFh,0C3h
 		db	 33h,0CFh,0CFh,0FFh,0C0h, 00h
 		db	0F3h,0FFh,0AAh,0BAh,0D7h,0FFh
