@@ -586,9 +586,7 @@ locloop_24:
 
 		retn
 		db	 87h, 20h
-		db	'   Copyright (C)1987,1990 GAME A'
-		db	'RTS    ', 0Dh, '    Copyright (C'
-		db	')1990 Sierra On-Line    '
+		db	'   Copyright (C)1987,1990 GAME ARTS    ', 0Dh, '    Copyright (C)1990 Sierra On-Line    '
 		db	0FFh, 00h, 00h, 00h
 loc_25:
 		cli				; Disable interrupts
@@ -1819,103 +1817,31 @@ locloop_92:
 		jmp	word ptr cs:data_90
 scene_process_loop_5		endp
 
-		db	'           Two thousand years, ', 0Dh
-		db	'from the dark reaches of another'
-		db	' galaxy,', 0Dh, '        a demon'
-		db	' with not a shred', 0Dh, '      '
-		db	'of compassion for humankind,', 0Dh
-		db	'         descended upon earth.', 0Dh
-		db	0Dh, '          He defiled the la'
-		db	'nd,', 0Dh, '  sending vile creat'
-		db	'ures to live in it,', 0Dh, '   a'
-		db	'nd thus became ruler of the worl'
-		db	'd.', 0Dh, 0Dh, '         The Kin'
-		db	'g of Felishika,', 0Dh, '     app'
-		db	'alled by what had happened,', 0Dh
-		db	'          prayed to the Spirit', 0Dh
-		db	'      of the Holy Land of Zeliar'
-		db	'd', 0Dh, '    for help in defeat'
-		db	'ing this monster.', 0Dh, 0Dh, ' '
-		db	'   With the help of the holy cry'
-		db	'stals', 0Dh, '       called Tear'
-		db	's of Esmesanti,', 0Dh, '    the '
-		db	'King managed to wrest power', 0Dh
-		db	'    from the fiend and seal him '
-		db	'deep', 0Dh, '     within the bow'
-		db	'els of the earth.', 0Dh, 0Dh, ' '
-		db	'           And once again,', 0Dh
-		db	' the light of peace came to shin'
-		db	'e upon', 0Dh, '              the'
-		db	' earth.', 0Dh, 0Dh, 0Dh, 'Howeve'
-		db	'r, it is written in', 0Dh, '    '
-		db	'   the Sixth Book of Esmesanti:', 0Dh
-		db	'                    The Age of D'
-		db	'arkness.', 0Dh
+		db	'           Two thousand years, ', 0Dh, 'from the dark reaches of another galaxy,', 0Dh, '        a demon with not a shred', 0Dh
+		db	'      of compassion for humankind,', 0Dh, '         descended upon earth.', 0Dh, 0Dh, '          He defiled the land,', 0Dh
+		db	'  sending vile creatures to live in it,', 0Dh, '   and thus became ruler of the world.', 0Dh, 0Dh, '         The King of Felishika,', 0Dh
+		db	'     appalled by what had happened,', 0Dh, '          prayed to the Spirit', 0Dh, '      of the Holy Land of Zeliard', 0Dh
+		db	'    for help in defeating this monster.', 0Dh, 0Dh, '    With the help of the holy crystals', 0Dh, '       called Tears of Esmesanti,', 0Dh
+		db	'    the King managed to wrest power', 0Dh, '    from the fiend and seal him deep', 0Dh, '     within the bowels of the earth.', 0Dh
+		db	0Dh, '            And once again,', 0Dh, ' the light of peace came to shine upon', 0Dh, '              the earth.', 0Dh
+		db	0Dh, 0Dh, 'However, it is written in', 0Dh, '       the Sixth Book of Esmesanti:', 0Dh, '                    The Age of Darkness.', 0Dh
 		db	0FFh, 20h		; end-of-script
-		db	'               At last,         '
-		db	'       ', 0Dh, '     the door of'
-		db	' destiny was opened.    ', 0Dh, ' '
-		db	'       The labyrinths are deep, '
-		db	'       ', 0Dh, '          and th'
-		db	'e way is long.          ', 0Dh, ' '
-		db	'    Will Duke Garland be success'
-		db	'ful    ', 0Dh, '   in dethroning'
-		db	' the Emperor of Chaos?  ', 0Dh
+		db	'               At last,                ', 0Dh, '     the door of destiny was opened.    ', 0Dh, '        The labyrinths are deep,        ', 0Dh
+		db	'          and the way is long.          ', 0Dh, '     Will Duke Garland be successful    ', 0Dh, '   in dethroning the Emperor of Chaos?  ', 0Dh
 		db	0FFh, 20h		; end-of-script
-		db	'         Fantasy Action Game    '
-		db	'       ', 0Dh, '               Z'
-		db	'ELIARD                  ', 0Dh, 0Dh
-		db	'             -- STAFF --        '
-		db	'        ', 0Dh, 0Dh, 'Producer -'
-		db	'- Japanese Version', 0Dh, '     '
-		db	'                 Mitsuhiro Mazda'
-		db	'   ', 0Dh, 0Dh, 'Producer -- Eng'
-		db	'lish Version', 0Dh, '           '
-		db	'             Josh Mandel     ', 0Dh
-		db	0Dh, 'Lead Programmer      Tomoyu'
-		db	'ki Shimada   ', 0Dh, 0Dh, 'Graph'
-		db	'ic Designers     Akihiko Yoshida'
-		db	'   ', 0Dh, '                    '
-		db	'  Masatoshi Azumi   ', 0Dh, 0Dh, 'E'
-		db	'nglish Text Translation by', 0Dh
-		db	'                       Marti McK'
-		db	'enna    ', 0Dh, 0Dh, 'Music Comp'
-		db	'osers  -- MECANO ASSOCIATES --', 0Dh
-		db	'                    Fumihito Kas'
-		db	'atani   ', 0Dh, '               '
-		db	'     Nobuyuki Aoshima    ', 0Dh, 0Dh
-		db	'Story Maker           Masaru Tak'
-		db	'euchi   ', 0Dh, 0Dh, 'Sound Effe'
-		db	'cts by     Tomoyuki Shimada   ', 0Dh
-		db	0Dh, 'Advisers               Osam'
-		db	'u Harada     ', 0Dh, '          '
-		db	'             Hiromi Ohba      ', 0Dh
-		db	'                       Greg Miya'
-		db	'ji      ', 0Dh, 0Dh, 'System Des'
-		db	'igner      Rocky Cave Maker   ', 0Dh
-		db	0Dh, 'Special Thanks to', 0Dh, ' '
-		db	'                   Toshiyuki Uch'
-		db	'ida    ', 0Dh, '                '
-		db	'       Yuzo Sunaga      ', 0Dh, ' '
-		db	'                    Takeshi Miya'
-		db	'ji     ', 0Dh, '                '
-		db	'     Naozumi Honma      ', 0Dh, ' '
-		db	'                    Toshi Masubu'
-		db	'chi    ', 0Dh, '                '
-		db	'     Ray E. Nakazato    ', 0Dh, ' '
-		db	'                    Hiroyuki Koy'
-		db	'ama    ', 0Dh, '                '
-		db	'     Satoshi Uesaka     ', 0Dh, ' '
-		db	'             Sierra On-Line Japa'
-		db	'n, Inc.', 0Dh, '                '
-		db	'    Eiji (Ed) Nagano    ', 0Dh, 0Dh
-		db	0Dh, 0Dh, '    Copyright (C)1987,'
-		db	'1990 GAME ARTS    ', 0Dh, '    C'
-		db	'opyright (C)1990 Sierra On-Line '
-		db	'   ', 0Dh, '  This edition first'
-		db	' published 1987 by  ', 0Dh, '  G'
-		db	'AME ARTS Co.,Ltd./ Tomoyuki Shim'
-		db	'ada  ', 0Dh
+		db	'         Fantasy Action Game           ', 0Dh, '               ZELIARD                  ', 0Dh, 0Dh, '             -- STAFF --                ', 0Dh
+		db	0Dh, 'Producer -- Japanese Version', 0Dh, '                      Mitsuhiro Mazda   ', 0Dh, 0Dh, 'Producer -- English Version', 0Dh
+		db	'                        Josh Mandel     ', 0Dh, 0Dh, 'Lead Programmer      Tomoyuki Shimada   ', 0Dh, 0Dh, 'Graphic Designers     Akihiko Yoshida   ', 0Dh
+		db	'                      Masatoshi Azumi   ', 0Dh, 0Dh, 'English Text Translation by', 0Dh, '                       Marti McKenna    ', 0Dh
+		db	0Dh, 'Music Composers  -- MECANO ASSOCIATES --', 0Dh, '                    Fumihito Kasatani   ', 0Dh, '                    Nobuyuki Aoshima    ', 0Dh
+		db	0Dh, 'Story Maker           Masaru Takeuchi   ', 0Dh, 0Dh, 'Sound Effects by     Tomoyuki Shimada   ', 0Dh, 0Dh
+		db	'Advisers               Osamu Harada     ', 0Dh, '                       Hiromi Ohba      ', 0Dh, '                       Greg Miyaji      ', 0Dh
+		db	0Dh, 'System Designer      Rocky Cave Maker   ', 0Dh, 0Dh, 'Special Thanks to', 0Dh, '                    Toshiyuki Uchida    ', 0Dh
+		db	'                       Yuzo Sunaga      ', 0Dh, '                     Takeshi Miyaji     ', 0Dh, '                     Naozumi Honma      ', 0Dh
+		db	'                     Toshi Masubuchi    ', 0Dh, '                     Ray E. Nakazato    ', 0Dh, '                     Hiroyuki Koyama    ', 0Dh
+		db	'                     Satoshi Uesaka     ', 0Dh, '              Sierra On-Line Japan, Inc.', 0Dh, '                    Eiji (Ed) Nagano    ', 0Dh
+		db	0Dh, 0Dh, 0Dh, '    Copyright (C)1987,1990 GAME ARTS    ', 0Dh, '    Copyright (C)1990 Sierra On-Line    ', 0Dh
+		db	'  This edition first published 1987 by  ', 0Dh, '  GAME ARTS Co.,Ltd./ Tomoyuki Shimada  ', 0Dh
 		db	0FFh, 50h,0F0h,0FEh,0F3h,0FAh		; end-of-script | reset text attribute | scroll-text-up | layout-mode 1 | text-style: color 7 normal
 		db	'Once, long ago, a terrible storm came to the land of Zeliard. '
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
@@ -1925,23 +1851,19 @@ scene_process_loop_5		endp
 		db	'Day after day, rain poured from the heavens as if in lament.'
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F5h		; pause | pause | pause | pause | scroll-text-up | pause
 		db	0F5h,0FEh,0F3h,0F5h		; pause | scroll-text-up | layout-mode 1 | pause
-		db	'On the seventh day of rain, a beautiful young girl stood on her '
-		db	'balcony watching this dark, sad rain.'
+		db	'On the seventh day of rain, a beautiful young girl stood on her balcony watching this dark, sad rain.'
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
-		db	'The girl was Princess Felicia la Felishika.  She was the only da'
-		db	'ughter of King Felishika, and the light of his life.'
+		db	'The girl was Princess Felicia la Felishika.  She was the only daughter of King Felishika, and the light of his life.'
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
 		db	0F5h		; pause
-		db	'Her smiles were like sunshine, her voice as beautiful as that of'
-		db	' an angel.  She was adored by the people of the kingdom.'
+		db	'Her smiles were like sunshine, her voice as beautiful as that of an angel.  She was adored by the people of the kingdom.'
 		db	0F5h,0F5h,0F5h,0F5h		; pause | pause | pause | pause
 loc_93:
 		db	0EBh, 0FEh		; script ctrl: EB FE
 		db	0F5h, 0F3h, 0FBh, 0A0h		; pause | layout-mode 1 | text-style: color 7 bold | attr-restore
 		db	'"What a dreadful storm!  Will it never end?"'
 		db	0F0h,0F6h,0FEh,0F5h,0F3h,0FAh		; reset text attribute | long-pause (3x) | scroll-text-up | pause | layout-mode 1 | text-style: color 7 normal
-		db	'Just as the princess spoke these words, the raindrops turned to '
-		db	'grains of sand which covered the ground below her. '
+		db	'Just as the princess spoke these words, the raindrops turned to grains of sand which covered the ground below her. '
 		db	0F5h,0F5h,0F5h,0F5h,0F5h,0FEh		; pause | pause | pause | pause | pause | scroll-text-up
 		db	0FDh,0FEh,0F5h,0F3h		; end-of-section | scroll-text-up | pause | layout-mode 1
 		db	'As she watched, a startling transformation began to take place.'
@@ -1968,14 +1890,11 @@ loc_93:
 		db	'and suddenly, a terrifying voice bellowed as loud as thunder...'
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	0F9h,0EDh		; text-style: color 6 | speaker: Jashiin/narrator (attr ?)
-		db	'"I am Jashiin, the Emperor of Chaos.  The descendants of those w'
-		db	'ho imprisoned me under the earth shall know that my wrath has sm'
-		db	'oldered for two thousand years!"'
+		db	'"I am Jashiin, the Emperor of Chaos.  The descendants of those who imprisoned me under the earth shall know that my wrath has smoldered for two thousand years!"'
 		db	0F0h,0F5h,0F5h,0FDh,0FDh,0FEh		; reset text attribute | pause | pause | end-of-section | end-of-section | scroll-text-up
 		db	0F7h,0EDh		; layout-mode 0 (direct write) | speaker: Jashiin/narrator (attr ?)
 data_47		db	'"Beautiful Princess Felicia, you'
-		db	' will make a lovely and terrifying symbol of my awakening.  Your'
-		db	' father will not make the mistakes of his ancestors!"'
+		db	' will make a lovely and terrifying symbol of my awakening.  Your father will not make the mistakes of his ancestors!"'
 		db	0F0h,0F5h,0F5h,0FEh,0FDh,0F3h		; reset text attribute | pause | pause | scroll-text-up | end-of-section | layout-mode 1
 		db	0FAh		; text-style: color 7 normal
 data_49		db	'As the words of the demon resoun'
@@ -1994,27 +1913,21 @@ scene_func_27:
 		db	0F5h, 0F5h, 0FEh, 0FDh, 0F3h		; pause | pause | scroll-text-up | end-of-section | layout-mode 1
 		db	'The rain of sand continued for 108 days and transformed the once-fertile land into desert.'
 		db	0F5h,0F5h,0FEh,0F3h		; pause | pause | scroll-text-up | layout-mode 1
-		db	'The people of the kingdom wept at the terrible fate of their cou'
-		db	'ntry, and of their princess.'
+		db	'The people of the kingdom wept at the terrible fate of their country, and of their princess.'
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0FDh		; pause | pause | pause | pause | scroll-text-up | end-of-section
 		db	0FEh,0F7h,0FAh		; scroll-text-up | layout-mode 0 (direct write) | text-style: color 7 normal
 		db	'The King wept most of all. '
 		db	0F3h,0EEh,0FBh		; layout-mode 1 | speaker: King Felishika (attr >) | text-style: color 7 bold
-		db	'"Oh, my beloved Felicia!  I fear the Age of Darkness is upon us.'
-		db	'  I am powerless to stop it ... and powerless to help you."'
+		db	'"Oh, my beloved Felicia!  I fear the Age of Darkness is upon us.  I am powerless to stop it ... and powerless to help you."'
 		db	0F0h,0F5h,0F5h,0F5h,0FEh,0FDh		; reset text attribute | pause | pause | pause | scroll-text-up | end-of-section
 		db	0F3h,0FAh		; layout-mode 1 | text-style: color 7 normal
 		db	'But the tears of the King and his people soon awakened another power.'
 		db	0F5h,0F5h,0FEh,0FDh,0F3h		; pause | pause | scroll-text-up | end-of-section | layout-mode 1
 		db	'As the King grieved, an apparition appeared before him.'
 		db	0F5h,0F5h,0FEh,0ECh,0F7h,0FBh		; pause | pause | scroll-text-up | speaker: Jashiin (attr @) | layout-mode 0 (direct write) | text-style: color 7 bold
-		db	'"I am the Guardian Spirit of the Holy Land of Zeliard.  The demo'
-		db	'n Jashiin has been resurrected, and indeed his evil magic will p'
-		db	'lunge this world into the Age of Darkness once again."'
+		db	'"I am the Guardian Spirit of the Holy Land of Zeliard.  The demon Jashiin has been resurrected, and indeed his evil magic will plunge this world into the Age of Darkness once again."'
 		db	0F5h,0F5h,0F5h,0FEh,0F7h, 22h		; pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
-		db	'Heed my words, King Felishika: There is but one way to stop this'
-		db	' demon.  A brave warrior must venture into the labyrinths and re'
-		db	'cover the nine Holy Crystals, the Tears of Esmesanti."'
+		db	'Heed my words, King Felishika: There is but one way to stop this demon.  A brave warrior must venture into the labyrinths and recover the nine Holy Crystals, the Tears of Esmesanti."'
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	 22h
 		db	'Many terrible creatures dwell within the labyrinths, all of them'
@@ -2028,9 +1941,7 @@ scene_func_27:
 		db	'"This man is the only being strong enough to banish Jashiin forever."'
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	 22h
-		db	'You must await the arrival of this brave and noble knight, and t'
-		db	'ell him everything.  Only with his help can you hope to restore '
-		db	'this land to its former beauty, and free your daughter from her terrible curse."'
+		db	'You must await the arrival of this brave and noble knight, and tell him everything.  Only with his help can you hope to restore this land to its former beauty, and free your daughter from her terrible curse."'
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F0h		; pause | pause | pause | pause | scroll-text-up | reset text attribute
 		db	0FDh,0F3h,0FAh		; end-of-section | layout-mode 1 | text-style: color 7 normal
 		db	'Having spoken these words, the Spirit disappeared.'
@@ -2052,8 +1963,7 @@ scene_func_27:
 
 scene_func_29:
 		db	0F5h, 0F5h, 0F5h, 0FEh, 0F0h, 0F3h, 0FAh		; pause | pause | pause | scroll-text-up | reset text attribute | layout-mode 1 | text-style: color 7 normal
-		db	'Guided by the light of the Spirit, brave Duke Garland had journe'
-		db	'yed many days to the land of Zeliard.'
+		db	'Guided by the light of the Spirit, brave Duke Garland had journeyed many days to the land of Zeliard.'
 		db	0F5h,0F5h,0F5h,0FEh,0FDh,0F3h		; pause | pause | pause | scroll-text-up | end-of-section | layout-mode 1
 		db	'Entering the castle, he was quickly escorted to the throne of the grieving King Felishika.'
 		db	0F5h,0F5h,0F5h,0FEh,0EEh,0FDh		; pause | pause | pause | scroll-text-up | speaker: King Felishika (attr >) | end-of-section
@@ -2198,8 +2108,7 @@ scene_func_29:
 		db	 81h, 65h, 73h, 83h, 74h, 2Eh
 		db	 84h, 22h, 84h,0F5h,0F5h,0FEh		; pause | pause | scroll-text-up
 		db	0F0h,0FDh,0FDh,0FAh,0F3h		; reset text attribute | end-of-section | end-of-section | text-style: color 7 normal | layout-mode 1
-		db	'Suddenly, the room grew cold.  A black mist swirled around them, '
-		db	'then took on a hideous shape.'
+		db	'Suddenly, the room grew cold.  A black mist swirled around them, then took on a hideous shape.'
 		db	0F5h,0F5h,0F5h,0FEh,0EDh,0FDh		; pause | pause | pause | scroll-text-up | speaker: Jashiin/narrator (attr ?) | end-of-section
 		db	0F3h,0F9h		; layout-mode 1 | text-style: color 6
 		db	'"Are you the fool who dares to c'
@@ -2226,9 +2135,7 @@ scene_func_30:
 		db	9Bh
 		db	'THE EMPEROR OF CHAOS!"'
 		db	0F5h,0F5h,0F5h,0FEh,0F7h, 22h		; pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
-		db	'Young fool, I could destroy you now, but I need a little amuseme'
-		db	'nt.  I will give you some time to perform your little quest, but'
-		db	' you must promise not to bore me."'
+		db	'Young fool, I could destroy you now, but I need a little amusement.  I will give you some time to perform your little quest, but you must promise not to bore me."'
 		db	0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | scroll-text-up | layout-mode 1
 		db	'"Of course, you have no hope of defeating me."'
 		db	0F5h,0F5h,0F5h,0EFh,0FEh,0F3h		; pause | pause | pause | speaker: unknown (attr =) | scroll-text-up | layout-mode 1
