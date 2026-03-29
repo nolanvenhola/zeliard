@@ -175,19 +175,20 @@ def decode_grp(data: bytes, cl: int):
 class GrpViewer:
     def __init__(self, root, filepath: str, cl: int):
         self.root = root
-        self.filepath = filepath
+        self.filepath = Path(filepath)
+        self.folder = self.filepath.parent
         self.cl = cl
         self.zoom = 2
         self._photo = None
         self._interleaved = None
         self._rows = 0
+        self.data = b''
 
-        self.data = Path(filepath).read_bytes()
-        root.title(f'GRP Viewer — {Path(filepath).name}')
+        root.title('GRP Viewer')
 
         self._build_ui()
-        self._decode()
-        self._redraw()
+        self._populate_file_list()
+        self._load_file(self.filepath)
         root.bind('+', lambda e: self._set_zoom(self.zoom + 1))
         root.bind('=', lambda e: self._set_zoom(self.zoom + 1))
         root.bind('-', lambda e: self._set_zoom(self.zoom - 1))
@@ -195,12 +196,15 @@ class GrpViewer:
         root.bind('s', lambda e: self._set_cl(max(4, self.cl - 4)))
 
     def _build_ui(self):
+        # Toolbar
         top = tk.Frame(self.root)
         top.pack(side=tk.TOP, fill=tk.X, padx=4, pady=2)
 
+        tk.Button(top, text='Browse…', command=self._browse_folder).pack(side=tk.LEFT)
+
         self.antialias_var = tk.BooleanVar(value=True)
         tk.Checkbutton(top, text='Anti-alias', variable=self.antialias_var,
-                       command=self._redraw).pack(side=tk.LEFT)
+                       command=self._redraw).pack(side=tk.LEFT, padx=(8, 0))
 
         tk.Label(top, text='  CL:').pack(side=tk.LEFT)
         self.cl_var = tk.StringVar(value=str(self.cl))
@@ -216,19 +220,84 @@ class GrpViewer:
 
         tk.Button(top, text='Save PNG', command=self._save_png).pack(side=tk.RIGHT)
 
+        # Status bar
         self.status = tk.Label(self.root, text='', anchor='w', relief=tk.SUNKEN)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
 
-        frame = tk.Frame(self.root)
-        frame.pack(fill=tk.BOTH, expand=True)
-        self.canvas = tk.Canvas(frame, bg='#1a1a1a')
-        vsb = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self.canvas.yview)
-        hsb = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=self.canvas.xview)
+        # Main area: file list (left) + canvas (right)
+        main = tk.Frame(self.root)
+        main.pack(fill=tk.BOTH, expand=True)
+
+        # File list panel
+        list_frame = tk.Frame(main, width=180)
+        list_frame.pack(side=tk.LEFT, fill=tk.Y)
+        list_frame.pack_propagate(False)
+
+        self.folder_label = tk.Label(list_frame, text='', anchor='w',
+                                     font=('TkDefaultFont', 8), wraplength=175)
+        self.folder_label.pack(fill=tk.X, padx=2, pady=2)
+
+        vsb_list = ttk.Scrollbar(list_frame, orient=tk.VERTICAL)
+        self.file_list = tk.Listbox(list_frame, yscrollcommand=vsb_list.set,
+                                    selectmode=tk.SINGLE, activestyle='dotbox',
+                                    bg='#2a2a2a', fg='white', selectbackground='#4a7aaf',
+                                    font=('Consolas', 9))
+        vsb_list.config(command=self.file_list.yview)
+        vsb_list.pack(side=tk.RIGHT, fill=tk.Y)
+        self.file_list.pack(fill=tk.BOTH, expand=True)
+        self.file_list.bind('<<ListboxSelect>>', self._on_list_select)
+
+        # Canvas panel
+        canvas_frame = tk.Frame(main)
+        canvas_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.canvas = tk.Canvas(canvas_frame, bg='#1a1a1a')
+        vsb = ttk.Scrollbar(canvas_frame, orient=tk.VERTICAL, command=self.canvas.yview)
+        hsb = ttk.Scrollbar(canvas_frame, orient=tk.HORIZONTAL, command=self.canvas.xview)
         self.canvas.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
         hsb.pack(side=tk.BOTTOM, fill=tk.X)
         self.canvas.pack(fill=tk.BOTH, expand=True)
-        self.canvas.bind('<MouseWheel>', lambda e: self.canvas.yview_scroll(-1*(e.delta//120), 'units'))
+        self.canvas.bind('<MouseWheel>',
+                         lambda e: self.canvas.yview_scroll(-1*(e.delta//120), 'units'))
+
+    def _populate_file_list(self):
+        self.file_list.delete(0, tk.END)
+        files = sorted(self.folder.glob('*.grp')) + sorted(self.folder.glob('*.GRP'))
+        self._files = files
+        for f in files:
+            self.file_list.insert(tk.END, f.name)
+        self.folder_label.config(text=str(self.folder))
+        # Select current file
+        try:
+            idx = [f.name.lower() for f in files].index(self.filepath.name.lower())
+            self.file_list.selection_set(idx)
+            self.file_list.see(idx)
+        except ValueError:
+            pass
+
+    def _on_list_select(self, event):
+        sel = self.file_list.curselection()
+        if sel and self._files:
+            self._load_file(self._files[sel[0]])
+
+    def _browse_folder(self):
+        import tkinter.filedialog as fd
+        folder = fd.askdirectory(initialdir=str(self.folder), title='Select GRP folder')
+        if folder:
+            self.folder = Path(folder)
+            self._populate_file_list()
+
+    def _load_file(self, path: Path):
+        self.filepath = path
+        self.root.title(f'GRP Viewer — {path.name}')
+        try:
+            self.data = path.read_bytes()
+        except OSError as e:
+            self.status.config(text=str(e))
+            return
+        self._decode()
+        self._redraw()
 
     def _decode(self):
         self._interleaved, self._rows, _ = decode_grp(self.data, self.cl)
@@ -281,10 +350,9 @@ class GrpViewer:
 
     def _save_png(self):
         import tkinter.filedialog as fd
-        stem = Path(self.filepath).stem
         path = fd.asksaveasfilename(defaultextension='.png',
                                     filetypes=[('PNG', '*.png')],
-                                    initialfile=f'{stem}_vgascale.png')
+                                    initialfile=f'{self.filepath.stem}_vgascale.png')
         if not path:
             return
         antialias = self.antialias_var.get()
@@ -298,13 +366,16 @@ class GrpViewer:
 
 def main():
     parser = argparse.ArgumentParser(description='Zeliard GRP viewer (loose files)')
-    parser.add_argument('file', help='Path to .grp file')
+    parser.add_argument('file', nargs='?',
+                        default='c:/Projects/Zeliard/3_Assembly/tasm/bin/zelres1/131TTL3G.grp',
+                        help='Path to .grp file (default: 131TTL3G.grp)')
     parser.add_argument('--cl', type=int, default=112,
-                        help='Plane width in bytes (default: 112 for title images)')
+                        help='Plane width in bytes (default: 112)')
     parser.add_argument('--zoom', type=int, default=2)
     args = parser.parse_args()
 
     root = tk.Tk()
+    root.geometry('900x500')
     app = GrpViewer(root, args.file, args.cl)
     app._set_zoom(args.zoom)
     root.mainloop()
