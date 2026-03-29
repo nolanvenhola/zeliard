@@ -19,8 +19,7 @@ Dungeon height is always **64 tiles**. Width varies per dungeon.
 
 | File Offset | Seg Offset | Size | Description |
 |-------------|------------|------|-------------|
-| 0x00 | 0xC000 | 1 | Unknown/Flags (bit0: 1=regular cavern, 0=boss) |
-| 0x01 | 0xC001 | 1 | Unknown |
+| 0x00 | 0xC000 | 2 | Pointer → Dungeon descriptor (see below) |
 | 0x02 | 0xC002 | 2 | Dungeon width in tiles (height always = 64) |
 | 0x04 | 0xC004 | 2 | Pointer → vertical platforms array |
 | 0x06 | 0xC006 | 2 | Pointer → air stream objects array |
@@ -35,6 +34,19 @@ Dungeon height is always **64 tiles**. Width varies per dungeon.
 ## Data Sections
 
 All arrays are terminated with a `0xFFFF` stop marker word.
+
+### Dungeon Descriptor
+**Variable size**
+
+Contain indices for choosing sprites, music, enemy AI for the dungeon.
+
+| Offset | Size | Description |
+|--------|------|-------------|
+| 0 | 1 | bit 7: 1 = boss dungeon, 0 = regular dungeon |
+|   |   | bit 6: unknown |
+|   |   | bits 1-5: music file index |
+|   |   | bit 0: unknown |
+
 
 ### Vertical Platforms
 **Entry size: 3 bytes**
