@@ -79,7 +79,8 @@ start:
 		xor	di,[bx+di+33h]
 		push	word ptr [bp+di]
 ;*		jg	loc_1			;*Jump if >
-		db	 7Fh, 34h		;  Fixup - byte match
+		jg	loc_004C
+		db	00Ch			; was: db 07Fh, 034h
 		db	 60h, 36h,0B4h, 36h, 08h, 37h
 		db	0ECh, 30h, 47h, 37h,0C9h, 37h
 		db	0C3h, 38h, 01h, 3Ch, 4Bh, 3Dh
@@ -89,6 +90,7 @@ start:
 		db	0F6h,0E1h, 8Bh,0E8h, 06h, 1Fh
 		db	 8Bh,0F7h, 8Ch,0C8h, 05h, 00h
 		db	 30h, 8Eh,0C0h,0BFh
+loc_004C:
 		db	 00h, 00h, 2Eh,0C7h, 06h, 01h
 		db	 4Ch, 00h, 00h, 2Eh,0C7h, 06h
 		db	 03h, 4Ch, 00h, 00h, 8Bh,0CDh

@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 1
 356LVGRP.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
 1    52				     ;	are used!  (macro CALLF)
 1    53				     ;
 1    54
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 2
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 2
 356LVGRP.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     106	      =	A0E0		     data_34e	     equ     0A0E0h		     ;*
     107	      =	A333		     data_35e	     equ     0A333h		     ;*
     108	      =	A800		     data_36e	     equ     0A800h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 3
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 3
 356LVGRP.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     160	0082  30 3C 20 08 00 CC			     db	      30h, 3Ch,	20h, 08h, 00h,0CCh
     161	0088  39 00 03 0C 39 01			     db	      39h, 00h,	03h, 0Ch, 39h, 01h
     162	008E  03 00 02				     db	      03h, 00h,	02h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 4
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 4
 356LVGRP.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     214	01A7  00 0D 90 00 2F 0D			     db	      00h, 0Dh,	90h, 00h, 2Fh, 0Dh
     215	01AD  40 00 17 06 40 00			     db	      40h, 00h,	17h, 06h, 40h, 00h
     216	01B3  0A 03 39 02 A0 39			     db	      0Ah, 03h,	39h, 02h,0A0h, 39h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 5
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 5
 356LVGRP.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     268	02EB  00 2A 00 AA 30 AB			     db	      00h, 2Ah,	00h,0AAh, 30h,0ABh
     269	02F1  30 AB 0F 38 0C 3B			     db	      30h,0ABh,	0Fh, 38h, 0Ch, 3Bh
     270	02F7  02 20 02 2E 3A A0			     db	      02h, 20h,	02h, 2Eh, 3Ah,0A0h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 6
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 6
 356LVGRP.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     322	03DA  EA 39 14 A8 39 01			     db	     0EAh, 39h,	14h,0A8h, 39h, 01h
     323	03E0  AA 39 01 EA 80 00			     db	     0AAh, 39h,	01h,0EAh, 80h, 00h
     324	03E6  AE 2E AE 00 33 3A			     db	     0AEh, 2Eh,0AEh, 00h, 33h, 3Ah
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 7
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 7
 356LVGRP.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     376	04D5  2A 39				     sub     bh,[bx+di]
     377	04D7  01 02				     add     [bp+si],ax
     378	04D9  39 06 0080r			     cmp     data_10,ax
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 8
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 8
 356LVGRP.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     430	0540  30 39				     xor     [bx+di],bh
     431	0542  00 30				     add     [bx+si],dh
     432	0544  C0 39 00 82 39 07			     db	     0C0h, 39h,	00h, 82h, 39h, 07h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 9
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 9
 356LVGRP.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     484	062E  01 04				     add     [si],ax
     485	0630  39 10				     cmp     [bx+si],dx
     486	0632  5F				     pop     di
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 10
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 10
 356LVGRP.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     538	069C  3A AA 5515			     cmp     ch,ss:data_7e[bp+si]
     539	06A0  3E AA 15 55 0F FA			     db	      3Eh,0AAh,	15h, 55h, 0Fh,0FAh
     540	06A6  05 FA 39 08 C0 00			     db	      05h,0FAh,	39h, 08h,0C0h, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 11
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 11
 356LVGRP.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     592	07DE  1A 80 EA AA 4A 8A			     db	      1Ah, 80h,0EAh,0AAh, 4Ah, 8Ah
     593	07E4  2A 80 D5 80 0A 80			     db	      2Ah, 80h,0D5h, 80h, 0Ah, 80h
     594	07EA  E4 00 22 A0 9D 20			     db	     0E4h, 00h,	22h,0A0h, 9Dh, 20h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 12
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 12
 356LVGRP.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     646	0917  01 54 39 01 18 00			     db	      01h, 54h,	39h, 01h, 18h, 00h
     647	091D  02 39 01 03 AA A0			     db	      02h, 39h,	01h, 03h,0AAh,0A0h
     648	0923  0A 06 55 50 05 03			     db	      0Ah, 06h,	55h, 50h, 05h, 03h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 13
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 13
 356LVGRP.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     700	0A5B  69 00 EA 00 EA 03			     db	      69h, 00h,0EAh, 00h,0EAh, 03h
     701	0A61  AB 03 A9 AF 00 AD			     db	     0ABh, 03h,0A9h,0AFh, 00h,0ADh
     702	0A67  00 FA C0				     db	      00h,0FAh,0C0h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 14
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 14
 356LVGRP.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     754	0B98  0E 0C 0E 00 FA 00			     db	      0Eh, 0Ch,	0Eh, 00h,0FAh, 00h
     755	0B9E  7A 03 A8 03 A8 0E			     db	      7Ah, 03h,0A8h, 03h,0A8h, 0Eh
     756	0BA4  83 0E 83 08 80 08			     db	      83h, 0Eh,	83h, 08h, 80h, 08h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 15
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 15
 356LVGRP.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     808	0CDC  EB F0 69 50 AB 00			     db	     0EBh,0F0h,	69h, 50h,0ABh, 00h
     809	0CE2  AB 00 EA C0 EA C0			     db	     0ABh, 00h,0EAh,0C0h,0EAh,0C0h
     810	0CE8  FB FF FB FD AE FF			     db	     0FBh,0FFh,0FBh,0FDh,0AEh,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 16
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 16
 356LVGRP.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     862	0E20  C2 B0 C2 B0 02 20			     db	     0C2h,0B0h,0C2h,0B0h, 02h, 20h
     863	0E26  02 20 39 13 0F 00			     db	      02h, 20h,	39h, 13h, 0Fh, 00h
     864	0E2C  05 00 FF 00 7F 03			     db	      05h, 00h,0FFh, 00h, 7Fh, 03h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 17
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 17
 356LVGRP.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     916	0F5F  01 40 39 08 01 39			     db	      01h, 40h,	39h, 08h, 01h, 39h
     917	0F65  00 01 08 22 00 02			     db	      00h, 01h,	08h, 22h, 00h, 02h
     918	0F6B  00 05 00 9F 00 87			     db	      00h, 05h,	00h, 9Fh, 00h, 87h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 18
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 18
 356LVGRP.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
     970	10A3  10 D0 20 80 00 70			     db	      10h,0D0h,	20h, 80h, 00h, 70h
     971	10A9  00 28 00 D4 00 22			     db	      00h, 28h,	00h,0D4h, 00h, 22h
     972	10AF  80 DD 70 A8 28 57			     db	      80h,0DDh,	70h,0A8h, 28h, 57h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 19
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 19
 356LVGRP.asm
 
 
@@ -1119,7 +1119,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
    1024				     ;*		     loopnz  locloop_10		     ;*Loop if zf=0, cx>0
    1025
    1026	1193  E0 0F				     db	     0E0h, 0Fh		     ;	Fixup -	byte match
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 20
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 20
 356LVGRP.asm
 
 
@@ -1178,7 +1178,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
    1078	1232  04 0E				     db	      04h, 0Eh
    1079	1234			     loc_13:
    1080	1234  7D FE				     jge     loc_13		     ; Jump if > or =
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 21
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 21
 356LVGRP.asm
 
 
@@ -1237,7 +1237,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
    1132	12F5  A0 48 04 02 04 92			     db	     0A0h, 48h,	04h, 02h, 04h, 92h
    1133	12FB  39 00 A1 20 04 02			     db	      39h, 00h,0A1h, 20h, 04h, 02h
    1134	1301  04 02 3F B6 23 A6			     db	      04h, 02h,	3Fh,0B6h, 23h,0A6h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 22
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 22
 356LVGRP.asm
 
 
@@ -1296,7 +1296,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
    1186	1439  18 04 F3 01 D2 01			     db	      18h, 04h,0F3h, 01h,0D2h, 01h
    1187	143F  DF 01 8A 00 DE F0			     db	     0DFh, 01h,	8Ah, 00h,0DEh,0F0h
    1188	1445  44 A0 4C F8 08 D8			     db	      44h,0A0h,	4Ch,0F8h, 08h,0D8h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 23
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 23
 356LVGRP.asm
 
 
@@ -1355,7 +1355,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
    1240	157D  07 00 08 00 40 00			     db	      07h, 00h,	08h, 00h, 40h, 00h
    1241	1583  B0 02 00 01 39 01			     db	     0B0h, 02h,	00h, 01h, 39h, 01h
    1242	1589  0C 00 10 00 08 00			     db	      0Ch, 00h,	10h, 00h, 08h, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 24
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 24
 356LVGRP.asm
 
 
@@ -1414,7 +1414,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
    1294	16C1  00 C0 00 30 39 07			     db	      00h,0C0h,	00h, 30h, 39h, 07h
    1295	16C7  04 80 39 00 0E 40			     db	      04h, 80h,	39h, 00h, 0Eh, 40h
    1296	16CD  0C 00 8B 20 0A 00			     db	      0Ch, 00h,	8Bh, 20h, 0Ah, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 25
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 25
 356LVGRP.asm
 
 
@@ -1473,7 +1473,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
    1348	1805  71 0A B5 60 00 15			     db	      71h, 0Ah,0B5h, 60h, 00h, 15h
    1349	180B  6A 39 01 84 39 01			     db	      6Ah, 39h,	01h, 84h, 39h, 01h
    1350	1811  C9 00 20 00 94 00			     db	     0C9h, 00h,	20h, 00h, 94h, 00h
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 26
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 26
 356LVGRP.asm
 
 
@@ -1502,7 +1502,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 1
    1372
    1373
    1374						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 27
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 27
 Symbol Table
 
 
@@ -1510,9 +1510,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/28/26"
 ??FILENAME			  Text	 "356LVGRP"
-??TIME				  Text	 "17:37:59"
+??TIME				  Text	 "19:49:14"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -1561,7 +1561,7 @@ DATA_9				  Word	 SEG_A:0039
 LOCLOOP_4			  Near	 SEG_A:036C
 LOCLOOP_7			  Near	 SEG_A:0610
 LOC_11				  Near	 SEG_A:11ED
-Turbo Assembler	 Version 2.01	     03/22/26 17:38:00	    Page 28
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:15	    Page 28
 Symbol Table
 
 

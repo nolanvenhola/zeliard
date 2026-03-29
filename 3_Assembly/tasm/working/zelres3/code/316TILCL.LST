@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 1
 316TILCL.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 2
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 2
 316TILCL.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     106	      =	AA56		     data_38e	     equ     0AA56h		     ;*
     107	      =	AA57		     data_39e	     equ     0AA57h		     ;*
     108	      =	AA58		     data_40e	     equ     0AA58h		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 3
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 3
 316TILCL.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     160	006A  91 00 9A 9B 9D FE			     db	      91h, 00h,	9Ah, 9Bh, 9Dh,0FEh
     161	0070  00 73 74 00 00			     db	      00h, 73h,	74h, 00h, 00h
     162	0075  00		     data_3	     db	     0			     ; Data table (indexed access)
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 4
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 4
 316TILCL.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     214	012E  00 ED EE F6 F7 00			     db	      00h,0EDh,0EEh,0F6h,0F7h, 00h
     215	0134  EF F0 F8 EA 00 F1			     db	     0EFh,0F0h,0F8h,0EAh, 00h,0F1h
     216	013A  F2 EA EB 00 F3 F4			     db	     0F2h,0EAh,0EBh, 00h,0F3h,0F4h
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 5
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 5
 316TILCL.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     268	0272  C6 01 00 00 C2 C7			     db	     0C6h, 01h,	00h, 00h,0C2h,0C7h
     269	0278  01 BD BE C5 C3 01			     db	      01h,0BDh,0BEh,0C5h,0C3h, 01h
     270	027E  00 00 BD C2 01 C9			     db	      00h, 00h,0BDh,0C2h, 01h,0C9h
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 6
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 6
 316TILCL.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     322	0347  74 75				     jz	     loc_14		     ; Jump if zero
     323	0349  A0 AA5A				     mov     al,ds:data_42e
     324	034C  50				     push    ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 7
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 7
 316TILCL.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     376				     ;*		     jmp     loc_30		     ;*
     377	03DD  E9 E6 00				     db	     0E9h,0E6h,	00h	     ;	Fixup -	byte match
     378	03E0			     loc_17:
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 8
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 8
 316TILCL.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     430	046A  3A 06 AA3C			     cmp     al,ds:data_32e
     431	046E  73 11				     jae     loc_26		     ; Jump if above or	=
     432	0470  B0 00				     mov     al,0
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 9
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 9
 316TILCL.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     484	0505  A0 AA57				     mov     al,ds:data_39e
     485	0508  FE C0				     inc     al
     486	050A  3C 04				     cmp     al,4
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 10
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 10
 316TILCL.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     538	054B  B8 FFFF				     mov     ax,0FFFFh
     539	054E  B9 00A0				     mov     cx,0A0h
     540	0551  F3> AB				     rep     stosw		     ; Rep when	cx >0 Store ax to es:[di]
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 11
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 11
 316TILCL.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     592	0600  2E: FF 16	6036			     call    word ptr cs:data_16e
     593	0605  58				     pop     ax
     594	0606  88 1E AA55			     mov     ds:data_37e,bl
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 12
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 12
 316TILCL.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     646	067E  40				     inc     ax
     647	067F  5F				     pop     di
     648	0680  83 C7 0A				     add     di,0Ah
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 13
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 13
 316TILCL.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     700
     701	06EA  EB 61				     jmp     short loc_52
     702	06EC			     loc_49:
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 14
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 14
 316TILCL.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     754	0754			     locloop_53:
     755	0754  E9 FF79				     jmp     loc_46
     756	0757			     loc_54:
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 15
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 15
 316TILCL.asm
 
 
@@ -883,7 +883,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     808	0793  DA A7 E4 A7 FA A7			     db	     0DAh,0A7h,0E4h,0A7h,0FAh,0A7h
     809	0799  EF A7 05 A8 00 02			     db	     0EFh,0A7h,	05h,0A8h, 00h, 02h
     810	079F  01 10 11 12 13 14			     db	      01h, 10h,	11h, 12h, 13h, 14h
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 16
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 16
 316TILCL.asm
 
 
@@ -942,7 +942,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     862	08BC  A8 C7 A8 CF A8 C7			     db	     0A8h,0C7h,0A8h,0CFh,0A8h,0C7h
     863	08C2  A8				     db	     0A8h
     864	08C3  75 62 63 64 73 65	74+		     db	     'ubcdsetfugcisjthaklpsqtr'
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 17
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 17
 316TILCL.asm
 
 
@@ -1001,7 +1001,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     916	09C1  A3 AA3F				     mov     ds:data_34e,ax
     917	09C4  8B D8				     mov     bx,ax
     918	09C6  50				     push    ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 18
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 18
 316TILCL.asm
 
 
@@ -1060,7 +1060,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     970	0A4B  C4 09				     les     cx,dword ptr [bx+di]    ; Load seg:offset ptr
     971	0A4D  11 BB 0600			     adc     word ptr ss:[600h][bp+di],di
     972	0A51  44				     inc     sp
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 19
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 19
 316TILCL.asm
 
 
@@ -1075,7 +1075,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 1
     980
     981
     982						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 20
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 20
 Symbol Table
 
 
@@ -1083,9 +1083,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/28/26"
 ??FILENAME			  Text	 "316TILCL"
-??TIME				  Text	 "12:38:25"
+??TIME				  Text	 "19:49:10"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -1134,7 +1134,7 @@ DATA_50E			  Number AA62
 DATA_51E			  Number AA63
 DATA_52E			  Number AA64
 DATA_53E			  Number AA65
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 21
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 21
 Symbol Table
 
 
@@ -1193,7 +1193,7 @@ LOC_43				  Near	 SEG_A:0697
 LOC_44				  Near	 SEG_A:06AA
 LOC_45				  Near	 SEG_A:06CD
 LOC_46				  Near	 SEG_A:06D0
-Turbo Assembler	 Version 2.01	     03/22/26 12:38:25	    Page 22
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:10	    Page 22
 Symbol Table
 
 
