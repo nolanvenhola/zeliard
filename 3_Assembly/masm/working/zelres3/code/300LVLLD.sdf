@@ -8,16 +8,16 @@
 Analysis Options = a b c d e f g h i j k l m n o p q r s t u v w x y z
 2nd Options page = a b c d e f g h i j k l m
 uP               = 8088
-File format      = asm
+File format      = ASM
 Keep segments    = Def
 Label type       = Decimal
 Remarks          = All
 Segment display  = Hex
-Target Assembler = MASM-4.0
+Target Assembler = MASM-4.0, byte match
 Input filename   = 300LVLLD.bin
 Code style       = Zero start
 Drive (output)   = W
-Output filename  = 300LVLLD.asm
+Output filename  = 300LVLLD.ASM
 Passes           = 9
 Xref             = OFF
 

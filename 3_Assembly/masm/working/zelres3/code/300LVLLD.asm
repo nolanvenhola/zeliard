@@ -1,13 +1,17 @@
 
 PAGE  59,132
 
-;==========================================================================
-;
-;  LEVEL_LOADER - Code Module
-;
-;==========================================================================
+;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;ÛÛ					                                 ÛÛ
+;ÛÛ				_300LVLLD                                ÛÛ
+;ÛÛ					                                 ÛÛ
+;ÛÛ      Created:   29-Mar-26		                                 ÛÛ
+;ÛÛ      Code type: zero start		                                 ÛÛ
+;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
+;ÛÛ					                                 ÛÛ
+;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
 
-target		EQU   'T2'                      ; Target assembler: TASM-2.X
+target		EQU   'M4'                      ; Target assembler: MASM-4.0
 
 include  srmacros.inc
 
@@ -51,7 +55,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zr3_00		proc	far
+_300LVLLD	proc	far
 
 start:
 		test	al,5
@@ -97,8 +101,8 @@ loc_3:
 		push	bx
 		inc	byte ptr ds:[0E7h]
 		and	byte ptr ds:[0E7h],3
-		call	lvload_multiply
-		call	lvload_multiply_2
+		call	sub_1
+		call	sub_2
 		pop	bx
 		cmp	bh,24h			; '$'
 		je	loc_4			; Jump if equal
@@ -114,26 +118,26 @@ loc_4:
 
 		mov	byte ptr ds:[0E7h],4
 		mov	bx,246Eh
-		call	lvload_multiply
+		call	sub_1
 		mov	cx,5
 
 locloop_5:
 		push	cx
-		call	lvload_multiply_2
+		call	sub_2
 		pop	cx
 		loop	locloop_5		; Loop if cx > 0
 
 		mov	byte ptr ds:[0E7h],5
 loc_6:
 		mov	bx,246Eh
-		call	lvload_multiply
-		call	lvload_multiply_2
-		call	lvload_multiply_2
+		call	sub_1
+		call	sub_2
+		call	sub_2
 		inc	byte ptr ds:[0E7h]
 		cmp	byte ptr ds:[0E7h],9
 		jb	loc_6			; Jump if below
 		mov	bx,246Eh
-		call	lvload_multiply
+		call	sub_1
 		call	word ptr cs:data_11e
 		xor	bh,bh			; Zero register
 		mov	bl,byte ptr ds:[0A0h]
@@ -141,7 +145,7 @@ loc_6:
 		mov	al,ds:data_15e[bx]
 		mov	ds:data_17e,al
 		mov	byte ptr ds:data_18e,2
-		call	lvload_func_3
+		call	sub_3
 		mov	ah,ds:data_19e
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
@@ -157,7 +161,7 @@ loc_7:
 		xor	bh,bh			; Zero register
 		mov	cl,ds:data_20e
 		call	word ptr cs:data_12e
-		call	lvload_multiply_2
+		call	sub_2
 		mov	ah,ds:data_19e
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
@@ -188,8 +192,8 @@ loc_8:
 		sub	bx,18h
 		mov	cl,ds:data_20e
 		call	word ptr cs:data_12e
-		call	lvload_multiply_2
-		call	lvload_multiply_2
+		call	sub_2
+		call	sub_2
 		mov	ah,ds:data_19e
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
@@ -222,7 +226,7 @@ loc_9:
 		xor	bh,bh			; Zero register
 		mov	cl,ds:data_20e
 		call	word ptr cs:data_12e
-		call	lvload_multiply_2
+		call	sub_2
 		mov	ah,ds:data_19e
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
@@ -254,7 +258,7 @@ loc_11:
 		mov	cx,310h
 		xor	di,di			; Zero register
 		call	word ptr cs:data_8e
-		call	lvload_func_4
+		call	sub_4
 		pushf				; Push flags
 		mov	ah,ds:data_19e
 		shr	ah,1			; Shift w/zeros fill
@@ -271,7 +275,7 @@ loc_11:
 		xor	bh,bh			; Zero register
 		mov	cl,ds:data_20e
 		call	word ptr cs:data_12e
-		call	lvload_multiply_2
+		call	sub_2
 		popf				; Pop flags
 		jnc	loc_10			; Jump if carry=0
 		mov	ah,ds:data_19e
@@ -301,8 +305,8 @@ loc_12:
 		sub	bx,18h
 		mov	cl,ds:data_20e
 		call	word ptr cs:data_12e
-		call	lvload_multiply_2
-		call	lvload_multiply_2
+		call	sub_2
+		call	sub_2
 		mov	ah,ds:data_19e
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
@@ -338,7 +342,7 @@ loc_13:
 		xor	bh,bh			; Zero register
 		mov	cl,ds:data_20e
 		call	word ptr cs:data_12e
-		call	lvload_multiply_2
+		call	sub_2
 		mov	ah,ds:data_19e
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
@@ -367,19 +371,19 @@ loc_14:
 		mov	byte ptr ds:[0E7h],8
 loc_15:
 		mov	bx,246Eh
-		call	lvload_multiply
-		call	lvload_multiply_2
-		call	lvload_multiply_2
+		call	sub_1
+		call	sub_2
+		call	sub_2
 		dec	byte ptr ds:[0E7h]
 		cmp	byte ptr ds:[0E7h],5
 		jae	loc_15			; Jump if above or =
 		mov	bx,246Eh
-		call	lvload_multiply
+		call	sub_1
 		mov	cx,5
 
 locloop_16:
 		push	cx
-		call	lvload_multiply_2
+		call	sub_2
 		pop	cx
 		loop	locloop_16		; Loop if cx > 0
 
@@ -399,8 +403,8 @@ loc_18:
 		push	bx
 		inc	byte ptr ds:[0E7h]
 		and	byte ptr ds:[0E7h],3
-		call	lvload_multiply
-		call	lvload_multiply_2
+		call	sub_1
+		call	sub_2
 		pop	bx
 		cmp	bh,3Eh			; '>'
 		je	loc_19			; Jump if equal
@@ -418,13 +422,13 @@ loc_19:
 		xor	al,al			; Zero register
 		jmp	word ptr cs:data_6e
 
-zr3_00		endp
+_300LVLLD	endp
 
-;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 ;                              SUBROUTINE
-;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 
-lvload_multiply		proc	near
+sub_1		proc	near
 		mov	al,byte ptr ds:[0E7h]
 		mov	cl,9
 		mul	cl			; ax = reg * al
@@ -454,7 +458,7 @@ locloop_21:
 		loop	locloop_20		; Loop if cx > 0
 
 		retn
-lvload_multiply		endp
+sub_1		endp
 
 		db	 00h, 02h, 04h, 01h, 03h, 05h
 		db	 00h, 00h, 06h, 07h, 09h, 0Bh
@@ -471,11 +475,11 @@ lvload_multiply		endp
 		db	 1Fh, 00h
 		db	'#*,(+-).1#/24035'
 
-;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 ;                              SUBROUTINE
-;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 
-lvload_multiply_2		proc	near
+sub_2		proc	near
 		mov	cl,ds:data_34e
 		mov	al,4
 		mul	cl			; ax = reg * al
@@ -484,14 +488,14 @@ loc_22:
 		jb	loc_22			; Jump if below
 		mov	byte ptr ds:data_31e,0
 		retn
-lvload_multiply_2		endp
+sub_2		endp
 
 
-;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 ;                              SUBROUTINE
-;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 
-lvload_func_3		proc	near
+sub_3		proc	near
 		mov	byte ptr ds:data_19e,94h
 		mov	byte ptr ds:data_20e,50h	; 'P'
 		xor	cl,cl			; Zero register
@@ -534,14 +538,14 @@ loc_27:
 		mov	ds:data_26e,al
 		mov	byte ptr ds:data_25e,0FFh
 		retn
-lvload_func_3		endp
+sub_3		endp
 
 
-;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 ;                              SUBROUTINE
-;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 
-lvload_func_4		proc	near
+sub_4		proc	near
 		test	byte ptr ds:data_25e,0FFh
 		jnz	loc_30			; Jump if not zero
 		mov	al,ds:data_26e
@@ -581,10 +585,12 @@ loc_31:
 loc_32:
 		clc				; Clear carry flag
 		retn
-lvload_func_4		endp
+sub_4		endp
 
 			                        ;* No entry point to code
-		db	 3Ch,0F4h, 54h,0DCh, 6Ch,0C4h, 84h,0ACh, 98h
+		cmp	al,0F4h
+		push	sp
+		db	0DCh, 6Ch,0C4h, 84h,0ACh, 98h
 		db	 00h, 0Fh, 00h, 3Dh, 00h, 15h
 		db	 00h, 37h, 00h, 1Bh, 00h, 31h
 		db	 00h, 21h, 00h, 2Bh, 00h, 26h
