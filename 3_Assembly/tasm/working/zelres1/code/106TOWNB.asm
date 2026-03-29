@@ -1016,10 +1016,9 @@ loc_82:
 		stc				; Set carry flag
 		retn
 player_func_9		endp
-
-		db	 54h, 61h, 6Bh, 65h, 00h, 4Eh
-		db	 6Fh, 20h, 54h, 61h, 6Bh, 65h
-		db	 00h
+		; UI strings: Take/No Take prompt
+		db	'Take', 0		; 0x0000
+		db	'No Take', 0		; 0x0005
 
 ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
 ;                              SUBROUTINE
@@ -1528,13 +1527,11 @@ player_load_chunk		endp
 			                        ;* No entry point to code
 		add	[bx+di],cx
 		pop	cx
-		dec	bp
-		push	ax
-		inc	sp
-		db	 2Eh, 42h, 49h, 4Eh, 00h, 01h
-		db	0Ah, 'CKPD.BIN'
-		db	 00h, 00h, 33h, 00h, 30h
-
+		; SAR chunk references: YMPD.BIN, CKPD.BIN
+		db	'YMPD.BIN', 0		; 0x0000
+		db	001h, 00Ah		; 0x0009
+		db	'CKPD.BIN', 0		; 0x000B
+		db	'3', 0		; 0x0015
 ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
 ;                              SUBROUTINE
 ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
@@ -1895,13 +1892,10 @@ loc_ret_150:
 		retn
 			                        ;* No entry point to code
 		add	ds:data_86e,bx
-		inc	cx
-		dec	si
-		db	 2Eh, 47h, 52h, 50h, 00h, 01h
-		db	 1Fh
-		db	'CMAN.GRP'
-		db	0
-
+		; Sprite file references: MMAN.GRP, CMAN.GRP
+		db	'MMAN.GRP', 0		; 0x0000
+		db	001h, 01Fh		; 0x0009
+		db	'CMAN.GRP', 0		; 0x000B
 ;ﬂﬂﬂﬂ External Entry into Subroutine ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
 
 player_func_32:
@@ -1921,17 +1915,15 @@ player_func_32:
 		add	[bp+si],sp
 		inc	bx
 		push	ax
-		inc	cx
-		push	sp
-		db	 2Eh, 47h, 52h, 50h, 00h, 01h
-		db	'#MPAT.GRP'
-		db	0, 1
-		db	'$'
-		db	'DPAT.GRP'
-		db	0
-
-;ﬂﬂﬂﬂ External Entry into Subroutine ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
-
+		; Pattern/sprite file references: MPAT.GRP, DPAT.GRP
+		db	080h		; 0x0001
+		db	'.', 0		; 0x0002
+		db	'&$0', 0		; 0x0004
+		db	'"CPAT.GRP', 0		; 0x0008
+		db	001h		; 0x0012
+		db	'#MPAT.GRP', 0		; 0x0013
+		db	001h		; 0x001D
+		db	'$DPAT.GRP', 0		; 0x001E
 player_func_33:
 		mov	es,cs:data_160e
 		mov	si,6E1Eh
@@ -2051,21 +2043,23 @@ loc_156:
 		push	ax
 		push	dx
 		dec	di
-		db	 2Eh, 42h, 49h, 4Eh, 00h, 01h
-		db	0Ch, 'OMOYPRO.BIN'
-		db	 00h, 01h, 12h
-		db	'KENJPRO.BIN'
-		db	0, 1
-		db	0Dh, 'ARMRPRO.BIN'
-		db	 00h, 01h, 10h
-		db	'DRUGPRO.BIN'
-		db	 00h, 01h, 0Fh
-		db	'CHURPRO.BIN'
-		db	 00h, 01h, 0Eh
-		db	'BANKPRO.BIN'
-		db	 00h, 01h, 11h
-		db	'INNAPRO.BIN'
-		db	0
+		; Building program file references (OMOYPRO, KENJPRO, ARMRPRO...)
+		db	001h, 00Bh		; 0x0000
+		db	'KINGPRO.BIN', 0		; 0x0002
+		db	001h, 00Ch		; 0x000E
+		db	'OMOYPRO.BIN', 0		; 0x0010
+		db	001h, 012h		; 0x001C
+		db	'KENJPRO.BIN', 0		; 0x001E
+		db	001h, 00Dh		; 0x002A
+		db	'ARMRPRO.BIN', 0		; 0x002C
+		db	001h, 010h		; 0x0038
+		db	'DRUGPRO.BIN', 0		; 0x003A
+		db	001h, 00Fh		; 0x0046
+		db	'CHURPRO.BIN', 0		; 0x0048
+		db	001h, 00Eh		; 0x0054
+		db	'BANKPRO.BIN', 0		; 0x0056
+		db	001h, 011h		; 0x0062
+		db	'INNAPRO.BIN', 0		; 0x0064
 loc_157:
 		mov	byte ptr ds:[0E7h],4
 		call	player_func_14
@@ -3006,12 +3000,11 @@ loc_234:
 		mov	byte ptr cs:data_154e,0
 		jmp	loc_228
 clear_buffer		endp
-
-		db	'User File', 0Dh, 'Not Found'
-		db	0FFh, 00h, 00h
-		db	'GAME.BIN'
-		db	 00h, 00h,0A0h, 00h, 00h
-		db	'STDPLY.BIN'
+		; Game loader reference: GAME.BIN
+		db	0FFh		; 0x0000
+		db	'User File', 0		; 0x0001
+		db	'Not Found', 0		; 0x000B
+		db	'GAME.BI', 0		; 0x0017
 		db	0
 
 ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
@@ -3143,14 +3136,12 @@ loc_246:
 		mov	ax,0FFFFh
 		jmp	dword ptr cs:data_151e
 copy_buffer		endp
-
-		db	 2Ah, 2Eh, 75h, 73h, 72h, 00h
-		db	'Input name:'
-		db	0FFh
-		db	'Re-Start'
-		db	0
-
-;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+		; Input/user string data
+		db	'.', 0		; 0x0000
+		db	0FFh		; 0x0002
+		db	'*.usr', 0		; 0x0003
+		db	'Input name:', 0		; 0x0009
+		db	'Re-Start', 0		; 0x0015
 ;                              SUBROUTINE
 ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
 

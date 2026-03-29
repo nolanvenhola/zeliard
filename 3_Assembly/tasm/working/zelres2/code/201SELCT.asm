@@ -1264,12 +1264,11 @@ loc_75:
 			                        ;* No entry point to code
 		xor	al,0
 		adc	dl,[bp+di+45h]
-		dec	sp
-; Building menu command table: null-terminated strings
-; Format: each entry is a shortcut key char + command name + ":" + null
-		db	'T-MAGIC:', 0		; 0x0A18: 'T' key -> MAGIC
-		db	'4', 0			; 0x0A21: shortcut key '4'
-		db	'CWEAR:', 0		; 0x0A23: 'C' key -> WEAR
+		; Menu shortcut table prefix entries
+		db	'4', 0		; 0x0000
+		db	012h		; 0x0002
+		db	'SELT-MAGIC:', 0		; 0x0003
+		db	'4', 0		; 0x000F
 		db	'4', 0			; 0x0A2A: shortcut key '4'
 		db	071h, 'USE:', 0		; 0x0A2C: 0x71 key -> USE
 		db	0B8h, 0			; 0x0A32: (non-printable key)

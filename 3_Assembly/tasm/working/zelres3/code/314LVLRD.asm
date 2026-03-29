@@ -112,28 +112,38 @@ data_5		dw	1615h			; Data table (indexed access)
 		db	 24h, 1Ah, 25h, 1Dh, 00h, 1Ah
 		db	 1Bh, 1Dh, 1Eh, 00h, 0Dh, 0Eh
 		db	 26h, 27h, 00h, 0Fh, 00h, 28h
-		db	 29h, 00h, 2Ah, 2Bh, 2Eh, 2Fh
-		db	 00h, 2Ch, 2Dh, 30h, 31h, 00h
-		db	 32h, 33h, 36h, 37h, 00h, 34h
+		; Tile index table
+		db	'()', 0		; 0x0001
+		db	'*+./', 0		; 0x0004
+		db	',-01', 0		; 0x0009
+		db	'2367', 0		; 0x000E
 		db	 35h, 19h, 1Ah, 00h, 36h, 37h
 		db	 3Ah, 3Bh, 00h, 19h, 1Ah, 1Ch
-		db	 1Dh, 00h, 1Ah, 00h, 1Dh, 1Eh
-		db	 00h, 0Dh, 0Eh, 3Dh, 27h, 00h
-		db	 3Ch, 3Dh, 3Eh, 3Fh, 00h, 3Fh
-		db	 40h, 43h, 44h, 00h, 41h, 42h
-		db	 45h, 46h, 00h, 47h, 48h, 49h
-		db	 00h, 00h
-data_6		dw	0E4Ah
-		db	 4Dh, 27h, 00h, 34h, 35h, 58h
-		db	 59h, 00h, 4Bh, 4Ch, 4Eh, 4Fh
-		db	 00h, 50h, 51h, 00h, 44h, 00h
-		db	 58h, 59h, 5Ah, 5Bh, 00h, 53h
-		db	 54h, 56h, 57h, 00h, 4Eh, 4Fh
-		db	 54h, 55h, 00h, 00h, 00h, 52h
-		db	 53h, 00h, 0Dh, 0Eh, 5Dh, 27h
-		db	 00h, 0Eh, 0Fh, 27h, 28h, 00h
-		db	 61h, 2Ch, 6Ah, 6Bh, 00h, 2Ch
-		db	 69h, 6Bh, 6Ch, 00h, 6Bh, 6Ch
+		; Tile/character index table
+		db	'=\'', 0		; 0x0000
+		db	'<=>?', 0		; 0x0003
+		db	'?@CD', 0		; 0x0008
+		db	'ABEF', 0		; 0x000D
+		db	'GHI', 0		; 0x0012
+		db	'J', 0		; 0x0017
+		db	'M\'', 0		; 0x0019
+		db	'45XY', 0		; 0x001C
+		db	'KLNO', 0		; 0x0021
+		db	'PQ', 0		; 0x0026
+		db	'D', 0		; 0x0029
+		db	'XYZ[', 0		; 0x002B
+		; Tile index table (continued)
+		db	'\'(', 0		; 0x0000
+		db	'a,jk', 0		; 0x0003
+		db	',ikl', 0		; 0x0008
+		db	'klmn', 0		; 0x000D
+		db	'nopq', 0		; 0x0012
+		db	'pqZr', 0		; 0x0017
+		db	'\\^_', 0		; 0x001D
+		db	'\\]_`', 0		; 0x0021
+		; Tile index table (continued)
+		db	'vwz{', 0		; 0x0001
+		db	'xy|}', 0		; 0x0006
 		db	 6Dh, 6Eh, 00h, 6Eh, 6Fh, 70h
 		db	 71h, 00h, 70h, 71h, 5Ah, 72h
 		db	 00h, 00h, 5Ch, 5Eh, 5Fh, 00h

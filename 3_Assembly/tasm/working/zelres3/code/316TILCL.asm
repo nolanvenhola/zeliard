@@ -171,18 +171,31 @@ loc_5:
 		db	 0Fh, 20h, 12h, 00h, 0Fh, 10h
 		db	 12h, 3Ch, 00h, 02h, 03h, 19h
 		db	 28h, 00h, 04h, 05h, 29h, 2Ah
-		db	 00h, 1Ch, 2Bh, 3Dh, 26h, 00h
-		db	 2Ch, 11h, 27h, 31h, 00h, 0Fh
+		; Tile pattern table
+		db	')*', 0		; 0x0000
+		db	01Ch		; 0x0003
+		db	'+=&', 0		; 0x0004
+		db	',', 0		; 0x0008
+		db	'\'1', 0		; 0x000A
 		db	 10h, 37h, 38h, 00h, 02h, 03h
 		db	 32h, 33h, 00h, 04h, 05h, 34h
-		db	 35h, 00h, 36h, 2Ch, 26h, 27h
-		db	 00h, 11h, 11h, 31h, 39h, 00h
-		db	 06h, 07h, 11h, 5Ch, 00h, 11h
-		db	 42h, 3Bh, 48h, 00h, 08h, 09h
-		db	 3Eh, 3Fh, 00h, 43h, 44h, 49h
-		db	 4Ah, 00h, 45h, 46h, 4Bh, 4Ch
-		db	 00h, 47h, 16h, 4Dh, 4Eh, 00h
-		db	 11h, 4Fh, 55h, 56h, 00h, 54h
+		; Tile pattern table (continued)
+		db	'>?', 0		; 0x0000
+		db	'CDIJ', 0		; 0x0003
+		db	'EFKL', 0		; 0x0008
+		db	'G', 0		; 0x000D
+		db	'MN', 0		; 0x000F
+		db	011h		; 0x0012
+		db	'OUV', 0		; 0x0013
+		; Tile pattern table (continued)
+		db	']?', 0		; 0x0000
+		db	'_`-.', 0		; 0x0003
+		db	'ab/0', 0		; 0x0008
+		db	'c', 0		; 0x000D
+		db	':N', 0		; 0x000F
+		db	'RSYZ', 0		; 0x0021
+		db	011h		; 0x0026
+		db	'^de', 0		; 0x0027
 		db	 16h, 5Bh, 4Eh, 00h, 50h, 51h
 		db	 57h, 58h, 00h, 52h, 53h, 59h
 		db	 5Ah, 00h, 11h, 5Eh, 64h, 65h

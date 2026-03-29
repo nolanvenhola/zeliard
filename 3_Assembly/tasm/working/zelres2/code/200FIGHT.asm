@@ -3338,14 +3338,14 @@ loc_341:
 		sub	ax,bx
 		retn
 game_func_68		endp
-
-		db	'IJaKLMOPQN_RST`_UVW`IJaKLMX', 0
-		db	'YN_Z', 0
-		db	'[`_\]^`'
-		db	0FAh,0BCh, 00h, 20h,0FBh, 8Ch
-		db	0C8h, 8Eh,0D8h, 8Eh,0C0h,0BFh
-		db	0EDh, 9Eh,0B9h, 2Eh, 9Fh, 81h
-		db	0E9h,0EDh, 9Eh, 49h, 32h,0C0h
+		; ASCII sequence / lookup table
+		db	'\'', 0		; 0x0000
+		db	'+', 0		; 0x0002
+		db	0C3h		; 0x0004
+		db	'IJaKLMOPQN_RST`_UVW`IJaKLMX', 0		; 0x0005
+		db	'YN_Z', 0		; 0x0021
+		db	'[`_\\]^`', 0		; 0x0026
+		db	0BCh		; 0x002E
 		db	0F3h,0AAh,0F6h,0D0h,0A2h,0F5h
 		db	 9Eh,0A2h,0FEh, 9Eh,0A2h,0FFh
 		db	 9Eh,0E8h, 57h, 04h,0B0h,0FFh
@@ -4860,6 +4860,8 @@ game_func_96		endp
 		test	bx,ds:data_180e[bx]
 		test	bx,data_90[bx]
 loc_2598:
+loc_2598:
+loc_2598:
 		inc	sp
 		add	[di+1],si
 		retn
@@ -4876,7 +4878,9 @@ loc_2598:
 		and	al,3Fh			; '?'
 ;*		jmp	short loc_469		;*
 		jmp	short loc_2598
-		db	00Ch			; was: db 0EBh, 0ECh
+		jmp	short loc_2598
+		jmp	short loc_2598
+		db	0EBh			; was: db 0ECh, 00Ch
 
 ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 ;                              SUBROUTINE

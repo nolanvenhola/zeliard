@@ -3320,27 +3320,25 @@ loc_268:
 		db	'mno)&!"*%!"'
 		db	 15h, 16h, 15h, 16h, 1Ch
 		db	 35h, 44h, 48h, 4Ch
-		db	9 dup (0)
-		db	 69h, 71h, 73h, 74h, 1Fh, 20h
-		db	 2Ch, 27h, 1Fh, 20h, 17h, 18h
-		db	 38h, 3Ah, 3Fh, 42h, 45h
-		db	12 dup (0)
-		db	'muwyo+&)&'
-		db	 1Ah, 34h, 39h, 3Bh, 40h, 41h
-		db	14 dup (0)
-		db	'vxz{12/-367<'
-		db	0
-		db	18 dup (0)
-		db	 6Dh, 71h, 70h, 72h, 70h
-		db	84 dup (0)
+		; Character encoding / font lookup table
+		db	'CGKO', 0		; 0x0000
+		db	'mno)&!"*%!"', 0		; 0x000B
+		db	016h, 015h, 016h, 01Ch		; 0x0017
+		db	'5DHL', 0		; 0x001B
+		db	'iqst', 0		; 0x0028
+		db	' ,\'', 0		; 0x002D
+		db	' ', 0		; 0x0031
+		db	018h		; 0x0033
+		db	'8:?BE', 0		; 0x0034
+		db	'muwyo+&)&', 0		; 0x0045
 		db	 01h, 02h, 01h, 02h, 01h, 02h
 		db	 01h, 02h, 01h, 02h, 01h, 02h
 		db	 01h, 02h, 01h, 02h, 01h, 02h
-		db	 01h, 02h, 01h, 02h, 01h, 02h
-		db	 01h, 02h, 01h, 02h, 03h, 04h
-		db	 03h, 04h, 03h, 04h, 03h, 04h
-		db	 03h, 04h, 03h, 04h, 03h, 04h
-		db	 03h, 04h, 03h, 04h, 03h, 04h
+		; Character encoding table (continued)
+		db	'49;@A', 0		; 0x0000
+		db	'vxz{12', 0		; 0x0013
+		; Character encoding table (continued)
+		db	'/-367<', 0		; 0x0000
 		db	 03h, 04h, 03h, 04h, 03h, 04h
 		db	 03h, 04h, 05h, 06h, 05h, 06h
 		db	 05h, 06h, 05h, 06h, 05h, 06h

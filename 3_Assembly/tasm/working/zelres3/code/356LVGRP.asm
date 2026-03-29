@@ -278,7 +278,10 @@ data_16		db	0
 		db	0C0h, 39h, 00h, 23h, 39h, 01h
 		db	 0Ch, 39h, 03h, 0Ah, 80h,0AAh
 		db	 80h, 00h, 20h, 38h, 20h, 00h
-		db	 60h,0C0h, 60h, 39h, 00h, 20h
+		; Graphics data table
+		db	' 8 ', 0		; 0x0001
+		db	'`', 0		; 0x0005
+		db	'`9', 0		; 0x0007
 		db	 39h, 1Eh,0C0h, 39h, 00h, 03h
 		db	0C0h, 39h, 00h, 0Ch, 3Ch, 00h
 		db	0E0h, 3Ch,0EFh, 00h, 80h, 03h
