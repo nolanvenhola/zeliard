@@ -55,6 +55,23 @@ To properly annotate these files the code/data sections need to be separated fir
 
 ---
 
+## 1b. `130UTILB.asm` — 13 irreproducible byte encodings
+
+13 instructions in `130UTILB.asm` use the `r/m = destination` encoding form
+(`01 FE` for `add si,di`, `39 F0` for `cmp ax,si`, etc.) that no known
+standard assembler reproduces for register-to-register operations:
+
+- **TASM 2.01**: generates `03 F7` / `3B C6` (`reg = destination` form)
+- **MASM 4.0**: tested 2026-03-29 — also generates `03 F7` / `3B C6`
+- **Neither** produces the original `01/39/30` encoding via mnemonics
+
+The original assembler was likely a Japanese or pre-MASM 2.x tool used in
+1986-87 during the PC-88 → DOS port. These 13 instructions **must stay as
+`db` declarations** to preserve bit-perfect output. They are functionally
+identical at runtime. MASM tool is available at `tool/masm4/` for future use.
+
+---
+
 ## 2. Graphics driver internal EQU linkability (deferred)
 
 The 5 graphics drivers (`gmmcga`, `gmcga`, `gmega`, `gmhgc`, `gmtga`) all load
