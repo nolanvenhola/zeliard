@@ -1851,7 +1851,7 @@ scene_process_loop_5		endp
 		db	'   the Sixth Book of Esmesanti:', 0Dh
 		db	'                    The Age of D'
 		db	'arkness.', 0Dh
-		db	0FFh, 20h
+		db	0FFh, 20h		; end-of-script
 		db	'               At last,         '
 		db	'       ', 0Dh, '     the door of'
 		db	' destiny was opened.    ', 0Dh, ' '
@@ -1861,7 +1861,7 @@ scene_process_loop_5		endp
 		db	'    Will Duke Garland be success'
 		db	'ful    ', 0Dh, '   in dethroning'
 		db	' the Emperor of Chaos?  ', 0Dh
-		db	0FFh, 20h
+		db	0FFh, 20h		; end-of-script
 		db	'         Fantasy Action Game    '
 		db	'       ', 0Dh, '               Z'
 		db	'ELIARD                  ', 0Dh, 0Dh
@@ -1916,94 +1916,94 @@ scene_process_loop_5		endp
 		db	' published 1987 by  ', 0Dh, '  G'
 		db	'AME ARTS Co.,Ltd./ Tomoyuki Shim'
 		db	'ada  ', 0Dh
-		db	0FFh, 50h,0F0h,0FEh,0F3h,0FAh
+		db	0FFh, 50h,0F0h,0FEh,0F3h,0FAh		; end-of-script | reset text attribute | scroll-text-up | layout-mode 1 | text-style: color 7 normal
 		db	'Once, long ago, a terrible storm'
 		db	' came to the land of Zeliard. '
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	'Dark clouds filled the sky; lightnin'
 		db	'g flashed and thunder crashed. '
-		db	0F2h
+		db	0F2h		; layout-mode 2
 		db	'Day after day, rain poured from '
 		db	'the heavens as if in lament.'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F5h
-		db	0F5h,0FEh,0F3h,0F5h
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F5h		; pause | pause | pause | pause | scroll-text-up | pause
+		db	0F5h,0FEh,0F3h,0F5h		; pause | scroll-text-up | layout-mode 1 | pause
 		db	'On the seventh day of rain, a be'
 		db	'autiful young girl stood on her '
 		db	'balcony watching this dark, sad '
 		db	'rain.'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
 		db	'The girl was Princess Felicia la'
 		db	' Felishika.  She was the only da'
 		db	'ughter of King Felishika, and th'
 		db	'e light of his life.'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h
-		db	0F5h
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
+		db	0F5h		; pause
 		db	'Her smiles were like sunshine, h'
 		db	'er voice as beautiful as that of'
 		db	' an angel.  She was adored by th'
 		db	'e people of the kingdom.'
-		db	0F5h,0F5h,0F5h,0F5h
+		db	0F5h,0F5h,0F5h,0F5h		; pause | pause | pause | pause
 loc_93:
 		db	0EBh, 0FEh		; script ctrl: EB FE
-		db	0F5h, 0F3h, 0FBh, 0A0h
+		db	0F5h, 0F3h, 0FBh, 0A0h		; pause | layout-mode 1 | text-style: color 7 bold | attr-restore
 		db	'"What a dreadful storm!  Will it n'
 		db	'ever end?"'
-		db	0F0h,0F6h,0FEh,0F5h,0F3h,0FAh
+		db	0F0h,0F6h,0FEh,0F5h,0F3h,0FAh		; reset text attribute | long-pause (3x) | scroll-text-up | pause | layout-mode 1 | text-style: color 7 normal
 		db	'Just as the princess spoke these'
 		db	' words, the raindrops turned to '
 		db	'grains of sand which covered the'
 		db	' ground below her. '
-		db	0F5h,0F5h,0F5h,0F5h,0F5h,0FEh
-		db	0FDh,0FEh,0F5h,0F3h
+		db	0F5h,0F5h,0F5h,0F5h,0F5h,0FEh		; pause | pause | pause | pause | pause | scroll-text-up
+		db	0FDh,0FEh,0F5h,0F3h		; end-of-section | scroll-text-up | pause | layout-mode 1
 		db	'As she watched, a startling tran'
 		db	'sformation began to take place.'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
 		db	'In an instant, the green hills a'
 		db	'nd plains turned a dusty brown. '
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	'Trees and flowers crumpled and wer'
 		db	'e buried. '
-		db	0F3h
+		db	0F3h		; layout-mode 1
 		db	'Rivers and lakes disappeared ben'
 		db	'eath the sand.'
-		db	0F1h
+		db	0F1h		; layout-mode 3
 		db	'This ever-green land was turning'
 		db	' to desert before her very eyes.'
-		db	0F5h,0F5h,0F5h,0F5h,0F5h,0F5h
-		db	0FEh,0FDh,0F5h,0F3h,0FBh,0EBh
-		db	0A2h
+		db	0F5h,0F5h,0F5h,0F5h,0F5h,0F5h		; pause | pause | pause | pause | pause | pause
+		db	0FEh,0FDh,0F5h,0F3h,0FBh,0EBh		; scroll-text-up | end-of-section | pause | layout-mode 1 | text-style: color 7 bold | speaker: Princess Felicia (attr A)
+		db	0A2h		; attr-restore
 		db	'"How can this be?" '
-		db	0F0h,0FAh
+		db	0F0h,0FAh		; reset text attribute | text-style: color 7 normal
 		db	'she cried, '
-		db	0EBh,0FBh
+		db	0EBh,0FBh		; speaker: Princess Felicia (attr A) | text-style: color 7 bold
 		db	'"Wh'
 		db	'at evil p'
 		db	'ower could cause such a terrible'
 		db	' thing to happen?"'
-		db	0F0h,0F6h,0F5h,0F5h,0F5h,0FEh
-		db	0F3h,0FAh
+		db	0F0h,0F6h,0F5h,0F5h,0F5h,0FEh		; reset text attribute | long-pause (3x) | pause | pause | pause | scroll-text-up
+		db	0F3h,0FAh		; layout-mode 1 | text-style: color 7 normal
 		db	'Princess Felicia shiver'
 		db	'ed as she felt a dark presence n'
 		db	'ear her, '
-		db	0FDh
+		db	0FDh		; end-of-section
 		db	'and suddenly, a terrifying voice'
 		db	' bellowed as loud as thunder...'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h
-		db	0F9h,0EDh
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
+		db	0F9h,0EDh		; text-style: color 6 | speaker: Jashiin/narrator (attr ?)
 		db	'"I am Jashiin, the Emperor of Ch'
 		db	'aos.  The descendants of those w'
 		db	'ho imprisoned me under the earth'
 		db	' shall know that my wrath has sm'
 		db	'oldered for two thousand years!"'
-		db	0F0h,0F5h,0F5h,0FDh,0FDh,0FEh
-		db	0F7h,0EDh
+		db	0F0h,0F5h,0F5h,0FDh,0FDh,0FEh		; reset text attribute | pause | pause | end-of-section | end-of-section | scroll-text-up
+		db	0F7h,0EDh		; layout-mode 0 (direct write) | speaker: Jashiin/narrator (attr ?)
 data_47		db	'"Beautiful Princess Felicia, you'
 		db	' will make a lovely and terrifyi'
 		db	'ng symbol of my awakening.  Your'
 		db	' father will not make the mistak'
 		db	'es of his ancestors!"'
-		db	0F0h,0F5h,0F5h,0FEh,0FDh,0F3h
-		db	0FAh
+		db	0F0h,0F5h,0F5h,0FEh,0FDh,0F3h		; reset text attribute | pause | pause | scroll-text-up | end-of-section | layout-mode 1
+		db	0FAh		; text-style: color 7 normal
 data_49		db	'As the words of the demon resoun'
 		db	'ded over the land, Princess Feli'
 		db	'cia was turned to stone.'
@@ -2018,49 +2018,49 @@ scene_func_26		proc	near
 ;���� External Entry into Subroutine ��������������������������������������
 
 scene_func_27:
-		db	0F5h, 0F5h, 0FEh, 0FDh, 0F3h
+		db	0F5h, 0F5h, 0FEh, 0FDh, 0F3h		; pause | pause | scroll-text-up | end-of-section | layout-mode 1
 		db	'The rain of sand continued for 1'
 		db	'08 days and transformed the once'
 		db	'-fertile land into desert.'
-		db	0F5h,0F5h,0FEh,0F3h
+		db	0F5h,0F5h,0FEh,0F3h		; pause | pause | scroll-text-up | layout-mode 1
 		db	'The people of the kingdom wept a'
 		db	't the terrible fate of their cou'
 		db	'ntry, and of their princess.'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0FDh
-		db	0FEh,0F7h,0FAh
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0FDh		; pause | pause | pause | pause | scroll-text-up | end-of-section
+		db	0FEh,0F7h,0FAh		; scroll-text-up | layout-mode 0 (direct write) | text-style: color 7 normal
 		db	'The King wept most of all. '
-		db	0F3h,0EEh,0FBh
+		db	0F3h,0EEh,0FBh		; layout-mode 1 | speaker: King Felishika (attr >) | text-style: color 7 bold
 		db	'"Oh, my beloved Felicia!  I fear'
 		db	' the Age of Darkness is upon us.'
 		db	'  I am powerless to stop it ... '
 		db	'and'
 		db	' powerless to help you."'
-		db	0F0h,0F5h,0F5h,0F5h,0FEh,0FDh
-		db	0F3h,0FAh
+		db	0F0h,0F5h,0F5h,0F5h,0FEh,0FDh		; reset text attribute | pause | pause | pause | scroll-text-up | end-of-section
+		db	0F3h,0FAh		; layout-mode 1 | text-style: color 7 normal
 		db	'But the tears of th'
 		db	'e King and his peo'
 		db	'ple soon awakened another power.'
-		db	0F5h,0F5h,0FEh,0FDh,0F3h
+		db	0F5h,0F5h,0FEh,0FDh,0F3h		; pause | pause | scroll-text-up | end-of-section | layout-mode 1
 		db	'As the Ki'
 		db	'ng grieved'
 		db	', '
 		db	'an ap'
 		db	'parition appeared before him.'
-		db	0F5h,0F5h,0FEh,0ECh,0F7h,0FBh
+		db	0F5h,0F5h,0FEh,0ECh,0F7h,0FBh		; pause | pause | scroll-text-up | speaker: Jashiin (attr @) | layout-mode 0 (direct write) | text-style: color 7 bold
 		db	'"I am the Guardian Spirit of the'
 		db	' Holy Land of Zeliard.  The demo'
 		db	'n Jashiin has been resurrected, '
 		db	'and indeed his evil magic will p'
 		db	'lunge this world into the Age of'
 		db	' Darkness once again."'
-		db	0F5h,0F5h,0F5h,0FEh,0F7h, 22h
+		db	0F5h,0F5h,0F5h,0FEh,0F7h, 22h		; pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	'Heed my words, King Felishika: T'
 		db	'here is but one way to stop this'
 		db	' demon.  A brave warrior must ve'
 		db	'nture into the labyrinths and re'
 		db	'cover the nine Holy Crystals, th'
 		db	'e Tears of Esmesanti."'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	 22h
 		db	'Many terrible creatures dwell wi'
 		db	'thin the labyrinths, all of them'
@@ -2068,18 +2068,18 @@ scene_func_27:
 		db	'mortal man could defeat these de'
 		db	'adly beasts and wrest the crysta'
 		db	'ls from them."'
-		db	0F5h,0F5h,0FEh,0F7h, 22h
+		db	0F5h,0F5h,0FEh,0F7h, 22h		; pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	'However, there is one with the p'
 		db	'ower to oppose Jashiin.'
-		db	0F2h
+		db	0F2h		; layout-mode 2
 		db	'The man who is destined to fight'
 		db	' him will soon arrive in your ki'
 		db	'ngdom."'
-		db	0F5h,0F5h,0F5h,0FEh,0F3h
+		db	0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | scroll-text-up | layout-mode 1
 		db	'"This man is the only being stro'
 		db	'ng enough to banish Jashiin fore'
 		db	'ver."'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	 22h
 		db	'You must await the arrival of th'
 		db	'is brave and noble knight, and t'
@@ -2088,41 +2088,41 @@ scene_func_27:
 		db	'this land to its former beauty, '
 		db	'and free your daughter from her '
 		db	'terrible curse."'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F0h
-		db	0FDh,0F3h,0FAh
+		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F0h		; pause | pause | pause | pause | scroll-text-up | reset text attribute
+		db	0FDh,0F3h,0FAh		; end-of-section | layout-mode 1 | text-style: color 7 normal
 		db	'Having spoken these words, the S'
 		db	'pirit disappeared.'
-		db	0F5h,0F5h,0F5h,0FEh,0F7h
+		db	0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	'King Felishika could not believe'
 		db	' what he had seen.'
-		db	0F2h,0FBh
+		db	0F2h,0FBh		; layout-mode 2 | text-style: color 7 bold
 		db	'"Surely my mind is playing trick'
 		db	's on me!  I', 27h, 'm afraid I h'
 		db	'ave gone mad with grief."'
-		db	0FAh,0F5h,0F5h,0F5h,0F5h,0FEh
-		db	0F3h
+		db	0FAh,0F5h,0F5h,0F5h,0F5h,0FEh		; text-style: color 7 normal | pause | pause | pause | pause | scroll-text-up
+		db	0F3h		; layout-mode 1
 		db	'But the next day, a stranger app'
 		db	'eared in the kingdom...'
-		db	0F5h,0F5h,0F5h,0FEh,0EFh,0FDh
-		db	0F3h,0FBh
+		db	0F5h,0F5h,0F5h,0FEh,0EFh,0FDh		; pause | pause | pause | scroll-text-up | speaker: unknown (attr =) | end-of-section
+		db	0F3h,0FBh		; layout-mode 1 | text-style: color 7 bold
 		db	'"What a desolate place!  Why has'
 		db	' the Spirit led me here?"'
-		db	0F5h
+		db	0F5h		; pause
 
 ;���� External Entry into Subroutine ��������������������������������������
 
 scene_func_29:
-		db	0F5h, 0F5h, 0F5h, 0FEh, 0F0h, 0F3h, 0FAh
+		db	0F5h, 0F5h, 0F5h, 0FEh, 0F0h, 0F3h, 0FAh		; pause | pause | pause | scroll-text-up | reset text attribute | layout-mode 1 | text-style: color 7 normal
 		db	'Guided by the light of the Spiri'
 		db	't, brave Duke Garland had journe'
 		db	'yed many days to the land of Zel'
 		db	'iard.'
-		db	0F5h,0F5h,0F5h,0FEh,0FDh,0F3h
+		db	0F5h,0F5h,0F5h,0FEh,0FDh,0F3h		; pause | pause | pause | scroll-text-up | end-of-section | layout-mode 1
 		db	'Entering the castle, he was quic'
 		db	'kly escorted to the throne of th'
 		db	'e grieving King Felishika.'
-		db	0F5h,0F5h,0F5h,0FEh,0EEh,0FDh
-		db	0F5h,0FEh,0FBh,0F7h, 22h, 81h
+		db	0F5h,0F5h,0F5h,0FEh,0EEh,0FDh		; pause | pause | pause | scroll-text-up | speaker: King Felishika (attr >) | end-of-section
+		db	0F5h,0FEh,0FBh,0F7h, 22h, 81h		; pause | scroll-text-up | text-style: color 7 bold | layout-mode 0 (direct write)
 		db	 44h, 75h, 6Bh, 65h, 20h, 80h
 		db	 47h, 61h, 72h, 6Ch, 61h, 84h
 		db	 6Eh, 83h, 64h, 21h, 20h, 20h
@@ -2167,11 +2167,11 @@ scene_func_29:
 		db	 68h, 80h, 74h, 65h, 72h, 20h
 		db	 85h, 74h, 6Fh, 20h, 83h, 87h
 		db	 73h, 88h, 74h, 87h, 6Fh, 84h
-		db	 86h, 6Eh, 65h, 2Eh, 22h,0F5h
-		db	0F5h,0F5h,0F0h,0FEh,0F7h,0FAh
+		db	 86h, 6Eh, 65h, 2Eh, 22h,0F5h		; pause
+		db	0F5h,0F5h,0F0h,0FEh,0F7h,0FAh		; pause | pause | reset text attribute | scroll-text-up | layout-mode 0 (direct write) | text-style: color 7 normal
 		db	'Duke Garland k'
 		db	'nelt before the King. '
-		db	0FBh,0F5h,0F5h,0F5h,0F3h,0EFh
+		db	0FBh,0F5h,0F5h,0F5h,0F3h,0EFh		; text-style: color 7 bold | pause | pause | pause | layout-mode 1 | speaker: unknown (attr =)
 		db	 97h, 22h, 93h, 96h, 59h, 6Fh
 		db	 90h, 75h, 72h, 20h, 4Dh, 61h
 		db	 91h, 6Ah, 65h, 95h, 73h, 74h
@@ -2189,7 +2189,7 @@ scene_func_29:
 		db	 92h, 69h, 97h, 73h, 98h, 20h
 		db	 97h, 95h, 70h, 96h, 90h, 6Ch
 		db	 61h, 93h, 63h, 65h, 2Eh, 22h
-		db	 94h,0F5h,0F5h,0F5h,0FEh,0F7h
+		db	 94h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	 22h, 90h, 49h, 20h, 93h, 6Bh
 		db	 95h, 6Eh, 6Fh, 77h, 94h, 20h
 		db	 93h, 6Eh, 6Fh, 74h, 94h, 20h
@@ -2227,8 +2227,8 @@ scene_func_29:
 		db	 20h, 92h, 74h, 68h, 93h, 69h
 		db	 73h, 20h, 90h, 74h, 61h, 97h
 		db	 93h, 73h, 98h, 6Bh, 97h, 2Eh
-		db	 96h, 22h, 94h,0F5h,0F5h,0F5h
-		db	0F5h,0EEh,0FEh,0F3h, 22h, 83h
+		db	 96h, 22h, 94h,0F5h,0F5h,0F5h		; pause | pause | pause
+		db	0F5h,0EEh,0FEh,0F3h, 22h, 83h		; pause | speaker: King Felishika (attr >) | scroll-text-up | layout-mode 1
 		db	 46h, 6Fh, 80h, 72h, 20h, 81h
 		db	 74h, 68h, 65h, 20h, 80h, 66h
 		db	 69h, 83h, 72h, 73h, 74h, 20h
@@ -2262,19 +2262,19 @@ scene_func_29:
 		db	 6Eh, 20h, 83h, 79h, 6Fh, 80h
 		db	 75h, 72h, 20h, 83h, 71h, 75h
 		db	 81h, 65h, 73h, 83h, 74h, 2Eh
-		db	 84h, 22h, 84h,0F5h,0F5h,0FEh
-		db	0F0h,0FDh,0FDh,0FAh,0F3h
+		db	 84h, 22h, 84h,0F5h,0F5h,0FEh		; pause | pause | scroll-text-up
+		db	0F0h,0FDh,0FDh,0FAh,0F3h		; reset text attribute | end-of-section | end-of-section | text-style: color 7 normal | layout-mode 1
 		db	'Suddenly, the room grew cold.  A'
 		db	' black mist swirled around them,'
 		db	' '
 		db	'then took on a hideous shape.'
-		db	0F5h,0F5h,0F5h,0FEh,0EDh,0FDh
-		db	0F3h,0F9h
+		db	0F5h,0F5h,0F5h,0FEh,0EDh,0FDh		; pause | pause | pause | scroll-text-up | speaker: Jashiin/narrator (attr ?) | end-of-section
+		db	0F3h,0F9h		; layout-mode 1 | text-style: color 6
 		db	'"Are you the fool who dares to c'
 		db	'hallenge me?  Don', 27h, 't be a'
 		db	'bsurd!"'
-		db	0F5h,0F5h,0FEh,0FDh, 99h,0F5h
-		db	0FEh,0F3h,0FBh,0EFh, 9Ah, 22h
+		db	0F5h,0F5h,0FEh,0FDh, 99h,0F5h		; pause | pause | scroll-text-up | end-of-section | pause
+		db	0FEh,0F3h,0FBh,0EFh, 9Ah, 22h		; scroll-text-up | layout-mode 1 | text-style: color 7 bold | speaker: unknown (attr =)
 		db	 90h, 41h, 94h, 6Eh, 93h, 64h
 		db	 20h, 93h
 		db	79h
@@ -2288,24 +2288,24 @@ scene_func_30:
 		db	 20h, 91h, 65h, 92h, 76h, 69h
 		db	 93h, 6Ch, 20h, 90h, 4Ah, 61h
 		db	 92h, 73h, 68h, 69h, 94h, 69h
-		db	 6Eh, 21h, 22h,0F5h,0F5h,0EDh
-		db	0FEh,0F3h,0F9h
+		db	 6Eh, 21h, 22h,0F5h,0F5h,0EDh		; pause | pause | speaker: Jashiin/narrator (attr ?)
+		db	0FEh,0F3h,0F9h		; scroll-text-up | layout-mode 1 | text-style: color 6
 		db	'"You shall address me as the Emp'
 		db	'eror of Chaos... '
 		db	9Bh
 		db	'THE EMPEROR OF CHAOS!"'
-		db	0F5h,0F5h,0F5h,0FEh,0F7h, 22h
+		db	0F5h,0F5h,0F5h,0FEh,0F7h, 22h		; pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	'Young fool, I could destroy you '
 		db	'now, but I need a little amuseme'
 		db	'nt.  I will give you some time t'
 		db	'o perform your little quest, but'
 		db	' you must promise not to bore me'
 		db	'."'
-		db	0F5h,0F5h,0F5h,0FEh,0F3h
+		db	0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | scroll-text-up | layout-mode 1
 		db	'"Of course, you have no hope of '
 		db	'defeating me."'
-		db	0F5h,0F5h,0F5h,0EFh,0FEh,0F3h
-		db	0FBh, 22h, 9Ah, 90h, 4Dh, 61h
+		db	0F5h,0F5h,0F5h,0EFh,0FEh,0F3h		; pause | pause | pause | speaker: unknown (attr =) | scroll-text-up | layout-mode 1
+		db	0FBh, 22h, 9Ah, 90h, 4Dh, 61h		; text-style: color 7 bold
 		db	 72h, 95h, 6Bh, 20h, 90h, 6Dh
 		db	 92h, 79h, 20h, 90h, 77h, 6Fh
 		db	 72h, 93h, 64h, 73h, 2Ch, 20h
@@ -2341,29 +2341,29 @@ scene_func_30:
 ;���� External Entry into Subroutine ��������������������������������������
 
 scene_func_31:
-		db	094h, 6Eh, 93h, 64h, 20h, 93h, 66h
+		db	094h, 6Eh, 93h, 64h, 20h, 93h, 66h		; small-portrait[4]
 		db	 6Fh, 90h, 72h, 20h, 95h, 61h
 		db	 93h, 6Ch, 6Ch, 21h, 99h, 94h
-		db	 22h,0F5h,0F5h,0F5h,0F5h,0FEh
-		db	0F0h,0F5h,0F7h,0FAh
+		db	 22h,0F5h,0F5h,0F5h,0F5h,0FEh		; pause | pause | pause | pause | scroll-text-up
+		db	0F0h,0F5h,0F7h,0FAh		; reset text attribute | pause | layout-mode 0 (direct write) | text-style: color 7 normal
 		db	'The demon '
 		db	'laug'
 		db	'hed, and th'
 		db	'e sound was like breaking glass.'
-		db	0F2h,0F9h,0EDh
+		db	0F2h,0F9h,0EDh		; layout-mode 2 | text-style: color 6 | speaker: Jashiin/narrator (attr ?)
 		db	'"My labyrinths are immense, and '
 		db	'run deep into the earth.  You', 27h
 		db	'll soon lose your way, and then '
 		db	'my underlings wil'
 		db	'l finish you off."'
-		db	0F5h,0F5h,0FEh,0F3h
+		db	0F5h,0F5h,0FEh,0F3h		; pause | pause | scroll-text-up | layout-mode 1
 		db	'"It', 27h, 's been many years si'
 		db	'nce a stray mortal has wandered '
 		db	'into their realm. They are hungr'
 		db	'y '
 		db	'for human flesh."'
-		db	0F5h,0F5h,0F5h,0F0h,0FDh,0FEh
-		db	0F3h,0FAh
+		db	0F5h,0F5h,0F5h,0F0h,0FDh,0FEh		; pause | pause | pause | reset text attribute | end-of-section | scroll-text-up
+		db	0F3h,0FAh		; layout-mode 1 | text-style: color 7 normal
 		db	'With that, '
 data_87		db	'Jashiin disappeared leaving echo'
 		db	'es of earsplitting laughter.'
@@ -2385,25 +2385,25 @@ data_107	dw	6C20h
 		db	'ast of m'
 data_108	dw	offset scene_func_30
 		db	' Jashiin!'
-		db	0F2h
+		db	0F2h		; layout-mode 2
 		db	'Your reign of evil is near its e'
 		db	'nd!"'
-		db	0F5h,0F5h,0F5h,0FFh, 58h, 25h
-		db	0F0h, 00h, 00h, 03h, 68h, 21h
-		db	0FCh,0FCh, 04h, 07h, 70h, 23h
-		db	 01h,0FDh, 04h, 07h, 70h, 24h
-		db	 04h,0FDh, 04h, 07h, 78h, 25h
-		db	 06h,0FEh, 04h, 07h, 78h, 28h
+		db	0F5h,0F5h,0F5h,0FFh, 58h, 25h		; pause | pause | pause | end-of-script
+		db	0F0h, 00h, 00h, 03h, 68h, 21h		; reset text attribute
+		db	0FCh,0FCh, 04h, 07h, 70h, 23h		; ctrl 0xFC | ctrl 0xFC
+		db	 01h,0FDh, 04h, 07h, 70h, 24h		; end-of-section
+		db	 04h,0FDh, 04h, 07h, 78h, 25h		; end-of-section
+		db	 06h,0FEh, 04h, 07h, 78h, 28h		; scroll-text-up
 		db	 06h, 02h, 04h, 07h, 70h, 29h
 		db	 04h, 03h, 04h, 07h, 70h, 2Ah
 		db	 01h, 03h, 04h, 07h, 68h, 2Ch
-		db	0FCh, 04h, 04h, 07h,0FFh, 01h
+		db	0FCh, 04h, 04h, 07h,0FFh, 01h		; ctrl 0xFC | end-of-script
 		db	 08h, 01h, 42h, 65h, 03h, 77h
 		db	 61h, 04h, 72h, 65h, 2Ch, 20h
 		db	 03h, 66h, 6Fh, 04h, 72h, 20h
 		db	 04h, 49h, 20h, 01h, 73h, 68h
 		db	 61h, 03h, 6Ch, 6Ch, 20h, 77h
-		db	 04h, 61h, 6Bh, 03h, 65h,0FFh
+		db	 04h, 61h, 6Bh, 03h, 65h,0FFh		; end-of-script
 		db	 01h, 06h, 03h, 66h, 72h, 6Fh
 		db	 03h, 6Dh, 20h, 02h, 6Dh, 01h
 		db	 79h, 20h, 03h, 73h, 01h, 6Ch
@@ -2411,7 +2411,7 @@ data_108	dw	offset scene_func_30
 		db	 66h, 20h, 03h, 32h, 2Ch, 04h
 		db	 30h, 30h, 30h, 20h, 01h, 79h
 		db	 65h, 04h, 61h, 72h, 03h, 73h
-		db	0FFh, 01h, 02h, 04h, 61h, 02h
+		db	0FFh, 01h, 02h, 04h, 61h, 02h		; end-of-script
 		db	 6Eh, 03h, 64h, 20h, 03h, 6Fh
 		db	 02h, 6Eh, 63h, 65h, 20h, 04h
 		db	 61h, 67h, 61h, 01h, 69h, 6Eh
@@ -2481,15 +2481,15 @@ data_108	dw	offset scene_func_30
 		db	 00h, 00h, 00h, 98h, 99h, 9Ah
 		db	 9Bh, 9Ch, 9Dh
 		db	14 dup (0)
-		db	 9Eh, 9Fh,0A0h,0A1h,0A2h,0A3h
-		db	0A4h,0A5h,0A6h,0A7h,0A8h,0A9h
-		db	 16h, 00h,0AAh,0ABh,0ACh,0ADh
-		db	0AEh,0AFh
+		db	 9Eh, 9Fh,0A0h,0A1h,0A2h,0A3h		; attr-restore | ctrl 0xA1 | attr-restore | ctrl 0xA3
+		db	0A4h,0A5h,0A6h,0A7h,0A8h,0A9h		; ctrl 0xA4 | ctrl 0xA5 | ctrl 0xA6 | ctrl 0xA7 | ctrl 0xA8 | ctrl 0xA9
+		db	 16h, 00h,0AAh,0ABh,0ACh,0ADh		; ctrl 0xAA | ctrl 0xAB | ctrl 0xAC | ctrl 0xAD
+		db	0AEh,0AFh		; ctrl 0xAE | ctrl 0xAF
 		db	14 dup (0)
-		db	0B0h,0B1h,0B2h,0B3h,0B4h,0B5h
-		db	0B6h,0B7h,0B8h, 26h, 26h,0B9h
-		db	0BAh,0BBh,0BCh,0BDh,0BEh,0BFh
-		db	0C0h,0C1h
+		db	0B0h,0B1h,0B2h,0B3h,0B4h,0B5h		; ctrl 0xB0 | ctrl 0xB1 | ctrl 0xB2 | ctrl 0xB3 | ctrl 0xB4 | ctrl 0xB5
+		db	0B6h,0B7h,0B8h, 26h, 26h,0B9h		; ctrl 0xB6 | ctrl 0xB7 | ctrl 0xB8 | ctrl 0xB9
+		db	0BAh,0BBh,0BCh,0BDh,0BEh,0BFh		; ctrl 0xBA | ctrl 0xBB | ctrl 0xBC | ctrl 0xBD | ctrl 0xBE | ctrl 0xBF
+		db	0C0h,0C1h		; ctrl 0xC0 | ctrl 0xC1
 		db	13 dup (0)
 		db	2, 2, 3, 1, 0, 0
 		db	2, 2, 3, 1, 1, 1
