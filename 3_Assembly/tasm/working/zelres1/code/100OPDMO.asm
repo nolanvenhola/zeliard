@@ -1968,6 +1968,11 @@ scene_func_29:
 		db	'Entering the castle, he was quickly escorted to the throne of the grieving King Felishika.'
 		db	0F5h,0F5h,0F5h,0FEh,0EEh,0FDh		; pause | pause | pause | scroll-text-up | speaker: King Felishika (attr >) | end-of-section
 		db	0F5h,0FEh,0FBh,0F7h, 22h, 81h		; pause | scroll-text-up | text-style: color 7 bold | layout-mode 0 (direct write)
+		; Style-encoded speech -- King Felishika
+		; "Duke Garland! You must be the man of destiny of whom the Spirit spoke.
+		;    I beg of you to destroy the demon Jashiin who has cursed my kingdom
+		;    and turned my beloved daughter to stone."
+		; (0x80-0x97 between chars = per-character color-cycle animation)
 		db	 44h, 75h, 6Bh, 65h, 20h, 80h
 		db	 47h, 61h, 72h, 6Ch, 61h, 84h
 		db	 6Eh, 83h, 64h, 21h, 20h, 20h
@@ -2016,6 +2021,9 @@ scene_func_29:
 		db	0F5h,0F5h,0F0h,0FEh,0F7h,0FAh		; pause | pause | reset text attribute | scroll-text-up | layout-mode 0 (direct write) | text-style: color 7 normal
 		db	'Duke Garland knelt before the King. '
 		db	0FBh,0F5h,0F5h,0F5h,0F3h,0EFh		; text-style: color 7 bold | pause | pause | pause | layout-mode 1 | speaker: unknown (attr =)
+		; Style-encoded speech -- Duke Garland
+		; "Your Majesty, I have followed the light of the Spirit to this place."
+		; (0x80-0x97 between chars = per-character color-cycle animation)
 		db	 97h, 22h, 93h, 96h, 59h, 6Fh
 		db	 90h, 75h, 72h, 20h, 4Dh, 61h
 		db	 91h, 6Ah, 65h, 95h, 73h, 74h
@@ -2034,6 +2042,10 @@ scene_func_29:
 		db	 97h, 95h, 70h, 96h, 90h, 6Ch
 		db	 61h, 93h, 63h, 65h, 2Eh, 22h
 		db	 94h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
+		; Style-encoded speech -- Duke Garland
+		; "I know not of this demon, nor what powers he may possess, but if
+		;    there is none else who can defeat him, then I will dedicate my life to this task."
+		; (0x80-0x97 between chars = per-character color-cycle animation)
 		db	 22h, 90h, 49h, 20h, 93h, 6Bh
 		db	 95h, 6Eh, 6Fh, 77h, 94h, 20h
 		db	 93h, 6Eh, 6Fh, 74h, 94h, 20h
@@ -2073,6 +2085,10 @@ scene_func_29:
 		db	 93h, 73h, 98h, 6Bh, 97h, 2Eh
 		db	 96h, 22h, 94h,0F5h,0F5h,0F5h		; pause | pause | pause
 		db	0F5h,0EEh,0FEh,0F3h, 22h, 83h		; pause | speaker: King Felishika (attr >) | scroll-text-up | layout-mode 1
+		; Style-encoded speech -- King Felishika
+		; "For the first time since the sandstorm began, you have brought hope
+		;    into my heart, Duke Garland.  May God go with you on your quest."
+		; (0x80-0x97 between chars = per-character color-cycle animation)
 		db	 46h, 6Fh, 80h, 72h, 20h, 81h
 		db	 74h, 68h, 65h, 20h, 80h, 66h
 		db	 69h, 83h, 72h, 73h, 74h, 20h
@@ -2116,6 +2132,9 @@ scene_func_29:
 		db	'bsurd!"'
 		db	0F5h,0F5h,0FEh,0FDh, 99h,0F5h		; pause | pause | scroll-text-up | end-of-section | pause
 		db	0FEh,0F3h,0FBh,0EFh, 9Ah, 22h		; scroll-text-up | layout-mode 1 | text-style: color 7 bold | speaker: unknown (attr =)
+		; Style-encoded speech -- Jashiin (cont.)
+		; "...And you must be the evil Jashiin!" (end of Jashiin speech)
+		; (0x80-0x97 between chars = per-character color-cycle animation)
 		db	 90h, 41h, 94h, 6Eh, 93h, 64h
 		db	 20h, 93h
 		db	79h
@@ -2123,6 +2142,9 @@ scene_func_29:
 ;���� External Entry into Subroutine ��������������������������������������
 
 scene_func_30:
+		; Style-encoded speech -- Jashiin (cont.)
+		; "...you must be the evil Jashiin!"
+		; (0x80-0x97 between chars = per-character color-cycle animation)
 		db	 6Fh, 75h, 20h, 90h, 6Dh, 75h
 		db	 93h, 73h, 74h, 20h, 92h, 62h
 		db	 65h, 20h, 90h, 74h, 68h, 65h
@@ -2140,6 +2162,10 @@ scene_func_30:
 		db	'"Of course, you have no hope of defeating me."'
 		db	0F5h,0F5h,0F5h,0EFh,0FEh,0F3h		; pause | pause | pause | speaker: unknown (attr =) | scroll-text-up | layout-mode 1
 		db	0FBh, 22h, 9Ah, 90h, 4Dh, 61h		; text-style: color 7 bold
+		; Style-encoded speech -- Duke Garland
+		; "Mark my words, evil one: I will not stop until I have reclaimed the
+		;    nine holy crystals, and sealed you under the earth once again!"
+		; (0x80-0x97 between chars = per-character color-cycle animation)
 		db	 72h, 95h, 6Bh, 20h, 90h, 6Dh
 		db	 92h, 79h, 20h, 90h, 77h, 6Fh
 		db	 72h, 93h, 64h, 73h, 2Ch, 20h
