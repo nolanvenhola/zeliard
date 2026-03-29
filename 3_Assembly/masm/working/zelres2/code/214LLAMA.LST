@@ -1,0 +1,644 @@
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 1
+214LLAMA.asm
+
+
+
+      1
+      2
+      3				     ;==========================================================================
+      4				     ;
+      5				     ;	ENEMY_ORC - Code Module
+      6				     ;
+      7				     ;==========================================================================
+      8
+      9	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     10
+     11				     include  srmacros.inc
+1    12
+1    13				     ; Macros which may	be required for	proper re-assembly
+1    14
+1    15
+1    16
+1    17
+1    18
+1    19				     ;-----------------------------------------------------------------------------
+1    20				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    21				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    22				     ; instruction it uses a near jump or call.
+1    23
+1    24				     calls	     macro   dummy1, dummy2, slocation
+1    25						     db	     9Ah		     ; forced call far instruction
+1    26						     dw	     offset slocation, seg slocation
+1    27				     endm
+1    28
+1    29				     jmps	     macro   dummy1, dummy2, jlocation
+1    30						     db	     0EAh		     ; forced jump far instruction
+1    31						     dw	     offset jlocation, seg jlocation
+1    32				     endm
+1    33
+1    34
+1    35
+1    36
+1    37				     ;-----------------------------------------------------------------------------
+1    38				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    39				     ;	subroutine in the same segment as:
+1    40				     ;
+1    41				     ;		     PUSH    CS
+1    42				     ;		     CALL    near
+1    43				     ;
+1    44				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    45				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    46				     ;	macros are used	to code	the same information.  In other	words, the binary
+1    47				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    48				     ;	are used!  (macro CALLF)
+1    49				     ;
+1    50
+1    51				     callf	     macro   location
+1    52						     push    cs
+1    53						     call    near ptr location
+1    54				     endm
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 2
+214LLAMA.asm
+
+
+
+1    55
+1    56				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    57				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    58
+1    59				     callfx	     macro   location
+1    60						     push    cs
+1    61						     db	     3Eh
+1    62						     call    near ptr location
+1    63				     endm
+1    64
+1    65
+1    66				     ;-----------------------------------------------------------------------------
+1    67				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    68				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    69				     ;	reconstructs a near jump for these cases.
+1    70
+1    71				     jmpn	     macro   location
+1    72						     db	     0E9h
+1    73						     dw	     offset location-$-2
+1    74				     endm
+1    75
+1    76
+1    77
+     78
+     79				     ; Mapped addresses	(auto-fixed from original chunk)
+     80	      =	00FF		     loc_10	     equ     000FFh
+     81
+     82
+     83				     ; The following equates show data references outside the range of the program.
+     84
+     85	      =	068E		     data_13e	     equ     68Eh		     ;*
+     86	      =	2000		     data_14e	     equ     2000h		     ;*
+     87	      =	2002		     data_15e	     equ     2002h		     ;*
+     88	      =	2008		     data_16e	     equ     2008h		     ;*
+     89	      =	2010		     data_17e	     equ     2010h		     ;*
+     90	      =	2012		     data_18e	     equ     2012h		     ;*
+     91	      =	2018		     data_19e	     equ     2018h		     ;*
+     92	      =	2040		     data_20e	     equ     2040h		     ;*
+     93	      =	2044		     data_21e	     equ     2044h		     ;*
+     94	      =	3016		     data_22e	     equ     3016h		     ;*
+     95	      =	6004		     data_23e	     equ     6004h		     ;*
+     96	      =	A078		     data_24e	     equ     0A078h		     ;*
+     97	      =	A089		     data_25e	     equ     0A089h		     ;*
+     98	      =	A0CB		     data_26e	     equ     0A0CBh		     ;*
+     99	      =	A177		     data_27e	     equ     0A177h		     ;*
+    100	      =	A234		     data_28e	     equ     0A234h		     ;*
+    101	      =	A27C		     data_29e	     equ     0A27Ch		     ;*
+    102	      =	A3E4		     data_30e	     equ     0A3E4h		     ;*
+    103	      =	A3E5		     data_31e	     equ     0A3E5h		     ;*
+    104	      =	FF1A		     data_32e	     equ     0FF1Ah		     ;*
+    105	      =	FF2C		     data_33e	     equ     0FF2Ch		     ;*
+    106	      =	FF4C		     data_34e	     equ     0FF4Ch		     ;*
+    107	      =	FF4E		     data_35e	     equ     0FF4Eh		     ;*
+    108	      =	FF4F		     data_36e	     equ     0FF4Fh		     ;*
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 3
+214LLAMA.asm
+
+
+
+    109	      =	FF50		     data_37e	     equ     0FF50h		     ;*
+    110
+    111	0000			     seg_a	     segment byte public
+    112						     assume  cs:seg_a, ds:seg_a
+    113
+    114
+    115						     org     0
+    116
+    117	0000			     zr2_14	     proc    far
+    118
+    119	0000			     start:
+    120	0000  E6 03				     out     3,al		     ; port 3, DMA-1 bas&cnt ch	1
+    121	0002  00 00				     add     [bx+si],al
+    122	0004  04 A0				     add     al,0A0h
+    123	0006  D7				     xlat			     ; al=[al+[bx]] table
+    124	0007  A1 068E				     mov     ax,ds:data_13e
+    125	000A  2C FF				     sub     al,0FFh
+    126	000C  BF 8000				     mov     di,8000h
+    127	000F  BE A299				     mov     si,0A299h
+    128	0012  B0 02				     mov     al,2
+    129	0014  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    130	0019  1E				     push    ds
+    131	001A  2E: 8E 1E	FF2C			     mov     ds,cs:data_33e
+    132	001F  BE 8000				     mov     si,8000h
+    133	0022  B9 0100				     mov     cx,100h
+    134	0025  2E: FF 16	2044			     call    word ptr cs:data_21e
+    135	002A  1F				     pop     ds
+    136	002B  C6 06 FF4E 00			     mov     byte ptr ds:data_35e,0
+    137	0030  C6 06 FF4F 00			     mov     byte ptr ds:data_36e,0
+    138	0035  2E: FF 16	2002			     call    word ptr cs:data_15e
+    139	003A  2E: FF 16	2012			     call    word ptr cs:data_18e
+    140	003F  BE A2A6				     mov     si,0A2A6h
+    141	0042  2E: FF 16	2010			     call    word ptr cs:data_17e
+    142	0047  E8 010C				     call    orc_process_loop
+    143	004A  BB 0D60				     mov     bx,0D60h
+    144	004D  B9 3637				     mov     cx,3637h
+    145	0050  B0 FF				     mov     al,0FFh
+    146	0052  2E: FF 16	2000			     call    word ptr cs:data_14e
+    147	0057  E8 0232				     call    orc_func_5
+    148	005A  89 36 FF4C			     mov     ds:data_34e,si
+    149	005E			     loc_1:
+    150	005E  2E: FF 16	6004			     call    word ptr cs:data_23e
+    151	0063  3C FF				     cmp     al,0FFh
+    152	0065  74 05				     je	     loc_2		     ; Jump if equal
+    153	0067  E8 0007				     call    orc_func_1
+    154	006A  EB F2				     jmp     short loc_1
+    155	006C			     loc_2:
+    156	006C  2E: FF 26	2040			     jmp     word ptr cs:data_20e
+    157
+    158	0071			     zr2_14	     endp
+    159
+    160				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+    161				     ;				    SUBROUTINE
+    162				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 4
+214LLAMA.asm
+
+
+
+    163
+    164	0071			     orc_func_1		     proc    near
+    165	0071  8A D8				     mov     bl,al
+    166	0073  32 FF				     xor     bh,bh		     ; Zero register
+    167	0075  03 DB				     add     bx,bx
+    168	0077  2E: FF A7	A078			     jmp     word ptr cs:data_24e[bx]	     ;*
+    169	007C			     orc_func_1		     endp
+    170
+    171										     ;*	No entry point to code
+    172	007C  E5 A0				     in	     ax,0A0h		     ; port 0A0h ??I/O Non-standard
+    173				     ;*		     and     byte ptr ds:data_25e[bx+si],99h
+    174	007E  82 A0 89 A0 99			     db	      82h,0A0h,	89h,0A0h, 99h	     ;	Fixup -	byte match
+    175	0083  A0 A0CB				     mov     al,ds:data_26e
+    176	0086  C7 06 FF4C A36A			     mov     word ptr ds:data_34e,0A36Ah
+    177	008C  C3				     retn
+    178	008D  C6 06 1A				     db	     0C6h, 06h,	1Ah
+    179	0090  00FF		     data_1	     dw	     offset loc_10	     ; Data table (indexed access)
+    180	0092			     loc_3:
+    181	0092  E8 0146				     call    orc_func_3
+    182	0095  80 3E FF1A FA			     cmp     byte ptr ds:data_32e,0FAh
+    183	009A  72 F6				     jb	     loc_3		     ; Jump if below
+    184	009C  C3				     retn
+    185	009D			     loc_4:
+    186	009D  A1 0090r				     mov     ax,word ptr data_1
+    187	00A0  05 0008				     add     ax,8
+    188	00A3  3B 06 00B2			     cmp     ax,word ptr ds:[0B2h]
+    189	00A7  73 19				     jae     loc_6		     ; Jump if above or	=
+    190	00A9  A3 0090r				     mov     word ptr data_1,ax
+    191	00AC  2E: FF 16	2008			     call    word ptr cs:data_16e
+    192	00B1  C6 06 FF1A 00			     mov     byte ptr ds:data_32e,0
+    193	00B6			     loc_5:
+    194	00B6  E8 0122				     call    orc_func_3
+    195	00B9  80 3E FF1A 14			     cmp     byte ptr ds:data_32e,14h
+    196	00BE  72 F6				     jb	     loc_5		     ; Jump if below
+    197	00C0  EB DB				     jmp     short loc_4
+    198	00C2			     loc_6:
+    199	00C2  A1 00B2				     mov     ax,word ptr ds:[0B2h]
+    200	00C5  A3 0090r				     mov     word ptr data_1,ax
+    201	00C8  2E: FF 16	2008			     call    word ptr cs:data_16e
+    202	00CD  EB 00				     jmp     short $+2		     ; delay for I/O
+    203	00CF  0E				     push    cs
+    204	00D0  07				     pop     es
+    205	00D1  BE 00B4				     mov     si,0B4h
+    206	00D4  BF 00AB				     mov     di,0ABh
+    207	00D7  B9 0007				     mov     cx,7
+    208	00DA  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    209	00DC  F6 06 009D FF			     test    byte ptr ds:[9Dh],0FFh
+    210	00E1  74 05				     jz	     loc_ret_7		     ; Jump if zero
+    211	00E3  2E: FF 16	2018			     call    word ptr cs:data_19e
+    212
+    213	00E8			     loc_ret_7:
+    214	00E8  C3				     retn
+    215	00E9  C6 06 E4 A3 00			     db	     0C6h, 06h,0E4h,0A3h, 00h
+    216	00EE			     loc_8:
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 5
+214LLAMA.asm
+
+
+
+    217	00EE  C6 06 FF1A 00			     mov     byte ptr ds:data_32e,0
+    218	00F3  80 3E A3E4 05			     cmp     byte ptr ds:data_30e,5
+    219	00F8  72 01				     jb	     loc_9		     ; Jump if below
+    220	00FA  C3				     retn
+    221	00FB			     loc_9:
+    222	00FB  A0 A3E4				     mov     al,ds:data_30e
+    223	00FE  B1 06				     mov     cl,6
+    224	0100  F6 E1				     mul     cl			     ; ax = reg	* al
+    225	0102  05 A134				     add     ax,0A134h
+    226	0105  8B F0				     mov     si,ax
+    227	0107  BB 163F				     mov     bx,163Fh
+    228	010A  B9 0003				     mov     cx,3
+    229
+    230	010D			     locloop_11:
+    231	010D  51				     push    cx
+    232	010E  B9 0002				     mov     cx,2
+    233
+    234	0111			     locloop_12:
+    235	0111  51				     push    cx
+    236	0112  53				     push    bx
+    237	0113  AC				     lodsb			     ; String [si] to al
+    238	0114  2E: FF 16	3016			     call    word ptr cs:data_22e
+    239	0119  5B				     pop     bx
+    240	011A  FE C7				     inc     bh
+    241	011C  59				     pop     cx
+    242	011D  E2 F2				     loop    locloop_12		     ; Loop if cx > 0
+    243
+    244	011F  80 EF 02				     sub     bh,2
+    245	0122  80 C3 08				     add     bl,8
+    246	0125  59				     pop     cx
+    247	0126  E2 E5				     loop    locloop_11		     ; Loop if cx > 0
+    248
+    249	0128			     loc_13:
+    250	0128  E8 00B0				     call    orc_func_3
+    251	012B  80 3E FF1A 20			     cmp     byte ptr ds:data_32e,20h	     ; ' '
+    252	0130  72 F6				     jb	     loc_13		     ; Jump if below
+    253	0132  FE 06 A3E4			     inc     byte ptr ds:data_30e
+    254	0136  EB B6				     jmp     short loc_8
+    255	0138  41 42 4D 4E 57 58	41+		     db	     'ABMNWXABklmnABopqrsBtuvwxyz{|w'
+    256	      42 6B 6C 6D 6E 41	42+
+    257	      6F 70 71 72 73 42	74+
+    258	      75 76 77 78 79 7A	7B+
+    259	      7C 77
+    260
+    261				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+    262				     ;				    SUBROUTINE
+    263				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
+    264
+    265	0156			     orc_process_loop		     proc    near
+    266	0156  BE A177				     mov     si,data_27e
+    267	0159  BB 0E17				     mov     bx,0E17h
+    268	015C  B9 0008				     mov     cx,8
+    269
+    270	015F			     locloop_14:
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 6
+214LLAMA.asm
+
+
+
+    271	015F  51				     push    cx
+    272	0160  B9 000C				     mov     cx,0Ch
+    273
+    274	0163			     locloop_15:
+    275	0163  51				     push    cx
+    276	0164  53				     push    bx
+    277	0165  AC				     lodsb			     ; String [si] to al
+    278	0166  2E: FF 16	3016			     call    word ptr cs:data_22e
+    279	016B  5B				     pop     bx
+    280	016C  FE C7				     inc     bh
+    281	016E  59				     pop     cx
+    282	016F  E2 F2				     loop    locloop_15		     ; Loop if cx > 0
+    283
+    284	0171  80 EF 0C				     sub     bh,0Ch
+    285	0174  80 C3 08				     add     bl,8
+    286	0177  59				     pop     cx
+    287	0178  E2 E5				     loop    locloop_14		     ; Loop if cx > 0
+    288
+    289	017A  C3				     retn
+    290	017B			     orc_process_loop		     endp
+    291
+    292	017B  00 01 02 03 04 05			     db	      00h, 01h,	02h, 03h, 04h, 05h
+    293	0181  06 07 08 09 0A 0B			     db	      06h, 07h,	08h, 09h, 0Ah, 0Bh
+    294	0187  0C 0D 0E 0F 10 11			     db	      0Ch, 0Dh,	0Eh, 0Fh, 10h, 11h
+    295	018D  12 10 13 14 15 16			     db	      12h, 10h,	13h, 14h, 15h, 16h
+    296	0193  17 18 19 1A 1B 1C			     db	      17h, 18h,	19h, 1Ah, 1Bh, 1Ch
+    297	0199  1D 1E 1F				     db	      1Dh, 1Eh,	1Fh
+    298	019C  20 21 22 23 24			     db	     ' !"#$'
+    299	01A1  25 26 26 27 28 26	29+		     db	     '%&&', 27h, '(&)*+,-./0123456789:'
+    300	      2A 2B 2C 2D 2E 2F	30+
+    301	      31 32 33 34 35 36	37+
+    302	      38 39 3A
+    303	01B9  3B				     db	     ';'
+    304	01BA  3C 3D 3E 3F			     db	     '<=>?'
+    305	01BE  40 41 42 43 44 45	46+		     db	     '@ABCDEFGHIJKLMNOPQRSTSUVSWXYZ'
+    306	      47 48 49 4A 4B 4C	4D+
+    307	      4E 4F 50 51 52 53	54+
+    308	      53 55 56 53 57 58	59+
+    309	      5A
+    310
+    311				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+    312				     ;				    SUBROUTINE
+    313				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
+    314
+    315	01DB			     orc_func_3		     proc    near
+    316	01DB  83 3E FF50 20			     cmp     word ptr ds:data_37e,20h
+    317	01E0  73 01				     jae     loc_16		     ; Jump if above or	=
+    318	01E2  C3				     retn
+    319	01E3			     loc_16:
+    320	01E3  C7 06 FF50 0000			     mov     word ptr ds:data_37e,0
+    321	01E9  FE 06 A3E5			     inc     byte ptr ds:data_31e
+    322	01ED  80 3E A3E5 03			     cmp     byte ptr ds:data_31e,3
+    323	01F2  75 05				     jne     loc_17		     ; Jump if not equal
+    324	01F4  C6 06 A3E5 00			     mov     byte ptr ds:data_31e,0
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 7
+214LLAMA.asm
+
+
+
+    325	01F9			     loc_17:
+    326	01F9  E8 0002				     call    orc_func_4
+    327	01FC  EB 4C				     jmp     short loc_21
+    328
+    329				     ;ﬂﬂﬂﬂ External Entry into Subroutine ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+    330
+    331	01FE			     orc_func_4:
+    332	01FE  8A 1E A3E5			     mov     bl,ds:data_31e
+    333	0202  32 FF				     xor     bh,bh		     ; Zero register
+    334	0204  03 DB				     add     bx,bx
+    335	0206  8B C3				     mov     ax,bx
+    336	0208  03 DB				     add     bx,bx
+    337	020A  03 D8				     add     bx,ax
+    338	020C  8B F3				     mov     si,bx
+    339	020E  81 C6 A234			     add     si,data_28e
+    340	0212  BB 1037				     mov     bx,1037h
+    341	0215  B9 0002				     mov     cx,2
+    342
+    343	0218			     locloop_18:
+    344	0218  51				     push    cx
+    345	0219  B9 0003				     mov     cx,3
+    346
+    347	021C			     locloop_19:
+    348	021C  51				     push    cx
+    349	021D  53				     push    bx
+    350	021E  AC				     lodsb			     ; String [si] to al
+    351	021F  3C FF				     cmp     al,0FFh
+    352	0221  74 05				     je	     loc_20		     ; Jump if equal
+    353	0223  2E: FF 16	3016			     call    word ptr cs:data_22e
+    354	0228			     loc_20:
+    355	0228  5B				     pop     bx
+    356	0229  FE C7				     inc     bh
+    357	022B  59				     pop     cx
+    358	022C  E2 EE				     loop    locloop_19		     ; Loop if cx > 0
+    359
+    360	022E  80 EF 03				     sub     bh,3
+    361	0231  80 C3 08				     add     bl,8
+    362	0234  59				     pop     cx
+    363	0235  E2 E1				     loop    locloop_18		     ; Loop if cx > 0
+    364
+    365	0237  C3				     retn
+    366										     ;*	No entry point to code
+    367	0238  FF 30				     push    word ptr [bx+si]
+    368	023A  31 3B				     xor     [bp+di],di
+    369	023C  3C 3D				     cmp     al,3Dh		     ; '='
+    370	023E  FF 5B 5C				     call    dword ptr [bp+di+5Ch]   ;*
+    371	0241  5D				     pop     bp
+    372	0242  5E				     pop     si
+    373	0243  5F				     pop     di
+    374	0244  FF 60 61				     jmp     word ptr [bx+si+61h]    ;*
+    375	0247  62 63 64				     db	      62h, 63h,	64h
+    376	024A			     loc_21:
+    377	024A  8A 1E A3E5			     mov     bl,ds:data_31e
+    378	024E  32 FF				     xor     bh,bh		     ; Zero register
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 8
+214LLAMA.asm
+
+
+
+    379	0250  03 DB				     add     bx,bx
+    380	0252  03 DB				     add     bx,bx
+    381	0254  8B F3				     mov     si,bx
+    382	0256  81 C6 A27C			     add     si,data_29e
+    383	025A  BB 1537				     mov     bx,1537h
+    384	025D  B9 0002				     mov     cx,2
+    385
+    386	0260			     locloop_22:
+    387	0260  51				     push    cx
+    388	0261  B9 0002				     mov     cx,2
+    389
+    390	0264			     locloop_23:
+    391	0264  51				     push    cx
+    392	0265  53				     push    bx
+    393	0266  AC				     lodsb			     ; String [si] to al
+    394	0267  3C FF				     cmp     al,0FFh
+    395	0269  74 05				     je	     loc_24		     ; Jump if equal
+    396	026B  2E: FF 16	3016			     call    word ptr cs:data_22e
+    397	0270			     loc_24:
+    398	0270  5B				     pop     bx
+    399	0271  FE C7				     inc     bh
+    400	0273  59				     pop     cx
+    401	0274  E2 EE				     loop    locloop_23		     ; Loop if cx > 0
+    402
+    403	0276  80 EF 02				     sub     bh,2
+    404	0279  80 C3 08				     add     bl,8
+    405	027C  59				     pop     cx
+    406	027D  E2 E1				     loop    locloop_22		     ; Loop if cx > 0
+    407
+    408	027F  C3				     retn
+    409	0280			     orc_func_3		     endp
+    410
+    411										     ;*	No entry point to code
+    412	0280  34 35				     xor     al,35h		     ; '5'
+    413	0282  40				     inc     ax
+    414	0283  FF 65 66				     jmp     word ptr [di+66h]	     ;*
+    415	0286  67 FF 68 69 6A FF			     db	      67h,0FFh,	68h, 69h, 6Ah,0FFh
+    416
+    417				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+    418				     ;				    SUBROUTINE
+    419				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
+    420
+    421	028C			     orc_func_5		     proc    near
+    422	028C  A1 0090r				     mov     ax,word ptr data_1
+    423	028F  3B 06 00B2			     cmp     ax,word ptr ds:[0B2h]
+    424	0293  BE A2B4				     mov     si,0A2B4h
+    425	0296  75 01				     jnz     loc_25		     ; Jump if not zero
+    426	0298  C3				     retn
+    427	0299			     loc_25:
+    428	0299  BE A2F2				     mov     si,0A2F2h
+    429	029C  C3				     retn
+    430	029D			     orc_func_5		     endp
+    431
+    432										     ;*	No entry point to code
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 9
+214LLAMA.asm
+
+
+
+    433	029D  01 17				     add     [bx],dx
+    434	029F  43				     inc     bx
+    435	02A0  48				     dec     ax
+    436	02A1  55				     push    bp
+    437	02A2  52				     push    dx
+    438	02A3  43				     inc     bx
+    439	02A4  48				     dec     ax
+    440	02A5  2E 47 52 50 00 17			     db	      2Eh, 47h,	52h, 50h, 00h, 17h
+    441	02AB  AF 02				     db	     0AFh, 02h
+    442	02AD  0A				     db	     0Ah
+    443	02AE  54 68 65 20 43 68	75+		     db	     'The Church', 0Ch,	'Brave Knight,'
+    444	      72 63 68 0C 42 72	61+
+    445	      76 65 20 4B 6E 69	67+
+    446	      68 74 2C
+    447	02C6  20 77 68 65 6E 65	76+		     db	     ' whenever	you\re tired come to t'
+    448	      65 72 20 79 6F 75	5C+
+    449	      72 65 20 74 69 72	65+
+    450	      64 20 63 6F 6D 65	20+
+    451	      74 6F 20 74
+    452	02E6  68 69 73 20 63 68	75+		     db	     'his church./'
+    453	      72 63 68 2E 2F
+    454	02F2  FF 04 FF 01			     db	     0FFh, 04h,0FFh, 01h
+    455	02F6  0C 42 72 61 76 65	20+		     db	     0Ch, 'Brave Knight, whenever you\'
+    456	      4B 6E 69 67 68 74	2C+
+    457	      20 77 68 65 6E 65	76+
+    458	      65 72 20 79 6F 75	5C
+    459	0312  72 65 20 77 65 61	72+		     db	     're weary,	come here to rest. '
+    460	      79 2C 20 63 6F 6D	65+
+    461	      20 68 65 72 65 20	74+
+    462	      6F 20 72 65 73 74	2E+
+    463	      20
+    464	032F  FF 02 FF 02			     db	     0FFh, 02h,0FFh, 02h
+    465	0333  54 68 65 20 48 6F	6C+		     db	     'The Holy Spirit will help	you to'
+    466	      79 20 53 70 69 72	69+
+    467	      74 20 77 69 6C 6C	20+
+    468	      68 65 6C 70 20 79	6F+
+    469	      75 20 74 6F
+    470	0353  20 72 65 67 61 69	6E+		     db	     ' regain your strength.'
+    471	      20 79 6F 75 72 20	73+
+    472	      74 72 65 6E 67 74	68+
+    473	      2E
+    474	0369  FF 03 0D FF 01			     db	     0FFh, 03h,	0Dh,0FFh, 01h
+    475	036E  42 72 61 76 65 20	4B+		     db	     'Brave Knight, you	look fatigued '
+    476	      6E 69 67 68 74 2C	20+
+    477	      79 6F 75 20 6C 6F	6F+
+    478	      6B 20 66 61 74 69	67+
+    479	      75 65 64 20
+    480	038E  66 72 6F 6D 20 62	61+		     db	     'from battle. Why not rest	awhile'
+    481	      74 74 6C 65 2E 20	57+
+    482	      68 79 20 6E 6F 74	20+
+    483	      72 65 73 74 20 61	77+
+    484	      68 69 6C 65
+    485	03AE  20 61 6E 64 20 6C	65+		     db	     ' and let the Spirit heal you. '
+    486	      74 20 74 68 65 20	53+
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 10
+214LLAMA.asm
+
+
+
+    487	      70 69 72 69 74 20	68+
+    488	      65 61 6C 20 79 6F	75+
+    489	      2E 20
+    490	03CC  FF 02				     db	     0FFh, 02h
+    491	03CE  2F 4D 61 79 20 47	6F+		     db	     '/May God go with you.'
+    492	      64 20 67 6F 20 77	69+
+    493	      74 68 20 79 6F 75	2E
+    494	03E3  FF 00 11 FF FF 00			     db	     0FFh, 00h,	11h,0FFh,0FFh, 00h
+    495	03E9  00				     db	      00h
+    496
+    497	03EA			     seg_a	     ends
+    498
+    499
+    500
+    501						     end     start
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 11
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/24/26"
+??FILENAME			  Text	 "214LLAMA"
+??TIME				  Text	 "00:11:19"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 214LLAMA
+@WORDSIZE			  Text	 2
+DATA_1				  Word	 SEG_A:0090
+DATA_13E			  Number 068E
+DATA_14E			  Number 2000
+DATA_15E			  Number 2002
+DATA_16E			  Number 2008
+DATA_17E			  Number 2010
+DATA_18E			  Number 2012
+DATA_19E			  Number 2018
+DATA_20E			  Number 2040
+DATA_21E			  Number 2044
+DATA_22E			  Number 3016
+DATA_23E			  Number 6004
+DATA_24E			  Number A078
+DATA_25E			  Number A089
+DATA_26E			  Number A0CB
+DATA_27E			  Number A177
+DATA_28E			  Number A234
+DATA_29E			  Number A27C
+DATA_30E			  Number A3E4
+DATA_31E			  Number A3E5
+DATA_32E			  Number FF1A
+DATA_33E			  Number FF2C
+DATA_34E			  Number FF4C
+DATA_35E			  Number FF4E
+DATA_36E			  Number FF4F
+DATA_37E			  Number FF50
+LOCLOOP_11			  Near	 SEG_A:010D
+LOCLOOP_12			  Near	 SEG_A:0111
+LOCLOOP_14			  Near	 SEG_A:015F
+LOCLOOP_15			  Near	 SEG_A:0163
+LOCLOOP_18			  Near	 SEG_A:0218
+LOCLOOP_19			  Near	 SEG_A:021C
+LOCLOOP_22			  Near	 SEG_A:0260
+LOCLOOP_23			  Near	 SEG_A:0264
+LOC_1				  Near	 SEG_A:005E
+LOC_10				  Number 00FF
+LOC_13				  Near	 SEG_A:0128
+LOC_16				  Near	 SEG_A:01E3
+LOC_17				  Near	 SEG_A:01F9
+LOC_2				  Near	 SEG_A:006C
+LOC_20				  Near	 SEG_A:0228
+LOC_21				  Near	 SEG_A:024A
+LOC_24				  Near	 SEG_A:0270
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:19	    Page 12
+Symbol Table
+
+
+
+LOC_25				  Near	 SEG_A:0299
+LOC_3				  Near	 SEG_A:0092
+LOC_4				  Near	 SEG_A:009D
+LOC_5				  Near	 SEG_A:00B6
+LOC_6				  Near	 SEG_A:00C2
+LOC_8				  Near	 SEG_A:00EE
+LOC_9				  Near	 SEG_A:00FB
+LOC_RET_7			  Near	 SEG_A:00E8
+ORC_FUNC_1			  Near	 SEG_A:0071
+ORC_FUNC_3			  Near	 SEG_A:01DB
+ORC_FUNC_4			  Near	 SEG_A:01FE
+ORC_FUNC_5			  Near	 SEG_A:028C
+ORC_PROCESS_LOOP		  Near	 SEG_A:0156
+START				  Near	 SEG_A:0000
+TARGET				  Number 5432
+ZR2_14				  Far	 SEG_A:0000
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  03EA Byte	  Public
+

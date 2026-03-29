@@ -1,0 +1,2516 @@
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 1
+stick.asm
+
+
+
+      1
+      2
+      3				     ;==========================================================================
+      4				     ;
+      5				     ;	STICK.BIN - Joystick & Keyboard	Input Driver
+      6				     ;
+      7				     ;	Interrupt-driven multi-input driver supporting:
+      8				     ;	- Keyboard scanning with remappable scan codes
+      9				     ;	- Joystick support with	dead zone calibration (port 201h)
+     10				     ;	- Pause/menu state management
+     11				     ;	- Save/load game file I/O with compression
+     12				     ;	- Game state machine (pause, exit dialogs)
+     13				     ;
+     14				     ;	Entry Points (jump table at offset 0):
+     15				     ;	  +0x00	 Keyboard IRQ handler (INT 09h replacement)
+     16				     ;	  +0x03	 Joystick/input	polling	(called	from INT 08h timer)
+     17				     ;	  +0x06	 Game state handler (pause/exit	dialogs)
+     18				     ;	  +0x09	 Input state query (returns current button/direction)
+     19				     ;
+     20				     ;	Code type: zero	start
+     21				     ;	Created:   16-Feb-26
+     22				     ;	Passes:	   9	      Analysis Options on: none
+     23				     ;
+     24				     ;==========================================================================
+     25
+     26	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     27
+     28				     include  srmacros.inc
+1    29
+1    30				     ; Macros which may	be required for	proper re-assembly
+1    31
+1    32
+1    33
+1    34
+1    35
+1    36				     ;-----------------------------------------------------------------------------
+1    37				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    38				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    39				     ; instruction it uses a near jump or call.
+1    40
+1    41				     calls	     macro   dummy1, dummy2, slocation
+1    42						     db	     9Ah		     ; forced call far instruction
+1    43						     dw	     offset slocation, seg slocation
+1    44				     endm
+1    45
+1    46				     jmps	     macro   dummy1, dummy2, jlocation
+1    47						     db	     0EAh		     ; forced jump far instruction
+1    48						     dw	     offset jlocation, seg jlocation
+1    49				     endm
+1    50
+1    51
+1    52
+1    53
+1    54				     ;-----------------------------------------------------------------------------
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 2
+stick.asm
+
+
+
+1    55				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    56				     ;	subroutine in the same segment as:
+1    57				     ;
+1    58				     ;		     PUSH    CS
+1    59				     ;		     CALL    near
+1    60				     ;
+1    61				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    62				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    63				     ;	macros are used	to code	the same information.  In other	words, the binary
+1    64				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    65				     ;	are used!  (macro CALLF)
+1    66				     ;
+1    67
+1    68				     callf	     macro   location
+1    69						     push    cs
+1    70						     call    near ptr location
+1    71				     endm
+1    72
+1    73				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    74				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    75
+1    76				     callfx	     macro   location
+1    77						     push    cs
+1    78						     db	     3Eh
+1    79						     call    near ptr location
+1    80				     endm
+1    81
+1    82
+1    83				     ;-----------------------------------------------------------------------------
+1    84				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    85				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    86				     ;	reconstructs a near jump for these cases.
+1    87
+1    88				     jmpn	     macro   location
+1    89						     db	     0E9h
+1    90						     dw	     offset location-$-2
+1    91				     endm
+1    92
+1    93
+1    94
+     95
+     96
+     97				     ; External	references - graphics/screen functions in loaded segments
+     98
+     99	      =	2000		     gfx_screen_base equ     2000h		     ; Screen buffer base
+    100	      =	2022		     gfx_fn_setup    equ     2022h		     ; Screen setup function
+    101	      =	2026		     gfx_fn_draw     equ     2026h		     ; Screen draw function
+    102	      =	2028		     gfx_fn_restore  equ     2028h		     ; Screen restore function
+    103	      =	202A		     gfx_fn_clear    equ     202Ah		     ; Screen clear function
+    104	      =	444D		     save_file_magic equ     444Dh		     ; Save file magic number 'DM'
+    105
+    106				     ; Game state variables (0xFF00+ shared with zeliad.exe and	game.bin)
+    107
+    108	      =	FF00		     gvar_chunk_load_fn	equ  0FF00h		     ; Chunk loader function
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 3
+stick.asm
+
+
+
+    109	      =	FF04		     gvar_old_int08  equ     0FF04h		     ; Original	INT 08h	vector
+    110	      =	FF09		     gvar_key_released equ   0FF09h		     ; Key released flag
+    111	      =	FF0A		     gvar_last_key   equ     0FF0Ah		     ; Last key	scancode
+    112	      =	FF0C		     gvar_input_fn   equ     0FF0Ch		     ; Input handler function ptr
+    113	      =	FF10		     gvar_gfx_fn     equ     0FF10h		     ; Graphics	handler	function ptr
+    114	      =	FF16		     gvar_timer_flag equ     0FF16h		     ; Timer flag
+    115	      =	FF17		     gvar_timer_count equ    0FF17h		     ; Timer counter
+    116	      =	FF18		     gvar_skip_input equ     0FF18h		     ; Input skip flag
+    117	      =	FF1A		     gvar_frame_timer equ    0FF1Ah		     ; Frame timer
+    118	      =	FF1B		     gvar_anim_timer equ     0FF1Bh		     ; Animation timer
+    119	      =	FF1D		     gvar_skip_flag  equ     0FF1Dh		     ; Skip/interrupt flag
+    120	      =	FF1E		     gvar_state_a    equ     0FF1Eh		     ; Game state A
+    121	      =	FF1F		     gvar_state_b    equ     0FF1Fh		     ; Game state B
+    122	      =	FF27		     gvar_sound_flag equ     0FF27h		     ; Sound enabled flag
+    123	      =	FF28		     gvar_key_pressed equ    0FF28h		     ; Key pressed scancode
+    124	      =	FF29		     gvar_enter_key  equ     0FF29h		     ; Enter key scancode (0x0D)
+    125	      =	FF33		     gvar_save_name  equ     0FF33h		     ; Save filename (8	chars)
+    126	      =	FF3B		     gvar_music_state equ    0FF3Bh		     ; Music state flag
+    127	      =	FF48		     gvar_joy_cal_x  equ     0FF48h		     ; Joystick	X calibration
+    128	      =	FF49		     gvar_joy_cal_y  equ     0FF49h		     ; Joystick	Y calibration
+    129	      =	FF50		     gvar_frame_count equ    0FF50h		     ; Frame counter
+    130	      =	FF74		     gvar_volume_a   equ     0FF74h		     ; Volume A
+    131	      =	FF75		     gvar_volume_b   equ     0FF75h		     ; Volume B
+    132	      =	FF78		     gvar_old_int09  equ     0FF78h		     ; Original	INT 09h	vector
+    133	      =	FF79		     gvar_old_int09_seg	equ  0FF79h		     ; Original	INT 09h	segment
+    134	      =	B000		     herc_video_seg  equ     0B000h		     ; Hercules	video segment
+    135	      =	0000		     zero_offset     equ     0			     ; Zero constant
+    136	      =	0E34		     dialog_text_ofs equ     0E34h		     ; Dialog text offset
+    137
+    138				     ; Game state / segment addresses referenced by Sourcer auto-names
+    139	      =	2000		     data_51e	     equ     02000h
+    140	      =	2022		     data_52e	     equ     02022h
+    141	      =	2026		     data_53e	     equ     02026h
+    142	      =	2028		     data_54e	     equ     02028h
+    143	      =	202A		     data_55e	     equ     0202Ah
+    144	      =	444D		     data_56e	     equ     0444Dh
+    145	      =	FF00		     data_57e	     equ     0FF00h
+    146	      =	FF04		     data_58e	     equ     0FF04h
+    147	      =	FF09		     data_59e	     equ     0FF09h
+    148	      =	FF0A		     data_60e	     equ     0FF0Ah
+    149	      =	FF0C		     data_61e	     equ     0FF0Ch
+    150	      =	FF10		     data_62e	     equ     0FF10h
+    151	      =	FF16		     data_63e	     equ     0FF16h
+    152	      =	FF17		     data_64e	     equ     0FF17h
+    153	      =	FF18		     data_65e	     equ     0FF18h
+    154	      =	FF1A		     data_66e	     equ     0FF1Ah
+    155	      =	FF1B		     data_67e	     equ     0FF1Bh
+    156	      =	FF1D		     data_68e	     equ     0FF1Dh
+    157	      =	FF1E		     data_69e	     equ     0FF1Eh
+    158	      =	FF1F		     data_70e	     equ     0FF1Fh
+    159	      =	FF27		     data_72e	     equ     0FF27h
+    160	      =	FF28		     data_73e	     equ     0FF28h
+    161	      =	FF29		     data_74e	     equ     0FF29h
+    162	      =	FF33		     data_75e	     equ     0FF33h
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 4
+stick.asm
+
+
+
+    163	      =	FF3B		     data_76e	     equ     0FF3Bh
+    164	      =	FF48		     data_77e	     equ     0FF48h
+    165	      =	FF49		     data_78e	     equ     0FF49h
+    166	      =	FF50		     data_79e	     equ     0FF50h
+    167	      =	FF74		     data_80e	     equ     0FF74h
+    168	      =	FF75		     data_81e	     equ     0FF75h
+    169	      =	FF78		     data_82e	     equ     0FF78h
+    170	      =	FF79		     data_83e	     equ     0FF79h
+    171	      =	B000		     data_84e	     equ     0B000h
+    172	      =	0000		     data_85e	     equ     00000h
+    173	      =	0E34		     data_86e	     equ     00E34h
+    174
+    175	0000			     seg_a	     segment byte public
+    176						     assume  cs:seg_a, ds:seg_a
+    177
+    178
+    179						     org     0
+    180
+    181	0000			     stick	     proc    far
+    182
+    183	0000			     start:
+    184	0000  E9 01C2				     jmp     loc_24
+    185	0003  E9 014A				     jmp     loc_20
+    186	0006  E9 0E0F				     jmp     loc_136
+    187	0009  E9 04F1				     jmp     loc_51
+    188										     ;*	No entry point to code
+    189	000C  84 0A				     test    cl,[bp+si]
+    190	000E  17				     pop     ss
+    191				     ;*		     pop     cs			     ; Dangerous-8088 only
+    192	000F  0F				     db	     0Fh		     ;	Fixup -	byte match
+    193	0010  AC				     lodsb			     ; String [si] to al
+    194	0011  06				     push    es
+    195	0012  23 07				     and     ax,[bx]
+    196	0014  B6 07				     mov     dh,7
+    197	0016  81 08 08EF			     or	     word ptr [bx+si],8EFh
+    198	001A  18 09				     sbb     [bx+di],cl
+    199	001C  D6 09 2D 09 9E 08			     db	     0D6h, 09h,	2Dh, 09h, 9Eh, 08h
+    200
+    201	0022			     stick	     endp
+    202
+    203				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    204				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    205				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    206				     ;				    SUBROUTINE
+    207				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    208				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    209				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    210
+    211	0022			     handle_pause_key		     proc    near
+    212	0022  2E: F6 06	02BE FF			     test    byte ptr cs:[2BEh],0FFh
+    213	0028  74 16				     jz	     loc_1		     ; Jump if zero
+    214	002A  2E: F6 06	FF16 01			     test    byte ptr cs:data_63e,1
+    215	0030  74 1C				     jz	     loc_2		     ; Jump if zero
+    216	0032  2E: C6 06	02BE 00			     mov     byte ptr cs:[2BEh],0
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 5
+stick.asm
+
+
+
+    217	0038  2E: C6 06	FF1D FF			     mov     byte ptr cs:data_68e,0FFh
+    218	003E  EB 0E				     jmp     short loc_2
+    219	0040			     loc_1:
+    220	0040  2E: F6 06	FF16 01			     test    byte ptr cs:data_63e,1
+    221	0046  75 06				     jnz     loc_2		     ; Jump if not zero
+    222	0048  2E: C6 06	02BE FF			     mov     byte ptr cs:[2BEh],0FFh
+    223	004E			     loc_2:
+    224	004E  2E: F6 06	02BF FF			     test    byte ptr cs:[2BFh],0FFh
+    225	0054  74 16				     jz	     loc_4		     ; Jump if zero
+    226	0056  2E: F6 06	FF16 02			     test    byte ptr cs:data_63e,2
+    227	005C  75 01				     jnz     loc_3		     ; Jump if not zero
+    228	005E  C3				     retn
+    229	005F			     loc_3:
+    230	005F  2E: C6 06	02BF 00			     mov     byte ptr cs:[2BFh],0
+    231	0065  2E: C6 06	FF1E FF			     mov     byte ptr cs:data_69e,0FFh
+    232	006B  C3				     retn
+    233	006C			     loc_4:
+    234	006C  2E: F6 06	FF16 02			     test    byte ptr cs:data_63e,2
+    235	0072  74 01				     jz	     loc_5		     ; Jump if zero
+    236	0074  C3				     retn
+    237	0075			     loc_5:
+    238	0075  2E: C6 06	02BF FF			     mov     byte ptr cs:[2BFh],0FFh
+    239	007B  C3				     retn
+    240	007C			     handle_pause_key		     endp
+    241
+    242
+    243				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    244				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    245				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    246				     ;				    SUBROUTINE
+    247				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    248				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    249				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    250
+    251	007C			     poll_joystick_buttons	     proc    near
+    252	007C  2E: F6 06	FF3B FF			     test    byte ptr cs:data_76e,0FFh
+    253	0082  75 01				     jnz     loc_6		     ; Jump if not zero
+    254	0084  C3				     retn
+    255	0085			     loc_6:
+    256	0085  2E: F6 06	FF0A FF			     test    byte ptr cs:data_60e,0FFh
+    257	008B  75 01				     jnz     loc_7		     ; Jump if not zero
+    258	008D  C3				     retn
+    259	008E			     loc_7:
+    260	008E  BA 0201				     mov     dx,201h
+    261	0091  EC				     in	     al,dx		     ; port 201h, start	game 1-shots
+    262	0092  E8 0002				     call    decode_joystick_bits
+    263	0095  EB 26				     jmp     short loc_11
+    264
+    265				     ;ï¿½ï¿½ï¿½ï¿½ External Entry into Subroutine						   +
+    266				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+    267				     ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    268
+    269	0097			     decode_joystick_bits:
+    270	0097  2E: F6 06	02C0 FF			     test    byte ptr cs:[2C0h],0FFh
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 6
+stick.asm
+
+
+
+    271	009D  74 12				     jz	     loc_9		     ; Jump if zero
+    272	009F  A8 10				     test    al,10h
+    273	00A1  74 01				     jz	     loc_8		     ; Jump if zero
+    274	00A3  C3				     retn
+    275	00A4			     loc_8:
+    276	00A4  2E: C6 06	02C0 00			     mov     byte ptr cs:[2C0h],0
+    277	00AA  2E: C6 06	FF1D FF			     mov     byte ptr cs:data_68e,0FFh
+    278	00B0  C3				     retn
+    279	00B1			     loc_9:
+    280	00B1  A8 10				     test    al,10h
+    281	00B3  75 01				     jnz     loc_10		     ; Jump if not zero
+    282	00B5  C3				     retn
+    283	00B6			     loc_10:
+    284	00B6  2E: C6 06	02C0 FF			     mov     byte ptr cs:[2C0h],0FFh
+    285	00BC  C3				     retn
+    286	00BD			     loc_11:
+    287	00BD  2E: F6 06	02C1 FF			     test    byte ptr cs:[2C1h],0FFh
+    288	00C3  74 12				     jz	     loc_13		     ; Jump if zero
+    289	00C5  A8 20				     test    al,20h		     ; ' '
+    290	00C7  74 01				     jz	     loc_12		     ; Jump if zero
+    291	00C9  C3				     retn
+    292	00CA			     loc_12:
+    293	00CA  2E: C6 06	02C1 00			     mov     byte ptr cs:[2C1h],0
+    294	00D0  2E: C6 06	FF1E FF			     mov     byte ptr cs:data_69e,0FFh
+    295	00D6  C3				     retn
+    296	00D7			     loc_13:
+    297	00D7  A8 20				     test    al,20h		     ; ' '
+    298	00D9  75 01				     jnz     loc_14		     ; Jump if not zero
+    299	00DB  C3				     retn
+    300	00DC			     loc_14:
+    301	00DC  2E: C6 06	02C1 FF			     mov     byte ptr cs:[2C1h],0FFh
+    302	00E2  C3				     retn
+    303	00E3			     poll_joystick_buttons	     endp
+    304
+    305
+    306				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    307				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    308				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    309				     ;				    SUBROUTINE
+    310				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    311				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    312				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    313
+    314	00E3			     handle_special_keys	     proc    near
+    315	00E3  2E: F6 06	02C2 FF			     test    byte ptr cs:[2C2h],0FFh
+    316	00E9  74 21				     jz	     loc_15		     ; Jump if zero
+    317	00EB  2E: 81 3E	FF18 1000		     cmp     word ptr cs:data_65e,1000h
+    318	00F2  75 27				     jne     loc_16		     ; Jump if not equal
+    319	00F4  2E: C6 06	FF75 01			     mov     byte ptr cs:data_81e,1
+    320	00FA  2E: C6 06	02C2 00			     mov     byte ptr cs:[2C2h],0
+    321	0100  2E: 8A 0E	FF28			     mov     cl,cs:data_73e
+    322	0105  B8 0002				     mov     ax,2
+    323	0108  CD 60				     int     60h		     ; ??INT Non-standard interrupt
+    324	010A  EB 0F				     jmp     short loc_16
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 7
+stick.asm
+
+
+
+    325	010C			     loc_15:
+    326	010C  2E: 81 3E	FF18 1000		     cmp     word ptr cs:data_65e,1000h
+    327	0113  74 06				     je	     loc_16		     ; Jump if equal
+    328	0115  2E: C6 06	02C2 FF			     mov     byte ptr cs:[2C2h],0FFh
+    329	011B			     loc_16:
+    330	011B  2E: F6 06	02C3 FF			     test    byte ptr cs:[2C3h],0FFh
+    331	0121  74 1C				     jz	     loc_18		     ; Jump if zero
+    332	0123  2E: 81 3E	FF18 2000		     cmp     word ptr cs:data_65e,2000h
+    333	012A  74 01				     je	     loc_17		     ; Jump if equal
+    334	012C  C3				     retn
+    335	012D			     loc_17:
+    336	012D  2E: C6 06	02C3 00			     mov     byte ptr cs:[2C3h],0
+    337	0133  2E: F6 16	FF27			     not     byte ptr cs:data_72e
+    338	0138  2E: C6 06	FF75 01			     mov     byte ptr cs:data_81e,1
+    339	013E  C3				     retn
+    340	013F			     loc_18:
+    341	013F  2E: 81 3E	FF18 2000		     cmp     word ptr cs:data_65e,2000h
+    342	0146  75 01				     jne     loc_19		     ; Jump if not equal
+    343	0148  C3				     retn
+    344	0149			     loc_19:
+    345	0149  2E: C6 06	02C3 FF			     mov     byte ptr cs:[2C3h],0FFh
+    346	014F  C3				     retn
+    347	0150			     handle_special_keys	     endp
+    348
+    349	0150			     loc_20:
+    350	0150  50				     push    ax
+    351	0151  53				     push    bx
+    352	0152  51				     push    cx
+    353	0153  52				     push    dx
+    354	0154  57				     push    di
+    355	0155  56				     push    si
+    356	0156  55				     push    bp
+    357	0157  1E				     push    ds
+    358	0158  06				     push    es
+    359	0159  FC				     cld			     ; Clear direction
+    360	015A  2E: FF 1E	FF10			     call    dword ptr cs:data_62e
+    361	015F  2E: FF 1E	FF0C			     call    dword ptr cs:data_61e
+    362	0164  2E: FE 0E	02BC			     dec     byte ptr cs:[2BCh]
+    363	0169  75 0F				     jnz     loc_21		     ; Jump if not zero
+    364	016B  2E: C6 06	02BC 05			     mov     byte ptr cs:[2BCh],5
+    365	0171  E8 FF6F				     call    handle_special_keys
+    366	0174  E8 FEAB				     call    handle_pause_key
+    367	0177  E8 FF02				     call    poll_joystick_buttons
+    368	017A			     loc_21:
+    369	017A  2E: FE 06	FF1A			     inc     byte ptr cs:data_66e
+    370	017F  2E: FF 06	FF50			     inc     word ptr cs:data_79e
+    371	0184  2E: FF 06	FF1B			     inc     word ptr cs:data_67e
+    372	0189  2E: FE 06	02C4			     inc     byte ptr cs:[2C4h]
+    373	018E  2E: F6 06	FF20 FF			     test    byte ptr cs:data_70e+1,0FFh
+    374	0194  74 05				     jz	     loc_22		     ; Jump if zero
+    375	0196  2E: FF 16	FF1F			     call    word ptr cs:data_70e
+    376	019B			     loc_22:
+    377	019B  07				     pop     es
+    378	019C  1F				     pop     ds
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 8
+stick.asm
+
+
+
+    379	019D  5D				     pop     bp
+    380	019E  5E				     pop     si
+    381	019F  5F				     pop     di
+    382	01A0  5A				     pop     dx
+    383	01A1  59				     pop     cx
+    384	01A2  5B				     pop     bx
+    385	01A3  2E: FE 0E	02BD			     dec     byte ptr cs:[2BDh]
+    386	01A8  74 06				     jz	     loc_23		     ; Jump if zero
+    387	01AA  B0 20				     mov     al,20h		     ; ' '
+    388	01AC  E6 20				     out     20h,al		     ; port 20h, 8259-1	int command
+    389										     ;	al = 20h, end of interrupt
+    390	01AE  58				     pop     ax
+    391	01AF  CF				     iret			     ; Interrupt return
+    392	01B0			     loc_23:
+    393	01B0  2E: C6 06	02BD 0D			     mov     byte ptr cs:[2BDh],0Dh
+    394	01B6  58				     pop     ax
+    395	01B7  2E: FF 2E	FF04			     jmp     dword ptr cs:data_58e
+    396	01BC  0A 0D				     db	      0Ah, 0Dh
+    397	01BE  07*(00)				     db	     7 dup (0)
+    398	01C5			     loc_24:
+    399	01C5  50				     push    ax
+    400	01C6  53				     push    bx
+    401	01C7  51				     push    cx
+    402	01C8  52				     push    dx
+    403	01C9  56				     push    si
+    404	01CA  57				     push    di
+    405	01CB  1E				     push    ds
+    406	01CC  06				     push    es
+    407	01CD  8C C8				     mov     ax,cs
+    408	01CF  8E D8				     mov     ds,ax
+    409	01D1  E4 60				     in	     al,60h		     ; port 60h, keybd scan or sw1
+    410	01D3  3C FF				     cmp     al,0FFh
+    411	01D5  74 20				     je	     loc_27		     ; Jump if equal
+    412	01D7  3C FE				     cmp     al,0FEh
+    413	01D9  74 1C				     je	     loc_27		     ; Jump if equal
+    414	01DB  E8 0048				     call    process_scancode
+    415	01DE			     loc_25:
+    416	01DE  B4 01				     mov     ah,1
+    417	01E0  CD 16				     int     16h		     ; Keyboard	i/o  ah=function 01h
+    418										     ;	get status, if zf=0  al=char
+    419	01E2  74 06				     jz	     loc_26		     ; Jump if zero
+    420	01E4  32 E4				     xor     ah,ah		     ; Zero register
+    421	01E6  CD 16				     int     16h		     ; Keyboard	i/o  ah=function 00h
+    422										     ;	get keybd char in al, ah=scan
+    423	01E8  EB F4				     jmp     short loc_25
+    424	01EA			     loc_26:
+    425	01EA  07				     pop     es
+    426	01EB  1F				     pop     ds
+    427	01EC  5F				     pop     di
+    428	01ED  5E				     pop     si
+    429	01EE  5A				     pop     dx
+    430	01EF  59				     pop     cx
+    431	01F0  5B				     pop     bx
+    432	01F1  58				     pop     ax
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 9
+stick.asm
+
+
+
+    433	01F2  2E: FF 2E	FF79			     jmp     dword ptr cs:data_83e
+    434	01F7			     loc_27:
+    435	01F7  E4 61				     in	     al,61h		     ; port 61h, 8255 port B, read
+    436	01F9  0C 80				     or	     al,80h
+    437	01FB  E6 61				     out     61h,al		     ; port 61h, 8255 B	- spkr,	etc
+    438	01FD  24 7F				     and     al,7Fh
+    439	01FF  E6 61				     out     61h,al		     ; port 61h, 8255 B	- spkr,	etc
+    440										     ;	al = 0,	speaker	off
+    441	0201  2E: C6 06	05C1 00			     mov     byte ptr cs:[5C1h],0
+    442	0207  2E: C6 06	05C2 00			     mov     byte ptr cs:[5C2h],0
+    443	020D  2E: C6 06	05C3 00			     mov     byte ptr cs:[5C3h],0
+    444	0213  2E: C6 06	05C4 00			     mov     byte ptr cs:[5C4h],0
+    445	0219  B0 20				     mov     al,20h		     ; ' '
+    446	021B  E6 20				     out     20h,al		     ; port 20h, 8259-1	int command
+    447										     ;	al = 20h, end of interrupt
+    448	021D  07				     pop     es
+    449	021E  1F				     pop     ds
+    450	021F  5F				     pop     di
+    451	0220  5E				     pop     si
+    452	0221  5A				     pop     dx
+    453	0222  59				     pop     cx
+    454	0223  5B				     pop     bx
+    455	0224  58				     pop     ax
+    456	0225  CF				     iret			     ; Interrupt return
+    457
+    458				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    459				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    460				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    461				     ;				    SUBROUTINE
+    462				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    463				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    464				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    465
+    466	0226			     process_scancode		     proc    near
+    467	0226  50				     push    ax
+    468	0227  E8 01A6				     call    dispatch_extended_key
+    469	022A  58				     pop     ax
+    470	022B  3C E0				     cmp     al,0E0h
+    471	022D  72 01				     jb	     loc_28		     ; Jump if below
+    472	022F  C3				     retn
+    473	0230			     loc_28:
+    474	0230  8A E0				     mov     ah,al
+    475	0232  24 7F				     and     al,7Fh
+    476	0234  B1 08				     mov     cl,8
+    477	0236  3C 4D				     cmp     al,4Dh		     ; 'M'
+    478	0238  74 22				     je	     loc_29		     ; Jump if equal
+    479	023A  3C 4E				     cmp     al,4Eh		     ; 'N'
+    480	023C  74 1E				     je	     loc_29		     ; Jump if equal
+    481	023E  B1 04				     mov     cl,4
+    482	0240  3C 4B				     cmp     al,4Bh		     ; 'K'
+    483	0242  74 18				     je	     loc_29		     ; Jump if equal
+    484	0244  3C 2B				     cmp     al,2Bh		     ; '+'
+    485	0246  74 14				     je	     loc_29		     ; Jump if equal
+    486	0248  B1 02				     mov     cl,2
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 10
+stick.asm
+
+
+
+    487	024A  3C 50				     cmp     al,50h		     ; 'P'
+    488	024C  74 0E				     je	     loc_29		     ; Jump if equal
+    489	024E  3C 4A				     cmp     al,4Ah		     ; 'J'
+    490	0250  74 0A				     je	     loc_29		     ; Jump if equal
+    491	0252  B1 01				     mov     cl,1
+    492	0254  3C 48				     cmp     al,48h		     ; 'H'
+    493	0256  74 04				     je	     loc_29		     ; Jump if equal
+    494	0258  3C 29				     cmp     al,29h		     ; ')'
+    495	025A  75 13				     jne     loc_31		     ; Jump if not equal
+    496	025C			     loc_29:
+    497	025C  08 0E 05C1			     or	     byte ptr ds:[5C1h],cl
+    498	0260  F6 C4 80				     test    ah,80h
+    499	0263  75 03				     jnz     loc_30		     ; Jump if not zero
+    500	0265  E9 012F				     jmp     loc_43
+    501	0268			     loc_30:
+    502	0268  30 0E 05C1			     xor     byte ptr ds:[5C1h],cl
+    503	026C  E9 0128				     jmp     loc_43
+    504	026F			     loc_31:
+    505	026F  B1 05				     mov     cl,5
+    506	0271  3C 47				     cmp     al,47h		     ; 'G'
+    507	0273  74 12				     je	     loc_32		     ; Jump if equal
+    508	0275  B1 90				     mov     cl,90h
+    509	0277  3C 49				     cmp     al,49h		     ; 'I'
+    510	0279  74 0C				     je	     loc_32		     ; Jump if equal
+    511	027B  B1 60				     mov     cl,60h		     ; '`'
+    512	027D  3C 4F				     cmp     al,4Fh		     ; 'O'
+    513	027F  74 06				     je	     loc_32		     ; Jump if equal
+    514	0281  B1 0A				     mov     cl,0Ah
+    515	0283  3C 51				     cmp     al,51h		     ; 'Q'
+    516	0285  75 13				     jne     loc_34		     ; Jump if not equal
+    517	0287			     loc_32:
+    518	0287  08 0E 05C2			     or	     byte ptr ds:[5C2h],cl
+    519	028B  F6 C4 80				     test    ah,80h
+    520	028E  75 03				     jnz     loc_33		     ; Jump if not zero
+    521	0290  E9 0104				     jmp     loc_43
+    522	0293			     loc_33:
+    523	0293  30 0E 05C2			     xor     byte ptr ds:[5C2h],cl
+    524	0297  E9 00FD				     jmp     loc_43
+    525	029A			     loc_34:
+    526	029A  F6 06 FF74 FF			     test    byte ptr ds:data_80e,0FFh
+    527	029F  74 0C				     jz	     loc_35		     ; Jump if zero
+    528	02A1  C6 06 05C3 00			     mov     byte ptr ds:[5C3h],0
+    529	02A6  C6 06 05C4 00			     mov     byte ptr ds:[5C4h],0
+    530	02AB  EB 4E				     jmp     short loc_39
+    531	02AD			     loc_35:
+    532	02AD  B1 08				     mov     cl,8
+    533	02AF  3C 25				     cmp     al,25h		     ; '%'
+    534	02B1  74 12				     je	     loc_36		     ; Jump if equal
+    535	02B3  B1 04				     mov     cl,4
+    536	02B5  3C 23				     cmp     al,23h		     ; '#'
+    537	02B7  74 0C				     je	     loc_36		     ; Jump if equal
+    538	02B9  B1 02				     mov     cl,2
+    539	02BB  3C 32				     cmp     al,32h		     ; '2'
+    540	02BD  74 06				     je	     loc_36		     ; Jump if equal
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 11
+stick.asm
+
+
+
+    541	02BF  B1 01				     mov     cl,1
+    542	02C1  3C 16				     cmp     al,16h
+    543	02C3  75 0F				     jne     loc_37		     ; Jump if not equal
+    544	02C5			     loc_36:
+    545	02C5  08 0E 05C3			     or	     byte ptr ds:[5C3h],cl
+    546	02C9  F6 C4 80				     test    ah,80h
+    547	02CC  74 48				     jz	     loc_41		     ; Jump if zero
+    548	02CE  30 0E 05C3			     xor     byte ptr ds:[5C3h],cl
+    549	02D2  EB 42				     jmp     short loc_41
+    550	02D4			     loc_37:
+    551	02D4  B1 05				     mov     cl,5
+    552	02D6  3C 15				     cmp     al,15h
+    553	02D8  74 12				     je	     loc_38		     ; Jump if equal
+    554	02DA  B1 90				     mov     cl,90h
+    555	02DC  3C 17				     cmp     al,17h
+    556	02DE  74 0C				     je	     loc_38		     ; Jump if equal
+    557	02E0  B1 60				     mov     cl,60h		     ; '`'
+    558	02E2  3C 31				     cmp     al,31h		     ; '1'
+    559	02E4  74 06				     je	     loc_38		     ; Jump if equal
+    560	02E6  B1 0A				     mov     cl,0Ah
+    561	02E8  3C 33				     cmp     al,33h		     ; '3'
+    562	02EA  75 0F				     jne     loc_39		     ; Jump if not equal
+    563	02EC			     loc_38:
+    564	02EC  08 0E 05C4			     or	     byte ptr ds:[5C4h],cl
+    565	02F0  F6 C4 80				     test    ah,80h
+    566	02F3  74 21				     jz	     loc_41		     ; Jump if zero
+    567	02F5  30 0E 05C4			     xor     byte ptr ds:[5C4h],cl
+    568	02F9  EB 1B				     jmp     short loc_41
+    569	02FB			     loc_39:
+    570	02FB  B1 01				     mov     cl,1
+    571	02FD  3C 39				     cmp     al,39h		     ; '9'
+    572	02FF  74 06				     je	     loc_40		     ; Jump if equal
+    573	0301  B1 02				     mov     cl,2
+    574	0303  3C 38				     cmp     al,38h		     ; '8'
+    575	0305  75 0F				     jne     loc_41		     ; Jump if not equal
+    576	0307			     loc_40:
+    577	0307  08 0E FF16			     or	     ds:data_63e,cl
+    578	030B  F6 C4 80				     test    ah,80h
+    579	030E  74 06				     jz	     loc_41		     ; Jump if zero
+    580	0310  30 0E FF16			     xor     ds:data_63e,cl
+    581	0314  EB 00				     jmp     short loc_41
+    582	0316			     loc_41:
+    583	0316  B9 0800				     mov     cx,800h
+    584	0319  3C 25				     cmp     al,25h		     ; '%'
+    585	031B  74 6D				     je	     loc_42		     ; Jump if equal
+    586	031D  B9 0400				     mov     cx,400h
+    587	0320  3C 13				     cmp     al,13h
+    588	0322  74 66				     je	     loc_42		     ; Jump if equal
+    589	0324  B9 0200				     mov     cx,200h
+    590	0327  3C 12				     cmp     al,12h
+    591	0329  74 5F				     je	     loc_42		     ; Jump if equal
+    592	032B  B9 0100				     mov     cx,100h
+    593	032E  3C 24				     cmp     al,24h		     ; '$'
+    594	0330  74 58				     je	     loc_42		     ; Jump if equal
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 12
+stick.asm
+
+
+
+    595	0332  B9 0080				     mov     cx,80h
+    596	0335  3C 1F				     cmp     al,1Fh
+    597	0337  74 51				     je	     loc_42		     ; Jump if equal
+    598	0339  B9 0040				     mov     cx,40h
+    599	033C  3C 31				     cmp     al,31h		     ; '1'
+    600	033E  74 4A				     je	     loc_42		     ; Jump if equal
+    601	0340  B9 0020				     mov     cx,20h
+    602	0343  3C 15				     cmp     al,15h
+    603	0345  74 43				     je	     loc_42		     ; Jump if equal
+    604	0347  B9 0010				     mov     cx,10h
+    605	034A  3C 10				     cmp     al,10h
+    606	034C  74 3C				     je	     loc_42		     ; Jump if equal
+    607	034E  B9 0008				     mov     cx,8
+    608	0351  3C 01				     cmp     al,1
+    609	0353  74 35				     je	     loc_42		     ; Jump if equal
+    610	0355  B9 0004				     mov     cx,4
+    611	0358  3C 1D				     cmp     al,1Dh
+    612	035A  74 2E				     je	     loc_42		     ; Jump if equal
+    613	035C  B9 0002				     mov     cx,2
+    614	035F  3C 36				     cmp     al,36h		     ; '6'
+    615	0361  74 27				     je	     loc_42		     ; Jump if equal
+    616	0363  3C 2A				     cmp     al,2Ah		     ; '*'
+    617	0365  74 23				     je	     loc_42		     ; Jump if equal
+    618	0367  B9 0001				     mov     cx,1
+    619	036A  3C 1C				     cmp     al,1Ch
+    620	036C  74 1C				     je	     loc_42		     ; Jump if equal
+    621	036E  B9 1000				     mov     cx,1000h
+    622	0371  3C 3B				     cmp     al,3Bh		     ; ';'
+    623	0373  74 15				     je	     loc_42		     ; Jump if equal
+    624	0375  B9 2000				     mov     cx,2000h
+    625	0378  3C 3C				     cmp     al,3Ch		     ; '<'
+    626	037A  74 0E				     je	     loc_42		     ; Jump if equal
+    627	037C  B9 4000				     mov     cx,4000h
+    628	037F  3C 41				     cmp     al,41h		     ; 'A'
+    629	0381  74 07				     je	     loc_42		     ; Jump if equal
+    630	0383  B9 8000				     mov     cx,8000h
+    631	0386  3C 43				     cmp     al,43h		     ; 'C'
+    632	0388  75 0D				     jne     loc_43		     ; Jump if not equal
+    633	038A			     loc_42:
+    634	038A  09 0E FF18			     or	     ds:data_65e,cx
+    635	038E  F6 C4 80				     test    ah,80h
+    636	0391  74 04				     jz	     loc_43		     ; Jump if zero
+    637	0393  31 0E FF18			     xor     ds:data_65e,cx
+    638	0397			     loc_43:
+    639	0397  A0 05C1				     mov     al,byte ptr ds:[5C1h]
+    640	039A  0A 06 05C3			     or	     al,byte ptr ds:[5C3h]
+    641	039E  8A 26 05C2			     mov     ah,byte ptr ds:[5C2h]
+    642	03A2  80 E4 0F				     and     ah,0Fh
+    643	03A5  0A C4				     or	     al,ah
+    644	03A7  8A 26 05C2			     mov     ah,byte ptr ds:[5C2h]
+    645	03AB  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
+    646	03AD  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
+    647	03AF  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
+    648	03B1  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 13
+stick.asm
+
+
+
+    649	03B3  0A C4				     or	     al,ah
+    650	03B5  8A 26 05C4			     mov     ah,byte ptr ds:[5C4h]
+    651	03B9  80 E4 0F				     and     ah,0Fh
+    652	03BC  0A C4				     or	     al,ah
+    653	03BE  8A 26 05C4			     mov     ah,byte ptr ds:[5C4h]
+    654	03C2  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
+    655	03C4  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
+    656	03C6  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
+    657	03C8  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
+    658	03CA  0A C4				     or	     al,ah
+    659	03CC  A2 FF17				     mov     ds:data_64e,al
+    660	03CF  C3				     retn
+    661	03D0			     process_scancode		     endp
+    662
+    663
+    664				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    665				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    666				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    667				     ;				    SUBROUTINE
+    668				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    669				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    670				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    671
+    672	03D0			     dispatch_extended_key	     proc    near
+    673	03D0  3C E0				     cmp     al,0E0h
+    674	03D2  72 07				     jb	     loc_44		     ; Jump if below
+    675	03D4  2E: C6 06	05C5 FF			     mov     byte ptr cs:[5C5h],0FFh
+    676	03DA  C3				     retn
+    677	03DB			     loc_44:
+    678	03DB  2E: F6 06	05C5 FF			     test    byte ptr cs:[5C5h],0FFh
+    679	03E1  2E: C6 06	05C5 00			     mov     byte ptr cs:[5C5h],0
+    680	03E7  74 01				     jz	     loc_45		     ; Jump if zero
+    681	03E9  C3				     retn
+    682	03EA			     loc_45:
+    683	03EA  0A C0				     or	     al,al		     ; Zero ?
+    684	03EC  79 01				     jns     loc_46		     ; Jump if not sign
+    685	03EE  C3				     retn
+    686	03EF			     loc_46:
+    687	03EF  3C 54				     cmp     al,54h		     ; 'T'
+    688	03F1  72 01				     jb	     loc_47		     ; Jump if below
+    689	03F3  C3				     retn
+    690	03F4			     loc_47:
+    691	03F4  FE C8				     dec     al
+    692	03F6  33 DB				     xor     bx,bx		     ; Zero register
+    693	03F8  8A D8				     mov     bl,al
+    694	03FA  BF 0511				     mov     di,511h
+    695	03FD  2E: F7 06	FF18 0002		     test    word ptr cs:data_65e,2
+    696	0404  74 03				     jz	     loc_48		     ; Jump if zero
+    697	0406  BF 0569				     mov     di,569h
+    698	0409			     loc_48:
+    699	0409  2E: 8A 01				     mov     al,cs:[bx+di]
+    700	040C  2E: A2 FF29			     mov     cs:data_74e,al
+    701	0410  C3				     retn
+    702	0411			     dispatch_extended_key	     endp
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 14
+stick.asm
+
+
+
+    703
+    704	0411  00				     db	     0
+    705	0412  31 32 33 34 35 36	37+		     db	     '1234567890'
+    706	      38 39 30
+    707	041C  00 00 08 00			     db	     0,	0, 8, 0
+    708	0420  51 57 45 52 54 59	55+		     db	     'QWERTYUIOP'
+    709	      49 4F 50
+    710	042A  00 00 0D 00			     db	      00h, 00h,	0Dh, 00h
+    711	042E  41 53 44 46 47 48	4A+		     db	     'ASDFGHJKL'
+    712	      4B 4C
+    713	0437  00 00 00 00 00			     db	     0,	0, 0, 0, 0
+    714	043C  5A 58 43 56 42 4E			     db	      5Ah, 58h,	43h, 56h, 42h, 4Eh
+    715	0442  4D				     db	      4Dh
+    716	0443  27*(00)				     db	     39	dup (0)
+    717	046A  21 40 00 24 25 00			     db	      21h, 40h,	00h, 24h, 25h, 00h
+    718	0470  00 00 28 29 00 00			     db	      00h, 00h,	28h, 29h, 00h, 00h
+    719	0476  08 00				     db	      08h, 00h
+    720	0478  51 57 45 52 54 59	55+		     db	     'QWERTYUIOP{}', 0Dh
+    721	      49 4F 50 7B 7D 0D
+    722	0485  00				     db	     0
+    723	0486  41 53 44 46 47 48	4A+		     db	     'ASDFGHJKL:'
+    724	      4B 4C 3A
+    725	0490  00 00 00 00			     db	     0,	0, 0, 0
+    726	0494  5A 58 43 56 42 4E			     db	      5Ah, 58h,	43h, 56h, 42h, 4Eh
+    727	049A  4D				     db	      4Dh
+    728	049B  2F*(00)				     db	     47	dup (0)
+    729
+    730				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    731				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    732				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    733				     ;				    SUBROUTINE
+    734				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    735				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    736				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    737
+    738	04CA			     calibrate_joystick		     proc    near
+    739	04CA  BA 0201				     mov     dx,201h
+    740	04CD  33 F6				     xor     si,si		     ; Zero register
+    741	04CF  33 FF				     xor     di,di		     ; Zero register
+    742	04D1  B1 01				     mov     cl,1
+    743	04D3  B5 02				     mov     ch,2
+    744	04D5  32 FF				     xor     bh,bh		     ; Zero register
+    745	04D7  FA				     cli			     ; Disable interrupts
+    746	04D8  B4 03				     mov     ah,3
+    747	04DA  EE				     out     dx,al		     ; port 201h, start	game 1-shots
+    748	04DB  B3 06				     mov     bl,6
+    749	04DD			     loc_49:
+    750	04DD  EC				     in	     al,dx		     ; port 201h, start	game 1-shots
+    751	04DE  32 C4				     xor     al,ah
+    752	04E0  74 04				     jz	     loc_50		     ; Jump if zero
+    753	04E2  FE CB				     dec     bl
+    754	04E4  75 F7				     jnz     loc_49		     ; Jump if not zero
+    755	04E6			     loc_50:
+    756	04E6  EC				     in	     al,dx		     ; port 201h, start	game 1-shots
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 15
+stick.asm
+
+
+
+    757	04E7  8A E0				     mov     ah,al
+    758	04E9  22 E5				     and     ah,ch
+    759	04EB  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
+    760	04ED  8A D8				     mov     bl,al
+    761	04EF  22 D9				     and     bl,cl
+    762	04F1  03 F3				     add     si,bx
+    763	04F3  8A DC				     mov     bl,ah
+    764	04F5  03 FB				     add     di,bx
+    765	04F7  24 03				     and     al,3
+    766	04F9  75 EB				     jnz     loc_50		     ; Jump if not zero
+    767	04FB  FB				     sti			     ; Enable interrupts
+    768	04FC  C3				     retn
+    769	04FD			     calibrate_joystick		     endp
+    770
+    771	04FD			     loc_51:
+    772	04FD  53				     push    bx
+    773	04FE  51				     push    cx
+    774	04FF  52				     push    dx
+    775	0500  2E: C6 06	FF48 00			     mov     byte ptr cs:data_77e,0
+    776	0506  2E: C6 06	FF49 00			     mov     byte ptr cs:data_78e,0
+    777	050C  2E: A0 FF3B			     mov     al,cs:data_76e
+    778	0510  22 06 FF0A			     and     al,ds:data_60e
+    779	0514  74 03				     jz	     loc_52		     ; Jump if zero
+    780	0516  E8 0017				     call    calc_joystick_deadzone
+    781	0519			     loc_52:
+    782	0519  2E: A0 FF17			     mov     al,cs:data_64e
+    783	051D  2E: 0A 06	FF48			     or	     al,cs:data_77e
+    784	0522  2E: 8A 26	FF16			     mov     ah,cs:data_63e
+    785	0527  2E: 0A 26	FF49			     or	     ah,cs:data_78e
+    786	052C  5A				     pop     dx
+    787	052D  59				     pop     cx
+    788	052E  5B				     pop     bx
+    789	052F  CF				     iret			     ; Interrupt return
+    790
+    791				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    792				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    793				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    794				     ;				    SUBROUTINE
+    795				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    796				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    797				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    798
+    799	0530			     calc_joystick_deadzone	     proc    near
+    800	0530  56				     push    si
+    801	0531  57				     push    di
+    802	0532  51				     push    cx
+    803	0533  E8 FF94				     call    calibrate_joystick
+    804	0536  2E: 8B 0E	05C6			     mov     cx,word ptr cs:[5C6h]
+    805	053B  83 C1 08				     add     cx,8
+    806	053E  73 03				     jnc     loc_53		     ; Jump if carry=0
+    807	0540  B9 FFFF				     mov     cx,0FFFFh
+    808	0543			     loc_53:
+    809	0543  3B F1				     cmp     si,cx
+    810	0545  72 06				     jb	     loc_54		     ; Jump if below
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 16
+stick.asm
+
+
+
+    811	0547  2E: 80 0E	FF48 08			     or	     byte ptr cs:data_77e,8
+    812	054D			     loc_54:
+    813	054D  2E: 8B 0E	05C6			     mov     cx,word ptr cs:[5C6h]
+    814	0552  D1 E9				     shr     cx,1		     ; Shift w/zeros fill
+    815	0554  83 E9 08				     sub     cx,8
+    816	0557  73 02				     jnc     loc_55		     ; Jump if carry=0
+    817	0559  33 C9				     xor     cx,cx		     ; Zero register
+    818	055B			     loc_55:
+    819	055B  3B F1				     cmp     si,cx
+    820	055D  77 06				     ja	     loc_56		     ; Jump if above
+    821	055F  2E: 80 0E	FF48 04			     or	     byte ptr cs:data_77e,4
+    822	0565			     loc_56:
+    823	0565  2E: 8B 0E	05C8			     mov     cx,word ptr cs:[5C8h]
+    824	056A  83 C1 08				     add     cx,8
+    825	056D  73 03				     jnc     loc_57		     ; Jump if carry=0
+    826	056F  B9 FFFF				     mov     cx,0FFFFh
+    827	0572			     loc_57:
+    828	0572  3B F9				     cmp     di,cx
+    829	0574  72 06				     jb	     loc_58		     ; Jump if below
+    830	0576  2E: 80 0E	FF48 02			     or	     byte ptr cs:data_77e,2
+    831	057C			     loc_58:
+    832	057C  2E: 8B 0E	05C8			     mov     cx,word ptr cs:[5C8h]
+    833	0581  D1 E9				     shr     cx,1		     ; Shift w/zeros fill
+    834	0583  83 E9 08				     sub     cx,8
+    835	0586  73 02				     jnc     loc_59		     ; Jump if carry=0
+    836	0588  33 C9				     xor     cx,cx		     ; Zero register
+    837	058A			     loc_59:
+    838	058A  3B F9				     cmp     di,cx
+    839	058C  77 06				     ja	     loc_60		     ; Jump if above
+    840	058E  2E: 80 0E	FF48 01			     or	     byte ptr cs:data_77e,1
+    841	0594			     loc_60:
+    842	0594  BA 0201				     mov     dx,201h
+    843	0597  EC				     in	     al,dx		     ; port 201h, start	game 1-shots
+    844	0598  F6 D0				     not     al
+    845	059A  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+    846	059C  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+    847	059E  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+    848	05A0  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+    849	05A2  24 03				     and     al,3
+    850	05A4  2E: A2 FF49			     mov     cs:data_78e,al
+    851	05A8  59				     pop     cx
+    852	05A9  5F				     pop     di
+    853	05AA  5E				     pop     si
+    854	05AB  C3				     retn
+    855	05AC			     calc_joystick_deadzone	     endp
+    856
+    857										     ;*	No entry point to code
+    858	05AC  2E: 83 3E	FF18 14			     cmp     word ptr cs:data_65e,14h
+    859	05B2  74 01				     je	     loc_61		     ; Jump if equal
+    860	05B4  C3				     retn
+    861	05B5			     loc_61:
+    862	05B5  1E				     push    ds
+    863	05B6  E8 02E3				     call    handle_pause_key2
+    864	05B9  B1 FF				     mov     cl,0FFh
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 17
+stick.asm
+
+
+
+    865	05BB  B8 0003				     mov     ax,3
+    866	05BE  CD 60				     int     60h		     ; ??INT Non-standard interrupt
+    867	05C0  0E				     push    cs
+    868	05C1  1F				     pop     ds
+    869	05C2  BE 070A				     mov     si,70Ah
+    870	05C5  BB 0074				     mov     bx,74h
+    871	05C8  B1 52				     mov     cl,52h		     ; 'R'
+    872	05CA  2E: FF 16	202A			     call    word ptr cs:data_55e
+    873	05CF  1F				     pop     ds
+    874	05D0			     loc_62:
+    875	05D0  2E: A1 FF18			     mov     ax,cs:data_65e
+    876	05D4  A9 0060				     test    ax,60h
+    877	05D7  74 F7				     jz	     loc_62		     ; Jump if zero
+    878	05D9  A9 0020				     test    ax,20h
+    879	05DC  75 1D				     jnz     loc_63		     ; Jump if not zero
+    880	05DE  E8 02DC				     call    handle_pause_key4
+    881	05E1  32 C9				     xor     cl,cl		     ; Zero register
+    882	05E3  B8 0003				     mov     ax,3
+    883	05E6  CD 60				     int     60h		     ; ??INT Non-standard interrupt
+    884	05E8  2E: C6 06	FF17 00			     mov     byte ptr cs:data_64e,0
+    885	05EE  2E: C6 06	FF1D 00			     mov     byte ptr cs:data_68e,0
+    886	05F4  2E: C6 06	FF1E 00			     mov     byte ptr cs:data_69e,0
+    887	05FA  C3				     retn
+    888	05FB			     loc_63:
+    889	05FB  2E: F6 06	FF09 FF			     test    byte ptr cs:data_59e,0FFh
+    890	0601  74 F8				     jz	     loc_63		     ; Jump if zero
+    891	0603  33 C0				     xor     ax,ax		     ; Zero register
+    892	0605  2E: FF 2E	FF00			     jmp     dword ptr cs:data_57e
+    893	060A  45 78 69 74 20 74	6F+		     db	     'Exit to DOS.', 0Dh, ' Sure?(Y/N)'
+    894	      20 44 4F 53 2E 0D	20+
+    895	      53 75 72 65 3F 28	59+
+    896	      2F 4E 29
+    897	0622  FF 2E F7 06 18 FF			     db	     0FFh, 2Eh,0F7h, 06h, 18h,0FFh
+    898	0628  08 00 75 01 C3 1E			     db	      08h, 00h,	75h, 01h,0C3h, 1Eh
+    899	062E  2E C6 06 75 FF 02			     db	      2Eh,0C6h,	06h, 75h,0FFh, 02h
+    900	0634  B8 1E 10 B9 10 08			     db	     0B8h, 1Eh,	10h,0B9h, 10h, 08h
+    901	063A  BF 80 3C 2E FF 16			     db	     0BFh, 80h,	3Ch, 2Eh,0FFh, 16h
+    902	0640  26 20 2E 83 3E 18			     db	      26h, 20h,	2Eh, 83h, 3Eh, 18h
+    903	0646  FF 0E 74 1C BB 1E			     db	     0FFh, 0Eh,	74h, 1Ch,0BBh, 1Eh
+    904	064C  20 B9 10 10 B0 FF			     db	      20h,0B9h,	10h, 10h,0B0h,0FFh
+    905	0652  2E FF 16 00 20 0E			     db	      2Eh,0FFh,	16h, 00h, 20h, 0Eh
+    906	0658  1F BE B0 07 BB 8C			     db	      1Fh,0BEh,0B0h, 07h,0BBh, 8Ch
+    907	065E  00 B1 22 2E FF 16			     db	      00h,0B1h,	22h, 2Eh,0FFh, 16h
+    908	0664  2A 20				     db	      2Ah, 20h
+    909	0666			     loc_64:
+    910	0666  B1 FF				     mov     cl,0FFh
+    911	0668  B8 0003				     mov     ax,3
+    912	066B  CD 60				     int     60h		     ; ??INT Non-standard interrupt
+    913	066D  1F				     pop     ds
+    914	066E			     loc_65:
+    915	066E  2E: 83 3E	FF18 0E			     cmp     word ptr cs:data_65e,0Eh
+    916	0674  75 03				     jne     loc_66		     ; Jump if not equal
+    917	0676  E8 0029				     call    draw_screen_element
+    918	0679			     loc_66:
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 18
+stick.asm
+
+
+
+    919	0679  2E: F6 06	FF1D FF			     test    byte ptr cs:data_68e,0FFh
+    920	067F  75 0A				     jnz     loc_67		     ; Jump if not zero
+    921	0681  2E: F6 06	FF1E FF			     test    byte ptr cs:data_69e,0FFh
+    922	0687  75 02				     jnz     loc_67		     ; Jump if not zero
+    923	0689  EB E3				     jmp     short loc_65
+    924	068B			     loc_67:
+    925	068B  E8 0014				     call    draw_screen_element
+    926	068E  2E: C6 06	FF1D 00			     mov     byte ptr cs:data_68e,0
+    927	0694  2E: C6 06	FF1E 00			     mov     byte ptr cs:data_69e,0
+    928	069A  32 C9				     xor     cl,cl		     ; Zero register
+    929	069C  B8 0003				     mov     ax,3
+    930	069F  CD 60				     int     60h		     ; ??INT Non-standard interrupt
+    931	06A1  C3				     retn
+    932
+    933				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    934				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    935				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    936				     ;				    SUBROUTINE
+    937				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+    938				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    939				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    940
+    941	06A2			     draw_screen_element	     proc    near
+    942	06A2  B8 101E				     mov     ax,101Eh
+    943	06A5  B9 0810				     mov     cx,810h
+    944	06A8  BF 3C80				     mov     di,3C80h
+    945	06AB  2E: FF 26	2028			     jmp     word ptr cs:data_54e
+    946	06B0			     draw_screen_element	     endp
+    947
+    948										     ;*	No entry point to code
+    949	06B0  50				     push    ax
+    950	06B1  41				     inc     cx
+    951	06B2  55				     push    bp
+    952	06B3  53				     push    bx
+    953	06B4  45				     inc     bp
+    954	06B5  FF 2E 06F7			     jmp     dword ptr ds:[6F7h]
+    955										     ;*	No entry point to code
+    956				     ;*		     sbb     bh,bh
+    957	06B9  18 FF				     db	      18h,0FFh		     ;	Fixup -	byte match
+    958	06BB  00 80 0175			     add     byte ptr ds:[175h][bx+si],al
+    959	06BF  C3				     retn
+    960										     ;*	No entry point to code
+    961	06C0  E8 01D9				     call    handle_pause_key2
+    962	06C3  0E				     push    cs
+    963	06C4  1F				     pop     ds
+    964	06C5  BE 0845				     mov     si,845h
+    965	06C8  BB 0074				     mov     bx,74h
+    966	06CB  B1 52				     mov     cl,52h		     ; 'R'
+    967	06CD  2E: FF 16	202A			     call    word ptr cs:data_55e
+    968	06D2			     loc_68:
+    969	06D2  2E: F7 06	FF18 8000		     test    word ptr cs:data_65e,8000h
+    970	06D9  75 F7				     jnz     loc_68		     ; Jump if not zero
+    971	06DB  A0 FF33				     mov     al,ds:data_75e
+    972	06DE  F6 D8				     neg     al
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 19
+stick.asm
+
+
+
+    973	06E0  04 0A				     add     al,0Ah
+    974	06E2  E8 0079				     call    handle_pause_key0
+    975	06E5  50				     push    ax
+    976	06E6  04 30				     add     al,30h		     ; '0'
+    977	06E8  B4 01				     mov     ah,1
+    978	06EA  BB 00CC				     mov     bx,0CCh
+    979	06ED  B1 5A				     mov     cl,5Ah		     ; 'Z'
+    980	06EF  2E: FF 16	2022			     call    word ptr cs:data_52e
+    981	06F4  58				     pop     ax
+    982	06F5  F6 D8				     neg     al
+    983	06F7  04 0A				     add     al,0Ah
+    984	06F9  A2 FF33				     mov     ds:data_75e,al
+    985	06FC  2E: C6 06	FF75 01			     mov     byte ptr cs:data_81e,1
+    986	0702  E8 01C6				     call    handle_pause_key5
+    987	0705  2E: C6 06	FF17 00			     mov     byte ptr cs:data_64e,0
+    988	070B  2E: C6 06	FF1D 00			     mov     byte ptr cs:data_68e,0
+    989	0711  2E: C6 06	FF1E 00			     mov     byte ptr cs:data_69e,0
+    990	0717			     loc_69:
+    991	0717  B2 FF				     mov     dl,0FFh
+    992	0719  B4 06				     mov     ah,6
+    993	071B  CD 21				     int     21h		     ; DOS Services  ah=function 06h
+    994										     ;	special	char i/o, dl=subfunc
+    995	071D  75 10				     jnz     loc_70		     ; Jump if not zero
+    996	071F  2E: A0 FF17			     mov     al,cs:data_64e
+    997	0723  2E: 0A 06	FF1D			     or	     al,cs:data_68e
+    998	0728  2E: 0A 06	FF1E			     or	     al,cs:data_69e
+    999	072D  74 E8				     jz	     loc_69		     ; Jump if zero
+   1000	072F			     loc_70:
+   1001	072F  E8 018B				     call    handle_pause_key4
+   1002	0732  2E: C6 06	FF17 00			     mov     byte ptr cs:data_64e,0
+   1003	0738  2E: C6 06	FF1D 00			     mov     byte ptr cs:data_68e,0
+   1004	073E  2E: C6 06	FF1E 00			     mov     byte ptr cs:data_69e,0
+   1005	0744  C3				     retn
+   1006	0745  53 70 65 65 64 20	63+		     db	     'Speed change', 0Dh, 'Select 0-9:'
+   1007	      68 61 6E 67 65 0D	53+
+   1008	      65 6C 65 63 74 20	30+
+   1009	      2D 39 3A
+   1010	075D  FF				     db	     0FFh
+   1011
+   1012				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1013				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1014				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1015				     ;				    SUBROUTINE
+   1016				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1017				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1018				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1019
+   1020	075E			     handle_pause_key0		     proc    near
+   1021	075E  C6 06 FF29 00			     mov     byte ptr ds:data_74e,0
+   1022	0763			     loc_71:
+   1023	0763  F6 06 FF29 FF			     test    byte ptr ds:data_74e,0FFh
+   1024	0768  74 F9				     jz	     loc_71		     ; Jump if zero
+   1025	076A  8A 26 FF29			     mov     ah,ds:data_74e
+   1026	076E  80 FC 1B				     cmp     ah,1Bh
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 20
+stick.asm
+
+
+
+   1027	0771  F9				     stc			     ; Set carry flag
+   1028	0772  75 01				     jnz     loc_72		     ; Jump if not zero
+   1029	0774  C3				     retn
+   1030	0775			     loc_72:
+   1031	0775  80 EC 30				     sub     ah,30h		     ; '0'
+   1032	0778  80 FC 0A				     cmp     ah,0Ah
+   1033	077B  73 E6				     jae     loc_71		     ; Jump if above or	=
+   1034	077D  F8				     clc			     ; Clear carry flag
+   1035	077E  8A C4				     mov     al,ah
+   1036	0780  C3				     retn
+   1037	0781			     handle_pause_key0		     endp
+   1038
+   1039										     ;*	No entry point to code
+   1040	0781  2E: 81 3E	FF18 0104		     cmp     word ptr cs:data_65e,104h
+   1041	0788  74 01				     je	     loc_73		     ; Jump if equal
+   1042	078A  C3				     retn
+   1043	078B			     loc_73:
+   1044	078B  E8 0010				     call    handle_pause_key1
+   1045	078E  2E: C6 06	FF17 00			     mov     byte ptr cs:data_64e,0
+   1046	0794			     loc_74:
+   1047	0794  2E: 81 3E	FF18 0104		     cmp     word ptr cs:data_65e,104h
+   1048	079B  74 F7				     je	     loc_74		     ; Jump if equal
+   1049	079D  C3				     retn
+   1050
+   1051				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1052				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1053				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1054				     ;				    SUBROUTINE
+   1055				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1056				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1057				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1058
+   1059	079E			     handle_pause_key1		     proc    near
+   1060	079E  2E: F6 06	FF3B FF			     test    byte ptr cs:data_76e,0FFh
+   1061	07A4  74 01				     jz	     loc_75		     ; Jump if zero
+   1062	07A6  C3				     retn
+   1063	07A7			     loc_75:
+   1064	07A7  2E: F6 06	FF0A FF			     test    byte ptr cs:data_60e,0FFh
+   1065	07AD  75 01				     jnz     loc_76		     ; Jump if not zero
+   1066	07AF  C3				     retn
+   1067	07B0			     loc_76:
+   1068	07B0  B9 0103				     mov     cx,103h
+   1069	07B3  D2 E5				     shl     ch,cl		     ; Shift w/zeros fill
+   1070	07B5  91				     xchg    cx,ax
+   1071	07B6  B9 FFFF				     mov     cx,0FFFFh
+   1072	07B9  BA 0201				     mov     dx,201h
+   1073
+   1074	07BC			     locloop_77:
+   1075	07BC  EC				     in	     al,dx		     ; port 201h, start	game 1-shots
+   1076	07BD  84 C4				     test    al,ah
+   1077	07BF  E0 FB				     loopnz  locloop_77		     ; Loop if zf=0, cx>0
+   1078
+   1079	07C1  E3 2B				     jcxz    loc_ret_78		     ; Jump if cx=0
+   1080	07C3  E8 FD04				     call    calibrate_joystick
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 21
+stick.asm
+
+
+
+   1081				     ;*		     cmp     si,0FFFFh
+   1082	07C6  83 FE FF				     db	      83h,0FEh,0FFh	     ;	Fixup -	byte match
+   1083	07C9  74 23				     jz	     loc_ret_78		     ; Jump if zero
+   1084				     ;*		     cmp     di,0FFFFh
+   1085	07CB  83 FF FF				     db	      83h,0FFh,0FFh	     ;	Fixup -	byte match
+   1086	07CE  74 1E				     jz	     loc_ret_78		     ; Jump if zero
+   1087	07D0  0B F6				     or	     si,si		     ; Zero ?
+   1088	07D2  74 1A				     jz	     loc_ret_78		     ; Jump if zero
+   1089	07D4  0B FF				     or	     di,di		     ; Zero ?
+   1090	07D6  74 16				     jz	     loc_ret_78		     ; Jump if zero
+   1091	07D8  2E: 89 36	05C6			     mov     word ptr cs:[5C6h],si
+   1092	07DD  2E: 89 3E	05C8			     mov     word ptr cs:[5C8h],di
+   1093	07E2  2E: C6 06	FF3B FF			     mov     byte ptr cs:data_76e,0FFh
+   1094	07E8  2E: C6 06	FF75 01			     mov     byte ptr cs:data_81e,1
+   1095
+   1096	07EE			     loc_ret_78:
+   1097	07EE  C3				     retn
+   1098	07EF			     handle_pause_key1		     endp
+   1099
+   1100										     ;*	No entry point to code
+   1101	07EF  2E: 81 3E	FF18 0804		     cmp     word ptr cs:data_65e,804h
+   1102	07F6  74 01				     je	     loc_79		     ; Jump if equal
+   1103	07F8  C3				     retn
+   1104	07F9			     loc_79:
+   1105	07F9  2E: F6 06	FF3B FF			     test    byte ptr cs:data_76e,0FFh
+   1106	07FF  75 01				     jnz     loc_80		     ; Jump if not zero
+   1107	0801  C3				     retn
+   1108	0802			     loc_80:
+   1109	0802  2E: C6 06	FF75 01			     mov     byte ptr cs:data_81e,1
+   1110	0808  2E: C6 06	FF3B 00			     mov     byte ptr cs:data_76e,0
+   1111	080E			     loc_81:
+   1112	080E  2E: 81 3E	FF18 0804		     cmp     word ptr cs:data_65e,804h
+   1113	0815  74 F7				     je	     loc_81		     ; Jump if equal
+   1114	0817  C3				     retn
+   1115										     ;*	No entry point to code
+   1116	0818  2E: A1 FF1B			     mov     ax,cs:data_67e
+   1117	081C  02 C4				     add     al,ah
+   1118	081E  80 D4 00				     adc     ah,0
+   1119	0821  2E: 03 06	092B			     add     ax,word ptr cs:[92Bh]
+   1120	0826  2E: A3 092B			     mov     word ptr cs:[92Bh],ax
+   1121	082A  C3				     retn
+   1122	082B  00 00 2E 81 3E 18			     db	      00h, 00h,	2Eh, 81h, 3Eh, 18h
+   1123	0831  FF 00 40 F8 74 01			     db	     0FFh, 00h,	40h,0F8h, 74h, 01h
+   1124	0837  C3 1E E8 60 00 B1			     db	     0C3h, 1Eh,0E8h, 60h, 00h,0B1h
+   1125	083D  FF B8 03 00 CD 60			     db	     0FFh,0B8h,	03h, 00h,0CDh, 60h
+   1126	0843  0E 1F BE 83 09 BB			     db	      0Eh, 1Fh,0BEh, 83h, 09h,0BBh
+   1127	0849  74 00 B1 52 2E FF			     db	      74h, 00h,0B1h, 52h, 2Eh,0FFh
+   1128	084F  16 2A 20 1F			     db	      16h, 2Ah,	20h, 1Fh
+   1129	0853			     loc_82:
+   1130	0853  2E: A1 FF18			     mov     ax,cs:data_65e
+   1131	0857  A9 0060				     test    ax,60h
+   1132	085A  74 F7				     jz	     loc_82		     ; Jump if zero
+   1133	085C  A9 0020				     test    ax,20h
+   1134	085F  9C				     pushf			     ; Push flags
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 22
+stick.asm
+
+
+
+   1135	0860  E8 005A				     call    handle_pause_key4
+   1136	0863  2E: C6 06	FF17 00			     mov     byte ptr cs:data_64e,0
+   1137	0869  2E: C6 06	FF1D 00			     mov     byte ptr cs:data_68e,0
+   1138	086F  2E: C6 06	FF1E 00			     mov     byte ptr cs:data_69e,0
+   1139	0875  32 C9				     xor     cl,cl		     ; Zero register
+   1140	0877  B8 0003				     mov     ax,3
+   1141	087A  CD 60				     int     60h		     ; ??INT Non-standard interrupt
+   1142	087C  9D				     popf			     ; Pop flags
+   1143	087D  F9				     stc			     ; Set carry flag
+   1144	087E  74 01				     jz	     loc_83		     ; Jump if zero
+   1145	0880  C3				     retn
+   1146	0881			     loc_83:
+   1147	0881  F8				     clc			     ; Clear carry flag
+   1148	0882  C3				     retn
+   1149	0883  52 65 73 74 6F 72	65+		     db	     'Restore Game', 0Dh, ' Sure?(Y/N)'
+   1150	      20 47 61 6D 65 0D	20+
+   1151	      53 75 72 65 3F 28	59+
+   1152	      2F 4E 29
+   1153	089B  FF				     db	     0FFh
+   1154
+   1155				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1156				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1157				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1158				     ;				    SUBROUTINE
+   1159				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1160				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1161				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1162
+   1163	089C			     handle_pause_key2		     proc    near
+   1164	089C  2E: C6 06	FF75 02			     mov     byte ptr cs:data_81e,2
+   1165
+   1166				     ;ï¿½ï¿½ï¿½ï¿½ External Entry into Subroutine						   +
+   1167				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+   1168				     ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1169
+   1170	08A2			     handle_pause_key3:
+   1171	08A2  B8 0C46				     mov     ax,0C46h
+   1172	08A5  B9 1028				     mov     cx,1028h
+   1173	08A8  BF 3C80				     mov     di,3C80h
+   1174	08AB  2E: FF 16	2026			     call    word ptr cs:data_53e
+   1175	08B0  BB 1A46				     mov     bx,1A46h
+   1176	08B3  B9 1E28				     mov     cx,1E28h
+   1177	08B6  B0 FF				     mov     al,0FFh
+   1178	08B8  2E: FF 26	2000			     jmp     word ptr cs:data_51e
+   1179	08BD			     handle_pause_key2		     endp
+   1180
+   1181
+   1182				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1183				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1184				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1185				     ;				    SUBROUTINE
+   1186				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1187				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1188				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 23
+stick.asm
+
+
+
+   1189
+   1190	08BD			     handle_pause_key4		     proc    near
+   1191	08BD  B8 0C46				     mov     ax,0C46h
+   1192	08C0  B9 1028				     mov     cx,1028h
+   1193	08C3  BF 3C80				     mov     di,3C80h
+   1194	08C6  2E: FF 26	2028			     jmp     word ptr cs:data_54e
+   1195	08CB			     handle_pause_key4		     endp
+   1196
+   1197
+   1198				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1199				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1200				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1201				     ;				    SUBROUTINE
+   1202				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1203				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1204				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1205
+   1206	08CB			     handle_pause_key5		     proc    near
+   1207	08CB  52				     push    dx
+   1208	08CC			     loc_84:
+   1209	08CC  B2 FF				     mov     dl,0FFh
+   1210	08CE  B4 06				     mov     ah,6
+   1211	08D0  CD 21				     int     21h		     ; DOS Services  ah=function 06h
+   1212										     ;	special	char i/o, dl=subfunc
+   1213	08D2  75 F8				     jnz     loc_84		     ; Jump if not zero
+   1214	08D4  5A				     pop     dx
+   1215	08D5  C3				     retn
+   1216	08D6			     handle_pause_key5		     endp
+   1217
+   1218										     ;*	No entry point to code
+   1219	08D6  1E				     push    ds
+   1220	08D7  2E: 89 3E	0A51r			     mov     cs:data_25,di
+   1221	08DC  2E: 8C 06	0A53r			     mov     word ptr cs:data_25+2,es
+   1222	08E1  2E: 89 16	0A55r			     mov     cs:data_27,dx
+   1223	08E6  2E: 8C 1E	0A57r			     mov     word ptr cs:data_27+2,ds
+   1224	08EB  B9 0AF6				     mov     cx,0AF6h
+   1225	08EE  32 C0				     xor     al,al		     ; Zero register
+   1226	08F0  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
+   1227	08F2  2E: 8B 3E	0A51r			     mov     di,cs:data_25
+   1228	08F7  8B C7				     mov     ax,di
+   1229	08F9  47				     inc     di
+   1230	08FA  05 0201				     add     ax,201h
+   1231	08FD  B9 00FF				     mov     cx,0FFh
+   1232
+   1233	0900			     locloop_85:
+   1234	0900  AB				     stosw			     ; Store ax	to es:[di]
+   1235	0901  05 0009				     add     ax,9
+   1236	0904  E2 FA				     loop    locloop_85		     ; Loop if cx > 0
+   1237
+   1238	0906  0E				     push    cs
+   1239	0907  1F				     pop     ds
+   1240	0908  BA 0A59r				     mov     dx,offset data_29
+   1241	090B  B4 1A				     mov     ah,1Ah
+   1242	090D  CD 21				     int     21h		     ; DOS Services  ah=function 1Ah
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 24
+stick.asm
+
+
+
+   1243										     ;	set DTA(disk xfer area)	ds:dx
+   1244	090F  2E: C5 16	0A55r			     lds     dx,dword ptr cs:data_27 ; Load seg:offset ptr
+   1245	0914  8B CA				     mov     cx,dx
+   1246	0916  B4 4E				     mov     ah,4Eh
+   1247	0918  CD 21				     int     21h		     ; DOS Services  ah=function 4Eh
+   1248										     ;	find 1st filenam match @ds:dx
+   1249	091A  72 33				     jc	     loc_89		     ; Jump if carry Set
+   1250	091C  0E				     push    cs
+   1251	091D  1F				     pop     ds
+   1252	091E  2E: C4 3E	0A51r			     les     di,dword ptr cs:data_25 ; Load seg:offset ptr
+   1253	0923  81 C7 0201			     add     di,201h
+   1254	0927  B9 00FE				     mov     cx,0FEh
+   1255
+   1256	092A			     locloop_86:
+   1257	092A  51				     push    cx
+   1258	092B  57				     push    di
+   1259	092C  2E: 8B 1E	0A51r			     mov     bx,cs:data_25
+   1260	0931  26: FE 07				     inc     byte ptr es:[bx]
+   1261	0934  BE 0A77				     mov     si,0A77h
+   1262	0937  B9 0008				     mov     cx,8
+   1263
+   1264	093A			     locloop_87:
+   1265	093A  AC				     lodsb			     ; String [si] to al
+   1266	093B  3C 2E				     cmp     al,2Eh		     ; '.'
+   1267	093D  74 03				     je	     loc_88		     ; Jump if equal
+   1268	093F  AA				     stosb			     ; Store al	to es:[di]
+   1269	0940  E2 F8				     loop    locloop_87		     ; Loop if cx > 0
+   1270
+   1271	0942			     loc_88:
+   1272	0942  5F				     pop     di
+   1273	0943  59				     pop     cx
+   1274	0944  B4 4F				     mov     ah,4Fh
+   1275	0946  CD 21				     int     21h		     ; DOS Services  ah=function 4Fh
+   1276										     ;	find next filename match
+   1277	0948  72 05				     jc	     loc_89		     ; Jump if carry Set
+   1278	094A  83 C7 09				     add     di,9
+   1279	094D  E2 DB				     loop    locloop_86		     ; Loop if cx > 0
+   1280
+   1281	094F			     loc_89:
+   1282	094F  1F				     pop     ds
+   1283	0950  C3				     retn
+   1284	0951  33*(00)				     db	     51	dup (0)
+   1285	0984  3C 00 75 03 E9 76			     db	      3Ch, 00h,	75h, 03h,0E9h, 76h
+   1286	098A  01 57 56 1E 06 2E			     db	      01h, 57h,	56h, 1Eh, 06h, 2Eh
+   1287	0990  89 36 5C 0F 2E 8C			     db	      89h, 36h,	5Ch, 0Fh, 2Eh, 8Ch
+   1288	0996  1E 5E 0F 2E 89 3E			     db	      1Eh, 5Eh,	0Fh, 2Eh, 89h, 3Eh
+   1289	099C  60 0F 2E 8C 06 62			     db	      60h, 0Fh,	2Eh, 8Ch, 06h, 62h
+   1290	09A2  0F 9C FC 3C 07 73			     db	      0Fh, 9Ch,0FCh, 3Ch, 07h, 73h
+   1291	09A8  0F FE C8 33 C9 8A			     db	      0Fh,0FEh,0C8h, 33h,0C9h, 8Ah
+   1292	09AE  C8 8B E9 03 ED 2E			     db	     0C8h, 8Bh,0E9h, 03h,0EDh, 2Eh
+   1293	09B4  FF 96 CA				     db	     0FFh, 96h,0CAh
+   1294	09B7  0A				     db	     0Ah
+   1295	09B8			     loc_90:
+   1296	09B8  5B				     pop     bx
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 25
+stick.asm
+
+
+
+   1297	09B9  9C				     pushf			     ; Push flags
+   1298	09BA  58				     pop     ax
+   1299				     ;*		     and     bx,0FFFEh
+   1300	09BB  83 E3 FE				     db	      83h,0E3h,0FEh	     ;	Fixup -	byte match
+   1301	09BE  25 0001				     and     ax,1
+   1302	09C1  0B C3				     or	     ax,bx
+   1303	09C3  50				     push    ax
+   1304	09C4  9D				     popf			     ; Pop flags
+   1305	09C5  07				     pop     es
+   1306	09C6  1F				     pop     ds
+   1307	09C7  5E				     pop     si
+   1308	09C8  5F				     pop     di
+   1309	09C9  C3				     retn
+   1310	09CA  D6 0A FF 0A 2F 0C			     db	     0D6h, 0Ah,0FFh, 0Ah, 2Fh, 0Ch
+   1311	09D0  6F 0B AE 0B 24 0C			     db	      6Fh, 0Bh,0AEh, 0Bh, 24h, 0Ch
+   1312	09D6  2E C7 06 60 0F 00			     db	      2Eh,0C7h,	06h, 60h, 0Fh, 00h
+   1313	09DC  C0 2E 8C 0E 62 0F			     db	     0C0h, 2Eh,	8Ch, 0Eh, 62h, 0Fh
+   1314	09E2  8A C4 0A C0 79 04			     db	      8Ah,0C4h,	0Ah,0C0h, 79h, 04h
+   1315	09E8  24 7F 04 20 B1 0B			     db	      24h, 7Fh,	04h, 20h,0B1h, 0Bh
+   1316	09EE  F6 E1 05 68 0F 2E			     db	     0F6h,0E1h,	05h, 68h, 0Fh, 2Eh
+   1317	09F4  A3 5C 0F 2E 8C 0E			     db	     0A3h, 5Ch,	0Fh, 2Eh, 8Ch, 0Eh
+   1318	09FA  5E 0F E9 30 01 2E			     db	      5Eh, 0Fh,0E9h, 30h, 01h, 2Eh
+   1319	0A00  C4 3E 60 0F 57 06			     db	     0C4h, 3Eh,	60h, 0Fh, 57h, 06h
+   1320	0A06  2E C7 06 60 0F 00			     db	      2Eh,0C7h,	06h, 60h, 0Fh, 00h
+   1321	0A0C  00 8C C8 05 00 30			     db	      00h, 8Ch,0C8h, 05h, 00h, 30h
+   1322	0A12  8E C0 2E A3 62 0F			     db	      8Eh,0C0h,	2Eh,0A3h, 62h, 0Fh
+   1323	0A18  E8 27 01 8B D8 B9			     db	     0E8h, 27h,	01h, 8Bh,0D8h,0B9h
+   1324	0A1E  01 00 E8 61 02 2E			     db	      01h, 00h,0E8h, 61h, 02h, 2Eh
+   1325	0A24  8B 0E 64 0F 49 26			     db	      8Bh, 0Eh,	64h, 0Fh, 49h, 26h
+   1326	0A2A  80 3E 00 00 00 74			     db	      80h, 3Eh,	00h, 00h, 00h, 74h
+   1327	0A30  2A 2E C7 06 60 0F			     db	      2Ah, 2Eh,0C7h, 06h, 60h, 0Fh
+   1328	0A36  00 00 B9 04 00 E8			     db	      00h, 00h,0B9h, 04h, 00h,0E8h
+   1329	0A3C  46 02 26 8B 0E 00			     db	      46h, 02h,	26h, 8Bh, 0Eh, 00h
+   1330	0A42  00 2E 80 3E 14 FF			     db	      00h, 2Eh,	80h, 3Eh, 14h,0FFh
+   1331	0A48  00 74 10 8B D1 B0			     db	      00h, 74h,	10h, 8Bh,0D1h,0B0h
+   1332	0A4E  01 B9 00				     db	      01h,0B9h,	00h
+   1333	0A51  B400 CD42		     data_25	     dw	     0B400h, 0CD42h
+   1334	0A55  2621 0E8B		     data_27	     dw	     2621h, 0E8Bh
+   1335	0A59  02		     data_29	     db	     2
+   1336	0A5A  00				     db	     0
+   1337	0A5B			     loc_91:
+   1338	0A5B  2E: C7 06	0F60r 0000		     mov     cs:data_46,0
+   1339	0A62  E8 021F				     call    handle_pause_key7
+   1340	0A65  50				     push    ax
+   1341	0A66  E8 022A				     call    handle_pause_key8
+   1342	0A69  5A				     pop     dx
+   1343	0A6A  07				     pop     es
+   1344	0A6B  5F				     pop     di
+   1345	0A6C  E9 022E				     jmp     loc_111
+   1346										     ;*	No entry point to code
+   1347	0A6F  8A DC				     mov     bl,ah
+   1348	0A71  32 FF				     xor     bh,bh		     ; Zero register
+   1349	0A73  03 DB				     add     bx,bx
+   1350	0A75  2E: 8B B7	0BA0			     mov     si,word ptr cs:[0BA0h][bx]
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 26
+stick.asm
+
+
+
+   1351	0A7A  8C C8				     mov     ax,cs
+   1352	0A7C  05 1000				     add     ax,1000h
+   1353	0A7F  8E C0				     mov     es,ax
+   1354	0A81  05 1000				     add     ax,1000h
+   1355	0A84  8E D8				     mov     ds,ax
+   1356	0A86  8B 34				     mov     si,[si]
+   1357	0A88  BF B000				     mov     di,data_84e
+   1358	0A8B  B9 0800				     mov     cx,800h
+   1359	0A8E  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1360	0A90  BF B000				     mov     di,data_84e
+   1361	0A93  B9 000F				     mov     cx,0Fh
+   1362
+   1363	0A96			     locloop_92:
+   1364	0A96  26: 81 05	B000			     add     word ptr es:[di],0B000h
+   1365	0A9B  47				     inc     di
+   1366	0A9C  47				     inc     di
+   1367	0A9D  E2 F7				     loop    locloop_92		     ; Loop if cx > 0
+   1368
+   1369	0A9F  C3				     retn
+   1370	0AA0  00 18 00 18 00 18			     db	      00h, 18h,	00h, 18h, 00h, 18h
+   1371	0AA6  00 18 02 18 02 18			     db	      00h, 18h,	02h, 18h, 02h, 18h
+   1372	0AAC  04 18 2E C4 3E 60			     db	      04h, 18h,	2Eh,0C4h, 3Eh, 60h
+   1373	0AB2  0F 57 06 2E C7 06			     db	      0Fh, 57h,	06h, 2Eh,0C7h, 06h
+   1374	0AB8  60 0F 00 00 8C C8			     db	      60h, 0Fh,	00h, 00h, 8Ch,0C8h
+   1375	0ABE  05 00 30 8E C0 2E			     db	      05h, 00h,	30h, 8Eh,0C0h, 2Eh
+   1376	0AC4  A3 62 0F E8 78 00			     db	     0A3h, 62h,	0Fh,0E8h, 78h, 00h
+   1377	0ACA  D88B		     data_31	     dw	     0D88Bh		     ; Data table (indexed access)
+   1378	0ACC  B9 04 00 E8 B2 01			     db	     0B9h, 04h,	00h,0E8h,0B2h, 01h
+   1379	0AD2  26 8B 0E 00 00 2E			     db	      26h, 8Bh,	0Eh, 00h, 00h, 2Eh
+   1380	0AD8  F6 06 15 FF FF 75			     db	     0F6h, 06h,	15h,0FFh,0FFh, 75h
+   1381	0ADE  10 8B D1 B0 01 B9			     db	      10h, 8Bh,0D1h,0B0h, 01h,0B9h
+   1382	0AE4  00 00 B4 42 CD 21			     db	      00h, 00h,0B4h, 42h,0CDh, 21h
+   1383	0AEA  26 8B 0E 02 00 07			     db	      26h, 8Bh,	0Eh, 02h, 00h, 07h
+   1384	0AF0  5F 2E 89 3E 60 0F			     db	      5Fh, 2Eh,	89h, 3Eh, 60h, 0Fh
+   1385	0AF6  2E 8C 06 62 0F E8			     db	      2Eh, 8Ch,	06h, 62h, 0Fh,0E8h
+   1386	0AFC  86 01 E9 92 01 1E			     db	      86h, 01h,0E9h, 92h, 01h, 1Eh
+   1387	0B02  53 8C C8 05 00 20			     db	      53h, 8Ch,0C8h, 05h, 00h, 20h
+   1388	0B08  8E D8 0E 07 BE 00			     db	      8Eh,0D8h,	0Eh, 07h,0BEh, 00h
+   1389	0B0E  90 BF 00 30 B9 00			     db	      90h,0BFh,	00h, 30h,0B9h, 00h
+   1390	0B14  38				     db	     38h
+   1391
+   1392	0B15			     locloop_93:
+   1393	0B15  AD				     lodsw			     ; String [si] to ax
+   1394	0B16  26: 8B 15				     mov     dx,es:[di]
+   1395	0B19  AB				     stosw			     ; Store ax	to es:[di]
+   1396	0B1A  89 54 FE				     mov     [si-2],dx
+   1397	0B1D  E2 F6				     loop    locloop_93		     ; Loop if cx > 0
+   1398
+   1399	0B1F  5B				     pop     bx
+   1400	0B20  1F				     pop     ds
+   1401	0B21  2E: FF 27				     jmp     word ptr cs:[bx]	     ;*
+   1402										     ;*	No entry point to code
+   1403	0B24  E8 001B				     call    handle_pause_key6
+   1404	0B27  73 01				     jnc     loc_94		     ; Jump if carry=0
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 27
+stick.asm
+
+
+
+   1405	0B29  C3				     retn
+   1406	0B2A			     loc_94:
+   1407	0B2A  8B D8				     mov     bx,ax
+   1408	0B2C  E9 0164				     jmp     loc_109
+   1409	0B2F			     loc_95:
+   1410	0B2F  E8 0010				     call    handle_pause_key6
+   1411	0B32  73 01				     jnc     loc_96		     ; Jump if carry=0
+   1412	0B34  C3				     retn
+   1413	0B35			     loc_96:
+   1414	0B35  2E: 8B 0E	0F64r			     mov     cx,cs:data_48
+   1415	0B3A  8B D8				     mov     bx,ax
+   1416	0B3C  E8 0145				     call    handle_pause_key7
+   1417	0B3F  E9 0151				     jmp     loc_109
+   1418
+   1419				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1420				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1421				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1422				     ;				    SUBROUTINE
+   1423				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1424				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1425				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1426
+   1427	0B42			     handle_pause_key6		     proc    near
+   1428	0B42			     loc_97:
+   1429	0B42  2E: C7 06	0F64r FFFF		     mov     cs:data_48,0FFFFh
+   1430	0B49  2E: C7 06	0F66r FFFF		     mov     cs:data_49,0FFFFh
+   1431	0B50  2E: C5 1E	0F5Cr			     lds     bx,dword ptr cs:data_44 ; Load seg:offset ptr
+   1432	0B55  8A 07				     mov     al,[bx]
+   1433	0B57  04 31				     add     al,31h		     ; '1'
+   1434	0B59  2E: A2 0D41			     mov     byte ptr cs:[0D41h],al
+   1435	0B5D  2E: A2 0D5E			     mov     byte ptr cs:[0D5Eh],al
+   1436	0B61  43				     inc     bx
+   1437	0B62  8A 07				     mov     al,[bx]
+   1438	0B64  43				     inc     bx
+   1439	0B65  8B D3				     mov     dx,bx
+   1440	0B67  2E: A2 0D79			     mov     byte ptr cs:[0D79h],al
+   1441	0B6B  0A C0				     or	     al,al		     ; Zero ?
+   1442	0B6D  74 05				     jz	     loc_98		     ; Jump if zero
+   1443	0B6F  0E				     push    cs
+   1444	0B70  1F				     pop     ds
+   1445	0B71  BA 0D3B				     mov     dx,0D3Bh
+   1446	0B74			     loc_98:
+   1447	0B74  B8 3D00				     mov     ax,3D00h
+   1448	0B77  CD 21				     int     21h		     ; DOS Services  ah=function 3Dh
+   1449										     ;	open file, al=mode,name@ds:dx
+   1450	0B79  73 61				     jnc     loc_103		     ; Jump if carry=0
+   1451	0B7B  3D 0002				     cmp     ax,2
+   1452	0B7E  74 03				     je	     loc_99		     ; Jump if equal
+   1453	0B80  E9 02CF				     jmp     loc_140
+   1454	0B83			     loc_99:
+   1455	0B83  2E: F6 06	FF78 FF			     test    byte ptr cs:data_82e,0FFh
+   1456	0B89  75 42				     jnz     loc_102		     ; Jump if not zero
+   1457	0B8B  06				     push    es
+   1458	0B8C  E8 FD13				     call    handle_pause_key3
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 28
+stick.asm
+
+
+
+   1459	0B8F  0E				     push    cs
+   1460	0B90  1F				     pop     ds
+   1461	0B91  BE 0D47				     mov     si,0D47h
+   1462	0B94  BB 006C				     mov     bx,6Ch
+   1463	0B97  B1 4A				     mov     cl,4Ah		     ; 'J'
+   1464	0B99  2E: FF 16	202A			     call    word ptr cs:data_55e
+   1465	0B9E  E8 FD2A				     call    handle_pause_key5
+   1466	0BA1  52				     push    dx
+   1467	0BA2  2E: C6 06	FF1D 00			     mov     byte ptr cs:data_68e,0
+   1468	0BA8			     loc_100:
+   1469	0BA8  B2 FF				     mov     dl,0FFh
+   1470	0BAA  B4 06				     mov     ah,6
+   1471	0BAC  CD 21				     int     21h		     ; DOS Services  ah=function 06h
+   1472										     ;	special	char i/o, dl=subfunc
+   1473	0BAE  75 08				     jnz     loc_101		     ; Jump if not zero
+   1474	0BB0  2E: F6 06	FF1D FF			     test    byte ptr cs:data_68e,0FFh
+   1475	0BB6  74 F0				     jz	     loc_100		     ; Jump if zero
+   1476	0BB8			     loc_101:
+   1477	0BB8  5A				     pop     dx
+   1478	0BB9  E8 FD01				     call    handle_pause_key4
+   1479	0BBC  07				     pop     es
+   1480	0BBD  0E				     push    cs
+   1481	0BBE  1F				     pop     ds
+   1482	0BBF  B4 0D				     mov     ah,0Dh
+   1483	0BC1  CD 21				     int     21h		     ; DOS Services  ah=function 0Dh
+   1484										     ;	flush disk buffers to disk
+   1485	0BC3  BA 0D7E				     mov     dx,0D7Eh
+   1486	0BC6  B4 10				     mov     ah,10h
+   1487	0BC8  CD 21				     int     21h		     ; DOS Services  ah=function 10h
+   1488										     ;	close file, FCB	@ ds:dx
+   1489	0BCA  E9 FF75				     jmp     loc_97
+   1490	0BCD			     loc_102:
+   1491	0BCD  0E				     push    cs
+   1492	0BCE  1F				     pop     ds
+   1493	0BCF  B4 0D				     mov     ah,0Dh
+   1494	0BD1  CD 21				     int     21h		     ; DOS Services  ah=function 0Dh
+   1495										     ;	flush disk buffers to disk
+   1496	0BD3  BA 0D7E				     mov     dx,0D7Eh
+   1497	0BD6  B4 10				     mov     ah,10h
+   1498	0BD8  CD 21				     int     21h		     ; DOS Services  ah=function 10h
+   1499										     ;	close file, FCB	@ ds:dx
+   1500	0BDA  F9				     stc			     ; Set carry flag
+   1501	0BDB  C3				     retn
+   1502	0BDC			     loc_103:
+   1503	0BDC  2E: C6 06	FF1D 00			     mov     byte ptr cs:data_68e,0
+   1504	0BE2  2E: F6 06	0D79 FF			     test    byte ptr cs:[0D79h],0FFh
+   1505	0BE8  75 01				     jnz     loc_104		     ; Jump if not zero
+   1506	0BEA  C3				     retn
+   1507	0BEB			     loc_104:
+   1508	0BEB  50				     push    ax
+   1509	0BEC  8B D8				     mov     bx,ax
+   1510	0BEE  2E: A0 0D79			     mov     al,byte ptr cs:[0D79h]
+   1511	0BF2  32 E4				     xor     ah,ah		     ; Zero register
+   1512	0BF4  48				     dec     ax
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 29
+stick.asm
+
+
+
+   1513	0BF5  03 C0				     add     ax,ax
+   1514	0BF7  03 C0				     add     ax,ax
+   1515	0BF9  8B D0				     mov     dx,ax
+   1516	0BFB  B0 00				     mov     al,0
+   1517	0BFD  B9 0000				     mov     cx,0
+   1518	0C00  B4 42				     mov     ah,42h
+   1519	0C02  CD 21				     int     21h		     ; DOS Services  ah=function 42h
+   1520										     ;	move file ptr, bx=file handle
+   1521										     ;	 al=method, cx,dx=offset
+   1522	0C04  73 03				     jnc     loc_105		     ; Jump if carry=0
+   1523	0C06  E9 0249				     jmp     loc_140
+   1524	0C09			     loc_105:
+   1525	0C09  0E				     push    cs
+   1526	0C0A  1F				     pop     ds
+   1527	0C0B  BA 0D7A				     mov     dx,0D7Ah
+   1528	0C0E  B9 0004				     mov     cx,4
+   1529	0C11  B4 3F				     mov     ah,3Fh
+   1530	0C13  CD 21				     int     21h		     ; DOS Services  ah=function 3Fh
+   1531										     ;	read file, bx=file handle
+   1532										     ;	 cx=bytes to ds:dx buffer
+   1533	0C15  73 03				     jnc     loc_106		     ; Jump if carry=0
+   1534	0C17  E9 0238				     jmp     loc_140
+   1535	0C1A			     loc_106:
+   1536	0C1A  8B 16 0D7A			     mov     dx,word ptr ds:[0D7Ah]
+   1537	0C1E  8B 0E 0D7C			     mov     cx,word ptr ds:[0D7Ch]
+   1538	0C22  B0 00				     mov     al,0
+   1539	0C24  B4 42				     mov     ah,42h
+   1540	0C26  CD 21				     int     21h		     ; DOS Services  ah=function 42h
+   1541										     ;	move file ptr, bx=file handle
+   1542										     ;	 al=method, cx,dx=offset
+   1543	0C28  0E				     push    cs
+   1544	0C29  1F				     pop     ds
+   1545	0C2A  BA 0F64r				     mov     dx,offset data_48
+   1546	0C2D  B9 0004				     mov     cx,4
+   1547	0C30  B4 3F				     mov     ah,3Fh
+   1548	0C32  CD 21				     int     21h		     ; DOS Services  ah=function 3Fh
+   1549										     ;	read file, bx=file handle
+   1550										     ;	 cx=bytes to ds:dx buffer
+   1551	0C34  73 03				     jnc     loc_107		     ; Jump if carry=0
+   1552	0C36  E9 0219				     jmp     loc_140
+   1553	0C39			     loc_107:
+   1554	0C39  58				     pop     ax
+   1555	0C3A  C3				     retn
+   1556	0C3B  7A 65 6C 72 65 73	31+		     db	     'zelres1.sar', 0
+   1557	      2E 73 61 72 00
+   1558	0C47  20 20 20 20 50 6C	65+		     db	     '	  Please', 0Dh,	' insert DISK1'
+   1559	      61 73 65 0D 20 69	6E+
+   1560	      73 65 72 74 20 44	49+
+   1561	      53 4B 31
+   1562	0C5F  0D 20 20 20 20 20	20+		     db	     0Dh, '	 and', 0Dh, ' press an'
+   1563	      61 6E 64 0D 20 70	72+
+   1564	      65 73 73 20 61 6E
+   1565	0C73  79 20 6B 65 79			     db	     'y	key'
+   1566	0C78  FF 00 00 00 00 00			     db	     0FFh, 00h,	00h, 00h, 00h, 00h
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 30
+stick.asm
+
+
+
+   1567	0C7E  64 75 6D 6D 79 00			     db	      64h, 75h,	6Dh, 6Dh, 79h, 00h
+   1568
+   1569				     ;ï¿½ï¿½ï¿½ï¿½ External Entry into Subroutine						   +
+   1570				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+   1571				     ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1572
+   1573	0C84			     handle_pause_key7:
+   1574	0C84  2E: C5 16	0F60r			     lds     dx,dword ptr cs:data_46 ; Load seg:offset ptr
+   1575	0C89  B4 3F				     mov     ah,3Fh
+   1576	0C8B  CD 21				     int     21h		     ; DOS Services  ah=function 3Fh
+   1577										     ;	read file, bx=file handle
+   1578										     ;	 cx=bytes to ds:dx buffer
+   1579	0C8D  73 03				     jnc     loc_ret_108	     ; Jump if carry=0
+   1580	0C8F  E9 01C0				     jmp     loc_140
+   1581
+   1582	0C92			     loc_ret_108:
+   1583	0C92  C3				     retn
+   1584
+   1585				     ;ï¿½ï¿½ï¿½ï¿½ External Entry into Subroutine						   +
+   1586				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+   1587				     ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1588
+   1589	0C93			     handle_pause_key8:
+   1590	0C93			     loc_109:
+   1591	0C93  B4 3E				     mov     ah,3Eh
+   1592	0C95  CD 21				     int     21h		     ; DOS Services  ah=function 3Eh
+   1593										     ;	close file, bx=file handle
+   1594	0C97  73 03				     jnc     loc_ret_110	     ; Jump if carry=0
+   1595	0C99  E9 01B6				     jmp     loc_140
+   1596
+   1597	0C9C			     loc_ret_110:
+   1598	0C9C  C3				     retn
+   1599	0C9D			     loc_111:
+   1600	0C9D  1E				     push    ds
+   1601	0C9E  8C C8				     mov     ax,cs
+   1602	0CA0  05 3000				     add     ax,3000h
+   1603	0CA3  8E D8				     mov     ds,ax
+   1604	0CA5  BE 0000				     mov     si,data_85e
+   1605	0CA8  E8 0002				     call    handle_pause_key9
+   1606	0CAB  1F				     pop     ds
+   1607	0CAC  C3				     retn
+   1608
+   1609				     ;ï¿½ï¿½ï¿½ï¿½ External Entry into Subroutine						   +
+   1610				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+   1611				     ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1612
+   1613	0CAD			     handle_pause_key9:
+   1614	0CAD  33 DB				     xor     bx,bx		     ; Zero register
+   1615	0CAF  AC				     lodsb			     ; String [si] to al
+   1616	0CB0  4A				     dec     dx
+   1617	0CB1  24 07				     and     al,7
+   1618	0CB3  8A D8				     mov     bl,al
+   1619	0CB5  03 DB				     add     bx,bx
+   1620	0CB7  2E: FF A7	0DBC			     jmp     word ptr cs:[0DBCh][bx] ;*
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 31
+stick.asm
+
+
+
+   1621										     ;*	No entry point to code
+   1622	0CBC  CC				     int     3			     ; Debug breakpoint
+   1623	0CBD  0D 0DD1				     or	     ax,0DD1h
+   1624	0CC0  13 0E 0E34			     adc     cx,ds:data_86e
+   1625	0CC4  73 0E				     jnc     loc_112		     ; Jump if carry=0
+   1626	0CC6  9C				     pushf			     ; Push flags
+   1627	0CC7  0E				     push    cs
+   1628	0CC8  BA F50E				     mov     dx,0F50Eh
+   1629	0CCB  0E				     push    cs
+   1630	0CCC  8B CA				     mov     cx,dx
+   1631	0CCE  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1632	0CD0  C3				     retn
+   1633	0CD1  8B EE E8				     db	      8Bh,0EEh,0E8h
+   1634	0CD4			     loc_112:
+   1635	0CD4  32 00				     xor     al,[bx+si]
+   1636	0CD6			     loc_113:
+   1637	0CD6  AC				     lodsb			     ; String [si] to al
+   1638	0CD7  E8 0006				     call    poll_joystick_buttons0
+   1639	0CDA  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
+   1640	0CDC  4A				     dec     dx
+   1641	0CDD  75 F7				     jnz     loc_113		     ; Jump if not zero
+   1642	0CDF  C3				     retn
+   1643
+   1644				     ;ï¿½ï¿½ï¿½ï¿½ External Entry into Subroutine						   +
+   1645				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+   1646				     ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1647
+   1648	0CE0			     poll_joystick_buttons0:
+   1649	0CE0  55				     push    bp
+   1650	0CE1  8A E0				     mov     ah,al
+   1651	0CE3  80 E4 F0				     and     ah,0F0h
+   1652	0CE6  B9 0001				     mov     cx,1
+   1653	0CE9			     loc_114:
+   1654	0CE9  3E: F6 46	00 0F			     test    byte ptr ds:[bp],0Fh
+   1655	0CEE  75 16				     jnz     loc_116		     ; Jump if not zero
+   1656	0CF0  3E: 3A 66	00			     cmp     ah,ds:[bp]
+   1657	0CF4  74 04				     je	     loc_115		     ; Jump if equal
+   1658	0CF6  45				     inc     bp
+   1659	0CF7  45				     inc     bp
+   1660	0CF8  EB EF				     jmp     short loc_114
+   1661	0CFA			     loc_115:
+   1662	0CFA  8A C8				     mov     cl,al
+   1663	0CFC  3E: 8A 46	01			     mov     al,ds:[bp+1]
+   1664	0D00  83 E1 0F				     and     cx,0Fh
+   1665	0D03  83 C1 02				     add     cx,2
+   1666	0D06			     loc_116:
+   1667	0D06  5D				     pop     bp
+   1668	0D07  C3				     retn
+   1669	0D08			     loc_117:
+   1670	0D08  AC				     lodsb			     ; String [si] to al
+   1671	0D09  4A				     dec     dx
+   1672	0D0A  3C FF				     cmp     al,0FFh
+   1673	0D0C  75 01				     jne     loc_118		     ; Jump if not equal
+   1674	0D0E  C3				     retn
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 32
+stick.asm
+
+
+
+   1675	0D0F			     loc_118:
+   1676	0D0F  46				     inc     si
+   1677	0D10  4A				     dec     dx
+   1678	0D11  EB F5				     jmp     short loc_117
+   1679	0D13  AC 4A 8A E0			     db	     0ACh, 4Ah,	8Ah,0E0h
+   1680	0D17			     loc_119:
+   1681	0D17  AC				     lodsb			     ; String [si] to al
+   1682	0D18  B9 0001				     mov     cx,1
+   1683	0D1B  8A D8				     mov     bl,al
+   1684	0D1D  80 E3 F0				     and     bl,0F0h
+   1685	0D20  3A DC				     cmp     bl,ah
+   1686	0D22  75 0A				     jne     loc_120		     ; Jump if not equal
+   1687	0D24  8A C8				     mov     cl,al
+   1688	0D26  83 E1 0F				     and     cx,0Fh
+   1689	0D29  83 C1 03				     add     cx,3
+   1690	0D2C  AC				     lodsb			     ; String [si] to al
+   1691	0D2D  4A				     dec     dx
+   1692	0D2E			     loc_120:
+   1693	0D2E  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
+   1694	0D30  4A				     dec     dx
+   1695	0D31  75 E4				     jnz     loc_119		     ; Jump if not zero
+   1696	0D33  C3				     retn
+   1697	0D34  8B EE E8 CF FF			     db	      8Bh,0EEh,0E8h,0CFh,0FFh
+   1698	0D39			     loc_121:
+   1699	0D39  AC				     lodsb			     ; String [si] to al
+   1700	0D3A  E8 0006				     call    poll_joystick_buttons1
+   1701	0D3D  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
+   1702	0D3F  4A				     dec     dx
+   1703	0D40  75 F7				     jnz     loc_121		     ; Jump if not zero
+   1704	0D42  C3				     retn
+   1705
+   1706				     ;ï¿½ï¿½ï¿½ï¿½ External Entry into Subroutine						   +
+   1707				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+   1708				     ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1709
+   1710	0D43			     poll_joystick_buttons1:
+   1711	0D43  55				     push    bp
+   1712	0D44  8A E0				     mov     ah,al
+   1713	0D46  80 E4 0F				     and     ah,0Fh
+   1714	0D49  B9 0001				     mov     cx,1
+   1715	0D4C			     loc_122:
+   1716	0D4C  3E: F6 46	00 F0			     test    byte ptr ds:[bp],0F0h
+   1717	0D51  75 1E				     jnz     loc_124		     ; Jump if not zero
+   1718	0D53  3E: 3A 66	00			     cmp     ah,ds:[bp]
+   1719	0D57  74 04				     je	     loc_123		     ; Jump if equal
+   1720	0D59  45				     inc     bp
+   1721	0D5A  45				     inc     bp
+   1722	0D5B  EB EF				     jmp     short loc_122
+   1723	0D5D			     loc_123:
+   1724	0D5D  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+   1725	0D5F  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+   1726	0D61  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+   1727	0D63  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+   1728	0D65  8A C8				     mov     cl,al
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 33
+stick.asm
+
+
+
+   1729	0D67  3E: 8A 46	01			     mov     al,ds:[bp+1]
+   1730	0D6B  83 E1 0F				     and     cx,0Fh
+   1731	0D6E  83 C1 02				     add     cx,2
+   1732	0D71			     loc_124:
+   1733	0D71  5D				     pop     bp
+   1734	0D72  C3				     retn
+   1735	0D73  AC 4A 8A E0			     db	     0ACh, 4Ah,	8Ah,0E0h
+   1736	0D77			     loc_125:
+   1737	0D77  AC				     lodsb			     ; String [si] to al
+   1738	0D78  B9 0001				     mov     cx,1
+   1739	0D7B  8A D8				     mov     bl,al
+   1740	0D7D  80 E3 0F				     and     bl,0Fh
+   1741	0D80  3A DC				     cmp     bl,ah
+   1742	0D82  75 12				     jne     loc_126		     ; Jump if not equal
+   1743	0D84  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+   1744	0D86  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+   1745	0D88  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+   1746	0D8A  D0 E8				     shr     al,1		     ; Shift w/zeros fill
+   1747	0D8C  8A C8				     mov     cl,al
+   1748	0D8E  83 E1 0F				     and     cx,0Fh
+   1749	0D91  83 C1 03				     add     cx,3
+   1750	0D94  AC				     lodsb			     ; String [si] to al
+   1751	0D95  4A				     dec     dx
+   1752	0D96			     loc_126:
+   1753	0D96  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
+   1754	0D98  4A				     dec     dx
+   1755	0D99  75 DC				     jnz     loc_125		     ; Jump if not zero
+   1756	0D9B  C3				     retn
+   1757	0D9C			     loc_127:
+   1758	0D9C  AC				     lodsb			     ; String [si] to al
+   1759	0D9D  B9 0001				     mov     cx,1
+   1760	0DA0  38 04				     cmp     [si],al
+   1761	0DA2  75 10				     jne     loc_128		     ; Jump if not equal
+   1762	0DA4  8A 4C 01				     mov     cl,[si+1]
+   1763	0DA7  81 E1 00FF			     and     cx,0FFh
+   1764	0DAB  83 C1 02				     add     cx,2
+   1765	0DAE  83 C6 02				     add     si,2
+   1766	0DB1  83 EA 02				     sub     dx,2
+   1767	0DB4			     loc_128:
+   1768	0DB4  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
+   1769	0DB6  4A				     dec     dx
+   1770	0DB7  75 E3				     jnz     loc_127		     ; Jump if not zero
+   1771	0DB9  C3				     retn
+   1772	0DBA  8B EE				     db	      8Bh,0EEh
+   1773	0DBC			     loc_129:
+   1774	0DBC  AD				     lodsw			     ; String [si] to ax
+   1775	0DBD  83 EA 02				     sub     dx,2
+   1776	0DC0  3D FFFF				     cmp     ax,0FFFFh
+   1777	0DC3  75 F7				     jne     loc_129		     ; Jump if not equal
+   1778	0DC5			     loc_130:
+   1779	0DC5  AC				     lodsb			     ; String [si] to al
+   1780	0DC6  E8 0006				     call    poll_joystick_buttons2
+   1781	0DC9  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
+   1782	0DCB  4A				     dec     dx
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 34
+stick.asm
+
+
+
+   1783	0DCC  75 F7				     jnz     loc_130		     ; Jump if not zero
+   1784	0DCE  C3				     retn
+   1785
+   1786				     ;ï¿½ï¿½ï¿½ï¿½ External Entry into Subroutine						   +
+   1787				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
+   1788				     ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1789
+   1790	0DCF			     poll_joystick_buttons2:
+   1791	0DCF  55				     push    bp
+   1792	0DD0  B9 0001				     mov     cx,1
+   1793	0DD3			     loc_131:
+   1794				     ;*		     cmp     word ptr ds:[bp],0FFFFh
+   1795	0DD3  3E 83 7E 00 FF			     db	      3Eh, 83h,	7Eh, 00h,0FFh	     ;	Fixup -	byte match
+   1796	0DD8  74 19				     jz	     loc_133		     ; Jump if zero
+   1797	0DDA  3E: 3A 46	00			     cmp     al,ds:[bp]
+   1798	0DDE  74 04				     je	     loc_132		     ; Jump if equal
+   1799	0DE0  45				     inc     bp
+   1800	0DE1  45				     inc     bp
+   1801	0DE2  EB EF				     jmp     short loc_131
+   1802	0DE4			     loc_132:
+   1803	0DE4  AC				     lodsb			     ; String [si] to al
+   1804	0DE5  4A				     dec     dx
+   1805	0DE6  8A C8				     mov     cl,al
+   1806	0DE8  3E: 8A 46	01			     mov     al,ds:[bp+1]
+   1807	0DEC  81 E1 00FF			     and     cx,0FFh
+   1808	0DF0  83 C1 02				     add     cx,2
+   1809	0DF3			     loc_133:
+   1810	0DF3  5D				     pop     bp
+   1811	0DF4  C3				     retn
+   1812	0DF5  AC 4A 8A E0			     db	     0ACh, 4Ah,	8Ah,0E0h
+   1813	0DF9			     loc_134:
+   1814	0DF9  AC				     lodsb			     ; String [si] to al
+   1815	0DFA  B9 0001				     mov     cx,1
+   1816	0DFD  3A C4				     cmp     al,ah
+   1817	0DFF  75 10				     jne     loc_135		     ; Jump if not equal
+   1818	0E01  AC				     lodsb			     ; String [si] to al
+   1819	0E02  8A C8				     mov     cl,al
+   1820	0E04  AC				     lodsb			     ; String [si] to al
+   1821	0E05  86 C1				     xchg    al,cl
+   1822	0E07  81 E1 00FF			     and     cx,0FFh
+   1823	0E0B  83 C1 03				     add     cx,3
+   1824	0E0E  83 EA 02				     sub     dx,2
+   1825	0E11			     loc_135:
+   1826	0E11  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
+   1827	0E13  4A				     dec     dx
+   1828	0E14  75 E3				     jnz     loc_134		     ; Jump if not zero
+   1829	0E16  C3				     retn
+   1830	0E17  C3				     db	     0C3h
+   1831	0E18			     loc_136:
+   1832	0E18  FB				     sti			     ; Enable interrupts
+   1833	0E19  50				     push    ax
+   1834	0E1A  53				     push    bx
+   1835	0E1B  51				     push    cx
+   1836	0E1C  52				     push    dx
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 35
+stick.asm
+
+
+
+   1837	0E1D  57				     push    di
+   1838	0E1E  56				     push    si
+   1839	0E1F  55				     push    bp
+   1840	0E20  1E				     push    ds
+   1841	0E21  06				     push    es
+   1842	0E22  57				     push    di
+   1843	0E23  58				     pop     ax
+   1844	0E24  0A C0				     or	     al,al		     ; Zero ?
+   1845	0E26  78 04				     js	     loc_137		     ; Jump if sign=1
+   1846	0E28  3C 02				     cmp     al,2
+   1847	0E2A  74 0C				     je	     loc_138		     ; Jump if equal
+   1848	0E2C			     loc_137:
+   1849	0E2C  07				     pop     es
+   1850	0E2D  1F				     pop     ds
+   1851	0E2E  5D				     pop     bp
+   1852	0E2F  5E				     pop     si
+   1853	0E30  5F				     pop     di
+   1854	0E31  5A				     pop     dx
+   1855	0E32  59				     pop     cx
+   1856	0E33  5B				     pop     bx
+   1857	0E34  58				     pop     ax
+   1858	0E35  32 C0				     xor     al,al		     ; Zero register
+   1859	0E37  CF				     iret			     ; Interrupt return
+   1860	0E38			     loc_138:
+   1861	0E38  2E: C6 06	02C4 00			     mov     byte ptr cs:[2C4h],0
+   1862	0E3E			     loc_139:
+   1863	0E3E  2E: 80 3E	02C4 F0			     cmp     byte ptr cs:[2C4h],0F0h
+   1864	0E44  72 F8				     jb	     loc_139		     ; Jump if below
+   1865	0E46  07				     pop     es
+   1866	0E47  1F				     pop     ds
+   1867	0E48  5D				     pop     bp
+   1868	0E49  5E				     pop     si
+   1869	0E4A  5F				     pop     di
+   1870	0E4B  5A				     pop     dx
+   1871	0E4C  59				     pop     cx
+   1872	0E4D  5B				     pop     bx
+   1873	0E4E  58				     pop     ax
+   1874	0E4F  B0 01				     mov     al,1
+   1875	0E51  CF				     iret			     ; Interrupt return
+   1876	0E52			     loc_140:
+   1877	0E52  2E: C5 16	0F5Cr			     lds     dx,dword ptr cs:data_44 ; Load seg:offset ptr
+   1878	0E57  2E: FF 2E	FF00			     jmp     dword ptr cs:data_57e
+   1879	0E5C			     handle_pause_key6		     endp
+   1880
+   1881	0E5C  0C*(00)				     db	     12	dup (0)
+   1882	0E68  02 15				     db	      02h, 15h
+   1883	0E6A  4D 50 31 30 2E 4D	44+		     db	     'MP10.MDT'
+   1884	      54
+   1885	0E72  00 02 16				     db	      00h, 02h,	16h
+   1886	0E75  4D 50 31 44 2E 4D	44+		     db	     'MP1D.MDT'
+   1887	      54
+   1888	0E7D  00 02 17				     db	      00h, 02h,	17h
+   1889	0E80  4D 50 32 30 2E 4D	44+		     db	     'MP20.MDT'
+   1890	      54
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 36
+stick.asm
+
+
+
+   1891	0E88  00 02 18				     db	      00h, 02h,	18h
+   1892	0E8B  4D 50 32 31 2E 4D	44+		     db	     'MP21.MDT'
+   1893	      54
+   1894	0E93  00 02 19				     db	      00h, 02h,	19h
+   1895	0E96  4D 50 32 44 2E 4D	44+		     db	     'MP2D.MDT'
+   1896	      54
+   1897	0E9E  00 02 1A				     db	      00h, 02h,	1Ah
+   1898	0EA1  4D 50 33 30 2E 4D	44+		     db	     'MP30.MDT'
+   1899	      54
+   1900	0EA9  00 02				     db	     0,	2
+   1901	0EAB  1B 4D 50 33 31 2E	4D+		     db	     1Bh, 'MP31.MDT'
+   1902	      44 54
+   1903	0EB4  00 02 1C				     db	      00h, 02h,	1Ch
+   1904	0EB7  4D 50 33 44 2E 4D	44+		     db	     'MP3D.MDT'
+   1905	      54
+   1906	0EBF  00 02 1D				     db	      00h, 02h,	1Dh
+   1907	0EC2  4D 50 34 30 2E 4D	44+		     db	     'MP40.MDT'
+   1908	      54
+   1909	0ECA  00 02 1E				     db	      00h, 02h,	1Eh
+   1910	0ECD  4D 50 34 31 2E 4D	44+		     db	     'MP41.MDT'
+   1911	      54
+   1912	0ED5  00 02 1F				     db	      00h, 02h,	1Fh
+   1913	0ED8  4D 50 34 44 2E 4D	44+		     db	     'MP4D.MDT'
+   1914	      54
+   1915	0EE0  00 02				     db	     0,	2
+   1916	0EE2  20 4D 50 35 30 2E	4D+		     db	     ' MP50.MDT'
+   1917	      44 54
+   1918	0EEB  00 02				     db	     0,	2
+   1919	0EED  21 4D 50 35 31 2E	4D+		     db	     '!MP51.MD'
+   1920	      44
+   1921
+   1922				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1923				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1924				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1925				     ;				    SUBROUTINE
+   1926				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
+   1927				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1928				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   1929
+   1930	0EF5			     poll_joystick_buttons3	     proc    near
+   1931	0EF5  54				     push    sp
+   1932	0EF6  00 02				     add     [bp+si],al
+   1933	0EF8  22 4D 50				     and     cl,[di+50h]
+   1934	0EFB  35 2E44				     xor     ax,2E44h
+   1935	0EFE  4D				     dec     bp
+   1936	0EFF  44				     inc     sp
+   1937	0F00  54				     push    sp
+   1938	0F01  00 02				     add     [bp+si],al
+   1939	0F03  23 4D 50				     and     cx,[di+50h]
+   1940	0F06  36: 30 2E	444D			     xor     ss:data_56e,ch
+   1941	0F0B  54				     push    sp
+   1942	0F0C  00 02				     add     [bp+si],al
+   1943	0F0E  24 4D				     and     al,4Dh		     ; 'M'
+   1944	0F10  50				     push    ax
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 37
+stick.asm
+
+
+
+   1945	0F11  36: 31 2E	444D			     xor     ss:data_56e,bp
+   1946	0F16  54				     push    sp
+   1947	0F17  00 02				     add     [bp+si],al
+   1948	0F19  25 504D				     and     ax,504Dh
+   1949	0F1C  36: 32 2E	444D			     xor     ch,ss:data_56e
+   1950	0F21  54				     push    sp
+   1951	0F22  00 02				     add     [bp+si],al
+   1952	0F24  26 4D 50 36 44 2E	4D+		     db	     '&MP6D.MDT'
+   1953	      44 54
+   1954	0F2D  00 02				     db	     0,	2
+   1955	0F2F  27 4D 50 37 30 2E	4D+		     db	     27h, 'MP70.MDT'
+   1956	      44 54
+   1957	0F38  00 02				     db	     0,	2
+   1958	0F3A  28 4D 50 37 31 2E	4D+		     db	     '(MP71.MDT'
+   1959	      44 54
+   1960	0F43  00 02				     db	     0,	2
+   1961	0F45  29 4D 50 37 32 2E	4D+		     db	     ')MP72.MDT'
+   1962	      44 54
+   1963	0F4E  00 02				     db	     0,	2
+   1964	0F50  2A 4D 50 37 33 2E	4D+		     db	     '*MP73.MDT'
+   1965	      44 54
+   1966	0F59  00 02 2B				     db	      00h, 02h,	2Bh
+   1967	0F5C  504D 4437		     data_44	     dw	     504Dh, 4437h
+   1968	0F60  4D2E 5444		     data_46	     dw	     4D2Eh, 5444h
+   1969	0F64  0200		     data_48	     dw	     200h
+   1970	0F66  4D2C		     data_49	     dw	     4D2Ch
+   1971	0F68  50 38 30 2E 4D 44			     db	      50h, 38h,	30h, 2Eh, 4Dh, 44h
+   1972	0F6E  54 00 02				     db	      54h, 00h,	02h
+   1973	0F71  2D 4D 50 38 31 2E	4D+		     db	     '-MP81.MDT'
+   1974	      44 54
+   1975	0F7A  00 02				     db	     0,	2
+   1976	0F7C  2E 4D 50 38 32 2E	4D+		     db	     '.MP82.MDT'
+   1977	      44 54
+   1978	0F85  00 02				     db	     0,	2
+   1979	0F87  2F 4D 50 38 33 2E	4D+		     db	     '/MP83.MDT'
+   1980	      44 54
+   1981	0F90  00 02				     db	     0,	2
+   1982	0F92  30 4D 50 38 34 2E	4D+		     db	     '0MP84.MDT'
+   1983	      44 54
+   1984	0F9B  00 02				     db	     0,	2
+   1985	0F9D  31 4D 50 38 44 2E	4D+		     db	     '1MP8D.MDT'
+   1986	      44 54
+   1987	0FA6  00 02				     db	     0,	2
+   1988	0FA8  32 4D 50 39 30 2E	4D+		     db	     '2MP90.MDT'
+   1989	      44 54
+   1990	0FB1  00 02				     db	     0,	2
+   1991	0FB3  33 4D 50 41 30 2E	4D+		     db	     '3MPA0.MDT'
+   1992	      44 54
+   1993	0FBC  00 01 00 20			     db	      00h, 01h,	00h, 20h
+   1994	0FC0  07*(20)				     db	     7 dup (20h)
+   1995	0FC7  00 01				     db	     0,	1
+   1996	0FC9  25 43 4D 41 50 2E	4D+		     db	     '%CMAP.MDT'
+   1997	      44 54
+   1998	0FD2  00 01				     db	     0,	1
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 38
+stick.asm
+
+
+
+   1999	0FD4  26 4D 52 4D 50 2E	4D+		     db	     '&MRMP.MDT'
+   2000	      44 54
+   2001	0FDD  00 01				     db	     0,	1
+   2002	0FDF  27 53 54 4D 50 2E	4D+		     db	     27h, 'STMP.MDT'
+   2003	      44 54
+   2004	0FE8  00 01				     db	     0,	1
+   2005	0FEA  28 42 53 4D 50 2E	4D+		     db	     '(BSMP.MDT'
+   2006	      44 54
+   2007	0FF3  00 01				     db	     0,	1
+   2008	0FF5  29 48 4C 4D 50 2E	4D+		     db	     ')HLMP.MDT'
+   2009	      44 54
+   2010	0FFE  00 01				     db	     0,	1
+   2011	1000  2A 54 4D 4D 50 2E	4D+		     db	     '*TMMP.MDT'
+   2012	      44 54
+   2013	1009  00 01				     db	     0,	1
+   2014	100B  2B 44 52 4D 50 2E	4D+		     db	     '+DRMP.MDT'
+   2015	      44 54
+   2016	1014  00 01				     db	     0,	1
+   2017	1016  2C 4C 4C 4D 50 2E	4D+		     db	     ',LLMP.MDT'
+   2018	      44 54
+   2019	101F  00 01				     db	     0,	1
+   2020	1021  2D 50 52 4D 50 2E	4D+		     db	     '-PRMP.MDT'
+   2021	      44 54
+   2022	102A  00 01				     db	     0,	1
+   2023	102C  2E 45 53 4D 50 2E	4D+		     db	     '.ESMP.MDT'
+   2024	      44 54
+   2025	1035  00				     db	     0
+   2026	1036			     poll_joystick_buttons3	     endp
+   2027
+   2028
+   2029	1036			     seg_a	     ends
+   2030
+   2031
+   2032
+   2033						     end     start
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 39
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/27/26"
+??FILENAME			  Text	 "stick	  "
+??TIME				  Text	 "10:34:44"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 STICK
+@WORDSIZE			  Text	 2
+CALC_JOYSTICK_DEADZONE		  Near	 SEG_A:0530
+CALIBRATE_JOYSTICK		  Near	 SEG_A:04CA
+DATA_25				  Word	 SEG_A:0A51
+DATA_27				  Word	 SEG_A:0A55
+DATA_29				  Byte	 SEG_A:0A59
+DATA_31				  Word	 SEG_A:0ACA
+DATA_44				  Word	 SEG_A:0F5C
+DATA_46				  Word	 SEG_A:0F60
+DATA_48				  Word	 SEG_A:0F64
+DATA_49				  Word	 SEG_A:0F66
+DATA_51E			  Number 2000
+DATA_52E			  Number 2022
+DATA_53E			  Number 2026
+DATA_54E			  Number 2028
+DATA_55E			  Number 202A
+DATA_56E			  Number 444D
+DATA_57E			  Number FF00
+DATA_58E			  Number FF04
+DATA_59E			  Number FF09
+DATA_60E			  Number FF0A
+DATA_61E			  Number FF0C
+DATA_62E			  Number FF10
+DATA_63E			  Number FF16
+DATA_64E			  Number FF17
+DATA_65E			  Number FF18
+DATA_66E			  Number FF1A
+DATA_67E			  Number FF1B
+DATA_68E			  Number FF1D
+DATA_69E			  Number FF1E
+DATA_70E			  Number FF1F
+DATA_72E			  Number FF27
+DATA_73E			  Number FF28
+DATA_74E			  Number FF29
+DATA_75E			  Number FF33
+DATA_76E			  Number FF3B
+DATA_77E			  Number FF48
+DATA_78E			  Number FF49
+DATA_79E			  Number FF50
+DATA_80E			  Number FF74
+DATA_81E			  Number FF75
+DATA_82E			  Number FF78
+DATA_83E			  Number FF79
+DATA_84E			  Number B000
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 40
+Symbol Table
+
+
+
+DATA_85E			  Number 0000
+DATA_86E			  Number 0E34
+DECODE_JOYSTICK_BITS		  Near	 SEG_A:0097
+DIALOG_TEXT_OFS			  Number 0E34
+DISPATCH_EXTENDED_KEY		  Near	 SEG_A:03D0
+DRAW_SCREEN_ELEMENT		  Near	 SEG_A:06A2
+GFX_FN_CLEAR			  Number 202A
+GFX_FN_DRAW			  Number 2026
+GFX_FN_RESTORE			  Number 2028
+GFX_FN_SETUP			  Number 2022
+GFX_SCREEN_BASE			  Number 2000
+GVAR_ANIM_TIMER			  Number FF1B
+GVAR_CHUNK_LOAD_FN		  Number FF00
+GVAR_ENTER_KEY			  Number FF29
+GVAR_FRAME_COUNT		  Number FF50
+GVAR_FRAME_TIMER		  Number FF1A
+GVAR_GFX_FN			  Number FF10
+GVAR_INPUT_FN			  Number FF0C
+GVAR_JOY_CAL_X			  Number FF48
+GVAR_JOY_CAL_Y			  Number FF49
+GVAR_KEY_PRESSED		  Number FF28
+GVAR_KEY_RELEASED		  Number FF09
+GVAR_LAST_KEY			  Number FF0A
+GVAR_MUSIC_STATE		  Number FF3B
+GVAR_OLD_INT08			  Number FF04
+GVAR_OLD_INT09			  Number FF78
+GVAR_OLD_INT09_SEG		  Number FF79
+GVAR_SAVE_NAME			  Number FF33
+GVAR_SKIP_FLAG			  Number FF1D
+GVAR_SKIP_INPUT			  Number FF18
+GVAR_SOUND_FLAG			  Number FF27
+GVAR_STATE_A			  Number FF1E
+GVAR_STATE_B			  Number FF1F
+GVAR_TIMER_COUNT		  Number FF17
+GVAR_TIMER_FLAG			  Number FF16
+GVAR_VOLUME_A			  Number FF74
+GVAR_VOLUME_B			  Number FF75
+HANDLE_PAUSE_KEY		  Near	 SEG_A:0022
+HANDLE_PAUSE_KEY0		  Near	 SEG_A:075E
+HANDLE_PAUSE_KEY1		  Near	 SEG_A:079E
+HANDLE_PAUSE_KEY2		  Near	 SEG_A:089C
+HANDLE_PAUSE_KEY3		  Near	 SEG_A:08A2
+HANDLE_PAUSE_KEY4		  Near	 SEG_A:08BD
+HANDLE_PAUSE_KEY5		  Near	 SEG_A:08CB
+HANDLE_PAUSE_KEY6		  Near	 SEG_A:0B42
+HANDLE_PAUSE_KEY7		  Near	 SEG_A:0C84
+HANDLE_PAUSE_KEY8		  Near	 SEG_A:0C93
+HANDLE_PAUSE_KEY9		  Near	 SEG_A:0CAD
+HANDLE_SPECIAL_KEYS		  Near	 SEG_A:00E3
+HERC_VIDEO_SEG			  Number B000
+LOCLOOP_77			  Near	 SEG_A:07BC
+LOCLOOP_85			  Near	 SEG_A:0900
+LOCLOOP_86			  Near	 SEG_A:092A
+LOCLOOP_87			  Near	 SEG_A:093A
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 41
+Symbol Table
+
+
+
+LOCLOOP_92			  Near	 SEG_A:0A96
+LOCLOOP_93			  Near	 SEG_A:0B15
+LOC_1				  Near	 SEG_A:0040
+LOC_10				  Near	 SEG_A:00B6
+LOC_100				  Near	 SEG_A:0BA8
+LOC_101				  Near	 SEG_A:0BB8
+LOC_102				  Near	 SEG_A:0BCD
+LOC_103				  Near	 SEG_A:0BDC
+LOC_104				  Near	 SEG_A:0BEB
+LOC_105				  Near	 SEG_A:0C09
+LOC_106				  Near	 SEG_A:0C1A
+LOC_107				  Near	 SEG_A:0C39
+LOC_109				  Near	 SEG_A:0C93
+LOC_11				  Near	 SEG_A:00BD
+LOC_111				  Near	 SEG_A:0C9D
+LOC_112				  Near	 SEG_A:0CD4
+LOC_113				  Near	 SEG_A:0CD6
+LOC_114				  Near	 SEG_A:0CE9
+LOC_115				  Near	 SEG_A:0CFA
+LOC_116				  Near	 SEG_A:0D06
+LOC_117				  Near	 SEG_A:0D08
+LOC_118				  Near	 SEG_A:0D0F
+LOC_119				  Near	 SEG_A:0D17
+LOC_12				  Near	 SEG_A:00CA
+LOC_120				  Near	 SEG_A:0D2E
+LOC_121				  Near	 SEG_A:0D39
+LOC_122				  Near	 SEG_A:0D4C
+LOC_123				  Near	 SEG_A:0D5D
+LOC_124				  Near	 SEG_A:0D71
+LOC_125				  Near	 SEG_A:0D77
+LOC_126				  Near	 SEG_A:0D96
+LOC_127				  Near	 SEG_A:0D9C
+LOC_128				  Near	 SEG_A:0DB4
+LOC_129				  Near	 SEG_A:0DBC
+LOC_13				  Near	 SEG_A:00D7
+LOC_130				  Near	 SEG_A:0DC5
+LOC_131				  Near	 SEG_A:0DD3
+LOC_132				  Near	 SEG_A:0DE4
+LOC_133				  Near	 SEG_A:0DF3
+LOC_134				  Near	 SEG_A:0DF9
+LOC_135				  Near	 SEG_A:0E11
+LOC_136				  Near	 SEG_A:0E18
+LOC_137				  Near	 SEG_A:0E2C
+LOC_138				  Near	 SEG_A:0E38
+LOC_139				  Near	 SEG_A:0E3E
+LOC_14				  Near	 SEG_A:00DC
+LOC_140				  Near	 SEG_A:0E52
+LOC_15				  Near	 SEG_A:010C
+LOC_16				  Near	 SEG_A:011B
+LOC_17				  Near	 SEG_A:012D
+LOC_18				  Near	 SEG_A:013F
+LOC_19				  Near	 SEG_A:0149
+LOC_2				  Near	 SEG_A:004E
+LOC_20				  Near	 SEG_A:0150
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 42
+Symbol Table
+
+
+
+LOC_21				  Near	 SEG_A:017A
+LOC_22				  Near	 SEG_A:019B
+LOC_23				  Near	 SEG_A:01B0
+LOC_24				  Near	 SEG_A:01C5
+LOC_25				  Near	 SEG_A:01DE
+LOC_26				  Near	 SEG_A:01EA
+LOC_27				  Near	 SEG_A:01F7
+LOC_28				  Near	 SEG_A:0230
+LOC_29				  Near	 SEG_A:025C
+LOC_3				  Near	 SEG_A:005F
+LOC_30				  Near	 SEG_A:0268
+LOC_31				  Near	 SEG_A:026F
+LOC_32				  Near	 SEG_A:0287
+LOC_33				  Near	 SEG_A:0293
+LOC_34				  Near	 SEG_A:029A
+LOC_35				  Near	 SEG_A:02AD
+LOC_36				  Near	 SEG_A:02C5
+LOC_37				  Near	 SEG_A:02D4
+LOC_38				  Near	 SEG_A:02EC
+LOC_39				  Near	 SEG_A:02FB
+LOC_4				  Near	 SEG_A:006C
+LOC_40				  Near	 SEG_A:0307
+LOC_41				  Near	 SEG_A:0316
+LOC_42				  Near	 SEG_A:038A
+LOC_43				  Near	 SEG_A:0397
+LOC_44				  Near	 SEG_A:03DB
+LOC_45				  Near	 SEG_A:03EA
+LOC_46				  Near	 SEG_A:03EF
+LOC_47				  Near	 SEG_A:03F4
+LOC_48				  Near	 SEG_A:0409
+LOC_49				  Near	 SEG_A:04DD
+LOC_5				  Near	 SEG_A:0075
+LOC_50				  Near	 SEG_A:04E6
+LOC_51				  Near	 SEG_A:04FD
+LOC_52				  Near	 SEG_A:0519
+LOC_53				  Near	 SEG_A:0543
+LOC_54				  Near	 SEG_A:054D
+LOC_55				  Near	 SEG_A:055B
+LOC_56				  Near	 SEG_A:0565
+LOC_57				  Near	 SEG_A:0572
+LOC_58				  Near	 SEG_A:057C
+LOC_59				  Near	 SEG_A:058A
+LOC_6				  Near	 SEG_A:0085
+LOC_60				  Near	 SEG_A:0594
+LOC_61				  Near	 SEG_A:05B5
+LOC_62				  Near	 SEG_A:05D0
+LOC_63				  Near	 SEG_A:05FB
+LOC_64				  Near	 SEG_A:0666
+LOC_65				  Near	 SEG_A:066E
+LOC_66				  Near	 SEG_A:0679
+LOC_67				  Near	 SEG_A:068B
+LOC_68				  Near	 SEG_A:06D2
+LOC_69				  Near	 SEG_A:0717
+LOC_7				  Near	 SEG_A:008E
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 43
+Symbol Table
+
+
+
+LOC_70				  Near	 SEG_A:072F
+LOC_71				  Near	 SEG_A:0763
+LOC_72				  Near	 SEG_A:0775
+LOC_73				  Near	 SEG_A:078B
+LOC_74				  Near	 SEG_A:0794
+LOC_75				  Near	 SEG_A:07A7
+LOC_76				  Near	 SEG_A:07B0
+LOC_79				  Near	 SEG_A:07F9
+LOC_8				  Near	 SEG_A:00A4
+LOC_80				  Near	 SEG_A:0802
+LOC_81				  Near	 SEG_A:080E
+LOC_82				  Near	 SEG_A:0853
+LOC_83				  Near	 SEG_A:0881
+LOC_84				  Near	 SEG_A:08CC
+LOC_88				  Near	 SEG_A:0942
+LOC_89				  Near	 SEG_A:094F
+LOC_9				  Near	 SEG_A:00B1
+LOC_90				  Near	 SEG_A:09B8
+LOC_91				  Near	 SEG_A:0A5B
+LOC_94				  Near	 SEG_A:0B2A
+LOC_95				  Near	 SEG_A:0B2F
+LOC_96				  Near	 SEG_A:0B35
+LOC_97				  Near	 SEG_A:0B42
+LOC_98				  Near	 SEG_A:0B74
+LOC_99				  Near	 SEG_A:0B83
+LOC_RET_108			  Near	 SEG_A:0C92
+LOC_RET_110			  Near	 SEG_A:0C9C
+LOC_RET_78			  Near	 SEG_A:07EE
+POLL_JOYSTICK_BUTTONS		  Near	 SEG_A:007C
+POLL_JOYSTICK_BUTTONS0		  Near	 SEG_A:0CE0
+POLL_JOYSTICK_BUTTONS1		  Near	 SEG_A:0D43
+POLL_JOYSTICK_BUTTONS2		  Near	 SEG_A:0DCF
+POLL_JOYSTICK_BUTTONS3		  Near	 SEG_A:0EF5
+PROCESS_SCANCODE		  Near	 SEG_A:0226
+SAVE_FILE_MAGIC			  Number 444D
+START				  Near	 SEG_A:0000
+STICK				  Far	 SEG_A:0000
+TARGET				  Number 5432
+ZERO_OFFSET			  Number 0000
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  1036 Byte	  Public
+

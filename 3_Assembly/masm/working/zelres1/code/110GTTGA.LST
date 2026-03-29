@@ -1,0 +1,2662 @@
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 1
+110GTTGA.asm
+
+
+
+      1
+      2
+      3				     ;==========================================================================
+      4				     ;
+      5				     ;	LARGE_IMAGE_RENDERER - Code Module
+      6				     ;
+      7				     ;==========================================================================
+      8
+      9	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     10
+     11				     include  srmacros.inc
+1    12
+1    13				     ; Macros which may	be required for	proper re-assembly
+1    14
+1    15
+1    16
+1    17
+1    18
+1    19				     ;-----------------------------------------------------------------------------
+1    20				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    21				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    22				     ; instruction it uses a near jump or call.
+1    23
+1    24				     calls	     macro   dummy1, dummy2, slocation
+1    25						     db	     9Ah		     ; forced call far instruction
+1    26						     dw	     offset slocation, seg slocation
+1    27				     endm
+1    28
+1    29				     jmps	     macro   dummy1, dummy2, jlocation
+1    30						     db	     0EAh		     ; forced jump far instruction
+1    31						     dw	     offset jlocation, seg jlocation
+1    32				     endm
+1    33
+1    34
+1    35
+1    36
+1    37				     ;-----------------------------------------------------------------------------
+1    38				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    39				     ;	subroutine in the same segment as:
+1    40				     ;
+1    41				     ;		     PUSH    CS
+1    42				     ;		     CALL    near
+1    43				     ;
+1    44				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    45				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    46				     ;	macros are used	to code	the same information.  In other	words, the binary
+1    47				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    48				     ;	are used!  (macro CALLF)
+1    49				     ;
+1    50
+1    51				     callf	     macro   location
+1    52						     push    cs
+1    53						     call    near ptr location
+1    54				     endm
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 2
+110GTTGA.asm
+
+
+
+1    55
+1    56				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    57				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    58
+1    59				     callfx	     macro   location
+1    60						     push    cs
+1    61						     db	     3Eh
+1    62						     call    near ptr location
+1    63				     endm
+1    64
+1    65
+1    66				     ;-----------------------------------------------------------------------------
+1    67				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    68				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    69				     ;	reconstructs a near jump for these cases.
+1    70
+1    71				     jmpn	     macro   location
+1    72						     db	     0E9h
+1    73						     dw	     offset location-$-2
+1    74				     endm
+1    75
+1    76
+1    77
+     78
+     79
+     80				     ; The following equates show data references outside the range of the program.
+     81
+     82	      =	4100		     data_1e	     equ     4100h		     ;*
+     83	      =	6000		     data_2e	     equ     6000h		     ;*
+     84	      =	8000		     data_3e	     equ     8000h		     ;*
+     85	      =	8004		     data_4e	     equ     8004h		     ;*
+     86	      =	8100		     data_5e	     equ     8100h		     ;*
+     87	      =	D000		     data_6e	     equ     0D000h		     ;*
+     88	      =	35BA		     data_12e	     equ     35BAh		     ;*
+     89	      =	3616		     data_13e	     equ     3616h		     ;*
+     90	      =	386C		     data_14e	     equ     386Ch		     ;*
+     91	      =	3A20		     data_15e	     equ     3A20h		     ;*
+     92	      =	3C68		     data_16e	     equ     3C68h		     ;*
+     93	      =	3DCB		     data_17e	     equ     3DCBh		     ;*
+     94	      =	3E64		     data_18e	     equ     3E64h		     ;*
+     95	      =	3E66		     data_19e	     equ     3E66h		     ;*
+     96	      =	3E67		     data_20e	     equ     3E67h		     ;*
+     97	      =	3E68		     data_21e	     equ     3E68h		     ;*
+     98	      =	3E6A		     data_22e	     equ     3E6Ah		     ;*
+     99	      =	3E6D		     data_23e	     equ     3E6Dh		     ;*
+    100	      =	3E6F		     data_24e	     equ     3E6Fh		     ;*
+    101	      =	3E71		     data_25e	     equ     3E71h		     ;*
+    102	      =	3E73		     data_26e	     equ     3E73h		     ;*
+    103	      =	3E75		     data_27e	     equ     3E75h		     ;*
+    104	      =	3E77		     data_28e	     equ     3E77h		     ;*
+    105	      =	3E7B		     data_30e	     equ     3E7Bh		     ;*
+    106	      =	419B		     data_31e	     equ     419Bh		     ;*
+    107	      =	425B		     data_32e	     equ     425Bh		     ;*
+    108	      =	42BB		     data_33e	     equ     42BBh		     ;*
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 3
+110GTTGA.asm
+
+
+
+    109	      =	431B		     data_34e	     equ     431Bh		     ;*
+    110	      =	5238		     data_35e	     equ     5238h		     ;*
+    111	      =	7F60		     data_36e	     equ     7F60h		     ;*
+    112	      =	80A0		     data_37e	     equ     80A0h		     ;*
+    113	      =	C00F		     data_38e	     equ     0C00Fh		     ;*
+    114	      =	E005		     data_39e	     equ     0E005h		     ;*
+    115	      =	F502		     data_40e	     equ     0F502h		     ;*
+    116	      =	F504		     data_41e	     equ     0F504h		     ;*
+    117	      =	FF2A		     data_42e	     equ     0FF2Ah		     ;*
+    118	      =	FF2C		     data_43e	     equ     0FF2Ch		     ;*
+    119	      =	FF57		     data_44e	     equ     0FF57h		     ;*
+    120	      =	FF68		     data_45e	     equ     0FF68h		     ;*
+    121	      =	FF6A		     data_46e	     equ     0FF6Ah		     ;*
+    122	      =	0000		     data_47e	     equ     0			     ;*
+    123	      =	41F8		     data_48e	     equ     41F8h
+    124	      =	4266		     data_49e	     equ     4266h
+    125	      =	55F8		     data_50e	     equ     55F8h
+    126	      =	5666		     data_51e	     equ     5666h
+    127	      =	5738		     data_52e	     equ     5738h
+    128	      =	57A6		     data_53e	     equ     57A6h
+    129	      =	7F60		     data_54e	     equ     7F60h
+    130	      =	80A0		     data_55e	     equ     80A0h
+    131
+    132	0000			     seg_a	     segment byte public
+    133						     assume  cs:seg_a, ds:seg_a
+    134
+    135
+    136						     org     0
+    137
+    138	0000			     zr1_10	     proc    far
+    139
+    140	0000			     start:
+    141	0000  1B 15				     sbb     dx,[di]
+    142	0002  00 00				     add     [bx+si],al
+    143	0004  47				     inc     di
+    144	0005  3B 28				     cmp     bp,[bx+si]
+    145	0007  30 59 30				     xor     [bx+di+30h],bl
+    146	000A  E4 36				     in	     al,36h		     ; port 36h	??I/O Non-standard
+    147	000C  42				     inc     dx
+    148	000D  37				     aaa			     ; Ascii adjust
+    149				     ;*		     jz	     loc_3		     ;*Jump if zero
+    150	000E  74 37				     db	      74h, 37h		     ;	Fixup -	byte match
+    151				     ;*		     sal     byte ptr [bx],1	     ; Shift w/zeros fill
+    152	0010  D0 37				     db	     0D0h, 37h		     ;	Fixup -	byte match
+    153	0012  93				     xchg    bx,ax
+    154	0013  33 08				     xor     cx,[bx+si]
+    155	0015  36 77 36 CE 35 00			     db	      36h, 77h,	36h,0CEh, 35h, 00h
+    156	001B  38 3F 38 C2 38 90			     db	      38h, 3Fh,	38h,0C2h, 38h, 90h
+    157	0021  38 8F 3A E7 3A 83			     db	      38h, 8Fh,	3Ah,0E7h, 3Ah, 83h
+    158	0027  39 16 3C 81 3B 1E			     db	      39h, 16h,	3Ch, 81h, 3Bh, 1Eh
+    159	002D  BE F8 4B BF 00 A0			     db	     0BEh,0F8h,	4Bh,0BFh, 00h,0A0h
+    160	0033  0E 07 B8 00 B8 8E			     db	      0Eh, 07h,0B8h, 00h,0B8h, 8Eh
+    161	0039  D8 B9 1C 00			     db	     0D8h,0B9h,	1Ch, 00h
+    162
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 4
+110GTTGA.asm
+
+
+
+    163	003D			     locloop_1:
+    164	003D  51				     push    cx
+    165	003E  56				     push    si
+    166	003F  B9 0018				     mov     cx,18h
+    167
+    168	0042			     locloop_2:
+    169	0042  A5				     movsw			     ; Mov [si]	to es:[di]
+    170	0043  A5				     movsw			     ; Mov [si]	to es:[di]
+    171	0044  81 C6 1FFC			     add     si,1FFCh
+    172	0048  81 FE 8000			     cmp     si,8000h
+    173	004C  72 04				     jb	     loc_4		     ; Jump if below
+    174	004E  81 C6 80A0			     add     si,data_37e
+    175	0052			     loc_4:
+    176	0052  E2 EE				     loop    locloop_2		     ; Loop if cx > 0
+    177
+    178	0054  5E				     pop     si
+    179	0055  59				     pop     cx
+    180	0056  83 C6 04				     add     si,4
+    181	0059  E2 E2				     loop    locloop_1		     ; Loop if cx > 0
+    182
+    183	005B  1F				     pop     ds
+    184	005C  C3				     retn
+    185										     ;*	No entry point to code
+    186	005D  0E				     push    cs
+    187	005E  07				     pop     es
+    188	005F  BF 431B				     mov     di,data_34e
+    189	0062  33 C0				     xor     ax,ax		     ; Zero register
+    190	0064  B9 0100				     mov     cx,100h
+    191	0067  F3> AB				     rep     stosw		     ; Rep when	cx >0 Store ax to es:[di]
+    192	0069  8B 36 FF2A			     mov     si,ds:data_42e
+    193	006D  80 7C 1D FD			     cmp     byte ptr [si+1Dh],0FDh
+    194	0071  75 03				     jne     loc_5		     ; Jump if not equal
+    195	0073  E8 0409				     call    limg_multiply_2
+    196	0076			     loc_5:
+    197	0076  C7 06 3E64 4BF8			     mov     word ptr ds:data_18e,4BF8h
+    198	007C  8B 36 FF2A			     mov     si,ds:data_42e
+    199	0080  83 C6 20				     add     si,20h
+    200	0083  0E				     push    cs
+    201	0084  07				     pop     es
+    202	0085  BF E000				     mov     di,0E000h
+    203	0088  C6 06 3E66 00			     mov     byte ptr ds:data_19e,0
+    204	008D			     loc_6:
+    205	008D  E8 0051				     call    limg_scan_loop
+    206	0090  32 DB				     xor     bl,bl		     ; Zero register
+    207	0092  A6				     cmpsb			     ; Cmp [si]	to es:[di]
+    208	0093  74 03				     jz	     loc_7		     ; Jump if zero
+    209	0095  E8 01DF				     call    limg_func_4
+    210	0098			     loc_7:
+    211	0098  FE C3				     inc     bl
+    212	009A  A6				     cmpsb			     ; Cmp [si]	to es:[di]
+    213	009B  74 03				     jz	     loc_8		     ; Jump if zero
+    214	009D  E8 01D7				     call    limg_func_4
+    215	00A0			     loc_8:
+    216	00A0  FE C3				     inc     bl
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 5
+110GTTGA.asm
+
+
+
+    217	00A2  A6				     cmpsb			     ; Cmp [si]	to es:[di]
+    218	00A3  74 03				     jz	     loc_9		     ; Jump if zero
+    219	00A5  E8 01CF				     call    limg_func_4
+    220	00A8			     loc_9:
+    221	00A8  FE C3				     inc     bl
+    222	00AA  A6				     cmpsb			     ; Cmp [si]	to es:[di]
+    223	00AB  74 03				     jz	     loc_10		     ; Jump if zero
+    224	00AD  E8 0079				     call    limg_func_3
+    225	00B0			     loc_10:
+    226	00B0  FE C3				     inc     bl
+    227	00B2  A6				     cmpsb			     ; Cmp [si]	to es:[di]
+    228	00B3  74 03				     jz	     loc_11		     ; Jump if zero
+    229	00B5  E8 0071				     call    limg_func_3
+    230	00B8			     loc_11:
+    231	00B8  FE C3				     inc     bl
+    232	00BA  A6				     cmpsb			     ; Cmp [si]	to es:[di]
+    233	00BB  74 03				     jz	     loc_12		     ; Jump if zero
+    234	00BD  E8 0060				     call    limg_multiply
+    235	00C0			     loc_12:
+    236	00C0  FE C3				     inc     bl
+    237	00C2  A6				     cmpsb			     ; Cmp [si]	to es:[di]
+    238	00C3  74 03				     jz	     loc_13		     ; Jump if zero
+    239	00C5  E8 0061				     call    limg_func_3
+    240	00C8			     loc_13:
+    241	00C8  FE C3				     inc     bl
+    242	00CA  A6				     cmpsb			     ; Cmp [si]	to es:[di]
+    243	00CB  74 03				     jz	     loc_14		     ; Jump if zero
+    244	00CD  E8 0059				     call    limg_func_3
+    245	00D0			     loc_14:
+    246	00D0  83 06 3E64 04			     add     word ptr ds:data_18e,4
+    247	00D5  FE 06 3E66			     inc     byte ptr ds:data_19e
+    248	00D9  80 3E 3E66 1C			     cmp     byte ptr ds:data_19e,1Ch
+    249	00DE  75 AD				     jne     loc_6		     ; Jump if not equal
+    250	00E0  C3				     retn
+    251
+    252	00E1			     zr1_10	     endp
+    253
+    254				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    255				     ;				    SUBROUTINE
+    256				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    257
+    258	00E1			     limg_scan_loop	     proc    near
+    259	00E1  80 3E 3E66 1B			     cmp     byte ptr ds:data_19e,1Bh
+    260	00E6  75 01				     jne     loc_15		     ; Jump if not equal
+    261	00E8  C3				     retn
+    262	00E9			     loc_15:
+    263	00E9  A0 0083				     mov     al,byte ptr ds:[83h]
+    264	00EC  38 06 3E66			     cmp     ds:data_19e,al
+    265	00F0  74 01				     je	     loc_16		     ; Jump if equal
+    266	00F2  C3				     retn
+    267	00F3			     loc_16:
+    268	00F3  57				     push    di
+    269	00F4  06				     push    es
+    270	00F5  56				     push    si
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 6
+110GTTGA.asm
+
+
+
+    271	00F6  33 C0				     xor     ax,ax		     ; Zero register
+    272	00F8  A0 0083				     mov     al,byte ptr ds:[83h]
+    273	00FB  03 C0				     add     ax,ax
+    274	00FD  03 C0				     add     ax,ax
+    275	00FF  8B F8				     mov     di,ax
+    276	0101  81 C7 5238			     add     di,data_35e
+    277	0105  B8 B800				     mov     ax,0B800h
+    278	0108  8E C0				     mov     es,ax
+    279	010A  BE 419B				     mov     si,data_31e
+    280	010D  B9 0002				     mov     cx,2
+    281
+    282	0110			     locloop_17:
+    283	0110  51				     push    cx
+    284	0111  57				     push    di
+    285	0112  E8 0410				     call    limg_check_state
+    286	0115  5F				     pop     di
+    287	0116  83 C7 04				     add     di,4
+    288	0119  59				     pop     cx
+    289	011A  E2 F4				     loop    locloop_17		     ; Loop if cx > 0
+    290
+    291	011C  5E				     pop     si
+    292	011D  07				     pop     es
+    293	011E  5F				     pop     di
+    294	011F  C3				     retn
+    295	0120			     limg_scan_loop	     endp
+    296
+    297
+    298				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    299				     ;				    SUBROUTINE
+    300				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    301
+    302	0120			     limg_multiply	     proc    near
+    303	0120  80 7C FF FD			     cmp     byte ptr [si-1],0FDh
+    304	0124  75 03				     jne     loc_18		     ; Jump if not equal
+    305	0126  E9 0294				     jmp     loc_51
+    306
+    307				     ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    308
+    309	0129			     limg_func_3:
+    310	0129			     loc_18:
+    311	0129  8A 45 FF				     mov     al,[di-1]
+    312	012C  C6 45 FF FE			     mov     byte ptr [di-1],0FEh
+    313	0130  FE C0				     inc     al
+    314	0132  75 01				     jnz     loc_19		     ; Jump if not zero
+    315	0134  C3				     retn
+    316	0135			     loc_19:
+    317	0135  4F				     dec     di
+    318	0136  4E				     dec     si
+    319	0137  8A 14				     mov     dl,[si]
+    320	0139  A4				     movsb			     ; Mov [si]	to es:[di]
+    321	013A  06				     push    es
+    322	013B  1E				     push    ds
+    323	013C  57				     push    di
+    324	013D  56				     push    si
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 7
+110GTTGA.asm
+
+
+
+    325	013E  53				     push    bx
+    326	013F  52				     push    dx
+    327	0140  32 FF				     xor     bh,bh		     ; Zero register
+    328	0142  03 DB				     add     bx,bx
+    329	0144  B8 00A0				     mov     ax,0A0h
+    330	0147  F7 E3				     mul     bx			     ; dx:ax = reg * ax
+    331	0149  03 06 3E64			     add     ax,ds:data_18e
+    332	014D  8B F8				     mov     di,ax
+    333	014F  5A				     pop     dx
+    334	0150  8A DA				     mov     bl,dl
+    335	0152  32 FF				     xor     bh,bh		     ; Zero register
+    336	0154  03 DB				     add     bx,bx
+    337	0156  F7 87 431B FFFF			     test    word ptr ds:data_34e[bx],0FFFFh
+    338	015C  75 34				     jnz     loc_22		     ; Jump if not zero
+    339	015E  89 BF 431B			     mov     ds:data_34e[bx],di
+    340	0162  B8 0020				     mov     ax,20h
+    341	0165  F6 E2				     mul     dl			     ; ax = reg	* al
+    342	0167  8B F0				     mov     si,ax
+    343	0169  81 C6 8100			     add     si,data_5e
+    344	016D  2E: 8E 1E	FF2C			     mov     ds,cs:data_43e
+    345	0172  B8 B800				     mov     ax,0B800h
+    346	0175  8E C0				     mov     es,ax
+    347	0177  B9 0008				     mov     cx,8
+    348
+    349	017A			     locloop_20:
+    350	017A  A5				     movsw			     ; Mov [si]	to es:[di]
+    351	017B  A5				     movsw			     ; Mov [si]	to es:[di]
+    352	017C  81 C7 1FFC			     add     di,1FFCh
+    353	0180  81 FF 8000			     cmp     di,8000h
+    354	0184  72 04				     jb	     loc_21		     ; Jump if below
+    355	0186  81 C7 80A0			     add     di,data_55e
+    356	018A			     loc_21:
+    357	018A  E2 EE				     loop    locloop_20		     ; Loop if cx > 0
+    358
+    359	018C  5B				     pop     bx
+    360	018D  5E				     pop     si
+    361	018E  5F				     pop     di
+    362	018F  1F				     pop     ds
+    363	0190  07				     pop     es
+    364	0191  C3				     retn
+    365	0192			     loc_22:
+    366	0192  8B B7 431B			     mov     si,ds:data_34e[bx]
+    367	0196  B8 B800				     mov     ax,0B800h
+    368	0199  8E C0				     mov     es,ax
+    369	019B  8E D8				     mov     ds,ax
+    370	019D  A5				     movsw			     ; Mov [si]	to es:[di]
+    371	019E  A5				     movsw			     ; Mov [si]	to es:[di]
+    372	019F  81 C7 1FFC			     add     di,1FFCh
+    373	01A3  81 FF 8000			     cmp     di,8000h
+    374	01A7  72 04				     jb	     loc_23		     ; Jump if below
+    375	01A9  81 C7 80A0			     add     di,data_55e
+    376	01AD			     loc_23:
+    377	01AD  81 C6 1FFC			     add     si,1FFCh
+    378	01B1  81 FE 8000			     cmp     si,8000h
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 8
+110GTTGA.asm
+
+
+
+    379	01B5  72 04				     jb	     loc_24		     ; Jump if below
+    380	01B7  81 C6 80A0			     add     si,data_55e
+    381	01BB			     loc_24:
+    382	01BB  A5				     movsw			     ; Mov [si]	to es:[di]
+    383	01BC  A5				     movsw			     ; Mov [si]	to es:[di]
+    384	01BD  81 C7 1FFC			     add     di,1FFCh
+    385	01C1  81 FF 8000			     cmp     di,8000h
+    386	01C5  72 04				     jb	     loc_25		     ; Jump if below
+    387	01C7  81 C7 80A0			     add     di,data_55e
+    388	01CB			     loc_25:
+    389	01CB  81 C6 1FFC			     add     si,1FFCh
+    390	01CF  81 FE 8000			     cmp     si,8000h
+    391	01D3  72 04				     jb	     loc_26		     ; Jump if below
+    392	01D5  81 C6 80A0			     add     si,data_55e
+    393	01D9			     loc_26:
+    394	01D9  A5				     movsw			     ; Mov [si]	to es:[di]
+    395	01DA  A5				     movsw			     ; Mov [si]	to es:[di]
+    396	01DB  81 C7 1FFC			     add     di,1FFCh
+    397	01DF  81 FF 8000			     cmp     di,8000h
+    398	01E3  72 04				     jb	     loc_27		     ; Jump if below
+    399	01E5  81 C7 80A0			     add     di,data_55e
+    400	01E9			     loc_27:
+    401	01E9  81 C6 1FFC			     add     si,1FFCh
+    402	01ED  81 FE 8000			     cmp     si,8000h
+    403	01F1  72 04				     jb	     loc_28		     ; Jump if below
+    404	01F3  81 C6 80A0			     add     si,data_55e
+    405	01F7			     loc_28:
+    406	01F7  A5				     movsw			     ; Mov [si]	to es:[di]
+    407	01F8  A5				     movsw			     ; Mov [si]	to es:[di]
+    408	01F9  81 C7 1FFC			     add     di,1FFCh
+    409	01FD  81 FF 8000			     cmp     di,8000h
+    410	0201  72 04				     jb	     loc_29		     ; Jump if below
+    411	0203  81 C7 80A0			     add     di,data_55e
+    412	0207			     loc_29:
+    413	0207  81 C6 1FFC			     add     si,1FFCh
+    414	020B  81 FE 8000			     cmp     si,8000h
+    415	020F  72 04				     jb	     loc_30		     ; Jump if below
+    416	0211  81 C6 80A0			     add     si,data_55e
+    417	0215			     loc_30:
+    418	0215  A5				     movsw			     ; Mov [si]	to es:[di]
+    419	0216  A5				     movsw			     ; Mov [si]	to es:[di]
+    420	0217  81 C7 1FFC			     add     di,1FFCh
+    421	021B  81 FF 8000			     cmp     di,8000h
+    422	021F  72 04				     jb	     loc_31		     ; Jump if below
+    423	0221  81 C7 80A0			     add     di,data_55e
+    424	0225			     loc_31:
+    425	0225  81 C6 1FFC			     add     si,1FFCh
+    426	0229  81 FE 8000			     cmp     si,8000h
+    427	022D  72 04				     jb	     loc_32		     ; Jump if below
+    428	022F  81 C6 80A0			     add     si,data_55e
+    429	0233			     loc_32:
+    430	0233  A5				     movsw			     ; Mov [si]	to es:[di]
+    431	0234  A5				     movsw			     ; Mov [si]	to es:[di]
+    432	0235  81 C7 1FFC			     add     di,1FFCh
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 9
+110GTTGA.asm
+
+
+
+    433	0239  81 FF 8000			     cmp     di,8000h
+    434	023D  72 04				     jb	     loc_33		     ; Jump if below
+    435	023F  81 C7 80A0			     add     di,data_55e
+    436	0243			     loc_33:
+    437	0243  81 C6 1FFC			     add     si,1FFCh
+    438	0247  81 FE 8000			     cmp     si,8000h
+    439	024B  72 04				     jb	     loc_34		     ; Jump if below
+    440	024D  81 C6 80A0			     add     si,data_55e
+    441	0251			     loc_34:
+    442	0251  A5				     movsw			     ; Mov [si]	to es:[di]
+    443	0252  A5				     movsw			     ; Mov [si]	to es:[di]
+    444	0253  81 C7 1FFC			     add     di,1FFCh
+    445	0257  81 FF 8000			     cmp     di,8000h
+    446	025B  72 04				     jb	     loc_35		     ; Jump if below
+    447	025D  81 C7 80A0			     add     di,data_55e
+    448	0261			     loc_35:
+    449	0261  81 C6 1FFC			     add     si,1FFCh
+    450	0265  81 FE 8000			     cmp     si,8000h
+    451	0269  72 04				     jb	     loc_36		     ; Jump if below
+    452	026B  81 C6 80A0			     add     si,data_55e
+    453	026F			     loc_36:
+    454	026F  A5				     movsw			     ; Mov [si]	to es:[di]
+    455	0270  A5				     movsw			     ; Mov [si]	to es:[di]
+    456	0271  5B				     pop     bx
+    457	0272  5E				     pop     si
+    458	0273  5F				     pop     di
+    459	0274  1F				     pop     ds
+    460	0275  07				     pop     es
+    461	0276  C3				     retn
+    462
+    463				     ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    464
+    465	0277			     limg_func_4:
+    466	0277  8A 45 FF				     mov     al,[di-1]
+    467	027A  C6 45 FF FE			     mov     byte ptr [di-1],0FEh
+    468	027E  FE C0				     inc     al
+    469	0280  75 01				     jnz     loc_37		     ; Jump if not zero
+    470	0282  C3				     retn
+    471	0283			     loc_37:
+    472	0283  53				     push    bx
+    473	0284  06				     push    es
+    474	0285  8A 54 FF				     mov     dl,[si-1]
+    475	0288  8A DA				     mov     bl,dl
+    476	028A  32 FF				     xor     bh,bh		     ; Zero register
+    477	028C  2E: 8E 06	FF2C			     mov     es,cs:data_43e
+    478	0291  26: 03 1E	8000			     add     bx,es:data_3e
+    479	0296  26: 8A 37				     mov     dh,es:[bx]
+    480	0299  07				     pop     es
+    481	029A  5B				     pop     bx
+    482	029B  0A F6				     or	     dh,dh		     ; Zero ?
+    483	029D  75 03				     jnz     loc_38		     ; Jump if not zero
+    484	029F  E9 FE87				     jmp     loc_18
+    485	02A2			     loc_38:
+    486	02A2  4F				     dec     di
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 10
+110GTTGA.asm
+
+
+
+    487	02A3  4E				     dec     si
+    488	02A4  A4				     movsb			     ; Mov [si]	to es:[di]
+    489	02A5  06				     push    es
+    490	02A6  1E				     push    ds
+    491	02A7  57				     push    di
+    492	02A8  56				     push    si
+    493	02A9  53				     push    bx
+    494	02AA  52				     push    dx
+    495	02AB  32 FF				     xor     bh,bh		     ; Zero register
+    496	02AD  03 DB				     add     bx,bx
+    497	02AF  B8 00A0				     mov     ax,0A0h
+    498	02B2  F7 E3				     mul     bx			     ; dx:ax = reg * ax
+    499	02B4  03 06 3E64			     add     ax,ds:data_18e
+    500	02B8  8B F8				     mov     di,ax
+    501	02BA  5A				     pop     dx
+    502	02BB  B8 0020				     mov     ax,20h
+    503	02BE  F6 E2				     mul     dl			     ; ax = reg	* al
+    504	02C0  8B F0				     mov     si,ax
+    505	02C2  D1 E8				     shr     ax,1		     ; Shift w/zeros fill
+    506	02C4  D1 E8				     shr     ax,1		     ; Shift w/zeros fill
+    507	02C6  8B E8				     mov     bp,ax
+    508	02C8  81 C6 8100			     add     si,8100h
+    509	02CC  81 C5 D000			     add     bp,data_6e
+    510	02D0  B8 0060				     mov     ax,60h
+    511	02D3  F6 26 3E66			     mul     byte ptr ds:data_19e    ; ax = data * al
+    512	02D7  03 DB				     add     bx,bx
+    513	02D9  03 DB				     add     bx,bx
+    514	02DB  03 DB				     add     bx,bx
+    515	02DD  03 DB				     add     bx,bx
+    516	02DF  03 D8				     add     bx,ax
+    517	02E1  81 C3 A000			     add     bx,0A000h
+    518	02E5  2E: 8E 1E	FF2C			     mov     ds,cs:data_43e
+    519	02EA  B8 B800				     mov     ax,0B800h
+    520	02ED  8E C0				     mov     es,ax
+    521	02EF  80 FE 04				     cmp     dh,4
+    522	02F2  74 3E				     je	     loc_41		     ; Jump if equal
+    523	02F4  B9 0008				     mov     cx,8
+    524
+    525	02F7			     locloop_39:
+    526	02F7  51				     push    cx
+    527	02F8  3E: 8A 46	00			     mov     al,ds:[bp]
+    528	02FC  E8 0B50				     call    limg_process_loop_6
+    529	02FF  8A C8				     mov     cl,al
+    530	0301  2E: 8B 07				     mov     ax,cs:[bx]
+    531	0304  23 C2				     and     ax,dx
+    532	0306  0B 04				     or	     ax,[si]
+    533	0308  AB				     stosw			     ; Store ax	to es:[di]
+    534	0309  8A C1				     mov     al,cl
+    535	030B  E8 0B41				     call    limg_process_loop_6
+    536	030E  2E: 8B 47	02			     mov     ax,cs:[bx+2]
+    537	0312  23 C2				     and     ax,dx
+    538	0314  0B 44 02				     or	     ax,[si+2]
+    539	0317  AB				     stosw			     ; Store ax	to es:[di]
+    540	0318  45				     inc     bp
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 11
+110GTTGA.asm
+
+
+
+    541	0319  83 C3 04				     add     bx,4
+    542	031C  83 C6 04				     add     si,4
+    543	031F  81 C7 1FFC			     add     di,1FFCh
+    544	0323  81 FF 8000			     cmp     di,8000h
+    545	0327  72 04				     jb	     loc_40		     ; Jump if below
+    546	0329  81 C7 80A0			     add     di,data_55e
+    547	032D			     loc_40:
+    548	032D  59				     pop     cx
+    549	032E  E2 C7				     loop    locloop_39		     ; Loop if cx > 0
+    550
+    551	0330  EB 21				     jmp     short loc_44
+    552	0332			     loc_41:
+    553	0332  B9 0008				     mov     cx,8
+    554
+    555	0335			     locloop_42:
+    556	0335  51				     push    cx
+    557	0336  2E: 8B 07				     mov     ax,cs:[bx]
+    558	0339  AB				     stosw			     ; Store ax	to es:[di]
+    559	033A  2E: 8B 47	02			     mov     ax,cs:[bx+2]
+    560	033E  AB				     stosw			     ; Store ax	to es:[di]
+    561	033F  83 C3 04				     add     bx,4
+    562	0342  81 C7 1FFC			     add     di,1FFCh
+    563	0346  81 FF 8000			     cmp     di,8000h
+    564	034A  72 04				     jb	     loc_43		     ; Jump if below
+    565	034C  81 C7 80A0			     add     di,data_37e
+    566	0350			     loc_43:
+    567	0350  59				     pop     cx
+    568	0351  E2 E2				     loop    locloop_42		     ; Loop if cx > 0
+    569
+    570	0353			     loc_44:
+    571	0353  5B				     pop     bx
+    572	0354  5E				     pop     si
+    573	0355  5F				     pop     di
+    574	0356  1F				     pop     ds
+    575	0357  07				     pop     es
+    576	0358  8A 65 FF				     mov     ah,[di-1]
+    577	035B  0A E4				     or	     ah,ah		     ; Zero ?
+    578	035D  75 01				     jnz     loc_45		     ; Jump if not zero
+    579	035F  C3				     retn
+    580	0360			     loc_45:
+    581	0360  80 FC 19				     cmp     ah,19h
+    582	0363  72 01				     jb	     loc_46		     ; Jump if below
+    583	0365  C3				     retn
+    584	0366			     loc_46:
+    585	0366  57				     push    di
+    586	0367  06				     push    es
+    587	0368  2E: 8E 06	FF2C			     mov     es,cs:data_43e
+    588	036D  26: 8B 3E	8004			     mov     di,es:data_4e
+    589	0372  26: 8A 0D				     mov     cl,es:[di]
+    590	0375  0A C9				     or	     cl,cl		     ; Zero ?
+    591	0377  74 1B				     jz	     loc_49		     ; Jump if zero
+    592	0379  47				     inc     di
+    593	037A			     loc_47:
+    594	037A  26: 8A 05				     mov     al,es:[di]
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 12
+110GTTGA.asm
+
+
+
+    595	037D  3C FF				     cmp     al,0FFh
+    596	037F  74 13				     je	     loc_49		     ; Jump if equal
+    597	0381  3A E0				     cmp     ah,al
+    598	0383  75 09				     jne     loc_48		     ; Jump if not equal
+    599	0385  26: 8A 45	01			     mov     al,es:[di+1]
+    600	0389  88 44 FF				     mov     [si-1],al
+    601	038C  EB 06				     jmp     short loc_49
+    602	038E			     loc_48:
+    603	038E  47				     inc     di
+    604	038F  47				     inc     di
+    605	0390  FE C9				     dec     cl
+    606	0392  75 E6				     jnz     loc_47		     ; Jump if not zero
+    607	0394			     loc_49:
+    608	0394  07				     pop     es
+    609	0395  5F				     pop     di
+    610	0396  C3				     retn
+    611	0397  BF 9B 41				     db	     0BFh, 9Bh,	41h
+    612
+    613				     ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    614
+    615	039A			     limg_func_5:
+    616	039A  B9 0006				     mov     cx,6
+    617
+    618				     ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    619
+    620	039D			     limg_func_6:
+    621	039D  0E				     push    cs
+    622	039E  07				     pop     es
+    623
+    624	039F			     locloop_50:
+    625	039F  51				     push    cx
+    626	03A0  AC				     lodsb			     ; String [si] to al
+    627	03A1  1E				     push    ds
+    628	03A2  56				     push    si
+    629	03A3  B1 20				     mov     cl,20h		     ; ' '
+    630	03A5  F6 E1				     mul     cl			     ; ax = reg	* al
+    631	03A7  8B F0				     mov     si,ax
+    632	03A9  81 C6 8100			     add     si,data_5e
+    633	03AD  2E: 8E 1E	FF2C			     mov     ds,cs:data_43e
+    634	03B2  B9 0010				     mov     cx,10h
+    635	03B5  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+    636	03B7  5E				     pop     si
+    637	03B8  1F				     pop     ds
+    638	03B9  59				     pop     cx
+    639	03BA  E2 E3				     loop    locloop_50		     ; Loop if cx > 0
+    640
+    641	03BC  C3				     retn
+    642	03BD			     loc_51:
+    643	03BD  1E				     push    ds
+    644	03BE  56				     push    si
+    645	03BF  06				     push    es
+    646	03C0  57				     push    di
+    647	03C1  BF 3E68				     mov     di,data_21e
+    648	03C4  A5				     movsw			     ; Mov [si]	to es:[di]
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 13
+110GTTGA.asm
+
+
+
+    649	03C5  83 C6 05				     add     si,5
+    650	03C8  A5				     movsw			     ; Mov [si]	to es:[di]
+    651	03C9  A4				     movsb			     ; Mov [si]	to es:[di]
+    652	03CA  2E: 8A 16	3E66			     mov     dl,cs:data_19e
+    653	03CF  80 C2 04				     add     dl,4
+    654	03D2  32 F6				     xor     dh,dh		     ; Zero register
+    655	03D4  2E: 03 16	0080			     add     dx,word ptr cs:[80h]
+    656	03D9  89 16 3E6D			     mov     ds:data_23e,dx
+    657	03DD  E8 011E				     call    limg_func_8
+    658	03E0  26: A2 3E67			     mov     es:data_20e,al
+    659	03E4  26: 80 3E	3E6A FD			     cmp     byte ptr es:data_22e,0FDh
+    660	03EA  75 08				     jne     loc_52		     ; Jump if not equal
+    661	03EC  42				     inc     dx
+    662	03ED  E8 010E				     call    limg_func_8
+    663	03F0  26: A2 3E6A			     mov     es:data_22e,al
+    664	03F4			     loc_52:
+    665	03F4  BE 3E67				     mov     si,3E67h
+    666	03F7  BF 425B				     mov     di,425Bh
+    667	03FA  E8 FF9D				     call    limg_func_5
+    668	03FD  2E: 8B 36	C00F			     mov     si,cs:data_38e
+    669	0402			     loc_53:
+    670	0402  E8 01F3				     call    limg_scan_loop_2
+    671	0405  0A DB				     or	     bl,bl		     ; Zero ?
+    672	0407  74 12				     jz	     loc_54		     ; Jump if zero
+    673	0409  56				     push    si
+    674	040A  53				     push    bx
+    675	040B  E8 01C4				     call    limg_multiply_3
+    676	040E  5B				     pop     bx
+    677	040F  2E: 8E 06	FF2C			     mov     es,cs:data_43e
+    678	0414  BE 3E67				     mov     si,data_20e
+    679	0417  E8 0196				     call    limg_get_value
+    680	041A  5E				     pop     si
+    681	041B			     loc_54:
+    682	041B  83 C6 08				     add     si,8
+    683				     ;*		     cmp     word ptr [si],0FFFFh
+    684	041E  83 3C FF				     db	      83h, 3Ch,0FFh	     ;	Fixup -	byte match
+    685	0421  75 DF				     jnz     loc_53		     ; Jump if not zero
+    686	0423  5F				     pop     di
+    687	0424  07				     pop     es
+    688	0425  26: 8A 6D	FF			     mov     ch,es:[di-1]
+    689	0429  26: 8A 4D	07			     mov     cl,es:[di+7]
+    690	042D  06				     push    es
+    691	042E  57				     push    di
+    692	042F  51				     push    cx
+    693	0430  2E: 8B 3E	3E64			     mov     di,cs:data_18e
+    694	0435  81 C7 0640			     add     di,640h
+    695	0439  57				     push    di
+    696	043A  BE 425B				     mov     si,data_32e
+    697	043D  B8 B800				     mov     ax,0B800h
+    698	0440  8E C0				     mov     es,ax
+    699	0442  FE C5				     inc     ch
+    700	0444  74 03				     jz	     loc_55		     ; Jump if zero
+    701	0446  E8 00DC				     call    limg_check_state
+    702	0449			     loc_55:
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 14
+110GTTGA.asm
+
+
+
+    703	0449  5F				     pop     di
+    704	044A  59				     pop     cx
+    705	044B  2E: 80 3E	3E66 1B			     cmp     byte ptr cs:data_19e,1Bh
+    706	0451  74 0D				     je	     loc_56		     ; Jump if equal
+    707	0453  BE 42BB				     mov     si,data_33e
+    708	0456  83 C7 04				     add     di,4
+    709	0459  FE C1				     inc     cl
+    710	045B  74 03				     jz	     loc_56		     ; Jump if zero
+    711	045D  E8 00C5				     call    limg_check_state
+    712	0460			     loc_56:
+    713	0460  5F				     pop     di
+    714	0461  07				     pop     es
+    715	0462  B0 FF				     mov     al,0FFh
+    716	0464  26: C6 45	FF FE			     mov     byte ptr es:[di-1],0FEh
+    717	0469  26: 88 05				     mov     es:[di],al
+    718	046C  26: 88 45	01			     mov     es:[di+1],al
+    719	0470  26: 88 45	07			     mov     es:[di+7],al
+    720	0474  26: 88 45	08			     mov     es:[di+8],al
+    721	0478  26: 88 45	09			     mov     es:[di+9],al
+    722	047C  5E				     pop     si
+    723	047D  1F				     pop     ds
+    724	047E  C3				     retn
+    725	047F			     limg_multiply	     endp
+    726
+    727
+    728				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    729				     ;				    SUBROUTINE
+    730				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    731
+    732	047F			     limg_multiply_2	     proc    near
+    733	047F  06				     push    es
+    734	0480  1E				     push    ds
+    735	0481  8B 36 FF2A			     mov     si,ds:data_42e
+    736	0485  83 C6 25				     add     si,25h
+    737	0488  BF 3E67				     mov     di,data_20e
+    738	048B  A5				     movsw			     ; Mov [si]	to es:[di]
+    739	048C  A4				     movsb			     ; Mov [si]	to es:[di]
+    740	048D  8B 16 0080			     mov     dx,word ptr ds:[80h]
+    741	0491  83 C2 03				     add     dx,3
+    742	0494  89 16 3E6D			     mov     ds:data_23e,dx
+    743	0498  80 3E 3E67 FD			     cmp     byte ptr ds:data_20e,0FDh
+    744	049D  75 07				     jne     loc_57		     ; Jump if not equal
+    745	049F  42				     inc     dx
+    746	04A0  E8 005B				     call    limg_func_8
+    747	04A3  A2 3E67				     mov     ds:data_20e,al
+    748	04A6			     loc_57:
+    749	04A6  BE 3E67				     mov     si,data_20e
+    750	04A9  BF 425B				     mov     di,425Bh
+    751	04AC  B9 0003				     mov     cx,3
+    752	04AF  E8 FEEB				     call    limg_func_6
+    753	04B2  2E: 8B 36	C00F			     mov     si,cs:data_38e
+    754	04B7			     loc_58:
+    755	04B7  E8 013E				     call    limg_scan_loop_2
+    756	04BA  0A DB				     or	     bl,bl		     ; Zero ?
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 15
+110GTTGA.asm
+
+
+
+    757	04BC  74 1F				     jz	     loc_59		     ; Jump if zero
+    758	04BE  56				     push    si
+    759	04BF  FE CB				     dec     bl
+    760	04C1  B0 03				     mov     al,3
+    761	04C3  F6 E3				     mul     bl			     ; ax = reg	* al
+    762	04C5  50				     push    ax
+    763	04C6  E8 0109				     call    limg_multiply_3
+    764	04C9  58				     pop     ax
+    765	04CA  03 F8				     add     di,ax
+    766	04CC  8B EF				     mov     bp,di
+    767	04CE  2E: 8E 06	FF2C			     mov     es,cs:data_43e
+    768	04D3  BE 3E67				     mov     si,3E67h
+    769	04D6  BF 425B				     mov     di,425Bh
+    770	04D9  E8 015C				     call    limg_multiply_4
+    771	04DC  5E				     pop     si
+    772	04DD			     loc_59:
+    773	04DD  83 C6 08				     add     si,8
+    774				     ;*		     cmp     word ptr [si],0FFFFh
+    775	04E0  83 3C FF				     db	      83h, 3Ch,0FFh	     ;	Fixup -	byte match
+    776	04E3  75 D2				     jnz     loc_58		     ; Jump if not zero
+    777	04E5  BF 5238				     mov     di,data_35e
+    778	04E8  BE 425B				     mov     si,data_32e
+    779	04EB  B8 B800				     mov     ax,0B800h
+    780	04EE  8E C0				     mov     es,ax
+    781	04F0  E8 0032				     call    limg_check_state
+    782	04F3  1F				     pop     ds
+    783	04F4  07				     pop     es
+    784	04F5  BF E005				     mov     di,data_39e
+    785	04F8  B0 FF				     mov     al,0FFh
+    786	04FA  AA				     stosb			     ; Store al	to es:[di]
+    787	04FB  AA				     stosb			     ; Store al	to es:[di]
+    788	04FC  AA				     stosb			     ; Store al	to es:[di]
+    789	04FD  C3				     retn
+    790	04FE			     limg_multiply_2	     endp
+    791
+    792
+    793				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    794				     ;				    SUBROUTINE
+    795				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    796
+    797	04FE			     limg_func_8	     proc    near
+    798	04FE  E8 0016				     call    limg_func_9
+    799	0501  8A 44 03				     mov     al,[si+3]
+    800	0504  3C FD				     cmp     al,0FDh
+    801	0506  74 01				     je	     loc_60		     ; Jump if equal
+    802	0508  C3				     retn
+    803	0509			     loc_60:
+    804	0509  83 C6 08				     add     si,8
+    805	050C  E8 000C				     call    limg_func_10
+    806	050F  8A 44 03				     mov     al,[si+3]
+    807	0512  3C FD				     cmp     al,0FDh
+    808	0514  74 F3				     je	     loc_60		     ; Jump if equal
+    809	0516  C3				     retn
+    810	0517			     limg_func_8	     endp
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 16
+110GTTGA.asm
+
+
+
+    811
+    812
+    813				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    814				     ;				    SUBROUTINE
+    815				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    816
+    817	0517			     limg_func_9	     proc    near
+    818	0517  8B 36 C00F			     mov     si,ds:data_38e
+    819
+    820				     ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    821
+    822	051B			     limg_func_10:
+    823	051B			     loc_61:
+    824	051B  3B 14				     cmp     dx,[si]
+    825	051D  75 01				     jne     loc_62		     ; Jump if not equal
+    826	051F  C3				     retn
+    827	0520			     loc_62:
+    828	0520  83 C6 08				     add     si,8
+    829	0523  EB F6				     jmp     short loc_61
+    830	0525			     limg_func_9	     endp
+    831
+    832
+    833				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    834				     ;				    SUBROUTINE
+    835				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    836
+    837	0525			     limg_check_state		     proc    near
+    838	0525  B9 0003				     mov     cx,3
+    839	0528			     loc_63:
+    840	0528  A5				     movsw			     ; Mov [si]	to es:[di]
+    841	0529  A5				     movsw			     ; Mov [si]	to es:[di]
+    842	052A  81 C7 1FFC			     add     di,1FFCh
+    843	052E  81 FF 8000			     cmp     di,8000h
+    844	0532  72 04				     jb	     loc_64		     ; Jump if below
+    845	0534  81 C7 80A0			     add     di,data_55e
+    846	0538			     loc_64:
+    847	0538  A5				     movsw			     ; Mov [si]	to es:[di]
+    848	0539  A5				     movsw			     ; Mov [si]	to es:[di]
+    849	053A  81 C7 1FFC			     add     di,1FFCh
+    850	053E  81 FF 8000			     cmp     di,8000h
+    851	0542  72 04				     jb	     loc_65		     ; Jump if below
+    852	0544  81 C7 80A0			     add     di,data_55e
+    853	0548			     loc_65:
+    854	0548  A5				     movsw			     ; Mov [si]	to es:[di]
+    855	0549  A5				     movsw			     ; Mov [si]	to es:[di]
+    856	054A  81 C7 1FFC			     add     di,1FFCh
+    857	054E  81 FF 8000			     cmp     di,8000h
+    858	0552  72 04				     jb	     loc_66		     ; Jump if below
+    859	0554  81 C7 80A0			     add     di,data_55e
+    860	0558			     loc_66:
+    861	0558  A5				     movsw			     ; Mov [si]	to es:[di]
+    862	0559  A5				     movsw			     ; Mov [si]	to es:[di]
+    863	055A  81 C7 1FFC			     add     di,1FFCh
+    864	055E  81 FF 8000			     cmp     di,8000h
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 17
+110GTTGA.asm
+
+
+
+    865	0562  72 04				     jb	     loc_67		     ; Jump if below
+    866	0564  81 C7 80A0			     add     di,data_55e
+    867	0568			     loc_67:
+    868	0568  A5				     movsw			     ; Mov [si]	to es:[di]
+    869	0569  A5				     movsw			     ; Mov [si]	to es:[di]
+    870	056A  81 C7 1FFC			     add     di,1FFCh
+    871	056E  81 FF 8000			     cmp     di,8000h
+    872	0572  72 04				     jb	     loc_68		     ; Jump if below
+    873	0574  81 C7 80A0			     add     di,data_55e
+    874	0578			     loc_68:
+    875	0578  A5				     movsw			     ; Mov [si]	to es:[di]
+    876	0579  A5				     movsw			     ; Mov [si]	to es:[di]
+    877	057A  81 C7 1FFC			     add     di,1FFCh
+    878	057E  81 FF 8000			     cmp     di,8000h
+    879	0582  72 04				     jb	     loc_69		     ; Jump if below
+    880	0584  81 C7 80A0			     add     di,data_55e
+    881	0588			     loc_69:
+    882	0588  A5				     movsw			     ; Mov [si]	to es:[di]
+    883	0589  A5				     movsw			     ; Mov [si]	to es:[di]
+    884	058A  81 C7 1FFC			     add     di,1FFCh
+    885	058E  81 FF 8000			     cmp     di,8000h
+    886	0592  72 04				     jb	     loc_70		     ; Jump if below
+    887	0594  81 C7 80A0			     add     di,data_55e
+    888	0598			     loc_70:
+    889	0598  A5				     movsw			     ; Mov [si]	to es:[di]
+    890	0599  A5				     movsw			     ; Mov [si]	to es:[di]
+    891	059A  81 C7 1FFC			     add     di,1FFCh
+    892	059E  81 FF 8000			     cmp     di,8000h
+    893	05A2  72 04				     jb	     loc_71		     ; Jump if below
+    894	05A4  81 C7 80A0			     add     di,80A0h
+    895	05A8			     loc_71:
+    896	05A8  E2 02				     loop    locloop_72		     ; Loop if cx > 0
+    897
+    898	05AA  EB 03				     jmp     short loc_ret_73
+    899
+    900	05AC			     locloop_72:
+    901	05AC  E9 FF79				     jmp     loc_63
+    902
+    903	05AF			     loc_ret_73:
+    904	05AF  C3				     retn
+    905	05B0			     limg_check_state		     endp
+    906
+    907
+    908				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    909				     ;				    SUBROUTINE
+    910				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    911
+    912	05B0			     limg_get_value	     proc    near
+    913	05B0  8B EF				     mov     bp,di
+    914	05B2  FE CB				     dec     bl
+    915	05B4  32 FF				     xor     bh,bh		     ; Zero register
+    916	05B6  03 DB				     add     bx,bx
+    917	05B8  2E: FF 97	35BA			     call    word ptr cs:data_12e[bx]	     ;*
+    918	05BD  C3				     retn
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 18
+110GTTGA.asm
+
+
+
+    919	05BE			     limg_get_value	     endp
+    920
+    921	05BE  C6 35 BE 35 BF 5B			     db	     0C6h, 35h,0BEh, 35h,0BFh, 5Bh
+    922	05C4  42 E8 70 00 EB 6E			     db	      42h,0E8h,	70h, 00h,0EBh, 6Eh
+    923	05CA  83 C6 03 BF BB 42			     db	      83h,0C6h,	03h,0BFh,0BBh, 42h
+    924	05D0  EB				     db	     0EBh
+    925	05D1  66				     db	     66h
+    926
+    927				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    928				     ;				    SUBROUTINE
+    929				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    930
+    931	05D2			     limg_multiply_3	     proc    near
+    932	05D2  8A 44 02				     mov     al,[si+2]
+    933	05D5  8A E8				     mov     ch,al
+    934	05D7  24 7F				     and     al,7Fh
+    935	05D9  B1 30				     mov     cl,30h		     ; '0'
+    936	05DB  F6 E1				     mul     cl			     ; ax = reg	* al
+    937	05DD  05 4000				     add     ax,4000h
+    938	05E0  8B F8				     mov     di,ax
+    939	05E2  32 D2				     xor     dl,dl		     ; Zero register
+    940	05E4  0A ED				     or	     ch,ch		     ; Zero ?
+    941	05E6  78 02				     js	     loc_74		     ; Jump if sign=1
+    942	05E8  B2 04				     mov     dl,4
+    943	05EA			     loc_74:
+    944	05EA  8A 44 04				     mov     al,[si+4]
+    945	05ED  24 03				     and     al,3
+    946	05EF  02 C2				     add     al,dl
+    947	05F1  B1 06				     mov     cl,6
+    948	05F3  F6 E1				     mul     cl			     ; ax = reg	* al
+    949	05F5  03 F8				     add     di,ax
+    950	05F7  C3				     retn
+    951	05F8			     limg_multiply_3	     endp
+    952
+    953
+    954				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    955				     ;				    SUBROUTINE
+    956				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    957
+    958	05F8			     limg_scan_loop_2		     proc    near
+    959	05F8  B9 0002				     mov     cx,2
+    960	05FB  8B 16 3E6D			     mov     dx,ds:data_23e
+    961
+    962	05FF			     locloop_75:
+    963	05FF  8A D9				     mov     bl,cl
+    964	0601  39 14				     cmp     [si],dx
+    965	0603  75 01				     jne     loc_76		     ; Jump if not equal
+    966	0605  C3				     retn
+    967	0606			     loc_76:
+    968	0606  42				     inc     dx
+    969	0607  E2 F6				     loop    locloop_75		     ; Loop if cx > 0
+    970
+    971	0609  8A D9				     mov     bl,cl
+    972	060B  C3				     retn
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 19
+110GTTGA.asm
+
+
+
+    973	060C			     limg_scan_loop_2		     endp
+    974
+    975										     ;*	No entry point to code
+    976	060C  8B EF				     mov     bp,di
+    977	060E  FE CB				     dec     bl
+    978	0610  32 FF				     xor     bh,bh		     ; Zero register
+    979	0612  03 DB				     add     bx,bx
+    980	0614  2E: FF 97	3616			     call    word ptr cs:data_13e[bx]	     ;*
+    981	0619  C3				     retn
+    982										     ;*	No entry point to code
+    983	061A  2C 36				     sub     al,36h		     ; '6'
+    984	061C  24 36				     and     al,36h		     ; '6'
+    985	061E  1C 36				     sbb     al,36h		     ; '6'
+    986	0620  83 C5 03				     add     bp,3
+    987	0623  BF 419B				     mov     di,419Bh
+    988	0626  EB 10				     jmp     short loc_77
+    989										     ;*	No entry point to code
+    990	0628  BF 419B				     mov     di,419Bh
+    991	062B  E8 000A				     call    limg_multiply_4
+    992	062E  EB 08				     jmp     short loc_77
+    993										     ;*	No entry point to code
+    994	0630  BF 41FB				     mov     di,41FBh
+    995	0633  83 C6 03				     add     si,3
+    996	0636  EB 00				     jmp     short loc_77
+    997
+    998				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    999				     ;				    SUBROUTINE
+   1000				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1001
+   1002	0638			     limg_multiply_4	     proc    near
+   1003	0638			     loc_77:
+   1004	0638  B9 0003				     mov     cx,3
+   1005
+   1006	063B			     locloop_78:
+   1007	063B  51				     push    cx
+   1008	063C  C6 04 FF				     mov     byte ptr [si],0FFh
+   1009	063F  46				     inc     si
+   1010	0640  1E				     push    ds
+   1011	0641  56				     push    si
+   1012	0642  26: 8A 46	00			     mov     al,es:[bp]
+   1013	0646  45				     inc     bp
+   1014	0647  06				     push    es
+   1015	0648  55				     push    bp
+   1016	0649  FE C8				     dec     al
+   1017	064B  B1 20				     mov     cl,20h		     ; ' '
+   1018	064D  F6 E1				     mul     cl			     ; ax = reg	* al
+   1019	064F  8B F0				     mov     si,ax
+   1020	0651  81 C6 4100			     add     si,data_1e
+   1021	0655  D1 E8				     shr     ax,1		     ; Shift w/zeros fill
+   1022	0657  D1 E8				     shr     ax,1		     ; Shift w/zeros fill
+   1023	0659  05 7000				     add     ax,7000h
+   1024	065C  2E: A3 3E77			     mov     cs:data_28e,ax
+   1025	0660  8C C8				     mov     ax,cs
+   1026	0662  05 2000				     add     ax,2000h
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 20
+110GTTGA.asm
+
+
+
+   1027	0665  2E: A3 3E79			     mov     word ptr cs:data_28e+2,ax
+   1028	0669  2E: 8E 1E	FF2C			     mov     ds,cs:data_43e
+   1029	066E  0E				     push    cs
+   1030	066F  07				     pop     es
+   1031	0670  E8 0040				     call    limg_process_loop
+   1032	0673  5D				     pop     bp
+   1033	0674  07				     pop     es
+   1034	0675  5E				     pop     si
+   1035	0676  1F				     pop     ds
+   1036	0677  59				     pop     cx
+   1037	0678  E2 C1				     loop    locloop_78		     ; Loop if cx > 0
+   1038
+   1039	067A  C3				     retn
+   1040	067B			     limg_multiply_4	     endp
+   1041
+   1042										     ;*	No entry point to code
+   1043	067B  0E				     push    cs
+   1044	067C  07				     pop     es
+   1045	067D  BF 419B				     mov     di,419Bh
+   1046	0680  B9 0006				     mov     cx,6
+   1047
+   1048	0683			     locloop_79:
+   1049	0683  51				     push    cx
+   1050	0684  AC				     lodsb			     ; String [si] to al
+   1051	0685  1E				     push    ds
+   1052	0686  56				     push    si
+   1053	0687  B1 20				     mov     cl,20h		     ; ' '
+   1054	0689  F6 E1				     mul     cl			     ; ax = reg	* al
+   1055	068B  8B F0				     mov     si,ax
+   1056	068D  81 C6 6000			     add     si,data_2e
+   1057	0691  D1 E8				     shr     ax,1		     ; Shift w/zeros fill
+   1058	0693  D1 E8				     shr     ax,1		     ; Shift w/zeros fill
+   1059	0695  05 8000				     add     ax,8000h
+   1060	0698  2E: A3 3E77			     mov     cs:data_28e,ax
+   1061	069C  8C C8				     mov     ax,cs
+   1062	069E  05 2000				     add     ax,2000h
+   1063	06A1  2E: A3 3E79			     mov     word ptr cs:data_28e+2,ax
+   1064	06A5  2E: 8E 1E	FF2C			     mov     ds,cs:data_43e
+   1065	06AA  E8 0006				     call    limg_process_loop
+   1066	06AD  5E				     pop     si
+   1067	06AE  1F				     pop     ds
+   1068	06AF  59				     pop     cx
+   1069	06B0  E2 D1				     loop    locloop_79		     ; Loop if cx > 0
+   1070
+   1071	06B2  C3				     retn
+   1072
+   1073				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1074				     ;				    SUBROUTINE
+   1075				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1076
+   1077	06B3			     limg_process_loop		     proc    near
+   1078	06B3  1E				     push    ds
+   1079	06B4  56				     push    si
+   1080	06B5  57				     push    di
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 21
+110GTTGA.asm
+
+
+
+   1081	06B6  2E: C5 36	3E77			     lds     si,dword ptr cs:data_28e	     ; Load seg:offset ptr
+   1082	06BB  B9 0008				     mov     cx,8
+   1083
+   1084	06BE			     locloop_80:
+   1085	06BE  51				     push    cx
+   1086	06BF  AC				     lodsb			     ; String [si] to al
+   1087	06C0  E8 078C				     call    limg_process_loop_6
+   1088	06C3  26: 21 15				     and     es:[di],dx
+   1089	06C6  E8 0786				     call    limg_process_loop_6
+   1090	06C9  26: 21 55	02			     and     es:[di+2],dx
+   1091	06CD  83 C7 04				     add     di,4
+   1092	06D0  59				     pop     cx
+   1093	06D1  E2 EB				     loop    locloop_80		     ; Loop if cx > 0
+   1094
+   1095	06D3  5F				     pop     di
+   1096	06D4  5E				     pop     si
+   1097	06D5  1F				     pop     ds
+   1098	06D6  B9 0008				     mov     cx,8
+   1099
+   1100	06D9			     locloop_81:
+   1101	06D9  AD				     lodsw			     ; String [si] to ax
+   1102	06DA  26: 09 05				     or	     es:[di],ax
+   1103	06DD  AD				     lodsw			     ; String [si] to ax
+   1104	06DE  26: 09 45	02			     or	     es:[di+2],ax
+   1105	06E2  83 C7 04				     add     di,4
+   1106	06E5  E2 F2				     loop    locloop_81		     ; Loop if cx > 0
+   1107
+   1108	06E7  C3				     retn
+   1109	06E8			     limg_process_loop		     endp
+   1110
+   1111										     ;*	No entry point to code
+   1112	06E8  1E				     push    ds
+   1113	06E9  B8 B800				     mov     ax,0B800h
+   1114	06EC  8E C0				     mov     es,ax
+   1115	06EE  8E D8				     mov     ds,ax
+   1116	06F0  FD				     std			     ; Set direction flag
+   1117	06F1  BE 5666				     mov     si,data_51e
+   1118	06F4  B0 08				     mov     al,8
+   1119	06F6			     loc_82:
+   1120	06F6  56				     push    si
+   1121	06F7  8B FE				     mov     di,si
+   1122	06F9  83 EE 04				     sub     si,4
+   1123	06FC  B9 0036				     mov     cx,36h
+   1124	06FF  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1125	0701  83 C6 3C				     add     si,3Ch
+   1126	0704  A5				     movsw			     ; Mov [si]	to es:[di]
+   1127	0705  A5				     movsw			     ; Mov [si]	to es:[di]
+   1128	0706  5E				     pop     si
+   1129	0707  81 C6 2000			     add     si,2000h
+   1130	070B  81 FE 8000			     cmp     si,8000h
+   1131	070F  72 04				     jb	     loc_83		     ; Jump if below
+   1132	0711  81 C6 80A0			     add     si,80A0h
+   1133	0715			     loc_83:
+   1134	0715  FE C8				     dec     al
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 22
+110GTTGA.asm
+
+
+
+   1135	0717  75 DD				     jnz     loc_82		     ; Jump if not zero
+   1136	0719  BE 57A6				     mov     si,data_53e
+   1137	071C  B0 08				     mov     al,8
+   1138	071E			     loc_84:
+   1139	071E  56				     push    si
+   1140	071F  8B FE				     mov     di,si
+   1141	0721  83 EE 08				     sub     si,8
+   1142	0724  B9 0034				     mov     cx,34h
+   1143	0727  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1144	0729  83 C6 40				     add     si,40h
+   1145	072C  A5				     movsw			     ; Mov [si]	to es:[di]
+   1146	072D  A5				     movsw			     ; Mov [si]	to es:[di]
+   1147	072E  A5				     movsw			     ; Mov [si]	to es:[di]
+   1148	072F  A5				     movsw			     ; Mov [si]	to es:[di]
+   1149	0730  5E				     pop     si
+   1150	0731  81 C6 2000			     add     si,2000h
+   1151	0735  81 FE 8000			     cmp     si,8000h
+   1152	0739  72 04				     jb	     loc_85		     ; Jump if below
+   1153	073B  81 C6 80A0			     add     si,80A0h
+   1154	073F			     loc_85:
+   1155	073F  FE C8				     dec     al
+   1156	0741  75 DB				     jnz     loc_84		     ; Jump if not zero
+   1157	0743  1F				     pop     ds
+   1158	0744  FC				     cld			     ; Clear direction
+   1159	0745  C3				     retn
+   1160										     ;*	No entry point to code
+   1161	0746  1E				     push    ds
+   1162	0747  B8 B800				     mov     ax,0B800h
+   1163	074A  8E C0				     mov     es,ax
+   1164	074C  8E D8				     mov     ds,ax
+   1165	074E  FD				     std			     ; Set direction flag
+   1166	074F  BE 4266				     mov     si,data_49e
+   1167	0752  B0 10				     mov     al,10h
+   1168	0754			     loc_86:
+   1169	0754  56				     push    si
+   1170	0755  8B FE				     mov     di,si
+   1171	0757  4E				     dec     si
+   1172	0758  4E				     dec     si
+   1173	0759  B9 0037				     mov     cx,37h
+   1174	075C  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1175	075E  83 C6 3A				     add     si,3Ah
+   1176	0761  A5				     movsw			     ; Mov [si]	to es:[di]
+   1177	0762  5E				     pop     si
+   1178	0763  81 C6 2000			     add     si,2000h
+   1179	0767  81 FE 8000			     cmp     si,8000h
+   1180	076B  72 04				     jb	     loc_87		     ; Jump if below
+   1181	076D  81 C6 80A0			     add     si,80A0h
+   1182	0771			     loc_87:
+   1183	0771  FE C8				     dec     al
+   1184	0773  75 DF				     jnz     loc_86		     ; Jump if not zero
+   1185	0775  1F				     pop     ds
+   1186	0776  FC				     cld			     ; Clear direction
+   1187	0777  C3				     retn
+   1188										     ;*	No entry point to code
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 23
+110GTTGA.asm
+
+
+
+   1189	0778  1E				     push    ds
+   1190	0779  B8 B800				     mov     ax,0B800h
+   1191	077C  8E C0				     mov     es,ax
+   1192	077E  8E D8				     mov     ds,ax
+   1193	0780  BE 55F8				     mov     si,data_50e
+   1194	0783  B0 08				     mov     al,8
+   1195	0785			     loc_88:
+   1196	0785  56				     push    si
+   1197	0786  8B FE				     mov     di,si
+   1198	0788  83 C6 04				     add     si,4
+   1199	078B  B9 0036				     mov     cx,36h
+   1200	078E  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1201	0790  83 EE 3C				     sub     si,3Ch
+   1202	0793  A5				     movsw			     ; Mov [si]	to es:[di]
+   1203	0794  A5				     movsw			     ; Mov [si]	to es:[di]
+   1204	0795  5E				     pop     si
+   1205	0796  81 C6 2000			     add     si,2000h
+   1206	079A  81 FE 8000			     cmp     si,8000h
+   1207	079E  72 04				     jb	     loc_89		     ; Jump if below
+   1208	07A0  81 C6 80A0			     add     si,80A0h
+   1209	07A4			     loc_89:
+   1210	07A4  FE C8				     dec     al
+   1211	07A6  75 DD				     jnz     loc_88		     ; Jump if not zero
+   1212	07A8  BE 5738				     mov     si,data_52e
+   1213	07AB  B0 08				     mov     al,8
+   1214	07AD			     loc_90:
+   1215	07AD  56				     push    si
+   1216	07AE  8B FE				     mov     di,si
+   1217	07B0  83 C6 08				     add     si,8
+   1218	07B3  B9 0034				     mov     cx,34h
+   1219	07B6  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1220	07B8  83 EE 40				     sub     si,40h
+   1221	07BB  A5				     movsw			     ; Mov [si]	to es:[di]
+   1222	07BC  A5				     movsw			     ; Mov [si]	to es:[di]
+   1223	07BD  A5				     movsw			     ; Mov [si]	to es:[di]
+   1224	07BE  A5				     movsw			     ; Mov [si]	to es:[di]
+   1225	07BF  5E				     pop     si
+   1226	07C0  81 C6 2000			     add     si,2000h
+   1227	07C4  81 FE 8000			     cmp     si,8000h
+   1228	07C8  72 04				     jb	     loc_91		     ; Jump if below
+   1229	07CA  81 C6 80A0			     add     si,80A0h
+   1230	07CE			     loc_91:
+   1231	07CE  FE C8				     dec     al
+   1232	07D0  75 DB				     jnz     loc_90		     ; Jump if not zero
+   1233	07D2  1F				     pop     ds
+   1234	07D3  C3				     retn
+   1235										     ;*	No entry point to code
+   1236	07D4  1E				     push    ds
+   1237	07D5  B8 B800				     mov     ax,0B800h
+   1238	07D8  8E C0				     mov     es,ax
+   1239	07DA  8E D8				     mov     ds,ax
+   1240	07DC  BE 41F8				     mov     si,data_48e
+   1241	07DF  B0 10				     mov     al,10h
+   1242	07E1			     loc_92:
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 24
+110GTTGA.asm
+
+
+
+   1243	07E1  56				     push    si
+   1244	07E2  8B FE				     mov     di,si
+   1245	07E4  46				     inc     si
+   1246	07E5  46				     inc     si
+   1247	07E6  B9 0037				     mov     cx,37h
+   1248	07E9  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1249	07EB  83 EE 3A				     sub     si,3Ah
+   1250	07EE  A5				     movsw			     ; Mov [si]	to es:[di]
+   1251	07EF  5E				     pop     si
+   1252	07F0  81 C6 2000			     add     si,2000h
+   1253	07F4  81 FE 8000			     cmp     si,8000h
+   1254	07F8  72 04				     jb	     loc_93		     ; Jump if below
+   1255	07FA  81 C6 80A0			     add     si,80A0h
+   1256	07FE			     loc_93:
+   1257	07FE  FE C8				     dec     al
+   1258	0800  75 DF				     jnz     loc_92		     ; Jump if not zero
+   1259	0802  1F				     pop     ds
+   1260	0803  C3				     retn
+   1261										     ;*	No entry point to code
+   1262	0804  1E				     push    ds
+   1263	0805  56				     push    si
+   1264	0806  32 E4				     xor     ah,ah		     ; Zero register
+   1265	0808  03 C0				     add     ax,ax
+   1266	080A  03 C0				     add     ax,ax
+   1267	080C  03 C0				     add     ax,ax
+   1268	080E  03 C0				     add     ax,ax
+   1269	0810  03 C0				     add     ax,ax
+   1270	0812  8B F0				     mov     si,ax
+   1271	0814  81 C6 8000			     add     si,8000h
+   1272	0818  02 FF				     add     bh,bh
+   1273	081A  02 FF				     add     bh,bh
+   1274	081C  E8 0612				     call    extract_bits
+   1275	081F  8B F8				     mov     di,ax
+   1276	0821  2E: 8E 1E	FF2C			     mov     ds,cs:data_43e
+   1277	0826  B8 B800				     mov     ax,0B800h
+   1278	0829  8E C0				     mov     es,ax
+   1279	082B  B9 0008				     mov     cx,8
+   1280
+   1281	082E			     locloop_94:
+   1282	082E  A5				     movsw			     ; Mov [si]	to es:[di]
+   1283	082F  A5				     movsw			     ; Mov [si]	to es:[di]
+   1284	0830  81 C7 1FFC			     add     di,1FFCh
+   1285	0834  81 FF 8000			     cmp     di,8000h
+   1286	0838  72 04				     jb	     loc_95		     ; Jump if below
+   1287	083A  81 C7 80A0			     add     di,80A0h
+   1288	083E			     loc_95:
+   1289	083E  E2 EE				     loop    locloop_94		     ; Loop if cx > 0
+   1290
+   1291	0840  5E				     pop     si
+   1292	0841  1F				     pop     ds
+   1293	0842  C3				     retn
+   1294										     ;*	No entry point to code
+   1295	0843  1E				     push    ds
+   1296	0844  56				     push    si
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 25
+110GTTGA.asm
+
+
+
+   1297	0845  57				     push    di
+   1298	0846  0E				     push    cs
+   1299	0847  1F				     pop     ds
+   1300	0848  02 FF				     add     bh,bh
+   1301	084A  E8 05E4				     call    extract_bits
+   1302	084D  8B F8				     mov     di,ax
+   1303	084F  B8 B800				     mov     ax,0B800h
+   1304	0852  8E C0				     mov     es,ax
+   1305	0854  BE 386C				     mov     si,data_14e
+   1306	0857  B9 0009				     mov     cx,9
+   1307
+   1308	085A			     locloop_96:
+   1309	085A  A5				     movsw			     ; Mov [si]	to es:[di]
+   1310	085B  A5				     movsw			     ; Mov [si]	to es:[di]
+   1311	085C  81 C7 1FFC			     add     di,1FFCh
+   1312	0860  81 FF 8000			     cmp     di,8000h
+   1313	0864  72 04				     jb	     loc_97		     ; Jump if below
+   1314	0866  81 C7 80A0			     add     di,data_37e
+   1315	086A			     loc_97:
+   1316	086A  E2 EE				     loop    locloop_96		     ; Loop if cx > 0
+   1317
+   1318	086C  5F				     pop     di
+   1319	086D  5E				     pop     si
+   1320	086E  1F				     pop     ds
+   1321	086F  C3				     retn
+   1322	0870  00 00 00 00 0C C0			     db	      00h, 00h,	00h, 00h, 0Ch,0C0h
+   1323	0876  00 00 0C CC 00 00			     db	      00h, 00h,	0Ch,0CCh, 00h, 00h
+   1324	087C  0C CC C0 00 0C CC			     db	      0Ch,0CCh,0C0h, 00h, 0Ch,0CCh
+   1325	0882  CC 00 0C CC C0 00			     db	     0CCh, 00h,	0Ch,0CCh,0C0h, 00h
+   1326	0888  0C CC 00 00 0C C0			     db	      0Ch,0CCh,	00h, 00h, 0Ch,0C0h
+   1327	088E  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1328	0894  02 FF E8 98 05 8B			     db	      02h,0FFh,0E8h, 98h, 05h, 8Bh
+   1329	089A  F8 BE 7B 3E B8 00			     db	     0F8h,0BEh,	7Bh, 3Eh,0B8h, 00h
+   1330	08A0  B8 8E C0 B9 09 00			     db	     0B8h, 8Eh,0C0h,0B9h, 09h, 00h
+   1331
+   1332	08A6			     locloop_98:
+   1333	08A6  51				     push    cx
+   1334	08A7  57				     push    di
+   1335	08A8  56				     push    si
+   1336	08A9  8B 0E FF6A			     mov     cx,ds:data_46e
+   1337	08AD  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1338	08AF  5E				     pop     si
+   1339	08B0  83 C6 50				     add     si,50h
+   1340	08B3  5F				     pop     di
+   1341	08B4  81 C7 2000			     add     di,2000h
+   1342	08B8  81 FF 8000			     cmp     di,8000h
+   1343	08BC  72 04				     jb	     loc_99		     ; Jump if below
+   1344	08BE  81 C7 80A0			     add     di,80A0h
+   1345	08C2			     loc_99:
+   1346	08C2  59				     pop     cx
+   1347	08C3  E2 E1				     loop    locloop_98		     ; Loop if cx > 0
+   1348
+   1349	08C5  C3				     retn
+   1350										     ;*	No entry point to code
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 26
+110GTTGA.asm
+
+
+
+   1351	08C6  56				     push    si
+   1352	08C7  57				     push    di
+   1353	08C8  57				     push    di
+   1354	08C9  32 E4				     xor     ah,ah		     ; Zero register
+   1355	08CB  50				     push    ax
+   1356	08CC  0E				     push    cs
+   1357	08CD  07				     pop     es
+   1358	08CE  BF 3E7B				     mov     di,data_30e
+   1359	08D1  33 C0				     xor     ax,ax		     ; Zero register
+   1360	08D3  B9 0190				     mov     cx,190h
+   1361	08D6  F3> AB				     rep     stosw		     ; Rep when	cx >0 Store ax to es:[di]
+   1362	08D8  58				     pop     ax
+   1363	08D9  50				     push    ax
+   1364	08DA  03 C0				     add     ax,ax
+   1365	08DC  03 F0				     add     si,ax
+   1366	08DE  8B 34				     mov     si,[si]
+   1367	08E0  E8 001C				     call    limg_func_17
+   1368	08E3  58				     pop     ax
+   1369	08E4  5F				     pop     di
+   1370	08E5  F6 06 FF57 FF			     test    byte ptr ds:data_44e,0FFh
+   1371	08EA  74 10				     jz	     loc_100		     ; Jump if zero
+   1372	08EC  8B D8				     mov     bx,ax
+   1373	08EE  03 C0				     add     ax,ax
+   1374	08F0  03 C3				     add     ax,bx
+   1375	08F2  03 F8				     add     di,ax
+   1376	08F4  8A 15				     mov     dl,[di]
+   1377	08F6  8B 45 01				     mov     ax,[di+1]
+   1378	08F9  E8 00B1				     call    limg_process_loop_2
+   1379	08FC			     loc_100:
+   1380	08FC  5F				     pop     di
+   1381	08FD  5E				     pop     si
+   1382	08FE  C3				     retn
+   1383
+   1384				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1385				     ;				    SUBROUTINE
+   1386				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1387
+   1388	08FF			     limg_func_17	     proc    near
+   1389	08FF  0E				     push    cs
+   1390	0900  07				     pop     es
+   1391	0901  BF 3ECB				     mov     di,3ECBh
+   1392	0904  32 DB				     xor     bl,bl		     ; Zero register
+   1393	0906			     loc_101:
+   1394	0906  AC				     lodsb			     ; String [si] to al
+   1395	0907  0A C0				     or	     al,al		     ; Zero ?
+   1396	0909  75 01				     jnz     loc_102		     ; Jump if not zero
+   1397	090B  C3				     retn
+   1398	090C			     loc_102:
+   1399	090C  53				     push    bx
+   1400	090D  1E				     push    ds
+   1401	090E  56				     push    si
+   1402	090F  80 E3 01				     and     bl,1
+   1403	0912  E8 0007				     call    limg_func_18
+   1404	0915  5E				     pop     si
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 27
+110GTTGA.asm
+
+
+
+   1405	0916  1F				     pop     ds
+   1406	0917  5B				     pop     bx
+   1407	0918  FE C3				     inc     bl
+   1408	091A  EB EA				     jmp     short loc_101
+   1409	091C			     limg_func_17	     endp
+   1410
+   1411
+   1412				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1413				     ;				    SUBROUTINE
+   1414				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1415
+   1416	091C			     limg_func_18	     proc    near
+   1417	091C  2C 20				     sub     al,20h		     ; ' '
+   1418	091E  32 E4				     xor     ah,ah		     ; Zero register
+   1419	0920  D1 E0				     shl     ax,1		     ; Shift w/zeros fill
+   1420	0922  D1 E0				     shl     ax,1		     ; Shift w/zeros fill
+   1421	0924  D1 E0				     shl     ax,1		     ; Shift w/zeros fill
+   1422	0926  8B F0				     mov     si,ax
+   1423	0928  0E				     push    cs
+   1424	0929  1F				     pop     ds
+   1425	092A  03 36 F504			     add     si,ds:data_41e
+   1426	092E  02 DB				     add     bl,bl
+   1427	0930  02 DB				     add     bl,bl
+   1428	0932  8A CB				     mov     cl,bl
+   1429	0934  57				     push    di
+   1430	0935  B3 08				     mov     bl,8
+   1431	0937			     loc_103:
+   1432	0937  53				     push    bx
+   1433	0938  AC				     lodsb			     ; String [si] to al
+   1434	0939  E8 0031				     call    limg_func_19
+   1435	093C  50				     push    ax
+   1436	093D  E8 002D				     call    limg_func_19
+   1437	0940  5B				     pop     bx
+   1438	0941  8A DC				     mov     bl,ah
+   1439	0943  8A F3				     mov     dh,bl
+   1440	0945  32 D2				     xor     dl,dl		     ; Zero register
+   1441	0947  D3 EB				     shr     bx,cl		     ; Shift w/zeros fill
+   1442	0949  D3 EA				     shr     dx,cl		     ; Shift w/zeros fill
+   1443	094B  8A F2				     mov     dh,dl
+   1444	094D  32 D2				     xor     dl,dl		     ; Zero register
+   1445	094F  86 FB				     xchg    bh,bl
+   1446	0951  86 F2				     xchg    dh,dl
+   1447	0953  26: 09 1D				     or	     es:[di],bx
+   1448	0956  26: 09 55	02			     or	     es:[di+2],dx
+   1449	095A  83 C7 50				     add     di,50h
+   1450	095D  5B				     pop     bx
+   1451	095E  FE CB				     dec     bl
+   1452	0960  75 D5				     jnz     loc_103		     ; Jump if not zero
+   1453	0962  5F				     pop     di
+   1454	0963  47				     inc     di
+   1455	0964  47				     inc     di
+   1456	0965  80 F9 04				     cmp     cl,4
+   1457	0968  74 01				     je	     loc_104		     ; Jump if equal
+   1458	096A  C3				     retn
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 28
+110GTTGA.asm
+
+
+
+   1459	096B			     loc_104:
+   1460	096B  47				     inc     di
+   1461	096C  C3				     retn
+   1462	096D			     limg_func_18	     endp
+   1463
+   1464
+   1465				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1466				     ;				    SUBROUTINE
+   1467				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1468
+   1469	096D			     limg_func_19	     proc    near
+   1470	096D  32 E4				     xor     ah,ah		     ; Zero register
+   1471	096F  B2 02				     mov     dl,2
+   1472	0971			     loc_105:
+   1473	0971  02 C0				     add     al,al
+   1474	0973  1A F6				     sbb     dh,dh
+   1475	0975  80 E6 0F				     and     dh,0Fh
+   1476	0978  02 E4				     add     ah,ah
+   1477	097A  02 E4				     add     ah,ah
+   1478	097C  02 E4				     add     ah,ah
+   1479	097E  02 E4				     add     ah,ah
+   1480	0980  0A E6				     or	     ah,dh
+   1481	0982  FE CA				     dec     dl
+   1482	0984  75 EB				     jnz     loc_105		     ; Jump if not zero
+   1483	0986  C3				     retn
+   1484	0987			     limg_func_19	     endp
+   1485
+   1486										     ;*	No entry point to code
+   1487	0987  52				     push    dx
+   1488	0988  50				     push    ax
+   1489	0989  0E				     push    cs
+   1490	098A  07				     pop     es
+   1491	098B  BF 3E7B				     mov     di,data_30e
+   1492	098E  33 C0				     xor     ax,ax		     ; Zero register
+   1493	0990  B9 0190				     mov     cx,190h
+   1494	0993  F3> AB				     rep     stosw		     ; Rep when	cx >0 Store ax to es:[di]
+   1495	0995  58				     pop     ax
+   1496	0996  5A				     pop     dx
+   1497	0997  E8 0071				     call    limg_process_loop_4
+   1498	099A  BF 3ECB				     mov     di,3ECBh
+   1499	099D  BE 3A1F				     mov     si,3A1Fh
+   1500	09A0  B9 0007				     mov     cx,7
+   1501	09A3  B3 01				     mov     bl,1
+   1502	09A5  C7 06 FF6A 000B			     mov     word ptr ds:data_46e,0Bh
+   1503	09AB  EB 16				     jmp     short locloop_106
+   1504
+   1505				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1506				     ;				    SUBROUTINE
+   1507				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1508
+   1509	09AD			     limg_process_loop_2	     proc    near
+   1510	09AD  E8 005B				     call    limg_process_loop_4
+   1511	09B0  0E				     push    cs
+   1512	09B1  07				     pop     es
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 29
+110GTTGA.asm
+
+
+
+   1513	09B2  BF 3ECB				     mov     di,3ECBh
+   1514	09B5  A1 FF68				     mov     ax,ds:data_45e
+   1515	09B8  03 C0				     add     ax,ax
+   1516	09BA  03 F8				     add     di,ax
+   1517	09BC  47				     inc     di
+   1518	09BD  BE 3A20				     mov     si,data_15e
+   1519	09C0  B9 0006				     mov     cx,6
+   1520
+   1521	09C3			     locloop_106:
+   1522	09C3  51				     push    cx
+   1523	09C4  57				     push    di
+   1524	09C5  AC				     lodsb			     ; String [si] to al
+   1525	09C6  56				     push    si
+   1526	09C7  E8 0009				     call    limg_process_loop_3
+   1527	09CA  5E				     pop     si
+   1528	09CB  5F				     pop     di
+   1529	09CC  83 C7 03				     add     di,3
+   1530	09CF  59				     pop     cx
+   1531	09D0  E2 F1				     loop    locloop_106	     ; Loop if cx > 0
+   1532
+   1533	09D2  C3				     retn
+   1534	09D3			     limg_process_loop_2	     endp
+   1535
+   1536
+   1537				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1538				     ;				    SUBROUTINE
+   1539				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1540
+   1541	09D3			     limg_process_loop_3	     proc    near
+   1542	09D3  FE C0				     inc     al
+   1543	09D5  75 01				     jnz     loc_107		     ; Jump if not zero
+   1544	09D7  C3				     retn
+   1545	09D8			     loc_107:
+   1546	09D8  FE C8				     dec     al
+   1547	09DA  32 E4				     xor     ah,ah		     ; Zero register
+   1548	09DC  03 C0				     add     ax,ax
+   1549	09DE  03 C0				     add     ax,ax
+   1550	09E0  03 C0				     add     ax,ax
+   1551	09E2  2E: 03 06	F502			     add     ax,cs:data_40e
+   1552	09E7  8B F0				     mov     si,ax
+   1553	09E9  B9 0007				     mov     cx,7
+   1554
+   1555	09EC			     locloop_108:
+   1556	09EC  AC				     lodsb			     ; String [si] to al
+   1557	09ED  02 C0				     add     al,al
+   1558	09EF  02 C0				     add     al,al
+   1559	09F1  E8 FF79				     call    limg_func_19
+   1560	09F4  26: 08 25				     or	     es:[di],ah
+   1561	09F7  E8 FF73				     call    limg_func_19
+   1562	09FA  26: 08 65	01			     or	     es:[di+1],ah
+   1563	09FE  E8 FF6C				     call    limg_func_19
+   1564	0A01  26: 08 65	02			     or	     es:[di+2],ah
+   1565	0A05  83 C7 50				     add     di,50h
+   1566	0A08  E2 E2				     loop    locloop_108	     ; Loop if cx > 0
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 30
+110GTTGA.asm
+
+
+
+   1567
+   1568	0A0A  C3				     retn
+   1569	0A0B			     limg_process_loop_3	     endp
+   1570
+   1571
+   1572				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1573				     ;				    SUBROUTINE
+   1574				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1575
+   1576	0A0B			     limg_process_loop_4	     proc    near
+   1577	0A0B  BF 3A1F				     mov     di,3A1Fh
+   1578	0A0E  E8 0019				     call    limg_func_23
+   1579	0A11  B9 0006				     mov     cx,6
+   1580
+   1581	0A14			     locloop_109:
+   1582	0A14  2E: F6 05	FF			     test    byte ptr cs:[di],0FFh
+   1583	0A18  74 01				     jz	     loc_110		     ; Jump if zero
+   1584	0A1A  C3				     retn
+   1585	0A1B			     loc_110:
+   1586	0A1B  2E: C6 05	FF			     mov     byte ptr cs:[di],0FFh
+   1587	0A1F  47				     inc     di
+   1588	0A20  E2 F2				     loop    locloop_109	     ; Loop if cx > 0
+   1589
+   1590	0A22  C3				     retn
+   1591	0A23			     limg_process_loop_4	     endp
+   1592
+   1593	0A23  07*(00)				     db	     7 dup (0)
+   1594
+   1595				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1596				     ;				    SUBROUTINE
+   1597				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1598
+   1599	0A2A			     limg_func_23	     proc    near
+   1600	0A2A  B1 0F				     mov     cl,0Fh
+   1601	0A2C  BB 4240				     mov     bx,4240h
+   1602	0A2F  E8 003E				     call    limg_func_24
+   1603	0A32  2E: 88 35				     mov     cs:[di],dh
+   1604	0A35  B1 01				     mov     cl,1
+   1605	0A37  BB 86A0				     mov     bx,86A0h
+   1606	0A3A  E8 0033				     call    limg_func_24
+   1607	0A3D  2E: 88 75	01			     mov     cs:[di+1],dh
+   1608	0A41  32 C9				     xor     cl,cl		     ; Zero register
+   1609	0A43  BB 2710				     mov     bx,2710h
+   1610	0A46  E8 0027				     call    limg_func_24
+   1611	0A49  2E: 88 75	02			     mov     cs:[di+2],dh
+   1612	0A4D  BB 03E8				     mov     bx,3E8h
+   1613	0A50  E8 0036				     call    limg_func_25
+   1614	0A53  2E: 88 75	03			     mov     cs:[di+3],dh
+   1615	0A57  BB 0064				     mov     bx,64h
+   1616	0A5A  E8 002C				     call    limg_func_25
+   1617	0A5D  2E: 88 75	04			     mov     cs:[di+4],dh
+   1618	0A61  BB 000A				     mov     bx,0Ah
+   1619	0A64  E8 0022				     call    limg_func_25
+   1620	0A67  2E: 88 75	05			     mov     cs:[di+5],dh
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 31
+110GTTGA.asm
+
+
+
+   1621	0A6B  2E: 88 45	06			     mov     cs:[di+6],al
+   1622	0A6F  C3				     retn
+   1623	0A70			     limg_func_23	     endp
+   1624
+   1625
+   1626				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1627				     ;				    SUBROUTINE
+   1628				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1629
+   1630	0A70			     limg_func_24	     proc    near
+   1631	0A70  32 F6				     xor     dh,dh		     ; Zero register
+   1632	0A72			     loc_111:
+   1633	0A72  2A D1				     sub     dl,cl
+   1634	0A74  72 10				     jc	     loc_114		     ; Jump if carry Set
+   1635	0A76  2B C3				     sub     ax,bx
+   1636	0A78  73 06				     jnc     loc_112		     ; Jump if carry=0
+   1637	0A7A  0A D2				     or	     dl,dl		     ; Zero ?
+   1638	0A7C  74 06				     jz	     loc_113		     ; Jump if zero
+   1639	0A7E  FE CA				     dec     dl
+   1640	0A80			     loc_112:
+   1641	0A80  FE C6				     inc     dh
+   1642	0A82  EB EE				     jmp     short loc_111
+   1643	0A84			     loc_113:
+   1644	0A84  03 C3				     add     ax,bx
+   1645	0A86			     loc_114:
+   1646	0A86  02 D1				     add     dl,cl
+   1647	0A88  C3				     retn
+   1648	0A89			     limg_func_24	     endp
+   1649
+   1650
+   1651				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1652				     ;				    SUBROUTINE
+   1653				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1654
+   1655	0A89			     limg_func_25	     proc    near
+   1656	0A89  32 F6				     xor     dh,dh		     ; Zero register
+   1657	0A8B  F7 F3				     div     bx			     ; ax,dx rem=dx:ax/reg
+   1658	0A8D  92				     xchg    dx,ax
+   1659	0A8E  8A F2				     mov     dh,dl
+   1660	0A90  32 D2				     xor     dl,dl		     ; Zero register
+   1661	0A92  C3				     retn
+   1662	0A93			     limg_func_25	     endp
+   1663
+   1664										     ;*	No entry point to code
+   1665	0A93  1E				     push    ds
+   1666	0A94  50				     push    ax
+   1667	0A95  02 FF				     add     bh,bh
+   1668	0A97  02 D9				     add     bl,cl
+   1669	0A99  FE CB				     dec     bl
+   1670	0A9B  E8 0393				     call    extract_bits
+   1671	0A9E  8B F8				     mov     di,ax
+   1672	0AA0  8B F0				     mov     si,ax
+   1673	0AA2  81 EE 2000			     sub     si,2000h
+   1674	0AA6  73 04				     jnc     loc_115		     ; Jump if carry=0
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 32
+110GTTGA.asm
+
+
+
+   1675	0AA8  81 C6 7F60			     add     si,data_54e
+   1676	0AAC			     loc_115:
+   1677	0AAC  B8 B800				     mov     ax,0B800h
+   1678	0AAF  8E C0				     mov     es,ax
+   1679	0AB1  8E D8				     mov     ds,ax
+   1680	0AB3  8A DD				     mov     bl,ch
+   1681	0AB5  32 FF				     xor     bh,bh		     ; Zero register
+   1682	0AB7  32 ED				     xor     ch,ch		     ; Zero register
+   1683
+   1684	0AB9			     locloop_116:
+   1685	0AB9  51				     push    cx
+   1686	0ABA  57				     push    di
+   1687	0ABB  56				     push    si
+   1688	0ABC  8B CB				     mov     cx,bx
+   1689	0ABE  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1690	0AC0  5E				     pop     si
+   1691	0AC1  5F				     pop     di
+   1692	0AC2  81 EE 2000			     sub     si,2000h
+   1693	0AC6  73 04				     jnc     loc_117		     ; Jump if carry=0
+   1694	0AC8  81 C6 7F60			     add     si,data_36e
+   1695	0ACC			     loc_117:
+   1696	0ACC  81 EF 2000			     sub     di,2000h
+   1697	0AD0  73 04				     jnc     loc_118		     ; Jump if carry=0
+   1698	0AD2  81 C7 7F60			     add     di,data_54e
+   1699	0AD6			     loc_118:
+   1700	0AD6  59				     pop     cx
+   1701	0AD7  E2 E0				     loop    locloop_116	     ; Loop if cx > 0
+   1702
+   1703	0AD9  58				     pop     ax
+   1704	0ADA  B2 50				     mov     dl,50h		     ; 'P'
+   1705	0ADC  F6 E2				     mul     dl			     ; ax = reg	* al
+   1706	0ADE  05 3E7B				     add     ax,3E7Bh
+   1707	0AE1  8B F0				     mov     si,ax
+   1708	0AE3  0E				     push    cs
+   1709	0AE4  1F				     pop     ds
+   1710	0AE5  8B CB				     mov     cx,bx
+   1711	0AE7  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1712	0AE9  1F				     pop     ds
+   1713	0AEA  C3				     retn
+   1714										     ;*	No entry point to code
+   1715	0AEB  1E				     push    ds
+   1716	0AEC  50				     push    ax
+   1717	0AED  02 FF				     add     bh,bh
+   1718	0AEF  E8 033F				     call    extract_bits
+   1719	0AF2  8B F8				     mov     di,ax
+   1720	0AF4  8B F0				     mov     si,ax
+   1721	0AF6  81 C6 2000			     add     si,2000h
+   1722	0AFA  81 FE 8000			     cmp     si,8000h
+   1723	0AFE  72 04				     jb	     loc_119		     ; Jump if below
+   1724	0B00  81 C6 80A0			     add     si,data_55e
+   1725	0B04			     loc_119:
+   1726	0B04  B8 B800				     mov     ax,0B800h
+   1727	0B07  8E C0				     mov     es,ax
+   1728	0B09  8E D8				     mov     ds,ax
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 33
+110GTTGA.asm
+
+
+
+   1729	0B0B  8A DD				     mov     bl,ch
+   1730	0B0D  32 FF				     xor     bh,bh		     ; Zero register
+   1731	0B0F  32 ED				     xor     ch,ch		     ; Zero register
+   1732
+   1733	0B11			     locloop_120:
+   1734	0B11  51				     push    cx
+   1735	0B12  57				     push    di
+   1736	0B13  56				     push    si
+   1737	0B14  8B CB				     mov     cx,bx
+   1738	0B16  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1739	0B18  5E				     pop     si
+   1740	0B19  5F				     pop     di
+   1741	0B1A  81 C6 2000			     add     si,2000h
+   1742	0B1E  81 FE 8000			     cmp     si,8000h
+   1743	0B22  72 04				     jb	     loc_121		     ; Jump if below
+   1744	0B24  81 C6 80A0			     add     si,data_37e
+   1745	0B28			     loc_121:
+   1746	0B28  81 C7 2000			     add     di,2000h
+   1747	0B2C  81 FF 8000			     cmp     di,8000h
+   1748	0B30  72 04				     jb	     loc_122		     ; Jump if below
+   1749	0B32  81 C7 80A0			     add     di,data_55e
+   1750	0B36			     loc_122:
+   1751	0B36  59				     pop     cx
+   1752	0B37  E2 D8				     loop    locloop_120	     ; Loop if cx > 0
+   1753
+   1754	0B39  58				     pop     ax
+   1755	0B3A  B2 50				     mov     dl,50h		     ; 'P'
+   1756	0B3C  F6 E2				     mul     dl			     ; ax = reg	* al
+   1757	0B3E  05 3E7B				     add     ax,3E7Bh
+   1758	0B41  8B F0				     mov     si,ax
+   1759	0B43  0E				     push    cs
+   1760	0B44  1F				     pop     ds
+   1761	0B45  8B CB				     mov     cx,bx
+   1762	0B47  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1763	0B49  1F				     pop     ds
+   1764	0B4A  C3				     retn
+   1765										     ;*	No entry point to code
+   1766	0B4B  B8 B800				     mov     ax,0B800h
+   1767	0B4E  8E C0				     mov     es,ax
+   1768	0B50  BF 41F8				     mov     di,data_48e
+   1769	0B53  B9 0008				     mov     cx,8
+   1770
+   1771	0B56			     locloop_123:
+   1772	0B56  51				     push    cx
+   1773	0B57  57				     push    di
+   1774	0B58  B9 0012				     mov     cx,12h
+   1775
+   1776	0B5B			     locloop_124:
+   1777	0B5B  51				     push    cx
+   1778	0B5C  57				     push    di
+   1779	0B5D  B9 0038				     mov     cx,38h
+   1780	0B60  B8 EEEE				     mov     ax,0EEEEh
+   1781
+   1782	0B63			     locloop_125:
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 34
+110GTTGA.asm
+
+
+
+   1783	0B63  26: 31 05				     xor     es:[di],ax
+   1784	0B66  47				     inc     di
+   1785	0B67  47				     inc     di
+   1786	0B68  E2 F9				     loop    locloop_125	     ; Loop if cx > 0
+   1787
+   1788	0B6A  5F				     pop     di
+   1789	0B6B  81 C7 0140			     add     di,140h
+   1790	0B6F  59				     pop     cx
+   1791	0B70  E2 E9				     loop    locloop_124	     ; Loop if cx > 0
+   1792
+   1793	0B72  5F				     pop     di
+   1794	0B73  81 C7 2000			     add     di,2000h
+   1795	0B77  81 FF 8000			     cmp     di,8000h
+   1796	0B7B  72 04				     jb	     loc_126		     ; Jump if below
+   1797	0B7D  81 C7 80A0			     add     di,80A0h
+   1798	0B81			     loc_126:
+   1799	0B81  59				     pop     cx
+   1800	0B82  E2 D2				     loop    locloop_123	     ; Loop if cx > 0
+   1801
+   1802	0B84  C3				     retn
+   1803										     ;*	No entry point to code
+   1804	0B85  2E: 89 3E	3E77			     mov     cs:data_28e,di
+   1805	0B8A  2E: 8C 06	3E79			     mov     word ptr cs:data_28e+2,es
+   1806	0B8F  51				     push    cx
+   1807	0B90  1E				     push    ds
+   1808	0B91  56				     push    si
+   1809	0B92  8C C8				     mov     ax,cs
+   1810	0B94  05 3000				     add     ax,3000h
+   1811	0B97  8E C0				     mov     es,ax
+   1812	0B99  B8 0030				     mov     ax,30h
+   1813	0B9C  F7 E1				     mul     cx			     ; dx:ax = reg * ax
+   1814	0B9E  8B C8				     mov     cx,ax
+   1815	0BA0  BF 0000				     mov     di,data_47e
+   1816	0BA3  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1817	0BA5  5F				     pop     di
+   1818	0BA6  07				     pop     es
+   1819	0BA7  59				     pop     cx
+   1820	0BA8  8C C8				     mov     ax,cs
+   1821	0BAA  05 3000				     add     ax,3000h
+   1822	0BAD  8E D8				     mov     ds,ax
+   1823	0BAF  BE 0000				     mov     si,data_47e
+   1824
+   1825	0BB2			     locloop_127:
+   1826	0BB2  51				     push    cx
+   1827	0BB3  B9 0008				     mov     cx,8
+   1828
+   1829	0BB6			     locloop_128:
+   1830	0BB6  51				     push    cx
+   1831	0BB7  AD				     lodsw			     ; String [si] to ax
+   1832	0BB8  8B D0				     mov     dx,ax
+   1833	0BBA  AD				     lodsw			     ; String [si] to ax
+   1834	0BBB  8B C8				     mov     cx,ax
+   1835	0BBD  AD				     lodsw			     ; String [si] to ax
+   1836	0BBE  8B D8				     mov     bx,ax
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 35
+110GTTGA.asm
+
+
+
+   1837	0BC0  8B E8				     mov     bp,ax
+   1838	0BC2  0B C1				     or	     ax,cx
+   1839	0BC4  0B C2				     or	     ax,dx
+   1840	0BC6  23 E9				     and     bp,cx
+   1841	0BC8  23 EA				     and     bp,dx
+   1842	0BCA  F7 D5				     not     bp
+   1843	0BCC  23 D5				     and     dx,bp
+   1844	0BCE  23 CD				     and     cx,bp
+   1845	0BD0  23 DD				     and     bx,bp
+   1846	0BD2  86 F2				     xchg    dh,dl
+   1847	0BD4  2E: 89 16	3E6F			     mov     cs:data_24e,dx
+   1848	0BD9  86 E9				     xchg    ch,cl
+   1849	0BDB  2E: 89 0E	3E71			     mov     cs:data_25e,cx
+   1850	0BE0  86 FB				     xchg    bh,bl
+   1851	0BE2  2E: 89 1E	3E73			     mov     cs:data_26e,bx
+   1852	0BE7  86 E0				     xchg    ah,al
+   1853	0BE9  F7 D0				     not     ax
+   1854	0BEB  2E: A3 3E75			     mov     cs:data_27e,ax
+   1855	0BEF  E8 019E				     call    limg_process_loop_5
+   1856	0BF2  8B C2				     mov     ax,dx
+   1857	0BF4  86 E0				     xchg    ah,al
+   1858	0BF6  AB				     stosw			     ; Store ax	to es:[di]
+   1859	0BF7  E8 0196				     call    limg_process_loop_5
+   1860	0BFA  8B C2				     mov     ax,dx
+   1861	0BFC  86 E0				     xchg    ah,al
+   1862	0BFE  AB				     stosw			     ; Store ax	to es:[di]
+   1863	0BFF  06				     push    es
+   1864	0C00  57				     push    di
+   1865	0C01  2E: C4 3E	3E77			     les     di,dword ptr cs:data_28e	     ; Load seg:offset ptr
+   1866	0C06  E8 0206				     call    limg_scan_loop_3
+   1867	0C09  8A C2				     mov     al,dl
+   1868	0C0B  AA				     stosb			     ; Store al	to es:[di]
+   1869	0C0C  2E: 89 3E	3E77			     mov     cs:data_28e,di
+   1870	0C11  5F				     pop     di
+   1871	0C12  07				     pop     es
+   1872	0C13  59				     pop     cx
+   1873	0C14  E2 A0				     loop    locloop_128	     ; Loop if cx > 0
+   1874
+   1875	0C16  59				     pop     cx
+   1876	0C17  E2 99				     loop    locloop_127	     ; Loop if cx > 0
+   1877
+   1878	0C19  C3				     retn
+   1879										     ;*	No entry point to code
+   1880	0C1A  1E				     push    ds
+   1881	0C1B  2E: 8E 1E	FF2C			     mov     ds,cs:data_43e
+   1882	0C20  BE 8100				     mov     si,data_5e
+   1883	0C23  8C C8				     mov     ax,cs
+   1884	0C25  05 3000				     add     ax,3000h
+   1885	0C28  8E C0				     mov     es,ax
+   1886	0C2A  B9 2EE0				     mov     cx,2EE0h
+   1887	0C2D  BF 0000				     mov     di,data_47e
+   1888	0C30  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1889	0C32  2E: 8E 06	FF2C			     mov     es,cs:data_43e
+   1890	0C37  8C C8				     mov     ax,cs
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 36
+110GTTGA.asm
+
+
+
+   1891	0C39  05 3000				     add     ax,3000h
+   1892	0C3C  8E D8				     mov     ds,ax
+   1893	0C3E  BE 0000				     mov     si,0
+   1894	0C41  BF 8100				     mov     di,8100h
+   1895	0C44  26: 8B 1E	8000			     mov     bx,es:data_3e
+   1896	0C49  BD D000				     mov     bp,0D000h
+   1897	0C4C  B9 00FA				     mov     cx,0FAh
+   1898
+   1899	0C4F			     locloop_129:
+   1900	0C4F  51				     push    cx
+   1901	0C50  26: 8A 07				     mov     al,es:[bx]
+   1902	0C53  3C 05				     cmp     al,5
+   1903	0C55  72 02				     jb	     loc_130		     ; Jump if below
+   1904	0C57  32 C0				     xor     al,al		     ; Zero register
+   1905	0C59			     loc_130:
+   1906	0C59  53				     push    bx
+   1907	0C5A  33 DB				     xor     bx,bx		     ; Zero register
+   1908	0C5C  8A D8				     mov     bl,al
+   1909	0C5E  03 DB				     add     bx,bx
+   1910	0C60  2E: FF 97	3C68			     call    word ptr cs:data_16e[bx]	     ;*
+   1911	0C65  5B				     pop     bx
+   1912	0C66  43				     inc     bx
+   1913	0C67  59				     pop     cx
+   1914	0C68  E2 E5				     loop    locloop_129	     ; Loop if cx > 0
+   1915
+   1916	0C6A  1F				     pop     ds
+   1917	0C6B  C3				     retn
+   1918										     ;*	No entry point to code
+   1919	0C6C  72 3C				     jc	     loc_132		     ; Jump if carry Set
+   1920	0C6E  A5				     movsw			     ; Mov [si]	to es:[di]
+   1921	0C6F  3C E1				     cmp     al,0E1h
+   1922	0C71  3C 1D				     cmp     al,1Dh
+   1923	0C73  3D 3D59				     cmp     ax,3D59h
+   1924	0C76  B9 0008				     mov     cx,8
+   1925
+   1926	0C79			     locloop_131:
+   1927	0C79  51				     push    cx
+   1928	0C7A  AD				     lodsw			     ; String [si] to ax
+   1929	0C7B  86 E0				     xchg    ah,al
+   1930	0C7D  2E: A3 3E6F			     mov     cs:data_24e,ax
+   1931	0C81  AD				     lodsw			     ; String [si] to ax
+   1932	0C82  86 E0				     xchg    ah,al
+   1933	0C84  2E: A3 3E71			     mov     cs:data_25e,ax
+   1934	0C88  AD				     lodsw			     ; String [si] to ax
+   1935	0C89  86 E0				     xchg    ah,al
+   1936	0C8B  2E: A3 3E73			     mov     cs:data_26e,ax
+   1937	0C8F  E8 00FE				     call    limg_process_loop_5
+   1938	0C92  8B C2				     mov     ax,dx
+   1939	0C94  86 E0				     xchg    ah,al
+   1940	0C96  AB				     stosw			     ; Store ax	to es:[di]
+   1941	0C97  E8 00F6				     call    limg_process_loop_5
+   1942	0C9A  8B C2				     mov     ax,dx
+   1943	0C9C  86 E0				     xchg    ah,al
+   1944	0C9E  AB				     stosw			     ; Store ax	to es:[di]
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 37
+110GTTGA.asm
+
+
+
+   1945	0C9F  26: C6 46	00 00			     mov     byte ptr es:[bp],0
+   1946	0CA4  45				     inc     bp
+   1947	0CA5  59				     pop     cx
+   1948	0CA6  E2 D1				     loop    locloop_131	     ; Loop if cx > 0
+   1949
+   1950	0CA8  C3				     retn
+   1951	0CA9  B9				     db	     0B9h
+   1952	0CAA			     loc_132:
+   1953	0CAA  08 00				     or	     [bx+si],al
+   1954
+   1955	0CAC			     locloop_133:
+   1956	0CAC  51				     push    cx
+   1957	0CAD  AD				     lodsw			     ; String [si] to ax
+   1958	0CAE  86 E0				     xchg    ah,al
+   1959	0CB0  2E: A3 3E6F			     mov     cs:data_24e,ax
+   1960	0CB4  AD				     lodsw			     ; String [si] to ax
+   1961	0CB5  86 E0				     xchg    ah,al
+   1962	0CB7  2E: A3 3E71			     mov     cs:data_25e,ax
+   1963	0CBB  2E: C7 06	3E73 0000		     mov     word ptr cs:data_26e,0
+   1964	0CC2  AD				     lodsw			     ; String [si] to ax
+   1965	0CC3  86 C4				     xchg    al,ah
+   1966	0CC5  2E: A3 3E75			     mov     cs:data_27e,ax
+   1967	0CC9  E8 00C4				     call    limg_process_loop_5
+   1968	0CCC  8B C2				     mov     ax,dx
+   1969	0CCE  86 E0				     xchg    ah,al
+   1970	0CD0  AB				     stosw			     ; Store ax	to es:[di]
+   1971	0CD1  E8 00BC				     call    limg_process_loop_5
+   1972	0CD4  8B C2				     mov     ax,dx
+   1973	0CD6  86 E0				     xchg    ah,al
+   1974	0CD8  AB				     stosw			     ; Store ax	to es:[di]
+   1975	0CD9  E8 0133				     call    limg_scan_loop_3
+   1976	0CDC  26: 88 56	00			     mov     es:[bp],dl
+   1977	0CE0  45				     inc     bp
+   1978	0CE1  59				     pop     cx
+   1979	0CE2  E2 C8				     loop    locloop_133	     ; Loop if cx > 0
+   1980
+   1981	0CE4  C3				     retn
+   1982	0CE5  B9 08 00				     db	     0B9h, 08h,	00h
+   1983
+   1984	0CE8			     locloop_134:
+   1985	0CE8  51				     push    cx
+   1986	0CE9  AD				     lodsw			     ; String [si] to ax
+   1987	0CEA  86 E0				     xchg    ah,al
+   1988	0CEC  2E: A3 3E6F			     mov     cs:data_24e,ax
+   1989	0CF0  AD				     lodsw			     ; String [si] to ax
+   1990	0CF1  86 C4				     xchg    al,ah
+   1991	0CF3  2E: A3 3E75			     mov     cs:data_27e,ax
+   1992	0CF7  2E: C7 06	3E71 0000		     mov     word ptr cs:data_25e,0
+   1993	0CFE  AD				     lodsw			     ; String [si] to ax
+   1994	0CFF  86 C4				     xchg    al,ah
+   1995	0D01  2E: A3 3E73			     mov     cs:data_26e,ax
+   1996	0D05  E8 0088				     call    limg_process_loop_5
+   1997	0D08  8B C2				     mov     ax,dx
+   1998	0D0A  86 E0				     xchg    ah,al
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 38
+110GTTGA.asm
+
+
+
+   1999	0D0C  AB				     stosw			     ; Store ax	to es:[di]
+   2000	0D0D  E8 0080				     call    limg_process_loop_5
+   2001	0D10  8B C2				     mov     ax,dx
+   2002	0D12  86 E0				     xchg    ah,al
+   2003	0D14  AB				     stosw			     ; Store ax	to es:[di]
+   2004	0D15  E8 00F7				     call    limg_scan_loop_3
+   2005	0D18  26: 88 56	00			     mov     es:[bp],dl
+   2006	0D1C  45				     inc     bp
+   2007	0D1D  59				     pop     cx
+   2008	0D1E  E2 C8				     loop    locloop_134	     ; Loop if cx > 0
+   2009
+   2010	0D20  C3				     retn
+   2011	0D21  B9 08 00				     db	     0B9h, 08h,	00h
+   2012
+   2013	0D24			     locloop_135:
+   2014	0D24  51				     push    cx
+   2015	0D25  AD				     lodsw			     ; String [si] to ax
+   2016	0D26  86 C4				     xchg    al,ah
+   2017	0D28  2E: A3 3E75			     mov     cs:data_27e,ax
+   2018	0D2C  2E: C7 06	3E6F 0000		     mov     word ptr cs:data_24e,0
+   2019	0D33  AD				     lodsw			     ; String [si] to ax
+   2020	0D34  86 E0				     xchg    ah,al
+   2021	0D36  2E: A3 3E71			     mov     cs:data_25e,ax
+   2022	0D3A  AD				     lodsw			     ; String [si] to ax
+   2023	0D3B  86 E0				     xchg    ah,al
+   2024	0D3D  2E: A3 3E73			     mov     cs:data_26e,ax
+   2025	0D41  E8 004C				     call    limg_process_loop_5
+   2026	0D44  8B C2				     mov     ax,dx
+   2027	0D46  86 E0				     xchg    ah,al
+   2028	0D48  AB				     stosw			     ; Store ax	to es:[di]
+   2029	0D49  E8 0044				     call    limg_process_loop_5
+   2030	0D4C  8B C2				     mov     ax,dx
+   2031	0D4E  86 E0				     xchg    ah,al
+   2032	0D50  AB				     stosw			     ; Store ax	to es:[di]
+   2033	0D51  E8 00BB				     call    limg_scan_loop_3
+   2034	0D54  26: 88 56	00			     mov     es:[bp],dl
+   2035	0D58  45				     inc     bp
+   2036	0D59  59				     pop     cx
+   2037	0D5A  E2 C8				     loop    locloop_135	     ; Loop if cx > 0
+   2038
+   2039	0D5C  C3				     retn
+   2040	0D5D  B9 08 00				     db	     0B9h, 08h,	00h
+   2041
+   2042	0D60			     locloop_136:
+   2043	0D60  51				     push    cx
+   2044	0D61  AD				     lodsw			     ; String [si] to ax
+   2045	0D62  86 E0				     xchg    ah,al
+   2046	0D64  2E: A3 3E6F			     mov     cs:data_24e,ax
+   2047	0D68  AD				     lodsw			     ; String [si] to ax
+   2048	0D69  86 E0				     xchg    ah,al
+   2049	0D6B  2E: A3 3E71			     mov     cs:data_25e,ax
+   2050	0D6F  AD				     lodsw			     ; String [si] to ax
+   2051	0D70  86 E0				     xchg    ah,al
+   2052	0D72  2E: A3 3E73			     mov     cs:data_26e,ax
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 39
+110GTTGA.asm
+
+
+
+   2053	0D76  E8 0017				     call    limg_process_loop_5
+   2054	0D79  8B C2				     mov     ax,dx
+   2055	0D7B  86 E0				     xchg    ah,al
+   2056	0D7D  AB				     stosw			     ; Store ax	to es:[di]
+   2057	0D7E  E8 000F				     call    limg_process_loop_5
+   2058	0D81  8B C2				     mov     ax,dx
+   2059	0D83  86 E0				     xchg    ah,al
+   2060	0D85  AB				     stosw			     ; Store ax	to es:[di]
+   2061	0D86  26: C6 46	00 FF			     mov     byte ptr es:[bp],0FFh
+   2062	0D8B  45				     inc     bp
+   2063	0D8C  59				     pop     cx
+   2064	0D8D  E2 D1				     loop    locloop_136	     ; Loop if cx > 0
+   2065
+   2066	0D8F  C3				     retn
+   2067
+   2068				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2069				     ;				    SUBROUTINE
+   2070				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2071
+   2072	0D90			     limg_process_loop_5	     proc    near
+   2073	0D90  B9 0004				     mov     cx,4
+   2074
+   2075	0D93			     locloop_137:
+   2076	0D93  33 DB				     xor     bx,bx		     ; Zero register
+   2077	0D95  2E: D1 06	3E73			     rol     word ptr cs:data_26e,1  ; Rotate
+   2078	0D9A  13 DB				     adc     bx,bx
+   2079	0D9C  2E: D1 06	3E71			     rol     word ptr cs:data_25e,1  ; Rotate
+   2080	0DA1  13 DB				     adc     bx,bx
+   2081	0DA3  2E: D1 06	3E6F			     rol     word ptr cs:data_24e,1  ; Rotate
+   2082	0DA8  13 DB				     adc     bx,bx
+   2083	0DAA  2E: D1 06	3E73			     rol     word ptr cs:data_26e,1  ; Rotate
+   2084	0DAF  13 DB				     adc     bx,bx
+   2085	0DB1  2E: D1 06	3E71			     rol     word ptr cs:data_25e,1  ; Rotate
+   2086	0DB6  13 DB				     adc     bx,bx
+   2087	0DB8  2E: D1 06	3E6F			     rol     word ptr cs:data_24e,1  ; Rotate
+   2088	0DBD  13 DB				     adc     bx,bx
+   2089	0DBF  03 D2				     add     dx,dx
+   2090	0DC1  03 D2				     add     dx,dx
+   2091	0DC3  03 D2				     add     dx,dx
+   2092	0DC5  03 D2				     add     dx,dx
+   2093	0DC7  2E: 0A 97	3DCB			     or	     dl,cs:data_17e[bx]
+   2094	0DCC  E2 C5				     loop    locloop_137	     ; Loop if cx > 0
+   2095
+   2096	0DCE  C3				     retn
+   2097	0DCF			     limg_process_loop_5	     endp
+   2098
+   2099	0DCF  00 07 04 02 03 01			     db	      00h, 07h,	04h, 02h, 03h, 01h
+   2100	0DD5  08 05 07 0F 0C 0E			     db	      08h, 05h,	07h, 0Fh, 0Ch, 0Eh
+   2101	0DDB  0B 09 0E 0D 04 0C			     db	      0Bh, 09h,	0Eh, 0Dh, 04h, 0Ch
+   2102	0DE1  0C 0E 07 05 06 0C			     db	      0Ch, 0Eh,	07h, 05h, 06h, 0Ch
+   2103	0DE7  02 0E 0E 0A 0A 03			     db	      02h, 0Eh,	0Eh, 0Ah, 0Ah, 03h
+   2104	0DED  0A 07 03 0B 07 0A			     db	      0Ah, 07h,	03h, 0Bh, 07h, 0Ah
+   2105	0DF3  0B 09 0A 09 01 09			     db	      0Bh, 09h,	0Ah, 09h, 01h, 09h
+   2106	0DF9  05 03 09 09 07 05			     db	      05h, 03h,	09h, 09h, 07h, 05h
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 40
+110GTTGA.asm
+
+
+
+   2107	0DFF  08 0E 06 0A 0A 07			     db	      08h, 0Eh,	06h, 0Ah, 0Ah, 07h
+   2108	0E05  0E 0C 05 0D 0C 07			     db	      0Eh, 0Ch,	05h, 0Dh, 0Ch, 07h
+   2109	0E0B  09 05				     db	      09h, 05h
+   2110	0E0D  0C 0D				     db	      0Ch, 0Dh
+   2111
+   2112				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2113				     ;				    SUBROUTINE
+   2114				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2115
+   2116	0E0F			     limg_scan_loop_3		     proc    near
+   2117	0E0F  B9 0008				     mov     cx,8
+   2118
+   2119	0E12			     locloop_138:
+   2120	0E12  32 C0				     xor     al,al		     ; Zero register
+   2121	0E14  2E: D1 06	3E75			     rol     word ptr cs:data_27e,1  ; Rotate
+   2122	0E19  12 C0				     adc     al,al
+   2123	0E1B  2E: D1 06	3E75			     rol     word ptr cs:data_27e,1  ; Rotate
+   2124	0E20  12 C0				     adc     al,al
+   2125	0E22  3C 03				     cmp     al,3
+   2126	0E24  74 02				     je	     loc_139		     ; Jump if equal
+   2127	0E26  32 C0				     xor     al,al		     ; Zero register
+   2128	0E28			     loc_139:
+   2129	0E28  24 01				     and     al,1
+   2130	0E2A  02 D2				     add     dl,dl
+   2131	0E2C  0A D0				     or	     dl,al
+   2132	0E2E  E2 E2				     loop    locloop_138	     ; Loop if cx > 0
+   2133
+   2134	0E30  C3				     retn
+   2135	0E31			     limg_scan_loop_3		     endp
+   2136
+   2137
+   2138				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2139				     ;				    SUBROUTINE
+   2140				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2141
+   2142	0E31			     extract_bits	     proc    near
+   2143	0E31  8A F3				     mov     dh,bl
+   2144	0E33  D0 CE				     ror     dh,1		     ; Rotate
+   2145	0E35  D0 CE				     ror     dh,1		     ; Rotate
+   2146	0E37  D0 CE				     ror     dh,1		     ; Rotate
+   2147	0E39  81 E2 6000			     and     dx,6000h
+   2148	0E3D  B8 00A0				     mov     ax,0A0h
+   2149	0E40  D0 EB				     shr     bl,1		     ; Shift w/zeros fill
+   2150	0E42  D0 EB				     shr     bl,1		     ; Shift w/zeros fill
+   2151	0E44  F6 E3				     mul     bl			     ; ax = reg	* al
+   2152	0E46  03 C2				     add     ax,dx
+   2153	0E48  8A DF				     mov     bl,bh
+   2154	0E4A  32 FF				     xor     bh,bh		     ; Zero register
+   2155	0E4C  03 C3				     add     ax,bx
+   2156	0E4E  C3				     retn
+   2157	0E4F			     extract_bits	     endp
+   2158
+   2159
+   2160				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 41
+110GTTGA.asm
+
+
+
+   2161				     ;				    SUBROUTINE
+   2162				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2163
+   2164	0E4F			     limg_process_loop_6	     proc    near
+   2165	0E4F  B9 0004				     mov     cx,4
+   2166
+   2167	0E52			     locloop_140:
+   2168	0E52  02 C0				     add     al,al
+   2169	0E54  1A E4				     sbb     ah,ah
+   2170	0E56  80 E4 0F				     and     ah,0Fh
+   2171	0E59  03 D2				     add     dx,dx
+   2172	0E5B  03 D2				     add     dx,dx
+   2173	0E5D  03 D2				     add     dx,dx
+   2174	0E5F  03 D2				     add     dx,dx
+   2175	0E61  0A D4				     or	     dl,ah
+   2176	0E63  E2 ED				     loop    locloop_140	     ; Loop if cx > 0
+   2177
+   2178	0E65  86 F2				     xchg    dh,dl
+   2179	0E67  C3				     retn
+   2180	0E68			     limg_process_loop_6	     endp
+   2181
+   2182	0E68  06B7*(00)				     db	     1719 dup (0)
+   2183
+   2184	151F			     seg_a	     ends
+   2185
+   2186
+   2187
+   2188						     end     start
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 42
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/28/26"
+??FILENAME			  Text	 "110GTTGA"
+??TIME				  Text	 "17:08:22"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 110GTTGA
+@WORDSIZE			  Text	 2
+DATA_12E			  Number 35BA
+DATA_13E			  Number 3616
+DATA_14E			  Number 386C
+DATA_15E			  Number 3A20
+DATA_16E			  Number 3C68
+DATA_17E			  Number 3DCB
+DATA_18E			  Number 3E64
+DATA_19E			  Number 3E66
+DATA_1E				  Number 4100
+DATA_20E			  Number 3E67
+DATA_21E			  Number 3E68
+DATA_22E			  Number 3E6A
+DATA_23E			  Number 3E6D
+DATA_24E			  Number 3E6F
+DATA_25E			  Number 3E71
+DATA_26E			  Number 3E73
+DATA_27E			  Number 3E75
+DATA_28E			  Number 3E77
+DATA_2E				  Number 6000
+DATA_30E			  Number 3E7B
+DATA_31E			  Number 419B
+DATA_32E			  Number 425B
+DATA_33E			  Number 42BB
+DATA_34E			  Number 431B
+DATA_35E			  Number 5238
+DATA_36E			  Number 7F60
+DATA_37E			  Number 80A0
+DATA_38E			  Number C00F
+DATA_39E			  Number E005
+DATA_3E				  Number 8000
+DATA_40E			  Number F502
+DATA_41E			  Number F504
+DATA_42E			  Number FF2A
+DATA_43E			  Number FF2C
+DATA_44E			  Number FF57
+DATA_45E			  Number FF68
+DATA_46E			  Number FF6A
+DATA_47E			  Number 0000
+DATA_48E			  Number 41F8
+DATA_49E			  Number 4266
+DATA_4E				  Number 8004
+DATA_50E			  Number 55F8
+DATA_51E			  Number 5666
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 43
+Symbol Table
+
+
+
+DATA_52E			  Number 5738
+DATA_53E			  Number 57A6
+DATA_54E			  Number 7F60
+DATA_55E			  Number 80A0
+DATA_5E				  Number 8100
+DATA_6E				  Number D000
+EXTRACT_BITS			  Near	 SEG_A:0E31
+LIMG_CHECK_STATE		  Near	 SEG_A:0525
+LIMG_FUNC_10			  Near	 SEG_A:051B
+LIMG_FUNC_17			  Near	 SEG_A:08FF
+LIMG_FUNC_18			  Near	 SEG_A:091C
+LIMG_FUNC_19			  Near	 SEG_A:096D
+LIMG_FUNC_23			  Near	 SEG_A:0A2A
+LIMG_FUNC_24			  Near	 SEG_A:0A70
+LIMG_FUNC_25			  Near	 SEG_A:0A89
+LIMG_FUNC_3			  Near	 SEG_A:0129
+LIMG_FUNC_4			  Near	 SEG_A:0277
+LIMG_FUNC_5			  Near	 SEG_A:039A
+LIMG_FUNC_6			  Near	 SEG_A:039D
+LIMG_FUNC_8			  Near	 SEG_A:04FE
+LIMG_FUNC_9			  Near	 SEG_A:0517
+LIMG_GET_VALUE			  Near	 SEG_A:05B0
+LIMG_MULTIPLY			  Near	 SEG_A:0120
+LIMG_MULTIPLY_2			  Near	 SEG_A:047F
+LIMG_MULTIPLY_3			  Near	 SEG_A:05D2
+LIMG_MULTIPLY_4			  Near	 SEG_A:0638
+LIMG_PROCESS_LOOP		  Near	 SEG_A:06B3
+LIMG_PROCESS_LOOP_2		  Near	 SEG_A:09AD
+LIMG_PROCESS_LOOP_3		  Near	 SEG_A:09D3
+LIMG_PROCESS_LOOP_4		  Near	 SEG_A:0A0B
+LIMG_PROCESS_LOOP_5		  Near	 SEG_A:0D90
+LIMG_PROCESS_LOOP_6		  Near	 SEG_A:0E4F
+LIMG_SCAN_LOOP			  Near	 SEG_A:00E1
+LIMG_SCAN_LOOP_2		  Near	 SEG_A:05F8
+LIMG_SCAN_LOOP_3		  Near	 SEG_A:0E0F
+LOCLOOP_1			  Near	 SEG_A:003D
+LOCLOOP_106			  Near	 SEG_A:09C3
+LOCLOOP_108			  Near	 SEG_A:09EC
+LOCLOOP_109			  Near	 SEG_A:0A14
+LOCLOOP_116			  Near	 SEG_A:0AB9
+LOCLOOP_120			  Near	 SEG_A:0B11
+LOCLOOP_123			  Near	 SEG_A:0B56
+LOCLOOP_124			  Near	 SEG_A:0B5B
+LOCLOOP_125			  Near	 SEG_A:0B63
+LOCLOOP_127			  Near	 SEG_A:0BB2
+LOCLOOP_128			  Near	 SEG_A:0BB6
+LOCLOOP_129			  Near	 SEG_A:0C4F
+LOCLOOP_131			  Near	 SEG_A:0C79
+LOCLOOP_133			  Near	 SEG_A:0CAC
+LOCLOOP_134			  Near	 SEG_A:0CE8
+LOCLOOP_135			  Near	 SEG_A:0D24
+LOCLOOP_136			  Near	 SEG_A:0D60
+LOCLOOP_137			  Near	 SEG_A:0D93
+LOCLOOP_138			  Near	 SEG_A:0E12
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 44
+Symbol Table
+
+
+
+LOCLOOP_140			  Near	 SEG_A:0E52
+LOCLOOP_17			  Near	 SEG_A:0110
+LOCLOOP_2			  Near	 SEG_A:0042
+LOCLOOP_20			  Near	 SEG_A:017A
+LOCLOOP_39			  Near	 SEG_A:02F7
+LOCLOOP_42			  Near	 SEG_A:0335
+LOCLOOP_50			  Near	 SEG_A:039F
+LOCLOOP_72			  Near	 SEG_A:05AC
+LOCLOOP_75			  Near	 SEG_A:05FF
+LOCLOOP_78			  Near	 SEG_A:063B
+LOCLOOP_79			  Near	 SEG_A:0683
+LOCLOOP_80			  Near	 SEG_A:06BE
+LOCLOOP_81			  Near	 SEG_A:06D9
+LOCLOOP_94			  Near	 SEG_A:082E
+LOCLOOP_96			  Near	 SEG_A:085A
+LOCLOOP_98			  Near	 SEG_A:08A6
+LOC_10				  Near	 SEG_A:00B0
+LOC_100				  Near	 SEG_A:08FC
+LOC_101				  Near	 SEG_A:0906
+LOC_102				  Near	 SEG_A:090C
+LOC_103				  Near	 SEG_A:0937
+LOC_104				  Near	 SEG_A:096B
+LOC_105				  Near	 SEG_A:0971
+LOC_107				  Near	 SEG_A:09D8
+LOC_11				  Near	 SEG_A:00B8
+LOC_110				  Near	 SEG_A:0A1B
+LOC_111				  Near	 SEG_A:0A72
+LOC_112				  Near	 SEG_A:0A80
+LOC_113				  Near	 SEG_A:0A84
+LOC_114				  Near	 SEG_A:0A86
+LOC_115				  Near	 SEG_A:0AAC
+LOC_117				  Near	 SEG_A:0ACC
+LOC_118				  Near	 SEG_A:0AD6
+LOC_119				  Near	 SEG_A:0B04
+LOC_12				  Near	 SEG_A:00C0
+LOC_121				  Near	 SEG_A:0B28
+LOC_122				  Near	 SEG_A:0B36
+LOC_126				  Near	 SEG_A:0B81
+LOC_13				  Near	 SEG_A:00C8
+LOC_130				  Near	 SEG_A:0C59
+LOC_132				  Near	 SEG_A:0CAA
+LOC_139				  Near	 SEG_A:0E28
+LOC_14				  Near	 SEG_A:00D0
+LOC_15				  Near	 SEG_A:00E9
+LOC_16				  Near	 SEG_A:00F3
+LOC_18				  Near	 SEG_A:0129
+LOC_19				  Near	 SEG_A:0135
+LOC_21				  Near	 SEG_A:018A
+LOC_22				  Near	 SEG_A:0192
+LOC_23				  Near	 SEG_A:01AD
+LOC_24				  Near	 SEG_A:01BB
+LOC_25				  Near	 SEG_A:01CB
+LOC_26				  Near	 SEG_A:01D9
+LOC_27				  Near	 SEG_A:01E9
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 45
+Symbol Table
+
+
+
+LOC_28				  Near	 SEG_A:01F7
+LOC_29				  Near	 SEG_A:0207
+LOC_30				  Near	 SEG_A:0215
+LOC_31				  Near	 SEG_A:0225
+LOC_32				  Near	 SEG_A:0233
+LOC_33				  Near	 SEG_A:0243
+LOC_34				  Near	 SEG_A:0251
+LOC_35				  Near	 SEG_A:0261
+LOC_36				  Near	 SEG_A:026F
+LOC_37				  Near	 SEG_A:0283
+LOC_38				  Near	 SEG_A:02A2
+LOC_4				  Near	 SEG_A:0052
+LOC_40				  Near	 SEG_A:032D
+LOC_41				  Near	 SEG_A:0332
+LOC_43				  Near	 SEG_A:0350
+LOC_44				  Near	 SEG_A:0353
+LOC_45				  Near	 SEG_A:0360
+LOC_46				  Near	 SEG_A:0366
+LOC_47				  Near	 SEG_A:037A
+LOC_48				  Near	 SEG_A:038E
+LOC_49				  Near	 SEG_A:0394
+LOC_5				  Near	 SEG_A:0076
+LOC_51				  Near	 SEG_A:03BD
+LOC_52				  Near	 SEG_A:03F4
+LOC_53				  Near	 SEG_A:0402
+LOC_54				  Near	 SEG_A:041B
+LOC_55				  Near	 SEG_A:0449
+LOC_56				  Near	 SEG_A:0460
+LOC_57				  Near	 SEG_A:04A6
+LOC_58				  Near	 SEG_A:04B7
+LOC_59				  Near	 SEG_A:04DD
+LOC_6				  Near	 SEG_A:008D
+LOC_60				  Near	 SEG_A:0509
+LOC_61				  Near	 SEG_A:051B
+LOC_62				  Near	 SEG_A:0520
+LOC_63				  Near	 SEG_A:0528
+LOC_64				  Near	 SEG_A:0538
+LOC_65				  Near	 SEG_A:0548
+LOC_66				  Near	 SEG_A:0558
+LOC_67				  Near	 SEG_A:0568
+LOC_68				  Near	 SEG_A:0578
+LOC_69				  Near	 SEG_A:0588
+LOC_7				  Near	 SEG_A:0098
+LOC_70				  Near	 SEG_A:0598
+LOC_71				  Near	 SEG_A:05A8
+LOC_74				  Near	 SEG_A:05EA
+LOC_76				  Near	 SEG_A:0606
+LOC_77				  Near	 SEG_A:0638
+LOC_8				  Near	 SEG_A:00A0
+LOC_82				  Near	 SEG_A:06F6
+LOC_83				  Near	 SEG_A:0715
+LOC_84				  Near	 SEG_A:071E
+LOC_85				  Near	 SEG_A:073F
+LOC_86				  Near	 SEG_A:0754
+Turbo Assembler	 Version 2.01	     03/28/26 17:08:22	    Page 46
+Symbol Table
+
+
+
+LOC_87				  Near	 SEG_A:0771
+LOC_88				  Near	 SEG_A:0785
+LOC_89				  Near	 SEG_A:07A4
+LOC_9				  Near	 SEG_A:00A8
+LOC_90				  Near	 SEG_A:07AD
+LOC_91				  Near	 SEG_A:07CE
+LOC_92				  Near	 SEG_A:07E1
+LOC_93				  Near	 SEG_A:07FE
+LOC_95				  Near	 SEG_A:083E
+LOC_97				  Near	 SEG_A:086A
+LOC_99				  Near	 SEG_A:08C2
+LOC_RET_73			  Near	 SEG_A:05AF
+START				  Near	 SEG_A:0000
+TARGET				  Number 5432
+ZR1_10				  Far	 SEG_A:0000
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  151F Byte	  Public
+

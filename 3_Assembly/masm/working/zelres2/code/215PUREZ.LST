@@ -1,0 +1,1559 @@
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 1
+215PUREZ.asm
+
+
+
+      1
+      2
+      3				     ;==========================================================================
+      4				     ;
+      5				     ;	ENEMY_WIZARD - Code Module
+      6				     ;
+      7				     ;==========================================================================
+      8
+      9	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     10
+     11				     include  srmacros.inc
+1    12
+1    13				     ; Macros which may	be required for	proper re-assembly
+1    14
+1    15
+1    16
+1    17
+1    18
+1    19				     ;-----------------------------------------------------------------------------
+1    20				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    21				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    22				     ; instruction it uses a near jump or call.
+1    23
+1    24				     calls	     macro   dummy1, dummy2, slocation
+1    25						     db	     9Ah		     ; forced call far instruction
+1    26						     dw	     offset slocation, seg slocation
+1    27				     endm
+1    28
+1    29				     jmps	     macro   dummy1, dummy2, jlocation
+1    30						     db	     0EAh		     ; forced jump far instruction
+1    31						     dw	     offset jlocation, seg jlocation
+1    32				     endm
+1    33
+1    34
+1    35
+1    36
+1    37				     ;-----------------------------------------------------------------------------
+1    38				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    39				     ;	subroutine in the same segment as:
+1    40				     ;
+1    41				     ;		     PUSH    CS
+1    42				     ;		     CALL    near
+1    43				     ;
+1    44				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    45				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    46				     ;	macros are used	to code	the same information.  In other	words, the binary
+1    47				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    48				     ;	are used!  (macro CALLF)
+1    49				     ;
+1    50
+1    51				     callf	     macro   location
+1    52						     push    cs
+1    53						     call    near ptr location
+1    54				     endm
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 2
+215PUREZ.asm
+
+
+
+1    55
+1    56				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    57				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    58
+1    59				     callfx	     macro   location
+1    60						     push    cs
+1    61						     db	     3Eh
+1    62						     call    near ptr location
+1    63				     endm
+1    64
+1    65
+1    66				     ;-----------------------------------------------------------------------------
+1    67				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    68				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    69				     ;	reconstructs a near jump for these cases.
+1    70
+1    71				     jmpn	     macro   location
+1    72						     db	     0E9h
+1    73						     dw	     offset location-$-2
+1    74				     endm
+1    75
+1    76
+1    77
+     78
+     79
+     80				     ; The following equates show data references outside the range of the program.
+     81
+     82	      =	2000		     data_36e	     equ     2000h		     ;*
+     83	      =	2002		     data_37e	     equ     2002h		     ;*
+     84	      =	2010		     data_38e	     equ     2010h		     ;*
+     85	      =	2012		     data_39e	     equ     2012h		     ;*
+     86	      =	2016		     data_40e	     equ     2016h		     ;*
+     87	      =	2040		     data_41e	     equ     2040h		     ;*
+     88	      =	2044		     data_42e	     equ     2044h		     ;*
+     89	      =	3016		     data_43e	     equ     3016h		     ;*
+     90	      =	6004		     data_44e	     equ     6004h		     ;*
+     91	      =	6006		     data_45e	     equ     6006h		     ;*
+     92	      =	6008		     data_46e	     equ     6008h		     ;*
+     93	      =	600A		     data_47e	     equ     600Ah		     ;*
+     94	      =	600C		     data_48e	     equ     600Ch		     ;*
+     95	      =	6010		     data_49e	     equ     6010h		     ;*
+     96	      =	6012		     data_50e	     equ     6012h		     ;*
+     97	      =	A0C3		     data_51e	     equ     0A0C3h		     ;*
+     98	      =	A494		     data_52e	     equ     0A494h		     ;*
+     99	      =	A5E4		     data_53e	     equ     0A5E4h		     ;*
+    100	      =	A644		     data_54e	     equ     0A644h		     ;*
+    101	      =	A69C		     data_55e	     equ     0A69Ch		     ;*
+    102	      =	A745		     data_56e	     equ     0A745h		     ;*
+    103	      =	AB3A		     data_57e	     equ     0AB3Ah		     ;*
+    104	      =	B08A		     data_58e	     equ     0B08Ah		     ;*
+    105	      =	B10C		     data_59e	     equ     0B10Ch		     ;*
+    106	      =	B1F6		     data_60e	     equ     0B1F6h		     ;*
+    107	      =	B20E		     data_61e	     equ     0B20Eh		     ;*
+    108	      =	B20F		     data_62e	     equ     0B20Fh		     ;*
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 3
+215PUREZ.asm
+
+
+
+    109	      =	B217		     data_63e	     equ     0B217h		     ;*
+    110	      =	B218		     data_64e	     equ     0B218h		     ;*
+    111	      =	B219		     data_65e	     equ     0B219h		     ;*
+    112	      =	B21A		     data_66e	     equ     0B21Ah		     ;*
+    113	      =	B21B		     data_67e	     equ     0B21Bh		     ;*
+    114	      =	B21C		     data_68e	     equ     0B21Ch		     ;*
+    115	      =	C006		     data_69e	     equ     0C006h		     ;*
+    116	      =	FF1A		     data_70e	     equ     0FF1Ah		     ;*
+    117	      =	FF2C		     data_71e	     equ     0FF2Ch		     ;*
+    118	      =	FF4C		     data_72e	     equ     0FF4Ch		     ;*
+    119	      =	FF4E		     data_73e	     equ     0FF4Eh		     ;*
+    120	      =	FF4F		     data_74e	     equ     0FF4Fh		     ;*
+    121	      =	FF50		     data_75e	     equ     0FF50h		     ;*
+    122	      =	FF52		     data_76e	     equ     0FF52h		     ;*
+    123	      =	FF53		     data_77e	     equ     0FF53h		     ;*
+    124	      =	FF54		     data_78e	     equ     0FF54h		     ;*
+    125	      =	FF56		     data_79e	     equ     0FF56h		     ;*
+    126	      =	FF57		     data_80e	     equ     0FF57h		     ;*
+    127	      =	FF58		     data_81e	     equ     0FF58h		     ;*
+    128	      =	FF68		     data_82e	     equ     0FF68h		     ;*
+    129	      =	FF6A		     data_83e	     equ     0FF6Ah		     ;*
+    130
+    131	0000			     seg_a	     segment byte public
+    132						     assume  cs:seg_a, ds:seg_a
+    133
+    134
+    135						     org     0
+    136
+    137	0000			     zr2_15	     proc    far
+    138
+    139	0000			     start:
+    140	0000  26: 12 00				     adc     al,es:[bx+si]
+    141	0003  00 04				     add     [si],al
+    142	0005  A0 A644				     mov     al,ds:data_54e
+    143	0008  8E 06 FF2C			     mov     es,ds:data_71e
+    144	000C  BF 8000				     mov     di,8000h
+    145	000F  BE A811				     mov     si,0A811h
+    146	0012  B0 02				     mov     al,2
+    147	0014  2E: FF 16	010Cr			     call    word ptr cs:data_5
+    148	0019  1E				     push    ds
+    149	001A  2E: 8E 1E	FF2C			     mov     ds,cs:data_71e
+    150	001F  BE 8000				     mov     si,8000h
+    151	0022  B9 0100				     mov     cx,100h
+    152	0025  2E: FF 16	2044			     call    word ptr cs:data_42e
+    153	002A  1F				     pop     ds
+    154	002B  C6 06 FF4E 00			     mov     byte ptr ds:data_73e,0
+    155	0030  C6 06 FF4F 00			     mov     byte ptr ds:data_74e,0
+    156	0035  C6 06 B217 00			     mov     byte ptr ds:data_63e,0
+    157	003A  2E: FF 16	2002			     call    word ptr cs:data_37e
+    158	003F  2E: FF 16	2012			     call    word ptr cs:data_39e
+    159	0044  BE A81C				     mov     si,0A81Ch
+    160	0047  2E: FF 16	2010			     call    word ptr cs:data_38e
+    161	004C  E8 0041				     call    wizard_process_loop
+    162	004F  0E				     push    cs
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 4
+215PUREZ.asm
+
+
+
+    163	0050  07				     pop     es
+    164	0051  8A 1E C006			     mov     bl,ds:data_69e
+    165	0055  FE CB				     dec     bl
+    166	0057  02 DB				     add     bl,bl
+    167	0059  32 FF				     xor     bh,bh		     ; Zero register
+    168	005B  8B B7 B10C			     mov     si,ds:data_59e[bx]
+    169	005F  BF B1F6				     mov     di,data_60e
+    170	0062  B9 000C				     mov     cx,0Ch
+    171	0065  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+    172	0067  E8 0559				     call    wizard_process_loop_3
+    173	006A  BB 0D60				     mov     bx,0D60h
+    174	006D  B9 3637				     mov     cx,3637h
+    175	0070  B0 FF				     mov     al,0FFh
+    176	0072  2E: FF 16	2000			     call    word ptr cs:data_36e
+    177	0077  C7 06 FF4C A86B			     mov     word ptr ds:data_72e,0A86Bh
+    178	007D			     loc_2:
+    179	007D  2E: FF 16	6004			     call    word ptr cs:data_44e
+    180	0082  3C FF				     cmp     al,0FFh
+    181	0084  74 05				     je	     loc_3		     ; Jump if equal
+    182	0086  E8 0033				     call    wizard_func_2
+    183	0089  EB F2				     jmp     short loc_2
+    184	008B			     loc_3:
+    185	008B  2E: FF 26	2040			     jmp     word ptr cs:data_41e
+    186
+    187	0090			     zr2_15	     endp
+    188
+    189				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    190				     ;				    SUBROUTINE
+    191				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    192
+    193	0090			     wizard_process_loop	     proc    near
+    194	0090  BE 00C9r				     mov     si,offset data_4
+    195	0093  A0 C006				     mov     al,ds:data_69e
+    196	0096  FE C8				     dec     al
+    197	0098  32 E4				     xor     ah,ah		     ; Zero register
+    198	009A  03 F0				     add     si,ax
+    199	009C  8A 14				     mov     dl,[si]
+    200	009E  0E				     push    cs
+    201	009F  07				     pop     es
+    202	00A0  BF B20F				     mov     di,data_62e
+    203	00A3  32 F6				     xor     dh,dh		     ; Zero register
+    204	00A5  B9 0008				     mov     cx,8
+    205
+    206	00A8			     locloop_4:
+    207	00A8  02 D2				     add     dl,dl
+    208	00AA  73 09				     jnc     loc_5		     ; Jump if carry=0
+    209	00AC  8A C1				     mov     al,cl
+    210	00AE  F6 D8				     neg     al
+    211	00B0  04 08				     add     al,8
+    212	00B2  AA				     stosb			     ; Store al	to es:[di]
+    213	00B3  FE C6				     inc     dh
+    214	00B5			     loc_5:
+    215	00B5  E2 F1				     loop    locloop_4		     ; Loop if cx > 0
+    216
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 5
+215PUREZ.asm
+
+
+
+    217	00B7  88 36 B20E			     mov     ds:data_61e,dh
+    218	00BB  C3				     retn
+    219	00BC			     wizard_process_loop	     endp
+    220
+    221
+    222				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    223				     ;				    SUBROUTINE
+    224				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    225
+    226	00BC			     wizard_func_2	     proc    near
+    227	00BC  8A D8				     mov     bl,al
+    228	00BE  32 FF				     xor     bh,bh		     ; Zero register
+    229	00C0  03 DB				     add     bx,bx
+    230	00C2  2E: FF A7	A0C3			     jmp     word ptr cs:data_51e[bx]	     ;*
+    231	00C7			     wizard_func_2	     endp
+    232
+    233	00C7  D5 A0				     db	     0D5h,0A0h
+    234	00C9  EB		     data_4	     db	     0EBh
+    235	00CA  A0 0C A1 8D A1 AA			     db	     0A0h, 0Ch,0A1h, 8Dh,0A1h,0AAh
+    236	00D0  A1 00 A3 BA A4 00			     db	     0A1h, 00h,0A3h,0BAh,0A4h, 00h
+    237	00D6  A1 06 A1 C6 06 1A			     db	     0A1h, 06h,0A1h,0C6h, 06h, 1Ah
+    238	00DC  FF 00				     db	     0FFh, 00h
+    239	00DE			     loc_6:
+    240	00DE  E8 0567				     call    wizard_multiply
+    241	00E1  80 3E FF1A 50			     cmp     byte ptr ds:data_70e,50h	     ; 'P'
+    242	00E6  72 F6				     jb	     loc_6		     ; Jump if below
+    243	00E8  BE A745				     mov     si,data_56e
+    244	00EB  E8 061E				     call    wizard_scan_loop
+    245	00EE  C3				     retn
+    246	00EF  C6 06 1A FF 00			     db	     0C6h, 06h,	1Ah,0FFh, 00h
+    247	00F4			     loc_7:
+    248	00F4  E8 0551				     call    wizard_multiply
+    249	00F7  80 3E FF1A 50			     cmp     byte ptr ds:data_70e,50h	     ; 'P'
+    250	00FC  72 F6				     jb	     loc_7		     ; Jump if below
+    251	00FE  BE A74F				     mov     si,0A74Fh
+    252	0101  E9 0608				     jmp     loc_34
+    253										     ;*	No entry point to code
+    254	0104  BE A759				     mov     si,0A759h
+    255	0107  E9 0602				     jmp     loc_34
+    256	010A  BE 61				     db	     0BEh, 61h
+    257	010C  E9A7		     data_5	     dw	     0E9A7h
+    258	010E  FC 05 E8 A3 04 BB			     db	     0FCh, 05h,0E8h,0A3h, 04h,0BBh
+    259	0114  22 27 B9 2D 1C B0			     db	      22h, 27h,0B9h, 2Dh, 1Ch,0B0h
+    260	011A  FF 2E FF 16 00 20			     db	     0FFh, 2Eh,0FFh, 16h, 00h, 20h
+    261	0120  C7 06 54 FF 25 27			     db	     0C7h, 06h,	54h,0FFh, 25h, 27h
+    262	0126  C6 06 52 FF 04 C6			     db	     0C6h, 06h,	52h,0FFh, 04h,0C6h
+    263	012C  06 53 FF 04 B9 04			     db	      06h, 53h,0FFh, 04h,0B9h, 04h
+    264	0132  00 BE 39 A8 2E FF			     db	      00h,0BEh,	39h,0A8h, 2Eh,0FFh
+    265	0138  16 0E 60 C6 06 56			     db	      16h, 0Eh,	60h,0C6h, 06h, 56h
+    266	013E  FF 00 8A 1E 17 B2			     db	     0FFh, 00h,	8Ah, 1Eh, 17h,0B2h
+    267	0144  2E FF 16 10 60 73			     db	      2Eh,0FFh,	16h, 10h, 60h, 73h
+    268	014A  02 32 DB 88 1E 17			     db	      02h, 32h,0DBh, 88h, 1Eh, 17h
+    269	0150  B2 32 FF 03 DB FF			     db	     0B2h, 32h,0FFh, 03h,0DBh,0FFh
+    270	0156  A7 55 A1 5D A1 67			     db	     0A7h, 55h,0A1h, 5Dh,0A1h, 67h
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 6
+215PUREZ.asm
+
+
+
+    271	015C  A1 6E A1 86 A1 E8			     db	     0A1h, 6Eh,0A1h, 86h,0A1h,0E8h
+    272	0162  52 04 C7 06 4C FF			     db	      52h, 04h,0C7h, 06h, 4Ch,0FFh
+    273	0168  0E AB C3 C7 06 4C			     db	      0Eh,0ABh,0C3h,0C7h, 06h, 4Ch
+    274	016E  FF 8C A8 C3 E8 2B			     db	     0FFh, 8Ch,0A8h,0C3h,0E8h, 2Bh
+    275	0174  03 C7 06 4C FF 8D			     db	      03h,0C7h,	06h, 4Ch,0FFh, 8Dh
+    276	017A  A9 F6 06 53 FF FF			     db	     0A9h,0F6h,	06h, 53h,0FFh,0FFh
+    277	0180  74 01 C3 C7 06 4C			     db	      74h, 01h,0C3h,0C7h, 06h, 4Ch
+    278	0186  FF 79 AA C3 C7 06			     db	     0FFh, 79h,0AAh,0C3h,0C7h, 06h
+    279	018C  4C FF A6 AA C3 0E			     db	      4Ch,0FFh,0A6h,0AAh,0C3h, 0Eh
+    280	0192  07 BE 0F B2 BF 58			     db	      07h,0BEh,	0Fh,0B2h,0BFh, 58h
+    281	0198  FF B9 08 00 F3 A4			     db	     0FFh,0B9h,	08h, 00h,0F3h,0A4h
+    282	019E  A0 0E B2 A2 53 FF			     db	     0A0h, 0Eh,0B2h,0A2h, 53h,0FFh
+    283	01A4  C6 06 56 FF 00 C6			     db	     0C6h, 06h,	56h,0FFh, 00h,0C6h
+    284	01AA  06 18 B2 00 A0 0E			     db	      06h, 18h,0B2h, 00h,0A0h, 0Eh
+    285	01B0  B2 A2 53 FF 3C 03			     db	     0B2h,0A2h,	53h,0FFh, 3Ch, 03h
+    286	01B6  72 02 B0 03			     db	      72h, 02h,0B0h, 03h
+    287	01BA			     loc_8:
+    288	01BA  A2 FF52				     mov     ds:data_76e,al
+    289	01BD  BB 156E				     mov     bx,156Eh
+    290	01C0  B9 2524				     mov     cx,2524h
+    291	01C3  B0 FF				     mov     al,0FFh
+    292	01C5  2E: FF 16	2000			     call    word ptr cs:data_36e
+    293	01CA  C6 06 FF57 FF			     mov     byte ptr ds:data_80e,0FFh
+    294	01CF  C7 06 FF54 1571			     mov     word ptr ds:data_78e,1571h
+    295	01D5  C7 06 FF6A 0021			     mov     word ptr ds:data_83e,21h
+    296	01DB  C7 06 FF68 0017			     mov     word ptr ds:data_82e,17h
+    297	01E1  BE B08A				     mov     si,0B08Ah
+    298	01E4  BF B1F6				     mov     di,0B1F6h
+    299	01E7  8A 0E FF52			     mov     cl,ds:data_76e
+    300	01EB  32 ED				     xor     ch,ch		     ; Zero register
+    301	01ED  A0 FF56				     mov     al,ds:data_79e
+    302	01F0  2E: FF 16	6012			     call    word ptr cs:data_50e
+    303	01F5  8A 1E B218			     mov     bl,ds:data_64e
+    304	01F9  2E: FF 16	6010			     call    word ptr cs:data_49e
+    305	01FE  73 07				     jnc     loc_9		     ; Jump if carry=0
+    306	0200  C7 06 FF4C A965			     mov     word ptr ds:data_72e,0A965h
+    307	0206  C3				     retn
+    308	0207			     loc_9:
+    309	0207  88 1E B218			     mov     ds:data_64e,bl
+    310	020B  8A C3				     mov     al,bl
+    311	020D  02 06 FF56			     add     al,ds:data_79e
+    312	0211  BB FF58				     mov     bx,data_81e
+    313	0214  D7				     xlat			     ; al=[al+[bx]] table
+    314	0215  50				     push    ax
+    315	0216  C7 06 FF4C A8C4			     mov     word ptr ds:data_72e,0A8C4h
+    316	021C  2E: FF 16	6004			     call    word ptr cs:data_44e
+    317	0221  58				     pop     ax
+    318	0222  50				     push    ax
+    319	0223  8B 36 FF4C			     mov     si,ds:data_72e
+    320	0227  56				     push    si
+    321	0228  32 E4				     xor     ah,ah		     ; Zero register
+    322	022A  03 C0				     add     ax,ax
+    323	022C  8B D8				     mov     bx,ax
+    324	022E  8B 87 B08A			     mov     ax,ds:data_58e[bx]
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 7
+215PUREZ.asm
+
+
+
+    325	0232  A3 FF4C				     mov     ds:data_72e,ax
+    326	0235  2E: FF 16	6004			     call    word ptr cs:data_44e
+    327	023A  5E				     pop     si
+    328	023B  89 36 FF4C			     mov     ds:data_72e,si
+    329	023F  2E: FF 16	6004			     call    word ptr cs:data_44e
+    330	0244  58				     pop     ax
+    331	0245  50				     push    ax
+    332	0246  32 E4				     xor     ah,ah		     ; Zero register
+    333	0248  8B D8				     mov     bx,ax
+    334	024A  03 C0				     add     ax,ax
+    335	024C  03 C3				     add     ax,bx
+    336	024E  BE B1F6				     mov     si,data_60e
+    337	0251  03 F0				     add     si,ax
+    338	0253  8A 14				     mov     dl,[si]
+    339	0255  8B 44 01				     mov     ax,[si+1]
+    340	0258  88 16 B21B			     mov     ds:data_67e,dl
+    341	025C  A3 B21C				     mov     ds:data_68e,ax
+    342	025F  2E: FF 16	600A			     call    word ptr cs:data_47e
+    343	0264  5B				     pop     bx
+    344	0265  C7 06 FF4C A928			     mov     word ptr ds:data_72e,0A928h
+    345	026B  72 55				     jc	     loc_12		     ; Jump if carry Set
+    346	026D  52				     push    dx
+    347	026E  50				     push    ax
+    348	026F  BE 00A6				     mov     si,0A6h
+    349	0272  B9 0005				     mov     cx,5
+    350
+    351	0275			     locloop_10:
+    352	0275  F6 04 FF				     test    byte ptr [si],0FFh
+    353	0278  74 0C				     jz	     loc_11		     ; Jump if zero
+    354	027A  46				     inc     si
+    355	027B  E2 F8				     loop    locloop_10		     ; Loop if cx > 0
+    356
+    357	027D  58				     pop     ax
+    358	027E  5A				     pop     dx
+    359	027F  C7 06 FF4C A940			     mov     word ptr ds:data_72e,0A940h
+    360	0285  C3				     retn
+    361	0286			     loc_11:
+    362	0286  58				     pop     ax
+    363	0287  5A				     pop     dx
+    364	0288  88 16 0085			     mov     byte ptr ds:[85h],dl
+    365	028C  A3 0086				     mov     word ptr ds:[86h],ax
+    366	028F  FE C3				     inc     bl
+    367	0291  88 1C				     mov     [si],bl
+    368	0293  C7 06 FF4C A8F2			     mov     word ptr ds:data_72e,0A8F2h
+    369	0299  2E: FF 16	6004			     call    word ptr cs:data_44e
+    370	029E  8A 16 B21B			     mov     dl,ds:data_67e
+    371	02A2  A1 B21C				     mov     ax,ds:data_68e
+    372	02A5  BF B21E				     mov     di,0B21Eh
+    373	02A8  2E: FF 16	6006			     call    word ptr cs:data_45e
+    374	02AD  8B 36 FF4C			     mov     si,ds:data_72e
+    375	02B1  56				     push    si
+    376	02B2  C7 06 FF4C B21E			     mov     word ptr ds:data_72e,0B21Eh
+    377	02B8  2E: FF 16	6004			     call    word ptr cs:data_44e
+    378	02BD  5E				     pop     si
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 8
+215PUREZ.asm
+
+
+
+    379	02BE  89 36 FF4C			     mov     ds:data_72e,si
+    380	02C2			     loc_12:
+    381	02C2  2E: FF 16	6004			     call    word ptr cs:data_44e
+    382	02C7  2E: FF 16	2016			     call    word ptr cs:data_40e
+    383	02CC  C7 06 FF4C A909			     mov     word ptr ds:data_72e,0A909h
+    384	02D2  2E: FF 16	6004			     call    word ptr cs:data_44e
+    385	02D7  BB 2F2B				     mov     bx,2F2Bh
+    386	02DA  B9 0C19				     mov     cx,0C19h
+    387	02DD  B0 FF				     mov     al,0FFh
+    388	02DF  2E: FF 16	2000			     call    word ptr cs:data_36e
+    389	02E4  C7 06 FF54 302E			     mov     word ptr ds:data_78e,302Eh
+    390	02EA  2E: FF 16	6008			     call    word ptr cs:data_46e
+    391	02EF  9C				     pushf			     ; Push flags
+    392	02F0  E8 02C3				     call    wizard_func_4
+    393	02F3  9D				     popf			     ; Pop flags
+    394	02F4  C7 06 FF4C A8A8			     mov     word ptr ds:data_72e,0A8A8h
+    395	02FA  72 01				     jc	     loc_13		     ; Jump if carry Set
+    396	02FC  C3				     retn
+    397	02FD			     loc_13:
+    398	02FD  C7 06 FF4C A965			     mov     word ptr ds:data_72e,0A965h
+    399	0303  C3				     retn
+    400										     ;*	No entry point to code
+    401	0304  E8 0199				     call    wizard_process_loop_2
+    402	0307  C6 06 FF56 00			     mov     byte ptr ds:data_79e,0
+    403	030C  A0 FF53				     mov     al,ds:data_77e
+    404	030F  3C 02				     cmp     al,2
+    405	0311  72 02				     jb	     loc_14		     ; Jump if below
+    406	0313  B0 02				     mov     al,2
+    407	0315			     loc_14:
+    408	0315  A2 FF52				     mov     ds:data_76e,al
+    409	0318  BB 1778				     mov     bx,1778h
+    410	031B  B9 211A				     mov     cx,211Ah
+    411	031E  B0 FF				     mov     al,0FFh
+    412	0320  2E: FF 16	2000			     call    word ptr cs:data_36e
+    413	0325  C6 06 FF57 00			     mov     byte ptr ds:data_80e,0
+    414	032A  C7 06 FF54 197B			     mov     word ptr ds:data_78e,197Bh
+    415	0330  C7 06 FF6A 0019			     mov     word ptr ds:data_83e,19h
+    416	0336  BE B08A				     mov     si,0B08Ah
+    417	0339  8A 0E FF52			     mov     cl,ds:data_76e
+    418	033D  32 ED				     xor     ch,ch		     ; Zero register
+    419	033F  A0 FF56				     mov     al,ds:data_79e
+    420	0342  2E: FF 16	6012			     call    word ptr cs:data_50e
+    421	0347  32 DB				     xor     bl,bl		     ; Zero register
+    422	0349  2E: FF 16	6010			     call    word ptr cs:data_49e
+    423	034E  73 07				     jnc     loc_15		     ; Jump if carry=0
+    424	0350  C7 06 FF4C A965			     mov     word ptr ds:data_72e,0A965h
+    425	0356  C3				     retn
+    426	0357			     loc_15:
+    427	0357  88 1E B218			     mov     ds:data_64e,bl
+    428	035B  C7 06 FF4C A8D7			     mov     word ptr ds:data_72e,0A8D7h
+    429	0361  2E: FF 16	6004			     call    word ptr cs:data_44e
+    430	0366  A0 B218				     mov     al,ds:data_64e
+    431	0369  02 06 FF56			     add     al,ds:data_79e
+    432	036D  BB FF58				     mov     bx,data_81e
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 9
+215PUREZ.asm
+
+
+
+    433	0370  D7				     xlat			     ; al=[al+[bx]] table
+    434	0371  50				     push    ax
+    435	0372  8B 36 FF4C			     mov     si,ds:data_72e
+    436	0376  56				     push    si
+    437	0377  32 E4				     xor     ah,ah		     ; Zero register
+    438	0379  03 C0				     add     ax,ax
+    439	037B  8B D8				     mov     bx,ax
+    440	037D  8B 87 B08A			     mov     ax,ds:data_58e[bx]
+    441	0381  A3 FF4C				     mov     ds:data_72e,ax
+    442	0384  2E: FF 16	6004			     call    word ptr cs:data_44e
+    443	0389  5E				     pop     si
+    444	038A  89 36 FF4C			     mov     ds:data_72e,si
+    445	038E  2E: FF 16	6004			     call    word ptr cs:data_44e
+    446	0393  58				     pop     ax
+    447	0394  B1 03				     mov     cl,3
+    448	0396  F6 E1				     mul     cl			     ; ax = reg	* al
+    449	0398  BB B1F6				     mov     bx,data_60e
+    450	039B  03 D8				     add     bx,ax
+    451	039D  8A 17				     mov     dl,[bx]
+    452	039F  8B 47 01				     mov     ax,[bx+1]
+    453	03A2  D0 EA				     shr     dl,1		     ; Shift w/zeros fill
+    454	03A4  D1 D8				     rcr     ax,1		     ; Rotate thru carry
+    455	03A6  88 16 B21B			     mov     ds:data_67e,dl
+    456	03AA  A3 B21C				     mov     ds:data_68e,ax
+    457	03AD  50				     push    ax
+    458	03AE  52				     push    dx
+    459	03AF  C7 06 FF4C A9C4			     mov     word ptr ds:data_72e,0A9C4h
+    460	03B5  2E: FF 16	6004			     call    word ptr cs:data_44e
+    461	03BA  5A				     pop     dx
+    462	03BB  58				     pop     ax
+    463	03BC  BF B21E				     mov     di,0B21Eh
+    464	03BF  2E: FF 16	6006			     call    word ptr cs:data_45e
+    465	03C4  8B 36 FF4C			     mov     si,ds:data_72e
+    466	03C8  56				     push    si
+    467	03C9  C7 06 FF4C B21E			     mov     word ptr ds:data_72e,0B21Eh
+    468	03CF  2E: FF 16	6004			     call    word ptr cs:data_44e
+    469	03D4  5E				     pop     si
+    470	03D5  89 36 FF4C			     mov     ds:data_72e,si
+    471	03D9  2E: FF 16	6004			     call    word ptr cs:data_44e
+    472	03DE  BB 3421				     mov     bx,3421h
+    473	03E1  B9 0C19				     mov     cx,0C19h
+    474	03E4  B0 FF				     mov     al,0FFh
+    475	03E6  2E: FF 16	2000			     call    word ptr cs:data_36e
+    476	03EB  C7 06 FF54 3524			     mov     word ptr ds:data_78e,3524h
+    477	03F1  2E: FF 16	6008			     call    word ptr cs:data_46e
+    478	03F6  C7 06 FF4C A9FE			     mov     word ptr ds:data_72e,0A9FEh
+    479	03FC  73 01				     jnc     loc_16		     ; Jump if carry=0
+    480	03FE  C3				     retn
+    481	03FF			     loc_16:
+    482	03FF  8A 16 B21B			     mov     dl,ds:data_67e
+    483	0403  A1 B21C				     mov     ax,ds:data_68e
+    484	0406  2E: FF 16	600C			     call    word ptr cs:data_48e
+    485	040B  C7 06 FF4C A9AD			     mov     word ptr ds:data_72e,0A9ADh
+    486	0411  2E: FF 16	6004			     call    word ptr cs:data_44e
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 10
+215PUREZ.asm
+
+
+
+    487	0416  A0 B218				     mov     al,ds:data_64e
+    488	0419  02 06 FF56			     add     al,ds:data_79e
+    489	041D  BB FF58				     mov     bx,data_81e
+    490	0420  D7				     xlat			     ; al=[al+[bx]] table
+    491	0421  FE C0				     inc     al
+    492	0423  BE 00A6				     mov     si,0A6h
+    493	0426  B9 0005				     mov     cx,5
+    494
+    495	0429			     locloop_17:
+    496	0429  3A 04				     cmp     al,[si]
+    497	042B  74 03				     je	     loc_18		     ; Jump if equal
+    498	042D  46				     inc     si
+    499	042E  E2 F9				     loop    locloop_17		     ; Loop if cx > 0
+    500
+    501	0430			     loc_18:
+    502	0430  C6 04 00				     mov     byte ptr [si],0
+    503	0433  FE C8				     dec     al
+    504	0435  32 E4				     xor     ah,ah		     ; Zero register
+    505	0437  50				     push    ax
+    506	0438  A0 C006				     mov     al,ds:data_69e
+    507	043B  FE C8				     dec     al
+    508	043D  BE 00C9r				     mov     si,offset data_4
+    509	0440  03 F0				     add     si,ax
+    510	0442  58				     pop     ax
+    511	0443  BF A494				     mov     di,data_52e
+    512	0446  03 F8				     add     di,ax
+    513	0448  8A 05				     mov     al,[di]
+    514	044A  08 04				     or	     [si],al
+    515	044C  2E: FF 16	2016			     call    word ptr cs:data_40e
+    516	0451  E8 004C				     call    wizard_process_loop_2
+    517	0454  C7 06 FF4C A966			     mov     word ptr ds:data_72e,0A966h
+    518	045A  F6 06 FF53 FF			     test    byte ptr ds:data_77e,0FFh
+    519	045F  75 01				     jnz     loc_19		     ; Jump if not zero
+    520	0461  C3				     retn
+    521	0462			     loc_19:
+    522	0462  C7 06 FF4C AA4B			     mov     word ptr ds:data_72e,0AA4Bh
+    523	0468  2E: FF 16	6004			     call    word ptr cs:data_44e
+    524	046D  BB 2F2B				     mov     bx,2F2Bh
+    525	0470  B9 0C19				     mov     cx,0C19h
+    526	0473  B0 FF				     mov     al,0FFh
+    527	0475  2E: FF 16	2000			     call    word ptr cs:data_36e
+    528	047A  C7 06 FF54 302E			     mov     word ptr ds:data_78e,302Eh
+    529	0480  2E: FF 16	6008			     call    word ptr cs:data_46e
+    530	0485  C7 06 FF4C A965			     mov     word ptr ds:data_72e,0A965h
+    531	048B  73 01				     jnc     loc_20		     ; Jump if carry=0
+    532	048D  C3				     retn
+    533	048E			     loc_20:
+    534	048E  E8 0125				     call    wizard_func_4
+    535	0491  C7 06 FF4C A98D			     mov     word ptr ds:data_72e,0A98Dh
+    536	0497  C3				     retn
+    537										     ;*	No entry point to code
+    538	0498  80 40 20 10			     add     byte ptr [bx+si+20h],10h
+    539	049C  08 04				     or	     [si],al
+    540	049E  02 01				     add     al,[bx+di]
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 11
+215PUREZ.asm
+
+
+
+    541
+    542				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    543				     ;				    SUBROUTINE
+    544				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    545
+    546	04A0			     wizard_process_loop_2	     proc    near
+    547	04A0  0E				     push    cs
+    548	04A1  07				     pop     es
+    549	04A2  BE 00A6				     mov     si,0A6h
+    550	04A5  BF FF58				     mov     di,data_81e
+    551	04A8  B9 0005				     mov     cx,5
+    552	04AB  32 D2				     xor     dl,dl		     ; Zero register
+    553
+    554	04AD			     locloop_21:
+    555	04AD  AC				     lodsb			     ; String [si] to al
+    556	04AE  0A C0				     or	     al,al		     ; Zero ?
+    557	04B0  74 05				     jz	     loc_22		     ; Jump if zero
+    558	04B2  FE C8				     dec     al
+    559	04B4  AA				     stosb			     ; Store al	to es:[di]
+    560	04B5  FE C2				     inc     dl
+    561	04B7			     loc_22:
+    562	04B7  E2 F4				     loop    locloop_21		     ; Loop if cx > 0
+    563
+    564	04B9  88 16 FF53			     mov     ds:data_77e,dl
+    565	04BD  C3				     retn
+    566	04BE			     wizard_process_loop_2	     endp
+    567
+    568										     ;*	No entry point to code
+    569	04BE  C6 06 B218 00			     mov     byte ptr ds:data_64e,0
+    570	04C3  C6 06 FF56 00			     mov     byte ptr ds:data_79e,0
+    571	04C8			     loc_23:
+    572	04C8  0E				     push    cs
+    573	04C9  07				     pop     es
+    574	04CA  BE B20F				     mov     si,data_62e
+    575	04CD  BF FF58				     mov     di,data_81e
+    576	04D0  B9 0008				     mov     cx,8
+    577	04D3  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    578	04D5  A0 B20E				     mov     al,ds:data_61e
+    579	04D8  A2 FF53				     mov     ds:data_77e,al
+    580	04DB  A0 FF53				     mov     al,ds:data_77e
+    581	04DE  3C 02				     cmp     al,2
+    582	04E0  72 02				     jb	     loc_24		     ; Jump if below
+    583	04E2  B0 02				     mov     al,2
+    584	04E4			     loc_24:
+    585	04E4  A2 FF52				     mov     ds:data_76e,al
+    586	04E7  BB 1778				     mov     bx,1778h
+    587	04EA  B9 211A				     mov     cx,211Ah
+    588	04ED  B0 FF				     mov     al,0FFh
+    589	04EF  2E: FF 16	2000			     call    word ptr cs:data_36e
+    590	04F4  C6 06 FF57 00			     mov     byte ptr ds:data_80e,0
+    591	04F9  C7 06 FF54 197B			     mov     word ptr ds:data_78e,197Bh
+    592	04FF  C7 06 FF6A 0019			     mov     word ptr ds:data_83e,19h
+    593	0505  BE B08A				     mov     si,0B08Ah
+    594	0508  8A 0E FF52			     mov     cl,ds:data_76e
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 12
+215PUREZ.asm
+
+
+
+    595	050C  32 ED				     xor     ch,ch		     ; Zero register
+    596	050E  A0 FF56				     mov     al,ds:data_79e
+    597	0511  2E: FF 16	6012			     call    word ptr cs:data_50e
+    598	0516  8A 1E B218			     mov     bl,ds:data_64e
+    599	051A  2E: FF 16	6010			     call    word ptr cs:data_49e
+    600	051F  73 07				     jnc     loc_25		     ; Jump if carry=0
+    601	0521  C7 06 FF4C A965			     mov     word ptr ds:data_72e,0A965h
+    602	0527  C3				     retn
+    603	0528			     loc_25:
+    604	0528  88 1E B218			     mov     ds:data_64e,bl
+    605	052C  C7 06 FF4C AACA			     mov     word ptr ds:data_72e,0AACAh
+    606	0532  2E: FF 16	6004			     call    word ptr cs:data_44e
+    607	0537  A0 B218				     mov     al,ds:data_64e
+    608	053A  02 06 FF56			     add     al,ds:data_79e
+    609	053E  BB FF58				     mov     bx,data_81e
+    610	0541  D7				     xlat			     ; al=[al+[bx]] table
+    611	0542  50				     push    ax
+    612	0543  8B 36 FF4C			     mov     si,ds:data_72e
+    613	0547  56				     push    si
+    614	0548  32 E4				     xor     ah,ah		     ; Zero register
+    615	054A  03 C0				     add     ax,ax
+    616	054C  8B D8				     mov     bx,ax
+    617	054E  8B 87 B08A			     mov     ax,ds:data_58e[bx]
+    618	0552  A3 FF4C				     mov     ds:data_72e,ax
+    619	0555  2E: FF 16	6004			     call    word ptr cs:data_44e
+    620	055A  5E				     pop     si
+    621	055B  89 36 FF4C			     mov     ds:data_72e,si
+    622	055F  2E: FF 16	6004			     call    word ptr cs:data_44e
+    623	0564  58				     pop     ax
+    624	0565  32 E4				     xor     ah,ah		     ; Zero register
+    625	0567  03 C0				     add     ax,ax
+    626	0569  8B D8				     mov     bx,ax
+    627	056B  8B 87 AB3A			     mov     ax,ds:data_57e[bx]
+    628	056F  A3 FF4C				     mov     ds:data_72e,ax
+    629	0572  2E: FF 16	6004			     call    word ptr cs:data_44e
+    630	0577  C7 06 FF4C AAE9			     mov     word ptr ds:data_72e,0AAE9h
+    631	057D  2E: FF 16	6004			     call    word ptr cs:data_44e
+    632	0582  BB 2F2B				     mov     bx,2F2Bh
+    633	0585  B9 0C19				     mov     cx,0C19h
+    634	0588  B0 FF				     mov     al,0FFh
+    635	058A  2E: FF 16	2000			     call    word ptr cs:data_36e
+    636	058F  C7 06 FF54 302E			     mov     word ptr ds:data_78e,302Eh
+    637	0595  2E: FF 16	6008			     call    word ptr cs:data_46e
+    638	059A  9C				     pushf			     ; Push flags
+    639	059B  E8 0018				     call    wizard_func_4
+    640	059E  9D				     popf			     ; Pop flags
+    641	059F  C7 06 FF4C A965			     mov     word ptr ds:data_72e,0A965h
+    642	05A5  73 01				     jnc     loc_26		     ; Jump if carry=0
+    643	05A7  C3				     retn
+    644	05A8			     loc_26:
+    645	05A8  C7 06 FF4C AAA6			     mov     word ptr ds:data_72e,0AAA6h
+    646	05AE  2E: FF 16	6004			     call    word ptr cs:data_44e
+    647	05B3  E9 FF12				     jmp     loc_23
+    648
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 13
+215PUREZ.asm
+
+
+
+    649				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    650				     ;				    SUBROUTINE
+    651				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    652
+    653	05B6			     wizard_func_4	     proc    near
+    654	05B6  BB 2717				     mov     bx,2717h
+    655	05B9  B9 1D41				     mov     cx,1D41h
+    656	05BC  32 C0				     xor     al,al		     ; Zero register
+    657	05BE  2E: FF 26	2000			     jmp     word ptr cs:data_36e
+    658	05C3			     wizard_func_4	     endp
+    659
+    660
+    661				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    662				     ;				    SUBROUTINE
+    663				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    664
+    665	05C3			     wizard_process_loop_3	     proc    near
+    666	05C3  BE A5E4				     mov     si,data_53e
+    667	05C6  BB 0717				     mov     bx,717h
+    668	05C9  B9 0008				     mov     cx,8
+    669
+    670	05CC			     locloop_27:
+    671	05CC  51				     push    cx
+    672	05CD  B9 000C				     mov     cx,0Ch
+    673
+    674	05D0			     locloop_28:
+    675	05D0  51				     push    cx
+    676	05D1  53				     push    bx
+    677	05D2  AC				     lodsb			     ; String [si] to al
+    678	05D3  2E: FF 16	3016			     call    word ptr cs:data_43e
+    679	05D8  5B				     pop     bx
+    680	05D9  FE C7				     inc     bh
+    681	05DB  59				     pop     cx
+    682	05DC  E2 F2				     loop    locloop_28		     ; Loop if cx > 0
+    683
+    684	05DE  80 EF 0C				     sub     bh,0Ch
+    685	05E1  80 C3 08				     add     bl,8
+    686	05E4  59				     pop     cx
+    687	05E5  E2 E5				     loop    locloop_27		     ; Loop if cx > 0
+    688
+    689	05E7  C3				     retn
+    690	05E8			     wizard_process_loop_3	     endp
+    691
+    692	05E8  00 01 02 03 04 05			     db	      00h, 01h,	02h, 03h, 04h, 05h
+    693	05EE  1C 1D 1E 1F 20 21			     db	      1Ch, 1Dh,	1Eh, 1Fh, 20h, 21h
+    694	05F4  06 09 7D 7E 7F 80			     db	      06h, 09h,	7Dh, 7Eh, 7Fh, 80h
+    695	05FA  22 23 24 25 26 27			     db	      22h, 23h,	24h, 25h, 26h, 27h
+    696	0600  06 0A 81 82 83 84			     db	      06h, 0Ah,	81h, 82h, 83h, 84h
+    697	0606  28 29 2A 2B 2C 2D			     db	      28h, 29h,	2Ah, 2Bh, 2Ch, 2Dh
+    698	060C  06 0B 85 86 87 88			     db	      06h, 0Bh,	85h, 86h, 87h, 88h
+    699	0612  2E 2F 30 31 32 33			     db	      2Eh, 2Fh,	30h, 31h, 32h, 33h
+    700	0618  06 0C 89 8A 8B 8C			     db	      06h, 0Ch,	89h, 8Ah, 8Bh, 8Ch
+    701	061E  34 35 36 37 38 39			     db	      34h, 35h,	36h, 37h, 38h, 39h
+    702	0624  06 0D 8D 8E 8F 90			     db	      06h, 0Dh,	8Dh, 8Eh, 8Fh, 90h
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 14
+215PUREZ.asm
+
+
+
+    703	062A  3A 3B 3C 3D 3E 3F			     db	      3Ah, 3Bh,	3Ch, 3Dh, 3Eh, 3Fh
+    704	0630  07 0E 91 92 93 94			     db	      07h, 0Eh,	91h, 92h, 93h, 94h
+    705	0636  10 11 12 13 14 15			     db	      10h, 11h,	12h, 13h, 14h, 15h
+    706	063C  08 0F 95 96 97 98			     db	      08h, 0Fh,	95h, 96h, 97h, 98h
+    707	0642  16 17 18 19 1A			     db	      16h, 17h,	18h, 19h, 1Ah
+    708	0647  1B				     db	     1Bh
+    709
+    710				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    711				     ;				    SUBROUTINE
+    712				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    713
+    714	0648			     wizard_multiply	     proc    near
+    715	0648  83 3E FF50 02			     cmp     word ptr ds:data_75e,2
+    716	064D  73 01				     jae     loc_29		     ; Jump if above or	=
+    717	064F  C3				     retn
+    718	0650			     loc_29:
+    719	0650  C7 06 FF50 0000			     mov     word ptr ds:data_75e,0
+    720	0656  FE 06 B219			     inc     byte ptr ds:data_65e
+    721	065A  80 3E B219 14			     cmp     byte ptr ds:data_65e,14h
+    722	065F  73 01				     jae     loc_30		     ; Jump if above or	=
+    723	0661  C3				     retn
+    724	0662			     loc_30:
+    725	0662  C6 06 B219 00			     mov     byte ptr ds:data_65e,0
+    726	0667  A0 B21A				     mov     al,ds:data_66e
+    727	066A  FE C0				     inc     al
+    728	066C  3C 03				     cmp     al,3
+    729	066E  72 02				     jb	     loc_31		     ; Jump if below
+    730	0670  32 C0				     xor     al,al		     ; Zero register
+    731	0672			     loc_31:
+    732	0672  A2 B21A				     mov     ds:data_66e,al
+    733	0675  B1 24				     mov     cl,24h		     ; '$'
+    734	0677  F6 E1				     mul     cl			     ; ax = reg	* al
+    735	0679  BE A69C				     mov     si,data_55e
+    736	067C  03 F0				     add     si,ax
+    737	067E  BB 0D17				     mov     bx,0D17h
+    738	0681  B9 0006				     mov     cx,6
+    739
+    740	0684			     locloop_32:
+    741	0684  51				     push    cx
+    742	0685  B9 0006				     mov     cx,6
+    743
+    744	0688			     locloop_33:
+    745	0688  51				     push    cx
+    746	0689  53				     push    bx
+    747	068A  AC				     lodsb			     ; String [si] to al
+    748	068B  2E: FF 16	3016			     call    word ptr cs:data_43e
+    749	0690  5B				     pop     bx
+    750	0691  FE C7				     inc     bh
+    751	0693  59				     pop     cx
+    752	0694  E2 F2				     loop    locloop_33		     ; Loop if cx > 0
+    753
+    754	0696  80 EF 06				     sub     bh,6
+    755	0699  80 C3 08				     add     bl,8
+    756	069C  59				     pop     cx
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 15
+215PUREZ.asm
+
+
+
+    757	069D  E2 E5				     loop    locloop_32		     ; Loop if cx > 0
+    758
+    759	069F  C3				     retn
+    760	06A0			     wizard_multiply	     endp
+    761
+    762	06A0  1C 1D 1E 1F			     db	      1Ch, 1Dh,	1Eh, 1Fh
+    763	06A4  20 21 22 23 24			     db	     ' !"#$'
+    764	06A9  25 26 27 28 29 2A	2B+		     db	     '%&', 27h,	'()*+,-./0123456789:;<'
+    765	      2C 2D 2E 2F 30 31	32+
+    766	      33 34 35 36 37 38	39+
+    767	      3A 3B 3C
+    768	06C1  3D 3E 3F 5F 60 61	62+		     db	     '=>?_`abcdefghij(klmno.p01R3qrstu'
+    769	      63 64 65 66 67 68	69+
+    770	      6A 28 6B 6C 6D 6E	6F+
+    771	      2E 70 30 31 52 33	71+
+    772	      72 73 74 75
+    773	06E1  76 77 78 79 7A 7B	7C+		     db	     'vwxyz{|@ABCDEFGHIJK(LMNOP.Q01RST'
+    774	      40 41 42 43 44 45	46+
+    775	      47 48 49 4A 4B 28	4C+
+    776	      4D 4E 4F 50 2E 51	30+
+    777	      31 52 53 54
+    778	0701  55 56 37 57 58 59	5A+		     db	     'UV7WXYZ[\]^'
+    779	      5B 5C 5D 5E
+    780
+    781				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    782				     ;				    SUBROUTINE
+    783				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    784
+    785	070C			     wizard_scan_loop		     proc    near
+    786	070C			     loc_34:
+    787	070C  C6 06 FF1A 00			     mov     byte ptr ds:data_70e,0
+    788	0711  AD				     lodsw			     ; String [si] to ax
+    789	0712  3D FFFF				     cmp     ax,0FFFFh
+    790	0715  75 01				     jne     loc_35		     ; Jump if not equal
+    791	0717  C3				     retn
+    792	0718			     loc_35:
+    793	0718  56				     push    si
+    794	0719  8B F0				     mov     si,ax
+    795	071B  BB 091F				     mov     bx,91Fh
+    796	071E  B9 0007				     mov     cx,7
+    797
+    798	0721			     locloop_36:
+    799	0721  51				     push    cx
+    800	0722  B9 0004				     mov     cx,4
+    801
+    802	0725			     locloop_37:
+    803	0725  51				     push    cx
+    804	0726  53				     push    bx
+    805	0727  AC				     lodsb			     ; String [si] to al
+    806	0728  2E: FF 16	3016			     call    word ptr cs:data_43e
+    807	072D  5B				     pop     bx
+    808	072E  FE C7				     inc     bh
+    809	0730  59				     pop     cx
+    810	0731  E2 F2				     loop    locloop_37		     ; Loop if cx > 0
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 16
+215PUREZ.asm
+
+
+
+    811
+    812	0733  80 EF 04				     sub     bh,4
+    813	0736  80 C3 08				     add     bl,8
+    814	0739  59				     pop     cx
+    815	073A  E2 E5				     loop    locloop_36		     ; Loop if cx > 0
+    816
+    817	073C			     loc_38:
+    818	073C  E8 FF09				     call    wizard_multiply
+    819	073F  80 3E FF1A 28			     cmp     byte ptr ds:data_70e,28h	     ; '('
+    820	0744  72 F6				     jb	     loc_38		     ; Jump if below
+    821	0746  5E				     pop     si
+    822	0747  EB C3				     jmp     short loc_34
+    823	0749			     wizard_scan_loop		     endp
+    824
+    825	0749  69 A7 85 A7 A1 A7			     db	      69h,0A7h,	85h,0A7h,0A1h,0A7h
+    826	074F  BD A7 FF FF BD A7			     db	     0BDh,0A7h,0FFh,0FFh,0BDh,0A7h
+    827	0755  A1 A7 85 A7 69 A7			     db	     0A1h,0A7h,	85h,0A7h, 69h,0A7h
+    828	075B  FF FF BD A7 D9 A7			     db	     0FFh,0FFh,0BDh,0A7h,0D9h,0A7h
+    829	0761  F5 A7 FF FF F5 A7			     db	     0F5h,0A7h,0FFh,0FFh,0F5h,0A7h
+    830	0767  D9 A7 BD A7 FF FF			     db	     0D9h,0A7h,0BDh,0A7h,0FFh,0FFh
+    831	076D  7D 7E 7F 80 81 82			     db	      7Dh, 7Eh,	7Fh, 80h, 81h, 82h
+    832	0773  83 84 85 86 87 88			     db	      83h, 84h,	85h, 86h, 87h, 88h
+    833	0779  89 8A 8B 8C 8D 8E			     db	      89h, 8Ah,	8Bh, 8Ch, 8Dh, 8Eh
+    834	077F  8F 90 91 92 93 94			     db	      8Fh, 90h,	91h, 92h, 93h, 94h
+    835	0785  95 96 97 98 99 9A			     db	      95h, 96h,	97h, 98h, 99h, 9Ah
+    836	078B  7F 80 9B 9C 83 84			     db	      7Fh, 80h,	9Bh, 9Ch, 83h, 84h
+    837	0791  9D 9E 9F 88 A0 A1			     db	      9Dh, 9Eh,	9Fh, 88h,0A0h,0A1h
+    838	0797  A2 A3 8D A4 A5 A6			     db	     0A2h,0A3h,	8Dh,0A4h,0A5h,0A6h
+    839	079D  91 92 93 94 95 96			     db	      91h, 92h,	93h, 94h, 95h, 96h
+    840	07A3  97 98 99 9A 7F 80			     db	      97h, 98h,	99h, 9Ah, 7Fh, 80h
+    841	07A9  9B 9C 83 84 9D 9E			     db	      9Bh, 9Ch,	83h, 84h, 9Dh, 9Eh
+    842	07AF  9F 88 A0 A1 A2 A3			     db	      9Fh, 88h,0A0h,0A1h,0A2h,0A3h
+    843	07B5  8D A4 A5 A6 91 92			     db	      8Dh,0A4h,0A5h,0A6h, 91h, 92h
+    844	07BB  93 94 95 96 97 98			     db	      93h, 94h,	95h, 96h, 97h, 98h
+    845	07C1  99 9A B8 BF A7 B3			     db	      99h, 9Ah,0B8h,0BFh,0A7h,0B3h
+    846	07C7  B9 C0 85 A9 BA C1			     db	     0B9h,0C0h,	85h,0A9h,0BAh,0C1h
+    847	07CD  AC B4 BB C2 8D B5			     db	     0ACh,0B4h,0BBh,0C2h, 8Dh,0B5h
+    848	07D3  BC C3 91 B6 BD C4			     db	     0BCh,0C3h,	91h,0B6h,0BDh,0C4h
+    849	07D9  95 B7 BE C5 99 9A			     db	      95h,0B7h,0BEh,0C5h, 99h, 9Ah
+    850	07DF  C7 C6 A7 CA C9 C8			     db	     0C7h,0C6h,0A7h,0CAh,0C9h,0C8h
+    851	07E5  85 A9 CC CB AC B4			     db	      85h,0A9h,0CCh,0CBh,0ACh,0B4h
+    852	07EB  BB C2 8D B5 BC C3			     db	     0BBh,0C2h,	8Dh,0B5h,0BCh,0C3h
+    853	07F1  91 B6 BD C4 95 B7			     db	      91h,0B6h,0BDh,0C4h, 95h,0B7h
+    854	07F7  BE C5 99 9A CE CD			     db	     0BEh,0C5h,	99h, 9Ah,0CEh,0CDh
+    855	07FD  A7 D1 D0 CF 85 A9			     db	     0A7h,0D1h,0D0h,0CFh, 85h,0A9h
+    856	0803  D3 D2 AC B4 BB C2			     db	     0D3h,0D2h,0ACh,0B4h,0BBh,0C2h
+    857	0809  8D B5 BC C3 91 B6			     db	      8Dh,0B5h,0BCh,0C3h, 91h,0B6h
+    858	080F  BD C4 95 B7 BE C5			     db	     0BDh,0C4h,	95h,0B7h,0BEh,0C5h
+    859	0815  01 18				     db	      01h, 18h
+    860	0817  44 52 55 47 2E 47	52+		     db	     'DRUG.GRP'
+    861	      50
+    862	081F  00 0E AF 00 19 57			     db	      00h, 0Eh,0AFh, 00h, 19h, 57h
+    863	0825  69				     db	      69h
+    864	0826  74 63 68 63 72 61	66+		     db	     'tchcraft Implement shopGo	outsid'
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 17
+215PUREZ.asm
+
+
+
+    865	      74 20 49 6D 70 6C	65+
+    866	      6D 65 6E 74 20 73	68+
+    867	      6F 70 47 6F 20 6F	75+
+    868	      74 73 69 64
+    869	0846  65 00				     db	     'e', 0
+    870	0848  42 75 79 20 69 74	65+		     db	     'Buy item', 0
+    871	      6D 00
+    872	0851  53 65 6C 6C 20 69	74+		     db	     'Sell item', 0
+    873	      65 6D 00
+    874	085B  44 65 73 63 72 69	70+		     db	     'Description of item', 0
+    875	      74 69 6F 6E 20 6F	66+
+    876	      20 69 74 65 6D 00
+    877	086F  4F 68 2E 2E 2E 20			     db	     'Oh... '
+    878	0875  FF 00				     db	     0FFh, 00h
+    879	0877  68 65 6C 6C 6F 2C	20+		     db	     'hello, can I help	you?/'
+    880	      63 61 6E 20 49 20	68+
+    881	      65 6C 70 20 79 6F	75+
+    882	      3F 2F
+    883	088E  FF 02				     db	     0FFh, 02h
+    884	0890  0C 57 68 61 74 20	61+		     db	     0Ch, 'What	are you	looking	for?'
+    885	      72 65 20 79 6F 75	20+
+    886	      6C 6F 6F 6B 69 6E	67+
+    887	      20 66 6F 72 3F
+    888	08AA  FF 03				     db	     0FFh, 03h
+    889	08AC  0C 57 68 61 74 20	61+		     db	     0Ch, 'What	are you	looking	for?'
+    890	      72 65 20 79 6F 75	20+
+    891	      6C 6F 6F 6B 69 6E	67+
+    892	      20 66 6F 72 3F
+    893	08C6  FF 04				     db	     0FFh, 04h
+    894	08C8  0C 59 6F 75 5C 64	20+		     db	     0Ch, 'You\d like a	'
+    895	      6C 69 6B 65 20 61	20
+    896	08D6  FF 00 2E 2F FF			     db	     0FFh, 00h,	2Eh, 2Fh,0FFh
+    897	08DB  0C 59 6F 75 5C 64	20+		     db	     0Ch, 'You\d like to sell a	'
+    898	      6C 69 6B 65 20 74	6F+
+    899	      20 73 65 6C 6C 20	61+
+    900	      20
+    901	08F1  FF 00 2E 2F FF			     db	     0FFh, 00h,	2Eh, 2Fh,0FFh
+    902	08F6  54 68 61 74 20 77	69+		     db	     'That will	be '
+    903	      6C 6C 20 62 65 20
+    904	0903  FF 00 26 67 6F 6C			     db	     0FFh, 00h,	26h, 67h, 6Fh, 6Ch
+    905	0909  64 73 2E FF			     db	      64h, 73h,	2Eh,0FFh
+    906	090D  0D 57 69 6C 6C 20	74+		     db	     0Dh, 'Will	there be something els'
+    907	      68 65 72 65 20 62	65+
+    908	      20 73 6F 6D 65 74	68+
+    909	      69 6E 67 20 65 6C	73
+    910	0929  65 3F				     db	     'e?'
+    911	092B  FF				     db	     0FFh
+    912	092C  59 6F 75 20 68 61	76+		     db	     'You have no money, sir.'
+    913	      65 20 6E 6F 20 6D	6F+
+    914	      6E 65 79 2C 20 73	69+
+    915	      72 2E
+    916	0943  FF 59 6F				     db	     0FFh, 59h,	6Fh
+    917	0946  75 20 63 61 6E 5C	74+		     db	     'u	can\t po'
+    918	      20 70 6F
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 18
+215PUREZ.asm
+
+
+
+    919	0950  73 73 69 62 6C 79	20+		     db	     'ssibly carry any more./'
+    920	      63 61 72 72 79 20	61+
+    921	      6E 79 20 6D 6F 72	65+
+    922	      2E 2F
+    923	0967  FF 02				     db	     0FFh, 02h
+    924	0969  0C				     db	     0Ch
+    925	096A  49 73 20 74 68 65	72		     db	     'Is ther'
+    926	0971  65 20 73 6F 6D 65	74+		     db	     'e	something I&can	do for you?/'
+    927	      68 69 6E 67 20 49	26+
+    928	      63 61 6E 20 64 6F	20+
+    929	      66 6F 72 20 79 6F	75+
+    930	      3F 2F
+    931	098F  FF 02				     db	     0FFh, 02h
+    932	0991  0C 57 68 61 74 20	77+		     db	     0Ch, 'What	would you like to sell'
+    933	      6F 75 6C 64 20 79	6F+
+    934	      75 20 6C 69 6B 65	20+
+    935	      74 6F 20 73 65 6C	6C
+    936	09AD  3F 2F				     db	     '?/'
+    937	09AF  FF 05				     db	     0FFh, 05h
+    938	09B1  0C 54 68 61 6E 6B	20+		     db	     0Ch, 'Thank you very much./'
+    939	      79 6F 75 20 76 65	72+
+    940	      79 20 6D 75 63 68	2E+
+    941	      2F
+    942	09C7  FF				     db	     0FFh
+    943	09C8  49 5C 6C 6C 20 67	69+		     db	     'I\ll give	you '
+    944	      76 65 20 79 6F 75	20
+    945	09D6  FF 00				     db	     0FFh, 00h
+    946	09D8  26 67 6F 6C			     db	     '&gol'
+    947	09DC  64 73 20 66 6F			     db	     'ds fo'
+    948	09E1  72 20 74 68 61 74	2E+		     db	     'r	that./Will that	be all right?'
+    949	      2F 57 69 6C 6C 20	74+
+    950	      68 61 74 20 62 65	20+
+    951	      61 6C 6C 20 72 69	67+
+    952	      68 74 3F
+    953	0A00  FF 00				     db	     0FFh, 00h
+    954	0A02  0C				     db	     0Ch
+    955	0A03  4F 68 2C 20			     db	     'Oh, '
+    956	0A07  49				     db	     'I'
+    957	0A08  26 73 65 65 2E 20	57+		     db	     '&see. Well,'
+    958	      65 6C 6C 2C
+    959	0A13  20 74 68				     db	     ' th'
+    960	0A16  61 74 5C 73 20 74	68+		     db	     'at\s the best'
+    961	      65 20 62 65 73 74
+    962	0A23  20 49 26 63 61 6E	20+		     db	     ' I&can do. I\m sorr'
+    963	      64 6F 2E 20 49 5C	6D+
+    964	      20 73 6F 72 72
+    965	0A36  79 20 69 74 20 69	73+		     db	     'y	it is\t	satisfactory.'
+    966	      5C 74 20 73 61 74	69+
+    967	      73 66 61 63 74 6F	72+
+    968	      79 2E
+    969	0A4D  FF 02				     db	     0FFh, 02h
+    970	0A4F  44 6F 20 79 6F 75	20+		     db	     'Do you ha'
+    971	      68 61
+    972	0A58  76 65 20				     db	     've '
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 19
+215PUREZ.asm
+
+
+
+    973	0A5B  61 6E 79 74 68			     db	     'anyth'
+    974	0A60  69 6E 67 20 65 6C	73+		     db	     'ing else you\d like to sell?'
+    975	      65 20 79 6F 75 5C	64+
+    976	      20 6C 69 6B 65 20	74+
+    977	      6F 20 73 65 6C 6C	3F
+    978	0A7C  FF 0C				     db	     0FFh, 0Ch
+    979	0A7E  59 6F 75 20 61 72	65+		     db	     'You aren\t carrying any magi'
+    980	      6E 5C 74 20 63 61	72+
+    981	      72 79 69 6E 67 20	61+
+    982	      6E 79 20 6D 61 67	69
+    983	0A9A  63 20 69 74 65 6D	73+		     db	     'c	items, sir./'
+    984	      2C 20 73 69 72 2E	2F
+    985	0AA8  FF 02				     db	     0FFh, 02h
+    986	0AAA  0C 57				     db	     0Ch, 'W'
+    987	0AAC  68 69 63 68 20 69	74+		     db	     'hich item	can I tell you about?/'
+    988	      65 6D 20 63 61 6E	20+
+    989	      49 20 74 65 6C 6C	20+
+    990	      79 6F 75 20 61 62	6F+
+    991	      75 74 3F 2F
+    992	0ACC  FF 06				     db	     0FFh, 06h
+    993	0ACE  0C 59 6F 75 5C 72	65+		     db	     0Ch, 'You\re interested in	the '
+    994	      20 69 6E 74 65 72	65+
+    995	      73 74 65 64 20 69	6E+
+    996	      20 74 68 65 20
+    997	0AE8  FF 00 2E 2F FF			     db	     0FFh, 00h,	2Eh, 2Fh,0FFh
+    998	0AED  0C 43 61 6E 20 49	20+		     db	     0Ch, 'Can I tell you about	anythi'
+    999	      74 65 6C 6C 20 79	6F+
+   1000	      75 20 61 62 6F 75	74+
+   1001	      20 61 6E 79 74 68	69
+   1002	0B09  6E 67 20 65 6C 73	65+		     db	     'ng else?'
+   1003	      3F
+   1004	0B11  FF 0C FF 07			     db	     0FFh, 0Ch,0FFh, 07h
+   1005	0B15  54 68 61 6E 6B 20	79+		     db	     'Thank you, sir. '
+   1006	      6F 75 2C 20 73 69	72+
+   1007	      2E 20
+   1008	0B25  FF				     db	     0FFh
+   1009	0B26  08 50 6C 65 61 73	65+		     db	     8,	'Please	come again.'
+   1010	      20 63 6F 6D 65 20	61+
+   1011	      67 61 69 6E 2E
+   1012	0B39  FF 01 11 FF FF 4A			     db	     0FFh, 01h,	11h,0FFh,0FFh, 4Ah
+   1013	0B3F  AB C5 AB 9C AC 39			     db	     0ABh,0C5h,0ABh, 9Ch,0ACh, 39h
+   1014	0B45  AD FD AD A6 AE 3D			     db	     0ADh,0FDh,0ADh,0A6h,0AEh, 3Dh
+   1015	0B4B  AF D3 AF				     db	     0AFh,0D3h,0AFh
+   1016	0B4E  57 65 6C 6C 2C 20	69+		     db	     'Well, it\s a special blend of yu'
+   1017	      74 5C 73 20 61 20	73+
+   1018	      70 65 63 69 61 6C	20+
+   1019	      62 6C 65 6E 64 20	6F+
+   1020	      66 20 79 75
+   1021	0B6E  6E 6B 65 6C 20 66	72+		     db	     'nkel fruit and ripodi leaf./It\s'
+   1022	      75 69 74 20 61 6E	64+
+   1023	      20 72 69 70 6F 64	69+
+   1024	      20 6C 65 61 66 2E	2F+
+   1025	      49 74 5C 73
+   1026	0B8E  20 6C 6F 77 20 69	6E+		     db	     ' low in price and	as a mild heal'
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 20
+215PUREZ.asm
+
+
+
+   1027	      20 70 72 69 63 65	20+
+   1028	      61 6E 64 20 61 73	20+
+   1029	      61 20 6D 69 6C 64	20+
+   1030	      68 65 61 6C
+   1031	0BAE  74 68 20 74 6F 6E	69+		     db	     'th tonic,	it\s perfect.'
+   1032	      63 2C 20 69 74 5C	73+
+   1033	      20 70 65 72 66 65	63+
+   1034	      74 2E
+   1035	0BC5  11 0C FF FF 54 68			     db	      11h, 0Ch,0FFh,0FFh, 54h, 68h
+   1036	0BCB  69 73 20 69 73 20	74+		     db	     'is is the	fruit of the Juu-en tr'
+   1037	      68 65 20 66 72 75	69+
+   1038	      74 20 6F 66 20 74	68+
+   1039	      65 20 4A 75 75 2D	65+
+   1040	      6E 20 74 72
+   1041	0BEB  65 65 20 77 68 69	63+		     db	     'ee which bears only once every t'
+   1042	      68 20 62 65 61 72	73+
+   1043	      20 6F 6E 6C 79 20	6F+
+   1044	      6E 63 65 20 65 76	65+
+   1045	      72 79 20 74
+   1046	0C0B  65 6E 20 79 65 61	72+		     db	     'en years./The price is a bit hig'
+   1047	      73 2E 2F 54 68 65	20+
+   1048	      70 72 69 63 65 20	69+
+   1049	      73 20 61 20 62 69	74+
+   1050	      20 68 69 67
+   1051	0C2B  68 2C 20 62 75 74	20+		     db	     'h, but it	provides excellent rel'
+   1052	      69 74 20 70 72 6F	76+
+   1053	      69 64 65 73 20 65	78+
+   1054	      63 65 6C 6C 65 6E	74+
+   1055	      20 72 65 6C
+   1056	0C4B  69 65 66 20 66 72	6F+		     db	     'ief from wounds and exhaustion -'
+   1057	      6D 20 77 6F 75 6E	64+
+   1058	      73 20 61 6E 64 20	65+
+   1059	      78 68 61 75 73 74	69+
+   1060	      6F 6E 20 2D
+   1061	0C6B  2D 20 69 74 5C 73	20+		     db	     '-	it\s quite a bit better	than t'
+   1062	      71 75 69 74 65 20	61+
+   1063	      20 62 69 74 20 62	65+
+   1064	      74 74 65 72 20 74	68+
+   1065	      61 6E 20 74
+   1066	0C8B  68 65 20 4B 65 6E	5C+		     db	     'he Ken\ko	potion.'
+   1067	      6B 6F 20 70 6F 74	69+
+   1068	      6F 6E 2E
+   1069	0C9C  11 0C FF FF 54 68			     db	      11h, 0Ch,0FFh,0FFh, 54h, 68h
+   1070	0CA2  69 73 20 70 6F 74	69+		     db	     'is potion	is made	from the broth'
+   1071	      6F 6E 20 69 73 20	6D+
+   1072	      61 64 65 20 66 72	6F+
+   1073	      6D 20 74 68 65 20	62+
+   1074	      72 6F 74 68
+   1075	0CC2  20 6F 66 20 6D 69	73+		     db	     ' of mistletoe simmered on	the ni'
+   1076	      74 6C 65 74 6F 65	20+
+   1077	      73 69 6D 6D 65 72	65+
+   1078	      64 20 6F 6E 20 74	68+
+   1079	      65 20 6E 69
+   1080	0CE2  67 68 74 20 6F 66	20+		     db	     'ght of a full moon./It restores '
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 21
+215PUREZ.asm
+
+
+
+   1081	      61 20 66 75 6C 6C	20+
+   1082	      6D 6F 6F 6E 2E 2F	49+
+   1083	      74 20 72 65 73 74	6F+
+   1084	      72 65 73 20
+   1085	0D02  6D 61 67 69 63 61	6C+		     db	     'magical powers. It\s very	bitter'
+   1086	      20 70 6F 77 65 72	73+
+   1087	      2E 20 49 74 5C 73	20+
+   1088	      76 65 72 79 20 62	69+
+   1089	      74 74 65 72
+   1090	0D22  2C 20 62 75 74 20	74+		     db	     ',	but the	price is low.'
+   1091	      68 65 20 70 72 69	63+
+   1092	      65 20 69 73 20 6C	6F+
+   1093	      77 2E
+   1094	0D39  11 0C FF FF 54 68			     db	      11h, 0Ch,0FFh,0FFh, 54h, 68h
+   1095	0D3F  69 73 20 69 73 20	6D+		     db	     'is is made from a	mixture	of the'
+   1096	      61 64 65 20 66 72	6F+
+   1097	      6D 20 61 20 6D 69	78+
+   1098	      74 75 72 65 20 6F	66+
+   1099	      20 74 68 65
+   1100	0D5F  20 70 6F 77 64 65	72+		     db	     ' powdered	dragon scales and crus'
+   1101	      65 64 20 64 72 61	67+
+   1102	      6F 6E 20 73 63 61	6C+
+   1103	      65 73 20 61 6E 64	20+
+   1104	      63 72 75 73
+   1105	0D7F  68 65 64 20 57 69	73+		     db	     'hed Wise Man\s Stone steamed for'
+   1106	      65 20 4D 61 6E 5C	73+
+   1107	      20 53 74 6F 6E 65	20+
+   1108	      73 74 65 61 6D 65	64+
+   1109	      20 66 6F 72
+   1110	0D9F  20 6F 6E 65 20 68	75+		     db	     ' one hundred days./It will fully'
+   1111	      6E 64 72 65 64 20	64+
+   1112	      61 79 73 2E 2F 49	74+
+   1113	      20 77 69 6C 6C 20	66+
+   1114	      75 6C 6C 79
+   1115	0DBF  20 72 65 73 74 6F	72+		     db	     ' restore your magical powers. Th'
+   1116	      65 20 79 6F 75 72	20+
+   1117	      6D 61 67 69 63 61	6C+
+   1118	      20 70 6F 77 65 72	73+
+   1119	      2E 20 54 68
+   1120	0DDF  65 20 70 72 69 63	65+		     db	     'e	price, however..... is high.'
+   1121	      2C 20 68 6F 77 65	76+
+   1122	      65 72 2E 2E 2E 2E	2E+
+   1123	      20 69 73 20 68 69	67+
+   1124	      68 2E
+   1125	0DFD  11 0C FF FF 54 68			     db	      11h, 0Ch,0FFh,0FFh, 54h, 68h
+   1126	0E03  69 73 20 73 74 6F	6E+		     db	     'is stone protects	the aura that '
+   1127	      65 20 70 72 6F 74	65+
+   1128	      63 74 73 20 74 68	65+
+   1129	      20 61 75 72 61 20	74+
+   1130	      68 61 74 20
+   1131	0E23  6C 69 76 69 6E 67	20+		     db	     'living beings exude./It surround'
+   1132	      62 65 69 6E 67 73	20+
+   1133	      65 78 75 64 65 2E	2F+
+   1134	      49 74 20 73 75 72	72+
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 22
+215PUREZ.asm
+
+
+
+   1135	      6F 75 6E 64
+   1136	0E43  73 20 74 68 65 20	61+		     db	     's	the aura to prevent interferen'
+   1137	      75 72 61 20 74 6F	20+
+   1138	      70 72 65 76 65 6E	74+
+   1139	      20 69 6E 74 65 72	66+
+   1140	      65 72 65 6E
+   1141	0E63  63 65 20 66 72 6F	6D+		     db	     'ce from other auras and acts as '
+   1142	      20 6F 74 68 65 72	20+
+   1143	      61 75 72 61 73 20	61+
+   1144	      6E 64 20 61 63 74	73+
+   1145	      20 61 73 20
+   1146	0E83  61 20 70 72 6F 74	65+		     db	     'a	protection against enemy attac'
+   1147	      63 74 69 6F 6E 20	61+
+   1148	      67 61 69 6E 73 74	20+
+   1149	      65 6E 65 6D 79 20	61+
+   1150	      74 74 61 63
+   1151	0EA3  6B 73 2E				     db	     'ks.'
+   1152	0EA6  11 0C FF FF 54 68			     db	      11h, 0Ch,0FFh,0FFh, 54h, 68h
+   1153	0EAC  69 73 20 69 73 20	61+		     db	     'is is a liquified	metal made fro'
+   1154	      20 6C 69 71 75 69	66+
+   1155	      69 65 64 20 6D 65	74+
+   1156	      61 6C 20 6D 61 64	65+
+   1157	      20 66 72 6F
+   1158	0ECC  6D 20 6D 65 72 63	75+		     db	     'm	mercury	and iron./If you paint'
+   1159	      72 79 20 61 6E 64	20+
+   1160	      69 72 6F 6E 2E 2F	49+
+   1161	      66 20 79 6F 75 20	70+
+   1162	      61 69 6E 74
+   1163	0EEC  20 69 74 20 6F 6E	20+		     db	     ' it on a shield weakened by batt'
+   1164	      61 20 73 68 69 65	6C+
+   1165	      64 20 77 65 61 6B	65+
+   1166	      6E 65 64 20 62 79	20+
+   1167	      62 61 74 74
+   1168	0F0C  6C 65 2C 20 74 68	65+		     db	     'le, the shield will regain its o'
+   1169	      20 73 68 69 65 6C	64+
+   1170	      20 77 69 6C 6C 20	72+
+   1171	      65 67 61 69 6E 20	69+
+   1172	      74 73 20 6F
+   1173	0F2C  72 69 67 69 6E 61	6C+		     db	     'riginal strength.'
+   1174	      20 73 74 72 65 6E	67+
+   1175	      74 68 2E
+   1176	0F3D  11 0C FF FF 48 6D			     db	      11h, 0Ch,0FFh,0FFh, 48h, 6Dh
+   1177	0F43  6D 2E 2E 2E 20 49	20+		     db	     'm... I don\t know	much about thi'
+   1178	      64 6F 6E 5C 74 20	6B+
+   1179	      6E 6F 77 20 6D 75	63+
+   1180	      68 20 61 62 6F 75	74+
+   1181	      20 74 68 69
+   1182	0F63  73 20 6F 6E 65 2C	20+		     db	     's	one, but I do know that	it inc'
+   1183	      62 75 74 20 49 20	64+
+   1184	      6F 20 6B 6E 6F 77	20+
+   1185	      74 68 61 74 20 69	74+
+   1186	      20 69 6E 63
+   1187	0F83  72 65 61 73 65 73	20+		     db	     'reases the offensive power of a '
+   1188	      74 68 65 20 6F 66	66+
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 23
+215PUREZ.asm
+
+
+
+   1189	      65 6E 73 69 76 65	20+
+   1190	      70 6F 77 65 72 20	6F+
+   1191	      66 20 61 20
+   1192	0FA3  73 77 6F 72 64 2E	2F+		     db	     'sword./Don\t worry, it hasn\t ki'
+   1193	      44 6F 6E 5C 74 20	77+
+   1194	      6F 72 72 79 2C 20	69+
+   1195	      74 20 68 61 73 6E	5C+
+   1196	      74 20 6B 69
+   1197	0FC3  6C 6C 65 64 20 61	6E+		     db	     'lled anyone yet.'
+   1198	      79 6F 6E 65 20 79	65+
+   1199	      74 2E
+   1200	0FD3  11 0C FF FF 54 68			     db	      11h, 0Ch,0FFh,0FFh, 54h, 68h
+   1201	0FD9  69 73 20 66 65 61	74+		     db	     'is feather remembers the voice o'
+   1202	      68 65 72 20 72 65	6D+
+   1203	      65 6D 62 65 72 73	20+
+   1204	      74 68 65 20 76 6F	69+
+   1205	      63 65 20 6F
+   1206	0FF9  66 20 74 68 65 20	6C+		     db	     'f	the last wise man who spoke to'
+   1207	      61 73 74 20 77 69	73+
+   1208	      65 20 6D 61 6E 20	77+
+   1209	      68 6F 20 73 70 6F	6B+
+   1210	      65 20 74 6F
+   1211	1019  20 79 6F 75 2E 2F	49+		     db	     ' you./If you hold	it in your rig'
+   1212	      66 20 79 6F 75 20	68+
+   1213	      6F 6C 64 20 69 74	20+
+   1214	      69 6E 20 79 6F 75	72+
+   1215	      20 72 69 67
+   1216	1039  68 74 20 68 61 6E	64+		     db	     'ht hand and swing	it once, you\l'
+   1217	      20 61 6E 64 20 73	77+
+   1218	      69 6E 67 20 69 74	20+
+   1219	      6F 6E 63 65 2C 20	79+
+   1220	      6F 75 5C 6C
+   1221	1059  6C 20 72 65 74 75	72+		     db	     'l	return to him. It\s never fail'
+   1222	      6E 20 74 6F 20 68	69+
+   1223	      6D 2E 20 49 74 5C	73+
+   1224	      20 6E 65 76 65 72	20+
+   1225	      66 61 69 6C
+   1226	1079  65 64 20 61 6E 79	6F+		     db	     'ed anyone	I know.'
+   1227	      6E 65 20 49 20 6B	6E+
+   1228	      6F 77 2E
+   1229	108A  11 0C FF FF 9A B0			     db	      11h, 0Ch,0FFh,0FFh, 9Ah,0B0h
+   1230	1090  A8 B0 B5 B0 C5 B0			     db	     0A8h,0B0h,0B5h,0B0h,0C5h,0B0h
+   1231	1096  D4 B0 E0 B0 F4 B0			     db	     0D4h,0B0h,0E0h,0B0h,0F4h,0B0h
+   1232	109C  FE B0				     db	     0FEh,0B0h
+   1233	109E  4B				     db	     4Bh
+   1234	109F  65 6E 5C 6B 6F 20	50+		     db	     'en\ko Potion', 0
+   1235	      6F 74 69 6F 6E 00
+   1236	10AC  4A 75 75 2D 65 6E	20+		     db	     'Juu-en Fruit', 0
+   1237	      46 72 75 69 74 00
+   1238	10B9  45 6C 69 78 69 72	20+		     db	     'Elixir of	Kashi',	0
+   1239	      6F 66 20 4B 61 73	68+
+   1240	      69 00
+   1241	10C9  43 68 69 6B 61 72	61+		     db	     'Chikara Powder', 0
+   1242	      20 50 6F 77 64 65	72+
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 24
+215PUREZ.asm
+
+
+
+   1243	      00
+   1244	10D8  4D 61 67 69 61 20	53+		     db	     'Magia Stone', 0
+   1245	      74 6F 6E 65 00
+   1246	10E4  48 6F 6C 79 20 57	61+		     db	     'Holy Water of Acero', 0
+   1247	      74 65 72 20 6F 66	20+
+   1248	      41 63 65 72 6F 00
+   1249	10F8  53 61 62 72 65 20	4F+		     db	     'Sabre Oil', 0
+   1250	      69 6C 00
+   1251	1102  4B 69 6F 6B 75 20	46+		     db	     'Kioku Feather', 0
+   1252	      65 61 74 68 65 72	00
+   1253	1110  1E B1 36 B1 4E B1			     db	      1Eh,0B1h,	36h,0B1h, 4Eh,0B1h
+   1254	1116  66 B1 7E B1 96 B1			     db	      66h,0B1h,	7Eh,0B1h, 96h,0B1h
+   1255	111C  AE B1 C6 B1 DE B1			     db	     0AEh,0B1h,0C6h,0B1h,0DEh,0B1h
+   1256	1122  00 32 00 00 F0 00			     db	      00h, 32h,	00h, 00h,0F0h, 00h
+   1257	1128  00 3C 00 00 40 01			     db	      00h, 3Ch,	00h, 00h, 40h, 01h
+   1258	112E  00 E8 03 00 64 00			     db	      00h,0E8h,	03h, 00h, 64h, 00h
+   1259	1134  00 B0 04 00 5E 01			     db	      00h,0B0h,	04h, 00h, 5Eh, 01h
+   1260	113A  00 32 00 00 F0 00			     db	      00h, 32h,	00h, 00h,0F0h, 00h
+   1261	1140  00 3C 00 00 40 01			     db	      00h, 3Ch,	00h, 00h, 40h, 01h
+   1262	1146  00 E8 03 00 64 00			     db	      00h,0E8h,	03h, 00h, 64h, 00h
+   1263	114C  00 B0 04 00 5E 01			     db	      00h,0B0h,	04h, 00h, 5Eh, 01h
+   1264	1152  00 32 00 00 F0 00			     db	      00h, 32h,	00h, 00h,0F0h, 00h
+   1265	1158  00 3C 00 00 40 01			     db	      00h, 3Ch,	00h, 00h, 40h, 01h
+   1266	115E  00 DC 05 00 64 00			     db	      00h,0DCh,	05h, 00h, 64h, 00h
+   1267	1164  00 B0 04 00 5E 01			     db	      00h,0B0h,	04h, 00h, 5Eh, 01h
+   1268	116A  00 32 00 00 2C 01			     db	      00h, 32h,	00h, 00h, 2Ch, 01h
+   1269	1170  00 78 00 00 40 01			     db	      00h, 78h,	00h, 00h, 40h, 01h
+   1270	1176  00 DC 05 00 64 00			     db	      00h,0DCh,	05h, 00h, 64h, 00h
+   1271	117C  00 B0 04 00 5E 01			     db	      00h,0B0h,	04h, 00h, 5Eh, 01h
+   1272	1182  00 05 00 00 58 02			     db	      00h, 05h,	00h, 00h, 58h, 02h
+   1273	1188  00 F0 00 00 E0 01			     db	      00h,0F0h,	00h, 00h,0E0h, 01h
+   1274	118E  00 D0 07 00 C8 00			     db	      00h,0D0h,	07h, 00h,0C8h, 00h
+   1275	1194  00 D0 07 00 5E 01			     db	      00h,0D0h,	07h, 00h, 5Eh, 01h
+   1276	119A  00 05 00 00 58 02			     db	      00h, 05h,	00h, 00h, 58h, 02h
+   1277	11A0  00 F0 00 00 E0 01			     db	      00h,0F0h,	00h, 00h,0E0h, 01h
+   1278	11A6  00 D0 07 00 C8 00			     db	      00h,0D0h,	07h, 00h,0C8h, 00h
+   1279	11AC  00 D0 07 00 5E 01			     db	      00h,0D0h,	07h, 00h, 5Eh, 01h
+   1280	11B2  00 05 00 00 84 03			     db	      00h, 05h,	00h, 00h, 84h, 03h
+   1281	11B8  00 68 01 00 C0 03			     db	      00h, 68h,	01h, 00h,0C0h, 03h
+   1282	11BE  00 C4 09 00 90 01			     db	      00h,0C4h,	09h, 00h, 90h, 01h
+   1283	11C4  00 60 09 00 5E 01			     db	      00h, 60h,	09h, 00h, 5Eh, 01h
+   1284	11CA  00 05 00 00 84 03			     db	      00h, 05h,	00h, 00h, 84h, 03h
+   1285	11D0  00 68 01 00 C0 03			     db	      00h, 68h,	01h, 00h,0C0h, 03h
+   1286	11D6  00 C4 09 00 90 01			     db	      00h,0C4h,	09h, 00h, 90h, 01h
+   1287	11DC  00 60 09 00 5E 01			     db	      00h, 60h,	09h, 00h, 5Eh, 01h
+   1288	11E2  00 02 00 00 C8 00			     db	      00h, 02h,	00h, 00h,0C8h, 00h
+   1289	11E8  00 28 00 00 18 01			     db	      00h, 28h,	00h, 00h, 18h, 01h
+   1290	11EE  00 20 03 00 50 00			     db	      00h, 20h,	03h, 00h, 50h, 00h
+   1291	11F4  00 E8 03 00 96			     db	      00h,0E8h,	03h, 00h, 96h
+   1292	11F9  31*(00)				     db	     49	dup (0)
+   1293
+   1294	122A			     seg_a	     ends
+   1295
+   1296
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 25
+215PUREZ.asm
+
+
+
+   1297
+   1298						     end     start
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 26
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/24/26"
+??FILENAME			  Text	 "215PUREZ"
+??TIME				  Text	 "00:11:21"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 215PUREZ
+@WORDSIZE			  Text	 2
+DATA_36E			  Number 2000
+DATA_37E			  Number 2002
+DATA_38E			  Number 2010
+DATA_39E			  Number 2012
+DATA_4				  Byte	 SEG_A:00C9
+DATA_40E			  Number 2016
+DATA_41E			  Number 2040
+DATA_42E			  Number 2044
+DATA_43E			  Number 3016
+DATA_44E			  Number 6004
+DATA_45E			  Number 6006
+DATA_46E			  Number 6008
+DATA_47E			  Number 600A
+DATA_48E			  Number 600C
+DATA_49E			  Number 6010
+DATA_5				  Word	 SEG_A:010C
+DATA_50E			  Number 6012
+DATA_51E			  Number A0C3
+DATA_52E			  Number A494
+DATA_53E			  Number A5E4
+DATA_54E			  Number A644
+DATA_55E			  Number A69C
+DATA_56E			  Number A745
+DATA_57E			  Number AB3A
+DATA_58E			  Number B08A
+DATA_59E			  Number B10C
+DATA_60E			  Number B1F6
+DATA_61E			  Number B20E
+DATA_62E			  Number B20F
+DATA_63E			  Number B217
+DATA_64E			  Number B218
+DATA_65E			  Number B219
+DATA_66E			  Number B21A
+DATA_67E			  Number B21B
+DATA_68E			  Number B21C
+DATA_69E			  Number C006
+DATA_70E			  Number FF1A
+DATA_71E			  Number FF2C
+DATA_72E			  Number FF4C
+DATA_73E			  Number FF4E
+DATA_74E			  Number FF4F
+DATA_75E			  Number FF50
+DATA_76E			  Number FF52
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 27
+Symbol Table
+
+
+
+DATA_77E			  Number FF53
+DATA_78E			  Number FF54
+DATA_79E			  Number FF56
+DATA_80E			  Number FF57
+DATA_81E			  Number FF58
+DATA_82E			  Number FF68
+DATA_83E			  Number FF6A
+LOCLOOP_10			  Near	 SEG_A:0275
+LOCLOOP_17			  Near	 SEG_A:0429
+LOCLOOP_21			  Near	 SEG_A:04AD
+LOCLOOP_27			  Near	 SEG_A:05CC
+LOCLOOP_28			  Near	 SEG_A:05D0
+LOCLOOP_32			  Near	 SEG_A:0684
+LOCLOOP_33			  Near	 SEG_A:0688
+LOCLOOP_36			  Near	 SEG_A:0721
+LOCLOOP_37			  Near	 SEG_A:0725
+LOCLOOP_4			  Near	 SEG_A:00A8
+LOC_11				  Near	 SEG_A:0286
+LOC_12				  Near	 SEG_A:02C2
+LOC_13				  Near	 SEG_A:02FD
+LOC_14				  Near	 SEG_A:0315
+LOC_15				  Near	 SEG_A:0357
+LOC_16				  Near	 SEG_A:03FF
+LOC_18				  Near	 SEG_A:0430
+LOC_19				  Near	 SEG_A:0462
+LOC_2				  Near	 SEG_A:007D
+LOC_20				  Near	 SEG_A:048E
+LOC_22				  Near	 SEG_A:04B7
+LOC_23				  Near	 SEG_A:04C8
+LOC_24				  Near	 SEG_A:04E4
+LOC_25				  Near	 SEG_A:0528
+LOC_26				  Near	 SEG_A:05A8
+LOC_29				  Near	 SEG_A:0650
+LOC_3				  Near	 SEG_A:008B
+LOC_30				  Near	 SEG_A:0662
+LOC_31				  Near	 SEG_A:0672
+LOC_34				  Near	 SEG_A:070C
+LOC_35				  Near	 SEG_A:0718
+LOC_38				  Near	 SEG_A:073C
+LOC_5				  Near	 SEG_A:00B5
+LOC_6				  Near	 SEG_A:00DE
+LOC_7				  Near	 SEG_A:00F4
+LOC_8				  Near	 SEG_A:01BA
+LOC_9				  Near	 SEG_A:0207
+START				  Near	 SEG_A:0000
+TARGET				  Number 5432
+WIZARD_FUNC_2			  Near	 SEG_A:00BC
+WIZARD_FUNC_4			  Near	 SEG_A:05B6
+WIZARD_MULTIPLY			  Near	 SEG_A:0648
+WIZARD_PROCESS_LOOP		  Near	 SEG_A:0090
+WIZARD_PROCESS_LOOP_2		  Near	 SEG_A:04A0
+WIZARD_PROCESS_LOOP_3		  Near	 SEG_A:05C3
+WIZARD_SCAN_LOOP		  Near	 SEG_A:070C
+ZR2_15				  Far	 SEG_A:0000
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:21	    Page 28
+Symbol Table
+
+
+
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  122A Byte	  Public
+

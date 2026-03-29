@@ -1,0 +1,817 @@
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 1
+game.asm
+
+
+
+      1
+      2
+      3				     ;==========================================================================
+      4				     ;
+      5				     ;	GAME.BIN - Main	Game Initialization & Resource Loader
+      6				     ;
+      7				     ;	Loaded by zeliad.exe into memory, then called to start the game.
+      8				     ;	Loads SAR archive chunks, initializes graphics/sound drivers,
+      9				     ;	sets up	palettes, and jumps to the main	gameplay loop.
+     10				     ;
+     11				     ;	Code type: zero	start (loaded at base of segment, runs from offset 0)
+     12				     ;	Created:   16-Feb-26
+     13				     ;	Passes:	   9	      Analysis Options on: none
+     14				     ;
+     15				     ;==========================================================================
+     16
+     17	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     18
+     19				     include  srmacros.inc
+1    20
+1    21				     ; Macros which may	be required for	proper re-assembly
+1    22
+1    23
+1    24
+1    25
+1    26
+1    27				     ;-----------------------------------------------------------------------------
+1    28				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    29				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    30				     ; instruction it uses a near jump or call.
+1    31
+1    32				     calls	     macro   dummy1, dummy2, slocation
+1    33						     db	     9Ah		     ; forced call far instruction
+1    34						     dw	     offset slocation, seg slocation
+1    35				     endm
+1    36
+1    37				     jmps	     macro   dummy1, dummy2, jlocation
+1    38						     db	     0EAh		     ; forced jump far instruction
+1    39						     dw	     offset jlocation, seg jlocation
+1    40				     endm
+1    41
+1    42
+1    43
+1    44
+1    45				     ;-----------------------------------------------------------------------------
+1    46				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    47				     ;	subroutine in the same segment as:
+1    48				     ;
+1    49				     ;		     PUSH    CS
+1    50				     ;		     CALL    near
+1    51				     ;
+1    52				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    53				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    54				     ;	macros are used	to code	the same information.  In other	words, the binary
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 2
+game.asm
+
+
+
+1    55				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    56				     ;	are used!  (macro CALLF)
+1    57				     ;
+1    58
+1    59				     callf	     macro   location
+1    60						     push    cs
+1    61						     call    near ptr location
+1    62				     endm
+1    63
+1    64				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    65				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    66
+1    67				     callfx	     macro   location
+1    68						     push    cs
+1    69						     db	     3Eh
+1    70						     call    near ptr location
+1    71				     endm
+1    72
+1    73
+1    74				     ;-----------------------------------------------------------------------------
+1    75				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    76				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    77				     ;	reconstructs a near jump for these cases.
+1    78
+1    79				     jmpn	     macro   location
+1    80						     db	     0E9h
+1    81						     dw	     offset location-$-2
+1    82				     endm
+1    83
+1    84
+1    85
+     86
+     87
+     88				     ; External	references - addresses in other	loaded segments
+     89
+     90	      =	18AB		     music_player_fn equ     18ABh		     ; Music player function
+     91	      =	201C		     gfx_call_a	     equ     201Ch		     ; Graphics	driver call A
+     92	      =	201E		     gfx_call_b	     equ     201Eh		     ; Graphics	driver call B
+     93	      =	2020		     gfx_call_c	     equ     2020h		     ; Graphics	driver call C
+     94	      =	203E		     sound_load_track_fn equ 203Eh		     ; Sound driver: load/init music track
+     95	      =	3000		     loaded_code_a   equ     3000h		     ; Loaded chunk code entry A
+     96	      =	37A4		     tile_gfx_base   equ     37A4h		     ; Tile graphics base address
+     97	      =	3EA4		     font_gfx_base   equ     3EA4h		     ; Font graphics base address
+     98	      =	6000		     loaded_code_b   equ     6000h		     ; Loaded chunk code entry B
+     99	      =	6002		     loaded_code_b_fn equ    6002h		     ; Loaded chunk function B
+    100				     ; zeliad loads game.bin at	this offset in the game	segment.
+    101				     ; Using GAME_CODE_BASE + (offset label) makes these auto-update
+    102				     ; when code is added or removed above each	label.
+    103	      =	A000		     GAME_CODE_BASE  equ     0A000h
+    104	      =	2000		     DRIVER_TEST_BASE equ 02000h
+    105	      =	OFFSET SEG_A:23D3    test_driver_equ equ DRIVER_TEST_BASE + (offset level_system_ref_lbl)
+    106	      =	OFFSET SEG_A:A288    gfx_mode_tbl_ega equ    GAME_CODE_BASE + (offset gfx_mode_tbl_ega_lbl)
+    107	      =	OFFSET SEG_A:A2D1    gfx_mode_tbl_cga equ    GAME_CODE_BASE + (offset gfx_mode_tbl_cga_lbl)
+    108	      =	OFFSET SEG_A:A31A    gfx_mode_tbl_all equ    GAME_CODE_BASE + (offset gfx_mode_tbl_all_lbl)
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 3
+game.asm
+
+
+
+    109	      =	OFFSET SEG_A:A3D3    level_system_ref equ    GAME_CODE_BASE + (offset level_system_ref_lbl)
+    110	      =	OFFSET SEG_A:A3F2    level_data_ref  equ     GAME_CODE_BASE + (offset level_data_ref_lbl)
+    111	      =	OFFSET SEG_A:A456    palette_base_tbl equ    GAME_CODE_BASE + (offset palette_base_tbl_lbl)
+    112	      =	OFFSET SEG_A:A470    game_init_fn    equ     GAME_CODE_BASE + (offset game_init_fn_lbl)
+    113	      =	OFFSET SEG_A:A474    save_mode_flag  equ     GAME_CODE_BASE + (offset save_mode_flag_lbl)
+    114	      =	OFFSET SEG_A:A474    level_chunk_ref equ     GAME_CODE_BASE + (offset save_mode_flag_lbl)
+    115	      =	C000		     save_data_base  equ     0C000h		     ; Save data load address
+    116
+    117				     ; Game state variables (0xFF00+ range, shared with	zeliad.exe)
+    118	      =	FF08		     gvar_timer_ticks equ    0FF08h		     ; Timer tick counter
+    119	      =	FF14		     gvar_game_phase equ     0FF14h		     ; Current game phase / graphics mode
+    120	      =	FF36		     gvar_music_vol  equ     0FF36h		     ; Music volume setting
+    121	      =	FF38		     gvar_music_a    equ     0FF38h		     ; Music state A
+    122	      =	FF39		     gvar_music_b    equ     0FF39h		     ; Music state B
+    123	      =	FF3A		     gvar_music_c    equ     0FF3Ah		     ; Music state C
+    124	      =	FF3C		     gvar_palette_st equ     0FF3Ch		     ; Palette state
+    125	      =	FF3D		     gvar_palette_a  equ     0FF3Dh		     ; Palette value A
+    126	      =	FF3E		     gvar_palette_b  equ     0FF3Eh		     ; Palette value B
+    127	      =	FF40		     gvar_debug_mode equ     0FF40h		     ; Debug mode
+    128	      =	FF42		     gvar_debug_val  equ     0FF42h		     ; Debug value
+    129	      =	FF43		     gvar_joystick   equ     0FF43h		     ; Joystick	state
+    130	      =	FF44		     gvar_joy_data   equ     0FF44h		     ; Joystick	data (7	bytes)
+    131	      =	FF4B		     gvar_joy_count  equ     0FF4Bh		     ; Joystick	count
+    132	      =	FF74		     gvar_volume_a   equ     0FF74h		     ; Volume setting A
+    133	      =	FF77		     gvar_volume_b   equ     0FF77h		     ; Volume setting B
+    134
+    135	0000			     seg_a	     segment byte public
+    136						     assume  cs:seg_a, ds:seg_a
+    137
+    138
+    139						     org     0
+    140
+    141				     ;==========================================================================
+    142				     ;
+    143				     ;	Game Entry Point
+    144				     ;
+    145				     ;	Called from zeliad.exe with AX = mode flag:
+    146				     ;	  AX = 0      New game
+    147				     ;	  AX = 0xFFFF Load saved game
+    148				     ;
+    149				     ;	Initialization flow:
+    150				     ;	  1. Load SAR chunk loader / jump table
+    151				     ;	  2. Clear all game state variables
+    152				     ;	  3. Load graphics driver for current video mode
+    153				     ;	  4. Branch: new game vs. load save
+    154				     ;	  5. Load all game subsystems (physics,	combat,	AI, etc.)
+    155				     ;	  6. Initialize	palette, music,	level data
+    156				     ;	  7. Jump to main game loop
+    157				     ;
+    158				     ;==========================================================================
+    159
+    160	0000			     game	     proc    far
+    161
+    162	0000			     start:
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 4
+game.asm
+
+
+
+    163	0000  2E: A3 A474r			     mov     cs:save_mode_flag,ax    ; Save new/load flag
+    164	0004  8C C8				     mov     ax,cs
+    165	0006  8E D8				     mov     ds,ax
+    166	0008  0E				     push    cs
+    167	0009  07				     pop     es
+    168
+    169						     ; Load SAR	chunk loader from zelres2
+    170	000A  BF F500				     mov     di,0F500h
+    171	000D  BE A21D				     mov     si,0A21Dh		     ; Chunk ref for loader code
+    172	0010  B0 02				     mov     al,2		     ; Archive 2 = zelres2
+    173	0012  2E: FF 16	010C			     call    word ptr cs:[10Ch]	     ; call chunk_load()
+    174
+    175						     ; Fix up loaded code's jump table (relocate pointers)
+    176	0017  26: 01 3D				     add     es:[di],di
+    177	001A  26: 01 7D	02			     add     es:[di+2],di
+    178	001E  26: 01 7D	04			     add     es:[di+4],di
+    179
+    180						     ; Call loaded chunk initialization
+    181	0022  2E: FF 16	0120			     call    word ptr cs:[120h]
+    182
+    183						     ; Clear all game state variables
+    184	0027  32 C0				     xor     al,al
+    185	0029  A2 FF39				     mov     ds:gvar_music_b,al
+    186	002C  A2 FF3A				     mov     ds:gvar_music_c,al
+    187	002F  A2 FF43				     mov     ds:gvar_joystick,al
+    188	0032  A2 FF44				     mov     ds:gvar_joy_data,al
+    189	0035  A2 FF3C				     mov     ds:gvar_palette_st,al
+    190	0038  A2 FF3D				     mov     ds:gvar_palette_a,al
+    191	003B  A2 FF38				     mov     ds:gvar_music_a,al
+    192	003E  A2 FF36				     mov     ds:gvar_music_vol,al
+    193	0041  A2 FF3E				     mov     ds:gvar_palette_b,al
+    194	0044  A2 FF4B				     mov     ds:gvar_joy_count,al
+    195	0047  A2 FF08				     mov     ds:gvar_timer_ticks,al
+    196	004A  A2 00E7				     mov     byte ptr ds:[0E7h],al   ; Unknown state var
+    197	004D  A2 FF74				     mov     ds:gvar_volume_a,al
+    198	0050  A2 FF77				     mov     ds:gvar_volume_b,al
+    199	0053  A2 FF40				     mov     ds:gvar_debug_mode,al
+    200	0056  A2 FF42				     mov     ds:gvar_debug_val,al
+    201
+    202						     ; Load graphics driver chunk for current video mode
+    203	0059  8C C8				     mov     ax,cs
+    204	005B  8E C0				     mov     es,ax
+    205	005D  33 DB				     xor     bx,bx
+    206	005F  8A 1E FF14			     mov     bl,ds:gvar_game_phase   ; BL = graphics mode index
+    207	0063  03 DB				     add     bx,bx
+    208	0065  8B B7 A31Ar			     mov     si,ds:gfx_mode_tbl_all[bx]	; SI = chunk ref for this mode
+    209	0069  BF 3000				     mov     di,3000h		     ; Load to offset 0x3000
+    210	006C  B0 03				     mov     al,3		     ; Archive 3 = zelres3
+    211	006E  2E: FF 16	010C			     call    word ptr cs:[10Ch]	     ; Load graphics driver chunk
+    212
+    213						     ; Call graphics driver init
+    214	0073  2E: FF 16	3000			     call    word ptr cs:loaded_code_a
+    215
+    216						     ; Check: new game or load save?
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 5
+game.asm
+
+
+
+    217				     ;*		     cmp     word ptr cs:save_mode_flag,0FFFFh
+    218	0078  2E 83 3E 74 A4 FF			     db	      2Eh, 83h,	3Eh, 74h,0A4h,0FFh   ;	Fixup -	byte match
+    219	007E  74 17				     jz	     start_new_game
+    220
+    221						     ; --- LOAD	SAVED GAME ---
+    222	0080  2E: C6 06	FF77 FF			     mov     byte ptr cs:gvar_volume_b,0FFh
+    223	0086  BE A27B				     mov     si,0A27Bh		     ; Saved game chunk	ref
+    224	0089  BF 6000				     mov     di,6000h
+    225	008C  B0 03				     mov     al,3		     ; Archive 3
+    226	008E  2E: FF 16	010C			     call    word ptr cs:[10Ch]	     ; Load save handler
+    227	0093  FF 26 6000			     jmp     word ptr ds:loaded_code_b ; Jump to save loader
+    228
+    229	0097			     start_new_game:
+    230						     ; --- NEW GAME ---
+    231	0097  E8 034B				     call    set_vga_palette
+    232
+    233						     ; Load main game graphics driver
+    234	009A  8C C8				     mov     ax,cs
+    235	009C  8E C0				     mov     es,ax
+    236	009E  33 DB				     xor     bx,bx
+    237	00A0  8A 1E FF14			     mov     bl,ds:gvar_game_phase
+    238	00A4  03 DB				     add     bx,bx
+    239	00A6  8B B7 A2D1r			     mov     si,ds:gfx_mode_tbl_cga[bx]
+    240	00AA  BF 3000				     mov     di,3000h
+    241	00AD  B0 03				     mov     al,3
+    242	00AF  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    243
+    244						     ; Load gameplay code chunk
+    245	00B4  BE A270				     mov     si,0A270h
+    246	00B7  BF 6000				     mov     di,6000h
+    247	00BA  B0 03				     mov     al,3
+    248	00BC  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    249
+    250						     ; Load tile graphics (+0x2000 segment)
+    251	00C1  8C C8				     mov     ax,cs
+    252	00C3  05 2000				     add     ax,2000h
+    253	00C6  8E C0				     mov     es,ax
+    254	00C8  33 DB				     xor     bx,bx
+    255	00CA  8A 1E FF14			     mov     bl,ds:gvar_game_phase
+    256	00CE  03 DB				     add     bx,bx
+    257	00D0  8B B7 A288r			     mov     si,ds:gfx_mode_tbl_ega[bx]
+    258	00D4  BF 9000				     mov     di,9000h
+    259	00D7  B0 03				     mov     al,3
+    260	00D9  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    261
+    262						     ; Load more graphics data
+    263	00DE  BE A264				     mov     si,0A264h
+    264	00E1  BF C000				     mov     di,0C000h
+    265	00E4  B0 03				     mov     al,3
+    266	00E6  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    267
+    268						     ; Load combat/physics system (+0x1000 segment)
+    269	00EB  8C C8				     mov     ax,cs
+    270	00ED  05 1000				     add     ax,1000h
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 6
+game.asm
+
+
+
+    271	00F0  8E C0				     mov     es,ax
+    272	00F2  BE A23F				     mov     si,0A23Fh
+    273	00F5  BF C000				     mov     di,0C000h
+    274	00F8  B0 03				     mov     al,3
+    275	00FA  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    276
+    277						     ; Load enemy AI / animation system
+    278	00FF  8C C8				     mov     ax,cs
+    279	0101  05 1000				     add     ax,1000h
+    280	0104  8E C0				     mov     es,ax
+    281	0106  BE A233				     mov     si,0A233h
+    282	0109  BF E200				     mov     di,0E200h
+    283	010C  B0 02				     mov     al,2		     ; Archive 2 = zelres2
+    284	010E  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    285
+    286						     ; Fix up loaded enemy system jump table (7	entries)
+    287	0113  26: 01 3D				     add     es:[di],di
+    288	0116  26: 01 7D	02			     add     es:[di+2],di
+    289	011A  26: 01 7D	04			     add     es:[di+4],di
+    290	011E  26: 01 7D	06			     add     es:[di+6],di
+    291	0122  26: 01 7D	08			     add     es:[di+8],di
+    292	0126  26: 01 7D	0A			     add     es:[di+0Ah],di
+    293	012A  26: 01 7D	0C			     add     es:[di+0Ch],di
+    294
+    295						     ; Load sprite system (+0x2000 segment)
+    296	012E  8C C8				     mov     ax,cs
+    297	0130  05 2000				     add     ax,2000h
+    298	0133  8E C0				     mov     es,ax
+    299	0135  BF 0000				     mov     di,0
+    300	0138  BE A24C				     mov     si,0A24Ch
+    301	013B  B0 02				     mov     al,2
+    302	013D  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    303
+    304						     ; Load input/UI system
+    305	0142  8C C8				     mov     ax,cs
+    306	0144  05 2000				     add     ax,2000h
+    307	0147  8E C0				     mov     es,ax
+    308	0149  BE A258				     mov     si,0A258h
+    309	014C  BF 1800				     mov     di,1800h
+    310	014F  B0 02				     mov     al,2
+    311	0151  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    312
+    313						     ; Fix up input system jump	table (3 entries)
+    314	0156  26: 01 3D				     add     es:[di],di
+    315	0159  26: 01 7D	02			     add     es:[di+2],di
+    316	015D  26: 01 7D	04			     add     es:[di+4],di
+    317
+    318						     ; Load SAR	archive	(zelres1 opening data)
+    319	0161  8A 26 0092			     mov     ah,byte ptr ds:[92h]    ; Archive number from config
+    320	0165  B0 04				     mov     al,4		     ; Function	4 = load archive
+    321	0167  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    322
+    323						     ; Load level/world	system (+0x3000	segment)
+    324	016C  8C C8				     mov     ax,cs
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 7
+game.asm
+
+
+
+    325	016E  8E D8				     mov     ds,ax
+    326	0170  05 3000				     add     ax,3000h
+    327	0173  A3 A472r				     mov     word ptr ds:game_init_fn+2,ax ; Set segment for game init
+    328	0176  8E C0				     mov     es,ax
+    329	0178  BF 0000				     mov     di,0
+    330	017B  BE A228				     mov     si,0A228h
+    331	017E  B0 03				     mov     al,3
+    332	0180  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    333
+    334						     ; Call game initialization	(level setup)
+    335	0185  A0 FF14				     mov     al,ds:gvar_game_phase
+    336	0188  1E				     push    ds
+    337	0189  FF 1E A470r			     call    dword ptr ds:game_init_fn
+    338	018D  1F				     pop     ds
+    339
+    340						     ; Initialize music	system
+    341	018E  E8 0214				     call    load_music_tracks
+    342
+    343						     ; Initialize graphics driver systems
+    344	0191  8C C8				     mov     ax,cs
+    345	0193  8E D8				     mov     ds,ax
+    346	0195  F6 06 0092 FF			     test    byte ptr ds:[92h],0FFh
+    347	019A  74 0B				     jz	     skip_gfx_init_a
+    348	019C  A0 0092				     mov     al,byte ptr ds:[92h]
+    349	019F  BB 18AB				     mov     bx,music_player_fn
+    350	01A2  2E: FF 16	201C			     call    word ptr cs:gfx_call_a
+    351	01A7			     skip_gfx_init_a:
+    352	01A7  F6 06 0093 FF			     test    byte ptr ds:[93h],0FFh
+    353	01AC  74 0B				     jz	     skip_gfx_init_b
+    354	01AE  A0 0093				     mov     al,byte ptr ds:[93h]
+    355	01B1  BB 3EA4				     mov     bx,font_gfx_base
+    356	01B4  2E: FF 16	2020			     call    word ptr cs:gfx_call_c
+    357	01B9			     skip_gfx_init_b:
+    358	01B9  F6 06 009D FF			     test    byte ptr ds:[9Dh],0FFh
+    359	01BE  74 0B				     jz	     skip_gfx_init_c
+    360	01C0  A0 009D				     mov     al,byte ptr ds:[9Dh]
+    361	01C3  BB 37A4				     mov     bx,tile_gfx_base
+    362	01C6  2E: FF 16	201E			     call    word ptr cs:gfx_call_b
+    363	01CB			     skip_gfx_init_c:
+    364
+    365						     ; Load first level	chunks
+    366	01CB  2E: 8A 26	00C4			     mov     ah,byte ptr cs:[0C4h]   ; Level/area number
+    367	01D0  B0 01				     mov     al,1		     ; Function	1 = load level
+    368	01D2  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    369
+    370						     ; Set up level rendering
+    371	01D7  8C C8				     mov     ax,cs
+    372	01D9  8E D8				     mov     ds,ax
+    373	01DB  05 1000				     add     ax,1000h
+    374	01DE  8E C0				     mov     es,ax
+    375	01E0  2E: 8B 36	C000			     mov     si,cs:save_data_base
+    376	01E5  AC				     lodsb
+    377	01E6  56				     push    si
+    378	01E7  D0 E8				     shr     al,1
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 8
+game.asm
+
+
+
+    379	01E9  24 1F				     and     al,1Fh
+    380	01EB  2E: A2 00C8			     mov     byte ptr cs:[0C8h],al   ; Store level tileset index
+    381	01EF  B1 0B				     mov     cl,0Bh
+    382	01F1  F6 E1				     mul     cl			     ; Calculate chunk ref offset
+    383	01F3  8B F0				     mov     si,ax
+    384	01F5  81 C6 A363			     add     si,0A363h		     ; Level tileset chunk refs
+    385	01F9  BF 3000				     mov     di,3000h
+    386	01FC  B0 05				     mov     al,5		     ; Archive 5?
+    387	01FE  2E: FF 16	010C			     call    word ptr cs:[10Ch]	     ; Load tileset
+    388
+    389						     ; Load level map data
+    390	0203  5E				     pop     si
+    391	0204  AC				     lodsb
+    392	0205  B1 0B				     mov     cl,0Bh
+    393	0207  F6 E1				     mul     cl
+    394	0209  8B F0				     mov     si,ax
+    395	020B  81 C6 A38F			     add     si,0A38Fh		     ; Level map chunk refs
+    396	020F  BF 4000				     mov     di,4000h
+    397	0212  B0 02				     mov     al,2		     ; Archive 2
+    398	0214  2E: FF 16	010C			     call    word ptr cs:[10Ch]	     ; Load level map
+    399
+    400						     ; Jump to main game loop!
+    401	0219  FF 26 6002			     jmp     word ptr ds:loaded_code_b_fn
+    402
+    403				     ;==========================================================================
+    404				     ;	File Reference Table
+    405				     ;
+    406				     ;	Original development filenames with chunk number associations.
+    407				     ;	Format:	[chunk_num_byte] 'filename.ext'	[null] [flags]
+    408				     ;	These strings are vestigial - not used at runtime.
+    409				     ;==========================================================================
+    410
+    411	021D  00				     db	     0
+    412	021E  0D 66 6F 6E 74 2E	67+		     db	     0Dh, 'font.grp' ; Chunk 13: bitmap	font
+    413	      72 70
+    414	0227  00 01				     db	     0,	1
+    415	0229  08 6D 6F 6C 65 2E	62+		     db	     8,	'mole.bin'	     ; Chunk 8:	mole enemy data
+    416	      69 6E
+    417	0232  00 01 1C				     db	      00h, 01h,	1Ch
+    418	0235  69 74 65 6D 70 2E	67+		     db	     'itemp.grp'	     ; Item panel graphics
+    419	      72 70
+    420	023E  00 01 02				     db	     0,	1, 2
+    421	0241  73 65 6C 65 63 74	2E+		     db	     'select.bin'	     ; Selection UI data
+    422	      62 69 6E
+    423	024B  00 01 1D				     db	      00h, 01h,	1Dh
+    424	024E  6D 61 67 69 63 2E	67+		     db	     'magic.grp'	     ; Magic effect graphics
+    425	      72 70
+    426	0257  00 01				     db	     0,	1
+    427	0259  1B 73 77 6F 72 64	2E+		     db	     1Bh, 'sword.grp'	     ; Chunk 27: sword/weapon sprite
+    428	      67 72 70
+    429	0263  00 01 01				     db	     0,	1, 1
+    430	0266  66 69 67 68 74 2E	62+		     db	     'fight.bin'	     ; Combat data
+    431	      69 6E
+    432	026F  00 00 07				     db	     0,	0, 7
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 9
+game.asm
+
+
+
+    433	0272  74 6F 77 6E 2E 62	69+		     db	     'town.bin'		     ; Town data
+    434	      6E
+    435	027A  00 00 01				     db	     0,	0, 1
+    436	027D  6F 70 64 65 6D 6F	2E+		     db	     'opdemo.bin'	     ; Opening demo
+    437	      62 69 6E
+    438	0287  00				     db	      00h
+    439	0288			     gfx_mode_tbl_ega_lbl    label   word
+    440	0288  94 A2 A0 A2 A0			     db	      94h,0A2h,0A0h,0A2h,0A0h
+    441	028D  A2 AC A2 B8 A2 C5			     db	     0A2h,0ACh,0A2h,0B8h,0A2h,0C5h
+    442	0293  A2 01 03				     db	     0A2h, 01h,	03h
+    443	0296  67 66 65 67 61 2E	62+		     db	     'gfega.bin'	     ; Chunk 3:	font/frame (EGA)
+    444	      69 6E
+    445	029F  00 01 04				     db	     0,	1, 4
+    446	02A2  67 66 63 67 61 2E	62+		     db	     'gfcga.bin'	     ; Chunk 4:	font/frame (CGA)
+    447	      69 6E
+    448	02AB  00 01 05				     db	     0,	1, 5
+    449	02AE  67 66 68 67 63 2E	62+		     db	     'gfhgc.bin'	     ; Chunk 5:	font/frame (HGC)
+    450	      69 6E
+    451	02B7  00 01 07				     db	     0,	1, 7
+    452	02BA  67 66 6D 63 67 61	2E+		     db	     'gfmcga.bin'	     ; Chunk 7:	font/frame (MCGA)
+    453	      62 69 6E
+    454	02C4  00 01 06				     db	     0,	1, 6
+    455	02C7  67 66 74 67 61 2E	62+		     db	     'gftga.bin'	     ; Chunk 6:	font/frame (TGA)
+    456	      69 6E
+    457	02D0  00				     db	      00h
+    458	02D1			     gfx_mode_tbl_cga_lbl    label   word
+    459	02D1  DD A2 E9 A2 E9			     db	     0DDh,0A2h,0E9h,0A2h,0E9h
+    460	02D6  A2 F5 A2 01 A3 0E			     db	     0A2h,0F5h,0A2h, 01h,0A3h, 0Eh
+    461	02DC  A3 00				     db	     0A3h, 00h
+    462	02DE  08 67 74 65 67 61	2E+		     db	     8,	'gtega.bin'	     ; Chunk 8:	tile graphics (EGA)
+    463	      62 69 6E
+    464	02E8  00 00				     db	     0,	0
+    465	02EA  09 67 74 63 67 61	2E+		     db	     9,	'gtcga.bin'	     ; Chunk 9:	tile graphics (CGA)
+    466	      62 69 6E
+    467	02F4  00 00				     db	     0,	0
+    468	02F6  0A 67 74 68 67 63	2E+		     db	     0Ah, 'gthgc.bin'	     ; Chunk 10: tile graphics (HGC)
+    469	      62 69 6E
+    470	0300  00 00				     db	     0,	0
+    471	0302  0C 67 74 6D 63 67	61+		     db	     0Ch, 'gtmcga.bin'	     ; Chunk 12: tile graphics (MCGA)
+    472	      2E 62 69 6E
+    473	030D  00 00 0B				     db	      00h, 00h,	0Bh
+    474	0310  67 74 74 67 61 2E	62+		     db	     'gttga.bin'	     ; Chunk 11: tile graphics (TGA)
+    475	      69 6E
+    476	0319  00				     db	      00h
+    477	031A			     gfx_mode_tbl_all_lbl    label   word
+    478	031A  26 A3 32 A3 32			     db	      26h,0A3h,	32h,0A3h, 32h
+    479	031F  A3 3E A3 4A A3 57			     db	     0A3h, 3Eh,0A3h, 4Ah,0A3h, 57h
+    480	0325  A3 00 02				     db	     0A3h, 00h,	02h
+    481	0328  67 64 65 67 61 2E	62+		     db	     'gdega.bin'	     ; Chunk 2:	graphics driver	(EGA)
+    482	      69 6E
+    483	0331  00 00 03				     db	     0,	0, 3
+    484	0334  67 64 63 67 61 2E	62+		     db	     'gdcga.bin'	     ; Chunk 3:	graphics driver	(CGA)
+    485	      69 6E
+    486	033D  00 00 04				     db	     0,	0, 4
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 10
+game.asm
+
+
+
+    487	0340  67 64 68 67 63 2E	62+		     db	     'gdhgc.bin'	     ; Chunk 4:	graphics driver	(HGC)
+    488	      69 6E
+    489	0349  00 00 06				     db	     0,	0, 6
+    490	034C  67 64 6D 63 67 61	2E+		     db	     'gdmcga.bin'	     ; Chunk 6:	graphics driver	(MCGA)
+    491	      62 69 6E
+    492	0356  00 00 05				     db	     0,	0, 5
+    493	0359  67 64 74 67 61 2E	62+		     db	     'gdtga.bin'	     ; Chunk 5:	graphics driver	(TGA)
+    494	      69 6E
+    495	0362  00 01				     db	     0,	1
+    496	0364  2F 4D 47 54 31 2E	4D+		     db	     '/MGT1.MSD'	     ; MT-32 music track 1
+    497	      53 44
+    498	036D  00 01				     db	     0,	1
+    499	036F  31 55 47 4D 31 2E	4D+		     db	     '1UGM1.MSD'	     ; General MIDI music track	1
+    500	      53 44
+    501	0378  00 01				     db	     0,	1
+    502	037A  30 4D 47 54 32 2E	4D+		     db	     '0MGT2.MSD'	     ; MT-32 music track 2
+    503	      53 44
+    504	0383  00 01				     db	     0,	1
+    505	0385  32 55 47 4D 32 2E	4D+		     db	     '2UGM2.MSD'	     ; General MIDI music track	2
+    506	      53 44
+    507	038E  00 01 1E				     db	      00h, 01h,	1Eh
+    508	0391  4D 4D 41 4E 2E 47	52+		     db	     'MMAN.GRP'		     ; Chunk 30: manual	graphics (mono)
+    509	      50
+    510	0399  00 01 1F				     db	      00h, 01h,	1Fh
+    511	039C  43 4D 41 4E 2E 47	52+		     db	     'CMAN.GRP'		     ; Chunk 31: manual	graphics (color)
+    512	      50
+    513	03A4  00				     db	     0
+    514
+    515	03A5			     game	     endp
+    516
+    517
+    518				     ;==========================================================================
+    519				     ;	load_music_tracks - Load all configured	music tracks
+    520				     ;
+    521				     ;	Reads music track count	from [ds:0xA0],	iterates through track table
+    522				     ;	at level_data_ref (0xA3F2), and	calls sound driver track-load fn for each.
+    523				     ;	Track 8	gets special flag (AL=1) for background	music.
+    524				     ;==========================================================================
+    525
+    526	03A5			     load_music_tracks proc  near
+    527	03A5  F6 06 00A0 FF			     test    byte ptr ds:[0A0h],0FFh
+    528	03AA  75 01				     jnz     has_tracks
+    529	03AC  C3				     retn
+    530
+    531	03AD			     has_tracks:
+    532	03AD  8A 0E 00A0			     mov     cl,byte ptr ds:[0A0h]   ; Track count
+    533	03B1  32 ED				     xor     ch,ch
+    534	03B3  33 DB				     xor     bx,bx		     ; Track index
+    535
+    536	03B5			     load_track_loop:
+    537	03B5  51				     push    cx
+    538	03B6  53				     push    bx
+    539	03B7  8B D3				     mov     dx,bx
+    540	03B9  03 DB				     add     bx,bx
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 11
+game.asm
+
+
+
+    541	03BB  8B 9F A3D3r			     mov     bx,ds:level_system_ref[bx]	; Get track chunk ref
+    542	03BF  32 C0				     xor     al,al
+    543	03C1  83 FA 08				     cmp     dx,8		     ; Track 8 = background music
+    544	03C4  75 02				     jne     not_bg_music
+    545	03C6  B0 01				     mov     al,1		     ; Flag for	background track
+    546	03C8			     not_bg_music:
+    547	03C8  2E: FF 16	203E			     call    word ptr cs:sound_load_track_fn ; Load/init track via sound driver
+    548	03CD  5B				     pop     bx
+    549	03CE  43				     inc     bx
+    550	03CF  59				     pop     cx
+    551	03D0  E2 E3				     loop    load_track_loop
+    552
+    553	03D2  C3				     retn
+    554	03D3			     load_music_tracks endp
+    555
+    556						     ; Padding / unknown data
+    557	03D3			     level_system_ref_lbl    label   word
+    558	03D3  00 0F 00 3D 00 15			     db	      00h, 0Fh,	00h, 3Dh, 00h, 15h
+    559	03D9  00 37 00 1B 00 31			     db	      00h, 37h,	00h, 1Bh, 00h, 31h
+    560	03DF  00 21 00 2B 00			     db	      00h, 21h,	00h, 2Bh, 00h
+    561	03E4  26				     db	     26h
+    562
+    563
+    564				     ;==========================================================================
+    565				     ;	set_vga_palette	- Set VGA DAC palette based on graphics	mode
+    566				     ;
+    567				     ;	Uses gvar_game_phase as	index into mode-specific palette setup.
+    568				     ;	For MCGA mode: programs	64 VGA DAC registers (8	base colors x 8	shades)
+    569				     ;	using RGB triplets from	a base color table + shade offset table.
+    570				     ;==========================================================================
+    571
+    572	03E5			     set_vga_palette proc    near
+    573	03E5  8A 1E FF14			     mov     bl,ds:gvar_game_phase   ; Graphics	mode index
+    574	03E9  32 FF				     xor     bh,bh
+    575	03EB  03 DB				     add     bx,bx
+    576	03ED  2E: FF A7	A3F2r			     jmp     word ptr cs:level_data_ref[bx] ; Jump to mode handler
+    577	03F2			     set_vga_palette endp
+    578
+    579						     ; Jump table + palette setup code (mode-specific handlers)
+    580	03F2			     level_data_ref_lbl	     label   word
+    581	03F2  FE A3 1A A4 1A A4			     db	     0FEh,0A3h,	1Ah,0A4h, 1Ah,0A4h
+    582	03F8  6F A4 1B A4 6E A4			     db	      6Fh,0A4h,	1Bh,0A4h, 6Eh,0A4h
+    583
+    584						     ; EGA/CGA palette handler - set text mode and return
+    585	03FE  0E 07 BA 09 A4 B8			     db	      0Eh, 07h,0BAh, 09h,0A4h,0B8h
+    586	0404  02 10 CD 10 C3			     db	      02h, 10h,0CDh, 10h,0C3h
+    587
+    588						     ; Mode index table
+    589	0409  00				     db	      00h
+    590	040A  3F 24 12 1B 09 36			     db	      3Fh, 24h,	12h, 1Bh, 09h, 36h
+    591	0410  2D 38 07 04 02 03			     db	      2Dh, 38h,	07h, 04h, 02h, 03h
+    592	0416  01 06 05 00			     db	      01h, 06h,	05h, 00h
+    593
+    594						     ; MCGA palette setup: Programs 64 DAC registers
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 12
+game.asm
+
+
+
+    595						     ; Reads 8 base RGB	triplets, adds 8 shade offsets per base
+    596	041A  C3 0E				     db	     0C3h, 0Eh
+    597	041C  1F BE 56 A4 33 DB			     db	      1Fh,0BEh,	56h,0A4h, 33h,0DBh
+    598	0422  B9 08 00				     db	     0B9h, 08h,	00h
+    599
+    600				     ;	Inner palette loop: for	each base color	(8 iterations)
+    601	0425			     palette_base_loop:
+    602	0425  51				     push    cx
+    603	0426  AC				     lodsb			     ; Red base
+    604	0427  8A F0				     mov     dh,al
+    605	0429  AC				     lodsb			     ; Green base
+    606	042A  8A D0				     mov     dl,al
+    607	042C  AC				     lodsb			     ; Blue base
+    608	042D  8A E0				     mov     ah,al
+    609	042F  56				     push    si
+    610	0430  BE A456r				     mov     si,palette_base_tbl     ; Base RGB	color table (8 triplets)
+    611	0433  B9 0008				     mov     cx,8		     ; 8 shades	per base
+    612
+    613				     ;	For each shade:	add offset to base RGB,	program	DAC register
+    614	0436			     palette_shade_loop:
+    615	0436  51				     push    cx
+    616	0437  50				     push    ax
+    617	0438  52				     push    dx
+    618	0439  AC				     lodsb			     ; Red offset
+    619	043A  02 F0				     add     dh,al		     ; Final red
+    620	043C  AC				     lodsb			     ; Green offset
+    621	043D  02 C2				     add     al,dl
+    622	043F  8A E8				     mov     ch,al		     ; Final green
+    623	0441  AC				     lodsb			     ; Blue offset
+    624	0442  02 C4				     add     al,ah
+    625	0444  8A C8				     mov     cl,al		     ; Final blue
+    626	0446  B8 1010				     mov     ax,1010h
+    627	0449  CD 10				     int     10h		     ; VGA: Set	DAC register BX
+    628										     ;	DH=red,	CH=green, CL=blue
+    629	044B  43				     inc     bx			     ; Next register
+    630	044C  5A				     pop     dx
+    631	044D  58				     pop     ax
+    632	044E  59				     pop     cx
+    633	044F  E2 E5				     loop    palette_shade_loop
+    634
+    635	0451  5E				     pop     si
+    636	0452  59				     pop     cx
+    637	0453  E2 D0				     loop    palette_base_loop
+    638
+    639	0455  C3				     retn
+    640
+    641						     ; Default shade offsets (8	RGB triplets: black to white ramp)
+    642	0456			     palette_base_tbl_lbl    label   byte
+    643	0456  00 00 00 1F 1F 1F			     db	      00h, 00h,	00h, 1Fh, 1Fh, 1Fh
+    644	045C  1F 00 00 00 1F 00			     db	      1Fh, 00h,	00h, 00h, 1Fh, 00h
+    645	0462  00 1F 1F 00 00 1F			     db	      00h, 1Fh,	1Fh, 00h, 00h, 1Fh
+    646	0468  1F 1F 00 1F 00 1F			     db	      1Fh, 1Fh,	00h, 1Fh, 00h, 1Fh
+    647	046E  C3 C3				     db	     0C3h,0C3h
+    648	0470			     game_init_fn_lbl	     label   dword
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 13
+game.asm
+
+
+
+    649	0470  00 00 00 30			     db	      00h, 00h,	00h, 30h
+    650	0474			     save_mode_flag_lbl	     label   word
+    651	0474  00 00				     db	      00h, 00h
+    652
+    653	0476			     seg_a	     ends
+    654
+    655
+    656
+    657						     end     start
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 14
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/27/26"
+??FILENAME			  Text	 "game	  "
+??TIME				  Text	 "10:05:56"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 GAME
+@WORDSIZE			  Text	 2
+DRIVER_TEST_BASE		  Number 2000
+FONT_GFX_BASE			  Number 3EA4
+GAME				  Far	 SEG_A:0000
+GAME_CODE_BASE			  Number A000
+GAME_INIT_FN			  Number OFFSET	SEG_A:A470
+GAME_INIT_FN_LBL		  Dword	 SEG_A:0470
+GFX_CALL_A			  Number 201C
+GFX_CALL_B			  Number 201E
+GFX_CALL_C			  Number 2020
+GFX_MODE_TBL_ALL		  Number OFFSET	SEG_A:A31A
+GFX_MODE_TBL_ALL_LBL		  Word	 SEG_A:031A
+GFX_MODE_TBL_CGA		  Number OFFSET	SEG_A:A2D1
+GFX_MODE_TBL_CGA_LBL		  Word	 SEG_A:02D1
+GFX_MODE_TBL_EGA		  Number OFFSET	SEG_A:A288
+GFX_MODE_TBL_EGA_LBL		  Word	 SEG_A:0288
+GVAR_DEBUG_MODE			  Number FF40
+GVAR_DEBUG_VAL			  Number FF42
+GVAR_GAME_PHASE			  Number FF14
+GVAR_JOYSTICK			  Number FF43
+GVAR_JOY_COUNT			  Number FF4B
+GVAR_JOY_DATA			  Number FF44
+GVAR_MUSIC_A			  Number FF38
+GVAR_MUSIC_B			  Number FF39
+GVAR_MUSIC_C			  Number FF3A
+GVAR_MUSIC_VOL			  Number FF36
+GVAR_PALETTE_A			  Number FF3D
+GVAR_PALETTE_B			  Number FF3E
+GVAR_PALETTE_ST			  Number FF3C
+GVAR_TIMER_TICKS		  Number FF08
+GVAR_VOLUME_A			  Number FF74
+GVAR_VOLUME_B			  Number FF77
+HAS_TRACKS			  Near	 SEG_A:03AD
+LEVEL_CHUNK_REF			  Number OFFSET	SEG_A:A474
+LEVEL_DATA_REF			  Number OFFSET	SEG_A:A3F2
+LEVEL_DATA_REF_LBL		  Word	 SEG_A:03F2
+LEVEL_SYSTEM_REF		  Number OFFSET	SEG_A:A3D3
+LEVEL_SYSTEM_REF_LBL		  Word	 SEG_A:03D3
+LOADED_CODE_A			  Number 3000
+LOADED_CODE_B			  Number 6000
+LOADED_CODE_B_FN		  Number 6002
+LOAD_MUSIC_TRACKS		  Near	 SEG_A:03A5
+LOAD_TRACK_LOOP			  Near	 SEG_A:03B5
+MUSIC_PLAYER_FN			  Number 18AB
+Turbo Assembler	 Version 2.01	     03/27/26 10:05:56	    Page 15
+Symbol Table
+
+
+
+NOT_BG_MUSIC			  Near	 SEG_A:03C8
+PALETTE_BASE_LOOP		  Near	 SEG_A:0425
+PALETTE_BASE_TBL		  Number OFFSET	SEG_A:A456
+PALETTE_BASE_TBL_LBL		  Byte	 SEG_A:0456
+PALETTE_SHADE_LOOP		  Near	 SEG_A:0436
+SAVE_DATA_BASE			  Number C000
+SAVE_MODE_FLAG			  Number OFFSET	SEG_A:A474
+SAVE_MODE_FLAG_LBL		  Word	 SEG_A:0474
+SET_VGA_PALETTE			  Near	 SEG_A:03E5
+SKIP_GFX_INIT_A			  Near	 SEG_A:01A7
+SKIP_GFX_INIT_B			  Near	 SEG_A:01B9
+SKIP_GFX_INIT_C			  Near	 SEG_A:01CB
+SOUND_LOAD_TRACK_FN		  Number 203E
+START				  Near	 SEG_A:0000
+START_NEW_GAME			  Near	 SEG_A:0097
+TARGET				  Number 5432
+TEST_DRIVER_EQU			  Number OFFSET	SEG_A:23D3
+TILE_GFX_BASE			  Number 37A4
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  0476 Byte	  Public
+

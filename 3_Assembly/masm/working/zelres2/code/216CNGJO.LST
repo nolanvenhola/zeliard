@@ -1,0 +1,679 @@
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 1
+216CNGJO.asm
+
+
+
+      1
+      2
+      3				     ;==========================================================================
+      4				     ;
+      5				     ;	BOSS_BEHAVIORS - Code Module
+      6				     ;
+      7				     ;==========================================================================
+      8
+      9	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     10
+     11				     include  srmacros.inc
+1    12
+1    13				     ; Macros which may	be required for	proper re-assembly
+1    14
+1    15
+1    16
+1    17
+1    18
+1    19				     ;-----------------------------------------------------------------------------
+1    20				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    21				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    22				     ; instruction it uses a near jump or call.
+1    23
+1    24				     calls	     macro   dummy1, dummy2, slocation
+1    25						     db	     9Ah		     ; forced call far instruction
+1    26						     dw	     offset slocation, seg slocation
+1    27				     endm
+1    28
+1    29				     jmps	     macro   dummy1, dummy2, jlocation
+1    30						     db	     0EAh		     ; forced jump far instruction
+1    31						     dw	     offset jlocation, seg jlocation
+1    32				     endm
+1    33
+1    34
+1    35
+1    36
+1    37				     ;-----------------------------------------------------------------------------
+1    38				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    39				     ;	subroutine in the same segment as:
+1    40				     ;
+1    41				     ;		     PUSH    CS
+1    42				     ;		     CALL    near
+1    43				     ;
+1    44				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    45				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    46				     ;	macros are used	to code	the same information.  In other	words, the binary
+1    47				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    48				     ;	are used!  (macro CALLF)
+1    49				     ;
+1    50
+1    51				     callf	     macro   location
+1    52						     push    cs
+1    53						     call    near ptr location
+1    54				     endm
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 2
+216CNGJO.asm
+
+
+
+1    55
+1    56				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    57				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    58
+1    59				     callfx	     macro   location
+1    60						     push    cs
+1    61						     db	     3Eh
+1    62						     call    near ptr location
+1    63				     endm
+1    64
+1    65
+1    66				     ;-----------------------------------------------------------------------------
+1    67				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    68				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    69				     ;	reconstructs a near jump for these cases.
+1    70
+1    71				     jmpn	     macro   location
+1    72						     db	     0E9h
+1    73						     dw	     offset location-$-2
+1    74				     endm
+1    75
+1    76
+1    77
+     78
+     79
+     80				     ; The following equates show data references outside the range of the program.
+     81
+     82	      =	068E		     data_18e	     equ     68Eh		     ;*
+     83	      =	2000		     data_19e	     equ     2000h		     ;*
+     84	      =	2002		     data_20e	     equ     2002h		     ;*
+     85	      =	2008		     data_21e	     equ     2008h		     ;*
+     86	      =	2010		     data_22e	     equ     2010h		     ;*
+     87	      =	2012		     data_23e	     equ     2012h		     ;*
+     88	      =	2016		     data_24e	     equ     2016h		     ;*
+     89	      =	2018		     data_25e	     equ     2018h		     ;*
+     90	      =	2040		     data_26e	     equ     2040h		     ;*
+     91	      =	2044		     data_27e	     equ     2044h		     ;*
+     92	      =	3016		     data_28e	     equ     3016h		     ;*
+     93	      =	6004		     data_29e	     equ     6004h		     ;*
+     94	      =	A080		     data_30e	     equ     0A080h		     ;*
+     95	      =	A1CF		     data_31e	     equ     0A1CFh		     ;*
+     96	      =	A505		     data_32e	     equ     0A505h		     ;*
+     97	      =	FF1A		     data_33e	     equ     0FF1Ah		     ;*
+     98	      =	FF2C		     data_34e	     equ     0FF2Ch		     ;*
+     99	      =	FF4C		     data_35e	     equ     0FF4Ch		     ;*
+    100	      =	FF4E		     data_36e	     equ     0FF4Eh		     ;*
+    101	      =	FF4F		     data_37e	     equ     0FF4Fh		     ;*
+    102	      =	FF50		     data_38e	     equ     0FF50h		     ;*
+    103
+    104	0000			     seg_a	     segment byte public
+    105						     assume  cs:seg_a, ds:seg_a
+    106
+    107
+    108						     org     0
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 3
+216CNGJO.asm
+
+
+
+    109
+    110	0000			     zr2_16	     proc    far
+    111
+    112	0000			     start:
+    113	0000  10 05				     adc     [di],al
+    114	0002  00 00				     add     [bx+si],al
+    115	0004  04 A0				     add     al,0A0h
+    116	0006  2F				     das			     ; Decimal adjust
+    117	0007  A2 068E				     mov     ds:data_18e,al
+    118	000A  2C FF				     sub     al,0FFh
+    119	000C  BF 8000				     mov     di,8000h
+    120	000F  BE A2E1				     mov     si,0A2E1h
+    121	0012  B0 02				     mov     al,2
+    122	0014  2E: FF 16	010C			     call    word ptr cs:[10Ch]
+    123	0019  1E				     push    ds
+    124	001A  2E: 8E 1E	FF2C			     mov     ds,cs:data_34e
+    125	001F  BE 8000				     mov     si,8000h
+    126	0022  B9 0100				     mov     cx,100h
+    127	0025  2E: FF 16	2044			     call    word ptr cs:data_27e
+    128	002A  1F				     pop     ds
+    129	002B  C6 06 FF4E 00			     mov     byte ptr ds:data_36e,0
+    130	0030  C6 06 FF4F 00			     mov     byte ptr ds:data_37e,0
+    131	0035  2E: FF 16	2002			     call    word ptr cs:data_20e
+    132	003A  2E: FF 16	2012			     call    word ptr cs:data_23e
+    133	003F  BE A2EB				     mov     si,0A2EBh
+    134	0042  2E: FF 16	2010			     call    word ptr cs:data_22e
+    135	0047  E8 0019				     call    boss_func_1
+    136	004A  C7 06 FF4C A2F6			     mov     word ptr ds:data_35e,0A2F6h
+    137	0050			     loc_1:
+    138	0050  2E: FF 16	6004			     call    word ptr cs:data_29e
+    139	0055  3C FF				     cmp     al,0FFh
+    140	0057  74 05				     je	     loc_2		     ; Jump if equal
+    141	0059  E8 001D				     call    boss_func_2
+    142	005C  EB F2				     jmp     short loc_1
+    143	005E			     loc_2:
+    144	005E  2E: FF 26	2040			     jmp     word ptr cs:data_26e
+    145
+    146	0063			     zr2_16	     endp
+    147
+    148				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    149				     ;				    SUBROUTINE
+    150				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    151
+    152	0063			     boss_func_1	     proc    near
+    153	0063			     loc_3:
+    154	0063  E8 0148				     call    boss_process_loop
+    155	0066  BB 0D60				     mov     bx,0D60h
+    156	0069  B9 3637				     mov     cx,3637h
+    157	006C  B0 FF				     mov     al,0FFh
+    158	006E  2E: FF 16	2000			     call    word ptr cs:data_19e
+    159	0073  C6 06 A505 FF			     mov     byte ptr ds:data_32e,0FFh
+    160	0078  C3				     retn
+    161	0079			     boss_func_1	     endp
+    162
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 4
+216CNGJO.asm
+
+
+
+    163
+    164				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    165				     ;				    SUBROUTINE
+    166				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    167
+    168	0079			     boss_func_2	     proc    near
+    169	0079  8A D8				     mov     bl,al
+    170	007B  32 FF				     xor     bh,bh		     ; Zero register
+    171	007D  03 DB				     add     bx,bx
+    172	007F  2E: FF A7	A080			     jmp     word ptr cs:data_30e[bx]	     ;*
+    173	0084			     boss_func_2	     endp
+    174
+    175	0084  8A				     db	     8Ah
+    176	0085  A0		     data_1	     db	     0A0h
+    177	0086  A0BE		     data_2	     dw	     0A0BEh
+    178	0088  14 A1 2A A1 5F A1			     db	      14h,0A1h,	2Ah,0A1h, 5Fh,0A1h
+    179	008E  8A 1E				     db	      8Ah, 1Eh
+    180	0090  C006		     data_3	     dw	     0C006h
+    181	0092  FE CB 32 FF 03 DB			     db	     0FEh,0CBh,	32h,0FFh, 03h,0DBh
+    182	0098  8B 97 D1 A2 89			     db	      8Bh, 97h,0D1h,0A2h, 89h
+    183	009D  16		     data_4	     db	     16h
+    184	009E  06 A5 8B C2 32 D2			     db	      06h,0A5h,	8Bh,0C2h, 32h,0D2h
+    185	00A4  BF 08 A5 2E FF 16			     db	     0BFh, 08h,0A5h, 2Eh,0FFh, 16h
+    186	00AA  06				     db	      06h
+    187	00AB  60		     data_5	     db	     60h
+    188	00AC  8B 36 4C FF 56 C7			     db	      8Bh, 36h,	4Ch,0FFh, 56h,0C7h
+    189	00B2  4C06		     data_6	     dw	     4C06h
+    190	00B4  FF		     data_7	     db	     0FFh
+    191	00B5  08 A5 2E FF 16 04			     db	      08h,0A5h,	2Eh,0FFh, 16h, 04h
+    192	00BB  60 5E 89 36 4C FF			     db	      60h, 5Eh,	89h, 36h, 4Ch,0FFh
+    193	00C1  C3 BB 2B 2F B9 19			     db	     0C3h,0BBh,	2Bh, 2Fh,0B9h, 19h
+    194	00C7  0C B0 FF 2E FF 16			     db	      0Ch,0B0h,0FFh, 2Eh,0FFh, 16h
+    195	00CD  00 20 C7 06 54 FF			     db	      00h, 20h,0C7h, 06h, 54h,0FFh
+    196	00D3  2E 30 2E FF 16 08			     db	      2Eh, 30h,	2Eh,0FFh, 16h, 08h
+    197	00D9  60 9C BB 2B 2F B9			     db	      60h, 9Ch,0BBh, 2Bh, 2Fh,0B9h
+    198	00DF  19 0C 32 C0 2E FF			     db	      19h, 0Ch,	32h,0C0h, 2Eh,0FFh
+    199	00E5  16 00 20 9D C7 06			     db	      16h, 00h,	20h, 9Dh,0C7h, 06h
+    200	00EB  4C FF BD A3 73 01			     db	      4Ch,0FFh,0BDh,0A3h, 73h, 01h
+    201	00F1  C3 A1 06 A5 32 D2			     db	     0C3h,0A1h,	06h,0A5h, 32h,0D2h
+    202	00F7  2E FF 16 0A 60 C7			     db	      2Eh,0FFh,	16h, 0Ah, 60h,0C7h
+    203	00FD  06 4C FF 1A A4 73			     db	      06h, 4Ch,0FFh, 1Ah,0A4h, 73h
+    204	0103  01 C3				     db	      01h,0C3h
+    205	0105			     loc_4:
+    206	0105  88 16 0085r			     mov     data_1,dl
+    207	0109  A3 0086r				     mov     data_2,ax
+    208	010C  2E: FF 16	2016			     call    word ptr cs:data_24e
+    209	0111  C7 06 FF4C A483			     mov     word ptr ds:data_35e,0A483h
+    210	0117  C3				     retn
+    211	0118  C6 06				     db	     0C6h, 06h
+    212	011A  A505		     data_8	     dw	     0A505h
+    213	011C  00 32 C0				     db	      00h, 32h,0C0h
+    214	011F			     loc_5:
+    215	011F  50				     push    ax
+    216	0120  E8 0060				     call    boss_multiply
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 5
+216CNGJO.asm
+
+
+
+    217	0123  E8 004D				     call    boss_func_4
+    218	0126  58				     pop     ax
+    219	0127  FE C0				     inc     al
+    220	0129  3C 04				     cmp     al,4
+    221	012B  75 F2				     jne     loc_5		     ; Jump if not equal
+    222	012D  C3				     retn
+    223										     ;*	No entry point to code
+    224	012E  E8 0032				     call    boss_func_3
+    225	0131  2E: FF 16	2040			     call    word ptr cs:data_26e
+    226	0136  E8 002A				     call    boss_func_3
+    227	0139  E8 0027				     call    boss_func_3
+    228	013C  A1 00B2r				     mov     ax,data_6
+    229	013F  A3 0090r				     mov     data_3,ax
+    230	0142  2E: FF 16	2008			     call    word ptr cs:data_21e
+    231	0147  0E				     push    cs
+    232	0148  07				     pop     es
+    233	0149  BE 00B4r				     mov     si,offset data_7
+    234	014C  BF 00ABr				     mov     di,offset data_5
+    235	014F  B9 0007				     mov     cx,7
+    236	0152  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    237	0154  F6 06 009Dr FF			     test    data_4,0FFh
+    238	0159  74 05				     jz	     loc_6		     ; Jump if zero
+    239	015B  2E: FF 16	2018			     call    word ptr cs:data_25e
+    240	0160			     loc_6:
+    241	0160  E9 FF00				     jmp     loc_3
+    242
+    243				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    244				     ;				    SUBROUTINE
+    245				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    246
+    247	0163			     boss_func_3	     proc    near
+    248	0163  C6 06 FF1A 00			     mov     byte ptr ds:data_33e,0
+    249	0168			     loc_7:
+    250	0168  E8 00C8				     call    boss_scan_loop
+    251	016B  80 3E FF1A 96			     cmp     byte ptr ds:data_33e,96h
+    252	0170  72 F6				     jb	     loc_7		     ; Jump if below
+    253	0172  C3				     retn
+    254	0173			     boss_func_3	     endp
+    255
+    256
+    257				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    258				     ;				    SUBROUTINE
+    259				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    260
+    261	0173			     boss_func_4	     proc    near
+    262	0173  C6 06 FF1A 00			     mov     byte ptr ds:data_33e,0
+    263	0178			     loc_8:
+    264	0178  E8 00B8				     call    boss_scan_loop
+    265	017B  80 3E FF1A 32			     cmp     byte ptr ds:data_33e,32h	     ; '2'
+    266	0180  72 F6				     jb	     loc_8		     ; Jump if below
+    267	0182  C3				     retn
+    268	0183			     boss_func_4	     endp
+    269
+    270
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 6
+216CNGJO.asm
+
+
+
+    271				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    272				     ;				    SUBROUTINE
+    273				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    274
+    275	0183			     boss_multiply	     proc    near
+    276	0183  B1 14				     mov     cl,14h
+    277	0185  F6 E1				     mul     cl			     ; ax = reg	* al
+    278	0187  05 A281				     add     ax,0A281h
+    279	018A  8B F0				     mov     si,ax
+    280	018C  BB 0827				     mov     bx,827h
+    281	018F  B9 0004				     mov     cx,4
+    282
+    283	0192			     locloop_9:
+    284	0192  51				     push    cx
+    285	0193  B9 0005				     mov     cx,5
+    286
+    287	0196			     locloop_10:
+    288	0196  51				     push    cx
+    289	0197  53				     push    bx
+    290	0198  AC				     lodsb			     ; String [si] to al
+    291	0199  2E: FF 16	3016			     call    word ptr cs:data_28e
+    292	019E  5B				     pop     bx
+    293	019F  FE C7				     inc     bh
+    294	01A1  59				     pop     cx
+    295	01A2  E2 F2				     loop    locloop_10		     ; Loop if cx > 0
+    296
+    297	01A4  80 EF 05				     sub     bh,5
+    298	01A7  80 C3 08				     add     bl,8
+    299	01AA  59				     pop     cx
+    300	01AB  E2 E5				     loop    locloop_9		     ; Loop if cx > 0
+    301
+    302	01AD  C3				     retn
+    303	01AE			     boss_multiply	     endp
+    304
+    305
+    306				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    307				     ;				    SUBROUTINE
+    308				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    309
+    310	01AE			     boss_process_loop		     proc    near
+    311	01AE  BE A1CF				     mov     si,data_31e
+    312	01B1  BB 0717				     mov     bx,717h
+    313	01B4  B9 0008				     mov     cx,8
+    314
+    315	01B7			     locloop_11:
+    316	01B7  51				     push    cx
+    317	01B8  B9 000C				     mov     cx,0Ch
+    318
+    319	01BB			     locloop_12:
+    320	01BB  51				     push    cx
+    321	01BC  53				     push    bx
+    322	01BD  AC				     lodsb			     ; String [si] to al
+    323	01BE  2E: FF 16	3016			     call    word ptr cs:data_28e
+    324	01C3  5B				     pop     bx
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 7
+216CNGJO.asm
+
+
+
+    325	01C4  FE C7				     inc     bh
+    326	01C6  59				     pop     cx
+    327	01C7  E2 F2				     loop    locloop_12		     ; Loop if cx > 0
+    328
+    329	01C9  80 EF 0C				     sub     bh,0Ch
+    330	01CC  80 C3 08				     add     bl,8
+    331	01CF  59				     pop     cx
+    332	01D0  E2 E5				     loop    locloop_11		     ; Loop if cx > 0
+    333
+    334	01D2  C3				     retn
+    335	01D3			     boss_process_loop		     endp
+    336
+    337	01D3  00 01 02 03 04 05			     db	      00h, 01h,	02h, 03h, 04h, 05h
+    338	01D9  06 07 08 09 0A 0B			     db	      06h, 07h,	08h, 09h, 0Ah, 0Bh
+    339	01DF  0C 0D 0E 0F 10 11			     db	      0Ch, 0Dh,	0Eh, 0Fh, 10h, 11h
+    340	01E5  12 13 14 15 16 17			     db	      12h, 13h,	14h, 15h, 16h, 17h
+    341	01EB  18 19 1A 1B 10 1C			     db	      18h, 19h,	1Ah, 1Bh, 10h, 1Ch
+    342	01F1  1D 1E 1F 20 21 22			     db	      1Dh, 1Eh,	1Fh, 20h, 21h, 22h
+    343	01F7  23 24 25 26 10			     db	      23h, 24h,	25h, 26h, 10h
+    344	01FC  27				     db	     27h
+    345	01FD  28 29 2A 2B 2C 2D	2E+		     db	     '()*+,-./0123456789:;<=>?@ABCDEFG'
+    346	      2F 30 31 32 33 34	35+
+    347	      36 37 38 39 3A 3B	3C+
+    348	      3D 3E 3F 40 41 42	43+
+    349	      44 45 46 47
+    350	021D  48 49 4A 4B 4C 4D	4E+		     db	     'HIJKLMNOPQRSTUVWXYZ[\]'
+    351	      4F 50 51 52 53 54	55+
+    352	      56 57 58 59 5A 5B	5C+
+    353	      5D
+    354
+    355				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    356				     ;				    SUBROUTINE
+    357				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    358
+    359	0233			     boss_scan_loop	     proc    near
+    360	0233  F6 06 A505 FF			     test    byte ptr ds:data_32e,0FFh
+    361	0238  75 01				     jnz     loc_13		     ; Jump if not zero
+    362	023A  C3				     retn
+    363	023B			     loc_13:
+    364	023B  83 3E FF50 28			     cmp     word ptr ds:data_38e,28h
+    365	0240  73 01				     jae     loc_14		     ; Jump if above or	=
+    366	0242  C3				     retn
+    367	0243			     loc_14:
+    368	0243  C7 06 FF50 0000			     mov     word ptr ds:data_38e,0
+    369	0249  2E: FF 16	011Ar			     call    word ptr cs:data_8
+    370	024E  24 01				     and     al,1
+    371	0250  02 C0				     add     al,al
+    372	0252  02 C0				     add     al,al
+    373	0254  32 E4				     xor     ah,ah		     ; Zero register
+    374	0256  05 A279				     add     ax,0A279h
+    375	0259  8B F0				     mov     si,ax
+    376	025B  BB 0827				     mov     bx,827h
+    377	025E  B9 0002				     mov     cx,2
+    378
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 8
+216CNGJO.asm
+
+
+
+    379	0261			     locloop_15:
+    380	0261  51				     push    cx
+    381	0262  B9 0002				     mov     cx,2
+    382
+    383	0265			     locloop_16:
+    384	0265  51				     push    cx
+    385	0266  53				     push    bx
+    386	0267  AC				     lodsb			     ; String [si] to al
+    387	0268  2E: FF 16	3016			     call    word ptr cs:data_28e
+    388	026D  5B				     pop     bx
+    389	026E  FE C7				     inc     bh
+    390	0270  59				     pop     cx
+    391	0271  E2 F2				     loop    locloop_16		     ; Loop if cx > 0
+    392
+    393	0273  80 EF 02				     sub     bh,2
+    394	0276  80 C3 08				     add     bl,8
+    395	0279  59				     pop     cx
+    396	027A  E2 E5				     loop    locloop_15		     ; Loop if cx > 0
+    397
+    398	027C  C3				     retn
+    399	027D			     boss_scan_loop	     endp
+    400
+    401										     ;*	No entry point to code
+    402	027D  19 1A				     sbb     [bp+si],bx
+    403	027F  24 25				     and     al,25h		     ; '%'
+    404	0281  5E				     pop     si
+    405	0282  5F				     pop     di
+    406	0283  24 60				     and     al,60h		     ; '`'
+    407	0285  19 1A				     sbb     [bp+si],bx
+    408	0287  1B 10				     sbb     dx,[bx+si]
+    409	0289  1C 24				     sbb     al,24h		     ; '$'
+    410	028B  25 1026				     and     ax,1026h
+    411	028E  27				     daa			     ; Decimal adjust
+    412	028F  2F				     das			     ; Decimal adjust
+    413	0290  30 31				     xor     [bx+di],dh
+    414	0292  32 33				     xor     dh,[bp+di]
+    415	0294  3B 3C				     cmp     di,[si]
+    416	0296  3D 3F3E				     cmp     ax,3F3Eh
+    417	0299  19 1A				     sbb     [bp+si],bx
+    418	029B  1B 10				     sbb     dx,[bx+si]
+    419	029D  1C 24				     sbb     al,24h		     ; '$'
+    420	029F  25 1026				     and     ax,1026h
+    421	02A2  27				     daa			     ; Decimal adjust
+    422	02A3  2F				     das			     ; Decimal adjust
+    423	02A4  30 31				     xor     [bx+di],dh
+    424	02A6  32 33				     xor     dh,[bp+di]
+    425	02A8  3B 3C				     cmp     di,[si]
+    426	02AA  3D 3F3E				     cmp     ax,3F3Eh
+    427	02AD  19 1A				     sbb     [bp+si],bx
+    428	02AF  1B 10				     sbb     dx,[bx+si]
+    429	02B1  1C 24				     sbb     al,24h		     ; '$'
+    430	02B3  61 62 10				     db	      61h, 62h,	10h
+    431	02B6  27 2F 63 64 32 33	3B+		     db	     27h, '/cd23;ef>?'
+    432	      65 66 3E 3F
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 9
+216CNGJO.asm
+
+
+
+    433	02C1  19 1A 1B 10 1C			     db	      19h, 1Ah,	1Bh, 10h, 1Ch
+    434	02C6  24				     db	     '$'
+    435	02C7  25 26 67 68 2F 69	6A+		     db	     '%&gh/ijkl;mno?'
+    436	      6B 6C 3B 6D 6E 6F	3F
+    437	02D5  00 00 1E 00 32 00			     db	      00h, 00h,	1Eh, 00h, 32h, 00h
+    438	02DB  46 00 64 00 96 00			     db	      46h, 00h,	64h, 00h, 96h, 00h
+    439	02E1  C8 00 90 01 01 19			     db	     0C8h, 00h,	90h, 01h, 01h, 19h
+    440	02E7  49 4E 4E 2E 47 52			     db	      49h, 4Eh,	4Eh, 2Eh, 47h, 52h
+    441	02ED  50 00 19 AF 00 07			     db	      50h, 00h,	19h,0AFh, 00h, 07h
+    442	02F3  54 68 65 20 49 6E	6E+		     db	     'The Inn',	0Ch, 'Welcome, sir!/Yo'
+    443	      0C 57 65 6C 63 6F	6D+
+    444	      65 2C 20 73 69 72	21+
+    445	      2F 59 6F
+    446	030B  75 20 6C 6F 6F 6B	20+		     db	     'u	look like you\ve come a	long w'
+    447	      6C 69 6B 65 20 79	6F+
+    448	      75 5C 76 65 20 63	6F+
+    449	      6D 65 20 61 20 6C	6F+
+    450	      6E 67 20 77
+    451	032B  61 79 2E 2F 4F 6E	65+		     db	     'ay./One night of rest in my inn '
+    452	      20 6E 69 67 68 74	20+
+    453	      6F 66 20 72 65 73	74+
+    454	      20 69 6E 20 6D 79	20+
+    455	      69 6E 6E 20
+    456	034B  69 73 20 61 6C 6C	20+		     db	     'is all you need to recover your '
+    457	      79 6F 75 20 6E 65	65+
+    458	      64 20 74 6F 20 72	65+
+    459	      63 6F 76 65 72 20	79+
+    460	      6F 75 72 20
+    461	036B  73 74 72 65 6E 67	74+		     db	     'strength.	You can	have the best '
+    462	      68 2E 20 59 6F 75	20+
+    463	      63 61 6E 20 68 61	76+
+    464	      65 20 74 68 65 20	62+
+    465	      65 73 74 20
+    466	038B  72 6F 6F 6D 20 69	6E+		     db	     'room in the house	for only '
+    467	      20 74 68 65 20 68	6F+
+    468	      75 73 65 20 66 6F	72+
+    469	      20 6F 6E 6C 79 20
+    470	03A6  FF 00				     db	     0FFh, 00h
+    471	03A8  26 67 6F 6C 64 73	2E+		     db	     '&golds. Will you stay? '
+    472	      20 57 69 6C 6C 20	79+
+    473	      6F 75 20 73 74 61	79+
+    474	      3F 20
+    475	03BF  FF 01 0C				     db	     0FFh, 01h,	0Ch
+    476	03C2  4F 68 2C 20 49 5C	6D+		     db	     'Oh, I\m sorry to hear that./Well'
+    477	      20 73 6F 72 72 79	20+
+    478	      74 6F 20 68 65 61	72+
+    479	      20 74 68 61 74 2E	2F+
+    480	      57 65 6C 6C
+    481	03E2  2C 20 69 66 20 79	6F+		     db	     ',	if you should ever need	a'
+    482	      75 20 73 68 6F 75	6C+
+    483	      64 20 65 76 65 72	20+
+    484	      6E 65 65 64 20 61
+    485	03FD  20 70 6C 61 63 65	20+		     db	     ' place to	rest, do come back. '
+    486	      74 6F 20 72 65 73	74+
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 10
+216CNGJO.asm
+
+
+
+    487	      2C 20 64 6F 20 63	6F+
+    488	      6D 65 20 62 61 63	6B+
+    489	      2E 20
+    490	041B  11 FF FF 0C			     db	      11h,0FFh,0FFh, 0Ch
+    491	041F  49 5C 6D 20 73 6F	72+		     db	     'I\m sorry	sir, b'
+    492	      72 79 20 73 69 72	2C+
+    493	      20 62
+    494	042F  75 74 20 49 20 63	61+		     db	     'ut I can\t accommodate you witho'
+    495	      6E 5C 74 20 61 63	63+
+    496	      6F 6D 6D 6F 64 61	74+
+    497	      65 20 79 6F 75 20	77+
+    498	      69 74 68 6F
+    499	044F  75 74 20 66 75 6E	64+		     db	     'ut funds./'
+    500	      73 2E 2F
+    501	0459  FF 04				     db	     0FFh, 04h
+    502	045B  50 6C 65 61 73 65	20+		     db	     'Please come back when you	can af'
+    503	      63 6F 6D 65 20 62	61+
+    504	      63 6B 20 77 68 65	6E+
+    505	      20 79 6F 75 20 63	61+
+    506	      6E 20 61 66
+    507	047B  66 6F 72 64			     db	     'ford'
+    508	047F  20 69 74 2E 20 11			     db	      20h, 69h,	74h, 2Eh, 20h, 11h
+    509	0485  FF FF				     db	     0FFh,0FFh
+    510	0487  0C				     db	     0Ch
+    511	0488  54 68 61 6E 6B 20	79+		     db	     'Thank you, sir. Enjoy your stay.'
+    512	      6F 75 2C 20 73 69	72+
+    513	      2E 20 45 6E 6A 6F	79+
+    514	      20 79 6F 75 72 20	73+
+    515	      74 61 79 2E
+    516	04A8  20				     db	     ' '
+    517	04A9  FF 02 FF 04 FF 03			     db	     0FFh, 02h,0FFh, 04h,0FFh, 03h
+    518	04AF  0C FF 04				     db	      0Ch,0FFh,	04h
+    519	04B2  49				     db	     49h
+    520	04B3  20 74 72 75 73 74	20+		     db	     ' trust you had a good night\s sl'
+    521	      79 6F 75 20 68 61	64+
+    522	      20 61 20 67 6F 6F	64+
+    523	      20 6E 69 67 68 74	5C+
+    524	      73 20 73 6C
+    525	04D3  65 65 70 2E 20 57	65+		     db	     'eep. We\ll be looking forward to'
+    526	      5C 6C 6C 20 62 65	20+
+    527	      6C 6F 6F 6B 69 6E	67+
+    528	      20 66 6F 72 77 61	72+
+    529	      64 20 74 6F
+    530	04F3  20 73 65 65 69 6E	67+		     db	     ' seeing you again./'
+    531	      20 79 6F 75 20 61	67+
+    532	      61 69 6E 2E 2F
+    533	0506  11 FF FF 00			     db	      11h,0FFh,0FFh, 00h
+    534	050A  0A*(00)				     db	     10	dup (0)
+    535
+    536	0514			     seg_a	     ends
+    537
+    538
+    539
+    540						     end     start
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 11
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/24/26"
+??FILENAME			  Text	 "216CNGJO"
+??TIME				  Text	 "00:11:25"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 216CNGJO
+@WORDSIZE			  Text	 2
+BOSS_FUNC_1			  Near	 SEG_A:0063
+BOSS_FUNC_2			  Near	 SEG_A:0079
+BOSS_FUNC_3			  Near	 SEG_A:0163
+BOSS_FUNC_4			  Near	 SEG_A:0173
+BOSS_MULTIPLY			  Near	 SEG_A:0183
+BOSS_PROCESS_LOOP		  Near	 SEG_A:01AE
+BOSS_SCAN_LOOP			  Near	 SEG_A:0233
+DATA_1				  Byte	 SEG_A:0085
+DATA_18E			  Number 068E
+DATA_19E			  Number 2000
+DATA_2				  Word	 SEG_A:0086
+DATA_20E			  Number 2002
+DATA_21E			  Number 2008
+DATA_22E			  Number 2010
+DATA_23E			  Number 2012
+DATA_24E			  Number 2016
+DATA_25E			  Number 2018
+DATA_26E			  Number 2040
+DATA_27E			  Number 2044
+DATA_28E			  Number 3016
+DATA_29E			  Number 6004
+DATA_3				  Word	 SEG_A:0090
+DATA_30E			  Number A080
+DATA_31E			  Number A1CF
+DATA_32E			  Number A505
+DATA_33E			  Number FF1A
+DATA_34E			  Number FF2C
+DATA_35E			  Number FF4C
+DATA_36E			  Number FF4E
+DATA_37E			  Number FF4F
+DATA_38E			  Number FF50
+DATA_4				  Byte	 SEG_A:009D
+DATA_5				  Byte	 SEG_A:00AB
+DATA_6				  Word	 SEG_A:00B2
+DATA_7				  Byte	 SEG_A:00B4
+DATA_8				  Word	 SEG_A:011A
+LOCLOOP_10			  Near	 SEG_A:0196
+LOCLOOP_11			  Near	 SEG_A:01B7
+LOCLOOP_12			  Near	 SEG_A:01BB
+LOCLOOP_15			  Near	 SEG_A:0261
+LOCLOOP_16			  Near	 SEG_A:0265
+LOCLOOP_9			  Near	 SEG_A:0192
+LOC_1				  Near	 SEG_A:0050
+Turbo Assembler	 Version 2.01	     03/24/26 00:11:25	    Page 12
+Symbol Table
+
+
+
+LOC_13				  Near	 SEG_A:023B
+LOC_14				  Near	 SEG_A:0243
+LOC_2				  Near	 SEG_A:005E
+LOC_3				  Near	 SEG_A:0063
+LOC_4				  Near	 SEG_A:0105
+LOC_5				  Near	 SEG_A:011F
+LOC_6				  Near	 SEG_A:0160
+LOC_7				  Near	 SEG_A:0168
+LOC_8				  Near	 SEG_A:0178
+START				  Near	 SEG_A:0000
+TARGET				  Number 5432
+ZR2_16				  Far	 SEG_A:0000
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  0514 Byte	  Public
+

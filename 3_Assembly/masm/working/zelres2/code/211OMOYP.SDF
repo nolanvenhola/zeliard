@@ -1,0 +1,67 @@
+
+                  ฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+                          SOURCER DEFINITION FILE
+                  ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+
+ ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ Section 1: CONTROL INFORMATION   ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+
+Analysis Options = a b c d e f g h i j k l m n o p q r s t u v w x y z
+2nd Options page = a b c d e f g h i j k l m
+uP               = 8088
+File format      = ASM
+Keep segments    = Def
+Label type       = Decimal
+Remarks          = All
+Segment display  = Hex
+Target Assembler = MASM-4.0, byte match
+Input filename   = 211OMOYP.bin
+Code style       = Zero start
+Drive (output)   = W
+Output filename  = 211OMOYP.ASM
+Passes           = 9
+Xref             = OFF
+
+
+
+ ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ Section 2: RANGE DEFINITION      ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+
+ ออออ Segments ออออออออออออออออออออออออออ
+
+  begin       end        default     seg   seg                           seg
+ seg:off      off      ds      es    type  size                         value
+ -------      ----   ------  ------  ----- -----                        -----
+seg_a:0000    0256   seg_a   seg_a   auto  use16                       ; 2923
+
+ ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ Section 3: REFERENCE DEFINITIONS ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+
+ ออออ Subroutines อออออออออออออออออออออออ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0108   sub			        ; sub_1
+
+ ออออ Locations อออออออออออออออออออออออออ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0000   loc, far		start
+seg_a:004D   loc			        ; loc_1
+seg_a:0108   forced, od seg_a
+seg_a:0111   loc			        ; locloop_2
+seg_a:0115   loc			        ; locloop_3
+
+ ออออ Data Items ออออออออออออออออออออออออ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+2923:2002    dw, osn, equ		        ; data_13e
+2923:2010    dw, osn, equ		        ; data_14e
+2923:2012    dw, osn, equ		        ; data_15e
+2923:2040    dw, oln, equ		        ; data_16e
+2923:2044    dw, osn, equ		        ; data_17e
+2923:3016    dw, osn, equ		        ; data_18e
+2923:6016    dw, osn, equ		        ; data_19e
+2923:A004    db, equ			        ; data_20e
+2923:A0BB    dw, equ			        ; data_21e
+2923:A129    db, equ			        ; data_22e
+2923:FF14    db, equ			        ; data_23e
+2923:FF1D    db, equ			        ; data_24e
+2923:FF2C    dw, equ			        ; data_25e
+2923:FF50    dw, equ			        ; data_26e

@@ -1,0 +1,2646 @@
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 1
+208SATNO.asm
+
+
+
+      1
+      2
+      3				     ;==========================================================================
+      4				     ;
+      5				     ;	ENEMY_BAT - Code Module
+      6				     ;
+      7				     ;==========================================================================
+      8
+      9	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     10
+     11				     include  srmacros.inc
+1    12
+1    13				     ; Macros which may	be required for	proper re-assembly
+1    14
+1    15
+1    16
+1    17
+1    18
+1    19				     ;-----------------------------------------------------------------------------
+1    20				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    21				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    22				     ; instruction it uses a near jump or call.
+1    23
+1    24				     calls	     macro   dummy1, dummy2, slocation
+1    25						     db	     9Ah		     ; forced call far instruction
+1    26						     dw	     offset slocation, seg slocation
+1    27				     endm
+1    28
+1    29				     jmps	     macro   dummy1, dummy2, jlocation
+1    30						     db	     0EAh		     ; forced jump far instruction
+1    31						     dw	     offset jlocation, seg jlocation
+1    32				     endm
+1    33
+1    34
+1    35
+1    36
+1    37				     ;-----------------------------------------------------------------------------
+1    38				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    39				     ;	subroutine in the same segment as:
+1    40				     ;
+1    41				     ;		     PUSH    CS
+1    42				     ;		     CALL    near
+1    43				     ;
+1    44				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    45				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    46				     ;	macros are used	to code	the same information.  In other	words, the binary
+1    47				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    48				     ;	are used!  (macro CALLF)
+1    49				     ;
+1    50
+1    51				     callf	     macro   location
+1    52						     push    cs
+1    53						     call    near ptr location
+1    54				     endm
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 2
+208SATNO.asm
+
+
+
+1    55
+1    56				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    57				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    58
+1    59				     callfx	     macro   location
+1    60						     push    cs
+1    61						     db	     3Eh
+1    62						     call    near ptr location
+1    63				     endm
+1    64
+1    65
+1    66				     ;-----------------------------------------------------------------------------
+1    67				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    68				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    69				     ;	reconstructs a near jump for these cases.
+1    70
+1    71				     jmpn	     macro   location
+1    72						     db	     0E9h
+1    73						     dw	     offset location-$-2
+1    74				     endm
+1    75
+1    76
+1    77
+     78
+     79
+     80				     ; The following equates show data references outside the range of the program.
+     81
+     82	      =	2C6C		     data_7e	     equ     2C6Ch		     ;*
+     83	      =	2C88		     data_8e	     equ     2C88h		     ;*
+     84	      =	335B		     data_9e	     equ     335Bh		     ;*
+     85	      =	338A		     data_10e	     equ     338Ah		     ;*
+     86	      =	3432		     data_11e	     equ     3432h		     ;*
+     87	      =	357D		     data_12e	     equ     357Dh		     ;*
+     88	      =	35BB		     data_13e	     equ     35BBh		     ;*
+     89	      =	36B6		     data_14e	     equ     36B6h		     ;*
+     90	      =	3C30		     data_15e	     equ     3C30h		     ;*
+     91	      =	56F1		     data_16e	     equ     56F1h		     ;*
+     92	      =	6000		     data_17e	     equ     6000h		     ;*
+     93	      =	C050		     data_18e	     equ     0C050h		     ;*
+     94	      =	FD57		     data_19e	     equ     0FD57h		     ;*
+     95	      =	0000		     data_20e	     equ     0			     ;*
+     96	      =	1340		     data_21e	     equ     1340h		     ;*
+     97	      =	B1B0		     data_22e	     equ     0B1B0h
+     98	      =	B220		     data_23e	     equ     0B220h
+     99	      =	BBB0		     data_24e	     equ     0BBB0h
+    100	      =	023C		     data_25e	     equ     23Ch
+    101	      =	163C		     data_26e	     equ     163Ch
+    102
+    103	0000			     seg_a	     segment byte public
+    104						     assume  cs:seg_a, ds:seg_a
+    105
+    106
+    107						     org     0
+    108
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 3
+208SATNO.asm
+
+
+
+    109	0000			     zr2_08	     proc    far
+    110
+    111	0000			     start:
+    112	0000  65 25 00 00 2E A2			     db	      65h, 25h,	00h, 00h, 2Eh,0A2h
+    113	0006  5B 33 8C CA 8E DA			     db	      5Bh, 33h,	8Ch,0CAh, 8Eh,0DAh
+    114	000C  81 C2 00 10 8E C2			     db	      81h,0C2h,	00h, 10h, 8Eh,0C2h
+    115	0012  FC BF 00 00 B9 80			     db	     0FCh,0BFh,	00h, 00h,0B9h, 80h
+    116	0018  26 33 C0 F3 AB 8C			     db	      26h, 33h,0C0h,0F3h,0ABh, 8Ch
+    117	001E  CA 81 C2 00 10 8E			     db	     0CAh, 81h,0C2h, 00h, 10h, 8Eh
+    118	0024  C2 BE E7 38 BF 00			     db	     0C2h,0BEh,0E7h, 38h,0BFh, 00h
+    119	002A  00 E8 32 00 BE 59			     db	      00h,0E8h,	32h, 00h,0BEh, 59h
+    120	0030  47 BF 40 13 E8 29			     db	      47h,0BFh,	40h, 13h,0E8h, 29h
+    121	0036  00 E8 48 00 8C CA			     db	      00h,0E8h,	48h, 00h, 8Ch,0CAh
+    122	003C  81 C2 00 10 8E C2			     db	      81h,0C2h,	00h, 10h, 8Eh,0C2h
+    123	0042  BF 00 00 BE 9E 55			     db	     0BFh, 00h,	00h,0BEh, 9Eh, 55h
+    124	0048  B9 10 00				     db	     0B9h, 10h,	00h
+    125
+    126	004B			     locloop_6:
+    127	004B  E8 0243				     call    bat_func_3
+    128	004E  E2 FB				     loop    locloop_6		     ; Loop if cx > 0
+    129
+    130	0050  BE 56F1				     mov     si,data_16e
+    131	0053  B9 0010				     mov     cx,10h
+    132
+    133	0056			     locloop_7:
+    134	0056  E8 0238				     call    bat_func_3
+    135	0059  E2 FB				     loop    locloop_7		     ; Loop if cx > 0
+    136
+    137	005B  E8 0255				     call    bat_func_4
+    138	005E  CB				     retf			     ; Return far
+    139	005F  00 33 C9				     db	      00h, 33h,0C9h
+    140	0062			     loc_8:
+    141	0062  AC				     lodsb			     ; String [si] to al
+    142	0063  3C 06				     cmp     al,6
+    143	0065  B4 01				     mov     ah,1
+    144	0067  75 01				     jnz     loc_9		     ; Jump if not zero
+    145	0069  AD				     lodsw			     ; String [si] to ax
+    146	006A			     loc_9:
+    147	006A  AA				     stosb			     ; Store al	to es:[di]
+    148	006B  FE C5				     inc     ch
+    149	006D  80 FD 38				     cmp     ch,38h		     ; '8'
+    150	0070  75 0A				     jne     loc_10		     ; Jump if not equal
+    151	0072  32 ED				     xor     ch,ch		     ; Zero register
+    152	0074  FE C1				     inc     cl
+    153	0076  80 F9 58				     cmp     cl,58h		     ; 'X'
+    154	0079  75 01				     jne     loc_10		     ; Jump if not equal
+    155	007B  C3				     retn
+    156	007C			     loc_10:
+    157	007C  FE CC				     dec     ah
+    158	007E  75 EA				     jnz     loc_9		     ; Jump if not zero
+    159	0080  EB E0				     jmp     short loc_8
+    160										     ;*	No entry point to code
+    161	0082  33 DB				     xor     bx,bx		     ; Zero register
+    162	0084  8A 1E 335B			     mov     bl,ds:data_9e
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 4
+208SATNO.asm
+
+
+
+    163	0088  03 DB				     add     bx,bx
+    164	008A  FF A7 338A			     jmp     word ptr ds:data_10e[bx]	     ;*
+    165										     ;*	No entry point to code
+    166	008E  96				     xchg    si,ax
+    167	008F  33 D1				     xor     dx,cx
+    168	0091  33 D1				     xor     dx,cx
+    169	0093  33 42 34				     xor     ax,[bp+si+34h]
+    170	0096  B8 1034				     mov     ax,1034h
+    171	0099  35 8C1E				     xor     ax,8C1Eh
+    172	009C  CA C281				     retf    0C281h		     ; Return far
+    173	009F  00 10 8E DA BE 00			     db	      00h, 10h,	8Eh,0DAh,0BEh, 00h
+    174	00A5  00 B8 00 A0 8E C0			     db	      00h,0B8h,	00h,0A0h, 8Eh,0C0h
+    175	00AB  BA C4 03 B0 02 EE			     db	     0BAh,0C4h,	03h,0B0h, 02h,0EEh
+    176	00B1  42 B0 01 EE E8 08			     db	      42h,0B0h,	01h,0EEh,0E8h, 08h
+    177	00B7  00 B0 04 EE E8 02			     db	      00h,0B0h,	04h,0EEh,0E8h, 02h
+    178	00BD  00 1F C3 BF 6C 04			     db	      00h, 1Fh,0C3h,0BFh, 6Ch, 04h
+    179	00C3  B9 58 00				     db	     0B9h, 58h,	00h
+    180
+    181	00C6			     locloop_11:
+    182	00C6  51				     push    cx
+    183	00C7  57				     push    di
+    184	00C8  B9 0038				     mov     cx,38h
+    185	00CB  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    186	00CD  5F				     pop     di
+    187	00CE  83 C7 50				     add     di,50h
+    188	00D1  59				     pop     cx
+    189	00D2  E2 F2				     loop    locloop_11		     ; Loop if cx > 0
+    190
+    191	00D4  C3				     retn
+    192										     ;*	No entry point to code
+    193	00D5  1E				     push    ds
+    194	00D6  8C CA				     mov     dx,cs
+    195	00D8  81 C2 1000			     add     dx,1000h
+    196	00DC  8E DA				     mov     ds,dx
+    197	00DE  BE 0000				     mov     si,data_20e
+    198	00E1  B8 B800				     mov     ax,0B800h
+    199	00E4  8E C0				     mov     es,ax
+    200	00E6  BF 023C				     mov     di,data_25e
+    201	00E9  B9 0058				     mov     cx,58h
+    202
+    203	00EC			     locloop_12:
+    204	00EC  51				     push    cx
+    205	00ED  57				     push    di
+    206	00EE  B9 0038				     mov     cx,38h
+    207
+    208	00F1			     locloop_13:
+    209	00F1  51				     push    cx
+    210	00F2  8A A4 1340			     mov     ah,ds:data_21e[si]
+    211	00F6  AC				     lodsb			     ; String [si] to al
+    212	00F7  32 D2				     xor     dl,dl		     ; Zero register
+    213	00F9  B9 0004				     mov     cx,4
+    214
+    215	00FC			     locloop_14:
+    216	00FC  02 E4				     add     ah,ah
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 5
+208SATNO.asm
+
+
+
+    217	00FE  12 DB				     adc     bl,bl
+    218	0100  02 C0				     add     al,al
+    219	0102  12 DB				     adc     bl,bl
+    220	0104  02 E4				     add     ah,ah
+    221	0106  12 DB				     adc     bl,bl
+    222	0108  02 C0				     add     al,al
+    223	010A  12 DB				     adc     bl,bl
+    224	010C  80 E3 0F				     and     bl,0Fh
+    225	010F  32 FF				     xor     bh,bh		     ; Zero register
+    226	0111  02 D2				     add     dl,dl
+    227	0113  02 D2				     add     dl,dl
+    228	0115  2E: 0A 97	3432			     or	     dl,cs:data_11e[bx]
+    229	011A  E2 E0				     loop    locloop_14		     ; Loop if cx > 0
+    230
+    231	011C  8A C2				     mov     al,dl
+    232	011E  AA				     stosb			     ; Store al	to es:[di]
+    233	011F  59				     pop     cx
+    234	0120  E2 CF				     loop    locloop_13		     ; Loop if cx > 0
+    235
+    236	0122  5F				     pop     di
+    237	0123  81 C7 2000			     add     di,2000h
+    238	0127  81 FF 4000			     cmp     di,4000h
+    239	012B  72 04				     jb	     loc_15		     ; Jump if below
+    240	012D  81 C7 C050			     add     di,data_18e
+    241	0131			     loc_15:
+    242	0131  59				     pop     cx
+    243	0132  E2 B8				     loop    locloop_12		     ; Loop if cx > 0
+    244
+    245	0134  1F				     pop     ds
+    246	0135  C3				     retn
+    247	0136  00 03 01 02 00 03			     db	      00h, 03h,	01h, 02h, 00h, 03h
+    248	013C  01 02 00 03 01 02			     db	      01h, 02h,	00h, 03h, 01h, 02h
+    249	0142  00 03 01 02 1E 8C			     db	      00h, 03h,	01h, 02h, 1Eh, 8Ch
+    250	0148  CA 81 C2 00 10 8E			     db	     0CAh, 81h,0C2h, 00h, 10h, 8Eh
+    251	014E  DA BE 00 00 B8 00			     db	     0DAh,0BEh,	00h, 00h,0B8h, 00h
+    252	0154  B0 8E C0 BF FD 04			     db	     0B0h, 8Eh,0C0h,0BFh,0FDh, 04h
+    253	015A  B9 58 00				     db	     0B9h, 58h,	00h
+    254
+    255	015D			     locloop_16:
+    256	015D  51				     push    cx
+    257	015E  57				     push    di
+    258	015F  B9 0038				     mov     cx,38h
+    259
+    260	0162			     locloop_17:
+    261	0162  51				     push    cx
+    262	0163  8A A4 1340r			     mov     ah,data_3[si]
+    263	0167  AC				     lodsb			     ; String [si] to al
+    264	0168  32 D2				     xor     dl,dl		     ; Zero register
+    265	016A  B9 0004				     mov     cx,4
+    266
+    267	016D			     locloop_18:
+    268	016D  02 E4				     add     ah,ah
+    269	016F  12 DB				     adc     bl,bl
+    270	0171  02 C0				     add     al,al
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 6
+208SATNO.asm
+
+
+
+    271	0173  12 DB				     adc     bl,bl
+    272	0175  02 E4				     add     ah,ah
+    273	0177  12 DB				     adc     bl,bl
+    274	0179  02 C0				     add     al,al
+    275	017B  12 DB				     adc     bl,bl
+    276	017D  80 E3 0F				     and     bl,0Fh
+    277	0180  32 FF				     xor     bh,bh		     ; Zero register
+    278	0182  02 D2				     add     dl,dl
+    279	0184  02 D2				     add     dl,dl
+    280	0186  2E: 0A 97	3432			     or	     dl,cs:data_11e[bx]
+    281	018B  E2 E0				     loop    locloop_18		     ; Loop if cx > 0
+    282
+    283	018D  8A C2				     mov     al,dl
+    284	018F  AA				     stosb			     ; Store al	to es:[di]
+    285	0190  59				     pop     cx
+    286	0191  E2 CF				     loop    locloop_17		     ; Loop if cx > 0
+    287
+    288	0193  5F				     pop     di
+    289	0194  81 C7 2000			     add     di,2000h
+    290	0198  81 FF 6000			     cmp     di,data_17e
+    291	019C  72 19				     jb	     loc_19		     ; Jump if below
+    292	019E  1E				     push    ds
+    293	019F  56				     push    si
+    294	01A0  51				     push    cx
+    295	01A1  57				     push    di
+    296	01A2  06				     push    es
+    297	01A3  1F				     pop     ds
+    298	01A4  8B F7				     mov     si,di
+    299	01A6  81 EE 2000			     sub     si,2000h
+    300	01AA  B9 0038				     mov     cx,38h
+    301	01AD  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    302	01AF  5F				     pop     di
+    303	01B0  59				     pop     cx
+    304	01B1  5E				     pop     si
+    305	01B2  1F				     pop     ds
+    306	01B3  81 C7 A05A			     add     di,0A05Ah
+    307	01B7			     loc_19:
+    308	01B7  59				     pop     cx
+    309	01B8  E2 A3				     loop    locloop_16		     ; Loop if cx > 0
+    310
+    311	01BA  1F				     pop     ds
+    312	01BB  C3				     retn
+    313										     ;*	No entry point to code
+    314	01BC  1E				     push    ds
+    315	01BD  8C CA				     mov     dx,cs
+    316	01BF  81 C2 1000			     add     dx,1000h
+    317	01C3  8E DA				     mov     ds,dx
+    318	01C5  BE 0000				     mov     si,data_20e
+    319	01C8  B8 A000				     mov     ax,0A000h
+    320	01CB  8E C0				     mov     es,ax
+    321	01CD  BF 11B0				     mov     di,11B0h
+    322	01D0  B9 0058				     mov     cx,58h
+    323
+    324	01D3			     locloop_20:
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 7
+208SATNO.asm
+
+
+
+    325	01D3  51				     push    cx
+    326	01D4  57				     push    di
+    327	01D5  B9 0038				     mov     cx,38h
+    328
+    329	01D8			     locloop_21:
+    330	01D8  51				     push    cx
+    331	01D9  8A B4 1340			     mov     dh,ds:data_21e[si]
+    332	01DD  8A 14				     mov     dl,[si]
+    333	01DF  46				     inc     si
+    334	01E0  E8 001A				     call    bat_func_1
+    335	01E3  AA				     stosb			     ; Store al	to es:[di]
+    336	01E4  E8 0016				     call    bat_func_1
+    337	01E7  AA				     stosb			     ; Store al	to es:[di]
+    338	01E8  E8 0012				     call    bat_func_1
+    339	01EB  AA				     stosb			     ; Store al	to es:[di]
+    340	01EC  E8 000E				     call    bat_func_1
+    341	01EF  AA				     stosb			     ; Store al	to es:[di]
+    342	01F0  59				     pop     cx
+    343	01F1  E2 E5				     loop    locloop_21		     ; Loop if cx > 0
+    344
+    345	01F3  5F				     pop     di
+    346	01F4  81 C7 0140			     add     di,140h
+    347	01F8  59				     pop     cx
+    348	01F9  E2 D8				     loop    locloop_20		     ; Loop if cx > 0
+    349
+    350	01FB  1F				     pop     ds
+    351	01FC  C3				     retn
+    352
+    353	01FD			     zr2_08	     endp
+    354
+    355				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    356				     ;				    SUBROUTINE
+    357				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    358
+    359	01FD			     bat_func_1		     proc    near
+    360	01FD  32 C0				     xor     al,al		     ; Zero register
+    361	01FF  02 F6				     add     dh,dh
+    362	0201  12 C0				     adc     al,al
+    363	0203  02 C0				     add     al,al
+    364	0205  02 D2				     add     dl,dl
+    365	0207  12 C0				     adc     al,al
+    366	0209  02 F6				     add     dh,dh
+    367	020B  12 C0				     adc     al,al
+    368	020D  02 C0				     add     al,al
+    369	020F  02 D2				     add     dl,dl
+    370	0211  12 C0				     adc     al,al
+    371	0213  C3				     retn
+    372	0214			     bat_func_1		     endp
+    373
+    374										     ;*	No entry point to code
+    375	0214  1E				     push    ds
+    376	0215  8C CA				     mov     dx,cs
+    377	0217  81 C2 1000			     add     dx,1000h
+    378	021B  8E DA				     mov     ds,dx
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 8
+208SATNO.asm
+
+
+
+    379	021D  BE 0000				     mov     si,data_20e
+    380	0220  B8 B800				     mov     ax,0B800h
+    381	0223  8E C0				     mov     es,ax
+    382	0225  BF 41F8				     mov     di,41F8h
+    383	0228  B9 0058				     mov     cx,58h
+    384
+    385	022B			     locloop_22:
+    386	022B  51				     push    cx
+    387	022C  57				     push    di
+    388	022D  B9 0038				     mov     cx,38h
+    389
+    390	0230			     locloop_23:
+    391	0230  51				     push    cx
+    392	0231  8A B4 1340			     mov     dh,ds:data_21e[si]
+    393	0235  8A 14				     mov     dl,[si]
+    394	0237  46				     inc     si
+    395	0238  E8 001C				     call    bat_process_loop
+    396	023B  AA				     stosb			     ; Store al	to es:[di]
+    397	023C  E8 0018				     call    bat_process_loop
+    398	023F  AA				     stosb			     ; Store al	to es:[di]
+    399	0240  59				     pop     cx
+    400	0241  E2 ED				     loop    locloop_23		     ; Loop if cx > 0
+    401
+    402	0243  5F				     pop     di
+    403	0244  81 C7 2000			     add     di,2000h
+    404	0248  81 FF 8000			     cmp     di,8000h
+    405	024C  72 04				     jb	     loc_24		     ; Jump if below
+    406	024E  81 C7 80A0			     add     di,80A0h
+    407	0252			     loc_24:
+    408	0252  59				     pop     cx
+    409	0253  E2 D6				     loop    locloop_22		     ; Loop if cx > 0
+    410
+    411	0255  1F				     pop     ds
+    412	0256  C3				     retn
+    413
+    414				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    415				     ;				    SUBROUTINE
+    416				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    417
+    418	0257			     bat_process_loop		     proc    near
+    419	0257  32 C0				     xor     al,al		     ; Zero register
+    420	0259  B9 0002				     mov     cx,2
+    421
+    422	025C			     locloop_25:
+    423	025C  02 F6				     add     dh,dh
+    424	025E  12 DB				     adc     bl,bl
+    425	0260  02 D2				     add     dl,dl
+    426	0262  12 DB				     adc     bl,bl
+    427	0264  02 F6				     add     dh,dh
+    428	0266  12 DB				     adc     bl,bl
+    429	0268  02 D2				     add     dl,dl
+    430	026A  12 DB				     adc     bl,bl
+    431	026C  80 E3 0F				     and     bl,0Fh
+    432	026F  32 FF				     xor     bh,bh		     ; Zero register
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 9
+208SATNO.asm
+
+
+
+    433	0271  02 C0				     add     al,al
+    434	0273  02 C0				     add     al,al
+    435	0275  02 C0				     add     al,al
+    436	0277  02 C0				     add     al,al
+    437	0279  2E: 0A 87	357D			     or	     al,cs:data_12e[bx]
+    438	027E  E2 DC				     loop    locloop_25		     ; Loop if cx > 0
+    439
+    440	0280  C3				     retn
+    441	0281			     bat_process_loop		     endp
+    442
+    443	0281  00 07 09 01 07 0F			     db	      00h, 07h,	09h, 01h, 07h, 0Fh
+    444	0287  0B 07 09 0B 0B 03			     db	      0Bh, 07h,	09h, 0Bh, 0Bh, 03h
+    445	028D  01 07 03				     db	      01h, 07h,	03h
+    446	0290  09				     db	     9
+    447
+    448				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    449				     ;				    SUBROUTINE
+    450				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    451
+    452	0291			     bat_func_3		     proc    near
+    453	0291  32 DB				     xor     bl,bl		     ; Zero register
+    454	0293			     loc_26:
+    455	0293  AC				     lodsb			     ; String [si] to al
+    456	0294  8A E0				     mov     ah,al
+    457	0296  80 E4 F0				     and     ah,0F0h
+    458	0299  80 FC 60				     cmp     ah,60h		     ; '`'
+    459	029C  B4 01				     mov     ah,1
+    460	029E  75 06				     jnz     loc_27		     ; Jump if not zero
+    461	02A0  24 0F				     and     al,0Fh
+    462	02A2  8A E0				     mov     ah,al
+    463	02A4  32 C0				     xor     al,al		     ; Zero register
+    464	02A6			     loc_27:
+    465	02A6  AA				     stosb			     ; Store al	to es:[di]
+    466	02A7  FE C3				     inc     bl
+    467	02A9  FE CC				     dec     ah
+    468	02AB  75 F9				     jnz     loc_27		     ; Jump if not zero
+    469	02AD  80 FB 1C				     cmp     bl,1Ch
+    470	02B0  75 E1				     jne     loc_26		     ; Jump if not equal
+    471	02B2  C3				     retn
+    472	02B3			     bat_func_3		     endp
+    473
+    474
+    475				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    476				     ;				    SUBROUTINE
+    477				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    478
+    479	02B3			     bat_func_4		     proc    near
+    480	02B3  33 DB				     xor     bx,bx		     ; Zero register
+    481	02B5  8A 1E 335B			     mov     bl,ds:data_9e
+    482	02B9  03 DB				     add     bx,bx
+    483	02BB  FF A7 35BB			     jmp     word ptr ds:data_13e[bx]	     ;*
+    484	02BF			     bat_func_4		     endp
+    485
+    486	02BF  C7 35 43 36 43 36			     db	     0C7h, 35h,	43h, 36h, 43h, 36h
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 10
+208SATNO.asm
+
+
+
+    487	02C5  C6 36 4E 37 00 38			     db	     0C6h, 36h,	4Eh, 37h, 00h, 38h
+    488	02CB  1E 8C CA 81 C2 00			     db	      1Eh, 8Ch,0CAh, 81h,0C2h, 00h
+    489	02D1  10 8E DA BE 00 00			     db	      10h, 8Eh,0DAh,0BEh, 00h, 00h
+    490	02D7  B8 00 A0 8E C0 BF			     db	     0B8h, 00h,0A0h, 8Eh,0C0h,0BFh
+    491	02DD  6C 2C BA C4 03 B0			     db	      6Ch, 2Ch,0BAh,0C4h, 03h,0B0h
+    492	02E3  02 EE 42 B9 08 00			     db	      02h,0EEh,	42h,0B9h, 08h, 00h
+    493
+    494	02E9			     locloop_28:
+    495	02E9  B0 04				     mov     al,4
+    496	02EB  EE				     out     dx,al		     ; port 0, DMA-1 bas&add ch	0
+    497	02EC  E8 004E				     call    copy_buffer
+    498	02EF  B0 02				     mov     al,2
+    499	02F1  EE				     out     dx,al		     ; port 0, DMA-1 bas&add ch	0
+    500	02F2  E8 0048				     call    copy_buffer
+    501	02F5  83 C7 50				     add     di,50h
+    502	02F8  E2 EF				     loop    locloop_28		     ; Loop if cx > 0
+    503
+    504	02FA  BF 2EEC				     mov     di,2EECh
+    505	02FD  B9 0008				     mov     cx,8
+    506
+    507	0300			     locloop_29:
+    508	0300  B0 01				     mov     al,1
+    509	0302  EE				     out     dx,al		     ; port 0, DMA-1 bas&add ch	0
+    510	0303  E8 0037				     call    copy_buffer
+    511	0306  B0 02				     mov     al,2
+    512	0308  EE				     out     dx,al		     ; port 0, DMA-1 bas&add ch	0
+    513	0309  E8 0031				     call    copy_buffer
+    514	030C  83 C7 50				     add     di,50h
+    515	030F  E2 EF				     loop    locloop_29		     ; Loop if cx > 0
+    516
+    517	0311  B0 07				     mov     al,7
+    518	0313  EE				     out     dx,al		     ; port 0, DMA-1 bas&add ch	0
+    519	0314  BA 03CE				     mov     dx,3CEh
+    520	0317  B8 0105				     mov     ax,105h
+    521	031A  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    522										     ;	al = 5,	mode
+    523	031B  06				     push    es
+    524	031C  1F				     pop     ds
+    525	031D  BE 2C6C				     mov     si,data_7e
+    526	0320  BF 2C88				     mov     di,data_8e
+    527	0323  B4 10				     mov     ah,10h
+    528	0325			     loc_30:
+    529	0325  B9 001C				     mov     cx,1Ch
+    530	0328  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    531	032A  83 C7 34				     add     di,34h
+    532	032D  83 C6 34				     add     si,34h
+    533	0330  FE CC				     dec     ah
+    534	0332  75 F1				     jnz     loc_30		     ; Jump if not zero
+    535	0334  BA 03CE				     mov     dx,3CEh
+    536	0337  B8 0005				     mov     ax,5
+    537	033A  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    538										     ;	al = 5,	mode
+    539	033B  1F				     pop     ds
+    540	033C  C3				     retn
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 11
+208SATNO.asm
+
+
+
+    541
+    542				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    543				     ;				    SUBROUTINE
+    544				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    545
+    546	033D			     copy_buffer	     proc    near
+    547	033D  57				     push    di
+    548	033E  51				     push    cx
+    549	033F  B9 001C				     mov     cx,1Ch
+    550	0342  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    551	0344  59				     pop     cx
+    552	0345  5F				     pop     di
+    553	0346  C3				     retn
+    554	0347			     copy_buffer	     endp
+    555
+    556										     ;*	No entry point to code
+    557	0347  1E				     push    ds
+    558	0348  8C CA				     mov     dx,cs
+    559	034A  81 C2 1000			     add     dx,1000h
+    560	034E  8E DA				     mov     ds,dx
+    561	0350  BE 0000				     mov     si,data_20e
+    562	0353  B8 B800				     mov     ax,0B800h
+    563	0356  8E C0				     mov     es,ax
+    564	0358  BF 163C				     mov     di,data_26e
+    565	035B  B9 0010				     mov     cx,10h
+    566
+    567	035E			     locloop_31:
+    568	035E  51				     push    cx
+    569	035F  57				     push    di
+    570	0360  B9 001C				     mov     cx,1Ch
+    571
+    572	0363			     locloop_32:
+    573	0363  51				     push    cx
+    574	0364  8A 64 1C				     mov     ah,[si+1Ch]
+    575	0367  AC				     lodsb			     ; String [si] to al
+    576	0368  32 D2				     xor     dl,dl		     ; Zero register
+    577	036A  B9 0004				     mov     cx,4
+    578
+    579	036D			     locloop_33:
+    580	036D  02 E4				     add     ah,ah
+    581	036F  12 DB				     adc     bl,bl
+    582	0371  02 C0				     add     al,al
+    583	0373  12 DB				     adc     bl,bl
+    584	0375  02 E4				     add     ah,ah
+    585	0377  12 DB				     adc     bl,bl
+    586	0379  02 C0				     add     al,al
+    587	037B  12 DB				     adc     bl,bl
+    588	037D  80 E3 0F				     and     bl,0Fh
+    589	0380  32 FF				     xor     bh,bh		     ; Zero register
+    590	0382  02 D2				     add     dl,dl
+    591	0384  02 D2				     add     dl,dl
+    592	0386  2E: 0A 97	36B6			     or	     dl,cs:data_14e[bx]
+    593	038B  E2 E0				     loop    locloop_33		     ; Loop if cx > 0
+    594
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 12
+208SATNO.asm
+
+
+
+    595	038D  8A C2				     mov     al,dl
+    596	038F  AA				     stosb			     ; Store al	to es:[di]
+    597	0390  59				     pop     cx
+    598	0391  E2 D0				     loop    locloop_32		     ; Loop if cx > 0
+    599
+    600	0393  1E				     push    ds
+    601	0394  56				     push    si
+    602	0395  06				     push    es
+    603	0396  1F				     pop     ds
+    604	0397  8B F7				     mov     si,di
+    605	0399  83 EE 1C				     sub     si,1Ch
+    606	039C  B9 000E				     mov     cx,0Eh
+    607	039F  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+    608	03A1  5E				     pop     si
+    609	03A2  1F				     pop     ds
+    610	03A3  83 C6 1C				     add     si,1Ch
+    611	03A6  5F				     pop     di
+    612	03A7  81 C7 2000			     add     di,2000h
+    613	03AB  81 FF 4000			     cmp     di,4000h
+    614	03AF  72 04				     jb	     loc_34		     ; Jump if below
+    615	03B1  81 C7 C050			     add     di,data_18e
+    616	03B5			     loc_34:
+    617	03B5  59				     pop     cx
+    618	03B6  E2 A6				     loop    locloop_31		     ; Loop if cx > 0
+    619
+    620	03B8  1F				     pop     ds
+    621	03B9  C3				     retn
+    622	03BA  00 03 02 01 01 03			     db	      00h, 03h,	02h, 01h, 01h, 03h
+    623	03C0  03 03 02 03 01 02			     db	      03h, 03h,	02h, 03h, 01h, 02h
+    624	03C6  02 03 03 03 1E 8C			     db	      02h, 03h,	03h, 03h, 1Eh, 8Ch
+    625	03CC  CA 81 C2 00 10 8E			     db	     0CAh, 81h,0C2h, 00h, 10h, 8Eh
+    626	03D2  DA BE 00 00 B8 00			     db	     0DAh,0BEh,	00h, 00h,0B8h, 00h
+    627	03D8  B0 8E C0 BF C1 53			     db	     0B0h, 8Eh,0C0h,0BFh,0C1h, 53h
+    628	03DE  B9 10 00				     db	     0B9h, 10h,	00h
+    629
+    630	03E1			     locloop_35:
+    631	03E1  51				     push    cx
+    632	03E2  57				     push    di
+    633	03E3  B9 001C				     mov     cx,1Ch
+    634
+    635	03E6			     locloop_36:
+    636	03E6  51				     push    cx
+    637	03E7  8A 64 1C				     mov     ah,[si+1Ch]
+    638	03EA  AC				     lodsb			     ; String [si] to al
+    639	03EB  32 D2				     xor     dl,dl		     ; Zero register
+    640	03ED  B9 0004				     mov     cx,4
+    641
+    642	03F0			     locloop_37:
+    643	03F0  02 E4				     add     ah,ah
+    644	03F2  12 DB				     adc     bl,bl
+    645	03F4  02 C0				     add     al,al
+    646	03F6  12 DB				     adc     bl,bl
+    647	03F8  02 E4				     add     ah,ah
+    648	03FA  12 DB				     adc     bl,bl
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 13
+208SATNO.asm
+
+
+
+    649	03FC  02 C0				     add     al,al
+    650	03FE  12 DB				     adc     bl,bl
+    651	0400  80 E3 0F				     and     bl,0Fh
+    652	0403  32 FF				     xor     bh,bh		     ; Zero register
+    653	0405  02 D2				     add     dl,dl
+    654	0407  02 D2				     add     dl,dl
+    655	0409  2E: 0A 97	36B6			     or	     dl,cs:data_14e[bx]
+    656	040E  E2 E0				     loop    locloop_37		     ; Loop if cx > 0
+    657
+    658	0410  8A C2				     mov     al,dl
+    659	0412  AA				     stosb			     ; Store al	to es:[di]
+    660	0413  59				     pop     cx
+    661	0414  E2 D0				     loop    locloop_36		     ; Loop if cx > 0
+    662
+    663	0416  1E				     push    ds
+    664	0417  56				     push    si
+    665	0418  06				     push    es
+    666	0419  1F				     pop     ds
+    667	041A  8B F7				     mov     si,di
+    668	041C  83 EE 1C				     sub     si,1Ch
+    669	041F  B9 000E				     mov     cx,0Eh
+    670	0422  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+    671	0424  5E				     pop     si
+    672	0425  1F				     pop     ds
+    673	0426  83 C6 1C				     add     si,1Ch
+    674	0429  5F				     pop     di
+    675	042A  81 C7 2000			     add     di,2000h
+    676	042E  81 FF 6000			     cmp     di,data_17e
+    677	0432  72 19				     jb	     loc_38		     ; Jump if below
+    678	0434  1E				     push    ds
+    679	0435  56				     push    si
+    680	0436  51				     push    cx
+    681	0437  57				     push    di
+    682	0438  06				     push    es
+    683	0439  1F				     pop     ds
+    684	043A  8B F7				     mov     si,di
+    685	043C  81 EE 2000			     sub     si,2000h
+    686	0440  B9 0038				     mov     cx,38h
+    687	0443  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    688	0445  5F				     pop     di
+    689	0446  59				     pop     cx
+    690	0447  5E				     pop     si
+    691	0448  1F				     pop     ds
+    692	0449  81 C7 A05A			     add     di,0A05Ah
+    693	044D			     loc_38:
+    694	044D  59				     pop     cx
+    695	044E  E2 91				     loop    locloop_35		     ; Loop if cx > 0
+    696
+    697	0450  1F				     pop     ds
+    698	0451  C3				     retn
+    699										     ;*	No entry point to code
+    700	0452  1E				     push    ds
+    701	0453  8C CA				     mov     dx,cs
+    702	0455  81 C2 1000			     add     dx,1000h
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 14
+208SATNO.asm
+
+
+
+    703	0459  8E DA				     mov     ds,dx
+    704	045B  BE 0000				     mov     si,data_20e
+    705	045E  B8 A000				     mov     ax,0A000h
+    706	0461  8E C0				     mov     es,ax
+    707	0463  BF B1B0				     mov     di,data_22e
+    708	0466  B9 0008				     mov     cx,8
+    709
+    710	0469			     locloop_39:
+    711	0469  51				     push    cx
+    712	046A  56				     push    si
+    713	046B  57				     push    di
+    714	046C  B9 000E				     mov     cx,0Eh
+    715
+    716	046F			     locloop_40:
+    717	046F  51				     push    cx
+    718	0470  8B 14				     mov     dx,[si]
+    719	0472  8B 5C 1C				     mov     bx,[si+1Ch]
+    720	0475  86 D6				     xchg    dl,dh
+    721	0477  86 DF				     xchg    bl,bh
+    722	0479  B9 0008				     mov     cx,8
+    723
+    724	047C			     locloop_41:
+    725	047C  32 C0				     xor     al,al		     ; Zero register
+    726	047E  03 D2				     add     dx,dx
+    727	0480  12 C0				     adc     al,al
+    728	0482  03 DB				     add     bx,bx
+    729	0484  12 C0				     adc     al,al
+    730	0486  02 C0				     add     al,al
+    731	0488  03 D2				     add     dx,dx
+    732	048A  12 C0				     adc     al,al
+    733	048C  03 DB				     add     bx,bx
+    734	048E  12 C0				     adc     al,al
+    735	0490  02 C0				     add     al,al
+    736	0492  AA				     stosb			     ; Store al	to es:[di]
+    737	0493  E2 E7				     loop    locloop_41		     ; Loop if cx > 0
+    738
+    739	0495  46				     inc     si
+    740	0496  46				     inc     si
+    741	0497  59				     pop     cx
+    742	0498  E2 D5				     loop    locloop_40		     ; Loop if cx > 0
+    743
+    744	049A  5F				     pop     di
+    745	049B  81 C7 0140			     add     di,140h
+    746	049F  5E				     pop     si
+    747	04A0  83 C6 38				     add     si,38h
+    748	04A3  59				     pop     cx
+    749	04A4  E2 C3				     loop    locloop_39		     ; Loop if cx > 0
+    750
+    751	04A6  BF BBB0				     mov     di,data_24e
+    752	04A9  B9 0008				     mov     cx,8
+    753
+    754	04AC			     locloop_42:
+    755	04AC  51				     push    cx
+    756	04AD  56				     push    si
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 15
+208SATNO.asm
+
+
+
+    757	04AE  57				     push    di
+    758	04AF  B9 000E				     mov     cx,0Eh
+    759
+    760	04B2			     locloop_43:
+    761	04B2  51				     push    cx
+    762	04B3  8B 1C				     mov     bx,[si]
+    763	04B5  8B 54 1C				     mov     dx,[si+1Ch]
+    764	04B8  86 D6				     xchg    dl,dh
+    765	04BA  86 DF				     xchg    bl,bh
+    766	04BC  B9 0008				     mov     cx,8
+    767
+    768	04BF			     locloop_44:
+    769	04BF  32 C0				     xor     al,al		     ; Zero register
+    770	04C1  03 D2				     add     dx,dx
+    771	04C3  12 C0				     adc     al,al
+    772	04C5  03 DB				     add     bx,bx
+    773	04C7  12 C0				     adc     al,al
+    774	04C9  02 C0				     add     al,al
+    775	04CB  03 D2				     add     dx,dx
+    776	04CD  12 C0				     adc     al,al
+    777	04CF  03 DB				     add     bx,bx
+    778	04D1  12 C0				     adc     al,al
+    779	04D3  AA				     stosb			     ; Store al	to es:[di]
+    780	04D4  E2 E9				     loop    locloop_44		     ; Loop if cx > 0
+    781
+    782	04D6  46				     inc     si
+    783	04D7  46				     inc     si
+    784	04D8  59				     pop     cx
+    785	04D9  E2 D7				     loop    locloop_43		     ; Loop if cx > 0
+    786
+    787	04DB  5F				     pop     di
+    788	04DC  81 C7 0140			     add     di,140h
+    789	04E0  5E				     pop     si
+    790	04E1  83 C6 38				     add     si,38h
+    791	04E4  59				     pop     cx
+    792	04E5  E2 C5				     loop    locloop_42		     ; Loop if cx > 0
+    793
+    794	04E7  06				     push    es
+    795	04E8  1F				     pop     ds
+    796	04E9  BE B1B0				     mov     si,data_22e
+    797	04EC  BF B220				     mov     di,data_23e
+    798	04EF  B4 10				     mov     ah,10h
+    799	04F1			     loc_45:
+    800	04F1  B9 0038				     mov     cx,38h
+    801	04F4  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+    802	04F6  81 C7 00D0			     add     di,0D0h
+    803	04FA  81 C6 00D0			     add     si,0D0h
+    804	04FE  FE CC				     dec     ah
+    805	0500  75 EF				     jnz     loc_45		     ; Jump if not zero
+    806	0502  1F				     pop     ds
+    807	0503  C3				     retn
+    808										     ;*	No entry point to code
+    809	0504  1E				     push    ds
+    810	0505  8C CA				     mov     dx,cs
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 16
+208SATNO.asm
+
+
+
+    811	0507  81 C2 1000			     add     dx,1000h
+    812	050B  8E DA				     mov     ds,dx
+    813	050D  BE 0000				     mov     si,data_20e
+    814	0510  B8 B800				     mov     ax,0B800h
+    815	0513  8E C0				     mov     es,ax
+    816	0515  BF 55F8				     mov     di,55F8h
+    817	0518  B9 0008				     mov     cx,8
+    818
+    819	051B			     locloop_46:
+    820	051B  51				     push    cx
+    821	051C  57				     push    di
+    822	051D  B9 001C				     mov     cx,1Ch
+    823
+    824	0520			     locloop_47:
+    825	0520  51				     push    cx
+    826	0521  8A 74 1C				     mov     dh,[si+1Ch]
+    827	0524  8A 14				     mov     dl,[si]
+    828	0526  46				     inc     si
+    829	0527  BD 38C7				     mov     bp,38C7h
+    830	052A  E8 0074				     call    bat_process_loop_2
+    831	052D  AA				     stosb			     ; Store al	to es:[di]
+    832	052E  E8 0070				     call    bat_process_loop_2
+    833	0531  AA				     stosb			     ; Store al	to es:[di]
+    834	0532  59				     pop     cx
+    835	0533  E2 EB				     loop    locloop_47		     ; Loop if cx > 0
+    836
+    837	0535  1E				     push    ds
+    838	0536  56				     push    si
+    839	0537  06				     push    es
+    840	0538  1F				     pop     ds
+    841	0539  8B F7				     mov     si,di
+    842	053B  83 EE 38				     sub     si,38h
+    843	053E  B9 001C				     mov     cx,1Ch
+    844	0541  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+    845	0543  5E				     pop     si
+    846	0544  1F				     pop     ds
+    847	0545  83 C6 1C				     add     si,1Ch
+    848	0548  5F				     pop     di
+    849	0549  81 C7 2000			     add     di,2000h
+    850	054D  81 FF 8000			     cmp     di,8000h
+    851	0551  72 04				     jb	     loc_48		     ; Jump if below
+    852	0553  81 C7 80A0			     add     di,80A0h
+    853	0557			     loc_48:
+    854	0557  59				     pop     cx
+    855	0558  E2 C1				     loop    locloop_46		     ; Loop if cx > 0
+    856
+    857	055A  BF 5738				     mov     di,5738h
+    858	055D  B9 0008				     mov     cx,8
+    859
+    860	0560			     locloop_49:
+    861	0560  51				     push    cx
+    862	0561  57				     push    di
+    863	0562  B9 001C				     mov     cx,1Ch
+    864
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 17
+208SATNO.asm
+
+
+
+    865	0565			     locloop_50:
+    866	0565  51				     push    cx
+    867	0566  8A 74 1C				     mov     dh,[si+1Ch]
+    868	0569  8A 14				     mov     dl,[si]
+    869	056B  46				     inc     si
+    870	056C  BD 38D7				     mov     bp,38D7h
+    871	056F  E8 002F				     call    bat_process_loop_2
+    872	0572  AA				     stosb			     ; Store al	to es:[di]
+    873	0573  E8 002B				     call    bat_process_loop_2
+    874	0576  AA				     stosb			     ; Store al	to es:[di]
+    875	0577  59				     pop     cx
+    876	0578  E2 EB				     loop    locloop_50		     ; Loop if cx > 0
+    877
+    878	057A  1E				     push    ds
+    879	057B  56				     push    si
+    880	057C  06				     push    es
+    881	057D  1F				     pop     ds
+    882	057E  8B F7				     mov     si,di
+    883	0580  83 EE 38				     sub     si,38h
+    884	0583  B9 001C				     mov     cx,1Ch
+    885	0586  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+    886	0588  5E				     pop     si
+    887	0589  1F				     pop     ds
+    888	058A  83 C6 1C				     add     si,1Ch
+    889	058D  5F				     pop     di
+    890	058E  81 C7 2000			     add     di,2000h
+    891	0592  81 FF 8000			     cmp     di,8000h
+    892	0596  72 04				     jb	     loc_51		     ; Jump if below
+    893	0598  81 C7 80A0			     add     di,80A0h
+    894	059C			     loc_51:
+    895	059C  59				     pop     cx
+    896	059D  E2 C1				     loop    locloop_49		     ; Loop if cx > 0
+    897
+    898	059F  1F				     pop     ds
+    899	05A0  C3				     retn
+    900
+    901				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    902				     ;				    SUBROUTINE
+    903				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    904
+    905	05A1			     bat_process_loop_2		     proc    near
+    906	05A1  32 C0				     xor     al,al		     ; Zero register
+    907	05A3  B9 0002				     mov     cx,2
+    908
+    909	05A6			     locloop_52:
+    910	05A6  02 F6				     add     dh,dh
+    911	05A8  12 DB				     adc     bl,bl
+    912	05AA  02 D2				     add     dl,dl
+    913	05AC  12 DB				     adc     bl,bl
+    914	05AE  02 F6				     add     dh,dh
+    915	05B0  12 DB				     adc     bl,bl
+    916	05B2  02 D2				     add     dl,dl
+    917	05B4  12 DB				     adc     bl,bl
+    918	05B6  80 E3 0F				     and     bl,0Fh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 18
+208SATNO.asm
+
+
+
+    919	05B9  32 FF				     xor     bh,bh		     ; Zero register
+    920	05BB  02 C0				     add     al,al
+    921	05BD  02 C0				     add     al,al
+    922	05BF  02 C0				     add     al,al
+    923	05C1  02 C0				     add     al,al
+    924	05C3  03 DD				     add     bx,bp
+    925	05C5  2E: 0A 07				     or	     al,cs:[bx]
+    926	05C8  E2 DC				     loop    locloop_52		     ; Loop if cx > 0
+    927
+    928	05CA  C3				     retn
+    929	05CB			     bat_process_loop_2		     endp
+    930
+    931	05CB  00 03 04 07 03 0B			     db	      00h, 03h,	04h, 07h, 03h, 0Bh
+    932	05D1  05 0A 04 05 0C 06			     db	      05h, 0Ah,	04h, 05h, 0Ch, 06h
+    933	05D7  07 0A 06 0E 00 07			     db	      07h, 0Ah,	06h, 0Eh, 00h, 07h
+    934	05DD  04 02 07 0F 0C 0E			     db	      04h, 02h,	07h, 0Fh, 0Ch, 0Eh
+    935	05E3  04 0C 0C 02 02 0E			     db	      04h, 0Ch,	0Ch, 02h, 02h, 0Eh
+    936	05E9  02 0A 06 AA 70 BB			     db	      02h, 0Ah,	06h,0AAh, 70h,0BBh
+    937	05EF  FB BF BB BF BB BB			     db	     0FBh,0BFh,0BBh,0BFh,0BBh,0BBh
+    938	05F5  FF BB BB BF 06 BB			     db	     0FFh,0BBh,0BBh,0BFh, 06h,0BBh
+    939	05FB  08 FB FF FF BB BF			     db	      08h,0FBh,0FFh,0FFh,0BBh,0BFh
+    940	0601  FB 06 BB 10 FF FF			     db	     0FBh, 06h,0BBh, 10h,0FFh,0FFh
+    941	0607  FB 06 BB 0C FE FE			     db	     0FBh, 06h,0BBh, 0Ch,0FEh,0FEh
+    942	060D  FE FF FE EF FF FF			     db	     0FEh,0FFh,0FEh,0EFh,0FFh,0FFh
+    943	0613  FF EF FF FF EE EE			     db	     0FFh,0EFh,0FFh,0FFh,0EEh,0EEh
+    944	0619  EF FE EF FF FF FE			     db	     0EFh,0FEh,0EFh,0FFh,0FFh,0FEh
+    945	061F  FF EE EF FF FF FF			     db	     0FFh,0EEh,0EFh,0FFh,0FFh,0FFh
+    946	0625  EE EF EE EF FE FF			     db	     0EEh,0EFh,0EEh,0EFh,0FEh,0FFh
+    947	062B  EF FE EF EF FF FE			     db	     0EFh,0FEh,0EFh,0EFh,0FFh,0FEh
+    948	0631  FF EF FF FF FE FF			     db	     0FFh,0EFh,0FFh,0FFh,0FEh,0FFh
+    949	0637  EE 06 EF 04 FE FF			     db	     0EEh, 06h,0EFh, 04h,0FEh,0FFh
+    950	063D  FF FE EE EE EE 06			     db	     0FFh,0FEh,0EEh,0EEh,0EEh, 06h
+    951	0643  FF 32 EF FB 06 FF			     db	     0FFh, 32h,0EFh,0FBh, 06h,0FFh
+    952	0649  77 BB BB BB 06 FF			     db	      77h,0BBh,0BBh,0BBh, 06h,0FFh
+    953	064F  0D FE EA BB FF FF			     db	      0Dh,0FEh,0EAh,0BBh,0FFh,0FFh
+    954	0655  FE EA EF FF FF EE			     db	     0FEh,0EAh,0EFh,0FFh,0FFh,0EEh
+    955	065B  EE EE 06 FF 10 FE			     db	     0EEh,0EEh,	06h,0FFh, 10h,0FEh
+    956	0661  EE EE 06 FF 05 BB			     db	     0EEh,0EEh,	06h,0FFh, 05h,0BBh
+    957	0667  FB AE 06 EE 04 EF			     db	     0FBh,0AEh,	06h,0EEh, 04h,0EFh
+    958	066D  FF FF FB BA BE BE			     db	     0FFh,0FFh,0FBh,0BAh,0BEh,0BEh
+    959	0673  EF FB FB BB 06 FF			     db	     0EFh,0FBh,0FBh,0BBh, 06h,0FFh
+    960	0679  0E 06 BB 0B BF FF			     db	      0Eh, 06h,0BBh, 0Bh,0BFh,0FFh
+    961	067F  FF BB BB BB FB BB			     db	     0FFh,0BBh,0BBh,0BBh,0FBh,0BBh
+    962	0685  BB BF BF FF BB EE			     db	     0BBh,0BFh,0BFh,0FFh,0BBh,0EEh
+    963	068B  EE EA AA AA AA EE			     db	     0EEh,0EAh,0AAh,0AAh,0AAh,0EEh
+    964	0691  FE EE EE EF FF EA			     db	     0FEh,0EEh,0EEh,0EFh,0FFh,0EAh
+    965	0697  EA AB AA BF EE EE			     db	     0EAh,0ABh,0AAh,0BFh,0EEh,0EEh
+    966	069D  AA 06 BB 04 BF FF			     db	     0AAh, 06h,0BBh, 04h,0BFh,0FFh
+    967	06A3  FE 06 EE 07 FE AA			     db	     0FEh, 06h,0EEh, 07h,0FEh,0AAh
+    968	06A9  AE EE AA AA AE EE			     db	     0AEh,0EEh,0AAh,0AAh,0AEh,0EEh
+    969	06AF  FF FF FF 06 EE 04			     db	     0FFh,0FFh,0FFh, 06h,0EEh, 04h
+    970	06B5  EF EE FF FF FF EE			     db	     0EFh,0EEh,0FFh,0FFh,0FFh,0EEh
+    971	06BB  FF BB BB BB BA AB			     db	     0FFh,0BBh,0BBh,0BBh,0BAh,0ABh
+    972	06C1  AB 06 BB 05 BA AB			     db	     0ABh, 06h,0BBh, 05h,0BAh,0ABh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 19
+208SATNO.asm
+
+
+
+    973	06C7  AA AA AB AB BB 06			     db	     0AAh,0AAh,0ABh,0ABh,0BBh, 06h
+    974	06CD  AA 06 AB 06 BB 07			     db	     0AAh, 06h,0ABh, 06h,0BBh, 07h
+    975	06D3  AA AB 06 BB 13 BF			     db	     0AAh,0ABh,	06h,0BBh, 13h,0BFh
+    976	06D9  FF BF 06 EE 08 06			     db	     0FFh,0BFh,	06h,0EEh, 08h, 06h
+    977	06DF  AA 0D EE AE AA EE			     db	     0AAh, 0Dh,0EEh,0AEh,0AAh,0EEh
+    978	06E5  EE EA AA EE AA			     db	     0EEh,0EAh,0AAh,0EEh,0AAh
+    979	06EA  AA		     data_2	     db	     0AAh		     ; Data table (indexed access)
+    980	06EB  EA EE EA AA EE EE			     db	     0EAh,0EEh,0EAh,0AAh,0EEh,0EEh
+    981	06F1  FE AA EA AA AE EE			     db	     0FEh,0AAh,0EAh,0AAh,0AEh,0EEh
+    982	06F7  EA AA EE AA EA AE			     db	     0EAh,0AAh,0EEh,0AAh,0EAh,0AEh
+    983	06FD  06 EE 06 EF FB 06			     db	      06h,0EEh,	06h,0EFh,0FBh, 06h
+    984	0703  AA 2D BB AA BA AA			     db	     0AAh, 2Dh,0BBh,0AAh,0BAh,0AAh
+    985	0709  AB 06 BB 05 EA EE			     db	     0ABh, 06h,0BBh, 05h,0EAh,0EEh
+    986	070F  06 AA 35 EE AB AA			     db	      06h,0AAh,	35h,0EEh,0ABh,0AAh
+    987	0715  AA AA EA EE EA AE			     db	     0AAh,0AAh,0EAh,0EEh,0EAh,0AEh
+    988	071B  AB 06 AA 2F EA 06			     db	     0ABh, 06h,0AAh, 2Fh,0EAh, 06h
+    989	0721  AA 08 AB AA BA EA			     db	     0AAh, 08h,0ABh,0AAh,0BAh,0EAh
+    990	0727  06 AA B6 AF FE EF			     db	      06h,0AAh,0B6h,0AFh,0FEh,0EFh
+    991	072D  06 AA 04 BF EE EF			     db	      06h,0AAh,	04h,0BFh,0EEh,0EFh
+    992	0733  FA 06 AA 2D BE AF			     db	     0FAh, 06h,0AAh, 2Dh,0BEh,0AFh
+    993	0739  FE EE BB FA AA BA			     db	     0FEh,0EEh,0BBh,0FAh,0AAh,0BAh
+    994	073F  FB BA 06 AA 1F 3F			     db	     0FBh,0BAh,	06h,0AAh, 1Fh, 3Fh
+    995	0745  FE EE EA BB 06 AA			     db	     0FEh,0EEh,0EAh,0BBh, 06h,0AAh
+    996	074B  09 AB FE AE EA 06			     db	      09h,0ABh,0FEh,0AEh,0EAh, 06h
+    997	0751  AA 04 FA BE 06 AA			     db	     0AAh, 04h,0FAh,0BEh, 06h,0AAh
+    998	0757  20 3E EA 06 AA 0C			     db	      20h, 3Eh,0EAh, 06h,0AAh, 0Ch
+    999	075D  AF FE AB BB BA AA			     db	     0AFh,0FEh,0ABh,0BBh,0BAh,0AAh
+   1000	0763  AA AA FA BA 06 AA			     db	     0AAh,0AAh,0FAh,0BAh, 06h,0AAh
+   1001	0769  1F AB BA 06 AA 0D			     db	      1Fh,0ABh,0BAh, 06h,0AAh, 0Dh
+   1002	076F  AF FA AA EA AA AA			     db	     0AFh,0FAh,0AAh,0EAh,0AAh,0AAh
+   1003	0775  AA AB FB EE 06 AA			     db	     0AAh,0ABh,0FBh,0EEh, 06h,0AAh
+   1004	077B  10 BF FF FF EF 06			     db	      10h,0BFh,0FFh,0FFh,0EFh, 06h
+   1005	0781  AA 0B AF AE EE EF			     db	     0AAh, 0Bh,0AFh,0AEh,0EEh,0EFh
+   1006	0787  FE BA AA EE EE FF			     db	     0FEh,0BAh,0AAh,0EEh,0EEh,0FFh
+   1007	078D  FB BB AA AA AA FF			     db	     0FBh,0BBh,0AAh,0AAh,0AAh,0FFh
+   1008	0793  EA AA EA AA AA AA			     db	     0EAh,0AAh,0EAh,0AAh,0AAh,0AAh
+   1009	0799  AB EE BA AA AA AB			     db	     0ABh,0EEh,0BAh,0AAh,0AAh,0ABh
+   1010	079F  FF FB FF BB BB AA			     db	     0FFh,0FBh,0FFh,0BBh,0BBh,0AAh
+   1011	07A5  EE 06 AA 05 BF EE			     db	     0EEh, 06h,0AAh, 05h,0BFh,0EEh
+   1012	07AB  AB FF BA 06 AA 07			     db	     0ABh,0FFh,0BAh, 06h,0AAh, 07h
+   1013	07B1  FF FE EE AA AF AF			     db	     0FFh,0FEh,0EEh,0AAh,0AFh,0AFh
+   1014	07B7  BB BB AA AA AE EE			     db	     0BBh,0BBh,0AAh,0AAh,0AEh,0EEh
+   1015	07BD  06 AA 04 AE EE EF			     db	      06h,0AAh,	04h,0AEh,0EEh,0EFh
+   1016	07C3  BF EA 06 AA 05 AF			     db	     0BFh,0EAh,	06h,0AAh, 05h,0AFh
+   1017	07C9  EC BA AA AA AF FF			     db	     0ECh,0BAh,0AAh,0AAh,0AFh,0FFh
+   1018	07CF  FF BB FF EA 06 AA			     db	     0FFh,0BBh,0FFh,0EAh, 06h,0AAh
+   1019	07D5  06 BF FF EE AA AB			     db	      06h,0BFh,0FFh,0EEh,0AAh,0ABh
+   1020	07DB  AA BF BF EB FB BB			     db	     0AAh,0BFh,0BFh,0EBh,0FBh,0BBh
+   1021	07E1  BB BB 06 AA 04 AF			     db	     0BBh,0BBh,	06h,0AAh, 04h,0AFh
+   1022	07E7  2B FA AA AA AA 06			     db	      2Bh,0FAh,0AAh,0AAh,0AAh, 06h
+   1023	07ED  BB 04 AA AE EA AA			     db	     0BBh, 04h,0AAh,0AEh,0EAh,0AAh
+   1024	07F3  FA BF EA AA BB BF			     db	     0FAh,0BFh,0EAh,0AAh,0BBh,0BFh
+   1025	07F9  FB BB BF E8 BA AA			     db	     0FBh,0BBh,0BFh,0E8h,0BAh,0AAh
+   1026	07FF  AA AF FE AB EF FE			     db	     0AAh,0AFh,0FEh,0ABh,0EFh,0FEh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 20
+208SATNO.asm
+
+
+
+   1027	0805  FF FE EA AA AF 06			     db	     0FFh,0FEh,0EAh,0AAh,0AFh, 06h
+   1028	080B  FF 04 EE AA AA AA			     db	     0FFh, 04h,0EEh,0AAh,0AAh,0AAh
+   1029	0811  FF AE EE FF EA AE			     db	     0FFh,0AEh,0EEh,0FFh,0EAh,0AEh
+   1030	0817  EE FB BA FF FF EE			     db	     0EEh,0FBh,0BAh,0FFh,0FFh,0EEh
+   1031	081D  EA BE EE EE EE BF			     db	     0EAh,0BEh,0EEh,0EEh,0EEh,0BFh
+   1032	0823  FF EB FF FE BA EA			     db	     0FFh,0EBh,0FFh,0FEh,0BAh,0EAh
+   1033	0829  AB EB FF 06 AA 06			     db	     0ABh,0EBh,0FFh, 06h,0AAh, 06h
+   1034	082F  FE EC 8E AA AA BF			     db	     0FEh,0ECh,	8Eh,0AAh,0AAh,0BFh
+   1035	0835  FE AF BA 06 FF 05			     db	     0FEh,0AFh,0BAh, 06h,0FFh, 05h
+   1036	083B  FA BF BE FF FF EE			     db	     0FAh,0BFh,0BEh,0FFh,0FFh,0EEh
+   1037	0841  AA AA AA 06 FF 05			     db	     0AAh,0AAh,0AAh, 06h,0FFh, 05h
+   1038	0847  AB 06 FF 04 FE BF			     db	     0ABh, 06h,0FFh, 04h,0FEh,0BFh
+   1039	084D  AA AF 06 FF 08 FB			     db	     0AAh,0AFh,	06h,0FFh, 08h,0FBh
+   1040	0853  FF EF AF FF AA A8			     db	     0FFh,0EFh,0AFh,0FFh,0AAh,0A8h
+   1041	0859  BF FF FB FF BE EE			     db	     0BFh,0FFh,0FBh,0FFh,0BEh,0EEh
+   1042	085F  2E FF FF BF FE AF			     db	      2Eh,0FFh,0FFh,0BFh,0FEh,0AFh
+   1043	0865  BB FE AA EE BE FB			     db	     0BBh,0FEh,0AAh,0EEh,0BEh,0FBh
+   1044	086B  AA BF EB BF FF EE			     db	     0AAh,0BFh,0EBh,0BFh,0FFh,0EEh
+   1045	0871  06 AA 07 AF AB EA			     db	      06h,0AAh,	07h,0AFh,0ABh,0EAh
+   1046	0877  AA AA AA A8 BF AA			     db	     0AAh,0AAh,0AAh,0A8h,0BFh,0AAh
+   1047	087D  AE EE EB AA AE EE			     db	     0AEh,0EEh,0EBh,0AAh,0AEh,0EEh
+   1048	0883  AB BB AF AF EA BF			     db	     0ABh,0BBh,0AFh,0AFh,0EAh,0BFh
+   1049	0889  AF FE AA A8 AA AA			     db	     0AFh,0FEh,0AAh,0A8h,0AAh,0AAh
+   1050	088F  AF EE EA EE 22 AA			     db	     0AFh,0EEh,0EAh,0EEh, 22h,0AAh
+   1051	0895  AA FF FE EB BA BE			     db	     0AAh,0FFh,0FEh,0EBh,0BAh,0BEh
+   1052	089B  AA EE FE FB BA AF			     db	     0AAh,0EEh,0FEh,0FBh,0BAh,0AFh
+   1053	08A1  AA BF FF EE AA AA			     db	     0AAh,0BFh,0FFh,0EEh,0AAh,0AAh
+   1054	08A7  AA FF FF FF EB FA			     db	     0AAh,0FFh,0FFh,0FFh,0EBh,0FAh
+   1055	08AD  AA FF FF FF FE A2			     db	     0AAh,0FFh,0FFh,0FFh,0FEh,0A2h
+   1056	08B3  FD E8 AF FE AB 06			     db	     0FDh,0E8h,0AFh,0FEh,0ABh, 06h
+   1057	08B9  FF 06 EF BF BE EF			     db	     0FFh, 06h,0EFh,0BFh,0BEh,0EFh
+   1058	08BF  FA AA A8 2B FF EF			     db	     0FAh,0AAh,0A8h, 2Bh,0FFh,0EFh
+   1059	08C5  FF EB BE 8A BF FE			     db	     0FFh,0EBh,0BEh, 8Ah,0BFh,0FEh
+   1060	08CB  FF FE EB BE BA AA			     db	     0FFh,0FEh,0EBh,0BEh,0BAh,0AAh
+   1061	08D1  FA BE FB BA BE EA			     db	     0FAh,0BEh,0FBh,0BAh,0BEh,0EAh
+   1062	08D7  BF FF AE AA AA AA			     db	     0BFh,0FFh,0AEh,0AAh,0AAh,0AAh
+   1063	08DD  AE BA AA FA AA BB			     db	     0AEh,0BAh,0AAh,0FAh,0AAh,0BBh
+   1064	08E3  FE AA BF FA 82 FB			     db	     0FEh,0AAh,0BFh,0FAh, 82h,0FBh
+   1065	08E9  E8 AB FE AB FF EB			     db	     0E8h,0ABh,0FEh,0ABh,0FFh,0EBh
+   1066	08EF  06 FF 04 EF BF BF			     db	      06h,0FFh,	04h,0EFh,0BFh,0BFh
+   1067	08F5  AF FA AA AA 0B FF			     db	     0AFh,0FAh,0AAh,0AAh, 0Bh,0FFh
+   1068	08FB  EE FF AB BA A8 BF			     db	     0EEh,0FFh,0ABh,0BAh,0A8h,0BFh
+   1069	0901  FB FF FB AB FE BA			     db	     0FBh,0FFh,0FBh,0ABh,0FEh,0BAh
+   1070	0907  AA FA FE FB BA BB			     db	     0AAh,0FAh,0FEh,0FBh,0BAh,0BBh
+   1071	090D  AA BF FF BA AA AA			     db	     0AAh,0BFh,0FFh,0BAh,0AAh,0AAh
+   1072	0913  AA BE BF EF AA AA			     db	     0AAh,0BEh,0BFh,0EFh,0AAh,0AAh
+   1073	0919  AF FF AA FF FA 22			     db	     0AFh,0FFh,0AAh,0FFh,0FAh, 22h
+   1074	091F  FF E8 AA FA AB FF			     db	     0FFh,0E8h,0AAh,0FAh,0ABh,0FFh
+   1075	0925  AB 06 FF 04 BE FF			     db	     0ABh, 06h,0FFh, 04h,0BEh,0FFh
+   1076	092B  BE AF EA AA AA 8A			     db	     0BEh,0AFh,0EAh,0AAh,0AAh, 8Ah
+   1077	0931  FF BF FA AE AE 88			     db	     0FFh,0BFh,0FAh,0AEh,0AEh, 88h
+   1078	0937  AB FB FF EB AA FA			     db	     0ABh,0FBh,0FFh,0EBh,0AAh,0FAh
+   1079	093D  BA AA FA EE FB AA			     db	     0BAh,0AAh,0FAh,0EEh,0FBh,0AAh
+   1080	0943  BE AA BF FF BA 06			     db	     0BEh,0AAh,0BFh,0FFh,0BAh, 06h
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 21
+208SATNO.asm
+
+
+
+   1081	0949  AA 04 BE AA AA AA			     db	     0AAh, 04h,0BEh,0AAh,0AAh,0AAh
+   1082	094F  AE FF EA FE FA CB			     db	     0AEh,0FFh,0EAh,0FEh,0FAh,0CBh
+   1083	0955  FF A8 8A AA AE EE			     db	     0FFh,0A8h,	8Ah,0AAh,0AEh,0EEh
+   1084	095B  AB FF FF FF FE FF			     db	     0ABh,0FFh,0FFh,0FFh,0FEh,0FFh
+   1085	0961  AE FF BF EA AA AA			     db	     0AEh,0FFh,0BFh,0EAh,0AAh,0AAh
+   1086	0967  0A FE FB BA EE FE			     db	      0Ah,0FEh,0FBh,0BAh,0EEh,0FEh
+   1087	096D  80 AA FF FF EB AA			     db	      80h,0AAh,0FFh,0FFh,0EBh,0AAh
+   1088	0973  EA AE AA EB BE EE			     db	     0EAh,0AEh,0AAh,0EBh,0BEh,0EEh
+   1089	0979  BA BE AA BF FF FA			     db	     0BAh,0BEh,0AAh,0BFh,0FFh,0FAh
+   1090	097F  06 AA 04 FE AA AE			     db	      06h,0AAh,	04h,0FEh,0AAh,0AEh
+   1091	0985  AA AF BF AB FF E8			     db	     0AAh,0AFh,0BFh,0ABh,0FFh,0E8h
+   1092	098B  C3 FF 98 0A AA AB			     db	     0C3h,0FFh,	98h, 0Ah,0AAh,0ABh
+   1093	0991  FA BB FF FF FF FE			     db	     0FAh,0BBh,0FFh,0FFh,0FFh,0FEh
+   1094	0997  FF AB FA BE EA AA			     db	     0FFh,0ABh,0FAh,0BEh,0EAh,0AAh
+   1095	099D  AA 82 BE EF EB BB			     db	     0AAh, 82h,0BEh,0EFh,0EBh,0BBh
+   1096	09A3  EE 82 2A FF FF AF			     db	     0EEh, 82h,	2Ah,0FFh,0FFh,0AFh
+   1097	09A9  AA EA AA AB BB FE			     db	     0AAh,0EAh,0AAh,0ABh,0BBh,0FEh
+   1098	09AF  EE BA BA AA BF FF			     db	     0EEh,0BAh,0BAh,0AAh,0BFh,0FFh
+   1099	09B5  AE 06 AA 04 BE AA			     db	     0AEh, 06h,0AAh, 04h,0BEh,0AAh
+   1100	09BB  BA AA AB FE BB AF			     db	     0BAh,0AAh,0ABh,0FEh,0BBh,0AFh
+   1101	09C1  FB CF FE 98 08 88			     db	     0FBh,0CFh,0FEh, 98h, 08h, 88h
+   1102	09C7  AA FA AF FE FF FF			     db	     0AAh,0FAh,0AFh,0FEh,0FFh,0FFh
+   1103	09CD  FE FE AB EE FE EA			     db	     0FEh,0FEh,0ABh,0EEh,0FEh,0EAh
+   1104	09D3  AA AA 88 AB FF EA			     db	     0AAh,0AAh,	88h,0ABh,0FFh,0EAh
+   1105	09D9  AF BA 82 23 FF FF			     db	     0AFh,0BAh,	82h, 23h,0FFh,0FFh
+   1106	09DF  AE AA BB AE AB EB			     db	     0AEh,0AAh,0BBh,0AEh,0ABh,0EBh
+   1107	09E5  FF AE BA AE AA BF			     db	     0FFh,0AEh,0BAh,0AEh,0AAh,0BFh
+   1108	09EB  FF EE AA AA AA 2A			     db	     0FFh,0EEh,0AAh,0AAh,0AAh, 2Ah
+   1109	09F1  FA AA EA AA AB FA			     db	     0FAh,0AAh,0EAh,0AAh,0ABh,0FAh
+   1110	09F7  FB FF EF CF F9 A8			     db	     0FBh,0FFh,0EFh,0CFh,0F9h,0A8h
+   1111	09FD  20 A2 2A EA BF FF			     db	      20h,0A2h,	2Ah,0EAh,0BFh,0FFh
+   1112	0A03  FF FF EB FF AF BA			     db	     0FFh,0FFh,0EBh,0FFh,0AFh,0BAh
+   1113	0A09  FB AA AA AA A2 AB			     db	     0FBh,0AAh,0AAh,0AAh,0A2h,0ABh
+   1114	0A0F  BE EF BF BE 88 83			     db	     0BEh,0EFh,0BFh,0BEh, 88h, 83h
+   1115	0A15  FF FF BA AA FB BA			     db	     0FFh,0FFh,0BAh,0AAh,0FBh,0BAh
+   1116	0A1B  AE EE FF AE EA BA			     db	     0AEh,0EEh,0FFh,0AEh,0EAh,0BAh
+   1117	0A21  AA BF FF				     db	     0AAh,0BFh,0FFh
+   1118	0A24  EE AA AA AA 2B FA			     db	     0EEh,0AAh,0AAh,0AAh, 2Bh,0FAh
+   1119	0A2A  AB AA AA BB FE EF			     db	     0ABh,0AAh,0AAh,0BBh,0FEh,0EFh
+   1120	0A30  BB EF BF F9 AA 08			     db	     0BBh,0EFh,0BFh,0F9h,0AAh, 08h
+   1121	0A36  28 AA AB BF FF FF			     db	      28h,0AAh,0ABh,0BFh,0FFh,0FFh
+   1122	0A3C  FF FE FA EF EB FB			     db	     0FFh,0FEh,0FAh,0EFh,0EBh,0FBh
+   1123	0A42  AA AA AA 82 AA FF			     db	     0AAh,0AAh,0AAh, 82h,0AAh,0FFh
+   1124	0A48  AE BE BA 80 8F FF			     db	     0AEh,0BEh,0BAh, 80h, 8Fh,0FFh
+   1125	0A4E  FF BA AA EB AA FB			     db	     0FFh,0BAh,0AAh,0EBh,0AAh,0FBh
+   1126	0A54  AB BF AE EA BA AA			     db	     0ABh,0BFh,0AEh,0EAh,0BAh,0AAh
+   1127	0A5A  BF FF				     db	     0BFh,0FFh
+   1128	0A5C  AE AA AA AA EB FA			     db	     0AEh,0AAh,0AAh,0AAh,0EBh,0FAh
+   1129	0A62  AF AA AA				     db	     0AFh,0AAh,0AAh
+   1130	0A65  BE EA FB BA FF 3F			     db	     0BEh,0EAh,0FBh,0BAh,0FFh, 3Fh
+   1131	0A6B  FA AA 0A 88 00 BF			     db	     0FAh,0AAh,	0Ah, 88h, 00h,0BFh
+   1132	0A71  06 FF 04 FB EF AB			     db	      06h,0FFh,	04h,0FBh,0EFh,0ABh
+   1133	0A77  AB EB AA AA AA A0			     db	     0ABh,0EBh,0AAh,0AAh,0AAh,0A0h
+   1134	0A7D  AA FB BE EA FA A0			     db	     0AAh,0FBh,0BEh,0EAh,0FAh,0A0h
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 22
+208SATNO.asm
+
+
+
+   1135	0A83  0F FF FE BA AA EF			     db	      0Fh,0FFh,0FEh,0BAh,0AAh,0EFh
+   1136	0A89  BB AE AE EE EE EA			     db	     0BBh,0AEh,0AEh,0EEh,0EEh,0EAh
+   1137	0A8F  AE AA EF FF AE AA			     db	     0AEh,0AAh,0EFh,0FFh,0AEh,0AAh
+   1138	0A95  AA AA 0B EA BB AA			     db	     0AAh,0AAh,	0Bh,0EAh,0BBh,0AAh
+   1139	0A9B  AA BF FB AE FF BC			     db	     0AAh,0BFh,0FBh,0AEh,0FFh,0BCh
+   1140	0AA1  FF FA AA 82 A0 0F			     db	     0FFh,0FAh,0AAh, 82h,0A0h, 0Fh
+   1141	0AA7  06 FF 05 EF AB AE			     db	      06h,0FFh,	05h,0EFh,0ABh,0AEh
+   1142	0AAD  AF EB AA AA AA A8			     db	     0AFh,0EBh,0AAh,0AAh,0AAh,0A8h
+   1143	0AB3  2A BE BB BA FA A2			     db	      2Ah,0BEh,0BBh,0BAh,0FAh,0A2h
+   1144	0AB9  3F FF EF BA AA EF			     db	      3Fh,0FFh,0EFh,0BAh,0AAh,0EFh
+   1145	0ABF  AE BA AB EF AE EA			     db	     0AEh,0BAh,0ABh,0EFh,0AEh,0EAh
+   1146	0AC5  AE AA BF FF 06 AA			     db	     0AEh,0AAh,0BFh,0FFh, 06h,0AAh
+   1147	0ACB  04 CF BA AE AA AA			     db	      04h,0CFh,0BAh,0AEh,0AAh,0AAh
+   1148	0AD1  EF AB BA BE BF FF			     db	     0EFh,0ABh,0BAh,0BEh,0BFh,0FFh
+   1149	0AD7  FA 6A 82 80			     db	     0FAh, 6Ah,	82h, 80h
+   1150	0ADB  06 FF 06 AF BA			     db	      06h,0FFh,	06h,0AFh,0BAh
+   1151	0AE0  BE BF AE AA AA AA			     db	     0BEh,0BFh,0AEh,0AAh,0AAh,0AAh
+   1152	0AE6  A2 0A AE AF AA EE			     db	     0A2h, 0Ah,0AEh,0AFh,0AAh,0EEh
+   1153	0AEC  A0 3F FB EB EA AA			     db	     0A0h, 3Fh,0FBh,0EBh,0EAh,0AAh
+   1154	0AF2  BB AE BA AF EF EE			     db	     0BBh,0AEh,0BAh,0AFh,0EFh,0EEh
+   1155	0AF8  EA AE AA AF FF AE			     db	     0EAh,0AEh,0AAh,0AFh,0FFh,0AEh
+   1156	0AFE  AA AA AA 8F EA BA			     db	     0AAh,0AAh,0AAh, 8Fh,0EAh,0BAh
+   1157	0B04  AA AB BF AA BA FE			     db	     0AAh,0ABh,0BFh,0AAh,0BAh,0FEh
+   1158	0B0A  BF FF EA AA A8 83			     db	     0BFh,0FFh,0EAh,0AAh,0A8h, 83h
+   1159	0B10  06 FF 05 FE AF BA			     db	      06h,0FFh,	05h,0FEh,0AFh,0BAh
+   1160	0B16  FA FE AE AA AA AA			     db	     0FAh,0FEh,0AEh,0AAh,0AAh,0AAh
+   1161	0B1C  A8 0A AA BF AB EE			     db	     0A8h, 0Ah,0AAh,0BFh,0ABh,0EEh
+   1162	0B22  A2 3F EF AF EA AA			     db	     0A2h, 3Fh,0EFh,0AFh,0EAh,0AAh
+   1163	0B28  AF FA EA BF FF EE			     db	     0AFh,0FAh,0EAh,0BFh,0FFh,0EEh
+   1164	0B2E  EA AE AA AF FE AE			     db	     0EAh,0AEh,0AAh,0AFh,0FEh,0AEh
+   1165	0B34  AA AA AA CE EB EA			     db	     0AAh,0AAh,0AAh,0CEh,0EBh,0EAh
+   1166	0B3A  AA AB FA AA EA EE			     db	     0AAh,0ABh,0FAh,0AAh,0EAh,0EEh
+   1167	0B40  B3 FF A9 AA 22 87			     db	     0B3h,0FFh,0A9h,0AAh, 22h, 87h
+   1168	0B46  06 FF 05 FE FF BA			     db	      06h,0FFh,	05h,0FEh,0FFh,0BAh
+   1169	0B4C  BB FE AE AA AA AA			     db	     0BBh,0FEh,0AEh,0AAh,0AAh,0AAh
+   1170	0B52  A8 82 AA FF AF EE			     db	     0A8h, 82h,0AAh,0FFh,0AFh,0EEh
+   1171	0B58  88 3F EE BE FA AA			     db	      88h, 3Fh,0EEh,0BEh,0FAh,0AAh
+   1172	0B5E  BF AF AA BF BF AA			     db	     0BFh,0AFh,0AAh,0BFh,0BFh,0AAh
+   1173	0B64  EA AA AA AF FE AE			     db	     0EAh,0AAh,0AAh,0AFh,0FEh,0AEh
+   1174	0B6A  AA AA AA 83 AE EA			     db	     0AAh,0AAh,0AAh, 83h,0AEh,0EAh
+   1175	0B70  AA AF AA EF AA AE			     db	     0AAh,0AFh,0AAh,0EFh,0AAh,0AEh
+   1176	0B76  F3 FF A9 AA 0A 05			     db	     0F3h,0FFh,0A9h,0AAh, 0Ah, 05h
+   1177	0B7C  7F FF 5F FF FF FB			     db	      7Fh,0FFh,	5Fh,0FFh,0FFh,0FBh
+   1178	0B82  EE FA EB FE BA 06			     db	     0EEh,0FAh,0EBh,0FEh,0BAh, 06h
+   1179	0B88  AA 04 00 AA FE BF			     db	     0AAh, 04h,	00h,0AAh,0FEh,0BFh
+   1180	0B8E  BE A0 FF AE EF BA			     db	     0BEh,0A0h,0FFh,0AEh,0EFh,0BAh
+   1181	0B94  AA FF BA AA BF BE			     db	     0AAh,0FFh,0BAh,0AAh,0BFh,0BEh
+   1182	0B9A  BA BA AE AA AF FE			     db	     0BAh,0BAh,0AEh,0AAh,0AFh,0FEh
+   1183	0BA0  BA AA AA AA 82 AF			     db	     0BAh,0AAh,0AAh,0AAh, 82h,0AFh
+   1184	0BA6  AA AA BE AA EF AA			     db	     0AAh,0AAh,0BEh,0AAh,0EFh,0AAh
+   1185	0BAC  AA FF FF A6 AA 0A			     db	     0AAh,0FFh,0FFh,0A6h,0AAh, 0Ah
+   1186	0BB2  07 D5 7D FF FF FF			     db	      07h,0D5h,	7Dh,0FFh,0FFh,0FFh
+   1187	0BB8  FE FB EB AF FE BA			     db	     0FEh,0FBh,0EBh,0AFh,0FEh,0BAh
+   1188	0BBE  06 AA 04 00 AA FA			     db	      06h,0AAh,	04h, 00h,0AAh,0FAh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 23
+208SATNO.asm
+
+
+
+   1189	0BC4  EF EE 88 FF AA BE			     db	     0EFh,0EEh,	88h,0FFh,0AAh,0BEh
+   1190	0BCA  BA AA FE EA AA FE			     db	     0BAh,0AAh,0FEh,0EAh,0AAh,0FEh
+   1191	0BD0  BE BA BA AB AA AB			     db	     0BEh,0BAh,0BAh,0ABh,0AAh,0ABh
+   1192	0BD6  FE BA AA AA AA C3			     db	     0FEh,0BAh,0AAh,0AAh,0AAh,0C3h
+   1193	0BDC  BA EA AA FE AA BF			     db	     0BAh,0EAh,0AAh,0FEh,0AAh,0BFh
+   1194	0BE2  AA AB FF FE A6 8A			     db	     0AAh,0ABh,0FFh,0FEh,0A6h, 8Ah
+   1195	0BE8  0A 87 75 D7 5F FF			     db	      0Ah, 87h,	75h,0D7h, 5Fh,0FFh
+   1196	0BEE  FF EB EF AA AF FA			     db	     0FFh,0EBh,0EFh,0AAh,0AFh,0FAh
+   1197	0BF4  BA 06 AA 04 08 2B			     db	     0BAh, 06h,0AAh, 04h, 08h, 2Bh
+   1198	0BFA  BE EF BF A8 FF BA			     db	     0BEh,0EFh,0BFh,0A8h,0FFh,0BAh
+   1199	0C00  EF FA AA FB AA AE			     db	     0EFh,0FAh,0AAh,0FBh,0AAh,0AEh
+   1200	0C06  FE BE BA BA AB EA			     db	     0FEh,0BEh,0BAh,0BAh,0ABh,0EAh
+   1201	0C0C  AB FE BA AA AA AA			     db	     0ABh,0FEh,0BAh,0AAh,0AAh,0AAh
+   1202	0C12  CE AF AA AE FA AA			     db	     0CEh,0AFh,0AAh,0AEh,0FAh,0AAh
+   1203	0C18  BB EB AB FF FA AA			     db	     0BBh,0EBh,0ABh,0FFh,0FAh,0AAh
+   1204	0C1E  8A 0A 07 7F FD FF			     db	      8Ah, 0Ah,	07h, 7Fh,0FDh,0FFh
+   1205	0C24  FF FE AE FB AB BF			     db	     0FFh,0FEh,0AEh,0FBh,0ABh,0BFh
+   1206	0C2A  FA EA 06 AA 04 0A			     db	     0FAh,0EAh,	06h,0AAh, 04h, 0Ah
+   1207	0C30  AF EF AB FF A8 FE			     db	     0AFh,0EFh,0ABh,0FFh,0A8h,0FEh
+   1208	0C36  AE EE FA AA FB AA			     db	     0AEh,0EEh,0FAh,0AAh,0FBh,0AAh
+   1209	0C3C  AE FE BA BA BA AB			     db	     0AEh,0FEh,0BAh,0BAh,0BAh,0ABh
+   1210	0C42  EA AB FE BA AA AA			     db	     0EAh,0ABh,0FEh,0BAh,0AAh,0AAh
+   1211	0C48  AA 20 BE AA BB FA			     db	     0AAh, 20h,0BEh,0AAh,0BBh,0FAh
+   1212	0C4E  AA BF EB BB FE AA			     db	     0AAh,0BFh,0EBh,0BBh,0FEh,0AAh
+   1213	0C54  AA 8A 20 0F 7F FF			     db	     0AAh, 8Ah,	20h, 0Fh, 7Fh,0FFh
+   1214	0C5A  FF FF FE BB AF AE			     db	     0FFh,0FFh,0FEh,0BBh,0AFh,0AEh
+   1215	0C60  FF EA 06 AA 05 8B			     db	     0FFh,0EAh,	06h,0AAh, 05h, 8Bh
+   1216	0C66  AF EA EF EF A0 FE			     db	     0AFh,0EAh,0EFh,0EFh,0A0h,0FEh
+   1217	0C6C  EA FB EA AB EE AA			     db	     0EAh,0FBh,0EAh,0ABh,0EEh,0AAh
+   1218	0C72  BA EE BE BA BA AB			     db	     0BAh,0EEh,0BEh,0BAh,0BAh,0ABh
+   1219	0C78  EA AB FE FA AA AA			     db	     0EAh,0ABh,0FEh,0FAh,0AAh,0AAh
+   1220	0C7E  AA 00 FA AA EF FA			     db	     0AAh, 00h,0FAh,0AAh,0EFh,0FAh
+   1221	0C84  AB EE EF 2F FE A6			     db	     0ABh,0EEh,0EFh, 2Fh,0FEh,0A6h
+   1222	0C8A  9A 2A 0A 3D FF DD			     db	      9Ah, 2Ah,	0Ah, 3Dh,0FFh,0DDh
+   1223	0C90  FF FF FE AF AE AA			     db	     0FFh,0FFh,0FEh,0AFh,0AEh,0AAh
+   1224	0C96  FF EA 06 AA 05 2B			     db	     0FFh,0EAh,	06h,0AAh, 05h, 2Bh
+   1225	0C9C  FF EA BB EF A2 FE			     db	     0FFh,0EAh,0BBh,0EFh,0A2h,0FEh
+   1226	0CA2  FB FB AA AB FB AA			     db	     0FBh,0FBh,0AAh,0ABh,0FBh,0AAh
+   1227	0CA8  BA FE EE BA BA AB			     db	     0BAh,0FEh,0EEh,0BAh,0BAh,0ABh
+   1228	0CAE  BA AB FE EE AA AA			     db	     0BAh,0ABh,0FEh,0EEh,0AAh,0AAh
+   1229	0CB4  AA 02 BA AF BF EA			     db	     0AAh, 02h,0BAh,0AFh,0BFh,0EAh
+   1230	0CBA  AB FE EC 3F FE 6A			     db	     0ABh,0FEh,0ECh, 3Fh,0FEh, 6Ah
+   1231	0CC0  AA 2A 20 1D FF F7			     db	     0AAh, 2Ah,	20h, 1Dh,0FFh,0F7h
+   1232	0CC6  DF F7 FA EF BA AF			     db	     0DFh,0F7h,0FAh,0EFh,0BAh,0AFh
+   1233	0CCC  FF 06 AA 06 2A BF			     db	     0FFh, 06h,0AAh, 06h, 2Ah,0BFh
+   1234	0CD2  AA AF BA A2 FB EF			     db	     0AAh,0AFh,0BAh,0A2h,0FBh,0EFh
+   1235	0CD8  AF EA AB FB AE EE			     db	     0AFh,0EAh,0ABh,0FBh,0AEh,0EEh
+   1236	0CDE  FA FA AE AE BB EA			     db	     0FAh,0FAh,0AEh,0AEh,0BBh,0EAh
+   1237	0CE4  AB FE EE AA AA AA			     db	     0ABh,0FEh,0EEh,0AAh,0AAh,0AAh
+   1238	0CEA  08 AA FA FB BA AF			     db	      08h,0AAh,0FAh,0FBh,0BAh,0AFh
+   1239	0CF0  EF BC FF FA 69 AA			     db	     0EFh,0BCh,0FFh,0FAh, 69h,0AAh
+   1240	0CF6  28 A0 F5 F7 DF DF			     db	      28h,0A0h,0F5h,0F7h,0DFh,0DFh
+   1241	0CFC  5F EB BE FE AE FE			     db	      5Fh,0EBh,0BEh,0FEh,0AEh,0FEh
+   1242	0D02  06 AA 06 0F FF AA			     db	      06h,0AAh,	06h, 0Fh,0FFh,0AAh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 24
+208SATNO.asm
+
+
+
+   1243	0D08  AB EE BB FB AF EF			     db	     0ABh,0EEh,0BBh,0FBh,0AFh,0EFh
+   1244	0D0E  BA AF EB AA BB BE			     db	     0BAh,0AFh,0EBh,0AAh,0BBh,0BEh
+   1245	0D14  EE AE AE BB AA AB			     db	     0EEh,0AEh,0AEh,0BBh,0AAh,0ABh
+   1246	0D1A  FE EE AA AA AA C0			     db	     0FEh,0EEh,0AAh,0AAh,0AAh,0C0h
+   1247	0D20  AF EB FE EA AF FF			     db	     0AFh,0EBh,0FEh,0EAh,0AFh,0FFh
+   1248	0D26  BC FF EA A9 6A 28			     db	     0BCh,0FFh,0EAh,0A9h, 6Ah, 28h
+   1249	0D2C  88 D5 77 5F DD 5F			     db	      88h,0D5h,	77h, 5Fh,0DDh, 5Fh
+   1250	0D32  EB FB FA EF FE 06			     db	     0EBh,0FBh,0FAh,0EFh,0FEh, 06h
+   1251	0D38  AA 06 3F FE BA AB			     db	     0AAh, 06h,	3Fh,0FEh,0BAh,0ABh
+   1252	0D3E  EB AB EF AB FF BA			     db	     0EBh,0ABh,0EFh,0ABh,0FFh,0BAh
+   1253	0D44  BF EE AE BE BE EE			     db	     0BFh,0EEh,0AEh,0BEh,0BEh,0EEh
+   1254	0D4A  AE AE AE FE AA FB			     db	     0AEh,0AEh,0AEh,0FEh,0AAh,0FBh
+   1255	0D50  06 AA 04 08 3B BF			     db	      06h,0AAh,	04h, 08h, 3Bh,0BFh
+   1256	0D56  EB EA AF EE F3 FF			     db	     0EBh,0EAh,0AFh,0EEh,0F3h,0FFh
+   1257	0D5C  E9 A5 AA A8 A1 F7			     db	     0E9h,0A5h,0AAh,0A8h,0A1h,0F7h
+   1258	0D62  F7 DF 55 7F AE BE			     db	     0F7h,0DFh,	55h, 7Fh,0AEh,0BEh
+   1259	0D68  EA BF FE 06 AA 06			     db	     0EAh,0BFh,0FEh, 06h,0AAh, 06h
+   1260	0D6E  3F EA EA AA BB EB			     db	      3Fh,0EAh,0EAh,0AAh,0BBh,0EBh
+   1261	0D74  BA AE FF EA AF EE			     db	     0BAh,0AEh,0FFh,0EAh,0AFh,0EEh
+   1262	0D7A  AE BA EE FA AE AE			     db	     0AEh,0BAh,0EEh,0FAh,0AEh,0AEh
+   1263	0D80  AB EB AA FB AE AA			     db	     0ABh,0EBh,0AAh,0FBh,0AEh,0AAh
+   1264	0D86  AA AA 30 0F FF AE			     db	     0AAh,0AAh,	30h, 0Fh,0FFh,0AEh
+   1265	0D8C  AA BF FE FF FF F9			     db	     0AAh,0BFh,0FEh,0FFh,0FFh,0F9h
+   1266	0D92  A5 A8 A0 89 77 DF			     db	     0A5h,0A8h,0A0h, 89h, 77h,0DFh
+   1267	0D98  DD 55 FA BF BA EA			     db	     0DDh, 55h,0FAh,0BFh,0BAh,0EAh
+   1268	0D9E  FF FA 06 AA 05 A8			     db	     0FFh,0FAh,	06h,0AAh, 05h,0A8h
+   1269	0DA4  FF AE EA AA AA BF			     db	     0FFh,0AEh,0EAh,0AAh,0AAh,0BFh
+   1270	0DAA  FE AA FE EA BE EE			     db	     0FEh,0AAh,0FEh,0EAh,0BEh,0EEh
+   1271	0DB0  AE AE FA EE AA AB			     db	     0AEh,0AEh,0FAh,0EEh,0AAh,0ABh
+   1272	0DB6  AA EF AE FB AE AA			     db	     0AAh,0EFh,0AEh,0FBh,0AEh,0AAh
+   1273	0DBC  AA AA 30 0B FE FA			     db	     0AAh,0AAh,	30h, 0Bh,0FEh,0FAh
+   1274	0DC2  AA FF FB FC FF F9			     db	     0AAh,0FFh,0FBh,0FCh,0FFh,0F9h
+   1275	0DC8  A6 A8 88 81 7D 5F			     db	     0A6h,0A8h,	88h, 81h, 7Dh, 5Fh
+   1276	0DCE  FD 5F FA FE AB EB			     db	     0FDh, 5Fh,0FAh,0FEh,0ABh,0EBh
+   1277	0DD4  BF 06 AA 07 FF AB			     db	     0BFh, 06h,0AAh, 07h,0FFh,0ABh
+   1278	0DDA  AA AA AA AB FF EA			     db	     0AAh,0AAh,0AAh,0ABh,0FFh,0EAh
+   1279	0DE0  FB AA BE EB AB BB			     db	     0FBh,0AAh,0BEh,0EBh,0ABh,0BBh
+   1280	0DE6  BA FA AB AB AA EF			     db	     0BAh,0FAh,0ABh,0ABh,0AAh,0EFh
+   1281	0DEC  AB FB AE AA AA AA			     db	     0ABh,0FBh,0AEh,0AAh,0AAh,0AAh
+   1282	0DF2  33 83 FF EE EF FF			     db	      33h, 83h,0FFh,0EEh,0EFh,0FFh
+   1283	0DF8  FB FF FF FA AA A2			     db	     0FBh,0FFh,0FFh,0FAh,0AAh,0A2h
+   1284	0DFE  8A 8D 5F 5F F5 5F			     db	      8Ah, 8Dh,	5Fh, 5Fh,0F5h, 5Fh
+   1285	0E04  FA EE EB AA FA 06			     db	     0FAh,0EEh,0EBh,0AAh,0FAh, 06h
+   1286	0E0A  AA 04 AE AA BF FF			     db	     0AAh, 04h,0AEh,0AAh,0BFh,0FFh
+   1287	0E10  BA AA AA A8 AA AF			     db	     0BAh,0AAh,0AAh,0A8h,0AAh,0AFh
+   1288	0E16  FA EE FA AE FB AA			     db	     0FAh,0EEh,0FAh,0AEh,0FBh,0AAh
+   1289	0E1C  FE FE EA AF AB AA			     db	     0FEh,0FEh,0EAh,0AFh,0ABh,0AAh
+   1290	0E22  EA AE FB AE AA AA			     db	     0EAh,0AEh,0FBh,0AEh,0AAh,0AAh
+   1291	0E28  AA 30 23 FF FB FF			     db	     0AAh, 30h,	23h,0FFh,0FBh,0FFh
+   1292	0E2E  FF EF FF FF FA AA			     db	     0FFh,0EFh,0FFh,0FFh,0FAh,0AAh
+   1293	0E34  A2 88 8F 75 FF D5			     db	     0A2h, 88h,	8Fh, 75h,0FFh,0D5h
+   1294	0E3A  7F BB AB AF AB EA			     db	      7Fh,0BBh,0ABh,0AFh,0ABh,0EAh
+   1295	0E40  06 AA 04 BF FF EF			     db	      06h,0AAh,	04h,0BFh,0FFh,0EFh
+   1296	0E46  FE FA AA AA A8 8A			     db	     0FEh,0FAh,0AAh,0AAh,0A8h, 8Ah
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 25
+208SATNO.asm
+
+
+
+   1297	0E4C  AB FE BF FE AE FB			     db	     0ABh,0FEh,0BFh,0FEh,0AEh,0FBh
+   1298	0E52  AB EF EE FA AF AB			     db	     0ABh,0EFh,0EEh,0FAh,0AFh,0ABh
+   1299	0E58  AA EB AF FE AE EA			     db	     0AAh,0EBh,0AFh,0FEh,0AEh,0EAh
+   1300	0E5E  AA AA 88 C0 06 FF			     db	     0AAh,0AAh,	88h,0C0h, 06h,0FFh
+   1301	0E64  04 E3 FF FF E6 AA			     db	      04h,0E3h,0FFh,0FFh,0E6h,0AAh
+   1302	0E6A  AA 2A 0F FF FF D5			     db	     0AAh, 2Ah,	0Fh,0FFh,0FFh,0D5h
+   1303	0E70  FF EF AA BE AF EA			     db	     0FFh,0EFh,0AAh,0BEh,0AFh,0EAh
+   1304	0E76  AA AA AA AB BF FF			     db	     0AAh,0AAh,0AAh,0ABh,0BFh,0FFh
+   1305	0E7C  AF FA EA AA AA AA			     db	     0AFh,0FAh,0EAh,0AAh,0AAh,0AAh
+   1306	0E82  22 AA BF EF BA AB			     db	      22h,0AAh,0BFh,0EFh,0BAh,0ABh
+   1307	0E88  EE AF BB EE FA 9F			     db	     0EEh,0AFh,0BBh,0EEh,0FAh, 9Fh
+   1308	0E8E  AB AA EB BB FE BA			     db	     0ABh,0AAh,0EBh,0BBh,0FEh,0BAh
+   1309	0E94  AA AA AA 8A 38 3F			     db	     0AAh,0AAh,0AAh, 8Ah, 38h, 3Fh
+   1310	0E9A  FF FF FF EC FF FF			     db	     0FFh,0FFh,0FFh,0ECh,0FFh,0FFh
+   1311	0EA0  E6 AA AA A8 0F FF			     db	     0E6h,0AAh,0AAh,0A8h, 0Fh,0FFh
+   1312	0EA6  FF 57 FF BB AA EA			     db	     0FFh, 57h,0FFh,0BBh,0AAh,0EAh
+   1313	0EAC  AF BA AA AA AA AB			     db	     0AFh,0BAh,0AAh,0AAh,0AAh,0ABh
+   1314	0EB2  FF FA BF AB EA AA			     db	     0FFh,0FAh,0BFh,0ABh,0EAh,0AAh
+   1315	0EB8  AA AA 22 AA AB FB			     db	     0AAh,0AAh,	22h,0AAh,0ABh,0FBh
+   1316	0EBE  EE FB AA FB FE FA			     db	     0EEh,0FBh,0AAh,0FBh,0FEh,0FAh
+   1317	0EC4  FA AB EB AA BB BF			     db	     0FAh,0ABh,0EBh,0AAh,0BBh,0BFh
+   1318	0ECA  FE BB AA AA AA B3			     db	     0FEh,0BBh,0AAh,0AAh,0AAh,0B3h
+   1319	0ED0  38 2F FE FF FB E3			     db	      38h, 2Fh,0FEh,0FFh,0FBh,0E3h
+   1320	0ED6  FF FF AA AA A8 A0			     db	     0FFh,0FFh,0AAh,0AAh,0A8h,0A0h
+   1321	0EDC  2F FF FD 5F FA AE			     db	      2Fh,0FFh,0FDh, 5Fh,0FAh,0AEh
+   1322	0EE2  AA FA AF EA AA AA			     db	     0AAh,0FAh,0AFh,0EAh,0AAh,0AAh
+   1323	0EE8  AA AF FE AB FF AB			     db	     0AAh,0AFh,0FEh,0ABh,0FFh,0ABh
+   1324	0EEE  06 AA 04 28 2A AA			     db	      06h,0AAh,	04h, 28h, 2Ah,0AAh
+   1325	0EF4  BB FB BE FF BE FB			     db	     0BBh,0FBh,0BEh,0FFh,0BEh,0FBh
+   1326	0EFA  BA EA 7B EA EA BB			     db	     0BAh,0EAh,	7Bh,0EAh,0EAh,0BBh
+   1327	0F00  BF BA BE AA AA AA			     db	     0BFh,0BAh,0BEh,0AAh,0AAh,0AAh
+   1328	0F06  FC 8E 0A FB FF FE			     db	     0FCh, 8Eh,	0Ah,0FBh,0FFh,0FEh
+   1329	0F0C  EC FF FF AA AA 88			     db	     0ECh,0FFh,0FFh,0AAh,0AAh, 88h
+   1330	0F12  89 7F FF F5 5F EB			     db	      89h, 7Fh,0FFh,0F5h, 5Fh,0EBh
+   1331	0F18  BA AB EA BE FA AA			     db	     0BAh,0ABh,0EAh,0BEh,0FAh,0AAh
+   1332	0F1E  AA AA AB FA EE FE			     db	     0AAh,0AAh,0ABh,0FAh,0EEh,0FEh
+   1333	0F24  AF 06 AA 04 0A 00			     db	     0AFh, 06h,0AAh, 04h, 0Ah, 00h
+   1334	0F2A  AA AE FF EB AF FA			     db	     0AAh,0AEh,0FFh,0EBh,0AFh,0FAh
+   1335	0F30  FF BB BA 7B EA EA			     db	     0FFh,0BBh,0BAh, 7Bh,0EAh,0EAh
+   1336	0F36  BA AF FA BE AA AA			     db	     0BAh,0AFh,0FAh,0BEh,0AAh,0AAh
+   1337	0F3C  AA BC A2 03 FF FF			     db	     0AAh,0BCh,0A2h, 03h,0FFh,0FFh
+   1338	0F42  FA F3 FF FE 9A 6A			     db	     0FAh,0F3h,0FFh,0FEh, 9Ah, 6Ah
+   1339	0F48  82 17 FF FF F5 7F			     db	      82h, 17h,0FFh,0FFh,0F5h, 7Fh
+   1340	0F4E  AF EE AB EA FB EA			     db	     0AFh,0EEh,0ABh,0EAh,0FBh,0EAh
+   1341	0F54  06 AA 04 FB BB FE			     db	      06h,0AAh,	04h,0FBh,0BBh,0FEh
+   1342	0F5A  AE AA EA AA AA 0A			     db	     0AEh,0AAh,0EAh,0AAh,0AAh, 0Ah
+   1343	0F60  80 00 AB BE BF AF			     db	      80h, 00h,0ABh,0BEh,0BFh,0AFh
+   1344	0F66  EB BB BB EA AF EA			     db	     0EBh,0BBh,0BBh,0EAh,0AFh,0EAh
+   1345	0F6C  EA BB AF EE BA AA			     db	     0EAh,0BBh,0AFh,0EEh,0BAh,0AAh
+   1346	0F72  AA AA FA 2C 83 FF			     db	     0AAh,0AAh,0FAh, 2Ch, 83h,0FFh
+   1347	0F78  FF AE F3 FF FE 6A			     db	     0FFh,0AEh,0F3h,0FFh,0FEh, 6Ah
+   1348	0F7E  6A 28 5F FF FF D5			     db	      6Ah, 28h,	5Fh,0FFh,0FFh,0D5h
+   1349	0F84  FB BE EE AB AB BF			     db	     0FBh,0BEh,0EEh,0ABh,0ABh,0BFh
+   1350	0F8A  BA 06 AA 04 EA EF			     db	     0BAh, 06h,0AAh, 04h,0EAh,0EFh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 26
+208SATNO.asm
+
+
+
+   1351	0F90  FE BE AB FA AA A8			     db	     0FEh,0BEh,0ABh,0FAh,0AAh,0A8h
+   1352	0F96  80 AA 80 2A AB FA			     db	      80h,0AAh,	80h, 2Ah,0ABh,0FAh
+   1353	0F9C  FE BB FE EB EA 6F			     db	     0FEh,0BBh,0FEh,0EBh,0EAh, 6Fh
+   1354	0FA2  EA EA BB AB EE BE			     db	     0EAh,0EAh,0BBh,0ABh,0EEh,0BEh
+   1355	0FA8  AA AA AA FE 8A E0			     db	     0AAh,0AAh,0AAh,0FEh, 8Ah,0E0h
+   1356	0FAE  EA EA EB 8F FF FE			     db	     0EAh,0EAh,0EBh, 8Fh,0FFh,0FEh
+   1357	0FB4  6A AA 28 57 FF FF			     db	      6Ah,0AAh,	28h, 57h,0FFh,0FFh
+   1358	0FBA  D5 EE BA BA AF AA			     db	     0D5h,0EEh,0BAh,0BAh,0AFh,0AAh
+   1359	0FC0  FB EA 06 AA 04 AB			     db	     0FBh,0EAh,	06h,0AAh, 04h,0ABh
+   1360	0FC6  AF FA BA AF FA AA			     db	     0AFh,0FAh,0BAh,0AFh,0FAh,0AAh
+   1361	0FCC  AA 22 02 AA 8A AF			     db	     0AAh, 22h,	02h,0AAh, 8Ah,0AFh
+   1362	0FD2  FE EB EB BA EB A9			     db	     0FEh,0EBh,0EBh,0BAh,0EBh,0A9h
+   1363	0FD8  AF EA EA AF AE EE			     db	     0AFh,0EAh,0EAh,0AFh,0AEh,0EEh
+   1364	0FDE  EE AA AA AA AF F0			     db	     0EEh,0AAh,0AAh,0AAh,0AFh,0F0h
+   1365	0FE4  B8 02 AA EA 8F FF			     db	     0B8h, 02h,0AAh,0EAh, 8Fh,0FFh
+   1366	0FEA  FE AA A8 A0 57 FF			     db	     0FEh,0AAh,0A8h,0A0h, 57h,0FFh
+   1367	0FF0  FF 57 EF AB EA EF			     db	     0FFh, 57h,0EFh,0ABh,0EAh,0EFh
+   1368	0FF6  AB FF BA AA AA AA			     db	     0ABh,0FFh,0BAh,0AAh,0AAh,0AAh
+   1369	0FFC  FA AB BF FA BA AF			     db	     0FAh,0ABh,0BFh,0FAh,0BAh,0AFh
+   1370	1002  AE AA AA A8 20 0A			     db	     0AEh,0AAh,0AAh,0A8h, 20h, 0Ah
+   1371	1008  2A 8F FA AF AE FE			     db	      2Ah, 8Fh,0FAh,0AFh,0AEh,0FEh
+   1372	100E  AE AA BB EA EA AF			     db	     0AEh,0AAh,0BBh,0EAh,0EAh,0AFh
+   1373	1014  AB FA FA 06 AA 04			     db	     0ABh,0FAh,0FAh, 06h,0AAh, 04h
+   1374	101A  BF 0A 20 3B AB CF			     db	     0BFh, 0Ah,	20h, 3Bh,0ABh,0CFh
+   1375	1020  FB FE AA 68 A1 75			     db	     0FBh,0FEh,0AAh, 68h,0A1h, 75h
+   1376	1026  FF FD 76 BF AF AB			     db	     0FFh,0FDh,	76h,0BFh,0AFh,0ABh
+   1377	102C  FF AF FF EA AA AA			     db	     0FFh,0AFh,0FFh,0EAh,0AAh,0AAh
+   1378	1032  AA EF AE FE EA BE			     db	     0AAh,0EFh,0AEh,0FEh,0EAh,0BEh
+   1379	1038  BF AB AA AA 0A 00			     db	     0BFh,0ABh,0AAh,0AAh, 0Ah, 00h
+   1380	103E  20 2A 8F EE AE AF			     db	      20h, 2Ah,	8Fh,0EEh,0AEh,0AFh
+   1381	1044  BA AE A9 BB EA EA			     db	     0BAh,0AEh,0A9h,0BBh,0EAh,0EAh
+   1382	104A  AF AB FA EE AA AA			     db	     0AFh,0ABh,0FAh,0EEh,0AAh,0AAh
+   1383	1050  AA 2A AA E0 2C 0A			     db	     0AAh, 2Ah,0AAh,0E0h, 2Ch, 0Ah
+   1384	1056  AF 3F FB FE AA 98			     db	     0AFh, 3Fh,0FBh,0FEh,0AAh, 98h
+   1385	105C  01 F7 FF FD DA EE			     db	      01h,0F7h,0FFh,0FDh,0DAh,0EEh
+   1386	1062  BA AE FE AF FF EA			     db	     0BAh,0AEh,0FEh,0AFh,0FFh,0EAh
+   1387	1068  AA AA AB FF AF FF			     db	     0AAh,0AAh,0ABh,0FFh,0AFh,0FFh
+   1388	106E  AB FA FE EB AA AA			     db	     0ABh,0FAh,0FEh,0EBh,0AAh,0AAh
+   1389	1074  A2 80 80 AE 3F FA			     db	     0A2h, 80h,	80h,0AEh, 3Fh,0FAh
+   1390	107A  AE AE EA EE AA BB			     db	     0AEh,0AEh,0EAh,0EEh,0AAh,0BBh
+   1391	1080  EA EA AE AA FA AE			     db	     0EAh,0EAh,0AEh,0AAh,0FAh,0AEh
+   1392	1086  AA AA AA 8A AA BA			     db	     0AAh,0AAh,0AAh, 8Ah,0AAh,0BAh
+   1393	108C  80 A8 0B 3F FF FE			     db	      80h,0A8h,	0Bh, 3Fh,0FFh,0FEh
+   1394	1092  A9 A0 15 FF FF 55			     db	     0A9h,0A0h,	15h,0FFh,0FFh, 55h
+   1395	1098  DB AE BA BB FE BF			     db	     0DBh,0AEh,0BAh,0BBh,0FEh,0BFh
+   1396	109E  FF EA AA AA AB EF			     db	     0FFh,0EAh,0AAh,0AAh,0ABh,0EFh
+   1397	10A4  AF EE FE EF FA EA			     db	     0AFh,0EEh,0FEh,0EFh,0FAh,0EAh
+   1398	10AA  EB EA A8 2A 8A FB			     db	     0EBh,0EAh,0A8h, 2Ah, 8Ah,0FBh
+   1399	10B0  3F AA BE AB EA AE			     db	      3Fh,0AAh,0BEh,0ABh,0EAh,0AEh
+   1400	10B6  A6 BB EA EA AB AE			     db	     0A6h,0BBh,0EAh,0EAh,0ABh,0AEh
+   1401	10BC  EA FA AA AA AA 80			     db	     0EAh,0FAh,0AAh,0AAh,0AAh, 80h
+   1402	10C2  AA AB FB 0A AC FF			     db	     0AAh,0ABh,0FBh, 0Ah,0ACh,0FFh
+   1403	10C8  EF FF AA 81 7F FF			     db	     0EFh,0FFh,0AAh, 81h, 7Fh,0FFh
+   1404	10CE  F5 FD 5B EA EA BB			     db	     0F5h,0FDh,	5Bh,0EAh,0EAh,0BBh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 27
+208SATNO.asm
+
+
+
+   1405	10D4  EA FB FF AA AA AA			     db	     0EAh,0FBh,0FFh,0AAh,0AAh,0AAh
+   1406	10DA  AB BE BF FF AF BF			     db	     0ABh,0BEh,0BFh,0FFh,0AFh,0BFh
+   1407	10E0  EB AA EE FF AA 80			     db	     0EBh,0AAh,0EEh,0FFh,0AAh, 80h
+   1408	10E6  0A BE 8F EA BA AE			     db	      0Ah,0BEh,	8Fh,0EAh,0BAh,0AEh
+   1409	10EC  EA BA A6 BF EA EA			     db	     0EAh,0BAh,0A6h,0BFh,0EAh,0EAh
+   1410	10F2  AE AF BA FA AA AA			     db	     0AEh,0AFh,0BAh,0FAh,0AAh,0AAh
+   1411	10F8  AA A0 2A AA AE FA			     db	     0AAh,0A0h,	2Ah,0AAh,0AEh,0FAh
+   1412	10FE  F0 FF AF FF BF 95			     db	     0F0h,0FFh,0AFh,0FFh,0BFh, 95h
+   1413	1104  7F FF F7 D6 EF AA			     db	      7Fh,0FFh,0F7h,0D6h,0EFh,0AAh
+   1414	110A  AA EF EB FF FB EA			     db	     0AAh,0EFh,0EBh,0FFh,0FBh,0EAh
+   1415	1110  AA AA AF BE BF FA			     db	     0AAh,0AAh,0AFh,0BEh,0BFh,0FAh
+   1416	1116  EE EE BE A2 BA BF			     db	     0EEh,0EEh,0BEh,0A2h,0BAh,0BFh
+   1417	111C  FE AA 0B FE 3F B6			     db	     0FEh,0AAh,	0Bh,0FEh, 3Fh,0B6h
+   1418	1122  EE AF AA BA 99 BF			     db	     0EEh,0AFh,0AAh,0BAh, 99h,0BFh
+   1419	1128  EA EA AE AF EA FA			     db	     0EAh,0EAh,0AEh,0AFh,0EAh,0FAh
+   1420	112E  06 AA 04 02 AA AA			     db	      06h,0AAh,	04h, 02h,0AAh,0AAh
+   1421	1134  AB EF FA BF FE BA			     db	     0ABh,0EFh,0FAh,0BFh,0FEh,0BAh
+   1422	113A  FF FF EE FE AF EF			     db	     0FFh,0FFh,0EEh,0FEh,0AFh,0EFh
+   1423	1140  AE AA AE AA EF FA			     db	     0AEh,0AAh,0AEh,0AAh,0EFh,0FAh
+   1424	1146  AA AA AA BB EE AB			     db	     0AAh,0AAh,0AAh,0BBh,0EEh,0ABh
+   1425	114C  EE FB BA FA A2 BB			     db	     0EEh,0FBh,0BAh,0FAh,0A2h,0BBh
+   1426	1152  EE FE EA 8A FA 3B			     db	     0EEh,0FEh,0EAh, 8Ah,0FAh, 3Bh
+   1427	1158  5A EA BB AA AA AA			     db	      5Ah,0EAh,0BBh,0AAh,0AAh,0AAh
+   1428	115E  AF EA BA AA AA EA			     db	     0AFh,0EAh,0BAh,0AAh,0AAh,0EAh
+   1429	1164  FA AA AA AA A8 A0			     db	     0FAh,0AAh,0AAh,0AAh,0A8h,0A0h
+   1430	116A  02 AA AE FB EE BB			     db	      02h,0AAh,0AEh,0FBh,0EEh,0BBh
+   1431	1170  FA AE FF BF EB BE			     db	     0FAh,0AEh,0FFh,0BFh,0EBh,0BEh
+   1432	1176  AF FB BB AA BE AA			     db	     0AFh,0FBh,0BBh,0AAh,0BEh,0AAh
+   1433	117C  BF EB AA AA AA BF			     db	     0BFh,0EBh,0AAh,0AAh,0AAh,0BFh
+   1434	1182  EA AE BF AE FA EE			     db	     0EAh,0AEh,0BFh,0AEh,0FAh,0EEh
+   1435	1188  A8 AF BB FB AA AA			     db	     0A8h,0AFh,0BBh,0FBh,0AAh,0AAh
+   1436	118E  F8 3E B6 AA BE AA			     db	     0F8h, 3Eh,0B6h,0AAh,0BEh,0AAh
+   1437	1194  AA AA EF EA BA AA			     db	     0AAh,0AAh,0EFh,0EAh,0BAh,0AAh
+   1438	119A  AE EA EA 06 AA 04			     db	     0AEh,0EAh,0EAh, 06h,0AAh, 04h
+   1439	11A0  08 00 02 AF AF AE			     db	      08h, 00h,	02h,0AFh,0AFh,0AEh
+   1440	11A6  FE FE BA FF EE AF			     db	     0FEh,0FEh,0BAh,0FFh,0EEh,0AFh
+   1441	11AC  FA BB FF EB AA BA			     db	     0FAh,0BBh,0FFh,0EBh,0AAh,0BAh
+   1442	11B2  AA BF AB AA AA AA			     db	     0AAh,0BFh,0ABh,0AAh,0AAh,0AAh
+   1443	11B8  BE EA AE BE 3F E8			     db	     0BEh,0EAh,0AEh,0BEh, 3Fh,0E8h
+   1444	11BE  FA A8 BA BE BE FF			     db	     0FAh,0A8h,0BAh,0BEh,0BEh,0FFh
+   1445	11C4  AA A8 FF 5A EA 06			     db	     0AAh,0A8h,0FFh, 5Ah,0EAh, 06h
+   1446	11CA  AA 04 BF EA BA AA			     db	     0AAh, 04h,0BFh,0EAh,0BAh,0AAh
+   1447	11D0  BB AA BA 06 AA 04			     db	     0BBh,0AAh,0BAh, 06h,0AAh, 04h
+   1448	11D6  A0 0A AA FE FB AB			     db	     0A0h, 0Ah,0AAh,0FEh,0FBh,0ABh
+   1449	11DC  EA BA BB FF FA AF			     db	     0EAh,0BAh,0BBh,0FFh,0FAh,0AFh
+   1450	11E2  EA BF BB AA AA FE			     db	     0EAh,0BFh,0BBh,0AAh,0AAh,0FEh
+   1451	11E8  AA BE AE AA AA AA			     db	     0AAh,0BEh,0AEh,0AAh,0AAh,0AAh
+   1452	11EE  FB AA AE BA 3F F8			     db	     0FBh,0AAh,0AEh,0BAh, 3Fh,0F8h
+   1453	11F4  FE A2 2F BB FA BF			     db	     0FEh,0A2h,	2Fh,0BBh,0FAh,0BFh
+   1454	11FA  FB A8 EE 6A AA BA			     db	     0FBh,0A8h,0EEh, 6Ah,0AAh,0BAh
+   1455	1200  AA AA AA FF EA BA			     db	     0AAh,0AAh,0AAh,0FFh,0EAh,0BAh
+   1456	1206  AA BE AA FA 06 AA			     db	     0AAh,0BEh,0AAh,0FAh, 06h,0AAh
+   1457	120C  05 A0 2F EF EA AF			     db	      05h,0A0h,	2Fh,0EFh,0EAh,0AFh
+   1458	1212  AB EA AB FB AA BF			     db	     0ABh,0EAh,0ABh,0FBh,0AAh,0BFh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 28
+208SATNO.asm
+
+
+
+   1459	1218  EA BF BE AA AA BA			     db	     0EAh,0BFh,0BEh,0AAh,0AAh,0BAh
+   1460	121E  AA BE AE AA AA AA			     db	     0AAh,0BEh,0AEh,0AAh,0AAh,0AAh
+   1461	1224  EE EA BA B8 3F B8			     db	     0EEh,0EAh,0BAh,0B8h, 3Fh,0B8h
+   1462	122A  BF A8 8B AA AB EE			     db	     0BFh,0A8h,	8Bh,0AAh,0ABh,0EEh
+   1463	1230  BE 83 BF 06 AA 06			     db	     0BEh, 83h,0BFh, 06h,0AAh, 06h
+   1464	1236  EF EA BA AA BE AA			     db	     0EFh,0EAh,0BAh,0AAh,0BEh,0AAh
+   1465	123C  FA 06 AA 06 BE EF			     db	     0FAh, 06h,0AAh, 06h,0BEh,0EFh
+   1466	1242  AA BA AA EA AB FE			     db	     0AAh,0BAh,0AAh,0EAh,0ABh,0FEh
+   1467	1248  AA BF EA EE BF AE			     db	     0AAh,0BFh,0EAh,0EEh,0BFh,0AEh
+   1468	124E  AA EA AA FA BA AA			     db	     0AAh,0EAh,0AAh,0FAh,0BAh,0AAh
+   1469	1254  AA AA FB AA EA A8			     db	     0AAh,0AAh,0FBh,0AAh,0EAh,0A8h
+   1470	125A  2A E8 FA A8 A0 BE			     db	      2Ah,0E8h,0FAh,0A8h,0A0h,0BEh
+   1471	1260  AA AA A2 23 EF AA			     db	     0AAh,0AAh,0A2h, 23h,0EFh,0AAh
+   1472	1266  EA BA AA AA AA FA			     db	     0EAh,0BAh,0AAh,0AAh,0AAh,0FAh
+   1473	126C  EA BA AA BA AA EA			     db	     0EAh,0BAh,0AAh,0BAh,0AAh,0EAh
+   1474	1272  06 AA 06 EF BA AA			     db	      06h,0AAh,	06h,0EFh,0BAh,0AAh
+   1475	1278  AA AB AA AB BB AA			     db	     0AAh,0ABh,0AAh,0ABh,0BBh,0AAh
+   1476	127E  FF BA BE EE AA AA			     db	     0FFh,0BAh,0BEh,0EEh,0AAh,0AAh
+   1477	1284  EA AA EA 06 AA 04			     db	     0EAh,0AAh,0EAh, 06h,0AAh, 04h
+   1478	128A  FB AA BA BA 3A E8			     db	     0FBh,0AAh,0BAh,0BAh, 3Ah,0E8h
+   1479	1290  3E A8 2A 20 0F BA			     db	      3Eh,0A8h,	2Ah, 20h, 0Fh,0BAh
+   1480	1296  00 FF BA AB 06 AA			     db	      00h,0FFh,0BAh,0ABh, 06h,0AAh
+   1481	129C  05 EB AA BA AA EE			     db	      05h,0EBh,0AAh,0BAh,0AAh,0EEh
+   1482	12A2  AA EA 06 AA 06 BF			     db	     0AAh,0EAh,	06h,0AAh, 06h,0BFh
+   1483	12A8  EA 06 AA 04 AF FE			     db	     0EAh, 06h,0AAh, 04h,0AFh,0FEh
+   1484	12AE  AB FF EA FE FE AA			     db	     0ABh,0FFh,0EAh,0FEh,0FEh,0AAh
+   1485	12B4  AB AA AB EA AA AA			     db	     0ABh,0AAh,0ABh,0EAh,0AAh,0AAh
+   1486	12BA  AA AB BE AA EA A8			     db	     0AAh,0ABh,0BEh,0AAh,0EAh,0A8h
+   1487	12C0  3A A0 FA AA 0A AA			     db	      3Ah,0A0h,0FAh,0AAh, 0Ah,0AAh
+   1488	12C6  2A A0 3F AF EA AE			     db	      2Ah,0A0h,	3Fh,0AFh,0EAh,0AEh
+   1489	12CC  06 AA 04 AB BB AA			     db	      06h,0AAh,	04h,0ABh,0BBh,0AAh
+   1490	12D2  BA AA FA 06 AA 07			     db	     0BAh,0AAh,0FAh, 06h,0AAh, 07h
+   1491	12D8  BA FB AA EA AA BA			     db	     0BAh,0FBh,0AAh,0EAh,0AAh,0BAh
+   1492	12DE  AA FF EA AB FE AA			     db	     0AAh,0FFh,0EAh,0ABh,0FEh,0AAh
+   1493	12E4  FA FB AA AF 06 AA			     db	     0FAh,0FBh,0AAh,0AFh, 06h,0AAh
+   1494	12EA  06 AB EE AA EA A2			     db	      06h,0ABh,0EEh,0AAh,0EAh,0A2h
+   1495	12F0  3E A8 FE AA A2 A0			     db	      3Eh,0A8h,0FEh,0AAh,0A2h,0A0h
+   1496	12F6  80 3F EF AA AA AE			     db	      80h, 3Fh,0EFh,0AAh,0AAh,0AEh
+   1497	12FC  06 AA 07 BA AA FA			     db	      06h,0AAh,	07h,0BAh,0AAh,0FAh
+   1498	1302  06 AA 07 BE FE AF			     db	      06h,0AAh,	07h,0BEh,0FEh,0AFh
+   1499	1308  AA AA BA AB FE AE			     db	     0AAh,0AAh,0BAh,0ABh,0FEh,0AEh
+   1500	130E  AF FE AA EA EB AA			     db	     0AFh,0FEh,0AAh,0EAh,0EBh,0AAh
+   1501	1314  AF AA AB 06 AA 04			     db	     0AFh,0AAh,0ABh, 06h,0AAh, 04h
+   1502	131A  AE EA AB AA A8 AE			     db	     0AEh,0EAh,0ABh,0AAh,0A8h,0AEh
+   1503	1320  A2 FA AA AA 08 0C			     db	     0A2h,0FAh,0AAh,0AAh, 08h, 0Ch
+   1504	1326  EF BA AA AA BA 06			     db	     0EFh,0BAh,0AAh,0AAh,0BAh, 06h
+   1505	132C  AA 05 AE AA EA AA			     db	     0AAh, 05h,0AEh,0AAh,0EAh,0AAh
+   1506	1332  FA 06 AA 06 AB EB			     db	     0FAh, 06h,0AAh, 06h,0ABh,0EBh
+   1507	1338  AA BA AA AA BA AB			     db	     0AAh,0BAh,0AAh,0AAh,0BAh,0ABh
+   1508	133E  FA BA				     db	     0FAh,0BAh
+   1509	1340  BF		     data_3	     db	     0BFh		     ; Data table (indexed access)
+   1510	1341  FA AB AA EA AA BE			     db	     0FAh,0ABh,0AAh,0EAh,0AAh,0BEh
+   1511	1347  06 AA 06 AF AA AB			     db	      06h,0AAh,	06h,0AFh,0AAh,0ABh
+   1512	134D  AA A2 EA A0 FA AA			     db	     0AAh,0A2h,0EAh,0A0h,0FAh,0AAh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 29
+208SATNO.asm
+
+
+
+   1513	1353  A0 20 FF BA 06 AA			     db	     0A0h, 20h,0FFh,0BAh, 06h,0AAh
+   1514	1359  0B EA AA EA 06 AA			     db	      0Bh,0EAh,0AAh,0EAh, 06h,0AAh
+   1515	135F  06 BE AA AA BA AA			     db	      06h,0BEh,0AAh,0AAh,0BAh,0AAh
+   1516	1365  EA EA AA EB EA BF			     db	     0EAh,0EAh,0AAh,0EBh,0EAh,0BFh
+   1517	136B  BA AA AA AB AA BB			     db	     0BAh,0AAh,0AAh,0ABh,0AAh,0BBh
+   1518	1371  AA AE 06 AA 04 AF			     db	     0AAh,0AEh,	06h,0AAh, 04h,0AFh
+   1519	1377  AA AA AA A8 EA A2			     db	     0AAh,0AAh,0AAh,0A8h,0EAh,0A2h
+   1520	137D  AA AA 22 AE EE AA			     db	     0AAh,0AAh,	22h,0AEh,0EEh,0AAh
+   1521	1383  AA AA AB 06 AA 06			     db	     0AAh,0AAh,0ABh, 06h,0AAh, 06h
+   1522	1389  AE AA AA AA FA 06			     db	     0AEh,0AAh,0AAh,0AAh,0FAh, 06h
+   1523	138F  AA 06 EE AA AA EA			     db	     0AAh, 06h,0EEh,0AAh,0AAh,0EAh
+   1524	1395  AB AA EA AB BE AA			     db	     0ABh,0AAh,0EAh,0ABh,0BEh,0AAh
+   1525	139B  FE EA AA AA EB AA			     db	     0FEh,0EAh,0AAh,0AAh,0EBh,0AAh
+   1526	13A1  AE 06 AA 06 BE 06			     db	     0AEh, 06h,0AAh, 06h,0BEh, 06h
+   1527	13A7  AA 05 8B AA AA AA			     db	     0AAh, 05h,	8Bh,0AAh,0AAh,0AAh
+   1528	13AD  AF BA 06 AA 0B AB			     db	     0AFh,0BAh,	06h,0AAh, 0Bh,0ABh
+   1529	13B3  AA AB BA 06 AA 05			     db	     0AAh,0ABh,0BAh, 06h,0AAh, 05h
+   1530	13B9  AB 06 AA 04 AB AB			     db	     0ABh, 06h,0AAh, 04h,0ABh,0ABh
+   1531	13BF  AA AB EE AA FA AA			     db	     0AAh,0ABh,0EEh,0AAh,0FAh,0AAh
+   1532	13C5  AA AB AB AA BA AA			     db	     0AAh,0ABh,0ABh,0AAh,0BAh,0AAh
+   1533	13CB  BA 06 AA 04 BF 06			     db	     0BAh, 06h,0AAh, 04h,0BFh, 06h
+   1534	13D1  AA 05 A3 AA AA AA			     db	     0AAh, 05h,0A3h,0AAh,0AAh,0AAh
+   1535	13D7  BA 06 AA 0B AE AB			     db	     0BAh, 06h,0AAh, 0Bh,0AEh,0ABh
+   1536	13DD  AA AB EA 06 AA 05			     db	     0AAh,0ABh,0EAh, 06h,0AAh, 05h
+   1537	13E3  BA 06 AA 04 AF AA			     db	     0BAh, 06h,0AAh, 04h,0AFh,0AAh
+   1538	13E9  AA AB BA AB EE AA			     db	     0AAh,0ABh,0BAh,0ABh,0EEh,0AAh
+   1539	13EF  AA AA AE AA BA AA			     db	     0AAh,0AAh,0AEh,0AAh,0BAh,0AAh
+   1540	13F5  BA 06 AA 04 BB AA			     db	     0BAh, 06h,0AAh, 04h,0BBh,0AAh
+   1541	13FB  AA AA AE AA AB 06			     db	     0AAh,0AAh,0AEh,0AAh,0ABh, 06h
+   1542	1401  AA 0F BA AE AA AB			     db	     0AAh, 0Fh,0BAh,0AEh,0AAh,0ABh
+   1543	1407  EA 06 AA 05 EA 06			     db	     0EAh, 06h,0AAh, 05h,0EAh, 06h
+   1544	140D  AA 04 BE AA AA AB			     db	     0AAh, 04h,0BEh,0AAh,0AAh,0ABh
+   1545	1413  BA AB EA 06 AA 07			     db	     0BAh,0ABh,0EAh, 06h,0AAh, 07h
+   1546	1419  EA 06 AA 04 EE 06			     db	     0EAh, 06h,0AAh, 04h,0EEh, 06h
+   1547	141F  AA 09 BA 06 AA 0E			     db	     0AAh, 09h,0BAh, 06h,0AAh, 0Eh
+   1548	1425  AB EA 06 AA 09 AF			     db	     0ABh,0EAh,	06h,0AAh, 09h,0AFh
+   1549	142B  EA AA AA AB AA AB			     db	     0EAh,0AAh,0AAh,0ABh,0AAh,0ABh
+   1550	1431  06 AA 0D FA 06 AA			     db	      06h,0AAh,	0Dh,0FAh, 06h,0AAh
+   1551	1437  08 AB EA 06 AA 0C			     db	      08h,0ABh,0EAh, 06h,0AAh, 0Ch
+   1552	143D  FA 06 AA 0C BA AA			     db	     0FAh, 06h,0AAh, 0Ch,0BAh,0AAh
+   1553	1443  AA AA AE 06 AA 0F			     db	     0AAh,0AAh,0AEh, 06h,0AAh, 0Fh
+   1554	1449  BA 06 AA 08 BE 06			     db	     0BAh, 06h,0AAh, 08h,0BEh, 06h
+   1555	144F  AA 0F AB 06 AA 1E			     db	     0AAh, 0Fh,0ABh, 06h,0AAh, 1Eh
+   1556	1455  EA 06 AA 07 AB 06			     db	     0EAh, 06h,0AAh, 07h,0ABh, 06h
+   1557	145B  AA 17 06 AA 70 BB			     db	     0AAh, 17h,	06h,0AAh, 70h,0BBh
+   1558	1461  FB BF BB BF BB BB			     db	     0FBh,0BFh,0BBh,0BFh,0BBh,0BBh
+   1559	1467  FF BB BB BF 06 BB			     db	     0FFh,0BBh,0BBh,0BFh, 06h,0BBh
+   1560	146D  08 FB FF FF BB BF			     db	      08h,0FBh,0FFh,0FFh,0BBh,0BFh
+   1561	1473  FB 06 BB 10 FF FF			     db	     0FBh, 06h,0BBh, 10h,0FFh,0FFh
+   1562	1479  FB 06 BB 0C FE FE			     db	     0FBh, 06h,0BBh, 0Ch,0FEh,0FEh
+   1563	147F  FE FF FE EF FF FF			     db	     0FEh,0FFh,0FEh,0EFh,0FFh,0FFh
+   1564	1485  FF EF FF FF EE EE			     db	     0FFh,0EFh,0FFh,0FFh,0EEh,0EEh
+   1565	148B  EF FE EF FF FF FE			     db	     0EFh,0FEh,0EFh,0FFh,0FFh,0FEh
+   1566	1491  FF EE EF FF FF FF			     db	     0FFh,0EEh,0EFh,0FFh,0FFh,0FFh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 30
+208SATNO.asm
+
+
+
+   1567	1497  EE EF EE EF FE FF			     db	     0EEh,0EFh,0EEh,0EFh,0FEh,0FFh
+   1568	149D  EF FE EF EF FF FE			     db	     0EFh,0FEh,0EFh,0EFh,0FFh,0FEh
+   1569	14A3  FF EF FF FF FE FF			     db	     0FFh,0EFh,0FFh,0FFh,0FEh,0FFh
+   1570	14A9  EE 06 EF 04 FE FF			     db	     0EEh, 06h,0EFh, 04h,0FEh,0FFh
+   1571	14AF  FF FE EE EE EE 06			     db	     0FFh,0FEh,0EEh,0EEh,0EEh, 06h
+   1572	14B5  FF 32 EF FB 06 FF			     db	     0FFh, 32h,0EFh,0FBh, 06h,0FFh
+   1573	14BB  FF 06 FF FF 06 FF			     db	     0FFh, 06h,0FFh,0FFh, 06h,0FFh
+   1574	14C1  F9 F0 2B BA 06 FF			     db	     0F9h,0F0h,	2Bh,0BAh, 06h,0FFh
+   1575	14C7  04 C2 BB BA AF 06			     db	      04h,0C2h,0BBh,0BAh,0AFh, 06h
+   1576	14CD  FF 2D C3 EA AB BB			     db	     0FFh, 2Dh,0C3h,0EAh,0ABh,0BBh
+   1577	14D3  EE AF FF CE AE EF			     db	     0EEh,0AFh,0FFh,0CEh,0AEh,0EFh
+   1578	14D9  06 FF 1E FD 6A AB			     db	      06h,0FFh,	1Eh,0FDh, 6Ah,0ABh
+   1579	14DF  BB BF EE 06 FF 09			     db	     0BBh,0BFh,0EEh, 06h,0FFh, 09h
+   1580	14E5  FC 03 EB BF 06 FF			     db	     0FCh, 03h,0EBh,0BFh, 06h,0FFh
+   1581	14EB  04 0B AB 06 FF 1F			     db	      04h, 0Bh,0ABh, 06h,0FFh, 1Fh
+   1582	14F1  FD 2B BF 06 FF 0C			     db	     0FDh, 2Bh,0BFh, 06h,0FFh, 0Ch
+   1583	14F7  F0 03 EA EE EF FF			     db	     0F0h, 03h,0EAh,0EEh,0EFh,0FFh
+   1584	14FD  FF FF 0E AF 06 FF			     db	     0FFh,0FFh,	0Eh,0AFh, 06h,0FFh
+   1585	1503  1F F4 AF 06 FF 0D			     db	      1Fh,0F4h,0AFh, 06h,0FFh, 0Dh
+   1586	1509  F0 0F EA BF FF FF			     db	     0F0h, 0Fh,0EAh,0BFh,0FFh,0FFh
+   1587	150F  FF FC 0F FB 06 FF			     db	     0FFh,0FCh,	0Fh,0FBh, 06h,0FFh
+   1588	1515  10 C0 02 AA BA 06			     db	      10h,0C0h,	02h,0AAh,0BAh, 06h
+   1589	151B  FF 0B F4 2B BB BA			     db	     0FFh, 0Bh,0F4h, 2Bh,0BBh,0BAh
+   1590	1521  AB EF FF BB BB AA			     db	     0ABh,0EFh,0FFh,0BBh,0BBh,0AAh
+   1591	1527  AE EE FF FF FF 00			     db	     0AEh,0EEh,0FFh,0FFh,0FFh, 00h
+   1592	152D  3F EA BF FF FF FF			     db	      3Fh,0EAh,0BFh,0FFh,0FFh,0FFh
+   1593	1533  FC 3E BF FF FF FC			     db	     0FCh, 3Eh,0BFh,0FFh,0FFh,0FCh
+   1594	1539  02 AE AA EE EE FF			     db	      02h,0AEh,0AAh,0EEh,0EEh,0FFh
+   1595	153F  BB 06 FF 05 C0 33			     db	     0BBh, 06h,0FFh, 05h,0C0h, 33h
+   1596	1545  FC 02 EF 06 FF 07			     db	     0FCh, 02h,0EFh, 06h,0FFh, 07h
+   1597	154B  AA AB BB FF F4 AA			     db	     0AAh,0ABh,0BBh,0FFh,0F4h,0AAh
+   1598	1551  EE EE FF FF FB BB			     db	     0EEh,0EEh,0FFh,0FFh,0FBh,0BBh
+   1599	1557  06 FF 04 FB BB B0			     db	      06h,0FFh,	04h,0FBh,0BBh,0B0h
+   1600	155D  C0 3E EA 06 FF 04			     db	     0C0h, 3Eh,0EAh, 06h,0FFh, 04h
+   1601	1563  F0 3C BF FF FF F0			     db	     0F0h, 3Ch,0BFh,0FFh,0FFh,0F0h
+   1602	1569  00 02 EE AA BF 06			     db	      00h, 02h,0EEh,0AAh,0BFh, 06h
+   1603	156F  FF 06 C0 00 33 FB			     db	     0FFh, 06h,0C0h, 00h, 33h,0FBh
+   1604	1575  A8 AF EA EA BE AE			     db	     0A8h,0AFh,0EAh,0EAh,0BEh,0AEh
+   1605	157B  EE EE EE 06 FF 04			     db	     0EEh,0EEh,0EEh, 06h,0FFh, 04h
+   1606	1581  D8 2A AF FF FF FF			     db	     0D8h, 2Ah,0AFh,0FFh,0FFh,0FFh
+   1607	1587  06 EE 04 FF FB BF			     db	      06h,0EEh,	04h,0FFh,0FBh,0BFh
+   1608	158D  FF 0F C0 3F EA AE			     db	     0FFh, 0Fh,0C0h, 3Fh,0EAh,0AEh
+   1609	1593  EA AE EE C0 3C BF			     db	     0EAh,0AEh,0EEh,0C0h, 3Ch,0BFh
+   1610	1599  FF FF F0 03 FF F0			     db	     0FFh,0FFh,0F0h, 03h,0FFh,0F0h
+   1611	159F  CF AA AB BF FF F0			     db	     0CFh,0AAh,0ABh,0BFh,0FFh,0F0h
+   1612	15A5  06 00 04 33 FB AA			     db	      06h, 00h,	04h, 33h,0FBh,0AAh
+   1613	15AB  AB AA FB BB AA BF			     db	     0ABh,0AAh,0FBh,0BBh,0AAh,0BFh
+   1614	15B1  FB BB AE EF AA AA			     db	     0FBh,0BBh,0AEh,0EFh,0AAh,0AAh
+   1615	15B7  90 2A AB BB BB BB			     db	      90h, 2Ah,0ABh,0BBh,0BBh,0BBh
+   1616	15BD  EA AA BE AA AB EF			     db	     0EAh,0AAh,0BEh,0AAh,0ABh,0EFh
+   1617	15C3  BF FC 3C 00 FE FA			     db	     0BFh,0FCh,	3Ch, 00h,0FEh,0FAh
+   1618	15C9  BF FF FF FF 03 3C			     db	     0BFh,0FFh,0FFh,0FFh, 03h, 3Ch
+   1619	15CF  8F FF FF C0 03 FF			     db	      8Fh,0FFh,0FFh,0C0h, 03h,0FFh
+   1620	15D5  CB FF 00 00 F0 00			     db	     0CBh,0FFh,	00h, 00h,0F0h, 00h
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 31
+208SATNO.asm
+
+
+
+   1621	15DB  0F C0 C3 00 00 33			     db	      0Fh,0C0h,0C3h, 00h, 00h, 33h
+   1622	15E1  FF AA AB 06 AA 05			     db	     0FFh,0AAh,0ABh, 06h,0AAh, 05h
+   1623	15E7  D7 06 AA 04 AB 42			     db	     0D7h, 06h,0AAh, 04h,0ABh, 42h
+   1624	15ED  06 AA 0A AC AA B0			     db	      06h,0AAh,	0Ah,0ACh,0AAh,0B0h
+   1625	15F3  F0 00 FF B8 AA AA			     db	     0F0h, 00h,0FFh,0B8h,0AAh,0AAh
+   1626	15F9  AC 00 C3 3E 2E AA			     db	     0ACh, 00h,0C3h, 3Eh, 2Eh,0AAh
+   1627	15FF  AA C0 03 06 FF 04			     db	     0AAh,0C0h,	03h, 06h,0FFh, 04h
+   1628	1605  33 F3 0C FF C0 3C			     db	      33h,0F3h,	0Ch,0FFh,0C0h, 3Ch
+   1629	160B  C0 00 33 FB AA AB			     db	     0C0h, 00h,	33h,0FBh,0AAh,0ABh
+   1630	1611  06 FF 04 D0 57 06			     db	      06h,0FFh,	04h,0D0h, 57h, 06h
+   1631	1617  FF 05 42 AA AB BB			     db	     0FFh, 05h,	42h,0AAh,0ABh,0BBh
+   1632	161D  B6 FF FB BB FE EE			     db	     0B6h,0FFh,0FBh,0BBh,0FEh,0EEh
+   1633	1623  FA F0 3F C0 F0 03			     db	     0FAh,0F0h,	3Fh,0C0h,0F0h, 03h
+   1634	1629  FE E8 AF FF F0 33			     db	     0FEh,0E8h,0AFh,0FFh,0F0h, 33h
+   1635	162F  3F 3E 22 FF FF 00			     db	      3Fh, 3Eh,	22h,0FFh,0FFh, 00h
+   1636	1635  03 3F FF FF FF 33			     db	      03h, 3Fh,0FFh,0FFh,0FFh, 33h
+   1637	163B  F3 0C CF F0 FF C0			     db	     0F3h, 0Ch,0CFh,0F0h,0FFh,0C0h
+   1638	1641  00 33 FB BA AB AA			     db	      00h, 33h,0FBh,0BAh,0ABh,0AAh
+   1639	1647  AA AA B4 05 55 FA			     db	     0AAh,0AAh,0B4h, 05h, 55h,0FAh
+   1640	164D  AA AA AB 7D 04 28			     db	     0AAh,0AAh,0ABh, 7Dh, 04h, 28h
+   1641	1653  AA AB 56 06 AA 06			     db	     0AAh,0ABh,	56h, 06h,0AAh, 06h
+   1642	1659  B0 CA C3 30 0F FE			     db	     0B0h,0CAh,0C3h, 30h, 0Fh,0FEh
+   1643	165F  E8 2A AA B0 00 3C			     db	     0E8h, 2Ah,0AAh,0B0h, 00h, 3Ch
+   1644	1665  FE 8A AA AB 00 03			     db	     0FEh, 8Ah,0AAh,0ABh, 00h, 03h
+   1645	166B  3F FF FF FF 0F F3			     db	      3Fh,0FFh,0FFh,0FFh, 0Fh,0F3h
+   1646	1671  0C CF C3 3F C0 00			     db	      0Ch,0CFh,0C3h, 3Fh,0C0h, 00h
+   1647	1677  F3 FB AA AB D1 7F			     db	     0F3h,0FBh,0AAh,0ABh,0D1h, 7Fh
+   1648	167D  FD 05 5D 77 FF F5			     db	     0FDh, 05h,	5Dh, 77h,0FFh,0F5h
+   1649	1683  EA AD 7D 88 E8 AA			     db	     0EAh,0ADh,	7Dh, 88h,0E8h,0AAh
+   1650	1689  AB 57 AA B6 06 AA			     db	     0ABh, 57h,0AAh,0B6h, 06h,0AAh
+   1651	168F  04 B0 CA C0 F0 0F			     db	      04h,0B0h,0CAh,0C0h,0F0h, 0Fh
+   1652	1695  FE EA 0A AA B3 00			     db	     0FEh,0EAh,	0Ah,0AAh,0B3h, 00h
+   1653	169B  FC FA A8 AA AC 00			     db	     0FCh,0FAh,0A8h,0AAh,0ACh, 00h
+   1654	16A1  0C 06 FF 04 0F F3			     db	      0Ch, 06h,0FFh, 04h, 0Fh,0F3h
+   1655	16A7  0C CF CC FF C0 00			     db	      0Ch,0CFh,0CCh,0FFh,0C0h, 00h
+   1656	16AD  CF FF AA EA 41 FF			     db	     0CFh,0FFh,0AAh,0EAh, 41h,0FFh
+   1657	16B3  D0 5F 75 5F FF D7			     db	     0D0h, 5Fh,	75h, 5Fh,0FFh,0D7h
+   1658	16B9  FA AD DD 8B 28 AA			     db	     0FAh,0ADh,0DDh, 8Bh, 28h,0AAh
+   1659	16BF  AD 57 EA D7 06 AA			     db	     0ADh, 57h,0EAh,0D7h, 06h,0AAh
+   1660	16C5  04 C3 0A C3 F0 3F			     db	      04h,0C3h,	0Ah,0C3h,0F0h, 3Fh
+   1661	16CB  FF AE 8A AA C0 0F			     db	     0FFh,0AEh,	8Ah,0AAh,0C0h, 0Fh
+   1662	16D1  F3 EE 88 AA AC 00			     db	     0F3h,0EEh,	88h,0AAh,0ACh, 00h
+   1663	16D7  3C 06 FF 04 0F F3			     db	      3Ch, 06h,0FFh, 04h, 0Fh,0F3h
+   1664	16DD  0C FF C3 FF C0 00			     db	      0Ch,0FFh,0C3h,0FFh,0C0h, 00h
+   1665	16E3  CF FE AA AA 57 FF			     db	     0CFh,0FEh,0AAh,0AAh, 57h,0FFh
+   1666	16E9  55 7D F7 7F FF DF			     db	      55h, 7Dh,0F7h, 7Fh,0FFh,0DFh
+   1667	16EF  FF AD 35 30 A8 8A			     db	     0FFh,0ADh,	35h, 30h,0A8h, 8Ah
+   1668	16F5  A9 5D FB 57 EA AA			     db	     0A9h, 5Dh,0FBh, 57h,0EAh,0AAh
+   1669	16FB  AA AB 00 F3 00 C0			     db	     0AAh,0ABh,	00h,0F3h, 00h,0C0h
+   1670	1701  3F FB AE 0A AB 0C			     db	      3Fh,0FBh,0AEh, 0Ah,0ABh, 0Ch
+   1671	1707  CF 33 FE 80 AA A0			     db	     0CFh, 33h,0FEh, 80h,0AAh,0A0h
+   1672	170D  00 3C 06 FF 04 3F			     db	      00h, 3Ch,	06h,0FFh, 04h, 3Fh
+   1673	1713  C3 33 CF C3 FF C0			     db	     0C3h, 33h,0CFh,0C3h,0FFh,0C0h
+   1674	1719  00 0F FE AA AA 75			     db	      00h, 0Fh,0FEh,0AAh,0AAh, 75h
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 32
+208SATNO.asm
+
+
+
+   1675	171F  FF 55 FD D7 7F FF			     db	     0FFh, 55h,0FDh,0D7h, 7Fh,0FFh
+   1676	1725  DF FF F7 7D 00 B8			     db	     0DFh,0FFh,0F7h, 7Dh, 00h,0B8h
+   1677	172B			     loc_53:
+   1678	172B  0A AA FD57			     or	     ch,ss:data_19e[bp+si]
+   1679	172F  77 FA				     ja	     loc_53		     ; Jump if above
+   1680	1731  A8 AA				     test    al,0AAh
+   1681	1733  AB				     stosw			     ; Store ax	to es:[di]
+   1682				     ;*		     add     ah,bh
+   1683	1734  00 FC				     db	      00h,0FCh		     ;	Fixup -	byte match
+   1684				     ;*		     pop     cs			     ; Dangerous-8088 only
+   1685	1736  0F				     db	     0Fh		     ;	Fixup -	byte match
+   1686	1737  C3				     retn
+   1687										     ;*	No entry point to code
+   1688	1738  3F				     aas			     ; Ascii adjust
+   1689	1739  FB				     sti			     ; Enable interrupts
+   1690	173A  AE				     scasb			     ; Scan es:[di] for	al
+   1691				     ;*		     sub     byte ptr ss:data_15e[bp+di],0CFh
+   1692	173B  82 AB 30 3C CF			     db	      82h,0ABh,	30h, 3Ch,0CFh	     ;	Fixup -	byte match
+   1693	1740  EE				     out     dx,al		     ; port 0, DMA-1 bas&add ch	0
+   1694				     ;*		     sub     byte ptr [bp+si],0
+   1695	1741  82 2A 00				     db	      82h, 2Ah,	00h	     ;	Fixup -	byte match
+   1696				     ;*		     add     al,dh
+   1697	1744  00 F0				     db	      00h,0F0h		     ;	Fixup -	byte match
+   1698	1746  FF FF FF FC CF C3			     db	     0FFh,0FFh,0FFh,0FCh,0CFh,0C3h
+   1699	174C  33 CF CF FF C0 00			     db	      33h,0CFh,0CFh,0FFh,0C0h, 00h
+   1700	1752  F3 FF AA BA D7 FF			     db	     0F3h,0FFh,0AAh,0BAh,0D7h,0FFh
+   1701	1758  77 F5 5D 06 FF 04			     db	      77h,0F5h,	5Dh, 06h,0FFh, 04h
+   1702	175E  C4 30 C2 B8 08 88			     db	     0C4h, 30h,0C2h,0B8h, 08h, 88h
+   1703	1764  A9 F5 5F FF C0 0A			     db	     0A9h,0F5h,	5Fh,0FFh,0C0h, 0Ah
+   1704	176A  AB 03 FC 33 03 3F			     db	     0ABh, 03h,0FCh, 33h, 03h, 3Fh
+   1705	1770  FB BE 88 AC 00 3F			     db	     0FBh,0BEh,	88h,0ACh, 00h, 3Fh
+   1706	1776  FF BA 82 20 00 00			     db	     0FFh,0BAh,	82h, 20h, 00h, 00h
+   1707	177C  F3 FF FF FF FC 3F			     db	     0F3h,0FFh,0FFh,0FFh,0FCh, 3Fh
+   1708	1782  C0 F3 CF F3 FF C0			     db	     0C0h,0F3h,0CFh,0F3h,0FFh,0C0h
+   1709	1788  00 33 FF EA EA 1F			     db	      00h, 33h,0FFh,0EAh,0EAh, 1Fh
+   1710	178E  FF DF D7 75 06 FF			     db	     0FFh,0DFh,0D7h, 75h, 06h,0FFh
+   1711	1794  04 D0 30 4B A8 20			     db	      04h,0D0h,	30h, 4Bh,0A8h, 20h
+   1712	179A  A2 2A D5 7F F0 00			     db	     0A2h, 2Ah,0D5h, 7Fh,0F0h, 00h
+   1713	17A0  00 3C 00 F0 CF 0C			     db	      00h, 3Ch,	00h,0F0h,0CFh, 0Ch
+   1714	17A6  FF FF AE A2 AC C3			     db	     0FFh,0FFh,0AEh,0A2h,0ACh,0C3h
+   1715	17AC  30 FF BE 88 80 00			     db	      30h,0FFh,0BEh, 88h, 80h, 00h
+   1716	17B2  00 CF FF FF FF F3			     db	      00h,0CFh,0FFh,0FFh,0FFh,0F3h
+   1717	17B8  3F C0 F3 3F CF FF			     db	      3Fh,0C0h,0F3h, 3Fh,0CFh,0FFh
+   1718	17BE  C0 00 33 FE EB AE			     db	     0C0h, 00h,	33h,0FEh,0EBh,0AEh
+   1719	17C4  3F FF DF 55 57 06			     db	      3Fh,0FFh,0DFh, 55h, 57h, 06h
+   1720	17CA  FF 04 D0 C1 EB AA			     db	     0FFh, 04h,0D0h,0C1h,0EBh,0AAh
+   1721	17D0  08 28 AA A8 B0 00			     db	      08h, 28h,0AAh,0A8h,0B0h, 00h
+   1722	17D6  00 00 03 0F 30 3C			     db	      00h, 00h,	03h, 0Fh, 30h, 3Ch
+   1723	17DC  0C FF EF BB 82 AA			     db	      0Ch,0FFh,0EFh,0BBh, 82h,0AAh
+   1724	17E2  00 F3 FE BA 80 80			     db	      00h,0F3h,0FEh,0BAh, 80h, 80h
+   1725	17E8  00 00 CF FF FF FF			     db	      00h, 00h,0CFh,0FFh,0FFh,0FFh
+   1726	17EE  0C FF C0 F3 3F CF			     db	      0Ch,0FFh,0C0h,0F3h, 3Fh,0CFh
+   1727	17F4  FF C0 00 F3 FE EA			     db	     0FFh,0C0h,	00h,0F3h,0FEh,0EAh
+   1728	17FA  AE FF FF 7F 5D 57			     db	     0AEh,0FFh,0FFh, 7Fh, 5Dh, 57h
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 33
+208SATNO.asm
+
+
+
+   1729	1800  06 FF 04 C1 C9 4A			     db	      06h,0FFh,	04h,0C1h,0C9h, 4Ah
+   1730	1806  AA 0A 88 00 80 06			     db	     0AAh, 0Ah,	88h, 00h, 80h, 06h
+   1731	180C  00 04 0C 30 FC FC			     db	      00h, 04h,	0Ch, 30h,0FCh,0FCh
+   1732	1812  3C FF FF BB A0 AA			     db	      3Ch,0FFh,0FFh,0BBh,0A0h,0AAh
+   1733	1818  0C C3 EA FA A0 00			     db	      0Ch,0C3h,0EAh,0FAh,0A0h, 00h
+   1734	181E  00 03 CF FF FF FC			     db	      00h, 03h,0CFh,0FFh,0FFh,0FCh
+   1735	1824  F3 FF 33 33 3F F3			     db	     0F3h,0FFh,	33h, 33h, 3Fh,0F3h
+   1736	182A  FF 30 00 F3 FE EA			     db	     0FFh, 30h,	00h,0F3h,0FEh,0EAh
+   1737	1830  AF 0F FD FF 75 77			     db	     0AFh, 0Fh,0FDh,0FFh, 75h, 77h
+   1738	1836  06 FF 04 43 13 0A			     db	      06h,0FFh,	04h, 43h, 13h, 0Ah
+   1739	183C  AA 82 A0 06 00 06			     db	     0AAh, 82h,0A0h, 06h, 00h, 06h
+   1740	1842  30 FC F3 F0 3C FF			     db	      30h,0FCh,0F3h,0F0h, 3Ch,0FFh
+   1741	1848  EE FA A8 2A 83 CF			     db	     0EEh,0FAh,0A8h, 2Ah, 83h,0CFh
+   1742	184E  BA FA A2 00 00 30			     db	     0BAh,0FAh,0A2h, 00h, 00h, 30h
+   1743	1854  CF FF FF F3 CF FF			     db	     0CFh,0FFh,0FFh,0F3h,0CFh,0FFh
+   1744	185A  30 F3 3F F3 FF C0			     db	      30h,0F3h,	3Fh,0F3h,0FFh,0C0h
+   1745	1860  00 FF FE EB AE CF			     db	      00h,0FFh,0FEh,0EBh,0AEh,0CFh
+   1746	1866  FF FD 77 5F 06 FF			     db	     0FFh,0FDh,	77h, 5Fh, 06h,0FFh
+   1747	186C  04 40 16 CA EA 82			     db	      04h, 40h,	16h,0CAh,0EAh, 82h
+   1748	1872  80 06 00 04 0C 00			     db	      80h, 06h,	00h, 04h, 0Ch, 00h
+   1749	1878  F0 CF C3 C0 F3 FF			     db	     0F0h,0CFh,0C3h,0C0h,0F3h,0FFh
+   1750	187E  BE BB E2 0A B3 FF			     db	     0BEh,0BBh,0E2h, 0Ah,0B3h,0FFh
+   1751	1884  AA EE A0 00 0C 3C			     db	     0AAh,0EEh,0A0h, 00h, 0Ch, 3Ch
+   1752	188A  3F FF FF F3 CF FF			     db	      3Fh,0FFh,0FFh,0F3h,0CFh,0FFh
+   1753	1890  30 33 3F F3 FF F0			     db	      30h, 33h,	3Fh,0F3h,0FFh,0F0h
+   1754	1896  00 F3 FE EB AE 8F			     db	      00h,0F3h,0FEh,0EBh,0AEh, 8Fh
+   1755	189C  FF F5 DD DF 06 FF			     db	     0FFh,0F5h,0DDh,0DFh, 06h,0FFh
+   1756	18A2  04 40 24 2A AA A8			     db	      04h, 40h,	24h, 2Ah,0AAh,0A8h
+   1757	18A8  80 00 00 00 C0 C0			     db	      80h, 00h,	00h, 00h,0C0h,0C0h
+   1758	18AE  03 F0 CF 0F C3 F3			     db	      03h,0F0h,0CFh, 0Fh,0C3h,0F3h
+   1759	18B4  FF BE BF E8 0A AF			     db	     0FFh,0BEh,0BFh,0E8h, 0Ah,0AFh
+   1760	18BA  FF AB EE A2 00 30			     db	     0FFh,0ABh,0EEh,0A2h, 00h, 30h
+   1761	18C0  F0 3F FF FF 0F 3F			     db	     0F0h, 3Fh,0FFh,0FFh, 0Fh, 3Fh
+   1762	18C6  FF 00 33 3F F3 FF			     db	     0FFh, 00h,	33h, 3Fh,0F3h,0FFh
+   1763	18CC  F0 03 F3 FE EB AA			     db	     0F0h, 03h,0F3h,0FEh,0EBh,0AAh
+   1764	18D2  CF FF F5 7F FF F5			     db	     0CFh,0FFh,0F5h, 7Fh,0FFh,0F5h
+   1765	18D8  77 FF FD 4F 08 AB			     db	      77h,0FFh,0FDh, 4Fh, 08h,0ABh
+   1766	18DE  AA 22 88 00 00 0F			     db	     0AAh, 22h,	88h, 00h, 00h, 0Fh
+   1767	18E4  00 30 03 00 CF CF			     db	      00h, 30h,	03h, 00h,0CFh,0CFh
+   1768	18EA  C3 F3 FF BA FB E8			     db	     0C3h,0F3h,0FFh,0BAh,0FBh,0E8h
+   1769	18F0  82 AF FF AF EE 88			     db	      82h,0AFh,0FFh,0AFh,0EEh, 88h
+   1770	18F6  00 33 C3 0F FF FC			     db	      00h, 33h,0C3h, 0Fh,0FFh,0FCh
+   1771	18FC  F0 FF FC C0 FF 3F			     db	     0F0h,0FFh,0FCh,0C0h,0FFh, 3Fh
+   1772	1902  FF FF F0 03 F3 FE			     db	     0FFh,0FFh,0F0h, 03h,0F3h,0FEh
+   1773	1908  EA AB 83 FF D7 DF			     db	     0EAh,0ABh,	83h,0FFh,0D7h,0DFh
+   1774	190E  7F 57 FF FF FD 0F			     db	      7Fh, 57h,0FFh,0FFh,0FDh, 0Fh
+   1775	1914  33 AB AA 0A 0A 80			     db	      33h,0ABh,0AAh, 0Ah, 0Ah, 80h
+   1776	191A  00 AC 33 30 0C 33			     db	      00h,0ACh,	33h, 30h, 0Ch, 33h
+   1777	1920  0F 3F C3 CF FF FE			     db	      0Fh, 3Fh,0C3h,0CFh,0FFh,0FEh
+   1778	1926  BB FA 00 AA FE BF			     db	     0BBh,0FAh,	00h,0AAh,0FEh,0BFh
+   1779	192C  BE A0 00 F3 30 CF			     db	     0BEh,0A0h,	00h,0F3h, 30h,0CFh
+   1780	1932  FF C0 CF FF FC C3			     db	     0FFh,0C0h,0CFh,0FFh,0FCh,0C3h
+   1781	1938  CF CF F3 FF F0 03			     db	     0CFh,0CFh,0F3h,0FFh,0F0h, 03h
+   1782	193E  CF FE EA BA 83 FF			     db	     0CFh,0FEh,0EAh,0BAh, 83h,0FFh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 34
+208SATNO.asm
+
+
+
+   1783	1944  D7 DF FD DD FF FF			     db	     0D7h,0DFh,0FDh,0DDh,0FFh,0FFh
+   1784	194A  F5 0C 3C AE AA 0A			     db	     0F5h, 0Ch,	3Ch,0AEh,0AAh, 0Ah
+   1785	1950  0B EA 82 F0 30 F0			     db	      0Bh,0EAh,	82h,0F0h, 30h,0F0h
+   1786	1956  03 0C 3C FF 03 CF			     db	      03h, 0Ch,	3Ch,0FFh, 03h,0CFh
+   1787	195C  FE FA BF BA 00 AA			     db	     0FEh,0FAh,0BFh,0BAh, 00h,0AAh
+   1788	1962  FA EF EE 88 00 FF			     db	     0FAh,0EFh,0EEh, 88h, 00h,0FFh
+   1789	1968  C3 CF FF C3 3F FF			     db	     0C3h,0CFh,0FFh,0C3h, 3Fh,0FFh
+   1790	196E  F3 C3 CF CF FC FF			     db	     0F3h,0C3h,0CFh,0CFh,0FCh,0FFh
+   1791	1974  FC 03 CF FF EB EB			     db	     0FCh, 03h,0CFh,0FFh,0EBh,0EBh
+   1792	197A  C3 FF DF 7D FD 77			     db	     0C3h,0FFh,0DFh, 7Dh,0FDh, 77h
+   1793	1980  FF FD 54 00 32 AE			     db	     0FFh,0FDh,	54h, 00h, 32h,0AEh
+   1794	1986  8A 0A 8B BA EB A3			     db	      8Ah, 0Ah,	8Bh,0BAh,0EBh,0A3h
+   1795	198C  00 C0 3C 30 FF FF			     db	      00h,0C0h,	3Ch, 30h,0FFh,0FFh
+   1796	1992  0F CF FE FA EE AE			     db	      0Fh,0CFh,0FEh,0FAh,0EEh,0AEh
+   1797	1998  08 28 BE EF BF A8			     db	      08h, 28h,0BEh,0EFh,0BFh,0A8h
+   1798	199E  00 FF 30 0F FF 0C			     db	      00h,0FFh,	30h, 0Fh,0FFh, 0Ch
+   1799	19A4  FF FF F3 C3 CF CF			     db	     0FFh,0FFh,0F3h,0C3h,0CFh,0CFh
+   1800	19AA  FC 3F FC 03 CF FF			     db	     0FCh, 3Fh,0FCh, 03h,0CFh,0FFh
+   1801	19B0  EE AB CF FF 7D FF			     db	     0EEh,0ABh,0CFh,0FFh, 7Dh,0FFh
+   1802	19B6  F5 FF FF F4 54 30			     db	     0F5h,0FFh,0FFh,0F4h, 54h, 30h
+   1803	19BC  CA AA 8A 0A 0B BC			     db	     0CAh,0AAh,	8Ah, 0Ah, 0Bh,0BCh
+   1804	19C2  CE 00 C3 CF F3 0C			     db	     0CEh, 00h,0C3h,0CFh,0F3h, 0Ch
+   1805	19C8  FC FC 0F 3F FE EA			     db	     0FCh,0FCh,	0Fh, 3Fh,0FEh,0EAh
+   1806	19CE  EE EE 0A AC 2F AB			     db	     0EEh,0EEh,	0Ah,0ACh, 2Fh,0ABh
+   1807	19D4  FF A8 03 FF 33 0F			     db	     0FFh,0A8h,	03h,0FFh, 33h, 0Fh
+   1808	19DA  FF 0C FF FF F3 CF			     db	     0FFh, 0Ch,0FFh,0FFh,0F3h,0CFh
+   1809	19E0  CF CF FC 3F FC 03			     db	     0CFh,0CFh,0FCh, 3Fh,0FCh, 03h
+   1810	19E6  CF FF BA EB 20 FF			     db	     0CFh,0FFh,0BAh,0EBh, 20h,0FFh
+   1811	19EC  FF FF F5 FF FF F4			     db	     0FFh,0FFh,0F5h,0FFh,0FFh,0F4h
+   1812	19F2  44 C2 AA AA 8A 20			     db	      44h,0C2h,0AAh,0AAh, 8Ah, 20h
+   1813	19F8  03 B0 F0 CC C0 C3			     db	      03h,0B0h,0F0h,0CCh,0C0h,0C3h
+   1814	19FE  CC F0 F3 FC 3F FF			     db	     0CCh,0F0h,0F3h,0FCh, 3Fh,0FFh
+   1815	1A04  FE FA BE EE 88 A0			     db	     0FEh,0FAh,0BEh,0EEh, 88h,0A0h
+   1816	1A0A  2A EF EF A0 03 3F			     db	      2Ah,0EFh,0EFh,0A0h, 03h, 3Fh
+   1817	1A10  0C 3F FC 33 FF FF			     db	      0Ch, 3Fh,0FCh, 33h,0FFh,0FFh
+   1818	1A16  F3 C3 CF CF FC 3F			     db	     0F3h,0C3h,0CFh,0CFh,0FCh, 3Fh
+   1819	1A1C  FC 03 0F FF BA EB			     db	     0FCh, 03h,	0Fh,0FFh,0BAh,0EBh
+   1820	1A22  00 FF FD FF F7 FF			     db	      00h,0FFh,0FDh,0FFh,0F7h,0FFh
+   1821	1A28  FF D0 D0 C2 AE BA			     db	     0FFh,0D0h,0D0h,0C2h,0AEh,0BAh
+   1822	1A2E  2A 0A 02 30 E2 00			     db	      2Ah, 0Ah,	02h, 30h,0E2h, 00h
+   1823	1A34  33 33 F0 F3 FF F0			     db	      33h, 33h,0F0h,0F3h,0FFh,0F0h
+   1824	1A3A  3F FF FE EA AF EE			     db	      3Fh,0FFh,0FEh,0EAh,0AFh,0EEh
+   1825	1A40  28 30 2A BB EF A2			     db	      28h, 30h,	2Ah,0BBh,0EFh,0A2h
+   1826	1A46  03 3C 0C FF FC 0C			     db	      03h, 3Ch,	0Ch,0FFh,0FCh, 0Ch
+   1827	1A4C  FF FF F3 33 CF CF			     db	     0FFh,0FFh,0F3h, 33h,0CFh,0CFh
+   1828	1A52  FC CF FC 03 33 FF			     db	     0FCh,0CFh,0FCh, 03h, 33h,0FFh
+   1829	1A58  BA AB 02 FF FF FF			     db	     0BAh,0ABh,	02h,0FFh,0FFh,0FFh
+   1830	1A5E  D7 FF FF D3 C3 CE			     db	     0D7h,0FFh,0FFh,0D3h,0C3h,0CEh
+   1831	1A64  EA AA 2A 20 22 03			     db	     0EAh,0AAh,	2Ah, 20h, 22h, 03h
+   1832	1A6A  38 E0 08 CF 30 CF			     db	      38h,0E0h,	08h,0CFh, 30h,0CFh
+   1833	1A70  F3 C0 FF FF FB AA			     db	     0F3h,0C0h,0FFh,0FFh,0FBh,0AAh
+   1834	1A76  BB EA 2B C0 AA AF			     db	     0BBh,0EAh,	2Bh,0C0h,0AAh,0AFh
+   1835	1A7C  BA A2 0C F0 F0 3F			     db	     0BAh,0A2h,	0Ch,0F0h,0F0h, 3Fh
+   1836	1A82  FF 0C FF FF CF 0F			     db	     0FFh, 0Ch,0FFh,0FFh,0CFh, 0Fh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 35
+208SATNO.asm
+
+
+
+   1837	1A88  F3 F3 FC 3F FC 03			     db	     0F3h,0F3h,0FCh, 3Fh,0FCh, 03h
+   1838	1A8E  33 FF FB AE 08 BF			     db	      33h,0FFh,0FBh,0AEh, 08h,0BFh
+   1839	1A94  FF FF 7F FF FF 43			     db	     0FFh,0FFh,	7Fh,0FFh,0FFh, 43h
+   1840	1A9A  0F 3A EB AA 28 A0			     db	      0Fh, 3Ah,0EBh,0AAh, 28h,0A0h
+   1841	1AA0  0A CB E0 E0 A3 3C			     db	      0Ah,0CBh,0E0h,0E0h,0A3h, 3Ch
+   1842	1AA6  C3 03 FF C3 EF FF			     db	     0C3h, 03h,0FFh,0C3h,0EFh,0FFh
+   1843	1AAC  FB AA AF BA 00 00			     db	     0FBh,0AAh,0AFh,0BAh, 00h, 00h
+   1844	1AB2  BA AB EE BB 0C F0			     db	     0BAh,0ABh,0EEh,0BBh, 0Ch,0F0h
+   1845	1AB8  30 CF FF 3C FF FF			     db	      30h,0CFh,0FFh, 3Ch,0FFh,0FFh
+   1846	1ABE  83 33 F3 F3 FC FF			     db	      83h, 33h,0F3h,0F3h,0FCh,0FFh
+   1847	1AC4  FC 03 33 FF FA EE			     db	     0FCh, 03h,	33h,0FFh,0FAh,0EEh
+   1848	1ACA  C0 BF 06 FF 05 43			     db	     0C0h,0BFh,	06h,0FFh, 05h, 43h
+   1849	1AD0  30 EA AB EA 28 88			     db	      30h,0EAh,0ABh,0EAh, 28h, 88h
+   1850	1AD6  2A 8B A3 E2 AF 3C			     db	      2Ah, 8Bh,0A3h,0E2h,0AFh, 3Ch
+   1851	1ADC  0C 0F FF C3 EF FF			     db	      0Ch, 0Fh,0FFh,0C3h,0EFh,0FFh
+   1852	1AE2  FB AE AF BA 00 02			     db	     0FBh,0AEh,0AFh,0BAh, 00h, 02h
+   1853	1AE8  BA AB EB A8 33 FC			     db	     0BAh,0ABh,0EBh,0A8h, 33h,0FCh
+   1854	1AEE  00 CF F0 33 FF FF			     db	      00h,0CFh,0F0h, 33h,0FFh,0FFh
+   1855	1AF4  83 33 F3 F3 FF 03			     db	      83h, 33h,0F3h,0F3h,0FFh, 03h
+   1856	1AFA  FF 0C FF FF BA EE			     db	     0FFh, 0Ch,0FFh,0FFh,0BAh,0EEh
+   1857	1B00  08 3F 06 FF 04 FD			     db	      08h, 3Fh,	06h,0FFh, 04h,0FDh
+   1858	1B06  0C 00 2B AF AA A8			     db	      0Ch, 00h,	2Bh,0AFh,0AAh,0A8h
+   1859	1B0C  A2 0B 0B EF AA 83			     db	     0A2h, 0Bh,	0Bh,0EFh,0AAh, 83h
+   1860	1B12  F3 C3 3F FF 03 BE			     db	     0F3h,0C3h,	3Fh,0FFh, 03h,0BEh
+   1861	1B18  FF AE AE EF BA 00			     db	     0FFh,0AEh,0AEh,0EFh,0BAh, 00h
+   1862	1B1E  3E EA AA BB E8 8F			     db	      3Eh,0EAh,0AAh,0BBh,0E8h, 8Fh
+   1863	1B24  F3 00 3F FC F3 FF			     db	     0F3h, 00h,	3Fh,0FCh,0F3h,0FFh
+   1864	1B2A  FA 33 0F F3 F3 FF			     db	     0FAh, 33h,	0Fh,0F3h,0F3h,0FFh
+   1865	1B30  FC FF 0C F3 FF BA			     db	     0FCh,0FFh,	0Ch,0F3h,0FFh,0BAh
+   1866	1B36  AE 30 0F 06 FF 04			     db	     0AEh, 30h,	0Fh, 06h,0FFh, 04h
+   1867	1B3C  FD 00 00 CB AF A8			     db	     0FDh, 00h,	00h,0CBh,0AFh,0A8h
+   1868	1B42  A0 8A 88 2C EE AA			     db	     0A0h, 8Ah,	88h, 2Ch,0EEh,0AAh
+   1869	1B48  0F C0 CF 3F FF 0F			     db	      0Fh,0C0h,0CFh, 3Fh,0FFh, 0Fh
+   1870	1B4E  AB FF AA AA BF EC			     db	     0ABh,0FFh,0AAh,0AAh,0BFh,0ECh
+   1871	1B54  00 FE EA AA AA B0			     db	      00h,0FEh,0EAh,0AAh,0AAh,0B0h
+   1872	1B5A  CF FF 03 3F F3 F3			     db	     0CFh,0FFh,	03h, 3Fh,0F3h,0F3h
+   1873	1B60  FF EE 0F 33 FF FC			     db	     0FFh,0EEh,	0Fh, 33h,0FFh,0FCh
+   1874	1B66  FF F0 FF 0C F3 FF			     db	     0FFh,0F0h,0FFh, 0Ch,0F3h,0FFh
+   1875	1B6C  FB AF 30 0B 06 FF			     db	     0FBh,0AFh,	30h, 0Bh, 06h,0FFh
+   1876	1B72  04 F4 03 00 3B AE			     db	      04h,0F4h,	03h, 00h, 3Bh,0AEh
+   1877	1B78  A8 88 82 82 AF 3E			     db	     0A8h, 88h,	82h, 82h,0AFh, 3Eh
+   1878	1B7E  A0 0F 03 FC 3F FC			     db	     0A0h, 0Fh,	03h,0FCh, 3Fh,0FCh
+   1879	1B84  FF BA FE AA AE BE			     db	     0FFh,0BAh,0FEh,0AAh,0AEh,0BEh
+   1880	1B8A  AA 00 FB AA AB AA			     db	     0AAh, 00h,0FBh,0AAh,0ABh,0AAh
+   1881	1B90  AB FF FF 0C FF F3			     db	     0ABh,0FFh,0FFh, 0Ch,0FFh,0F3h
+   1882	1B96  FC FB B8 CF 0F FC			     db	     0FCh,0FBh,0B8h,0CFh, 0Fh,0FCh
+   1883	1B9C  FC FF F0 FF 0C F3			     db	     0FCh,0FFh,0F0h,0FFh, 0Ch,0F3h
+   1884	1BA2  FF BA EB 33 83 06			     db	     0FFh,0BAh,0EBh, 33h, 83h, 06h
+   1885	1BA8  FF 04 F4 00 C0 CA			     db	     0FFh, 04h,0F4h, 00h,0C0h,0CAh
+   1886	1BAE  AA A2 8A 82 A0 AF			     db	     0AAh,0A2h,	8Ah, 82h,0A0h,0AFh
+   1887	1BB4  FA A0 0F 33 3C FF			     db	     0FAh,0A0h,	0Fh, 33h, 3Ch,0FFh
+   1888	1BBA  FF FE EF FE E9 52			     db	     0FFh,0FEh,0EFh,0FEh,0E9h, 52h
+   1889	1BC0  AA 80 00 FA AA AF			     db	     0AAh, 80h,	00h,0FAh,0AAh,0AFh
+   1890	1BC6  E8 AA AF FF 33 0F			     db	     0E8h,0AAh,0AFh,0FFh, 33h, 0Fh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 36
+208SATNO.asm
+
+
+
+   1891	1BCC  FF FC EE 03 03 3F			     db	     0FFh,0FCh,0EEh, 03h, 03h, 3Fh
+   1892	1BD2  FC FC FF FF FF 0C			     db	     0FCh,0FCh,0FFh,0FFh,0FFh, 0Ch
+   1893	1BD8  F3 FF BA AF 30 23			     db	     0F3h,0FFh,0BAh,0AFh, 30h, 23h
+   1894	1BDE  06 FF 04 D0 00 03			     db	      06h,0FFh,	04h,0D0h, 00h, 03h
+   1895	1BE4  3A AA A2 88 80 8A			     db	      3Ah,0AAh,0A2h, 88h, 80h, 8Ah
+   1896	1BEA  3F 2A 80 CC FC F0			     db	      3Fh, 2Ah,	80h,0CCh,0FCh,0F0h
+   1897	1BF0  FF FF FE EB FE E5			     db	     0FFh,0FFh,0FEh,0EBh,0FEh,0E5h
+   1898	1BF6  40 00 3C 03 FA EA			     db	      40h, 00h,	3Ch, 03h,0FAh,0EAh
+   1899	1BFC  AF A8 8A AB FF C0			     db	     0AFh,0A8h,	8Ah,0ABh,0FFh,0C0h
+   1900	1C02  03 FF FB A8 30 33			     db	      03h,0FFh,0FBh,0A8h, 30h, 33h
+   1901	1C08  0F FC F8 FF FC FF			     db	      0Fh,0FCh,0F8h,0FFh,0FCh,0FFh
+   1902	1C0E  03 F3 3F BA BB C8			     db	      03h,0F3h,	3Fh,0BAh,0BBh,0C8h
+   1903	1C14  C0 06 FF 04 DC 03			     db	     0C0h, 06h,0FFh, 04h,0DCh, 03h
+   1904	1C1A  03 2E AA AA 2A 00			     db	      03h, 2Eh,0AAh,0AAh, 2Ah, 00h
+   1905	1C20  03 3C EA 00 30 FF			     db	      03h, 3Ch,0EAh, 00h, 30h,0FFh
+   1906	1C26  C3 FF FF EA BF FE			     db	     0C3h,0FFh,0FFh,0EAh,0BFh,0FEh
+   1907	1C2C  A4 40 00 FF 0F EA			     db	     0A4h, 40h,	00h,0FFh, 0Fh,0EAh
+   1908	1C32  AA AE BA 22 AA BF			     db	     0AAh,0AEh,0BAh, 22h,0AAh,0BFh
+   1909	1C38  FC CF FF EE A0 CC			     db	     0FCh,0CFh,0FFh,0EEh,0A0h,0CCh
+   1910	1C3E  33 0F FC F8 FF FF			     db	      33h, 0Fh,0FCh,0F8h,0FFh,0FFh
+   1911	1C44  FF 03 CF FF BA BB			     db	     0FFh, 03h,0CFh,0FFh,0BAh,0BBh
+   1912	1C4A  CA 38 3F FF FF FF			     db	     0CAh, 38h,	3Fh,0FFh,0FFh,0FFh
+   1913	1C50  D3 0C 0C EE AA AA			     db	     0D3h, 0Ch,	0Ch,0EEh,0AAh,0AAh
+   1914	1C56  A8 03 0F 0C A8 00			     db	     0A8h, 03h,	0Fh, 0Ch,0A8h, 00h
+   1915	1C5C  CC FF 3F FF FF EB			     db	     0CCh,0FFh,	3Fh,0FFh,0FFh,0EBh
+   1916	1C62  BF BE 94 00 0F FC			     db	     0BFh,0BEh,	94h, 00h, 0Fh,0FCh
+   1917	1C68  FF EB AA BE EA 22			     db	     0FFh,0EBh,0AAh,0BEh,0EAh, 22h
+   1918	1C6E  AA AB FC 33 0F AA			     db	     0AAh,0ABh,0FCh, 33h, 0Fh,0AAh
+   1919	1C74  0C 03 0F 0F FF 38			     db	      0Ch, 03h,	0Fh, 0Fh,0FFh, 38h
+   1920	1C7A  FF FF FF 03 CC FF			     db	     0FFh,0FFh,0FFh, 03h,0CCh,0FFh
+   1921	1C80  BA FB F3 38 2F FD			     db	     0BAh,0FBh,0F3h, 38h, 2Fh,0FDh
+   1922	1C86  FF F7 DC 0C 03 AA			     db	     0FFh,0F7h,0DCh, 0Ch, 03h,0AAh
+   1923	1C8C  AA A8 A0 30 03 32			     db	     0AAh,0A8h,0A0h, 30h, 03h, 32h
+   1924	1C92  A0 0F F3 FF 0F FF			     db	     0A0h, 0Fh,0F3h,0FFh, 0Fh,0FFh
+   1925	1C98  FF EE BF BA 90 03			     db	     0FFh,0EEh,0BFh,0BAh, 90h, 03h
+   1926	1C9E  FF F0 FF AB AA AA			     db	     0FFh,0F0h,0FFh,0ABh,0AAh,0AAh
+   1927	1CA4  AA 28 2A AA BB 0C			     db	     0AAh, 28h,	2Ah,0AAh,0BBh, 0Ch
+   1928	1CAA  FE 0C C3 0C CF 3F			     db	     0FEh, 0Ch,0C3h, 0Ch,0CFh, 3Fh
+   1929	1CB0  FF 3A 3F FF FC CF			     db	     0FFh, 3Ah,	3Fh,0FFh,0FCh,0CFh
+   1930	1CB6  C3 FF BB BB FC 8E			     db	     0C3h,0FFh,0BBh,0BBh,0FCh, 8Eh
+   1931	1CBC  0A 86 83 01 D3 33			     db	      0Ah, 86h,	83h, 01h,0D3h, 33h
+   1932	1CC2  0F AA AA 88 8A 80			     db	      0Fh,0AAh,0AAh, 88h, 8Ah, 80h
+   1933	1CC8  0C 0A A0 3C CF FC			     db	      0Ch, 0Ah,0A0h, 3Ch,0CFh,0FCh
+   1934	1CCE  3F FF FE BE BE BA			     db	      3Fh,0FFh,0FEh,0BEh,0BEh,0BAh
+   1935	1CD4  94 0F FF C3 FF AA			     db	      94h, 0Fh,0FFh,0C3h,0FFh,0AAh
+   1936	1CDA  AA BA EA 0A 00 AA			     db	     0AAh,0BAh,0EAh, 0Ah, 00h,0AAh
+   1937	1CE0  AE FF E8 F0 0F 00			     db	     0AEh,0FFh,0E8h,0F0h, 0Fh, 00h
+   1938	1CE6  CC CF FF 3B 3F FF			     db	     0CCh,0CFh,0FFh, 3Bh, 3Fh,0FFh
+   1939	1CEC  BC 0F C3 FF FE FB			     db	     0BCh, 0Fh,0C3h,0FFh,0FEh,0FBh
+   1940	1CF2  FC A2 03 EB A2 85			     db	     0FCh,0A2h,	03h,0EBh,0A2h, 85h
+   1941	1CF8  8C F0 C2 BA EA 82			     db	      8Ch,0F0h,0C2h,0BAh,0EAh, 82h
+   1942	1CFE  28 0C 3C 0A 80 F0			     db	      28h, 0Ch,	3Ch, 0Ah, 80h,0F0h
+   1943	1D04  33 FC 3F FF FE EA			     db	      33h,0FCh,	3Fh,0FFh,0FEh,0EAh
+   1944	1D0A  FE EA 55 0F FF 33			     db	     0FEh,0EAh,	55h, 0Fh,0FFh, 33h
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 37
+208SATNO.asm
+
+
+
+   1945	1D10  FE AB 2A AE AA 0A			     db	     0FEh,0ABh,	2Ah,0AEh,0AAh, 0Ah
+   1946	1D16  80 00 AB BE 80 F0			     db	      80h, 00h,0ABh,0BEh, 80h,0F0h
+   1947	1D1C  2C CC CC 3F FF 3E			     db	      2Ch,0CCh,0CCh, 3Fh,0FFh, 3Eh
+   1948	1D22  3F FF B0 33 CF FF			     db	      3Fh,0FFh,0B0h, 33h,0CFh,0FFh
+   1949	1D28  EE AB FF 2C 83 00			     db	     0EEh,0ABh,0FFh, 2Ch, 83h, 00h
+   1950	1D2E  00 53 CC F0 CE EA			     db	      00h, 53h,0CCh,0F0h,0CEh,0EAh
+   1951	1D34  EA 28 A0 00			     db	     0EAh, 28h,0A0h, 00h
+   1952	1D38  3F 2A 0C				     db	      3Fh, 2Ah,	0Ch
+   1953
+   1954	1D3B			     locloop_54:
+   1955	1D3B  C3				     retn
+   1956										     ;*	No entry point to code
+   1957	1D3C  33 FC				     xor     di,sp
+   1958	1D3E  FF FF FA BB FA EA			     db	     0FFh,0FFh,0FAh,0BBh,0FAh,0EAh
+   1959	1D44  55 3F FF 03 FE A8			     db	      55h, 3Fh,0FFh, 03h,0FEh,0A8h
+   1960	1D4A  0A BA A8 80 AA 80			     db	      0Ah,0BAh,0A8h, 80h,0AAh, 80h
+   1961	1D50  2A A8 0F 02 8C 03			     db	      2Ah,0A8h,	0Fh, 02h, 8Ch, 03h
+   1962	1D56  3C 3F FF 3A 3F FF			     db	      3Ch, 3Fh,0FFh, 3Ah, 3Fh,0FFh
+   1963	1D5C  BC 33 C3 FF EE EB			     db	     0BCh, 33h,0C3h,0FFh,0EEh,0EBh
+   1964	1D62  FF CA E0 D5 95 17			     db	     0FFh,0CAh,0E0h,0D5h, 95h, 17h
+   1965	1D68  70 F3 CE EA AA 28			     db	      70h,0F3h,0CEh,0EAh,0AAh, 28h
+   1966	1D6E  A8 0C CF EA 33 CF			     db	     0A8h, 0Ch,0CFh,0EAh, 33h,0CFh
+   1967	1D74  CF F0 FF FF FA FB			     db	     0CFh,0F0h,0FFh,0FFh,0FAh,0FBh
+   1968	1D7A  FB A9 55 7F FC 0F			     db	     0FBh,0A9h,	55h, 7Fh,0FCh, 0Fh
+   1969	1D80  FA A0 0A AA EA 22			     db	     0FAh,0A0h,	0Ah,0AAh,0EAh, 22h
+   1970	1D86  02 AA 8A A0 03 28			     db	      02h,0AAh,	8Ah,0A0h, 03h, 28h
+   1971	1D8C  3C CF 3C FF FF 3A			     db	      3Ch,0CFh,	3Ch,0FFh,0FFh, 3Ah
+   1972	1D92  3F FF B3 33 33 FF			     db	      3Fh,0FFh,0B3h, 33h, 33h,0FFh
+   1973	1D98  EE EB AF F0 B8 03			     db	     0EEh,0EBh,0AFh,0F0h,0B8h, 03h
+   1974	1D9E  5F 17 73 C3 FE AA			     db	      5Fh, 17h,	73h,0C3h,0FEh,0AAh
+   1975	1DA4  A8 A0 A8 C0 FF A8			     db	     0A8h,0A0h,0A8h,0C0h,0FFh,0A8h
+   1976	1DAA  30 FC 3F 30 FF FF			     db	      30h,0FCh,	3Fh, 30h,0FFh,0FFh
+   1977	1DB0  FB FA FB A9 05 7F			     db	     0FBh,0FAh,0FBh,0A9h, 05h, 7Fh
+   1978	1DB6  FC 0F FA A0 F2 AB			     db	     0FCh, 0Fh,0FAh,0A0h,0F2h,0ABh
+   1979	1DBC  EA A8 20 0A 2A 80			     db	     0EAh,0A8h,	20h, 0Ah, 2Ah, 80h
+   1980	1DC2  0F A0 F3 03 F3 FF			     db	      0Fh,0A0h,0F3h, 03h,0F3h,0FFh
+   1981	1DC8  FF 3E 3F FF EC 0F			     db	     0FFh, 3Eh,	3Fh,0FFh,0ECh, 0Fh
+   1982	1DCE  0F FF EE EB AA BF			     db	      0Fh,0FFh,0EEh,0EBh,0AAh,0BFh
+   1983	1DD4  0A 20 04 DF 33 C7			     db	      0Ah, 20h,	04h,0DFh, 33h,0C7h
+   1984	1DDA  CE AA E8				     db	     0CEh,0AAh,0E8h
+   1985	1DDD			     loc_55:
+   1986	1DDD  A2 338A				     mov     ds:data_10e,al
+   1987	1DE0  3E 8B C0 F0 FC 00			     db	      3Eh, 8Bh,0C0h,0F0h,0FCh, 00h
+   1988	1DE6  FF FF FB EA FB A5			     db	     0FFh,0FFh,0FBh,0EAh,0FBh,0A5h
+   1989	1DEC  10 FF FF 3F FE 80			     db	      10h,0FFh,0FFh, 3Fh,0FEh, 80h
+   1990	1DF2  F8 AA FA 0A 00 20			     db	     0F8h,0AAh,0FAh, 0Ah, 00h, 20h
+   1991	1DF8  2A 80 32 E3 E0 CF			     db	      2Ah, 80h,	32h,0E3h,0E0h,0CFh
+   1992	1DFE  F3 FF FF 3B 3F FF			     db	     0F3h,0FFh,0FFh, 3Bh, 3Fh,0FFh
+   1993	1E04  BC 0F 33 FF EE EB			     db	     0BCh, 0Fh,	33h,0FFh,0EEh,0EBh
+   1994	1E0A  2E AA E0 2C 0B 7C			     db	      2Eh,0AAh,0E0h, 2Ch, 0Bh, 7Ch
+   1995	1E10  C3 C7 C2 AA B8 02			     db	     0C3h,0C7h,0C2h,0AAh,0B8h, 02h
+   1996	1E16  0B CF C2 2F 33 CF			     db	      0Bh,0CFh,0C2h, 2Fh, 33h,0CFh
+   1997	1E1C  F3 03 FF FF EF AF			     db	     0F3h, 03h,0FFh,0FFh,0EFh,0AFh
+   1998	1E22  FA A4 00 FF C0 FC			     db	     0FAh,0A4h,	00h,0FFh,0C0h,0FCh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 38
+208SATNO.asm
+
+
+
+   1999	1E28  0A 03 38 AA AA A2			     db	      0Ah, 03h,	38h,0AAh,0AAh,0A2h
+   2000	1E2E  80 80 AA 00 0F A3			     db	      80h, 80h,0AAh, 00h, 0Fh,0A3h
+   2001	1E34  F3 3F 33 FF FF 3A			     db	     0F3h, 3Fh,	33h,0FFh,0FFh, 3Ah
+   2002	1E3A  3F FE EF 0F F3 FF			     db	      3Fh,0FEh,0EFh, 0Fh,0F3h,0FFh
+   2003	1E40  FA AA 8A AA BA 80			     db	     0FAh,0AAh,	8Ah,0AAh,0BAh, 80h
+   2004	1E46  A8 04 CF CF C2 AB			     db	     0A8h, 04h,0CFh,0CFh,0C2h,0ABh
+   2005	1E4C  A0 2A 0F FC AA 2C			     db	     0A0h, 2Ah,	0Fh,0FCh,0AAh, 2Ch
+   2006	1E52  F3 CF CC 03 FF FF			     db	     0F3h,0CFh,0CCh, 03h,0FFh,0FFh
+   2007	1E58  EE EB EA A4 10 FF			     db	     0EEh,0EBh,0EAh,0A4h, 10h,0FFh
+   2008	1E5E  33 03 30 0F 2A 28			     db	      33h, 03h,	30h, 0Fh, 2Ah, 28h
+   2009	1E64  FA A8 2A 8A AA 00			     db	     0FAh,0A8h,	2Ah, 8Ah,0AAh, 00h
+   2010	1E6A  FE 83 E8 3F F3 FF			     db	     0FEh, 83h,0E8h, 3Fh,0F3h,0FFh
+   2011	1E70  FF 3A 3F FF A3 3F			     db	     0FFh, 3Ah,	3Fh,0FFh,0A3h, 3Fh
+   2012	1E76  0F FF FA EB 80 AA			     db	      0Fh,0FFh,0FAh,0EBh, 80h,0AAh
+   2013	1E7C  AB FB 0A 53 3F 1F			     db	     0ABh,0FBh,	0Ah, 53h, 3Fh, 1Fh
+   2014	1E82  C0 AA 82 80 3F 3A			     db	     0C0h,0AAh,	82h, 80h, 3Fh, 3Ah
+   2015	1E88  02 AC 3F 3F CC 3F			     db	      02h,0ACh,	3Fh, 3Fh,0CCh, 3Fh
+   2016	1E8E  FF FF AF AA EA 94			     db	     0FFh,0FFh,0AFh,0AAh,0EAh, 94h
+   2017	1E94  43 FF C0 F0 C0 3C			     db	      43h,0FFh,0C0h,0F0h,0C0h, 3Ch
+   2018	1E9A  FA 23 FF AA 80 0A			     db	     0FAh, 23h,0FFh,0AAh, 80h, 0Ah
+   2019	1EA0  82 80 3B 8F A3 3F			     db	      82h, 80h,	3Bh, 8Fh,0A3h, 3Fh
+   2020	1EA6  CF FF FF 3A 3F FE			     db	     0CFh,0FFh,0FFh, 3Ah, 3Fh,0FEh
+   2021	1EAC  E0 CF 0F FF EE EA			     db	     0E0h,0CFh,	0Fh,0FFh,0EEh,0EAh
+   2022	1EB2  A0 2A AA AE F5 0F			     db	     0A0h, 2Ah,0AAh,0AEh,0F5h, 0Fh
+   2023	1EB8  FC 5F CC BF AA 80			     db	     0FCh, 5Fh,0CCh,0BFh,0AAh, 80h
+   2024	1EBE  FC F8 2B 30 FF FF			     db	     0FCh,0F8h,	2Bh, 30h,0FFh,0FFh
+   2025	1EC4  30 3F FF FF EE AE			     db	      30h, 3Fh,0FFh,0FFh,0EEh,0AEh
+   2026	1ECA  EE 90 43 FC 0F 33			     db	     0EEh, 90h,	43h,0FCh, 0Fh, 33h
+   2027	1ED0  3F C3 A2 CF FF FE			     db	      3Fh,0C3h,0A2h,0CFh,0FFh,0FEh
+   2028	1ED6  AA 0A 2A 00 CE 32			     db	     0AAh, 0Ah,	2Ah, 00h,0CEh, 32h
+   2029	1EDC  E0 FF CF FF FF 2E			     db	     0E0h,0FFh,0CFh,0FFh,0FFh, 2Eh
+   2030	1EE2  3F FE A0 3F 0F FF			     db	      3Fh,0FEh,0A0h, 3Fh, 0Fh,0FFh
+   2031	1EE8  EE AB AA 02 AA AA			     db	     0EEh,0ABh,0AAh, 02h,0AAh,0AAh
+   2032	1EEE  A4 10 F9 BF 3E BA			     db	     0A4h, 10h,0F9h,0BFh, 3Eh,0BAh
+   2033	1EF4  00 3F EE 01 60 23			     db	      00h, 3Fh,0EEh, 01h, 60h, 23h
+   2034	1EFA  FF FF F2 FE EF FE			     db	     0FFh,0FFh,0F2h,0FEh,0EFh,0FEh
+   2035	1F00  AE BB EE 88 33 B8			     db	     0AEh,0BBh,0EEh, 88h, 33h,0B8h
+   2036	1F06  22 08 8A 0B A2 8B			     db	      22h, 08h,	8Ah, 0Bh,0A2h, 8Bh
+   2037	1F0C  EE FE EA 8A 2A 08			     db	     0EEh,0FEh,0EAh, 8Ah, 2Ah, 08h
+   2038	1F12  FE 3F 88 EE BF FF			     db	     0FEh, 3Fh,	88h,0EEh,0BFh,0FFh
+   2039	1F18  FF 2A 8F FE EB 3B			     db	     0FFh, 2Ah,	8Fh,0FEh,0EBh, 3Bh
+   2040	1F1E  0F EE FA EB A8 A0			     db	      0Fh,0EEh,0FAh,0EBh,0A8h,0A0h
+   2041	1F24  02 AA 91 07 E2 7B			     db	      02h,0AAh,	91h, 07h,0E2h, 7Bh
+   2042	1F2A  3A AE 00 BF E8 81			     db	      3Ah,0AEh,	00h,0BFh,0E8h, 81h
+   2043	1F30  63 CB FC FF C3 BA			     db	      63h,0CBh,0FCh,0FFh,0C3h,0BAh
+   2044	1F36  BF FB AA AB BA 80			     db	     0BFh,0FBh,0AAh,0ABh,0BAh, 80h
+   2045	1F3C  3E E2 80 A2 3A 23			     db	      3Eh,0E2h,	80h,0A2h, 3Ah, 23h
+   2046	1F42  A8 A3 BB FB AA AA			     db	     0A8h,0A3h,0BBh,0FBh,0AAh,0AAh
+   2047	1F48  A8 02 CF BE 83 FB			     db	     0A8h, 02h,0CFh,0BEh, 83h,0FBh
+   2048	1F4E  BE FB FF 3B 8F FA			     db	     0BEh,0FBh,0FFh, 3Bh, 8Fh,0FAh
+   2049	1F54  E3 3A 2F BA FE AA			     db	     0E3h, 3Ah,	2Fh,0BAh,0FEh,0AAh
+   2050	1F5A  AA 08 00 02 50 5F			     db	     0AAh, 08h,	00h, 02h, 50h, 5Fh
+   2051	1F60  A1 FE 3E BA 33 EE			     db	     0A1h,0FEh,	3Eh,0BAh, 33h,0EEh
+   2052	1F66  A0 09 88 CC E8 FF			     db	     0A0h, 09h,	88h,0CCh,0E8h,0FFh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 39
+208SATNO.asm
+
+
+
+   2053	1F6C  8E FA BF FB AE BB			     db	      8Eh,0FAh,0BFh,0FBh,0AEh,0BBh
+   2054	1F72  EE 83 3B A2 82 00			     db	     0EEh, 83h,	3Bh,0A2h, 82h, 00h
+   2055	1F78  E8 0E A8 BA BE BE			     db	     0E8h, 0Eh,0A8h,0BAh,0BEh,0BEh
+   2056	1F7E  FF AA A8 00 FB 3B			     db	     0FFh,0AAh,0A8h, 00h,0FBh, 3Bh
+   2057	1F84  AE EE BB BF FF 2E			     db	     0AEh,0EEh,0BBh,0BFh,0FFh, 2Eh
+   2058	1F8A  8F BB 8C EE 8F BA			     db	      8Fh,0BBh,	8Ch,0EEh, 8Fh,0BAh
+   2059	1F90  FA EA AA A0 0A A5			     db	     0FAh,0EAh,0AAh,0A0h, 0Ah,0A5h
+   2060	1F96  01 FB 97 EA BA B8			     db	      01h,0FBh,	97h,0EAh,0BAh,0B8h
+   2061	1F9C  0C FA A0 26 83 88			     db	      0Ch,0FAh,0A0h, 26h, 83h, 88h
+   2062	1FA2  EA FE 03 AA BF AE			     db	     0EAh,0FEh,	03h,0AAh,0BFh,0AEh
+   2063	1FA8  BA AB EE 08 EB A2			     db	     0BAh,0ABh,0EEh, 08h,0EBh,0A2h
+   2064	1FAE  8A 03 F8 02 A2 2F			     db	      8Ah, 03h,0F8h, 02h,0A2h, 2Fh
+   2065	1FB4  BB FA BF FB A8 22			     db	     0BBh,0FAh,0BFh,0FBh,0A8h, 22h
+   2066	1FBA  FA FE 8F FA BF BE			     db	     0FAh,0FEh,	8Fh,0FAh,0BFh,0BEh
+   2067	1FC0  FF 3F 8F BB 83 FE			     db	     0FFh, 3Fh,	8Fh,0BBh, 83h,0FEh
+   2068	1FC6  0B BA EA BE AA AA			     db	      0Bh,0BAh,0EAh,0BEh,0AAh,0AAh
+   2069	1FCC  A0 10 1F EA 5F A8			     db	     0A0h, 10h,	1Fh,0EAh, 5Fh,0A8h
+   2070	1FD2  EA A8 3B AA 83 26			     db	     0EAh,0A8h,	3Bh,0AAh, 83h, 26h
+   2071	1FD8  83 82 EA FE 8E AE			     db	      83h, 82h,0EAh,0FEh, 8Eh,0AEh
+   2072	1FDE  BF AE AA AE FA 23			     db	     0BFh,0AEh,0AAh,0AEh,0FAh, 23h
+   2073	1FE4  3E 8A 88 0F B8 8C			     db	      3Eh, 8Ah,	88h, 0Fh,0B8h, 8Ch
+   2074	1FEA  A8 8B AA AB EE BE			     db	     0A8h, 8Bh,0AAh,0ABh,0EEh,0BEh
+   2075	1FF0  80 80 BB EE AE EA			     db	      80h, 80h,0BBh,0EEh,0AEh,0EAh
+   2076	1FF6  EB AE EF 2E CE EA			     db	     0EBh,0AEh,0EFh, 2Eh,0CEh,0EAh
+   2077	1FFC  83 FE 0E BA AB EE			     db	      83h,0FEh,	0Eh,0BAh,0ABh,0EEh
+   2078	2002  AA AA AA 41 EF A9			     db	     0AAh,0AAh,0AAh, 41h,0EFh,0A9h
+   2079	2008  BA AA EA A8 0E AA			     db	     0BAh,0AAh,0EAh,0A8h, 0Eh,0AAh
+   2080	200E  80 E6 2E 83 E2 EE			     db	      80h,0E6h,	2Eh, 83h,0E2h,0EEh
+   2081	2014  2E AA FB BA BA AF			     db	      2Eh,0AAh,0FBh,0BAh,0BAh,0AFh
+   2082	201A  BA 08 FA 2A A8 2A			     db	     0BAh, 08h,0FAh, 2Ah,0A8h, 2Ah
+   2083	2020  E8 0A A8 A0 BE AA			     db	     0E8h, 0Ah,0A8h,0A0h,0BEh,0AAh
+   2084	2026  AA A2 20 20 EE 3E			     db	     0AAh,0A2h,	20h, 20h,0EEh, 3Eh
+   2085	202C  8F AF AB BA FA 2B			     db	      8Fh,0AFh,0ABh,0BAh,0FAh, 2Bh
+   2086	2032  CE EA 8E EE 3E AA			     db	     0CEh,0EAh,	8Eh,0EEh, 3Eh,0AAh
+   2087	2038  EA EF AA AA AA 1F			     db	     0EAh,0EFh,0AAh,0AAh,0AAh, 1Fh
+   2088	203E  BA A6 AA A7 AA A8			     db	     0BAh,0A6h,0AAh,0A7h,0AAh,0A8h
+   2089	2044  8B AA 03 BA 8E 23			     db	      8Bh,0AAh,	03h,0BAh, 8Eh, 23h
+   2090	204A  AA BA 3A BA EE AA			     db	     0AAh,0BAh,	3Ah,0BAh,0EEh,0AAh
+   2091	2050  EE AA BA 08 EA 8A			     db	     0EEh,0AAh,0BAh, 08h,0EAh, 8Ah
+   2092	2056  8A 0A E8 0E A8 2A			     db	      8Ah, 0Ah,0E8h, 0Eh,0A8h, 2Ah
+   2093	205C  20 0F BA 00 00 8B			     db	      20h, 0Fh,0BAh, 00h, 00h, 8Bh
+   2094	2062  A8 FA BB BA AE AA			     db	     0A8h,0FAh,0BBh,0BAh,0AEh,0AAh
+   2095	2068  E8 AB 8F EA 32 FA			     db	     0E8h,0ABh,	8Fh,0EAh, 32h,0FAh
+   2096	206E  3B BA AF BA AA AA			     db	      3Bh,0BAh,0AFh,0BAh,0AAh,0AAh
+   2097	2074  A9 7F EA 06 AA 04			     db	     0A9h, 7Fh,0EAh, 06h,0AAh, 04h
+   2098	207A  A3 3E A8 33 EA 3E			     db	     0A3h, 3Eh,0A8h, 33h,0EAh, 3Eh
+   2099	2080  0F AB E8 EA EB EE			     db	      0Fh,0ABh,0E8h,0EAh,0EBh,0EEh
+   2100	2086  AB FA AE E8 82 BA			     db	     0ABh,0FAh,0AEh,0E8h, 82h,0BAh
+   2101	208C  2A A8 0A A0 0A AA			     db	      2Ah,0A8h,	0Ah,0A0h, 0Ah,0AAh
+   2102	2092  0A AA 2A A0 00 A0			     db	      0Ah,0AAh,	2Ah,0A0h, 00h,0A0h
+   2103	2098  3E A3 EA AE EA AA			     db	      3Eh,0A3h,0EAh,0AEh,0EAh,0AAh
+   2104	209E  AB B8 AE CF EA 0E			     db	     0ABh,0B8h,0AEh,0CFh,0EAh, 0Eh
+   2105	20A4  EE BE BA AB BA AA			     db	     0EEh,0BEh,0BAh,0ABh,0BAh,0AAh
+   2106	20AA  AA 85 FB AA EA AA			     db	     0AAh, 85h,0FBh,0AAh,0EAh,0AAh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 40
+208SATNO.asm
+
+
+
+   2107	20B0  BA AA 03 EA A8 0E			     db	     0BAh,0AAh,	03h,0EAh,0A8h, 0Eh
+   2108	20B6  AA 3A 3B AE A0 FA			     db	     0AAh, 3Ah,	3Bh,0AEh,0A0h,0FAh
+   2109	20BC  EA AA AB EA BA A8			     db	     0EAh,0AAh,0ABh,0EAh,0BAh,0A8h
+   2110	20C2  23 EA 2A A2 0E A8			     db	      23h,0EAh,	2Ah,0A2h, 0Eh,0A8h
+   2111	20C8  0E AA A2 A0 80 00			     db	      0Eh,0AAh,0A2h,0A0h, 80h, 00h
+   2112	20CE  20 AF EA A3 AA BA			     db	      20h,0AFh,0EAh,0A3h,0AAh,0BAh
+   2113	20D4  EA AA AA AA AB 8E			     db	     0EAh,0AAh,0AAh,0AAh,0ABh, 8Eh
+   2114	20DA  AE 0E FA FA AA AE			     db	     0AEh, 0Eh,0FAh,0FAh,0AAh,0AEh
+   2115	20E0  EA AA A9 7E FE AF			     db	     0EAh,0AAh,0A9h, 7Eh,0FEh,0AFh
+   2116	20E6  AA AA BA A8 3E AE			     db	     0AAh,0AAh,0BAh,0A8h, 3Eh,0AEh
+   2117	20EC  A0 3E AA EA EB AE			     db	     0A0h, 3Eh,0AAh,0EAh,0EBh,0AEh
+   2118	20F2  A0 EA AB AA AB AA			     db	     0A0h,0EAh,0ABh,0AAh,0ABh,0AAh
+   2119	20F8  BA E2 2E B8 AA A8			     db	     0BAh,0E2h,	2Eh,0B8h,0AAh,0A8h
+   2120	20FE  AE A2 3A AA AA 08			     db	     0AEh,0A2h,	3Ah,0AAh,0AAh, 08h
+   2121	2104  00 20 8F BA AA 8A			     db	      00h, 20h,	8Fh,0BAh,0AAh, 8Ah
+   2122	210A  AA BB AA AA AA A2			     db	     0AAh,0BBh,0AAh,0AAh,0AAh,0A2h
+   2123	2110  AB 2F AE 0B AA EA			     db	     0ABh, 2Fh,0AEh, 0Bh,0AAh,0EAh
+   2124	2116  EA AE EA AA A7 EB			     db	     0EAh,0AEh,0EAh,0AAh,0A7h,0EBh
+   2125	211C  AA BA AA AA BA A8			     db	     0AAh,0BAh,0AAh,0AAh,0BAh,0A8h
+   2126	2122  3A BA 80 FA A8 AA			     db	      3Ah,0BAh,	80h,0FAh,0A8h,0AAh
+   2127	2128  EA AE 83 FA AA AA			     db	     0EAh,0AEh,	83h,0FAh,0AAh,0AAh
+   2128	212E  AE AA EB A0 AE E8			     db	     0AEh,0AAh,0EBh,0A0h,0AEh,0E8h
+   2129	2134  AA A2 2A A0 3A AA			     db	     0AAh,0A2h,	2Ah,0A0h, 3Ah,0AAh
+   2130	213A  A0 20 00 8F AA AA			     db	     0A0h, 20h,	00h, 8Fh,0AAh,0AAh
+   2131	2140  AA AF AA BB AA AA			     db	     0AAh,0AFh,0AAh,0BBh,0AAh,0AAh
+   2132	2146  BA AA AB 3B AE 3F			     db	     0BAh,0AAh,0ABh, 3Bh,0AEh, 3Fh
+   2133	214C  BA BA EA BA EA AA			     db	     0BAh,0BAh,0EAh,0BAh,0EAh,0AAh
+   2134	2152  7E AA AA BA AA EA			     db	      7Eh,0AAh,0AAh,0BAh,0AAh,0EAh
+   2135	2158  EA AA EB EA 8F BA			     db	     0EAh,0AAh,0EBh,0EAh, 8Fh,0BAh
+   2136	215E  AA AA AB EE 8C EA			     db	     0AAh,0AAh,0ABh,0EEh, 8Ch,0EAh
+   2137	2164  AE 06 AA 04 A0 AF			     db	     0AEh, 06h,0AAh, 04h,0A0h,0AFh
+   2138	216A  AA AA A8 2A A2 AA			     db	     0AAh,0AAh,0A8h, 2Ah,0A2h,0AAh
+   2139	2170  AA 22 A3 33 EA AA			     db	     0AAh, 22h,0A3h, 33h,0EAh,0AAh
+   2140	2176  AA A8 BA AA BB AA			     db	     0AAh,0A8h,0BAh,0AAh,0BBh,0AAh
+   2141	217C  AA FA A2 AE FB AA			     db	     0AAh,0FAh,0A2h,0AEh,0FBh,0AAh
+   2142	2182  0F EA EA EF EA EA			     db	      0Fh,0EAh,0EAh,0EFh,0EAh,0EAh
+   2143	2188  AA EE AA AA EA AB			     db	     0AAh,0EEh,0AAh,0AAh,0EAh,0ABh
+   2144	218E  AA EA A8 BE AA 3E			     db	     0AAh,0EAh,0A8h,0BEh,0AAh, 3Eh
+   2145	2194  EA AA AA EB EA A3			     db	     0EAh,0AAh,0AAh,0EBh,0EAh,0A3h
+   2146	219A  06 AA 05 EB 82 BB			     db	      06h,0AAh,	05h,0EBh, 82h,0BBh
+   2147	21A0  06 AA 04 8B AA AA			     db	      06h,0AAh,	04h, 8Bh,0AAh,0AAh
+   2148	21A6  AA A0 CA 06 AA 04			     db	     0AAh,0A0h,0CAh, 06h,0AAh, 04h
+   2149	21AC  EA AA AE AA AB BA			     db	     0EAh,0AAh,0AEh,0AAh,0ABh,0BAh
+   2150	21B2  AA A8 FA A8 8B AA			     db	     0AAh,0A8h,0FAh,0A8h, 8Bh,0AAh
+   2151	21B8  EA BA AB BA A7 06			     db	     0EAh,0BAh,0ABh,0BAh,0A7h, 06h
+   2152	21BE  AA 04 A7 AB AA AB			     db	     0AAh, 04h,0A7h,0ABh,0AAh,0ABh
+   2153	21C4  EE AA 3A AA AA AB			     db	     0EEh,0AAh,	3Ah,0AAh,0AAh,0ABh
+   2154	21CA  AB AE 8E EA BA AA			     db	     0ABh,0AEh,	8Eh,0EAh,0BAh,0AAh
+   2155	21D0  AA AB AA 80 BE 06			     db	     0AAh,0ABh,0AAh, 80h,0BEh, 06h
+   2156	21D6  AA 04 A3 AA AA AA			     db	     0AAh, 04h,0A3h,0AAh,0AAh,0AAh
+   2157	21DC  8F 06 AA 04 BA AA			     db	      8Fh, 06h,0AAh, 04h,0BAh,0AAh
+   2158	21E2  AA AE AA AE EA A2			     db	     0AAh,0AEh,0AAh,0AEh,0EAh,0A2h
+   2159	21E8  A8 EA E8 2B EA EB			     db	     0A8h,0EAh,0E8h, 2Bh,0EAh,0EBh
+   2160	21EE  AA AB AA BA 06 AA			     db	     0AAh,0ABh,0AAh,0BAh, 06h,0AAh
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 41
+208SATNO.asm
+
+
+
+   2161	21F4  04 9F AA AA AB BA			     db	      04h, 9Fh,0AAh,0AAh,0ABh,0BAh
+   2162	21FA  A8 EE AA AA AA AF			     db	     0A8h,0EEh,0AAh,0AAh,0AAh,0AFh
+   2163	2200  AA 8F AA BA AA AA			     db	     0AAh, 8Fh,0AAh,0BAh,0AAh,0AAh
+   2164	2206  AB AE 88 BA AA AA			     db	     0ABh,0AEh,	88h,0BAh,0AAh,0AAh
+   2165	220C  A2 AA AB AA AA AA			     db	     0A2h,0AAh,0ABh,0AAh,0AAh,0AAh
+   2166	2212  AE EA 06 AA 08 FF			     db	     0AEh,0EAh,	06h,0AAh, 08h,0FFh
+   2167	2218  AA 8A A2 EB A8 2B			     db	     0AAh, 8Ah,0A2h,0EBh,0A8h, 2Bh
+   2168	221E  AA EA AA AE EA EA			     db	     0AAh,0EAh,0AAh,0AEh,0EAh,0EAh
+   2169	2224  AA AA AA A5 7E AA			     db	     0AAh,0AAh,0AAh,0A5h, 7Eh,0AAh
+   2170	222A  AA AB BA A8 EA AA			     db	     0AAh,0ABh,0BAh,0A8h,0EAh,0AAh
+   2171	2230  AA AA BE AA AF AA			     db	     0AAh,0AAh,0BEh,0AAh,0AFh,0AAh
+   2172	2236  EA AA AA AA AE 22			     db	     0EAh,0AAh,0AAh,0AAh,0AEh, 22h
+   2173	223C  BA 06 AA 08 8F 06			     db	     0BAh, 06h,0AAh, 08h, 8Fh, 06h
+   2174	2242  AA 08 AB FA AA AA			     db	     0AAh, 08h,0ABh,0FAh,0AAh,0AAh
+   2175	2248  AB AB A8 2B AA AA			     db	     0ABh,0ABh,0A8h, 2Bh,0AAh,0AAh
+   2176	224E  AA FF 06 AA 05 9F			     db	     0AAh,0FFh,	06h,0AAh, 05h, 9Fh
+   2177	2254  EA AA AA AB AA A8			     db	     0EAh,0AAh,0AAh,0ABh,0AAh,0A8h
+   2178	225A  AA AA AA AB EA 06			     db	     0AAh,0AAh,0AAh,0ABh,0EAh, 06h
+   2179	2260  AA 07 BA 0A EA 06			     db	     0AAh, 07h,0BAh, 0Ah,0EAh, 06h
+   2180	2266  AA 07 A8 3A 06 AA			     db	     0AAh, 07h,0A8h, 3Ah, 06h,0AAh
+   2181	226C  0C 0A AE AA AE AA			     db	      0Ch, 0Ah,0AEh,0AAh,0AEh,0AAh
+   2182	2272  EA AB BA 06 AA 05			     db	     0EAh,0ABh,0BAh, 06h,0AAh, 05h
+   2183	2278  7A AA AA AA AE 06			     db	      7Ah,0AAh,0AAh,0AAh,0AEh, 06h
+   2184	227E  AA 08 AE 06 AA 05			     db	     0AAh, 08h,0AEh, 06h,0AAh, 05h
+   2185	2284  BA 8A 06 AA 08 82			     db	     0BAh, 8Ah,	06h,0AAh, 08h, 82h
+   2186	228A  EE 06 AA 0D AE A8			     db	     0EEh, 06h,0AAh, 0Dh,0AEh,0A8h
+   2187	2290  AA AA AA AE 06 AA			     db	     0AAh,0AAh,0AAh,0AEh, 06h,0AAh
+   2188	2296  1A 2A 06 AA 07 A8			     db	      1Ah, 2Ah,	06h,0AAh, 07h,0A8h
+   2189	229C  06 AA 14 AE AA AA			     db	      06h,0AAh,	14h,0AEh,0AAh,0AAh
+   2190	22A2  7D 17 DD 47 55 35			     db	      7Dh, 17h,0DDh, 47h, 55h, 35h
+   2191	22A8  54 7D 1F 45 F5 F4			     db	      54h, 7Dh,	1Fh, 45h,0F5h,0F4h
+   2192	22AE  7D 51 DF D5 54 1D			     db	      7Dh, 51h,0DFh,0D5h, 54h, 1Dh
+   2193	22B4  54 53 CF 4F 74 F7			     db	      54h, 53h,0CFh, 4Fh, 74h,0F7h
+   2194	22BA  37 DF 4F 4F 7D 17			     db	      37h,0DFh,	4Fh, 4Fh, 7Dh, 17h
+   2195	22C0  DD 47 55 35 54 7D			     db	     0DDh, 47h,	55h, 35h, 54h, 7Dh
+   2196	22C6  1F 45 F5 F4 7D 51			     db	      1Fh, 45h,0F5h,0F4h, 7Dh, 51h
+   2197	22CC  DF D5 54 1D 54 53			     db	     0DFh,0D5h,	54h, 1Dh, 54h, 53h
+   2198	22D2  CF 4F 74 F7 37 DF			     db	     0CFh, 4Fh,	74h,0F7h, 37h,0DFh
+   2199	22D8  4F 4F 15 4D 55 1D			     db	      4Fh, 4Fh,	15h, 4Dh, 55h, 1Dh
+   2200	22DE  55 43 41 D5 45 44			     db	      55h, 43h,	41h,0D5h, 45h, 44h
+   2201	22E4  01 51 D5 D1 D5 40			     db	      01h, 51h,0D5h,0D1h,0D5h, 40h
+   2202	22EA  01 F5				     db	      01h,0F5h
+   2203	22EC  55 0D 45 4D 53 55	35+		     db	     'U', 0Dh, 'EMSU5U54'
+   2204	      55 35 34
+   2205	22F6  15 4D 55 1D 55 43			     db	      15h, 4Dh,	55h, 1Dh, 55h, 43h
+   2206	22FC  41 D5 45 44 01 51			     db	      41h,0D5h,	45h, 44h, 01h, 51h
+   2207	2302  D5 D1 D5 40 01 F5			     db	     0D5h,0D1h,0D5h, 40h, 01h,0F5h
+   2208	2308  55 0D 45 4D 53 55	35+		     db	     'U', 0Dh, 'EMSU5U54'
+   2209	      55 35 34
+   2210	2312  05 4D 54 00 05 54			     db	      05h, 4Dh,	54h, 00h, 05h, 54h
+   2211	2318  1C 55 45 63 01 54			     db	      1Ch, 55h,	45h, 63h, 01h, 54h
+   2212	231E  55 3D F4 55 55 35			     db	      55h, 3Dh,0F4h, 55h, 55h, 35h
+   2213	2324  01 4D 51 55 4D 40			     db	      01h, 4Dh,	51h, 55h, 4Dh, 40h
+   2214	232A  05 10 85 4D 54 00			     db	      05h, 10h,	85h, 4Dh, 54h, 00h
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 42
+208SATNO.asm
+
+
+
+   2215	2330  05 54 1C 55 45 01			     db	      05h, 54h,	1Ch, 55h, 45h, 01h
+   2216	2336  F4 00 01 54 55 3D			     db	     0F4h, 00h,	01h, 54h, 55h, 3Dh
+   2217	233C  F4 55 55 35 11 4D			     db	     0F4h, 55h,	55h, 35h, 11h, 4Dh
+   2218	2342  51 55 4D 40 05 11			     db	      51h, 55h,	4Dh, 40h, 05h, 11h
+   2219	2348  65 05 35 15 67 01			     db	      65h, 05h,	35h, 15h, 67h, 01h
+   2220	234E  54 55 40 50 00 35			     db	      54h, 55h,	40h, 50h, 00h, 35h
+   2221	2354  54 D5 50 63 E0 62			     db	      54h,0D5h,	50h, 63h,0E0h, 62h
+   2222	235A  FF A0 05 35 15 00			     db	     0FFh,0A0h,	05h, 35h, 15h, 00h
+   2223	2360  BE EB EF B8 62 01			     db	     0BEh,0EBh,0EFh,0B8h, 62h, 01h
+   2224	2366  54 55 40 50 E8 35			     db	      54h, 55h,	40h, 50h,0E8h, 35h
+   2225	236C  54 D5 50 3F A0 03			     db	      54h,0D5h,	50h, 3Fh,0A0h, 03h
+   2226	2372  66 75 14 69 05 3D			     db	      66h, 75h,	14h, 69h, 05h, 3Dh
+   2227	2378  63 54 50 64 57 7D			     db	      63h, 54h,	50h, 64h, 57h, 7Dh
+   2228	237E  7F D5 5D F0 75 14			     db	      7Fh,0D5h,	5Dh,0F0h, 75h, 14h
+   2229	2384  1F 55 D5 D5 55 F5			     db	      1Fh, 55h,0D5h,0D5h, 55h,0F5h
+   2230	238A  FD FC 00 05 3D 07			     db	     0FDh,0FCh,	00h, 05h, 3Dh, 07h
+   2231	2390  5D 40 54 50 07 F5			     db	      5Dh, 40h,	54h, 50h, 07h,0F5h
+   2232	2396  D5 FD 66 15 40 68			     db	     0D5h,0FDh,	66h, 15h, 40h, 68h
+   2233	239C  6C AE AA AB AA AA			     db	      6Ch,0AEh,0AAh,0ABh,0AAh,0AAh
+   2234	23A2  AE 15 43 BA BA AB			     db	     0AEh, 15h,	43h,0BAh,0BAh,0ABh
+   2235	23A8  AA EA BA AA AB FE			     db	     0AAh,0EAh,0BAh,0AAh,0ABh,0FEh
+   2236	23AE  E0 00 FA EE AA 00			     db	     0E0h, 00h,0FAh,0EEh,0AAh, 00h
+   2237	23B4  0F BA EA EB AA			     db	      0Fh,0BAh,0EAh,0EBh,0AAh
+   2238	23B9  6E 6E 55 55 57 55	55+		     db	     'nnUUWUUU@'
+   2239	      55 40
+   2240	23C2  1D 75 55 55 55 55			     db	      1Dh, 75h,	55h, 55h, 55h, 55h
+   2241	23C8  75 55 D5 DD 5D FD			     db	      75h, 55h,0D5h,0DDh, 5Dh,0FDh
+   2242	23CE  55 DD 55 75 5D 75			     db	      55h,0DDh,	55h, 75h, 5Dh, 75h
+   2243	23D4  D5 57 55 6E 6E AE			     db	     0D5h, 57h,	55h, 6Eh, 6Eh,0AEh
+   2244	23DA  0E*(AA)				     db	     14	dup (0AAh)
+   2245	23E8  AB AA AA EA AB AA			     db	     0ABh,0AAh,0AAh,0EAh,0ABh,0AAh
+   2246	23EE  AA AA AA AA AA AA			     db	     0AAh,0AAh,0AAh,0AAh,0AAh,0AAh
+   2247	23F4  AA				     db	     0AAh
+   2248	23F5  69 0C 6F 63 55 55	55+		     db	     'i', 0Ch, 'ocUUUUU'
+   2249	      55 55
+   2250	23FE  55 55 55 55 5D 45	55+		     db	     'UUUU]EUU]uU'
+   2251	      55 5D 75 55
+   2252	2409  0C*(55)				     db	     12	dup (55h)
+   2253	2415  69 30 64 0F 00 0C			     db	      69h, 30h,	64h, 0Fh, 00h, 0Ch
+   2254	241B  65 C0 65 AE AA BA			     db	      65h,0C0h,	65h,0AEh,0AAh,0BAh
+   2255	2421  BA AA AA AA BA BA			     db	     0BAh,0AAh,0AAh,0AAh,0BAh,0BAh
+   2256	2427  80 2B AA AE AA AF			     db	      80h, 2Bh,0AAh,0AEh,0AAh,0AFh
+   2257	242D  AA AE AA AA AB AA			     db	     0AAh,0AEh,0AAh,0AAh,0ABh,0AAh
+   2258	2433  AA EB AA EA EA AA			     db	     0AAh,0EBh,0AAh,0EAh,0EAh,0AAh
+   2259	2439  AA 69 C0 62 0C C0			     db	     0AAh, 69h,0C0h, 62h, 0Ch,0C0h
+   2260	243F  F0 00 FC 30 63 0F			     db	     0F0h, 00h,0FCh, 30h, 63h, 0Fh
+   2261	2445  66 55 55 D5 55 57			     db	      66h, 55h,	55h,0D5h, 55h, 57h
+   2262	244B  55 D5 75 55 05 57			     db	      55h,0D5h,	75h, 55h, 05h, 57h
+   2263	2451  55 5D D5 F0 75 CD			     db	      55h, 5Dh,0D5h,0F0h, 75h,0CDh
+   2264	2457  75 75 57 55 5F 1D			     db	      75h, 75h,	57h, 55h, 5Fh, 1Dh
+   2265	245D  55 55 55 75 5D 63			     db	      55h, 55h,	55h, 75h, 5Dh, 63h
+   2266	2463  10 64 03 30 F0 03			     db	      10h, 64h,	03h, 30h,0F0h, 03h
+   2267	2469  CF 03 CC 0F F3 63			     db	     0CFh, 03h,0CCh, 0Fh,0F3h, 63h
+   2268	246F  0F 50 00 30 62 03			     db	      0Fh, 50h,	00h, 30h, 62h, 03h
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 43
+208SATNO.asm
+
+
+
+   2269	2475  00 AA AE AA 9A EA			     db	      00h,0AAh,0AEh,0AAh, 9Ah,0EAh
+   2270	247B  AB AA EA AB 3A F2			     db	     0ABh,0AAh,0EAh,0ABh, 3Ah,0F2h
+   2271	2481  A8 E3 2B 0E AC F3			     db	     0A8h,0E3h,	2Bh, 0Eh,0ACh,0F3h
+   2272	2487  AA AA AA A3 58 82			     db	     0AAh,0AAh,0AAh,0A3h, 58h, 82h
+   2273	248D  BA AB AA AB 2A 63			     db	     0BAh,0ABh,0AAh,0ABh, 2Ah, 63h
+   2274	2493  C0 64 3F 0F 00 FC			     db	     0C0h, 64h,	3Fh, 0Fh, 00h,0FCh
+   2275	2499  30 CF 30 FD C1 CC			     db	      30h,0CFh,	30h,0FDh,0C1h,0CCh
+   2276	249F  00 3D 70 0F 03 C0			     db	      00h, 3Dh,	70h, 0Fh, 03h,0C0h
+   2277	24A5  62 F0 3C 55 55 D5			     db	      62h,0F0h,	3Ch, 55h, 55h,0D5h
+   2278	24AB  55 D5 55 55 55 73			     db	      55h,0D5h,	55h, 55h, 55h, 73h
+   2279	24B1  13 05 CC 70 D3 31			     db	      13h, 05h,0CCh, 70h,0D3h, 31h
+   2280	24B7  C1 C5 DD 5D 4D 70			     db	     0C1h,0C5h,0DDh, 5Dh, 4Dh, 70h
+   2281	24BD  13 54 C5 55 55 F1			     db	      13h, 54h,0C5h, 55h, 55h,0F1h
+   2282	24C3  7D 33 00 03 40 63			     db	      7Dh, 33h,	00h, 03h, 40h, 63h
+   2283	24C9  03 F5 F7 C0 03 D3			     db	      03h,0F5h,0F7h,0C0h, 03h,0D3h
+   2284	24CF  3D 3F FF C4 0F 01			     db	      3Dh, 3Fh,0FFh,0C4h, 0Fh, 01h
+   2285	24D5  C0 0F FF CC 03 30			     db	     0C0h, 0Fh,0FFh,0CCh, 03h, 30h
+   2286	24DB  0C 03 C0 A0 2E A9			     db	      0Ch, 03h,0C0h,0A0h, 2Eh,0A9h
+   2287	24E1  4A AB AA AA EB 35			     db	      4Ah,0ABh,0AAh,0AAh,0EBh, 35h
+   2288	24E7  F7 EA 0B D3 BD 0F			     db	     0F7h,0EAh,	0Bh,0D3h,0BDh, 0Fh
+   2289	24ED  FF C4 2F 29 C0 8F			     db	     0FFh,0C4h,	2Fh, 29h,0C0h, 8Fh
+   2290	24F3  0F EC 28 32 AC AB			     db	      0Fh,0ECh,	28h, 32h,0ACh,0ABh
+   2291	24F9  C2 FC 00 03 10 62			     db	     0C2h,0FCh,	00h, 03h, 10h, 62h
+   2292	24FF  0C 3B 5F 5F FD B0			     db	      0Ch, 3Bh,	5Fh, 5Fh,0FDh,0B0h
+   2293	2505  CC DF 77 5F 7F 31			     db	     0CCh,0DFh,	77h, 5Fh, 7Fh, 31h
+   2294	250B  34 3F FD F5 30 3D			     db	      34h, 3Fh,0FDh,0F5h, 30h, 3Dh
+   2295	2511  03 C0 FC 3F 9C 55			     db	      03h,0C0h,0FCh, 3Fh, 9Ch, 55h
+   2296	2517  57 15 D5 55 5D 7B			     db	      57h, 15h,0D5h, 55h, 5Dh, 7Bh
+   2297	251D  5C 5F F1 B1 CC 1C			     db	      5Ch, 5Fh,0F1h,0B1h,0CCh, 1Ch
+   2298	2523  77 5F 70 31 75 70			     db	      77h, 5Fh,	70h, 31h, 75h, 70h
+   2299	2529  FD F5 31 71 14 C1			     db	     0FDh,0F5h,	31h, 71h, 14h,0C1h
+   2300	252F  3C 43 FF A4 0D 22			     db	      3Ch, 43h,0FFh,0A4h, 0Dh, 22h
+   2301	2535  00 45 BF D5 7D FD			     db	      00h, 45h,0BFh,0D5h, 7Dh,0FDh
+   2302	253B  5F 5F 5F 55 DD 7D			     db	      5Fh, 5Fh,	5Fh, 55h,0DDh, 7Dh
+   2303	2541  7F FF D7 FF 5F 57			     db	      7Fh,0FFh,0D7h,0FFh, 5Fh, 57h
+   2304	2547  FD 77 7C 3D 5F 75			     db	     0FDh, 77h,	7Ch, 3Dh, 5Fh, 75h
+   2305	254D  FF A4 AD 2A AA EF			     db	     0FFh,0A4h,0ADh, 2Ah,0AAh,0EFh
+   2306	2553  BF D5 71 FD 5F 5F			     db	     0BFh,0D5h,	71h,0FDh, 5Fh, 5Fh
+   2307	2559  5F 55 DD 7D 7F FF			     db	      5Fh, 55h,0DDh, 7Dh, 7Fh,0FFh
+   2308	255F  D7 FF 5F 57 CD 77			     db	     0D7h,0FFh,	5Fh, 57h,0CDh, 77h
+   2309	2565  7E B1				     db	      7Eh,0B1h
+   2310	2567  5F 75				     db	      5Fh, 75h
+   2311
+   2312	2569			     seg_a	     ends
+   2313
+   2314
+   2315
+   2316						     end     start
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 44
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/28/26"
+??FILENAME			  Text	 "208SATNO"
+??TIME				  Text	 "17:24:33"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 208SATNO
+@WORDSIZE			  Text	 2
+BAT_FUNC_1			  Near	 SEG_A:01FD
+BAT_FUNC_3			  Near	 SEG_A:0291
+BAT_FUNC_4			  Near	 SEG_A:02B3
+BAT_PROCESS_LOOP		  Near	 SEG_A:0257
+BAT_PROCESS_LOOP_2		  Near	 SEG_A:05A1
+COPY_BUFFER			  Near	 SEG_A:033D
+DATA_10E			  Number 338A
+DATA_11E			  Number 3432
+DATA_12E			  Number 357D
+DATA_13E			  Number 35BB
+DATA_14E			  Number 36B6
+DATA_15E			  Number 3C30
+DATA_16E			  Number 56F1
+DATA_17E			  Number 6000
+DATA_18E			  Number C050
+DATA_19E			  Number FD57
+DATA_2				  Byte	 SEG_A:06EA
+DATA_20E			  Number 0000
+DATA_21E			  Number 1340
+DATA_22E			  Number B1B0
+DATA_23E			  Number B220
+DATA_24E			  Number BBB0
+DATA_25E			  Number 023C
+DATA_26E			  Number 163C
+DATA_3				  Byte	 SEG_A:1340
+DATA_7E				  Number 2C6C
+DATA_8E				  Number 2C88
+DATA_9E				  Number 335B
+LOCLOOP_11			  Near	 SEG_A:00C6
+LOCLOOP_12			  Near	 SEG_A:00EC
+LOCLOOP_13			  Near	 SEG_A:00F1
+LOCLOOP_14			  Near	 SEG_A:00FC
+LOCLOOP_16			  Near	 SEG_A:015D
+LOCLOOP_17			  Near	 SEG_A:0162
+LOCLOOP_18			  Near	 SEG_A:016D
+LOCLOOP_20			  Near	 SEG_A:01D3
+LOCLOOP_21			  Near	 SEG_A:01D8
+LOCLOOP_22			  Near	 SEG_A:022B
+LOCLOOP_23			  Near	 SEG_A:0230
+LOCLOOP_25			  Near	 SEG_A:025C
+LOCLOOP_28			  Near	 SEG_A:02E9
+LOCLOOP_29			  Near	 SEG_A:0300
+LOCLOOP_31			  Near	 SEG_A:035E
+Turbo Assembler	 Version 2.01	     03/28/26 17:24:35	    Page 45
+Symbol Table
+
+
+
+LOCLOOP_32			  Near	 SEG_A:0363
+LOCLOOP_33			  Near	 SEG_A:036D
+LOCLOOP_35			  Near	 SEG_A:03E1
+LOCLOOP_36			  Near	 SEG_A:03E6
+LOCLOOP_37			  Near	 SEG_A:03F0
+LOCLOOP_39			  Near	 SEG_A:0469
+LOCLOOP_40			  Near	 SEG_A:046F
+LOCLOOP_41			  Near	 SEG_A:047C
+LOCLOOP_42			  Near	 SEG_A:04AC
+LOCLOOP_43			  Near	 SEG_A:04B2
+LOCLOOP_44			  Near	 SEG_A:04BF
+LOCLOOP_46			  Near	 SEG_A:051B
+LOCLOOP_47			  Near	 SEG_A:0520
+LOCLOOP_49			  Near	 SEG_A:0560
+LOCLOOP_50			  Near	 SEG_A:0565
+LOCLOOP_52			  Near	 SEG_A:05A6
+LOCLOOP_54			  Near	 SEG_A:1D3B
+LOCLOOP_6			  Near	 SEG_A:004B
+LOCLOOP_7			  Near	 SEG_A:0056
+LOC_10				  Near	 SEG_A:007C
+LOC_15				  Near	 SEG_A:0131
+LOC_19				  Near	 SEG_A:01B7
+LOC_24				  Near	 SEG_A:0252
+LOC_26				  Near	 SEG_A:0293
+LOC_27				  Near	 SEG_A:02A6
+LOC_30				  Near	 SEG_A:0325
+LOC_34				  Near	 SEG_A:03B5
+LOC_38				  Near	 SEG_A:044D
+LOC_45				  Near	 SEG_A:04F1
+LOC_48				  Near	 SEG_A:0557
+LOC_51				  Near	 SEG_A:059C
+LOC_53				  Near	 SEG_A:172B
+LOC_55				  Near	 SEG_A:1DDD
+LOC_8				  Near	 SEG_A:0062
+LOC_9				  Near	 SEG_A:006A
+START				  Near	 SEG_A:0000
+TARGET				  Number 5432
+ZR2_08				  Far	 SEG_A:0000
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  2569 Byte	  Public
+

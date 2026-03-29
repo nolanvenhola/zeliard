@@ -1,0 +1,328 @@
+Turbo Assembler	 Version 2.01	     03/22/26 12:39:15	    Page 1
+337UTINY.asm
+
+
+
+      1
+      2
+      3				     ;ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ
+      4				     ;ЫЫ								      ЫЫ
+      5				     ;ЫЫ			     ZR3_37				      ЫЫ
+      6				     ;ЫЫ								      ЫЫ
+      7				     ;ЫЫ      Created:	 16-Feb-26					      ЫЫ
+      8				     ;ЫЫ      Code type: device	drivr					      ЫЫ
+      9				     ;ЫЫ      Passes:	 9	    Analysis Options on: none		      ЫЫ
+     10				     ;ЫЫ								      ЫЫ
+     11				     ;ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ
+     12
+     13	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     14
+     15				     include  srmacros.inc
+1    16
+1    17				     ; Macros which may	be required for	proper re-assembly
+1    18
+1    19
+1    20
+1    21
+1    22
+1    23				     ;-----------------------------------------------------------------------------
+1    24				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    25				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    26				     ; instruction it uses a near jump or call.
+1    27
+1    28				     calls	     macro   dummy1, dummy2, slocation
+1    29						     db	     9Ah		     ; forced call far instruction
+1    30						     dw	     offset slocation, seg slocation
+1    31				     endm
+1    32
+1    33				     jmps	     macro   dummy1, dummy2, jlocation
+1    34						     db	     0EAh		     ; forced jump far instruction
+1    35						     dw	     offset jlocation, seg jlocation
+1    36				     endm
+1    37
+1    38
+1    39
+1    40
+1    41				     ;-----------------------------------------------------------------------------
+1    42				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    43				     ;	subroutine in the same segment as:
+1    44				     ;
+1    45				     ;		     PUSH    CS
+1    46				     ;		     CALL    near
+1    47				     ;
+1    48				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    49				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    50				     ;	macros are used	to code	the same information.  In other	words, the binary
+1    51				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    52				     ;	are used!  (macro CALLF)
+1    53				     ;
+1    54
+Turbo Assembler	 Version 2.01	     03/22/26 12:39:15	    Page 2
+337UTINY.asm
+
+
+
+1    55				     callf	     macro   location
+1    56						     push    cs
+1    57						     call    near ptr location
+1    58				     endm
+1    59
+1    60				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    61				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    62
+1    63				     callfx	     macro   location
+1    64						     push    cs
+1    65						     db	     3Eh
+1    66						     call    near ptr location
+1    67				     endm
+1    68
+1    69
+1    70				     ;-----------------------------------------------------------------------------
+1    71				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    72				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    73				     ;	reconstructs a near jump for these cases.
+1    74
+1    75				     jmpn	     macro   location
+1    76						     db	     0E9h
+1    77						     dw	     offset location-$-2
+1    78				     endm
+1    79
+1    80
+1    81
+     82
+     83
+     84	0000			     seg_a	     segment byte public
+     85						     assume  cs:seg_a, ds:seg_a
+     86
+     87
+     88						     org     0
+     89
+     90	0000			     zr3_37	     proc    far
+     91
+     92
+     93	0000			     zr3_37	     endp
+     94
+     95				     ;ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ
+     96				     ;
+     97				     ;			     External Entry Point
+     98				     ;
+     99				     ;ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ
+    100
+    101	0000			     strategy_1	     proc    far
+    102	0000  FE 02				     inc     byte ptr [bp+si]
+    103	0002  00 00				     add     [bx+si],al
+    104	0004  C2D0		     attributes	     dw	     0C2D0h
+    105	0006  0049r		     pointers	     dw	     offset strategy
+    106	0008  C26F				     dw	     0C26Fh
+    107	000A  71 C2 73 C2 8D C2	8F+  char_dev	     db	     'qВsВЌВЏВ'
+    108	      C2
+Turbo Assembler	 Version 2.01	     03/22/26 12:39:15	    Page 3
+337UTINY.asm
+
+
+
+    109	0012  BC C2 FC C2 06 FF			     db	     0BCh,0C2h,0FCh,0C2h, 06h,0FFh
+    110	0018  FF 00 0C 00 00 6F			     db	     0FFh, 00h,	0Ch, 00h, 00h, 6Fh
+    111	001E  C2 83 C9 C8 53 C5			     db	     0C2h, 83h,0C9h,0C8h, 53h,0C5h
+    112	0024  53 C5 53 4B 4C C9			     db	      53h,0C5h,	53h, 4Bh, 4Ch,0C9h
+    113	002A  AB 83 C9 C8 43 C5			     db	     0ABh, 83h,0C9h,0C8h, 43h,0C5h
+    114	0030  53 C5 53 C7 4C 81			     db	      53h,0C5h,	53h,0C7h, 4Ch, 81h
+    115	0036  48 AB 83 C8 43 C5			     db	      48h,0ABh,	83h,0C8h, 43h,0C5h
+    116	003C  53 C5 E0 43 C7 5B			     db	      53h,0C5h,0E0h, 43h,0C7h, 5Bh
+    117	0042  CA CD C9 AB 83 C8			     db	     0CAh,0CDh,0C9h,0ABh, 83h,0C8h
+    118	0048  C4				     db	     0C4h
+    119	0049			     strategy_1	     endp
+    120
+    121
+    122				     ;ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ
+    123				     ;
+    124				     ;			     External Entry Point
+    125				     ;
+    126				     ;ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ
+    127
+    128	0049			     strategy	     proc    far
+    129	0049  C5 53 C5				     lds     dx,dword ptr [bp+di-3Bh]	     ; Load seg:offset ptr
+    130	004C  53				     push    bx
+    131	004D  C7 CC CD CC CB CA			     db	     0C7h,0CCh,0CDh,0CCh,0CBh,0CAh
+    132	0053  48 AB 83 C8 E0 43			     db	      48h,0ABh,	83h,0C8h,0E0h, 43h
+    133	0059  C5 05 04 4B 49 58			     db	     0C5h, 05h,	04h, 4Bh, 49h, 58h
+    134	005F  AB 83 53 C5 E0 73			     db	     0ABh, 83h,	53h,0C5h,0E0h, 73h
+    135	0065  C7 CC CD 4A CD CB			     db	     0C7h,0CCh,0CDh, 4Ah,0CDh,0CBh
+    136	006B  C9 AB 83 C3 C4 C5			     db	     0C9h,0ABh,	83h,0C3h,0C4h,0C5h
+    137	0071  05 04 C7 4B C9 CB			     db	      05h, 04h,0C7h, 4Bh,0C9h,0CBh
+    138	0077  C8 CB CA C8 AB 84			     db	     0C8h,0CBh,0CAh,0C8h,0ABh, 84h
+    139	007D  C3 05 04 C7 4B 49			     db	     0C3h, 05h,	04h,0C7h, 4Bh, 49h
+    140	0083  C9 C7 CD CC C8 AB			     db	     0C9h,0C7h,0CDh,0CCh,0C8h,0ABh
+    141	0089  85 C3 53 C7 C9 CC			     db	      85h,0C3h,	53h,0C7h,0C9h,0CCh
+    142	008F  49 CC C8 CC C5 47			     db	      49h,0CCh,0C8h,0CCh,0C5h, 47h
+    143	0095  C4 AB 85 42 43 C7			     db	     0C4h,0ABh,	85h, 42h, 43h,0C7h
+    144	009B  C9 4B C7 CA CB CA			     db	     0C9h, 4Bh,0C7h,0CAh,0CBh,0CAh
+    145	00A1  C9 C8 43 AB 86 C3			     db	     0C9h,0C8h,	43h,0ABh, 86h,0C3h
+    146	00A7  43 C7 48 CC C9 49			     db	      43h,0C7h,	48h,0CCh,0C9h, 49h
+    147	00AD  CC CA 43 C5 AB 83			     db	     0CCh,0CAh,	43h,0C5h,0ABh, 83h
+    148	00B3  CE CF D0 C3 C4 E0			     db	     0CEh,0CFh,0D0h,0C3h,0C4h,0E0h
+    149	00B9  C4 C7 C9 CB C9 CA			     db	     0C4h,0C7h,0C9h,0CBh,0C9h,0CAh
+    150	00BF  CC CA CC C8 C5 C4			     db	     0CCh,0CAh,0CCh,0C8h,0C5h,0C4h
+    151	00C5  AB 86 C3 C4 E0 C9			     db	     0ABh, 86h,0C3h,0C4h,0E0h,0C9h
+    152	00CB  5B C9 CC CA 47 43			     db	      5Bh,0C9h,0CCh,0CAh, 47h, 43h
+    153	00D1  C5 AB 87 C3 68 CA			     db	     0C5h,0ABh,	87h,0C3h, 68h,0CAh
+    154	00D7  C9 CA C8 53 C5 C4			     db	     0C9h,0CAh,0C8h, 53h,0C5h,0C4h
+    155	00DD  AB 83 D2 01 13 D4			     db	     0ABh, 83h,0D2h, 01h, 13h,0D4h
+    156	00E3  C3 C9 CC				     db	     0C3h,0C9h,0CCh
+    157	00E6  49				     db	     49h
+    158
+    159	00E7			     locloop_1:
+    160	00E7  CC				     int     3			     ; Debug breakpoint
+    161	00E8  CA C8CC				     retf    0C8CCh
+    162	00EB			     strategy	     endp
+Turbo Assembler	 Version 2.01	     03/22/26 12:39:15	    Page 4
+337UTINY.asm
+
+
+
+    163
+    164										     ;*	No entry point to code
+    165	00EB  43				     inc     bx
+    166	00EC  C5 E0 C4 AB 88			     db	     0C5h,0E0h,0C4h,0ABh, 88h
+    167
+    168	00F1			     locloop_2:
+    169	00F1  CD 6B				     int     6Bh		     ; ??INT Non-standard interrupt
+    170	00F3  CA C8CC				     retf    0C8CCh
+    171	00F6  C5 E0 C5 43 AB 89			     db	     0C5h,0E0h,0C5h, 43h,0ABh, 89h
+    172	00FC  49 CC CA CD CC C5			     db	      49h,0CCh,0CAh,0CDh,0CCh,0C5h
+    173	0102  C4 C5 C4 C5 C4 AB			     db	     0C4h,0C5h,0C4h,0C5h,0C4h,0ABh
+    174	0108  92 C3 43 AB 92 C3			     db	      92h,0C3h,	43h,0ABh, 92h,0C3h
+    175	010E  C5 C4 AB 92 C3 E0			     db	     0C5h,0C4h,0ABh, 92h,0C3h,0E0h
+    176	0114  C4 AB 92 C3 C5 E0			     db	     0C4h,0ABh,	92h,0C3h,0C5h,0E0h
+    177	011A  AB 92 C3 43 AB 92			     db	     0ABh, 92h,0C3h, 43h,0ABh, 92h
+    178	0120  C3 E0 C4 AB 92 C3			     db	     0C3h,0E0h,0C4h,0ABh, 92h,0C3h
+    179	0126  E0 C4 AB 92 C3 E0			     db	     0E0h,0C4h,0ABh, 92h,0C3h,0E0h
+    180	012C  C4 AB 92 C3 C5 C4			     db	     0C4h,0ABh,	92h,0C3h,0C5h,0C4h
+    181	0132  AB 92 C3 E0 C4 AB			     db	     0ABh, 92h,0C3h,0E0h,0C4h,0ABh
+    182	0138  92 C3 E0 C4 AB 92			     db	      92h,0C3h,0E0h,0C4h,0ABh, 92h
+    183	013E  C3 C5 C4 AB 92 C3			     db	     0C3h,0C5h,0C4h,0ABh, 92h,0C3h
+    184	0144  C4 C7 AB 92 C3 C5			     db	     0C4h,0C7h,0ABh, 92h,0C3h,0C5h
+    185	014A  C4 AB 92 C3 C5 E0			     db	     0C4h,0ABh,	92h,0C3h,0C5h,0E0h
+    186	0150  AB 92 C3 E0 C4 AB			     db	     0ABh, 92h,0C3h,0E0h,0C4h,0ABh
+    187	0156  92 C3 C5 C7 AB 92			     db	      92h,0C3h,0C5h,0C7h,0ABh, 92h
+    188	015C  C3 C5 C7 AB 92 C3			     db	     0C3h,0C5h,0C7h,0ABh, 92h,0C3h
+    189	0162  C5 CA AB 92 C3 C7			     db	     0C5h,0CAh,0ABh, 92h,0C3h,0C7h
+    190	0168  C9 AB 92 C3 C5 CA			     db	     0C9h,0ABh,	92h,0C3h,0C5h,0CAh
+    191	016E  AB 92 C3 C7 CA AB			     db	     0ABh, 92h,0C3h,0C7h,0CAh,0ABh
+    192	0174  92 C3 C4 C8 AB 92			     db	      92h,0C3h,0C4h,0C8h,0ABh, 92h
+    193	017A  C3 C5 E0 AB 92 C3			     db	     0C3h,0C5h,0E0h,0ABh, 92h,0C3h
+    194	0180  C5 C4 AB 92 C3 E0			     db	     0C5h,0C4h,0ABh, 92h,0C3h,0E0h
+    195	0186  C4 AB 92 C3 C5 C4			     db	     0C4h,0ABh,	92h,0C3h,0C5h,0C4h
+    196	018C  AB 92 C3 C5 C4 AB			     db	     0ABh, 92h,0C3h,0C5h,0C4h,0ABh
+    197	0192  92 C3 E0 C4 AB 92			     db	      92h,0C3h,0E0h,0C4h,0ABh, 92h
+    198	0198  C3 C5 C4 AB 92 C3			     db	     0C3h,0C5h,0C4h,0ABh, 92h,0C3h
+    199	019E  C5 E0 AB 92 C3 E0			     db	     0C5h,0E0h,0ABh, 92h,0C3h,0E0h
+    200	01A4  C4 AB 92 C3 43 AB			     db	     0C4h,0ABh,	92h,0C3h, 43h,0ABh
+    201	01AA  92 C3 43 AB 92 C3			     db	      92h,0C3h,	43h,0ABh, 92h,0C3h
+    202	01B0  C5 C4 AB 92 C3 C5			     db	     0C5h,0C4h,0ABh, 92h,0C3h,0C5h
+    203	01B6  C4 AB 92 C3 E0 C4			     db	     0C4h,0ABh,	92h,0C3h,0E0h,0C4h
+    204	01BC  AB 92 C3 C5 C4 AB			     db	     0ABh, 92h,0C3h,0C5h,0C4h,0ABh
+    205	01C2  92 C3 C5 E0 AB 92			     db	      92h,0C3h,0C5h,0E0h,0ABh, 92h
+    206	01C8  C3 C5 C4 AB 92 C3			     db	     0C3h,0C5h,0C4h,0ABh, 92h,0C3h
+    207	01CE  C5 C4 AB 92 C3 C5			     db	     0C5h,0C4h,0ABh, 92h,0C3h,0C5h
+    208	01D4  C4 AB 83 CE 06 0F			     db	     0C4h,0ABh,	83h,0CEh, 06h, 0Fh
+    209	01DA  D0 5B C8 43 E0 43			     db	     0D0h, 5Bh,0C8h, 43h,0E0h, 43h
+    210	01E0  AB 8A CC 48 C8 53			     db	     0ABh, 8Ah,0CCh, 48h,0C8h, 53h
+    211	01E6  C5 53 AB 83 CE 6E			     db	     0C5h, 53h,0ABh, 83h,0CEh, 6Eh
+    212	01EC  D0 CA 48 47 43 C5			     db	     0D0h,0CAh,	48h, 47h, 43h,0C5h
+    213	01F2  63 AB 88 CC C9 C8			     db	      63h,0ABh,	88h,0CCh,0C9h,0C8h
+    214	01F8  43 E0 C4 C5 73 AB			     db	      43h,0E0h,0C4h,0C5h, 73h,0ABh
+    215	01FE  87 4B C9 C8 53 C5			     db	      87h, 4Bh,0C9h,0C8h, 53h,0C5h
+    216	0204  C4 E0 63 AB 83 D2			     db	     0C4h,0E0h,	63h,0ABh, 83h,0D2h
+Turbo Assembler	 Version 2.01	     03/22/26 12:39:15	    Page 5
+337UTINY.asm
+
+
+
+    217	020A  D3 D4 CC C9 CA C8			     db	     0D3h,0D4h,0CCh,0C9h,0CAh,0C8h
+    218	0210  0A 04 AB 85 CC C9			     db	      0Ah, 04h,0ABh, 85h,0CCh,0C9h
+    219	0216  CB C9 C8 43 E0 07			     db	     0CBh,0C9h,0C8h, 43h,0E0h, 07h
+    220	021C  04 AB 85 CD 48 C8			     db	      04h,0ABh,	85h,0CDh, 48h,0C8h
+    221	0222  73 C5 C4 C5 E0 53			     db	      73h,0C5h,0C4h,0C5h,0E0h, 53h
+    222	0228  AB 85 CC CB C8 43			     db	     0ABh, 85h,0CCh,0CBh,0C8h, 43h
+    223	022E  E0 43 C5 C4 E0 73			     db	     0E0h, 43h,0C5h,0C4h,0E0h, 73h
+    224	0234  AB 84 CC 48 73 C5			     db	     0ABh, 84h,0CCh, 48h, 73h,0C5h
+    225	023A  C4 C5 05 04 AB 83			     db	     0C4h,0C5h,	05h, 04h,0ABh, 83h
+    226	0240  CC CA CB C9 C8 53			     db	     0CCh,0CAh,0CBh,0C9h,0C8h, 53h
+    227	0246  C5 C4 44 05 04 AB			     db	     0C5h,0C4h,	44h, 05h, 04h,0ABh
+    228	024C  83 C9 CA C9 C8 53			     db	      83h,0C9h,0CAh,0C9h,0C8h, 53h
+    229	0252  C5 06 04 E0 C7 CC			     db	     0C5h, 06h,	04h,0E0h,0C7h,0CCh
+    230	0258  AB 83 CA CB C8 05			     db	     0ABh, 83h,0CAh,0CBh,0C8h, 05h
+    231	025E  04 E0 73 C7 CC C9			     db	      04h,0E0h,	73h,0C7h,0CCh,0C9h
+    232	0264  AB 83 CB CD C8 C4			     db	     0ABh, 83h,0CBh,0CDh,0C8h,0C4h
+    233	026A  E0 07 04 C7 CD CC			     db	     0E0h, 07h,	04h,0C7h,0CDh,0CCh
+    234	0270  C9 CD AB FF FF FF			     db	     0C9h,0CDh,0ABh,0FFh,0FFh,0FFh
+    235	0276  FF FF FF 1B 00 0E			     db	     0FFh,0FFh,0FFh, 1Bh, 00h, 0Eh
+    236	027C  C1 0E 35 01 29 00			     db	     0C1h, 0Eh,	35h, 01h, 29h, 00h
+    237	0282  FF FF FF 2F 00 0E			     db	     0FFh,0FFh,0FFh, 2Fh, 00h, 0Eh
+    238	0288  82 0E 1C 00 2E 80			     db	      82h, 0Eh,	1Ch, 00h, 2Eh, 80h
+    239	028E  2D 00 10 FF FF 2D			     db	      2Dh, 00h,	10h,0FFh,0FFh, 2Dh
+    240	0294  00 20 EA C2 FF FF			     db	      00h, 20h,0EAh,0C2h,0FFh,0FFh
+    241	029A  FF FF 2D 00 10 89			     db	     0FFh,0FFh,	2Dh, 00h, 10h, 89h
+    242	02A0  C2 00 FF 8B C2 FF			     db	     0C2h, 00h,0FFh, 8Bh,0C2h,0FFh
+    243	02A6  FF FF FF 28 00 FF			     db	     0FFh,0FFh,0FFh, 28h, 00h,0FFh
+    244	02AC  10 C0 EA C2 0A C0			     db	      10h,0C0h,0EAh,0C2h, 0Ah,0C0h
+    245	02B2  75 C2 D3 C2 0A 0A			     db	      75h,0C2h,0D3h,0C2h, 0Ah, 0Ah
+    246	02B8  D0 C2 13 00 FF FF			     db	     0D0h,0C2h,	13h, 00h,0FFh,0FFh
+    247	02BE  FF FF 17 AF 00 10			     db	     0FFh,0FFh,	17h,0AFh, 00h, 10h
+    248	02C4  43 61 76 65 72 6E	20+		     db	     'Cavern of	Tesoro'
+    249	      6F 66 20 54 65 73	6F+
+    250	      72 6F
+    251	02D4  99 00 05 0B FF 0B			     db	      99h, 00h,	05h, 0Bh,0FFh, 0Bh
+    252	02DA  0A 0A 10 C0 EA C2			     db	      0Ah, 0Ah,	10h,0C0h,0EAh,0C2h
+    253	02E0  0A C0 81 C2 EC C2			     db	      0Ah,0C0h,	81h,0C2h,0ECh,0C2h
+    254	02E6  05 FF 28 00 FF FF			     db	      05h,0FFh,	28h, 00h,0FFh,0FFh
+    255	02EC  FF FF 26 00 10 FF			     db	     0FFh,0FFh,	26h, 00h, 10h,0FFh
+    256	02F2  76 00 00 20 00 00			     db	      76h, 00h,	00h, 20h, 00h, 00h
+    257	02F8  00 2D 00 20 00 00			     db	      00h, 2Dh,	00h, 20h, 00h, 00h
+    258	02FE  FFFFFFFF		     header_1	     dd	     0FFFFFFFFh
+    259
+    260	0302			     seg_a	     ends
+    261
+    262
+    263
+    264						     end
+Turbo Assembler	 Version 2.01	     03/22/26 12:39:15	    Page 6
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/22/26"
+??FILENAME			  Text	 "337UTINY"
+??TIME				  Text	 "12:39:15"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 337UTINY
+@WORDSIZE			  Text	 2
+ATTRIBUTES			  Word	 SEG_A:0004
+CHAR_DEV			  Byte	 SEG_A:000A
+HEADER_1			  Dword	 SEG_A:02FE
+LOCLOOP_1			  Near	 SEG_A:00E7
+LOCLOOP_2			  Near	 SEG_A:00F1
+POINTERS			  Word	 SEG_A:0006
+STRATEGY			  Far	 SEG_A:0049
+STRATEGY_1			  Far	 SEG_A:0000
+TARGET				  Number 5432
+ZR3_37				  Far	 SEG_A:0000
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  0302 Byte	  Public
+

@@ -1,0 +1,1557 @@
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 1
+331MP50.asm
+
+
+
+      1
+      2
+      3				     ;==========================================================================
+      4				     ;
+      5				     ;	TRIGGER_EVENTS - Code Module
+      6				     ;
+      7				     ;==========================================================================
+      8
+      9	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     10
+     11				     include  srmacros.inc
+1    12
+1    13				     ; Macros which may	be required for	proper re-assembly
+1    14
+1    15
+1    16
+1    17
+1    18
+1    19				     ;-----------------------------------------------------------------------------
+1    20				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    21				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    22				     ; instruction it uses a near jump or call.
+1    23
+1    24				     calls	     macro   dummy1, dummy2, slocation
+1    25						     db	     9Ah		     ; forced call far instruction
+1    26						     dw	     offset slocation, seg slocation
+1    27				     endm
+1    28
+1    29				     jmps	     macro   dummy1, dummy2, jlocation
+1    30						     db	     0EAh		     ; forced jump far instruction
+1    31						     dw	     offset jlocation, seg jlocation
+1    32				     endm
+1    33
+1    34
+1    35
+1    36
+1    37				     ;-----------------------------------------------------------------------------
+1    38				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    39				     ;	subroutine in the same segment as:
+1    40				     ;
+1    41				     ;		     PUSH    CS
+1    42				     ;		     CALL    near
+1    43				     ;
+1    44				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    45				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    46				     ;	macros are used	to code	the same information.  In other	words, the binary
+1    47				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    48				     ;	are used!  (macro CALLF)
+1    49				     ;
+1    50
+1    51				     callf	     macro   location
+1    52						     push    cs
+1    53						     call    near ptr location
+1    54				     endm
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 2
+331MP50.asm
+
+
+
+1    55
+1    56				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    57				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    58
+1    59				     callfx	     macro   location
+1    60						     push    cs
+1    61						     db	     3Eh
+1    62						     call    near ptr location
+1    63				     endm
+1    64
+1    65
+1    66				     ;-----------------------------------------------------------------------------
+1    67				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    68				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    69				     ;	reconstructs a near jump for these cases.
+1    70
+1    71				     jmpn	     macro   location
+1    72						     db	     0E9h
+1    73						     dw	     offset location-$-2
+1    74				     endm
+1    75
+1    76
+1    77
+     78
+     79
+     80	0000			     seg_a	     segment byte public
+     81						     assume  cs:seg_a, ds:seg_a
+     82
+     83
+     84						     org     0
+     85
+     86	0000			     zr3_31	     proc    far
+     87
+     88	0000			     start:
+     89	0000  94				     xchg    sp,ax
+     90	0001  1D 0000				     sbb     ax,0
+     91	0004  FD				     std			     ; Set direction flag
+     92				     ;*		     fdiv    st,st		     ; st = st / st(#)
+     93	0005  D8 F0				     db	     0D8h,0F0h		     ;	Fixup -	byte match
+     94				     ;*		     add     bl,ch
+     95	0007  00 EB				     db	      00h,0EBh		     ;	Fixup -	byte match
+     96	0009  D7				     xlat			     ; al=[al+[bx]] table
+     97	000A  F9				     stc			     ; Set carry flag
+     98	000B  D7				     xlat			     ; al=[al+[bx]] table
+     99	000C  FB				     sti			     ; Enable interrupts
+    100	000D  D7				     xlat			     ; al=[al+[bx]] table
+    101	000E  0B D8				     or	     bx,ax
+    102	0010  79 D8				     jns     $-26h		     ; Jump if not sign
+    103	0012  E8 02D8				     call    trigger_func_1
+    104				     ;*		     fld     dword ptr [di]	     ; Push onto stack
+    105	0015  D9 05				     db	     0D9h, 05h		     ;	Fixup -	byte match
+    106	0017  FF FF FF 0A 00 00			     db	     0FFh,0FFh,0FFh, 0Ah, 00h, 00h
+    107	001D  EB D7 83 C4 56 C9			     db	     0EBh,0D7h,	83h,0C4h, 56h,0C9h
+    108	0023  C7 CC 88 C3 66 CC			     db	     0C7h,0CCh,	88h,0C3h, 66h,0CCh
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 3
+331MP50.asm
+
+
+
+    109	0029  92 C3 46 C5 01 18			     db	      92h,0C3h,	46h,0C5h, 01h, 18h
+    110	002F  85 C3 66 02 18 83			     db	      85h,0C3h,	66h, 02h, 18h, 83h
+    111	0035  83 C4 66 C8 CC 88			     db	      83h,0C4h,	66h,0C8h,0CCh, 88h
+    112	003B  C3 66 CC 40 C2 40			     db	     0C3h, 66h,0CCh, 40h,0C2h, 40h
+    113	0041  C2 C1 C2 40 C2 60			     db	     0C2h,0C1h,0C2h, 40h,0C2h, 60h
+    114	0047  C2 C1 81 C3 56 CA			     db	     0C2h,0C1h,	81h,0C3h, 56h,0CAh
+    115	004D  02 18 83 C3 56 C9			     db	      02h, 18h,	83h,0C3h, 56h,0C9h
+    116	0053  C7 85 83 C4 76 CC			     db	     0C7h, 85h,	83h,0C4h, 76h,0CCh
+    117	0059  88 C3 56 CC 93 C3			     db	      88h,0C3h,	56h,0CCh, 93h,0C3h
+    118	005F  C5 56 D8 85 C3 66			     db	     0C5h, 56h,0D8h, 85h,0C3h, 66h
+    119	0065  01 18 84 83 C4 66			     db	      01h, 18h,	84h, 83h,0C4h, 66h
+    120	006B  CA 01 18 87 C3 56			     db	     0CAh, 01h,	18h, 87h,0C3h, 56h
+    121	0071  C6 86 C4 45 8A C4			     db	     0C6h, 86h,0C4h, 45h, 8Ah,0C4h
+    122	0077  46 CC 87 C4 56 01			     db	      46h,0CCh,	87h,0C4h, 56h, 01h
+    123	007D  18 85 83 C3 66 CC			     db	      18h, 85h,	83h,0C3h, 66h,0CCh
+    124	0083  89 C3 46 CB C7 02			     db	      89h,0C3h,	46h,0CBh,0C7h, 02h
+    125	0089  18 83 C3 46 01 18			     db	      18h, 83h,0C3h, 46h, 01h, 18h
+    126	008F  88 C3 46 01 18 86			     db	      88h,0C3h,	46h, 01h, 18h, 86h
+    127	0095  C4 66 86 83 C3 CA			     db	     0C4h, 66h,	86h, 83h,0C3h,0CAh
+    128	009B  66 D8 88 C3 46 C6			     db	      66h,0D8h,	88h,0C3h, 46h,0C6h
+    129	00A1  87 C3 C5 CC 8A C4			     db	      87h,0C3h,0C5h,0CCh, 8Ah,0C4h
+    130	00A7  C7 C8 02 18 85 C3			     db	     0C7h,0C8h,	02h, 18h, 85h,0C3h
+    131	00AD  66 01 18 84 83 C3			     db	      66h, 01h,	18h, 84h, 83h,0C3h
+    132	00B3  76 CC 88 C4 C7 C8			     db	      76h,0CCh,	88h,0C4h,0C7h,0C8h
+    133	00B9  46 01 18 84 C3 C8			     db	      46h, 01h,	18h, 84h,0C3h,0C8h
+    134	00BF  C7 D8 89 C3 46 C6			     db	     0C7h,0D8h,	89h,0C3h, 46h,0C6h
+    135	00C5  87 C3 46 C9 C7 C8			     db	      87h,0C3h,	46h,0C9h,0C7h,0C8h
+    136	00CB  D9 01 18 82 83 C3			     db	     0D9h, 01h,	18h, 82h, 83h,0C3h
+    137	00D1  76 D8 88 C3 46 CC			     db	      76h,0D8h,	88h,0C3h, 46h,0CCh
+    138	00D7  87 C4 C7 CC 01 18			     db	      87h,0C4h,0C7h,0CCh, 01h, 18h
+    139	00DD  88 C3 56 01 18 85			     db	      88h,0C3h,	56h, 01h, 18h, 85h
+    140	00E3  C3 66 01 18 84 84			     db	     0C3h, 66h,	01h, 18h, 84h, 84h
+    141	00E9  C4 46 C9 C7 02 18			     db	     0C4h, 46h,0C9h,0C7h, 02h, 18h
+    142	00EF  86 C3 C7 CC 88 C3			     db	      86h,0C3h,0C7h,0CCh, 88h,0C3h
+    143	00F5  56 89 C3 46 C8 C6			     db	      56h, 89h,0C3h, 46h,0C8h,0C6h
+    144	00FB  86 C4 56 D8 86 84			     db	      86h,0C4h,	56h,0D8h, 86h, 84h
+    145	0101  C4 56 8A C3 46 88			     db	     0C4h, 56h,	8Ah,0C3h, 46h, 88h
+    146	0107  C3 46 CA D9 D8 87			     db	     0C3h, 46h,0CAh,0D9h,0D8h, 87h
+    147	010D  C3 66 C6 84 C3 76			     db	     0C3h, 66h,0C6h, 84h,0C3h, 76h
+    148	0113  01 18 84 84 C4 46			     db	      01h, 18h,	84h, 84h,0C4h, 46h
+    149	0119  03 18 87 C3 46 01			     db	      03h, 18h,	87h,0C3h, 46h, 01h
+    150	011F  18 86 C3 56 CC 88			     db	      18h, 86h,0C3h, 56h,0CCh, 88h
+    151	0125  C3 56 C6 C8 CA D8			     db	     0C3h, 56h,0C6h,0C8h,0CAh,0D8h
+    152	012B  C3 C6 CA C8 56 CA			     db	     0C3h,0C6h,0CAh,0C8h, 56h,0CAh
+    153	0131  C7 D8 84 84 C3 66			     db	     0C7h,0D8h,	84h, 84h,0C3h, 66h
+    154	0137  03 18 85 C3 C7 CC			     db	      03h, 18h,	85h,0C3h,0C7h,0CCh
+    155	013D  88 C3 56 C8 C6 02			     db	      88h,0C3h,	56h,0C8h,0C6h, 02h
+    156	0143  18 84 C3 66 C6 C8			     db	      18h, 84h,0C3h, 66h,0C6h,0C8h
+    157	0149  07 07 C8 02 18 83			     db	      07h, 07h,0C8h, 02h, 18h, 83h
+    158	014F  84 C3 66 CC 88 C3			     db	      84h,0C3h,	66h,0CCh, 88h,0C3h
+    159	0155  C7 CC 88 C4 56 C5			     db	     0C7h,0CCh,	88h,0C4h, 56h,0C5h
+    160	015B  D8 87 C3 C5 0B 07			     db	     0D8h, 87h,0C3h,0C5h, 0Bh, 07h
+    161	0161  D8 87 84 C3 66 CC			     db	     0D8h, 87h,	84h,0C3h, 66h,0CCh
+    162	0167  88 C4 46 C6 D8 86			     db	      88h,0C4h,	46h,0C6h,0D8h, 86h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 4
+331MP50.asm
+
+
+
+    163	016D  C3 C7 CC C7 CC 88			     db	     0C3h,0C7h,0CCh,0C7h,0CCh, 88h
+    164	0173  C3 56 C9 46 CC C8			     db	     0C3h, 56h,0C9h, 46h,0CCh,0C8h
+    165	0179  CC 46 C8 D9 01 18			     db	     0CCh, 46h,0C8h,0D9h, 01h, 18h
+    166	017F  86 84 C3 46 C9 C7			     db	      86h, 84h,0C3h, 46h,0C9h,0C7h
+    167	0185  CC 88 C3 C7 C5 C7			     db	     0CCh, 88h,0C3h,0C7h,0C5h,0C7h
+    168	018B  01 18 85 C3 56 CC			     db	      01h, 18h,	85h,0C3h, 56h,0CCh
+    169	0191  88 C3 66 CC 47 CC			     db	      88h,0C3h,	66h,0CCh, 47h,0CCh
+    170	0197  C7 D9 02 18 88 84			     db	     0C7h,0D9h,	02h, 18h, 88h, 84h
+    171	019D  C3 56 C6 89 C4 56			     db	     0C3h, 56h,0C6h, 89h,0C4h, 56h
+    172	01A3  C6 86 C3 66 88 C3			     db	     0C6h, 86h,0C3h, 66h, 88h,0C3h
+    173	01A9  76 CC 01 18 8D 84			     db	      76h,0CCh,	01h, 18h, 8Dh, 84h
+    174	01AF  C3 66 CC 88 C4 76			     db	     0C3h, 66h,0CCh, 88h,0C4h, 76h
+    175	01B5  C6 84 C4 C7 C9 C8			     db	     0C6h, 84h,0C4h,0C7h,0C9h,0C8h
+    176	01BB  CC 88 C3 66 D9 01			     db	     0CCh, 88h,0C3h, 66h,0D9h, 01h
+    177	01C1  18 8E 84 C3 C7 CA			     db	      18h, 8Eh,	84h,0C3h,0C7h,0CAh
+    178	01C7  46 CC 88 C3 56 C5			     db	      46h,0CCh,	88h,0C3h, 56h,0C5h
+    179	01CD  46 CB 02 25 76 D9			     db	      46h,0CBh,	02h, 25h, 76h,0D9h
+    180	01D3  01 18 85 C3 46 CC			     db	      01h, 18h,	85h,0C3h, 46h,0CCh
+    181	01D9  01 18 90 84 C3 56			     db	      01h, 18h,	90h, 84h,0C3h, 56h
+    182	01DF  C8 01 18 87 C3 76			     db	     0C8h, 01h,	18h, 87h,0C3h, 76h
+    183	01E5  C8 C7 E6 01 25 66			     db	     0C8h,0C7h,0E6h, 01h, 25h, 66h
+    184	01EB  89 C4 46 CC 87 C4			     db	      89h,0C4h,	46h,0CCh, 87h,0C4h
+    185	01F1  C7 89 84 C3 56 CC			     db	     0C7h, 89h,	84h,0C3h, 56h,0CCh
+    186	01F7  89 C3 56 CC C7 4B			     db	      89h,0C3h,	56h,0CCh,0C7h, 4Bh
+    187	01FD  83 C3 56 CC 01 18			     db	      83h,0C3h,	56h,0CCh, 01h, 18h
+    188	0203  86 C4 46 CC 87 C4			     db	      86h,0C4h,	46h,0CCh, 87h,0C4h
+    189	0209  46 01 18 86 84 C3			     db	      46h, 01h,	18h, 86h, 84h,0C3h
+    190	020F  66 01 18 87 C3 46			     db	      66h, 01h,	18h, 87h,0C3h, 46h
+    191	0215  C9 C7 01 18 84 C4			     db	     0C9h,0C7h,	01h, 18h, 84h,0C4h
+    192	021B  56 CC C6 87 C3 56			     db	      56h,0CCh,0C6h, 87h,0C3h, 56h
+    193	0221  02 18 84 C3 46 C8			     db	      02h, 18h,	84h,0C3h, 46h,0C8h
+    194	0227  02 18 84 84 C3 46			     db	      02h, 18h,	84h, 84h,0C3h, 46h
+    195	022D  CA C8 03 18 85 C3			     db	     0CAh,0C8h,	03h, 18h, 85h,0C3h
+    196	0233  56 01 18 85 C4 66			     db	      56h, 01h,	18h, 85h,0C4h, 66h
+    197	0239  C8 01 18 85 C4 46			     db	     0C8h, 01h,	18h, 85h,0C4h, 46h
+    198	023F  C8 D8 86 C3 56 CC			     db	     0C8h,0D8h,	86h,0C3h, 56h,0CCh
+    199	0245  86 84 C3 56 D8 89			     db	      86h, 84h,0C3h, 56h,0D8h, 89h
+    200	024B  C4 56 CC 86 C3 46			     db	     0C4h, 56h,0CCh, 86h,0C3h, 46h
+    201	0251  CA 4B 87 C3 46 02			     db	     0CAh, 4Bh,	87h,0C3h, 46h, 02h
+    202	0257  18 85 C3 C5 46 CC			     db	      18h, 85h,0C3h,0C5h, 46h,0CCh
+    203	025D  86 84 C3 46 C8 D8			     db	      86h, 84h,0C3h, 46h,0C8h,0D8h
+    204	0263  89 C3 56 CC 86 C3			     db	      89h,0C3h,	56h,0CCh, 86h,0C3h
+    205	0269  56 CC 88 C3 46 C6			     db	      56h,0CCh,	88h,0C3h, 46h,0C6h
+    206	026F  87 C3 56 C8 01 18			     db	      87h,0C3h,	56h,0C8h, 01h, 18h
+    207	0275  84 84 C3 56 C6 89			     db	      84h, 84h,0C3h, 56h,0C6h, 89h
+    208	027B  C3 56 D9 D8 85 C3			     db	     0C3h, 56h,0D9h,0D8h, 85h,0C3h
+    209	0281  56 CC 88 C3 46 C8			     db	      56h,0CCh,	88h,0C3h, 46h,0C8h
+    210	0287  01 18 85 C4 56 CC			     db	      01h, 18h,	85h,0C4h, 56h,0CCh
+    211	028D  86 84 C3 56 C8 01			     db	      86h, 84h,0C3h, 56h,0C8h, 01h
+    212	0293  18 87 C3 56 CC 01			     db	      18h, 87h,0C3h, 56h,0CCh, 01h
+    213	0299  18 84 C4 56 01 18			     db	      18h, 84h,0C4h, 56h, 01h, 18h
+    214	029F  87 C3 56 D8 86 C3			     db	      87h,0C3h,	56h,0D8h, 86h,0C3h
+    215	02A5  66 02 18 83 84 C3			     db	      66h, 02h,	18h, 83h, 84h,0C3h
+    216	02AB  56 C6 89 C4 46 C8			     db	      56h,0C6h,	89h,0C4h, 46h,0C8h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 5
+331MP50.asm
+
+
+
+    217	02B1  CC 86 C3 56 C6 88			     db	     0CCh, 86h,0C3h, 56h,0C6h, 88h
+    218	02B7  C3 46 CC 87 C3 66			     db	     0C3h, 46h,0CCh, 87h,0C3h, 66h
+    219	02BD  CC 85 84 C3 56 C8			     db	     0CCh, 85h,	84h,0C3h, 56h,0C8h
+    220	02C3  01 18 87 C4 56 CC			     db	      01h, 18h,	87h,0C4h, 56h,0CCh
+    221	02C9  86 C4 56 01 19 01			     db	      86h,0C4h,	56h, 01h, 19h, 01h
+    222	02CF  18 85 C3 46 CC 87			     db	      18h, 85h,0C3h, 46h,0CCh, 87h
+    223	02D5  C3 76 D8 84 84 C3			     db	     0C3h, 76h,0D8h, 84h, 84h,0C3h
+    224	02DB  C7 C9 C7 CC 89 C3			     db	     0C7h,0C9h,0C7h,0CCh, 89h,0C3h
+    225	02E1  56 C8 D9 D8 84 C3			     db	      56h,0C8h,0D9h,0D8h, 84h,0C3h
+    226	02E7  46 C9 CC 88 C3			     db	      46h,0C9h,0CCh, 88h,0C3h
+    227	02EC  46				     db	     46h
+    228
+    229	02ED			     zr3_31	     endp
+    230
+    231				     ;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+    232				     ;				    SUBROUTINE
+    233				     ;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
+    234
+    235	02ED			     trigger_func_1	     proc    near
+    236	02ED  CA 86D8				     retf    86D8h
+    237	02F0			     trigger_func_1	     endp
+    238
+    239										     ;*	No entry point to code
+    240	02F0  C3				     retn
+    241	02F1  66 C8 C7 01 18 82			     db	      66h,0C8h,0C7h, 01h, 18h, 82h
+    242	02F7  84 C3 56 CC 89 C3			     db	      84h,0C3h,	56h,0CCh, 89h,0C3h
+    243	02FD  56 CC 86 C3 56 CC			     db	      56h,0CCh,	86h,0C3h, 56h,0CCh
+    244	0303  88 C3 46 C6 87 C3			     db	      88h,0C3h,	46h,0C6h, 87h,0C3h
+    245	0309  66 02 18 83 84 C3			     db	      66h, 02h,	18h, 83h, 84h,0C3h
+    246	030F  56 CC 89 C3 56 CC			     db	      56h,0CCh,	89h,0C3h, 56h,0CCh
+    247	0315  86 C3 56 CC 88 C3			     db	      86h,0C3h,	56h,0CCh, 88h,0C3h
+    248	031B  56 01 18 85 C3 56			     db	      56h, 01h,	18h, 85h,0C3h, 56h
+    249	0321  C8 D8 85 84 C3 56			     db	     0C8h,0D8h,	85h, 84h,0C3h, 56h
+    250	0327  C6 01 18 87 C3 46			     db	     0C6h, 01h,	18h, 87h,0C3h, 46h
+    251	032D  CA 01 18 85 C3 56			     db	     0CAh, 01h,	18h, 85h,0C3h, 56h
+    252	0333  C6 88 C3 C7 C8 03			     db	     0C6h, 88h,0C3h,0C7h,0C8h, 03h
+    253	0339  18 84 C3 C7 CA C7			     db	      18h, 84h,0C3h,0C7h,0CAh,0C7h
+    254	033F  CC 86 84 C3 66 C6			     db	     0CCh, 86h,	84h,0C3h, 66h,0C6h
+    255	0345  88 C4 56 CC 86 C3			     db	      88h,0C4h,	56h,0CCh, 86h,0C3h
+    256	034B  56 C5 D8 87 C3 46			     db	      56h,0C5h,0D8h, 87h,0C3h, 46h
+    257	0351  01 18 86 C3 56 CC			     db	      01h, 18h,	86h,0C3h, 56h,0CCh
+    258	0357  86 84 C3 66 C8 02			     db	      86h, 84h,0C3h, 66h,0C8h, 02h
+    259	035D  18 85 C4 56 CC 01			     db	      18h, 85h,0C4h, 56h,0CCh, 01h
+    260	0363  18 84 C3 56 CC 88			     db	      18h, 84h,0C3h, 56h,0CCh, 88h
+    261	0369  C3 46 CC 87 C3 56			     db	     0C3h, 46h,0CCh, 87h,0C3h, 56h
+    262	036F  CC 86 84 C3 46 CA			     db	     0CCh, 86h,	84h,0C3h, 46h,0CAh
+    263	0375  C7 01 18 87 C3 CA			     db	     0C7h, 01h,	18h, 87h,0C3h,0CAh
+    264	037B  C7 C8 CC 86 C3 56			     db	     0C7h,0C8h,0CCh, 86h,0C3h, 56h
+    265	0381  C6 02 18 85 C3 C7			     db	     0C6h, 02h,	18h, 85h,0C3h,0C7h
+    266	0387  CA CC 87 C4 56 C6			     db	     0CAh,0CCh,	87h,0C4h, 56h,0C6h
+    267	038D  86 84 C3 66 CC 88			     db	      86h, 84h,0C3h, 66h,0CCh, 88h
+    268	0393  C4 56 CC 86 C3 56			     db	     0C4h, 56h,0CCh, 86h,0C3h, 56h
+    269	0399  CC 88 C4 46 C6 87			     db	     0CCh, 88h,0C4h, 46h,0C6h, 87h
+    270	039F  C3 66 C8 01 18 83			     db	     0C3h, 66h,0C8h, 01h, 18h, 83h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 6
+331MP50.asm
+
+
+
+    271	03A5  84 C3 66 CC 88 C4			     db	      84h,0C3h,	66h,0CCh, 88h,0C4h
+    272	03AB  56 01 18 85 C3 C7			     db	      56h, 01h,	18h, 85h,0C3h,0C7h
+    273	03B1  CA C8 CC 88 C4 46			     db	     0CAh,0C8h,0CCh, 88h,0C4h, 46h
+    274	03B7  C8 01 18 85 C3 66			     db	     0C8h, 01h,	18h, 85h,0C3h, 66h
+    275	03BD  CC 85 84 C3 66 CC			     db	     0CCh, 85h,	84h,0C3h, 66h,0CCh
+    276	03C3  88 C3 56 C6 86 C3			     db	      88h,0C3h,	56h,0C6h, 86h,0C3h
+    277	03C9  56 CC 01 18 86 C3			     db	      56h,0CCh,	01h, 18h, 86h,0C3h
+    278	03CF  C7 04 18 84 C4 46			     db	     0C7h, 04h,	18h, 84h,0C4h, 46h
+    279	03D5  C8 03 18 83 84 C3			     db	     0C8h, 03h,	18h, 83h, 84h,0C3h
+    280	03DB  56 C8 02 18 86 C3			     db	      56h,0C8h,	02h, 18h, 86h,0C3h
+    281	03E1  56 C8 D9 D8 84 C3			     db	      56h,0C8h,0D9h,0D8h, 84h,0C3h
+    282	03E7  56 C5 D8 87 C3 CA			     db	      56h,0C5h,0D8h, 87h,0C3h,0CAh
+    283	03ED  89 C3 66 01 18 84			     db	      89h,0C3h,	66h, 01h, 18h, 84h
+    284	03F3  84 C3 66 CC 88 C4			     db	      84h,0C3h,	66h,0CCh, 88h,0C4h
+    285	03F9  56 CC 86 C3 46 C9			     db	      56h,0CCh,	86h,0C3h, 46h,0C9h
+    286	03FF  CC 88 C3 C7 89 C3			     db	     0CCh, 88h,0C3h,0C7h, 89h,0C3h
+    287	0405  56 C8 D8 85 84 C3			     db	      56h,0C8h,0D8h, 85h, 84h,0C3h
+    288	040B  66 CC 88 C3 C7 C9			     db	      66h,0CCh,	88h,0C3h,0C7h,0C9h
+    289	0411  C7 CC 86 C4 46 C6			     db	     0C7h,0CCh,	86h,0C4h, 46h,0C6h
+    290	0417  CC 88 C3 01 18 88			     db	     0CCh, 88h,0C3h, 01h, 18h, 88h
+    291	041D  C3 56 C6 86 84 C3			     db	     0C3h, 56h,0C6h, 86h, 84h,0C3h
+    292	0423  56 C8 01 18 87 C3			     db	      56h,0C8h,	01h, 18h, 87h,0C3h
+    293	0429  56 CC 86 C4 56 D9			     db	      56h,0CCh,	86h,0C4h, 56h,0D9h
+    294	042F  D8 87 C4 D8 89 C3			     db	     0D8h, 87h,0C4h,0D8h, 89h,0C3h
+    295	0435  C5 46 C6 86 84 C3			     db	     0C5h, 46h,0C6h, 86h, 84h,0C3h
+    296	043B  56 CC 89 C3 56 CC			     db	      56h,0CCh,	89h,0C3h, 56h,0CCh
+    297	0441  86 C3 56 CC 93 C3			     db	      86h,0C3h,	56h,0CCh, 93h,0C3h
+    298	0447  66 D8 85 84 C3 C7			     db	      66h,0D8h,	85h, 84h,0C3h,0C7h
+    299	044D  C9 C7 CC 89 C3 56			     db	     0C9h,0C7h,0CCh, 89h,0C3h, 56h
+    300	0453  D9 D8 85 C3 46 C9			     db	     0D9h,0D8h,	85h,0C3h, 46h,0C9h
+    301	0459  C7 50 C2 50 C2 C1			     db	     0C7h, 50h,0C2h, 50h,0C2h,0C1h
+    302	045F  C2 60 C2 50 81 C3			     db	     0C2h, 60h,0C2h, 50h, 81h,0C3h
+    303	0465  56 CA 02 18 83 84			     db	      56h,0CAh,	02h, 18h, 83h, 84h
+    304	046B  C3 56 C8 D8 88 C3			     db	     0C3h, 56h,0C8h,0D8h, 88h,0C3h
+    305	0471  46 C6 87 C3 56 D9			     db	      46h,0C6h,	87h,0C3h, 56h,0D9h
+    306	0477  01 18 91 C4 66 CC			     db	      01h, 18h,	91h,0C4h, 66h,0CCh
+    307	047D  85 84 C3 56 02 18			     db	      85h, 84h,0C3h, 56h, 02h, 18h
+    308	0483  87 C3 46 D9 D8 86			     db	      87h,0C3h,	46h,0D9h,0D8h, 86h
+    309	0489  C3 CA C7 C6 CC 93			     db	     0C3h,0CAh,0C7h,0C6h,0CCh, 93h
+    310	048F  C3 66 C6 85 84 C3			     db	     0C3h, 66h,0C6h, 85h, 84h,0C3h
+    311	0495  46 C8 CC 89 C3 C5			     db	      46h,0C8h,0CCh, 89h,0C3h,0C5h
+    312	049B  46 C6 86 C3 46 4B			     db	      46h,0C6h,	86h,0C3h, 46h, 4Bh
+    313	04A1  93 C3 76 01 18 83			     db	      93h,0C3h,	76h, 01h, 18h, 83h
+    314	04A7  84 C3 56 CC 89 C3			     db	      84h,0C3h,	56h,0CCh, 89h,0C3h
+    315	04AD  46 01 18 86 C3 66			     db	      46h, 01h,	18h, 86h,0C3h, 66h
+    316	04B3  01 18 91 C4 66 C8			     db	      01h, 18h,	91h,0C4h, 66h,0C8h
+    317	04B9  02 18 82 84 C3 46			     db	      02h, 18h,	82h, 84h,0C3h, 46h
+    318	04BF  C9 CC 89 C3 56 CC			     db	     0C9h,0CCh,	89h,0C3h, 56h,0CCh
+    319	04C5  86 C4 76 C5 C8 02			     db	      86h,0C4h,	76h,0C5h,0C8h, 02h
+    320	04CB  23 C7 C5 56 C8 E6			     db	      23h,0C7h,0C5h, 56h,0C8h,0E6h
+    321	04D1  01 25 07 07 CB CC			     db	      01h, 25h,	07h, 07h,0CBh,0CCh
+    322	04D7  85 84 C3 56 CC 89			     db	      85h, 84h,0C3h, 56h,0CCh, 89h
+    323	04DD  C4 46 4B D8 85 C4			     db	     0C4h, 46h,	4Bh,0D8h, 85h,0C4h
+    324	04E3  56 C8 56 E3 E4 E3			     db	      56h,0C8h,	56h,0E3h,0E4h,0E3h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 7
+331MP50.asm
+
+
+
+    325	04E9  C8 46 C5 46 01 25			     db	     0C8h, 46h,0C5h, 46h, 01h, 25h
+    326	04EF  E6 C7 C8 05 07 CA			     db	     0E6h,0C7h,0C8h, 05h, 07h,0CAh
+    327	04F5  CC 85 84 C3 56 01			     db	     0CCh, 85h,	84h,0C3h, 56h, 01h
+    328	04FB  18 88 C3 46 CC C7			     db	      18h, 88h,0C3h, 46h,0CCh,0C7h
+    329	0501  86 C3 66 01 18 8D			     db	      86h,0C3h,	66h, 01h, 18h, 8Dh
+    330	0507  C4 C7 CB 05 07 CC			     db	     0C4h,0C7h,0CBh, 05h, 07h,0CCh
+    331	050D  85 84 C3 C7 C8 03			     db	      85h, 84h,0C3h,0C7h,0C8h, 03h
+    332	0513  18 87 C3 46 C8 4B			     db	      18h, 87h,0C3h, 46h,0C8h, 4Bh
+    333	0519  85 C3 C7 C5 46 D8			     db	      85h,0C3h,0C7h,0C5h, 46h,0D8h
+    334	051F  8E C3 66 C5 46 C8			     db	      8Eh,0C3h,	66h,0C5h, 46h,0C8h
+    335	0525  C7 01 18 83 84 C3			     db	     0C7h, 01h,	18h, 83h, 84h,0C3h
+    336	052B  C7 CC 8B C3 C7 CC			     db	     0C7h,0CCh,	8Bh,0C3h,0C7h,0CCh
+    337	0531  C7 87 C3 56 CC 8F			     db	     0C7h, 87h,0C3h, 56h,0CCh, 8Fh
+    338	0537  C4 06 07 C6 86 84			     db	     0C4h, 06h,	07h,0C6h, 86h, 84h
+    339	053D  C3 C7 CC 8B C3 C7			     db	     0C3h,0C7h,0CCh, 8Bh,0C3h,0C7h
+    340	0543  C5 D9 01 18 85 C4			     db	     0C5h,0D9h,	01h, 18h, 85h,0C4h
+    341	0549  56 CC 50 41 40 C2			     db	      56h,0CCh,	50h, 41h, 40h,0C2h
+    342	054F  50 C2 40 81 C3 C7			     db	      50h,0C2h,	40h, 81h,0C3h,0C7h
+    343	0555  C5 05 07 C8 02 18			     db	     0C5h, 05h,	07h,0C8h, 02h, 18h
+    344	055B  82 84 C3 C7 CC 8B			     db	      82h, 84h,0C3h,0C7h,0CCh, 8Bh
+    345	0561  C3 46 CC 87 C4 46			     db	     0C3h, 46h,0CCh, 87h,0C4h, 46h
+    346	0567  C5 CC D8 8E C3 05			     db	     0C5h,0CCh,0D8h, 8Eh,0C3h, 05h
+    347	056D  07 C9 C7 01 18 84			     db	      07h,0C9h,0C7h, 01h, 18h, 84h
+    348	0573  84 C3 46 01 18 89			     db	      84h,0C3h,	46h, 01h, 18h, 89h
+    349	0579  C3 C7 C9 02 18 85			     db	     0C3h,0C7h,0C9h, 02h, 18h, 85h
+    350	057F  C3 46 01 18 85 C4			     db	     0C3h, 46h,	01h, 18h, 85h,0C4h
+    351	0585  C7 88 C3 06 07 CC			     db	     0C7h, 88h,0C3h, 06h, 07h,0CCh
+    352	058B  86 84 C3 C8 03 18			     db	      86h, 84h,0C3h,0C8h, 03h, 18h
+    353	0591  88 C3 46 CC 87 C4			     db	      88h,0C3h,	46h,0CCh, 87h,0C4h
+    354	0597  56 C8 D9 D8 83 C3			     db	      56h,0C8h,0D9h,0D8h, 83h,0C3h
+    355	059D  C7 01 18 86 C3 06			     db	     0C7h, 01h,	18h, 86h,0C3h, 06h
+    356	05A3  07 CC 86 84 C3 CC			     db	      07h,0CCh,	86h, 84h,0C3h,0CCh
+    357	05A9  8C C4 C7 C8 CC 87			     db	      8Ch,0C4h,0C7h,0C8h,0CCh, 87h
+    358	05AF  C3 56 CC 85 C4 46			     db	     0C3h, 56h,0CCh, 85h,0C4h, 46h
+    359	05B5  87 C3 66 C9 46 02			     db	      87h,0C3h,	66h,0C9h, 46h, 02h
+    360	05BB  18 84 84 C3 C7 D8			     db	      18h, 84h,	84h,0C3h,0C7h,0D8h
+    361	05C1  8B C4 C7 89 C3 66			     db	      8Bh,0C4h,0C7h, 89h,0C3h, 66h
+    362	05C7  D8 84 C3 46 01 18			     db	     0D8h, 84h,0C3h, 46h, 01h, 18h
+    363	05CD  85 C4 C7 C8 05 07			     db	      85h,0C4h,0C7h,0C8h, 05h, 07h
+    364	05D3  C6 85 84 C3 CC 8C			     db	     0C6h, 85h,	84h,0C3h,0CCh, 8Ch
+    365	05D9  C3 C8 CC D9 D8 86			     db	     0C3h,0C8h,0CCh,0D9h,0D8h, 86h
+    366	05DF  C4 46 C8 CC 85 C3			     db	     0C4h, 46h,0C8h,0CCh, 85h,0C3h
+    367	05E5  C7 C5 C7 01 18 84			     db	     0C7h,0C5h,0C7h, 01h, 18h, 84h
+    368	05EB  C4 CC C7 CC 66 CA			     db	     0C4h,0CCh,0C7h,0CCh, 66h,0CAh
+    369	05F1  C7 02 18 82 84 C3			     db	     0C7h, 02h,	18h, 82h, 84h,0C3h
+    370	05F7  C7 01 18 8A C4 CC			     db	     0C7h, 01h,	18h, 8Ah,0C4h,0CCh
+    371	05FD  89 C3 C7 CA C7 CC			     db	      89h,0C3h,0C7h,0CAh,0C7h,0CCh
+    372	0603  85 C3 56 8B C3 56			     db	      85h,0C3h,	56h, 8Bh,0C3h, 56h
+    373	0609  86 84 C3 C7 CC 96			     db	      86h, 84h,0C3h,0C7h,0CCh, 96h
+    374	060F  C4 46 CC 86 C3 46			     db	     0C4h, 46h,0CCh, 86h,0C3h, 46h
+    375	0615  C8 C7 8A C3 46 CB			     db	     0C8h,0C7h,	8Ah,0C3h, 46h,0CBh
+    376	061B  C6 85 84 C3 C8 C7			     db	     0C6h, 85h,	84h,0C3h,0C8h,0C7h
+    377	0621  40 C2 60 C2 C1 C2			     db	      40h,0C2h,	60h,0C2h,0C1h,0C2h
+    378	0627  05 01 C2 C1 C2 40			     db	      05h, 01h,0C2h,0C1h,0C2h, 40h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 8
+331MP50.asm
+
+
+
+    379	062D  81 C4 46 CA CC 85			     db	      81h,0C4h,	46h,0CAh,0CCh, 85h
+    380	0633  C3 56 C8 8A C3 56			     db	     0C3h, 56h,0C8h, 8Ah,0C3h, 56h
+    381	0639  C8 D8 84 84 C3 C7			     db	     0C8h,0D8h,	84h, 84h,0C3h,0C7h
+    382	063F  D8 96 C3 66 85 C3			     db	     0D8h, 96h,0C3h, 66h, 85h,0C3h
+    383	0645  C7 C9 46 CC 89 C3			     db	     0C7h,0C9h,	46h,0CCh, 89h,0C3h
+    384	064B  56 C6 85 84 C3 CC			     db	      56h,0C6h,	85h, 84h,0C3h,0CCh
+    385	0651  88 C4 C6 D8 87 C4			     db	      88h,0C4h,0C6h,0D8h, 87h,0C4h
+    386	0657  C6 83 C3 EC 46 C8			     db	     0C6h, 83h,0C3h,0ECh, 46h,0C8h
+    387	065D  D8 84 C4 66 CC 89			     db	     0D8h, 84h,0C4h, 66h,0CCh, 89h
+    388	0663  C3 66 01 18 83 84			     db	     0C3h, 66h,	01h, 18h, 83h, 84h
+    389	0669  C3 CC 01 18 86 C4			     db	     0C3h,0CCh,	01h, 18h, 86h,0C4h
+    390	066F  C6 88 C3 C7 EC 82			     db	     0C6h, 88h,0C3h,0C7h,0ECh, 82h
+    391	0675  01 2C 46 CC 85 C3			     db	      01h, 2Ch,	46h,0CCh, 85h,0C3h
+    392	067B  56 C8 C7 89 C3 46			     db	      56h,0C8h,0C7h, 89h,0C3h, 46h
+    393	0681  CA C6 85 84 C3 D8			     db	     0CAh,0C6h,	85h, 84h,0C3h,0D8h
+    394	0687  88 C3 C8 C6 87 C3			     db	      88h,0C3h,0C8h,0C6h, 87h,0C3h
+    395	068D  01 2C 82 EC 56 86			     db	      01h, 2Ch,	82h,0ECh, 56h, 86h
+    396	0693  C4 66 C6 CC 88 C3			     db	     0C4h, 66h,0C6h,0CCh, 88h,0C3h
+    397	0699  66 C6 84 84 C3 01			     db	      66h,0C6h,	84h, 84h,0C3h, 01h
+    398	069F  18 87 C3 C7 C8 01			     db	      18h, 87h,0C3h,0C7h,0C8h, 01h
+    399	06A5  18 85 C3 EC 05 07			     db	      18h, 85h,0C3h,0ECh, 05h, 07h
+    400	06AB  C9 CC 87 C3 46 C8			     db	     0C9h,0CCh,	87h,0C3h, 46h,0C8h
+    401	06B1  89 C3 C9 C7 CB C8			     db	      89h,0C3h,0C9h,0C7h,0CBh,0C8h
+    402	06B7  01 18 83 84 C3 89			     db	      01h, 18h,	83h, 84h,0C3h, 89h
+    403	06BD  C3 CA C7 C6 86 C3			     db	     0C3h,0CAh,0C7h,0C6h, 86h,0C3h
+    404	06C3  01 2C CA C7 EC 56			     db	      01h, 2Ch,0CAh,0C7h,0ECh, 56h
+    405	06C9  CC 87 C4 56 CC 88			     db	     0CCh, 87h,0C4h, 56h,0CCh, 88h
+    406	06CF  C3 56 01 18 84 8E			     db	     0C3h, 56h,	01h, 18h, 84h, 8Eh
+    407	06D5  C3 56 D8 85 C3 07			     db	     0C3h, 56h,0D8h, 85h,0C3h, 07h
+    408	06DB  07 C8 01 18 85 C3			     db	      07h,0C8h,	01h, 18h, 85h,0C3h
+    409	06E1  C7 CA 46 87 C4 56			     db	     0C7h,0CAh,	46h, 87h,0C4h, 56h
+    410	06E7  CC 86 C2 70 C2 40			     db	     0CCh, 86h,0C2h, 70h,0C2h, 40h
+    411	06ED  C2 40 82 C3 C7 CA			     db	     0C2h, 40h,	82h,0C3h,0C7h,0CAh
+    412	06F3  02 18 84 C3 76 C9			     db	      02h, 18h,	84h,0C3h, 76h,0C9h
+    413	06F9  5B 87 C4 56 C8 01			     db	      5Bh, 87h,0C4h, 56h,0C8h, 01h
+    414	06FF  18 85 C4 46 C8 C7			     db	      18h, 85h,0C4h, 46h,0C8h,0C7h
+    415	0705  40 C2 40 C2 8E C3			     db	      40h,0C2h,	40h,0C2h, 8Eh,0C3h
+    416	070B  46 CC 86 C3 07 07			     db	      46h,0CCh,	86h,0C3h, 07h, 07h
+    417	0711  8A C3 46 C6 86 C4			     db	      8Ah,0C3h,	46h,0C6h, 86h,0C4h
+    418	0717  46 01 18 86 C7 45			     db	      46h, 01h,	18h, 86h,0C7h, 45h
+    419	071D  02 18 88 C3 C7 EC			     db	      02h, 18h,	88h,0C3h,0C7h,0ECh
+    420	0723  C6 86 C3 05 07 C8			     db	     0C6h, 86h,0C3h, 05h, 07h,0C8h
+    421	0729  03 18 87 C3 56 01			     db	      03h, 18h,	87h,0C3h, 56h, 01h
+    422	072F  18 84 C3 56 C6 85			     db	      18h, 84h,0C3h, 56h,0C6h, 85h
+    423	0735  C4 46 C8 56 01 18			     db	     0C4h, 46h,0C8h, 56h, 01h, 18h
+    424	073B  86 C4 EC C7 C8 01			     db	      86h,0C4h,0ECh,0C7h,0C8h, 01h
+    425	0741  18 84 C3 05 07 01			     db	      18h, 84h,0C3h, 05h, 07h, 01h
+    426	0747  18 8A C3				     db	      18h, 8Ah,0C3h
+    427	074A  C7 CA C7 C6 85 C3			     db	     0C7h,0CAh,0C7h,0C6h, 85h,0C3h
+    428	0750  46 C9 C7 01 18 83			     db	      46h,0C9h,0C7h, 01h, 18h, 83h
+    429	0756  C3 66 CA 01 18 87			     db	     0C3h, 66h,0CAh, 01h, 18h, 87h
+    430	075C  EB EC C7 CC 86 C3			     db	     0EBh,0ECh,0C7h,0CCh, 86h,0C3h
+    431	0762  66 CC 8D C4 56 C8			     db	      66h,0CCh,	8Dh,0C4h, 56h,0C8h
+    432	0768  01 18 83 C3 56 CC			     db	      01h, 18h,	83h,0C3h, 56h,0CCh
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 9
+331MP50.asm
+
+
+
+    433	076E  85 C3 76 CC 88 EB			     db	      85h,0C3h,	76h,0CCh, 88h,0EBh
+    434	0774  EC 88 C4 66 CA 02			     db	     0ECh, 88h,0C4h, 66h,0CAh, 02h
+    435	077A  18 8A C4 66 85 C4			     db	      18h, 8Ah,0C4h, 66h, 85h,0C4h
+    436	0780  56 CC 85 C4 C7 CA			     db	      56h,0CCh,	85h,0C4h,0C7h,0CAh
+    437	0786  46 02 18 87 EB EC			     db	      46h, 02h,	18h, 87h,0EBh,0ECh
+    438	078C  88 C4 76 CC 8E C3			     db	      88h,0C4h,	76h,0CCh, 8Eh,0C3h
+    439	0792  CC 86 C3 C7 C8 02			     db	     0CCh, 86h,0C3h,0C7h,0C8h, 02h
+    440	0798  18 84 C4 56 C6 CC			     db	      18h, 84h,0C4h, 56h,0C6h,0CCh
+    441	079E  89 EB EC 88 C3 76			     db	      89h,0EBh,0ECh, 88h,0C3h, 76h
+    442	07A4  CC 8E C3 CC 86 C3			     db	     0CCh, 8Eh,0C3h,0CCh, 86h,0C3h
+    443	07AA  46 CB 02 18 83 C3			     db	      46h,0CBh,	02h, 18h, 83h,0C3h
+    444	07B0  56 C8 02 18 91 C3			     db	      56h,0C8h,	02h, 18h, 91h,0C3h
+    445	07B6  66 C6 8F C3 D8 86			     db	      66h,0C6h,	8Fh,0C3h,0D8h, 86h
+    446	07BC  C3 56 CC 85 C3 56			     db	     0C3h, 56h,0CCh, 85h,0C3h, 56h
+    447	07C2  CC 94 C3 C7 CA 56			     db	     0CCh, 94h,0C3h,0C7h,0CAh, 56h
+    448	07C8  CC 8E C4 87 C3 56			     db	     0CCh, 8Eh,0C4h, 87h,0C3h, 56h
+    449	07CE  CC 85 C3 56 02 18			     db	     0CCh, 85h,0C3h, 56h, 02h, 18h
+    450	07D4  88 EB EC 88 C3 66			     db	      88h,0EBh,0ECh, 88h,0C3h, 66h
+    451	07DA  C8 CC 96 C3 66 85			     db	     0C8h,0CCh,	96h,0C3h, 66h, 85h
+    452	07E0  C3 66 CC 89 EB EC			     db	     0C3h, 66h,0CCh, 89h,0EBh,0ECh
+    453	07E6  88 C3 66 CC 88 C4			     db	      88h,0C3h,	66h,0CCh, 88h,0C4h
+    454	07EC  C6 8D C3 46 C8 01			     db	     0C6h, 8Dh,0C3h, 46h,0C8h, 01h
+    455	07F2  18 84 C3 56 C8 01			     db	      18h, 84h,0C3h, 56h,0C8h, 01h
+    456	07F8  18 88 EB EC 88 C3			     db	      18h, 88h,0EBh,0ECh, 88h,0C3h
+    457	07FE  C5 56 CC 88 C3 C6			     db	     0C5h, 56h,0CCh, 88h,0C3h,0C6h
+    458	0804  8D C3 46 CC 86 C4			     db	      8Dh,0C3h,	46h,0CCh, 86h,0C4h
+    459	080A  66 CC 89 EB EC 88			     db	      66h,0CCh,	89h,0EBh,0ECh, 88h
+    460	0810  C3 56 C6 89 C3 C7			     db	     0C3h, 56h,0C6h, 89h,0C3h,0C7h
+    461	0816  01 18 8B C4 46 01			     db	      01h, 18h,	8Bh,0C4h, 46h, 01h
+    462	081C  18 85				     db	      18h, 85h
+    463	081E			     loc_1:
+    464	081E  C4 56 C6				     les     dx,dword ptr [bp-3Ah]   ; Load seg:offset ptr
+    465	0821  CC				     int     3			     ; Debug breakpoint
+    466	0822  93				     xchg    bx,ax
+    467	0823  C3				     retn
+    468	0824  66 03 18 85 C3 C7			     db	      66h, 03h,	18h, 85h,0C3h,0C7h
+    469	082A  C8 02 18 89 C3 56			     db	     0C8h, 02h,	18h, 89h,0C3h, 56h
+    470	0830  CC 85 C3 46 C9 C7			     db	     0CCh, 85h,0C3h, 46h,0C9h,0C7h
+    471	0836  CC 93 C3 56 C8 02			     db	     0CCh, 93h,0C3h, 56h,0C8h, 02h
+    472	083C  18 86 C3 C7 CC 8C			     db	      18h, 86h,0C3h,0C7h,0CCh, 8Ch
+    473	0842  C3 C7 CA C7 CC 85			     db	     0C3h,0C7h,0CAh,0C7h,0CCh, 85h
+    474	0848  C4 56 CC 8A EB C5			     db	     0C4h, 56h,0CCh, 8Ah,0EBh,0C5h
+    475	084E  88 C3 76 CC 87 C4			     db	      88h,0C3h,	76h,0CCh, 87h,0C4h
+    476	0854  46 01 18 8A C3 56			     db	      46h, 01h,	18h, 8Ah,0C3h, 56h
+    477	085A  D8 85 C3 66 D8 89			     db	     0D8h, 85h,0C3h, 66h,0D8h, 89h
+    478	0860  EB C7 D8 87 C4 56			     db	     0EBh,0C7h,0D8h, 87h,0C4h, 56h
+    479	0866  CA C7 CC 87 C3 C7			     db	     0CAh,0C7h,0CCh, 87h,0C3h,0C7h
+    480	086C  CC 8C C3 56 C8 01			     db	     0CCh, 8Ch,0C3h, 56h,0C8h, 01h
+    481	0872  18 83 C3 56 C6 02			     db	      18h, 83h,0C3h, 56h,0C6h, 02h
+    482	0878  18 87 EB EC C7 C6			     db	      18h, 87h,0EBh,0ECh,0C7h,0C6h
+    483	087E  86 C4 76 CC 87 C3			     db	      86h,0C4h,	76h,0CCh, 87h,0C3h
+    484	0884  C7 02 18 8A C4 46			     db	     0C7h, 02h,	18h, 8Ah,0C4h, 46h
+    485	088A  CB 01 18 84 C3 66			     db	     0CBh, 01h,	18h, 84h,0C3h, 66h
+    486	0890  01 18 88 EB EC C7			     db	      01h, 18h,	88h,0EBh,0ECh,0C7h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 10
+331MP50.asm
+
+
+
+    487	0896  C8 01 18 84 C3 66			     db	     0C8h, 01h,	18h, 84h,0C3h, 66h
+    488	089C  C6 88 C4 46 CA 01			     db	     0C6h, 88h,0C4h, 46h,0CAh, 01h
+    489	08A2  18 89 C4 46 CC 86			     db	      18h, 89h,0C4h, 46h,0CCh, 86h
+    490	08A8  C3 66 CC 89 EB EC			     db	     0C3h, 66h,0CCh, 89h,0EBh,0ECh
+    491	08AE  CA CC 86 C3 66 02			     db	     0CAh,0CCh,	86h,0C3h, 66h, 02h
+    492	08B4  18 86 C4 46 CC 8B			     db	      18h, 86h,0C4h, 46h,0CCh, 8Bh
+    493	08BA  C3 46 CC 86 C3 56			     db	     0C3h, 46h,0CCh, 86h,0C3h, 56h
+    494	08C0  CA CC 89 EB EC C7			     db	     0CAh,0CCh,	89h,0EBh,0ECh,0C7h
+    495	08C6  01 18 85 C4 C7 C9			     db	      01h, 18h,	85h,0C4h,0C7h,0C9h
+    496	08CC  46 C8 02 18 85 C3			     db	      46h,0C8h,	02h, 18h, 85h,0C3h
+    497	08D2  C7 CC 8C C3 46 CC			     db	     0C7h,0CCh,	8Ch,0C3h, 46h,0CCh
+    498	08D8  86 C3 66 C6 D8 88			     db	      86h,0C3h,	66h,0C6h,0D8h, 88h
+    499	08DE  C3 EC C6 87 C3 76			     db	     0C3h,0ECh,0C6h, 87h,0C3h, 76h
+    500	08E4  CC 87 C3 C7 C8 CC			     db	     0CCh, 87h,0C3h,0C7h,0C8h,0CCh
+    501	08EA  8B C3 C7 C6 87 C3			     db	      8Bh,0C3h,0C7h,0C6h, 87h,0C3h
+    502	08F0  C7 C5 56 02 18 81			     db	     0C7h,0C5h,	56h, 02h, 18h, 81h
+    503	08F6  ED 84 C3 EC C7 87			     db	     0EDh, 84h,0C3h,0ECh,0C7h, 87h
+    504	08FC  C3 56 CC 89 C3 46			     db	     0C3h, 56h,0CCh, 89h,0C3h, 46h
+    505	0902  CC 8B C3 C7 CB CC			     db	     0CCh, 8Bh,0C3h,0C7h,0CBh,0CCh
+    506	0908  86 C3 66 C6 02 18			     db	      86h,0C3h,	66h,0C6h, 02h, 18h
+    507	090E  81 EE 84 C4 EC CB			     db	      81h,0EEh,	84h,0C4h,0ECh,0CBh
+    508	0914  C6 86 C3 76 CC 87			     db	     0C6h, 86h,0C3h, 76h,0CCh, 87h
+    509	091A  C3 C7 C6 8C C4 C7			     db	     0C3h,0C7h,0C6h, 8Ch,0C4h,0C7h
+    510	0920  CA C7 D8 85 C4 76			     db	     0CAh,0C7h,0D8h, 85h,0C4h, 76h
+    511	0926  CC 83 EF 84 C4 46			     db	     0CCh, 83h,0EFh, 84h,0C4h, 46h
+    512	092C  CA 02 18 83 C3 56			     db	     0CAh, 02h,	18h, 83h,0C3h, 56h
+    513	0932  C9 C7 CC 87 C3 C7			     db	     0C9h,0C7h,0CCh, 87h,0C3h,0C7h
+    514	0938  CA 02 18 89 C4 46			     db	     0CAh, 02h,	18h, 89h,0C4h, 46h
+    515	093E  C8 01 18 84 C3 76			     db	     0C8h, 01h,	18h, 84h,0C3h, 76h
+    516	0944  D8 83 E7 84 C4 C7			     db	     0D8h, 83h,0E7h, 84h,0C4h,0C7h
+    517	094A  EC C7 01 18 84 C3			     db	     0ECh,0C7h,	01h, 18h, 84h,0C3h
+    518	0950  76 CC 87 C3 C7 02			     db	      76h,0CCh,	87h,0C3h,0C7h, 02h
+    519	0956  18 8A C3 46 01 18			     db	      18h, 8Ah,0C3h, 46h, 01h, 18h
+    520	095C  85 C3 66 CA CC 83			     db	      85h,0C3h,	66h,0CAh,0CCh, 83h
+    521	0962  E8 84 C3 EC C7 C6			     db	     0E8h, 84h,0C3h,0ECh,0C7h,0C6h
+    522	0968  86 C3 C5 56 C8 02			     db	      86h,0C3h,0C5h, 56h,0C8h, 02h
+    523	096E  18 85 C3 C7 CC 8C			     db	      18h, 85h,0C3h,0C7h,0CCh, 8Ch
+    524	0974  C3 C7 CC 87 C3 C5			     db	     0C3h,0C7h,0CCh, 87h,0C3h,0C5h
+    525	097A  66 CC 88 C3 C7 C8			     db	      66h,0CCh,	88h,0C3h,0C7h,0C8h
+    526	0980  C7 D8 85 C3 66 01			     db	     0C7h,0D8h,	85h,0C3h, 66h, 01h
+    527	0986  18 87 C4 C7 CC 8C			     db	      18h, 87h,0C4h,0C7h,0CCh, 8Ch
+    528	098C  C3 C7 CC 87 C3 56			     db	     0C3h,0C7h,0CCh, 87h,0C3h, 56h
+    529	0992  C8 C7 02 18 86 C3			     db	     0C8h,0C7h,	02h, 18h, 86h,0C3h
+    530	0998  EC C7 02 18 84 C3			     db	     0ECh,0C7h,	02h, 18h, 84h,0C3h
+    531	099E  66 CC 88 C4 46 C6			     db	      66h,0CCh,	88h,0C4h, 46h,0C6h
+    532	09A4  8B C3 C7 CB 02 18			     db	      8Bh,0C3h,0C7h,0CBh, 02h, 18h
+    533	09AA  84 C4 C7 C5 46 02			     db	      84h,0C4h,0C7h,0C5h, 46h, 02h
+    534	09B0  18 87 C3 EC C6 87			     db	      18h, 87h,0C3h,0ECh,0C6h, 87h
+    535	09B6  C3 76 03 18 84 C3			     db	     0C3h, 76h,	03h, 18h, 84h,0C3h
+    536	09BC  46 C8 01 18 89 C3			     db	      46h,0C8h,	01h, 18h, 89h,0C3h
+    537	09C2  C7 C8 01 18 85 C3			     db	     0C7h,0C8h,	01h, 18h, 85h,0C3h
+    538	09C8  66 C5 C7 88 C3 C7			     db	      66h,0C5h,0C7h, 88h,0C3h,0C7h
+    539	09CE  C9 4B 85 C3 C7 EC			     db	     0C9h, 4Bh,	85h,0C3h,0C7h,0ECh
+    540	09D4  C7 CA 02 18 86 C3			     db	     0C7h,0CAh,	02h, 18h, 86h,0C3h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 11
+331MP50.asm
+
+
+
+    541	09DA  C7 CA D8 8B C3 C7			     db	     0C7h,0CAh,0D8h, 8Bh,0C3h,0C7h
+    542	09E0  CC 87 C4 76 CC 88			     db	     0CCh, 87h,0C4h, 76h,0CCh, 88h
+    543	09E6  C3 C7 C8 CB 86 C4			     db	     0C3h,0C7h,0C8h,0CBh, 86h,0C4h
+    544	09EC  C7 EC 46 CC 88 C3			     db	     0C7h,0ECh,	46h,0CCh, 88h,0C3h
+    545	09F2  46 CC 8B C4 C9 CC			     db	      46h,0CCh,	8Bh,0C4h,0C9h,0CCh
+    546	09F8  87 C4 76 03 18 85			     db	      87h,0C4h,	76h, 03h, 18h, 85h
+    547	09FE  C3 46 CC 86 C3 C7			     db	     0C3h, 46h,0CCh, 86h,0C3h,0C7h
+    548	0A04  EC 46 CC 88 C3 C7			     db	     0ECh, 46h,0CCh, 88h,0C3h,0C7h
+    549	0A0A  D8 8C C3 C7 CC 01			     db	     0D8h, 8Ch,0C3h,0C7h,0CCh, 01h
+    550	0A10  18 85 C3 66 CA 02			     db	      18h, 85h,0C3h, 66h,0CAh, 02h
+    551	0A16  18 86 C4 C7 CC 87			     db	      18h, 86h,0C4h,0C7h,0CCh, 87h
+    552	0A1C  C3 46 EC C7 01 18			     db	     0C3h, 46h,0ECh,0C7h, 01h, 18h
+    553	0A22  87 C3 C7 CC 8C C4			     db	      87h,0C3h,0C7h,0CCh, 8Ch,0C4h
+    554	0A28  C7 CC 87 C3 05 07			     db	     0C7h,0CCh,	87h,0C3h, 05h, 07h
+    555	0A2E  CC 91 C3 46 EC C7			     db	     0CCh, 91h,0C3h, 46h,0ECh,0C7h
+    556	0A34  C8 02 18 85 C3 D8			     db	     0C8h, 02h,	18h, 85h,0C3h,0D8h
+    557	0A3A  8D C4 C7 CC 87 C3			     db	      8Dh,0C4h,0C7h,0CCh, 87h,0C3h
+    558	0A40  06 07 60 41 50 C2			     db	      06h, 07h,	60h, 41h, 50h,0C2h
+    559	0A46  60 C2 C1 81 C3 76			     db	      60h,0C2h,0C1h, 81h,0C3h, 76h
+    560	0A4C  CC 87 C4 CC 8D C3			     db	     0CCh, 87h,0C4h,0CCh, 8Dh,0C3h
+    561	0A52  C8 C7 01 18 85 C3			     db	     0C8h,0C7h,	01h, 18h, 85h,0C3h
+    562	0A58  05 07 CC 91 C3 56			     db	      05h, 07h,0CCh, 91h,0C3h, 56h
+    563	0A5E  C8 01 18 8F C4 86			     db	     0C8h, 01h,	18h, 8Fh,0C4h, 86h
+    564	0A64  C3 C7 03 18 84 C3			     db	     0C3h,0C7h,	03h, 18h, 84h,0C3h
+    565	0A6A  05 07 02 18 88 C4			     db	      05h, 07h,	02h, 18h, 88h,0C4h
+    566	0A70  C7 D8 84 C3 76 40			     db	     0C7h,0D8h,	84h,0C3h, 76h, 40h
+    567	0A76  C2 C1 C2 40 41 40			     db	     0C2h,0C1h,0C2h, 40h, 41h, 40h
+    568	0A7C  C2 40 82 C4 86 C3			     db	     0C2h, 40h,	82h,0C4h, 86h,0C3h
+    569	0A82  CC 88 C4 76 C8 01			     db	     0CCh, 88h,0C4h, 76h,0C8h, 01h
+    570	0A88  18 89 C3 C7 01 18			     db	      18h, 89h,0C3h,0C7h, 01h, 18h
+    571	0A8E  83 C3 C7 EC 56 C8			     db	      83h,0C3h,0C7h,0ECh, 56h,0C8h
+    572	0A94  01 18 8D C3 86 C3			     db	      01h, 18h,	8Dh,0C3h, 86h,0C3h
+    573	0A9A  CC 88 C3 05 07 CC			     db	     0CCh, 88h,0C3h, 05h, 07h,0CCh
+    574	0AA0  8A C3 C7 C6 83 C4			     db	      8Ah,0C3h,0C7h,0C6h, 83h,0C4h
+    575	0AA6  C7 C5 76 D8 CB C7			     db	     0C7h,0C5h,	76h,0D8h,0CBh,0C7h
+    576	0AAC  01 18 89 C4 C7 CC			     db	      01h, 18h,	89h,0C4h,0C7h,0CCh
+    577	0AB2  85 C4 01 18 87 C3			     db	      85h,0C4h,	01h, 18h, 87h,0C3h
+    578	0AB8  05 07 CC 8A C3 C7			     db	      05h, 07h,0CCh, 8Ah,0C3h,0C7h
+    579	0ABE  C8 C7 D8 81 C3 0A			     db	     0C8h,0C7h,0D8h, 81h,0C3h, 0Ah
+    580	0AC4  07 C8 C7 01 18 86			     db	      07h,0C8h,0C7h, 01h, 18h, 86h
+    581	0ACA  C4 C7 CC 85 C4 89			     db	     0C4h,0C7h,0CCh, 85h,0C4h, 89h
+    582	0AD0  C3 05 07 CC 8A C4			     db	     0C3h, 05h,	07h,0CCh, 8Ah,0C4h
+    583	0AD6  09 07 C9 C7 C8 46			     db	      09h, 07h,0C9h,0C7h,0C8h, 46h
+    584	0ADC  CC C8 46 D8 87 C3			     db	     0CCh,0C8h,	46h,0D8h, 87h,0C3h
+    585	0AE2  C7 C8 D8 8E C4 C7			     db	     0C7h,0C8h,0D8h, 8Eh,0C4h,0C7h
+    586	0AE8  C5 76 03 18 86 C4			     db	     0C5h, 76h,	03h, 18h, 86h,0C4h
+    587	0AEE  09 07 CC 82 C4 CC			     db	      09h, 07h,0CCh, 82h,0C4h,0CCh
+    588	0AF4  C8 D8 46 C8 01 18			     db	     0C8h,0D8h,	46h,0C8h, 01h, 18h
+    589	0AFA  85 C3 C7 CC 8F C3			     db	      85h,0C3h,0C7h,0CCh, 8Fh,0C3h
+    590	0B00  76 C8 C7 02 18 87			     db	      76h,0C8h,0C7h, 02h, 18h, 87h
+    591	0B06  C3 07 07 C8 01 18			     db	     0C3h, 07h,	07h,0C8h, 01h, 18h
+    592	0B0C  86 C4 56 86 C3 46			     db	      86h,0C4h,	56h, 86h,0C3h, 46h
+    593	0B12  03 18 8B C4 C5 76			     db	      03h, 18h,	8Bh,0C4h,0C5h, 76h
+    594	0B18  01 18 89 C3 05 07			     db	      01h, 18h,	89h,0C3h, 05h, 07h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 12
+331MP50.asm
+
+
+
+    595	0B1E  C8 C7 CB 02 18 86			     db	     0C8h,0C7h,0CBh, 02h, 18h, 86h
+    596	0B24  C3 46 D8 85 C4 C7			     db	     0C3h, 46h,0D8h, 85h,0C4h,0C7h
+    597	0B2A  C8 02 18 8C C3 05			     db	     0C8h, 02h,	18h, 8Ch,0C3h, 05h
+    598	0B30  07 CC 8A C3 56 C5			     db	      07h,0CCh,	8Ah,0C3h, 56h,0C5h
+    599	0B36  C7 CC 81 C3 CC 89			     db	     0C7h,0CCh,	81h,0C3h,0CCh, 89h
+    600	0B3C  C3 C6 46 01 18 83			     db	     0C3h,0C6h,	46h, 01h, 18h, 83h
+    601	0B42  C3 46 CC 8E C4 76			     db	     0C3h, 46h,0CCh, 8Eh,0C4h, 76h
+    602	0B48  C6 C8 02 18 87 C3			     db	     0C6h,0C8h,	02h, 18h, 87h,0C3h
+    603	0B4E  56 02 18 8D C3 C7			     db	      56h, 02h,	18h, 8Dh,0C3h,0C7h
+    604	0B54  C6 C8 01 18 82 C3			     db	     0C6h,0C8h,	01h, 18h, 82h,0C3h
+    605	0B5A  C7 01 18 88 C4 45			     db	     0C7h, 01h,	18h, 88h,0C4h, 45h
+    606	0B60  02 23 C7 CC 46 CC			     db	      02h, 23h,0C7h,0CCh, 46h,0CCh
+    607	0B66  56 01 18 87 E1 66			     db	      56h, 01h,	18h, 87h,0E1h, 66h
+    608	0B6C  50 C2 40 C2 40 C2			     db	      50h,0C2h,	40h,0C2h, 40h,0C2h
+    609	0B72  C1 C2 50 81 C3 46			     db	     0C1h,0C2h,	50h, 81h,0C3h, 46h
+    610	0B78  C8 05 07 CC 89 C3			     db	     0C8h, 05h,	07h,0CCh, 89h,0C3h
+    611	0B7E  46 02 23 C7 82 C4			     db	      46h, 02h,	23h,0C7h, 82h,0C4h
+    612	0B84  66 CC 87 E1 C7 C8			     db	      66h,0CCh,	87h,0E1h,0C7h,0C8h
+    613	0B8A  CC CA C7 D8 8F C4			     db	     0CCh,0CAh,0C7h,0D8h, 8Fh,0C4h
+    614	0B90  CC C8 05 07 C8 C7			     db	     0CCh,0C8h,	05h, 07h,0C8h,0C7h
+    615	0B96  02 18 85 C3 C7 C9			     db	      02h, 18h,	85h,0C3h,0C7h,0C9h
+    616	0B9C  C7 EA E9 D9 D8 82			     db	     0C7h,0EAh,0E9h,0D9h,0D8h, 82h
+    617	0BA2  C3 46 CA 02 18 85			     db	     0C3h, 46h,0CAh, 02h, 18h, 85h
+    618	0BA8  E1 76 CC 87 DA DE			     db	     0E1h, 76h,0CCh, 87h,0DAh,0DEh
+    619	0BAE  C6 87 C3 46 C9 56			     db	     0C6h, 87h,0C3h, 46h,0C9h, 56h
+    620	0BB4  CA C7 CC 85 C4 45			     db	     0CAh,0C7h,0CCh, 85h,0C4h, 45h
+    621	0BBA  56 CC 84 82 C3 46			     db	      56h,0CCh,	84h, 82h,0C3h, 46h
+    622	0BC0  01 18 86 E1 C7 C5			     db	      01h, 18h,	86h,0E1h,0C7h,0C5h
+    623	0BC6  66 CC 87 DB DF 46			     db	      66h,0CCh,	87h,0DBh,0DFh, 46h
+    624	0BCC  01 18 84 C4 09 07			     db	      01h, 18h,	84h,0C4h, 09h, 07h
+    625	0BD2  D8 81 C4 C6 C7 C8			     db	     0D8h, 81h,0C4h,0C6h,0C7h,0C8h
+    626	0BD8  56 CC 85 82 C3 46			     db	      56h,0CCh,	85h, 82h,0C3h, 46h
+    627	0BDE  CC 87 C4 05 07 CC			     db	     0CCh, 87h,0C4h, 05h, 07h,0CCh
+    628	0BE4  87 DB DF 46 CC 87			     db	      87h,0DBh,0DFh, 46h,0CCh, 87h
+    629	0BEA  C3 06 07 CC C6 81			     db	     0C3h, 06h,	07h,0CCh,0C6h, 81h
+    630	0BF0  C4 C8 66 C8 02 18			     db	     0C4h,0C8h,	66h,0C8h, 02h, 18h
+    631	0BF6  83 82 C3 46 CC 87			     db	      83h, 82h,0C3h, 46h,0CCh, 87h
+    632	0BFC  C4 06 07 01 18 85			     db	     0C4h, 06h,	07h, 01h, 18h, 85h
+    633	0C02  DB DF C7 C8 CC 01			     db	     0DBh,0DFh,0C7h,0C8h,0CCh, 01h
+    634	0C08  18 85 C4 06 07 CA			     db	      18h, 85h,0C4h, 06h, 07h,0CAh
+    635	0C0E  09 07 C6 84 82 C3			     db	      09h, 07h,0C6h, 84h, 82h,0C3h
+    636	0C14  46 02 18 85 C3 76			     db	      46h, 02h,	18h, 85h,0C3h, 76h
+    637	0C1A  CA 01 18 86 DB DF			     db	     0CAh, 01h,	18h, 86h,0DBh,0DFh
+    638	0C20  46 CC 88 C4 46 C9			     db	      46h,0CCh,	88h,0C4h, 46h,0C9h
+    639	0C26  07 07 CC 05 07 C6			     db	      07h, 07h,0CCh, 05h, 07h,0C6h
+    640	0C2C  83 82 C3 46 CC 02			     db	      83h, 82h,0C3h, 46h,0CCh, 02h
+    641	0C32  18 84 C3 05 07 CC			     db	      18h, 84h,0C3h, 05h, 07h,0CCh
+    642	0C38  87 DD E0 56 CC 88			     db	      87h,0DDh,0E0h, 56h,0CCh, 88h
+    643	0C3E  DB DF 06 07 01 18			     db	     0DBh,0DFh,	06h, 07h, 01h, 18h
+    644	0C44  82 C4 56 C9 CC 01			     db	      82h,0C4h,	56h,0C9h,0CCh, 01h
+    645	0C4A  18 81 82 C3 66 CC			     db	      18h, 81h,	82h,0C3h, 66h,0CCh
+    646	0C50  85 C3 06 07 02 18			     db	      85h,0C3h,	06h, 07h, 02h, 18h
+    647	0C56  85 DB DF 46 C8 01			     db	      85h,0DBh,0DFh, 46h,0C8h, 01h
+    648	0C5C  19 D8 85 DC DF 66			     db	      19h,0D8h,	85h,0DCh,0DFh, 66h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 13
+331MP50.asm
+
+
+
+    649	0C62  CA C5 02 18 83 C4			     db	     0CAh,0C5h,	02h, 18h, 83h,0C4h
+    650	0C68  56 CC 83 82 C4 56			     db	      56h,0CCh,	83h, 82h,0C4h, 56h
+    651	0C6E  CC 86 C3 76 CA C7			     db	     0CCh, 86h,0C3h, 76h,0CAh,0C7h
+    652	0C74  01 18 86 DB DF 66			     db	      01h, 18h,	86h,0DBh,0DFh, 66h
+    653	0C7A  D8 86 DD E0 C7 C9			     db	     0D8h, 86h,0DDh,0E0h,0C7h,0C9h
+    654	0C80  46 CC 88 C3 C7 C8			     db	      46h,0CCh,	88h,0C3h,0C7h,0C8h
+    655	0C86  CC 01 18 81 82 C3			     db	     0CCh, 01h,	18h, 81h, 82h,0C3h
+    656	0C8C  C7 C8 02 18 85 C4			     db	     0C7h,0C8h,	02h, 18h, 85h,0C4h
+    657	0C92  05 07 CC 88 DB DF			     db	      05h, 07h,0CCh, 88h,0DBh,0DFh
+    658	0C98  C9 46 CA C7 01 18			     db	     0C9h, 46h,0CAh,0C7h, 01h, 18h
+    659	0C9E  85 DB DF 76 D8 86			     db	      85h,0DBh,0DFh, 76h,0D8h, 86h
+    660	0CA4  C3 46 01 18 82 82			     db	     0C3h, 46h,	01h, 18h, 82h, 82h
+    661	0CAA  C3 46 01 18 86 C3			     db	     0C3h, 46h,	01h, 18h, 86h,0C3h
+    662	0CB0  06 07 CC 87 DD E0			     db	      06h, 07h,0CCh, 87h,0DDh,0E0h
+    663	0CB6  66 CC 02 18 84 DC			     db	      66h,0CCh,	02h, 18h, 84h,0DCh
+    664	0CBC  DF 66 C8 C7 01 18			     db	     0DFh, 66h,0C8h,0C7h, 01h, 18h
+    665	0CC2  84 C3 C7 CC 84 82			     db	      84h,0C3h,0C7h,0CCh, 84h, 82h
+    666	0CC8  C3 C7 CC 83 ED 84			     db	     0C3h,0C7h,0CCh, 83h,0EDh, 84h
+    667	0CCE  C3 06 07 CC 88 DB			     db	     0C3h, 06h,	07h,0CCh, 88h,0DBh
+    668	0CD4  66 CC 87 DB E0 76			     db	      66h,0CCh,	87h,0DBh,0E0h, 76h
+    669	0CDA  CC 86 C4 C7 CC 84			     db	     0CCh, 86h,0C4h,0C7h,0CCh, 84h
+    670	0CE0  82 C3 46 01 18 81			     db	      82h,0C3h,	46h, 01h, 18h, 81h
+    671	0CE6  EE 84 C3 46 C9 66			     db	     0EEh, 84h,0C3h, 46h,0C9h, 66h
+    672	0CEC  02 18 86 DB 66 D9			     db	      02h, 18h,	86h,0DBh, 66h,0D9h
+    673	0CF2  D8 86 DB DE 66 CC			     db	     0D8h, 86h,0DBh,0DEh, 66h,0CCh
+    674	0CF8  87 C4 C7 01 18 83			     db	      87h,0C4h,0C7h, 01h, 18h, 83h
+    675	0CFE  82 C3 46 CC 82 EF			     db	      82h,0C3h,	46h,0CCh, 82h,0EFh
+    676	0D04  84 C4 76 C8 C7 CC			     db	      84h,0C4h,	76h,0C8h,0C7h,0CCh
+    677	0D0A  88 DB E0 56 C8 02			     db	      88h,0DBh,0E0h, 56h,0C8h, 02h
+    678	0D10  18 84 DB DF C7 C9			     db	      18h, 84h,0DBh,0DFh,0C7h,0C9h
+    679	0D16  46 CC 87 C3 C7 85			     db	      46h,0CCh,	87h,0C3h,0C7h, 85h
+    680	0D1C  82 C3 46 C8 CC 81			     db	      82h,0C3h,	46h,0C8h,0CCh, 81h
+    681	0D22  E7 84 C4 06 07 89			     db	     0E7h, 84h,0C4h, 06h, 07h, 89h
+    682	0D28  DB DE 76 D8 85 DB			     db	     0DBh,0DEh,	76h,0D8h, 85h,0DBh
+    683	0D2E  DF 66 CA D8 86 C3			     db	     0DFh, 66h,0CAh,0D8h, 86h,0C3h
+    684	0D34  C7 CC 84 82 C3 56			     db	     0C7h,0CCh,	84h, 82h,0C3h, 56h
+    685	0D3A  01 18 E8 84 C3 07			     db	      01h, 18h,0E8h, 84h,0C3h, 07h
+    686	0D40  07 88 DB DF 66 CC			     db	      07h, 88h,0DBh,0DFh, 66h,0CCh
+    687	0D46  86 DB DF 76 C8 01			     db	      86h,0DBh,0DFh, 76h,0C8h, 01h
+    688	0D4C  18 84 C3 C7 CA C7			     db	      18h, 84h,0C3h,0C7h,0CAh,0C7h
+    689	0D52  01 18 81 82 C3 56			     db	      01h, 18h,	81h, 82h,0C3h, 56h
+    690	0D58  CC 86 C3 07 07 03			     db	     0CCh, 86h,0C3h, 07h, 07h, 03h
+    691	0D5E  18 84 DB DF 56 CA			     db	      18h, 84h,0DBh,0DFh, 56h,0CAh
+    692	0D64  CC 86 DB DF 66 CC			     db	     0CCh, 86h,0DBh,0DFh, 66h,0CCh
+    693	0D6A  87 C3 C7 CC D8 83			     db	      87h,0C3h,0C7h,0CCh,0D8h, 83h
+    694	0D70  82 C3 46 03 18 84			     db	      82h,0C3h,	46h, 03h, 18h, 84h
+    695	0D76  C3 CA 76 C8 02 18			     db	     0C3h,0CAh,	76h,0C8h, 02h, 18h
+    696	0D7C  86 DB DF 66 CC 86			     db	      86h,0DBh,0DFh, 66h,0CCh, 86h
+    697	0D82  DB DF 66 CC 87 C3			     db	     0DBh,0DFh,	66h,0CCh, 87h,0C3h
+    698	0D88  C7 01 18 83 82 C3			     db	     0C7h, 01h,	18h, 83h, 82h,0C3h
+    699	0D8E  46 02 18 85 C3 05			     db	      46h, 02h,	18h, 85h,0C3h, 05h
+    700	0D94  07 CC 89 DB DF C9			     db	      07h,0CCh,	89h,0DBh,0DFh,0C9h
+    701	0D9A  56 CC 86 DB DF C9			     db	      56h,0CCh,	86h,0DBh,0DFh,0C9h
+    702	0DA0  56 CA C7 01 18 84			     db	      56h,0CAh,0C7h, 01h, 18h, 84h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 14
+331MP50.asm
+
+
+
+    703	0DA6  C3 C7 CC 84 82 C3			     db	     0C3h,0C7h,0CCh, 84h, 82h,0C3h
+    704	0DAC  56 D8 86 C3 66 C9			     db	      56h,0D8h,	86h,0C3h, 66h,0C9h
+    705	0DB2  C7 CC 89 DB DF 56			     db	     0C7h,0CCh,	89h,0DBh,0DFh, 56h
+    706	0DB8  CC 87 DB DF 66 01			     db	     0CCh, 87h,0DBh,0DFh, 66h, 01h
+    707	0DBE  18 86 C3 46 CC 83			     db	      18h, 86h,0C3h, 46h,0CCh, 83h
+    708	0DC4  82 C3 46 CC 87 C4			     db	      82h,0C3h,	46h,0CCh, 87h,0C4h
+    709	0DCA  05 07 CC 89 DB DF			     db	      05h, 07h,0CCh, 89h,0DBh,0DFh
+    710	0DD0  46 EC C7 D9 D8 85			     db	      46h,0ECh,0C7h,0D9h,0D8h, 85h
+    711	0DD6  DB DF 66 CC 87 C4			     db	     0DBh,0DFh,	66h,0CCh, 87h,0C4h
+    712	0DDC  C7 CA 01 18 82 82			     db	     0C7h,0CAh,	01h, 18h, 82h, 82h
+    713	0DE2  C3 C7 CA 02 18 85			     db	     0C3h,0C7h,0CAh, 02h, 18h, 85h
+    714	0DE8  C3 05 07 01 18 88			     db	     0C3h, 05h,	07h, 01h, 18h, 88h
+    715	0DEE  DB DF 46 EC C7 C8			     db	     0DBh,0DFh,	46h,0ECh,0C7h,0C8h
+    716	0DF4  01 18 84 DB DF 66			     db	      01h, 18h,	84h,0DBh,0DFh, 66h
+    717	0DFA  C8 02 18 84 C4 46			     db	     0C8h, 02h,	18h, 84h,0C4h, 46h
+    718	0E00  CC 83 82 C3 46 01			     db	     0CCh, 83h,	82h,0C3h, 46h, 01h
+    719	0E06  18 86 C3 C8 CC 56			     db	      18h, 86h,0C3h,0C8h,0CCh, 56h
+    720	0E0C  C8 C7 02 18 86 DB			     db	     0C8h,0C7h,	02h, 18h, 86h,0DBh
+    721	0E12  E0 46 EC C7 CC 86			     db	     0E0h, 46h,0ECh,0C7h,0CCh, 86h
+    722	0E18  DB DF 76 C5 D8 85			     db	     0DBh,0DFh,	76h,0C5h,0D8h, 85h
+    723	0E1E  C3 C7 CC 84 82 C3			     db	     0C3h,0C7h,0CCh, 84h, 82h,0C3h
+    724	0E24  46 D8 87 C4 CC 82			     db	      46h,0D8h,	87h,0C4h,0CCh, 82h
+    725	0E2A  C3 46 D8 89 DB DE			     db	     0C3h, 46h,0D8h, 89h,0DBh,0DEh
+    726	0E30  46 EC CC 87 DB E0			     db	      46h,0ECh,0CCh, 87h,0DBh,0E0h
+    727	0E36  76 CC 86 C3 CC C7			     db	      76h,0CCh,	86h,0C3h,0CCh,0C7h
+    728	0E3C  CC 83 82 C4 56 01			     db	     0CCh, 83h,	82h,0C4h, 56h, 01h
+    729	0E42  18 8A C3 C7 CC 89			     db	      18h, 8Ah,0C3h,0C7h,0CCh, 89h
+    730	0E48  DB DF C9 C7 EC 02			     db	     0DBh,0DFh,0C9h,0C7h,0ECh, 02h
+    731	0E4E  18 85 DB DE 05 07			     db	      18h, 85h,0DBh,0DEh, 05h, 07h
+    732	0E54  01 18 84 C3 46 CC			     db	      01h, 18h,	84h,0C3h, 46h,0CCh
+    733	0E5A  83 82 C3 66 40 C2			     db	      83h, 82h,0C3h, 66h, 40h,0C2h
+    734	0E60  C1 C2 50 C2 C1 81			     db	     0C1h,0C2h,	50h,0C2h,0C1h, 81h
+    735	0E66  C3 46 89 DB DF 56			     db	     0C3h, 46h,	89h,0DBh,0DFh, 56h
+    736	0E6C  CA 02 18 84 DB DF			     db	     0CAh, 02h,	18h, 84h,0DBh,0DFh
+    737	0E72  76 CA C7 01 18 83			     db	      76h,0CAh,0C7h, 01h, 18h, 83h
+    738	0E78  C3 C7 CA 01 18 82			     db	     0C3h,0C7h,0CAh, 01h, 18h, 82h
+    739	0E7E  82 C3 C7 CC C8 02			     db	      82h,0C3h,0C7h,0CCh,0C8h, 02h
+    740	0E84  18 89 C4 C7 C8 04			     db	      18h, 89h,0C4h,0C7h,0C8h, 04h
+    741	0E8A  18 84 DB DF 66 CC			     db	      18h, 84h,0DBh,0DFh, 66h,0CCh
+    742	0E90  86 DB DF 76 C5 D8			     db	      86h,0DBh,0DFh, 76h,0C5h,0D8h
+    743	0E96  85 C3 46 CC 83 82			     db	      85h,0C3h,	46h,0CCh, 83h, 82h
+    744	0E9C  C3 C7 C8 46 01 18			     db	     0C3h,0C7h,0C8h, 46h, 01h, 18h
+    745	0EA2  89 DA DF C7 02 18			     db	      89h,0DAh,0DFh,0C7h, 02h, 18h
+    746	0EA8  86 DB DF 66 CC 86			     db	      86h,0DBh,0DFh, 66h,0CCh, 86h
+    747	0EAE  DB DF 76 CC 86 C4			     db	     0DBh,0DFh,	76h,0CCh, 86h,0C4h
+    748	0EB4  C7 CC C8 D8 82 82			     db	     0C7h,0CCh,0C8h,0D8h, 82h, 82h
+    749	0EBA  C4 56 01 18 8A DC			     db	     0C4h, 56h,	01h, 18h, 8Ah,0DCh
+    750	0EC0  DF C7 C8 D8 87 DB			     db	     0DFh,0C7h,0C8h,0D8h, 87h,0DBh
+    751	0EC6  DF 56 C6 CC 86 DB			     db	     0DFh, 56h,0C6h,0CCh, 86h,0DBh
+    752	0ECC  DF 05 07 01 18 84			     db	     0DFh, 05h,	07h, 01h, 18h, 84h
+    753	0ED2  C3 46 D8 C7 82 81			     db	     0C3h, 46h,0D8h,0C7h, 82h, 81h
+    754	0ED8  C4 66 CC 8B DB DF			     db	     0C4h, 66h,0CCh, 8Bh,0DBh,0DFh
+    755	0EDE  C7 CC 88 DB DF 66			     db	     0C7h,0CCh,	88h,0DBh,0DFh, 66h
+    756	0EE4  01 18 85 DB DF C9			     db	      01h, 18h,	85h,0DBh,0DFh,0C9h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 15
+331MP50.asm
+
+
+
+    757	0EEA  66 C8 C7 D8 84 C3			     db	      66h,0C8h,0C7h,0D8h, 84h,0C3h
+    758	0EF0  56 CA C7 C6 46 C5			     db	      56h,0CAh,0C7h,0C6h, 46h,0C5h
+    759	0EF6  66 01 18 89 DB DF			     db	      66h, 01h,	18h, 89h,0DBh,0DFh
+    760	0EFC  C9 CC 88 DB DF 46			     db	     0C9h,0CCh,	88h,0DBh,0DFh, 46h
+    761	0F02  C8 01 18 86 DB DF			     db	     0C8h, 01h,	18h, 86h,0DBh,0DFh
+    762	0F08  56 CC C7 C5 D8 85			     db	      56h,0CCh,0C7h,0C5h,0D8h, 85h
+    763	0F0E  C3 46 C5 56 06 07			     db	     0C3h, 46h,0C5h, 56h, 06h, 07h
+    764	0F14  C8 CA 02 18 86 DB			     db	     0C8h,0CAh,	02h, 18h, 86h,0DBh
+    765	0F1A  E0 C7 CC 88 DB DF			     db	     0E0h,0C7h,0CCh, 88h,0DBh,0DFh
+    766	0F20  76 D8 85 DB DF 56			     db	      76h,0D8h,	85h,0DBh,0DFh, 56h
+    767	0F26  01 18 87 C3 C7 C8			     db	      01h, 18h,	87h,0C3h,0C7h,0C8h
+    768	0F2C  66 08 07 01 18 87			     db	      66h, 08h,	07h, 01h, 18h, 87h
+    769	0F32  DB DE C7 02 18 86			     db	     0DBh,0DEh,0C7h, 02h, 18h, 86h
+    770	0F38  DB DF 66 C6 86 DB			     db	     0DBh,0DFh,	66h,0C6h, 86h,0DBh
+    771	0F3E  DF 46 C1 41 40 C2			     db	     0DFh, 46h,0C1h, 41h, 40h,0C2h
+    772	0F44  50 81 C3 46 CC 81			     db	      50h, 81h,0C3h, 46h,0CCh, 81h
+    773	0F4A  C3 C5 06 07 CC 8A			     db	     0C3h,0C5h,	06h, 07h,0CCh, 8Ah
+    774	0F50  DB DF C7 C6 88 DB			     db	     0DBh,0DFh,0C7h,0C6h, 88h,0DBh
+    775	0F56  DF C7 C9 C6 C8 C6			     db	     0DFh,0C7h,0C9h,0C6h,0C8h,0C6h
+    776	0F5C  86 DB DF 56 01 18			     db	      86h,0DBh,0DFh, 56h, 01h, 18h
+    777	0F62  87 C4 CC 83 C4 C7			     db	      87h,0C4h,0CCh, 83h,0C4h,0C7h
+    778	0F68  C4 06 07 CC 89 DB			     db	     0C4h, 06h,	07h,0CCh, 89h,0DBh
+    779	0F6E  DF C7 C8 02 18 85			     db	     0DFh,0C7h,0C8h, 02h, 18h, 85h
+    780	0F74  DB DF 56 45 86 DB			     db	     0DBh,0DFh,	56h, 45h, 86h,0DBh
+    781	0F7A  DF 56 50 C2 40 C2			     db	     0DFh, 56h,	50h,0C2h, 40h,0C2h
+    782	0F80  40 87 C3 07 07 03			     db	      40h, 87h,0C3h, 07h, 07h, 03h
+    783	0F86  18 85 DB DF C9 C7			     db	      18h, 85h,0DBh,0DFh,0C9h,0C7h
+    784	0F8C  D8 87 DB DF 56 4B			     db	     0D8h, 87h,0DBh,0DFh, 56h, 4Bh
+    785	0F92  86 DB DF 46 C8 01			     db	      86h,0DBh,0DFh, 46h,0C8h, 01h
+    786	0F98  18 8E C3 76 CC C8			     db	      18h, 8Eh,0C3h, 76h,0CCh,0C8h
+    787	0F9E  CC 01 18 87 DB DF			     db	     0CCh, 01h,	18h, 87h,0DBh,0DFh
+    788	0FA4  C7 CC 88 DB DF 56			     db	     0C7h,0CCh,	88h,0DBh,0DFh, 56h
+    789	0FAA  C6 87 DB DF 66 C1			     db	     0C6h, 87h,0DBh,0DFh, 66h,0C1h
+    790	0FB0  C2 40 C2 C1 C2 C1			     db	     0C2h, 40h,0C2h,0C1h,0C2h,0C1h
+    791	0FB6  87 C4 06 07 CC 89			     db	      87h,0C4h,	06h, 07h,0CCh, 89h
+    792	0FBC  DD E0 C7 01 18 87			     db	     0DDh,0E0h,0C7h, 01h, 18h, 87h
+    793	0FC2  DB DF C9 46 01 18			     db	     0DBh,0DFh,0C9h, 46h, 01h, 18h
+    794	0FC8  86 DB DF C7 CC CA			     db	      86h,0DBh,0DFh,0C7h,0CCh,0CAh
+    795	0FCE  D9 01 18 8D C3 06			     db	     0D9h, 01h,	18h, 8Dh,0C3h, 06h
+    796	0FD4  07 CC 95 DB DF 66			     db	      07h,0CCh,	95h,0DBh,0DFh, 66h
+    797	0FDA  01 18 85 DB DF 56			     db	      01h, 18h,	85h,0DBh,0DFh, 56h
+    798	0FE0  C2 40 C2 50 C2 C1			     db	     0C2h, 40h,0C2h, 50h,0C2h,0C1h
+    799	0FE6  87 C3 C7 C5 76 CC			     db	      87h,0C3h,0C7h,0C5h, 76h,0CCh
+    800	0FEC  40 C2 60 C2 40 C2			     db	      40h,0C2h,	60h,0C2h, 40h,0C2h
+    801	0FF2  50 C2 C1 C2 C1 C2			     db	      50h,0C2h,0C1h,0C2h,0C1h,0C2h
+    802	0FF8  C1 81 DB DF 66 C6			     db	     0C1h, 81h,0DBh,0DFh, 66h,0C6h
+    803	0FFE  86 DB DF 46 C8 D8			     db	      86h,0DBh,0DFh, 46h,0C8h,0D8h
+    804	1004  8F C3 06 07 96 DD			     db	      8Fh,0C3h,	06h, 07h, 96h,0DDh
+    805	100A  DF 46 C6 CA D9 01			     db	     0DFh, 46h,0C6h,0CAh,0D9h, 01h
+    806	1010  18 84 DD E0 CC C7			     db	      18h, 84h,0DDh,0E0h,0CCh,0C7h
+    807	1016  C1 C2 60 41 40 87			     db	     0C1h,0C2h,	60h, 41h, 40h, 87h
+    808	101C  C3 07 07 02 18 86			     db	     0C3h, 07h,	07h, 02h, 18h, 86h
+    809	1022  DA DE 46 02 18 85			     db	     0DAh,0DEh,	46h, 02h, 18h, 85h
+    810	1028  C4 76 C6 9B C3 C5			     db	     0C4h, 76h,0C6h, 9Bh,0C3h,0C5h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 16
+331MP50.asm
+
+
+
+    811	102E  05 07 CA C7 02 18			     db	      05h, 07h,0CAh,0C7h, 02h, 18h
+    812	1034  85 DB E0 66 01 18			     db	      85h,0DBh,0E0h, 66h, 01h, 18h
+    813	103A  82 C3 07 07 C1 C2			     db	      82h,0C3h,	07h, 07h,0C1h,0C2h
+    814	1040  40 41 40 C2 70 C2			     db	      40h, 41h,	40h,0C2h, 70h,0C2h
+    815	1046  C1 8B C3 06 07 CC			     db	     0C1h, 8Bh,0C3h, 06h, 07h,0CCh
+    816	104C  89 DB DE 05 07 01			     db	      89h,0DBh,0DEh, 05h, 07h, 01h
+    817	1052  18 C3 06 07 C8 02			     db	      18h,0C3h,	06h, 07h,0C8h, 02h
+    818	1058  18 98 C3 07 07 01			     db	      18h, 98h,0C3h, 07h, 07h, 01h
+    819	105E  18 87 DB DF C7 C9			     db	      18h, 87h,0DBh,0DFh,0C7h,0C9h
+    820	1064  76 01 18 C7 CA 66			     db	      76h, 01h,	18h,0C7h,0CAh, 66h
+    821	106A  CA C7 C6 9A C3 66			     db	     0CAh,0C7h,0C6h, 9Ah,0C3h, 66h
+    822	1070  C9 C7 CC C8 C7 88			     db	     0C9h,0C7h,0CCh,0C8h,0C7h, 88h
+    823	1076  DB DF 0D 07 EC 66			     db	     0DBh,0DFh,	0Dh, 07h,0ECh, 66h
+    824	107C  02 18 96 C4 05 07			     db	      02h, 18h,	96h,0C4h, 05h, 07h
+    825	1082  5B 02 18 85 DB DF			     db	      5Bh, 02h,	18h, 85h,0DBh,0DFh
+    826	1088  05 07 CC 06 07 EC			     db	      05h, 07h,0CCh, 06h, 07h,0ECh
+    827	108E  56 C6 C8 46 D8 95			     db	      56h,0C6h,0C8h, 46h,0D8h, 95h
+    828	1094  C3 76 CC 8B DB DF			     db	     0C3h, 76h,0CCh, 8Bh,0DBh,0DFh
+    829	109A  C9 56 C8 CC C8 06			     db	     0C9h, 56h,0C8h,0CCh,0C8h, 06h
+    830	10A0  07 EC 66 C8 CA CC			     db	      07h,0ECh,	66h,0C8h,0CAh,0CCh
+    831	10A6  66 01 18 90 C3 06			     db	      66h, 01h,	18h, 90h,0C3h, 06h
+    832	10AC  07 8A DB E0 05 07			     db	      07h, 8Ah,0DBh,0E0h, 05h, 07h
+    833	10B2  01 18 C3 C7 C8 46			     db	      01h, 18h,0C3h,0C7h,0C8h, 46h
+    834	10B8  EC 56 C8 CC C7 D9			     db	     0ECh, 56h,0C8h,0CCh,0C7h,0D9h
+    835	10BE  46 01 18 93 C3 76			     db	      46h, 01h,	18h, 93h,0C3h, 76h
+    836	10C4  CA CC 03 18 86 DB			     db	     0CAh,0CCh,	03h, 18h, 86h,0DBh
+    837	10CA  DE 76 CC 82 C4 56			     db	     0DEh, 76h,0CCh, 82h,0C4h, 56h
+    838	10D0  CA EC 56 D9 01 18			     db	     0CAh,0ECh,	56h,0D9h, 01h, 18h
+    839	10D6  8E C4 89 C3 C7 C5			     db	      8Eh,0C4h,	89h,0C3h,0C7h,0C5h
+    840	10DC  56 CC C8 02 18 87			     db	      56h,0CCh,0C8h, 02h, 18h, 87h
+    841	10E2  DB E0 66 CB CC 83			     db	     0DBh,0E0h,	66h,0CBh,0CCh, 83h
+    842	10E8  C3 CC 46 EC 66 C1			     db	     0C3h,0CCh,	46h,0ECh, 66h,0C1h
+    843	10EE  C2 40 C2 40 41 40			     db	     0C2h, 40h,0C2h, 40h, 41h, 40h
+    844	10F4  C2 50 81 C4 C7 D8			     db	     0C2h, 50h,	81h,0C4h,0C7h,0D8h
+    845	10FA  87 C4 66 C8 4B 8A			     db	      87h,0C4h,	66h,0C8h, 4Bh, 8Ah
+    846	1100  DB DF 66 C8 02 18			     db	     0DBh,0DFh,	66h,0C8h, 02h, 18h
+    847	1106  83 C4 46 EC C7 CA			     db	      83h,0C4h,	46h,0ECh,0C7h,0CAh
+    848	110C  D8 90 C3 46 01 18			     db	     0D8h, 90h,0C3h, 46h, 01h, 18h
+    849	1112  85 C4 C7 4B D8 CC			     db	      85h,0C4h,0C7h, 4Bh,0D8h,0CCh
+    850	1118  02 18 89 DB DF C7			     db	      02h, 18h,	89h,0DBh,0DFh,0C7h
+    851	111E  EC 46 02 18 84 C4			     db	     0ECh, 46h,	02h, 18h, 84h,0C4h
+    852	1124  76 02 18 84 C4 C7			     db	      76h, 02h,	18h, 84h,0C4h,0C7h
+    853	112A  01 18 86 C3 C8 C7			     db	      01h, 18h,	86h,0C3h,0C8h,0C7h
+    854	1130  02 18 84 92 DB DE			     db	      02h, 18h,	84h, 92h,0DBh,0DEh
+    855	1136  C7 EC C7 CC 87 C3			     db	     0C7h,0ECh,0C7h,0CCh, 87h,0C3h
+    856	113C  66 CC 87 C3 C7 C6			     db	      66h,0CCh,	87h,0C3h,0C7h,0C6h
+    857	1142  01 18 85 C3 C7 CC			     db	      01h, 18h,	85h,0C3h,0C7h,0CCh
+    858	1148  87 40 C2 C1 C2 50			     db	      87h, 40h,0C2h,0C1h,0C2h, 50h
+    859	114E  C2 C1 C2 50 C2 40			     db	     0C2h,0C1h,0C2h, 50h,0C2h, 40h
+    860	1154  81 DB DF 56 01 18			     db	      81h,0DBh,0DFh, 56h, 01h, 18h
+    861	115A  86 C3 C5 56 D9 01			     db	      86h,0C3h,0C5h, 56h,0D9h, 01h
+    862	1160  18 85 C3 C5 C7 C8			     db	      18h, 85h,0C3h,0C5h,0C7h,0C8h
+    863	1166  D8 85 C3 C5 46 40			     db	     0D8h, 85h,0C3h,0C5h, 46h, 40h
+    864	116C  41 40 92 DB DF 56			     db	      41h, 40h,	92h,0DBh,0DFh, 56h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 17
+331MP50.asm
+
+
+
+    865	1172  C8 02 18 84 C3 66			     db	     0C8h, 02h,	18h, 84h,0C3h, 66h
+    866	1178  CC 87 C4 46 CC 86			     db	     0CCh, 87h,0C4h, 46h,0CCh, 86h
+    867	117E  C3 46 C8 01 18 84			     db	     0C3h, 46h,0C8h, 01h, 18h, 84h
+    868	1184  92 DB DE C7 C9 CB			     db	      92h,0DBh,0DEh,0C7h,0C9h,0CBh
+    869	118A  CC 87 C3 66 CC 87			     db	     0CCh, 87h,0C3h, 66h,0CCh, 87h
+    870	1190  C3 46 CC 86 C3 76			     db	     0C3h, 46h,0CCh, 86h,0C3h, 76h
+    871	1196  01 18 82 92 DB E0			     db	      01h, 18h,	82h, 92h,0DBh,0E0h
+    872	119C  56 CC 87 C4 46 C5			     db	      56h,0CCh,	87h,0C4h, 46h,0C5h
+    873	11A2  C7 CC 87 C4 C7 CC			     db	     0C7h,0CCh,	87h,0C4h,0C7h,0CCh
+    874	11A8  C8 01 18 84 C4 46			     db	     0C8h, 01h,	18h, 84h,0C4h, 46h
+    875	11AE  C5 C8 46 02 18 92			     db	     0C5h,0C8h,	46h, 02h, 18h, 92h
+    876	11B4  DB DF 46 C8 CC 87			     db	     0DBh,0DFh,	46h,0C8h,0CCh, 87h
+    877	11BA  C3 C5 56 01 18 86			     db	     0C3h,0C5h,	56h, 01h, 18h, 86h
+    878	11C0  C3 C7 C8 01 18 85			     db	     0C3h,0C7h,0C8h, 01h, 18h, 85h
+    879	11C6  C3 C7 4B 02 18 83			     db	     0C3h,0C7h,	4Bh, 02h, 18h, 83h
+    880	11CC  92 DB DF 56 CC 87			     db	      92h,0DBh,0DFh, 56h,0CCh, 87h
+    881	11D2  C3 56 D9 02 18 85			     db	     0C3h, 56h,0D9h, 02h, 18h, 85h
+    882	11D8  C3 46 CC 86 C3 C7			     db	     0C3h, 46h,0CCh, 86h,0C3h,0C7h
+    883	11DE  CC C8 C7 85 92 DB			     db	     0CCh,0C8h,0C7h, 85h, 92h,0DBh
+    884	11E4  DF 46 CA 01 18 86			     db	     0DFh, 46h,0CAh, 01h, 18h, 86h
+    885	11EA  C4 66 CC 87 C3 46			     db	     0C4h, 66h,0CCh, 87h,0C3h, 46h
+    886	11F0  CC 86 C3 56 01 18			     db	     0CCh, 86h,0C3h, 56h, 01h, 18h
+    887	11F6  84 92 DC DF C9 C7			     db	      84h, 92h,0DCh,0DFh,0C9h,0C7h
+    888	11FC  CC 88 DA DF 56 CC			     db	     0CCh, 88h,0DAh,0DFh, 56h,0CCh
+    889	1202  87 C3 56 01 18 84			     db	      87h,0C3h,	56h, 01h, 18h, 84h
+    890	1208  C3 C5 01 18 86 92			     db	     0C3h,0C5h,	01h, 18h, 86h, 92h
+    891	120E  DD DF 66 02 18 84			     db	     0DDh,0DFh,	66h, 02h, 18h, 84h
+    892	1214  DB DF CA C7 C6 88			     db	     0DBh,0DFh,0CAh,0C7h,0C6h, 88h
+    893	121A  C4 46 CA 02 18 83			     db	     0C4h, 46h,0CAh, 02h, 18h, 83h
+    894	1220  C3 C7 CC 87 92 C4			     db	     0C3h,0C7h,0CCh, 87h, 92h,0C4h
+    895	1226  56 C8 C7 01 18 85			     db	      56h,0C8h,0C7h, 01h, 18h, 85h
+    896	122C  DB E0 56 C6 87 DA			     db	     0DBh,0E0h,	56h,0C6h, 87h,0DAh
+    897	1232  DF 46 01 18 84 C4			     db	     0DFh, 46h,	01h, 18h, 84h,0C4h
+    898	1238  4B 87 92 C3 66 CC			     db	      4Bh, 87h,	92h,0C3h, 66h,0CCh
+    899	123E  87 DB DE 66 D9 01			     db	      87h,0DBh,0DEh, 66h,0D9h, 01h
+    900	1244  18 84 DB DF CA 01			     db	      18h, 84h,0DBh,0DFh,0CAh, 01h
+    901	124A  18 8F 41 60 C2 50			     db	      18h, 8Fh,	41h, 60h,0C2h, 50h
+    902	1250  C2 50 C2 40 81 C3			     db	     0C2h, 50h,0C2h, 40h, 81h,0C3h
+    903	1256  56 CC 88 DB DF C9			     db	      56h,0CCh,	88h,0DBh,0DFh,0C9h
+    904	125C  C7 C8 01 18 86 DB			     db	     0C7h,0C8h,	01h, 18h, 86h,0DBh
+    905	1262  DF 46 50 C2 40 C2			     db	     0DFh, 46h,	50h,0C2h, 40h,0C2h
+    906	1268  40 C2 50 C2 40 92			     db	      40h,0C2h,	50h,0C2h, 40h, 92h
+    907	126E  C4 C5 56 CC 87 DB			     db	     0C4h,0C5h,	56h,0CCh, 87h,0DBh
+    908	1274  DF 56 CC 87 DB DF			     db	     0DFh, 56h,0CCh, 87h,0DBh,0DFh
+    909	127A  56 01 18 8D 82 C4			     db	      56h, 01h,	18h, 8Dh, 82h,0C4h
+    910	1280  45 8E C3 C8 46 CA			     db	      45h, 8Eh,0C3h,0C8h, 46h,0CAh
+    911	1286  01 18 85 DB DF 46			     db	      01h, 18h,	85h,0DBh,0DFh, 46h
+    912	128C  C6 88 DB DF C9 46			     db	     0C6h, 88h,0DBh,0DFh,0C9h, 46h
+    913	1292  CA 02 18 8B 82 C4			     db	     0CAh, 02h,	18h, 8Bh, 82h,0C4h
+    914	1298  47 C6 8D C4 C6 56			     db	      47h,0C6h,	8Dh,0C4h,0C6h, 56h
+    915	129E  02 18 84 DB DF C7			     db	      02h, 18h,	84h,0DBh,0DFh,0C7h
+    916	12A4  CA C7 C6 01 18 85			     db	     0CAh,0C7h,0C6h, 01h, 18h, 85h
+    917	12AA  DB DF 76 CA 03 18			     db	     0DBh,0DFh,	76h,0CAh, 03h, 18h
+    918	12B0  88 82 C3 46 C6 01			     db	      88h, 82h,0C3h, 46h,0C6h, 01h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 18
+331MP50.asm
+
+
+
+    919	12B6  18 8B DB DF 46 CC			     db	      18h, 8Bh,0DBh,0DFh, 46h,0CCh
+    920	12BC  87 DD DE 56 CC C7			     db	      87h,0DDh,0DEh, 56h,0CCh,0C7h
+    921	12C2  02 18 83 DB DF 07			     db	      02h, 18h,	83h,0DBh,0DFh, 07h
+    922	12C8  07 C8 01 18 87 82			     db	      07h,0C8h,	01h, 18h, 87h, 82h
+    923	12CE  C3 56 C8 C7 01 18			     db	     0C3h, 56h,0C8h,0C7h, 01h, 18h
+    924	12D4  89 DB DF C6 C7 CC			     db	      89h,0DBh,0DFh,0C6h,0C7h,0CCh
+    925	12DA  87 C3 56 C8 01 18			     db	      87h,0C3h,	56h,0C8h, 01h, 18h
+    926	12E0  86 DB DF 0B 07 02			     db	      86h,0DBh,0DFh, 0Bh, 07h, 02h
+    927	12E6  18 83 82 C3 C7 CB			     db	      18h, 83h,	82h,0C3h,0C7h,0CBh
+    928	12EC  CC C7 CC 8B DD E0			     db	     0CCh,0C7h,0CCh, 8Bh,0DDh,0E0h
+    929	12F2  C6 C7 01 18 86 C3			     db	     0C6h,0C7h,	01h, 18h, 86h,0C3h
+    930	12F8  C7 CC C8 02 18 86			     db	     0C7h,0CCh,0C8h, 02h, 18h, 86h
+    931	12FE  DB DF 56 C9 C7 4B			     db	     0DBh,0DFh,	56h,0C9h,0C7h, 4Bh
+    932	1304  76 C8 02 18 82 82			     db	      76h,0C8h,	02h, 18h, 82h, 82h
+    933	130A  DA DF CC 01 18 8D			     db	     0DAh,0DFh,0CCh, 01h, 18h, 8Dh
+    934	1310  DB DF CB 46 01 18			     db	     0DBh,0DFh,0CBh, 46h, 01h, 18h
+    935	1316  84 C4 C7 C8 D8 89			     db	      84h,0C4h,0C7h,0C8h,0D8h, 89h
+    936	131C  DB DF C9 56 D8 82			     db	     0DBh,0DFh,0C9h, 56h,0D8h, 82h
+    937	1322  C4 CC 76 C8 01 18			     db	     0C4h,0CCh,	76h,0C8h, 01h, 18h
+    938	1328  81 82 DB E0 46 C8			     db	      81h, 82h,0DBh,0E0h, 46h,0C8h
+    939	132E  C6 D8 8B DD E0 CC			     db	     0C6h,0D8h,	8Bh,0DDh,0E0h,0CCh
+    940	1334  88 C4 CC 01 18 89			     db	      88h,0C4h,0CCh, 01h, 18h, 89h
+    941	133A  DB DF 56 01 18 83			     db	     0DBh,0DFh,	56h, 01h, 18h, 83h
+    942	1340  C4 46 C5 46 D8 83			     db	     0C4h, 46h,0C5h, 46h,0D8h, 83h
+    943	1346  82 DB DE 46 C6 C8			     db	      82h,0DBh,0DEh, 46h,0C6h,0C8h
+    944	134C  45 A2 DB DF 46 CC			     db	      45h,0A2h,0DBh,0DFh, 46h,0CCh
+    945	1352  85 C4 56 CC 85 82			     db	      85h,0C4h,	56h,0CCh, 85h, 82h
+    946	1358  DB DF 46 CB C6 47			     db	     0DBh,0DFh,	46h,0CBh,0C6h, 47h
+    947	135E  4B 40 41 60 C2 40			     db	      4Bh, 40h,	41h, 60h,0C2h, 40h
+    948	1364  C2 C1 C2 40 41 40			     db	     0C2h,0C1h,0C2h, 40h, 41h, 40h
+    949	136A  C2 C1 C2 50 C2 40			     db	     0C2h,0C1h,0C2h, 50h,0C2h, 40h
+    950	1370  C2 C1 81 DB DF 46			     db	     0C2h,0C1h,	81h,0DBh,0DFh, 46h
+    951	1376  CC 85 C3 76 D8 83			     db	     0CCh, 85h,0C3h, 76h,0D8h, 83h
+    952	137C  82 DB DF C7 CA C7			     db	      82h,0DBh,0DFh,0C7h,0CAh,0C7h
+    953	1382  CB 01 18 A2 DB DF			     db	     0CBh, 01h,	18h,0A2h,0DBh,0DFh
+    954	1388  56 D8 84 C3 56 C8			     db	      56h,0D8h,	84h,0C3h, 56h,0C8h
+    955	138E  D8 D9 D8 82 82 DB			     db	     0D8h,0D9h,0D8h, 82h, 82h,0DBh
+    956	1394  E0 46 C6 8C DA DE			     db	     0E0h, 46h,0C6h, 8Ch,0DAh,0DEh
+    957	139A  C6 8B C4 45 88 DB			     db	     0C6h, 8Bh,0C4h, 45h, 88h,0DBh
+    958	13A0  E0 46 C8 01 18 83			     db	     0E0h, 46h,0C8h, 01h, 18h, 83h
+    959	13A6  C3 C5 56 D9 84 82			     db	     0C3h,0C5h,	56h,0D9h, 84h, 82h
+    960	13AC  DB DE C7 C8 C6 8C			     db	     0DBh,0DEh,0C7h,0C8h,0C6h, 8Ch
+    961	13B2  DB DF C7 C6 8A C4			     db	     0DBh,0DFh,0C7h,0C6h, 8Ah,0C4h
+    962	13B8  46 45 86 DB DE 46			     db	      46h, 45h,	86h,0DBh,0DEh, 46h
+    963	13BE  D8 85 C3 66 CC 84			     db	     0D8h, 85h,0C3h, 66h,0CCh, 84h
+    964	13C4  82 DD DF C7 C6 C8			     db	      82h,0DDh,0DFh,0C7h,0C6h,0C8h
+    965	13CA  C6 8B DB DF C9 CC			     db	     0C6h, 8Bh,0DBh,0DFh,0C9h,0CCh
+    966	13D0  02 18 87 C3 C7 C6			     db	      02h, 18h,	87h,0C3h,0C7h,0C6h
+    967	13D6  81 CC C8 46 45 66			     db	      81h,0CCh,0C8h, 46h, 45h, 66h
+    968	13DC  CC 86 C3 56 C6 85			     db	     0CCh, 86h,0C3h, 56h,0C6h, 85h
+    969	13E2  82 C3 76 02 18 88			     db	      82h,0C3h,	76h, 02h, 18h, 88h
+    970	13E8  DC DF C7 D8 8A C3			     db	     0DCh,0DFh,0C7h,0D8h, 8Ah,0C3h
+    971	13EE  CC 81 5B C8 46 C9			     db	     0CCh, 81h,	5Bh,0C8h, 46h,0C9h
+    972	13F4  76 01 18 84 C3 66			     db	      76h, 01h,	18h, 84h,0C3h, 66h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 19
+331MP50.asm
+
+
+
+    973	13FA  D9 01 18 82 82 C3			     db	     0D9h, 01h,	18h, 82h, 82h,0C3h
+    974	1400  66 CC 8B DB DF C7			     db	      66h,0CCh,	8Bh,0DBh,0DFh,0C7h
+    975	1406  C6 8A C3 46 45 C8			     db	     0C6h, 8Ah,0C3h, 46h, 45h,0C8h
+    976	140C  66 4B C8 C7 CC 86			     db	      66h, 4Bh,0C8h,0C7h,0CCh, 86h
+    977	1412  C4 46 C8 01 18 84			     db	     0C4h, 46h,0C8h, 01h, 18h, 84h
+    978	1418  81 CD CE D6 56 01			     db	      81h,0CDh,0CEh,0D6h, 56h, 01h
+    979	141E  18 89 DA DE 46 01			     db	      18h, 89h,0DAh,0DEh, 46h, 01h
+    980	1424  18 88 E1 C7 4B 82			     db	      18h, 88h,0E1h,0C7h, 4Bh, 82h
+    981	142A  C4 44 CC C7 C8 56			     db	     0C4h, 44h,0CCh,0C7h,0C8h, 56h
+    982	1430  CC 86 C4 56 CC 85			     db	     0CCh, 86h,0C4h, 56h,0CCh, 85h
+    983	1436  81 D0 D1 D6 C9 CA			     db	      81h,0D0h,0D1h,0D6h,0C9h,0CAh
+    984	143C  C7 C8 01 18 88 DB			     db	     0C7h,0C8h,	01h, 18h, 88h,0DBh
+    985	1442  DF C7 CC 89 E1 56			     db	     0DFh,0C7h,0CCh, 89h,0E1h, 56h
+    986	1448  C6 87 C3 56 CC 86			     db	     0C6h, 87h,0C3h, 56h,0CCh, 86h
+    987	144E  C3 56 CC 85 82 D7			     db	     0C3h, 56h,0CCh, 85h, 82h,0D7h
+    988	1454  D2 66 C8 C7 01 18			     db	     0D2h, 66h,0C8h,0C7h, 01h, 18h
+    989	145A  86 DB DF CA C6 88			     db	      86h,0DBh,0DFh,0CAh,0C6h, 88h
+    990	1460  E1 66 CC 01 18 85			     db	     0E1h, 66h,0CCh, 01h, 18h, 85h
+    991	1466  C3 56 01 18 85 C3			     db	     0C3h, 56h,	01h, 18h, 85h,0C3h
+    992	146C  66 01 18 83 82 D4			     db	      66h, 01h,	18h, 83h, 82h,0D4h
+    993	1472  D6 56 CA CC 89 DB			     db	     0D6h, 56h,0CAh,0CCh, 89h,0DBh
+    994	1478  DF C7 CC 01 18 85			     db	     0DFh,0C7h,0CCh, 01h, 18h, 85h
+    995	147E  E1 56 C8 C7 CC 87			     db	     0E1h, 56h,0C8h,0C7h,0CCh, 87h
+    996	1484  C3 56 C8 01 18 84			     db	     0C3h, 56h,0C8h, 01h, 18h, 84h
+    997	148A  C4 66 CC 84 82 C3			     db	     0C4h, 66h,0CCh, 84h, 82h,0C3h
+    998	1490  66 D8 8A DB DF C7			     db	      66h,0D8h,	8Ah,0DBh,0DFh,0C7h
+    999	1496  CB D8 86 C4 66 C6			     db	     0CBh,0D8h,	86h,0C4h, 66h,0C6h
+   1000	149C  88 C4 56 CC 86 C4			     db	      88h,0C4h,	56h,0CCh, 86h,0C4h
+   1001	14A2  56 C6 85 82 C3 56			     db	      56h,0C6h,	85h, 82h,0C3h, 56h
+   1002	14A8  C8 02 18 88 C4 46			     db	     0C8h, 02h,	18h, 88h,0C4h, 46h
+   1003	14AE  45 86 C4 46 C6 C8			     db	      45h, 86h,0C4h, 46h,0C6h,0C8h
+   1004	14B4  C6 88 C3 56 D8 86			     db	     0C6h, 88h,0C3h, 56h,0D8h, 86h
+   1005	14BA  C3 66 02 18 82 82			     db	     0C3h, 66h,	02h, 18h, 82h, 82h
+   1006	14C0  C3 66 CC 8A C3 46			     db	     0C3h, 66h,0CCh, 8Ah,0C3h, 46h
+   1007	14C6  4B 01 18 84 C4 C5			     db	      4Bh, 01h,	18h, 84h,0C4h,0C5h
+   1008	14CC  46 C6 C8 C6 01 18			     db	      46h,0C6h,0C8h,0C6h, 01h, 18h
+   1009	14D2  85 C3 46 CC 87 C4			     db	      85h,0C3h,	46h,0CCh, 87h,0C4h
+   1010	14D8  56 CA D9 D8 83 82			     db	      56h,0CAh,0D9h,0D8h, 83h, 82h
+   1011	14DE  C3 56 CA CC 8A C3			     db	     0C3h, 56h,0CAh,0CCh, 8Ah,0C3h
+   1012	14E4  C9 C7 CC D8 86 C4			     db	     0C9h,0C7h,0CCh,0D8h, 86h,0C4h
+   1013	14EA  66 4B 87 C4 46 C6			     db	      66h, 4Bh,	87h,0C4h, 46h,0C6h
+   1014	14F0  87 C3 66 CC 84 82			     db	      87h,0C3h,	66h,0CCh, 84h, 82h
+   1015	14F6  C3 56 01 18 8A C3			     db	     0C3h, 56h,	01h, 18h, 8Ah,0C3h
+   1016	14FC  46 CC 87 C3 56 CC			     db	      46h,0CCh,	87h,0C3h, 56h,0CCh
+   1017	1502  01 18 87 C4 46 CA			     db	      01h, 18h,	87h,0C4h, 46h,0CAh
+   1018	1508  01 18 85 C3 66 01			     db	      01h, 18h,	85h,0C3h, 66h, 01h
+   1019	150E  18 83 82 C3 56 C6			     db	      18h, 83h,	82h,0C3h, 56h,0C6h
+   1020	1514  8B C3 46 C6 87 C3			     db	      8Bh,0C3h,	46h,0C6h, 87h,0C3h
+   1021	151A  46 C8 C6 89 C3 56			     db	      46h,0C8h,0C6h, 89h,0C3h, 56h
+   1022	1520  CA 02 18 83 C3 C9			     db	     0CAh, 02h,	18h, 83h,0C3h,0C9h
+   1023	1526  56 CC 84 82 C3 66			     db	      56h,0CCh,	84h, 82h,0C3h, 66h
+   1024	152C  03 18 87 C3 46 CC			     db	      03h, 18h,	87h,0C3h, 46h,0CCh
+   1025	1532  D8 86 C4 46 C6 C8			     db	     0D8h, 86h,0C4h, 46h,0C6h,0C8h
+   1026	1538  C6 88 C3 56 CC 01			     db	     0C6h, 88h,0C3h, 56h,0CCh, 01h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 20
+331MP50.asm
+
+
+
+   1027	153E  18 84 C3 56 CA CC			     db	      18h, 84h,0C3h, 56h,0CAh,0CCh
+   1028	1544  84 82 C3 C7 C9 C7			     db	      84h, 82h,0C3h,0C7h,0C9h,0C7h
+   1029	154A  02 18 89 C3 46 CB			     db	      02h, 18h,	89h,0C3h, 46h,0CBh
+   1030	1550  D9 01 18 84 C4 66			     db	     0D9h, 01h,	18h, 84h,0C4h, 66h
+   1031	1556  C6 02 18 85 C3 46			     db	     0C6h, 02h,	18h, 85h,0C3h, 46h
+   1032	155C  CC 87 C3 56 C6 85			     db	     0CCh, 87h,0C3h, 56h,0C6h, 85h
+   1033	1562  82 C3 56 CC 8B C4			     db	      82h,0C3h,	56h,0CCh, 8Bh,0C4h
+   1034	1568  C7 C9 C6 88 C4 C5			     db	     0C7h,0C9h,0C6h, 88h,0C4h,0C5h
+   1035	156E  46 4B D8 86 C3 C7			     db	      46h, 4Bh,0D8h, 86h,0C3h,0C7h
+   1036	1574  C8 C7 01 18 85 C3			     db	     0C8h,0C7h,	01h, 18h, 85h,0C3h
+   1037	157A  66 CC 84 82 C3 56			     db	      66h,0CCh,	84h, 82h,0C3h, 56h
+   1038	1580  CC 8B DA DF C7 CC			     db	     0CCh, 8Bh,0DAh,0DFh,0C7h,0CCh
+   1039	1586  01 18 86 C4 46 CC			     db	      01h, 18h,	86h,0C4h, 46h,0CCh
+   1040	158C  89 C3 46 01 18 86			     db	      89h,0C3h,	46h, 01h, 18h, 86h
+   1041	1592  C3 56 C6 CC 84 82			     db	     0C3h, 56h,0C6h,0CCh, 84h, 82h
+   1042	1598  C3 46 CA C7 02 18			     db	     0C3h, 46h,0CAh,0C7h, 02h, 18h
+   1043	159E  88 DB E0 C7 CC 88			     db	      88h,0DBh,0E0h,0C7h,0CCh, 88h
+   1044	15A4  C4 46 01 18 88 C3			     db	     0C4h, 46h,	01h, 18h, 88h,0C3h
+   1045	15AA  46 CC 87 C3 66 CC			     db	      46h,0CCh,	87h,0C3h, 66h,0CCh
+   1046	15B0  84 82 C3 56 02 18			     db	      84h, 82h,0C3h, 56h, 02h, 18h
+   1047	15B6  89 DB DE C7 C6 88			     db	      89h,0DBh,0DEh,0C7h,0C6h, 88h
+   1048	15BC  C3 46 C6 89 C4 46			     db	     0C3h, 46h,0C6h, 89h,0C4h, 46h
+   1049	15C2  CC 87 C3 56 C8 02			     db	     0CCh, 87h,0C3h, 56h,0C8h, 02h
+   1050	15C8  18 82 82 C3 46 CC			     db	      18h, 82h,	82h,0C3h, 46h,0CCh
+   1051	15CE  8C DB DE 46 D9 01			     db	      8Ch,0DBh,0DEh, 46h,0D9h, 01h
+   1052	15D4  18 85 C3 C7 C6 8A			     db	      18h, 85h,0C3h,0C7h,0C6h, 8Ah
+   1053	15DA  C3 46 CA 01 18 85			     db	     0C3h, 46h,0CAh, 01h, 18h, 85h
+   1054	15E0  C3 66 01 18 83 82			     db	     0C3h, 66h,	01h, 18h, 83h, 82h
+   1055	15E6  C3 56 01 18 8A DB			     db	     0C3h, 56h,	01h, 18h, 8Ah,0DBh
+   1056	15EC  E0 C7 CA CC 87 C3			     db	     0E0h,0C7h,0CAh,0CCh, 87h,0C3h
+   1057	15F2  C7 45 89 C4 C9 46			     db	     0C7h, 45h,	89h,0C4h,0C9h, 46h
+   1058	15F8  C6 86 C4 66 CC 84			     db	     0C6h, 86h,0C4h, 66h,0CCh, 84h
+   1059	15FE  82 C3 46 C6 8C DC			     db	      82h,0C3h,	46h,0C6h, 8Ch,0DCh
+   1060	1604  DE 46 01 18 86 C3			     db	     0DEh, 46h,	01h, 18h, 86h,0C3h
+   1061	160A  46 C6 01 18 87 C3			     db	      46h,0C6h,	01h, 18h, 87h,0C3h
+   1062	1610  66 01 18 84 C4 66			     db	      66h, 01h,	18h, 84h,0C4h, 66h
+   1063	1616  01 18 83 82 C3 46			     db	      01h, 18h,	83h, 82h,0C3h, 46h
+   1064	161C  CC 8C DD DF C7 C5			     db	     0CCh, 8Ch,0DDh,0DFh,0C7h,0C5h
+   1065	1622  C7 02 18 84 C4 46			     db	     0C7h, 02h,	18h, 84h,0C4h, 46h
+   1066	1628  CC 89 C3 46 C8 01			     db	     0CCh, 89h,0C3h, 46h,0C8h, 01h
+   1067	162E  18 85 C3 66 D9 01			     db	      18h, 85h,0C3h, 66h,0D9h, 01h
+   1068	1634  18 82 82 C3 46 CC			     db	      18h, 82h,	82h,0C3h, 46h,0CCh
+   1069	163A  8B CD D7 46 4B 87			     db	      8Bh,0CDh,0D7h, 46h, 4Bh, 87h
+   1070	1640  C3 C7 C6 8A C4 46			     db	     0C3h,0C7h,0C6h, 8Ah,0C4h, 46h
+   1071	1646  CC 87 C3 46 CA D9			     db	     0CCh, 87h,0C3h, 46h,0CAh,0D9h
+   1072	164C  01 18 83 82 C3 C7			     db	      01h, 18h,	83h, 82h,0C3h,0C7h
+   1073	1652  C9 CC 8B D0 D7 46			     db	     0C9h,0CCh,	8Bh,0D0h,0D7h, 46h
+   1074	1658  89 C4 46 C6 89 C4			     db	      89h,0C4h,	46h,0C6h, 89h,0C4h
+   1075	165E  C7 CA 01 18 86 C3			     db	     0C7h,0CAh,	01h, 18h, 86h,0C3h
+   1076	1664  66 CC 84 82 C3 56			     db	      66h,0CCh,	84h, 82h,0C3h, 56h
+   1077	166A  01 18 89 D3 D6 56			     db	      01h, 18h,	89h,0D3h,0D6h, 56h
+   1078	1670  D9 01 18 85 C3 C5			     db	     0D9h, 01h,	18h, 85h,0C3h,0C5h
+   1079	1676  46 01 18 92 C4 56			     db	      46h, 01h,	18h, 92h,0C4h, 56h
+   1080	167C  CA 85 82 C3 46 CC			     db	     0CAh, 85h,	82h,0C3h, 46h,0CCh
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 21
+331MP50.asm
+
+
+
+   1081	1682  02 18 89 C4 46 CC			     db	      02h, 18h,	89h,0C4h, 46h,0CCh
+   1082	1688  88 C3 56 40 C2 40			     db	      88h,0C3h,	56h, 40h,0C2h, 40h
+   1083	168E  41 40 C2 40 C2 50			     db	      41h, 40h,0C2h, 40h,0C2h, 50h
+   1084	1694  C2 40 81 C3 66 CC			     db	     0C2h, 40h,	81h,0C3h, 66h,0CCh
+   1085	169A  84 82 C3 46 CA D8			     db	      84h, 82h,0C3h, 46h,0CAh,0D8h
+   1086	16A0  8B C4 46 C6 88 C4			     db	      8Bh,0C4h,	46h,0C6h, 88h,0C4h
+   1087	16A6  46 CC 94 C3 66 CC			     db	      46h,0CCh,	94h,0C3h, 66h,0CCh
+   1088	16AC  84 82 C3 46 CC 8B			     db	      84h, 82h,0C3h, 46h,0CCh, 8Bh
+   1089	16B2  CE D6 56 C6 D8 86			     db	     0CEh,0D6h,	56h,0C6h,0D8h, 86h
+   1090	16B8  C4 CC 87 C4 46 45			     db	     0C4h,0CCh,	87h,0C4h, 46h, 45h
+   1091	16BE  8A C3 C9 C7 CC C8			     db	      8Ah,0C3h,0C9h,0C7h,0CCh,0C8h
+   1092	16C4  02 18 82 82 C3 46			     db	      02h, 18h,	82h, 82h,0C3h, 46h
+   1093	16CA  CC 8A CD D1 D6 76			     db	     0CCh, 8Ah,0CDh,0D1h,0D6h, 76h
+   1094	16D0  01 18 8D C3 C7 C5			     db	      01h, 18h,	8Dh,0C3h,0C7h,0C5h
+   1095	16D6  56 02 18 86 C3 66			     db	      56h, 02h,	18h, 86h,0C3h, 66h
+   1096	16DC  D9 D8 83 82 C3 46			     db	     0D9h,0D8h,	83h, 82h,0C3h, 46h
+   1097	16E2  CC 8A D0 D1 D2 56			     db	     0CCh, 8Ah,0D0h,0D1h,0D2h, 56h
+   1098	16E8  C8 CC 50 41 50 41			     db	     0C8h,0CCh,	50h, 41h, 50h, 41h
+   1099	16EE  40 C2 C1 81 C4 76			     db	      40h,0C2h,0C1h, 81h,0C4h, 76h
+   1100	16F4  C8 C7 01 18 85 C3			     db	     0C8h,0C7h,	01h, 18h, 85h,0C3h
+   1101	16FA  66 CC 84 82 C3 46			     db	      66h,0CCh,	84h, 82h,0C3h, 46h
+   1102	1700  01 18 89 D3 D7 D6			     db	      01h, 18h,	89h,0D3h,0D7h,0D6h
+   1103	1706  56 CC 90 C3 05 07			     db	      56h,0CCh,	90h,0C3h, 05h, 07h
+   1104	170C  CC 87 C3 46 CC CA			     db	     0CCh, 87h,0C3h, 46h,0CCh,0CAh
+   1105	1712  01 18 83 82 C3 46			     db	      01h, 18h,	83h, 82h,0C3h, 46h
+   1106	1718  CC 8B D4 C4 C7 D6			     db	     0CCh, 8Bh,0D4h,0C4h,0C7h,0D6h
+   1107	171E  C7 CB C6 01 18 8D			     db	     0C7h,0CBh,0C6h, 01h, 18h, 8Dh
+   1108	1724  C3 05 07 CA 02 18			     db	     0C3h, 05h,	07h,0CAh, 02h, 18h
+   1109	172A  84 C4 56 01 18 84			     db	      84h,0C4h,	56h, 01h, 18h, 84h
+   1110	1730  82 C3 56 02 18 89			     db	      82h,0C3h,	56h, 02h, 18h, 89h
+   1111	1736  C4 46 CC 91 C3 C5			     db	     0C4h, 46h,0CCh, 91h,0C3h,0C5h
+   1112	173C  56 C9 46 01 18 85			     db	      56h,0C9h,	46h, 01h, 18h, 85h
+   1113	1742  C3 C7 C8 D8 86 82			     db	     0C3h,0C7h,0C8h,0D8h, 86h, 82h
+   1114	1748  C3 46 CA C7 03 18			     db	     0C3h, 46h,0CAh,0C7h, 03h, 18h
+   1115	174E  87 C3 D6 46 91 C4			     db	      87h,0C3h,0D6h, 46h, 91h,0C4h
+   1116	1754  4B 66 CC 87 C3 C7			     db	      4Bh, 66h,0CCh, 87h,0C3h,0C7h
+   1117	175A  02 18 85 82 C3 66			     db	      02h, 18h,	85h, 82h,0C3h, 66h
+   1118	1760  D8 8A C4 66 01 18			     db	     0D8h, 8Ah,0C4h, 66h, 01h, 18h
+   1119	1766  91 C4 56 88 C4 CC			     db	      91h,0C4h,	56h, 88h,0C4h,0CCh
+   1120	176C  88 82 C3 56 C8 CC			     db	      88h, 82h,0C3h, 56h,0C8h,0CCh
+   1121	1772  8A C3 66 C8 C6 91			     db	      8Ah,0C3h,	66h,0C8h,0C6h, 91h
+   1122	1778  C3 C7 C8 C7 02 18			     db	     0C3h,0C7h,0C8h,0C7h, 02h, 18h
+   1123	177E  8F 82 C3 66 CC 8A			     db	      8Fh, 82h,0C3h, 66h,0CCh, 8Ah
+   1124	1784  C4 05 07 C6 01 18			     db	     0C4h, 05h,	07h,0C6h, 01h, 18h
+   1125	178A  8E C3 56 CC 91 82			     db	      8Eh,0C3h,	56h,0CCh, 91h, 82h
+   1126	1790  C3 76 CC 89 C3 06			     db	     0C3h, 76h,0CCh, 89h,0C3h, 06h
+   1127	1796  07 45 03 18 8A C3			     db	      07h, 45h,	03h, 18h, 8Ah,0C3h
+   1128	179C  46 C8 CC 86 C3 C7			     db	      46h,0C8h,0CCh, 86h,0C3h,0C7h
+   1129	17A2  02 18 86 82 C4 66			     db	      02h, 18h,	86h, 82h,0C4h, 66h
+   1130	17A8  CA CC 89 C3 56 C5			     db	     0CAh,0CCh,	89h,0C3h, 56h,0C5h
+   1131	17AE  09 07 D8 D9 01 18			     db	      09h, 07h,0D8h,0D9h, 01h, 18h
+   1132	17B4  85 C4 66 02 18 83			     db	      85h,0C4h,	66h, 02h, 18h, 83h
+   1133	17BA  C3 46 D9 87 83 C4			     db	     0C3h, 46h,0D9h, 87h, 83h,0C4h
+   1134	17C0  66 01 18 88 C3 08			     db	      66h, 01h,	18h, 88h,0C3h, 08h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 22
+331MP50.asm
+
+
+
+   1135	17C6  07 D8 46 02 18 88			     db	      07h,0D8h,	46h, 02h, 18h, 88h
+   1136	17CC  C3 46 CC 02 18 84			     db	     0C3h, 46h,0CCh, 02h, 18h, 84h
+   1137	17D2  C3 C7 C9 C7 02 18			     db	     0C3h,0C7h,0C9h,0C7h, 02h, 18h
+   1138	17D8  84 83 C4 76 02 18			     db	      84h, 83h,0C4h, 76h, 02h, 18h
+   1139	17DE  86 C3 66 C9 CB CC			     db	      86h,0C3h,	66h,0C9h,0CBh,0CCh
+   1140	17E4  90 C3 46 C6 87 C3			     db	      90h,0C3h,	46h,0C6h, 87h,0C3h
+   1141	17EA  56 C8 C7 D8 84 2D			     db	      56h,0C8h,0C7h,0D8h, 84h, 2Dh
+   1142	17F0  00 31 3C 00 35 3F			     db	      00h, 31h,	3Ch, 00h, 35h, 3Fh
+   1143	17F6  00 35 42 00 35 FF			     db	      00h, 35h,	42h, 00h, 35h,0FFh
+   1144	17FC  FF FF FF 53 80 2F			     db	     0FFh,0FFh,0FFh, 53h, 80h, 2Fh
+   1145	1802  4C 00 5A 00 64 80			     db	      4Ch, 00h,	5Ah, 00h, 64h, 80h
+   1146	1808  AF 5D 00 6B 00 FF			     db	     0AFh, 5Dh,	00h, 6Bh, 00h,0FFh
+   1147	180E  FF 09 00 19 C2 0C			     db	     0FFh, 09h,	00h, 19h,0C2h, 0Ch
+   1148	1814  09 00 19 00 FF FF			     db	      09h, 00h,	19h, 00h,0FFh,0FFh
+   1149	181A  FF 19 00 0E C2 0A			     db	     0FFh, 19h,	00h, 0Eh,0C2h, 0Ah
+   1150	1820  2F 00 0E 00 FF FF			     db	      2Fh, 00h,	0Eh, 00h,0FFh,0FFh
+   1151	1826  FF 58 00 22 C3 0C			     db	     0FFh, 58h,	00h, 22h,0C3h, 0Ch
+   1152	182C  58 00 22 00 FF FF			     db	      58h, 00h,	22h, 00h,0FFh,0FFh
+   1153	1832  FF 5E 00 0A 80 85			     db	     0FFh, 5Eh,	00h, 0Ah, 80h, 85h
+   1154	1838  04 00 FF 00 FF FF			     db	      04h, 00h,0FFh, 00h,0FFh,0FFh
+   1155	183E  FF 64 00 3B C4 0C			     db	     0FFh, 64h,	00h, 3Bh,0C4h, 0Ch
+   1156	1844  64 00 3B 00 FF FF			     db	      64h, 00h,	3Bh, 00h,0FFh,0FFh
+   1157	184A  FF 83 00 09 C0 85			     db	     0FFh, 83h,	00h, 09h,0C0h, 85h
+   1158	1850  08 01 FF 00 FF FF			     db	      08h, 01h,0FFh, 00h,0FFh,0FFh
+   1159	1856  FF 83 00 35 42 0C			     db	     0FFh, 83h,	00h, 35h, 42h, 0Ch
+   1160	185C  83 00 35 00 23 00			     db	      83h, 00h,	35h, 00h, 23h, 00h
+   1161	1862  80 8D 00 3E C2 0C			     db	      80h, 8Dh,	00h, 3Eh,0C2h, 0Ch
+   1162	1868  8D 00 3E 00 FF FF			     db	      8Dh, 00h,	3Eh, 00h,0FFh,0FFh
+   1163	186E  FF CE 00 27 C4 0C			     db	     0FFh,0CEh,	00h, 27h,0C4h, 0Ch
+   1164	1874  CE 00 27 00 FF FF			     db	     0CEh, 00h,	27h, 00h,0FFh,0FFh
+   1165	187A  FF FF FF 22 00 80			     db	     0FFh,0FFh,0FFh, 22h, 00h, 80h
+   1166	1880  12 D9 00 FF 1D D9			     db	      12h,0D9h,	00h,0FFh, 1Dh,0D9h
+   1167	1886  FF FF FF FF 22 00			     db	     0FFh,0FFh,0FFh,0FFh, 22h, 00h
+   1168	188C  40 2B DA 00 00 FF			     db	      40h, 2Bh,0DAh, 00h, 00h,0FFh
+   1169	1892  FF 22 00 20 E2 DA			     db	     0FFh, 22h,	00h, 20h,0E2h,0DAh
+   1170	1898  00 FF ED DA FF FF			     db	      00h,0FFh,0EDh,0DAh,0FFh,0FFh
+   1171	189E  FF FF 22 00 10 C2			     db	     0FFh,0FFh,	22h, 00h, 10h,0C2h
+   1172	18A4  DB 00 FF CD DB FF			     db	     0DBh, 00h,0FFh,0CDh,0DBh,0FFh
+   1173	18AA  FF FF FF 22 00 08			     db	     0FFh,0FFh,0FFh, 22h, 00h, 08h
+   1174	18B0  D2 DB 00 FF DD DB			     db	     0D2h,0DBh,	00h,0FFh,0DDh,0DBh
+   1175	18B6  FF FF FF FF 22 00			     db	     0FFh,0FFh,0FFh,0FFh, 22h, 00h
+   1176	18BC  04 22 DC 00 FF 2D			     db	      04h, 22h,0DCh, 00h,0FFh, 2Dh
+   1177	18C2  DC FF FF FF FF 22			     db	     0DCh,0FFh,0FFh,0FFh,0FFh, 22h
+   1178	18C8  00 02 52 DC 00 FF			     db	      00h, 02h,	52h,0DCh, 00h,0FFh
+   1179	18CE  5D DC FF FF FF FF			     db	      5Dh,0DCh,0FFh,0FFh,0FFh,0FFh
+   1180	18D4  22 00 01 82 DC 00			     db	      22h, 00h,	01h, 82h,0DCh, 00h
+   1181	18DA  FF 8D DC FF FF FF			     db	     0FFh, 8Dh,0DCh,0FFh,0FFh,0FFh
+   1182	18E0  FF 23 00 80 56 D8			     db	     0FFh, 23h,	00h, 80h, 56h,0D8h
+   1183	18E6  C2 0C FF FF FF FF			     db	     0C2h, 0Ch,0FFh,0FFh,0FFh,0FFh
+   1184	18EC  16 AF 02 11			     db	      16h,0AFh,	02h, 11h
+   1185	18F0  43 61 76 65 72 6E	20+		     db	     'Cavern of	Corroer'
+   1186	      6F 66 20 43 6F 72	72+
+   1187	      6F 65 72
+   1188	1901  11 00 04 08 08 03			     db	      11h, 00h,	04h, 08h, 08h, 03h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 23
+331MP50.asm
+
+
+
+   1189	1907  00 2F FF 04 00 00			     db	      00h, 2Fh,0FFh, 04h, 00h, 00h
+   1190	190D  00 00 00 00 03 00			     db	      00h, 00h,	00h, 00h, 03h, 00h
+   1191	1913  2F 04 00 07 00 33			     db	      2Fh, 04h,	00h, 07h, 00h, 33h
+   1192	1919  FF 73 00 00 20 00			     db	     0FFh, 73h,	00h, 00h, 20h, 00h
+   1193	191F  18 00 22 00 80 00			     db	      18h, 00h,	22h, 00h, 80h, 00h
+   1194	1925  00 09 00 10 FF 02			     db	      00h, 09h,	00h, 10h,0FFh, 02h
+   1195	192B  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1196	1931  09 00 10 02 00 0B			     db	      09h, 00h,	10h, 02h, 00h, 0Bh
+   1197	1937  00 00 FF 00 00 00			     db	      00h, 00h,0FFh, 00h, 00h, 00h
+   1198	193D  10 00 00 00 0B 00			     db	      10h, 00h,	00h, 00h, 0Bh, 00h
+   1199	1943  00 00 00 0B 00 02			     db	      00h, 00h,	00h, 0Bh, 00h, 02h
+   1200	1949  FF 01 00 00 10 00			     db	     0FFh, 01h,	00h, 00h, 10h, 00h
+   1201	194F  00 00 0B 00 02 01			     db	      00h, 00h,	0Bh, 00h, 02h, 01h
+   1202	1955  00 0B 00 15 FF 04			     db	      00h, 0Bh,	00h, 15h,0FFh, 04h
+   1203	195B  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1204	1961  0B 00 15 04 00 0E			     db	      0Bh, 00h,	15h, 04h, 00h, 0Eh
+   1205	1967  00 22 FF 04 00 00			     db	      00h, 22h,0FFh, 04h, 00h, 00h
+   1206	196D  00 00 00 00 0E 00			     db	      00h, 00h,	00h, 00h, 0Eh, 00h
+   1207	1973  22 04 00 0E 00 28			     db	      22h, 04h,	00h, 0Eh, 00h, 28h
+   1208	1979  FF 03 00 00 00 00			     db	     0FFh, 03h,	00h, 00h, 00h, 00h
+   1209	197F  00 00 0E 00 28 03			     db	      00h, 00h,	0Eh, 00h, 28h, 03h
+   1210	1985  00 16 00 02 FF 03			     db	      00h, 16h,	00h, 02h,0FFh, 03h
+   1211	198B  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1212	1991  16 00 02 03 00 1A			     db	      16h, 00h,	02h, 03h, 00h, 1Ah
+   1213	1997  00 28 FF 02 00 00			     db	      00h, 28h,0FFh, 02h, 00h, 00h
+   1214	199D  00 00 00 00 1A 00			     db	      00h, 00h,	00h, 00h, 1Ah, 00h
+   1215	19A3  28 02 00 1B 00 19			     db	      28h, 02h,	00h, 1Bh, 00h, 19h
+   1216	19A9  FF 00 00 00 10 00			     db	     0FFh, 00h,	00h, 00h, 10h, 00h
+   1217	19AF  00 00 1B 00 19 00			     db	      00h, 00h,	1Bh, 00h, 19h, 00h
+   1218	19B5  00 1B 00 1B FF 01			     db	      00h, 1Bh,	00h, 1Bh,0FFh, 01h
+   1219	19BB  00 00 10 00 00 00			     db	      00h, 00h,	10h, 00h, 00h, 00h
+   1220	19C1  1B 00 1B 01 00 1B			     db	      1Bh, 00h,	1Bh, 01h, 00h, 1Bh
+   1221	19C7  00 33 FF 03 00 00			     db	      00h, 33h,0FFh, 03h, 00h, 00h
+   1222	19CD  00 00 00 00 1B 00			     db	      00h, 00h,	00h, 00h, 1Bh, 00h
+   1223	19D3  33 03 00 1E 00 22			     db	      33h, 03h,	00h, 1Eh, 00h, 22h
+   1224	19D9  FF 04 00 00 00 00			     db	     0FFh, 04h,	00h, 00h, 00h, 00h
+   1225	19DF  00 00 1E 00 22 04			     db	      00h, 00h,	1Eh, 00h, 22h, 04h
+   1226	19E5  00 20 00 3A FF 04			     db	      00h, 20h,	00h, 3Ah,0FFh, 04h
+   1227	19EB  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1228	19F1  20 00 3A 04 00 28			     db	      20h, 00h,	3Ah, 04h, 00h, 28h
+   1229	19F7  00 3A FF 04 00 00			     db	      00h, 3Ah,0FFh, 04h, 00h, 00h
+   1230	19FD  00 00 00 00 28 00			     db	      00h, 00h,	00h, 00h, 28h, 00h
+   1231	1A03  3A 04 00 2F 00 10			     db	      3Ah, 04h,	00h, 2Fh, 00h, 10h
+   1232	1A09  FF 03 00 00 00 00			     db	     0FFh, 03h,	00h, 00h, 00h, 00h
+   1233	1A0F  00 00 2F 00 10 03			     db	      00h, 00h,	2Fh, 00h, 10h, 03h
+   1234	1A15  00 31 00 02 FF 03			     db	      00h, 31h,	00h, 02h,0FFh, 03h
+   1235	1A1B  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1236	1A21  31 00 02 03 00 41			     db	      31h, 00h,	02h, 03h, 00h, 41h
+   1237	1A27  00 1B FF D0 00 00			     db	      00h, 1Bh,0FFh,0D0h, 00h, 00h
+   1238	1A2D  20 00 18 00 22 00			     db	      20h, 00h,	18h, 00h, 22h, 00h
+   1239	1A33  40 00 00 4A 00 1F			     db	      40h, 00h,	00h, 4Ah, 00h, 1Fh
+   1240	1A39  FF 04 00 00 00 00			     db	     0FFh, 04h,	00h, 00h, 00h, 00h
+   1241	1A3F  00 00 4A 00 1F 04			     db	      00h, 00h,	4Ah, 00h, 1Fh, 04h
+   1242	1A45  00 4E 00 0E FF F1			     db	      00h, 4Eh,	00h, 0Eh,0FFh,0F1h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 24
+331MP50.asm
+
+
+
+   1243	1A4B  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1244	1A51  FF FF FF 00 00 52			     db	     0FFh,0FFh,0FFh, 00h, 00h, 52h
+   1245	1A57  00 16 FF 02 00 00			     db	      00h, 16h,0FFh, 02h, 00h, 00h
+   1246	1A5D  00 00 00 00 52 00			     db	      00h, 00h,	00h, 00h, 52h, 00h
+   1247	1A63  16 02 00 54 00 0E			     db	      16h, 02h,	00h, 54h, 00h, 0Eh
+   1248	1A69  FF F1 00 00 00 00			     db	     0FFh,0F1h,	00h, 00h, 00h, 00h
+   1249	1A6F  00 00 FF FF FF 00			     db	      00h, 00h,0FFh,0FFh,0FFh, 00h
+   1250	1A75  00 56 00 04 FF 04			     db	      00h, 56h,	00h, 04h,0FFh, 04h
+   1251	1A7B  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1252	1A81  56 00 04 04 00 57			     db	      56h, 00h,	04h, 04h, 00h, 57h
+   1253	1A87  00 1F FF 04 00 00			     db	      00h, 1Fh,0FFh, 04h, 00h, 00h
+   1254	1A8D  00 00 00 00 57 00			     db	      00h, 00h,	00h, 00h, 57h, 00h
+   1255	1A93  1F 04 00 58 00 33			     db	      1Fh, 04h,	00h, 58h, 00h, 33h
+   1256	1A99  FF 02 00 00 00 00			     db	     0FFh, 02h,	00h, 00h, 00h, 00h
+   1257	1A9F  00 00 58 00 33 02			     db	      00h, 00h,	58h, 00h, 33h, 02h
+   1258	1AA5  00 5A 00 39 FF 04			     db	      00h, 5Ah,	00h, 39h,0FFh, 04h
+   1259	1AAB  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1260	1AB1  5A 00 39 04 00 5E			     db	      5Ah, 00h,	39h, 04h, 00h, 5Eh
+   1261	1AB7  00 16 FF 02 00 00			     db	      00h, 16h,0FFh, 02h, 00h, 00h
+   1262	1ABD  00 00 00 00 5E 00			     db	      00h, 00h,	00h, 00h, 5Eh, 00h
+   1263	1AC3  16 02 00 65 00 33			     db	      16h, 02h,	00h, 65h, 00h, 33h
+   1264	1AC9  FF 02 00 00 00 00			     db	     0FFh, 02h,	00h, 00h, 00h, 00h
+   1265	1ACF  00 00 65 00 33 02			     db	      00h, 00h,	65h, 00h, 33h, 02h
+   1266	1AD5  00 6E 00 07 FF 04			     db	      00h, 6Eh,	00h, 07h,0FFh, 04h
+   1267	1ADB  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1268	1AE1  6E 00 07 04 00 73			     db	      6Eh, 00h,	07h, 04h, 00h, 73h
+   1269	1AE7  00 2B FF 73 00 04			     db	      00h, 2Bh,0FFh, 73h, 00h, 04h
+   1270	1AED  20 00 00 00 22 00			     db	      20h, 00h,	00h, 00h, 22h, 00h
+   1271	1AF3  20 00 00 81 00 16			     db	      20h, 00h,	00h, 81h, 00h, 16h
+   1272	1AF9  FF 04 00 00 00 00			     db	     0FFh, 04h,	00h, 00h, 00h, 00h
+   1273	1AFF  00 00 81 00 16 04			     db	      00h, 00h,	81h, 00h, 16h, 04h
+   1274	1B05  00 82 00 00 FF 03			     db	      00h, 82h,	00h, 00h,0FFh, 03h
+   1275	1B0B  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1276	1B11  82 00 00 03 00 86			     db	      82h, 00h,	00h, 03h, 00h, 86h
+   1277	1B17  00 00 FF 02 00 00			     db	      00h, 00h,0FFh, 02h, 00h, 00h
+   1278	1B1D  00 00 00 00 86 00			     db	      00h, 00h,	00h, 00h, 86h, 00h
+   1279	1B23  00 02 00 86 00 1D			     db	      00h, 02h,	00h, 86h, 00h, 1Dh
+   1280	1B29  FF 02 00 00 00 00			     db	     0FFh, 02h,	00h, 00h, 00h, 00h
+   1281	1B2F  00 00 86 00 1D 02			     db	      00h, 00h,	86h, 00h, 1Dh, 02h
+   1282	1B35  00 88 00 2A FF 02			     db	      00h, 88h,	00h, 2Ah,0FFh, 02h
+   1283	1B3B  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1284	1B41  88 00 2A 02 00 8A			     db	      88h, 00h,	2Ah, 02h, 00h, 8Ah
+   1285	1B47  00 15 FF 04 00 00			     db	      00h, 15h,0FFh, 04h, 00h, 00h
+   1286	1B4D  00 00 00 00 8A 00			     db	      00h, 00h,	00h, 00h, 8Ah, 00h
+   1287	1B53  15 04 00 8D 00 1D			     db	      15h, 04h,	00h, 8Dh, 00h, 1Dh
+   1288	1B59  FF 03 00 00 00 00			     db	     0FFh, 03h,	00h, 00h, 00h, 00h
+   1289	1B5F  00 00 8D 00 1D 03			     db	      00h, 00h,	8Dh, 00h, 1Dh, 03h
+   1290	1B65  00 90 00 2A FF 02			     db	      00h, 90h,	00h, 2Ah,0FFh, 02h
+   1291	1B6B  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1292	1B71  90 00 2A 02 00 95			     db	      90h, 00h,	2Ah, 02h, 00h, 95h
+   1293	1B77  00 16 FF 04 00 00			     db	      00h, 16h,0FFh, 04h, 00h, 00h
+   1294	1B7D  00 00 00 00 95 00			     db	      00h, 00h,	00h, 00h, 95h, 00h
+   1295	1B83  16 04 00 98 00 09			     db	      16h, 04h,	00h, 98h, 00h, 09h
+   1296	1B89  FF 04 00 00 00 00			     db	     0FFh, 04h,	00h, 00h, 00h, 00h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 25
+331MP50.asm
+
+
+
+   1297	1B8F  00 00 98 00 09 04			     db	      00h, 00h,	98h, 00h, 09h, 04h
+   1298	1B95  00 9B 00 3E FF 02			     db	      00h, 9Bh,	00h, 3Eh,0FFh, 02h
+   1299	1B9B  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1300	1BA1  9B 00 3E 02 00 A6			     db	      9Bh, 00h,	3Eh, 02h, 00h,0A6h
+   1301	1BA7  00 08 FF 04 00 00			     db	      00h, 08h,0FFh, 04h, 00h, 00h
+   1302	1BAD  00 00 00 00 A6 00			     db	      00h, 00h,	00h, 00h,0A6h, 00h
+   1303	1BB3  08 04 00 A9 00 11			     db	      08h, 04h,	00h,0A9h, 00h, 11h
+   1304	1BB9  FF 02 00 00 00 00			     db	     0FFh, 02h,	00h, 00h, 00h, 00h
+   1305	1BBF  00 00 A9 00 11 02			     db	      00h, 00h,0A9h, 00h, 11h, 02h
+   1306	1BC5  00 AA 00 1D FF 73			     db	      00h,0AAh,	00h, 1Dh,0FFh, 73h
+   1307	1BCB  00 00 20 00 19 00			     db	      00h, 00h,	20h, 00h, 19h, 00h
+   1308	1BD1  22 00 10 00 00 AF			     db	      22h, 00h,	10h, 00h, 00h,0AFh
+   1309	1BD7  00 34 FF 73 00 04			     db	      00h, 34h,0FFh, 73h, 00h, 04h
+   1310	1BDD  20 00 00 00 22 00			     db	      20h, 00h,	00h, 00h, 22h, 00h
+   1311	1BE3  08 00 00 B3 00 11			     db	      08h, 00h,	00h,0B3h, 00h, 11h
+   1312	1BE9  FF 02 00 00 00 00			     db	     0FFh, 02h,	00h, 00h, 00h, 00h
+   1313	1BEF  00 00 B3 00 11 02			     db	      00h, 00h,0B3h, 00h, 11h, 02h
+   1314	1BF5  00 B3 00 25 FF 04			     db	      00h,0B3h,	00h, 25h,0FFh, 04h
+   1315	1BFB  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1316	1C01  B3 00 25 04 00 B6			     db	     0B3h, 00h,	25h, 04h, 00h,0B6h
+   1317	1C07  00 1E FF 02 00 00			     db	      00h, 1Eh,0FFh, 02h, 00h, 00h
+   1318	1C0D  00 00 00 00 B6 00			     db	      00h, 00h,	00h, 00h,0B6h, 00h
+   1319	1C13  1E 02 00 BF 00 2B			     db	      1Eh, 02h,	00h,0BFh, 00h, 2Bh
+   1320	1C19  FF 02 00 00 00 00			     db	     0FFh, 02h,	00h, 00h, 00h, 00h
+   1321	1C1F  00 00 BF 00 2B 02			     db	      00h, 00h,0BFh, 00h, 2Bh, 02h
+   1322	1C25  00 C0 00 34 FF 73			     db	      00h,0C0h,	00h, 34h,0FFh, 73h
+   1323	1C2B  00 01 20 00 00 00			     db	      00h, 01h,	20h, 00h, 00h, 00h
+   1324	1C31  22 00 04 00 00 C1			     db	      22h, 00h,	04h, 00h, 00h,0C1h
+   1325	1C37  00 01 FF 02 00 00			     db	      00h, 01h,0FFh, 02h, 00h, 00h
+   1326	1C3D  00 00 00 00 C1 00			     db	      00h, 00h,	00h, 00h,0C1h, 00h
+   1327	1C43  01 02 00 D0 00 00			     db	      01h, 02h,	00h,0D0h, 00h, 00h
+   1328	1C49  FF 03 00 00 00 00			     db	     0FFh, 03h,	00h, 00h, 00h, 00h
+   1329	1C4F  00 00 D0 00 00 03			     db	      00h, 00h,0D0h, 00h, 00h, 03h
+   1330	1C55  00 D0 00 1B FF 73			     db	      00h,0D0h,	00h, 1Bh,0FFh, 73h
+   1331	1C5B  00 00 20 00 1A 00			     db	      00h, 00h,	20h, 00h, 1Ah, 00h
+   1332	1C61  22 00 02 00 00 D0			     db	      22h, 00h,	02h, 00h, 00h,0D0h
+   1333	1C67  00 32 FF 00 00 00			     db	      00h, 32h,0FFh, 00h, 00h, 00h
+   1334	1C6D  10 00 00 00 D0 00			     db	      10h, 00h,	00h, 00h,0D0h, 00h
+   1335	1C73  32 00 00 D0 00 34			     db	      32h, 00h,	00h,0D0h, 00h, 34h
+   1336	1C79  FF 01 00 00 10 00			     db	     0FFh, 01h,	00h, 00h, 10h, 00h
+   1337	1C7F  00 00 D0 00 34 01			     db	      00h, 00h,0D0h, 00h, 34h, 01h
+   1338	1C85  00 D1 00 10 FF 73			     db	      00h,0D1h,	00h, 10h,0FFh, 73h
+   1339	1C8B  00 02 20 00 00 00			     db	      00h, 02h,	20h, 00h, 00h, 00h
+   1340	1C91  22 00 01 00 00 D6			     db	      22h, 00h,	01h, 00h, 00h,0D6h
+   1341	1C97  00 1C FF 03 00 00			     db	      00h, 1Ch,0FFh, 03h, 00h, 00h
+   1342	1C9D  00 00 00 00 D6 00			     db	      00h, 00h,	00h, 00h,0D6h, 00h
+   1343	1CA3  1C 03 00 D8 00 11			     db	      1Ch, 03h,	00h,0D8h, 00h, 11h
+   1344	1CA9  FF 02 00 00 00 00			     db	     0FFh, 02h,	00h, 00h, 00h, 00h
+   1345	1CAF  00 00 D8 00 11 02			     db	      00h, 00h,0D8h, 00h, 11h, 02h
+   1346	1CB5  00 E0 00 00 FF 03			     db	      00h,0E0h,	00h, 00h,0FFh, 03h
+   1347	1CBB  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1348	1CC1  E0 00 00 03 00 E9			     db	     0E0h, 00h,	00h, 03h, 00h,0E9h
+   1349	1CC7  00 0E FF 00 00 00			     db	      00h, 0Eh,0FFh, 00h, 00h, 00h
+   1350	1CCD  10 00 00 00 E9 00			     db	      10h, 00h,	00h, 00h,0E9h, 00h
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 26
+331MP50.asm
+
+
+
+   1351	1CD3  0E 00 00 E9 00 10			     db	      0Eh, 00h,	00h,0E9h, 00h, 10h
+   1352	1CD9  FF 01 00 00 10 00			     db	     0FFh, 01h,	00h, 00h, 10h, 00h
+   1353	1CDF  00 00 E9 00 10 01			     db	      00h, 00h,0E9h, 00h, 10h, 01h
+   1354	1CE5  00 E9 00 26 FF 00			     db	      00h,0E9h,	00h, 26h,0FFh, 00h
+   1355	1CEB  00 00 10 00 00 00			     db	      00h, 00h,	10h, 00h, 00h, 00h
+   1356	1CF1  E9 00 26 00 00 E9			     db	     0E9h, 00h,	26h, 00h, 00h,0E9h
+   1357	1CF7  00 28 FF 01 00 00			     db	      00h, 28h,0FFh, 01h, 00h, 00h
+   1358	1CFD  10 00 00 00 E9 00			     db	      10h, 00h,	00h, 00h,0E9h, 00h
+   1359	1D03  28 01 00 00 FF 00			     db	      28h, 01h,	00h, 00h,0FFh, 00h
+   1360	1D09  FF				     db	     0FFh
+   1361	1D0A  07*(00)				     db	     7 dup (0)
+   1362	1D11  FF FF 00 00 00 00			     db	     0FFh,0FFh,	00h, 00h, 00h, 00h
+   1363	1D17  FF 00 FF				     db	     0FFh, 00h,0FFh
+   1364	1D1A  07*(00)				     db	     7 dup (0)
+   1365	1D21  FF FF 00 00 00 00			     db	     0FFh,0FFh,	00h, 00h, 00h, 00h
+   1366	1D27  FF 00 FF				     db	     0FFh, 00h,0FFh
+   1367	1D2A  07*(00)				     db	     7 dup (0)
+   1368	1D31  FF FF 00 00 00 00			     db	     0FFh,0FFh,	00h, 00h, 00h, 00h
+   1369	1D37  FF 00 FF				     db	     0FFh, 00h,0FFh
+   1370	1D3A  07*(00)				     db	     7 dup (0)
+   1371	1D41  FF FF 00 00 00 00			     db	     0FFh,0FFh,	00h, 00h, 00h, 00h
+   1372	1D47  FF 00 FF				     db	     0FFh, 00h,0FFh
+   1373	1D4A  07*(00)				     db	     7 dup (0)
+   1374	1D51  FF FF 00 00 00 00			     db	     0FFh,0FFh,	00h, 00h, 00h, 00h
+   1375	1D57  FF 00 FF				     db	     0FFh, 00h,0FFh
+   1376	1D5A  07*(00)				     db	     7 dup (0)
+   1377	1D61  FF FF 00 00 00 00			     db	     0FFh,0FFh,	00h, 00h, 00h, 00h
+   1378	1D67  FF 00 FF				     db	     0FFh, 00h,0FFh
+   1379	1D6A  07*(00)				     db	     7 dup (0)
+   1380	1D71  FF FF 00 00 00 00			     db	     0FFh,0FFh,	00h, 00h, 00h, 00h
+   1381	1D77  FF 00 FF				     db	     0FFh, 00h,0FFh
+   1382	1D7A  07*(00)				     db	     7 dup (0)
+   1383	1D81  FF FF 00 00 00 00			     db	     0FFh,0FFh,	00h, 00h, 00h, 00h
+   1384	1D87  FF 00 FF				     db	     0FFh, 00h,0FFh
+   1385	1D8A  07*(00)				     db	     7 dup (0)
+   1386	1D91  FF FF 00 00 00 FF			     db	     0FFh,0FFh,	00h, 00h, 00h,0FFh
+   1387	1D97  FF				     db	     0FFh
+   1388
+   1389	1D98			     seg_a	     ends
+   1390
+   1391
+   1392
+   1393						     end     start
+Turbo Assembler	 Version 2.01	     03/28/26 17:25:12	    Page 27
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/28/26"
+??FILENAME			  Text	 "331MP50 "
+??TIME				  Text	 "17:25:11"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 331MP50
+@WORDSIZE			  Text	 2
+LOC_1				  Near	 SEG_A:081E
+START				  Near	 SEG_A:0000
+TARGET				  Number 5432
+TRIGGER_FUNC_1			  Near	 SEG_A:02ED
+ZR3_31				  Far	 SEG_A:0000
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  1D98 Byte	  Public
+

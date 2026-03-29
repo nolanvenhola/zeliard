@@ -1,0 +1,87 @@
+
+                  ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+                          SOURCER DEFINITION FILE
+                  ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+
+ ±±±±±±±±±±±±±±±±±± Section 1: CONTROL INFORMATION   ±±±±±±±±±±±±±±±±±±
+
+Analysis Options = a b c d e f g h i j k l m n o p q r s t u v w x y z
+2nd Options page = a b c d e f g h i j k l m
+uP               = 8088
+File format      = ASM
+Keep segments    = Def
+Label type       = Decimal
+Remarks          = All
+Segment display  = Hex
+Target Assembler = MASM-4.0, byte match
+Input filename   = 356LVGRP.bin
+Code style       = Zero start
+Drive (output)   = W
+Output filename  = 356LVGRP.ASM
+Passes           = 9
+Xref             = OFF
+
+
+
+ ±±±±±±±±±±±±±±±±±± Section 2: RANGE DEFINITION      ±±±±±±±±±±±±±±±±±±
+
+ ÍÍÍÍ Segments ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+
+  begin       end        default     seg   seg                           seg
+ seg:off      off      ds      es    type  size                         value
+ -------      ----   ------  ------  ----- -----                        -----
+seg_a:0000    1878   seg_a   seg_a   auto  use16                       ; 2923
+
+ ±±±±±±±±±±±±±±±±±± Section 3: REFERENCE DEFINITIONS ±±±±±±±±±±±±±±±±±±
+
+ ÍÍÍÍ Subroutines ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+
+ ÍÍÍÍ Locations ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+seg_a:0000   loc, far		start
+seg_a:036C   loc			        ; locloop_4
+seg_a:0613   loc			        ; locloop_6
+seg_a:0621   loc			        ; loc_7
+seg_a:117D   loc			        ; loc_8
+seg_a:11F0   loc			        ; loc_10
+seg_a:11FF   loc			        ; loc_11
+seg_a:120C   forced, od seg_a
+seg_a:1237   loc			        ; loc_12
+
+ ÍÍÍÍ Data Items ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+  seg:off    type & options	labels & comments
+  -------    --------------	----------------------------------------------
+0000:0CC0    db, equ			        ; data_1e
+0000:5B01    db, equ			        ; data_2e
+0000:5D01    db, equ			        ; data_3e
+0000:5E15    db, equ			        ; data_4e
+0000:80A9    db, equ			        ; data_5e
+001C:5500    dw, equ			        ; data_6e
+001C:5515    db, equ			        ; data_7e
+seg_a:0030   dw				        ; data_8
+seg_a:0039   db				        ; data_9
+seg_a:0080   dw				        ; data_10
+seg_a:0091   dw				        ; data_11
+seg_a:00D0   dw				        ; data_12
+seg_a:00DC   dw				        ; data_13
+seg_a:0139   dw				        ; data_14
+seg_a:0339   dw				        ; data_15
+seg_a:0418   db				        ; data_16
+seg_a:0F39   dw				        ; data_18
+seg_a:10D0   db				        ; data_19
+2923:2804    db, equ			        ; data_20e
+2923:3903    db, equ			        ; data_21e
+2923:3940    dw, equ			        ; data_22e
+2923:4600    db, equ			        ; data_23e
+2923:4642    db, equ			        ; data_24e
+2923:5000    dw, equ			        ; data_25e
+2923:5400    db, equ			        ; data_26e
+2923:5D01    db, equ			        ; data_27e
+2923:9E03    db, equ			        ; data_28e
+2923:A333    dw, equ			        ; data_29e
+2923:B7C0    db, equ			        ; data_30e
+2923:B808    db, equ			        ; data_31e
+2923:FA01    dw, equ			        ; data_32e

@@ -1,0 +1,1592 @@
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 1
+356LVGRP.asm
+
+
+
+      1
+      2
+      3				     ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
+      4				     ;лл								      лл
+      5				     ;лл			     ZR356FUL				      лл
+      6				     ;лл								      лл
+      7				     ;лл      Created:	 22-Mar-26					      лл
+      8				     ;лл      Code type: zero start					      лл
+      9				     ;лл      Passes:	 9	    Analysis Options on: none		      лл
+     10				     ;лл								      лл
+     11				     ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
+     12
+     13	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     14
+     15				     include  srmacros.inc
+1    16
+1    17				     ; Macros which may	be required for	proper re-assembly
+1    18
+1    19
+1    20
+1    21
+1    22
+1    23				     ;-----------------------------------------------------------------------------
+1    24				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    25				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    26				     ; instruction it uses a near jump or call.
+1    27
+1    28				     calls	     macro   dummy1, dummy2, slocation
+1    29						     db	     9Ah		     ; forced call far instruction
+1    30						     dw	     offset slocation, seg slocation
+1    31				     endm
+1    32
+1    33				     jmps	     macro   dummy1, dummy2, jlocation
+1    34						     db	     0EAh		     ; forced jump far instruction
+1    35						     dw	     offset jlocation, seg jlocation
+1    36				     endm
+1    37
+1    38
+1    39
+1    40
+1    41				     ;-----------------------------------------------------------------------------
+1    42				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    43				     ;	subroutine in the same segment as:
+1    44				     ;
+1    45				     ;		     PUSH    CS
+1    46				     ;		     CALL    near
+1    47				     ;
+1    48				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    49				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    50				     ;	macros are used	to code	the same information.  In other	words, the binary
+1    51				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    52				     ;	are used!  (macro CALLF)
+1    53				     ;
+1    54
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 2
+356LVGRP.asm
+
+
+
+1    55				     callf	     macro   location
+1    56						     push    cs
+1    57						     call    near ptr location
+1    58				     endm
+1    59
+1    60				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    61				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    62
+1    63				     callfx	     macro   location
+1    64						     push    cs
+1    65						     db	     3Eh
+1    66						     call    near ptr location
+1    67				     endm
+1    68
+1    69
+1    70				     ;-----------------------------------------------------------------------------
+1    71				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    72				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    73				     ;	reconstructs a near jump for these cases.
+1    74
+1    75				     jmpn	     macro   location
+1    76						     db	     0E9h
+1    77						     dw	     offset location-$-2
+1    78				     endm
+1    79
+1    80
+1    81
+     82
+     83
+     84				     ; The following equates show data references outside the range of the program.
+     85
+     86	      =	0CC0		     data_1e	     equ     0CC0h		     ;*
+     87	      =	5B01		     data_2e	     equ     5B01h		     ;*
+     88	      =	5D01		     data_3e	     equ     5D01h		     ;*
+     89	      =	5E15		     data_4e	     equ     5E15h		     ;*
+     90	      =	80A9		     data_5e	     equ     80A9h		     ;*
+     91	      =	5500		     data_6e	     equ     5500h		     ;*
+     92	      =	5515		     data_7e	     equ     5515h		     ;*
+     93	      =	2804		     data_21e	     equ     2804h		     ;*
+     94	      =	2B38		     data_22e	     equ     2B38h		     ;*
+     95	      =	300C		     data_23e	     equ     300Ch		     ;*
+     96	      =	3903		     data_24e	     equ     3903h		     ;*
+     97	      =	3940		     data_25e	     equ     3940h		     ;*
+     98	      =	4600		     data_26e	     equ     4600h		     ;*
+     99	      =	4642		     data_27e	     equ     4642h		     ;*
+    100	      =	5000		     data_28e	     equ     5000h		     ;*
+    101	      =	5400		     data_29e	     equ     5400h		     ;*
+    102	      =	5D01		     data_30e	     equ     5D01h		     ;*
+    103	      =	7E00		     data_31e	     equ     7E00h		     ;*
+    104	      =	80A0		     data_32e	     equ     80A0h		     ;*
+    105	      =	9E03		     data_33e	     equ     9E03h		     ;*
+    106	      =	A0E0		     data_34e	     equ     0A0E0h		     ;*
+    107	      =	A333		     data_35e	     equ     0A333h		     ;*
+    108	      =	A800		     data_36e	     equ     0A800h		     ;*
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 3
+356LVGRP.asm
+
+
+
+    109	      =	A8AA		     data_37e	     equ     0A8AAh		     ;*
+    110	      =	AA00		     data_38e	     equ     0AA00h		     ;*
+    111	      =	B7C0		     data_39e	     equ     0B7C0h		     ;*
+    112	      =	B808		     data_40e	     equ     0B808h		     ;*
+    113	      =	FA01		     data_41e	     equ     0FA01h		     ;*
+    114
+    115	0000			     seg_a	     segment byte public
+    116						     assume  cs:seg_a, ds:seg_a
+    117
+    118
+    119						     org     0
+    120
+    121	0000			     ZR356FUL	     proc    far
+    122
+    123	0000			     start:
+    124				     ;*		     jc	     loc_3		     ;*Jump if carry Set
+    125	0000  72 18				     db	      72h, 18h		     ;	Fixup -	byte match
+    126	0002  00 00				     add     [bx+si],al
+    127	0004  00 06 0039r			     add     byte ptr data_9,al
+    128	0008  4E				     dec     si
+    129	0009  02 63 80				     add     ah,[bp+di-80h]
+    130	000C  91				     xchg    cx,ax
+    131	000D  20 9C 9E03			     and     ds:data_33e[si],bl
+    132	0011  AA				     stosb			     ; Store al	to es:[di]
+    133	0012  9F				     lahf			     ; Load ah from flags
+    134	0013  08 B3 B7C0			     or	     ss:data_39e[bp+di],dh
+    135	0017  40				     inc     ax
+    136	0018  B9 BD01				     mov     cx,0BD01h
+    137	001B  A8 C5				     test    al,0C5h
+    138	001D  04 C7				     add     al,0C7h
+    139	001F  A0 10D0r				     mov     al,data_20
+    140	0022  DB 30 E2 0A E5 0C			     db	     0DBh, 30h,0E2h, 0Ah,0E5h, 0Ch
+    141	0028  E6 EA E7 2A F9 50			     db	     0E6h,0EAh,0E7h, 2Ah,0F9h, 50h
+    142	002E  FF FF				     db	     0FFh,0FFh
+    143	0030  2F39		     data_8	     dw	     2F39h		     ; Data table (indexed access)
+    144	0032  0A 39 01 2B 39 01			     db	      0Ah, 39h,	01h, 2Bh, 39h, 01h
+    145	0038  BF				     db	     0BFh
+    146	0039  0200		     data_9	     dw	     200h		     ; Data table (indexed access)
+    147	003B  2A FF 00 2B 39 06			     db	      2Ah,0FFh,	00h, 2Bh, 39h, 06h
+    148	0041  80 39 01 80 39 01			     db	      80h, 39h,	01h, 80h, 39h, 01h
+    149	0047  E8 00 80 00 FE 00			     db	     0E8h, 00h,	80h, 00h,0FEh, 00h
+    150	004D  80 00 FF 80 E0 00			     db	      80h, 00h,0FFh, 80h,0E0h, 00h
+    151	0053  FF EA FA 39 00 BF			     db	     0FFh,0EAh,0FAh, 39h, 00h,0BFh
+    152	0059  00 02 00 2F 39 01			     db	      00h, 02h,	00h, 2Fh, 39h, 01h
+    153	005F  0A 39 14 FF 80 E0			     db	      0Ah, 39h,	14h,0FFh, 80h,0E0h
+    154	0065  00 FE 00 80 00 E8			     db	      00h,0FEh,	00h, 80h, 00h,0E8h
+    155	006B  00 80 00 80 39 01			     db	      00h, 80h,	00h, 80h, 39h, 01h
+    156	0071  80 39 01 80 39 0A			     db	      80h, 39h,	01h, 80h, 39h, 0Ah
+    157	0077  03 00 02 00 0F 00			     db	      03h, 00h,	02h, 00h, 0Fh, 00h
+    158	007D  02 9C 00				     db	      02h, 9Ch,	00h
+    159	0080  0002		     data_10	     dw	     2			     ; Data table (indexed access)
+    160	0082  30 3C 20 08 00 CC			     db	      30h, 3Ch,	20h, 08h, 00h,0CCh
+    161	0088  39 00 03 0C 39 01			     db	      39h, 00h,	03h, 0Ch, 39h, 01h
+    162	008E  03 00 02				     db	      03h, 00h,	02h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 4
+356LVGRP.asm
+
+
+
+    163	0091  3FF0		     data_11	     dw	     3FF0h
+    164	0093  80 28 39 02 C0 00			     db	      80h, 28h,	39h, 02h,0C0h, 00h
+    165	0099  80 00 0C 00 08 39			     db	      80h, 00h,	0Ch, 00h, 08h, 39h
+    166	009F  03 F0 30 A0 20 0C			     db	      03h,0F0h,	30h,0A0h, 20h, 0Ch
+    167	00A5  00 08 39 03 C0 CF			     db	      00h, 08h,	39h, 03h,0C0h,0CFh
+    168	00AB  80 00 0C CF 39 01			     db	      80h, 00h,	0Ch,0CFh, 39h, 01h
+    169	00B1  03 00 02 0C C0 39			     db	      03h, 00h,	02h, 0Ch,0C0h, 39h
+    170	00B7  01 0F 00 02 33 30			     db	      01h, 0Fh,	00h, 02h, 33h, 30h
+    171	00BD  20 39 04 C3 00 82			     db	      20h, 39h,	04h,0C3h, 00h, 82h
+    172	00C3  00 03 39 00 CC 00			     db	      00h, 03h,	39h, 00h,0CCh, 00h
+    173	00C9  80 00 03 C0 00 80			     db	      80h, 00h,	03h,0C0h, 00h, 80h
+    174	00CF  CC				     db	     0CCh
+    175	00D0  0539		     data_12	     dw	     539h
+    176	00D2  DB 00 00 20 03 00			     db	     0DBh, 00h,	00h, 20h, 03h, 00h
+    177	00D8  02 00 F0 00			     db	      02h, 00h,0F0h, 00h
+    178	00DC  3920		     data_13	     dw	     3920h		     ; Data table (indexed access)
+    179	00DE  07 03 00 02 39 03			     db	      07h, 03h,	00h, 02h, 39h, 03h
+    180	00E4  C0 00 80 39 00 03			     db	     0C0h, 00h,	80h, 39h, 00h, 03h
+    181	00EA  00 02 39 03 3C 00			     db	      00h, 02h,	39h, 03h, 3Ch, 00h
+    182	00F0  20 DB 00 20 39 03			     db	      20h,0DBh,	00h, 20h, 39h, 03h
+    183	00F6  03 0C 02 08 39 06			     db	      03h, 0Ch,	02h, 08h, 39h, 06h
+    184	00FC  30 00 20 00 9C 00			     db	      30h, 00h,	20h, 00h, 9Ch, 00h
+    185	0102  4E 00 C0 00 80 00			     db	      4Eh, 00h,0C0h, 00h, 80h, 00h
+    186	0108  03 39 02 0C 00 08			     db	      03h, 39h,	02h, 0Ch, 00h, 08h
+    187	010E  00 C0 00 80 00 03			     db	      00h,0C0h,	00h, 80h, 00h, 03h
+    188	0114  00 02 39 0A 03 00			     db	      00h, 02h,	39h, 0Ah, 03h, 00h
+    189	011A  02 00 C0 00 80 00			     db	      02h, 00h,0C0h, 00h, 80h, 00h
+    190	0120  F0 00 A0 00 F0 00			     db	     0F0h, 00h,0A0h, 00h,0F0h, 00h
+    191	0126  80 00 03 00 02 39			     db	      80h, 00h,	03h, 00h, 02h, 39h
+    192	012C  08 03 00 02 DB 00			     db	      08h, 03h,	00h, 02h,0DBh, 00h
+    193	0132  91 00 39 0F 1F 39			     db	      91h, 00h,	39h, 0Fh, 1Fh, 39h
+    194	0138  01				     db	      01h
+    195	0139  39FD		     data_14	     dw	     39FDh		     ; Data table (indexed access)
+    196	013B  00 03 FE 39 00 06			     db	      00h, 03h,0FEh, 39h, 00h, 06h
+    197	0141  F8 39 00 0D E8 00			     db	     0F8h, 39h,	00h, 0Dh,0E8h, 00h
+    198	0147  05 39 0A D0 39 01			     db	      05h, 39h,	0Ah,0D0h, 39h, 01h
+    199	014D  52 39 01 8A 40 39			     db	      52h, 39h,	01h, 8Ah, 40h, 39h
+    200	0153  01 20 39 01 10 A0			     db	      01h, 20h,	39h, 01h, 10h,0A0h
+    201	0159  00 0D 90 00 03 0D			     db	      00h, 0Dh,	90h, 00h, 03h, 0Dh
+    202	015F  40 00 05 06 40 39			     db	      40h, 00h,	05h, 06h, 40h, 39h
+    203	0165  00 03 39 02 A0 39			     db	      00h, 03h,	39h, 02h,0A0h, 39h
+    204	016B  01 15 39 09 10 C0			     db	      01h, 15h,	39h, 09h, 10h,0C0h
+    205	0171  39 00 10 A0 39 00			     db	      39h, 00h,	10h,0A0h, 39h, 00h
+    206	0177  20 39 01 40 39 00			     db	      20h, 39h,	01h, 40h, 39h, 00h
+    207	017D  02 39 01 50 39 16			     db	      02h, 39h,	01h, 50h, 39h, 16h
+    208	0183  1F 39 01 FD 39 00			     db	      1Fh, 39h,	01h,0FDh, 39h, 00h
+    209	0189  03 FE 39 00 06 F8			     db	      03h,0FEh,	39h, 00h, 06h,0F8h
+    210	018F  00 05 0D E8 00 13			     db	      00h, 05h,	0Dh,0E8h, 00h, 13h
+    211	0195  39 0A D0 39 01 52			     db	      39h, 0Ah,0D0h, 39h, 01h, 52h
+    212	019B  39 01 8A 40 39 01			     db	      39h, 01h,	8Ah, 40h, 39h, 01h
+    213	01A1  20 50 39 00 10 A8			     db	      20h, 50h,	39h, 00h, 10h,0A8h
+    214	01A7  00 0D 90 00 2F 0D			     db	      00h, 0Dh,	90h, 00h, 2Fh, 0Dh
+    215	01AD  40 00 17 06 40 00			     db	      40h, 00h,	17h, 06h, 40h, 00h
+    216	01B3  0A 03 39 02 A0 39			     db	      0Ah, 03h,	39h, 02h,0A0h, 39h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 5
+356LVGRP.asm
+
+
+
+    217	01B9  01 15 39 09 10 D0			     db	      01h, 15h,	39h, 09h, 10h,0D0h
+    218	01BF  39 00 10 A8 39 00			     db	      39h, 00h,	10h,0A8h, 39h, 00h
+    219	01C5  20 40 39 00 40 39			     db	      20h, 40h,	39h, 00h, 40h, 39h
+    220	01CB  00 02 39 01 50 39			     db	      00h, 02h,	39h, 01h, 50h, 39h
+    221	01D1  16 1F 39 01 FD 39			     db	      16h, 1Fh,	39h, 01h,0FDh, 39h
+    222	01D7  00 03 FE 00 01 06			     db	      00h, 03h,0FEh, 00h, 01h, 06h
+    223	01DD  F8 00 07 0D E9 00			     db	     0F8h, 00h,	07h, 0Dh,0E9h, 00h
+    224	01E3  16 39 0A D0 39 01			     db	      16h, 39h,	0Ah,0D0h, 39h, 01h
+    225	01E9  52 39 01 8A 40 20			     db	      52h, 39h,	01h, 8Ah, 40h, 20h
+    226	01EF  39 00 20 F5 00 40			     db	      39h, 00h,	20h,0F5h, 00h, 40h
+    227	01F5  10 BA 00 0D 92 00			     db	      10h,0BAh,	00h, 0Dh, 92h, 00h
+    228	01FB  2D 0D 45 00 3A 06			     db	      2Dh, 0Dh,	45h, 00h, 3Ah, 06h
+    229	0201  40 00 1F 03 39 00			     db	      40h, 00h,	1Fh, 03h, 39h, 00h
+    230	0207  0A 00 A0 39 01 15			     db	      0Ah, 00h,0A0h, 39h, 01h, 15h
+    231	020D  39 08 80 10 7D 00			     db	      39h, 08h,	80h, 10h, 7Dh, 00h
+    232	0213  40 10 BA 39 00 20			     db	      40h, 10h,0BAh, 39h, 00h, 20h
+    233	0219  D4 39 00 40 A0 00			     db	     0D4h, 39h,	00h, 40h,0A0h, 00h
+    234	021F  02 39 01 50 39 0C			     db	      02h, 39h,	01h, 50h, 39h, 0Ch
+    235	0225  32 39 01 08 00 03			     db	      32h, 39h,	01h, 08h, 00h, 03h
+    236	022B  00 03 00 08 00 06			     db	      00h, 03h,	00h, 08h, 00h, 06h
+    237	0231  39 01 0F 00 20 00			     db	      39h, 01h,	0Fh, 00h, 20h, 00h
+    238	0237  1F 00 20 00 1F 39			     db	      1Fh, 00h,	20h, 00h, 1Fh, 39h
+    239	023D  01 3F 39 00 32 00			     db	      01h, 3Fh,	39h, 00h, 32h, 00h
+    240	0243  C0 00 C8 00 A0 00			     db	     0C0h, 00h,0C8h, 00h,0A0h, 00h
+    241	0249  A0 00 80 00 AC 39			     db	     0A0h, 00h,	80h, 00h,0ACh, 39h
+    242	024F  01 B8 39 01 BA 39			     db	      01h,0B8h,	39h, 01h,0BAh, 39h
+    243	0255  01 AA 39 01 EA 39			     db	      01h,0AAh,	39h, 01h,0EAh, 39h
+    244	025B  02 3F 39 01 0A 00			     db	      02h, 3Fh,	39h, 01h, 0Ah, 00h
+    245	0261  03 00 03 00 02 00			     db	      03h, 00h,	03h, 00h, 02h, 00h
+    246	0267  02 00 0F 00 0F 00			     db	      02h, 00h,	0Fh, 00h, 0Fh, 00h
+    247	026D  0C 00 0C 39 08 AA			     db	      0Ch, 00h,	0Ch, 39h, 08h,0AAh
+    248	0273  00 C0 00 E8 00 B0			     db	      00h,0C0h,	00h,0E8h, 00h,0B0h
+    249	0279  00 B0 00 D0 00 D0			     db	      00h,0B0h,	00h,0D0h, 00h,0D0h
+    250	027F  00 BC 00 BC 00 0C			     db	      00h,0BCh,	00h,0BCh, 00h, 0Ch
+    251	0285  00 0C 39 22 03 00			     db	      00h, 0Ch,	39h, 22h, 03h, 00h
+    252	028B  08 00 07 39 0C 03			     db	      08h, 00h,	07h, 39h, 0Ch, 03h
+    253	0291  39 01 03 C0 39 00			     db	      39h, 01h,	03h,0C0h, 39h, 00h
+    254	0297  3C 30 8E 00 7E 3C			     db	      3Ch, 30h,	8Eh, 00h, 7Eh, 3Ch
+    255	029D  02 00 EE 80 39 01			     db	      02h, 00h,0EEh, 80h, 39h, 01h
+    256	02A3  3F 39 01 3E 39 01			     db	      3Fh, 39h,	01h, 3Eh, 39h, 01h
+    257	02A9  3A 00 FC 00 FE 0E			     db	      3Ah, 00h,0FCh, 00h,0FEh, 0Eh
+    258	02AF  EC 0E EE 08 B8 08			     db	     0ECh, 0Eh,0EEh, 08h,0B8h, 08h
+    259	02B5  B8 00 20 00 20 00			     db	     0B8h, 00h,	20h, 00h, 20h, 00h
+    260	02BB  E0 00 E0 39 00 BA			     db	     0E0h, 00h,0E0h, 39h, 00h,0BAh
+    261	02C1  80 39 00 EA 39 01			     db	      80h, 39h,	00h,0EAh, 39h, 01h
+    262	02C7  AA 39 01 A8 39 01			     db	     0AAh, 39h,	01h,0A8h, 39h, 01h
+    263	02CD  A0 39 20 08 00 07			     db	     0A0h, 39h,	20h, 08h, 00h, 07h
+    264	02D3  00 80 00 7F 39 00			     db	      00h, 80h,	00h, 7Fh, 39h, 00h
+    265	02D9  03 EA 39 14 F0 30			     db	      03h,0EAh,	39h, 14h,0F0h, 30h
+    266	02DF  39 00 A8 C0 39 00			     db	      39h, 00h,0A8h,0C0h, 39h, 00h
+    267	02E5  AA 30 00 0A 03 AA			     db	     0AAh, 30h,	00h, 0Ah, 03h,0AAh
+    268	02EB  00 2A 00 AA 30 AB			     db	      00h, 2Ah,	00h,0AAh, 30h,0ABh
+    269	02F1  30 AB 0F 38 0C 3B			     db	      30h,0ABh,	0Fh, 38h, 0Ch, 3Bh
+    270	02F7  02 20 02 2E 3A A0			     db	      02h, 20h,	02h, 2Eh, 3Ah,0A0h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 6
+356LVGRP.asm
+
+
+
+    271	02FD  3A AA 39 06 A0 00			     db	      3Ah,0AAh,	39h, 06h,0A0h, 00h
+    272	0303  A2 00 A8 00 A8 F0			     db	     0A2h, 00h,0A8h, 00h,0A8h,0F0h
+    273	0309  A8 00 AB 39 01 FA			     db	     0A8h, 00h,0ABh, 39h, 01h,0FAh
+    274	030F  39 01 A8 39 01 80			     db	      39h, 01h,0A8h, 39h, 01h, 80h
+    275	0315  39 0F 0C 30 0C 30			     db	      39h, 0Fh,	0Ch, 30h, 0Ch, 30h
+    276	031B  0C C0 0C C3 0F 00			     db	      0Ch,0C0h,	0Ch,0C3h, 0Fh, 00h
+    277	0321  2C 00 0C 20 3C 22			     db	      2Ch, 00h,	0Ch, 20h, 3Ch, 22h
+    278	0327  0E E8 3E EA 00 AE			     db	      0Eh,0E8h,	3Eh,0EAh, 00h,0AEh
+    279	032D  28 AE 39 0C E0 39			     db	      28h,0AEh,	39h, 0Ch,0E0h, 39h
+    280	0333  01 BE 39 01 AF 80			     db	      01h,0BEh,	39h, 01h,0AFh, 80h
+    281	0339  0039		     data_15	     dw	     39h		     ; Data table (indexed access)
+    282	033B  AA E0 39 00 A0 30			     db	     0AAh,0E0h,	39h, 00h,0A0h, 30h
+    283	0341  00 BB 08 BB 00 2A			     db	      00h,0BBh,	08h,0BBh, 00h, 2Ah
+    284	0347  00 2A 39 01 3A 39			     db	      00h, 2Ah,	39h, 01h, 3Ah, 39h
+    285	034D  00 0C E3 39 00 03			     db	      00h, 0Ch,0E3h, 39h, 00h, 03h
+    286	0353  0C 39 01 82 39 06			     db	      0Ch, 39h,	01h, 82h, 39h, 06h
+    287	0359  80 00 80 30 E0 00			     db	      80h, 00h,	80h, 30h,0E0h, 00h
+    288	035F  E0 00 AA 00 AA 39			     db	     0E0h, 00h,0AAh, 00h,0AAh, 39h
+    289	0365  01 80 39 13 40 39			     db	      01h, 80h,	39h, 13h, 40h, 39h
+    290	036B  00				     db	      00h
+    291
+    292	036C			     locloop_4:
+    293	036C  01 80 5000			     add     ds:data_28e[bx+si],ax
+    294	0370  02 80 2804			     add     al,ds:data_21e[bx+si]
+    295				     ;*		     add     bx,ax
+    296	0374  01 C3				     db	      01h,0C3h		     ;	Fixup -	byte match
+    297				     ;*		     add     bl,ch
+    298	0376  00 EB				     db	      00h,0EBh		     ;	Fixup -	byte match
+    299	0378  0E				     push    cs
+    300	0379  CC				     int     3			     ; Debug breakpoint
+    301				     ;*		     add     dh,ch
+    302	037A  00 EE				     db	      00h,0EEh		     ;	Fixup -	byte match
+    303	037C  05 00F0				     add     ax,0F0h
+    304	037F  C3				     retn
+    305										     ;*	No entry point to code
+    306	0380  35 00C2				     xor     ax,0C2h
+    307	0383  C2 0ACA				     retn    0ACAh
+    308	0386  00 15 EA 80 00 75			     db	      00h, 15h,0EAh, 80h, 00h, 75h
+    309	038C  50 39 00 AA 80 39			     db	      50h, 39h,	00h,0AAh, 80h, 39h
+    310	0392  00 54 39 01 08 39			     db	      00h, 54h,	39h, 01h, 08h, 39h
+    311	0398  05 40 39 03 EE 80			     db	      05h, 40h,	39h, 03h,0EEh, 80h
+    312	039E  EE AB 0A E0 0A E0			     db	     0EEh,0ABh,	0Ah,0E0h, 0Ah,0E0h
+    313	03A4  0B B8 0B B8 02 AE			     db	      0Bh,0B8h,	0Bh,0B8h, 02h,0AEh
+    314	03AA  02 AE 00 0A 03 AA			     db	      02h,0AEh,	00h, 0Ah, 03h,0AAh
+    315	03B0  39 00 CE 38 39 00			     db	      39h, 00h,0CEh, 38h, 39h, 00h
+    316	03B6  30 C0 39 00 08 20			     db	      30h,0C0h,	39h, 00h, 08h, 20h
+    317	03BC  39 0A 0C 00 0C 00			     db	      39h, 0Ah,	0Ch, 00h, 0Ch, 00h
+    318	03C2  A0 00 A0 39 17 0C			     db	     0A0h, 00h,0A0h, 39h, 17h, 0Ch
+    319	03C8  30 0C 30 0C C0 0C			     db	      30h, 0Ch,	30h, 0Ch,0C0h, 0Ch
+    320	03CE  C0 0F 00 0C 02 0C			     db	     0C0h, 0Fh,	00h, 0Ch, 02h, 0Ch
+    321	03D4  20 0C 2B 0E E8 2E			     db	      20h, 0Ch,	2Bh, 0Eh,0E8h, 2Eh
+    322	03DA  EA 39 14 A8 39 01			     db	     0EAh, 39h,	14h,0A8h, 39h, 01h
+    323	03E0  AA 39 01 EA 80 00			     db	     0AAh, 39h,	01h,0EAh, 80h, 00h
+    324	03E6  AE 2E AE 00 33 3A			     db	     0AEh, 2Eh,0AEh, 00h, 33h, 3Ah
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 7
+356LVGRP.asm
+
+
+
+    325	03EC  FF 00 22 20 EE 39			     db	     0FFh, 00h,	22h, 20h,0EEh, 39h
+    326	03F2  00 83 AE 39 00 03			     db	      00h, 83h,0AEh, 39h, 00h, 03h
+    327	03F8  0C 39 0C BE A0 80			     db	      0Ch, 39h,	0Ch,0BEh,0A0h, 80h
+    328	03FE  00 83 A0 E0 00 E0			     db	      00h, 83h,0A0h,0E0h, 00h,0E0h
+    329	0404  E0 AA 00 AA 28 39			     db	     0E0h,0AAh,	00h,0AAh, 28h, 39h
+    330	040A  0F C3 00 C3 00 CC			     db	      0Fh,0C3h,	00h,0C3h, 00h,0CCh
+    331	0410  00 CC 00 F0 00 C0			     db	      00h,0CCh,	00h,0F0h, 00h,0C0h
+    332	0416  00 C2				     db	      00h,0C2h
+    333	0418  00		     data_16	     db	     0
+    334	0419  C2 00 EE 00 EE 00			     db	     0C2h, 00h,0EEh, 00h,0EEh, 00h
+    335	041F  08 02 8B 39 00 06			     db	      08h, 02h,	8Bh, 39h, 00h, 06h
+    336	0425  8F 08 10 02 2F 39			     db	      8Fh, 08h,	10h, 02h, 2Fh, 39h
+    337	042B  0C C0 39 01 E0 39			     db	      0Ch,0C0h,	39h, 01h,0E0h, 39h
+    338	0431  01 F0 00 08 00 B8			     db	      01h,0F0h,	00h, 08h, 00h,0B8h
+    339	0437  00 0E 00 5E 39 00			     db	      00h, 0Eh,	00h, 5Eh, 39h, 00h
+    340	043D  40 1A BA 39 00 1A			     db	      40h, 1Ah,0BAh, 39h, 00h, 1Ah
+    341	0443  F5 39 00 28 E8 39			     db	     0F5h, 39h,	00h, 28h,0E8h, 39h
+    342	0449  00 2B D0 39 00 2B			     db	      00h, 2Bh,0D0h, 39h, 00h, 2Bh
+    343	044F  C0 39 00 23 39 01			     db	     0C0h, 39h,	00h, 23h, 39h, 01h
+    344	0455  0C 39 03 0A 80 AA			     db	      0Ch, 39h,	03h, 0Ah, 80h,0AAh
+    345	045B  80 00 20 38 20 00			     db	      80h, 00h,	20h, 38h, 20h, 00h
+    346						     ; Graphics	data table
+    347	0461  20 38 20 00			     db	     ' 8 ', 0		     ; 0x0001
+    348	0465  60 00				     db	     '`', 0	     ; 0x0005
+    349	0467  60 39 00				     db	     '`9', 0	     ; 0x0007
+    350	046A  39 1E C0 39 00 03			     db	      39h, 1Eh,0C0h, 39h, 00h, 03h
+    351	0470  C0 39 00 0C 3C 00			     db	     0C0h, 39h,	00h, 0Ch, 3Ch, 00h
+    352	0476  E0 3C EF 00 80 03			     db	     0E0h, 3Ch,0EFh, 00h, 80h, 03h
+    353	047C  BA 39 18 80 39 01			     db	     0BAh, 39h,	18h, 80h, 39h, 01h
+    354	0482  A0 39 01 03 AE 39			     db	     0A0h, 39h,	01h, 03h,0AEh, 39h
+    355	0488  01 EB 39 01 EA 39			     db	      01h,0EBh,	39h, 01h,0EAh, 39h
+    356	048E  01 3A 39 01 0A 39			     db	      01h, 3Ah,	39h, 01h, 0Ah, 39h
+    357	0494  0C A8 39 01 A8 39			     db	      0Ch,0A8h,	39h, 01h,0A8h, 39h
+    358	049A  01 A8 00 3F 00 BF			     db	      01h,0A8h,	00h, 3Fh, 00h,0BFh
+    359	04A0  00 3B B0 BB B0 2E			     db	      00h, 3Bh,0B0h,0BBh,0B0h, 2Eh
+    360	04A6  20 2E 20 08 00 08			     db	      20h, 2Eh,	20h, 08h, 00h, 08h
+    361	04AC  00 0B 00 0B 39 14			     db	      00h, 0Bh,	00h, 0Bh, 39h, 14h
+    362	04B2  08 0C 07 00 20 03			     db	      08h, 0Ch,	07h, 00h, 20h, 03h
+    363	04B8  1E 39 00 0C FA 39			     db	      1Eh, 39h,	00h, 0Ch,0FAh, 39h
+    364	04BE  14 F0 39 01 AA			     db	      14h,0F0h,	39h, 01h,0AAh
+    365	04C3  39				     db	     39h
+    366	04C4			     loc_6:
+    367	04C4  01 AA 0080r			     add     ss:data_10[bp+si],bp
+    368	04C8  0A 00				     or	     al,[bx+si]
+    369	04CA  CA 2A00				     retf    2A00h
+    370										     ;*	No entry point to code
+    371				     ;*		     pop     cs			     ; Dangerous-8088 only
+    372	04CD  0F				     db	     0Fh		     ;	Fixup -	byte match
+    373	04CE  2A 00				     sub     al,[bx+si]
+    374	04D0  0A 00				     or	     al,[bx+si]
+    375	04D2  FA				     cli			     ; Disable interrupts
+    376	04D3  39 01				     cmp     [bx+di],ax
+    377	04D5  AF				     scasw			     ; Scan es:[di] for	ax
+    378	04D6  39 01				     cmp     [bx+di],ax
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 8
+356LVGRP.asm
+
+
+
+    379	04D8  2A 39				     sub     bh,[bx+di]
+    380	04DA  01 02				     add     [bp+si],ax
+    381	04DC  39 06 0080r			     cmp     data_10,ax
+    382	04E0  AA				     stosb			     ; Store al	to es:[di]
+    383	04E1  80 A8 AA00 00			     sub     byte ptr ds:data_38e[bx+si],0
+    384				     ;*		     jmp     far ptr loc_2	     ;*
+    385	04E6  EA				     db	     0EAh
+    386	04E7  EA08 2308				     dw	     0EA08h, 2308h	     ;	Fixup -	byte match
+    387										     ;*	No entry point to code
+    388	04EB  A0 A0E0				     mov     al,ds:data_34e
+    389	04EE  20 80 80A0			     and     ds:data_32e[bx+si],al
+    390	04F2  0A A8 A8AA			     or	     ch,ds:data_37e[bx+si]
+    391	04F6  39 13				     cmp     [bp+di],dx
+    392	04F8  08 00				     or	     [bx+si],al
+    393	04FA  07				     pop     es
+    394	04FB  00 80 7E00			     add     ds:data_31e[bx+si],al
+    395	04FF  39 00				     cmp     [bx+si],ax
+    396	0501  03 FA				     add     di,dx
+    397	0503  08 00				     or	     [bx+si],al
+    398	0505  07				     pop     es
+    399	0506  AA				     stosb			     ; Store al	to es:[di]
+    400	0507  39 00				     cmp     [bx+si],ax
+    401	0509  0C 0A				     or	     al,0Ah
+    402	050B  39 06 300C			     cmp     ds:data_23e,ax
+    403	050F  0C 30				     or	     al,30h		     ; '0'
+    404	0511  03 30				     add     si,[bx+si]
+    405	0513  C3				     retn
+    406										     ;*	No entry point to code
+    407	0514  30 03				     xor     [bp+di],al
+    408	0516  30 00				     xor     [bx+si],al
+    409	0518  3C 08				     cmp     al,8
+    410	051A  30 88 2B38			     xor     ds:data_22e[bx+si],cl
+    411	051E  B0 AB				     mov     al,0ABh
+    412	0520  B8 00BA				     mov     ax,0BAh
+    413	0523  BA 0028				     mov     dx,28h
+    414	0526  02 0C				     add     cl,[si]
+    415	0528  02 00				     add     al,[bx+si]
+    416	052A  0B 00				     or	     ax,[bx+si]
+    417	052C  0B 00				     or	     ax,[bx+si]
+    418				     ;*		     jmp     far ptr loc_1	     ;*
+    419	052E  EA				     db	     0EAh
+    420	052F  EA00 0139				     dw	     0EA00h, 139h	     ;	Fixup -	byte match
+    421										     ;*	No entry point to code
+    422	0533  02 39				     add     bh,[bx+di]
+    423	0535  0E				     push    cs
+    424	0536  EE				     out     dx,al		     ; port 28h	??I/O Non-standard
+    425				     ;*		     add     dh,ch
+    426	0537  00 EE				     db	      00h,0EEh		     ;	Fixup -	byte match
+    427	0539  20 A8 A800			     and     ds:data_36e[bx+si],ch
+    428	053D  39 01				     cmp     [bx+di],ax
+    429	053F  AC				     lodsb			     ; String [si] to al
+    430	0540  39 01				     cmp     [bx+di],ax
+    431	0542  CB				     retf
+    432										     ;*	No entry point to code
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 9
+356LVGRP.asm
+
+
+
+    433	0543  30 39				     xor     [bx+di],bh
+    434	0545  00 30				     add     [bx+si],dh
+    435	0547  C0 39 00 82 39 07			     db	     0C0h, 39h,	00h, 82h, 39h, 07h
+    436	054D  26 40 D9 B8 39 00			     db	      26h, 40h,0D9h,0B8h, 39h, 00h
+    437	0553  0A AF 39 00 01 55			     db	      0Ah,0AFh,	39h, 00h, 01h, 55h
+    438	0559  39 01 2A 39 01 10			     db	      39h, 01h,	2Ah, 39h, 01h, 10h
+    439	055F  39 05 02 39 07 02			     db	      39h, 05h,	02h, 39h, 07h, 02h
+    440	0565  80 39 00 01 40 0E			     db	      80h, 39h,	00h, 01h, 40h, 0Eh
+    441	056B  00 01 A0 1C 00 C3			     db	      00h, 01h,0A0h, 1Ch, 00h,0C3h
+    442	0571  70 D7 00 33 A0 77			     db	      70h,0D7h,	00h, 33h,0A0h, 77h
+    443	0577  00 33 AC C3 00 43			     db	      00h, 33h,0ACh,0C3h, 00h, 43h
+    444	057D  53 43 39 0B 30 00			     db	      53h, 43h,	39h, 0Bh, 30h, 00h
+    445	0583  30 00 05 00 05 39			     db	      30h, 00h,	05h, 00h, 05h, 39h
+    446	0589  0A 01 77 D5 77 07			     db	      0Ah, 01h,	77h,0D5h, 77h, 07h
+    447	058F  50 07 50 1D D0 1D			     db	      50h, 07h,	50h, 1Dh,0D0h, 1Dh
+    448	0595  D0 75 40 75 40 50			     db	     0D0h, 75h,	40h, 75h, 40h, 50h
+    449	059B  00 55 C0 39 00 1C			     db	      00h, 55h,0C0h, 39h, 00h, 1Ch
+    450	05A1  73 39 00 03 0C 39			     db	      73h, 39h,	00h, 03h, 0Ch, 39h
+    451	05A7  00 04 10 39 15 3E			     db	      00h, 04h,	10h, 39h, 15h, 3Eh
+    452	05AD  39 01 EA 39 00 03			     db	      39h, 01h,0EAh, 39h, 00h, 03h
+    453	05B3  AF 39 0A 0C 30 0C			     db	     0AFh, 39h,	0Ah, 0Ch, 30h, 0Ch
+    454	05B9  30 03 30 03 30 03			     db	      30h, 03h,	30h, 03h, 30h, 03h
+    455	05BF  30 80 30 08 30 E8			     db	      30h, 80h,	30h, 08h, 30h,0E8h
+    456	05C5  30 2B B0 AB BC 39			     db	      30h, 2Bh,0B0h,0ABh,0BCh, 39h
+    457	05CB  00 0E BA 00 02 0E			     db	      00h, 0Eh,0BAh, 00h, 02h, 0Eh
+    458	05D1  82 00 0B 0A 0B 00			     db	      82h, 00h,	0Bh, 0Ah, 0Bh, 00h
+    459	05D7  EA 38 EA 39 0E BA			     db	     0EAh, 38h,0EAh, 39h, 0Eh,0BAh
+    460	05DD  00 BA AC CC 00 FF			     db	      00h,0BAh,0ACh,0CCh, 00h,0FFh
+    461	05E3  A8 88 00 BB 08 39			     db	     0A8h, 88h,	00h,0BBh, 08h, 39h
+    462	05E9  00 BA C2 39 00 30			     db	      00h,0BAh,0C2h, 39h, 00h, 30h
+    463	05EF  C0 39 17 01 00 02			     db	     0C0h, 39h,	17h, 01h, 00h, 02h
+    464	05F5  00 04 00 0B 39 01			     db	      00h, 04h,	00h, 0Bh, 39h, 01h
+    465	05FB  0F 00 30 00 1D 00			     db	      0Fh, 00h,	30h, 00h, 1Dh, 00h
+    466	0601  F0 00 7A C3 00 C3			     db	     0F0h, 00h,	7Ah,0C3h, 00h,0C3h
+    467	0607  00 33 00 33 00 33			     db	      00h, 33h,	00h, 33h, 00h, 33h
+    468	060D  00 03 00 43 00			     db	      00h, 03h,	00h, 43h, 00h
+    469	0612  43				     db	     43h
+    470
+    471	0613			     locloop_7:
+    472				     ;*		     add     [bx+0],dh
+    473	0613  00 77 00				     db	      00h, 77h,	00h	     ;	Fixup -	byte match
+    474	0616  77 00 10 00 D1 40			     db	      77h, 00h,	10h, 00h,0D1h, 40h
+    475	061C  39 00 F1				     db	      39h, 00h,0F1h
+    476	061F  20 39				     db	      20h, 39h
+    477	0621			     loc_8:
+    478				     ;*		     add     ah,bh
+    479	0621  00 FC				     db	      00h,0FCh		     ;	Fixup -	byte match
+    480	0623  50				     push    ax
+    481	0624  03 D0				     add     dx,ax
+    482	0626  03 D5				     add     dx,bp
+    483	0628  04 00				     add     al,0
+    484	062A  04 1C				     add     al,1Ch
+    485	062C  06				     push    es
+    486	062D  00 06 3903			     add     ds:data_24e,al
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 10
+356LVGRP.asm
+
+
+
+    487	0631  01 04				     add     [si],ax
+    488	0633  39 10				     cmp     [bx+si],dx
+    489	0635  5F				     pop     di
+    490	0636  50				     push    ax
+    491	0637  39 00				     cmp     [bx+si],ax
+    492	0639  AF				     scasw			     ; Scan es:[di] for	ax
+    493	063A  48				     dec     ax
+    494	063B  39 00				     cmp     [bx+si],ax
+    495	063D  17				     pop     ss
+    496	063E  94				     xchg    sp,ax
+    497	063F  39 00				     cmp     [bx+si],ax
+    498	0641  0B D4				     or	     dx,sp
+    499	0643  39 00				     cmp     [bx+si],ax
+    500	0645  03 D4				     add     dx,sp
+    501	0647  39 01				     cmp     [bx+di],ax
+    502	0649  C4 39				     les     di,dword ptr [bx+di]    ; Load seg:offset ptr
+    503	064B  01 30				     add     [bx+si],si
+    504	064D  39 06 0091r			     cmp     data_11,ax
+    505	0651  18 18				     sbb     [bx+si],bl
+    506	0653  02 00				     add     al,[bx+si]
+    507	0655  2A 28				     sub     ch,[bx+si]
+    508	0657  02 08				     add     cl,[bx+si]
+    509	0659  02 08				     add     cl,[bx+si]
+    510				     ;*		     add     ah,cl
+    511	065B  00 CC				     db	      00h,0CCh		     ;	Fixup -	byte match
+    512				     ;*		     add     ah,cl
+    513	065D  00 CC				     db	      00h,0CCh		     ;	Fixup -	byte match
+    514	065F  00 A8 5400			     add     ds:data_29e[bx+si],ch
+    515	0663  03 AA 5500			     add     bp,ss:data_6e[bp+si]
+    516	0667  0E				     push    cs
+    517	0668  A2 5D01				     mov     ds:data_30e,al
+    518	066B  19 A8 00DCr			     sbb     data_13[bx+si],bp
+    519	066F  B1 54				     mov     cl,54h		     ; 'T'
+    520	0671  BC 0200				     mov     sp,200h
+    521	0674  AA				     stosb			     ; Store al	to es:[di]
+    522	0675  E8 AC00				     call    $-53FDh
+    523				     ;*		     adc     bh,bh
+    524	0678  10 FF				     db	      10h,0FFh		     ;	Fixup -	byte match
+    525	067A  45				     inc     bp
+    526	067B  10 08				     adc     [bx+si],cl
+    527	067D  7B A2				     jnp     loc_8		     ; Jump if not parity
+    528	067F  C5 00				     lds     ax,dword ptr [bx+si]    ; Load seg:offset ptr
+    529	0681  E0 90				     loopnz  locloop_7		     ; Loop if zf=0, cx>0
+    530
+    531	0683  8F 40 60				     pop     word ptr [bx+si+60h]
+    532	0686  18 0A				     sbb     [bp+si],cl
+    533	0688  A0 0CC0				     mov     al,ds:data_1e
+    534	068B  02 A8 5702			     add     ch,byte ptr ds:[5702h][bx+si]
+    535	068F  02 A0 5B01			     add     ah,ds:data_2e[bx+si]
+    536	0693  0E				     push    cs
+    537	0694  88 05				     mov     [di],al
+    538	0696  76 3A				     jbe     $+3Ch		     ; Jump if below or	=
+    539	0698  A0 5E15				     mov     al,ds:data_4e
+    540	069B  3A AA 5515			     cmp     ch,ss:data_7e[bp+si]
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 11
+356LVGRP.asm
+
+
+
+    541	069F  3A AA 5515			     cmp     ch,ss:data_7e[bp+si]
+    542	06A3  3E AA 15 55 0F FA			     db	      3Eh,0AAh,	15h, 55h, 0Fh,0FAh
+    543	06A9  05 FA 39 08 C0 00			     db	      05h,0FAh,	39h, 08h,0C0h, 00h
+    544	06AF  80 00 70 00 08 00			     db	      80h, 00h,	70h, 00h, 08h, 00h
+    545	06B5  B0 00 63 00 7A 00			     db	     0B0h, 00h,	63h, 00h, 7Ah, 00h
+    546	06BB  A8 08 02 A0 9E 00			     db	     0A8h, 08h,	02h,0A0h, 9Eh, 00h
+    547	06C1  A2 A2 39 06 63 00			     db	     0A2h,0A2h,	39h, 06h, 63h, 00h
+    548	06C7  60 60 0A 08 AA A8			     db	      60h, 60h,	0Ah, 08h,0AAh,0A8h
+    549	06CD  00 CC 00 CC 00 A8			     db	      00h,0CCh,	00h,0CCh, 00h,0A8h
+    550	06D3  00 54 03 AA 00 55			     db	      00h, 54h,	03h,0AAh, 00h, 55h
+    551	06D9  0E A2 01 5D 02 A8			     db	      0Eh,0A2h,	01h, 5Dh, 02h,0A8h
+    552	06DF  02 57 0A A0 05 5B			     db	      02h, 57h,	0Ah,0A0h, 05h, 5Bh
+    553	06E5  3A 88 15 76 EA A2			     db	      3Ah, 88h,	15h, 76h,0EAh,0A2h
+    554	06EB  55 5D EA A8 55 57			     db	      55h, 5Dh,0EAh,0A8h, 55h, 57h
+    555	06F1  EA AA 55 55 FA AA			     db	     0EAh,0AAh,	55h, 55h,0FAh,0AAh
+    556	06F7  55 55 3F EA 17 EA			     db	      55h, 55h,	3Fh,0EAh, 17h,0EAh
+    557	06FD  39 08 C0 39 01 C0			     db	      39h, 08h,0C0h, 39h, 01h,0C0h
+    558	0703  00 28 00 80 00 02			     db	      00h, 28h,	00h, 80h, 00h, 02h
+    559	0709  00 F8 00 A0 20 0A			     db	      00h,0F8h,	00h,0A0h, 20h, 0Ah
+    560	070F  80 AA A8 8A 39 08			     db	      80h,0AAh,0A8h, 8Ah, 39h, 08h
+    561	0715  80 00 60 00 02 00			     db	      80h, 00h,	60h, 00h, 02h, 00h
+    562	071B  A2 00 CC 00 CC 00			     db	     0A2h, 00h,0CCh, 00h,0CCh, 00h
+    563	0721  A8 00 54 03 AA 00			     db	     0A8h, 00h,	54h, 03h,0AAh, 00h
+    564	0727  55 0E A2 01 5D 39			     db	      55h, 0Eh,0A2h, 01h, 5Dh, 39h
+    565	072D  06 80 00 60 39 01			     db	      06h, 80h,	00h, 60h, 39h, 01h
+    566	0733  A0 39 13 4E 00 01			     db	     0A0h, 39h,	13h, 4Eh, 00h, 01h
+    567	0739  81 39 00 02 82 00			     db	      81h, 39h,	00h, 02h, 82h, 00h
+    568	073F  82 00 82 03 0C 03			     db	      82h, 00h,	82h, 03h, 0Ch, 03h
+    569	0745  0C 02 A0 01 50 0E			     db	      0Ch, 02h,0A0h, 01h, 50h, 0Eh
+    570	074B  A8 01 54 3A 88 05			     db	     0A8h, 01h,	54h, 3Ah, 88h, 05h
+    571	0751  76 39 04 80 39 01			     db	      76h, 39h,	04h, 80h, 39h, 01h
+    572	0757  80 39 13 02 A0 01			     db	      80h, 39h,	13h, 02h,0A0h, 01h
+    573	075D  5E 0A 88 09 67 0E			     db	      5Eh, 0Ah,	88h, 09h, 67h, 0Eh
+    574	0763  88 05 76 0E A0 05			     db	      88h, 05h,	76h, 0Eh,0A0h, 05h
+    575	0769  5E 0E AA 05 55 0E			     db	      5Eh, 0Eh,0AAh, 05h, 55h, 0Eh
+    576	076F  AA 05 55 0F AA 05			     db	     0AAh, 05h,	55h, 0Fh,0AAh, 05h
+    577	0775  55 03 FE 01 7E 39			     db	      55h, 03h,0FEh, 01h, 7Eh, 39h
+    578	077B  08 C0 00 80 00 70			     db	      08h,0C0h,	00h, 80h, 00h, 70h
+    579	0781  00 08 00 B0 00 63			     db	      00h, 08h,	00h,0B0h, 00h, 63h
+    580	0787  00 7A 00 A8 08 02			     db	      00h, 7Ah,	00h,0A8h, 08h, 02h
+    581	078D  A0 9E 00 A8 A2 00			     db	     0A0h, 9Eh,	00h,0A8h,0A2h, 00h
+    582	0793  07 4A CF 00 C4 23			     db	      07h, 4Ah,0CFh, 00h,0C4h, 23h
+    583	0799  F7 0C 1B 03 DF 1A			     db	     0F7h, 0Ch,	1Bh, 03h,0DFh, 1Ah
+    584	079F  9D E0 0F 02 8D E0			     db	      9Dh,0E0h,	0Fh, 02h, 8Dh,0E0h
+    585	07A5  1A 35 04 39 00 2A			     db	      1Ah, 35h,	04h, 39h, 00h, 2Ah
+    586	07AB  C9 40 20 10 94 E0			     db	     0C9h, 40h,	20h, 10h, 94h,0E0h
+    587	07B1  61 39 02 91 00 18			     db	      61h, 39h,	02h, 91h, 00h, 18h
+    588	07B7  18 00 80 28 A8 20			     db	      18h, 00h,	80h, 28h,0A8h, 20h
+    589	07BD  80 20 80 33 00 33			     db	      80h, 20h,	80h, 33h, 00h, 33h
+    590	07C3  00 2A 00 15 00 AA			     db	      00h, 2Ah,	00h, 15h, 00h,0AAh
+    591	07C9  80 55 40 8A A0 75			     db	      80h, 55h,	40h, 8Ah,0A0h, 75h
+    592	07CF  50 39 09 03 00 02			     db	      50h, 39h,	09h, 03h, 00h, 02h
+    593	07D5  00 0D 00 20 00 1E			     db	      00h, 0Dh,	00h, 20h, 00h, 1Eh
+    594	07DB  4E 00 01 AD 20 2A			     db	      4Eh, 00h,	01h,0ADh, 20h, 2Ah
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 12
+356LVGRP.asm
+
+
+
+    595	07E1  1A 80 EA AA 4A 8A			     db	      1Ah, 80h,0EAh,0AAh, 4Ah, 8Ah
+    596	07E7  2A 80 D5 80 0A 80			     db	      2Ah, 80h,0D5h, 80h, 0Ah, 80h
+    597	07ED  E4 00 22 A0 9D 20			     db	     0E4h, 00h,	22h,0A0h, 9Dh, 20h
+    598	07F3  0A A8 B5 08 AA A8			     db	      0Ah,0A8h,0B5h, 08h,0AAh,0A8h
+    599	07F9  54 08 AA A8 40 08			     db	      54h, 08h,0AAh,0A8h, 40h, 08h
+    600	07FF  AA A8 00 28 AA A0			     db	     0AAh,0A8h,	00h, 28h,0AAh,0A0h
+    601	0805  AA A0 39 06 9F 00			     db	     0AAh,0A0h,	39h, 06h, 9Fh, 00h
+    602	080B  06 06 20 A0 2A AA			     db	      06h, 06h,	20h,0A0h, 2Ah,0AAh
+    603	0811  33 00 33 00 2A 00			     db	      33h, 00h,	33h, 00h, 2Ah, 00h
+    604	0817  15 00 AA 80 55 40			     db	      15h, 00h,0AAh, 80h, 55h, 40h
+    605	081D  8A A0				     db	      8Ah,0A0h
+    606	081F  75 50 39 09			     db	      75h, 50h,	39h, 09h
+    607	0823  03		     data_18	     db	     3
+    608	0824  39 01 03 00 28 00			     db	      39h, 01h,	03h, 00h, 28h, 00h
+    609	082A  16 00 80 00 6F 08			     db	      16h, 00h,	80h, 00h, 6Fh, 08h
+    610	0830  0A 06 A0 2A AA 10			     db	      0Ah, 06h,0A0h, 2Ah,0AAh, 10h
+    611	0836  A2 2A 80 D4 80 0A			     db	     0A2h, 2Ah,	80h,0D4h, 80h, 0Ah
+    612	083C  A0 E4 00 22 A8 9D			     db	     0A0h,0E4h,	00h, 22h,0A8h, 9Dh
+    613	0842  08 8A AA 75 02 2A			     db	      08h, 8Ah,0AAh, 75h, 02h, 2Ah
+    614	0848  AA D4 02 9E 00 50			     db	     0AAh,0D4h,	02h, 9Eh, 00h, 50h
+    615	084E  02 9E 00 00 0A AA			     db	      02h, 9Eh,	00h, 00h, 0Ah,0AAh
+    616	0854  A8 AA A8 39 07 08			     db	     0A8h,0AAh,0A8h, 39h, 07h, 08h
+    617	085A  00 06 39 01 0A 39			     db	      00h, 06h,	39h, 01h, 0Ah, 39h
+    618	0860  16 08 00 06 00 80			     db	      16h, 08h,	00h, 06h, 00h, 80h
+    619	0866  00 8A 00 33 00 33			     db	      00h, 8Ah,	00h, 33h, 00h, 33h
+    620	086C  00 2A 00 15 00 AA			     db	      00h, 2Ah,	00h, 15h, 00h,0AAh
+    621	0872  80 55 40 8A A0 75			     db	      80h, 55h,	40h, 8Ah,0A0h, 75h
+    622	0878  50 39 03 02 00 01			     db	      50h, 39h,	03h, 02h, 00h, 01h
+    623	087E  39 01 02 39 16 02			     db	      39h, 01h,	02h, 39h, 16h, 02h
+    624	0884  00 81 80 39 00 82			     db	      00h, 81h,	80h, 39h, 00h, 82h
+    625	088A  80 82 00 82 00 30			     db	      80h, 82h,	00h, 82h, 00h, 30h
+    626	0890  C0 30 C0 0A 80 05			     db	     0C0h, 30h,0C0h, 0Ah, 80h, 05h
+    627	0896  40 2A A0 15 50 22			     db	      40h, 2Ah,0A0h, 15h, 50h, 22h
+    628	089C  A8 5D 54 39 09 03			     db	     0A8h, 5Dh,	54h, 39h, 09h, 03h
+    629	08A2  00 02 00 0D 00 20			     db	      00h, 02h,	00h, 0Dh, 00h, 20h
+    630	08A8  00 1E 4E 00 01 AD			     db	      00h, 1Eh,	4Eh, 00h, 01h,0ADh
+    631	08AE  20 2A 1A 80 EA AA			     db	      20h, 2Ah,	1Ah, 80h,0EAh,0AAh
+    632	08B4  4A 2A 0A 80 B5 00			     db	      4Ah, 2Ah,	0Ah, 80h,0B5h, 00h
+    633	08BA  22 A0 D9 20 22 A0			     db	      22h,0A0h,0D9h, 20h, 22h,0A0h
+    634	08C0  9D 20 0A A0 B5 20			     db	      9Dh, 20h,	0Ah,0A0h,0B5h, 20h
+    635	08C6  AA A0 54 20 AA A0			     db	     0AAh,0A0h,	54h, 20h,0AAh,0A0h
+    636	08CC  40 20 AA A0 00 A0			     db	      40h, 20h,0AAh,0A0h, 00h,0A0h
+    637	08D2  AA 80 AA 80 39 07			     db	     0AAh, 80h,0AAh, 80h, 39h, 07h
+    638	08D8  06 00 09 00 20 00			     db	      06h, 00h,	09h, 00h, 20h, 00h
+    639	08DE  50 01 39 00 80 39			     db	      50h, 01h,	39h, 00h, 80h, 39h
+    640	08E4  02 01 20 39 00 02			     db	      02h, 01h,	20h, 39h, 00h, 02h
+    641	08EA  70 00 30 39 06 80			     db	      70h, 00h,	30h, 39h, 06h, 80h
+    642	08F0  00 70 00 04 00 0B			     db	      00h, 70h,	00h, 04h, 00h, 0Bh
+    643	08F6  39 00 80 00 40 39			     db	      39h, 00h,	80h, 00h, 40h, 39h
+    644	08FC  01 30 00 10 00 08			     db	      01h, 30h,	00h, 10h, 00h, 08h
+    645	0902  7D 08 3C C5 00 D3			     db	      7Dh, 08h,	3Ch,0C5h, 00h,0D3h
+    646	0908  00 50 1D 55 39 00			     db	      00h, 50h,	1Dh, 55h, 39h, 00h
+    647	090E  29 82 02 40 55 05			     db	      29h, 82h,	02h, 40h, 55h, 05h
+    648	0914  02 C0 28 08 00 80			     db	      02h,0C0h,	28h, 08h, 00h, 80h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 13
+356LVGRP.asm
+
+
+
+    649	091A  01 54 39 01 18 00			     db	      01h, 54h,	39h, 01h, 18h, 00h
+    650	0920  02 39 01 03 AA A0			     db	      02h, 39h,	01h, 03h,0AAh,0A0h
+    651	0926  0A 06 55 50 05 03			     db	      0Ah, 06h,	55h, 50h, 05h, 03h
+    652	092C  AB A8 08 03 45 54			     db	     0ABh,0A8h,	08h, 03h, 45h, 54h
+    653	0932  00 02 8E A8 00 02			     db	      00h, 02h,	8Eh,0A8h, 00h, 02h
+    654	0938  05 40 39 00 1A 39			     db	      05h, 40h,	39h, 00h, 1Ah, 39h
+    655	093E  03 68 39 08 36 00			     db	      03h, 68h,	39h, 08h, 36h, 00h
+    656	0944  49 39 06 01 20 39			     db	      49h, 39h,	06h, 01h, 20h, 39h
+    657	094A  00 02 70 00 30 04			     db	      00h, 02h,	70h, 00h, 30h, 04h
+    658	0950  D0 00 50 39 06 40			     db	     0D0h, 00h,	50h, 39h, 06h, 40h
+    659	0956  00 A0 00 08 00 16			     db	      00h,0A0h,	00h, 08h, 00h, 16h
+    660	095C  00 01 00 02 80 39			     db	      00h, 01h,	00h, 02h, 80h, 39h
+    661	0962  01 60 00 20 00 10			     db	      01h, 60h,	00h, 20h, 00h, 10h
+    662	0968  7D 00 1C 08 1D 55			     db	      7Dh, 00h,	1Ch, 08h, 1Dh, 55h
+    663	096E  39 00 29 82 02 40			     db	      39h, 00h,	29h, 82h, 02h, 40h
+    664	0974  55 05 02 C0 28 38			     db	      55h, 05h,	02h,0C0h, 28h, 38h
+    665	097A  00 80 00 D0 00 06			     db	      00h, 80h,	00h,0D0h, 00h, 06h
+    666	0980  00 20 00 08 39 06			     db	      00h, 20h,	00h, 08h, 39h, 06h
+    667	0986  AA A8 0A 04 55 50			     db	     0AAh,0A8h,	0Ah, 04h, 55h, 50h
+    668	098C  05 06 AB A8 08 02			     db	      05h, 06h,0ABh,0A8h, 08h, 02h
+    669	0992  47 54 00 02 86 A8			     db	      47h, 54h,	00h, 02h, 86h,0A8h
+    670	0998  39 00 01 40 39 01			     db	      39h, 00h,	01h, 40h, 39h, 01h
+    671	099E  A0 39 02 01 A0 39			     db	     0A0h, 39h,	02h, 01h,0A0h, 39h
+    672	09A4  01 08 00 04 00 02			     db	      01h, 08h,	00h, 04h, 00h, 02h
+    673	09AA  00 01 39 04 01 20			     db	      00h, 01h,	39h, 04h, 01h, 20h
+    674	09B0  39 00 02 70 00 30			     db	      39h, 00h,	02h, 70h, 00h, 30h
+    675	09B6  04 D0 00 50 1D 55			     db	      04h,0D0h,	00h, 50h, 1Dh, 55h
+    676	09BC  39 0A C0 00 30 00			     db	      39h, 0Ah,0C0h, 00h, 30h, 00h
+    677	09C2  08 00 06 00 01 80			     db	      08h, 00h,	06h, 00h, 01h, 80h
+    678	09C8  00 40 00 30 FD 10			     db	      00h, 40h,	00h, 30h,0FDh, 10h
+    679	09CE  1C 0C AA A0 0A 06			     db	      1Ch, 0Ch,0AAh,0A0h, 0Ah, 06h
+    680	09D4  29 82 02 40 55 05			     db	      29h, 82h,	02h, 40h, 55h, 05h
+    681	09DA  02 C0 28 0A 00 80			     db	      02h,0C0h,	28h, 0Ah, 00h, 80h
+    682	09E0  05 54 D0 39 0F 55			     db	      05h, 54h,0D0h, 39h, 0Fh, 55h
+    683	09E6  50 05 06 AA A8 0A			     db	      50h, 05h,	06h,0AAh,0A8h, 0Ah
+    684	09EC  03 1D 54 04 02 3A			     db	      03h, 1Dh,	54h, 04h, 02h, 3Ah
+    685	09F2  A8 39 00 1D 50 39			     db	     0A8h, 39h,	00h, 1Dh, 50h, 39h
+    686	09F8  00 02 A8 00 02 39			     db	      00h, 02h,0A8h, 00h, 02h, 39h
+    687	09FE  01 05 39 03 40 39			     db	      01h, 05h,	39h, 03h, 40h, 39h
+    688	0A04  01 20 00 10 00 0C			     db	      01h, 20h,	00h, 10h, 00h, 0Ch
+    689	0A0A  00 03 39 06 01 20			     db	      00h, 03h,	39h, 06h, 01h, 20h
+    690	0A10  39 00 02 70 00 30			     db	      39h, 00h,	02h, 70h, 00h, 30h
+    691	0A16  04 D3 00 50 39 0A			     db	      04h,0D3h,	00h, 50h, 39h, 0Ah
+    692	0A1C  64 00 9B C0 00 10			     db	      64h, 00h,	9Bh,0C0h, 00h, 10h
+    693	0A22  00 68 3D 08 0C 04			     db	      00h, 68h,	3Dh, 08h, 0Ch, 04h
+    694	0A28  EA A0 0A 06 55 50			     db	     0EAh,0A0h,	0Ah, 06h, 55h, 50h
+    695	0A2E  05 02 39 0F 30 00			     db	      05h, 02h,	39h, 0Fh, 30h, 00h
+    696	0A34  10 02 3C 01 B4 00			     db	      10h, 02h,	3Ch, 01h,0B4h, 00h
+    697	0A3A  2E 02 2E 3C 2A 1C			     db	      2Eh, 02h,	2Eh, 3Ch, 2Ah, 1Ch
+    698	0A40  2A 39 1A F0 00 D0			     db	      2Ah, 39h,	1Ah,0F0h, 00h,0D0h
+    699	0A46  00 FF EF 7F EF FF			     db	      00h,0FFh,0EFh, 7Fh,0EFh,0FFh
+    700	0A4C  BA 04 BA FF EB 11			     db	     0BAh, 04h,0BAh,0FFh,0EBh, 11h
+    701	0A52  2B 3F FB 04 59 3F			     db	      2Bh, 3Fh,0FBh, 04h, 59h, 3Fh
+    702	0A58  FB 15 79 03 EB 01			     db	     0FBh, 15h,	79h, 03h,0EBh, 01h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 14
+356LVGRP.asm
+
+
+
+    703	0A5E  69 00 EA 00 EA 03			     db	      69h, 00h,0EAh, 00h,0EAh, 03h
+    704	0A64  AB 03 A9 AF 00 AD			     db	     0ABh, 03h,0A9h,0AFh, 00h,0ADh
+    705	0A6A  00 FA C0				     db	      00h,0FAh,0C0h
+    706	0A6D  FA C0				     db	     0FAh,0C0h
+    707	0A6F  FF B0 5F 90 EB F8			     db	     0FFh,0B0h,	5Fh, 90h,0EBh,0F8h
+    708	0A75  EB F8 EE E8 EE E8			     db	     0EBh,0F8h,0EEh,0E8h,0EEh,0E8h
+    709	0A7B  FB AA FB AA EA A8			     db	     0FBh,0AAh,0FBh,0AAh,0EAh,0A8h
+    710	0A81  6A A8 EA 80 EA 80			     db	      6Ah,0A8h,0EAh, 80h,0EAh, 80h
+    711	0A87  FF EF 7F EF FF BA			     db	     0FFh,0EFh,	7Fh,0EFh,0FFh,0BAh
+    712	0A8D  04 BA 3F EB 11 2B			     db	      04h,0BAh,	3Fh,0EBh, 11h, 2Bh
+    713	0A93  03 FB 00 59 00 FB			     db	      03h,0FBh,	00h, 59h, 00h,0FBh
+    714	0A99  00 79 00 2B 00 29			     db	      00h, 79h,	00h, 2Bh, 00h, 29h
+    715	0A9F  00 EA 00 EA 03 AB			     db	      00h,0EAh,	00h,0EAh, 03h,0ABh
+    716	0AA5  03 A9 00 30 00 10			     db	      03h,0A9h,	00h, 30h, 00h, 10h
+    717	0AAB  02 3C 01 B4 00 2E			     db	      02h, 3Ch,	01h,0B4h, 00h, 2Eh
+    718	0AB1  02 2E 3C 2A 1C 2A			     db	      02h, 2Eh,	3Ch, 2Ah, 1Ch, 2Ah
+    719	0AB7  FF EF 7F ED 00 03			     db	     0FFh,0EFh,	7Fh,0EDh, 00h, 03h
+    720	0ABD  02 AB 00 0F 03 A3			     db	      02h,0ABh,	00h, 0Fh, 03h,0A3h
+    721	0AC3  C0 3E C2 82 39 06			     db	     0C0h, 3Eh,0C2h, 82h, 39h, 06h
+    722	0AC9  C0 00 C0 00 FF 00			     db	     0C0h, 00h,0C0h, 00h,0FFh, 00h
+    723	0ACF  DF 00 AB C0 A9 C0			     db	     0DFh, 00h,0ABh,0C0h,0A9h,0C0h
+    724	0AD5  FA B0 FA B0 AF A8			     db	     0FAh,0B0h,0FAh,0B0h,0AFh,0A8h
+    725	0ADB  AF A8 FA EA FA EA			     db	     0AFh,0A8h,0FAh,0EAh,0FAh,0EAh
+    726	0AE1  3F FB 3F CB CF A0			     db	      3Fh,0FBh,	3Fh,0CBh,0CFh,0A0h
+    727	0AE7  CF A0 39 16 FF BA			     db	     0CFh,0A0h,	39h, 16h,0FFh,0BAh
+    728	0AED  55 BA FF FA 55 DA			     db	      55h,0BAh,0FFh,0FAh, 55h,0DAh
+    729	0AF3  0F F8 05 78 00 E8			     db	      0Fh,0F8h,	05h, 78h, 00h,0E8h
+    730	0AF9  00 E8 00 E0 00 E0			     db	      00h,0E8h,	00h,0E0h, 00h,0E0h
+    731	0AFF  00 B0 00 B0 00 2A			     db	      00h,0B0h,	00h,0B0h, 00h, 2Ah
+    732	0B05  00 2A 00 08 00 08			     db	      00h, 2Ah,	00h, 08h, 00h, 08h
+    733	0B0B  00 30 00 10 02 3C			     db	      00h, 30h,	00h, 10h, 02h, 3Ch
+    734	0B11  01 B4 00 2E 02 2E			     db	      01h,0B4h,	00h, 2Eh, 02h, 2Eh
+    735	0B17  3C 2A 1C 2A FF EF			     db	      3Ch, 2Ah,	1Ch, 2Ah,0FFh,0EFh
+    736	0B1D  7F ED 00 03 02 AB			     db	      7Fh,0EDh,	00h, 03h, 02h,0ABh
+    737	0B23  00 0F 03 A3 00 3E			     db	      00h, 0Fh,	03h,0A3h, 00h, 3Eh
+    738	0B29  02 82 00 FA 0F 0A			     db	      02h, 82h,	00h,0FAh, 0Fh, 0Ah
+    739	0B2F  03 3E 0C 3E 03 FC			     db	      03h, 3Eh,	0Ch, 3Eh, 03h,0FCh
+    740	0B35  03 7C 3F 80 1F 80			     db	      03h, 7Ch,	3Fh, 80h, 1Fh, 80h
+    741	0B3B  0E 00 0E 39 0B EE			     db	      0Eh, 00h,	0Eh, 39h, 0Bh,0EEh
+    742	0B41  FA 66 7A FF EA 55			     db	     0FAh, 66h,	7Ah,0FFh,0EAh, 55h
+    743	0B47  6A 03 E8 03 E8 0F			     db	      6Ah, 03h,0E8h, 03h,0E8h, 0Fh
+    744	0B4D  A0 0F A0 3E 00 3E			     db	     0A0h, 0Fh,0A0h, 3Eh, 00h, 3Eh
+    745	0B53  00 38 00 38 00 0E			     db	      00h, 38h,	00h, 38h, 00h, 0Eh
+    746	0B59  00 0E 00 08 00 08			     db	      00h, 0Eh,	00h, 08h, 00h, 08h
+    747	0B5F  39 04 30 00 10 02			     db	      39h, 04h,	30h, 00h, 10h, 02h
+    748	0B65  3C 01 B4 00 2E 02			     db	      3Ch, 01h,0B4h, 00h, 2Eh, 02h
+    749	0B6B  2E 3C 2A 1C 2A FF			     db	      2Eh, 3Ch,	2Ah, 1Ch, 2Ah,0FFh
+    750	0B71  EF 7F ED 00 03 02			     db	     0EFh, 7Fh,0EDh, 00h, 03h, 02h
+    751	0B77  AB 00 0F 03 A3 39			     db	     0ABh, 00h,	0Fh, 03h,0A3h, 39h
+    752	0B7D  0A C0 00 C0 00 FF			     db	      0Ah,0C0h,	00h,0C0h, 00h,0FFh
+    753	0B83  00 DF 00 AB C0 A9			     db	      00h,0DFh,	00h,0ABh,0C0h,0A9h
+    754	0B89  C0 FA B0 FA B0 AF			     db	     0C0h,0FAh,0B0h,0FAh,0B0h,0AFh
+    755	0B8F  A8 AF A8 00 3E 02			     db	     0A8h,0AFh,0A8h, 00h, 3Eh, 02h
+    756	0B95  82 00 FA 0F 0A 03			     db	      82h, 00h,0FAh, 0Fh, 0Ah, 03h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 15
+356LVGRP.asm
+
+
+
+    757	0B9B  0E 0C 0E 00 FA 00			     db	      0Eh, 0Ch,	0Eh, 00h,0FAh, 00h
+    758	0BA1  7A 03 A8 03 A8 0E			     db	      7Ah, 03h,0A8h, 03h,0A8h, 0Eh
+    759	0BA7  83 0E 83 08 80 08			     db	      83h, 0Eh,	83h, 08h, 80h, 08h
+    760	0BAD  80 39 02 AA FA AA			     db	      80h, 39h,	02h,0AAh,0FAh,0AAh
+    761	0BB3  DA EE FA 62 7A FF			     db	     0DAh,0EEh,0FAh, 62h, 7Ah,0FFh
+    762	0BB9  EA 05 EA 32 A8 32			     db	     0EAh, 05h,0EAh, 32h,0A8h, 32h
+    763	0BBF  A8 EA 80 6A 80 20			     db	     0A8h,0EAh,	80h, 6Ah, 80h, 20h
+    764	0BC5  00 20 39 10 30 00			     db	      00h, 20h,	39h, 10h, 30h, 00h
+    765	0BCB  10 02 3C 01 B4 00			     db	      10h, 02h,	3Ch, 01h,0B4h, 00h
+    766	0BD1  2E 02 2E 3C 2A 1C			     db	      2Eh, 02h,	2Eh, 3Ch, 2Ah, 1Ch
+    767	0BD7  2A FF EF 7F ED 00			     db	      2Ah,0FFh,0EFh, 7Fh,0EDh, 00h
+    768	0BDD  03 02 AB 39 0E C0			     db	      03h, 02h,0ABh, 39h, 0Eh,0C0h
+    769	0BE3  00 C0 00 FF 00 DF			     db	      00h,0C0h,	00h,0FFh, 00h,0DFh
+    770	0BE9  00 AB C0 A9 C0 FA			     db	      00h,0ABh,0C0h,0A9h,0C0h,0FAh
+    771	0BEF  B0 FA B0 00 3F 03			     db	     0B0h,0FAh,0B0h, 00h, 3Fh, 03h
+    772	0BF5  83 03 FE 00 02 3F			     db	      83h, 03h,0FEh, 00h, 02h, 3Fh
+    773	0BFB  FA 00 0A 03 2E 00			     db	     0FAh, 00h,	0Ah, 03h, 2Eh, 00h
+    774	0C01  2E 00 3A 00 3A 00			     db	      2Eh, 00h,	3Ah, 00h, 3Ah, 00h
+    775	0C07  E8 00 E8 02 A0 02			     db	     0E8h, 00h,0E8h, 02h,0A0h, 02h
+    776	0C0D  A0 08 80 08 80 AF			     db	     0A0h, 08h,	80h, 08h, 80h,0AFh
+    777	0C13  A8 AF A8 AA FA AA			     db	     0A8h,0AFh,0A8h,0AAh,0FAh,0AAh
+    778	0C19  DA EF AA 25 AA BF			     db	     0DAh,0EFh,0AAh, 25h,0AAh,0BFh
+    779	0C1F  AA 83 AA 0C A8 04			     db	     0AAh, 83h,0AAh, 0Ch,0A8h, 04h
+    780	0C25  A8 0E 80 0E 80 3A			     db	     0A8h, 0Eh,	80h, 0Eh, 80h, 3Ah
+    781	0C2B  00 3A 00 A0 00 A0			     db	      00h, 3Ah,	00h,0A0h, 00h,0A0h
+    782	0C31  39 0C 30 00 10 02			     db	      39h, 0Ch,	30h, 00h, 10h, 02h
+    783	0C37  3C 01 B4 00 2E 02			     db	      3Ch, 01h,0B4h, 00h, 2Eh, 02h
+    784	0C3D  2E 3C 2A 1C 2A FF			     db	      2Eh, 3Ch,	2Ah, 1Ch, 2Ah,0FFh
+    785	0C43  EF 7F ED 39 12 C0			     db	     0EFh, 7Fh,0EDh, 39h, 12h,0C0h
+    786	0C49  00 C0 00 FF 00 DF			     db	      00h,0C0h,	00h,0FFh, 00h,0DFh
+    787	0C4F  00 AB C0 A9 C0 00			     db	      00h,0ABh,0C0h,0A9h,0C0h, 00h
+    788	0C55  9C 00 AB 00 FF 3A			     db	      9Ch, 00h,0ABh, 00h,0FFh, 3Ah
+    789	0C5B  07 FF FE 01 12 0F			     db	      07h,0FFh,0FEh, 01h, 12h, 0Fh
+    790	0C61  FF 04 44 00 3E 00			     db	     0FFh, 04h,	44h, 00h, 3Eh, 00h
+    791	0C67  16 00 0E 00 0E 00			     db	      16h, 00h,	0Eh, 00h, 0Eh, 00h
+    792	0C6D  EA 00 EA 02 88 02			     db	     0EAh, 00h,0EAh, 02h, 88h, 02h
+    793	0C73  88 FA B0 FA B0 AF			     db	      88h,0FAh,0B0h,0FAh,0B0h,0AFh
+    794	0C79  A8 AF A8 AA FE AA			     db	     0A8h,0AFh,0A8h,0AAh,0FEh,0AAh
+    795	0C7F  DE EB EA E9 EA BF			     db	     0DEh,0EBh,0EAh,0E9h,0EAh,0BFh
+    796	0C85  AA 97 AA 8E A8 8E			     db	     0AAh, 97h,0AAh, 8Eh,0A8h, 8Eh
+    797	0C8B  A8 0F A0 0F A0 EA			     db	     0A8h, 0Fh,0A0h, 0Fh,0A0h,0EAh
+    798	0C91  80 EA 80 39 1B 0F			     db	      80h,0EAh,	80h, 39h, 1Bh, 0Fh
+    799	0C97  00 07 39 0E 0C 00			     db	      00h, 07h,	39h, 0Eh, 0Ch, 00h
+    800	0C9D  04 00 3C 80 1E 40			     db	      04h, 00h,	3Ch, 80h, 1Eh, 40h
+    801	0CA3  B8 00 B8 80 A8 3C			     db	     0B8h, 00h,0B8h, 80h,0A8h, 3Ch
+    802	0CA9  A8 34 00 FA 00 7A			     db	     0A8h, 34h,	00h,0FAh, 00h, 7Ah
+    803	0CAF  03 EF 01 EF 0F BF			     db	      03h,0EFh,	01h,0EFh, 0Fh,0BFh
+    804	0CB5  07 95 3E FB 1E 5B			     db	      07h, 95h,	3Eh,0FBh, 1Eh, 5Bh
+    805	0CBB  3F BB 1F BB FA EF			     db	      3Fh,0BBh,	1Fh,0BBh,0FAh,0EFh
+    806	0CC1  7A EF 2A AB 2A A9			     db	      7Ah,0EFh,	2Ah,0ABh, 2Ah,0A9h
+    807	0CC7  02 AB 02 A9 FB FF			     db	      02h,0ABh,	02h,0A9h,0FBh,0FFh
+    808	0CCD  FB FD AE FF AE 10			     db	     0FBh,0FDh,0AEh,0FFh,0AEh, 10h
+    809	0CD3  AB FF A8 45 EF FC			     db	     0ABh,0FFh,0A8h, 45h,0EFh,0FCh
+    810	0CD9  65 10 EF FC 6D 44			     db	      65h, 10h,0EFh,0FCh, 6Dh, 44h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 16
+356LVGRP.asm
+
+
+
+    811	0CDF  EB F0 69 50 AB 00			     db	     0EBh,0F0h,	69h, 50h,0ABh, 00h
+    812	0CE5  AB 00 EA C0 EA C0			     db	     0ABh, 00h,0EAh,0C0h,0EAh,0C0h
+    813	0CEB  FB FF FB FD AE FF			     db	     0FBh,0FFh,0FBh,0FDh,0AEh,0FFh
+    814	0CF1  AE 10 AB FC A8 44			     db	     0AEh, 10h,0ABh,0FCh,0A8h, 44h
+    815	0CF7  EF C0 65 00 EF 00			     db	     0EFh,0C0h,	65h, 00h,0EFh, 00h
+    816	0CFD  6D 00 E8 00 68 00			     db	      6Dh, 00h,0E8h, 00h, 68h, 00h
+    817	0D03  AB 00 AB 00 EA C0			     db	     0ABh, 00h,0ABh, 00h,0EAh,0C0h
+    818	0D09  EA C0 39 07 0F 00			     db	     0EAh,0C0h,	39h, 07h, 0Fh, 00h
+    819	0D0F  0F 00 FF 00 5F 03			     db	      0Fh, 00h,0FFh, 00h, 5Fh, 03h
+    820	0D15  FA 01 FA 0F AF 07			     db	     0FAh, 01h,0FAh, 0Fh,0AFh, 07h
+    821	0D1B  AF 3E FA 1E FA FB			     db	     0AFh, 3Eh,0FAh, 1Eh,0FAh,0FBh
+    822	0D21  AF 7B AF 0C 00 04			     db	     0AFh, 7Bh,0AFh, 0Ch, 00h, 04h
+    823	0D27  00 3C 80 1E 40 B8			     db	      00h, 3Ch,	80h, 1Eh, 40h,0B8h
+    824	0D2D  00 B8 80 A8 3C A8			     db	      00h,0B8h,	80h,0A8h, 3Ch,0A8h
+    825	0D33  34 FB FF 7B FD C0			     db	      34h,0FBh,0FFh, 7Bh,0FDh,0C0h
+    826	0D39  00 EA 80 F0 00 CA			     db	      00h,0EAh,	80h,0F0h, 00h,0CAh
+    827	0D3F  C0 BC 03 82 83 EE			     db	     0C0h,0BCh,	03h, 82h, 83h,0EEh
+    828	0D45  FD 6E D4 AF FF A7			     db	     0FDh, 6Eh,0D4h,0AFh,0FFh,0A7h
+    829	0D4B  55 2F F0 2D 50 2B			     db	      55h, 2Fh,0F0h, 2Dh, 50h, 2Bh
+    830	0D51  00 2B 00 0B 00 0B			     db	      00h, 2Bh,	00h, 0Bh, 00h, 0Bh
+    831	0D57  00 0E 00 0E 00 E8			     db	      00h, 0Eh,	00h, 0Eh, 00h,0E8h
+    832	0D5D  00 E8 00 20 00 20			     db	      00h,0E8h,	00h, 20h, 00h, 20h
+    833	0D63  00 EF FC E3 FC 0A			     db	      00h,0EFh,0FCh,0E3h,0FCh, 0Ah
+    834	0D69  F3 0A F3 39 16 0C			     db	     0F3h, 0Ah,0F3h, 39h, 16h, 0Ch
+    835	0D6F  00 04 00 3C 80 1E			     db	      00h, 04h,	00h, 3Ch, 80h, 1Eh
+    836	0D75  40 B8 00 B8 80 A8			     db	      40h,0B8h,	00h,0B8h, 80h,0A8h
+    837	0D7B  3C A8 34 FB FF 7B			     db	      3Ch,0A8h,	34h,0FBh,0FFh, 7Bh
+    838	0D81  FD C0 00 EA 80 F0			     db	     0FDh,0C0h,	00h,0EAh, 80h,0F0h
+    839	0D87  00 CA C0 BC 00 82			     db	      00h,0CAh,0C0h,0BCh, 00h, 82h
+    840	0D8D  80 EF BB ED 99 AB			     db	      80h,0EFh,0BBh,0EDh, 99h,0ABh
+    841	0D93  FF A9 55 2B C0 2B			     db	     0FFh,0A9h,	55h, 2Bh,0C0h, 2Bh
+    842	0D99  C0 0A F0 0A F0 00			     db	     0C0h, 0Ah,0F0h, 0Ah,0F0h, 00h
+    843	0D9F  BC 00 BC 00 2C 00			     db	     0BCh, 00h,0BCh, 00h, 2Ch, 00h
+    844	0DA5  2C 00 F0 00 70 00			     db	      2Ch, 00h,0F0h, 00h, 70h, 00h
+    845	0DAB  20 00 20 AF 00 A0			     db	      20h, 00h,	20h,0AFh, 00h,0A0h
+    846	0DB1  F0 BC C0 BC 30 3F			     db	     0F0h,0BCh,0C0h,0BCh, 30h, 3Fh
+    847	0DB7  C0 3D C0 02 FC 02			     db	     0C0h, 3Dh,0C0h, 02h,0FCh, 02h
+    848	0DBD  F4 00 B0 00 B0 39			     db	     0F4h, 00h,0B0h, 00h,0B0h, 39h
+    849	0DC3  17 0F 00 07 00 FF			     db	      17h, 0Fh,	00h, 07h, 00h,0FFh
+    850	0DC9  00 7F 03 EA 01 EA			     db	      00h, 7Fh,	03h,0EAh, 01h,0EAh
+    851	0DCF  0F AF 07 AF 3E FA			     db	      0Fh,0AFh,	07h,0AFh, 3Eh,0FAh
+    852	0DD5  1E FA 39 02 0C 00			     db	      1Eh,0FAh,	39h, 02h, 0Ch, 00h
+    853	0DDB  04 00 3C 80 1E 40			     db	      04h, 00h,	3Ch, 80h, 1Eh, 40h
+    854	0DE1  B8 00 B8 80 A8 3C			     db	     0B8h, 00h,0B8h, 80h,0A8h, 3Ch
+    855	0DE7  A8 34 FB FF 7B FD			     db	     0A8h, 34h,0FBh,0FFh, 7Bh,0FDh
+    856	0DED  C0 00 EA 80 F0 00			     db	     0C0h, 00h,0EAh, 80h,0F0h, 00h
+    857	0DF3  CA C0 FB AA 7B AA			     db	     0CAh,0C0h,0FBh,0AAh, 7Bh,0AAh
+    858	0DF9  EF BB ED 89 AB FF			     db	     0EFh,0BBh,0EDh, 89h,0ABh,0FFh
+    859	0DFF  AB 50 2A 8C 2A 8C			     db	     0ABh, 50h,	2Ah, 8Ch, 2Ah, 8Ch
+    860	0E05  02 AB 02 A9 00 08			     db	      02h,0ABh,	02h,0A9h, 00h, 08h
+    861	0E0B  00 08 39 06 BC 00			     db	      00h, 08h,	39h, 06h,0BCh, 00h
+    862	0E11  82 80 AF 00 A0 F0			     db	      82h, 80h,0AFh, 00h,0A0h,0F0h
+    863	0E17  B0 C0 B0 30 AF 00			     db	     0B0h,0C0h,0B0h, 30h,0AFh, 00h
+    864	0E1D  AD 00 2A C0 2A C0			     db	     0ADh, 00h,	2Ah,0C0h, 2Ah,0C0h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 17
+356LVGRP.asm
+
+
+
+    865	0E23  C2 B0 C2 B0 02 20			     db	     0C2h,0B0h,0C2h,0B0h, 02h, 20h
+    866	0E29  02 20 39 13 0F 00			     db	      02h, 20h,	39h, 13h, 0Fh, 00h
+    867	0E2F  05 00 FF 00 7F 03			     db	      05h, 00h,0FFh, 00h, 7Fh, 03h
+    868	0E35  EA 01 EA 0F AF 07			     db	     0EAh, 01h,0EAh, 0Fh,0AFh, 07h
+    869	0E3B  AF 39 06 0C 00 04			     db	     0AFh, 39h,	06h, 0Ch, 00h, 04h
+    870	0E41  00 3C 80 1E 40 B8			     db	      00h, 3Ch,	80h, 1Eh, 40h,0B8h
+    871	0E47  00 B8 80 A8 3C A8			     db	      00h,0B8h,	80h,0A8h, 3Ch,0A8h
+    872	0E4D  34 FB FF 7B FD C0			     db	      34h,0FBh,0FFh, 7Bh,0FDh,0C0h
+    873	0E53  00 EA 80 3E FA 1E			     db	      00h,0EAh,	80h, 3Eh,0FAh, 1Eh
+    874	0E59  FA FB AA 7B AA FA			     db	     0FAh,0FBh,0AAh, 7Bh,0AAh,0FAh
+    875	0E5F  FB 7A 58 AA FE AA			     db	     0FBh, 7Ah,	58h,0AAh,0FEh,0AAh
+    876	0E65  C2 2A 30 2A 10 02			     db	     0C2h, 2Ah,	30h, 2Ah, 10h, 02h
+    877	0E6B  B0 02 B0 00 AC 00			     db	     0B0h, 02h,0B0h, 00h,0ACh, 00h
+    878	0E71  AC 00 0A 00 0A FC			     db	     0ACh, 00h,	0Ah, 00h, 0Ah,0FCh
+    879	0E77  00 C2 C0 BF C0 80			     db	      00h,0C2h,0C0h,0BFh,0C0h, 80h
+    880	0E7D  00 AF FC A0 00 B8			     db	      00h,0AFh,0FCh,0A0h, 00h,0B8h
+    881	0E83  C0 B8 00 AC 00 AC			     db	     0C0h,0B8h,	00h,0ACh, 00h,0ACh
+    882	0E89  00 2B 00 2B 00 0A			     db	      00h, 2Bh,	00h, 2Bh, 00h, 0Ah
+    883	0E8F  80 0A 80 02 20 02			     db	      80h, 0Ah,	80h, 02h, 20h, 02h
+    884	0E95  20 39 13 03 00 03			     db	      20h, 39h,	13h, 03h, 00h, 03h
+    885	0E9B  00 FF 00 77 03 EA			     db	      00h,0FFh,	00h, 77h, 03h,0EAh
+    886	0EA1  01 EA 39 0A 0C 00			     db	      01h,0EAh,	39h, 0Ah, 0Ch, 00h
+    887	0EA7  04 00 3C 80 1E 40			     db	      04h, 00h,	3Ch, 80h, 1Eh, 40h
+    888	0EAD  B8 00 B8 80 A8 3C			     db	     0B8h, 00h,0B8h, 80h,0A8h, 3Ch
+    889	0EB3  A8 34 FB FF 7B FD			     db	     0A8h, 34h,0FBh,0FFh, 7Bh,0FDh
+    890	0EB9  0F AF 07 AF 3E FA			     db	      0Fh,0AFh,	07h,0AFh, 3Eh,0FAh
+    891	0EBF  1E FA FB AA 7B AA			     db	      1Eh,0FAh,0FBh,0AAh, 7Bh,0AAh
+    892	0EC5  FB EB 7B 6B EA FE			     db	     0FBh,0EBh,	7Bh, 6Bh,0EAh,0FEh
+    893	0ECB  EA D6 3A B2 3A B2			     db	     0EAh,0D6h,	3Ah,0B2h, 3Ah,0B2h
+    894	0ED1  0A F0 0A F0 02 AB			     db	      0Ah,0F0h,	0Ah,0F0h, 02h,0ABh
+    895	0ED7  02 AB C0 00 EA C0			     db	      02h,0ABh,0C0h, 00h,0EAh,0C0h
+    896	0EDD  FF 00 D0 AC BF FF			     db	     0FFh, 00h,0D0h,0ACh,0BFh,0FFh
+    897	0EE3  84 40 FF F0 11 10			     db	      84h, 40h,0FFh,0F0h, 11h, 10h
+    898	0EE9  BC 00 94 00 B0 00			     db	     0BCh, 00h,	94h, 00h,0B0h, 00h
+    899	0EEF  B0 00 AB 00 AB 00			     db	     0B0h, 00h,0ABh, 00h,0ABh, 00h
+    900	0EF5  22 80 22 80 39 03			     db	      22h, 80h,	22h, 80h, 39h, 03h
+    901	0EFB  28 00 28 39 03 03			     db	      28h, 00h,	28h, 39h, 03h, 03h
+    902	0F01  00 0B 08 03 08 17			     db	      00h, 0Bh,	08h, 03h, 08h, 17h
+    903	0F07  00 C0 00 CA 00 F0			     db	      00h,0C0h,	00h,0CAh, 00h,0F0h
+    904	0F0D  00 F7 1A D4 25 D7			     db	      00h,0F7h,	1Ah,0D4h, 25h,0D7h
+    905	0F13  39 03 80 00 40 C1			     db	      39h, 03h,	80h, 00h, 40h,0C1h
+    906	0F19  00 C2 70 39 00 0A			     db	      00h,0C2h,	70h, 39h, 00h, 0Ah
+    907	0F1F  B8 80 00 B5 54 D0			     db	     0B8h, 80h,	00h,0B5h, 54h,0D0h
+    908	0F25  00 DA AA 20 00 65			     db	      00h,0DAh,0AAh, 20h, 00h, 65h
+    909	0F2B  56 30 00 B0 2A 00			     db	      56h, 30h,	00h,0B0h, 2Ah, 00h
+    910	0F31  08 75 59 20 05 4A			     db	      08h, 75h,	59h, 20h, 05h, 4Ah
+    911	0F37  85 39 00 D5 00			     db	      85h, 39h,	00h,0D5h, 00h
+    912	0F3C  0080		     data_19	     dw	     80h		     ; Data table (indexed access)
+    913	0F3E  68 44 39 00 D4 30			     db	      68h, 44h,	39h, 00h,0D4h, 30h
+    914	0F44  80 00 60 A0 39 00			     db	      80h, 00h,	60h,0A0h, 39h, 00h
+    915	0F4A  C0 39 01 C0 00 08			     db	     0C0h, 39h,	01h,0C0h, 00h, 08h
+    916	0F50  00 48 15 39 01 0B			     db	      00h, 48h,	15h, 39h, 01h, 0Bh
+    917	0F56  C0 00 C2 03 39 00			     db	     0C0h, 00h,0C2h, 03h, 39h, 00h
+    918	0F5C  01 81 39 01 B1 39			     db	      01h, 81h,	39h, 01h,0B1h, 39h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 18
+356LVGRP.asm
+
+
+
+    919	0F62  01 40 39 08 01 39			     db	      01h, 40h,	39h, 08h, 01h, 39h
+    920	0F68  00 01 08 22 00 02			     db	      00h, 01h,	08h, 22h, 00h, 02h
+    921	0F6E  00 05 00 9F 00 87			     db	      00h, 05h,	00h, 9Fh, 00h, 87h
+    922	0F74  39 00 01 1E 00 10			     db	      39h, 00h,	01h, 1Eh, 00h, 10h
+    923	0F7A  C0 2D 39 00 78 3A			     db	     0C0h, 2Dh,	39h, 00h, 78h, 3Ah
+    924	0F80  00 01 3C 35 14 00			     db	      00h, 01h,	3Ch, 35h, 14h, 00h
+    925	0F86  6B C4 80 00 57 F8			     db	      6Bh,0C4h,	80h, 00h, 57h,0F8h
+    926	0F8C  39 00 BA AA 39 00			     db	      39h, 00h,0BAh,0AAh, 39h, 00h
+    927	0F92  D5 56 39 00 A8 43			     db	     0D5h, 56h,	39h, 00h,0A8h, 43h
+    928	0F98  1D 00 5D 21 6A 00			     db	      1Dh, 00h,	5Dh, 21h, 6Ah, 00h
+    929	0F9E  EA 11 A8 10 AB 20			     db	     0EAh, 11h,0A8h, 10h,0ABh, 20h
+    930	0FA4  08 06 16 26 04 09			     db	      08h, 06h,	16h, 26h, 04h, 09h
+    931	0FAA  0B 15 04 00 0B 49			     db	      0Bh, 15h,	04h, 00h, 0Bh, 49h
+    932	0FB0  39 00 27 B2 01 00			     db	      39h, 00h,	27h,0B2h, 01h, 00h
+    933	0FB6  02 D4 39 00 09 AA			     db	      02h,0D4h,	39h, 00h, 09h,0AAh
+    934	0FBC  39 00 20 55 39 00			     db	      39h, 00h,	20h, 55h, 39h, 00h
+    935	0FC2  04 06 44 00 5E 88			     db	      04h, 06h,	44h, 00h, 5Eh, 88h
+    936	0FC8  10 00 4D 68 41 04			     db	      10h, 00h,	4Dh, 68h, 41h, 04h
+    937	0FCE  9A 82 5B 90 5B 80			     db	      9Ah, 82h,	5Bh, 90h, 5Bh, 80h
+    938	0FD4  02 A8 3A A8 00 10			     db	      02h,0A8h,	3Ah,0A8h, 00h, 10h
+    939	0FDA  95 50 39 00 54 39			     db	      95h, 50h,	39h, 00h, 54h, 39h
+    940	0FE0  01 AA 39 02 3F 01			     db	      01h,0AAh,	39h, 02h, 3Fh, 01h
+    941	0FE6  00 02 D4 04 01 0B			     db	      00h, 02h,0D4h, 04h, 01h, 0Bh
+    942	0FEC  82 39 00 1E 05 00			     db	      82h, 39h,	00h, 1Eh, 05h, 00h
+    943	0FF2  48 38 50 00 C0 32			     db	      48h, 38h,	50h, 00h,0C0h, 32h
+    944	0FF8  D0 02 41 24 49 04			     db	     0D0h, 02h,	41h, 24h, 49h, 04h
+    945	0FFE  10 2A 10 39 00 68			     db	      10h, 2Ah,	10h, 39h, 00h, 68h
+    946	1004  39 03 40 00 B1 80			     db	      39h, 03h,	40h, 00h,0B1h, 80h
+    947	100A  39 00 04 60 39 00			     db	      39h, 00h,	04h, 60h, 39h, 00h
+    948	1010  03 CD 00 00 20 80			     db	      03h,0CDh,	00h, 00h, 20h, 80h
+    949	1016  00 20 08 28 40 00			     db	      00h, 20h,	08h, 28h, 40h, 00h
+    950	101C  41 0C 05 04 0B 44			     db	      41h, 0Ch,	05h, 04h, 0Bh, 44h
+    951	1022  00 21 0E 41 00 08			     db	      00h, 21h,	0Eh, 41h, 00h, 08h
+    952	1028  03 36 00 01 40 8E			     db	      03h, 36h,	00h, 01h, 40h, 8Eh
+    953	102E  20 00 40 00 0A 02			     db	      20h, 00h,	40h, 00h, 0Ah, 02h
+    954	1034  35 05 00 A0 0F 50			     db	      35h, 05h,	00h,0A0h, 0Fh, 50h
+    955	103A  39 00 01 FF 02 08			     db	      39h, 00h,	01h,0FFh, 02h, 08h
+    956	1040  05 04 10 48 6C 40			     db	      05h, 04h,	10h, 48h, 6Ch, 40h
+    957	1046  00 10 00 28 82 40			     db	      00h, 10h,	00h, 28h, 82h, 40h
+    958	104C  72 A0 39 01 18 63			     db	      72h,0A0h,	39h, 01h, 18h, 63h
+    959	1052  00 55 60 39 00 7F			     db	      00h, 55h,	60h, 39h, 00h, 7Fh
+    960	1058  39 03 20 00 14 39			     db	      39h, 03h,	20h, 00h, 14h, 39h
+    961	105E  01 14 00 06 00 06			     db	      01h, 14h,	00h, 06h, 00h, 06h
+    962	1064  39 00 C0 00 C0 39			     db	      39h, 00h,0C0h, 00h,0C0h, 39h
+    963	106A  07 3E 00 01 04 EA			     db	      07h, 3Eh,	00h, 01h, 04h,0EAh
+    964	1070  08 15 39 06 02 00			     db	      08h, 15h,	39h, 06h, 02h, 00h
+    965	1076  01 40 34 00 35 40			     db	      01h, 40h,	34h, 00h, 35h, 40h
+    966	107C  C0 00 C0 39 07 81			     db	     0C0h, 00h,0C0h, 39h, 07h, 81h
+    967	1082  00 42 39 00 BA 00			     db	      00h, 42h,	39h, 00h,0BAh, 00h
+    968	1088  45 13 6A 20 95 08			     db	      45h, 13h,	6Ah, 20h, 95h, 08h
+    969	108E  AA 07 55 32 AA 0D			     db	     0AAh, 07h,	55h, 32h,0AAh, 0Dh
+    970	1094  55 8E 2A 71 D5 AA			     db	      55h, 8Eh,	2Ah, 71h,0D5h,0AAh
+    971	109A  BA 55 55 2A FE 15			     db	     0BAh, 55h,	55h, 2Ah,0FEh, 15h
+    972	10A0  54 02 FF 01 55 20			     db	      54h, 02h,0FFh, 01h, 55h, 20h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 19
+356LVGRP.asm
+
+
+
+    973	10A6  10 D0 20 80 00 70			     db	      10h,0D0h,	20h, 80h, 00h, 70h
+    974	10AC  00 28 00 D4 00 22			     db	      00h, 28h,	00h,0D4h, 00h, 22h
+    975	10B2  80 DD 70 A8 28 57			     db	      80h,0DDh,	70h,0A8h, 28h, 57h
+    976	10B8  D4 9E 00 55 55 AA			     db	     0D4h, 9Eh,	00h, 55h, 55h,0AAh
+    977	10BE  A8 15 54 D5 00 55			     db	     0A8h, 15h,	54h,0D5h, 00h, 55h
+    978	10C4  40 39 12 10 00 20			     db	      40h, 39h,	12h, 10h, 00h, 20h
+    979	10CA  39 10 40 00 80			     db	      39h, 10h,	40h, 00h, 80h
+    980	10CF  39				     db	     39h
+    981	10D0  03		     data_20	     db	     3
+    982	10D1  01 00 02 40 00 80			     db	      01h, 00h,	02h, 40h, 00h, 80h
+    983	10D7  39 03 01 00 02 39			     db	      39h, 03h,	01h, 00h, 02h, 39h
+    984	10DD  00 40 00 80 00 04			     db	      00h, 40h,	00h, 80h, 00h, 04h
+    985	10E3  00 08 B7 00 63 00			     db	      00h, 08h,0B7h, 00h, 63h, 00h
+    986	10E9  00 14 00 28 00 02			     db	      00h, 14h,	00h, 28h, 00h, 02h
+    987	10EF  00 0D 00 08 00 37			     db	      00h, 0Dh,	00h, 08h, 00h, 37h
+    988	10F5  02 AA 0D 55 28 AA			     db	      02h,0AAh,	0Dh, 55h, 28h,0AAh
+    989	10FB  17 55 39 02 04 10			     db	      17h, 55h,	39h, 02h, 04h, 10h
+    990	1101  08 20 3E 00 01 00			     db	      08h, 20h,	3Eh, 00h, 01h, 00h
+    991	1107  EA 81 15 42 2A 40			     db	     0EAh, 81h,	15h, 42h, 2Ah, 40h
+    992	110D  D5 40 AA 90 55 50			     db	     0D5h, 40h,0AAh, 90h, 55h, 50h
+    993	1113  AA 50 55 50 FD 40			     db	     0AAh, 50h,	55h, 50h,0FDh, 40h
+    994	1119  55 7C 39 03 20 00			     db	      55h, 7Ch,	39h, 03h, 20h, 00h
+    995	111F  10 20 00 10 00 08			     db	      10h, 20h,	00h, 10h, 00h, 08h
+    996	1125  00 04 39 03 80 00			     db	      00h, 04h,	39h, 03h, 80h, 00h
+    997	112B  40 39 03 08 00 04			     db	      40h, 39h,	03h, 08h, 00h, 04h
+    998	1131  00 02 00 01 39 04			     db	      00h, 02h,	00h, 01h, 39h, 04h
+    999	1137  82 00 41 20 00 10			     db	      82h, 00h,	41h, 20h, 00h, 10h
+   1000	113D  39 08 08 00 04 39			     db	      39h, 08h,	08h, 00h, 04h, 39h
+   1001	1143  17 A0 00 50 02 AA			     db	      17h,0A0h,	00h, 50h, 02h,0AAh
+   1002	1149  01 55 0A A2 05 5D			     db	      01h, 55h,	0Ah,0A2h, 05h, 5Dh
+   1003	114F  39 07 02 00 01 39			     db	      39h, 07h,	02h, 00h, 01h, 39h
+   1004	1155  0A 20 00 D0 00 82			     db	      0Ah, 20h,	00h,0D0h, 00h, 82h
+   1005	115B  00 7D C0 39 07 01			     db	      00h, 7Dh,0C0h, 39h, 07h, 01h
+   1006	1161  00 40 00 02 0A 10			     db	      00h, 40h,	00h, 02h, 0Ah, 10h
+   1007	1167  03 80 01 A5 1C 64			     db	      03h, 80h,	01h,0A5h, 1Ch, 64h
+   1008	116D  04 E1 E0 02 A7 F6			     db	      04h,0E1h,0E0h, 02h,0A7h,0F6h
+   1009	1173  7E 08 72 79 39 02			     db	      7Eh, 08h,	72h, 79h, 39h, 02h
+   1010	1179  81 C0 01				     db	      81h,0C0h,	01h
+   1011	117C  40				     db	     40h
+   1012	117D			     loc_9:
+   1013				     ;*		     add     byte ptr ds:data_5e[bx+si],0Ch
+   1014	117D  82 80 A9 80 0C			     db	      82h, 80h,0A9h, 80h, 0Ch	     ;	Fixup -	byte match
+   1015	1182  80 C9 A0				     or	     cl,0A0h
+   1016	1185  B1 03				     mov     cl,3
+   1017	1187  D3 51 41				     rcl     word ptr [bx+di+41h],cl ; Rotate thru carry
+   1018				     ;*		     pop     cs			     ; Dangerous-8088 only
+   1019	118A  0F				     db	     0Fh		     ;	Fixup -	byte match
+   1020	118B  CF				     iret			     ; Interrupt return
+   1021										     ;*	No entry point to code
+   1022	118C  A3 FA01				     mov     ds:data_41e,ax
+   1023	118F  FF 1A				     call    dword ptr [bp+si]	     ;*
+   1024	1191  0B D0				     or	     dx,ax
+   1025	1193  FD				     std			     ; Set direction flag
+   1026	1194  D0 0F				     ror     byte ptr [bx],1	     ; Rotate
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 20
+356LVGRP.asm
+
+
+
+   1027				     ;*		     loopnz  locloop_10		     ;*Loop if zf=0, cx>0
+   1028
+   1029	1196  E0 0F				     db	     0E0h, 0Fh		     ;	Fixup -	byte match
+   1030	1198  A7				     cmpsw			     ; Cmp [si]	to es:[di]
+   1031	1199  00 38				     add     [bx+si],bh
+   1032	119B  00 2B				     add     [bp+di],ch
+   1033				     ;*		     pop     cs			     ; Dangerous-8088 only
+   1034	119D  0F				     db	     0Fh		     ;	Fixup -	byte match
+   1035	119E  4C				     dec     sp
+   1036	119F  09 4D 3F				     or	     [di+3Fh],cx
+   1037	11A2  A3 A333				     mov     ds:data_35e,ax
+   1038	11A5  1F				     pop     ds
+   1039				     ;*		     aam     1Fh		     ; undocumented inst
+   1040	11A6  D4 1F				     db	     0D4h, 1Fh		     ;	Fixup -	byte match
+   1041	11A8  D4 0A				     aam			     ; Ascii adjust
+   1042	11AA  FA				     cli			     ; Disable interrupts
+   1043	11AB  0A FA				     or	     bh,dl
+   1044				     ;*		     add     [bx+0],bl
+   1045	11AD  00 5F 00				     db	      00h, 5Fh,	00h	     ;	Fixup -	byte match
+   1046	11B0  5F 3E A0 26 A0 3C			     db	      5Fh, 3Eh,0A0h, 26h,0A0h, 3Ch
+   1047	11B6  30 FC 30 CA A0 CA			     db	      30h,0FCh,	30h,0CAh,0A0h,0CAh
+   1048	11BC  A0 35 41 3D 40 FF			     db	     0A0h, 35h,	41h, 3Dh, 40h,0FFh
+   1049	11C2  F3 38 B1 2F 5A 37			     db	     0F3h, 38h,0B1h, 2Fh, 5Ah, 37h
+   1050	11C8  5A FA BC FA BC B5			     db	      5Ah,0FAh,0BCh,0FAh,0BCh,0B5h
+   1051	11CE  18 F5 18 A8 08 A8			     db	      18h,0F5h,	18h,0A8h, 08h,0A8h
+   1052	11D4  08 39 00 40 90 39			     db	      08h, 39h,	00h, 40h, 90h, 39h
+   1053	11DA  00 08 39 02 40 39			     db	      00h, 08h,	39h, 02h, 40h, 39h
+   1054	11E0  01 09 39 00 04 56			     db	      01h, 09h,	39h, 00h, 04h, 56h
+   1055	11E6  39 00 01 2F 39 00			     db	      39h, 00h,	01h, 2Fh, 39h, 00h
+   1056	11EC  40 7F 39 00			     db	      40h, 7Fh,	39h, 00h
+   1057	11F0			     loc_11:
+   1058	11F0  05 397F				     add     ax,397Fh
+   1059	11F3  00 44 39				     add     [si+39h],al
+   1060	11F6  01 20				     add     [bx+si],sp
+   1061	11F8  12 39				     adc     bh,[bx+di]
+   1062	11FA  00 30				     add     [bx+si],dh
+   1063	11FC  80 39 00				     cmp     byte ptr [bx+di],0
+   1064	11FF			     loc_12:
+   1065	11FF  45				     inc     bp
+   1066	1200  12 39				     adc     bh,[bx+di]
+   1067	1202  00 AB 3940			     add     ss:data_25e[bp+di],ch
+   1068				     ;*		     add     bl,dl
+   1069	1206  00 D3				     db	      00h,0D3h		     ;	Fixup -	byte match
+   1070	1208  CA 2B00				     retf    2B00h
+   1071										     ;*	No entry point to code
+   1072	120B  EF				     out     dx,ax		     ; port 0, DMA-1 bas&add ch	0
+   1073	120C  BF 4642				     mov     di,data_27e
+   1074	120F  EB EE				     jmp     short loc_12
+   1075	1211  00 01 12 EF 00 14			     db	      00h, 01h,	12h,0EFh, 00h, 14h
+   1076	1217  0A 7F 06 40 17 CF			     db	      0Ah, 7Fh,	06h, 40h, 17h,0CFh
+   1077	121D  D0 00 D7 FF 30 14			     db	     0D0h, 00h,0D7h,0FFh, 30h, 14h
+   1078	1223  31 F7 0A F8 0A FB			     db	      31h,0F7h,	0Ah,0F8h, 0Ah,0FBh
+   1079	1229  00 5E 00 5F 3E A0			     db	      00h, 5Eh,	00h, 5Fh, 3Eh,0A0h
+   1080	122F  26 A0 08 04 7C 5C			     db	      26h,0A0h,	08h, 04h, 7Ch, 5Ch
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 21
+356LVGRP.asm
+
+
+
+   1081	1235  04 0E				     db	      04h, 0Eh
+   1082	1237			     loc_13:
+   1083	1237  7D FE				     jge     loc_13		     ; Jump if > or =
+   1084	1239  00 0F				     add     [bx],cl
+   1085	123B  7E 7F				     jle     $+81h		     ; Jump if < or =
+   1086	123D  02 CF				     add     cl,bh
+   1087	123F  FB				     sti			     ; Enable interrupts
+   1088	1240  FF 2F				     jmp     dword ptr [bx]	     ;*
+   1089										     ;*	No entry point to code
+   1090	1242  4A				     dec     dx
+   1091	1243  F7 5A 92				     neg     word ptr [bp+si-6Eh]
+   1092	1246  BC BCFA				     mov     sp,0BCFAh
+   1093	1249  85 18				     test    bx,[bx+si]
+   1094	124B  F5				     cmc			     ; Complement carry
+   1095	124C  18 88 B808			     sbb     ds:data_40e[bx+si],cl
+   1096	1250  08 39				     or	     [bx+di],bh
+   1097	1252  04 10				     add     al,10h
+   1098	1254  04 39				     add     al,39h		     ; '9'
+   1099	1256  01 61 39				     add     [bx+di+39h],sp
+   1100	1259  00 04				     add     [si],al
+   1101	125B  05 0039				     add     ax,39h
+   1102	125E  20 AF 0039r			     and     byte ptr data_9[bx],ch
+   1103	1262  42				     inc     dx
+   1104	1263  07				     pop     es
+   1105	1264  02 A1 4600			     add     ah,ds:data_26e[bx+di]
+   1106	1268  05 3050				     add     ax,3050h
+   1107	126B  83 39 01				     cmp     word ptr [bx+di],1
+   1108	126E  08 39				     or	     [bx+di],bh
+   1109	1270  00 88 0139r			     add     byte ptr data_14[bx+si],cl
+   1110	1274  20 80 0039r			     and     byte ptr data_9[bx+si],al
+   1111	1278  94				     xchg    sp,ax
+   1112	1279  28 39				     sub     [bx+di],bh
+   1113	127B  00 7F 52				     add     [bx+52h],bh
+   1114	127E  39 00				     cmp     [bx+si],ax
+   1115	1280  36 50 80 50 15 02			     db	      36h, 50h,	80h, 50h, 15h, 02h
+   1116	1286  20 08 96 A3 39 01			     db	      20h, 08h,	96h,0A3h, 39h, 01h
+   1117	128C  88 39 00 08 04 39			     db	      88h, 39h,	00h, 08h, 04h, 39h
+   1118	1292  00 11 1D 00 3C 07			     db	      00h, 11h,	1Dh, 00h, 3Ch, 07h
+   1119	1298  FD 33 03 33 FF 0F			     db	     0FDh, 33h,	03h, 33h,0FFh, 0Fh
+   1120	129E  F0 0F FF F0 0E FF			     db	     0F0h, 0Fh,0FFh,0F0h, 0Eh,0FFh
+   1121	12A4  FE 0E A4 0E A4 39			     db	     0FEh, 0Eh,0A4h, 0Eh,0A4h, 39h
+   1122	12AA  00 08 39 01 82 10			     db	      00h, 08h,	39h, 01h, 82h, 10h
+   1123	12B0  39 00 F5 49 C0 00			     db	      39h, 00h,0F5h, 49h,0C0h, 00h
+   1124	12B6  FE F8 28 D8 EE DA			     db	     0FEh,0F8h,	28h,0D8h,0EEh,0DAh
+   1125	12BC  02 B4 FE B4 A0 0C			     db	      02h,0B4h,0FEh,0B4h,0A0h, 0Ch
+   1126	12C2  AF FC 0D 52 0D 52			     db	     0AFh,0FCh,	0Dh, 52h, 0Dh, 52h
+   1127	12C8  03 BF 02 AA 08 39			     db	      03h,0BFh,	02h,0AAh, 08h, 39h
+   1128	12CE  01 18 00 02 FE 30			     db	      01h, 18h,	00h, 02h,0FEh, 30h
+   1129	12D4  00 20 00 20 00 0B			     db	      00h, 20h,	00h, 20h, 00h, 0Bh
+   1130	12DA  FA 20 00 20 39 01			     db	     0FAh, 20h,	00h, 20h, 39h, 01h
+   1131	12E0  0B FA 20 00 20 00			     db	      0Bh,0FAh,	20h, 00h, 20h, 00h
+   1132	12E6  AA F0 AA 30 03 08			     db	     0AAh,0F0h,0AAh, 30h, 03h, 08h
+   1133	12EC  00 08 02 04 AA C5			     db	      00h, 08h,	02h, 04h,0AAh,0C5h
+   1134	12F2  00 02 04 22 39 00			     db	      00h, 02h,	04h, 22h, 39h, 00h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 22
+356LVGRP.asm
+
+
+
+   1135	12F8  A0 48 04 02 04 92			     db	     0A0h, 48h,	04h, 02h, 04h, 92h
+   1136	12FE  39 00 A1 20 04 02			     db	      39h, 00h,0A1h, 20h, 04h, 02h
+   1137	1304  04 02 3F B6 23 A6			     db	      04h, 02h,	3Fh,0B6h, 23h,0A6h
+   1138	130A  20 34 00 24 10 1C			     db	      20h, 34h,	00h, 24h, 10h, 1Ch
+   1139	1310  02 3E 10 00 01 55			     db	      02h, 3Eh,	10h, 00h, 01h, 55h
+   1140	1316  10 00 10 00 10 00			     db	      10h, 00h,	10h, 00h, 10h, 00h
+   1141	131C  15 FD 10 00 12 AA			     db	      15h,0FDh,	10h, 00h, 12h,0AAh
+   1142	1322  1D 50 1D 50 EA AA			     db	      1Dh, 50h,	1Dh, 50h,0EAh,0AAh
+   1143	1328  8A AA 04 02 04 02			     db	      8Ah,0AAh,	04h, 02h, 04h, 02h
+   1144	132E  04 00 20 80 04 02			     db	      04h, 00h,	20h, 80h, 04h, 02h
+   1145	1334  44 22 04 02 05 02			     db	      44h, 22h,	04h, 02h, 05h, 02h
+   1146	133A  04 00 50 20 C5 00			     db	      04h, 00h,	50h, 20h,0C5h, 00h
+   1147	1340  A2 44 6D 6C 45 6C			     db	     0A2h, 44h,	6Dh, 6Ch, 45h, 6Ch
+   1148	1346  00 02 00 02 00 07			     db	      00h, 02h,	00h, 02h, 00h, 07h
+   1149	134C  00 06 00 07 00 06			     db	      00h, 06h,	00h, 07h, 00h, 06h
+   1150	1352  00 1F 00 1F 00 78			     db	      00h, 1Fh,	00h, 1Fh, 00h, 78h
+   1151	1358  00 70 00 E0 00 C0			     db	      00h, 70h,	00h,0E0h, 00h,0C0h
+   1152	135E  00 78 00 70 00 1F			     db	      00h, 78h,	00h, 70h, 00h, 1Fh
+   1153	1364  00 1B 39 0A C0 00			     db	      00h, 1Bh,	39h, 0Ah,0C0h, 00h
+   1154	136A  C0 00 F0 00 E0 00			     db	     0C0h, 00h,0F0h, 00h,0E0h, 00h
+   1155	1370  38 00 20 00 F0 00			     db	      38h, 00h,	20h, 00h,0F0h, 00h
+   1156	1376  C0 00 C0 39 02 0F			     db	     0C0h, 00h,0C0h, 39h, 02h, 0Fh
+   1157	137C  00 0D 00 0B 00 0A			     db	      00h, 0Dh,	00h, 0Bh, 00h, 0Ah
+   1158	1382  00 0B 00 09 00 0B			     db	      00h, 0Bh,	00h, 09h, 00h, 0Bh
+   1159	1388  00 0A 00 0B 00 09			     db	      00h, 0Ah,	00h, 0Bh, 00h, 09h
+   1160	138E  00 0B 00 0A 00 0B			     db	      00h, 0Bh,	00h, 0Ah, 00h, 0Bh
+   1161	1394  00 09 39 0A E0 00			     db	      00h, 09h,	39h, 0Ah,0E0h, 00h
+   1162	139A  A0 39 03 90 00 90			     db	     0A0h, 39h,	03h, 90h, 00h, 90h
+   1163	13A0  00 F0 00 C0 39 08			     db	      00h,0F0h,	00h,0C0h, 39h, 08h
+   1164	13A6  07 39 01 0F 39 01			     db	      07h, 39h,	01h, 0Fh, 39h, 01h
+   1165	13AC  05 39 01 04 39 01			     db	      05h, 39h,	01h, 04h, 39h, 01h
+   1166	13B2  3F 39 01 0F 39 01			     db	      3Fh, 39h,	01h, 0Fh, 39h, 01h
+   1167	13B8  0A 39 01 62 39 00			     db	      0Ah, 39h,	01h, 62h, 39h, 00h
+   1168	13BE  E0 39 01 90 39 01			     db	     0E0h, 39h,	01h, 90h, 39h, 01h
+   1169	13C4  20 39 01 20 39 01			     db	      20h, 39h,	01h, 20h, 39h, 01h
+   1170	13CA  4C 39 01 10 39 05			     db	      4Ch, 39h,	01h, 10h, 39h, 05h
+   1171	13D0  02 39 01 01 95 39			     db	      02h, 39h,	01h, 01h, 95h, 39h
+   1172	13D6  00 07 B8 00 47 0F			     db	      00h, 07h,0B8h, 00h, 47h, 0Fh
+   1173	13DC  30 00 8A 0F B0 00			     db	      30h, 00h,	8Ah, 0Fh,0B0h, 00h
+   1174	13E2  45 0D 30 02 8B 06			     db	      45h, 0Dh,	30h, 02h, 8Bh, 06h
+   1175	13E8  D0 00 25 01 A8 00			     db	     0D0h, 00h,	25h, 01h,0A8h, 00h
+   1176	13EE  13 00 54 00 2A 50			     db	      13h, 00h,	54h, 00h, 2Ah, 50h
+   1177	13F4  80 39 01 20 FC 39			     db	      80h, 39h,	01h, 20h,0FCh, 39h
+   1178	13FA  00 10 AA 80 39 00			     db	      00h, 10h,0AAh, 80h, 39h, 00h
+   1179	1400  55 39 00 10 FE 80			     db	      55h, 39h,	00h, 10h,0FEh, 80h
+   1180	1406  00 20 FF 39 00 80			     db	      00h, 20h,0FFh, 39h, 00h, 80h
+   1181	140C  FC 00 02 00 A8 00			     db	     0FCh, 00h,	02h, 00h,0A8h, 00h
+   1182	1412  4D 93 01 03 DE C6			     db	      4Dh, 93h,	01h, 03h,0DEh,0C6h
+   1183	1418  4A 86 3D 76 18 64			     db	      4Ah, 86h,	3Dh, 76h, 18h, 64h
+   1184	141E  F3 E1 D2 A1 DF 3F			     db	     0F3h,0E1h,0D2h,0A1h,0DFh, 3Fh
+   1185	1424  8A 3E DE FA 4C EA			     db	      8Ah, 3Eh,0DEh,0FAh, 4Ch,0EAh
+   1186	142A  4C FC 08 D8 54 C9			     db	      4Ch,0FCh,	08h,0D8h, 54h,0C9h
+   1187	1430  04 48 40 93 00 03			     db	      04h, 48h,	40h, 93h, 00h, 03h
+   1188	1436  D0 46 40 06 38 16			     db	     0D0h, 46h,	40h, 06h, 38h, 16h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 23
+356LVGRP.asm
+
+
+
+   1189	143C  18 04 F3 01 D2 01			     db	      18h, 04h,0F3h, 01h,0D2h, 01h
+   1190	1442  DF 01 8A 00 DE F0			     db	     0DFh, 01h,	8Ah, 00h,0DEh,0F0h
+   1191	1448  44 A0 4C F8 08 D8			     db	      44h,0A0h,	4Ch,0F8h, 08h,0D8h
+   1192	144E  54 C0 04 40 4D 93			     db	      54h,0C0h,	04h, 40h, 4Dh, 93h
+   1193	1454  01 03 DE C2 4A 82			     db	      01h, 03h,0DEh,0C2h, 4Ah, 82h
+   1194	145A  3D 42 18 40 F3 01			     db	      3Dh, 42h,	18h, 40h,0F3h, 01h
+   1195	1460  82 01 DC 0F 08 0E			     db	      82h, 01h,0DCh, 0Fh, 08h, 0Eh
+   1196	1466  C0 7A 00 6A 00 FC			     db	     0C0h, 7Ah,	00h, 6Ah, 00h,0FCh
+   1197	146C  00 90 14 C9 04 48			     db	      00h, 90h,	14h,0C9h, 04h, 48h
+   1198	1472  00 03 00 03 00 04			     db	      00h, 03h,	00h, 03h, 00h, 04h
+   1199	1478  00 04 3D 60 10 60			     db	      00h, 04h,	3Dh, 60h, 10h, 60h
+   1200	147E  F3 C1 D2 81 DF 0F			     db	     0F3h,0C1h,0D2h, 81h,0DFh, 0Fh
+   1201	1484  8A 0A DE 1A 48 0A			     db	      8Ah, 0Ah,0DEh, 1Ah, 48h, 0Ah
+   1202	148A  48 3C 08 18 50 09			     db	      48h, 3Ch,	08h, 18h, 50h, 09h
+   1203	1490  00 08 40 13 00 03			     db	      00h, 08h,	40h, 13h, 00h, 03h
+   1204	1496  C6 80 42 80 21 76			     db	     0C6h, 80h,	42h, 80h, 21h, 76h
+   1205	149C  00 64 F0 E1 D0 A1			     db	      00h, 64h,0F0h,0E1h,0D0h,0A1h
+   1206	14A2  DC 3F 88 26 DE 7A			     db	     0DCh, 3Fh,	88h, 26h,0DEh, 7Ah
+   1207	14A8  40 6A 4C 3C 39 00			     db	      40h, 6Ah,	4Ch, 3Ch, 39h, 00h
+   1208	14AE  54 C9 04 48 39 0A			     db	      54h,0C9h,	04h, 48h, 39h, 0Ah
+   1209	14B4  08 30 39 08 03 06			     db	      08h, 30h,	39h, 08h, 03h, 06h
+   1210	14BA  02 00 60 10 60 39			     db	      02h, 00h,	60h, 10h, 60h, 39h
+   1211	14C0  03 04 39 01 60 00			     db	      03h, 04h,	39h, 01h, 60h, 00h
+   1212	14C6  40 39 03 10 60 39			     db	      40h, 39h,	03h, 10h, 60h, 39h
+   1213	14CC  04 0E 00 0C 00 1D			     db	      04h, 0Eh,	00h, 0Ch, 00h, 1Dh
+   1214	14D2  06 10 04 F0 00 40			     db	      06h, 10h,	04h,0F0h, 00h, 40h
+   1215	14D8  00 70 C0 40 80 18			     db	      00h, 70h,0C0h, 40h, 80h, 18h
+   1216	14DE  20 39 00 01 80 39			     db	      20h, 39h,	00h, 01h, 80h, 39h
+   1217	14E4  00 3D 66 18 60 F3			     db	      00h, 3Dh,	66h, 18h, 60h,0F3h
+   1218	14EA  D1 92 01 D5 0E 00			     db	     0D1h, 92h,	01h,0D5h, 0Eh, 00h
+   1219	14F0  0C DA 5A 48 08 3C			     db	      0Ch,0DAh,	5Ah, 48h, 08h, 3Ch
+   1220	14F6  80 04 00 74 10 20			     db	      80h, 04h,	00h, 74h, 10h, 20h
+   1221	14FC  00 50 30 39 04 2D			     db	      00h, 50h,	30h, 39h, 04h, 2Dh
+   1222	1502  76 00 64 B0 E1 10			     db	      76h, 00h,	64h,0B0h,0E1h, 10h
+   1223	1508  A0 DC 37 88 22 DE			     db	     0A0h,0DCh,	37h, 88h, 22h,0DEh
+   1224	150E  6A 08 40 01 06 39			     db	      6Ah, 08h,	40h, 01h, 06h, 39h
+   1225	1514  01 10 39 00 20 00			     db	      01h, 10h,	39h, 00h, 20h, 00h
+   1226	151A  20 00 70 E0 20 80			     db	      20h, 00h,	70h,0E0h, 20h, 80h
+   1227	1520  28 60 39 00 11 80			     db	      28h, 60h,	39h, 00h, 11h, 80h
+   1228	1526  39 00 35 62 10 00			     db	      39h, 00h,	35h, 62h, 10h, 00h
+   1229	152C  D3 55 80 01 39 02			     db	     0D3h, 55h,	80h, 01h, 39h, 02h
+   1230	1532  4C 00 04 00 19 00			     db	      4Ch, 00h,	04h, 00h, 19h, 00h
+   1231	1538  10 00 34 10 39 00			     db	      10h, 00h,	34h, 10h, 39h, 00h
+   1232	153E  68 30 39 00 20 39			     db	      68h, 30h,	39h, 00h, 20h, 39h
+   1233	1544  01 28 56 00 04 50			     db	      01h, 28h,	56h, 00h, 04h, 50h
+   1234	154A  A1 00 01 1D 55 39			     db	     0A1h, 00h,	01h, 1Dh, 55h, 39h
+   1235	1550  00 29 82 02 40 55			     db	      00h, 29h,	82h, 02h, 40h, 55h
+   1236	1556  05 02 C0 28 0A 00			     db	      05h, 02h,0C0h, 28h, 0Ah, 00h
+   1237	155C  80 01 54 39 01 A0			     db	      80h, 01h,	54h, 39h, 01h,0A0h
+   1238	1562  39 02 01 40 39 00			     db	      39h, 02h,	01h, 40h, 39h, 00h
+   1239	1568  01 80 4A A8 0A 02			     db	      01h, 80h,	4Ah,0A8h, 0Ah, 02h
+   1240	156E  5F 54 00 02 3A A8			     db	      5Fh, 54h,	00h, 02h, 3Ah,0A8h
+   1241	1574  39 00 95 50 39 02			     db	      39h, 00h,	95h, 50h, 39h, 02h
+   1242	157A  07 39 01 0C 39 10			     db	      07h, 39h,	01h, 0Ch, 39h, 10h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 24
+356LVGRP.asm
+
+
+
+   1243	1580  07 00 08 00 40 00			     db	      07h, 00h,	08h, 00h, 40h, 00h
+   1244	1586  B0 02 00 01 39 01			     db	     0B0h, 02h,	00h, 01h, 39h, 01h
+   1245	158C  0C 00 10 00 08 00			     db	      0Ch, 00h,	10h, 00h, 08h, 00h
+   1246	1592  20 EE 10 2C 39 06			     db	      20h,0EEh,	10h, 2Ch, 39h, 06h
+   1247	1598  40 00 B0 00 04 00			     db	      40h, 00h,0B0h, 00h, 04h, 00h
+   1248	159E  0A 39 01 01 80 39			     db	      0Ah, 39h,	01h, 01h, 80h, 39h
+   1249	15A4  02 04 80 39 00 0E			     db	      02h, 04h,	80h, 39h, 00h, 0Eh
+   1250	15AA  40 0C 00 47 55 20			     db	      40h, 0Ch,	00h, 47h, 55h, 20h
+   1251	15B0  50 9A AA 40 A0 35			     db	      50h, 9Ah,0AAh, 40h,0A0h, 35h
+   1252	15B6  45 C0 00 3A A2 40			     db	      45h,0C0h,	00h, 3Ah,0A2h, 40h
+   1253	15BC  00 15 51 40 00 02			     db	      00h, 15h,	51h, 40h, 00h, 02h
+   1254	15C2  80 39 01 D0 39 03			     db	      80h, 39h,	01h,0D0h, 39h, 03h
+   1255	15C8  16 4B 20 0A 00 AA			     db	      16h, 4Bh,	20h, 0Ah, 00h,0AAh
+   1256	15CE  A8 39 00 41 94 02			     db	     0A8h, 39h,	00h, 41h, 94h, 02h
+   1257	15D4  40 A1 2A 02 C0 10			     db	      40h,0A1h,	2Ah, 02h,0C0h, 10h
+   1258	15DA  14 01 00 2A 80 39			     db	      14h, 01h,	00h, 2Ah, 80h, 39h
+   1259	15E0  00 18 00 40 39 01			     db	      00h, 18h,	00h, 40h, 39h, 01h
+   1260	15E6  C0 39 08 03 00 04			     db	     0C0h, 39h,	08h, 03h, 00h, 04h
+   1261	15EC  00 20 00 58 01 39			     db	      00h, 20h,	00h, 58h, 01h, 39h
+   1262	15F2  00 C0 39 00 06 00			     db	      00h,0C0h,	39h, 00h, 06h, 00h
+   1263	15F8  08 00 04 39 00 F6			     db	      08h, 00h,	04h, 39h, 00h,0F6h
+   1264	15FE  10 30 39 06 A8 00			     db	      10h, 30h,	39h, 06h,0A8h, 00h
+   1265	1604  56 39 07 04 80 39			     db	      56h, 39h,	07h, 04h, 80h, 39h
+   1266	160A  00 0E 40 0C 00 0B			     db	      00h, 0Eh,	40h, 0Ch, 00h, 0Bh
+   1267	1610  20 0A 00 17 55 20			     db	      20h, 0Ah,	00h, 17h, 55h, 20h
+   1268	1616  50 1A AA 60 A0 35			     db	      50h, 1Ah,0AAh, 60h,0A0h, 35h
+   1269	161C  45 40 00 3A A2 40			     db	      45h, 40h,	00h, 3Ah,0A2h, 40h
+   1270	1622  00 15 41 39 00 02			     db	      00h, 15h,	41h, 39h, 00h, 02h
+   1271	1628  80 39 00 05 39 03			     db	      80h, 39h,	00h, 05h, 39h, 03h
+   1272	162E  05 80 AA A8 39 00			     db	      05h, 80h,0AAh,0A8h, 39h, 00h
+   1273	1634  41 94 02 40 21 2A			     db	      41h, 94h,	02h, 40h, 21h, 2Ah
+   1274	163A  02 C0 5C 14 01 00			     db	      02h,0C0h,	5Ch, 14h, 01h, 00h
+   1275	1640  0B 00 60 00 04 00			     db	      0Bh, 00h,	60h, 00h, 04h, 00h
+   1276	1646  10 39 10 02 00 01			     db	      10h, 39h,	10h, 02h, 00h, 01h
+   1277	164C  00 18 00 04 00 C0			     db	      00h, 18h,	00h, 04h, 00h,0C0h
+   1278	1652  01 20 04 00 0A 00			     db	      01h, 20h,	04h, 00h, 0Ah, 00h
+   1279	1658  10 FF 28 38 47 55			     db	      10h,0FFh,	28h, 38h, 47h, 55h
+   1280	165E  20 50 39 00 10 00			     db	      20h, 50h,	39h, 00h, 10h, 00h
+   1281	1664  40 00 20 39 01 80			     db	      40h, 00h,	20h, 39h, 01h, 80h
+   1282	166A  39 03 04 80 39 00			     db	      39h, 03h,	04h, 80h, 39h, 00h
+   1283	1670  0E 40 0C 00 0B 20			     db	      0Eh, 40h,	0Ch, 00h, 0Bh, 20h
+   1284	1676  0A 00 AA A8 39 00			     db	      0Ah, 00h,0AAh,0A8h, 39h, 00h
+   1285	167C  5A AA 20 A0 35 56			     db	      5Ah,0AAh,	20h,0A0h, 35h, 56h
+   1286	1682  C0 50 3A A8 40 20			     db	     0C0h, 50h,	3Ah,0A8h, 40h, 20h
+   1287	1688  15 54 39 00 0A A8			     db	      15h, 54h,	39h, 00h, 0Ah,0A8h
+   1288	168E  39 00 35 B7 00 39			     db	      39h, 00h,	35h,0B7h, 00h, 39h
+   1289	1694  01 A0 39 03 41 94			     db	      01h,0A0h,	39h, 03h, 41h, 94h
+   1290	169A  02 40 A1 2A 02 C0			     db	      02h, 40h,0A1h, 2Ah, 02h,0C0h
+   1291	16A0  50 14 01 00 AA A0			     db	      50h, 14h,	01h, 00h,0AAh,0A0h
+   1292	16A6  00 0B 39 1A 01 CA			     db	      00h, 0Bh,	39h, 1Ah, 01h,0CAh
+   1293	16AC  02 35 08 00 16 00			     db	      02h, 35h,	08h, 00h, 16h, 00h
+   1294	16B2  11 FC 20 30 07 55			     db	      11h,0FCh,	20h, 30h, 07h, 55h
+   1295	16B8  60 50 1A AA 40 A0			     db	      60h, 50h,	1Ah,0AAh, 40h,0A0h
+   1296	16BE  02 39 01 08 00 04			     db	      02h, 39h,	01h, 08h, 00h, 04h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 25
+356LVGRP.asm
+
+
+
+   1297	16C4  00 C0 00 30 39 07			     db	      00h,0C0h,	00h, 30h, 39h, 07h
+   1298	16CA  04 80 39 00 0E 40			     db	      04h, 80h,	39h, 00h, 0Eh, 40h
+   1299	16D0  0C 00 8B 20 0A 00			     db	      0Ch, 00h,	8Bh, 20h, 0Ah, 00h
+   1300	16D6  35 52 40 50 2B A8			     db	      35h, 52h,	40h, 50h, 2Bh,0A8h
+   1301	16DC  40 00 17 50 39 00			     db	      40h, 00h,	17h, 50h, 39h, 00h
+   1302	16E2  0A A9 39 03 E0 39			     db	      0Ah,0A9h,	39h, 03h,0E0h, 39h
+   1303	16E8  01 30 39 06 AA A8			     db	      01h, 30h,	39h, 06h,0AAh,0A8h
+   1304	16EE  39 00 41 94 02 40			     db	      39h, 00h,	41h, 94h, 02h, 40h
+   1305	16F4  A1 2A 02 C0 50 14			     db	     0A1h, 2Ah,	02h,0C0h, 50h, 14h
+   1306	16FA  01 00 2A 80 39 00			     db	      01h, 00h,	2Ah, 80h, 39h, 00h
+   1307	1700  05 39 03 02 80 39			     db	      05h, 39h,	03h, 02h, 80h, 39h
+   1308	1706  00 01 80 00 04 39			     db	      00h, 01h,	80h, 00h, 04h, 39h
+   1309	170C  01 0C 39 01 13 39			     db	      01h, 0Ch,	39h, 01h, 13h, 39h
+   1310	1712  01 2A 39 01 09 00			     db	      01h, 2Ah,	39h, 01h, 09h, 00h
+   1311	1718  60 00 09 00 60 00			     db	      60h, 00h,	09h, 00h, 60h, 00h
+   1312	171E  2A 39 01 10 39 00			     db	      2Ah, 39h,	01h, 10h, 39h, 00h
+   1313	1724  60 08 39 00 B0 08			     db	      60h, 08h,	39h, 00h,0B0h, 08h
+   1314	172A  20 00 30 10 20 08			     db	      20h, 00h,	30h, 10h, 20h, 08h
+   1315	1730  A8 39 00 10 88 20			     db	     0A8h, 39h,	00h, 10h, 88h, 20h
+   1316	1736  40 10 04 40 C0 20			     db	      40h, 10h,	04h, 40h,0C0h, 20h
+   1317	173C  0A 40 00 20 54 39			     db	      0Ah, 40h,	00h, 20h, 54h, 39h
+   1318	1742  00 30 00 1C 39 01			     db	      00h, 30h,	00h, 1Ch, 39h, 01h
+   1319	1748  20 00 0A 07 D1 00			     db	      20h, 00h,	0Ah, 07h,0D1h, 00h
+   1320	174E  04 0E 8A 39 00 0D			     db	      04h, 0Eh,	8Ah, 39h, 00h, 0Dh
+   1321	1754  44 39 00 02 82 39			     db	      44h, 39h,	00h, 02h, 82h, 39h
+   1322	175A  01 50 39 01 AA 6A			     db	      01h, 50h,	39h, 01h,0AAh, 6Ah
+   1323	1760  00 74 10 00 08 82			     db	      00h, 74h,	10h, 00h, 08h, 82h
+   1324	1766  00 28 0C 47 C0 10			     db	      00h, 28h,	0Ch, 47h,0C0h, 10h
+   1325	176C  1C AE A0 00 08 55			     db	      1Ch,0AEh,0A0h, 00h, 08h, 55h
+   1326	1772  50 39 00 AA A0 39			     db	      50h, 39h,	00h,0AAh,0A0h, 39h
+   1327	1778  00 14 39 01 2A 80			     db	      00h, 14h,	39h, 01h, 2Ah, 80h
+   1328	177E  00 2A 00 03 39 01			     db	      00h, 2Ah,	00h, 03h, 39h, 01h
+   1329	1784  06 00 02 00 06 00			     db	      06h, 00h,	02h, 00h, 06h, 00h
+   1330	178A  02 00 0A 39 01 08			     db	      02h, 00h,	0Ah, 39h, 01h, 08h
+   1331	1790  00 01 00 10 00 01			     db	      00h, 01h,	00h, 10h, 00h, 01h
+   1332	1796  00 28 39 01 15 39			     db	      00h, 28h,	39h, 01h, 15h, 39h
+   1333	179C  00 10 08 39 00 98			     db	      00h, 10h,	08h, 39h, 00h, 98h
+   1334	17A2  08 39 00 64 10 00			     db	      08h, 39h,	00h, 64h, 10h, 00h
+   1335	17A8  08 AA 39 00 10 C8			     db	      08h,0AAh,	39h, 00h, 10h,0C8h
+   1336	17AE  20 03 10 88 40 43			     db	      20h, 03h,	10h, 88h, 40h, 43h
+   1337	17B4  20 2A 40 00 20 04			     db	      20h, 2Ah,	40h, 00h, 20h, 04h
+   1338	17BA  39 00 30 39 00 30			     db	      39h, 00h,	30h, 39h, 00h, 30h
+   1339	17C0  39 00 03 0E 04 00			     db	      39h, 00h,	03h, 0Eh, 04h, 00h
+   1340	17C6  60 01 98 39 00 12			     db	      60h, 01h,	98h, 39h, 00h, 12h
+   1341	17CC  39 00 01 03 48 0C			     db	      39h, 00h,	01h, 03h, 48h, 0Ch
+   1342	17D2  45 00 E8 2A 22 05			     db	      45h, 00h,0E8h, 2Ah, 22h, 05h
+   1343	17D8  FC 15 24 C2 3D 14			     db	     0FCh, 15h,	24h,0C2h, 3Dh, 14h
+   1344	17DE  00 2B 00 01 00 B3			     db	      00h, 2Bh,	00h, 01h, 00h,0B3h
+   1345	17E4  00 06 00 01 80 30			     db	      00h, 06h,	00h, 01h, 80h, 30h
+   1346	17EA  00 4C 00 A1 E8 00			     db	      00h, 4Ch,	00h,0A1h,0E8h, 00h
+   1347	17F0  07 4D 50 39 00 9A			     db	      07h, 4Dh,	50h, 39h, 00h, 9Ah
+   1348	17F6  88 39 00 45 10 98			     db	      88h, 39h,	00h, 45h, 10h, 98h
+   1349	17FC  00 02 8C C8 3E 01			     db	      00h, 02h,	8Ch,0C8h, 3Eh, 01h
+   1350	1802  02 00 8F 0D 08 10			     db	      02h, 00h,	8Fh, 0Dh, 08h, 10h
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 26
+356LVGRP.asm
+
+
+
+   1351	1808  71 0A B5 60 00 15			     db	      71h, 0Ah,0B5h, 60h, 00h, 15h
+   1352	180E  6A 39 01 84 39 01			     db	      6Ah, 39h,	01h, 84h, 39h, 01h
+   1353	1814  C9 00 20 00 94 00			     db	     0C9h, 00h,	20h, 00h, 94h, 00h
+   1354	181A  61 82 20 30 00 10			     db	      61h, 82h,	20h, 30h, 00h, 10h
+   1355	1820  00 C0 00 82 00 E0			     db	      00h,0C0h,	00h, 82h, 00h,0E0h
+   1356	1826  08 39 00 2C 40 80			     db	      08h, 39h,	00h, 2Ch, 40h, 80h
+   1357	182C  39 01 04 39 00 10			     db	      39h, 01h,	04h, 39h, 00h, 10h
+   1358	1832  8F B7 00 18 0A A0			     db	      8Fh,0B7h,	00h, 18h, 0Ah,0A0h
+   1359	1838  C0 0C 39 01 98 00			     db	     0C0h, 0Ch,	39h, 01h, 98h, 00h
+   1360	183E  01 11 02 08 00 88			     db	      01h, 11h,	02h, 08h, 00h, 88h
+   1361	1844  A9 00 40 14 F2 39			     db	     0A9h, 00h,	40h, 14h,0F2h, 39h
+   1362	184A  00 27 4F 01 00 15			     db	      00h, 27h,	4Fh, 01h, 00h, 15h
+   1363	1850  D7 00 04 2B BE 01			     db	     0D7h, 00h,	04h, 2Bh,0BEh, 01h
+   1364	1856  06 87 7F 39 00 04			     db	      06h, 87h,	7Fh, 39h, 00h, 04h
+   1365	185C  00 80 00 62 40 18			     db	      00h, 80h,	00h, 62h, 40h, 18h
+   1366	1862  00 06 42 02 00 29			     db	      00h, 06h,	42h, 02h, 00h, 29h
+   1367	1868  50 39 00 50 CA 80			     db	      50h, 39h,	00h, 50h,0CAh, 80h
+   1368	186E  40 D5 30 00 30 EB			     db	      40h,0D5h,	30h, 00h, 30h,0EBh
+   1369	1874  88 83 C0 C8 18			     db	      88h, 83h,0C0h,0C8h, 18h
+   1370
+   1371	1879			     ZR356FUL	     endp
+   1372
+   1373	1879			     seg_a	     ends
+   1374
+   1375
+   1376
+   1377						     end     start
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 27
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/28/26"
+??FILENAME			  Text	 "356LVGRP"
+??TIME				  Text	 "20:46:14"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 356LVGRP
+@WORDSIZE			  Text	 2
+DATA_10				  Word	 SEG_A:0080
+DATA_11				  Word	 SEG_A:0091
+DATA_12				  Word	 SEG_A:00D0
+DATA_13				  Word	 SEG_A:00DC
+DATA_14				  Word	 SEG_A:0139
+DATA_15				  Word	 SEG_A:0339
+DATA_16				  Byte	 SEG_A:0418
+DATA_18				  Byte	 SEG_A:0823
+DATA_19				  Word	 SEG_A:0F3C
+DATA_1E				  Number 0CC0
+DATA_20				  Byte	 SEG_A:10D0
+DATA_21E			  Number 2804
+DATA_22E			  Number 2B38
+DATA_23E			  Number 300C
+DATA_24E			  Number 3903
+DATA_25E			  Number 3940
+DATA_26E			  Number 4600
+DATA_27E			  Number 4642
+DATA_28E			  Number 5000
+DATA_29E			  Number 5400
+DATA_2E				  Number 5B01
+DATA_30E			  Number 5D01
+DATA_31E			  Number 7E00
+DATA_32E			  Number 80A0
+DATA_33E			  Number 9E03
+DATA_34E			  Number A0E0
+DATA_35E			  Number A333
+DATA_36E			  Number A800
+DATA_37E			  Number A8AA
+DATA_38E			  Number AA00
+DATA_39E			  Number B7C0
+DATA_3E				  Number 5D01
+DATA_40E			  Number B808
+DATA_41E			  Number FA01
+DATA_4E				  Number 5E15
+DATA_5E				  Number 80A9
+DATA_6E				  Number 5500
+DATA_7E				  Number 5515
+DATA_8				  Word	 SEG_A:0030
+DATA_9				  Word	 SEG_A:0039
+LOCLOOP_4			  Near	 SEG_A:036C
+LOCLOOP_7			  Near	 SEG_A:0613
+LOC_11				  Near	 SEG_A:11F0
+Turbo Assembler	 Version 2.01	     03/28/26 20:46:15	    Page 28
+Symbol Table
+
+
+
+LOC_12				  Near	 SEG_A:11FF
+LOC_13				  Near	 SEG_A:1237
+LOC_6				  Near	 SEG_A:04C4
+LOC_8				  Near	 SEG_A:0621
+LOC_9				  Near	 SEG_A:117D
+START				  Near	 SEG_A:0000
+TARGET				  Number 5432
+ZR356FUL			  Far	 SEG_A:0000
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  1879 Byte	  Public
+

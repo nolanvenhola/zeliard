@@ -1,0 +1,2912 @@
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 1
+101GDEGA.asm
+
+
+
+      1
+      2
+      3				     ;==========================================================================
+      4				     ;
+      5				     ;	IMAGE_CONTROLLER - Code	Module
+      6				     ;
+      7				     ;==========================================================================
+      8
+      9	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
+     10
+     11				     include  srmacros.inc
+1    12
+1    13				     ; Macros which may	be required for	proper re-assembly
+1    14
+1    15
+1    16
+1    17
+1    18
+1    19				     ;-----------------------------------------------------------------------------
+1    20				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
+1    21				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
+1    22				     ; instruction it uses a near jump or call.
+1    23
+1    24				     calls	     macro   dummy1, dummy2, slocation
+1    25						     db	     9Ah		     ; forced call far instruction
+1    26						     dw	     offset slocation, seg slocation
+1    27				     endm
+1    28
+1    29				     jmps	     macro   dummy1, dummy2, jlocation
+1    30						     db	     0EAh		     ; forced jump far instruction
+1    31						     dw	     offset jlocation, seg jlocation
+1    32				     endm
+1    33
+1    34
+1    35
+1    36
+1    37				     ;-----------------------------------------------------------------------------
+1    38				     ;	Some compilers and some	assemblers will	code a call that goes to a far
+1    39				     ;	subroutine in the same segment as:
+1    40				     ;
+1    41				     ;		     PUSH    CS
+1    42				     ;		     CALL    near
+1    43				     ;
+1    44				     ;	This saves one byte, and is slightly faster.  If the assembler you are
+1    45				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
+1    46				     ;	macros are used	to code	the same information.  In other	words, the binary
+1    47				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
+1    48				     ;	are used!  (macro CALLF)
+1    49				     ;
+1    50
+1    51				     callf	     macro   location
+1    52						     push    cs
+1    53						     call    near ptr location
+1    54				     endm
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 2
+101GDEGA.asm
+
+
+
+1    55
+1    56				     ;	Some compilers generate	an unnecessary DS override on the call instruction
+1    57				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
+1    58
+1    59				     callfx	     macro   location
+1    60						     push    cs
+1    61						     db	     3Eh
+1    62						     call    near ptr location
+1    63				     endm
+1    64
+1    65
+1    66				     ;-----------------------------------------------------------------------------
+1    67				     ;	Some compilers and some	assemblers will	code a near call that is the
+1    68				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
+1    69				     ;	reconstructs a near jump for these cases.
+1    70
+1    71				     jmpn	     macro   location
+1    72						     db	     0E9h
+1    73						     dw	     offset location-$-2
+1    74				     endm
+1    75
+1    76
+1    77
+     78
+     79
+     80				     ; The following equates show data references outside the range of the program.
+     81
+     82	      =	0063		     data_1e	     equ     63h
+     83	      =	2050		     data_12e	     equ     2050h		     ;*
+     84	      =	2A80		     data_13e	     equ     2A80h		     ;*
+     85	      =	32A7		     data_14e	     equ     32A7h		     ;*
+     86	      =	32AF		     data_15e	     equ     32AFh		     ;*
+     87	      =	35AD		     data_16e	     equ     35ADh		     ;*
+     88	      =	35AF		     data_17e	     equ     35AFh		     ;*
+     89	      =	35CD		     data_18e	     equ     35CDh		     ;*
+     90	      =	3A6C		     data_19e	     equ     3A6Ch		     ;*
+     91	      =	3B30		     data_20e	     equ     3B30h		     ;*
+     92	      =	3B63		     data_21e	     equ     3B63h		     ;*
+     93	      =	3B64		     data_22e	     equ     3B64h		     ;*
+     94	      =	416A		     data_23e	     equ     416Ah		     ;*
+     95	      =	4210		     data_24e	     equ     4210h		     ;*
+     96	      =	4211		     data_25e	     equ     4211h		     ;*
+     97	      =	4212		     data_26e	     equ     4212h		     ;*
+     98	      =	4213		     data_27e	     equ     4213h		     ;*
+     99	      =	4214		     data_28e	     equ     4214h		     ;*
+    100	      =	4216		     data_29e	     equ     4216h		     ;*
+    101	      =	4218		     data_31e	     equ     4218h		     ;*
+    102	      =	421A		     data_32e	     equ     421Ah		     ;*
+    103	      =	421C		     data_33e	     equ     421Ch		     ;*
+    104	      =	453C		     data_34e	     equ     453Ch		     ;*
+    105	      =	455E		     data_35e	     equ     455Eh		     ;*
+    106	      =	A000		     data_36e	     equ     0A000h		     ;*
+    107	      =	BF07		     data_37e	     equ     0BF07h		     ;*
+    108	      =	F500		     data_38e	     equ     0F500h		     ;*
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 3
+101GDEGA.asm
+
+
+
+    109	      =	FF1A		     data_39e	     equ     0FF1Ah		     ;*
+    110	      =	FF2C		     data_40e	     equ     0FF2Ch		     ;*
+    111	      =	1A6E		     data_41e	     equ     1A6Eh		     ;*
+    112	      =	1A8F		     data_42e	     equ     1A8Fh		     ;*
+    113	      =	1A90		     data_43e	     equ     1A90h		     ;*
+    114	      =	013F		     data_44e	     equ     13Fh
+    115	      =	0140		     data_45e	     equ     140h
+    116	      =	0141		     data_46e	     equ     141h
+    117	      =	0504		     data_47e	     equ     504h
+    118	      =	FEBF		     data_48e	     equ     0FEBFh
+    119	      =	FEC0		     data_49e	     equ     0FEC0h
+    120	      =	FEC1		     data_50e	     equ     0FEC1h
+    121
+    122	0000			     seg_a	     segment byte public
+    123						     assume  cs:seg_a, ds:seg_a
+    124
+    125
+    126						     org     0
+    127
+    128	0000			     zr1_01	     proc    far
+    129
+    130	0000			     start:
+    131	0000  80 15 00				     adc     byte ptr [di],0
+    132	0003  00 32				     add     [bp+si],dh
+    133	0005  30 4A 30				     xor     [bp+si+30h],cl
+    134	0008  9E				     sahf			     ; Store ah	into flags
+    135				     ;*		     xor     dh,bh
+    136	0009  30 FE				     db	      30h,0FEh		     ;	Fixup -	byte match
+    137	000B  30 34				     xor     [si],dh
+    138	000D  41				     inc     cx
+    139				     ;*		     pop     cs			     ; Dangerous-8088 only
+    140	000E  0F				     db	     0Fh		     ;	Fixup -	byte match
+    141	000F  42				     inc     dx
+    142	0010  B7 32				     mov     bh,32h		     ; '2'
+    143	0012  F5				     cmc			     ; Complement carry
+    144	0013  32 42 33				     xor     al,[bp+si+33h]
+    145	0016  AD				     lodsw			     ; String [si] to ax
+    146	0017  33 D5				     xor     dx,bp
+    147	0019  35 3622				     xor     ax,3622h
+    148	001C  6F 36 26 31 9A 36			     db	      6Fh, 36h,	26h, 31h, 9Ah, 36h
+    149	0022  1C 37 16 38 69 3B			     db	      1Ch, 37h,	16h, 38h, 69h, 3Bh
+    150	0028  7F 3C A1 3D F7 3D			     db	      7Fh, 3Ch,0A1h, 3Dh,0F7h, 3Dh
+    151	002E  B1 3F 75 40 0D 41			     db	     0B1h, 3Fh,	75h, 40h, 0Dh, 41h
+    152	0034  0A 42 BA CE 03 B8			     db	      0Ah, 42h,0BAh,0CEh, 03h,0B8h
+    153	003A  05 00 EF B8 03 00			     db	      05h, 00h,0EFh,0B8h, 03h, 00h
+    154	0040  EF B8 08 FF EF B8			     db	     0EFh,0B8h,	08h,0FFh,0EFh,0B8h
+    155	0046  07 0F EF B8 02 0F			     db	      07h, 0Fh,0EFh,0B8h, 02h, 0Fh
+    156	004C  EF C3 50 BA C4 03			     db	     0EFh,0C3h,	50h,0BAh,0C4h, 03h
+    157	0052  B8 02 0F EF BA CE			     db	     0B8h, 02h,	0Fh,0EFh,0BAh,0CEh
+    158	0058  03 B8 05 02 EF 2E			     db	      03h,0B8h,	05h, 02h,0EFh, 2Eh
+    159	005E  C7 06 16 42 71 30			     db	     0C7h, 06h,	16h, 42h, 71h, 30h
+    160	0064  58 E8 5D 01 B8 03			     db	      58h,0E8h,	5Dh, 01h,0B8h, 03h
+    161	006A  00 EF B8 05 00 EF			     db	      00h,0EFh,0B8h, 05h, 00h,0EFh
+    162	0070  B8 08 FF EF C3 2E			     db	     0B8h, 08h,0FFh,0EFh,0C3h, 2Eh
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 4
+101GDEGA.asm
+
+
+
+    163	0076  F6 06 13 42 FF 74			     db	     0F6h, 06h,	13h, 42h,0FFh, 74h
+    164	007C  0B 50 B8 03 00 EF			     db	      0Bh, 50h,0B8h, 03h, 00h,0EFh
+    165	0082  58 32 FF E8 EC 01			     db	      58h, 32h,0FFh,0E8h,0ECh, 01h
+    166	0088			     loc_1:
+    167	0088  50				     push    ax
+    168	0089  B8 1003				     mov     ax,1003h
+    169	008C  EF				     out     dx,ax		     ; port 1, DMA-1 bas&cnt ch	0
+    170	008D  58				     pop     ax
+    171	008E  56				     push    si
+    172	008F  B7 01				     mov     bh,1
+    173	0091  E8 01FB				     call    imgctl_process_loop_2
+    174	0094  5E				     pop     si
+    175	0095  56				     push    si
+    176	0096  2E: 03 36	4214			     add     si,cs:data_28e
+    177	009B  B7 08				     mov     bh,8
+    178	009D  E8 01EF				     call    imgctl_process_loop_2
+    179	00A0  5E				     pop     si
+    180	00A1  C3				     retn
+    181										     ;*	No entry point to code
+    182	00A2  50				     push    ax
+    183	00A3  BA 03C4				     mov     dx,3C4h
+    184	00A6  B8 0F02				     mov     ax,0F02h
+    185	00A9  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+    186										     ;	al = 2,	map mask register
+    187	00AA  BA 03CE				     mov     dx,3CEh
+    188	00AD  B8 0205				     mov     ax,205h
+    189	00B0  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    190										     ;	al = 5,	mode
+    191	00B1  2E: C7 06	4216 30C5		     mov     word ptr cs:data_29e,30C5h
+    192	00B8  58				     pop     ax
+    193	00B9  E8 0109				     call    imgctl_multiply
+    194	00BC  B8 0003				     mov     ax,3
+    195	00BF  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    196										     ;	al = 3,	data rotate
+    197	00C0  B8 0005				     mov     ax,5
+    198	00C3  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    199										     ;	al = 5,	mode
+    200	00C4  B8 FF08				     mov     ax,0FF08h
+    201	00C7  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    202										     ;	al = 8,	data bit mask
+    203	00C8  C3				     retn
+    204										     ;*	No entry point to code
+    205	00C9  2E: F6 06	4213 FF			     test    byte ptr cs:data_27e,0FFh
+    206	00CF  74 0B				     jz	     loc_2		     ; Jump if zero
+    207	00D1  50				     push    ax
+    208	00D2  B8 0003				     mov     ax,3
+    209	00D5  EF				     out     dx,ax		     ; port 0, DMA-1 bas&add ch	0
+    210	00D6  58				     pop     ax
+    211	00D7  32 FF				     xor     bh,bh		     ; Zero register
+    212	00D9  E8 0198				     call    imgctl_process_loop
+    213	00DC			     loc_2:
+    214	00DC  50				     push    ax
+    215	00DD  B8 1003				     mov     ax,1003h
+    216	00E0  EF				     out     dx,ax		     ; port 0, DMA-1 bas&add ch	0
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 5
+101GDEGA.asm
+
+
+
+    217	00E1  58				     pop     ax
+    218	00E2  56				     push    si
+    219	00E3  B7 01				     mov     bh,1
+    220	00E5  E8 01A7				     call    imgctl_process_loop_2
+    221	00E8  5E				     pop     si
+    222	00E9  56				     push    si
+    223	00EA  2E: 03 36	4214			     add     si,cs:data_28e
+    224	00EF  56				     push    si
+    225	00F0  B7 02				     mov     bh,2
+    226	00F2  E8 019A				     call    imgctl_process_loop_2
+    227	00F5  5E				     pop     si
+    228	00F6  2E: 03 36	4214			     add     si,cs:data_28e
+    229	00FB  B7 04				     mov     bh,4
+    230	00FD  E8 018F				     call    imgctl_process_loop_2
+    231	0100  5E				     pop     si
+    232	0101  C3				     retn
+    233										     ;*	No entry point to code
+    234	0102  BA 03C4				     mov     dx,3C4h
+    235	0105  B8 0F02				     mov     ax,0F02h
+    236	0108  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+    237										     ;	al = 2,	map mask register
+    238	0109  BA 03CE				     mov     dx,3CEh
+    239	010C  B8 0205				     mov     ax,205h
+    240	010F  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    241										     ;	al = 5,	mode
+    242	0110  2E: C7 06	4216 3121		     mov     word ptr cs:data_29e,3121h
+    243	0117  B0 FF				     mov     al,0FFh
+    244	0119  E8 00A9				     call    imgctl_multiply
+    245	011C  B8 0005				     mov     ax,5
+    246	011F  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    247										     ;	al = 5,	mode
+    248	0120  B8 FF08				     mov     ax,0FF08h
+    249	0123  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    250										     ;	al = 8,	data bit mask
+    251	0124  C3				     retn
+    252										     ;*	No entry point to code
+    253	0125  32 FF				     xor     bh,bh		     ; Zero register
+    254	0127  E9 014A				     jmp     loc_10
+    255										     ;*	No entry point to code
+    256	012A  BA 03C4				     mov     dx,3C4h
+    257	012D  B8 0F02				     mov     ax,0F02h
+    258	0130  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+    259										     ;	al = 2,	map mask register
+    260	0131  BA 03CE				     mov     dx,3CEh
+    261	0134  B8 0205				     mov     ax,205h
+    262	0137  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    263										     ;	al = 5,	mode
+    264	0138  2E: C7 06	4216 314D		     mov     word ptr cs:data_29e,314Dh
+    265	013F  32 C0				     xor     al,al		     ; Zero register
+    266	0141  E8 0081				     call    imgctl_multiply
+    267	0144  B8 0003				     mov     ax,3
+    268	0147  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    269										     ;	al = 3,	data rotate
+    270	0148  B8 0005				     mov     ax,5
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 6
+101GDEGA.asm
+
+
+
+    271	014B  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    272										     ;	al = 5,	mode
+    273	014C  B8 FF08				     mov     ax,0FF08h
+    274	014F  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    275										     ;	al = 8,	data bit mask
+    276	0150  C3				     retn
+    277										     ;*	No entry point to code
+    278	0151  51				     push    cx
+    279	0152  57				     push    di
+    280	0153  55				     push    bp
+    281	0154  56				     push    si
+    282	0155  50				     push    ax
+    283	0156  B8 1003				     mov     ax,1003h
+    284	0159  EF				     out     dx,ax		     ; port 0, DMA-1 bas&add ch	0
+    285	015A  58				     pop     ax
+    286	015B  2E: 8B 2E	4214			     mov     bp,cs:data_28e
+    287	0160  8A CD				     mov     cl,ch
+    288	0162  32 ED				     xor     ch,ch		     ; Zero register
+    289
+    290	0164			     locloop_3:
+    291	0164  51				     push    cx
+    292	0165  50				     push    ax
+    293	0166  AC				     lodsb			     ; String [si] to al
+    294	0167  22 C4				     and     al,ah
+    295	0169  8A E8				     mov     ch,al
+    296	016B  3E: 8A 4A	FF			     mov     cl,ds:[bp+si-1]
+    297	016F  22 CC				     and     cl,ah
+    298	0171  8A F9				     mov     bh,cl
+    299	0173  22 FD				     and     bh,ch
+    300	0175  8A D9				     mov     bl,cl
+    301	0177  0A DD				     or	     bl,ch
+    302	0179  F6 D7				     not     bh
+    303	017B  22 EF				     and     ch,bh
+    304	017D  22 CF				     and     cl,bh
+    305	017F  22 DC				     and     bl,ah
+    306	0181  2E: F6 06	4213 FF			     test    byte ptr cs:data_27e,0FFh
+    307	0187  74 15				     jz	     loc_4		     ; Jump if zero
+    308	0189  B8 0003				     mov     ax,3
+    309	018C  EF				     out     dx,ax		     ; port 0, DMA-1 bas&add ch	0
+    310	018D  B0 08				     mov     al,8
+    311	018F  EE				     out     dx,al		     ; port 0, DMA-1 bas&add ch	0
+    312	0190  42				     inc     dx
+    313	0191  8A C3				     mov     al,bl
+    314	0193  EE				     out     dx,al		     ; port 1, DMA-1 bas&cnt ch	0
+    315	0194  4A				     dec     dx
+    316	0195  32 C0				     xor     al,al		     ; Zero register
+    317	0197  26: 86 05				     xchg    es:[di],al
+    318	019A  B8 1003				     mov     ax,1003h
+    319	019D  EF				     out     dx,ax		     ; port 0, DMA-1 bas&add ch	0
+    320	019E			     loc_4:
+    321	019E  B0 08				     mov     al,8
+    322	01A0  EE				     out     dx,al		     ; port 0, DMA-1 bas&add ch	0
+    323	01A1  42				     inc     dx
+    324	01A2  8A C5				     mov     al,ch
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 7
+101GDEGA.asm
+
+
+
+    325	01A4  EE				     out     dx,al		     ; port 1, DMA-1 bas&cnt ch	0
+    326	01A5  B0 02				     mov     al,2
+    327	01A7  26: 86 05				     xchg    es:[di],al
+    328	01AA  8A C1				     mov     al,cl
+    329	01AC  EE				     out     dx,al		     ; port 1, DMA-1 bas&cnt ch	0
+    330	01AD  B0 04				     mov     al,4
+    331	01AF  26: 86 05				     xchg    es:[di],al
+    332	01B2  8A C3				     mov     al,bl
+    333	01B4  EE				     out     dx,al		     ; port 1, DMA-1 bas&cnt ch	0
+    334	01B5  B0 08				     mov     al,8
+    335	01B7  26: 86 05				     xchg    es:[di],al
+    336	01BA  4A				     dec     dx
+    337	01BB  47				     inc     di
+    338	01BC  58				     pop     ax
+    339	01BD  59				     pop     cx
+    340	01BE  E2 A4				     loop    locloop_3		     ; Loop if cx > 0
+    341
+    342	01C0  5E				     pop     si
+    343	01C1  5D				     pop     bp
+    344	01C2  5F				     pop     di
+    345	01C3  59				     pop     cx
+    346	01C4  C3				     retn
+    347
+    348	01C5			     zr1_01	     endp
+    349
+    350				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    351				     ;				    SUBROUTINE
+    352				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    353
+    354	01C5			     imgctl_multiply	     proc    near
+    355	01C5  1E				     push    ds
+    356	01C6  50				     push    ax
+    357	01C7  06				     push    es
+    358	01C8  57				     push    di
+    359	01C9  B8 0050				     mov     ax,50h
+    360	01CC  F6 E3				     mul     bl			     ; ax = reg	* al
+    361	01CE  8A DF				     mov     bl,bh
+    362	01D0  32 FF				     xor     bh,bh		     ; Zero register
+    363	01D2  03 C3				     add     ax,bx
+    364	01D4  8B F8				     mov     di,ax
+    365	01D6  8A C5				     mov     al,ch
+    366	01D8  F6 E1				     mul     cl			     ; ax = reg	* al
+    367	01DA  2E: A3 4214			     mov     cs:data_28e,ax
+    368	01DE  5E				     pop     si
+    369	01DF  1F				     pop     ds
+    370	01E0  58				     pop     ax
+    371	01E1  2E: C6 06	4213 00			     mov     byte ptr cs:data_27e,0
+    372	01E7  0A C0				     or	     al,al		     ; Zero ?
+    373	01E9  75 03				     jnz     loc_5		     ; Jump if not zero
+    374	01EB  E8 000B				     call    vga_operation
+    375	01EE			     loc_5:
+    376	01EE  2E: C6 06	4213 FF			     mov     byte ptr cs:data_27e,0FFh
+    377	01F4  E8 0002				     call    vga_operation
+    378	01F7  1F				     pop     ds
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 8
+101GDEGA.asm
+
+
+
+    379	01F8  C3				     retn
+    380	01F9			     imgctl_multiply	     endp
+    381
+    382
+    383				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    384				     ;				    SUBROUTINE
+    385				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    386
+    387	01F9			     vga_operation	     proc    near
+    388	01F9  2E: C6 06	4211 00			     mov     byte ptr cs:data_25e,0
+    389	01FF  B8 A000				     mov     ax,0A000h
+    390	0202  8E C0				     mov     es,ax
+    391	0204  BD 0008				     mov     bp,8
+    392	0207			     loc_6:
+    393	0207  2E: A0 4211			     mov     al,cs:data_25e
+    394	020B  2E: A2 4210			     mov     cs:data_24e,al
+    395	020F  2E: C6 06	FF1A 00			     mov     byte ptr cs:data_39e,0
+    396	0215  51				     push    cx
+    397	0216  56				     push    si
+    398	0217  57				     push    di
+    399	0218			     loc_7:
+    400	0218  2E: 8A 1E	4210			     mov     bl,cs:data_24e
+    401	021D  83 E3 07				     and     bx,7
+    402	0220  2E: 8A A7	32A7			     mov     ah,cs:data_14e[bx]
+    403	0225  2E: FF 16	4216			     call    word ptr cs:data_29e
+    404	022A  2E: FE 06	4210			     inc     byte ptr cs:data_24e
+    405	022F  8A C5				     mov     al,ch
+    406	0231  32 E4				     xor     ah,ah		     ; Zero register
+    407	0233  03 F0				     add     si,ax
+    408	0235  83 C7 50				     add     di,50h
+    409	0238  FE C9				     dec     cl
+    410	023A  74 24				     jz	     loc_8		     ; Jump if zero
+    411	023C  2E: 8A 1E	4210			     mov     bl,cs:data_24e
+    412	0241  83 E3 07				     and     bx,7
+    413	0244  2E: 8A A7	32AF			     mov     ah,cs:data_15e[bx]
+    414	0249  2E: FF 16	4216			     call    word ptr cs:data_29e
+    415	024E  2E: FE 06	4210			     inc     byte ptr cs:data_24e
+    416	0253  8A C5				     mov     al,ch
+    417	0255  32 E4				     xor     ah,ah		     ; Zero register
+    418	0257  03 F0				     add     si,ax
+    419	0259  83 C7 50				     add     di,50h
+    420	025C  FE C9				     dec     cl
+    421	025E  75 B8				     jnz     loc_7		     ; Jump if not zero
+    422	0260			     loc_8:
+    423	0260  5F				     pop     di
+    424	0261  5E				     pop     si
+    425	0262  59				     pop     cx
+    426	0263  2E: FE 06	4211			     inc     byte ptr cs:data_25e
+    427	0268			     loc_9:
+    428	0268  2E: 80 3E	FF1A 14			     cmp     byte ptr cs:data_39e,14h
+    429	026E  72 F8				     jb	     loc_9		     ; Jump if below
+    430	0270  4D				     dec     bp
+    431	0271  75 94				     jnz     loc_6		     ; Jump if not zero
+    432	0273  C3				     retn
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 9
+101GDEGA.asm
+
+
+
+    433	0274			     vga_operation	     endp
+    434
+    435
+    436				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    437				     ;				    SUBROUTINE
+    438				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    439
+    440	0274			     imgctl_process_loop	     proc    near
+    441	0274			     loc_10:
+    442	0274  57				     push    di
+    443	0275  51				     push    cx
+    444	0276  50				     push    ax
+    445	0277  B0 08				     mov     al,8
+    446	0279  EE				     out     dx,al		     ; port 0, DMA-1 bas&add ch	0
+    447	027A  42				     inc     dx
+    448	027B  8A C4				     mov     al,ah
+    449	027D  EE				     out     dx,al		     ; port 1, DMA-1 bas&cnt ch	0
+    450	027E  8A CD				     mov     cl,ch
+    451	0280  32 ED				     xor     ch,ch		     ; Zero register
+    452
+    453	0282			     locloop_11:
+    454	0282  8A C7				     mov     al,bh
+    455	0284  26: 86 05				     xchg    es:[di],al
+    456	0287  47				     inc     di
+    457	0288  E2 F8				     loop    locloop_11		     ; Loop if cx > 0
+    458
+    459	028A  4A				     dec     dx
+    460	028B  58				     pop     ax
+    461	028C  59				     pop     cx
+    462	028D  5F				     pop     di
+    463	028E  C3				     retn
+    464	028F			     imgctl_process_loop	     endp
+    465
+    466
+    467				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    468				     ;				    SUBROUTINE
+    469				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    470
+    471	028F			     imgctl_process_loop_2	     proc    near
+    472	028F  57				     push    di
+    473	0290  51				     push    cx
+    474	0291  50				     push    ax
+    475	0292  B0 08				     mov     al,8
+    476	0294  EE				     out     dx,al		     ; port 1, DMA-1 bas&cnt ch	0
+    477	0295  42				     inc     dx
+    478	0296  8A CD				     mov     cl,ch
+    479	0298  32 ED				     xor     ch,ch		     ; Zero register
+    480
+    481	029A			     locloop_12:
+    482	029A  AC				     lodsb			     ; String [si] to al
+    483	029B  22 C4				     and     al,ah
+    484	029D  EE				     out     dx,al		     ; port 2, DMA-1 bas&add ch	1
+    485	029E  8A C7				     mov     al,bh
+    486	02A0  26: 86 05				     xchg    es:[di],al
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 10
+101GDEGA.asm
+
+
+
+    487	02A3  47				     inc     di
+    488	02A4  E2 F4				     loop    locloop_12		     ; Loop if cx > 0
+    489
+    490	02A6  4A				     dec     dx
+    491	02A7  58				     pop     ax
+    492	02A8  59				     pop     cx
+    493	02A9  5F				     pop     di
+    494	02AA  C3				     retn
+    495	02AB			     imgctl_process_loop_2	     endp
+    496
+    497										     ;*	No entry point to code
+    498	02AB  80 20 08				     and     byte ptr [bx+si],8
+    499	02AE  02 40 10				     add     al,[bx+si+10h]
+    500	02B1  04 01				     add     al,1
+    501	02B3  01 04				     add     [si],ax
+    502	02B5  10 40 02				     adc     [bx+si+2],al
+    503	02B8  08 20				     or	     [bx+si],ah
+    504	02BA  80 0E BF07 1C			     or	     byte ptr ds:data_37e,1Ch
+    505	02BF  42				     inc     dx
+    506	02C0  33 C0				     xor     ax,ax		     ; Zero register
+    507	02C2  B9 0190				     mov     cx,190h
+    508	02C5  F3> AB				     rep     stosw		     ; Rep when	cx >0 Store ax to es:[di]
+    509	02C7  BF 421C				     mov     di,data_33e
+    510	02CA			     loc_13:
+    511	02CA  AC				     lodsb			     ; String [si] to al
+    512	02CB  3C FF				     cmp     al,0FFh
+    513	02CD  75 01				     jne     loc_14		     ; Jump if not equal
+    514	02CF  C3				     retn
+    515	02D0			     loc_14:
+    516	02D0  2C 20				     sub     al,20h		     ; ' '
+    517	02D2  73 01				     jnc     loc_15		     ; Jump if carry=0
+    518	02D4  C3				     retn
+    519	02D5			     loc_15:
+    520	02D5  74 1D				     jz	     loc_17		     ; Jump if zero
+    521	02D7  56				     push    si
+    522	02D8  57				     push    di
+    523	02D9  32 E4				     xor     ah,ah		     ; Zero register
+    524	02DB  03 C0				     add     ax,ax
+    525	02DD  03 C0				     add     ax,ax
+    526	02DF  03 C0				     add     ax,ax
+    527	02E1  03 C0				     add     ax,ax
+    528	02E3  03 06 F500			     add     ax,ds:data_38e
+    529	02E7  8B F0				     mov     si,ax
+    530	02E9  B9 0008				     mov     cx,8
+    531
+    532	02EC			     locloop_16:
+    533	02EC  A5				     movsw			     ; Mov [si]	to es:[di]
+    534	02ED  83 C7 4E				     add     di,4Eh
+    535	02F0  E2 FA				     loop    locloop_16		     ; Loop if cx > 0
+    536
+    537	02F2  5F				     pop     di
+    538	02F3  5E				     pop     si
+    539	02F4			     loc_17:
+    540	02F4  83 C7 02				     add     di,2
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 11
+101GDEGA.asm
+
+
+
+    541	02F7  EB D1				     jmp     short loc_13
+    542										     ;*	No entry point to code
+    543	02F9  B2 50				     mov     dl,50h		     ; 'P'
+    544	02FB  F6 E2				     mul     dl			     ; ax = reg	* al
+    545	02FD  05 421C				     add     ax,421Ch
+    546	0300  8B F0				     mov     si,ax
+    547	0302  8A C3				     mov     al,bl
+    548	0304  F6 E2				     mul     dl			     ; ax = reg	* al
+    549	0306  8A DF				     mov     bl,bh
+    550	0308  32 FF				     xor     bh,bh		     ; Zero register
+    551	030A  03 C3				     add     ax,bx
+    552	030C  8B F8				     mov     di,ax
+    553	030E  BA 03C4				     mov     dx,3C4h
+    554	0311  B8 0402				     mov     ax,402h
+    555	0314  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+    556										     ;	al = 2,	map mask register
+    557	0315  BA 03CE				     mov     dx,3CEh
+    558	0318  B8 0204				     mov     ax,204h
+    559	031B  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    560										     ;	al = 4,	read map select
+    561	031C  56				     push    si
+    562	031D  1E				     push    ds
+    563	031E  B8 A000				     mov     ax,0A000h
+    564	0321  8E C0				     mov     es,ax
+    565	0323  8E D8				     mov     ds,ax
+    566	0325  FE C9				     dec     cl
+    567	0327  33 DB				     xor     bx,bx		     ; Zero register
+    568	0329  8A DD				     mov     bl,ch
+    569	032B  32 ED				     xor     ch,ch		     ; Zero register
+    570
+    571	032D			     locloop_18:
+    572	032D  51				     push    cx
+    573	032E  57				     push    di
+    574	032F  8B F7				     mov     si,di
+    575	0331  83 C6 50				     add     si,50h
+    576	0334  8B CB				     mov     cx,bx
+    577	0336  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    578	0338  5F				     pop     di
+    579	0339  83 C7 50				     add     di,50h
+    580	033C  59				     pop     cx
+    581	033D  E2 EE				     loop    locloop_18		     ; Loop if cx > 0
+    582
+    583	033F  1F				     pop     ds
+    584	0340  5E				     pop     si
+    585	0341  8B CB				     mov     cx,bx
+    586	0343  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    587	0345  C3				     retn
+    588	0346			     loc_19:
+    589	0346  1E				     push    ds
+    590	0347  06				     push    es
+    591	0348  57				     push    di
+    592	0349  B8 0050				     mov     ax,50h
+    593	034C  F6 E3				     mul     bl			     ; ax = reg	* al
+    594	034E  8A DF				     mov     bl,bh
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 12
+101GDEGA.asm
+
+
+
+    595	0350  32 FF				     xor     bh,bh		     ; Zero register
+    596	0352  03 C3				     add     ax,bx
+    597	0354  8B F8				     mov     di,ax
+    598	0356  8A C5				     mov     al,ch
+    599	0358  F6 E1				     mul     cl			     ; ax = reg	* al
+    600	035A  2E: A3 4214			     mov     cs:data_28e,ax
+    601	035E  5E				     pop     si
+    602	035F  1F				     pop     ds
+    603	0360  E8 0002				     call    copy_vga_buffer
+    604	0363  1F				     pop     ds
+    605	0364  C3				     retn
+    606
+    607				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    608				     ;				    SUBROUTINE
+    609				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    610
+    611	0365			     copy_vga_buffer	     proc    near
+    612	0365  B8 A000				     mov     ax,0A000h
+    613	0368  8E C0				     mov     es,ax
+    614	036A  BA 03C4				     mov     dx,3C4h
+    615	036D  B0 02				     mov     al,2
+    616	036F  EE				     out     dx,al		     ; port 3C4h, EGA sequencr index
+    617										     ;	al = 2,	map mask register
+    618	0370  42				     inc     dx
+    619	0371  33 DB				     xor     bx,bx		     ; Zero register
+    620	0373  8A DD				     mov     bl,ch
+    621	0375  32 ED				     xor     ch,ch		     ; Zero register
+    622
+    623	0377			     locloop_20:
+    624	0377  51				     push    cx
+    625	0378  B0 01				     mov     al,1
+    626	037A  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+    627	037B  56				     push    si
+    628	037C  57				     push    di
+    629	037D  8B CB				     mov     cx,bx
+    630	037F  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    631	0381  5F				     pop     di
+    632	0382  5E				     pop     si
+    633	0383  B0 02				     mov     al,2
+    634	0385  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+    635	0386  56				     push    si
+    636	0387  57				     push    di
+    637	0388  2E: 03 36	4214			     add     si,cs:data_28e
+    638	038D  8B CB				     mov     cx,bx
+    639	038F  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    640	0391  5F				     pop     di
+    641	0392  5E				     pop     si
+    642	0393  B0 04				     mov     al,4
+    643	0395  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+    644	0396  56				     push    si
+    645	0397  57				     push    di
+    646	0398  2E: 03 36	4214			     add     si,cs:data_28e
+    647	039D  2E: 03 36	4214			     add     si,cs:data_28e
+    648	03A2  8B CB				     mov     cx,bx
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 13
+101GDEGA.asm
+
+
+
+    649	03A4  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    650	03A6  5F				     pop     di
+    651	03A7  5E				     pop     si
+    652	03A8  59				     pop     cx
+    653	03A9  83 C7 50				     add     di,50h
+    654	03AC  03 F3				     add     si,bx
+    655	03AE  E2 C7				     loop    locloop_20		     ; Loop if cx > 0
+    656
+    657	03B0  C3				     retn
+    658	03B1			     copy_vga_buffer	     endp
+    659
+    660										     ;*	No entry point to code
+    661	03B1  0E				     push    cs
+    662	03B2  07				     pop     es
+    663	03B3  BF A000				     mov     di,data_36e
+    664	03B6  33 D2				     xor     dx,dx		     ; Zero register
+    665	03B8  B9 0009				     mov     cx,9
+    666
+    667	03BB			     locloop_21:
+    668	03BB  B0 01				     mov     al,1
+    669	03BD  AA				     stosb			     ; Store al	to es:[di]
+    670	03BE  8B C2				     mov     ax,dx
+    671	03C0  AB				     stosw			     ; Store ax	to es:[di]
+    672	03C1  A5				     movsw			     ; Mov [si]	to es:[di]
+    673	03C2  AB				     stosw			     ; Store ax	to es:[di]
+    674	03C3  B8 0101				     mov     ax,101h
+    675	03C6  AB				     stosw			     ; Store ax	to es:[di]
+    676	03C7  A4				     movsb			     ; Mov [si]	to es:[di]
+    677	03C8  A4				     movsb			     ; Mov [si]	to es:[di]
+    678	03C9  32 C0				     xor     al,al		     ; Zero register
+    679	03CB  AA				     stosb			     ; Store al	to es:[di]
+    680	03CC  AA				     stosb			     ; Store al	to es:[di]
+    681	03CD  A4				     movsb			     ; Mov [si]	to es:[di]
+    682	03CE  A4				     movsb			     ; Mov [si]	to es:[di]
+    683	03CF  81 C2 0240			     add     dx,240h
+    684	03D3  E2 E6				     loop    locloop_21		     ; Loop if cx > 0
+    685
+    686	03D5  C6 06 4210 00			     mov     byte ptr ds:data_24e,0
+    687	03DA  C6 06 FF1A 00			     mov     byte ptr ds:data_39e,0
+    688	03DF			     loc_22:
+    689	03DF  BE A000				     mov     si,data_36e
+    690	03E2  B9 0009				     mov     cx,9
+    691	03E5			     loc_23:
+    692	03E5  51				     push    cx
+    693	03E6  F6 04 FF				     test    byte ptr [si],0FFh
+    694	03E9  75 03				     jnz     loc_24		     ; Jump if not zero
+    695	03EB  E9 0087				     jmp     loc_26
+    696	03EE			     loc_24:
+    697	03EE  8A 44 0D				     mov     al,[si+0Dh]
+    698	03F1  3A 44 0E				     cmp     al,[si+0Eh]
+    699	03F4  74 0C				     je	     loc_25		     ; Jump if equal
+    700	03F6  FE 44 0C				     inc     byte ptr [si+0Ch]
+    701	03F9  F6 44 0C 01			     test    byte ptr [si+0Ch],1
+    702	03FD  75 03				     jnz     loc_25		     ; Jump if not zero
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 14
+101GDEGA.asm
+
+
+
+    703	03FF  FE 44 0D				     inc     byte ptr [si+0Dh]
+    704	0402			     loc_25:
+    705	0402  33 DB				     xor     bx,bx		     ; Zero register
+    706	0404  8A 5C 0D				     mov     bl,[si+0Dh]
+    707	0407  03 DB				     add     bx,bx
+    708	0409  03 DB				     add     bx,bx
+    709	040B  8B 8F 35AF			     mov     cx,ds:data_17e[bx]
+    710	040F  89 4C 07				     mov     [si+7],cx
+    711	0412  8A 44 04				     mov     al,[si+4]
+    712	0415  02 44 0A				     add     al,[si+0Ah]
+    713	0418  88 44 04				     mov     [si+4],al
+    714	041B  8A F0				     mov     dh,al
+    715	041D  8A 44 03				     mov     al,[si+3]
+    716	0420  02 44 09				     add     al,[si+9]
+    717	0423  88 44 03				     mov     [si+3],al
+    718	0426  8A D0				     mov     dl,al
+    719	0428  32 E4				     xor     ah,ah		     ; Zero register
+    720	042A  03 C0				     add     ax,ax
+    721	042C  03 C0				     add     ax,ax
+    722	042E  03 C0				     add     ax,ax
+    723	0430  8B E8				     mov     bp,ax
+    724	0432  03 C0				     add     ax,ax
+    725	0434  03 C0				     add     ax,ax
+    726	0436  03 C5				     add     ax,bp
+    727	0438  03 C0				     add     ax,ax
+    728	043A  8A D6				     mov     dl,dh
+    729	043C  32 F6				     xor     dh,dh		     ; Zero register
+    730	043E  03 C2				     add     ax,dx
+    731	0440  89 44 05				     mov     [si+5],ax
+    732	0443  8B F8				     mov     di,ax
+    733	0445  8B 6C 01				     mov     bp,[si+1]
+    734	0448  1E				     push    ds
+    735	0449  56				     push    si
+    736	044A  B8 A000				     mov     ax,0A000h
+    737	044D  8E D8				     mov     ds,ax
+    738	044F  8C C8				     mov     ax,cs
+    739	0451  05 3000				     add     ax,3000h
+    740	0454  8E C0				     mov     es,ax
+    741	0456  BA 03CE				     mov     dx,3CEh
+    742	0459  B0 04				     mov     al,4
+    743	045B  EE				     out     dx,al		     ; port 3CEh, EGA graphic index
+    744										     ;	al = 4,	read map select
+    745	045C  42				     inc     dx
+    746	045D  8B F7				     mov     si,di
+    747	045F  8B FD				     mov     di,bp
+    748	0461  B0 00				     mov     al,0
+    749	0463  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+    750	0464  E8 0103				     call    copy_buffer
+    751	0467  B0 01				     mov     al,1
+    752	0469  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+    753	046A  E8 00FD				     call    copy_buffer
+    754	046D  B0 02				     mov     al,2
+    755	046F  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+    756	0470  E8 00F7				     call    copy_buffer
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 15
+101GDEGA.asm
+
+
+
+    757	0473  5E				     pop     si
+    758	0474  1F				     pop     ds
+    759	0475			     loc_26:
+    760	0475  59				     pop     cx
+    761	0476  83 C6 0F				     add     si,0Fh
+    762	0479  E2 02				     loop    locloop_27		     ; Loop if cx > 0
+    763
+    764	047B  EB 03				     jmp     short loc_28
+    765
+    766	047D			     locloop_27:
+    767	047D  E9 FF65				     jmp     loc_23
+    768	0480			     loc_28:
+    769	0480  BE A000				     mov     si,data_36e
+    770	0483  B9 0009				     mov     cx,9
+    771
+    772	0486			     locloop_29:
+    773	0486  51				     push    cx
+    774	0487  56				     push    si
+    775	0488  A0 4210				     mov     al,ds:data_24e
+    776	048B  24 07				     and     al,7
+    777	048D  BB 35CD				     mov     bx,data_18e
+    778	0490  D7				     xlat			     ; al=[al+[bx]] table
+    779	0491  A2 416A				     mov     ds:data_23e,al
+    780	0494  FE 06 4210			     inc     byte ptr ds:data_24e
+    781	0498  33 C0				     xor     ax,ax		     ; Zero register
+    782	049A  E8 0C9B				     call    vga_operation4
+    783	049D  5E				     pop     si
+    784	049E  2E: F6 04	FF			     test    byte ptr cs:[si],0FFh
+    785	04A2  74 58				     jz	     loc_30		     ; Jump if zero
+    786	04A4  33 DB				     xor     bx,bx		     ; Zero register
+    787	04A6  8A 5C 0D				     mov     bl,[si+0Dh]
+    788	04A9  03 DB				     add     bx,bx
+    789	04AB  03 DB				     add     bx,bx
+    790	04AD  8B AF 35AD			     mov     bp,ds:data_16e[bx]
+    791	04B1  8B 4C 07				     mov     cx,[si+7]
+    792	04B4  8A 14				     mov     dl,[si]
+    793	04B6  C6 04 00				     mov     byte ptr [si],0
+    794	04B9  8B 44 03				     mov     ax,[si+3]
+    795	04BC  80 FC 4B				     cmp     ah,4Bh		     ; 'K'
+    796	04BF  73 3B				     jae     loc_30		     ; Jump if above or	=
+    797	04C1  3C A0				     cmp     al,0A0h
+    798	04C3  73 37				     jae     loc_30		     ; Jump if above or	=
+    799	04C5  88 14				     mov     [si],dl
+    800	04C7  8B 7C 05				     mov     di,[si+5]
+    801	04CA  1E				     push    ds
+    802	04CB  56				     push    si
+    803	04CC  B8 A000				     mov     ax,0A000h
+    804	04CF  8E C0				     mov     es,ax
+    805	04D1  2E: 8E 1E	FF2C			     mov     ds,cs:data_40e
+    806	04D6  8B F5				     mov     si,bp
+    807	04D8  BA 03C4				     mov     dx,3C4h
+    808	04DB  B8 0102				     mov     ax,102h
+    809	04DE  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+    810										     ;	al = 2,	map mask register
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 16
+101GDEGA.asm
+
+
+
+    811	04DF  BA 03CE				     mov     dx,3CEh
+    812	04E2  B8 0004				     mov     ax,4
+    813	04E5  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    814										     ;	al = 4,	read map select
+    815	04E6  E8 00AD				     call    imgctl_process_loop_3
+    816	04E9  BA 03C4				     mov     dx,3C4h
+    817	04EC  B8 0202				     mov     ax,202h
+    818	04EF  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+    819										     ;	al = 2,	map mask register
+    820	04F0  BA 03CE				     mov     dx,3CEh
+    821	04F3  B8 0104				     mov     ax,104h
+    822	04F6  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+    823										     ;	al = 4,	read map select
+    824	04F7  E8 009C				     call    imgctl_process_loop_3
+    825	04FA  5E				     pop     si
+    826	04FB  1F				     pop     ds
+    827	04FC			     loc_30:
+    828	04FC  59				     pop     cx
+    829	04FD  83 C6 0F				     add     si,0Fh
+    830	0500  E2 84				     loop    locloop_29		     ; Loop if cx > 0
+    831
+    832	0502			     loc_31:
+    833	0502  2E: 80 3E	FF1A 1E			     cmp     byte ptr cs:data_39e,1Eh
+    834	0508  72 F8				     jb	     loc_31		     ; Jump if below
+    835	050A  2E: C6 06	FF1A 00			     mov     byte ptr cs:data_39e,0
+    836	0510  BE A000				     mov     si,data_36e
+    837	0513  B9 0009				     mov     cx,9
+    838
+    839	0516			     locloop_32:
+    840	0516  51				     push    cx
+    841	0517  8B 6C 01				     mov     bp,[si+1]
+    842	051A  8B 7C 05				     mov     di,[si+5]
+    843	051D  8B 4C 07				     mov     cx,[si+7]
+    844	0520  1E				     push    ds
+    845	0521  56				     push    si
+    846	0522  B8 A000				     mov     ax,0A000h
+    847	0525  8E C0				     mov     es,ax
+    848	0527  8C C8				     mov     ax,cs
+    849	0529  05 3000				     add     ax,3000h
+    850	052C  8E D8				     mov     ds,ax
+    851	052E  8B F5				     mov     si,bp
+    852	0530  BA 03C4				     mov     dx,3C4h
+    853	0533  B0 02				     mov     al,2
+    854	0535  EE				     out     dx,al		     ; port 3C4h, EGA sequencr index
+    855										     ;	al = 2,	map mask register
+    856	0536  42				     inc     dx
+    857	0537  B0 01				     mov     al,1
+    858	0539  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+    859	053A  E8 0043				     call    copy_buffer_2
+    860	053D  B0 02				     mov     al,2
+    861	053F  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+    862	0540  E8 003D				     call    copy_buffer_2
+    863	0543  B0 04				     mov     al,4
+    864	0545  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 17
+101GDEGA.asm
+
+
+
+    865	0546  E8 0037				     call    copy_buffer_2
+    866	0549  5E				     pop     si
+    867	054A  1F				     pop     ds
+    868	054B  59				     pop     cx
+    869	054C  83 C6 0F				     add     si,0Fh
+    870	054F  E2 C5				     loop    locloop_32		     ; Loop if cx > 0
+    871
+    872	0551  BE A000				     mov     si,data_36e
+    873	0554  B9 0009				     mov     cx,9
+    874
+    875	0557			     locloop_33:
+    876	0557  F6 04 FF				     test    byte ptr [si],0FFh
+    877	055A  74 03				     jz	     loc_34		     ; Jump if zero
+    878	055C  E9 FE80				     jmp     loc_22
+    879	055F			     loc_34:
+    880	055F  83 C6 0F				     add     si,0Fh
+    881	0562  E2 F3				     loop    locloop_33		     ; Loop if cx > 0
+    882
+    883	0564  B8 0002				     mov     ax,2
+    884	0567  E9 0BCE				     jmp     loc_101
+    885
+    886				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    887				     ;				    SUBROUTINE
+    888				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    889
+    890	056A			     copy_buffer	     proc    near
+    891	056A  56				     push    si
+    892	056B  51				     push    cx
+    893	056C			     loc_35:
+    894	056C  56				     push    si
+    895	056D  51				     push    cx
+    896	056E  8A CD				     mov     cl,ch
+    897	0570  32 ED				     xor     ch,ch		     ; Zero register
+    898	0572  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    899	0574  59				     pop     cx
+    900	0575  5E				     pop     si
+    901	0576  83 C6 50				     add     si,50h
+    902	0579  FE C9				     dec     cl
+    903	057B  75 EF				     jnz     loc_35		     ; Jump if not zero
+    904	057D  59				     pop     cx
+    905	057E  5E				     pop     si
+    906	057F  C3				     retn
+    907	0580			     copy_buffer	     endp
+    908
+    909
+    910				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    911				     ;				    SUBROUTINE
+    912				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    913
+    914	0580			     copy_buffer_2	     proc    near
+    915	0580  57				     push    di
+    916	0581  51				     push    cx
+    917	0582			     loc_36:
+    918	0582  57				     push    di
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 18
+101GDEGA.asm
+
+
+
+    919	0583  51				     push    cx
+    920	0584  8A CD				     mov     cl,ch
+    921	0586  32 ED				     xor     ch,ch		     ; Zero register
+    922	0588  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+    923	058A  59				     pop     cx
+    924	058B  5F				     pop     di
+    925	058C  83 C7 50				     add     di,50h
+    926	058F  FE C9				     dec     cl
+    927	0591  75 EF				     jnz     loc_36		     ; Jump if not zero
+    928	0593  59				     pop     cx
+    929	0594  5F				     pop     di
+    930	0595  C3				     retn
+    931	0596			     copy_buffer_2	     endp
+    932
+    933
+    934				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+    935				     ;				    SUBROUTINE
+    936				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+    937
+    938	0596			     imgctl_process_loop_3	     proc    near
+    939	0596  57				     push    di
+    940	0597  51				     push    cx
+    941	0598			     loc_37:
+    942	0598  57				     push    di
+    943	0599  51				     push    cx
+    944	059A  8A CD				     mov     cl,ch
+    945	059C  32 ED				     xor     ch,ch		     ; Zero register
+    946
+    947	059E			     locloop_38:
+    948	059E  AC				     lodsb			     ; String [si] to al
+    949	059F  26: 08 05				     or	     es:[di],al
+    950	05A2  47				     inc     di
+    951	05A3  E2 F9				     loop    locloop_38		     ; Loop if cx > 0
+    952
+    953	05A5  59				     pop     cx
+    954	05A6  5F				     pop     di
+    955	05A7  83 C7 50				     add     di,50h
+    956	05AA  FE C9				     dec     cl
+    957	05AC  75 EA				     jnz     loc_37		     ; Jump if not zero
+    958	05AE  59				     pop     cx
+    959	05AF  5F				     pop     di
+    960	05B0  C3				     retn
+    961	05B1			     imgctl_process_loop_3	     endp
+    962
+    963	05B1  00 90 20 06 80 91			     db	      00h, 90h,	20h, 06h, 80h, 91h
+    964	05B7  20 06 00 93 20 06			     db	      20h, 06h,	00h, 93h, 20h, 06h
+    965	05BD  80 94 20 06 00 96			     db	      80h, 94h,	20h, 06h, 00h, 96h
+    966	05C3  18 04 C0 96 18 04			     db	      18h, 04h,0C0h, 96h, 18h, 04h
+    967	05C9  80 97 18 04 40 98			     db	      80h, 97h,	18h, 04h, 40h, 98h
+    968	05CF  18 04 36 06 3F 07			     db	      18h, 04h,	36h, 06h, 3Fh, 07h
+    969	05D5  2D 05 24 04 1E 32			     db	      2Dh, 05h,	24h, 04h, 1Eh, 32h
+    970	05DB  E4 BA C0 0C F7 E2			     db	     0E4h,0BAh,0C0h, 0Ch,0F7h,0E2h
+    971	05E1  05 40 AB 2E 8E 1E			     db	      05h, 40h,0ABh, 2Eh, 8Eh, 1Eh
+    972	05E7  2C FF 8B F0 B8 50			     db	      2Ch,0FFh,	8Bh,0F0h,0B8h, 50h
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 19
+101GDEGA.asm
+
+
+
+    973	05ED  00 F6 E3 8A DF 32			     db	      00h,0F6h,0E3h, 8Ah,0DFh, 32h
+    974	05F3  FF 03 C3 8B F8 B8			     db	     0FFh, 03h,0C3h, 8Bh,0F8h,0B8h
+    975	05F9  00 A0 8E C0 BA C4			     db	      00h,0A0h,	8Eh,0C0h,0BAh,0C4h
+    976	05FF  03 B0 02 EE 42 B0			     db	      03h,0B0h,	02h,0EEh, 42h,0B0h
+    977	0605  02 EE E8 08 00 B0			     db	      02h,0EEh,0E8h, 08h, 00h,0B0h
+    978	060B  01 EE E8 02 00 1F			     db	      01h,0EEh,0E8h, 02h, 00h, 1Fh
+    979	0611  C3 57 B9 30 00			     db	     0C3h, 57h,0B9h, 30h, 00h
+    980
+    981	0616			     locloop_39:
+    982	0616  57				     push    di
+    983	0617  51				     push    cx
+    984	0618  B9 0011				     mov     cx,11h
+    985	061B  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+    986	061D  59				     pop     cx
+    987	061E  5F				     pop     di
+    988	061F  83 C7 50				     add     di,50h
+    989	0622  E2 F2				     loop    locloop_39		     ; Loop if cx > 0
+    990
+    991	0624  5F				     pop     di
+    992	0625  C3				     retn
+    993										     ;*	No entry point to code
+    994	0626  1E				     push    ds
+    995	0627  32 E4				     xor     ah,ah		     ; Zero register
+    996	0629  BA 0480				     mov     dx,480h
+    997	062C  F7 E2				     mul     dx			     ; dx:ax = reg * ax
+    998	062E  05 97C0				     add     ax,97C0h
+    999	0631  2E: 8E 1E	FF2C			     mov     ds,cs:data_40e
+   1000	0636  8B F0				     mov     si,ax
+   1001	0638  B8 0050				     mov     ax,50h
+   1002	063B  F6 E3				     mul     bl			     ; ax = reg	* al
+   1003	063D  8A DF				     mov     bl,bh
+   1004	063F  32 FF				     xor     bh,bh		     ; Zero register
+   1005	0641  03 C3				     add     ax,bx
+   1006	0643  8B F8				     mov     di,ax
+   1007	0645  B8 A000				     mov     ax,0A000h
+   1008	0648  8E C0				     mov     es,ax
+   1009	064A  BA 03C4				     mov     dx,3C4h
+   1010	064D  B0 02				     mov     al,2
+   1011	064F  EE				     out     dx,al		     ; port 3C4h, EGA sequencr index
+   1012										     ;	al = 2,	map mask register
+   1013	0650  42				     inc     dx
+   1014	0651  B0 01				     mov     al,1
+   1015	0653  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   1016	0654  E8 0008				     call    copy_buffer_3
+   1017	0657  B0 02				     mov     al,2
+   1018	0659  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   1019	065A  E8 0002				     call    copy_buffer_3
+   1020	065D  1F				     pop     ds
+   1021	065E  C3				     retn
+   1022
+   1023				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1024				     ;				    SUBROUTINE
+   1025				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1026
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 20
+101GDEGA.asm
+
+
+
+   1027	065F			     copy_buffer_3	     proc    near
+   1028	065F  57				     push    di
+   1029	0660  B9 0020				     mov     cx,20h
+   1030
+   1031	0663			     locloop_40:
+   1032	0663  57				     push    di
+   1033	0664  51				     push    cx
+   1034	0665  B9 0009				     mov     cx,9
+   1035	0668  F3> A5				     rep     movsw		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1036	066A  59				     pop     cx
+   1037	066B  5F				     pop     di
+   1038	066C  83 C7 50				     add     di,50h
+   1039	066F  E2 F2				     loop    locloop_40		     ; Loop if cx > 0
+   1040
+   1041	0671  5F				     pop     di
+   1042	0672  C3				     retn
+   1043	0673			     copy_buffer_3	     endp
+   1044
+   1045										     ;*	No entry point to code
+   1046	0673  B8 A000				     mov     ax,0A000h
+   1047	0676  8E C0				     mov     es,ax
+   1048	0678  BA 03C4				     mov     dx,3C4h
+   1049	067B  B8 0102				     mov     ax,102h
+   1050	067E  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+   1051										     ;	al = 2,	map mask register
+   1052	067F  33 FF				     xor     di,di		     ; Zero register
+   1053	0681  BB 2288				     mov     bx,2288h
+   1054	0684  B9 0064				     mov     cx,64h
+   1055
+   1056	0687			     locloop_41:
+   1057	0687  51				     push    cx
+   1058	0688  8A C7				     mov     al,bh
+   1059	068A  8A E7				     mov     ah,bh
+   1060	068C  B9 0028				     mov     cx,28h
+   1061	068F  F3> AB				     rep     stosw		     ; Rep when	cx >0 Store ax to es:[di]
+   1062	0691  8A C3				     mov     al,bl
+   1063	0693  8A E3				     mov     ah,bl
+   1064	0695  B9 0028				     mov     cx,28h
+   1065	0698  F3> AB				     rep     stosw		     ; Rep when	cx >0 Store ax to es:[di]
+   1066	069A  59				     pop     cx
+   1067	069B  E2 EA				     loop    locloop_41		     ; Loop if cx > 0
+   1068
+   1069	069D  C3				     retn
+   1070	069E  33 DB B9 19 00			     db	      33h,0DBh,0B9h, 19h, 00h
+   1071
+   1072	06A3			     locloop_42:
+   1073	06A3  51				     push    cx
+   1074	06A4  B9 0022				     mov     cx,22h
+   1075
+   1076	06A7			     locloop_43:
+   1077	06A7  51				     push    cx
+   1078	06A8  AC				     lodsb			     ; String [si] to al
+   1079	06A9  53				     push    bx
+   1080	06AA  1E				     push    ds
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 21
+101GDEGA.asm
+
+
+
+   1081	06AB  56				     push    si
+   1082	06AC  E8 0010				     call    imgctl_multiply_2
+   1083	06AF  5E				     pop     si
+   1084	06B0  1F				     pop     ds
+   1085	06B1  5B				     pop     bx
+   1086	06B2  FE C7				     inc     bh
+   1087	06B4  59				     pop     cx
+   1088	06B5  E2 F0				     loop    locloop_43		     ; Loop if cx > 0
+   1089
+   1090	06B7  32 FF				     xor     bh,bh		     ; Zero register
+   1091	06B9  FE C3				     inc     bl
+   1092	06BB  59				     pop     cx
+   1093	06BC  E2 E5				     loop    locloop_42		     ; Loop if cx > 0
+   1094
+   1095	06BE  C3				     retn
+   1096
+   1097				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1098				     ;				    SUBROUTINE
+   1099				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1100
+   1101	06BF			     imgctl_multiply_2		     proc    near
+   1102	06BF  2E: 8E 1E	FF2C			     mov     ds,cs:data_40e
+   1103	06C4  8C CA				     mov     dx,cs
+   1104	06C6  81 C2 2000			     add     dx,2000h
+   1105	06CA  8E C2				     mov     es,dx
+   1106	06CC  32 E4				     xor     ah,ah		     ; Zero register
+   1107	06CE			     loc_44:
+   1108	06CE  2C 28				     sub     al,28h		     ; '('
+   1109	06D0  72 04				     jc	     loc_45		     ; Jump if carry Set
+   1110	06D2  FE C4				     inc     ah
+   1111	06D4  EB F8				     jmp     short loc_44
+   1112	06D6			     loc_45:
+   1113	06D6  04 28				     add     al,28h		     ; '('
+   1114	06D8  8A C8				     mov     cl,al
+   1115	06DA  8A C4				     mov     al,ah
+   1116	06DC  32 E4				     xor     ah,ah		     ; Zero register
+   1117	06DE  BA 0140				     mov     dx,140h
+   1118	06E1  F7 E2				     mul     dx			     ; dx:ax = reg * ax
+   1119	06E3  32 ED				     xor     ch,ch		     ; Zero register
+   1120	06E5  03 C1				     add     ax,cx
+   1121	06E7  05 4000				     add     ax,4000h
+   1122	06EA  50				     push    ax
+   1123	06EB  8B D3				     mov     dx,bx
+   1124	06ED  32 F6				     xor     dh,dh		     ; Zero register
+   1125	06EF  B8 0110				     mov     ax,110h
+   1126	06F2  F7 E2				     mul     dx			     ; dx:ax = reg * ax
+   1127	06F4  8A D7				     mov     dl,bh
+   1128	06F6  32 F6				     xor     dh,dh		     ; Zero register
+   1129	06F8  03 C2				     add     ax,dx
+   1130	06FA  05 0000				     add     ax,0
+   1131	06FD  8B F8				     mov     di,ax
+   1132	06FF  5E				     pop     si
+   1133	0700  B9 0003				     mov     cx,3
+   1134
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 22
+101GDEGA.asm
+
+
+
+   1135	0703			     locloop_46:
+   1136	0703  51				     push    cx
+   1137	0704  57				     push    di
+   1138	0705  56				     push    si
+   1139	0706  B9 0008				     mov     cx,8
+   1140
+   1141	0709			     locloop_47:
+   1142	0709  A4				     movsb			     ; Mov [si]	to es:[di]
+   1143	070A  83 C7 21				     add     di,21h
+   1144	070D  83 C6 27				     add     si,27h
+   1145	0710  E2 F7				     loop    locloop_47		     ; Loop if cx > 0
+   1146
+   1147	0712  5E				     pop     si
+   1148	0713  5F				     pop     di
+   1149	0714  81 C7 1A90			     add     di,1A90h
+   1150	0718  81 C6 0640			     add     si,640h
+   1151	071C  59				     pop     cx
+   1152	071D  E2 E4				     loop    locloop_46		     ; Loop if cx > 0
+   1153
+   1154	071F  C3				     retn
+   1155	0720			     imgctl_multiply_2		     endp
+   1156
+   1157										     ;*	No entry point to code
+   1158	0720  1E				     push    ds
+   1159	0721  8C CA				     mov     dx,cs
+   1160	0723  8E C2				     mov     es,dx
+   1161	0725  81 C2 2000			     add     dx,2000h
+   1162	0729  8E DA				     mov     ds,dx
+   1163	072B  50				     push    ax
+   1164	072C  B2 22				     mov     dl,22h		     ; '"'
+   1165	072E  F6 E2				     mul     dl			     ; ax = reg	* al
+   1166	0730  05 0000				     add     ax,0
+   1167	0733  8B F0				     mov     si,ax
+   1168	0735  56				     push    si
+   1169	0736  BF 453C				     mov     di,data_34e
+   1170	0739  B9 0022				     mov     cx,22h
+   1171	073C  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1172	073E  81 C6 1A6E			     add     si,data_41e
+   1173	0742  B9 0022				     mov     cx,22h
+   1174	0745  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   1175	0747  BF 453C				     mov     di,data_34e
+   1176	074A  B9 0044				     mov     cx,44h
+   1177
+   1178	074D			     locloop_48:
+   1179	074D  26: 8A 05				     mov     al,es:[di]
+   1180	0750  BA 0008				     mov     dx,8
+   1181	0753			     loc_49:
+   1182	0753  D0 C8				     ror     al,1		     ; Rotate
+   1183	0755  12 E4				     adc     ah,ah
+   1184	0757  4A				     dec     dx
+   1185	0758  75 F9				     jnz     loc_49		     ; Jump if not zero
+   1186	075A  26: 88 25				     mov     es:[di],ah
+   1187	075D  47				     inc     di
+   1188	075E  E2 ED				     loop    locloop_48		     ; Loop if cx > 0
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 23
+101GDEGA.asm
+
+
+
+   1189
+   1190	0760  5E				     pop     si
+   1191	0761  58				     pop     ax
+   1192	0762  B2 50				     mov     dl,50h		     ; 'P'
+   1193	0764  F6 E2				     mul     dl			     ; ax = reg	* al
+   1194	0766  8B F8				     mov     di,ax
+   1195	0768  B8 A000				     mov     ax,0A000h
+   1196	076B  8E C0				     mov     es,ax
+   1197	076D  BA 03C4				     mov     dx,3C4h
+   1198	0770  B8 0F02				     mov     ax,0F02h
+   1199	0773  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+   1200										     ;	al = 2,	map mask register
+   1201	0774  BA 03CE				     mov     dx,3CEh
+   1202	0777  B8 0003				     mov     ax,3
+   1203	077A  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1204										     ;	al = 3,	data rotate
+   1205	077B  B8 0205				     mov     ax,205h
+   1206	077E  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1207										     ;	al = 5,	mode
+   1208	077F  B0 08				     mov     al,8
+   1209	0781  EE				     out     dx,al		     ; port 3CEh, EGA graphic index
+   1210										     ;	al = 8,	data bit mask
+   1211	0782  42				     inc     dx
+   1212	0783  56				     push    si
+   1213	0784  57				     push    di
+   1214	0785  B9 0022				     mov     cx,22h
+   1215
+   1216	0788			     locloop_50:
+   1217	0788  AC				     lodsb			     ; String [si] to al
+   1218	0789  8A D8				     mov     bl,al
+   1219	078B  0A 84 1A8F			     or	     al,ds:data_42e[si]
+   1220	078F  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1221	0790  32 C0				     xor     al,al		     ; Zero register
+   1222	0792  26: 86 05				     xchg    es:[di],al
+   1223	0795  8A C3				     mov     al,bl
+   1224	0797  22 84 1A8F			     and     al,ds:data_42e[si]
+   1225	079B  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1226	079C  B0 0F				     mov     al,0Fh
+   1227	079E  26: 86 05				     xchg    es:[di],al
+   1228	07A1  47				     inc     di
+   1229	07A2  E2 E4				     loop    locloop_50		     ; Loop if cx > 0
+   1230
+   1231	07A4  5F				     pop     di
+   1232	07A5  5E				     pop     si
+   1233	07A6  4A				     dec     dx
+   1234	07A7  B8 1003				     mov     ax,1003h
+   1235	07AA  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1236										     ;	al = 3,	data rotate
+   1237	07AB  B0 08				     mov     al,8
+   1238	07AD  EE				     out     dx,al		     ; port 3CEh, EGA graphic index
+   1239										     ;	al = 8,	data bit mask
+   1240	07AE  42				     inc     dx
+   1241	07AF  81 C6 1A90			     add     si,data_43e
+   1242	07B3  57				     push    di
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 24
+101GDEGA.asm
+
+
+
+   1243	07B4  B9 0022				     mov     cx,22h
+   1244
+   1245	07B7			     locloop_51:
+   1246	07B7  AC				     lodsb			     ; String [si] to al
+   1247	07B8  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1248	07B9  B0 0E				     mov     al,0Eh
+   1249	07BB  26: 86 05				     xchg    es:[di],al
+   1250	07BE  47				     inc     di
+   1251	07BF  E2 F6				     loop    locloop_51		     ; Loop if cx > 0
+   1252
+   1253	07C1  5F				     pop     di
+   1254	07C2  0E				     push    cs
+   1255	07C3  1F				     pop     ds
+   1256	07C4  83 C7 4F				     add     di,4Fh
+   1257	07C7  4A				     dec     dx
+   1258	07C8  B8 0003				     mov     ax,3
+   1259	07CB  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1260										     ;	al = 3,	data rotate
+   1261	07CC  B0 08				     mov     al,8
+   1262	07CE  EE				     out     dx,al		     ; port 3CEh, EGA graphic index
+   1263										     ;	al = 8,	data bit mask
+   1264	07CF  42				     inc     dx
+   1265	07D0  BE 453C				     mov     si,data_34e
+   1266	07D3  57				     push    di
+   1267	07D4  B9 0022				     mov     cx,22h
+   1268
+   1269	07D7			     locloop_52:
+   1270	07D7  AC				     lodsb			     ; String [si] to al
+   1271	07D8  8A D8				     mov     bl,al
+   1272	07DA  0A 44 21				     or	     al,[si+21h]
+   1273	07DD  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1274	07DE  32 C0				     xor     al,al		     ; Zero register
+   1275	07E0  26: 86 05				     xchg    es:[di],al
+   1276	07E3  8A C3				     mov     al,bl
+   1277	07E5  22 44 21				     and     al,[si+21h]
+   1278	07E8  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1279	07E9  B0 0F				     mov     al,0Fh
+   1280	07EB  26: 86 05				     xchg    es:[di],al
+   1281	07EE  4F				     dec     di
+   1282	07EF  E2 E6				     loop    locloop_52		     ; Loop if cx > 0
+   1283
+   1284	07F1  5F				     pop     di
+   1285	07F2  4A				     dec     dx
+   1286	07F3  B8 1003				     mov     ax,1003h
+   1287	07F6  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1288										     ;	al = 3,	data rotate
+   1289	07F7  B0 08				     mov     al,8
+   1290	07F9  EE				     out     dx,al		     ; port 3CEh, EGA graphic index
+   1291										     ;	al = 8,	data bit mask
+   1292	07FA  42				     inc     dx
+   1293	07FB  BE 455E				     mov     si,data_35e
+   1294	07FE  B9 0022				     mov     cx,22h
+   1295
+   1296	0801			     locloop_53:
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 25
+101GDEGA.asm
+
+
+
+   1297	0801  AC				     lodsb			     ; String [si] to al
+   1298	0802  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1299	0803  B0 0E				     mov     al,0Eh
+   1300	0805  26: 86 05				     xchg    es:[di],al
+   1301	0808  4F				     dec     di
+   1302	0809  E2 F6				     loop    locloop_53		     ; Loop if cx > 0
+   1303
+   1304	080B  4A				     dec     dx
+   1305	080C  B8 0005				     mov     ax,5
+   1306	080F  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1307										     ;	al = 5,	mode
+   1308	0810  B8 0003				     mov     ax,3
+   1309	0813  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1310										     ;	al = 3,	data rotate
+   1311	0814  B8 FF08				     mov     ax,0FF08h
+   1312	0817  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1313										     ;	al = 8,	data bit mask
+   1314	0818  1F				     pop     ds
+   1315	0819  C3				     retn
+   1316										     ;*	No entry point to code
+   1317	081A  8B D8				     mov     bx,ax
+   1318	081C  03 DB				     add     bx,bx
+   1319	081E  8A 87 3B63			     mov     al,ds:data_21e[bx]
+   1320	0822  A2 4211				     mov     ds:data_25e,al
+   1321	0825  8A 87 3B64			     mov     al,ds:data_22e[bx]
+   1322	0829  A2 4210				     mov     ds:data_24e,al
+   1323	082C  B8 A000				     mov     ax,0A000h
+   1324	082F  8E C0				     mov     es,ax
+   1325	0831  BA 03C4				     mov     dx,3C4h
+   1326	0834  B8 0F02				     mov     ax,0F02h
+   1327	0837  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+   1328										     ;	al = 2,	map mask register
+   1329	0838  BA 03CE				     mov     dx,3CEh
+   1330	083B  B8 0205				     mov     ax,205h
+   1331	083E  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1332										     ;	al = 5,	mode
+   1333	083F  BF 0504				     mov     di,data_47e
+   1334	0842  BE 3A6C				     mov     si,data_19e
+   1335	0845			     loc_54:
+   1336	0845  AC				     lodsb			     ; String [si] to al
+   1337	0846  0A C0				     or	     al,al		     ; Zero ?
+   1338	0848  74 09				     jz	     loc_55		     ; Jump if zero
+   1339	084A  E8 00B6				     call    imgctl_func_11
+   1340	084D  81 C7 0140			     add     di,140h
+   1341	0851  EB F2				     jmp     short loc_54
+   1342	0853			     loc_55:
+   1343	0853  81 C7 FEC1			     add     di,data_50e
+   1344	0857			     loc_56:
+   1345	0857  AC				     lodsb			     ; String [si] to al
+   1346	0858  0A C0				     or	     al,al		     ; Zero ?
+   1347	085A  74 06				     jz	     loc_57		     ; Jump if zero
+   1348	085C  E8 00A4				     call    imgctl_func_11
+   1349	085F  47				     inc     di
+   1350	0860  EB F5				     jmp     short loc_56
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 26
+101GDEGA.asm
+
+
+
+   1351	0862			     loc_57:
+   1352	0862  81 C7 FEBF			     add     di,data_48e
+   1353	0866			     loc_58:
+   1354	0866  AC				     lodsb			     ; String [si] to al
+   1355	0867  0A C0				     or	     al,al		     ; Zero ?
+   1356	0869  74 09				     jz	     loc_59		     ; Jump if zero
+   1357	086B  E8 0095				     call    imgctl_func_11
+   1358	086E  81 C7 FEC0			     add     di,0FEC0h
+   1359	0872  EB F2				     jmp     short loc_58
+   1360	0874			     loc_59:
+   1361	0874  81 C7 013F			     add     di,data_44e
+   1362	0878			     loc_60:
+   1363	0878  AC				     lodsb			     ; String [si] to al
+   1364	0879  0A C0				     or	     al,al		     ; Zero ?
+   1365	087B  74 06				     jz	     loc_61		     ; Jump if zero
+   1366	087D  E8 0083				     call    imgctl_func_11
+   1367	0880  4F				     dec     di
+   1368	0881  EB F5				     jmp     short loc_60
+   1369	0883			     loc_61:
+   1370	0883  81 C7 0141			     add     di,data_46e
+   1371	0887  BE 3B30				     mov     si,data_20e
+   1372	088A			     loc_62:
+   1373	088A  2E: C6 06	FF1A 00			     mov     byte ptr cs:data_39e,0
+   1374	0890  AC				     lodsb			     ; String [si] to al
+   1375	0891  0A C0				     or	     al,al		     ; Zero ?
+   1376	0893  74 61				     jz	     loc_68		     ; Jump if zero
+   1377	0895  33 C9				     xor     cx,cx		     ; Zero register
+   1378	0897  8A C8				     mov     cl,al
+   1379
+   1380	0899			     locloop_63:
+   1381	0899  51				     push    cx
+   1382	089A  B0 18				     mov     al,18h
+   1383	089C  E8 0064				     call    imgctl_func_11
+   1384	089F  81 C7 0140			     add     di,140h
+   1385	08A3  59				     pop     cx
+   1386	08A4  E2 F3				     loop    locloop_63		     ; Loop if cx > 0
+   1387
+   1388	08A6  81 C7 FEC0			     add     di,data_49e
+   1389	08AA  AC				     lodsb			     ; String [si] to al
+   1390	08AB  0A C0				     or	     al,al		     ; Zero ?
+   1391	08AD  74 47				     jz	     loc_68		     ; Jump if zero
+   1392	08AF  33 C9				     xor     cx,cx		     ; Zero register
+   1393	08B1  8A C8				     mov     cl,al
+   1394
+   1395	08B3			     locloop_64:
+   1396	08B3  51				     push    cx
+   1397	08B4  B0 18				     mov     al,18h
+   1398	08B6  E8 004A				     call    imgctl_func_11
+   1399	08B9  47				     inc     di
+   1400	08BA  59				     pop     cx
+   1401	08BB  E2 F6				     loop    locloop_64		     ; Loop if cx > 0
+   1402
+   1403	08BD  4F				     dec     di
+   1404	08BE  AC				     lodsb			     ; String [si] to al
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 27
+101GDEGA.asm
+
+
+
+   1405	08BF  0A C0				     or	     al,al		     ; Zero ?
+   1406	08C1  74 33				     jz	     loc_68		     ; Jump if zero
+   1407	08C3  33 C9				     xor     cx,cx		     ; Zero register
+   1408	08C5  8A C8				     mov     cl,al
+   1409
+   1410	08C7			     locloop_65:
+   1411	08C7  51				     push    cx
+   1412	08C8  B0 18				     mov     al,18h
+   1413	08CA  E8 0036				     call    imgctl_func_11
+   1414	08CD  81 C7 FEC0			     add     di,0FEC0h
+   1415	08D1  59				     pop     cx
+   1416	08D2  E2 F3				     loop    locloop_65		     ; Loop if cx > 0
+   1417
+   1418	08D4  81 C7 0140			     add     di,data_45e
+   1419	08D8  AC				     lodsb			     ; String [si] to al
+   1420	08D9  0A C0				     or	     al,al		     ; Zero ?
+   1421	08DB  74 19				     jz	     loc_68		     ; Jump if zero
+   1422	08DD  33 C9				     xor     cx,cx		     ; Zero register
+   1423	08DF  8A C8				     mov     cl,al
+   1424
+   1425	08E1			     locloop_66:
+   1426	08E1  51				     push    cx
+   1427	08E2  B0 18				     mov     al,18h
+   1428	08E4  E8 001C				     call    imgctl_func_11
+   1429	08E7  4F				     dec     di
+   1430	08E8  59				     pop     cx
+   1431	08E9  E2 F6				     loop    locloop_66		     ; Loop if cx > 0
+   1432
+   1433	08EB  47				     inc     di
+   1434	08EC			     loc_67:
+   1435	08EC  2E: 80 3E	FF1A 0C			     cmp     byte ptr cs:data_39e,0Ch
+   1436	08F2  72 F8				     jb	     loc_67		     ; Jump if below
+   1437	08F4  EB 94				     jmp     short loc_62
+   1438	08F6			     loc_68:
+   1439	08F6  B8 0005				     mov     ax,5
+   1440	08F9  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1441										     ;	al = 5,	mode
+   1442	08FA  B8 0003				     mov     ax,3
+   1443	08FD  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1444										     ;	al = 3,	data rotate
+   1445	08FE  B8 FF08				     mov     ax,0FF08h
+   1446	0901  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1447										     ;	al = 8,	data bit mask
+   1448	0902  C3				     retn
+   1449
+   1450				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1451				     ;				    SUBROUTINE
+   1452				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1453
+   1454	0903			     imgctl_func_11	     proc    near
+   1455	0903  56				     push    si
+   1456	0904  FE C8				     dec     al
+   1457	0906  32 E4				     xor     ah,ah		     ; Zero register
+   1458	0908  03 C0				     add     ax,ax
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 28
+101GDEGA.asm
+
+
+
+   1459	090A  03 C0				     add     ax,ax
+   1460	090C  03 C0				     add     ax,ax
+   1461	090E  05 39AC				     add     ax,39ACh
+   1462	0911  8B F0				     mov     si,ax
+   1463	0913  B8 0003				     mov     ax,3
+   1464	0916  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1465										     ;	al = 3,	data rotate
+   1466	0917  B8 FF08				     mov     ax,0FF08h
+   1467	091A  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1468										     ;	al = 8,	data bit mask
+   1469	091B  57				     push    di
+   1470	091C  32 C0				     xor     al,al		     ; Zero register
+   1471	091E  26: 86 05				     xchg    es:[di],al
+   1472	0921  83 C7 50				     add     di,50h
+   1473	0924  32 C0				     xor     al,al		     ; Zero register
+   1474	0926  26: 86 05				     xchg    es:[di],al
+   1475	0929  83 C7 50				     add     di,50h
+   1476	092C  32 C0				     xor     al,al		     ; Zero register
+   1477	092E  26: 86 05				     xchg    es:[di],al
+   1478	0931  83 C7 50				     add     di,50h
+   1479	0934  32 C0				     xor     al,al		     ; Zero register
+   1480	0936  26: 86 05				     xchg    es:[di],al
+   1481	0939  5F				     pop     di
+   1482	093A  B8 1003				     mov     ax,1003h
+   1483	093D  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1484										     ;	al = 3,	data rotate
+   1485	093E  B0 08				     mov     al,8
+   1486	0940  EE				     out     dx,al		     ; port 3CEh, EGA graphic index
+   1487										     ;	al = 8,	data bit mask
+   1488	0941  42				     inc     dx
+   1489	0942  57				     push    di
+   1490	0943  2E: 8A 26	4210			     mov     ah,cs:data_24e
+   1491	0948  D0 CC				     ror     ah,1		     ; Rotate
+   1492	094A  AC				     lodsb			     ; String [si] to al
+   1493	094B  2E: 22 06	4210			     and     al,cs:data_24e
+   1494	0950  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1495	0951  2E: A0 4211			     mov     al,cs:data_25e
+   1496	0955  26: 86 05				     xchg    es:[di],al
+   1497	0958  83 C7 50				     add     di,50h
+   1498	095B  AC				     lodsb			     ; String [si] to al
+   1499	095C  22 C4				     and     al,ah
+   1500	095E  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1501	095F  2E: A0 4211			     mov     al,cs:data_25e
+   1502	0963  26: 86 05				     xchg    es:[di],al
+   1503	0966  83 C7 50				     add     di,50h
+   1504	0969  AC				     lodsb			     ; String [si] to al
+   1505	096A  2E: 22 06	4210			     and     al,cs:data_24e
+   1506	096F  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1507	0970  2E: A0 4211			     mov     al,cs:data_25e
+   1508	0974  26: 86 05				     xchg    es:[di],al
+   1509	0977  83 C7 50				     add     di,50h
+   1510	097A  AC				     lodsb			     ; String [si] to al
+   1511	097B  22 C4				     and     al,ah
+   1512	097D  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 29
+101GDEGA.asm
+
+
+
+   1513	097E  2E: A0 4211			     mov     al,cs:data_25e
+   1514	0982  26: 86 05				     xchg    es:[di],al
+   1515	0985  5F				     pop     di
+   1516	0986  57				     push    di
+   1517	0987  AC				     lodsb			     ; String [si] to al
+   1518	0988  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1519	0989  B0 06				     mov     al,6
+   1520	098B  26: 86 05				     xchg    es:[di],al
+   1521	098E  83 C7 50				     add     di,50h
+   1522	0991  AC				     lodsb			     ; String [si] to al
+   1523	0992  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1524	0993  B0 06				     mov     al,6
+   1525	0995  26: 86 05				     xchg    es:[di],al
+   1526	0998  83 C7 50				     add     di,50h
+   1527	099B  AC				     lodsb			     ; String [si] to al
+   1528	099C  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1529	099D  B0 06				     mov     al,6
+   1530	099F  26: 86 05				     xchg    es:[di],al
+   1531	09A2  83 C7 50				     add     di,50h
+   1532	09A5  AC				     lodsb			     ; String [si] to al
+   1533	09A6  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1534	09A7  B0 06				     mov     al,6
+   1535	09A9  26: 86 05				     xchg    es:[di],al
+   1536	09AC  5F				     pop     di
+   1537	09AD  4A				     dec     dx
+   1538	09AE  5E				     pop     si
+   1539	09AF  C3				     retn
+   1540	09B0			     imgctl_func_11	     endp
+   1541
+   1542	09B0  00 00 00 03 80 80			     db	      00h, 00h,	00h, 03h, 80h, 80h
+   1543	09B6  85 84 03 03 03 03			     db	      85h, 84h,	03h, 03h, 03h, 03h
+   1544	09BC  84 84 84 84 03 03			     db	      84h, 84h,	84h, 84h, 03h, 03h
+   1545	09C2  03 03 84 84 84 D4			     db	      03h, 03h,	84h, 84h, 84h,0D4h
+   1546	09C8  00 00 00 FF 00 00			     db	      00h, 00h,	00h,0FFh, 00h, 00h
+   1547	09CE  55 00 00 00 01 FF			     db	      55h, 00h,	00h, 00h, 01h,0FFh
+   1548	09D4  02 02 56 00 00 00			     db	      02h, 02h,	56h, 00h, 00h, 00h
+   1549	09DA  00 FF 40 40 55 00			     db	      00h,0FFh,	40h, 40h, 55h, 00h
+   1550	09E0  00 00 00 C0 01 01			     db	      00h, 00h,	00h,0C0h, 01h, 01h
+   1551	09E6  61 21 C0 C0 C0 C0			     db	      61h, 21h,0C0h,0C0h,0C0h,0C0h
+   1552	09EC  21 21 21 21 C0 C0			     db	      21h, 21h,	21h, 21h,0C0h,0C0h
+   1553	09F2  C0 C0 21 21 21 21			     db	     0C0h,0C0h,	21h, 21h, 21h, 21h
+   1554	09F8  C0 E0 E0 E0 2B 01			     db	     0C0h,0E0h,0E0h,0E0h, 2Bh, 01h
+   1555	09FE  01 01 03 03 03 03			     db	      01h, 01h,	03h, 03h, 03h, 03h
+   1556	0A04  D4 84 84 84 03 03			     db	     0D4h, 84h,	84h, 84h, 03h, 03h
+   1557	0A0A  03 03 84 84 84 84			     db	      03h, 03h,	84h, 84h, 84h, 84h
+   1558	0A10  03 02 00 00 84 85			     db	      03h, 02h,	00h, 00h, 84h, 85h
+   1559	0A16  80 80 FF AA 00 00			     db	      80h, 80h,0FFh,0AAh, 00h, 00h
+   1560	0A1C  00 55 00 00 FF A8			     db	      00h, 55h,	00h, 00h,0FFh,0A8h
+   1561	0A22  00 00 00 56 02 02			     db	      00h, 00h,	00h, 56h, 02h, 02h
+   1562	0A28  FF FF 00 00 00 55			     db	     0FFh,0FFh,	00h, 00h, 00h, 55h
+   1563	0A2E  40 40 C0 C0 C0 C0			     db	      40h, 40h,0C0h,0C0h,0C0h,0C0h
+   1564	0A34  2B 21 21 21 C0 C0			     db	      2Bh, 21h,	21h, 21h,0C0h,0C0h
+   1565	0A3A  C0 C0 21 21 21 21			     db	     0C0h,0C0h,	21h, 21h, 21h, 21h
+   1566	0A40  C0 80 00 00 21 61			     db	     0C0h, 80h,	00h, 00h, 21h, 61h
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 30
+101GDEGA.asm
+
+
+
+   1567	0A46  01 01 00 00 FF FF			     db	      01h, 01h,	00h, 00h,0FFh,0FFh
+   1568	0A4C  00 00 00 00 FF FF			     db	      00h, 00h,	00h, 00h,0FFh,0FFh
+   1569	0A52  00 00 00 00 00 00			     db	      00h, 00h,	00h, 00h, 00h, 00h
+   1570	0A58  07 07 07 07 80 80			     db	      07h, 07h,	07h, 07h, 80h, 80h
+   1571	0A5E  80 80 E0 E0 E0 E0			     db	      80h, 80h,0E0h,0E0h,0E0h,0E0h
+   1572	0A64  01 01 01 01 FF FF			     db	      01h, 01h,	01h, 01h,0FFh,0FFh
+   1573	0A6A  FF FF 00 00 00 00			     db	     0FFh,0FFh,	00h, 00h, 00h, 00h
+   1574	0A70  01 02 03				     db	      01h, 02h,	03h
+   1575	0A73  14*(16)				     db	     20	dup (16h)
+   1576	0A87  0B 0C 0D 00 0E 0F			     db	      0Bh, 0Ch,	0Dh, 00h, 0Eh, 0Fh
+   1577	0A8D  42*(15)				     db	     66	dup (15h)
+   1578	0ACF  10 0E 13 00 12 11			     db	      10h, 0Eh,	13h, 00h, 12h, 11h
+   1579	0AD5  13*(17)				     db	     19	dup (17h)
+   1580	0AE8  0A 09 08 07 00 04			     db	      0Ah, 09h,	08h, 07h, 00h, 04h
+   1581	0AEE  06				     db	      06h
+   1582	0AEF  42*(14)				     db	     66	dup (14h)
+   1583	0B31  05 04 00 18 46 18			     db	      05h, 04h,	00h, 18h, 46h, 18h
+   1584	0B37  45 17 44 16 43 15			     db	      45h, 17h,	44h, 16h, 43h, 15h
+   1585	0B3D  42 14 41 13 40 12			     db	      42h, 14h,	41h, 13h, 40h, 12h
+   1586	0B43  3F 11 3E 10 3D 0F			     db	      3Fh, 11h,	3Eh, 10h, 3Dh, 0Fh
+   1587	0B49  3C 0E 3B 0D 3A 0C			     db	      3Ch, 0Eh,	3Bh, 0Dh, 3Ah, 0Ch
+   1588	0B4F  39 0B 38 0A 37 09			     db	      39h, 0Bh,	38h, 0Ah, 37h, 09h
+   1589	0B55  36 08 35 07 34 06			     db	      36h, 08h,	35h, 07h, 34h, 06h
+   1590	0B5B  33 05 32 04 31 03			     db	      33h, 05h,	32h, 04h, 31h, 03h
+   1591	0B61  30 02 2F 01 2E 00			     db	      30h, 02h,	2Fh, 01h, 2Eh, 00h
+   1592	0B67  02 55 03 FF 01 55			     db	      02h, 55h,	03h,0FFh, 01h, 55h
+   1593	0B6D  1E 2E A2 13 42 81			     db	      1Eh, 2Eh,0A2h, 13h, 42h, 81h
+   1594	0B73  EB 10 04 2E C6 06			     db	     0EBh, 10h,	04h, 2Eh,0C6h, 06h
+   1595	0B79  11 42 00 2E C6 06			     db	      11h, 42h,	00h, 2Eh,0C6h, 06h
+   1596	0B7F  12 42 00 2E 89 0E			     db	      12h, 42h,	00h, 2Eh, 89h, 0Eh
+   1597	0B85  16 42 8A C5 F6 E1			     db	      16h, 42h,	8Ah,0C5h,0F6h,0E1h
+   1598	0B8B  2E A3 14 42 06 1F			     db	      2Eh,0A3h,	14h, 42h, 06h, 1Fh
+   1599	0B91  57 5E B8 00 A0 8E			     db	      57h, 5Eh,0B8h, 00h,0A0h, 8Eh
+   1600	0B97  C0 B9 08 00			     db	     0C0h,0B9h,	08h, 00h
+   1601
+   1602	0B9B			     locloop_69:
+   1603	0B9B  51				     push    cx
+   1604	0B9C  2E: A0 4212			     mov     al,cs:data_26e
+   1605	0BA0  2E: A2 4211			     mov     cs:data_25e,al
+   1606	0BA4  2E: C6 06	FF1A 00			     mov     byte ptr cs:data_39e,0
+   1607	0BAA  B9 000D				     mov     cx,0Dh
+   1608
+   1609	0BAD			     locloop_70:
+   1610	0BAD  51				     push    cx
+   1611	0BAE  53				     push    bx
+   1612	0BAF  56				     push    si
+   1613	0BB0  E8 001D				     call    imgctl_multiply_3
+   1614	0BB3  5E				     pop     si
+   1615	0BB4  5B				     pop     bx
+   1616	0BB5  59				     pop     cx
+   1617	0BB6  2E: 80 06	4211 08			     add     byte ptr cs:data_25e,8
+   1618	0BBC  E2 EF				     loop    locloop_70		     ; Loop if cx > 0
+   1619
+   1620	0BBE  59				     pop     cx
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 31
+101GDEGA.asm
+
+
+
+   1621	0BBF			     loc_71:
+   1622	0BBF  2E: 80 3E	FF1A 14			     cmp     byte ptr cs:data_39e,14h
+   1623	0BC5  72 F8				     jb	     loc_71		     ; Jump if below
+   1624	0BC7  2E: FE 06	4212			     inc     byte ptr cs:data_26e
+   1625	0BCC  E2 CD				     loop    locloop_69		     ; Loop if cx > 0
+   1626
+   1627	0BCE  1F				     pop     ds
+   1628	0BCF  C3				     retn
+   1629
+   1630				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1631				     ;				    SUBROUTINE
+   1632				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1633
+   1634	0BD0			     imgctl_multiply_3		     proc    near
+   1635	0BD0  BA 03C4				     mov     dx,3C4h
+   1636	0BD3  B0 02				     mov     al,2
+   1637	0BD5  EE				     out     dx,al		     ; port 3C4h, EGA sequencr index
+   1638										     ;	al = 2,	map mask register
+   1639	0BD6  42				     inc     dx
+   1640	0BD7  2E: A0 4211			     mov     al,cs:data_25e
+   1641	0BDB  04 10				     add     al,10h
+   1642	0BDD  B1 50				     mov     cl,50h		     ; 'P'
+   1643	0BDF  F6 E1				     mul     cl			     ; ax = reg	* al
+   1644	0BE1  05 0004				     add     ax,4
+   1645	0BE4  8B F8				     mov     di,ax
+   1646	0BE6  2E: 38 1E	4211			     cmp     cs:data_25e,bl
+   1647	0BEB  73 03				     jae     loc_72		     ; Jump if above or	=
+   1648	0BED  E9 0088				     jmp     loc_78
+   1649	0BF0			     loc_72:
+   1650	0BF0  8A C3				     mov     al,bl
+   1651	0BF2  2E: 02 06	4216			     add     al,cs:data_29e
+   1652	0BF7  2E: 38 06	4211			     cmp     cs:data_25e,al
+   1653	0BFC  73 7A				     jae     loc_78		     ; Jump if above or	=
+   1654	0BFE  2E: A0 4211			     mov     al,cs:data_25e
+   1655	0C02  2A C3				     sub     al,bl
+   1656	0C04  2E: F6 26	4217			     mul     byte ptr cs:data_29e+1  ; ax = data * al
+   1657	0C09  03 F0				     add     si,ax
+   1658	0C0B  2E: C6 06	4210 00			     mov     byte ptr cs:data_24e,0
+   1659	0C11  B9 0048				     mov     cx,48h
+   1660
+   1661	0C14			     locloop_73:
+   1662	0C14  51				     push    cx
+   1663	0C15  B0 0F				     mov     al,0Fh
+   1664	0C17  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   1665	0C18  26: C6 05	00			     mov     byte ptr es:[di],0
+   1666	0C1C  2E: 38 3E	4210			     cmp     cs:data_24e,bh
+   1667	0C21  72 4B				     jb	     loc_77		     ; Jump if below
+   1668	0C23  8A C7				     mov     al,bh
+   1669	0C25  2E: 02 06	4217			     add     al,byte ptr cs:data_29e+1
+   1670	0C2A  2E: 38 06	4210			     cmp     cs:data_24e,al
+   1671	0C2F  73 3D				     jae     loc_77		     ; Jump if above or	=
+   1672	0C31  56				     push    si
+   1673	0C32  2E: F6 06	4213 01			     test    byte ptr cs:data_27e,1
+   1674	0C38  74 0D				     jz	     loc_74		     ; Jump if zero
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 32
+101GDEGA.asm
+
+
+
+   1675	0C3A  B0 01				     mov     al,1
+   1676	0C3C  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   1677	0C3D  8A 04				     mov     al,[si]
+   1678	0C3F  26: 88 05				     mov     es:[di],al
+   1679	0C42  2E: 03 36	4214			     add     si,cs:data_28e
+   1680	0C47			     loc_74:
+   1681	0C47  2E: F6 06	4213 02			     test    byte ptr cs:data_27e,2
+   1682	0C4D  74 0D				     jz	     loc_75		     ; Jump if zero
+   1683	0C4F  B0 02				     mov     al,2
+   1684	0C51  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   1685	0C52  8A 04				     mov     al,[si]
+   1686	0C54  26: 88 05				     mov     es:[di],al
+   1687	0C57  2E: 03 36	4214			     add     si,cs:data_28e
+   1688	0C5C			     loc_75:
+   1689	0C5C  2E: F6 06	4213 04			     test    byte ptr cs:data_27e,4
+   1690	0C62  74 08				     jz	     loc_76		     ; Jump if zero
+   1691	0C64  B0 04				     mov     al,4
+   1692	0C66  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   1693	0C67  8A 04				     mov     al,[si]
+   1694	0C69  26: 88 05				     mov     es:[di],al
+   1695	0C6C			     loc_76:
+   1696	0C6C  5E				     pop     si
+   1697	0C6D  46				     inc     si
+   1698	0C6E			     loc_77:
+   1699	0C6E  47				     inc     di
+   1700	0C6F  2E: FE 06	4210			     inc     byte ptr cs:data_24e
+   1701	0C74  59				     pop     cx
+   1702	0C75  E2 9D				     loop    locloop_73		     ; Loop if cx > 0
+   1703
+   1704	0C77  C3				     retn
+   1705	0C78			     loc_78:
+   1706	0C78  B0 0F				     mov     al,0Fh
+   1707	0C7A  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   1708	0C7B  B9 0024				     mov     cx,24h
+   1709	0C7E  33 C0				     xor     ax,ax		     ; Zero register
+   1710	0C80  F3> AB				     rep     stosw		     ; Rep when	cx >0 Store ax to es:[di]
+   1711	0C82  C3				     retn
+   1712	0C83			     imgctl_multiply_3		     endp
+   1713
+   1714										     ;*	No entry point to code
+   1715	0C83  B8 0050				     mov     ax,50h
+   1716	0C86  F6 E3				     mul     bl			     ; ax = reg	* al
+   1717	0C88  2E: 88 1E	4211			     mov     cs:data_25e,bl
+   1718	0C8D  8A DF				     mov     bl,bh
+   1719	0C8F  32 FF				     xor     bh,bh		     ; Zero register
+   1720	0C91  03 C3				     add     ax,bx
+   1721	0C93  8B F8				     mov     di,ax
+   1722	0C95  BA 03C4				     mov     dx,3C4h
+   1723	0C98  B8 0F02				     mov     ax,0F02h
+   1724	0C9B  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+   1725										     ;	al = 2,	map mask register
+   1726	0C9C  BA 03CE				     mov     dx,3CEh
+   1727	0C9F  B8 0003				     mov     ax,3
+   1728	0CA2  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 33
+101GDEGA.asm
+
+
+
+   1729										     ;	al = 3,	data rotate
+   1730	0CA3  B8 0205				     mov     ax,205h
+   1731	0CA6  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1732										     ;	al = 5,	mode
+   1733	0CA7  B8 A000				     mov     ax,0A000h
+   1734	0CAA  8E C0				     mov     es,ax
+   1735	0CAC  8A DD				     mov     bl,ch
+   1736	0CAE  32 FF				     xor     bh,bh		     ; Zero register
+   1737	0CB0  32 ED				     xor     ch,ch		     ; Zero register
+   1738	0CB2  83 E9 05				     sub     cx,5
+   1739	0CB5  51				     push    cx
+   1740	0CB6  57				     push    di
+   1741	0CB7  B0 08				     mov     al,8
+   1742	0CB9  EE				     out     dx,al		     ; port 3CEh, EGA graphic index
+   1743										     ;	al = 8,	data bit mask
+   1744	0CBA  42				     inc     dx
+   1745	0CBB  E8 0058				     call    imgctl_process_loop_4
+   1746	0CBE  5F				     pop     di
+   1747	0CBF  2E: FE 06	4211			     inc     byte ptr cs:data_25e
+   1748	0CC4  83 C7 50				     add     di,50h
+   1749	0CC7  B9 0002				     mov     cx,2
+   1750	0CCA  E8 006E				     call    imgctl_process_loop_5
+   1751	0CCD  59				     pop     cx
+   1752
+   1753	0CCE			     locloop_79:
+   1754	0CCE  51				     push    cx
+   1755	0CCF  E8 00AC				     call    imgctl_func_15
+   1756	0CD2  B0 30				     mov     al,30h		     ; '0'
+   1757	0CD4  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1758	0CD5  B0 07				     mov     al,7
+   1759	0CD7  26: 86 05				     xchg    es:[di],al
+   1760	0CDA  B0 0F				     mov     al,0Fh
+   1761	0CDC  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1762	0CDD  32 C0				     xor     al,al		     ; Zero register
+   1763	0CDF  26: 86 05				     xchg    es:[di],al
+   1764	0CE2  B0 0C				     mov     al,0Ch
+   1765	0CE4  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1766	0CE5  B0 07				     mov     al,7
+   1767	0CE7  26: 86 41	FF			     xchg    es:[bx+di-1],al
+   1768	0CEB  B0 F0				     mov     al,0F0h
+   1769	0CED  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1770	0CEE  32 C0				     xor     al,al		     ; Zero register
+   1771	0CF0  26: 86 41	FF			     xchg    es:[bx+di-1],al
+   1772	0CF4  2E: FE 06	4211			     inc     byte ptr cs:data_25e
+   1773	0CF9  83 C7 50				     add     di,50h
+   1774	0CFC  59				     pop     cx
+   1775	0CFD  E2 CF				     loop    locloop_79		     ; Loop if cx > 0
+   1776
+   1777	0CFF  B9 0001				     mov     cx,1
+   1778	0D02  E8 0036				     call    imgctl_process_loop_5
+   1779	0D05  E8 000E				     call    imgctl_process_loop_4
+   1780	0D08  4A				     dec     dx
+   1781	0D09  B8 0005				     mov     ax,5
+   1782	0D0C  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 34
+101GDEGA.asm
+
+
+
+   1783										     ;	al = 5,	mode
+   1784	0D0D  B8 0003				     mov     ax,3
+   1785	0D10  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1786										     ;	al = 3,	data rotate
+   1787	0D11  B8 FF08				     mov     ax,0FF08h
+   1788	0D14  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   1789										     ;	al = 8,	data bit mask
+   1790	0D15  C3				     retn
+   1791
+   1792				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1793				     ;				    SUBROUTINE
+   1794				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1795
+   1796	0D16			     imgctl_process_loop_4	     proc    near
+   1797	0D16  E8 0065				     call    imgctl_func_15
+   1798	0D19  B0 3F				     mov     al,3Fh		     ; '?'
+   1799	0D1B  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1800	0D1C  B0 07				     mov     al,7
+   1801	0D1E  26: 86 05				     xchg    es:[di],al
+   1802	0D21  47				     inc     di
+   1803	0D22  B0 FF				     mov     al,0FFh
+   1804	0D24  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1805	0D25  8B CB				     mov     cx,bx
+   1806	0D27  83 E9 02				     sub     cx,2
+   1807
+   1808	0D2A			     locloop_80:
+   1809	0D2A  B0 07				     mov     al,7
+   1810	0D2C  26: 86 05				     xchg    es:[di],al
+   1811	0D2F  47				     inc     di
+   1812	0D30  E2 F8				     loop    locloop_80		     ; Loop if cx > 0
+   1813
+   1814	0D32  B0 FC				     mov     al,0FCh
+   1815	0D34  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1816	0D35  B0 07				     mov     al,7
+   1817	0D37  26: 86 05				     xchg    es:[di],al
+   1818	0D3A  C3				     retn
+   1819	0D3B			     imgctl_process_loop_4	     endp
+   1820
+   1821
+   1822				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1823				     ;				    SUBROUTINE
+   1824				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1825
+   1826	0D3B			     imgctl_process_loop_5	     proc    near
+   1827
+   1828	0D3B			     locloop_81:
+   1829	0D3B  51				     push    cx
+   1830	0D3C  57				     push    di
+   1831	0D3D  E8 003E				     call    imgctl_func_15
+   1832	0D40  B0 30				     mov     al,30h		     ; '0'
+   1833	0D42  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1834	0D43  B0 07				     mov     al,7
+   1835	0D45  26: 86 05				     xchg    es:[di],al
+   1836	0D48  B0 0F				     mov     al,0Fh
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 35
+101GDEGA.asm
+
+
+
+   1837	0D4A  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1838	0D4B  32 C0				     xor     al,al		     ; Zero register
+   1839	0D4D  26: 86 05				     xchg    es:[di],al
+   1840	0D50  47				     inc     di
+   1841	0D51  B0 FF				     mov     al,0FFh
+   1842	0D53  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1843	0D54  8B CB				     mov     cx,bx
+   1844	0D56  83 E9 02				     sub     cx,2
+   1845
+   1846	0D59			     locloop_82:
+   1847	0D59  32 C0				     xor     al,al		     ; Zero register
+   1848	0D5B  26: 86 05				     xchg    es:[di],al
+   1849	0D5E  47				     inc     di
+   1850	0D5F  E2 F8				     loop    locloop_82		     ; Loop if cx > 0
+   1851
+   1852	0D61  B0 0C				     mov     al,0Ch
+   1853	0D63  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1854	0D64  B0 07				     mov     al,7
+   1855	0D66  26: 86 05				     xchg    es:[di],al
+   1856	0D69  B0 F0				     mov     al,0F0h
+   1857	0D6B  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1858	0D6C  32 C0				     xor     al,al		     ; Zero register
+   1859	0D6E  26: 86 05				     xchg    es:[di],al
+   1860	0D71  5F				     pop     di
+   1861	0D72  2E: FE 06	4211			     inc     byte ptr cs:data_25e
+   1862	0D77  83 C7 50				     add     di,50h
+   1863	0D7A  59				     pop     cx
+   1864	0D7B  E2 BE				     loop    locloop_81		     ; Loop if cx > 0
+   1865
+   1866	0D7D  C3				     retn
+   1867	0D7E			     imgctl_process_loop_5	     endp
+   1868
+   1869
+   1870				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   1871				     ;				    SUBROUTINE
+   1872				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   1873
+   1874	0D7E			     imgctl_func_15	     proc    near
+   1875	0D7E  B0 FF				     mov     al,0FFh
+   1876	0D80  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1877	0D81  32 C0				     xor     al,al		     ; Zero register
+   1878	0D83  26: 86 45	FF			     xchg    es:[di-1],al
+   1879	0D87  32 C0				     xor     al,al		     ; Zero register
+   1880	0D89  26: 86 05				     xchg    es:[di],al
+   1881	0D8C  B0 55				     mov     al,55h		     ; 'U'
+   1882	0D8E  2E: 8A 0E	4211			     mov     cl,cs:data_25e
+   1883	0D93  80 E1 01				     and     cl,1
+   1884	0D96  D2 C8				     ror     al,cl		     ; Rotate
+   1885	0D98  EE				     out     dx,al		     ; port 3CFh, EGA graphic func
+   1886	0D99  B0 02				     mov     al,2
+   1887	0D9B  26: 86 45	FF			     xchg    es:[di-1],al
+   1888	0D9F  B0 02				     mov     al,2
+   1889	0DA1  26: 86 05				     xchg    es:[di],al
+   1890	0DA4  C3				     retn
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 36
+101GDEGA.asm
+
+
+
+   1891	0DA5			     imgctl_func_15	     endp
+   1892
+   1893										     ;*	No entry point to code
+   1894	0DA5  53				     push    bx
+   1895	0DA6  06				     push    es
+   1896	0DA7  57				     push    di
+   1897	0DA8  B9 1028				     mov     cx,1028h
+   1898
+   1899	0DAB			     locloop_83:
+   1900	0DAB  26: 8A 05				     mov     al,es:[di]
+   1901	0DAE  26: 22 85	1028			     and     al,byte ptr es:[1028h][di]
+   1902	0DB3  26: 8A A5	2050			     mov     ah,es:data_12e[di]
+   1903	0DB8  F6 D4				     not     ah
+   1904	0DBA  22 C4				     and     al,ah
+   1905	0DBC  F6 D0				     not     al
+   1906	0DBE  26: 20 05				     and     es:[di],al
+   1907	0DC1  26: 20 85	1028			     and     byte ptr es:[1028h][di],al
+   1908	0DC6  26: 20 85	2050			     and     es:data_12e[di],al
+   1909	0DCB  26: 8A 85	2050			     mov     al,es:data_12e[di]
+   1910	0DD0  26: 8A 25				     mov     ah,es:[di]
+   1911	0DD3  F6 D4				     not     ah
+   1912	0DD5  22 C4				     and     al,ah
+   1913	0DD7  26: 8A A5	1028			     mov     ah,byte ptr es:[1028h][di]
+   1914	0DDC  F6 D4				     not     ah
+   1915	0DDE  22 C4				     and     al,ah
+   1916	0DE0  26: 08 05				     or	     es:[di],al
+   1917	0DE3  26: 08 85	1028			     or	     byte ptr es:[1028h][di],al
+   1918	0DE8  F6 D0				     not     al
+   1919	0DEA  26: 20 85	2050			     and     es:data_12e[di],al
+   1920	0DEF  47				     inc     di
+   1921	0DF0  E2 B9				     loop    locloop_83		     ; Loop if cx > 0
+   1922
+   1923	0DF2  5F				     pop     di
+   1924	0DF3  07				     pop     es
+   1925	0DF4  5B				     pop     bx
+   1926	0DF5  B9 2F58				     mov     cx,2F58h
+   1927	0DF8  E9 F54B				     jmp     loc_19
+   1928										     ;*	No entry point to code
+   1929	0DFB  1E				     push    ds
+   1930	0DFC  89 3E 4218			     mov     ds:data_31e,di
+   1931	0E00  8C 06 421A			     mov     ds:data_32e,es
+   1932	0E04  BF 069A				     mov     di,69Ah
+   1933	0E07  03 3E 4218			     add     di,ds:data_31e
+   1934	0E0B  E8 0116				     call    imgctl_process_loop_6
+   1935	0E0E  BF 06BC				     mov     di,6BCh
+   1936	0E11  03 3E 4218			     add     di,ds:data_31e
+   1937	0E15  E8 010C				     call    imgctl_process_loop_6
+   1938	0E18  B8 A000				     mov     ax,0A000h
+   1939	0E1B  8E C0				     mov     es,ax
+   1940	0E1D  2E: 8E 1E	421A			     mov     ds,cs:data_32e
+   1941	0E22  BA 03C4				     mov     dx,3C4h
+   1942	0E25  B0 02				     mov     al,2
+   1943	0E27  EE				     out     dx,al		     ; port 3C4h, EGA sequencr index
+   1944										     ;	al = 2,	map mask register
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 37
+101GDEGA.asm
+
+
+
+   1945	0E28  42				     inc     dx
+   1946	0E29  B9 0044				     mov     cx,44h
+   1947
+   1948	0E2C			     locloop_84:
+   1949	0E2C  51				     push    cx
+   1950	0E2D  2E: C6 06	FF1A 00			     mov     byte ptr cs:data_39e,0
+   1951	0E33  B8 0044				     mov     ax,44h
+   1952	0E36  2B C1				     sub     ax,cx
+   1953	0E38  03 C0				     add     ax,ax
+   1954	0E3A  50				     push    ax
+   1955	0E3B  B3 50				     mov     bl,50h		     ; 'P'
+   1956	0E3D  F6 E3				     mul     bl			     ; ax = reg	* al
+   1957	0E3F  8B F8				     mov     di,ax
+   1958	0E41  2E: 03 06	4218			     add     ax,cs:data_31e
+   1959	0E46  8B F0				     mov     si,ax
+   1960	0E48  58				     pop     ax
+   1961	0E49  3D 0016				     cmp     ax,16h
+   1962	0E4C  72 0A				     jb	     loc_85		     ; Jump if below
+   1963	0E4E  3D 0071				     cmp     ax,71h
+   1964	0E51  73 05				     jae     loc_85		     ; Jump if above or	=
+   1965	0E53  E8 0063				     call    copy_buffer_5
+   1966	0E56  EB 03				     jmp     short loc_86
+   1967	0E58			     loc_85:
+   1968	0E58  E8 0035				     call    copy_buffer_4
+   1969	0E5B			     loc_86:
+   1970	0E5B  59				     pop     cx
+   1971	0E5C  51				     push    cx
+   1972	0E5D  8B C1				     mov     ax,cx
+   1973	0E5F  03 C0				     add     ax,ax
+   1974	0E61  48				     dec     ax
+   1975	0E62  50				     push    ax
+   1976	0E63  B3 50				     mov     bl,50h		     ; 'P'
+   1977	0E65  F6 E3				     mul     bl			     ; ax = reg	* al
+   1978	0E67  8B F8				     mov     di,ax
+   1979	0E69  2E: 03 06	4218			     add     ax,cs:data_31e
+   1980	0E6E  8B F0				     mov     si,ax
+   1981	0E70  58				     pop     ax
+   1982	0E71  3D 0016				     cmp     ax,16h
+   1983	0E74  72 0A				     jb	     loc_87		     ; Jump if below
+   1984	0E76  3D 0071				     cmp     ax,71h
+   1985	0E79  73 05				     jae     loc_87		     ; Jump if above or	=
+   1986	0E7B  E8 003B				     call    copy_buffer_5
+   1987	0E7E  EB 03				     jmp     short loc_88
+   1988	0E80			     loc_87:
+   1989	0E80  E8 000D				     call    copy_buffer_4
+   1990	0E83			     loc_88:
+   1991	0E83  2E: 80 3E	FF1A 04			     cmp     byte ptr cs:data_39e,4
+   1992	0E89  72 F8				     jb	     loc_88		     ; Jump if below
+   1993	0E8B  59				     pop     cx
+   1994	0E8C  E2 9E				     loop    locloop_84		     ; Loop if cx > 0
+   1995
+   1996	0E8E  1F				     pop     ds
+   1997	0E8F  C3				     retn
+   1998
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 38
+101GDEGA.asm
+
+
+
+   1999				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2000				     ;				    SUBROUTINE
+   2001				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2002
+   2003	0E90			     copy_buffer_4	     proc    near
+   2004	0E90  56				     push    si
+   2005	0E91  57				     push    di
+   2006	0E92  B0 01				     mov     al,1
+   2007	0E94  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   2008	0E95  B9 0050				     mov     cx,50h
+   2009	0E98  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2010	0E9A  5F				     pop     di
+   2011	0E9B  5E				     pop     si
+   2012	0E9C  81 C6 2A80			     add     si,data_13e
+   2013	0EA0  56				     push    si
+   2014	0EA1  57				     push    di
+   2015	0EA2  B0 02				     mov     al,2
+   2016	0EA4  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   2017	0EA5  B9 0050				     mov     cx,50h
+   2018	0EA8  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2019	0EAA  5F				     pop     di
+   2020	0EAB  5E				     pop     si
+   2021	0EAC  81 C6 2A80			     add     si,data_13e
+   2022	0EB0  B0 04				     mov     al,4
+   2023	0EB2  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   2024	0EB3  B9 0050				     mov     cx,50h
+   2025	0EB6  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2026	0EB8  C3				     retn
+   2027	0EB9			     copy_buffer_4	     endp
+   2028
+   2029
+   2030				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2031				     ;				    SUBROUTINE
+   2032				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2033
+   2034	0EB9			     copy_buffer_5	     proc    near
+   2035	0EB9  56				     push    si
+   2036	0EBA  57				     push    di
+   2037	0EBB  B0 01				     mov     al,1
+   2038	0EBD  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   2039	0EBE  B9 000B				     mov     cx,0Bh
+   2040	0EC1  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2041	0EC3  83 C6 18				     add     si,18h
+   2042	0EC6  83 C7 18				     add     di,18h
+   2043	0EC9  B9 000A				     mov     cx,0Ah
+   2044	0ECC  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2045	0ECE  83 C6 18				     add     si,18h
+   2046	0ED1  83 C7 18				     add     di,18h
+   2047	0ED4  B9 000B				     mov     cx,0Bh
+   2048	0ED7  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2049	0ED9  5F				     pop     di
+   2050	0EDA  5E				     pop     si
+   2051	0EDB  81 C6 2A80			     add     si,data_13e
+   2052	0EDF  56				     push    si
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 39
+101GDEGA.asm
+
+
+
+   2053	0EE0  57				     push    di
+   2054	0EE1  B0 02				     mov     al,2
+   2055	0EE3  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   2056	0EE4  B9 000B				     mov     cx,0Bh
+   2057	0EE7  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2058	0EE9  83 C6 18				     add     si,18h
+   2059	0EEC  83 C7 18				     add     di,18h
+   2060	0EEF  B9 000A				     mov     cx,0Ah
+   2061	0EF2  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2062	0EF4  83 C6 18				     add     si,18h
+   2063	0EF7  83 C7 18				     add     di,18h
+   2064	0EFA  B9 000B				     mov     cx,0Bh
+   2065	0EFD  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2066	0EFF  5F				     pop     di
+   2067	0F00  5E				     pop     si
+   2068	0F01  81 C6 2A80			     add     si,data_13e
+   2069	0F05  B0 04				     mov     al,4
+   2070	0F07  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   2071	0F08  B9 000B				     mov     cx,0Bh
+   2072	0F0B  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2073	0F0D  83 C6 18				     add     si,18h
+   2074	0F10  83 C7 18				     add     di,18h
+   2075	0F13  B9 000A				     mov     cx,0Ah
+   2076	0F16  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2077	0F18  83 C6 18				     add     si,18h
+   2078	0F1B  83 C7 18				     add     di,18h
+   2079	0F1E  B9 000B				     mov     cx,0Bh
+   2080	0F21  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2081	0F23  C3				     retn
+   2082	0F24			     copy_buffer_5	     endp
+   2083
+   2084
+   2085				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2086				     ;				    SUBROUTINE
+   2087				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2088
+   2089	0F24			     imgctl_process_loop_6	     proc    near
+   2090	0F24  57				     push    di
+   2091	0F25  B8 FC3F				     mov     ax,0FC3Fh
+   2092	0F28  E8 007E				     call    fill_buffer
+   2093	0F2B  83 C7 36				     add     di,36h
+   2094	0F2E  B9 005B				     mov     cx,5Bh
+   2095
+   2096	0F31			     locloop_89:
+   2097	0F31  26: C6 05	30			     mov     byte ptr es:[di],30h    ; '0'
+   2098	0F35  26: C6 45	19 0C			     mov     byte ptr es:[di+19h],0Ch
+   2099	0F3A  83 C7 50				     add     di,50h
+   2100	0F3D  E2 F2				     loop    locloop_89		     ; Loop if cx > 0
+   2101
+   2102	0F3F  B8 FC3F				     mov     ax,0FC3Fh
+   2103	0F42  E8 0064				     call    fill_buffer
+   2104	0F45  5F				     pop     di
+   2105	0F46  81 C7 2A80			     add     di,data_13e
+   2106	0F4A  57				     push    di
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 40
+101GDEGA.asm
+
+
+
+   2107	0F4B  B8 FD7F				     mov     ax,0FD7Fh
+   2108	0F4E  E8 0058				     call    fill_buffer
+   2109	0F51  83 C7 36				     add     di,36h
+   2110	0F54  B9 002D				     mov     cx,2Dh
+   2111
+   2112	0F57			     locloop_90:
+   2113	0F57  26: C6 05	B0			     mov     byte ptr es:[di],0B0h
+   2114	0F5B  26: C6 45	19 0E			     mov     byte ptr es:[di+19h],0Eh
+   2115	0F60  83 C7 50				     add     di,50h
+   2116	0F63  26: C6 05	70			     mov     byte ptr es:[di],70h    ; 'p'
+   2117	0F67  26: C6 45	19 0D			     mov     byte ptr es:[di+19h],0Dh
+   2118	0F6C  83 C7 50				     add     di,50h
+   2119	0F6F  E2 E6				     loop    locloop_90		     ; Loop if cx > 0
+   2120
+   2121	0F71  26: C6 05	B0			     mov     byte ptr es:[di],0B0h
+   2122	0F75  26: C6 45	19 0E			     mov     byte ptr es:[di+19h],0Eh
+   2123	0F7A  83 C7 50				     add     di,50h
+   2124	0F7D  B8 FD7F				     mov     ax,0FD7Fh
+   2125	0F80  E8 0026				     call    fill_buffer
+   2126	0F83  5F				     pop     di
+   2127	0F84  81 C7 2A80			     add     di,data_13e
+   2128	0F88  B8 FC3F				     mov     ax,0FC3Fh
+   2129	0F8B  E8 001B				     call    fill_buffer
+   2130	0F8E  83 C7 36				     add     di,36h
+   2131	0F91  B9 005B				     mov     cx,5Bh
+   2132
+   2133	0F94			     locloop_91:
+   2134	0F94  26: C6 05	30			     mov     byte ptr es:[di],30h    ; '0'
+   2135	0F98  26: C6 45	19 0C			     mov     byte ptr es:[di+19h],0Ch
+   2136	0F9D  83 C7 50				     add     di,50h
+   2137	0FA0  E2 F2				     loop    locloop_91		     ; Loop if cx > 0
+   2138
+   2139	0FA2  B8 FC3F				     mov     ax,0FC3Fh
+   2140	0FA5  E8 0001				     call    fill_buffer
+   2141	0FA8  C3				     retn
+   2142	0FA9			     imgctl_process_loop_6	     endp
+   2143
+   2144
+   2145				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2146				     ;				    SUBROUTINE
+   2147				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2148
+   2149	0FA9			     fill_buffer	     proc    near
+   2150	0FA9  AA				     stosb			     ; Store al	to es:[di]
+   2151	0FAA  B0 FF				     mov     al,0FFh
+   2152	0FAC  B9 0018				     mov     cx,18h
+   2153	0FAF  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
+   2154	0FB1  8A C4				     mov     al,ah
+   2155	0FB3  AA				     stosb			     ; Store al	to es:[di]
+   2156	0FB4  C3				     retn
+   2157	0FB5			     fill_buffer	     endp
+   2158
+   2159										     ;*	No entry point to code
+   2160	0FB5  1E				     push    ds
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 41
+101GDEGA.asm
+
+
+
+   2161	0FB6  89 3E 4218			     mov     ds:data_31e,di
+   2162	0FBA  8C 06 421A			     mov     ds:data_32e,es
+   2163	0FBE  B8 A000				     mov     ax,0A000h
+   2164	0FC1  8E C0				     mov     es,ax
+   2165	0FC3  2E: 8E 1E	421A			     mov     ds,cs:data_32e
+   2166	0FC8  B9 0039				     mov     cx,39h
+   2167
+   2168	0FCB			     locloop_92:
+   2169	0FCB  2E: C6 06	FF1A 00			     mov     byte ptr cs:data_39e,0
+   2170	0FD1  51				     push    cx
+   2171	0FD2  8B C1				     mov     ax,cx
+   2172	0FD4  F7 D8				     neg     ax
+   2173	0FD6  05 0039				     add     ax,39h
+   2174	0FD9  03 C0				     add     ax,ax
+   2175	0FDB  E8 0015				     call    vga_operation0
+   2176	0FDE  58				     pop     ax
+   2177	0FDF  50				     push    ax
+   2178	0FE0  03 C0				     add     ax,ax
+   2179	0FE2  48				     dec     ax
+   2180	0FE3  E8 000D				     call    vga_operation0
+   2181	0FE6			     loc_93:
+   2182	0FE6  2E: 80 3E	FF1A 04			     cmp     byte ptr cs:data_39e,4
+   2183	0FEC  72 F8				     jb	     loc_93		     ; Jump if below
+   2184	0FEE  59				     pop     cx
+   2185	0FEF  E2 DA				     loop    locloop_92		     ; Loop if cx > 0
+   2186
+   2187	0FF1  1F				     pop     ds
+   2188	0FF2  C3				     retn
+   2189
+   2190				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2191				     ;				    SUBROUTINE
+   2192				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2193
+   2194	0FF3			     vga_operation0	     proc    near
+   2195	0FF3  50				     push    ax
+   2196	0FF4  8A D8				     mov     bl,al
+   2197	0FF6  B0 2F				     mov     al,2Fh		     ; '/'
+   2198	0FF8  F6 E3				     mul     bl			     ; ax = reg	* al
+   2199	0FFA  2E: 03 06	4218			     add     ax,cs:data_31e
+   2200	0FFF  8B F0				     mov     si,ax
+   2201	1001  B0 50				     mov     al,50h		     ; 'P'
+   2202	1003  F6 E3				     mul     bl			     ; ax = reg	* al
+   2203	1005  8B F8				     mov     di,ax
+   2204	1007  BA 03C4				     mov     dx,3C4h
+   2205	100A  B8 0102				     mov     ax,102h
+   2206	100D  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+   2207										     ;	al = 2,	map mask register
+   2208	100E  BA 03CE				     mov     dx,3CEh
+   2209	1011  B8 0004				     mov     ax,4
+   2210	1014  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   2211										     ;	al = 4,	read map select
+   2212	1015  58				     pop     ax
+   2213	1016  50				     push    ax
+   2214	1017  57				     push    di
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 42
+101GDEGA.asm
+
+
+
+   2215	1018  56				     push    si
+   2216	1019  E8 0030				     call    vga_operation1
+   2217	101C  5E				     pop     si
+   2218	101D  5F				     pop     di
+   2219	101E  81 C6 14EE			     add     si,14EEh
+   2220	1022  BA 03C4				     mov     dx,3C4h
+   2221	1025  B8 0202				     mov     ax,202h
+   2222	1028  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+   2223										     ;	al = 2,	map mask register
+   2224	1029  BA 03CE				     mov     dx,3CEh
+   2225	102C  B8 0104				     mov     ax,104h
+   2226	102F  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   2227										     ;	al = 4,	read map select
+   2228	1030  58				     pop     ax
+   2229	1031  50				     push    ax
+   2230	1032  57				     push    di
+   2231	1033  56				     push    si
+   2232	1034  E8 0015				     call    vga_operation1
+   2233	1037  5E				     pop     si
+   2234	1038  5F				     pop     di
+   2235	1039  81 C6 14EEr			     add     si,offset data_11
+   2236	103D  BA 03C4				     mov     dx,3C4h
+   2237	1040  B8 0402				     mov     ax,402h
+   2238	1043  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+   2239										     ;	al = 2,	map mask register
+   2240	1044  BA 03CE				     mov     dx,3CEh
+   2241	1047  B8 0204				     mov     ax,204h
+   2242	104A  EF				     out     dx,ax		     ; port 3CEh, EGA graphic index
+   2243										     ;	al = 4,	read map select
+   2244	104B  58				     pop     ax
+   2245
+   2246				     ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2247
+   2248	104C			     vga_operation1:
+   2249	104C  3D 0014				     cmp     ax,14h
+   2250	104F  73 05				     jae     loc_94		     ; Jump if above or	=
+   2251	1051  B9 002F				     mov     cx,2Fh
+   2252	1054  EB 10				     jmp     short loc_95
+   2253	1056			     loc_94:
+   2254	1056  B9 0023				     mov     cx,23h
+   2255	1059  3D 0017				     cmp     ax,17h
+   2256	105C  72 08				     jb	     loc_95		     ; Jump if below
+   2257	105E  3D 001C				     cmp     ax,1Ch
+   2258	1061  72 06				     jb	     loc_96		     ; Jump if below
+   2259	1063  B9 0021				     mov     cx,21h
+   2260	1066			     loc_95:
+   2261	1066  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2262	1068  C3				     retn
+   2263	1069			     loc_96:
+   2264	1069  B9 0021				     mov     cx,21h
+   2265	106C  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2266	106E  AC				     lodsb			     ; String [si] to al
+   2267	106F  24 FC				     and     al,0FCh
+   2268	1071  26: 80 25	03			     and     byte ptr es:[di],3
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 43
+101GDEGA.asm
+
+
+
+   2269	1075  26: 08 05				     or	     es:[di],al
+   2270	1078  C3				     retn
+   2271	1079			     vga_operation0	     endp
+   2272
+   2273										     ;*	No entry point to code
+   2274	1079  1E				     push    ds
+   2275	107A  89 3E 4218			     mov     ds:data_31e,di
+   2276	107E  8C 06 421A			     mov     ds:data_32e,es
+   2277	1082  B8 A000				     mov     ax,0A000h
+   2278	1085  8E C0				     mov     es,ax
+   2279	1087  BA 03C4				     mov     dx,3C4h
+   2280	108A  B0 02				     mov     al,2
+   2281	108C  EE				     out     dx,al		     ; port 3C4h, EGA sequencr index
+   2282										     ;	al = 2,	map mask register
+   2283	108D  42				     inc     dx
+   2284	108E  2E: 8E 1E	421A			     mov     ds,cs:data_32e
+   2285	1093  B9 0039				     mov     cx,39h
+   2286
+   2287	1096			     locloop_97:
+   2288	1096  2E: C6 06	FF1A 00			     mov     byte ptr cs:data_39e,0
+   2289	109C  51				     push    cx
+   2290	109D  8B C1				     mov     ax,cx
+   2291	109F  F7 D8				     neg     ax
+   2292	10A1  05 0039				     add     ax,39h
+   2293	10A4  03 C0				     add     ax,ax
+   2294	10A6  E8 0015				     call    vga_operation2
+   2295	10A9  58				     pop     ax
+   2296	10AA  50				     push    ax
+   2297	10AB  03 C0				     add     ax,ax
+   2298	10AD  48				     dec     ax
+   2299	10AE  E8 000D				     call    vga_operation2
+   2300	10B1			     loc_98:
+   2301	10B1  2E: 80 3E	FF1A 04			     cmp     byte ptr cs:data_39e,4
+   2302	10B7  72 F8				     jb	     loc_98		     ; Jump if below
+   2303	10B9  59				     pop     cx
+   2304	10BA  E2 DA				     loop    locloop_97		     ; Loop if cx > 0
+   2305
+   2306	10BC  1F				     pop     ds
+   2307	10BD  C3				     retn
+   2308
+   2309				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2310				     ;				    SUBROUTINE
+   2311				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2312
+   2313	10BE			     vga_operation2	     proc    near
+   2314	10BE  50				     push    ax
+   2315	10BF  8A D8				     mov     bl,al
+   2316	10C1  B0 2F				     mov     al,2Fh		     ; '/'
+   2317	10C3  F6 E3				     mul     bl			     ; ax = reg	* al
+   2318	10C5  05 03CD				     add     ax,3CDh
+   2319	10C8  2E: 03 06	4218			     add     ax,cs:data_31e
+   2320	10CD  8B F0				     mov     si,ax
+   2321	10CF  B0 50				     mov     al,50h		     ; 'P'
+   2322	10D1  F6 E3				     mul     bl			     ; ax = reg	* al
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 44
+101GDEGA.asm
+
+
+
+   2323	10D3  05 0661				     add     ax,661h
+   2324	10D6  8B F8				     mov     di,ax
+   2325	10D8  B0 01				     mov     al,1
+   2326	10DA  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   2327	10DB  58				     pop     ax
+   2328	10DC  50				     push    ax
+   2329	10DD  57				     push    di
+   2330	10DE  56				     push    si
+   2331	10DF  E8 001A				     call    vga_operation3
+   2332	10E2  5E				     pop     si
+   2333	10E3  5F				     pop     di
+   2334	10E4  81 C6 14EE			     add     si,14EEh
+   2335	10E8  B0 02				     mov     al,2
+   2336	10EA  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   2337	10EB  58				     pop     ax
+   2338	10EC  50				     push    ax
+   2339	10ED  57				     push    di
+   2340	10EE  56				     push    si
+   2341	10EF  E8 000A				     call    vga_operation3
+   2342	10F2  5E				     pop     si
+   2343	10F3  5F				     pop     di
+   2344	10F4  81 C6 14EEr			     add     si,offset data_11
+   2345	10F8  B0 04				     mov     al,4
+   2346	10FA  EE				     out     dx,al		     ; port 3C5h, EGA sequencr func
+   2347	10FB  58				     pop     ax
+   2348
+   2349				     ;ßßßß External Entry into Subroutine ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2350
+   2351	10FC			     vga_operation3:
+   2352	10FC  3D 005E				     cmp     ax,5Eh
+   2353	10FF  B9 002F				     mov     cx,2Fh
+   2354	1102  73 08				     jnc     loc_99		     ; Jump if carry=0
+   2355	1104  B9 000E				     mov     cx,0Eh
+   2356	1107  F3> A4				     rep     movsb		     ; Rep when	cx >0 Mov [si] to es:[di]
+   2357	1109  B9 0021				     mov     cx,21h
+   2358	110C			     loc_99:
+   2359	110C  32 C0				     xor     al,al		     ; Zero register
+   2360	110E  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
+   2361	1110  C3				     retn
+   2362	1111			     vga_operation2	     endp
+   2363
+   2364										     ;*	No entry point to code
+   2365	1111  50				     push    ax
+   2366	1112  B8 0050				     mov     ax,50h
+   2367	1115  F6 E3				     mul     bl			     ; ax = reg	* al
+   2368	1117  8A DF				     mov     bl,bh
+   2369	1119  32 FF				     xor     bh,bh		     ; Zero register
+   2370	111B  03 C3				     add     ax,bx
+   2371	111D  8B F8				     mov     di,ax
+   2372	111F  B8 A000				     mov     ax,0A000h
+   2373	1122  8E C0				     mov     es,ax
+   2374	1124  BA 03C4				     mov     dx,3C4h
+   2375	1127  B8 0702				     mov     ax,702h
+   2376	112A  EF				     out     dx,ax		     ; port 3C4h, EGA sequencr index
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 45
+101GDEGA.asm
+
+
+
+   2377										     ;	al = 2,	map mask register
+   2378	112B  58				     pop     ax
+   2379	112C  8A E0				     mov     ah,al
+   2380	112E  B9 0008				     mov     cx,8
+   2381
+   2382	1131			     locloop_100:
+   2383	1131  AB				     stosw			     ; Store ax	to es:[di]
+   2384	1132  83 C7 4E				     add     di,4Eh
+   2385	1135  E2 FA				     loop    locloop_100	     ; Loop if cx > 0
+   2386
+   2387	1137  C3				     retn
+   2388
+   2389				     ;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+   2390				     ;				    SUBROUTINE
+   2391				     ;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+   2392
+   2393	1138			     vga_operation4	     proc    near
+   2394	1138			     loc_101:
+   2395	1138  9C				     pushf			     ; Push flags
+   2396	1139  FA				     cli			     ; Disable interrupts
+   2397	113A  BA 0010				     mov     dx,10h
+   2398	113D  F7 E2				     mul     dx			     ; dx:ax = reg * ax
+   2399	113F  05 416A				     add     ax,416Ah
+   2400	1142  8B F0				     mov     si,ax
+   2401	1144  B8 0040				     mov     ax,40h
+   2402	1147  8E C0				     mov     es,ax
+   2403	1149  26: 8B 16	0063			     mov     dx,es:data_1e
+   2404	114E  83 C2 06				     add     dx,6
+   2405	1151  52				     push    dx
+   2406	1152  EC				     in	     al,dx		     ; port 3DAh, CGA/EGA vid status
+   2407	1153  BA 03C0				     mov     dx,3C0h
+   2408	1156  32 E4				     xor     ah,ah		     ; Zero register
+   2409	1158  B9 0010				     mov     cx,10h
+   2410
+   2411	115B			     locloop_102:
+   2412	115B  8A C4				     mov     al,ah
+   2413	115D  EE				     out     dx,al		     ; port 3C0h, EGA attributes
+   2414	115E  AC				     lodsb			     ; String [si] to al
+   2415	115F  EE				     out     dx,al		     ; port 3C0h, EGA attributes
+   2416	1160  FE C4				     inc     ah
+   2417	1162  E2 F7				     loop    locloop_102	     ; Loop if cx > 0
+   2418
+   2419	1164  5A				     pop     dx
+   2420	1165  EC				     in	     al,dx		     ; port 3DAh, CGA/EGA vid status
+   2421	1166  B0 20				     mov     al,20h		     ; ' '
+   2422	1168  BA 03C0				     mov     dx,3C0h
+   2423	116B  EE				     out     dx,al		     ; port 3C0h, EGA attributes
+   2424	116C  9D				     popf			     ; Pop flags
+   2425	116D  C3				     retn
+   2426	116E			     vga_operation4	     endp
+   2427
+   2428	116E  00 03 09 3F 00 1B			     db	      00h, 03h,	09h, 3Fh, 00h, 1Bh
+   2429	1174  36 3F 38 07 24 2D			     db	      36h, 3Fh,	38h, 07h, 24h, 2Dh
+   2430	117A  12 1B 06 07 00			     db	      12h, 1Bh,	06h, 07h, 00h
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 46
+101GDEGA.asm
+
+
+
+   2431	117F  09 24				     db	     9,	'$'
+   2432	1181  2D 3F 3F 3F 3F 38			     db	     '-????8'
+   2433	1187  07 24 2D 3F 3F 3F			     db	      07h, 24h,	2Dh, 3Fh, 3Fh, 3Fh
+   2434	118D  3F 00 09 24 2D 00			     db	      3Fh, 00h,	09h, 24h, 2Dh, 00h
+   2435	1193  1B 36 3F 38 07 24			     db	      1Bh, 36h,	3Fh, 38h, 07h, 24h
+   2436	1199  2D 12 1B 06 07 00			     db	      2Dh, 12h,	1Bh, 06h, 07h, 00h
+   2437	119F  24 09 3F 09 3F 00			     db	      24h, 09h,	3Fh, 09h, 3Fh, 00h
+   2438	11A5  3F 38 3F 24 2D 12			     db	      3Fh, 38h,	3Fh, 24h, 2Dh, 12h
+   2439	11AB  1B 36 07 00 01 04			     db	      1Bh, 36h,	07h, 00h, 01h, 04h
+   2440	11B1  05 03 03				     db	      05h, 03h,	03h
+   2441	11B4  36 3F 38 09 24			     db	     '6?8', 9, '$'
+   2442	11B9  2D 1B 1B				     db	     '-', 1Bh, 1Bh
+   2443	11BC  06 3F 00 09 24 03			     db	      06h, 3Fh,	00h, 09h, 24h, 03h
+   2444	11C2  12				     db	      12h
+   2445	11C3  1B 36 3F 38 09 24			     db	     1Bh, '6?8', 9, '$'
+   2446	11C9  2D 1B 1B 36 3F			     db	     '-', 1Bh, 1Bh, '6?'
+   2447	11CE  00 09 24 2D 00			     db	      00h, 09h,	24h, 2Dh, 00h
+   2448	11D3  1B 36 3F 38 09 24			     db	     1Bh, '6?8', 9, '$'
+   2449	11D9  2D 1B 1B 36 3F			     db	     '-', 1Bh, 1Bh, '6?'
+   2450	11DE  00 09 24 2D 12 1B			     db	      00h, 09h,	24h, 2Dh, 12h, 1Bh
+   2451	11E4  36 3F 38 07 24 2D			     db	      36h, 3Fh,	38h, 07h, 24h, 2Dh
+   2452	11EA  3F 3F 3F 3F 00 09			     db	      3Fh, 3Fh,	3Fh, 3Fh, 00h, 09h
+   2453	11F0  24 12 00				     db	      24h, 12h,	00h
+   2454	11F3  1B 36 3F 38 09 24			     db	     1Bh, '6?8', 9, '$'
+   2455	11F9  2D 1B 1B 36 3F			     db	     '-', 1Bh, 1Bh, '6?'
+   2456	11FE  00 09 24 04 12			     db	      00h, 09h,	24h, 04h, 12h
+   2457	1203  24				     db	     '$'
+   2458	1204  36 3F 38 09 24			     db	     '6?8', 9, '$'
+   2459	1209  2D 1B 1B 36 3F 2E			     db	     '-', 1Bh, 1Bh, '6?.'
+   2460	120F  FF 26 22 20 C3			     db	     0FFh, 26h,	22h, 20h,0C3h
+   2461	1214  02DA*(00)				     db	     730 dup (0)
+   2462	14EE  00		     data_11	     db	     0
+   2463	14EF  95*(00)				     db	     149 dup (0)
+   2464
+   2465	1584			     seg_a	     ends
+   2466
+   2467
+   2468
+   2469						     end     start
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 47
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/28/26"
+??FILENAME			  Text	 "101GDEGA"
+??TIME				  Text	 "17:22:52"
+??VERSION			  Number 0201
+@CPU				  Text	 0101H
+@CURSEG				  Text	 SEG_A
+@FILENAME			  Text	 101GDEGA
+@WORDSIZE			  Text	 2
+COPY_BUFFER			  Near	 SEG_A:056A
+COPY_BUFFER_2			  Near	 SEG_A:0580
+COPY_BUFFER_3			  Near	 SEG_A:065F
+COPY_BUFFER_4			  Near	 SEG_A:0E90
+COPY_BUFFER_5			  Near	 SEG_A:0EB9
+COPY_VGA_BUFFER			  Near	 SEG_A:0365
+DATA_11				  Byte	 SEG_A:14EE
+DATA_12E			  Number 2050
+DATA_13E			  Number 2A80
+DATA_14E			  Number 32A7
+DATA_15E			  Number 32AF
+DATA_16E			  Number 35AD
+DATA_17E			  Number 35AF
+DATA_18E			  Number 35CD
+DATA_19E			  Number 3A6C
+DATA_1E				  Number 0063
+DATA_20E			  Number 3B30
+DATA_21E			  Number 3B63
+DATA_22E			  Number 3B64
+DATA_23E			  Number 416A
+DATA_24E			  Number 4210
+DATA_25E			  Number 4211
+DATA_26E			  Number 4212
+DATA_27E			  Number 4213
+DATA_28E			  Number 4214
+DATA_29E			  Number 4216
+DATA_31E			  Number 4218
+DATA_32E			  Number 421A
+DATA_33E			  Number 421C
+DATA_34E			  Number 453C
+DATA_35E			  Number 455E
+DATA_36E			  Number A000
+DATA_37E			  Number BF07
+DATA_38E			  Number F500
+DATA_39E			  Number FF1A
+DATA_40E			  Number FF2C
+DATA_41E			  Number 1A6E
+DATA_42E			  Number 1A8F
+DATA_43E			  Number 1A90
+DATA_44E			  Number 013F
+DATA_45E			  Number 0140
+DATA_46E			  Number 0141
+DATA_47E			  Number 0504
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 48
+Symbol Table
+
+
+
+DATA_48E			  Number FEBF
+DATA_49E			  Number FEC0
+DATA_50E			  Number FEC1
+FILL_BUFFER			  Near	 SEG_A:0FA9
+IMGCTL_FUNC_11			  Near	 SEG_A:0903
+IMGCTL_FUNC_15			  Near	 SEG_A:0D7E
+IMGCTL_MULTIPLY			  Near	 SEG_A:01C5
+IMGCTL_MULTIPLY_2		  Near	 SEG_A:06BF
+IMGCTL_MULTIPLY_3		  Near	 SEG_A:0BD0
+IMGCTL_PROCESS_LOOP		  Near	 SEG_A:0274
+IMGCTL_PROCESS_LOOP_2		  Near	 SEG_A:028F
+IMGCTL_PROCESS_LOOP_3		  Near	 SEG_A:0596
+IMGCTL_PROCESS_LOOP_4		  Near	 SEG_A:0D16
+IMGCTL_PROCESS_LOOP_5		  Near	 SEG_A:0D3B
+IMGCTL_PROCESS_LOOP_6		  Near	 SEG_A:0F24
+LOCLOOP_100			  Near	 SEG_A:1131
+LOCLOOP_102			  Near	 SEG_A:115B
+LOCLOOP_11			  Near	 SEG_A:0282
+LOCLOOP_12			  Near	 SEG_A:029A
+LOCLOOP_16			  Near	 SEG_A:02EC
+LOCLOOP_18			  Near	 SEG_A:032D
+LOCLOOP_20			  Near	 SEG_A:0377
+LOCLOOP_21			  Near	 SEG_A:03BB
+LOCLOOP_27			  Near	 SEG_A:047D
+LOCLOOP_29			  Near	 SEG_A:0486
+LOCLOOP_3			  Near	 SEG_A:0164
+LOCLOOP_32			  Near	 SEG_A:0516
+LOCLOOP_33			  Near	 SEG_A:0557
+LOCLOOP_38			  Near	 SEG_A:059E
+LOCLOOP_39			  Near	 SEG_A:0616
+LOCLOOP_40			  Near	 SEG_A:0663
+LOCLOOP_41			  Near	 SEG_A:0687
+LOCLOOP_42			  Near	 SEG_A:06A3
+LOCLOOP_43			  Near	 SEG_A:06A7
+LOCLOOP_46			  Near	 SEG_A:0703
+LOCLOOP_47			  Near	 SEG_A:0709
+LOCLOOP_48			  Near	 SEG_A:074D
+LOCLOOP_50			  Near	 SEG_A:0788
+LOCLOOP_51			  Near	 SEG_A:07B7
+LOCLOOP_52			  Near	 SEG_A:07D7
+LOCLOOP_53			  Near	 SEG_A:0801
+LOCLOOP_63			  Near	 SEG_A:0899
+LOCLOOP_64			  Near	 SEG_A:08B3
+LOCLOOP_65			  Near	 SEG_A:08C7
+LOCLOOP_66			  Near	 SEG_A:08E1
+LOCLOOP_69			  Near	 SEG_A:0B9B
+LOCLOOP_70			  Near	 SEG_A:0BAD
+LOCLOOP_73			  Near	 SEG_A:0C14
+LOCLOOP_79			  Near	 SEG_A:0CCE
+LOCLOOP_80			  Near	 SEG_A:0D2A
+LOCLOOP_81			  Near	 SEG_A:0D3B
+LOCLOOP_82			  Near	 SEG_A:0D59
+LOCLOOP_83			  Near	 SEG_A:0DAB
+LOCLOOP_84			  Near	 SEG_A:0E2C
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 49
+Symbol Table
+
+
+
+LOCLOOP_89			  Near	 SEG_A:0F31
+LOCLOOP_90			  Near	 SEG_A:0F57
+LOCLOOP_91			  Near	 SEG_A:0F94
+LOCLOOP_92			  Near	 SEG_A:0FCB
+LOCLOOP_97			  Near	 SEG_A:1096
+LOC_1				  Near	 SEG_A:0088
+LOC_10				  Near	 SEG_A:0274
+LOC_101				  Near	 SEG_A:1138
+LOC_13				  Near	 SEG_A:02CA
+LOC_14				  Near	 SEG_A:02D0
+LOC_15				  Near	 SEG_A:02D5
+LOC_17				  Near	 SEG_A:02F4
+LOC_19				  Near	 SEG_A:0346
+LOC_2				  Near	 SEG_A:00DC
+LOC_22				  Near	 SEG_A:03DF
+LOC_23				  Near	 SEG_A:03E5
+LOC_24				  Near	 SEG_A:03EE
+LOC_25				  Near	 SEG_A:0402
+LOC_26				  Near	 SEG_A:0475
+LOC_28				  Near	 SEG_A:0480
+LOC_30				  Near	 SEG_A:04FC
+LOC_31				  Near	 SEG_A:0502
+LOC_34				  Near	 SEG_A:055F
+LOC_35				  Near	 SEG_A:056C
+LOC_36				  Near	 SEG_A:0582
+LOC_37				  Near	 SEG_A:0598
+LOC_4				  Near	 SEG_A:019E
+LOC_44				  Near	 SEG_A:06CE
+LOC_45				  Near	 SEG_A:06D6
+LOC_49				  Near	 SEG_A:0753
+LOC_5				  Near	 SEG_A:01EE
+LOC_54				  Near	 SEG_A:0845
+LOC_55				  Near	 SEG_A:0853
+LOC_56				  Near	 SEG_A:0857
+LOC_57				  Near	 SEG_A:0862
+LOC_58				  Near	 SEG_A:0866
+LOC_59				  Near	 SEG_A:0874
+LOC_6				  Near	 SEG_A:0207
+LOC_60				  Near	 SEG_A:0878
+LOC_61				  Near	 SEG_A:0883
+LOC_62				  Near	 SEG_A:088A
+LOC_67				  Near	 SEG_A:08EC
+LOC_68				  Near	 SEG_A:08F6
+LOC_7				  Near	 SEG_A:0218
+LOC_71				  Near	 SEG_A:0BBF
+LOC_72				  Near	 SEG_A:0BF0
+LOC_74				  Near	 SEG_A:0C47
+LOC_75				  Near	 SEG_A:0C5C
+LOC_76				  Near	 SEG_A:0C6C
+LOC_77				  Near	 SEG_A:0C6E
+LOC_78				  Near	 SEG_A:0C78
+LOC_8				  Near	 SEG_A:0260
+LOC_85				  Near	 SEG_A:0E58
+LOC_86				  Near	 SEG_A:0E5B
+Turbo Assembler	 Version 2.01	     03/28/26 17:22:53	    Page 50
+Symbol Table
+
+
+
+LOC_87				  Near	 SEG_A:0E80
+LOC_88				  Near	 SEG_A:0E83
+LOC_9				  Near	 SEG_A:0268
+LOC_93				  Near	 SEG_A:0FE6
+LOC_94				  Near	 SEG_A:1056
+LOC_95				  Near	 SEG_A:1066
+LOC_96				  Near	 SEG_A:1069
+LOC_98				  Near	 SEG_A:10B1
+LOC_99				  Near	 SEG_A:110C
+START				  Near	 SEG_A:0000
+TARGET				  Number 5432
+VGA_OPERATION			  Near	 SEG_A:01F9
+VGA_OPERATION0			  Near	 SEG_A:0FF3
+VGA_OPERATION1			  Near	 SEG_A:104C
+VGA_OPERATION2			  Near	 SEG_A:10BE
+VGA_OPERATION3			  Near	 SEG_A:10FC
+VGA_OPERATION4			  Near	 SEG_A:1138
+ZR1_01				  Far	 SEG_A:0000
+
+Macro Name
+
+CALLF
+CALLFX
+CALLS
+JMPN
+JMPS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+SEG_A				  16  1584 Byte	  Public
+
