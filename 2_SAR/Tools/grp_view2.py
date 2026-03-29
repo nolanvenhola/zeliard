@@ -128,6 +128,8 @@ def decode_6de1(src: bytes) -> bytes:
     return bytes(out)
 
 
+
+
 def interleave_4plane(src: bytes, rows: int, cl: int) -> bytes:
     """041F:30FC 4-plane interleaver: 2-plane 1bpp → nibble-packed."""
     BP = rows * cl
@@ -157,43 +159,6 @@ def interleave_4plane(src: bytes, rows: int, cl: int) -> bytes:
     return bytes(out)
 
 
-def apply_exact_blit(src: bytes, blit_calls: int = 112, call_size: int = 260,
-                     outer_passes: int = 8, antialias: bool = True) -> Image.Image:
-    """041F:3277 exact blit with 8 outer passes OR'd. Verified vs VGA dump."""
-    mask1 = [0x80, 0x20, 0x08, 0x02, 0x40, 0x10, 0x04, 0x01]
-    mask2 = [0x01, 0x04, 0x10, 0x40, 0x02, 0x08, 0x20, 0x80]
-
-    def _wp(M):
-        bl = M
-        for s in range(8):
-            cf = (bl >> 7) & 1; bl = ((bl << 1) & 0xFF) | cf
-            if cf: return s
-        return -1
-
-    m1p = [_wp(mask1[k]) for k in range(8)]
-    m2p = [_wp(mask2[k]) for k in range(8)]
-
-    vga = bytearray(call_size * blit_calls)
-    for start_k in range(outer_passes):
-        k = start_k
-        for n in range(blit_calls):
-            wp = m1p[k % 8] if n % 2 == 0 else m2p[k % 8]
-            for i in range(call_size):
-                if i % 8 == wp:
-                    b = src[n * call_size + i] if n * call_size + i < len(src) else 0
-                    vga[n * call_size + i] |= b
-            k += 1
-
-    img = Image.new('RGB', (call_size, blit_calls), (0, 0, 0))
-    px = img.load()
-    for n in range(blit_calls):
-        for i in range(call_size):
-            b = vga[n * call_size + i]
-            if b:
-                px[i, n] = VGA_PAL[b] if antialias else VGA_PAL[(b >> 4) * 17]
-    return img
-
-
 def decode_grp(data: bytes, cl: int):
     """Full pipeline: detect header → 6DE1 → 4-plane → interleaved nibble buffer."""
     payload = _detect_and_strip_header(data)
@@ -205,6 +170,56 @@ def decode_grp(data: bytes, cl: int):
         return None, 0, 0
     interleaved = interleave_4plane(decoded, rows, cl)
     return interleaved, rows, cl
+
+
+def render_grp(interleaved: bytes, rows: int, cl: int, antialias: bool = True) -> Image.Image:
+    """
+    Reconstruct the image using the game's 8-pass blit mask logic.
+
+    blit_calls = cl  (one blit call per pixel-column group)
+    call_size  = rows * 4  (bytes per blit call)
+
+    This formula is derived from the verified TTL3G parameters:
+      CH=65, CL=112 → blit_calls=112=CL, call_size=260=CH*4
+
+    antialias=True:  full VGA palette lookup per byte (smooth mixed colors)
+    antialias=False: snap to pure nibble color (crisp 4-color look)
+    """
+    mask1 = [0x80, 0x20, 0x08, 0x02, 0x40, 0x10, 0x04, 0x01]
+    mask2 = [0x01, 0x04, 0x10, 0x40, 0x02, 0x08, 0x20, 0x80]
+
+    def _wp(M):
+        bl = M
+        for s in range(8):
+            cf = (bl >> 7) & 1; bl = ((bl << 1) & 0xFF) | cf
+            if cf: return s
+        return -1
+
+    blit_calls = cl
+    call_size  = rows * 4
+    m1p = [_wp(mask1[k]) for k in range(8)]
+    m2p = [_wp(mask2[k]) for k in range(8)]
+
+    vga = bytearray(call_size * blit_calls)
+    for start_k in range(8):
+        k = start_k
+        for n in range(blit_calls):
+            wp = m1p[k % 8] if n % 2 == 0 else m2p[k % 8]
+            for i in range(call_size):
+                if i % 8 == wp:
+                    src_idx = n * call_size + i
+                    if src_idx < len(interleaved):
+                        vga[src_idx] |= interleaved[src_idx]
+            k += 1
+
+    img = Image.new('RGB', (call_size, blit_calls), (0, 0, 0))
+    px = img.load()
+    for n in range(blit_calls):
+        for i in range(call_size):
+            b = vga[n * call_size + i]
+            if b:
+                px[i, n] = VGA_PAL[b] if antialias else VGA_PAL[(b >> 4) * 17]
+    return img
 
 
 
@@ -389,7 +404,7 @@ class GrpViewer:
             return
 
         antialias = self.antialias_var.get()
-        img = apply_exact_blit(self._interleaved, antialias=antialias)
+        img = render_grp(self._interleaved, self._rows, self.cl, antialias=antialias)
         if img:
             z = self.zoom
             w, h = img.size[0] * z, img.size[1] * z
@@ -426,7 +441,7 @@ class GrpViewer:
         if not path:
             return
         antialias = self.antialias_var.get()
-        img = apply_exact_blit(self._interleaved, antialias=antialias)
+        img = render_grp(self._interleaved, self._rows, self.cl, antialias=antialias)
         if img:
             img.save(path)
             self.status.config(text=f'Saved {path}')
