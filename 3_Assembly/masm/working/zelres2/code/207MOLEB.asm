@@ -201,8 +201,7 @@ sub_1		proc	near
 sub_1		endp
 
 ;*		jmp	far ptr loc_61		;*
-		db	0EAh
-		dw	4000h, 4001h		;  Fixup - byte match
+				jmp	far ptr 4000h:4001h			; was: db 0EAh + dw 000h,040h,001h,040h
 			                        ;* No entry point to code
 		add	ss:data_118e[bp+si],di
 		add	bh,ss:data_20[bp]
@@ -740,7 +739,7 @@ loc_37:
 		loopnz	$+5			; Loop if zf=0, cx>0
 
 ;*		jmp	short loc_38		;*
-		db	0EBh,0FAh		;  Fixup - byte match
+				jmp 4C4h			; was: db 0EBh,0FAh
 		db	0FFh,0FCh, 2Ah, 93h,0FFh,0FCh
 		db	 2Ah, 93h,0FFh,0FCh, 2Ah, 93h
 		db	0FFh,0FCh, 2Ah, 92h,0ACh,0EAh
@@ -1762,7 +1761,7 @@ data_61		db	88h			; Data table (indexed access)
 sub_9		proc	near
 		out	dx,al			; port 1, DMA-1 bas&cnt ch 0
 ;*		and	byte ptr ds:data_87e[bx+si],0A8h
-		db	 82h,0A0h,0A8h, 3Ah,0A8h	;  Fixup - byte match
+				and byte ptr [bx+si+3AA8h],0A8h			; was: db 082h,0A0h,0A8h,03Ah,0A8h
 		sub	ch,byte ptr data_29
 		test	al,41h			; 'A'
 		lodsb				; String [si] to al

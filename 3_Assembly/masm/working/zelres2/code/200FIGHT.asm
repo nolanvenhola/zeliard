@@ -2210,7 +2210,7 @@ loc_238:
 		mov	byte ptr ds:data_228e,0
 		mov	byte ptr ds:data_156e,0
 ;*		call	sub_55			;*
-		db	0E8h,0E3h, 04h		;  Fixup - byte match
+				call 1524h			; was: db 0E8h,0E3h,004h
 		call	word ptr cs:data_73
 		call	sub_94
 		call	sub_104
@@ -3029,11 +3029,11 @@ sub_62		endp
 
 			                        ;* No entry point to code
 ;*		aam	76h			; 'v' undocumented inst
-		db	0D4h, 76h		;  Fixup - byte match
+				aam 76h			; was: db 0D4h,076h
 ;*                         lock	jbe	loc_313			;*Jump if below or =
-		db	0F0h, 76h,0EAh		;  Fixup - byte match
+				lock jna 16C2h			; was: db 0F0h,076h,0EAh
 ;*		jbe	loc_313			;*Jump if below or =
-		db	 76h,0E8h		;  Fixup - byte match
+				jna 16C2h			; was: db 076h,0E8h
 		dec	dx
 		out	dx,ax			; port 0FFFFh ??I/O Non-standard
 		call	sub_11
@@ -4368,9 +4368,9 @@ sub_85		endp
 			                        ;* No entry point to code
 		dec	dx
 ;*		adc	byte ptr [bp+si-7Eh],52h	; 'R'
-		db	 82h, 52h, 82h, 52h	;  Fixup - byte match
+				adc byte ptr [bp+si-7Eh],52h			; was: db 082h,052h,082h,052h
 ;*		xor	dh,6
-		db	 82h,0F6h, 06h		;  Fixup - byte match
+				xor dh,6h			; was: db 082h,0F6h,006h
 		pop	es
 		lahf				; Load ah from flags
 		add	[di+1],si

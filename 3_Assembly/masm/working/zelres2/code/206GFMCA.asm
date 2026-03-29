@@ -3802,3 +3802,48 @@ seg_a		ends
 
 
 		end	start
+		; Character encoding / font lookup table
+		db	'CGKO', 0		; 0x0000
+		db	'mno)&!"*%!"', 0		; 0x000B
+		db	016h, 015h, 016h, 01Ch		; 0x0017
+		db	'5DHLCGKO', 0		; 0x001B
+		db	'mno)&!"*%!"', 0		; 0x0024
+		db	016h, 015h, 016h, 01Ch		; 0x0030
+		db	'5DHL', 0		; 0x0034
+		db	'iqst', 0		; 0x0039
+		db	' ,\\\', 0', 0		; 0x003E
+		db	009h		; 0x0046
+		; Character encoding / font lookup table
+		db	'CGKO', 0		; 0x0000
+		db	'mno)&!"*%!"', 0		; 0x000B
+		db	016h, 015h, 016h, 01Ch		; 0x0017
+		db	'5DHLCGKO', 0		; 0x001B
+		db	'mno)&!"*%!"', 0		; 0x0024
+		db	016h, 015h, 016h, 01Ch		; 0x0030
+		db	'5DHL', 0		; 0x0034
+		db	'iqst', 0		; 0x0039
+		db	' ,\\\', 0', 0		; 0x003E
+		db	009h		; 0x0046
+		; Character encoding / font lookup table
+		db	'CGKO', 0		; 0x0000
+		db	'mno)&!"*%!"', 0		; 0x000B
+		db	016h, 015h, 016h, 01Ch		; 0x0017
+		db	'5DHLCGKO', 0		; 0x001B
+		db	'mno)&!"*%!"', 0		; 0x0024
+		db	016h, 015h, 016h, 01Ch		; 0x0030
+		db	'5DHL', 0		; 0x0034
+		db	'iqst', 0		; 0x0039
+		db	' ,\\\', 0', 0		; 0x003E
+		db	009h		; 0x0046
+		; Character encoding / font lookup table
+		db	'CGKO', 0		; 0x0000
+		db	'mno)&!"*%!"', 0		; 0x000B
+		db	016h, 015h, 016h, 01Ch		; 0x0017
+		db	'5DHLCGKO', 0		; 0x001B
+		db	'mno)&!"*%!"', 0		; 0x0024
+		db	016h, 015h, 016h, 01Ch		; 0x0030
+		db	'5DHL', 0		; 0x0034
+		db	'iqst', 0		; 0x0039
+		db	' ,\\\', 0', 0		; 0x003E
+		db	009h		; 0x0046
+		db	'; 0x002D', 0		; 0x0047

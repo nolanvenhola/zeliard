@@ -1,290 +1,330 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:39:00	    Page 1
-333UTILS.asm
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:17:49
+
+                                                            Page     1-1
+                                                            
+
+                                 
+                                PAGE  59,132 
+                                 
+                                ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл 
+                                ;лл					                                 лл 
+                                ;лл				_333MP5D                                 лл 
+                                ;лл					                                 лл 
+                                ;лл      Created:   29-Mar-26		                                 лл 
+                                ;лл      Code type: special		                                 лл 
+                                ;лл      Passes:    9          Analysis	Options on: none                 лл 
+                                ;лл					                                 лл 
+                                ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл 
+                                 
+ = 4D34                         target		EQU   'M4'                      ; Target assembler: MASM-4.0 
+                                 
+                             C  include  srmacros.inc 
+                             C   
+                             C  ; Macros which may be required for proper re-assembly 
+                             C   
+                             C  IF (target EQ 'M4') 
+                             C  ;----------------------------------------------------------------------------- 
+                             C  ;  MASM 4.0 does not allow retf and retn, allowed by current assemblers. 
+                             C  ;  These marcos, convert RETF and RETN into data bytes that are acceptable 
+                             C  ;  to MASM 4.0. 
+                             C   
+                             C   
+                             C  retf            macro   ret_count               ; Fixup for Assembler 
+                             C                  if      ret_count+0 GT 1 
+                             C                  db      0CAh 
+                             C                  dw      ret_count 
+                             C                  else 
+                             C                  db      0CBh 
+                             C                  endif 
+                             C  endm 
+                             C   
+                             C  retn            macro  ret_count 
+                             C                  if     ret_count+0 GT 1 
+                             C                  db     0C2h 
+                             C                  dw     ret_count 
+                             C                  else 
+                             C                  db     0C3h 
+                             C                  endif 
+                             C  endm 
+                             C   
+                             C  ENDIF 
+                             C   
+                             C   
+                             C  IF (target EQ 'M4') OR (target EQ 'M5')  
+                             C  ;----------------------------------------------------------------------------- 
+                             C  ; Due to a bug in earlier MASM assemblers, the valid instruction type  
+                             C  ; "mov segreg, reg"  cannot be used, if the register is not AX.   
+                             C  ; For example:  mov  es, bx 
+                             C   
+                             C  movseg          macro reg16, unused, Imm16      ; Fixup for Assembler 
+                             C                  ifidn  <reg16>, <bx>             
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:17:49
+
+                                                            Page     1-2
+                                                            
+
+                             C                  db     0BBh                      
+                             C                  endif                            
+                             C                  ifidn  <reg16>, <cx>             
+                             C                  db     0B9h                      
+                             C                  endif 
+                             C                  ifidn  <reg16>, <dx> 
+                             C                  db     0BAh 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <si> 
+                             C                  db     0BEh 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <di> 
+                             C                  db     0BFh 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <bp> 
+                             C                  db     0BDh 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <sp> 
+                             C                  db     0BCh 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <BX> 
+                             C                  db     0BBH 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <CX> 
+                             C                  db     0B9H 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <DX> 
+                             C                  db     0BAH 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <SI> 
+                             C                  db     0BEH 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <DI> 
+                             C                  db     0BFH 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <BP> 
+                             C                  db     0BDH 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <SP> 
+                             C                  db     0BCH 
+                             C                  endif 
+                             C                  dw     seg Imm16 
+                             C  endm 
+                             C   
+                             C  ENDIF 
+                             C   
+                             C   
+                             C  ENDIF 
+                             C   
+                             C   
+                             C   
+                             C  IFE (target EQ 'NO') 
+                             C  ;----------------------------------------------------------------------------- 
+                             C  ;  Some compilers and some assemblers will code a call that goes to a far 
+                             C  ;  subroutine in the same segment as: 
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:17:49
+
+                                                            Page     1-3
+                                                            
+
+                             C  ; 
+                             C  ;               PUSH    CS 
+                             C  ;               CALL    near 
+                             C  ; 
+                             C  ;  This saves one byte, and is slightly faster.  If the assembler you are 
+                             C  ;  using (i.e. MASM, Optasm) does not do this automatically, the following 
+                             C  ;  macros are used to code the same information.  In other words, the binary 
+                             C  ;  file has "PUSH CS, CALL near", and Sourcer ensures the same instructions 
+                             C  ;  are used!  (macro CALLF) 
+                             C  ; 
+                             C   
+                             C  callf           macro   location 
+                             C                  push    cs 
+                             C                  call    near ptr location 
+                             C  endm 
+                             C   
+                             C  ;  Some compilers generate an unnecessary DS override on the call instruction 
+                             C  ;  when compacting the CALLF type function.  Macro CALLFX handles this case. 
+                             C   
+                             C  callfx          macro   location 
+                             C                  push    cs 
+                             C                  db      3Eh 
+                             C                  call    near ptr location 
+                             C  endm 
+                             C   
+                             C   
+                             C  ;----------------------------------------------------------------------------- 
+                             C  ;  Some compilers and some assemblers will code a near call that is the 
+                             C  ;  selected assembler will convert to a short jump to save a byte.  This 
+                             C  ;  reconstructs a near jump for these cases. 
+                             C   
+                             C  jmpn            macro   location 
+                             C                  db      0E9h 
+                             C                  dw      offset location-$-2 
+                             C  endm 
+                             C   
+                             C  ENDIF 
+                             C   
+                                 
+                                 
+                                 
+                                ;------------------------------------------------------------  seg_a   ---- 
+                                 
+ 0000                           seg_a		segment	byte public 
+                                		assume cs:seg_a  , ds:seg_a 
+                                 
+ 0000  6B 02 00 00 3D C2        		db	 6Bh, 02h, 00h, 00h, 3Dh,0C2h 
+ 0006  49 00 DE C1 E0 C1        		db	 49h, 00h,0DEh,0C1h,0E0h,0C1h 
+ 000C  E2 C1 FC C1 FE C1        		db	0E2h,0C1h,0FCh,0C1h,0FEh,0C1h 
+ 0012  27 C2 69 C2 05 FF        		db	 27h,0C2h, 69h,0C2h, 05h,0FFh 
+ 0018  FF 00 0C 00 00 DE        		db	0FFh, 00h, 0Ch, 00h, 00h,0DEh 
+ 001E  C1 8D D0 D1 D6 C7        		db	0C1h, 8Dh,0D0h,0D1h,0D6h,0C7h 
+ 0024  CB 76 C6 46 CB C7        		db	0CBh, 76h,0C6h, 46h,0CBh,0C7h 
+ 002A  A4 8D D0 D7 C3 C4        		db	0A4h, 8Dh,0D0h,0D7h,0C3h,0C4h 
+ 0030  CB C5 C9 07 07 A4        		db	0CBh,0C5h,0C9h, 07h, 07h,0A4h 
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:17:49
+
+                                                            Page     1-4
+                                                            
+
+ 0036  8D C3 C7 4A C8 C7        		db	 8Dh,0C3h,0C7h, 4Ah,0C8h,0C7h 
+ 003C  4A C7 CB C7 CB 56        		db	 4Ah,0C7h,0CBh,0C7h,0CBh, 56h 
+ 0042  A4 8D C4 66 C9 08        		db	0A4h, 8Dh,0C4h, 66h,0C9h, 08h 
+ 0048  07 A4 8D C3 CB 46        		db	 07h,0A4h, 8Dh,0C3h,0CBh, 46h 
+ 004E  4A C5 CB 56 CB 56        		db	 4Ah,0C5h,0CBh, 56h,0CBh, 56h 
+ 0054  A4 8D C3 46 C8 01        		db	0A4h, 8Dh,0C3h, 46h,0C8h, 01h 
+ 005A  19 81 C4 46 C9 46        		db	 19h, 81h,0C4h, 46h,0C9h, 46h 
+ 0060  C5 C7 A4 8E C4 CB        		db	0C5h,0C7h,0A4h, 8Eh,0C4h,0CBh 
+ 0066  D8 D9 82 C4 C7 C9        		db	0D8h,0D9h, 82h,0C4h,0C7h,0C9h 
+ 006C  C7 CB 56 A4 94 C3        		db	0C7h,0CBh, 56h,0A4h, 94h,0C3h 
+ 0072  66 C6 46 A4 94 C3        		db	 66h,0C6h, 46h,0A4h, 94h,0C3h 
+ 0078  C6 05 07 A4 94 C4        		db	0C6h, 05h, 07h,0A4h, 94h,0C4h 
+ 007E  46 C5 46 C9 C7 A4        		db	 46h,0C5h, 46h,0C9h,0C7h,0A4h 
+ 0084  94 C4 CC 01 19 D8        		db	 94h,0C4h,0CCh, 01h, 19h,0D8h 
+ 008A  46 CB A4 99 C3 46        		db	 46h,0CBh,0A4h, 99h,0C3h, 46h 
+ 0090  A4 99 C3 46 A4 99        		db	0A4h, 99h,0C3h, 46h,0A4h, 99h 
+ 0096  C3 46 A4 99 C4 C9        		db	0C3h, 46h,0A4h, 99h,0C4h,0C9h 
+ 009C  C7 A4 99 C3 C7 C9        		db	0C7h,0A4h, 99h,0C3h,0C7h,0C9h 
+ 00A2  A4 99 C3 46 A4 99        		db	0A4h, 99h,0C3h, 46h,0A4h, 99h 
+ 00A8  C3 46 A4 99 C3 C5        		db	0C3h, 46h,0A4h, 99h,0C3h,0C5h 
+ 00AE  C7 A4 99 C3 46 A4        		db	0C7h,0A4h, 99h,0C3h, 46h,0A4h 
+ 00B4  99 C4 46 A4 99 C3        		db	 99h,0C4h, 46h,0A4h, 99h,0C3h 
+ 00BA  46 A4 99 C3 46 A4        		db	 46h,0A4h, 99h,0C3h, 46h,0A4h 
+ 00C0  99 C3 C7 C9 A4 99        		db	 99h,0C3h,0C7h,0C9h,0A4h, 99h 
+ 00C6  C3 C5 C7 A4 99 C3        		db	0C3h,0C5h,0C7h,0A4h, 99h,0C3h 
+ 00CC  46 A4 99 C3 C9 C7        		db	 46h,0A4h, 99h,0C3h,0C9h,0C7h 
+ 00D2  A4 99 C3 46 A4 99        		db	0A4h, 99h,0C3h, 46h,0A4h, 99h 
+ 00D8  C3 46 A4 99 C4 46        		db	0C3h, 46h,0A4h, 99h,0C4h, 46h 
+ 00DE  A4 99 C3 46 A4 99        		db	0A4h, 99h,0C3h, 46h,0A4h, 99h 
+ 00E4  C3 46 A4 99 C3 46        		db	0C3h, 46h,0A4h, 99h,0C3h, 46h 
+ 00EA  A4 99 C3 C7 C5 A4        		db	0A4h, 99h,0C3h,0C7h,0C5h,0A4h 
+ 00F0  99 C3 46 A4 99 C4        		db	 99h,0C3h, 46h,0A4h, 99h,0C4h 
+ 00F6  46 A4 99 C3 46 A4        		db	 46h,0A4h, 99h,0C3h, 46h,0A4h 
+ 00FC  99 C3 C7 C9 A4 99        		db	 99h,0C3h,0C7h,0C9h,0A4h, 99h 
+ 0102  C3 46 A4 99 C3 46        		db	0C3h, 46h,0A4h, 99h,0C3h, 46h 
+ 0108  A4 99 C3 46 A4 99        		db	0A4h, 99h,0C3h, 46h,0A4h, 99h 
+ 010E  C3 46 A4 99 C3 46        		db	0C3h, 46h,0A4h, 99h,0C3h, 46h 
+ 0114  A4 99 C3 46 A4 99        		db	0A4h, 99h,0C3h, 46h,0A4h, 99h 
+ 011A  C3 C5 C7 A4 99 C3        		db	0C3h,0C5h,0C7h,0A4h, 99h,0C3h 
+ 0120  46 A4 99 C3 C9 C7        		db	 46h,0A4h, 99h,0C3h,0C9h,0C7h 
+ 0126  A4 99 C4 46 A4 99        		db	0A4h, 99h,0C4h, 46h,0A4h, 99h 
+ 012C  C3 46 A4 99 C3 46        		db	0C3h, 46h,0A4h, 99h,0C3h, 46h 
+ 0132  A4 99 C3 C7 C5 A4        		db	0A4h, 99h,0C3h,0C7h,0C5h,0A4h 
+ 0138  99 C3 46 A4 99 C3        		db	 99h,0C3h, 46h,0A4h, 99h,0C3h 
+ 013E  46 A4 99 C3 46 A4        		db	 46h,0A4h, 99h,0C3h, 46h,0A4h 
+ 0144  99 C3 46 A4 99 C4        		db	 99h,0C3h, 46h,0A4h, 99h,0C4h 
+ 014A  C7 C9 A4 99 C3 46        		db	0C7h,0C9h,0A4h, 99h,0C3h, 46h 
+ 0150  A4 99 C3 C9 C7 A4        		db	0A4h, 99h,0C3h,0C9h,0C7h,0A4h 
+ 0156  99 C3 46 A4 99 C3        		db	 99h,0C3h, 46h,0A4h, 99h,0C3h 
+ 015C  46 A4 99 C3 C5 C7        		db	 46h,0A4h, 99h,0C3h,0C5h,0C7h 
+ 0162  A4 94 C3 C6 D9 D8        		db	0A4h, 94h,0C3h,0C6h,0D9h,0D8h 
+ 0168  81 56 A4 94 C4 C7        		db	 81h, 56h,0A4h, 94h,0C4h,0C7h 
+ 016E  C8 D8 66 A4 94 C3        		db	0C8h,0D8h, 66h,0A4h, 94h,0C3h 
+ 0174  C7 D8 C9 66 A4 94        		db	0C7h,0D8h,0C9h, 66h,0A4h, 94h 
+ 017A  C3 C7 C9 C7 4A 46        		db	0C3h,0C7h,0C9h,0C7h, 4Ah, 46h 
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:17:49
+
+                                                            Page     1-5
+                                                            
+
+ 0180  A4 8D CD CE CF C3        		db	0A4h, 8Dh,0CDh,0CEh,0CFh,0C3h 
+ 0186  D9 D8 81 C4 06 07        		db	0D9h,0D8h, 81h,0C4h, 06h, 07h 
+ 018C  A4 8D D0 D1 D2 C3        		db	0A4h, 8Dh,0D0h,0D1h,0D2h,0C3h 
+ 0192  CB C5 CB 46 CB C6        		db	0CBh,0C5h,0CBh, 46h,0CBh,0C6h 
+ 0198  C5 56 A4 8D D0 D1        		db	0C5h, 56h,0A4h, 8Dh,0D0h,0D1h 
+ 019E  D6 46 C5 CB 05 07        		db	0D6h, 46h,0C5h,0CBh, 05h, 07h 
+ 01A4  CB C7 A4 8D D0 D1        		db	0CBh,0C7h,0A4h, 8Dh,0D0h,0D1h 
+ 01AA  D2 C5 CB 46 CB 66        		db	0D2h,0C5h,0CBh, 46h,0CBh, 66h 
+ 01B0  C8 46 A4 8D D0 D1        		db	0C8h, 46h,0A4h, 8Dh,0D0h,0D1h 
+ 01B6  D6 C7 4A C6 46 CB        		db	0D6h,0C7h, 4Ah,0C6h, 46h,0CBh 
+ 01BC  C9 46 C5 C7 A4 8D        		db	0C9h, 46h,0C5h,0C7h,0A4h, 8Dh 
+ 01C2  D0 D1 D2 C5 CB 46        		db	0D0h,0D1h,0D2h,0C5h,0CBh, 46h 
+ 01C8  C9 06 07 A4 8D D0        		db	0C9h, 06h, 07h,0A4h, 8Dh,0D0h 
+ 01CE  D7 D6 C4 05 07 C5        		db	0D7h,0D6h,0C4h, 05h, 07h,0C5h 
+ 01D4  66 A4 8D D0 D1 D2        		db	 66h,0A4h, 8Dh,0D0h,0D1h,0D2h 
+ 01DA  C3 C5 CB 46 CB 05        		db	0C3h,0C5h,0CBh, 46h,0CBh, 05h 
+ 01E0  07 A4 FF FF FF FF        		db	 07h,0A4h,0FFh,0FFh,0FFh,0FFh 
+ 01E6  FF FF 11 00 15 C1        		db	0FFh,0FFh, 11h, 00h, 15h,0C1h 
+ 01EC  0C 9D 00 10 00 FF        		db	 0Ch, 9Dh, 00h, 10h, 00h,0FFh 
+ 01F2  FF FF 34 00 15 82        		db	0FFh,0FFh, 34h, 00h, 15h, 82h 
+ 01F8  0E 0E 00 05 80 24        		db	 0Eh, 0Eh, 00h, 05h, 80h, 24h 
+ 01FE  00 04 FF FF 24 00        		db	 00h, 04h,0FFh,0FFh, 24h, 00h 
+ 0204  08 57 C2 FF FF FF        		db	 08h, 57h,0C2h,0FFh,0FFh,0FFh 
+ 020A  FF 24 00 04 F7 C1        		db	0FFh, 24h, 00h, 04h,0F7h,0C1h 
+ 0210  05 00 FF FF 20 00        		db	 05h, 00h,0FFh,0FFh, 20h, 00h 
+ 0216  FF 10 C0 57 C2 0A        		db	0FFh, 10h,0C0h, 57h,0C2h, 0Ah 
+ 021C  C0 E4 C1 40 C2 08        		db	0C0h,0E4h,0C1h, 40h,0C2h, 08h 
+ 0222  08 3D C2 11 00 FF        		db	 08h, 3Dh,0C2h, 11h, 00h,0FFh 
+ 0228  FF FF FF 16 AF 00        		db	0FFh,0FFh,0FFh, 16h,0AFh, 00h 
+ 022E  12                       		db	 12h 
+ 022F  43 61 76 65 72 6E 20     		db	'Cavern of Cementar' 
+       6F 66 20 43 65 6D 65     
+       6E 74 61 72              
+ 0241  99 00 04 09 FF 09        		db	 99h, 00h, 04h, 09h,0FFh, 09h 
+ 0247  08 08 10 C0 57 C2        		db	 08h, 08h, 10h,0C0h, 57h,0C2h 
+ 024D  0A C0 F0 C1 59 C2        		db	 0Ah,0C0h,0F0h,0C1h, 59h,0C2h 
+ 0253  0D FF 20 00 FF FF        		db	 0Dh,0FFh, 20h, 00h,0FFh,0FFh 
+ 0259  FF FF 21 00 17 FF        		db	0FFh,0FFh, 21h, 00h, 17h,0FFh 
+ 025F  79 00 00 20 00 00        		db	 79h, 00h, 00h, 20h, 00h, 00h 
+ 0265  00 24 00 08 00 00        		db	 00h, 24h, 00h, 08h, 00h, 00h 
+ 026B  FF FF FF FF              		db	0FFh,0FFh,0FFh,0FFh 
+                                 
+ 026F                           seg_a		ends 
+                                 
+                                 
+                                 
+                                		end 
+
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:17:49
+
+                                                            Symbols-1
+                                                             
+
+Macros:
+
+		N a m e			Lines
+
+CALLF  . . . . . . . . . . . . .  	   2
+CALLFX . . . . . . . . . . . . .  	   3
+JMPN . . . . . . . . . . . . . .  	   2
+MOVSEG . . . . . . . . . . . . .  	  43
+RETF . . . . . . . . . . . . . .  	   6
+RETN . . . . . . . . . . . . . .  	   6
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+SEG_A  . . . . . . . . . . . . .  	026F	BYTE	PUBLIC	
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+TARGET . . . . . . . . . . . . .  	Number	4D34	
 
 
+    280 Source  Lines
+    281 Total   Lines
+     29 Symbols
 
-      1
-      2
-      3				     ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-      4				     ;лл								      лл
-      5				     ;лл			     ZR3_33				      лл
-      6				     ;лл								      лл
-      7				     ;лл      Created:	 16-Feb-26					      лл
-      8				     ;лл      Code type: device	drivr					      лл
-      9				     ;лл      Passes:	 9	    Analysis Options on: none		      лл
-     10				     ;лл								      лл
-     11				     ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-     12
-     13	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
-     14
-     15				     include  srmacros.inc
-1    16
-1    17				     ; Macros which may	be required for	proper re-assembly
-1    18
-1    19
-1    20
-1    21
-1    22
-1    23				     ;-----------------------------------------------------------------------------
-1    24				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
-1    25				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
-1    26				     ; instruction it uses a near jump or call.
-1    27
-1    28				     calls	     macro   dummy1, dummy2, slocation
-1    29						     db	     9Ah		     ; forced call far instruction
-1    30						     dw	     offset slocation, seg slocation
-1    31				     endm
-1    32
-1    33				     jmps	     macro   dummy1, dummy2, jlocation
-1    34						     db	     0EAh		     ; forced jump far instruction
-1    35						     dw	     offset jlocation, seg jlocation
-1    36				     endm
-1    37
-1    38
-1    39
-1    40
-1    41				     ;-----------------------------------------------------------------------------
-1    42				     ;	Some compilers and some	assemblers will	code a call that goes to a far
-1    43				     ;	subroutine in the same segment as:
-1    44				     ;
-1    45				     ;		     PUSH    CS
-1    46				     ;		     CALL    near
-1    47				     ;
-1    48				     ;	This saves one byte, and is slightly faster.  If the assembler you are
-1    49				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
-1    50				     ;	macros are used	to code	the same information.  In other	words, the binary
-1    51				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
-1    52				     ;	are used!  (macro CALLF)
-1    53				     ;
-1    54
-Turbo Assembler	 Version 2.01	     03/22/26 12:39:00	    Page 2
-333UTILS.asm
+  50352 Bytes symbol space free
 
-
-
-1    55				     callf	     macro   location
-1    56						     push    cs
-1    57						     call    near ptr location
-1    58				     endm
-1    59
-1    60				     ;	Some compilers generate	an unnecessary DS override on the call instruction
-1    61				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
-1    62
-1    63				     callfx	     macro   location
-1    64						     push    cs
-1    65						     db	     3Eh
-1    66						     call    near ptr location
-1    67				     endm
-1    68
-1    69
-1    70				     ;-----------------------------------------------------------------------------
-1    71				     ;	Some compilers and some	assemblers will	code a near call that is the
-1    72				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
-1    73				     ;	reconstructs a near jump for these cases.
-1    74
-1    75				     jmpn	     macro   location
-1    76						     db	     0E9h
-1    77						     dw	     offset location-$-2
-1    78				     endm
-1    79
-1    80
-1    81
-     82
-     83
-     84	0000			     seg_a	     segment byte public
-     85						     assume  cs:seg_a, ds:seg_a
-     86
-     87
-     88						     org     0
-     89
-     90	0000			     zr3_33	     proc    far
-     91
-     92
-     93	0000			     zr3_33	     endp
-     94
-     95				     ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-     96				     ;
-     97				     ;			     External Entry Point
-     98				     ;
-     99				     ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-    100
-    101	0000			     strategy_1	     proc    far
-    102	0000  6B 02 00 00			     db	      6Bh, 02h,	00h, 00h
-    103	0004  C23D		     attributes	     dw	     0C23Dh
-    104	0006  0049r		     pointers	     dw	     offset strategy
-    105	0008  C1DE				     dw	     0C1DEh
-    106	000A  E0 C1 E2 C1 FC C1	FE+  char_dev	     db	     'рСтСќСўС'
-    107	      C1
-    108	0012  27 C2 69 C2 05 FF			     db	      27h,0C2h,	69h,0C2h, 05h,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:39:00	    Page 3
-333UTILS.asm
-
-
-
-    109	0018  FF 00 0C 00 00 DE			     db	     0FFh, 00h,	0Ch, 00h, 00h,0DEh
-    110	001E  C1 8D D0 D1 D6 C7			     db	     0C1h, 8Dh,0D0h,0D1h,0D6h,0C7h
-    111	0024  CB 76 C6 46 CB C7			     db	     0CBh, 76h,0C6h, 46h,0CBh,0C7h
-    112	002A  A4 8D D0 D7 C3 C4			     db	     0A4h, 8Dh,0D0h,0D7h,0C3h,0C4h
-    113	0030  CB C5 C9 07 07 A4			     db	     0CBh,0C5h,0C9h, 07h, 07h,0A4h
-    114	0036  8D C3 C7 4A C8 C7			     db	      8Dh,0C3h,0C7h, 4Ah,0C8h,0C7h
-    115	003C  4A C7 CB C7 CB 56			     db	      4Ah,0C7h,0CBh,0C7h,0CBh, 56h
-    116	0042  A4 8D C4 66 C9 08			     db	     0A4h, 8Dh,0C4h, 66h,0C9h, 08h
-    117	0048  07				     db	      07h
-    118	0049			     strategy_1	     endp
-    119
-    120
-    121				     ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-    122				     ;
-    123				     ;			     External Entry Point
-    124				     ;
-    125				     ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-    126
-    127	0049			     strategy	     proc    far
-    128	0049  A4				     movsb			     ; Mov [si]	to es:[di]
-    129	004A  8D C3 CB 46 4A C5			     db	      8Dh,0C3h,0CBh, 46h, 4Ah,0C5h
-    130	0050  CB 56 CB 56 A4 8D			     db	     0CBh, 56h,0CBh, 56h,0A4h, 8Dh
-    131	0056  C3 46 C8 01 19 81			     db	     0C3h, 46h,0C8h, 01h, 19h, 81h
-    132	005C  C4 46 C9 46 C5 C7			     db	     0C4h, 46h,0C9h, 46h,0C5h,0C7h
-    133	0062  A4 8E C4 CB D8 D9			     db	     0A4h, 8Eh,0C4h,0CBh,0D8h,0D9h
-    134	0068  82 C4 C7 C9 C7 CB			     db	      82h,0C4h,0C7h,0C9h,0C7h,0CBh
-    135	006E  56 A4 94 C3 66 C6			     db	      56h,0A4h,	94h,0C3h, 66h,0C6h
-    136	0074  46 A4 94 C3 C6 05			     db	      46h,0A4h,	94h,0C3h,0C6h, 05h
-    137	007A  07 A4 94 C4 46 C5			     db	      07h,0A4h,	94h,0C4h, 46h,0C5h
-    138	0080  46 C9 C7 A4 94 C4			     db	      46h,0C9h,0C7h,0A4h, 94h,0C4h
-    139	0086  CC 01 19 D8 46 CB			     db	     0CCh, 01h,	19h,0D8h, 46h,0CBh
-    140	008C  A4 99 C3 46 A4 99			     db	     0A4h, 99h,0C3h, 46h,0A4h, 99h
-    141	0092  C3 46 A4 99 C3 46			     db	     0C3h, 46h,0A4h, 99h,0C3h, 46h
-    142	0098  A4 99 C4 C9 C7 A4			     db	     0A4h, 99h,0C4h,0C9h,0C7h,0A4h
-    143	009E  99 C3 C7 C9 A4 99			     db	      99h,0C3h,0C7h,0C9h,0A4h, 99h
-    144	00A4  C3 46 A4 99 C3 46			     db	     0C3h, 46h,0A4h, 99h,0C3h, 46h
-    145	00AA  A4 99 C3 C5 C7 A4			     db	     0A4h, 99h,0C3h,0C5h,0C7h,0A4h
-    146	00B0  99 C3 46 A4 99 C4			     db	      99h,0C3h,	46h,0A4h, 99h,0C4h
-    147	00B6  46 A4 99 C3 46 A4			     db	      46h,0A4h,	99h,0C3h, 46h,0A4h
-    148	00BC  99 C3 46 A4 99 C3			     db	      99h,0C3h,	46h,0A4h, 99h,0C3h
-    149	00C2  C7 C9 A4 99 C3 C5			     db	     0C7h,0C9h,0A4h, 99h,0C3h,0C5h
-    150	00C8  C7 A4 99 C3 46 A4			     db	     0C7h,0A4h,	99h,0C3h, 46h,0A4h
-    151	00CE  99 C3 C9 C7 A4 99			     db	      99h,0C3h,0C9h,0C7h,0A4h, 99h
-    152	00D4  C3 46 A4 99 C3 46			     db	     0C3h, 46h,0A4h, 99h,0C3h, 46h
-    153	00DA  A4 99 C4 46 A4 99			     db	     0A4h, 99h,0C4h, 46h,0A4h, 99h
-    154	00E0  C3 46 A4 99 C3 46			     db	     0C3h, 46h,0A4h, 99h,0C3h, 46h
-    155	00E6  A4 99 C3 46 A4 99			     db	     0A4h, 99h,0C3h, 46h,0A4h, 99h
-    156	00EC  C3 C7 C5 A4 99 C3			     db	     0C3h,0C7h,0C5h,0A4h, 99h,0C3h
-    157	00F2  46 A4 99 C4 46 A4			     db	      46h,0A4h,	99h,0C4h, 46h,0A4h
-    158	00F8  99 C3 46 A4 99 C3			     db	      99h,0C3h,	46h,0A4h, 99h,0C3h
-    159	00FE  C7 C9 A4 99 C3 46			     db	     0C7h,0C9h,0A4h, 99h,0C3h, 46h
-    160	0104  A4 99 C3 46 A4 99			     db	     0A4h, 99h,0C3h, 46h,0A4h, 99h
-    161	010A  C3 46 A4 99 C3 46			     db	     0C3h, 46h,0A4h, 99h,0C3h, 46h
-    162	0110  A4 99 C3 46 A4 99			     db	     0A4h, 99h,0C3h, 46h,0A4h, 99h
-Turbo Assembler	 Version 2.01	     03/22/26 12:39:00	    Page 4
-333UTILS.asm
-
-
-
-    163	0116  C3 46 A4 99 C3 C5			     db	     0C3h, 46h,0A4h, 99h,0C3h,0C5h
-    164	011C  C7 A4 99 C3 46 A4			     db	     0C7h,0A4h,	99h,0C3h, 46h,0A4h
-    165	0122  99 C3 C9 C7 A4 99			     db	      99h,0C3h,0C9h,0C7h,0A4h, 99h
-    166	0128  C4 46 A4 99 C3 46			     db	     0C4h, 46h,0A4h, 99h,0C3h, 46h
-    167	012E  A4 99 C3 46 A4 99			     db	     0A4h, 99h,0C3h, 46h,0A4h, 99h
-    168	0134  C3 C7 C5 A4 99 C3			     db	     0C3h,0C7h,0C5h,0A4h, 99h,0C3h
-    169	013A  46 A4 99 C3 46 A4			     db	      46h,0A4h,	99h,0C3h, 46h,0A4h
-    170	0140  99 C3 46 A4 99 C3			     db	      99h,0C3h,	46h,0A4h, 99h,0C3h
-    171	0146  46 A4 99 C4 C7 C9			     db	      46h,0A4h,	99h,0C4h,0C7h,0C9h
-    172	014C  A4 99 C3 46 A4 99			     db	     0A4h, 99h,0C3h, 46h,0A4h, 99h
-    173	0152  C3 C9 C7 A4 99 C3			     db	     0C3h,0C9h,0C7h,0A4h, 99h,0C3h
-    174	0158  46 A4 99 C3 46 A4			     db	      46h,0A4h,	99h,0C3h, 46h,0A4h
-    175	015E  99 C3 C5 C7 A4 94			     db	      99h,0C3h,0C5h,0C7h,0A4h, 94h
-    176	0164  C3 C6 D9 D8 81 56			     db	     0C3h,0C6h,0D9h,0D8h, 81h, 56h
-    177	016A  A4 94 C4 C7 C8 D8			     db	     0A4h, 94h,0C4h,0C7h,0C8h,0D8h
-    178	0170  66 A4 94 C3 C7 D8			     db	      66h,0A4h,	94h,0C3h,0C7h,0D8h
-    179	0176  C9 66 A4 94 C3 C7			     db	     0C9h, 66h,0A4h, 94h,0C3h,0C7h
-    180	017C  C9 C7 4A 46 A4 8D			     db	     0C9h,0C7h,	4Ah, 46h,0A4h, 8Dh
-    181	0182  CD CE CF C3 D9 D8			     db	     0CDh,0CEh,0CFh,0C3h,0D9h,0D8h
-    182	0188  81 C4 06 07 A4 8D			     db	      81h,0C4h,	06h, 07h,0A4h, 8Dh
-    183	018E  D0 D1 D2 C3 CB C5			     db	     0D0h,0D1h,0D2h,0C3h,0CBh,0C5h
-    184	0194  CB 46 CB C6 C5 56			     db	     0CBh, 46h,0CBh,0C6h,0C5h, 56h
-    185	019A  A4 8D D0 D1 D6 46			     db	     0A4h, 8Dh,0D0h,0D1h,0D6h, 46h
-    186	01A0  C5 CB 05 07 CB C7			     db	     0C5h,0CBh,	05h, 07h,0CBh,0C7h
-    187	01A6  A4 8D D0 D1 D2 C5			     db	     0A4h, 8Dh,0D0h,0D1h,0D2h,0C5h
-    188	01AC  CB 46 CB 66 C8 46			     db	     0CBh, 46h,0CBh, 66h,0C8h, 46h
-    189	01B2  A4 8D D0 D1 D6 C7			     db	     0A4h, 8Dh,0D0h,0D1h,0D6h,0C7h
-    190	01B8  4A C6 46 CB C9 46			     db	      4Ah,0C6h,	46h,0CBh,0C9h, 46h
-    191	01BE  C5 C7 A4 8D D0 D1			     db	     0C5h,0C7h,0A4h, 8Dh,0D0h,0D1h
-    192	01C4  D2 C5 CB 46 C9 06			     db	     0D2h,0C5h,0CBh, 46h,0C9h, 06h
-    193	01CA  07 A4 8D D0 D7 D6			     db	      07h,0A4h,	8Dh,0D0h,0D7h,0D6h
-    194	01D0  C4 05 07 C5 66 A4			     db	     0C4h, 05h,	07h,0C5h, 66h,0A4h
-    195	01D6  8D D0 D1 D2 C3 C5			     db	      8Dh,0D0h,0D1h,0D2h,0C3h,0C5h
-    196	01DC  CB 46 CB 05 07 A4			     db	     0CBh, 46h,0CBh, 05h, 07h,0A4h
-    197	01E2  FF FF FF FF FF FF			     db	     0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    198	01E8  11 00 15 C1 0C 9D			     db	      11h, 00h,	15h,0C1h, 0Ch, 9Dh
-    199	01EE  00 10 00 FF FF FF			     db	      00h, 10h,	00h,0FFh,0FFh,0FFh
-    200	01F4  34 00 15 82 0E 0E			     db	      34h, 00h,	15h, 82h, 0Eh, 0Eh
-    201	01FA  00 05 80 24 00 04			     db	      00h, 05h,	80h, 24h, 00h, 04h
-    202	0200  FF FF 24 00 08 57			     db	     0FFh,0FFh,	24h, 00h, 08h, 57h
-    203	0206  C2 FF FF FF FF 24			     db	     0C2h,0FFh,0FFh,0FFh,0FFh, 24h
-    204	020C  00 04 F7 C1 05 00			     db	      00h, 04h,0F7h,0C1h, 05h, 00h
-    205	0212  FF FF 20 00 FF 10			     db	     0FFh,0FFh,	20h, 00h,0FFh, 10h
-    206	0218  C0 57 C2 0A C0 E4			     db	     0C0h, 57h,0C2h, 0Ah,0C0h,0E4h
-    207	021E  C1 40 C2 08 08 3D			     db	     0C1h, 40h,0C2h, 08h, 08h, 3Dh
-    208	0224  C2 11 00 FF FF FF			     db	     0C2h, 11h,	00h,0FFh,0FFh,0FFh
-    209	022A  FF 16 AF 00 12			     db	     0FFh, 16h,0AFh, 00h, 12h
-    210	022F  43 61 76 65 72 6E	20+		     db	     'Cavern of	Cementar'
-    211	      6F 66 20 43 65 6D	65+
-    212	      6E 74 61 72
-    213	0241  99 00 04 09 FF 09			     db	      99h, 00h,	04h, 09h,0FFh, 09h
-    214	0247  08 08 10 C0 57 C2			     db	      08h, 08h,	10h,0C0h, 57h,0C2h
-    215	024D  0A C0 F0 C1 59 C2			     db	      0Ah,0C0h,0F0h,0C1h, 59h,0C2h
-    216	0253  0D FF 20 00 FF FF			     db	      0Dh,0FFh,	20h, 00h,0FFh,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:39:00	    Page 5
-333UTILS.asm
-
-
-
-    217	0259  FF FF 21 00 17 FF			     db	     0FFh,0FFh,	21h, 00h, 17h,0FFh
-    218	025F  79 00 00 20 00 00			     db	      79h, 00h,	00h, 20h, 00h, 00h
-    219	0265  00 24 00 08 00 00			     db	      00h, 24h,	00h, 08h, 00h, 00h
-    220	026B  FFFFFFFF		     header_1	     dd	     0FFFFFFFFh
-    221	026F			     strategy	     endp
-    222
-    223
-    224	026F			     seg_a	     ends
-    225
-    226
-    227
-    228						     end
-Turbo Assembler	 Version 2.01	     03/22/26 12:39:00	    Page 6
-Symbol Table
-
-
-
-
-Symbol Name			  Type	 Value
-
-??DATE				  Text	 "03/22/26"
-??FILENAME			  Text	 "333UTILS"
-??TIME				  Text	 "12:39:00"
-??VERSION			  Number 0201
-@CPU				  Text	 0101H
-@CURSEG				  Text	 SEG_A
-@FILENAME			  Text	 333UTILS
-@WORDSIZE			  Text	 2
-ATTRIBUTES			  Word	 SEG_A:0004
-CHAR_DEV			  Byte	 SEG_A:000A
-HEADER_1			  Dword	 SEG_A:026B
-POINTERS			  Word	 SEG_A:0006
-STRATEGY			  Far	 SEG_A:0049
-STRATEGY_1			  Far	 SEG_A:0000
-TARGET				  Number 5432
-ZR3_33				  Far	 SEG_A:0000
-
-Macro Name
-
-CALLF
-CALLFX
-CALLS
-JMPN
-JMPS
-
-Groups & Segments		  Bit Size Align  Combine Class
-
-SEG_A				  16  026F Byte	  Public
-
+      0 Warning Errors
+      0 Severe  Errors

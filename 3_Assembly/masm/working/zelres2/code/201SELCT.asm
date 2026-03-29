@@ -1467,3 +1467,32 @@ seg_a		ends
 
 
 		end	start
+		; Menu shortcut table prefix entries
+		db	'4', 0		; 0x0000
+		db	012h		; 0x0002
+		db	'SE4', 0		; 0x0003
+		db	012h		; 0x0007
+		db	'SE4', 0		; 0x0008
+		db	012h		; 0x000C
+		; Menu shortcut table prefix entries
+		db	'4', 0		; 0x0000
+		db	012h		; 0x0002
+		db	'SE4', 0		; 0x0003
+		db	012h		; 0x0007
+		db	'SE4', 0		; 0x0008
+		db	012h		; 0x000C
+		; Menu shortcut table prefix entries
+		db	'4', 0		; 0x0000
+		db	012h		; 0x0002
+		db	'SE4', 0		; 0x0003
+		db	012h		; 0x0007
+		db	'SE4', 0		; 0x0008
+		db	012h		; 0x000C
+		; Menu shortcut table prefix entries
+		db	'4', 0		; 0x0000
+		db	012h		; 0x0002
+		db	'SE4', 0		; 0x0003
+		db	012h		; 0x0007
+		db	'SE4', 0		; 0x0008
+		db	012h		; 0x000C
+		db	'SEL', 0		; 0x000D

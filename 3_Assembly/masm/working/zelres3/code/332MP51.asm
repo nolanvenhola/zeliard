@@ -29,27 +29,27 @@ start:
 		add	[bx+si],al
 		or	bl,bl			; Zero ?
 ;*                         lock	add	cl,al
-		db	0F0h, 00h,0C1h		;  Fixup - byte match
+				lock add cl,al			; was: db 0F0h,000h,0C1h
 ;*		fld	st(6)			; Push onto stack
-		db	0D9h,0C6h		;  Fixup - byte match
+				fld st(6)			; was: db 0D9h,0C6h
 ;*		fxch	st			; Exchange st & st(#)
-		db	0D9h,0C8h		;  Fixup - byte match
+				fxch st(0)			; was: db 0D9h,0C8h
 ;*		fst	dword ptr [bx+si]	; Store st to memory
-		db	0D9h, 10h		;  Fixup - byte match
+				fst dword ptr [bx+si]			; was: db 0D9h,010h
 ;*		fisub	dword ptr [bp-26h]	; st = st - memory
-		db	0DAh, 66h,0DAh		;  Fixup - byte match
+				fisub dword ptr [bp-26h]			; was: db 0DAh,066h,0DAh
 		hlt				; Halt processor
 ;*		fimul	dword ptr [bx]		; st = st * memory
-		db	0DAh, 0Fh		;  Fixup - byte match
+				fimul dword ptr [bx]			; was: db 0DAh,00Fh
 ;*		fild	dword ptr [di]		; Push integer to stk
-		db	0DBh, 05h		;  Fixup - byte match
+				fild dword ptr [di]			; was: db 0DBh,005h
 		popf				; Pop flags
 		add	[bx+di],dl
 		or	al,[bx+si]
 ;*		add	cl,al
-		db	 00h,0C1h		;  Fixup - byte match
+				add cl,al			; was: db 000h,0C1h
 ;*		fldenv	byte ptr [bp-34h]	; Load Envirnmt state
-		db	0D9h, 66h,0CCh		;  Fixup - byte match
+				fldenv [bp-34h]			; was: db 0D9h,066h,0CCh
 loc_2:
 		xchg	al,ah
 		lds	cx,dword ptr [bx+di]	; Load seg:offset ptr
@@ -66,11 +66,11 @@ loc_2:
 		les	dx,dword ptr [bp-34h]	; Load seg:offset ptr
 		mov	bl,dl
 ;*		fiadd	word ptr [bp+66h]
-		db	0DEh, 46h, 66h		;  Fixup - byte match
+				fiadd word ptr [bp+66h]			; was: db 0DEh,046h,066h
 		add	[bx+si],bx
 		test	ax,sp
 ;*		jbe	loc_1			;*Jump if below or =
-		db	 76h,0C8h		;  Fixup - byte match
+				jna 8h			; was: db 076h,0C8h
 		jbe	$-70h			; Jump if below or =
 		retn
 			                        ;* No entry point to code
@@ -1392,7 +1392,7 @@ locloop_3:
 		add	[bp+di],bl
 		add	[si],ah
 ;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		;  Fixup - byte match
+				add [bx+si+0h],al			; was: db 000h,040h,000h
 		db	 00h, 00h,0FFh, 00h,0FFh, 00h
 		db	 00h, 00h, 00h, 00h, 00h, 00h
 		db	0FFh,0FFh, 00h, 00h, 00h, 00h

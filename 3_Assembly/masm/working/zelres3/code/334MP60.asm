@@ -45,9 +45,9 @@ seg_a		segment	byte public
 		xlat				; al=[al+[bx]] table
 		mov	di,data_13e
 ;*		fcom	dword ptr ds:data_9e	; Compare with st
-		db	0D8h, 16h,0D9h, 2Fh	;  Fixup - byte match
+				fcom dword ptr [2FD9h]			; was: db 0D8h,016h,0D9h,02Fh
 ;*		fld	dword ptr data_3	; Push onto stack
-		db	0D9h, 06h, 35h, 01h	;  Fixup - byte match
+				fld dword ptr [135h]			; was: db 0D9h,006h,035h,001h
 		sub	cl,[bp+si]
 		add	[bx+si],al
 		inc	bp
@@ -590,7 +590,7 @@ data_5		dw	0C388h, 8753h, 53C3h	; Data table (indexed access)
 locloop_4:
 		push	bx
 ;*		ffree	st(4)			; Set tag to empty
-		db	0DDh,0C4h		;  Fixup - byte match
+				ffree st(4)			; was: db 0DDh,0C4h
 		test	ax,bx
 		inc	bx
 		mov	data_7[di],ax
@@ -863,7 +863,7 @@ locloop_6:
 locloop_8:
 		adc	dx,sp
 ;*		xchg	ax,bx
-		db	 87h,0C3h		;  Fixup - byte match
+				xchg ax,bx			; was: db 087h,0C3h
 		loopnz	locloop_5		; Loop if zf=0, cx>0
 
 		retn
@@ -962,7 +962,7 @@ locloop_11:
 		loopnz	locloop_10		; Loop if zf=0, cx>0
 
 ;*		fld	qword ptr [bp+di-7Dh]	; Push onto stack
-		db	0DDh, 43h, 83h		;  Fixup - byte match
+				fld qword ptr [bp+di-7Dh]			; was: db 0DDh,043h,083h
 		nop
 		retn
 			                        ;* No entry point to code
@@ -990,7 +990,7 @@ locloop_12:
 			                        ;* No entry point to code
 		inc	bx
 ;*		xchg	ax,bx
-		db	 87h,0C3h		;  Fixup - byte match
+				xchg ax,bx			; was: db 087h,0C3h
 		push	bx
 		retf
 			                        ;* No entry point to code
@@ -1007,15 +1007,15 @@ locloop_12:
 			                        ;* No entry point to code
 		inc	bx
 ;*		fld	qword ptr ds:data_11e[bx]	; Push onto stack
-		db	0DDh, 87h,0C3h, 53h	;  Fixup - byte match
+				fld qword ptr [bx+53C3h]			; was: db 0DDh,087h,0C3h,053h
 		xchg	[bx+di],al
 		and	ds:data_11e[bx+si],cl
 		adc	word ptr ds:data_15e[bx+si],0FFC4h
 ;*		xchg	ax,bx
-		db	 87h,0C3h		;  Fixup - byte match
+				xchg ax,bx			; was: db 087h,0C3h
 		push	bx
 ;*		xchg	ax,bx
-		db	 87h,0C3h		;  Fixup - byte match
+				xchg ax,bx			; was: db 087h,0C3h
 		push	bx
 		xchg	[bx+di],al
 		and	ds:data_11e[bx+si],cl
@@ -1032,7 +1032,7 @@ locloop_12:
 		retn
 			                        ;* No entry point to code
 ;*		fld	qword ptr [bp+di-7Dh]	; Push onto stack
-		db	0DDh, 43h, 83h		;  Fixup - byte match
+				fld qword ptr [bp+di-7Dh]			; was: db 0DDh,043h,083h
 		db	 60h,0C2h,0C1h, 41h, 50h, 05h
 		db	 02h, 07h, 01h, 51h, 70h, 51h
 		db	 60h, 51h,0C1h, 41h, 81h, 01h

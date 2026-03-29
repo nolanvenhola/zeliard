@@ -324,7 +324,7 @@ data_9		dw	200h			; Data table (indexed access)
 loc_1:
 		cli				; Disable interrupts
 ;*		add	si,di
-		db	 01h,0FEh		;  Fixup - byte match
+				add si,di			; was: db 001h,0FEh
 		mov	al,[bx+si]
 		pop	es
 		inc	ax
@@ -333,9 +333,9 @@ loc_1:
 		push	bp
 		cld				; Clear direction
 ;*		add	byte ptr [bx+si],6
-		db	 82h, 00h, 06h		;  Fixup - byte match
+				add byte ptr [bx+si],6h			; was: db 082h,000h,006h
 ;*		add	cx,si
-		db	 01h,0F1h		;  Fixup - byte match
+				add cx,si			; was: db 001h,0F1h
 		loopnz	$+8			; Loop if zf=0, cx>0
 
 		pop	es
@@ -343,7 +343,7 @@ loc_1:
 		add	ax,[bx+di]
 		add	byte ptr [bx+si],7Ch	; '|'
 ;*		cmp	ax,si
-		db	 39h,0F0h		;  Fixup - byte match
+				cmp ax,si			; was: db 039h,0F0h
 		add	[bp+si],al
 		db	0FFh,0FEh, 89h, 00h, 01h, 80h
 		db	 82h, 00h, 09h, 71h,0E0h, 01h
@@ -423,13 +423,13 @@ data_11		dw	0CB00h, 0BE0h		; Data table (indexed access)
 locloop_2:
 		pop	ss
 ;*		cmp	ax,si
-		db	 39h,0F0h		;  Fixup - byte match
+				cmp ax,si			; was: db 039h,0F0h
 ;*		xor	al,al			; Zero register
-		db	 30h,0C0h		;  Fixup - byte match
+				xor al,al			; was: db 030h,0C0h
 		add	word ptr [bx+si],9
 		mov	ax,ds:data_14e
 ;*		adc	byte ptr [bx+si+0],0C0h
-		db	 80h, 50h, 00h,0C0h	;  Fixup - byte match
+				adc byte ptr [bx+si+0h],0C0h			; was: db 080h,050h,000h,0C0h
 		db	 38h, 0Eh, 82h, 00h, 0Ch, 0Bh
 		db	0E0h, 08h, 00h, 4Bh,0F0h, 17h
 		db	0EAh,0DFh,0F8h, 17h, 80h, 82h
@@ -548,10 +548,10 @@ locloop_3:
 		or	ax,data_5[si]
                            lock	add	word ptr [bx+si],9
 ;*		add	ax,ax
-		db	 01h,0C0h		;  Fixup - byte match
+				add ax,ax			; was: db 001h,0C0h
 		add	[bx+si],dh
 ;*		add	ah,bh
-		db	 00h,0FCh		;  Fixup - byte match
+				add ah,bh			; was: db 000h,0FCh
 ;*		pop	cs			; Dangerous-8088 only
 		db	0Fh			;  Fixup - byte match
 		inc	data_1[bx+si]
@@ -559,9 +559,9 @@ locloop_3:
 		test	al,[bx+si]
 		add	al,[bp+si]
 ;*                         lock	add	byte ptr [bx+si],2
-		db	0F0h, 82h, 00h, 02h	;  Fixup - byte match
+				lock add byte ptr [bx+si],2h			; was: db 0F0h,082h,000h,002h
 ;*		add	ax,si
-		db	 01h,0F0h		;  Fixup - byte match
+				add ax,si			; was: db 001h,0F0h
 		xchg	[bx+si],ax
 		or	[bp+di],ax
 		push	ds
@@ -569,9 +569,9 @@ locloop_3:
 		pop	es
 		add	[bx-8],bh
 ;*		add	byte ptr [bx+si],7
-		db	 82h, 00h, 07h		;  Fixup - byte match
+				add byte ptr [bx+si],7h			; was: db 082h,000h,007h
 ;*                         lock	add	[bx+si+0],ah
-		db	0F0h, 00h, 60h, 00h	;  Fixup - byte match
+				lock add [bx+si+0h],ah			; was: db 0F0h,000h,060h,000h
 		db	0F8h, 03h,0FCh, 84h, 00h, 01h
 		db	 20h, 85h, 00h, 04h, 17h, 80h
 		db	 00h, 3Fh, 88h, 00h, 06h, 06h

@@ -1,555 +1,657 @@
-Turbo Assembler	 Version 2.01	     03/24/26 00:11:34	    Page 1
-236CMAP.asm
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-1
+                                                            
+
+                                 
+                                PAGE  59,132 
+                                 
+                                ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл 
+                                ;лл					                                 лл 
+                                ;лл				_236CMAP                                 лл 
+                                ;лл					                                 лл 
+                                ;лл      Created:   29-Mar-26		                                 лл 
+                                ;лл      Code type: zero start		                                 лл 
+                                ;лл      Passes:    9          Analysis	Options on: none                 лл 
+                                ;лл					                                 лл 
+                                ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл 
+                                 
+ = 4D34                         target		EQU   'M4'                      ; Target assembler: MASM-4.0 
+                                 
+                             C  include  srmacros.inc 
+                             C   
+                             C  ; Macros which may be required for proper re-assembly 
+                             C   
+                             C  IF (target EQ 'M4') 
+                             C  ;----------------------------------------------------------------------------- 
+                             C  ;  MASM 4.0 does not allow retf and retn, allowed by current assemblers. 
+                             C  ;  These marcos, convert RETF and RETN into data bytes that are acceptable 
+                             C  ;  to MASM 4.0. 
+                             C   
+                             C   
+                             C  retf            macro   ret_count               ; Fixup for Assembler 
+                             C                  if      ret_count+0 GT 1 
+                             C                  db      0CAh 
+                             C                  dw      ret_count 
+                             C                  else 
+                             C                  db      0CBh 
+                             C                  endif 
+                             C  endm 
+                             C   
+                             C  retn            macro  ret_count 
+                             C                  if     ret_count+0 GT 1 
+                             C                  db     0C2h 
+                             C                  dw     ret_count 
+                             C                  else 
+                             C                  db     0C3h 
+                             C                  endif 
+                             C  endm 
+                             C   
+                             C  ENDIF 
+                             C   
+                             C   
+                             C  IF (target EQ 'M4') OR (target EQ 'M5')  
+                             C  ;----------------------------------------------------------------------------- 
+                             C  ; Due to a bug in earlier MASM assemblers, the valid instruction type  
+                             C  ; "mov segreg, reg"  cannot be used, if the register is not AX.   
+                             C  ; For example:  mov  es, bx 
+                             C   
+                             C  movseg          macro reg16, unused, Imm16      ; Fixup for Assembler 
+                             C                  ifidn  <reg16>, <bx>             
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-2
+                                                            
+
+                             C                  db     0BBh                      
+                             C                  endif                            
+                             C                  ifidn  <reg16>, <cx>             
+                             C                  db     0B9h                      
+                             C                  endif 
+                             C                  ifidn  <reg16>, <dx> 
+                             C                  db     0BAh 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <si> 
+                             C                  db     0BEh 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <di> 
+                             C                  db     0BFh 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <bp> 
+                             C                  db     0BDh 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <sp> 
+                             C                  db     0BCh 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <BX> 
+                             C                  db     0BBH 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <CX> 
+                             C                  db     0B9H 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <DX> 
+                             C                  db     0BAH 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <SI> 
+                             C                  db     0BEH 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <DI> 
+                             C                  db     0BFH 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <BP> 
+                             C                  db     0BDH 
+                             C                  endif 
+                             C                  ifidn  <reg16>, <SP> 
+                             C                  db     0BCH 
+                             C                  endif 
+                             C                  dw     seg Imm16 
+                             C  endm 
+                             C   
+                             C  ENDIF 
+                             C   
+                             C   
+                             C  ENDIF 
+                             C   
+                             C   
+                             C   
+                             C  IFE (target EQ 'NO') 
+                             C  ;----------------------------------------------------------------------------- 
+                             C  ;  Some compilers and some assemblers will code a call that goes to a far 
+                             C  ;  subroutine in the same segment as: 
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-3
+                                                            
+
+                             C  ; 
+                             C  ;               PUSH    CS 
+                             C  ;               CALL    near 
+                             C  ; 
+                             C  ;  This saves one byte, and is slightly faster.  If the assembler you are 
+                             C  ;  using (i.e. MASM, Optasm) does not do this automatically, the following 
+                             C  ;  macros are used to code the same information.  In other words, the binary 
+                             C  ;  file has "PUSH CS, CALL near", and Sourcer ensures the same instructions 
+                             C  ;  are used!  (macro CALLF) 
+                             C  ; 
+                             C   
+                             C  callf           macro   location 
+                             C                  push    cs 
+                             C                  call    near ptr location 
+                             C  endm 
+                             C   
+                             C  ;  Some compilers generate an unnecessary DS override on the call instruction 
+                             C  ;  when compacting the CALLF type function.  Macro CALLFX handles this case. 
+                             C   
+                             C  callfx          macro   location 
+                             C                  push    cs 
+                             C                  db      3Eh 
+                             C                  call    near ptr location 
+                             C  endm 
+                             C   
+                             C   
+                             C  ;----------------------------------------------------------------------------- 
+                             C  ;  Some compilers and some assemblers will code a near call that is the 
+                             C  ;  selected assembler will convert to a short jump to save a byte.  This 
+                             C  ;  reconstructs a near jump for these cases. 
+                             C   
+                             C  jmpn            macro   location 
+                             C                  db      0E9h 
+                             C                  dw      offset location-$-2 
+                             C  endm 
+                             C   
+                             C  ENDIF 
+                             C   
+                                 
+                                 
+                                 
+                                ; The following equates show data references outside the range of the program. 
+                                 
+ = 72C3                         data_17e	equ	72C3h			;* 
+                                 
+ 0000                           seg_a		segment	byte public 
+                                		assume	cs:seg_a, ds:seg_a 
+                                 
+                                 
+ 0000                           		org	0 
+                                 
+ 0000                           _236CMAP	proc	far 
+                                 
+ 0000                           start: 
+ 0000  BE 0008                  		mov	si,8 
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-4
+                                                            
+
+ 0003  00 AB 72C3               		add	ss:data_17e[bp+di],ch 
+ 0007  00 B0 01C3 R             		add	data_4[bx+si],dh 
+                                ;*		mov	bl,0CAh 
+ 000B  C6 C3 CA                 		db	0C6h,0C3h,0CAh		;  Fixup - byte match 
+                                		retn 
+ 000E  C3                     1                 db     0C3h
+ 000F  00 00 F6 C3 9C C8        		db	 00h, 00h,0F6h,0C3h, 9Ch,0C8h 
+ 0015  A7 C3 22 00 D2 C3        		db	0A7h,0C3h, 22h, 00h,0D2h,0C3h 
+ 001B  001A[                    		db	26 dup (0) 
+            00                  
+                         ]      
+                                
+ 0035  3C 3D 3D 3D 3D 3D 55     		db	'<=====UX\ldeimVZ]aeflnWZ^bfgkoTX' 
+       58 5C 6C 64 65 69 6D     
+       56 5A 5D 61 65 66 6C     
+       6E 57 5A 5E 62 66 67     
+       6B 6F 54 58              
+ 0055  5C 60 64 64 69 6D 55     		db	'\`ddimUY]alejmVZ^bfglnW[_cghioVX' 
+       59 5D 61 6C 65 6A 6D     
+       56 5A 5E 62 66 67 6C     
+       6E 57 5B 5F 63 67 68     
+       69 6F 56 58              
+ 0075  58 5E 5C 60 69 6D 56     		db	'X^\`imVY\_]aooVZ_`ddim', 0 
+       59 5C 5F 5D 61 6F 6F     
+       56 5A 5F 60 64 64 69     
+       6D 00                    
+ 008C  57 59 62 63 65 6C 6E     		db	'WYbceln', 0 
+       00                       
+ 0094  56 5A 64 67 69 6D 6F     		db	'VZdgimo', 0 
+       00                       
+ 009C  55 60 63 65 67 6C 6D     		db	'U`ceglm', 0 
+       00                       
+ 00A4  3F 42 60 64 64 68 6D     		db	'?B`ddhm' 
+                                
+ 00AB  00 00 46 49 60 49        		db	 00h, 00h, 46h, 49h, 60h, 49h 
+ 00B1  51 53 00 00 00 00        		db	 51h, 53h, 00h, 00h, 00h, 00h 
+ 00B7  4D 4A                    		db	 4Dh, 4Ah 
+ 00B9  000B[                    		db	11 dup (0) 
+            00                  
+                         ]      
+                                
+ 00C4  38 06 00 00 00 00        		db	 38h, 06h, 00h, 00h, 00h, 00h 
+ 00CA  00 00 39 07 13 13        		db	 00h, 00h, 39h, 07h, 13h, 13h 
+ 00D0  13 13 13 02 3A 08        		db	 13h, 13h, 13h, 02h, 3Ah, 08h 
+ 00D6  14 14 14 14 14 00        		db	 14h, 14h, 14h, 14h, 14h, 00h 
+ 00DC  3B 09 00 0E 32 34        		db	 3Bh, 09h, 00h, 0Eh, 32h, 34h 
+ 00E2  36 00 00 00 0D 0E        		db	 36h, 00h, 00h, 00h, 0Dh, 0Eh 
+ 00E8  33 35 37 00 00 00        		db	 33h, 35h, 37h, 00h, 00h, 00h 
+ 00EE  0E 11 33 34 36 00        		db	 0Eh, 11h, 33h, 34h, 36h, 00h 
+ 00F4  00 02 0E 17 33 34        		db	 00h, 02h, 0Eh, 17h, 33h, 34h 
+ 00FA  37 00 00 00 0F 15        		db	 37h, 00h, 00h, 00h, 0Fh, 15h 
+ 0100  33 34 36 00 00 38        		db	 33h, 34h, 36h, 00h, 00h, 38h 
+ 0106  00 0E 33 34 37 00        		db	 00h, 0Eh, 33h, 34h, 37h, 00h 
+ 010C  00 39 0A 11 33 34        		db	 00h, 39h, 0Ah, 11h, 33h, 34h 
+ 0112  36 00 02 3A 0B 11        		db	 36h, 00h, 02h, 3Ah, 0Bh, 11h 
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-5
+                                                            
+
+ 0118  32 34 37 00 00 39        		db	 32h, 34h, 37h, 00h, 00h, 39h 
+ 011E  0B 11 32 34 36 00        		db	 0Bh, 11h, 32h, 34h, 36h, 00h 
+ 0124  00 3A 0B 17 32 34        		db	 00h, 3Ah, 0Bh, 17h, 32h, 34h 
+ 012A  37 00 00 3A 0B 11        		db	 37h, 00h, 00h, 3Ah, 0Bh, 11h 
+ 0130  32 35 36 00 00 3A        		db	 32h, 35h, 36h, 00h, 00h, 3Ah 
+ 0136  0B 11 33 35 37 00        		db	 0Bh, 11h, 33h, 35h, 37h, 00h 
+ 013C  00 3A 0B 17 33 35        		db	 00h, 3Ah, 0Bh, 17h, 33h, 35h 
+ 0142  36 00 02 39 0B 11        		db	 36h, 00h, 02h, 39h, 0Bh, 11h 
+ 0148  33 35 37 00 00 39        		db	 33h, 35h, 37h, 00h, 00h, 39h 
+ 014E  0B 17 33 35 36 00        		db	 0Bh, 17h, 33h, 35h, 36h, 00h 
+ 0154  00 3A 0B 11 33 34        		db	 00h, 3Ah, 0Bh, 11h, 33h, 34h 
+ 015A  37 00 00 3A 0B 11        		db	 37h, 00h, 00h, 3Ah, 0Bh, 11h 
+ 0160  32 34 36 00 00 39        		db	 32h, 34h, 36h, 00h, 00h, 39h 
+ 0166  0B 17 32 34 37 00        		db	 0Bh, 17h, 32h, 34h, 37h, 00h 
+ 016C  00 3A 0B 11 33 34        		db	 00h, 3Ah, 0Bh, 11h, 33h, 34h 
+ 0172  36 00 02 39 0C 11        		db	 36h, 00h, 02h, 39h, 0Ch, 11h 
+ 0178  33 34 37 00 00 3B        		db	 33h, 34h, 37h, 00h, 00h, 3Bh 
+ 017E  00 15 33 35 36 00        		db	 00h, 15h, 33h, 35h, 36h, 00h 
+ 0184  38 00 00 0E 33 35        		db	 38h, 00h, 00h, 0Eh, 33h, 35h 
+ 018A  37 00 39 0A 10 17        		db	 37h, 00h, 39h, 0Ah, 10h, 17h 
+ 0190  33 35 36 02 3A 0B        		db	 33h, 35h, 36h, 02h, 3Ah, 0Bh 
+ 0196  11 18 18 18 19 00        		db	 11h, 18h, 18h, 18h, 19h, 00h 
+ 019C  3A 0B 11 18 18 18        		db	 3Ah, 0Bh, 11h, 18h, 18h, 18h 
+ 01A2  19 00 3A 0B 11 18        		db	 19h, 00h, 3Ah, 0Bh, 11h, 18h 
+ 01A8  18 18 19 00 39 0B        		db	 18h, 18h, 19h, 00h, 39h, 0Bh 
+ 01AE  11 1B 20 26 2C 00        		db	 11h, 1Bh, 20h, 26h, 2Ch, 00h 
+ 01B4  39 0B 11 1C 21 27        		db	 39h, 0Bh, 11h, 1Ch, 21h, 27h 
+ 01BA  2D 00 3A 0B 11 1D        		db	 2Dh, 00h, 3Ah, 0Bh, 11h, 1Dh 
+ 01C0  22 28 2E                 		db	 22h, 28h, 2Eh 
+ 01C3  02                       data_4		db	2			; Data table (indexed access) 
+ 01C4  3A 0B 11 1D 23 29        		db	 3Ah, 0Bh, 11h, 1Dh, 23h, 29h 
+ 01CA  2F 00 3A 0B 11 1E        		db	 2Fh, 00h, 3Ah, 0Bh, 11h, 1Eh 
+ 01D0  24 2A 30 00 39 0B        		db	 24h, 2Ah, 30h, 00h, 39h, 0Bh 
+ 01D6  11 1F 25 2B 31 00        		db	 11h, 1Fh, 25h, 2Bh, 31h, 00h 
+ 01DC  3A 0B 11 18 18 18        		db	 3Ah, 0Bh, 11h, 18h, 18h, 18h 
+ 01E2  1A 00 3A 0B 11 18        		db	 1Ah, 00h, 3Ah, 0Bh, 11h, 18h 
+ 01E8  18 18 1A 00 39 0B        		db	 18h, 18h, 1Ah, 00h, 39h, 0Bh 
+ 01EE  11 18 18 18 1A 02        		db	 11h, 18h, 18h, 18h, 1Ah, 02h 
+ 01F4  39 0C 12 16 01 01        		db	 39h, 0Ch, 12h, 16h, 01h, 01h 
+ 01FA  01 00 3B 00 00 0E        		db	 01h, 00h, 3Bh, 00h, 00h, 0Eh 
+ 0200  32 33 36 00 00 38        		db	 32h, 33h, 36h, 00h, 00h, 38h 
+ 0206  00 0E 33 35 37 00        		db	 00h, 0Eh, 33h, 35h, 37h, 00h 
+ 020C  00 3A 0A 11 33 35        		db	 00h, 3Ah, 0Ah, 11h, 33h, 35h 
+ 0212  36 00 02 3A 0B 17        		db	 36h, 00h, 02h, 3Ah, 0Bh, 17h 
+ 0218  33 35 37 00 00 39        		db	 33h, 35h, 37h, 00h, 00h, 39h 
+ 021E  0B 11 33 35 36 00        		db	 0Bh, 11h, 33h, 35h, 36h, 00h 
+ 0224  00 3A 0B 17 33 35        		db	 00h, 3Ah, 0Bh, 17h, 33h, 35h 
+ 022A  37 00 00 39 0B 11        		db	 37h, 00h, 00h, 39h, 0Bh, 11h 
+ 0230  33 35 36 00 00 39        		db	 33h, 35h, 36h, 00h, 00h, 39h 
+ 0236  0B 17 33 35 37 00        		db	 0Bh, 17h, 33h, 35h, 37h, 00h 
+ 023C  00 39 0B 11 33 35        		db	 00h, 39h, 0Bh, 11h, 33h, 35h 
+ 0242  36 00 02 3A 0B 17        		db	 36h, 00h, 02h, 3Ah, 0Bh, 17h 
+ 0248  33 35 37 00 00 3A        		db	 33h, 35h, 37h, 00h, 00h, 3Ah 
+ 024E  0B 11 33 35 36 00        		db	 0Bh, 11h, 33h, 35h, 36h, 00h 
+ 0254  00 39 0B 11 33 35        		db	 00h, 39h, 0Bh, 11h, 33h, 35h 
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-6
+                                                            
+
+ 025A  37 00 00 3A 0B 11        		db	 37h, 00h, 00h, 3Ah, 0Bh, 11h 
+ 0260  33 35 36 00 00 39        		db	 33h, 35h, 36h, 00h, 00h, 39h 
+ 0266  0B 11 33 35 37 00        		db	 0Bh, 11h, 33h, 35h, 37h, 00h 
+ 026C  00 3A 0B 11 33 35        		db	 00h, 3Ah, 0Bh, 11h, 33h, 35h 
+ 0272  36 00 02 3A 0C 11        		db	 36h, 00h, 02h, 3Ah, 0Ch, 11h 
+ 0278  33 35 37 00 00 3B        		db	 33h, 35h, 37h, 00h, 00h, 3Bh 
+ 027E  00 0E 33 35 36 00        		db	 00h, 0Eh, 33h, 35h, 36h, 00h 
+ 0284  00 00 0D 15 33 35        		db	 00h, 00h, 0Dh, 15h, 33h, 35h 
+ 028A  37 00 00 00 0E 11        		db	 37h, 00h, 00h, 00h, 0Eh, 11h 
+ 0290  33 35 36 00 00 02        		db	 33h, 35h, 36h, 00h, 00h, 02h 
+ 0296  15 11 32 34 37 00        		db	 15h, 11h, 32h, 34h, 37h, 00h 
+ 029C  00 00 0F 15 32 34        		db	 00h, 00h, 0Fh, 15h, 32h, 34h 
+ 02A2  36 00 38 06 00 0E        		db	 36h, 00h, 38h, 06h, 00h, 0Eh 
+ 02A8  32 34 37 00 39 07        		db	 32h, 34h, 37h, 00h, 39h, 07h 
+ 02AE  13 13 13 13 13 02        		db	 13h, 13h, 13h, 13h, 13h, 02h 
+ 02B4  3A 08 14 14 14 14        		db	 3Ah, 08h, 14h, 14h, 14h, 14h 
+ 02BA  14 00 3B 09 00 00        		db	 14h, 00h, 3Bh, 09h, 00h, 00h 
+ 02C0  00 00 00 00              		db	 00h, 00h, 00h, 00h 
+ 02C4  40 43                    		db	 40h, 43h 
+ 02C6  47 4B 4E 4F 00           		db	'GKNO', 0 
+ 02CB  3E 41 44 48 4C 4C 50     		db	'>ADHLLPRTX\``eimUY]aaflmVZ^bbgkm' 
+       52 54 58 5C 60 60 65     
+       69 6D 55 59 5D 61 61     
+       66 6C 6D 56 5A 5E 62     
+       62 67 6B 6D              
+ 02EB  57 5B 5F 63 63 66 69     		db	'W[_ccfimTX^`dfi' 
+       6D 54 58 5E 60 64 66     
+       69                       
+ 02FA  95 55 59 5D 81 85        		db	 95h, 55h, 59h, 5Dh, 81h, 85h 
+ 0300  86 87 99 56 5A 71        		db	 86h, 87h, 99h, 56h, 5Ah, 71h 
+ 0306  82 64 68 6C 96 54        		db	 82h, 64h, 68h, 6Ch, 96h, 54h 
+ 030C  71 79 81 01 88 8F        		db	 71h, 79h, 81h, 01h, 88h, 8Fh 
+ 0312  97 55 72 7A 82 01        		db	 97h, 55h, 72h, 7Ah, 82h, 01h 
+ 0318  89 90 98 56 73 7B        		db	 89h, 90h, 98h, 56h, 73h, 7Bh 
+ 031E  81 01 8A 91 99 57        		db	 81h, 01h, 8Ah, 91h, 99h, 57h 
+ 0324  74 7C 82 01 8B 92        		db	 74h, 7Ch, 82h, 01h, 8Bh, 92h 
+ 032A  99 54 75 7D 83 85        		db	 99h, 54h, 75h, 7Dh, 83h, 85h 
+ 0330  86 87 9A 55 76 7E        		db	 86h, 87h, 9Ah, 55h, 76h, 7Eh 
+ 0336  84 01 8C 93 9B 56        		db	 84h, 01h, 8Ch, 93h, 9Bh, 56h 
+ 033C  77 7F 83 01 8D 8D        		db	 77h, 7Fh, 83h, 01h, 8Dh, 8Dh 
+ 0342  9B 54 78 80 84 01        		db	 9Bh, 54h, 78h, 80h, 84h, 01h 
+ 0348  8E 94 9B 55 59 78        		db	 8Eh, 94h, 9Bh, 55h, 59h, 78h 
+ 034E  83 64 64 69 9B 56        		db	 83h, 64h, 64h, 69h, 9Bh, 56h 
+ 0354  5A 5C 84 85 86 87        		db	 5Ah, 5Ch, 84h, 85h, 86h, 87h 
+ 035A  9B 57 5B 5D 60 63        		db	 9Bh, 57h, 5Bh, 5Dh, 60h, 63h 
+ 0360  68 6C 9C                 		db	 68h, 6Ch, 9Ch 
+ 0363  54 5C 5C 60 64 69 69     		db	'T\\`diimUY]adgimVZ^behkmW[_cfcln' 
+       6D 55 59 5D 61 64 67     
+       69 6D 56 5A 5E 62 65     
+       68 6B 6D 57 5B 5F 63     
+       66 63 6C 6E              
+ 0383  54 58 5C 60              		db	'TX\`' 
+ 0387  60 63 69 6D              		db	 60h, 63h, 69h, 6Dh 
+ 038B  0020[                    		db	32 dup (0) 
+            00                  
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-7
+                                                            
+
+                         ]      
+                                
+ 03AB  33 00 6D 00 00 00        		db	 33h, 00h, 6Dh, 00h, 00h, 00h 
+ 03B1  FF 00 00 16 AF 00        		db	0FFh, 00h, 00h, 16h,0AFh, 00h 
+ 03B7  12                       		db	 12h 
+ 03B8  46 65 6C 69 73 68 69     		db	'Felishika\s Castle' 
+       6B 61 5C 73 20 43 61     
+       73 74 6C 65              
+ 03CA  00 01 00 01 5F 00        		db	 00h, 01h, 00h, 01h, 5Fh, 00h 
+ 03D0  01 34 00 00 FF FF        		db	 01h, 34h, 00h, 00h,0FFh,0FFh 
+ 03D6  49 00 FF 0F C0 94        		db	 49h, 00h,0FFh, 0Fh,0C0h, 94h 
+ 03DC  10 C0 C8 8E C3 3D        		db	 10h,0C0h,0C8h, 8Eh,0C3h, 3Dh 
+ 03E2  A3 C8 06 AB C8 07        		db	0A3h,0C8h, 06h,0ABh,0C8h, 07h 
+ 03E8  B3 C8 08 BB C8 09        		db	0B3h,0C8h, 08h,0BBh,0C8h, 09h 
+ 03EE  FF FF 04 00 FF 9B        		db	0FFh,0FFh, 04h, 00h,0FFh, 9Bh 
+ 03F4  C8 05 FF FF FF FF        		db	0C8h, 05h,0FFh,0FFh,0FFh,0FFh 
+ 03FA  0A C4 AC C4 53 C5        		db	 0Ah,0C4h,0ACh,0C4h, 53h,0C5h 
+ 0400  C3 C5 2C C6 C4 C6        		db	0C3h,0C5h, 2Ch,0C6h,0C4h,0C6h 
+ 0406  E1 C6 52 C7 AB C7        		db	0E1h,0C6h, 52h,0C7h,0ABh,0C7h 
+ 040C  1F C8                    		db	 1Fh,0C8h 
+ 040E  49 66 20 79 6F 75 20     		db	'If you are the brave warrior we ' 
+       61 72 65 20 74 68 65     
+       20 62 72 61 76 65 20     
+       77 61 72 72 69 6F 72     
+       20 77 65 20              
+ 042E  68 61 76 65 20 61 77     		db	'have awaited, we have something ' 
+       61 69 74 65 64 2C 20     
+       77 65 20 68 61 76 65     
+       20 73 6F 6D 65 74 68     
+       69 6E 67 20              
+ 044E  74 6F 20 74 65 6C 6C     		db	'to tell you: throughout the ages' 
+       20 79 6F 75 3A 20 74     
+       68 72 6F 75 67 68 6F     
+       75 74 20 74 68 65 20     
+       61 67 65 73              
+ 046E  2C 20 6D 61 6E 79 20     		db	', many young men have entered th' 
+       79 6F 75 6E 67 20 6D     
+       65 6E 20 68 61 76 65     
+       20 65 6E 74 65 72 65     
+       64 20 74 68              
+ 048E  65 20 63 61 76 65 72     		db	'e caverns, but few have returned' 
+       6E 73 2C 20 62 75 74     
+       20 66 65 77 20 68 61     
+       76 65 20 72 65 74 75     
+       72 6E 65 64              
+ 04AE  2E                       		db	'.' 
+ 04AF  FF 41 63                 		db	0FFh, 41h, 63h 
+ 04B2  63 6F 72 64 69 6E 67     		db	'cording to legend, there may sti' 
+       20 74 6F 20 6C 65 67     
+       65 6E 64 2C 20 74 68     
+       65 72 65 20 6D 61 79     
+       20 73 74 69              
+ 04D2  6C 6C 20 62 65 20 75     		db	'll be underground places that ha' 
+       6E 64 65 72 67 72 6F     
+       75 6E 64 20 70 6C 61     
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-8
+                                                            
+
+       63 65 73 20 74 68 61     
+       74 20 68 61              
+ 04F2  76 65 20 6E 6F 74 20     		db	've not been destroyed by Jashiin' 
+       62 65 65 6E 20 64 65     
+       73 74 72 6F 79 65 64     
+       20 62 79 20 4A 61 73     
+       68 69 69 6E              
+ 0512  2E 20 50 65 6F 70 6C     		db	'. People may still be living the' 
+       65 20 6D 61 79 20 73     
+       74 69 6C 6C 20 62 65     
+       20 6C 69 76 69 6E 67     
+       20 74 68 65              
+ 0532  72 65 2C 20 61 6E 64     		db	're, and will surely lend you a h' 
+       20 77 69 6C 6C 20 73     
+       75 72 65 6C 79 20 6C     
+       65 6E 64 20 79 6F 75     
+       20 61 20 68              
+ 0552  61 6E 64 2E              		db	'and.' 
+ 0556  FF 49 20                 		db	0FFh, 49h, 20h 
+ 0559  68 61 76 65 20 62 65     		db	'have been in the underground tow' 
+       65 6E 20 69 6E 20 74     
+       68 65 20 75 6E 64 65     
+       72 67 72 6F 75 6E 64     
+       20 74 6F 77              
+ 0579  6E 2E 20 41 66 74 65     		db	'n. After I fled, they put a lock' 
+       72 20 49 20 66 6C 65     
+       64 2C 20 74 68 65 79     
+       20 70 75 74 20 61 20     
+       6C 6F 63 6B              
+ 0599  20 6F 6E 20 74 68 65     		db	' on the door. If the town is sti' 
+       20 64 6F 6F 72 2E 20     
+       49 66 20 74 68 65 20     
+       74 6F 77 6E 20 69 73     
+       20 73 74 69              
+ 05B9  6C 6C 20 74 68 65 72     		db	'll there.... ' 
+       65 2E 2E 2E 2E 20        
+ 05C6  FF 54 68                 		db	0FFh, 54h, 68h 
+ 05C9  69 73 20 69 73 20 74     		db	'is is the chamber of poor Prince' 
+       68 65 20 63 68 61 6D     
+       62 65 72 20 6F 66 20     
+       70 6F 6F 72 20 50 72     
+       69 6E 63 65              
+ 05E9  73 73 20 46 65 6C 69     		db	'ss Felicia, who has been turned ' 
+       63 69 61 2C 20 77 68     
+       6F 20 68 61 73 20 62     
+       65 65 6E 20 74 75 72     
+       6E 65 64 20              
+ 0609  74 6F 20 73 74 6F 6E     		db	'to stone. You may enter, Duke Ga' 
+       65 2E 20 59 6F 75 20     
+       6D 61 79 20 65 6E 74     
+       65 72 2C 20 44 75 6B     
+       65 20 47 61              
+ 0629  72 6C 61 6E 64 2E        		db	'rland.' 
+ 062F  FF 42 72                 		db	0FFh, 42h, 72h 
+ 0632  61 76 65 20 6B 6E 69     		db	'ave knight, you have awakened. W' 
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-9
+                                                            
+
+       67 68 74 2C 20 79 6F     
+       75 20 68 61 76 65 20     
+       61 77 61 6B 65 6E 65     
+       64 2E 20 57              
+ 0652  68 65 6E 20 79 6F 75     		db	'hen you fell at the hand of Jash' 
+       20 66 65 6C 6C 20 61     
+       74 20 74 68 65 20 68     
+       61 6E 64 20 6F 66 20     
+       4A 61 73 68              
+ 0672  69 69 6E 2C 20 74 68     		db	'iin, the Spirits brought you her' 
+       65 20 53 70 69 72 69     
+       74 73 20 62 72 6F 75     
+       67 68 74 20 79 6F 75     
+       20 68 65 72              
+ 0692  65 2E 20 4E 6F 77 20     		db	'e. Now make haste to the aid of ' 
+       6D 61 6B 65 20 68 61     
+       73 74 65 20 74 6F 20     
+       74 68 65 20 61 69 64     
+       20 6F 66 20              
+ 06B2  74 68 65 20 50 72 69     		db	'the Princess Felicia.' 
+       6E 63 65 73 73 20 46     
+       65 6C 69 63 69 61 2E     
+                                
+ 06C7  FF                       		db	0FFh 
+ 06C8  51 75 69 63 6B 6C 79     		db	'Quickly, go to the Princess!' 
+       2C 20 67 6F 20 74 6F     
+       20 74 68 65 20 50 72     
+       69 6E 63 65 73 73 21     
+                                
+ 06E4  FF                       		db	0FFh 
+ 06E5  41 68 2C 20 74 68 65     		db	'Ah, the Nine Tears of Esmesanti.' 
+       20 4E 69 6E 65 20 54     
+       65 61 72 73 20 6F 66     
+       20 45 73 6D 65 73 61     
+       6E 74 69 2E              
+ 0705  20 4A 61 73 68 69 69     		db	' Jashiin exists no more and the ' 
+       6E 20 65 78 69 73 74     
+       73 20 6E 6F 20 6D 6F     
+       72 65 20 61 6E 64 20     
+       74 68 65 20              
+ 0725  6C 69 67 68 74 20 6F     		db	'light of peace shines once again' 
+       66 20 70 65 61 63 65     
+       20 73 68 69 6E 65 73     
+       20 6F 6E 63 65 20 61     
+       67 61 69 6E              
+ 0745  20 6F 6E 20 6F 75 72     		db	' on our land... ' 
+       20 6C 61 6E 64 2E 2E     
+       2E 20                    
+ 0755  FF 54 68                 		db	0FFh, 54h, 68h 
+ 0758  69 73 20 77 69 6C 6C     		db	'is will benefit the people livin' 
+       20 62 65 6E 65 66 69     
+       74 20 74 68 65 20 70     
+       65 6F 70 6C 65 20 6C     
+       69 76 69 6E              
+ 0778  67 20 75 6E 64 65 72     		db	'g underground, as well. Hurry to' 
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-10
+                                                            
+
+       67 72 6F 75 6E 64 2C     
+       20 61 73 20 77 65 6C     
+       6C 2E 20 48 75 72 72     
+       79 20 74 6F              
+ 0798  20 74 68 65 20 50 72     		db	' the Princess Felicia.' 
+       69 6E 63 65 73 73 20     
+       46 65 6C 69 63 69 61     
+       2E                       
+ 07AE  FF 54 68                 		db	0FFh, 54h, 68h 
+ 07B1  65 20 70 65 61 63 65     		db	'e peace we dared not hope for ha' 
+       20 77 65 20 64 61 72     
+       65 64 20 6E 6F 74 20     
+       68 6F 70 65 20 66 6F     
+       72 20 68 61              
+ 07D1  73 20 63 6F 6D 65 2E     		db	's come. I\ll get my things toget' 
+       20 49 5C 6C 6C 20 67     
+       65 74 20 6D 79 20 74     
+       68 69 6E 67 73 20 74     
+       6F 67 65 74              
+ 07F1  68 65 72 20 61 6E 64     		db	'her and be on my way. I\ve a fam' 
+       20 62 65 20 6F 6E 20     
+       6D 79 20 77 61 79 2E     
+       20 49 5C 76 65 20 61     
+       20 66 61 6D              
+ 0811  69 6C 79 20 74 6F 20     		db	'ily to attend to.' 
+       61 74 74 65 6E 64 20     
+       74 6F 2E                 
+ 0822  FF 51 75                 		db	0FFh, 51h, 75h 
+ 0825  69 63 6B 6C 79 2C 20     		db	'ickly, enter this chamber. The h' 
+       65 6E 74 65 72 20 74     
+       68 69 73 20 63 68 61     
+       6D 62 65 72 2E 20 54     
+       68 65 20 68              
+ 0845  6F 6C 79 20 63 72 79     		db	'oly crystals will break the evil' 
+       73 74 61 6C 73 20 77     
+       69 6C 6C 20 62 72 65     
+       61 6B 20 74 68 65 20     
+       65 76 69 6C              
+ 0865  20 73 70 65 6C 6C 20     		db	' spell which has turned Princess' 
+       77 68 69 63 68 20 68     
+       61 73 20 74 75 72 6E     
+       65 64 20 50 72 69 6E     
+       63 65 73 73              
+ 0885  20 46 65 6C 69 63 69     		db	' Felicia to stone.' 
+       61 20 74 6F 20 73 74     
+       6F 6E 65 2E              
+ 0897  FF 24 00 82 00 03        		db	0FFh, 24h, 00h, 82h, 00h, 03h 
+ 089D  03 80 04 30 00 81        		db	 03h, 80h, 04h, 30h, 00h, 81h 
+ 08A3  18 00 00 00 00 38        		db	 18h, 00h, 00h, 00h, 00h, 38h 
+ 08A9  00 81 18 00 00 00        		db	 00h, 81h, 18h, 00h, 00h, 00h 
+ 08AF  01 54 00 80 00 01        		db	 01h, 54h, 00h, 80h, 00h, 01h 
+ 08B5  03 00 02 5C 00 81        		db	 03h, 00h, 02h, 5Ch, 00h, 81h 
+ 08BB  18 00 00 00 03 FF        		db	 18h, 00h, 00h, 00h, 03h,0FFh 
+ 08C1  FF                       		db	0FFh 
+                                 
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Page     1-11
+                                                            
+
+                                _236CMAP	endp 
+                                 
+ 08C2                           seg_a		ends 
+                                 
+                                 
+                                 
+                                		end	start 
+
+Microsoft (R) Macro Assembler  Version 4.00                 3/29/26 15:16:39
+
+                                                            Symbols-1
+                                                             
+
+Macros:
+
+		N a m e			Lines
+
+CALLF  . . . . . . . . . . . . .  	   2
+CALLFX . . . . . . . . . . . . .  	   3
+JMPN . . . . . . . . . . . . . .  	   2
+MOVSEG . . . . . . . . . . . . .  	  43
+RETF . . . . . . . . . . . . . .  	   6
+RETN . . . . . . . . . . . . . .  	   6
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+SEG_A  . . . . . . . . . . . . .  	08C2	BYTE	PUBLIC	
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+DATA_17E . . . . . . . . . . . .  	Number	72C3	
+DATA_4 . . . . . . . . . . . . .  	L BYTE 	01C3	SEG_A
+
+START  . . . . . . . . . . . . .  	L NEAR	0000	SEG_A
+
+TARGET . . . . . . . . . . . . .  	Number	4D34	
+
+_236CMAP . . . . . . . . . . . .  	F PROC	0000	SEG_A	Length = 08C2
 
 
+    394 Source  Lines
+    401 Total   Lines
+     33 Symbols
 
-      1
-      2
-      3				     ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-      4				     ;лл								      лл
-      5				     ;лл			     ZR2_36				      лл
-      6				     ;лл								      лл
-      7				     ;лл      Created:	 16-Feb-26					      лл
-      8				     ;лл      Code type: zero start					      лл
-      9				     ;лл      Passes:	 9	    Analysis Options on: none		      лл
-     10				     ;лл								      лл
-     11				     ;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-     12
-     13	      =	5432		     target	     EQU   'T2'			     ; Target assembler: TASM-2.X
-     14
-     15				     include  srmacros.inc
-1    16
-1    17				     ; Macros which may	be required for	proper re-assembly
-1    18
-1    19
-1    20
-1    21
-1    22
-1    23				     ;-----------------------------------------------------------------------------
-1    24				     ; Some assemblers,	like TASM, check each far call and jump, to see	if it is
-1    25				     ; in the same segment.  If	so, rather than	produce	the standard five byte far
-1    26				     ; instruction it uses a near jump or call.
-1    27
-1    28				     calls	     macro   dummy1, dummy2, slocation
-1    29						     db	     9Ah		     ; forced call far instruction
-1    30						     dw	     offset slocation, seg slocation
-1    31				     endm
-1    32
-1    33				     jmps	     macro   dummy1, dummy2, jlocation
-1    34						     db	     0EAh		     ; forced jump far instruction
-1    35						     dw	     offset jlocation, seg jlocation
-1    36				     endm
-1    37
-1    38
-1    39
-1    40
-1    41				     ;-----------------------------------------------------------------------------
-1    42				     ;	Some compilers and some	assemblers will	code a call that goes to a far
-1    43				     ;	subroutine in the same segment as:
-1    44				     ;
-1    45				     ;		     PUSH    CS
-1    46				     ;		     CALL    near
-1    47				     ;
-1    48				     ;	This saves one byte, and is slightly faster.  If the assembler you are
-1    49				     ;	using (i.e. MASM, Optasm) does not do this automatically, the following
-1    50				     ;	macros are used	to code	the same information.  In other	words, the binary
-1    51				     ;	file has "PUSH CS, CALL	near", and Sourcer ensures the same instructions
-1    52				     ;	are used!  (macro CALLF)
-1    53				     ;
-1    54
-Turbo Assembler	 Version 2.01	     03/24/26 00:11:34	    Page 2
-236CMAP.asm
+  49156 Bytes symbol space free
 
-
-
-1    55				     callf	     macro   location
-1    56						     push    cs
-1    57						     call    near ptr location
-1    58				     endm
-1    59
-1    60				     ;	Some compilers generate	an unnecessary DS override on the call instruction
-1    61				     ;	when compacting	the CALLF type function.  Macro	CALLFX handles this case.
-1    62
-1    63				     callfx	     macro   location
-1    64						     push    cs
-1    65						     db	     3Eh
-1    66						     call    near ptr location
-1    67				     endm
-1    68
-1    69
-1    70				     ;-----------------------------------------------------------------------------
-1    71				     ;	Some compilers and some	assemblers will	code a near call that is the
-1    72				     ;	selected assembler will	convert	to a short jump	to save	a byte.	 This
-1    73				     ;	reconstructs a near jump for these cases.
-1    74
-1    75				     jmpn	     macro   location
-1    76						     db	     0E9h
-1    77						     dw	     offset location-$-2
-1    78				     endm
-1    79
-1    80
-1    81
-     82
-     83
-     84				     ; The following equates show data references outside the range of the program.
-     85
-     86	      =	72C3		     data_17e	     equ     72C3h		     ;*
-     87
-     88	0000			     seg_a	     segment byte public
-     89						     assume  cs:seg_a, ds:seg_a
-     90
-     91
-     92						     org     0
-     93
-     94	0000			     zr2_36	     proc    far
-     95
-     96	0000			     start:
-     97	0000  BE 0008				     mov     si,8
-     98	0003  00 AB 72C3			     add     ss:data_17e[bp+di],ch
-     99	0007  00 B0 01C3r			     add     data_4[bx+si],dh
-    100				     ;*		     mov     bl,0CAh
-    101	000B  C6 C3 CA				     db	     0C6h,0C3h,0CAh	     ;	Fixup -	byte match
-    102	000E  C3				     retn
-    103	000F  00 00 F6 C3 9C C8			     db	      00h, 00h,0F6h,0C3h, 9Ch,0C8h
-    104	0015  A7 C3 22 00 D2 C3			     db	     0A7h,0C3h,	22h, 00h,0D2h,0C3h
-    105	001B  1A*(00)				     db	     26	dup (0)
-    106	0035  3C 3D 3D 3D 3D 3D	55+		     db	     '<=====UX\ldeimVZ]aeflnWZ^bfgkoTX'
-    107	      58 5C 6C 64 65 69	6D+
-    108	      56 5A 5D 61 65 66	6C+
-Turbo Assembler	 Version 2.01	     03/24/26 00:11:34	    Page 3
-236CMAP.asm
-
-
-
-    109	      6E 57 5A 5E 62 66	67+
-    110	      6B 6F 54 58
-    111	0055  5C 60 64 64 69 6D	55+		     db	     '\`ddimUY]alejmVZ^bfglnW[_cghioVX'
-    112	      59 5D 61 6C 65 6A	6D+
-    113	      56 5A 5E 62 66 67	6C+
-    114	      6E 57 5B 5F 63 67	68+
-    115	      69 6F 56 58
-    116	0075  58 5E 5C 60 69 6D	56+		     db	     'X^\`imVY\_]aooVZ_`ddim', 0
-    117	      59 5C 5F 5D 61 6F	6F+
-    118	      56 5A 5F 60 64 64	69+
-    119	      6D 00
-    120	008C  57 59 62 63 65 6C	6E+		     db	     'WYbceln',	0
-    121	      00
-    122	0094  56 5A 64 67 69 6D	6F+		     db	     'VZdgimo',	0
-    123	      00
-    124	009C  55 60 63 65 67 6C	6D+		     db	     'U`ceglm',	0
-    125	      00
-    126	00A4  3F 42 60 64 64 68	6D		     db	     '?B`ddhm'
-    127	00AB  00 00 46 49 60 49			     db	      00h, 00h,	46h, 49h, 60h, 49h
-    128	00B1  51 53 00 00 00 00			     db	      51h, 53h,	00h, 00h, 00h, 00h
-    129	00B7  4D 4A				     db	      4Dh, 4Ah
-    130	00B9  0B*(00)				     db	     11	dup (0)
-    131	00C4  38 06 00 00 00 00			     db	      38h, 06h,	00h, 00h, 00h, 00h
-    132	00CA  00 00 39 07 13 13			     db	      00h, 00h,	39h, 07h, 13h, 13h
-    133	00D0  13 13 13 02 3A 08			     db	      13h, 13h,	13h, 02h, 3Ah, 08h
-    134	00D6  14 14 14 14 14 00			     db	      14h, 14h,	14h, 14h, 14h, 00h
-    135	00DC  3B 09 00 0E 32 34			     db	      3Bh, 09h,	00h, 0Eh, 32h, 34h
-    136	00E2  36 00 00 00 0D 0E			     db	      36h, 00h,	00h, 00h, 0Dh, 0Eh
-    137	00E8  33 35 37 00 00 00			     db	      33h, 35h,	37h, 00h, 00h, 00h
-    138	00EE  0E 11 33 34 36 00			     db	      0Eh, 11h,	33h, 34h, 36h, 00h
-    139	00F4  00 02 0E 17 33 34			     db	      00h, 02h,	0Eh, 17h, 33h, 34h
-    140	00FA  37 00 00 00 0F 15			     db	      37h, 00h,	00h, 00h, 0Fh, 15h
-    141	0100  33 34 36 00 00 38			     db	      33h, 34h,	36h, 00h, 00h, 38h
-    142	0106  00 0E 33 34 37 00			     db	      00h, 0Eh,	33h, 34h, 37h, 00h
-    143	010C  00 39 0A 11 33 34			     db	      00h, 39h,	0Ah, 11h, 33h, 34h
-    144	0112  36 00 02 3A 0B 11			     db	      36h, 00h,	02h, 3Ah, 0Bh, 11h
-    145	0118  32 34 37 00 00 39			     db	      32h, 34h,	37h, 00h, 00h, 39h
-    146	011E  0B 11 32 34 36 00			     db	      0Bh, 11h,	32h, 34h, 36h, 00h
-    147	0124  00 3A 0B 17 32 34			     db	      00h, 3Ah,	0Bh, 17h, 32h, 34h
-    148	012A  37 00 00 3A 0B 11			     db	      37h, 00h,	00h, 3Ah, 0Bh, 11h
-    149	0130  32 35 36 00 00 3A			     db	      32h, 35h,	36h, 00h, 00h, 3Ah
-    150	0136  0B 11 33 35 37 00			     db	      0Bh, 11h,	33h, 35h, 37h, 00h
-    151	013C  00 3A 0B 17 33 35			     db	      00h, 3Ah,	0Bh, 17h, 33h, 35h
-    152	0142  36 00 02 39 0B 11			     db	      36h, 00h,	02h, 39h, 0Bh, 11h
-    153	0148  33 35 37 00 00 39			     db	      33h, 35h,	37h, 00h, 00h, 39h
-    154	014E  0B 17 33 35 36 00			     db	      0Bh, 17h,	33h, 35h, 36h, 00h
-    155	0154  00 3A 0B 11 33 34			     db	      00h, 3Ah,	0Bh, 11h, 33h, 34h
-    156	015A  37 00 00 3A 0B 11			     db	      37h, 00h,	00h, 3Ah, 0Bh, 11h
-    157	0160  32 34 36 00 00 39			     db	      32h, 34h,	36h, 00h, 00h, 39h
-    158	0166  0B 17 32 34 37 00			     db	      0Bh, 17h,	32h, 34h, 37h, 00h
-    159	016C  00 3A 0B 11 33 34			     db	      00h, 3Ah,	0Bh, 11h, 33h, 34h
-    160	0172  36 00 02 39 0C 11			     db	      36h, 00h,	02h, 39h, 0Ch, 11h
-    161	0178  33 34 37 00 00 3B			     db	      33h, 34h,	37h, 00h, 00h, 3Bh
-    162	017E  00 15 33 35 36 00			     db	      00h, 15h,	33h, 35h, 36h, 00h
-Turbo Assembler	 Version 2.01	     03/24/26 00:11:34	    Page 4
-236CMAP.asm
-
-
-
-    163	0184  38 00 00 0E 33 35			     db	      38h, 00h,	00h, 0Eh, 33h, 35h
-    164	018A  37 00 39 0A 10 17			     db	      37h, 00h,	39h, 0Ah, 10h, 17h
-    165	0190  33 35 36 02 3A 0B			     db	      33h, 35h,	36h, 02h, 3Ah, 0Bh
-    166	0196  11 18 18 18 19 00			     db	      11h, 18h,	18h, 18h, 19h, 00h
-    167	019C  3A 0B 11 18 18 18			     db	      3Ah, 0Bh,	11h, 18h, 18h, 18h
-    168	01A2  19 00 3A 0B 11 18			     db	      19h, 00h,	3Ah, 0Bh, 11h, 18h
-    169	01A8  18 18 19 00 39 0B			     db	      18h, 18h,	19h, 00h, 39h, 0Bh
-    170	01AE  11 1B 20 26 2C 00			     db	      11h, 1Bh,	20h, 26h, 2Ch, 00h
-    171	01B4  39 0B 11 1C 21 27			     db	      39h, 0Bh,	11h, 1Ch, 21h, 27h
-    172	01BA  2D 00 3A 0B 11 1D			     db	      2Dh, 00h,	3Ah, 0Bh, 11h, 1Dh
-    173	01C0  22 28 2E				     db	      22h, 28h,	2Eh
-    174	01C3  02		     data_4	     db	     2			     ; Data table (indexed access)
-    175	01C4  3A 0B 11 1D 23 29			     db	      3Ah, 0Bh,	11h, 1Dh, 23h, 29h
-    176	01CA  2F 00 3A 0B 11 1E			     db	      2Fh, 00h,	3Ah, 0Bh, 11h, 1Eh
-    177	01D0  24 2A 30 00 39 0B			     db	      24h, 2Ah,	30h, 00h, 39h, 0Bh
-    178	01D6  11 1F 25 2B 31 00			     db	      11h, 1Fh,	25h, 2Bh, 31h, 00h
-    179	01DC  3A 0B 11 18 18 18			     db	      3Ah, 0Bh,	11h, 18h, 18h, 18h
-    180	01E2  1A 00 3A 0B 11 18			     db	      1Ah, 00h,	3Ah, 0Bh, 11h, 18h
-    181	01E8  18 18 1A 00 39 0B			     db	      18h, 18h,	1Ah, 00h, 39h, 0Bh
-    182	01EE  11 18 18 18 1A 02			     db	      11h, 18h,	18h, 18h, 1Ah, 02h
-    183	01F4  39 0C 12 16 01 01			     db	      39h, 0Ch,	12h, 16h, 01h, 01h
-    184	01FA  01 00 3B 00 00 0E			     db	      01h, 00h,	3Bh, 00h, 00h, 0Eh
-    185	0200  32 33 36 00 00 38			     db	      32h, 33h,	36h, 00h, 00h, 38h
-    186	0206  00 0E 33 35 37 00			     db	      00h, 0Eh,	33h, 35h, 37h, 00h
-    187	020C  00 3A 0A 11 33 35			     db	      00h, 3Ah,	0Ah, 11h, 33h, 35h
-    188	0212  36 00 02 3A 0B 17			     db	      36h, 00h,	02h, 3Ah, 0Bh, 17h
-    189	0218  33 35 37 00 00 39			     db	      33h, 35h,	37h, 00h, 00h, 39h
-    190	021E  0B 11 33 35 36 00			     db	      0Bh, 11h,	33h, 35h, 36h, 00h
-    191	0224  00 3A 0B 17 33 35			     db	      00h, 3Ah,	0Bh, 17h, 33h, 35h
-    192	022A  37 00 00 39 0B 11			     db	      37h, 00h,	00h, 39h, 0Bh, 11h
-    193	0230  33 35 36 00 00 39			     db	      33h, 35h,	36h, 00h, 00h, 39h
-    194	0236  0B 17 33 35 37 00			     db	      0Bh, 17h,	33h, 35h, 37h, 00h
-    195	023C  00 39 0B 11 33 35			     db	      00h, 39h,	0Bh, 11h, 33h, 35h
-    196	0242  36 00 02 3A 0B 17			     db	      36h, 00h,	02h, 3Ah, 0Bh, 17h
-    197	0248  33 35 37 00 00 3A			     db	      33h, 35h,	37h, 00h, 00h, 3Ah
-    198	024E  0B 11 33 35 36 00			     db	      0Bh, 11h,	33h, 35h, 36h, 00h
-    199	0254  00 39 0B 11 33 35			     db	      00h, 39h,	0Bh, 11h, 33h, 35h
-    200	025A  37 00 00 3A 0B 11			     db	      37h, 00h,	00h, 3Ah, 0Bh, 11h
-    201	0260  33 35 36 00 00 39			     db	      33h, 35h,	36h, 00h, 00h, 39h
-    202	0266  0B 11 33 35 37 00			     db	      0Bh, 11h,	33h, 35h, 37h, 00h
-    203	026C  00 3A 0B 11 33 35			     db	      00h, 3Ah,	0Bh, 11h, 33h, 35h
-    204	0272  36 00 02 3A 0C 11			     db	      36h, 00h,	02h, 3Ah, 0Ch, 11h
-    205	0278  33 35 37 00 00 3B			     db	      33h, 35h,	37h, 00h, 00h, 3Bh
-    206	027E  00 0E 33 35 36 00			     db	      00h, 0Eh,	33h, 35h, 36h, 00h
-    207	0284  00 00 0D 15 33 35			     db	      00h, 00h,	0Dh, 15h, 33h, 35h
-    208	028A  37 00 00 00 0E 11			     db	      37h, 00h,	00h, 00h, 0Eh, 11h
-    209	0290  33 35 36 00 00 02			     db	      33h, 35h,	36h, 00h, 00h, 02h
-    210	0296  15 11 32 34 37 00			     db	      15h, 11h,	32h, 34h, 37h, 00h
-    211	029C  00 00 0F 15 32 34			     db	      00h, 00h,	0Fh, 15h, 32h, 34h
-    212	02A2  36 00 38 06 00 0E			     db	      36h, 00h,	38h, 06h, 00h, 0Eh
-    213	02A8  32 34 37 00 39 07			     db	      32h, 34h,	37h, 00h, 39h, 07h
-    214	02AE  13 13 13 13 13 02			     db	      13h, 13h,	13h, 13h, 13h, 02h
-    215	02B4  3A 08 14 14 14 14			     db	      3Ah, 08h,	14h, 14h, 14h, 14h
-    216	02BA  14 00 3B 09 00 00			     db	      14h, 00h,	3Bh, 09h, 00h, 00h
-Turbo Assembler	 Version 2.01	     03/24/26 00:11:34	    Page 5
-236CMAP.asm
-
-
-
-    217	02C0  00 00 00 00			     db	      00h, 00h,	00h, 00h
-    218	02C4  40 43				     db	      40h, 43h
-    219	02C6  47 4B 4E 4F 00			     db	     'GKNO', 0
-    220	02CB  3E 41 44 48 4C 4C	50+		     db	     '>ADHLLPRTX\``eimUY]aaflmVZ^bbgkm'
-    221	      52 54 58 5C 60 60	65+
-    222	      69 6D 55 59 5D 61	61+
-    223	      66 6C 6D 56 5A 5E	62+
-    224	      62 67 6B 6D
-    225	02EB  57 5B 5F 63 63 66	69+		     db	     'W[_ccfimTX^`dfi'
-    226	      6D 54 58 5E 60 64	66+
-    227	      69
-    228	02FA  95 55 59 5D 81 85			     db	      95h, 55h,	59h, 5Dh, 81h, 85h
-    229	0300  86 87 99 56 5A 71			     db	      86h, 87h,	99h, 56h, 5Ah, 71h
-    230	0306  82 64 68 6C 96 54			     db	      82h, 64h,	68h, 6Ch, 96h, 54h
-    231	030C  71 79 81 01 88 8F			     db	      71h, 79h,	81h, 01h, 88h, 8Fh
-    232	0312  97 55 72 7A 82 01			     db	      97h, 55h,	72h, 7Ah, 82h, 01h
-    233	0318  89 90 98 56 73 7B			     db	      89h, 90h,	98h, 56h, 73h, 7Bh
-    234	031E  81 01 8A 91 99 57			     db	      81h, 01h,	8Ah, 91h, 99h, 57h
-    235	0324  74 7C 82 01 8B 92			     db	      74h, 7Ch,	82h, 01h, 8Bh, 92h
-    236	032A  99 54 75 7D 83 85			     db	      99h, 54h,	75h, 7Dh, 83h, 85h
-    237	0330  86 87 9A 55 76 7E			     db	      86h, 87h,	9Ah, 55h, 76h, 7Eh
-    238	0336  84 01 8C 93 9B 56			     db	      84h, 01h,	8Ch, 93h, 9Bh, 56h
-    239	033C  77 7F 83 01 8D 8D			     db	      77h, 7Fh,	83h, 01h, 8Dh, 8Dh
-    240	0342  9B 54 78 80 84 01			     db	      9Bh, 54h,	78h, 80h, 84h, 01h
-    241	0348  8E 94 9B 55 59 78			     db	      8Eh, 94h,	9Bh, 55h, 59h, 78h
-    242	034E  83 64 64 69 9B 56			     db	      83h, 64h,	64h, 69h, 9Bh, 56h
-    243	0354  5A 5C 84 85 86 87			     db	      5Ah, 5Ch,	84h, 85h, 86h, 87h
-    244	035A  9B 57 5B 5D 60 63			     db	      9Bh, 57h,	5Bh, 5Dh, 60h, 63h
-    245	0360  68 6C 9C				     db	      68h, 6Ch,	9Ch
-    246	0363  54 5C 5C 60 64 69	69+		     db	     'T\\`diimUY]adgimVZ^behkmW[_cfcln'
-    247	      6D 55 59 5D 61 64	67+
-    248	      69 6D 56 5A 5E 62	65+
-    249	      68 6B 6D 57 5B 5F	63+
-    250	      66 63 6C 6E
-    251	0383  54 58 5C 60			     db	     'TX\`'
-    252	0387  60 63 69 6D			     db	      60h, 63h,	69h, 6Dh
-    253	038B  20*(00)				     db	     32	dup (0)
-    254	03AB  33 00 6D 00 00 00			     db	      33h, 00h,	6Dh, 00h, 00h, 00h
-    255	03B1  FF 00 00 16 AF 00			     db	     0FFh, 00h,	00h, 16h,0AFh, 00h
-    256	03B7  12				     db	      12h
-    257	03B8  46 65 6C 69 73 68	69+		     db	     'Felishika\s Castle'
-    258	      6B 61 5C 73 20 43	61+
-    259	      73 74 6C 65
-    260	03CA  00 01 00 01 5F 00			     db	      00h, 01h,	00h, 01h, 5Fh, 00h
-    261	03D0  01 34 00 00 FF FF			     db	      01h, 34h,	00h, 00h,0FFh,0FFh
-    262	03D6  49 00 FF 0F C0 94			     db	      49h, 00h,0FFh, 0Fh,0C0h, 94h
-    263	03DC  10 C0 C8 8E C3 3D			     db	      10h,0C0h,0C8h, 8Eh,0C3h, 3Dh
-    264	03E2  A3 C8 06 AB C8 07			     db	     0A3h,0C8h,	06h,0ABh,0C8h, 07h
-    265	03E8  B3 C8 08 BB C8 09			     db	     0B3h,0C8h,	08h,0BBh,0C8h, 09h
-    266	03EE  FF FF 04 00 FF 9B			     db	     0FFh,0FFh,	04h, 00h,0FFh, 9Bh
-    267	03F4  C8 05 FF FF FF FF			     db	     0C8h, 05h,0FFh,0FFh,0FFh,0FFh
-    268	03FA  0A C4 AC C4 53 C5			     db	      0Ah,0C4h,0ACh,0C4h, 53h,0C5h
-    269	0400  C3 C5 2C C6 C4 C6			     db	     0C3h,0C5h,	2Ch,0C6h,0C4h,0C6h
-    270	0406  E1 C6 52 C7 AB C7			     db	     0E1h,0C6h,	52h,0C7h,0ABh,0C7h
-Turbo Assembler	 Version 2.01	     03/24/26 00:11:34	    Page 6
-236CMAP.asm
-
-
-
-    271	040C  1F C8				     db	      1Fh,0C8h
-    272	040E  49 66 20 79 6F 75	20+		     db	     'If you are the brave warrior we '
-    273	      61 72 65 20 74 68	65+
-    274	      20 62 72 61 76 65	20+
-    275	      77 61 72 72 69 6F	72+
-    276	      20 77 65 20
-    277	042E  68 61 76 65 20 61	77+		     db	     'have awaited, we have something '
-    278	      61 69 74 65 64 2C	20+
-    279	      77 65 20 68 61 76	65+
-    280	      20 73 6F 6D 65 74	68+
-    281	      69 6E 67 20
-    282	044E  74 6F 20 74 65 6C	6C+		     db	     'to tell you: throughout the ages'
-    283	      20 79 6F 75 3A 20	74+
-    284	      68 72 6F 75 67 68	6F+
-    285	      75 74 20 74 68 65	20+
-    286	      61 67 65 73
-    287	046E  2C 20 6D 61 6E 79	20+		     db	     ',	many young men have entered th'
-    288	      79 6F 75 6E 67 20	6D+
-    289	      65 6E 20 68 61 76	65+
-    290	      20 65 6E 74 65 72	65+
-    291	      64 20 74 68
-    292	048E  65 20 63 61 76 65	72+		     db	     'e	caverns, but few have returned'
-    293	      6E 73 2C 20 62 75	74+
-    294	      20 66 65 77 20 68	61+
-    295	      76 65 20 72 65 74	75+
-    296	      72 6E 65 64
-    297	04AE  2E				     db	     '.'
-    298	04AF  FF 41 63				     db	     0FFh, 41h,	63h
-    299	04B2  63 6F 72 64 69 6E	67+		     db	     'cording to legend, there may sti'
-    300	      20 74 6F 20 6C 65	67+
-    301	      65 6E 64 2C 20 74	68+
-    302	      65 72 65 20 6D 61	79+
-    303	      20 73 74 69
-    304	04D2  6C 6C 20 62 65 20	75+		     db	     'll be underground	places that ha'
-    305	      6E 64 65 72 67 72	6F+
-    306	      75 6E 64 20 70 6C	61+
-    307	      63 65 73 20 74 68	61+
-    308	      74 20 68 61
-    309	04F2  76 65 20 6E 6F 74	20+		     db	     've not been destroyed by Jashiin'
-    310	      62 65 65 6E 20 64	65+
-    311	      73 74 72 6F 79 65	64+
-    312	      20 62 79 20 4A 61	73+
-    313	      68 69 69 6E
-    314	0512  2E 20 50 65 6F 70	6C+		     db	     '.	People may still be living the'
-    315	      65 20 6D 61 79 20	73+
-    316	      74 69 6C 6C 20 62	65+
-    317	      20 6C 69 76 69 6E	67+
-    318	      20 74 68 65
-    319	0532  72 65 2C 20 61 6E	64+		     db	     're, and will surely lend you a h'
-    320	      20 77 69 6C 6C 20	73+
-    321	      75 72 65 6C 79 20	6C+
-    322	      65 6E 64 20 79 6F	75+
-    323	      20 61 20 68
-    324	0552  61 6E 64 2E			     db	     'and.'
-Turbo Assembler	 Version 2.01	     03/24/26 00:11:34	    Page 7
-236CMAP.asm
-
-
-
-    325	0556  FF 49 20				     db	     0FFh, 49h,	20h
-    326	0559  68 61 76 65 20 62	65+		     db	     'have been	in the underground tow'
-    327	      65 6E 20 69 6E 20	74+
-    328	      68 65 20 75 6E 64	65+
-    329	      72 67 72 6F 75 6E	64+
-    330	      20 74 6F 77
-    331	0579  6E 2E 20 41 66 74	65+		     db	     'n. After I fled, they put	a lock'
-    332	      72 20 49 20 66 6C	65+
-    333	      64 2C 20 74 68 65	79+
-    334	      20 70 75 74 20 61	20+
-    335	      6C 6F 63 6B
-    336	0599  20 6F 6E 20 74 68	65+		     db	     ' on the door. If the town	is sti'
-    337	      20 64 6F 6F 72 2E	20+
-    338	      49 66 20 74 68 65	20+
-    339	      74 6F 77 6E 20 69	73+
-    340	      20 73 74 69
-    341	05B9  6C 6C 20 74 68 65	72+		     db	     'll there.... '
-    342	      65 2E 2E 2E 2E 20
-    343	05C6  FF 54 68				     db	     0FFh, 54h,	68h
-    344	05C9  69 73 20 69 73 20	74+		     db	     'is is the	chamber	of poor	Prince'
-    345	      68 65 20 63 68 61	6D+
-    346	      62 65 72 20 6F 66	20+
-    347	      70 6F 6F 72 20 50	72+
-    348	      69 6E 63 65
-    349	05E9  73 73 20 46 65 6C	69+		     db	     'ss Felicia, who has been turned '
-    350	      63 69 61 2C 20 77	68+
-    351	      6F 20 68 61 73 20	62+
-    352	      65 65 6E 20 74 75	72+
-    353	      6E 65 64 20
-    354	0609  74 6F 20 73 74 6F	6E+		     db	     'to stone.	You may	enter, Duke Ga'
-    355	      65 2E 20 59 6F 75	20+
-    356	      6D 61 79 20 65 6E	74+
-    357	      65 72 2C 20 44 75	6B+
-    358	      65 20 47 61
-    359	0629  72 6C 61 6E 64 2E			     db	     'rland.'
-    360	062F  FF 42 72				     db	     0FFh, 42h,	72h
-    361	0632  61 76 65 20 6B 6E	69+		     db	     'ave knight, you have awakened. W'
-    362	      67 68 74 2C 20 79	6F+
-    363	      75 20 68 61 76 65	20+
-    364	      61 77 61 6B 65 6E	65+
-    365	      64 2E 20 57
-    366	0652  68 65 6E 20 79 6F	75+		     db	     'hen you fell at the hand of Jash'
-    367	      20 66 65 6C 6C 20	61+
-    368	      74 20 74 68 65 20	68+
-    369	      61 6E 64 20 6F 66	20+
-    370	      4A 61 73 68
-    371	0672  69 69 6E 2C 20 74	68+		     db	     'iin, the Spirits brought you her'
-    372	      65 20 53 70 69 72	69+
-    373	      74 73 20 62 72 6F	75+
-    374	      67 68 74 20 79 6F	75+
-    375	      20 68 65 72
-    376	0692  65 2E 20 4E 6F 77	20+		     db	     'e. Now make haste	to the aid of '
-    377	      6D 61 6B 65 20 68	61+
-    378	      73 74 65 20 74 6F	20+
-Turbo Assembler	 Version 2.01	     03/24/26 00:11:34	    Page 8
-236CMAP.asm
-
-
-
-    379	      74 68 65 20 61 69	64+
-    380	      20 6F 66 20
-    381	06B2  74 68 65 20 50 72	69+		     db	     'the Princess Felicia.'
-    382	      6E 63 65 73 73 20	46+
-    383	      65 6C 69 63 69 61	2E
-    384	06C7  FF				     db	     0FFh
-    385	06C8  51 75 69 63 6B 6C	79+		     db	     'Quickly, go to the Princess!'
-    386	      2C 20 67 6F 20 74	6F+
-    387	      20 74 68 65 20 50	72+
-    388	      69 6E 63 65 73 73	21
-    389	06E4  FF				     db	     0FFh
-    390	06E5  41 68 2C 20 74 68	65+		     db	     'Ah, the Nine Tears of Esmesanti.'
-    391	      20 4E 69 6E 65 20	54+
-    392	      65 61 72 73 20 6F	66+
-    393	      20 45 73 6D 65 73	61+
-    394	      6E 74 69 2E
-    395	0705  20 4A 61 73 68 69	69+		     db	     ' Jashiin exists no more and the '
-    396	      6E 20 65 78 69 73	74+
-    397	      73 20 6E 6F 20 6D	6F+
-    398	      72 65 20 61 6E 64	20+
-    399	      74 68 65 20
-    400	0725  6C 69 67 68 74 20	6F+		     db	     'light of peace shines once again'
-    401	      66 20 70 65 61 63	65+
-    402	      20 73 68 69 6E 65	73+
-    403	      20 6F 6E 63 65 20	61+
-    404	      67 61 69 6E
-    405	0745  20 6F 6E 20 6F 75	72+		     db	     ' on our land... '
-    406	      20 6C 61 6E 64 2E	2E+
-    407	      2E 20
-    408	0755  FF 54 68				     db	     0FFh, 54h,	68h
-    409	0758  69 73 20 77 69 6C	6C+		     db	     'is will benefit the people livin'
-    410	      20 62 65 6E 65 66	69+
-    411	      74 20 74 68 65 20	70+
-    412	      65 6F 70 6C 65 20	6C+
-    413	      69 76 69 6E
-    414	0778  67 20 75 6E 64 65	72+		     db	     'g	underground, as	well. Hurry to'
-    415	      67 72 6F 75 6E 64	2C+
-    416	      20 61 73 20 77 65	6C+
-    417	      6C 2E 20 48 75 72	72+
-    418	      79 20 74 6F
-    419	0798  20 74 68 65 20 50	72+		     db	     ' the Princess Felicia.'
-    420	      69 6E 63 65 73 73	20+
-    421	      46 65 6C 69 63 69	61+
-    422	      2E
-    423	07AE  FF 54 68				     db	     0FFh, 54h,	68h
-    424	07B1  65 20 70 65 61 63	65+		     db	     'e	peace we dared not hope	for ha'
-    425	      20 77 65 20 64 61	72+
-    426	      65 64 20 6E 6F 74	20+
-    427	      68 6F 70 65 20 66	6F+
-    428	      72 20 68 61
-    429	07D1  73 20 63 6F 6D 65	2E+		     db	     's	come. I\ll get my things toget'
-    430	      20 49 5C 6C 6C 20	67+
-    431	      65 74 20 6D 79 20	74+
-    432	      68 69 6E 67 73 20	74+
-Turbo Assembler	 Version 2.01	     03/24/26 00:11:34	    Page 9
-236CMAP.asm
-
-
-
-    433	      6F 67 65 74
-    434	07F1  68 65 72 20 61 6E	64+		     db	     'her and be on my way. I\ve a fam'
-    435	      20 62 65 20 6F 6E	20+
-    436	      6D 79 20 77 61 79	2E+
-    437	      20 49 5C 76 65 20	61+
-    438	      20 66 61 6D
-    439	0811  69 6C 79 20 74 6F	20+		     db	     'ily to attend to.'
-    440	      61 74 74 65 6E 64	20+
-    441	      74 6F 2E
-    442	0822  FF 51 75				     db	     0FFh, 51h,	75h
-    443	0825  69 63 6B 6C 79 2C	20+		     db	     'ickly, enter this	chamber. The h'
-    444	      65 6E 74 65 72 20	74+
-    445	      68 69 73 20 63 68	61+
-    446	      6D 62 65 72 2E 20	54+
-    447	      68 65 20 68
-    448	0845  6F 6C 79 20 63 72	79+		     db	     'oly crystals will	break the evil'
-    449	      73 74 61 6C 73 20	77+
-    450	      69 6C 6C 20 62 72	65+
-    451	      61 6B 20 74 68 65	20+
-    452	      65 76 69 6C
-    453	0865  20 73 70 65 6C 6C	20+		     db	     ' spell which has turned Princess'
-    454	      77 68 69 63 68 20	68+
-    455	      61 73 20 74 75 72	6E+
-    456	      65 64 20 50 72 69	6E+
-    457	      63 65 73 73
-    458	0885  20 46 65 6C 69 63	69+		     db	     ' Felicia to stone.'
-    459	      61 20 74 6F 20 73	74+
-    460	      6F 6E 65 2E
-    461	0897  FF 24 00 82 00 03			     db	     0FFh, 24h,	00h, 82h, 00h, 03h
-    462	089D  03 80 04 30 00 81			     db	      03h, 80h,	04h, 30h, 00h, 81h
-    463	08A3  18 00 00 00 00 38			     db	      18h, 00h,	00h, 00h, 00h, 38h
-    464	08A9  00 81 18 00 00 00			     db	      00h, 81h,	18h, 00h, 00h, 00h
-    465	08AF  01 54 00 80 00 01			     db	      01h, 54h,	00h, 80h, 00h, 01h
-    466	08B5  03 00 02 5C 00 81			     db	      03h, 00h,	02h, 5Ch, 00h, 81h
-    467	08BB  18 00 00 00 03 FF			     db	      18h, 00h,	00h, 00h, 03h,0FFh
-    468	08C1  FF				     db	     0FFh
-    469
-    470	08C2			     zr2_36	     endp
-    471
-    472	08C2			     seg_a	     ends
-    473
-    474
-    475
-    476						     end     start
-Turbo Assembler	 Version 2.01	     03/24/26 00:11:34	    Page 10
-Symbol Table
-
-
-
-
-Symbol Name			  Type	 Value
-
-??DATE				  Text	 "03/24/26"
-??FILENAME			  Text	 "236CMAP "
-??TIME				  Text	 "00:11:34"
-??VERSION			  Number 0201
-@CPU				  Text	 0101H
-@CURSEG				  Text	 SEG_A
-@FILENAME			  Text	 236CMAP
-@WORDSIZE			  Text	 2
-DATA_17E			  Number 72C3
-DATA_4				  Byte	 SEG_A:01C3
-START				  Near	 SEG_A:0000
-TARGET				  Number 5432
-ZR2_36				  Far	 SEG_A:0000
-
-Macro Name
-
-CALLF
-CALLFX
-CALLS
-JMPN
-JMPS
-
-Groups & Segments		  Bit Size Align  Combine Class
-
-SEG_A				  16  08C2 Byte	  Public
-
+      0 Warning Errors
+      0 Severe  Errors

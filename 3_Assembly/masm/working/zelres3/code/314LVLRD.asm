@@ -195,7 +195,7 @@ loc_4:
 		inc	byte ptr ds:data_25e
 		add	si,10h
 ;*		jmp	short loc_2		;*
-		db	0EBh,0C4h		;  Fixup - byte match
+				jmp 235h			; was: db 0EBh,0C4h
 loc_5:
 		mov	si,ds:data_45e
 		mov	word ptr [si],0FFFFh
@@ -284,11 +284,45 @@ loc_16:
 		pop	es
 		mov	di,data_15e
 		mov	cx,5
-		repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
-		jnz	loc_18			; Jump if not zero
-		push	ax
-		call	sub_2
-		cmc				; Complement carry
+		; Tile/character index table
+		db	'=\'', 0		; 0x0000
+		db	'<=>?', 0		; 0x0003
+		db	'?@CD', 0		; 0x0008
+		db	'ABEF', 0		; 0x000D
+		db	'GHI', 0		; 0x0012
+		db	'J', 0		; 0x0017
+		db	'M\'', 0		; 0x0019
+		db	'45XY', 0		; 0x001C
+		db	'KLNO', 0		; 0x0021
+		; Tile index table (continued)
+		db	'\'(', 0		; 0x0000
+		db	'a,jk', 0		; 0x0003
+		db	',ikl', 0		; 0x0008
+		db	'klmn', 0		; 0x000D
+		db	'nopq', 0		; 0x0012
+		db	'pqZr', 0		; 0x0017
+		db	'\\^_', 0		; 0x001D
+		db	'\\]_`', 0		; 0x0021
+		db	'bcef', 0		; 0x0026
+		db	'degh', 0		; 0x002B
+		db	'pqZr', 0		; 0x0017
+		db	'\\^_', 0		; 0x001D
+		db	'\\]_`', 0		; 0x0021
+		; Tile index table (continued)
+		db	'vwz{', 0		; 0x0001
+		db	'xy|}', 0		; 0x0006
+		db	'pqZr', 0		; 0x0017
+		db	'\\^_', 0		; 0x001D
+		db	'\\]_`', 0		; 0x0021
+		; Tile index table (continued)
+		db	'vwz{', 0		; 0x0001
+		db	'xy|}', 0		; 0x0006
+		db	'pqZr', 0		; 0x0017
+		db	'\\^_', 0		; 0x001D
+		db	'\\]_`', 0		; 0x0021
+		; Tile index table (continued)
+		db	'vwz{', 0		; 0x0001
+		db	'xy|}', 0		; 0x0006
 		sbb	al,al
 		mov	ds:data_31e,al
 		pop	ax
@@ -623,7 +657,7 @@ sub_4		endp
 loc_47:
 		cmp	byte ptr ds:data_27e,28h	; '('
 ;*		jae	loc_50			;*Jump if above or =
-		db	 73h, 4Dh		;  Fixup - byte match
+				jnc 6C6h			; was: db 073h,04Dh
 		mov	byte ptr ds:data_48e,0FFh
 		inc	byte ptr ds:data_27e
 		cmp	byte ptr ds:data_27e,0Ah
@@ -655,9 +689,9 @@ loc_49:
 		add	ax,0C605h
 		push	es
 ;*		xor	bh,bh			; Zero register
-		db	 30h,0FFh		;  Fixup - byte match
+				xor bh,bh			; was: db 030h,0FFh
 ;*		inc	bx
-		db	0FFh,0C3h		;  Fixup - byte match
+				inc bx			; was: db 0FFh,0C3h
 		db	0DCh,0A6h,0E3h,0A6h,0ECh,0A6h
 		db	0F6h,0A6h, 01h,0A7h, 0Ch,0A7h
 		db	 18h,0A7h, 22h,0A7h, 2Eh,0A7h

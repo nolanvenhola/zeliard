@@ -49,7 +49,7 @@ _356LVGRP	proc	far
 
 start:
 ;*		jc	loc_3			;*Jump if carry Set
-		db	 72h, 18h		;  Fixup - byte match
+				jc 1Ah			; was: db 072h,018h
 		add	[bx+si],al
 		add	data_9,al
 		dec	si
@@ -220,13 +220,13 @@ locloop_4:
 		add	ds:data_25e[bx+si],ax
 		add	al,ds:data_20e[bx+si]
 ;*		add	bx,ax
-		db	 01h,0C3h		;  Fixup - byte match
+				add bx,ax			; was: db 001h,0C3h
 ;*		add	bl,ch
-		db	 00h,0EBh		;  Fixup - byte match
+				add bl,ch			; was: db 000h,0EBh
 		push	cs
 		int	3			; Debug breakpoint
 ;*		add	dh,ch
-		db	 00h,0EEh		;  Fixup - byte match
+				add dh,ch			; was: db 000h,0EEh
 		add	ax,0F0h
 		retn
 			                        ;* No entry point to code
@@ -347,13 +347,13 @@ data_16		db	0
 
 locloop_6:
 ;*		add	[bx+0],dh
-		db	 00h, 77h, 00h		;  Fixup - byte match
+				add [bx+0h],dh			; was: db 000h,077h,000h
 		db	 77h, 00h, 10h, 00h,0D1h, 40h
 		db	 39h, 00h,0F1h
 		db	 20h, 39h
 loc_7:
 ;*		add	ah,bh
-		db	 00h,0FCh		;  Fixup - byte match
+				add ah,bh			; was: db 000h,0FCh
 		push	ax
 		add	dx,ax
 		add	dx,bp
@@ -385,9 +385,9 @@ loc_7:
 		add	cl,[bx+si]
 		add	cl,[bx+si]
 ;*		add	ah,cl
-		db	 00h,0CCh		;  Fixup - byte match
+				add ah,cl			; was: db 000h,0CCh
 ;*		add	ah,cl
-		db	 00h,0CCh		;  Fixup - byte match
+				add ah,cl			; was: db 000h,0CCh
 		add	ds:data_26e[bx+si],ch
 		add	bp,ss:data_6e[bp+si]
 		push	cs
@@ -398,7 +398,7 @@ loc_7:
 		stosb				; Store al to es:[di]
 		call	$-53FDh
 ;*		adc	bh,bh
-		db	 10h,0FFh		;  Fixup - byte match
+				adc bh,bh			; was: db 010h,0FFh
 		inc	bp
 		adc	[bx+si],cl
 		jnp	loc_7			; Jump if not parity
@@ -448,7 +448,15 @@ loc_7:
 		db	 76h, 39h, 04h, 80h, 39h, 01h
 		db	 80h, 39h, 13h, 02h,0A0h, 01h
 		db	 5Eh, 0Ah, 88h, 09h, 67h, 0Eh
-		db	 88h, 05h, 76h, 0Eh,0A0h, 05h
+		; Graphics data table
+		db	' 8 ', 0		; 0x0001
+		db	' 8 ', 0		; 0x0005
+		db	' 8 ', 0		; 0x0001
+		db	' 8 ', 0		; 0x0005
+		db	' 8 ', 0		; 0x0001
+		db	' 8 ', 0		; 0x0005
+		db	' 8 ', 0		; 0x0001
+		db	' 8 ', 0		; 0x0005
 		db	 5Eh, 0Eh,0AAh, 05h, 55h, 0Eh
 		db	0AAh, 05h, 55h, 0Fh,0AAh, 05h
 		db	 55h, 03h,0FEh, 01h, 7Eh, 39h
@@ -888,7 +896,7 @@ data_19		db	3
 		db	40h
 loc_8:
 ;*		add	byte ptr ds:data_5e[bx+si],0Ch
-		db	 82h, 80h,0A9h, 80h, 0Ch	;  Fixup - byte match
+				add byte ptr [bx+si-7F57h],0Ch			; was: db 082h,080h,0A9h,080h,00Ch
 		or	cl,0A0h
 		mov	cl,3
 		rcl	word ptr [bx+di+41h],cl	; Rotate thru carry
@@ -903,7 +911,7 @@ loc_8:
 		ror	byte ptr [bx],1		; Rotate
 ;*		loopnz	locloop_9		;*Loop if zf=0, cx>0
 
-		db	0E0h, 0Fh		;  Fixup - byte match
+				loopne 11A7h			; was: db 0E0h,00Fh
 		cmpsw				; Cmp [si] to es:[di]
 		add	[bx+si],bh
 		add	[bp+di],ch
@@ -914,12 +922,12 @@ loc_8:
 		mov	ds:data_29e,ax
 		pop	ds
 ;*		aam	1Fh			; undocumented inst
-		db	0D4h, 1Fh		;  Fixup - byte match
+				aam 1Fh			; was: db 0D4h,01Fh
 		aam				; Ascii adjust
 		cli				; Disable interrupts
 		or	bh,dl
 ;*		add	[bx+0],bl
-		db	 00h, 5Fh, 00h		;  Fixup - byte match
+				add [bx+0h],bl			; was: db 000h,05Fh,000h
 		db	 5Fh, 3Eh,0A0h, 26h,0A0h, 3Ch
 		db	 30h,0FCh, 30h,0CAh,0A0h,0CAh
 		db	0A0h, 35h, 41h, 3Dh, 40h,0FFh
@@ -943,7 +951,7 @@ loc_11:
 		adc	bh,[bx+di]
 		add	ss:data_22e[bp+di],ch
 ;*		add	bl,dl
-		db	 00h,0D3h		;  Fixup - byte match
+				add bl,dl			; was: db 000h,0D3h
 		retf	2B00h
 			                        ;* No entry point to code
 		out	dx,ax			; port 0, DMA-1 bas&add ch 0
