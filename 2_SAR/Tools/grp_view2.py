@@ -32,6 +32,13 @@ from PIL import Image, ImageTk
 
 PALETTE_JSON = 'c:/Projects/Zeliard/3_Assembly/dumps/palette_rows.json'
 
+BIN_ROOT = Path('c:/Projects/Zeliard/3_Assembly/tasm/bin')
+ZELRES_FOLDERS = {
+    'zelres1': BIN_ROOT / 'zelres1',
+    'zelres2': BIN_ROOT / 'zelres2',
+    'zelres3': BIN_ROOT / 'zelres3',
+}
+
 def _load_vga_palette(name='P2_Title'):
     import json, os
     if not os.path.exists(PALETTE_JSON):
@@ -233,6 +240,14 @@ class GrpViewer:
         list_frame.pack(side=tk.LEFT, fill=tk.Y)
         list_frame.pack_propagate(False)
 
+        # Quick-switch buttons for zelres1/2/3
+        zr_frame = tk.Frame(list_frame)
+        zr_frame.pack(fill=tk.X, padx=2, pady=2)
+        for name, path in ZELRES_FOLDERS.items():
+            tk.Button(zr_frame, text=name, width=6,
+                      command=lambda p=path: self._switch_folder(p)
+                      ).pack(side=tk.LEFT, padx=1)
+
         self.folder_label = tk.Label(list_frame, text='', anchor='w',
                                      font=('TkDefaultFont', 8), wraplength=175)
         self.folder_label.pack(fill=tk.X, padx=2, pady=2)
@@ -280,6 +295,13 @@ class GrpViewer:
         sel = self.file_list.curselection()
         if sel and self._files:
             self._load_file(self._files[sel[0]])
+
+    def _switch_folder(self, path: Path):
+        self.folder = path
+        self._populate_file_list()
+        # Auto-load first file if list is not empty
+        if self._files:
+            self._load_file(self._files[0])
 
     def _browse_folder(self):
         import tkinter.filedialog as fd
