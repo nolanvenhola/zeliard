@@ -1,58 +1,86 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				GAME	                                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   29-Mar-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½				GAME	                                 ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½      Created:   29-Mar-26		                                 ï¿½ï¿½
+;ï¿½ï¿½      Code type: zero start		                                 ï¿½ï¿½
+;ï¿½ï¿½      Passes:    9          Analysis	Options on: none                 ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 target		EQU   'M4'                      ; Target assembler: MASM-4.0
 
 include  srmacros.inc
+include  ZELIARD.INC
 
 
-; The following equates show data references outside the range of the program.
+; External references â€” addresses in other loaded segments
+music_player_fn	equ	18ABh			; Music player function
+gfx_call_a	equ	201Ch			; Graphics driver call A
+gfx_call_b	equ	201Eh			; Graphics driver call B
+gfx_call_c	equ	2020h			; Graphics driver call C
+sound_load_track_fn equ	203Eh			; Sound driver: load/init music track
+loaded_code_a	equ	3000h			; Loaded chunk code entry A
+tile_gfx_base	equ	37A4h			; Tile graphics base address
+font_gfx_base	equ	3EA4h			; Font graphics base address
+loaded_code_b	equ	6000h			; Loaded chunk code entry B
+loaded_code_b_fn equ	6002h			; Loaded chunk function B
 
-data_10e	equ	18ABh			;*
-data_11e	equ	201Ch			;*
-data_12e	equ	201Eh			;*
-data_13e	equ	2020h			;*
-data_14e	equ	203Eh			;*
-data_15e	equ	3000h			;*
-data_16e	equ	37A4h			;*
-data_17e	equ	3EA4h			;*
-data_18e	equ	6000h			;*
-data_19e	equ	6002h			;*
-data_20e	equ	0A288h			;*
-data_21e	equ	0A2D1h			;*
-data_22e	equ	0A31Ah			;*
-data_23e	equ	0A3D3h			;*
-data_24e	equ	0A3F2h			;*
-data_25e	equ	0A456h			;*
-data_26e	equ	0A470h			;*
-data_28e	equ	0A474h			;*
-data_29e	equ	0C000h			;*
-data_30e	equ	0FF08h			;*
-data_31e	equ	0FF14h			;*
-data_32e	equ	0FF36h			;*
-data_33e	equ	0FF38h			;*
-data_34e	equ	0FF39h			;*
-data_35e	equ	0FF3Ah			;*
-data_36e	equ	0FF3Ch			;*
-data_37e	equ	0FF3Dh			;*
-data_38e	equ	0FF3Eh			;*
-data_39e	equ	0FF40h			;*
-data_40e	equ	0FF42h			;*
-data_41e	equ	0FF43h			;*
-data_42e	equ	0FF44h			;*
-data_43e	equ	0FF4Bh			;*
-data_44e	equ	0FF74h			;*
-data_45e	equ	0FF77h			;*
+; Internal EQUs â€” using GAME_CODE_BASE + (offset label) makes these
+; auto-update when code is added or removed above the data tables.
+; NOTE: GAME_CODE_BASE + (offset ...) syntax requires TASM 2.x or later.
+;       MASM 4.0 would need hardcoded values here.
+GAME_CODE_BASE  equ     0A000h
+gfx_mode_tbl_ega equ	GAME_CODE_BASE + (offset gfx_mode_tbl_ega_lbl)
+gfx_mode_tbl_cga equ	GAME_CODE_BASE + (offset gfx_mode_tbl_cga_lbl)
+gfx_mode_tbl_all equ	GAME_CODE_BASE + (offset gfx_mode_tbl_all_lbl)
+level_system_ref equ	GAME_CODE_BASE + (offset level_system_ref_lbl)
+level_data_ref	equ	GAME_CODE_BASE + (offset level_data_ref_lbl)
+palette_base_tbl equ	GAME_CODE_BASE + (offset palette_base_tbl_lbl)
+game_init_fn	equ	GAME_CODE_BASE + (offset game_init_fn_lbl)
+save_mode_flag	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
+level_chunk_ref	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
+save_data_base	equ	0C000h			; Save data load address
+
+; Backward-compatible aliases â€” Sourcer generated these names; code body uses them
+data_10e	equ	music_player_fn
+data_11e	equ	gfx_call_a
+data_12e	equ	gfx_call_b
+data_13e	equ	gfx_call_c
+data_14e	equ	sound_load_track_fn
+data_15e	equ	loaded_code_a
+data_16e	equ	tile_gfx_base
+data_17e	equ	font_gfx_base
+data_18e	equ	loaded_code_b
+data_19e	equ	loaded_code_b_fn
+data_20e	equ	gfx_mode_tbl_ega
+data_21e	equ	gfx_mode_tbl_cga
+data_22e	equ	gfx_mode_tbl_all
+data_23e	equ	level_system_ref
+data_24e	equ	level_data_ref
+data_25e	equ	palette_base_tbl
+data_26e	equ	game_init_fn
+data_28e	equ	save_mode_flag
+data_29e	equ	save_data_base
+data_30e	equ	gvar_timer_ticks
+data_31e	equ	gvar_game_phase
+data_32e	equ	gvar_music_vol
+data_33e	equ	gvar_music_a
+data_34e	equ	gvar_music_b
+data_35e	equ	gvar_music_c
+data_36e	equ	gvar_palette_st
+data_37e	equ	gvar_palette_a
+data_38e	equ	gvar_palette_b
+data_39e	equ	gvar_debug_mode
+data_40e	equ	gvar_debug_val
+data_41e	equ	gvar_joystick
+data_42e	equ	gvar_joy_data
+data_43e	equ	gvar_joy_count
+data_44e	equ	gvar_volume_a
+data_45e	equ	gvar_volume_b
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -263,7 +291,9 @@ loc_4:
 		db	'town.bin'
 		db	0, 0, 1
 		db	'opdemo.bin'
-		db	 00h, 94h,0A2h,0A0h,0A2h,0A0h
+		db	 00h
+gfx_mode_tbl_ega_lbl	label	word
+		db	 94h,0A2h,0A0h,0A2h,0A0h
 		db	0A2h,0ACh,0A2h,0B8h,0A2h,0C5h
 		db	0A2h, 01h, 03h
 		db	'gfega.bin'
@@ -275,7 +305,9 @@ loc_4:
 		db	'gfmcga.bin'
 		db	0, 1, 6
 		db	'gftga.bin'
-		db	 00h,0DDh,0A2h,0E9h,0A2h,0E9h
+		db	 00h
+gfx_mode_tbl_cga_lbl	label	word
+		db	0DDh,0A2h,0E9h,0A2h,0E9h
 		db	0A2h,0F5h,0A2h, 01h,0A3h, 0Eh
 		db	0A3h, 00h
 		db	8, 'gtega.bin'
@@ -287,7 +319,9 @@ loc_4:
 		db	0Ch, 'gtmcga.bin'
 		db	 00h, 00h, 0Bh
 		db	'gttga.bin'
-		db	 00h, 26h,0A3h, 32h,0A3h, 32h
+		db	 00h
+gfx_mode_tbl_all_lbl	label	word
+		db	 26h,0A3h, 32h,0A3h, 32h
 		db	0A3h, 3Eh,0A3h, 4Ah,0A3h, 57h
 		db	0A3h, 00h, 02h
 		db	'gdega.bin'
@@ -315,9 +349,9 @@ loc_4:
 
 game		endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_1		proc	near
 		test	byte ptr ds:[0A0h],0FFh
@@ -348,14 +382,15 @@ loc_7:
 		retn
 sub_1		endp
 
+level_system_ref_lbl	label	word
 		db	 00h, 0Fh, 00h, 3Dh, 00h, 15h
 		db	 00h, 37h, 00h, 1Bh, 00h, 31h
 		db	 00h, 21h, 00h, 2Bh, 00h
 		db	26h
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_2		proc	near
 		mov	bl,ds:data_31e
@@ -364,6 +399,7 @@ sub_2		proc	near
 		jmp	word ptr cs:data_24e[bx]	;*
 sub_2		endp
 
+level_data_ref_lbl	label	word
 		db	0FEh,0A3h, 1Ah,0A4h, 1Ah,0A4h
 		db	 6Fh,0A4h, 1Bh,0A4h, 6Eh,0A4h
 		db	 0Eh, 07h,0BAh, 09h,0A4h,0B8h
@@ -413,11 +449,15 @@ locloop_9:
 		loop	locloop_8		; Loop if cx > 0
 
 		retn
+palette_base_tbl_lbl	label	byte
 		db	 00h, 00h, 00h, 1Fh, 1Fh, 1Fh
 		db	 1Fh, 00h, 00h, 00h, 1Fh, 00h
 		db	 00h, 1Fh, 1Fh, 00h, 00h, 1Fh
 		db	 1Fh, 1Fh, 00h, 1Fh, 00h, 1Fh
-		db	0C3h,0C3h, 00h, 00h, 00h, 30h
+		db	0C3h,0C3h
+game_init_fn_lbl	label	dword
+		db	 00h, 00h, 00h, 30h
+save_mode_flag_lbl	label	word
 		db	 00h, 00h
 
 seg_a		ends
