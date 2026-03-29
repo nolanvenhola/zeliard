@@ -39,6 +39,37 @@ ZELRES_FOLDERS = {
     'zelres3': BIN_ROOT / 'zelres3',
 }
 
+# (CH, CL) pairs extracted from mov cx,XXXXh call sites in the assembly code.
+# Used to match decompressed GRP size -> candidate CL values.
+_KNOWN_DIMS = [
+    (2,8),(4,8),(5,8),(7,8),(16,8),(3,16),(16,16),(11,16),(39,16),(4,16),(28,16),
+    (17,16),(8,16),(52,16),(30,16),(2,20),(4,20),(6,24),(10,24),(7,24),(9,24),(2,24),
+    (18,32),(9,32),(6,32),(1,32),(14,32),(3,32),(26,36),(37,36),(50,36),(28,36),
+    (56,40),(16,40),(30,40),(34,48),(15,60),(80,60),(1,64),(16,64),(31,64),(66,64),
+    (6,64),(56,72),(22,80),(24,88),(47,88),(22,88),(49,96),(127,96),(26,100),(28,100),
+    (36,104),(44,104),(72,104),(65,112),(34,112),(84,112),(80,120),(4,128),(49,128),(62,128),
+    (2,128),(80,136),(1,144),(134,160),(80,160),(63,176),(64,192),(15,192),(80,200),
+    (31,216),(46,224),(3,232),
+]
+
+_KNOWN_DIMS_SET = set(_KNOWN_DIMS)
+
+def candidate_cls(decoded_size: int) -> list[int]:
+    """
+    Return candidate CL values for a decoded GRP image buffer.
+    Primary: (CH, CL) pairs from the known ASM table that fit within decoded_size.
+    Fallback: CL values that evenly divide decoded_size/2 into a reasonable row count.
+    """
+    # Primary: exact match from known dimension table (±64 byte padding)
+    primary = sorted({cl for (ch, cl) in _KNOWN_DIMS
+                      if 0 <= decoded_size - ch * cl * 2 < 64})
+    if primary:
+        return primary
+    # Fallback: any CL divisor of decoded_size//2 with 1–256 rows
+    half = decoded_size // 2
+    return sorted({cl for cl in range(8, 257, 4)
+                   if half % cl == 0 and 1 <= half // cl <= 256})
+
 def _load_vga_palette(name='P2_Title'):
     import json, os
     if not os.path.exists(PALETTE_JSON):
@@ -215,9 +246,11 @@ class GrpViewer:
 
         tk.Label(top, text='  CL:').pack(side=tk.LEFT)
         self.cl_var = tk.StringVar(value=str(self.cl))
-        cl_entry = tk.Entry(top, textvariable=self.cl_var, width=5)
-        cl_entry.pack(side=tk.LEFT)
-        cl_entry.bind('<Return>', lambda e: self._on_cl_change())
+        self.cl_combo = ttk.Combobox(top, textvariable=self.cl_var, width=7,
+                                     state='normal')
+        self.cl_combo.pack(side=tk.LEFT)
+        self.cl_combo.bind('<<ComboboxSelected>>', lambda e: self._on_cl_change())
+        self.cl_combo.bind('<Return>', lambda e: self._on_cl_change())
 
         tk.Label(top, text='  Zoom:').pack(side=tk.LEFT)
         self.zoom_var = tk.StringVar(value=str(self.zoom))
@@ -322,12 +355,27 @@ class GrpViewer:
         self._redraw()
 
     def _decode(self):
+        # Compute candidate CLs from known assembly dimension table
+        payload = _detect_and_strip_header(self.data)
+        decoded_len = len(decode_6de1(payload))
+        candidates = candidate_cls(decoded_len)
+        if candidates:
+            self.cl_combo['values'] = [str(c) for c in candidates]
+            # Auto-select if current CL not in candidates
+            if self.cl not in candidates:
+                self.cl = candidates[0]
+                self.cl_var.set(str(self.cl))
+        else:
+            self.cl_combo['values'] = []
+
         self._interleaved, self._rows, _ = decode_grp(self.data, self.cl)
         if self._interleaved:
             self.status.config(text=f'CL={self.cl}  rows={self._rows}  '
-                                    f'interleaved={len(self._interleaved)} bytes')
+                                    f'{self.cl*8}px wide  '
+                                    f'decoded={decoded_len} bytes')
         else:
-            self.status.config(text='Decode failed — try different CL value')
+            self.status.config(text=f'Decode failed — decoded={decoded_len}B, '
+                                    f'candidates={candidates}')
 
     def _redraw(self):
         try:
