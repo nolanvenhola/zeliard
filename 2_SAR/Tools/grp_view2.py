@@ -203,8 +203,8 @@ class GrpViewer:
         self.filepath = filepath
         self.cl = cl
         self.zoom = 2
-        self.mode = 'vga_scale'
-        self._photo = None
+        self._photo_decode = None
+        self._photo_vga = None
         self._interleaved = None
         self._rows = 0
 
@@ -214,21 +214,19 @@ class GrpViewer:
         self._build_ui()
         self._decode()
         self._redraw()
-        root.bind('+',     lambda e: self._set_zoom(self.zoom + 1))
-        root.bind('=',     lambda e: self._set_zoom(self.zoom + 1))
-        root.bind('-',     lambda e: self._set_zoom(self.zoom - 1))
-        root.bind('w',     lambda e: self._set_cl(self.cl + 4))
-        root.bind('s',     lambda e: self._set_cl(max(4, self.cl - 4)))
+        root.bind('+', lambda e: self._set_zoom(self.zoom + 1))
+        root.bind('=', lambda e: self._set_zoom(self.zoom + 1))
+        root.bind('-', lambda e: self._set_zoom(self.zoom - 1))
+        root.bind('w', lambda e: self._set_cl(self.cl + 4))
+        root.bind('s', lambda e: self._set_cl(max(4, self.cl - 4)))
 
     def _build_ui(self):
         top = tk.Frame(self.root)
         top.pack(side=tk.TOP, fill=tk.X, padx=4, pady=2)
 
-        tk.Label(top, text='Mode:').pack(side=tk.LEFT)
-        self.mode_var = tk.StringVar(value=self.mode)
-        for m in ('grp_decode', 'vga_scale', 'anti_alias'):
-            tk.Radiobutton(top, text=m, variable=self.mode_var, value=m,
-                           command=self._on_mode).pack(side=tk.LEFT)
+        self.antialias_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(top, text='Anti-alias', variable=self.antialias_var,
+                       command=self._redraw).pack(side=tk.LEFT)
 
         tk.Label(top, text='  CL:').pack(side=tk.LEFT)
         self.cl_var = tk.StringVar(value=str(self.cl))
@@ -238,63 +236,79 @@ class GrpViewer:
 
         tk.Label(top, text='  Zoom:').pack(side=tk.LEFT)
         self.zoom_var = tk.StringVar(value=str(self.zoom))
-        tk.Entry(top, textvariable=self.zoom_var, width=3).pack(side=tk.LEFT)
+        zoom_entry = tk.Entry(top, textvariable=self.zoom_var, width=3)
+        zoom_entry.pack(side=tk.LEFT)
+        zoom_entry.bind('<Return>', lambda e: self._redraw())
 
         tk.Button(top, text='Save PNG', command=self._save_png).pack(side=tk.RIGHT)
 
         self.status = tk.Label(self.root, text='', anchor='w', relief=tk.SUNKEN)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
 
-        frame = tk.Frame(self.root)
-        frame.pack(fill=tk.BOTH, expand=True)
-        self.canvas = tk.Canvas(frame, bg='#1a1a1a')
-        vsb = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self.canvas.yview)
-        hsb = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=self.canvas.xview)
-        self.canvas.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-        vsb.pack(side=tk.RIGHT, fill=tk.Y)
-        hsb.pack(side=tk.BOTTOM, fill=tk.X)
-        self.canvas.pack(fill=tk.BOTH, expand=True)
-        self.canvas.bind('<MouseWheel>', lambda e: self.canvas.yview_scroll(-1*(e.delta//120), 'units'))
+        # Two panels side by side: grp_decode (left) and vga_scale (right)
+        panels = tk.Frame(self.root)
+        panels.pack(fill=tk.BOTH, expand=True)
+
+        left = tk.LabelFrame(panels, text='grp_decode', bg='#1a1a1a', fg='white')
+        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.canvas_decode = tk.Canvas(left, bg='#1a1a1a')
+        vsb_l = ttk.Scrollbar(left, orient=tk.VERTICAL, command=self.canvas_decode.yview)
+        self.canvas_decode.configure(yscrollcommand=vsb_l.set)
+        vsb_l.pack(side=tk.RIGHT, fill=tk.Y)
+        self.canvas_decode.pack(fill=tk.BOTH, expand=True)
+        self.canvas_decode.bind('<MouseWheel>', lambda e: self.canvas_decode.yview_scroll(-1*(e.delta//120), 'units'))
+
+        right = tk.LabelFrame(panels, text='vga_scale', bg='#1a1a1a', fg='white')
+        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.canvas_vga = tk.Canvas(right, bg='#1a1a1a')
+        vsb_r = ttk.Scrollbar(right, orient=tk.VERTICAL, command=self.canvas_vga.yview)
+        self.canvas_vga.configure(yscrollcommand=vsb_r.set)
+        vsb_r.pack(side=tk.RIGHT, fill=tk.Y)
+        self.canvas_vga.pack(fill=tk.BOTH, expand=True)
+        self.canvas_vga.bind('<MouseWheel>', lambda e: self.canvas_vga.yview_scroll(-1*(e.delta//120), 'units'))
 
     def _decode(self):
         self._interleaved, self._rows, _ = decode_grp(self.data, self.cl)
         if self._interleaved:
-            self.status.config(text=f'CL={self.cl}  rows={self._rows}  interleaved={len(self._interleaved)} bytes')
+            self.status.config(text=f'CL={self.cl}  rows={self._rows}  '
+                                    f'interleaved={len(self._interleaved)} bytes')
         else:
-            self.status.config(text=f'Decode failed — try different CL value')
-
-    def _render(self) -> Image.Image:
-        if self._interleaved is None:
-            return None
-        mode = self.mode_var.get()
-        if mode == 'grp_decode':
-            return render_grp_decode(self._interleaved, self._rows, self.cl)
-        elif mode == 'vga_scale':
-            return apply_exact_blit(self._interleaved, antialias=False)
-        elif mode == 'anti_alias':
-            return apply_exact_blit(self._interleaved, antialias=True)
-        return None
+            self.status.config(text='Decode failed — try different CL value')
 
     def _redraw(self):
         try:
             self.zoom = max(1, min(8, int(self.zoom_var.get())))
         except ValueError:
             pass
-        img = self._render()
-        if img is None:
-            self.canvas.delete('all')
-            self.canvas.create_text(20, 20, text='No image', fill='white', anchor='nw')
-            return
-        w, h = img.size[0] * self.zoom, img.size[1] * self.zoom
-        scaled = img.resize((w, h), Image.NEAREST)
-        self._photo = ImageTk.PhotoImage(scaled)
-        self.canvas.delete('all')
-        self.canvas.create_image(0, 0, anchor='nw', image=self._photo)
-        self.canvas.configure(scrollregion=(0, 0, w, h))
 
-    def _on_mode(self):
-        self.mode = self.mode_var.get()
-        self._redraw()
+        if self._interleaved is None:
+            for c in (self.canvas_decode, self.canvas_vga):
+                c.delete('all')
+                c.create_text(10, 10, text='No image', fill='white', anchor='nw')
+            return
+
+        z = self.zoom
+
+        # grp_decode panel
+        img_d = render_grp_decode(self._interleaved, self._rows, self.cl)
+        if img_d:
+            w, h = img_d.size[0] * z, img_d.size[1] * z
+            scaled = img_d.resize((w, h), Image.NEAREST)
+            self._photo_decode = ImageTk.PhotoImage(scaled)
+            self.canvas_decode.delete('all')
+            self.canvas_decode.create_image(0, 0, anchor='nw', image=self._photo_decode)
+            self.canvas_decode.configure(scrollregion=(0, 0, w, h))
+
+        # vga_scale panel
+        antialias = self.antialias_var.get()
+        img_v = apply_exact_blit(self._interleaved, antialias=antialias)
+        if img_v:
+            w, h = img_v.size[0] * z, img_v.size[1] * z
+            scaled = img_v.resize((w, h), Image.NEAREST)
+            self._photo_vga = ImageTk.PhotoImage(scaled)
+            self.canvas_vga.delete('all')
+            self.canvas_vga.create_image(0, 0, anchor='nw', image=self._photo_vga)
+            self.canvas_vga.configure(scrollregion=(0, 0, w, h))
 
     def _on_cl_change(self):
         try:
@@ -317,13 +331,14 @@ class GrpViewer:
 
     def _save_png(self):
         import tkinter.filedialog as fd
-        default = Path(self.filepath).stem + f'_{self.mode_var.get()}.png'
+        stem = Path(self.filepath).stem
         path = fd.asksaveasfilename(defaultextension='.png',
                                     filetypes=[('PNG', '*.png')],
-                                    initialfile=default)
+                                    initialfile=f'{stem}_vgascale.png')
         if not path:
             return
-        img = self._render()
+        antialias = self.antialias_var.get()
+        img = apply_exact_blit(self._interleaved, antialias=antialias)
         if img:
             img.save(path)
             self.status.config(text=f'Saved {path}')
@@ -337,13 +352,10 @@ def main():
     parser.add_argument('--cl', type=int, default=112,
                         help='Plane width in bytes (default: 112 for title images)')
     parser.add_argument('--zoom', type=int, default=2)
-    parser.add_argument('--mode', default='vga_scale',
-                        choices=['grp_decode', 'vga_scale', 'anti_alias'])
     args = parser.parse_args()
 
     root = tk.Tk()
     app = GrpViewer(root, args.file, args.cl)
-    app.mode_var.set(args.mode)
     app._set_zoom(args.zoom)
     root.mainloop()
 
