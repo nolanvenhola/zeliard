@@ -43,17 +43,17 @@ start:
 		sbb	[bx+si],al
 		add	[di],ah
 ;*		aad	0			; undocumented inst
-		db	0D5h, 00h		;  Fixup - byte match
+				aad 0h			; was: db 0D5h,000h
 		add	ds:data_12e[bx+di],ax
 		shl	word ptr ss:data_7e[bp+di],cl	; Shift w/zeros fill
 ;*		aam	0D2h			; undocumented inst
-		db	0D4h,0D2h		;  Fixup - byte match
+				aam 0D2h			; was: db 0D4h,0D2h
 ;*		aam	12h			; undocumented inst
-		db	0D4h, 12h		;  Fixup - byte match
+				aam 12h			; was: db 0D4h,012h
 ;*		aad	2Ah			; '*' undocumented inst
-		db	0D5h, 2Ah		;  Fixup - byte match
+				aad 2Ah			; was: db 0D5h,02Ah
 ;*		aad	6			; undocumented inst
-		db	0D5h, 06h		;  Fixup - byte match
+				aad 6h			; was: db 0D5h,006h
 		db	0FFh,0FFh,0FFh, 0Ah, 00h, 00h
 		db	 81h,0D3h, 63h, 01h, 1Dh, 53h
 		db	 48h,0C8h,0C9h, 49h,0CBh, 83h
@@ -119,7 +119,7 @@ locloop_2:
 			                        ;* No entry point to code
 		inc	bx
 ;*		mov	bh,al
-		db	 88h,0C7h		;  Fixup - byte match
+				mov bh,al			; was: db 088h,0C7h
 		int	49h			; ??INT Non-standard interrupt
 		retf				; Return far
 		db	 91h, 82h,0C3h,0C4h, 8Ch,0C3h
@@ -275,7 +275,7 @@ loc_5:
 		js	$+6Ah			; Jump if sign=1
 		jnc	$+3			; Jump if carry=0
 ;*		and	ah,al
-		db	 20h,0C4h		;  Fixup - byte match
+				and ah,al			; was: db 020h,0C4h
 		loopnz	$+7			; Loop if zf=0, cx>0
 
 		add	al,85h
@@ -321,42 +321,42 @@ loc_8:
 		inc	bx
 		test	ax,bx
 ;*		ffree	st(4)			; Set tag to empty
-		db	0DDh,0C4h		;  Fixup - byte match
+				ffree st(4)			; was: db 0DDh,0C4h
 ;*		xchg	ax,bx
-		db	 87h,0C3h		;  Fixup - byte match
+				xchg ax,bx			; was: db 087h,0C3h
 		push	es
 		add	al,84h
 		push	es
 		add	al,0DDh
 ;*		add	byte ptr ds:data_13e[si],0DDh
-		db	 82h, 84h,0C3h,0C4h,0DDh	;  Fixup - byte match
+				add byte ptr [si-3B3Dh],0DDh			; was: db 082h,084h,0C3h,0C4h,0DDh
 		les	dx,dword ptr ds:data_8e[bx+si]	; Load seg:offset ptr
 		test	ax,bx
 		inc	bx
 ;*		xchg	ax,bx
-		db	 87h,0C3h		;  Fixup - byte match
+				xchg ax,bx			; was: db 087h,0C3h
 ;*		fld	qword ptr ds:data_16e	; Push onto stack
-		db	0DDh, 06h, 04h,0E0h	;  Fixup - byte match
+				fld qword ptr [0E004h]			; was: db 0DDh,006h,004h,0E0h
 		or	[si],ax
 ;*		add	byte ptr ds:data_9e[si],90h
-		db	 82h, 84h,0C3h, 53h, 90h	;  Fixup - byte match
+				add byte ptr [si+53C3h],90h			; was: db 082h,084h,0C3h,053h,090h
 		retn
 			                        ;* No entry point to code
 		inc	bx
 		test	ax,bx
 		inc	bx
 ;*		xchg	ax,bx
-		db	 87h,0C3h		;  Fixup - byte match
+				xchg ax,bx			; was: db 087h,0C3h
 		adc	al,[si]
 ;*		add	byte ptr ds:data_9e[si],90h
-		db	 82h, 84h,0C3h, 53h, 90h	;  Fixup - byte match
+				add byte ptr [si+53C3h],90h			; was: db 082h,084h,0C3h,053h,090h
 		retn
 			                        ;* No entry point to code
 		inc	bx
 		test	ax,bx
 		inc	bx
 ;*		xchg	ax,bx
-		db	 87h,0C3h		;  Fixup - byte match
+				xchg ax,bx			; was: db 087h,0C3h
 		inc	bx
 ;*		db	0DDh, 08h, 04h,0E0h, 53h,0E0h
 		db	0DDh, 08h, 04h,0E0h, 53h,0E0h	;  Fixup - byte match
@@ -396,7 +396,7 @@ data_3		dw	63C3h, 0C38Bh, 0C4DDh	; Data table (indexed access)
 locloop_10:
 		push	bx
 ;*		or	byte ptr ds:data_14e[bx+si],0C4h
-		db	 82h, 88h,0C3h,0C5h,0C4h	;  Fixup - byte match
+				or byte ptr [bx+si-3A3Dh],0C4h			; was: db 082h,088h,0C3h,0C5h,0C4h
 		test	ax,bx
 		jnc	loc_9			; Jump if carry=0
 		retn
@@ -408,7 +408,7 @@ locloop_12:
 			                        ;* No entry point to code
 		push	bx
 ;*		or	byte ptr ds:data_8e[bx+si],85h
-		db	 82h, 88h,0C3h, 43h, 85h	;  Fixup - byte match
+				or byte ptr [bx+si+43C3h],85h			; was: db 082h,088h,0C3h,043h,085h
 		retn
 		db	0C4h,0C5h, 53h, 8Ah,0C3h, 53h
 		db	0DDh, 06h, 04h,0DDh, 8Dh,0C3h
@@ -511,7 +511,7 @@ loc_13:
 		inc	cx
 		inc	ax
 ;*		add	bl,0C8h
-		db	 82h,0C3h,0C8h		;  Fixup - byte match
+				add bl,0C8h			; was: db 082h,0C3h,0C8h
 		db	0C9h,0CAh,0CBh, 84h, 82h,0DDh
 		db	 43h, 89h,0C3h, 63h, 8Ah,0C3h
 		db	0C4h
@@ -537,36 +537,36 @@ loc_14:
 locloop_15:
 		xchg	ss:data_8e[bp+si],al
 ;*		mov	bx,ax
-		db	 89h,0C3h		;  Fixup - byte match
+				mov bx,ax			; was: db 089h,0C3h
 		add	ax,8E04h
 		retn
 			                        ;* No entry point to code
 		inc	bx
 ;*		xchg	ax,bx
-		db	 87h,0C3h		;  Fixup - byte match
+				xchg ax,bx			; was: db 087h,0C3h
 		inc	bx
 		test	al,bl
 		jnc	loc_13			; Jump if carry=0
 ;*		sbb	ch,43h			; 'C'
-		db	 82h,0DDh, 43h		;  Fixup - byte match
+				sbb ch,43h			; was: db 082h,0DDh,043h
 ;*		mov	bx,ax
-		db	 89h,0C3h		;  Fixup - byte match
+				mov bx,ax			; was: db 089h,0C3h
 		push	bx
 ;*		fld	qword ptr [bp+di-72h]	; Push onto stack
-		db	0DDh, 43h, 8Eh		;  Fixup - byte match
+				fld qword ptr [bp+di-72h]			; was: db 0DDh,043h,08Eh
 		retn
 			                        ;* No entry point to code
 ;*		ffree	st(4)			; Set tag to empty
-		db	0DDh,0C4h		;  Fixup - byte match
+				ffree st(4)			; was: db 0DDh,0C4h
 ;*		ffree	st(4)			; Set tag to empty
-		db	0DDh,0C4h		;  Fixup - byte match
+				ffree st(4)			; was: db 0DDh,0C4h
 		test	ax,bx
 		inc	bx
 		test	al,bl
 		jnc	loc_14			; Jump if carry=0
 		mov	es,bx
 ;*		jnc	loc_16			;*Jump if carry=0
-		db	 73h,0DDh		;  Fixup - byte match
+				jnc 8ACh			; was: db 073h,0DDh
 		mov	es,bx
 		db	 63h, 85h,0C3h, 43h, 84h,0C3h
 		db	 73h, 86h, 82h,0C3h, 43h, 89h
@@ -791,10 +791,10 @@ data_6		dw	0C386h, 8C63h		; Data table (indexed access)
 loc_17:
 		push	bx
 ;*		xchg	ax,bx
-		db	 87h,0C3h		;  Fixup - byte match
+				xchg ax,bx			; was: db 087h,0C3h
 		inc	bx
 ;*		fld	qword ptr ss:data_8e[bp]	; Push onto stack
-		db	0DDh, 86h,0C3h, 43h	;  Fixup - byte match
+				fld qword ptr [bp+43C3h]			; was: db 0DDh,086h,0C3h,043h
 		test	ax,bx
 		inc	bx
 		test	ax,bx
@@ -938,7 +938,7 @@ locloop_20:
 		lds	ax,dword ptr [bp+di-23h]	; Load seg:offset ptr
 		inc	bx
 ;*		mov	bl,al
-		db	 88h,0C3h		;  Fixup - byte match
+				mov bl,al			; was: db 088h,0C3h
 		inc	bx
 		test	ax,bx
 		les	ax,dword ptr ds:data_1e[di]	; Load seg:offset ptr
@@ -946,7 +946,7 @@ locloop_20:
 		inc	bx
 		test	al,bl
 ;*		mov	bx,ax
-		db	 89h,0C3h		;  Fixup - byte match
+				mov bx,ax			; was: db 089h,0C3h
 		push	bx
 		xchg	al,bl
 		add	ax,8804h
@@ -960,7 +960,7 @@ locloop_20:
 		mov	es,bx
 		inc	bx
 ;*		fld	qword ptr ss:data_10e[bp]	; Push onto stack
-		db	0DDh, 86h,0C3h, 73h	;  Fixup - byte match
+				fld qword ptr [bp+73C3h]			; was: db 0DDh,086h,0C3h,073h
 ;*		db	0DDh, 88h,0C3h,0C4h,0DDh, 85h
 		db	0DDh, 88h,0C3h,0C4h,0DDh, 85h	;  Fixup - byte match
 		db	0C3h,0C4h, 85h,0C3h,0C4h, 85h

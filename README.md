@@ -4,7 +4,7 @@ Complete reverse engineering of Zeliard (Game Arts, 1987/1990) â€” a DOS ac
 
 ## Current State
 
-- **57 ASM source files** compile bit-perfect to their original binaries
+- **58 ASM source files** compile bit-perfect to their original binaries
 - **All three SAR archives** (zelres1/2/3.sar) rebuild bit-perfect from source
 - **Full virtual filesystem** mapped â€” every chunk identified by original filename
 - **Single-command build**: `python3 build_all.py --verify` compiles everything in one DOSBox-X session and verifies the results
@@ -16,7 +16,7 @@ cd 3_Assembly/tasm
 python3 build_all.py --verify
 ```
 
-Compiles all 57 ASM files in a single DOSBox-X session, copies data files, packs zelres1/2/3.sar, and verifies bit-perfect output.
+Compiles all 58 ASM files in a single DOSBox-X session, copies data files, packs zelres1/2/3.sar, and verifies bit-perfect output.
 
 ## Project Structure
 
@@ -41,7 +41,7 @@ working/
   drivers/        gmcga, gmega, gmhgc, gmmcga, gmtga, stdply, stick
   zelres1/code/   14 ASM files (100OPDMO through 130UTILB)
   zelres1/data/   28 data files (.grp, .msd)
-  zelres2/code/   20 ASM files (200FIGHT through 250ENDMO)
+  zelres2/code/   21 ASM files (200FIGHT through 250ENDMO)
   zelres2/data/   38 data files (.grp, .msd, .mdt)
   zelres3/code/   12 ASM files (300LVLLD, MP10 maps, 356LVGRP)
   zelres3/data/   69 data files (.grp, .msd, .mdt)
@@ -100,7 +100,7 @@ To locate a file in a SAR:
 |---|---|
 | 00-06 | Core gameplay engine: main loop, combat, sprites, physics, animation, AI dispatcher |
 | 07 | Muralla section AI |
-| 08-17 | Town building programs: inn, shop, church, apothecary, weapon shop, bank, armor, etc. |
+| 08-17 | Town building programs: YMPD, CKPD, KINGPRO, OMOYPRO, ARMRPRO, BANKPRO, CHURPRO, DRUGPRO, INNAPRO, KENJPRO |
 | 18-35 | Gameplay sprite sets |
 | 36-45 | Town overworld maps: CMAP, MRMP, STMP, BSMP, HLMP, TMMP, DRMP, LLMP, PRMP, ESMP (.mdt) |
 | 46-49 | Music: MGT1, MGT2, UGM1, UGM2 (.msd) |

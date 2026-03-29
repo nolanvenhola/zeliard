@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 1
 314LVLRD.asm
 
 
@@ -57,7 +57,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
 1    52						     push    cs
 1    53						     call    near ptr location
 1    54				     endm
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 2
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 2
 314LVLRD.asm
 
 
@@ -116,7 +116,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     106	      =	A7B9		     data_28e	     equ     0A7B9h		     ;*
     107	      =	A7BB		     data_29e	     equ     0A7BBh		     ;*
     108	      =	A7BC		     data_30e	     equ     0A7BCh		     ;*
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 3
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 3
 314LVLRD.asm
 
 
@@ -175,7 +175,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     160	0071  B4 B7 B8 02 B9 BA			     db	     0B4h,0B7h,0B8h, 02h,0B9h,0BAh
     161	0077  39 01 02 75 AA 02			     db	      39h, 01h,	02h, 75h,0AAh, 02h
     162	007D  38 02 00 00 00 01			     db	      38h, 02h,	00h, 00h, 00h, 01h
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 4
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 4
 314LVLRD.asm
 
 
@@ -234,7 +234,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     214	01A0  00 80 81 84 85 00			     db	      00h, 80h,	81h, 84h, 85h, 00h
     215	01A6  19 1A A2 A3 00 1A			     db	      19h, 1Ah,0A2h,0A3h, 00h, 1Ah
     216	01AC  1B A3 A4 00 7E 7F			     db	      1Bh,0A3h,0A4h, 00h, 7Eh, 7Fh
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 5
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 5
 314LVLRD.asm
 
 
@@ -293,7 +293,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     268	027E  74 39				     jz	     loc_8		     ; Jump if zero
     269	0280  A0 A7B7				     mov     al,ds:data_26e
     270	0283  50				     push    ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 6
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 6
 314LVLRD.asm
 
 
@@ -352,7 +352,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     322	0308  A2 A7BD				     mov     ds:data_31e,al
     323	030B  58				     pop     ax
     324	030C  3C 07				     cmp     al,7
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 7
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 7
 314LVLRD.asm
 
 
@@ -411,7 +411,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     376	0378  75 29				     jnz     loc_19		     ; Jump if not zero
     377	037A  F6 06 A7C2 FF			     test    byte ptr ds:data_36e,0FFh
     378	037F  75 22				     jnz     loc_19		     ; Jump if not zero
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 8
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 8
 314LVLRD.asm
 
 
@@ -470,7 +470,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     430	0431  BB 000E				     mov     bx,0Eh
     431	0434  2B D8				     sub     bx,ax
     432	0436  A3 A7A0				     mov     ds:data_22e,ax
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 9
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 9
 314LVLRD.asm
 
 
@@ -529,7 +529,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     484
     485	0488  A0 A7BA				     mov     al,byte ptr ds:[0A7BAh]
     486	048B  02 C0				     add     al,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 10
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 10
 314LVLRD.asm
 
 
@@ -588,7 +588,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     538	04FE  88 44 04				     mov     [si+4],al
     539	0501  C6 44 05 00			     mov     byte ptr [si+5],0
     540	0505  F6 06 A7B7 FF			     test    byte ptr ds:data_26e,0FFh
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 11
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 11
 314LVLRD.asm
 
 
@@ -647,7 +647,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     592	057B  03 DB				     add     bx,bx
     593	057D  8A 87 A5D8			     mov     al,ds:data_16e[bx]
     594	0581  00 06 A7C3			     add     ds:data_37e,al
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 12
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 12
 314LVLRD.asm
 
 
@@ -706,7 +706,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     646	0605  C3				     retn
     647	0606			     loc_43:
     648	0606  A1 A7C3				     mov     ax,ds:data_37e
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 13
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 13
 314LVLRD.asm
 
 
@@ -765,7 +765,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     700	0667  C6 06 A7C2 00			     mov     byte ptr ds:data_36e,0
     701	066C  C6 06 FF2E FF			     mov     byte ptr ds:data_47e,0FFh
     702	0671  C3				     retn
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 14
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 14
 314LVLRD.asm
 
 
@@ -824,7 +824,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     754	0704  25 32 30 2D 31 2B	2E		     db	     '%20-1+.'
     755	070B  10 1E				     db	      10h, 1Eh
     756	070D  20 2C 2F 3D 3A 3C	3B+		     db	     ' ,/=:<;3'
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 15
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 15
 314LVLRD.asm
 
 
@@ -867,7 +867,7 @@ Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 1
     792
     793
     794						     end     start
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 16
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 16
 Symbol Table
 
 
@@ -875,9 +875,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/22/26"
+??DATE				  Text	 "03/28/26"
 ??FILENAME			  Text	 "314LVLRD"
-??TIME				  Text	 "12:48:31"
+??TIME				  Text	 "19:49:06"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -926,7 +926,7 @@ DATA_47E			  Number FF2E
 DATA_48E			  Number FF2F
 DATA_49E			  Number FF3C
 DATA_5				  Word	 SEG_A:00A4
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 17
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 17
 Symbol Table
 
 
@@ -985,7 +985,7 @@ LVRENDER_FUNC_3			  Near	 SEG_A:05FE
 LVRENDER_FUNC_4			  Near	 SEG_A:0648
 LVRENDER_GET_VALUE		  Near	 SEG_A:043F
 START				  Near	 SEG_A:0000
-Turbo Assembler	 Version 2.01	     03/22/26 12:48:31	    Page 18
+Turbo Assembler	 Version 2.01	     03/28/26 19:49:06	    Page 18
 Symbol Table
 
 

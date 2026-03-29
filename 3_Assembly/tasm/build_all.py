@@ -62,8 +62,11 @@ def build_dosbox_conf(jobs, work_dir, conf_path):
     Write a BUILD.BAT with all TASM/TLINK commands.
     Write a minimal DOSBox conf that just mounts drives and calls BUILD.BAT.
     """
-    srmacros = WORKING / 'srmacros.inc'
-    shutil.copy2(srmacros, work_dir / 'SRMACROS.INC')
+    shutil.copy2(WORKING / 'srmacros.inc', work_dir / 'SRMACROS.INC')
+    # Copy any extra .inc files present in the working dir root
+    for inc in WORKING.glob('*.inc'):
+        if inc.name.lower() != 'srmacros.inc':
+            shutil.copy2(inc, work_dir / inc.name.upper())
 
     # Write BUILD.BAT in the work dir
     bat_lines = ['@echo off']
@@ -107,6 +110,59 @@ def strip_mz_header(exe_data):
     hdr_paras = struct.unpack_from('<H', exe_data, 8)[0]
     return exe_data[hdr_paras * 16:]
 
+
+def patch_zeliad_exe(exe_data):
+    """
+    Convert TLINK 2.01 zeliad.exe to original linker format (byte-perfect).
+
+    TLINK 2.01 differences vs the original linker:
+      - Inserts a 32-byte extended header before the reloc table (0x1E -> 0x3E)
+      - Omits relocation entry at offset 0x08C6
+      - Adds 6 trailing zero padding bytes to code section
+      - Different checksum value
+
+    Target: 3050 bytes, reloc table at 0x1E, 6 entries, code = 2538 bytes.
+    """
+    HDR_SIZE  = 0x200
+    CODE_SIZE = 2538   # original code size (without trailing zeros)
+    TOTAL     = HDR_SIZE + CODE_SIZE  # 3050
+
+    if len(exe_data) < HDR_SIZE + CODE_SIZE:
+        return exe_data  # too small, leave as-is
+
+    result = bytearray(TOTAL)
+
+    # Copy code section (skip trailing 6 zero bytes)
+    result[HDR_SIZE:HDR_SIZE + CODE_SIZE] = exe_data[HDR_SIZE:HDR_SIZE + CODE_SIZE]
+
+    # Copy base MZ fields from TLINK output, then patch specific fields
+    result[:HDR_SIZE] = exe_data[:HDR_SIZE]
+
+    # Fix header fields to match original linker values
+    struct.pack_into('<H', result, 0x02, 490)    # last_page_bytes = 3050 % 512
+    struct.pack_into('<H', result, 0x04, 6)      # page_count
+    struct.pack_into('<H', result, 0x06, 6)      # reloc_count = 6
+    struct.pack_into('<H', result, 0x0A, 0x0201) # min_alloc
+    struct.pack_into('<H', result, 0x0C, 0x0201) # max_alloc
+    struct.pack_into('<H', result, 0x12, 0xAC11) # checksum (LE: 0x11 at 0x12, 0xAC at 0x13)
+    struct.pack_into('<H', result, 0x18, 0x001E) # reloc_table_off
+    result[0x1A] = 0; result[0x1B] = 0           # overlay = 0
+    result[0x1C] = 1; result[0x1D] = 0           # e_res1 (matches original)
+
+    # Write relocation table at 0x1E (original 6 entries)
+    relocs = [(0x000C, 0), (0x036B, 0), (0x08C6, 0),
+              (0x08CA, 0), (0x08CE, 0), (0x08D2, 0)]
+    for i, (off, seg) in enumerate(relocs):
+        pos = 0x1E + i * 4
+        struct.pack_into('<HH', result, pos, off, seg)
+
+    # Zero out padding area after reloc table
+    reloc_end = 0x1E + len(relocs) * 4  # = 0x36
+    for i in range(reloc_end, HDR_SIZE):
+        result[i] = 0
+
+    return bytes(result)
+
 def process_outputs(jobs, work_dir):
     ok = fail = 0
     for asm, dest_dir in jobs:
@@ -125,6 +181,8 @@ def process_outputs(jobs, work_dir):
 
         if keep_as_exe(stem):
             dest = dest_dir / f'{stem}.exe'
+            if stem.lower() == 'zeliad':
+                exe_data = patch_zeliad_exe(exe_data)
             dest.write_bytes(exe_data)
         else:
             raw  = strip_mz_header(exe_data)

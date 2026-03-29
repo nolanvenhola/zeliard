@@ -33,7 +33,7 @@ start:
 		add	ss:data_17e[bp+di],ch
 		add	data_4[bx+si],dh
 ;*		mov	bl,0CAh
-		db	0C6h,0C3h,0CAh		;  Fixup - byte match
+				mov bl,0CAh			; was: db 0C6h,0C3h,0CAh
 		retn
 		db	 00h, 00h,0F6h,0C3h, 9Ch,0C8h
 		db	0A7h,0C3h, 22h, 00h,0D2h,0C3h

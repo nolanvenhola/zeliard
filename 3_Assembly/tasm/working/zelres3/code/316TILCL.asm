@@ -76,7 +76,7 @@ zr3_16		proc	far
 start:
 		test	ax,0Bh
 ;*		add	ch,bl
-		db	 00h,0DDh		;  Fixup - byte match
+				add ch,bl			; was: db 000h,0DDh
 		mov	ds:data_32e,al
 		db	12 dup (0)
 		db	 28h, 1Eh, 1Eh, 1Eh, 1Eh, 1Eh
@@ -109,7 +109,7 @@ data_5		db	71h			; Data table (indexed access)
 loc_1:
 		mov	bl,75h			; 'u'
 ;*		add	[bx+0],dh
-		db	 00h, 77h, 00h		;  Fixup - byte match
+				add [bx+0h],dh			; was: db 000h,077h,000h
 		db	 76h, 00h, 78h, 79h, 00h,0A6h
 		db	 9Fh, 87h,0A1h, 00h, 99h
 data_6		db	87h			; Data table (indexed access)
@@ -129,14 +129,14 @@ data_6		db	87h			; Data table (indexed access)
 loc_2:
 		test	sp,ds:data_18e[bx]
 ;*		add	data_6[bx+di],0B4h
-		db	 82h, 81h,0AEh, 00h,0B4h	;  Fixup - byte match
+				add byte ptr [bx+di+0AEh],0B4h			; was: db 082h,081h,0AEh,000h,0B4h
 		rol	sp,cl			; Rotate
 		xchg	sp,ax
 ;*		add	bl,dl
-		db	 00h,0D3h		;  Fixup - byte match
+				add bl,dl			; was: db 000h,0D3h
 		add	data_5[si],dl
 ;*		test	si,[si+0]
-		db	 85h, 74h, 00h		;  Fixup - byte match
+				test [si+0h],si			; was: db 085h,074h,000h
 		db	 00h, 00h, 00h,0DFh,0E8h,0E9h
 		db	 00h,0E0h,0E1h,0EAh,0EAh, 00h
 		db	0E2h,0E2h,0EAh,0EBh
@@ -171,18 +171,31 @@ loc_5:
 		db	 0Fh, 20h, 12h, 00h, 0Fh, 10h
 		db	 12h, 3Ch, 00h, 02h, 03h, 19h
 		db	 28h, 00h, 04h, 05h, 29h, 2Ah
-		db	 00h, 1Ch, 2Bh, 3Dh, 26h, 00h
-		db	 2Ch, 11h, 27h, 31h, 00h, 0Fh
+		; Tile pattern table
+		db	')*', 0		; 0x0000
+		db	01Ch		; 0x0003
+		db	'+=&', 0		; 0x0004
+		db	',', 0		; 0x0008
+		db	'\'1', 0		; 0x000A
 		db	 10h, 37h, 38h, 00h, 02h, 03h
 		db	 32h, 33h, 00h, 04h, 05h, 34h
-		db	 35h, 00h, 36h, 2Ch, 26h, 27h
-		db	 00h, 11h, 11h, 31h, 39h, 00h
-		db	 06h, 07h, 11h, 5Ch, 00h, 11h
-		db	 42h, 3Bh, 48h, 00h, 08h, 09h
-		db	 3Eh, 3Fh, 00h, 43h, 44h, 49h
-		db	 4Ah, 00h, 45h, 46h, 4Bh, 4Ch
-		db	 00h, 47h, 16h, 4Dh, 4Eh, 00h
-		db	 11h, 4Fh, 55h, 56h, 00h, 54h
+		; Tile pattern table (continued)
+		db	'>?', 0		; 0x0000
+		db	'CDIJ', 0		; 0x0003
+		db	'EFKL', 0		; 0x0008
+		db	'G', 0		; 0x000D
+		db	'MN', 0		; 0x000F
+		db	011h		; 0x0012
+		db	'OUV', 0		; 0x0013
+		; Tile pattern table (continued)
+		db	']?', 0		; 0x0000
+		db	'_`-.', 0		; 0x0003
+		db	'ab/0', 0		; 0x0008
+		db	'c', 0		; 0x000D
+		db	':N', 0		; 0x000F
+		db	'RSYZ', 0		; 0x0021
+		db	011h		; 0x0026
+		db	'^de', 0		; 0x0027
 		db	 16h, 5Bh, 4Eh, 00h, 50h, 51h
 		db	 57h, 58h, 00h, 52h, 53h, 59h
 		db	 5Ah, 00h, 11h, 5Eh, 64h, 65h
@@ -223,7 +236,7 @@ loc_5:
 		db	0C6h, 06h, 5Ah,0AAh, 00h
 loc_6:
 ;*		cmp	word ptr [si],0FFFFh
-		db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
 		jz	loc_9			; Jump if zero
 		mov	ax,[si]
 		call	word ptr cs:data_16e
@@ -309,7 +322,7 @@ loc_16:
 		test	byte ptr ds:data_49e,0FFh
 		jz	loc_17			; Jump if zero
 ;*		jmp	loc_30			;*
-		db	0E9h,0E6h, 00h		;  Fixup - byte match
+				jmp 4C6h			; was: db 0E9h,0E6h,000h
 loc_17:
 		add	byte ptr ds:data_46e,80h
 		jnc	loc_20			; Jump if carry=0
@@ -402,7 +415,7 @@ loc_29:
 		add	ax,[bp+si]
 		add	[bp+di],ax
 ;*		cmp	dh,6
-		db	 82h,0FEh, 06h		;  Fixup - byte match
+				cmp dh,6h			; was: db 082h,0FEh,006h
 		db	 63h,0AAh,0A0h, 63h,0AAh, 24h
 		db	 01h, 02h, 06h, 62h,0AAh,0A2h
 		db	 5Bh,0AAh,0A0h, 63h,0AAh, 3Ch
@@ -891,14 +904,14 @@ loc_63:
 		and	[bp+di],al
 ;*		loopnz	locloop_64		;*Loop if zf=0, cx>0
 
-		db	0E0h, 2Eh		;  Fixup - byte match
+				loopne 0A75h			; was: db 0E0h,02Eh
 		add	ax,4900h
 		stosb				; Store al to es:[di]
 		les	cx,dword ptr [bx+di]	; Load seg:offset ptr
 		adc	word ptr ss:[600h][bp+di],di
 		inc	sp
 ;*		jc	loc_65			;*Jump if carry Set
-		db	 72h, 61h		;  Fixup - byte match
+				jc 0AB5h			; was: db 072h,061h
 		db	 67h, 6Fh, 6Eh
 		db	342 dup (0)
 

@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 1
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 1
 stick.asm
 
 
@@ -57,7 +57,7 @@ stick.asm
 1    52
 1    53
 1    54				     ;-----------------------------------------------------------------------------
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 2
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 2
 stick.asm
 
 
@@ -116,7 +116,7 @@ stick.asm
     106				     ; Game state variables (0xFF00+ shared with zeliad.exe and	game.bin)
     107
     108	      =	FF00		     gvar_chunk_load_fn	equ  0FF00h		     ; Chunk loader function
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 3
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 3
 stick.asm
 
 
@@ -175,7 +175,7 @@ stick.asm
     160	      =	FF28		     data_73e	     equ     0FF28h
     161	      =	FF29		     data_74e	     equ     0FF29h
     162	      =	FF33		     data_75e	     equ     0FF33h
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 4
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 4
 stick.asm
 
 
@@ -234,7 +234,7 @@ stick.asm
     214	002A  2E: F6 06	FF16 01			     test    byte ptr cs:data_63e,1
     215	0030  74 1C				     jz	     loc_2		     ; Jump if zero
     216	0032  2E: C6 06	02BE 00			     mov     byte ptr cs:[2BEh],0
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 5
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 5
 stick.asm
 
 
@@ -293,7 +293,7 @@ stick.asm
     268
     269	0097			     decode_joystick_bits:
     270	0097  2E: F6 06	02C0 FF			     test    byte ptr cs:[2C0h],0FFh
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 6
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 6
 stick.asm
 
 
@@ -352,7 +352,7 @@ stick.asm
     322	0105  B8 0002				     mov     ax,2
     323	0108  CD 60				     int     60h		     ; ??INT Non-standard interrupt
     324	010A  EB 0F				     jmp     short loc_16
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 7
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 7
 stick.asm
 
 
@@ -411,7 +411,7 @@ stick.asm
     376	019B			     loc_22:
     377	019B  07				     pop     es
     378	019C  1F				     pop     ds
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 8
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 8
 stick.asm
 
 
@@ -470,7 +470,7 @@ stick.asm
     430	01EF  59				     pop     cx
     431	01F0  5B				     pop     bx
     432	01F1  58				     pop     ax
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 9
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 9
 stick.asm
 
 
@@ -529,7 +529,7 @@ stick.asm
     484	0244  3C 2B				     cmp     al,2Bh		     ; '+'
     485	0246  74 14				     je	     loc_29		     ; Jump if equal
     486	0248  B1 02				     mov     cl,2
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 10
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 10
 stick.asm
 
 
@@ -588,7 +588,7 @@ stick.asm
     538	02B9  B1 02				     mov     cl,2
     539	02BB  3C 32				     cmp     al,32h		     ; '2'
     540	02BD  74 06				     je	     loc_36		     ; Jump if equal
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 11
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 11
 stick.asm
 
 
@@ -647,7 +647,7 @@ stick.asm
     592	032B  B9 0100				     mov     cx,100h
     593	032E  3C 24				     cmp     al,24h		     ; '$'
     594	0330  74 58				     je	     loc_42		     ; Jump if equal
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 12
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 12
 stick.asm
 
 
@@ -706,7 +706,7 @@ stick.asm
     646	03AD  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
     647	03AF  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
     648	03B1  D0 EC				     shr     ah,1		     ; Shift w/zeros fill
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 13
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 13
 stick.asm
 
 
@@ -765,7 +765,7 @@ stick.asm
     700	040C  2E: A2 FF29			     mov     cs:data_74e,al
     701	0410  C3				     retn
     702	0411			     dispatch_extended_key	     endp
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 14
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 14
 stick.asm
 
 
@@ -824,7 +824,7 @@ stick.asm
     754	04E4  75 F7				     jnz     loc_49		     ; Jump if not zero
     755	04E6			     loc_50:
     756	04E6  EC				     in	     al,dx		     ; port 201h, start	game 1-shots
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 15
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 15
 stick.asm
 
 
@@ -883,7 +883,7 @@ stick.asm
     808	0543			     loc_53:
     809	0543  3B F1				     cmp     si,cx
     810	0545  72 06				     jb	     loc_54		     ; Jump if below
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 16
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 16
 stick.asm
 
 
@@ -942,7 +942,7 @@ stick.asm
     862	05B5  1E				     push    ds
     863	05B6  E8 02E3				     call    handle_pause_key2
     864	05B9  B1 FF				     mov     cl,0FFh
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 17
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 17
 stick.asm
 
 
@@ -1001,7 +1001,7 @@ stick.asm
     916	0674  75 03				     jne     loc_66		     ; Jump if not equal
     917	0676  E8 0029				     call    draw_screen_element
     918	0679			     loc_66:
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 18
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 18
 stick.asm
 
 
@@ -1060,7 +1060,7 @@ stick.asm
     970	06D9  75 F7				     jnz     loc_68		     ; Jump if not zero
     971	06DB  A0 FF33				     mov     al,ds:data_75e
     972	06DE  F6 D8				     neg     al
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 19
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 19
 stick.asm
 
 
@@ -1119,7 +1119,7 @@ stick.asm
    1024	0768  74 F9				     jz	     loc_71		     ; Jump if zero
    1025	076A  8A 26 FF29			     mov     ah,ds:data_74e
    1026	076E  80 FC 1B				     cmp     ah,1Bh
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 20
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 20
 stick.asm
 
 
@@ -1178,7 +1178,7 @@ stick.asm
    1078
    1079	07C1  E3 2B				     jcxz    loc_ret_78		     ; Jump if cx=0
    1080	07C3  E8 FD04				     call    calibrate_joystick
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 21
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 21
 stick.asm
 
 
@@ -1237,7 +1237,7 @@ stick.asm
    1132	085A  74 F7				     jz	     loc_82		     ; Jump if zero
    1133	085C  A9 0020				     test    ax,20h
    1134	085F  9C				     pushf			     ; Push flags
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 22
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 22
 stick.asm
 
 
@@ -1296,7 +1296,7 @@ stick.asm
    1186				     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï
    1187				     ¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    1188				     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 23
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 23
 stick.asm
 
 
@@ -1355,7 +1355,7 @@ stick.asm
    1240	0908  BA 0A59r				     mov     dx,offset data_29
    1241	090B  B4 1A				     mov     ah,1Ah
    1242	090D  CD 21				     int     21h		     ; DOS Services  ah=function 1Ah
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 24
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 24
 stick.asm
 
 
@@ -1414,7 +1414,7 @@ stick.asm
    1294	09B7  0A				     db	     0Ah
    1295	09B8			     loc_90:
    1296	09B8  5B				     pop     bx
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 25
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 25
 stick.asm
 
 
@@ -1473,7 +1473,7 @@ stick.asm
    1348	0A71  32 FF				     xor     bh,bh		     ; Zero register
    1349	0A73  03 DB				     add     bx,bx
    1350	0A75  2E: 8B B7	0BA0			     mov     si,word ptr cs:[0BA0h][bx]
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 26
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 26
 stick.asm
 
 
@@ -1532,7 +1532,7 @@ stick.asm
    1402										     ;*	No entry point to code
    1403	0B24  E8 001B				     call    handle_pause_key6
    1404	0B27  73 01				     jnc     loc_94		     ; Jump if carry=0
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 27
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 27
 stick.asm
 
 
@@ -1591,7 +1591,7 @@ stick.asm
    1456	0B89  75 42				     jnz     loc_102		     ; Jump if not zero
    1457	0B8B  06				     push    es
    1458	0B8C  E8 FD13				     call    handle_pause_key3
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 28
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 28
 stick.asm
 
 
@@ -1650,7 +1650,7 @@ stick.asm
    1510	0BEE  2E: A0 0D79			     mov     al,byte ptr cs:[0D79h]
    1511	0BF2  32 E4				     xor     ah,ah		     ; Zero register
    1512	0BF4  48				     dec     ax
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 29
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 29
 stick.asm
 
 
@@ -1709,7 +1709,7 @@ stick.asm
    1564	      65 73 73 20 61 6E
    1565	0C73  79 20 6B 65 79			     db	     'y	key'
    1566	0C78  FF 00 00 00 00 00			     db	     0FFh, 00h,	00h, 00h, 00h, 00h
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 30
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 30
 stick.asm
 
 
@@ -1768,7 +1768,7 @@ stick.asm
    1618	0CB3  8A D8				     mov     bl,al
    1619	0CB5  03 DB				     add     bx,bx
    1620	0CB7  2E: FF A7	0DBC			     jmp     word ptr cs:[0DBCh][bx] ;*
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 31
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 31
 stick.asm
 
 
@@ -1827,7 +1827,7 @@ stick.asm
    1672	0D0A  3C FF				     cmp     al,0FFh
    1673	0D0C  75 01				     jne     loc_118		     ; Jump if not equal
    1674	0D0E  C3				     retn
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 32
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 32
 stick.asm
 
 
@@ -1886,7 +1886,7 @@ stick.asm
    1726	0D61  D0 E8				     shr     al,1		     ; Shift w/zeros fill
    1727	0D63  D0 E8				     shr     al,1		     ; Shift w/zeros fill
    1728	0D65  8A C8				     mov     cl,al
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 33
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 33
 stick.asm
 
 
@@ -1945,7 +1945,7 @@ stick.asm
    1780	0DC6  E8 0006				     call    poll_joystick_buttons2
    1781	0DC9  F3> AA				     rep     stosb		     ; Rep when	cx >0 Store al to es:[di]
    1782	0DCB  4A				     dec     dx
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 34
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 34
 stick.asm
 
 
@@ -2004,7 +2004,7 @@ stick.asm
    1834	0E1A  53				     push    bx
    1835	0E1B  51				     push    cx
    1836	0E1C  52				     push    dx
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 35
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 35
 stick.asm
 
 
@@ -2063,7 +2063,7 @@ stick.asm
    1888	0E7D  00 02 17				     db	      00h, 02h,	17h
    1889	0E80  4D 50 32 30 2E 4D	44+		     db	     'MP20.MDT'
    1890	      54
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 36
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 36
 stick.asm
 
 
@@ -2122,7 +2122,7 @@ stick.asm
    1942	0F0C  00 02				     add     [bp+si],al
    1943	0F0E  24 4D				     and     al,4Dh		     ; 'M'
    1944	0F10  50				     push    ax
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 37
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 37
 stick.asm
 
 
@@ -2181,7 +2181,7 @@ stick.asm
    1996	0FC9  25 43 4D 41 50 2E	4D+		     db	     '%CMAP.MDT'
    1997	      44 54
    1998	0FD2  00 01				     db	     0,	1
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 38
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 38
 stick.asm
 
 
@@ -2221,7 +2221,7 @@ stick.asm
    2031
    2032
    2033						     end     start
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 39
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 39
 Symbol Table
 
 
@@ -2229,9 +2229,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/24/26"
+??DATE				  Text	 "03/27/26"
 ??FILENAME			  Text	 "stick	  "
-??TIME				  Text	 "00:08:05"
+??TIME				  Text	 "10:34:44"
 ??VERSION			  Number 0201
 @CPU				  Text	 0101H
 @CURSEG				  Text	 SEG_A
@@ -2280,7 +2280,7 @@ DATA_81E			  Number FF75
 DATA_82E			  Number FF78
 DATA_83E			  Number FF79
 DATA_84E			  Number B000
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 40
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 40
 Symbol Table
 
 
@@ -2339,7 +2339,7 @@ LOCLOOP_77			  Near	 SEG_A:07BC
 LOCLOOP_85			  Near	 SEG_A:0900
 LOCLOOP_86			  Near	 SEG_A:092A
 LOCLOOP_87			  Near	 SEG_A:093A
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 41
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 41
 Symbol Table
 
 
@@ -2398,7 +2398,7 @@ LOC_18				  Near	 SEG_A:013F
 LOC_19				  Near	 SEG_A:0149
 LOC_2				  Near	 SEG_A:004E
 LOC_20				  Near	 SEG_A:0150
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 42
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 42
 Symbol Table
 
 
@@ -2457,7 +2457,7 @@ LOC_67				  Near	 SEG_A:068B
 LOC_68				  Near	 SEG_A:06D2
 LOC_69				  Near	 SEG_A:0717
 LOC_7				  Near	 SEG_A:008E
-Turbo Assembler	 Version 2.01	     03/24/26 00:08:05	    Page 43
+Turbo Assembler	 Version 2.01	     03/27/26 10:34:45	    Page 43
 Symbol Table
 
 
