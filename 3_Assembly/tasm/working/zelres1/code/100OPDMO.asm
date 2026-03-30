@@ -1470,7 +1470,13 @@ alt_fade_loop:
 		retn
 animate_scanline_alt		endp
 
-		db	0C6h, 79h, 00h, 00h, 00h, 00h, 00h, 00h	; padding (unreachable — gap between procs)
+		; Static initial values for script state variables (loaded at CS:0x6000,
+		; these bytes sit at segment offset 0x6D5A = script_pc+4 through +11)
+		; 0x79C6 = initial script program counter (= opening_narration address in segment)
+		db	0C6h, 79h	; script_pc initial lo/hi (0x79C6)
+		db	0, 0		; text_x_pos initial = 0
+		db	0, 0		; text_y_pos initial = 0
+		db	0, 0		; text_color_fg/bg initial = 0
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
