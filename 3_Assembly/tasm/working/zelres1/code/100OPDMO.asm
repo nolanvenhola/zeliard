@@ -2304,27 +2304,27 @@ narration_chapter_5:
 		db	'With that, '
 jashiin_disappear_text		db	'Jashiin disappeared leaving echo'
 		db	'es of earsplitting laughter.'
-anim_fn_wipe		dw	0F5F5h
-anim_fn_fade		dw	0FEFDh
-anim_fn_draw		dw	0F3EFh
+anim_fn_wipe		dw	0F5F5h		; runtime fn ptr (placeholder = SCR_WAIT,SCR_WAIT)
+anim_fn_fade		dw	0FEFDh		; runtime fn ptr (placeholder = SCR_BREAK,SCR_SCROLL)
+anim_fn_draw		dw	0F3EFh		; runtime fn ptr (placeholder = SCR_SPK_UNK,SCR_PARA)
 ; ������ Garland final speech word table ������������������������������������������������������������������������������������������������������
 ; Duke Garland's threat: SCR_BOLD "You haven't seen the last of me, Jashiin!"
 ; Each dw stores 2 consecutive script bytes (little-endian).
 ; Referenced individually by code that builds the speech incrementally.
-garland_speech		dw	22FBh			; SCR_BOLD + '"'
-gspeech_yo		dw	6F59h
-gspeech_u_		dw	offset narration_chapter_2
-gspeech_ha		dw	6168h
-gspeech_ve	dw	6576h
-gspeech_nt	dw	offset narration_chapter_3
-gspeech_t_	dw	offset opening_narration
-gspeech_se	dw	6573h
-gspeech_en	dw	6E65h
-gspeech_t2_	dw	7420h
-gspeech_he	dw	6568h
-gspeech_l_	dw	6C20h
+garland_speech		db	SCR_BOLD, '"'		; start bold quoted speech
+gspeech_yo		db	'Y', 'o'
+gspeech_u_		dw	offset narration_chapter_2	; 'u ', encoded as chapter offset
+gspeech_ha		db	'h', 'a'
+gspeech_ve		db	'v', 'e'
+gspeech_nt		dw	offset narration_chapter_3	; "n'", encoded as chapter offset
+gspeech_t_		dw	offset opening_narration	; 't ', encoded as narration offset
+gspeech_se		db	's', 'e'
+gspeech_en		db	'e', 'n'
+gspeech_t2_		db	' ', 't'
+gspeech_he		db	'h', 'e'
+gspeech_l_		db	' ', 'l'
 		db	'ast of m'
-gspeech_e_	dw	offset narration_chapter_4
+gspeech_e_	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
 		db	' Jashiin!'
 		db	SCR_MODE2		; layout-mode 2
 		db	'Your reign of evil is near its end!"'
