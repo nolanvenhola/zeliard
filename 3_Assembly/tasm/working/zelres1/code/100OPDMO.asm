@@ -13,74 +13,74 @@ include  srmacros.inc
 
 
 ; Graphics driver function table offsets (in loaded CS segment)
-data_51		equ	02042h			; driver function pointer
-data_89		equ	03002h			; driver function pointer
-data_90		equ	03004h			; driver function pointer
-data_91		equ	03006h			; driver function pointer
-data_92		equ	03008h			; driver_fn4 (palette switching)
+gfx_init_fn		equ	02042h		; graphics initialisation function
+gfx_draw_fn		equ	03002h		; graphics draw function
+gfx_update_fn		equ	03004h		; graphics update/display function
+gfx_mode_fn		equ	03006h		; graphics mode setup function
+gfx_palette_fn		equ	03008h		; graphics palette switch (driver_fn4)
 
 ; The following equates show data references outside the range of the program.
 
-data_1e		equ	660h			;*
-data_2e		equ	819h			;*
-data_3e		equ	0D20h			;*
-data_4e		equ	0EE0h			;*
-data_5e		equ	1A40h			;*
-data_6e		equ	1D40h			;*
-data_7e		equ	3000h			;*
-data_8e		equ	3A80h			;*
-data_9e		equ	4000h			;*
-data_10e	equ	46D3h			;*
-data_11e	equ	6000h			;*
-data_12e	equ	9C40h			;*
-data_13e	equ	0A9C0h			;*
-data_14e	equ	0AB40h			;*
-data_15e	equ	0D000h			;*
-data_137e	equ	4000h			;*
-data_138e	equ	64EAh			;*
-data_139e	equ	653Dh			;*
-data_140e	equ	653Fh			;*
-data_141e	equ	6A73h			;*
-data_142e	equ	6D56h			;*
-data_143e	equ	6D58h			;*
-data_144e	equ	6D5Ah			;*
-data_145e	equ	6D5Bh			;*
-data_146e	equ	6D5Ch			;*
-data_147e	equ	6D5Dh			;*
-data_148e	equ	75A0h			;*
-data_149e	equ	8000h			;*
-data_150e	equ	9000h			;*
-data_151e	equ	9060h			;*
-data_152e	equ	9096h			;*
-data_153e	equ	911Eh			;*
-data_154e	equ	912Bh			;*
-data_155e	equ	947Dh			;*
-data_156e	equ	94DDh			;*
-data_157e	equ	953Dh			;*
-data_158e	equ	9547h			;*
-data_159e	equ	9551h			;*
-data_160e	equ	955Dh			;*
-data_161e	equ	9573h			;*
-data_162e	equ	957Eh			;*
-data_163e	equ	959Fh			;*
-data_164e	equ	95B4h			;*
-data_165e	equ	95FEh			;*
-data_166e	equ	9609h			;*
-data_167e	equ	97C0h			;*
-data_168e	equ	0A000h			;*
-data_169e	equ	0B000h			;*
-data_170e	equ	0B800h			;*
-data_171e	equ	0D000h			;*
-data_172e	equ	0FF1Ah			;*
-data_173e	equ	0FF1Dh			;*
-data_174e	equ	0FF24h			;*
-data_175e	equ	0FF26h			;*
-data_176e	equ	0FF29h			;*
-data_177e	equ	0FF2Ch			;*
-data_178e	equ	0FF75h			;*
-data_179e	equ	0			;*
-data_180e	equ	660h			;*
-data_181e	equ	0CC0h			;*
+font_plane_a		equ	660h		; character font data plane A
+font_scanline_ofs		equ	819h		; font scanline offset
+pixel_mask_a		equ	0D20h		; pixel mask plane A
+font_row_ofs		equ	0EE0h		; font row vertical offset
+pixel_mask_b		equ	1A40h		; pixel mask plane B
+plane_data_a		equ	1D40h		; rendering plane data A
+gfx_plane_b		equ	3000h		; graphics plane B buffer (0x3000)
+plane_data_b		equ	3A80h		; rendering plane data B
+framebuffer_a		equ	4000h		; frame buffer A (0x4000)
+temp_decode_buf	equ	46D3h		; temporary decode buffer
+framebuffer_b	equ	6000h		; frame buffer B (0x6000)
+sprite_buf_a	equ	9C40h		; sprite buffer A
+sprite_buf_b	equ	0A9C0h		; sprite buffer B
+sprite_buf_c	equ	0AB40h		; sprite buffer C
+ext_segment	equ	0D000h		; extended segment (0xD000)
+scene_framebuf	equ	4000h		; scene frame buffer (0x4000)
+scene_data_a	equ	64EAh		; scene initialisation data A
+render_state_a	equ	653Dh		; render state A (word)
+render_state_b	equ	653Fh		; render state B (byte, x-advance)
+scene_data_b	equ	6A73h		; scene data B
+script_pc	equ	6D56h		; script program counter (execution pointer)
+text_x_pos	equ	6D58h		; text cursor X position
+text_y_pos	equ	6D5Ah		; text cursor Y / layout mode
+text_color_fg	equ	6D5Bh		; text foreground color
+text_color_bg	equ	6D5Ch		; text background color
+text_attr	equ	6D5Dh		; text attribute / speaker style code
+ui_overlay_buf	equ	75A0h		; UI overlay buffer
+screen_buf_1	equ	8000h		; screen buffer 1 (0x8000)
+screen_buf_2	equ	9000h		; screen buffer 2 (0x9000)
+scene_sprite_a	equ	9060h		; scene sprite data A
+scene_sprite_b	equ	9096h		; scene sprite data B
+scene_sprite_c	equ	911Eh		; scene sprite data C
+scene_sprite_d	equ	912Bh		; scene sprite data D
+char_width_tbl	equ	947Dh		; character width lookup table
+char_glyph_tbl	equ	94DDh		; character glyph/font table
+palette_data_a	equ	953Dh		; palette data A
+palette_data_b	equ	9547h		; palette data B
+scene_data_c	equ	9551h		; scene data C
+glyph_small	equ	955Dh		; small glyph data
+glyph_large	equ	9573h		; large glyph data
+scene_data_d	equ	957Eh		; scene data D
+scene_data_e	equ	959Fh		; scene data E
+scene_data_f	equ	95B4h		; scene data F
+scene_data_g	equ	95FEh		; scene data G
+scene_data_h	equ	9609h		; scene data H
+scene_data_i	equ	97C0h		; scene data I
+vga_seg	equ	0A000h		; VGA segment / game data (0xA000)
+aux_buf_seg	equ	0B000h		; auxiliary buffer segment (0xB000)
+cga_text_seg	equ	0B800h		; CGA text mode VGA segment (0xB800)
+ext_seg_d000	equ	0D000h		; extended segment 0xD000
+gvar_timer_lo	equ	0FF1Ah		; timer counter low word (0xFF1A)
+gvar_skip_input	equ	0FF1Dh		; input skip flag (zeliard.inc: gvar_skip_input)
+gvar_state_flag	equ	0FF24h		; game state flag (0xFF24)
+gvar_enable_all	equ	0FF26h		; enable all flag (zeliard.inc: gvar_enable_all)
+gvar_key_state	equ	0FF29h		; key state (0xFF29)
+gvar_game_seg	equ	0FF2Ch		; game data segment (zeliard.inc: gvar_game_seg)
+gvar_volume_b	equ	0FF75h		; volume B (zeliard.inc: gvar_volume_b)
+null_ofs	equ	0		; null/zero offset
+font_plane_b	equ	660h		; character font data plane B
+font_plane_c	equ	0CC0h		; character font data plane C
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -95,96 +95,96 @@ start:
 		add	ah,[bx+si-6]
 		mov	sp,2000h
 		sti				; Enable interrupts
-		mov	byte ptr cs:data_173e,0
-		mov	byte ptr cs:data_176e,0
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_key_state,0
 		push	cs
 		pop	ds
-		call	word ptr cs:data_51
+		call	word ptr cs:gfx_init_fn
 		push	cs
 		pop	ds
 		push	cs
 		pop	es
-		mov	si,data_162e
-		mov	di,data_168e
+		mov	si,scene_data_d
+		mov	di,vga_seg
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	fill_buffer
 		mov	ax,4
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		xor	bx,bx			; Zero register
 		mov	cl,96h
-		mov	si,data_138e
+		mov	si,scene_data_a
 		call	word ptr cs:data_49+0Eh	; ('f ')
 		mov	bx,70Fh
 		mov	cx,4170h
-		mov	es,cs:data_177e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	di,scene_framebuf
 		call	word ptr cs:data_101
 		push	cs
 		pop	es
-		mov	si,data_157e
-		mov	di,data_168e
+		mov	si,palette_data_a
+		mov	di,vga_seg
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	si,data_158e
-		mov	di,data_170e
+		mov	si,palette_data_b
+		mov	di,cga_text_seg
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	scene_process_loop
-		call	word ptr cs:data_51
-		mov	byte ptr cs:data_173e,0
-		mov	byte ptr cs:data_176e,0
+		call	word ptr cs:gfx_init_fn
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_key_state,0
 		mov	ax,1
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		mov	al,0FFh
 		mov	bx,1220h
 		mov	cx,2C68h
-		mov	es,cs:data_177e
-		mov	di,data_137e
-		call	word ptr cs:data_89
+		mov	es,cs:gvar_game_seg
+		mov	di,scene_framebuf
+		call	word ptr cs:gfx_draw_fn
 		call	scene_scan_loop
 		mov	ax,2
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		mov	al,0FFh
 		mov	bx,1220h
 		mov	cx,2C68h
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
-		call	word ptr cs:data_90
-		mov	es,cs:data_177e
-		mov	si,data_170e
-		mov	di,data_150e
+		call	word ptr cs:gfx_update_fn
+		mov	es,cs:gvar_game_seg
+		mov	si,cga_text_seg
+		mov	di,screen_buf_2
 		call	scene_process_loop
 		mov	bx,2048h
 		mov	cx,1040h
-		mov	es,cs:data_177e
-		mov	di,data_148e
+		mov	es,cs:gvar_game_seg
+		mov	di,ui_overlay_buf
 		call	word ptr cs:data_96
-		mov	byte ptr cs:data_178e,4
-		mov	si,data_151e
+		mov	byte ptr cs:gvar_volume_b,4
+		mov	si,scene_sprite_a
 		call	word ptr cs:data_97
 		push	cs
 		pop	es
-		mov	si,data_159e
-		mov	di,data_168e
+		mov	si,scene_data_c
+		mov	di,vga_seg
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_167e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_data_i
 		call	scene_process_loop
 		call	fill_buffer_2
 		mov	bx,1220h
 		mov	cx,2C68h
-		call	word ptr cs:data_91
+		call	word ptr cs:gfx_mode_fn
 		mov	ax,3
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		mov	ax,cs
 		add	ax,2000h
 		mov	es,ax
@@ -192,10 +192,10 @@ start:
 		mov	bx,1720h
 		mov	cx,2270h
 		mov	di,0
-		call	word ptr cs:data_90
-		mov	si,data_153e
+		call	word ptr cs:gfx_update_fn
+		mov	si,scene_sprite_c
 loc_1:
-		mov	byte ptr ds:data_172e,0
+		mov	byte ptr ds:gvar_timer_lo,0
 		lodsb				; String [si] to al
 		or	al,al			; Zero ?
 		jz	loc_2			; Jump if zero
@@ -208,24 +208,24 @@ loc_1:
 		call	scene_func_4
 		jmp	short loc_1
 loc_2:
-		mov	byte ptr ds:data_172e,0
+		mov	byte ptr ds:gvar_timer_lo,0
 		mov	al,0F0h
 		call	scene_func_4
-		mov	si,data_152e
+		mov	si,scene_sprite_b
 		call	scene_func_1
-		mov	byte ptr ds:data_172e,0
+		mov	byte ptr ds:gvar_timer_lo,0
 		mov	al,0F0h
 		call	scene_func_4
 		mov	al,2
 		mov	bx,1720h
 		call	word ptr cs:data_98
-		mov	byte ptr ds:data_172e,0
+		mov	byte ptr ds:gvar_timer_lo,0
 		mov	al,0Fh
 		call	scene_func_4
 		mov	al,3
 		mov	bx,1720h
 		call	word ptr cs:data_98
-		mov	byte ptr ds:data_172e,0
+		mov	byte ptr ds:gvar_timer_lo,0
 		mov	al,0F0h
 		call	scene_func_4
 		xor	al,al			; Zero register
@@ -238,33 +238,33 @@ loc_2:
 		mov	di,0A000h
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	fill_buffer
 		push	cs
 		pop	es
-		mov	si,data_161e
-		mov	di,data_168e
+		mov	si,glyph_large
+		mov	di,vga_seg
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	si,data_162e
-		mov	di,data_169e
+		mov	si,scene_data_d
+		mov	di,aux_buf_seg
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	si,data_160e
-		mov	es,cs:data_177e
+		mov	si,glyph_small
+		mov	es,cs:gvar_game_seg
 		mov	di,offset data_87+32h	; (' ')
 		mov	al,5
 		call	word ptr cs:[10Ch]
 		mov	bx,1720h
 		mov	cx,2270h
-		call	word ptr cs:data_91
+		call	word ptr cs:gfx_mode_fn
 		mov	ax,4
-		call	word ptr cs:data_92
-		mov	byte ptr ds:data_172e,0
+		call	word ptr cs:gfx_palette_fn
+		mov	byte ptr ds:gvar_timer_lo,0
 		push	ds
-		mov	ds,cs:data_177e
+		mov	ds,cs:gvar_game_seg
 		mov	si,3000h
 		xor	ax,ax			; Zero register
 		int	60h			; ??INT Non-standard interrupt
@@ -275,27 +275,27 @@ loc_2:
 		xor	al,al			; Zero register
 		mov	bx,0B48h
 		mov	cx,3180h
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
-		call	word ptr cs:data_90
-		mov	byte ptr ds:data_172e,0
-		mov	es,cs:data_177e
-		mov	si,data_169e
-		mov	di,data_137e
+		call	word ptr cs:gfx_update_fn
+		mov	byte ptr ds:gvar_timer_lo,0
+		mov	es,cs:gvar_game_seg
+		mov	si,aux_buf_seg
+		mov	di,scene_framebuf
 		call	fill_buffer
 		mov	al,0F0h
 		call	scene_func_4
 		mov	bx,70Fh
 		mov	cx,4170h
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		call	word ptr cs:data_101
-		mov	byte ptr ds:data_172e,0
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	byte ptr ds:gvar_timer_lo,0
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	fill_buffer
-		mov	si,data_154e
+		mov	si,scene_sprite_d
 		call	word ptr cs:data_102
 		mov	al,0F0h
 		call	scene_func_4
@@ -304,7 +304,7 @@ loc_2:
 
 locloop_3:
 		push	cx
-		mov	byte ptr ds:data_172e,0
+		mov	byte ptr ds:gvar_timer_lo,0
 		push	ax
 		call	word ptr cs:data_103
 		pop	ax
@@ -321,7 +321,7 @@ locloop_3:
 
 loc_4:
 		call	scene_func_5
-		test	byte ptr ds:data_175e,0FFh
+		test	byte ptr ds:gvar_enable_all,0FFh
 		jz	loc_4			; Jump if zero
 		jmp	loc_17
 
@@ -332,9 +332,9 @@ zr1_00		endp
 ;��������������������������������������������������������������������������
 
 scene_func_1		proc	near
-		mov	byte ptr ds:data_140e,8Ah
+		mov	byte ptr ds:render_state_b,8Ah
 loc_5:
-		mov	byte ptr ds:data_172e,0
+		mov	byte ptr ds:gvar_timer_lo,0
 loc_6:
 		lodsb				; String [si] to al
 		or	al,al			; Zero ?
@@ -378,32 +378,32 @@ loc_10:
 		add	ax,ax
 		add	ax,ax
 		add	ax,ax
-		mov	ds:data_139e,ax
-		add	byte ptr ds:data_140e,0Ah
+		mov	ds:render_state_a,ax
+		add	byte ptr ds:render_state_b,0Ah
 		retn
 loc_11:
 		push	ax
 		push	si
 		push	ax
-		mov	bx,ds:data_139e
+		mov	bx,ds:render_state_a
 		add	bx,2
-		mov	cl,ds:data_140e
+		mov	cl,ds:render_state_b
 		add	cl,1
 		mov	ah,2
 		call	word ptr cs:data_108
 		pop	ax
-		mov	bx,ds:data_139e
-		mov	cl,ds:data_140e
+		mov	bx,ds:render_state_a
+		mov	cl,ds:render_state_b
 		mov	ah,7
 		call	word ptr cs:data_108
 		pop	si
-		add	word ptr ds:data_139e,8
+		add	word ptr ds:render_state_a,8
 		pop	ax
 		cmp	al,20h			; ' '
 		jne	loc_12			; Jump if not equal
 		retn
 loc_12:
-		mov	byte ptr ds:data_178e,3Fh	; '?'
+		mov	byte ptr ds:gvar_volume_b,3Fh	; '?'
 		retn
 scene_func_2		endp
 
@@ -461,14 +461,14 @@ scene_scan_loop		endp
 
 scene_func_4		proc	near
 loc_16:
-		test	byte ptr cs:data_173e,0FFh
+		test	byte ptr cs:gvar_skip_input,0FFh
 		jnz	loc_17			; Jump if not zero
-		cmp	byte ptr cs:data_176e,0Dh
+		cmp	byte ptr cs:gvar_key_state,0Dh
 		je	loc_17			; Jump if equal
 		call	scene_func_5
-		cmp	cs:data_172e,al
+		cmp	cs:gvar_timer_lo,al
 		jb	loc_16			; Jump if below
-		mov	byte ptr cs:data_172e,0
+		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 
 ;���� External Entry into Subroutine ��������������������������������������
@@ -484,39 +484,39 @@ scene_func_5:
 		pop	si
 		retn
 loc_17:
-		mov	byte ptr ds:data_174e,8
+		mov	byte ptr ds:gvar_state_flag,8
 		mov	al,0FFh
 		mov	bx,0
 		mov	cx,50C8h
-		call	word ptr cs:data_91
+		call	word ptr cs:gfx_mode_fn
 loc_18:
-		test	byte ptr ds:data_175e,0FFh
+		test	byte ptr ds:gvar_enable_all,0FFh
 		jz	loc_18			; Jump if zero
-		mov	byte ptr cs:data_173e,0
-		mov	byte ptr cs:data_176e,0
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_key_state,0
 		jmp	short $+2		; delay for I/O
 		cli				; Disable interrupts
 		mov	sp,2000h
 		sti				; Enable interrupts
 		push	cs
 		pop	ds
-		call	word ptr cs:data_51
+		call	word ptr cs:gfx_init_fn
 		mov	si,9589h
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,3000h
 		mov	al,5
 		call	word ptr cs:[10Ch]
-		mov	byte ptr ds:data_172e,0
+		mov	byte ptr ds:gvar_timer_lo,0
 		push	ds
-		mov	ds,cs:data_177e
+		mov	ds,cs:gvar_game_seg
 		mov	si,3000h
 		xor	ax,ax			; Zero register
 		int	60h			; ??INT Non-standard interrupt
 		pop	ds
-		mov	byte ptr cs:data_173e,0
-		mov	byte ptr cs:data_176e,0
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_key_state,0
 		mov	ax,1
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		call	scene_func_7
 		jmp	short loc_20
 
@@ -524,23 +524,23 @@ loc_18:
 
 scene_func_6:
 loc_19:
-		test	byte ptr cs:data_173e,0FFh
+		test	byte ptr cs:gvar_skip_input,0FFh
 		jnz	loc_20			; Jump if not zero
-		cmp	byte ptr cs:data_176e,0Dh
+		cmp	byte ptr cs:gvar_key_state,0Dh
 		je	loc_20			; Jump if equal
 		call	scene_func_5
-		cmp	cs:data_172e,al
+		cmp	cs:gvar_timer_lo,al
 		jb	loc_19			; Jump if below
-		mov	byte ptr cs:data_172e,0
+		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 loc_20:
-		mov	byte ptr ds:data_174e,8
-		call	word ptr cs:data_51
+		mov	byte ptr ds:gvar_state_flag,8
+		call	word ptr cs:gfx_init_fn
 loc_21:
-		test	byte ptr ds:data_175e,0FFh
+		test	byte ptr ds:gvar_enable_all,0FFh
 		jz	loc_21			; Jump if zero
-		mov	byte ptr cs:data_173e,0
-		mov	byte ptr cs:data_176e,0
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_key_state,0
 		jmp	loc_25
 
 ;���� External Entry into Subroutine ��������������������������������������
@@ -592,11 +592,11 @@ loc_25:
 		cli				; Disable interrupts
 		mov	sp,2000h
 		sti				; Enable interrupts
-		mov	byte ptr cs:data_173e,0
-		mov	byte ptr cs:data_176e,0
-		mov	word ptr cs:data_142e,79C6h
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_key_state,0
+		mov	word ptr cs:script_pc,79C6h
 		mov	ax,5
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		push	cs
 		pop	es
 		mov	si,9594h
@@ -606,18 +606,18 @@ loc_25:
 		mov	ax,cs
 		add	ax,2000h
 		mov	es,ax
-		mov	si,data_168e
+		mov	si,vga_seg
 		mov	di,0
 		call	scene_process_loop
 		push	cs
 		pop	es
-		mov	si,data_163e
-		mov	di,data_168e
+		mov	si,scene_data_e
+		mov	di,vga_seg
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	scene_process_loop
 		mov	bx,0
 		mov	cx,5088h
@@ -628,15 +628,15 @@ loc_25:
 		call	word ptr cs:data_96
 		mov	bx,410h
 		mov	cx,4868h
-		mov	es,cs:data_177e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	di,scene_framebuf
 		call	word ptr cs:data_96
 		call	scene_multiply
 		mov	ax,9
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		mov	bx,410h
 		mov	cx,4868h
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		call	word ptr cs:data_96
 		push	cs
@@ -645,18 +645,18 @@ loc_25:
 		mov	di,0A000h
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	scene_process_loop
 		call	scene_multiply
 		xor	ax,ax			; Zero register
 		call	word ptr cs:data_104
 		mov	ax,6
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		mov	bx,410h
 		mov	cx,4868h
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		call	word ptr cs:data_96
 		push	cs
@@ -665,9 +665,9 @@ loc_25:
 		mov	di,0A000h
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_167e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_data_i
 		call	scene_process_loop
 		call	scene_multiply
 		mov	al,4
@@ -679,7 +679,7 @@ loc_25:
 		call	scene_process_loop_3
 		mov	bx,410h
 		mov	cx,4868h
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		call	word ptr cs:data_96
 		call	scene_multiply
@@ -703,7 +703,7 @@ loc_25:
 		mov	bx,1728h
 		mov	cx,2230h
 		call	word ptr cs:data_96
-		mov	byte ptr cs:data_172e,0
+		mov	byte ptr cs:gvar_timer_lo,0
 		mov	al,0Fh
 		call	scene_func_8
 		mov	al,3
@@ -717,26 +717,26 @@ loc_25:
 		call	word ptr cs:data_96
 		push	cs
 		pop	es
-		mov	si,data_164e
+		mov	si,scene_data_f
 		mov	di,0A000h
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	scene_process_loop
 		mov	bx,410h
 		mov	cx,4868h
-		call	word ptr cs:data_91
+		call	word ptr cs:gfx_mode_fn
 		call	scene_multiply
 		mov	ax,7
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		mov	al,0FFh
 		mov	bx,410h
 		mov	cx,4868h
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
-		call	word ptr cs:data_90
+		call	word ptr cs:gfx_update_fn
 		call	scene_multiply
 		push	cs
 		pop	es
@@ -744,16 +744,16 @@ loc_25:
 		mov	di,0A000h
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	scene_process_loop
 		xor	al,al			; Zero register
 		mov	bx,410h
 		mov	cx,4868h
-		mov	es,cs:data_177e
-		mov	di,data_137e
-		call	word ptr cs:data_90
+		mov	es,cs:gvar_game_seg
+		mov	di,scene_framebuf
+		call	word ptr cs:gfx_update_fn
 		call	scene_multiply
 		call	scene_multiply
 		push	cs
@@ -762,11 +762,11 @@ loc_25:
 		mov	di,0A000h
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	scene_process_loop
-		mov	di,data_137e
+		mov	di,scene_framebuf
 		mov	bx,1610h
 		mov	cx,2468h
 		mov	al,5
@@ -781,46 +781,46 @@ loc_25:
 		mov	di,0A000h
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	scene_process_loop
 		mov	al,0FFh
 		mov	bx,410h
 		mov	cx,4868h
-		mov	es,cs:data_177e
-		mov	di,data_137e
-		call	word ptr cs:data_90
+		mov	es,cs:gvar_game_seg
+		mov	di,scene_framebuf
+		call	word ptr cs:gfx_update_fn
 		push	cs
 		pop	es
-		mov	si,data_165e
-		mov	di,data_168e
+		mov	si,scene_data_g
+		mov	di,vga_seg
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	scene_process_loop
 		push	cs
 		pop	es
-		mov	si,data_166e
-		mov	di,data_168e
+		mov	si,scene_data_h
+		mov	di,vga_seg
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_149e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,screen_buf_1
 		call	scene_process_loop
 		call	scene_multiply
 		call	scene_multiply
 		xor	ax,ax			; Zero register
 		call	word ptr cs:data_104
 		mov	ax,6
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		mov	bx,0A15h
 		mov	cx,1A5Dh
 		call	word ptr cs:data_106
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		mov	bx,0B18h
 		mov	cx,1858h
@@ -828,7 +828,7 @@ loc_25:
 		mov	bx,2C15h
 		mov	cx,1A5Dh
 		call	word ptr cs:data_106
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,8000h
 		mov	bx,2D18h
 		mov	cx,1858h
@@ -841,19 +841,19 @@ loc_25:
 		mov	di,0A000h
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_149e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,screen_buf_1
 		call	scene_process_loop
 		xor	ax,ax			; Zero register
 		call	word ptr cs:data_104
 		mov	ax,8
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		mov	bx,1515h
 		mov	cx,315Dh
 		call	word ptr cs:data_106
-		mov	es,cs:data_177e
-		mov	di,data_149e
+		mov	es,cs:gvar_game_seg
+		mov	di,screen_buf_1
 		mov	bx,1618h
 		call	word ptr cs:data_107
 		call	scene_multiply
@@ -866,7 +866,7 @@ locloop_26:
 		push	cx
 		push	dx
 		push	bx
-		mov	byte ptr cs:data_172e,0
+		mov	byte ptr cs:gvar_timer_lo,0
 		mov	cx,dx
 		call	word ptr cs:data_106
 		mov	al,0Fh
@@ -884,7 +884,7 @@ locloop_26:
 		mov	bx,0A15h
 		mov	cx,1A5Dh
 		call	word ptr cs:data_106
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		mov	bx,0B18h
 		mov	cx,1858h
@@ -899,7 +899,7 @@ locloop_27:
 		push	cx
 		push	dx
 		push	bx
-		mov	byte ptr cs:data_172e,0
+		mov	byte ptr cs:gvar_timer_lo,0
 		mov	cx,dx
 		call	word ptr cs:data_106
 		mov	al,0Fh
@@ -914,19 +914,19 @@ locloop_27:
 		xor	ax,ax			; Zero register
 		call	word ptr cs:data_104
 		mov	ax,7
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		push	cs
 		pop	es
 		mov	si,95DDh
 		mov	di,0A000h
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	scene_process_loop
-		mov	es,cs:data_177e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	di,scene_framebuf
 		mov	bx,1010h
 		mov	cx,3160h
 		call	word ptr cs:data_96
@@ -941,42 +941,42 @@ locloop_27:
 		mov	di,0D000h
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:data_177e
-		mov	si,data_168e
-		mov	di,data_137e
+		mov	es,cs:gvar_game_seg
+		mov	si,vga_seg
+		mov	di,scene_framebuf
 		call	scene_process_loop
 		mov	bx,0
 		mov	cx,50C8h
-		call	word ptr cs:data_91
+		call	word ptr cs:gfx_mode_fn
 		mov	bx,808h
-		mov	es,cs:data_177e
-		mov	di,data_9e
+		mov	es,cs:gvar_game_seg
+		mov	di,framebuffer_a
 		call	scene_process_loop_5
-		mov	es,cs:data_177e
-		mov	si,data_171e
-		mov	di,data_171e
+		mov	es,cs:gvar_game_seg
+		mov	si,ext_seg_d000
+		mov	di,ext_seg_d000
 		call	scene_process_loop
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
-		mov	si,data_15e
+		mov	si,ext_segment
 		call	scene_process_loop_4
 		mov	al,0FFh
 		mov	bx,808h
 		mov	cx,40C0h
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
-		call	word ptr cs:data_90
-		mov	byte ptr cs:data_172e,0
+		call	word ptr cs:gfx_update_fn
+		mov	byte ptr cs:gvar_timer_lo,0
 		mov	al,0F0h
 		call	scene_func_8
 		mov	al,0FFh
 		mov	bx,808h
 		mov	cx,40C0h
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		mov	di,4000h
-		call	word ptr cs:data_89
+		call	word ptr cs:gfx_draw_fn
 		mov	ax,1
-		call	word ptr cs:data_92
+		call	word ptr cs:gfx_palette_fn
 		mov	si,7338h
 		call	scene_scan_loop_2
 		mov	cx,0Ah
@@ -995,17 +995,17 @@ locloop_28:
 scene_func_8:
 loc_29:
 		call	scene_func_9
-		cmp	cs:data_172e,al
+		cmp	cs:gvar_timer_lo,al
 		jb	loc_29			; Jump if below
-		mov	byte ptr cs:data_172e,0
+		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 
 ;���� External Entry into Subroutine ��������������������������������������
 
 scene_func_9:
-		test	byte ptr cs:data_173e,0FFh
+		test	byte ptr cs:gvar_skip_input,0FFh
 		jnz	loc_30			; Jump if not zero
-		cmp	byte ptr cs:data_176e,0Dh
+		cmp	byte ptr cs:gvar_key_state,0Dh
 		je	loc_30			; Jump if equal
 		push	si
 		push	ax
@@ -1019,9 +1019,9 @@ scene_func_9:
 loc_30:
 		mov	bx,0
 		mov	cx,50C8h
-		call	word ptr cs:data_91
-		mov	byte ptr cs:data_173e,0
-		mov	byte ptr cs:data_176e,0
+		call	word ptr cs:gfx_mode_fn
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_key_state,0
 		mov	ax,cs
 		mov	es,ax
 		mov	ds,ax
@@ -1030,7 +1030,7 @@ loc_30:
 		mov	al,3
 		call	word ptr cs:[10Ch]
 		mov	ax,0FFFFh
-		jmp	word ptr cs:data_141e
+		jmp	word ptr cs:scene_data_b
 scene_func_4		endp
 
 		db	 00h,0A0h
@@ -1040,16 +1040,16 @@ scene_func_4		endp
 ;��������������������������������������������������������������������������
 
 scene_multiply		proc	near
-		mov	byte ptr cs:data_172e,0
+		mov	byte ptr cs:gvar_timer_lo,0
 loc_31:
 		mov	al,10h
 		call	scene_func_8
 loc_32:
 		push	cs
 		pop	ds
-		mov	si,ds:data_142e
+		mov	si,ds:script_pc
 		lodsb				; String [si] to al
-		mov	ds:data_142e,si
+		mov	ds:script_pc,si
 		test	al,80h
 		jz	loc_33			; Jump if zero
 		jmp	loc_37
@@ -1064,13 +1064,13 @@ loc_33:
 		je	loc_34			; Jump if equal
 		cmp	al,27h			; '''
 		je	loc_34			; Jump if equal
-		mov	ah,ds:data_147e
-		mov	ds:data_178e,ah
+		mov	ah,ds:text_attr
+		mov	ds:gvar_volume_b,ah
 loc_34:
 		push	ax
-		mov	bx,ds:data_143e
+		mov	bx,ds:text_x_pos
 		add	bx,4
-		mov	al,ds:data_144e
+		mov	al,ds:text_y_pos
 		mov	dl,0Ah
 		mul	dl			; ax = reg * al
 		add	ax,8Fh
@@ -1080,7 +1080,7 @@ loc_34:
 		mov	bl,al
 		sub	bl,20h			; ' '
 		xor	bh,bh			; Zero register
-		mov	dl,ds:data_155e[bx]
+		mov	dl,ds:char_width_tbl[bx]
 		mov	dh,bh
 		pop	bx
 		push	ax
@@ -1090,27 +1090,27 @@ loc_34:
 		push	cx
 		inc	bx
 		inc	cx
-		mov	ah,ds:data_145e
+		mov	ah,ds:text_color_fg
 		call	word ptr cs:data_108
 		pop	cx
 		pop	bx
 		pop	ax
-		mov	ah,ds:data_146e
+		mov	ah,ds:text_color_bg
 		call	word ptr cs:data_108
 		pop	ax
 		mov	bl,al
 		sub	bl,20h			; ' '
 		xor	bh,bh			; Zero register
-		mov	cl,ds:data_156e[bx]
+		mov	cl,ds:char_glyph_tbl[bx]
 		mov	ch,bh
-		add	ds:data_143e,cx
+		add	ds:text_x_pos,cx
 		cmp	al,20h			; ' '
 		je	loc_35			; Jump if equal
 		jmp	loc_31
 loc_35:
-		mov	si,ds:data_142e
+		mov	si,ds:script_pc
 		call	scene_check_state
-		mov	dx,ds:data_143e
+		mov	dx,ds:text_x_pos
 		add	dx,cx
 		cmp	dx,138h
 		jb	loc_36			; Jump if below
@@ -1171,50 +1171,50 @@ loc_45:
 		je	loc_53			; Jump if equal
 		cmp	al,0FEh
 		je	loc_55			; Jump if equal
-		mov	ah,ds:data_147e
-		mov	byte ptr ds:data_147e,0
+		mov	ah,ds:text_attr
+		mov	byte ptr ds:text_attr,0
 		cmp	al,0F0h
 		jne	loc_46			; Jump if not equal
 		jmp	loc_31
 loc_46:
-		mov	byte ptr ds:data_147e,3Dh	; '='
+		mov	byte ptr ds:text_attr,3Dh	; '='
 		cmp	al,0EFh
 		jne	loc_47			; Jump if not equal
 		jmp	loc_31
 loc_47:
-		mov	byte ptr ds:data_147e,3Eh	; '>'
+		mov	byte ptr ds:text_attr,3Eh	; '>'
 		cmp	al,0EEh
 		jne	loc_48			; Jump if not equal
 		jmp	loc_31
 loc_48:
-		mov	byte ptr ds:data_147e,3Fh	; '?'
+		mov	byte ptr ds:text_attr,3Fh	; '?'
 		cmp	al,0EDh
 		jne	loc_49			; Jump if not equal
 		jmp	loc_31
 loc_49:
-		mov	byte ptr ds:data_147e,40h	; '@'
+		mov	byte ptr ds:text_attr,40h	; '@'
 		cmp	al,0ECh
 		jne	loc_50			; Jump if not equal
 		jmp	loc_31
 loc_50:
-		mov	byte ptr ds:data_147e,41h	; 'A'
+		mov	byte ptr ds:text_attr,41h	; 'A'
 		cmp	al,0EBh
 		jne	loc_51			; Jump if not equal
 		jmp	loc_31
 loc_51:
-		mov	ds:data_147e,ah
+		mov	ds:text_attr,ah
 		jmp	loc_31
 loc_52:
-		mov	ds:data_145e,bl
-		mov	ds:data_146e,bh
+		mov	ds:text_color_fg,bl
+		mov	ds:text_color_bg,bh
 		jmp	loc_31
 loc_53:
-		mov	word ptr ds:data_143e,0
-		mov	ds:data_144e,ah
+		mov	word ptr ds:text_x_pos,0
+		mov	ds:text_y_pos,ah
 		jmp	loc_31
 loc_54:
-		mov	word ptr ds:data_143e,0
-		inc	byte ptr ds:data_144e
+		mov	word ptr ds:text_x_pos,0
+		inc	byte ptr ds:text_y_pos
 		jmp	loc_31
 loc_55:
 		mov	bx,8Fh
@@ -1236,7 +1236,7 @@ loc_57:
 		call	scene_func_8
 		jmp	loc_31
 loc_58:
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		and	al,0Fh
 		cmp	al,6
 		jae	loc_59			; Jump if above or =
@@ -1269,7 +1269,7 @@ loc_59:
 		call	word ptr cs:data_96
 		jmp	loc_32
 loc_60:
-		mov	es,cs:data_177e
+		mov	es,cs:gvar_game_seg
 		and	al,0Fh
 		cmp	al,6
 		jae	loc_61			; Jump if above or =
@@ -1349,7 +1349,7 @@ loc_70:
 		jc	loc_62			; Jump if carry Set
 		mov	bl,al
 		xor	bh,bh			; Zero register
-		add	cl,cs:data_156e[bx]
+		add	cl,cs:char_glyph_tbl[bx]
 		adc	ch,bh
 		jmp	short loc_62
 scene_check_state		endp
@@ -1540,23 +1540,23 @@ fill_buffer_2		proc	near
 		mov	ax,cs
 		add	ax,2000h
 		mov	es,ax
-		mov	di,data_179e
+		mov	di,null_ofs
 		mov	cx,1650h
 		xor	ax,ax			; Zero register
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
-		mov	ds,cs:data_177e
+		mov	ds,cs:gvar_game_seg
 		mov	di,0
 		mov	bx,0
 		mov	cx,2230h
-		mov	si,data_14e
+		mov	si,sprite_buf_c
 		call	scene_func_17
 		mov	bx,0F30h
 		mov	cx,620h
-		mov	si,data_13e
+		mov	si,sprite_buf_b
 		call	scene_func_17
 		mov	bx,850h
 		mov	cx,1220h
-		mov	si,data_12e
+		mov	si,sprite_buf_a
 		call	scene_func_18
 		pop	ds
 		retn
@@ -1569,7 +1569,7 @@ fill_buffer_2		endp
 
 scene_func_17		proc	near
 		push	di
-		add	di,data_4e
+		add	di,font_row_ofs
 		call	copy_buffer
 		pop	di
 		push	di
@@ -1588,7 +1588,7 @@ scene_func_18		proc	near
 		call	copy_buffer
 		pop	di
 		push	di
-		add	di,data_4e
+		add	di,font_row_ofs
 		call	copy_buffer
 		pop	di
 		retn
@@ -1635,12 +1635,12 @@ scene_multiply_2		proc	near
 		mov	dx,0CC0h
 		mul	dx			; dx:ax = reg * ax
 		add	ax,0AB40h
-		mov	ds,cs:data_177e
+		mov	ds,cs:gvar_game_seg
 		mov	si,ax
 		mov	ax,cs
 		add	ax,2000h
 		mov	es,ax
-		mov	di,data_179e
+		mov	di,null_ofs
 		call	scene_process_loop_2
 		pop	ds
 		retn
@@ -1659,15 +1659,15 @@ locloop_86:
 		mov	cx,22h
 
 locloop_87:
-		mov	ah,ds:data_1e[si]
+		mov	ah,ds:font_plane_a[si]
 		lodsb				; String [si] to al
 		mov	bh,al
 		not	bh
 		and	bh,ah
 		xor	ah,bh
 		mov	es:[di],al
-		mov	es:data_180e[di],bh
-		mov	es:data_181e[di],ah
+		mov	es:font_plane_b[di],bh
+		mov	es:font_plane_c[di],ah
 		inc	di
 		loop	locloop_87		; Loop if cx > 0
 
@@ -1687,8 +1687,8 @@ scene_process_loop_3		proc	near
 		push	es
 		pop	ds
 		mov	si,di
-		mov	es,cs:data_177e
-		mov	di,data_10e
+		mov	es,cs:gvar_game_seg
+		mov	di,temp_decode_buf
 		mov	cx,30h
 
 locloop_88:
@@ -1699,11 +1699,11 @@ locloop_88:
 locloop_89:
 		push	cx
 		mov	ax,es:[di]
-		mov	bx,es:data_6e[di]
+		mov	bx,es:plane_data_a[di]
 		not	ax
 		not	bx
 		and	ax,bx
-		and	ax,es:data_8e[di]
+		and	ax,es:plane_data_b[di]
 		mov	dx,ax
 		not	dx
 		mov	bx,ax
@@ -1711,13 +1711,13 @@ locloop_89:
 		and	es:[di],dx
 		or	es:[di],ax
 		mov	ax,bx
-		and	ax,ds:data_180e[si]
-		and	es:data_6e[di],dx
-		or	es:data_6e[di],ax
+		and	ax,ds:font_plane_b[si]
+		and	es:plane_data_a[di],dx
+		or	es:plane_data_a[di],ax
 		mov	ax,bx
-		and	ax,ds:data_181e[si]
-		and	es:data_8e[di],dx
-		or	es:data_8e[di],ax
+		and	ax,ds:font_plane_c[si]
+		and	es:plane_data_b[di],dx
+		or	es:plane_data_b[di],ax
 		add	di,2
 		add	si,2
 		pop	cx
@@ -1738,7 +1738,7 @@ scene_process_loop_3		endp
 ;��������������������������������������������������������������������������
 
 scene_process_loop_4		proc	near
-		add	di,data_2e
+		add	di,font_scanline_ofs
 		mov	cx,0A0h
 
 locloop_90:
@@ -1749,26 +1749,26 @@ locloop_90:
 locloop_91:
 		push	cx
 		mov	al,es:[si]
-		and	al,es:data_3e[si]
-		mov	ah,es:data_5e[si]
+		and	al,es:pixel_mask_a[si]
+		mov	ah,es:pixel_mask_b[si]
 		not	ah
 		and	al,ah
 		not	al
 		mov	ah,es:[si]
-		or	ah,es:data_3e[si]
-		or	ah,es:data_5e[si]
+		or	ah,es:pixel_mask_a[si]
+		or	ah,es:pixel_mask_b[si]
 		and	es:[si],al
-		and	es:data_3e[si],al
+		and	es:pixel_mask_a[si],al
 		not	ah
 		and	es:[di],ah
-		and	es:data_7e[di],ah
-		and	es:data_11e[di],ah
+		and	es:gfx_plane_b[di],ah
+		and	es:framebuffer_b[di],ah
 		mov	al,es:[si]
 		or	es:[di],al
-		mov	al,es:data_3e[si]
-		or	es:data_7e[di],al
-		mov	al,es:data_5e[si]
-		or	es:data_11e[di],al
+		mov	al,es:pixel_mask_a[si]
+		or	es:gfx_plane_b[di],al
+		mov	al,es:pixel_mask_b[si]
+		or	es:framebuffer_b[di],al
 		inc	di
 		inc	si
 		pop	cx
@@ -1794,18 +1794,18 @@ scene_process_loop_5		proc	near
 		mov	cx,3000h
 
 locloop_92:
-		mov	byte ptr es:data_11e[di],0
-		mov	al,es:data_7e[di]
+		mov	byte ptr es:framebuffer_b[di],0
+		mov	al,es:gfx_plane_b[di]
 		mov	ah,es:[di]
 		not	ah
 		and	al,ah
 		or	es:[di],al
-		or	es:data_11e[di],al
+		or	es:framebuffer_b[di],al
 		not	al
-		and	es:data_7e[di],al
-		mov	al,es:data_7e[di]
+		and	es:gfx_plane_b[di],al
+		mov	al,es:gfx_plane_b[di]
 		and	al,es:[di]
-		or	es:data_11e[di],al
+		or	es:framebuffer_b[di],al
 		inc	di
 		loop	locloop_92		; Loop if cx > 0
 
@@ -1814,7 +1814,7 @@ locloop_92:
 		pop	bx
 		mov	cx,40C0h
 		mov	al,0FFh
-		jmp	word ptr cs:data_90
+		jmp	word ptr cs:gfx_update_fn
 scene_process_loop_5		endp
 
 		db	'           Two thousand years, ', 0Dh, 'from the dark reaches of another galaxy,', 0Dh, '        a demon with not a shred', 0Dh
