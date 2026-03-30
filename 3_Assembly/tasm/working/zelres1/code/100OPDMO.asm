@@ -131,6 +131,7 @@ ANIM_9F	equ	09Fh
 ; Used in narration db sequences between text strings.
 SCR_END_SCRIPT	equ	0FFh	; end of script / page terminator
 CR		equ	0Dh	; carriage return (line break in prologue text)
+ENTER_KEY	equ	0Dh	; Enter key scancode (same byte, different context)
 SCR_SCROLL	equ	0FEh	; scroll text up (advance display)
 SCR_BREAK	equ	0FDh	; section break / return
 SCR_BOLD	equ	0FBh	; text style: color 7 bold
@@ -574,7 +575,7 @@ timer_wait_loop		proc	near
 timer_check_input:
 		test	byte ptr cs:gvar_skip_input,0FFh
 		jnz	timer_exit_to_game			; Jump if not zero
-		cmp	byte ptr cs:gvar_key_state,0Dh
+		cmp	byte ptr cs:gvar_key_state,ENTER_KEY
 		je	timer_exit_to_game			; Jump if equal
 		call	interrupt_handler_cascade
 		cmp	cs:gvar_timer_lo,al
@@ -635,7 +636,7 @@ scene_transition_wait:
 trans_wait_timer:
 		test	byte ptr cs:gvar_skip_input,0FFh
 		jnz	trans_exit			; Jump if not zero
-		cmp	byte ptr cs:gvar_key_state,0Dh
+		cmp	byte ptr cs:gvar_key_state,ENTER_KEY
 		je	trans_exit			; Jump if equal
 		call	interrupt_handler_cascade
 		cmp	cs:gvar_timer_lo,al
@@ -1032,7 +1033,7 @@ gameplay_wait_elapsed:
 gameplay_input_handler:
 		test	byte ptr cs:gvar_skip_input,0FFh
 		jnz	gameplay_exit_to_menu			; Jump if not zero
-		cmp	byte ptr cs:gvar_key_state,0Dh
+		cmp	byte ptr cs:gvar_key_state,ENTER_KEY
 		je	gameplay_exit_to_menu			; Jump if equal
 		push	si
 		push	ax
