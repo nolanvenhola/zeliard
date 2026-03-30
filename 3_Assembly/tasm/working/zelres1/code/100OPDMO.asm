@@ -130,6 +130,7 @@ ANIM_9F	equ	09Fh
 ; �??�?? Opening scene script control codes �??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??
 ; Used in narration db sequences between text strings.
 SCR_END_SCRIPT	equ	0FFh	; end of script / page terminator
+CR		equ	0Dh	; carriage return (line break in prologue text)
 SCR_SCROLL	equ	0FEh	; scroll text up (advance display)
 SCR_BREAK	equ	0FDh	; section break / return
 SCR_BOLD	equ	0FBh	; text style: color 7 bold
@@ -694,7 +695,7 @@ credits_fade_loop:
 
 		retn
 		db	ANIM_87, ' '	; animation code + space (script entry point)
-		db	'   Copyright (C)1987,1990 GAME ARTS    ', 0Dh, '    Copyright (C)1990 Sierra On-Line    '
+		db	'   Copyright (C)1987,1990 GAME ARTS    ', CR, '    Copyright (C)1990 Sierra On-Line    '
 		db	SCR_END_SCRIPT, 0, 0, 0	; end of credits script + padding
 begin_gameplay:
 		RESET_STACK
@@ -1896,32 +1897,32 @@ merge_loop:
 		jmp	word ptr cs:gfx_update_fn
 merge_gfx_planes		endp
 
-		db	'           Two thousand years, ', 0Dh, 'from the dark reaches of another galaxy,', 0Dh, '        a demon with not a shred', 0Dh
-		db	'      of compassion for humankind,', 0Dh, '         descended upon earth.', 0Dh, 0Dh, '          He defiled the land,', 0Dh
-		db	'  sending vile creatures to live in it,', 0Dh, '   and thus became ruler of the world.', 0Dh, 0Dh, '         The King of Felishika,', 0Dh
-		db	'     appalled by what had happened,', 0Dh, '          prayed to the Spirit', 0Dh, '      of the Holy Land of Zeliard', 0Dh
-		db	'    for help in defeating this monster.', 0Dh, 0Dh, '    With the help of the holy crystals', 0Dh, '       called Tears of Esmesanti,', 0Dh
-		db	'    the King managed to wrest power', 0Dh, '    from the fiend and seal him deep', 0Dh, '     within the bowels of the earth.', 0Dh
-		db	0Dh, '            And once again,', 0Dh, ' the light of peace came to shine upon', 0Dh, '              the earth.', 0Dh
-		db	0Dh, 0Dh, 'However, it is written in', 0Dh, '       the Sixth Book of Esmesanti:', 0Dh, '                    The Age of Darkness.', 0Dh
-		db	0FFh, 20h		; end-of-script
-		db	'               At last,                ', 0Dh, '     the door of destiny was opened.    ', 0Dh, '        The labyrinths are deep,        ', 0Dh
-		db	'          and the way is long.          ', 0Dh, '     Will Duke Garland be successful    ', 0Dh, '   in dethroning the Emperor of Chaos?  ', 0Dh
-		db	0FFh, 20h		; end-of-script
-		db	'         Fantasy Action Game           ', 0Dh, '               ZELIARD                  ', 0Dh, 0Dh, '             -- STAFF --                ', 0Dh
-		db	0Dh, 'Producer -- Japanese Version', 0Dh, '                      Mitsuhiro Mazda   ', 0Dh, 0Dh, 'Producer -- English Version', 0Dh
-		db	'                        Josh Mandel     ', 0Dh, 0Dh, 'Lead Programmer      Tomoyuki Shimada   ', 0Dh, 0Dh, 'Graphic Designers     Akihiko Yoshida   ', 0Dh
-		db	'                      Masatoshi Azumi   ', 0Dh, 0Dh, 'English Text Translation by', 0Dh, '                       Marti McKenna    ', 0Dh
-		db	0Dh, 'Music Composers  -- MECANO ASSOCIATES --', 0Dh, '                    Fumihito Kasatani   ', 0Dh, '                    Nobuyuki Aoshima    ', 0Dh
-		db	0Dh, 'Story Maker           Masaru Takeuchi   ', 0Dh, 0Dh, 'Sound Effects by     Tomoyuki Shimada   ', 0Dh, 0Dh
-		db	'Advisers               Osamu Harada     ', 0Dh, '                       Hiromi Ohba      ', 0Dh, '                       Greg Miyaji      ', 0Dh
-		db	0Dh, 'System Designer      Rocky Cave Maker   ', 0Dh, 0Dh, 'Special Thanks to', 0Dh, '                    Toshiyuki Uchida    ', 0Dh
-		db	'                       Yuzo Sunaga      ', 0Dh, '                     Takeshi Miyaji     ', 0Dh, '                     Naozumi Honma      ', 0Dh
-		db	'                     Toshi Masubuchi    ', 0Dh, '                     Ray E. Nakazato    ', 0Dh, '                     Hiroyuki Koyama    ', 0Dh
-		db	'                     Satoshi Uesaka     ', 0Dh, '              Sierra On-Line Japan, Inc.', 0Dh, '                    Eiji (Ed) Nagano    ', 0Dh
-		db	0Dh, 0Dh, 0Dh, '    Copyright (C)1987,1990 GAME ARTS    ', 0Dh, '    Copyright (C)1990 Sierra On-Line    ', 0Dh
-		db	'  This edition first published 1987 by  ', 0Dh, '  GAME ARTS Co.,Ltd./ Tomoyuki Shimada  ', 0Dh
-		db	0FFh, 50h,0F0h,0FEh,0F3h,0FAh		; end-of-script | reset text attribute | scroll-text-up | layout-mode 1 | text-style: color 7 normal
+		db	'           Two thousand years, ', CR, 'from the dark reaches of another galaxy,', CR, '        a demon with not a shred', CR
+		db	'      of compassion for humankind,', CR, '         descended upon earth.', CR, CR, '          He defiled the land,', CR
+		db	'  sending vile creatures to live in it,', CR, '   and thus became ruler of the world.', CR, CR, '         The King of Felishika,', CR
+		db	'     appalled by what had happened,', CR, '          prayed to the Spirit', CR, '      of the Holy Land of Zeliard', CR
+		db	'    for help in defeating this monster.', CR, CR, '    With the help of the holy crystals', CR, '       called Tears of Esmesanti,', CR
+		db	'    the King managed to wrest power', CR, '    from the fiend and seal him deep', CR, '     within the bowels of the earth.', CR
+		db	CR, '            And once again,', CR, ' the light of peace came to shine upon', CR, '              the earth.', CR
+		db	CR, CR, 'However, it is written in', CR, '       the Sixth Book of Esmesanti:', CR, '                    The Age of Darkness.', CR
+		db	SCR_END_SCRIPT, ' '
+		db	'               At last,                ', CR, '     the door of destiny was opened.    ', CR, '        The labyrinths are deep,        ', CR
+		db	'          and the way is long.          ', CR, '     Will Duke Garland be successful    ', CR, '   in dethroning the Emperor of Chaos?  ', CR
+		db	SCR_END_SCRIPT, ' '
+		db	'         Fantasy Action Game           ', CR, '               ZELIARD                  ', CR, CR, '             -- STAFF --                ', CR
+		db	CR, 'Producer -- Japanese Version', CR, '                      Mitsuhiro Mazda   ', CR, CR, 'Producer -- English Version', CR
+		db	'                        Josh Mandel     ', CR, CR, 'Lead Programmer      Tomoyuki Shimada   ', CR, CR, 'Graphic Designers     Akihiko Yoshida   ', CR
+		db	'                      Masatoshi Azumi   ', CR, CR, 'English Text Translation by', CR, '                       Marti McKenna    ', CR
+		db	CR, 'Music Composers  -- MECANO ASSOCIATES --', CR, '                    Fumihito Kasatani   ', CR, '                    Nobuyuki Aoshima    ', CR
+		db	CR, 'Story Maker           Masaru Takeuchi   ', CR, CR, 'Sound Effects by     Tomoyuki Shimada   ', CR, CR
+		db	'Advisers               Osamu Harada     ', CR, '                       Hiromi Ohba      ', CR, '                       Greg Miyaji      ', CR
+		db	CR, 'System Designer      Rocky Cave Maker   ', CR, CR, 'Special Thanks to', CR, '                    Toshiyuki Uchida    ', CR
+		db	'                       Yuzo Sunaga      ', CR, '                     Takeshi Miyaji     ', CR, '                     Naozumi Honma      ', CR
+		db	'                     Toshi Masubuchi    ', CR, '                     Ray E. Nakazato    ', CR, '                     Hiroyuki Koyama    ', CR
+		db	'                     Satoshi Uesaka     ', CR, '              Sierra On-Line Japan, Inc.', CR, '                    Eiji (Ed) Nagano    ', CR
+		db	CR, CR, CR, '    Copyright (C)1987,1990 GAME ARTS    ', CR, '    Copyright (C)1990 Sierra On-Line    ', CR
+		db	'  This edition first published 1987 by  ', CR, '  GAME ARTS Co.,Ltd./ Tomoyuki Shimada  ', CR
+		db	SCR_END_SCRIPT, 50h,0F0h,0FEh,0F3h,0FAh		; end-of-script | reset text attribute | scroll-text-up | layout-mode 1 | text-style: color 7 normal
 		db	'Once, long ago, a terrible storm came to the land of Zeliard. '
 		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	'Dark clouds filled the sky; lightnin'
@@ -2346,7 +2347,7 @@ gspeech_e_	dw	offset narration_chapter_4
 		db	ANIM_03, 'fo', ANIM_04, 'r '
 		db	ANIM_04, 'I ', ANIM_01, 'sh'
 		db	'a', ANIM_03, 'll w'
-		db	 04h, 61h, 6Bh, 03h, 65h,SCR_END_SCRIPT		; end-of-script
+		db	 04h, 61h, 6Bh, 03h, 65h,SCR_END_SCRIPT
 		db	ANIM_01, ANIM_06, ANIM_03, 'fro'
 		db	ANIM_03, 'm ', ANIM_02, 'm', ANIM_01
 		db	'y ', ANIM_03, 's', ANIM_01, 'l'
@@ -2354,7 +2355,7 @@ gspeech_e_	dw	offset narration_chapter_4
 		db	'f ', ANIM_03, '2,', ANIM_04
 		db	'000 ', ANIM_01, 'y'
 		db	'e', ANIM_04, 'ar', ANIM_03, 's'
-		db	SCR_END_SCRIPT, 01h, 02h, 04h, 61h, 02h		; end-of-script
+		db	SCR_END_SCRIPT, 01h, 02h, 04h, 61h, 02h
 		db	'n', ANIM_03, 'd ', ANIM_03, 'o'
 		db	ANIM_02, 'nce ', ANIM_04
 		db	'aga', ANIM_01, 'in'
@@ -2378,7 +2379,7 @@ char_glyph_index:
 		db	ANIM_01, ANIM_02, ANIM_03, ANIM_04, 000h, 000h
 		db	000h, 000h, 000h, 000h, ANIM_05, ANIM_06
 		db	ANIM_07, ANIM_08, 009h, 00Ah, 00Bh, 00Ch
-		db	 0Dh, 0Eh, 0Fh, 10h, 11h, 12h
+		db	 CR, 0Eh, 0Fh, 10h, 11h, 12h
 		db	 13h, 14h, 15h, 16h, 00h, 00h
 		db	 00h, 17h, 18h, 19h, 1Ah, 1Bh
 		db	 1Ch, 1Dh, 1Eh, 1Fh
