@@ -126,6 +126,14 @@ LOAD_DATA	MACRO	src, dst
 		call	word ptr cs:[10Ch]
 		ENDM
 
+; RESET_STACK
+;   Atomically reset SP to 2000h (interrupts disabled during the write).
+RESET_STACK	MACRO
+		cli
+		mov	sp, 2000h
+		sti
+		ENDM
+
 ; GFX_BLIT bx_val, cx_val, di_val
 ;   Set up registers and call gfx_update_fn.
 GFX_BLIT	MACRO	bx_val, cx_val, di_val
@@ -552,9 +560,7 @@ timer_wait_gfx:
 		mov	byte ptr cs:gvar_skip_input,0
 		mov	byte ptr cs:gvar_key_state,0
 		jmp	short $+2		; delay for I/O
-		cli				; Disable interrupts
-		mov	sp,2000h
-		sti				; Enable interrupts
+		RESET_STACK
 		push	cs
 		pop	ds
 		call	word ptr cs:gfx_init_fn
@@ -646,9 +652,7 @@ credits_fade_loop:
 		db	'   Copyright (C)1987,1990 GAME ARTS    ', 0Dh, '    Copyright (C)1990 Sierra On-Line    '
 		db	0FFh, 00h, 00h, 00h
 begin_gameplay:
-		cli				; Disable interrupts
-		mov	sp,2000h
-		sti				; Enable interrupts
+		RESET_STACK
 		mov	byte ptr cs:gvar_skip_input,0
 		mov	byte ptr cs:gvar_key_state,0
 		mov	word ptr cs:script_pc,79C6h
