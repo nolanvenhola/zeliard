@@ -2328,16 +2328,19 @@ gspeech_e_	dw	offset narration_chapter_4
 		db	' Jashiin!'
 		db	SCR_MODE2		; layout-mode 2
 		db	'Your reign of evil is near its end!"'
-		db	SCR_WAIT, SCR_WAIT, SCR_WAIT, SCR_END_SCRIPT, 'X%'		; pause | pause | pause | end-of-script
-		db	SCR_RESET, 0, 0, ANIM_03, 'h!'		; reset text attribute
-		db	0FCh, 0FCh, ANIM_04, ANIM_07, 'p#'		; ctrl 0xFC | ctrl 0xFC
-		db	ANIM_01, SCR_BREAK, ANIM_04, ANIM_07, 'p$'		; end-of-section
-		db	ANIM_04, SCR_BREAK, ANIM_04, ANIM_07, 'x%'		; end-of-section
-		db	ANIM_06, SCR_SCROLL, ANIM_04, ANIM_07, 'x('		; scroll-text-up
-		db	ANIM_06, ANIM_02, ANIM_04, ANIM_07, 'p)'
-		db	ANIM_04, ANIM_03, ANIM_04, ANIM_07, 'p*'
-		db	ANIM_01, ANIM_03, ANIM_04, ANIM_07, 'h,'
-		db	0FCh, ANIM_04, ANIM_04, ANIM_07, SCR_END_SCRIPT, ANIM_01		; ctrl 0xFC | end-of-script
+		db	SCR_WAIT, SCR_WAIT, SCR_WAIT, SCR_END_SCRIPT, 058h, 025h	; end chapter
+		; Chapter-end scanline transition table
+		; Format per row (6 bytes): [ctrl1] [ctrl2] [04h] [07h] [y_pos] [seq]
+		; y_pos = screen Y coordinate, seq = sequence index
+		db	SCR_RESET, 000h, 000h, 003h, 068h, 021h	; reset | y=68 seq=21
+		db	0FCh,  0FCh,  004h, 007h, 070h, 023h		; sync  | y=70 seq=23
+		db	001h, SCR_BREAK, 004h, 007h, 070h, 024h	; t=1  | break  | y=70 seq=24
+		db	004h, SCR_BREAK, 004h, 007h, 078h, 025h	; t=4  | break  | y=78 seq=25
+		db	006h, SCR_SCROLL,004h, 007h, 078h, 028h	; t=6  | scroll | y=78 seq=28
+		db	006h, 002h,  004h, 007h, 070h, 029h		; t=6  | t=2    | y=70 seq=29
+		db	004h, 003h,  004h, 007h, 070h, 02Ah		; t=4  | t=3    | y=70 seq=2A
+		db	001h, 003h,  004h, 007h, 068h, 02Ch		; t=1  | t=3    | y=68 seq=2C
+		db	0FCh, 004h,  004h, 007h, SCR_END_SCRIPT, 001h	; sync | end-of-script
 
 		; Style-encoded speech -- Jashiin (departing threat)
 		; "Beware, for I shall wake from my sleep of 2,000 years
