@@ -2368,18 +2368,28 @@ char_glyph_index:
 		db	0BAh,0BBh,0BCh,0BDh,0BEh,0BFh		; ctrl 0xBA | ctrl 0xBB | ctrl 0xBC | ctrl 0xBD | ctrl 0xBE | ctrl 0xBF
 		db	0C0h,0C1h		; ctrl 0xC0 | ctrl 0xC1
 		db	13 dup (0)
-		; �??�?? Character pixel width table �??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??�??
-		; One byte per glyph index: pixel width used by text layout engine
-		; to advance the cursor after drawing each character.
+		; Character pixel width table
+		; One entry per glyph index (indexed by char_glyph_index lookup).
+		; Each byte = pixel advance width after drawing that glyph.
+		; Width 0 = glyph not present / zero-width.
 char_pixel_widths:
+		; glyphs 0x00-0x05  (control/unused glyphs)
 		db	2, 2, 3, 1, 0, 0
+		; glyphs 0x06-0x0B
 		db	2, 2, 3, 1, 1, 1
+		; glyphs 0x0C-0x11
 		db	2, 2, 0, 1, 2, 1
+		; glyphs 0x12-0x18  (7x width 1)
 		db	7 dup (1)
+		; glyphs 0x19-0x1E
 		db	3, 2, 1, 1, 2, 1
+		; glyphs 0x1F-0x27  (unused)
 		db	9 dup (0)
+		; glyphs 0x28-0x29
 		db	2, 0
+		; glyphs 0x2A-0x32  (unused)
 		db	9 dup (0)
+		; glyphs 0x33-0x50  (symbols and digits)
 		db	1, 0, 0, 0, 0, 0
 		db	1, 2, 2, 2, 1, 1
 		db	1, 0, 0, 1, 0, 1
@@ -2388,22 +2398,27 @@ char_pixel_widths:
 		db	0, 1, 1, 0, 0, 0
 		db	1, 1, 1, 2, 0, 3
 		db	1, 0, 5, 4, 4, 4
+		; glyphs 0x51-0x5E  (uppercase A-Z area)
 		db	6, 8, 5, 3, 4, 4
 		db	6, 6, 6, 5, 6, 8
 		db	7, 5, 7, 7, 7, 7
 		db	7, 7, 7, 7, 3, 4
 		db	6, 6, 6, 7
+		; glyphs 0x5F-0x67  (9x width 8)
 		db	9 dup (8)
+		; glyphs 0x68-0x6A
 		db	5, 8, 8
+		; glyphs 0x6B-0x72  (8x width 8)
 		db	8 dup (8)
-		db	ANIM_07, ANIM_08, ANIM_08, ANIM_08, ANIM_08, ANIM_08
-		db	ANIM_07, ANIM_05, ANIM_03, ANIM_05, ANIM_06, ANIM_07
-		db	ANIM_07, ANIM_08, ANIM_08, ANIM_07, ANIM_08, ANIM_07
-		db	ANIM_07, ANIM_08, ANIM_08, ANIM_05, ANIM_06, ANIM_08
-		db	ANIM_05, ANIM_08, ANIM_07, ANIM_07, ANIM_08, ANIM_08
-		db	ANIM_08, ANIM_07, ANIM_06, ANIM_08, ANIM_08, ANIM_08
-		db	ANIM_07, ANIM_07, ANIM_07, ANIM_04, ANIM_08, ANIM_04
-		db	ANIM_07, ANIM_08		; (end of char width table)
+		; glyphs 0x73-0x84  (lowercase / extended)
+		db	7, 8, 8, 8, 8, 8
+		db	7, 5, 3, 5, 6, 7
+		db	7, 8, 8, 7, 8, 7
+		db	7, 8, 8, 5, 6, 8
+		db	5, 8, 7, 7, 8, 8
+		db	8, 7, 6, 8, 8, 8
+		db	7, 7, 7, 4, 8, 4
+		db	7, 8		; (end of char width table)
 
 		; Opening scene resource file table
 		; Format per entry: [archive_0indexed][chunk_1indexed][filename\0]
