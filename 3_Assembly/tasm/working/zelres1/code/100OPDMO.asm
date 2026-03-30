@@ -2373,49 +2373,32 @@ data_108	dw	offset scene_func_30
 		db	 05h, 08h, 07h, 07h, 08h, 08h
 		db	 08h, 07h, 06h, 08h, 08h, 08h
 		db	 07h, 07h, 07h, 04h, 08h, 04h
-		db	 07h, 08h, 00h, 17h, 6Eh, 65h
-		db	 63h, 2Eh, 67h, 72h, 70h, 00h
-		db	 00h, 12h, 68h, 6Fh, 75h, 2Eh
-		db	 67h, 72h, 70h, 00h, 00h, 0Fh
-		db	'dmaou.grp'
-		db	0, 0
-		db	'(zopn.msd'
-		db	 00h, 00h, 1Eh
-		db	'ttl1.grp'
-		db	 00h, 00h, 1Fh
-		db	'ttl2.grp'
-		db	0, 0
-		db	' ttl3.grp'
-		db	0, 0
-		db	27h, 'zend.msd'
-		db	0, 0
-		db	'!waku.grp'
-		db	 00h, 00h, 0Eh, 61h, 6Dh, 65h
-		db	 2Eh, 67h, 72h, 70h, 00h, 00h
-		db	 10h
-		db	'hime.grp'
-		db	 00h, 00h, 13h, 69h, 73h, 69h
-		db	 2Eh, 67h, 72h, 70h, 00h, 00h
-		db	 1Ah, 6Fh, 75h, 69h, 2Eh, 67h
-		db	 72h, 70h, 00h, 00h, 1Ch, 73h
-		db	 65h, 69h, 2Eh, 67h, 72h, 70h
-		db	 00h, 00h
-		db	'"yuu1.grp'
-		db	0, 0
-		db	'#yuu2.grp'
-		db	0, 0
-		db	'$yuu3.grp'
-		db	0, 0
-		db	'%yuu4.grp'
-		db	0, 0
-		db	'&yuup.grp'
-		db	0, 0
-		db	1Bh, 'oup.grp'
-		db	 00h, 00h, 14h
-		db	'maop.grp'
-		db	0, 0, 0
-		db	'game.bin'
-		db	0
+		db	07h, 08h		; (end of char width table)
+
+		; Opening scene resource file table
+		; Format per entry: [archive_0indexed][chunk_1indexed][filename\0]
+		db	00h, 17h, 'nec.grp',   0	; zelres1 chunk 23
+		db	00h, 12h, 'hou.grp',   0	; zelres1 chunk 18
+		db	00h, 0Fh, 'dmaou.grp', 0	; zelres1 chunk 15
+		db	00h, 28h, 'zopn.msd',  0	; zelres1 chunk 40 (opening music)
+		db	00h, 1Eh, 'ttl1.grp',  0	; zelres1 chunk 30
+		db	00h, 1Fh, 'ttl2.grp',  0	; zelres1 chunk 31
+		db	00h, 20h, 'ttl3.grp',  0	; zelres1 chunk 32 (Zeliard logo)
+		db	00h, 27h, 'zend.msd',  0	; zelres1 chunk 39 (ending music)
+		db	00h, 21h, 'waku.grp',  0	; zelres1 chunk 33
+		db	00h, 0Eh, 'ame.grp',   0	; zelres1 chunk 14
+		db	00h, 10h, 'hime.grp',  0	; zelres1 chunk 16
+		db	00h, 13h, 'isi.grp',   0	; zelres1 chunk 19
+		db	00h, 1Ah, 'oui.grp',   0	; zelres1 chunk 26
+		db	00h, 1Ch, 'sei.grp',   0	; zelres1 chunk 28
+		db	00h, 22h, 'yuu1.grp',  0	; zelres1 chunk 34
+		db	00h, 23h, 'yuu2.grp',  0	; zelres1 chunk 35
+		db	00h, 24h, 'yuu3.grp',  0	; zelres1 chunk 36
+		db	00h, 25h, 'yuu4.grp',  0	; zelres1 chunk 37
+		db	00h, 26h, 'yuup.grp',  0	; zelres1 chunk 38
+		db	00h, 1Bh, 'oup.grp',   0	; zelres1 chunk 27
+		db	00h, 14h, 'maop.grp',  0	; zelres1 chunk 20
+		db	00h, 00h, 'game.bin',  0	; game main binary
 scene_func_26		endp
 
 
