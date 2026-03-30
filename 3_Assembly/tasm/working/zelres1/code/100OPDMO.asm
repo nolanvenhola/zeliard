@@ -237,7 +237,7 @@ start:
 		mov	cx,4170h
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
-		call	word ptr cs:gspeech_nt
+		call	word ptr cs:ftbl_05
 		LOAD_DATA palette_data_a, vga_seg
 		mov	si,palette_data_b
 		mov	di,cga_text_seg
@@ -270,10 +270,10 @@ start:
 		mov	cx,1040h
 		mov	es,cs:gvar_game_seg
 		mov	di,ui_overlay_buf
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		mov	byte ptr cs:gvar_volume_b,4
 		mov	si,scene_sprite_a
-		call	word ptr cs:gspeech_yo
+		call	word ptr cs:ftbl_01
 		LOAD_DATA scene_data_c, vga_seg
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
@@ -302,7 +302,7 @@ scene_sprite_loop:
 		push	si
 		dec	al
 		mov	bx,1720h
-		call	word ptr cs:gspeech_u_
+		call	word ptr cs:ftbl_02
 		pop	si
 		mov	al,14h
 		call	timer_wait_loop
@@ -314,11 +314,11 @@ scene_after_anim:
 		WAIT_FRAME 0F0h
 		mov	al,2
 		mov	bx,1720h
-		call	word ptr cs:gspeech_u_
+		call	word ptr cs:ftbl_02
 		WAIT_FRAME 0Fh
 		mov	al,3
 		mov	bx,1720h
-		call	word ptr cs:gspeech_u_
+		call	word ptr cs:ftbl_02
 		WAIT_FRAME 0F0h
 		xor	al,al			; Zero register
 		mov	bx,94h
@@ -351,7 +351,7 @@ scene_after_anim:
 		xor	ax,ax			; Zero register
 		int	60h			; ??INT Non-standard interrupt
 		pop	ds
-		call	word ptr cs:gspeech_ve
+		call	word ptr cs:ftbl_04
 		mov	al,0F0h
 		call	timer_wait_loop
 		xor	al,al			; Zero register
@@ -371,14 +371,14 @@ scene_after_anim:
 		mov	cx,4170h
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
-		call	word ptr cs:gspeech_nt
+		call	word ptr cs:ftbl_05
 		mov	byte ptr ds:gvar_timer_lo,0
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
 		call	fill_buffer
 		mov	si,scene_sprite_d
-		call	word ptr cs:gspeech_t_
+		call	word ptr cs:ftbl_06
 		mov	al,0F0h
 		call	timer_wait_loop
 		mov	ax,0C7h
@@ -388,11 +388,11 @@ scene_color_rotate_loop:
 		push	cx
 		mov	byte ptr ds:gvar_timer_lo,0
 		push	ax
-		call	word ptr cs:gspeech_se
+		call	word ptr cs:ftbl_07
 		pop	ax
 		push	ax
 		mov	al,ah
-		call	word ptr cs:gspeech_se
+		call	word ptr cs:ftbl_07
 		mov	al,50h			; 'P'
 		call	timer_wait_loop
 		pop	ax
@@ -438,7 +438,7 @@ anim_check_frame_opcode:
 		push	si
 		dec	al
 		mov	bx,1F70h
-		call	word ptr cs:gspeech_ha
+		call	word ptr cs:ftbl_03
 		pop	si
 		jmp	short anim_read_byte
 anim_char_render:
@@ -482,12 +482,12 @@ char_render_glyph:
 		mov	cl,ds:render_state_b
 		add	cl,1
 		mov	ah,2
-		call	word ptr cs:gspeech_e_
+		call	word ptr cs:ftbl_12
 		pop	ax
 		mov	bx,ds:render_state_a
 		mov	cl,ds:render_state_b
 		mov	ah,7
-		call	word ptr cs:gspeech_e_
+		call	word ptr cs:ftbl_12
 		pop	si
 		add	word ptr ds:render_state_a,8
 		pop	ax
@@ -723,12 +723,12 @@ begin_gameplay:
 		add	ax,2000h
 		mov	es,ax
 		mov	di,0
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		mov	bx,410h
 		mov	cx,4868h
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		call	script_interpreter
 		mov	ax,9
 		call	word ptr cs:gfx_palette_fn
@@ -736,7 +736,7 @@ begin_gameplay:
 		mov	cx,4868h
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		LOAD_DATA 95A9h, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
@@ -744,14 +744,14 @@ begin_gameplay:
 		call	decompress_image
 		call	script_interpreter
 		xor	ax,ax			; Zero register
-		call	word ptr cs:gspeech_en
+		call	word ptr cs:ftbl_08
 		mov	ax,6
 		call	word ptr cs:gfx_palette_fn
 		mov	bx,410h
 		mov	cx,4868h
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		LOAD_DATA 9551h, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
@@ -769,7 +769,7 @@ begin_gameplay:
 		mov	cx,4868h
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		call	script_interpreter
 		call	script_interpreter
 		mov	ax,cs
@@ -779,7 +779,7 @@ begin_gameplay:
 		mov	bx,1728h
 		mov	cx,2230h
 		mov	al,7
-		call	word ptr cs:gspeech_t2_
+		call	word ptr cs:ftbl_09
 		call	script_interpreter
 		call	script_interpreter
 		mov	al,2
@@ -790,7 +790,7 @@ begin_gameplay:
 		mov	di,0
 		mov	bx,1728h
 		mov	cx,2230h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		mov	byte ptr cs:gvar_timer_lo,0
 		mov	al,0Fh
 		call	gameplay_timer_loop
@@ -802,7 +802,7 @@ begin_gameplay:
 		mov	di,0
 		mov	bx,1728h
 		mov	cx,2230h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		LOAD_DATA scene_data_f, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
@@ -838,10 +838,10 @@ begin_gameplay:
 		mov	bx,1610h
 		mov	cx,2468h
 		mov	al,5
-		call	word ptr cs:gspeech_t2_
+		call	word ptr cs:ftbl_09
 		call	script_interpreter
 		xor	ax,ax			; Zero register
-		call	word ptr cs:gspeech_en
+		call	word ptr cs:ftbl_08
 		call	script_interpreter
 		LOAD_DATA 95D2h, 0A000h
 		mov	es,cs:gvar_game_seg
@@ -862,25 +862,25 @@ begin_gameplay:
 		call	script_interpreter
 		call	script_interpreter
 		xor	ax,ax			; Zero register
-		call	word ptr cs:gspeech_en
+		call	word ptr cs:ftbl_08
 		mov	ax,6
 		call	word ptr cs:gfx_palette_fn
 		mov	bx,0A15h
 		mov	cx,1A5Dh
-		call	word ptr cs:gspeech_he
+		call	word ptr cs:ftbl_10
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		mov	bx,0B18h
 		mov	cx,1858h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		mov	bx,2C15h
 		mov	cx,1A5Dh
-		call	word ptr cs:gspeech_he
+		call	word ptr cs:ftbl_10
 		mov	es,cs:gvar_game_seg
 		mov	di,8000h
 		mov	bx,2D18h
 		mov	cx,1858h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		call	script_interpreter
 		call	script_interpreter
 		LOAD_DATA 9613h, 0A000h
@@ -889,16 +889,16 @@ begin_gameplay:
 		mov	di,screen_buf_1
 		call	decompress_image
 		xor	ax,ax			; Zero register
-		call	word ptr cs:gspeech_en
+		call	word ptr cs:ftbl_08
 		mov	ax,8
 		call	word ptr cs:gfx_palette_fn
 		mov	bx,1515h
 		mov	cx,315Dh
-		call	word ptr cs:gspeech_he
+		call	word ptr cs:ftbl_10
 		mov	es,cs:gvar_game_seg
 		mov	di,screen_buf_1
 		mov	bx,1618h
-		call	word ptr cs:gspeech_l_
+		call	word ptr cs:ftbl_11
 		call	script_interpreter
 		call	script_interpreter
 		mov	bx,1515h
@@ -911,7 +911,7 @@ gameplay_timer_loop_start:
 		push	bx
 		mov	byte ptr cs:gvar_timer_lo,0
 		mov	cx,dx
-		call	word ptr cs:gspeech_he
+		call	word ptr cs:ftbl_10
 		mov	al,0Fh
 		call	gameplay_timer_loop
 		pop	bx
@@ -923,15 +923,15 @@ gameplay_timer_loop_start:
 
 		mov	bx,2C15h
 		mov	cx,1A5Dh
-		call	word ptr cs:gspeech_he
+		call	word ptr cs:ftbl_10
 		mov	bx,0A15h
 		mov	cx,1A5Dh
-		call	word ptr cs:gspeech_he
+		call	word ptr cs:ftbl_10
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		mov	bx,0B18h
 		mov	cx,1858h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		call	script_interpreter
 		call	script_interpreter
 		mov	bx,2C15h
@@ -944,7 +944,7 @@ gameplay_input_loop:
 		push	bx
 		mov	byte ptr cs:gvar_timer_lo,0
 		mov	cx,dx
-		call	word ptr cs:gspeech_he
+		call	word ptr cs:ftbl_10
 		mov	al,0Fh
 		call	gameplay_timer_loop
 		pop	bx
@@ -955,7 +955,7 @@ gameplay_input_loop:
 		loop	gameplay_input_loop		; Loop if cx > 0
 
 		xor	ax,ax			; Zero register
-		call	word ptr cs:gspeech_en
+		call	word ptr cs:ftbl_08
 		mov	ax,7
 		call	word ptr cs:gfx_palette_fn
 		LOAD_DATA 95DDh, 0A000h
@@ -967,7 +967,7 @@ gameplay_input_loop:
 		mov	di,scene_framebuf
 		mov	bx,1010h
 		mov	cx,3160h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		call	script_interpreter
 		LOAD_DATA 95E8h, 0A000h
 		mov	si,95F3h
@@ -1137,12 +1137,12 @@ script_render_char:
 		inc	bx
 		inc	cx
 		mov	ah,ds:text_color_fg
-		call	word ptr cs:gspeech_e_
+		call	word ptr cs:ftbl_12
 		pop	cx
 		pop	bx
 		pop	ax
 		mov	ah,ds:text_color_bg
-		call	word ptr cs:gspeech_e_
+		call	word ptr cs:ftbl_12
 		pop	ax
 		mov	bl,al
 		sub	bl,20h			; ' '
@@ -1298,7 +1298,7 @@ script_portrait_sm:
 		mov	di,ax
 		mov	bx,3350h
 		mov	cx,0E20h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		jmp	script_refetch
 script_portrait_sm_large:
 		sub	al,6
@@ -1312,7 +1312,7 @@ script_portrait_sm_large:
 		mov	di,ax
 		mov	bx,3338h
 		mov	cx,0B10h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		jmp	script_refetch
 script_portrait_lg:
 		mov	es,cs:gvar_game_seg
@@ -1330,7 +1330,7 @@ script_portrait_lg:
 		mov	di,ax
 		mov	bx,1350h
 		mov	cx,920h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		jmp	script_refetch
 script_portrait_lg_large:
 		sub	al,6
@@ -1344,7 +1344,7 @@ script_portrait_lg_large:
 		mov	di,ax
 		mov	bx,1238h
 		mov	cx,0B10h
-		call	word ptr cs:garland_speech
+		call	word ptr cs:ftbl_00
 		jmp	script_refetch
 script_interpreter		endp
 
@@ -2307,24 +2307,30 @@ jashiin_disappear_text		db	'Jashiin disappeared leaving echo'
 anim_fn_wipe		dw	0F5F5h		; runtime fn ptr (placeholder = SCR_WAIT,SCR_WAIT)
 anim_fn_fade		dw	0FEFDh		; runtime fn ptr (placeholder = SCR_BREAK,SCR_SCROLL)
 anim_fn_draw		dw	0F3EFh		; runtime fn ptr (placeholder = SCR_SPK_UNK,SCR_PARA)
-; ������ Garland final speech word table ������������������������������������������������������������������������������������������������������
-; Duke Garland's threat: SCR_BOLD "You haven't seen the last of me, Jashiin!"
-; Each dw stores 2 consecutive script bytes (little-endian).
-; Referenced individually by code that builds the speech incrementally.
-garland_speech		db	SCR_BOLD, '"'		; start bold quoted speech
-gspeech_yo		db	'Y', 'o'
-gspeech_u_		dw	offset narration_chapter_2	; 'u ', encoded as chapter offset
-gspeech_ha		db	'h', 'a'
-gspeech_ve		db	'v', 'e'
-gspeech_nt		dw	offset narration_chapter_3	; "n'", encoded as chapter offset
-gspeech_t_		dw	offset opening_narration	; 't ', encoded as narration offset
-gspeech_se		db	's', 'e'
-gspeech_en		db	'e', 'n'
-gspeech_t2_		db	' ', 't'
-gspeech_he		db	'h', 'e'
-gspeech_l_		db	' ', 'l'
+; Dual-use dispatch/speech table (ftbl_00 .. ftbl_12)
+; Each entry serves two purposes simultaneously:
+;  1. DISPATCH - called via "call word ptr cs:ftbl_NN": the 2-byte value is
+;     read as a 16-bit address. Most targets (0x6168, 0x6F59 etc.) are
+;     runtime-loaded driver functions in the upper CS segment; ftbl_00/02/05/06/12
+;     call into narration chapters directly.
+;  2. TEXT - reading all bytes sequentially produces the speech:
+;     SCR_BOLD + '"You haven''t seen the last of me, Jashiin!"'
+;     (Duke Garland's final threat to Jashiin)
+; The character byte pairs were deliberately chosen to match driver addresses.
+ftbl_00		db	SCR_BOLD, '"'		; start bold quoted speech
+ftbl_01		db	'Y', 'o'
+ftbl_02		dw	offset narration_chapter_2	; 'u ', encoded as chapter offset
+ftbl_03		db	'h', 'a'
+ftbl_04		db	'v', 'e'
+ftbl_05		dw	offset narration_chapter_3	; "n'", encoded as chapter offset
+ftbl_06		dw	offset opening_narration	; 't ', encoded as narration offset
+ftbl_07		db	's', 'e'
+ftbl_08		db	'e', 'n'
+ftbl_09		db	' ', 't'
+ftbl_10		db	'h', 'e'
+ftbl_11		db	' ', 'l'
 		db	'ast of m'
-gspeech_e_	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
+ftbl_12	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
 		db	' Jashiin!'
 		db	SCR_MODE2		; layout-mode 2
 		db	'Your reign of evil is near its end!"'
