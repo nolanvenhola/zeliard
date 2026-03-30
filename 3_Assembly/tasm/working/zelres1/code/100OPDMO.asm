@@ -105,6 +105,38 @@ SCR_SPK_PRINC	equ	0EBh	; speaker: Princess Felicia (attr 'A')
 SCR_ATTR_RST	equ	0A0h	; attribute restore
 SCR_ATTR_RST2	equ	0A2h	; attribute restore (variant)
 
+; ── Macros ───────────────────────────────────────────────────────────────────
+
+; WAIT_FRAME delay
+;   Reset the frame timer and wait for 'delay' timer units.
+WAIT_FRAME	MACRO	delay
+		mov	byte ptr ds:gvar_timer_lo, 0
+		mov	al, delay
+		call	timer_wait_loop
+		ENDM
+
+; LOAD_DATA src, dst
+;   Load a data chunk via the chunk loader (call cs:[10Ch], AL=2).
+LOAD_DATA	MACRO	src, dst
+		push	cs
+		pop	es
+		mov	si, src
+		mov	di, dst
+		mov	al, 2
+		call	word ptr cs:[10Ch]
+		ENDM
+
+; GFX_BLIT bx_val, cx_val, di_val
+;   Set up registers and call gfx_update_fn.
+GFX_BLIT	MACRO	bx_val, cx_val, di_val
+		mov	al, 0FFh
+		mov	bx, bx_val
+		mov	cx, cx_val
+		mov	es, cs:gvar_game_seg
+		mov	di, di_val
+		call	word ptr cs:gfx_update_fn
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -135,12 +167,7 @@ start:
 		call	word ptr cs:gfx_init_fn
 		push	cs
 		pop	ds
-		push	cs
-		pop	es
-		mov	si,scene_data_d
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA scene_data_d, vga_seg
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
@@ -156,12 +183,7 @@ start:
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		call	word ptr cs:data_101
-		push	cs
-		pop	es
-		mov	si,palette_data_a
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA palette_data_a, vga_seg
 		mov	si,palette_data_b
 		mov	di,cga_text_seg
 		mov	al,2
@@ -184,12 +206,7 @@ start:
 		call	animate_scanline
 		mov	ax,2
 		call	word ptr cs:gfx_palette_fn
-		mov	al,0FFh
-		mov	bx,1220h
-		mov	cx,2C68h
-		mov	es,cs:gvar_game_seg
-		mov	di,4000h
-		call	word ptr cs:gfx_update_fn
+		GFX_BLIT 1220h, 2C68h, 4000h
 		mov	es,cs:gvar_game_seg
 		mov	si,cga_text_seg
 		mov	di,screen_buf_2
@@ -202,12 +219,7 @@ start:
 		mov	byte ptr cs:gvar_volume_b,4
 		mov	si,scene_sprite_a
 		call	word ptr cs:data_97
-		push	cs
-		pop	es
-		mov	si,scene_data_c
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA scene_data_c, vga_seg
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_data_i
@@ -241,46 +253,28 @@ scene_sprite_loop:
 		call	timer_wait_loop
 		jmp	short scene_sprite_loop
 scene_after_anim:
-		mov	byte ptr ds:gvar_timer_lo,0
-		mov	al,0F0h
-		call	timer_wait_loop
+		WAIT_FRAME 0F0h
 		mov	si,scene_sprite_b
 		call	sprite_anim_proc
-		mov	byte ptr ds:gvar_timer_lo,0
-		mov	al,0F0h
-		call	timer_wait_loop
+		WAIT_FRAME 0F0h
 		mov	al,2
 		mov	bx,1720h
 		call	word ptr cs:data_98
-		mov	byte ptr ds:gvar_timer_lo,0
-		mov	al,0Fh
-		call	timer_wait_loop
+		WAIT_FRAME 0Fh
 		mov	al,3
 		mov	bx,1720h
 		call	word ptr cs:data_98
-		mov	byte ptr ds:gvar_timer_lo,0
-		mov	al,0F0h
-		call	timer_wait_loop
+		WAIT_FRAME 0F0h
 		xor	al,al			; Zero register
 		mov	bx,94h
 		mov	cx,501Eh
 		call	word ptr cs:data_47+80h	; ('es')
-		push	cs
-		pop	es
-		mov	si,9568h
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA 9568h, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
 		call	fill_buffer
-		push	cs
-		pop	es
-		mov	si,glyph_large
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA glyph_large, vga_seg
 		mov	si,scene_data_d
 		mov	di,aux_buf_seg
 		mov	al,2
@@ -660,24 +654,14 @@ begin_gameplay:
 		mov	word ptr cs:script_pc,79C6h
 		mov	ax,5
 		call	word ptr cs:gfx_palette_fn
-		push	cs
-		pop	es
-		mov	si,9594h
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA 9594h, 0A000h
 		mov	ax,cs
 		add	ax,2000h
 		mov	es,ax
 		mov	si,vga_seg
 		mov	di,0
 		call	decompress_image
-		push	cs
-		pop	es
-		mov	si,scene_data_e
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA scene_data_e, vga_seg
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
@@ -702,12 +686,7 @@ begin_gameplay:
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		call	word ptr cs:data_96
-		push	cs
-		pop	es
-		mov	si,95A9h
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA 95A9h, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
@@ -722,12 +701,7 @@ begin_gameplay:
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		call	word ptr cs:data_96
-		push	cs
-		pop	es
-		mov	si,9551h
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA 9551h, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_data_i
@@ -778,12 +752,7 @@ begin_gameplay:
 		mov	bx,1728h
 		mov	cx,2230h
 		call	word ptr cs:data_96
-		push	cs
-		pop	es
-		mov	si,scene_data_f
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA scene_data_f, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
@@ -794,19 +763,9 @@ begin_gameplay:
 		call	script_interpreter
 		mov	ax,7
 		call	word ptr cs:gfx_palette_fn
-		mov	al,0FFh
-		mov	bx,410h
-		mov	cx,4868h
-		mov	es,cs:gvar_game_seg
-		mov	di,4000h
-		call	word ptr cs:gfx_update_fn
+		GFX_BLIT 410h, 4868h, 4000h
 		call	script_interpreter
-		push	cs
-		pop	es
-		mov	si,95BEh
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA 95BEh, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
@@ -819,12 +778,7 @@ begin_gameplay:
 		call	word ptr cs:gfx_update_fn
 		call	script_interpreter
 		call	script_interpreter
-		push	cs
-		pop	es
-		mov	si,95C8h
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA 95C8h, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
@@ -838,38 +792,18 @@ begin_gameplay:
 		xor	ax,ax			; Zero register
 		call	word ptr cs:data_104
 		call	script_interpreter
-		push	cs
-		pop	es
-		mov	si,95D2h
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA 95D2h, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
 		call	decompress_image
-		mov	al,0FFh
-		mov	bx,410h
-		mov	cx,4868h
-		mov	es,cs:gvar_game_seg
-		mov	di,scene_framebuf
-		call	word ptr cs:gfx_update_fn
-		push	cs
-		pop	es
-		mov	si,scene_data_g
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		GFX_BLIT 410h, 4868h, scene_framebuf
+		LOAD_DATA scene_data_g, vga_seg
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
 		call	decompress_image
-		push	cs
-		pop	es
-		mov	si,scene_data_h
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA scene_data_h, vga_seg
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,screen_buf_1
@@ -898,12 +832,7 @@ begin_gameplay:
 		call	word ptr cs:data_96
 		call	script_interpreter
 		call	script_interpreter
-		push	cs
-		pop	es
-		mov	si,9613h
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA 9613h, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,screen_buf_1
@@ -978,12 +907,7 @@ gameplay_input_loop:
 		call	word ptr cs:data_104
 		mov	ax,7
 		call	word ptr cs:gfx_palette_fn
-		push	cs
-		pop	es
-		mov	si,95DDh
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA 95DDh, 0A000h
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
@@ -994,12 +918,7 @@ gameplay_input_loop:
 		mov	cx,3160h
 		call	word ptr cs:data_96
 		call	script_interpreter
-		push	cs
-		pop	es
-		mov	si,95E8h
-		mov	di,0A000h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		LOAD_DATA 95E8h, 0A000h
 		mov	si,95F3h
 		mov	di,0D000h
 		mov	al,2
@@ -1023,12 +942,7 @@ gameplay_input_loop:
 		mov	di,4000h
 		mov	si,ext_segment
 		call	xor_mask_render
-		mov	al,0FFh
-		mov	bx,808h
-		mov	cx,40C0h
-		mov	es,cs:gvar_game_seg
-		mov	di,4000h
-		call	word ptr cs:gfx_update_fn
+		GFX_BLIT 808h, 40C0h, 4000h
 		mov	byte ptr cs:gvar_timer_lo,0
 		mov	al,0F0h
 		call	gameplay_timer_loop
