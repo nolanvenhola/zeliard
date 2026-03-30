@@ -88,7 +88,17 @@ seg_a		segment	byte public
 
 		org	0
 
-zr1_00		proc	far
+; ============================================================
+; INITIALIZATION & SCENE ORCHESTRATION
+; Main entry point for the opening demo sequence
+; ============================================================
+
+; ============================================================
+; INITIALIZATION & SCENE ORCHESTRATION
+; Main entry point for the opening demo sequence.
+; ============================================================
+
+opening_scene_main		proc	far
 
 start:
 		sub	word ptr ds:[0],si
@@ -136,7 +146,7 @@ start:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	scene_process_loop
+		call	decompress_image
 		call	word ptr cs:gfx_init_fn
 		mov	byte ptr cs:gvar_skip_input,0
 		mov	byte ptr cs:gvar_key_state,0
@@ -148,7 +158,7 @@ start:
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		call	word ptr cs:gfx_draw_fn
-		call	scene_scan_loop
+		call	animate_scanline
 		mov	ax,2
 		call	word ptr cs:gfx_palette_fn
 		mov	al,0FFh
@@ -160,7 +170,7 @@ start:
 		mov	es,cs:gvar_game_seg
 		mov	si,cga_text_seg
 		mov	di,screen_buf_2
-		call	scene_process_loop
+		call	decompress_image
 		mov	bx,2048h
 		mov	cx,1040h
 		mov	es,cs:gvar_game_seg
@@ -178,8 +188,8 @@ start:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_data_i
-		call	scene_process_loop
-		call	fill_buffer_2
+		call	decompress_image
+		call	palette_lookup
 		mov	bx,1220h
 		mov	cx,2C68h
 		call	word ptr cs:gfx_mode_fn
@@ -205,29 +215,29 @@ loc_1:
 		call	word ptr cs:data_98
 		pop	si
 		mov	al,14h
-		call	scene_func_4
+		call	timer_wait_loop
 		jmp	short loc_1
 loc_2:
 		mov	byte ptr ds:gvar_timer_lo,0
 		mov	al,0F0h
-		call	scene_func_4
+		call	timer_wait_loop
 		mov	si,scene_sprite_b
-		call	scene_func_1
+		call	sprite_anim_proc
 		mov	byte ptr ds:gvar_timer_lo,0
 		mov	al,0F0h
-		call	scene_func_4
+		call	timer_wait_loop
 		mov	al,2
 		mov	bx,1720h
 		call	word ptr cs:data_98
 		mov	byte ptr ds:gvar_timer_lo,0
 		mov	al,0Fh
-		call	scene_func_4
+		call	timer_wait_loop
 		mov	al,3
 		mov	bx,1720h
 		call	word ptr cs:data_98
 		mov	byte ptr ds:gvar_timer_lo,0
 		mov	al,0F0h
-		call	scene_func_4
+		call	timer_wait_loop
 		xor	al,al			; Zero register
 		mov	bx,94h
 		mov	cx,501Eh
@@ -271,7 +281,7 @@ loc_2:
 		pop	ds
 		call	word ptr cs:data_100
 		mov	al,0F0h
-		call	scene_func_4
+		call	timer_wait_loop
 		xor	al,al			; Zero register
 		mov	bx,0B48h
 		mov	cx,3180h
@@ -284,7 +294,7 @@ loc_2:
 		mov	di,scene_framebuf
 		call	fill_buffer
 		mov	al,0F0h
-		call	scene_func_4
+		call	timer_wait_loop
 		mov	bx,70Fh
 		mov	cx,4170h
 		mov	es,cs:gvar_game_seg
@@ -298,7 +308,7 @@ loc_2:
 		mov	si,scene_sprite_d
 		call	word ptr cs:data_102
 		mov	al,0F0h
-		call	scene_func_4
+		call	timer_wait_loop
 		mov	ax,0C7h
 		mov	cx,64h
 
@@ -312,7 +322,7 @@ locloop_3:
 		mov	al,ah
 		call	word ptr cs:data_103
 		mov	al,50h			; 'P'
-		call	scene_func_4
+		call	timer_wait_loop
 		pop	ax
 		add	ah,2
 		sub	al,2
@@ -320,18 +330,28 @@ locloop_3:
 		loop	locloop_3		; Loop if cx > 0
 
 loc_4:
-		call	scene_func_5
+		call	interrupt_handler_cascade
 		test	byte ptr ds:gvar_enable_all,0FFh
 		jz	loc_4			; Jump if zero
 		jmp	loc_17
 
-zr1_00		endp
+opening_scene_main		endp
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_func_1		proc	near
+
+; ============================================================
+; SPRITE & CHARACTER RENDERING
+; ============================================================
+
+
+; ============================================================
+; SPRITE & CHARACTER RENDERING
+; ============================================================
+
+sprite_anim_proc		proc	near
 		mov	byte ptr ds:render_state_b,8Ah
 loc_5:
 		mov	byte ptr ds:gvar_timer_lo,0
@@ -350,18 +370,18 @@ loc_7:
 		pop	si
 		jmp	short loc_6
 loc_8:
-		call	scene_func_2
+		call	char_render_proc
 		mov	al,14h
-		call	scene_func_4
+		call	timer_wait_loop
 		jmp	short loc_5
-scene_func_1		endp
+sprite_anim_proc		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_func_2		proc	near
+char_render_proc		proc	near
 		cmp	al,0FFh
 		jne	loc_11			; Jump if not equal
 		lodsb				; String [si] to al
@@ -405,14 +425,24 @@ loc_11:
 loc_12:
 		mov	byte ptr ds:gvar_volume_b,3Fh	; '?'
 		retn
-scene_func_2		endp
+char_render_proc		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_scan_loop		proc	near
+
+; ============================================================
+; SCREEN TRANSITION ANIMATIONS
+; ============================================================
+
+
+; ============================================================
+; SCREEN TRANSITION ANIMATIONS
+; ============================================================
+
+animate_scanline		proc	near
 		mov	bx,20h
 		mov	cx,5078h
 		call	word ptr cs:data_93
@@ -431,7 +461,7 @@ locloop_14:
 		mov	cx,5078h
 		call	word ptr cs:data_95
 		mov	al,1Ch
-		call	scene_func_4
+		call	timer_wait_loop
 		pop	cx
 		loop	locloop_14		; Loop if cx > 0
 
@@ -447,25 +477,35 @@ locloop_15:
 		mov	cx,5078h
 		call	word ptr cs:data_95
 		mov	al,1Ch
-		call	scene_func_4
+		call	timer_wait_loop
 		pop	cx
 		loop	locloop_15		; Loop if cx > 0
 
 		retn
-scene_scan_loop		endp
+animate_scanline		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_func_4		proc	near
+
+; ============================================================
+; TIMING & INPUT LOOPS
+; ============================================================
+
+
+; ============================================================
+; TIMING & INPUT LOOPS
+; ============================================================
+
+timer_wait_loop		proc	near
 loc_16:
 		test	byte ptr cs:gvar_skip_input,0FFh
 		jnz	loc_17			; Jump if not zero
 		cmp	byte ptr cs:gvar_key_state,0Dh
 		je	loc_17			; Jump if equal
-		call	scene_func_5
+		call	interrupt_handler_cascade
 		cmp	cs:gvar_timer_lo,al
 		jb	loc_16			; Jump if below
 		mov	byte ptr cs:gvar_timer_lo,0
@@ -473,7 +513,7 @@ loc_16:
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-scene_func_5:
+interrupt_handler_cascade:
 		push	si
 		push	ax
 		call	word ptr cs:[110h]
@@ -517,18 +557,18 @@ loc_18:
 		mov	byte ptr cs:gvar_key_state,0
 		mov	ax,1
 		call	word ptr cs:gfx_palette_fn
-		call	scene_func_7
+		call	credits_scroll_display
 		jmp	short loc_20
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-scene_func_6:
+scene_transition_wait:
 loc_19:
 		test	byte ptr cs:gvar_skip_input,0FFh
 		jnz	loc_20			; Jump if not zero
 		cmp	byte ptr cs:gvar_key_state,0Dh
 		je	loc_20			; Jump if equal
-		call	scene_func_5
+		call	interrupt_handler_cascade
 		cmp	cs:gvar_timer_lo,al
 		jb	loc_19			; Jump if below
 		mov	byte ptr cs:gvar_timer_lo,0
@@ -545,7 +585,7 @@ loc_21:
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-scene_func_7:
+credits_scroll_display:
 		mov	bx,20h
 		mov	cx,5078h
 		call	word ptr cs:data_93
@@ -564,7 +604,7 @@ locloop_23:
 		mov	cx,5078h
 		call	word ptr cs:data_95
 		mov	al,1Ch
-		call	scene_func_6
+		call	scene_transition_wait
 		pop	cx
 		loop	locloop_23		; Loop if cx > 0
 
@@ -580,7 +620,7 @@ locloop_24:
 		mov	cx,5078h
 		call	word ptr cs:data_95
 		mov	al,1Ch
-		call	scene_func_6
+		call	scene_transition_wait
 		pop	cx
 		loop	locloop_24		; Loop if cx > 0
 
@@ -608,7 +648,7 @@ loc_25:
 		mov	es,ax
 		mov	si,vga_seg
 		mov	di,0
-		call	scene_process_loop
+		call	decompress_image
 		push	cs
 		pop	es
 		mov	si,scene_data_e
@@ -618,7 +658,7 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	scene_process_loop
+		call	decompress_image
 		mov	bx,0
 		mov	cx,5088h
 		mov	ax,cs
@@ -631,7 +671,7 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		call	word ptr cs:data_96
-		call	scene_multiply
+		call	script_interpreter
 		mov	ax,9
 		call	word ptr cs:gfx_palette_fn
 		mov	bx,410h
@@ -648,8 +688,8 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	scene_process_loop
-		call	scene_multiply
+		call	decompress_image
+		call	script_interpreter
 		xor	ax,ax			; Zero register
 		call	word ptr cs:data_104
 		mov	ax,6
@@ -668,22 +708,22 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_data_i
-		call	scene_process_loop
-		call	scene_multiply
+		call	decompress_image
+		call	script_interpreter
 		mov	al,4
-		call	scene_multiply_2
+		call	busy_wait_delay
 		mov	ax,cs
 		add	ax,2000h
 		mov	es,ax
 		mov	di,0
-		call	scene_process_loop_3
+		call	palette_blend
 		mov	bx,410h
 		mov	cx,4868h
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		call	word ptr cs:data_96
-		call	scene_multiply
-		call	scene_multiply
+		call	script_interpreter
+		call	script_interpreter
 		mov	ax,cs
 		add	ax,2000h
 		mov	es,ax
@@ -692,10 +732,10 @@ loc_25:
 		mov	cx,2230h
 		mov	al,7
 		call	word ptr cs:data_105
-		call	scene_multiply
-		call	scene_multiply
+		call	script_interpreter
+		call	script_interpreter
 		mov	al,2
-		call	scene_multiply_2
+		call	busy_wait_delay
 		mov	ax,cs
 		add	ax,2000h
 		mov	es,ax
@@ -705,9 +745,9 @@ loc_25:
 		call	word ptr cs:data_96
 		mov	byte ptr cs:gvar_timer_lo,0
 		mov	al,0Fh
-		call	scene_func_8
+		call	gameplay_timer_loop
 		mov	al,3
-		call	scene_multiply_2
+		call	busy_wait_delay
 		mov	ax,cs
 		add	ax,2000h
 		mov	es,ax
@@ -724,11 +764,11 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	scene_process_loop
+		call	decompress_image
 		mov	bx,410h
 		mov	cx,4868h
 		call	word ptr cs:gfx_mode_fn
-		call	scene_multiply
+		call	script_interpreter
 		mov	ax,7
 		call	word ptr cs:gfx_palette_fn
 		mov	al,0FFh
@@ -737,7 +777,7 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		call	word ptr cs:gfx_update_fn
-		call	scene_multiply
+		call	script_interpreter
 		push	cs
 		pop	es
 		mov	si,95BEh
@@ -747,15 +787,15 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	scene_process_loop
+		call	decompress_image
 		xor	al,al			; Zero register
 		mov	bx,410h
 		mov	cx,4868h
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		call	word ptr cs:gfx_update_fn
-		call	scene_multiply
-		call	scene_multiply
+		call	script_interpreter
+		call	script_interpreter
 		push	cs
 		pop	es
 		mov	si,95C8h
@@ -765,16 +805,16 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	scene_process_loop
+		call	decompress_image
 		mov	di,scene_framebuf
 		mov	bx,1610h
 		mov	cx,2468h
 		mov	al,5
 		call	word ptr cs:data_105
-		call	scene_multiply
+		call	script_interpreter
 		xor	ax,ax			; Zero register
 		call	word ptr cs:data_104
-		call	scene_multiply
+		call	script_interpreter
 		push	cs
 		pop	es
 		mov	si,95D2h
@@ -784,7 +824,7 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	scene_process_loop
+		call	decompress_image
 		mov	al,0FFh
 		mov	bx,410h
 		mov	cx,4868h
@@ -800,7 +840,7 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	scene_process_loop
+		call	decompress_image
 		push	cs
 		pop	es
 		mov	si,scene_data_h
@@ -810,9 +850,9 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,screen_buf_1
-		call	scene_process_loop
-		call	scene_multiply
-		call	scene_multiply
+		call	decompress_image
+		call	script_interpreter
+		call	script_interpreter
 		xor	ax,ax			; Zero register
 		call	word ptr cs:data_104
 		mov	ax,6
@@ -833,8 +873,8 @@ loc_25:
 		mov	bx,2D18h
 		mov	cx,1858h
 		call	word ptr cs:data_96
-		call	scene_multiply
-		call	scene_multiply
+		call	script_interpreter
+		call	script_interpreter
 		push	cs
 		pop	es
 		mov	si,9613h
@@ -844,7 +884,7 @@ loc_25:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,screen_buf_1
-		call	scene_process_loop
+		call	decompress_image
 		xor	ax,ax			; Zero register
 		call	word ptr cs:data_104
 		mov	ax,8
@@ -856,8 +896,8 @@ loc_25:
 		mov	di,screen_buf_1
 		mov	bx,1618h
 		call	word ptr cs:data_107
-		call	scene_multiply
-		call	scene_multiply
+		call	script_interpreter
+		call	script_interpreter
 		mov	bx,1515h
 		mov	dx,315Dh
 		mov	cx,18h
@@ -870,7 +910,7 @@ locloop_26:
 		mov	cx,dx
 		call	word ptr cs:data_106
 		mov	al,0Fh
-		call	scene_func_8
+		call	gameplay_timer_loop
 		pop	bx
 		pop	dx
 		inc	bh
@@ -889,8 +929,8 @@ locloop_26:
 		mov	bx,0B18h
 		mov	cx,1858h
 		call	word ptr cs:data_96
-		call	scene_multiply
-		call	scene_multiply
+		call	script_interpreter
+		call	script_interpreter
 		mov	bx,2C15h
 		mov	dx,1A5Dh
 		mov	cx,18h
@@ -903,7 +943,7 @@ locloop_27:
 		mov	cx,dx
 		call	word ptr cs:data_106
 		mov	al,0Fh
-		call	scene_func_8
+		call	gameplay_timer_loop
 		pop	bx
 		pop	dx
 		inc	bh
@@ -924,13 +964,13 @@ locloop_27:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	scene_process_loop
+		call	decompress_image
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		mov	bx,1010h
 		mov	cx,3160h
 		call	word ptr cs:data_96
-		call	scene_multiply
+		call	script_interpreter
 		push	cs
 		pop	es
 		mov	si,95E8h
@@ -944,22 +984,22 @@ locloop_27:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	scene_process_loop
+		call	decompress_image
 		mov	bx,0
 		mov	cx,50C8h
 		call	word ptr cs:gfx_mode_fn
 		mov	bx,808h
 		mov	es,cs:gvar_game_seg
 		mov	di,framebuffer_a
-		call	scene_process_loop_5
+		call	merge_gfx_planes
 		mov	es,cs:gvar_game_seg
 		mov	si,ext_seg_d000
 		mov	di,ext_seg_d000
-		call	scene_process_loop
+		call	decompress_image
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		mov	si,ext_segment
-		call	scene_process_loop_4
+		call	xor_mask_render
 		mov	al,0FFh
 		mov	bx,808h
 		mov	cx,40C0h
@@ -968,7 +1008,7 @@ locloop_27:
 		call	word ptr cs:gfx_update_fn
 		mov	byte ptr cs:gvar_timer_lo,0
 		mov	al,0F0h
-		call	scene_func_8
+		call	gameplay_timer_loop
 		mov	al,0FFh
 		mov	bx,808h
 		mov	cx,40C0h
@@ -978,13 +1018,13 @@ locloop_27:
 		mov	ax,1
 		call	word ptr cs:gfx_palette_fn
 		mov	si,7338h
-		call	scene_scan_loop_2
+		call	animate_scanline_alt
 		mov	cx,0Ah
 
 locloop_28:
 		push	cx
 		mov	al,0C8h
-		call	scene_func_8
+		call	gameplay_timer_loop
 		pop	cx
 		loop	locloop_28		; Loop if cx > 0
 
@@ -992,9 +1032,9 @@ locloop_28:
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-scene_func_8:
+gameplay_timer_loop:
 loc_29:
-		call	scene_func_9
+		call	gameplay_input_handler
 		cmp	cs:gvar_timer_lo,al
 		jb	loc_29			; Jump if below
 		mov	byte ptr cs:gvar_timer_lo,0
@@ -1002,7 +1042,7 @@ loc_29:
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-scene_func_9:
+gameplay_input_handler:
 		test	byte ptr cs:gvar_skip_input,0FFh
 		jnz	loc_30			; Jump if not zero
 		cmp	byte ptr cs:gvar_key_state,0Dh
@@ -1031,7 +1071,7 @@ loc_30:
 		call	word ptr cs:[10Ch]
 		mov	ax,0FFFFh
 		jmp	word ptr cs:scene_data_b
-scene_func_4		endp
+timer_wait_loop		endp
 
 		db	 00h,0A0h
 
@@ -1039,11 +1079,29 @@ scene_func_4		endp
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_multiply		proc	near
+
+; ============================================================
+; SCRIPT INTERPRETER
+; Reads scene script bytecode and dispatches to handlers.
+; Control codes: 0xF0-0xFF (timing, layout, color, scroll)
+;                0x80-0x9F (character portrait sprites)
+;                0xEB-0xEF (speaker / text attribute codes)
+; ============================================================
+
+
+; ============================================================
+; SCRIPT INTERPRETER
+; Reads scene script bytecode and dispatches to handlers.
+; Control codes 0xF0-0xFF: timing, layout, color, scroll
+; Control codes 0x80-0x9F: character portrait sprites
+; Control codes 0xEB-0xEF: speaker / text attribute codes
+; ============================================================
+
+script_interpreter		proc	near
 		mov	byte ptr cs:gvar_timer_lo,0
 loc_31:
 		mov	al,10h
-		call	scene_func_8
+		call	gameplay_timer_loop
 loc_32:
 		push	cs
 		pop	ds
@@ -1109,7 +1167,7 @@ loc_34:
 		jmp	loc_31
 loc_35:
 		mov	si,ds:script_pc
-		call	scene_check_state
+		call	calc_text_width
 		mov	dx,ds:text_x_pos
 		add	dx,cx
 		cmp	dx,138h
@@ -1225,15 +1283,15 @@ loc_55:
 		jmp	short loc_53
 loc_56:
 		mov	al,0F0h
-		call	scene_func_8
+		call	gameplay_timer_loop
 		jmp	loc_31
 loc_57:
 		mov	al,0F0h
-		call	scene_func_8
+		call	gameplay_timer_loop
 		mov	al,0F0h
-		call	scene_func_8
+		call	gameplay_timer_loop
 		mov	al,0F0h
-		call	scene_func_8
+		call	gameplay_timer_loop
 		jmp	loc_31
 loc_58:
 		mov	es,cs:gvar_game_seg
@@ -1300,14 +1358,24 @@ loc_61:
 		mov	cx,0B10h
 		call	word ptr cs:data_96
 		jmp	loc_32
-scene_multiply		endp
+script_interpreter		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_check_state		proc	near
+
+; ============================================================
+; TEXT RENDERING UTILITIES
+; ============================================================
+
+
+; ============================================================
+; TEXT RENDERING UTILITIES
+; ============================================================
+
+calc_text_width		proc	near
 		xor	cx,cx			; Zero register
 loc_62:
 		lodsb				; String [si] to al
@@ -1352,14 +1420,14 @@ loc_70:
 		add	cl,cs:char_glyph_tbl[bx]
 		adc	ch,bh
 		jmp	short loc_62
-scene_check_state		endp
+calc_text_width		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_scan_loop_2		proc	near
+animate_scanline_alt		proc	near
 		push	si
 		mov	bx,20h
 		mov	cx,5078h
@@ -1379,7 +1447,7 @@ locloop_72:
 		mov	cx,50A0h
 		call	word ptr cs:data_95
 		mov	al,1Ch
-		call	scene_func_8
+		call	gameplay_timer_loop
 		pop	cx
 		loop	locloop_72		; Loop if cx > 0
 
@@ -1395,12 +1463,12 @@ locloop_73:
 		mov	cx,50A0h
 		call	word ptr cs:data_95
 		mov	al,1Ch
-		call	scene_func_8
+		call	gameplay_timer_loop
 		pop	cx
 		loop	locloop_73		; Loop if cx > 0
 
 		retn
-scene_scan_loop_2		endp
+animate_scanline_alt		endp
 
 		db	0C6h, 79h, 00h, 00h, 00h, 00h
 		db	 00h, 00h
@@ -1409,13 +1477,23 @@ scene_scan_loop_2		endp
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_process_loop		proc	near
-		call	scene_func_14
+
+; ============================================================
+; IMAGE PROCESSING
+; ============================================================
+
+
+; ============================================================
+; IMAGE PROCESSING
+; ============================================================
+
+decompress_image		proc	near
+		call	rle_unpack_core
 		jmp	short loc_78
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-scene_func_14:
+rle_unpack_core:
 		push	di
 		lodsw				; String [si] to ax
 		mov	cx,ax
@@ -1493,12 +1571,22 @@ locloop_79:
 		loop	locloop_79		; Loop if cx > 0
 
 		retn
-scene_process_loop		endp
+decompress_image		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
+
+
+; ============================================================
+; UTILITY ROUTINES
+; ============================================================
+
+
+; ============================================================
+; UTILITY ROUTINES
+; ============================================================
 
 fill_buffer		proc	near
 loc_80:
@@ -1535,7 +1623,7 @@ fill_buffer		endp
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-fill_buffer_2		proc	near
+palette_lookup		proc	near
 		push	ds
 		mov	ax,cs
 		add	ax,2000h
@@ -1549,25 +1637,25 @@ fill_buffer_2		proc	near
 		mov	bx,0
 		mov	cx,2230h
 		mov	si,sprite_buf_c
-		call	scene_func_17
+		call	render_font_row_double
 		mov	bx,0F30h
 		mov	cx,620h
 		mov	si,sprite_buf_b
-		call	scene_func_17
+		call	render_font_row_double
 		mov	bx,850h
 		mov	cx,1220h
 		mov	si,sprite_buf_a
-		call	scene_func_18
+		call	render_font_row_inverse
 		pop	ds
 		retn
-fill_buffer_2		endp
+palette_lookup		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_func_17		proc	near
+render_font_row_double		proc	near
 		push	di
 		add	di,font_row_ofs
 		call	copy_buffer
@@ -1576,14 +1664,14 @@ scene_func_17		proc	near
 		call	copy_buffer
 		pop	di
 		retn
-scene_func_17		endp
+render_font_row_double		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_func_18		proc	near
+render_font_row_inverse		proc	near
 		push	di
 		call	copy_buffer
 		pop	di
@@ -1592,7 +1680,7 @@ scene_func_18		proc	near
 		call	copy_buffer
 		pop	di
 		retn
-scene_func_18		endp
+render_font_row_inverse		endp
 
 
 ;��������������������������������������������������������������������������
@@ -1629,7 +1717,7 @@ copy_buffer		endp
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_multiply_2		proc	near
+busy_wait_delay		proc	near
 		push	ds
 		xor	ah,ah			; Zero register
 		mov	dx,0CC0h
@@ -1641,17 +1729,17 @@ scene_multiply_2		proc	near
 		add	ax,2000h
 		mov	es,ax
 		mov	di,null_ofs
-		call	scene_process_loop_2
+		call	color_rotation
 		pop	ds
 		retn
-scene_multiply_2		endp
+busy_wait_delay		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_process_loop_2		proc	near
+color_rotation		proc	near
 		mov	cx,30h
 
 locloop_86:
@@ -1675,14 +1763,14 @@ locloop_87:
 		loop	locloop_86		; Loop if cx > 0
 
 		retn
-scene_process_loop_2		endp
+color_rotation		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_process_loop_3		proc	near
+palette_blend		proc	near
 		push	ds
 		push	es
 		pop	ds
@@ -1730,14 +1818,14 @@ locloop_89:
 
 		pop	ds
 		retn
-scene_process_loop_3		endp
+palette_blend		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_process_loop_4		proc	near
+xor_mask_render		proc	near
 		add	di,font_scanline_ofs
 		mov	cx,0A0h
 
@@ -1780,14 +1868,14 @@ locloop_91:
 		loop	locloop_90		; Loop if cx > 0
 
 		retn
-scene_process_loop_4		endp
+xor_mask_render		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_process_loop_5		proc	near
+merge_gfx_planes		proc	near
 		push	bx
 		push	es
 		push	di
@@ -1815,7 +1903,7 @@ locloop_92:
 		mov	cx,40C0h
 		mov	al,0FFh
 		jmp	word ptr cs:gfx_update_fn
-scene_process_loop_5		endp
+merge_gfx_planes		endp
 
 		db	'           Two thousand years, ', 0Dh, 'from the dark reaches of another galaxy,', 0Dh, '        a demon with not a shred', 0Dh
 		db	'      of compassion for humankind,', 0Dh, '         descended upon earth.', 0Dh, 0Dh, '          He defiled the land,', 0Dh
@@ -1904,12 +1992,16 @@ data_49		db	'As the words of the demon resoun'
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-scene_func_26		proc	near
+; ============================================================
+; DATA SECTION -- Opening Scene Script & Narration
+; ============================================================
+
+opening_narration:
 		db	0FDh			; script ctrl: FD
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-scene_func_27:
+narration_chapter_2:
 		db	0F5h, 0F5h, 0FEh, 0FDh, 0F3h		; pause | pause | scroll-text-up | end-of-section | layout-mode 1
 		db	'The rain of sand continued for 108 days and transformed the once-fertile land into desert.'
 		db	0F5h,0F5h,0FEh,0F3h		; pause | pause | scroll-text-up | layout-mode 1
@@ -1961,7 +2053,7 @@ scene_func_27:
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-scene_func_29:
+narration_chapter_3:
 		db	0F5h, 0F5h, 0F5h, 0FEh, 0F0h, 0F3h, 0FAh		; pause | pause | pause | scroll-text-up | reset text attribute | layout-mode 1 | text-style: color 7 normal
 		db	'Guided by the light of the Spirit, brave Duke Garland had journeyed many days to the land of Zeliard.'
 		db	0F5h,0F5h,0F5h,0FEh,0FDh,0F3h		; pause | pause | pause | scroll-text-up | end-of-section | layout-mode 1
@@ -2141,7 +2233,7 @@ scene_func_29:
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-scene_func_30:
+narration_chapter_4:
 		; Style-encoded speech -- Jashiin (cont.)
 		; "...you must be the evil Jashiin!"
 		; (0x80-0x97 between chars = per-character color-cycle animation)
@@ -2200,7 +2292,7 @@ scene_func_30:
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-scene_func_31:
+narration_chapter_5:
 		db	094h, 6Eh, 93h, 64h, 20h, 93h, 66h		; small-portrait[4]
 		db	 6Fh, 90h, 72h, 20h, 95h, 61h
 		db	 93h, 6Ch, 6Ch, 21h, 99h, 94h
@@ -2224,18 +2316,18 @@ data_94		dw	0FEFDh
 data_95		dw	0F3EFh
 data_96		dw	22FBh
 data_97		dw	6F59h
-data_98		dw	offset scene_func_27
+data_98		dw	offset narration_chapter_2
 data_99		dw	6168h
 data_100	dw	6576h
-data_101	dw	offset scene_func_29
-data_102	dw	offset scene_func_26
+data_101	dw	offset narration_chapter_3
+data_102	dw	offset opening_narration
 data_103	dw	6573h
 data_104	dw	6E65h
 data_105	dw	7420h
 data_106	dw	6568h
 data_107	dw	6C20h
 		db	'ast of m'
-data_108	dw	offset scene_func_30
+data_108	dw	offset narration_chapter_4
 		db	' Jashiin!'
 		db	0F2h		; layout-mode 2
 		db	'Your reign of evil is near its end!"'
@@ -2399,7 +2491,6 @@ data_108	dw	offset scene_func_30
 		db	00h, 1Bh, 'oup.grp',   0	; zelres1 chunk 27
 		db	00h, 14h, 'maop.grp',  0	; zelres1 chunk 20
 		db	00h, 00h, 'game.bin',  0	; game main binary
-scene_func_26		endp
 
 
 seg_a		ends
