@@ -1061,7 +1061,7 @@ gameplay_exit_to_menu:
 		jmp	word ptr cs:scene_data_b
 timer_wait_loop		endp
 
-		db	00h, 0A0h	; word = 0A000h (game/VGA segment base — static data between procs)
+		db	00h, SCR_ATTR_RST	; word = 0A000h (game/VGA segment base — static data between procs)
 
 ;������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������
 ;                              SUBROUTINE
@@ -1923,61 +1923,61 @@ merge_gfx_planes		endp
 		db	'                     Satoshi Uesaka     ', CR, '              Sierra On-Line Japan, Inc.', CR, '                    Eiji (Ed) Nagano    ', CR
 		db	CR, CR, CR, '    Copyright (C)1987,1990 GAME ARTS    ', CR, '    Copyright (C)1990 Sierra On-Line    ', CR
 		db	'  This edition first published 1987 by  ', CR, '  GAME ARTS Co.,Ltd./ Tomoyuki Shimada  ', CR
-		db	SCR_END_SCRIPT, 50h,0F0h,0FEh,0F3h,0FAh		; end-of-script | reset text attribute | scroll-text-up | layout-mode 1 | text-style: color 7 normal
+		db	SCR_END_SCRIPT, 50h,SCR_RESET,SCR_SCROLL,SCR_PARA,SCR_NORMAL		; end-of-script | reset text attribute | scroll-text-up | layout-mode 1 | text-style: color 7 normal
 		db	'Once, long ago, a terrible storm came to the land of Zeliard. '
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
+		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SCROLL,SCR_DIRECT		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	'Dark clouds filled the sky; lightnin'
 		db	'g flashed and thunder crashed. '
-		db	0F2h		; layout-mode 2
+		db	SCR_MODE2		; layout-mode 2
 		db	'Day after day, rain poured from the heavens as if in lament.'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F5h		; pause | pause | pause | pause | scroll-text-up | pause
-		db	0F5h,0FEh,0F3h,0F5h		; pause | scroll-text-up | layout-mode 1 | pause
+		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SCROLL,SCR_WAIT		; pause | pause | pause | pause | scroll-text-up | pause
+		db	SCR_WAIT,SCR_SCROLL,SCR_PARA,SCR_WAIT		; pause | scroll-text-up | layout-mode 1 | pause
 		db	'On the seventh day of rain, a beautiful young girl stood on her balcony watching this dark, sad rain.'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
+		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SCROLL,SCR_PARA		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
 		db	'The girl was Princess Felicia la Felishika.  She was the only daughter of King Felishika, and the light of his life.'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
-		db	0F5h		; pause
+		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SCROLL,SCR_PARA		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
+		db	SCR_WAIT		; pause
 		db	'Her smiles were like sunshine, her voice as beautiful as that of an angel.  She was adored by the people of the kingdom.'
-		db	0F5h,0F5h,0F5h,0F5h		; pause | pause | pause | pause
+		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT		; pause | pause | pause | pause
 dialogue_scene_start:
-		db	0EBh, 0FEh		; script ctrl: EB FE
-		db	0F5h, 0F3h, 0FBh, 0A0h		; pause | layout-mode 1 | text-style: color 7 bold | attr-restore
+		db	SCR_SPK_PRINC, SCR_SCROLL		; script ctrl: EB FE
+		db	SCR_WAIT, SCR_PARA, SCR_BOLD, SCR_ATTR_RST		; pause | layout-mode 1 | text-style: color 7 bold | attr-restore
 		db	'"What a dreadful storm!  Will it never end?"'
-		db	0F0h,0F6h,0FEh,0F5h,0F3h,0FAh		; reset text attribute | long-pause (3x) | scroll-text-up | pause | layout-mode 1 | text-style: color 7 normal
+		db	SCR_RESET,SCR_WAIT3,SCR_SCROLL,SCR_WAIT,SCR_PARA,SCR_NORMAL		; reset text attribute | long-pause (3x) | scroll-text-up | pause | layout-mode 1 | text-style: color 7 normal
 		db	'Just as the princess spoke these words, the raindrops turned to grains of sand which covered the ground below her. '
-		db	0F5h,0F5h,0F5h,0F5h,0F5h,0FEh		; pause | pause | pause | pause | pause | scroll-text-up
-		db	0FDh,0FEh,0F5h,0F3h		; end-of-section | scroll-text-up | pause | layout-mode 1
+		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SCROLL		; pause | pause | pause | pause | pause | scroll-text-up
+		db	SCR_BREAK,SCR_SCROLL,SCR_WAIT,SCR_PARA		; end-of-section | scroll-text-up | pause | layout-mode 1
 		db	'As she watched, a startling transformation began to take place.'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F3h		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
+		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SCROLL,SCR_PARA		; pause | pause | pause | pause | scroll-text-up | layout-mode 1
 		db	'In an instant, the green hills and plains turned a dusty brown. '
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
+		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SCROLL,SCR_DIRECT		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
 		db	'Trees and flowers crumpled and were buried. '
-		db	0F3h		; layout-mode 1
+		db	SCR_PARA		; layout-mode 1
 		db	'Rivers and lakes disappeared beneath the sand.'
-		db	0F1h		; layout-mode 3
+		db	SCR_MODE3		; layout-mode 3
 		db	'This ever-green land was turning to desert before her very eyes.'
-		db	0F5h,0F5h,0F5h,0F5h,0F5h,0F5h		; pause | pause | pause | pause | pause | pause
-		db	0FEh,0FDh,0F5h,0F3h,0FBh,0EBh		; scroll-text-up | end-of-section | pause | layout-mode 1 | text-style: color 7 bold | speaker: Princess Felicia (attr A)
-		db	0A2h		; attr-restore
+		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT		; pause | pause | pause | pause | pause | pause
+		db	SCR_SCROLL,SCR_BREAK,SCR_WAIT,SCR_PARA,SCR_BOLD,SCR_SPK_PRINC		; scroll-text-up | end-of-section | pause | layout-mode 1 | text-style: color 7 bold | speaker: Princess Felicia (attr A)
+		db	SCR_ATTR_RST2		; attr-restore
 		db	'"How can this be?" '
-		db	0F0h,0FAh		; reset text attribute | text-style: color 7 normal
+		db	SCR_RESET,SCR_NORMAL		; reset text attribute | text-style: color 7 normal
 		db	'she cried, '
-		db	0EBh,0FBh		; speaker: Princess Felicia (attr A) | text-style: color 7 bold
+		db	SCR_SPK_PRINC,SCR_BOLD		; speaker: Princess Felicia (attr A) | text-style: color 7 bold
 		db	'"What evil power could cause such a terrible thing to happen?"'
-		db	0F0h,0F6h,0F5h,0F5h,0F5h,0FEh		; reset text attribute | long-pause (3x) | pause | pause | pause | scroll-text-up
-		db	0F3h,0FAh		; layout-mode 1 | text-style: color 7 normal
+		db	SCR_RESET,SCR_WAIT3,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SCROLL		; reset text attribute | long-pause (3x) | pause | pause | pause | scroll-text-up
+		db	SCR_PARA,SCR_NORMAL		; layout-mode 1 | text-style: color 7 normal
 		db	'Princess Felicia shivered as she felt a dark presence near her, '
-		db	0FDh		; end-of-section
+		db	SCR_BREAK		; end-of-section
 		db	'and suddenly, a terrifying voice bellowed as loud as thunder...'
-		db	0F5h,0F5h,0F5h,0F5h,0FEh,0F7h		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
-		db	0F9h,0EDh		; text-style: color 6 | speaker: Jashiin/narrator (attr ?)
+		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SCROLL,SCR_DIRECT		; pause | pause | pause | pause | scroll-text-up | layout-mode 0 (direct write)
+		db	SCR_COLOR6,SCR_SPK_NARR		; text-style: color 6 | speaker: Jashiin/narrator (attr ?)
 		db	'"I am Jashiin, the Emperor of Chaos.  The descendants of those who imprisoned me under the earth shall know that my wrath has smoldered for two thousand years!"'
-		db	0F0h,0F5h,0F5h,0FDh,0FDh,0FEh		; reset text attribute | pause | pause | end-of-section | end-of-section | scroll-text-up
-		db	0F7h,0EDh		; layout-mode 0 (direct write) | speaker: Jashiin/narrator (attr ?)
+		db	SCR_RESET,SCR_WAIT,SCR_WAIT,SCR_BREAK,SCR_BREAK,SCR_SCROLL		; reset text attribute | pause | pause | end-of-section | end-of-section | scroll-text-up
+		db	SCR_DIRECT,SCR_SPK_NARR		; layout-mode 0 (direct write) | speaker: Jashiin/narrator (attr ?)
 jashiin_speech_2		db	'"Beautiful Princess Felicia, you'
 		db	' will make a lovely and terrifying symbol of my awakening.  Your father will not make the mistakes of his ancestors!"'
-		db	0F0h,0F5h,0F5h,0FEh,0FDh,0F3h		; reset text attribute | pause | pause | scroll-text-up | end-of-section | layout-mode 1
-		db	0FAh		; text-style: color 7 normal
+		db	SCR_RESET,SCR_WAIT,SCR_WAIT,SCR_SCROLL,SCR_BREAK,SCR_PARA		; reset text attribute | pause | pause | scroll-text-up | end-of-section | layout-mode 1
+		db	SCR_NORMAL		; text-style: color 7 normal
 narration_stone_scene		db	'As the words of the demon resoun'
 		db	'ded over the land, Princess Felicia was turned to stone.'
 
