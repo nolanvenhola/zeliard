@@ -1470,8 +1470,7 @@ alt_fade_loop:
 		retn
 animate_scanline_alt		endp
 
-		db	0C6h, 79h, 00h, 00h, 00h, 00h
-		db	 00h, 00h
+		db	0C6h, 79h, 00h, 00h, 00h, 00h, 00h, 00h	; padding (unreachable — gap between procs)
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
