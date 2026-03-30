@@ -2369,6 +2369,11 @@ data_108	dw	offset narration_chapter_4
 		db	 04h, 03h, 04h, 07h, 70h, 2Ah
 		db	 01h, 03h, 04h, 07h, 68h, 2Ch
 		db	0FCh, 04h, 04h, 07h,SCR_END_SCRIPT, 01h		; ctrl 0xFC | end-of-script
+
+		; Style-encoded speech -- Jashiin (departing threat)
+		; "Beware, for I shall wake from my sleep of 2,000 years
+		;  and once again reign over the world."
+		; (0x01-0x08 between chars = per-character color-cycle animation)
 		db	 08h, 01h, 42h, 65h, 03h, 77h
 		db	 61h, 04h, 72h, 65h, 2Ch, 20h
 		db	 03h, 66h, 6Fh, 04h, 72h, 20h
@@ -2391,9 +2396,17 @@ data_108	dw	offset narration_chapter_4
 		db	 76h, 04h, 65h, 72h, 20h, 01h
 		db	 74h, 68h, 65h, 20h, 04h, 77h
 		db	 6Fh, 72h, 03h, 6Ch, 64h, 2Eh
-		db	 02h, 00h, 01h, 01h, 01h, 02h
-		db	 02h, 01h, 01h, 02h, 02h, 03h
-		db	 03h, 05h
+		db	 02h
+
+		; Animation frame timing sequence (end-of-chapter transition)
+		db	 00h, 01h, 01h, 01h, 02h, 02h
+		db	 01h, 01h, 02h, 02h, 03h, 03h
+		db	 05h
+		; ── Character/font glyph index table ──────────────────────────────
+		; Maps ASCII codes (0x00–0xC1) to glyph indices in the font sheet.
+		; Index 0 = no glyph (space/unprintable). Used by the text renderer
+		; to look up which glyph bitmap to draw for each character.
+char_glyph_index:
 		db	7 dup (0)
 		db	 01h, 02h, 03h, 04h, 00h, 00h
 		db	 00h, 00h, 00h, 00h, 05h, 06h
@@ -2462,6 +2475,10 @@ data_108	dw	offset narration_chapter_4
 		db	0BAh,0BBh,0BCh,0BDh,0BEh,0BFh		; ctrl 0xBA | ctrl 0xBB | ctrl 0xBC | ctrl 0xBD | ctrl 0xBE | ctrl 0xBF
 		db	0C0h,0C1h		; ctrl 0xC0 | ctrl 0xC1
 		db	13 dup (0)
+		; ── Character pixel width table ────────────────────────────────────
+		; One byte per glyph index: pixel width used by text layout engine
+		; to advance the cursor after drawing each character.
+char_pixel_widths:
 		db	2, 2, 3, 1, 0, 0
 		db	2, 2, 3, 1, 1, 1
 		db	2, 2, 0, 1, 2, 1
