@@ -2369,56 +2369,200 @@ char_glyph_index:
 		db	0C0h,0C1h		; ctrl 0xC0 | ctrl 0xC1
 		db	13 dup (0)
 		; Character pixel width table
-		; One entry per glyph index (indexed by char_glyph_index lookup).
-		; Each byte = pixel advance width after drawing that glyph.
-		; Width 0 = glyph not present / zero-width.
+		; One db per glyph index. Width = pixel advance after drawing.
 char_pixel_widths:
-		; glyphs 0x00-0x05  (control/unused glyphs)
-		db	2, 2, 3, 1, 0, 0
-		; glyphs 0x06-0x0B
-		db	2, 2, 3, 1, 1, 1
-		; glyphs 0x0C-0x11
-		db	2, 2, 0, 1, 2, 1
-		; glyphs 0x12-0x18  (7x width 1)
-		db	7 dup (1)
-		; glyphs 0x19-0x1E
-		db	3, 2, 1, 1, 2, 1
-		; glyphs 0x1F-0x27  (unused)
-		db	9 dup (0)
-		; glyphs 0x28-0x29
-		db	2, 0
-		; glyphs 0x2A-0x32  (unused)
-		db	9 dup (0)
-		; glyphs 0x33-0x50  (symbols and digits)
-		db	1, 0, 0, 0, 0, 0
-		db	1, 2, 2, 2, 1, 1
-		db	1, 0, 0, 1, 0, 1
-		db	1, 0, 0, 2, 1, 0
-		db	2, 0, 1, 1, 0, 0
-		db	0, 1, 1, 0, 0, 0
-		db	1, 1, 1, 2, 0, 3
-		db	1, 0, 5, 4, 4, 4
-		; glyphs 0x51-0x5E  (uppercase A-Z area)
-		db	6, 8, 5, 3, 4, 4
-		db	6, 6, 6, 5, 6, 8
-		db	7, 5, 7, 7, 7, 7
-		db	7, 7, 7, 7, 3, 4
-		db	6, 6, 6, 7
-		; glyphs 0x5F-0x67  (9x width 8)
-		db	9 dup (8)
-		; glyphs 0x68-0x6A
-		db	5, 8, 8
-		; glyphs 0x6B-0x72  (8x width 8)
-		db	8 dup (8)
-		; glyphs 0x73-0x84  (lowercase / extended)
-		db	7, 8, 8, 8, 8, 8
-		db	7, 5, 3, 5, 6, 7
-		db	7, 8, 8, 7, 8, 7
-		db	7, 8, 8, 5, 6, 8
-		db	5, 8, 7, 7, 8, 8
-		db	8, 7, 6, 8, 8, 8
-		db	7, 7, 7, 4, 8, 4
-		db	7, 8		; (end of char width table)
+		db	2				; glyph   0  [(unused)]
+		db	2				; glyph   1  [0x07]
+		db	3				; glyph   2  [0x08]
+		db	1				; glyph   3  [0x09]
+		db	0				; glyph   4  [0x0A]
+		db	0				; glyph   5  [0x11]
+		db	2				; glyph   6  [0x12]
+		db	2				; glyph   7  [0x13]
+		db	3				; glyph   8  [0x14]
+		db	1				; glyph   9  [0x15]
+		db	1				; glyph  10  [0x16]
+		db	1				; glyph  11  [0x17]
+		db	2				; glyph  12  [0x18]
+		db	2				; glyph  13  [0x19]
+		db	0				; glyph  14  [0x1A]
+		db	1				; glyph  15  [0x1B]
+		db	2				; glyph  16  [0x1C]
+		db	1				; glyph  17  [0x1D]
+		db	1				; glyph  18  [0x1E]
+		db	1				; glyph  19  [0x1F]
+		db	1				; glyph  20  [' ']
+		db	1				; glyph  21  ['!']
+		db	1				; glyph  22  ['"', 0xAF]
+		db	1				; glyph  23  ['&']
+		db	1				; glyph  24  [''']
+		db	3				; glyph  25  ['(']
+		db	2				; glyph  26  [')']
+		db	1				; glyph  27  ['*']
+		db	1				; glyph  28  ['+']
+		db	2				; glyph  29  [',']
+		db	1				; glyph  30  ['-']
+		db	0				; glyph  31  ['.']
+		db	0				; glyph  32  ['/']
+		db	0				; glyph  33  ['0']
+		db	0				; glyph  34  ['1']
+		db	0				; glyph  35  ['2']
+		db	0				; glyph  36  ['3']
+		db	0				; glyph  37  ['4']
+		db	0				; glyph  38  ['5', 'N']
+		db	0				; glyph  39  ['6']
+		db	2				; glyph  40  ['7']
+		db	0				; glyph  41  ['8']
+		db	0				; glyph  42  ['9']
+		db	0				; glyph  43  [':']
+		db	0				; glyph  44  [';']
+		db	0				; glyph  45  ['<']
+		db	0				; glyph  46  ['=']
+		db	0				; glyph  47  ['@']
+		db	0				; glyph  48  ['A']
+		db	0				; glyph  49  ['B']
+		db	0				; glyph  50  ['C']
+		db	1				; glyph  51  ['D']
+		db	0				; glyph  52  ['G']
+		db	0				; glyph  53  ['H']
+		db	0				; glyph  54  ['I']
+		db	0				; glyph  55  ['J']
+		db	0				; glyph  56  ['K']
+		db	1				; glyph  57  ['M']
+		db	2				; glyph  58  ['O']
+		db	2				; glyph  59  ['c']
+		db	2				; glyph  60  ['d']
+		db	1				; glyph  61  ['e']
+		db	1				; glyph  62  ['i']
+		db	1				; glyph  63  ['j']
+		db	0				; glyph  64  ['k']
+		db	0				; glyph  65  ['l']
+		db	1				; glyph  66  [0x8B]
+		db	0				; glyph  67  [0x8C]
+		db	1				; glyph  68  [0x8D]
+		db	1				; glyph  69  [0x8E]
+		db	0				; glyph  70  [0xAD]
+		db	0				; glyph  71  [0xAE]
+		db	2				; glyph  72  [(unused)]
+		db	1				; glyph  73  [(unused)]
+		db	0				; glyph  74  [(unused)]
+		db	2				; glyph  75  [(unused)]
+		db	0				; glyph  76  [(unused)]
+		db	1				; glyph  77  [(unused)]
+		db	1				; glyph  78  [(unused)]
+		db	0				; glyph  79  [(unused)]
+		db	0				; glyph  80  [(unused)]
+		db	0				; glyph  81  [(unused)]
+		db	1				; glyph  82  [(unused)]
+		db	1				; glyph  83  [(unused)]
+		db	0				; glyph  84  [(unused)]
+		db	0				; glyph  85  [(unused)]
+		db	0				; glyph  86  [(unused)]
+		db	1				; glyph  87  [(unused)]
+		db	1				; glyph  88  [(unused)]
+		db	1				; glyph  89  [(unused)]
+		db	2				; glyph  90  [(unused)]
+		db	0				; glyph  91  [(unused)]
+		db	3				; glyph  92  [(unused)]
+		db	1				; glyph  93  [(unused)]
+		db	0				; glyph  94  [(unused)]
+		db	5				; glyph  95  [(unused)]
+		db	4				; glyph  96  [(unused)]
+		db	4				; glyph  97  [(unused)]
+		db	4				; glyph  98  [(unused)]
+		db	6				; glyph  99  [(unused)]
+		db	8				; glyph 100  [(unused)]
+		db	5				; glyph 101  [(unused)]
+		db	3				; glyph 102  [(unused)]
+		db	4				; glyph 103  [(unused)]
+		db	4				; glyph 104  [(unused)]
+		db	6				; glyph 105  [(unused)]
+		db	6				; glyph 106  [(unused)]
+		db	6				; glyph 107  [(unused)]
+		db	5				; glyph 108  [(unused)]
+		db	6				; glyph 109  [(unused)]
+		db	8				; glyph 110  [(unused)]
+		db	7				; glyph 111  [(unused)]
+		db	5				; glyph 112  [(unused)]
+		db	7				; glyph 113  [(unused)]
+		db	7				; glyph 114  [(unused)]
+		db	7				; glyph 115  [(unused)]
+		db	7				; glyph 116  [(unused)]
+		db	7				; glyph 117  [(unused)]
+		db	7				; glyph 118  [(unused)]
+		db	7				; glyph 119  [(unused)]
+		db	7				; glyph 120  [(unused)]
+		db	3				; glyph 121  [(unused)]
+		db	4				; glyph 122  [(unused)]
+		db	6				; glyph 123  [(unused)]
+		db	6				; glyph 124  [(unused)]
+		db	6				; glyph 125  [(unused)]
+		db	7				; glyph 126  [(unused)]
+		db	8				; glyph 127  [(unused)]
+		db	8				; glyph 128  [(unused)]
+		db	8				; glyph 129  [(unused)]
+		db	8				; glyph 130  [(unused)]
+		db	8				; glyph 131  [(unused)]
+		db	8				; glyph 132  [(unused)]
+		db	8				; glyph 133  [(unused)]
+		db	8				; glyph 134  [(unused)]
+		db	8				; glyph 135  [(unused)]
+		db	5				; glyph 136  [(unused)]
+		db	8				; glyph 137  [(unused)]
+		db	8				; glyph 138  [(unused)]
+		db	8				; glyph 139  [(unused)]
+		db	8				; glyph 140  [(unused)]
+		db	8				; glyph 141  [(unused)]
+		db	8				; glyph 142  [(unused)]
+		db	8				; glyph 143  [(unused)]
+		db	8				; glyph 144  [(unused)]
+		db	8				; glyph 145  [(unused)]
+		db	8				; glyph 146  [(unused)]
+		db	7				; glyph 147  [(unused)]
+		db	8				; glyph 148  [(unused)]
+		db	8				; glyph 149  [(unused)]
+		db	8				; glyph 150  [(unused)]
+		db	8				; glyph 151  [(unused)]
+		db	8				; glyph 152  [(unused)]
+		db	7				; glyph 153  [(unused)]
+		db	5				; glyph 154  [(unused)]
+		db	3				; glyph 155  [(unused)]
+		db	5				; glyph 156  [(unused)]
+		db	6				; glyph 157  [(unused)]
+		db	7				; glyph 158  [(unused)]
+		db	7				; glyph 159  [(unused)]
+		db	8				; glyph 160  [(unused)]
+		db	8				; glyph 161  [(unused)]
+		db	7				; glyph 162  [(unused)]
+		db	8				; glyph 163  [(unused)]
+		db	7				; glyph 164  [(unused)]
+		db	7				; glyph 165  [(unused)]
+		db	8				; glyph 166  [(unused)]
+		db	8				; glyph 167  [(unused)]
+		db	5				; glyph 168  [(unused)]
+		db	6				; glyph 169  [(unused)]
+		db	8				; glyph 170  [(unused)]
+		db	5				; glyph 171  [(unused)]
+		db	8				; glyph 172  [(unused)]
+		db	7				; glyph 173  [(unused)]
+		db	7				; glyph 174  [(unused)]
+		db	8				; glyph 175  [(unused)]
+		db	8				; glyph 176  [(unused)]
+		db	8				; glyph 177  [(unused)]
+		db	7				; glyph 178  [(unused)]
+		db	6				; glyph 179  [(unused)]
+		db	8				; glyph 180  [(unused)]
+		db	8				; glyph 181  [(unused)]
+		db	8				; glyph 182  [(unused)]
+		db	7				; glyph 183  [(unused)]
+		db	7				; glyph 184  [(unused)]
+		db	7				; glyph 185  [(unused)]
+		db	4				; glyph 186  [(unused)]
+		db	8				; glyph 187  [(unused)]
+		db	4				; glyph 188  [(unused)]
+		db	7				; glyph 189  [(unused)]
+		db	8				; glyph 190  [(unused)]
+						; (end of char width table)
 
 		; Opening scene resource file table
 		; Format per entry: [archive_0indexed][chunk_1indexed][filename\0]
