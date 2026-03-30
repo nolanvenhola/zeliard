@@ -2168,8 +2168,8 @@ narration_chapter_3:
 		db	' ', ANIM_92, 'th', ANIM_93, 'i'
 		db	's ', ANIM_90, 'ta', ANIM_97
 		db	ANIM_93, 's', ANIM_98, 'k', ANIM_97, '.'
-		db	 96h, 22h, 94h,SCR_WAIT,SCR_WAIT,SCR_WAIT		; pause | pause | pause
-		db	SCR_WAIT,SCR_SPK_KING,SCR_SCROLL,SCR_PARA, 22h, 83h		; pause | speaker: King Felishika (attr >) | scroll-text-up | layout-mode 1
+		db	ANIM_96, '"', ANIM_94, SCR_WAIT,SCR_WAIT,SCR_WAIT		; pause | pause | pause
+		db	SCR_WAIT,SCR_SPK_KING,SCR_SCROLL,SCR_PARA, '"', ANIM_83		; pause | speaker: King Felishika (attr >) | scroll-text-up | layout-mode 1
 		; Style-encoded speech -- King Felishika
 		; "For the first time since the sandstorm began, you have brought hope
 		;    into my heart, Duke Garland.  May God go with you on your quest."
@@ -2216,7 +2216,7 @@ narration_chapter_3:
 		db	'hallenge me?  Don', 27h, 't be a'
 		db	'bsurd!"'
 		db	SCR_WAIT,SCR_WAIT,SCR_SCROLL,SCR_BREAK, 99h,SCR_WAIT		; pause | pause | scroll-text-up | end-of-section | pause
-		db	SCR_SCROLL,SCR_PARA,SCR_BOLD,SCR_SPK_UNK, 9Ah, 22h		; scroll-text-up | layout-mode 1 | text-style: color 7 bold | speaker: unknown (attr =)
+		db	SCR_SCROLL,SCR_PARA,SCR_BOLD,SCR_SPK_UNK, ANIM_9A, '"'		; scroll-text-up | layout-mode 1 | text-style: color 7 bold | speaker: unknown (attr =)
 		; Style-encoded speech -- Jashiin (cont.)
 		; "...And you must be the evil Jashiin!" (end of Jashiin speech)
 		; (0x80-0x97 between chars = per-character color-cycle animation)
@@ -2246,7 +2246,7 @@ narration_chapter_4:
 		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SCROLL,SCR_PARA		; pause | pause | pause | scroll-text-up | layout-mode 1
 		db	'"Of course, you have no hope of defeating me."'
 		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_SPK_UNK,SCR_SCROLL,SCR_PARA		; pause | pause | pause | speaker: unknown (attr =) | scroll-text-up | layout-mode 1
-		db	SCR_BOLD, 22h, 9Ah, 90h, 4Dh, 61h		; text-style: color 7 bold
+		db	SCR_BOLD, '"', ANIM_9A, ANIM_90, 'Ma'		; text-style: color 7 bold
 		; Style-encoded speech -- Duke Garland
 		; "Mark my words, evil one: I will not stop until I have reclaimed the
 		;    nine holy crystals, and sealed you under the earth once again!"
@@ -2328,16 +2328,16 @@ gspeech_e_	dw	offset narration_chapter_4
 		db	' Jashiin!'
 		db	SCR_MODE2		; layout-mode 2
 		db	'Your reign of evil is near its end!"'
-		db	SCR_WAIT,SCR_WAIT,SCR_WAIT,SCR_END_SCRIPT, 58h, 25h		; pause | pause | pause | end-of-script
-		db	SCR_RESET, 00h, 00h, 03h, 68h, 21h		; reset text attribute
+		db	SCR_WAIT, SCR_WAIT, SCR_WAIT, SCR_END_SCRIPT, 'X%'		; pause | pause | pause | end-of-script
+		db	SCR_RESET, 0, 0, ANIM_03, 'h!'		; reset text attribute
 		db	0FCh, 0FCh, ANIM_04, ANIM_07, 'p#'		; ctrl 0xFC | ctrl 0xFC
-		db	 01h,SCR_BREAK, 04h, 07h, 70h, 24h		; end-of-section
-		db	 04h,SCR_BREAK, 04h, 07h, 78h, 25h		; end-of-section
-		db	 06h,SCR_SCROLL, 04h, 07h, 78h, 28h		; scroll-text-up
+		db	ANIM_01, SCR_BREAK, ANIM_04, ANIM_07, 'p$'		; end-of-section
+		db	ANIM_04, SCR_BREAK, ANIM_04, ANIM_07, 'x%'		; end-of-section
+		db	ANIM_06, SCR_SCROLL, ANIM_04, ANIM_07, 'x('		; scroll-text-up
 		db	ANIM_06, ANIM_02, ANIM_04, ANIM_07, 'p)'
 		db	ANIM_04, ANIM_03, ANIM_04, ANIM_07, 'p*'
 		db	ANIM_01, ANIM_03, ANIM_04, ANIM_07, 'h,'
-		db	0FCh, 04h, 04h, 07h,SCR_END_SCRIPT, 01h		; ctrl 0xFC | end-of-script
+		db	0FCh, ANIM_04, ANIM_04, ANIM_07, SCR_END_SCRIPT, ANIM_01		; ctrl 0xFC | end-of-script
 
 		; Style-encoded speech -- Jashiin (departing threat)
 		; "Beware, for I shall wake from my sleep of 2,000 years
