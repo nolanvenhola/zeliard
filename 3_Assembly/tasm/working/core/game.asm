@@ -64,6 +64,23 @@ gvar_joy_count	equ	0FF4Bh			; Joystick count
 gvar_volume_a	equ	0FF74h			; Volume setting A
 gvar_volume_b	equ	0FF77h			; Volume setting B
 
+; Load a chunk from a SAR archive into ES:DI
+; Usage: LOAD_CHUNK chunk_ref, dest_offset, archive_index
+LOAD_CHUNK	MACRO	chunk_ref, dest_offset, archive
+		mov	si, chunk_ref
+		mov	di, dest_offset
+		mov	al, archive
+		call	word ptr cs:[10Ch]
+		ENDM
+
+; Set ES to CS + a segment paragraph offset (e.g. 1000h, 2000h, 3000h)
+; Usage: SET_ES_SEG 2000h
+SET_ES_SEG	MACRO	seg_offset
+		mov	ax, cs
+		add	ax, seg_offset
+		mov	es, ax
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -150,10 +167,7 @@ start:
 
 		; --- LOAD SAVED GAME ---
 		mov	byte ptr cs:gvar_volume_b,0FFh
-		mov	si,0A27Bh		; Saved game chunk ref
-		mov	di,6000h
-		mov	al,3			; Archive 3
-		call	word ptr cs:[10Ch]	; Load save handler
+		LOAD_CHUNK 0A27Bh, 6000h, 3	; load save handler
 		jmp	word ptr ds:loaded_code_b ; Jump to save loader
 
 start_new_game:
@@ -172,46 +186,25 @@ start_new_game:
 		call	word ptr cs:[10Ch]
 
 		; Load gameplay code chunk
-		mov	si,0A270h
-		mov	di,6000h
-		mov	al,3
-		call	word ptr cs:[10Ch]
+		LOAD_CHUNK 0A270h, 6000h, 3
 
 		; Load tile graphics (+0x2000 segment)
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_SEG 2000h
 		xor	bx,bx
 		mov	bl,ds:gvar_game_phase
 		add	bx,bx
-		mov	si,ds:gfx_mode_tbl_ega[bx]
-		mov	di,9000h
-		mov	al,3
-		call	word ptr cs:[10Ch]
+		LOAD_CHUNK ds:gfx_mode_tbl_ega[bx], 9000h, 3
 
 		; Load more graphics data
-		mov	si,0A264h
-		mov	di,0C000h
-		mov	al,3
-		call	word ptr cs:[10Ch]
+		LOAD_CHUNK 0A264h, 0C000h, 3
 
 		; Load combat/physics system (+0x1000 segment)
-		mov	ax,cs
-		add	ax,1000h
-		mov	es,ax
-		mov	si,0A23Fh
-		mov	di,0C000h
-		mov	al,3
-		call	word ptr cs:[10Ch]
+		SET_ES_SEG 1000h
+		LOAD_CHUNK 0A23Fh, 0C000h, 3
 
 		; Load enemy AI / animation system
-		mov	ax,cs
-		add	ax,1000h
-		mov	es,ax
-		mov	si,0A233h
-		mov	di,0E200h
-		mov	al,2			; Archive 2 = zelres2
-		call	word ptr cs:[10Ch]
+		SET_ES_SEG 1000h
+		LOAD_CHUNK 0A233h, 0E200h, 2	; archive 2 = zelres2
 
 		; Fix up loaded enemy system jump table (7 entries)
 		add	es:[di],di
@@ -222,23 +215,16 @@ start_new_game:
 		add	es:[di+0Ah],di
 		add	es:[di+0Ch],di
 
-		; Load sprite system (+0x2000 segment)
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		; Load sprite system (+0x2000 segment)  — di before si: use explicit movs
+		SET_ES_SEG 2000h
 		mov	di,0
 		mov	si,0A24Ch
 		mov	al,2
 		call	word ptr cs:[10Ch]
 
 		; Load input/UI system
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
-		mov	si,0A258h
-		mov	di,1800h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		SET_ES_SEG 2000h
+		LOAD_CHUNK 0A258h, 1800h, 2
 
 		; Fix up input system jump table (3 entries)
 		add	es:[di],di
@@ -256,7 +242,7 @@ start_new_game:
 		add	ax,3000h
 		mov	word ptr ds:game_init_fn+2,ax ; Set segment for game init
 		mov	es,ax
-		mov	di,0
+		mov	di,0				; di before si: use explicit movs
 		mov	si,0A228h
 		mov	al,3
 		call	word ptr cs:[10Ch]
