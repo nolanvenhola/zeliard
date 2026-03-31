@@ -44,6 +44,16 @@ palette_base_tbl equ	GAME_CODE_BASE + (offset palette_base_tbl_lbl)
 game_init_fn	equ	GAME_CODE_BASE + (offset game_init_fn_lbl)
 save_mode_flag	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
 level_chunk_ref	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
+; Chunk reference addresses (GAME_CODE_BASE + offset of [archive][chunk] record)
+chunk_ref_font_grp equ	GAME_CODE_BASE + (offset ref_font_grp)
+chunk_ref_mole	equ	GAME_CODE_BASE + (offset ref_mole)
+chunk_ref_itemp	equ	GAME_CODE_BASE + (offset ref_itemp)
+chunk_ref_select equ	GAME_CODE_BASE + (offset ref_select)
+chunk_ref_magic	equ	GAME_CODE_BASE + (offset ref_magic)
+chunk_ref_sword	equ	GAME_CODE_BASE + (offset ref_sword)
+chunk_ref_fight	equ	GAME_CODE_BASE + (offset ref_fight)
+chunk_ref_town	equ	GAME_CODE_BASE + (offset ref_town)
+chunk_ref_opdemo equ	GAME_CODE_BASE + (offset ref_opdemo)
 save_data_base	equ	0C000h			; Save data load address
 
 ; Game state variables (0xFF00+ range, shared with zeliad.exe)
@@ -114,11 +124,11 @@ start:
 		push	cs
 		pop	es
 
-		; Load SAR chunk loader from zelres2
+		; Load font graphics (zelres1 ch13) — compressed, to CS:F500h
 		mov	di,0F500h
-		mov	si,0A21Dh		; Chunk ref for loader code
-		mov	al,2			; Archive 2 = zelres2
-		call	word ptr cs:[10Ch]	; call chunk_load()
+		mov	si,chunk_ref_font_grp
+		mov	al,2			; AL=2: compressed load
+		call	word ptr cs:[10Ch]
 
 		; Fix up loaded code's jump table (relocate pointers)
 		add	es:[di],di
@@ -167,7 +177,7 @@ start:
 
 		; --- LOAD SAVED GAME ---
 		mov	byte ptr cs:gvar_volume_b,0FFh
-		LOAD_CHUNK 0A27Bh, 6000h, 3	; load save handler
+		LOAD_CHUNK chunk_ref_opdemo, 6000h, 3	; opening demo (handles save restore)
 		jmp	word ptr ds:loaded_code_b ; Jump to save loader
 
 start_new_game:
@@ -185,8 +195,8 @@ start_new_game:
 		mov	al,3
 		call	word ptr cs:[10Ch]
 
-		; Load gameplay code chunk
-		LOAD_CHUNK 0A270h, 6000h, 3
+		; Load town/overworld code (zelres1 ch7) to CS:6000h
+		LOAD_CHUNK chunk_ref_town, 6000h, 3
 
 		; Load tile graphics (+0x2000 segment)
 		SET_ES_SEG 2000h
@@ -195,16 +205,16 @@ start_new_game:
 		add	bx,bx
 		LOAD_CHUNK ds:gfx_mode_tbl_ega[bx], 9000h, 3
 
-		; Load more graphics data
-		LOAD_CHUNK 0A264h, 0C000h, 3
+		; Load main game loop (zelres2 ch1 = fight.bin / 200FIGHT)
+		LOAD_CHUNK chunk_ref_fight, 0C000h, 3
 
-		; Load combat/physics system (+0x1000 segment)
+		; Load character select system (zelres2 ch2) (+0x1000 segment)
 		SET_ES_SEG 1000h
-		LOAD_CHUNK 0A23Fh, 0C000h, 3
+		LOAD_CHUNK chunk_ref_select, 0C000h, 3
 
-		; Load enemy AI / animation system
+		; Load item panel graphics (zelres2 ch28) (+0x1000 segment, compressed)
 		SET_ES_SEG 1000h
-		LOAD_CHUNK 0A233h, 0E200h, 2	; archive 2 = zelres2
+		LOAD_CHUNK chunk_ref_itemp, 0E200h, 2	; AL=2: compressed
 
 		; Fix up loaded enemy system jump table (7 entries)
 		add	es:[di],di
@@ -215,16 +225,16 @@ start_new_game:
 		add	es:[di+0Ah],di
 		add	es:[di+0Ch],di
 
-		; Load sprite system (+0x2000 segment)  — di before si: use explicit movs
+		; Load magic effect graphics (zelres2 ch29, compressed) (+0x2000 segment)
 		SET_ES_SEG 2000h
 		mov	di,0
-		mov	si,0A24Ch
-		mov	al,2
+		mov	si,chunk_ref_magic
+		mov	al,2			; AL=2: compressed
 		call	word ptr cs:[10Ch]
 
-		; Load input/UI system
+		; Load sword sprite (zelres2 ch27, compressed)
 		SET_ES_SEG 2000h
-		LOAD_CHUNK 0A258h, 1800h, 2
+		LOAD_CHUNK chunk_ref_sword, 1800h, 2	; AL=2: compressed
 
 		; Fix up input system jump table (3 entries)
 		add	es:[di],di
@@ -243,7 +253,7 @@ start_new_game:
 		mov	word ptr ds:game_init_fn+2,ax ; Set segment for game init
 		mov	es,ax
 		mov	di,0				; di before si: use explicit movs
-		mov	si,0A228h
+		mov	si,chunk_ref_mole
 		mov	al,3
 		call	word ptr cs:[10Ch]
 
@@ -335,15 +345,15 @@ skip_gfx_init_c:
 ;  Music file entries use [01h]['path'\0] (no chunk byte — DOS file path).
 ;==========================================================================
 
-		db	00h, 0Dh, 'font.grp', 0		; zelres1 ch13: font graphics
-		db	01h, 08h, 'mole.bin', 0		; zelres2 ch8:  mole enemy code
-		db	01h, 1Ch, 'itemp.grp', 0	; zelres2 ch28: item panel graphics
-		db	01h, 02h, 'select.bin', 0	; zelres2 ch2:  character select
-		db	01h, 1Dh, 'magic.grp', 0	; zelres2 ch29: magic effect graphics
-		db	01h, 1Bh, 'sword.grp', 0	; zelres2 ch27: sword sprite
-		db	01h, 01h, 'fight.bin', 0	; zelres2 ch1:  main game loop
-		db	00h, 07h, 'town.bin', 0		; zelres1 ch7:  town code
-		db	00h, 01h, 'opdemo.bin', 0	; zelres1 ch1:  opening demo
+ref_font_grp	db	00h, 0Dh, 'font.grp', 0	; zelres1 ch13: font graphics
+ref_mole	db	01h, 08h, 'mole.bin', 0	; zelres2 ch8:  mole enemy code
+ref_itemp	db	01h, 1Ch, 'itemp.grp', 0	; zelres2 ch28: item panel graphics
+ref_select	db	01h, 02h, 'select.bin', 0	; zelres2 ch2:  character select
+ref_magic	db	01h, 1Dh, 'magic.grp', 0	; zelres2 ch29: magic effect graphics
+ref_sword	db	01h, 1Bh, 'sword.grp', 0	; zelres2 ch27: sword sprite
+ref_fight	db	01h, 01h, 'fight.bin', 0	; zelres2 ch1:  main game loop (200FIGHT)
+ref_town	db	00h, 07h, 'town.bin', 0	; zelres1 ch7:  town/overworld code
+ref_opdemo	db	00h, 01h, 'opdemo.bin', 0	; zelres1 ch1:  opening demo / save handler
 ; Game frame graphics (GF* series, zelres2) — loaded into CS+2000h:9000h
 ; archive=1 (zelres2); modes 1 and 2 share the same CGA frame assets
 gfx_mode_tbl_ega_lbl	label	word
