@@ -400,7 +400,7 @@ check_exit_error:
 check_disk_error:
 		push	ds
 		push	dx
-		mov	dx,775h
+		mov	dx,offset str_file_not_found
 		cmp	ax,2
 		je	show_error_filename
 		mov	dx,offset str_disk_error
@@ -807,10 +807,10 @@ show_error_code:
 		mov	dx,offset str_error_type
 		mov	ah,9
 		int	21h			; "     Error Type : "
-		mov	dx,775h
+		mov	dx,offset str_file_not_found
 		cmp	bx,2
 		je	show_error_string
-		mov	dx,785h
+		mov	dx,offset str_disk_error
 		cmp	bx,5
 		je	show_error_string
 		shl	bx,1
@@ -990,9 +990,8 @@ str_game_title	db	'The Fantasy Action Game ZELIARD '
 		db	'o.,Ltd.', 0Dh, 0Ah, 'Copyright ('
 		db	'C) 1990 Sierra On-Line, Inc.', 0Dh
 		db	0Ah, '$'
-		db	'Not supported command !', 0Dh, 0Ah
-		db	'$'
-		db	'Special mode !!', 0Dh, 0Ah, '$'
+str_not_supported	db	'Not supported command !', 0Dh, 0Ah, '$'
+str_special_mode	db	'Special mode !!', 0Dh, 0Ah, '$'
 str_not_enough_mem db	'Not enough memory to run ', 27h, 'Z'
 		db	'ELIARD', 27h, '.', 0Dh, 0Ah, '$'
 str_memory_error db	'Memory error !!!', 0Dh, 0Ah, '$'
@@ -1000,7 +999,7 @@ str_thank_you	db	'Thank you for playing.', 0Dh, 0Ah
 		db	'$'
 str_file_error	db	'File Error from $'
 str_error_type	db	'     Error Type : $'
-		db	'File not found.$'
+str_file_not_found db	'File not found.$'
 str_disk_error	db	'DISK read Error!!$'
 str_user_file_error db	'USER file nothing.$'
 str_cfg_error	db	'Error in RESOURCE.CFG', 0Dh, 0Ah
