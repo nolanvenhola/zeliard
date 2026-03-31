@@ -28,6 +28,11 @@ Dungeon height is always **64 tiles**. Width varies per dungeon.
 | 0x0C | 0xC00C | 2 | Pointer → accomplished items check array |
 | 0x0E | 0xC00E | 2 | Pointer → cavern name renderer data |
 | 0x10 | 0xC010 | 2 | Pointer → monsters array |
+| 0x12 | 0xC012 | 1 | Cavern level |
+| 0x13 | 0xC013 | 2 | x-coord of Tear (door to boss) |
+| 0x15 | 0xC015 | 1 | y-coord of Tear |
+| 0x16 | 0xC016 | 1 | y-coord of hero head in viewport |
+| 0x17 | 0xC017 | 2 | Pointer → text signs inside cavern array |
 
 ---
 
@@ -64,7 +69,6 @@ Contain indices for choosing sprites, music, enemy AI for the dungeon.
 | 0 | 2 | X tile position |
 | 2 | 1 | Y tile position |
 
-
 ### Horizontal Platforms
 **Entry size: 7 bytes**
 
@@ -96,7 +100,7 @@ Contain indices for choosing sprites, music, enemy AI for the dungeon.
 Contains the ASCII cavern name string (null-terminated) plus rendering parameters.
 Confirmed: `MP10.MDT` contains "Cavern of Malicia\t" at file offset 0x1617.
 
-### Monsters/Items (potions, chests, etc.)
+### Monsters/Items (potions, chests, signs etc.)
 **Entry size: 16 bytes** — some monsters occupy 2 consecutive records (32 bytes total).
 Stop marker = `0xFFFF`.
 `MP10.MDT` (Cavern of Malicia) has 54 monster entries.
@@ -111,6 +115,26 @@ Stop marker = `0xFFFF`.
 | 14 | 1 | Type |
 | 15 | 1 | Unknown |
 
+### Cavern level
+**Entry size: 1 byte (immediate value)**
+Matches the digit in the cavern filename after 'MP'
+
+### Tear of Esmesanti coords (above dor to the boss)
+**Entry size: 3 bytes (immediate values)**
+2 bytes for X coord
+1 byte for Y coord
+
+### Hero head Y coord in viewport
+**Entry size: 1 byte (immediate value)**
+Distance from screen top to hero head in tiles
+
+### Text signs inside cavern
+**Entry size: variable** — TBD, terminator = `0xFF`
+(Peligro example):
+D72d: array of pointers; indexed by monster struct byte at offset 6
+D72F - single pointer (no more signs in Peligro)
+0x01, 0x03, 0x2C, 'Danger!!/ Don\t open/', 0x14, 'the box ahead.', 0xFF
+
 ---
 
 ## Map Index (from stick.bin reference table)
@@ -118,10 +142,10 @@ Stop marker = `0xFFFF`.
 | File | zelres | chunk | Town | Cavern |
 |------|--------|-------|------|--------|
 | MP10.MDT | zelres3 | 20 | Muralla | Malicia |
-| MP1D.MDT | zelres3 | 21 | ? | ? |
+| MP1D.MDT | zelres3 | 21 | ? | Malicia boss |
 | MP20.MDT | zelres3 | 22 | Satono | Peligro |
-| MP21.MDT | zelres3 | 23 | ? | ? |
-| MP2D.MDT | zelres3 | 24 | ? | ? |
+| MP21.MDT | zelres3 | 23 | ? | Peligro1 |
+| MP2D.MDT | zelres3 | 24 | ? | Peligro boss |
 | MP30.MDT | zelres3 | 25 | Bosque | Madera/Riza |
 | MP31.MDT | zelres3 | 26 | ? | ? |
 | MP3D.MDT | zelres3 | 27 | ? | ? |
