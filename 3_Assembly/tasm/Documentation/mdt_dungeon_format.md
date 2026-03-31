@@ -61,7 +61,7 @@ Contain indices for choosing sprites, music, enemy AI for the dungeon.
 | 0 | 2 | X tile position |
 | 2 | 1 | Y tile position |
 
-### Collapsing Platforms
+### Collapsing Platforms (only exist in caverns 7+)
 **Entry size: 3 bytes**
 
 | Offset | Size | Description |
