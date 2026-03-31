@@ -16,6 +16,8 @@ MONOGAME_AUTHENTIC/.idea
 3_Assembly/cutter/source/dist
 3_Assembly/tasm/SourcerRunner/logs/
 3_Assembly/tasm/TasmRunner/logs/
+3_Assembly/tasm/logs/
+logs/
 3_Assembly/tasm/working/**/*.LST
 3_Assembly/tasm/working/**/*.OBJ
 3_Assembly/tasm/working/**/*.SDF
