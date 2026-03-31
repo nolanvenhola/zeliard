@@ -2514,66 +2514,24 @@ disp_narr_chap4	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
-		db	SCR_END_SCRIPT				; end of script
-		db	058h				; 058h
-		db	025h				; 025h
-		; Chapter-end scanline transition table
-		; Format per row (6 bytes): [ctrl1] [ctrl2] [04h] [07h] [y_pos] [seq]
-		; y_pos = screen Y coordinate, seq = sequence index
-		db	SCR_RESET				; reset style
-		db	000h				; 000h
-		db	000h				; 000h
-		db	003h				; 003h
-		db	068h				; 068h
-		db	021h				; 021h
-		db	0FCh				; 0FCh
-		db	0FCh				; 0FCh
-		db	004h				; 004h
-		db	007h				; 007h
-		db	070h				; 070h
-		db	023h				; 023h
-		db	001h				; 001h
-		db	SCR_BREAK				; end of section
-		db	004h				; 004h
-		db	007h				; 007h
-		db	070h				; 070h
-		db	024h				; 024h
-		db	004h				; 004h
-		db	SCR_BREAK				; end of section
-		db	004h				; 004h
-		db	007h				; 007h
-		db	078h				; 078h
-		db	025h				; 025h
-		db	006h				; 006h
-		db	SCR_SCROLL				; scroll text up
-		db	004h				; 004h
-		db	007h				; 007h
-		db	078h				; 078h
-		db	028h				; 028h
-		db	006h				; 006h
-		db	002h				; 002h
-		db	004h				; 004h
-		db	007h				; 007h
-		db	070h				; 070h
-		db	029h				; 029h
-		db	004h				; 004h
-		db	003h				; 003h
-		db	004h				; 004h
-		db	007h				; 007h
-		db	070h				; 070h
-		db	02Ah				; 02Ah
-		db	001h				; 001h
-		db	003h				; 003h
-		db	004h				; 004h
-		db	007h				; 007h
-		db	068h				; 068h
-		db	02Ch				; 02Ch
-		db	0FCh				; 0FCh
-		db	004h				; 004h
-		db	004h				; 004h
-		db	007h				; 007h
-		db	SCR_END_SCRIPT				; end of script
-		db	001h				; 001h
+		db	SCR_END_SCRIPT				; end of script (page break — caller re-invokes script_interpreter from here)
+		; Script continuation (0x00-0x1F = custom font glyphs / animation codes; 0xFC = no-op)
+		db	'X', '%', SCR_RESET
+		db	0, 0, ANIM_03, 'h', '!'
+		db	0FCh, 0FCh
+		db	ANIM_04, ANIM_07, 'p', '#', ANIM_01
+		db	SCR_BREAK
+		db	ANIM_04, ANIM_07, 'p', '$', ANIM_04
+		db	SCR_BREAK
+		db	ANIM_04, ANIM_07, 'x', '%', ANIM_06
+		db	SCR_SCROLL
+		db	ANIM_04, ANIM_07, 'x', '(', ANIM_06, ANIM_02
+		db	ANIM_04, ANIM_07, 'p', ')', ANIM_04, ANIM_03
+		db	ANIM_04, ANIM_07, 'p', '*', ANIM_01, ANIM_03
+		db	ANIM_04, ANIM_07, 'h', ',', 0FCh
+		db	ANIM_04, ANIM_04, ANIM_07
+		db	SCR_END_SCRIPT
+		db	ANIM_01
 
 		; Style-encoded speech -- Jashiin (departing threat)
 		; "Beware, for I shall wake from my sleep of 2,000 years
@@ -2584,11 +2542,7 @@ disp_narr_chap4	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
 		db	ANIM_03, 'fo', ANIM_04, 'r '
 		db	ANIM_04, 'I ', ANIM_01, 'sh'
 		db	'a', ANIM_03, 'll w'
-		db	04h				; 04h
-		db	61h				; 61h
-		db	6Bh				; 6Bh
-		db	03h				; 03h
-		db	65h				; 65h
+		db	ANIM_04, 'ak', ANIM_03, 'e'
 		db	SCR_END_SCRIPT				; end of script
 		db	ANIM_01, ANIM_06, ANIM_03, 'fro'
 		db	ANIM_03, 'm ', ANIM_02, 'm', ANIM_01
@@ -2598,11 +2552,7 @@ disp_narr_chap4	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
 		db	'000 ', ANIM_01, 'y'
 		db	'e', ANIM_04, 'ar', ANIM_03, 's'
 		db	SCR_END_SCRIPT				; end of script
-		db	01h				; 01h
-		db	02h				; 02h
-		db	04h				; 04h
-		db	61h				; 61h
-		db	02h				; 02h
+		db	ANIM_01, ANIM_02, ANIM_04, 'a', ANIM_02
 		db	'n', ANIM_03, 'd ', ANIM_03, 'o'
 		db	ANIM_02, 'nce ', ANIM_04
 		db	'aga', ANIM_01, 'in'
