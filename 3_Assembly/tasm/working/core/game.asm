@@ -360,47 +360,47 @@ ref_opdemo	db	00h, 01h, 'opdemo.bin', 0	; zelres1 ch1:  opening demo / save hand
 ; Game frame graphics (GF* series, zelres2) — loaded into CS+2000h:9000h
 ; archive=1 (zelres2); modes 1 and 2 share the same CGA frame assets
 gfx_mode_tbl_ega_lbl	label	word
-		dw	0A294h		; mode 0: EGA      → zelres2 ch3 (gfega.bin)
-		dw	0A2A0h		; mode 1: CGA      → zelres2 ch4 (gfcga.bin)
-		dw	0A2A0h		; mode 2: CGA 2clr → zelres2 ch4 (shared with CGA)
-		dw	0A2ACh		; mode 3: HGC      → zelres2 ch5 (gfhgc.bin)
-		dw	0A2B8h		; mode 4: MCGA     → zelres2 ch7 (gfmcga.bin)
-		dw	0A2C5h		; mode 5: TGA      → zelres2 ch6 (gftga.bin)
-		db	01h, 03h, 'gfega.bin', 0	; zelres2 ch3: EGA game frame
-		db	01h, 04h, 'gfcga.bin', 0	; zelres2 ch4: CGA game frame
-		db	01h, 05h, 'gfhgc.bin', 0	; zelres2 ch5: HGC game frame
-		db	01h, 07h, 'gfmcga.bin', 0	; zelres2 ch7: MCGA game frame
-		db	01h, 06h, 'gftga.bin', 0	; zelres2 ch6: TGA game frame
+		dw	GAME_CODE_BASE + (offset ref_gfega)	; mode 0: EGA      → zelres2 ch3 (gfega.bin)
+		dw	GAME_CODE_BASE + (offset ref_gfcga)	; mode 1: CGA      → zelres2 ch4 (gfcga.bin)
+		dw	GAME_CODE_BASE + (offset ref_gfcga)	; mode 2: CGA 2clr (shared) → zelres2 ch4 (shared with CGA)
+		dw	GAME_CODE_BASE + (offset ref_gfhgc)	; mode 3: HGC      → zelres2 ch5 (gfhgc.bin)
+		dw	GAME_CODE_BASE + (offset ref_gfmcga)	; mode 4: MCGA     → zelres2 ch7 (gfmcga.bin)
+		dw	GAME_CODE_BASE + (offset ref_gftga)	; mode 5: TGA      → zelres2 ch6 (gftga.bin)
+		ref_gfega	db	01h, 03h, 'gfega.bin', 0	; zelres2 ch3: EGA game frame
+		ref_gfcga	db	01h, 04h, 'gfcga.bin', 0	; zelres2 ch4: CGA game frame
+		ref_gfhgc	db	01h, 05h, 'gfhgc.bin', 0	; zelres2 ch5: HGC game frame
+		ref_gfmcga	db	01h, 07h, 'gfmcga.bin', 0	; zelres2 ch7: MCGA game frame
+		ref_gftga	db	01h, 06h, 'gftga.bin', 0	; zelres2 ch6: TGA game frame
 
 ; Tile renderer code (GT* series, zelres1) — loaded into CS:3000h
 ; archive=0 (zelres1); modes 1 and 2 share the same CGA tile renderer
 gfx_mode_tbl_cga_lbl	label	word
-		dw	0A2DDh		; mode 0: EGA      → zelres1 ch8  (gtega.bin)
-		dw	0A2E9h		; mode 1: CGA      → zelres1 ch9  (gtcga.bin)
-		dw	0A2E9h		; mode 2: CGA 2clr → zelres1 ch9  (shared with CGA)
-		dw	0A2F5h		; mode 3: HGC      → zelres1 ch10 (gthgc.bin)
-		dw	0A301h		; mode 4: MCGA     → zelres1 ch12 (gtmcga.bin)
-		dw	0A30Eh		; mode 5: TGA      → zelres1 ch11 (gttga.bin)
-		db	00h, 08h, 'gtega.bin', 0	; zelres1 ch8:  EGA tile renderer
-		db	00h, 09h, 'gtcga.bin', 0	; zelres1 ch9:  CGA tile renderer
-		db	00h, 0Ah, 'gthgc.bin', 0	; zelres1 ch10: HGC tile renderer
-		db	00h, 0Ch, 'gtmcga.bin', 0	; zelres1 ch12: MCGA tile renderer
-		db	00h, 0Bh, 'gttga.bin', 0	; zelres1 ch11: TGA tile renderer
+		dw	GAME_CODE_BASE + (offset ref_gtega)	; mode 0: EGA      → zelres1 ch8  (gtega.bin)
+		dw	GAME_CODE_BASE + (offset ref_gtcga)	; mode 1: CGA      → zelres1 ch9  (gtcga.bin)
+		dw	GAME_CODE_BASE + (offset ref_gtcga)	; mode 2: CGA 2clr (shared) → zelres1 ch9  (shared with CGA)
+		dw	GAME_CODE_BASE + (offset ref_gthgc)	; mode 3: HGC      → zelres1 ch10 (gthgc.bin)
+		dw	GAME_CODE_BASE + (offset ref_gtmcga)	; mode 4: MCGA     → zelres1 ch12 (gtmcga.bin)
+		dw	GAME_CODE_BASE + (offset ref_gttga)	; mode 5: TGA      → zelres1 ch11 (gttga.bin)
+		ref_gtega	db	00h, 08h, 'gtega.bin', 0	; zelres1 ch8:  EGA tile renderer
+		ref_gtcga	db	00h, 09h, 'gtcga.bin', 0	; zelres1 ch9:  CGA tile renderer
+		ref_gthgc	db	00h, 0Ah, 'gthgc.bin', 0	; zelres1 ch10: HGC tile renderer
+		ref_gtmcga	db	00h, 0Ch, 'gtmcga.bin', 0	; zelres1 ch12: MCGA tile renderer
+		ref_gttga	db	00h, 0Bh, 'gttga.bin', 0	; zelres1 ch11: TGA tile renderer
 
 ; Graphics driver code (GD* series, zelres1) — loaded into CS:3000h at startup
 ; archive=0 (zelres1); modes 1 and 2 share the CGA driver
 gfx_mode_tbl_all_lbl	label	word
-		dw	0A326h		; mode 0: EGA      → zelres1 ch2  (gdega.bin)
-		dw	0A332h		; mode 1: CGA      → zelres1 ch3  (gdcga.bin)
-		dw	0A332h		; mode 2: CGA 2clr → zelres1 ch3  (shared with CGA)
-		dw	0A33Eh		; mode 3: HGC      → zelres1 ch4  (gdhgc.bin)
-		dw	0A34Ah		; mode 4: MCGA     → zelres1 ch6  (gdmcga.bin)
-		dw	0A357h		; mode 5: TGA      → zelres1 ch5  (gdtga.bin)
-		db	00h, 02h, 'gdega.bin', 0	; zelres1 ch2:  EGA graphics driver
-		db	00h, 03h, 'gdcga.bin', 0	; zelres1 ch3:  CGA graphics driver
-		db	00h, 04h, 'gdhgc.bin', 0	; zelres1 ch4:  HGC graphics driver
-		db	00h, 06h, 'gdmcga.bin', 0	; zelres1 ch6:  MCGA graphics driver
-		db	00h, 05h, 'gdtga.bin', 0	; zelres1 ch5:  TGA graphics driver
+		dw	GAME_CODE_BASE + (offset ref_gdega)	; mode 0: EGA      → zelres1 ch2  (gdega.bin)
+		dw	GAME_CODE_BASE + (offset ref_gdcga)	; mode 1: CGA      → zelres1 ch3  (gdcga.bin)
+		dw	GAME_CODE_BASE + (offset ref_gdcga)	; mode 2: CGA 2clr (shared) → zelres1 ch3  (shared with CGA)
+		dw	GAME_CODE_BASE + (offset ref_gdhgc)	; mode 3: HGC      → zelres1 ch4  (gdhgc.bin)
+		dw	GAME_CODE_BASE + (offset ref_gdmcga)	; mode 4: MCGA     → zelres1 ch6  (gdmcga.bin)
+		dw	GAME_CODE_BASE + (offset ref_gdtga)	; mode 5: TGA      → zelres1 ch5  (gdtga.bin)
+		ref_gdega	db	00h, 02h, 'gdega.bin', 0	; zelres1 ch2:  EGA graphics driver
+		ref_gdcga	db	00h, 03h, 'gdcga.bin', 0	; zelres1 ch3:  CGA graphics driver
+		ref_gdhgc	db	00h, 04h, 'gdhgc.bin', 0	; zelres1 ch4:  HGC graphics driver
+		ref_gdmcga	db	00h, 06h, 'gdmcga.bin', 0	; zelres1 ch6:  MCGA graphics driver
+		ref_gdtga	db	00h, 05h, 'gdtga.bin', 0	; zelres1 ch5:  TGA graphics driver
 		db	01h, '/MGT1.MSD', 0		; MT-32 music track 1
 		db	01h, '1UGM1.MSD', 0		; General MIDI music track 1
 		db	01h, '0MGT2.MSD', 0		; MT-32 music track 2

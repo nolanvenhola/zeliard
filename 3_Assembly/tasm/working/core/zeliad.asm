@@ -169,7 +169,7 @@ memory_allocated:
 		jz	skip_music_init
 		mov	cs:saved_sp,sp
 		mov	cs:saved_ss,ss
-		mov	di,7EDh
+		mov	di,offset mtinit_filename - 2
 		mov	dx,offset mtinit_filename
 		mov	bx,offset exec_param_block
 		mov	ax,4B00h
@@ -283,7 +283,7 @@ save_name_done:
 		mov	di,offset entry_stdply_nosave
 		test	byte ptr has_savefile,0FFh
 		jz	load_gfx_driver
-		mov	di,867h
+		mov	di,offset cmdline_savefile
 
 load_gfx_driver:
 		call	load_driver_file
@@ -310,14 +310,14 @@ load_gfx_driver:
 		mov	ax,word ptr cs:game_entry_seg
 		add	ax,0FF0h
 		mov	es,ax
-		mov	di,889h
+		mov	di,offset music_driver_name
 		call	load_driver_file
 
 		; Load secondary music handler
 		mov	ax,word ptr cs:game_entry_seg
 		add	ax,0FF0h
 		mov	es,ax
-		mov	di,89Bh
+		mov	di,offset joystick_driver_name
 		call	load_driver_file
 
 		; Install interrupt handlers
