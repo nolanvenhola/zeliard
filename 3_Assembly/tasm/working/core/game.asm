@@ -346,47 +346,50 @@ skip_gfx_init_c:
 		db	0, 0, 1
 		db	'opdemo.bin'		; Opening demo
 		db	 00h
+; Game frame graphics (GF* series, zelres2) — loaded into CS+2000h:9000h
+; archive=1 (zelres2); modes 1 and 2 share the same CGA frame assets
 gfx_mode_tbl_ega_lbl	label	word
-		db	 94h,0A2h,0A0h,0A2h,0A0h
-		db	0A2h,0ACh,0A2h,0B8h,0A2h,0C5h
-		db	0A2h, 01h, 03h
-		db	'gfega.bin'		; Chunk 3: font/frame (EGA)
-		db	0, 1, 4
-		db	'gfcga.bin'		; Chunk 4: font/frame (CGA)
-		db	0, 1, 5
-		db	'gfhgc.bin'		; Chunk 5: font/frame (HGC)
-		db	0, 1, 7
-		db	'gfmcga.bin'		; Chunk 7: font/frame (MCGA)
-		db	0, 1, 6
-		db	'gftga.bin'		; Chunk 6: font/frame (TGA)
-		db	 00h
+		dw	0A294h		; mode 0: EGA      → zelres2 ch3 (gfega.bin)
+		dw	0A2A0h		; mode 1: CGA      → zelres2 ch4 (gfcga.bin)
+		dw	0A2A0h		; mode 2: CGA 2clr → zelres2 ch4 (shared with CGA)
+		dw	0A2ACh		; mode 3: HGC      → zelres2 ch5 (gfhgc.bin)
+		dw	0A2B8h		; mode 4: MCGA     → zelres2 ch7 (gfmcga.bin)
+		dw	0A2C5h		; mode 5: TGA      → zelres2 ch6 (gftga.bin)
+		db	01h, 03h, 'gfega.bin', 0	; zelres2 ch3: EGA game frame
+		db	01h, 04h, 'gfcga.bin', 0	; zelres2 ch4: CGA game frame
+		db	01h, 05h, 'gfhgc.bin', 0	; zelres2 ch5: HGC game frame
+		db	01h, 07h, 'gfmcga.bin', 0	; zelres2 ch7: MCGA game frame
+		db	01h, 06h, 'gftga.bin', 0	; zelres2 ch6: TGA game frame
+
+; Tile renderer code (GT* series, zelres1) — loaded into CS:3000h
+; archive=0 (zelres1); modes 1 and 2 share the same CGA tile renderer
 gfx_mode_tbl_cga_lbl	label	word
-		db	0DDh,0A2h,0E9h,0A2h,0E9h
-		db	0A2h,0F5h,0A2h, 01h,0A3h, 0Eh
-		db	0A3h, 00h
-		db	8, 'gtega.bin'		; Chunk 8: tile graphics (EGA)
-		db	0, 0
-		db	9, 'gtcga.bin'		; Chunk 9: tile graphics (CGA)
-		db	0, 0
-		db	0Ah, 'gthgc.bin'	; Chunk 10: tile graphics (HGC)
-		db	0, 0
-		db	0Ch, 'gtmcga.bin'	; Chunk 12: tile graphics (MCGA)
-		db	 00h, 00h, 0Bh
-		db	'gttga.bin'		; Chunk 11: tile graphics (TGA)
-		db	 00h
+		dw	0A2DDh		; mode 0: EGA      → zelres1 ch8  (gtega.bin)
+		dw	0A2E9h		; mode 1: CGA      → zelres1 ch9  (gtcga.bin)
+		dw	0A2E9h		; mode 2: CGA 2clr → zelres1 ch9  (shared with CGA)
+		dw	0A2F5h		; mode 3: HGC      → zelres1 ch10 (gthgc.bin)
+		dw	0A301h		; mode 4: MCGA     → zelres1 ch12 (gtmcga.bin)
+		dw	0A30Eh		; mode 5: TGA      → zelres1 ch11 (gttga.bin)
+		db	00h, 08h, 'gtega.bin', 0	; zelres1 ch8:  EGA tile renderer
+		db	00h, 09h, 'gtcga.bin', 0	; zelres1 ch9:  CGA tile renderer
+		db	00h, 0Ah, 'gthgc.bin', 0	; zelres1 ch10: HGC tile renderer
+		db	00h, 0Ch, 'gtmcga.bin', 0	; zelres1 ch12: MCGA tile renderer
+		db	00h, 0Bh, 'gttga.bin', 0	; zelres1 ch11: TGA tile renderer
+
+; Graphics driver code (GD* series, zelres1) — loaded into CS:3000h at startup
+; archive=0 (zelres1); modes 1 and 2 share the CGA driver
 gfx_mode_tbl_all_lbl	label	word
-		db	 26h,0A3h, 32h,0A3h, 32h
-		db	0A3h, 3Eh,0A3h, 4Ah,0A3h, 57h
-		db	0A3h, 00h, 02h
-		db	'gdega.bin'		; Chunk 2: graphics driver (EGA)
-		db	0, 0, 3
-		db	'gdcga.bin'		; Chunk 3: graphics driver (CGA)
-		db	0, 0, 4
-		db	'gdhgc.bin'		; Chunk 4: graphics driver (HGC)
-		db	0, 0, 6
-		db	'gdmcga.bin'		; Chunk 6: graphics driver (MCGA)
-		db	0, 0, 5
-		db	'gdtga.bin'		; Chunk 5: graphics driver (TGA)
+		dw	0A326h		; mode 0: EGA      → zelres1 ch2  (gdega.bin)
+		dw	0A332h		; mode 1: CGA      → zelres1 ch3  (gdcga.bin)
+		dw	0A332h		; mode 2: CGA 2clr → zelres1 ch3  (shared with CGA)
+		dw	0A33Eh		; mode 3: HGC      → zelres1 ch4  (gdhgc.bin)
+		dw	0A34Ah		; mode 4: MCGA     → zelres1 ch6  (gdmcga.bin)
+		dw	0A357h		; mode 5: TGA      → zelres1 ch5  (gdtga.bin)
+		db	00h, 02h, 'gdega.bin', 0	; zelres1 ch2:  EGA graphics driver
+		db	00h, 03h, 'gdcga.bin', 0	; zelres1 ch3:  CGA graphics driver
+		db	00h, 04h, 'gdhgc.bin', 0	; zelres1 ch4:  HGC graphics driver
+		db	00h, 06h, 'gdmcga.bin', 0	; zelres1 ch6:  MCGA graphics driver
+		db	00h, 05h, 'gdtga.bin'		; zelres1 ch5:  TGA graphics driver (null from next section)
 		db	0, 1
 		db	'/MGT1.MSD'		; MT-32 music track 1
 		db	0, 1
@@ -407,7 +410,7 @@ game		endp
 ;  load_music_tracks - Load all configured music tracks
 ;
 ;  Reads music track count from [ds:0xA0], iterates through track table
-;  at level_data_ref (0xA3F2), and calls sound driver track-load fn for each.
+;  at level_system_ref, and calls sound driver track-load fn for each.
 ;  Track 8 gets special flag (AL=1) for background music.
 ;==========================================================================
 
@@ -443,12 +446,20 @@ not_bg_music:
 
 load_music_tracks endp
 
-		; Padding / unknown data
+; Music track chunk ref pointer table (9 tracks, index 0-8)
+; Each word is an offset into the zeliad pre-populated data zone (DS < 0xA000)
+; where the actual [archive, chunk] record for that track lives.
+; Track 8 = background music (gets special AL=1 flag in load_music_tracks).
 level_system_ref_lbl	label	word
-		db	 00h, 0Fh, 00h, 3Dh, 00h, 15h
-		db	 00h, 37h, 00h, 1Bh, 00h, 31h
-		db	 00h, 21h, 00h, 2Bh, 00h
-		db	26h
+		dw	0F00h		; track 0 chunk ref ptr
+		dw	3D00h		; track 1 chunk ref ptr
+		dw	1500h		; track 2 chunk ref ptr
+		dw	3700h		; track 3 chunk ref ptr
+		dw	1B00h		; track 4 chunk ref ptr
+		dw	3100h		; track 5 chunk ref ptr
+		dw	2100h		; track 6 chunk ref ptr
+		dw	2B00h		; track 7 chunk ref ptr
+		dw	2600h		; track 8 chunk ref ptr (background music)
 
 ;==========================================================================
 ;  set_vga_palette - Set VGA DAC palette based on graphics mode
@@ -466,26 +477,41 @@ set_vga_palette	proc	near
 
 set_vga_palette	endp
 
-		; Jump table + palette setup code (mode-specific handlers)
+; VGA palette initialization jump table — one entry per video mode
 level_data_ref_lbl	label	word
-		db	0FEh,0A3h, 1Ah,0A4h, 1Ah,0A4h
-		db	 6Fh,0A4h, 1Bh,0A4h, 6Eh,0A4h
+		dw	GAME_CODE_BASE + (offset ega_palette_handler)	; mode 0: EGA
+		dw	GAME_CODE_BASE + (offset cga_palette_handler)	; mode 1: CGA
+		dw	GAME_CODE_BASE + (offset cga_palette_handler)	; mode 2: CGA 2-color
+		dw	GAME_CODE_BASE + (offset hgc_palette_handler)	; mode 3: HGC
+		dw	GAME_CODE_BASE + (offset mcga_palette_handler)	; mode 4: MCGA
+		dw	GAME_CODE_BASE + (offset tga_palette_handler)	; mode 5: TGA
 
-		; EGA/CGA palette handler - set text mode and return
-		db	 0Eh, 07h,0BAh, 09h,0A4h,0B8h
-		db	 02h, 10h,0CDh, 10h,0C3h
+; EGA palette handler: set all 16 attribute controller registers via INT 10h
+ega_palette_handler:
+		push	cs
+		pop	es
+		mov	dx, GAME_CODE_BASE + (offset ega_palette_data)	; ES:DX → 17-byte table
+		mov	ax, 1002h		; INT 10h fn 10h sub 02h: set all palette regs
+		int	10h
+		retn
 
-		; Mode index table
-		db	 00h
-		db	 3Fh, 24h, 12h, 1Bh, 09h, 36h
-		db	 2Dh, 38h, 07h, 04h, 02h, 03h
-		db	 01h, 06h, 05h, 00h
+; EGA attribute controller palette values (border + 16 palette registers)
+ega_palette_data:
+		db	00h			; border color
+		db	3Fh, 24h, 12h, 1Bh, 09h, 36h, 2Dh, 38h	; regs 0-7
+		db	07h, 04h, 02h, 03h, 01h, 06h, 05h, 00h	; regs 8-15
 
-		; MCGA palette setup: Programs 64 DAC registers
-		; Reads 8 base RGB triplets, adds 8 shade offsets per base
-		db	0C3h, 0Eh
-		db	 1Fh,0BEh, 56h,0A4h, 33h,0DBh
-		db	0B9h, 08h, 00h
+; CGA / CGA 2-color palette handler: no palette programming needed
+cga_palette_handler:
+		retn
+
+; MCGA palette handler: program 64 VGA DAC entries (8 base colors x 8 shades)
+mcga_palette_handler:
+		push	cs
+		pop	ds
+		mov	si, palette_base_tbl	; SI = base color / shade offset table
+		xor	bx, bx			; BX = first DAC register index
+		mov	cx, 8			; 8 base colors
 
 ;  Inner palette loop: for each base color (8 iterations)
 
@@ -530,17 +556,32 @@ palette_shade_loop:
 
 		retn
 
-		; Default shade offsets (8 RGB triplets: black to white ramp)
+; VGA DAC base color table — 8 RGB triplets (6-bit values, 0-3Fh)
+; Used as both base colors (outer loop) and shade offsets (inner loop)
+; to generate 64 DAC entries: entry[i*8+j] = color[i] + color[j]
 palette_base_tbl_lbl	label	byte
-		db	 00h, 00h, 00h, 1Fh, 1Fh, 1Fh
-		db	 1Fh, 00h, 00h, 00h, 1Fh, 00h
-		db	 00h, 1Fh, 1Fh, 00h, 00h, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 00h, 1Fh
-		db	0C3h,0C3h
+		db	00h, 00h, 00h	; black
+		db	1Fh, 1Fh, 1Fh	; white
+		db	1Fh, 00h, 00h	; red
+		db	00h, 1Fh, 00h	; green
+		db	00h, 1Fh, 1Fh	; cyan
+		db	00h, 00h, 1Fh	; blue
+		db	1Fh, 1Fh, 00h	; yellow
+		db	1Fh, 00h, 1Fh	; magenta
+
+; TGA and HGC palette handlers: no palette programming needed
+tga_palette_handler:
+		retn			; mode 5: TGA
+
+hgc_palette_handler:
+		retn			; mode 3: HGC
+
 game_init_fn_lbl	label	dword
-		db	 00h, 00h, 00h, 30h
+		dw	0			; offset  (overwritten at runtime)
+		dw	3000h			; segment CS+3000h (overwritten at runtime)
+
 save_mode_flag_lbl	label	word
-		db	 00h, 00h
+		dw	0			; 0 = new game, 0FFFFh = load save
 
 seg_a		ends
 
