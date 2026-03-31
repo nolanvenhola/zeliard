@@ -203,11 +203,6 @@ seg_a		segment	byte public
 ; Main entry point for the opening demo sequence
 ; ============================================================
 
-; ============================================================
-; INITIALIZATION & SCENE ORCHESTRATION
-; Main entry point for the opening demo sequence.
-; ============================================================
-
 opening_scene_main		proc	far
 
 start:
@@ -1854,7 +1849,7 @@ merge_gfx_planes		endp
 		db	CR, CR, CR, '    Copyright (C)1987,1990 GAME ARTS    ', CR, '    Copyright (C)1990 Sierra On-Line    ', CR
 		db	'  This edition first published 1987 by  ', CR, '  GAME ARTS Co.,Ltd./ Tomoyuki Shimada  ', CR
 		db	SCR_END_SCRIPT				; end of script
-		db	50h				; 50h
+		db	'P'				; scene page ID (parameter after SCR_END_SCRIPT)
 		db	SCR_RESET				; reset style
 		db	SCR_SCROLL				; scroll text up
 		db	SCR_PARA				; layout: paragraph
@@ -1866,8 +1861,7 @@ merge_gfx_planes		endp
 		db	SCR_WAIT				; pause
 		db	SCR_SCROLL				; scroll text up
 		db	SCR_DIRECT				; layout: direct
-		db	'Dark clouds filled the sky; lightnin'
-		db	'g flashed and thunder crashed. '
+		db	'Dark clouds filled the sky; lightning flashed and thunder crashed. '
 		db	SCR_MODE2		; layout-mode 2
 		db	'Day after day, rain poured from the heavens as if in lament.'
 		db	SCR_WAIT				; pause
@@ -2066,8 +2060,7 @@ narration_chapter_2:
 		db	SCR_WAIT				; pause
 		db	SCR_SCROLL				; scroll text up
 		db	SCR_DIRECT				; layout: direct
-		db	22h				; 22h
-		db	'Heed my words, King Felishika: There is but one way to stop this demon.  A brave warrior must venture into the labyrinths and recover the nine Holy Crystals, the Tears of Esmesanti."'
+		db	'"Heed my words, King Felishika: There is but one way to stop this demon.  A brave warrior must venture into the labyrinths and recover the nine Holy Crystals, the Tears of Esmesanti."'
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
@@ -2082,8 +2075,7 @@ narration_chapter_2:
 		db	SCR_WAIT				; pause
 		db	SCR_SCROLL				; scroll text up
 		db	SCR_DIRECT				; layout: direct
-		db	22h				; 22h
-		db	'However, there is one with the power to oppose Jashiin.'
+		db	'"However, there is one with the power to oppose Jashiin.'
 		db	SCR_MODE2		; layout-mode 2
 		db	'The man who is destined to fight him will soon arrive in your kingdom."'
 		db	SCR_WAIT				; pause
@@ -2167,8 +2159,7 @@ narration_chapter_3:
 		db	SCR_SCROLL				; scroll text up
 		db	SCR_BOLD				; bold text
 		db	SCR_DIRECT				; layout: direct
-		db	22h				; 22h
-		db	81h				; 81h
+		db	'"', ANIM_81
 		; Style-encoded speech -- King Felishika
 		; "Duke Garland! You must be the man of destiny of whom the Spirit spoke.
 		;    I beg of you to destroy the demon Jashiin who has cursed my kingdom
@@ -2218,11 +2209,7 @@ narration_chapter_3:
 		db	'h', ANIM_80, 'ter '
 		db	ANIM_85, 'to ', ANIM_83, ANIM_87
 		db	's', ANIM_88, 't', ANIM_87, 'o', ANIM_84
-		db	86h				; 86h
-		db	6Eh				; 6Eh
-		db	65h				; 65h
-		db	2Eh				; 2Eh
-		db	22h				; 22h
+		db	ANIM_86, 'ne."'
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
@@ -2257,7 +2244,7 @@ narration_chapter_3:
 		db	ANIM_92, 'i', ANIM_97, 's', ANIM_98, ' '
 		db	ANIM_97, ANIM_95, 'p', ANIM_96, ANIM_90, 'l'
 		db	'a', ANIM_93, 'ce."'
-		db	94h				; 94h
+		db	ANIM_94
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
@@ -2343,9 +2330,7 @@ narration_chapter_3:
 		db	'n ', ANIM_83, 'yo', ANIM_80
 		db	'ur ', ANIM_83, 'qu'
 		db	ANIM_81, 'es', ANIM_83, 't.'
-		db	84h				; 84h
-		db	22h				; 22h
-		db	84h				; 84h
+		db	ANIM_84, '"', ANIM_84
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
 		db	SCR_SCROLL				; scroll text up
@@ -2370,7 +2355,7 @@ narration_chapter_3:
 		db	SCR_WAIT				; pause
 		db	SCR_SCROLL				; scroll text up
 		db	SCR_BREAK				; end of section
-		db	99h				; 99h
+		db	ANIM_99
 		db	SCR_WAIT				; pause
 		db	SCR_SCROLL,SCR_PARA,SCR_BOLD,SCR_SPK_UNK, ANIM_9A, '"'		; scroll-text-up | layout-mode 1 | text-style: color 7 bold | speaker: unknown (attr =)
 		; Style-encoded speech -- Jashiin (cont.)
@@ -2391,9 +2376,7 @@ narration_chapter_4:
 		db	' ', ANIM_91, 'e', ANIM_92, 'vi'
 		db	ANIM_93, 'l ', ANIM_90, 'Ja'
 		db	ANIM_92, 'shi', ANIM_94, 'i'
-		db	6Eh				; 6Eh
-		db	21h				; 21h
-		db	22h				; 22h
+		db	'n!"'
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
 		db	SCR_SPK_NARR				; speaker: narrator
