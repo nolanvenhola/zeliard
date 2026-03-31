@@ -320,9 +320,16 @@ skip_gfx_init_c:
 		jmp	word ptr ds:loaded_code_b_fn
 
 ;==========================================================================
-;  File Reference Table
+;  Chunk Reference Table
 ;
-;  Vestigial development filenames — not used at runtime.
+;  The [archive][chunk] byte pairs at the start of each record ARE used at
+;  runtime: the chunk_load calls above pass SI pointing directly into this
+;  table (e.g. mov si, 0A21Dh). The loader reads only those 2 bytes.
+;
+;  The filename strings that follow each pair are vestigial development
+;  annotations — they document which file each chunk corresponds to but
+;  are never read at runtime.
+;
 ;  Format: [archive][chunk]['filename.ext'\0]
 ;    archive 00h = zelres1, 01h = zelres2
 ;  Music file entries use [01h]['path'\0] (no chunk byte — DOS file path).
