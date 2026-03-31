@@ -19,7 +19,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; External references - addresses in other loaded segments
 
 music_player_fn	equ	18ABh			; Music player function
@@ -67,7 +66,6 @@ gvar_volume_b	equ	0FF77h			; Volume setting B
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
@@ -147,8 +145,7 @@ start:
 		call	word ptr cs:loaded_code_a
 
 		; Check: new game or load save?
-;*		cmp	word ptr cs:save_mode_flag,0FFFFh
-		db	 2Eh, 83h, 3Eh, 74h,0A4h,0FFh	;  Fixup - byte match
+		cmp	word ptr cs:save_mode_flag,-1	; new game=0, load save=0xFFFF
 		jz	start_new_game
 
 		; --- LOAD SAVED GAME ---
@@ -281,18 +278,21 @@ start_new_game:
 		mov	al,byte ptr ds:[92h]
 		mov	bx,music_player_fn
 		call	word ptr cs:gfx_call_a
+
 skip_gfx_init_a:
 		test	byte ptr ds:[93h],0FFh
 		jz	skip_gfx_init_b
 		mov	al,byte ptr ds:[93h]
 		mov	bx,font_gfx_base
 		call	word ptr cs:gfx_call_c
+
 skip_gfx_init_b:
 		test	byte ptr ds:[9Dh],0FFh
 		jz	skip_gfx_init_c
 		mov	al,byte ptr ds:[9Dh]
 		mov	bx,tile_gfx_base
 		call	word ptr cs:gfx_call_b
+
 skip_gfx_init_c:
 
 		; Load first level chunks
@@ -417,7 +417,6 @@ gfx_mode_tbl_all_lbl	label	word
 
 game		endp
 
-
 ;==========================================================================
 ;  load_music_tracks - Load all configured music tracks
 ;
@@ -437,23 +436,25 @@ has_tracks:
 		xor	bx,bx			; Track index
 
 load_track_loop:
-		push	cx
-		push	bx
-		mov	dx,bx
-		add	bx,bx
-		mov	bx,ds:level_system_ref[bx] ; Get track chunk ref
-		xor	al,al
-		cmp	dx,8			; Track 8 = background music
-		jne	not_bg_music
-		mov	al,1			; Flag for background track
+			push	cx
+			push	bx
+			mov	dx,bx
+			add	bx,bx
+			mov	bx,ds:level_system_ref[bx] ; Get track chunk ref
+			xor	al,al
+			cmp	dx,8			; Track 8 = background music
+			jne	not_bg_music
+			mov	al,1			; Flag for background track
+
 not_bg_music:
-		call	word ptr cs:sound_load_track_fn ; Load/init track via sound driver
-		pop	bx
-		inc	bx
-		pop	cx
-		loop	load_track_loop
+			call	word ptr cs:sound_load_track_fn ; Load/init track via sound driver
+			pop	bx
+			inc	bx
+			pop	cx
+			loop	load_track_loop
 
 		retn
+
 load_music_tracks endp
 
 		; Padding / unknown data
@@ -462,7 +463,6 @@ level_system_ref_lbl	label	word
 		db	 00h, 37h, 00h, 1Bh, 00h, 31h
 		db	 00h, 21h, 00h, 2Bh, 00h
 		db	26h
-
 
 ;==========================================================================
 ;  set_vga_palette - Set VGA DAC palette based on graphics mode
@@ -477,6 +477,7 @@ set_vga_palette	proc	near
 		xor	bh,bh
 		add	bx,bx
 		jmp	word ptr cs:level_data_ref[bx] ; Jump to mode handler
+
 set_vga_palette	endp
 
 		; Jump table + palette setup code (mode-specific handlers)
@@ -501,43 +502,45 @@ level_data_ref_lbl	label	word
 		db	0B9h, 08h, 00h
 
 ;  Inner palette loop: for each base color (8 iterations)
+
 palette_base_loop:
-		push	cx
-		lodsb				; Red base
-		mov	dh,al
-		lodsb				; Green base
-		mov	dl,al
-		lodsb				; Blue base
-		mov	ah,al
-		push	si
-		mov	si,palette_base_tbl	; Base RGB color table (8 triplets)
-		mov	cx,8			; 8 shades per base
+			push	cx
+			lodsb				; Red base
+			mov	dh,al
+			lodsb				; Green base
+			mov	dl,al
+			lodsb				; Blue base
+			mov	ah,al
+			push	si
+			mov	si,palette_base_tbl	; Base RGB color table (8 triplets)
+			mov	cx,8			; 8 shades per base
 
 ;  For each shade: add offset to base RGB, program DAC register
-palette_shade_loop:
-		push	cx
-		push	ax
-		push	dx
-		lodsb				; Red offset
-		add	dh,al			; Final red
-		lodsb				; Green offset
-		add	al,dl
-		mov	ch,al			; Final green
-		lodsb				; Blue offset
-		add	al,ah
-		mov	cl,al			; Final blue
-		mov	ax,1010h
-		int	10h			; VGA: Set DAC register BX
-						;  DH=red, CH=green, CL=blue
-		inc	bx			; Next register
-		pop	dx
-		pop	ax
-		pop	cx
-		loop	palette_shade_loop
 
-		pop	si
-		pop	cx
-		loop	palette_base_loop
+palette_shade_loop:
+				push	cx
+				push	ax
+				push	dx
+				lodsb				; Red offset
+				add	dh,al			; Final red
+				lodsb				; Green offset
+				add	al,dl
+				mov	ch,al			; Final green
+				lodsb				; Blue offset
+				add	al,ah
+				mov	cl,al			; Final blue
+				mov	ax,1010h
+				int	10h			; VGA: Set DAC register BX
+								;  DH=red, CH=green, CL=blue
+				inc	bx			; Next register
+				pop	dx
+				pop	ax
+				pop	cx
+				loop	palette_shade_loop
+
+			pop	si
+			pop	cx
+			loop	palette_base_loop
 
 		retn
 
@@ -554,7 +557,5 @@ save_mode_flag_lbl	label	word
 		db	 00h, 00h
 
 seg_a		ends
-
-
 
 		end	start
