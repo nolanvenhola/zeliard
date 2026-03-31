@@ -2583,25 +2583,10 @@ disp_narr_chap4	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
 		; to look up which glyph bitmap to draw for each character.
 char_glyph_index:
 		db	7 dup (0)
-		db	ANIM_01				; ANIM_01
-		db	ANIM_02				; ANIM_02
-		db	ANIM_03				; ANIM_03
-		db	ANIM_04				; ANIM_04
-		db	000h				; 000h
-		db	000h				; 000h
-		db	000h				; 000h
-		db	000h				; 000h
-		db	000h				; 000h
-		db	000h				; 000h
-		db	ANIM_05				; ANIM_05
-		db	ANIM_06				; ANIM_06
-		db	ANIM_07				; ANIM_07
-		db	ANIM_08				; ANIM_08
-		db	009h				; 009h
-		db	00Ah				; 00Ah
-		db	00Bh				; 00Bh
-		db	00Ch				; 00Ch
-		db	CR				; CR
+		db	001h, 002h, 003h, 004h
+		db	6 dup (0)
+		db	005h, 006h, 007h, 008h
+		db	009h, 00Ah, 00Bh, 00Ch, 00Dh
 		db	0Eh				; 0Eh
 		db	0Fh				; 0Fh
 		db	10h				; 10h
@@ -2663,45 +2648,22 @@ char_glyph_index:
 		db	24 dup (0)
 		db	'tuvwxyz{|}'
 		db	24 dup (0)
-		db	'~', 07Fh, ANIM_80, ANIM_81, ANIM_82, ANIM_83
-		db	ANIM_84				; ANIM_84
-		db	ANIM_85				; ANIM_85
-		db	ANIM_86				; ANIM_86
-		db	ANIM_87				; ANIM_87
-		db	ANIM_88				; ANIM_88
-		db	ANIM_89				; ANIM_89
-		db	000h				; 000h
-		db	000h				; 000h
-		db	000h				; 000h
-		db	000h				; 000h
-		db	00Fh				; 00Fh
-		db	ANIM_8A				; ANIM_8A
-		db	ANIM_8B				; ANIM_8B
-		db	ANIM_8C				; ANIM_8C
-		db	000h				; 000h
+		db	'~', 07Fh, 080h, 081h, 082h, 083h
+		db	084h, 085h, 086h, 087h, 088h, 089h
+		db	0, 0, 0, 0
+		db	00Fh
+		db	08Ah, 08Bh, 08Ch
+		db	0
 		db	13 dup (0)
-		db	'/', ANIM_8D, ANIM_8E, ANIM_8F, ANIM_90, ANIM_91
-		db	ANIM_92				; ANIM_92
-		db	ANIM_93				; ANIM_93
-		db	ANIM_94				; ANIM_94
-		db	ANIM_95				; ANIM_95
-		db	ANIM_96				; ANIM_96
-		db	ANIM_97				; ANIM_97
-		db	000h				; 000h
-		db	000h				; 000h
-		db	000h				; 000h
-		db	ANIM_98				; ANIM_98
-		db	ANIM_99				; ANIM_99
-		db	ANIM_9A				; ANIM_9A
-		db	ANIM_9B				; ANIM_9B
-		db	ANIM_9C				; ANIM_9C
-		db	ANIM_9D				; ANIM_9D
+		db	'/', 08Dh, 08Eh, 08Fh, 090h, 091h
+		db	092h, 093h, 094h, 095h, 096h, 097h
+		db	0, 0, 0
+		db	098h, 099h, 09Ah, 09Bh, 09Ch, 09Dh
 		db	14 dup (0)
-		db	9Eh				; 9Eh
-		db	9Fh				; 9Fh
-		db	SCR_ATTR_RST				; attr restore
-		db	0A1h				; 0A1h
-		db	SCR_ATTR_RST2				; attr restore 2
+		db	09Eh, 09Fh
+		db	0A0h
+		db	0A1h
+		db	0A2h
 		db	0A3h				; 0A3h
 		db	0A4h				; 0A4h
 		db	0A5h				; 0A5h
