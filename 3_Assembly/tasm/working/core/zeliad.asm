@@ -18,7 +18,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zeliard.inc
 
-
 ; Additional zeliad-only constants not in zeliard.inc
 
 gvar_chunk_load_fn	equ	0FF00h		; Chunk loader function pointer
@@ -70,7 +69,6 @@ zero_offset		equ	0
 
 seg_a		segment	byte public
 		assume cs:seg_a  , ds:seg_a , ss:stack_seg_b
-
 
 ;==========================================================================
 ;
@@ -133,12 +131,19 @@ cfg_line3_ok:
 
 cfg_line4_ok:
 		call	parse_joystick_enable	; Does not return on error
-		db	0B4h, 3Eh,0CDh, 21h,0BBh, 00h
-		db	 40h,0B4h, 48h,0CDh, 21h, 73h
-		db	 1Dh, 3Dh, 08h, 00h, 75h, 0Ch
-		db	0BAh,0FFh, 06h,0B4h, 09h,0CDh
-		db	 21h,0B8h, 00h, 4Ch,0CDh
-		db	21h
+		mov	ah, 3Eh
+		int	21h			; Close RESOURCE.CFG (BX = handle)
+		mov	bx, 4000h		; Request 256KB (0x4000 paragraphs)
+		mov	ah, 48h
+		int	21h			; DOS: allocate memory block
+		jnb	memory_allocated	; Success → continue
+		cmp	ax, 8			; Error 8 = not enough memory
+		jnz	memory_error		; Other error → generic handler
+		mov	dx, offset str_not_enough_mem
+		mov	ah, 9
+		int	21h			; Print "Not enough memory..."
+		mov	ax, 4C00h
+		int	21h			; Exit to DOS
 
 memory_error:
 		mov	dx,offset str_memory_error
@@ -244,17 +249,18 @@ skip_music_init:
 		mov	cx,8
 
 copy_save_name:
-		lodsb
-		cmp	al,2Eh			; '.'
-		je	save_name_done
-		cmp	al,61h			; 'a'
-		jb	not_lowercase
-		cmp	al,7Bh			; '{'
-		jae	not_lowercase
-		and	al,5Fh			; Convert to uppercase
+			lodsb
+			cmp	al,2Eh			; '.'
+			je	save_name_done
+			cmp	al,61h			; 'a'
+			jb	not_lowercase
+			cmp	al,7Bh			; '{'
+			jae	not_lowercase
+			and	al,5Fh			; Convert to uppercase
+
 not_lowercase:
-		stosb
-		loop	copy_save_name
+			stosb
+			loop	copy_save_name
 
 save_name_done:
 		mov	al,cs:graphics_mode
@@ -273,6 +279,7 @@ save_name_done:
 		test	byte ptr has_savefile,0FFh
 		jz	load_gfx_driver
 		mov	di,867h
+
 load_gfx_driver:
 		call	load_driver_file
 
@@ -397,6 +404,7 @@ check_disk_error:
 		cmp	ax,2
 		je	show_error_filename
 		mov	dx,offset str_disk_error
+
 show_error_filename:
 		push	cs
 		pop	ds
@@ -415,13 +423,13 @@ show_error_filename:
 		pop	ds
 
 print_error_name:
-		mov	dl,[di]
-		or	dl,dl
-		jz	cleanup_and_exit
-		mov	ah,2
-		int	21h
-		inc	di
-		jmp	short print_error_name
+			mov	dl,[di]
+			or	dl,dl
+			jz	cleanup_and_exit
+			mov	ah,2
+			int	21h
+			inc	di
+			jmp	short print_error_name
 
 cleanup_and_exit:
 		; Restore original interrupt vectors
@@ -454,12 +462,12 @@ cleanup_and_exit:
 		mov	dx,offset str_memory_error
 		mov	ah,9
 		int	21h
+
 exit_program:
 		mov	ax,4C00h
 		int	21h			; Exit to DOS
 
 zeliad		endp
-
 
 ;==========================================================================
 ;  flush_keyboard - Drain all pending keystrokes from keyboard buffer
@@ -467,15 +475,16 @@ zeliad		endp
 
 flush_keyboard	proc	near
 		push	dx
+
 flush_loop:
-		mov	dl,0FFh
-		mov	ah,6
-		int	21h			; Direct console I/O (check key)
-		jnz	flush_loop		; Loop while keys available
+			mov	dl,0FFh
+			mov	ah,6
+			int	21h			; Direct console I/O (check key)
+			jnz	flush_loop		; Loop while keys available
 		pop	dx
 		retn
-flush_keyboard	endp
 
+flush_keyboard	endp
 
 ;==========================================================================
 ;  read_config_line - Read one line from RESOURCE.CFG
@@ -491,40 +500,40 @@ read_config_line proc	near
 		mov	byte ptr cfg_line_length,0
 
 skip_whitespace:
-		mov	cx,1
-		mov	ah,3Fh
-		int	21h			; Read 1 byte
-		or	ax,ax
-		stc				; Set CF (EOF)
-		jnz	got_char
-		retn
+			mov	cx,1
+			mov	ah,3Fh
+			int	21h			; Read 1 byte
+			or	ax,ax
+			stc				; Set CF (EOF)
+			jnz	got_char
+			retn
 
 got_char:
-		mov	si,dx
-		cmp	byte ptr [si],20h	; Skip control chars
-		jb	skip_whitespace
+			mov	si,dx
+			cmp	byte ptr [si],20h	; Skip control chars
+			jb	skip_whitespace
 
 read_next_char:
-		inc	cfg_line_length
-		or	byte ptr [si],20h	; Force lowercase
-		inc	dx
+			inc	cfg_line_length
+			or	byte ptr [si],20h	; Force lowercase
+			inc	dx
 
 read_more:
-		mov	cx,1
-		mov	ah,3Fh
-		int	21h			; Read 1 byte
-		or	ax,ax
-		jz	line_done
-		mov	si,dx
-		cmp	byte ptr [si],20h	; Space = separator
-		je	read_more		; Skip spaces
-		jnc	read_next_char		; Continue if printable
+				mov	cx,1
+				mov	ah,3Fh
+				int	21h			; Read 1 byte
+				or	ax,ax
+				jz	line_done
+				mov	si,dx
+				cmp	byte ptr [si],20h	; Space = separator
+				je	read_more		; Skip spaces
+			jnc	read_next_char		; Continue if printable
 
 line_done:
 		clc				; Clear CF (success)
 		retn
-read_config_line endp
 
+read_config_line endp
 
 ;==========================================================================
 ;  parse_graphics_mode - Parse graphics adapter name from config
@@ -548,17 +557,17 @@ try_4char_modes:
 		mov	cx,2
 
 match_4char_loop:
-		push	cx
-		push	si
-		push	di
-		mov	cx,4
-		repe	cmpsb
-		pop	di
-		pop	si
-		pop	cx
-		jz	found_4char_mode
-		add	di,5
-		loop	match_4char_loop
+			push	cx
+			push	si
+			push	di
+			mov	cx,4
+			repe	cmpsb
+			pop	di
+			pop	si
+			pop	cx
+			jz	found_4char_mode
+			add	di,5
+			loop	match_4char_loop
 		jmp	cfg_error
 
 found_4char_mode:
@@ -572,17 +581,17 @@ try_3char_modes:
 		mov	cx,4
 
 match_3char_loop:
-		push	cx
-		push	si
-		push	di
-		mov	cx,3
-		repe	cmpsb
-		pop	di
-		pop	si
-		pop	cx
-		jz	found_3char_mode
-		add	di,4
-		loop	match_3char_loop
+			push	cx
+			push	si
+			push	di
+			mov	cx,3
+			repe	cmpsb
+			pop	di
+			pop	si
+			pop	cx
+			jz	found_3char_mode
+			add	di,4
+			loop	match_3char_loop
 		jmp	cfg_error
 
 found_3char_mode:
@@ -591,16 +600,13 @@ found_3char_mode:
 		mov	graphics_mode,al
 		retn
 
-; Mode lookup tables: name bytes followed by mode index
-; 4-char modes: "cga2"=2, "mcga"=4
-mode_4char_table db	63h
-		db	 67h, 61h, 32h, 02h, 6Dh, 63h
-		db	 67h, 61h, 04h
-; 3-char modes: "cga"=1, "ega"=0, "hgc"=3, "tga"=5
-mode_3char_table db	63h
-		db	 67h, 61h, 01h, 65h, 67h, 61h
-		db	 00h, 68h, 67h, 63h, 03h, 74h
-		db	 67h, 61h, 05h
+; Mode lookup tables: 4 or 3 ASCII name bytes followed by mode index byte
+mode_4char_table db	'cga2', 02h	; CGA 2-color → mode 2
+		db	'mcga', 04h	; MCGA        → mode 4
+mode_3char_table db	'cga',  01h	; CGA         → mode 1
+		db	'ega',  00h	; EGA         → mode 0
+		db	'hgc',  03h	; HGC         → mode 3
+		db	'tga',  05h	; TGA         → mode 5
 
 ;==========================================================================
 ;  parse_music_driver - Parse music driver name from config line
@@ -616,6 +622,7 @@ parse_music_driver:
 		cmp	cx,0Fh
 		jb	music_name_ok
 		mov	cx,0Fh
+
 music_name_ok:
 		mov	di,offset music_driver_name
 		rep	movsb
@@ -627,6 +634,7 @@ music_name_ok:
 		repe	cmpsb
 		jz	music_is_mt32
 		retn
+
 music_is_mt32:
 		mov	byte ptr music_enabled,0FFh
 		retn
@@ -645,6 +653,7 @@ parse_joystick_name:
 		cmp	cx,0Fh
 		jb	joy_name_ok
 		mov	cx,0Fh
+
 joy_name_ok:
 		mov	di,offset joystick_driver_name
 		rep	movsb
@@ -672,6 +681,7 @@ parse_joystick_enable:
 		jnz	cfg_error
 		mov	byte ptr cs:joystick_enabled,0FFh
 		retn
+
 try_no:
 		mov	di,offset str_no
 		mov	cx,2
@@ -680,21 +690,19 @@ try_no:
 		mov	byte ptr cs:joystick_enabled,0
 		retn
 
-str_yes		db	79h
-		db	 65h, 73h
-str_no		db	6Eh
-		db	6Fh
+str_yes		db	'yes'
+str_no		db	'no'
 
 cfg_error:
-		mov	ah,3Eh
-		int	21h			; Close file
-		mov	dx,offset str_cfg_error
-		mov	ah,9
-		int	21h			; "Error in RESOURCE.CFG"
-		mov	ax,4C00h
-		int	21h			; Exit
-parse_graphics_mode endp
+			mov	ah,3Eh
+			int	21h			; Close file
+			mov	dx,offset str_cfg_error
+			mov	ah,9
+			int	21h			; "Error in RESOURCE.CFG"
+			mov	ax,4C00h
+			int	21h			; Exit
 
+parse_graphics_mode endp
 
 ;==========================================================================
 ;  find_colon_in_line - Find ':' delimiter in config line buffer
@@ -702,22 +710,23 @@ parse_graphics_mode endp
 ;==========================================================================
 
 find_colon_in_line proc	near
-		push	cs
-		pop	ds
-		mov	si,offset cfg_line_buffer
-		xor	cx,cx
-		mov	cl,cfg_line_length
+			push	cs
+			pop	ds
+			mov	si,offset cfg_line_buffer
+			xor	cx,cx
+			mov	cl,cfg_line_length
 
 scan_for_colon:
-		lodsb
-		cmp	al,3Ah			; ':'
-		jne	next_colon_char
-		retn
-next_colon_char:
-		loop	scan_for_colon
-		jmp	short cfg_error
-find_colon_in_line endp
+				lodsb
+				cmp	al,3Ah			; ':'
+				jne	next_colon_char
+				retn
 
+next_colon_char:
+				loop	scan_for_colon
+			jmp	short cfg_error
+
+find_colon_in_line endp
 
 ;==========================================================================
 ;  load_driver_file - Load a binary file into memory at ES:DI
@@ -756,8 +765,8 @@ driver_load_error:
 		pop	ds
 		call	display_file_error
 		jmp	cleanup_and_exit
-load_driver_file endp
 
+load_driver_file endp
 
 ;==========================================================================
 ;  display_file_error - Show "File Error from <filename>" message
@@ -783,13 +792,13 @@ display_file_error proc	near
 		add	di,2			; Skip to filename
 
 print_filename:
-		mov	dl,[di]
-		or	dl,dl
-		jz	show_error_code
-		mov	ah,2
-		int	21h
-		inc	di
-		jmp	short print_filename
+			mov	dl,[di]
+			or	dl,dl
+			jz	show_error_code
+			mov	ah,2
+			int	21h
+			inc	di
+			jmp	short print_filename
 
 show_error_code:
 		pop	bx			; BX = error code
@@ -820,8 +829,8 @@ show_error_string:
 		mov	ah,9
 		int	21h
 		retn
-display_file_error endp
 
+display_file_error endp
 
 ;==========================================================================
 ;  set_video_mode - Initialize video hardware for selected graphics mode
@@ -882,14 +891,14 @@ set_mode_hgc:
 		mov	dx,3B4h
 
 hgc_init_loop:
-		mov	al,ah
-		out	dx,al			; CRT register index
-		lodsb
-		inc	dx
-		out	dx,al			; CRT register data
-		dec	dx
-		inc	ah
-		loop	hgc_init_loop
+			mov	al,ah
+			out	dx,al			; CRT register index
+			lodsb
+			inc	dx
+			out	dx,al			; CRT register data
+			dec	dx
+			inc	ah
+			loop	hgc_init_loop
 
 		mov	al,2Ah
 		mov	dx,3B8h
@@ -901,12 +910,11 @@ hgc_init_loop:
 		mov	cx,4000h
 		rep	stosw			; Clear video memory
 		retn
+
 set_video_mode	endp
 
-hgc_crt_params	db	35h
-		db	 2Dh, 2Eh, 07h, 5Bh, 02h, 57h
-		db	 57h, 02h, 03h, 00h, 00h
-
+hgc_crt_params	db	35h, 2Dh, 2Eh, 07h, 5Bh, 02h	; HGC CRTC regs 0-5
+		db	57h, 57h, 02h, 03h, 00h, 00h	; HGC CRTC regs 6-11
 
 ;==========================================================================
 ;  ctrl_c_handler - INT 23h handler (ignores Ctrl+C)
@@ -914,8 +922,8 @@ hgc_crt_params	db	35h
 
 ctrl_c_handler	proc	far
 		iret
-ctrl_c_handler	endp
 
+ctrl_c_handler	endp
 
 ;==========================================================================
 ;  parse_command_line - Check PSP for command-line save file name
@@ -934,28 +942,28 @@ has_args:
 		mov	si,PSP_cmd_line
 
 skip_leading_spaces:
-		cmp	byte ptr es:[si],20h
-		jne	found_arg_start
-		inc	si
-		loop	skip_leading_spaces
+			cmp	byte ptr es:[si],20h
+			jne	found_arg_start
+			inc	si
+			loop	skip_leading_spaces
 		retn
 
 found_arg_start:
 		xor	ah,ah			; Flag: found non-space char
 
 copy_arg_chars:
-		mov	al,es:[si]
-		cmp	al,20h			; Space = end
-		je	next_arg_char
-		cmp	al,0Dh			; CR = end
-		je	next_arg_char
-		mov	ah,0FFh			; Mark as having content
-		mov	[di],al
-		inc	di
+			mov	al,es:[si]
+			cmp	al,20h			; Space = end
+			je	next_arg_char
+			cmp	al,0Dh			; CR = end
+			je	next_arg_char
+			mov	ah,0FFh			; Mark as having content
+			mov	[di],al
+			inc	di
 
 next_arg_char:
-		inc	si
-		loop	copy_arg_chars
+			inc	si
+			loop	copy_arg_chars
 
 		or	ah,ah
 		jnz	set_savefile_flag
@@ -969,8 +977,8 @@ set_savefile_flag:
 		mov	byte ptr [di+3],52h	; 'R'
 		mov	byte ptr [di+4],0
 		retn
-parse_command_line endp
 
+parse_command_line endp
 
 ;==========================================================================
 ;  String Constants
@@ -985,7 +993,7 @@ str_game_title	db	'The Fantasy Action Game ZELIARD '
 		db	'Not supported command !', 0Dh, 0Ah
 		db	'$'
 		db	'Special mode !!', 0Dh, 0Ah, '$'
-		db	'Not enough memory to run ', 27h, 'Z'
+str_not_enough_mem db	'Not enough memory to run ', 27h, 'Z'
 		db	'ELIARD', 27h, '.', 0Dh, 0Ah, '$'
 str_memory_error db	'Memory error !!!', 0Dh, 0Ah, '$'
 str_thank_you	db	'Thank you for playing.', 0Dh, 0Ah
@@ -1008,9 +1016,14 @@ hex_digits_lo	db	'00102030405060708090A0B0C0D0E0F'
 cfg_filename	db	'RESOURCE.CFG', 0
 mtinit_filename	db	'MTINIT.COM', 0
 
-driver_offset_table dw	812h			; EGA driver offset
-		db	 1Eh, 08h, 1Eh, 08h, 2Ah, 08h
-		db	 36h, 08h, 43h, 08h, 00h, 01h
+; Graphics mode driver load offsets (indexed by graphics_mode * 2)
+driver_offset_table dw	0812h		; mode 0: EGA  (gmega.bin)
+		dw	081Eh		; mode 1: CGA  (gmcga.bin)
+		dw	081Eh		; mode 2: CGA 2-color (shared with CGA)
+		dw	082Ah		; mode 3: HGC  (gmhgc.bin)
+		dw	0836h		; mode 4: MCGA (gmmcga.bin)
+		dw	0843h		; mode 5: TGA  (gmtga.bin)
+		dw	0100h		; stdply.bin (always)
 
 		; Driver file entries: {load_offset, filename, 0}
 		db	'stick.bin'
@@ -1056,15 +1069,23 @@ has_savefile	db	0			; 0xFF if command-line save file
 saved_sp	dw	0			; Saved SP for EXEC
 saved_ss	dw	0			; Saved SS for EXEC
 
-exec_param_block db	00h			; EXEC parameter block (env seg = 0)
-		db	 00h,0D4h, 08h
-		dw	seg_a
-		db	0D7h, 08h
-		dw	seg_a
-		db	0D7h, 08h
-		dw	seg_a
-		db	 01h, 20h, 0Dh, 00h, 20h
-		db	14 dup (0)
+; DOS EXEC parameter block (INT 21h fn 4Bh)
+
+exec_param_block:
+		dw	0			; environment segment (0 = inherit)
+		dw	offset exec_cmdline	; command line offset
+		dw	seg_a			; command line segment
+		dw	offset exec_fcb1	; FCB1 offset
+		dw	seg_a			; FCB1 segment
+		dw	offset exec_fcb1	; FCB2 offset (same block)
+		dw	seg_a			; FCB2 segment
+
+exec_cmdline:
+		db	01h, ' ', 0Dh		; cmd: length=1, ' ', CR (blank args)
+
+exec_fcb1:
+		db	0, ' '			; FCB preamble
+		db	14 dup (0)		; FCB data (blank)
 
 graphics_mode	db	0			; 0=EGA 1=CGA 2=HGC 3=MCGA 4=TGA 5=?
 music_enabled	db	0			; 0xFF = music enabled
@@ -1075,8 +1096,6 @@ cfg_line_buffer	db	0			; Config line read buffer
 
 seg_a		ends
 
-
-
 ;------------------------------------------------------  stack_seg_b   ----
 
 stack_seg_b	segment	word stack 'STACK'
@@ -1084,7 +1103,5 @@ stack_seg_b	segment	word stack 'STACK'
 		db	8192 dup (?)
 
 stack_seg_b	ends
-
-
 
 		end	start
