@@ -322,30 +322,21 @@ skip_gfx_init_c:
 ;==========================================================================
 ;  File Reference Table
 ;
-;  Original development filenames with chunk number associations.
-;  Format: [chunk_num_byte] 'filename.ext' [null] [flags]
-;  These strings are vestigial - not used at runtime.
+;  Vestigial development filenames — not used at runtime.
+;  Format: [archive][chunk]['filename.ext'\0]
+;    archive 00h = zelres1, 01h = zelres2
+;  Music file entries use [01h]['path'\0] (no chunk byte — DOS file path).
 ;==========================================================================
 
-		db	0
-		db	0Dh, 'font.grp'	; Chunk 13: bitmap font
-		db	0, 1
-		db	8, 'mole.bin'		; Chunk 8: mole enemy data
-		db	 00h, 01h, 1Ch
-		db	'itemp.grp'		; Item panel graphics
-		db	0, 1, 2
-		db	'select.bin'		; Selection UI data
-		db	 00h, 01h, 1Dh
-		db	'magic.grp'		; Magic effect graphics
-		db	0, 1
-		db	1Bh, 'sword.grp'	; Chunk 27: sword/weapon sprite
-		db	0, 1, 1
-		db	'fight.bin'		; Combat data
-		db	0, 0, 7
-		db	'town.bin'		; Town data
-		db	0, 0, 1
-		db	'opdemo.bin'		; Opening demo
-		db	 00h
+		db	00h, 0Dh, 'font.grp', 0		; zelres1 ch13: font graphics
+		db	01h, 08h, 'mole.bin', 0		; zelres2 ch8:  mole enemy code
+		db	01h, 1Ch, 'itemp.grp', 0	; zelres2 ch28: item panel graphics
+		db	01h, 02h, 'select.bin', 0	; zelres2 ch2:  character select
+		db	01h, 1Dh, 'magic.grp', 0	; zelres2 ch29: magic effect graphics
+		db	01h, 1Bh, 'sword.grp', 0	; zelres2 ch27: sword sprite
+		db	01h, 01h, 'fight.bin', 0	; zelres2 ch1:  main game loop
+		db	00h, 07h, 'town.bin', 0		; zelres1 ch7:  town code
+		db	00h, 01h, 'opdemo.bin', 0	; zelres1 ch1:  opening demo
 ; Game frame graphics (GF* series, zelres2) — loaded into CS+2000h:9000h
 ; archive=1 (zelres2); modes 1 and 2 share the same CGA frame assets
 gfx_mode_tbl_ega_lbl	label	word
@@ -389,20 +380,13 @@ gfx_mode_tbl_all_lbl	label	word
 		db	00h, 03h, 'gdcga.bin', 0	; zelres1 ch3:  CGA graphics driver
 		db	00h, 04h, 'gdhgc.bin', 0	; zelres1 ch4:  HGC graphics driver
 		db	00h, 06h, 'gdmcga.bin', 0	; zelres1 ch6:  MCGA graphics driver
-		db	00h, 05h, 'gdtga.bin'		; zelres1 ch5:  TGA graphics driver (null from next section)
-		db	0, 1
-		db	'/MGT1.MSD'		; MT-32 music track 1
-		db	0, 1
-		db	'1UGM1.MSD'		; General MIDI music track 1
-		db	0, 1
-		db	'0MGT2.MSD'		; MT-32 music track 2
-		db	0, 1
-		db	'2UGM2.MSD'		; General MIDI music track 2
-		db	 00h, 01h, 1Eh
-		db	'MMAN.GRP'		; Chunk 30: manual graphics (mono)
-		db	 00h, 01h, 1Fh
-		db	'CMAN.GRP'		; Chunk 31: manual graphics (color)
-		db	0
+		db	00h, 05h, 'gdtga.bin', 0	; zelres1 ch5:  TGA graphics driver
+		db	01h, '/MGT1.MSD', 0		; MT-32 music track 1
+		db	01h, '1UGM1.MSD', 0		; General MIDI music track 1
+		db	01h, '0MGT2.MSD', 0		; MT-32 music track 2
+		db	01h, '2UGM2.MSD', 0		; General MIDI music track 2
+		db	01h, 1Eh, 'MMAN.GRP', 0	; zelres2 ch30: manual graphics (mono)
+		db	01h, 1Fh, 'CMAN.GRP', 0	; zelres2 ch31: manual graphics (color)
 
 game		endp
 
