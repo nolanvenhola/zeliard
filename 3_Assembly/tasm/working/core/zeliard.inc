@@ -14,6 +14,14 @@
 ; All internal game.asm labels are: GAME_CODE_BASE + (offset label)
 GAME_CODE_BASE          equ     0A000h
 
+; SAR chunk loader function pointer in the game segment (installed by font.grp init).
+; game.asm calls the chunk loader via: call word ptr cs:sar_loader_fn
+sar_loader_fn           equ     010Ch
+
+; zeliad callback function offset (zeliad's own code segment, stored in gvar_chunk_load_fn).
+; game.asm/SAR loader calls back into zeliad via this far pointer.
+zeliad_callback_ofs     equ     2D9h
+
 ;--------------------------------------------------------------------------
 ; Game state variables (0xFF00+ in the game segment, shared between
 ; zeliad.asm and game.asm)

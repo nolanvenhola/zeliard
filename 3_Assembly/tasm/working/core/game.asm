@@ -19,6 +19,9 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
+; SAR chunk loader entry point (installed at runtime by font.grp init code)
+sar_loader_fn	equ	010Ch			; call word ptr cs:sar_loader_fn
+
 ; External references - addresses in other loaded segments
 
 music_player_fn	equ	18ABh			; Music player function
@@ -80,7 +83,7 @@ LOAD_CHUNK	MACRO	chunk_ref, dest_offset, archive
 		mov	si, chunk_ref
 		mov	di, dest_offset
 		mov	al, archive
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		ENDM
 
 ; Set ES to CS + a segment paragraph offset (e.g. 1000h, 2000h, 3000h)
@@ -128,7 +131,7 @@ start:
 		mov	di,0F500h
 		mov	si,chunk_ref_font_grp
 		mov	al,2			; AL=2: compressed load
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 
 		; Fix up loaded code's jump table (relocate pointers)
 		add	es:[di],di
@@ -166,7 +169,7 @@ start:
 		mov	si,ds:gfx_mode_tbl_all[bx] ; SI = chunk ref for this mode
 		mov	di,3000h		; Load to offset 0x3000
 		mov	al,3			; Archive 3 = zelres3
-		call	word ptr cs:[10Ch]	; Load graphics driver chunk
+		call	word ptr cs:sar_loader_fn	; Load graphics driver chunk
 
 		; Call graphics driver init
 		call	word ptr cs:loaded_code_a
@@ -193,7 +196,7 @@ start_new_game:
 		mov	si,ds:gfx_mode_tbl_cga[bx]
 		mov	di,3000h
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 
 		; Load town/overworld code (zelres1 ch7) to CS:6000h
 		LOAD_CHUNK chunk_ref_town, 6000h, 3
@@ -230,7 +233,7 @@ start_new_game:
 		mov	di,0
 		mov	si,chunk_ref_magic
 		mov	al,2			; AL=2: compressed
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 
 		; Load sword sprite (zelres2 ch27, compressed)
 		SET_ES_SEG 2000h
@@ -244,7 +247,7 @@ start_new_game:
 		; Load SAR archive (zelres1 opening data)
 		mov	ah,byte ptr ds:[92h]	; Archive number from config
 		mov	al,4			; Function 4 = load archive
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 
 		; Load level/world system (+0x3000 segment)
 		mov	ax,cs
@@ -255,7 +258,7 @@ start_new_game:
 		mov	di,0				; di before si: use explicit movs
 		mov	si,chunk_ref_mole
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 
 		; Call game initialization (level setup)
 		mov	al,ds:gvar_game_phase
@@ -294,7 +297,7 @@ skip_gfx_init_c:
 		; Load first level chunks
 		mov	ah,byte ptr cs:[0C4h]	; Level/area number
 		mov	al,1			; Function 1 = load level
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 
 		; Set up level rendering
 		mov	ax,cs
@@ -313,7 +316,7 @@ skip_gfx_init_c:
 		add	si,0A363h		; Level tileset chunk refs
 		mov	di,3000h
 		mov	al,5			; Archive 5?
-		call	word ptr cs:[10Ch]	; Load tileset
+		call	word ptr cs:sar_loader_fn	; Load tileset
 
 		; Load level map data
 		pop	si
@@ -324,7 +327,7 @@ skip_gfx_init_c:
 		add	si,0A38Fh		; Level map chunk refs
 		mov	di,4000h
 		mov	al,2			; Archive 2
-		call	word ptr cs:[10Ch]	; Load level map
+		call	word ptr cs:sar_loader_fn	; Load level map
 
 		; Jump to main game loop!
 		jmp	word ptr ds:loaded_code_b_fn

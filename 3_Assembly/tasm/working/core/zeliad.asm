@@ -58,12 +58,17 @@ gvar_joystick_flag	equ	0FF43h		; Joystick enabled flag
 gvar_save_name_buf	equ	0FF6Ch		; Save file name buffer (8 bytes)
 gvar_volume_a		equ	0FF74h		; Volume/audio setting A
 gvar_volume_b		equ	0FF75h		; Volume/audio setting B
+gvar_unk_FF78		equ	0FF78h		; Unknown state byte (cleared at startup)
 gvar_old_int09_ofs	equ	0FF79h		; Saved INT 09h offset
 gvar_old_int09_seg	equ	0FF7Bh		; Saved INT 09h segment
 gvar_old_int61_ofs	equ	0FF7Bh		; Saved INT 61h offset
 PSP_cmd_size		equ	80h
 PSP_cmd_line		equ	81h
 zero_offset		equ	0
+
+; Driver entry-point offsets within the music driver segment (CS + 0xFF0h)
+stick_input_fn_ofs	equ	100h		; stick.bin input handler entry point
+stdply_gfx_fn_ofs	equ	1100h		; stdply.bin graphics handler entry point
 
 ;------------------------------------------------------------  seg_a   ----
 
@@ -199,7 +204,7 @@ skip_music_init:
 
 		; Initialize game state variables in game.bin segment
 		mov	es,word ptr cs:game_entry_seg
-		mov	word ptr es:gvar_chunk_load_fn,2D9h
+		mov	word ptr es:gvar_chunk_load_fn,zeliad_callback_ofs
 		mov	es:gvar_chunk_load_seg,cs
 		lds	dx,dword ptr cs:saved_int08_ofs
 		mov	es:gvar_old_int08_ofs,dx
@@ -231,7 +236,7 @@ skip_music_init:
 		mov	byte ptr es:gvar_volume_a,0
 		mov	byte ptr es:gvar_debug_mode,0
 		mov	byte ptr es:gvar_debug_val,0
-		mov	byte ptr es:[0FF78h],0
+		mov	byte ptr es:gvar_unk_FF78,0
 		mov	al,cs:joystick_enabled
 		mov	es:gvar_last_key,al
 		mov	al,cs:music_enabled
@@ -275,7 +280,7 @@ save_name_done:
 		mov	es,word ptr cs:game_entry_seg
 
 		; Load graphics mode driver (gm*.bin)
-		mov	di,85Ah
+		mov	di,offset entry_stdply_nosave
 		test	byte ptr has_savefile,0FFh
 		jz	load_gfx_driver
 		mov	di,867h
@@ -285,12 +290,12 @@ load_gfx_driver:
 
 		; Load input driver (stick.bin)
 		mov	es,word ptr cs:game_entry_seg
-		mov	di,806h
+		mov	di,offset entry_stick
 		call	load_driver_file
 
 		; Load game data (game.bin)
 		mov	es,word ptr cs:game_entry_seg
-		mov	di,84Fh
+		mov	di,offset entry_game
 		call	load_driver_file
 
 		; Load standard player driver (stdply.bin)
@@ -342,9 +347,9 @@ load_gfx_driver:
 		mov	es,ax
 		add	ax,0FF0h
 		mov	ds,ax
-		mov	word ptr es:gvar_input_fn_ofs,100h
+		mov	word ptr es:gvar_input_fn_ofs,stick_input_fn_ofs
 		mov	es:gvar_input_fn_seg,ds
-		mov	word ptr es:gvar_gfx_fn_ofs,1100h
+		mov	word ptr es:gvar_gfx_fn_ofs,stdply_gfx_fn_ofs
 		mov	es:gvar_gfx_fn_seg,ds
 		mov	dx,isr_timer			; stick.bin game-services stub
 		mov	ax,2560h
@@ -1022,12 +1027,15 @@ driver_offset_table dw	0812h		; mode 0: EGA  (gmega.bin)
 		dw	082Ah		; mode 3: HGC  (gmhgc.bin)
 		dw	0836h		; mode 4: MCGA (gmmcga.bin)
 		dw	0843h		; mode 5: TGA  (gmtga.bin)
-		dw	0100h		; stdply.bin (always)
-
-		; Driver file entries: {load_offset, filename, 0}
+; Driver file entries: [dw load_ofs][filename\0]
+; Load offset bytes interleave: each entry's trailing null = next entry's load_ofs low byte,
+; and the next entry's leading ' ' = load_ofs high byte (0x20 → 0x2000).
+; The dw 0100h is BOTH driver_offset_table[6] AND stick.bin's load_ofs word.
+entry_stick:
+		dw	0100h		; DUAL-USE: table[6] AND stick.bin load offset (CS:0100h)
 		db	'stick.bin'
-		db	0, 0
-		db	' gmega.bin'
+		db	0, 0		; null + gmega load_ofs low (0x00)
+		db	' gmega.bin'	; ' '=load_ofs high (0x20 → 0x2000)
 		db	0, 0
 		db	' gmcga.bin'
 		db	0, 0
@@ -1036,11 +1044,15 @@ driver_offset_table dw	0812h		; mode 0: EGA  (gmega.bin)
 		db	' gmmcga.bin'
 		db	0, 0
 		db	' gmtga.bin'
-		db	 00h, 00h,0A0h
+		db	0		; gmtga null
+entry_game:
+		db	0, 0A0h		; game.bin load_ofs (0xA000: lo=00 hi=A0)
 		db	'game.bin'
-		db	0, 0, 0
+		db	0		; game.bin null
+entry_stdply_nosave:
+		db	0, 0		; stdply load_ofs (0x0000)
 		db	'stdply.bin'
-		db	0, 0, 0
+		db	0, 0, 0		; null + 2 trailing bytes (empty entry area)
 
 ;==========================================================================
 ;  Runtime Variables
