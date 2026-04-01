@@ -10,7 +10,7 @@
 ; Segment permissions: Read/Write
 DATA            segment byte public 'DATA' use16
                 assume cs:DATA
-Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
+00000000 Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00000002 malicia_items   db ?                    ; +128 - Chest, 50 Golds
 00000002                                         ; +64 - Chest, Red Potion
 00000002                                         ; +32 - Muralla Key 1
@@ -207,7 +207,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00000046                 db    ? ;
 00000047                 db    ? ;
 00000048                 db    ? ;
-00000049 byte_49         db ?                    ; ...
+00000049 is_death_already_processed db ?         ; ...
 0000004A                 db    ? ;
 0000004B                 db    ? ;
 0000004C                 db    ? ;
@@ -261,7 +261,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000007C                 db    ? ;
 0000007D                 db    ? ;
 0000007E                 db    ? ;
-0000007F byte_7F         db ?                    ; ...
+0000007F hero_invincibility db ?                 ; ...
 00000080 proximity_map_left_col_x dw ?           ; ...
 00000080                                         ; Proximity map is centered around hero, width=36
 00000082 viewport_top_row_y db ?                 ; ...
@@ -351,7 +351,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000000C2 facing_direction db ?                   ; ...
 000000C2                                         ; bit0: 0=Right, 1=Left
 000000C2                                         ; bit1: 0=Down, 1=Up
-000000C3 byte_C3         db ?                    ; ...
+000000C3 is_left_run     db ?                    ; ...
 000000C4 place_map_id    db ?                    ; ...
 000000C4                                         ; 80h - Felishika's Castle
 000000C4                                         ; 81h - Muralla
@@ -364,7 +364,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000000C4                                         ; 88h - Pureza
 000000C4                                         ; 89h - Esco
 000000C5 last_sage_visited db ?                  ; ...
-000000C6 word_C6         dw ?                    ; ...
+000000C6 healing_potion_timer dw ?               ; ...
 000000C8 msd_index       db ?                    ; ...
 000000C9                 db ?                    ; C9-D1 - Magic Stores Inventory. --- TOWNS
 000000C9                                         ;
@@ -635,8 +635,8 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00006053                 mov     byte_9F22, 0
 00006058                 mov     ax, 0FFFFh
 0000605B                 mov     projectiles_array, al
-0000605E                 mov     byte_EDA0, al
-00006061                 mov     magic_projectiles, ax
+0000605E                 mov     is_boss_dead, al
+00006061                 mov     word ptr magic_projectiles, ax
 00006064                 mov     byte_FF2E, 0
 00006069                 mov     byte_FF2F, 0
 0000606E                 mov     byte_FF30, 0
@@ -666,7 +666,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000060B5                 mov     al, 2           ; fn_2
 000060B7                 call    cs:res_dispatcher_proc ; =0A84h
 000060BC                 call    cs:word_301C    ; =4518h
-000060C1                 mov     byte_FF37, 0
+000060C1                 mov     hero_sprite_hidden, 0
 000060C6                 call    cs:word_3016
 000060CB                 call    cs:word_3014
 000060D0                 call    clear_hero_in_viewport
@@ -826,12 +826,12 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00006263                 call    update_all_monsters_in_map
 00006266
 00006266 loc_6266:                               ; ...
-00006266                 test    ds:byte_49, 0FFh
-0000626B                 jz      short loc_6270
+00006266                 test    ds:is_death_already_processed, 0FFh
+0000626B                 jz      short not_dead
 0000626D                 jmp     process_hero_death
 00006270 ; ---------------------------------------------------------------------------
 00006270
-00006270 loc_6270:                               ; ...
+00006270 not_dead:                               ; ...
 00006270                 test    ds:byte_9F02, 0FFh
 00006275                 jz      short loc_628A
 00006277                 mov     ds:byte_9F02, 0
@@ -883,9 +883,9 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000062DB                 mov     ds:squat_flag, 0
 000062E0                 mov     ds:jump_phase_flags, 0 ; 0: on ground, ff: ascending, 7f: descending, 80h: climbing down off rope
 000062E5                 mov     ds:slope_direction, 0
-000062EA                 mov     ds:byte_FF3C, 0
+000062EA                 mov     ds:spell_active_flag, 0
 000062EF                 call    cs:Flush_Ui_Element_If_Dirty_proc
-000062F4                 mov     ds:byte_FF43, 0
+000062F4                 mov     ds:sword_swing_flag, 0
 000062F9                 call    main_update_render
 000062FC                 call    hero_knockback_handler
 000062FF                 call    state_machine_dispatcher
@@ -2787,7 +2787,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00006DD7                 mul     cl
 00006DD9                 mov     bx, ax
 00006DDB                 add     bx, ds:monsters_table_addr
-00006DDF                 mov     al, [bx+monster.type_]
+00006DDF                 mov     al, [bx+monster.flags]
 00006DE2                 or      al, al          ; NC, NZ if live monster (not item)
 00006DE4                 retn
 00006DE4 get_dst_monster_flags endp
@@ -2902,32 +2902,32 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00006E5A                                         ; space+up+down
 00006E5C                 mov     ds:sword_hit_type, 2 ; Ground downward thrust
 00006E61                 mov     ds:sword_down_thrust, 2
-00006E66                 test    ds:byte_FF47, 0FFh
+00006E66                 test    ds:down_thrust_held_flag, 0FFh
 00006E6B                 jz      short loc_6E70
 00006E6D                 jmp     loc_6EF7
 00006E70 ; ---------------------------------------------------------------------------
 00006E70
 00006E70 loc_6E70:                               ; ...
-00006E70                 mov     ds:byte_FF47, 0FFh
+00006E70                 mov     ds:down_thrust_held_flag, 0FFh
 00006E75                 mov     ds:soundFX_request, 4
 00006E7A                 jmp     short loc_6EF7
 00006E7C ; ---------------------------------------------------------------------------
 00006E7C
 00006E7C sword_default:                          ; ...
-00006E7C                 mov     ds:byte_FF47, 0
+00006E7C                 mov     ds:down_thrust_held_flag, 0
 00006E81                 test    ds:byte_FF1D, 0FFh
 00006E86                 jnz     short loc_6E89
 00006E88                 retn
 00006E89 ; ---------------------------------------------------------------------------
 00006E89
 00006E89 loc_6E89:                               ; ...
-00006E89                 test    ds:byte_FF43, 0FFh
+00006E89                 test    ds:sword_swing_flag, 0FFh
 00006E8E                 jz      short loc_6E91
 00006E90                 retn
 00006E91 ; ---------------------------------------------------------------------------
 00006E91
 00006E91 loc_6E91:                               ; ...
-00006E91                 test    ds:byte_FF3C, 0FFh
+00006E91                 test    ds:spell_active_flag, 0FFh
 00006E96                 jz      short loc_6E99
 00006E98                 retn
 00006E99 ; ---------------------------------------------------------------------------
@@ -2990,7 +2990,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00006EF7 loc_6EF7:                               ; ...
 00006EF7                 mov     ds:byte_FF1D, 0
 00006EFC                 mov     ds:byte_FF1E, 0
-00006F01                 mov     ds:byte_FF43, 0FFh
+00006F01                 mov     ds:sword_swing_flag, 0FFh
 00006F06                 retn
 00006F06 input_handling  endp
 00006F06
@@ -2999,7 +2999,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00006F07
 00006F07
 00006F07 apply_sword_hit_to_map_tiles proc near  ; ...
-00006F07                 test    ds:byte_FF43, 0FFh
+00006F07                 test    ds:sword_swing_flag, 0FFh
 00006F0C                 jnz     short loc_6F0F
 00006F0E                 retn
 00006F0F ; ---------------------------------------------------------------------------
@@ -3146,7 +3146,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000702C                 call    monsters_spawning
 0000702F
 0000702F loc_702F:                               ; ...
-0000702F                 mov     ds:byte_FF36, 0
+0000702F                 mov     ds:hero_damage_this_frame, 0
 00007034                 mov     ds:byte_9F14, 0
 00007039                 call    check_hero_contact_damage
 0000703C                 call    cs:Flush_Ui_Element_If_Dirty_proc
@@ -3161,7 +3161,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000705D                 inc     ds:temperature_timer
 00007061                 test    ds:temperature_timer, 3Fh
 00007066                 jnz     short skip_temperature_damage
-00007068                 mov     ds:byte_FF36, 0FFh
+00007068                 mov     ds:hero_damage_this_frame, 0FFh
 0000706D                 mov     ds:soundFX_request, 9
 00007072                 mov     ax, 0Fh
 00007075                 call    damage_hero     ; ax: damage level
@@ -3172,7 +3172,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000707E                 call    screen_flash_overlay
 00007081                 test    ds:invincibility_flag, 0FFh
 00007086                 jz      short game_loop_render_and_timing
-00007088                 mov     ds:byte_FF36, 0
+00007088                 mov     ds:hero_damage_this_frame, 0
 0000708D                 jmp     short loc_7094
 0000708D main_update_render endp
 0000708D
@@ -3181,11 +3181,11 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000708F
 0000708F
 0000708F game_loop_render_and_timing proc near   ; ...
-0000708F                 mov     ds:byte_FF37, 0
+0000708F                 mov     ds:hero_sprite_hidden, 0
 00007094
 00007094 loc_7094:                               ; ...
 00007094                 mov     ds:byte_FF40, 0
-00007099                 test    ds:byte_FF43, 0FFh
+00007099                 test    ds:sword_swing_flag, 0FFh
 0000709E                 jz      short loc_70B3
 000070A0                 mov     ds:byte_FF40, 0FFh
 000070A5                 mov     al, ds:sword_hit_type
@@ -3196,7 +3196,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000070B3 ; ---------------------------------------------------------------------------
 000070B3
 000070B3 loc_70B3:                               ; ...
-000070B3                 test    ds:byte_FF3C, 0FFh
+000070B3                 test    ds:spell_active_flag, 0FFh
 000070B8                 jz      short loc_70CA
 000070BA                 mov     ds:byte_FF40, 0FFh
 000070BF                 mov     al, ds:byte_9F2B
@@ -3204,7 +3204,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000070C5                 mov     ds:byte_FF41, 1
 000070CA
 000070CA loc_70CA:                               ; ...
-000070CA                 test    ds:byte_FF37, 0FFh
+000070CA                 test    ds:hero_sprite_hidden, 0FFh
 000070CF                 jnz     short loc_70D4
 000070D1                 call    clear_hero_in_viewport
 000070D4
@@ -3212,18 +3212,18 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000070D4                 call    cs:Sample_Neighborhood_Attributes_proc
 000070D9                 test    ds:invincibility_flag, 0FFh
 000070DE                 jnz     short loc_710F
-000070E0                 mov     ax, ds:word_C6  ; potions? magic?
+000070E0                 mov     ax, ds:healing_potion_timer
 000070E3                 or      ax, ax
 000070E5                 jz      short loc_710F
 000070E7                 dec     ax
-000070E8                 mov     ds:word_C6, ax
+000070E8                 mov     ds:healing_potion_timer, ax
 000070EB                 add     ds:hero_HP, 8   ; faster hp restoration
 000070F0                 mov     ax, ds:heroMaxHp
 000070F3                 cmp     ax, ds:hero_HP
 000070F7                 jnb     short loc_7105
 000070F9                 mov     ax, ds:heroMaxHp
 000070FC                 mov     ds:hero_HP, ax
-000070FF                 mov     ds:word_C6, 0
+000070FF                 mov     ds:healing_potion_timer, 0
 00007105
 00007105 loc_7105:                               ; ...
 00007105                 mov     ds:soundFX_request, 13h
@@ -3277,7 +3277,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000718C ; ---------------------------------------------------------------------------
 0000718C
 0000718C loc_718C:                               ; ...
-0000718C                 test    ds:byte_7F, 0FFh
+0000718C                 test    ds:hero_invincibility, 0FFh
 00007191                 jnz     short increase_hp
 00007193                 test    ds:hero_HP, 0FFFFh
 00007199                 jnz     short increase_hp
@@ -3307,7 +3307,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000071D1                 jz      short loc_71FA
 000071D3                 test    ds:byte_FF30, 0FFh
 000071D8                 jz      short loc_71FA
-000071DA                 cmp     ds:byte_EDA0, 0FFh
+000071DA                 cmp     ds:is_boss_dead, 0FFh
 000071DF                 jnz     short loc_71FA
 000071E1                 mov     si, ds:word_A002
 000071E5                 add     si, 5
@@ -3402,7 +3402,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00007275
 00007275 bring_inventory_window proc near        ; ...
 00007275                 mov     al, ds:byte_9EF5
-00007278                 or      al, ds:byte_FF3C
+00007278                 or      al, ds:spell_active_flag
 0000727C                 or      al, ds:byte_FF3E
 00007280                 or      al, ds:byte_9F26
 00007284                 jz      short loc_7287
@@ -3772,7 +3772,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000074FB ; ---------------------------------------------------------------------------
 000074FB
 000074FB loc_74FB:                               ; ...
-000074FB                 mov     ds:byte_FF36, 0FFh
+000074FB                 mov     ds:hero_damage_this_frame, 0FFh
 00007500                 mov     ds:soundFX_request, 9
 00007505                 mov     bl, ds:cavern_level
 00007509                 dec     bl
@@ -3875,7 +3875,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000075A4                 or      al, [di+2]
 000075A7                 or      al, [di+3]
 000075AA                 mov     ds:byte_9F14, al
-000075AD                 mov     ds:byte_FF36, al
+000075AD                 mov     ds:hero_damage_this_frame, al
 000075B0                 or      al, al
 000075B2                 jz      short locret_75B9
 000075B4                 call    cs:Print_ShieldHP_Decimal_proc
@@ -4481,10 +4481,10 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000079FE                 mov     ds:enp_grp_index, al
 00007A01                 call    reset_dungeon_state_vars
 00007A04                 mov     al, 0FFh
-00007A06                 mov     ds:byte_EB60, al
-00007A09                 mov     ds:byte_EB67, al
-00007A0C                 mov     ds:byte_EB6E, al
-00007A0F                 mov     ds:byte_EB75, al
+00007A06                 mov     ds:spirit_sprite_0, al
+00007A09                 mov     ds:spirit_sprite_1, al
+00007A0C                 mov     ds:spirit_sprite_2, al
+00007A0F                 mov     ds:spirit_sprite_3, al
 00007A12                 mov     ds:byte_FF3A, 0
 00007A17                 mov     es, cs:game_segment
 00007A1C                 assume es:nothing
@@ -4664,7 +4664,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00007B5C                 mov     ds:byte_9F1C, al
 00007B5F                 mov     al, [si+door.field_3]
 00007B62                 and     al, 1000000b
-00007B64                 mov     ds:byte_C3, al
+00007B64                 mov     ds:is_left_run, al
 00007B67                 mov     al, [si+door.field_8]
 00007B6A                 mov     ds:byte_9F1D, al
 00007B6D                 mov     ah, [si+door.place_map_id]
@@ -4780,9 +4780,9 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00007C6E ; ---------------------------------------------------------------------------
 00007C6E
 00007C6E loc_7C6E:                               ; ...
-00007C6E                 test    ds:byte_C3, 0FFh
-00007C73                 jnz     short loc_7CB4
-00007C75                 and     ds:facing_direction, 11111110b
+00007C6E                 test    ds:is_left_run, 0FFh
+00007C73                 jnz     short run_to_town
+00007C75                 and     ds:facing_direction, 11111110b ; run to the cavern
 00007C7A                 mov     bx, 0A6Eh
 00007C7D                 mov     cx, 26          ; 26 steps to animate
 00007C80
@@ -4810,7 +4810,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00007CB2                 jmp     short loc_7CF4
 00007CB4 ; ---------------------------------------------------------------------------
 00007CB4
-00007CB4 loc_7CB4:                               ; ...
+00007CB4 run_to_town:                            ; ...
 00007CB4                 or      ds:facing_direction, 1
 00007CB9                 mov     bx, 406Eh
 00007CBC                 mov     cx, 1Ah
@@ -5032,12 +5032,12 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00007E5B
 00007E5B reset_dungeon_state_vars proc near      ; ...
 00007E5B                 xor     al, al
-00007E5D                 mov     ds:byte_FF43, al
+00007E5D                 mov     ds:sword_swing_flag, al
 00007E60                 mov     ds:byte_FF44, al
-00007E63                 mov     ds:byte_FF3C, al
+00007E63                 mov     ds:spell_active_flag, al
 00007E66                 mov     ds:jump_phase_flags, al ; 0: on ground, ff: ascending, 7f: descending, 80h: climbing down off rope
 00007E69                 mov     ds:squat_flag, al
-00007E6C                 mov     ds:byte_FF36, al
+00007E6C                 mov     ds:hero_damage_this_frame, al
 00007E6F                 mov     ds:byte_9EEF, al
 00007E72                 mov     ds:byte_FF3E, al
 00007E75                 mov     ds:byte_FF4B, al
@@ -5045,8 +5045,8 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00007E7B                 mov     ds:byte_E7, al
 00007E7E                 mov     ax, 0FFFFh
 00007E81                 mov     ds:projectiles_array, al
-00007E84                 mov     ds:byte_EDA0, al
-00007E87                 mov     ds:magic_projectiles, ax
+00007E84                 mov     ds:is_boss_dead, al
+00007E87                 mov     word ptr ds:magic_projectiles, ax
 00007E8A                 mov     ds:byte_FF3A, al
 00007E8D                 mov     ds:byte_9EF5, al
 00007E90                 jmp     clear_viewport_buffer
@@ -5284,14 +5284,14 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008014 ; ---------------------------------------------------------------------------
 00008014
 00008014 alive_monster:                          ; ...
-00008014                 test    [bx+monster.field_5], 100000b ; is damageable?
+00008014                 test    [bx+monster.ai_flags], 100000b ; is damageable?
 00008018                 jz      short monster_can_be_damaged
 0000801A                 retn
 0000801B ; ---------------------------------------------------------------------------
 0000801B
 0000801B monster_can_be_damaged:                 ; ...
-0000801B                 or      [bx+monster.field_5], 1000000b ; damage monster
-0000801F                 and     [bx+monster.field_5], 11100000b
+0000801B                 or      [bx+monster.ai_flags], 1000000b ; damage monster
+0000801F                 and     [bx+monster.ai_flags], 11100000b
 00008023                 retn
 00008023 move_platform_down_damage_monster endp
 00008023
@@ -5965,7 +5965,9 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000838C                 mov     [si+0Ch], al
 0000838F                 mov     ah, [si+0Bh]
 00008392                 push    ax
-00008393                 call    proximity_map_coords_to_viewport_offset
+00008393                 call    proximity_map_coords_to_viewport_offset ; AL: proximity map relative y
+00008393                                         ; AH: proximity map relative x
+00008393                                         ; Return: address in DI
 00008396                 pop     ax
 00008397                 cmp     byte ptr [di], 0FFh
 0000839A                 jz      short loc_83CD
@@ -6047,7 +6049,9 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008409
 00008409 restore_bg_tile_at_given_position proc near ; ...
 00008409                 push    ax
-0000840A                 call    proximity_map_coords_to_viewport_offset
+0000840A                 call    proximity_map_coords_to_viewport_offset ; AL: proximity map relative y
+0000840A                                         ; AH: proximity map relative x
+0000840A                                         ; Return: address in DI
 0000840D                 pop     ax
 0000840E                 cmp     byte ptr [di], 0FCh
 00008411                 jb      short loc_8414
@@ -6107,7 +6111,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000845B                 mov     al, [si+projectile.field_3]
 0000845E                 cmp     al, [si+projectile.field_4]
 00008461                 jb      short loc_8466
-00008463                 mov     byte ptr [si], 0
+00008463                 mov     [si+projectile.x_rel], 0
 00008466
 00008466 loc_8466:                               ; ...
 00008466                 inc     ds:last_projectile_index
@@ -6122,17 +6126,17 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000846F
 0000846F
 0000846F sub_846F        proc near               ; ...
-0000846F                 call    sub_85A5
-00008472                 test    byte ptr [si+5], 8
+0000846F                 call    projectile_advance_position
+00008472                 test    [si+projectile.field_5], 8
 00008476                 jnz     short loc_8490
-00008478                 mov     ah, [si]
+00008478                 mov     ah, [si+projectile.x_rel]
 0000847A                 or      ah, ah
 0000847C                 jnz     short loc_847F
 0000847E                 retn
 0000847F ; ---------------------------------------------------------------------------
 0000847F
 0000847F loc_847F:                               ; ...
-0000847F                 mov     al, [si+1]
+0000847F                 mov     al, [si+projectile.y_rel]
 00008482                 call    coords_in_ax_to_proximity_map_offset_in_di ; uint8_t y = AL
 00008482                                         ; uint8_t x = AH
 00008482                                         ; y &= 0x3F; // Clamp Y to 0-63
@@ -6140,7 +6144,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008485                 mov     al, [di]
 00008487                 call    is_non_blocking_tile_extended
 0000848A                 jz      short loc_8490
-0000848C                 mov     byte ptr [si], 0
+0000848C                 mov     [si+projectile.x_rel], 0
 0000848F                 retn
 00008490 ; ---------------------------------------------------------------------------
 00008490
@@ -6150,7 +6154,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008497                 test    ds:squat_flag, 0FFh
 0000849C                 jnz     short loc_84A5
 0000849E                 and     al, 3Fh
-000084A0                 cmp     al, [si+1]
+000084A0                 cmp     al, [si+projectile.y_rel]
 000084A3                 jz      short loc_84B4
 000084A5
 000084A5 loc_84A5:                               ; ...
@@ -6159,7 +6163,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000084A8 loc_84A8:                               ; ...
 000084A8                 inc     al
 000084AA                 and     al, 3Fh
-000084AC                 cmp     al, [si+1]
+000084AC                 cmp     al, [si+projectile.y_rel]
 000084AF                 jz      short loc_84B4
 000084B1                 loop    loc_84A8
 000084B3                 retn
@@ -6173,23 +6177,23 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000084C0                 inc     al
 000084C2
 000084C2 loc_84C2:                               ; ...
-000084C2                 cmp     al, [si]
+000084C2                 cmp     al, [si+projectile.x_rel]
 000084C4                 jz      short loc_84CD
 000084C6                 inc     al
-000084C8                 cmp     al, [si]
+000084C8                 cmp     al, [si+projectile.x_rel]
 000084CA                 jz      short loc_84CD
 000084CC                 retn
 000084CD ; ---------------------------------------------------------------------------
 000084CD
 000084CD loc_84CD:                               ; ...
-000084CD                 mov     byte ptr [si], 0
+000084CD                 mov     [si+projectile.x_rel], 0
 000084D0                 test    ds:shield_type, 0FFh
 000084D5                 jz      short loc_850E
-000084D7                 test    ds:byte_FF43, 0FFh
+000084D7                 test    ds:sword_swing_flag, 0FFh
 000084DC                 jnz     short loc_850E
 000084DE                 test    ds:on_rope_flags, 0FFh ; 0: on ground, ff: on rope, 80h: transition from rope to ground
 000084E3                 jnz     short loc_850E
-000084E5                 mov     al, [si+5]
+000084E5                 mov     al, [si+projectile.field_5]
 000084E8                 and     al, 7
 000084EA                 cmp     al, 2
 000084EC                 jz      short loc_850E
@@ -6211,16 +6215,16 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000850C                 jnz     short loc_854F
 0000850E
 0000850E loc_850E:                               ; ...
-0000850E                 mov     al, [si+6]
+0000850E                 mov     al, [si+projectile.field_6]
 00008511                 xor     ah, ah
 00008513                 call    damage_hero     ; ax: damage level
 00008516                 mov     ds:soundFX_request, 9
 0000851B                 mov     al, 0FFh
 0000851D                 mov     ds:byte_9F14, al
-00008520                 mov     ds:byte_FF36, al
+00008520                 mov     ds:hero_damage_this_frame, al
 00008523                 mov     bx, 0FFFFh
 00008526                 mov     cx, 0FFFFh
-00008529                 mov     al, [si+5]
+00008529                 mov     al, [si+projectile.field_5]
 0000852C                 and     al, 7
 0000852E                 cmp     al, 2
 00008530                 jz      short loc_8546
@@ -6252,7 +6256,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008566                 inc     al
 00008568
 00008568 loc_8568:                               ; ...
-00008568                 call    sub_8573
+00008568                 call    projectile_y_vs_hero_row_dispatch
 0000856B                 jb      short loc_850E
 0000856D
 0000856D loc_856D:                               ; ...
@@ -6264,30 +6268,30 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008573 ; =============== S U B R O U T I N E =======================================
 00008573
 00008573
-00008573 sub_8573        proc near               ; ...
-00008573                 mov     bl, [si+5]
+00008573 projectile_y_vs_hero_row_dispatch proc near ; ...
+00008573                 mov     bl, [si+projectile.field_5]
 00008576                 and     bx, 7           ; switch 8 cases
 00008579                 add     bx, bx
 0000857B                 and     al, 3Fh
 0000857D                 jmp     ds:jpt_857D[bx] ; switch jump
-0000857D sub_8573        endp
+0000857D projectile_y_vs_hero_row_dispatch endp
 0000857D
 0000857D ; ---------------------------------------------------------------------------
-00008581 jpt_857D        dw offset sub_8591      ; ...
-00008583                 dw offset sub_8599      ; jumptable 0000857D cases 0,4
-00008585                 dw offset sub_8599
-00008587                 dw offset sub_8599
-00008589                 dw offset sub_8591
-0000858B                 dw offset sub_859F
-0000858D                 dw offset sub_859F
-0000858F                 dw offset sub_859F
+00008581 jpt_857D        dw offset check_y_eq_projectile_row ; ...
+00008583                 dw offset check_prev_y_eq_projectile_row ; jumptable 0000857D cases 0,4
+00008585                 dw offset check_prev_y_eq_projectile_row
+00008587                 dw offset check_prev_y_eq_projectile_row
+00008589                 dw offset check_y_eq_projectile_row
+0000858B                 dw offset check_next_y_eq_projectile_row
+0000858D                 dw offset check_next_y_eq_projectile_row
+0000858F                 dw offset check_next_y_eq_projectile_row
 00008591
 00008591 ; =============== S U B R O U T I N E =======================================
 00008591
 00008591 ; jumptable 0000857D cases 0,4
 00008591
-00008591 sub_8591        proc near               ; ...
-00008591                 cmp     al, [si+1]
+00008591 check_y_eq_projectile_row proc near     ; ...
+00008591                 cmp     al, [si+projectile.y_rel]
 00008594                 jnz     short loc_8597
 00008596                 retn
 00008597 ; ---------------------------------------------------------------------------
@@ -6295,38 +6299,38 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008597 loc_8597:                               ; ...
 00008597                 stc
 00008598                 retn
-00008598 sub_8591        endp
+00008598 check_y_eq_projectile_row endp
 00008598
 00008599
 00008599 ; =============== S U B R O U T I N E =======================================
 00008599
 00008599 ; jumptable 0000857D cases 1-3
 00008599
-00008599 sub_8599        proc near               ; ...
+00008599 check_prev_y_eq_projectile_row proc near ; ...
 00008599                 dec     al
 0000859B                 and     al, 3Fh
-0000859D                 jmp     short sub_8591  ; jumptable 0000857D cases 0,4
-0000859D sub_8599        endp
+0000859D                 jmp     short check_y_eq_projectile_row ; jumptable 0000857D cases 0,4
+0000859D check_prev_y_eq_projectile_row endp
 0000859D
 0000859F
 0000859F ; =============== S U B R O U T I N E =======================================
 0000859F
 0000859F ; jumptable 0000857D cases 5-7
 0000859F
-0000859F sub_859F        proc near               ; ...
+0000859F check_next_y_eq_projectile_row proc near ; ...
 0000859F                 inc     al
 000085A1                 and     al, 3Fh
-000085A3                 jmp     short sub_8591  ; jumptable 0000857D cases 0,4
-000085A3 sub_859F        endp
+000085A3                 jmp     short check_y_eq_projectile_row ; jumptable 0000857D cases 0,4
+000085A3 check_next_y_eq_projectile_row endp
 000085A3
 000085A5
 000085A5 ; =============== S U B R O U T I N E =======================================
 000085A5
 000085A5
-000085A5 sub_85A5        proc near               ; ...
+000085A5 projectile_advance_position proc near   ; ...
 000085A5                 test    [si+projectile.field_5], 40h
 000085A9                 jz      short loc_85B1
-000085AB                 call    sub_85F2
+000085AB                 call    projectile_read_curved_path_step
 000085AE                 jnb     short loc_85B1
 000085B0                 retn
 000085B1 ; ---------------------------------------------------------------------------
@@ -6338,7 +6342,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000085B9                 call    ds:funcs_85B9[bx]
 000085BD                 and     [si+projectile.y_rel], 3Fh
 000085C1                 retn
-000085C1 sub_85A5        endp
+000085C1 projectile_advance_position endp
 000085C1
 000085C1 ; ---------------------------------------------------------------------------
 000085C2 funcs_85B9      dw offset incX          ; ...
@@ -6425,7 +6429,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000085F2 ; =============== S U B R O U T I N E =======================================
 000085F2
 000085F2
-000085F2 sub_85F2        proc near               ; ...
+000085F2 projectile_read_curved_path_step proc near ; ...
 000085F2                 mov     bl, [si+projectile.field_3]
 000085F5                 xor     bh, bh
 000085F7                 mov     di, [si+projectile.field_9]
@@ -6442,7 +6446,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008609                 and     [si+projectile.field_5], 0F8h
 0000860D                 or      [si+projectile.field_5], al
 00008610                 retn
-00008610 sub_85F2        endp
+00008610 projectile_read_curved_path_step endp
 00008610
 00008611
 00008611 ; =============== S U B R O U T I N E =======================================
@@ -6531,6 +6535,9 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008663
 00008663 ; =============== S U B R O U T I N E =======================================
 00008663
+00008663 ; AL: proximity map relative y
+00008663 ; AH: proximity map relative x
+00008663 ; Return: address in DI
 00008663
 00008663 proximity_map_coords_to_viewport_offset proc near ; ...
 00008663                 and     al, 3Fh         ; clamp y
@@ -6550,14 +6557,14 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008679
 00008679
 00008679 render_and_collision_pass_row proc near ; ...
-00008679                 mov     si, offset byte_EB60
+00008679                 mov     si, offset spirit_sprite_0
 0000867C                 mov     cx, 4
 0000867F
-0000867F loc_867F:                               ; ...
+0000867F next_spirit:                            ; ...
 0000867F                 push    cx
 00008680                 cmp     byte ptr [si], 0FFh
 00008683                 jz      short loc_86DC
-00008685                 call    sub_86E3
+00008685                 call    restore_bg_under_spirit_sprite
 00008688                 test    byte ptr [si+2], 0FFh
 0000868C                 jnz     short loc_8693
 0000868E                 mov     byte ptr [si], 0FFh
@@ -6569,7 +6576,14 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008695                 and     bl, 0Fh
 00008698                 xor     bh, bh
 0000869A                 add     bx, bx
-0000869C                 add     bx, offset word_8790 ; dx=low byte, dy=high byte
+0000869C                 add     bx, offset circle ;
+0000869C                                         ; ..345..
+0000869C                                         ; .2...6.
+0000869C                                         ; 1.....7
+0000869C                                         ; 0.....8
+0000869C                                         ; f.....9
+0000869C                                         ; .e...a.
+0000869C                                         ; ..dcb..
 000086A0                 mov     ah, ds:hero_x_in_viewport
 000086A4                 add     ah, [bx]
 000086A6                 mov     [si+5], ah
@@ -6578,7 +6592,9 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000086AF                 and     al, 3Fh
 000086B1                 mov     [si+6], al
 000086B4                 push    ax
-000086B5                 call    proximity_map_coords_to_viewport_offset
+000086B5                 call    proximity_map_coords_to_viewport_offset ; AL: proximity map relative y
+000086B5                                         ; AH: proximity map relative x
+000086B5                                         ; Return: address in DI
 000086B8                 pop     ax
 000086B9                 cmp     byte ptr [di], 0FFh
 000086BC                 jz      short loc_86DC
@@ -6599,7 +6615,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000086DC loc_86DC:                               ; ...
 000086DC                 add     si, 7
 000086DF                 pop     cx
-000086E0                 loop    loc_867F
+000086E0                 loop    next_spirit
 000086E2                 retn
 000086E2 render_and_collision_pass_row endp
 000086E2
@@ -6607,7 +6623,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000086E3 ; =============== S U B R O U T I N E =======================================
 000086E3
 000086E3
-000086E3 sub_86E3        proc near               ; ...
+000086E3 restore_bg_under_spirit_sprite proc near ; ...
 000086E3                 test    word ptr [si+3], 8000h
 000086E8                 jnz     short loc_86EB
 000086EA                 retn
@@ -6619,27 +6635,34 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000086F3                 mov     ah, [si+5]
 000086F6                 mov     al, [si+6]
 000086F9                 jmp     restore_bg_tile_at_given_position
-000086F9 sub_86E3        endp
+000086F9 restore_bg_under_spirit_sprite endp
 000086F9
 000086FC
 000086FC ; =============== S U B R O U T I N E =======================================
 000086FC
 000086FC
 000086FC monsters_updates proc near              ; ...
-000086FC                 mov     si, offset byte_EB60
+000086FC                 mov     si, offset spirit_sprite_0
 000086FF                 mov     cx, 4
 00008702
-00008702 loc_8702:                               ; ...
+00008702 next_spirit:                            ; ...
 00008702                 push    cx
-00008703                 cmp     byte ptr [si], 0FFh
+00008703                 cmp     [si+spirit.field_0], 0FFh
 00008706                 jz      short loc_873A
-00008708                 mov     bl, [si]
-0000870A                 add     bl, [si+1]
+00008708                 mov     bl, [si+spirit.field_0]
+0000870A                 add     bl, [si+spirit.field_1]
 0000870D                 and     bl, 0Fh
-00008710                 mov     [si], bl
+00008710                 mov     [si+spirit.field_0], bl
 00008712                 xor     bh, bh
 00008714                 add     bx, bx
-00008716                 add     bx, offset word_8790 ; dx=low byte, dy=high byte
+00008716                 add     bx, offset circle ;
+00008716                                         ; ..345..
+00008716                                         ; .2...6.
+00008716                                         ; 1.....7
+00008716                                         ; 0.....8
+00008716                                         ; f.....9
+00008716                                         ; .e...a.
+00008716                                         ; ..dcb..
 0000871A                 mov     ah, ds:hero_x_in_viewport
 0000871E                 add     ah, [bx]
 00008720                 mov     al, ds:hero_head_y_in_viewport
@@ -6653,12 +6676,12 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000872F                 sub     si, 37
 00008732                 call    wrap_map_from_below ; if (si < 0E000h) si += 900h
 00008735                 xchg    si, di
-00008737                 call    sub_8741
+00008737                 call    spirit_sprite_place_in_proximity_rows
 0000873A
 0000873A loc_873A:                               ; ...
 0000873A                 add     si, 7
 0000873D                 pop     cx
-0000873E                 loop    loc_8702
+0000873E                 loop    next_spirit
 00008740                 retn
 00008740 monsters_updates endp
 00008740
@@ -6666,7 +6689,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008741 ; =============== S U B R O U T I N E =======================================
 00008741
 00008741
-00008741 sub_8741        proc near               ; ...
+00008741 spirit_sprite_place_in_proximity_rows proc near ; ...
 00008741                 test    ds:is_boss_cavern, 0FFh
 00008746                 jz      short loc_8750
 00008748                 test    ds:byte_FF30, 0FFh
@@ -6675,22 +6698,22 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008750 ; ---------------------------------------------------------------------------
 00008750
 00008750 loc_8750:                               ; ...
-00008750                 call    sub_8765
+00008750                 call    proximity_cell_inject_spell_target
 00008753                 inc     di
-00008754                 call    sub_8765
+00008754                 call    proximity_cell_inject_spell_target
 00008757                 xchg    si, di
 00008759                 add     si, 35
 0000875C                 call    wrap_map_from_above ; if (si >= 0E900h) si -= 900h
 0000875F                 xchg    si, di
-00008761                 call    sub_8765
+00008761                 call    proximity_cell_inject_spell_target
 00008764                 inc     di
-00008764 sub_8741        endp
+00008764 spirit_sprite_place_in_proximity_rows endp
 00008764
 00008765
 00008765 ; =============== S U B R O U T I N E =======================================
 00008765
 00008765
-00008765 sub_8765        proc near               ; ...
+00008765 proximity_cell_inject_spell_target proc near ; ...
 00008765                 test    byte ptr [si+2], 0FFh
 00008769                 jnz     short loc_876C
 0000876B                 retn
@@ -6722,11 +6745,18 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008788                 or      byte ptr [bx+5], 49h
 0000878C                 dec     byte ptr [si+2]
 0000878F                 retn
-0000878F sub_8765        endp
+0000878F proximity_cell_inject_spell_target endp
 0000878F
 0000878F ; ---------------------------------------------------------------------------
-00008790 word_8790       dw 102h                 ; ...
-00008790                                         ; dx=low byte, dy=high byte
+00008790 circle          dw 102h                 ; ...
+00008790                                         ;
+00008790                                         ; ..345..
+00008790                                         ; .2...6.
+00008790                                         ; 1.....7
+00008790                                         ; 0.....8
+00008790                                         ; f.....9
+00008790                                         ; .e...a.
+00008790                                         ; ..dcb..
 00008792                 dw 2
 00008794                 dw 0FF03h
 00008796                 dw 0FE04h
@@ -6753,7 +6783,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000087B8 ; ---------------------------------------------------------------------------
 000087B8
 000087B8 loc_87B8:                               ; ...
-000087B8                 test    ds:byte_FF3C, 0FFh
+000087B8                 test    ds:spell_active_flag, 0FFh
 000087BD                 jnz     short loc_87F1
 000087BF                 test    ds:byte_FF1E, 0FFh
 000087C4                 jnz     short loc_87C7
@@ -6763,7 +6793,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000087C7 loc_87C7:                               ; ...
 000087C7                 mov     ds:byte_FF1D, 0
 000087CC                 mov     ds:byte_FF1E, 0
-000087D1                 test    ds:byte_FF43, 0FFh
+000087D1                 test    ds:sword_swing_flag, 0FFh
 000087D6                 jz      short loc_87D9
 000087D8                 retn
 000087D9 ; ---------------------------------------------------------------------------
@@ -6776,7 +6806,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000087E1
 000087E1 loc_87E1:                               ; ...
 000087E1                 mov     ds:byte_9F2B, 0
-000087E6                 mov     ds:byte_FF3C, 0FFh
+000087E6                 mov     ds:spell_active_flag, 0FFh
 000087EB                 mov     ds:soundFX_request, 17h
 000087F0                 retn
 000087F1 ; ---------------------------------------------------------------------------
@@ -6791,7 +6821,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008805 ; ---------------------------------------------------------------------------
 00008805
 00008805 loc_8805:                               ; ...
-00008805                 mov     ds:byte_FF3C, 0
+00008805                 mov     ds:spell_active_flag, 0
 0000880A                 retn
 0000880B ; ---------------------------------------------------------------------------
 0000880B
@@ -6833,16 +6863,16 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000884D                 mov     al, ds:facing_direction
 00008850                 not     al
 00008852                 and     al, 1
-00008854                 mov     [si+3], al
+00008854                 mov     [si+magic_projectile.field_3], al
 00008857                 mov     al, ds:squat_flag
 0000885A                 and     al, 1
 0000885C                 add     al, ds:hero_head_y_in_viewport
 00008860                 add     al, ds:viewport_top_row_y
 00008864                 and     al, 3Fh
-00008866                 mov     [si+2], al
+00008866                 mov     [si+magic_projectile.y_rel], al
 00008869                 mov     al, ds:hero_x_in_viewport
 0000886C                 add     al, 4
-0000886E                 mov     ah, [si+3]
+0000886E                 mov     ah, [si+magic_projectile.field_3]
 00008871                 not     ah
 00008873                 and     ah, 1
 00008876                 add     al, ah
@@ -6853,14 +6883,14 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008884                 sub     ax, ds:mapWidth
 00008888
 00008888 loc_8888:                               ; ...
-00008888                 mov     [si], ax
-0000888A                 mov     byte ptr [si+9], 0
-0000888E                 mov     byte ptr [si+0Bh], 0
-00008892                 mov     byte ptr [si+0Dh], 0
-00008896                 mov     byte ptr [si+0Fh], 0
-0000889A                 mov     byte ptr [si+4], 0
-0000889E                 mov     byte ptr [si+5], 0
-000088A2                 mov     word ptr [si+10h], 0FFFFh
+00008888                 mov     [si+magic_projectile.x_rel], ax
+0000888A                 mov     [si+magic_projectile.field_9], 0
+0000888E                 mov     [si+magic_projectile.field_B], 0
+00008892                 mov     [si+magic_projectile.field_D], 0
+00008896                 mov     [si+magic_projectile.field_F], 0
+0000889A                 mov     [si+magic_projectile.field_4], 0
+0000889E                 mov     [si+magic_projectile.field_5], 0
+000088A2                 mov     word ptr [si+16], 0FFFFh ; terminate
 000088A7                 retn
 000088A7 init_magic_projectile endp
 000088A7
@@ -6956,7 +6986,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008941                 push    cx
 00008942                 test    byte ptr [si], 80h
 00008945                 jz      short loc_894A
-00008947                 call    sub_8C4F
+00008947                 call    mark_proximity_monster_as_spell_target
 0000894A
 0000894A loc_894A:                               ; ...
 0000894A                 inc     si
@@ -6983,8 +7013,8 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000896E                 mov     si, offset magic_projectiles
 00008971                 mov     cx, 4
 00008974
-00008974 loc_8974:                               ; ...
-00008974                 cmp     word ptr [si], 0FFFFh
+00008974 next_magic_projectile:                  ; ...
+00008974                 cmp     [si+magic_projectile.x_rel], 0FFFFh
 00008977                 jnz     short loc_897A
 00008979                 retn
 0000897A ; ---------------------------------------------------------------------------
@@ -6994,12 +7024,12 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000897B                 call    projectile_erase_old_tiles
 0000897E                 cmp     byte ptr [si+1], 0FFh
 00008982                 jnz     short loc_898B
-00008984                 mov     word ptr [si], 0FFFFh
+00008984                 mov     [si+magic_projectile.x_rel], 0FFFFh
 00008988                 jmp     loc_8A2B
 0000898B ; ---------------------------------------------------------------------------
 0000898B
 0000898B loc_898B:                               ; ...
-0000898B                 mov     bl, [si+5]
+0000898B                 mov     bl, [si+magic_projectile.field_5]
 0000898E                 add     bl, bl
 00008990                 add     bl, bl
 00008992                 xor     bh, bh
@@ -7007,27 +7037,27 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008997                 dec     al
 00008999                 add     al, al
 0000899B                 xor     ah, ah
-0000899D                 mov     di, offset off_8C81
-000089A0                 test    byte ptr [si+3], 0FFh
+0000899D                 mov     di, offset sequences0
+000089A0                 test    [si+magic_projectile.field_3], 0FFh
 000089A4                 jnz     short loc_89A9
-000089A6                 mov     di, offset off_8C8D
+000089A6                 mov     di, offset sequences1
 000089A9
 000089A9 loc_89A9:                               ; ...
 000089A9                 add     di, ax
 000089AB                 mov     di, [di]
 000089AD                 add     di, bx
-000089AF                 mov     ax, [si]
+000089AF                 mov     ax, [si+magic_projectile.x_rel]
 000089B1                 call    HorizDistToHero_35 ; * Calculates distance to hero and checks if within a 35-unit range.
 000089B1                                         ;  * Accounts for world-wrapping (map edges).
 000089B1                                         ;  * * @param monster_x The X coordinate of the monster (AX)
 000089B1                                         ;  * @return Positive value (35 - distance) if in range,
 000089B1                                         ;  * Sets Carry Flag (CF=1) if out of range.
 000089B4                 jb      short loc_8A2B
-000089B6                 mov     [si+6], bl
-000089B9                 mov     al, [si+2]
+000089B6                 mov     [si+magic_projectile.field_6], bl
+000089B9                 mov     al, [si+magic_projectile.y_rel]
 000089BC                 sub     al, ds:viewport_top_row_y
 000089C0                 and     al, 3Fh
-000089C2                 mov     [si+7], al
+000089C2                 mov     [si+magic_projectile.field_7], al
 000089C5                 mov     bh, al
 000089C7                 xchg    bh, bl
 000089C9                 push    si
@@ -7043,18 +7073,20 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000089DA                 mov     al, bh
 000089DC                 sub     al, 4
 000089DE                 cmp     al, 28
-000089E0                 jnb     short loc_8A20
+000089E0                 jnb     short outside_viewport
 000089E2                 inc     bp
 000089E3                 add     bl, ds:[bp+0]
 000089E7                 and     bl, 3Fh
 000089EA                 cmp     bl, 18
-000089ED                 jnb     short loc_8A20
+000089ED                 jnb     short outside_viewport
 000089EF                 mov     al, [di]
 000089F1                 push    di
 000089F2                 push    ax
 000089F3                 mov     ax, bx
 000089F5                 push    ax
-000089F6                 call    proximity_map_coords_to_viewport_offset
+000089F6                 call    proximity_map_coords_to_viewport_offset ; AL: proximity map relative y
+000089F6                                         ; AH: proximity map relative x
+000089F6                                         ; Return: address in DI
 000089F9                 pop     ax
 000089FA                 cmp     byte ptr [di], 0FFh
 000089FD                 jz      short loc_8A1E
@@ -7072,14 +7104,14 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008A15                                         ; DI: screen address
 00008A1A                 pop     si
 00008A1B                 pop     di
-00008A1C                 jmp     short loc_8A20
+00008A1C                 jmp     short outside_viewport
 00008A1E ; ---------------------------------------------------------------------------
 00008A1E
 00008A1E loc_8A1E:                               ; ...
 00008A1E                 pop     ax
 00008A1F                 pop     di
 00008A20
-00008A20 loc_8A20:                               ; ...
+00008A20 outside_viewport:                       ; ...
 00008A20                 pop     bp
 00008A21                 inc     si
 00008A22                 inc     si
@@ -7092,14 +7124,14 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008A2A                 pop     si
 00008A2B
 00008A2B loc_8A2B:                               ; ...
-00008A2B                 add     si, 10h
+00008A2B                 add     si, 16
 00008A2E                 pop     cx
-00008A2F                 loop    loc_8A33
+00008A2F                 loop    next_magic_projectile_
 00008A31                 jmp     short locret_8A36
 00008A33 ; ---------------------------------------------------------------------------
 00008A33
-00008A33 loc_8A33:                               ; ...
-00008A33                 jmp     loc_8974
+00008A33 next_magic_projectile_:                 ; ...
+00008A33                 jmp     next_magic_projectile
 00008A36 ; ---------------------------------------------------------------------------
 00008A36
 00008A36 locret_8A36:                            ; ...
@@ -7198,27 +7230,27 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008AD4
 00008AD4
 00008AD4 espada_move     proc near               ; ...
-00008AD4                 test    byte ptr [si+3], 80h
+00008AD4                 test    [si+magic_projectile.field_3], 80h
 00008AD8                 jz      short loc_8ADD
 00008ADA                 jmp     loc_8BB5
 00008ADD ; ---------------------------------------------------------------------------
 00008ADD
 00008ADD loc_8ADD:                               ; ...
-00008ADD                 inc     byte ptr [si+4]
-00008AE0                 cmp     byte ptr [si+4], 5
+00008ADD                 inc     [si+magic_projectile.field_4]
+00008AE0                 cmp     [si+magic_projectile.field_4], 5
 00008AE4                 jb      short loc_8AE9
 00008AE6                 jmp     loc_8BB5
 00008AE9 ; ---------------------------------------------------------------------------
 00008AE9
 00008AE9 loc_8AE9:                               ; ...
 00008AE9                 call    sub_8BC2
-00008AEC                 call    sub_8BF7
+00008AEC                 call    monster_is_in_spawn_range_and_clear
 00008AEF                 jnb     short loc_8AF2
 00008AF1                 retn
 00008AF2 ; ---------------------------------------------------------------------------
 00008AF2
 00008AF2 loc_8AF2:                               ; ...
-00008AF2                 or      byte ptr [si+3], 80h
+00008AF2                 or      [si+magic_projectile.field_3], 80h
 00008AF6                 retn
 00008AF6 espada_move     endp
 00008AF6
@@ -7227,15 +7259,15 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008AF7
 00008AF7
 00008AF7 saeta_move      proc near               ; ...
-00008AF7                 inc     byte ptr [si+4]
-00008AFA                 cmp     byte ptr [si+4], 0Ah
+00008AF7                 inc     [si+magic_projectile.field_4]
+00008AFA                 cmp     [si+magic_projectile.field_4], 0Ah
 00008AFE                 jb      short loc_8B03
 00008B00                 jmp     loc_8BB5
 00008B03 ; ---------------------------------------------------------------------------
 00008B03
 00008B03 loc_8B03:                               ; ...
 00008B03                 call    sub_8BC2
-00008B06                 jmp     sub_8BF7
+00008B06                 jmp     monster_is_in_spawn_range_and_clear
 00008B06 saeta_move      endp
 00008B06
 00008B09
@@ -7243,35 +7275,35 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008B09
 00008B09
 00008B09 fuego_move      proc near               ; ...
-00008B09                 inc     byte ptr [si+4]
-00008B0C                 cmp     byte ptr [si+4], 0Ch
+00008B09                 inc     [si+magic_projectile.field_4]
+00008B0C                 cmp     [si+magic_projectile.field_4], 0Ch
 00008B10                 jb      short loc_8B15
 00008B12                 jmp     loc_8BB5
 00008B15 ; ---------------------------------------------------------------------------
 00008B15
 00008B15 loc_8B15:                               ; ...
-00008B15                 cmp     byte ptr [si+4], 4
+00008B15                 cmp     [si+magic_projectile.field_4], 4
 00008B19                 jnb     short loc_8B20
 00008B1B                 call    loc_8BD0
 00008B1E                 jmp     short loc_8B61
 00008B20 ; ---------------------------------------------------------------------------
 00008B20
 00008B20 loc_8B20:                               ; ...
-00008B20                 and     byte ptr [si+5], 3
-00008B24                 inc     byte ptr [si+5]
-00008B27                 cmp     byte ptr [si+4], 3
+00008B20                 and     [si+magic_projectile.field_5], 3
+00008B24                 inc     [si+magic_projectile.field_5]
+00008B27                 cmp     [si+magic_projectile.field_4], 3
 00008B2B                 jz      short loc_8B61
-00008B2D                 mov     ax, [si]
+00008B2D                 mov     ax, [si+magic_projectile.x_rel]
 00008B2F                 call    HorizDistToHero_35 ; * Calculates distance to hero and checks if within a 35-unit range.
 00008B2F                                         ;  * Accounts for world-wrapping (map edges).
 00008B2F                                         ;  * * @param monster_x The X coordinate of the monster (AX)
 00008B2F                                         ;  * @return Positive value (35 - distance) if in range,
 00008B2F                                         ;  * Sets Carry Flag (CF=1) if out of range.
 00008B32                 jb      short loc_8B61
-00008B34                 cmp     bl, 21h ; '!'
+00008B34                 cmp     bl, 33
 00008B37                 jnb     short loc_8B61
 00008B39                 mov     ah, bl
-00008B3B                 mov     al, [si+2]
+00008B3B                 mov     al, [si+magic_projectile.y_rel]
 00008B3E                 call    coords_in_ax_to_proximity_map_offset_in_di ; uint8_t y = AL
 00008B3E                                         ; uint8_t x = AH
 00008B3E                                         ; y &= 0x3F; // Clamp Y to 0-63
@@ -7286,11 +7318,11 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008B52                 mov     al, [di+1]
 00008B55                 call    is_non_blocking_tile ; ZF if can pass
 00008B58                 jnz     short loc_8B61
-00008B5A                 inc     byte ptr [si+2]
-00008B5D                 and     byte ptr [si+2], 3Fh
+00008B5A                 inc     [si+magic_projectile.y_rel]
+00008B5D                 and     [si+magic_projectile.y_rel], 3Fh
 00008B61
 00008B61 loc_8B61:                               ; ...
-00008B61                 jmp     sub_8BF7
+00008B61                 jmp     monster_is_in_spawn_range_and_clear
 00008B61 fuego_move      endp
 00008B61
 00008B64
@@ -7298,16 +7330,16 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008B64
 00008B64
 00008B64 rascar_move     proc near               ; ...
-00008B64                 inc     byte ptr [si+4]
-00008B67                 cmp     byte ptr [si+4], 0Ch
+00008B64                 inc     [si+magic_projectile.field_4]
+00008B67                 cmp     [si+magic_projectile.field_4], 0Ch
 00008B6B                 jnb     short loc_8B9D
 00008B6D                 mov     cx, 4
 00008B70
 00008B70 loc_8B70:                               ; ...
 00008B70                 push    cx
-00008B71                 add     byte ptr [si+2], 2
-00008B75                 and     byte ptr [si+2], 3Fh
-00008B79                 call    sub_8BF7
+00008B71                 add     [si+magic_projectile.y_rel], 2
+00008B75                 and     [si+magic_projectile.y_rel], 3Fh
+00008B79                 call    monster_is_in_spawn_range_and_clear
 00008B7C                 add     si, 10h
 00008B7F                 pop     cx
 00008B80                 loop    loc_8B70
@@ -7319,15 +7351,15 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008B83
 00008B83
 00008B83 agua_move       proc near               ; ...
-00008B83                 inc     byte ptr [si+4]
-00008B86                 cmp     byte ptr [si+4], 0Ah
+00008B83                 inc     [si+magic_projectile.field_4]
+00008B86                 cmp     [si+magic_projectile.field_4], 0Ah
 00008B8A                 jnb     short loc_8BA5
 00008B8C                 mov     cx, 3
 00008B8F
 00008B8F loc_8B8F:                               ; ...
 00008B8F                 push    cx
 00008B90                 call    sub_8BC2
-00008B93                 call    sub_8BF7
+00008B93                 call    monster_is_in_spawn_range_and_clear
 00008B96                 add     si, 10h
 00008B99                 pop     cx
 00008B9A                 loop    loc_8B8F
@@ -7358,18 +7390,18 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008BC2
 00008BC2
 00008BC2 sub_8BC2        proc near               ; ...
-00008BC2                 mov     al, [si+5]
+00008BC2                 mov     al, [si+magic_projectile.field_5]
 00008BC5                 inc     al
 00008BC7                 cmp     al, 3
 00008BC9                 jb      short loc_8BCD
 00008BCB                 xor     al, al
 00008BCD
 00008BCD loc_8BCD:                               ; ...
-00008BCD                 mov     [si+5], al
+00008BCD                 mov     [si+magic_projectile.field_5], al
 00008BD0
 00008BD0 loc_8BD0:                               ; ...
-00008BD0                 mov     ax, [si]
-00008BD2                 mov     bl, [si+3]
+00008BD0                 mov     ax, [si+magic_projectile.x_rel]
+00008BD2                 mov     bl, [si+magic_projectile.field_3]
 00008BD5                 and     bx, 1
 00008BD8                 add     bx, bx
 00008BDA                 add     bx, bx
@@ -7396,7 +7428,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008BF7 ; =============== S U B R O U T I N E =======================================
 00008BF7
 00008BF7
-00008BF7 sub_8BF7        proc near               ; ...
+00008BF7 monster_is_in_spawn_range_and_clear proc near ; ...
 00008BF7                 test    ds:is_boss_cavern, 0FFh
 00008BFC                 jz      short loc_8C07
 00008BFE                 test    ds:byte_FF2E, 0FFh
@@ -7406,7 +7438,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008C07 ; ---------------------------------------------------------------------------
 00008C07
 00008C07 loc_8C07:                               ; ...
-00008C07                 mov     ax, [si]
+00008C07                 mov     ax, [si+magic_projectile.x_rel]
 00008C09                 call    HorizDistToHero_35 ; * Calculates distance to hero and checks if within a 35-unit range.
 00008C09                                         ;  * Accounts for world-wrapping (map edges).
 00008C09                                         ;  * * @param monster_x The X coordinate of the monster (AX)
@@ -7426,14 +7458,14 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008C1B ; ---------------------------------------------------------------------------
 00008C1B
 00008C1B loc_8C1B:                               ; ...
-00008C1B                 mov     al, [si+2]
+00008C1B                 mov     al, [si+magic_projectile.y_rel]
 00008C1E                 call    coords_in_ax_to_proximity_map_offset_in_di ; uint8_t y = AL
 00008C1E                                         ; uint8_t x = AH
 00008C1E                                         ; y &= 0x3F; // Clamp Y to 0-63
 00008C1E                                         ; uint16_t di = (y * 36) + x + 0xE000;
 00008C21                 push    si
 00008C22                 xchg    di, si
-00008C24                 sub     si, 25h ; '%'
+00008C24                 sub     si, 37
 00008C27                 call    wrap_map_from_below ; if (si < 0E000h) si += 900h
 00008C2A                 mov     ds:byte_9F2A, 0
 00008C2F                 mov     cx, 3
@@ -7444,11 +7476,11 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008C36
 00008C36 loc_8C36:                               ; ...
 00008C36                 push    cx
-00008C37                 call    sub_8C4F
+00008C37                 call    mark_proximity_monster_as_spell_target
 00008C3A                 pop     cx
 00008C3B                 inc     si
 00008C3C                 loop    loc_8C36
-00008C3E                 add     si, 21h ; '!'
+00008C3E                 add     si, 33
 00008C41                 call    wrap_map_from_above ; if (si >= 0E900h) si -= 900h
 00008C44                 pop     cx
 00008C45                 loop    loc_8C32
@@ -7457,13 +7489,13 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008C4B                 add     al, al
 00008C4D                 cmc
 00008C4E                 retn
-00008C4E sub_8BF7        endp
+00008C4E monster_is_in_spawn_range_and_clear endp
 00008C4E
 00008C4F
 00008C4F ; =============== S U B R O U T I N E =======================================
 00008C4F
 00008C4F
-00008C4F sub_8C4F        proc near               ; ...
+00008C4F mark_proximity_monster_as_spell_target proc near ; ...
 00008C4F                 call    get_dst_monster_flags ; CF: no monster
 00008C4F                                         ; NC: active monster; al=type, bx=monster struct
 00008C52                 jnb     short loc_8C55
@@ -7477,32 +7509,32 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008C5A ; ---------------------------------------------------------------------------
 00008C5A
 00008C5A loc_8C5A:                               ; ...
-00008C5A                 test    byte ptr [bx+5], 20h
+00008C5A                 test    [bx+monster.ai_flags], 20h
 00008C5E                 jz      short loc_8C61
 00008C60                 retn
 00008C61 ; ---------------------------------------------------------------------------
 00008C61
 00008C61 loc_8C61:                               ; ...
-00008C61                 mov     al, [bx+5]
+00008C61                 mov     al, [bx+monster.ai_flags]
 00008C64                 or      al, 40h
 00008C66                 and     al, 0E0h
 00008C68                 mov     ah, ds:current_magic_spell
 00008C6C                 inc     ah
 00008C6E                 or      al, ah
-00008C70                 mov     [bx+5], al
+00008C70                 mov     [bx+monster.ai_flags], al
 00008C73                 mov     ds:byte_9F2A, 0FFh
 00008C78                 retn
-00008C78 sub_8C4F        endp
+00008C78 mark_proximity_monster_as_spell_target endp
 00008C78
 00008C78 ; ---------------------------------------------------------------------------
 00008C79 byte_8C79       db 0, 0, 1, 0, 0, 1, 1, 1 ; ...
-00008C81 off_8C81        dw offset byte_8C99     ; ...
+00008C81 sequences0      dw offset byte_8C99     ; ...
 00008C83                 dw offset byte_8CA5
 00008C85                 dw offset byte_8CBD
 00008C87                 dw offset byte_8CE5
 00008C89                 dw offset byte_8CFD
 00008C8B                 dw offset byte_8D01
-00008C8D off_8C8D        dw offset byte_8C99     ; ...
+00008C8D sequences1      dw offset byte_8C99     ; ...
 00008C8F                 dw offset byte_8CB1
 00008C91                 dw offset byte_8CD1
 00008C93                 dw offset byte_8CF1
@@ -7551,7 +7583,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008D41                                         ;  * Sets Carry Flag (CF=1) if out of range.
 00008D44                 jb      short skip
 00008D46                 mov     [si+monster.x_rel], bl
-00008D49                 call    sub_8DAE
+00008D49                 call    place_monster_in_proximity_and_run_ai
 00008D4C                 cmp     byte ptr [si+1], 0FFh ; monster x coord high byte; ff => stationary item
 00008D50                 jz      short skip
 00008D52                 mov     ax, word ptr [si+monster.currY]
@@ -7569,7 +7601,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008D64                                         ; when position is already occupied by monster,
 00008D64                                         ; we use second layer: 128 bytes of additional buffer
 00008D64                                         ; (1 byte per monster id)
-00008D68                 test    [si+monster.type_], 10001b
+00008D68                 test    [si+monster.flags], 10001b
 00008D6C                 jnz     short skip
 00008D6E                 test    [si+monster.state_flags], 10000b
 00008D72                 jz      short skip
@@ -7611,17 +7643,17 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008DAE ; =============== S U B R O U T I N E =======================================
 00008DAE
 00008DAE
-00008DAE sub_8DAE        proc near               ; ...
+00008DAE place_monster_in_proximity_and_run_ai proc near ; ...
 00008DAE                 mov     ax, word ptr [si+monster.currY]
 00008DB1                 call    coords_in_ax_to_proximity_map_offset_in_di ; uint8_t y = AL
 00008DB1                                         ; uint8_t x = AH
 00008DB1                                         ; y &= 0x3F; // Clamp Y to 0-63
 00008DB1                                         ; uint16_t di = (y * 36) + x + 0xE000;
-00008DB4                 mov     al, [si+monster.field_5]
+00008DB4                 mov     al, [si+monster.ai_flags]
 00008DB7                 and     al, 0DFh
 00008DB9                 test    al, 40h
 00008DBB                 jz      short loc_8DC7
-00008DBD                 test    [si+monster.type_], 20h
+00008DBD                 test    [si+monster.flags], 20h
 00008DC1                 jnz     short loc_8DC5
 00008DC3                 or      al, 20h
 00008DC5
@@ -7629,7 +7661,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008DC5                 and     al, 0BFh
 00008DC7
 00008DC7 loc_8DC7:                               ; ...
-00008DC7                 mov     [si+monster.field_5], al
+00008DC7                 mov     [si+monster.ai_flags], al
 00008DCA                 mov     al, ds:monster_index
 00008DCD                 mov     bx, offset proximity_second_layer ; proximity map is designed to keep only one item
 00008DCD                                         ; at given address. So when we need to put other object,
@@ -7638,7 +7670,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008DCD                                         ; (1 byte per monster id)
 00008DD0                 xlat
 00008DD1                 mov     [di], al
-00008DD3                 test    [si+monster.type_], 11h
+00008DD3                 test    [si+monster.flags], 11h
 00008DD7                 jnz     short loc_8DF1
 00008DD9                 test    [si+monster.state_flags], 10h
 00008DDD                 jz      short loc_8DF1
@@ -7652,7 +7684,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008DEF                 mov     [di], al
 00008DF1
 00008DF1 loc_8DF1:                               ; ...
-00008DF1                 test    [si+monster.type_], 11000b
+00008DF1                 test    [si+monster.flags], 11000b
 00008DF5                 jnz     short loc_8DFC
 00008DF7                 jmp     cs:Monster_AI_proc
 00008DFC ; ---------------------------------------------------------------------------
@@ -7660,7 +7692,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008DFC loc_8DFC:                               ; ...
 00008DFC                 jmp     short $+2
 00008DFE                 xor     bh, bh
-00008E00                 mov     bl, [si+monster.type_]
+00008E00                 mov     bl, [si+monster.flags]
 00008E03                 and     bl, 1Fh
 00008E06                 sub     bl, 10h
 00008E09                 jnb     short loc_8E0E
@@ -7689,36 +7721,36 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008E32 ; ---------------------------------------------------------------------------
 00008E32
 00008E32 flag_10:                                ; ...
-00008E32                 test    [si+monster.field_A], 1
+00008E32                 test    [si+monster.ai_timer], 1
 00008E36                 jnz     short loc_8E54
-00008E38                 test    [si+monster.field_5], 100000b
+00008E38                 test    [si+monster.ai_flags], 100000b
 00008E3C                 jnz     short loc_8E3F
 00008E3E                 retn
 00008E3F ; ---------------------------------------------------------------------------
 00008E3F
 00008E3F loc_8E3F:                               ; ...
 00008E3F                 mov     ds:soundFX_request, 12h
-00008E44                 and     [si+monster.field_5], 10010000b
-00008E48                 and     [si+monster.type_], 1111111b
-00008E4C                 or      [si+monster.type_], 1100000b
-00008E50                 or      [si+monster.field_A], 1
+00008E44                 and     [si+monster.ai_flags], 10010000b
+00008E48                 and     [si+monster.flags], 1111111b
+00008E4C                 or      [si+monster.flags], 1100000b
+00008E50                 or      [si+monster.ai_timer], 1
 00008E54
 00008E54 loc_8E54:                               ; ...
-00008E54                 add     [si+monster.field_6], 80h
+00008E54                 add     [si+monster.anim_counter], 80h
 00008E58                 jb      short loc_8E5B
 00008E5A                 retn
 00008E5B ; ---------------------------------------------------------------------------
 00008E5B
 00008E5B loc_8E5B:                               ; ...
-00008E5B                 inc     [si+monster.field_6]
-00008E5E                 cmp     [si+monster.field_6], 4
+00008E5B                 inc     [si+monster.anim_counter]
+00008E5E                 cmp     [si+monster.anim_counter], 4
 00008E62                 jnb     short loc_8E65
 00008E64                 retn
 00008E65 ; ---------------------------------------------------------------------------
 00008E65
 00008E65 loc_8E65:                               ; ...
-00008E65                 mov     [si+monster.field_6], 0
-00008E69                 mov     al, [si+monster.field_9]
+00008E65                 mov     [si+monster.anim_counter], 0
+00008E69                 mov     al, [si+monster.ai_state]
 00008E6C                 or      al, al
 00008E6E                 jnz     short loc_8E73
 00008E70                 jmp     loc_914C
@@ -7732,14 +7764,14 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008E7D                 mov     [si+monster.counter], 0
 00008E81
 00008E81 loc_8E81:                               ; ...
-00008E81                 mov     [si+monster.type_], al
-00008E84                 and     [si+monster.field_5], 80h
-00008E88                 mov     [si+monster.field_9], 0
+00008E81                 mov     [si+monster.flags], al
+00008E84                 and     [si+monster.ai_flags], 80h
+00008E88                 mov     [si+monster.ai_state], 0
 00008E8C                 retn
 00008E8D ; ---------------------------------------------------------------------------
 00008E8D
 00008E8D flag_11:                                ; ...
-00008E8D                 test    [si+monster.field_A], 1
+00008E8D                 test    [si+monster.ai_timer], 1
 00008E91                 jnz     short loc_8ECA
 00008E93                 mov     ah, [si+monster.currY]
 00008E96                 sub     ah, 3
@@ -7768,33 +7800,33 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008EC0
 00008EC0 loc_8EC0:                               ; ...
 00008EC0                 mov     ds:soundFX_request, 12h
-00008EC5                 or      [si+monster.field_A], 1
+00008EC5                 or      [si+monster.ai_timer], 1
 00008EC9                 retn
 00008ECA ; ---------------------------------------------------------------------------
 00008ECA
 00008ECA loc_8ECA:                               ; ...
-00008ECA                 and     [si+monster.type_], 7Fh
+00008ECA                 and     [si+monster.flags], 7Fh
 00008ECE                 call    move_monster_S
-00008ED1                 add     [si+monster.field_6], 80h
+00008ED1                 add     [si+monster.anim_counter], 80h
 00008ED5                 jb      short loc_8ED8
 00008ED7                 retn
 00008ED8 ; ---------------------------------------------------------------------------
 00008ED8
 00008ED8 loc_8ED8:                               ; ...
-00008ED8                 inc     [si+monster.field_6]
-00008EDB                 cmp     [si+monster.field_6], 4
+00008ED8                 inc     [si+monster.anim_counter]
+00008EDB                 cmp     [si+monster.anim_counter], 4
 00008EDF                 jnb     short loc_8EE2
 00008EE1                 retn
 00008EE2 ; ---------------------------------------------------------------------------
 00008EE2
 00008EE2 loc_8EE2:                               ; ...
-00008EE2                 mov     [si+monster.field_6], 0
+00008EE2                 mov     [si+monster.anim_counter], 0
 00008EE6                 jmp     loc_914C
 00008EE9 ; ---------------------------------------------------------------------------
 00008EE9
 00008EE9 flag_12:                                ; ...
-00008EE9                 inc     [si+monster.field_6]
-00008EEC                 cmp     [si+monster.field_6], 3
+00008EE9                 inc     [si+monster.anim_counter]
+00008EEC                 cmp     [si+monster.anim_counter], 3
 00008EF0                 jz      short loc_8EF3
 00008EF2                 retn
 00008EF3 ; ---------------------------------------------------------------------------
@@ -7804,16 +7836,16 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008EF6 ; ---------------------------------------------------------------------------
 00008EF6
 00008EF6 flag_13:                                ; ...
-00008EF6                 call    sub_9190
+00008EF6                 call    check_monster_aligned_to_hero_and_tick
 00008EF9                 jnb     short loc_8EFC
 00008EFB                 retn
 00008EFC ; ---------------------------------------------------------------------------
 00008EFC
 00008EFC loc_8EFC:                               ; ...
 00008EFC                 mov     ds:soundFX_request, 14h
-00008F01                 test    [si+monster.field_6], 0Fh
+00008F01                 test    [si+monster.anim_counter], 0Fh
 00008F05                 jnz     short chest
-00008F07                 mov     al, [si+monster.field_9]
+00008F07                 mov     al, [si+monster.ai_state]
 00008F0A                 test    al, 10h
 00008F0C                 jz      short loc_8F18
 00008F0E                 or      al, 60h
@@ -7821,14 +7853,14 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008F14                 mov     [si+monster.counter], 0
 00008F18
 00008F18 loc_8F18:                               ; ...
-00008F18                 mov     [si+monster.type_], al
-00008F1B                 mov     [si+monster.field_9], 0
+00008F18                 mov     [si+monster.flags], al
+00008F1B                 mov     [si+monster.ai_state], 0
 00008F1F                 retn
 00008F20 ; ---------------------------------------------------------------------------
 00008F20
 00008F20 chest:                                  ; ...
 00008F20                 call    loc_914C
-00008F23                 mov     bl, [si+monster.field_6]
+00008F23                 mov     bl, [si+monster.anim_counter]
 00008F26                 and     bl, 0Fh         ; 1..8
 00008F29                 dec     bl
 00008F2B                 add     bl, bl
@@ -7904,16 +7936,16 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00008FAB
 00008FAB flag_14_15_1b:                          ; ...
 00008FAB                 call    move_monster_S
-00008FAE                 inc     [si+monster.field_6]
-00008FB1                 and     [si+monster.field_6], 3
-00008FB5                 call    sub_9190
+00008FAE                 inc     [si+monster.anim_counter]
+00008FB1                 and     [si+monster.anim_counter], 3
+00008FB5                 call    check_monster_aligned_to_hero_and_tick
 00008FB8                 jnb     short almas_picked_up
 00008FBA                 retn
 00008FBB ; ---------------------------------------------------------------------------
 00008FBB
 00008FBB almas_picked_up:                        ; ...
 00008FBB                 mov     ds:soundFX_request, 10h
-00008FC0                 mov     al, [si+monster.type_]
+00008FC0                 mov     al, [si+monster.flags]
 00008FC3                 and     al, 0Fh         ; monster almas price:
 00008FC3                                         ; 4 => 1 almas
 00008FC3                                         ; 5 => 10 almas
@@ -7964,7 +7996,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00009008 ; ---------------------------------------------------------------------------
 00009008
 00009008 flag_18:                                ; ...
-00009008                 call    sub_9190
+00009008                 call    check_monster_aligned_to_hero_and_tick
 0000900B                 jnb     short loc_900E
 0000900D                 retn
 0000900E ; ---------------------------------------------------------------------------
@@ -7972,13 +8004,13 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000900E loc_900E:                               ; ...
 0000900E                 mov     dx, offset you_have_recovered_str
 00009011                 call    render_notification_string
-00009014                 add     byte ptr ds:word_C6, 0Ah
+00009014                 add     byte ptr ds:healing_potion_timer, 0Ah
 00009019                 jmp     loc_914C
 0000901C ; ---------------------------------------------------------------------------
 0000901C
 0000901C flag_19:                                ; ...
 0000901C                 call    move_monster_S
-0000901F                 call    sub_9190
+0000901F                 call    check_monster_aligned_to_hero_and_tick
 00009022                 jnb     short loc_9025
 00009024                 retn
 00009025 ; ---------------------------------------------------------------------------
@@ -7991,15 +8023,15 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00009030                 shr     ax, 1
 00009032                 shr     ax, 1
 00009034                 inc     ax
-00009035                 add     ds:word_C6, ax
+00009035                 add     ds:healing_potion_timer, ax
 00009039                 jmp     loc_914C
 0000903C ; ---------------------------------------------------------------------------
 0000903C
 0000903C flag_1c:                                ; ...
 0000903C                 mov     [si+monster.counter], 0
-00009040                 test    [si+monster.field_9], 1
+00009040                 test    [si+monster.ai_state], 1
 00009044                 jnz     short loc_9070
-00009046                 call    sub_9190
+00009046                 call    check_monster_aligned_to_hero_and_tick
 00009049                 jnb     short loc_904C
 0000904B                 retn
 0000904C ; ---------------------------------------------------------------------------
@@ -8007,9 +8039,9 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000904C loc_904C:                               ; ...
 0000904C                 mov     ds:soundFX_request, 11h
 00009051                 or      [si+monster.state_flags], 80h
-00009055                 or      [si+monster.field_9], 1
-00009059                 mov     [si+monster.field_A], 0EBh
-0000905D                 mov     bl, [si+monster.field_6] ; sign index
+00009055                 or      [si+monster.ai_state], 1
+00009059                 mov     [si+monster.ai_timer], 0EBh
+0000905D                 mov     bl, [si+monster.anim_counter] ; sign index
 00009060                 add     bl, bl
 00009062                 xor     bh, bh
 00009064                 add     bx, ds:cavern_signs_rendering_info
@@ -8021,14 +8053,14 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00009070 ; ---------------------------------------------------------------------------
 00009070
 00009070 loc_9070:                               ; ...
-00009070                 test    [si+monster.field_A], 0FFh
+00009070                 test    [si+monster.ai_timer], 0FFh
 00009074                 jz      short loc_907A
-00009076                 inc     [si+monster.field_A]
+00009076                 inc     [si+monster.ai_timer]
 00009079                 retn
 0000907A ; ---------------------------------------------------------------------------
 0000907A
 0000907A loc_907A:                               ; ...
-0000907A                 and     [si+monster.field_9], 0FEh
+0000907A                 and     [si+monster.ai_state], 0FEh
 0000907E                 retn
 0000907F ; ---------------------------------------------------------------------------
 0000907F
@@ -8100,7 +8132,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000090D3 loc_90D3:                               ; ...
 000090D3                 push    dx
 000090D4                 call    move_monster_S
-000090D7                 call    sub_9190
+000090D7                 call    check_monster_aligned_to_hero_and_tick
 000090DA                 pop     dx
 000090DB                 jnb     short loc_90DE
 000090DD                 retn
@@ -8182,7 +8214,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00009163                 or      [di], al
 00009165                 mov     word ptr [si+0Bh], 0FFFFh
 0000916A                 retn
-0000916A sub_8DAE        endp
+0000916A place_monster_in_proximity_and_run_ai endp
 0000916A
 0000916B
 0000916B ; =============== S U B R O U T I N E =======================================
@@ -8219,7 +8251,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00009190 ; =============== S U B R O U T I N E =======================================
 00009190
 00009190
-00009190 sub_9190        proc near               ; ...
+00009190 check_monster_aligned_to_hero_and_tick proc near ; ...
 00009190                 test    ds:invincibility_flag, 0FFh
 00009195                 stc
 00009196                 jz      short loc_9199
@@ -8276,7 +8308,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000091E3 loc_91E3:                               ; ...
 000091E3                 stc
 000091E4                 retn
-000091E4 sub_9190        endp
+000091E4 check_monster_aligned_to_hero_and_tick endp
 000091E4
 000091E5
 000091E5 ; =============== S U B R O U T I N E =======================================
@@ -9063,11 +9095,11 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000958D                 mov     al, [si+monster.spwnY]
 00009590                 mov     [si+monster.currY], al
 00009593                 mov     al, [si+monster.type]
-00009596                 mov     [si+monster.type_], al
-00009599                 mov     [si+monster.field_6], 10h
-0000959D                 mov     [si+monster.field_5], 0
-000095A1                 mov     word ptr [si+monster.field_9], 0
-000095A6                 mov     [si+monster.field_8], 0
+00009596                 mov     [si+monster.flags], al
+00009599                 mov     [si+monster.anim_counter], 10h
+0000959D                 mov     [si+monster.ai_flags], 0
+000095A1                 mov     word ptr [si+monster.ai_state], 0
+000095A6                 mov     [si+monster.hp], 0
 000095AA                 mov     bl, ds:monster_index
 000095AE                 xor     bh, bh
 000095B0                 mov     ds:proximity_second_layer[bx], 0 ; proximity map is designed to keep only one item
@@ -9133,17 +9165,17 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00009616                 and     al, 3Fh
 00009618                 mov     [si+(monster.currY+10h)], al
 0000961B                 mov     al, [si+monster.type]
-0000961E                 mov     [si+monster.type_], al
+0000961E                 mov     [si+monster.flags], al
 00009621                 inc     al
-00009623                 mov     [si+(monster.type_+10h)], al
-00009626                 mov     [si+monster.field_6], 10h
-0000962A                 mov     [si+(monster.field_6+10h)], 10h
-0000962E                 mov     [si+monster.field_5], 0
-00009632                 mov     [si+(monster.field_5+10h)], 0
-00009636                 mov     word ptr [si+monster.field_9], 0
-0000963B                 mov     word ptr [si+(monster.field_9+10h)], 0
-00009640                 mov     [si+monster.field_8], 0
-00009644                 mov     [si+(monster.field_8+10h)], 0
+00009623                 mov     [si+(monster.flags+10h)], al
+00009626                 mov     [si+monster.anim_counter], 10h
+0000962A                 mov     [si+(monster.anim_counter+10h)], 10h
+0000962E                 mov     [si+monster.ai_flags], 0
+00009632                 mov     [si+(monster.ai_flags+10h)], 0
+00009636                 mov     word ptr [si+monster.ai_state], 0
+0000963B                 mov     word ptr [si+(monster.ai_state+10h)], 0
+00009640                 mov     [si+monster.hp], 0
+00009644                 mov     [si+(monster.hp+10h)], 0
 00009648                 and     [si+(monster.state_flags+10h)], 0F0h
 0000964C                 mov     bl, ds:monster_index
 00009650                 xor     bh, bh
@@ -9245,7 +9277,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000096C1
 000096C1
 000096C1 monster_split_or_die proc near          ; ...
-000096C1                 mov     al, [si+monster.type_]
+000096C1                 mov     al, [si+monster.flags]
 000096C4                 test    al, 10h
 000096C6                 jnz     short Check_Vertical_Distance_Between_Hero_And_Monster
 000096C8                 and     al, 0Fh
@@ -9257,17 +9289,17 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000096D5 ; ---------------------------------------------------------------------------
 000096D5
 000096D5 Check_Vertical_Distance_Between_Hero_And_Monster: ; ...
-000096D5                 mov     [si+monster.field_6], 0
-000096D9                 or      [si+monster.type_], 68h
-000096DD                 and     [si+monster.field_5], 80h
+000096D5                 mov     [si+monster.anim_counter], 0
+000096D9                 or      [si+monster.flags], 68h
+000096DD                 and     [si+monster.ai_flags], 80h
 000096E1                 test    [si+monster.state_flags], 10h ; big monster?
 000096E5                 jz      short usual_monster
-000096E7                 test    [si+monster.type_], 1
+000096E7                 test    [si+monster.flags], 1
 000096EB                 jnz     short usual_monster
-000096ED                 mov     [si+monster.field_6], 80h
-000096F1                 mov     [si+(monster.field_6+10h)], 0
-000096F5                 or      [si+(monster.type_+10h)], 68h
-000096F9                 and     [si+(monster.field_5+10h)], 80h
+000096ED                 mov     [si+monster.anim_counter], 80h
+000096F1                 mov     [si+(monster.anim_counter+10h)], 0
+000096F5                 or      [si+(monster.flags+10h)], 68h
+000096F9                 and     [si+(monster.ai_flags+10h)], 80h
 000096FD
 000096FD usual_monster:                          ; ...
 000096FD                 mov     al, [si+monster.currY]
@@ -9442,22 +9474,22 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000097B5
 000097B5
 000097B5 Hero_Hits_monster proc near             ; ...
-000097B5                 mov     al, [si+monster.field_5]
+000097B5                 mov     al, [si+monster.ai_flags]
 000097B8                 and     al, 1Fh
 000097BA                 call    Get_Stats       ; al=0: return ah=hero_level/2
 000097BA                                         ; al=1: return ah=sword_total_damage
 000097BA                                         ; al=2..8: return ah=byte_98BE[al-2]
 000097BA                                         ; al=9: NOP
-000097BD                 mov     al, [si+monster.field_8]
+000097BD                 mov     al, [si+monster.hp]
 000097C0                 sub     al, ah
 000097C2                 jbe     short loc_97CD
-000097C4                 mov     [si+monster.field_8], al
+000097C4                 mov     [si+monster.hp], al
 000097C7                 mov     byte ptr ds:0FF75h, 6
 000097CC                 retn
 000097CD ; ---------------------------------------------------------------------------
 000097CD
 000097CD loc_97CD:                               ; ...
-000097CD                 test    [si+monster.type_], 1
+000097CD                 test    [si+monster.flags], 1
 000097D1                 jnz     short loc_97D9
 000097D3                 test    [si+monster.state_flags], 10h ; extended monsters? splitting ones?
 000097D7                 jnz     short loc_9815
@@ -9470,7 +9502,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000097E2
 000097E2 loc_97E2:                               ; ...
 000097E2                 mov     di, ds:word_A006 ; =a240
-000097E6                 mov     bl, [si+monster.type_]
+000097E6                 mov     bl, [si+monster.flags]
 000097E9                 and     bl, 7
 000097EC                 xor     bh, bh
 000097EE                 add     bx, bx
@@ -9505,7 +9537,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000981E
 0000981E loc_981E:                               ; ...
 0000981E                 mov     di, ds:word_A006
-00009822                 mov     bl, [si+monster.type_]
+00009822                 mov     bl, [si+monster.flags]
 00009825                 and     bl, 7
 00009828                 xor     bh, bh
 0000982A                 add     bx, bx
@@ -9645,7 +9677,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000098E1                                         ;  * Sets Carry Flag (CF=1) if out of range.
 000098E4                 pop     dx
 000098E5                 jnb     short loc_98ED
-000098E7                 test    [di+monster.type_], 10h
+000098E7                 test    [di+monster.flags], 10h
 000098EB                 jz      short loc_98FA
 000098ED
 000098ED loc_98ED:                               ; ...
@@ -9669,10 +9701,10 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000098FC
 000098FC process_hero_death proc near            ; ...
 000098FC                 call    cs:Flush_Ui_Element_If_Dirty_proc
-00009901                 mov     ds:byte_FF43, 0
+00009901                 mov     ds:sword_swing_flag, 0
 00009906                 mov     ds:jump_phase_flags, 0 ; 0: on ground, ff: ascending, 7f: descending, 80h: climbing down off rope
 0000990B                 mov     ds:squat_flag, 0
-00009910                 mov     ds:byte_FF36, 0
+00009910                 mov     ds:hero_damage_this_frame, 0
 00009915                 mov     ds:invincibility_flag, 0FFh
 0000991A                 mov     ds:byte_9F28, 0
 0000991F                 mov     ds:byte_9F29, 0
@@ -9681,17 +9713,17 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00009929 repeat:                                 ; ...
 00009929                 mov     ds:byte_E7, 0
 0000992E                 mov     ds:on_rope_flags, 0 ; 0: on ground, ff: on rope, 80h: transition from rope to ground
-00009933                 mov     ds:byte_FF37, 0
+00009933                 mov     ds:hero_sprite_hidden, 0
 00009938                 call    main_update_render
 0000993B                 mov     ax, offset repeat
 0000993E                 push    ax
 0000993F                 call    airborne_movement
 00009942                 pop     ax
-00009943                 mov     ds:byte_FF37, 0
+00009943                 mov     ds:hero_sprite_hidden, 0
 00009948
 00009948 loc_9948:                               ; ...
 00009948                 call    main_update_render
-0000994B                 mov     ds:byte_FF37, 0
+0000994B                 mov     ds:hero_sprite_hidden, 0
 00009950                 cmp     ds:byte_E7, 2
 00009955                 jz      short loc_9972
 00009957                 inc     ds:byte_9F28
@@ -9712,7 +9744,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000997B                 jz      short loc_998B
 0000997D                 test    ds:byte_9F29, 1
 00009982                 jz      short loc_9948
-00009984                 mov     ds:byte_FF37, 0FFh
+00009984                 mov     ds:hero_sprite_hidden, 0FFh
 00009989                 jmp     short loc_9948
 0000998B ; ---------------------------------------------------------------------------
 0000998B
@@ -9727,15 +9759,15 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 00009998                 mov     al, cl
 0000999A                 and     al, 1
 0000999C                 dec     al
-0000999E                 mov     ds:byte_FF37, al
+0000999E                 mov     ds:hero_sprite_hidden, al
 000099A1                 loop    loc_9993
 000099A3                 mov     ax, 1
 000099A6                 int     60h             ; mscadlib.drv
 000099A8                 call    cs:Fade_To_Black_Dithered_proc
-000099AD                 test    ds:byte_49, 0FFh
+000099AD                 test    ds:is_death_already_processed, 0FFh
 000099B2                 jz      short loc_99BB
 000099B4                 mov     ds:last_sage_visited, 80h
-000099B9                 jmp     short loc_99D8
+000099B9                 jmp     short skip_death_math
 000099BB ; ---------------------------------------------------------------------------
 000099BB
 000099BB loc_99BB:                               ; ...
@@ -9749,7 +9781,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 000099CE                 mov     ds:hero_gold_lo, 0
 000099D4                 shr     ds:hero_almas, 1
 000099D8
-000099D8 loc_99D8:                               ; ...
+000099D8 skip_death_math:                        ; ...
 000099D8                 mov     ax, ds:heroMaxHp
 000099DB                 mov     ds:hero_HP, ax
 000099DE                 jmp     short $+2
@@ -10162,36 +10194,25 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000EADC                 db ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 0000EAF8                 db ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 0000EB14                 db    ? ;
-0000EB15 magic_projectiles dw ?                  ; ...
-0000EB17                 db 49h dup(?)
-0000EB60 byte_EB60       db ?                    ; ...
-0000EB61                 db    ? ;
-0000EB62                 db    ? ;
-0000EB63                 db    ? ;
-0000EB64                 db    ? ;
-0000EB65                 db    ? ;
-0000EB66                 db    ? ;
-0000EB67 byte_EB67       db ?
-0000EB68                 db    ? ;
-0000EB69                 db    ? ;
-0000EB6A                 db    ? ;
-0000EB6B                 db    ? ;
-0000EB6C                 db    ? ;
-0000EB6D                 db    ? ;
-0000EB6E byte_EB6E       db ?
-0000EB6F                 db    ? ;
-0000EB70                 db    ? ;
-0000EB71                 db    ? ;
-0000EB72                 db    ? ;
-0000EB73                 db    ? ;
-0000EB74                 db    ? ;
-0000EB75 byte_EB75       db ?
-0000EB76                 db    ? ;
-0000EB77                 db    ? ;
-0000EB78                 db    ? ;
-0000EB79                 db    ? ;
-0000EB7A                 db    ? ;
-0000EB7B                 db    ? ;
+0000EB15 magic_projectiles db ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ; ...
+0000EB25                 db ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+0000EB35                 db ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+0000EB45                 db ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+0000EB55                 db    ? ;
+0000EB56                 db    ? ;
+0000EB57                 db    ? ;
+0000EB58                 db    ? ;
+0000EB59                 db    ? ;
+0000EB5A                 db    ? ;
+0000EB5B                 db    ? ;
+0000EB5C                 db    ? ;
+0000EB5D                 db    ? ;
+0000EB5E                 db    ? ;
+0000EB5F                 db    ? ;
+0000EB60 spirit_sprite_0 db ?, ?, ?, ?, ?, ?, ?  ; ...
+0000EB67 spirit_sprite_1 db ?, ?, ?, ?, ?, ?, ?
+0000EB6E spirit_sprite_2 db ?, ?, ?, ?, ?, ?, ?
+0000EB75 spirit_sprite_3 db ?, ?, ?, ?, ?, ?, ?
 0000EB7C                 db    ? ;
 0000EB7D                 db    ? ;
 0000EB7E                 db    ? ;
@@ -10204,7 +10225,7 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000ED20                                         ; when position is already occupied by monster,
 0000ED20                                         ; we use second layer: 128 bytes of additional buffer
 0000ED20                                         ; (1 byte per monster id)
-0000EDA0 byte_EDA0       db ?                    ; ...
+0000EDA0 is_boss_dead    db ?                    ; ...
 0000EDA1                 db 115Fh dup(?)
 0000FF00                 db    ? ;
 0000FF01                 db    ? ;
@@ -10212,8 +10233,8 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000FF03                 db    ? ;
 0000FF04                 dd ?
 0000FF08 heartbeat_volume db ?                   ; ...
-0000FF09 key_released_flag db ?
-0000FF0A last_key_scancode db ?
+0000FF09                 db ?
+0000FF0A                 db ?
 0000FF0B                 db    ? ;
 0000FF0C                 db    ? ;
 0000FF0D                 db    ? ;
@@ -10257,15 +10278,15 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000FF34 is_boss_cavern  db ?                    ; ...
 0000FF35 hero_y_absolute db ?                    ; ...
 0000FF35                                         ; absolute y position of hero head in the map
-0000FF36 byte_FF36       db ?                    ; ...
-0000FF37 byte_FF37       db ?                    ; ...
+0000FF36 hero_damage_this_frame db ?             ; ...
+0000FF37 hero_sprite_hidden db ?                 ; ...
 0000FF38 squat_flag      db ?                    ; ...
 0000FF38                                         ; 0 = false, 0xFF = true (crouching)
 0000FF39 on_rope_flags   db ?                    ; ...
 0000FF39                                         ; 0: on ground, ff: on rope, 80h: transition from rope to ground
 0000FF3A byte_FF3A       db ?                    ; ...
 0000FF3B                 db    ? ;
-0000FF3C byte_FF3C       db ?                    ; ...
+0000FF3C spell_active_flag db ?                  ; ...
 0000FF3D jump_phase_flags db ?                   ; ...
 0000FF3D                                         ; 0: on ground, ff: ascending, 7f: descending, 80h: climbing down off rope
 0000FF3E byte_FF3E       db ?                    ; ...
@@ -10273,12 +10294,12 @@ Cangrejo_Defeated dw ?                  ; 0000 = No, FFFF = Yes
 0000FF40 byte_FF40       db ?                    ; ...
 0000FF41 byte_FF41       db ?                    ; ...
 0000FF42 slope_direction db ?                    ; ...
-0000FF42                                         ; 1=R, 2=L
-0000FF43 byte_FF43       db ?                    ; ...
+0000FF42                                         ; 1=R\, 2=L/
+0000FF43 sword_swing_flag db ?                   ; ...
 0000FF44 byte_FF44       db ?                    ; ...
 0000FF45 sword_hit_type  db ?                    ; ...
 0000FF46 sword_down_thrust db ?                  ; ...
-0000FF47 byte_FF47       db ?                    ; ...
+0000FF47 down_thrust_held_flag db ?              ; ...
 0000FF48                 db    ? ;
 0000FF49                 db    ? ;
 0000FF4A monster_index   db ?                    ; ...
