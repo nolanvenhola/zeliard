@@ -1768,8 +1768,9 @@ sprite_frame_d:				; anim frame 3  (driver_base + offset = 2D32h)
 		db	0D0h, 0Dh,0BAh,0AAh,0F0h, 01h
 		db	 6Bh,0ABh,0C0h, 00h, 58h,0AFh
 		db	 00h, 00h, 1Dh, 54h, 00h, 00h
-; CGA init stub: initializes ES=0B800h, DI=0, CX=8, then falls into vram_init_outer
 		db	00h, 00h, 00h	; sprite data tail padding
+; CGA init stub: initializes ES=0B800h, DI=0, CX=8, then falls into vram_init_outer
+cga_vram_init:
 		SET_CGA_ES		; mov ax, 0B800h / mov es, ax
 		xor	di,di
 		mov	cx,8
