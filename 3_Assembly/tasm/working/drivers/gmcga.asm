@@ -1721,13 +1721,13 @@ deco_draw_wrap:
 ; Each frame is 52 bytes of 2-plane CGA bitplane data.
 ; Pointers = driver_base + frame_offset  (driver_base = 2000h)
 sprite_anim_frames:
-		dw	2C96h			; anim frame 0 → frame_a (driver offset 0C96h)
-		dw	2CFEh			; anim frame 1 → frame_c (driver offset 0CFEh)
-		dw	2CCAh			; anim frame 2 → frame_b (driver offset 0CCAh)
-		dw	2D32h			; anim frame 3 → frame_d (driver offset 0D32h)
+		dw	driver_base + (offset sprite_frame_a)	; anim frame 0
+		dw	driver_base + (offset sprite_frame_c)	; anim frame 1
+		dw	driver_base + (offset sprite_frame_b)	; anim frame 2
+		dw	driver_base + (offset sprite_frame_d)	; anim frame 3
 
 ; Sprite bitplane bitmaps (52 bytes each, 2-plane CGA format)
-; frame_a: anim frame 0 data
+sprite_frame_a:				; anim frame 0  (driver_base + offset = 2C96h)
 		db	0FFh,0F0h, 0Ch,0FFh
 		db	0FFh,0C0h, 00h,0FFh,0FFh, 00h
 		db	 00h,0FFh,0FFh, 00h, 00h,0FFh
@@ -1736,7 +1736,9 @@ sprite_anim_frames:
 		db	0FFh,0C0h, 00h,0FFh,0FFh,0C0h
 		db	 00h,0FFh,0FFh,0C0h, 00h,0FFh
 		db	0FFh,0CCh, 0Ch,0FFh
-		db	9 dup (0FFh)
+		db	8 dup (0FFh)			; frame_a tail
+sprite_frame_b:				; anim frame 2  (driver_base + offset = 2CCAh)
+		db	0FFh
 		db	 00h, 00h,0FFh,0FCh, 00h, 00h
 		db	 3Fh,0F0h, 00h, 00h, 0Fh,0F0h
 		db	 00h, 00h, 0Fh,0C0h, 00h, 00h
@@ -1745,7 +1747,9 @@ sprite_anim_frames:
 		db	 03h,0F0h, 00h, 00h, 0Fh,0F0h
 		db	 00h, 00h, 0Fh,0FCh, 00h, 00h
 		db	 3Fh,0FFh, 00h, 00h,0FFh,0FFh
-		db	0C0h, 03h,0FFh, 00h, 00h, 00h
+		db	0C0h, 03h, 0FFh			; frame_b tail
+sprite_frame_c:				; anim frame 1  (driver_base + offset = 2CFEh)
+		db	 00h, 00h, 00h
 		db	 00h, 00h, 0Ah,0A0h, 00h, 00h
 		db	 3Bh,0F8h, 00h, 00h, 2Fh,0D6h
 		db	 00h, 00h,0E7h,0D6h, 00h, 00h
@@ -1753,7 +1757,9 @@ sprite_anim_frames:
 		db	 00h, 00h, 25h, 56h, 00h, 00h
 		db	 29h, 58h, 00h, 00h, 0Ah,0A0h
 		db	 00h, 00h
-		db	12 dup (0)
+		db	11 dup (0)			; frame_c tail
+sprite_frame_d:				; anim frame 3  (driver_base + offset = 2D32h)
+		db	0
 		db	 3Fh,0D4h, 00h, 00h,0F0h, 05h
 		db	 00h, 03h,0CFh,0C1h, 40h, 0Fh
 		db	 3Fh, 0Ch, 50h, 0Fh,0FCh, 03h
