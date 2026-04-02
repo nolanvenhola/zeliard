@@ -178,7 +178,6 @@ cga_scanline_wrap:
 
 gmcga		endp
 
-;��������������������������������������������������������������������������
 
 fill_horizontal_line		proc	near
 		push	di
@@ -204,7 +203,6 @@ loc_ret_4:
 
 fill_horizontal_line		endp
 
-;��������������������������������������������������������������������������
 
 clear_screen		proc	near
 clear_screen_init:
@@ -385,7 +383,6 @@ plot_last_pixels:
 		not	ah
 		mov	al,ah
 
-;��������������������������������������������������������������������������
 
 plot_pixel		proc	near
 		test	byte ptr cs:plot_mode,0FFh
@@ -549,7 +546,6 @@ text_fill_line:
 			jnz	text_fill_line			; Jump if not zero
 		retn
 
-;��������������������������������������������������������������������������
 
 calc_text_width		proc	near
 		mov	ax,320h
@@ -574,7 +570,6 @@ text_width_clamped:
 
 calc_text_width		endp
 
-;��������������������������������������������������������������������������
 
 fill_vertical_line		proc	near
 vline_plot_loop:
@@ -670,7 +665,6 @@ text_line_loop:
 
 		retn
 
-;��������������������������������������������������������������������������
 
 render_text_char		proc	near
 		sub	al,20h			; ' '
@@ -811,7 +805,6 @@ sprite_check:
 		pop	ds
 		retn
 
-;��������������������������������������������������������������������������
 
 init_timestamp		proc	near
 		mov	di,timestamp_buf
@@ -834,7 +827,6 @@ init_timestamp		endp
 
 		db	7 dup (0)
 
-;��������������������������������������������������������������������������
 
 time_to_bcd		proc	near
 		mov	cl,0Fh
@@ -863,7 +855,6 @@ time_to_bcd		proc	near
 
 time_to_bcd		endp
 
-;��������������������������������������������������������������������������
 
 modulo_divide_bcd		proc	near
 		xor	dh,dh			; Zero register
@@ -890,7 +881,6 @@ bcd_add_back:
 
 modulo_divide_bcd		endp
 
-;��������������������������������������������������������������������������
 
 int_divide_bcd		proc	near
 		xor	dh,dh			; Zero register
@@ -902,7 +892,6 @@ int_divide_bcd		proc	near
 
 int_divide_bcd		endp
 
-;��������������������������������������������������������������������������
 
 render_tilemap_large		proc	near
 		mov	ds:tile_bg_mask,bh
@@ -945,7 +934,6 @@ render_tilemap_large		endp
 		db	 00h,0FFh,0AAh,0FFh, 55h, 00h
 		db	0FFh,0AAh
 
-;��������������������������������������������������������������������������
 
 decode_bitplane_tile		proc	near
 		mov	bx,0Fh
@@ -1212,7 +1200,6 @@ tile_src_base_b_lbl:
 		pop	ds
 		retn
 
-;��������������������������������������������������������������������������
 
 render_tilemap_small		proc	near
 		shr	bl,1			; Shift w/zeros fill
@@ -1276,7 +1263,6 @@ small_tile_wrap:
 
 render_tilemap_small		endp
 
-;��������������������������������������������������������������������������
 
 extract_bitplane_pixels		proc	near
 		mov	cx,8
@@ -1318,7 +1304,6 @@ extract_bitplane_pixels		endp
 		db	3, 2, 1, 2, 2, 2	; indices 0x36-0x3B
 		db	2, 2, 2, 2		; indices 0x3C-0x3F
 
-;��������������������������������������������������������������������������
 
 render_text_char_alt		proc	near
 		push	ds
@@ -1392,7 +1377,6 @@ alt_char_wrap:
 
 render_text_char_alt		endp
 
-;��������������������������������������������������������������������������
 
 expand_font_bits		proc	near
 		mov	cx,8
@@ -1670,7 +1654,6 @@ tile_remap_wrap:
 		call	fill_rectangle
 		retn
 
-;��������������������������������������������������������������������������
 
 fill_rectangle		proc	near
 		mov	cx,2
@@ -1873,7 +1856,6 @@ sprite_row_loop:
 
 		retn
 
-;��������������������������������������������������������������������������
 
 process_sprite_row		proc	near
 		mov	cx,8
