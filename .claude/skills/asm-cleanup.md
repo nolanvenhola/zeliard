@@ -71,6 +71,14 @@ Replace magic numbers with named EQUs in the header (before `seg_a segment`).
 
 **Check for:** `cmp al, 0Dh` → `cmp al, ENTER_KEY`, `cmp al, 0FFh` → use `SCR_END_SCRIPT`, etc.
 
+**For graphics drivers** (gmmcga, gmcga, etc.), common EQUs to add:
+- `cga_seg equ 0B800h` / `vga_seg equ 0A000h` — framebuffer segments
+- `driver_base equ 2000h` — driver loads at game_seg:2000h
+- `sprite_anim_frames_cs equ driver_base + (offset sprite_anim_frames)` — CS-relative sprite table pointer
+- Driver state variables: `drv_frame_idx equ 9Dh`, `drv_color_lut equ 0ABh`, `timestamp_buf equ 24E8h`
+- Tilemap sources: named EQUs for CS-relative tilemap data addresses (`tilemap_src_a equ 26BBh`, etc.)
+- `level_seg_ofs equ 3000h` — segment offset for level/map data (`add ax, 3000h` → `add ax, level_seg_ofs`)
+
 ---
 
 ## Step 5 — Add macros for repeated patterns
@@ -266,6 +274,15 @@ git commit -m "Annotate and clean up XXX.asm
 - **Shared null bytes**: in driver file entry tables, each entry's trailing null doubles as the next entry's load-offset low byte — don't add extra nulls
 - **Comments don't add bytes; labels don't add bytes** — these are always safe to add
 - **Trailing zeros**: mode tables may end without an explicit null for the last record; the null comes from the first byte of the following section
+- **Alternate opcode encodings**: many x86 instructions have two equivalent forms (`20h` vs `22h` for AND, `1Bh` vs `19h` for SBB, `30h` vs `32h` for XOR). TASM picks one; use `db` for the other. Check with verify1.py — a mismatch of exactly the affected bytes with size_delta=0 identifies this.
+- **TASM drops CS: prefix with `assume cs:seg_a`**: writing `mov reg, cs:label` (EQU form) may produce no CS: override prefix. Use bracket form `cs:[label]` instead: `mov bx, cs:[gvar_game_seg]`. Or use `assume cs:nothing` temporarily.
+- **`add ax, [addr]` vs immediate**: TASM may encode `add ax, [0E208h]` as `ADD AX, imm16` (opcode 05h, 3 bytes) instead of `ADD AX, [mem]` (opcode 03h 06h, 4 bytes). Use `add ax, ds:[0E208h]` to force the memory form.
+- **Dual-use bytes**: some data blocks serve double duty — e.g. the last N bytes of a lookup table also form the code prologue for the next entry point. Add both labels; split `dup` blocks at the boundary. Verify the entry point address matches the binary.
+- **Sprite/bitmap dup splits**: frame boundaries often fall inside `db N dup(...)` blocks. Split them: `db 8 dup(0FFh)` + `label:` + `db 0FFh` to place the label at the exact byte offset.
+- **Driver base for CS-relative pointers**: for drivers loaded at game_seg:2000h, add `driver_base equ 2000h` and express pointer table entries as `dw driver_base + (offset label)` so they auto-update.
+- **`jz` / `call` forward references to labels in orphaned code**: TASM may fail to compile if the target label is far ahead. Always check the actual binary target address first — the call may target a different label than assumed (e.g. `clear_screen_init` not `set_plot_mode`).
+- **`render_tilemap_small` vs `render_tilemap_small+N`**: two orphaned sprite selectors that look like they call different entry points may both call `render_tilemap_small` — the different relative offsets (+1Ah vs +2) simply result from the selectors being at different positions in the binary. TASM auto-computes the correct offset when using the label.
+- **Boilerplate `; ═══` lines**: the Sourcer non-ASCII horizontal rule comments (`; ═══════`) can be bulk-removed with a regex matching lines of the form `^;[^\x00-\x7F]+$`.
 
 ---
 
