@@ -127,6 +127,14 @@ ref_gfega  db  01h, 03h, 'gfega.bin', 0
 
 **String tables** — identify all unlabeled strings and add `str_X` labels. Check for strings referenced by hardcoded address (`mov dx, 775h` → `mov dx, offset str_file_not_found`).
 
+**Raw hex bytes that are actually printable characters** — Sourcer emits `db 65h, 73h` instead of `db 'es'` whenever a byte falls outside a string it was already parsing. Check every standalone `db NNh` line:
+- If the value is in `0x20–0x7E`, convert to a quoted char: `db 65h` → `db 'e'`
+- Group adjacent printable bytes: `db 65h / db 73h` → `db 'es'`
+- `0x22` = `'"'`, `0x27` = `"'"`, `0x0D` = `CR` (in string/script context)
+- Values like `0x01–0x08` may be `ANIM_01–ANIM_08` if they're in a style-encoded speech block
+- Values `0x80–0x9F` may be `ANIM_80–ANIM_9F` in speech blocks, but plain glyph indices in font tables
+- Leave values alone when they're clearly numeric data (color indices, offsets, counts)
+
 **Character/glyph tables** — `char_glyph_index`, `glyph_advance_tbl`. Values 0x80+ in these tables are sequential glyph indices, NOT animation or script control codes — use plain hex, not `ANIM_*` or `SCR_*`.
 
 ---
