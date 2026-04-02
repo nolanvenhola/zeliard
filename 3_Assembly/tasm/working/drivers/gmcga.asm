@@ -53,6 +53,7 @@ cga_hud_ofs	equ	23Ch
 cga_tile_stride	equ	18BCh
 
 cga_seg		equ	0B800h			; CGA framebuffer segment
+driver_base	equ	2000h			; driver loads at game_seg:2000h; CS-relative ptr = driver_base + (offset label)
 
 ; Set ES to the CGA framebuffer segment (0xB800)
 SET_CGA_ES	MACRO
@@ -1713,12 +1714,20 @@ deco_draw_wrap:
 		pop	si
 		pop	ds
 		retn
-; Sprite animation frame pointer table (4 CS-relative word offsets into sprite data):
-		dw	2C96h			; frame 0: CS:2C96h (driver offset 0C96h)
-		dw	2CFEh			; frame 1: CS:2CFEh (driver offset 0CFEh)
-		dw	2CCAh			; frame 2: CS:2CCAh (driver offset 0CCAh)
-		dw	2D32h			; frame 3: CS:2D32h (driver offset 0D32h)
-; Sprite bitplane bitmap data for all 4 animation frames:
+; Sprite animation frame pointer table
+; 4 CS-relative word pointers; animation order differs from memory order:
+;   anim[0] -> frame_a (mem +0),  anim[1] -> frame_c (mem +104),
+;   anim[2] -> frame_b (mem +52), anim[3] -> frame_d (mem +156)
+; Each frame is 52 bytes of 2-plane CGA bitplane data.
+; Pointers = driver_base + frame_offset  (driver_base = 2000h)
+sprite_anim_frames:
+		dw	2C96h			; anim frame 0 → frame_a (driver offset 0C96h)
+		dw	2CFEh			; anim frame 1 → frame_c (driver offset 0CFEh)
+		dw	2CCAh			; anim frame 2 → frame_b (driver offset 0CCAh)
+		dw	2D32h			; anim frame 3 → frame_d (driver offset 0D32h)
+
+; Sprite bitplane bitmaps (52 bytes each, 2-plane CGA format)
+; frame_a: anim frame 0 data
 		db	0FFh,0F0h, 0Ch,0FFh
 		db	0FFh,0C0h, 00h,0FFh,0FFh, 00h
 		db	 00h,0FFh,0FFh, 00h, 00h,0FFh
