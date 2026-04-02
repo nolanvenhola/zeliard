@@ -134,8 +134,8 @@ start:
 		push	bx
 		mov	bl,ch
 		dec	bl
-		db	32h,0FFh		; xor bh,bh
-		db	32h,0EDh		; xor ch,ch
+		xor	bh,bh
+		xor	ch,ch
 
 init_vram_loop:
 			mov	byte ptr es:[di],0F0h
