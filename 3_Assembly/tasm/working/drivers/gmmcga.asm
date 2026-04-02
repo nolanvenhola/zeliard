@@ -95,13 +95,13 @@ start:
 		db	 58h, 0Ah,0C0h, 75h, 03h,0E9h
 		db	 86h, 00h
 
-loc_1:
+volume_param_branch:
 		mov	dx,909h
 		test	byte ptr cs:gvar_volume_b,0FFh
-		jz	loc_2			; Jump if zero
+		jz	clear_screen_entry			; Jump if zero
 		mov	dx,0FFFFh
 
-loc_2:
+clear_screen_entry:
 		push	di
 		sub	cl,4
 		add	di,280h
@@ -122,11 +122,11 @@ loc_2:
 		xor	bh,bh			; Zero register
 		xor	ch,ch			; Zero register
 
-locloop_3:
+draw_border_loop:
 			mov	es:[di],dx
 			mov	es:[bx+di+2],dx
 			add	di,vga_stride
-			loop	locloop_3		; Loop if cx > 0
+			loop	draw_border_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	cx
@@ -172,12 +172,12 @@ fill_horizontal_line		endp
 ;��������������������������������������������������������������������������
 
 clear_screen		proc	near
-loc_4:
+clear_screen_init:
 		SET_VGA_ES
 		push	cx
 		xor	ax,ax			; Zero register
 
-loc_5:
+clear_row_loop:
 			push	di
 			push	cx
 			mov	cl,ch
@@ -188,7 +188,7 @@ loc_5:
 			pop	di
 			add	di,140h
 			dec	cl
-			jnz	loc_5			; Jump if not zero
+			jnz	clear_row_loop			; Jump if not zero
 		pop	cx
 		retn
 
@@ -199,12 +199,12 @@ clear_screen		endp
 		mov	di,hud_vga_ofs
 		mov	cx,8
 
-locloop_6:
+clear_block_outer_loop:
 			push	cx
 			push	di
 			mov	cx,12h
 
-locloop_7:
+clear_block_inner_loop:
 				push	cx
 				push	di
 				mov	cx,0E0h
@@ -213,76 +213,76 @@ locloop_7:
 				pop	di
 				add	di,0A00h
 				pop	cx
-				loop	locloop_7		; Loop if cx > 0
+				loop	clear_block_inner_loop		; Loop if cx > 0
 
 			pop	di
 			add	di,140h
 			pop	cx
-			loop	locloop_6		; Loop if cx > 0
+			loop	clear_block_outer_loop		; Loop if cx > 0
 
 		retn
-data_16		db	0B8h
+font_render_code		db	0B8h
 		db	 00h,0A0h, 8Eh,0C0h
 		db	0BEh, 8Dh, 21h,0B9h, 08h, 00h
 
-locloop_8:
+font_render_loop:
 			push	cx
 			mov	di,11B0h
 			lodsb				; String [si] to al
 			push	di
 			mov	cx,48h
 
-locloop_9:
+font_row_loop:
 				push	cx
 				mov	cx,0E0h
 
-locloop_10:
+font_bit_loop:
 				rol	al,1			; Rotate
-				jnc	loc_11			; Jump if carry=0
+				jnc	font_skip_pixel			; Jump if carry=0
 				mov	byte ptr es:[di],0
 
-loc_11:
+font_skip_pixel:
 				inc	di
-				loop	locloop_10		; Loop if cx > 0
+				loop	font_bit_loop		; Loop if cx > 0
 
 				ror	al,1			; Rotate
 				ror	al,1			; Rotate
 				ror	al,1			; Rotate
 				pop	cx
 				add	di,1A0h
-				loop	locloop_9		; Loop if cx > 0
+				loop	font_row_loop		; Loop if cx > 0
 
 			pop	di
 			add	di,140h
 			mov	cx,48h
 
-locloop_12:
+font_row_loop_b:
 				push	cx
 				mov	cx,0E0h
 
-locloop_13:
+font_bit_loop_b:
 				ror	al,1			; Rotate
-				jnc	loc_14			; Jump if carry=0
+				jnc	font_skip_pixel_b			; Jump if carry=0
 				mov	byte ptr es:[di],0
 
-loc_14:
+font_skip_pixel_b:
 				inc	di
-				loop	locloop_13		; Loop if cx > 0
+				loop	font_bit_loop_b		; Loop if cx > 0
 
 				rol	al,1			; Rotate
 				rol	al,1			; Rotate
 				rol	al,1			; Rotate
 				pop	cx
 				add	di,1A0h
-				loop	locloop_12		; Loop if cx > 0
+				loop	font_row_loop_b		; Loop if cx > 0
 
 			mov	cx,1F40h
 
-locloop_15:
-				loop	locloop_15		; Loop if cx > 0
+delay_loop:
+				loop	delay_loop		; Loop if cx > 0
 
 			pop	cx
-			loop	locloop_8		; Loop if cx > 0
+			loop	font_render_loop		; Loop if cx > 0
 
 		retn
 			                        ;* No entry point to code
@@ -294,7 +294,7 @@ locloop_15:
 		aas				; Ascii adjust
 		db	 7Fh,0FFh
 
-loc_16:
+set_plot_mode:
 		mov	cs:plot_mode,al
 		SET_VGA_ES
 		xor	ax,ax			; Zero register
@@ -315,21 +315,21 @@ loc_16:
 		inc	di
 		mov	cl,ch
 
-loc_17:
+plot_white_pixels_loop:
 			push	cx
 			mov	ax,0FFFFh
 			call	plot_pixel
 			pop	cx
 			inc	di
 			dec	cl
-			jnz	loc_17			; Jump if not zero
+			jnz	plot_white_pixels_loop			; Jump if not zero
 		retn
 
 ;��������������������������������������������������������������������������
 
 plot_pixel		proc	near
 		test	byte ptr cs:plot_mode,0FFh
-		jnz	loc_19			; Jump if not zero
+		jnz	check_mode			; Jump if not zero
 		push	di
 		and	ah,5
 		and	al,2Dh			; '-'
@@ -337,42 +337,42 @@ plot_pixel		proc	near
 		add	di,vga_stride
 		mov	cx,8
 
-locloop_18:
+fill_col_loop:
 			mov	es:[di],ah
 			add	di,vga_stride
-			loop	locloop_18		; Loop if cx > 0
+			loop	fill_col_loop		; Loop if cx > 0
 
 		mov	es:[di],al
 		pop	di
 		retn
 
-loc_19:
+check_mode:
 		cmp	byte ptr cs:plot_mode,80h
-		je	loc_21			; Jump if equal
+		je	inverted_blend_entry			; Jump if equal
 		push	di
 		mov	ah,al
 		not	ah
 		and	al,1
 		mov	cx,0Ah
 
-locloop_20:
+blend_loop:
 			and	es:[di],ah
 			or	es:[di],al
 			add	di,vga_stride
-			loop	locloop_20		; Loop if cx > 0
+			loop	blend_loop		; Loop if cx > 0
 
 		pop	di
 		retn
 
-loc_21:
+inverted_blend_entry:
 		push	di
 		not	al
 		mov	cx,0Ah
 
-locloop_22:
+inverted_blend_loop:
 			and	es:[di],al
 			add	di,140h
-			loop	locloop_22		; Loop if cx > 0
+			loop	inverted_blend_loop		; Loop if cx > 0
 
 		pop	di
 		retn
@@ -386,7 +386,7 @@ plot_pixel		endp
 		db	 8Bh,0CBh, 0Bh,0C9h, 75h, 01h
 		db	0C3h
 
-locloop_23:
+vertical_line_loop:
 			push	cx
 			push	di
 			mov	bh,6
@@ -396,24 +396,24 @@ locloop_23:
 			pop	di
 			inc	di
 			pop	cx
-			loop	locloop_23		; Loop if cx > 0
+			loop	vertical_line_loop		; Loop if cx > 0
 
 		retn
 			                        ;* No entry point to code
 		mov	di,0CC14h
 		mov	bx,word ptr cs:[90h]
-		jmp	short loc_24
+		jmp	short calc_width_entry
 		db	0BFh, 14h,0DBh,0EBh, 00h
 
-loc_24:
+calc_width_entry:
 		SET_VGA_ES
 		call	calc_text_width
 		push	bx
 		mov	cx,bx
 		or	cx,cx			; Zero ?
-		jz	loc_26			; Jump if zero
+		jz	calc_remaining_width			; Jump if zero
 
-locloop_25:
+draw_text_cols_loop:
 			push	cx
 			push	di
 			mov	bh,5
@@ -423,16 +423,16 @@ locloop_25:
 			pop	di
 			inc	di
 			pop	cx
-			loop	locloop_25		; Loop if cx > 0
+			loop	draw_text_cols_loop		; Loop if cx > 0
 
-loc_26:
+calc_remaining_width:
 		pop	bx
 		mov	cx,64h
 		sub	cx,bx
-		jnz	locloop_27		; Jump if not zero
+		jnz	fill_blank_cols_loop		; Jump if not zero
 		retn
 
-locloop_27:
+fill_blank_cols_loop:
 			push	cx
 			push	di
 			mov	bh,5
@@ -442,7 +442,7 @@ locloop_27:
 			pop	di
 			inc	di
 			pop	cx
-			loop	locloop_27		; Loop if cx > 0
+			loop	fill_blank_cols_loop		; Loop if cx > 0
 
 		retn
 
@@ -451,13 +451,13 @@ locloop_27:
 calc_text_width		proc	near
 		mov	ax,320h
 		sub	ax,bx
-		jc	loc_28			; Jump if carry Set
+		jc	text_width_clamped			; Jump if carry Set
 		shr	bx,1			; Shift w/zeros fill
 		shr	bx,1			; Shift w/zeros fill
 		shr	bx,1			; Shift w/zeros fill
 		retn
 
-loc_28:
+text_width_clamped:
 		mov	bx,64h
 		retn
 
@@ -466,12 +466,12 @@ calc_text_width		endp
 ;��������������������������������������������������������������������������
 
 fill_vertical_line		proc	near
-loc_29:
+fill_vline_loop:
 			and	es:[di],ah
 			or	es:[di],al
 			add	di,140h
 			dec	bh
-			jnz	loc_29			; Jump if not zero
+			jnz	fill_vline_loop			; Jump if not zero
 		retn
 
 fill_vertical_line		endp
@@ -479,11 +479,11 @@ fill_vertical_line		endp
 			                        ;* No entry point to code
 		mov	byte ptr cs:tile_color,1Bh
 		mov	byte ptr cs:tile_row_idx,12h
-		jmp	short loc_32
+		jmp	short text_data_entry
 			                        ;* No entry point to code
 		mov	byte ptr cs:tile_color,9
 		mov	byte ptr cs:tile_row_idx,2Dh	; '-'
-		jmp	short loc_32
+		jmp	short text_data_entry
 			                        ;* No entry point to code
 		mov	byte ptr cs:tile_color,9
 		mov	byte ptr cs:tile_row_idx,0
@@ -501,21 +501,21 @@ fill_vertical_line		endp
 		add	di,cx
 		SET_VGA_ES
 
-loc_30:
+char_stream_loop:
 			lodsb				; String [si] to al
 			or	al,al			; Zero ?
-			jnz	loc_31			; Jump if not zero
+			jnz	render_char_entry			; Jump if not zero
 			retn
 
-loc_31:
+render_char_entry:
 			push	ds
 			push	si
 			call	render_text_char
 			pop	si
 			pop	ds
-			jmp	short loc_30
+			jmp	short char_stream_loop
 
-loc_32:
+text_data_entry:
 		lodsb				; String [si] to al
 		mov	dl,al
 		xor	dh,dh			; Zero register
@@ -537,7 +537,7 @@ loc_32:
 		mov	cl,al
 		SET_VGA_ES
 
-locloop_33:
+render_line_loop:
 			push	cx
 			lodsb				; String [si] to al
 			push	ds
@@ -546,7 +546,7 @@ locloop_33:
 			pop	si
 			pop	ds
 			pop	cx
-			loop	locloop_33		; Loop if cx > 0
+			loop	render_line_loop		; Loop if cx > 0
 
 		retn
 
@@ -563,30 +563,30 @@ render_text_char		proc	near
 		push	di
 		mov	bl,8
 
-loc_34:
+char_row_loop:
 			push	bx
 			lodsb				; String [si] to al
 			push	di
 			mov	dh,al
 			mov	dl,4
 
-loc_35:
+char_pixel_loop:
 				add	dh,dh
-				jnc	loc_36			; Jump if carry=0
+				jnc	char_next_pixel			; Jump if carry=0
 				mov	al,ds:tile_row_idx
 				mov	es:[di+1],al
 				mov	ah,ds:tile_color
 				mov	es:[di],ah
 
-loc_36:
+char_next_pixel:
 				inc	di
 				dec	dl
-				jnz	loc_35			; Jump if not zero
+				jnz	char_pixel_loop			; Jump if not zero
 			pop	di
 			add	di,140h
 			pop	bx
 			dec	bl
-			jnz	loc_34			; Jump if not zero
+			jnz	char_row_loop			; Jump if not zero
 		pop	di
 		add	di,5
 		retn
@@ -597,7 +597,7 @@ render_text_char		endp
 		mov	bx,210h
 		xor	al,al			; Zero register
 		mov	ch,88h
-		jmp	loc_16
+		jmp	set_plot_mode
 			                        ;* No entry point to code
 		push	ds
 		mov	ax,word ptr cs:[8Bh]
@@ -646,10 +646,10 @@ render_text_char		endp
 		retn
 			                        ;* No entry point to code
 		test	byte ptr cs:[93h],0FFh
-		jnz	loc_37			; Jump if not zero
+		jnz	draw_timer_entry			; Jump if not zero
 		retn
 
-loc_37:
+draw_timer_entry:
 		push	ds
 		mov	ax,word ptr cs:[94h]
 		xor	dx,dx			; Zero register
@@ -671,15 +671,15 @@ init_timestamp		proc	near
 		call	time_to_bcd
 		mov	cx,6
 
-locloop_38:
+check_filled_loop:
 			test	byte ptr cs:[di],0FFh
-			jz	loc_39			; Jump if zero
+			jz	mark_slot_filled			; Jump if zero
 			retn
 
-loc_39:
+mark_slot_filled:
 			mov	byte ptr cs:[di],0FFh
 			inc	di
-			loop	locloop_38		; Loop if cx > 0
+			loop	check_filled_loop		; Loop if cx > 0
 
 		retn
 
@@ -721,23 +721,23 @@ time_to_bcd		endp
 modulo_divide_bcd		proc	near
 		xor	dh,dh			; Zero register
 
-loc_40:
+bcd_div_loop:
 			sub	dl,cl
-			jc	loc_43			; Jump if carry Set
+			jc	bcd_adjust			; Jump if carry Set
 			sub	ax,bx
-			jnc	loc_41			; Jump if carry=0
+			jnc	bcd_increment			; Jump if carry=0
 			or	dl,dl			; Zero ?
-			jz	loc_42			; Jump if zero
+			jz	bcd_restore			; Jump if zero
 			dec	dl
 
-loc_41:
+bcd_increment:
 			inc	dh
-			jmp	short loc_40
+			jmp	short bcd_div_loop
 
-loc_42:
+bcd_restore:
 		add	ax,bx
 
-loc_43:
+bcd_adjust:
 		add	dl,cl
 		retn
 
@@ -778,7 +778,7 @@ render_tilemap_large		proc	near
 		add	bx,ax
 		SET_VGA_ES
 
-loc_44:
+tile_render_loop:
 			mov	al,[di]
 			inc	di
 			push	bx
@@ -793,7 +793,7 @@ loc_44:
 			pop	bx
 			add	bx,6
 			dec	cl
-			jnz	loc_44			; Jump if not zero
+			jnz	tile_render_loop			; Jump if not zero
 		retn
 
 render_tilemap_large		endp
@@ -805,13 +805,13 @@ render_tilemap_large		endp
 
 decode_bitplane_tile		proc	near
 		test	byte ptr ds:tile_row_idx,0FFh
-		jz	loc_46			; Jump if zero
+		jz	check_blank_tile			; Jump if zero
 		push	ax
 		push	di
 		mov	ax,505h
 		mov	cx,7
 
-locloop_45:
+blit_tile_pattern:
 			push	cx
 			push	di
 			mov	cx,3
@@ -819,17 +819,17 @@ locloop_45:
 			pop	di
 			add	di,vga_stride
 			pop	cx
-			loop	locloop_45		; Loop if cx > 0
+			loop	blit_tile_pattern		; Loop if cx > 0
 
 		pop	di
 		pop	ax
 
-loc_46:
+check_blank_tile:
 		inc	al
-		jnz	loc_47			; Jump if not zero
+		jnz	render_font_tile			; Jump if not zero
 		retn
 
-loc_47:
+render_font_tile:
 		dec	al
 		xor	ah,ah			; Zero register
 		add	ax,ax
@@ -841,24 +841,24 @@ loc_47:
 		pop	ds
 		mov	cx,7
 
-locloop_48:
+font_byte_loop:
 			lodsb				; String [si] to al
 			add	al,al
 			add	al,al
 			mov	ah,6
 
-loc_49:
+font_bit_loop_tile:
 				add	al,al
-				jnc	loc_50			; Jump if carry=0
+				jnc	font_next_pixel_tile			; Jump if carry=0
 				mov	bl,cs:tile_color
 				mov	es:[di],bl
 
-loc_50:
+font_next_pixel_tile:
 				inc	di
 				dec	ah
-				jnz	loc_49			; Jump if not zero
+				jnz	font_bit_loop_tile			; Jump if not zero
 			add	di,13Ah
-			loop	locloop_48		; Loop if cx > 0
+			loop	font_byte_loop		; Loop if cx > 0
 
 		retn
 
@@ -887,7 +887,7 @@ decode_bitplane_tile		endp
 		SET_VGA_ES
 		mov	cx,12h
 
-locloop_51:
+tilemap_large_loop:
 			push	cx
 			mov	ax,[si]
 			xchg	ah,al
@@ -920,7 +920,7 @@ locloop_51:
 			add	si,0Fh
 			add	bp,stride_minus_20
 			pop	cx
-			loop	locloop_51		; Loop if cx > 0
+			loop	tilemap_large_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -952,7 +952,7 @@ locloop_51:
 		push	ds
 		mov	si,tile_src_base
 		or	al,al			; Zero ?
-		jz	loc_52			; Jump if zero
+		jz	render_tilemap_branch			; Jump if zero
 		mov	ds,cs:gvar_game_seg
 		dec	al
 		xor	ah,ah			; Zero register
@@ -961,7 +961,7 @@ locloop_51:
 		add	ax,ds:anim_ptr_4
 		mov	si,ax
 
-loc_52:
+render_tilemap_branch:
 		call	render_tilemap_small
 		pop	ds
 		retn
@@ -969,7 +969,7 @@ loc_52:
 		push	ds
 		mov	si,tile_src_base
 		or	al,al			; Zero ?
-		jz	loc_53			; Jump if zero
+		jz	render_animated_tile			; Jump if zero
 		mov	ds,cs:gvar_game_seg
 		dec	al
 		xor	ah,ah			; Zero register
@@ -978,7 +978,7 @@ loc_52:
 		add	ax,ds:anim_ptr_3
 		mov	si,ax
 
-loc_53:
+render_animated_tile:
 		call	render_tilemap_small
 		pop	ds
 		retn
@@ -1040,7 +1040,7 @@ render_tilemap_small		proc	near
 		SET_VGA_ES
 		mov	cx,10h
 
-locloop_54:
+tilemap_small_loop:
 			push	cx
 			mov	ax,[si]
 			xchg	ah,al
@@ -1065,7 +1065,7 @@ locloop_54:
 			add	si,0Ch
 			add	bp,130h
 			pop	cx
-			loop	locloop_54		; Loop if cx > 0
+			loop	tilemap_small_loop		; Loop if cx > 0
 
 		retn
 
@@ -1076,7 +1076,7 @@ render_tilemap_small		endp
 extract_bitplane_pixels		proc	near
 		mov	cx,4
 
-locloop_55:
+bitplane_bits_loop:
 			xor	ax,ax			; Zero register
 			rol	word ptr cs:bitplane_2,1	; Rotate
 			adc	ax,ax
@@ -1092,7 +1092,7 @@ locloop_55:
 			adc	ax,ax
 			mov	es:[bp],al
 			inc	bp
-			loop	locloop_55		; Loop if cx > 0
+			loop	bitplane_bits_loop		; Loop if cx > 0
 
 		retn
 
@@ -1109,7 +1109,7 @@ render_text_char_alt		proc	near
 		mov	bl,ah
 		mov	ah,ds:tile_color_tbl[bx]
 		test	byte ptr cs:gvar_volume_b,0FFh
-		jz	loc_56			; Jump if zero
+		jz	store_render_color			; Jump if zero
 		mov	ah,bl
 		add	ah,ah
 		add	ah,ah
@@ -1117,7 +1117,7 @@ render_text_char_alt		proc	near
 		add	ah,ah
 		or	ah,bl
 
-loc_56:
+store_render_color:
 		mov	ds:tile_color,ah
 		pop	bx
 		xor	ah,ah			; Zero register
@@ -1140,24 +1140,24 @@ loc_56:
 		SET_VGA_ES
 		mov	cx,8
 
-locloop_57:
+alt_char_row_loop:
 			push	cx
 			lodsb				; String [si] to al
 			mov	cx,8
 
-locloop_58:
+alt_char_pixel_loop:
 				add	al,al
-				jnc	loc_59			; Jump if carry=0
+				jnc	alt_char_next_pixel			; Jump if carry=0
 				mov	dl,cs:tile_color
 				mov	es:[di],dl
 
-loc_59:
+alt_char_next_pixel:
 				inc	di
-				loop	locloop_58		; Loop if cx > 0
+				loop	alt_char_pixel_loop		; Loop if cx > 0
 
 			pop	cx
 			add	di,138h
-			loop	locloop_57		; Loop if cx > 0
+			loop	alt_char_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1187,7 +1187,7 @@ render_text_char_alt		endp
 		add	bx,bx
 		xor	ch,ch			; Zero register
 
-locloop_60:
+copy_region_loop:
 			push	cx
 			push	di
 			push	si
@@ -1198,7 +1198,7 @@ locloop_60:
 			add	di,vga_stride
 			add	si,vga_stride
 			pop	cx
-			loop	locloop_60		; Loop if cx > 0
+			loop	copy_region_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1227,7 +1227,7 @@ locloop_60:
 		add	bx,bx
 		add	bx,bx
 
-locloop_61:
+copy_from_vga_loop:
 			push	cx
 			push	si
 			mov	cx,bx
@@ -1235,7 +1235,7 @@ locloop_61:
 			pop	si
 			add	si,vga_stride
 			pop	cx
-			loop	locloop_61		; Loop if cx > 0
+			loop	copy_from_vga_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1264,7 +1264,7 @@ locloop_61:
 		add	bx,bx
 		add	bx,bx
 
-locloop_62:
+copy_to_vga_loop:
 			push	cx
 			push	di
 			mov	cx,bx
@@ -1272,7 +1272,7 @@ locloop_62:
 			pop	di
 			add	di,140h
 			pop	cx
-			loop	locloop_62		; Loop if cx > 0
+			loop	copy_to_vga_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1281,23 +1281,23 @@ locloop_62:
 		mov	cs:char_bit_idx,cl
 		mov	al,1
 		test	byte ptr cs:gvar_volume_b,0FFh
-		jz	loc_63			; Jump if zero
+		jz	set_char_color			; Jump if zero
 		mov	al,7
 
-loc_63:
+set_char_color:
 		mov	cs:char_color,al
 
-loc_64:
+char_cmd_loop:
 				lodsb				; String [si] to al
 				cmp	al,0FFh
-				jne	loc_65			; Jump if not equal
+				jne	check_newline_cmd			; Jump if not equal
 				retn
 
-loc_65:
+check_newline_cmd:
 				cmp	al,0Dh
-				je	loc_66			; Jump if equal
+				je	handle_newline			; Jump if equal
 				or	al,al			; Zero ?
-				js	loc_67			; Jump if sign=1
+				js	set_color_cmd			; Jump if sign=1
 				push	cx
 				push	bx
 				push	si
@@ -1307,18 +1307,18 @@ loc_65:
 				pop	bx
 				pop	cx
 				add	bx,8
-				jmp	short loc_64
+				jmp	short char_cmd_loop
 
-loc_66:
+handle_newline:
 				add	byte ptr cs:char_bit_idx,8
 				mov	cl,cs:char_bit_idx
 				mov	bx,cs:char_src_ptr
-				jmp	short loc_64
+				jmp	short char_cmd_loop
 
-loc_67:
+set_color_cmd:
 			and	al,7
 			mov	cs:char_color,al
-			jmp	short loc_64
+			jmp	short char_cmd_loop
 			                        ;* No entry point to code
 		push	ds
 		push	dx
@@ -1353,7 +1353,7 @@ loc_67:
 		add	bx,bx
 		xor	ch,ch			; Zero register
 
-locloop_68:
+copy_stride_loop:
 			push	cx
 			push	di
 			push	si
@@ -1364,7 +1364,7 @@ locloop_68:
 			add	di,140h
 			add	si,140h
 			pop	cx
-			loop	locloop_68		; Loop if cx > 0
+			loop	copy_stride_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1390,20 +1390,20 @@ locloop_68:
 		mov	al,ds:tile_color
 		mov	cx,10h
 
-locloop_69:
+corner_pixel_loop:
 			mov	es:[di],al
 			mov	es:[di+1],al
 			mov	es:[di+12h],al
 			mov	es:[di+13h],al
 			add	di,vga_stride
-			loop	locloop_69		; Loop if cx > 0
+			loop	corner_pixel_loop		; Loop if cx > 0
 
 ;��������������������������������������������������������������������������
 
 fill_rectangle		proc	near
 		mov	cx,2
 
-locloop_70:
+fill_rect_row_loop:
 			push	cx
 			push	di
 			mov	al,ds:tile_color
@@ -1412,7 +1412,7 @@ locloop_70:
 			pop	di
 			add	di,140h
 			pop	cx
-			loop	locloop_70		; Loop if cx > 0
+			loop	fill_rect_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1440,24 +1440,24 @@ fill_rectangle		endp
 		mov	si,ds:tile_offset_tbl[si]
 		mov	cx,0Dh
 
-locloop_71:
+tile_row_loop:
 			push	cx
 			mov	cx,10h
 
-locloop_72:
+tile_col_loop:
 				lodsb				; String [si] to al
 				cmp	al,80h
-				je	loc_73			; Jump if equal
+				je	tile_next_col			; Jump if equal
 				stosb				; Store al to es:[di]
 				dec	di
 
-loc_73:
+tile_next_col:
 				inc	di
-				loop	locloop_72		; Loop if cx > 0
+				loop	tile_col_loop		; Loop if cx > 0
 
 			pop	cx
-			add	di,offset data_16
-			loop	locloop_71		; Loop if cx > 0
+			add	di,offset font_render_code
+			loop	tile_row_loop		; Loop if cx > 0
 
 		pop	si
 		pop	ds
@@ -1533,12 +1533,12 @@ loc_73:
 		db	 8Eh,0C0h, 33h,0FFh,0B9h, 08h
 		db	 00h
 
-locloop_74:
+clear_vram_outer:
 			push	cx
 			push	di
 			mov	cx,19h
 
-locloop_75:
+clear_vram_inner:
 				push	cx
 				push	di
 				mov	cx,0A0h
@@ -1547,12 +1547,12 @@ locloop_75:
 				pop	di
 				add	di,0A00h
 				pop	cx
-				loop	locloop_75		; Loop if cx > 0
+				loop	clear_vram_inner		; Loop if cx > 0
 
 			pop	di
 			add	di,140h
 			pop	cx
-			loop	locloop_74		; Loop if cx > 0
+			loop	clear_vram_outer		; Loop if cx > 0
 
 		retn
 			                        ;* No entry point to code
@@ -1575,11 +1575,11 @@ locloop_75:
 		mov	ds,ax
 		mov	si,zero_offset
 
-locloop_76:
+sprite_batch_loop:
 			push	cx
 			call	process_sprite_row
 			pop	cx
-			loop	locloop_76		; Loop if cx > 0
+			loop	sprite_batch_loop		; Loop if cx > 0
 
 		retn
 
@@ -1588,7 +1588,7 @@ locloop_76:
 process_sprite_row		proc	near
 		mov	cx,8
 
-locloop_77:
+sprite_row_loop:
 			push	cx
 			lodsw				; String [si] to ax
 			xchg	ah,al
@@ -1601,7 +1601,7 @@ locloop_77:
 			mov	cs:bitplane_2,ax
 			call	bitplane_to_pixels
 			pop	cx
-			loop	locloop_77		; Loop if cx > 0
+			loop	sprite_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1612,7 +1612,7 @@ process_sprite_row		endp
 bitplane_to_pixels		proc	near
 		mov	cx,2
 
-locloop_78:
+bitplane_pixels_loop:
 			call	extract_bitplane_bit
 			call	extract_bitplane_bit
 			call	extract_bitplane_bit
@@ -1628,7 +1628,7 @@ locloop_78:
 			call	extract_bitplane_bit
 			call	extract_bitplane_bit
 			stosb				; Store al to es:[di]
-			loop	locloop_78		; Loop if cx > 0
+			loop	bitplane_pixels_loop		; Loop if cx > 0
 
 		retn
 
