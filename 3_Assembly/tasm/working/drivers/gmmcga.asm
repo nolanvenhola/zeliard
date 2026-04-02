@@ -1460,77 +1460,85 @@ tile_next_col:
 		pop	si
 		pop	ds
 		retn
-; Sprite animation bitplane data (referenced by process_sprite_row)
-
+; Sprite bitplane animation data: 70 rows x 6 bytes = 420 bytes
+; Each row: [bp0_lo, bp0_hi, bp1_lo, bp1_hi, bp2_lo, bp2_hi] — 3 bitplanes x 16 pixels
+; 80h = background, 00h = boundary/action, other = colour index
+; Process: process_sprite_row reads 8 consecutive rows (48 bytes) per call
+; Sprite bitplane animation data: 70 rows x 6 bytes = 420 bytes
+; Each row: [bp0_lo, bp0_hi, bp1_lo, bp1_hi, bp2_lo, bp2_hi] -- 3 bitplanes x 16 pixels
+; 80h = background, 00h = boundary/action, other = colour index
+; process_sprite_row reads 8 consecutive rows (48 bytes) per call
 sprite_anim_data:
-		db	 61h, 2Ah, 31h, 2Bh, 80h, 80h
-		db	 80h, 80h, 80h, 80h, 00h, 00h
-		db	 00h, 00h, 80h, 00h, 80h
-		db	7 dup (80h)
-		db	 00h, 00h, 11h, 11h, 11h, 12h
-		db	 00h, 00h
-		db	8 dup (80h)
-		db	 00h, 11h, 11h, 09h, 09h, 01h
-		db	 12h, 00h
-		db	8 dup (80h)
-		db	 00h, 11h, 09h, 09h, 09h, 28h
-		db	 2Ah, 10h
-		db	8 dup (80h)
-		db	 11h, 15h, 01h, 09h, 0Dh, 05h
-		db	 05h, 12h, 00h
-		db	7 dup (80h)
-		db	 11h, 10h, 28h, 28h, 2Dh, 28h
-		db	 28h, 12h, 00h
-		db	7 dup (80h)
-		db	 12h, 15h, 05h, 05h, 05h, 05h
-		db	 05h, 12h, 00h, 80h, 80h, 80h
-		db	 80h, 80h, 80h, 80h, 00h, 12h
-		db	 05h, 2Dh, 2Dh, 05h, 15h, 02h
-		db	 80h
-		db	7 dup (80h)
-		db	 00h, 02h, 02h, 2Dh, 2Dh, 05h
-		db	 12h, 00h, 80h, 80h, 80h, 80h
-		db	 80h, 80h, 80h, 80h, 00h, 00h
-		db	 02h, 12h, 12h, 12h, 00h, 00h
-		db	8 dup (80h)
-		db	 00h, 00h, 80h, 00h, 00h, 00h
-		db	 80h, 00h, 80h
-		db	39 dup (80h)
-		db	 00h, 01h, 09h, 09h, 09h, 1Bh
-		db	 03h, 00h
-		db	7 dup (80h)
-		db	 00h, 09h, 09h, 00h, 00h, 00h
-		db	 00h, 03h, 1Bh, 00h, 80h, 80h
-		db	 80h, 80h, 80h, 00h, 09h, 01h
-		db	 00h, 01h, 09h, 01h, 00h, 00h
-		db	 03h, 03h, 00h, 80h, 80h, 80h
-		db	 80h, 01h, 09h, 00h, 09h, 09h
-		db	 01h, 00h, 00h, 01h, 00h, 03h
-		db	 03h, 80h, 80h, 80h, 00h, 09h
-		db	 01h, 01h, 09h, 09h, 00h, 00h
-		db	 00h, 00h, 01h, 03h, 03h, 00h
-		db	 80h, 80h, 00h, 09h, 00h, 09h
-		db	 01h, 00h, 00h, 02h, 02h, 00h
-		db	 00h, 00h, 0Bh, 00h, 80h, 80h
-		db	 00h, 09h, 00h, 01h, 00h, 00h
-		db	 02h, 02h, 02h, 02h, 02h, 02h
-		db	 0Bh, 00h, 80h, 80h, 00h, 09h
-		db	 03h, 01h, 02h, 02h, 02h, 12h
-		db	 12h, 12h, 02h, 01h, 0Bh, 00h
-		db	 80h, 80h, 80h, 01h, 1Bh, 02h
-		db	 01h, 02h, 12h, 12h, 12h, 12h
-		db	 02h, 09h, 01h, 80h, 80h, 80h
-		db	 80h, 00h, 0Bh, 03h, 02h, 0Ah
-		db	 01h, 12h, 12h, 12h, 01h, 09h
-		db	 00h, 80h, 80h, 80h, 80h, 80h
-		db	 00h, 1Bh, 03h, 02h, 00h, 02h
-		db	 02h, 01h, 09h, 00h, 80h, 80h
-		db	 80h, 80h, 80h, 80h, 80h, 00h
-		db	 03h, 01h, 03h, 03h, 01h, 03h
-		db	 00h, 80h, 80h, 80h, 80h, 80h
-		db	 80h, 80h, 80h, 80h, 00h, 00h
-		db	 00h, 00h, 00h, 00h, 80h, 80h
-		db	 80h, 80h, 80h	; sprite data tail
+		db	061h, 02Ah, 031h, 02Bh, 080h, 080h	; [####  ]
+		db	080h, 080h, 080h, 080h, 000h, 000h	; [    ..]
+		db	000h, 000h, 080h, 000h, 080h, 080h	; [.. .  ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	000h, 000h, 011h, 011h, 011h, 012h	; [..####]
+		db	000h, 000h, 080h, 080h, 080h, 080h	; [..    ]
+		db	080h, 080h, 080h, 080h, 000h, 011h	; [    .#]
+		db	011h, 009h, 009h, 001h, 012h, 000h	; [#####.]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	080h, 080h, 000h, 011h, 009h, 009h	; [  .###]
+		db	009h, 028h, 02Ah, 010h, 080h, 080h	; [####  ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	011h, 015h, 001h, 009h, 00Dh, 005h	; [######]
+		db	005h, 012h, 000h, 080h, 080h, 080h	; [##.   ]
+		db	080h, 080h, 080h, 080h, 011h, 010h	; [    ##]
+		db	028h, 028h, 02Dh, 028h, 028h, 012h	; [######]
+		db	000h, 080h, 080h, 080h, 080h, 080h	; [.     ]
+		db	080h, 080h, 012h, 015h, 005h, 005h	; [  ####]
+		db	005h, 005h, 005h, 012h, 000h, 080h	; [####. ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	000h, 012h, 005h, 02Dh, 02Dh, 005h	; [.#####]
+		db	015h, 002h, 080h, 080h, 080h, 080h	; [##    ]
+		db	080h, 080h, 080h, 080h, 000h, 002h	; [    .#]
+		db	002h, 02Dh, 02Dh, 005h, 012h, 000h	; [#####.]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	080h, 080h, 000h, 000h, 002h, 012h	; [  ..##]
+		db	012h, 012h, 000h, 000h, 080h, 080h	; [##..  ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	000h, 000h, 080h, 000h, 000h, 000h	; [.. ...]
+		db	080h, 000h, 080h, 080h, 080h, 080h	; [ .    ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	000h, 001h, 009h, 009h, 009h, 01Bh	; [.#####]
+		db	003h, 000h, 080h, 080h, 080h, 080h	; [#.    ]
+		db	080h, 080h, 080h, 000h, 009h, 009h	; [   .##]
+		db	000h, 000h, 000h, 000h, 003h, 01Bh	; [....##]
+		db	000h, 080h, 080h, 080h, 080h, 080h	; [.     ]
+		db	000h, 009h, 001h, 000h, 001h, 009h	; [.##.##]
+		db	001h, 000h, 000h, 003h, 003h, 000h	; [#..##.]
+		db	080h, 080h, 080h, 080h, 001h, 009h	; [    ##]
+		db	000h, 009h, 009h, 001h, 000h, 000h	; [.###..]
+		db	001h, 000h, 003h, 003h, 080h, 080h	; [#.##  ]
+		db	080h, 000h, 009h, 001h, 001h, 009h	; [ .####]
+		db	009h, 000h, 000h, 000h, 000h, 001h	; [#....#]
+		db	003h, 003h, 000h, 080h, 080h, 000h	; [##.  .]
+		db	009h, 000h, 009h, 001h, 000h, 000h	; [#.##..]
+		db	002h, 002h, 000h, 000h, 000h, 00Bh	; [##...#]
+		db	000h, 080h, 080h, 000h, 009h, 000h	; [.  .#.]
+		db	001h, 000h, 000h, 002h, 002h, 002h	; [#..###]
+		db	002h, 002h, 002h, 00Bh, 000h, 080h	; [####. ]
+		db	080h, 000h, 009h, 003h, 001h, 002h	; [ .####]
+		db	002h, 002h, 012h, 012h, 012h, 002h	; [######]
+		db	001h, 00Bh, 000h, 080h, 080h, 080h	; [##.   ]
+		db	001h, 01Bh, 002h, 001h, 002h, 012h	; [######]
+		db	012h, 012h, 012h, 002h, 009h, 001h	; [######]
+		db	080h, 080h, 080h, 080h, 000h, 00Bh	; [    .#]
+		db	003h, 002h, 00Ah, 001h, 012h, 012h	; [######]
+		db	012h, 001h, 009h, 000h, 080h, 080h	; [###.  ]
+		db	080h, 080h, 080h, 000h, 01Bh, 003h	; [   .##]
+		db	002h, 000h, 002h, 002h, 001h, 009h	; [#.####]
+		db	000h, 080h, 080h, 080h, 080h, 080h	; [.     ]
+		db	080h, 080h, 000h, 003h, 001h, 003h	; [  .###]
+		db	003h, 001h, 003h, 000h, 080h, 080h	; [###.  ]
+		db	080h, 080h, 080h, 080h, 080h, 080h	; [      ]
+		db	080h, 000h, 000h, 000h, 000h, 000h	; [ .....]
+		db	000h, 080h, 080h, 080h, 080h, 080h	; [.     ]
 ; VGA init stub: sets ES=A000h, DI=0, CX=8, falls into clear_vram_outer
 
 vga_vram_init:
