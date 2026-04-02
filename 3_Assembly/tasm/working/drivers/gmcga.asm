@@ -55,6 +55,25 @@ cga_tile_stride	equ	18BCh
 cga_seg		equ	0B800h			; CGA framebuffer segment
 driver_base	equ	2000h			; driver loads at game_seg:2000h; CS-relative ptr = driver_base + (offset label)
 
+; Driver state variables (CS-relative offsets in driver data area)
+drv_timer_flag	equ	85h			; timer/display flag
+drv_time_param_a equ	86h			; time parameter A
+drv_time_param_b equ	8Bh			; time parameter B
+drv_sprite_flag	equ	93h			; sprite display flag
+drv_time_param_c equ	94h			; time parameter C
+drv_frame_idx	equ	9Dh			; current animation frame index
+drv_color_lut	equ	0ABh			; color lookup table base (indexed by frame)
+timestamp_buf	equ	24E8h			; timestamp storage area (6 bytes)
+
+; Segment offsets (add ax, offset to set ES/DS to that data segment)
+level_seg_ofs	equ	3000h			; CS+3000h = level/map data segment
+
+; Tilemap source data addresses (CS-relative, within driver or game segment)
+tilemap_src_a	equ	26BBh			; tilemap source A  (driver offset 06BBh)
+tilemap_src_b	equ	13BBh			; tilemap source B  (pre-driver game_seg area)
+tilemap_src_c	equ	37BBh			; tilemap source C  (post-driver segment area)
+tilemap_src_d	equ	3EBBh			; tilemap source D  (font/tile graphics area)
+
 ; Set ES to the CGA framebuffer segment (0xB800)
 SET_CGA_ES	MACRO
 		mov	ax, cga_seg
@@ -726,28 +745,28 @@ render_text_char		endp
 		jmp	set_plot_mode
 			                        ;* No entry point to code
 		push	ds
-		mov	ax,word ptr cs:[8Bh]
+		mov	ax,word ptr cs:[drv_time_param_b]
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
 		pop	ds
 		mov	di,tile_color_tbl
 		mov	cx,105h
-		mov	ax,26BBh
+		mov	ax,tilemap_src_a
 		mov	bx,palette_state
 		call	render_tilemap_large
 		pop	ds
 		retn
 			                        ;* No entry point to code
 		push	ds
-		mov	ax,word ptr cs:[86h]
-		mov	dl,byte ptr cs:[85h]
+		mov	ax,word ptr cs:[drv_time_param_a]
+		mov	dl,byte ptr cs:[drv_timer_flag]
 		call	init_timestamp
 		push	cs
 		pop	ds
 		mov	di,text_vga_ofs_a
 		mov	cx,106h
-		mov	ax,13BBh
+		mov	ax,tilemap_src_b
 		mov	bx,palette_state
 		call	render_tilemap_large
 		pop	ds
@@ -755,9 +774,9 @@ render_text_char		endp
 			                        ;* No entry point to code
 		push	ds
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:[9Dh]
+		mov	bl,byte ptr cs:[drv_frame_idx]
 		dec	bl
-		mov	al,byte ptr cs:[0ABh][bx]
+		mov	al,byte ptr cs:[drv_color_lut][bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
 		call	init_timestamp
@@ -765,26 +784,26 @@ render_text_char		endp
 		pop	ds
 		mov	di,text_vga_ofs_b
 		mov	cx,103h
-		mov	ax,37BBh
+		mov	ax,tilemap_src_c
 		mov	bx,palette_state
 		call	render_tilemap_large
 		pop	ds
 		retn
 			                        ;* No entry point to code
-		test	byte ptr cs:[93h],0FFh
+		test	byte ptr cs:[drv_sprite_flag],0FFh
 		jnz	sprite_check			; Jump if not zero
 		retn
 
 sprite_check:
 		push	ds
-		mov	ax,word ptr cs:[94h]
+		mov	ax,word ptr cs:[drv_time_param_c]
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
 		pop	ds
 		mov	di,text_vga_ofs_b
 		mov	cx,103h
-		mov	ax,3EBBh
+		mov	ax,tilemap_src_d
 		mov	bx,palette_state
 		call	render_tilemap_large
 		pop	ds
@@ -793,7 +812,7 @@ sprite_check:
 ;��������������������������������������������������������������������������
 
 init_timestamp		proc	near
-		mov	di,24E8h
+		mov	di,timestamp_buf
 		call	time_to_bcd
 		mov	cx,6
 
@@ -1452,7 +1471,7 @@ copy_si_wrap:
 		add	bx,bx
 		add	si,bx
 		mov	ax,cs
-		add	ax,3000h
+		add	ax,level_seg_ofs
 		mov	es,ax
 		mov	ax,0B800h
 		mov	ds,ax
@@ -1492,7 +1511,7 @@ copy_words_wrap:
 		add	bx,bx
 		add	di,bx
 		mov	ax,cs
-		add	ax,3000h
+		add	ax,level_seg_ofs
 		mov	ds,ax
 		SET_CGA_ES
 		mov	bl,ch
@@ -1808,7 +1827,7 @@ vram_init_wrap:
 		push	ds
 		push	si
 		mov	ax,cs
-		add	ax,3000h
+		add	ax,level_seg_ofs
 		mov	es,ax
 		mov	ax,30h
 		mul	cx			; dx:ax = reg * ax
@@ -1819,7 +1838,7 @@ vram_init_wrap:
 		pop	es
 		pop	cx
 		mov	ax,cs
-		add	ax,3000h
+		add	ax,level_seg_ofs
 		mov	ds,ax
 		mov	si,zero_offset
 
