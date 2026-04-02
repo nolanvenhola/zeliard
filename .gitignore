@@ -26,3 +26,8 @@ logs/
 3_Assembly/tasm/research/**/*.LST
 3_Assembly/tasm/research/**/*.OBJ
 3_Assembly/tasm/research/**/*.SDF
+venv/
+.venv
+.env
+.pyc
+__pycache__
