@@ -54,6 +54,8 @@ cga_tile_stride	equ	18BCh
 
 cga_seg		equ	0B800h			; CGA framebuffer segment
 driver_base	equ	2000h			; driver loads at game_seg:2000h; CS-relative ptr = driver_base + (offset label)
+; Sprite animation frame table CS address (used as base for indexed frame loads)
+sprite_anim_frames_cs equ driver_base + (offset sprite_anim_frames)
 
 ; Driver state variables (CS-relative offsets in driver data area)
 drv_timer_flag	equ	85h			; timer/display flag
@@ -1691,16 +1693,35 @@ rect_fill_wrap:
 
 fill_rectangle		endp
 
-		db	 00h,0FFh,0AAh,0FFh, 55h,0FFh
-		db	0FFh,0AAh, 1Eh, 56h, 0Eh, 1Fh
-		db	 32h,0E4h, 03h,0C0h, 03h,0C0h
-		db	 8Bh,0F0h,0D0h,0EBh, 1Bh,0FFh
-		db	 81h,0E7h, 00h, 20h,0B0h, 50h
-		db	0F6h,0E3h, 03h,0F8h, 8Ah,0DFh
-		db	 32h,0FFh, 03h,0FBh,0B8h, 00h
-		db	0B8h, 8Eh,0C0h, 8Bh, 9Ch, 8Eh
-		db	 2Ch, 8Bh,0B4h, 90h, 2Ch,0B9h
-		db	 0Dh, 00h
+; tile_offset_tbl data (12 bytes: indices 0-11 for tile bit-shift offsets).
+; NOTE: bytes 8-11 (1Eh,56h,0Eh,1Fh) are DUAL-USE — they are both table
+; data values AND the code prologue for sprite_deco_setup (same dual-use
+; pattern as the driver's main dispatch table).
+tile_offset_tbl_lbl:
+		db	00h, 0FFh, 0AAh, 0FFh, 55h, 0FFh	; table indices 0-5
+		db	0FFh, 0AAh				; table indices 6-7
+
+; Sprite decoration setup — entry at table index 8 (dual-use bytes 8-11).
+; Calculates CGA screen offset, sets ES=B800h, loads sprite frame pointers.
+sprite_deco_setup:
+		db	1Eh, 56h, 0Eh, 1Fh		; push ds/push si/push cs/pop ds  [table 8-11]
+		xor	ah,ah
+		add	ax,ax
+		add	ax,ax
+		mov	si,ax
+		shr	bl,1
+		sbb	di,di
+		and	di,2000h
+		mov	al,50h
+		mul	bl
+		add	di,ax
+		mov	bl,bh
+		db	32h, 0FFh			; xor bh,bh  (alt encoding)
+		add	di,bx
+		SET_CGA_ES
+		mov	bx,word ptr [si+sprite_anim_frames_cs]
+		mov	si,word ptr [si+sprite_anim_frames_cs+2]
+		mov	cx,0Dh
 
 deco_draw_loop:
 			push	cx
