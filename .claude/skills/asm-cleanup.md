@@ -98,7 +98,25 @@ Define macros before `seg_a segment`. Apply them only where the instruction ORDE
 
 ---
 
-## Step 6 — Decode raw `db` data tables
+## Step 6 — Decode ALL raw `db` lines
+
+**The rule: every `db` line must have a true meaning or code conversion. No `db` line should remain as unexplained hex after cleanup.**
+
+For each `db` block, determine which of these it is and apply the appropriate treatment:
+
+| What it is | How to identify | Treatment |
+|---|---|---|
+| x86 instructions | After a `proc`, before a `retn`, no "No entry point" marker | Decode to real mnemonics |
+| Word pointer table (jump/fn table) | Pairs of bytes all in the same address range | Convert to `dw` with labels or comments identifying each target |
+| String/text data | Values in 0x20–0x7E in sequence | Convert to `db 'string'` literals |
+| Named constant (color, mode, flag) | Single byte used as a parameter | Add a named EQU or inline comment |
+| Binary bitmap/tile data | Patterns of bits in large blocks | Add a block comment naming the structure; group rows logically |
+| Numeric lookup table | Indexed by register in adjacent code | Add a table label and per-entry comments |
+| Embedded code in unreachable section | "No entry point to code" marker | Decode instructions, add a label explaining what calls it |
+
+If you cannot determine the meaning of a `db` block, add a comment explaining what you know (where it's referenced from, what registers point to it) so it can be investigated later.
+
+---
 
 **Mode lookup tables** — `db xxh, yyh` word pairs → `dw` with per-mode comments and `GAME_CODE_BASE + (offset label)`:
 
