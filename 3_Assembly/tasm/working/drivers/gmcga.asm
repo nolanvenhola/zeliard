@@ -17,7 +17,7 @@ include  srmacros.inc
 
 ; The following equates show data references outside the range of the program.
 
-tile_src_base_b		equ	2751h			;*
+tile_src_base_b		equ	driver_base + (offset tile_src_base_b_lbl)
 anim_ptr_0		equ	0E200h			;*
 anim_ptr_1		equ	0E202h			;*
 anim_ptr_2		equ	0E206h			;*
@@ -1153,40 +1153,42 @@ anim_ptr3_check:
 		call	render_tilemap_small
 		pop	ds
 		retn
-; CGA 2-bitplane tile bitmap data (patterns for render_tilemap_large):
-; Each pair of rows (6 bytes each) encodes one tile line in 2 CGA planes.
-		db	 00h, 00h, 00h, 00h,0FCh,0FFh
-		db	0FFh, 3Fh, 2Ah,0AAh,0AAh,0A8h
-		db	 00h, 00h, 00h, 00h, 03h, 00h
-		db	 00h,0C0h, 80h, 00h, 00h, 02h
-		db	 0Eh, 38h,0F8h, 00h, 03h, 00h
-		db	 00h,0C0h, 82h, 08h, 08h, 02h
-		db	 0Fh,0BBh, 8Eh, 00h, 03h, 00h
-		db	 00h,0C0h, 80h, 88h, 82h, 02h
-		db	 0Fh,0FBh, 8Eh, 00h, 03h, 00h
-		db	 00h,0C0h, 80h, 08h, 82h, 02h
-		db	 0Eh,0FBh, 8Eh, 00h, 03h, 00h
-		db	 00h,0C0h, 82h, 08h, 82h, 02h
-		db	 0Eh, 38h,0F8h, 00h, 03h, 00h
-		db	 00h,0C0h, 82h, 08h, 08h, 02h
-		db	 00h, 00h, 00h, 00h, 03h, 00h
-		db	 00h,0C0h, 80h, 00h, 00h, 02h
-		db	 00h, 00h, 00h, 00h, 03h, 00h
-		db	 00h,0C0h, 80h, 00h, 00h, 02h
-		db	 0Eh, 38h,0FBh,0F8h, 03h, 00h
-		db	 00h,0C0h, 82h, 08h, 08h, 0Ah
-		db	 0Eh, 3Bh, 83h, 80h, 03h, 00h
-		db	 00h,0C0h, 82h, 08h, 80h, 82h
-		db	 0Eh, 38h,0E3h,0C0h, 03h, 00h
-		db	 00h,0C0h, 82h, 08h, 20h, 02h
-		db	 0Eh, 38h, 3Bh, 80h, 03h, 00h
-		db	 00h,0C0h, 82h, 08h, 08h, 82h
-		db	 03h,0E3h,0E3h,0F8h, 03h, 00h
-		db	 00h,0C0h, 80h, 20h, 20h, 0Ah
-		db	 00h, 00h, 00h, 00h, 03h, 00h
-		db	 00h,0C0h, 80h, 00h, 00h, 02h
-		db	 00h, 00h, 00h, 00h,0FCh,0FFh
-		db	0FFh, 3Fh, 2Ah,0AAh,0AAh,0A8h
+; CGA 2-bitplane tile bitmap (16 rows x 12 bytes = 192 bytes).
+; Each row = 2 x 6-byte lines: even scanline | odd scanline.
+; Referenced as tile_src_base_b by render_tilemap_large.
+tile_src_base_b_lbl:
+		db	 00h, 00h, 00h, 00h,0FCh,0FFh	; row  0 even
+		db	0FFh, 3Fh, 2Ah,0AAh,0AAh,0A8h	; row  0 odd
+		db	 00h, 00h, 00h, 00h, 03h, 00h	; row  1 even
+		db	 00h,0C0h, 80h, 00h, 00h, 02h	; row  1 odd
+		db	 0Eh, 38h,0F8h, 00h, 03h, 00h	; row  2 even
+		db	 00h,0C0h, 82h, 08h, 08h, 02h	; row  2 odd
+		db	 0Fh,0BBh, 8Eh, 00h, 03h, 00h	; row  3 even
+		db	 00h,0C0h, 80h, 88h, 82h, 02h	; row  3 odd
+		db	 0Fh,0FBh, 8Eh, 00h, 03h, 00h	; row  4 even
+		db	 00h,0C0h, 80h, 08h, 82h, 02h	; row  4 odd
+		db	 0Eh,0FBh, 8Eh, 00h, 03h, 00h	; row  5 even
+		db	 00h,0C0h, 82h, 08h, 82h, 02h	; row  5 odd
+		db	 0Eh, 38h,0F8h, 00h, 03h, 00h	; row  6 even
+		db	 00h,0C0h, 82h, 08h, 08h, 02h	; row  6 odd
+		db	 00h, 00h, 00h, 00h, 03h, 00h	; row  7 even
+		db	 00h,0C0h, 80h, 00h, 00h, 02h	; row  7 odd
+		db	 00h, 00h, 00h, 00h, 03h, 00h	; row  8 even
+		db	 00h,0C0h, 80h, 00h, 00h, 02h	; row  8 odd
+		db	 0Eh, 38h,0FBh,0F8h, 03h, 00h	; row  9 even
+		db	 00h,0C0h, 82h, 08h, 08h, 0Ah	; row  9 odd
+		db	 0Eh, 3Bh, 83h, 80h, 03h, 00h	; row 10 even
+		db	 00h,0C0h, 82h, 08h, 80h, 82h	; row 10 odd
+		db	 0Eh, 38h,0E3h,0C0h, 03h, 00h	; row 11 even
+		db	 00h,0C0h, 82h, 08h, 20h, 02h	; row 11 odd
+		db	 0Eh, 38h, 3Bh, 80h, 03h, 00h	; row 12 even
+		db	 00h,0C0h, 82h, 08h, 08h, 82h	; row 12 odd
+		db	 03h,0E3h,0E3h,0F8h, 03h, 00h	; row 13 even
+		db	 00h,0C0h, 80h, 20h, 20h, 0Ah	; row 13 odd
+		db	 00h, 00h, 00h, 00h, 03h, 00h	; row 14 even
+		db	 00h,0C0h, 80h, 00h, 00h, 02h	; row 14 odd
+		db	 00h, 00h, 00h, 00h,0FCh,0FFh	; row 15 even
+		db	0FFh, 3Fh, 2Ah,0AAh,0AAh,0A8h	; row 15 odd
 ; Sprite source selector A: computes SI from row*192 + game_seg:[E208h], calls render_tilemap_small+2
 		push	ds
 		mov	ds,cs:[gvar_game_seg]
