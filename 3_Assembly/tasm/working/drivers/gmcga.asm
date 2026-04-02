@@ -430,11 +430,18 @@ plot_and_wrap:
 
 plot_pixel		endp
 
-		db	 00h,0BFh, 65h, 39h, 2Eh, 8Bh
-		db	 1Eh,0B2h, 00h,0EBh, 05h,0BFh
-		db	 45h, 3Bh,0EBh, 00h,0B8h, 00h
-		db	0B8h, 8Eh,0C0h,0E8h, 7Eh, 00h
-		db	50h
+; Two-entry orphaned text setup function (called via dispatch table)
+; Entry A: adjusts data[bx+3965h] with BH, loads BX from driver var, then init
+		add	byte ptr [bx+3965h],bh
+		mov	bx,cs:[00B2h]		; load BX from driver variable
+		jmp	short text_setup_cga	; skip alternate DI load (+5)
+; Entry B: loads DI with alternate screen position, then falls through
+		mov	di,3B45h
+		jmp	short text_setup_cga	; JMP +0, fall through
+text_setup_cga:
+		SET_CGA_ES
+		call	calc_text_width
+		push	ax
 
 draw_vline_loop:
 			or	bl,bl			; Zero ?
