@@ -109,32 +109,33 @@ start:
 ; Calculates CGA byte offset: DI = (col/2 & 2000h) + col*80 + row
 ; then draws top border, middle rows, bottom border via fill_horizontal_line.
 ; JZ at byte 23 jumps to set_plot_mode (height=0 → init mode only).
-		db	0D0h,0EBh		; SHR BL,1  (col/2, sets carry for bank)
-		db	1Bh,0FFh		; SBB DI,DI  (DI = 0 or -1 from carry)
-		db	81h,0E7h,00h,20h	; AND DI,2000h  (even/odd bank bit)
-		db	0B0h,50h		; MOV AL,80  (bytes per CGA scanline)
-		db	0F6h,0E3h		; MUL BL  (AX = col * 80)
-		db	03h,0F8h		; ADD DI,AX  (DI = bank + col offset)
-		db	8Ah,0DFh		; MOV BL,BH  (BL = row)
-		db	32h,0FFh		; XOR BH,BH
-		db	03h,0FBh		; ADD DI,BX  (DI = final byte offset)
-		db	58h			; POP AX  (restore height)
-		db	0Ah,0C0h		; OR AL,AL  (height == 0?)
-		db	74h,6Ah			; JZ set_plot_mode  (+6Ah → init mode)
-		db	57h			; PUSH DI  (save frame position)
-		db	80h,0E9h,04h		; SUB CL,4  (width minus 2 border cols)
-		db	83h,0C7h,50h		; ADD DI,50h  (skip to next row)
-		db	0E8h,60h,00h		; CALL fill_horizontal_line  (+60h)
-		db	5Fh			; POP DI
-		db	0B8h,0Fh,0F0h		; MOV AX,0F00Fh  (top row CGA pattern)
-		db	0E8h,33h,00h		; CALL fill_horizontal_line  (+33h)
-		db	0B8h,3Fh,0FCh		; MOV AX,0FC3Fh  (middle rows pattern)
-		db	0E8h,2Dh,00h		; CALL fill_horizontal_line  (+2Dh)
-		db	51h,53h			; PUSH CX / PUSH BX
-		db	8Ah,0DDh		; MOV BL,CH  (BL = row count)
-		db	0FEh,0CBh		; DEC BL
-		db	32h,0FFh		; XOR BH,BH
-		db	32h,0EDh		; XOR CH,CH
+		shr	bl,1
+		sbb	di,di
+		and	di,2000h
+		mov	al,50h
+		mul	bl
+		add	di,ax
+		mov	bl,bh
+		xor	bh,bh
+		add	di,bx
+		pop	ax
+		or	al,al
+		jz	clear_screen_init
+		push	di
+		sub	cl,4
+		add	di,50h
+		call	clear_screen_init
+		pop	di
+		mov	ax,0F00Fh
+		call	fill_horizontal_line
+		mov	ax,0FC3Fh
+		call	fill_horizontal_line
+		push	cx
+		push	bx
+		mov	bl,ch
+		dec	bl
+		db	32h,0FFh		; xor bh,bh
+		db	32h,0EDh		; xor ch,ch
 
 init_vram_loop:
 			mov	byte ptr es:[di],0F0h
@@ -1158,27 +1159,27 @@ anim_ptr3_check:
 		db	 00h, 00h, 00h, 00h,0FCh,0FFh
 		db	0FFh, 3Fh, 2Ah,0AAh,0AAh,0A8h
 ; Sprite source selector A: computes SI from row*192 + game_seg:[E208h], calls render_tilemap_small+2
-		db	1Eh			; push ds
-		db	2Eh,8Eh,1Eh,2Ch,0FFh	; mov ds, cs:gvar_game_seg
-		db	32h,0E4h		; xor ah, ah
-		db	0B9h,0C0h,00h		; mov cx, 192
-		db	0F7h,0E1h		; mul cx  (dx:ax = ax * 192)
-		db	03h,06h,08h,0E2h	; add ax, [0E208h]  (game_seg sprite base A)
-		db	8Bh,0F0h		; mov si, ax
-		db	0E8h,1Ah,00h		; call render_tilemap_small+2  (+1Ah)
-		db	1Fh			; pop ds
-		db	0C3h			; retn
+		push	ds
+		mov	ds,cs:[gvar_game_seg]
+		xor	ah,ah
+		mov	cx,0C0h
+		mul	cx
+		add	ax,ds:[0E208h]
+		mov	si,ax
+		call	render_tilemap_small
+		pop	ds
+		retn
 ; Sprite source selector B: same but uses base [E204h] and calls render_tilemap_small  (+2)
-		db	1Eh			; push ds
-		db	2Eh,8Eh,1Eh,2Ch,0FFh	; mov ds, cs:gvar_game_seg
-		db	32h,0E4h		; xor ah, ah
-		db	0B9h,0C0h,00h		; mov cx, 192
-		db	0F7h,0E1h		; mul cx
-		db	03h,06h,04h,0E2h	; add ax, [0E204h]  (game_seg sprite base B)
-		db	8Bh,0F0h		; mov si, ax
-		db	0E8h,02h,00h		; call render_tilemap_small  (+2)
-		db	1Fh			; pop ds
-		db	0C3h			; retn
+		push	ds
+		mov	ds,cs:[gvar_game_seg]	; switch to game data segment
+		xor	ah,ah
+		mov	cx,0C0h
+		mul	cx
+		add	ax,ds:[0E204h]		; + sprite base B in game segment
+		mov	si,ax
+		call	render_tilemap_small
+		pop	ds
+		retn
 
 ;��������������������������������������������������������������������������
 
@@ -1746,12 +1747,10 @@ deco_draw_wrap:
 		db	 6Bh,0ABh,0C0h, 00h, 58h,0AFh
 		db	 00h, 00h, 1Dh, 54h, 00h, 00h
 ; CGA init stub: initializes ES=0B800h, DI=0, CX=8, then falls into vram_init_outer
-		db	 00h, 00h, 00h	; (sprite data tail padding)
-		db	0B8h, 00h,0B8h	; mov ax, 0B800h  (CGA segment)
-		db	 8Eh,0C0h	; mov es, ax
-		db	 33h,0FFh	; xor di, di
-		db	0B9h, 08h
-		db	 00h
+		db	00h, 00h, 00h	; sprite data tail padding
+		SET_CGA_ES		; mov ax, 0B800h / mov es, ax
+		xor	di,di
+		mov	cx,8
 
 vram_init_outer:
 			push	cx
