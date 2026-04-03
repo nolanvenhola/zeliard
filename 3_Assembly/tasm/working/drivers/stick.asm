@@ -28,46 +28,43 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-; External references - graphics/screen functions in loaded segments
-
-gfx_screen_base	equ	2000h			; Screen buffer base
-gfx_fn_setup	equ	2022h			; Screen setup function
-gfx_fn_draw	equ	2026h			; Screen draw function
-gfx_fn_restore	equ	2028h			; Screen restore function
-gfx_fn_clear	equ	202Ah			; Screen clear function
-save_file_magic	equ	444Dh			; Save file magic number 'DM'
+; stick.bin exported constants — also defined in stick.inc for external callers.
+; Note: zeliard.inc (working/core/) cannot be included here because TasmRunner
+; only mounts the source file's own directory. Names that differ from zeliard.inc
+; canonical names are noted with (= zeliard_name) comments.
+include  stick.inc
 
 ; Game state variables (0xFF00+ shared with zeliad.exe and game.bin)
-
-gvar_chunk_load_fn equ	0FF00h			; Chunk loader function
-gvar_old_int08	equ	0FF04h			; Original INT 08h vector
+; Canonical names are in working/core/zeliard.inc.  Where this file uses a
+; different name for the same address, the zeliard.inc name is shown in parens.
+gvar_chunk_load_fn equ	0FF00h			; Chunk loader function ptr
+gvar_old_int08	equ	0FF04h			; Saved INT 08h (= gvar_old_int08_ofs)
 gvar_key_released equ	0FF09h			; Key released flag
 gvar_last_key	equ	0FF0Ah			; Last key scancode
-gvar_input_fn	equ	0FF0Ch			; Input handler function ptr
-gvar_gfx_fn	equ	0FF10h			; Graphics handler function ptr
-gvar_timer_flag	equ	0FF16h			; Timer flag
-gvar_timer_count equ	0FF17h			; Timer counter
-gvar_skip_input	equ	0FF18h			; Input skip flag
-gvar_frame_timer equ	0FF1Ah			; Frame timer
-gvar_anim_timer	equ	0FF1Bh			; Animation timer
-gvar_skip_flag	equ	0FF1Dh			; Skip/interrupt flag
-gvar_state_a	equ	0FF1Eh			; Game state A
-gvar_state_b	equ	0FF1Fh			; Game state B
+gvar_input_fn	equ	0FF0Ch			; Input handler ptr (= gvar_input_fn_ofs)
+gvar_gfx_fn	equ	0FF10h			; Graphics handler ptr (= gvar_gfx_fn_ofs)
+gvar_timer_flag	equ	0FF16h			; Timer/display flag (= gvar_skip_flag)
+gvar_timer_count equ	0FF17h			; Timer counter word (= gvar_timer_flag)
+gvar_skip_input	equ	0FF18h			; Input skip counter (= gvar_timer_counter)
+gvar_frame_timer equ	0FF1Ah			; Frame timer accumulator
+gvar_anim_timer	equ	0FF1Bh			; Animation timer accumulator
+gvar_skip_flag	equ	0FF1Dh			; Skip/state flag (= gvar_skip_input)
+gvar_state_a	equ	0FF1Eh			; Game state A (= gvar_state_b)
+gvar_state_b	equ	0FF1Fh			; Game state B (= gvar_state_c)
 gvar_sound_flag	equ	0FF27h			; Sound enabled flag
 gvar_key_pressed equ	0FF28h			; Key pressed scancode
 gvar_enter_key	equ	0FF29h			; Enter key scancode (0x0D)
-gvar_save_name	equ	0FF33h			; Save filename (8 chars)
-gvar_music_state equ	0FF3Bh			; Music state flag
-gvar_joy_cal_x	equ	0FF48h			; Joystick X calibration
-gvar_joy_cal_y	equ	0FF49h			; Joystick Y calibration
+gvar_save_name	equ	0FF33h			; Save filename (= gvar_save_filename)
+gvar_music_state equ	0FF3Bh			; Music state (= gvar_music_flag_d)
+gvar_joy_cal_x	equ	0FF48h			; Joystick X calibration centre
+gvar_joy_cal_y	equ	0FF49h			; Joystick Y calibration centre
 gvar_frame_count equ	0FF50h			; Frame counter
 gvar_volume_a	equ	0FF74h			; Volume A
 gvar_volume_b	equ	0FF75h			; Volume B
-gvar_old_int09	equ	0FF78h			; Original INT 09h vector
-gvar_old_int09_seg equ	0FF79h			; Original INT 09h segment
-herc_video_seg	equ	0B000h			; Hercules video segment
+gvar_old_int09	equ	0FF78h			; Saved INT 09h raw (= gvar_old_int09_raw)
+gvar_old_int09_seg equ	0FF79h			; Saved INT 09h seg (= gvar_old_int09_ofs)
+herc_video_seg	equ	0B000h			; HGC framebuffer segment
 zero_offset	equ	0			; Zero constant
-dialog_text_ofs	equ	0E34h			; Dialog text offset
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
