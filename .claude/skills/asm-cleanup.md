@@ -291,6 +291,45 @@ The formatter:
 
 ---
 
+## Step 10b — Create / update shared .inc file for linkability
+
+Every file that exports constants used by other files, or imports constants from other files, needs a shared `.inc` header so that changing one file doesn't silently break another.
+
+**What goes in the .inc file:**
+
+1. **Exported EQUs** — any address, offset, or constant defined in this file that another file accesses by hardcoded value. Example: `stdply.inc` exports `drv_timer_flag equ 85h` so all `gm*.bin` drivers stay in sync.
+
+2. **External EQUs this file consumes** — if this file has `data_NNe equ NNNNh` Sourcer auto-names that duplicate EQUs already named elsewhere, those point to a shared dependency. Move them to the shared include.
+
+**Process:**
+
+```
+; 1. Find all EQU values in this file that other files might reference
+grep -n "equ" <file.asm>
+
+; 2. Find which of those values also appear hardcoded in sibling files
+python3 -c "
+import re, os, glob
+vals = { ... }   # EQU name -> hex value from this file
+for f in glob.glob('working/drivers/*.asm'):
+    ...          # search for raw hex matches
+"
+
+; 3. Create or update <module>.inc with the shared EQUs
+
+; 4. Add  include  <module>.inc  to every file that needs them
+
+; 5. Remove the duplicate EQU definitions from each file
+```
+
+**Naming convention:** `<binary_stem>.inc` — e.g. `stick.inc`, `stdply.inc`, `zeliard.inc`.
+
+**Check the reverse too** — if this file references raw CS/DS addresses that belong to another module (e.g. `gvar_*` addresses owned by `zeliard.inc`, stdply field offsets in `stdply.inc`), add `include <that_module>.inc` rather than duplicating the EQUs.
+
+Verify bit-perfect after adding each include.
+
+---
+
 ## Step 11 — Final verification and commit
 
 Before committing, confirm NO unexplained raw `db` lines remain:
