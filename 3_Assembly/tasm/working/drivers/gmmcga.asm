@@ -9,7 +9,7 @@ PAGE  59,132
 ;  - Screen clear, pixel plot, line fill (horizontal/vertical)
 ;  - Rectangle fill
 ;  - Text character rendering (8x8 with color)
-;  - Tilemap rendering (large 6x18 and small 8x16 tiles)
+;  - Tilemap rendering (large 6x7 glyphs from font_ptr_b, small 16x16 sprites)
 ;  - 3-bitplane sprite decoding (3 bits per pixel, 8 colors)
 ;  - Time/BCD formatting utilities
 ;
