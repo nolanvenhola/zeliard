@@ -17,39 +17,47 @@ include  srmacros.inc
 
 ; The following equates show data references outside the range of the program.
 
-data_1e		equ	27BBh			;*
-data_2e		equ	0E200h			;*
-data_3e		equ	0E202h			;*
-data_4e		equ	0E206h			;*
-data_5e		equ	0E20Ah			;*
-data_6e		equ	0E20Ch			;*
-data_18e	equ	21C0h			;*
-data_19e	equ	22DEh			;*
-data_20e	equ	256Ah			;*
-data_21e	equ	256Bh			;*
-data_22e	equ	256Dh			;*
-data_23e	equ	2D27h			;*
-data_24e	equ	2E93h			;*
-data_25e	equ	2E94h			;*
-data_26e	equ	2E95h			;*
-data_27e	equ	2E97h			;*
-data_28e	equ	4526h			;*
-data_29e	equ	0A000h			;*
-data_30e	equ	0A523h			;*
-data_31e	equ	0BB23h			;*
-data_32e	equ	0C821h			;*
-data_33e	equ	0D92Bh			;*
-data_34e	equ	0DEA2h			;*
-data_35e	equ	0E52Ah			;*
-data_36e	equ	0F500h			;*
-data_37e	equ	0F502h			;*
-data_38e	equ	0F504h			;*
-data_39e	equ	0F828h			;*
-data_40e	equ	0FE71h			;*
-data_41e	equ	0FF2Ch			;*
-data_42e	equ	0FF77h			;*
-data_43e	equ	316Ch			;*
-data_44e	equ	46Ch
+tile_src_base	equ	27BBh			;* tilemap source base (default SI)
+anim_ptr_0	equ	0E200h			;*
+anim_ptr_1	equ	0E202h			;*
+anim_ptr_2	equ	0E206h			;*
+anim_ptr_3	equ	0E20Ah			;*
+anim_ptr_4	equ	0E20Ch			;*
+tile_src_base_b	equ	21C0h			;* hud mask tile source B
+plot_mode	equ	22DEh			;* plot mode flag byte
+text_vga_ofs_a	equ	256Ah			;* VGA offset for text function A
+text_vga_ofs_b	equ	256Bh			;* VGA offset for text function B
+text_vga_ofs_c	equ	256Dh			;* VGA offset for text function C
+sprite_anim_tbl	equ	2D27h			;* sprite animation frame pointer table
+tile_fg_mask	equ	2E93h			;* tile foreground color/map mask byte
+tile_bg_mask	equ	2E94h			;* tile background color/map mask byte
+char_col_ptr	equ	2E95h			;* text cursor column word (BX)
+char_row_ptr	equ	2E97h			;* text cursor row byte (CL), +8 per newline
+dispatch_tbl	equ	4526h			;*
+ega_seg		equ	0A000h			;* EGA framebuffer segment
+ega_plot_tbl_a	equ	0A523h			;*
+ega_plot_tbl_b	equ	0BB23h			;*
+ega_plot_tbl_c	equ	0C821h			;*
+ega_plot_tbl_d	equ	0D92Bh			;*
+music_fn_ptr	equ	0DEA2h			;* music/timer function pointer (game seg)
+ega_plot_tbl_e	equ	0E52Ah			;*
+font_ptr_a	equ	0F500h			;*
+font_ptr_b	equ	0F502h			;*
+font_ptr_c	equ	0F504h			;*
+ega_plot_tbl_f	equ	0F828h			;*
+ega_col_stride	equ	0FE71h			;* EGA text column stride (-399; net +1 after 5-row char)
+gvar_game_seg	equ	0FF2Ch			;*
+gvar_volume_b	equ	0FF77h			;*
+ega_pixel_ofs	equ	316Ch			;* initial EGA byte offset for pixel plot
+ega_hud_ofs	equ	46Ch			;* HUD area starting offset in EGA framebuffer
+
+driver_base	equ	2000h			; driver loads at game_seg:2000h
+
+; Set ES to the EGA framebuffer segment (0xA000)
+SET_EGA_ES	MACRO
+		mov	ax, ega_seg
+		mov	es, ax
+		ENDM
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -60,42 +68,61 @@ seg_a		segment	byte public
 gmega		proc	far
 
 start:
-		inc	si
-		and	ds:data_32e,bl
-;*		and	di,bx
-		db	 21h,0DFh		;  Fixup - byte match
-		and	bl,[si]
-		and	bp,cx
-		and	ah,ds:data_30e
-		and	si,ss:data_31e[bp+di]
-		and	al,0C5h
-		and	al,0E2h
-		and	al,2
-		and	ax,252Bh
-		mov	si,data_28e
-		daa				; Decimal adjust
-		pop	di
-		daa				; Decimal adjust
+; Function dispatch table (35 word entries) followed by dispatch mechanism code.
+; Entries are CS-relative addresses (driver loads at game_seg:2000h).
+; First 70 bytes = 35 dw pointers; remaining = dispatch mechanism code.
+		dw	02046h			; fn  0
+		dw	0211Eh			; fn  1
+		dw	021C8h			; fn  2
+		dw	022DFh			; fn  3
+		dw	0231Ch			; fn  4
+		dw	022E9h			; fn  5
+		dw	02326h			; fn  6
+		dw	023A5h			; fn  7
+		dw	023B3h			; fn  8
+		dw	024BBh			; fn  9
+		dw	024C5h			; fn 10
+		dw	024E2h			; fn 11
+		dw	02502h			; fn 12
+		dw	0252Bh			; fn 13
+		dw	026BEh			; fn 14
+		dw	02745h			; fn 15
+		dw	0275Fh			; fn 16
+		dw	02958h			; fn 17
+		dw	029E9h			; fn 18
+		dw	02A33h			; fn 19
+		dw	02A8Bh			; fn 20
+		dw	02AE5h			; fn 21
+		dw	02B3Ah			; fn 22
+		dw	02B8Eh			; fn 23
+		dw	025D9h			; fn 24
+		dw	02570h			; fn 25
+		dw	02779h			; fn 26
+		dw	0279Ah			; fn 27
+		dw	023C1h			; fn 28
+		dw	0287Bh			; fn 29
+		dw	02893h			; fn 30
+		dw	02BF8h			; fn 31
+		dw	0214Eh			; fn 32
+		dw	02E63h			; fn 33
+		dw	02E92h			; fn 34
+; Dispatch mechanism: AL=fn#, BL=col, BH=row. Computes DI=col*80+row.
+; fn 0 (AL=0) jumps directly to clear_screen (init only path).
+; fn 1+ PUSHes DI then falls through to border-draw setup at loc_1.
+dispatch_call:
+		push	ax
+		mov	ax, 50h
+		mul	bl
+		mov	bl, bh
+		db	32h, 0FFh		; xor bh, bh  (alt encoding: 32h r,r/m vs 30h r/m,r)
+		add	ax, bx
+		mov	di, ax
 		pop	ax
-;*		sub	cx,bp
-		db	 29h,0E9h		;  Fixup - byte match
-		sub	[bp+di],si
-		sub	cl,ss:data_35e[bp+di]
-		sub	bh,[bp+si]
-		sub	cx,ss:data_33e[bp]
-		and	ax,2570h
-		jns	loc_1			; Jump if not sign
-;*		call	far ptr fill_rectangle	;*
-		db	9Ah
-		dw	0C127h, 7B23h		;  Fixup - byte match
-		sub	ss:data_39e[bp+di],dl
-		sub	cx,[bp+21h]
-		db	 63h, 2Eh, 92h, 2Eh, 50h,0B8h
-		db	 50h, 00h,0F6h,0E3h, 8Ah,0DFh
-		db	 32h,0FFh, 03h,0C3h, 8Bh,0F8h
-		db	 58h, 0Ah,0C0h, 75h, 03h,0E9h
-		db	 9Dh, 00h
-		db	57h
+		db	0Ah, 0C0h		; or al, al  (alt encoding: 0Ah r,r/m vs 08h r/m,r)
+		jnz	dispatch_call_do
+		jmp	near ptr clear_screen	; fn 0: init mode only, jump to clear_screen
+dispatch_call_do:
+		push	di
 loc_1:
 		sub	cl,4
 		add	di,0A0h
@@ -158,7 +185,7 @@ loc_3:
 		mov	ax,102h
 		out	dx,ax			; port 3C4h, EGA sequencr index
 						;  al = 2, map mask register
-		test	byte ptr cs:data_42e,0FFh
+		test	byte ptr cs:gvar_volume_b,0FFh
 		jz	loc_4			; Jump if zero
 		mov	ax,0F02h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -196,8 +223,7 @@ fill_horizontal_line		endp
 ;��������������������������������������������������������������������������
 
 clear_screen		proc	near
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,0F02h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -220,13 +246,12 @@ loc_6:
 clear_screen		endp
 
 			                        ;* No entry point to code
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,0F02h
 		out	dx,ax			; port 3C4h, EGA sequencr index
 						;  al = 2, map mask register
-		mov	di,data_44e
+		mov	di,ega_hud_ofs
 		mov	cx,8
 
 locloop_7:
@@ -252,8 +277,7 @@ locloop_8:
 
 		retn
 			                        ;* No entry point to code
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,0F02h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -262,12 +286,12 @@ locloop_8:
 		mov	ax,205h
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
-		mov	si,data_18e
+		mov	si,tile_src_base_b
 		mov	cx,8
 
 locloop_9:
 		push	cx
-		mov	di,data_44e
+		mov	di,ega_hud_ofs
 		lodsb				; String [si] to al
 		mov	ah,al
 		push	di
@@ -336,9 +360,9 @@ locloop_14:
 		add	[bx+di],dx
 		adc	ax,5755h
 		ja	loc_19			; Jump if above
-		jmp	dword ptr ds:data_34e
+		jmp	dword ptr ds:music_fn_ptr
 			                        ;* No entry point to code
-		and	bh,ds:data_29e[bx+si]
+		and	bh,ds:ega_seg[bx+si]
 		mov	es,ax
 		mov	ax,50h
 		mul	bl			; ax = reg * al
@@ -349,7 +373,7 @@ locloop_14:
 		shr	dl,1			; Shift w/zeros fill
 		xor	dh,dh			; Zero register
 		add	di,dx
-		add	di,data_43e
+		add	di,ega_pixel_ofs
 		mov	cl,bh
 		add	cl,cl
 		mov	ax,0FF3Fh
@@ -399,7 +423,7 @@ loc_18:
 
 plot_pixel		proc	near
 		mov	cx,ax
-		test	byte ptr cs:data_19e,0FFh
+		test	byte ptr cs:plot_mode,0FFh
 		jnz	loc_21			; Jump if not zero
 		mov	dx,3CEh
 		mov	al,8
@@ -442,7 +466,7 @@ loc_20:
 		pop	di
 		retn
 loc_21:
-		cmp	byte ptr cs:data_19e,80h
+		cmp	byte ptr cs:plot_mode,80h
 		je	loc_23			; Jump if equal
 		mov	dx,3CEh
 		mov	ah,cl
@@ -526,8 +550,7 @@ loc_27:
 		jmp	short loc_28
 		db	0BFh,0C5h, 36h,0EBh, 00h
 loc_28:
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,102h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -542,7 +565,7 @@ loc_29:
 		mov	al,0FFh
 		call	fill_vertical_line
 		dec	bl
-		add	di,data_40e
+		add	di,ega_col_stride
 		jmp	short loc_29
 loc_30:
 		pop	bx
@@ -551,7 +574,7 @@ loc_30:
 		jz	loc_31			; Jump if zero
 		mov	bh,5
 		call	fill_vertical_line
-		add	di,data_40e
+		add	di,ega_col_stride
 		inc	bl
 loc_31:
 		mov	bh,19h
@@ -609,16 +632,16 @@ loc_35:
 fill_vertical_line		endp
 
 			                        ;* No entry point to code
-		mov	byte ptr cs:data_24e,3
-		mov	byte ptr cs:data_25e,2
+		mov	byte ptr cs:tile_fg_mask,3
+		mov	byte ptr cs:tile_bg_mask,2
 		jmp	short loc_38
 			                        ;* No entry point to code
-		mov	byte ptr cs:data_24e,1
-		mov	byte ptr cs:data_25e,5
+		mov	byte ptr cs:tile_fg_mask,1
+		mov	byte ptr cs:tile_bg_mask,5
 		jmp	short loc_38
 			                        ;* No entry point to code
-		mov	byte ptr cs:data_24e,1
-		mov	byte ptr cs:data_25e,0
+		mov	byte ptr cs:tile_fg_mask,1
+		mov	byte ptr cs:tile_bg_mask,0
 		xor	dh,dh			; Zero register
 		mov	dl,bh
 		mov	di,dx
@@ -627,8 +650,7 @@ fill_vertical_line		endp
 		mul	dl			; ax = reg * al
 		add	di,ax
 		mov	bl,cl
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,702h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -673,8 +695,7 @@ loc_38:
 		lodsb				; String [si] to al
 		xor	ch,ch			; Zero register
 		mov	cl,al
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,702h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -720,7 +741,7 @@ render_text_char		proc	near
 		mov	si,ax
 		push	cs
 		pop	ds
-		add	si,ds:data_38e
+		add	si,ds:font_ptr_c
 		add	bl,bl
 		mov	cl,bl
 		mov	al,8
@@ -740,20 +761,20 @@ loc_40:
 		shr	bx,1			; Shift w/zeros fill
 		mov	al,bh
 		out	dx,al			; port 3CFh, EGA graphic func
-		mov	al,cs:data_25e
+		mov	al,cs:tile_bg_mask
 		xchg	es:[di],al
 		mov	al,bl
 		out	dx,al			; port 3CFh, EGA graphic func
-		mov	al,cs:data_25e
+		mov	al,cs:tile_bg_mask
 		xchg	es:[di+1],al
 		pop	bx
 		mov	al,bh
 		out	dx,al			; port 3CFh, EGA graphic func
-		mov	al,cs:data_24e
+		mov	al,cs:tile_fg_mask
 		xchg	es:[di],al
 		mov	al,bl
 		out	dx,al			; port 3CFh, EGA graphic func
-		mov	al,cs:data_24e
+		mov	al,cs:tile_fg_mask
 		xchg	es:[di+1],al
 		add	di,50h
 		pop	bx
@@ -775,7 +796,7 @@ render_text_char		endp
 		xor	al,al			; Zero register
 		mov	ch,88h
 ;*		jmp	loc_15			;*
-		db	0E9h, 03h,0FDh		;  Fixup - byte match
+		db	0E9h, 03h,0FDh		;  jmp near ptr 0x01CAh  (E9h rel16; disp=0xFD03=-763)
 			                        ;* No entry point to code
 		push	ds
 		mov	ax,word ptr cs:[8Bh]
@@ -783,7 +804,7 @@ render_text_char		endp
 		call	init_timestamp
 		push	cs
 		pop	ds
-		mov	di,data_21e
+		mov	di,text_vga_ofs_b
 		mov	cx,105h
 		mov	ax,26BBh
 		mov	bx,0FF01h
@@ -797,7 +818,7 @@ render_text_char		endp
 		call	init_timestamp
 		push	cs
 		pop	ds
-		mov	di,data_20e
+		mov	di,text_vga_ofs_a
 		mov	cx,106h
 		mov	ax,13BBh
 		mov	bx,0FF01h
@@ -815,7 +836,7 @@ render_text_char		endp
 		call	init_timestamp
 		push	cs
 		pop	ds
-		mov	di,data_22e
+		mov	di,text_vga_ofs_c
 		mov	cx,103h
 		mov	ax,37BBh
 		mov	bx,0FF01h
@@ -833,7 +854,7 @@ loc_42:
 		call	init_timestamp
 		push	cs
 		pop	ds
-		mov	di,data_22e
+		mov	di,text_vga_ofs_c
 		mov	cx,103h
 		mov	ax,3EBBh
 		mov	bx,0FF01h
@@ -939,15 +960,14 @@ int_divide_bcd		endp
 ;��������������������������������������������������������������������������
 
 render_tilemap_large		proc	near
-		mov	cs:data_24e,bl
-		mov	cs:data_25e,bh
+		mov	cs:tile_fg_mask,bl
+		mov	cs:tile_bg_mask,bh
 		mov	bl,ah
 		mov	ah,50h			; 'P'
 		mul	ah			; ax = reg * al
 		xor	bh,bh			; Zero register
 		add	bx,ax
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,702h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -996,7 +1016,7 @@ decode_bitplane_tile		proc	near
 		jz	loc_50			; Jump if zero
 		mov	bx,0FFFh
 loc_50:
-		test	byte ptr ds:data_25e,0FFh
+		test	byte ptr ds:tile_bg_mask,0FFh
 		jz	loc_52			; Jump if zero
 		push	di
 		push	cx
@@ -1044,7 +1064,7 @@ loc_53:
 		shl	ax,1			; Shift w/zeros fill
 		shl	ax,1			; Shift w/zeros fill
 		shl	ax,1			; Shift w/zeros fill
-		add	ax,cs:data_37e
+		add	ax,cs:font_ptr_b
 		mov	si,ax
 		push	cs
 		pop	ds
@@ -1063,12 +1083,12 @@ loc_55:
 		mov	al,8
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 8, data bit mask
-		mov	ah,cs:data_24e
+		mov	ah,cs:tile_fg_mask
 		xchg	es:[di],ah
 		mov	ah,bl
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 8, data bit mask
-		mov	ah,cs:data_24e
+		mov	ah,cs:tile_fg_mask
 		xchg	es:[di+1],ah
 		add	di,50h
 		dec	cl
@@ -1078,12 +1098,12 @@ decode_bitplane_tile		endp
 
 			                        ;* No entry point to code
 		push	ds
-		mov	ds,cs:data_41e
+		mov	ds,cs:gvar_game_seg
 		dec	al
 		xor	ah,ah			; Zero register
 		mov	cx,10Eh
 		mul	cx			; dx:ax = reg * ax
-		add	ax,ds:data_2e
+		add	ax,ds:anim_ptr_0
 		mov	si,ax
 		mov	al,50h			; 'P'
 		mul	bl			; ax = reg * al
@@ -1092,8 +1112,7 @@ decode_bitplane_tile		endp
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		add	bp,bx
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	al,2
 		out	dx,al			; port 3C4h, EGA sequencr index
@@ -1139,39 +1158,39 @@ locloop_56:
 		retn
 			                        ;* No entry point to code
 		push	ds
-		mov	ds,cs:data_41e
+		mov	ds,cs:gvar_game_seg
 		dec	al
 		xor	ah,ah			; Zero register
 		mov	cx,0C0h
 		mul	cx			; dx:ax = reg * ax
-		add	ax,ds:data_4e
+		add	ax,ds:anim_ptr_2
 		mov	si,ax
 		call	render_tilemap_small
 		pop	ds
 		retn
 			                        ;* No entry point to code
 		push	ds
-		mov	ds,cs:data_41e
+		mov	ds,cs:gvar_game_seg
 		dec	al
 		xor	ah,ah			; Zero register
 		mov	cx,0C0h
 		mul	cx			; dx:ax = reg * ax
-		add	ax,ds:data_3e
+		add	ax,ds:anim_ptr_1
 		mov	si,ax
 		call	render_tilemap_small
 		pop	ds
 		retn
 			                        ;* No entry point to code
 		push	ds
-		mov	si,data_1e
+		mov	si,tile_src_base
 		or	al,al			; Zero ?
 		jz	loc_57			; Jump if zero
-		mov	ds,cs:data_41e
+		mov	ds,cs:gvar_game_seg
 		dec	al
 		xor	ah,ah			; Zero register
 		mov	cx,0C0h
 		mul	cx			; dx:ax = reg * ax
-		add	ax,ds:data_6e
+		add	ax,ds:anim_ptr_4
 		mov	si,ax
 loc_57:
 		call	render_tilemap_small
@@ -1179,15 +1198,15 @@ loc_57:
 		retn
 			                        ;* No entry point to code
 		push	ds
-		mov	si,data_1e
+		mov	si,tile_src_base
 		or	al,al			; Zero ?
 		jz	loc_58			; Jump if zero
-		mov	ds,cs:data_41e
+		mov	ds,cs:gvar_game_seg
 		dec	al
 		xor	ah,ah			; Zero register
 		mov	cx,0C0h
 		mul	cx			; dx:ax = reg * ax
-		add	ax,ds:data_5e
+		add	ax,ds:anim_ptr_3
 		mov	si,ax
 loc_58:
 		call	render_tilemap_small
@@ -1245,8 +1264,7 @@ render_tilemap_small		proc	near
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	bp,bx
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	al,2
 		out	dx,al			; port 3C4h, EGA sequencr index
@@ -1343,19 +1361,19 @@ render_text_char_alt		proc	near
 		push	ds
 		push	cs
 		pop	ds
-		mov	ds:data_24e,ah
+		mov	ds:tile_fg_mask,ah
 		xor	ah,ah			; Zero register
 		sub	al,20h			; ' '
 		add	ax,ax
 		add	ax,ax
 		add	ax,ax
 		add	ax,ax
-		add	ax,ds:data_36e
+		add	ax,ds:font_ptr_a
 		push	ax
 		mov	al,bl
 		and	al,3
 		add	al,al
-		mov	ds:data_25e,al
+		mov	ds:tile_bg_mask,al
 		shr	bx,1			; Shift w/zeros fill
 		shr	bx,1			; Shift w/zeros fill
 		mov	al,50h			; 'P'
@@ -1363,8 +1381,7 @@ render_text_char_alt		proc	near
 		add	ax,bx
 		mov	di,ax
 		pop	si
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,702h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -1385,7 +1402,7 @@ locloop_65:
 		lodsw				; String [si] to ax
 		mov	bh,al
 		xor	bl,bl			; Zero register
-		mov	cl,cs:data_25e
+		mov	cl,cs:tile_bg_mask
 		shr	bx,cl			; Shift w/zeros fill
 		xor	al,al			; Zero register
 		shr	ax,cl			; Shift w/zeros fill
@@ -1393,17 +1410,17 @@ locloop_65:
 		mov	ah,al
 		mov	al,bh
 		out	dx,al			; port 3CFh, EGA graphic func
-		mov	al,cs:data_24e
+		mov	al,cs:tile_fg_mask
 		xchg	es:[di],al
 		inc	di
 		mov	al,bl
 		out	dx,al			; port 3CFh, EGA graphic func
-		mov	al,cs:data_24e
+		mov	al,cs:tile_fg_mask
 		xchg	es:[di],al
 		inc	di
 		mov	al,ah
 		out	dx,al			; port 3CFh, EGA graphic func
-		mov	al,cs:data_24e
+		mov	al,cs:tile_fg_mask
 		xchg	es:[di],al
 		add	di,4Eh
 		pop	cx
@@ -1431,8 +1448,7 @@ render_text_char_alt		endp
 		mov	di,ax
 		mov	si,di
 		add	si,50h
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	ds,ax
 		mov	dx,3C4h
 		mov	ax,702h
@@ -1535,8 +1551,7 @@ locloop_67:
 		mov	ax,cs
 		add	ax,3000h
 		mov	ds,ax
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	al,2
 		out	dx,al			; port 3C4h, EGA sequencr index
@@ -1579,14 +1594,14 @@ locloop_68:
 		pop	ds
 		retn
 			                        ;* No entry point to code
-		mov	cs:data_26e,bx
-		mov	cs:data_27e,cl
+		mov	cs:char_col_ptr,bx
+		mov	cs:char_row_ptr,cl
 		mov	al,1
-		test	byte ptr cs:data_42e,0FFh
+		test	byte ptr cs:gvar_volume_b,0FFh
 		jz	loc_69			; Jump if zero
 		mov	al,7
 loc_69:
-		mov	cs:data_24e,al
+		mov	cs:tile_fg_mask,al
 loc_70:
 		lodsb				; String [si] to al
 		cmp	al,0FFh
@@ -1600,7 +1615,7 @@ loc_71:
 		push	cx
 		push	bx
 		push	si
-		mov	ah,cs:data_24e
+		mov	ah,cs:tile_fg_mask
 		call	render_text_char_alt
 		pop	si
 		pop	bx
@@ -1608,13 +1623,13 @@ loc_71:
 		add	bx,8
 		jmp	short loc_70
 loc_72:
-		add	byte ptr cs:data_27e,8
-		mov	cl,cs:data_27e
-		mov	bx,cs:data_26e
+		add	byte ptr cs:char_row_ptr,8
+		mov	cl,cs:char_row_ptr
+		mov	bx,cs:char_col_ptr
 		jmp	short loc_70
 loc_73:
 		and	al,7
-		mov	cs:data_24e,al
+		mov	cs:tile_fg_mask,al
 		jmp	short loc_70
 			                        ;* No entry point to code
 		push	ds
@@ -1632,8 +1647,7 @@ loc_73:
 		add	dx,dx
 		add	ax,dx
 		mov	di,ax
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	ds,ax
 		mov	dx,3C4h
 		mov	ax,702h
@@ -1670,15 +1684,14 @@ locloop_74:
 		push	ds
 		push	cs
 		pop	ds
-		mov	ds:data_24e,al
+		mov	ds:tile_fg_mask,al
 		mov	al,50h			; 'P'
 		mul	bl			; ax = reg * al
 		mov	di,ax
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,702h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -1699,11 +1712,11 @@ locloop_74:
 locloop_75:
 		mov	al,0F0h
 		out	dx,al			; port 3CFh, EGA graphic func
-		mov	al,ds:data_24e
+		mov	al,ds:tile_fg_mask
 		xchg	es:[di],al
 		mov	al,0Fh
 		out	dx,al			; port 3CFh, EGA graphic func
-		mov	al,ds:data_24e
+		mov	al,ds:tile_fg_mask
 		xchg	es:[di+4],al
 		add	di,50h
 		loop	locloop_75		; Loop if cx > 0
@@ -1727,7 +1740,7 @@ fill_rectangle		proc	near
 
 locloop_76:
 		push	cx
-		mov	al,ds:data_24e
+		mov	al,ds:tile_fg_mask
 		mov	cx,5
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
 		add	di,4Bh
@@ -1745,15 +1758,14 @@ fill_rectangle		endp
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	si,ax
-		mov	si,ds:data_23e[si]
+		mov	si,ds:sprite_anim_tbl[si]
 		mov	al,50h			; 'P'
 		mul	bl			; ax = reg * al
 		mov	di,ax
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
-		mov	ax,0A000h
-		mov	es,ax
+		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,702h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -1923,7 +1935,7 @@ loc_80:
 		ja	loc_80			; Jump if above
 		add	[bx+si],al
 ;*		div	word ptr [bx+0]		; ax,dxrem=dx:ax/data
-		db	0F7h, 77h, 00h		;  Fixup - byte match
+		db	0F7h, 77h, 00h		;  div word ptr [bx+0]  (F7h /6 with ModRM 77h; alt encoding)
 		db	 00h, 77h,0F7h
 		db	26 dup (0)
 		db	0FFh,0FFh, 00h, 00h, 3Fh,0E0h
