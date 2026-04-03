@@ -5,9 +5,12 @@ PAGE  59,132
 ;
 ;  STDPLY.BIN - Standard Player Input Driver (Data-Only Module)
 ;
-;  Loaded by zeliad.exe as the default player input configuration.
-;  Contains key mappings, movement parameters, and player sprite masks.
-;  No executable code - purely configuration data tables.
+;  Loaded by zeliad.exe at game_entry_seg:0000h (before stick.bin at 0100h
+;  and game.bin at A000h). game.bin reads this data via CS-relative addresses
+;  since it shares the same segment. No executable code — pure config tables.
+;
+;  If a save file is present at startup, zeliad loads the save instead of this
+;  file (same load address), restoring the player's key assignments.
 ;
 ;  Code type: zero start
 ;  Created:   16-Feb-26
@@ -19,10 +22,8 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
@@ -74,7 +75,5 @@ sprite_masks	db	 80h, 81h, 00h, 00h, 00h, 8Ah
 stdply		endp
 
 seg_a		ends
-
-
 
 		end	start

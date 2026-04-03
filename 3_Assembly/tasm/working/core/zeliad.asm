@@ -279,7 +279,7 @@ save_name_done:
 		pop	ds
 		mov	es,word ptr cs:game_entry_seg
 
-		; Load graphics mode driver (gm*.bin)
+		; Load player config (stdply.bin or save file) at game_entry_seg:0000h
 		mov	di,offset entry_stdply_nosave
 		test	byte ptr has_savefile,0FFh
 		jz	load_gfx_driver
@@ -298,7 +298,7 @@ load_gfx_driver:
 		mov	di,offset entry_game
 		call	load_driver_file
 
-		; Load standard player driver (stdply.bin)
+		; Load graphics mode driver (gm*.bin) at offset from driver_offset_table
 		mov	es,word ptr cs:game_entry_seg
 		xor	bx,bx
 		mov	bl,graphics_mode
