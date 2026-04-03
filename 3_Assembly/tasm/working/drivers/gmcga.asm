@@ -57,14 +57,8 @@ driver_base	equ	2000h			; driver loads at game_seg:2000h; CS-relative ptr = driv
 ; Sprite animation frame table CS address (used as base for indexed frame loads)
 sprite_anim_frames_cs equ driver_base + (offset sprite_anim_frames)
 
-; Driver state variables (CS-relative offsets in driver data area)
-drv_timer_flag	equ	85h			; timer/display flag
-drv_time_param_a equ	86h			; time parameter A
-drv_time_param_b equ	8Bh			; time parameter B
-drv_sprite_flag	equ	93h			; sprite display flag
-drv_time_param_c equ	94h			; time parameter C
-drv_frame_idx	equ	9Dh			; current animation frame index
-drv_color_lut	equ	0ABh			; color lookup table base (indexed by frame)
+; stdply.bin player state field offsets (shared with all gm*.bin drivers)
+include  stdply.inc
 timestamp_buf	equ	24E8h			; timestamp storage area (6 bytes)
 
 ; Segment offsets (add ax, offset to set ES/DS to that data segment)

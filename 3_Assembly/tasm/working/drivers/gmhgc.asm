@@ -50,6 +50,9 @@ hgc_cursor_ofs	equ	4FDh
 driver_base	equ	2000h			; driver loads at game_seg:2000h
 hgc_seg		equ	0B000h			; HGC framebuffer segment
 
+; stdply.bin player state field offsets (shared with all gm*.bin drivers)
+include  stdply.inc
+
 ; Set ES to the HGC framebuffer segment (0xB000)
 SET_HGC_ES	MACRO
 		mov	ax, hgc_seg

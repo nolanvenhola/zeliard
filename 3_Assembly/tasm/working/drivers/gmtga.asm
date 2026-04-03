@@ -51,6 +51,9 @@ tga_hud_ofs	equ	41F8h
 driver_base	equ	2000h			; driver loads at game_seg:2000h
 tga_seg		equ	80A0h			; Tandy framebuffer segment (0x8000 area)
 
+; stdply.bin player state field offsets (shared with all gm*.bin drivers)
+include  stdply.inc
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 

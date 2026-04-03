@@ -52,6 +52,9 @@ ega_hud_ofs	equ	46Ch			;* HUD area starting offset in EGA framebuffer
 
 driver_base	equ	2000h			; driver loads at game_seg:2000h
 
+; stdply.bin player state field offsets (shared with all gm*.bin drivers)
+include  stdply.inc
+
 ; Set ES to the EGA framebuffer segment (0xA000)
 SET_EGA_ES	MACRO
 		mov	ax, ega_seg

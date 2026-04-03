@@ -64,7 +64,9 @@ char_row_advance equ	1A0h			; VGA advance to next character row (320+96 bytes)
 char_width_half	equ	0A0h			; half character render width (160)
 hud_vga_ofs	equ	11B0h			; VGA offset for HUD row (row 14, col 48)
 text_field_vga_ofs equ	0CC14h			; VGA offset for timer/text field (row 163, col 84)
-drv_text_src	equ	90h			; driver state: text source pointer
+; stdply.bin player state field offsets (shared with all gm*.bin drivers)
+include  stdply.inc
+
 driver_base	equ	2000h			; driver loads at game_seg:2000h
 vga_seg		equ	0A000h			; VGA framebuffer segment
 
