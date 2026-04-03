@@ -138,6 +138,37 @@ If you cannot determine the meaning of a `db` block, add a comment explaining wh
 
 ---
 
+### Resolving `;* No entry point to code` markers
+
+Sourcer emits `;* No entry point to code` before any code block it could not trace a call path to. **Do not leave these as-is.** Every such block has a real entry point — find it and add a label. There are four patterns:
+
+**1. Dispatch table target** — The most common case. The block is called via the driver's function dispatch table at the start of the file. To confirm: compute the binary offset of the block (count instruction bytes from `org 0`), add `driver_base` (0x2000), and check whether any `dw NNNNh ; fn N` entry in the dispatch table equals that CS address. If so, add a label `fn_N_impl:` (or a descriptive name if the function's purpose is clear).
+
+```asm
+; Before:
+    ;* No entry point to code
+    mov  byte ptr cs:tile_color, 1Bh
+    ...
+
+; After — found as fn 5 in dispatch table:
+fn_5_set_tile_color:            ; dispatch fn 5: set tile color and row index
+    mov  byte ptr cs:tile_color, 1Bh
+    ...
+```
+
+**2. Function pointer call** — The block is reached via `call word ptr cs:[NNNh]` or `call word ptr [some_tbl+bx]`. Search the whole file for indirect calls: `call word ptr cs:` and `call near ptr cs:`. Compute the target from the function pointer value and add a descriptive label.
+
+**3. Self-modifying / patched entry** — The block is reached because another function patches a byte (typically the opcode byte, via `mov cs:plot_mode, al`) and then jumps or falls through. Add a label explaining the patching relationship, e.g. `plot_mode_fn:  ; opcode byte patched by set_plot_mode`.
+
+**4. Fall-through / alternate entry** — Code immediately before the marker ends with a `jmp short` that skips over this block, making it an alternate entry point. Trace backward to find the `jmp short` and forward to where both paths reconverge. Add `fn_name_alt:` and `fn_name_common:` labels.
+
+**If none of the above apply** — the block is genuinely dead code (leftover from a previous version or conditional compilation). Replace the Sourcer marker with:
+```asm
+; Dead code — no callers found. Likely leftover from an earlier version.
+```
+
+---
+
 **Mode lookup tables** — `db xxh, yyh` word pairs → `dw` with per-mode comments and `GAME_CODE_BASE + (offset label)`:
 
 ```asm
