@@ -33,15 +33,17 @@ Also look for `; Fixup` patterns in data sections (palette handlers, EXEC param 
 
 ## Step 2 — Remove Sourcer boilerplate
 
-Delete repeated boilerplate comment blocks that Sourcer inserts before every function:
+`fmt_asm.py` (Step 10) handles this automatically. If running manually, delete:
 
+1. The 3-line SUBROUTINE header blocks Sourcer inserts before every function:
 ```asm
-;-------------- S U B R O U T I N E ----------------------------------------
-;   Called from: ...
-;   Uses: ...
+;████████████████████████████████████████████████████████████████████████
+;                              SUBROUTINE
+;████████████████████████████████████████████████████████████████████████
 ```
+These lines contain non-ASCII box-drawing characters — grep with `grep -Pn ";[^\x00-\x7F]+"` (or the equivalent for your OS) to find them all at once.
 
-Also remove duplicate section-header comment blocks if the same header appears more than once.
+2. Any duplicate section-header comment blocks (same header appearing more than once).
 
 ---
 
@@ -56,6 +58,16 @@ Sourcer produces generic names: `loc_XX`, `locloop_XX`, `zr1_NN`, `data_XXe`, `s
 - `stats_func_N` / `scene_func_N` → describe what the function does
 
 Read each function's body before renaming — understand inputs, outputs, and side effects.
+
+**Loop labels specifically:** `locloop_XX` labels are almost always loop targets. Rename them to `verb_noun_loop` style matching what the loop does. See gmmcga.asm for examples:
+- `draw_border_loop`, `clear_row_loop`, `clear_block_inner_loop`
+- `font_render_loop`, `font_row_loop`, `font_bit_loop`
+- `fill_col_loop`, `blend_loop`, `vertical_line_loop`
+- `tilemap_large_loop`, `tilemap_small_loop`, `sprite_row_loop`
+
+Non-loop `loc_XX` jump targets rename to their role:
+- `volume_param_branch`, `clear_screen_entry`, `dispatch_call_do`
+- `check_blank_tile`, `render_font_tile`, `draw_text_field_alt`
 
 ---
 
@@ -229,22 +241,40 @@ Only split lines with no string literals. Text `db 'string'` lines stay as-is.
 
 ## Step 10 — Format the file
 
-Run `fmt_asm.py` to normalize blank lines and add loop indentation:
+Run `fmt_asm.py` to normalize blank lines, add loop indentation, and strip Sourcer boilerplate:
 
 ```
 python fmt_asm.py working/<path>/file.asm
 ```
 
 The formatter:
+- **Removes** Sourcer non-ASCII SUBROUTINE header blocks (`; ████ / ; SUBROUTINE / ; ████`)
+- **Removes** any standalone non-ASCII comment lines (box-drawing separators)
 - Adds one blank line before every code label (proc/endp/label:)
 - Collapses multiple consecutive blank lines to one
 - Indents loop bodies +1 tab for: `loop`, `jmp short` (backward), backward conditional jumps
 - Caps indent depth at 2 to avoid runaway indentation in complex dispatch chains
 - Does NOT affect assembled output
 
+**Run fmt_asm.py as early as Step 2** (it replaces manual boilerplate removal), then again at Step 10 to pick up indentation after all labels are renamed.
+
 ---
 
 ## Step 11 — Final verification and commit
+
+Before committing, confirm NO unexplained raw `db` lines remain:
+
+```
+grep -n "^\s*db\s" <file.asm> | grep -v "dup\|'[^']*'"
+```
+
+Every remaining `db` line must be one of:
+- An alt-encoding byte with a comment (`; and di, bx  (alt encoding: ...)`)
+- Sprite/bitmap data with a `sprite_anim_data:` label and row comments
+- A named lookup table with a label
+- An explicitly unexplainable block with a comment explaining what is known
+
+Then run final verify:
 
 ```
 python verify1.py <path/to/file.asm>
