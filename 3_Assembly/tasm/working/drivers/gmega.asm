@@ -141,10 +141,10 @@ loc_1:
 		xor	ch,ch			; Zero register
 
 locloop_2:
-						mov	byte ptr es:[di],0F0h
-						mov	byte ptr es:[bx+di],0Fh
-						add	di,50h
-						loop	locloop_2		; Loop if cx > 0
+							mov	byte ptr es:[di],0F0h
+							mov	byte ptr es:[bx+di],0Fh
+							add	di,50h
+							loop	locloop_2		; Loop if cx > 0
 
 		pop	bx
 		pop	cx
@@ -174,11 +174,11 @@ fill_horizontal_line		proc	near
 		sub	bh,2
 
 loc_3:
-						xor	al,al			; Zero register
-						xchg	es:[di],al
-						inc	di
-						dec	bh
-						jnz	loc_3			; Jump if not zero
+							xor	al,al			; Zero register
+							xchg	es:[di],al
+							inc	di
+							dec	bh
+							jnz	loc_3			; Jump if not zero
 		xchg	es:[di],ah
 		mov	ax,102h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -202,11 +202,11 @@ loc_4:
 		sub	bh,2
 
 loc_5:
-						mov	al,0FFh
-						xchg	es:[di],al
-						inc	di
-						dec	bh
-						jnz	loc_5			; Jump if not zero
+							mov	al,0FFh
+							xchg	es:[di],al
+							inc	di
+							dec	bh
+							jnz	loc_5			; Jump if not zero
 		mov	al,ah
 		xchg	es:[di],al
 		inc	di
@@ -230,20 +230,20 @@ clear_screen		proc	near
 		mov	ah,cl
 
 loc_6:
-						push	cx
-						mov	cl,ch
-						xor	ch,ch			; Zero register
-						xor	al,al			; Zero register
-						rep	stosb			; Rep when cx >0 Store al to es:[di]
-						pop	cx
-						add	di,bx
-						dec	ah
-						jnz	loc_6			; Jump if not zero
+							push	cx
+							mov	cl,ch
+							xor	ch,ch			; Zero register
+							xor	al,al			; Zero register
+							rep	stosb			; Rep when cx >0 Store al to es:[di]
+							pop	cx
+							add	di,bx
+							dec	ah
+							jnz	loc_6			; Jump if not zero
 		retn
 
 clear_screen		endp
 
-			                        ;* No entry point to code
+ega_vram_init:
 		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,0F02h
@@ -253,28 +253,29 @@ clear_screen		endp
 		mov	cx,8
 
 locloop_7:
-						push	cx
-						push	di
-						mov	cx,12h
+							push	cx
+							push	di
+							mov	cx,12h
 
 locloop_8:
-										push	cx
-										push	di
-										mov	cx,38h
-										xor	al,al			; Zero register
-										rep	stosb			; Rep when cx >0 Store al to es:[di]
-										pop	di
-										add	di,280h
-										pop	cx
-										loop	locloop_8		; Loop if cx > 0
+												push	cx
+												push	di
+												mov	cx,38h
+												xor	al,al			; Zero register
+												rep	stosb			; Rep when cx >0 Store al to es:[di]
+												pop	di
+												add	di,280h
+												pop	cx
+												loop	locloop_8		; Loop if cx > 0
 
-						pop	di
-						add	di,50h
-						pop	cx
-						loop	locloop_7		; Loop if cx > 0
+							pop	di
+							add	di,50h
+							pop	cx
+							loop	locloop_7		; Loop if cx > 0
 
 		retn
-			                        ;* No entry point to code
+
+ega_write_mode2_init:
 		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,0F02h
@@ -288,64 +289,64 @@ locloop_8:
 		mov	cx,8
 
 locloop_9:
-						push	cx
-						mov	di,ega_hud_ofs
-						lodsb				; String [si] to al
-						mov	ah,al
-						push	di
-						mov	cx,48h
+							push	cx
+							mov	di,ega_hud_ofs
+							lodsb				; String [si] to al
+							mov	ah,al
+							push	di
+							mov	cx,48h
 
 locloop_10:
-										push	cx
-										mov	al,8
-										out	dx,ax			; port 3CEh, EGA graphic index
-														;  al = 8, data bit mask
-										mov	cx,38h
+												push	cx
+												mov	al,8
+												out	dx,ax			; port 3CEh, EGA graphic index
+																;  al = 8, data bit mask
+												mov	cx,38h
 
 locloop_11:
-										xor	al,al			; Zero register
-										xchg	es:[di],al
-										inc	di
-										loop	locloop_11		; Loop if cx > 0
+												xor	al,al			; Zero register
+												xchg	es:[di],al
+												inc	di
+												loop	locloop_11		; Loop if cx > 0
 
-										rol	ah,1			; Rotate
-										rol	ah,1			; Rotate
-										rol	ah,1			; Rotate
-										pop	cx
-										add	di,68h
-										loop	locloop_10		; Loop if cx > 0
+												rol	ah,1			; Rotate
+												rol	ah,1			; Rotate
+												rol	ah,1			; Rotate
+												pop	cx
+												add	di,68h
+												loop	locloop_10		; Loop if cx > 0
 
-						pop	di
-						add	di,50h
-						mov	cx,48h
+							pop	di
+							add	di,50h
+							mov	cx,48h
 
 locloop_12:
-										push	cx
-										mov	al,8
-										out	dx,ax			; port 3CEh, EGA graphic index
-														;  al = 8, data bit mask
-										mov	cx,38h
+												push	cx
+												mov	al,8
+												out	dx,ax			; port 3CEh, EGA graphic index
+																;  al = 8, data bit mask
+												mov	cx,38h
 
 locloop_13:
-										xor	al,al			; Zero register
-										xchg	es:[di],al
-										inc	di
-										loop	locloop_13		; Loop if cx > 0
+												xor	al,al			; Zero register
+												xchg	es:[di],al
+												inc	di
+												loop	locloop_13		; Loop if cx > 0
 
-										rol	al,1			; Rotate
-										rol	al,1			; Rotate
-										rol	al,1			; Rotate
-										pop	cx
-										add	di,68h
-										loop	locloop_12		; Loop if cx > 0
+												rol	al,1			; Rotate
+												rol	al,1			; Rotate
+												rol	al,1			; Rotate
+												pop	cx
+												add	di,68h
+												loop	locloop_12		; Loop if cx > 0
 
-						mov	cx,3E80h
+							mov	cx,3E80h
 
 locloop_14:
-										loop	locloop_14		; Loop if cx > 0
+												loop	locloop_14		; Loop if cx > 0
 
-						pop	cx
-						loop	locloop_9		; Loop if cx > 0
+							pop	cx
+							loop	locloop_9		; Loop if cx > 0
 
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -354,12 +355,14 @@ locloop_14:
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 8, data bit mask
 		retn
-			                        ;* No entry point to code
+
+music_update_trampoline:
 		add	[bx+di],dx
 		adc	ax,5755h
 		ja	loc_19			; Jump if above
 		jmp	dword ptr ds:music_fn_ptr
-			                        ;* No entry point to code
+
+calc_ega_pixel_pos:
 		and	bh,ds:ega_seg[bx+si]
 		mov	es,ax
 		mov	ax,50h
@@ -391,13 +394,13 @@ locloop_14:
 		jz	loc_17			; Jump if zero
 
 loc_16:
-						push	cx
-						mov	ax,0FFFFh
-						call	plot_pixel
-						pop	cx
-						inc	di
-						dec	cl
-						jnz	loc_16			; Jump if not zero
+							push	cx
+							mov	ax,0FFFFh
+							call	plot_pixel
+							pop	cx
+							inc	di
+							dec	cl
+							jnz	loc_16			; Jump if not zero
 
 loc_17:
 		and	ch,3
@@ -442,18 +445,18 @@ loc_19:
 		mov	ch,8
 
 loc_20:
-						mov	al,7
-						out	dx,al			; port 3C5h, EGA sequencr func
-						xor	al,al			; Zero register
-						xchg	es:[di],al
-						mov	al,5
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	al,cl
-						and	al,0AAh
-						xchg	es:[di],al
-						add	di,50h
-						dec	ch
-						jnz	loc_20			; Jump if not zero
+							mov	al,7
+							out	dx,al			; port 3C5h, EGA sequencr func
+							xor	al,al			; Zero register
+							xchg	es:[di],al
+							mov	al,5
+							out	dx,al			; port 3C5h, EGA sequencr func
+							mov	al,cl
+							and	al,0AAh
+							xchg	es:[di],al
+							add	di,50h
+							dec	ch
+							jnz	loc_20			; Jump if not zero
 		mov	al,7
 		out	dx,al			; port 3C5h, EGA sequencr func
 		xor	al,al			; Zero register
@@ -482,18 +485,18 @@ loc_21:
 		mov	ch,0Ah
 
 loc_22:
-						mov	al,7
-						out	dx,al			; port 3C5h, EGA sequencr func
-						xor	al,al			; Zero register
-						xchg	es:[di],al
-						mov	al,1
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	al,cl
-						and	al,0AAh
-						xchg	es:[di],al
-						add	di,50h
-						dec	ch
-						jnz	loc_22			; Jump if not zero
+							mov	al,7
+							out	dx,al			; port 3C5h, EGA sequencr func
+							xor	al,al			; Zero register
+							xchg	es:[di],al
+							mov	al,1
+							out	dx,al			; port 3C5h, EGA sequencr func
+							mov	al,cl
+							and	al,0AAh
+							xchg	es:[di],al
+							add	di,50h
+							dec	ch
+							jnz	loc_22			; Jump if not zero
 		pop	di
 		retn
 
@@ -514,11 +517,11 @@ loc_23:
 		mov	ch,0Ah
 
 loc_24:
-						xor	al,al			; Zero register
-						xchg	es:[di],al
-						add	di,50h
-						dec	ch
-						jnz	loc_24			; Jump if not zero
+							xor	al,al			; Zero register
+							xchg	es:[di],al
+							add	di,50h
+							dec	ch
+							jnz	loc_24			; Jump if not zero
 		pop	di
 		retn
 
@@ -546,14 +549,14 @@ draw_text_field_common:
 		push	ax
 
 loc_25:
-						or	bl,bl			; Zero ?
-						jz	loc_26			; Jump if zero
-						mov	bh,6
-						mov	al,0FFh
-						call	fill_vertical_line
-						dec	bl
-						add	di,0FE21h
-						jmp	short loc_25
+							or	bl,bl			; Zero ?
+							jz	loc_26			; Jump if zero
+							mov	bh,6
+							mov	al,0FFh
+							call	fill_vertical_line
+							dec	bl
+							add	di,0FE21h
+							jmp	short loc_25
 
 loc_26:
 		pop	ax
@@ -564,7 +567,8 @@ loc_26:
 loc_27:
 		mov	bh,6
 		jmp	loc_35
-			                        ;* No entry point to code
+
+draw_text_field_ega:
 		mov	di,3305h
 		mov	bx,word ptr cs:[90h]
 		jmp	short loc_28
@@ -582,14 +586,14 @@ loc_28:
 		push	bx
 
 loc_29:
-						or	bl,bl			; Zero ?
-						jz	loc_30			; Jump if zero
-						mov	bh,5
-						mov	al,0FFh
-						call	fill_vertical_line
-						dec	bl
-						add	di,ega_col_stride
-						jmp	short loc_29
+							or	bl,bl			; Zero ?
+							jz	loc_30			; Jump if zero
+							mov	bh,5
+							mov	al,0FFh
+							call	fill_vertical_line
+							dec	bl
+							add	di,ega_col_stride
+							jmp	short loc_29
 
 loc_30:
 		pop	bx
@@ -611,12 +615,12 @@ loc_32:
 		mov	bl,bh
 
 loc_33:
-						mov	bh,5
-						xor	al,al			; Zero register
-						call	fill_vertical_line
-						add	di,0FE71h
-						dec	bl
-						jnz	loc_33			; Jump if not zero
+							mov	bh,5
+							xor	al,al			; Zero register
+							call	fill_vertical_line
+							add	di,0FE71h
+							dec	bl
+							jnz	loc_33			; Jump if not zero
 		retn
 
 calc_text_width		proc	near
@@ -645,23 +649,25 @@ calc_text_width		endp
 fill_vertical_line		proc	near
 
 loc_35:
-						stosb				; Store al to es:[di]
-						add	di,4Fh
-						dec	bh
-						jnz	loc_35			; Jump if not zero
+							stosb				; Store al to es:[di]
+							add	di,4Fh
+							dec	bh
+							jnz	loc_35			; Jump if not zero
 		retn
 
 fill_vertical_line		endp
 
-			                        ;* No entry point to code
+set_tile_color_a:
 		mov	byte ptr cs:tile_fg_mask,3
 		mov	byte ptr cs:tile_bg_mask,2
 		jmp	short loc_38
-			                        ;* No entry point to code
+
+set_tile_color_b:
 		mov	byte ptr cs:tile_fg_mask,1
 		mov	byte ptr cs:tile_bg_mask,5
 		jmp	short loc_38
-			                        ;* No entry point to code
+
+set_tile_color_c:
 		mov	byte ptr cs:tile_fg_mask,1
 		mov	byte ptr cs:tile_bg_mask,0
 		xor	dh,dh			; Zero register
@@ -683,19 +689,19 @@ fill_vertical_line		endp
 						;  al = 5, mode
 
 loc_36:
-						lodsb				; String [si] to al
-						or	al,al			; Zero ?
-						jz	loc_37			; Jump if zero
-						push	bx
-						push	ds
-						push	si
-						and	bl,3
-						call	render_text_char
-						pop	si
-						pop	ds
-						pop	bx
-						inc	bl
-						jmp	short loc_36
+							lodsb				; String [si] to al
+							or	al,al			; Zero ?
+							jz	loc_37			; Jump if zero
+							push	bx
+							push	ds
+							push	si
+							and	bl,3
+							call	render_text_char
+							pop	si
+							pop	ds
+							pop	bx
+							inc	bl
+							jmp	short loc_36
 
 loc_37:
 		mov	ax,5
@@ -731,19 +737,19 @@ loc_38:
 						;  al = 5, mode
 
 locloop_39:
-						push	cx
-						lodsb				; String [si] to al
-						push	bx
-						push	ds
-						push	si
-						and	bl,3
-						call	render_text_char
-						pop	si
-						pop	ds
-						pop	bx
-						inc	bl
-						pop	cx
-						loop	locloop_39		; Loop if cx > 0
+							push	cx
+							lodsb				; String [si] to al
+							push	bx
+							push	ds
+							push	si
+							and	bl,3
+							call	render_text_char
+							pop	si
+							pop	ds
+							pop	bx
+							inc	bl
+							pop	cx
+							loop	locloop_39		; Loop if cx > 0
 
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -773,35 +779,35 @@ render_text_char		proc	near
 		mov	bl,8
 
 loc_40:
-						push	bx
-						lodsb				; String [si] to al
-						xor	bl,bl			; Zero register
-						mov	bh,al
-						shr	bx,cl			; Shift w/zeros fill
-						push	bx
-						shr	bx,1			; Shift w/zeros fill
-						shr	bx,1			; Shift w/zeros fill
-						mov	al,bh
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	al,cs:tile_bg_mask
-						xchg	es:[di],al
-						mov	al,bl
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	al,cs:tile_bg_mask
-						xchg	es:[di+1],al
-						pop	bx
-						mov	al,bh
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	al,cs:tile_fg_mask
-						xchg	es:[di],al
-						mov	al,bl
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	al,cs:tile_fg_mask
-						xchg	es:[di+1],al
-						add	di,50h
-						pop	bx
-						dec	bl
-						jnz	loc_40			; Jump if not zero
+							push	bx
+							lodsb				; String [si] to al
+							xor	bl,bl			; Zero register
+							mov	bh,al
+							shr	bx,cl			; Shift w/zeros fill
+							push	bx
+							shr	bx,1			; Shift w/zeros fill
+							shr	bx,1			; Shift w/zeros fill
+							mov	al,bh
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	al,cs:tile_bg_mask
+							xchg	es:[di],al
+							mov	al,bl
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	al,cs:tile_bg_mask
+							xchg	es:[di+1],al
+							pop	bx
+							mov	al,bh
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	al,cs:tile_fg_mask
+							xchg	es:[di],al
+							mov	al,bl
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	al,cs:tile_fg_mask
+							xchg	es:[di+1],al
+							add	di,50h
+							pop	bx
+							dec	bl
+							jnz	loc_40			; Jump if not zero
 		dec	dx
 		pop	di
 		inc	di
@@ -815,13 +821,14 @@ loc_41:
 
 render_text_char		endp
 
-			                        ;* No entry point to code
+sprite_anim_init:
 		mov	bx,210h
 		xor	al,al			; Zero register
 		mov	ch,88h
 ;*		jmp	loc_15			;*
 		db	0E9h, 03h,0FDh		;  jmp near ptr 0x01CAh  (E9h rel16; disp=0xFD03=-763)
-			                        ;* No entry point to code
+
+render_tilemap_row_b:
 		push	ds
 		mov	ax,word ptr cs:[8Bh]
 		xor	dx,dx			; Zero register
@@ -835,7 +842,8 @@ render_text_char		endp
 		call	render_tilemap_large
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+render_tilemap_row_a:
 		push	ds
 		mov	ax,word ptr cs:[86h]
 		mov	dl,byte ptr cs:[85h]
@@ -849,7 +857,8 @@ render_text_char		endp
 		call	render_tilemap_large
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+render_animated_tile:
 		push	ds
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr cs:[9Dh]
@@ -867,7 +876,8 @@ render_text_char		endp
 		call	render_tilemap_large
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+render_if_enabled:
 		test	byte ptr cs:[93h],0FFh
 		jnz	loc_42			; Jump if not zero
 		retn
@@ -893,14 +903,14 @@ init_timestamp		proc	near
 		mov	cx,6
 
 locloop_43:
-						test	byte ptr cs:[di],0FFh
-						jz	loc_44			; Jump if zero
-						retn
+							test	byte ptr cs:[di],0FFh
+							jz	loc_44			; Jump if zero
+							retn
 
 loc_44:
-						mov	byte ptr cs:[di],0FFh
-						inc	di
-						loop	locloop_43		; Loop if cx > 0
+							mov	byte ptr cs:[di],0FFh
+							inc	di
+							loop	locloop_43		; Loop if cx > 0
 
 		retn
 
@@ -939,17 +949,17 @@ modulo_divide_bcd		proc	near
 		xor	dh,dh			; Zero register
 
 loc_45:
-						sub	dl,cl
-						jc	loc_48			; Jump if carry Set
-						sub	ax,bx
-						jnc	loc_46			; Jump if carry=0
-						or	dl,dl			; Zero ?
-						jz	loc_47			; Jump if zero
-						dec	dl
+							sub	dl,cl
+							jc	loc_48			; Jump if carry Set
+							sub	ax,bx
+							jnc	loc_46			; Jump if carry=0
+							or	dl,dl			; Zero ?
+							jz	loc_47			; Jump if zero
+							dec	dl
 
 loc_46:
-						inc	dh
-						jmp	short loc_45
+							inc	dh
+							jmp	short loc_45
 
 loc_47:
 		add	ax,bx
@@ -989,25 +999,25 @@ render_tilemap_large		proc	near
 						;  al = 5, mode
 
 loc_49:
-						mov	al,[di]
-						inc	di
-						push	bx
-						push	cx
-						push	di
-						push	ds
-						mov	di,bx
-						call	decode_bitplane_tile
-						pop	ds
-						pop	di
-						pop	cx
-						pop	bx
-						mov	al,ch
-						and	ax,1
-						add	bx,ax
-						inc	bx
-						inc	ch
-						dec	cl
-						jnz	loc_49			; Jump if not zero
+							mov	al,[di]
+							inc	di
+							push	bx
+							push	cx
+							push	di
+							push	ds
+							mov	di,bx
+							call	decode_bitplane_tile
+							pop	ds
+							pop	di
+							pop	cx
+							pop	bx
+							mov	al,ch
+							and	ax,1
+							add	bx,ax
+							inc	bx
+							inc	ch
+							dec	cl
+							jnz	loc_49			; Jump if not zero
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
@@ -1034,30 +1044,30 @@ loc_50:
 		mov	cx,7
 
 locloop_51:
-						mov	ah,bh
-						out	dx,ax			; port 3CEh, EGA graphic index
-										;  al = 8, data bit mask
-						xor	ah,ah			; Zero register
-						xchg	es:[di],ah
-						mov	ah,bl
-						out	dx,ax			; port 3CEh, EGA graphic index
-										;  al = 8, data bit mask
-						xor	ah,ah			; Zero register
-						xchg	es:[di+1],ah
-						mov	ah,bh
-						and	ah,0AAh
-						out	dx,ax			; port 3CEh, EGA graphic index
-										;  al = 8, data bit mask
-						mov	ah,5
-						xchg	es:[di],ah
-						mov	ah,bl
-						and	ah,0AAh
-						out	dx,ax			; port 3CEh, EGA graphic index
-										;  al = 8, data bit mask
-						mov	ah,5
-						xchg	es:[di+1],ah
-						add	di,50h
-						loop	locloop_51		; Loop if cx > 0
+							mov	ah,bh
+							out	dx,ax			; port 3CEh, EGA graphic index
+											;  al = 8, data bit mask
+							xor	ah,ah			; Zero register
+							xchg	es:[di],ah
+							mov	ah,bl
+							out	dx,ax			; port 3CEh, EGA graphic index
+											;  al = 8, data bit mask
+							xor	ah,ah			; Zero register
+							xchg	es:[di+1],ah
+							mov	ah,bh
+							and	ah,0AAh
+							out	dx,ax			; port 3CEh, EGA graphic index
+											;  al = 8, data bit mask
+							mov	ah,5
+							xchg	es:[di],ah
+							mov	ah,bl
+							and	ah,0AAh
+							out	dx,ax			; port 3CEh, EGA graphic index
+											;  al = 8, data bit mask
+							mov	ah,5
+							xchg	es:[di+1],ah
+							add	di,50h
+							loop	locloop_51		; Loop if cx > 0
 
 		pop	ax
 		pop	cx
@@ -1082,35 +1092,35 @@ loc_53:
 		mov	cl,7
 
 loc_54:
-						lodsw				; String [si] to ax
-						xchg	ah,al
-						test	ch,1
-						jnz	loc_55			; Jump if not zero
-						shl	ax,1			; Shift w/zeros fill
-						shl	ax,1			; Shift w/zeros fill
-						shl	ax,1			; Shift w/zeros fill
-						shl	ax,1			; Shift w/zeros fill
+							lodsw				; String [si] to ax
+							xchg	ah,al
+							test	ch,1
+							jnz	loc_55			; Jump if not zero
+							shl	ax,1			; Shift w/zeros fill
+							shl	ax,1			; Shift w/zeros fill
+							shl	ax,1			; Shift w/zeros fill
+							shl	ax,1			; Shift w/zeros fill
 
 loc_55:
-						mov	bl,al
-						mov	al,8
-						out	dx,ax			; port 3CEh, EGA graphic index
-										;  al = 8, data bit mask
-						mov	ah,cs:tile_fg_mask
-						xchg	es:[di],ah
-						mov	ah,bl
-						out	dx,ax			; port 3CEh, EGA graphic index
-										;  al = 8, data bit mask
-						mov	ah,cs:tile_fg_mask
-						xchg	es:[di+1],ah
-						add	di,50h
-						dec	cl
-						jnz	loc_54			; Jump if not zero
+							mov	bl,al
+							mov	al,8
+							out	dx,ax			; port 3CEh, EGA graphic index
+											;  al = 8, data bit mask
+							mov	ah,cs:tile_fg_mask
+							xchg	es:[di],ah
+							mov	ah,bl
+							out	dx,ax			; port 3CEh, EGA graphic index
+											;  al = 8, data bit mask
+							mov	ah,cs:tile_fg_mask
+							xchg	es:[di+1],ah
+							add	di,50h
+							dec	cl
+							jnz	loc_54			; Jump if not zero
 		retn
 
 decode_bitplane_tile		endp
 
-			                        ;* No entry point to code
+render_sprite_anim0:
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		dec	al
@@ -1135,42 +1145,43 @@ decode_bitplane_tile		endp
 		mov	cx,12h
 
 locloop_56:
-						mov	al,1
-						out	dx,al			; port 3C5h, EGA sequencr func
-						lodsw				; String [si] to ax
-						mov	es:[bp],al
-						mov	es:[bp+1],ah
-						lodsw				; String [si] to ax
-						mov	es:[bp+2],al
-						mov	es:[bp+3],ah
-						lodsb				; String [si] to al
-						mov	es:[bp+4],al
-						mov	al,2
-						out	dx,al			; port 3C5h, EGA sequencr func
-						lodsw				; String [si] to ax
-						mov	es:[bp+4],al
-						mov	es:[bp+3],ah
-						lodsw				; String [si] to ax
-						mov	es:[bp+2],al
-						mov	es:[bp+1],ah
-						lodsb				; String [si] to al
-						mov	es:[bp],al
-						mov	al,4
-						out	dx,al			; port 3C5h, EGA sequencr func
-						lodsw				; String [si] to ax
-						mov	es:[bp],al
-						mov	es:[bp+1],ah
-						lodsw				; String [si] to ax
-						mov	es:[bp+2],al
-						mov	es:[bp+3],ah
-						lodsb				; String [si] to al
-						mov	es:[bp+4],al
-						add	bp,50h
-						loop	locloop_56		; Loop if cx > 0
+							mov	al,1
+							out	dx,al			; port 3C5h, EGA sequencr func
+							lodsw				; String [si] to ax
+							mov	es:[bp],al
+							mov	es:[bp+1],ah
+							lodsw				; String [si] to ax
+							mov	es:[bp+2],al
+							mov	es:[bp+3],ah
+							lodsb				; String [si] to al
+							mov	es:[bp+4],al
+							mov	al,2
+							out	dx,al			; port 3C5h, EGA sequencr func
+							lodsw				; String [si] to ax
+							mov	es:[bp+4],al
+							mov	es:[bp+3],ah
+							lodsw				; String [si] to ax
+							mov	es:[bp+2],al
+							mov	es:[bp+1],ah
+							lodsb				; String [si] to al
+							mov	es:[bp],al
+							mov	al,4
+							out	dx,al			; port 3C5h, EGA sequencr func
+							lodsw				; String [si] to ax
+							mov	es:[bp],al
+							mov	es:[bp+1],ah
+							lodsw				; String [si] to ax
+							mov	es:[bp+2],al
+							mov	es:[bp+3],ah
+							lodsb				; String [si] to al
+							mov	es:[bp+4],al
+							add	bp,50h
+							loop	locloop_56		; Loop if cx > 0
 
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+render_small_tile_anim2:
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		dec	al
@@ -1182,7 +1193,8 @@ locloop_56:
 		call	render_tilemap_small
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+render_small_tile_anim1:
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		dec	al
@@ -1194,7 +1206,8 @@ locloop_56:
 		call	render_tilemap_small
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+render_small_tile_anim4:
 		push	ds
 		mov	si,tile_src_base
 		or	al,al			; Zero ?
@@ -1211,7 +1224,8 @@ loc_57:
 		call	render_tilemap_small
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+render_small_tile_anim3:
 		push	ds
 		mov	si,tile_src_base
 		or	al,al			; Zero ?
@@ -1316,10 +1330,10 @@ loc_59:
 		mov	cx,4
 
 locloop_60:
-						shr	di,1			; Shift w/zeros fill
-						rcr	ax,1			; Rotate thru carry
-						rcr	bl,1			; Rotate thru carry
-						loop	locloop_60		; Loop if cx > 0
+							shr	di,1			; Shift w/zeros fill
+							rcr	ax,1			; Rotate thru carry
+							rcr	bl,1			; Rotate thru carry
+							loop	locloop_60		; Loop if cx > 0
 
 		xchg	di,ax
 		mov	es:[bp],ah
@@ -1337,10 +1351,10 @@ locloop_60:
 		mov	cx,4
 
 locloop_61:
-						shr	ax,1			; Shift w/zeros fill
-						rcr	di,1			; Rotate thru carry
-						rcr	bl,1			; Rotate thru carry
-						loop	locloop_61		; Loop if cx > 0
+							shr	ax,1			; Shift w/zeros fill
+							rcr	di,1			; Rotate thru carry
+							rcr	bl,1			; Rotate thru carry
+							loop	locloop_61		; Loop if cx > 0
 
 		mov	es:[bp],ah
 		mov	es:[bp+1],al
@@ -1359,10 +1373,10 @@ locloop_61:
 		mov	cx,4
 
 locloop_62:
-						shr	di,1			; Shift w/zeros fill
-						rcr	ax,1			; Rotate thru carry
-						rcr	bl,1			; Rotate thru carry
-						loop	locloop_62		; Loop if cx > 0
+							shr	di,1			; Shift w/zeros fill
+							rcr	ax,1			; Rotate thru carry
+							rcr	bl,1			; Rotate thru carry
+							loop	locloop_62		; Loop if cx > 0
 
 		xchg	di,ax
 		mov	es:[bp],ah
@@ -1426,33 +1440,33 @@ render_text_char_alt		proc	near
 		mov	cx,8
 
 locloop_65:
-						push	cx
-						lodsw				; String [si] to ax
-						mov	bh,al
-						xor	bl,bl			; Zero register
-						mov	cl,cs:tile_bg_mask
-						shr	bx,cl			; Shift w/zeros fill
-						xor	al,al			; Zero register
-						shr	ax,cl			; Shift w/zeros fill
-						or	bl,ah
-						mov	ah,al
-						mov	al,bh
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	al,cs:tile_fg_mask
-						xchg	es:[di],al
-						inc	di
-						mov	al,bl
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	al,cs:tile_fg_mask
-						xchg	es:[di],al
-						inc	di
-						mov	al,ah
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	al,cs:tile_fg_mask
-						xchg	es:[di],al
-						add	di,4Eh
-						pop	cx
-						loop	locloop_65		; Loop if cx > 0
+							push	cx
+							lodsw				; String [si] to ax
+							mov	bh,al
+							xor	bl,bl			; Zero register
+							mov	cl,cs:tile_bg_mask
+							shr	bx,cl			; Shift w/zeros fill
+							xor	al,al			; Zero register
+							shr	ax,cl			; Shift w/zeros fill
+							or	bl,ah
+							mov	ah,al
+							mov	al,bh
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	al,cs:tile_fg_mask
+							xchg	es:[di],al
+							inc	di
+							mov	al,bl
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	al,cs:tile_fg_mask
+							xchg	es:[di],al
+							inc	di
+							mov	al,ah
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	al,cs:tile_fg_mask
+							xchg	es:[di],al
+							add	di,4Eh
+							pop	cx
+							loop	locloop_65		; Loop if cx > 0
 
 		dec	dx
 		mov	ax,5
@@ -1466,7 +1480,7 @@ locloop_65:
 
 render_text_char_alt		endp
 
-			                        ;* No entry point to code
+ega_copy_region:
 		push	ds
 		mov	ax,50h
 		mul	bl			; ax = reg * al
@@ -1493,24 +1507,25 @@ render_text_char_alt		endp
 		xor	ch,ch			; Zero register
 
 locloop_66:
-						push	cx
-						push	di
-						push	si
-						mov	cx,bx
-						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-						pop	si
-						pop	di
-						add	si,50h
-						add	di,50h
-						pop	cx
-						loop	locloop_66		; Loop if cx > 0
+							push	cx
+							push	di
+							push	si
+							mov	cx,bx
+							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+							pop	si
+							pop	di
+							add	si,50h
+							add	di,50h
+							pop	cx
+							loop	locloop_66		; Loop if cx > 0
 
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+ega_read_region:
 		push	ds
 		add	di,0
 		mov	bl,ah
@@ -1535,38 +1550,39 @@ locloop_66:
 		mov	ch,bh
 
 locloop_67:
-						push	cx
-						push	si
-						mov	al,0
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	cx,bx
-						rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-						pop	si
-						push	si
-						mov	al,1
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	cx,bx
-						rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-						pop	si
-						push	si
-						mov	al,2
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	cx,bx
-						rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-						pop	si
-						push	si
-						mov	al,3
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	cx,bx
-						rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-						pop	si
-						add	si,50h
-						pop	cx
-						loop	locloop_67		; Loop if cx > 0
+							push	cx
+							push	si
+							mov	al,0
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	cx,bx
+							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+							pop	si
+							push	si
+							mov	al,1
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	cx,bx
+							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+							pop	si
+							push	si
+							mov	al,2
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	cx,bx
+							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+							pop	si
+							push	si
+							mov	al,3
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	cx,bx
+							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+							pop	si
+							add	si,50h
+							pop	cx
+							loop	locloop_67		; Loop if cx > 0
 
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+ega_copy_to_level:
 		push	ds
 		mov	si,di
 		add	si,0
@@ -1591,38 +1607,39 @@ locloop_67:
 		mov	ch,bh
 
 locloop_68:
-						push	cx
-						push	di
-						mov	al,1
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	cx,bx
-						rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-						pop	di
-						push	di
-						mov	al,2
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	cx,bx
-						rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-						pop	di
-						push	di
-						mov	al,4
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	cx,bx
-						rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-						pop	di
-						push	di
-						mov	al,8
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	cx,bx
-						rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-						pop	di
-						add	di,50h
-						pop	cx
-						loop	locloop_68		; Loop if cx > 0
+							push	cx
+							push	di
+							mov	al,1
+							out	dx,al			; port 3C5h, EGA sequencr func
+							mov	cx,bx
+							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+							pop	di
+							push	di
+							mov	al,2
+							out	dx,al			; port 3C5h, EGA sequencr func
+							mov	cx,bx
+							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+							pop	di
+							push	di
+							mov	al,4
+							out	dx,al			; port 3C5h, EGA sequencr func
+							mov	cx,bx
+							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+							pop	di
+							push	di
+							mov	al,8
+							out	dx,al			; port 3C5h, EGA sequencr func
+							mov	cx,bx
+							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+							pop	di
+							add	di,50h
+							pop	cx
+							loop	locloop_68		; Loop if cx > 0
 
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+render_char_string:
 		mov	cs:char_col_ptr,bx
 		mov	cs:char_row_ptr,cl
 		mov	al,1
@@ -1634,38 +1651,39 @@ loc_69:
 		mov	cs:tile_fg_mask,al
 
 loc_70:
-										lodsb				; String [si] to al
-										cmp	al,0FFh
-										jne	loc_71			; Jump if not equal
-										retn
+												lodsb				; String [si] to al
+												cmp	al,0FFh
+												jne	loc_71			; Jump if not equal
+												retn
 
 loc_71:
-										cmp	al,0Dh
-										je	loc_72			; Jump if equal
-										or	al,al			; Zero ?
-										js	loc_73			; Jump if sign=1
-										push	cx
-										push	bx
-										push	si
-										mov	ah,cs:tile_fg_mask
-										call	render_text_char_alt
-										pop	si
-										pop	bx
-										pop	cx
-										add	bx,8
-										jmp	short loc_70
+												cmp	al,0Dh
+												je	loc_72			; Jump if equal
+												or	al,al			; Zero ?
+												js	loc_73			; Jump if sign=1
+												push	cx
+												push	bx
+												push	si
+												mov	ah,cs:tile_fg_mask
+												call	render_text_char_alt
+												pop	si
+												pop	bx
+												pop	cx
+												add	bx,8
+												jmp	short loc_70
 
 loc_72:
-										add	byte ptr cs:char_row_ptr,8
-										mov	cl,cs:char_row_ptr
-										mov	bx,cs:char_col_ptr
-										jmp	short loc_70
+												add	byte ptr cs:char_row_ptr,8
+												mov	cl,cs:char_row_ptr
+												mov	bx,cs:char_col_ptr
+												jmp	short loc_70
 
 loc_73:
-						and	al,7
-						mov	cs:tile_fg_mask,al
-						jmp	short loc_70
-			                        ;* No entry point to code
+							and	al,7
+							mov	cs:tile_fg_mask,al
+							jmp	short loc_70
+
+ega_copy_xy_region:
 		push	ds
 		mov	ax,50h
 		mul	bl			; ax = reg * al
@@ -1697,24 +1715,25 @@ loc_73:
 		xor	ch,ch			; Zero register
 
 locloop_74:
-						push	cx
-						push	di
-						push	si
-						mov	cx,bx
-						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-						pop	si
-						pop	di
-						add	si,50h
-						add	di,50h
-						pop	cx
-						loop	locloop_74		; Loop if cx > 0
+							push	cx
+							push	di
+							push	si
+							mov	cx,bx
+							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+							pop	si
+							pop	di
+							add	si,50h
+							add	di,50h
+							pop	cx
+							loop	locloop_74		; Loop if cx > 0
 
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+ega_pattern_fill:
 		push	ds
 		push	cs
 		pop	ds
@@ -1744,16 +1763,16 @@ locloop_74:
 		mov	cx,10h
 
 locloop_75:
-						mov	al,0F0h
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	al,ds:tile_fg_mask
-						xchg	es:[di],al
-						mov	al,0Fh
-						out	dx,al			; port 3CFh, EGA graphic func
-						mov	al,ds:tile_fg_mask
-						xchg	es:[di+4],al
-						add	di,50h
-						loop	locloop_75		; Loop if cx > 0
+							mov	al,0F0h
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	al,ds:tile_fg_mask
+							xchg	es:[di],al
+							mov	al,0Fh
+							out	dx,al			; port 3CFh, EGA graphic func
+							mov	al,ds:tile_fg_mask
+							xchg	es:[di+4],al
+							add	di,50h
+							loop	locloop_75		; Loop if cx > 0
 
 		mov	al,0FFh
 		out	dx,al			; port 3CFh, EGA graphic func
@@ -1769,19 +1788,19 @@ fill_rectangle		proc	near
 		mov	cx,2
 
 locloop_76:
-						push	cx
-						mov	al,ds:tile_fg_mask
-						mov	cx,5
-						rep	stosb			; Rep when cx >0 Store al to es:[di]
-						add	di,4Bh
-						pop	cx
-						loop	locloop_76		; Loop if cx > 0
+							push	cx
+							mov	al,ds:tile_fg_mask
+							mov	cx,5
+							rep	stosb			; Rep when cx >0 Store al to es:[di]
+							add	di,4Bh
+							pop	cx
+							loop	locloop_76		; Loop if cx > 0
 
 		retn
 
 fill_rectangle		endp
 
-			                        ;* No entry point to code
+render_font_ext:
 		push	ds
 		push	si
 		push	cs
@@ -1968,10 +1987,10 @@ sprite_anim_data:
 		db	 0Fh, 00h, 00h,0FFh		; (4-byte terminator)
 
 loc_80:
-						jg	$+2			; delay for I/O
-						add	[bx+si+0Fh],bh
-						add	[bx+si],al
-						ja	loc_80			; Jump if above
+							jg	$+2			; delay for I/O
+							add	[bx+si+0Fh],bh
+							add	[bx+si],al
+							ja	loc_80			; Jump if above
 		add	[bx+si],al
 ;*		div	word ptr [bx+0]		; ax,dxrem=dx:ax/data
 		db	0F7h, 77h, 00h		;  div word ptr [bx+0]  (F7h /6 with ModRM 77h; alt encoding)
@@ -2021,25 +2040,25 @@ vga_vram_init:
 		mov	cx,8				; CX = 8 (outer loop count)
 
 locloop_81:
-						push	cx
-						push	di
-						mov	cx,19h
+							push	cx
+							push	di
+							mov	cx,19h
 
 locloop_82:
-										push	cx
-										push	di
-										mov	cx,50h
-										xor	al,al			; Zero register
-										rep	stosb			; Rep when cx >0 Store al to es:[di]
-										pop	di
-										add	di,280h
-										pop	cx
-										loop	locloop_82		; Loop if cx > 0
+												push	cx
+												push	di
+												mov	cx,50h
+												xor	al,al			; Zero register
+												rep	stosb			; Rep when cx >0 Store al to es:[di]
+												pop	di
+												add	di,280h
+												pop	cx
+												loop	locloop_82		; Loop if cx > 0
 
-						pop	di
-						add	di,50h
-						pop	cx
-						loop	locloop_81		; Loop if cx > 0
+							pop	di
+							add	di,50h
+							pop	cx
+							loop	locloop_81		; Loop if cx > 0
 
 		retn
 		db	0C3h, 00h, 00h, 00h, 00h, 00h	; C3h = retn + 5 zero-bytes padding
