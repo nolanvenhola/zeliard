@@ -87,21 +87,54 @@ start:
 		and	[bx],sp
 		and	dl,[bp+22h]
 		xor	[bp+si],sp
-		db	 60h, 22h,0BFh, 22h,0CDh, 22h
-		db	 85h, 23h, 8Fh, 23h,0ACh, 23h
-		db	0CCh, 23h,0F5h, 23h, 4Ch, 25h
-		db	0E2h, 25h,0FCh, 25h,0E9h, 27h
-		db	 57h, 28h, 9Ah, 28h,0D9h, 28h
-		db	 1Ah, 29h, 6Fh, 29h,0C3h, 29h
-		db	0A3h, 24h, 3Ah, 24h, 16h, 26h
-		db	 37h, 26h,0DBh, 22h, 18h, 27h
-		db	 30h, 27h, 1Ch, 2Ah, 30h, 21h
-		db	 01h, 2Ch, 2Ah, 2Ch, 50h, 33h
-		db	0C0h, 8Ah,0C7h, 8Ah,0FCh, 50h
-		db	0B8h, 40h, 01h,0F7h,0E3h, 5Fh
-		db	 03h,0FFh, 03h,0FFh, 03h,0F8h
-		db	 58h, 0Ah,0C0h, 75h, 03h,0E9h
-		db	 86h, 00h
+; Function dispatch table (30 CS-relative word pointers, driver loads at game_seg:2000h).
+		dw	2260h			; fn  0
+		dw	22BFh			; fn  1
+		dw	22CDh			; fn  2
+		dw	2385h			; fn  3
+		dw	238Fh			; fn  4
+		dw	23ACh			; fn  5
+		dw	23CCh			; fn  6
+		dw	23F5h			; fn  7
+		dw	254Ch			; fn  8
+		dw	25E2h			; fn  9
+		dw	25FCh			; fn 10
+		dw	27E9h			; fn 11
+		dw	2857h			; fn 12
+		dw	289Ah			; fn 13
+		dw	28D9h			; fn 14
+		dw	291Ah			; fn 15
+		dw	296Fh			; fn 16
+		dw	29C3h			; fn 17
+		dw	24A3h			; fn 18
+		dw	243Ah			; fn 19
+		dw	2616h			; fn 20
+		dw	2637h			; fn 21
+		dw	22DBh			; fn 22
+		dw	2718h			; fn 23
+		dw	2730h			; fn 24
+		dw	2A1Ch			; fn 25
+		dw	2130h			; fn 26
+		dw	2C01h			; fn 27
+		dw	2C2Ah			; fn 28
+		dw	3350h			; fn 29 (external)
+
+dispatch_call:
+; Coordinate dispatch: AL=fn#, BH=row, AH=col; computes VGA row offset and branches.
+		db	0C0h			; alternate opcode byte (alt encoding)
+		mov	al,bh			; AL = row
+		mov	bh,ah			; BH = col high byte
+		push	ax
+		mov	ax,vga_stride		; 320 bytes per row
+		mul	bx			; AX = row * 320
+		pop	di
+		add	di,di
+		add	di,di
+		add	di,ax
+		pop	ax
+		or	al,al
+		jnz	volume_param_branch
+		jmp	clear_screen_init
 
 volume_param_branch:
 		mov	dx,909h
@@ -381,12 +414,24 @@ inverted_blend_loop:
 
 plot_pixel		endp
 
-		db	 00h,0BFh, 14h,0CCh, 2Eh, 8Bh
-		db	 1Eh,0B2h, 00h,0EBh, 05h,0BFh
-		db	 14h,0DBh,0EBh, 00h,0B8h, 00h
-		db	0A0h, 8Eh,0C0h,0E8h, 60h, 00h
-		db	 8Bh,0CBh, 0Bh,0C9h, 75h, 01h
-		db	0C3h
+; plot_mode opcode byte lives here (CS:2226h); set_plot_mode patches it to
+; change the pixel operation (ADD/OR/AND/SUB) applied to the VGA text field.
+plot_mode_fn:
+		add	byte ptr [bx+text_field_vga_ofs],bh	; opcode patched by set_plot_mode
+		mov	bx,cs:[0B2h]
+		jmp	short draw_text_field_common
+
+draw_text_field_alt:
+		mov	di,0DB14h			; alt VGA row offset (row 175, col 84)
+		jmp	short draw_text_field_common
+
+draw_text_field_common:
+		SET_VGA_ES
+		call	calc_text_width
+		mov	cx,bx
+		or	cx,cx
+		jnz	vertical_line_loop
+		retn
 
 vertical_line_loop:
 				push	cx
