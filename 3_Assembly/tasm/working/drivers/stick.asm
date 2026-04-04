@@ -1830,110 +1830,68 @@ fio_error:
 
 handle_pause_key6		endp
 
-		db	12 dup (0)
-		db	 02h, 15h
-		db	'MP10.MDT'
-		db	 00h, 02h, 16h
-		db	'MP1D.MDT'
-		db	 00h, 02h, 17h
-		db	'MP20.MDT'
-		db	 00h, 02h, 18h
-		db	'MP21.MDT'
-		db	 00h, 02h, 19h
-		db	'MP2D.MDT'
-		db	 00h, 02h, 1Ah
-		db	'MP30.MDT'
-		db	0, 2
-		db	1Bh, 'MP31.MDT'
-		db	 00h, 02h, 1Ch
-		db	'MP3D.MDT'
-		db	 00h, 02h, 1Dh
-		db	'MP40.MDT'
-		db	 00h, 02h, 1Eh
-		db	'MP41.MDT'
-		db	 00h, 02h, 1Fh
-		db	'MP4D.MDT'
-		db	0, 2
-		db	' MP50.MDT'
-		db	0, 2
-		db	'!MP51.MD'
-
-poll_joystick_buttons3		proc	near
-		push	sp
-		add	[bp+si],al
-		and	cl,[di+50h]
-		xor	ax,2E44h
-		dec	bp
-		inc	sp
-		push	sp
-		add	[bp+si],al
-		and	cx,[di+50h]
-		xor	ss:save_file_magic,ch
-		push	sp
-		add	[bp+si],al
-		and	al,4Dh			; 'M'
-		push	ax
-		xor	ss:save_file_magic,bp
-		push	sp
-		add	[bp+si],al
-		and	ax,504Dh
-		xor	ch,ss:save_file_magic
-		push	sp
-		add	[bp+si],al
-		db	'&MP6D.MDT'
-		db	0, 2
-		db	27h, 'MP70.MDT'
-		db	0, 2
-		db	'(MP71.MDT'
-		db	0, 2
-		db	')MP72.MDT'
-		db	0, 2
-		db	'*MP73.MDT'
-		db	 00h, 02h, 2Bh
-savefile_desc_ptr		dw	504Dh, 4437h
-file_read_buf_ptr		dw	4D2Eh, 5444h
-file_read_count		dw	200h
-file_sector_ptr		dw	4D2Ch
-		db	 50h, 38h, 30h, 2Eh, 4Dh, 44h
-		db	 54h, 00h, 02h
-		db	'-MP81.MDT'
-		db	0, 2
-		db	'.MP82.MDT'
-		db	0, 2
-		db	'/MP83.MDT'
-		db	0, 2
-		db	'0MP84.MDT'
-		db	0, 2
-		db	'1MP8D.MDT'
-		db	0, 2
-		db	'2MP90.MDT'
-		db	0, 2
-		db	'3MPA0.MDT'
-		db	 00h, 01h, 00h, 20h
-		db	7 dup (20h)
-		db	0, 1
-		db	'%CMAP.MDT'
-		db	0, 1
-		db	'&MRMP.MDT'
-		db	0, 1
-		db	27h, 'STMP.MDT'
-		db	0, 1
-		db	'(BSMP.MDT'
-		db	0, 1
-		db	')HLMP.MDT'
-		db	0, 1
-		db	'*TMMP.MDT'
-		db	0, 1
-		db	'+DRMP.MDT'
-		db	0, 1
-		db	',LLMP.MDT'
-		db	0, 1
-		db	'-PRMP.MDT'
-		db	0, 1
-		db	'.ESMP.MDT'
-		db	0
-
-poll_joystick_buttons3		endp
+; Map driver file reference table  [CS:0x115C]
+; Format: [archive][chunk]['FILENAME.MDT'\0] repeated.
+; The 12-byte prefix is runtime I/O scratch (overwritten during save/load).
+; savefile_desc_ptr etc. mark specific bytes inside 'MP7D.MDT' that get
+; overwritten with live far pointers by the save/load I/O routines.
+map_driver_tbl:
+		db	12 dup (0)		; runtime I/O buffer (overwritten)
+; zelres2 map data files:
+		db	2, 015h, 'MP10.MDT', 0
+		db	2, 016h, 'MP1D.MDT', 0
+		db	2, 017h, 'MP20.MDT', 0
+		db	2, 018h, 'MP21.MDT', 0
+		db	2, 019h, 'MP2D.MDT', 0
+		db	2, 01Ah, 'MP30.MDT', 0
+		db	2, 01Bh, 'MP31.MDT', 0
+		db	2, 01Ch, 'MP3D.MDT', 0
+		db	2, 01Dh, 'MP40.MDT', 0
+		db	2, 01Eh, 'MP41.MDT', 0
+		db	2, 01Fh, 'MP4D.MDT', 0
+		db	2, 020h, 'MP50.MDT', 0
+		db	2, 021h, 'MP51.MDT', 0
+		db	2, 022h, 'MP5D.MDT', 0
+		db	2, 023h, 'MP60.MDT', 0
+		db	2, 024h, 'MP61.MDT', 0
+		db	2, 025h, 'MP62.MDT', 0
+		db	2, 026h, 'MP6D.MDT', 0
+		db	2, 027h, 'MP70.MDT', 0
+		db	2, 028h, 'MP71.MDT', 0
+		db	2, 029h, 'MP72.MDT', 0
+		db	2, 02Ah, 'MP73.MDT', 0
+		db	2, 02Bh			; archive=2, chunk=0x2B
+; Runtime I/O area: bytes below are 'MP7D.MDT...' statically but are
+; overwritten with live far pointers before each save/load operation:
+;   savefile_desc_ptr (CS:0x105C) = far ptr to save filename
+;   file_read_buf_ptr (CS:0x1060) = far ptr to I/O read buffer
+;   file_read_count   (CS:0x1064) = byte count word
+;   file_sector_ptr   (CS:0x1066) = sector pointer word
+savefile_desc_ptr dw	504Dh, 4437h	; 'MP7D' (static: first 4 bytes of MP7D.MDT)
+file_read_buf_ptr dw	4D2Eh, 5444h	; '.MDT' (static: last 4 bytes of MP7D.MDT)
+file_read_count	dw	200h		; 0x0000 + archive=2 (null of MP7D + MP80 header)
+file_sector_ptr	dw	4D2Ch		; chunk=0x2C + 'M' (start of MP80.MDT filename)
+		db	 50h, 38h, 30h, 2Eh, 4Dh, 44h	; 'P80.MD' (MP80.MDT continued)
+		db	 54h, 00h		; 'T' + null terminator
+		db	2, 02Dh, 'MP81.MDT', 0
+		db	2, 02Eh, 'MP82.MDT', 0
+		db	2, 02Fh, 'MP83.MDT', 0
+		db	2, 030h, 'MP84.MDT', 0
+		db	2, 031h, 'MP8D.MDT', 0
+		db	2, 032h, 'MP90.MDT', 0
+		db	2, 033h, 'MPA0.MDT', 0
+; zelres1 map data files:
+		db	1, 000h, '        ', 0	; blank placeholder entry (8 spaces)
+		db	1, 025h, 'CMAP.MDT', 0
+		db	1, 026h, 'MRMP.MDT', 0
+		db	1, 027h, 'STMP.MDT', 0
+		db	1, 028h, 'BSMP.MDT', 0
+		db	1, 029h, 'HLMP.MDT', 0
+		db	1, 02Ah, 'TMMP.MDT', 0
+		db	1, 02Bh, 'DRMP.MDT', 0
+		db	1, 02Ch, 'LLMP.MDT', 0
+		db	1, 02Dh, 'PRMP.MDT', 0
+		db	1, 02Eh, 'ESMP.MDT', 0
 
 seg_a		ends
 
