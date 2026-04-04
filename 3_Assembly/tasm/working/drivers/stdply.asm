@@ -7,7 +7,7 @@ PAGE  59,132
 ;
 ;  Loaded by zeliad.exe at game_entry_seg:0000h (before stick.bin at 0100h
 ;  and game.bin at A000h). game.bin reads this data via CS-relative addresses
-;  since it shares the same segment. No executable code — pure config tables.
+;  since it shares the same segment. No executable code ?-- pure config tables.
 ;
 ;  If a save file is present at startup, zeliad loads the save instead of this
 ;  file (same load address), restoring the player's key assignments.
@@ -110,7 +110,7 @@ anim_color_lut	db	0Ch		; frame  1: color 12
 ;
 ;  CS:[0C4h] = level/area number (read by game.bin at startup)
 ;  CS:[0C8h] = level tileset index (written by game.bin at runtime)
-;  CS:[0D2h-0E3h] = 9-row × 2-byte collision bitmask (left half | right half)
+;  CS:[0D2h-0E3h] = 9-row ?? 2-byte collision bitmask (left half | right half)
 ;--------------------------------------------------------------------------
 
 ply_level	db	80h		; [0C4h] level/area number (init 0x80)

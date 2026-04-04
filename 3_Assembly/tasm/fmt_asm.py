@@ -47,18 +47,51 @@ def is_label_line(line: str) -> bool:
 
 
 def is_nonascii_comment(line: str) -> bool:
-    """True for lines like ';████████' or ';══════' (non-ASCII box-drawing comment lines)."""
+    """True for Sourcer separator/banner comment lines containing non-ASCII chars.
+
+    Catches both:
+    - Pure box-drawing lines: ';████████' (all chars after ; are non-ASCII)
+    - Mixed banner lines:     ';╔══ External Entry into Subroutine ══╗'
+      (starts with non-ASCII, or contains non-ASCII box chars alongside ASCII text)
+    """
     s = line.strip()
     if not s.startswith(';'):
         return False
     content = s[1:]
-    return bool(content) and all(ord(c) > 127 for c in content)
+    if not content:
+        return False
+    # Pure non-ASCII comment
+    if all(ord(c) > 127 for c in content):
+        return True
+    # Mixed: first non-whitespace char after ';' is non-ASCII (Sourcer banner pattern)
+    first_nonws = content.lstrip()
+    if first_nonws and ord(first_nonws[0]) > 127:
+        return True
+    return False
+
+
+def ascii_clean_comment(line: str) -> str:
+    """Replace non-ASCII characters in inline comments with ASCII equivalents."""
+    # Common substitutions seen in Sourcer/agent output
+    subs = [
+        ('\x86\x92', '->'),   # CP437 right arrow →
+        ('\x80\x94', '--'),   # CP437 em dash —
+        ('\xe2\x86\x92', '->'),  # UTF-8 →
+        ('\xe2\x80\x94', '--'),  # UTF-8 —
+    ]
+    result = line
+    for bad, good in subs:
+        result = result.replace(bad, good)
+    # Generic fallback: replace any remaining non-ASCII with '?'
+    result = result.encode('ascii', errors='replace').decode('ascii')
+    return result
 
 
 def strip_boilerplate(lines: list[str]) -> list[str]:
     """Remove Sourcer subroutine header blocks:
        [non-ASCII comment] + [;...SUBROUTINE...] + [non-ASCII comment]
-    Also removes any standalone non-ASCII comment lines."""
+    Also removes any standalone non-ASCII comment lines.
+    Also sanitises inline non-ASCII characters in regular lines."""
     SUBR_RE = re.compile(r';\s*SUBROUTINE\s*$', re.IGNORECASE)
     out = []
     i = 0
@@ -74,7 +107,11 @@ def strip_boilerplate(lines: list[str]) -> list[str]:
         if is_nonascii_comment(lines[i]):
             i += 1
             continue
-        out.append(lines[i])
+        # Sanitise any remaining non-ASCII in regular lines
+        line = lines[i]
+        if any(ord(c) > 127 for c in line):
+            line = ascii_clean_comment(line)
+        out.append(line)
         i += 1
     return out
 
