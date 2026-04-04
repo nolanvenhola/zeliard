@@ -160,8 +160,14 @@ class Program
         var asmFile = Path.GetFileName(asmFullPath);
         var outputDir = Path.GetFullPath(config.OutputDir ?? ".");
 
+        // Mount the parent of asmDir as W: so that sibling directories (e.g.
+        // working/core/) are reachable via relative includes like ..\core\file.inc.
+        // If asmDir has no parent (root), fall back to mounting asmDir directly.
+        var mountRoot = Path.GetDirectoryName(asmDir) ?? asmDir;
+        var asmSubDir = mountRoot != asmDir ? Path.GetFileName(asmDir) : "";
+
         // Create temporary DOSBox config
-        var confFile = CreateDosBoxConf(config, asmDir, asmFile, outputDir);
+        var confFile = CreateDosBoxConf(config, asmDir, asmFile, outputDir, mountRoot, asmSubDir);
 
         try
         {
@@ -293,7 +299,8 @@ class Program
         }
     }
 
-    static string CreateDosBoxConf(Config config, string asmDir, string asmFile, string outputDir)
+    static string CreateDosBoxConf(Config config, string asmDir, string asmFile, string outputDir,
+                                   string mountRoot, string asmSubDir)
     {
         var confFile = Path.Combine(Path.GetTempPath(), $"dosbox_tasm_{Guid.NewGuid():N}.conf");
         var baseName = Path.GetFileNameWithoutExtension(asmFile);
@@ -305,8 +312,8 @@ class Program
         sb.AppendLine("rem Mount TASM directory");
         sb.AppendLine($"mount t \"{config.TasmPath}\"");
         sb.AppendLine();
-        sb.AppendLine("rem Mount working directory");
-        sb.AppendLine($"mount w \"{asmDir}\"");
+        sb.AppendLine("rem Mount working root (parent of asm dir) so sibling include dirs are reachable");
+        sb.AppendLine($"mount w \"{mountRoot}\"");
         sb.AppendLine();
 
         if (asmDir != outputDir)
@@ -321,6 +328,10 @@ class Program
         sb.AppendLine();
         sb.AppendLine("rem Go to working directory");
         sb.AppendLine("w:");
+        if (!string.IsNullOrEmpty(asmSubDir))
+        {
+            sb.AppendLine($"cd {asmSubDir}");
+        }
         sb.AppendLine();
         sb.AppendLine("rem Run TASM");
         sb.AppendLine($"echo Assembling {asmFile}...");
