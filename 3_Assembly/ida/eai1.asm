@@ -741,7 +741,7 @@ loc_A582:                               ; ...
 loc_A595:                               ; ...
                 and     [si+monster.ai_state], 0FBh
                 and     [si+monster.ai_flags], 7Fh
-                call    word ptr cs:11Ah ; Accumulate_folded_ff1b_proc
+                call    word ptr cs:Accumulate_folded_ff1b_proc
                 and     al, 80h
                 or      [si+monster.ai_flags], al
                 or      al, al

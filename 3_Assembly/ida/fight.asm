@@ -74,9 +74,9 @@ Cavern_Game_Init proc near              ; ...
                 mov     projectiles_array, al
                 mov     is_boss_dead, al
                 mov     word ptr magic_projectiles, ax
-                mov     byte ptr ds:byte_FF2E, 0
-                mov     byte ptr ds:byte_FF2F, 0
-                mov     byte ptr ds:byte_FF30, 0
+                mov     byte ptr ds:boss_being_hit, 0
+                mov     byte ptr ds:sprite_flash_flag, 0
+                mov     byte ptr ds:boss_is_dead, 0
                 mov     byte ptr ds:byte_9F01, 0
                 test    byte ptr ds:is_boss_cavern, 0FFh
                 jnz     short boss_place
@@ -2440,7 +2440,7 @@ apply_sword_hit_to_map_tiles proc near  ; ...
 loc_6F0F:                               ; ...
                 test    byte ptr ds:is_boss_cavern, 0FFh
                 jz      short loc_6F1E
-                test    byte ptr ds:byte_FF2E, 0FFh
+                test    byte ptr ds:boss_being_hit, 0FFh
                 jz      short loc_6F1E
                 retn
 ; ---------------------------------------------------------------------------
@@ -2574,7 +2574,7 @@ loc_7007:                               ; ...
                 call    process_visible_collapsing_platforms
                 call    process_doors
                 call    dispatch_spell_projectile_movement
-                test    byte ptr ds:byte_FF30, 0FFh
+                test    byte ptr ds:boss_is_dead, 0FFh
                 jnz     short loc_702F
                 call    monsters_spawning
 
@@ -2664,7 +2664,7 @@ loc_7105:                               ; ...
 
 loc_710F:                               ; ...
                 call    cs:Refresh_Dirty_Tiles_proc
-                test    byte ptr ds:byte_FF2F, 0FFh
+                test    byte ptr ds:sprite_flash_flag, 0FFh
                 jz      short loc_7125
                 call    cs:Active_Entity_Sprite_Renderer_proc
                 mov     byte ptr ds:byte_FF24, 0Ah
@@ -2738,7 +2738,7 @@ loc_71C2:                               ; ...
 loc_71CC:                               ; ...
                 test    byte ptr ds:is_boss_cavern, 0FFh
                 jz      short loc_71FA
-                test    byte ptr ds:byte_FF30, 0FFh
+                test    byte ptr ds:boss_is_dead, 0FFh
                 jz      short loc_71FA
                 cmp     ds:is_boss_dead, 0FFh
                 jnz     short loc_71FA
@@ -2754,7 +2754,7 @@ loc_71CC:                               ; ...
                 mov     ds:byte_9F1E, 0FFh
 
 loc_71FA:                               ; ...
-                test    byte ptr ds:byte_FF2E, 0FFh
+                test    byte ptr ds:boss_being_hit, 0FFh
                 jz      short loc_7202
                 retn
 ; ---------------------------------------------------------------------------
@@ -3221,7 +3221,7 @@ byte_7516       db 1, 1, 4, 8, 20, 20, 20, 20, 20 ; ...
 check_hero_contact_damage proc near     ; ...
                 test    byte ptr ds:is_boss_cavern, 0FFh
                 jz      short loc_752E
-                test    byte ptr ds:byte_FF2E, 0FFh
+                test    byte ptr ds:boss_being_hit, 0FFh
                 jz      short loc_752E
                 retn
 ; ---------------------------------------------------------------------------
@@ -4275,8 +4275,8 @@ loc_7CF4:                               ; ...
                 add     ah, ah
                 sbb     bl, bl          ; if ah bit 6 was set => bl = ff (Jashiin cavern)
                 mov     ds:is_jashiin_cavern, bl
-                mov     byte ptr ds:byte_FF2E, 0
-                mov     byte ptr ds:byte_FF2F, 0
+                mov     byte ptr ds:boss_being_hit, 0
+                mov     byte ptr ds:sprite_flash_flag, 0
                 call    cs:Clear_Viewport_proc
                 mov     byte ptr ds:hero_x_in_viewport, 0Ch
                 mov     al, ds:hero_head_y_in_viewport_initial_from_mdt
@@ -6104,7 +6104,7 @@ monsters_updates endp
 spirit_sprite_place_in_proximity_rows proc near ; ...
                 test    byte ptr ds:is_boss_cavern, 0FFh
                 jz      short loc_8750
-                test    byte ptr ds:byte_FF30, 0FFh
+                test    byte ptr ds:boss_is_dead, 0FFh
                 jz      short loc_8750
                 retn
 ; ---------------------------------------------------------------------------
@@ -6381,7 +6381,7 @@ init_guerra     proc near               ; ...
                 mov     ds:byte_9EEE, 0FFh
                 test    byte ptr ds:is_boss_cavern, 0FFh
                 jz      short loc_8930
-                test    byte ptr ds:byte_FF2E, 0FFh
+                test    byte ptr ds:boss_being_hit, 0FFh
                 jnz     short loc_8954
 
 loc_8930:                               ; ...
@@ -6843,7 +6843,7 @@ sub_8BC2        endp
 monster_is_in_spawn_range_and_clear proc near ; ...
                 test    byte ptr ds:is_boss_cavern, 0FFh
                 jz      short loc_8C07
-                test    byte ptr ds:byte_FF2E, 0FFh
+                test    byte ptr ds:boss_being_hit, 0FFh
                 stc
                 jz      short loc_8C07
                 retn
@@ -8549,7 +8549,7 @@ loc_9581:                               ; ...
                 mov     [si+monster.hp], 0
                 mov     bl, ds:monster_index
                 xor     bh, bh
-                mov     ds:proximity_second_layer[bx], 0 ; proximity map is designed to keep only one item
+                mov     byte ptr ds:proximity_second_layer[bx], 0 ; proximity map is designed to keep only one item
                                         ; at given address. So when we need to put other object,
                                         ; when position is already occupied by monster,
                                         ; we use second layer: 128 bytes of additional buffer
@@ -9580,14 +9580,14 @@ byte_9F2E       db 0D2h dup(?)          ; ...
                 db 2000h dup(?)         ; ...
 mdt_buffer      dw ?                    ; ...
                                         ; 29h
-mapWidth        dw ?                    ; ...
+                dw ?                    ; mapWidth
 vertical_platforms_table_addr dw ?      ; ...
 collapsing_platforms_table_addr dw ?    ; ...
 horiz_platforms_table_addr dw ?         ; ...
 doors_table_addr dw ?                   ; ...
 accomplished_items_checker dw ?         ; ...
 cavern_name_rendering_info dw ?         ; ...
-monsters_table_addr dw ?                ; ...
+                dw ?                    ; monsters_table_addr
 cavern_level    db ?                    ; ...
 tear_x          dw ?                    ; ...
 tear_y          db ?                    ; ...
@@ -9639,9 +9639,8 @@ spirit_sprite_3 db ?, ?, ?, ?, ?, ?, ?  ; ...
                 db    ? ;
                 db    ? ;
                 db    ? ;
-projectiles_array db 416 dup(?)         ; ...
-                                        ; 13*32
-proximity_second_layer db 80h dup(?)    ; ...
+projectiles_array db 416 dup(?)         ; 13*32
+                db 80h dup(?)           ; proximity_second_layer
                                         ; proximity map is designed to keep only one item
                                         ; at given address. So when we need to put other object,
                                         ; when position is already occupied by monster,
