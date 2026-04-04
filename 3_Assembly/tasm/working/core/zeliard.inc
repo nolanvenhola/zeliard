@@ -65,8 +65,17 @@ gvar_joystick_flag      equ     0FF43h  ; Joystick enabled flag
 gvar_save_name_buf      equ     0FF6Ch  ; Save file name buffer
 gvar_volume_a           equ     0FF74h  ; Volume A
 gvar_volume_b           equ     0FF75h  ; Volume B
+gvar_old_int09_raw      equ     0FF78h  ; Saved INT 09h vector (raw, lo byte)
 gvar_old_int09_ofs      equ     0FF79h  ; Saved INT 09h offset
 gvar_old_int09_seg      equ     0FF7Bh  ; Saved INT 09h segment
+
+; Additional game state variables used by stick.bin
+gvar_frame_timer        equ     0FF1Ah  ; Frame timer accumulator
+gvar_anim_timer         equ     0FF1Bh  ; Animation timer accumulator
+gvar_enter_key          equ     0FF29h  ; Enter key scancode buffer (0x0D)
+gvar_joy_cal_x          equ     0FF48h  ; Joystick X-axis calibration centre
+gvar_joy_cal_y          equ     0FF49h  ; Joystick Y-axis calibration centre
+gvar_frame_count        equ     0FF50h  ; Frame counter
 
 ; stick.bin ISR stub offsets in the game segment.
 ; stick.bin is loaded at ISR_STUBS_BASE in game_entry_seg.

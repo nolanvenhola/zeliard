@@ -28,42 +28,13 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-; stick.bin exported constants — also defined in stick.inc for external callers.
-; Note: zeliard.inc (working/core/) cannot be included here because TasmRunner
-; only mounts the source file's own directory. Names that differ from zeliard.inc
-; canonical names are noted with (= zeliard_name) comments.
+; stick.bin exports + shared game state layout
 include  stick.inc
+include  ..\core\zeliard.inc
 
-; Game state variables (0xFF00+ shared with zeliad.exe and game.bin)
-; Canonical names are in working/core/zeliard.inc.  Where this file uses a
-; different name for the same address, the zeliard.inc name is shown in parens.
-gvar_chunk_load_fn equ	0FF00h			; Chunk loader function ptr
-gvar_old_int08	equ	0FF04h			; Saved INT 08h (= gvar_old_int08_ofs)
-gvar_key_released equ	0FF09h			; Key released flag
-gvar_last_key	equ	0FF0Ah			; Last key scancode
-gvar_input_fn	equ	0FF0Ch			; Input handler ptr (= gvar_input_fn_ofs)
-gvar_gfx_fn	equ	0FF10h			; Graphics handler ptr (= gvar_gfx_fn_ofs)
-gvar_timer_flag	equ	0FF16h			; Timer/display flag (= gvar_skip_flag)
-gvar_timer_count equ	0FF17h			; Timer counter word (= gvar_timer_flag)
-gvar_skip_input	equ	0FF18h			; Input skip counter (= gvar_timer_counter)
-gvar_frame_timer equ	0FF1Ah			; Frame timer accumulator
-gvar_anim_timer	equ	0FF1Bh			; Animation timer accumulator
-gvar_skip_flag	equ	0FF1Dh			; Skip/state flag (= gvar_skip_input)
-gvar_state_a	equ	0FF1Eh			; Game state A (= gvar_state_b)
-gvar_state_b	equ	0FF1Fh			; Game state B (= gvar_state_c)
-gvar_sound_flag	equ	0FF27h			; Sound enabled flag
-gvar_key_pressed equ	0FF28h			; Key pressed scancode
-gvar_enter_key	equ	0FF29h			; Enter key scancode (0x0D)
-gvar_save_name	equ	0FF33h			; Save filename (= gvar_save_filename)
-gvar_music_state equ	0FF3Bh			; Music state (= gvar_music_flag_d)
-gvar_joy_cal_x	equ	0FF48h			; Joystick X calibration centre
-gvar_joy_cal_y	equ	0FF49h			; Joystick Y calibration centre
-gvar_frame_count equ	0FF50h			; Frame counter
-gvar_volume_a	equ	0FF74h			; Volume A
-gvar_volume_b	equ	0FF75h			; Volume B
-gvar_old_int09	equ	0FF78h			; Saved INT 09h raw (= gvar_old_int09_raw)
-gvar_old_int09_seg equ	0FF79h			; Saved INT 09h seg (= gvar_old_int09_ofs)
-herc_video_seg	equ	0B000h			; HGC framebuffer segment
+; stick.asm uses zeliard.inc canonical names throughout (see zeliard.inc).
+; Only truly stick-local constants remain below:
+herc_video_seg	equ	0B000h			; HGC framebuffer segment (stick-only)
 zero_offset	equ	0			; Zero constant
 
 seg_a		segment	byte public
@@ -97,31 +68,31 @@ stick		endp
 handle_pause_key		proc	near
 		test	byte ptr cs:[2BEh],0FFh
 		jz	hpk_pause_was_set			; Jump if zero
-		test	byte ptr cs:gvar_timer_flag,1
+		test	byte ptr cs:gvar_skip_flag,1
 		jz	hpk_pause_done			; Jump if zero
 		mov	byte ptr cs:[2BEh],0
-		mov	byte ptr cs:gvar_skip_flag,0FFh
+		mov	byte ptr cs:gvar_skip_input,0FFh
 		jmp	short hpk_pause_done
 
 hpk_pause_was_set:
-		test	byte ptr cs:gvar_timer_flag,1
+		test	byte ptr cs:gvar_skip_flag,1
 		jnz	hpk_pause_done			; Jump if not zero
 		mov	byte ptr cs:[2BEh],0FFh
 
 hpk_pause_done:
 		test	byte ptr cs:[2BFh],0FFh
 		jz	hpk_btn_off			; Jump if zero
-		test	byte ptr cs:gvar_timer_flag,2
+		test	byte ptr cs:gvar_skip_flag,2
 		jnz	hpk_pause_set			; Jump if not zero
 		retn
 
 hpk_pause_set:
 		mov	byte ptr cs:[2BFh],0
-		mov	byte ptr cs:gvar_state_a,0FFh
+		mov	byte ptr cs:gvar_state_b,0FFh
 		retn
 
 hpk_btn_off:
-		test	byte ptr cs:gvar_timer_flag,2
+		test	byte ptr cs:gvar_skip_flag,2
 		jz	hpk_btn_set			; Jump if zero
 		retn
 
@@ -132,7 +103,7 @@ hpk_btn_set:
 handle_pause_key		endp
 
 poll_joystick_buttons		proc	near
-		test	byte ptr cs:gvar_music_state,0FFh
+		test	byte ptr cs:gvar_music_flag_d,0FFh
 		jnz	pjb_music_on			; Jump if not zero
 		retn
 
@@ -158,7 +129,7 @@ decode_joystick_bits:
 
 pjb_btna_released:
 		mov	byte ptr cs:[2C0h],0
-		mov	byte ptr cs:gvar_skip_flag,0FFh
+		mov	byte ptr cs:gvar_skip_input,0FFh
 		retn
 
 pjb_btna_off:
@@ -179,7 +150,7 @@ pjb_btnb_check:
 
 pjb_btnb_released:
 		mov	byte ptr cs:[2C1h],0
-		mov	byte ptr cs:gvar_state_a,0FFh
+		mov	byte ptr cs:gvar_state_b,0FFh
 		retn
 
 pjb_btnb_off:
@@ -196,7 +167,7 @@ poll_joystick_buttons		endp
 handle_special_keys		proc	near
 		test	byte ptr cs:[2C2h],0FFh
 		jz	hsk_skip_off			; Jump if zero
-		cmp	word ptr cs:gvar_skip_input,1000h
+		cmp	word ptr cs:gvar_timer_counter,1000h
 		jne	hsk_chk_sound			; Jump if not equal
 		mov	byte ptr cs:gvar_volume_b,1
 		mov	byte ptr cs:[2C2h],0
@@ -206,14 +177,14 @@ handle_special_keys		proc	near
 		jmp	short hsk_chk_sound
 
 hsk_skip_off:
-		cmp	word ptr cs:gvar_skip_input,1000h
+		cmp	word ptr cs:gvar_timer_counter,1000h
 		je	hsk_chk_sound			; Jump if equal
 		mov	byte ptr cs:[2C2h],0FFh
 
 hsk_chk_sound:
 		test	byte ptr cs:[2C3h],0FFh
 		jz	hsk_sound_off			; Jump if zero
-		cmp	word ptr cs:gvar_skip_input,2000h
+		cmp	word ptr cs:gvar_timer_counter,2000h
 		je	hsk_toggle_sound			; Jump if equal
 		retn
 
@@ -224,7 +195,7 @@ hsk_toggle_sound:
 		retn
 
 hsk_sound_off:
-		cmp	word ptr cs:gvar_skip_input,2000h
+		cmp	word ptr cs:gvar_timer_counter,2000h
 		jne	hsk_sound_set			; Jump if not equal
 		retn
 
@@ -245,8 +216,8 @@ timer_isr_entry:
 		push	ds
 		push	es
 		cld				; Clear direction
-		call	dword ptr cs:gvar_gfx_fn
-		call	dword ptr cs:gvar_input_fn
+		call	dword ptr cs:gvar_gfx_fn_ofs
+		call	dword ptr cs:gvar_input_fn_ofs
 		dec	byte ptr cs:[2BCh]
 		jnz	tis_subsample_done			; Jump if not zero
 		mov	byte ptr cs:[2BCh],5
@@ -259,9 +230,9 @@ tis_subsample_done:
 		inc	word ptr cs:gvar_frame_count
 		inc	word ptr cs:gvar_anim_timer
 		inc	byte ptr cs:[2C4h]
-		test	byte ptr cs:gvar_state_b+1,0FFh
+		test	byte ptr cs:gvar_state_c+1,0FFh
 		jz	tis_no_callback			; Jump if zero
-		call	word ptr cs:gvar_state_b
+		call	word ptr cs:gvar_state_c
 
 tis_no_callback:
 		pop	es
@@ -283,7 +254,7 @@ tis_no_callback:
 tis_chain_int08:
 		mov	byte ptr cs:[2BDh],0Dh
 		pop	ax
-		jmp	dword ptr cs:gvar_old_int08
+		jmp	dword ptr cs:gvar_old_int08_ofs
 		db	 0Ah, 0Dh		; CRLF padding bytes
 		db	7 dup (0)		; Alignment padding
 
@@ -324,7 +295,7 @@ kbd_done:
 		pop	cx
 		pop	bx
 		pop	ax
-		jmp	dword ptr cs:gvar_old_int09_seg
+		jmp	dword ptr cs:gvar_old_int09_ofs
 
 kbd_bad_scancode:
 		in	al,61h			; port 61h, 8255 port B, read
@@ -474,10 +445,10 @@ ps_btn_check:
 		jne	ps_extra_keys			; Jump if not equal
 
 ps_btn_match:
-		or	ds:gvar_timer_flag,cl
+		or	ds:gvar_skip_flag,cl
 		test	ah,80h
 		jz	ps_extra_keys			; Jump if zero
-		xor	ds:gvar_timer_flag,cl
+		xor	ds:gvar_skip_flag,cl
 		jmp	short ps_extra_keys
 
 ps_extra_keys:
@@ -533,10 +504,10 @@ ps_extra_keys:
 		jne	ps_merge_input			; Jump if not equal
 
 ps_extra_match:
-		or	ds:gvar_skip_input,cx
+		or	ds:gvar_timer_counter,cx
 		test	ah,80h
 		jz	ps_merge_input			; Jump if zero
-		xor	ds:gvar_skip_input,cx
+		xor	ds:gvar_timer_counter,cx
 
 ps_merge_input:
 		mov	al,byte ptr ds:[5C1h]
@@ -559,7 +530,7 @@ ps_merge_input:
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
 		or	al,ah
-		mov	ds:gvar_timer_count,al
+		mov	ds:gvar_timer_flag,al
 		retn
 
 process_scancode		endp
@@ -591,7 +562,7 @@ dek_below_54:
 		xor	bx,bx			; Zero register
 		mov	bl,al
 		mov	di,511h
-		test	word ptr cs:gvar_skip_input,2
+		test	word ptr cs:gvar_timer_counter,2
 		jz	dek_no_shift			; Jump if zero
 		mov	di,569h
 
@@ -673,15 +644,15 @@ query_input_state:
 		push	dx
 		mov	byte ptr cs:gvar_joy_cal_x,0
 		mov	byte ptr cs:gvar_joy_cal_y,0
-		mov	al,cs:gvar_music_state
+		mov	al,cs:gvar_music_flag_d
 		and	al,ds:gvar_last_key
 		jz	qis_no_joystick			; Jump if zero
 		call	calc_joystick_deadzone
 
 qis_no_joystick:
-		mov	al,cs:gvar_timer_count
+		mov	al,cs:gvar_timer_flag
 		or	al,cs:gvar_joy_cal_x
-		mov	ah,cs:gvar_timer_flag
+		mov	ah,cs:gvar_skip_flag
 		or	ah,cs:gvar_joy_cal_y
 		pop	dx
 		pop	cx
@@ -758,7 +729,7 @@ calc_joystick_deadzone		endp
 			                        ; Called via game_state dispatch: skip_input==0x14 → exit dialog
 
 exit_dlg_handler:
-		cmp	word ptr cs:gvar_skip_input,14h
+		cmp	word ptr cs:gvar_timer_counter,14h
 		je	exit_dlg_active			; Jump if equal
 		retn
 
@@ -777,7 +748,7 @@ exit_dlg_active:
 		pop	ds
 
 exit_wait_input:
-			mov	ax,cs:gvar_skip_input
+			mov	ax,cs:gvar_timer_counter
 			test	ax,60h
 			jz	exit_wait_input			; Jump if zero
 		test	ax,20h
@@ -786,9 +757,9 @@ exit_wait_input:
 		xor	cl,cl			; Zero register
 		mov	ax,3
 		int	60h			; ??INT Non-standard interrupt
-		mov	byte ptr cs:gvar_timer_count,0
-		mov	byte ptr cs:gvar_skip_flag,0
-		mov	byte ptr cs:gvar_state_a,0
+		mov	byte ptr cs:gvar_timer_flag,0
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_state_b,0
 		retn
 
 exit_confirm_wait:
@@ -799,7 +770,7 @@ exit_confirm_wait:
 		db	'Exit to DOS.', 0Dh, ' Sure?(Y/N)'
 		; Exit dialog machine-code body (unreachable via normal flow;
 		; executed via far-call from game engine after the Exit text above)
-		db	0FFh, 2Eh,0F7h, 06h, 18h,0FFh	; jmp word ptr [06F7h]; test gvar_skip_input,...
+		db	0FFh, 2Eh,0F7h, 06h, 18h,0FFh	; jmp word ptr [06F7h]; test gvar_timer_counter,...
 		db	 08h, 00h, 75h, 01h,0C3h, 1Eh	; and 8; jnz +1; retn; push ds
 		db	 2Eh,0C6h, 06h, 75h,0FFh, 02h	; mov byte ptr cs:[0FF75h],2
 		db	0B8h, 1Eh, 10h,0B9h, 10h, 08h	; mov ax,101Eh; mov cx,810h
@@ -819,21 +790,21 @@ pause_menu_restore:
 		pop	ds
 
 pause_menu_loop:
-			cmp	word ptr cs:gvar_skip_input,0Eh
+			cmp	word ptr cs:gvar_timer_counter,0Eh
 			jne	pause_no_redraw			; Jump if not equal
 			call	draw_screen_element
 
 pause_no_redraw:
-			test	byte ptr cs:gvar_skip_flag,0FFh
+			test	byte ptr cs:gvar_skip_input,0FFh
 			jnz	pause_done			; Jump if not zero
-			test	byte ptr cs:gvar_state_a,0FFh
+			test	byte ptr cs:gvar_state_b,0FFh
 			jnz	pause_done			; Jump if not zero
 			jmp	short pause_menu_loop
 
 pause_done:
 		call	draw_screen_element
-		mov	byte ptr cs:gvar_skip_flag,0
-		mov	byte ptr cs:gvar_state_a,0
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_state_b,0
 		xor	cl,cl			; Zero register
 		mov	ax,3
 		int	60h			; ??INT Non-standard interrupt
@@ -874,9 +845,9 @@ speed_change_handler:
 		call	word ptr cs:gfx_fn_clear
 
 spd_wait_key:
-			test	word ptr cs:gvar_skip_input,8000h
+			test	word ptr cs:gvar_timer_counter,8000h
 			jnz	spd_wait_key			; Jump if not zero
-		mov	al,ds:gvar_save_name
+		mov	al,ds:gvar_save_filename
 		neg	al
 		add	al,0Ah
 		call	handle_pause_key0
@@ -889,12 +860,12 @@ spd_wait_key:
 		pop	ax
 		neg	al
 		add	al,0Ah
-		mov	ds:gvar_save_name,al
+		mov	ds:gvar_save_filename,al
 		mov	byte ptr cs:gvar_volume_b,1
 		call	handle_pause_key5
-		mov	byte ptr cs:gvar_timer_count,0
-		mov	byte ptr cs:gvar_skip_flag,0
-		mov	byte ptr cs:gvar_state_a,0
+		mov	byte ptr cs:gvar_timer_flag,0
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_state_b,0
 
 spd_poll_input:
 			mov	dl,0FFh
@@ -902,16 +873,16 @@ spd_poll_input:
 			int	21h			; DOS Services  ah=function 06h
 							;  special char i/o, dl=subfunc
 			jnz	spd_done			; Jump if not zero
-			mov	al,cs:gvar_timer_count
-			or	al,cs:gvar_skip_flag
-			or	al,cs:gvar_state_a
+			mov	al,cs:gvar_timer_flag
+			or	al,cs:gvar_skip_input
+			or	al,cs:gvar_state_b
 			jz	spd_poll_input			; Jump if zero
 
 spd_done:
 		call	handle_pause_key4
-		mov	byte ptr cs:gvar_timer_count,0
-		mov	byte ptr cs:gvar_skip_flag,0
-		mov	byte ptr cs:gvar_state_a,0
+		mov	byte ptr cs:gvar_timer_flag,0
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_state_b,0
 		retn
 		db	'Speed change', 0Dh, 'Select 0-9:'
 		db	0FFh			; String terminator
@@ -941,21 +912,21 @@ handle_pause_key0		endp
 			                        ; Called via game_state dispatch: skip_input==0x104 → joystick calibrate
 
 joy_cal_handler:
-		cmp	word ptr cs:gvar_skip_input,104h
+		cmp	word ptr cs:gvar_timer_counter,104h
 		je	jcal_active			; Jump if equal
 		retn
 
 jcal_active:
 		call	handle_pause_key1
-		mov	byte ptr cs:gvar_timer_count,0
+		mov	byte ptr cs:gvar_timer_flag,0
 
 jcal_wait_release:
-			cmp	word ptr cs:gvar_skip_input,104h
+			cmp	word ptr cs:gvar_timer_counter,104h
 			je	jcal_wait_release			; Jump if equal
 		retn
 
 handle_pause_key1		proc	near
-		test	byte ptr cs:gvar_music_state,0FFh
+		test	byte ptr cs:gvar_music_flag_d,0FFh
 		jz	hpk1_no_joy			; Jump if zero
 		retn
 
@@ -988,7 +959,7 @@ locloop_joy_fire_wait:
 		jz	loc_ret_78		; Jump if zero
 		mov	word ptr cs:[5C6h],si
 		mov	word ptr cs:[5C8h],di
-		mov	byte ptr cs:gvar_music_state,0FFh
+		mov	byte ptr cs:gvar_music_flag_d,0FFh
 		mov	byte ptr cs:gvar_volume_b,1
 
 loc_ret_78:
@@ -999,21 +970,21 @@ handle_pause_key1		endp
 			                        ; Called via game_state dispatch: skip_input==0x804 → joystick detach
 
 joy_det_handler:
-		cmp	word ptr cs:gvar_skip_input,804h
+		cmp	word ptr cs:gvar_timer_counter,804h
 		je	jdet_active			; Jump if equal
 		retn
 
 jdet_active:
-		test	byte ptr cs:gvar_music_state,0FFh
+		test	byte ptr cs:gvar_music_flag_d,0FFh
 		jnz	jdet_has_joy			; Jump if not zero
 		retn
 
 jdet_has_joy:
 		mov	byte ptr cs:gvar_volume_b,1
-		mov	byte ptr cs:gvar_music_state,0
+		mov	byte ptr cs:gvar_music_flag_d,0
 
 jdet_wait_release:
-			cmp	word ptr cs:gvar_skip_input,804h
+			cmp	word ptr cs:gvar_timer_counter,804h
 			je	jdet_wait_release			; Jump if equal
 		retn
 			                        ; Called via game_state dispatch: accumulate anim_timer for frame sync
@@ -1026,7 +997,7 @@ frame_sync_update:
 		mov	word ptr cs:[92Bh],ax
 		retn
 		; Game-state dispatch handler stub (save/restore menu; accessed via dispatch table)
-		; Decodes to: add [bx+si],al×2; cs: cmp gvar_skip_input,4000h; clc; je +1; retn;
+		; Decodes to: add [bx+si],al×2; cs: cmp gvar_timer_counter,4000h; clc; je +1; retn;
 		;             push ds; call near +0x60; mov cl,0FFh; mov ax,3; int 60h;
 		;             push cs; pop ds; mov si,983h; mov bx,74h; mov cl,52h; call gfx_fn_clear; pop ds
 		db	 00h, 00h, 2Eh, 81h, 3Eh, 18h
@@ -1038,15 +1009,15 @@ frame_sync_update:
 		db	 16h, 2Ah, 20h, 1Fh
 
 sav_wait_input:
-			mov	ax,cs:gvar_skip_input
+			mov	ax,cs:gvar_timer_counter
 			test	ax,60h
 			jz	sav_wait_input			; Jump if zero
 		test	ax,20h
 		pushf				; Push flags
 		call	handle_pause_key4
-		mov	byte ptr cs:gvar_timer_count,0
-		mov	byte ptr cs:gvar_skip_flag,0
-		mov	byte ptr cs:gvar_state_a,0
+		mov	byte ptr cs:gvar_timer_flag,0
+		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_state_b,0
 		xor	cl,cl			; Zero register
 		mov	ax,3
 		int	60h			; ??INT Non-standard interrupt
@@ -1367,7 +1338,7 @@ fio_no_dirname:
 		jmp	fio_error
 
 fio_file_notfound:
-		test	byte ptr cs:gvar_old_int09,0FFh
+		test	byte ptr cs:gvar_old_int09_raw,0FFh
 		jnz	fio_disk_declined			; Jump if not zero
 		push	es
 		call	handle_pause_key3
@@ -1379,7 +1350,7 @@ fio_file_notfound:
 		call	word ptr cs:gfx_fn_clear
 		call	handle_pause_key5
 		push	dx
-		mov	byte ptr cs:gvar_skip_flag,0
+		mov	byte ptr cs:gvar_skip_input,0
 
 fio_disk_prompt:
 			mov	dl,0FFh
@@ -1387,7 +1358,7 @@ fio_disk_prompt:
 			int	21h			; DOS Services  ah=function 06h
 							;  special char i/o, dl=subfunc
 			jnz	fio_disk_accepted			; Jump if not zero
-			test	byte ptr cs:gvar_skip_flag,0FFh
+			test	byte ptr cs:gvar_skip_input,0FFh
 			jz	fio_disk_prompt			; Jump if zero
 
 fio_disk_accepted:
@@ -1419,7 +1390,7 @@ fio_disk_declined:
 		retn
 
 fio_file_opened:
-		mov	byte ptr cs:gvar_skip_flag,0
+		mov	byte ptr cs:gvar_skip_input,0
 		test	byte ptr cs:[0D79h],0FFh
 		jnz	fio_seek_slot			; Jump if not zero
 		retn
