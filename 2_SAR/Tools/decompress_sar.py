@@ -29,13 +29,30 @@ import struct
 from pathlib import Path
 
 
+def read_sar_offsets(sar_path: str) -> list:
+    """Read all chunk offsets from a SAR archive."""
+    file_size = Path(sar_path).stat().st_size
+    offsets = []
+    with open(sar_path, 'rb') as f:
+        while True:
+            data = f.read(4)
+            if len(data) < 4:
+                break
+            val = struct.unpack('<I', data)[0]
+            # Stop if offset is beyond file or goes backwards (end of table)
+            if val >= file_size or (offsets and val < offsets[-1]):
+                break
+            offsets.append(val)
+    return offsets
+
+
 def read_sar_chunk(sar_path: str, chunk_index_0based: int) -> bytes:
     """Read raw chunk bytes from a SAR archive (0-based index)."""
+    offsets = read_sar_offsets(sar_path)
+    file_size = Path(sar_path).stat().st_size
+    start = offsets[chunk_index_0based]
+    end = offsets[chunk_index_0based + 1] if chunk_index_0based + 1 < len(offsets) else file_size
     with open(sar_path, 'rb') as f:
-        offsets = struct.unpack('<40I', f.read(160))
-    with open(sar_path, 'rb') as f:
-        start = offsets[chunk_index_0based]
-        end = offsets[chunk_index_0based + 1] if chunk_index_0based + 1 < 40 else Path(sar_path).stat().st_size
         f.seek(start)
         return f.read(end - start)
 
