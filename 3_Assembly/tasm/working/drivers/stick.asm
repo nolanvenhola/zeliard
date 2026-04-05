@@ -1157,7 +1157,15 @@ scan_name_done:
 scan_done:
 		pop	ds
 		retn
-		db	51 dup (0)		; Save-file data buffer (51 bytes zeroed)
+; Scan state + DOS DTA runtime buffer [CS:0x0A51 - CS:0x0A83, stick.bin[0x0951-0x0983]]
+; Accessed via scan_buf_ptr / search_path_ptr / dta_buffer labels defined ~250 lines
+; below. Because stick.bin loads at CS:+0x0100, a label at seg_offset X generates
+; cs:[X] which accesses stick.bin[X - 0x0100] at runtime. So scan_buf_ptr at seg
+; offset 0x0A51 -> cs:[0x0A51] -> stick.bin[0x0951] = first byte here. Runtime layout:
+;   +0  scan_buf_ptr  (4 bytes): far ptr to scan output buffer
+;   +4  search_path_ptr (4 bytes): far ptr to search wildcard string
+;   +8  dta_buffer   (43 bytes): DOS INT 21h FindFirst DTA (filename at +0x26 = CS:0x0A77)
+		db	51 dup (0)		; zero-initialized; written at runtime by scan_savefile_dir
 		; INT 60h sub-function dispatch body (INT 60h handler; accessed via INT 60h vector):
 		cmp	al,0
 		jnz	int60_dispatch_active		; Jump if not zero (sub-fn != 0)
