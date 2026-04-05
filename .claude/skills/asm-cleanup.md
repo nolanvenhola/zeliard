@@ -14,7 +14,13 @@ cd 3_Assembly/tasm
 python verify1.py <zelresN/code/XXX.asm>
 ```
 
-If it fails, stop and investigate before proceeding.
+If it fails, **fix compile errors first** before any other cleanup step. Common causes in partially-cleaned files:
+- `Illegal immediate` — sign-extended immediate form TASM won't assemble (e.g. `cmp [addr], -1`). Replace with `db` bytes and add an alt-encoding comment.
+- `Operand types do not match` — EQU or label has wrong type (NEAR vs WORD). Use `label word` at the declaration site.
+- `Near jump or call to different CS` — absolute address in `call NNNNh` or `jmp NNNNh`. Replace with `db 0E8h/0E9h, lo, hi` and a comment.
+- `Far call to different CS` — `call far ptr seg:ofs`. Replace with `db 9Ah, ofs_lo, ofs_hi, seg_lo, seg_hi`.
+
+Fix each error, verify bit-perfect, then proceed with cleanup.
 
 ---
 
@@ -142,7 +148,11 @@ If you cannot determine the meaning of a `db` block, add a comment explaining wh
 
 Sourcer emits `;* No entry point to code` before any code block it could not trace a call path to. **Do not leave these as-is.** Every such block has a real entry point — find it and add a label. There are four patterns:
 
-**1. Dispatch table target** — The most common case. The block is called via the driver's function dispatch table at the start of the file. To confirm: compute the binary offset of the block (count instruction bytes from `org 0`), add `driver_base` (0x2000), and check whether any `dw NNNNh ; fn N` entry in the dispatch table equals that CS address. If so, add a label `fn_N_impl:` (or a descriptive name if the function's purpose is clear).
+**1. Dispatch table target** — The most common case in game code modules. The block is called via an indexed dispatch table (`jmp word ptr ds:[entity_fn_tbl+bx]` etc.). There are two sub-cases:
+
+*CS-segment tables* (drivers): The table is in this file's CS segment. Compute the binary offset of the block (count bytes from `org 0`), add `driver_base`, and check if any `dw NNNNh ; fn N` entry matches. Add a label `fn_N_impl:` or descriptive name.
+
+*DS-segment tables* (game code modules): The dispatch tables (`entity_fn_tbl_a–f`, `boss_fn_tbl`, `scroll_dispatch_*`) live in the **game data segment** (DS), not in CS. Static analysis cannot trace these — every handler looks dead but is actually called. To resolve: generate the TASM listing (`TasmRunner --bin`), find each block's binary offset in the `.LST` file, then search the DS-resident tables in the game segment for matching word values. Since the tables are in DS at runtime, the word values stored there equal the CS-relative offset of the handler (same as `offset label` with `org 0`).
 
 ```asm
 ; Before:
@@ -195,6 +205,15 @@ ref_gfega  db  01h, 03h, 'gfega.bin', 0
 - Example: `db 0Eh, 07h, 0BAh, ...` → `push cs / pop es / mov dx, ega_palette_data / ...`
 
 **String tables** — identify all unlabeled strings and add `str_X` labels. Check for strings referenced by hardcoded address (`mov dx, 775h` → `mov dx, offset str_file_not_found`).
+
+**String + lookup table dual-use** — a label used for indexed table access (`test bx, [tbl_base + bx]`) may land inside a string, with the string's terminator/value bytes serving as the first table entry. Use `label word` at the dual-use point, decode the overlapping bytes individually, and comment both roles:
+```asm
+gfx_fn_hitbox_data  label  word   ; hitbox bitmask table base (test bx,[base+bx])
+        db  2Eh         ; '.' — also completes 'You get a Key.'
+        db  0FFh, 1Ch, 00h  ; msg terminator, key value, entry end
+```
+
+**Module init header (zelresN code chunks)** — the first block of bytes before the first executable label is often a word-pair table of internal function addresses (dispatch init table). Convert raw `db` hex pairs to `dw` entries with `; init fn N` comments. The table ends where real code begins.
 
 **Raw hex bytes that are actually printable characters** — Sourcer emits `db 65h, 73h` instead of `db 'es'` whenever a byte falls outside a string it was already parsing. Check every standalone `db NNh` line:
 - If the value is in `0x20–0x7E`, convert to a quoted char: `db 65h` → `db 'e'`
@@ -437,6 +456,10 @@ git commit -m "Annotate and clean up XXX.asm
 - **Load-base addressing (`org 0` + non-zero CS load offset)**: For binaries that load at `CS:+LOAD_BASE` (e.g. stick.bin at +0x100), TASM `org 0` means label value F causes `cs:[F]` to access `file[F - LOAD_BASE]` at runtime. A label at file offset X must therefore be declared at file offset `X + LOAD_BASE` to address it correctly via `cs:[X + LOAD_BASE]`. Use `(offset label) + LOAD_BASE` for EQUs so they auto-update when code shifts. Hardcoded internal addresses are any hex value in range `LOAD_BASE` to `LOAD_BASE + file_size` used in `cs:[]`, `mov reg,`, or `dw` table entries.
 - **`label word` required for `(offset) + constant` EQUs in CS-relative instructions**: `equ (offset label) + constant` inherits the label's TASM type. A plain `:` code label has NEAR type; used in `mov cs:equ_name, reg` this causes "Operand types do not match". Fix: declare the anchor with `label word` — `my_anchor label word` — so the resulting EQU has WORD type compatible with all memory-access operand forms.
 - **Non-ASCII in agent-added comments**: agents sometimes insert Unicode arrows (`→`) or dashes (`—`) in comments. `fmt_asm.py` replaces these with ASCII (`->`, `--`). Run `fmt_asm.py` after any agent pass to catch them.
+- **Large files (7000+ lines) need multiple passes**: a single agent pass on a 7000+ line file will do best-effort labeling but typically leaves generic `loc_XX` labels, `; * No entry point` markers, and raw `db` blocks unfinished. Plan for 3+ sequential passes: (1) compile errors + EQU renames, (2) label renames + entry point markers, (3) remaining db blocks + macros + linkability.
+- **Macro de-duplication across zelres modules**: when the same chunk-load or VGA-operation sequence appears across multiple zelres code files, move the macro to a shared `zelcode.inc` rather than redefining it per-file. Check for existing macros with `grep -rn "MACRO\b" working/` before defining new ones.
+- **`LOAD_CHUNK_ES` vs `LOAD_CHUNK` variants**: game code modules (zelres) load chunks differently from drivers. The game-code variant sets ES to gvar_game_seg (SI already set from preceding ref-table computation): `LOAD_CHUNK_ES dest, archive` expands to `mov es,cs:gvar_game_seg / mov di,dest / mov al,archive / call cs:[10Ch]`. The paired `LOAD_CHUNK_REF ref_tbl, dest, archive` handles the `add ax,ref_tbl / mov si,ax` prefix. Both differ from `game.asm`'s `LOAD_CHUNK` which sets SI via a chunk_ref parameter instead.
+- **`c2_clear_bit1`-style orphaned helpers**: a tiny subroutine (2–3 instructions + `retn`) that appears after an unconditional jump is almost always dead code — the body was inlined everywhere that called it. Confirm by searching all `call` sites for the label; if none found, mark as `; Dead code — confirmed unreachable (inlined at all call sites)`.
 
 ---
 
