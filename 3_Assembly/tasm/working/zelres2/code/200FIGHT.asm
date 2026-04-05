@@ -7800,8 +7800,11 @@ item_msg_table:
 		db	'You get 1000 golds.'
 		db	0FFh, 32h, 00h
 		db	'You get a Key'
-gfx_fn_hitbox_data		dw	0FF2Eh			; Data table (indexed access)
-		db	 1Ch, 00h
+; gfx_fn_hitbox_data: base of hitbox bitmask table (test bx,[base+bx] pattern).
+; Dual-use: these bytes also form the end of 'You get a Key.' + its message terminator.
+gfx_fn_hitbox_data	label	word		; hitbox bitmask table base (test bx,[base+bx])
+		db	2Eh			; '.'  — completes 'You get a Key.'
+		db	0FFh, 1Ch, 00h		; message terminator, key item value, entry end
 		db	'You have recovered.'
 		db	0FFh, 08h, 00h
 		db	'You have recovered full.'
