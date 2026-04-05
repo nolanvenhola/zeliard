@@ -249,6 +249,51 @@ For **zeliad.asm** (CS-relative labels):
 For function pointer tables with `dw 0A3FEh`:
 - Use `dw GAME_CODE_BASE + (offset handler_label)` so they auto-recalculate
 
+### Files that load at a non-zero base offset (e.g. stick.bin at CS:+0x0100)
+
+When a binary loads at `CS:+LOAD_BASE` (e.g. ISR_STUBS_BASE = 0x100 for stick.bin),
+the assembler uses `org 0` but the runtime CS offset is label_value + LOAD_BASE away.
+With `org 0`, a label at file offset F has TASM value F, and `cs:[F]` at runtime
+accesses `file[F - LOAD_BASE]`.
+
+**Finding hardcoded internal addresses:** scan for hex literals in range
+`CS:(LOAD_BASE + 0)` to `CS:(LOAD_BASE + file_size)` used in `cs:[NNNNh]`,
+`mov reg, NNNNh`, `dw NNNNh` (in dispatch tables), and `add ax, NNNNh`.
+
+**Perfect linkability pattern** — use `(offset label) + LOAD_BASE` as the EQU value.
+The label must use `label word` (not a bare `:` label) so the EQU type is compatible
+with CS-relative memory access instructions:
+
+```asm
+; In the data area:
+my_buf_lbl  label  word      ; 'label word' gives correct type for EQU
+            db  51 dup (0)
+
+; At the top of the file (before seg_a):
+my_buf_ptr  equ  (offset my_buf_lbl) + LOAD_BASE
+; Now cs:[my_buf_ptr] at runtime accesses my_buf_lbl correctly.
+; If code before my_buf_lbl changes size, my_buf_ptr auto-updates.
+```
+
+**Dispatch tables** with internal function pointers also need the load base:
+```asm
+; Before:  dw  0AD6h, 0AFFh, 0B6Fh
+; After:   dw  (offset fn_a) + LOAD_BASE, (offset fn_b) + LOAD_BASE, ...
+```
+
+**Address arithmetic** that builds internal pointers:
+```asm
+; Before:  add ax, 0F68h   ; add base of table
+; After:   add ax, (offset my_table) + LOAD_BASE
+```
+
+**Audit checklist for internal addresses in a LOAD_BASE file:**
+1. All `cs:[NNNNh]` where NNNN is in (LOAD_BASE..LOAD_BASE+file_size) range
+2. `mov reg, NNNNh` used as a pointer into the binary
+3. `dw NNNNh` entries in dispatch/jump tables
+4. `add/sub ax, NNNNh` that computes a table base address
+5. `mov si/di, NNNNh` loaded and then used with `cs:` addressing
+
 ---
 
 ## Step 9 — Split multi-constant `db` lines
@@ -326,6 +371,12 @@ for f in glob.glob('working/drivers/*.asm'):
 
 **Check the reverse too** — if this file references raw CS/DS addresses that belong to another module (e.g. `gvar_*` addresses owned by `zeliard.inc`, stdply field offsets in `stdply.inc`), add `include <that_module>.inc` rather than duplicating the EQUs.
 
+**TasmRunner cross-directory includes:** TasmRunner mounts only the source file's directory as `W:` in DOSBox. A sibling-directory include like `include ..\core\zeliard.inc` works because TasmRunner now mounts the **parent** of the asm directory as `W:` and `cd`s into the subdirectory. This means:
+- `working/drivers/stick.asm` can include `working/core/zeliard.inc` as `include ..\core\zeliard.inc`
+- Files in `working/core/` can include each other with plain `include zeliard.inc`
+
+If an include fails to assemble, check that the relative path from the asm file's directory is correct.
+
 Verify bit-perfect after adding each include.
 
 ---
@@ -383,6 +434,9 @@ git commit -m "Annotate and clean up XXX.asm
 - **`jz` / `call` forward references to labels in orphaned code**: TASM may fail to compile if the target label is far ahead. Always check the actual binary target address first — the call may target a different label than assumed (e.g. `clear_screen_init` not `set_plot_mode`).
 - **`render_tilemap_small` vs `render_tilemap_small+N`**: two orphaned sprite selectors that look like they call different entry points may both call `render_tilemap_small` — the different relative offsets (+1Ah vs +2) simply result from the selectors being at different positions in the binary. TASM auto-computes the correct offset when using the label.
 - **Boilerplate `; ═══` lines**: the Sourcer non-ASCII horizontal rule comments (`; ═══════`) can be bulk-removed with a regex matching lines of the form `^;[^\x00-\x7F]+$`.
+- **Load-base addressing (`org 0` + non-zero CS load offset)**: For binaries that load at `CS:+LOAD_BASE` (e.g. stick.bin at +0x100), TASM `org 0` means label value F causes `cs:[F]` to access `file[F - LOAD_BASE]` at runtime. A label at file offset X must therefore be declared at file offset `X + LOAD_BASE` to address it correctly via `cs:[X + LOAD_BASE]`. Use `(offset label) + LOAD_BASE` for EQUs so they auto-update when code shifts. Hardcoded internal addresses are any hex value in range `LOAD_BASE` to `LOAD_BASE + file_size` used in `cs:[]`, `mov reg,`, or `dw` table entries.
+- **`label word` required for `(offset) + constant` EQUs in CS-relative instructions**: `equ (offset label) + constant` inherits the label's TASM type. A plain `:` code label has NEAR type; used in `mov cs:equ_name, reg` this causes "Operand types do not match". Fix: declare the anchor with `label word` — `my_anchor label word` — so the resulting EQU has WORD type compatible with all memory-access operand forms.
+- **Non-ASCII in agent-added comments**: agents sometimes insert Unicode arrows (`→`) or dashes (`—`) in comments. `fmt_asm.py` replaces these with ASCII (`->`, `--`). Run `fmt_asm.py` after any agent pass to catch them.
 
 ---
 
