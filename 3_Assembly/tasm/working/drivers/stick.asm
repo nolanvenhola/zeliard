@@ -37,6 +37,18 @@ include  ..\core\zeliard.inc
 herc_video_seg	equ	0B000h			; HGC framebuffer segment (stick-only)
 zero_offset	equ	0			; Zero constant
 
+; Scan state + DTA buffer: runtime CS addresses of the 51-byte zero block.
+; stick.bin uses org 0, loads at CS:+0x0100. A label at file-offset F generates
+; cs:[F], which at runtime accesses file[F - 0x0100]. So to access the scan
+; buffer at file 0x0951, the label must be at file F = 0x0951 + 0x0100 = 0x0A51.
+; These EQUs are the single source of truth. If the scan buffer moves, update here.
+;
+; WARNING: these values MUST equal (file_offset_of_db_51_dup_0 + 0x0100).
+; If code before the 51-byte block changes length, recompute from the listing.
+scan_buf_ptr	equ	0A51h		; CS:0A51h = scan output buffer far ptr (4 bytes)
+search_path_ptr	equ	0A55h		; CS:0A55h = search wildcard far ptr (4 bytes)
+dta_buffer	equ	0A59h		; CS:0A59h = DOS FindFirst DTA (43 bytes; filename at +0x1E)
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -1248,11 +1260,11 @@ sav_fn_compute:
 		jz	save_clear_done			; Jump if zero (CGA/text mode)
 		mov	dx,cx
 		mov	al,1
-		db	0B9h, 00h			; mov cx,0 (low byte; high byte=00 from scan_buf_ptr)
-scan_buf_ptr		dw	0B400h, 0CD42h
-search_path_ptr		dw	2621h, 0E8Bh
-dta_buffer		db	2
-		db	0
+; mov cx, 0  (B9 00 00): low byte + high byte from first byte of inline data below
+		db	0B9h, 00h		; MOV CX, 0 low byte
+		db	00h, 0B4h, 42h		; MOV CX high byte + MOV AH, 42h (LSEEK fn)
+		db	0CDh, 21h		; INT 21h  (DOS LSEEK)
+		db	26h, 8Bh, 0Eh, 02h, 00h ; ES: MOV CX, [0x0002]  (read from ES DTA)
 
 save_clear_done:
 		mov	cs:file_read_buf_ptr,0
