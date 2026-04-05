@@ -46,10 +46,44 @@ zero_offset	equ	0			; Zero constant
 ; offset F has TASM value F; cs:[F] at runtime accesses file[F - 0x0100].
 ; So to address the scan buffer AT file offset F, we need cs:[F + 0x0100].
 ; Using (offset scan_data_lbl) + ISR_STUBS_BASE lets TASM compute this
-; automatically — if code before the block changes, all three EQUs update.
+; automatically ?-- if code before the block changes, all three EQUs update.
 scan_buf_ptr	equ	(offset scan_data_lbl) + ISR_STUBS_BASE
 search_path_ptr	equ	(offset scan_data_lbl) + ISR_STUBS_BASE + 4
 dta_buffer	equ	(offset scan_data_lbl) + ISR_STUBS_BASE + 8
+
+; Hercules bank table CS address (herc_bank_table label is at file offset, +ISR_STUBS_BASE for runtime).
+herc_bank_tbl_cs	equ	(offset herc_bank_table) + ISR_STUBS_BASE	; CS:0x0BA0
+
+; fill_buffer opcode dispatch table CS address.
+; dcmp_opcode0 label sits at the table start (file offset computed by TASM).
+dcmp_dispatch_tbl	equ	(offset dcmp_opcode0) + ISR_STUBS_BASE		; CS:0x0DBC
+
+; map_driver_tbl slot base CS address (+0x0C from map_driver_tbl = first slot field).
+; Used in sav_fn_compute: ax = al*11 + map_driver_slot_base gives CS slot ptr.
+map_driver_slot_base	equ	(offset map_driver_tbl) + ISR_STUBS_BASE + 0Ch	; CS:0x0F68
+
+; Save/load file I/O data area CS addresses.
+; Labels are placed in fio_read_done data region; EQUs compute CS-relative addresses.
+fio_filename	equ	(offset fio_filename_lbl) + ISR_STUBS_BASE	; CS:0x0D3B 'zelres1.sar\0' (byte[6] patched with slot)
+fio_filename_digit	equ	fio_filename + 6				; CS:0x0D41 digit '1' in filename patched with slot num
+fio_disk_msg	equ	(offset fio_disk_msg_lbl) + ISR_STUBS_BASE	; CS:0x0D47 disk-insert prompt string
+fio_disk_msg_digit	equ	fio_disk_msg + 17h				; CS:0x0D5E digit '1' in 'DISK1' patched with disk num
+fio_slot_flag	equ	(offset fio_slot_flag_lbl) + ISR_STUBS_BASE	; CS:0x0D79 slot/dirname flag byte
+fio_seek_buf	equ	(offset fio_seek_buf_lbl) + ISR_STUBS_BASE	; CS:0x0D7A 4-byte seek-offset read buffer
+fio_seek_buf_hi	equ	fio_seek_buf + 2				; CS:0x0D7C high word of seek buffer
+fio_default_name	equ	(offset fio_default_name_lbl) + ISR_STUBS_BASE	; CS:0x0D7E 'dummy\0' default name (also FCB area)
+
+; Timer ISR state flags embedded in tis_chain_int08 padding area (CS:0x02BC..0x02C4).
+; Labels are placed in the padding bytes; EQUs compute CS-relative addresses.
+subsample_ctr	equ	(offset subsample_ctr_lbl) + ISR_STUBS_BASE	; CS:0x02BC subsample counter
+chain_int_ctr	equ	(offset chain_int_ctr_lbl) + ISR_STUBS_BASE	; CS:0x02BD chain-INT-08 counter
+pause_key_state	equ	(offset pause_key_state_lbl) + ISR_STUBS_BASE	; CS:0x02BE pause key toggle
+btn1_state	equ	pause_key_state + 1				; CS:0x02BF button-1 state
+joy_btna_state	equ	pause_key_state + 2				; CS:0x02C0 joystick button A
+joy_btnb_state	equ	pause_key_state + 3				; CS:0x02C1 joystick button B
+skip_key_state	equ	pause_key_state + 4				; CS:0x02C2 skip key hold
+sound_key_state	equ	pause_key_state + 5				; CS:0x02C3 sound key hold
+frame_ctr8	equ	pause_key_state + 6				; CS:0x02C4 8-bit frame counter
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -82,28 +116,28 @@ driver_init_data:
 stick		endp
 
 handle_pause_key		proc	near
-		test	byte ptr cs:[2BEh],0FFh
+		test	byte ptr cs:pause_key_state,0FFh
 		jz	hpk_pause_was_set			; Jump if zero
 		test	byte ptr cs:gvar_skip_flag,1
 		jz	hpk_pause_done			; Jump if zero
-		mov	byte ptr cs:[2BEh],0
+		mov	byte ptr cs:pause_key_state,0
 		mov	byte ptr cs:gvar_skip_input,0FFh
 		jmp	short hpk_pause_done
 
 hpk_pause_was_set:
 		test	byte ptr cs:gvar_skip_flag,1
 		jnz	hpk_pause_done			; Jump if not zero
-		mov	byte ptr cs:[2BEh],0FFh
+		mov	byte ptr cs:pause_key_state,0FFh
 
 hpk_pause_done:
-		test	byte ptr cs:[2BFh],0FFh
+		test	byte ptr cs:btn1_state,0FFh
 		jz	hpk_btn_off			; Jump if zero
 		test	byte ptr cs:gvar_skip_flag,2
 		jnz	hpk_pause_set			; Jump if not zero
 		retn
 
 hpk_pause_set:
-		mov	byte ptr cs:[2BFh],0
+		mov	byte ptr cs:btn1_state,0
 		mov	byte ptr cs:gvar_state_b,0FFh
 		retn
 
@@ -113,7 +147,7 @@ hpk_btn_off:
 		retn
 
 hpk_btn_set:
-		mov	byte ptr cs:[2BFh],0FFh
+		mov	byte ptr cs:btn1_state,0FFh
 		retn
 
 handle_pause_key		endp
@@ -135,14 +169,14 @@ pjb_joy_on:
 		jmp	short pjb_btnb_check
 
 decode_joystick_bits:
-		test	byte ptr cs:[2C0h],0FFh
+		test	byte ptr cs:joy_btna_state,0FFh
 		jz	pjb_btna_off			; Jump if zero
 		test	al,10h
 		jz	pjb_btna_released			; Jump if zero
 		retn
 
 pjb_btna_released:
-		mov	byte ptr cs:[2C0h],0
+		mov	byte ptr cs:joy_btna_state,0
 		mov	byte ptr cs:gvar_skip_input,0FFh
 		retn
 
@@ -152,18 +186,18 @@ pjb_btna_off:
 		retn
 
 pjb_btna_set:
-		mov	byte ptr cs:[2C0h],0FFh
+		mov	byte ptr cs:joy_btna_state,0FFh
 		retn
 
 pjb_btnb_check:
-		test	byte ptr cs:[2C1h],0FFh
+		test	byte ptr cs:joy_btnb_state,0FFh
 		jz	pjb_btnb_off			; Jump if zero
 		test	al,20h			; ' '
 		jz	pjb_btnb_released			; Jump if zero
 		retn
 
 pjb_btnb_released:
-		mov	byte ptr cs:[2C1h],0
+		mov	byte ptr cs:joy_btnb_state,0
 		mov	byte ptr cs:gvar_state_b,0FFh
 		retn
 
@@ -173,18 +207,18 @@ pjb_btnb_off:
 		retn
 
 pjb_btnb_set:
-		mov	byte ptr cs:[2C1h],0FFh
+		mov	byte ptr cs:joy_btnb_state,0FFh
 		retn
 
 poll_joystick_buttons		endp
 
 handle_special_keys		proc	near
-		test	byte ptr cs:[2C2h],0FFh
+		test	byte ptr cs:skip_key_state,0FFh
 		jz	hsk_skip_off			; Jump if zero
 		cmp	word ptr cs:gvar_timer_counter,1000h
 		jne	hsk_chk_sound			; Jump if not equal
 		mov	byte ptr cs:gvar_volume_b,1
-		mov	byte ptr cs:[2C2h],0
+		mov	byte ptr cs:skip_key_state,0
 		mov	cl,cs:gvar_key_pressed
 		mov	ax,2
 		int	60h			; ??INT Non-standard interrupt
@@ -193,17 +227,17 @@ handle_special_keys		proc	near
 hsk_skip_off:
 		cmp	word ptr cs:gvar_timer_counter,1000h
 		je	hsk_chk_sound			; Jump if equal
-		mov	byte ptr cs:[2C2h],0FFh
+		mov	byte ptr cs:skip_key_state,0FFh
 
 hsk_chk_sound:
-		test	byte ptr cs:[2C3h],0FFh
+		test	byte ptr cs:sound_key_state,0FFh
 		jz	hsk_sound_off			; Jump if zero
 		cmp	word ptr cs:gvar_timer_counter,2000h
 		je	hsk_toggle_sound			; Jump if equal
 		retn
 
 hsk_toggle_sound:
-		mov	byte ptr cs:[2C3h],0
+		mov	byte ptr cs:sound_key_state,0
 		not	byte ptr cs:gvar_sound_flag
 		mov	byte ptr cs:gvar_volume_b,1
 		retn
@@ -214,7 +248,7 @@ hsk_sound_off:
 		retn
 
 hsk_sound_set:
-		mov	byte ptr cs:[2C3h],0FFh
+		mov	byte ptr cs:sound_key_state,0FFh
 		retn
 
 handle_special_keys		endp
@@ -232,9 +266,9 @@ timer_isr_entry:
 		cld				; Clear direction
 		call	dword ptr cs:gvar_gfx_fn_ofs
 		call	dword ptr cs:gvar_input_fn_ofs
-		dec	byte ptr cs:[2BCh]
+		dec	byte ptr cs:subsample_ctr
 		jnz	tis_subsample_done			; Jump if not zero
-		mov	byte ptr cs:[2BCh],5
+		mov	byte ptr cs:subsample_ctr,5
 		call	handle_special_keys
 		call	handle_pause_key
 		call	poll_joystick_buttons
@@ -243,7 +277,7 @@ tis_subsample_done:
 		inc	byte ptr cs:gvar_frame_timer
 		inc	word ptr cs:gvar_frame_count
 		inc	word ptr cs:gvar_anim_timer
-		inc	byte ptr cs:[2C4h]
+		inc	byte ptr cs:frame_ctr8
 		test	byte ptr cs:gvar_state_c+1,0FFh
 		jz	tis_no_callback			; Jump if zero
 		call	word ptr cs:gvar_state_c
@@ -257,7 +291,7 @@ tis_no_callback:
 		pop	dx
 		pop	cx
 		pop	bx
-		dec	byte ptr cs:[2BDh]
+		dec	byte ptr cs:chain_int_ctr
 		jz	tis_chain_int08			; Jump if zero
 		mov	al,20h			; ' '
 		out	20h,al			; port 20h, 8259-1 int command
@@ -266,11 +300,18 @@ tis_no_callback:
 		iret				; Interrupt return
 
 tis_chain_int08:
-		mov	byte ptr cs:[2BDh],0Dh
+		mov	byte ptr cs:chain_int_ctr,0Dh
 		pop	ax
 		jmp	dword ptr cs:gvar_old_int08_ofs
-		db	 0Ah, 0Dh		; CRLF padding bytes
-		db	7 dup (0)		; Alignment padding
+
+subsample_ctr_lbl	label	byte		; anchor: subsample counter (CS:0x02BC)
+		db	0Ah			; subsample_ctr init value
+
+chain_int_ctr_lbl	label	byte		; anchor: chain-INT-08 counter (CS:0x02BD)
+		db	0Dh			; chain_int_ctr init value
+
+pause_key_state_lbl	label	byte		; anchor: state flags block (CS:0x02BE..0x02C4)
+		db	7 dup (0)		; Alignment padding: pause_key..frame_ctr8
 
 kbd_irq_handler:
 		push	ax
@@ -291,14 +332,14 @@ kbd_irq_handler:
 		call	process_scancode
 
 kbd_flush_loop:
-						mov	ah,1
-						int	16h			; Keyboard i/o  ah=function 01h
-										;  get status, if zf=0  al=char
-						jz	kbd_done			; Jump if zero
-						xor	ah,ah			; Zero register
-						int	16h			; Keyboard i/o  ah=function 00h
-										;  get keybd char in al, ah=scan
-						jmp	short kbd_flush_loop
+							mov	ah,1
+							int	16h			; Keyboard i/o  ah=function 01h
+											;  get status, if zf=0  al=char
+							jz	kbd_done			; Jump if zero
+							xor	ah,ah			; Zero register
+							int	16h			; Keyboard i/o  ah=function 00h
+											;  get keybd char in al, ah=scan
+							jmp	short kbd_flush_loop
 
 kbd_done:
 		pop	es
@@ -629,24 +670,24 @@ calibrate_joystick		proc	near
 		mov	bl,6
 
 joy_wait_start:
-						in	al,dx			; port 201h, start game 1-shots
-						xor	al,ah
-						jz	joy_read_loop			; Jump if zero
-						dec	bl
-						jnz	joy_wait_start			; Jump if not zero
+							in	al,dx			; port 201h, start game 1-shots
+							xor	al,ah
+							jz	joy_read_loop			; Jump if zero
+							dec	bl
+							jnz	joy_wait_start			; Jump if not zero
 
 joy_read_loop:
-						in	al,dx			; port 201h, start game 1-shots
-						mov	ah,al
-						and	ah,ch
-						shr	ah,1			; Shift w/zeros fill
-						mov	bl,al
-						and	bl,cl
-						add	si,bx
-						mov	bl,ah
-						add	di,bx
-						and	al,3
-						jnz	joy_read_loop			; Jump if not zero
+							in	al,dx			; port 201h, start game 1-shots
+							mov	ah,al
+							and	ah,ch
+							shr	ah,1			; Shift w/zeros fill
+							mov	bl,al
+							and	bl,cl
+							add	si,bx
+							mov	bl,ah
+							add	di,bx
+							and	al,3
+							jnz	joy_read_loop			; Jump if not zero
 		sti				; Enable interrupts
 		retn
 
@@ -762,9 +803,9 @@ exit_dlg_active:
 		pop	ds
 
 exit_wait_input:
-						mov	ax,cs:gvar_timer_counter
-						test	ax,60h
-						jz	exit_wait_input			; Jump if zero
+							mov	ax,cs:gvar_timer_counter
+							test	ax,60h
+							jz	exit_wait_input			; Jump if zero
 		test	ax,20h
 		jnz	exit_confirm_wait			; Jump if not zero
 		call	handle_pause_key4
@@ -777,8 +818,8 @@ exit_wait_input:
 		retn
 
 exit_confirm_wait:
-						test	byte ptr cs:gvar_key_released,0FFh
-						jz	exit_confirm_wait			; Jump if zero
+							test	byte ptr cs:gvar_key_released,0FFh
+							jz	exit_confirm_wait			; Jump if zero
 		xor	ax,ax			; Zero register
 		jmp	dword ptr cs:gvar_chunk_load_fn
 		db	'Exit to DOS.', 0Dh, ' Sure?(Y/N)'
@@ -815,16 +856,16 @@ pause_menu_restore:
 		pop	ds
 
 pause_menu_loop:
-						cmp	word ptr cs:gvar_timer_counter,0Eh
-						jne	pause_no_redraw			; Jump if not equal
-						call	draw_screen_element
+							cmp	word ptr cs:gvar_timer_counter,0Eh
+							jne	pause_no_redraw			; Jump if not equal
+							call	draw_screen_element
 
 pause_no_redraw:
-						test	byte ptr cs:gvar_skip_input,0FFh
-						jnz	pause_done			; Jump if not zero
-						test	byte ptr cs:gvar_state_b,0FFh
-						jnz	pause_done			; Jump if not zero
-						jmp	short pause_menu_loop
+							test	byte ptr cs:gvar_skip_input,0FFh
+							jnz	pause_done			; Jump if not zero
+							test	byte ptr cs:gvar_state_b,0FFh
+							jnz	pause_done			; Jump if not zero
+							jmp	short pause_menu_loop
 
 pause_done:
 		call	draw_screen_element
@@ -870,8 +911,8 @@ speed_change_handler:
 		call	word ptr cs:gfx_fn_clear
 
 spd_wait_key:
-						test	word ptr cs:gvar_timer_counter,8000h
-						jnz	spd_wait_key			; Jump if not zero
+							test	word ptr cs:gvar_timer_counter,8000h
+							jnz	spd_wait_key			; Jump if not zero
 		mov	al,ds:gvar_save_filename
 		neg	al
 		add	al,0Ah
@@ -893,15 +934,15 @@ spd_wait_key:
 		mov	byte ptr cs:gvar_state_b,0
 
 spd_poll_input:
-						mov	dl,0FFh
-						mov	ah,6
-						int	21h			; DOS Services  ah=function 06h
-										;  special char i/o, dl=subfunc
-						jnz	spd_done			; Jump if not zero
-						mov	al,cs:gvar_timer_flag
-						or	al,cs:gvar_skip_input
-						or	al,cs:gvar_state_b
-						jz	spd_poll_input			; Jump if zero
+							mov	dl,0FFh
+							mov	ah,6
+							int	21h			; DOS Services  ah=function 06h
+											;  special char i/o, dl=subfunc
+							jnz	spd_done			; Jump if not zero
+							mov	al,cs:gvar_timer_flag
+							or	al,cs:gvar_skip_input
+							or	al,cs:gvar_state_b
+							jz	spd_poll_input			; Jump if zero
 
 spd_done:
 		call	handle_pause_key4
@@ -916,18 +957,18 @@ handle_pause_key0		proc	near
 		mov	byte ptr ds:gvar_enter_key,0
 
 hpk0_wait_key:
-										test	byte ptr ds:gvar_enter_key,0FFh
-										jz	hpk0_wait_key			; Jump if zero
-						mov	ah,ds:gvar_enter_key
-						cmp	ah,1Bh
-						stc				; Set carry flag
-						jnz	hpk0_check_digit			; Jump if not zero
-						retn
+												test	byte ptr ds:gvar_enter_key,0FFh
+												jz	hpk0_wait_key			; Jump if zero
+							mov	ah,ds:gvar_enter_key
+							cmp	ah,1Bh
+							stc				; Set carry flag
+							jnz	hpk0_check_digit			; Jump if not zero
+							retn
 
 hpk0_check_digit:
-						sub	ah,30h			; '0'
-						cmp	ah,0Ah
-						jae	hpk0_wait_key			; Jump if above or =
+							sub	ah,30h			; '0'
+							cmp	ah,0Ah
+							jae	hpk0_wait_key			; Jump if above or =
 		clc				; Clear carry flag
 		mov	al,ah
 		retn
@@ -946,8 +987,8 @@ jcal_active:
 		mov	byte ptr cs:gvar_timer_flag,0
 
 jcal_wait_release:
-						cmp	word ptr cs:gvar_timer_counter,104h
-						je	jcal_wait_release			; Jump if equal
+							cmp	word ptr cs:gvar_timer_counter,104h
+							je	jcal_wait_release			; Jump if equal
 		retn
 
 handle_pause_key1		proc	near
@@ -968,9 +1009,9 @@ hpk1_have_joy:
 		mov	dx,201h
 
 locloop_joy_fire_wait:
-						in	al,dx			; port 201h, start game 1-shots
-						test	al,ah
-						loopnz	locloop_joy_fire_wait		; Loop if zf=0, cx>0
+							in	al,dx			; port 201h, start game 1-shots
+							test	al,ah
+							loopnz	locloop_joy_fire_wait		; Loop if zf=0, cx>0
 
 		jcxz	loc_ret_78		; Jump if cx=0
 		call	calibrate_joystick
@@ -1009,8 +1050,8 @@ jdet_has_joy:
 		mov	byte ptr cs:gvar_music_flag_d,0
 
 jdet_wait_release:
-						cmp	word ptr cs:gvar_timer_counter,804h
-						je	jdet_wait_release			; Jump if equal
+							cmp	word ptr cs:gvar_timer_counter,804h
+							je	jdet_wait_release			; Jump if equal
 		retn
 			                        ; Called via game_state dispatch: accumulate anim_timer for frame sync
 
@@ -1043,9 +1084,9 @@ sav_menu_body:
 		pop	ds
 
 sav_wait_input:
-						mov	ax,cs:gvar_timer_counter
-						test	ax,60h
-						jz	sav_wait_input			; Jump if zero
+							mov	ax,cs:gvar_timer_counter
+							test	ax,60h
+							jz	sav_wait_input			; Jump if zero
 		test	ax,20h
 		pushf				; Push flags
 		call	handle_pause_key4
@@ -1093,11 +1134,11 @@ handle_pause_key5		proc	near
 		push	dx
 
 hpk5_flush_loop:
-						mov	dl,0FFh
-						mov	ah,6
-						int	21h			; DOS Services  ah=function 06h
-										;  special char i/o, dl=subfunc
-						jnz	hpk5_flush_loop			; Jump if not zero
+							mov	dl,0FFh
+							mov	ah,6
+							int	21h			; DOS Services  ah=function 06h
+											;  special char i/o, dl=subfunc
+							jnz	hpk5_flush_loop			; Jump if not zero
 		pop	dx
 		retn
 
@@ -1121,9 +1162,9 @@ scan_savefile_dir:
 		mov	cx,0FFh
 
 locloop_build_table:
-						stosw				; Store ax to es:[di]
-						add	ax,9
-						loop	locloop_build_table		; Loop if cx > 0
+							stosw				; Store ax to es:[di]
+							add	ax,9
+							loop	locloop_build_table		; Loop if cx > 0
 
 		push	cs
 		pop	ds
@@ -1144,29 +1185,29 @@ locloop_build_table:
 		mov	cx,0FEh
 
 locloop_scan_files:
-						push	cx
-						push	di
-						mov	bx,cs:scan_buf_ptr
-						inc	byte ptr es:[bx]
-						mov	si,0A77h
-						mov	cx,8
+							push	cx
+							push	di
+							mov	bx,cs:scan_buf_ptr
+							inc	byte ptr es:[bx]
+							mov	si,dta_buffer + 1Eh	; dta_buffer+0x1E = filename field of DOS FindFirst DTA
+							mov	cx,8
 
 locloop_copy_name:
-										lodsb				; String [si] to al
-										cmp	al,2Eh			; '.'
-										je	scan_name_done			; Jump if equal
-										stosb				; Store al to es:[di]
-										loop	locloop_copy_name		; Loop if cx > 0
+												lodsb				; String [si] to al
+												cmp	al,2Eh			; '.'
+												je	scan_name_done			; Jump if equal
+												stosb				; Store al to es:[di]
+												loop	locloop_copy_name		; Loop if cx > 0
 
 scan_name_done:
-						pop	di
-						pop	cx
-						mov	ah,4Fh
-						int	21h			; DOS Services  ah=function 4Fh
-										;  find next filename match
-						jc	scan_done			; Jump if carry Set
-						add	di,9
-						loop	locloop_scan_files		; Loop if cx > 0
+							pop	di
+							pop	cx
+							mov	ah,4Fh
+							int	21h			; DOS Services  ah=function 4Fh
+											;  find next filename match
+							jc	scan_done			; Jump if carry Set
+							add	di,9
+							loop	locloop_scan_files		; Loop if cx > 0
 
 scan_done:
 		pop	ds
@@ -1178,6 +1219,7 @@ scan_done:
 ;   +0  scan_buf_ptr   (4 bytes): far ptr to scan output buffer
 ;   +4  search_path_ptr(4 bytes): far ptr to search wildcard string
 ;   +8  dta_buffer     (43 bytes): DOS FindFirst DTA (filename field at +0x1E)
+
 scan_data_lbl	label	word		; anchor for scan_buf_ptr EQU computation
 		db	51 dup (0)		; zero-initialized; written at runtime by scan_savefile_dir
 		; INT 60h sub-function dispatch body (INT 60h handler; accessed via INT 60h vector):
@@ -1220,8 +1262,15 @@ adj_carry_flag:
 		pop	di
 		retn
 		; INT 60h sub-function dispatch table (6 word entries, indexed via AL after dec):
-		dw	0AD6h, 0AFFh, 0C2Fh, 0B6Fh, 0BAEh, 0C24h
+		dw	(offset sav_slot_select) + ISR_STUBS_BASE	; fn 1: save-slot select
+		dw	(offset fio_load_game) + ISR_STUBS_BASE	; fn 2: load game
+		dw	(offset fio_save_entry) + ISR_STUBS_BASE	; fn 3: save game
+		dw	(offset herc_load_display) + ISR_STUBS_BASE	; fn 4: Hercules display load
+		dw	(offset fio_open_buf_init) + ISR_STUBS_BASE	; fn 5: file open + buf init
+		dw	(offset fio_load_entry) + ISR_STUBS_BASE	; fn 6: load entry
 		; Save-game slot select body (accessed via dispatch table, entry 0):
+
+sav_slot_select:
 		mov	word ptr cs:file_read_buf_ptr,0C000h	; set buf ptr to 0xC000
 		mov	word ptr cs:file_read_buf_ptr+2,cs	; set buf seg to CS
 		mov	al,ah				; al = sub-slot index
@@ -1233,11 +1282,13 @@ adj_carry_flag:
 sav_fn_compute:
 		mov	cl,0Bh				; shift amount
 		mul	cl				; ax = al * 11
-		add	ax,0F68h			; add base offset
+		add	ax,map_driver_slot_base		; add base offset (map_driver_tbl+0x0C)
 		mov	word ptr cs:savefile_desc_ptr,ax	; store ptr low word
 		mov	word ptr cs:savefile_desc_ptr+2,cs	; store ptr seg = CS
 		jmp	fio_save_entry			; open & seek save slot
 		; Load-game body (second dispatch entry, accessed via table):
+
+fio_load_game:
 		les	di,dword ptr cs:file_read_buf_ptr	; Load seg:offset ptr
 		push	di
 		push	es
@@ -1283,7 +1334,7 @@ herc_load_display:
 		mov	bl,ah
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,word ptr cs:[0BA0h][bx]
+		mov	si,word ptr cs:herc_bank_tbl_cs[bx]
 		mov	ax,cs
 		add	ax,1000h
 		mov	es,ax
@@ -1297,10 +1348,10 @@ herc_load_display:
 		mov	cx,0Fh
 
 locloop_herc_reloc:
-						add	word ptr es:[di],0B000h
-						inc	di
-						inc	di
-						loop	locloop_herc_reloc		; Loop if cx > 0
+							add	word ptr es:[di],0B000h
+							inc	di
+							inc	di
+							loop	locloop_herc_reloc		; Loop if cx > 0
 
 		retn
 		; Hercules bank/segment address table (7 entries, accessed via herc_load_display):
@@ -1308,6 +1359,8 @@ locloop_herc_reloc:
 herc_bank_table:
 		dw	1800h, 1800h, 1800h, 1800h, 1802h, 1802h, 1804h
 		; Save/load file open + buffer init body (accessed via INT 60h dispatch):
+
+fio_open_buf_init:
 		les	di,dword ptr cs:file_read_buf_ptr	; Load seg:offset ptr
 		push	di
 		push	es
@@ -1352,11 +1405,11 @@ sav_swap_init:
 		mov	cx,3800h
 
 locloop_swap_data:
-						lodsw				; String [si] to ax
-						mov	dx,es:[di]
-						stosw				; Store ax to es:[di]
-						mov	[si-2],dx
-						loop	locloop_swap_data		; Loop if cx > 0
+							lodsw				; String [si] to ax
+							mov	dx,es:[di]
+							stosw				; Store ax to es:[di]
+							mov	[si-2],dx
+							loop	locloop_swap_data		; Loop if cx > 0
 
 		pop	bx
 		pop	ds
@@ -1391,18 +1444,18 @@ fio_open_loop:
 		lds	bx,dword ptr cs:savefile_desc_ptr	; Load seg:offset ptr
 		mov	al,[bx]
 		add	al,31h			; '1'
-		mov	byte ptr cs:[0D41h],al
-		mov	byte ptr cs:[0D5Eh],al
+		mov	byte ptr cs:fio_filename_digit,al
+		mov	byte ptr cs:fio_disk_msg_digit,al
 		inc	bx
 		mov	al,[bx]
 		inc	bx
 		mov	dx,bx
-		mov	byte ptr cs:[0D79h],al
+		mov	byte ptr cs:fio_slot_flag,al
 		or	al,al			; Zero ?
 		jz	fio_no_dirname			; Jump if zero
 		push	cs
 		pop	ds
-		mov	dx,0D3Bh
+		mov	dx,fio_filename
 
 fio_no_dirname:
 		mov	ax,3D00h
@@ -1420,7 +1473,7 @@ fio_file_notfound:
 		call	handle_pause_key3
 		push	cs
 		pop	ds
-		mov	si,0D47h
+		mov	si,fio_disk_msg
 		mov	bx,6Ch
 		mov	cl,4Ah			; 'J'
 		call	word ptr cs:gfx_fn_clear
@@ -1429,13 +1482,13 @@ fio_file_notfound:
 		mov	byte ptr cs:gvar_skip_input,0
 
 fio_disk_prompt:
-						mov	dl,0FFh
-						mov	ah,6
-						int	21h			; DOS Services  ah=function 06h
-										;  special char i/o, dl=subfunc
-						jnz	fio_disk_accepted			; Jump if not zero
-						test	byte ptr cs:gvar_skip_input,0FFh
-						jz	fio_disk_prompt			; Jump if zero
+							mov	dl,0FFh
+							mov	ah,6
+							int	21h			; DOS Services  ah=function 06h
+											;  special char i/o, dl=subfunc
+							jnz	fio_disk_accepted			; Jump if not zero
+							test	byte ptr cs:gvar_skip_input,0FFh
+							jz	fio_disk_prompt			; Jump if zero
 
 fio_disk_accepted:
 		pop	dx
@@ -1446,7 +1499,7 @@ fio_disk_accepted:
 		mov	ah,0Dh
 		int	21h			; DOS Services  ah=function 0Dh
 						;  flush disk buffers to disk
-		mov	dx,0D7Eh
+		mov	dx,fio_default_name
 		mov	ah,10h
 		int	21h			; DOS Services  ah=function 10h
 						;  close file, FCB @ ds:dx
@@ -1458,7 +1511,7 @@ fio_disk_declined:
 		mov	ah,0Dh
 		int	21h			; DOS Services  ah=function 0Dh
 						;  flush disk buffers to disk
-		mov	dx,0D7Eh
+		mov	dx,fio_default_name
 		mov	ah,10h
 		int	21h			; DOS Services  ah=function 10h
 						;  close file, FCB @ ds:dx
@@ -1467,14 +1520,14 @@ fio_disk_declined:
 
 fio_file_opened:
 		mov	byte ptr cs:gvar_skip_input,0
-		test	byte ptr cs:[0D79h],0FFh
+		test	byte ptr cs:fio_slot_flag,0FFh
 		jnz	fio_seek_slot			; Jump if not zero
 		retn
 
 fio_seek_slot:
 		push	ax
 		mov	bx,ax
-		mov	al,byte ptr cs:[0D79h]
+		mov	al,byte ptr cs:fio_slot_flag
 		xor	ah,ah			; Zero register
 		dec	ax
 		add	ax,ax
@@ -1492,7 +1545,7 @@ fio_seek_slot:
 fio_read_ptr:
 		push	cs
 		pop	ds
-		mov	dx,0D7Ah
+		mov	dx,fio_seek_buf
 		mov	cx,4
 		mov	ah,3Fh
 		int	21h			; DOS Services  ah=function 3Fh
@@ -1502,8 +1555,8 @@ fio_read_ptr:
 		jmp	fio_error
 
 fio_seek_data:
-		mov	dx,word ptr ds:[0D7Ah]
-		mov	cx,word ptr ds:[0D7Ch]
+		mov	dx,word ptr ds:fio_seek_buf
+		mov	cx,word ptr ds:fio_seek_buf_hi
 		mov	al,0
 		mov	ah,42h
 		int	21h			; DOS Services  ah=function 42h
@@ -1523,12 +1576,23 @@ fio_seek_data:
 fio_read_done:
 		pop	ax
 		retn
+
+fio_filename_lbl	label	byte		; anchor: save-file name (CS:0x0D3B); byte[6]='1' patched with slot number
 		db	'zelres1.sar', 0
+
+fio_disk_msg_lbl	label	byte		; anchor: disk-insert prompt (CS:0x0D47); byte[0x17]='1' patched with disk number
 		db	'    Please', 0Dh, ' insert DISK1'
 		db	0Dh, '      and', 0Dh, ' press an'
 		db	'y key'
 		db	0FFh			; String terminator (0xFF)
-		db	00h, 00h, 00h, 00h, 00h	; Padding
+
+fio_slot_flag_lbl	label	byte		; anchor: slot flag / seek buffer (CS:0x0D79)
+		db	00h			; fio_slot_flag: slot number / dirname flag (byte[0])
+
+fio_seek_buf_lbl	label	byte		; anchor: 4-byte seek offset buffer (CS:0x0D7A)
+		db	00h, 00h, 00h, 00h	; fio_seek_buf: seek offset read from file
+
+fio_default_name_lbl	label	byte		; anchor: default save filename (CS:0x0D7E)
 		db	'dummy', 0		; Default save filename placeholder
 
 handle_pause_key7:
@@ -1572,8 +1636,8 @@ handle_pause_key9:
 		and	al,7
 		mov	bl,al
 		add	bx,bx
-		jmp	word ptr cs:[0DBCh][bx]	;*
-			                        ; Dispatch table entry [0DBCh]: opcode 0 = raw/verbatim copy
+		jmp	word ptr cs:dcmp_dispatch_tbl[bx]	;*
+			                        ; Dispatch table (dcmp_dispatch_tbl = dcmp_opcode0 + ISR_STUBS_BASE): opcode 0 = raw/verbatim copy
 
 dcmp_opcode0:
 		int	3			; Debug breakpoint
@@ -1593,11 +1657,11 @@ dcmp_opcode0_body:
 		xor	al,[bx+si]
 
 dcmp_copy_loop:
-						lodsb				; String [si] to al
-						call	poll_joystick_buttons0
-						rep	stosb			; Rep when cx >0 Store al to es:[di]
-						dec	dx
-						jnz	dcmp_copy_loop			; Jump if not zero
+							lodsb				; String [si] to al
+							call	poll_joystick_buttons0
+							rep	stosb			; Rep when cx >0 Store al to es:[di]
+							dec	dx
+							jnz	dcmp_copy_loop			; Jump if not zero
 		retn
 
 poll_joystick_buttons0:
@@ -1607,13 +1671,13 @@ poll_joystick_buttons0:
 		mov	cx,1
 
 dcmp_tbl_search:
-						test	byte ptr ds:[bp],0Fh
-						jnz	dcmp_tbl_miss			; Jump if not zero
-						cmp	ah,ds:[bp]
-						je	dcmp_tbl_found			; Jump if equal
-						inc	bp
-						inc	bp
-						jmp	short dcmp_tbl_search
+							test	byte ptr ds:[bp],0Fh
+							jnz	dcmp_tbl_miss			; Jump if not zero
+							cmp	ah,ds:[bp]
+							je	dcmp_tbl_found			; Jump if equal
+							inc	bp
+							inc	bp
+							jmp	short dcmp_tbl_search
 
 dcmp_tbl_found:
 		mov	cl,al
@@ -1626,44 +1690,44 @@ dcmp_tbl_miss:
 		retn
 
 dcmp_skip_loop:
-						lodsb				; String [si] to al
-						dec	dx
-						cmp	al,0FFh
-						jne	dcmp_skip_next			; Jump if not equal
-						retn
+							lodsb				; String [si] to al
+							dec	dx
+							cmp	al,0FFh
+							jne	dcmp_skip_next			; Jump if not equal
+							retn
 
 dcmp_skip_next:
-						inc	si
-						dec	dx
-						jmp	short dcmp_skip_loop
+							inc	si
+							dec	dx
+							jmp	short dcmp_skip_loop
 		db	0ACh, 4Ah, 8Ah,0E0h		; lodsb; dec dx; mov ah,al ?-- load escape marker into AH (dispatch stub)
 
 dcmp_rle3_loop:
-						lodsb				; String [si] to al
-						mov	cx,1
-						mov	bl,al
-						and	bl,0F0h
-						cmp	bl,ah
-						jne	dcmp_rle3_no_match			; Jump if not equal
-						mov	cl,al
-						and	cx,0Fh
-						add	cx,3
-						lodsb				; String [si] to al
-						dec	dx
+							lodsb				; String [si] to al
+							mov	cx,1
+							mov	bl,al
+							and	bl,0F0h
+							cmp	bl,ah
+							jne	dcmp_rle3_no_match			; Jump if not equal
+							mov	cl,al
+							and	cx,0Fh
+							add	cx,3
+							lodsb				; String [si] to al
+							dec	dx
 
 dcmp_rle3_no_match:
-						rep	stosb			; Rep when cx >0 Store al to es:[di]
-						dec	dx
-						jnz	dcmp_rle3_loop			; Jump if not zero
+							rep	stosb			; Rep when cx >0 Store al to es:[di]
+							dec	dx
+							jnz	dcmp_rle3_loop			; Jump if not zero
 		retn
 		db	 8Bh,0EEh,0E8h,0CFh,0FFh	; mov bp,si; call near -0x31 (dispatch entry stub for opcode 4)
 
 dcmp_rle6_loop:
-						lodsb				; String [si] to al
-						call	poll_joystick_buttons1
-						rep	stosb			; Rep when cx >0 Store al to es:[di]
-						dec	dx
-						jnz	dcmp_rle6_loop			; Jump if not zero
+							lodsb				; String [si] to al
+							call	poll_joystick_buttons1
+							rep	stosb			; Rep when cx >0 Store al to es:[di]
+							dec	dx
+							jnz	dcmp_rle6_loop			; Jump if not zero
 		retn
 
 poll_joystick_buttons1:
@@ -1673,13 +1737,13 @@ poll_joystick_buttons1:
 		mov	cx,1
 
 dcmp_rle6_search:
-						test	byte ptr ds:[bp],0F0h
-						jnz	dcmp_rle6_miss			; Jump if not zero
-						cmp	ah,ds:[bp]
-						je	dcmp_rle6_found			; Jump if equal
-						inc	bp
-						inc	bp
-						jmp	short dcmp_rle6_search
+							test	byte ptr ds:[bp],0F0h
+							jnz	dcmp_rle6_miss			; Jump if not zero
+							cmp	ah,ds:[bp]
+							je	dcmp_rle6_found			; Jump if equal
+							inc	bp
+							inc	bp
+							jmp	short dcmp_rle6_search
 
 dcmp_rle6_found:
 		shr	al,1			; Shift w/zeros fill
@@ -1697,58 +1761,58 @@ dcmp_rle6_miss:
 		db	0ACh, 4Ah, 8Ah,0E0h		; lodsb; dec dx; mov ah,al ?-- load escape marker into AH (dispatch stub)
 
 dcmp_rle4_loop:
-						lodsb				; String [si] to al
-						mov	cx,1
-						mov	bl,al
-						and	bl,0Fh
-						cmp	bl,ah
-						jne	dcmp_rle4_no_match			; Jump if not equal
-						shr	al,1			; Shift w/zeros fill
-						shr	al,1			; Shift w/zeros fill
-						shr	al,1			; Shift w/zeros fill
-						shr	al,1			; Shift w/zeros fill
-						mov	cl,al
-						and	cx,0Fh
-						add	cx,3
-						lodsb				; String [si] to al
-						dec	dx
+							lodsb				; String [si] to al
+							mov	cx,1
+							mov	bl,al
+							and	bl,0Fh
+							cmp	bl,ah
+							jne	dcmp_rle4_no_match			; Jump if not equal
+							shr	al,1			; Shift w/zeros fill
+							shr	al,1			; Shift w/zeros fill
+							shr	al,1			; Shift w/zeros fill
+							shr	al,1			; Shift w/zeros fill
+							mov	cl,al
+							and	cx,0Fh
+							add	cx,3
+							lodsb				; String [si] to al
+							dec	dx
 
 dcmp_rle4_no_match:
-						rep	stosb			; Rep when cx >0 Store al to es:[di]
-						dec	dx
-						jnz	dcmp_rle4_loop			; Jump if not zero
+							rep	stosb			; Rep when cx >0 Store al to es:[di]
+							dec	dx
+							jnz	dcmp_rle4_loop			; Jump if not zero
 		retn
 
 dcmp_rle0_loop:
-						lodsb				; String [si] to al
-						mov	cx,1
-						cmp	[si],al
-						jne	dcmp_rle0_no_match			; Jump if not equal
-						mov	cl,[si+1]
-						and	cx,0FFh
-						add	cx,2
-						add	si,2
-						sub	dx,2
+							lodsb				; String [si] to al
+							mov	cx,1
+							cmp	[si],al
+							jne	dcmp_rle0_no_match			; Jump if not equal
+							mov	cl,[si+1]
+							and	cx,0FFh
+							add	cx,2
+							add	si,2
+							sub	dx,2
 
 dcmp_rle0_no_match:
-						rep	stosb			; Rep when cx >0 Store al to es:[di]
-						dec	dx
-						jnz	dcmp_rle0_loop			; Jump if not zero
+							rep	stosb			; Rep when cx >0 Store al to es:[di]
+							dec	dx
+							jnz	dcmp_rle0_loop			; Jump if not zero
 		retn
 		db	 8Bh,0EEh			; mov bp,si (dispatch entry stub prefix for opcode 6)
 
 dcmp_skip16_loop:
-						lodsw				; String [si] to ax
-						sub	dx,2
-						cmp	ax,0FFFFh
-						jne	dcmp_skip16_loop			; Jump if not equal
+							lodsw				; String [si] to ax
+							sub	dx,2
+							cmp	ax,0FFFFh
+							jne	dcmp_skip16_loop			; Jump if not equal
 
 dcmp_rle7_loop:
-						lodsb				; String [si] to al
-						call	poll_joystick_buttons2
-						rep	stosb			; Rep when cx >0 Store al to es:[di]
-						dec	dx
-						jnz	dcmp_rle7_loop			; Jump if not zero
+							lodsb				; String [si] to al
+							call	poll_joystick_buttons2
+							rep	stosb			; Rep when cx >0 Store al to es:[di]
+							dec	dx
+							jnz	dcmp_rle7_loop			; Jump if not zero
 		retn
 
 poll_joystick_buttons2:
@@ -1756,13 +1820,13 @@ poll_joystick_buttons2:
 		mov	cx,1
 
 dcmp_rle2_search:
-						db	 3Eh, 83h, 7Eh, 00h,0FFh	; cmp word ptr ds:[bp+0],-1 (cmp [bp],0FFFFh; alt-encoding DS:+sign-extend: Fixup byte match)
-						jz	dcmp_rle2_miss			; Jump if zero
-						cmp	al,ds:[bp]
-						je	dcmp_rle2_found			; Jump if equal
-						inc	bp
-						inc	bp
-						jmp	short dcmp_rle2_search
+							db	 3Eh, 83h, 7Eh, 00h,0FFh	; cmp word ptr ds:[bp+0],-1 (cmp [bp],0FFFFh; alt-encoding DS:+sign-extend: Fixup byte match)
+							jz	dcmp_rle2_miss			; Jump if zero
+							cmp	al,ds:[bp]
+							je	dcmp_rle2_found			; Jump if equal
+							inc	bp
+							inc	bp
+							jmp	short dcmp_rle2_search
 
 dcmp_rle2_found:
 		lodsb				; String [si] to al
@@ -1778,22 +1842,22 @@ dcmp_rle2_miss:
 		db	0ACh, 4Ah, 8Ah,0E0h		; lodsb; dec dx; mov ah,al ?-- load escape marker into AH (dispatch stub)
 
 dcmp_rle1_loop:
-						lodsb				; String [si] to al
-						mov	cx,1
-						cmp	al,ah
-						jne	dcmp_rle1_no_match			; Jump if not equal
-						lodsb				; String [si] to al
-						mov	cl,al
-						lodsb				; String [si] to al
-						xchg	al,cl
-						and	cx,0FFh
-						add	cx,3
-						sub	dx,2
+							lodsb				; String [si] to al
+							mov	cx,1
+							cmp	al,ah
+							jne	dcmp_rle1_no_match			; Jump if not equal
+							lodsb				; String [si] to al
+							mov	cl,al
+							lodsb				; String [si] to al
+							xchg	al,cl
+							and	cx,0FFh
+							add	cx,3
+							sub	dx,2
 
 dcmp_rle1_no_match:
-						rep	stosb			; Rep when cx >0 Store al to es:[di]
-						dec	dx
-						jnz	dcmp_rle1_loop			; Jump if not zero
+							rep	stosb			; Rep when cx >0 Store al to es:[di]
+							dec	dx
+							jnz	dcmp_rle1_loop			; Jump if not zero
 		retn
 		db	0C3h			; retn (trailing byte from dcmp_rle1 entry stub)
 
@@ -1829,11 +1893,11 @@ gsh_not_loader:
 		iret				; Interrupt return
 
 gsh_loader_active:
-		mov	byte ptr cs:[2C4h],0
+		mov	byte ptr cs:frame_ctr8,0
 
 gsh_loader_wait:
-						cmp	byte ptr cs:[2C4h],0F0h
-						jb	gsh_loader_wait			; Jump if below
+							cmp	byte ptr cs:frame_ctr8,0F0h
+							jb	gsh_loader_wait			; Jump if below
 		pop	es
 		pop	ds
 		pop	bp
@@ -1857,6 +1921,7 @@ handle_pause_key6		endp
 ; The 12-byte prefix is runtime I/O scratch (overwritten during save/load).
 ; savefile_desc_ptr etc. mark specific bytes inside 'MP7D.MDT' that get
 ; overwritten with live far pointers by the save/load I/O routines.
+
 map_driver_tbl:
 		db	12 dup (0)		; runtime I/O buffer (overwritten)
 ; zelres2 map data files:
