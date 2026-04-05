@@ -41,13 +41,15 @@ zero_offset	equ	0			; Zero constant
 ; stick.bin uses org 0, loads at CS:+0x0100. A label at file-offset F generates
 ; cs:[F], which at runtime accesses file[F - 0x0100]. So to access the scan
 ; buffer at file 0x0951, the label must be at file F = 0x0951 + 0x0100 = 0x0A51.
-; These EQUs are the single source of truth. If the scan buffer moves, update here.
-;
-; WARNING: these values MUST equal (file_offset_of_db_51_dup_0 + 0x0100).
-; If code before the 51-byte block changes length, recompute from the listing.
-scan_buf_ptr	equ	0A51h		; CS:0A51h = scan output buffer far ptr (4 bytes)
-search_path_ptr	equ	0A55h		; CS:0A55h = search wildcard far ptr (4 bytes)
-dta_buffer	equ	0A59h		; CS:0A59h = DOS FindFirst DTA (43 bytes; filename at +0x1E)
+; Scan state + DTA CS-relative addresses.
+; stick.bin loads at CS:+ISR_STUBS_BASE (0x0100). With org 0, a label at file
+; offset F has TASM value F; cs:[F] at runtime accesses file[F - 0x0100].
+; So to address the scan buffer AT file offset F, we need cs:[F + 0x0100].
+; Using (offset scan_data_lbl) + ISR_STUBS_BASE lets TASM compute this
+; automatically — if code before the block changes, all three EQUs update.
+scan_buf_ptr	equ	(offset scan_data_lbl) + ISR_STUBS_BASE
+search_path_ptr	equ	(offset scan_data_lbl) + ISR_STUBS_BASE + 4
+dta_buffer	equ	(offset scan_data_lbl) + ISR_STUBS_BASE + 8
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -1169,14 +1171,14 @@ scan_name_done:
 scan_done:
 		pop	ds
 		retn
-; Scan state + DOS DTA runtime buffer [CS:0x0A51 - CS:0x0A83, stick.bin[0x0951-0x0983]]
-; Accessed via scan_buf_ptr / search_path_ptr / dta_buffer labels defined ~250 lines
-; below. Because stick.bin loads at CS:+0x0100, a label at seg_offset X generates
-; cs:[X] which accesses stick.bin[X - 0x0100] at runtime. So scan_buf_ptr at seg
-; offset 0x0A51 -> cs:[0x0A51] -> stick.bin[0x0951] = first byte here. Runtime layout:
-;   +0  scan_buf_ptr  (4 bytes): far ptr to scan output buffer
-;   +4  search_path_ptr (4 bytes): far ptr to search wildcard string
-;   +8  dta_buffer   (43 bytes): DOS INT 21h FindFirst DTA (filename at +0x26 = CS:0x0A77)
+; Scan state + DOS DTA runtime buffer.
+; scan_buf_ptr/search_path_ptr/dta_buffer EQUs are computed as
+; (offset scan_data_lbl) + ISR_STUBS_BASE so they auto-update if this block moves.
+; Runtime layout:
+;   +0  scan_buf_ptr   (4 bytes): far ptr to scan output buffer
+;   +4  search_path_ptr(4 bytes): far ptr to search wildcard string
+;   +8  dta_buffer     (43 bytes): DOS FindFirst DTA (filename field at +0x1E)
+scan_data_lbl	label	word		; anchor for scan_buf_ptr EQU computation
 		db	51 dup (0)		; zero-initialized; written at runtime by scan_savefile_dir
 		; INT 60h sub-function dispatch body (INT 60h handler; accessed via INT 60h vector):
 		cmp	al,0
