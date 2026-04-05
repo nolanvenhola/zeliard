@@ -322,24 +322,24 @@ save_game_load:
 		mov	cx,6
 
 timer_wait_loop:
-								push	cx
-								mov	byte ptr ds:gvar_frame_timer,0
+									push	cx
+									mov	byte ptr ds:gvar_frame_timer,0
 
 frame_wait_loop_a:
-														cmp	byte ptr ds:gvar_frame_timer,41h	; 'A'
-														jb	frame_wait_loop_a			; Jump if below
-								mov	bx,0C28h
-								mov	cx,3828h
-								xor	al,al			; Zero register
-								call	word ptr cs:[2000h]
-								mov	byte ptr ds:gvar_frame_timer,0
+																cmp	byte ptr ds:gvar_frame_timer,41h	; 'A'
+																jb	frame_wait_loop_a			; Jump if below
+									mov	bx,0C28h
+									mov	cx,3828h
+									xor	al,al			; Zero register
+									call	word ptr cs:[2000h]
+									mov	byte ptr ds:gvar_frame_timer,0
 
 frame_wait_loop_b:
-														cmp	byte ptr ds:gvar_frame_timer,41h	; 'A'
-														jb	frame_wait_loop_b			; Jump if below
-								call	word ptr cs:gfx_fn_clear
-								pop	cx
-								loop	timer_wait_loop		; Loop if cx > 0
+																cmp	byte ptr ds:gvar_frame_timer,41h	; 'A'
+																jb	frame_wait_loop_b			; Jump if below
+									call	word ptr cs:gfx_fn_clear
+									pop	cx
+									loop	timer_wait_loop		; Loop if cx > 0
 
 		mov	si,ds:map_data_ptr
 		add	si,5
@@ -401,9 +401,9 @@ scene_transition:
 		call	fill_buffer
 
 scene_exit_wait:
-								call	game_check_state_3
-								test	byte ptr ds:[0E6h],0FFh
-								jnz	scene_exit_wait			; Jump if not zero
+									call	game_check_state_3
+									test	byte ptr ds:[0E6h],0FFh
+									jnz	scene_exit_wait			; Jump if not zero
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,3000h
@@ -511,25 +511,25 @@ call_frame_check:
 		retn
 
 music_active_branch:
-														mov	byte ptr ds:gvar_music_flag_a,0
-														mov	byte ptr ds:gvar_combat_ff3D,0
-														mov	byte ptr ds:gvar_debug_val,0
-														mov	byte ptr ds:gvar_palette_flag,0
-														call	word ptr cs:gfx_fn_render_tile
-														mov	byte ptr ds:gvar_joystick_flag,0
-														call	game_check_state_3
-														call	game_func_8
-														call	game_check_state
-														cmp	byte ptr ds:gvar_music_flag_b,0FFh
-														jne	music_end_cleanup			; Jump if not equal
-														call	vga_operation8
-														inc	si
-														call	game_get_value
-														jc	music_active_branch			; Jump if carry Set
-								add	si,24h
-								call	vga_operation5
-								call	game_get_value
-								jc	music_active_branch			; Jump if carry Set
+																mov	byte ptr ds:gvar_music_flag_a,0
+																mov	byte ptr ds:gvar_combat_ff3D,0
+																mov	byte ptr ds:gvar_debug_val,0
+																mov	byte ptr ds:gvar_palette_flag,0
+																call	word ptr cs:gfx_fn_render_tile
+																mov	byte ptr ds:gvar_joystick_flag,0
+																call	game_check_state_3
+																call	game_func_8
+																call	game_check_state
+																cmp	byte ptr ds:gvar_music_flag_b,0FFh
+																jne	music_end_cleanup			; Jump if not equal
+																call	vga_operation8
+																inc	si
+																call	game_get_value
+																jc	music_active_branch			; Jump if carry Set
+									add	si,24h
+									call	vga_operation5
+									call	game_get_value
+									jc	music_active_branch			; Jump if carry Set
 
 music_end_cleanup:
 		and	byte ptr ds:[0C2h],0FDh
@@ -911,24 +911,24 @@ set_music_loop:
 		mov	byte ptr ds:gvar_music_flag_a,0
 
 music_anim_loop:
-								call	vga_operation8
-								sub	si,23h
-								call	vga_operation6
-								dec	byte ptr ds:[0E7h]
-								call	game_get_value
-								jc	func13_and_state			; Jump if carry Set
-								or	byte ptr ds:[0E7h],1
-								retn
+									call	vga_operation8
+									sub	si,23h
+									call	vga_operation6
+									dec	byte ptr ds:[0E7h]
+									call	game_get_value
+									jc	func13_and_state			; Jump if carry Set
+									or	byte ptr ds:[0E7h],1
+									retn
 
 func13_and_state:
-								call	game_func_13
-								call	game_check_state_3
-								test	byte ptr ds:[0E7h],1
-								jz	jmp_back_music_loop			; Jump if zero
-								retn
+									call	game_func_13
+									call	game_check_state_3
+									test	byte ptr ds:[0E7h],1
+									jz	jmp_back_music_loop			; Jump if zero
+									retn
 
 jmp_back_music_loop:
-								jmp	short music_anim_loop
+									jmp	short music_anim_loop
 
 game_func_13:
 
@@ -1003,15 +1003,15 @@ scroll_advance:
 		mov	cx,4
 
 tile_scan_4:
-								call	vga_operation9
-								add	al,al
-								jnc	advance_si			; Jump if carry=0
-								retn
+									call	vga_operation9
+									add	al,al
+									jnc	advance_si			; Jump if carry=0
+									retn
 
 advance_si:
-								add	si,24h
-								call	vga_operation5
-								loop	tile_scan_4		; Loop if cx > 0
+									add	si,24h
+									call	vga_operation5
+									loop	tile_scan_4		; Loop if cx > 0
 
 		xchg	di,si
 		test	byte ptr ds:gvar_music_flag_a,0FFh
@@ -1031,23 +1031,23 @@ scan_2more:
 		mov	cx,2
 
 scan_2_tiles:
-								add	si,24h
-								call	vga_operation5
-								mov	al,[si]
-								call	game_func_42
-								stc				; Set carry flag
-								jz	push_call16			; Jump if zero
-								retn
+									add	si,24h
+									call	vga_operation5
+									mov	al,[si]
+									call	game_func_42
+									stc				; Set carry flag
+									jz	push_call16			; Jump if zero
+									retn
 
 push_call16:
-								push	cx
-								call	game_func_16
-								pop	cx
-								jnc	loop_continue			; Jump if carry=0
-								retn
+									push	cx
+									call	game_func_16
+									pop	cx
+									jnc	loop_continue			; Jump if carry=0
+									retn
 
 loop_continue:
-								loop	scan_2_tiles		; Loop if cx > 0
+									loop	scan_2_tiles		; Loop if cx > 0
 
 scroll_pos_dec:
 		dec	word ptr ds:[80h]
@@ -1075,17 +1075,17 @@ scroll_wrap_check:
 		xor	dl,dl			; Zero register
 
 fill_column_loop:
-								call	vga_operation2
-								dec	si
-								add	dl,bh
+									call	vga_operation2
+									dec	si
+									add	dl,bh
 
 fill_cell_loop:
-														mov	[di],bl
-														sub	di,24h
-														dec	bh
-														jnz	fill_cell_loop			; Jump if not zero
-								cmp	dl,40h			; '@'
-								jb	fill_column_loop			; Jump if below
+																mov	[di],bl
+																sub	di,24h
+																dec	bh
+																jnz	fill_cell_loop			; Jump if not zero
+									cmp	dl,40h			; '@'
+									jb	fill_column_loop			; Jump if below
 		inc	si
 		mov	ds:map_cur_ptr,si
 		mov	si,ds:scroll_end_ptr
@@ -1098,11 +1098,11 @@ fill_cell_loop:
 		xor	dh,dh			; Zero register
 
 scroll_col_loop:
-								call	vga_operation2
-								dec	si
-								add	dh,bh
-								cmp	dh,40h			; '@'
-								jb	scroll_col_loop			; Jump if below
+									call	vga_operation2
+									dec	si
+									add	dh,bh
+									cmp	dh,40h			; '@'
+									jb	scroll_col_loop			; Jump if below
 
 scroll_cur_update:
 		mov	ds:scroll_cur_ptr,si
@@ -1112,27 +1112,27 @@ scroll_cur_update:
 		mov	si,ds:object_list_ptr
 
 obj_list_scan:
-								mov	ax,[si]
-								cmp	ax,0FFFFh
-								jne	obj_check_match			; Jump if not equal
-								retn
+									mov	ax,[si]
+									cmp	ax,0FFFFh
+									jne	obj_check_match			; Jump if not equal
+									retn
 
 obj_check_match:
-								cmp	ah,0FFh
-								je	obj_list_next			; Jump if equal
-								cmp	ax,bx
-								jne	obj_list_next			; Jump if not equal
-								xor	ah,ah			; Zero register
-								mov	al,[si+2]
-								call	vga_operation4
-								mov	al,ds:gvar_flag_FF4A
-								or	al,80h
-								mov	[di],al
+									cmp	ah,0FFh
+									je	obj_list_next			; Jump if equal
+									cmp	ax,bx
+									jne	obj_list_next			; Jump if not equal
+									xor	ah,ah			; Zero register
+									mov	al,[si+2]
+									call	vga_operation4
+									mov	al,ds:gvar_flag_FF4A
+									or	al,80h
+									mov	[di],al
 
 obj_list_next:
-								inc	byte ptr ds:gvar_flag_FF4A
-								add	si,10h
-								jmp	short obj_list_scan
+									inc	byte ptr ds:gvar_flag_FF4A
+									add	si,10h
+									jmp	short obj_list_scan
 
 game_func_16:
 		cmp	byte ptr ds:area_num,7
@@ -1234,15 +1234,15 @@ map_scan_loop_entry:
 		mov	cx,4
 
 tile_scan_4b:
-								call	vga_operation9
-								add	al,al
-								jnc	scan_tile_advance			; Jump if carry=0
-								retn
+									call	vga_operation9
+									add	al,al
+									jnc	scan_tile_advance			; Jump if carry=0
+									retn
 
 scan_tile_advance:
-								add	si,24h
-								call	vga_operation5
-								loop	tile_scan_4b		; Loop if cx > 0
+									add	si,24h
+									call	vga_operation5
+									loop	tile_scan_4b		; Loop if cx > 0
 
 		xchg	di,si
 		test	byte ptr ds:gvar_music_flag_a,0FFh
@@ -1262,23 +1262,23 @@ scan_2more_b:
 		mov	cx,2
 
 scan_2_tiles_b:
-								add	si,24h
-								call	vga_operation5
-								mov	al,[si]
-								call	game_func_42
-								stc				; Set carry flag
-								jz	push_call19			; Jump if zero
-								retn
+									add	si,24h
+									call	vga_operation5
+									mov	al,[si]
+									call	game_func_42
+									stc				; Set carry flag
+									jz	push_call19			; Jump if zero
+									retn
 
 push_call19:
-								push	cx
-								call	game_func_19
-								pop	cx
-								jnc	loop_continue_b			; Jump if carry=0
-								retn
+									push	cx
+									call	game_func_19
+									pop	cx
+									jnc	loop_continue_b			; Jump if carry=0
+									retn
 
 loop_continue_b:
-								loop	scan_2_tiles_b		; Loop if cx > 0
+									loop	scan_2_tiles_b		; Loop if cx > 0
 
 scroll_pos_inc:
 		inc	word ptr ds:[80h]
@@ -1313,11 +1313,11 @@ scroll_to_right:
 		xor	dh,dh			; Zero register
 
 fill_right_col:
-								call	vga_operation1
-								inc	si
-								add	dh,bh
-								cmp	dh,40h			; '@'
-								jb	fill_right_col			; Jump if below
+									call	vga_operation1
+									inc	si
+									add	dh,bh
+									cmp	dh,40h			; '@'
+									jb	fill_right_col			; Jump if below
 
 set_col_ptr:
 		mov	ds:map_cur_ptr,si
@@ -1334,27 +1334,27 @@ bx_wrap_check:
 		mov	si,ds:object_list_ptr
 
 obj_list_scan_b:
-								mov	ax,[si]
-								cmp	ax,0FFFFh
-								jne	obj_check_match_b			; Jump if not equal
-								retn
+									mov	ax,[si]
+									cmp	ax,0FFFFh
+									jne	obj_check_match_b			; Jump if not equal
+									retn
 
 obj_check_match_b:
-								cmp	ah,0FFh
-								je	obj_list_next_b			; Jump if equal
-								cmp	ax,bx
-								jne	obj_list_next_b			; Jump if not equal
-								mov	ah,23h			; '#'
-								mov	al,[si+2]
-								call	vga_operation4
-								mov	al,ds:gvar_flag_FF4A
-								or	al,80h
-								mov	[di],al
+									cmp	ah,0FFh
+									je	obj_list_next_b			; Jump if equal
+									cmp	ax,bx
+									jne	obj_list_next_b			; Jump if not equal
+									mov	ah,23h			; '#'
+									mov	al,[si+2]
+									call	vga_operation4
+									mov	al,ds:gvar_flag_FF4A
+									or	al,80h
+									mov	[di],al
 
 obj_list_next_b:
-								inc	byte ptr ds:gvar_flag_FF4A
-								add	si,10h
-								jmp	short obj_list_scan_b
+									inc	byte ptr ds:gvar_flag_FF4A
+									add	si,10h
+									jmp	short obj_list_scan_b
 
 game_process_loop		endp
 
@@ -1446,7 +1446,9 @@ check_e8:
 
 dispatch_player_side:
 		jmp	scroll_retreat
-			                        ; Dead code ?-- no callers found.
+
+c2_clear_bit1:
+			                        ; Dead code -- confirmed unreachable (after jmp scroll_retreat)
 		and	byte ptr ds:[0C2h],0FDh
 		retn
 
@@ -1459,50 +1461,50 @@ combat_mode_active:
 		je	left_no_c2b1			; Jump if equal
 
 check_c2_bit2b:
-														test	byte ptr ds:[0C2h],2
-														jnz	check_c2_bit1			; Jump if not zero
-														cmp	al,4
-														je	check_vga8_d			; Jump if equal
-														cmp	al,8
-														je	check_vga8_c			; Jump if equal
-														retn
+																test	byte ptr ds:[0C2h],2
+																jnz	check_c2_bit1			; Jump if not zero
+																cmp	al,4
+																je	check_vga8_d			; Jump if equal
+																cmp	al,8
+																je	check_vga8_c			; Jump if equal
+																retn
 
 check_c2_bit1:
-														test	byte ptr ds:[0C2h],1
-														jz	jmp_retreat			; Jump if zero
-														jmp	player_action_taken
+																test	byte ptr ds:[0C2h],1
+																jz	jmp_retreat			; Jump if zero
+																jmp	player_action_taken
 
 jmp_retreat:
-														jmp	scroll_retreat
+																jmp	scroll_retreat
 
 right_no_c2b1:
-														test	byte ptr ds:[0C2h],1
-														jnz	check_c2_bit2b			; Jump if not zero
-								and	byte ptr ds:[0C2h],0FDh
-								call	game_func_17
+																test	byte ptr ds:[0C2h],1
+																jnz	check_c2_bit2b			; Jump if not zero
+									and	byte ptr ds:[0C2h],0FDh
+									call	game_func_17
 
 check_vga8_c:
-								call	vga_operation8
-								add	si,6Dh
-								call	vga_operation5
-								mov	al,[si]
-								call	game_check_state_2
-								jz	check_si_ok			; Jump if zero
-								retn
+									call	vga_operation8
+									add	si,6Dh
+									call	vga_operation5
+									mov	al,[si]
+									call	game_check_state_2
+									jz	check_si_ok			; Jump if zero
+									retn
 
 check_si_ok:
-								inc	si
-								mov	al,[si]
-								call	game_check_state_2
-								jnz	jmp_map_scan_b			; Jump if not zero
-								retn
+									inc	si
+									mov	al,[si]
+									call	game_check_state_2
+									jnz	jmp_map_scan_b			; Jump if not zero
+									retn
 
 jmp_map_scan_b:
-								jmp	map_scan_loop_entry
+									jmp	map_scan_loop_entry
 
 left_no_c2b1:
-								test	byte ptr ds:[0C2h],1
-								jz	check_c2_bit2b			; Jump if zero
+									test	byte ptr ds:[0C2h],1
+									jz	check_c2_bit2b			; Jump if zero
 		and	byte ptr ds:[0C2h],0FDh
 		call	game_func_17
 
@@ -1604,25 +1606,25 @@ set_music_a_flag:
 		retn
 
 music_advance_loop:
-								call	vga_operation8
-								add	si,6Dh
-								call	vga_operation5
-								inc	byte ptr ds:[0E7h]
-								mov	al,[si]
-								call	game_check_state_2
-								jz	func13_and_state2			; Jump if zero
-								or	byte ptr ds:[0E7h],1
-								retn
+									call	vga_operation8
+									add	si,6Dh
+									call	vga_operation5
+									inc	byte ptr ds:[0E7h]
+									mov	al,[si]
+									call	game_check_state_2
+									jz	func13_and_state2			; Jump if zero
+									or	byte ptr ds:[0E7h],1
+									retn
 
 func13_and_state2:
-								call	game_func_23
-								call	game_check_state_3
-								test	byte ptr ds:[0E7h],1
-								jz	jmp_back_adv_loop			; Jump if zero
-								retn
+									call	game_func_23
+									call	game_check_state_3
+									test	byte ptr ds:[0E7h],1
+									jz	jmp_back_adv_loop			; Jump if zero
+									retn
 
 jmp_back_adv_loop:
-								jmp	short music_advance_loop
+									jmp	short music_advance_loop
 
 game_func_23:
 
@@ -1732,15 +1734,15 @@ game_scan_loop		proc	near
 		mov	cx,4
 
 fire1_scan_loop:
-								test	byte ptr es:[di],0FFh
-								jz	check_fire2			; Jump if zero
-								cmp	al,es:[di]
-								jne	fire1_next			; Jump if not equal
-								retn
+									test	byte ptr es:[di],0FFh
+									jz	check_fire2			; Jump if zero
+									cmp	al,es:[di]
+									jne	fire1_next			; Jump if not equal
+									retn
 
 fire1_next:
-								inc	di
-								loop	fire1_scan_loop		; Loop if cx > 0
+									inc	di
+									loop	fire1_scan_loop		; Loop if cx > 0
 
 check_fire2:
 		mov	di,fire2_slot_table
@@ -1748,15 +1750,15 @@ check_fire2:
 		mov	cx,4
 
 fire2_scan_loop:
-								test	byte ptr es:[di],0FFh
-								jz	test_dl			; Jump if zero
-								cmp	al,es:[di]
-								jne	fire2_next			; Jump if not equal
-								retn
+									test	byte ptr es:[di],0FFh
+									jz	test_dl			; Jump if zero
+									cmp	al,es:[di]
+									jne	fire2_next			; Jump if not equal
+									retn
 
 fire2_next:
-								inc	di
-								loop	fire2_scan_loop		; Loop if cx > 0
+									inc	di
+									loop	fire2_scan_loop		; Loop if cx > 0
 
 test_dl:
 		or	dl,dl			; Zero ?
@@ -1768,40 +1770,40 @@ game_func_27		proc	near
 		mov	si,ds:map_seg_ptr
 
 seg_scan_loop:
-								mov	di,[si]
+									mov	di,[si]
 ;*		cmp	di,0FFFFh
-										cmp di,-1			; was: db 083h,0FFh,0FFh
-								jnz	seg_has_entry			; Jump if not zero
-								retn
+											cmp di,-1			; was: db 083h,0FFh,0FFh
+									jnz	seg_has_entry			; Jump if not zero
+									retn
 
 seg_has_entry:
-								add	si,3
-								mov	al,[si-1]
-								and	al,[di]
-								jnz	copy_seg_data			; Jump if not zero
+									add	si,3
+									mov	al,[si-1]
+									and	al,[di]
+									jnz	copy_seg_data			; Jump if not zero
 
 skip_seg_scan:
-														mov	di,[si]
+																mov	di,[si]
 ;*		cmp	di,0FFFFh
-																cmp di,-1			; was: db 083h,0FFh,0FFh
-														jz	seg_next			; Jump if zero
-														add	si,4
-														jmp	short skip_seg_scan
+																		cmp di,-1			; was: db 083h,0FFh,0FFh
+																jz	seg_next			; Jump if zero
+																add	si,4
+																jmp	short skip_seg_scan
 
 copy_seg_data:
-														mov	di,[si]
+																mov	di,[si]
 ;*		cmp	di,0FFFFh
-																cmp di,-1			; was: db 083h,0FFh,0FFh
-														jz	seg_next			; Jump if zero
-														mov	ax,[si+2]
-														mov	[di],ax
-														add	si,4
-														jmp	short copy_seg_data
+																		cmp di,-1			; was: db 083h,0FFh,0FFh
+																jz	seg_next			; Jump if zero
+																mov	ax,[si+2]
+																mov	[di],ax
+																add	si,4
+																jmp	short copy_seg_data
 
 seg_next:
-								inc	si
-								inc	si
-								jmp	short seg_scan_loop
+									inc	si
+									inc	si
+									jmp	short seg_scan_loop
 
 game_func_27		endp
 
@@ -1814,7 +1816,8 @@ game_get_value_2		proc	near
 
 game_get_value_2		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+scroll_init_data_a:
+			                        ; Scroll init data block A (dispatch table target or alignment padding)
 		or	ax,1BBh
 		add	al,47h			; 'G'
 		dec	di
@@ -1848,7 +1851,8 @@ game_func_29		proc	near
 
 game_func_29		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+scroll_init_data_b:
+			                        ; Scroll init data block B (dispatch table target or alignment padding)
 		or	ax,2AFh
 		add	ax,4E45h
 		inc	bp
@@ -1862,15 +1866,15 @@ vga_operation0		proc	near
 		jz	map_col_done			; Jump if zero
 
 map_col_scan:
-								xor	dh,dh			; Zero register
+									xor	dh,dh			; Zero register
 
 map_col_inner:
-														call	vga_operation1
-														inc	si
-														add	dh,bh
-														cmp	dh,40h			; '@'
-														jb	map_col_inner			; Jump if below
-								loop	map_col_scan		; Loop if cx > 0
+																call	vga_operation1
+																inc	si
+																add	dh,bh
+																cmp	dh,40h			; '@'
+																jb	map_col_inner			; Jump if below
+									loop	map_col_scan		; Loop if cx > 0
 
 map_col_done:
 		mov	ds:map_cur_ptr,si
@@ -1879,18 +1883,18 @@ map_col_done:
 		mov	cx,24h
 
 map_init_loop:
-								push	di
-								call	vga_operation3
-								pop	di
-								inc	di
-								inc	ax
-								cmp	ax,ds:map_width
-								jne	map_col_wrap			; Jump if not equal
-								mov	si,map_col_ptr
-								xor	ax,ax			; Zero register
+									push	di
+									call	vga_operation3
+									pop	di
+									inc	di
+									inc	ax
+									cmp	ax,ds:map_width
+									jne	map_col_wrap			; Jump if not equal
+									mov	si,map_col_ptr
+									xor	ax,ax			; Zero register
 
 map_col_wrap:
-								loop	map_init_loop		; Loop if cx > 0
+									loop	map_init_loop		; Loop if cx > 0
 
 		or	ax,ax			; Zero ?
 		jnz	set_scroll_ptr			; Jump if not zero
@@ -1918,7 +1922,8 @@ vga_operation1		proc	near
 
 vga_operation1		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+scroll_op_a_0:
+			                        ; scroll_dispatch_a target: entry 0 (indirect via scroll_dispatch_a table)
 		pop	ds
 		db	6Dh			; insw (port DX?->ES:[DI])
 		db	2Fh			; das
@@ -1939,7 +1944,8 @@ vga_operation2		proc	near
 
 vga_operation2		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+scroll_op_b_0:
+			                        ; scroll_dispatch_b target: entry 0 (indirect via scroll_dispatch_b table)
 		daa				; Decimal adjust
 		db	6Dh			; insw
 		db	2Fh			; das
@@ -1988,17 +1994,17 @@ vga_operation3		proc	near
 		xor	dl,dl			; Zero register
 
 col_fill_loop:
-								call	vga_operation1
-								inc	si
-								add	dl,bh
+									call	vga_operation1
+									inc	si
+									add	dl,bh
 
 cell_fill_loop:
-														mov	[di],bl
-														add	di,24h
-														dec	bh
-														jnz	cell_fill_loop			; Jump if not zero
-								cmp	dl,40h			; '@'
-								jb	col_fill_loop			; Jump if below
+																mov	[di],bl
+																add	di,24h
+																dec	bh
+																jnz	cell_fill_loop			; Jump if not zero
+									cmp	dl,40h			; '@'
+									jb	col_fill_loop			; Jump if below
 		retn
 
 vga_operation3		endp
@@ -2021,56 +2027,56 @@ vga_operation4		endp
 vga_operation5		proc	near
 
 clamp_si_high:
-								cmp	si,hud_buf
-								jae	wrap_si_down			; Jump if above or =
-								retn
+									cmp	si,hud_buf
+									jae	wrap_si_down			; Jump if above or =
+									retn
 
 wrap_si_down:
-								sub	si,900h
-								retn
+									sub	si,900h
+									retn
 
 vga_operation5		endp
 
 vga_operation6		proc	near
-								cmp	si,scroll_buf
-								jb	wrap_si_up			; Jump if below
-								retn
+									cmp	si,scroll_buf
+									jb	wrap_si_up			; Jump if below
+									retn
 
 wrap_si_up:
-								add	si,900h
-								retn
+									add	si,900h
+									retn
 
 vga_operation6		endp
 
 vga_operation7		proc	near
-								cmp	byte ptr ds:area_num,4
-								je	area4_check			; Jump if equal
-								retn
+									cmp	byte ptr ds:area_num,4
+									je	area4_check			; Jump if equal
+									retn
 
 area4_check:
-								cmp	byte ptr ds:[9Eh],4
-								jne	area4_not4			; Jump if not equal
-								mov	al,0FFh
-								or	al,al			; Zero ?
-								retn
+									cmp	byte ptr ds:[9Eh],4
+									jne	area4_not4			; Jump if not equal
+									mov	al,0FFh
+									or	al,al			; Zero ?
+									retn
 
 area4_not4:
-								xor	al,al			; Zero register
-								retn
+									xor	al,al			; Zero register
+									retn
 
 vga_operation7		endp
 
 vga_operation8		proc	near
-								mov	al,byte ptr ds:[84h]
-								mov	cl,24h			; '$'
-								mul	cl			; ax = reg * al
-								mov	cl,byte ptr ds:[83h]
-								add	cl,4
-								xor	ch,ch			; Zero register
-								add	ax,cx
-								mov	si,ax
-								add	si,ds:gvar_scroll_pos
-								jmp	short clamp_si_high
+									mov	al,byte ptr ds:[84h]
+									mov	cl,24h			; '$'
+									mul	cl			; ax = reg * al
+									mov	cl,byte ptr ds:[83h]
+									add	cl,4
+									xor	ch,ch			; Zero register
+									add	ax,cx
+									mov	si,ax
+									add	si,ds:gvar_scroll_pos
+									jmp	short clamp_si_high
 
 vga_operation8		endp
 
@@ -2211,28 +2217,28 @@ check_palette_flag:
 		mov	cx,4
 
 outer_slot_scan:
-								push	cx
-								mov	cx,8
+									push	cx
+									mov	cx,8
 
 inner_slot_scan:
-														push	cx
-														call	vga_operation9
-														jc	slot_inner_next			; Jump if carry Set
-														test	al,60h			; '`'
-														jnz	slot_inner_next			; Jump if not zero
-														test	byte ptr [bx+7],10h
-														jnz	slot_inner_next			; Jump if not zero
-														mov	dl,0FFh
+																push	cx
+																call	vga_operation9
+																jc	slot_inner_next			; Jump if carry Set
+																test	al,60h			; '`'
+																jnz	slot_inner_next			; Jump if not zero
+																test	byte ptr [bx+7],10h
+																jnz	slot_inner_next			; Jump if not zero
+																mov	dl,0FFh
 
 slot_inner_next:
-														inc	si
-														pop	cx
-														loop	inner_slot_scan		; Loop if cx > 0
+																inc	si
+																pop	cx
+																loop	inner_slot_scan		; Loop if cx > 0
 
-								add	si,1Ch
-								call	vga_operation5
-								pop	cx
-								loop	outer_slot_scan		; Loop if cx > 0
+									add	si,1Ch
+									call	vga_operation5
+									pop	cx
+									loop	outer_slot_scan		; Loop if cx > 0
 
 		or	dl,dl			; Zero ?
 		jnz	set_flag45_1			; Jump if not zero
@@ -2314,26 +2320,26 @@ apply_mask:
 		mov	di,es:entity_ptr_table[bx]
 
 entity_ptr_loop:
-														mov	al,es:[di]
-														inc	di
-														cmp	al,0FFh
-														jne	entity_ptr_check			; Jump if not equal
-														retn
+																mov	al,es:[di]
+																inc	di
+																cmp	al,0FFh
+																jne	entity_ptr_check			; Jump if not equal
+																retn
 
 entity_ptr_check:
-														xor	ah,ah			; Zero register
-														add	si,ax
-														call	vga_operation5
-														call	vga_operation9
-														jc	entity_ptr_loop			; Jump if carry Set
-														test	al,20h			; ' '
-														jnz	entity_ptr_loop			; Jump if not zero
-														test	byte ptr [bx+5],20h	; ' '
-														jnz	entity_ptr_loop			; Jump if not zero
-								or	byte ptr [bx+5],40h	; '@'
-								and	byte ptr [bx+5],0E0h
-								or	byte ptr [bx+5],1
-								jmp	short entity_ptr_loop
+																xor	ah,ah			; Zero register
+																add	si,ax
+																call	vga_operation5
+																call	vga_operation9
+																jc	entity_ptr_loop			; Jump if carry Set
+																test	al,20h			; ' '
+																jnz	entity_ptr_loop			; Jump if not zero
+																test	byte ptr [bx+5],20h	; ' '
+																jnz	entity_ptr_loop			; Jump if not zero
+									or	byte ptr [bx+5],40h	; '@'
+									and	byte ptr [bx+5],0E0h
+									or	byte ptr [bx+5],1
+									jmp	short entity_ptr_loop
 
 game_func_44		endp
 
@@ -2495,8 +2501,8 @@ frame_timer_wait:
 		mul	cl			; ax = reg * al
 
 frame_timer_loop:
-								cmp	ds:gvar_frame_timer,al
-								jb	frame_timer_loop			; Jump if below
+									cmp	ds:gvar_frame_timer,al
+									jb	frame_timer_loop			; Jump if below
 		call	game_scan_loop_8
 		call	word ptr cs:gfx_fn_render_tile
 		call	game_check_state_5
@@ -2509,20 +2515,20 @@ frame_timer_loop:
 		mul	cl			; ax = reg * al
 
 sound_update_loop:
-								push	ax
-								call	word ptr cs:[110h]
-								call	word ptr cs:[112h]
-								call	word ptr cs:[114h]
-								call	word ptr cs:[116h]
-								call	word ptr cs:[118h]
-								call	word ptr cs:[11Eh]
-								jnc	sound_wait_done			; Jump if carry=0
-								call	game_func_65
+									push	ax
+									call	word ptr cs:[110h]
+									call	word ptr cs:[112h]
+									call	word ptr cs:[114h]
+									call	word ptr cs:[116h]
+									call	word ptr cs:[118h]
+									call	word ptr cs:[11Eh]
+									jnc	sound_wait_done			; Jump if carry=0
+									call	game_func_65
 
 sound_wait_done:
-								pop	ax
-								cmp	ds:gvar_frame_timer,al
-								jb	sound_update_loop			; Jump if below
+									pop	ax
+									cmp	ds:gvar_frame_timer,al
+									jb	sound_update_loop			; Jump if below
 		mov	byte ptr ds:gvar_frame_timer,0
 		test	byte ptr ds:[0E8h],0FFh
 		jz	check_7f_90			; Jump if zero
@@ -2599,12 +2605,12 @@ player_hud_fill_done:
 		xor	ch,ch			; Zero register
 
 hud_enemy_fill:
-								push	cx
-								mov	cx,12h
-								rep	stosb			; Rep when cx >0 Store al to es:[di]
-								add	di,0Ah
-								pop	cx
-								loop	hud_enemy_fill		; Loop if cx > 0
+									push	cx
+									mov	cx,12h
+									rep	stosb			; Rep when cx >0 Store al to es:[di]
+									add	di,0Ah
+									pop	cx
+									loop	hud_enemy_fill		; Loop if cx > 0
 
 check_enemy_scroll:
 		test	byte ptr ds:enemy_scroll_flag,0FFh
@@ -2626,14 +2632,14 @@ enemy_hud_fill_done:
 		mov	cx,2
 
 hud_player_fill:
-								push	cx
-								push	di
-								mov	cx,1Ah
-								rep	stosb			; Rep when cx >0 Store al to es:[di]
-								pop	di
-								add	di,1Ch
-								pop	cx
-								loop	hud_player_fill		; Loop if cx > 0
+									push	cx
+									push	di
+									mov	cx,1Ah
+									rep	stosb			; Rep when cx >0 Store al to es:[di]
+									pop	di
+									add	di,1Ch
+									pop	cx
+									loop	hud_player_fill		; Loop if cx > 0
 
 		retn
 
@@ -2677,10 +2683,10 @@ game_func_48:
 		mov	cx,800h
 
 world_state_swap:
-								mov	ax,es:[di]
-								movsw				; Mov [si] to es:[di]
-								mov	[si-2],ax
-								loop	world_state_swap		; Loop if cx > 0
+									mov	ax,es:[di]
+									movsw				; Mov [si] to es:[di]
+									mov	[si-2],ax
+									loop	world_state_swap		; Loop if cx > 0
 
 		retn
 
@@ -2722,13 +2728,13 @@ load_new_map:
 		add	si,8
 
 patch_table_loop:
-								lodsw				; String [si] to ax
-								cmp	ax,0FFFFh
-								je	patch_done			; Jump if equal
-								mov	bx,ax
-								lodsw				; String [si] to ax
-								mov	[bx],ax
-								jmp	short patch_table_loop
+									lodsw				; String [si] to ax
+									cmp	ax,0FFFFh
+									je	patch_done			; Jump if equal
+									mov	bx,ax
+									lodsw				; String [si] to ax
+									mov	[bx],ax
+									jmp	short patch_table_loop
 
 patch_done:
 		call	vga_operation8
@@ -2786,13 +2792,13 @@ atk_slot_check:
 		mov	cx,4
 
 atk_slot_scan:
-								mov	ah,es:[di]
-								inc	di
-								or	ah,ah			; Zero ?
-								jz	atk_not_found			; Jump if zero
-								cmp	ah,al
-								je	atk_found			; Jump if equal
-								loop	atk_slot_scan		; Loop if cx > 0
+									mov	ah,es:[di]
+									inc	di
+									or	ah,ah			; Zero ?
+									jz	atk_not_found			; Jump if zero
+									cmp	ah,al
+									je	atk_found			; Jump if equal
+									loop	atk_slot_scan		; Loop if cx > 0
 
 atk_not_found:
 		mov	ah,0FFh
@@ -2852,37 +2858,37 @@ game_multiply		proc	near
 		pop	cx
 
 hud_row_loop:
-								mov	ds:scroll_bx_save,bx
-								mov	ds:scroll_cx_save,cl
-								lodsb				; String [si] to al
-								xor	ah,ah			; Zero register
-								add	bx,ax
+									mov	ds:scroll_bx_save,bx
+									mov	ds:scroll_cx_save,cl
+									lodsb				; String [si] to al
+									xor	ah,ah			; Zero register
+									add	bx,ax
 
 hud_cell_loop:
-														lodsb				; String [si] to al
-														cmp	al,0FFh
-														jne	hud_draw_sprite			; Jump if not equal
-														retn
+																lodsb				; String [si] to al
+																cmp	al,0FFh
+																jne	hud_draw_sprite			; Jump if not equal
+																retn
 
 hud_draw_sprite:
-														cmp	al,2Fh			; '/'
-														je	hud_row_next			; Jump if equal
-														mov	ah,1
-														push	cx
-														push	bx
-														push	si
-														call	word ptr cs:[2022h]
-														pop	si
-														pop	bx
-														pop	cx
-														add	bx,8
-														jmp	short hud_cell_loop
+																cmp	al,2Fh			; '/'
+																je	hud_row_next			; Jump if equal
+																mov	ah,1
+																push	cx
+																push	bx
+																push	si
+																call	word ptr cs:[2022h]
+																pop	si
+																pop	bx
+																pop	cx
+																add	bx,8
+																jmp	short hud_cell_loop
 
 hud_row_next:
-								mov	bx,ds:scroll_bx_save
-								mov	cl,ds:scroll_cx_save
-								add	cl,0Ch
-								jmp	short hud_row_loop
+									mov	bx,ds:scroll_bx_save
+									mov	cl,ds:scroll_cx_save
+									add	cl,0Ch
+									jmp	short hud_row_loop
 
 game_multiply		endp
 
@@ -2901,11 +2907,11 @@ game_multiply_2		proc	near
 		mov	cx,3
 
 hud_col_fill:
-								stosb				; Store al to es:[di]
-								stosb				; Store al to es:[di]
-								stosb				; Store al to es:[di]
-								add	di,19h
-								loop	hud_col_fill		; Loop if cx > 0
+									stosb				; Store al to es:[di]
+									stosb				; Store al to es:[di]
+									stosb				; Store al to es:[di]
+									add	di,19h
+									loop	hud_col_fill		; Loop if cx > 0
 
 		retn
 
@@ -2927,25 +2933,25 @@ area2_skip:
 		dec	cx
 
 slot_outer_loop:
-								push	cx
-								mov	cx,3
+									push	cx
+									mov	cx,3
 
 slot_inner_loop:
-														push	cx
-														mov	al,[si]
-														inc	si
-														call	game_scan_loop_2
-														jnz	slot_occupied			; Jump if not zero
-														mov	byte ptr ds:state_byte_9F17,0FFh
+																push	cx
+																mov	al,[si]
+																inc	si
+																call	game_scan_loop_2
+																jnz	slot_occupied			; Jump if not zero
+																mov	byte ptr ds:state_byte_9F17,0FFh
 
 slot_occupied:
-														pop	cx
-														loop	slot_inner_loop		; Loop if cx > 0
+																pop	cx
+																loop	slot_inner_loop		; Loop if cx > 0
 
-								add	si,21h
-								call	vga_operation5
-								pop	cx
-								loop	slot_outer_loop		; Loop if cx > 0
+									add	si,21h
+									call	vga_operation5
+									pop	cx
+									loop	slot_outer_loop		; Loop if cx > 0
 
 		test	byte ptr ds:gvar_music_flag_b,0FFh
 		jnz	check_state17			; Jump if not zero
@@ -2969,7 +2975,9 @@ save_flag3_set:
 		mov	al,ds:area_lookup_tbl[bx]
 		xor	ah,ah			; Zero register
 		jmp	sub_score_and_call
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_dispatch_fn_0:
+			                        ; entity_dispatch_tbl target: entity fn 0
 		add	[bx+di],ax
 		add	al,8
 		adc	al,14h
@@ -3131,7 +3139,9 @@ game_func_58:
 		call	word ptr cs:[2000h]
 		mov	dx,9AB4h
 		jmp	entity_scan_start
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_dispatch_fn_1:
+			                        ; entity_dispatch_tbl target: entity fn 1
 		call	vga_operation9
 		jc	tile_down1			; Jump if carry Set
 		test	al,40h			; '@'
@@ -3201,12 +3211,12 @@ game_process_loop_2		proc	near
 		mov	cx,3
 
 process_loop_3:
-								push	cx
-								call	game_func_62
-								sub	si,24h
-								call	vga_operation6
-								pop	cx
-								loop	process_loop_3		; Loop if cx > 0
+									push	cx
+									call	game_func_62
+									sub	si,24h
+									call	vga_operation6
+									pop	cx
+									loop	process_loop_3		; Loop if cx > 0
 
 		retn
 
@@ -3230,7 +3240,8 @@ dispatch_entity:
 
 game_func_62		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+entity_dispatch_fn_2:
+			                        ; entity_dispatch_tbl target: entity fn 2
 ;*		aam	76h			; 'v' undocumented inst
 			db	0D4h, 76h			; aam 76h (non-standard immediate)
 ;*                         lock	jbe	loc_313			;*Jump if below or =
@@ -3244,10 +3255,14 @@ game_func_62		endp
 		mov	byte ptr ds:gvar_combat_ff3D,0
 		mov	byte ptr ds:[0E7h],80h
 		retn
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_dispatch_fn_3:
+			                        ; entity_dispatch_tbl target: entity fn 3
 		call	game_process_loop
 		jmp	map_scan_loop_entry
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_dispatch_fn_4:
+			                        ; entity_dispatch_tbl target: entity fn 4
 		call	game_func_15
 		jmp	scroll_advance
 
@@ -3261,17 +3276,17 @@ game_func_63		proc	near
 		mov	bl,4
 
 slotA_scan_loop:
-								mov	al,es:[si]
-								inc	si
-								or	al,al			; Zero ?
-								jz	slotA_not_found			; Jump if zero
-								cmp	al,bh
-								jne	slotA_mismatch			; Jump if not equal
-								retn
+									mov	al,es:[si]
+									inc	si
+									or	al,al			; Zero ?
+									jz	slotA_not_found			; Jump if zero
+									cmp	al,bh
+									jne	slotA_mismatch			; Jump if not equal
+									retn
 
 slotA_mismatch:
-								dec	bl
-								jnz	slotA_scan_loop			; Jump if not zero
+									dec	bl
+									jnz	slotA_scan_loop			; Jump if not zero
 
 slotA_not_found:
 		inc	cl
@@ -3279,17 +3294,17 @@ slotA_not_found:
 		mov	bl,4
 
 slotB_scan_loop:
-								mov	al,es:[si]
-								inc	si
-								or	al,al			; Zero ?
-								jz	slotB_not_found			; Jump if zero
-								cmp	al,bh
-								jne	slotB_mismatch			; Jump if not equal
-								retn
+									mov	al,es:[si]
+									inc	si
+									or	al,al			; Zero ?
+									jz	slotB_not_found			; Jump if zero
+									cmp	al,bh
+									jne	slotB_mismatch			; Jump if not equal
+									retn
 
 slotB_mismatch:
-								dec	bl
-								jnz	slotB_scan_loop			; Jump if not zero
+									dec	bl
+									jnz	slotB_scan_loop			; Jump if not zero
 
 slotB_not_found:
 		inc	cl
@@ -3297,17 +3312,17 @@ slotB_not_found:
 		mov	bl,4
 
 slotC_scan_loop:
-								mov	al,es:[si]
-								inc	si
-								or	al,al			; Zero ?
-								jz	slot_not_found			; Jump if zero
-								cmp	al,bh
-								jne	slotC_mismatch			; Jump if not equal
-								retn
+									mov	al,es:[si]
+									inc	si
+									or	al,al			; Zero ?
+									jz	slot_not_found			; Jump if zero
+									cmp	al,bh
+									jne	slotC_mismatch			; Jump if not equal
+									retn
 
 slotC_mismatch:
-								dec	bl
-								jnz	slotC_scan_loop			; Jump if not zero
+									dec	bl
+									jnz	slotC_scan_loop			; Jump if not zero
 
 slot_not_found:
 		mov	cl,0FFh
@@ -3405,88 +3420,88 @@ game_func_66		proc	near
 		mov	bp,ds:entity_list_ptr
 
 entity_list_loop:
-								mov	ax,ds:[bp]
-								cmp	ax,0FFFFh
-								jne	entity_found			; Jump if not equal
-								retn
+									mov	ax,ds:[bp]
+									cmp	ax,0FFFFh
+									jne	entity_found			; Jump if not equal
+									retn
 
 entity_found:
-								call	game_func_68
-								jc	entity_list_next			; Jump if carry Set
-								mov	al,ds:[bp+3]
-								and	al,7
-								add	al,61h			; 'a'
-								mov	ds:combat_byte_a,al
-								mov	ds:combat_byte_b,al
-								mov	al,ds:[bp+2]
-								xor	ah,ah			; Zero register
-								call	vga_operation4
-								cmp	bl,4
-								jb	entity_hud_normal			; Jump if below
-								mov	cx,bx
-								sub	bl,27h			; '''
-								neg	bl
-								inc	bl
-								mov	al,bl
-								cmp	al,6
-								jb	entity_hud_offset			; Jump if below
-								mov	al,5
+									call	game_func_68
+									jc	entity_list_next			; Jump if carry Set
+									mov	al,ds:[bp+3]
+									and	al,7
+									add	al,61h			; 'a'
+									mov	ds:combat_byte_a,al
+									mov	ds:combat_byte_b,al
+									mov	al,ds:[bp+2]
+									xor	ah,ah			; Zero register
+									call	vga_operation4
+									cmp	bl,4
+									jb	entity_hud_normal			; Jump if below
+									mov	cx,bx
+									sub	bl,27h			; '''
+									neg	bl
+									inc	bl
+									mov	al,bl
+									cmp	al,6
+									jb	entity_hud_offset			; Jump if below
+									mov	al,5
 
 entity_hud_offset:
-								sub	cl,4
-								xor	ch,ch			; Zero register
-								add	di,cx
-								mov	si,79C8h
-								test	byte ptr ds:[bp+3],80h
-								jnz	entity_render_loop			; Jump if not zero
-								mov	si,combat_data_tbl
-								jmp	short entity_render_loop
+									sub	cl,4
+									xor	ch,ch			; Zero register
+									add	di,cx
+									mov	si,79C8h
+									test	byte ptr ds:[bp+3],80h
+									jnz	entity_render_loop			; Jump if not zero
+									mov	si,combat_data_tbl
+									jmp	short entity_render_loop
 
 entity_list_next:
-														add	bp,0Ch
-														jmp	short entity_list_loop
+																add	bp,0Ch
+																jmp	short entity_list_loop
 
 entity_hud_normal:
-								mov	si,79C8h
-								test	byte ptr ds:[bp+3],80h
-								jnz	entity_hud_flip			; Jump if not zero
-								mov	si,combat_data_tbl
+									mov	si,79C8h
+									test	byte ptr ds:[bp+3],80h
+									jnz	entity_hud_flip			; Jump if not zero
+									mov	si,combat_data_tbl
 
 entity_hud_flip:
-								mov	al,bl
-								inc	al
-								mov	cl,5
-								sub	cl,al
-								xor	ch,ch			; Zero register
-								add	si,cx
+									mov	al,bl
+									inc	al
+									mov	cl,5
+									sub	cl,al
+									xor	ch,ch			; Zero register
+									add	si,cx
 
 entity_render_loop:
-								mov	cx,4
+									mov	cx,4
 
 entity_render_rows:
-														push	cx
-														push	ax
-														push	di
-														push	si
+																push	cx
+																push	ax
+																push	di
+																push	si
 
 hud_copy_loop:
-														call	game_get_value_3
-														inc	di
-														inc	si
-														dec	al
-														jnz	hud_copy_loop			; Jump if not zero
-														pop	si
-														add	si,5
-														xchg	si,di
-														pop	si
-														add	si,24h
-														call	vga_operation5
-														xchg	di,si
-														pop	ax
-														pop	cx
-														loop	entity_render_rows		; Loop if cx > 0
+																call	game_get_value_3
+																inc	di
+																inc	si
+																dec	al
+																jnz	hud_copy_loop			; Jump if not zero
+																pop	si
+																add	si,5
+																xchg	si,di
+																pop	si
+																add	si,24h
+																call	vga_operation5
+																xchg	di,si
+																pop	ax
+																pop	cx
+																loop	entity_render_rows		; Loop if cx > 0
 
-								jmp	short entity_list_next
+									jmp	short entity_list_next
 
 game_func_66		endp
 
@@ -3642,19 +3657,19 @@ dist_clamp:
 
 entity_search_loop:
 ;*		cmp	word ptr [si],0FFFFh
-										cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
-								jnz	entity_match_check			; Jump if not zero
-								retn
+											cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
+									jnz	entity_match_check			; Jump if not zero
+									retn
 
 entity_match_check:
-								cmp	ax,[si]
-								jne	entity_search_next			; Jump if not equal
-								cmp	bl,[si+2]
-								je	entity_match_found			; Jump if equal
+									cmp	ax,[si]
+									jne	entity_search_next			; Jump if not equal
+									cmp	bl,[si+2]
+									je	entity_match_found			; Jump if equal
 
 entity_search_next:
-								add	si,0Ch
-								jmp	short entity_search_loop
+									add	si,0Ch
+									jmp	short entity_search_loop
 
 entity_match_found:
 		pop	ax
@@ -3796,23 +3811,23 @@ check_c3:
 		mov	cx,1Ah
 
 intro_left_loop:
-								push	cx
-								push	bx
-								inc	byte ptr ds:[0E7h]
-								call	word ptr cs:gfx_fn_render_bg
-								pop	bx
-								add	bh,2
-								push	bx
-								call	word ptr cs:gfx_fn_map_ref
-								call	game_multiply_3
-								pop	bx
-								push	bx
-								mov	cx,218h
-								xor	al,al			; Zero register
-								call	word ptr cs:[2000h]
-								pop	bx
-								pop	cx
-								loop	intro_left_loop		; Loop if cx > 0
+									push	cx
+									push	bx
+									inc	byte ptr ds:[0E7h]
+									call	word ptr cs:gfx_fn_render_bg
+									pop	bx
+									add	bh,2
+									push	bx
+									call	word ptr cs:gfx_fn_map_ref
+									call	game_multiply_3
+									pop	bx
+									push	bx
+									mov	cx,218h
+									xor	al,al			; Zero register
+									call	word ptr cs:[2000h]
+									pop	bx
+									pop	cx
+									loop	intro_left_loop		; Loop if cx > 0
 
 		mov	cx,618h
 		xor	al,al			; Zero register
@@ -3825,24 +3840,24 @@ c3_set_loop:
 		mov	cx,1Ah
 
 intro_right_loop:
-								push	cx
-								push	bx
-								inc	byte ptr ds:[0E7h]
-								call	word ptr cs:gfx_fn_render_bg
-								pop	bx
-								sub	bh,2
-								push	bx
-								call	word ptr cs:gfx_fn_map_ref
-								call	game_multiply_3
-								pop	bx
-								push	bx
-								add	bh,4
-								mov	cx,218h
-								xor	al,al			; Zero register
-								call	word ptr cs:[2000h]
-								pop	bx
-								pop	cx
-								loop	intro_right_loop		; Loop if cx > 0
+									push	cx
+									push	bx
+									inc	byte ptr ds:[0E7h]
+									call	word ptr cs:gfx_fn_render_bg
+									pop	bx
+									sub	bh,2
+									push	bx
+									call	word ptr cs:gfx_fn_map_ref
+									call	game_multiply_3
+									pop	bx
+									push	bx
+									add	bh,4
+									mov	cx,218h
+									xor	al,al			; Zero register
+									call	word ptr cs:[2000h]
+									pop	bx
+									pop	cx
+									loop	intro_right_loop		; Loop if cx > 0
 
 		mov	cx,618h
 		xor	al,al			; Zero register
@@ -4120,15 +4135,15 @@ game_multiply_3		proc	near
 		mul	cl			; ax = reg * al
 
 frame_render_loop:
-								push	ax
-								call	word ptr cs:[110h]
-								call	word ptr cs:[112h]
-								call	word ptr cs:[114h]
-								call	word ptr cs:[116h]
-								call	word ptr cs:[118h]
-								pop	ax
-								cmp	ds:gvar_frame_timer,al
-								jb	frame_render_loop			; Jump if below
+									push	ax
+									call	word ptr cs:[110h]
+									call	word ptr cs:[112h]
+									call	word ptr cs:[114h]
+									call	word ptr cs:[116h]
+									call	word ptr cs:[118h]
+									pop	ax
+									cmp	ds:gvar_frame_timer,al
+									jb	frame_render_loop			; Jump if below
 		mov	byte ptr ds:gvar_frame_timer,0
 		retn
 
@@ -4138,29 +4153,29 @@ game_scan_loop_4		proc	near
 		mov	si,ds:map_top_ptr
 
 top_list_loop:
-								mov	ax,[si]
-								cmp	ax,0FFFFh
-								jne	top_item_found			; Jump if not equal
-								retn
+									mov	ax,[si]
+									cmp	ax,0FFFFh
+									jne	top_item_found			; Jump if not equal
+									retn
 
 top_item_found:
-								call	game_func_87
-								jc	top_item_next			; Jump if carry Set
-								mov	ah,bl
-								mov	al,[si+2]
-								call	vga_operation4
-								mov	cx,3
-								mov	dl,40h			; '@'
+									call	game_func_87
+									jc	top_item_next			; Jump if carry Set
+									mov	ah,bl
+									mov	al,[si+2]
+									call	vga_operation4
+									mov	cx,3
+									mov	dl,40h			; '@'
 
 top_draw_cells:
-														call	game_func_89
-														inc	di
-														inc	dl
-														loop	top_draw_cells		; Loop if cx > 0
+																call	game_func_89
+																inc	di
+																inc	dl
+																loop	top_draw_cells		; Loop if cx > 0
 
 top_item_next:
-								add	si,3
-								jmp	short top_list_loop
+									add	si,3
+									jmp	short top_list_loop
 
 game_scan_loop_4		endp
 
@@ -4225,13 +4240,13 @@ check_3slots:
 		mov	cx,3
 
 check_3_slots:
-								inc	si
-								test	byte ptr [si],0FFh
-								jz	slot_empty_ok			; Jump if zero
-								retn
+									inc	si
+									test	byte ptr [si],0FFh
+									jz	slot_empty_ok			; Jump if zero
+									retn
 
 slot_empty_ok:
-								loop	check_3_slots		; Loop if cx > 0
+									loop	check_3_slots		; Loop if cx > 0
 
 		mov	si,bx
 		add	si,24h
@@ -4241,21 +4256,21 @@ slot_empty_ok:
 		mov	cx,3
 
 draw_3_cells:
-								push	dx
-								push	bx
-								call	game_func_89
-								pop	bx
-								xchg	di,bx
-								push	bx
-								xor	dl,dl			; Zero register
-								call	game_func_89
-								pop	bx
-								xchg	di,bx
-								inc	di
-								inc	bx
-								pop	dx
-								inc	dl
-								loop	draw_3_cells		; Loop if cx > 0
+									push	dx
+									push	bx
+									call	game_func_89
+									pop	bx
+									xchg	di,bx
+									push	bx
+									xor	dl,dl			; Zero register
+									call	game_func_89
+									pop	bx
+									xchg	di,bx
+									inc	di
+									inc	bx
+									pop	dx
+									inc	dl
+									loop	draw_3_cells		; Loop if cx > 0
 
 		pop	di
 		inc	byte ptr [di+2]
@@ -4302,19 +4317,19 @@ find_bottom_entry:
 		mov	cx,3
 
 check_bot_wall:
-								test	byte ptr [si],80h
-								jz	check_si_wall			; Jump if zero
-								retn
+									test	byte ptr [si],80h
+									jz	check_si_wall			; Jump if zero
+									retn
 
 check_si_wall:
-								test	byte ptr [bx],0FFh
-								jz	check_bx_empty			; Jump if zero
-								retn
+									test	byte ptr [bx],0FFh
+									jz	check_bx_empty			; Jump if zero
+									retn
 
 check_bx_empty:
-								inc	si
-								inc	bx
-								loop	check_bot_wall		; Loop if cx > 0
+									inc	si
+									inc	bx
+									loop	check_bot_wall		; Loop if cx > 0
 
 		mov	bx,ax
 		mov	si,bx
@@ -4325,21 +4340,21 @@ check_bx_empty:
 		mov	cx,3
 
 draw_3_cells_b:
-								push	dx
-								push	bx
-								call	game_func_89
-								pop	bx
-								xchg	di,bx
-								push	bx
-								xor	dl,dl			; Zero register
-								call	game_func_89
-								pop	bx
-								xchg	di,bx
-								inc	di
-								inc	bx
-								pop	dx
-								inc	dl
-								loop	draw_3_cells_b		; Loop if cx > 0
+									push	dx
+									push	bx
+									call	game_func_89
+									pop	bx
+									xchg	di,bx
+									push	bx
+									xor	dl,dl			; Zero register
+									call	game_func_89
+									pop	bx
+									xchg	di,bx
+									inc	di
+									inc	bx
+									pop	dx
+									inc	dl
+									loop	draw_3_cells_b		; Loop if cx > 0
 
 		pop	di
 		dec	byte ptr [di+2]
@@ -4369,14 +4384,14 @@ map_col_calc:
 		and	cl,3Fh			; '?'
 
 map_entry_search:
-								cmp	ax,[di]
-								jne	map_entry_next			; Jump if not equal
-								cmp	cl,[di+2]
-								je	map_entry_found			; Jump if equal
+									cmp	ax,[di]
+									jne	map_entry_next			; Jump if not equal
+									cmp	cl,[di+2]
+									je	map_entry_found			; Jump if equal
 
 map_entry_next:
-								add	di,3
-								jmp	short map_entry_search
+									add	di,3
+									jmp	short map_entry_search
 
 map_entry_found:
 		call	game_func_87
@@ -4415,29 +4430,29 @@ game_scan_loop_5		proc	near
 		mov	si,ds:map_bot_ptr
 
 bot_list_loop:
-								mov	ax,[si]
-								cmp	ax,0FFFFh
-								jne	bot_item_found			; Jump if not equal
-								retn
+									mov	ax,[si]
+									cmp	ax,0FFFFh
+									jne	bot_item_found			; Jump if not equal
+									retn
 
 bot_item_found:
-								call	game_func_87
-								jc	bot_item_next			; Jump if carry Set
-								mov	ah,bl
-								mov	al,[si+2]
-								call	vga_operation4
-								mov	cx,3
-								mov	dl,43h			; 'C'
+									call	game_func_87
+									jc	bot_item_next			; Jump if carry Set
+									mov	ah,bl
+									mov	al,[si+2]
+									call	vga_operation4
+									mov	cx,3
+									mov	dl,43h			; 'C'
 
 bot_draw_cells:
-														call	game_func_89
-														inc	di
-														inc	dl
-														loop	bot_draw_cells		; Loop if cx > 0
+																call	game_func_89
+																inc	di
+																inc	dl
+																loop	bot_draw_cells		; Loop if cx > 0
 
 bot_item_next:
-								add	si,3
-								jmp	short bot_list_loop
+									add	si,3
+									jmp	short bot_list_loop
 
 game_scan_loop_5		endp
 
@@ -4513,9 +4528,9 @@ extra_draw_cells:
 		xor	dl,dl			; Zero register
 
 extra_draw_loop:
-								call	game_func_89
-								inc	di
-								loop	extra_draw_loop		; Loop if cx > 0
+									call	game_func_89
+									inc	di
+									loop	extra_draw_loop		; Loop if cx > 0
 
 extra_fn_check:
 		mov	ax,[si]
@@ -4540,10 +4555,10 @@ extra_draw_normal:
 		mov	dl,46h			; 'F'
 
 extra_normal_draw:
-								call	game_func_89
-								inc	di
-								inc	dl
-								loop	extra_normal_draw		; Loop if cx > 0
+									call	game_func_89
+									inc	di
+									inc	dl
+									loop	extra_normal_draw		; Loop if cx > 0
 
 extra_item_next:
 		add	si,7
@@ -4551,7 +4566,8 @@ extra_item_next:
 
 game_func_85		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+entity_fn_a_0:
+			                        ; entity_fn_tbl_a target: handler fn 0
 		dec	dx
 ;*		adc	byte ptr [bp+si-7Eh],52h	; 'R'
 			db	82h, 52h, 82h, 52h			; adc byte ptr [bp+si-7Eh],52h (alt opcode 82h)
@@ -4561,7 +4577,9 @@ game_func_85		endp
 		lahf				; Load ah from flags
 		add	[di+1],si
 		retn
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_a_1:
+			                        ; entity_fn_tbl_a target: handler fn 1 (bit-clear and direction update)
 		mov	cl,[si+2]
 		and	byte ptr [si+2],0BFh
 		test	cl,40h			; '@'
@@ -4656,14 +4674,14 @@ check_col_range:
 		mov	cx,3
 
 col_range_check:
-								cmp	dl,al
-								clc				; Clear carry flag
-								jnz	col_range_next			; Jump if not zero
-								retn
+									cmp	dl,al
+									clc				; Clear carry flag
+									jnz	col_range_next			; Jump if not zero
+									retn
 
 col_range_next:
-								inc	dl
-								loop	col_range_check		; Loop if cx > 0
+									inc	dl
+									loop	col_range_check		; Loop if cx > 0
 
 		stc				; Set carry flag
 		retn
@@ -4748,59 +4766,60 @@ game_check_state_5		proc	near
 		mov	si,enemy_data_buf
 
 enemy_scan_loop:
-								cmp	byte ptr [si],0FFh
-								jne	enemy_found			; Jump if not equal
-								retn
+									cmp	byte ptr [si],0FFh
+									jne	enemy_found			; Jump if not equal
+									retn
 
 enemy_found:
-								push	si
-								call	game_func_92
-								pop	si
-								mov	al,[si]
-								mov	[si+0Bh],al
-								sub	al,4
-								cmp	al,1Ch
-								jae	enemy_deactivate_here			; Jump if above or =
-								mov	al,[si+1]
-								sub	al,byte ptr ds:[82h]
-								and	al,3Fh			; '?'
-								cmp	al,12h
-								jae	enemy_deactivate_here			; Jump if above or =
-								mov	[si+0Ch],al
-								mov	ah,[si+0Bh]
-								push	ax
-								call	game_multiply_4
-								pop	ax
-								cmp	byte ptr [di],0FFh
-								je	enemy_next			; Jump if equal
-								cmp	byte ptr [di],0FCh
-								je	enemy_next			; Jump if equal
-								call	word ptr cs:gfx_fn_77
-								or	di,8000h
-								mov	[si+7],di
-								mov	al,[si+2]
-								mov	bl,al
-								rol	bl,1			; Rotate
-								rol	bl,1			; Rotate
-								and	bx,3
-								mov	bl,ds:entity_type_map[bx]
-								and	bl,[si+3]
-								add	al,bl
-								and	al,3Fh			; '?'
-								and	di,7FFFh
-								call	word ptr cs:gfx_fn_hud_draw
+									push	si
+									call	game_func_92
+									pop	si
+									mov	al,[si]
+									mov	[si+0Bh],al
+									sub	al,4
+									cmp	al,1Ch
+									jae	enemy_deactivate_here			; Jump if above or =
+									mov	al,[si+1]
+									sub	al,byte ptr ds:[82h]
+									and	al,3Fh			; '?'
+									cmp	al,12h
+									jae	enemy_deactivate_here			; Jump if above or =
+									mov	[si+0Ch],al
+									mov	ah,[si+0Bh]
+									push	ax
+									call	game_multiply_4
+									pop	ax
+									cmp	byte ptr [di],0FFh
+									je	enemy_next			; Jump if equal
+									cmp	byte ptr [di],0FCh
+									je	enemy_next			; Jump if equal
+									call	word ptr cs:gfx_fn_77
+									or	di,8000h
+									mov	[si+7],di
+									mov	al,[si+2]
+									mov	bl,al
+									rol	bl,1			; Rotate
+									rol	bl,1			; Rotate
+									and	bx,3
+									mov	bl,ds:entity_type_map[bx]
+									and	bl,[si+3]
+									add	al,bl
+									and	al,3Fh			; '?'
+									and	di,7FFFh
+									call	word ptr cs:gfx_fn_hud_draw
 
 enemy_next:
-														add	si,0Dh
-														jmp	short enemy_scan_loop
+																add	si,0Dh
+																jmp	short enemy_scan_loop
 
 enemy_deactivate_here:
-								mov	byte ptr [si],0
-								jmp	short enemy_next
+									mov	byte ptr [si],0
+									jmp	short enemy_next
 
 game_check_state_5		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+entity_fn_tbl_b_data:
+			                        ; Padding/data block (dispatch table alignment)
 		add	[bx+di],al
 		add	ax,[bx]
 
@@ -4808,13 +4827,13 @@ game_func_91		proc	near
 		mov	si,enemy_data_buf
 
 enemy_all_scan:
-								cmp	byte ptr [si],0FFh
-								je	enemy_all_done			; Jump if equal
-								push	si
-								call	game_func_92
-								pop	si
-								add	si,0Dh
-								jmp	short enemy_all_scan
+									cmp	byte ptr [si],0FFh
+									je	enemy_all_done			; Jump if equal
+									push	si
+									call	game_func_92
+									pop	si
+									add	si,0Dh
+									jmp	short enemy_all_scan
 
 enemy_all_done:
 		mov	byte ptr ds:enemy_data_buf,0FFh
@@ -4861,42 +4880,42 @@ copy_buffer_2		proc	near
 		mov	byte ptr ds:state_byte_9F1F,0
 
 sprite_buf_scan:
-								mov	al,[si]
-								or	al,al			; Zero ?
-								jnz	sprite_active			; Jump if not zero
-								test	word ptr [si+7],8000h
-								jz	sprite_buf_next			; Jump if zero
+									mov	al,[si]
+									or	al,al			; Zero ?
+									jnz	sprite_active			; Jump if not zero
+									test	word ptr [si+7],8000h
+									jz	sprite_buf_next			; Jump if zero
 
 sprite_active:
-								inc	al
-								jnz	sprite_live			; Jump if not zero
-								mov	byte ptr [di],0FFh
-								retn
+									inc	al
+									jnz	sprite_live			; Jump if not zero
+									mov	byte ptr [di],0FFh
+									retn
 
 sprite_live:
-								inc	byte ptr [si+3]
-								push	es
-								push	di
-								call	game_scan_loop_7
-								pop	di
-								pop	es
-								push	si
-								mov	cx,0Dh
-								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-								pop	si
-								test	byte ptr [si+5],40h	; '@'
-								jnz	sprite_inc_1f			; Jump if not zero
-								mov	al,[si+3]
-								cmp	al,[si+4]
-								jb	sprite_inc_1f			; Jump if below
-								mov	byte ptr [si],0
+									inc	byte ptr [si+3]
+									push	es
+									push	di
+									call	game_scan_loop_7
+									pop	di
+									pop	es
+									push	si
+									mov	cx,0Dh
+									rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+									pop	si
+									test	byte ptr [si+5],40h	; '@'
+									jnz	sprite_inc_1f			; Jump if not zero
+									mov	al,[si+3]
+									cmp	al,[si+4]
+									jb	sprite_inc_1f			; Jump if below
+									mov	byte ptr [si],0
 
 sprite_inc_1f:
-								inc	byte ptr ds:state_byte_9F1F
+									inc	byte ptr ds:state_byte_9F1F
 
 sprite_buf_next:
-								add	si,0Dh
-								jmp	short sprite_buf_scan
+									add	si,0Dh
+									jmp	short sprite_buf_scan
 
 copy_buffer_2		endp
 
@@ -4931,11 +4950,11 @@ sprite_row_scan:
 		mov	cx,2
 
 row_scan_loop:
-								inc	al
-								and	al,3Fh			; '?'
-								cmp	al,[si+1]
-								je	sprite_row_match			; Jump if equal
-								loop	row_scan_loop		; Loop if cx > 0
+									inc	al
+									and	al,3Fh			; '?'
+									cmp	al,[si+1]
+									je	sprite_row_match			; Jump if equal
+									loop	row_scan_loop		; Loop if cx > 0
 
 		retn
 
@@ -4983,48 +5002,48 @@ entity_process_skip:
 		jnz	sprite_check_93			; Jump if not zero
 
 entity_kill:
-								mov	al,[si+6]
-								xor	ah,ah			; Zero register
-								call	game_func_60
-								mov	byte ptr ds:gvar_volume_b,9
-								mov	al,0FFh
-								mov	ds:any_entity_active,al
-								mov	ds:gvar_save_flag_3,al
-								mov	bx,0FFFFh
-								mov	cx,0FFFFh
-								mov	al,[si+5]
-								and	al,7
-								cmp	al,2
-								je	entity_hit			; Jump if equal
-								cmp	al,6
-								je	entity_hit			; Jump if equal
-								xor	bx,bx			; Zero register
-								or	al,al			; Zero ?
-								jz	entity_hit			; Jump if zero
-								cmp	al,1
-								je	entity_hit			; Jump if equal
-								cmp	al,7
-								je	entity_hit			; Jump if equal
-								xchg	cx,bx
+									mov	al,[si+6]
+									xor	ah,ah			; Zero register
+									call	game_func_60
+									mov	byte ptr ds:gvar_volume_b,9
+									mov	al,0FFh
+									mov	ds:any_entity_active,al
+									mov	ds:gvar_save_flag_3,al
+									mov	bx,0FFFFh
+									mov	cx,0FFFFh
+									mov	al,[si+5]
+									and	al,7
+									cmp	al,2
+									je	entity_hit			; Jump if equal
+									cmp	al,6
+									je	entity_hit			; Jump if equal
+									xor	bx,bx			; Zero register
+									or	al,al			; Zero ?
+									jz	entity_hit			; Jump if zero
+									cmp	al,1
+									je	entity_hit			; Jump if equal
+									cmp	al,7
+									je	entity_hit			; Jump if equal
+									xchg	cx,bx
 
 entity_hit:
-								mov	ds:entity_slot_tbl,cx
-								mov	ds:state_word_9F10,bx
-								retn
+									mov	ds:entity_slot_tbl,cx
+									mov	ds:state_word_9F10,bx
+									retn
 
 sprite_check_93:
-								cmp	byte ptr ds:[93h],4
-								jae	set_vol_0a			; Jump if above or =
-								mov	al,byte ptr ds:[84h]
-								add	al,byte ptr ds:[82h]
-								inc	al
-								test	byte ptr ds:gvar_music_flag_a,0FFh
-								jz	call_func96			; Jump if zero
-								inc	al
+									cmp	byte ptr ds:[93h],4
+									jae	set_vol_0a			; Jump if above or =
+									mov	al,byte ptr ds:[84h]
+									add	al,byte ptr ds:[82h]
+									inc	al
+									test	byte ptr ds:gvar_music_flag_a,0FFh
+									jz	call_func96			; Jump if zero
+									inc	al
 
 call_func96:
-								call	game_func_96
-								jc	entity_kill			; Jump if carry Set
+									call	game_func_96
+									jc	entity_kill			; Jump if carry Set
 
 set_vol_0a:
 		mov	byte ptr ds:gvar_volume_b,0Ah
@@ -5041,7 +5060,8 @@ game_func_96		proc	near
 
 game_func_96		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+entity_fn_b_0:
+			                        ; entity_fn_tbl_b target: handler fn 0
 		xchg	cx,ax
 		test	bx,ds:hitbox_map_tbl[bx+di]
 		test	bx,ds:collision_map_tbl[bx+di]
@@ -5049,24 +5069,30 @@ game_func_96		endp
 		test	bx,gfx_fn_hitbox_data[bx]
 
 entity_fn_return:
-														inc	sp
-														add	[di+1],si
-														retn
-															                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
-														stc				; Set carry flag
-														retn
-															                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
-														dec	al
-														and	al,3Fh			; '?'
+																inc	sp
+																add	[di+1],si
+																retn
+
+entity_fn_b_1:
+																	                        ; entity_fn_tbl_b target: handler fn 1 (stc; retn)
+																stc				; Set carry flag
+																retn
+
+entity_fn_b_2:
+																	                        ; entity_fn_tbl_b target: handler fn 2 (dec al, mask)
+																dec	al
+																and	al,3Fh			; '?'
 ;*		jmp	short loc_469		;*
-															db	0EBh, 0F2h			; jmp short entity_fn_return (unaligned target)
-															                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
-														inc	al
-														and	al,3Fh			; '?'
+																	db	0EBh, 0F2h			; jmp short entity_fn_return (unaligned target)
+
+entity_fn_b_3:
+																	                        ; entity_fn_tbl_b target: handler fn 3 (inc al, mask)
+																inc	al
+																and	al,3Fh			; '?'
 ;*		jmp	short loc_469		;*
-														jmp	short entity_fn_return
-														jmp	short entity_fn_return
-								jmp	short entity_fn_return
+																jmp	short entity_fn_return
+																jmp	short entity_fn_return
+									jmp	short entity_fn_return
 		db	0EBh			; was: db 0ECh, 00Ch
 
 game_func_97		proc	near
@@ -5086,7 +5112,8 @@ call_entity_fn:
 
 game_func_97		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+entity_fn_c_0:
+			                        ; entity_fn_tbl_c target: handler fn 0 (rotate/dispatch block)
 ;*		aad	85h			; undocumented inst
 				aad 85h			; was: db 0D5h,085h
 		rol	byte ptr ds:entity_rotate_buf[di],cl	; Rotate
@@ -5132,7 +5159,8 @@ update_dir_bits:
 
 game_func_98		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+entity_fn_c_1:
+			                        ; entity_fn_tbl_c target: handler fn 1 (state byte 9F1F check)
 		cmp	byte ptr ds:state_byte_9F1F,1Fh
 		jb	check_state1f			; Jump if below
 		retn
@@ -5145,10 +5173,10 @@ check_state1f:
 		mov	di,enemy_data_buf
 
 find_free_slot:
-								cmp	byte ptr [di],0FFh
-								je	free_slot_found			; Jump if equal
-								add	di,0Dh
-								jmp	short find_free_slot
+									cmp	byte ptr [di],0FFh
+									je	free_slot_found			; Jump if equal
+									add	di,0Dh
+									jmp	short find_free_slot
 
 free_slot_found:
 		mov	cx,0Dh
@@ -5163,19 +5191,19 @@ game_func_99		proc	near
 		mov	si,enemy_data_buf
 
 enemy_dec_scan:
-								mov	al,[si]
-								cmp	al,0FFh
-								jne	enemy_dec_check			; Jump if not equal
-								retn
+									mov	al,[si]
+									cmp	al,0FFh
+									jne	enemy_dec_check			; Jump if not equal
+									retn
 
 enemy_dec_check:
-								or	al,al			; Zero ?
-								jz	enemy_dec_next			; Jump if zero
-								dec	byte ptr [si]
+									or	al,al			; Zero ?
+									jz	enemy_dec_next			; Jump if zero
+									dec	byte ptr [si]
 
 enemy_dec_next:
-								add	si,0Dh
-								jmp	short enemy_dec_scan
+									add	si,0Dh
+									jmp	short enemy_dec_scan
 
 game_func_99		endp
 
@@ -5183,19 +5211,19 @@ game_func_100		proc	near
 		mov	si,enemy_data_buf
 
 enemy_inc_scan:
-								mov	al,[si]
-								cmp	al,0FFh
-								jne	enemy_inc_check			; Jump if not equal
-								retn
+									mov	al,[si]
+									cmp	al,0FFh
+									jne	enemy_inc_check			; Jump if not equal
+									retn
 
 enemy_inc_check:
-								or	al,al			; Zero ?
-								jz	enemy_inc_next			; Jump if zero
-								inc	byte ptr [si]
+									or	al,al			; Zero ?
+									jz	enemy_inc_next			; Jump if zero
+									inc	byte ptr [si]
 
 enemy_inc_next:
-								add	si,0Dh
-								jmp	short enemy_inc_scan
+									add	si,0Dh
+									jmp	short enemy_inc_scan
 
 game_func_100		endp
 
@@ -5218,48 +5246,48 @@ game_func_102		proc	near
 		mov	cx,4
 
 sprite_wbuf_scan:
-								push	cx
-								cmp	byte ptr [si],0FFh
-								je	entity_loop_next			; Jump if equal
-								call	game_func_103
-								test	byte ptr [si+2],0FFh
-								jnz	sprite_entry_ok			; Jump if not zero
-								mov	byte ptr [si],0FFh
-								jmp	short entity_loop_next
+									push	cx
+									cmp	byte ptr [si],0FFh
+									je	entity_loop_next			; Jump if equal
+									call	game_func_103
+									test	byte ptr [si+2],0FFh
+									jnz	sprite_entry_ok			; Jump if not zero
+									mov	byte ptr [si],0FFh
+									jmp	short entity_loop_next
 
 sprite_entry_ok:
-								mov	bl,[si]
-								and	bl,0Fh
-								xor	bh,bh			; Zero register
-								add	bx,bx
-								add	bx,entity_data_base
-								mov	ah,byte ptr ds:[83h]
-								add	ah,[bx]
-								mov	[si+5],ah
-								mov	al,byte ptr ds:[84h]
-								add	al,[bx+1]
-								and	al,3Fh			; '?'
-								mov	[si+6],al
-								push	ax
-								call	game_multiply_4
-								pop	ax
-								cmp	byte ptr [di],0FFh
-								je	entity_loop_next			; Jump if equal
-								cmp	byte ptr [di],0FCh
-								je	entity_loop_next			; Jump if equal
-								call	word ptr cs:gfx_fn_77
-								or	di,8000h
-								mov	[si+3],di
-								mov	al,66h			; 'f'
-								and	di,7FFFh
-								push	si
-								call	word ptr cs:gfx_fn_hud_draw
-								pop	si
+									mov	bl,[si]
+									and	bl,0Fh
+									xor	bh,bh			; Zero register
+									add	bx,bx
+									add	bx,entity_data_base
+									mov	ah,byte ptr ds:[83h]
+									add	ah,[bx]
+									mov	[si+5],ah
+									mov	al,byte ptr ds:[84h]
+									add	al,[bx+1]
+									and	al,3Fh			; '?'
+									mov	[si+6],al
+									push	ax
+									call	game_multiply_4
+									pop	ax
+									cmp	byte ptr [di],0FFh
+									je	entity_loop_next			; Jump if equal
+									cmp	byte ptr [di],0FCh
+									je	entity_loop_next			; Jump if equal
+									call	word ptr cs:gfx_fn_77
+									or	di,8000h
+									mov	[si+3],di
+									mov	al,66h			; 'f'
+									and	di,7FFFh
+									push	si
+									call	word ptr cs:gfx_fn_hud_draw
+									pop	si
 
 entity_loop_next:
-								add	si,7
-								pop	cx
-								loop	sprite_wbuf_scan		; Loop if cx > 0
+									add	si,7
+									pop	cx
+									loop	sprite_wbuf_scan		; Loop if cx > 0
 
 		retn
 
@@ -5284,32 +5312,32 @@ game_scan_loop_8		proc	near
 		mov	cx,4
 
 sprite_update_loop:
-								push	cx
-								cmp	byte ptr [si],0FFh
-								je	sprite_wbuf_next			; Jump if equal
-								mov	bl,[si]
-								add	bl,[si+1]
-								and	bl,0Fh
-								mov	[si],bl
-								xor	bh,bh			; Zero register
-								add	bx,bx
-								add	bx,entity_data_base
-								mov	ah,byte ptr ds:[83h]
-								add	ah,[bx]
-								mov	al,byte ptr ds:[84h]
-								add	al,[bx+1]
-								add	al,byte ptr ds:[82h]
-								call	vga_operation4
-								xchg	si,di
-								sub	si,25h
-								call	vga_operation6
-								xchg	si,di
-								call	game_func_105
+									push	cx
+									cmp	byte ptr [si],0FFh
+									je	sprite_wbuf_next			; Jump if equal
+									mov	bl,[si]
+									add	bl,[si+1]
+									and	bl,0Fh
+									mov	[si],bl
+									xor	bh,bh			; Zero register
+									add	bx,bx
+									add	bx,entity_data_base
+									mov	ah,byte ptr ds:[83h]
+									add	ah,[bx]
+									mov	al,byte ptr ds:[84h]
+									add	al,[bx+1]
+									add	al,byte ptr ds:[82h]
+									call	vga_operation4
+									xchg	si,di
+									sub	si,25h
+									call	vga_operation6
+									xchg	si,di
+									call	game_func_105
 
 sprite_wbuf_next:
-								add	si,7
-								pop	cx
-								loop	sprite_update_loop		; Loop if cx > 0
+									add	si,7
+									pop	cx
+									loop	sprite_update_loop		; Loop if cx > 0
 
 		retn
 
@@ -5365,7 +5393,8 @@ set_slot_bits:
 
 game_func_106		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+entity_fn_d_data:
+			                        ; Data block after game_func_106 (dispatch table alignment)
 		add	al,[bx+di]
 		add	al,[bx+si]
 		add	di,di
@@ -5446,7 +5475,9 @@ decrement_ab:
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr ds:entity_fn_tbl_d[bx]	;*
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_d_0:
+			                        ; entity_fn_tbl_d target: handler fn 0 (fire slot init)
 		dec	bp
 		mov	[di-78h],cl
 		dec	bp
@@ -5489,45 +5520,45 @@ init_fire_entry:
 		mov	cx,4			; B9 04 00
 
 fire_init_loop:
-								push	cx
-								mov	al,6
-								mul	cl			; ax = reg * al
-								add	ax,2
-								add	ax,word ptr ds:[80h]
-								cmp	ax,ds:map_width
-								jb	fire_entry_col			; Jump if below
-								sub	ax,ds:map_width
+									push	cx
+									mov	al,6
+									mul	cl			; ax = reg * al
+									add	ax,2
+									add	ax,word ptr ds:[80h]
+									cmp	ax,ds:map_width
+									jb	fire_entry_col			; Jump if below
+									sub	ax,ds:map_width
 
 fire_entry_col:
-								mov	[si],ax
-								call	word ptr cs:[11Ah]
-								and	al,3
-								mov	ah,byte ptr ds:[82h]
-								sub	ah,3
-								sub	ah,al
-								and	ah,3Fh			; '?'
-								mov	[si+2],ah
-								mov	byte ptr [si+9],0
-								mov	byte ptr [si+0Bh],0
-								mov	byte ptr [si+0Dh],0
-								mov	byte ptr [si+0Fh],0
-								mov	byte ptr [si+4],0
-								mov	byte ptr [si+5],0
-								add	si,10h
-								pop	cx
-								loop	fire_init_loop		; Loop if cx > 0
+									mov	[si],ax
+									call	word ptr cs:[11Ah]
+									and	al,3
+									mov	ah,byte ptr ds:[82h]
+									sub	ah,3
+									sub	ah,al
+									and	ah,3Fh			; '?'
+									mov	[si+2],ah
+									mov	byte ptr [si+9],0
+									mov	byte ptr [si+0Bh],0
+									mov	byte ptr [si+0Dh],0
+									mov	byte ptr [si+0Fh],0
+									mov	byte ptr [si+4],0
+									mov	byte ptr [si+5],0
+									add	si,10h
+									pop	cx
+									loop	fire_init_loop		; Loop if cx > 0
 
 		retn
 		push	si			; 56h
 		mov	cx,3			; B9 03 00
 
 fire_init_loop2:
-								push	cx
+									push	cx
 ;*		call	game_func_108			;*
-									db	0E8h, 04Dh, 0FFh		; call near 2854h (unaligned target)
-								add	si,10h
-								pop	cx
-								loop	fire_init_loop2		; Loop if cx > 0
+										db	0E8h, 04Dh, 0FFh		; call near 2854h (unaligned target)
+									add	si,10h
+									pop	cx
+									loop	fire_init_loop2		; Loop if cx > 0
 
 		pop	si
 		sub	byte ptr [si+2],2
@@ -5535,7 +5566,9 @@ fire_init_loop2:
 		add	byte ptr [si+12h],2
 		and	byte ptr [si+12h],3Fh	; '?'
 		retn
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+boss_scroll_init:
+			                        ; Boss scroll init handler (resets anim counters, dispatch target)
 		mov	byte ptr ds:anim_ctr_x,0FFh
 		mov	byte ptr ds:anim_ctr_y,0FFh
 		test	byte ptr ds:gvar_save_flag_1,0FFh
@@ -5550,23 +5583,23 @@ boss_scroll_scan:
 		mov	cx,13h
 
 boss_scroll_outer:
-								push	cx
-								mov	cx,24h
+									push	cx
+									mov	cx,24h
 
 boss_scroll_inner:
-														push	cx
-														test	byte ptr [si],80h
-														jz	scan_for_obj			; Jump if zero
-														call	game_func_115
+																push	cx
+																test	byte ptr [si],80h
+																jz	scan_for_obj			; Jump if zero
+																call	game_func_115
 
 scan_for_obj:
-														inc	si
-														pop	cx
-														loop	boss_scroll_inner		; Loop if cx > 0
+																inc	si
+																pop	cx
+																loop	boss_scroll_inner		; Loop if cx > 0
 
-								call	vga_operation5
-								pop	cx
-								loop	boss_scroll_outer		; Loop if cx > 0
+									call	vga_operation5
+									pop	cx
+									loop	boss_scroll_outer		; Loop if cx > 0
 
 boss_scroll_done:
 		mov	byte ptr ds:gvar_flag_FF3E,0
@@ -5628,55 +5661,55 @@ boss_sprite_ptr:
 		mov	cx,4
 
 boss_cell_loop:
-								push	cx
-								push	bx
-								push	bp
-								add	bh,ds:[bp]
-								mov	al,bh
-								sub	al,4
-								cmp	al,1Ch
-								jae	boss_cell_next			; Jump if above or =
-								inc	bp
-								add	bl,ds:[bp]
-								and	bl,3Fh			; '?'
-								cmp	bl,12h
-								jae	boss_cell_next			; Jump if above or =
-								mov	al,[di]
-								push	di
-								push	ax
-								mov	ax,bx
-								push	ax
-								call	game_multiply_4
-								pop	ax
-								cmp	byte ptr [di],0FFh
-								je	boss_cell_skip			; Jump if equal
-								cmp	byte ptr [di],0FCh
-								je	boss_cell_skip			; Jump if equal
-								call	word ptr cs:gfx_fn_77
-								or	di,8000h
-								mov	[si],di
-								and	di,7FFFh
-								pop	ax
-								push	si
-								call	word ptr cs:gfx_fn_hud_draw
-								pop	si
-								pop	di
-								jmp	short boss_cell_next
+									push	cx
+									push	bx
+									push	bp
+									add	bh,ds:[bp]
+									mov	al,bh
+									sub	al,4
+									cmp	al,1Ch
+									jae	boss_cell_next			; Jump if above or =
+									inc	bp
+									add	bl,ds:[bp]
+									and	bl,3Fh			; '?'
+									cmp	bl,12h
+									jae	boss_cell_next			; Jump if above or =
+									mov	al,[di]
+									push	di
+									push	ax
+									mov	ax,bx
+									push	ax
+									call	game_multiply_4
+									pop	ax
+									cmp	byte ptr [di],0FFh
+									je	boss_cell_skip			; Jump if equal
+									cmp	byte ptr [di],0FCh
+									je	boss_cell_skip			; Jump if equal
+									call	word ptr cs:gfx_fn_77
+									or	di,8000h
+									mov	[si],di
+									and	di,7FFFh
+									pop	ax
+									push	si
+									call	word ptr cs:gfx_fn_hud_draw
+									pop	si
+									pop	di
+									jmp	short boss_cell_next
 
 boss_cell_skip:
-								pop	ax
-								pop	di
+									pop	ax
+									pop	di
 
 boss_cell_next:
-								pop	bp
-								inc	si
-								inc	si
-								inc	di
-								inc	bp
-								inc	bp
-								pop	bx
-								pop	cx
-								loop	boss_cell_loop		; Loop if cx > 0
+									pop	bp
+									inc	si
+									inc	si
+									inc	di
+									inc	bp
+									inc	bp
+									pop	bx
+									pop	cx
+									loop	boss_cell_loop		; Loop if cx > 0
 
 		pop	si
 
@@ -5758,14 +5791,17 @@ game_func_111		proc	near
 
 game_func_111		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+entity_fn_d_1:
+			                        ; entity_fn_tbl_d target: handler fn 1 (dispatch via [8AC6h][bx])
 		mov	si,0EB15h
 		mov	bl,byte ptr ds:[9Dh]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr ds:[8AC6h][bx]	;*
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_d_1_data:
+			                        ; Data: dispatch table for [8AC6h] (6 targets in game seg)
 ;*		aam	8Ah			; undocumented inst
 				aam 8Ah			; was: db 0D4h,08Ah
 		dw	8AF7h		; dispatch entry 0
@@ -5790,7 +5826,9 @@ game_func_111		endp
 set_bit80_and_ret:
 		or	byte ptr [si+3],80h
 		retn
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+boss_ctr_0a_handler:
+			                        ; Boss behavior handler: increment counter, check 0Ah threshold
 		inc	byte ptr [si+4]
 		cmp	byte ptr [si+4],0Ah
 		jb	check_ctr_0a			; Jump if below
@@ -5799,7 +5837,9 @@ set_bit80_and_ret:
 check_ctr_0a:
 		call	game_func_112
 		jmp	check_flags_scan
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+boss_ctr_0c_handler:
+			                        ; Boss behavior handler: increment counter, check 0Ch threshold
 		inc	byte ptr [si+4]
 		cmp	byte ptr [si+4],0Ch
 		jb	check_ctr_0c			; Jump if below
@@ -5836,35 +5876,39 @@ update_dir5:
 
 fight_continue:
 		jmp	check_flags_scan
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+boss_fire4_handler:
+			                        ; Boss fire behavior handler: move 4 projectiles per step
 		inc	byte ptr [si+4]
 		cmp	byte ptr [si+4],0Ch
 		jae	reset_slots_30			; Jump if above or =
 		mov	cx,4
 
 fire4_move_loop:
-								push	cx
-								add	byte ptr [si+2],2
-								and	byte ptr [si+2],3Fh	; '?'
-								call	game_scan_loop_9
-								add	si,10h
-								pop	cx
-								loop	fire4_move_loop		; Loop if cx > 0
+									push	cx
+									add	byte ptr [si+2],2
+									and	byte ptr [si+2],3Fh	; '?'
+									call	game_scan_loop_9
+									add	si,10h
+									pop	cx
+									loop	fire4_move_loop		; Loop if cx > 0
 
 		retn
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+boss_fire3_handler:
+			                        ; Boss fire behavior handler: move 3 projectiles per step
 		inc	byte ptr [si+4]
 		cmp	byte ptr [si+4],0Ah
 		jae	reset_slots_20			; Jump if above or =
 		mov	cx,3
 
 fire3_move_loop:
-								push	cx
-								call	game_func_112
-								call	game_scan_loop_9
-								add	si,10h
-								pop	cx
-								loop	fire3_move_loop		; Loop if cx > 0
+									push	cx
+									call	game_func_112
+									call	game_scan_loop_9
+									add	si,10h
+									pop	cx
+									loop	fire3_move_loop		; Loop if cx > 0
 
 		retn
 
@@ -5954,20 +5998,20 @@ draw_3x3_cells:
 		mov	cx,3
 
 draw_3x3_outer:
-								push	cx
-								mov	cx,3
+									push	cx
+									mov	cx,3
 
 draw_3x3_inner:
-														push	cx
-														call	game_func_115
-														pop	cx
-														inc	si
-														loop	draw_3x3_inner		; Loop if cx > 0
+																push	cx
+																call	game_func_115
+																pop	cx
+																inc	si
+																loop	draw_3x3_inner		; Loop if cx > 0
 
-								add	si,21h
-								call	vga_operation5
-								pop	cx
-								loop	draw_3x3_outer		; Loop if cx > 0
+									add	si,21h
+									call	vga_operation5
+									pop	cx
+									loop	draw_3x3_outer		; Loop if cx > 0
 
 		pop	si
 		mov	al,ds:state_byte_9F2A
@@ -6025,58 +6069,58 @@ obj_list_init:
 		mov	byte ptr ds:gvar_flag_FF4A,0
 
 obj_list_loop:
-								mov	ax,[si]
-								cmp	ax,0FFFFh
-								jne	obj_check_entry			; Jump if not equal
-								retn
+									mov	ax,[si]
+									cmp	ax,0FFFFh
+									jne	obj_check_entry			; Jump if not equal
+									retn
 
 obj_check_entry:
-								mov	byte ptr [si+3],0FFh
-								cmp	ah,0FFh
-								je	score_update_done			; Jump if equal
-								call	game_func_141
-								jc	score_update_done			; Jump if carry Set
-								mov	[si+3],bl
-								call	game_func_117
-								cmp	byte ptr [si+1],0FFh
-								je	score_update_done			; Jump if equal
-								mov	ax,[si+2]
-								call	vga_operation4
-								mov	bl,ds:gvar_flag_FF4A
-								xor	bh,bh			; Zero register
-								mov	al,bl
-								or	al,80h
-								xchg	[di],al
-								mov	ds:enemy_data_ext[bx],al
-								test	byte ptr [si+4],11h
-								jnz	score_update_done			; Jump if not zero
-								test	byte ptr [si+7],10h
-								jz	score_update_done			; Jump if zero
-								SWAP_CALL 48h, vga_operation5
-								mov	bl,ds:gvar_flag_FF4A
-								inc	bl
-								xor	bh,bh			; Zero register
-								mov	al,bl
-								or	al,80h
-								xchg	[di],al
-								mov	ds:enemy_data_ext[bx],al
+									mov	byte ptr [si+3],0FFh
+									cmp	ah,0FFh
+									je	score_update_done			; Jump if equal
+									call	game_func_141
+									jc	score_update_done			; Jump if carry Set
+									mov	[si+3],bl
+									call	game_func_117
+									cmp	byte ptr [si+1],0FFh
+									je	score_update_done			; Jump if equal
+									mov	ax,[si+2]
+									call	vga_operation4
+									mov	bl,ds:gvar_flag_FF4A
+									xor	bh,bh			; Zero register
+									mov	al,bl
+									or	al,80h
+									xchg	[di],al
+									mov	ds:enemy_data_ext[bx],al
+									test	byte ptr [si+4],11h
+									jnz	score_update_done			; Jump if not zero
+									test	byte ptr [si+7],10h
+									jz	score_update_done			; Jump if zero
+									SWAP_CALL 48h, vga_operation5
+									mov	bl,ds:gvar_flag_FF4A
+									inc	bl
+									xor	bh,bh			; Zero register
+									mov	al,bl
+									or	al,80h
+									xchg	[di],al
+									mov	ds:enemy_data_ext[bx],al
 
 score_update_done:
-								test	byte ptr [si+7],20h	; ' '
-								jnz	obj_list_incr			; Jump if not zero
-								mov	al,[si+0Fh]
-								inc	al
-								jz	obj_ctr_wrap			; Jump if zero
-								mov	[si+0Fh],al
+									test	byte ptr [si+7],20h	; ' '
+									jnz	obj_list_incr			; Jump if not zero
+									mov	al,[si+0Fh]
+									inc	al
+									jz	obj_ctr_wrap			; Jump if zero
+									mov	[si+0Fh],al
 
 obj_ctr_wrap:
-								jnz	obj_list_incr			; Jump if not zero
-								call	game_check_state_6
+									jnz	obj_list_incr			; Jump if not zero
+									call	game_check_state_6
 
 obj_list_incr:
-								inc	byte ptr ds:gvar_flag_FF4A
-								add	si,10h
-								jmp	short obj_list_loop
+									inc	byte ptr ds:gvar_flag_FF4A
+									add	si,10h
+									jmp	short obj_list_loop
 
 game_func_116		endp
 
@@ -6123,10 +6167,14 @@ obj_special_fn:
 		sub	bl,10h
 		jnc	$+5			; Jump if carry=0
 		jmp	anim_half_step
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+anim_dispatch_stub:
+			                        ; Animation dispatch stub via [8E14h][bx]
 		add	bx,bx
 		jmp	word ptr ds:[8E14h][bx]	;*
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+anim_dispatch_data:
+			                        ; Data: animation dispatch table entries (game seg targets)
 		xor	cl,byte ptr ss:[8E8Dh][bp]
 		jmp	$-96Fh
 		dw	0AB8Eh		; anim dispatch entry 0
@@ -6181,7 +6229,9 @@ set_next_anim:
 		and	byte ptr [si+5],80h
 		mov	byte ptr [si+9],0
 		retn
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_e_0:
+			                        ; entity_fn_tbl_e target: handler fn 0 (flag_0a and column match)
 		test	byte ptr [si+0Ah],1
 		jnz	flag_0a_set			; Jump if not zero
 		mov	ah,[si+2]
@@ -6201,10 +6251,10 @@ check_col_match_b:
 		mov	cx,2
 
 col_match_loop:
-								cmp	al,[si+3]
-								je	set_flag_12			; Jump if equal
-								inc	al
-								loop	col_match_loop		; Loop if cx > 0
+									cmp	al,[si+3]
+									je	set_flag_12			; Jump if equal
+									inc	al
+									loop	col_match_loop		; Loop if cx > 0
 
 		retn
 
@@ -6229,7 +6279,9 @@ anim_carry:
 anim_done:
 		mov	byte ptr [si+6],0
 		jmp	entity_deactivate
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_e_1:
+			                        ; entity_fn_tbl_e target: handler fn 1 (anim counter 3-step)
 		inc	byte ptr [si+6]
 		cmp	byte ptr [si+6],3
 		je	anim3_done			; Jump if equal
@@ -6237,7 +6289,9 @@ anim_done:
 
 anim3_done:
 		jmp	entity_deactivate
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_e_2:
+			                        ; entity_fn_tbl_e target: handler fn 2 (game_scan_loop_10 gated)
 		call	game_scan_loop_10
 		jnc	check_anim_timer			; Jump if carry=0
 		retn
@@ -6266,7 +6320,9 @@ anim_fn_dispatch:
 		add	bl,bl
 		xor	bh,bh			; Zero register
 		jmp	word ptr ds:entity_fn_tbl_e[bx]	;*
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_e_tbl_data:
+			                        ; Data: entity_fn_tbl_e dispatch entries (7 targets in game seg)
 		inc	cx
 ; entity_fn_tbl_e dispatch table (7 entries)
 		dw	4D8Fh		; fn 0
@@ -6338,7 +6394,9 @@ score_large:
 		mov	ax,64h
 		call	game_func_120
 		jmp	entity_deactivate
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_e_3:
+			                        ; entity_fn_tbl_e target: handler fn 3 (enemy trigger at 9A72h)
 		mov	dx,9A72h
 		call	game_func_118
 		jnc	inc_98			; Jump if carry=0
@@ -6410,7 +6468,9 @@ check_0a_flag:
 clear_dir_bit:
 		and	byte ptr [si+9],0FEh
 		retn
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_e_4:
+			                        ; entity_fn_tbl_e target: handler fn 4 (enemy trigger at 9AF3h)
 		mov	dx,9AF3h
 		call	game_func_118
 		jnc	set_9c_ff			; Jump if carry=0
@@ -6419,7 +6479,9 @@ clear_dir_bit:
 set_9c_ff:
 		mov	byte ptr ds:[9Ch],0FFh
 		jmp	entity_deactivate
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_e_5:
+			                        ; entity_fn_tbl_e target: handler fn 5 (enemy trigger at 9B63h)
 		mov	dx,9B63h
 		call	game_func_118
 		jnc	set_al_1			; Jump if carry=0
@@ -6428,7 +6490,9 @@ set_9c_ff:
 set_al_1:
 		mov	al,1
 		jmp	short search_free_slot
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_e_6:
+			                        ; entity_fn_tbl_e target: handler fn 6 (area-based boss encounter)
 		mov	al,ds:area_num
 		sub	al,4
 		mov	cl,3
@@ -6448,16 +6512,18 @@ search_free_slot:
 		mov	di,0A1h
 
 slot_scan_loop:
-								test	byte ptr [di],0FFh
-								jz	slot_found			; Jump if zero
-								inc	di
-								jmp	short slot_scan_loop
+									test	byte ptr [di],0FFh
+									jz	slot_found			; Jump if zero
+									inc	di
+									jmp	short slot_scan_loop
 
 slot_found:
 		pop	ax
 		mov	[di],al
 		jmp	entity_deactivate
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_tbl_e_stub:
+			                        ; Stub data between slot_found and game_func_118
 		add	al,0Fh
 		fwait				; 9Bh
 		add	al,byte ptr [bx-65h]	; 02 47 9B
@@ -6546,7 +6612,8 @@ apply_link_bits:
 
 game_func_117		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+game_func_119_body:
+			                        ; game_func_119 body: score update dispatch (via cs:[2016h])
 		add	word ptr ds:[86h],ax
 		adc	byte ptr ds:[85h],0
 		push	si
@@ -6579,11 +6646,11 @@ check_row_range:
 		mov	cx,4
 
 row_range_scan:
-								dec	ah
-								and	ah,3Fh			; '?'
-								cmp	ah,ds:gvar_save_flag_2
-								je	check_col_range_b			; Jump if equal
-								loop	row_range_scan		; Loop if cx > 0
+									dec	ah
+									and	ah,3Fh			; '?'
+									cmp	ah,ds:gvar_save_flag_2
+									je	check_col_range_b			; Jump if equal
+									loop	row_range_scan		; Loop if cx > 0
 
 		and	byte ptr [si+7],7Fh
 		stc				; Set carry flag
@@ -6597,10 +6664,10 @@ check_col_range_b:
 		mov	cx,4
 
 col_range_scan:
-								inc	ah
-								cmp	ah,al
-								je	check_bit80			; Jump if equal
-								loop	col_range_scan		; Loop if cx > 0
+									inc	ah
+									cmp	ah,al
+									je	check_bit80			; Jump if equal
+									loop	col_range_scan		; Loop if cx > 0
 
 		and	byte ptr [si+7],7Fh
 		stc				; Set carry flag
@@ -6639,7 +6706,9 @@ call_func128:
 
 jmp_loc620:
 		jmp	inc_map_pos
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+game_func_122_b:
+			                        ; game_func_122 variant B: check col 22h, dec_row
 		cmp	byte ptr [si+3],22h	; '"'
 		cmc				; Complement carry
 		jnc	check_col_22b			; Jump if carry=0
@@ -6676,7 +6745,9 @@ call_func132:
 
 jmp_loc625:
 		jmp	dec_row
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+game_func_123_b:
+			                        ; game_func_123 variant B: check col >= 2, dec_row
 		cmp	byte ptr [si+3],2
 		jae	check_col_2			; Jump if above or =
 		retn
@@ -6704,7 +6775,9 @@ call_func130:
 
 jmp_loc622:
 		jmp	short dec_map_pos
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+game_func_124_b:
+			                        ; game_func_124 variant B: check col >= 2c, inc_row
 		cmp	byte ptr [si+3],2
 		jae	check_col_2c			; Jump if above or =
 		retn
@@ -6738,7 +6811,9 @@ check_al_23b:
 
 jmp_loc624:
 		jmp	short inc_row
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+game_func_125_b:
+			                        ; game_func_125 variant B: check col 22h, inc_row
 		cmp	byte ptr [si+3],22h	; '"'
 		cmc				; Complement carry
 		jnc	check_col_22c			; Jump if carry=0
@@ -7223,12 +7298,12 @@ boss_check_next:
 		mov	cx,3
 
 check_3rows:
-								or	al,[si]
-								or	al,[si+1]
-								or	al,[si+2]
-								add	si,24h
-								call	vga_operation5
-								loop	check_3rows		; Loop if cx > 0
+									or	al,[si]
+									or	al,[si+1]
+									or	al,[si+2]
+									add	si,24h
+									call	vga_operation5
+									loop	check_3rows		; Loop if cx > 0
 
 		xchg	si,di
 		pop	di
@@ -7274,12 +7349,12 @@ setup_double_entity:
 		mov	cx,5
 
 check_5rows:
-								or	al,[si]
-								or	al,[si+1]
-								or	al,[si+2]
-								add	si,24h
-								call	vga_operation5
-								loop	check_5rows		; Loop if cx > 0
+									or	al,[si]
+									or	al,[si+1]
+									or	al,[si+2]
+									add	si,24h
+									call	vga_operation5
+									loop	check_5rows		; Loop if cx > 0
 
 		xchg	si,di
 		pop	di
@@ -7334,29 +7409,29 @@ clear_buffer		proc	near
 		mov	si,ds:object_list_ptr
 
 obj_clear_scan:
-								mov	ax,[si]
-								cmp	ax,0FFFFh
-								jne	obj_clear_found			; Jump if not equal
-								retn
+									mov	ax,[si]
+									cmp	ax,0FFFFh
+									jne	obj_clear_found			; Jump if not equal
+									retn
 
 obj_clear_found:
-								cmp	ah,0FFh
-								je	obj_clear_next			; Jump if equal
-								mov	byte ptr [si+3],0FFh
-								call	game_func_141
-								jc	obj_clear_next			; Jump if carry Set
-								mov	[si+3],bl
-								mov	al,[si+2]
-								mov	ah,bl
-								call	vga_operation4
-								mov	al,ds:gvar_flag_FF4A
-								or	al,80h
-								mov	[di],al
+									cmp	ah,0FFh
+									je	obj_clear_next			; Jump if equal
+									mov	byte ptr [si+3],0FFh
+									call	game_func_141
+									jc	obj_clear_next			; Jump if carry Set
+									mov	[si+3],bl
+									mov	al,[si+2]
+									mov	ah,bl
+									call	vga_operation4
+									mov	al,ds:gvar_flag_FF4A
+									or	al,80h
+									mov	[di],al
 
 obj_clear_next:
-								inc	byte ptr ds:gvar_flag_FF4A
-								add	si,10h
-								jmp	short obj_clear_scan
+									inc	byte ptr ds:gvar_flag_FF4A
+									add	si,10h
+									jmp	short obj_clear_scan
 
 clear_buffer		endp
 
@@ -7431,13 +7506,16 @@ clamp_score:
 
 game_func_143		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+entity_fn_f_dispatch:
+			                        ; entity_fn_tbl_f dispatch stub (al & 7, jmp via entity_fn_tbl_f[bx])
 		and	al,7
 		mov	bl,al
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr ds:entity_fn_tbl_f[bx]	;*
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+entity_fn_tbl_f_data:
+			                        ; Data block after entity_fn_tbl_f dispatch
 		in	ax,91h			; port 91h ??I/O Non-standard
 		not	byte ptr ds:entity_state_tbl[bx+di]
 		and	dl,ss:entity_attr_tbl[bp+si]
@@ -7468,16 +7546,16 @@ game_func_143		endp
 		mov	cx,0002h
 
 boss_slot_scan:
-								push	cx
-								push	si
-								mov	al,[di]
-								call	game_func_63
-								mov	bl,cl
-								pop	si
-								pop	cx
-								jz	dispatch_boss_fn			; Jump if zero
-								inc	di
-								loop	boss_slot_scan		; Loop if cx > 0
+									push	cx
+									push	si
+									mov	al,[di]
+									call	game_func_63
+									mov	bl,cl
+									pop	si
+									pop	cx
+									jz	dispatch_boss_fn			; Jump if zero
+									inc	di
+									loop	boss_slot_scan		; Loop if cx > 0
 
 		retn
 
@@ -7486,25 +7564,35 @@ dispatch_boss_fn:
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr ds:boss_fn_tbl[bx]	;*
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+boss_fn_0:
+			                        ; boss_fn_tbl target: boss fn 0 (call far, col 22h check)
 ;*		call	far ptr game_func_155		;*
 			db	9Ah, 97h, 94h, 97h, 8Eh		; call far ptr 8E97h:9497h
 		xchg	di,ax
 		call	game_func_122
 		jmp	check_col_22
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+boss_fn_1:
+			                        ; boss_fn_tbl target: boss fn 1 (game_func_124, check_col_2b)
 		call	game_func_124
 		jmp	check_col_2b
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+boss_fn_2:
+			                        ; boss_fn_tbl target: boss fn 2 (game_func_123, check_al_zero)
 		call	game_func_123
 		jmp	check_al_zero
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+boss_fn_3:
+			                        ; boss_fn_tbl target: boss fn 3 (position lookup, atk_slot_check)
 		mov	ax,[si+2]
 		call	vga_operation4
 		SWAP_CALL 48h, vga_operation5
 		mov	al,[di]
 		jmp	atk_slot_check
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+
+boss_fn_4:
+			                        ; boss_fn_tbl target: boss fn 4 (apply damage)
 		mov	al,[si+5]
 		and	al,1Fh
 		call	game_multiply_5
@@ -7643,7 +7731,8 @@ ah_carry:
 
 game_multiply_5		endp
 
-			                        ; Dead code ?-- no direct callers (dispatch table target or fall-through).
+boss_fn_tbl_data:
+			                        ; Data block after game_multiply_5 (table alignment bytes)
 		add	[bp+si],ax
 		add	al,8
 		and	[bx+2],bh
@@ -7656,33 +7745,33 @@ game_multiply_5		endp
 
 obj_link_scan:
 ;*		cmp	word ptr [di],0FFFFh
-										cmp word ptr [di],-1			; was: db 083h,03Dh,0FFh
-								stc				; Set carry flag
-								jnz	obj_link_found			; Jump if not zero
-								retn
+											cmp word ptr [di],-1			; was: db 083h,03Dh,0FFh
+									stc				; Set carry flag
+									jnz	obj_link_found			; Jump if not zero
+									retn
 
 obj_link_found:
 ;*		cmp	word ptr [di+0Bh],0FFFFh
-										cmp word ptr [di+0Bh],-1			; was: db 083h,07Dh,00Bh,0FFh
-								jnz	obj_link_next			; Jump if not zero
-								cmp	byte ptr [di+1],0FFh
-								je	check_slot_ff			; Jump if equal
-								mov	ax,[di]
-								push	dx
-								call	game_func_141
-								pop	dx
-								jnc	obj_link_next			; Jump if carry=0
-								test	byte ptr [di+4],10h
-								jz	link_visible			; Jump if zero
+											cmp word ptr [di+0Bh],-1			; was: db 083h,07Dh,00Bh,0FFh
+									jnz	obj_link_next			; Jump if not zero
+									cmp	byte ptr [di+1],0FFh
+									je	check_slot_ff			; Jump if equal
+									mov	ax,[di]
+									push	dx
+									call	game_func_141
+									pop	dx
+									jnc	obj_link_next			; Jump if carry=0
+									test	byte ptr [di+4],10h
+									jz	link_visible			; Jump if zero
 
 obj_link_next:
-														inc	dl
-														add	di,10h
-														jmp	short obj_link_scan
+																inc	dl
+																add	di,10h
+																jmp	short obj_link_scan
 
 check_slot_ff:
-								cmp	byte ptr [di+2],7Fh
-								je	obj_link_next			; Jump if equal
+									cmp	byte ptr [di+2],7Fh
+									je	obj_link_next			; Jump if equal
 
 link_visible:
 		clc				; Clear carry flag
@@ -7709,43 +7798,43 @@ game_over_sequence:
 		mov	byte ptr ds:gvar_save_flag_4,0
 
 cleanup_done:
-														call	game_check_state_3
-														mov	byte ptr ds:gvar_save_flag_4,0
-														cmp	byte ptr ds:[0E7h],2
-														je	wait_e7_2			; Jump if equal
-														inc	byte ptr ds:state_byte_9F28
-														test	byte ptr ds:state_byte_9F28,7
-														jnz	cleanup_done			; Jump if not zero
-														mov	al,byte ptr ds:[0E7h]
-														inc	al
-														and	al,3
-														cmp	al,3
-														je	cleanup_done			; Jump if equal
-														mov	byte ptr ds:[0E7h],al
-														jmp	short cleanup_done
+																call	game_check_state_3
+																mov	byte ptr ds:gvar_save_flag_4,0
+																cmp	byte ptr ds:[0E7h],2
+																je	wait_e7_2			; Jump if equal
+																inc	byte ptr ds:state_byte_9F28
+																test	byte ptr ds:state_byte_9F28,7
+																jnz	cleanup_done			; Jump if not zero
+																mov	al,byte ptr ds:[0E7h]
+																inc	al
+																and	al,3
+																cmp	al,3
+																je	cleanup_done			; Jump if equal
+																mov	byte ptr ds:[0E7h],al
+																jmp	short cleanup_done
 
 wait_e7_2:
-														inc	byte ptr ds:state_byte_9F29
-														test	byte ptr ds:state_byte_9F29,0Fh
-														jz	fade_out			; Jump if zero
-														test	byte ptr ds:state_byte_9F29,1
-														jz	cleanup_done			; Jump if zero
-								mov	byte ptr ds:gvar_save_flag_4,0FFh
-								jmp	short cleanup_done
+																inc	byte ptr ds:state_byte_9F29
+																test	byte ptr ds:state_byte_9F29,0Fh
+																jz	fade_out			; Jump if zero
+																test	byte ptr ds:state_byte_9F29,1
+																jz	cleanup_done			; Jump if zero
+									mov	byte ptr ds:gvar_save_flag_4,0FFh
+									jmp	short cleanup_done
 
 fade_out:
 		mov	byte ptr ds:gvar_state_FF24,8
 		mov	cx,1Eh
 
 fade_step_loop:
-								push	cx
-								call	game_check_state_3
-								pop	cx
-								mov	al,cl
-								and	al,1
-								dec	al
-								mov	ds:gvar_save_flag_4,al
-								loop	fade_step_loop		; Loop if cx > 0
+									push	cx
+									call	game_check_state_3
+									pop	cx
+									mov	al,cl
+									and	al,1
+									dec	al
+									mov	ds:gvar_save_flag_4,al
+									loop	fade_step_loop		; Loop if cx > 0
 
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
@@ -7802,8 +7891,9 @@ item_msg_table:
 		db	'You get a Key'
 ; gfx_fn_hitbox_data: base of hitbox bitmask table (test bx,[base+bx] pattern).
 ; Dual-use: these bytes also form the end of 'You get a Key.' + its message terminator.
+
 gfx_fn_hitbox_data	label	word		; hitbox bitmask table base (test bx,[base+bx])
-		db	2Eh			; '.'  — completes 'You get a Key.'
+		db	2Eh			; '.'  ?-- completes 'You get a Key.'
 		db	0FFh, 1Ch, 00h		; message terminator, key item value, entry end
 		db	'You have recovered.'
 		db	0FFh, 08h, 00h
