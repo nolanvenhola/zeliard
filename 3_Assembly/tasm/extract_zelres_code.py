@@ -30,9 +30,10 @@ from decompress_sar import read_sar_offsets, read_sar_chunk
 DRY_RUN = '--dry-run' in sys.argv
 
 # ---- Known names (0-indexed chunk -> stem suffix) ----
-# zelres1: chunks 0-11 and 24 are code; rest are DATA
-# chunk 30 (ttl2.grp) is fill_buffer opcode-7 compressed title screen image data,
-# loaded by 100OPDMO — NOT executable code.
+# zelres1: chunks 0-11 are code; rest are DATA
+# Confirmed misclassifications (fill_buffer opcode-7 compressed data, not code):
+#   chunk 24: buf[0]=07h, escape=DDh — image data (loader unknown)
+#   chunk 30: buf[0]=07h, escape=DDh — ttl2.grp title screen, loaded by 100OPDMO
 ZELRES1_NAMES = {
     0: 'OPDMO',   # 100OPDMO - opening demo
     1: 'GDEGA',   # 101GDEGA - image controller EGA
@@ -46,7 +47,6 @@ ZELRES1_NAMES = {
     9: 'GTHGC',   # 109GTHGC - town tiles HGC
     10: 'GTTGA',  # 110GTTGA - town tiles TGA
     11: 'GTMCA',  # 111GTMCA - town tiles MCGA (SMALL_IMAGE_RENDERER)
-    24: 'UTILA',  # 124UTILA - utility module A
 }
 ZELRES1_CODE_CHUNKS = set(ZELRES1_NAMES.keys())  # only these are code; rest are data
 
