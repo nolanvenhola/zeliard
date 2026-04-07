@@ -159,61 +159,20 @@ gvar_save_name	equ	0FF6Ch			;*
 gvar_save_ctrl	equ	0FF74h			;*
 gvar_volume	equ	0FF75h			;*
 gvar_load_flag	equ	0FF78h			;*
-byte_49h	equ	49h
-byte_83h	equ	83h
-byte_C2h	equ	0C2h
-fn_ptr_6AE9	equ	6AE9h
-game_fn_7686	equ	7686h
-dflt_name_77BA	equ	77BAh
-char_width_7B82	equ	7B82h
-char_glyph_7BE2	equ	7BE2h
-town_scene_flag_d	equ	7C42h
-town_load_flag_d	equ	7C44h
-town_npc_fn_d	equ	7C47h
-town_npc_col_d	equ	7C4Bh
-town_char_idx_d	equ	7C4Ch
-text_draw_x_d	equ	7C4Eh
-text_line_ctr_d	equ	7C52h
-text_col_pos_d	equ	7C53h
-text_box_cols_d	equ	7C54h
-text_anim_step_d	equ	7C56h
-text_row_flag_d	equ	7C57h
-text_str_ptr_d	equ	7C58h
-text_layout_cx_d	equ	7C5Ah
-text_done_flag_d	equ	7C5Ch
-text_wrap_flag_d	equ	7C5Dh
-save_name_len_d	equ	7C5Eh
-save_name_maxlen_d	equ	7C5Fh
-save_cursor_x_d	equ	7C60h
-save_cursor_y_d	equ	7C62h
-save_del_flag_d	equ	7C63h
-save_name_buf_d	equ	7C67h
-npc_anim_buf_d	equ	7C74h
-vga_seg_d	equ	0A000h
-town_exit_ptr_d	equ	0C007h
-gvar_music_idx	equ	0FF14h
-gvar_input_timer	equ	0FF17h
-gvar_joy_state_d	equ	0FF18h
-gvar_frame_timer_d	equ	0FF1Ah
-gvar_skip_input_d	equ	0FF1Dh
-gvar_skip_flag_d	equ	0FF1Eh
-gvar_key_state_d	equ	0FF29h
-gvar_dialog_ptr_d	equ	0FF4Ch
-gvar_dlg_cols_d	equ	0FF52h
-gvar_dlg_rows_d	equ	0FF53h
-gvar_dlg_pos_d	equ	0FF54h
-gvar_sel_row_d	equ	0FF56h
-gvar_sel_xlat_d	equ	0FF58h
-gvar_dlg_timer_d	equ	0FF6Ah
-gvar_save_ctrl_d	equ	0FF74h
-gvar_volume_d	equ	0FF75h
+area_load_flag	equ	49h			;*
+player_col	equ	83h			;*
+player_facing	equ	0C2h			;*
+music_fn_ptr	equ	6AE9h			;*
+game_exit_fn	equ	7686h			;*
+gvar_music_idx	equ	0FF14h			;*
+gvar_input_timer	equ	0FF17h			;*
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
 		org	0
 
-zr1_06		proc	far
+townb_main	proc	far
 
 start:
 		; Hardware capability probe header (CPU/hardware detection)
@@ -263,9 +222,9 @@ main_clear_flag:
 		inc	si
 
 walk_skip_loop:
-					lodsb				; String [si] to al
-					inc	al
-					jnz	walk_skip_loop			; Jump if not zero
+							lodsb				; String [si] to al
+							inc	al
+							jnz	walk_skip_loop			; Jump if not zero
 		lodsb				; String [si] to al
 		mov	ds:town_map_side,al
 		lodsb				; String [si] to al
@@ -344,9 +303,9 @@ draw_icon_b:
 		inc	si
 
 walk_skip_loop2:
-					lodsb				; String [si] to al
-					inc	al
-					jnz	walk_skip_loop2			; Jump if not zero
+							lodsb				; String [si] to al
+							inc	al
+							jnz	walk_skip_loop2			; Jump if not zero
 		inc	si
 		lodsb				; String [si] to al
 		mov	ds:town_palette_idx,al
@@ -383,28 +342,28 @@ walk_skip_loop2:
 portal_check:
 		fill_cursor_buf
 		call	player_multiply_2
-		test	byte ptr ds:town_load_flag_d,0FFh
+		test	byte ptr ds:town_load_flag,0FFh
 		jz	npc_col_clear			; Jump if zero
-		mov	word ptr ds:town_npc_fn_d,6781h
-		test	byte ptr ds:byte_C2h,1
+		mov	word ptr ds:town_npc_fn_ptr,6781h
+		test	byte ptr ds:player_facing,1
 		jnz	npc_fn_adjust			; Jump if not zero
-		mov	word ptr ds:town_npc_fn_d,67F4h
+		mov	word ptr ds:town_npc_fn_ptr,67F4h
 
 npc_fn_adjust:
 		mov	cx,4
 
 npc_update_loop:
-					push	cx
-					call	word ptr cs:town_npc_fn_ptr
-					call	player_multiply_2
-					pop	cx
-					loop	npc_update_loop		; Loop if cx > 0
+							push	cx
+							call	word ptr cs:town_npc_fn_ptr
+							call	player_multiply_2
+							pop	cx
+							loop	npc_update_loop		; Loop if cx > 0
 
 		call	word ptr cs:town_npc_fn_ptr
 
 npc_col_clear:
-		mov	byte ptr ds:town_npc_col_d,0
-		test	byte ptr ds:byte_49h,0FFh
+		mov	byte ptr ds:town_exit_flag,0
+		test	byte ptr ds:area_load_flag,0FFh
 		jz	scroll_check			; Jump if zero
 		push	ds
 		mov	ds,cs:gvar_game_seg
@@ -447,7 +406,7 @@ dispatch_right:
 		mov	byte ptr ds:town_exit_flag,0FFh
 		retn
 
-zr1_06		endp
+townb_main	endp
 
 player_func_1		proc	near
 		test	byte ptr ds:gvar_skip_input,0FFh
@@ -615,16 +574,16 @@ text_pos_right:
 		pop	bx
 		mov	ax,ds:town_char_idx
 		call	player_multiply
-		mov	ax,ds:town_char_idx_d
+		mov	ax,ds:town_char_idx
 		xor	di,di			; Zero register
 		mov	cx,1658h
 		call	word ptr cs:gfx_text_layout_b_fn
 		pop	si
-		mov	byte ptr ds:gvar_skip_input_d,0
+		mov	byte ptr ds:gvar_skip_input,0
 		fill_cursor_buf
-		mov	byte ptr ds:text_done_flag_d,0
-		mov	byte ptr ds:gvar_skip_input_d,0
-		mov	byte ptr ds:gvar_skip_flag_d,0
+		mov	byte ptr ds:text_done_flag,0
+		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_skip_flag2,0
 		retn
 
 player_func_2		endp
@@ -680,9 +639,9 @@ render_clamp_8:
 		call	word ptr cs:gfx_fill_fn
 
 render_char_loop:
-		mov	si,ds:text_str_ptr_d
+		mov	si,ds:text_str_ptr
 		lodsb				; String [si] to al
-		mov	ds:text_str_ptr_d,si
+		mov	ds:text_str_ptr,si
 		cmp	al,2Fh			; '/'
 		jne	render_not_slash			; Jump if not equal
 		jmp	render_newline
@@ -724,17 +683,17 @@ render_not_8B:
 
 render_not_FF:
 		push	ax
-		mov	cx,ds:text_draw_x_d
+		mov	cx,ds:text_draw_x
 		xor	bh,bh			; Zero register
 		mov	bl,ch
 		add	bx,bx
 		add	bx,bx
 		add	bx,bx
-		mov	al,ds:text_col_pos_d
+		mov	al,ds:text_col_pos
 		xor	ah,ah			; Zero register
 		add	bx,ax
 		add	bx,4
-		mov	al,ds:text_box_cols_d
+		mov	al,ds:text_box_cols
 		mov	dl,0Ah
 		mul	dl			; ax = reg * al
 		add	cl,al
@@ -744,7 +703,7 @@ render_not_FF:
 		mov	bl,al
 		sub	bl,20h			; ' '
 		xor	bh,bh			; Zero register
-		mov	dl,ds:char_width_7B82[bx]
+		mov	dl,ds:char_width_tbl[bx]
 		mov	dh,bh
 		pop	bx
 		push	ax
@@ -755,16 +714,16 @@ render_not_FF:
 		mov	bl,al
 		sub	bl,20h			; ' '
 		xor	bh,bh			; Zero register
-		mov	cl,ds:char_glyph_7BE2[bx]
-		add	ds:text_col_pos_d,cl
+		mov	cl,ds:char_glyph_tbl[bx]
+		add	ds:text_col_pos,cl
 		cmp	al,20h			; ' '
 		je	render_space_check			; Jump if equal
 		jmp	render_char_loop
 
 render_space_check:
-		mov	si,ds:text_str_ptr_d
+		mov	si,ds:text_str_ptr
 		call	player_func_7
-		mov	dl,ds:text_col_pos_d
+		mov	dl,ds:text_col_pos
 		xor	dh,dh			; Zero register
 		add	dx,cx
 		cmp	dx,0A8h
@@ -772,38 +731,38 @@ render_space_check:
 		jmp	render_char_loop
 
 render_newline:
-		mov	byte ptr ds:text_col_pos_d,0
-		inc	byte ptr ds:text_box_cols_d
-		cmp	byte ptr ds:text_box_cols_d,8
+		mov	byte ptr ds:text_col_pos,0
+		inc	byte ptr ds:text_box_cols
+		cmp	byte ptr ds:text_box_cols,8
 		jne	render_row_inc			; Jump if not equal
-		dec	byte ptr ds:text_box_cols_d
+		dec	byte ptr ds:text_box_cols
 		mov	cx,0Ah
 
 render_scroll_loop:
-					push	cx
-					mov	bx,ds:text_draw_x_d
-					add	bl,4
-					mov	cx,ds:text_layout_cx_d
-					shr	ch,1			; Shift w/zeros fill
-					sub	cl,8
-					call	word ptr cs:gfx_scroll_row_fn
-					pop	cx
-					loop	render_scroll_loop		; Loop if cx > 0
+							push	cx
+							mov	bx,ds:text_draw_x
+							add	bl,4
+							mov	cx,ds:text_layout_cx
+							shr	ch,1			; Shift w/zeros fill
+							sub	cl,8
+							call	word ptr cs:gfx_scroll_row_fn
+							pop	cx
+							loop	render_scroll_loop		; Loop if cx > 0
 
 render_row_inc:
-		inc	byte ptr ds:text_row_flag_d
-		cmp	byte ptr ds:text_row_flag_d,7
+		inc	byte ptr ds:text_row_flag
+		cmp	byte ptr ds:text_row_flag,7
 		jae	render_row_check			; Jump if above or =
 		jmp	render_char_loop
 
 render_row_check:
-		cmp	byte ptr ds:text_anim_step_d,8
+		cmp	byte ptr ds:text_anim_step,8
 		jne	render_page_scroll			; Jump if not equal
 		jmp	render_char_loop
 
 render_page_scroll:
-		sub	byte ptr ds:text_anim_step_d,7
-		mov	cx,ds:text_draw_x_d
+		sub	byte ptr ds:text_anim_step,7
+		mov	cx,ds:text_draw_x
 		xor	bh,bh			; Zero register
 		mov	bl,ch
 		add	bx,bx
@@ -815,27 +774,27 @@ render_page_scroll:
 		push	bx
 		mov	ax,27Ch
 		call	word ptr cs:gfx_draw_char_fn
-		mov	byte ptr ds:gvar_skip_input_d,0
-		mov	byte ptr ds:gvar_skip_flag_d,0
+		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_skip_flag2,0
 		pop	bx
 		pop	cx
 
 render_page_loop:
-					push	cx
-					push	bx
-					call	math_calc
-					call	player_multiply_2
-					pop	bx
-					pop	cx
-					test	byte ptr ds:text_done_flag_d,0FFh
-					jnz	render_page_done			; Jump if not zero
-					test	byte ptr ds:gvar_skip_flag_d,0FFh
-					jz	render_page_done			; Jump if zero
-					retn
+							push	cx
+							push	bx
+							call	math_calc
+							call	player_multiply_2
+							pop	bx
+							pop	cx
+							test	byte ptr ds:text_done_flag,0FFh
+							jnz	render_page_done			; Jump if not zero
+							test	byte ptr ds:gvar_skip_flag2,0FFh
+							jz	render_page_done			; Jump if zero
+							retn
 
 render_page_done:
-					test	byte ptr ds:gvar_skip_input_d,0FFh
-					jz	render_page_loop			; Jump if zero
+							test	byte ptr ds:gvar_skip_input,0FFh
+							jz	render_page_loop			; Jump if zero
 		shr	bx,1			; Shift w/zeros fill
 		shr	bx,1			; Shift w/zeros fill
 		mov	bh,bl
@@ -843,9 +802,9 @@ render_page_done:
 		xor	al,al			; Zero register
 		mov	cx,208h
 		call	word ptr cs:gfx_fill_fn
-		mov	byte ptr ds:gvar_skip_input_d,0
-		mov	byte ptr ds:text_row_flag_d,0
-		mov	byte ptr ds:gvar_volume_d,1Dh
+		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:text_row_flag,0
+		mov	byte ptr ds:gvar_volume,1Dh
 		jmp	render_char_loop
 
 player_func_6:
@@ -855,104 +814,104 @@ text_end_seq:
 		mov	byte ptr ds:gvar_skip_flag2,0
 
 text_end_loop:
-					call	math_calc
-					call	player_multiply_2
-					test	byte ptr ds:gvar_skip_input_d,0FFh
-					jz	text_end_wait_a			; Jump if zero
-					retn
+							call	math_calc
+							call	player_multiply_2
+							test	byte ptr ds:gvar_skip_input,0FFh
+							jz	text_end_wait_a			; Jump if zero
+							retn
 
 text_end_wait_a:
-					test	byte ptr ds:gvar_skip_flag_d,0FFh
-					jz	text_end_wait_b			; Jump if zero
-					retn
+							test	byte ptr ds:gvar_skip_flag2,0FFh
+							jz	text_end_wait_b			; Jump if zero
+							retn
 
 text_end_wait_b:
-					test	byte ptr ds:gvar_input_timer,0FFh
-					jnz	text_end_loop			; Jump if not zero
+							test	byte ptr ds:gvar_input_timer,0FFh
+							jnz	text_end_loop			; Jump if not zero
 
 text_end_loop2:
-					call	math_calc
-					call	player_multiply_2
-					test	byte ptr ds:gvar_skip_input_d,0FFh
-					jz	text_end_wait2_a			; Jump if zero
-					retn
+							call	math_calc
+							call	player_multiply_2
+							test	byte ptr ds:gvar_skip_input,0FFh
+							jz	text_end_wait2_a			; Jump if zero
+							retn
 
 text_end_wait2_a:
-					test	byte ptr ds:gvar_skip_flag_d,0FFh
-					jz	text_end_wait2_b			; Jump if zero
-					retn
+							test	byte ptr ds:gvar_skip_flag2,0FFh
+							jz	text_end_wait2_b			; Jump if zero
+							retn
 
 text_end_wait2_b:
-					test	byte ptr ds:gvar_input_timer,0FFh
-					jz	text_end_loop2			; Jump if zero
+							test	byte ptr ds:gvar_input_timer,0FFh
+							jz	text_end_loop2			; Jump if zero
 		retn
 
 player_func_7:
 		xor	cx,cx			; Zero register
 
 wwidth_loop:
-								lodsb				; String [si] to al
-								or	al,al			; Zero ?
-								jns	wwidth_char			; Jump if not sign
-								retn
+												lodsb				; String [si] to al
+												or	al,al			; Zero ?
+												jns	wwidth_char			; Jump if not sign
+												retn
 
 wwidth_char:
-								cmp	al,20h			; ' '
-								jne	wwidth_not_space			; Jump if not equal
-								retn
+												cmp	al,20h			; ' '
+												jne	wwidth_not_space			; Jump if not equal
+												retn
 
 wwidth_not_space:
-								cmp	al,2Fh			; '/'
-								jne	wwidth_not_slash			; Jump if not equal
-								retn
+												cmp	al,2Fh			; '/'
+												jne	wwidth_not_slash			; Jump if not equal
+												retn
 
 wwidth_not_slash:
-								sub	al,20h			; ' '
-								jc	wwidth_loop			; Jump if carry Set
-					mov	bl,al
-					xor	bh,bh			; Zero register
-					add	cl,cs:char_glyph_tbl[bx]
-					adc	ch,bh
-					jmp	short wwidth_loop
+												sub	al,20h			; ' '
+												jc	wwidth_loop			; Jump if carry Set
+							mov	bl,al
+							xor	bh,bh			; Zero register
+							add	cl,cs:char_glyph_tbl[bx]
+							adc	ch,bh
+							jmp	short wwidth_loop
 
 player_func_8:
 		xor	cx,cx			; Zero register
 		xor	dx,dx			; Zero register
 
 linecnt_loop:
-								lodsb				; String [si] to al
-								or	al,al			; Zero ?
-								js	linecnt_end			; Jump if sign=1
-								cmp	al,2Fh			; '/'
-								jne	linecnt_char			; Jump if not equal
-								inc	cx
-								xor	dx,dx			; Zero register
-								jmp	short linecnt_loop
+												lodsb				; String [si] to al
+												or	al,al			; Zero ?
+												js	linecnt_end			; Jump if sign=1
+												cmp	al,2Fh			; '/'
+												jne	linecnt_char			; Jump if not equal
+												inc	cx
+												xor	dx,dx			; Zero register
+												jmp	short linecnt_loop
 
 linecnt_char:
-								push	cx
-								mov	bl,al
-								sub	bl,20h			; ' '
-								xor	bh,bh			; Zero register
-								mov	cl,ds:char_glyph_tbl[bx]
-								mov	ch,bh
-								add	dx,cx
-								pop	cx
-								cmp	al,20h			; ' '
-								jne	linecnt_loop			; Jump if not equal
-								push	cx
-								push	si
-								push	dx
-								call	player_func_7
-								add	dx,cx
-								cmp	dx,0A8h
-								pop	dx
-								pop	si
-								pop	cx
-								jc	linecnt_loop			; Jump if carry Set
-					xor	dx,dx			; Zero register
-					inc	cx
-					jmp	short linecnt_loop
+												push	cx
+												mov	bl,al
+												sub	bl,20h			; ' '
+												xor	bh,bh			; Zero register
+												mov	cl,ds:char_glyph_tbl[bx]
+												mov	ch,bh
+												add	dx,cx
+												pop	cx
+												cmp	al,20h			; ' '
+												jne	linecnt_loop			; Jump if not equal
+												push	cx
+												push	si
+												push	dx
+												call	player_func_7
+												add	dx,cx
+												cmp	dx,0A8h
+												pop	dx
+												pop	si
+												pop	cx
+												jc	linecnt_loop			; Jump if carry Set
+							xor	dx,dx			; Zero register
+							inc	cx
+							jmp	short linecnt_loop
 
 linecnt_end:
 		or	dx,dx			; Zero ?
@@ -979,7 +938,7 @@ ctrl_81_header:
 		add	bx,103h
 		mov	ds:gvar_dlg_pos,bx
 		call	player_func_47
-		mov	ax,ds:town_char_idx_d
+		mov	ax,ds:town_char_idx
 		mov	bl,0Dh
 		jnc	ctrl_81_dir			; Jump if carry=0
 		jmp	render_set_dirty
@@ -995,7 +954,7 @@ ctrl_83_portrait:
 		jmp	text_end_seq
 
 ctrl_85_set_done:
-		mov	byte ptr ds:text_done_flag_d,0FFh
+		mov	byte ptr ds:text_done_flag,0FFh
 		mov	bl,4
 		mov	ax,word ptr ds:text_draw_x2
 		jmp	render_set_dirty
@@ -1007,7 +966,7 @@ ctrl_87_call_func6:
 		jmp	render_set_dirty
 
 ctrl_89_dialog:
-		mov	bx,ds:town_char_idx_d
+		mov	bx,ds:town_char_idx
 		add	bh,bh
 		add	bx,1832h
 		push	bx
@@ -1016,9 +975,9 @@ ctrl_89_dialog:
 		call	word ptr cs:gfx_fill_fn
 		pop	bx
 		add	bx,203h
-		mov	ds:gvar_dlg_pos_d,bx
+		mov	ds:gvar_dlg_pos,bx
 		call	player_func_9
-		mov	ax,ds:town_char_idx_d
+		mov	ax,ds:town_char_idx
 		mov	bl,6
 		jnc	ctrl_89_cost_check			; Jump if carry=0
 		jmp	render_set_dirty
@@ -1037,10 +996,10 @@ ctrl_89_deduct:
 		mov	si,0A1h
 
 ctrl_89_slot_find:
-					test	byte ptr [si],0FFh
-					jz	ctrl_89_slot_set			; Jump if zero
-					inc	si
-					jmp	short ctrl_89_slot_find
+							test	byte ptr [si],0FFh
+							jz	ctrl_89_slot_set			; Jump if zero
+							inc	si
+							jmp	short ctrl_89_slot_find
 
 ctrl_89_slot_set:
 		mov	byte ptr [si],5
@@ -1052,12 +1011,12 @@ ctrl_89_slot_set:
 player_multiply		endp
 
 player_func_9		proc	near
-		mov	byte ptr ds:gvar_dlg_cols_d,2
-		mov	byte ptr ds:gvar_dlg_rows_d,2
+		mov	byte ptr ds:gvar_dlg_cols,2
+		mov	byte ptr ds:gvar_dlg_rows,2
 		mov	cx,2
 		mov	si,6736h
 		call	player_multiply_6
-		mov	byte ptr ds:gvar_sel_row_d,0
+		mov	byte ptr ds:gvar_sel_row,0
 		xor	bl,bl			; Zero register
 		call	player_func_43
 		jnc	shop_no_take			; Jump if carry=0
@@ -1078,9 +1037,9 @@ player_func_9		endp
 		db	'No Take', 0		; 0x0005
 
 math_calc		proc	near
-		mov	ax,ds:text_draw_x_d
+		mov	ax,ds:text_draw_x
 		sub	ah,6
-		mov	cx,ds:text_layout_cx_d
+		mov	cx,ds:text_layout_cx
 		add	al,cl
 		cmp	al,56h			; 'V'
 		jae	cursor_fill_setup			; Jump if above or =
@@ -1104,19 +1063,19 @@ cursor_fill_setup:
 		mov	al,0FFh
 
 cursor_col_loop:
-					push	cx
-					push	di
-					mov	cx,16h
+							push	cx
+							push	di
+							mov	cx,16h
 
 cursor_row_loop:
-								stosb				; Store al to es:[di]
-								add	di,7
-								loop	cursor_row_loop		; Loop if cx > 0
+												stosb				; Store al to es:[di]
+												add	di,7
+												loop	cursor_row_loop		; Loop if cx > 0
 
-					pop	di
-					inc	di
-					pop	cx
-					loop	cursor_col_loop		; Loop if cx > 0
+							pop	di
+							inc	di
+							pop	cx
+							loop	cursor_col_loop		; Loop if cx > 0
 
 		retn
 
@@ -1236,13 +1195,13 @@ player_scan_loop		proc	near
 		inc	si
 
 scan_npc_loop:
-					cmp	al,es:[si]
-					jne	scan_npc_next			; Jump if not equal
-					retn
+							cmp	al,es:[si]
+							jne	scan_npc_next			; Jump if not equal
+							retn
 
 scan_npc_next:
-					inc	si
-					loop	scan_npc_loop		; Loop if cx > 0
+							inc	si
+							loop	scan_npc_loop		; Loop if cx > 0
 
 scan_not_found:
 		not	cl
@@ -1255,21 +1214,21 @@ player_func_12		proc	near
 		mov	si,ds:npc_obj_list
 
 npc_find_loop:
-					mov	ax,[si]
-					cmp	ax,0FFFFh
-					jne	npc_check_pos			; Jump if not equal
-					retn
+							mov	ax,[si]
+							cmp	ax,0FFFFh
+							jne	npc_check_pos			; Jump if not equal
+							retn
 
 npc_check_pos:
-					sub	ax,bx
-					jnz	npc_next_entry			; Jump if not zero
-					test	byte ptr [si+6],40h	; '@'
-					jz	npc_next_entry			; Jump if zero
-					retn
+							sub	ax,bx
+							jnz	npc_next_entry			; Jump if not zero
+							test	byte ptr [si+6],40h	; '@'
+							jz	npc_next_entry			; Jump if zero
+							retn
 
 npc_next_entry:
-					add	si,8
-					jmp	short npc_find_loop
+							add	si,8
+							jmp	short npc_find_loop
 
 player_func_12		endp
 
@@ -1285,32 +1244,32 @@ player_func_14:
 		mul	cl			; ax = reg * al
 
 frame_dispatch_loop:
-					push	ax
-					call	word ptr cs:[110h]
-					call	word ptr cs:[112h]
-					call	word ptr cs:[114h]
-					call	word ptr cs:[116h]
-					call	word ptr cs:[118h]
-					call	word ptr cs:[11Eh]
-					jnc	frame_no_clear			; Jump if carry=0
-					call	clear_buffer
+							push	ax
+							call	word ptr cs:[110h]
+							call	word ptr cs:[112h]
+							call	word ptr cs:[114h]
+							call	word ptr cs:[116h]
+							call	word ptr cs:[118h]
+							call	word ptr cs:[11Eh]
+							jnc	frame_no_clear			; Jump if carry=0
+							call	clear_buffer
 
 frame_no_clear:
-					pop	ax
-					cmp	ds:gvar_frame_timer_d,al
-					jb	frame_dispatch_loop			; Jump if below
-		mov	byte ptr ds:gvar_frame_timer_d,0
+							pop	ax
+							cmp	ds:gvar_frame_timer,al
+							jb	frame_dispatch_loop			; Jump if below
+		mov	byte ptr ds:gvar_frame_timer,0
 		retn
 
 player_multiply_2		endp
 
 fill_buffer		proc	near
-		test	word ptr ds:gvar_joy_state_d,1
+		test	word ptr ds:gvar_joy_state,1
 		jnz	fillbuf_active			; Jump if not zero
 		retn
 
 fillbuf_active:
-		mov	byte ptr ds:gvar_volume_d,0Bh
+		mov	byte ptr ds:gvar_volume,0Bh
 		call	word ptr cs:gfx_clear_fn
 		call	player_process_loop
 		call	word ptr cs:player_draw_fn
@@ -1320,8 +1279,8 @@ fillbuf_active:
 		call	word ptr cs:gfx_draw_fn
 		fill_cursor_buf
 		call	player_func_14
-		mov	byte ptr ds:gvar_skip_input_d,0
-		mov	byte ptr ds:gvar_skip_flag_d,0
+		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_skip_flag2,0
 		retn
 
 fill_buffer		endp
@@ -1329,14 +1288,14 @@ fill_buffer		endp
 player_process_loop		proc	near
 		mov	es,cs:gvar_game_seg
 		mov	di,town_desc_0C000
-		mov	si,vga_seg_d
+		mov	si,vga_seg_A000
 		mov	cx,800h
 
 proc_copy_loop:
-					mov	ax,es:[di]
-					movsw				; Mov [si] to es:[di]
-					mov	[si-2],ax
-					loop	proc_copy_loop		; Loop if cx > 0
+							mov	ax,es:[di]
+							movsw				; Mov [si] to es:[di]
+							mov	[si-2],ax
+							loop	proc_copy_loop		; Loop if cx > 0
 
 		retn
 
@@ -1395,30 +1354,30 @@ player_func_18		proc	near
 		add	dl,4
 		add	dx,word ptr ds:[80h]
 		push	dx
-		mov	si,npc_anim_buf_d
+		mov	si,npc_anim_buf
 		mov	cx,2
 
 npc_draw_setup_loop:
-					push	si
-					mov	al,[si]
-					cmp	al,0FDh
-					jne	npc_write_slot			; Jump if not equal
-					call	player_func_20
+							push	si
+							mov	al,[si]
+							cmp	al,0FDh
+							jne	npc_write_slot			; Jump if not equal
+							call	player_func_20
 
 npc_chain_check:
-								mov	al,[si+3]
-								cmp	al,0FDh
-								jne	npc_write_slot			; Jump if not equal
-								add	si,8
-								call	player_func_21
-								jmp	short npc_chain_check
+												mov	al,[si+3]
+												cmp	al,0FDh
+												jne	npc_write_slot			; Jump if not equal
+												add	si,8
+												call	player_func_21
+												jmp	short npc_chain_check
 
 npc_write_slot:
-					pop	si
-					mov	[si],al
-					add	si,3
-					inc	dx
-					loop	npc_draw_setup_loop		; Loop if cx > 0
+							pop	si
+							mov	[si],al
+							add	si,3
+							inc	dx
+							loop	npc_draw_setup_loop		; Loop if cx > 0
 
 		mov	si,npc_anim_buf
 		call	word ptr cs:gfx_npc_draw_fn
@@ -1438,23 +1397,23 @@ npc_write_slot:
 		mov	si,ds:npc_obj_list
 
 scan_npc2_loop:
-					call	player_scan_loop_2
-					or	al,al			; Zero ?
-					jz	scan_npc2_skip			; Jump if zero
-					push	ax
-					call	word ptr cs:gfx_fn_3014
-					pop	bx
-					mov	es,cs:gvar_game_seg
-					push	si
-					mov	si,npc_anim_buf
-					call	word ptr cs:gfx_npc_update_fn
-					pop	si
+							call	player_scan_loop_2
+							or	al,al			; Zero ?
+							jz	scan_npc2_skip			; Jump if zero
+							push	ax
+							call	word ptr cs:gfx_fn_3014
+							pop	bx
+							mov	es,cs:gvar_game_seg
+							push	si
+							mov	si,npc_anim_buf
+							call	word ptr cs:gfx_npc_update_fn
+							pop	si
 
 scan_npc2_skip:
-					add	si,8
+							add	si,8
 ;*		cmp	word ptr [si],0FFFFh
-							cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
-					jnz	scan_npc2_loop			; Jump if not zero
+									cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
+							jnz	scan_npc2_loop			; Jump if not zero
 		mov	si,6A3Bh
 		test	byte ptr ds:[0C2h],1
 		jnz	walk_dir_select			; Jump if not zero
@@ -1492,17 +1451,17 @@ player_scan_loop_2		proc	near
 		mov	di,npc_col_buf
 
 npc_col_scan_loop:
-					cmp	byte ptr [di],0FDh
-					jne	npc_col_next			; Jump if not equal
-					mov	al,cl
-					cmp	dx,[si]
-					jne	npc_col_next			; Jump if not equal
-					retn
+							cmp	byte ptr [di],0FDh
+							jne	npc_col_next			; Jump if not equal
+							mov	al,cl
+							cmp	dx,[si]
+							jne	npc_col_next			; Jump if not equal
+							retn
 
 npc_col_next:
-					inc	di
-					inc	dx
-					loop	npc_col_scan_loop		; Loop if cx > 0
+							inc	di
+							inc	dx
+							loop	npc_col_scan_loop		; Loop if cx > 0
 
 		xor	al,al			; Zero register
 		retn
@@ -1515,13 +1474,13 @@ player_func_20		proc	near
 player_func_21:
 
 npc_dx_loop:
-					cmp	dx,[si]
-					jne	npc_dx_next			; Jump if not equal
-					retn
+							cmp	dx,[si]
+							jne	npc_dx_next			; Jump if not equal
+							retn
 
 npc_dx_next:
-					add	si,8
-					jmp	short npc_dx_loop
+							add	si,8
+							jmp	short npc_dx_loop
 
 player_func_20		endp
 
@@ -1531,7 +1490,7 @@ player_func_22		proc	near
 player_func_23:
 		mov	al,ds:gvar_music_idx
 		push	ds
-		call	dword ptr ds:fn_ptr_6AE9
+		call	dword ptr ds:music_fn_ptr
 		pop	ds
 		retn
 
@@ -1570,39 +1529,39 @@ evt_walk_entry:
 		mov	si,ds:town_key_event
 
 evt_outer_loop:
-					lodsw				; String [si] to ax
-					mov	bx,ax
-					and	al,ah
-					inc	al
-					jnz	evt_outer_active			; Jump if not zero
-					retn
+							lodsw				; String [si] to ax
+							mov	bx,ax
+							and	al,ah
+							inc	al
+							jnz	evt_outer_active			; Jump if not zero
+							retn
 
 evt_outer_active:
-					lodsb				; String [si] to al
-					and	al,[bx]
-					jnz	evt_inner_write			; Jump if not zero
+							lodsb				; String [si] to al
+							and	al,[bx]
+							jnz	evt_inner_write			; Jump if not zero
 
 evt_skip_inner:
-								lodsw				; String [si] to ax
-								and	al,ah
-								inc	al
-								jz	evt_outer_end			; Jump if zero
-								inc	si
-								jmp	short evt_skip_inner
+												lodsw				; String [si] to ax
+												and	al,ah
+												inc	al
+												jz	evt_outer_end			; Jump if zero
+												inc	si
+												jmp	short evt_skip_inner
 
 evt_inner_write:
-								lodsw				; String [si] to ax
-								mov	bx,ax
-								and	al,ah
-								inc	al
-								jz	evt_outer_end			; Jump if zero
-								mov	al,[si]
-								mov	[bx],al
-								inc	si
-								jmp	short evt_inner_write
+												lodsw				; String [si] to ax
+												mov	bx,ax
+												and	al,ah
+												inc	al
+												jz	evt_outer_end			; Jump if zero
+												mov	al,[si]
+												mov	[bx],al
+												inc	si
+												jmp	short evt_inner_write
 
 evt_outer_end:
-					jmp	short evt_outer_loop
+							jmp	short evt_outer_loop
 
 player_func_25		endp
 
@@ -1637,44 +1596,44 @@ player_func_26		proc	near
 		db	 74h, 01h,0C3h
 
 npc_anim_advance:
-					inc	ch
-					and	ch,0Fh
-					or	ch,al
-					mov	[si+4],ch
-					mov	bx,ds:town_map_xlim
-					test	byte ptr [si+2],80h
-					jz	npc_hit_right_wall			; Jump if zero
-					dec	dx
-					cmp	[bx],dx
-					jae	npc_hit_left_wall			; Jump if above or =
-					retn
+							inc	ch
+							and	ch,0Fh
+							or	ch,al
+							mov	[si+4],ch
+							mov	bx,ds:town_map_xlim
+							test	byte ptr [si+2],80h
+							jz	npc_hit_right_wall			; Jump if zero
+							dec	dx
+							cmp	[bx],dx
+							jae	npc_hit_left_wall			; Jump if above or =
+							retn
 
 npc_hit_left_wall:
-					and	byte ptr [si+2],7Fh
-					retn
+							and	byte ptr [si+2],7Fh
+							retn
 
 npc_hit_right_wall:
-					inc	dx
-					cmp	[bx+2],dx
-					jb	npc_set_right_dir			; Jump if below
-					retn
+							inc	dx
+							cmp	[bx+2],dx
+							jb	npc_set_right_dir			; Jump if below
+							retn
 
 npc_set_right_dir:
-					or	byte ptr [si+2],80h
-					retn
-						                        ;* No entry point to code  (npc_type1_fn: NPC type-1 walk, called via dispatch table)
+							or	byte ptr [si+2],80h
+							retn
+								                        ;* No entry point to code  (npc_type1_fn: NPC type-1 walk, called via dispatch table)
 
 npc_type1_fn:
-					mov	al,[si+4]
-					add	al,10h
-					mov	[si+4],al
-					mov	ch,al
-					and	al,30h			; '0'
-					jz	npc_anim_loop2			; Jump if zero
-					retn
+							mov	al,[si+4]
+							add	al,10h
+							mov	[si+4],al
+							mov	ch,al
+							and	al,30h			; '0'
+							jz	npc_anim_loop2			; Jump if zero
+							retn
 
 npc_anim_loop2:
-					jmp	short npc_anim_advance
+							jmp	short npc_anim_advance
 			                        ;* No entry point to code  (npc_type2_fn: NPC type-2 walk with player-relative check)
 
 npc_type2_fn:
@@ -1719,37 +1678,37 @@ npc_type4_fn:
 		retn
 
 npc_anim_cycle:
-					inc	ch
-					and	ch,0Fh
-					or	ch,al
-					mov	[si+4],ch
-					and	ch,7
-					jnz	npc_anim_loop4			; Jump if not zero
-					xor	byte ptr [si+2],80h
-					retn
+							inc	ch
+							and	ch,0Fh
+							or	ch,al
+							mov	[si+4],ch
+							and	ch,7
+							jnz	npc_anim_loop4			; Jump if not zero
+							xor	byte ptr [si+2],80h
+							retn
 
 npc_anim_loop4:
-					test	byte ptr [si+2],80h
-					jz	npc_anim_fwd			; Jump if zero
-					dec	dx
-					retn
+							test	byte ptr [si+2],80h
+							jz	npc_anim_fwd			; Jump if zero
+							dec	dx
+							retn
 
 npc_anim_fwd:
-					inc	dx
-					retn
-						                        ;* No entry point to code  (npc_type5_fn: NPC type-5 walk, called via dispatch table)
+							inc	dx
+							retn
+								                        ;* No entry point to code  (npc_type5_fn: NPC type-5 walk, called via dispatch table)
 
 npc_type5_fn:
-					mov	al,[si+4]
-					add	al,10h
-					mov	[si+4],al
-					mov	ch,al
-					and	al,30h			; '0'
-					jz	npc_anim_loop5			; Jump if zero
-					retn
+							mov	al,[si+4]
+							add	al,10h
+							mov	[si+4],al
+							mov	ch,al
+							and	al,30h			; '0'
+							jz	npc_anim_loop5			; Jump if zero
+							retn
 
 npc_anim_loop5:
-					jmp	short npc_anim_cycle
+							jmp	short npc_anim_cycle
 		db	0C3h				; retn (tail of npc_type5_fn / padding before player_func_27)
 
 player_func_27:
@@ -1758,21 +1717,21 @@ npc_restore_entry:
 		mov	si,ds:npc_obj_list
 
 npc_restore_loop:
-					mov	bx,[si]
+							mov	bx,[si]
 ;*		cmp	bx,0FFFFh
-							cmp bx,-1			; was: db 083h,0FBh,0FFh
-					jnz	npc_restore_next			; Jump if not zero
-					retn
+									cmp bx,-1			; was: db 083h,0FBh,0FFh
+							jnz	npc_restore_next			; Jump if not zero
+							retn
 
 npc_restore_next:
-					add	bx,bx
-					add	bx,bx
-					add	bx,bx
-					mov	al,ds:tile_collision_map[bx]
-					mov	byte ptr ds:tile_collision_map[bx],0FDh
-					mov	[si+3],al
-					add	si,8
-					jmp	short npc_restore_loop
+							add	bx,bx
+							add	bx,bx
+							add	bx,bx
+							mov	al,ds:tile_collision_map[bx]
+							mov	byte ptr ds:tile_collision_map[bx],0FDh
+							mov	[si+3],al
+							add	si,8
+							jmp	short npc_restore_loop
 
 player_func_26		endp
 
@@ -1780,25 +1739,25 @@ player_func_28		proc	near
 		mov	si,ds:npc_obj_list
 
 npc_save_loop:
-					mov	bx,[si]
+							mov	bx,[si]
 ;*		cmp	bx,0FFFFh
-							cmp bx,-1			; was: db 083h,0FBh,0FFh
-					jnz	npc_save_check			; Jump if not zero
-					retn
+									cmp bx,-1			; was: db 083h,0FBh,0FFh
+							jnz	npc_save_check			; Jump if not zero
+							retn
 
 npc_save_check:
-					mov	al,[si+3]
-					cmp	al,0FDh
-					je	npc_save_next			; Jump if equal
-					add	bx,bx
-					add	bx,bx
-					add	bx,bx
-					add	bx,tile_collision_map
-					mov	[bx],al
+							mov	al,[si+3]
+							cmp	al,0FDh
+							je	npc_save_next			; Jump if equal
+							add	bx,bx
+							add	bx,bx
+							add	bx,bx
+							add	bx,tile_collision_map
+							mov	[bx],al
 
 npc_save_next:
-					add	si,8
-					jmp	short npc_save_loop
+							add	si,8
+							jmp	short npc_save_loop
 
 player_func_28		endp
 
@@ -1841,19 +1800,19 @@ player_func_29		endp
 		inc	bp
 
 player_func_30		proc	near
-		mov	al,ds:byte_83h
+		mov	al,ds:player_col
 		inc	al
 		jnz	door_alt_check			; Jump if not zero
 		call	player_func_28
-		mov	byte ptr ds:gvar_frame_timer_d,28h	; '('
+		mov	byte ptr ds:gvar_frame_timer,28h	; '('
 		call	player_func_14
-		mov	si,ds:town_exit_ptr_d
+		mov	si,ds:town_exit_ptr
 
 door_seek_loop:
-					test	byte ptr [si],1
-					jnz	door_found			; Jump if not zero
-					add	si,4
-					jmp	short door_seek_loop
+							test	byte ptr [si],1
+							jnz	door_found			; Jump if not zero
+							add	si,4
+							jmp	short door_seek_loop
 
 door_found:
 		lodsb				; String [si] to al
@@ -1884,10 +1843,10 @@ door_alt_seek:
 		mov	si,ds:town_exit_ptr
 
 door_alt_loop:
-					test	byte ptr [si],1
-					jz	door_alt_found			; Jump if zero
-					add	si,4
-					jmp	short door_alt_loop
+							test	byte ptr [si],1
+							jz	door_alt_found			; Jump if zero
+							add	si,4
+							jmp	short door_alt_loop
 
 door_alt_found:
 		lodsb				; String [si] to al
@@ -2010,23 +1969,23 @@ door_scan_entry:
 
 door_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-							cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
-					jnz	door_scan_next			; Jump if not zero
-					retn
+									cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
+							jnz	door_scan_next			; Jump if not zero
+							retn
 
 door_scan_next:
-					cmp	[si],ax
-					je	door_action			; Jump if equal
-					inc	ax
-					cmp	[si],ax
-					je	door_action			; Jump if equal
-					dec	ax
-					dec	ax
-					cmp	[si],ax
-					je	door_action			; Jump if equal
-					inc	ax
-					add	si,3
-					jmp	short door_scan_loop
+							cmp	[si],ax
+							je	door_action			; Jump if equal
+							inc	ax
+							cmp	[si],ax
+							je	door_action			; Jump if equal
+							dec	ax
+							dec	ax
+							cmp	[si],ax
+							je	door_action			; Jump if equal
+							inc	ax
+							add	si,3
+							jmp	short door_scan_loop
 
 door_action:
 		mov	byte ptr ds:[0E7h],4
@@ -2136,8 +2095,8 @@ special_door_load:
 		call	word ptr cs:[10Ch]
 
 special_door_wait:
-					test	byte ptr ds:gvar_enable_all,0FFh
-					jz	special_door_wait			; Jump if zero
+							test	byte ptr ds:gvar_enable_all,0FFh
+							jz	special_door_wait			; Jump if zero
 		mov	si,scene_map_data
 		mov	es,cs:gvar_game_seg
 		mov	di,3000h
@@ -2206,7 +2165,7 @@ player_func_34		proc	near
 dlg_char_skip:
 		pop	di
 		pop	si
-		test	byte ptr ds:town_scene_flag_d,0FFh
+		test	byte ptr ds:town_scene_flag,0FFh
 		jnz	dlg_char_idle			; Jump if not zero
 		retn
 
@@ -2233,56 +2192,56 @@ dlg_setup:
 		call	player_scan_loop_3
 
 dlg_main_loop:
-								mov	byte ptr ds:gvar_frame_timer,0
+												mov	byte ptr ds:gvar_frame_timer,0
 
 dlg_frame_wait:
-								call	player_func_34
-								cmp	byte ptr ds:gvar_frame_timer_d,6
-								jb	dlg_frame_wait			; Jump if below
-								mov	si,ds:gvar_dialog_ptr_d
-								lodsb				; String [si] to al
-								mov	ds:gvar_dialog_ptr_d,si
-								cmp	al,2Fh			; '/'
-								jne	dlg_char_dispatch			; Jump if not equal
-								jmp	dlg_newline
+												call	player_func_34
+												cmp	byte ptr ds:gvar_frame_timer,6
+												jb	dlg_frame_wait			; Jump if below
+												mov	si,ds:gvar_dialog_ptr
+												lodsb				; String [si] to al
+												mov	ds:gvar_dialog_ptr,si
+												cmp	al,2Fh			; '/'
+												jne	dlg_char_dispatch			; Jump if not equal
+												jmp	dlg_newline
 
 dlg_char_dispatch:
-								cmp	al,0Dh
-								jne	dlg_not_slash			; Jump if not equal
-								jmp	dlg_newline
+												cmp	al,0Dh
+												jne	dlg_not_slash			; Jump if not equal
+												jmp	dlg_newline
 
 dlg_not_slash:
-								cmp	al,0Ch
-								jne	dlg_not_0D			; Jump if not equal
-								jmp	dlg_ctrl_0C
+												cmp	al,0Ch
+												jne	dlg_not_0D			; Jump if not equal
+												jmp	dlg_ctrl_0C
 
 dlg_not_0D:
-								cmp	al,0Fh
-								jne	dlg_not_0C			; Jump if not equal
-								jmp	dlg_ctrl_0F
+												cmp	al,0Fh
+												jne	dlg_not_0C			; Jump if not equal
+												jmp	dlg_ctrl_0F
 
 dlg_not_0C:
-								cmp	al,11h
-								jne	dlg_not_0F			; Jump if not equal
-								jmp	dlg_ctrl_11
+												cmp	al,11h
+												jne	dlg_not_0F			; Jump if not equal
+												jmp	dlg_ctrl_11
 
 dlg_not_0F:
-								cmp	al,13h
-								jne	dlg_not_11			; Jump if not equal
-								mov	byte ptr ds:text_wrap_flag_d,0FFh
-								jmp	short dlg_main_loop
+												cmp	al,13h
+												jne	dlg_not_11			; Jump if not equal
+												mov	byte ptr ds:text_wrap_flag,0FFh
+												jmp	short dlg_main_loop
 
 dlg_not_11:
-					cmp	al,15h
-					jne	dlg_not_13			; Jump if not equal
-					mov	byte ptr ds:text_wrap_flag_d,0
-					jmp	short dlg_main_loop
+							cmp	al,15h
+							jne	dlg_not_13			; Jump if not equal
+							mov	byte ptr ds:text_wrap_flag,0
+							jmp	short dlg_main_loop
 
 dlg_not_13:
 		cmp	al,0FFh
 		jne	dlg_not_15			; Jump if not equal
 		lodsb				; String [si] to al
-		mov	ds:gvar_dialog_ptr_d,si
+		mov	ds:gvar_dialog_ptr,si
 		retn
 
 dlg_not_15:
@@ -2308,7 +2267,7 @@ dlg_put_char2:
 		mov	bl,al
 		sub	bl,20h			; ' '
 		xor	bh,bh			; Zero register
-		mov	dl,ds:char_width_7B82[bx]
+		mov	dl,ds:char_width_tbl[bx]
 		mov	dh,bh
 		pop	bx
 		push	bx
@@ -2322,20 +2281,20 @@ dlg_put_char2:
 		mov	bl,al
 		sub	bl,20h			; ' '
 		xor	bh,bh			; Zero register
-		mov	cl,ds:char_glyph_7BE2[bx]
+		mov	cl,ds:char_glyph_tbl[bx]
 		mov	ch,bh
 		pop	bx
 		add	bx,cx
 		mov	byte ptr ds:gvar_text_x,bl
-		test	byte ptr ds:text_wrap_flag_d,0FFh
+		test	byte ptr ds:text_wrap_flag,0FFh
 		jnz	dlg_check_overflow			; Jump if not zero
 		cmp	al,20h			; ' '
 		je	dlg_check_overflow			; Jump if equal
-		mov	byte ptr ds:gvar_volume_d,5
+		mov	byte ptr ds:gvar_volume,5
 		jmp	dlg_main_loop
 
 dlg_check_overflow:
-		mov	si,ds:gvar_dialog_ptr_d
+		mov	si,ds:gvar_dialog_ptr
 		call	player_check_state
 		mov	dl,byte ptr ds:gvar_text_x
 		xor	dh,dh			; Zero register
@@ -2380,13 +2339,13 @@ dlg_do_indent:
 		mov	cx,0Ah
 
 dlg_indent_loop:
-					push	cx
-					call	player_func_34
-					mov	bx,762h
-					mov	cx,1A32h
-					call	word ptr cs:gfx_scroll_row_fn
-					pop	cx
-					loop	dlg_indent_loop		; Loop if cx > 0
+							push	cx
+							call	player_func_34
+							mov	bx,762h
+							mov	cx,1A32h
+							call	word ptr cs:gfx_scroll_row_fn
+							pop	cx
+							loop	dlg_indent_loop		; Loop if cx > 0
 
 		retn
 
@@ -2416,17 +2375,17 @@ player_func_37		proc	near
 player_func_37		endp
 
 player_func_38		proc	near
-		mov	byte ptr ds:gvar_skip_input_d,0
-		mov	byte ptr ds:gvar_skip_flag_d,0
+		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_skip_flag2,0
 
 dlg_sel_wait_loop:
-					call	player_func_34
-					mov	al,ds:gvar_skip_input_d
-					or	al,ds:gvar_skip_flag_d
-					jz	dlg_sel_wait_loop			; Jump if zero
-		mov	byte ptr ds:gvar_skip_input_d,0
-		mov	byte ptr ds:gvar_skip_flag_d,0
-		mov	byte ptr ds:gvar_volume_d,1Dh
+							call	player_func_34
+							mov	al,ds:gvar_skip_input
+							or	al,ds:gvar_skip_flag2
+							jz	dlg_sel_wait_loop			; Jump if zero
+		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_skip_flag2,0
+		mov	byte ptr ds:gvar_volume,1Dh
 		retn
 
 player_func_38		endp
@@ -2446,28 +2405,28 @@ player_check_state		proc	near
 		xor	dx,dx			; Zero register
 
 chkstate_loop:
-								lodsb				; String [si] to al
-								or	al,al			; Zero ?
-								jz	chkstate_end			; Jump if zero
-								cmp	al,0FFh
-								je	chkstate_end			; Jump if equal
-								cmp	al,20h			; ' '
-								je	chkstate_end			; Jump if equal
-								cmp	al,2Fh			; '/'
-								je	chkstate_end			; Jump if equal
-								cmp	al,0Dh
-								je	chkstate_end			; Jump if equal
-								cmp	al,0Ch
-								je	chkstate_end			; Jump if equal
-								mov	ah,al
-								sub	al,20h			; ' '
-								jc	chkstate_loop			; Jump if carry Set
-					inc	dx
-					mov	bl,al
-					xor	bh,bh			; Zero register
-					add	cl,cs:char_glyph_tbl[bx]
-					adc	ch,bh
-					jmp	short chkstate_loop
+												lodsb				; String [si] to al
+												or	al,al			; Zero ?
+												jz	chkstate_end			; Jump if zero
+												cmp	al,0FFh
+												je	chkstate_end			; Jump if equal
+												cmp	al,20h			; ' '
+												je	chkstate_end			; Jump if equal
+												cmp	al,2Fh			; '/'
+												je	chkstate_end			; Jump if equal
+												cmp	al,0Dh
+												je	chkstate_end			; Jump if equal
+												cmp	al,0Ch
+												je	chkstate_end			; Jump if equal
+												mov	ah,al
+												sub	al,20h			; ' '
+												jc	chkstate_loop			; Jump if carry Set
+							inc	dx
+							mov	bl,al
+							xor	bh,bh			; Zero register
+							add	cl,cs:char_glyph_tbl[bx]
+							adc	ch,bh
+							jmp	short chkstate_loop
 
 chkstate_end:
 		cmp	dx,1
@@ -2493,55 +2452,55 @@ player_check_state_2		proc	near
 		xor	dx,dx			; Zero register
 
 chkstate2_loop:
-								lodsb				; String [si] to al
-								or	al,al			; Zero ?
-								jz	chkstate2_end			; Jump if zero
-								cmp	al,0FFh
-								jne	chkstate2_ctrl			; Jump if not equal
-								lodsb				; String [si] to al
-								cmp	al,0FFh
-								je	chkstate2_end			; Jump if equal
-								jmp	short chkstate2_loop
+												lodsb				; String [si] to al
+												or	al,al			; Zero ?
+												jz	chkstate2_end			; Jump if zero
+												cmp	al,0FFh
+												jne	chkstate2_ctrl			; Jump if not equal
+												lodsb				; String [si] to al
+												cmp	al,0FFh
+												je	chkstate2_end			; Jump if equal
+												jmp	short chkstate2_loop
 
 chkstate2_ctrl:
-								cmp	al,0Ch
-								je	chkstate2_end			; Jump if equal
-								cmp	al,2Fh			; '/'
-								jne	chkstate2_slash			; Jump if not equal
-								xor	dx,dx			; Zero register
-								inc	cx
-								jmp	short chkstate2_loop
+												cmp	al,0Ch
+												je	chkstate2_end			; Jump if equal
+												cmp	al,2Fh			; '/'
+												jne	chkstate2_slash			; Jump if not equal
+												xor	dx,dx			; Zero register
+												inc	cx
+												jmp	short chkstate2_loop
 
 chkstate2_slash:
-								cmp	al,0Dh
-								jne	chkstate2_0D			; Jump if not equal
-								xor	dx,dx			; Zero register
-								inc	cx
-								jmp	short chkstate2_loop
+												cmp	al,0Dh
+												jne	chkstate2_0D			; Jump if not equal
+												xor	dx,dx			; Zero register
+												inc	cx
+												jmp	short chkstate2_loop
 
 chkstate2_0D:
-								mov	bl,al
-								sub	bl,20h			; ' '
-								xor	bh,bh			; Zero register
-								mov	bl,ds:char_glyph_tbl[bx]
-								add	dx,bx
-								cmp	al,20h			; ' '
-								jne	chkstate2_loop			; Jump if not equal
-								push	cx
-								push	si
-								push	dx
-								push	dx
-								call	player_check_state
-								pop	dx
-								add	dx,cx
-								cmp	dx,0D0h
-								pop	dx
-								pop	si
-								pop	cx
-								jc	chkstate2_loop			; Jump if carry Set
-					xor	dx,dx			; Zero register
-					inc	cx
-					jmp	short chkstate2_loop
+												mov	bl,al
+												sub	bl,20h			; ' '
+												xor	bh,bh			; Zero register
+												mov	bl,ds:char_glyph_tbl[bx]
+												add	dx,bx
+												cmp	al,20h			; ' '
+												jne	chkstate2_loop			; Jump if not equal
+												push	cx
+												push	si
+												push	dx
+												push	dx
+												call	player_check_state
+												pop	dx
+												add	dx,cx
+												cmp	dx,0D0h
+												pop	dx
+												pop	si
+												pop	cx
+												jc	chkstate2_loop			; Jump if carry Set
+							xor	dx,dx			; Zero register
+							inc	cx
+							jmp	short chkstate2_loop
 
 chkstate2_end:
 		or	dx,dx			; Zero ?
@@ -2583,10 +2542,10 @@ num_to_str:
 		mov	cx,7
 
 numfmt_leading_skip:
-					lodsb				; String [si] to al
-					or	al,al			; Zero ?
-					jnz	numfmt_first_digit			; Jump if not zero
-					loop	numfmt_leading_skip		; Loop if cx > 0
+							lodsb				; String [si] to al
+							or	al,al			; Zero ?
+							jnz	numfmt_first_digit			; Jump if not zero
+							loop	numfmt_leading_skip		; Loop if cx > 0
 
 numfmt_first_digit:
 		add	al,30h			; '0'
@@ -2596,10 +2555,10 @@ numfmt_first_digit:
 		jz	numfmt_done			; Jump if zero
 
 numfmt_digit_loop:
-					lodsb				; String [si] to al
-					add	al,30h			; '0'
-					stosb				; Store al to es:[di]
-					loop	numfmt_digit_loop		; Loop if cx > 0
+							lodsb				; String [si] to al
+							add	al,30h			; '0'
+							stosb				; Store al to es:[di]
+							loop	numfmt_digit_loop		; Loop if cx > 0
 
 numfmt_done:
 		mov	al,0FFh
@@ -2610,17 +2569,17 @@ player_func_41		proc	near
 		xor	dh,dh			; Zero register
 
 div_loop:
-					sub	dl,bl
-					jc	div_done			; Jump if carry Set
-					sub	ax,cx
-					jnc	div_inc			; Jump if carry=0
-					or	dl,dl			; Zero ?
-					jz	div_add_back			; Jump if zero
-					dec	dl
+							sub	dl,bl
+							jc	div_done			; Jump if carry Set
+							sub	ax,cx
+							jnc	div_inc			; Jump if carry=0
+							or	dl,dl			; Zero ?
+							jz	div_add_back			; Jump if zero
+							dec	dl
 
 div_inc:
-					inc	dh
-					jmp	short div_loop
+							inc	dh
+							jmp	short div_loop
 
 div_add_back:
 		add	ax,cx
@@ -2650,25 +2609,25 @@ player_func_42		proc	near
 player_func_42		endp
 
 player_func_43		proc	near
-		mov	byte ptr ds:gvar_skip_input_d,0
-		mov	byte ptr ds:gvar_skip_flag_d,0
+		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_skip_flag2,0
 		push	bx
 		call	player_multiply_3
 		pop	bx
 		push	bx
 		call	player_func_34
 		pop	bx
-		mov	byte ptr ds:gvar_frame_timer_d,0
-		test	byte ptr ds:gvar_skip_flag_d,0FFh
+		mov	byte ptr ds:gvar_frame_timer,0
+		test	byte ptr ds:gvar_skip_flag2,0FFh
 		stc				; Set carry flag
 		jz	sel_check_skip			; Jump if zero
 		retn
 
 sel_check_skip:
-		test	byte ptr ds:gvar_skip_input_d,0FFh
+		test	byte ptr ds:gvar_skip_input,0FFh
 		jz	sel_poll_joy			; Jump if zero
 		clc				; Clear carry flag
-		mov	byte ptr ds:gvar_volume_d,1Fh
+		mov	byte ptr ds:gvar_volume,1Fh
 		retn
 
 sel_poll_joy:
@@ -2687,7 +2646,7 @@ sel_poll_joy:
 		retn
 
 sel_no_cursor:
-		test	byte ptr ds:gvar_sel_row_d,0FFh
+		test	byte ptr ds:gvar_sel_row,0FFh
 		jnz	sel_scroll_up			; Jump if not zero
 		retn
 
@@ -2695,37 +2654,37 @@ sel_scroll_up:
 		push	di
 		push	si
 		push	bx
-		dec	byte ptr ds:gvar_sel_row_d
-		mov	al,ds:gvar_sel_row_d
+		dec	byte ptr ds:gvar_sel_row
+		mov	al,ds:gvar_sel_row
 		add	al,bl
-		mov	bx,gvar_sel_xlat_d
+		mov	bx,gvar_sel_xlat
 		xlat				; al=[al+[bx]] table
 		call	word ptr cs:gfx_sel_init_fn
 		mov	cx,0Ah
 
 sel_scroll_up_anim:
-					push	cx
-					mov	bx,ds:gvar_dlg_pos_d
-					add	bx,301h
-					mov	al,cl
-					dec	al
-					mov	cl,ds:gvar_dlg_cols_d
-					add	cl,cl
-					mov	dl,cl
-					add	cl,cl
-					add	cl,cl
-					add	cl,dl
-					sub	cl,2
-					mov	ch,ds:gvar_dlg_timer_d
-					call	word ptr cs:gfx_sel_scroll_up_fn
+							push	cx
+							mov	bx,ds:gvar_dlg_pos
+							add	bx,301h
+							mov	al,cl
+							dec	al
+							mov	cl,ds:gvar_dlg_cols
+							add	cl,cl
+							mov	dl,cl
+							add	cl,cl
+							add	cl,cl
+							add	cl,dl
+							sub	cl,2
+							mov	ch,ds:gvar_dlg_timer
+							call	word ptr cs:gfx_sel_scroll_up_fn
 
 sel_anim_wait_u:
-								call	player_func_34
-								cmp	byte ptr ds:gvar_frame_timer_d,4
-								jb	sel_anim_wait_u			; Jump if below
-					mov	byte ptr ds:gvar_frame_timer_d,0
-					pop	cx
-					loop	sel_scroll_up_anim		; Loop if cx > 0
+												call	player_func_34
+												cmp	byte ptr ds:gvar_frame_timer,4
+												jb	sel_anim_wait_u			; Jump if below
+							mov	byte ptr ds:gvar_frame_timer,0
+							pop	cx
+							loop	sel_scroll_up_anim		; Loop if cx > 0
 
 		pop	bx
 		pop	si
@@ -2738,7 +2697,7 @@ sel_not_up:
 		retn
 
 sel_down_check:
-		mov	al,ds:gvar_dlg_cols_d
+		mov	al,ds:gvar_dlg_cols
 		dec	al
 		cmp	bl,al
 		jae	sel_bottom_check			; Jump if above or =
@@ -2750,9 +2709,9 @@ sel_down_check:
 
 sel_bottom_check:
 		mov	al,bl
-		add	al,ds:gvar_sel_row_d
+		add	al,ds:gvar_sel_row
 		inc	al
-		mov	ah,ds:gvar_dlg_rows_d
+		mov	ah,ds:gvar_dlg_rows
 		dec	ah
 		cmp	ah,al
 		jae	sel_scroll_down			; Jump if above or =
@@ -2762,38 +2721,38 @@ sel_scroll_down:
 		push	di
 		push	si
 		push	bx
-		inc	byte ptr ds:gvar_sel_row_d
-		mov	al,ds:gvar_sel_row_d
+		inc	byte ptr ds:gvar_sel_row
+		mov	al,ds:gvar_sel_row
 		add	al,bl
-		mov	bx,gvar_sel_xlat_d
+		mov	bx,gvar_sel_xlat
 		xlat				; al=[al+[bx]] table
 		call	word ptr cs:gfx_sel_init_fn
 		mov	cx,0Ah
 
 sel_scroll_dn_anim:
-					push	cx
-					mov	bx,ds:gvar_dlg_pos_d
-					add	bx,301h
-					mov	al,cl
-					neg	al
-					add	al,0Ah
-					mov	cl,ds:gvar_dlg_cols_d
-					add	cl,cl
-					mov	dl,cl
-					add	cl,cl
-					add	cl,cl
-					add	cl,dl
-					sub	cl,2
-					mov	ch,ds:gvar_dlg_timer_d
-					call	word ptr cs:gfx_sel_scroll_dn_fn
+							push	cx
+							mov	bx,ds:gvar_dlg_pos
+							add	bx,301h
+							mov	al,cl
+							neg	al
+							add	al,0Ah
+							mov	cl,ds:gvar_dlg_cols
+							add	cl,cl
+							mov	dl,cl
+							add	cl,cl
+							add	cl,cl
+							add	cl,dl
+							sub	cl,2
+							mov	ch,ds:gvar_dlg_timer
+							call	word ptr cs:gfx_sel_scroll_dn_fn
 
 sel_anim_wait_d:
-								call	player_func_34
-								cmp	byte ptr ds:gvar_frame_timer_d,4
-								jb	sel_anim_wait_d			; Jump if below
-					mov	byte ptr ds:gvar_frame_timer_d,0
-					pop	cx
-					loop	sel_scroll_dn_anim		; Loop if cx > 0
+												call	player_func_34
+												cmp	byte ptr ds:gvar_frame_timer,4
+												jb	sel_anim_wait_d			; Jump if below
+							mov	byte ptr ds:gvar_frame_timer,0
+							pop	cx
+							loop	sel_scroll_dn_anim		; Loop if cx > 0
 
 		pop	bx
 		pop	si
@@ -2805,7 +2764,7 @@ player_func_43		endp
 player_multiply_3		proc	near
 		mov	al,0Ah
 		mul	bl			; ax = reg * al
-		add	ax,ds:gvar_dlg_pos_d
+		add	ax,ds:gvar_dlg_pos
 		add	ax,100h
 		mov	bx,ax
 		jmp	word ptr cs:gfx_cursor_fn
@@ -2815,25 +2774,25 @@ player_multiply_3		endp
 player_multiply_4		proc	near
 		mov	al,0Ah
 		mul	bl			; ax = reg * al
-		add	ax,ds:gvar_dlg_pos_d
+		add	ax,ds:gvar_dlg_pos
 		add	ax,100h
 		mov	bx,ax
 		mov	cx,0Ah
 
 del_anim_loop:
-					push	cx
-					mov	byte ptr ds:gvar_frame_timer_d,0
-					dec	bx
-					push	bx
-					call	word ptr cs:gfx_cursor_fn
+							push	cx
+							mov	byte ptr ds:gvar_frame_timer,0
+							dec	bx
+							push	bx
+							call	word ptr cs:gfx_cursor_fn
 
 del_anim_wait:
-								call	player_func_34
-								cmp	byte ptr ds:gvar_frame_timer_d,4
-								jb	del_anim_wait			; Jump if below
-					pop	bx
-					pop	cx
-					loop	del_anim_loop		; Loop if cx > 0
+												call	player_func_34
+												cmp	byte ptr ds:gvar_frame_timer,4
+												jb	del_anim_wait			; Jump if below
+							pop	bx
+							pop	cx
+							loop	del_anim_loop		; Loop if cx > 0
 
 		retn
 
@@ -2842,25 +2801,25 @@ player_multiply_4		endp
 player_multiply_5		proc	near
 		mov	al,0Ah
 		mul	bl			; ax = reg * al
-		add	ax,ds:gvar_dlg_pos_d
+		add	ax,ds:gvar_dlg_pos
 		add	ax,100h
 		mov	bx,ax
 		mov	cx,0Ah
 
 ins_anim_loop:
-					push	cx
-					mov	byte ptr ds:gvar_frame_timer_d,0
-					inc	bx
-					push	bx
-					call	word ptr cs:gfx_cursor_fn
+							push	cx
+							mov	byte ptr ds:gvar_frame_timer,0
+							inc	bx
+							push	bx
+							call	word ptr cs:gfx_cursor_fn
 
 ins_anim_wait:
-								call	player_func_34
-								cmp	byte ptr ds:gvar_frame_timer_d,4
-								jb	ins_anim_wait			; Jump if below
-					pop	bx
-					pop	cx
-					loop	ins_anim_loop		; Loop if cx > 0
+												call	player_func_34
+												cmp	byte ptr ds:gvar_frame_timer,4
+												jb	ins_anim_wait			; Jump if below
+							pop	bx
+							pop	cx
+							loop	ins_anim_loop		; Loop if cx > 0
 
 		retn
 
@@ -2885,10 +2844,10 @@ player_func_47		proc	near
 
 shop_sel_no:
 		pop	ax
-		mov	ds:gvar_sel_row_d,al
+		mov	ds:gvar_sel_row,al
 		pop	ax
-		mov	ds:gvar_dlg_cols_d,al
-		mov	ds:gvar_dlg_rows_d,ah
+		mov	ds:gvar_dlg_cols,al
+		mov	ds:gvar_dlg_rows,ah
 		or	bl,bl			; Zero ?
 		jnz	shop_sel_yes			; Jump if not zero
 		retn
@@ -2907,19 +2866,19 @@ player_multiply_6		proc	near
 		xor	dl,dl			; Zero register
 
 shop_draw_loop:
-					push	cx
-					push	dx
-					mov	al,0Ah
-					mul	dl			; ax = reg * al
-					add	ax,ds:gvar_dlg_pos_d
-					add	ax,301h
-					mov	bx,ax
-					xor	cl,cl			; Zero register
-					call	word ptr cs:gfx_clear_row_fn
-					pop	dx
-					pop	cx
-					inc	dl
-					loop	shop_draw_loop		; Loop if cx > 0
+							push	cx
+							push	dx
+							mov	al,0Ah
+							mul	dl			; ax = reg * al
+							add	ax,ds:gvar_dlg_pos
+							add	ax,301h
+							mov	bx,ax
+							xor	cl,cl			; Zero register
+							call	word ptr cs:gfx_clear_row_fn
+							pop	dx
+							pop	cx
+							inc	dl
+							loop	shop_draw_loop		; Loop if cx > 0
 
 		retn
 
@@ -2928,32 +2887,32 @@ player_multiply_6		endp
 		db	 32h,0E4h		; xor ah,ah (entry prologue for shop_sel_anim_loop, reached via indirect call)
 
 shop_sel_anim_loop:
-					push	cx
-					push	si
-					push	di
-					push	ax
-					mov	bx,gvar_sel_xlat
-					xlat				; al=[al+[bx]] table
-					call	word ptr cs:gfx_sel_init_fn
-					pop	ax
-					push	ax
-					mov	al,ah
-					xor	ah,ah			; Zero register
-					add	ax,ax
-					mov	bx,ax
-					add	ax,ax
-					add	ax,ax
-					add	bx,ax
-					add	bx,ds:gvar_dlg_pos
-					add	bx,300h
-					call	word ptr cs:gfx_sel_draw_fn
-					pop	ax
-					inc	al
-					inc	ah
-					pop	di
-					pop	si
-					pop	cx
-					loop	shop_sel_anim_loop		; Loop if cx > 0
+							push	cx
+							push	si
+							push	di
+							push	ax
+							mov	bx,gvar_sel_xlat
+							xlat				; al=[al+[bx]] table
+							call	word ptr cs:gfx_sel_init_fn
+							pop	ax
+							push	ax
+							mov	al,ah
+							xor	ah,ah			; Zero register
+							add	ax,ax
+							mov	bx,ax
+							add	ax,ax
+							add	ax,ax
+							add	bx,ax
+							add	bx,ds:gvar_dlg_pos
+							add	bx,300h
+							call	word ptr cs:gfx_sel_draw_fn
+							pop	ax
+							inc	al
+							inc	ah
+							pop	di
+							pop	si
+							pop	cx
+							loop	shop_sel_anim_loop		; Loop if cx > 0
 
 		retn
 			                        ;* No entry point to code  (gold_sub_fn: subtract gold cost, called via dispatch)
@@ -3012,11 +2971,11 @@ load_no_new:
 		mov	cx,8
 
 load_name_copy_loop:
-					lodsb				; String [si] to al
-					or	al,al			; Zero ?
-					jz	load_append_ext			; Jump if zero
-					stosb				; Store al to es:[di]
-					loop	load_name_copy_loop		; Loop if cx > 0
+							lodsb				; String [si] to al
+							or	al,al			; Zero ?
+							jz	load_append_ext			; Jump if zero
+							stosb				; Store al to es:[di]
+							loop	load_name_copy_loop		; Loop if cx > 0
 
 load_append_ext:
 		mov	byte ptr es:[di],2Eh	; '.'
@@ -3044,7 +3003,7 @@ load_open_file:
 		mov	ax,3
 		int	60h			; ??INT Non-standard interrupt
 		mov	ax,0FFFFh
-		jmp	word ptr ds:game_fn_7686
+		jmp	word ptr ds:game_exit_fn
 
 load_not_found:
 		mov	bx,1A46h
@@ -3060,9 +3019,9 @@ load_not_found:
 		mov	byte ptr cs:gvar_skip_input,0
 
 load_wait_input:
-					call	word ptr cs:[110h]
-					test	byte ptr cs:gvar_skip_input,0FFh
-					jz	load_wait_input			; Jump if zero
+							call	word ptr cs:[110h]
+							test	byte ptr cs:gvar_skip_input,0FFh
+							jz	load_wait_input			; Jump if zero
 		mov	byte ptr cs:gvar_skip_input,0
 		jmp	savegame_entry
 
@@ -3116,12 +3075,12 @@ savescr_setup:
 		mov	cx,8
 
 savescr_name_copy:
-					lodsb				; String [si] to al
-					or	al,al			; Zero ?
-					jz	savescr_name_done			; Jump if zero
-					inc	byte ptr ds:save_name_len
-					stosb				; Store al to es:[di]
-					loop	savescr_name_copy		; Loop if cx > 0
+							lodsb				; String [si] to al
+							or	al,al			; Zero ?
+							jz	savescr_name_done			; Jump if zero
+							inc	byte ptr ds:save_name_len
+							stosb				; Store al to es:[di]
+							loop	savescr_name_copy		; Loop if cx > 0
 
 savescr_name_done:
 		mov	al,ds:save_name_len
@@ -3133,9 +3092,9 @@ savescr_name_done:
 		mov	cx,8
 
 savescr_blank_scan:
-					scasb				; Scan es:[di] for al
-					jnz	savescr_draw_slot			; Jump if not zero
-					loop	savescr_blank_scan		; Loop if cx > 0
+							scasb				; Scan es:[di] for al
+							jnz	savescr_draw_slot			; Jump if not zero
+							loop	savescr_blank_scan		; Loop if cx > 0
 
 		mov	si,save_default_name
 		mov	di,save_name_buf
@@ -3178,7 +3137,7 @@ savescr_load_prev:
 		mov	cx,8
 		xor	al,al			; Zero register
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
-		cmp	byte ptr ds:save_name_maxlen_d,0
+		cmp	byte ptr ds:save_name_maxlen,0
 		stc				; Set carry flag
 		jnz	savescr_has_name			; Jump if not zero
 		retn
@@ -3188,21 +3147,21 @@ savescr_has_name:
 		mov	di,gvar_save_name
 
 savescr_name_loop:
-					lodsb				; String [si] to al
-					cmp	al,0FFh
-					clc				; Clear carry flag
-					jnz	savescr_name_char			; Jump if not zero
-					retn
+							lodsb				; String [si] to al
+							cmp	al,0FFh
+							clc				; Clear carry flag
+							jnz	savescr_name_char			; Jump if not zero
+							retn
 
 savescr_name_char:
-					cmp	al,60h			; '`'
-					clc				; Clear carry flag
-					jnz	savescr_name_next			; Jump if not zero
-					retn
+							cmp	al,60h			; '`'
+							clc				; Clear carry flag
+							jnz	savescr_name_next			; Jump if not zero
+							retn
 
 savescr_name_next:
-					stosb				; Store al to es:[di]
-					jmp	short savescr_name_loop
+							stosb				; Store al to es:[di]
+							jmp	short savescr_name_loop
 
 savescr_no_saves:
 		mov	ax,0FFFFh
@@ -3257,28 +3216,28 @@ player_process_loop_2		proc	near
 		xor	ah,ah			; Zero register
 
 sel_item_loop:
-					push	cx
-					push	si
-					push	ax
-					call	word ptr cs:gfx_sel_init_fn
-					pop	ax
-					push	ax
-					mov	al,ah
-					xor	ah,ah			; Zero register
-					add	ax,ax
-					mov	bx,ax
-					add	ax,ax
-					add	ax,ax
-					add	bx,ax
-					add	bx,ds:gvar_dlg_pos
-					add	bx,300h
-					call	word ptr cs:gfx_sel_draw_fn
-					pop	ax
-					inc	al
-					inc	ah
-					pop	si
-					pop	cx
-					loop	sel_item_loop		; Loop if cx > 0
+							push	cx
+							push	si
+							push	ax
+							call	word ptr cs:gfx_sel_init_fn
+							pop	ax
+							push	ax
+							mov	al,ah
+							xor	ah,ah			; Zero register
+							add	ax,ax
+							mov	bx,ax
+							add	ax,ax
+							add	ax,ax
+							add	bx,ax
+							add	bx,ds:gvar_dlg_pos
+							add	bx,300h
+							call	word ptr cs:gfx_sel_draw_fn
+							pop	ax
+							inc	al
+							inc	ah
+							pop	si
+							pop	cx
+							loop	sel_item_loop		; Loop if cx > 0
 
 		retn
 
@@ -3303,49 +3262,49 @@ nameinput_draw:
 		call	player_func_55
 
 nameinput_main_loop:
-					mov	byte ptr ds:gvar_frame_timer_d,0
-					test	word ptr cs:gvar_joy_state,1
-					jz	nameinput_no_confirm			; Jump if zero
-					push	cs
-					pop	es
-					mov	di,save_name_buf
-					mov	al,60h			; '`'
-					mov	cx,8
+							mov	byte ptr ds:gvar_frame_timer,0
+							test	word ptr cs:gvar_joy_state,1
+							jz	nameinput_no_confirm			; Jump if zero
+							push	cs
+							pop	es
+							mov	di,save_name_buf
+							mov	al,60h			; '`'
+							mov	cx,8
 
 nameinput_blank_scan:
-								scasb				; Scan es:[di] for al
-								jnz	nameinput_done			; Jump if not zero
-								loop	nameinput_blank_scan		; Loop if cx > 0
+												scasb				; Scan es:[di] for al
+												jnz	nameinput_done			; Jump if not zero
+												loop	nameinput_blank_scan		; Loop if cx > 0
 
-					push	si
-					mov	si,dflt_name_77BA
-					mov	di,save_name_buf
-					mov	cx,8
-					rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-					pop	si
-					call	player_func_51
-					call	player_func_56
-					mov	byte ptr ds:gvar_volume_d,1
+							push	si
+							mov	si,save_default_name
+							mov	di,save_name_buf
+							mov	cx,8
+							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+							pop	si
+							call	player_func_51
+							call	player_func_56
+							mov	byte ptr ds:gvar_volume,1
 
 nameinput_blink_wait:
-								test	word ptr cs:gvar_joy_state,1
-								jnz	nameinput_blink_wait			; Jump if not zero
-					jmp	short nameinput_main_loop
+												test	word ptr cs:gvar_joy_state,1
+												jnz	nameinput_blink_wait			; Jump if not zero
+							jmp	short nameinput_main_loop
 
 nameinput_done:
-		mov	byte ptr ds:gvar_volume_d,1Fh
-		mov	byte ptr ds:gvar_save_ctrl_d,0
-		mov	byte ptr ds:gvar_skip_flag_d,0
+		mov	byte ptr ds:gvar_volume,1Fh
+		mov	byte ptr ds:gvar_save_ctrl,0
+		mov	byte ptr ds:gvar_skip_flag2,0
 		retn
 
 nameinput_no_confirm:
-		test	byte ptr ds:gvar_skip_input_d,0FFh
+		test	byte ptr ds:gvar_skip_input,0FFh
 		jz	nameinput_key_check			; Jump if zero
-		mov	byte ptr ds:gvar_volume_d,1
+		mov	byte ptr ds:gvar_volume,1
 		push	si
 		xor	bh,bh			; Zero register
-		mov	bl,ds:gvar_sel_row_d
-		add	bl,ds:save_del_flag_d
+		mov	bl,ds:gvar_sel_row
+		add	bl,ds:save_del_flag
 		add	bx,bx
 		mov	si,[bx+si]
 		push	cs
@@ -3356,29 +3315,29 @@ nameinput_no_confirm:
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
 		mov	al,0FFh
 		stosb				; Store al to es:[di]
-		mov	byte ptr ds:save_name_len_d,0
+		mov	byte ptr ds:save_name_len,0
 		mov	di,save_name_buf
 		mov	cx,8
 
 nameinput_copy_loop:
-					lodsb				; String [si] to al
-					or	al,al			; Zero ?
-					jz	nameinput_copy_done			; Jump if zero
-					inc	byte ptr ds:save_name_len_d
-					stosb				; Store al to es:[di]
-					loop	nameinput_copy_loop		; Loop if cx > 0
+							lodsb				; String [si] to al
+							or	al,al			; Zero ?
+							jz	nameinput_copy_done			; Jump if zero
+							inc	byte ptr ds:save_name_len
+							stosb				; Store al to es:[di]
+							loop	nameinput_copy_loop		; Loop if cx > 0
 
 nameinput_copy_done:
-		mov	al,ds:save_name_len_d
-		mov	ds:save_name_maxlen_d,al
+		mov	al,ds:save_name_len
+		mov	ds:save_name_maxlen,al
 		pop	si
 		call	player_func_51
-		mov	byte ptr ds:gvar_skip_input_d,0
-		mov	ax,ds:save_cursor_x_d
+		mov	byte ptr ds:gvar_skip_input,0
+		mov	ax,ds:save_cursor_x
 		shr	ax,1			; Shift w/zeros fill
 		shr	ax,1			; Shift w/zeros fill
 		mov	bh,al
-		mov	bl,ds:save_cursor_y_d
+		mov	bl,ds:save_cursor_y
 		mov	cx,1010h
 		xor	al,al			; Zero register
 		call	word ptr cs:gfx_fill_fn
@@ -3390,11 +3349,11 @@ nameinput_copy_done:
 nameinput_key_check:
 		mov	cx,786Fh
 		push	cx
-		test	byte ptr ds:gvar_key_state_d,0FFh
+		test	byte ptr ds:gvar_key_state,0FFh
 		jz	nameinput_joy_check			; Jump if zero
-		mov	byte ptr ds:gvar_volume_d,1
-		mov	al,ds:gvar_key_state_d
-		mov	byte ptr ds:gvar_key_state_d,0
+		mov	byte ptr ds:gvar_volume,1
+		mov	al,ds:gvar_key_state
+		mov	byte ptr ds:gvar_key_state,0
 		cmp	al,0Dh
 		jne	nameinput_not_enter			; Jump if not equal
 		retn
@@ -3409,15 +3368,15 @@ nameinput_not_bs:
 		call	fill_buffer_2
 		pop	ax
 		xor	bx,bx			; Zero register
-		mov	bl,ds:save_name_len_d
-		cmp	byte ptr ds:save_name_buf_d[bx],60h	; '`'
+		mov	bl,ds:save_name_len
+		cmp	byte ptr ds:save_name_buf[bx],60h	; '`'
 		jne	nameinput_append			; Jump if not equal
-		inc	byte ptr ds:save_name_maxlen_d
+		inc	byte ptr ds:save_name_maxlen
 
 nameinput_append:
-		mov	ds:save_name_buf_d[bx],al
+		mov	ds:save_name_buf[bx],al
 		call	player_func_56
-		mov	byte ptr ds:gvar_volume_d,1
+		mov	byte ptr ds:gvar_volume,1
 		mov	al,1
 		jmp	cursor_draw
 
@@ -3425,33 +3384,33 @@ nameinput_joy_check:
 		int	61h			; ??INT Non-standard interrupt
 		test	al,8
 		jz	nameinput_joy_dn			; Jump if zero
-		mov	byte ptr ds:gvar_volume_d,1
+		mov	byte ptr ds:gvar_volume,1
 		mov	al,1
 		call	player_func_55
 
 nameinput_joy_wait_u:
-					int	61h			; ??INT Non-standard interrupt
-					test	al,8
-					jnz	nameinput_joy_wait_u			; Jump if not zero
-		mov	byte ptr ds:gvar_key_state_d,0
+							int	61h			; ??INT Non-standard interrupt
+							test	al,8
+							jnz	nameinput_joy_wait_u			; Jump if not zero
+		mov	byte ptr ds:gvar_key_state,0
 		retn
 
 nameinput_joy_dn:
 		test	al,4
 		jz	nameinput_joy_lr			; Jump if zero
-		mov	byte ptr ds:gvar_volume_d,1
+		mov	byte ptr ds:gvar_volume,1
 		mov	al,0FFh
 		call	player_func_55
 
 nameinput_joy_wait_d:
-					int	61h			; ??INT Non-standard interrupt
-					test	al,4
-					jnz	nameinput_joy_wait_d			; Jump if not zero
-		mov	byte ptr ds:gvar_key_state_d,0
+							int	61h			; ??INT Non-standard interrupt
+							test	al,4
+							jnz	nameinput_joy_wait_d			; Jump if not zero
+		mov	byte ptr ds:gvar_key_state,0
 		retn
 
 nameinput_joy_lr:
-		test	byte ptr ds:gvar_dlg_rows_d,0FFh
+		test	byte ptr ds:gvar_dlg_rows,0FFh
 		jnz	nameinput_joy_lr2			; Jump if not zero
 		retn
 
@@ -3459,49 +3418,49 @@ nameinput_joy_lr2:
 		and	al,3
 		cmp	al,1
 		jne	nameinput_not_left			; Jump if not equal
-		test	byte ptr ds:save_del_flag_d,0FFh
+		test	byte ptr ds:save_del_flag,0FFh
 		jz	nameinput_at_top			; Jump if zero
-		mov	bl,ds:save_del_flag_d
+		mov	bl,ds:save_del_flag
 		call	word ptr cs:save_scroll_up_fn
-		dec	byte ptr ds:save_del_flag_d
+		dec	byte ptr ds:save_del_flag
 		retn
 
 nameinput_at_top:
-		test	byte ptr ds:gvar_sel_row_d,0FFh
+		test	byte ptr ds:gvar_sel_row,0FFh
 		jnz	nameinput_sel_up			; Jump if not zero
 		retn
 
 nameinput_sel_up:
 		push	di
 		push	si
-		dec	byte ptr ds:gvar_sel_row_d
-		mov	al,ds:gvar_sel_row_d
-		add	al,ds:save_del_flag_d
+		dec	byte ptr ds:gvar_sel_row
+		mov	al,ds:gvar_sel_row
+		add	al,ds:save_del_flag
 		call	word ptr cs:gfx_sel_init_fn
 		mov	cx,0Ah
 
 nameinput_up_anim:
-					push	cx
-					mov	bx,ds:gvar_dlg_pos_d
-					add	bx,301h
-					mov	al,cl
-					dec	al
-					mov	cl,ds:gvar_dlg_cols_d
-					add	cl,cl
-					mov	dl,cl
-					add	cl,cl
-					add	cl,cl
-					add	cl,dl
-					sub	cl,2
-					mov	ch,ds:gvar_dlg_timer_d
-					call	word ptr cs:gfx_sel_scroll_up_fn
+							push	cx
+							mov	bx,ds:gvar_dlg_pos
+							add	bx,301h
+							mov	al,cl
+							dec	al
+							mov	cl,ds:gvar_dlg_cols
+							add	cl,cl
+							mov	dl,cl
+							add	cl,cl
+							add	cl,cl
+							add	cl,dl
+							sub	cl,2
+							mov	ch,ds:gvar_dlg_timer
+							call	word ptr cs:gfx_sel_scroll_up_fn
 
 nameinput_up_wait:
-								cmp	byte ptr ds:gvar_frame_timer_d,4
-								jb	nameinput_up_wait			; Jump if below
-					mov	byte ptr ds:gvar_frame_timer_d,0
-					pop	cx
-					loop	nameinput_up_anim		; Loop if cx > 0
+												cmp	byte ptr ds:gvar_frame_timer,4
+												jb	nameinput_up_wait			; Jump if below
+							mov	byte ptr ds:gvar_frame_timer,0
+							pop	cx
+							loop	nameinput_up_anim		; Loop if cx > 0
 
 		pop	si
 		pop	di
@@ -3513,57 +3472,57 @@ nameinput_not_left:
 		retn
 
 nameinput_down_go:
-		mov	al,ds:save_del_flag_d
-		add	al,ds:gvar_sel_row_d
+		mov	al,ds:save_del_flag
+		add	al,ds:gvar_sel_row
 		inc	al
-		mov	ah,ds:gvar_dlg_rows_d
+		mov	ah,ds:gvar_dlg_rows
 		dec	ah
 		cmp	ah,al
 		jae	nameinput_at_bottom			; Jump if above or =
 		retn
 
 nameinput_at_bottom:
-		mov	al,ds:gvar_dlg_cols_d
+		mov	al,ds:gvar_dlg_cols
 		dec	al
-		cmp	ds:save_del_flag_d,al
+		cmp	ds:save_del_flag,al
 		jae	nameinput_sel_dn			; Jump if above or =
-		mov	bl,ds:save_del_flag_d
+		mov	bl,ds:save_del_flag
 		call	word ptr cs:save_scroll_dn_fn
-		inc	byte ptr ds:save_del_flag_d
+		inc	byte ptr ds:save_del_flag
 		retn
 
 nameinput_sel_dn:
 		push	di
 		push	si
-		inc	byte ptr ds:gvar_sel_row_d
-		mov	al,ds:gvar_sel_row_d
-		add	al,ds:save_del_flag_d
+		inc	byte ptr ds:gvar_sel_row
+		mov	al,ds:gvar_sel_row
+		add	al,ds:save_del_flag
 		call	word ptr cs:gfx_sel_init_fn
 		mov	cx,0Ah
 
 nameinput_dn_anim:
-					push	cx
-					mov	bx,ds:gvar_dlg_pos_d
-					add	bx,301h
-					mov	al,cl
-					neg	al
-					add	al,0Ah
-					mov	cl,ds:gvar_dlg_cols_d
-					add	cl,cl
-					mov	dl,cl
-					add	cl,cl
-					add	cl,cl
-					add	cl,dl
-					sub	cl,2
-					mov	ch,ds:gvar_dlg_timer_d
-					call	word ptr cs:gfx_sel_scroll_dn_fn
+							push	cx
+							mov	bx,ds:gvar_dlg_pos
+							add	bx,301h
+							mov	al,cl
+							neg	al
+							add	al,0Ah
+							mov	cl,ds:gvar_dlg_cols
+							add	cl,cl
+							mov	dl,cl
+							add	cl,cl
+							add	cl,cl
+							add	cl,dl
+							sub	cl,2
+							mov	ch,ds:gvar_dlg_timer
+							call	word ptr cs:gfx_sel_scroll_dn_fn
 
 nameinput_dn_wait:
-								cmp	byte ptr ds:gvar_frame_timer_d,4
-								jb	nameinput_dn_wait			; Jump if below
-					mov	byte ptr ds:gvar_frame_timer_d,0
-					pop	cx
-					loop	nameinput_dn_anim		; Loop if cx > 0
+												cmp	byte ptr ds:gvar_frame_timer,4
+												jb	nameinput_dn_wait			; Jump if below
+							mov	byte ptr ds:gvar_frame_timer,0
+							pop	cx
+							loop	nameinput_dn_anim		; Loop if cx > 0
 
 		pop	si
 		pop	di
