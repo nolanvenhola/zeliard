@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  IMAGE_DECODER_B - Code Module
+;  109GTHGC - Town Tiles HGC Renderer
 ;
 ;==========================================================================
 
@@ -11,80 +11,85 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; The following equates show data references outside the range of the program.
 
-data_1e		equ	4100h			;*
-data_2e		equ	6000h			;*
-data_3e		equ	8000h			;*
-data_4e		equ	8004h			;*
-data_5e		equ	8100h			;*
-data_6e		equ	0D000h			;*
-data_13e	equ	347Ah			;*
-data_14e	equ	34D6h			;*
-data_15e	equ	3737h			;*
-data_16e	equ	38D5h			;*
-data_17e	equ	3B1Dh			;*
-data_18e	equ	3C24h			;*
-data_19e	equ	3CACh			;*
-data_20e	equ	3CAEh			;*
-data_21e	equ	3CAFh			;*
-data_22e	equ	3CB0h			;*
-data_23e	equ	3CB2h			;*
-data_24e	equ	3CB5h			;*
-data_25e	equ	3CB7h			;*
-data_26e	equ	3CB9h			;*
-data_27e	equ	3CBBh			;*
-data_28e	equ	3CBDh			;*
-data_29e	equ	3CBFh			;*
-data_31e	equ	3CC3h			;*
-data_32e	equ	3CEBh			;*
-data_33e	equ	3E53h			;*
-data_34e	equ	3E83h			;*
-data_35e	equ	3EB3h			;*
-data_36e	equ	3EE3h			;*
-data_37e	equ	3F13h			;*
-data_38e	equ	50F1h			;*
-data_39e	equ	5FA6h			;*
-data_40e	equ	6000h			;*
-data_41e	equ	0A000h			;*
-data_42e	equ	0A058h			;*
-data_43e	equ	0A05Ah			;*
-data_44e	equ	0C00Fh			;*
-data_45e	equ	0E005h			;*
-data_46e	equ	0F435h			;*
-data_47e	equ	0F502h			;*
-data_48e	equ	0F504h			;*
-data_49e	equ	0FF2Ah			;*
-data_50e	equ	0FF2Ch			;*
-data_51e	equ	0FF57h			;*
-data_52e	equ	0FF68h			;*
-data_53e	equ	0FF6Ah			;*
-data_54e	equ	0			;*
-data_55e	equ	4FDh
-data_56e	equ	34CFh
-data_57e	equ	3506h
-data_58e	equ	5FA6h
-data_59e	equ	6000h
-data_60e	equ	7FA6h
-data_61e	equ	0A058h
-data_62e	equ	0A05Ah
+tile_alt_base		equ	4100h			;* tile alternate pixel data base
+tile_bank2_base		equ	6000h			;* tile pixel data bank 2 base (external CS ref)
+tileset_buf_a		equ	8000h			;* tileset lookup/cache buffer A
+tileset_buf_b		equ	8004h			;* tileset buffer B pointer word
+tile_pixel_base		equ	8100h			;* tile pixel data base (0x10 bytes per tile)
+tile_mask_base		equ	0D000h			;* tile transparency mask data base
+render_fn_tbl_a		equ	347Ah			;* render function pointer table A (word[N])
+render_fn_tbl_b		equ	34D6h			;* render function pointer table B (word[N])
+tile_row_data_a		equ	3737h			;* tile row source data A
+tile_row_data_b		equ	38D5h			;* tile row source data B
+tile_type_tbl		equ	3B1Dh			;* tile type dispatch table (word[N])
+pixel_encode_tbl	equ	3C24h			;* pixel encoding lookup table
+tile_hgc_ofs		equ	3CACh			;* current HGC framebuffer byte offset for tile row (word)
+tile_row_ctr		equ	3CAEh			;* current tile row counter (byte, 0..1Ch)
+tile_idx_a		equ	3CAFh			;* tile index A (byte)
+tile_dest_ofs		equ	3CB0h			;* tile destination offset (word)
+tile_idx_b		equ	3CB2h			;* tile index B (byte, 0FDh = none)
+tile_col_ctr		equ	3CB5h			;* current tile column position counter (word)
+bitplane_w0		equ	3CB7h			;* bitplane word 0
+bitplane_w1		equ	3CB9h			;* bitplane word 1
+bitplane_w2		equ	3CBBh			;* bitplane word 2
+bitplane_w3		equ	3CBDh			;* bitplane word 3
+far_ptr			equ	3CBFh			;* far pointer dword (seg:ofs) used with LDS
+char_render_buf		equ	3CC3h			;* character/sprite render buffer
+text_render_buf		equ	3CEBh			;* text glyph render buffer
+tile_strip_a		equ	3E53h			;* tile strip render area A (column 0)
+tile_strip_b		equ	3E83h			;* tile strip render area B (column 1)
+tile_strip_c		equ	3EB3h			;* tile strip render area C (column 2)
+tile_strip_d		equ	3EE3h			;* tile strip render area D (column 3)
+tile_cache_tbl		equ	3F13h			;* tile HGC address cache table (word[N])
+hgc_scan_cache		equ	50F1h			;* HGC scanline data cache
+hgc_wrap_back		equ	5FA6h			;* HGC bank wrap-back adjustment (external ref)
+hgc_bank_bdy		equ	6000h			;* HGC bank boundary = 6000h (external ref)
+sprite_data_base	equ	0A000h			;* sprite data CS offset base
+hgc_stride_a		equ	0A058h			;* HGC stride adjustment A (bank overflow fix)
+hgc_stride		equ	0A05Ah			;* HGC interleave stride (0xA05A per scanline set)
+tile_list_ptr		equ	0C00Fh			;* pointer to tile entry list (8-byte records)
+marker_buf		equ	0E005h			;* marker/sentinel output buffer (3 bytes)
+drv_init_tbl		equ	0F435h			;* driver init dispatch table offset
+font_ptr_a		equ	0F502h			;* font glyph data pointer A
+font_ptr_b		equ	0F504h			;* font glyph data pointer B
+gvar_map_ptr		equ	0FF2Ah			;* ptr to map/player data block (game seg)
+gvar_game_seg		equ	0FF2Ch			;* game segment selector word
+gvar_item_flag		equ	0FF57h			;* item/pickup flag byte
+gvar_text_ofs		equ	0FF68h			;* text render column offset (word)
+gvar_copy_width		equ	0FF6Ah			;* tile copy width in bytes (word)
+zero_offset		equ	0			;* zero/null offset
+
+hgc_cursor_ofs		equ	4FDh			; HGC cursor position offset
+scroll_src_b		equ	34CFh			; scroll source offset B (right scroll)
+scroll_src_a		equ	3506h			; scroll source offset A (left scroll)
+hgc_bank_back		equ	5FA6h			; HGC bank wrap-back constant (= hgc_wrap_back)
+hgc_bank_size		equ	6000h			; HGC bank size (24576 bytes = 0x6000)
+hgc_wrap_fwd		equ	7FA6h			; HGC bank forward-wrap constant
+hgc_stride_c		equ	0A058h			; HGC stride variant C (= hgc_stride_a)
+hgc_stride_b		equ	0A05Ah			; HGC stride variant B (= hgc_stride)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
 zr1_09		proc	far
 
+; Driver initialization binary blob (0x00..0x3E):
+; These 63 bytes are the function dispatch init table written by the game loader.
+; Sourcer decodes the first bytes as x86 instructions (they are valid code),
+; but the entire block is really a flat binary copied to drv_init_tbl (CS:0xF435).
+; The loader then patches the game segment function pointer table from this data.
+; Each LE word pair encodes a CS-relative offset to one of this module's entry points.
 start:
 		adc	dx,[bx+di]
 		add	[bx+si],al
 		or	al,3Ah			; ':'
 		sub	[bx+si],dh
 		push	di
-		xor	ds:data_46e[bx+di],cl
+		xor	ds:drv_init_tbl[bx+di],cl
 		xor	ax,362Ch
 		xchg	bp,ax
 		db	 36h,0B3h, 32h,0C8h, 34h, 33h
@@ -96,111 +101,122 @@ start:
 		db	0B8h, 00h,0B0h, 8Eh,0D8h,0B9h
 		db	 1Ch, 00h
 
-locloop_1:
-		push	cx
-		push	si
-		mov	cx,18h
+draw_map_col_outer:
+			push	cx
+			push	si
+			mov	cx,18h
 
-locloop_2:
-		movsw				; Mov [si] to es:[di]
-		add	si,1FFEh
-		cmp	si,6000h
-		jb	loc_3			; Jump if below
-		add	si,data_43e
-loc_3:
-		loop	locloop_2		; Loop if cx > 0
+blit_tile_row_loop:
+				movsw				; Mov [si] to es:[di]
+				add	si,1FFEh
+				cmp	si,6000h
+				jb	blit_tile_row_wrap			; Jump if below
+				add	si,hgc_stride
 
-		pop	si
-		pop	cx
-		inc	si
-		inc	si
-		loop	locloop_1		; Loop if cx > 0
+blit_tile_row_wrap:
+				loop	blit_tile_row_loop		; Loop if cx > 0
+
+			pop	si
+			pop	cx
+			inc	si
+			inc	si
+			loop	draw_map_col_outer		; Loop if cx > 0
 
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+; Init tile cache, then render all 8 tile columns for the current town row (dispatch target)
+draw_tilemap:				;* No entry point to code
 		push	cs
 		pop	es
-		mov	di,data_37e
+		mov	di,tile_cache_tbl
 		xor	ax,ax			; Zero register
 		mov	cx,100h
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
-		mov	si,ds:data_49e
+		mov	si,ds:gvar_map_ptr
 		cmp	byte ptr [si+1Dh],0FDh
-		jne	loc_4			; Jump if not equal
+		jne	draw_map_no_multiply			; Jump if not equal
 		call	decb_multiply
-loc_4:
-		mov	word ptr ds:data_19e,2C5Fh
-		mov	si,ds:data_49e
+
+draw_map_no_multiply:
+		mov	word ptr ds:tile_hgc_ofs,2C5Fh
+		mov	si,ds:gvar_map_ptr
 		add	si,20h
 		push	cs
 		pop	es
 		mov	di,0E000h
-		mov	byte ptr ds:data_20e,0
-loc_5:
-		call	decb_scan_loop
-		xor	bl,bl			; Zero register
-		cmpsb				; Cmp [si] to es:[di]
-		jz	loc_6			; Jump if zero
-		call	decb_func_4
-loc_6:
-		inc	bl
-		cmpsb				; Cmp [si] to es:[di]
-		jz	loc_7			; Jump if zero
-		call	decb_func_4
-loc_7:
-		inc	bl
-		cmpsb				; Cmp [si] to es:[di]
-		jz	loc_8			; Jump if zero
-		call	decb_func_4
-loc_8:
-		inc	bl
-		cmpsb				; Cmp [si] to es:[di]
-		jz	loc_9			; Jump if zero
-		call	decb_func_3
-loc_9:
-		inc	bl
-		cmpsb				; Cmp [si] to es:[di]
-		jz	loc_10			; Jump if zero
-		call	decb_func_3
-loc_10:
-		inc	bl
-		cmpsb				; Cmp [si] to es:[di]
-		jz	loc_11			; Jump if zero
-		call	decb_func_2
-loc_11:
-		inc	bl
-		cmpsb				; Cmp [si] to es:[di]
-		jz	loc_12			; Jump if zero
-		call	decb_func_3
-loc_12:
-		inc	bl
-		cmpsb				; Cmp [si] to es:[di]
-		jz	loc_13			; Jump if zero
-		call	decb_func_3
-loc_13:
-		add	word ptr ds:data_19e,2
-		inc	byte ptr ds:data_20e
-		cmp	byte ptr ds:data_20e,1Ch
-		jne	loc_5			; Jump if not equal
+		mov	byte ptr ds:tile_row_ctr,0
+
+draw_map_col_loop:
+			call	decb_scan_loop
+			xor	bl,bl			; Zero register
+			cmpsb				; Cmp [si] to es:[di]
+			jz	draw_col_1_done			; Jump if zero
+			call	decb_func_4
+
+draw_col_1_done:
+			inc	bl
+			cmpsb				; Cmp [si] to es:[di]
+			jz	draw_col_2_done			; Jump if zero
+			call	decb_func_4
+
+draw_col_2_done:
+			inc	bl
+			cmpsb				; Cmp [si] to es:[di]
+			jz	draw_col_3_done			; Jump if zero
+			call	decb_func_4
+
+draw_col_3_done:
+			inc	bl
+			cmpsb				; Cmp [si] to es:[di]
+			jz	draw_col_4_done			; Jump if zero
+			call	decb_func_3
+
+draw_col_4_done:
+			inc	bl
+			cmpsb				; Cmp [si] to es:[di]
+			jz	draw_col_5_done			; Jump if zero
+			call	decb_func_3
+
+draw_col_5_done:
+			inc	bl
+			cmpsb				; Cmp [si] to es:[di]
+			jz	draw_col_6_done			; Jump if zero
+			call	decb_func_2
+
+draw_col_6_done:
+			inc	bl
+			cmpsb				; Cmp [si] to es:[di]
+			jz	draw_col_7_done			; Jump if zero
+			call	decb_func_3
+
+draw_col_7_done:
+			inc	bl
+			cmpsb				; Cmp [si] to es:[di]
+			jz	draw_col_8_done			; Jump if zero
+			call	decb_func_3
+
+draw_col_8_done:
+			add	word ptr ds:tile_hgc_ofs,2
+			inc	byte ptr ds:tile_row_ctr
+			cmp	byte ptr ds:tile_row_ctr,1Ch
+			jne	draw_map_col_loop			; Jump if not equal
 		retn
 
 zr1_09		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 decb_scan_loop		proc	near
-		cmp	byte ptr ds:data_20e,1Bh
-		jne	loc_14			; Jump if not equal
+		cmp	byte ptr ds:tile_row_ctr,1Bh
+		jne	scan_check_pos			; Jump if not equal
 		retn
-loc_14:
+
+scan_check_pos:
 		mov	al,byte ptr ds:[83h]
-		cmp	ds:data_20e,al
-		je	loc_15			; Jump if equal
+		cmp	ds:tile_row_ctr,al
+		je	scan_do_render			; Jump if equal
 		retn
-loc_15:
+
+scan_do_render:
 		push	di
 		push	es
 		push	si
@@ -208,48 +224,44 @@ loc_15:
 		add	al,al
 		xor	ah,ah			; Zero register
 		mov	di,ax
-		add	di,data_38e
+		add	di,hgc_scan_cache
 		mov	ax,0B000h
 		mov	es,ax
-		mov	si,data_33e
+		mov	si,tile_strip_a
 		mov	cx,2
 
-locloop_16:
-		push	cx
-		push	di
-		call	decb_scan_loop_2
-		pop	di
-		inc	di
-		inc	di
-		pop	cx
-		loop	locloop_16		; Loop if cx > 0
+scan_render_loop:
+			push	cx
+			push	di
+			call	decb_scan_loop_2
+			pop	di
+			inc	di
+			inc	di
+			pop	cx
+			loop	scan_render_loop		; Loop if cx > 0
 
 		pop	si
 		pop	es
 		pop	di
 		retn
+
 decb_scan_loop		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_func_2		proc	near
 		cmp	byte ptr [si-1],0FDh
-		jne	loc_17			; Jump if not equal
-		jmp	loc_41
-
-;���� External Entry into Subroutine ��������������������������������������
+		jne	func2_not_door			; Jump if not equal
+		jmp	handle_door_tile
 
 decb_func_3:
-loc_17:
+
+func2_not_door:
 		mov	al,[di-1]
 		mov	byte ptr [di-1],0FEh
 		inc	al
-		jnz	loc_18			; Jump if not zero
+		jnz	func2_do_draw			; Jump if not zero
 		retn
-loc_18:
+
+func2_do_draw:
 		dec	di
 		dec	si
 		mov	dl,[si]
@@ -259,43 +271,47 @@ loc_18:
 		push	di
 		push	si
 		push	bx
-		mov	di,ds:data_19e
+		mov	di,ds:tile_hgc_ofs
 		or	bl,bl			; Zero ?
-		jz	loc_21			; Jump if zero
-loc_19:
-		add	di,40B4h
-		cmp	di,6000h
-		jb	loc_20			; Jump if below
-		add	di,data_62e
-loc_20:
-		dec	bl
-		jnz	loc_19			; Jump if not zero
-loc_21:
+		jz	tile_draw_check_cache			; Jump if zero
+
+hgc_col_advance_loop:
+			add	di,40B4h
+			cmp	di,6000h
+			jb	hgc_col_advance_wrap			; Jump if below
+			add	di,hgc_stride_b
+
+hgc_col_advance_wrap:
+			dec	bl
+			jnz	hgc_col_advance_loop			; Jump if not zero
+
+tile_draw_check_cache:
 		mov	bl,dl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		test	word ptr ds:data_37e[bx],0FFFFh
-		jnz	loc_24			; Jump if not zero
-		mov	ds:data_37e[bx],di
+		test	word ptr ds:tile_cache_tbl[bx],0FFFFh
+		jnz	tile_draw_cached			; Jump if not zero
+		mov	ds:tile_cache_tbl[bx],di
 		mov	ax,10h
 		mul	dl			; ax = reg * al
 		mov	si,ax
-		add	si,data_5e
-		mov	ds,cs:data_50e
+		add	si,tile_pixel_base
+		mov	ds,cs:gvar_game_seg
 		mov	ax,0B000h
 		mov	es,ax
 		mov	cx,8
 
-locloop_22:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,data_59e
-		jb	loc_23			; Jump if below
-		mov	ax,[si-2]
-		stosw				; Store ax to es:[di]
-		add	di,data_61e
-loc_23:
-		loop	locloop_22		; Loop if cx > 0
+tile_blit_new_loop:
+			movsw				; Mov [si] to es:[di]
+			add	di,1FFEh
+			cmp	di,hgc_bank_size
+			jb	tile_blit_new_wrap			; Jump if below
+			mov	ax,[si-2]
+			stosw				; Store ax to es:[di]
+			add	di,hgc_stride_c
+
+tile_blit_new_wrap:
+			loop	tile_blit_new_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	si
@@ -303,28 +319,31 @@ loc_23:
 		pop	ds
 		pop	es
 		retn
-loc_24:
-		mov	si,ds:data_37e[bx]
+
+tile_draw_cached:
+		mov	si,ds:tile_cache_tbl[bx]
 		mov	ax,0B000h
 		mov	es,ax
 		mov	ds,ax
 		mov	cx,8
 
-locloop_25:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,data_59e
-		jb	loc_26			; Jump if below
-		mov	ax,[si-2]
-		stosw				; Store ax to es:[di]
-		add	di,data_42e
-loc_26:
-		add	si,1FFEh
-		cmp	si,6000h
-		jb	loc_27			; Jump if below
-		add	si,data_43e
-loc_27:
-		loop	locloop_25		; Loop if cx > 0
+tile_blit_cached_loop:
+			movsw				; Mov [si] to es:[di]
+			add	di,1FFEh
+			cmp	di,hgc_bank_size
+			jb	tile_blit_cached_di_wrap			; Jump if below
+			mov	ax,[si-2]
+			stosw				; Store ax to es:[di]
+			add	di,hgc_stride_a
+
+tile_blit_cached_di_wrap:
+			add	si,1FFEh
+			cmp	si,6000h
+			jb	tile_blit_cached_si_wrap			; Jump if below
+			add	si,hgc_stride
+
+tile_blit_cached_si_wrap:
+			loop	tile_blit_cached_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	si
@@ -333,29 +352,29 @@ loc_27:
 		pop	es
 		retn
 
-;���� External Entry into Subroutine ��������������������������������������
-
 decb_func_4:
 		mov	al,[di-1]
 		mov	byte ptr [di-1],0FEh
 		inc	al
-		jnz	loc_28			; Jump if not zero
+		jnz	func4_do_draw			; Jump if not zero
 		retn
-loc_28:
+
+func4_do_draw:
 		push	bx
 		push	es
 		mov	dl,[si-1]
 		mov	bl,dl
 		xor	bh,bh			; Zero register
-		mov	es,cs:data_50e
-		add	bx,es:data_3e
+		mov	es,cs:gvar_game_seg
+		add	bx,es:tileset_buf_a
 		mov	dh,es:[bx]
 		pop	es
 		pop	bx
 		or	dh,dh			; Zero ?
-		jnz	loc_29			; Jump if not zero
-		jmp	loc_17
-loc_29:
+		jnz	func4_has_mask			; Jump if not zero
+		jmp	func2_not_door
+
+func4_has_mask:
 		dec	di
 		dec	si
 		movsb				; Mov [si] to es:[di]
@@ -364,57 +383,61 @@ loc_29:
 		push	di
 		push	si
 		push	bx
-		mov	di,ds:data_19e
+		mov	di,ds:tile_hgc_ofs
 		or	bl,bl			; Zero ?
-		jz	loc_32			; Jump if zero
+		jz	func4_draw_tile			; Jump if zero
 		push	bx
-loc_30:
-		add	di,40B4h
-		cmp	di,6000h
-		jb	loc_31			; Jump if below
-		add	di,data_62e
-loc_31:
-		dec	bl
-		jnz	loc_30			; Jump if not zero
+
+func4_col_advance_loop:
+			add	di,40B4h
+			cmp	di,6000h
+			jb	func4_col_advance_wrap			; Jump if below
+			add	di,hgc_stride_b
+
+func4_col_advance_wrap:
+			dec	bl
+			jnz	func4_col_advance_loop			; Jump if not zero
 		pop	bx
-loc_32:
+
+func4_draw_tile:
 		mov	ax,10h
 		mul	dl			; ax = reg * al
 		mov	si,ax
 		mov	bp,ax
-		add	si,data_5e
-		add	bp,data_6e
+		add	si,tile_pixel_base
+		add	bp,tile_mask_base
 		mov	ax,30h
-		mul	byte ptr ds:data_20e	; ax = data * al
+		mul	byte ptr ds:tile_row_ctr	; ax = data * al
 		add	bx,bx
 		add	bx,bx
 		add	bx,bx
 		add	bx,bx
 		add	bx,ax
-		add	bx,data_41e
-		mov	ds,cs:data_50e
+		add	bx,sprite_data_base
+		mov	ds,cs:gvar_game_seg
 		mov	ax,0B000h
 		mov	es,ax
 		mov	cx,8
 
-locloop_33:
-		mov	ax,cs:[bx]
-		inc	bx
-		inc	bx
-		and	ax,ds:[bp]
-		inc	bp
-		inc	bp
-		or	ax,[si]
-		inc	si
-		inc	si
-		stosw				; Store ax to es:[di]
-		add	di,1FFEh
-		cmp	di,data_59e
-		jb	loc_34			; Jump if below
-		stosw				; Store ax to es:[di]
-		add	di,data_42e
-loc_34:
-		loop	locloop_33		; Loop if cx > 0
+tile_mask_blit_loop:
+			mov	ax,cs:[bx]
+			inc	bx
+			inc	bx
+			and	ax,ds:[bp]
+			inc	bp
+			inc	bp
+			or	ax,[si]
+			inc	si
+			inc	si
+			stosw				; Store ax to es:[di]
+			add	di,1FFEh
+			cmp	di,hgc_bank_size
+			jb	tile_mask_blit_wrap			; Jump if below
+			stosw				; Store ax to es:[di]
+			add	di,hgc_stride_a
+
+tile_mask_blit_wrap:
+			loop	tile_mask_blit_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	si
@@ -423,120 +446,125 @@ loc_34:
 		pop	es
 		mov	ah,[di-1]
 		or	ah,ah			; Zero ?
-		jnz	loc_35			; Jump if not zero
+		jnz	tile_check_overlay			; Jump if not zero
 		retn
-loc_35:
+
+tile_check_overlay:
 		cmp	ah,19h
-		jb	loc_36			; Jump if below
+		jb	tile_has_overlay			; Jump if below
 		retn
-loc_36:
+
+tile_has_overlay:
 		push	di
 		push	es
-		mov	es,cs:data_50e
-		mov	di,es:data_4e
+		mov	es,cs:gvar_game_seg
+		mov	di,es:tileset_buf_b
 		mov	cl,es:[di]
 		or	cl,cl			; Zero ?
-		jz	loc_39			; Jump if zero
+		jz	tile_overlay_done			; Jump if zero
 		inc	di
-loc_37:
-		mov	al,es:[di]
-		cmp	al,0FFh
-		je	loc_39			; Jump if equal
-		cmp	ah,al
-		jne	loc_38			; Jump if not equal
-		mov	al,es:[di+1]
-		mov	[si-1],al
-		jmp	short loc_39
-loc_38:
-		inc	di
-		inc	di
-		dec	cl
-		jnz	loc_37			; Jump if not zero
-loc_39:
+
+tile_find_overlay:
+			mov	al,es:[di]
+			cmp	al,0FFh
+			je	tile_overlay_done			; Jump if equal
+			cmp	ah,al
+			jne	tile_overlay_next			; Jump if not equal
+			mov	al,es:[di+1]
+			mov	[si-1],al
+			jmp	short tile_overlay_done
+
+tile_overlay_next:
+			inc	di
+			inc	di
+			dec	cl
+			jnz	tile_find_overlay			; Jump if not zero
+
+tile_overlay_done:
 		pop	es
 		pop	di
 		retn
-		db	0BFh, 53h, 3Eh
-
-;���� External Entry into Subroutine ��������������������������������������
+		db	0BFh, 53h, 3Eh		; mov di,3E53h (dispatch table stub: render_fn_b1 entry bytes)
 
 decb_func_5:
 		mov	cx,6
-
-;���� External Entry into Subroutine ��������������������������������������
 
 decb_func_6:
 		push	cs
 		pop	es
 
-locloop_40:
-		push	cx
-		lodsb				; String [si] to al
-		push	ds
-		push	si
-		mov	cl,10h
-		mul	cl			; ax = reg * al
-		mov	si,ax
-		add	si,data_5e
-		mov	ds,cs:data_50e
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		pop	si
-		pop	ds
-		pop	cx
-		loop	locloop_40		; Loop if cx > 0
+copy_tile_pixels_loop:
+			push	cx
+			lodsb				; String [si] to al
+			push	ds
+			push	si
+			mov	cl,10h
+			mul	cl			; ax = reg * al
+			mov	si,ax
+			add	si,tile_pixel_base
+			mov	ds,cs:gvar_game_seg
+			movsw				; Mov [si] to es:[di]
+			movsw				; Mov [si] to es:[di]
+			movsw				; Mov [si] to es:[di]
+			movsw				; Mov [si] to es:[di]
+			movsw				; Mov [si] to es:[di]
+			movsw				; Mov [si] to es:[di]
+			movsw				; Mov [si] to es:[di]
+			movsw				; Mov [si] to es:[di]
+			pop	si
+			pop	ds
+			pop	cx
+			loop	copy_tile_pixels_loop		; Loop if cx > 0
 
 		retn
-loc_41:
+
+handle_door_tile:
 		push	ds
 		push	si
 		push	es
 		push	di
-		mov	di,data_22e
+		mov	di,tile_dest_ofs
 		movsw				; Mov [si] to es:[di]
 		add	si,5
 		movsw				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
-		mov	dl,cs:data_20e
+		mov	dl,cs:tile_row_ctr
 		add	dl,4
 		xor	dh,dh			; Zero register
 		add	dx,word ptr cs:[80h]
-		mov	ds:data_24e,dx
+		mov	ds:tile_col_ctr,dx
 		call	decb_func_8
-		mov	es:data_21e,al
-		cmp	byte ptr es:data_23e,0FDh
-		jne	loc_42			; Jump if not equal
+		mov	es:tile_idx_a,al
+		cmp	byte ptr es:tile_idx_b,0FDh
+		jne	door_no_second			; Jump if not equal
 		inc	dx
 		call	decb_func_8
-		mov	es:data_23e,al
-loc_42:
+		mov	es:tile_idx_b,al
+
+door_no_second:
 		mov	si,3CAFh
 		mov	di,3EB3h
 		call	decb_func_5
-		mov	si,cs:data_44e
-loc_43:
-		call	decb_scan_loop_3
-		or	bl,bl			; Zero ?
-		jz	loc_44			; Jump if zero
-		push	si
-		push	bx
-		call	decb_multiply_2
-		pop	bx
-		mov	es,cs:data_50e
-		mov	si,data_21e
-		call	decb_get_value
-		pop	si
-loc_44:
-		add	si,8
+		mov	si,cs:tile_list_ptr
+
+door_find_loop:
+			call	decb_scan_loop_3
+			or	bl,bl			; Zero ?
+			jz	door_no_match			; Jump if zero
+			push	si
+			push	bx
+			call	decb_multiply_2
+			pop	bx
+			mov	es,cs:gvar_game_seg
+			mov	si,tile_idx_a
+			call	decb_get_value
+			pop	si
+
+door_no_match:
+			add	si,8
 ;*		cmp	word ptr [si],0FFFFh
-		db	 83h, 3Ch,0FFh		;  Fixup - byte match
-		jnz	loc_43			; Jump if not zero
+			db	 83h, 3Ch,0FFh		;  Fixup - byte match
+			jnz	door_find_loop			; Jump if not zero
 		pop	di
 		pop	es
 		mov	ch,es:[di-1]
@@ -544,35 +572,39 @@ loc_44:
 		push	es
 		push	di
 		push	cx
-		mov	di,cs:data_19e
+		mov	di,cs:tile_hgc_ofs
 		mov	bl,5
-loc_45:
-		add	di,40B4h
-		cmp	di,6000h
-		jb	loc_46			; Jump if below
-		add	di,data_43e
-loc_46:
-		dec	bl
-		jnz	loc_45			; Jump if not zero
+
+door_col_advance_loop:
+			add	di,40B4h
+			cmp	di,6000h
+			jb	door_col_advance_wrap			; Jump if below
+			add	di,hgc_stride
+
+door_col_advance_wrap:
+			dec	bl
+			jnz	door_col_advance_loop			; Jump if not zero
 		push	di
-		mov	si,data_35e
+		mov	si,tile_strip_c
 		mov	ax,0B000h
 		mov	es,ax
 		inc	ch
-		jz	loc_47			; Jump if zero
+		jz	door_blit_top			; Jump if zero
 		call	decb_scan_loop_2
-loc_47:
+
+door_blit_top:
 		pop	di
 		pop	cx
-		cmp	byte ptr cs:data_20e,1Bh
-		je	loc_48			; Jump if equal
-		mov	si,data_36e
+		cmp	byte ptr cs:tile_row_ctr,1Bh
+		je	door_blit_done			; Jump if equal
+		mov	si,tile_strip_d
 		inc	di
 		inc	di
 		inc	cl
-		jz	loc_48			; Jump if zero
+		jz	door_blit_done			; Jump if zero
 		call	decb_scan_loop_2
-loc_48:
+
+door_blit_done:
 		pop	di
 		pop	es
 		mov	al,0FFh
@@ -585,164 +617,149 @@ loc_48:
 		pop	si
 		pop	ds
 		retn
+
 decb_func_2		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_multiply		proc	near
 		push	es
 		push	ds
-		mov	si,ds:data_49e
+		mov	si,ds:gvar_map_ptr
 		add	si,25h
-		mov	di,data_21e
+		mov	di,tile_idx_a
 		movsw				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
 		mov	dx,word ptr ds:[80h]
 		add	dx,3
-		mov	ds:data_24e,dx
-		cmp	byte ptr ds:data_21e,0FDh
-		jne	loc_49			; Jump if not equal
+		mov	ds:tile_col_ctr,dx
+		cmp	byte ptr ds:tile_idx_a,0FDh
+		jne	multiply_no_door			; Jump if not equal
 		inc	dx
 		call	decb_func_8
-		mov	ds:data_21e,al
-loc_49:
+		mov	ds:tile_idx_a,al
+
+multiply_no_door:
 		mov	si,3CAFh
 		mov	di,3EB3h
 		mov	cx,3
 		call	decb_func_6
-		mov	si,cs:data_44e
-loc_50:
-		call	decb_scan_loop_3
-		or	bl,bl			; Zero ?
-		jz	loc_51			; Jump if zero
-		push	si
-		dec	bl
-		mov	al,3
-		mul	bl			; ax = reg * al
-		push	ax
-		call	decb_multiply_2
-		pop	ax
-		add	di,ax
-		mov	bp,di
-		mov	es,cs:data_50e
-		mov	si,3CAFh
-		mov	di,3EB3h
-		call	decb_multiply_3
-		pop	si
-loc_51:
-		add	si,8
+		mov	si,cs:tile_list_ptr
+
+multiply_find_loop:
+			call	decb_scan_loop_3
+			or	bl,bl			; Zero ?
+			jz	multiply_no_match			; Jump if zero
+			push	si
+			dec	bl
+			mov	al,3
+			mul	bl			; ax = reg * al
+			push	ax
+			call	decb_multiply_2
+			pop	ax
+			add	di,ax
+			mov	bp,di
+			mov	es,cs:gvar_game_seg
+			mov	si,3CAFh
+			mov	di,3EB3h
+			call	decb_multiply_3
+			pop	si
+
+multiply_no_match:
+			add	si,8
 ;*		cmp	word ptr [si],0FFFFh
-		db	 83h, 3Ch,0FFh		;  Fixup - byte match
-		jnz	loc_50			; Jump if not zero
-		mov	di,data_38e
-		mov	si,data_35e
+			db	 83h, 3Ch,0FFh		;  Fixup - byte match
+			jnz	multiply_find_loop			; Jump if not zero
+		mov	di,hgc_scan_cache
+		mov	si,tile_strip_c
 		mov	ax,0B000h
 		mov	es,ax
 		call	decb_scan_loop_2
 		pop	ds
 		pop	es
-		mov	di,data_45e
+		mov	di,marker_buf
 		mov	al,0FFh
 		stosb				; Store al to es:[di]
 		stosb				; Store al to es:[di]
 		stosb				; Store al to es:[di]
 		retn
+
 decb_multiply		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_func_8		proc	near
 		call	decb_func_9
 		mov	al,[si+3]
 		cmp	al,0FDh
-		je	loc_52			; Jump if equal
+		je	func8_follow_chain			; Jump if equal
 		retn
-loc_52:
-		add	si,8
-		call	decb_func_10
-		mov	al,[si+3]
-		cmp	al,0FDh
-		je	loc_52			; Jump if equal
+
+func8_follow_chain:
+			add	si,8
+			call	decb_func_10
+			mov	al,[si+3]
+			cmp	al,0FDh
+			je	func8_follow_chain			; Jump if equal
 		retn
+
 decb_func_8		endp
 
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 decb_func_9		proc	near
-		mov	si,ds:data_44e
-
-;���� External Entry into Subroutine ��������������������������������������
+		mov	si,ds:tile_list_ptr
 
 decb_func_10:
-loc_53:
-		cmp	dx,[si]
-		jne	loc_54			; Jump if not equal
-		retn
-loc_54:
-		add	si,8
-		jmp	short loc_53
+
+func9_search_loop:
+			cmp	dx,[si]
+			jne	func9_no_match			; Jump if not equal
+			retn
+
+func9_no_match:
+			add	si,8
+			jmp	short func9_search_loop
+
 decb_func_9		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_scan_loop_2		proc	near
 		mov	cx,18h
 
-locloop_55:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,data_59e
-		jb	loc_56			; Jump if below
-		mov	ax,[si-2]
-		stosw				; Store ax to es:[di]
-		add	di,0A058h
-loc_56:
-		loop	locloop_55		; Loop if cx > 0
+scan2_blit_loop:
+			movsw				; Mov [si] to es:[di]
+			add	di,1FFEh
+			cmp	di,hgc_bank_size
+			jb	scan2_blit_wrap			; Jump if below
+			mov	ax,[si-2]
+			stosw				; Store ax to es:[di]
+			add	di,0A058h
+
+scan2_blit_wrap:
+			loop	scan2_blit_loop		; Loop if cx > 0
 
 		retn
+
 decb_scan_loop_2		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_get_value		proc	near
 		mov	bp,di
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		call	word ptr cs:data_13e[bx]	;*
+		call	word ptr cs:render_fn_tbl_a[bx]	;*
 		retn
+
 decb_get_value		endp
 
-			                        ;* No entry point to code
+; Render fn A, index 0: conditional redirect then render to tile_strip_c (dispatch target)
+render_fn_a0:				;* No entry point to code
 		xchg	[si],dh
 ;*		jle	loc_58			;*Jump if < or =
 		db	 7Eh, 34h		;  Fixup - byte match
 		mov	di,3EB3h
 		call	decb_multiply_3
-		jmp	short loc_61
-			                        ;* No entry point to code
+		jmp	short multiply3_render
+
+; Render fn A, index 1: skip 3 bytes, render to tile_strip_d (dispatch target)
+render_fn_a1:				;* No entry point to code
 		add	si,3
 		mov	di,3EE3h
-		jmp	short loc_61
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+		jmp	short multiply3_render
 
 decb_multiply_2		proc	near
 		mov	al,[si+2]
@@ -754,9 +771,10 @@ decb_multiply_2		proc	near
 		mov	di,ax
 		xor	dl,dl			; Zero register
 		or	ch,ch			; Zero ?
-		js	loc_57			; Jump if sign=1
+		js	multiply2_no_offset			; Jump if sign=1
 		mov	dl,4
-loc_57:
+
+multiply2_no_offset:
 		mov	al,[si+4]
 		and	al,3
 		add	al,dl
@@ -764,159 +782,161 @@ loc_57:
 		mul	cl			; ax = reg * al
 		add	di,ax
 		retn
+
 decb_multiply_2		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_scan_loop_3		proc	near
 		mov	cx,2
-		mov	dx,ds:data_24e
+		mov	dx,ds:tile_col_ctr
 
-locloop_59:
-		mov	bl,cl
-		cmp	[si],dx
-		jne	loc_60			; Jump if not equal
-		retn
-loc_60:
-		inc	dx
-		loop	locloop_59		; Loop if cx > 0
+scan3_search_loop:
+			mov	bl,cl
+			cmp	[si],dx
+			jne	scan3_no_match			; Jump if not equal
+			retn
+
+scan3_no_match:
+			inc	dx
+			loop	scan3_search_loop		; Loop if cx > 0
 
 		mov	bl,cl
 		retn
+
 decb_scan_loop_3		endp
 
-			                        ;* No entry point to code
+; Secondary dispatch: save pos, call render_fn_tbl_b[bl], return (dispatch target)
+get_value_b:				;* No entry point to code
 		mov	bp,di
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		call	word ptr cs:data_14e[bx]	;*
+		call	word ptr cs:render_fn_tbl_b[bx]	;*
 		retn
-			                        ;* No entry point to code
+
+; Render fn B, index 0: XOR-decode tile data, render to tile_strip_a (dispatch target)
+render_fn_b0:				;* No entry point to code
 		in	al,dx			; port 0, DMA-1 bas&add ch 0
 		xor	al,0E4h
 		xor	al,0DCh
 		xor	al,83h
 		lds	ax,dword ptr [bp+di]	; Load seg:offset ptr
 		mov	di,3E53h
-		jmp	short loc_61
-			                        ;* No entry point to code
+		jmp	short multiply3_render
+
+; Render fn B, index 1: render to tile_strip_a (dispatch target)
+render_fn_b1:				;* No entry point to code
 		mov	di,3E53h
 		call	decb_multiply_3
-		jmp	short loc_61
-			                        ;* No entry point to code
-		mov	di,data_34e
-		add	si,3
-		jmp	short loc_61
+		jmp	short multiply3_render
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+; Render fn B, index 2: skip 3 bytes, render to tile_strip_b (dispatch target)
+render_fn_b2:				;* No entry point to code
+		mov	di,tile_strip_b
+		add	si,3
+		jmp	short multiply3_render
 
 decb_multiply_3		proc	near
-loc_61:
+
+multiply3_render:
 		mov	cx,3
 
-locloop_62:
-		push	cx
-		mov	byte ptr [si],0FFh
-		inc	si
-		push	ds
-		push	si
-		mov	al,es:[bp]
-		inc	bp
-		push	es
-		push	bp
-		dec	al
-		mov	cl,10h
-		mul	cl			; ax = reg * al
-		mov	si,ax
-		add	si,data_1e
-		add	ax,7000h
-		mov	cs:data_29e,ax
-		mov	ax,cs
-		add	ax,2000h
-		mov	word ptr cs:data_29e+2,ax
-		mov	ds,cs:data_50e
-		push	cs
-		pop	es
-		call	decb_process_loop
-		pop	bp
-		pop	es
-		pop	si
-		pop	ds
-		pop	cx
-		loop	locloop_62		; Loop if cx > 0
+multiply3_process_loop:
+			push	cx
+			mov	byte ptr [si],0FFh
+			inc	si
+			push	ds
+			push	si
+			mov	al,es:[bp]
+			inc	bp
+			push	es
+			push	bp
+			dec	al
+			mov	cl,10h
+			mul	cl			; ax = reg * al
+			mov	si,ax
+			add	si,tile_alt_base
+			add	ax,7000h
+			mov	cs:far_ptr,ax
+			mov	ax,cs
+			add	ax,2000h
+			mov	word ptr cs:far_ptr+2,ax
+			mov	ds,cs:gvar_game_seg
+			push	cs
+			pop	es
+			call	decb_process_loop
+			pop	bp
+			pop	es
+			pop	si
+			pop	ds
+			pop	cx
+			loop	multiply3_process_loop		; Loop if cx > 0
 
 		retn
+
 decb_multiply_3		endp
 
-			                        ;* No entry point to code
+; Load 6-tile pixel bank from SI into tile_strip_a buffer (dispatch target)
+load_tile_bank:				;* No entry point to code
 		push	cs
 		pop	es
-		mov	di,data_33e
+		mov	di,tile_strip_a
 		mov	cx,6
 
-locloop_63:
-		push	cx
-		lodsb				; String [si] to al
-		push	ds
-		push	si
-		mov	cl,10h
-		mul	cl			; ax = reg * al
-		mov	si,ax
-		add	si,data_2e
-		add	ax,8000h
-		mov	cs:data_29e,ax
-		mov	ax,cs
-		add	ax,2000h
-		mov	word ptr cs:data_29e+2,ax
-		mov	ds,cs:data_50e
-		call	decb_process_loop
-		pop	si
-		pop	ds
-		pop	cx
-		loop	locloop_63		; Loop if cx > 0
+load_tile_bank_loop:
+			push	cx
+			lodsb				; String [si] to al
+			push	ds
+			push	si
+			mov	cl,10h
+			mul	cl			; ax = reg * al
+			mov	si,ax
+			add	si,tile_bank2_base
+			add	ax,8000h
+			mov	cs:far_ptr,ax
+			mov	ax,cs
+			add	ax,2000h
+			mov	word ptr cs:far_ptr+2,ax
+			mov	ds,cs:gvar_game_seg
+			call	decb_process_loop
+			pop	si
+			pop	ds
+			pop	cx
+			loop	load_tile_bank_loop		; Loop if cx > 0
 
 		retn
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_process_loop		proc	near
 		push	ds
 		push	si
 		push	di
-		lds	si,dword ptr cs:data_29e	; Load seg:offset ptr
+		lds	si,dword ptr cs:far_ptr	; Load seg:offset ptr
 		mov	cx,8
 
-locloop_64:
-		lodsw				; String [si] to ax
-		and	es:[di],ax
-		inc	di
-		inc	di
-		loop	locloop_64		; Loop if cx > 0
+process_and_loop:
+			lodsw				; String [si] to ax
+			and	es:[di],ax
+			inc	di
+			inc	di
+			loop	process_and_loop		; Loop if cx > 0
 
 		pop	di
 		pop	si
 		pop	ds
 		mov	cx,8
 
-locloop_65:
-		lodsw				; String [si] to ax
-		or	es:[di],ax
-		inc	di
-		inc	di
-		loop	locloop_65		; Loop if cx > 0
+process_or_loop:
+			lodsw				; String [si] to ax
+			or	es:[di],ax
+			inc	di
+			inc	di
+			loop	process_or_loop		; Loop if cx > 0
 
 		retn
+
 decb_process_loop		endp
 
-			                        ;* No entry point to code
+; Scroll tilemap left: shift tile rows left 2px using copy_buffer (dispatch target)
+scroll_left:				;* No entry point to code
 		push	ds
 		mov	ax,0B000h
 		mov	es,ax
@@ -924,35 +944,35 @@ decb_process_loop		endp
 		std				; Set direction flag
 		mov	si,53F8h
 		mov	al,8
-loc_66:
-		call	copy_buffer
-		add	si,2000h
-		cmp	si,6000h
-		jb	loc_67			; Jump if below
-		call	copy_buffer
-		add	si,0A05Ah
-loc_67:
-		dec	al
-		jnz	loc_66			; Jump if not zero
-		mov	si,data_57e
+
+scroll_left_row_loop:
+			call	copy_buffer
+			add	si,2000h
+			cmp	si,6000h
+			jb	scroll_left_wrap			; Jump if below
+			call	copy_buffer
+			add	si,0A05Ah
+
+scroll_left_wrap:
+			dec	al
+			jnz	scroll_left_row_loop			; Jump if not zero
+		mov	si,scroll_src_a
 		mov	al,8
-loc_68:
-		call	copy_buffer_2
-		add	si,2000h
-		cmp	si,data_59e
-		jb	loc_69			; Jump if below
-		call	copy_buffer_2
-		add	si,data_62e
-loc_69:
-		dec	al
-		jnz	loc_68			; Jump if not zero
+
+scroll_left2_row_loop:
+			call	copy_buffer_2
+			add	si,2000h
+			cmp	si,hgc_bank_size
+			jb	scroll_left2_wrap			; Jump if below
+			call	copy_buffer_2
+			add	si,hgc_stride_b
+
+scroll_left2_wrap:
+			dec	al
+			jnz	scroll_left2_row_loop			; Jump if not zero
 		pop	ds
 		cld				; Clear direction
 		retn
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 copy_buffer		proc	near
 		push	si
@@ -966,12 +986,8 @@ copy_buffer		proc	near
 		movsb				; Mov [si] to es:[di]
 		pop	si
 		retn
+
 copy_buffer		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 copy_buffer_2		proc	near
 		push	si
@@ -986,9 +1002,11 @@ copy_buffer_2		proc	near
 		movsb				; Mov [si] to es:[di]
 		pop	si
 		retn
+
 copy_buffer_2		endp
 
-			                        ;* No entry point to code
+; Scroll tilemap right: shift tile rows right 1px using copy_buffer (dispatch target)
+scroll_right:				;* No entry point to code
 		push	ds
 		mov	ax,0B000h
 		mov	es,ax
@@ -996,23 +1014,21 @@ copy_buffer_2		endp
 		std				; Set direction flag
 		mov	si,534h
 		mov	al,10h
-loc_70:
-		call	copy_buffer_3
-		add	si,2000h
-		cmp	si,6000h
-		jb	loc_71			; Jump if below
-		call	copy_buffer_3
-		add	si,data_62e
-loc_71:
-		dec	al
-		jnz	loc_70			; Jump if not zero
+
+scroll_right_row_loop:
+			call	copy_buffer_3
+			add	si,2000h
+			cmp	si,6000h
+			jb	scroll_right_wrap			; Jump if below
+			call	copy_buffer_3
+			add	si,hgc_stride_b
+
+scroll_right_wrap:
+			dec	al
+			jnz	scroll_right_row_loop			; Jump if not zero
 		pop	ds
 		cld				; Clear direction
 		retn
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 copy_buffer_3		proc	near
 		push	si
@@ -1024,43 +1040,45 @@ copy_buffer_3		proc	near
 		movsb				; Mov [si] to es:[di]
 		pop	si
 		retn
+
 copy_buffer_3		endp
 
-			                        ;* No entry point to code
+; Scroll tilemap up: shift tile rows up 1 row using copy_buffer_4/5 (dispatch target)
+scroll_up:				;* No entry point to code
 		push	ds
 		mov	ax,0B000h
 		mov	es,ax
 		mov	ds,ax
 		mov	si,53C1h
 		mov	al,8
-loc_72:
-		call	copy_buffer_4
-		add	si,2000h
-		cmp	si,6000h
-		jb	loc_73			; Jump if below
-		call	copy_buffer_4
-		add	si,0A05Ah
-loc_73:
-		dec	al
-		jnz	loc_72			; Jump if not zero
-		mov	si,data_56e
+
+scroll_up_row_loop:
+			call	copy_buffer_4
+			add	si,2000h
+			cmp	si,6000h
+			jb	scroll_up_wrap			; Jump if below
+			call	copy_buffer_4
+			add	si,0A05Ah
+
+scroll_up_wrap:
+			dec	al
+			jnz	scroll_up_row_loop			; Jump if not zero
+		mov	si,scroll_src_b
 		mov	al,8
-loc_74:
-		call	copy_buffer_5
-		add	si,2000h
-		cmp	si,data_59e
-		jb	loc_75			; Jump if below
-		call	copy_buffer_5
-		add	si,data_62e
-loc_75:
-		dec	al
-		jnz	loc_74			; Jump if not zero
+
+scroll_up2_row_loop:
+			call	copy_buffer_5
+			add	si,2000h
+			cmp	si,hgc_bank_size
+			jb	scroll_up2_wrap			; Jump if below
+			call	copy_buffer_5
+			add	si,hgc_stride_b
+
+scroll_up2_wrap:
+			dec	al
+			jnz	scroll_up2_row_loop			; Jump if not zero
 		pop	ds
 		retn
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 copy_buffer_4		proc	near
 		push	si
@@ -1074,12 +1092,8 @@ copy_buffer_4		proc	near
 		movsb				; Mov [si] to es:[di]
 		pop	si
 		retn
+
 copy_buffer_4		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 copy_buffer_5		proc	near
 		push	si
@@ -1094,31 +1108,31 @@ copy_buffer_5		proc	near
 		movsb				; Mov [si] to es:[di]
 		pop	si
 		retn
+
 copy_buffer_5		endp
 
-			                        ;* No entry point to code
+; Scroll tilemap down: shift tile rows down 1 row using copy_buffer_6 (dispatch target)
+scroll_down:				;* No entry point to code
 		push	ds
 		mov	ax,0B000h
 		mov	es,ax
 		mov	ds,ax
 		mov	si,4FDh
 		mov	al,10h
-loc_76:
-		call	copy_buffer_6
-		add	si,2000h
-		cmp	si,6000h
-		jb	loc_77			; Jump if below
-		call	copy_buffer_6
-		add	si,data_62e
-loc_77:
-		dec	al
-		jnz	loc_76			; Jump if not zero
+
+scroll_down_row_loop:
+			call	copy_buffer_6
+			add	si,2000h
+			cmp	si,6000h
+			jb	scroll_down_wrap			; Jump if below
+			call	copy_buffer_6
+			add	si,hgc_stride_b
+
+scroll_down_wrap:
+			dec	al
+			jnz	scroll_down_row_loop			; Jump if not zero
 		pop	ds
 		retn
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 copy_buffer_6		proc	near
 		push	si
@@ -1130,9 +1144,11 @@ copy_buffer_6		proc	near
 		movsb				; Mov [si] to es:[di]
 		pop	si
 		retn
+
 copy_buffer_6		endp
 
-			                        ;* No entry point to code
+; Blit one tile to HGC from game-seg tile_pixel_base (AL=tile_id, BH=col) (dispatch target)
+blit_tile_sprite:			;* No entry point to code
 		push	ds
 		push	si
 		xor	ah,ah			; Zero register
@@ -1145,26 +1161,29 @@ copy_buffer_6		endp
 		add	bh,bh
 		call	math_calc
 		mov	di,ax
-		mov	ds,cs:data_50e
+		mov	ds,cs:gvar_game_seg
 		mov	ax,0B000h
 		mov	es,ax
 		mov	cx,8
 
-locloop_78:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,data_59e
-		jb	loc_79			; Jump if below
-		mov	ax,[si-2]
-		stosw				; Store ax to es:[di]
-		add	di,0A058h
-loc_79:
-		loop	locloop_78		; Loop if cx > 0
+blit_sprite_row_loop:
+			movsw				; Mov [si] to es:[di]
+			add	di,1FFEh
+			cmp	di,hgc_bank_size
+			jb	blit_sprite_row_wrap			; Jump if below
+			mov	ax,[si-2]
+			stosw				; Store ax to es:[di]
+			add	di,0A058h
+
+blit_sprite_row_wrap:
+			loop	blit_sprite_row_loop		; Loop if cx > 0
 
 		pop	si
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+; Blit 9-row tile from tile_row_data_a to HGC at computed column offset (dispatch target)
+blit_tile9:				;* No entry point to code
 		push	ds
 		push	si
 		push	di
@@ -1174,56 +1193,63 @@ loc_79:
 		mov	di,ax
 		mov	ax,0B000h
 		mov	es,ax
-		mov	si,data_15e
+		mov	si,tile_row_data_a
 		mov	cx,9
 
-locloop_80:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,data_59e
-		jb	loc_81			; Jump if below
-		mov	ax,[si-2]
-		stosw				; Store ax to es:[di]
-		add	di,data_42e
-loc_81:
-		loop	locloop_80		; Loop if cx > 0
+blit_tile9_row_loop:
+			movsw				; Mov [si] to es:[di]
+			add	di,1FFEh
+			cmp	di,hgc_bank_size
+			jb	blit_tile9_row_wrap			; Jump if below
+			mov	ax,[si-2]
+			stosw				; Store ax to es:[di]
+			add	di,hgc_stride_a
+
+blit_tile9_row_wrap:
+			loop	blit_tile9_row_loop		; Loop if cx > 0
 
 		pop	di
 		pop	si
 		pop	ds
 		retn
-		db	 00h, 00h, 28h, 00h, 2Ah, 00h
-		db	 2Ah, 80h, 2Ah,0A0h, 2Ah, 80h
-		db	 2Ah, 00h, 28h, 00h, 00h, 00h
+		; blit_tile9 pixel mask table + copy_tile_strip entry stub bytes
+		; Pixel row mask (9 words): intensity pattern for blit_tile9 scanlines
+		db	 00h, 00h, 28h, 00h, 2Ah, 00h	; row 0-2: 0x0000, 0x0028, 0x002A
+		db	 2Ah, 80h, 2Ah,0A0h, 2Ah, 80h	; row 3-5: 0x802A, 0xA02A, 0x802A
+		db	 2Ah, 00h, 28h, 00h, 00h, 00h	; row 6-8: 0x002A, 0x0028, 0x0000
+		; copy_tile_strip dispatch entry bytes (call math_calc + setup)
 		db	0E8h, 3Ah, 05h, 8Bh,0F8h,0BEh
 		db	0C3h, 3Ch,0B8h, 00h,0B0h, 8Eh
 		db	0C0h,0B9h, 09h, 00h
 
-locloop_82:
-		push	cx
-		push	di
-		push	si
-		mov	cx,ds:data_53e
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	si
-		pop	di
-		add	di,2000h
-		cmp	di,data_40e
-		jb	loc_83			; Jump if below
-		push	si
-		push	di
-		mov	cx,ds:data_53e
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	di
-		pop	si
-		add	di,0A05Ah
-loc_83:
-		add	si,28h
-		pop	cx
-		loop	locloop_82		; Loop if cx > 0
+copy_tile_strip_loop:
+			push	cx
+			push	di
+			push	si
+			mov	cx,ds:gvar_copy_width
+			rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+			pop	si
+			pop	di
+			add	di,2000h
+			cmp	di,hgc_bank_bdy
+			jb	copy_tile_strip_wrap			; Jump if below
+			push	si
+			push	di
+			mov	cx,ds:gvar_copy_width
+			rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+			pop	di
+			pop	si
+			add	di,0A05Ah
+
+copy_tile_strip_wrap:
+			add	si,28h
+			pop	cx
+			loop	copy_tile_strip_loop		; Loop if cx > 0
 
 		retn
-			                        ;* No entry point to code
+
+; Draw string character: clear glyph buffer, render char, optionally apply overlay (dispatch target)
+draw_str_char:				;* No entry point to code
 		push	si
 		push	di
 		push	di
@@ -1231,7 +1257,7 @@ loc_83:
 		push	ax
 		push	cs
 		pop	es
-		mov	di,data_31e
+		mov	di,char_render_buf
 		xor	ax,ax			; Zero register
 		mov	cx,0C8h
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
@@ -1243,8 +1269,8 @@ loc_83:
 		call	decb_func_23
 		pop	ax
 		pop	di
-		test	byte ptr ds:data_51e,0FFh
-		jz	loc_84			; Jump if zero
+		test	byte ptr ds:gvar_item_flag,0FFh
+		jz	text_no_overlay			; Jump if zero
 		mov	bx,ax
 		add	ax,ax
 		add	ax,bx
@@ -1252,42 +1278,37 @@ loc_83:
 		mov	dl,[di]
 		mov	ax,[di+1]
 		call	decb_process_loop_2
-loc_84:
+
+text_no_overlay:
 		pop	di
 		pop	si
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 decb_func_23		proc	near
 		push	cs
 		pop	es
-		mov	di,data_32e
+		mov	di,text_render_buf
 		xor	bl,bl			; Zero register
-loc_85:
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jnz	loc_86			; Jump if not zero
-		retn
-loc_86:
-		push	bx
-		push	ds
-		push	si
-		and	bl,3
-		call	decb_func_24
-		pop	si
-		pop	ds
-		pop	bx
-		inc	bl
-		jmp	short loc_85
+
+render_glyph_loop:
+			lodsb				; String [si] to al
+			or	al,al			; Zero ?
+			jnz	render_glyph_draw			; Jump if not zero
+			retn
+
+render_glyph_draw:
+			push	bx
+			push	ds
+			push	si
+			and	bl,3
+			call	decb_func_24
+			pop	si
+			pop	ds
+			pop	bx
+			inc	bl
+			jmp	short render_glyph_loop
+
 decb_func_23		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_func_24		proc	near
 		sub	al,20h			; ' '
@@ -1298,48 +1319,53 @@ decb_func_24		proc	near
 		mov	si,ax
 		push	cs
 		pop	ds
-		add	si,ds:data_48e
+		add	si,ds:font_ptr_b
 		add	bl,bl
 		mov	cl,bl
 		push	di
 		mov	bl,8
-loc_87:
-		push	bx
-		lodsb				; String [si] to al
-		mov	dl,4
-loc_88:
-		add	ax,ax
-		add	ah,ah
-		dec	dl
-		jnz	loc_88			; Jump if not zero
-		mov	al,ah
-		shr	ah,1			; Shift w/zeros fill
-		or	al,ah
-		xor	bl,bl			; Zero register
-		mov	bh,al
-		shr	bx,cl			; Shift w/zeros fill
-		or	es:[di],bh
-		or	es:[di+1],bl
-		add	di,28h
-		pop	bx
-		dec	bl
-		jnz	loc_87			; Jump if not zero
+
+render_glyph_row_loop:
+			push	bx
+			lodsb				; String [si] to al
+			mov	dl,4
+
+render_pixel_shift_loop:
+				add	ax,ax
+				add	ah,ah
+				dec	dl
+				jnz	render_pixel_shift_loop			; Jump if not zero
+			mov	al,ah
+			shr	ah,1			; Shift w/zeros fill
+			or	al,ah
+			xor	bl,bl			; Zero register
+			mov	bh,al
+			shr	bx,cl			; Shift w/zeros fill
+			or	es:[di],bh
+			or	es:[di+1],bl
+			add	di,28h
+			pop	bx
+			dec	bl
+			jnz	render_glyph_row_loop			; Jump if not zero
 		pop	di
 		inc	di
 		cmp	cl,6
-		je	loc_89			; Jump if equal
+		je	render_glyph_wide			; Jump if equal
 		retn
-loc_89:
+
+render_glyph_wide:
 		inc	di
 		retn
+
 decb_func_24		endp
 
-			                        ;* No entry point to code
+; Draw number: DX:AX = value, clear glyph buf, BCD-convert and render digits (dispatch target)
+draw_number:				;* No entry point to code
 		push	dx
 		push	ax
 		push	cs
 		pop	es
-		mov	di,data_31e
+		mov	di,char_render_buf
 		xor	ax,ax			; Zero register
 		mov	cx,0C8h
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
@@ -1350,117 +1376,106 @@ decb_func_24		endp
 		mov	si,38D4h
 		mov	cx,7
 		mov	bl,1
-		mov	word ptr ds:data_53e,0Bh
-		jmp	short locloop_90
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+		mov	word ptr ds:gvar_copy_width,0Bh
+		jmp	short render_char_cols_loop
 
 decb_process_loop_2		proc	near
 		call	decb_process_loop_4
 		push	cs
 		pop	es
-		mov	di,data_32e
-		add	di,ds:data_52e
-		mov	si,data_16e
+		mov	di,text_render_buf
+		add	di,ds:gvar_text_ofs
+		mov	si,tile_row_data_b
 		mov	cx,6
 		mov	bl,1
 
-locloop_90:
-		push	cx
-		push	bx
-		push	di
-		lodsb				; String [si] to al
-		push	si
-		call	decb_process_loop_3
-		pop	si
-		pop	di
-		pop	bx
-		mov	al,bl
-		inc	di
-		and	ax,1
-		add	di,ax
-		inc	bl
-		pop	cx
-		loop	locloop_90		; Loop if cx > 0
+render_char_cols_loop:
+			push	cx
+			push	bx
+			push	di
+			lodsb				; String [si] to al
+			push	si
+			call	decb_process_loop_3
+			pop	si
+			pop	di
+			pop	bx
+			mov	al,bl
+			inc	di
+			and	ax,1
+			add	di,ax
+			inc	bl
+			pop	cx
+			loop	render_char_cols_loop		; Loop if cx > 0
 
 		retn
+
 decb_process_loop_2		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_process_loop_3		proc	near
 		inc	al
-		jnz	loc_91			; Jump if not zero
+		jnz	process3_do_render			; Jump if not zero
 		retn
-loc_91:
+
+process3_do_render:
 		dec	al
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		add	ax,ax
 		add	ax,ax
-		add	ax,cs:data_47e
+		add	ax,cs:font_ptr_a
 		mov	si,ax
 		mov	cx,7
 
-locloop_92:
-		lodsb				; String [si] to al
-		mov	ah,8
-loc_93:
-		add	al,al
-		adc	dx,dx
-		add	dx,dx
-		dec	ah
-		jnz	loc_93			; Jump if not zero
-		mov	ax,dx
-		shr	dx,1			; Shift w/zeros fill
-		or	ax,dx
-		test	bl,1
-		jnz	loc_94			; Jump if not zero
-		add	ax,ax
-		add	ax,ax
-		add	ax,ax
-		add	ax,ax
-loc_94:
-		or	es:[di],ah
-		or	es:[di+1],al
-		add	di,28h
-		loop	locloop_92		; Loop if cx > 0
+process3_pixel_loop:
+			lodsb				; String [si] to al
+			mov	ah,8
+
+process3_shift_loop:
+				add	al,al
+				adc	dx,dx
+				add	dx,dx
+				dec	ah
+				jnz	process3_shift_loop			; Jump if not zero
+			mov	ax,dx
+			shr	dx,1			; Shift w/zeros fill
+			or	ax,dx
+			test	bl,1
+			jnz	process3_odd_col			; Jump if not zero
+			add	ax,ax
+			add	ax,ax
+			add	ax,ax
+			add	ax,ax
+
+process3_odd_col:
+			or	es:[di],ah
+			or	es:[di+1],al
+			add	di,28h
+			loop	process3_pixel_loop		; Loop if cx > 0
 
 		retn
+
 decb_process_loop_3		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_process_loop_4		proc	near
 		mov	di,38D4h
 		call	decb_func_28
 		mov	cx,6
 
-locloop_95:
-		test	byte ptr cs:[di],0FFh
-		jz	loc_96			; Jump if zero
-		retn
-loc_96:
-		mov	byte ptr cs:[di],0FFh
-		inc	di
-		loop	locloop_95		; Loop if cx > 0
+process4_fill_loop:
+			test	byte ptr cs:[di],0FFh
+			jz	process4_write_ff			; Jump if zero
+			retn
+
+process4_write_ff:
+			mov	byte ptr cs:[di],0FFh
+			inc	di
+			loop	process4_fill_loop		; Loop if cx > 0
 
 		retn
+
 decb_process_loop_4		endp
 
-		db	7 dup (0)
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+		db	7 dup (0)		; BCD time digit storage (7 bytes: HH MM SS.tenth)
 
 decb_func_28		proc	near
 		mov	cl,0Fh
@@ -1486,37 +1501,33 @@ decb_func_28		proc	near
 		mov	cs:[di+5],dh
 		mov	cs:[di+6],al
 		retn
+
 decb_func_28		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_func_29		proc	near
 		xor	dh,dh			; Zero register
-loc_97:
-		sub	dl,cl
-		jc	loc_100			; Jump if carry Set
-		sub	ax,bx
-		jnc	loc_98			; Jump if carry=0
-		or	dl,dl			; Zero ?
-		jz	loc_99			; Jump if zero
-		dec	dl
-loc_98:
-		inc	dh
-		jmp	short loc_97
-loc_99:
+
+func29_div_loop:
+			sub	dl,cl
+			jc	func29_done			; Jump if carry Set
+			sub	ax,bx
+			jnc	func29_borrow			; Jump if carry=0
+			or	dl,dl			; Zero ?
+			jz	func29_add_back			; Jump if zero
+			dec	dl
+
+func29_borrow:
+			inc	dh
+			jmp	short func29_div_loop
+
+func29_add_back:
 		add	ax,bx
-loc_100:
+
+func29_done:
 		add	dl,cl
 		retn
+
 decb_func_29		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_func_30		proc	near
 		xor	dh,dh			; Zero register
@@ -1525,9 +1536,11 @@ decb_func_30		proc	near
 		mov	dh,dl
 		xor	dl,dl			; Zero register
 		retn
+
 decb_func_30		endp
 
-			                        ;* No entry point to code
+; Copy tile row upward in HGC (BL+CL=dst row, CH=width, copies row above) (dispatch target)
+copy_tile_up:				;* No entry point to code
 		push	ds
 		push	ax
 		add	bl,cl
@@ -1536,9 +1549,10 @@ decb_func_30		endp
 		mov	di,ax
 		mov	si,di
 		sub	si,2000h
-		jnc	loc_101			; Jump if carry=0
-		add	si,data_58e
-loc_101:
+		jnc	copy_up_si_nowrap			; Jump if carry=0
+		add	si,hgc_bank_back
+
+copy_up_si_nowrap:
 		mov	ax,0B000h
 		mov	es,ax
 		mov	ds,ax
@@ -1546,31 +1560,33 @@ loc_101:
 		xor	bh,bh			; Zero register
 		xor	ch,ch			; Zero register
 
-locloop_102:
-		push	cx
-		push	di
-		push	si
-		mov	cx,bx
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	si
-		pop	di
-		sub	di,2000h
-		jnc	loc_103			; Jump if carry=0
-		push	di
-		push	si
-		add	di,data_60e
-		mov	cx,bx
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	si
-		pop	di
-		add	di,data_58e
-loc_103:
-		sub	si,2000h
-		jnc	loc_104			; Jump if carry=0
-		add	si,data_39e
-loc_104:
-		pop	cx
-		loop	locloop_102		; Loop if cx > 0
+copy_up_row_loop:
+			push	cx
+			push	di
+			push	si
+			mov	cx,bx
+			rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+			pop	si
+			pop	di
+			sub	di,2000h
+			jnc	copy_up_di_wrap			; Jump if carry=0
+			push	di
+			push	si
+			add	di,hgc_wrap_fwd
+			mov	cx,bx
+			rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+			pop	si
+			pop	di
+			add	di,hgc_bank_back
+
+copy_up_di_wrap:
+			sub	si,2000h
+			jnc	copy_up_si_wrap			; Jump if carry=0
+			add	si,hgc_wrap_back
+
+copy_up_si_wrap:
+			pop	cx
+			loop	copy_up_row_loop		; Loop if cx > 0
 
 		pop	ax
 		mov	dl,28h			; '('
@@ -1583,7 +1599,9 @@ loc_104:
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+; Copy tile row downward in HGC (BL=dst row, CH=width, copies row below) (dispatch target)
+copy_tile_down:				;* No entry point to code
 		push	ds
 		push	ax
 		call	math_calc
@@ -1591,9 +1609,10 @@ loc_104:
 		mov	si,di
 		add	si,2000h
 		cmp	si,6000h
-		jb	loc_105			; Jump if below
-		add	si,data_62e
-loc_105:
+		jb	copy_dn_si_nowrap			; Jump if below
+		add	si,hgc_stride_b
+
+copy_dn_si_nowrap:
 		mov	ax,0B000h
 		mov	es,ax
 		mov	ds,ax
@@ -1601,32 +1620,34 @@ loc_105:
 		xor	bh,bh			; Zero register
 		xor	ch,ch			; Zero register
 
-locloop_106:
-		push	cx
-		push	di
-		push	si
-		mov	cx,bx
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	si
-		pop	di
-		add	di,2000h
-		cmp	di,data_59e
-		jb	loc_107			; Jump if below
-		push	di
-		push	si
-		mov	cx,bx
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	si
-		pop	di
-		add	di,data_62e
-loc_107:
-		add	si,2000h
-		cmp	si,6000h
-		jb	loc_108			; Jump if below
-		add	si,data_43e
-loc_108:
-		pop	cx
-		loop	locloop_106		; Loop if cx > 0
+copy_dn_row_loop:
+			push	cx
+			push	di
+			push	si
+			mov	cx,bx
+			rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+			pop	si
+			pop	di
+			add	di,2000h
+			cmp	di,hgc_bank_size
+			jb	copy_dn_di_wrap			; Jump if below
+			push	di
+			push	si
+			mov	cx,bx
+			rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+			pop	si
+			pop	di
+			add	di,hgc_stride_b
+
+copy_dn_di_wrap:
+			add	si,2000h
+			cmp	si,6000h
+			jb	copy_dn_si_wrap			; Jump if below
+			add	si,hgc_stride
+
+copy_dn_si_wrap:
+			pop	cx
+			loop	copy_dn_row_loop		; Loop if cx > 0
 
 		pop	ax
 		mov	dl,28h			; '('
@@ -1639,48 +1660,53 @@ loc_108:
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+; Invert (XOR 0xFFFF) a 28-pixel wide area for 0x90 rows at hgc_cursor_ofs (dispatch target)
+invert_screen:				;* No entry point to code
 		mov	ax,0B000h
 		mov	es,ax
-		mov	di,data_55e
+		mov	di,hgc_cursor_ofs
 		mov	cx,90h
 
-locloop_109:
-		push	cx
-		push	di
-		mov	ax,0FFFFh
-		mov	cx,1Ch
+invert_rows_outer:
+			push	cx
+			push	di
+			mov	ax,0FFFFh
+			mov	cx,1Ch
 
-locloop_110:
-		xor	es:[di],ax
-		inc	di
-		inc	di
-		loop	locloop_110		; Loop if cx > 0
+invert_scan_loop:
+				xor	es:[di],ax
+				inc	di
+				inc	di
+				loop	invert_scan_loop		; Loop if cx > 0
 
-		pop	di
-		add	di,2000h
-		cmp	di,data_59e
-		jb	loc_112			; Jump if below
-		push	di
-		mov	ax,0FFFFh
-		mov	cx,1Ch
+			pop	di
+			add	di,2000h
+			cmp	di,hgc_bank_size
+			jb	invert_bank_wrap			; Jump if below
+			push	di
+			mov	ax,0FFFFh
+			mov	cx,1Ch
 
-locloop_111:
-		xor	es:[di],ax
-		inc	di
-		inc	di
-		loop	locloop_111		; Loop if cx > 0
+invert_bank2_scan:
+				xor	es:[di],ax
+				inc	di
+				inc	di
+				loop	invert_bank2_scan		; Loop if cx > 0
 
-		pop	di
-		add	di,0A05Ah
-loc_112:
-		pop	cx
-		loop	locloop_109		; Loop if cx > 0
+			pop	di
+			add	di,0A05Ah
+
+invert_bank_wrap:
+			pop	cx
+			loop	invert_rows_outer		; Loop if cx > 0
 
 		retn
-			                        ;* No entry point to code
-		mov	cs:data_29e,di
-		mov	word ptr cs:data_29e+2,es
+
+; Encode CX tiles: copy tile rows to temp seg, compute HGC bitplane words (dispatch target)
+encode_tiles:				;* No entry point to code
+		mov	cs:far_ptr,di
+		mov	word ptr cs:far_ptr+2,es
 		push	cx
 		push	ds
 		push	si
@@ -1690,7 +1716,7 @@ loc_112:
 		mov	ax,30h
 		mul	cx			; dx:ax = reg * ax
 		mov	cx,ax
-		mov	di,data_54e
+		mov	di,zero_offset
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 		pop	di
 		pop	es
@@ -1698,93 +1724,98 @@ loc_112:
 		mov	ax,cs
 		add	ax,3000h
 		mov	ds,ax
-		mov	si,data_54e
+		mov	si,zero_offset
 
-locloop_113:
-		push	cx
-		mov	cx,8
+encode_tile_rows_loop:
+			push	cx
+			mov	cx,8
 
-locloop_114:
-		push	cx
-		lodsw				; String [si] to ax
-		mov	dx,ax
-		lodsw				; String [si] to ax
-		mov	cx,ax
-		lodsw				; String [si] to ax
-		mov	bx,ax
-		mov	bp,ax
-		or	ax,cx
-		or	ax,dx
-		and	bp,cx
-		and	bp,dx
-		not	bp
-		and	dx,bp
-		and	cx,bp
-		and	bx,bp
-		mov	cs:data_25e,dx
-		mov	cs:data_26e,cx
-		mov	cs:data_27e,bx
-		not	ax
-		mov	cs:data_28e,ax
-		call	decb_process_loop_5
-		mov	ax,dx
-		stosw				; Store ax to es:[di]
-		push	es
-		push	di
-		les	di,dword ptr cs:data_29e	; Load seg:offset ptr
-		call	decb_scan_loop_4
-		mov	ax,dx
-		stosw				; Store ax to es:[di]
-		mov	cs:data_29e,di
-		pop	di
-		pop	es
-		pop	cx
-		loop	locloop_114		; Loop if cx > 0
+encode_tile_pixels_loop:
+				push	cx
+				lodsw				; String [si] to ax
+				mov	dx,ax
+				lodsw				; String [si] to ax
+				mov	cx,ax
+				lodsw				; String [si] to ax
+				mov	bx,ax
+				mov	bp,ax
+				or	ax,cx
+				or	ax,dx
+				and	bp,cx
+				and	bp,dx
+				not	bp
+				and	dx,bp
+				and	cx,bp
+				and	bx,bp
+				mov	cs:bitplane_w0,dx
+				mov	cs:bitplane_w1,cx
+				mov	cs:bitplane_w2,bx
+				not	ax
+				mov	cs:bitplane_w3,ax
+				call	decb_process_loop_5
+				mov	ax,dx
+				stosw				; Store ax to es:[di]
+				push	es
+				push	di
+				les	di,dword ptr cs:far_ptr	; Load seg:offset ptr
+				call	decb_scan_loop_4
+				mov	ax,dx
+				stosw				; Store ax to es:[di]
+				mov	cs:far_ptr,di
+				pop	di
+				pop	es
+				pop	cx
+				loop	encode_tile_pixels_loop		; Loop if cx > 0
 
-		pop	cx
-		loop	locloop_113		; Loop if cx > 0
+			pop	cx
+			loop	encode_tile_rows_loop		; Loop if cx > 0
 
 		retn
-			                        ;* No entry point to code
+
+; Reload tile pixels from game seg to encode buf, then render tilemap (dispatch target)
+reload_tile_pixels:			;* No entry point to code
 		push	ds
-		mov	ds,cs:data_50e
-		mov	si,data_5e
+		mov	ds,cs:gvar_game_seg
+		mov	si,tile_pixel_base
 		mov	ax,cs
 		add	ax,3000h
 		mov	es,ax
 		mov	cx,2EE0h
-		mov	di,data_54e
+		mov	di,zero_offset
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		mov	es,cs:data_50e
+		mov	es,cs:gvar_game_seg
 		mov	ax,cs
 		add	ax,3000h
 		mov	ds,ax
 		mov	si,0
 		mov	di,8100h
-		mov	bx,es:data_3e
+		mov	bx,es:tileset_buf_a
 		mov	bp,0D000h
 		mov	cx,0FAh
 
-locloop_115:
-		push	cx
-		mov	al,es:[bx]
-		cmp	al,5
-		jb	loc_116			; Jump if below
-		xor	al,al			; Zero register
-loc_116:
-		push	bx
-		xor	bx,bx			; Zero register
-		mov	bl,al
-		add	bx,bx
-		call	word ptr cs:data_17e[bx]	;*
-		pop	bx
-		inc	bx
-		pop	cx
-		loop	locloop_115		; Loop if cx > 0
+render_tilemap_loop:
+			push	cx
+			mov	al,es:[bx]
+			cmp	al,5
+			jb	render_tile_clamp			; Jump if below
+			xor	al,al			; Zero register
+
+render_tile_clamp:
+			push	bx
+			xor	bx,bx			; Zero register
+			mov	bl,al
+			add	bx,bx
+			call	word ptr cs:tile_type_tbl[bx]	;*
+			pop	bx
+			inc	bx
+			pop	cx
+			loop	render_tilemap_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+; Tile type render dispatch entry + init data: daa/cmp are dispatch table word bytes
+render_tile_type_entry:		;* No entry point to code
 		daa				; Decimal adjust
 		cmp	cx,[si+3Bh]
 ;*		jns	loc_119			;*Jump if not sign
@@ -1793,134 +1824,133 @@ loc_116:
 		cmp	dx,bx
 		db	3Bh, 0B9h, 08h, 00h		; cmp di, word ptr [bx+di+8] (16-bit disp)
 
-locloop_117:
-		push	cx
-		lodsw				; String [si] to ax
-		mov	cs:data_25e,ax
-		lodsw				; String [si] to ax
-		mov	cs:data_26e,ax
-		lodsw				; String [si] to ax
-		mov	cs:data_27e,ax
-		call	decb_process_loop_5
-		mov	ax,dx
-		stosw				; Store ax to es:[di]
-		mov	word ptr es:[bp],0
-		inc	bp
-		inc	bp
-		pop	cx
-		loop	locloop_117		; Loop if cx > 0
+render_opaque_loop:
+			push	cx
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w0,ax
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w1,ax
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w2,ax
+			call	decb_process_loop_5
+			mov	ax,dx
+			stosw				; Store ax to es:[di]
+			mov	word ptr es:[bp],0
+			inc	bp
+			inc	bp
+			pop	cx
+			loop	render_opaque_loop		; Loop if cx > 0
 
 		retn
 		db	0B9h, 08h, 00h
 
-locloop_118:
-		push	cx
-		lodsw				; String [si] to ax
-		mov	cs:data_25e,ax
-		lodsw				; String [si] to ax
-		mov	cs:data_26e,ax
-		mov	word ptr cs:data_27e,0
-		lodsw				; String [si] to ax
-		mov	cs:data_28e,ax
-		call	decb_process_loop_5
-		mov	ax,dx
-		stosw				; Store ax to es:[di]
-		call	decb_scan_loop_4
-		mov	es:[bp],dx
-		inc	bp
-		inc	bp
-		pop	cx
-		loop	locloop_118		; Loop if cx > 0
+render_masked_loop:
+			push	cx
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w0,ax
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w1,ax
+			mov	word ptr cs:bitplane_w2,0
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w3,ax
+			call	decb_process_loop_5
+			mov	ax,dx
+			stosw				; Store ax to es:[di]
+			call	decb_scan_loop_4
+			mov	es:[bp],dx
+			inc	bp
+			inc	bp
+			pop	cx
+			loop	render_masked_loop		; Loop if cx > 0
 
 		retn
 		db	0B9h, 08h, 00h
 
-locloop_120:
-		push	cx
-		lodsw				; String [si] to ax
-		mov	cs:data_25e,ax
-		lodsw				; String [si] to ax
-		mov	cs:data_28e,ax
-		mov	word ptr cs:data_26e,0
-		lodsw				; String [si] to ax
-		mov	cs:data_27e,ax
-		call	decb_process_loop_5
-		mov	ax,dx
-		stosw				; Store ax to es:[di]
-		call	decb_scan_loop_4
-		mov	es:[bp],dx
-		inc	bp
-		inc	bp
-		pop	cx
-		loop	locloop_120		; Loop if cx > 0
+render_trans_loop:
+			push	cx
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w0,ax
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w3,ax
+			mov	word ptr cs:bitplane_w1,0
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w2,ax
+			call	decb_process_loop_5
+			mov	ax,dx
+			stosw				; Store ax to es:[di]
+			call	decb_scan_loop_4
+			mov	es:[bp],dx
+			inc	bp
+			inc	bp
+			pop	cx
+			loop	render_trans_loop		; Loop if cx > 0
 
 		retn
 		db	0B9h, 08h, 00h
 
-locloop_121:
-		push	cx
-		lodsw				; String [si] to ax
-		mov	cs:data_28e,ax
-		mov	word ptr cs:data_25e,0
-		lodsw				; String [si] to ax
-		mov	cs:data_26e,ax
-		lodsw				; String [si] to ax
-		mov	cs:data_27e,ax
-		call	decb_process_loop_5
-		mov	ax,dx
-		stosw				; Store ax to es:[di]
-		call	decb_scan_loop_4
-		mov	es:[bp],dx
-		inc	bp
-		inc	bp
-		pop	cx
-		loop	locloop_121		; Loop if cx > 0
+render_neg_loop:
+			push	cx
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w3,ax
+			mov	word ptr cs:bitplane_w0,0
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w1,ax
+			lodsw				; String [si] to ax
+			mov	cs:bitplane_w2,ax
+			call	decb_process_loop_5
+			mov	ax,dx
+			stosw				; Store ax to es:[di]
+			call	decb_scan_loop_4
+			mov	es:[bp],dx
+			inc	bp
+			inc	bp
+			pop	cx
+			loop	render_neg_loop		; Loop if cx > 0
 
 		retn
 		db	0B9h, 08h, 00h
 
-locloop_122:
-		push	cx
-		add	si,6
-		xor	ax,ax			; Zero register
-		stosw				; Store ax to es:[di]
-		mov	word ptr es:[bp],0FFFFh
-		inc	bp
-		inc	bp
-		pop	cx
-		loop	locloop_122		; Loop if cx > 0
+render_blank_loop:
+			push	cx
+			add	si,6
+			xor	ax,ax			; Zero register
+			stosw				; Store ax to es:[di]
+			mov	word ptr es:[bp],0FFFFh
+			inc	bp
+			inc	bp
+			pop	cx
+			loop	render_blank_loop		; Loop if cx > 0
 
 		retn
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 decb_process_loop_5		proc	near
 		mov	cx,8
 
-locloop_123:
-		xor	bx,bx			; Zero register
-		rol	word ptr cs:data_27e,1	; Rotate
-		adc	bx,bx
-		rol	word ptr cs:data_26e,1	; Rotate
-		adc	bx,bx
-		rol	word ptr cs:data_25e,1	; Rotate
-		adc	bx,bx
-		rol	word ptr cs:data_27e,1	; Rotate
-		adc	bx,bx
-		rol	word ptr cs:data_26e,1	; Rotate
-		adc	bx,bx
-		rol	word ptr cs:data_25e,1	; Rotate
-		adc	bx,bx
-		add	dx,dx
-		add	dx,dx
-		or	dl,cs:data_18e[bx]
-		loop	locloop_123		; Loop if cx > 0
+pixel_encode_loop:
+			xor	bx,bx			; Zero register
+			rol	word ptr cs:bitplane_w2,1	; Rotate
+			adc	bx,bx
+			rol	word ptr cs:bitplane_w1,1	; Rotate
+			adc	bx,bx
+			rol	word ptr cs:bitplane_w0,1	; Rotate
+			adc	bx,bx
+			rol	word ptr cs:bitplane_w2,1	; Rotate
+			adc	bx,bx
+			rol	word ptr cs:bitplane_w1,1	; Rotate
+			adc	bx,bx
+			rol	word ptr cs:bitplane_w0,1	; Rotate
+			adc	bx,bx
+			add	dx,dx
+			add	dx,dx
+			or	dl,cs:pixel_encode_tbl[bx]
+			loop	pixel_encode_loop		; Loop if cx > 0
 
 		retn
+
 decb_process_loop_5		endp
 
+; pixel_encode_tbl (CS:3C24h): 64-entry 2-bit HGC pixel encoding lookup
+; Each entry maps a 6-bit (3 bitplane pairs) index to a 2-bit HGC pixel value (0-3)
 		db	0, 1, 0, 1, 1, 0
 		db	3, 2, 1, 3, 2, 3
 		db	1, 3, 3, 2, 2, 2
@@ -1933,35 +1963,28 @@ decb_process_loop_5		endp
 		db	3, 2, 1, 2, 2, 2
 		db	2, 2, 2, 2
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 decb_scan_loop_4		proc	near
 		mov	cx,8
 
-locloop_124:
-		xor	al,al			; Zero register
-		rol	word ptr cs:data_28e,1	; Rotate
-		adc	al,al
-		rol	word ptr cs:data_28e,1	; Rotate
-		adc	al,al
-		cmp	al,3
-		je	loc_125			; Jump if equal
-		xor	al,al			; Zero register
-loc_125:
-		add	dx,dx
-		add	dx,dx
-		or	dl,al
-		loop	locloop_124		; Loop if cx > 0
+bitplane_decode_loop:
+			xor	al,al			; Zero register
+			rol	word ptr cs:bitplane_w3,1	; Rotate
+			adc	al,al
+			rol	word ptr cs:bitplane_w3,1	; Rotate
+			adc	al,al
+			cmp	al,3
+			je	bitplane_has_mask			; Jump if equal
+			xor	al,al			; Zero register
+
+bitplane_has_mask:
+			add	dx,dx
+			add	dx,dx
+			or	dl,al
+			loop	bitplane_decode_loop		; Loop if cx > 0
 
 		retn
+
 decb_scan_loop_4		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 math_calc		proc	near
 		xor	ax,ax			; Zero register
@@ -1982,12 +2005,11 @@ math_calc		proc	near
 		xor	bh,bh			; Zero register
 		add	ax,bx
 		retn
+
 math_calc		endp
 
-		db	1127 dup (0)
+		db	1127 dup (0)		; BSS: zero-initialized data areas (tile bufs, render state, etc.)
 
 seg_a		ends
-
-
 
 		end	start
