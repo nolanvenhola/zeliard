@@ -57,13 +57,14 @@ screen_start_off	equ	504h
 move_up_left	equ	0FEBFh
 move_up	equ	0FEC0h
 move_up_right	equ	0FEC1h
+sprite_backbuf_plane_sz equ	1028h		; bytes per plane in sprite back-buffer (at CS+3000h)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
 		org	0
 
-zr1_01		proc	far
+imgctl_module		proc	far
 
 start:
 		adc	byte ptr [di],0
@@ -109,7 +110,7 @@ ega_setup_mode2_a:
 		db	 50h,0BAh,0C4h, 03h		; push ax; mov dx,3C4h
 		db	0B8h, 02h, 0Fh,0EFh,0BAh,0CEh	; mov ax,0F02h; out dx,ax; mov dx,3CEh
 		db	 03h,0B8h, 05h, 02h,0EFh, 2Eh	; ; mov ax,0205h; out dx,ax; CS:
-		db	0C7h, 06h, 16h, 42h, 71h, 30h	; mov word[render_fn_ptr],3071h
+		db	0C7h, 06h, 16h, 42h, 71h, 30h	; mov word[render_fn_ptr],3071h  CS:3071h = mode2a inner row renderer
 		db	 58h,0E8h, 5Dh, 01h,0B8h, 03h	; pop ax; call +0x15D; mov ax,3
 		db	 00h,0EFh,0B8h, 05h, 00h,0EFh	; out dx,ax; mov ax,5; out dx,ax
 		db	0B8h, 08h,0FFh,0EFh,0C3h		; mov ax,0FF08h; out dx,ax; retn
@@ -146,7 +147,7 @@ ega_setup_mode1:
 		mov	ax,205h
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
-		mov	word ptr cs:render_fn_ptr,30C5h
+		mov	word ptr cs:render_fn_ptr,30C5h	; CS:30C5h = mode1 inner row renderer
 		pop	ax
 		call	imgctl_multiply
 		mov	ax,3
@@ -200,7 +201,7 @@ ega_setup_mode2:
 		mov	ax,205h
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
-		mov	word ptr cs:render_fn_ptr,3121h
+		mov	word ptr cs:render_fn_ptr,3121h	; CS:3121h = mode2 inner row renderer
 		mov	al,0FFh
 		call	imgctl_multiply
 		mov	ax,5
@@ -224,7 +225,7 @@ ega_setup_mode3:
 		mov	ax,205h
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
-		mov	word ptr cs:render_fn_ptr,314Dh
+		mov	word ptr cs:render_fn_ptr,314Dh	; CS:314Dh = mode3 inner row renderer
 		xor	al,al			; Zero register
 		call	imgctl_multiply
 		mov	ax,3
@@ -252,57 +253,57 @@ ega_render_planes_cx:
 		xor	ch,ch			; Zero register
 
 pixel_blend_loop:
-				push	cx
-				push	ax
-				lodsb				; String [si] to al
-				and	al,ah
-				mov	ch,al
-				mov	cl,ds:[bp+si-1]
-				and	cl,ah
-				mov	bh,cl
-				and	bh,ch
-				mov	bl,cl
-				or	bl,ch
-				not	bh
-				and	ch,bh
-				and	cl,bh
-				and	bl,ah
-				test	byte ptr cs:plane_enable_flags,0FFh
-				jz	skip_bg_plane			; Jump if zero
-				mov	ax,3
-				out	dx,ax			; port 0, DMA-1 bas&add ch 0
-				mov	al,8
-				out	dx,al			; port 0, DMA-1 bas&add ch 0
-				inc	dx
-				mov	al,bl
-				out	dx,al			; port 1, DMA-1 bas&cnt ch 0
-				dec	dx
-				xor	al,al			; Zero register
-				xchg	es:[di],al
-				mov	ax,1003h
-				out	dx,ax			; port 0, DMA-1 bas&add ch 0
+						push	cx
+						push	ax
+						lodsb				; String [si] to al
+						and	al,ah
+						mov	ch,al
+						mov	cl,ds:[bp+si-1]
+						and	cl,ah
+						mov	bh,cl
+						and	bh,ch
+						mov	bl,cl
+						or	bl,ch
+						not	bh
+						and	ch,bh
+						and	cl,bh
+						and	bl,ah
+						test	byte ptr cs:plane_enable_flags,0FFh
+						jz	skip_bg_plane			; Jump if zero
+						mov	ax,3
+						out	dx,ax			; port 0, DMA-1 bas&add ch 0
+						mov	al,8
+						out	dx,al			; port 0, DMA-1 bas&add ch 0
+						inc	dx
+						mov	al,bl
+						out	dx,al			; port 1, DMA-1 bas&cnt ch 0
+						dec	dx
+						xor	al,al			; Zero register
+						xchg	es:[di],al
+						mov	ax,1003h
+						out	dx,ax			; port 0, DMA-1 bas&add ch 0
 
 skip_bg_plane:
-				mov	al,8
-				out	dx,al			; port 0, DMA-1 bas&add ch 0
-				inc	dx
-				mov	al,ch
-				out	dx,al			; port 1, DMA-1 bas&cnt ch 0
-				mov	al,2
-				xchg	es:[di],al
-				mov	al,cl
-				out	dx,al			; port 1, DMA-1 bas&cnt ch 0
-				mov	al,4
-				xchg	es:[di],al
-				mov	al,bl
-				out	dx,al			; port 1, DMA-1 bas&cnt ch 0
-				mov	al,8
-				xchg	es:[di],al
-				dec	dx
-				inc	di
-				pop	ax
-				pop	cx
-				loop	pixel_blend_loop		; Loop if cx > 0
+						mov	al,8
+						out	dx,al			; port 0, DMA-1 bas&add ch 0
+						inc	dx
+						mov	al,ch
+						out	dx,al			; port 1, DMA-1 bas&cnt ch 0
+						mov	al,2
+						xchg	es:[di],al
+						mov	al,cl
+						out	dx,al			; port 1, DMA-1 bas&cnt ch 0
+						mov	al,4
+						xchg	es:[di],al
+						mov	al,bl
+						out	dx,al			; port 1, DMA-1 bas&cnt ch 0
+						mov	al,8
+						xchg	es:[di],al
+						dec	dx
+						inc	di
+						pop	ax
+						pop	cx
+						loop	pixel_blend_loop		; Loop if cx > 0
 
 		pop	si
 		pop	bp
@@ -310,7 +311,7 @@ skip_bg_plane:
 		pop	cx
 		retn
 
-zr1_01		endp
+imgctl_module		endp
 
 imgctl_multiply		proc	near
 		push	ds
@@ -349,48 +350,48 @@ vga_operation		proc	near
 		mov	bp,8
 
 vga_op_pass_loop:
-				mov	al,cs:cur_color
-				mov	cs:cur_col_ctr,al
-				mov	byte ptr cs:gvar_frame_timer,0
-				push	cx
-				push	si
-				push	di
+						mov	al,cs:cur_color
+						mov	cs:cur_col_ctr,al
+						mov	byte ptr cs:gvar_frame_timer,0
+						push	cx
+						push	si
+						push	di
 
 vga_op_row_loop:
-						mov	bl,cs:cur_col_ctr
-						and	bx,7
-						mov	ah,cs:mask_tbl_a[bx]
-						call	word ptr cs:render_fn_ptr
-						inc	byte ptr cs:cur_col_ctr
-						mov	al,ch
-						xor	ah,ah			; Zero register
-						add	si,ax
-						add	di,50h
-						dec	cl
-						jz	vga_op_row_done			; Jump if zero
-						mov	bl,cs:cur_col_ctr
-						and	bx,7
-						mov	ah,cs:mask_tbl_b[bx]
-						call	word ptr cs:render_fn_ptr
-						inc	byte ptr cs:cur_col_ctr
-						mov	al,ch
-						xor	ah,ah			; Zero register
-						add	si,ax
-						add	di,50h
-						dec	cl
-						jnz	vga_op_row_loop			; Jump if not zero
+										mov	bl,cs:cur_col_ctr
+										and	bx,7
+										mov	ah,cs:mask_tbl_a[bx]
+										call	word ptr cs:render_fn_ptr
+										inc	byte ptr cs:cur_col_ctr
+										mov	al,ch
+										xor	ah,ah			; Zero register
+										add	si,ax
+										add	di,50h
+										dec	cl
+										jz	vga_op_row_done			; Jump if zero
+										mov	bl,cs:cur_col_ctr
+										and	bx,7
+										mov	ah,cs:mask_tbl_b[bx]
+										call	word ptr cs:render_fn_ptr
+										inc	byte ptr cs:cur_col_ctr
+										mov	al,ch
+										xor	ah,ah			; Zero register
+										add	si,ax
+										add	di,50h
+										dec	cl
+										jnz	vga_op_row_loop			; Jump if not zero
 
 vga_op_row_done:
-				pop	di
-				pop	si
-				pop	cx
-				inc	byte ptr cs:cur_color
+						pop	di
+						pop	si
+						pop	cx
+						inc	byte ptr cs:cur_color
 
 wait_frame_timer:
-						cmp	byte ptr cs:gvar_frame_timer,14h
-						jb	wait_frame_timer			; Jump if below
-				dec	bp
-				jnz	vga_op_pass_loop			; Jump if not zero
+										cmp	byte ptr cs:gvar_frame_timer,14h
+										jb	wait_frame_timer			; Jump if below
+						dec	bp
+						jnz	vga_op_pass_loop			; Jump if not zero
 		retn
 
 vga_operation		endp
@@ -410,10 +411,10 @@ fill_plane_entry:
 		xor	ch,ch			; Zero register
 
 fill_plane_loop:
-				mov	al,bh
-				xchg	es:[di],al
-				inc	di
-				loop	fill_plane_loop		; Loop if cx > 0
+						mov	al,bh
+						xchg	es:[di],al
+						inc	di
+						loop	fill_plane_loop		; Loop if cx > 0
 
 		dec	dx
 		pop	ax
@@ -434,13 +435,13 @@ imgctl_process_loop_2		proc	near
 		xor	ch,ch			; Zero register
 
 mask_write_loop:
-				lodsb				; String [si] to al
-				and	al,ah
-				out	dx,al			; port 2, DMA-1 bas&add ch 1
-				mov	al,bh
-				xchg	es:[di],al
-				inc	di
-				loop	mask_write_loop		; Loop if cx > 0
+						lodsb				; String [si] to al
+						and	al,ah
+						out	dx,al			; port 2, DMA-1 bas&add ch 1
+						mov	al,bh
+						xchg	es:[di],al
+						inc	di
+						loop	mask_write_loop		; Loop if cx > 0
 
 		dec	dx
 		pop	ax
@@ -465,40 +466,40 @@ imgctl_render_text:
 		mov	di,text_dest_off
 
 char_render_loop:
-				lodsb				; String [si] to al
-				cmp	al,0FFh
-				jne	char_not_end			; Jump if not equal
-				retn
+						lodsb				; String [si] to al
+						cmp	al,0FFh
+						jne	char_not_end			; Jump if not equal
+						retn
 
 char_not_end:
-				sub	al,20h			; ' '
-				jnc	char_printable			; Jump if carry=0
-				retn
+						sub	al,20h			; ' '
+						jnc	char_printable			; Jump if carry=0
+						retn
 
 char_printable:
-				jz	char_advance			; Jump if zero
-				push	si
-				push	di
-				xor	ah,ah			; Zero register
-				add	ax,ax
-				add	ax,ax
-				add	ax,ax
-				add	ax,ax
-				add	ax,ds:font_ptr_a
-				mov	si,ax
-				mov	cx,8
+						jz	char_advance			; Jump if zero
+						push	si
+						push	di
+						xor	ah,ah			; Zero register
+						add	ax,ax
+						add	ax,ax
+						add	ax,ax
+						add	ax,ax
+						add	ax,ds:font_ptr_a
+						mov	si,ax
+						mov	cx,8
 
 char_row_copy_loop:
-						movsw				; Mov [si] to es:[di]
-						add	di,4Eh
-						loop	char_row_copy_loop		; Loop if cx > 0
+										movsw				; Mov [si] to es:[di]
+										add	di,4Eh
+										loop	char_row_copy_loop		; Loop if cx > 0
 
-				pop	di
-				pop	si
+						pop	di
+						pop	si
 
 char_advance:
-				add	di,2
-				jmp	short char_render_loop
+						add	di,2
+						jmp	short char_render_loop
 
 imgctl_copy_vga_src:
 		mov	dl,50h			; 'P'
@@ -530,16 +531,16 @@ imgctl_copy_vga_src:
 		xor	ch,ch			; Zero register
 
 ega_row_copy_loop:
-				push	cx
-				push	di
-				mov	si,di
-				add	si,50h
-				mov	cx,bx
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	di
-				add	di,50h
-				pop	cx
-				loop	ega_row_copy_loop		; Loop if cx > 0
+						push	cx
+						push	di
+						mov	si,di
+						add	si,50h
+						mov	cx,bx
+						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+						pop	di
+						add	di,50h
+						pop	cx
+						loop	ega_row_copy_loop		; Loop if cx > 0
 
 		pop	ds
 		pop	si
@@ -579,38 +580,38 @@ copy_vga_buffer		proc	near
 		xor	ch,ch			; Zero register
 
 copy_vga_planes_loop:
-				push	cx
-				mov	al,1
-				out	dx,al			; port 3C5h, EGA sequencr func
-				push	si
-				push	di
-				mov	cx,bx
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	di
-				pop	si
-				mov	al,2
-				out	dx,al			; port 3C5h, EGA sequencr func
-				push	si
-				push	di
-				add	si,cs:img_stride
-				mov	cx,bx
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	di
-				pop	si
-				mov	al,4
-				out	dx,al			; port 3C5h, EGA sequencr func
-				push	si
-				push	di
-				add	si,cs:img_stride
-				add	si,cs:img_stride
-				mov	cx,bx
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	di
-				pop	si
-				pop	cx
-				add	di,50h
-				add	si,bx
-				loop	copy_vga_planes_loop		; Loop if cx > 0
+						push	cx
+						mov	al,1
+						out	dx,al			; port 3C5h, EGA sequencr func
+						push	si
+						push	di
+						mov	cx,bx
+						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+						pop	di
+						pop	si
+						mov	al,2
+						out	dx,al			; port 3C5h, EGA sequencr func
+						push	si
+						push	di
+						add	si,cs:img_stride
+						mov	cx,bx
+						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+						pop	di
+						pop	si
+						mov	al,4
+						out	dx,al			; port 3C5h, EGA sequencr func
+						push	si
+						push	di
+						add	si,cs:img_stride
+						add	si,cs:img_stride
+						mov	cx,bx
+						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+						pop	di
+						pop	si
+						pop	cx
+						add	di,50h
+						add	si,bx
+						loop	copy_vga_planes_loop		; Loop if cx > 0
 
 		retn
 
@@ -624,23 +625,23 @@ imgctl_init_sprites:
 		mov	cx,9
 
 sprite_obj_init_loop:
-				mov	al,1
-				stosb				; Store al to es:[di]
-				mov	ax,dx
-				stosw				; Store ax to es:[di]
-				movsw				; Mov [si] to es:[di]
-				stosw				; Store ax to es:[di]
-				mov	ax,101h
-				stosw				; Store ax to es:[di]
-				movsb				; Mov [si] to es:[di]
-				movsb				; Mov [si] to es:[di]
-				xor	al,al			; Zero register
-				stosb				; Store al to es:[di]
-				stosb				; Store al to es:[di]
-				movsb				; Mov [si] to es:[di]
-				movsb				; Mov [si] to es:[di]
-				add	dx,240h
-				loop	sprite_obj_init_loop		; Loop if cx > 0
+						mov	al,1
+						stosb				; Store al to es:[di]
+						mov	ax,dx
+						stosw				; Store ax to es:[di]
+						movsw				; Mov [si] to es:[di]
+						stosw				; Store ax to es:[di]
+						mov	ax,101h
+						stosw				; Store ax to es:[di]
+						movsb				; Mov [si] to es:[di]
+						movsb				; Mov [si] to es:[di]
+						xor	al,al			; Zero register
+						stosb				; Store al to es:[di]
+						stosb				; Store al to es:[di]
+						movsb				; Mov [si] to es:[di]
+						movsb				; Mov [si] to es:[di]
+						add	dx,240h
+						loop	sprite_obj_init_loop		; Loop if cx > 0
 
 		mov	byte ptr ds:cur_col_ctr,0
 		mov	byte ptr ds:gvar_frame_timer,0
@@ -735,117 +736,117 @@ after_sprite_loop:
 		mov	cx,9
 
 sprite_blit_loop:
-				push	cx
-				push	si
-				mov	al,ds:cur_col_ctr
-				and	al,7
-				mov	bx,palette_xlat_tbl
-				xlat				; al=[al+[bx]] table
-				mov	ds:ega_palette_buf,al
-				inc	byte ptr ds:cur_col_ctr
-				xor	ax,ax			; Zero register
-				call	vga_operation4
-				pop	si
-				test	byte ptr cs:[si],0FFh
-				jz	skip_sprite_blit			; Jump if zero
-				xor	bx,bx			; Zero register
-				mov	bl,[si+0Dh]
-				add	bx,bx
-				add	bx,bx
-				mov	bp,ds:sprite_src_tbl[bx]
-				mov	cx,[si+7]
-				mov	dl,[si]
-				mov	byte ptr [si],0
-				mov	ax,[si+3]
-				cmp	ah,4Bh			; 'K'
-				jae	skip_sprite_blit			; Jump if above or =
-				cmp	al,0A0h
-				jae	skip_sprite_blit			; Jump if above or =
-				mov	[si],dl
-				mov	di,[si+5]
-				push	ds
-				push	si
-				mov	ax,vga_seg
-				mov	es,ax
-				mov	ds,cs:gvar_game_seg
-				mov	si,bp
-				mov	dx,3C4h
-				mov	ax,102h
-				out	dx,ax			; port 3C4h, EGA sequencr index
-								;  al = 2, map mask register
-				mov	dx,3CEh
-				mov	ax,4
-				out	dx,ax			; port 3CEh, EGA graphic index
-								;  al = 4, read map select
-				call	imgctl_process_loop_3
-				mov	dx,3C4h
-				mov	ax,202h
-				out	dx,ax			; port 3C4h, EGA sequencr index
-								;  al = 2, map mask register
-				mov	dx,3CEh
-				mov	ax,104h
-				out	dx,ax			; port 3CEh, EGA graphic index
-								;  al = 4, read map select
-				call	imgctl_process_loop_3
-				pop	si
-				pop	ds
+						push	cx
+						push	si
+						mov	al,ds:cur_col_ctr
+						and	al,7
+						mov	bx,palette_xlat_tbl
+						xlat				; al=[al+[bx]] table
+						mov	ds:ega_palette_buf,al
+						inc	byte ptr ds:cur_col_ctr
+						xor	ax,ax			; Zero register
+						call	vga_operation4
+						pop	si
+						test	byte ptr cs:[si],0FFh
+						jz	skip_sprite_blit			; Jump if zero
+						xor	bx,bx			; Zero register
+						mov	bl,[si+0Dh]
+						add	bx,bx
+						add	bx,bx
+						mov	bp,ds:sprite_src_tbl[bx]
+						mov	cx,[si+7]
+						mov	dl,[si]
+						mov	byte ptr [si],0
+						mov	ax,[si+3]
+						cmp	ah,4Bh			; 'K'
+						jae	skip_sprite_blit			; Jump if above or =
+						cmp	al,0A0h
+						jae	skip_sprite_blit			; Jump if above or =
+						mov	[si],dl
+						mov	di,[si+5]
+						push	ds
+						push	si
+						mov	ax,vga_seg
+						mov	es,ax
+						mov	ds,cs:gvar_game_seg
+						mov	si,bp
+						mov	dx,3C4h
+						mov	ax,102h
+						out	dx,ax			; port 3C4h, EGA sequencr index
+										;  al = 2, map mask register
+						mov	dx,3CEh
+						mov	ax,4
+						out	dx,ax			; port 3CEh, EGA graphic index
+										;  al = 4, read map select
+						call	imgctl_process_loop_3
+						mov	dx,3C4h
+						mov	ax,202h
+						out	dx,ax			; port 3C4h, EGA sequencr index
+										;  al = 2, map mask register
+						mov	dx,3CEh
+						mov	ax,104h
+						out	dx,ax			; port 3CEh, EGA graphic index
+										;  al = 4, read map select
+						call	imgctl_process_loop_3
+						pop	si
+						pop	ds
 
 skip_sprite_blit:
-				pop	cx
-				add	si,0Fh
-				loop	sprite_blit_loop		; Loop if cx > 0
+						pop	cx
+						add	si,0Fh
+						loop	sprite_blit_loop		; Loop if cx > 0
 
 wait_sprite_frame:
-				cmp	byte ptr cs:gvar_frame_timer,1Eh
-				jb	wait_sprite_frame			; Jump if below
+						cmp	byte ptr cs:gvar_frame_timer,1Eh
+						jb	wait_sprite_frame			; Jump if below
 		mov	byte ptr cs:gvar_frame_timer,0
 		mov	si,sprite_obj_tbl
 		mov	cx,9
 
 sprite_backbuf_loop:
-				push	cx
-				mov	bp,[si+1]
-				mov	di,[si+5]
-				mov	cx,[si+7]
-				push	ds
-				push	si
-				mov	ax,vga_seg
-				mov	es,ax
-				mov	ax,cs
-				add	ax,3000h
-				mov	ds,ax
-				mov	si,bp
-				mov	dx,3C4h
-				mov	al,2
-				out	dx,al			; port 3C4h, EGA sequencr index
-								;  al = 2, map mask register
-				inc	dx
-				mov	al,1
-				out	dx,al			; port 3C5h, EGA sequencr func
-				call	copy_buffer_2
-				mov	al,2
-				out	dx,al			; port 3C5h, EGA sequencr func
-				call	copy_buffer_2
-				mov	al,4
-				out	dx,al			; port 3C5h, EGA sequencr func
-				call	copy_buffer_2
-				pop	si
-				pop	ds
-				pop	cx
-				add	si,0Fh
-				loop	sprite_backbuf_loop		; Loop if cx > 0
+						push	cx
+						mov	bp,[si+1]
+						mov	di,[si+5]
+						mov	cx,[si+7]
+						push	ds
+						push	si
+						mov	ax,vga_seg
+						mov	es,ax
+						mov	ax,cs
+						add	ax,3000h
+						mov	ds,ax
+						mov	si,bp
+						mov	dx,3C4h
+						mov	al,2
+						out	dx,al			; port 3C4h, EGA sequencr index
+										;  al = 2, map mask register
+						inc	dx
+						mov	al,1
+						out	dx,al			; port 3C5h, EGA sequencr func
+						call	copy_buffer_2
+						mov	al,2
+						out	dx,al			; port 3C5h, EGA sequencr func
+						call	copy_buffer_2
+						mov	al,4
+						out	dx,al			; port 3C5h, EGA sequencr func
+						call	copy_buffer_2
+						pop	si
+						pop	ds
+						pop	cx
+						add	si,0Fh
+						loop	sprite_backbuf_loop		; Loop if cx > 0
 
 		mov	si,sprite_obj_tbl
 		mov	cx,9
 
 check_all_done_loop:
-				test	byte ptr [si],0FFh
-				jz	all_sprites_done			; Jump if zero
-				jmp	sprite_anim_loop
+						test	byte ptr [si],0FFh
+						jz	all_sprites_done			; Jump if zero
+						jmp	sprite_anim_loop
 
 all_sprites_done:
-				add	si,0Fh
-				loop	check_all_done_loop		; Loop if cx > 0
+						add	si,0Fh
+						loop	check_all_done_loop		; Loop if cx > 0
 
 		mov	ax,2
 		jmp	load_palette_entry
@@ -855,16 +856,16 @@ copy_buffer		proc	near
 		push	cx
 
 copy_buf_row_loop:
-				push	si
-				push	cx
-				mov	cl,ch
-				xor	ch,ch			; Zero register
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	cx
-				pop	si
-				add	si,50h
-				dec	cl
-				jnz	copy_buf_row_loop			; Jump if not zero
+						push	si
+						push	cx
+						mov	cl,ch
+						xor	ch,ch			; Zero register
+						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+						pop	cx
+						pop	si
+						add	si,50h
+						dec	cl
+						jnz	copy_buf_row_loop			; Jump if not zero
 		pop	cx
 		pop	si
 		retn
@@ -876,16 +877,16 @@ copy_buffer_2		proc	near
 		push	cx
 
 copy_buf2_row_loop:
-				push	di
-				push	cx
-				mov	cl,ch
-				xor	ch,ch			; Zero register
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	cx
-				pop	di
-				add	di,50h
-				dec	cl
-				jnz	copy_buf2_row_loop			; Jump if not zero
+						push	di
+						push	cx
+						mov	cl,ch
+						xor	ch,ch			; Zero register
+						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+						pop	cx
+						pop	di
+						add	di,50h
+						dec	cl
+						jnz	copy_buf2_row_loop			; Jump if not zero
 		pop	cx
 		pop	di
 		retn
@@ -897,22 +898,22 @@ imgctl_process_loop_3		proc	near
 		push	cx
 
 or_plane_row_loop:
-				push	di
-				push	cx
-				mov	cl,ch
-				xor	ch,ch			; Zero register
+						push	di
+						push	cx
+						mov	cl,ch
+						xor	ch,ch			; Zero register
 
 or_pixels_loop:
-						lodsb				; String [si] to al
-						or	es:[di],al
-						inc	di
-						loop	or_pixels_loop		; Loop if cx > 0
+										lodsb				; String [si] to al
+										or	es:[di],al
+										inc	di
+										loop	or_pixels_loop		; Loop if cx > 0
 
-				pop	cx
-				pop	di
-				add	di,50h
-				dec	cl
-				jnz	or_plane_row_loop			; Jump if not zero
+						pop	cx
+						pop	di
+						add	di,50h
+						dec	cl
+						jnz	or_plane_row_loop			; Jump if not zero
 		pop	cx
 		pop	di
 		retn
@@ -946,14 +947,14 @@ imgctl_copy_game_planes:
 		db	 57h,0B9h, 30h, 00h
 
 copy_17w_row_loop:
-				push	di
-				push	cx
-				mov	cx,11h
-				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-				pop	cx
-				pop	di
-				add	di,50h
-				loop	copy_17w_row_loop		; Loop if cx > 0
+						push	di
+						push	cx
+						mov	cx,11h
+						rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+						pop	cx
+						pop	di
+						add	di,50h
+						loop	copy_17w_row_loop		; Loop if cx > 0
 
 		pop	di
 		retn
@@ -993,14 +994,14 @@ copy_buffer_3		proc	near
 		mov	cx,20h
 
 copy_buf3_row_loop:
-				push	di
-				push	cx
-				mov	cx,9
-				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-				pop	cx
-				pop	di
-				add	di,50h
-				loop	copy_buf3_row_loop		; Loop if cx > 0
+						push	di
+						push	cx
+						mov	cx,9
+						rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+						pop	cx
+						pop	di
+						add	di,50h
+						loop	copy_buf3_row_loop		; Loop if cx > 0
 
 		pop	di
 		retn
@@ -1015,21 +1016,21 @@ imgctl_render_sprite_cols:
 		out	dx,ax			; port 3C4h, EGA sequencr index
 						;  al = 2, map mask register
 		xor	di,di			; Zero register
-		mov	bx,2288h
+		mov	bx,2288h		; checkerboard pixel pair: bh=22h (b00100010), bl=88h (b10001000)
 		mov	cx,64h
 
 checkerboard_loop:
-				push	cx
-				mov	al,bh
-				mov	ah,bh
-				mov	cx,28h
-				rep	stosw			; Rep when cx >0 Store ax to es:[di]
-				mov	al,bl
-				mov	ah,bl
-				mov	cx,28h
-				rep	stosw			; Rep when cx >0 Store ax to es:[di]
-				pop	cx
-				loop	checkerboard_loop		; Loop if cx > 0
+						push	cx
+						mov	al,bh
+						mov	ah,bh
+						mov	cx,28h
+						rep	stosw			; Rep when cx >0 Store ax to es:[di]
+						mov	al,bl
+						mov	ah,bl
+						mov	cx,28h
+						rep	stosw			; Rep when cx >0 Store ax to es:[di]
+						pop	cx
+						loop	checkerboard_loop		; Loop if cx > 0
 
 		retn
 
@@ -1038,27 +1039,27 @@ imgctl_render_sprite_palette_all:
 		mov	cx,19h
 
 sprite_palette_outer:
-				push	cx
-				mov	cx,22h
+						push	cx
+						mov	cx,22h
 
 sprite_palette_inner:
-						push	cx
-						lodsb				; String [si] to al
-						push	bx
-						push	ds
-						push	si
-						call	imgctl_multiply_2
-						pop	si
-						pop	ds
-						pop	bx
-						inc	bh
-						pop	cx
-						loop	sprite_palette_inner		; Loop if cx > 0
+										push	cx
+										lodsb				; String [si] to al
+										push	bx
+										push	ds
+										push	si
+										call	imgctl_multiply_2
+										pop	si
+										pop	ds
+										pop	bx
+										inc	bh
+										pop	cx
+										loop	sprite_palette_inner		; Loop if cx > 0
 
-				xor	bh,bh			; Zero register
-				inc	bl
-				pop	cx
-				loop	sprite_palette_outer		; Loop if cx > 0
+						xor	bh,bh			; Zero register
+						inc	bl
+						pop	cx
+						loop	sprite_palette_outer		; Loop if cx > 0
 
 		retn
 
@@ -1070,10 +1071,10 @@ imgctl_multiply_2		proc	near
 		xor	ah,ah			; Zero register
 
 div28_loop:
-				sub	al,28h			; '('
-				jc	div28_done			; Jump if carry Set
-				inc	ah
-				jmp	short div28_loop
+						sub	al,28h			; '('
+						jc	div28_done			; Jump if carry Set
+						inc	ah
+						jmp	short div28_loop
 
 div28_done:
 		add	al,28h			; '('
@@ -1099,23 +1100,23 @@ div28_done:
 		mov	cx,3
 
 three_pass_copy_loop:
-				push	cx
-				push	di
-				push	si
-				mov	cx,8
+						push	cx
+						push	di
+						push	si
+						mov	cx,8
 
 eight_row_copy_loop:
-						movsb				; Mov [si] to es:[di]
-						add	di,21h
-						add	si,27h
-						loop	eight_row_copy_loop		; Loop if cx > 0
+										movsb				; Mov [si] to es:[di]
+										add	di,21h
+										add	si,27h
+										loop	eight_row_copy_loop		; Loop if cx > 0
 
-				pop	si
-				pop	di
-				add	di,sprite_or_off
-				add	si,640h
-				pop	cx
-				loop	three_pass_copy_loop		; Loop if cx > 0
+						pop	si
+						pop	di
+						add	di,sprite_or_off
+						add	si,640h
+						pop	cx
+						loop	three_pass_copy_loop		; Loop if cx > 0
 
 		retn
 
@@ -1143,17 +1144,17 @@ imgctl_copy_to_buf:
 		mov	cx,44h
 
 bit_reverse_loop:
-				mov	al,es:[di]
-				mov	dx,8
+						mov	al,es:[di]
+						mov	dx,8
 
 bit_rotate_loop:
-						ror	al,1			; Rotate
-						adc	ah,ah
-						dec	dx
-						jnz	bit_rotate_loop			; Jump if not zero
-				mov	es:[di],ah
-				inc	di
-				loop	bit_reverse_loop		; Loop if cx > 0
+										ror	al,1			; Rotate
+										adc	ah,ah
+										dec	dx
+										jnz	bit_rotate_loop			; Jump if not zero
+						mov	es:[di],ah
+						inc	di
+						loop	bit_reverse_loop		; Loop if cx > 0
 
 		pop	si
 		pop	ax
@@ -1182,19 +1183,19 @@ bit_rotate_loop:
 		mov	cx,22h
 
 fwd_blit_loop:
-				lodsb				; String [si] to al
-				mov	bl,al
-				or	al,ds:sprite_mask_off[si]
-				out	dx,al			; port 3CFh, EGA graphic func
-				xor	al,al			; Zero register
-				xchg	es:[di],al
-				mov	al,bl
-				and	al,ds:sprite_mask_off[si]
-				out	dx,al			; port 3CFh, EGA graphic func
-				mov	al,0Fh
-				xchg	es:[di],al
-				inc	di
-				loop	fwd_blit_loop		; Loop if cx > 0
+						lodsb				; String [si] to al
+						mov	bl,al
+						or	al,ds:sprite_mask_off[si]
+						out	dx,al			; port 3CFh, EGA graphic func
+						xor	al,al			; Zero register
+						xchg	es:[di],al
+						mov	al,bl
+						and	al,ds:sprite_mask_off[si]
+						out	dx,al			; port 3CFh, EGA graphic func
+						mov	al,0Fh
+						xchg	es:[di],al
+						inc	di
+						loop	fwd_blit_loop		; Loop if cx > 0
 
 		pop	di
 		pop	si
@@ -1211,12 +1212,12 @@ fwd_blit_loop:
 		mov	cx,22h
 
 fwd_blit2_loop:
-				lodsb				; String [si] to al
-				out	dx,al			; port 3CFh, EGA graphic func
-				mov	al,0Eh
-				xchg	es:[di],al
-				inc	di
-				loop	fwd_blit2_loop		; Loop if cx > 0
+						lodsb				; String [si] to al
+						out	dx,al			; port 3CFh, EGA graphic func
+						mov	al,0Eh
+						xchg	es:[di],al
+						inc	di
+						loop	fwd_blit2_loop		; Loop if cx > 0
 
 		pop	di
 		push	cs
@@ -1235,19 +1236,19 @@ fwd_blit2_loop:
 		mov	cx,22h
 
 rev_blit_loop:
-				lodsb				; String [si] to al
-				mov	bl,al
-				or	al,[si+21h]
-				out	dx,al			; port 3CFh, EGA graphic func
-				xor	al,al			; Zero register
-				xchg	es:[di],al
-				mov	al,bl
-				and	al,[si+21h]
-				out	dx,al			; port 3CFh, EGA graphic func
-				mov	al,0Fh
-				xchg	es:[di],al
-				dec	di
-				loop	rev_blit_loop		; Loop if cx > 0
+						lodsb				; String [si] to al
+						mov	bl,al
+						or	al,[si+21h]
+						out	dx,al			; port 3CFh, EGA graphic func
+						xor	al,al			; Zero register
+						xchg	es:[di],al
+						mov	al,bl
+						and	al,[si+21h]
+						out	dx,al			; port 3CFh, EGA graphic func
+						mov	al,0Fh
+						xchg	es:[di],al
+						dec	di
+						loop	rev_blit_loop		; Loop if cx > 0
 
 		pop	di
 		dec	dx
@@ -1262,12 +1263,12 @@ rev_blit_loop:
 		mov	cx,22h
 
 rev_blit2_loop:
-				lodsb				; String [si] to al
-				out	dx,al			; port 3CFh, EGA graphic func
-				mov	al,0Eh
-				xchg	es:[di],al
-				dec	di
-				loop	rev_blit2_loop		; Loop if cx > 0
+						lodsb				; String [si] to al
+						out	dx,al			; port 3CFh, EGA graphic func
+						mov	al,0Eh
+						xchg	es:[di],al
+						dec	di
+						loop	rev_blit2_loop		; Loop if cx > 0
 
 		dec	dx
 		mov	ax,5
@@ -1303,117 +1304,117 @@ imgctl_scroll_snake:
 		mov	si,move_seq_up
 
 move_up_loop:
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	move_horiz_start			; Jump if zero
-				call	imgctl_func_11
-				add	di,140h
-				jmp	short move_up_loop
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	move_horiz_start			; Jump if zero
+						call	imgctl_func_11
+						add	di,140h
+						jmp	short move_up_loop
 
 move_horiz_start:
 		add	di,move_up_right
 
 move_horiz_loop:
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	move_down_start			; Jump if zero
-				call	imgctl_func_11
-				inc	di
-				jmp	short move_horiz_loop
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	move_down_start			; Jump if zero
+						call	imgctl_func_11
+						inc	di
+						jmp	short move_horiz_loop
 
 move_down_start:
 		add	di,move_up_left
 
 move_down_loop:
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	move_left_start			; Jump if zero
-				call	imgctl_func_11
-				add	di,0FEC0h
-				jmp	short move_down_loop
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	move_left_start			; Jump if zero
+						call	imgctl_func_11
+						add	di,0FEC0h
+						jmp	short move_down_loop
 
 move_left_start:
 		add	di,ega_row_m1
 
 move_left_loop:
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	move_seq_done			; Jump if zero
-				call	imgctl_func_11
-				dec	di
-				jmp	short move_left_loop
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	move_seq_done			; Jump if zero
+						call	imgctl_func_11
+						dec	di
+						jmp	short move_left_loop
 
 move_seq_done:
 		add	di,ega_row_p1
 		mov	si,move_seq_horiz
 
 scroll_step_loop:
-				mov	byte ptr cs:gvar_frame_timer,0
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	scroll_cleanup_ega			; Jump if zero
-				xor	cx,cx			; Zero register
-				mov	cl,al
+						mov	byte ptr cs:gvar_frame_timer,0
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	scroll_cleanup_ega			; Jump if zero
+						xor	cx,cx			; Zero register
+						mov	cl,al
 
 scroll_up_inner:
-						push	cx
-						mov	al,18h
-						call	imgctl_func_11
-						add	di,140h
-						pop	cx
-						loop	scroll_up_inner		; Loop if cx > 0
+										push	cx
+										mov	al,18h
+										call	imgctl_func_11
+										add	di,140h
+										pop	cx
+										loop	scroll_up_inner		; Loop if cx > 0
 
-				add	di,move_up
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	scroll_cleanup_ega			; Jump if zero
-				xor	cx,cx			; Zero register
-				mov	cl,al
+						add	di,move_up
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	scroll_cleanup_ega			; Jump if zero
+						xor	cx,cx			; Zero register
+						mov	cl,al
 
 scroll_right_inner:
-						push	cx
-						mov	al,18h
-						call	imgctl_func_11
-						inc	di
-						pop	cx
-						loop	scroll_right_inner		; Loop if cx > 0
+										push	cx
+										mov	al,18h
+										call	imgctl_func_11
+										inc	di
+										pop	cx
+										loop	scroll_right_inner		; Loop if cx > 0
 
-				dec	di
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	scroll_cleanup_ega			; Jump if zero
-				xor	cx,cx			; Zero register
-				mov	cl,al
+						dec	di
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	scroll_cleanup_ega			; Jump if zero
+						xor	cx,cx			; Zero register
+						mov	cl,al
 
 scroll_down_inner:
-						push	cx
-						mov	al,18h
-						call	imgctl_func_11
-						add	di,0FEC0h
-						pop	cx
-						loop	scroll_down_inner		; Loop if cx > 0
+										push	cx
+										mov	al,18h
+										call	imgctl_func_11
+										add	di,0FEC0h
+										pop	cx
+										loop	scroll_down_inner		; Loop if cx > 0
 
-				add	di,ega_row_w
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	scroll_cleanup_ega			; Jump if zero
-				xor	cx,cx			; Zero register
-				mov	cl,al
+						add	di,ega_row_w
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	scroll_cleanup_ega			; Jump if zero
+						xor	cx,cx			; Zero register
+						mov	cl,al
 
 scroll_left_inner:
-						push	cx
-						mov	al,18h
-						call	imgctl_func_11
-						dec	di
-						pop	cx
-						loop	scroll_left_inner		; Loop if cx > 0
+										push	cx
+										mov	al,18h
+										call	imgctl_func_11
+										dec	di
+										pop	cx
+										loop	scroll_left_inner		; Loop if cx > 0
 
-				inc	di
+						inc	di
 
 wait_scroll_timer:
-						cmp	byte ptr cs:gvar_frame_timer,0Ch
-						jb	wait_scroll_timer			; Jump if below
-				jmp	short scroll_step_loop
+										cmp	byte ptr cs:gvar_frame_timer,0Ch
+										jb	wait_scroll_timer			; Jump if below
+						jmp	short scroll_step_loop
 
 scroll_cleanup_ega:
 		mov	ax,5
@@ -1586,30 +1587,30 @@ imgctl_color_fade_setup:
 		db	0C0h,0B9h, 08h, 00h		; (cont); mov cx,8
 
 color_fade_outer:
-				push	cx
-				mov	al,cs:cur_row_ctr
-				mov	cs:cur_color,al
-				mov	byte ptr cs:gvar_frame_timer,0
-				mov	cx,0Dh
+						push	cx
+						mov	al,cs:cur_row_ctr
+						mov	cs:cur_color,al
+						mov	byte ptr cs:gvar_frame_timer,0
+						mov	cx,0Dh
 
 color_fade_col_loop:
-						push	cx
-						push	bx
-						push	si
-						call	imgctl_multiply_3
-						pop	si
-						pop	bx
-						pop	cx
-						add	byte ptr cs:cur_color,8
-						loop	color_fade_col_loop		; Loop if cx > 0
+										push	cx
+										push	bx
+										push	si
+										call	imgctl_multiply_3
+										pop	si
+										pop	bx
+										pop	cx
+										add	byte ptr cs:cur_color,8
+										loop	color_fade_col_loop		; Loop if cx > 0
 
-				pop	cx
+						pop	cx
 
 wait_fade_timer:
-						cmp	byte ptr cs:gvar_frame_timer,14h
-						jb	wait_fade_timer			; Jump if below
-				inc	byte ptr cs:cur_row_ctr
-				loop	color_fade_outer		; Loop if cx > 0
+										cmp	byte ptr cs:gvar_frame_timer,14h
+										jb	wait_fade_timer			; Jump if below
+						inc	byte ptr cs:cur_row_ctr
+						loop	color_fade_outer		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1643,51 +1644,51 @@ sprite_in_range:
 		mov	cx,48h
 
 sprite_col_render_loop:
-				push	cx
-				mov	al,0Fh
-				out	dx,al			; port 3C5h, EGA sequencr func
-				mov	byte ptr es:[di],0
-				cmp	cs:cur_col_ctr,bh
-				jb	sprite_col_end			; Jump if below
-				mov	al,bh
-				add	al,byte ptr cs:render_fn_ptr+1
-				cmp	cs:cur_col_ctr,al
-				jae	sprite_col_end			; Jump if above or =
-				push	si
-				test	byte ptr cs:plane_enable_flags,1
-				jz	render_plane1			; Jump if zero
-				mov	al,1
-				out	dx,al			; port 3C5h, EGA sequencr func
-				mov	al,[si]
-				mov	es:[di],al
-				add	si,cs:img_stride
+						push	cx
+						mov	al,0Fh
+						out	dx,al			; port 3C5h, EGA sequencr func
+						mov	byte ptr es:[di],0
+						cmp	cs:cur_col_ctr,bh
+						jb	sprite_col_end			; Jump if below
+						mov	al,bh
+						add	al,byte ptr cs:render_fn_ptr+1
+						cmp	cs:cur_col_ctr,al
+						jae	sprite_col_end			; Jump if above or =
+						push	si
+						test	byte ptr cs:plane_enable_flags,1
+						jz	render_plane1			; Jump if zero
+						mov	al,1
+						out	dx,al			; port 3C5h, EGA sequencr func
+						mov	al,[si]
+						mov	es:[di],al
+						add	si,cs:img_stride
 
 render_plane1:
-				test	byte ptr cs:plane_enable_flags,2
-				jz	render_plane2			; Jump if zero
-				mov	al,2
-				out	dx,al			; port 3C5h, EGA sequencr func
-				mov	al,[si]
-				mov	es:[di],al
-				add	si,cs:img_stride
+						test	byte ptr cs:plane_enable_flags,2
+						jz	render_plane2			; Jump if zero
+						mov	al,2
+						out	dx,al			; port 3C5h, EGA sequencr func
+						mov	al,[si]
+						mov	es:[di],al
+						add	si,cs:img_stride
 
 render_plane2:
-				test	byte ptr cs:plane_enable_flags,4
-				jz	render_plane4			; Jump if zero
-				mov	al,4
-				out	dx,al			; port 3C5h, EGA sequencr func
-				mov	al,[si]
-				mov	es:[di],al
+						test	byte ptr cs:plane_enable_flags,4
+						jz	render_plane4			; Jump if zero
+						mov	al,4
+						out	dx,al			; port 3C5h, EGA sequencr func
+						mov	al,[si]
+						mov	es:[di],al
 
 render_plane4:
-				pop	si
-				inc	si
+						pop	si
+						inc	si
 
 sprite_col_end:
-				inc	di
-				inc	byte ptr cs:cur_col_ctr
-				pop	cx
-				loop	sprite_col_render_loop		; Loop if cx > 0
+						inc	di
+						inc	byte ptr cs:cur_col_ctr
+						pop	cx
+						loop	sprite_col_render_loop		; Loop if cx > 0
 
 		retn
 
@@ -1741,28 +1742,28 @@ imgctl_draw_border_box:
 		pop	cx
 
 draw_border_mid_loop:
-				push	cx
-				call	imgctl_func_15
-				mov	al,30h			; '0'
-				out	dx,al			; port 3CFh, EGA graphic func
-				mov	al,7
-				xchg	es:[di],al
-				mov	al,0Fh
-				out	dx,al			; port 3CFh, EGA graphic func
-				xor	al,al			; Zero register
-				xchg	es:[di],al
-				mov	al,0Ch
-				out	dx,al			; port 3CFh, EGA graphic func
-				mov	al,7
-				xchg	es:[bx+di-1],al
-				mov	al,0F0h
-				out	dx,al			; port 3CFh, EGA graphic func
-				xor	al,al			; Zero register
-				xchg	es:[bx+di-1],al
-				inc	byte ptr cs:cur_color
-				add	di,50h
-				pop	cx
-				loop	draw_border_mid_loop		; Loop if cx > 0
+						push	cx
+						call	imgctl_func_15
+						mov	al,30h			; '0'
+						out	dx,al			; port 3CFh, EGA graphic func
+						mov	al,7
+						xchg	es:[di],al
+						mov	al,0Fh
+						out	dx,al			; port 3CFh, EGA graphic func
+						xor	al,al			; Zero register
+						xchg	es:[di],al
+						mov	al,0Ch
+						out	dx,al			; port 3CFh, EGA graphic func
+						mov	al,7
+						xchg	es:[bx+di-1],al
+						mov	al,0F0h
+						out	dx,al			; port 3CFh, EGA graphic func
+						xor	al,al			; Zero register
+						xchg	es:[bx+di-1],al
+						inc	byte ptr cs:cur_color
+						add	di,50h
+						pop	cx
+						loop	draw_border_mid_loop		; Loop if cx > 0
 
 		mov	cx,1
 		call	imgctl_process_loop_5
@@ -1792,10 +1793,10 @@ imgctl_process_loop_4		proc	near
 		sub	cx,2
 
 draw_border_fill_loop:
-				mov	al,7
-				xchg	es:[di],al
-				inc	di
-				loop	draw_border_fill_loop		; Loop if cx > 0
+						mov	al,7
+						xchg	es:[di],al
+						inc	di
+						loop	draw_border_fill_loop		; Loop if cx > 0
 
 		mov	al,0FCh
 		out	dx,al			; port 3CFh, EGA graphic func
@@ -1808,42 +1809,42 @@ imgctl_process_loop_4		endp
 imgctl_process_loop_5		proc	near
 
 draw_border_tb_loop:
-				push	cx
-				push	di
-				call	imgctl_func_15
-				mov	al,30h			; '0'
-				out	dx,al			; port 3CFh, EGA graphic func
-				mov	al,7
-				xchg	es:[di],al
-				mov	al,0Fh
-				out	dx,al			; port 3CFh, EGA graphic func
-				xor	al,al			; Zero register
-				xchg	es:[di],al
-				inc	di
-				mov	al,0FFh
-				out	dx,al			; port 3CFh, EGA graphic func
-				mov	cx,bx
-				sub	cx,2
-
-clear_interior_loop:
+						push	cx
+						push	di
+						call	imgctl_func_15
+						mov	al,30h			; '0'
+						out	dx,al			; port 3CFh, EGA graphic func
+						mov	al,7
+						xchg	es:[di],al
+						mov	al,0Fh
+						out	dx,al			; port 3CFh, EGA graphic func
 						xor	al,al			; Zero register
 						xchg	es:[di],al
 						inc	di
-						loop	clear_interior_loop		; Loop if cx > 0
+						mov	al,0FFh
+						out	dx,al			; port 3CFh, EGA graphic func
+						mov	cx,bx
+						sub	cx,2
 
-				mov	al,0Ch
-				out	dx,al			; port 3CFh, EGA graphic func
-				mov	al,7
-				xchg	es:[di],al
-				mov	al,0F0h
-				out	dx,al			; port 3CFh, EGA graphic func
-				xor	al,al			; Zero register
-				xchg	es:[di],al
-				pop	di
-				inc	byte ptr cs:cur_color
-				add	di,50h
-				pop	cx
-				loop	draw_border_tb_loop		; Loop if cx > 0
+clear_interior_loop:
+										xor	al,al			; Zero register
+										xchg	es:[di],al
+										inc	di
+										loop	clear_interior_loop		; Loop if cx > 0
+
+						mov	al,0Ch
+						out	dx,al			; port 3CFh, EGA graphic func
+						mov	al,7
+						xchg	es:[di],al
+						mov	al,0F0h
+						out	dx,al			; port 3CFh, EGA graphic func
+						xor	al,al			; Zero register
+						xchg	es:[di],al
+						pop	di
+						inc	byte ptr cs:cur_color
+						add	di,50h
+						pop	cx
+						loop	draw_border_tb_loop		; Loop if cx > 0
 
 		retn
 
@@ -1873,36 +1874,36 @@ imgctl_rotate_planes:
 		push	bx
 		push	es
 		push	di
-		mov	cx,1028h
+		mov	cx,sprite_backbuf_plane_sz
 
 rotate_planes_loop:
-				mov	al,es:[di]
-				and	al,byte ptr es:[1028h][di]
-				mov	ah,es:ega_plane2_buf[di]
-				not	ah
-				and	al,ah
-				not	al
-				and	es:[di],al
-				and	byte ptr es:[1028h][di],al
-				and	es:ega_plane2_buf[di],al
-				mov	al,es:ega_plane2_buf[di]
-				mov	ah,es:[di]
-				not	ah
-				and	al,ah
-				mov	ah,byte ptr es:[1028h][di]
-				not	ah
-				and	al,ah
-				or	es:[di],al
-				or	byte ptr es:[1028h][di],al
-				not	al
-				and	es:ega_plane2_buf[di],al
-				inc	di
-				loop	rotate_planes_loop		; Loop if cx > 0
+						mov	al,es:[di]
+						and	al,byte ptr es:[sprite_backbuf_plane_sz][di]
+						mov	ah,es:ega_plane2_buf[di]
+						not	ah
+						and	al,ah
+						not	al
+						and	es:[di],al
+						and	byte ptr es:[sprite_backbuf_plane_sz][di],al
+						and	es:ega_plane2_buf[di],al
+						mov	al,es:ega_plane2_buf[di]
+						mov	ah,es:[di]
+						not	ah
+						and	al,ah
+						mov	ah,byte ptr es:[sprite_backbuf_plane_sz][di]
+						not	ah
+						and	al,ah
+						or	es:[di],al
+						or	byte ptr es:[sprite_backbuf_plane_sz][di],al
+						not	al
+						and	es:ega_plane2_buf[di],al
+						inc	di
+						loop	rotate_planes_loop		; Loop if cx > 0
 
 		pop	di
 		pop	es
 		pop	bx
-		mov	cx,2F58h
+		mov	cx,2F58h		; ch=2Fh rows, cl=58h bytes/row: full backbuf copy extents
 		jmp	sprite_copy_entry
 
 imgctl_vscroll_interleave:
@@ -1926,56 +1927,56 @@ imgctl_vscroll_interleave:
 		mov	cx,44h
 
 scroll_rows_loop:
-				push	cx
-				mov	byte ptr cs:gvar_frame_timer,0
-				mov	ax,44h
-				sub	ax,cx
-				add	ax,ax
-				push	ax
-				mov	bl,50h			; 'P'
-				mul	bl			; ax = reg * al
-				mov	di,ax
-				add	ax,cs:saved_di
-				mov	si,ax
-				pop	ax
-				cmp	ax,16h
-				jb	skip_partial_row			; Jump if below
-				cmp	ax,71h
-				jae	skip_partial_row			; Jump if above or =
-				call	copy_buffer_5
-				jmp	short after_row_copy
+						push	cx
+						mov	byte ptr cs:gvar_frame_timer,0
+						mov	ax,44h
+						sub	ax,cx
+						add	ax,ax
+						push	ax
+						mov	bl,50h			; 'P'
+						mul	bl			; ax = reg * al
+						mov	di,ax
+						add	ax,cs:saved_di
+						mov	si,ax
+						pop	ax
+						cmp	ax,16h
+						jb	skip_partial_row			; Jump if below
+						cmp	ax,71h
+						jae	skip_partial_row			; Jump if above or =
+						call	copy_buffer_5
+						jmp	short after_row_copy
 
 skip_partial_row:
-				call	copy_buffer_4
+						call	copy_buffer_4
 
 after_row_copy:
-				pop	cx
-				push	cx
-				mov	ax,cx
-				add	ax,ax
-				dec	ax
-				push	ax
-				mov	bl,50h			; 'P'
-				mul	bl			; ax = reg * al
-				mov	di,ax
-				add	ax,cs:saved_di
-				mov	si,ax
-				pop	ax
-				cmp	ax,16h
-				jb	skip_partial_row_b			; Jump if below
-				cmp	ax,71h
-				jae	skip_partial_row_b			; Jump if above or =
-				call	copy_buffer_5
-				jmp	short wait_scroll_delay
+						pop	cx
+						push	cx
+						mov	ax,cx
+						add	ax,ax
+						dec	ax
+						push	ax
+						mov	bl,50h			; 'P'
+						mul	bl			; ax = reg * al
+						mov	di,ax
+						add	ax,cs:saved_di
+						mov	si,ax
+						pop	ax
+						cmp	ax,16h
+						jb	skip_partial_row_b			; Jump if below
+						cmp	ax,71h
+						jae	skip_partial_row_b			; Jump if above or =
+						call	copy_buffer_5
+						jmp	short wait_scroll_delay
 
 skip_partial_row_b:
-				call	copy_buffer_4
+						call	copy_buffer_4
 
 wait_scroll_delay:
-						cmp	byte ptr cs:gvar_frame_timer,4
-						jb	wait_scroll_delay			; Jump if below
-				pop	cx
-				loop	scroll_rows_loop		; Loop if cx > 0
+										cmp	byte ptr cs:gvar_frame_timer,4
+										jb	wait_scroll_delay			; Jump if below
+						pop	cx
+						loop	scroll_rows_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -2066,10 +2067,10 @@ imgctl_process_loop_6		proc	near
 		mov	cx,5Bh
 
 draw_border_top_loop:
-				mov	byte ptr es:[di],30h	; '0'
-				mov	byte ptr es:[di+19h],0Ch
-				add	di,50h
-				loop	draw_border_top_loop		; Loop if cx > 0
+						mov	byte ptr es:[di],30h	; '0'
+						mov	byte ptr es:[di+19h],0Ch
+						add	di,50h
+						loop	draw_border_top_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
 		call	fill_buffer
@@ -2082,13 +2083,13 @@ draw_border_top_loop:
 		mov	cx,2Dh
 
 draw_border_mid_rows_loop:
-				mov	byte ptr es:[di],0B0h
-				mov	byte ptr es:[di+19h],0Eh
-				add	di,50h
-				mov	byte ptr es:[di],70h	; 'p'
-				mov	byte ptr es:[di+19h],0Dh
-				add	di,50h
-				loop	draw_border_mid_rows_loop		; Loop if cx > 0
+						mov	byte ptr es:[di],0B0h
+						mov	byte ptr es:[di+19h],0Eh
+						add	di,50h
+						mov	byte ptr es:[di],70h	; 'p'
+						mov	byte ptr es:[di+19h],0Dh
+						add	di,50h
+						loop	draw_border_mid_rows_loop		; Loop if cx > 0
 
 		mov	byte ptr es:[di],0B0h
 		mov	byte ptr es:[di+19h],0Eh
@@ -2103,10 +2104,10 @@ draw_border_mid_rows_loop:
 		mov	cx,5Bh
 
 draw_border_bot_loop:
-				mov	byte ptr es:[di],30h	; '0'
-				mov	byte ptr es:[di+19h],0Ch
-				add	di,50h
-				loop	draw_border_bot_loop		; Loop if cx > 0
+						mov	byte ptr es:[di],30h	; '0'
+						mov	byte ptr es:[di+19h],0Ch
+						add	di,50h
+						loop	draw_border_bot_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
 		call	fill_buffer
@@ -2135,24 +2136,24 @@ imgctl_hscroll_interleave:
 		mov	cx,39h
 
 scroll_interleave_loop:
-				mov	byte ptr cs:gvar_frame_timer,0
-				push	cx
-				mov	ax,cx
-				neg	ax
-				add	ax,39h
-				add	ax,ax
-				call	vga_operation0
-				pop	ax
-				push	ax
-				add	ax,ax
-				dec	ax
-				call	vga_operation0
+						mov	byte ptr cs:gvar_frame_timer,0
+						push	cx
+						mov	ax,cx
+						neg	ax
+						add	ax,39h
+						add	ax,ax
+						call	vga_operation0
+						pop	ax
+						push	ax
+						add	ax,ax
+						dec	ax
+						call	vga_operation0
 
 wait_interleave_timer:
-						cmp	byte ptr cs:gvar_frame_timer,4
-						jb	wait_interleave_timer			; Jump if below
-				pop	cx
-				loop	scroll_interleave_loop		; Loop if cx > 0
+										cmp	byte ptr cs:gvar_frame_timer,4
+										jb	wait_interleave_timer			; Jump if below
+						pop	cx
+						loop	scroll_interleave_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -2198,7 +2199,7 @@ vga_operation0		proc	near
 		call	vga_operation1
 		pop	si
 		pop	di
-		add	si,offset data_11
+		add	si,offset hscroll_plane4_buf
 		mov	dx,3C4h
 		mov	ax,402h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -2253,24 +2254,24 @@ imgctl_hscroll_interleave2:
 		mov	cx,39h
 
 scroll_interleave2_loop:
-				mov	byte ptr cs:gvar_frame_timer,0
-				push	cx
-				mov	ax,cx
-				neg	ax
-				add	ax,39h
-				add	ax,ax
-				call	vga_operation2
-				pop	ax
-				push	ax
-				add	ax,ax
-				dec	ax
-				call	vga_operation2
+						mov	byte ptr cs:gvar_frame_timer,0
+						push	cx
+						mov	ax,cx
+						neg	ax
+						add	ax,39h
+						add	ax,ax
+						call	vga_operation2
+						pop	ax
+						push	ax
+						add	ax,ax
+						dec	ax
+						call	vga_operation2
 
 wait_interleave2_timer:
-						cmp	byte ptr cs:gvar_frame_timer,4
-						jb	wait_interleave2_timer			; Jump if below
-				pop	cx
-				loop	scroll_interleave2_loop		; Loop if cx > 0
+										cmp	byte ptr cs:gvar_frame_timer,4
+										jb	wait_interleave2_timer			; Jump if below
+						pop	cx
+						loop	scroll_interleave2_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -2306,7 +2307,7 @@ vga_operation2		proc	near
 		call	vga_operation3
 		pop	si
 		pop	di
-		add	si,offset data_11
+		add	si,offset hscroll_plane4_buf
 		mov	al,4
 		out	dx,al			; port 3C5h, EGA sequencr func
 		pop	ax
@@ -2345,9 +2346,9 @@ imgctl_fill_2px_color:
 		mov	cx,8
 
 color_write_loop:
-				stosw				; Store ax to es:[di]
-				add	di,4Eh
-				loop	color_write_loop		; Loop if cx > 0
+						stosw				; Store ax to es:[di]
+						add	di,4Eh
+						loop	color_write_loop		; Loop if cx > 0
 
 		retn
 
@@ -2371,12 +2372,12 @@ load_palette_entry:
 		mov	cx,10h
 
 palette_reg_write_loop:
-				mov	al,ah
-				out	dx,al			; port 3C0h, EGA attributes
-				lodsb				; String [si] to al
-				out	dx,al			; port 3C0h, EGA attributes
-				inc	ah
-				loop	palette_reg_write_loop		; Loop if cx > 0
+						mov	al,ah
+						out	dx,al			; port 3C0h, EGA attributes
+						lodsb				; String [si] to al
+						out	dx,al			; port 3C0h, EGA attributes
+						inc	ah
+						loop	palette_reg_write_loop		; Loop if cx > 0
 
 		pop	dx
 		in	al,dx			; port 3DAh, CGA/EGA vid status
@@ -2426,7 +2427,7 @@ ega_palette_data:
 		db	'-', 1Bh, 1Bh, '6?.'
 		db	0FFh, 26h, 22h, 20h,0C3h
 		db	730 dup (0)
-data_11		db	0
+hscroll_plane4_buf		db	0
 		db	149 dup (0)
 
 seg_a		ends
