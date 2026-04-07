@@ -1,20 +1,23 @@
 
 PAGE  59,132
 
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-;лл					                                 лл
-;лл				ZR1_30	                                 лл
-;лл					                                 лл
-;лл      Created:   16-Feb-26		                                 лл
-;лл      Code type: zero start		                                 лл
-;лл      Passes:    9          Analysis	Options on: none                 лл
-;лл					                                 лл
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
+;==========================================================================
+;
+;  130UTILB - Sprite/Image Compressed Data Blob (zelres1 chunk 30)
+;
+;  This chunk is almost entirely fill_buffer opcode-7 (escape-byte RLE)
+;  compressed data.  Sourcer misidentified scattered byte sequences as
+;  x86 instructions; the "fixup" db lines and loc/locloop labels are
+;  artifacts of that misidentification.
+;
+;  External EQU addresses are offsets into data segments used by the
+;  game engine at runtime; their exact roles are unknown.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
-
 
 ; The following equates show data references outside the range of the program.
 
@@ -25,7 +28,6 @@ data_16e	equ	8714h			;*
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
@@ -321,15 +323,16 @@ data_9		dw	200h			; Data table (indexed access)
 		db	 82h, 00h, 0Dh, 03h,0FCh, 06h
 		db	 00h, 01h,0C0h, 70h, 1Eh, 00h
 		db	 17h
+
 loc_1:
-		cli				; Disable interrupts
+			cli				; Disable interrupts
 ;*		add	si,di
-		db	 01h,0FEh		;  Fixup - byte match
-		mov	al,[bx+si]
-		pop	es
-		inc	ax
-		or	ax,[bx+si]
-		jg	loc_1			; Jump if >
+			db	 01h,0FEh		;  Fixup - byte match
+			mov	al,[bx+si]
+			pop	es
+			inc	ax
+			or	ax,[bx+si]
+			jg	loc_1			; Jump if >
 		push	bp
 		cld				; Clear direction
 ;*		add	byte ptr [bx+si],6
@@ -587,7 +590,5 @@ locloop_3:
 zr1_30		endp
 
 seg_a		ends
-
-
 
 		end	start
