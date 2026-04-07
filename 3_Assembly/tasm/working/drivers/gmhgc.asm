@@ -67,42 +67,42 @@ seg_a		segment	byte public
 gmhgc		proc	far
 
 start:
-		inc	si
-		and	[bp+di],dl
-;*		and	si,bx
-		db	 21h,0DEh		;  and si, bx  (alt encoding: 21h r/m,r)
-;*		and	si,dx
-		db	 21h,0D6h		;  and si, dx  (alt encoding: 21h r/m,r)
-		and	dl,[bx+si]
-		and	sp,ax
-		and	bl,[bp+si]
-		and	bp,ds:hgc_reg_a[di]
-		and	bp,ds:hgc_reg_b[bx+di]
-		and	al,0D0h
-		and	al,0F0h
-		and	al,19h
-		and	ax,2698h
-		pop	dx
-		daa				; Decimal adjust
-		jz	dispatch_entry			; Jump if zero
-;*		aam	29h			; ')' undocumented inst
-		db	0D4h, 29h		;  aam 29h  (undocumented form, alternate encoding)
-		mov	al,ds:drv_state_byte
-		sub	dh,[bp+si]
-		sub	di,[bp+di+2Bh]
-		dw	02BC6h			; fn  0
-		dw	02C18h			; fn  1
-		dw	025C7h			; fn  2
-		dw	0255Eh			; fn  3
-		dw	0278Eh			; fn  4
-		dw	027AFh			; fn  5
-		dw	023C9h			; fn  6
-		dw	02890h			; fn  7
-		dw	028A8h			; fn  8
-		dw	02CAFh			; fn  9
-		dw	02143h			; fn 10
-		dw	02E02h			; fn 11
-		dw	02E37h			; fn 12
+		; Function dispatch table (35 CS-relative word pointers, driver loads at game_seg:2000h).
+		dw	driver_base + (offset dispatch_call)			; fn  0
+		dw	driver_base + (offset fn_1)			; fn  1
+		dw	driver_base + (offset fn_2)			; fn  2
+		dw	driver_base + (offset fn_3)			; fn  3
+		dw	driver_base + (offset fn_4)			; fn  4
+		dw	driver_base + (offset fn_5)			; fn  5
+		dw	driver_base + (offset fn_6)			; fn  6
+		dw	driver_base + (offset fn_7)			; fn  7
+		dw	driver_base + (offset fn_8)			; fn  8
+		dw	driver_base + (offset fn_9)			; fn  9
+		dw	driver_base + (offset fn_10)			; fn 10
+		dw	driver_base + (offset fn_11)			; fn 11
+		dw	driver_base + (offset fn_12)			; fn 12
+		dw	driver_base + (offset fn_13)			; fn 13
+		dw	driver_base + (offset fn_14)			; fn 14
+		dw	driver_base + (offset fn_15)			; fn 15
+		dw	driver_base + (offset fn_16)			; fn 16
+		dw	driver_base + (offset render_text_char_alt)			; fn 17
+		dw	driver_base + (offset fn_18)			; fn 18
+		dw	driver_base + (offset fn_19)			; fn 19
+		dw	driver_base + (offset fn_20)			; fn 20
+		dw	driver_base + (offset fn_21)			; fn 21
+		dw	driver_base + (offset fn_22)			; fn 22
+		dw	driver_base + (offset fn_23)			; fn 23
+		dw	driver_base + (offset render_tilemap_large)			; fn 24
+		dw	driver_base + (offset time_to_bcd)			; fn 25
+		dw	driver_base + (offset fn_26)			; fn 26
+		dw	driver_base + (offset fn_27)			; fn 27
+		dw	driver_base + (offset fn_28)			; fn 28
+		dw	driver_base + (offset fn_29)			; fn 29
+		dw	driver_base + (offset fn_30)			; fn 30
+		dw	driver_base + (offset fn_31)			; fn 31
+		dw	driver_base + (offset fn_32)			; fn 32
+		dw	driver_base + (offset fn_33)			; fn 33
+		dw	driver_base + (offset fn_34)			; fn 34
 
 dispatch_call:
 		db	 50h			; push ax      (save fn#)
@@ -288,6 +288,7 @@ fade_row_a_bank_ok:
 												jb	fade_row_a_bank_ok2			; Jump if below
 												add	di,0A05Ah
 
+fn_1:
 fade_row_a_bank_ok2:
 												rol	al,1			; Rotate
 												rol	al,1			; Rotate
@@ -318,6 +319,7 @@ fade_row_b_bank_ok:
 												cmp	di,6000h
 												jb	fade_row_b_bank_ok2			; Jump if below
 												add	di,hgc_stride
+fn_32:
 
 fade_row_b_bank_ok2:
 												rol	al,1			; Rotate
@@ -411,6 +413,7 @@ plot_partial_check:
 		and	ch,3
 		jnz	plot_right_partial			; Jump if not zero
 		retn
+fn_2:
 
 plot_right_partial:
 		mov	cl,ch
@@ -573,9 +576,11 @@ draw_left_done:
 		inc	bl
 
 draw_fill_start:
+fn_4:
 		mov	bh,19h
 		sub	bh,bl
 		jnz	draw_fill_nonzero			; Jump if not zero
+fn_6:
 		retn
 
 draw_fill_nonzero:
@@ -679,6 +684,7 @@ render_chars_data:				; jumped to from set_tile_mode_a/b: read char coord + draw
 		call	calc_hgc_address
 		mov	di,ax
 		lodsb				; String [si] to al
+fn_7:
 		mov	bl,al
 		lodsb				; String [si] to al
 		xor	ch,ch			; Zero register
@@ -811,6 +817,7 @@ render_large_tilemap_b:				; called externally: render large tilemap B (cs:[86h]
 		pop	ds
 		retn
 
+fn_9:
 render_large_tilemap_c:				; called externally: render large tilemap C (cs:[9Dh] frame select via anim_lut, di=255Bh, cx=103h)
 		push	ds
 		xor	bx,bx			; Zero register
@@ -819,6 +826,7 @@ render_large_tilemap_c:				; called externally: render large tilemap C (cs:[9Dh]
 		mov	al,byte ptr cs:[0ABh][bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
+fn_10:
 		call	init_timestamp
 		push	cs
 		pop	ds
@@ -833,6 +841,7 @@ render_large_tilemap_c:				; called externally: render large tilemap C (cs:[9Dh]
 render_sprite_if_active:			; called externally: render sprite at di=255Bh if cs:[93h] != 0
 		test	byte ptr cs:[93h],0FFh
 		jnz	render_sprite_active			; Jump if not zero
+fn_11:
 		retn
 
 render_sprite_active:
@@ -847,6 +856,7 @@ render_sprite_active:
 		mov	ax,3EBBh
 		mov	bx,palette_state
 		call	render_tilemap_large
+fn_12:
 		pop	ds
 		retn
 
@@ -865,6 +875,7 @@ timestamp_slot_empty:
 							inc	di
 							loop	timestamp_fill_loop		; Loop if cx > 0
 
+fn_13:
 		retn
 
 init_timestamp		endp
@@ -1116,6 +1127,7 @@ sprite_row_loop:
 		mov	es:[bp+2],ax
 		mov	al,es:[di+4]
 		mov	es:[bp+4],al
+fn_14:
 		add	bp,0A05Ah
 
 sprite_bank_ok:
@@ -1191,6 +1203,7 @@ fn_5_render_anim_tiles_b:			; dispatch fn 5: render small animated tiles (anim_p
 render_small_tiles_b_entry:
 		call	render_tilemap_small
 		pop	ds
+fn_15:
 		retn
 
 sprite_anim_data:				; 16 rows x 12 bytes: HGC sprite animation bitplane data (3 planes x 2 bytes/row)
@@ -1203,6 +1216,7 @@ sprite_anim_data:				; 16 rows x 12 bytes: HGC sprite animation bitplane data (3
 		db	 0Fh,0BBh, 8Eh, 00h, 03h, 00h	; row  3
 		db	 00h,0C0h, 80h, 88h, 82h, 02h	; row  3 hi
 		db	 0Fh,0FBh, 8Eh, 00h, 03h, 00h	; row  4
+fn_16:
 		db	 00h,0C0h, 80h, 08h, 82h, 02h	; row  4 hi
 		db	 0Eh,0FBh, 8Eh, 00h, 03h, 00h	; row  5
 		db	 00h,0C0h, 82h, 08h, 82h, 02h	; row  5 hi
@@ -1215,6 +1229,7 @@ sprite_anim_data:				; 16 rows x 12 bytes: HGC sprite animation bitplane data (3
 		db	 0Eh, 38h,0FBh,0F8h, 03h, 00h	; row  9
 		db	 00h,0C0h, 82h, 08h, 08h, 0Ah	; row  9 hi
 		db	 0Eh, 3Bh, 83h, 80h, 03h, 00h	; row 10
+fn_26:
 		db	 00h,0C0h, 82h, 08h, 80h, 82h	; row 10 hi
 		db	 0Eh, 38h,0E3h,0C0h, 03h, 00h	; row 11
 		db	 00h,0C0h, 82h, 08h, 20h, 02h	; row 11 hi
@@ -1231,6 +1246,7 @@ render_small_tiles_a:				; load si=game_seg:anim_ptr[E208h], call render_tilemap
 		push	ds
 		mov	ds, cs:gvar_game_seg
 		xor	ah, ah			; Zero register
+fn_27:
 		mov	cx, 0C0h
 		mul	cx			; dx:ax = reg * ax
 		add	ax, ds:[0E208h]		; anim_ptr (not in equate list)
@@ -1278,10 +1294,12 @@ small_tile_row_loop:
 		mov	dx,[si+0Ah]
 		xchg	dh,dl
 		mov	cs:bitplane_2,dx
+fn_29:
 		call	extract_bitplane_pixels
 		xor	bl,bl			; Zero register
 		mov	cx,4
 
+fn_30:
 small_tile_shift_loop:
 							shr	ax,1			; Shift w/zeros fill
 							rcr	dx,1			; Rotate thru carry
@@ -1519,6 +1537,7 @@ hgc_read_region:
 		mov	si,ax
 		mov	ax,cs
 		add	ax,3000h
+fn_18:
 		mov	es,ax
 		mov	ax,0B000h
 		mov	ds,ax
@@ -1570,6 +1589,7 @@ restore_sprite_row_loop:
 							pop	di
 							pop	si
 							add	di,2000h
+fn_19:
 							cmp	di,hgc_bank_size
 							jb	restore_sprite_bank_ok			; Jump if below
 							push	si
@@ -1602,6 +1622,7 @@ render_string_next_char:
 
 render_string_not_end:
 												cmp	al,0Dh
+fn_20:
 												je	render_string_newline			; Jump if equal
 												or	al,al			; Zero ?
 												js	render_string_color			; Jump if sign=1
@@ -1645,6 +1666,7 @@ fn_0_blit_region:				; dispatch fn 0: blit rectangular region from (bh/ch) to (d
 		xor	ch,ch			; Zero register
 
 blit_region_row_loop:
+fn_21:
 							push	cx
 							push	di
 							push	si
@@ -1678,6 +1700,7 @@ blit_region_src_bank_ok:
 
 fn_1_draw_digit:				; dispatch fn 1: draw score digit at (bh,al) using tile_color_tbl_b pattern
 		push	bx
+fn_22:
 		xor	bx,bx			; Zero register
 		mov	bl,al
 		mov	al,ds:tile_color_tbl_b[bx]
@@ -1724,6 +1747,7 @@ fill_rectangle		proc	near
 fill_rect_row_loop:
 							push	cx
 							push	di
+fn_23:
 							mov	al,ds:tile_fg_mask
 							mov	cx,5
 							rep	stosb			; Rep when cx >0 Store al to es:[di]
@@ -1908,6 +1932,7 @@ sprite_decode_row_loop:
 							pop	cx
 							loop	sprite_decode_row_loop		; Loop if cx > 0
 
+fn_34:
 		retn
 
 process_sprite_row		proc	near

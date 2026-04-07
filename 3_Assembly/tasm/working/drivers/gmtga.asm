@@ -62,42 +62,44 @@ seg_a		segment	byte public
 gmtga		proc	far
 
 start:
-		inc	si
-		db	 20h,0F0h		; and al, dh  (alt encoding: 20h r/m,r vs 22h r,r/m)
-		and	ds:dispatch_tbl[bx],dh
-		and	ah,cl
-		and	dh,ds:tile_col_tbl[bx+di]
-		and	bh,[bx+si+23h]
-		xchg	[bp+di],ah
-; Function dispatch table (27 word entries) followed by dispatch mechanism code.
-; Entries are CS-relative addresses (driver loads at game_seg:2000h).
-		dw	024DCh			; fn  0
-		dw	024E6h			; fn  1
-		dw	02503h			; fn  2
-		dw	02523h			; fn  3
-		dw	0254Ch			; fn  4
-		dw	026B0h			; fn  5
-		dw	02771h			; fn  6
-		dw	0278Bh			; fn  7
-		dw	029D9h			; fn  8
-		dw	02A68h			; fn  9
-		dw	02ABBh			; fn 10
-		dw	02B0Fh			; fn 11
-		dw	02B65h			; fn 12
-		dw	02BAEh			; fn 13
-		dw	02BFCh			; fn 14
-		dw	025FAh			; fn 15
-		dw	02591h			; fn 16
-		dw	027A5h			; fn 17
-		dw	027C6h			; fn 18
-		dw	02394h			; fn 19
-		dw	028A7h			; fn 20
-		dw	028BFh			; fn 21
-		dw	02C5Bh			; fn 22
-		dw	02124h			; fn 23
-		dw	02DC3h			; fn 24
-		dw	02DF6h			; fn 25
-		dw	00250h			; fn 26
+		; Function dispatch table (36 CS-relative word pointers, driver loads at game_seg:2000h).
+		dw	driver_base + (offset fn_0)			; fn  0
+		dw	driver_base + (offset fn_1)			; fn  1
+		dw	driver_base + (offset fn_2)			; fn  2
+		dw	driver_base + (offset fn_3)			; fn  3
+		dw	driver_base + (offset fn_4)			; fn  4
+		dw	driver_base + (offset fn_5)			; fn  5
+		dw	driver_base + (offset fn_6)			; fn  6
+		dw	driver_base + (offset fn_7)			; fn  7
+		dw	driver_base + (offset fn_8)			; fn  8
+		dw	driver_base + (offset fn_9)			; fn  9
+		dw	driver_base + (offset fn_10)			; fn 10
+		dw	driver_base + (offset fn_11)			; fn 11
+		dw	driver_base + (offset fn_12)			; fn 12
+		dw	driver_base + (offset fn_13)			; fn 13
+		dw	driver_base + (offset fn_14)			; fn 14
+		dw	driver_base + (offset fn_15)			; fn 15
+		dw	driver_base + (offset fn_16)			; fn 16
+		dw	driver_base + (offset render_text_char_alt)			; fn 17
+		dw	driver_base + (offset fn_18)			; fn 18
+		dw	driver_base + (offset fn_19)			; fn 19
+		dw	driver_base + (offset fn_20)			; fn 20
+		dw	driver_base + (offset fn_21)			; fn 21
+		dw	driver_base + (offset fn_22)			; fn 22
+		dw	driver_base + (offset fn_23)			; fn 23
+		dw	driver_base + (offset render_tilemap_large)			; fn 24
+		dw	driver_base + (offset time_to_bcd)			; fn 25
+		dw	driver_base + (offset fn_26)			; fn 26
+		dw	driver_base + (offset fn_27)			; fn 27
+		dw	driver_base + (offset fn_28)			; fn 28
+		dw	driver_base + (offset fn_29)			; fn 29
+		dw	driver_base + (offset fn_30)			; fn 30
+		dw	driver_base + (offset fn_31)			; fn 31
+		dw	driver_base + (offset fn_32)			; fn 32
+		dw	driver_base + (offset fn_33)			; fn 33
+		dw	driver_base + (offset fn_34)			; fn 34
+fn_0:
+		dw	0250h			; fn 35
 ; Dispatch mechanism: AL=fn#, BH=row, BL=col; computes TGA pixel address and branches.
 
 dispatch_call:
@@ -240,6 +242,7 @@ fn23_tile_mask:					; dispatch fn 23 (CS:2124) ?-- HUD fade-wipe: loads AND mask
 		mov	es,ax
 		mov	si,tile_src_base
 		mov	cx,8
+fn_1:
 
 tile_mask_pass_loop:
 								push	cx
@@ -275,6 +278,7 @@ tile_mask_wrap_a:
 														pop	cx
 														loop	tile_mask_row_loop_a		; Loop if cx > 0
 
+fn_32:
 								pop	di
 								add	di,2000h
 								cmp	di,8000h
@@ -361,6 +365,7 @@ draw_sprite_entry:
 		neg	bh
 		add	bh,1
 		sub	ch,bh
+fn_2:
 		push	cx
 		call	plot_pixel
 		pop	cx
@@ -520,9 +525,11 @@ draw_entry_b:
 		mov	es,ax
 		call	calc_text_width
 		push	ax
+fn_4:
 		push	bx
 
 draw_cols_loop_b:
+fn_6:
 								or	bl,bl			; Zero ?
 								jz	draw_cols_done_b			; Jump if zero
 								push	di
@@ -624,6 +631,7 @@ fn19_text_render:				; dispatch fn 19 (CS:2394) ?-- text render: fg=0FFh, bg=00h
 		mov	byte ptr cs:tile_fg_mask,0FFh
 		mov	byte ptr cs:tile_bg_mask,0
 		add	bh,bh
+fn_7:
 		call	bitplane_to_pixels
 		mov	di,ax
 		mov	bl,cl
@@ -631,10 +639,12 @@ fn19_text_render:				; dispatch fn 19 (CS:2394) ?-- text render: fg=0FFh, bg=00h
 		and	bx,1
 		add	di,bx
 		mov	bl,cl
+fn_8:
 		mov	ax,0B800h
 		mov	es,ax
 
 text_render_loop:
+fn_28:
 								lodsb				; String [si] to al
 								or	al,al			; Zero ?
 								jnz	text_render_char			; Jump if not zero
@@ -822,6 +832,7 @@ fn1_render_time_a:				; dispatch fn 1 (CS:24E6) ?-- render time display A: reads
 		mov	bx,palette_state
 		call	render_tilemap_large
 		pop	ds
+fn_9:
 		retn
 
 fn2_render_time_b:				; dispatch fn 2 (CS:2503) ?-- render time display B: reads CS:[86h]/CS:[85h] timer, tilemap_src=13BBh
@@ -830,6 +841,7 @@ fn2_render_time_b:				; dispatch fn 2 (CS:2503) ?-- render time display B: reads
 		mov	dl,byte ptr cs:[85h]
 		call	init_timestamp
 		push	cs
+fn_10:
 		pop	ds
 		mov	di,258Bh
 		mov	cx,106h
@@ -844,6 +856,7 @@ fn3_render_time_c:				; dispatch fn 3 (CS:2523) ?-- render time display C: index
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr cs:[9Dh]
 		dec	bl
+fn_11:
 		mov	al,byte ptr cs:[0ABh][bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
@@ -858,6 +871,7 @@ fn3_render_time_c:				; dispatch fn 3 (CS:2523) ?-- render time display C: index
 		pop	ds
 		retn
 
+fn_12:
 fn4_sprite_check:				; dispatch fn 4 (CS:254C) ?-- sprite visibility check: early-out if CS:[93h]==0, else render time display D (tilemap_src=3EBBh)
 		test	byte ptr cs:[93h],0FFh
 		jnz	sprite_vis_check			; Jump if not zero
@@ -876,6 +890,7 @@ sprite_vis_check:
 		mov	bx,palette_state
 		call	render_tilemap_large
 		pop	ds
+fn_13:
 		retn
 
 init_timestamp		proc	near
@@ -1114,6 +1129,7 @@ sprite_large_row:
 		mov	ah,[si+4]
 		mov	cs:bitplane_0,ax
 		mov	ah,[si+5]
+fn_14:
 		mov	cs:bitplane_1,ax
 		mov	ah,[si+0Eh]
 		mov	cs:bitplane_2,ax
@@ -1189,6 +1205,7 @@ fn18_small_anim_3:				; dispatch fn 18 (CS:27C6) ?-- render small anim frame: AL
 		or	al,al			; Zero ?
 		jz	render_small_default_b			; Jump if zero
 		mov	ds,cs:gvar_game_seg
+fn_15:
 		dec	al
 		xor	ah,ah			; Zero register
 		mov	cx,0C0h
@@ -1201,6 +1218,7 @@ render_small_default_b:
 		pop	ds
 		retn
 ; sprite_anim_data: 32 rows x 6 bytes = 192 bytes of Tandy 3-bitplane animation frames.
+fn_16:
 ; Each row: [bp0_lo, bp0_hi, bp1_lo, bp1_hi, bp2_lo, bp2_hi] (3 bitplanes x 16 pixels).
 ; Rows come in pairs; 00 00 00 00 FC FF / FF 3F 2A AA AA A8 = frame boundary markers.
 ; fn20 and fn21 stubs are embedded after the data (dispatch table points into this block).
@@ -1213,6 +1231,7 @@ sprite_anim_data:
 		db	 0Eh, 38h,0F8h, 00h, 03h, 00h	; row  4
 		db	 00h,0C0h, 82h, 08h, 08h, 02h	; row  5
 		db	 0Fh,0BBh, 8Eh, 00h, 03h, 00h	; row  6
+fn_26:
 		db	 00h,0C0h, 80h, 88h, 82h, 02h	; row  7
 		db	 0Fh,0FBh, 8Eh, 00h, 03h, 00h	; row  8
 		db	 00h,0C0h, 80h, 08h, 82h, 02h	; row  9
@@ -1229,6 +1248,7 @@ sprite_anim_data:
 		db	 0Eh, 3Bh, 83h, 80h, 03h, 00h	; row 20
 		db	 00h,0C0h, 82h, 08h, 80h, 82h	; row 21
 		db	 0Eh, 38h,0E3h,0C0h, 03h, 00h	; row 22
+fn_27:
 		db	 00h,0C0h, 82h, 08h, 20h, 02h	; row 23
 		db	 0Eh, 38h, 3Bh, 80h, 03h, 00h	; row 24
 		db	 00h,0C0h, 82h, 08h, 08h, 82h	; row 25
@@ -1276,10 +1296,12 @@ render_tilemap_small		proc	near
 
 tilemap_small_loop:
 								push	cx
+fn_29:
 								mov	ax,[si]
 								xchg	ah,al
 								mov	cs:bitplane_0,ax
 								mov	ax,[si+6]
+fn_30:
 								mov	cs:bitplane_1,ax
 								mov	ax,[si+8]
 								xchg	ah,al
@@ -1472,6 +1494,7 @@ sprite_copy_loop:
 								cmp	di,8000h
 								jb	sprite_copy_wrap_di			; Jump if below
 								add	di,tga_wrap
+fn_18:
 
 sprite_copy_wrap_di:
 								add	si,2000h
@@ -1518,6 +1541,7 @@ fn10_sprite_save:				; dispatch fn 10 (CS:2ABB) ?-- save sprite BG: TGA framebuf
 sprite_save_loop:
 								push	cx
 								push	si
+fn_19:
 								mov	cx,bx
 								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
 								pop	si
@@ -1563,6 +1587,7 @@ fn11_sprite_restore:				; dispatch fn 11 (CS:2B0F) ?-- restore sprite BG: CS+300
 		add	bx,bx
 		mov	ch,bh
 
+fn_20:
 sprite_restore_loop:
 								push	cx
 								push	di
@@ -1609,6 +1634,7 @@ string_not_eol:
 														jmp	short string_char_loop
 
 string_newline:
+fn_21:
 														add	byte ptr cs:char_bit_idx,8
 														mov	cl,cs:char_bit_idx
 														mov	bx,cs:char_src_ptr
@@ -1641,6 +1667,7 @@ tga_blit_bitplanes:
 blit_copy_loop:
 								push	cx
 								push	di
+fn_22:
 								push	si
 								mov	cx,bx
 								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
@@ -1684,6 +1711,7 @@ panel_side_loop:
 								mov	al,ds:tile_fg_mask
 								mov	es:[di],al
 								mov	es:[di+9],al
+fn_23:
 								add	di,2000h
 								cmp	di,8000h
 								jb	panel_side_wrap			; Jump if below
@@ -1740,6 +1768,7 @@ sprite_px_row_loop:
 								push	cx
 								push	di
 								mov	dx,[bx]
+fn_31:
 								inc	bx
 								inc	bx
 								xchg	dh,dl
@@ -1857,6 +1886,7 @@ clear_area_row_done:
 
 clear_area_wrap:
 								pop	cx
+fn_33:
 								loop	clear_area_pass_loop		; Loop if cx > 0
 
 		retn
@@ -1888,6 +1918,7 @@ sprite_decode_pass_loop:
 								loop	sprite_decode_pass_loop		; Loop if cx > 0
 
 		retn
+fn_34:
 
 process_sprite_row		proc	near
 		mov	cx,8

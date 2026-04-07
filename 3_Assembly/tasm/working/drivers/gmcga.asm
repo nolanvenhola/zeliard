@@ -84,42 +84,42 @@ seg_a		segment	byte public
 gmcga		proc	far
 
 start:
-		inc	si
-		db	20h, 0F0h		; and al, dh  (alt encoding: 20h r/m,r vs 22h r,r/m)
-		and	ds:dispatch_tbl[bx],al
-		and	dl,ds:tile_col_tbl[bx]
-		and	ah,ds:dispatch_mask_tbl[bx+di]
-		and	di,[si]
-		and	di,[bp+si]
-		and	al,44h			; 'D'
-		and	al,61h			; 'a'
-		and	al,81h
-		and	al,0AAh
-		and	al,2Ch			; ','
-; Function dispatch table (21 word entries) followed by dispatch code.
-; Entries are CS-relative addresses (driver loads at game_seg:2000h).
-; First 42 bytes = 21 dw pointers; remaining = dispatch mechanism code.
-		dw	0DB26h			; fn  0
-		dw	0F526h			; fn  1
-		dw	04B26h			; fn  2
-		dw	0F529h			; fn  3
-		dw	05629h			; fn  4
-		dw	09C2Ah			; fn  5
-		dw	0E42Ah			; fn  6
-		dw	02F2Ah			; fn  7
-		dw	0972Bh			; fn  8
-		dw	0582Bh			; fn  9
-		dw	0EF25h			; fn 10
-		dw	00F24h			; fn 11
-		dw	03027h			; fn 12
-		dw	04A27h			; fn 13
-		dw	01123h			; fn 14
-		dw	02928h			; fn 15
-		dw	01928h			; fn 16
-		dw	0242Ch			; fn 17
-		dw	06621h			; fn 18
-		dw	0992Dh			; fn 19
-		dw	0502Dh			; fn 20
+		; Function dispatch table (35 CS-relative word pointers, driver loads at game_seg:2000h).
+		dw	driver_base + (offset fn_0)			; fn  0
+		dw	driver_base + (offset fn_1)			; fn  1
+		dw	driver_base + (offset fn_2)			; fn  2
+		dw	driver_base + (offset fn_3)			; fn  3
+		dw	driver_base + (offset fn_4)			; fn  4
+		dw	driver_base + (offset fn_5)			; fn  5
+		dw	driver_base + (offset fn_6)			; fn  6
+		dw	driver_base + (offset fn_7)			; fn  7
+		dw	driver_base + (offset fn_8)			; fn  8
+		dw	driver_base + (offset fn_9)			; fn  9
+		dw	driver_base + (offset fn_10)			; fn 10
+		dw	driver_base + (offset fn_11)			; fn 11
+		dw	driver_base + (offset fn_12)			; fn 12
+		dw	driver_base + (offset fn_13)			; fn 13
+		dw	driver_base + (offset fn_14)			; fn 14
+		dw	driver_base + (offset fn_15)			; fn 15
+		dw	driver_base + (offset fn_16)			; fn 16
+		dw	driver_base + (offset render_text_char_alt)			; fn 17
+		dw	driver_base + (offset fn_18)			; fn 18
+		dw	driver_base + (offset fn_19)			; fn 19
+		dw	driver_base + (offset fn_20)			; fn 20
+		dw	driver_base + (offset fn_21)			; fn 21
+		dw	driver_base + (offset fn_22)			; fn 22
+		dw	driver_base + (offset fn_23)			; fn 23
+		dw	driver_base + (offset render_tilemap_large)			; fn 24
+		dw	driver_base + (offset time_to_bcd)			; fn 25
+		dw	driver_base + (offset fn_26)			; fn 26
+		dw	driver_base + (offset fn_27)			; fn 27
+		dw	driver_base + (offset fn_28)			; fn 28
+		dw	driver_base + (offset fn_29)			; fn 29
+		dw	driver_base + (offset fn_30)			; fn 30
+		dw	driver_base + (offset fn_31)			; fn 31
+		dw	driver_base + (offset fn_32)			; fn 32
+		dw	driver_base + (offset fn_33)			; fn 33
+		dw	driver_base + (offset fn_34)			; fn 34
 ; Coordinate-to-CGA-offset calculation + bordered row draw.
 ; Input: BL=col BH=row CL/CH=width/height.
 ; Calculates CGA byte offset: DI = (col/2 & 2000h) + col*80 + row
@@ -239,6 +239,7 @@ hud_clear_inner:
 								mov	cx,38h
 								xor	al,al			; Zero register
 								rep	stosb			; Rep when cx >0 Store al to es:[di]
+fn_1:
 								pop	di
 								add	di,140h
 								pop	cx
@@ -274,6 +275,7 @@ hud_mask_mid:
 hud_mask_inner:
 								and	es:[di],al
 								inc	di
+fn_32:
 								loop	hud_mask_inner		; Loop if cx > 0
 
 								rol	al,1			; Rotate
@@ -337,6 +339,7 @@ set_plot_mode:
 		add	di,dx
 		add	di,cga_tile_stride
 		mov	cl,bh
+fn_2:
 		add	cl,cl
 		mov	ax,0FF3Fh
 		shr	ah,cl			; Shift w/zeros fill
@@ -485,9 +488,11 @@ draw_hline_text:
 		jmp	short text_render_init
 		db	0BFh, 45h, 3Bh,0EBh, 00h
 
+fn_4:
 text_render_init:
 		SET_CGA_ES
 		call	calc_text_width
+fn_6:
 		push	ax
 		push	bx
 
@@ -589,6 +594,7 @@ fill_vertical_line		endp
 		jmp	short text_coords_setup
 			                        ;* No entry point to code
 		mov	byte ptr cs:tile_fg_mask,0FFh
+fn_7:
 		mov	byte ptr cs:tile_bg_mask,0
 		xor	dh,dh			; Zero register
 		mov	dl,bh
@@ -596,10 +602,12 @@ fill_vertical_line		endp
 		sbb	di,di
 		and	di,2000h
 		add	di,dx
+fn_8:
 		mov	al,bl
 		mov	dl,50h			; 'P'
 		mul	dl			; ax = reg * al
 		add	di,ax
+fn_28:
 		mov	bl,cl
 		SET_CGA_ES
 
@@ -737,6 +745,7 @@ render_text_char		endp
 		call	init_timestamp
 		push	cs
 		pop	ds
+fn_9:
 		mov	di,tile_color_tbl
 		mov	cx,105h
 		mov	ax,tilemap_src_a
@@ -745,6 +754,7 @@ render_text_char		endp
 		pop	ds
 		retn
 			                        ;* No entry point to code
+fn_10:
 		push	ds
 		mov	ax,word ptr cs:[drv_time_param_a]
 		mov	dl,byte ptr cs:[drv_timer_flag]
@@ -759,6 +769,7 @@ render_text_char		endp
 		pop	ds
 		retn
 			                        ;* No entry point to code
+fn_11:
 		push	ds
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr cs:[drv_frame_idx]
@@ -773,6 +784,7 @@ render_text_char		endp
 		mov	cx,103h
 		mov	ax,tilemap_src_c
 		mov	bx,palette_state
+fn_12:
 		call	render_tilemap_large
 		pop	ds
 		retn
@@ -791,6 +803,7 @@ sprite_check:
 		mov	di,text_vga_ofs_b
 		mov	cx,103h
 		mov	ax,tilemap_src_d
+fn_13:
 		mov	bx,palette_state
 		call	render_tilemap_large
 		pop	ds
@@ -1044,6 +1057,7 @@ large_tile_loop:
 					mov	ax,[si+0Ch]
 					xchg	ah,al
 					mov	cs:bitplane_2,ax
+fn_14:
 					call	extract_bitplane_pixels
 					mov	es:[bp+2],dh
 					mov	es:[bp+3],dl
@@ -1114,6 +1128,7 @@ anim_ptr4_check:
 		mov	si,tile_src_base_b
 		or	al,al			; Zero ?
 		jz	anim_ptr3_check			; Jump if zero
+fn_15:
 		mov	ds,cs:gvar_game_seg
 		dec	al
 		xor	ah,ah			; Zero register
@@ -1126,6 +1141,7 @@ anim_ptr3_check:
 		call	render_tilemap_small
 		pop	ds
 		retn
+fn_16:
 ; CGA 2-bitplane tile bitmap (16 rows x 12 bytes = 192 bytes).
 ; Each row = 2 x 6-byte lines: even scanline | odd scanline.
 ; Referenced as tile_src_base_b by render_tilemap_large.
@@ -1138,6 +1154,7 @@ tile_src_base_b_lbl:
 		db	 0Eh, 38h,0F8h, 00h, 03h, 00h	; row  2 even
 		db	 00h,0C0h, 82h, 08h, 08h, 02h	; row  2 odd
 		db	 0Fh,0BBh, 8Eh, 00h, 03h, 00h	; row  3 even
+fn_26:
 		db	 00h,0C0h, 80h, 88h, 82h, 02h	; row  3 odd
 		db	 0Fh,0FBh, 8Eh, 00h, 03h, 00h	; row  4 even
 		db	 00h,0C0h, 80h, 08h, 82h, 02h	; row  4 odd
@@ -1154,6 +1171,7 @@ tile_src_base_b_lbl:
 		db	 0Eh, 3Bh, 83h, 80h, 03h, 00h	; row 10 even
 		db	 00h,0C0h, 82h, 08h, 80h, 82h	; row 10 odd
 		db	 0Eh, 38h,0E3h,0C0h, 03h, 00h	; row 11 even
+fn_27:
 		db	 00h,0C0h, 82h, 08h, 20h, 02h	; row 11 odd
 		db	 0Eh, 38h, 3Bh, 80h, 03h, 00h	; row 12 even
 		db	 00h,0C0h, 82h, 08h, 08h, 82h	; row 12 odd
@@ -1201,10 +1219,12 @@ render_tilemap_small		proc	near
 
 small_tile_loop:
 					push	cx
+fn_29:
 					mov	ax,[si]
 					xchg	ah,al
 					mov	cs:bitplane_0,ax
 					mov	ax,[si+6]
+fn_30:
 					mov	cs:bitplane_1,ax
 					mov	ax,[si+8]
 					xchg	ah,al
@@ -1426,6 +1446,7 @@ copy_si_wrap:
 					loop	copy_scan_loop		; Loop if cx > 0
 
 		pop	ds
+fn_18:
 		retn
 			                        ;* No entry point to code
 		push	ds
@@ -1478,6 +1499,7 @@ copy_words_wrap:
 		mul	bh			; ax = reg * al
 		add	di,ax
 		xor	bh,bh			; Zero register
+fn_19:
 		add	bx,bx
 		add	di,bx
 		mov	ax,cs
@@ -1516,6 +1538,7 @@ char_cmd_loop:
 								jne	char_terminator_check			; Jump if not equal
 								retn
 
+fn_20:
 char_terminator_check:
 								cmp	al,0Dh
 								je	handle_newline			; Jump if equal
@@ -1555,6 +1578,7 @@ handle_color_code:
 		add	ax,bx
 		add	si,ax
 		shr	dl,1			; Shift w/zeros fill
+fn_21:
 		sbb	di,di
 		and	di,2000h
 		mov	ax,50h
@@ -1588,6 +1612,7 @@ buf_copy_di_wrap:
 					add	si,2000h
 					cmp	si,4000h
 					jb	buf_copy_si_wrap			; Jump if below
+fn_22:
 					add	si,0C050h
 
 buf_copy_si_wrap:
@@ -1641,6 +1666,7 @@ fill_rectangle		proc	near
 
 rect_fill_loop:
 					push	cx
+fn_23:
 					push	di
 					mov	al,ds:tile_fg_mask
 					mov	cx,5
@@ -1816,6 +1842,7 @@ vram_init_wrap:
 					pop	cx
 					loop	vram_init_outer		; Loop if cx > 0
 
+fn_34:
 		retn
 			                        ;* No entry point to code
 		push	cx

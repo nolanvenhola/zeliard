@@ -105,27 +105,28 @@ start:
 		db	 1Ch, 00h			; ...28 (0x1C)
 
 copy_tile_row_loop:
-			push	cx
-			push	si
-			mov	cx,18h
+				push	cx
+				push	si
+				mov	cx,18h
 
 copy_tile_cols_loop:
-				movsw				; Mov [si] to es:[di]
-				movsw				; Mov [si] to es:[di]
-				movsw				; Mov [si] to es:[di]
-				movsw				; Mov [si] to es:[di]
-				add	si,138h
-				loop	copy_tile_cols_loop		; Loop if cx > 0
+						movsw				; Mov [si] to es:[di]
+						movsw				; Mov [si] to es:[di]
+						movsw				; Mov [si] to es:[di]
+						movsw				; Mov [si] to es:[di]
+						add	si,138h
+						loop	copy_tile_cols_loop		; Loop if cx > 0
 
-			pop	si
-			pop	cx
-			add	si,8
-			loop	copy_tile_row_loop		; Loop if cx > 0
+				pop	si
+				pop	cx
+				add	si,8
+				loop	copy_tile_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
 
 ; Called via dispatch_tbl_a to initialize tile cache and render tilemap column
+
 init_and_render_col:			;* No entry point to code
 		push	cs
 		pop	es
@@ -148,59 +149,59 @@ check_scroll_tile:
 		mov	byte ptr ds:tile_col_idx,0
 
 render_col_loop:
-			call	vga_operation
-			xor	bl,bl			; Zero register
-			cmpsb				; Cmp [si] to es:[di]
-			jz	tile_skip_0			; Jump if zero
-			call	simg_func_4
+				call	vga_operation
+				xor	bl,bl			; Zero register
+				cmpsb				; Cmp [si] to es:[di]
+				jz	tile_skip_0			; Jump if zero
+				call	simg_func_4
 
 tile_skip_0:
-			inc	bl
-			cmpsb				; Cmp [si] to es:[di]
-			jz	tile_skip_1			; Jump if zero
-			call	simg_func_4
+				inc	bl
+				cmpsb				; Cmp [si] to es:[di]
+				jz	tile_skip_1			; Jump if zero
+				call	simg_func_4
 
 tile_skip_1:
-			inc	bl
-			cmpsb				; Cmp [si] to es:[di]
-			jz	tile_skip_2			; Jump if zero
-			call	simg_func_4
+				inc	bl
+				cmpsb				; Cmp [si] to es:[di]
+				jz	tile_skip_2			; Jump if zero
+				call	simg_func_4
 
 tile_skip_2:
-			inc	bl
-			cmpsb				; Cmp [si] to es:[di]
-			jz	tile_skip_3			; Jump if zero
-			call	simg_func_3
+				inc	bl
+				cmpsb				; Cmp [si] to es:[di]
+				jz	tile_skip_3			; Jump if zero
+				call	simg_func_3
 
 tile_skip_3:
-			inc	bl
-			cmpsb				; Cmp [si] to es:[di]
-			jz	tile_skip_4			; Jump if zero
-			call	simg_func_3
+				inc	bl
+				cmpsb				; Cmp [si] to es:[di]
+				jz	tile_skip_4			; Jump if zero
+				call	simg_func_3
 
 tile_skip_4:
-			inc	bl
-			cmpsb				; Cmp [si] to es:[di]
-			jz	tile_skip_5			; Jump if zero
-			call	simg_multiply
+				inc	bl
+				cmpsb				; Cmp [si] to es:[di]
+				jz	tile_skip_5			; Jump if zero
+				call	simg_multiply
 
 tile_skip_5:
-			inc	bl
-			cmpsb				; Cmp [si] to es:[di]
-			jz	tile_skip_6			; Jump if zero
-			call	simg_func_3
+				inc	bl
+				cmpsb				; Cmp [si] to es:[di]
+				jz	tile_skip_6			; Jump if zero
+				call	simg_func_3
 
 tile_skip_6:
-			inc	bl
-			cmpsb				; Cmp [si] to es:[di]
-			jz	tile_skip_7			; Jump if zero
-			call	simg_func_3
+				inc	bl
+				cmpsb				; Cmp [si] to es:[di]
+				jz	tile_skip_7			; Jump if zero
+				call	simg_func_3
 
 tile_skip_7:
-			add	word ptr ds:tile_vga_ofs,8
-			inc	byte ptr ds:tile_col_idx
-			cmp	byte ptr ds:tile_col_idx,1Ch
-			jne	render_col_loop			; Jump if not equal
+				add	word ptr ds:tile_vga_ofs,8
+				inc	byte ptr ds:tile_col_idx
+				cmp	byte ptr ds:tile_col_idx,1Ch
+				jne	render_col_loop			; Jump if not equal
 		retn
 
 zr1_11		endp
@@ -235,13 +236,13 @@ vga_op_do_copy:
 		mov	cx,2
 
 blit_pair_loop:
-			push	cx
-			push	di
-			call	vga_operation1
-			pop	di
-			add	di,8
-			pop	cx
-			loop	blit_pair_loop		; Loop if cx > 0
+				push	cx
+				push	di
+				call	vga_operation1
+				pop	di
+				add	di,8
+				pop	cx
+				loop	blit_pair_loop		; Loop if cx > 0
 
 		pop	ds
 		pop	si
@@ -301,33 +302,33 @@ tile_changed:
 		mov	cx,8
 
 blit_8rows_loop:
-			push	cx
-			mov	cx,2
+				push	cx
+				mov	cx,2
 
 blit_3planes_loop:
-				lodsw				; String [si] to ax
-				mov	dx,ax
-				lodsb				; String [si] to al
-				mov	bl,al
-				mov	bh,dl
-				shr	dx,1			; Shift w/zeros fill
-				shr	dx,1			; Shift w/zeros fill
-				mov	es:[di],dh
-				shr	dl,1			; Shift w/zeros fill
-				shr	dl,1			; Shift w/zeros fill
-				mov	es:[di+1],dl
-				add	bx,bx
-				add	bx,bx
-				and	bh,3Fh			; '?'
-				mov	es:[di+2],bh
-				and	al,3Fh			; '?'
-				mov	es:[di+3],al
-				add	di,4
-				loop	blit_3planes_loop		; Loop if cx > 0
+						lodsw				; String [si] to ax
+						mov	dx,ax
+						lodsb				; String [si] to al
+						mov	bl,al
+						mov	bh,dl
+						shr	dx,1			; Shift w/zeros fill
+						shr	dx,1			; Shift w/zeros fill
+						mov	es:[di],dh
+						shr	dl,1			; Shift w/zeros fill
+						shr	dl,1			; Shift w/zeros fill
+						mov	es:[di+1],dl
+						add	bx,bx
+						add	bx,bx
+						and	bh,3Fh			; '?'
+						mov	es:[di+2],bh
+						and	al,3Fh			; '?'
+						mov	es:[di+3],al
+						add	di,4
+						loop	blit_3planes_loop		; Loop if cx > 0
 
-			add	di,stride_minus_8
-			pop	cx
-			loop	blit_8rows_loop		; Loop if cx > 0
+				add	di,stride_minus_8
+				pop	cx
+				loop	blit_8rows_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	si
@@ -344,13 +345,13 @@ tile_cached:
 		mov	cx,8
 
 blit_cached_loop:
-			movsw				; Mov [si] to es:[di]
-			movsw				; Mov [si] to es:[di]
-			movsw				; Mov [si] to es:[di]
-			movsw				; Mov [si] to es:[di]
-			add	di,138h
-			add	si,138h
-			loop	blit_cached_loop		; Loop if cx > 0
+				movsw				; Mov [si] to es:[di]
+				movsw				; Mov [si] to es:[di]
+				movsw				; Mov [si] to es:[di]
+				movsw				; Mov [si] to es:[di]
+				add	di,138h
+				add	si,138h
+				loop	blit_cached_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	si
@@ -421,63 +422,63 @@ tile_ov_changed:
 		mov	cx,8
 
 blit_ov_8rows:
-			push	cx
-			mov	ah,ds:[bp]
-			inc	bp
-			mov	cx,2
+				push	cx
+				mov	ah,ds:[bp]
+				inc	bp
+				mov	cx,2
 
 blit_ov_3planes:
-				push	cx
-				lodsb				; String [si] to al
-				mov	dl,al
-				lodsb				; String [si] to al
-				mov	dh,al
-				lodsb				; String [si] to al
-				mov	cl,al
-				mov	ch,dl
-				shr	dx,1			; Shift w/zeros fill
-				shr	dx,1			; Shift w/zeros fill
-				add	ah,ah
-				jnc	ovl_plane0			; Jump if carry=0
-				mov	dh,cs:[bx]
+						push	cx
+						lodsb				; String [si] to al
+						mov	dl,al
+						lodsb				; String [si] to al
+						mov	dh,al
+						lodsb				; String [si] to al
+						mov	cl,al
+						mov	ch,dl
+						shr	dx,1			; Shift w/zeros fill
+						shr	dx,1			; Shift w/zeros fill
+						add	ah,ah
+						jnc	ovl_plane0			; Jump if carry=0
+						mov	dh,cs:[bx]
 
 ovl_plane0:
-				inc	bx
-				mov	es:[di],dh
-				shr	dl,1			; Shift w/zeros fill
-				shr	dl,1			; Shift w/zeros fill
-				add	ah,ah
-				jnc	ovl_plane1			; Jump if carry=0
-				mov	dl,cs:[bx]
+						inc	bx
+						mov	es:[di],dh
+						shr	dl,1			; Shift w/zeros fill
+						shr	dl,1			; Shift w/zeros fill
+						add	ah,ah
+						jnc	ovl_plane1			; Jump if carry=0
+						mov	dl,cs:[bx]
 
 ovl_plane1:
-				inc	bx
-				mov	es:[di+1],dl
-				add	cx,cx
-				add	cx,cx
-				and	ch,3Fh			; '?'
-				add	ah,ah
-				jnc	ovl_plane2			; Jump if carry=0
-				mov	ch,cs:[bx]
+						inc	bx
+						mov	es:[di+1],dl
+						add	cx,cx
+						add	cx,cx
+						and	ch,3Fh			; '?'
+						add	ah,ah
+						jnc	ovl_plane2			; Jump if carry=0
+						mov	ch,cs:[bx]
 
 ovl_plane2:
-				inc	bx
-				mov	es:[di+2],ch
-				and	al,3Fh			; '?'
-				add	ah,ah
-				jnc	ovl_plane3			; Jump if carry=0
-				mov	al,cs:[bx]
+						inc	bx
+						mov	es:[di+2],ch
+						and	al,3Fh			; '?'
+						add	ah,ah
+						jnc	ovl_plane3			; Jump if carry=0
+						mov	al,cs:[bx]
 
 ovl_plane3:
-				inc	bx
-				mov	es:[di+3],al
-				add	di,4
-				pop	cx
-				loop	blit_ov_3planes		; Loop if cx > 0
+						inc	bx
+						mov	es:[di+3],al
+						add	di,4
+						pop	cx
+						loop	blit_ov_3planes		; Loop if cx > 0
 
-			pop	cx
-			add	di,138h
-			loop	blit_ov_8rows		; Loop if cx > 0
+				pop	cx
+				add	di,138h
+				loop	blit_ov_8rows		; Loop if cx > 0
 
 		pop	bx
 		pop	si
@@ -505,26 +506,27 @@ has_anim:
 		inc	di
 
 find_anim_loop:
-			mov	al,es:[di]
-			cmp	al,0FFh
-			je	anim_done			; Jump if equal
-			cmp	ah,al
-			jne	anim_next			; Jump if not equal
-			mov	al,es:[di+1]
-			mov	[si-1],al
-			jmp	short anim_done
+				mov	al,es:[di]
+				cmp	al,0FFh
+				je	anim_done			; Jump if equal
+				cmp	ah,al
+				jne	anim_next			; Jump if not equal
+				mov	al,es:[di+1]
+				mov	[si-1],al
+				jmp	short anim_done
 
 anim_next:
-			inc	di
-			inc	di
-			dec	cl
-			jnz	find_anim_loop			; Jump if not zero
+				inc	di
+				inc	di
+				dec	cl
+				jnz	find_anim_loop			; Jump if not zero
 
 anim_done:
 		pop	es
 		pop	di
 		retn
 ; Dispatch entry: set DI=tile_offscr_a then fall through to simg_func_6
+
 simg_func_5_alt:
 		mov	di,tile_offscr_a	; = 0FA00h
 
@@ -536,42 +538,42 @@ simg_func_6:
 		mov	es,ax
 
 blit_n_tiles_loop:
-			push	cx
-			lodsb				; String [si] to al
-			push	ds
-			push	si
-			mov	cl,30h			; '0'
-			mul	cl			; ax = reg * al
-			mov	si,ax
-			add	si,tile_src_base
-			mov	ds,cs:gvar_game_seg
-			mov	cx,10h
+				push	cx
+				lodsb				; String [si] to al
+				push	ds
+				push	si
+				mov	cl,30h			; '0'
+				mul	cl			; ax = reg * al
+				mov	si,ax
+				add	si,tile_src_base
+				mov	ds,cs:gvar_game_seg
+				mov	cx,10h
 
 blit_tile_3planes:
-				lodsw				; String [si] to ax
-				mov	dx,ax
-				lodsb				; String [si] to al
-				mov	bl,al
-				mov	bh,dl
-				shr	dx,1			; Shift w/zeros fill
-				shr	dx,1			; Shift w/zeros fill
-				mov	es:[di],dh
-				shr	dl,1			; Shift w/zeros fill
-				shr	dl,1			; Shift w/zeros fill
-				mov	es:[di+1],dl
-				add	bx,bx
-				add	bx,bx
-				and	bh,3Fh			; '?'
-				mov	es:[di+2],bh
-				and	al,3Fh			; '?'
-				mov	es:[di+3],al
-				add	di,4
-				loop	blit_tile_3planes		; Loop if cx > 0
+						lodsw				; String [si] to ax
+						mov	dx,ax
+						lodsb				; String [si] to al
+						mov	bl,al
+						mov	bh,dl
+						shr	dx,1			; Shift w/zeros fill
+						shr	dx,1			; Shift w/zeros fill
+						mov	es:[di],dh
+						shr	dl,1			; Shift w/zeros fill
+						shr	dl,1			; Shift w/zeros fill
+						mov	es:[di+1],dl
+						add	bx,bx
+						add	bx,bx
+						and	bh,3Fh			; '?'
+						mov	es:[di+2],bh
+						and	al,3Fh			; '?'
+						mov	es:[di+3],al
+						add	di,4
+						loop	blit_tile_3planes		; Loop if cx > 0
 
-			pop	si
-			pop	ds
-			pop	cx
-			loop	blit_n_tiles_loop		; Loop if cx > 0
+				pop	si
+				pop	ds
+				pop	cx
+				loop	blit_n_tiles_loop		; Loop if cx > 0
 
 		retn
 
@@ -605,23 +607,23 @@ scroll_no_second:
 		mov	si,cs:scroll_entry_ptr
 
 scroll_entry_loop:
-			call	vga_operation4
-			or	bl,bl			; Zero ?
-			jz	scroll_next_entry			; Jump if zero
-			push	si
-			push	bx
-			call	vga_operation3
-			pop	bx
-			mov	es,cs:gvar_game_seg
-			mov	si,tile_id_a
-			call	vga_operation2
-			pop	si
+				call	vga_operation4
+				or	bl,bl			; Zero ?
+				jz	scroll_next_entry			; Jump if zero
+				push	si
+				push	bx
+				call	vga_operation3
+				pop	bx
+				mov	es,cs:gvar_game_seg
+				mov	si,tile_id_a
+				call	vga_operation2
+				pop	si
 
 scroll_next_entry:
-			add	si,8
+				add	si,8
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		;  Fixup - byte match
-			jnz	scroll_entry_loop			; Jump if not zero
+				db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				jnz	scroll_entry_loop			; Jump if not zero
 		pop	di
 		pop	es
 		mov	ch,es:[di-1]
@@ -692,29 +694,29 @@ no_scroll2:
 		mov	si,cs:scroll_entry_ptr
 
 scroll2_entry_loop:
-			call	vga_operation4
-			or	bl,bl			; Zero ?
-			jz	scroll2_next_entry			; Jump if zero
-			push	si
-			dec	bl
-			mov	al,3
-			mul	bl			; ax = reg * al
-			push	ax
-			call	vga_operation3
-			pop	ax
-			add	di,ax
-			mov	bp,di
-			mov	es,cs:gvar_game_seg
-			mov	si,3C9Bh
-			mov	di,0FB80h
-			call	vga_operation_2
-			pop	si
+				call	vga_operation4
+				or	bl,bl			; Zero ?
+				jz	scroll2_next_entry			; Jump if zero
+				push	si
+				dec	bl
+				mov	al,3
+				mul	bl			; ax = reg * al
+				push	ax
+				call	vga_operation3
+				pop	ax
+				add	di,ax
+				mov	bp,di
+				mov	es,cs:gvar_game_seg
+				mov	si,3C9Bh
+				mov	di,0FB80h
+				call	vga_operation_2
+				pop	si
 
 scroll2_next_entry:
-			add	si,8
+				add	si,8
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		;  Fixup - byte match
-			jnz	scroll2_entry_loop			; Jump if not zero
+				db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				jnz	scroll2_entry_loop			; Jump if not zero
 		mov	di,vga_tile_left
 		mov	si,tile_offscr_c
 		mov	ax,0A000h
@@ -740,11 +742,11 @@ simg_func_8		proc	near
 		retn
 
 find_scroll_again:
-			add	si,8
-			call	vga_operation0
-			mov	al,[si+3]
-			cmp	al,0FDh
-			je	find_scroll_again			; Jump if equal
+				add	si,8
+				call	vga_operation0
+				mov	al,[si+3]
+				cmp	al,0FDh
+				je	find_scroll_again			; Jump if equal
 		retn
 
 simg_func_8		endp
@@ -755,13 +757,13 @@ simg_func_9		proc	near
 vga_operation0:
 
 scan_col_match:
-			cmp	dx,[si]
-			jne	col_next			; Jump if not equal
-			retn
+				cmp	dx,[si]
+				jne	col_next			; Jump if not equal
+				retn
 
 col_next:
-			add	si,8
-			jmp	short scan_col_match
+				add	si,8
+				jmp	short scan_col_match
 
 simg_func_9		endp
 
@@ -769,12 +771,12 @@ vga_operation1		proc	near
 		mov	cx,18h
 
 blit_8x8_loop:
-			movsw				; Mov [si] to es:[di]
-			movsw				; Mov [si] to es:[di]
-			movsw				; Mov [si] to es:[di]
-			movsw				; Mov [si] to es:[di]
-			add	di,138h
-			loop	blit_8x8_loop		; Loop if cx > 0
+				movsw				; Mov [si] to es:[di]
+				movsw				; Mov [si] to es:[di]
+				movsw				; Mov [si] to es:[di]
+				movsw				; Mov [si] to es:[di]
+				add	di,138h
+				loop	blit_8x8_loop		; Loop if cx > 0
 
 		retn
 
@@ -793,12 +795,14 @@ vga_operation2		endp
 ; Dispatch entries for dispatch_tbl_a: scroll-mode tile blitters to off-screen buffers C and D
 ; scroll_blit_c: IN AL,34h; ESC,[SI] (preamble); MOV DI,tile_offscr_c; CALL vga_operation_2; JMP render_3cells
 ; scroll_blit_d: ADD SI,3; MOV DI,tile_offscr_d; JMP render_3cells
+
 scroll_blit_c:				;* No entry point to code
 		in	al,34h			; read custom port 34h (preamble before tile_offscr_c blit)
 		db	0DCh, 34h		; ESC 6,[SI] -- x87 no-op / align
 		mov	di,tile_offscr_c	; = 0FB80h
 		call	vga_operation_2		; blit 3 cells to tile_offscr_c
 		jmp	short render_3cells	; done
+
 scroll_blit_d:
 		add	si,3			; advance SI past 3 scroll bytes
 		mov	di,tile_offscr_d	; = 0FC40h
@@ -833,14 +837,14 @@ vga_operation4		proc	near
 		mov	dx,ds:scroll_col
 
 find_entry_loop:
-			mov	bl,cl
-			cmp	[si],dx
-			jne	entry_not_match			; Jump if not equal
-			retn
+				mov	bl,cl
+				cmp	[si],dx
+				jne	entry_not_match			; Jump if not equal
+				retn
 
 entry_not_match:
-			inc	dx
-			loop	find_entry_loop		; Loop if cx > 0
+				inc	dx
+				loop	find_entry_loop		; Loop if cx > 0
 
 		mov	bl,cl
 		retn
@@ -848,6 +852,7 @@ entry_not_match:
 vga_operation4		endp
 
 	; Called via dispatch_tbl_a: dispatch to scroll-mode sub-handler via dispatch_tbl_b
+
 scroll_dispatch_b:			;* No entry point to code
 		mov	bp,di
 		dec	bl
@@ -856,6 +861,7 @@ scroll_dispatch_b:			;* No entry point to code
 		call	word ptr cs:dispatch_tbl_b[bx]	;*
 		retn
 ; Scroll blit entry A: adjust scroll position, blit to tile_offscr_a
+
 scroll_blit_a:				;* No entry point to code
 		dec	dx
 		xor	ax,3542h
@@ -864,11 +870,13 @@ scroll_blit_a:				;* No entry point to code
 		mov	di,0FA00h
 		jmp	short render_3cells
 ; Scroll blit entry: blit from scroll_entry to tile_offscr_a via vga_operation_2
+
 scroll_blit_a2:				;* No entry point to code
 		mov	di,0FA00h
 		call	vga_operation_2
 		jmp	short render_3cells
 ; Scroll blit entry B: advance SI by 3, blit to tile_offscr_b
+
 scroll_blit_b:				;* No entry point to code
 		mov	di,tile_offscr_b
 		add	si,3
@@ -880,75 +888,76 @@ render_3cells:
 		mov	cx,3
 
 render_cell_loop:
-			push	cx
-			mov	byte ptr [si],0FFh
-			inc	si
-			push	ds
-			push	si
-			mov	al,es:[bp]
-			inc	bp
-			push	es
-			push	bp
-			dec	al
-			push	ax
-			mov	cl,30h			; '0'
-			mul	cl			; ax = reg * al
-			mov	si,ax
-			add	si,tileset_base
-			pop	ax
-			mov	cl,8
-			mul	cl			; ax = reg * al
-			add	ax,7000h
-			mov	cs:glyph_far_ptr,ax
-			mov	ax,cs
-			add	ax,2000h
-			mov	word ptr cs:glyph_far_ptr+2,ax
-			mov	ds,cs:gvar_game_seg
-			mov	ax,0A000h
-			mov	es,ax
-			call	vga_operation6
-			pop	bp
-			pop	es
-			pop	si
-			pop	ds
-			pop	cx
-			loop	render_cell_loop		; Loop if cx > 0
+				push	cx
+				mov	byte ptr [si],0FFh
+				inc	si
+				push	ds
+				push	si
+				mov	al,es:[bp]
+				inc	bp
+				push	es
+				push	bp
+				dec	al
+				push	ax
+				mov	cl,30h			; '0'
+				mul	cl			; ax = reg * al
+				mov	si,ax
+				add	si,tileset_base
+				pop	ax
+				mov	cl,8
+				mul	cl			; ax = reg * al
+				add	ax,7000h
+				mov	cs:glyph_far_ptr,ax
+				mov	ax,cs
+				add	ax,2000h
+				mov	word ptr cs:glyph_far_ptr+2,ax
+				mov	ds,cs:gvar_game_seg
+				mov	ax,0A000h
+				mov	es,ax
+				call	vga_operation6
+				pop	bp
+				pop	es
+				pop	si
+				pop	ds
+				pop	cx
+				loop	render_cell_loop		; Loop if cx > 0
 
 		retn
 
 vga_operation_2		endp
 
 	; Called via dispatch_tbl_a: initialize 6 tile glyphs from chunk0 into off-screen buffer
+
 init_6tiles:				;* No entry point to code
 		mov	di,tile_offscr_a
 		mov	cx,6
 
 init_6tiles_loop:
-			push	cx
-			lodsb				; String [si] to al
-			push	ds
-			push	si
-			push	ax
-			mov	cl,30h			; '0'
-			mul	cl			; ax = reg * al
-			mov	si,ax
-			add	si,chunk0_base
-			pop	ax
-			mov	cl,8
-			mul	cl			; ax = reg * al
-			add	ax,8000h
-			mov	cs:glyph_far_ptr,ax
-			mov	ax,cs
-			add	ax,2000h
-			mov	word ptr cs:glyph_far_ptr+2,ax
-			mov	ds,cs:gvar_game_seg
-			mov	ax,0A000h
-			mov	es,ax
-			call	vga_operation6
-			pop	si
-			pop	ds
-			pop	cx
-			loop	init_6tiles_loop		; Loop if cx > 0
+				push	cx
+				lodsb				; String [si] to al
+				push	ds
+				push	si
+				push	ax
+				mov	cl,30h			; '0'
+				mul	cl			; ax = reg * al
+				mov	si,ax
+				add	si,chunk0_base
+				pop	ax
+				mov	cl,8
+				mul	cl			; ax = reg * al
+				add	ax,8000h
+				mov	cs:glyph_far_ptr,ax
+				mov	ax,cs
+				add	ax,2000h
+				mov	word ptr cs:glyph_far_ptr+2,ax
+				mov	ds,cs:gvar_game_seg
+				mov	ax,0A000h
+				mov	es,ax
+				call	vga_operation6
+				pop	si
+				pop	ds
+				pop	cx
+				loop	init_6tiles_loop		; Loop if cx > 0
 
 		retn
 
@@ -960,19 +969,19 @@ vga_operation6		proc	near
 		mov	cx,8
 
 blit_glyph_rows:
-			push	cx
-			lodsb				; String [si] to al
-			mov	cx,8
+				push	cx
+				lodsb				; String [si] to al
+				mov	cx,8
 
 blit_glyph_bits:
-				add	al,al
-				sbb	ah,ah
-				and	es:[di],ah
-				inc	di
-				loop	blit_glyph_bits		; Loop if cx > 0
+						add	al,al
+						sbb	ah,ah
+						and	es:[di],ah
+						inc	di
+						loop	blit_glyph_bits		; Loop if cx > 0
 
-			pop	cx
-			loop	blit_glyph_rows		; Loop if cx > 0
+				pop	cx
+				loop	blit_glyph_rows		; Loop if cx > 0
 
 		pop	di
 		pop	si
@@ -980,31 +989,32 @@ blit_glyph_bits:
 		mov	cx,10h
 
 blit_glyph_planes:
-			lodsw				; String [si] to ax
-			mov	dx,ax
-			lodsb				; String [si] to al
-			mov	bl,al
-			mov	bh,dl
-			shr	dx,1			; Shift w/zeros fill
-			shr	dx,1			; Shift w/zeros fill
-			or	es:[di],dh
-			shr	dl,1			; Shift w/zeros fill
-			shr	dl,1			; Shift w/zeros fill
-			or	es:[di+1],dl
-			add	bx,bx
-			add	bx,bx
-			and	bh,3Fh			; '?'
-			or	es:[di+2],bh
-			and	al,3Fh			; '?'
-			or	es:[di+3],al
-			add	di,4
-			loop	blit_glyph_planes		; Loop if cx > 0
+				lodsw				; String [si] to ax
+				mov	dx,ax
+				lodsb				; String [si] to al
+				mov	bl,al
+				mov	bh,dl
+				shr	dx,1			; Shift w/zeros fill
+				shr	dx,1			; Shift w/zeros fill
+				or	es:[di],dh
+				shr	dl,1			; Shift w/zeros fill
+				shr	dl,1			; Shift w/zeros fill
+				or	es:[di+1],dl
+				add	bx,bx
+				add	bx,bx
+				and	bh,3Fh			; '?'
+				or	es:[di+2],bh
+				and	al,3Fh			; '?'
+				or	es:[di+3],al
+				add	di,4
+				loop	blit_glyph_planes		; Loop if cx > 0
 
 		retn
 
 vga_operation6		endp
 
 	; Called via dispatch_tbl_c (tile type 0): scroll VGA viewport left by 8 pixels
+
 scroll_left:				;* No entry point to code
 		push	ds
 		mov	ax,0A000h
@@ -1015,38 +1025,39 @@ scroll_left:				;* No entry point to code
 		mov	al,8
 
 scroll_left_body:
-			push	si
-			mov	di,si
-			sub	si,8
-			mov	cx,6Ch
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			add	si,78h
-			mov	cx,4
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			pop	si
-			add	si,140h
-			dec	al
-			jnz	scroll_left_body			; Jump if not zero
+				push	si
+				mov	di,si
+				sub	si,8
+				mov	cx,6Ch
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				add	si,78h
+				mov	cx,4
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				pop	si
+				add	si,140h
+				dec	al
+				jnz	scroll_left_body			; Jump if not zero
 		mov	si,vga_tile_r3
 		mov	al,8
 
 scroll_left2_body:
-			push	si
-			mov	di,si
-			sub	si,10h
-			mov	cx,68h
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			add	si,half_stride
-			mov	cx,8
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			pop	si
-			add	si,140h
-			dec	al
-			jnz	scroll_left2_body			; Jump if not zero
+				push	si
+				mov	di,si
+				sub	si,10h
+				mov	cx,68h
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				add	si,half_stride
+				mov	cx,8
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				pop	si
+				add	si,140h
+				dec	al
+				jnz	scroll_left2_body			; Jump if not zero
 		pop	ds
 		cld				; Clear direction
 		retn
 	; Called via dispatch_tbl_c (tile type 1): scroll VGA viewport up by 4 pixels
+
 scroll_up:				;* No entry point to code
 		push	ds
 		mov	ax,0A000h
@@ -1057,22 +1068,23 @@ scroll_up:				;* No entry point to code
 		mov	al,10h
 
 scroll_up_body:
-			push	si
-			mov	di,si
-			sub	si,4
-			mov	cx,6Eh
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			add	si,74h
-			mov	cx,2
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			pop	si
-			add	si,140h
-			dec	al
-			jnz	scroll_up_body			; Jump if not zero
+				push	si
+				mov	di,si
+				sub	si,4
+				mov	cx,6Eh
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				add	si,74h
+				mov	cx,2
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				pop	si
+				add	si,140h
+				dec	al
+				jnz	scroll_up_body			; Jump if not zero
 		pop	ds
 		cld				; Clear direction
 		retn
 	; Called via dispatch_tbl_c (tile type 2): scroll VGA viewport right by 8 pixels
+
 scroll_right:				;* No entry point to code
 		push	ds
 		mov	ax,0A000h
@@ -1082,37 +1094,38 @@ scroll_right:				;* No entry point to code
 		mov	al,8
 
 scroll_right_body:
-			push	si
-			mov	di,si
-			add	si,8
-			mov	cx,6Ch
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			sub	si,78h
-			mov	cx,4
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			pop	si
-			add	si,140h
-			dec	al
-			jnz	scroll_right_body			; Jump if not zero
+				push	si
+				mov	di,si
+				add	si,8
+				mov	cx,6Ch
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				sub	si,78h
+				mov	cx,4
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				pop	si
+				add	si,140h
+				dec	al
+				jnz	scroll_right_body			; Jump if not zero
 		mov	si,vga_tile_l3
 		mov	al,8
 
 scroll_right2_body:
-			push	si
-			mov	di,si
-			add	si,10h
-			mov	cx,68h
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			sub	si,80h
-			mov	cx,8
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			pop	si
-			add	si,140h
-			dec	al
-			jnz	scroll_right2_body			; Jump if not zero
+				push	si
+				mov	di,si
+				add	si,10h
+				mov	cx,68h
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				sub	si,80h
+				mov	cx,8
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				pop	si
+				add	si,140h
+				dec	al
+				jnz	scroll_right2_body			; Jump if not zero
 		pop	ds
 		retn
 	; Called via dispatch_tbl_c (tile type 3): scroll VGA viewport down by 4 pixels
+
 scroll_down:				;* No entry point to code
 		push	ds
 		mov	ax,0A000h
@@ -1122,21 +1135,22 @@ scroll_down:				;* No entry point to code
 		mov	al,10h
 
 scroll_down_body:
-			push	si
-			mov	di,si
-			add	si,4
-			mov	cx,6Eh
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			sub	si,74h
-			mov	cx,2
-			rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-			pop	si
-			add	si,140h
-			dec	al
-			jnz	scroll_down_body			; Jump if not zero
+				push	si
+				mov	di,si
+				add	si,4
+				mov	cx,6Eh
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				sub	si,74h
+				mov	cx,2
+				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+				pop	si
+				add	si,140h
+				dec	al
+				jnz	scroll_down_body			; Jump if not zero
 		pop	ds
 		retn
 	; Called via dispatch_tbl_c (tile type 4): draw tile from tile_cache_base to VGA
+
 draw_tile_cached:			;* No entry point to code
 		push	ds
 		push	si
@@ -1161,38 +1175,39 @@ draw_tile_cached:			;* No entry point to code
 		mov	cx,8
 
 draw_8rows_loop:
-			push	cx
-			mov	cx,2
+				push	cx
+				mov	cx,2
 
 draw_3planes_loop:
-				lodsw				; String [si] to ax
-				mov	dx,ax
-				lodsb				; String [si] to al
-				mov	bl,al
-				mov	bh,dl
-				shr	dx,1			; Shift w/zeros fill
-				shr	dx,1			; Shift w/zeros fill
-				mov	es:[di],dh
-				shr	dl,1			; Shift w/zeros fill
-				shr	dl,1			; Shift w/zeros fill
-				mov	es:[di+1],dl
-				add	bx,bx
-				add	bx,bx
-				and	bh,3Fh			; '?'
-				mov	es:[di+2],bh
-				and	al,3Fh			; '?'
-				mov	es:[di+3],al
-				add	di,4
-				loop	draw_3planes_loop		; Loop if cx > 0
+						lodsw				; String [si] to ax
+						mov	dx,ax
+						lodsb				; String [si] to al
+						mov	bl,al
+						mov	bh,dl
+						shr	dx,1			; Shift w/zeros fill
+						shr	dx,1			; Shift w/zeros fill
+						mov	es:[di],dh
+						shr	dl,1			; Shift w/zeros fill
+						shr	dl,1			; Shift w/zeros fill
+						mov	es:[di+1],dl
+						add	bx,bx
+						add	bx,bx
+						and	bh,3Fh			; '?'
+						mov	es:[di+2],bh
+						and	al,3Fh			; '?'
+						mov	es:[di+3],al
+						add	di,4
+						loop	draw_3planes_loop		; Loop if cx > 0
 
-			add	di,stride_minus_8
-			pop	cx
-			loop	draw_8rows_loop		; Loop if cx > 0
+				add	di,stride_minus_8
+				pop	cx
+				loop	draw_8rows_loop		; Loop if cx > 0
 
 		pop	si
 		pop	ds
 		retn
 	; Called via dispatch_tbl_a: draw a character glyph from char_glyph_base to VGA
+
 draw_char_glyph:			;* No entry point to code
 		push	ds
 		push	si
@@ -1215,31 +1230,33 @@ draw_char_glyph:			;* No entry point to code
 		mov	cx,9
 
 draw_glyph_rows:
-			push	cx
-			lodsb				; String [si] to al
-			mov	ah,al
-			mov	cx,8
+				push	cx
+				lodsb				; String [si] to al
+				mov	ah,al
+				mov	cx,8
 
 draw_glyph_bits:
-				add	ah,ah
-				sbb	al,al
-				and	al,12h
-				stosb				; Store al to es:[di]
-				loop	draw_glyph_bits		; Loop if cx > 0
+						add	ah,ah
+						sbb	al,al
+						and	al,12h
+						stosb				; Store al to es:[di]
+						loop	draw_glyph_bits		; Loop if cx > 0
 
-			add	di,138h
-			pop	cx
-			loop	draw_glyph_rows		; Loop if cx > 0
+				add	di,138h
+				pop	cx
+				loop	draw_glyph_rows		; Loop if cx > 0
 
 		pop	di
 		pop	si
 		pop	ds
 		retn
 ; 9-byte cursor/selection glyph bitmask (diamond shape, 9 rows x 8 pixels):
+
 cursor_glyph:
 		db	 00h, 60h, 70h, 78h, 7Ch, 78h	; rows 0-5: 00000000 01100000 01110000 01111000 01111100 01111000
 		db	 70h, 60h, 00h			; rows 6-8: 01110000 01100000 00000000
 ; Entry point called via dispatch_tbl_a: set up VGA draw for 9-row character blit
+
 draw_char_entry:
 		xor	ax,ax			; Zero register
 		mov	al,bh
@@ -1257,22 +1274,23 @@ draw_char_entry:
 		mov	cx,9			; CX = 9 rows
 
 draw_char_rows:
-			push	cx
-			push	di
-			push	si
-			mov	cx,ds:gvar_tile_width
-			add	cx,cx
-			add	cx,cx
-			rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-			pop	si
-			add	si,0A0h
-			pop	di
-			add	di,140h
-			pop	cx
-			loop	draw_char_rows		; Loop if cx > 0
+				push	cx
+				push	di
+				push	si
+				mov	cx,ds:gvar_tile_width
+				add	cx,cx
+				add	cx,cx
+				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+				pop	si
+				add	si,0A0h
+				pop	di
+				add	di,140h
+				pop	cx
+				loop	draw_char_rows		; Loop if cx > 0
 
 		retn
 	; Called via dispatch_tbl_a: render HUD element -- clear tile_bitbuf, draw glyph overlay
+
 render_hud_element:			;* No entry point to code
 		push	si
 		push	di
@@ -1315,18 +1333,18 @@ vga_operation7		proc	near
 		xor	bl,bl			; Zero register
 
 glyph_char_loop:
-			lodsb				; String [si] to al
-			or	al,al			; Zero ?
-			jnz	glyph_nonzero			; Jump if not zero
-			retn
+				lodsb				; String [si] to al
+				or	al,al			; Zero ?
+				jnz	glyph_nonzero			; Jump if not zero
+				retn
 
 glyph_nonzero:
-			push	ds
-			push	si
-			call	extract_bits
-			pop	si
-			pop	ds
-			jmp	short glyph_char_loop
+				push	ds
+				push	si
+				call	extract_bits
+				pop	si
+				pop	ds
+				jmp	short glyph_char_loop
 
 vga_operation7		endp
 
@@ -1344,25 +1362,25 @@ extract_bits		proc	near
 		mov	bl,8
 
 glyph_row_loop:
-			push	bx
-			lodsb				; String [si] to al
-			push	di
-			mov	dh,al
-			mov	dl,4
+				push	bx
+				lodsb				; String [si] to al
+				push	di
+				mov	dh,al
+				mov	dl,4
 
 glyph_bit_loop:
-				add	dh,dh
-				sbb	bl,bl
-				and	bl,9
-				mov	es:[di],bl
-				inc	di
-				dec	dl
-				jnz	glyph_bit_loop			; Jump if not zero
-			pop	di
-			add	di,0A0h
-			pop	bx
-			dec	bl
-			jnz	glyph_row_loop			; Jump if not zero
+						add	dh,dh
+						sbb	bl,bl
+						and	bl,9
+						mov	es:[di],bl
+						inc	di
+						dec	dl
+						jnz	glyph_bit_loop			; Jump if not zero
+				pop	di
+				add	di,0A0h
+				pop	bx
+				dec	bl
+				jnz	glyph_row_loop			; Jump if not zero
 		pop	di
 		add	di,5
 		retn
@@ -1370,6 +1388,7 @@ glyph_bit_loop:
 extract_bits		endp
 
 	; Called via dispatch_tbl_a: render border glyph -- clear tile_bitbuf, draw border
+
 render_border_glyph:			;* No entry point to code
 		push	dx
 		push	ax
@@ -1402,16 +1421,16 @@ vga_operation9		proc	near
 		mov	cx,6
 
 draw_border_loop:
-			push	cx
-			push	di
-			lodsb				; String [si] to al
-			push	si
-			call	simg_process_loop
-			pop	si
-			pop	di
-			add	di,6
-			pop	cx
-			loop	draw_border_loop		; Loop if cx > 0
+				push	cx
+				push	di
+				lodsb				; String [si] to al
+				push	si
+				call	simg_process_loop
+				pop	si
+				pop	di
+				add	di,6
+				pop	cx
+				loop	draw_border_loop		; Loop if cx > 0
 
 		retn
 
@@ -1433,21 +1452,21 @@ glyph_valid:
 		mov	cx,7
 
 draw_glyph_cols:
-			lodsb				; String [si] to al
-			add	al,al
-			add	al,al
-			mov	ah,6
+				lodsb				; String [si] to al
+				add	al,al
+				add	al,al
+				mov	ah,6
 
 glyph_6bits:
-				add	al,al
-				sbb	bl,bl
-				and	bl,9
-				mov	es:[di],bl
-				inc	di
-				dec	ah
-				jnz	glyph_6bits			; Jump if not zero
-			add	di,9Ah
-			loop	draw_glyph_cols		; Loop if cx > 0
+						add	al,al
+						sbb	bl,bl
+						and	bl,9
+						mov	es:[di],bl
+						inc	di
+						dec	ah
+						jnz	glyph_6bits			; Jump if not zero
+				add	di,9Ah
+				loop	draw_glyph_cols		; Loop if cx > 0
 
 		retn
 
@@ -1459,14 +1478,14 @@ simg_process_loop_2		proc	near
 		mov	cx,6
 
 check_slot_loop:
-			test	byte ptr cs:[di],0FFh
-			jz	slot_mark			; Jump if zero
-			retn
+				test	byte ptr cs:[di],0FFh
+				jz	slot_mark			; Jump if zero
+				retn
 
 slot_mark:
-			mov	byte ptr cs:[di],0FFh
-			inc	di
-			loop	check_slot_loop		; Loop if cx > 0
+				mov	byte ptr cs:[di],0FFh
+				inc	di
+				loop	check_slot_loop		; Loop if cx > 0
 
 		retn
 
@@ -1505,17 +1524,17 @@ simg_func_23		proc	near
 		xor	dh,dh			; Zero register
 
 div_sub_loop:
-			sub	dl,cl
-			jc	div_done			; Jump if carry Set
-			sub	ax,bx
-			jnc	div_inc			; Jump if carry=0
-			or	dl,dl			; Zero ?
-			jz	div_rem_adj			; Jump if zero
-			dec	dl
+				sub	dl,cl
+				jc	div_done			; Jump if carry Set
+				sub	ax,bx
+				jnc	div_inc			; Jump if carry=0
+				or	dl,dl			; Zero ?
+				jz	div_rem_adj			; Jump if zero
+				dec	dl
 
 div_inc:
-			inc	dh
-			jmp	short div_sub_loop
+				inc	dh
+				jmp	short div_sub_loop
 
 div_rem_adj:
 		add	ax,bx
@@ -1537,6 +1556,7 @@ simg_func_24		proc	near
 simg_func_24		endp
 
 	; Called via dispatch_tbl_a: copy tile rows upward (scroll up helper)
+
 copy_rows_up:				;* No entry point to code
 		push	ds
 		push	ax
@@ -1564,17 +1584,17 @@ copy_rows_up:				;* No entry point to code
 		xor	ch,ch			; Zero register
 
 copy_up_rows:
-			push	cx
-			push	di
-			push	si
-			mov	cx,bx
-			rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-			pop	si
-			pop	di
-			sub	si,140h
-			sub	di,140h
-			pop	cx
-			loop	copy_up_rows		; Loop if cx > 0
+				push	cx
+				push	di
+				push	si
+				mov	cx,bx
+				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+				pop	si
+				pop	di
+				sub	si,140h
+				sub	di,140h
+				pop	cx
+				loop	copy_up_rows		; Loop if cx > 0
 
 		pop	ax
 		mov	dl,0A0h
@@ -1588,6 +1608,7 @@ copy_up_rows:
 		pop	ds
 		retn
 	; Called via dispatch_tbl_a: copy tile rows downward (scroll down helper)
+
 copy_rows_down:				;* No entry point to code
 		push	ds
 		push	ax
@@ -1613,17 +1634,17 @@ copy_rows_down:				;* No entry point to code
 		xor	ch,ch			; Zero register
 
 copy_down_rows:
-			push	cx
-			push	di
-			push	si
-			mov	cx,bx
-			rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-			pop	si
-			pop	di
-			add	si,140h
-			add	di,vga_stride
-			pop	cx
-			loop	copy_down_rows		; Loop if cx > 0
+				push	cx
+				push	di
+				push	si
+				mov	cx,bx
+				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+				pop	si
+				pop	di
+				add	si,140h
+				add	di,vga_stride
+				pop	cx
+				loop	copy_down_rows		; Loop if cx > 0
 
 		pop	ax
 		mov	dl,0A0h
@@ -1637,6 +1658,7 @@ copy_down_rows:
 		pop	ds
 		retn
 	; Called via dispatch_tbl_a: XOR-flash the tile grid area (visual effect)
+
 xor_tile_flash:				;* No entry point to code
 		mov	ax,0A000h
 		mov	es,ax
@@ -1644,34 +1666,35 @@ xor_tile_flash:				;* No entry point to code
 		mov	cx,8
 
 xor_col_outer:
-			push	cx
-			push	di
-			mov	cx,12h
-
-xor_row_loop:
 				push	cx
 				push	di
-				mov	ax,3636h
-				mov	cx,70h
+				mov	cx,12h
+
+xor_row_loop:
+						push	cx
+						push	di
+						mov	ax,3636h
+						mov	cx,70h
 
 xor_pixels_loop:
-				xor	es:[di],ax
-				inc	di
-				inc	di
-				loop	xor_pixels_loop		; Loop if cx > 0
+						xor	es:[di],ax
+						inc	di
+						inc	di
+						loop	xor_pixels_loop		; Loop if cx > 0
+
+						pop	di
+						add	di,0A00h
+						pop	cx
+						loop	xor_row_loop		; Loop if cx > 0
 
 				pop	di
-				add	di,0A00h
+				add	di,140h
 				pop	cx
-				loop	xor_row_loop		; Loop if cx > 0
-
-			pop	di
-			add	di,140h
-			pop	cx
-			loop	xor_col_outer		; Loop if cx > 0
+				loop	xor_col_outer		; Loop if cx > 0
 
 		retn
 	; Called via dispatch_tbl_a: encode tile bitplane data from CS+3000h segment
+
 encode_tile_block:			;* No entry point to code
 		mov	cs:glyph_far_ptr,di
 		mov	word ptr cs:glyph_far_ptr+2,es
@@ -1695,53 +1718,54 @@ encode_tile_block:			;* No entry point to code
 		mov	si,zero_offset
 
 encode_tiles_outer:
-			push	cx
-			mov	cx,8
+				push	cx
+				mov	cx,8
 
 encode_tiles_inner:
-				push	cx
-				lodsw				; String [si] to ax
-				mov	dx,ax
-				lodsw				; String [si] to ax
-				mov	cx,ax
-				lodsw				; String [si] to ax
-				mov	bx,ax
-				mov	bp,ax
-				or	ax,cx
-				or	ax,dx
-				and	bp,cx
-				and	bp,dx
-				not	bp
-				and	dx,bp
-				and	cx,bp
-				and	bx,bp
-				xchg	dh,dl
-				mov	cs:bitplane_0,dx
-				xchg	ch,cl
-				mov	cs:bitplane_1,cx
-				xchg	bh,bl
-				mov	cs:bitplane_2,bx
-				xchg	ah,al
-				not	ax
-				mov	cs:bitplane_3,ax
-				call	simg_process_loop_3
-				push	es
-				push	di
-				les	di,dword ptr cs:glyph_far_ptr	; Load seg:offset ptr
-				call	simg_scan_loop
-				mov	al,dl
-				stosb				; Store al to es:[di]
-				mov	cs:glyph_far_ptr,di
-				pop	di
-				pop	es
-				pop	cx
-				loop	encode_tiles_inner		; Loop if cx > 0
+						push	cx
+						lodsw				; String [si] to ax
+						mov	dx,ax
+						lodsw				; String [si] to ax
+						mov	cx,ax
+						lodsw				; String [si] to ax
+						mov	bx,ax
+						mov	bp,ax
+						or	ax,cx
+						or	ax,dx
+						and	bp,cx
+						and	bp,dx
+						not	bp
+						and	dx,bp
+						and	cx,bp
+						and	bx,bp
+						xchg	dh,dl
+						mov	cs:bitplane_0,dx
+						xchg	ch,cl
+						mov	cs:bitplane_1,cx
+						xchg	bh,bl
+						mov	cs:bitplane_2,bx
+						xchg	ah,al
+						not	ax
+						mov	cs:bitplane_3,ax
+						call	simg_process_loop_3
+						push	es
+						push	di
+						les	di,dword ptr cs:glyph_far_ptr	; Load seg:offset ptr
+						call	simg_scan_loop
+						mov	al,dl
+						stosb				; Store al to es:[di]
+						mov	cs:glyph_far_ptr,di
+						pop	di
+						pop	es
+						pop	cx
+						loop	encode_tiles_inner		; Loop if cx > 0
 
-			pop	cx
-			loop	encode_tiles_outer		; Loop if cx > 0
+				pop	cx
+				loop	encode_tiles_outer		; Loop if cx > 0
 
 		retn
 	; Called via dispatch_tbl_a: copy tile_src_base to CS+3000h, then process all tiles
+
 load_and_process_tiles:			;* No entry point to code
 		push	ds
 		mov	ds,cs:gvar_game_seg
@@ -1763,27 +1787,28 @@ load_and_process_tiles:			;* No entry point to code
 		mov	cx,0FAh
 
 process_tiles_loop:
-			push	cx
-			mov	al,es:[bx]
-			cmp	al,5
-			jb	tile_type_clamp			; Jump if below
-			xor	al,al			; Zero register
+				push	cx
+				mov	al,es:[bx]
+				cmp	al,5
+				jb	tile_type_clamp			; Jump if below
+				xor	al,al			; Zero register
 
 tile_type_clamp:
-			push	bx
-			xor	bx,bx			; Zero register
-			mov	bl,al
-			add	bx,bx
-			call	word ptr cs:dispatch_tbl_c[bx]	;*
-			pop	bx
-			inc	bx
-			pop	cx
-			loop	process_tiles_loop		; Loop if cx > 0
+				push	bx
+				xor	bx,bx			; Zero register
+				mov	bl,al
+				add	bx,bx
+				call	word ptr cs:dispatch_tbl_c[bx]	;*
+				pop	bx
+				inc	bx
+				pop	cx
+				loop	process_tiles_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
 	; Called via dispatch_tbl_c: encode tile type 0 row (all black/opaque)
 ; Preceded by init bytes that set up BP/DI/CX for the encode_row loops
+
 encode_row_dispatch:			;* No entry point to code
 		push	bp
 		cmp	di,[bp+di+3Bh]
@@ -1794,111 +1819,115 @@ encode_row_dispatch:			;* No entry point to code
 		or	[bx+si],al
 
 encode_row_a:
-			push	cx
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_0,ax
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_1,ax
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_2,ax
-			call	simg_process_loop_3
-			mov	byte ptr es:[bp],0
-			inc	bp
-			pop	cx
-			loop	encode_row_a		; Loop if cx > 0
+				push	cx
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_0,ax
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_1,ax
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_2,ax
+				call	simg_process_loop_3
+				mov	byte ptr es:[bp],0
+				inc	bp
+				pop	cx
+				loop	encode_row_a		; Loop if cx > 0
 
 		retn
+
 encode_row_b_entry:				; dispatch_tbl_c entry point (MOV CX,8 then push cx loop)
 		mov	cx,8
 
 encode_row_b:
-			push	cx
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_0,ax
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_1,ax
-			mov	word ptr cs:bitplane_2,0
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_3,ax
-			call	simg_process_loop_3
-			call	simg_scan_loop
-			mov	es:[bp],dl
-			inc	bp
-			pop	cx
-			loop	encode_row_b		; Loop if cx > 0
+				push	cx
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_0,ax
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_1,ax
+				mov	word ptr cs:bitplane_2,0
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_3,ax
+				call	simg_process_loop_3
+				call	simg_scan_loop
+				mov	es:[bp],dl
+				inc	bp
+				pop	cx
+				loop	encode_row_b		; Loop if cx > 0
 
 		retn
+
 encode_row_c_entry:
 		mov	cx,8
 
 encode_row_c:
-			push	cx
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_0,ax
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_3,ax
-			mov	word ptr cs:bitplane_1,0
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_2,ax
-			call	simg_process_loop_3
-			call	simg_scan_loop
-			mov	es:[bp],dl
-			inc	bp
-			pop	cx
-			loop	encode_row_c		; Loop if cx > 0
+				push	cx
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_0,ax
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_3,ax
+				mov	word ptr cs:bitplane_1,0
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_2,ax
+				call	simg_process_loop_3
+				call	simg_scan_loop
+				mov	es:[bp],dl
+				inc	bp
+				pop	cx
+				loop	encode_row_c		; Loop if cx > 0
 
 		retn
+
 encode_row_d_entry:
 		mov	cx,8
 
 encode_row_d:
-			push	cx
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_3,ax
-			mov	word ptr cs:bitplane_0,0
-			lodsw				; String [si] to ax
-			xchg	al,ah
-			mov	cs:bitplane_1,ax
-			lodsw				; String [si] to ax
-			xchg	al,ah
-			mov	cs:bitplane_2,ax
-			call	simg_process_loop_3
-			call	simg_scan_loop
-			mov	es:[bp],dl
-			inc	bp
-			pop	cx
-			loop	encode_row_d		; Loop if cx > 0
+				push	cx
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_3,ax
+				mov	word ptr cs:bitplane_0,0
+				lodsw				; String [si] to ax
+				xchg	al,ah
+				mov	cs:bitplane_1,ax
+				lodsw				; String [si] to ax
+				xchg	al,ah
+				mov	cs:bitplane_2,ax
+				call	simg_process_loop_3
+				call	simg_scan_loop
+				mov	es:[bp],dl
+				inc	bp
+				pop	cx
+				loop	encode_row_d		; Loop if cx > 0
 
 		retn
+
 encode_row_e_entry:
 		mov	cx,8
 
 encode_row_e:
-			push	cx
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_0,ax
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_1,ax
-			lodsw				; String [si] to ax
-			xchg	ah,al
-			mov	cs:bitplane_2,ax
-			call	simg_process_loop_3
-			mov	byte ptr es:[bp],0FFh
-			inc	bp
-			pop	cx
-			loop	encode_row_e		; Loop if cx > 0
+				push	cx
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_0,ax
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_1,ax
+				lodsw				; String [si] to ax
+				xchg	ah,al
+				mov	cs:bitplane_2,ax
+				call	simg_process_loop_3
+				mov	byte ptr es:[bp],0FFh
+				inc	bp
+				pop	cx
+				loop	encode_row_e		; Loop if cx > 0
 
 		retn
 
@@ -1906,22 +1935,22 @@ simg_process_loop_3		proc	near
 		mov	cx,2
 
 pack_planes_loop:
-			call	simg_func_26
-			call	simg_func_26
-			call	simg_func_26
-			call	simg_func_26
-			call	simg_func_26
-			rol	word ptr cs:bitplane_2,1	; Rotate
-			adc	ax,ax
-			stosw				; Store ax to es:[di]
-			rol	word ptr cs:bitplane_1,1	; Rotate
-			adc	ax,ax
-			rol	word ptr cs:bitplane_0,1	; Rotate
-			adc	ax,ax
-			call	simg_func_26
-			call	simg_func_26
-			stosb				; Store al to es:[di]
-			loop	pack_planes_loop		; Loop if cx > 0
+				call	simg_func_26
+				call	simg_func_26
+				call	simg_func_26
+				call	simg_func_26
+				call	simg_func_26
+				rol	word ptr cs:bitplane_2,1	; Rotate
+				adc	ax,ax
+				stosw				; Store ax to es:[di]
+				rol	word ptr cs:bitplane_1,1	; Rotate
+				adc	ax,ax
+				rol	word ptr cs:bitplane_0,1	; Rotate
+				adc	ax,ax
+				call	simg_func_26
+				call	simg_func_26
+				stosb				; Store al to es:[di]
+				loop	pack_planes_loop		; Loop if cx > 0
 
 		retn
 
@@ -1942,20 +1971,20 @@ simg_scan_loop		proc	near
 		mov	cx,8
 
 scan_alpha_loop:
-			xor	al,al			; Zero register
-			rol	word ptr cs:bitplane_3,1	; Rotate
-			adc	al,al
-			rol	word ptr cs:bitplane_3,1	; Rotate
-			adc	al,al
-			cmp	al,3
-			je	alpha_is_3			; Jump if equal
-			xor	al,al			; Zero register
+				xor	al,al			; Zero register
+				rol	word ptr cs:bitplane_3,1	; Rotate
+				adc	al,al
+				rol	word ptr cs:bitplane_3,1	; Rotate
+				adc	al,al
+				cmp	al,3
+				je	alpha_is_3			; Jump if equal
+				xor	al,al			; Zero register
 
 alpha_is_3:
-			and	al,1
-			add	dl,dl
-			or	dl,al
-			loop	scan_alpha_loop		; Loop if cx > 0
+				and	al,1
+				add	dl,dl
+				or	dl,al
+				loop	scan_alpha_loop		; Loop if cx > 0
 
 		retn
 

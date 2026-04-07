@@ -402,6 +402,24 @@ Verify bit-perfect after adding each include.
 
 ## Step 11 — Final verification and commit
 
+**Verify the header comment matches the actual code.** The top of every cleaned file has a comment like:
+
+```asm
+;  FILENAME - Code Module
+```
+
+Sourcer generates this from the input filename, so it often carries over a wrong or generic name (e.g. `ENEMY_SKELETON - Code Module` when the file is actually the king's palace dialog program). After cleanup, update this line to accurately describe what the module actually does:
+
+```asm
+;  210KINGPR - King's Palace Dialog Program (KINGPRO.BIN)
+;  301MAPCA  - Map: Cave Area A
+;  106TOWNB  - Town Main Module (building programs, NPC dialog)
+```
+
+If the module name was always correct and the description is already accurate, leave it as-is.
+
+---
+
 Before committing, confirm NO unexplained raw `db` lines remain:
 
 ```

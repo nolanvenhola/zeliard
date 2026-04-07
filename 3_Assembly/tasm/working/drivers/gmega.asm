@@ -72,41 +72,41 @@ start:
 ; Function dispatch table (35 word entries) followed by dispatch mechanism code.
 ; Entries are CS-relative addresses (driver loads at game_seg:2000h).
 ; First 70 bytes = 35 dw pointers; remaining = dispatch mechanism code.
-		dw	02046h			; fn  0
-		dw	0211Eh			; fn  1
-		dw	021C8h			; fn  2
-		dw	022DFh			; fn  3
-		dw	0231Ch			; fn  4
-		dw	022E9h			; fn  5
-		dw	02326h			; fn  6
-		dw	023A5h			; fn  7
-		dw	023B3h			; fn  8
-		dw	024BBh			; fn  9
-		dw	024C5h			; fn 10
-		dw	024E2h			; fn 11
-		dw	02502h			; fn 12
-		dw	0252Bh			; fn 13
-		dw	026BEh			; fn 14
-		dw	02745h			; fn 15
-		dw	0275Fh			; fn 16
-		dw	02958h			; fn 17
-		dw	029E9h			; fn 18
-		dw	02A33h			; fn 19
-		dw	02A8Bh			; fn 20
-		dw	02AE5h			; fn 21
-		dw	02B3Ah			; fn 22
-		dw	02B8Eh			; fn 23
-		dw	025D9h			; fn 24
-		dw	02570h			; fn 25
-		dw	02779h			; fn 26
-		dw	0279Ah			; fn 27
-		dw	023C1h			; fn 28
-		dw	0287Bh			; fn 29
-		dw	02893h			; fn 30
-		dw	02BF8h			; fn 31
-		dw	0214Eh			; fn 32
-		dw	02E63h			; fn 33
-		dw	02E92h			; fn 34
+		dw	driver_base + (offset dispatch_call)			; fn  0
+		dw	driver_base + (offset fn_1)			; fn  1
+		dw	driver_base + (offset fn_2)			; fn  2
+		dw	driver_base + (offset fn_3)			; fn  3
+		dw	driver_base + (offset fn_4)			; fn  4
+		dw	driver_base + (offset fn_5)			; fn  5
+		dw	driver_base + (offset fn_6)			; fn  6
+		dw	driver_base + (offset fn_7)			; fn  7
+		dw	driver_base + (offset fn_8)			; fn  8
+		dw	driver_base + (offset fn_9)			; fn  9
+		dw	driver_base + (offset fn_10)			; fn 10
+		dw	driver_base + (offset fn_11)			; fn 11
+		dw	driver_base + (offset fn_12)			; fn 12
+		dw	driver_base + (offset fn_13)			; fn 13
+		dw	driver_base + (offset fn_14)			; fn 14
+		dw	driver_base + (offset fn_15)			; fn 15
+		dw	driver_base + (offset fn_16)			; fn 16
+		dw	driver_base + (offset render_text_char_alt)			; fn 17
+		dw	driver_base + (offset fn_18)			; fn 18
+		dw	driver_base + (offset fn_19)			; fn 19
+		dw	driver_base + (offset fn_20)			; fn 20
+		dw	driver_base + (offset fn_21)			; fn 21
+		dw	driver_base + (offset fn_22)			; fn 22
+		dw	driver_base + (offset fn_23)			; fn 23
+		dw	driver_base + (offset render_tilemap_large)			; fn 24
+		dw	driver_base + (offset time_to_bcd)			; fn 25
+		dw	driver_base + (offset fn_26)			; fn 26
+		dw	driver_base + (offset fn_27)			; fn 27
+		dw	driver_base + (offset fn_28)			; fn 28
+		dw	driver_base + (offset fn_29)			; fn 29
+		dw	driver_base + (offset fn_30)			; fn 30
+		dw	driver_base + (offset fn_31)			; fn 31
+		dw	driver_base + (offset fn_32)			; fn 32
+		dw	driver_base + (offset fn_33)			; fn 33
+		dw	driver_base + (offset fn_34)			; fn 34
 ; Dispatch mechanism: AL=fn#, BL=col, BH=row. Computes DI=col*80+row.
 ; fn 0 (AL=0) jumps directly to clear_screen (init only path).
 ; fn 1+ PUSHes DI then falls through to border-draw setup at loc_1.
@@ -290,6 +290,7 @@ ega_write_mode2_init:
 						;  al = 5, mode
 		mov	si,tile_src_base_b
 		mov	cx,8
+fn_1:
 
 locloop_9:
 								push	cx
@@ -325,6 +326,7 @@ locloop_11:
 
 locloop_12:
 														push	cx
+fn_32:
 														mov	al,8
 														out	dx,ax			; port 3CEh, EGA graphic index
 																		;  al = 8, data bit mask
@@ -598,9 +600,11 @@ loc_29:
 								add	di,ega_col_stride
 								jmp	short loc_29
 
+fn_4:
 loc_30:
 		pop	bx
 		pop	ax
+fn_6:
 		or	al,al			; Zero ?
 		jz	loc_31			; Jump if zero
 		mov	bh,5
@@ -691,6 +695,7 @@ set_tile_color_c:
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
 
+fn_7:
 loc_36:
 								lodsb				; String [si] to al
 								or	al,al			; Zero ?
@@ -698,10 +703,12 @@ loc_36:
 								push	bx
 								push	ds
 								push	si
+fn_8:
 								and	bl,3
 								call	render_text_char
 								pop	si
 								pop	ds
+fn_28:
 								pop	bx
 								inc	bl
 								jmp	short loc_36
@@ -857,6 +864,7 @@ render_tilemap_row_a:
 		mov	cx,106h
 		mov	ax,13BBh
 		mov	bx,0FF01h
+fn_9:
 		call	render_tilemap_large
 		pop	ds
 		retn
@@ -866,6 +874,7 @@ render_animated_tile:
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr cs:[9Dh]
 		dec	bl
+fn_10:
 		mov	al,byte ptr cs:[0ABh][bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
@@ -880,6 +889,7 @@ render_animated_tile:
 		pop	ds
 		retn
 
+fn_11:
 render_if_enabled:
 		test	byte ptr cs:[93h],0FFh
 		jnz	loc_42			; Jump if not zero
@@ -894,6 +904,7 @@ loc_42:
 		pop	ds
 		mov	di,text_vga_ofs_c
 		mov	cx,103h
+fn_12:
 		mov	ax,3EBBh
 		mov	bx,0FF01h
 		call	render_tilemap_large
@@ -912,6 +923,7 @@ locloop_43:
 
 loc_44:
 								mov	byte ptr cs:[di],0FFh
+fn_13:
 								inc	di
 								loop	locloop_43		; Loop if cx > 0
 
@@ -1187,6 +1199,7 @@ locloop_56:
 render_small_tile_anim2:
 		push	ds
 		mov	ds,cs:gvar_game_seg
+fn_14:
 		dec	al
 		xor	ah,ah			; Zero register
 		mov	cx,0C0h
@@ -1251,6 +1264,7 @@ loc_58:
 
 tile_src_base_lbl:
 		db	0, 0, 0, 0			; (4-byte null entry)
+fn_15:
 		db	'TUUUUUUT'			; EGA plane boundary marker
 		db	 00h, 00h, 00h, 00h, 02h, 00h	; row  0 even
 		db	 00h, 80h, 80h, 00h, 00h, 02h	; row  0 odd
@@ -1263,6 +1277,7 @@ tile_src_base_lbl:
 		db	 06h, 31h, 8Ch, 00h, 02h, 00h	; row  4 even
 		db	 00h, 80h, 9Fh,0F7h,0BCh, 02h	; row  4 odd
 		db	 06h, 30h, 18h, 00h, 02h, 00h	; row  5 even
+fn_16:
 		db	 00h, 80h, 9Eh,0F3h,0F8h, 02h	; row  5 odd
 		db	 00h, 00h, 00h, 00h, 02h, 00h	; row  6 even
 		db	 00h, 80h, 80h, 00h, 00h, 02h	; row  6 odd
@@ -1275,6 +1290,7 @@ tile_src_base_lbl:
 		db	 03h, 18h, 18h, 18h, 02h, 00h	; row 10 even
 		db	 00h, 80h, 8Fh, 7Bh,0FBh,0FAh	; row 10 odd
 		db	 03h, 18h, 0Ch,0C0h, 02h, 00h	; row 11 even
+fn_26:
 		db	 00h, 80h, 8Fh, 78h, 3Fh,0C2h	; row 11 odd
 		db	 00h, 30h, 18h, 0Ch, 02h, 00h	; row 12 even
 		db	 00h, 80h, 87h,0F7h,0FBh,0FEh	; row 12 odd
@@ -1291,6 +1307,7 @@ tile_src_base_lbl:
 		add	ax,word ptr ds:[0E208h]
 		mov	si,ax
 		call	render_tilemap_small
+fn_27:
 		pop	ds
 		retn
 ; Sprite source selector B: SI = row*192 + game_seg:[0E204h], calls render_tilemap_small
@@ -1340,10 +1357,12 @@ locloop_60:
 
 		xchg	di,ax
 		mov	es:[bp],ah
+fn_29:
 		mov	es:[bp+1],al
 		xchg	di,ax
 		mov	es:[bp+2],ah
 		mov	es:[bp+3],al
+fn_30:
 		mov	es:[bp+4],bl
 		mov	al,2
 		out	dx,al			; port 3C5h, EGA sequencr func
@@ -1541,6 +1560,7 @@ ega_read_region:
 		mov	ax,cs
 		add	ax,3000h
 		mov	es,ax
+fn_18:
 		mov	ax,0A000h
 		mov	ds,ax
 		mov	dx,3CEh
@@ -1589,6 +1609,7 @@ ega_copy_to_level:
 		push	ds
 		mov	si,di
 		add	si,0
+fn_19:
 		mov	bl,ah
 		mov	bh,50h			; 'P'
 		mul	bh			; ax = reg * al
@@ -1645,6 +1666,7 @@ locloop_68:
 render_char_string:
 		mov	cs:char_col_ptr,bx
 		mov	cs:char_row_ptr,cl
+fn_20:
 		mov	al,1
 		test	byte ptr cs:gvar_volume_b,0FFh
 		jz	loc_69			; Jump if zero
@@ -1702,6 +1724,7 @@ ega_copy_xy_region:
 		add	dx,dx
 		add	ax,dx
 		mov	di,ax
+fn_21:
 		SET_EGA_ES
 		mov	ds,ax
 		mov	dx,3C4h
@@ -1740,6 +1763,7 @@ ega_pattern_fill:
 		push	ds
 		push	cs
 		pop	ds
+fn_22:
 		mov	ds:tile_fg_mask,al
 		mov	al,50h			; 'P'
 		mul	bl			; ax = reg * al
@@ -1790,6 +1814,7 @@ locloop_75:
 fill_rectangle		proc	near
 		mov	cx,2
 
+fn_23:
 locloop_76:
 								push	cx
 								mov	al,ds:tile_fg_mask
@@ -1862,6 +1887,7 @@ loc_77:
 		xor	al,al			; Zero register
 		xchg	es:[di],al
 		mov	al,bh
+fn_31:
 		out	dx,al			; port 3CFh, EGA graphic func
 		xor	al,al			; Zero register
 		xchg	es:[di+1],al
@@ -2069,3 +2095,4 @@ locloop_82:
 seg_a		ends
 
 		end	start
+fn_34:
