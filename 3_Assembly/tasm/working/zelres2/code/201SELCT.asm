@@ -55,12 +55,12 @@ str_no_use_notice	equ	SELCT_BASE + (offset str_no_use_notice_lbl)	;* item panel 
 str_item_used_count	equ	SELCT_BASE + (offset str_item_used_count_lbl)	;* item-use box: count label
 str_item_used_total	equ	SELCT_BASE + (offset str_item_used_total_lbl)	;* item-use box: total label
 str_item_detail_hdr	equ	SELCT_BASE + (offset str_item_detail_hdr_lbl)	;* item detail header ("I have used...")
-weapon_name_ptrs	equ	SELCT_BASE + (offset weapon_name_ptrs_lbl)	;* weapon name string pointer table (7 words)
-magic_name_ptrs		equ	SELCT_BASE + (offset magic_name_ptrs_lbl)	;* magic name string pointer table (6 words)
+spell_name_ptrs	equ	SELCT_BASE + (offset spell_name_ptrs_lbl)	;* weapon name string pointer table (7 words)
+shoe_name_ptrs		equ	SELCT_BASE + (offset shoe_name_ptrs_lbl)	;* magic name string pointer table (6 words)
 item_detail_ptrs	equ	SELCT_BASE + (offset item_detail_ptrs_lbl)	;* item detail string pointer table (8 words)
 item_name_ptrs		equ	SELCT_BASE + (offset item_name_ptrs_lbl)	;* item name string pointer table (9 words: NO_USE + 8 items)
 weapon_detail_ptrs	equ	SELCT_BASE + (offset weapon_detail_ptrs_lbl)	;* weapon detail string pointer table (6 words)
-magic_detail_ptrs	equ	SELCT_BASE + (offset magic_detail_ptrs_lbl)	;* magic detail string pointer table (6 words)
+shield_detail_ptrs	equ	SELCT_BASE + (offset shield_detail_ptrs_lbl)	;* magic detail string pointer table (6 words)
 portrait_data_tbl	equ	0ADE8h			;* portrait rect data table (4 x 4 bytes: BX/CX pairs)
 has_items_flag		equ	0ADF8h			;* byte: non-zero if character has usable items
 cur_panel_idx		equ	0ADF9h			;* byte: current panel (0=weapon, 1=magic, 2=item)
@@ -297,7 +297,7 @@ draw_weapon_cursor		proc	near
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:weapon_name_ptrs[bx]
+		mov	si,ds:spell_name_ptrs[bx]
 		mov	bx,9Eh
 		mov	cl,12h
 		mov	ah,1
@@ -410,7 +410,7 @@ draw_magic_cursor		proc	near
 		mov	bl,byte ptr ds:cur_magic_idx
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:magic_name_ptrs[bx]
+		mov	si,ds:shoe_name_ptrs[bx]
 		mov	bx,5Ch
 		mov	cl,43h			; 'C'
 		mov	ah,1
@@ -1015,7 +1015,7 @@ draw_magic_panel_loop:
 		mov	bl,byte ptr ds:cur_magic_idx
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:magic_name_ptrs[bx]
+		mov	si,ds:shoe_name_ptrs[bx]
 		mov	bx,5Ch
 		mov	cl,43h			; 'C'
 		mov	ah,1
@@ -1067,7 +1067,7 @@ draw_stat_93h:
 		xor	bh,bh			; Zero register
 		dec	bl
 		add	bx,bx
-		mov	si,ds:magic_detail_ptrs[bx]
+		mov	si,ds:shield_detail_ptrs[bx]
 		mov	bx,3461h
 		xor	cl,cl			; Zero register
 		call	word ptr cs:drv_fn_28
@@ -1225,7 +1225,7 @@ draw_weapon_panel_loop:
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:weapon_name_ptrs[bx]
+		mov	si,ds:spell_name_ptrs[bx]
 		mov	bx,9Eh
 		mov	cl,12h
 		mov	ah,1
@@ -1453,7 +1453,7 @@ str_item_used_total_lbl	label	word		; str_item_used_total — total row label
 str_item_detail_hdr_lbl	label	word		; str_item_detail_hdr — item-use header prefix
 		db	'I have used', 0
 
-weapon_name_ptrs_lbl	label	word		; attack spell name pointer table (7 entries, 1-based index)
+spell_name_ptrs_lbl	label	word		; attack spell name pointer table (7 entries, 1-based index)
 		dw	SELCT_BASE + (offset spell_str_espada)	; [1] Espada
 		dw	SELCT_BASE + (offset spell_str_saeta)	; [2] Saeta
 		dw	SELCT_BASE + (offset spell_str_fuego)	; [3] Fuego
@@ -1470,7 +1470,7 @@ spell_str_rascar:	db	'Rascar', 0
 spell_str_agua:		db	'Agua', 0
 spell_str_guerra:	db	'Guerra', 0
 
-magic_name_ptrs_lbl	label	word		; footwear/clothing item name pointer table (6 entries, 0=none)
+shoe_name_ptrs_lbl	label	word		; footwear/clothing item name pointer table (6 entries, 0=none)
 		dw	SELCT_BASE + (offset str_no_use_notice_lbl)	; [0] no item equipped
 		dw	SELCT_BASE + (offset shoe_str_feruza)		; [1] Feruza shoes
 		dw	SELCT_BASE + (offset shoe_str_pirika)		; [2] Pirika shoes
@@ -1557,7 +1557,7 @@ weap_det_str_illumination:	db	'Illumination', 0
 weap_det_str_enchantment:	db	'Enchantment', 0
 				db	'       Sword', 0
 
-magic_detail_ptrs_lbl	label	word		; shield detail pointer table (6 entries, 1-based; "magic" slot holds the shield)
+shield_detail_ptrs_lbl	label	word		; shield detail pointer table (6 entries, 1-based; "magic" slot holds the shield)
 		dw	SELCT_BASE + (offset shield_det_str_clay)	; [1] Clay Shield
 		dw	SELCT_BASE + (offset shield_det_str_wisemans)	; [2] Wise Man's Shield
 		dw	SELCT_BASE + (offset shield_det_str_stone)	; [3] Stone Shield
