@@ -3,7 +3,11 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  COMBAT_UI - Code Module
+;  CHARACTER_SELECT - Code Module
+;
+;  Character selection / inventory screen (zelres2 chunk 1).
+;  Displays character portraits with weapon, magic, and item panels.
+;  Player navigates with joystick (int 61h) or keyboard.
 ;
 ;==========================================================================
 
@@ -11,547 +15,565 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
+; Graphics driver function table (driver loads at game_seg:2000h).
+; Each entry is a CS-relative word pointer into the driver dispatch table.
+drv_fn_dispatch		equ	2000h			;* fn  0: coordinate dispatch (clear/fill rect)
+drv_fn_12		equ	2018h			;* fn 12: timestamp init area
+drv_fn_13		equ	201Ah			;* fn 13: time decode entry
+drv_fn_14		equ	201Ch			;* fn 14: render tile from anim_ptr_4
+drv_fn_15		equ	201Eh			;* fn 15: sprite source selector A
+drv_fn_16		equ	2020h			;* fn 16: sprite source selector B
+drv_fn_render_char	equ	2022h			;* fn 17: render_text_char_alt (BX=pos, CL=col, AL=char, AH=color)
+drv_fn_19		equ	2026h			;* fn 19: char render pipeline entry
+drv_fn_20		equ	2028h			;* fn 20: VGA block copy (stride loop)
+drv_fn_sprite		equ	202Eh			;* fn 23: sprite_anim_data dispatch (BX=sprite offset)
+drv_fn_render_bg	equ	2030h			;* fn 24: render_tilemap_large
+drv_fn_num_fmt		equ	2032h			;* fn 25: number formatter (DI=buf, DX=value)
+drv_fn_26		equ	2034h			;* fn 26: render_tilemap_small
+drv_fn_27		equ	2036h			;* fn 27: display text string row (BX=pos, AL=char)
+drv_fn_28		equ	2038h			;* fn 28: text render helper A
+drv_fn_29		equ	203Ah			;* fn 29: text render helper B
+drv_fn_30		equ	203Ch			;* fn 30: fill_rectangle helper
+drv_fn_32		equ	2040h			;* fn 32: palette/sync call
 
-; The following equates show data references outside the range of the program.
-
-data_33e	equ	2000h			;*
-data_34e	equ	2018h			;*
-data_35e	equ	201Ah			;*
-data_36e	equ	201Ch			;*
-data_37e	equ	201Eh			;*
-data_38e	equ	2020h			;*
-data_39e	equ	2022h			;*
-data_40e	equ	2026h			;*
-data_41e	equ	2028h			;*
-data_42e	equ	202Eh			;*
-data_43e	equ	2030h			;*
-data_44e	equ	2032h			;*
-data_45e	equ	2034h			;*
-data_46e	equ	2036h			;*
-data_47e	equ	2038h			;*
-data_48e	equ	203Ah			;*
-data_49e	equ	203Ch			;*
-data_50e	equ	2040h			;*
-data_51e	equ	0A00Bh			;*
-data_52e	equ	0A0C4h			;*
-data_53e	equ	0A2B9h			;*
-data_54e	equ	0A452h			;*
-data_55e	equ	0A520h			;*
-data_56e	equ	0A9FCh			;*
-data_57e	equ	0AAB8h			;*
-data_58e	equ	0AAF3h			;*
-data_59e	equ	0AB62h			;*
-data_60e	equ	0AC32h			;*
-data_61e	equ	0ACD9h			;*
-data_62e	equ	0AD67h			;*
-data_63e	equ	0ADE8h			;*
-data_64e	equ	0ADF8h			;*
-data_65e	equ	0ADF9h			;*
-data_66e	equ	0ADFAh			;*
-data_67e	equ	0ADFBh			;*
-data_68e	equ	0ADFCh			;*
-data_69e	equ	0ADFDh			;*
-data_70e	equ	0ADFEh			;*
-data_71e	equ	0ADFFh			;*
-data_72e	equ	0AE00h			;*
-data_73e	equ	0AE01h			;*
-data_74e	equ	0AE02h			;*
-data_75e	equ	0AE03h			;*
-data_76e	equ	0AE0Ah			;*
-data_77e	equ	0AE10h			;*
-data_78e	equ	0C00Ah			;*
-data_79e	equ	0FF18h			;*
-data_80e	equ	0FF1Ah			;*
-data_81e	equ	0FF4Bh			;*
-data_82e	equ	0FF75h			;*
+; Game segment data references (outside module address range).
+gvar_selct_state	equ	0A00Bh			;* game-seg byte: character select entry state
+panel_dispatch_tbl	equ	0A0C4h			;* jump table: panel_idx ?-> handler (words)
+selct_param		equ	0A2B9h			;* game-seg word: selection screen parameter
+item_use_dispatch_tbl	equ	0A452h			;* jump table: item_cursor-1 ?-> use handler (words)
+item_effect_tbl		equ	0A520h			;* item effect value table (words, indexed by item type)
+portrait_rect_tbl	equ	0A9FCh			;* portrait display rect table (4 ?? 5 bytes: BX,CL,mode)
+weapon_name_ptrs	equ	0AAB8h			;* weapon name string pointer table (words)
+magic_name_ptrs		equ	0AAF3h			;* magic name string pointer table (words)
+item_detail_ptrs	equ	0AB62h			;* item detail string pointer table (words)
+item_name_ptrs		equ	0AC32h			;* item name string pointer table (words)
+weapon_detail_ptrs	equ	0ACD9h			;* weapon detail string pointer table (words)
+magic_detail_ptrs	equ	0AD67h			;* magic detail string pointer table (words)
+portrait_data_tbl	equ	0ADE8h			;* portrait rect data table (4 ?? 4 bytes: BX/CX pairs)
+has_items_flag		equ	0ADF8h			;* byte: non-zero if character has usable items
+cur_panel_idx		equ	0ADF9h			;* byte: current panel (0=weapon, 1=magic, 2=item)
+weapon_count		equ	0ADFAh			;* byte: number of available weapons
+weapon_cursor		equ	0ADFBh			;* byte: current weapon selection cursor (0-based)
+magic_count		equ	0ADFCh			;* byte: number of available magic spells
+magic_cursor		equ	0ADFDh			;* byte: current magic selection cursor
+item_count		equ	0ADFEh			;* byte: number of available items
+item_cursor		equ	0ADFFh			;* byte: current item selection cursor
+item_sel_idx		equ	0AE00h			;* byte: item select confirm index
+exit_queued		equ	0AE01h			;* byte: non-zero ?-> queue exit on next poll
+portrait_vis		equ	0AE02h			;* byte: portrait box visible flag (0=hidden, FF=shown)
+weapon_idx_tbl		equ	0AE03h			;* 7-byte table: available weapon indices (1-based)
+magic_idx_tbl		equ	0AE0Ah			;* 6-byte table: available magic indices (1-based)
+item_idx_tbl		equ	0AE10h			;* 5-byte table: available item indices (1-based)
+entity_list_ptr		equ	0C00Ah			;* game-seg word: entity list pointer (unused here)
+gvar_timer_counter	equ	0FF18h			;* global: timer counter (compared to joy threshold)
+gvar_frame_timer	equ	0FF1Ah			;* global: frame timer tick counter
+gvar_item_result	equ	0FF4Bh			;* global: selected item result (written on use)
+gvar_volume_b		equ	0FF75h			;* global: display region / rendering mode byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
-zr2_01		proc	far
+selct_main		proc	far
 
 start:
 		sbb	ax,0Eh
 		add	[si],al
-		mov	al,ds:data_51e
-		mov	byte ptr ds:data_64e,0
-		jmp	short loc_1
+		mov	al,ds:gvar_selct_state
+		mov	byte ptr ds:has_items_flag,0
+		jmp	short init_continue
 		db	0C6h, 06h,0F8h,0ADh,0FFh
-loc_1:
-		mov	byte ptr ds:data_74e,0
-		mov	si,data_63e
+
+init_continue:
+		mov	byte ptr ds:portrait_vis,0
+		mov	si,portrait_data_tbl
 		mov	cx,4
 
-locloop_2:
-		push	cx
-		lodsw				; String [si] to ax
-		mov	bx,ax
-		lodsw				; String [si] to ax
-		mov	cx,ax
-		push	si
-		mov	al,0FFh
-		call	word ptr cs:data_33e
-		pop	si
-		pop	cx
-		loop	locloop_2		; Loop if cx > 0
+draw_portraits_loop:
+					push	cx
+					lodsw				; String [si] to ax
+					mov	bx,ax
+					lodsw				; String [si] to ax
+					mov	cx,ax
+					push	si
+					mov	al,0FFh
+					call	word ptr cs:drv_fn_dispatch
+					pop	si
+					pop	cx
+					loop	draw_portraits_loop		; Loop if cx > 0
 
-		call	combat_func_20
+		call	draw_portrait_tabs
 		push	cs
 		pop	es
 		mov	si,0BBh
-		mov	di,data_75e
+		mov	di,weapon_idx_tbl
 		xor	cl,cl			; Zero register
 		mov	ch,1
-loc_3:
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jz	loc_4			; Jump if zero
-		mov	al,ch
-		stosb				; Store al to es:[di]
-		inc	cl
-loc_4:
-		inc	ch
-		cmp	ch,8
-		jne	loc_3			; Jump if not equal
-		mov	ds:data_66e,cl
+
+scan_weapon_flags:
+					lodsb				; String [si] to al
+					or	al,al			; Zero ?
+					jz	scan_weapon_next			; Jump if zero
+					mov	al,ch
+					stosb				; Store al to es:[di]
+					inc	cl
+
+scan_weapon_next:
+					inc	ch
+					cmp	ch,8
+					jne	scan_weapon_flags			; Jump if not equal
+		mov	ds:weapon_count,cl
 		mov	si,0A1h
-		mov	di,data_76e
+		mov	di,magic_idx_tbl
 		xor	al,al			; Zero register
 		stosb				; Store al to es:[di]
 		xor	cl,cl			; Zero register
 		mov	ch,5
-loc_5:
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jz	loc_6			; Jump if zero
-		stosb				; Store al to es:[di]
-		inc	cl
-loc_6:
-		dec	ch
-		jnz	loc_5			; Jump if not zero
+
+scan_item_flags:
+					lodsb				; String [si] to al
+					or	al,al			; Zero ?
+					jz	scan_item_next			; Jump if zero
+					stosb				; Store al to es:[di]
+					inc	cl
+
+scan_item_next:
+					dec	ch
+					jnz	scan_item_flags			; Jump if not zero
 		or	cl,cl			; Zero ?
-		jz	loc_7			; Jump if zero
+		jz	init_panels			; Jump if zero
 		inc	cl
-loc_7:
-		mov	ds:data_68e,cl
-		call	combat_func_11
-		call	combat_func_17
-		call	combat_process_loop_2
-		call	combat_process_loop
-		call	combat_func_14
-		call	combat_func_22
+
+init_panels:
+		mov	ds:magic_count,cl
+		call	rebuild_item_idx
+		call	draw_weapon_panel
+		call	draw_magic_panel
+		call	draw_item_panel
+		call	draw_char_stats
+		call	poll_input
 		sbb	al,al
-		mov	ds:data_73e,al
+		mov	ds:exit_queued,al
 		xor	cl,cl			; Zero register
-		test	byte ptr ds:data_66e,0FFh
-		jnz	loc_9			; Jump if not zero
+		test	byte ptr ds:weapon_count,0FFh
+		jnz	set_panel			; Jump if not zero
 		inc	cl
-		test	byte ptr ds:data_68e,0FFh
-		jnz	loc_9			; Jump if not zero
-		test	byte ptr ds:data_64e,0FFh
-		jnz	loc_8			; Jump if not zero
+		test	byte ptr ds:magic_count,0FFh
+		jnz	set_panel			; Jump if not zero
+		test	byte ptr ds:has_items_flag,0FFh
+		jnz	wait_confirm_loop			; Jump if not zero
 		inc	cl
-		test	byte ptr ds:data_70e,0FFh
-		jnz	loc_9			; Jump if not zero
-loc_8:
-		call	combat_func_22
-		jnc	loc_8			; Jump if carry=0
+		test	byte ptr ds:item_count,0FFh
+		jnz	set_panel			; Jump if not zero
+
+wait_confirm_loop:
+					call	poll_input
+					jnc	wait_confirm_loop			; Jump if carry=0
 		retn
-loc_9:
-		mov	ds:data_65e,cl
-loc_10:
-		mov	bl,ds:data_65e
+
+set_panel:
+		mov	ds:cur_panel_idx,cl
+
+panel_dispatch:
+		mov	bl,ds:cur_panel_idx
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		jmp	word ptr ds:data_52e[bx]	;*
+		jmp	word ptr ds:panel_dispatch_tbl[bx]	;*
 			                        ;* No entry point to code
 		retf	0BBA0h
 			                        ;* No entry point to code
-		mov	ax,ds:data_53e
-		call	combat_func_20
+		mov	ax,ds:selct_param
+		call	draw_portrait_tabs
 		mov	al,2
-		call	combat_func_2
-loc_11:
-		int	61h			; ??INT Non-standard interrupt
-		and	al,3
-		jnz	loc_11			; Jump if not zero
-loc_12:
-		call	combat_func_22
-		jnc	loc_13			; Jump if carry=0
-		retn
-loc_13:
-		int	61h			; ??INT Non-standard interrupt
-		and	al,0Eh
-		jz	loc_12			; Jump if zero
-		and	al,0Ch
-		jnz	loc_14			; Jump if not zero
-		jmp	loc_17
-loc_14:
-		test	al,4
-		jnz	loc_15			; Jump if not zero
-		mov	al,ds:data_67e
-		inc	al
-		mov	ah,ds:data_66e
-		dec	ah
-		cmp	ah,al
-		jb	loc_12			; Jump if below
-		xor	al,al			; Zero register
-		call	combat_func_2
-		inc	byte ptr ds:data_67e
-		mov	al,2
-		call	combat_func_2
-		mov	byte ptr ds:data_82e,0Ch
-		call	combat_func_1
-		jmp	short loc_12
-loc_15:
-		test	byte ptr ds:data_67e,0FFh
-		jz	loc_12			; Jump if zero
-		xor	al,al			; Zero register
-		call	combat_func_2
-		dec	byte ptr ds:data_67e
-		mov	al,2
-		call	combat_func_2
-		mov	byte ptr ds:data_82e,0Ch
-		call	combat_func_1
-		jmp	short loc_12
+		call	show_weapon_portrait
 
-zr2_01		endp
+wait_joy_neutral:
+					int	61h			; ??INT Non-standard interrupt
+					and	al,3
+					jnz	wait_joy_neutral			; Jump if not zero
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+weapon_input_loop:
+								call	poll_input
+								jnc	weapon_poll_input			; Jump if carry=0
+								retn
 
-combat_func_1		proc	near
-		mov	bx,data_75e
-		mov	al,ds:data_67e
+weapon_poll_input:
+								int	61h			; ??INT Non-standard interrupt
+								and	al,0Eh
+								jz	weapon_input_loop			; Jump if zero
+								and	al,0Ch
+								jnz	weapon_joy_down			; Jump if not zero
+								jmp	weapon_confirm
+
+weapon_joy_down:
+								test	al,4
+								jnz	weapon_joy_up			; Jump if not zero
+								mov	al,ds:weapon_cursor
+								inc	al
+								mov	ah,ds:weapon_count
+								dec	ah
+								cmp	ah,al
+								jb	weapon_input_loop			; Jump if below
+								xor	al,al			; Zero register
+								call	show_weapon_portrait
+								inc	byte ptr ds:weapon_cursor
+								mov	al,2
+								call	show_weapon_portrait
+								mov	byte ptr ds:gvar_volume_b,0Ch
+								call	draw_weapon_cursor
+								jmp	short weapon_input_loop
+
+weapon_joy_up:
+								test	byte ptr ds:weapon_cursor,0FFh
+								jz	weapon_input_loop			; Jump if zero
+					xor	al,al			; Zero register
+					call	show_weapon_portrait
+					dec	byte ptr ds:weapon_cursor
+					mov	al,2
+					call	show_weapon_portrait
+					mov	byte ptr ds:gvar_volume_b,0Ch
+					call	draw_weapon_cursor
+					jmp	short weapon_input_loop
+
+selct_main		endp
+
+draw_weapon_cursor		proc	near
+		mov	bx,weapon_idx_tbl
+		mov	al,ds:weapon_cursor
 		xlat				; al=[al+[bx]] table
 		mov	byte ptr ds:[9Dh],al
 		mov	bx,2711h
 		mov	cx,1009h
 		xor	al,al			; Zero register
-		call	word ptr cs:data_33e
+		call	word ptr cs:drv_fn_dispatch
 		mov	bl,byte ptr ds:[9Dh]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:data_57e[bx]
+		mov	si,ds:weapon_name_ptrs[bx]
 		mov	bx,9Eh
 		mov	cl,12h
 		mov	ah,1
-;*		call	combat_func_21			;*
-		call	loc_0A2F
+;*		call	draw_portrait_tabs_fn21			;*
+		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 0C7h, 008h
 		mov	al,byte ptr ds:[9Dh]
 		mov	bx,37A4h
-		call	word ptr cs:data_37e
-		call	word ptr cs:data_34e
-loc_16:
-		int	61h			; ??INT Non-standard interrupt
-		and	al,0Ch
-		jnz	loc_16			; Jump if not zero
+		call	word ptr cs:drv_fn_15
+		call	word ptr cs:drv_fn_12
+
+wait_joy_clear_weapon:
+					int	61h			; ??INT Non-standard interrupt
+					and	al,0Ch
+					jnz	wait_joy_clear_weapon			; Jump if not zero
 		retn
-combat_func_1		endp
 
+draw_weapon_cursor		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-combat_func_2		proc	near
-		mov	bh,ds:data_67e
+show_weapon_portrait		proc	near
+		mov	bh,ds:weapon_cursor
 		xor	bl,bl			; Zero register
 		add	bx,bx
 		add	bx,bx
 		add	bx,bx
 		add	bx,0E1Ah
-		jmp	word ptr cs:data_42e
-combat_func_2		endp
+		jmp	word ptr cs:drv_fn_sprite
 
-loc_17:
+show_weapon_portrait		endp
+
+weapon_confirm:
 		mov	cl,1
-		test	byte ptr ds:data_68e,0FFh
-		jnz	loc_18			; Jump if not zero
-		test	byte ptr ds:data_64e,0FFh
+		test	byte ptr ds:magic_count,0FFh
+		jnz	weapon_switch_panel			; Jump if not zero
+		test	byte ptr ds:has_items_flag,0FFh
 		mov	cl,2
-		test	byte ptr ds:data_70e,0FFh
-		jnz	loc_18			; Jump if not zero
-		jmp	loc_12
-loc_18:
-		mov	byte ptr ds:data_82e,0Dh
-		mov	ds:data_65e,cl
+		test	byte ptr ds:item_count,0FFh
+		jnz	weapon_switch_panel			; Jump if not zero
+		jmp	weapon_input_loop
+
+weapon_switch_panel:
+		mov	byte ptr ds:gvar_volume_b,0Dh
+		mov	ds:cur_panel_idx,cl
 		mov	al,5
-		call	combat_func_2
-		jmp	loc_10
+		call	show_weapon_portrait
+		jmp	panel_dispatch
 			                        ;* No entry point to code
-		call	combat_func_20
+		call	draw_portrait_tabs
 		mov	al,2
-		call	combat_func_4
-loc_19:
-		int	61h			; ??INT Non-standard interrupt
-		and	al,3
-		jnz	loc_19			; Jump if not zero
-loc_20:
-		call	combat_func_22
-		jnc	loc_21			; Jump if carry=0
-		retn
-loc_21:
-		int	61h			; ??INT Non-standard interrupt
-		and	al,0Fh
-		jz	loc_20			; Jump if zero
-		mov	ah,al
-		and	al,0Ch
-		jnz	loc_22			; Jump if not zero
-		jmp	loc_25
-loc_22:
-		test	al,4
-		jnz	loc_23			; Jump if not zero
-		mov	al,ds:data_69e
-		inc	al
-		mov	ah,ds:data_68e
-		dec	ah
-		cmp	ah,al
-		jb	loc_20			; Jump if below
-		xor	al,al			; Zero register
-		call	combat_func_4
-		inc	byte ptr ds:data_69e
-		mov	al,2
-		call	combat_func_4
-		mov	byte ptr ds:data_82e,0Ch
-		call	combat_func_3
-		jmp	short loc_20
-loc_23:
-		test	byte ptr ds:data_69e,0FFh
-		jz	loc_20			; Jump if zero
-		xor	al,al			; Zero register
-		call	combat_func_4
-		dec	byte ptr ds:data_69e
-		mov	al,2
-		call	combat_func_4
-		mov	byte ptr ds:data_82e,0Ch
-		call	combat_func_3
-		jmp	short loc_20
+		call	show_magic_portrait
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+magic_wait_neutral:
+					int	61h			; ??INT Non-standard interrupt
+					and	al,3
+					jnz	magic_wait_neutral			; Jump if not zero
 
-combat_func_3		proc	near
-		mov	bx,data_76e
-		mov	al,ds:data_69e
+magic_input_loop:
+								call	poll_input
+								jnc	magic_poll_input			; Jump if carry=0
+								retn
+
+magic_poll_input:
+								int	61h			; ??INT Non-standard interrupt
+								and	al,0Fh
+								jz	magic_input_loop			; Jump if zero
+								mov	ah,al
+								and	al,0Ch
+								jnz	magic_joy_down_chk			; Jump if not zero
+								jmp	magic_check_confirm
+
+magic_joy_down_chk:
+								test	al,4
+								jnz	magic_joy_up			; Jump if not zero
+								mov	al,ds:magic_cursor
+								inc	al
+								mov	ah,ds:magic_count
+								dec	ah
+								cmp	ah,al
+								jb	magic_input_loop			; Jump if below
+								xor	al,al			; Zero register
+								call	show_magic_portrait
+								inc	byte ptr ds:magic_cursor
+								mov	al,2
+								call	show_magic_portrait
+								mov	byte ptr ds:gvar_volume_b,0Ch
+								call	draw_magic_cursor
+								jmp	short magic_input_loop
+
+magic_joy_up:
+								test	byte ptr ds:magic_cursor,0FFh
+								jz	magic_input_loop			; Jump if zero
+					xor	al,al			; Zero register
+					call	show_magic_portrait
+					dec	byte ptr ds:magic_cursor
+					mov	al,2
+					call	show_magic_portrait
+					mov	byte ptr ds:gvar_volume_b,0Ch
+					call	draw_magic_cursor
+					jmp	short magic_input_loop
+
+draw_magic_cursor		proc	near
+		mov	bx,magic_idx_tbl
+		mov	al,ds:magic_cursor
 		xlat				; al=[al+[bx]] table
 		mov	byte ptr ds:[9Eh],al
 		mov	bx,1742h
 		mov	cx,1611h
 		xor	al,al			; Zero register
-		call	word ptr cs:data_33e
+		call	word ptr cs:drv_fn_dispatch
 		mov	bl,byte ptr ds:[9Eh]
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:data_58e[bx]
+		mov	si,ds:magic_name_ptrs[bx]
 		mov	bx,5Ch
 		mov	cl,43h			; 'C'
 		mov	ah,1
-;*		call	combat_func_21			;*
-		call	loc_0A2F
+;*		call	draw_portrait_tabs_fn21			;*
+		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 0D6h, 007h
 		mov	bx,5Ch
 		mov	cl,4Bh			; 'K'
 		mov	ah,1
-;*		call	combat_func_21			;*
-		call	loc_0A2F
+;*		call	draw_portrait_tabs_fn21			;*
+		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 0CCh, 007h
-loc_24:
-		int	61h			; ??INT Non-standard interrupt
-		and	al,0Ch
-		jnz	loc_24			; Jump if not zero
+
+wait_joy_clear_magic:
+					int	61h			; ??INT Non-standard interrupt
+					and	al,0Ch
+					jnz	wait_joy_clear_magic			; Jump if not zero
 		retn
-combat_func_3		endp
 
+draw_magic_cursor		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-combat_func_4		proc	near
-		mov	bh,ds:data_69e
+show_magic_portrait		proc	near
+		mov	bh,ds:magic_cursor
 		xor	bl,bl			; Zero register
 		mov	cx,bx
 		add	bx,bx
 		add	bx,bx
 		add	bx,cx
 		add	bx,0E53h
-		jmp	word ptr cs:data_42e
-combat_func_4		endp
+		jmp	word ptr cs:drv_fn_sprite
 
-loc_25:
+show_magic_portrait		endp
+
+magic_check_confirm:
 		test	ah,1
-		jz	loc_27			; Jump if zero
-		test	byte ptr ds:data_66e,0FFh
-		jnz	loc_26			; Jump if not zero
-		jmp	loc_20
-loc_26:
-		mov	byte ptr ds:data_65e,0
-		jmp	short loc_30
-loc_27:
-		test	byte ptr ds:data_64e,0FFh
-		jz	loc_28			; Jump if zero
-		jmp	loc_20
-loc_28:
-		test	byte ptr ds:data_70e,0FFh
-		jnz	loc_29			; Jump if not zero
-		jmp	loc_20
-loc_29:
-		mov	byte ptr ds:data_65e,2
-loc_30:
-		mov	byte ptr ds:data_82e,0Dh
+		jz	magic_confirm_chk2			; Jump if zero
+		test	byte ptr ds:weapon_count,0FFh
+		jnz	magic_select_weapon_tab			; Jump if not zero
+		jmp	magic_input_loop
+
+magic_select_weapon_tab:
+		mov	byte ptr ds:cur_panel_idx,0
+		jmp	short magic_switch_panel
+
+magic_confirm_chk2:
+		test	byte ptr ds:has_items_flag,0FFh
+		jz	magic_confirm_chk3			; Jump if zero
+		jmp	magic_input_loop
+
+magic_confirm_chk3:
+		test	byte ptr ds:item_count,0FFh
+		jnz	magic_select_item_tab			; Jump if not zero
+		jmp	magic_input_loop
+
+magic_select_item_tab:
+		mov	byte ptr ds:cur_panel_idx,2
+
+magic_switch_panel:
+		mov	byte ptr ds:gvar_volume_b,0Dh
 		mov	al,5
-		call	combat_func_4
-		jmp	loc_10
+		call	show_magic_portrait
+		jmp	panel_dispatch
 			                        ;* No entry point to code
-		call	combat_func_20
+		call	draw_portrait_tabs
 		mov	al,2
-		call	combat_func_6
-loc_31:
-		int	61h			; ??INT Non-standard interrupt
-		and	al,3
-		jnz	loc_31			; Jump if not zero
-loc_32:
-		call	combat_func_22
-		jnc	loc_33			; Jump if carry=0
-		retn
-loc_33:
-		cmp	word ptr ds:data_79e,286h
-		jne	loc_34			; Jump if not equal
-		jmp	loc_42
-loc_34:
-		int	61h			; ??INT Non-standard interrupt
-		and	ah,1
-		jz	loc_35			; Jump if zero
-		jmp	loc_44
-loc_35:
-		and	al,0Dh
-		jz	loc_32			; Jump if zero
-		push	ax
-		call	combat_func_10
-		pop	ax
-		and	al,0Ch
-		jnz	loc_36			; Jump if not zero
-		jmp	loc_40
-loc_36:
-		test	al,4
-		jnz	loc_37			; Jump if not zero
-		mov	al,ds:data_72e
-		inc	al
-		mov	ah,ds:data_70e
-		dec	ah
-		cmp	ah,al
-		jb	loc_32			; Jump if below
-		xor	al,al			; Zero register
-		call	combat_func_6
-		inc	byte ptr ds:data_72e
-		mov	al,2
-		call	combat_func_6
-		mov	byte ptr ds:data_82e,0Ch
-		call	combat_func_5
-		jmp	short loc_32
-loc_37:
-		test	byte ptr ds:data_72e,0FFh
-		jz	loc_32			; Jump if zero
-		xor	al,al			; Zero register
-		call	combat_func_6
-		dec	byte ptr ds:data_72e
-		mov	al,2
-		call	combat_func_6
-		mov	byte ptr ds:data_82e,0Ch
-		call	combat_func_5
-		jmp	short loc_32
+		call	show_item_portrait
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+item_wait_neutral:
+					int	61h			; ??INT Non-standard interrupt
+					and	al,3
+					jnz	item_wait_neutral			; Jump if not zero
 
-combat_func_5		proc	near
-		mov	bx,data_77e
-		mov	al,ds:data_72e
+item_input_loop:
+								call	poll_input
+								jnc	item_poll_input			; Jump if carry=0
+								retn
+
+item_poll_input:
+								cmp	word ptr ds:gvar_timer_counter,286h
+								jne	item_not_confirm			; Jump if not equal
+								jmp	item_confirm_chk
+
+item_not_confirm:
+								int	61h			; ??INT Non-standard interrupt
+								and	ah,1
+								jz	item_no_button			; Jump if zero
+								jmp	item_button_select
+
+item_no_button:
+								and	al,0Dh
+								jz	item_input_loop			; Jump if zero
+								push	ax
+								call	hide_portrait_box
+								pop	ax
+								and	al,0Ch
+								jnz	item_joy_down_chk			; Jump if not zero
+								jmp	item_check_tab
+
+item_joy_down_chk:
+								test	al,4
+								jnz	item_joy_up			; Jump if not zero
+								mov	al,ds:item_sel_idx
+								inc	al
+								mov	ah,ds:item_count
+								dec	ah
+								cmp	ah,al
+								jb	item_input_loop			; Jump if below
+								xor	al,al			; Zero register
+								call	show_item_portrait
+								inc	byte ptr ds:item_sel_idx
+								mov	al,2
+								call	show_item_portrait
+								mov	byte ptr ds:gvar_volume_b,0Ch
+								call	draw_item_cursor
+								jmp	short item_input_loop
+
+item_joy_up:
+								test	byte ptr ds:item_sel_idx,0FFh
+								jz	item_input_loop			; Jump if zero
+					xor	al,al			; Zero register
+					call	show_item_portrait
+					dec	byte ptr ds:item_sel_idx
+					mov	al,2
+					call	show_item_portrait
+					mov	byte ptr ds:gvar_volume_b,0Ch
+					call	draw_item_cursor
+					jmp	short item_input_loop
+
+draw_item_cursor		proc	near
+		mov	bx,item_idx_tbl
+		mov	al,ds:item_sel_idx
 		xlat				; al=[al+[bx]] table
-		mov	ds:data_71e,al
+		mov	ds:item_cursor,al
 		mov	bx,1570h
 		mov	cx,1811h
 		xor	al,al			; Zero register
-		call	word ptr cs:data_33e
-		mov	bl,ds:data_71e
+		call	word ptr cs:drv_fn_dispatch
+		mov	bl,ds:item_cursor
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:data_60e[bx]
+		mov	si,ds:item_name_ptrs[bx]
 		mov	bx,54h
 		mov	cl,70h			; 'p'
 		mov	ah,1
-;*		call	combat_func_21			;*
-		call	loc_0A2F
+;*		call	draw_portrait_tabs_fn21			;*
+		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 0C2h, 006h
 		mov	bx,54h
 		mov	cl,78h			; 'x'
 		mov	ah,1
-;*		call	combat_func_21			;*
-		call	loc_0A2F
+;*		call	draw_portrait_tabs_fn21			;*
+		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 0B8h, 006h
-loc_38:
-		int	61h			; ??INT Non-standard interrupt
-		and	al,0Ch
-		jnz	loc_38			; Jump if not zero
+
+wait_joy_clear_item:
+					int	61h			; ??INT Non-standard interrupt
+					and	al,0Ch
+					jnz	wait_joy_clear_item			; Jump if not zero
 		retn
-combat_func_5		endp
 
+draw_item_cursor		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+show_item_portrait		proc	near
 
-combat_func_6		proc	near
-loc_39:
-		mov	bh,ds:data_72e
+show_item_portrait_entry:
+		mov	bh,ds:item_sel_idx
 		xor	bl,bl			; Zero register
 		mov	cx,bx
 		add	bx,bx
 		add	bx,bx
 		add	bx,cx
 		add	bx,0E81h
-		jmp	word ptr cs:data_42e
-combat_func_6		endp
+		jmp	word ptr cs:drv_fn_sprite
 
-loc_40:
+show_item_portrait		endp
+
+item_check_tab:
 		mov	cl,1
-		test	byte ptr ds:data_68e,0FFh
-		jnz	loc_41			; Jump if not zero
+		test	byte ptr ds:magic_count,0FFh
+		jnz	item_switch_panel			; Jump if not zero
 		xor	cl,cl			; Zero register
-		test	byte ptr ds:data_66e,0FFh
-		jnz	loc_41			; Jump if not zero
-		jmp	loc_32
-loc_41:
-		mov	ds:data_65e,cl
-		mov	byte ptr ds:data_82e,0Dh
+		test	byte ptr ds:weapon_count,0FFh
+		jnz	item_switch_panel			; Jump if not zero
+		jmp	item_input_loop
+
+item_switch_panel:
+		mov	ds:cur_panel_idx,cl
+		mov	byte ptr ds:gvar_volume_b,0Dh
 		mov	al,5
-		call	combat_func_6
-		jmp	loc_10
-loc_42:
-		test	byte ptr ds:data_74e,0FFh
-		jz	loc_43			; Jump if zero
-		jmp	loc_32
-loc_43:
-		call	combat_func_9
+		call	show_item_portrait
+		jmp	panel_dispatch
+
+item_confirm_chk:
+		test	byte ptr ds:portrait_vis,0FFh
+		jz	item_use_entry			; Jump if zero
+		jmp	item_input_loop
+
+item_use_entry:
+		call	show_portrait_box
 		mov	bx,1B43h
 		mov	cx,1A24h
 		mov	al,0FFh
-		call	word ptr cs:data_33e
+		call	word ptr cs:drv_fn_dispatch
 		mov	si,0AAA2h
 		mov	bx,80h
 		mov	cl,4Ch			; 'L'
 		mov	ah,1
-;*		call	combat_func_21			;*
-		call	loc_0A2F
+;*		call	draw_portrait_tabs_fn21			;*
+		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 04Dh, 006h
 		mov	al,byte ptr ds:[8Dh]
 		xor	ah,ah			; Zero register
@@ -559,50 +581,54 @@ loc_43:
 		mov	cx,2
 		mov	bl,6
 		mov	dx,2C4Ch
-		call	combat_func_19
+		call	fmt_number
 		mov	si,0AAA8h
 		mov	bx,80h
 		mov	cl,56h			; 'V'
 		mov	ah,1
-;*		call	combat_func_21			;*
-		call	loc_0A2F
+;*		call	draw_portrait_tabs_fn21			;*
+		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 02Fh, 006h
 		mov	ax,word ptr ds:[8Eh]
 		mov	cx,5
 		mov	bl,6
 		mov	dx,2856h
-		call	combat_func_19
-		jmp	loc_32
-loc_44:
-		test	byte ptr ds:data_71e,0FFh
-		jnz	loc_45			; Jump if not zero
-		jmp	loc_32
-loc_45:
-		call	combat_func_10
+		call	fmt_number
+		jmp	item_input_loop
+
+item_button_select:
+		test	byte ptr ds:item_cursor,0FFh
+		jnz	item_use_action			; Jump if not zero
+		jmp	item_input_loop
+
+item_use_action:
+		call	hide_portrait_box
 		mov	ax,0A2C7h
 		push	ax
 		mov	ax,0A5B4h
 		push	ax
-		mov	cl,ds:data_72e
+		mov	cl,ds:item_sel_idx
 		xor	ch,ch			; Zero register
 		mov	bx,0A6h
-loc_46:
-		test	byte ptr [bx],0FFh
-		jz	loc_47			; Jump if zero
-		inc	ch
-loc_47:
-		inc	bx
-		cmp	ch,cl
-		jne	loc_46			; Jump if not equal
+
+find_item_by_idx:
+					test	byte ptr [bx],0FFh
+					jz	find_item_next			; Jump if zero
+					inc	ch
+
+find_item_next:
+					inc	bx
+					cmp	ch,cl
+					jne	find_item_by_idx			; Jump if not equal
 		mov	byte ptr [bx-1],0
-		call	combat_func_11
-		mov	al,ds:data_71e
-		mov	ds:data_81e,al
-		mov	bl,ds:data_71e
+		call	rebuild_item_idx
+		mov	al,ds:item_cursor
+		mov	ds:gvar_item_result,al
+		mov	bl,ds:item_cursor
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		jmp	word ptr ds:data_54e[bx]	;*
+		jmp	word ptr ds:item_use_dispatch_tbl[bx]	;*
 		db	 62h,0A4h, 83h,0A4h, 96h,0A4h
 		db	0BEh,0A4h, 2Ch,0A5h,0EAh,0A4h
 		db	0DBh,0A4h, 8Bh,0A5h,0C6h, 06h
@@ -617,51 +643,54 @@ loc_47:
 		db	 44h, 01h,0C6h, 06h, 75h,0FFh
 		db	 0Eh,0F6h, 06h, 9Dh, 00h,0FFh
 		db	 75h, 01h,0C3h
-loc_48:
+
+use_item_apply:
 		mov	bl,byte ptr ds:[9Dh]
 		dec	bl
 		xor	bh,bh			; Zero register
 		mov	al,byte ptr ds:[0B4h][bx]
 		mov	byte ptr ds:[0ABh][bx],al
-		call	word ptr cs:data_34e
-		call	combat_func_18
-		jmp	loc_53
+		call	word ptr cs:drv_fn_12
+		call	draw_weapon_list
+		jmp	draw_item_detail_entry
 			                        ;* No entry point to code
-		mov	byte ptr ds:data_82e,0Eh
+		mov	byte ptr ds:gvar_volume_b,0Eh
 		push	cs
 		pop	es
 		mov	si,0B4h
 		mov	di,0ABh
 		mov	cx,7
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		call	word ptr cs:data_34e
-		call	combat_func_18
-		jmp	loc_53
+		call	word ptr cs:drv_fn_12
+		call	draw_weapon_list
+		jmp	draw_item_detail_entry
 			                        ;* No entry point to code
-		mov	byte ptr ds:data_82e,0Eh
+		mov	byte ptr ds:gvar_volume_b,0Eh
 		inc	byte ptr ds:[0E4h]
-		call	combat_func_16
-		jmp	loc_53
+		call	draw_key_count
+		jmp	draw_item_detail_entry
 			                        ;* No entry point to code
-		mov	byte ptr ds:data_82e,0Eh
+		mov	byte ptr ds:gvar_volume_b,0Eh
 		test	byte ptr ds:[93h],0FFh
-		jnz	loc_49			; Jump if not zero
+		jnz	apply_item_exp			; Jump if not zero
 		retn
-loc_49:
+
+apply_item_exp:
 		mov	bl,byte ptr ds:[93h]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	ax,ds:data_55e[bx]
+		mov	ax,ds:item_effect_tbl[bx]
 		add	word ptr ds:[94h],ax
 		mov	ax,word ptr ds:[94h]
 		sub	ax,word ptr ds:[96h]
-		jc	loc_50			; Jump if carry Set
+		jc	cap_exp			; Jump if carry Set
 		mov	ax,word ptr ds:[96h]
 		mov	word ptr ds:[94h],ax
-loc_50:
-		call	word ptr cs:data_35e
-		jmp	loc_53
+
+cap_exp:
+		call	word ptr cs:drv_fn_13
+		jmp	draw_item_detail_entry
 			                        ;* No entry point to code
 		push	ax
 		add	[bp+si+0],bl			; was: db 00h, 5Ah, 00h
@@ -686,220 +715,204 @@ loc_50:
 		db	0E8h, 47h, 00h,0E8h, 1Eh, 00h
 		db	 58h, 58h,0C6h, 06h, 24h,0FFh
 		db	 08h,0C6h, 06h, 1Ah,0FFh, 00h
-loc_51:
-		cmp	byte ptr ds:data_80e,78h	; 'x'
-		jb	loc_51			; Jump if below
-		call	word ptr cs:data_50e
+
+wait_timer_done:
+					cmp	byte ptr ds:gvar_frame_timer,78h	; 'x'
+					jb	wait_timer_done			; Jump if below
+		call	word ptr cs:drv_fn_32
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-combat_func_7		proc	near
+init_item_panel		proc	near
 		xor	al,al			; Zero register
-		call	combat_func_6
+		call	show_item_portrait
 		mov	bx,0E83h
 		mov	cx,1E10h
 		xor	al,al			; Zero register
-		call	word ptr cs:data_33e
-		test	byte ptr ds:data_70e,0FFh
-		jnz	loc_52			; Jump if not zero
-		mov	byte ptr ds:data_70e,1
-loc_52:
-		call	combat_process_loop
+		call	word ptr cs:drv_fn_dispatch
+		test	byte ptr ds:item_count,0FFh
+		jnz	check_item_present			; Jump if not zero
+		mov	byte ptr ds:item_count,1
+
+check_item_present:
+		call	draw_item_panel
 		mov	al,2
-		jmp	loc_39
-combat_func_7		endp
+		jmp	show_item_portrait_entry
 
+init_item_panel		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+draw_item_detail		proc	near
 
-combat_func_8		proc	near
-loc_53:
-		call	combat_func_9
+draw_item_detail_entry:
+		call	show_portrait_box
 		mov	bx,0F43h
 		mov	cx,3224h
 		mov	al,0FFh
-		call	word ptr cs:data_33e
+		call	word ptr cs:drv_fn_dispatch
 		mov	si,0AAACh
 		mov	bx,44h
 		mov	cl,4Ch			; 'L'
 		mov	ah,1
-;*		call	combat_func_21			;*
-		call	loc_0A2F
+;*		call	draw_portrait_tabs_fn21			;*
+		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 034h, 004h
-		mov	bl,ds:data_71e
+		mov	bl,ds:item_cursor
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:data_59e[bx]
+		mov	si,ds:item_detail_ptrs[bx]
 		mov	bx,48h
 		mov	cl,56h			; 'V'
 		mov	ah,1
-;*		jmp	loc_76			;*
-combat_func_8		endp
+;*		jmp	init_panels6			;*
 
-		jmp	loc_0A2F
+draw_item_detail		endp
+
+		jmp	scan_draw_string
 		db	00Ch			; was: db 0E9h, 01Ch, 004h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-combat_func_9		proc	near
-		test	byte ptr ds:data_74e,0FFh
-		jz	loc_54			; Jump if zero
+show_portrait_box		proc	near
+		test	byte ptr ds:portrait_vis,0FFh
+		jz	portrait_box_draw			; Jump if zero
 		retn
-loc_54:
-		mov	byte ptr ds:data_74e,0FFh
+
+portrait_box_draw:
+		mov	byte ptr ds:portrait_vis,0FFh
 		mov	ax,643h
 		xor	di,di			; Zero register
 		mov	cx,1C24h
-		jmp	word ptr cs:data_40e
-combat_func_9		endp
+		jmp	word ptr cs:drv_fn_19
 
+show_portrait_box		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-combat_func_10		proc	near
-		test	byte ptr ds:data_74e,0FFh
-		jnz	loc_55			; Jump if not zero
+hide_portrait_box		proc	near
+		test	byte ptr ds:portrait_vis,0FFh
+		jnz	portrait_box_hide			; Jump if not zero
 		retn
-loc_55:
-		mov	byte ptr ds:data_74e,0
+
+portrait_box_hide:
+		mov	byte ptr ds:portrait_vis,0
 		mov	ax,643h
 		xor	di,di			; Zero register
 		mov	cx,1C24h
-		jmp	word ptr cs:data_41e
-combat_func_10		endp
+		jmp	word ptr cs:drv_fn_20
 
+hide_portrait_box		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-combat_func_11		proc	near
+rebuild_item_idx		proc	near
 		push	cs
 		pop	es
 		mov	si,0A6h
-		mov	di,data_77e
+		mov	di,item_idx_tbl
 		xor	al,al			; Zero register
 		stosb				; Store al to es:[di]
 		xor	cl,cl			; Zero register
 		mov	ch,5
-loc_56:
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jz	loc_57			; Jump if zero
-		stosb				; Store al to es:[di]
-		inc	cl
-loc_57:
-		dec	ch
-		jnz	loc_56			; Jump if not zero
+
+item_idx_scan:
+					lodsb				; String [si] to al
+					or	al,al			; Zero ?
+					jz	item_idx_skip			; Jump if zero
+					stosb				; Store al to es:[di]
+					inc	cl
+
+item_idx_skip:
+					dec	ch
+					jnz	item_idx_scan			; Jump if not zero
 		or	cl,cl			; Zero ?
-		jz	loc_58			; Jump if zero
+		jz	item_idx_done			; Jump if zero
 		inc	cl
-loc_58:
-		mov	ds:data_70e,cl
+
+item_idx_done:
+		mov	ds:item_count,cl
 		retn
-combat_func_11		endp
 
+rebuild_item_idx		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-combat_process_loop		proc	near
-		test	byte ptr ds:data_70e,0FFh
-		jz	loc_61			; Jump if zero
-		mov	cl,ds:data_70e
+draw_item_panel		proc	near
+		test	byte ptr ds:item_count,0FFh
+		jz	item_panel_empty			; Jump if zero
+		mov	cl,ds:item_count
 		xor	ch,ch			; Zero register
 		mov	bx,0E83h
-		mov	si,data_77e
+		mov	si,item_idx_tbl
 
-locloop_59:
-		push	cx
-		lodsb				; String [si] to al
-		push	si
-		push	bx
-		call	word ptr cs:data_46e
-		pop	bx
-		pop	si
-		add	bx,500h
-		pop	cx
-		loop	locloop_59		; Loop if cx > 0
+draw_item_panel_loop:
+					push	cx
+					lodsb				; String [si] to al
+					push	si
+					push	bx
+					call	word ptr cs:drv_fn_27
+					pop	bx
+					pop	si
+					add	bx,500h
+					pop	cx
+					loop	draw_item_panel_loop		; Loop if cx > 0
 
-		mov	byte ptr ds:data_71e,0
-		mov	byte ptr ds:data_72e,0
-		test	byte ptr ds:data_64e,0FFh
-		jz	loc_60			; Jump if zero
+		mov	byte ptr ds:item_cursor,0
+		mov	byte ptr ds:item_sel_idx,0
+		test	byte ptr ds:has_items_flag,0FFh
+		jz	item_panel_has_items			; Jump if zero
 		retn
-loc_60:
+
+item_panel_has_items:
 		mov	bx,0E81h
 		mov	al,5
-		call	word ptr cs:data_42e
+		call	word ptr cs:drv_fn_sprite
 		mov	bx,1570h
 		mov	cx,1811h
 		xor	al,al			; Zero register
-		call	word ptr cs:data_33e
+		call	word ptr cs:drv_fn_dispatch
 		mov	si,0AA9Ah
 		mov	bx,54h
 		mov	cl,71h			; 'q'
 		mov	ah,1
-;*		jmp	loc_76			;*
-		jmp	loc_0A2F
+;*		jmp	init_panels6			;*
+		jmp	scan_draw_string
 		db	00Ch			; was: db 0E9h, 067h, 003h
-loc_61:
+
+item_panel_empty:
 		mov	bx,54h
 		mov	cl,71h			; 'q'
 		mov	si,0AA92h
 		mov	ah,1
-;*		jmp	loc_76			;*
-combat_process_loop		endp
+;*		jmp	init_panels6			;*
 
-		jmp	loc_0A2F
+draw_item_panel		endp
+
+		jmp	scan_draw_string
 		db	00Ch			; was: db 0E9h, 05Ah, 003h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-combat_process_loop_2		proc	near
-		test	byte ptr ds:data_68e,0FFh
-		jz	loc_63			; Jump if zero
-		mov	cl,ds:data_68e
+draw_magic_panel		proc	near
+		test	byte ptr ds:magic_count,0FFh
+		jz	magic_panel_empty			; Jump if zero
+		mov	cl,ds:magic_count
 		xor	ch,ch			; Zero register
 		mov	bx,0E55h
-		mov	si,data_76e
+		mov	si,magic_idx_tbl
 
-locloop_62:
-		push	cx
-		lodsb				; String [si] to al
-		push	si
-		push	bx
-		call	word ptr cs:data_45e
-		pop	bx
-		pop	si
-		add	bx,500h
-		pop	cx
-		loop	locloop_62		; Loop if cx > 0
+draw_magic_panel_loop:
+					push	cx
+					lodsb				; String [si] to al
+					push	si
+					push	bx
+					call	word ptr cs:drv_fn_26
+					pop	bx
+					pop	si
+					add	bx,500h
+					pop	cx
+					loop	draw_magic_panel_loop		; Loop if cx > 0
 
 		push	cs
 		pop	es
-		mov	di,data_76e
+		mov	di,magic_idx_tbl
 		mov	al,byte ptr ds:[9Eh]
 		mov	cx,6
 		repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
 		neg	cx
 		add	cx,5
-		mov	ds:data_69e,cl
+		mov	ds:magic_cursor,cl
 		mov	ch,cl
 		xor	cl,cl			; Zero register
 		mov	bx,cx
@@ -909,208 +922,207 @@ locloop_62:
 		add	cx,0E53h
 		mov	bx,cx
 		mov	al,5
-		call	word ptr cs:data_42e
+		call	word ptr cs:drv_fn_sprite
 		mov	bl,byte ptr ds:[9Eh]
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:data_58e[bx]
+		mov	si,ds:magic_name_ptrs[bx]
 		mov	bx,5Ch
 		mov	cl,43h			; 'C'
 		mov	ah,1
-;*		call	combat_func_21			;*
-		call	loc_0A2F
+;*		call	draw_portrait_tabs_fn21			;*
+		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 0F0h, 002h
 		mov	bx,5Ch
 		mov	cl,4Bh			; 'K'
 		mov	ah,1
-;*		jmp	loc_76			;*
-		jmp	loc_0A2F
+;*		jmp	init_panels6			;*
+		jmp	scan_draw_string
 		db	00Ch			; was: db 0E9h, 0E6h, 002h
-loc_63:
+
+magic_panel_empty:
 		mov	bx,5Ch
 		mov	cl,43h			; 'C'
 		mov	si,0AA92h
 		mov	ah,1
-;*		jmp	loc_76			;*
-		jmp	loc_0A2F
+;*		jmp	init_panels6			;*
+		jmp	scan_draw_string
 		db	00Ch			; was: db 0E9h, 0D9h, 002h
 
-;���� External Entry into Subroutine ��������������������������������������
-
-combat_func_14:
+draw_char_stats:
 		test	byte ptr ds:[92h],0FFh
-		jz	loc_64			; Jump if zero
+		jz	draw_stat_93h			; Jump if zero
 		mov	bx,174Dh
 		mov	al,byte ptr ds:[92h]
-		call	word ptr cs:data_36e
+		call	word ptr cs:drv_fn_14
 		mov	bl,byte ptr ds:[92h]
 		xor	bh,bh			; Zero register
 		dec	bl
 		add	bx,bx
-		mov	si,ds:data_61e[bx]
+		mov	si,ds:weapon_detail_ptrs[bx]
 		mov	bx,344Eh
 		xor	cl,cl			; Zero register
-		call	word ptr cs:data_47e
+		call	word ptr cs:drv_fn_28
 		mov	bx,3456h
 		xor	cl,cl			; Zero register
-		call	word ptr cs:data_47e
-		call	combat_func_16
-loc_64:
+		call	word ptr cs:drv_fn_28
+		call	draw_key_count
+
+draw_stat_93h:
 		test	byte ptr ds:[93h],0FFh
-		jz	loc_65			; Jump if zero
+		jz	draw_stat_98h			; Jump if zero
 		mov	bx,2E61h
 		mov	al,byte ptr ds:[93h]
-		call	word ptr cs:data_38e
+		call	word ptr cs:drv_fn_16
 		mov	bl,byte ptr ds:[93h]
 		xor	bh,bh			; Zero register
 		dec	bl
 		add	bx,bx
-		mov	si,ds:data_62e[bx]
+		mov	si,ds:magic_detail_ptrs[bx]
 		mov	bx,3461h
 		xor	cl,cl			; Zero register
-		call	word ptr cs:data_47e
+		call	word ptr cs:drv_fn_28
 		mov	bx,3469h
 		xor	cl,cl			; Zero register
-		call	word ptr cs:data_47e
-		call	combat_func_15
-loc_65:
+		call	word ptr cs:drv_fn_28
+		call	draw_exp_bar
+
+draw_stat_98h:
 		test	byte ptr ds:[98h],0FFh
-		jz	loc_66			; Jump if zero
+		jz	draw_stat_99h			; Jump if zero
 		mov	bx,2E75h
 		xor	al,al			; Zero register
-		call	word ptr cs:data_48e
+		call	word ptr cs:drv_fn_29
 		mov	bx,0C8h
 		mov	cl,7Eh			; '~'
 		mov	al,5Eh			; '^'
 		mov	ah,1
-		call	word ptr cs:data_39e
+		call	word ptr cs:drv_fn_render_char
 		mov	al,byte ptr ds:[98h]
 		xor	ah,ah			; Zero register
 		mov	cx,1
 		mov	bl,1
 		mov	dx,347Eh
-		call	combat_func_19
-loc_66:
+		call	fmt_number
+
+draw_stat_99h:
 		test	byte ptr ds:[99h],0FFh
-		jz	loc_67			; Jump if zero
+		jz	draw_abilities			; Jump if zero
 		mov	bx,3A75h
 		mov	al,1
-		call	word ptr cs:data_48e
+		call	word ptr cs:drv_fn_29
 		mov	bx,0F8h
 		mov	cl,7Eh			; '~'
 		mov	al,5Eh			; '^'
 		mov	ah,1
-		call	word ptr cs:data_39e
+		call	word ptr cs:drv_fn_render_char
 		mov	al,byte ptr ds:[99h]
 		xor	ah,ah			; Zero register
 		mov	cx,1
 		mov	bl,1
 		mov	dx,407Eh
-		call	combat_func_19
-loc_67:
+		call	fmt_number
+
+draw_abilities:
 		mov	si,9Ah
 		mov	bx,3089h
 		mov	cx,3
 
-locloop_68:
-		push	cx
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jz	loc_69			; Jump if zero
-		mov	al,cl
-		neg	al
-		add	al,3
-		push	bx
-		push	si
-		call	word ptr cs:data_49e
-		pop	si
-		pop	bx
-		add	bx,600h
-loc_69:
-		pop	cx
-		loop	locloop_68		; Loop if cx > 0
+draw_ability_loop:
+					push	cx
+					lodsb				; String [si] to al
+					or	al,al			; Zero ?
+					jz	ability_row_skip			; Jump if zero
+					mov	al,cl
+					neg	al
+					add	al,3
+					push	bx
+					push	si
+					call	word ptr cs:drv_fn_30
+					pop	si
+					pop	bx
+					add	bx,600h
+
+ability_row_skip:
+					pop	cx
+					loop	draw_ability_loop		; Loop if cx > 0
 
 		retn
 
-;���� External Entry into Subroutine ��������������������������������������
-
-combat_func_15:
+draw_exp_bar:
 		mov	ax,word ptr ds:[96h]
 		mov	dx,3469h
 		mov	cx,3
 		mov	bl,4
-		call	combat_func_19
+		call	fmt_number
 		mov	bx,0CAh
 		mov	cl,69h			; 'i'
 		mov	al,28h			; '('
 		mov	ah,4
-		call	word ptr cs:data_39e
+		call	word ptr cs:drv_fn_render_char
 		mov	bx,0E0h
 		mov	cl,69h			; 'i'
 		mov	al,29h			; ')'
 		mov	ah,4
-		jmp	word ptr cs:data_39e
+		jmp	word ptr cs:drv_fn_render_char
 
-;���� External Entry into Subroutine ��������������������������������������
-
-combat_func_16:
+draw_key_count:
 		test	byte ptr ds:[0E4h],0FFh
-		jnz	loc_70			; Jump if not zero
+		jnz	draw_key_count_body			; Jump if not zero
 		retn
-loc_70:
+
+draw_key_count_body:
 		mov	bx,3257h
 		mov	cx,408h
 		xor	al,al			; Zero register
-		call	word ptr cs:data_33e
+		call	word ptr cs:drv_fn_dispatch
 		mov	bx,0CAh
 		mov	cl,57h			; 'W'
 		mov	al,28h			; '('
 		mov	ah,1
-		call	word ptr cs:data_39e
+		call	word ptr cs:drv_fn_render_char
 		mov	al,byte ptr ds:[0E4h]
 		xor	ah,ah			; Zero register
 		mov	dx,3457h
 		mov	bl,1
 		mov	cx,1
-		call	combat_func_19
+		call	fmt_number
 		mov	bx,0D4h
 		mov	cl,57h			; 'W'
 		mov	al,29h			; ')'
 		mov	ah,1
-		jmp	word ptr cs:data_39e
+		jmp	word ptr cs:drv_fn_render_char
 
-;���� External Entry into Subroutine ��������������������������������������
-
-combat_func_17:
-		test	byte ptr ds:data_66e,0FFh
-		jz	loc_72			; Jump if zero
-		mov	cl,ds:data_66e
+draw_weapon_panel:
+		test	byte ptr ds:weapon_count,0FFh
+		jz	weapon_panel_empty			; Jump if zero
+		mov	cl,ds:weapon_count
 		xor	ch,ch			; Zero register
 		mov	bx,0E1Ch
-		mov	si,data_75e
+		mov	si,weapon_idx_tbl
 
-locloop_71:
-		push	cx
-		lodsb				; String [si] to al
-		push	si
-		push	bx
-		call	word ptr cs:data_37e
-		pop	bx
-		pop	si
-		add	bx,800h
-		pop	cx
-		loop	locloop_71		; Loop if cx > 0
+draw_weapon_panel_loop:
+					push	cx
+					lodsb				; String [si] to al
+					push	si
+					push	bx
+					call	word ptr cs:drv_fn_15
+					pop	bx
+					pop	si
+					add	bx,800h
+					pop	cx
+					loop	draw_weapon_panel_loop		; Loop if cx > 0
 
-		call	combat_func_18
+		call	draw_weapon_list
 		push	cs
 		pop	es
-		mov	di,data_75e
+		mov	di,weapon_idx_tbl
 		mov	al,byte ptr ds:[9Dh]
 		mov	cx,7
 		repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
 		neg	cx
 		add	cx,6
-		mov	ds:data_67e,cl
+		mov	ds:weapon_cursor,cl
 		mov	ch,cl
 		xor	cl,cl			; Zero register
 		add	cx,cx
@@ -1119,109 +1131,106 @@ locloop_71:
 		add	cx,0E1Ah
 		mov	bx,cx
 		mov	al,5
-		call	word ptr cs:data_42e
+		call	word ptr cs:drv_fn_sprite
 		mov	bl,byte ptr ds:[9Dh]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:data_57e[bx]
+		mov	si,ds:weapon_name_ptrs[bx]
 		mov	bx,9Eh
 		mov	cl,12h
 		mov	ah,1
-;*		jmp	loc_76			;*
-		jmp	loc_0A2F
+;*		jmp	init_panels6			;*
+		jmp	scan_draw_string
 		db	00Ch			; was: db 0E9h, 00Fh, 001h
-loc_72:
+
+weapon_panel_empty:
 		mov	bx,9Eh
 		mov	cl,12h
 		mov	si,0AA92h
 		mov	ah,1
-;*		jmp	loc_76			;*
-		jmp	loc_0A2F
+;*		jmp	init_panels6			;*
+		jmp	scan_draw_string
 		db	00Ch			; was: db 0E9h, 002h, 001h
 
-;���� External Entry into Subroutine ��������������������������������������
-
-combat_func_18:
+draw_weapon_list:
 		mov	dx,0E2Eh
-		mov	si,data_75e
-		mov	cl,ds:data_66e
+		mov	si,weapon_idx_tbl
+		mov	cl,ds:weapon_count
 		xor	ch,ch			; Zero register
 
-locloop_73:
-		push	cx
-		lodsb				; String [si] to al
-		push	si
-		push	dx
-		dec	al
-		mov	bl,al
-		xor	bh,bh			; Zero register
-		mov	al,byte ptr ds:[0ABh][bx]
-		mov	ah,byte ptr ds:[0B4h][bx]
-		push	ax
-		push	dx
-		push	ax
-		push	dx
-		mov	bx,dx
-		mov	cx,508h
-		xor	al,al			; Zero register
-		call	word ptr cs:data_33e
-		pop	dx
-		pop	ax
-		xor	ah,ah			; Zero register
-		mov	bl,1
-		mov	cx,3
-		call	combat_func_19
-		pop	dx
-		add	dx,9
-		push	dx
-		sub	dx,200h
-		mov	cl,dl
-		mov	bl,dh
-		xor	bh,bh			; Zero register
-		add	bx,bx
-		add	bx,bx
-		inc	bx
-		inc	bx
-		mov	al,28h			; '('
-		mov	ah,4
-		call	word ptr cs:data_39e
-		pop	dx
-		pop	ax
-		mov	al,ah
-		push	dx
-		xor	ah,ah			; Zero register
-		mov	bl,4
-		mov	cx,3
-		call	combat_func_19
-		pop	dx
-		add	dx,400h
-		mov	cl,dl
-		mov	bl,dh
-		xor	bh,bh			; Zero register
-		add	bx,bx
-		add	bx,bx
-		dec	bx
-		mov	al,29h			; ')'
-		mov	ah,4
-		call	word ptr cs:data_39e
-		pop	dx
-		add	dx,800h
-		pop	si
-		pop	cx
-		loop	locloop_73		; Loop if cx > 0
+draw_weapon_list_loop:
+					push	cx
+					lodsb				; String [si] to al
+					push	si
+					push	dx
+					dec	al
+					mov	bl,al
+					xor	bh,bh			; Zero register
+					mov	al,byte ptr ds:[0ABh][bx]
+					mov	ah,byte ptr ds:[0B4h][bx]
+					push	ax
+					push	dx
+					push	ax
+					push	dx
+					mov	bx,dx
+					mov	cx,508h
+					xor	al,al			; Zero register
+					call	word ptr cs:drv_fn_dispatch
+					pop	dx
+					pop	ax
+					xor	ah,ah			; Zero register
+					mov	bl,1
+					mov	cx,3
+					call	fmt_number
+					pop	dx
+					add	dx,9
+					push	dx
+					sub	dx,200h
+					mov	cl,dl
+					mov	bl,dh
+					xor	bh,bh			; Zero register
+					add	bx,bx
+					add	bx,bx
+					inc	bx
+					inc	bx
+					mov	al,28h			; '('
+					mov	ah,4
+					call	word ptr cs:drv_fn_render_char
+					pop	dx
+					pop	ax
+					mov	al,ah
+					push	dx
+					xor	ah,ah			; Zero register
+					mov	bl,4
+					mov	cx,3
+					call	fmt_number
+					pop	dx
+					add	dx,400h
+					mov	cl,dl
+					mov	bl,dh
+					xor	bh,bh			; Zero register
+					add	bx,bx
+					add	bx,bx
+					dec	bx
+					mov	al,29h			; ')'
+					mov	ah,4
+					call	word ptr cs:drv_fn_render_char
+					pop	dx
+					add	dx,800h
+					pop	si
+					pop	cx
+					loop	draw_weapon_list_loop		; Loop if cx > 0
 
 		retn
 
-;���� External Entry into Subroutine ��������������������������������������
-
-combat_func_19:
+fmt_number:
 		push	bx
 		push	dx
 		push	cx
 		xor	dl,dl			; Zero register
 		mov	di,0AE16h
-		call	word ptr cs:data_44e
+		call	word ptr cs:drv_fn_num_fmt
 		pop	cx
 		mov	di,0AE16h
 		mov	al,7
@@ -1231,34 +1240,33 @@ combat_func_19:
 		pop	ax
 		pop	bx
 		xor	bh,bh			; Zero register
-		jmp	word ptr cs:data_43e
+		jmp	word ptr cs:drv_fn_render_bg
 
-;���� External Entry into Subroutine ��������������������������������������
-
-combat_func_20:
-		mov	si,data_56e
+draw_portrait_tabs:
+		mov	si,portrait_rect_tbl
 		mov	cx,4
 
-locloop_74:
-		push	cx
-		mov	dh,cl
-		lodsw				; String [si] to ax
-		mov	bx,ax
-		lodsb				; String [si] to al
-		mov	cl,al
-		mov	dl,ds:data_65e
-		neg	dh
-		add	dh,4
-		mov	ah,3
-		cmp	dl,dh
-		jne	loc_75			; Jump if not equal
-		mov	ah,2
-loc_75:
-;*		call	combat_func_21			;*
-		call	loc_0A2F
-		db	00Ch			; was: db 0E8h, 033h, 000h
-		pop	cx
-		loop	locloop_74		; Loop if cx > 0
+draw_tabs_loop:
+					push	cx
+					mov	dh,cl
+					lodsw				; String [si] to ax
+					mov	bx,ax
+					lodsb				; String [si] to al
+					mov	cl,al
+					mov	dl,ds:cur_panel_idx
+					neg	dh
+					add	dh,4
+					mov	ah,3
+					cmp	dl,dh
+					jne	tab_not_active			; Jump if not equal
+					mov	ah,2
+
+tab_not_active:
+;*		call	draw_portrait_tabs_fn21			;*
+					call	scan_draw_string
+					db	00Ch			; was: db 0E8h, 033h, 000h
+					pop	cx
+					loop	draw_tabs_loop		; Loop if cx > 0
 
 		retn
 			                        ;* No entry point to code
@@ -1274,71 +1282,73 @@ loc_75:
 		db	0B8h, 0			; 0x0A32: (non-printable key)
 		db	'CINVENTORY', 0		; 0x0A34: 'C' key -> INVENTORY
 		db	00h				; 0x0A3E: null terminator
-sub_0A2F:					; string-scan function entry point
-loc_0A2F:
-		lodsb				; load byte from [DS:SI], advance SI
-		or	al,al				; test if zero (null terminator)
-		jnz	loc_77			; Jump if not zero
-		retn
-loc_77:
-		push	si
-		cmp	ah,1
-		je	loc_78			; Jump if equal
-		push	bx
-		push	cx
-		push	ax
-		inc	bx
-		inc	cl
-		mov	ah,5
-		call	word ptr cs:data_39e
-		pop	ax
-		pop	cx
-		pop	bx
-loc_78:
-		push	bx
-		push	cx
-		push	ax
-		call	word ptr cs:data_39e
-		pop	ax
-		pop	cx
-		pop	bx
-		pop	si
-		add	bx,8
-;*		jmp	short loc_76		;*
-		jmp	short loc_0A2F
+
+scan_draw_string:					; string-scan function entry point
+					lodsb				; load byte from [DS:SI], advance SI
+					or	al,al				; test if zero (null terminator)
+					jnz	scan_char_notnull			; Jump if not zero
+					retn
+
+scan_char_notnull:
+					push	si
+					cmp	ah,1
+					je	scan_char_draw			; Jump if equal
+					push	bx
+					push	cx
+					push	ax
+					inc	bx
+					inc	cl
+					mov	ah,5
+					call	word ptr cs:drv_fn_render_char
+					pop	ax
+					pop	cx
+					pop	bx
+
+scan_char_draw:
+					push	bx
+					push	cx
+					push	ax
+					call	word ptr cs:drv_fn_render_char
+					pop	ax
+					pop	cx
+					pop	bx
+					pop	si
+					add	bx,8
+;*		jmp	short init_panels6		;*
+					jmp	short scan_draw_string
 		db	00Ch			; was: db 0EBh, 0D3h
 
-;���� External Entry into Subroutine ��������������������������������������
-
-combat_func_22:
+poll_input:
 		call	word ptr cs:[110h]
 		call	word ptr cs:[112h]
 		call	word ptr cs:[114h]
 		call	word ptr cs:[116h]
 		call	word ptr cs:[118h]
-		test	byte ptr ds:data_73e,0FFh
-		jz	loc_81			; Jump if zero
-		call	combat_func_23
+		test	byte ptr ds:exit_queued,0FFh
+		jz	check_joy_neutral_entry			; Jump if zero
+		call	check_joy_neutral
 		cmc				; Complement carry
-		jc	loc_80			; Jump if carry Set
+		jc	poll_exit_queued			; Jump if carry Set
 		retn
-loc_80:
+
+poll_exit_queued:
 		clc				; Clear carry flag
-		mov	byte ptr ds:data_73e,0
+		mov	byte ptr ds:exit_queued,0
 		retn
 
-;���� External Entry into Subroutine ��������������������������������������
+check_joy_neutral:
 
-combat_func_23:
-loc_81:
-		test	word ptr ds:data_79e,1
+check_joy_neutral_entry:
+		test	word ptr ds:gvar_timer_counter,1
 		stc				; Set carry flag
-		jz	loc_82			; Jump if zero
+		jz	joy_has_dir			; Jump if zero
 		retn
-loc_82:
+
+joy_has_dir:
 		clc				; Clear carry flag
 		retn
-combat_process_loop_2		endp
+
+draw_magic_panel		endp
 
 		db	'NOTHING', 0
 		db	'NO USE', 0
@@ -1434,7 +1444,5 @@ combat_process_loop_2		endp
 		db	37 dup (0)
 
 seg_a		ends
-
-
 
 		end	start
