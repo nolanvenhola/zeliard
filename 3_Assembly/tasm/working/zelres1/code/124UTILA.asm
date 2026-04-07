@@ -1,35 +1,47 @@
 
 PAGE  59,132
 
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-;лл					                                 лл
-;лл				ZR1_24	                                 лл
-;лл					                                 лл
-;лл      Created:   16-Feb-26		                                 лл
-;лл      Code type: zero start		                                 лл
-;лл      Passes:    9          Analysis	Options on: none                 лл
-;лл					                                 лл
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
+;==========================================================================
+;
+;  124UTILA - Sprite/Image Compressed Data Blob (zelres1 chunk 24)
+;
+;  This chunk is compressed with fill_buffer opcode-7 (escape-byte RLE,
+;  escape marker = 0xDDh).  The raw SAR chunk content (4321 bytes) is
+;  reproduced here as db statements; the decompressed output is 4318
+;  bytes of sprite/image data used at runtime.
+;
+;  Sourcer misidentified scattered byte sequences as x86 instructions;
+;  all loc_* / locloop_* labels and inline code-like snippets are
+;  artifacts of that misidentification -- the entire body is data.
+;
+;  External EQU addresses are data-segment offsets referenced by the
+;  code that processes the decompressed content at runtime.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; The following equates show data references outside the range of the program.
 
-data_7e		equ	690Ch			;*
-data_8e		equ	0F744h			;*
+ds_6900		equ	690Ch			;* runtime data-segment offset 690Ch
+ds_f744		equ	0F744h			;* runtime data-segment offset F744h (pointer table)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
-zr1_24		proc	far
+chunk24_data	proc	far
 
 start:
+; SAR chunk raw data layout (4321 bytes total):
+;   [0-3] = 0x000010DDh (LE) = chunk_data_size=4317
+;   [4]   = 0x00 = flag (simple/single-section chunk)
+;   [5]   = 0x07 = fill_buffer opcode 7 (escape-byte RLE)
+;   [6]   = 0xDD = escape marker byte for opcode-7 decoder
+;   [7..] = compressed payload (decompresses to 4318 bytes of sprite/image data)
 		db	0DDh, 10h, 00h, 00h, 00h, 07h
 		db	0DDh, 1Ah, 04h, 81h,0F3h, 80h
 		db	 00h, 1Fh, 38h, 00h, 01h,0F7h
@@ -129,28 +141,31 @@ data_2		db	0C0h			; Data table (indexed access)
 		db	 7Ah, 4Fh, 3Bh,0F7h,0A4h,0F3h
 		db	0BFh
 		db	72h
+
 loc_1:
-		dec	di
-		cmp	si,di
+				dec	di
+				cmp	si,di
+
 loc_2:
-		db	 64h,0F3h,0BFh, 7Bh
+						db	 64h,0F3h,0BFh, 7Bh
+
 loc_3:
-		dec	di
-		jnp	loc_1			; Jump if not parity
-		jl	loc_2			; Jump if <
-		mov	bh,57h			; 'W'
-		iret				; Interrupt return
-			                        ;* No entry point to code
-		jnp	loc_3			; Jump if not parity
+						dec	di
+						jnp	loc_1			; Jump if not parity
+						jl	loc_2			; Jump if <
+				mov	bh,57h			; 'W'
+				iret				; Interrupt return
+					                        ;* No entry point to code
+				jnp	loc_3			; Jump if not parity
 		cmp	al,0F7h
 		mov	cx,0CF67h
-		call	dword ptr ds:data_8e[si]	;*
+		call	dword ptr ds:ds_f744[si]	;*
 		stc				; Set carry flag
 		les	cx,dword ptr [di-42h]	; Load seg:offset ptr
 		cbw				; Convrt byte to word
 		test	bl,bl
 ;*		jmp	far ptr loc_10		;*
-				jmp	far ptr 4D88h:0E83Eh			; was: db 0EAh + dw 088h,04Dh,03Eh,0E8h
+			db	0EAh, 88h, 4Dh, 3Eh, 0E8h		; jmp far ptr 0E83Eh:4D88h (raw data)
 			                        ;* No entry point to code
 		test	dl,bl
 		in	al,dx			; port 0, DMA-1 bas&add ch 0
@@ -170,12 +185,14 @@ data_3		db	4Ch			; Data table (indexed access)
 		db	 61h,0A2h, 9Fh,0A6h, 1Ah, 28h
 		db	0FEh, 63h,0A7h,0C7h,0E6h
 		db	 7Eh, 7Ch, 7Eh
+
 loc_4:
-		db	 6Fh,0E7h,0C7h
+				db	 6Fh,0E7h,0C7h
+
 loc_5:
-		out	0EFh,ax			; port 0EFh ??I/O Non-standard
-		jl	$+80h			; Jump if <
-		jle	loc_4			; Jump if < or =
+				out	0EFh,ax			; port 0EFh ??I/O Non-standard
+				jl	$+80h			; Jump if <
+				jle	loc_4			; Jump if < or =
 		retn
 		db	0E6h, 0Fh, 7Eh, 7Eh, 61h,0F7h
 		db	0E7h,0E6h, 1Fh, 7Eh, 5Eh,0E2h
@@ -458,7 +475,7 @@ locloop_7:
 		inc	ax
 		or	al,34h			; '4'
 		add	byte ptr [bp+di],0C0h
-		add	ds:data_7e[bx+si],ax
+		add	ds:ds_6900[bx+si],ax
 		db	 36h, 04h, 04h, 38h, 1Ch,0CBh
 		db	0ECh, 0Ch, 32h, 40h, 02h, 70h
 		db	 06h, 60h,0D2h, 36h, 16h, 07h
@@ -800,23 +817,22 @@ data_6		db	1Eh			; Data table (indexed access)
 		db	 30h, 05h, 01h,0A8h, 2Bh, 3Dh
 		db	 80h, 50h, 18h,0D8h, 05h,0D4h
 		db	 1Eh,0DEh,0C0h, 28h, 03h
+
 loc_9:
-		add	al,ss:data_6[bx+si]
-		out	0E0h,ax			; port 0E0h, Memory encode reg2
-		push	ds
-		iret				; Interrupt return
-			                        ;* No entry point to code
-		adc	al,2
-		adc	byte ptr [di],83h
-		jnp	loc_9			; Jump if not parity
+				add	al,ss:data_6[bx+si]
+				out	0E0h,ax			; port 0E0h, Memory encode reg2
+				push	ds
+				iret				; Interrupt return
+					                        ;* No entry point to code
+				adc	al,2
+				adc	byte ptr [di],83h
+				jnp	loc_9			; Jump if not parity
 		add	ax,800Dh
 		xor	ax,ax			; Zero register
 		add	al,[bp+si]
 
-zr1_24		endp
+chunk24_data	endp
 
 seg_a		ends
-
-
 
 		end	start
