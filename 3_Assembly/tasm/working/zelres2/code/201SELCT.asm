@@ -18,6 +18,7 @@ include  srmacros.inc
 ; Graphics driver function table (driver loads at game_seg:2000h).
 ; Each entry is a CS-relative word pointer into the driver dispatch table.
 drv_fn_dispatch		equ	2000h			;* fn  0: coordinate dispatch (clear/fill rect)
+drv_fn_4		equ	2008h			;* fn  4: redraw character stat display
 drv_fn_12		equ	2018h			;* fn 12: timestamp init area
 drv_fn_13		equ	201Ah			;* fn 13: time decode entry
 drv_fn_14		equ	201Ch			;* fn 14: render tile from anim_ptr_4
@@ -38,18 +39,29 @@ drv_fn_32		equ	2040h			;* fn 32: palette/sync call
 
 ; Game segment data references (outside module address range).
 gvar_selct_state	equ	0A00Bh			;* game-seg byte: character select entry state
-panel_dispatch_tbl	equ	0A0C4h			;* jump table: panel_idx ?-> handler (words)
+panel_dispatch_tbl	equ	0A0C4h			;* jump table: panel_idx -> handler (words, filled by caller)
 selct_param		equ	0A2B9h			;* game-seg word: selection screen parameter
-item_use_dispatch_tbl	equ	0A452h			;* jump table: item_cursor-1 ?-> use handler (words)
-item_effect_tbl		equ	0A520h			;* item effect value table (words, indexed by item type)
-portrait_rect_tbl	equ	0A9FCh			;* portrait display rect table (4 ?? 5 bytes: BX,CL,mode)
-weapon_name_ptrs	equ	0AAB8h			;* weapon name string pointer table (words)
-magic_name_ptrs		equ	0AAF3h			;* magic name string pointer table (words)
-item_detail_ptrs	equ	0AB62h			;* item detail string pointer table (words)
-item_name_ptrs		equ	0AC32h			;* item name string pointer table (words)
-weapon_detail_ptrs	equ	0ACD9h			;* weapon detail string pointer table (words)
-magic_detail_ptrs	equ	0AD67h			;* magic detail string pointer table (words)
-portrait_data_tbl	equ	0ADE8h			;* portrait rect data table (4 ?? 4 bytes: BX/CX pairs)
+item_use_dispatch_tbl	equ	0A452h			;* jump table: item_cursor-1 -> use handler (words, filled by caller)
+item_effect_tbl		equ	0A520h			;* item effect value table (words, indexed by magic type)
+portrait_rect_tbl	equ	0A9FCh			;* portrait display rect table (4 x 5 bytes: BX,CL,mode)
+; Module load offset: this binary loads at game_seg:SELCT_BASE.
+; String/table EQUs below use SELCT_BASE + (offset label) so they
+; auto-recalculate if data above the label shifts.
+SELCT_BASE		equ	9FEEh			; game-segment load address of this module
+
+; Named string/pointer-table addresses (within this module's data section).
+str_empty		equ	SELCT_BASE + (offset str_empty_lbl)		;* blank panel text (empty/null string)
+str_no_use_notice	equ	SELCT_BASE + (offset str_no_use_notice_lbl)	;* item panel notice string (no-use hint)
+str_item_used_count	equ	SELCT_BASE + (offset str_item_used_count_lbl)	;* item-use box: count label
+str_item_used_total	equ	SELCT_BASE + (offset str_item_used_total_lbl)	;* item-use box: total label
+str_item_detail_hdr	equ	SELCT_BASE + (offset str_item_detail_hdr_lbl)	;* item detail header ("I have used...")
+weapon_name_ptrs	equ	SELCT_BASE + (offset weapon_name_ptrs_lbl)	;* weapon name string pointer table (7 words)
+magic_name_ptrs		equ	SELCT_BASE + (offset magic_name_ptrs_lbl)	;* magic name string pointer table (6 words)
+item_detail_ptrs	equ	SELCT_BASE + (offset item_detail_ptrs_lbl)	;* item detail string pointer table (8 words)
+item_name_ptrs		equ	SELCT_BASE + (offset item_name_ptrs_lbl)	;* item name string pointer table (9 words: NO_USE + 8 items)
+weapon_detail_ptrs	equ	SELCT_BASE + (offset weapon_detail_ptrs_lbl)	;* weapon detail string pointer table (6 words)
+magic_detail_ptrs	equ	SELCT_BASE + (offset magic_detail_ptrs_lbl)	;* magic detail string pointer table (6 words)
+portrait_data_tbl	equ	0ADE8h			;* portrait rect data table (4 x 4 bytes: BX/CX pairs)
 has_items_flag		equ	0ADF8h			;* byte: non-zero if character has usable items
 cur_panel_idx		equ	0ADF9h			;* byte: current panel (0=weapon, 1=magic, 2=item)
 weapon_count		equ	0ADFAh			;* byte: number of available weapons
@@ -59,16 +71,50 @@ magic_cursor		equ	0ADFDh			;* byte: current magic selection cursor
 item_count		equ	0ADFEh			;* byte: number of available items
 item_cursor		equ	0ADFFh			;* byte: current item selection cursor
 item_sel_idx		equ	0AE00h			;* byte: item select confirm index
-exit_queued		equ	0AE01h			;* byte: non-zero ?-> queue exit on next poll
-portrait_vis		equ	0AE02h			;* byte: portrait box visible flag (0=hidden, FF=shown)
+exit_queued		equ	0AE01h			;* byte: non-zero -> queue exit on next poll
+portrait_vis		equ	0AE02h			;* byte: portrait box visible flag (0=hidden, FFh=shown)
 weapon_idx_tbl		equ	0AE03h			;* 7-byte table: available weapon indices (1-based)
 magic_idx_tbl		equ	0AE0Ah			;* 6-byte table: available magic indices (1-based)
 item_idx_tbl		equ	0AE10h			;* 5-byte table: available item indices (1-based)
+num_fmt_buf		equ	0AE16h			;* 7-byte scratch buffer for fmt_number output
 entity_list_ptr		equ	0C00Ah			;* game-seg word: entity list pointer (unused here)
-gvar_timer_counter	equ	0FF18h			;* global: timer counter (compared to joy threshold)
+gvar_timer_counter	equ	0FF18h			;* global: joystick hold timer counter
 gvar_frame_timer	equ	0FF1Ah			;* global: frame timer tick counter
 gvar_item_result	equ	0FF4Bh			;* global: selected item result (written on use)
 gvar_volume_b		equ	0FF75h			;* global: display region / rendering mode byte
+
+; Character stat / inventory variables (low game-segment offsets).
+magic_flags		equ	0A1h			;* 5-byte table: magic spell possession flags (at DS:0A1h)
+item_flags		equ	0A6h			;* 5-byte table: item possession flags (at DS:0A6h)
+weapon_flags		equ	0BBh			;* 7-byte table: weapon possession flags (1-based, at DS:0BBh)
+equipped_weapon		equ	092h			;* byte: currently equipped weapon index (1-based, 0=none)
+equipped_magic		equ	093h			;* byte: currently equipped magic index (1-based, 0=none)
+char_hp			equ	090h			;* word: current character HP
+char_hp_max		equ	0B2h			;* word: maximum character HP
+char_exp		equ	094h			;* word: current character experience
+char_exp_cap		equ	096h			;* word: experience cap for current level
+char_speed		equ	098h			;* byte: character speed stat
+char_power		equ	099h			;* byte: character power/attack stat
+char_abilities		equ	09Ah			;* 3-byte table: combat ability flags (DS:09Ah..09Ch)
+weap_dur_cur		equ	0ABh			;* 7-byte table: current weapon durability (DS:0ABh..0B1h)
+weap_dur_max		equ	0B4h			;* 7-byte table: maximum weapon durability (DS:0B4h..0BAh)
+key_count		equ	0E4h			;* byte: number of keys held
+cur_weapon_idx		equ	09Dh			;* byte: cached selected weapon type index (1-based)
+cur_magic_idx		equ	09Eh			;* byte: cached selected magic type index (1-based)
+item_qty_count		equ	08Dh			;* byte: item count value shown in use-confirm box
+item_effect_val		equ	08Eh			;* word: item effect value shown in use-confirm box
+
+; Sprite table base addresses in game segment.
+weap_spr_base		equ	0E1Ah			;* weapon portrait sprite table base (8 bytes/entry)
+magic_spr_base		equ	0E53h			;* magic portrait sprite table base (5 bytes/entry)
+item_spr_base		equ	0E81h			;* item portrait sprite table base (5 bytes/entry)
+anim_param_buf		equ	0A584h			;* 2-byte animation parameter staging buffer
+anim_spr_tbl		equ	0EB60h			;* sprite animation table (7 bytes/entry, 4 entries)
+
+; Timing and display constants.
+joy_hold_threshold	equ	0286h			; joystick button hold count for item confirm (646 ticks)
+timer_wait_feather	equ	078h			; frame timer target for Kioku Feather save delay (120 frames)
+gvar_display_mode	equ	0FF24h			;* global: display mode flag (set before save)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -106,7 +152,7 @@ draw_portraits_loop:
 		call	draw_portrait_tabs
 		push	cs
 		pop	es
-		mov	si,0BBh
+		mov	si,weapon_flags
 		mov	di,weapon_idx_tbl
 		xor	cl,cl			; Zero register
 		mov	ch,1
@@ -124,7 +170,7 @@ scan_weapon_next:
 					cmp	ch,8
 					jne	scan_weapon_flags			; Jump if not equal
 		mov	ds:weapon_count,cl
-		mov	si,0A1h
+		mov	si,magic_flags
 		mov	di,magic_idx_tbl
 		xor	al,al			; Zero register
 		stosb				; Store al to es:[di]
@@ -242,12 +288,12 @@ draw_weapon_cursor		proc	near
 		mov	bx,weapon_idx_tbl
 		mov	al,ds:weapon_cursor
 		xlat				; al=[al+[bx]] table
-		mov	byte ptr ds:[9Dh],al
+		mov	byte ptr ds:cur_weapon_idx,al
 		mov	bx,2711h
 		mov	cx,1009h
 		xor	al,al			; Zero register
 		call	word ptr cs:drv_fn_dispatch
-		mov	bl,byte ptr ds:[9Dh]
+		mov	bl,byte ptr ds:cur_weapon_idx
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -258,7 +304,7 @@ draw_weapon_cursor		proc	near
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 0C7h, 008h
-		mov	al,byte ptr ds:[9Dh]
+		mov	al,byte ptr ds:cur_weapon_idx
 		mov	bx,37A4h
 		call	word ptr cs:drv_fn_15
 		call	word ptr cs:drv_fn_12
@@ -277,7 +323,7 @@ show_weapon_portrait		proc	near
 		add	bx,bx
 		add	bx,bx
 		add	bx,bx
-		add	bx,0E1Ah
+		add	bx,weap_spr_base
 		jmp	word ptr cs:drv_fn_sprite
 
 show_weapon_portrait		endp
@@ -356,12 +402,12 @@ draw_magic_cursor		proc	near
 		mov	bx,magic_idx_tbl
 		mov	al,ds:magic_cursor
 		xlat				; al=[al+[bx]] table
-		mov	byte ptr ds:[9Eh],al
+		mov	byte ptr ds:cur_magic_idx,al
 		mov	bx,1742h
 		mov	cx,1611h
 		xor	al,al			; Zero register
 		call	word ptr cs:drv_fn_dispatch
-		mov	bl,byte ptr ds:[9Eh]
+		mov	bl,byte ptr ds:cur_magic_idx
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	si,ds:magic_name_ptrs[bx]
@@ -393,7 +439,7 @@ show_magic_portrait		proc	near
 		add	bx,bx
 		add	bx,bx
 		add	bx,cx
-		add	bx,0E53h
+		add	bx,magic_spr_base
 		jmp	word ptr cs:drv_fn_sprite
 
 show_magic_portrait		endp
@@ -443,7 +489,7 @@ item_input_loop:
 								retn
 
 item_poll_input:
-								cmp	word ptr ds:gvar_timer_counter,286h
+								cmp	word ptr ds:gvar_timer_counter,joy_hold_threshold
 								jne	item_not_confirm			; Jump if not equal
 								jmp	item_confirm_chk
 
@@ -536,7 +582,7 @@ show_item_portrait_entry:
 		add	bx,bx
 		add	bx,bx
 		add	bx,cx
-		add	bx,0E81h
+		add	bx,item_spr_base
 		jmp	word ptr cs:drv_fn_sprite
 
 show_item_portrait		endp
@@ -568,28 +614,28 @@ item_use_entry:
 		mov	cx,1A24h
 		mov	al,0FFh
 		call	word ptr cs:drv_fn_dispatch
-		mov	si,0AAA2h
+		mov	si,str_item_used_count
 		mov	bx,80h
 		mov	cl,4Ch			; 'L'
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 04Dh, 006h
-		mov	al,byte ptr ds:[8Dh]
+		mov	al,byte ptr ds:item_qty_count
 		xor	ah,ah			; Zero register
 		inc	ax
 		mov	cx,2
 		mov	bl,6
 		mov	dx,2C4Ch
 		call	fmt_number
-		mov	si,0AAA8h
+		mov	si,str_item_used_total
 		mov	bx,80h
 		mov	cl,56h			; 'V'
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
 		db	00Ch			; was: db 0E8h, 02Fh, 006h
-		mov	ax,word ptr ds:[8Eh]
+		mov	ax,word ptr ds:item_effect_val
 		mov	cx,5
 		mov	bl,6
 		mov	dx,2856h
@@ -609,7 +655,7 @@ item_use_action:
 		push	ax
 		mov	cl,ds:item_sel_idx
 		xor	ch,ch			; Zero register
-		mov	bx,0A6h
+		mov	bx,item_flags
 
 find_item_by_idx:
 					test	byte ptr [bx],0FFh
@@ -629,95 +675,138 @@ find_item_next:
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr ds:item_use_dispatch_tbl[bx]	;*
-		db	 62h,0A4h, 83h,0A4h, 96h,0A4h
-		db	0BEh,0A4h, 2Ch,0A5h,0EAh,0A4h
-		db	0DBh,0A4h, 8Bh,0A5h,0C6h, 06h
-		db	 75h,0FFh, 0Eh, 83h, 06h, 90h
-		db	 00h, 50h,0A1h, 90h, 00h, 2Bh
-		db	 06h,0B2h, 00h, 72h, 06h,0A1h
-		db	0B2h, 00h,0A3h, 90h, 00h, 2Eh
-		db	0FFh, 16h, 08h, 20h,0E9h, 57h
-		db	 01h,0C6h, 06h, 75h,0FFh, 0Eh
-		db	0A1h,0B2h, 00h,0A3h, 90h, 00h
-		db	 2Eh,0FFh, 16h, 08h, 20h,0E9h
-		db	 44h, 01h,0C6h, 06h, 75h,0FFh
-		db	 0Eh,0F6h, 06h, 9Dh, 00h,0FFh
-		db	 75h, 01h,0C3h
+; Inline item-use handler pointer table (8 entries).
+; Caller copies these words to DS:item_use_dispatch_tbl before calling this module.
+; Each entry is the game-segment address of the corresponding item handler.
+		dw	0A462h		; item 0 (Kensh\ko Potion)  -> use_hp_potion
+		dw	0A483h		; item 1 (Juu-en Fruit)     -> use_hp_full
+		dw	0A496h		; item 2 (Elixir of Kashi)  -> use_weapon_restore
+		dw	0A4BEh		; item 3 (Chikara Powder)   -> use_all_weapons_restore
+		dw	0A52Ch		; item 4 (Sabre Oil)        -> use_sabre_oil
+		dw	0A4EAh		; item 5 (Magia Stone)      -> use_magia_stone
+		dw	0A4DBh		; item 6 (Holy Water)       -> use_holy_water
+		dw	0A58Bh		; item 7 (Kioku Feather)    -> use_kioku_feather
+
+use_hp_potion:				; item 0: restore 80 HP (caps at max)
+		mov	byte ptr ds:gvar_volume_b,0Eh
+		add	word ptr ds:char_hp,50h		; heal +80 HP
+		mov	ax,word ptr ds:char_hp
+		sub	ax,word ptr ds:char_hp_max
+		jc	hp_potion_nocap
+		mov	ax,word ptr ds:char_hp_max
+		mov	word ptr ds:char_hp,ax		; cap at max HP
+hp_potion_nocap:
+		call	word ptr cs:drv_fn_4
+		jmp	draw_item_detail_entry+1	;* off-by-one: skips call show_portrait_box
+
+use_hp_full:				; item 1: restore HP to maximum
+		mov	byte ptr ds:gvar_volume_b,0Eh
+		mov	ax,word ptr ds:char_hp_max
+		mov	word ptr ds:char_hp,ax
+		call	word ptr cs:drv_fn_4
+		jmp	draw_item_detail_entry+1	;* off-by-one: skips call show_portrait_box
+
+use_weapon_restore:			; item 2: restore equipped weapon durability
+		mov	byte ptr ds:gvar_volume_b,0Eh
+		test	byte ptr ds:cur_weapon_idx,0FFh
+		jnz	use_item_apply
+		retn				; no weapon equipped -> no-op
 
 use_item_apply:
-		mov	bl,byte ptr ds:[9Dh]
+		mov	bl,byte ptr ds:cur_weapon_idx
 		dec	bl
 		xor	bh,bh			; Zero register
-		mov	al,byte ptr ds:[0B4h][bx]
-		mov	byte ptr ds:[0ABh][bx],al
+		mov	al,byte ptr ds:weap_dur_max[bx]
+		mov	byte ptr ds:weap_dur_cur[bx],al
 		call	word ptr cs:drv_fn_12
 		call	draw_weapon_list
 		jmp	draw_item_detail_entry
-			                        ;* No entry point to code
+
+use_all_weapons_restore:		; item 3: restore all 7 weapon durabilities
 		mov	byte ptr ds:gvar_volume_b,0Eh
 		push	cs
 		pop	es
-		mov	si,0B4h
-		mov	di,0ABh
+		mov	si,weap_dur_max
+		mov	di,weap_dur_cur
 		mov	cx,7
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+		rep	movsb			; copy all 7 max values -> cur values
 		call	word ptr cs:drv_fn_12
 		call	draw_weapon_list
 		jmp	draw_item_detail_entry
-			                        ;* No entry point to code
+
+use_holy_water:				; item 6: add one key to key_count
 		mov	byte ptr ds:gvar_volume_b,0Eh
-		inc	byte ptr ds:[0E4h]
+		inc	byte ptr ds:key_count
 		call	draw_key_count
 		jmp	draw_item_detail_entry
-			                        ;* No entry point to code
+
+use_magia_stone:			; item 5: grant experience based on equipped magic level
 		mov	byte ptr ds:gvar_volume_b,0Eh
-		test	byte ptr ds:[93h],0FFh
+		test	byte ptr ds:equipped_magic,0FFh
 		jnz	apply_item_exp			; Jump if not zero
-		retn
+		retn				; no magic equipped -> no-op
 
 apply_item_exp:
-		mov	bl,byte ptr ds:[93h]
+		mov	bl,byte ptr ds:equipped_magic
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	ax,ds:item_effect_tbl[bx]
-		add	word ptr ds:[94h],ax
-		mov	ax,word ptr ds:[94h]
-		sub	ax,word ptr ds:[96h]
+		add	word ptr ds:char_exp,ax
+		mov	ax,word ptr ds:char_exp
+		sub	ax,word ptr ds:char_exp_cap
 		jc	cap_exp			; Jump if carry Set
-		mov	ax,word ptr ds:[96h]
-		mov	word ptr ds:[94h],ax
+		mov	ax,word ptr ds:char_exp_cap
+		mov	word ptr ds:char_exp,ax
 
 cap_exp:
 		call	word ptr cs:drv_fn_13
 		jmp	draw_item_detail_entry
-			                        ;* No entry point to code
-		push	ax
-		add	[bp+si+0],bl			; was: db 00h, 5Ah, 00h
-		db	 64h, 00h, 6Eh, 00h, 73h, 00h
-		db	 78h, 00h, 0Eh, 07h,0C6h, 06h
-		db	 75h,0FFh, 0Eh,0C6h, 06h, 84h
-		db	0A5h, 00h,0C6h, 06h, 85h,0A5h
-		db	 01h,0BEh, 84h,0A5h,0BFh, 60h
-		db	0EBh,0B9h, 07h, 00h,0F3h,0A4h
-		db	0C6h, 06h, 84h,0A5h, 04h,0C6h
-		db	 06h, 85h,0A5h,0FFh,0BEh, 84h
-		db	0A5h,0BFh, 67h,0EBh,0B9h, 07h
-		db	 00h,0F3h,0A4h,0C6h, 06h, 84h
-		db	0A5h, 08h,0BEh, 84h,0A5h,0BFh
-		db	 6Eh,0EBh,0B9h, 07h, 00h,0F3h
-		db	0A4h,0C6h, 06h, 84h,0A5h, 0Ch
-		db	0C6h, 06h, 85h,0A5h, 01h,0BEh
-		db	 84h,0A5h,0BFh, 75h,0EBh,0B9h
-		db	 07h, 00h,0F3h,0A4h,0EBh, 56h
-		db	 00h, 00h, 50h, 00h, 00h, 00h
-		db	 00h,0C6h, 06h, 75h,0FFh, 0Fh
-		db	0E8h, 47h, 00h,0E8h, 1Eh, 00h
-		db	 58h, 58h,0C6h, 06h, 24h,0FFh
-		db	 08h,0C6h, 06h, 1Ah,0FFh, 00h
+; Padding between use_magia_stone and use_sabre_oil (dead bytes).
+		db	50h, 00h, 1Ah, 64h, 00h, 6Eh, 00h, 73h, 00h, 78h, 00h
+
+use_sabre_oil:				; item 4: animate Sabre Oil effect (4 sprite passes)
+		push	cs
+		pop	es
+		mov	byte ptr ds:gvar_volume_b,0Eh
+		mov	byte ptr ds:anim_param_buf,0		; anim_id = 0, dir = forward
+		mov	byte ptr ds:anim_param_buf+1,1
+		mov	si,anim_param_buf
+		mov	di,anim_spr_tbl+0			; entry 0
+		mov	cx,7
+		rep	movsb
+		mov	byte ptr ds:anim_param_buf,4		; anim_id = 4, dir = backward
+		mov	byte ptr ds:anim_param_buf+1,0FFh
+		mov	si,anim_param_buf
+		mov	di,anim_spr_tbl+7			; entry 1
+		mov	cx,7
+		rep	movsb
+		mov	byte ptr ds:anim_param_buf,8		; anim_id = 8
+		mov	si,anim_param_buf
+		mov	di,anim_spr_tbl+14			; entry 2
+		mov	cx,7
+		rep	movsb
+		mov	byte ptr ds:anim_param_buf,0Ch		; anim_id = 12, dir = forward
+		mov	byte ptr ds:anim_param_buf+1,1
+		mov	si,anim_param_buf
+		mov	di,anim_spr_tbl+21			; entry 3
+		mov	cx,7
+		rep	movsb
+		jmp	short draw_item_detail_entry
+; Padding between use_sabre_oil and use_kioku_feather (dead bytes).
+		db	00h, 00h, 50h, 00h, 00h, 00h, 00h
+
+use_kioku_feather:			; item 7: use Kioku Feather (memory feather / save game)
+		mov	byte ptr ds:gvar_volume_b,0Fh
+		call	draw_item_detail_entry		; refresh item detail panel
+		call	init_item_panel			; reset item panel display
+		pop	ax				; discard push ax from item_use_action
+		pop	ax				; discard push ax from item_use_action
+		mov	byte ptr ds:gvar_display_mode,8
+		mov	byte ptr ds:gvar_frame_timer,0		; reset frame timer
 
 wait_timer_done:
-					cmp	byte ptr ds:gvar_frame_timer,78h	; 'x'
+					cmp	byte ptr ds:gvar_frame_timer,timer_wait_feather	; 'x'
 					jb	wait_timer_done			; Jump if below
 		call	word ptr cs:drv_fn_32
 		mov	ax,1
@@ -727,7 +816,7 @@ wait_timer_done:
 init_item_panel		proc	near
 		xor	al,al			; Zero register
 		call	show_item_portrait
-		mov	bx,0E83h
+		mov	bx,item_spr_base+2
 		mov	cx,1E10h
 		xor	al,al			; Zero register
 		call	word ptr cs:drv_fn_dispatch
@@ -750,7 +839,7 @@ draw_item_detail_entry:
 		mov	cx,3224h
 		mov	al,0FFh
 		call	word ptr cs:drv_fn_dispatch
-		mov	si,0AAACh
+		mov	si,str_item_detail_hdr
 		mov	bx,44h
 		mov	cl,4Ch			; 'L'
 		mov	ah,1
@@ -803,7 +892,7 @@ hide_portrait_box		endp
 rebuild_item_idx		proc	near
 		push	cs
 		pop	es
-		mov	si,0A6h
+		mov	si,item_flags
 		mov	di,item_idx_tbl
 		xor	al,al			; Zero register
 		stosb				; Store al to es:[di]
@@ -835,7 +924,7 @@ draw_item_panel		proc	near
 		jz	item_panel_empty			; Jump if zero
 		mov	cl,ds:item_count
 		xor	ch,ch			; Zero register
-		mov	bx,0E83h
+		mov	bx,item_spr_base+2
 		mov	si,item_idx_tbl
 
 draw_item_panel_loop:
@@ -857,14 +946,14 @@ draw_item_panel_loop:
 		retn
 
 item_panel_has_items:
-		mov	bx,0E81h
+		mov	bx,item_spr_base
 		mov	al,5
 		call	word ptr cs:drv_fn_sprite
 		mov	bx,1570h
 		mov	cx,1811h
 		xor	al,al			; Zero register
 		call	word ptr cs:drv_fn_dispatch
-		mov	si,0AA9Ah
+		mov	si,str_no_use_notice
 		mov	bx,54h
 		mov	cl,71h			; 'q'
 		mov	ah,1
@@ -875,7 +964,7 @@ item_panel_has_items:
 item_panel_empty:
 		mov	bx,54h
 		mov	cl,71h			; 'q'
-		mov	si,0AA92h
+		mov	si,str_empty
 		mov	ah,1
 ;*		jmp	init_panels6			;*
 
@@ -889,7 +978,7 @@ draw_magic_panel		proc	near
 		jz	magic_panel_empty			; Jump if zero
 		mov	cl,ds:magic_count
 		xor	ch,ch			; Zero register
-		mov	bx,0E55h
+		mov	bx,magic_spr_base+2
 		mov	si,magic_idx_tbl
 
 draw_magic_panel_loop:
@@ -907,7 +996,7 @@ draw_magic_panel_loop:
 		push	cs
 		pop	es
 		mov	di,magic_idx_tbl
-		mov	al,byte ptr ds:[9Eh]
+		mov	al,byte ptr ds:cur_magic_idx
 		mov	cx,6
 		repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
 		neg	cx
@@ -919,11 +1008,11 @@ draw_magic_panel_loop:
 		add	cx,cx
 		add	cx,cx
 		add	cx,bx
-		add	cx,0E53h
+		add	cx,magic_spr_base
 		mov	bx,cx
 		mov	al,5
 		call	word ptr cs:drv_fn_sprite
-		mov	bl,byte ptr ds:[9Eh]
+		mov	bl,byte ptr ds:cur_magic_idx
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	si,ds:magic_name_ptrs[bx]
@@ -943,19 +1032,19 @@ draw_magic_panel_loop:
 magic_panel_empty:
 		mov	bx,5Ch
 		mov	cl,43h			; 'C'
-		mov	si,0AA92h
+		mov	si,str_empty
 		mov	ah,1
 ;*		jmp	init_panels6			;*
 		jmp	scan_draw_string
 		db	00Ch			; was: db 0E9h, 0D9h, 002h
 
 draw_char_stats:
-		test	byte ptr ds:[92h],0FFh
+		test	byte ptr ds:equipped_weapon,0FFh
 		jz	draw_stat_93h			; Jump if zero
 		mov	bx,174Dh
-		mov	al,byte ptr ds:[92h]
+		mov	al,byte ptr ds:equipped_weapon
 		call	word ptr cs:drv_fn_14
-		mov	bl,byte ptr ds:[92h]
+		mov	bl,byte ptr ds:equipped_weapon
 		xor	bh,bh			; Zero register
 		dec	bl
 		add	bx,bx
@@ -969,12 +1058,12 @@ draw_char_stats:
 		call	draw_key_count
 
 draw_stat_93h:
-		test	byte ptr ds:[93h],0FFh
+		test	byte ptr ds:equipped_magic,0FFh
 		jz	draw_stat_98h			; Jump if zero
 		mov	bx,2E61h
-		mov	al,byte ptr ds:[93h]
+		mov	al,byte ptr ds:equipped_magic
 		call	word ptr cs:drv_fn_16
-		mov	bl,byte ptr ds:[93h]
+		mov	bl,byte ptr ds:equipped_magic
 		xor	bh,bh			; Zero register
 		dec	bl
 		add	bx,bx
@@ -988,7 +1077,7 @@ draw_stat_93h:
 		call	draw_exp_bar
 
 draw_stat_98h:
-		test	byte ptr ds:[98h],0FFh
+		test	byte ptr ds:char_speed,0FFh
 		jz	draw_stat_99h			; Jump if zero
 		mov	bx,2E75h
 		xor	al,al			; Zero register
@@ -998,7 +1087,7 @@ draw_stat_98h:
 		mov	al,5Eh			; '^'
 		mov	ah,1
 		call	word ptr cs:drv_fn_render_char
-		mov	al,byte ptr ds:[98h]
+		mov	al,byte ptr ds:char_speed
 		xor	ah,ah			; Zero register
 		mov	cx,1
 		mov	bl,1
@@ -1006,7 +1095,7 @@ draw_stat_98h:
 		call	fmt_number
 
 draw_stat_99h:
-		test	byte ptr ds:[99h],0FFh
+		test	byte ptr ds:char_power,0FFh
 		jz	draw_abilities			; Jump if zero
 		mov	bx,3A75h
 		mov	al,1
@@ -1016,7 +1105,7 @@ draw_stat_99h:
 		mov	al,5Eh			; '^'
 		mov	ah,1
 		call	word ptr cs:drv_fn_render_char
-		mov	al,byte ptr ds:[99h]
+		mov	al,byte ptr ds:char_power
 		xor	ah,ah			; Zero register
 		mov	cx,1
 		mov	bl,1
@@ -1024,7 +1113,7 @@ draw_stat_99h:
 		call	fmt_number
 
 draw_abilities:
-		mov	si,9Ah
+		mov	si,char_abilities
 		mov	bx,3089h
 		mov	cx,3
 
@@ -1050,7 +1139,7 @@ ability_row_skip:
 		retn
 
 draw_exp_bar:
-		mov	ax,word ptr ds:[96h]
+		mov	ax,word ptr ds:char_exp_cap
 		mov	dx,3469h
 		mov	cx,3
 		mov	bl,4
@@ -1067,7 +1156,7 @@ draw_exp_bar:
 		jmp	word ptr cs:drv_fn_render_char
 
 draw_key_count:
-		test	byte ptr ds:[0E4h],0FFh
+		test	byte ptr ds:key_count,0FFh
 		jnz	draw_key_count_body			; Jump if not zero
 		retn
 
@@ -1081,7 +1170,7 @@ draw_key_count_body:
 		mov	al,28h			; '('
 		mov	ah,1
 		call	word ptr cs:drv_fn_render_char
-		mov	al,byte ptr ds:[0E4h]
+		mov	al,byte ptr ds:key_count
 		xor	ah,ah			; Zero register
 		mov	dx,3457h
 		mov	bl,1
@@ -1098,7 +1187,7 @@ draw_weapon_panel:
 		jz	weapon_panel_empty			; Jump if zero
 		mov	cl,ds:weapon_count
 		xor	ch,ch			; Zero register
-		mov	bx,0E1Ch
+		mov	bx,weap_spr_base+2
 		mov	si,weapon_idx_tbl
 
 draw_weapon_panel_loop:
@@ -1117,7 +1206,7 @@ draw_weapon_panel_loop:
 		push	cs
 		pop	es
 		mov	di,weapon_idx_tbl
-		mov	al,byte ptr ds:[9Dh]
+		mov	al,byte ptr ds:cur_weapon_idx
 		mov	cx,7
 		repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
 		neg	cx
@@ -1128,11 +1217,11 @@ draw_weapon_panel_loop:
 		add	cx,cx
 		add	cx,cx
 		add	cx,cx
-		add	cx,0E1Ah
+		add	cx,weap_spr_base
 		mov	bx,cx
 		mov	al,5
 		call	word ptr cs:drv_fn_sprite
-		mov	bl,byte ptr ds:[9Dh]
+		mov	bl,byte ptr ds:cur_weapon_idx
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -1147,7 +1236,7 @@ draw_weapon_panel_loop:
 weapon_panel_empty:
 		mov	bx,9Eh
 		mov	cl,12h
-		mov	si,0AA92h
+		mov	si,str_empty
 		mov	ah,1
 ;*		jmp	init_panels6			;*
 		jmp	scan_draw_string
@@ -1167,8 +1256,8 @@ draw_weapon_list_loop:
 					dec	al
 					mov	bl,al
 					xor	bh,bh			; Zero register
-					mov	al,byte ptr ds:[0ABh][bx]
-					mov	ah,byte ptr ds:[0B4h][bx]
+					mov	al,byte ptr ds:weap_dur_cur[bx]
+					mov	ah,byte ptr ds:weap_dur_max[bx]
 					push	ax
 					push	dx
 					push	ax
@@ -1229,10 +1318,10 @@ fmt_number:
 		push	dx
 		push	cx
 		xor	dl,dl			; Zero register
-		mov	di,0AE16h
+		mov	di,num_fmt_buf
 		call	word ptr cs:drv_fn_num_fmt
 		pop	cx
-		mov	di,0AE16h
+		mov	di,num_fmt_buf
 		mov	al,7
 		sub	al,cl
 		xor	ah,ah			; Zero register
@@ -1350,93 +1439,144 @@ joy_has_dir:
 
 draw_magic_panel		endp
 
+; ---- String table (module data section, game_seg:SELCT_BASE + file offset) ----
+
+str_empty_lbl		label	word		; str_empty — blank/empty panel placeholder
 		db	'NOTHING', 0
+str_no_use_notice_lbl	label	word		; str_no_use_notice — "no item/magic" hint line
 		db	'NO USE', 0
-		db	00h			; padding
+		db	00h				; padding
+str_item_used_count_lbl	label	word		; str_item_used_count — count row label
 		db	'LEVEL', 0
+str_item_used_total_lbl	label	word		; str_item_used_total — total row label
 		db	'EXP', 0
-		db	'I have used'
-		db	 00h,0C6h,0AAh,0CDh,0AAh,0D3h
-		db	0AAh,0D9h,0AAh,0E0h,0AAh,0E7h
-		db	0AAh,0ECh,0AAh
-		db	'Espada', 0
-		db	'Saeta', 0
-		db	'Fuego', 0
-		db	'Lanzar', 0
-		db	'Rascar', 0
-		db	'Agua', 0
-		db	'Guerra', 0
-		db	 9Ah,0AAh,0FFh,0AAh, 12h,0ABh
-		db	 25h,0ABh, 39h,0ABh, 4Dh,0ABh
-		db	'Feruza', 0
-		db	'      shoes', 0
-		db	'Pirika', 0
-		db	'      shoes', 0
-		db	'Silkarn', 0
-		db	'      shoes', 0
-		db	'Ruzeria', 0
-		db	'      shoes', 0
-		db	'Asbestos', 0
-		db	'       cape', 0
-		db	 72h,0ABh, 8Ah,0ABh,0A2h,0ABh
-		db	0BAh,0ABh,0D2h,0ABh,0EAh,0ABh
-		db	 02h,0ACh, 1Ah,0ACh
-		db	'       a Ken\ko Potion.', 0
-		db	'        a Juu-en Fruit.', 0
-		db	'     a Elixir of Kashi.', 0
-		db	'      a Chikara Powder.', 0
-		db	'         a Magia Stone.', 0
-		db	' a Holy Water of Acero.', 0
-		db	'           a Sabre Oil.', 0
-		db	'       a Kioku Feather.', 0
-		db	 9Ah,0AAh, 44h,0ACh, 58h,0ACh
-		db	 6Dh,0ACh, 81h,0ACh, 96h,0ACh
-		db	0A3h,0ACh,0BBh,0ACh,0C6h,0ACh
-		db	'Ken\ko', 0
-		db	'      Potion', 0
-		db	'Juu-en ', 0
-		db	'       Fruit', 0
-		db	'Elixir', 0
-		db	'    of Kashi', 0
-		db	'Chikara', 0
-		db	'      Powder', 0
-		db	'Magia Stone'
-		db	0, 0
-		db	'Holy Water', 0
-		db	'    of Acero', 0
-		db	'Sabre Oil', 0
-		db	0			; padding
-		db	'Kioku', 0
-		db	'     feather'
-		db	 00h,0E5h,0ACh,0F9h,0ACh, 10h
-		db	0ADh, 21h,0ADh, 34h,0ADh, 4Eh
-		db	0ADh
-		db	'Training', 0
-		db	'     Sword', 0
-		db	'Wise man\s', 0
-		db	'      Sword', 0
-		db	'Spirit', 0
-		db	'    Sword', 0
-		db	'Knight\s', 0
-		db	'    Sword', 0
-		db	'Illumination', 0
-		db	'       Sword', 0
-		db	'Enchantment', 0
-		db	'       Sword', 0
-		db	 73h,0ADh, 84h,0ADh, 9Ch,0ADh
-		db	0AEh,0ADh,0C0h,0ADh,0D2h,0ADh
-		db	'Clay', 0
-		db	'     Shield', 0
-		db	'Wise Man\s', 0
-		db	'      Shield', 0
-		db	'Stone', 0
-		db	'     Shield', 0
-		db	'Honor', 0
-		db	'     Shield', 0
-		db	'Light', 0
-		db	'     Shield', 0
-		db	'Titanium', 0
-		db	'      Shield', 0
+str_item_detail_hdr_lbl	label	word		; str_item_detail_hdr — item-use header prefix
+		db	'I have used', 0
+
+weapon_name_ptrs_lbl	label	word		; attack spell name pointer table (7 entries, 1-based index)
+		dw	SELCT_BASE + (offset spell_str_espada)	; [1] Espada
+		dw	SELCT_BASE + (offset spell_str_saeta)	; [2] Saeta
+		dw	SELCT_BASE + (offset spell_str_fuego)	; [3] Fuego
+		dw	SELCT_BASE + (offset spell_str_lanzar)	; [4] Lanzar
+		dw	SELCT_BASE + (offset spell_str_rascar)	; [5] Rascar
+		dw	SELCT_BASE + (offset spell_str_agua)	; [6] Agua
+		dw	SELCT_BASE + (offset spell_str_guerra)	; [7] Guerra
+
+spell_str_espada:	db	'Espada', 0
+spell_str_saeta:	db	'Saeta', 0
+spell_str_fuego:	db	'Fuego', 0
+spell_str_lanzar:	db	'Lanzar', 0
+spell_str_rascar:	db	'Rascar', 0
+spell_str_agua:		db	'Agua', 0
+spell_str_guerra:	db	'Guerra', 0
+
+magic_name_ptrs_lbl	label	word		; footwear/clothing item name pointer table (6 entries, 0=none)
+		dw	SELCT_BASE + (offset str_no_use_notice_lbl)	; [0] no item equipped
+		dw	SELCT_BASE + (offset shoe_str_feruza)		; [1] Feruza shoes
+		dw	SELCT_BASE + (offset shoe_str_pirika)		; [2] Pirika shoes
+		dw	SELCT_BASE + (offset shoe_str_silkarn)		; [3] Silkarn shoes
+		dw	SELCT_BASE + (offset shoe_str_ruzeria)		; [4] Ruzeria shoes
+		dw	SELCT_BASE + (offset shoe_str_asbestos)		; [5] Asbestos cape
+
+shoe_str_feruza:	db	'Feruza', 0
+			db	'      shoes', 0
+shoe_str_pirika:	db	'Pirika', 0
+			db	'      shoes', 0
+shoe_str_silkarn:	db	'Silkarn', 0
+			db	'      shoes', 0
+shoe_str_ruzeria:	db	'Ruzeria', 0
+			db	'      shoes', 0
+shoe_str_asbestos:	db	'Asbestos', 0
+			db	'       cape', 0
+
+item_detail_ptrs_lbl	label	word		; item detail pointer table (8 entries, 1-based)
+		dw	SELCT_BASE + (offset item_det_str_kenko)	; [1] Ken\ko Potion
+		dw	SELCT_BASE + (offset item_det_str_juuen)	; [2] Juu-en Fruit
+		dw	SELCT_BASE + (offset item_det_str_elixir)	; [3] Elixir of Kashi
+		dw	SELCT_BASE + (offset item_det_str_chikara)	; [4] Chikara Powder
+		dw	SELCT_BASE + (offset item_det_str_magia)	; [5] Magia Stone
+		dw	SELCT_BASE + (offset item_det_str_holywater)	; [6] Holy Water of Acero
+		dw	SELCT_BASE + (offset item_det_str_sabreoil)	; [7] Sabre Oil
+		dw	SELCT_BASE + (offset item_det_str_kioku)	; [8] Kioku Feather
+
+item_det_str_kenko:	db	'       a Ken\ko Potion.', 0
+item_det_str_juuen:	db	'        a Juu-en Fruit.', 0
+item_det_str_elixir:	db	'     a Elixir of Kashi.', 0
+item_det_str_chikara:	db	'      a Chikara Powder.', 0
+item_det_str_magia:	db	'         a Magia Stone.', 0
+item_det_str_holywater:	db	' a Holy Water of Acero.', 0
+item_det_str_sabreoil:	db	'           a Sabre Oil.', 0
+item_det_str_kioku:	db	'       a Kioku Feather.', 0
+
+item_name_ptrs_lbl	label	word		; item name pointer table (9 entries: [0]=no item, [1-8]=items)
+		dw	SELCT_BASE + (offset str_no_use_notice_lbl)	; [0] no item equipped
+		dw	SELCT_BASE + (offset item_str_kenko)		; [1] Ken\ko
+		dw	SELCT_BASE + (offset item_str_juuen)		; [2] Juu-en
+		dw	SELCT_BASE + (offset item_str_elixir)		; [3] Elixir
+		dw	SELCT_BASE + (offset item_str_chikara)		; [4] Chikara
+		dw	SELCT_BASE + (offset item_str_magia)		; [5] Magia Stone
+		dw	SELCT_BASE + (offset item_str_holywater)	; [6] Holy Water
+		dw	SELCT_BASE + (offset item_str_sabreoil)		; [7] Sabre Oil
+		dw	SELCT_BASE + (offset item_str_kioku)		; [8] Kioku
+
+item_str_kenko:		db	'Ken\ko', 0
+			db	'      Potion', 0
+item_str_juuen:		db	'Juu-en ', 0
+			db	'       Fruit', 0
+item_str_elixir:	db	'Elixir', 0
+			db	'    of Kashi', 0
+item_str_chikara:	db	'Chikara', 0
+			db	'      Powder', 0
+item_str_magia:		db	'Magia Stone'
+			db	0, 0
+item_str_holywater:	db	'Holy Water', 0
+			db	'    of Acero', 0
+item_str_sabreoil:	db	'Sabre Oil', 0
+			db	0			; padding
+item_str_kioku:		db	'Kioku', 0
+			db	'     feather', 0
+
+weapon_detail_ptrs_lbl	label	word		; weapon detail pointer table (6 entries, 1-based)
+		dw	SELCT_BASE + (offset weap_det_str_training)	; [1] Training Sword
+		dw	SELCT_BASE + (offset weap_det_str_wisemans)	; [2] Wise man's Sword
+		dw	SELCT_BASE + (offset weap_det_str_spirit)	; [3] Spirit Sword
+		dw	SELCT_BASE + (offset weap_det_str_knights)	; [4] Knight's Sword
+		dw	SELCT_BASE + (offset weap_det_str_illumination)	; [5] Illumination Sword
+		dw	SELCT_BASE + (offset weap_det_str_enchantment)	; [6] Enchantment Sword
+
+weap_det_str_training:		db	'Training', 0
+				db	'     Sword', 0
+weap_det_str_wisemans:		db	'Wise man\s', 0
+				db	'      Sword', 0
+weap_det_str_spirit:		db	'Spirit', 0
+				db	'    Sword', 0
+weap_det_str_knights:		db	'Knight\s', 0
+				db	'    Sword', 0
+weap_det_str_illumination:	db	'Illumination', 0
+				db	'       Sword', 0
+weap_det_str_enchantment:	db	'Enchantment', 0
+				db	'       Sword', 0
+
+magic_detail_ptrs_lbl	label	word		; shield detail pointer table (6 entries, 1-based; "magic" slot holds the shield)
+		dw	SELCT_BASE + (offset shield_det_str_clay)	; [1] Clay Shield
+		dw	SELCT_BASE + (offset shield_det_str_wisemans)	; [2] Wise Man's Shield
+		dw	SELCT_BASE + (offset shield_det_str_stone)	; [3] Stone Shield
+		dw	SELCT_BASE + (offset shield_det_str_honor)	; [4] Honor Shield
+		dw	SELCT_BASE + (offset shield_det_str_light)	; [5] Light Shield
+		dw	SELCT_BASE + (offset shield_det_str_titanium)	; [6] Titanium Shield
+
+shield_det_str_clay:		db	'Clay', 0
+				db	'     Shield', 0
+shield_det_str_wisemans:	db	'Wise Man\s', 0
+				db	'      Shield', 0
+shield_det_str_stone:		db	'Stone', 0
+				db	'     Shield', 0
+shield_det_str_honor:		db	'Honor', 0
+				db	'     Shield', 0
+shield_det_str_light:		db	'Light', 0
+				db	'     Shield', 0
+shield_det_str_titanium:	db	'Titanium', 0
+				db	'      Shield', 0
 		db	0Eh
 		db	0Ch, '38?', 0Ch, '0"m', 0Ch, '0"?'
 		db	'-^'
