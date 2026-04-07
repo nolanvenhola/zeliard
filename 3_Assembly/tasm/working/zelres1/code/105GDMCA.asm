@@ -71,7 +71,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zr1_05		proc	far
+mcga_imgctl_module		proc	far
 
 start:
 ;*		aad	21h			; '!' undocumented inst
@@ -100,21 +100,21 @@ start:
 		db	0D1h,0E9h
 
 render_plane_a_loop:
-				mov	ax,ds:[bp+si]
-				xchg	ah,al
-				mov	cs:src_word_d,ax
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	render_plane_a_loop		; Loop if cx > 0
+						mov	ax,ds:[bp+si]
+						xchg	ah,al
+						mov	cs:src_word_d,ax
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	render_plane_a_loop		; Loop if cx > 0
 
 		pop	ds
 		pop	cx
@@ -143,26 +143,26 @@ disp_render_a_only:
 		shr	cx,1			; Shift w/zeros fill
 
 render_plane_ab_loop:
-				add	bp,bp
-				mov	ax,ds:[bp+si]
-				xchg	al,ah
-				mov	cs:src_word_c,ax
-				shr	bp,1			; Shift w/zeros fill
-				mov	ax,ds:[bp+si]
-				xchg	al,ah
-				mov	cs:src_word_b,ax
-				lodsw				; String [si] to ax
-				xchg	al,ah
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	render_plane_ab_loop		; Loop if cx > 0
+						add	bp,bp
+						mov	ax,ds:[bp+si]
+						xchg	al,ah
+						mov	cs:src_word_c,ax
+						shr	bp,1			; Shift w/zeros fill
+						mov	ax,ds:[bp+si]
+						xchg	al,ah
+						mov	cs:src_word_b,ax
+						lodsw				; String [si] to ax
+						xchg	al,ah
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	render_plane_ab_loop		; Loop if cx > 0
 
 		pop	ds
 		pop	cx
@@ -181,7 +181,7 @@ disp_render_a_rev:
 		pop	si
 		pop	ds
 		pop	ax
-		mov	word ptr cs:render_fn_ptr,329Dh
+		mov	word ptr cs:render_fn_ptr,329Dh	; CS:329Dh = disp_blit_expand (write nonzero pixels only)
 		call	vga_operation
 		pop	ds
 		retn
@@ -205,31 +205,31 @@ disp_render_a_full:
 		shr	cx,1			; Shift w/zeros fill
 
 render_plane_abc_loop:
-				push	cx
-				mov	bx,ds:[bp+si]
-				xchg	bh,bl
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	dx,bx
-				and	dx,ax
-				mov	cx,bx
-				or	cx,ax
-				not	dx
-				and	ax,dx
-				and	bx,dx
-				mov	cs:src_word_c,bx
-				mov	cs:src_word_b,ax
-				mov	cs:src_word_d,cx
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				pop	cx
-				loop	render_plane_abc_loop		; Loop if cx > 0
+						push	cx
+						mov	bx,ds:[bp+si]
+						xchg	bh,bl
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	dx,bx
+						and	dx,ax
+						mov	cx,bx
+						or	cx,ax
+						not	dx
+						and	ax,dx
+						and	bx,dx
+						mov	cs:src_word_c,bx
+						mov	cs:src_word_b,ax
+						mov	cs:src_word_d,cx
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						pop	cx
+						loop	render_plane_abc_loop		; Loop if cx > 0
 
 		pop	ds
 		pop	cx
@@ -245,7 +245,7 @@ render_plane_abc_loop:
 		pop	si
 		pop	ds
 		pop	ax
-		mov	word ptr cs:render_fn_ptr,3277h
+		mov	word ptr cs:render_fn_ptr,3277h	; CS:3277h = blit_or_entry (OR blit)
 		mov	byte ptr cs:render_mode_flag,0
 		or	al,al			; Zero ?
 		jnz	render_blit_skip			; Jump if not zero
@@ -267,7 +267,7 @@ render_blit_entry:
 		pop	si
 		pop	ds
 		pop	ax
-		mov	word ptr cs:render_fn_ptr,3239h
+		mov	word ptr cs:render_fn_ptr,3239h	; CS:3239h = disp_blit_masked (masked write blit)
 		mov	byte ptr cs:render_mode_flag,0
 		or	al,al			; Zero ?
 		jnz	render_blit_skip2			; Jump if not zero
@@ -279,7 +279,7 @@ render_blit_skip2:
 		pop	ds
 		retn
 
-zr1_05		endp
+mcga_imgctl_module		endp
 
 vga_operation		proc	near
 		mov	byte ptr cs:cur_row_ctr,0
@@ -288,52 +288,52 @@ vga_operation		proc	near
 		mov	bp,8
 
 vga_blit_row_start:
-				mov	al,cs:cur_row_ctr
-				mov	cs:cur_col_ctr,al
-				mov	byte ptr cs:gvar_frame_timer,0
-				push	cx
-				push	si
-				push	di
+						mov	al,cs:cur_row_ctr
+						mov	cs:cur_col_ctr,al
+						mov	byte ptr cs:gvar_frame_timer,0
+						push	cx
+						push	si
+						push	di
 
 vga_blit_col_loop:
-						mov	bl,cs:cur_col_ctr
-						and	bx,7
-						mov	bl,cs:mask_tbl_a[bx]
-						call	word ptr cs:render_fn_ptr
-						inc	byte ptr cs:cur_col_ctr
-						mov	al,ch
-						xor	ah,ah			; Zero register
-						add	ax,ax
-						add	ax,ax
-						add	si,ax
-						add	di,140h
-						dec	cl
-						jz	vga_blit_col_done			; Jump if zero
-						mov	bl,cs:cur_col_ctr
-						and	bx,7
-						mov	bl,cs:mask_tbl_b[bx]
-						call	word ptr cs:render_fn_ptr
-						inc	byte ptr cs:cur_col_ctr
-						mov	al,ch
-						xor	ah,ah			; Zero register
-						add	ax,ax
-						add	ax,ax
-						add	si,ax
-						add	di,140h
-						dec	cl
-						jnz	vga_blit_col_loop			; Jump if not zero
+										mov	bl,cs:cur_col_ctr
+										and	bx,7
+										mov	bl,cs:mask_tbl_a[bx]
+										call	word ptr cs:render_fn_ptr
+										inc	byte ptr cs:cur_col_ctr
+										mov	al,ch
+										xor	ah,ah			; Zero register
+										add	ax,ax
+										add	ax,ax
+										add	si,ax
+										add	di,140h
+										dec	cl
+										jz	vga_blit_col_done			; Jump if zero
+										mov	bl,cs:cur_col_ctr
+										and	bx,7
+										mov	bl,cs:mask_tbl_b[bx]
+										call	word ptr cs:render_fn_ptr
+										inc	byte ptr cs:cur_col_ctr
+										mov	al,ch
+										xor	ah,ah			; Zero register
+										add	ax,ax
+										add	ax,ax
+										add	si,ax
+										add	di,140h
+										dec	cl
+										jnz	vga_blit_col_loop			; Jump if not zero
 
 vga_blit_col_done:
-				pop	di
-				pop	si
-				pop	cx
-				inc	byte ptr cs:cur_row_ctr
+						pop	di
+						pop	si
+						pop	cx
+						inc	byte ptr cs:cur_row_ctr
 
 vga_frame_wait:
-						cmp	byte ptr cs:gvar_frame_timer,14h
-						jb	vga_frame_wait			; Jump if below
-				dec	bp
-				jnz	vga_blit_row_start			; Jump if not zero
+										cmp	byte ptr cs:gvar_frame_timer,14h
+										jb	vga_frame_wait			; Jump if below
+						dec	bp
+						jnz	vga_blit_row_start			; Jump if not zero
 		retn
 
 vga_operation		endp
@@ -350,14 +350,14 @@ disp_blit_masked:
 		add	cx,cx
 
 blit_write_loop:
-				lodsb				; String [si] to al
-				rol	bl,1			; Rotate
-				jnc	blit_write_skip			; Jump if carry=0
-				mov	es:[di],al
+						lodsb				; String [si] to al
+						rol	bl,1			; Rotate
+						jnc	blit_write_skip			; Jump if carry=0
+						mov	es:[di],al
 
 blit_write_skip:
-				inc	di
-				loop	blit_write_loop		; Loop if cx > 0
+						inc	di
+						loop	blit_write_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	di
@@ -365,31 +365,31 @@ blit_write_skip:
 		retn
 
 blit_or_entry:
-				push	si
-				push	di
-				push	cx
-				mov	cl,ch
-				xor	ch,ch			; Zero register
-				add	cx,cx
-				add	cx,cx
+						push	si
+						push	di
+						push	cx
+						mov	cl,ch
+						xor	ch,ch			; Zero register
+						add	cx,cx
+						add	cx,cx
 
 blit_or_loop:
-						lodsb				; String [si] to al
-						rol	bl,1			; Rotate
-						sbb	ah,ah
-						and	al,ah
-						or	es:[di],al
-						inc	di
-						loop	blit_or_loop		; Loop if cx > 0
+										lodsb				; String [si] to al
+										rol	bl,1			; Rotate
+										sbb	ah,ah
+										and	al,ah
+										or	es:[di],al
+										inc	di
+										loop	blit_or_loop		; Loop if cx > 0
 
-				pop	cx
-				pop	di
-				pop	si
-				retn
+						pop	cx
+						pop	di
+						pop	si
+						retn
 
 disp_blit_expand:
-				test	byte ptr cs:render_mode_flag,0FFh
-				jz	blit_or_entry			; Jump if zero
+						test	byte ptr cs:render_mode_flag,0FFh
+						jz	blit_or_entry			; Jump if zero
 		push	si
 		push	di
 		push	cx
@@ -399,16 +399,16 @@ disp_blit_expand:
 		add	cx,cx
 
 blit_write_nonzero_loop:
-				lodsb				; String [si] to al
-				rol	bl,1			; Rotate
-				jnc	blit_write_nonzero_skip			; Jump if carry=0
-				or	al,al			; Zero ?
-				jz	blit_write_nonzero_skip			; Jump if zero
-				mov	es:[di],al
+						lodsb				; String [si] to al
+						rol	bl,1			; Rotate
+						jnc	blit_write_nonzero_skip			; Jump if carry=0
+						or	al,al			; Zero ?
+						jz	blit_write_nonzero_skip			; Jump if zero
+						mov	es:[di],al
 
 blit_write_nonzero_skip:
-				inc	di
-				loop	blit_write_nonzero_loop		; Loop if cx > 0
+						inc	di
+						loop	blit_write_nonzero_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	di
@@ -424,14 +424,14 @@ disp_blit_clear:
 		add	cx,cx
 
 blit_and_mask_loop:
-				rol	bl,1			; Rotate
-				sbb	al,al
-				rol	bl,1			; Rotate
-				sbb	ah,ah
-				and	es:[di],ax
-				inc	di
-				inc	di
-				loop	blit_and_mask_loop		; Loop if cx > 0
+						rol	bl,1			; Rotate
+						sbb	al,al
+						rol	bl,1			; Rotate
+						sbb	ah,ah
+						and	es:[di],ax
+						inc	di
+						inc	di
+						loop	blit_and_mask_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	di
@@ -452,49 +452,49 @@ disp_text_render:
 		mov	di,text_dest_off
 
 font_char_loop:
-				lodsb				; String [si] to al
-				cmp	al,0FFh
-				jne	font_char_notend			; Jump if not equal
-				retn
+						lodsb				; String [si] to al
+						cmp	al,0FFh
+						jne	font_char_notend			; Jump if not equal
+						retn
 
 font_char_notend:
-				sub	al,20h			; ' '
-				jnc	font_char_nonempty			; Jump if carry=0
-				retn
+						sub	al,20h			; ' '
+						jnc	font_char_nonempty			; Jump if carry=0
+						retn
 
 font_char_nonempty:
-				jz	font_char_space			; Jump if zero
-				push	si
-				push	di
-				xor	ah,ah			; Zero register
-				add	ax,ax
-				add	ax,ax
-				add	ax,ax
-				add	ax,ds:font_ptr_a
-				mov	si,ax
-				mov	cx,8
+						jz	font_char_space			; Jump if zero
+						push	si
+						push	di
+						xor	ah,ah			; Zero register
+						add	ax,ax
+						add	ax,ax
+						add	ax,ax
+						add	ax,ds:font_ptr_a
+						mov	si,ax
+						mov	cx,8
 
 font_row_loop:
-						push	cx
-						lodsb				; String [si] to al
-						call	pal_func_2
-						mov	es:[di],dx
-						call	pal_func_2
-						mov	es:[di+2],dx
-						call	pal_func_2
-						mov	es:[di+4],dx
-						call	pal_func_2
-						mov	es:[di+6],dx
-						add	di,140h
-						pop	cx
-						loop	font_row_loop		; Loop if cx > 0
+										push	cx
+										lodsb				; String [si] to al
+										call	pal_func_2
+										mov	es:[di],dx
+										call	pal_func_2
+										mov	es:[di+2],dx
+										call	pal_func_2
+										mov	es:[di+4],dx
+										call	pal_func_2
+										mov	es:[di+6],dx
+										add	di,140h
+										pop	cx
+										loop	font_row_loop		; Loop if cx > 0
 
-				pop	di
-				pop	si
+						pop	di
+						pop	si
 
 font_char_space:
-				add	di,8
-				jmp	short font_char_loop
+						add	di,8
+						jmp	short font_char_loop
 
 pal_func_2		proc	near
 		add	al,al
@@ -565,23 +565,23 @@ disp_scroll_copy:
 		xor	ch,ch			; Zero register
 
 sprite_blit_row_loop:
-				push	cx
-				push	di
-				mov	cx,bx
+						push	cx
+						push	di
+						mov	cx,bx
 
 sprite_blit_col_loop:
-						and	es:[di],dx
-						lodsw				; String [si] to ax
-						and	ax,bp
-						or	es:[di],ax
-						inc	di
-						inc	di
-						loop	sprite_blit_col_loop		; Loop if cx > 0
+										and	es:[di],dx
+										lodsw				; String [si] to ax
+										and	ax,bp
+										or	es:[di],ax
+										inc	di
+										inc	di
+										loop	sprite_blit_col_loop		; Loop if cx > 0
 
-				pop	di
-				add	di,140h
-				pop	cx
-				loop	sprite_blit_row_loop		; Loop if cx > 0
+						pop	di
+						add	di,140h
+						pop	cx
+						loop	sprite_blit_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -606,26 +606,26 @@ render_plane_ab_2_entry:
 		shr	cx,1			; Shift w/zeros fill
 
 render_plane_ab_2_loop:
-				add	bp,bp
-				mov	ax,ds:[bp+si]
-				xchg	ah,al
-				mov	cs:src_word_c,ax
-				shr	bp,1			; Shift w/zeros fill
-				mov	ax,ds:[bp+si]
-				xchg	ah,al
-				mov	cs:src_word_b,ax
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	render_plane_ab_2_loop		; Loop if cx > 0
+						add	bp,bp
+						mov	ax,ds:[bp+si]
+						xchg	ah,al
+						mov	cs:src_word_c,ax
+						shr	bp,1			; Shift w/zeros fill
+						mov	ax,ds:[bp+si]
+						xchg	ah,al
+						mov	cs:src_word_b,ax
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	render_plane_ab_2_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	bx
@@ -648,14 +648,14 @@ blit_vga_entry:
 		xor	ch,ch			; Zero register
 
 blit_vga_row_loop:
-				push	cx
-				push	di
-				mov	cx,bx
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	di
-				pop	cx
-				add	di,140h
-				loop	blit_vga_row_loop		; Loop if cx > 0
+						push	cx
+						push	di
+						mov	cx,bx
+						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+						pop	di
+						pop	cx
+						add	di,140h
+						loop	blit_vga_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -668,23 +668,23 @@ disp_sprite_obj_init:
 		mov	cx,9
 
 sprite_init_loop:
-				mov	al,1
-				stosb				; Store al to es:[di]
-				mov	ax,dx
-				stosw				; Store ax to es:[di]
-				movsw				; Mov [si] to es:[di]
-				stosw				; Store ax to es:[di]
-				mov	ax,101h
-				stosw				; Store ax to es:[di]
-				movsb				; Mov [si] to es:[di]
-				movsb				; Mov [si] to es:[di]
-				xor	al,al			; Zero register
-				stosb				; Store al to es:[di]
-				stosb				; Store al to es:[di]
-				movsb				; Mov [si] to es:[di]
-				movsb				; Mov [si] to es:[di]
-				add	dx,300h
-				loop	sprite_init_loop		; Loop if cx > 0
+						mov	al,1
+						stosb				; Store al to es:[di]
+						mov	ax,dx
+						stosw				; Store ax to es:[di]
+						movsw				; Mov [si] to es:[di]
+						stosw				; Store ax to es:[di]
+						mov	ax,101h
+						stosw				; Store ax to es:[di]
+						movsb				; Mov [si] to es:[di]
+						movsb				; Mov [si] to es:[di]
+						xor	al,al			; Zero register
+						stosb				; Store al to es:[di]
+						stosb				; Store al to es:[di]
+						movsb				; Mov [si] to es:[di]
+						movsb				; Mov [si] to es:[di]
+						add	dx,300h
+						loop	sprite_init_loop		; Loop if cx > 0
 
 		mov	byte ptr ds:cur_col_ctr,0
 		mov	byte ptr ds:gvar_frame_timer,0
@@ -694,146 +694,146 @@ sprite_anim_frame_top:
 		mov	cx,9
 
 sprite_update_loop:
-				push	cx
-				test	byte ptr [si],0FFh
-				jz	sprite_update_done			; Jump if zero
-				mov	al,[si+0Dh]
-				cmp	al,[si+0Eh]
-				je	sprite_anim_advance			; Jump if equal
-				inc	byte ptr [si+0Ch]
-				test	byte ptr [si+0Ch],1
-				jnz	sprite_anim_advance			; Jump if not zero
-				inc	byte ptr [si+0Dh]
+						push	cx
+						test	byte ptr [si],0FFh
+						jz	sprite_update_done			; Jump if zero
+						mov	al,[si+0Dh]
+						cmp	al,[si+0Eh]
+						je	sprite_anim_advance			; Jump if equal
+						inc	byte ptr [si+0Ch]
+						test	byte ptr [si+0Ch],1
+						jnz	sprite_anim_advance			; Jump if not zero
+						inc	byte ptr [si+0Dh]
 
 sprite_anim_advance:
-				xor	bx,bx			; Zero register
-				mov	bl,[si+0Dh]
-				add	bx,bx
-				add	bx,bx
-				mov	cx,ds:sprite_src_tbl[bx]
-				mov	[si+7],cx
-				mov	al,[si+4]
-				add	al,[si+0Ah]
-				mov	[si+4],al
-				mov	bh,al
-				mov	al,[si+3]
-				add	al,[si+9]
-				mov	[si+3],al
-				mov	bl,al
-				call	pal_multiply_4
-				mov	[si+5],ax
-				mov	di,ax
-				mov	bp,[si+1]
-				push	ds
-				push	si
-				mov	ax,vga_seg
-				mov	ds,ax
-				mov	ax,cs
-				add	ax,3000h
-				mov	es,ax
-				mov	si,di
-				mov	di,bp
-				call	copy_buffer
-				pop	si
-				pop	ds
+						xor	bx,bx			; Zero register
+						mov	bl,[si+0Dh]
+						add	bx,bx
+						add	bx,bx
+						mov	cx,ds:sprite_src_tbl[bx]
+						mov	[si+7],cx
+						mov	al,[si+4]
+						add	al,[si+0Ah]
+						mov	[si+4],al
+						mov	bh,al
+						mov	al,[si+3]
+						add	al,[si+9]
+						mov	[si+3],al
+						mov	bl,al
+						call	pal_multiply_4
+						mov	[si+5],ax
+						mov	di,ax
+						mov	bp,[si+1]
+						push	ds
+						push	si
+						mov	ax,vga_seg
+						mov	ds,ax
+						mov	ax,cs
+						add	ax,3000h
+						mov	es,ax
+						mov	si,di
+						mov	di,bp
+						call	copy_buffer
+						pop	si
+						pop	ds
 
 sprite_update_done:
-				pop	cx
-				add	si,0Fh
-				loop	sprite_update_loop		; Loop if cx > 0
+						pop	cx
+						add	si,0Fh
+						loop	sprite_update_loop		; Loop if cx > 0
 
 		mov	si,sprite_obj_tbl
 		mov	cx,9
 
 sprite_pal_update_loop:
-				push	cx
-				push	si
-				mov	al,ds:cur_col_ctr
-				and	al,7
-				mov	ah,3
-				mul	ah			; ax = reg * al
-				add	ax,pal_cycle_tbl
-				mov	si,ax
-				lodsb				; String [si] to al
-				mov	ds:pal_r_reg,al
-				lodsb				; String [si] to al
-				mov	ds:pal_g_reg,al
-				lodsb				; String [si] to al
-				mov	ds:pal_b_reg,al
-				inc	byte ptr ds:cur_col_ctr
-				xor	ax,ax			; Zero register
-				call	vga_operation9
-				pop	si
-				test	byte ptr cs:[si],0FFh
-				jz	sprite_pal_skip			; Jump if zero
-				xor	bx,bx			; Zero register
-				mov	bl,[si+0Dh]
-				add	bx,bx
-				add	bx,bx
-				mov	bp,ds:sprite_frame_tbl[bx]
-				mov	cx,[si+7]
-				mov	dl,[si]
-				mov	byte ptr [si],0
-				mov	ax,[si+3]
-				cmp	ah,4Bh			; 'K'
-				jae	sprite_pal_skip			; Jump if above or =
-				cmp	al,0A0h
-				jae	sprite_pal_skip			; Jump if above or =
-				mov	[si],dl
-				mov	di,[si+5]
-				push	ds
-				push	si
-				mov	ax,vga_seg
-				mov	es,ax
-				mov	ds,cs:gvar_game_seg
-				mov	si,bp
-				call	pal_multiply
-				pop	si
-				pop	ds
+						push	cx
+						push	si
+						mov	al,ds:cur_col_ctr
+						and	al,7
+						mov	ah,3
+						mul	ah			; ax = reg * al
+						add	ax,pal_cycle_tbl
+						mov	si,ax
+						lodsb				; String [si] to al
+						mov	ds:pal_r_reg,al
+						lodsb				; String [si] to al
+						mov	ds:pal_g_reg,al
+						lodsb				; String [si] to al
+						mov	ds:pal_b_reg,al
+						inc	byte ptr ds:cur_col_ctr
+						xor	ax,ax			; Zero register
+						call	vga_operation9
+						pop	si
+						test	byte ptr cs:[si],0FFh
+						jz	sprite_pal_skip			; Jump if zero
+						xor	bx,bx			; Zero register
+						mov	bl,[si+0Dh]
+						add	bx,bx
+						add	bx,bx
+						mov	bp,ds:sprite_frame_tbl[bx]
+						mov	cx,[si+7]
+						mov	dl,[si]
+						mov	byte ptr [si],0
+						mov	ax,[si+3]
+						cmp	ah,4Bh			; 'K'
+						jae	sprite_pal_skip			; Jump if above or =
+						cmp	al,0A0h
+						jae	sprite_pal_skip			; Jump if above or =
+						mov	[si],dl
+						mov	di,[si+5]
+						push	ds
+						push	si
+						mov	ax,vga_seg
+						mov	es,ax
+						mov	ds,cs:gvar_game_seg
+						mov	si,bp
+						call	pal_multiply
+						pop	si
+						pop	ds
 
 sprite_pal_skip:
-				pop	cx
-				add	si,0Fh
-				loop	sprite_pal_update_loop		; Loop if cx > 0
+						pop	cx
+						add	si,0Fh
+						loop	sprite_pal_update_loop		; Loop if cx > 0
 
 sprite_frame_wait:
-				cmp	byte ptr cs:gvar_frame_timer,1Eh
-				jb	sprite_frame_wait			; Jump if below
+						cmp	byte ptr cs:gvar_frame_timer,1Eh
+						jb	sprite_frame_wait			; Jump if below
 		mov	byte ptr cs:gvar_frame_timer,0
 		mov	si,sprite_obj_tbl
 		mov	cx,9
 
 sprite_restore_loop:
-				push	cx
-				mov	bp,[si+1]
-				mov	di,[si+5]
-				mov	cx,[si+7]
-				push	ds
-				push	si
-				mov	ax,vga_seg
-				mov	es,ax
-				mov	ax,cs
-				add	ax,3000h
-				mov	ds,ax
-				mov	si,bp
-				call	copy_buffer_2
-				pop	si
-				pop	ds
-				pop	cx
-				add	si,0Fh
-				loop	sprite_restore_loop		; Loop if cx > 0
+						push	cx
+						mov	bp,[si+1]
+						mov	di,[si+5]
+						mov	cx,[si+7]
+						push	ds
+						push	si
+						mov	ax,vga_seg
+						mov	es,ax
+						mov	ax,cs
+						add	ax,3000h
+						mov	ds,ax
+						mov	si,bp
+						call	copy_buffer_2
+						pop	si
+						pop	ds
+						pop	cx
+						add	si,0Fh
+						loop	sprite_restore_loop		; Loop if cx > 0
 
 		mov	si,sprite_obj_tbl
 		mov	cx,9
 
 sprite_active_check:
-				test	byte ptr [si],0FFh
-				jz	sprite_slot_empty			; Jump if zero
-				jmp	sprite_anim_frame_top
+						test	byte ptr [si],0FFh
+						jz	sprite_slot_empty			; Jump if zero
+						jmp	sprite_anim_frame_top
 
 sprite_slot_empty:
-				add	si,0Fh
-				loop	sprite_active_check		; Loop if cx > 0
+						add	si,0Fh
+						loop	sprite_active_check		; Loop if cx > 0
 
 		mov	ax,2
 		jmp	palette_write_entry
@@ -843,18 +843,18 @@ copy_buffer		proc	near
 		push	cx
 
 copy_buf_row_loop:
-				push	si
-				push	cx
-				mov	cl,ch
-				xor	ch,ch			; Zero register
-				add	cx,cx
-				add	cx,cx
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	cx
-				pop	si
-				add	si,140h
-				dec	cl
-				jnz	copy_buf_row_loop			; Jump if not zero
+						push	si
+						push	cx
+						mov	cl,ch
+						xor	ch,ch			; Zero register
+						add	cx,cx
+						add	cx,cx
+						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+						pop	cx
+						pop	si
+						add	si,140h
+						dec	cl
+						jnz	copy_buf_row_loop			; Jump if not zero
 		pop	cx
 		pop	si
 		retn
@@ -866,18 +866,18 @@ copy_buffer_2		proc	near
 		push	cx
 
 copy_buf2_row_loop:
-				push	di
-				push	cx
-				mov	cl,ch
-				xor	ch,ch			; Zero register
-				add	cx,cx
-				add	cx,cx
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	cx
-				pop	di
-				add	di,140h
-				dec	cl
-				jnz	copy_buf2_row_loop			; Jump if not zero
+						push	di
+						push	cx
+						mov	cl,ch
+						xor	ch,ch			; Zero register
+						add	cx,cx
+						add	cx,cx
+						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+						pop	cx
+						pop	di
+						add	di,140h
+						dec	cl
+						jnz	copy_buf2_row_loop			; Jump if not zero
 		pop	cx
 		pop	di
 		retn
@@ -893,35 +893,35 @@ pal_multiply		proc	near
 		mov	word ptr cs:src_word_d,0
 
 pal_mul_row_loop:
-				push	di
-				push	cx
-				mov	cl,ch
-				xor	ch,ch			; Zero register
+						push	di
+						push	cx
+						mov	cl,ch
+						xor	ch,ch			; Zero register
 
 pal_mul_pixel_loop:
-						xor	al,al			; Zero register
-						mov	ah,[bx+si]
-						mov	cs:src_word_b,ax
-						mov	ah,[si]
-						mov	cs:src_word_a,ax
-						mov	cs:src_word_c,ax
-						inc	si
-						push	bx
-						call	pal_process_loop
-						pop	bx
-						or	es:[di],ax
-						push	bx
-						call	pal_process_loop
-						pop	bx
-						or	es:[di+2],ax
-						add	di,4
-						loop	pal_mul_pixel_loop		; Loop if cx > 0
+										xor	al,al			; Zero register
+										mov	ah,[bx+si]
+										mov	cs:src_word_b,ax
+										mov	ah,[si]
+										mov	cs:src_word_a,ax
+										mov	cs:src_word_c,ax
+										inc	si
+										push	bx
+										call	pal_process_loop
+										pop	bx
+										or	es:[di],ax
+										push	bx
+										call	pal_process_loop
+										pop	bx
+										or	es:[di+2],ax
+										add	di,4
+										loop	pal_mul_pixel_loop		; Loop if cx > 0
 
-				pop	cx
-				pop	di
-				add	di,140h
-				dec	cl
-				jnz	pal_mul_row_loop			; Jump if not zero
+						pop	cx
+						pop	di
+						add	di,140h
+						dec	cl
+						jnz	pal_mul_row_loop			; Jump if not zero
 		pop	cx
 		pop	di
 		retn
@@ -941,8 +941,8 @@ disp_scroll_a:					;* Dispatcher entry: scroll function A
 		db	 00h, 00h, 1Eh, 53h, 32h,0E4h
 		db	0BAh,0C0h, 0Ch,0F7h,0E2h, 05h
 		db	 40h,0ABh
-		db	2Eh					; CS segment override prefix for data_4 dw
-data_4		dw	1E8Eh			; Data table (indexed access)
+		db	2Eh					; CS segment override prefix (with next 2 bytes = MOV DS,[BX])
+scroll_a_plane_b	dw	1E8Eh		; Bytes 8Eh,1Eh = MOV DS,[BX] in disp_scroll_a code; label offset used as plane B displacement in render_ab_buf_loop
 		db	 2Ch,0FFh, 8Bh,0F0h, 8Ch,0C8h
 		db	 05h, 00h, 30h, 8Eh,0C0h,0BFh
 		db	 00h, 00h, 2Eh,0C7h, 06h, 01h
@@ -951,21 +951,21 @@ data_4		dw	1E8Eh			; Data table (indexed access)
 		db	 03h
 
 render_ab_buf_loop:
-				mov	ax,data_4[si]
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	cs:src_word_b,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	render_ab_buf_loop		; Loop if cx > 0
+						mov	ax,scroll_a_plane_b[si]
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	cs:src_word_b,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	render_ab_buf_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	ds
@@ -991,21 +991,21 @@ disp_render_ab_gseg:
 		mov	cx,120h
 
 render_ab_gseg_loop:
-				mov	ax,ds:cga_plane2_off[si]
-				xchg	ah,al
-				mov	cs:src_word_b,ax
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	render_ab_gseg_loop		; Loop if cx > 0
+						mov	ax,ds:cga_plane2_off[si]
+						xchg	ah,al
+						mov	cs:src_word_b,ax
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	render_ab_gseg_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	ds
@@ -1020,21 +1020,21 @@ disp_vga_checker:
 		mov	cx,64h
 
 vga_checker_row_loop:
-				push	cx
-				push	di
-				mov	ax,1000h
-				mov	cx,0A0h
-				rep	stosw			; Rep when cx >0 Store ax to es:[di]
-				pop	di
-				add	di,vga_row_stride
-				push	di
-				mov	ax,10h
-				mov	cx,0A0h
-				rep	stosw			; Rep when cx >0 Store ax to es:[di]
-				pop	di
-				add	di,140h
-				pop	cx
-				loop	vga_checker_row_loop		; Loop if cx > 0
+						push	cx
+						push	di
+						mov	ax,1000h
+						mov	cx,0A0h
+						rep	stosw			; Rep when cx >0 Store ax to es:[di]
+						pop	di
+						add	di,vga_row_stride
+						push	di
+						mov	ax,10h
+						mov	cx,0A0h
+						rep	stosw			; Rep when cx >0 Store ax to es:[di]
+						pop	di
+						add	di,140h
+						pop	cx
+						loop	vga_checker_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1042,27 +1042,27 @@ disp_tilemap_render:				;* Dispatcher entry: tilemap render
 		db	 33h,0DBh,0B9h, 19h, 00h	; xor bx,bx; mov cx,19h
 
 tilemap_row_loop:
-				push	cx
-				mov	cx,22h
+						push	cx
+						mov	cx,22h
 
 tilemap_col_loop:
-						push	cx
-						lodsb				; String [si] to al
-						push	bx
-						push	ds
-						push	si
-						call	pal_multiply_2
-						pop	si
-						pop	ds
-						pop	bx
-						inc	bh
-						pop	cx
-						loop	tilemap_col_loop		; Loop if cx > 0
+										push	cx
+										lodsb				; String [si] to al
+										push	bx
+										push	ds
+										push	si
+										call	pal_multiply_2
+										pop	si
+										pop	ds
+										pop	bx
+										inc	bh
+										pop	cx
+										loop	tilemap_col_loop		; Loop if cx > 0
 
-				xor	bh,bh			; Zero register
-				inc	bl
-				pop	cx
-				loop	tilemap_row_loop		; Loop if cx > 0
+						xor	bh,bh			; Zero register
+						inc	bl
+						pop	cx
+						loop	tilemap_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1074,10 +1074,10 @@ pal_multiply_2		proc	near
 		xor	ah,ah			; Zero register
 
 div_loop:
-				sub	al,28h			; '('
-				jc	div_done			; Jump if carry Set
-				inc	ah
-				jmp	short div_loop
+						sub	al,28h			; '('
+						jc	div_done			; Jump if carry Set
+						inc	ah
+						jmp	short div_loop
 
 div_done:
 		add	al,28h			; '('
@@ -1103,23 +1103,23 @@ div_done:
 		mov	cx,3
 
 tile_plane_loop:
-				push	cx
-				push	di
-				push	si
-				mov	cx,8
+						push	cx
+						push	di
+						push	si
+						mov	cx,8
 
 tile_row_loop:
-						movsb				; Mov [si] to es:[di]
-						add	di,21h
-						add	si,27h
-						loop	tile_row_loop		; Loop if cx > 0
+										movsb				; Mov [si] to es:[di]
+										add	di,21h
+										add	si,27h
+										loop	tile_row_loop		; Loop if cx > 0
 
-				pop	si
-				pop	di
-				add	di,1A90h
-				add	si,640h
-				pop	cx
-				loop	tile_plane_loop		; Loop if cx > 0
+						pop	si
+						pop	di
+						add	di,1A90h
+						add	si,640h
+						pop	cx
+						loop	tile_plane_loop		; Loop if cx > 0
 
 		retn
 
@@ -1147,17 +1147,17 @@ disp_tile_render:
 		mov	cx,44h
 
 bitrev_loop:
-				mov	al,es:[di]
-				mov	dx,8
+						mov	al,es:[di]
+						mov	dx,8
 
 bitrev_bit_loop:
-						ror	al,1			; Rotate
-						adc	ah,ah
-						dec	dx
-						jnz	bitrev_bit_loop			; Jump if not zero
-				mov	es:[di],ah
-				inc	di
-				loop	bitrev_loop		; Loop if cx > 0
+										ror	al,1			; Rotate
+										adc	ah,ah
+										dec	dx
+										jnz	bitrev_bit_loop			; Jump if not zero
+						mov	es:[di],ah
+						inc	di
+						loop	bitrev_loop		; Loop if cx > 0
 
 		pop	si
 		pop	ax
@@ -1171,40 +1171,40 @@ bitrev_bit_loop:
 		mov	cx,11h
 
 sprite_render_loop_a:
-				push	cx
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	bx,ds:sprite_mask_off[si]
-				xchg	bh,bl
-				mov	dx,ax
-				and	dx,bx
-				mov	cs:src_word_a,dx
-				or	dx,bx
-				mov	cs:src_word_b,dx
-				mov	cs:src_word_c,dx
-				mov	cs:src_word_d,dx
-				or	ax,bx
-				not	ax
-				mov	cs:mask_word,ax
-				call	pal_func_21
-				and	es:[di],ax
-				call	pal_process_loop
-				or	es:[di],ax
-				call	pal_func_21
-				and	es:[di+2],ax
-				call	pal_process_loop
-				or	es:[di+2],ax
-				call	pal_func_21
-				and	es:[di+4],ax
-				call	pal_process_loop
-				or	es:[di+4],ax
-				call	pal_func_21
-				and	es:[di+6],ax
-				call	pal_process_loop
-				or	es:[di+6],ax
-				add	di,8
-				pop	cx
-				loop	sprite_render_loop_a		; Loop if cx > 0
+						push	cx
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	bx,ds:sprite_mask_off[si]
+						xchg	bh,bl
+						mov	dx,ax
+						and	dx,bx
+						mov	cs:src_word_a,dx
+						or	dx,bx
+						mov	cs:src_word_b,dx
+						mov	cs:src_word_c,dx
+						mov	cs:src_word_d,dx
+						or	ax,bx
+						not	ax
+						mov	cs:mask_word,ax
+						call	pal_func_21
+						and	es:[di],ax
+						call	pal_process_loop
+						or	es:[di],ax
+						call	pal_func_21
+						and	es:[di+2],ax
+						call	pal_process_loop
+						or	es:[di+2],ax
+						call	pal_func_21
+						and	es:[di+4],ax
+						call	pal_process_loop
+						or	es:[di+4],ax
+						call	pal_func_21
+						and	es:[di+6],ax
+						call	pal_process_loop
+						or	es:[di+6],ax
+						add	di,8
+						pop	cx
+						loop	sprite_render_loop_a		; Loop if cx > 0
 
 		pop	di
 		add	di,138h
@@ -1214,40 +1214,40 @@ sprite_render_loop_a:
 		mov	cx,11h
 
 sprite_render_loop_b:
-				push	cx
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	bx,[si+20h]
-				xchg	bh,bl
-				mov	dx,ax
-				and	dx,bx
-				mov	cs:src_word_a,dx
-				or	dx,bx
-				mov	cs:src_word_b,dx
-				mov	cs:src_word_c,dx
-				mov	cs:src_word_d,dx
-				or	ax,bx
-				not	ax
-				mov	cs:mask_word,ax
-				call	pal_func_21
-				and	es:[di+4],ax
-				call	pal_process_loop
-				or	es:[di+4],ax
-				call	pal_func_21
-				and	es:[di+6],ax
-				call	pal_process_loop
-				or	es:[di+6],ax
-				call	pal_func_21
-				and	es:[di],ax
-				call	pal_process_loop
-				or	es:[di],ax
-				call	pal_func_21
-				and	es:[di+2],ax
-				call	pal_process_loop
-				or	es:[di+2],ax
-				sub	di,8
-				pop	cx
-				loop	sprite_render_loop_b		; Loop if cx > 0
+						push	cx
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	bx,[si+20h]
+						xchg	bh,bl
+						mov	dx,ax
+						and	dx,bx
+						mov	cs:src_word_a,dx
+						or	dx,bx
+						mov	cs:src_word_b,dx
+						mov	cs:src_word_c,dx
+						mov	cs:src_word_d,dx
+						or	ax,bx
+						not	ax
+						mov	cs:mask_word,ax
+						call	pal_func_21
+						and	es:[di+4],ax
+						call	pal_process_loop
+						or	es:[di+4],ax
+						call	pal_func_21
+						and	es:[di+6],ax
+						call	pal_process_loop
+						or	es:[di+6],ax
+						call	pal_func_21
+						and	es:[di],ax
+						call	pal_process_loop
+						or	es:[di],ax
+						call	pal_func_21
+						and	es:[di+2],ax
+						call	pal_process_loop
+						or	es:[di+2],ax
+						sub	di,8
+						pop	cx
+						loop	sprite_render_loop_b		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1265,129 +1265,129 @@ disp_scroll_ring:
 		mov	si,move_seq_up
 
 scroll_up_loop:
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	scroll_up_done			; Jump if zero
-				call	pal_func_7
-				add	di,500h
-				jmp	short scroll_up_loop
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	scroll_up_done			; Jump if zero
+						call	pal_func_7
+						add	di,500h
+						jmp	short scroll_up_loop
 
 scroll_up_done:
 		add	di,0FB04h
 
 scroll_right_loop:
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	scroll_right_done			; Jump if zero
-				call	pal_func_7
-				add	di,4
-				jmp	short scroll_right_loop
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	scroll_right_done			; Jump if zero
+						call	pal_func_7
+						add	di,4
+						jmp	short scroll_right_loop
 
 scroll_right_done:
 		add	di,0FAFCh
 
 scroll_down_loop:
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	scroll_down_done			; Jump if zero
-				call	pal_func_7
-				add	di,0FB00h
-				jmp	short scroll_down_loop
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	scroll_down_done			; Jump if zero
+						call	pal_func_7
+						add	di,0FB00h
+						jmp	short scroll_down_loop
 
 scroll_down_done:
 		add	di,4FCh
 
 scroll_left_loop:
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jz	scroll_left_done			; Jump if zero
-				call	pal_func_7
-				sub	di,4
-				jmp	short scroll_left_loop
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	scroll_left_done			; Jump if zero
+						call	pal_func_7
+						sub	di,4
+						jmp	short scroll_left_loop
 
 scroll_left_done:
 		add	di,504h
 		mov	si,move_seq_horiz
 
 scroll_ring_top:
-				mov	byte ptr cs:gvar_frame_timer,0
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jnz	scroll_ring_run			; Jump if not zero
-				retn
+						mov	byte ptr cs:gvar_frame_timer,0
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jnz	scroll_ring_run			; Jump if not zero
+						retn
 
 scroll_ring_run:
-				xor	cx,cx			; Zero register
-				mov	cl,al
+						xor	cx,cx			; Zero register
+						mov	cl,al
 
 scroll_up_seg_loop:
-						push	cx
-						mov	al,18h
-						call	pal_func_7
-						add	di,500h
-						pop	cx
-						loop	scroll_up_seg_loop		; Loop if cx > 0
+										push	cx
+										mov	al,18h
+										call	pal_func_7
+										add	di,500h
+										pop	cx
+										loop	scroll_up_seg_loop		; Loop if cx > 0
 
-				add	di,0FB00h
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jnz	scroll_horiz_run			; Jump if not zero
-				retn
+						add	di,0FB00h
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jnz	scroll_horiz_run			; Jump if not zero
+						retn
 
 scroll_horiz_run:
-				xor	cx,cx			; Zero register
-				mov	cl,al
+						xor	cx,cx			; Zero register
+						mov	cl,al
 
 scroll_right_seg_loop:
-						push	cx
-						mov	al,18h
-						call	pal_func_7
-						add	di,4
-						pop	cx
-						loop	scroll_right_seg_loop		; Loop if cx > 0
+										push	cx
+										mov	al,18h
+										call	pal_func_7
+										add	di,4
+										pop	cx
+										loop	scroll_right_seg_loop		; Loop if cx > 0
 
-				sub	di,4
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jnz	scroll_down_run			; Jump if not zero
-				retn
+						sub	di,4
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jnz	scroll_down_run			; Jump if not zero
+						retn
 
 scroll_down_run:
-				xor	cx,cx			; Zero register
-				mov	cl,al
+						xor	cx,cx			; Zero register
+						mov	cl,al
 
 scroll_down_seg_loop:
-						push	cx
-						mov	al,18h
-						call	pal_func_7
-						add	di,0FB00h
-						pop	cx
-						loop	scroll_down_seg_loop		; Loop if cx > 0
+										push	cx
+										mov	al,18h
+										call	pal_func_7
+										add	di,0FB00h
+										pop	cx
+										loop	scroll_down_seg_loop		; Loop if cx > 0
 
-				add	di,500h
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jnz	scroll_left_run			; Jump if not zero
-				retn
+						add	di,500h
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jnz	scroll_left_run			; Jump if not zero
+						retn
 
 scroll_left_run:
-				xor	cx,cx			; Zero register
-				mov	cl,al
+						xor	cx,cx			; Zero register
+						mov	cl,al
 
 scroll_left_seg_loop:
-						push	cx
-						mov	al,18h
-						call	pal_func_7
-						sub	di,4
-						pop	cx
-						loop	scroll_left_seg_loop		; Loop if cx > 0
+										push	cx
+										mov	al,18h
+										call	pal_func_7
+										sub	di,4
+										pop	cx
+										loop	scroll_left_seg_loop		; Loop if cx > 0
 
-				add	di,4
+						add	di,4
 
 scroll_frame_wait:
-						cmp	byte ptr cs:gvar_frame_timer,0Ch
-						jb	scroll_frame_wait			; Jump if below
-				jmp	short scroll_ring_top
+										cmp	byte ptr cs:gvar_frame_timer,0Ch
+										jb	scroll_frame_wait			; Jump if below
+						jmp	short scroll_ring_top
 
 pal_func_7		proc	near
 		push	si
@@ -1528,42 +1528,42 @@ pal_plane_sel_tbl:
 		db	 00h, 8Bh,0CDh,0D1h,0E9h
 
 render_plane_sel_loop:
-				push	si
-				test	byte ptr cs:render_mode_flag,1
-				jz	plane1_skip			; Jump if zero
-				mov	ax,[si]
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				add	si,bp
+						push	si
+						test	byte ptr cs:render_mode_flag,1
+						jz	plane1_skip			; Jump if zero
+						mov	ax,[si]
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						add	si,bp
 
 plane1_skip:
-				test	byte ptr cs:render_mode_flag,2
-				jz	plane2_skip			; Jump if zero
-				mov	ax,[si]
-				xchg	ah,al
-				mov	cs:src_word_b,ax
-				add	si,bp
+						test	byte ptr cs:render_mode_flag,2
+						jz	plane2_skip			; Jump if zero
+						mov	ax,[si]
+						xchg	ah,al
+						mov	cs:src_word_b,ax
+						add	si,bp
 
 plane2_skip:
-				test	byte ptr cs:render_mode_flag,4
-				jz	plane3_skip			; Jump if zero
-				mov	ax,[si]
-				xchg	ah,al
-				mov	cs:src_word_c,ax
+						test	byte ptr cs:render_mode_flag,4
+						jz	plane3_skip			; Jump if zero
+						mov	ax,[si]
+						xchg	ah,al
+						mov	cs:src_word_c,ax
 
 plane3_skip:
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				pop	si
-				inc	si
-				inc	si
-				loop	render_plane_sel_loop		; Loop if cx > 0
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						pop	si
+						inc	si
+						inc	si
+						loop	render_plane_sel_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	bx
@@ -1580,30 +1580,30 @@ plane3_skip:
 		mov	cx,8
 
 render_pass_loop:
-				push	cx
-				mov	al,cs:cur_pass_ctr
-				mov	cs:cur_row_ctr,al
-				mov	byte ptr cs:gvar_frame_timer,0
-				mov	cx,0Dh
+						push	cx
+						mov	al,cs:cur_pass_ctr
+						mov	cs:cur_row_ctr,al
+						mov	byte ptr cs:gvar_frame_timer,0
+						mov	cx,0Dh
 
 render_col_loop:
-						push	cx
-						push	bx
-						push	si
-						call	pal_multiply_3
-						pop	si
-						pop	bx
-						pop	cx
-						add	byte ptr cs:cur_row_ctr,8
-						loop	render_col_loop		; Loop if cx > 0
+										push	cx
+										push	bx
+										push	si
+										call	pal_multiply_3
+										pop	si
+										pop	bx
+										pop	cx
+										add	byte ptr cs:cur_row_ctr,8
+										loop	render_col_loop		; Loop if cx > 0
 
-				pop	cx
+						pop	cx
 
 render_frame_wait:
-						cmp	byte ptr cs:gvar_frame_timer,14h
-						jb	render_frame_wait			; Jump if below
-				inc	byte ptr cs:cur_pass_ctr
-				loop	render_pass_loop		; Loop if cx > 0
+										cmp	byte ptr cs:gvar_frame_timer,14h
+										jb	render_frame_wait			; Jump if below
+						inc	byte ptr cs:cur_pass_ctr
+						loop	render_pass_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1632,24 +1632,24 @@ pal_multiply_3		proc	near
 		mov	cx,48h
 
 sprite_clip_row_loop:
-				push	cx
-				mov	word ptr es:[di],0
-				mov	word ptr es:[di+2],0
-				cmp	cs:cur_col_ctr,bh
-				jb	sprite_clip_skip			; Jump if below
-				mov	al,bh
-				add	al,byte ptr cs:render_fn_ptr+1
-				cmp	cs:cur_col_ctr,al
-				jae	sprite_clip_skip			; Jump if above or =
-				movsw				; Mov [si] to es:[di]
-				movsw				; Mov [si] to es:[di]
-				sub	di,4
+						push	cx
+						mov	word ptr es:[di],0
+						mov	word ptr es:[di+2],0
+						cmp	cs:cur_col_ctr,bh
+						jb	sprite_clip_skip			; Jump if below
+						mov	al,bh
+						add	al,byte ptr cs:render_fn_ptr+1
+						cmp	cs:cur_col_ctr,al
+						jae	sprite_clip_skip			; Jump if above or =
+						movsw				; Mov [si] to es:[di]
+						movsw				; Mov [si] to es:[di]
+						sub	di,4
 
 sprite_clip_skip:
-				add	di,4
-				inc	byte ptr cs:cur_col_ctr
-				pop	cx
-				loop	sprite_clip_row_loop		; Loop if cx > 0
+						add	di,4
+						inc	byte ptr cs:cur_col_ctr
+						pop	cx
+						loop	sprite_clip_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1685,20 +1685,20 @@ disp_scroll_bar:
 		pop	cx
 
 scroll_bar_loop:
-				push	cx
-				call	vga_operation2
-				mov	byte ptr es:[di],0FFh
-				mov	byte ptr es:[di+1],0
-				mov	byte ptr es:[di+2],0
-				mov	byte ptr es:[di+3],0
-				or	byte ptr es:[bx+di+3],0FFh
-				mov	byte ptr es:[bx+di+2],0
-				mov	byte ptr es:[bx+di+1],0
-				mov	byte ptr es:[bx+di],0
-				inc	byte ptr cs:cur_row_ctr
-				add	di,140h
-				pop	cx
-				loop	scroll_bar_loop		; Loop if cx > 0
+						push	cx
+						call	vga_operation2
+						mov	byte ptr es:[di],0FFh
+						mov	byte ptr es:[di+1],0
+						mov	byte ptr es:[di+2],0
+						mov	byte ptr es:[di+3],0
+						or	byte ptr es:[bx+di+3],0FFh
+						mov	byte ptr es:[bx+di+2],0
+						mov	byte ptr es:[bx+di+1],0
+						mov	byte ptr es:[bx+di],0
+						inc	byte ptr cs:cur_row_ctr
+						add	di,140h
+						pop	cx
+						loop	scroll_bar_loop		; Loop if cx > 0
 
 		mov	cx,1
 		call	clear_buffer
@@ -1716,21 +1716,21 @@ fill_buffer		endp
 clear_buffer		proc	near
 
 clear_buf_row_loop:
-				push	cx
-				push	di
-				call	vga_operation2
-				mov	byte ptr es:[di],0FFh
-				inc	di
-				mov	cx,bx
-				add	cx,2
-				xor	al,al			; Zero register
-				rep	stosb			; Rep when cx >0 Store al to es:[di]
-				mov	byte ptr es:[di],0FFh
-				pop	di
-				inc	byte ptr cs:cur_row_ctr
-				add	di,140h
-				pop	cx
-				loop	clear_buf_row_loop		; Loop if cx > 0
+						push	cx
+						push	di
+						call	vga_operation2
+						mov	byte ptr es:[di],0FFh
+						inc	di
+						mov	cx,bx
+						add	cx,2
+						xor	al,al			; Zero register
+						rep	stosb			; Rep when cx >0 Store al to es:[di]
+						mov	byte ptr es:[di],0FFh
+						pop	di
+						inc	byte ptr cs:cur_row_ctr
+						add	di,140h
+						pop	cx
+						loop	clear_buf_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1752,28 +1752,28 @@ disp_pixel_sort:
 		mov	cx,1028h
 
 pixel_sort_loop:
-				mov	al,es:[di]
-				and	al,byte ptr es:[1028h][di]
-				mov	ah,es:data_17[di]
-				not	ah
-				and	al,ah
-				not	al
-				and	es:[di],al
-				and	byte ptr es:[1028h][di],al
-				and	es:data_17[di],al
-				mov	al,es:data_17[di]
-				mov	ah,es:[di]
-				not	ah
-				and	al,ah
-				mov	ah,byte ptr es:[1028h][di]
-				not	ah
-				and	al,ah
-				or	es:[di],al
-				or	byte ptr es:[1028h][di],al
-				not	al
-				and	es:data_17[di],al
-				inc	di
-				loop	pixel_sort_loop		; Loop if cx > 0
+						mov	al,es:[di]
+						and	al,byte ptr es:[1028h][di]
+						mov	ah,es:pixel_plane_c_buf[di]
+						not	ah
+						and	al,ah
+						not	al
+						and	es:[di],al
+						and	byte ptr es:[1028h][di],al
+						and	es:pixel_plane_c_buf[di],al
+						mov	al,es:pixel_plane_c_buf[di]
+						mov	ah,es:[di]
+						not	ah
+						and	al,ah
+						mov	ah,byte ptr es:[1028h][di]
+						not	ah
+						and	al,ah
+						or	es:[di],al
+						or	byte ptr es:[1028h][di],al
+						not	al
+						and	es:pixel_plane_c_buf[di],al
+						inc	di
+						loop	pixel_sort_loop		; Loop if cx > 0
 
 		pop	di
 		pop	es
@@ -1797,66 +1797,66 @@ disp_wipe_a:
 		mov	cx,44h
 
 wipe_row_loop:
-				push	cx
-				mov	byte ptr cs:gvar_frame_timer,0
-				mov	ax,44h
-				sub	ax,cx
-				add	ax,ax
-				push	ax
-				mov	bl,al
-				mov	al,50h			; 'P'
-				mul	bl			; ax = reg * al
-				push	ax
-				mov	bh,0
-				call	pal_multiply_4
-				mov	di,ax
-				pop	ax
-				add	ax,cs:saved_di
-				mov	si,ax
-				pop	ax
-				cmp	ax,16h
-				jb	wipe_edge_call			; Jump if below
-				cmp	ax,71h
-				jae	wipe_edge_call			; Jump if above or =
-				call	vga_operation4
-				jmp	short wipe_row_frame_wait
+						push	cx
+						mov	byte ptr cs:gvar_frame_timer,0
+						mov	ax,44h
+						sub	ax,cx
+						add	ax,ax
+						push	ax
+						mov	bl,al
+						mov	al,50h			; 'P'
+						mul	bl			; ax = reg * al
+						push	ax
+						mov	bh,0
+						call	pal_multiply_4
+						mov	di,ax
+						pop	ax
+						add	ax,cs:saved_di
+						mov	si,ax
+						pop	ax
+						cmp	ax,16h
+						jb	wipe_edge_call			; Jump if below
+						cmp	ax,71h
+						jae	wipe_edge_call			; Jump if above or =
+						call	vga_operation4
+						jmp	short wipe_row_frame_wait
 
 wipe_edge_call:
-				call	vga_operation3
+						call	vga_operation3
 
 wipe_row_frame_wait:
-				pop	cx
-				push	cx
-				mov	ax,cx
-				add	ax,ax
-				dec	ax
-				push	ax
-				mov	bl,al
-				mov	al,50h			; 'P'
-				mul	bl			; ax = reg * al
-				push	ax
-				mov	bh,0
-				call	pal_multiply_4
-				mov	di,ax
-				pop	ax
-				add	ax,cs:saved_di
-				mov	si,ax
-				pop	ax
-				cmp	ax,16h
-				jb	wipe_edge2_call			; Jump if below
-				cmp	ax,71h
-				jae	wipe_edge2_call			; Jump if above or =
-				call	vga_operation4
-				jmp	short wipe_frame_wait
+						pop	cx
+						push	cx
+						mov	ax,cx
+						add	ax,ax
+						dec	ax
+						push	ax
+						mov	bl,al
+						mov	al,50h			; 'P'
+						mul	bl			; ax = reg * al
+						push	ax
+						mov	bh,0
+						call	pal_multiply_4
+						mov	di,ax
+						pop	ax
+						add	ax,cs:saved_di
+						mov	si,ax
+						pop	ax
+						cmp	ax,16h
+						jb	wipe_edge2_call			; Jump if below
+						cmp	ax,71h
+						jae	wipe_edge2_call			; Jump if above or =
+						call	vga_operation4
+						jmp	short wipe_frame_wait
 
 wipe_edge2_call:
-				call	vga_operation3
+						call	vga_operation3
 
 wipe_frame_wait:
-						cmp	byte ptr cs:gvar_frame_timer,4
-						jb	wipe_frame_wait			; Jump if below
-				pop	cx
-				loop	wipe_row_loop		; Loop if cx > 0
+										cmp	byte ptr cs:gvar_frame_timer,4
+										jb	wipe_frame_wait			; Jump if below
+						pop	cx
+						loop	wipe_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1866,24 +1866,24 @@ vga_operation3		proc	near
 		mov	word ptr cs:src_word_d,0
 
 wipe3_col_loop:
-				mov	ax,ds:sprite_row_buf_b[si]
-				xchg	ah,al
-				mov	cs:src_word_c,ax
-				mov	ax,ds:ega_plane_stride[si]
-				xchg	ah,al
-				mov	cs:src_word_b,ax
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	wipe3_col_loop		; Loop if cx > 0
+						mov	ax,ds:sprite_row_buf_b[si]
+						xchg	ah,al
+						mov	cs:src_word_c,ax
+						mov	ax,ds:ega_plane_stride[si]
+						xchg	ah,al
+						mov	cs:src_word_b,ax
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	wipe3_col_loop		; Loop if cx > 0
 
 		retn
 
@@ -1894,60 +1894,60 @@ vga_operation4		proc	near
 		mov	word ptr cs:src_word_d,0
 
 wipe4_top_loop:
-				mov	ah,ds:sprite_row_buf_b[si]
-				mov	cs:src_word_c,ax
-				mov	ah,ds:ega_plane_stride[si]
-				mov	cs:src_word_b,ax
-				lodsb				; String [si] to al
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	wipe4_top_loop		; Loop if cx > 0
+						mov	ah,ds:sprite_row_buf_b[si]
+						mov	cs:src_word_c,ax
+						mov	ah,ds:ega_plane_stride[si]
+						mov	cs:src_word_b,ax
+						lodsb				; String [si] to al
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	wipe4_top_loop		; Loop if cx > 0
 
 		add	si,18h
 		add	di,60h
 		mov	cx,5
 
 wipe4_mid_loop:
-				mov	ax,ds:sprite_row_buf_b[si]
-				xchg	ah,al
-				mov	cs:src_word_c,ax
-				mov	ax,ds:ega_plane_stride[si]
-				xchg	ah,al
-				mov	cs:src_word_b,ax
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	wipe4_mid_loop		; Loop if cx > 0
+						mov	ax,ds:sprite_row_buf_b[si]
+						xchg	ah,al
+						mov	cs:src_word_c,ax
+						mov	ax,ds:ega_plane_stride[si]
+						xchg	ah,al
+						mov	cs:src_word_b,ax
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	wipe4_mid_loop		; Loop if cx > 0
 
 		add	si,18h
 		add	di,60h
 		mov	cx,0Bh
 
 wipe4_bot_loop:
-				mov	ah,ds:sprite_row_buf_b[si]
-				mov	cs:src_word_c,ax
-				mov	ah,ds:ega_plane_stride[si]
-				mov	cs:src_word_b,ax
-				lodsb				; String [si] to al
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	wipe4_bot_loop		; Loop if cx > 0
+						mov	ah,ds:sprite_row_buf_b[si]
+						mov	cs:src_word_c,ax
+						mov	ah,ds:ega_plane_stride[si]
+						mov	cs:src_word_b,ax
+						lodsb				; String [si] to al
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	wipe4_bot_loop		; Loop if cx > 0
 
 		retn
 
@@ -1961,10 +1961,10 @@ vga_operation5		proc	near
 		mov	cx,5Bh
 
 border_top_loop:
-				mov	byte ptr es:[di],30h	; '0'
-				mov	byte ptr es:[di+19h],0Ch
-				add	di,50h
-				loop	border_top_loop		; Loop if cx > 0
+						mov	byte ptr es:[di],30h	; '0'
+						mov	byte ptr es:[di+19h],0Ch
+						add	di,50h
+						loop	border_top_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
 		call	fill_buffer_2
@@ -1977,13 +1977,13 @@ border_top_loop:
 		mov	cx,2Dh
 
 border_mid_loop:
-				mov	byte ptr es:[di],0B0h
-				mov	byte ptr es:[di+19h],0Eh
-				add	di,50h
-				mov	byte ptr es:[di],70h	; 'p'
-				mov	byte ptr es:[di+19h],0Dh
-				add	di,50h
-				loop	border_mid_loop		; Loop if cx > 0
+						mov	byte ptr es:[di],0B0h
+						mov	byte ptr es:[di+19h],0Eh
+						add	di,50h
+						mov	byte ptr es:[di],70h	; 'p'
+						mov	byte ptr es:[di+19h],0Dh
+						add	di,50h
+						loop	border_mid_loop		; Loop if cx > 0
 
 		mov	byte ptr es:[di],0B0h
 		mov	byte ptr es:[di+19h],0Eh
@@ -1998,10 +1998,10 @@ border_mid_loop:
 		mov	cx,5Bh
 
 border_bot_loop:
-				mov	byte ptr es:[di],30h	; '0'
-				mov	byte ptr es:[di+19h],0Ch
-				add	di,50h
-				loop	border_bot_loop		; Loop if cx > 0
+						mov	byte ptr es:[di],30h	; '0'
+						mov	byte ptr es:[di+19h],0Ch
+						add	di,50h
+						loop	border_bot_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
 		call	fill_buffer_2
@@ -2030,24 +2030,24 @@ disp_wipe_b:
 		mov	cx,39h
 
 wipe5_row_loop:
-				mov	byte ptr cs:gvar_frame_timer,0
-				push	cx
-				mov	ax,cx
-				neg	ax
-				add	ax,39h
-				add	ax,ax
-				call	vga_operation7
-				pop	ax
-				push	ax
-				add	ax,ax
-				dec	ax
-				call	vga_operation7
+						mov	byte ptr cs:gvar_frame_timer,0
+						push	cx
+						mov	ax,cx
+						neg	ax
+						add	ax,39h
+						add	ax,ax
+						call	vga_operation7
+						pop	ax
+						push	ax
+						add	ax,ax
+						dec	ax
+						call	vga_operation7
 
 wipe5_frame_wait:
-						cmp	byte ptr cs:gvar_frame_timer,4
-						jb	wipe5_frame_wait			; Jump if below
-				pop	cx
-				loop	wipe5_row_loop		; Loop if cx > 0
+										cmp	byte ptr cs:gvar_frame_timer,4
+										jb	wipe5_frame_wait			; Jump if below
+						pop	cx
+						loop	wipe5_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -2080,18 +2080,18 @@ wipe8_col_loop_entry:
 		mov	word ptr cs:src_word_d,0
 
 wipe8_narrow_loop:
-				mov	ah,ds:ega_plane3_buf[si]
-				mov	cs:src_word_c,ax
-				mov	ah,byte ptr ds:scroll_plane2_off[si]
-				mov	cs:src_word_b,ax
-				lodsb				; String [si] to al
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	wipe8_narrow_loop		; Loop if cx > 0
+						mov	ah,ds:ega_plane3_buf[si]
+						mov	cs:src_word_c,ax
+						mov	ah,byte ptr ds:scroll_plane2_off[si]
+						mov	cs:src_word_b,ax
+						lodsb				; String [si] to al
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	wipe8_narrow_loop		; Loop if cx > 0
 
 		retn
 
@@ -2100,18 +2100,18 @@ wipe8_extra_row:
 		mov	word ptr cs:src_word_d,0
 
 wipe8_extra_loop:
-				mov	ah,ds:ega_plane3_buf[si]
-				mov	cs:src_word_c,ax
-				mov	ah,byte ptr ds:scroll_plane2_off[si]
-				mov	cs:src_word_b,ax
-				lodsb				; String [si] to al
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	wipe8_extra_loop		; Loop if cx > 0
+						mov	ah,ds:ega_plane3_buf[si]
+						mov	cs:src_word_c,ax
+						mov	ah,byte ptr ds:scroll_plane2_off[si]
+						mov	cs:src_word_b,ax
+						lodsb				; String [si] to al
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	wipe8_extra_loop		; Loop if cx > 0
 
 		mov	ah,ds:ega_plane3_buf[si]
 		mov	cs:src_word_c,ax
@@ -2138,24 +2138,24 @@ disp_wipe_c:
 		mov	cx,39h
 
 wipe9_row_loop:
-				mov	byte ptr cs:gvar_frame_timer,0
-				push	cx
-				mov	ax,cx
-				neg	ax
-				add	ax,39h
-				add	ax,ax
-				call	vga_operation8
-				pop	ax
-				push	ax
-				add	ax,ax
-				dec	ax
-				call	vga_operation8
+						mov	byte ptr cs:gvar_frame_timer,0
+						push	cx
+						mov	ax,cx
+						neg	ax
+						add	ax,39h
+						add	ax,ax
+						call	vga_operation8
+						pop	ax
+						push	ax
+						add	ax,ax
+						dec	ax
+						call	vga_operation8
 
 wipe9_frame_wait:
-						cmp	byte ptr cs:gvar_frame_timer,4
-						jb	wipe9_frame_wait			; Jump if below
-				pop	cx
-				loop	wipe9_row_loop		; Loop if cx > 0
+										cmp	byte ptr cs:gvar_frame_timer,4
+										jb	wipe9_frame_wait			; Jump if below
+						pop	cx
+						loop	wipe9_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -2180,24 +2180,24 @@ vga_operation8		proc	near
 		mov	word ptr cs:src_word_d,0
 
 wipe9_wide_loop:
-				mov	ax,ds:ega_plane3_buf[si]
-				xchg	ah,al
-				mov	cs:src_word_c,ax
-				mov	ax,word ptr ds:scroll_plane2_off[si]
-				xchg	ah,al
-				mov	cs:src_word_b,ax
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	cs:src_word_a,ax
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				call	pal_process_loop
-				stosw				; Store ax to es:[di]
-				loop	wipe9_wide_loop		; Loop if cx > 0
+						mov	ax,ds:ega_plane3_buf[si]
+						xchg	ah,al
+						mov	cs:src_word_c,ax
+						mov	ax,word ptr ds:scroll_plane2_off[si]
+						xchg	ah,al
+						mov	cs:src_word_b,ax
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	cs:src_word_a,ax
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						call	pal_process_loop
+						stosw				; Store ax to es:[di]
+						loop	wipe9_wide_loop		; Loop if cx > 0
 
 		mov	cx,21h
 
@@ -2220,12 +2220,12 @@ disp_fill_row:
 		mov	cx,8
 
 fill_row_loop:
-				stosw				; Store ax to es:[di]
-				stosw				; Store ax to es:[di]
-				stosw				; Store ax to es:[di]
-				stosw				; Store ax to es:[di]
-				add	di,138h
-				loop	fill_row_loop		; Loop if cx > 0
+						stosw				; Store ax to es:[di]
+						stosw				; Store ax to es:[di]
+						stosw				; Store ax to es:[di]
+						stosw				; Store ax to es:[di]
+						add	di,138h
+						loop	fill_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -2234,7 +2234,7 @@ vga_operation9		proc	near
 palette_write_entry:
 		mov	dx,30h
 		mul	dx			; dx:ax = reg * ax
-		add	ax,4289h
+		add	ax,pal_r_reg		; offset to palette R register array base
 		mov	si,ax
 		mov	ds:cur_pal_ptr,si
 		pushf				; Push flags
@@ -2250,41 +2250,41 @@ palette_write_entry:
 		mov	cx,10h
 
 pal_step_loop:
-				push	cx
-				lodsb				; String [si] to al
-				mov	bh,al
-				lodsb				; String [si] to al
-				mov	bl,al
-				lodsb				; String [si] to al
-				mov	ah,al
-				push	si
-				mov	si,ds:cur_pal_ptr
-				mov	cx,10h
+						push	cx
+						lodsb				; String [si] to al
+						mov	bh,al
+						lodsb				; String [si] to al
+						mov	bl,al
+						lodsb				; String [si] to al
+						mov	ah,al
+						push	si
+						mov	si,ds:cur_pal_ptr
+						mov	cx,10h
 
 pal_dac_write_loop:
-						mov	dx,3C8h
-						mov	al,ds:cur_pal_idx
-						out	dx,al			; port 3C8h, VGA pel address
-						jmp	short $+2		; delay for I/O
-						mov	dl,0C9h
-						lodsb				; String [si] to al
-						add	al,bh
-						out	dx,al			; port 3C9h, VGA pel data reg
-						jmp	short $+2		; delay for I/O
-						lodsb				; String [si] to al
-						add	al,bl
-						out	dx,al			; port 3C9h, VGA pel data reg
-						jmp	short $+2		; delay for I/O
-						lodsb				; String [si] to al
-						add	al,ah
-						out	dx,al			; port 3C9h, VGA pel data reg
-						jmp	short $+2		; delay for I/O
-						inc	byte ptr ds:cur_pal_idx
-						loop	pal_dac_write_loop		; Loop if cx > 0
+										mov	dx,3C8h
+										mov	al,ds:cur_pal_idx
+										out	dx,al			; port 3C8h, VGA pel address
+										jmp	short $+2		; delay for I/O
+										mov	dl,0C9h
+										lodsb				; String [si] to al
+										add	al,bh
+										out	dx,al			; port 3C9h, VGA pel data reg
+										jmp	short $+2		; delay for I/O
+										lodsb				; String [si] to al
+										add	al,bl
+										out	dx,al			; port 3C9h, VGA pel data reg
+										jmp	short $+2		; delay for I/O
+										lodsb				; String [si] to al
+										add	al,ah
+										out	dx,al			; port 3C9h, VGA pel data reg
+										jmp	short $+2		; delay for I/O
+										inc	byte ptr ds:cur_pal_idx
+										loop	pal_dac_write_loop		; Loop if cx > 0
 
-				pop	si
-				pop	cx
-				loop	pal_step_loop		; Loop if cx > 0
+						pop	si
+						pop	cx
+						loop	pal_step_loop		; Loop if cx > 0
 
 		pop	dx
 		in	al,dx			; port 3DAh, CGA/EGA vid status
@@ -2377,23 +2377,23 @@ pal_process_loop		proc	near
 		mov	cx,2
 
 pal_process_inner:
-				rol	word ptr cs:src_word_d,1	; Rotate
-				adc	ax,ax
-				rol	word ptr cs:src_word_c,1	; Rotate
-				adc	ax,ax
-				rol	word ptr cs:src_word_b,1	; Rotate
-				adc	ax,ax
-				rol	word ptr cs:src_word_a,1	; Rotate
-				adc	ax,ax
-				rol	word ptr cs:src_word_d,1	; Rotate
-				adc	ax,ax
-				rol	word ptr cs:src_word_c,1	; Rotate
-				adc	ax,ax
-				rol	word ptr cs:src_word_b,1	; Rotate
-				adc	ax,ax
-				rol	word ptr cs:src_word_a,1	; Rotate
-				adc	ax,ax
-				loop	pal_process_inner		; Loop if cx > 0
+						rol	word ptr cs:src_word_d,1	; Rotate
+						adc	ax,ax
+						rol	word ptr cs:src_word_c,1	; Rotate
+						adc	ax,ax
+						rol	word ptr cs:src_word_b,1	; Rotate
+						adc	ax,ax
+						rol	word ptr cs:src_word_a,1	; Rotate
+						adc	ax,ax
+						rol	word ptr cs:src_word_d,1	; Rotate
+						adc	ax,ax
+						rol	word ptr cs:src_word_c,1	; Rotate
+						adc	ax,ax
+						rol	word ptr cs:src_word_b,1	; Rotate
+						adc	ax,ax
+						rol	word ptr cs:src_word_a,1	; Rotate
+						adc	ax,ax
+						loop	pal_process_inner		; Loop if cx > 0
 
 		xchg	ah,al
 		pop	cx
@@ -2443,7 +2443,7 @@ pal_multiply_4		endp
 
 		db	0C3h					; retn (end of dispatch stub)
 		db	2900 dup (0)
-data_17		db	0			; Data table (indexed access)
+pixel_plane_c_buf	db	0			; Third pixel plane buffer (used in disp_pixel_sort as ES:pixel_plane_c_buf[di])
 		db	392 dup (0)
 
 seg_a		ends
