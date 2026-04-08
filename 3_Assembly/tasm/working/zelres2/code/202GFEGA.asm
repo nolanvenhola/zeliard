@@ -148,23 +148,32 @@ start:
 		add	[si],ch
 		xor	[bx+3Ah],al
 		mov	al,ds:sprite_flags
-		db	 3Eh,0EEh
-		db	'AZFi@l2g8'
-		db	 8Ah, 42h,0AEh, 41h, 31h, 3Ah
-		db	0D0h, 43h, 75h, 46h,0BDh, 46h
-		db	0BAh, 47h, 9Fh, 41h,0DDh, 4Ah
-		db	 2Dh, 4Bh,0B4h, 4Ch, 66h, 50h
-		db	 66h, 50h, 0Eh, 07h,0BFh, 97h
-		db	 50h, 33h,0C0h,0B9h, 80h, 00h
-		db	0F3h,0ABh
-drv_init_stub	db	0FEh
-		db	 06h, 78h, 50h,0C7h, 06h, 69h
-		db	 50h, 6Ch, 04h, 8Bh, 36h, 31h
-		db	0FFh, 83h,0EEh, 21h,0E8h
-ega_row_ofs	db	65h
-		db	 16h, 33h,0DBh,0F6h, 04h, 80h
-		db	 74h, 03h,0E8h, 07h, 03h, 46h
-		db	0B9h, 06h, 00h
+; gfega_main inline init block (0x000B-0x005D):
+; -- The labels 'start:','drv_init_stub', and 'ega_row_ofs' land mid-instruction,
+;    so mnemonics cannot be used for the full block. Keeping as db with decode notes.
+;
+; [0x000B] ds:out dx,al       -- write sprite_flags byte to EGA port in DX
+		db	 3Eh,0EEh		;  ds: out dx,al  (DS-overridden OUT; writes sprite_flags to port)
+; [0x000D-0x002F] EGA init table: port/register pairs used by self-init code above
+		db	'AZFi@l2g8'		;  EGA reg init table: 'A'=inc cx, 'Z'=pop dx, 'F'=inc si...
+		db	 8Ah, 42h,0AEh, 41h, 31h, 3Ah  ;   (garbled as code by Sourcer; treated as table data)
+		db	0D0h, 43h, 75h, 46h,0BDh, 46h	;  (EGA init table cont.)
+		db	0BAh, 47h, 9Fh, 41h,0DDh, 4Ah	;  (EGA init table cont.)
+		db	 2Dh, 4Bh,0B4h, 4Ch, 66h, 50h	;  (EGA init table cont.) ; last entry before push cs
+; [0x002E] push eax (66 50, 32-bit prefix) x2 = 2 pushes; then real init code:
+		db	 66h, 50h, 0Eh, 07h,0BFh, 97h	;  push eax; push eax; push cs; pop es; mov di,0x5097
+		db	 50h, 33h,0C0h,0B9h, 80h, 00h	;  (cont) +sprite_cache_tbl; xor ax,ax; mov cx,0x80
+		db	0F3h,0ABh			;  rep stosw  (clear sprite_cache_tbl, 0x80 words)
+; [0x003C] drv_init_stub label lands at the start of 'inc byte [anim_phase]' (FE 06 78 50)
+drv_init_stub	db	0FEh			;  FE (inc byte opcode) -- drv_init_stub = patchable stub byte
+		db	 06h, 78h, 50h,0C7h, 06h, 69h	;  inc byte [0x5078]; mov word [0x5069],0x046C
+		db	 50h, 6Ch, 04h, 8Bh, 36h, 31h	;  (cont) ; mov si,[0xFF31]
+		db	0FFh, 83h,0EEh, 21h,0E8h	;  (cont) ; sub si,0x21 ; call near (E8 = opcode)
+; [0x004E] ega_row_ofs label lands at the displacement bytes of the call near above
+ega_row_ofs	db	65h			;  call displacement lo byte: call 0x16B5 (ega_row_ofs used as patch target)
+		db	 16h, 33h,0DBh,0F6h, 04h, 80h	;  call disp hi; xor bx,bx; test byte [si],0x80
+		db	 74h, 03h,0E8h, 07h, 03h, 46h	;  jz +3; call 0x0361; inc si
+		db	0B9h, 06h, 00h			;  mov cx,6
 
 sprite_scan_loop:
 							push	cx
@@ -356,11 +365,11 @@ sprite_state_update		endp
 ; Called via dispatch_tbl[bx]; called with SI=sprite_data, DI=sprite_buf slot.
 
 anim_cycle_2frame_1B:
-;*		js	loc_30			;*Jump if sign=1
-		db	 78h, 31h		;  Fixup - byte match
+;*		js	loc_29+1		; Fixup: jumps +1 into loc_29 body (0x01A7)
+		db	 78h, 31h		;  Fixup - byte match: js $+0x33 (short jump into loc_29)
 		cbw				; Convrt byte to word
-;*		xor	si,cx
-		db	 31h,0CEh		;  Fixup - byte match
+;*		xor	si,cx			; Fixup encoding 31h CEh (alternate ModRM form)
+		db	 31h,0CEh		;  Fixup - byte match: xor si,cx
 		xor	[si+32h],cx
 		mov	al,[si-1]
 		sub	al,1Bh
@@ -1526,36 +1535,44 @@ proj_blit_row_loop:
 		sub	si,4
 		add	si,4
 		jmp	$-0B8h
-		db	0F1h, 39h,0B1h, 39h, 71h, 39h
-		db	 31h, 39h, 00h
-		db	16 dup (0)
-		db	 0Bh,0D0h, 00h, 00h, 5Fh,0FAh
-		db	 00h, 00h, 7Fh,0FEh, 00h, 00h
-		db	0FFh,0FFh, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 7Fh,0FEh, 00h, 00h
-		db	 5Fh,0FAh, 00h, 00h, 0Bh,0D0h
-		db	26 dup (0)
-		db	 2Fh,0F4h, 00h, 00h,0FFh,0FFh
-		db	 00h, 03h,0FFh,0FFh,0C0h, 07h
-		db	0FFh,0FFh,0E0h, 0Fh,0FAh, 5Fh
-		db	0F0h, 0Fh,0F0h, 0Fh,0F0h, 0Fh
-		db	0F0h, 0Fh,0F0h, 0Fh,0FAh, 5Fh
-		db	0F0h, 07h,0FFh,0FFh,0E0h, 03h
-		db	0FFh,0FFh,0C0h, 00h,0FFh,0FFh
-		db	 00h, 00h, 2Fh,0F4h
-		db	10 dup (0)
-		db	 2Fh,0F4h, 00h, 01h, 7Fh,0FEh
-		db	 80h, 07h,0FFh,0FFh,0E0h, 0Fh
-		db	0FFh,0FFh,0F0h, 3Fh,0F4h, 2Fh
-		db	0FCh, 7Fh,0A0h, 05h,0FEh, 7Fh
-		db	 80h, 01h,0FEh,0FFh, 00h, 00h
-		db	0FFh,0FFh, 00h, 00h,0FFh, 7Fh
-		db	 80h, 01h,0FEh, 7Fh,0A0h, 05h
-		db	0FEh, 3Fh,0F4h, 2Fh,0FCh, 0Fh
-		db	0FFh,0FFh,0F0h, 07h,0FFh,0FFh
-		db	0E0h, 01h, 7Fh,0FEh, 80h, 00h
-		db	 2Fh,0F4h, 00h, 00h, 2Fh,0F4h
-		db	 00h, 01h
+
+; EGA sprite bitmask shape data -- accessed by fade_gradient_loop and similar.
+; Sourcer decodes surrounding code as garbled instructions; this is pure table data.
+; First 9 bytes: 4 pointer words (CS-relative offsets to shape groups) + 0x00 terminator.
+; Remaining: EGA 4-byte bitmask rows, 2 bytes per EGA plane pair, zero-padded between groups.
+; Groups alternate diamond/circle shapes; each row = (plane1_hi, plane1_lo, plane2_hi, plane2_lo).
+
+sprite_bitmask_tbl:
+		db	0F1h, 39h,0B1h, 39h, 71h, 39h	; ptr[0]=0x39F1, ptr[1]=0x39B1, ptr[2]=0x3971
+		db	 31h, 39h, 00h			; ptr[3]=0x3931, terminator
+		db	16 dup (0)			; padding (16 bytes)
+		db	 0Bh,0D0h, 00h, 00h, 5Fh,0FAh	; group shape rows: narrow diamond
+		db	 00h, 00h, 7Fh,0FEh, 00h, 00h	;  (cont.)
+		db	0FFh,0FFh, 00h, 00h,0FFh,0FFh	;  (cont.)
+		db	 00h, 00h, 7Fh,0FEh, 00h, 00h	;  (cont.)
+		db	 5Fh,0FAh, 00h, 00h, 0Bh,0D0h	;  (cont. last row)
+		db	26 dup (0)			; padding between groups
+		db	 2Fh,0F4h, 00h, 00h,0FFh,0FFh	; group shape rows: wide diamond
+		db	 00h, 03h,0FFh,0FFh,0C0h, 07h	;  (cont.)
+		db	0FFh,0FFh,0E0h, 0Fh,0FAh, 5Fh	;  (cont.)
+		db	0F0h, 0Fh,0F0h, 0Fh,0F0h, 0Fh	;  (cont.)
+		db	0F0h, 0Fh,0F0h, 0Fh,0FAh, 5Fh	;  (cont.)
+		db	0F0h, 07h,0FFh,0FFh,0E0h, 03h	;  (cont.)
+		db	0FFh,0FFh,0C0h, 00h,0FFh,0FFh	;  (cont.)
+		db	 00h, 00h, 2Fh,0F4h		;  (cont. last row)
+		db	10 dup (0)			; padding between groups
+		db	 2Fh,0F4h, 00h, 01h, 7Fh,0FEh	; group shape rows: full circle
+		db	 80h, 07h,0FFh,0FFh,0E0h, 0Fh	;  (cont.)
+		db	0FFh,0FFh,0F0h, 3Fh,0F4h, 2Fh	;  (cont.)
+		db	0FCh, 7Fh,0A0h, 05h,0FEh, 7Fh	;  (cont.)
+		db	 80h, 01h,0FEh,0FFh, 00h, 00h	;  (cont.)
+		db	0FFh,0FFh, 00h, 00h,0FFh, 7Fh	;  (cont.)
+		db	 80h, 01h,0FEh, 7Fh,0A0h, 05h	;  (cont.)
+		db	0FEh, 3Fh,0F4h, 2Fh,0FCh, 0Fh	;  (cont.)
+		db	0FFh,0FFh,0F0h, 07h,0FFh,0FFh	;  (cont.)
+		db	0E0h, 01h, 7Fh,0FEh, 80h, 00h	;  (cont.)
+		db	 2Fh,0F4h, 00h, 00h, 2Fh,0F4h	;  (cont.)
+		db	 00h, 01h			;  (cont. last bytes)
 
 loc_83:
 							jg	loc_83			; Jump if >
@@ -2969,28 +2986,52 @@ phase_ptr_advance		proc	near
 
 phase_ptr_advance		endp
 
-		db	 00h, 00h, 06h, 50h, 0Ch,0A0h
-		db	 12h,0F0h,0A0h, 83h, 00h, 02h
-		db	0C0h, 02h,0C0h, 02h,0C0h, 8Ah
-		db	 26h, 84h, 00h, 02h,0E4h, 02h
-		db	0E4h, 02h,0E4h,0A2h, 67h, 50h
-		db	 88h, 26h, 68h, 50h,0E8h, 23h
-		db	 02h,0C6h, 06h, 78h, 50h, 06h
-		db	0E8h, 0Bh, 00h,0C6h, 06h, 78h
-		db	 50h, 00h,0E8h, 03h, 00h,0E9h
-		db	 10h, 02h,0A0h, 67h, 50h,0FEh
-		db	0C8h, 8Ah,0D8h, 04h, 19h, 8Ah
-		db	0D0h,0A0h, 68h, 50h,0FEh,0C8h
-		db	 8Ah,0F8h, 04h, 19h, 8Ah,0F0h
-		db	0E8h, 2Fh, 00h,0A0h, 67h, 50h
-		db	 2Ch, 05h, 8Ah,0D8h, 04h, 21h
-		db	 8Ah,0D0h,0A0h, 68h, 50h, 2Ch
-		db	 05h, 8Ah,0F8h, 04h, 21h, 8Ah
-		db	0F0h,0E8h, 16h, 00h,0A0h, 67h
-		db	 50h, 2Ch, 09h, 8Ah,0D8h, 04h
-		db	 29h, 8Ah,0D0h,0A0h, 68h, 50h
-		db	 2Ch, 09h, 8Ah,0F8h, 04h, 29h
-		db	 8Ah,0F0h
+; ega_color_fade_init -- inline proc body (no proc label in Sourcer output).
+; Reads color coords from DS:[0x83]/[0x84], multiplies by 8 to get EGA palette
+; offsets, stores to cur_color_pair/cur_color_pair+1, then calls the EGA gradient
+; blit proc (CS:0x1614) and fade_gradient_loop three times at three radii
+; (0x19, 0x21, 0x29 pixel spread). Each call (ega_inner_fade) computes BL/BH/DL/DH
+; bounds from cur_color_pair +/- radius and calls fade_gradient_loop.
+;
+;  0x13CC: 00 00           -- 2-byte null header / alignment
+;  0x13CE: push es / push ax / or al,0xA0 / adc dh,al
+;  0x13D4: mov al,[0x83]; shl al,3 (via 3x add al,al)
+;  0x13DD: mov ah,[0x84]; shl ah,3
+;  0x13E7: mov [cur_color_pair],al; mov [cur_color_pair+1],ah
+;  0x13EE: call CS:0x1614  (EGA gradient blit core)
+;  0x13F1: mov [anim_phase],6; call 0x1404; mov [anim_phase],0; call 0x1404; jmp 0x1614
+;
+; ega_inner_fade (at 0x1404 within this block):
+;  Radius 0x19: BL=X-1, DL=X-1+0x19, BH=Y-1, DH=Y-1+0x19 -> call fade_gradient_loop
+;  Radius 0x21: BL=X-5, DL=X-5+0x21, BH=Y-5, DH=Y-5+0x21 -> call fade_gradient_loop
+;  Radius 0x29: BL=X-9, DL=X-9+0x29, BH=Y-9, DH=Y-9+0x29 -> call fade_gradient_loop
+
+ega_color_fade_init:
+		db	 00h, 00h		; null header
+		db	 06h, 50h, 0Ch,0A0h	; push es; push ax; or al,0A0h
+		db	 12h,0F0h,0A0h, 83h, 00h, 02h	; adc dh,al; mov al,[83h]; add al,al
+		db	0C0h, 02h,0C0h, 02h,0C0h, 8Ah	; add al,al; add al,al; mov ah,
+		db	 26h, 84h, 00h, 02h,0E4h, 02h	; [84h]; add ah,ah
+		db	0E4h, 02h,0E4h,0A2h, 67h, 50h	; add ah,ah; add ah,ah; mov [cur_color_pair],al
+		db	 88h, 26h, 68h, 50h,0E8h, 23h	; mov [cur_color_pair+1],ah; call 0x1614
+		db	 02h,0C6h, 06h, 78h, 50h, 06h	; ; mov [anim_phase],6
+		db	0E8h, 0Bh, 00h,0C6h, 06h, 78h	; call ega_inner_fade; mov [anim_phase],
+		db	 50h, 00h,0E8h, 03h, 00h,0E9h	; 0; call ega_inner_fade; jmp 0x1614
+
+ega_inner_fade:					; radius loop: 3 passes
+		db	 10h, 02h,0A0h, 67h, 50h,0FEh	; ; mov al,[cur_color_pair]; dec al
+		db	0C8h, 8Ah,0D8h, 04h, 19h, 8Ah	; mov bl,al; add al,0x19; mov dl,al
+		db	0D0h,0A0h, 68h, 50h,0FEh,0C8h	; mov al,[cur_color_pair+1]; dec al
+		db	 8Ah,0F8h, 04h, 19h, 8Ah,0F0h	; mov bh,al; add al,0x19; mov dh,al
+		db	0E8h, 2Fh, 00h,0A0h, 67h, 50h	; call fade_gradient_loop; mov al,[cur_color_pair]
+		db	 2Ch, 05h, 8Ah,0D8h, 04h, 21h	; sub al,5; mov bl,al; add al,0x21
+		db	 8Ah,0D0h,0A0h, 68h, 50h, 2Ch	; mov dl,al; mov al,[cur_color_pair+1]; sub al,5
+		db	 05h, 8Ah,0F8h, 04h, 21h, 8Ah	; mov bh,al; add al,0x21
+		db	0F0h,0E8h, 16h, 00h,0A0h, 67h	; mov dh,al; call fade_gradient_loop; mov al,[cur_color_pair]
+		db	 50h, 2Ch, 09h, 8Ah,0D8h, 04h	; sub al,9; mov bl,al
+		db	 29h, 8Ah,0D0h,0A0h, 68h, 50h	; add al,0x29; mov dl,al; mov al,[cur_color_pair+1]
+		db	 2Ch, 09h, 8Ah,0F8h, 04h, 29h	; sub al,9; mov bh,al; add al,0x29
+		db	 8Ah,0F0h			; mov dh,al  [-> fall through to fade_gradient_loop]
 
 fade_gradient_loop		proc	near
 		mov	cx,9
@@ -3521,39 +3562,43 @@ ui_tile_pixel_loop:
 ; Each row is a sequence of sprite indices for the 5-row ?? 28-column UI tile grid.
 
 ui_tile_idx_tbl:
-		db	 00h, 01h, 02h, 04h, 07h, 09h
-		db	 0Dh, 10h, 04h, 15h, 17h, 1Ch
-		db	 1Eh, 04h, 07h, 09h, 22h, 02h
-		db	 25h, 08h, 02h, 28h, 02h, 2Dh
-		db	 31h, 36h, 3Bh, 40h, 00h, 01h
-		db	 03h, 06h, 08h, 0Ah, 0Eh, 11h
-		db	 06h, 08h, 18h, 0Eh, 1Eh, 04h
-		db	8, 0Ah, '#$'
-		db	'&', 8, 27h, ')*'
-		db	 04h, 32h, 37h, 3Ch, 06h, 00h
-		db	 01h, 02h, 05h, 08h, 02h, 0Eh
-		db	 12h, 06h, 08h, 19h, 0Eh, 1Eh
-		db	 04h, 08h, 02h, 23h, 24h, 26h
-		db	 08h, 25h, 29h, 02h, 2Eh, 33h
-		db	 38h, 3Dh, 06h, 00h, 01h, 03h
-		db	 06h, 08h, 0Bh, 0Eh, 13h, 06h
-		db	 08h, 1Ah, 0Eh, 1Fh, 04h, 08h
-		db	 0Bh
-		db	'#$'
-		db	'&', 8, 27h, ')+/49>'
-		db	 06h, 00h, 01h, 02h, 04h, 08h
-		db	 0Ch, 0Fh, 14h, 04h, 16h, 1Bh
-		db	 1Dh
-		db	' !', 8, 0Ch, '#$'
-		db	'&', 8
-		db	 02h, 28h, 2Ch, 30h, 35h, 3Ah
+; 4 rows of tile indices for the 5-row x 28-column UI tile grid (draw_ui_tiles).
+; Sourcer encodes printable bytes as ASCII chars; all values are tile sprite indices.
+		db	 00h, 01h, 02h, 04h, 07h, 09h	; row 0 tile indices [0..5]
+		db	 0Dh, 10h, 04h, 15h, 17h, 1Ch	; row 0 tile indices [6..11]
+		db	 1Eh, 04h, 07h, 09h, 22h, 02h	; row 0 tile indices [12..17]
+		db	 25h, 08h, 02h, 28h, 02h, 2Dh	; row 0 tile indices [18..23]
+		db	 31h, 36h, 3Bh, 40h, 00h, 01h	; row 0 [24..27] + row 1 [0..1]
+		db	 03h, 06h, 08h, 0Ah, 0Eh, 11h	; row 1 tile indices [2..7]
+		db	 06h, 08h, 18h, 0Eh, 1Eh, 04h	; row 1 tile indices [8..13]
+		db	8, 0Ah, '#$'			; row 1 [14..17] (Sourcer ASCII encoding)
+		db	'&', 8, 27h, ')*'		; row 1 [18..23]
+		db	 04h, 32h, 37h, 3Ch, 06h, 00h	; row 1 [24..27] + row 2 [0..1]
+		db	 01h, 02h, 05h, 08h, 02h, 0Eh	; row 2 tile indices [2..7]
+		db	 12h, 06h, 08h, 19h, 0Eh, 1Eh	; row 2 tile indices [8..13]
+		db	 04h, 08h, 02h, 23h, 24h, 26h	; row 2 [14..19]
+		db	 08h, 25h, 29h, 02h, 2Eh, 33h	; row 2 [20..25]
+		db	 38h, 3Dh, 06h, 00h, 01h, 03h	; row 2 [26..27] + row 3 [0..3]
+		db	 06h, 08h, 0Bh, 0Eh, 13h, 06h	; row 3 tile indices [4..9]
+		db	 08h, 1Ah, 0Eh, 1Fh, 04h, 08h	; row 3 [10..15]
+		db	 0Bh				; row 3 [16]
+		db	'#$'				; row 3 [17..18]
+		db	'&', 8, 27h, ')+/49>'		; row 3 [19..27]
+		db	 06h, 00h, 01h, 02h, 04h, 08h	; row 4 tile indices [0..5]
+		db	 0Ch, 0Fh, 14h, 04h, 16h, 1Bh	; row 4 [6..11]
+		db	 1Dh				; row 4 [12]
+		db	' !', 8, 0Ch, '#$'		; row 4 [13..18]
+		db	'&', 8				; row 4 [19..20]
+		db	 02h, 28h, 2Ch, 30h, 35h, 3Ah	; row 4 [21..26]
 ; Inline init code: mov [anim_phase],al; mov si,0x48E5; mov [vga_row_ptr],hud_ofs; mov cx,0x12
 ; Followed by bg_tile_row_loop ?-- called as part of bg tile blit dispatch.
 
 bg_tile_blit_init:
-		db	 3Fh, 06h,0A2h, 78h, 50h,0BEh
-		db	0E5h, 48h,0C7h, 06h, 69h, 50h
-		db	 6Ch, 04h,0B9h, 12h, 00h
+; [2-byte dispatch header: aas; push es] then init code -- label lands mid-dispatch,
+; so kept as db. Code: mov [anim_phase],al; mov si,0x48E5; mov [vga_row_ptr],0x046C; mov cx,0x12
+		db	 3Fh, 06h,0A2h, 78h, 50h,0BEh  ; aas; push es; mov [anim_phase],al; mov si,0x48E5
+		db	0E5h, 48h,0C7h, 06h, 69h, 50h	;  (cont) mov word [vga_row_ptr],0x046C
+		db	 6Ch, 04h,0B9h, 12h, 00h	;  (cont) ; mov cx,0x12  (18 tile rows)
 
 bg_tile_row_loop:
 							push	cx
@@ -3646,24 +3691,74 @@ bg_plane_copy_loop:
 
 ega_bg_tile_blit		endp
 
-		db	 66h, 48h, 77h, 48h, 7Fh, 48h
-		db	 90h, 48h,0AAh, 48h,0B8h, 02h
-		db	 06h,0EFh,0B3h, 03h,0E8h, 55h
-		db	 00h,0B8h, 02h, 07h,0EFh,0B3h
-		db	 05h,0EBh, 4Dh,0B8h, 02h, 04h
-		db	0EFh,0B3h, 02h,0EBh, 45h,0B8h
-		db	 02h, 04h,0EFh,0B3h, 05h,0E8h
-		db	 3Ch, 00h,0B8h, 02h, 07h,0EFh
-		db	0B3h, 04h,0EBh, 34h,0B8h, 02h
-		db	 04h,0EFh,0B3h, 03h,0E8h, 2Bh
-		db	 00h,0B8h, 02h, 07h,0EFh,0B3h
-		db	 05h,0E8h, 22h, 00h,0B8h, 02h
-		db	 06h,0EFh,0B3h, 07h,0EBh, 1Ah
-		db	0B8h, 02h, 07h,0EFh,0B3h, 05h
-		db	0E8h, 11h, 00h,0B8h, 02h, 04h
-		db	0EFh,0B3h, 07h,0E8h, 08h, 00h
-		db	0B8h, 02h, 06h,0EFh,0B3h, 04h
-		db	0EBh, 00h
+; ega_plane_mode_dispatch -- multi-entry EGA color plane/mode selector.
+; Called via external dispatch (copy_fn_tbl or similar) with DX=3C4h (EGA sequencer),
+; BL=plane mask. Selects MapMask register value and calls ega_col_write_loop.
+; 10-byte entry-point header (0x1860-0x1869): branch targets for each EGA mode;
+; decoded as code but they are dispatch offsets / jump-pad bytes.
+; Each mode entry: mov ax,(seq_index<<8|map_mask); out dx,ax; mov bl,color; call/jmp ega_col_write_loop
+
+ega_plane_mode_dispatch:
+		db	 66h, 48h		; dec eax (32-bit prefix pad / dispatch header byte 0)
+		db	 77h, 48h		; ja +0x48 -> entry 7 (dispatch header byte 1)
+		db	 7Fh, 48h		; jg +0x48 -> entry 8 (dispatch header byte 2)
+		db	 90h, 48h		; nop; dec ax  (dispatch header bytes 3-4)
+		db	0AAh, 48h		; stosb; dec ax (dispatch header bytes 5-6: pad to entry 0)
+					; -- Entry 0: MapMask=0x06, color=3, call ega_col_write_loop
+		db	0B8h, 02h, 06h		; mov ax,0602h  (seq idx=2,map=6=planes 1+2)
+		db	0EFh			; out dx,ax
+		db	0B3h, 03h		; mov bl,3
+		db	0E8h, 55h, 00h		; call ega_col_write_loop
+					; -- Entry 1: MapMask=0x07, color=5, jmp ega_col_write_loop
+		db	0B8h, 02h, 07h		; mov ax,0702h  (map=7=all planes)
+		db	0EFh			; out dx,ax
+		db	0B3h, 05h		; mov bl,5
+		db	0EBh, 4Dh		; jmp ega_col_write_loop
+					; -- Entry 2: MapMask=0x04, color=2, jmp ega_col_write_loop
+		db	0B8h, 02h, 04h		; mov ax,0402h  (map=4=plane 2)
+		db	0EFh			; out dx,ax
+		db	0B3h, 02h		; mov bl,2
+		db	0EBh, 45h		; jmp ega_col_write_loop
+					; -- Entry 3: MapMask=0x04, color=5, call ega_col_write_loop
+		db	0B8h, 02h, 04h		; mov ax,0402h
+		db	0EFh			; out dx,ax
+		db	0B3h, 05h		; mov bl,5
+		db	0E8h, 3Ch, 00h		; call ega_col_write_loop
+					; -- Entry 4: MapMask=0x07, color=4, jmp ega_col_write_loop
+		db	0B8h, 02h, 07h		; mov ax,0702h
+		db	0EFh			; out dx,ax
+		db	0B3h, 04h		; mov bl,4
+		db	0EBh, 34h		; jmp ega_col_write_loop
+					; -- Entry 5: MapMask=0x04, color=3, call ega_col_write_loop
+		db	0B8h, 02h, 04h		; mov ax,0402h
+		db	0EFh			; out dx,ax
+		db	0B3h, 03h		; mov bl,3
+		db	0E8h, 2Bh, 00h		; call ega_col_write_loop
+					; -- Entry 6: MapMask=0x07, color=5, call ega_col_write_loop
+		db	0B8h, 02h, 07h		; mov ax,0702h
+		db	0EFh			; out dx,ax
+		db	0B3h, 05h		; mov bl,5
+		db	0E8h, 22h, 00h		; call ega_col_write_loop
+					; -- Entry 7 (ja target): MapMask=0x06, color=7, jmp ega_col_write_loop
+		db	0B8h, 02h, 06h		; mov ax,0602h
+		db	0EFh			; out dx,ax
+		db	0B3h, 07h		; mov bl,7
+		db	0EBh, 1Ah		; jmp ega_col_write_loop
+					; -- Entry 8 (jg target): MapMask=0x07, color=5, call ega_col_write_loop
+		db	0B8h, 02h, 07h		; mov ax,0702h
+		db	0EFh			; out dx,ax
+		db	0B3h, 05h		; mov bl,5
+		db	0E8h, 11h, 00h		; call ega_col_write_loop
+					; -- Entry 9: MapMask=0x04, color=7, call ega_col_write_loop
+		db	0B8h, 02h, 04h		; mov ax,0402h
+		db	0EFh			; out dx,ax
+		db	0B3h, 07h		; mov bl,7
+		db	0E8h, 08h, 00h		; call ega_col_write_loop
+					; -- Entry 10: MapMask=0x06, color=4, jmp+0 -> fall into ega_col_write_loop
+		db	0B8h, 02h, 06h		; mov ax,0602h
+		db	0EFh			; out dx,ax
+		db	0B3h, 04h		; mov bl,4
+		db	0EBh, 00h		; jmp $+2 (fall into ega_col_write_loop)
 
 ega_col_write_loop		proc	near
 
@@ -3733,32 +3828,32 @@ anim_seq_tbl:
 		push	sp
 		pop	cx
 		pop	bp
-		db	 63h, 32h, 2Fh, 2Eh, 1Fh, 20h
-		db	 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h
-		db	 1Fh, 20h, 0Fh, 10h, 11h, 12h
-		db	 0Fh, 10h, 0Dh, 0Eh, 17h, 18h
-		db	'PUZ^df(0#$'
-		db	'!"#$'
-		db	'!"#$'
-		db	 07h, 08h, 0Ah, 0Ch, 07h, 08h
-		db	 09h, 0Ah, 1Ah
-		db	'4QV[_eg/-'
-		db	 1Dh, 1Eh, 1Fh, 20h, 1Dh, 1Eh
-		db	 1Fh, 20h, 1Dh, 1Eh, 0Fh, 10h
-		db	 0Dh, 0Eh, 0Dh, 0Eh, 17h, 18h
-		db	 49h, 4Dh, 52h, 57h, 00h
-		db	'`ihjk(&!"+&!"!"'
-		db	7
-		db	8, 9, 0Ah, 9, 0Ah, 1Bh, 'FJNSX'
-		db	 00h, 00h, 00h, 00h, 69h, 6Ch
-		db	 31h, 2Dh, 1Fh, 20h, 2Ch, 2Dh
-		db	 1Fh, 20h, 1Fh, 20h, 13h, 14h
-		db	 13h, 14h, 17h, 18h
-		db	 43h, 47h, 4Bh, 4Fh
-		db	7 dup (0)
-		db	'mno)&!"*%!"'
-		db	 15h, 16h, 15h, 16h, 1Ch
-		db	 35h, 44h, 48h, 4Ch
+		db	 63h, 32h, 2Fh, 2Eh, 1Fh, 20h	; anim frame index pairs (continued from above mnemonics)
+		db	 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h	;  (cont.)
+		db	 1Fh, 20h, 0Fh, 10h, 11h, 12h	;  (cont.)
+		db	 0Fh, 10h, 0Dh, 0Eh, 17h, 18h	;  (cont.)
+		db	'PUZ^df(0#$'				; frame indices as ASCII (Sourcer mixed encoding)
+		db	'!"#$'					;  (cont.)
+		db	'!"#$'					;  (cont.)
+		db	 07h, 08h, 0Ah, 0Ch, 07h, 08h	;  (cont.)
+		db	 09h, 0Ah, 1Ah				;  (cont.)
+		db	'4QV[_eg/-'				; (cont.)
+		db	 1Dh, 1Eh, 1Fh, 20h, 1Dh, 1Eh	;  (cont.)
+		db	 1Fh, 20h, 1Dh, 1Eh, 0Fh, 10h	;  (cont.)
+		db	 0Dh, 0Eh, 0Dh, 0Eh, 17h, 18h	;  (cont.)
+		db	 49h, 4Dh, 52h, 57h, 00h		; (cont.)
+		db	'`ihjk(&!"+&!"!"'			; (cont.)
+		db	7					; (cont.)
+		db	8, 9, 0Ah, 9, 0Ah, 1Bh, 'FJNSX'	; (cont.)
+		db	 00h, 00h, 00h, 00h, 69h, 6Ch		; (cont.)
+		db	 31h, 2Dh, 1Fh, 20h, 2Ch, 2Dh	;  (cont.)
+		db	 1Fh, 20h, 1Fh, 20h, 13h, 14h	;  (cont.)
+		db	 13h, 14h, 17h, 18h			;  (cont.)
+		db	 43h, 47h, 4Bh, 4Fh			;  (cont.)
+		db	7 dup (0)				;  padding
+		db	'mno)&!"*%!"'				;  (cont.)
+		db	 15h, 16h, 15h, 16h, 1Ch		;  (cont.)
+		db	 35h, 44h, 48h, 4Ch			;  (cont. anim_seq_tbl end)
 		; Character encoding / font lookup table
 		db	'CGKO', 0		; 0x0000
 		db	'mno)&!"*%!"', 0		; 0x000B
@@ -3770,27 +3865,50 @@ anim_seq_tbl:
 		db	018h		; 0x0033
 		db	'8:?BE', 0		; 0x0034
 		db	'muwyo+&)&', 0		; 0x0045
-		db	 01h, 02h, 01h, 02h, 01h, 02h
-		db	 01h, 02h, 01h, 02h, 01h, 02h
-		db	 01h, 02h, 01h, 02h, 01h, 02h
-		db	 01h, 02h, 01h, 02h, 03h, 04h
-		db	 03h, 04h, 03h, 04h, 03h, 04h
-		db	 03h, 04h, 03h, 04h, 03h, 04h
+; EGA animation plane pair table -- pairs of (plane_A, plane_B) frame indices for animation.
+; Values 0x01/0x02, 0x03/0x04, 0x05/0x06 = EGA plane bitmask pair indices for each cycle.
+		db	 01h, 02h, 01h, 02h, 01h, 02h	; plane pair entries (pair 0: planes 1/2)
+		db	 01h, 02h, 01h, 02h, 01h, 02h	;  (cont.)
+		db	 01h, 02h, 01h, 02h, 01h, 02h	;  (cont.)
+		db	 01h, 02h, 01h, 02h, 03h, 04h	;  (cont. + pair 1: planes 3/4)
+		db	 03h, 04h, 03h, 04h, 03h, 04h	;  (cont.)
+		db	 03h, 04h, 03h, 04h, 03h, 04h	;  (cont.)
 		; Character encoding table (continued)
 		db	'/-367<', 0		; 0x0000
-		db	 03h, 04h, 05h, 06h, 05h, 06h
-		db	 05h, 06h, 05h, 06h, 05h, 06h
-		db	 05h, 06h, 05h, 06h, 05h, 06h
-		db	 05h, 06h, 05h, 06h, 05h, 06h
-		db	 06h, 05h, 05h, 06h, 05h, 06h
-		db	 1Eh, 50h,0B8h, 50h, 00h,0F6h
-		db	0E3h, 8Ah,0DFh, 32h,0FFh, 03h
-		db	0C3h, 8Bh,0F8h, 58h,0B1h, 20h
-		db	0F6h,0E1h, 05h, 00h, 60h, 8Bh
-		db	0F0h, 2Eh, 8Eh, 1Eh, 2Ch,0FFh
-		db	0B8h, 00h,0A0h, 8Eh,0C0h,0BAh
-		db	0C4h, 03h,0B0h, 02h,0EEh, 42h
-		db	0BBh, 4Eh, 00h,0B9h, 04h, 00h
+		db	 03h, 04h, 05h, 06h, 05h, 06h	; plane pair entries (pair 2: planes 5/6)
+		db	 05h, 06h, 05h, 06h, 05h, 06h	;  (cont.)
+		db	 05h, 06h, 05h, 06h, 05h, 06h	;  (cont.)
+		db	 05h, 06h, 05h, 06h, 05h, 06h	;  (cont.)
+		db	 06h, 05h, 05h, 06h, 05h, 06h	;  (cont. last entries)
+
+; plane_blit_init -- setup for plane_1_2_blit_loop.
+; Computes sprite source SI from AL (sprite index) * 0x20 + 0x6000 (game_seg sprite base),
+; and sprite dest DI from BH (row) * 0x50 + BL (col) offset into EGA framebuffer.
+; Sets DS=game_seg, ES=EGA segment, DX=3C4h (EGA sequencer), BX=0x4E (stride), CX=4.
+
+plane_blit_init:
+		push	ds
+		push	ax
+		mov	ax,50h			; DI = BH*0x50 + BL
+		mul	bl			; ax = col * 0x50
+		mov	bl,bh			; bx = row
+		xor	bh,bh			; zero high byte
+		add	ax,bx			; ax = col*0x50 + row
+		mov	di,ax			; DI = EGA row/col offset
+		pop	ax
+		mov	cl,20h			; ' '
+		mul	cl			; ax = sprite_idx * 0x20
+		add	ax,6000h		; + game_seg sprite base offset
+		mov	si,ax			; SI = sprite source ptr
+		mov	ds,cs:game_seg		; DS = game segment
+		mov	ax,0A000h
+		mov	es,ax			; ES = EGA framebuffer
+		mov	dx,3C4h			; EGA sequencer index port
+		mov	al,2			; map mask register
+		out	dx,al			; select map mask
+		inc	dx			; DX = 3C5h (EGA sequencer data)
+		mov	bx,4Eh			; stride = 0x4E (plane row - 2)
+		mov	cx,4			; 4 planes
 
 plane_1_2_blit_loop:
 							mov	al,1
@@ -3890,63 +4008,95 @@ sprite_shape_tbl:
 		dec	bx
 		push	sp
 		dec	sp
-		db	45 dup (0)
-		db	 02h, 00h, 00h, 00h, 06h, 00h
-		db	 00h, 00h, 06h, 00h, 00h, 00h
-		db	 0Eh, 00h, 00h, 00h, 0Eh, 00h
-		db	 00h, 00h, 0Ch, 00h, 00h, 00h
-		db	 0Eh, 00h, 00h, 00h, 1Ch, 00h
-		db	 00h, 00h, 0Ch, 00h, 00h, 00h
-		db	 1Ch, 00h, 00h, 00h, 1Ch, 00h
-		db	 00h, 00h, 1Ch, 00h, 00h, 00h
-		db	 1Ch
-		db	16 dup (0)
-		db	 80h, 00h, 00h, 01h, 80h, 00h
-		db	 00h, 03h, 80h, 00h, 00h, 03h
-		db	 00h, 00h, 00h, 07h, 80h, 00h
-		db	 00h, 07h, 00h, 00h, 00h, 07h
-		db	 00h, 00h, 00h, 0Fh, 00h, 00h
-		db	 00h, 0Eh, 00h, 00h, 00h, 0Fh
-		db	 00h, 00h, 00h, 1Eh, 00h, 00h
-		db	 00h, 0Eh, 00h, 00h, 00h, 1Fh
-		db	 00h, 00h, 00h, 1Eh, 00h, 00h
-		db	 00h, 1Fh, 00h, 00h, 00h, 1Eh
-		db	 00h, 00h, 00h, 1Eh, 00h, 00h
-		db	 00h, 1Eh, 00h, 00h, 00h, 1Eh
-		db	 00h, 00h, 00h, 1Ch, 00h, 00h
-		db	 00h
-		db	3Fh
-		db	12 dup (0)
-		db	 40h, 00h, 00h, 00h,0C0h, 00h
-		db	 00h, 01h,0C0h, 00h, 00h, 03h
-		db	 80h, 00h, 00h, 03h, 80h, 00h
-		db	 00h, 07h, 80h, 00h, 00h, 07h
-		db	 00h, 00h, 00h, 07h, 00h, 00h
-		db	 00h, 0Fh, 00h, 00h, 00h, 0Fh
-		db	 00h, 00h, 00h, 0Eh, 00h, 00h
-		db	 00h, 1Fh, 00h, 00h, 00h, 0Eh
-		db	 00h, 00h, 00h, 1Fh, 00h, 00h
-		db	 00h, 1Eh, 00h, 00h, 00h, 1Fh
-		db	 00h, 00h, 00h, 1Eh, 00h, 00h
-		db	 00h, 1Fh, 00h, 00h, 00h, 1Fh
-		db	 00h, 00h, 00h, 1Eh, 00h, 00h
-		db	 03h, 1Ch,0C0h, 00h, 00h,0FFh
-		db	 00h, 00h, 1Eh, 0Ah,0C0h, 78h
-		db	 10h, 24h, 03h,0B2h, 40h,0F6h
-		db	0E2h, 05h, 5Ah, 4Dh, 8Bh,0F0h
-		db	0BDh, 01h, 00h,0EBh, 0Eh, 24h
-		db	 01h, 8Ah,0E0h, 32h,0C0h, 05h
-		db	 5Ah, 4Eh, 8Bh,0F0h,0BDh, 04h
-		db	 00h, 8Ah,0C3h, 24h, 03h, 02h
-		db	0C0h,0A2h, 79h, 50h,0D1h,0EBh
-		db	0D1h,0EBh,0B0h, 50h,0F6h,0E1h
-		db	 03h,0C3h, 8Bh,0F8h,0B8h, 00h
-		db	0A0h, 8Eh,0C0h,0BAh,0C4h, 03h
-		db	0B8h, 02h, 07h,0EFh,0BAh,0CEh
-		db	 03h,0B8h, 05h, 02h,0EFh,0B0h
-		db	 08h,0EEh, 42h, 8Bh,0CDh,0BDh
-		db	 4Ch, 00h
-
+		db	45 dup (0)			; padding / zero-pad before shape group A
+; sprite_shape_tbl shape group A (small diamond, left-aligned):
+		db	 02h, 00h, 00h, 00h, 06h, 00h	; rows 0-1 (plane bitmasks)
+		db	 00h, 00h, 06h, 00h, 00h, 00h	; rows 2-3
+		db	 0Eh, 00h, 00h, 00h, 0Eh, 00h	; rows 4-5
+		db	 00h, 00h, 0Ch, 00h, 00h, 00h	; rows 6-7
+		db	 0Eh, 00h, 00h, 00h, 1Ch, 00h	; rows 8-9
+		db	 00h, 00h, 0Ch, 00h, 00h, 00h	; rows 10-11
+		db	 1Ch, 00h, 00h, 00h, 1Ch, 00h	; rows 12-13
+		db	 00h, 00h, 1Ch, 00h, 00h, 00h	; rows 14-15
+		db	 1Ch				;  last byte
+		db	16 dup (0)			; padding between shape groups
+; sprite_shape_tbl shape group B (larger diamond, right-aligned):
+		db	 80h, 00h, 00h, 01h, 80h, 00h	; rows 0-1
+		db	 00h, 03h, 80h, 00h, 00h, 03h	; rows 2-3
+		db	 00h, 00h, 00h, 07h, 80h, 00h	; rows 4-5
+		db	 00h, 07h, 00h, 00h, 00h, 07h	; rows 6-7
+		db	 00h, 00h, 00h, 0Fh, 00h, 00h	; rows 8-9
+		db	 00h, 0Eh, 00h, 00h, 00h, 0Fh	; rows 10-11
+		db	 00h, 00h, 00h, 1Eh, 00h, 00h	; rows 12-13
+		db	 00h, 0Eh, 00h, 00h, 00h, 1Fh	; rows 14-15
+		db	 00h, 00h, 00h, 1Eh, 00h, 00h	; rows 16-17
+		db	 00h, 1Fh, 00h, 00h, 00h, 1Eh	; rows 18-19
+		db	 00h, 00h, 00h, 1Eh, 00h, 00h	; rows 20-21
+		db	 00h, 1Eh, 00h, 00h, 00h, 1Eh	; rows 22-23
+		db	 00h, 00h, 00h, 1Ch, 00h, 00h	; rows 24-25
+		db	 00h				;  last byte
+		db	3Fh				;  sentinel byte (0x3F)
+		db	12 dup (0)			; padding between shape groups
+; sprite_shape_tbl shape group C (asymmetric diamond):
+		db	 40h, 00h, 00h, 00h,0C0h, 00h	; rows 0-1
+		db	 00h, 01h,0C0h, 00h, 00h, 03h	; rows 2-3
+		db	 80h, 00h, 00h, 03h, 80h, 00h	; rows 4-5
+		db	 00h, 07h, 80h, 00h, 00h, 07h	; rows 6-7
+		db	 00h, 00h, 00h, 07h, 00h, 00h	; rows 8-9
+		db	 00h, 0Fh, 00h, 00h, 00h, 0Fh	; rows 10-11
+		db	 00h, 00h, 00h, 0Eh, 00h, 00h	; rows 12-13
+		db	 00h, 1Fh, 00h, 00h, 00h, 0Eh	; rows 14-15
+		db	 00h, 00h, 00h, 1Fh, 00h, 00h	; rows 16-17
+		db	 00h, 1Eh, 00h, 00h, 00h, 1Fh	; rows 18-19
+		db	 00h, 00h, 00h, 1Eh, 00h, 00h	; rows 20-21
+		db	 00h, 1Fh, 00h, 00h, 00h, 1Fh	; rows 22-23
+		db	 00h, 00h, 00h, 1Eh, 00h, 00h	; rows 24-25
+		db	 03h, 1Ch,0C0h, 00h, 00h,0FFh	; row 26 (last shape entry) + 0xFF sentinel
+; shift_blit_setup -- inline code (no proc label in Sourcer output).
+; Sets up SI and BP for the shift-blit render path based on AL (sprite type/index).
+; Two entry paths merging at shift_blit_src_set; falls into shift_blit_outer_loop.
+		db	 00h, 00h		; null header (2-byte pad, matching ega_color_fade_init pattern)
+		push	ds
+		or	al,al			; test sign of sprite type byte
+		js	shift_blit_neg		; if negative → type-B path (signed sprite)
+		and	al,3			; mask to 2-bit index (0-3)
+		mov	dl,40h			; multiplier = 64
+		mul	dl			; ax = al * 0x40 (type-A sprite table stride)
+		add	ax,4D5Ah		; + type-A sprite table base (CS:0x4D5A)
+		mov	si,ax			; SI = sprite source ptr (type-A)
+		mov	bp,1			; BP = 1 plane pass
+		jmp	short shift_blit_src_set ; skip type-B path
+shift_blit_neg:
+		and	al,1			; mask to 1-bit index (0-1)
+		mov	ah,al			; AH = index
+		xor	al,al			; AL = 0 → AX = index * 256
+		add	ax,4E5Ah		; + type-B sprite table base (CS:0x4E5A)
+		mov	si,ax			; SI = sprite source ptr (type-B)
+		mov	bp,4			; BP = 4 plane passes
+shift_blit_src_set:
+		mov	al,bl			; AL = BL (X column byte)
+		and	al,3			; mask to pixel-in-byte position (0-3)
+		add	al,al			; double → shift amount (0,2,4,6)
+		db	0A2h, 79h, 50h		; mov [shift_count],al  (direct DS:[5079h] write)
+		shr	bx,1			; BX >>= 1 (byte address x/8 step 1)
+		shr	bx,1			; BX >>= 1 (byte address x/8 step 2 → x/4 col byte)
+		mov	al,50h			; row stride = 80 bytes
+		mul	cl			; ax = row * 80
+		add	ax,bx			; + col byte → VGA byte offset
+		mov	di,ax			; DI = VGA framebuffer destination offset
+		mov	ax,0A000h
+		mov	es,ax			; ES = EGA framebuffer segment
+		mov	dx,3C4h			; EGA sequencer index port
+		mov	ax,702h			; AH=7 (write mode), AL=2 (map mask register)
+		out	dx,ax			; write map mask + mode
+		mov	dx,3CEh			; EGA graphics controller index port
+		mov	ax,205h			; AH=2 (read mode 0+write mode 2), AL=5 (mode reg)
+		out	dx,ax			; write graphics mode
+		mov	al,8			; AL=8 (bit mask register index)
+		out	dx,al			; select bit mask register
+		inc	dx			; DX = 3CFh (EGA graphics controller data)
+		mov	cx,bp			; CX = plane pass count (1 or 4)
+		mov	bp,4Ch			; BP = 0x4C = 76 byte stride (EGA row advance)
 shift_blit_outer_loop:
 							push	cx
 							push	di
@@ -4000,96 +4150,103 @@ shift_blit_inner_loop:
 		out	dx,ax			; port 0FFFFh ??I/O Non-standard
 		pop	ds
 		retn
-		db	22 dup (0)
-		db	 10h, 00h, 00h, 10h, 60h, 00h
-		db	 00h, 07h,0C0h, 00h, 00h, 07h
-		db	0C0h, 00h, 00h, 07h,0C0h, 00h
-		db	 00h, 0Ch, 10h, 00h, 00h, 10h
-		db	 00h
-		db	26 dup (0)
-		db	 01h, 00h, 00h, 00h, 01h, 00h
-		db	 00h, 00h, 40h, 04h, 00h, 00h
-		db	 01h, 00h, 00h, 00h, 09h, 20h
-		db	 00h, 00h, 03h, 80h, 00h, 04h
-		db	 57h,0D4h, 80h, 00h, 03h, 80h
-		db	 00h, 00h, 09h, 20h, 00h, 00h
-		db	 01h, 00h, 00h, 00h, 40h, 04h
-		db	 00h, 00h, 01h, 00h, 00h, 00h
-		db	 01h
-		db	7 dup (0)
-		db	 01h, 00h, 00h, 00h, 01h, 00h
-		db	 00h, 00h, 01h, 00h, 00h, 00h
-		db	 02h, 80h, 00h, 00h, 83h, 80h
-		db	 00h, 00h, 23h, 88h, 00h, 00h
-		db	 0Dh,0B0h, 00h, 00h, 0Bh,0E8h
-		db	 00h, 96h,0FFh,0FFh,0B9h, 00h
-		db	 17h,0E8h, 00h, 00h, 0Bh, 58h
-		db	 00h, 00h, 23h, 82h, 00h, 00h
-		db	 02h, 80h, 80h, 02h, 01h, 00h
-		db	 00h, 00h, 01h, 00h, 00h, 00h
-		db	 01h, 00h
-		db	8 dup (0)
-		db	 10h, 10h, 00h, 00h, 00h, 04h
-		db	 00h, 00h, 80h, 00h, 80h, 03h
-		db	 00h, 00h, 71h, 0Ch, 00h, 00h
-		db	 3Dh, 38h, 00h, 00h, 07h,0F0h
-		db	 00h, 00h, 97h,0E5h, 00h, 00h
-		db	 0Fh,0F0h, 00h, 00h, 1Fh, 38h
-		db	 00h, 00h, 39h, 0Eh, 00h, 00h
-		db	0E1h, 01h, 80h, 01h, 00h, 00h
-		db	 40h, 04h, 00h, 00h, 08h, 10h
-		db	35 dup (0)
-		db	 92h, 4Ah,0AAh,0EBh, 00h
-		db	34 dup (0)
-		db	 01h, 00h, 00h, 00h, 01h, 00h
-		db	 00h, 01h, 01h, 00h, 00h, 00h
-		db	 82h, 00h, 00h, 00h,0ABh, 00h
-		db	 00h, 01h, 5Dh, 04h, 24h,0AEh
-		db	0EFh,0FFh,0FFh,0FFh,0FFh, 04h
-		db	 24h,0ABh,0EFh, 00h, 00h, 01h
-		db	 5Dh, 00h, 00h, 00h, 22h, 00h
-		db	 00h, 00h, 81h, 00h, 00h, 00h
-		db	 01h, 00h, 00h, 00h, 01h, 00h
-		db	19 dup (0)
-		db	 81h, 00h, 00h, 00h,0C4h, 00h
-		db	 00h, 00h,0BCh, 00h, 00h, 00h
-		db	0EEh,0EAh, 24h, 20h,0FFh,0FFh
-		db	0FFh,0FFh,0FBh,0AAh, 24h, 20h
-		db	0FDh, 40h, 00h, 00h,0E6h, 00h
-		db	 00h, 00h, 40h, 80h, 00h, 00h
-		db	 00h
-		db	20h
-		db	42 dup (0)
-		db	0D7h, 55h, 52h, 49h
-		db	60 dup (0)
-		db	0A7h, 54h, 90h, 04h, 00h
-		db	37 dup (0)
-		db	 10h, 00h, 00h, 00h, 04h, 00h
-		db	 00h, 00h, 00h, 80h, 00h, 00h
-		db	 00h, 71h, 00h, 00h, 00h, 3Dh
-		db	 00h, 00h, 00h, 07h, 10h, 04h
-		db	 00h, 97h, 00h, 00h, 00h, 0Fh
-		db	 00h, 00h, 00h, 1Fh, 00h, 00h
-		db	 00h, 39h, 00h, 00h, 00h,0E1h
-		db	 00h, 00h, 01h, 00h, 00h, 00h
-		db	 04h, 00h, 00h, 00h, 10h, 00h
-		db	 00h, 00h, 00h, 00h, 00h, 10h
-		db	7 dup (0)
-		db	 80h, 00h, 00h, 03h, 00h, 00h
-		db	 00h, 0Ch, 00h, 00h, 00h, 38h
-		db	 00h, 00h, 00h,0F0h, 00h, 00h
-		db	 00h,0E5h, 02h, 00h, 10h,0F0h
-		db	 00h, 00h, 00h, 3Ch, 00h, 00h
-		db	 00h, 07h, 00h, 00h, 00h, 00h
-		db	0C0h, 00h, 00h, 00h, 20h, 00h
-		db	 00h, 00h, 04h
-		db	38 dup (0)
-		db	 20h, 09h, 2Ah,0E5h
-		db	28 dup (0)
-		db	 01h, 02h, 02h, 04h, 01h, 04h
-		db	 05h, 06h, 06h, 05h, 05h, 06h
-		db	0C3h
-		db	304 dup (0)
+
+; shift_blit sprite shape tables (0x1CDB-end):
+; EGA 4-byte bitmask rows for shift_blit rendering. Each 4-byte entry = one pixel row:
+; bytes 0-1 = EGA plane 0/1 bitmask pair, bytes 2-3 = plane 2/3 bitmask pair.
+; Multiple shape groups separated by zero-padding. Used by shift_blit_outer_loop via SI+table.
+
+shift_blit_shape_tbl:
+		db	22 dup (0)			; leading zero-pad (group 0 empty)
+		db	 10h, 00h, 00h, 10h, 60h, 00h	; shape group 1 rows
+		db	 00h, 07h,0C0h, 00h, 00h, 07h	;  (group 1 cont.)
+		db	0C0h, 00h, 00h, 07h,0C0h, 00h	;  (group 1 cont.)
+		db	 00h, 0Ch, 10h, 00h, 00h, 10h	;  (group 1 cont.)
+		db	 00h				;  (group 1 last byte)
+		db	26 dup (0)			; padding between groups
+		db	 01h, 00h, 00h, 00h, 01h, 00h	; shape group 2 rows
+		db	 00h, 00h, 40h, 04h, 00h, 00h	;  (cont.)
+		db	 01h, 00h, 00h, 00h, 09h, 20h	;  (cont.)
+		db	 00h, 00h, 03h, 80h, 00h, 04h	;  (cont.)
+		db	 57h,0D4h, 80h, 00h, 03h, 80h	;  (cont.)
+		db	 00h, 00h, 09h, 20h, 00h, 00h	;  (cont.)
+		db	 01h, 00h, 00h, 00h, 40h, 04h	;  (cont.)
+		db	 00h, 00h, 01h, 00h, 00h, 00h	;  (cont.)
+		db	 01h				;  (group 2 last byte)
+		db	7 dup (0)			; padding between groups
+		db	 01h, 00h, 00h, 00h, 01h, 00h	; shape group 3 rows
+		db	 00h, 00h, 01h, 00h, 00h, 00h	;  (cont.)
+		db	 02h, 80h, 00h, 00h, 83h, 80h	;  (cont.)
+		db	 00h, 00h, 23h, 88h, 00h, 00h	;  (cont.)
+		db	 0Dh,0B0h, 00h, 00h, 0Bh,0E8h	;  (cont.)
+		db	 00h, 96h,0FFh,0FFh,0B9h, 00h	;  (cont.)
+		db	 17h,0E8h, 00h, 00h, 0Bh, 58h	;  (cont.)
+		db	 00h, 00h, 23h, 82h, 00h, 00h	;  (cont.)
+		db	 02h, 80h, 80h, 02h, 01h, 00h	;  (cont.)
+		db	 00h, 00h, 01h, 00h, 00h, 00h	;  (cont.)
+		db	 01h, 00h			;  (group 3 last bytes)
+		db	8 dup (0)			; padding between groups
+		db	 10h, 10h, 00h, 00h, 00h, 04h	; shape group 4 rows
+		db	 00h, 00h, 80h, 00h, 80h, 03h	;  (cont.)
+		db	 00h, 00h, 71h, 0Ch, 00h, 00h	;  (cont.)
+		db	 3Dh, 38h, 00h, 00h, 07h,0F0h	;  (cont.)
+		db	 00h, 00h, 97h,0E5h, 00h, 00h	;  (cont.)
+		db	 0Fh,0F0h, 00h, 00h, 1Fh, 38h	;  (cont.)
+		db	 00h, 00h, 39h, 0Eh, 00h, 00h	;  (cont.)
+		db	0E1h, 01h, 80h, 01h, 00h, 00h	;  (cont.)
+		db	 40h, 04h, 00h, 00h, 08h, 10h	;  (group 4 last row)
+		db	35 dup (0)			; padding between groups
+		db	 92h, 4Ah,0AAh,0EBh, 00h	; single-row sentinel entry + 1 byte
+		db	34 dup (0)			; padding between groups
+		db	 01h, 00h, 00h, 00h, 01h, 00h	; shape group 5 rows
+		db	 00h, 01h, 01h, 00h, 00h, 00h	;  (cont.)
+		db	 82h, 00h, 00h, 00h,0ABh, 00h	;  (cont.)
+		db	 00h, 01h, 5Dh, 04h, 24h,0AEh	;  (cont.)
+		db	0EFh,0FFh,0FFh,0FFh,0FFh, 04h	;  (cont.)
+		db	 24h,0ABh,0EFh, 00h, 00h, 01h	;  (cont.)
+		db	 5Dh, 00h, 00h, 00h, 22h, 00h	;  (cont.)
+		db	 00h, 00h, 81h, 00h, 00h, 00h	;  (cont.)
+		db	 01h, 00h, 00h, 00h, 01h, 00h	;  (group 5 last row)
+		db	19 dup (0)			; padding between groups
+		db	 81h, 00h, 00h, 00h,0C4h, 00h	; shape group 6 rows
+		db	 00h, 00h,0BCh, 00h, 00h, 00h	;  (cont.)
+		db	0EEh,0EAh, 24h, 20h,0FFh,0FFh	;  (cont.)
+		db	0FFh,0FFh,0FBh,0AAh, 24h, 20h	;  (cont.)
+		db	0FDh, 40h, 00h, 00h,0E6h, 00h	;  (cont.)
+		db	 00h, 00h, 40h, 80h, 00h, 00h	;  (cont.)
+		db	 00h				;  (group 6 last byte)
+		db	20h				; single marker byte (0x20)
+		db	42 dup (0)			; padding
+		db	0D7h, 55h, 52h, 49h		; marker bytes (0xD7,'U','R','I')
+		db	60 dup (0)			; padding
+		db	0A7h, 54h, 90h, 04h, 00h	; marker bytes
+		db	37 dup (0)			; padding
+		db	 10h, 00h, 00h, 00h, 04h, 00h	; shape group 7 rows (4-byte stride)
+		db	 00h, 00h, 00h, 80h, 00h, 00h	;  (cont.)
+		db	 00h, 71h, 00h, 00h, 00h, 3Dh	;  (cont.)
+		db	 00h, 00h, 00h, 07h, 10h, 04h	;  (cont.)
+		db	 00h, 97h, 00h, 00h, 00h, 0Fh	;  (cont.)
+		db	 00h, 00h, 00h, 1Fh, 00h, 00h	;  (cont.)
+		db	 00h, 39h, 00h, 00h, 00h,0E1h	;  (cont.)
+		db	 00h, 00h, 01h, 00h, 00h, 00h	;  (cont.)
+		db	 04h, 00h, 00h, 00h, 10h, 00h	;  (cont.)
+		db	 00h, 00h, 00h, 00h, 00h, 10h	;  (group 7 last row)
+		db	7 dup (0)			; padding
+		db	 80h, 00h, 00h, 03h, 00h, 00h	; shape group 8 rows
+		db	 00h, 0Ch, 00h, 00h, 00h, 38h	;  (cont.)
+		db	 00h, 00h, 00h,0F0h, 00h, 00h	;  (cont.)
+		db	 00h,0E5h, 02h, 00h, 10h,0F0h	;  (cont.)
+		db	 00h, 00h, 00h, 3Ch, 00h, 00h	;  (cont.)
+		db	 00h, 07h, 00h, 00h, 00h, 00h	;  (cont.)
+		db	0C0h, 00h, 00h, 00h, 20h, 00h	;  (cont.)
+		db	 00h, 00h, 04h			;  (group 8 last byte)
+		db	38 dup (0)			; trailing padding
+		db	 20h, 09h, 2Ah,0E5h		; epilog marker bytes
+		db	28 dup (0)			; padding
+		db	 01h, 02h, 02h, 04h, 01h, 04h	; EGA plane pair table (shift_blit plane seq)
+		db	 05h, 06h, 06h, 05h, 05h, 06h	;  (cont.)
+		db	0C3h				; retn (function epilog / table terminator)
+		db	304 dup (0)			; end-of-segment zero padding
 
 seg_a		ends
 
