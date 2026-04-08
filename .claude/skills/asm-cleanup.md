@@ -128,15 +128,26 @@ Define macros before `seg_a segment`. Apply them only where the instruction ORDE
 
 **The rule: every `db` line must have a true meaning or code conversion. No `db` line should remain as unexplained hex after cleanup.**
 
+**Adding a comment that explains what bytes do is NOT enough — you must convert x86 instruction bytes to actual mnemonics.** A line like:
+```asm
+db  8Ah, 42h, 0AEh    ;  mov al,[bp+0x8a]    ← WRONG: still a db line
+```
+must become:
+```asm
+mov  al, byte ptr [bp+08Ah]                    ← CORRECT: real mnemonic
+```
+The only exception is when TASM won't assemble the canonical form (wrong encoding, illegal immediate, etc.) — in that case keep as `db` with a comment explaining the alt-encoding.
+
 For each `db` block, determine which of these it is and apply the appropriate treatment:
 
 | What it is | How to identify | Treatment |
 |---|---|---|
-| x86 instructions | After a `proc`, before a `retn`, no "No entry point" marker | Decode to real mnemonics |
+| x86 instructions | After a `proc`, before a `retn`, no "No entry point" marker | **Decode to real mnemonics — not just comments** |
+| Fixup jump/call bytes | `; Fixup - byte match` comment, or `db 0E8h/0E9h/78h/0Fh` near branches | Decode: `db 0E8h, lo, hi` → `call label`; `db 78h, ofs` → `js label`; `db 0Fh, 85h, lo, hi` → `jnz near label` |
 | Word pointer table (jump/fn table) | Pairs of bytes all in the same address range | Convert to `dw` with labels or comments identifying each target |
 | String/text data | Values in 0x20–0x7E in sequence | Convert to `db 'string'` literals |
 | Named constant (color, mode, flag) | Single byte used as a parameter | Add a named EQU or inline comment |
-| Binary bitmap/tile data | Patterns of bits in large blocks | Add a block comment naming the structure; group rows logically |
+| Binary bitmap/tile data | Patterns of bits in large blocks | Add a block label and group rows logically with row comments |
 | Numeric lookup table | Indexed by register in adjacent code | Add a table label and per-entry comments |
 | Embedded code in unreachable section | "No entry point to code" marker | Decode instructions, add a label explaining what calls it |
 
@@ -420,17 +431,20 @@ If the module name was always correct and the description is already accurate, l
 
 ---
 
-Before committing, confirm NO unexplained raw `db` lines remain:
+Before committing, you MUST run this grep and report the count:
 
 ```
+grep -c "^\s*db\s" <file.asm>
 grep -n "^\s*db\s" <file.asm> | grep -v "dup\|'[^']*'"
 ```
 
-Every remaining `db` line must be one of:
+**If the count is non-zero, you are NOT done.** Work through every remaining line. Do not commit until the grep returns only lines that are one of:
 - An alt-encoding byte with a comment (`; and di, bx  (alt encoding: ...)`)
-- Sprite/bitmap data with a `sprite_anim_data:` label and row comments
+- Sprite/bitmap data with a block label and row comments
 - A named lookup table with a label
-- An explicitly unexplainable block with a comment explaining what is known
+- An explicitly unexplainable block with a comment explaining what is known (where it's referenced, what register points to it)
+
+**Never skip this check.** Large files will have hundreds of raw `db` lines — process them all before committing.
 
 Then run final verify:
 

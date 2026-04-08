@@ -365,11 +365,9 @@ sprite_state_update		endp
 ; Called via dispatch_tbl[bx]; called with SI=sprite_data, DI=sprite_buf slot.
 
 anim_cycle_2frame_1B:
-;*		js	loc_29+1		; Fixup: jumps +1 into loc_29 body (0x01A7)
-		db	 78h, 31h		;  Fixup - byte match: js $+0x33 (short jump into loc_29)
+		js	loc_29+1		; jumps +1 into loc_29 body — skips the mov [di-1] setup byte
 		cbw				; Convrt byte to word
-;*		xor	si,cx			; Fixup encoding 31h CEh (alternate ModRM form)
-		db	 31h,0CEh		;  Fixup - byte match: xor si,cx
+		db	 31h,0CEh		; xor si, cx  (alt encoding: 31/CE = XOR r/m16,r16; TASM uses 33/C6)
 		xor	[si+32h],cx
 		mov	al,[si-1]
 		sub	al,1Bh
