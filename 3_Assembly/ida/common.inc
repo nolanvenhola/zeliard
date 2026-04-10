@@ -1,95 +1,35 @@
-monster            STRUC
-  currX            dw   ?
-  currY            db   ?
-  m_x_rel          db   ?
-  flags            db   ?
-  ai_flags         db   ?
-  anim_counter     db   ?
-  state_flags      db   ?
-  hp               db   ?
-  ai_state         db   ?
-  ai_timer         db   ?
-  spwnX            dw   ?
-  spwnY            db   ?
-  type_            db   ?
-  counter          db   ?
-monster            ENDS
-
-door               STRUC
-  x0               dw   ?
-  y0               db   ?
-  field_3          db   ?
-  d_place_map_id   db   ?
-  x1               dw   ?
-  y1               db   ?
-  field_8          db   ?
-  d_field_9        dw   ?
-  field_B          db   ?
-door               ENDS
-
-; collapsing and vertical platforms share the same struct
-vert_platform      STRUC
-  x                dw   ?
-  y                db   ?
-vert_platform      ENDS
-
-horiz_platform     STRUC
-  x_and_flags      dw   ?
-  y_and_flags      db   ?
-  min_x            dw   ?
-  max_x            dw   ?
-horiz_platform     ENDS
-
-projectile         STRUC
-  p_x_rel          db   ?
-  p_y_rel          db   ?
-  field_2          db   ?
-  field_3          db   ?
-  field_4          db   ?
-  field_5          db   ?
-  field_6          db   ?
-  p_field_7        dw   ?
-  p_field_9        dw   ?
-  field_B          db   ?
-  field_C          db   ?
-projectile         ENDS
-
 mdt_descriptor     STRUC
-  b7b6_msd_idx_b0  db   ?
-  mman_grp_idx     db   ?
-  enp_grp_idx      db   ?
+  b7b6_msd_idx_b0  db   ? ; bit 7: is_boss_cavern, bit 6: is_jashiin_cavern, bit 0: (0 ? town : dungeon)
+  mman_grp_idx     db   ? ; Town NPC sprite group index
+  mpp_grp_idx      db   ? ; magic projectiles pattern group index
   eai_bin_idx      db   ?
-  enp_grp_idx_     db   ?
-  unk              db   ?
-  eai_bin_idx_     db   ?
+  enp_grp_idx      db   ?
+  boss_grp         db   ? ; boss enp override (e.g. crab.grp)
+  boss_ai          db   ? ; boss AI override (e.g. crab.bin)
 mdt_descriptor     ENDS
 
+; hero magic projectile
 magic_projectile   STRUC
-  mp_x_rel         dw   ?
-  mp_y_rel         db   ?
-  field_3          db   ?
-  field_4          db   ?
-  field_5          db   ?
-  field_6          db   ?
-  mp_field_7       db   ?
-  field_8          db   ?
-  mp_field_9       db   ?
-  field_A          db   ?
-  field_B          db   ?
-  field_C          db   ?
-  field_D          db   ?
-  field_E          db   ?
-  field_F          db   ?
+  mp_x_rel                  dw   ?
+  mp_y_rel                  db   ?
+  mp_dir                    db   ? ; bit 7: return/deactivate flag, bit 1,0: direction
+  mp_life_timer             db   ?
+  mp_anim_frame             db   ?
+  mp_cached_x_offset_tiles  db   ?
+  mp_cached_y_offset        db   ?
+  mp_vram_addr_tile00       dw   ?
+  mp_vram_addr_tile10       dw   ?
+  mp_vram_addr_tile01       dw   ?
+  mp_vram_addr_tile11       dw   ?
 magic_projectile   ENDS
 
 spirit             STRUC
-  field_0          db   ?
-  field_1          db   ?
-  field_2          db   ?
-  field_3          db   ?
-  field_4          db   ?
-  field_5          db   ?
-  field_6          db   ?
+  s_orbit_phase    db   ? ; FF: inactive; bits 3..0: orbit phase
+  s_orbit_speed    db   ?
+  s_active_shots   db   ?
+  s_vram_addr      dw   ? ; bit 15: dirty flag, bit 14..0: VRAM address
+  s_screen_x       db   ?
+  s_screen_y       db   ?
 spirit             ENDS
 
 ; Permanent constants
@@ -129,6 +69,7 @@ malicia_items               equ   2     ; +128 - Chest, 50 Golds
 malicia_items_1             equ   3     ; +128 - Door to Cangrejo open.
                                         ; +64 - Door to Satono open.
                                         ; +32 - Collected a Tear of Esmesanti.
+byte_4                      equ   4     ;
 spoke_to_king               equ   5     ; 00 = No, FF = Yes
 entered_cavern_first_time   equ   6     ; 00 = No, FF = Yes
 Pulpo_Defeated              equ   8     ; 0000 = No, FFFF = Yes
@@ -321,6 +262,7 @@ crest_of_glory              equ   9bh   ; 00-No, FF-Yes
 hero_crest                  equ   9ch   ; 00-No, FF-Yes
 current_magic_spell         equ   9dh   ; 00, Nothing, 01-07 Spells. This is row#, not which spell is equipped
 current_accessory           equ   9eh   ; This is Row #, not item specific
+byte_9F                     equ   9fh   ;
 Tears_of_Esmesanti_count    equ   0a0h  ; 0..9
 Feruza_Shoes                equ   0a1h  ; high jump
 Pirika_Shoes                equ   0a2h  ; feet protection
@@ -451,7 +393,12 @@ invincibility_flag          equ   0e8h  ; ...
 
 
 ; stick.bin
+stick_entry0                                       equ 100h
+stick_entry1                                       equ 103h
+stick_entry2                                       equ 106h
+stick_entry3                                       equ 109h
 res_dispatcher_proc                                equ 10ch
+reserved_nop_proc                                  equ 10eh
 Confirm_Exit_Dialog_proc                           equ 110h
 Handle_Pause_State_proc                            equ 112h
 Handle_Speed_Change_proc                           equ 114h
@@ -460,6 +407,7 @@ Joystick_Deactivator_proc                          equ 118h
 Accumulate_folded_ff1b_proc                        equ 11ah
 Scan_Saved_Games_proc                              equ 11ch
 Handle_Restore_Game_proc                           equ 11eh
+raw_joystick_calibration_read_proc                 equ 120h
 
 ; gmmcga.bin
 Draw_Bordered_Rectangle_proc                       equ 2000h
@@ -476,35 +424,27 @@ Print_Almas_Decimal_proc                           equ 2014h
 Print_Gold_Decimal_proc                            equ 2016h
 Print_Magic_Left_Decimal_proc                      equ 2018h
 Print_ShieldHP_Decimal_proc                        equ 201Ah
-word_201C                                          equ 201Ch
+Render_Sprite_18Rows_From_Seg1_proc                equ 201Ch
+Render_Entity_Sprite1_proc                         equ 201Eh
+Render_Mask_Sprite_proc                            equ 2020h
 Render_Font_Glyph_proc                             equ 2022h
+Scroll_Screen_Rect_Down_proc                       equ 2024h
+Capture_Screen_Rect_to_seg3_proc                   equ 2026h
+Put_Image_proc                                     equ 2028h
 Render_String_FF_Terminated_proc                   equ 202Ah
-word_202C                                          equ 202Ch
+Copy_Screen_Rect_VRAM_proc                         equ 202Ch
+Draw_Status_Frame_proc                             equ 202Eh
+Render_Decimal_Digits_proc                         equ 2030h
+Convert_32bit_To_Decimal_Digits_proc               equ 2032h
+Render_Sprite_With_Fallback_proc                   equ 2034h
+Render_Sprite_With_Fallback_Alt_proc               equ 2036h
+Render_C_String_proc                               equ 2038h
+Render_Sword_Sprite_proc                           equ 203Ah
+Render_Shield_Sprite_proc                          equ 203Ch
+Render_Spell_Icon_proc                             equ 203Eh
 Fade_To_Black_Dithered_proc                        equ 2040h
+Clear_Screen_proc                                  equ 2042h
 Reassemble_3_Planes_To_Packed_Bitmap_proc          equ 2044h
-
-; gfmcga.bin
-Refresh_Dirty_Tiles_proc                           equ 3000h
-Sample_Neighborhood_Attributes_proc                equ 3002h
-Flush_Ui_Element_If_Dirty_proc                     equ 3004h
-Composite_Meta_Tile_Renderer_proc                  equ 3006h
-Uncompress_And_Render_Tile_proc                    equ 3008h
-Viewport_Coords_To_Screen_Addr_proc                equ 300Ah
-Cached_Tile_Drawer_proc                            equ 300Eh
-Active_Entity_Sprite_Renderer_proc                 equ 3010h
-Render_Viewport_Tiles_proc                         equ 3012h
-word_3014                                          equ 3014h
-word_3016                                          equ 3016h
-word_3018                                          equ 3018h
-word_301A                                          equ 301Ah
-word_301C                                          equ 301Ch
-word_301E                                          equ 301Eh
-word_3020                                          equ 3020h
-word_3022                                          equ 3022h
-word_3024                                          equ 3024h
-word_3026                                          equ 3026h
-word_3028                                          equ 3028h
-word_302A                                          equ 302Ah
 
 ; fight.bin
 Cavern_Game_Init_proc                              equ 6000h
@@ -541,47 +481,134 @@ Browse_Projectiles_proc                            equ 603Ch
 Find_Monsters_Near_Hero_proc                       equ 603Eh
 Move_Monster_NWE_Depending_On_Whats_Below_proc     equ 6040h
 
-; eai1.bin
+; town.bin
+special_tile_list_ptr                              equ 8002h
+word_A000                                          equ 0A000h
+; eai1.bin, crab.bin
 Monster_AI_proc                                    equ 0A000h
 word_A002                                          equ 0A002h
+word_A004                                          equ 0A004h
 death_split_table_ptr                              equ 0A006h
 byte_A010                                          equ 0A010h
 
+mdt_buffer                                         equ 0C000h
+mapWidth                                           equ 0C002h
+
+proximity_map                                      equ 0E000h ; 900h bytes
+viewport_buffer_28x19                              equ 0E900h ; 28*19=532 bytes
+magic_projectiles                                  equ 0EB15h
+spirit_sprite_0                                    equ 0EB60h
+spirit_sprite_1                                    equ 0EB67h
+spirit_sprite_2                                    equ 0EB6Eh
+spirit_sprite_3                                    equ 0EB75h
+projectiles_array                                  equ 0EB80h ; 13x32 bytes
+proximity_second_layer                             equ 0ED20h
+is_boss_dead                                       equ 0EDA0h
+
+; towns
+cache_bytes_ptr                                    equ 0E005h
+digits_font                                        equ 0F502h
+letters_font                                       equ 0F504h
+
 ; shared data
-heartbeat_volume                                    equ 0FF08h
-____Alt_Space                                       equ 0FF16h
-____right_left_down_up                              equ 0FF17h
-F9_F7_F2_F1_KREJSNYQ_Esc_Ctrl_Shift_Enter           equ 0FF18h
-frame_timer                                         equ 0FF1Ah
-anim_timer                                          equ 0FF1Bh
-byte_FF1D                                           equ 0FF1Dh
-byte_FF1E                                           equ 0FF1Eh
-byte_FF24                                           equ 0FF24h
-game_segment                                        equ 0FF2Ch
-byte_FF2E                                           equ 0FF2Eh
-byte_FF2F                                           equ 0FF2Fh
-byte_FF30                                           equ 0FF30h
-viewport_top_offset                                 equ 0FF31h
-speed_const                                         equ 0FF33h
-is_boss_cavern                                      equ 0FF34h
-hero_y_absolute                                     equ 0FF35h
+fn_exit_far_ptr                                    equ 0FF00h
+fn_timer_chain_ptr                                 equ 0FF04h
+heartbeat_volume                                   equ 0FF08h
+exit_pending_flag                                  equ 0FF09h
+joystick_enabled_flag                              equ 0FF0Ah
+fn_per_tick_callback                               equ 0FF0Ch
+fn_per_tick_callback2                              equ 0FF10h
+segmented_load_flag                                equ 0FF14h
+direct_load_seek_flag                              equ 0FF15h
+____Alt_Space                                      equ 0FF16h
+____right_left_down_up                             equ 0FF17h
+F9_F7_F2_F1_KREJSNYQ_Esc_Ctrl_Shift_Enter          equ 0FF18h
+frame_timer                                        equ 0FF1Ah
+anim_timer                                         equ 0FF1Bh
+spacebar_latch                                     equ 0FF1Dh
+altkey_latch                                       equ 0FF1Eh
+fn_per_tick_user_ptr                               equ 0FF1Fh
+per_tick_user_enabled                              equ 0FF20h
+byte_FF24                                          equ 0FF24h
+byte_FF26                                          equ 0FF26h
+sound_fx_toggle_by_f2                              equ 0FF27h
+music_channel_param                                equ 0FF28h
+Current_ASCII_Char                                 equ 0FF29h
+proximity_start_tiles                              equ 0FF2Ah ; town tiles start address for left column of proximity map
+seg1                                               equ 0FF2Ch ; code segment + 1000h
+boss_being_hit                                     equ 0FF2Eh
+sprite_flash_flag                                  equ 0FF2Fh
+boss_is_dead                                       equ 0FF30h
+viewport_left_top_addr                             equ 0FF31h ; address within proximity map, corresponding to viewport left top corner
+speed_const                                        equ 0FF33h
+is_boss_cavern                                     equ 0FF34h
+hero_y_absolute                                    equ 0FF35h
 hero_damage_this_frame                             equ 0FF36h
-hero_sprite_hidden                                  equ 0FF37h
-squat_flag                                          equ 0FF38h
-on_rope_flags                                       equ 0FF39h
-byte_FF3A                                           equ 0FF3Ah
-spell_active_flag                                   equ 0FF3Ch
-jump_phase_flags                                    equ 0FF3Dh
-byte_FF3E                                           equ 0FF3Eh
-byte_FF3F                                           equ 0FF3Fh
-byte_FF40                                           equ 0FF40h
-byte_FF41                                           equ 0FF41h
-slope_direction                                     equ 0FF42h
-sword_swing_flag                                    equ 0FF43h
-byte_FF44                                           equ 0FF44h
-sword_hit_type                                      equ 0FF45h
-sword_down_thrust                                   equ 0FF46h
-down_thrust_held_flag                               equ 0FF47h
-monster_index                                       equ 0FF4Ah
-byte_FF4B                                           equ 0FF4Bh
-soundFX_request                                     equ 0FF75h
+hero_sprite_hidden                                 equ 0FF37h
+squat_flag                                         equ 0FF38h
+on_rope_flags                                      equ 0FF39h
+hero_hidden_flag                                   equ 0FF3Ah
+joystick_calibrated_flag                           equ 0FF3Bh
+spell_active_flag                                  equ 0FF3Ch
+jump_phase_flags                                   equ 0FF3Dh
+byte_FF3E                                          equ 0FF3Eh
+shield_anim_phase                                  equ 0FF3Fh
+shield_anim_active                                 equ 0FF40h
+shield_variant_index                               equ 0FF41h
+slope_direction                                    equ 0FF42h ; 1=right, 2=left
+sword_swing_flag                                   equ 0FF43h
+ui_element_dirty                                   equ 0FF44h
+sword_hit_type                                     equ 0FF45h
+sword_down_thrust                                  equ 0FF46h
+down_thrust_held_flag                              equ 0FF47h
+joystick_direction_bits                            equ 0FF48h
+joystick_button_bits                               equ 0FF49h
+tick_counter                                       equ 0FF50h
+monster_index                                      equ 0FF4Ah
+byte_FF4B                                          equ 0FF4Bh
+dialog_string_ptr                                  equ 0FF4Ch
+dialog_cursor_x                                    equ 0FF4Eh
+dialog_scroll_counter                              equ 0FF4Fh
+menu_item_count                                    equ 0FF52h
+menu_max_items                                     equ 0FF53h
+menu_base_addr                                     equ 0FF54h
+menu_cursor_pos                                    equ 0FF56h
+menu_digits_render_flag                            equ 0FF57h
+byte_FF58                                          equ 0FF58h
+numeric_display_x_offset                           equ 0FF68h ; relative to generic display buffer
+string_width_bytes                                 equ 0FF6Ah ; rendered strings are copied from buffer to VRAM by 8px columns
+byte_FF6C                                          equ 0FF6Ch
+keyboard_alt_mode_flag                             equ 0FF74h
+soundFX_request                                    equ 0FF75h
+font_highlight_flag                                equ 0FF77h
+disk_swap_suppressed                               equ 0FF78h
+fn_kbd_chain_ptr                                   equ 0FF79h
+
+; seg1 offsets (code seg + 1000h)
+; functions like draw_tile_to_screen assume that there are packed tiles (48 bytes each) at 8000h
+; other functions like decompress_sprite expect the descriptor table at 8000h:
+packed_tile_ptr                                    equ 08000h
+tile_anim_count_table                              equ 08000h ; pointer to a table
+    ; one byte per tile type
+    ; `0` = no animation, non-zero = number of animation frames. 
+    ; Also used as the loaded-sprites base for `tile_render_and_animate`
+tile_animation_replacement_table                   equ 08004h ; pointer to a table
+    ; the table at that address is a counted list of (old_tile, new_tile) byte pairs terminated by 0FFh
+packed_tile_graphics                               equ 08100h ; 48 bytes per tile (6 bits per pixel × 8 pixels × 8 rows)
+sprite_transparency_masks                          equ 0D000h
+    ; 1 byte per tile-row of the animated sprite, 
+    ; 8 bits per row selecting which of the 8 pixels are drawn from the sprite vs the background
+unknown2_sprite_pointer                            equ 0E202h
+shield_sprite_pointer                              equ 0E204h
+unknown3_sprite_pointer                            equ 0E206h
+sword_sprite_pointer                               equ 0E208h
+unknown_sprite_pointer                             equ 0E20Ah
+unknown1_sprite_pointer                            equ 0E20Ch
+
+
+; seg2 offsets (code seg + 2000h)
+or_blit_buffer                                     equ 6000h
+and_blit_buffer                                    equ 8000h
+mcga_driver_buffer                                 equ 9000h
+
+; seg3 offsets (code seg + 3000h)
