@@ -1,4 +1,5 @@
 include common.inc
+include dungeon.inc
                 .286
                 .model small
 
@@ -236,10 +237,7 @@ frog_rat_death_desc db 4, 0, 4, 0       ; ...
 ; =============== S U B R O U T I N E =======================================
 
 
-Monster_AI      proc near               ; ...
-
-; FUNCTION CHUNK AT A3E7 SIZE 00000101 BYTES
-; FUNCTION CHUNK AT A517 SIZE 000001D9 BYTES
+Monster_AI      proc near
 
                 mov     bl, [si+monster.flags]
                 and     bl, 0Fh
@@ -247,30 +245,30 @@ Monster_AI      proc near               ; ...
                 add     bx, bx          ; switch 4 cases
                 jmp     jpt_A25E[bx]    ; switch jump
 ; ---------------------------------------------------------------------------
-jpt_A25E        dw offset flags00       ; ...
-                dw offset flags01       ; jump table for switch statement
+jpt_A25E        dw offset flags00
+                dw offset flags01
                 dw offset flags10
                 dw offset flags11
 ; ---------------------------------------------------------------------------
 
-flags00:                                ; ...
+flags00:                 
                 call    cs:Check_Monster_Ids_Two_Rows_Below_Monster_proc ; jumptable 0000A25E case 0
                 jnz     short loc_A276
                 jmp     cs:Check_Vertical_Distance_Between_Hero_And_Monster_proc
 ; ---------------------------------------------------------------------------
 
-loc_A276:                               ; ...
+loc_A276:                
                 test    [si+monster.hp], 0FFh
                 jnz     short loc_A280
                 mov     [si+monster.hp], 2
 
-loc_A280:                               ; ...
+loc_A280:                
                 test    [si+monster.ai_flags], 20h
                 jz      short loc_A28B
                 jmp     cs:Hero_Hits_monster_proc
 ; ---------------------------------------------------------------------------
 
-loc_A28B:                               ; ...
+loc_A28B:                
                 mov     bl, [si+monster.ai_state]
                 rol     bl, 1
                 rol     bl, 1
@@ -279,13 +277,13 @@ loc_A28B:                               ; ...
                 add     bx, bx          ; switch 4 cases
                 jmp     jpt_A299[bx]    ; switch jump
 ; ---------------------------------------------------------------------------
-jpt_A299        dw offset ai_state_00   ; ...
-                dw offset ai_state_40   ; jump table for switch statement
+jpt_A299        dw offset ai_state_00
+                dw offset ai_state_40
                 dw offset ai_state_80
                 dw offset ai_state_c0
 ; ---------------------------------------------------------------------------
 
-ai_state_00:                            ; ...
+ai_state_00:             
                 call    cs:move_monster_N_proc ; jumptable 0000A299 case 0
                 test    [si+monster.anim_counter], 0FFh
                 jz      short loc_A2B5
@@ -293,7 +291,7 @@ ai_state_00:                            ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A2B5:                               ; ...
+loc_A2B5:                
                 mov     al, [si+monster.m_x_rel]
                 sub     al, 17
                 cmp     al, 10
@@ -303,15 +301,15 @@ loc_A2B5:                               ; ...
                 cmp     al, 7
                 jnb     short loc_A2CB
 
-loc_A2C7:                               ; ...
+loc_A2C7:                
                 mov     [si+monster.ai_state], 40h ; '@'
 
-loc_A2CB:                               ; ...
+loc_A2CB:                
                 mov     [si+monster.anim_counter], 0
                 retn
 ; ---------------------------------------------------------------------------
 
-ai_state_40:                            ; ...
+ai_state_40:             
                 inc     [si+monster.anim_counter] ; jumptable 0000A299 case 1
                 and     [si+monster.anim_counter], 7
                 cmp     [si+monster.anim_counter], 3
@@ -319,12 +317,12 @@ ai_state_40:                            ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A2DE:                               ; ...
+loc_A2DE:                
                 mov     [si+monster.ai_state], 80h
                 retn
 ; ---------------------------------------------------------------------------
 
-ai_state_80:                            ; ...
+ai_state_80:             
                 call    bat_step_throttle ; jumptable 0000A299 case 2
                 test    byte ptr ds:hero_damage_this_frame, 0FFh
                 jz      short loc_A2F2
@@ -332,7 +330,7 @@ ai_state_80:                            ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A2F2:                               ; ...
+loc_A2F2:                
                 mov     al, ds:hero_y_absolute ; hero_y_absolute
                 sub     al, [si+monster.currY]
                 add     al, 21
@@ -352,35 +350,35 @@ loc_A2F2:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A31E:                               ; ...
+loc_A31E:                
                 call    cs:move_monster_SW_proc
                 jb      short loc_A344
                 and     [si+monster.ai_flags], 7Fh
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A32A:                               ; ...
+loc_A32A:                
                 cmp     [si+monster.m_x_rel], 11h
                 jz      short loc_A376
                 cmp     [si+monster.m_x_rel], 10h
                 jz      short loc_A376
                 jnb     short loc_A344
 
-loc_A338:                               ; ...
+loc_A338:                
                 call    cs:move_monster_E_proc
                 jb      short loc_A376
                 or      [si+monster.ai_flags], 80h
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A344:                               ; ...
+loc_A344:                
                 call    cs:move_monster_W_proc
                 jb      short loc_A376
                 and     [si+monster.ai_flags], 7Fh
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A350:                               ; ...
+loc_A350:                
                 cmp     [si+monster.m_x_rel], 11h
                 jz      short loc_A376
                 cmp     [si+monster.m_x_rel], 10h
@@ -392,25 +390,25 @@ loc_A350:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A36A:                               ; ...
+loc_A36A:                
                 call    cs:move_monster_NW_proc
                 jb      short loc_A344
                 and     [si+monster.ai_flags], 7Fh
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A376:                               ; ...
+loc_A376:                
                 call    cs:move_monster_S_proc
                 jb      short loc_A37E
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A37E:                               ; ...
+loc_A37E:                
                 mov     [si+monster.ai_state], 0C0h
                 retn
 ; ---------------------------------------------------------------------------
 
-ai_state_c0:                            ; ...
+ai_state_c0:             
                 test    [si+monster.ai_state], 20h ; jumptable 0000A299 case 3
                 jnz     short loc_A3BD
                 call    bat_step_throttle
@@ -421,33 +419,33 @@ ai_state_c0:                            ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A39A:                               ; ...
+loc_A39A:                
                 and     [si+monster.ai_flags], 7Fh
                 jmp     short loc_A3AC
 ; ---------------------------------------------------------------------------
 
-loc_A3A0:                               ; ...
+loc_A3A0:                
                 call    cs:move_monster_NW_proc
                 jb      short loc_A3A8
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A3A8:                               ; ...
+loc_A3A8:                
                 or      [si+monster.ai_flags], 80h
 
-loc_A3AC:                               ; ...
+loc_A3AC:                
                 call    cs:move_monster_N_proc
                 jb      short loc_A3B4
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A3B4:                               ; ...
+loc_A3B4:                
                 or      [si+monster.ai_state], 20h
                 mov     [si+monster.anim_counter], 2
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A3BD:                               ; ...
+loc_A3BD:                
                 dec     [si+monster.anim_counter]
                 and     [si+monster.anim_counter], 7
                 test    [si+monster.anim_counter], 0FFh
@@ -455,7 +453,7 @@ loc_A3BD:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A3CB:                               ; ...
+loc_A3CB:                
                 mov     [si+monster.anim_counter], 70h ; 'p'
                 mov     [si+monster.ai_state], 0
                 retn
@@ -473,7 +471,7 @@ bat_step_throttle proc near             ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A3E2:                               ; ...
+loc_A3E2:                
                 mov     [si+monster.anim_counter], 3
                 retn
 bat_step_throttle endp
@@ -481,30 +479,30 @@ bat_step_throttle endp
 ; ---------------------------------------------------------------------------
 ; START OF FUNCTION CHUNK FOR Monster_AI
 
-flags01:                                ; ...
+flags01:                 
                 call    cs:Check_Monster_Ids_Two_Rows_Below_Monster_proc ; jumptable 0000A25E case 1
                 jnz     short loc_A3F3
                 jmp     cs:Check_Vertical_Distance_Between_Hero_And_Monster_proc
 ; ---------------------------------------------------------------------------
 
-loc_A3F3:                               ; ...
+loc_A3F3:                
                 test    [si+monster.hp], 0FFh
                 jnz     short loc_A3FD
                 mov     [si+monster.hp], 2
 
-loc_A3FD:                               ; ...
+loc_A3FD:                
                 test    [si+monster.ai_flags], 20h
                 jz      short loc_A408
                 jmp     cs:Hero_Hits_monster_proc
 ; ---------------------------------------------------------------------------
 
-loc_A408:                               ; ...
+loc_A408:                
                 call    cs:move_monster_S_proc
                 jb      short loc_A410
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A410:                               ; ...
+loc_A410:                
                 add     [si+monster.anim_counter], 41h ; 'A'
                 and     [si+monster.anim_counter], 11000011b
                 test    [si+monster.anim_counter], 0F0h
@@ -512,7 +510,7 @@ loc_A410:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A41F:                               ; ...
+loc_A41F:                
                 cmp     [si+monster.m_x_rel], 17
                 jnb     short loc_A432
                 call    cs:move_monster_E_proc
@@ -520,40 +518,40 @@ loc_A41F:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A42D:                               ; ...
+loc_A42D:                
                 or      [si+monster.ai_flags], 80h
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A432:                               ; ...
+loc_A432:                
                 call    cs:move_monster_W_proc
                 jnb     short loc_A43A
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A43A:                               ; ...
+loc_A43A:                
                 and     [si+monster.ai_flags], 7Fh
                 retn
 ; ---------------------------------------------------------------------------
 
-flags10:                                ; ...
+flags10:                 
                 call    cs:Check_Monster_Ids_Two_Rows_Below_Monster_proc ; jumptable 0000A25E case 2
                 jnz     short loc_A44B
                 jmp     cs:Check_Vertical_Distance_Between_Hero_And_Monster_proc
 ; ---------------------------------------------------------------------------
 
-loc_A44B:                               ; ...
+loc_A44B:                
                 test    [si+monster.hp], 0FFh
                 jnz     short loc_A455
                 mov     [si+monster.hp], 1
 
-loc_A455:                               ; ...
+loc_A455:                
                 test    [si+monster.ai_flags], 20h
                 jz      short loc_A460
                 jmp     cs:Hero_Hits_monster_proc
 ; ---------------------------------------------------------------------------
 
-loc_A460:                               ; ...
+loc_A460:                
                 test    [si+monster.ai_state], 8
                 jnz     short loc_A4A2
                 add     [si+monster.anim_counter], 21h ; '!'
@@ -563,7 +561,7 @@ loc_A460:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A476:                               ; ...
+loc_A476:                
                 call    frog_hero_proximity_and_direction
                 jb      short loc_A49A
                 mov     al, [si+monster.anim_counter]
@@ -572,7 +570,7 @@ loc_A476:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A483:                               ; ...
+loc_A483:                
                 call    frog_hero_proximity_and_direction
                 cmp     al, 0FFh
                 jz      short loc_A49A
@@ -583,11 +581,11 @@ loc_A483:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A49A:                               ; ...
+loc_A49A:                
                 mov     [si+monster.anim_counter], 2
                 or      [si+monster.ai_state], 8
 
-loc_A4A2:                               ; ...
+loc_A4A2:                
                 mov     al, [si+monster.anim_counter]
                 mov     ah, al
                 inc     al
@@ -603,7 +601,7 @@ loc_A4A2:                               ; ...
                 jnz     short loc_A4C5
                 mov     bx, offset jump_angles_left
 
-loc_A4C5:                               ; ...
+loc_A4C5:                
                 mov     al, ah
                 sub     al, 2
                 xlat
@@ -612,12 +610,12 @@ loc_A4C5:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A4D2:                               ; ...
+loc_A4D2:                
                 call    frog_hero_proximity_and_direction
                 jb      short loc_A4DB
                 xor     [si+monster.ai_flags], 80h
 
-loc_A4DB:                               ; ...
+loc_A4DB:                
                 and     [si+monster.ai_state], 0F7h
                 mov     [si+monster.anim_counter], 0
                 jmp     cs:move_monster_S_proc
@@ -632,14 +630,14 @@ frog_hero_proximity_and_direction proc near ; ...
                 jns     short loc_A4F2
                 neg     al
 
-loc_A4F2:                               ; ...
+loc_A4F2:                
                 cmp     al, 8
                 mov     al, 0FFh
                 jb      short loc_A4F9
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A4F9:                               ; ...
+loc_A4F9:                
                 cmp     [si+monster.m_x_rel], 11h
                 jnb     short loc_A50B
                 mov     al, 80h
@@ -649,12 +647,12 @@ loc_A4F9:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A509:                               ; ...
+loc_A509:                
                 clc
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A50B:                               ; ...
+loc_A50B:                
                 xor     al, al
                 test    [si+monster.ai_flags], 80h
                 stc
@@ -662,7 +660,7 @@ loc_A50B:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A515:                               ; ...
+loc_A515:                
                 clc
                 retn
 frog_hero_proximity_and_direction endp
@@ -670,42 +668,42 @@ frog_hero_proximity_and_direction endp
 ; ---------------------------------------------------------------------------
 ; START OF FUNCTION CHUNK FOR Monster_AI
 
-flags11:                                ; ...
+flags11:                 
                 call    cs:Check_Monster_Ids_Two_Rows_Below_Monster_proc ; jumptable 0000A25E case 3
                 jnz     short loc_A523
                 jmp     cs:Check_Vertical_Distance_Between_Hero_And_Monster_proc
 ; ---------------------------------------------------------------------------
 
-loc_A523:                               ; ...
+loc_A523:                
                 test    [si+monster.hp], 0FFh
                 jnz     short loc_A52D
                 mov     [si+monster.hp], 1
 
-loc_A52D:                               ; ...
+loc_A52D:                
                 test    [si+monster.ai_flags], 20h
                 jz      short loc_A538
                 jmp     cs:Hero_Hits_monster_proc
 ; ---------------------------------------------------------------------------
 
-loc_A538:                               ; ...
+loc_A538:                
                 test    [si+monster.ai_state], 8
                 jz      short loc_A541
                 jmp     loc_A649
 ; ---------------------------------------------------------------------------
 
-loc_A541:                               ; ...
+loc_A541:                
                 test    [si+monster.ai_state], 10h
                 jz      short loc_A54A
                 jmp     loc_A690
 ; ---------------------------------------------------------------------------
 
-loc_A54A:                               ; ...
+loc_A54A:                
                 call    cs:move_monster_S_proc
                 jb      short loc_A552
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A552:                               ; ...
+loc_A552:                
                 test    [si+monster.ai_state], 4
                 jz      short loc_A5C5
                 and     [si+monster.anim_counter], 0F1h
@@ -721,13 +719,13 @@ loc_A552:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A57B:                               ; ...
+loc_A57B:                
                 add     [si+monster.anim_counter], 40h ; '@'
                 jb      short loc_A582
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A582:                               ; ...
+loc_A582:                
                 mov     al, [si+monster.anim_counter]
                 inc     al
                 and     al, 1
@@ -738,10 +736,10 @@ loc_A582:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A595:                               ; ...
+loc_A595:                
                 and     [si+monster.ai_state], 0FBh
                 and     [si+monster.ai_flags], 7Fh
-                call    word ptr cs:11Ah ; Accumulate_folded_ff1b_proc
+                call    word ptr cs:Accumulate_folded_ff1b_proc
                 and     al, 80h
                 or      [si+monster.ai_flags], al
                 or      al, al
@@ -751,23 +749,23 @@ loc_A595:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A5B3:                               ; ...
+loc_A5B3:                
                 and     [si+monster.ai_flags], 7Fh
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A5B8:                               ; ...
+loc_A5B8:                
                 call    cs:check_collision_W2_proc
                 jb      short loc_A5C0
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A5C0:                               ; ...
+loc_A5C0:                
                 or      [si+monster.ai_flags], 80h
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A5C5:                               ; ...
+loc_A5C5:                
                 mov     ax, word ptr [si+monster.currY]
                 call    cs:coords_in_ax_to_proximity_map_offset_in_di_proc
                 mov     ax, 48h ; 'H'
@@ -775,7 +773,7 @@ loc_A5C5:                               ; ...
                 jz      short loc_A5D7
                 inc     ax
 
-loc_A5D7:                               ; ...
+loc_A5D7:                
                 xchg    si, di
                 add     si, ax
                 call    cs:wrap_map_from_above_proc
@@ -788,7 +786,7 @@ loc_A5D7:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A5F4:                               ; ...
+loc_A5F4:                
                 inc     [si+monster.anim_counter]
                 and     [si+monster.anim_counter], 3
                 test    [si+monster.ai_state], 2
@@ -799,13 +797,13 @@ loc_A5F4:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A60C:                               ; ...
+loc_A60C:                
                 call    rat_hero_proximity_and_direction
                 jnb     short loc_A619
                 and     [si+monster.ai_flags], 0FDh
                 mov     [si+monster.ai_timer], 0
 
-loc_A619:                               ; ...
+loc_A619:                
                 test    [si+monster.ai_flags], 80h
                 jz      short loc_A634
                 call    cs:move_monster_E_proc
@@ -813,27 +811,27 @@ loc_A619:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A627:                               ; ...
+loc_A627:                
                 mov     [si+monster.anim_counter], 0
                 or      [si+monster.ai_state], 10h
                 and     [si+monster.ai_state], 1Fh
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A634:                               ; ...
+loc_A634:                
                 call    cs:move_monster_W_proc
                 jb      short loc_A63C
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A63C:                               ; ...
+loc_A63C:                
                 mov     [si+monster.anim_counter], 0
                 or      [si+monster.ai_state], 10h
                 and     [si+monster.ai_state], 1Fh
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A649:                               ; ...
+loc_A649:                
                 mov     al, [si+monster.anim_counter]
                 mov     ah, al
                 inc     al
@@ -847,7 +845,7 @@ loc_A649:                               ; ...
                 jnz     short loc_A668
                 mov     bx, offset jump_angles_left
 
-loc_A668:                               ; ...
+loc_A668:                
                 mov     al, [si+monster.anim_counter]
                 xlat
                 push    ax
@@ -857,19 +855,19 @@ loc_A668:                               ; ...
                 jmp     cs:monster_move_in_direction_proc ; monster_move_in_direction; al=angle starting from right, counter-clockwise
 ; ---------------------------------------------------------------------------
 
-loc_A67A:                               ; ...
+loc_A67A:                
                 and     [si+monster.ai_state], 0F7h
                 or      [si+monster.ai_state], 4
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A683:                               ; ...
+loc_A683:                
                 and     [si+monster.ai_state], 0F7h
                 mov     [si+monster.anim_counter], 3
                 jmp     cs:move_monster_S_proc
 ; ---------------------------------------------------------------------------
 
-loc_A690:                               ; ...
+loc_A690:                
                 add     [si+monster.ai_state], 20h ; ' '
                 test    [si+monster.ai_state], 20h
                 jnz     short loc_A6AD
@@ -882,7 +880,7 @@ loc_A690:                               ; ...
                 or      ah, al
                 mov     [si+monster.anim_counter], ah
 
-loc_A6AD:                               ; ...
+loc_A6AD:                
                 mov     al, [si+monster.ai_state]
                 rol     al, 1
                 rol     al, 1
@@ -894,14 +892,14 @@ loc_A6AD:                               ; ...
                 jnz     short loc_A6C6
                 mov     bx, offset rat_jump_angles_left
 
-loc_A6C6:                               ; ...
+loc_A6C6:                
                 xlat
                 call    cs:monster_move_in_direction_proc ; monster_move_in_direction; al=angle starting from right, counter-clockwise
                 jb      short loc_A6CF
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A6CF:                               ; ...
+loc_A6CF:                
                 and     [si+monster.ai_state], 0EFh
                 or      [si+monster.ai_state], 4
                 test    [si+monster.anim_counter], 0FFh
@@ -909,12 +907,12 @@ loc_A6CF:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A6DE:                               ; ...
+loc_A6DE:                
                 mov     [si+monster.anim_counter], 3
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A6E3:                               ; ...
+loc_A6E3:                
                 and     [si+monster.ai_state], 0EFh
                 mov     [si+monster.anim_counter], 3
                 jmp     cs:move_monster_S_proc
@@ -929,14 +927,14 @@ rat_hero_proximity_and_direction proc near ; ...
                 jns     short loc_A6FA
                 neg     al
 
-loc_A6FA:                               ; ...
+loc_A6FA:                
                 cmp     al, 6
                 mov     al, 0FFh
                 jb      short loc_A701
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A701:                               ; ...
+loc_A701:                
                 cmp     [si+monster.m_x_rel], 17
                 jnb     short loc_A713
                 mov     al, 80h
@@ -946,12 +944,12 @@ loc_A701:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A711:                               ; ...
+loc_A711:                
                 clc
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A713:                               ; ...
+loc_A713:                
                 xor     al, al
                 test    [si+monster.ai_flags], 80h
                 stc
@@ -959,7 +957,7 @@ loc_A713:                               ; ...
                 retn
 ; ---------------------------------------------------------------------------
 
-loc_A71D:                               ; ...
+loc_A71D:                
                 clc
                 retn
 rat_hero_proximity_and_direction endp
