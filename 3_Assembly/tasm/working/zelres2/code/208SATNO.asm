@@ -3,7 +3,48 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  ENEMY_BAT - Code Module
+;  208SATNO - Satono Town Background Renderer (YMPD.BIN, zelres2 chunk 9)
+;
+;  Decodes and renders the mountain + ground scenery backdrop that is
+;  drawn behind the Satono town building interior dialogs. Loaded by the
+;  town program at CS:+3300h in the game segment.
+;
+;  Entry (AL = video_mode):
+;    2 = EGA/VGA planar (A000h)     5 = Hercules   (B000h)
+;    3 = CGA/Tandy      (B800h)     6 = MCGA 320x200 (A000h, byte-per-pixel)
+;    4 = CGA/Tandy      (B800h)     7 = CGA alt    (B800h)
+;  (Dispatch is via 'jmp [bx+0x338A]' with bx=video_mode*2; entries 0..1
+;  alias the jmp instruction's own bytes and are never reached in practice.)
+;
+;  Pipeline per entry:
+;    1. Zero decompression buffer at seg1:0000..seg1:4CFF (CS+1000h:0-0x4CFF)
+;    2. RLE-decode mountains0 data -> seg1:0000 (88x56 byte tile bitmap)
+;    3. RLE-decode mountains1 data -> seg1:1340h (second 88x56 tile bitmap)
+;    4. Dispatch render_mountains via jpt_mountains_render[video_mode*2]
+;    5. RLE-extract ground  -> seg1:0000  (16 rows x 28 bytes = 448 bytes)
+;    6. RLE-extract ground1 -> seg1:01C0h (16 rows x 28 bytes)
+;    7. Dispatch render_ground via jpt_ground_render[video_mode*2]
+;
+;  Key subsystems:
+;    satono_bg_main            - main entry (far), decompresses + renders both layers
+;    rle_decode_mountain_88x56 - 88x56 RLE decoder (opcode 06h = 2-byte fill)
+;    rle_decode_ground_28      - 28-byte-per-row RLE (high-nibble 6 = zero-run)
+;    render_mountains          - dispatch by video_mode -> mountains_*
+;    render_ground             - dispatch by video_mode -> ground_*
+;    mountains_ega             - EGA planar mountain render (map mask regs)
+;    mountains_cga             - CGA mountain render via 4-plane LUT
+;    mountains_hgc             - Hercules mountain render (B000h)
+;    mountains_mcga            - MCGA mountain render (one byte per pixel)
+;    mountains_cgaalt          - CGA alt mountain render (CS:357D LUT)
+;    ground_ega                - EGA planar ground render
+;    ground_cga                - CGA ground render
+;    ground_hgc                - Hercules ground render
+;    ground_mcga               - MCGA ground render (interleaved planes)
+;    ground_cgaalt             - CGA alt ground render (cga_alt_lut_a / _b)
+;    pixel_expand_mcga         - expand 2 source bytes -> 1 MCGA pixel byte
+;    pixel_expand_cga          - expand 2 source bytes -> 2-bit CGA pixel pair
+;    pixel_expand_cgaalt       - expand 2 source bytes -> 2-bit CGA alt pair
+;    copy_28b_ega              - EGA plane copy helper (1Ch bytes per plane)
 ;
 ;==========================================================================
 
@@ -11,287 +52,364 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
+; --- Internal CS-relative addresses (loaded at CS:+3300h in game_seg) ---
+video_mode		equ	335Bh			; byte: rendering mode 0..5 (AL on entry)
+jpt_mountains_render	equ	338Ah			; dw table [6] : mountain render per mode
+cga_color_lut_mountains	equ	3432h			; db[16] : CGA 4-plane -> 2bpp LUT (mountains)
+cga_color_lut_alt_mount	equ	357Dh			; db[16] : CGA alt 4-plane LUT (mountains)
+jpt_ground_render	equ	35BBh			; dw table [6] : ground render per mode
+cga_color_lut_ground	equ	36B6h			; db[16] : CGA 4-plane -> 2bpp LUT (ground)
+ground1_src_ofs		equ	56F1h			; ground1 RLE-source offset (CS:56F1) loaded into SI
 
-; The following equates show data references outside the range of the program.
+; --- Constants referenced only by Sourcer's commented-out mis-decoded bytes ---
+data_15e		equ	3C30h			;* inside mountains1 data (mis-decoded ';*' fake instruction)
+data_19e		equ	0FD57h			;* inside ground1 data    (mis-decoded ';*' fake instruction)
 
-data_7e		equ	2C6Ch			;*
-data_8e		equ	2C88h			;*
-data_9e		equ	335Bh			;*
-data_10e	equ	338Ah			;*
-data_11e	equ	3432h			;*
-data_12e	equ	357Dh			;*
-data_13e	equ	35BBh			;*
-data_14e	equ	36B6h			;*
-data_15e	equ	3C30h			;*
-data_16e	equ	56F1h			;*
-data_17e	equ	6000h			;*
-data_18e	equ	0C050h			;*
-data_19e	equ	0FD57h			;*
-data_20e	equ	0			;*
-data_21e	equ	1340h			;*
-data_22e	equ	0B1B0h
-data_23e	equ	0B220h
-data_24e	equ	0BBB0h
-data_25e	equ	23Ch
-data_26e	equ	163Ch
+; --- Source/destination offsets into the CS+1000h decompression scratch segment ---
+seg1_buf_base		equ	0			; seg1:0000 - mountains0 / ground decode destination
+seg1_mountains1_buf	equ	1340h			; seg1:1340 - mountains1 decode destination
+seg1_ground1_buf	equ	01C0h			; seg1:01C0 - ground1 decode destination (not referenced by name - 448 byte offset)
+
+; --- External video-memory destination offsets (A000h / B000h / B800h) ---
+ega_ground_dst_0	equ	2C6Ch			; EGA ground render base (A000:2C6C)
+ega_ground_copy_dst	equ	2C88h			; EGA ground plane-copy destination (A000:2C88)
+cga_ground_dst		equ	163Ch			; CGA ground start offset (B800:163C)
+cga_mountain_dst	equ	23Ch			; CGA mountain start offset (B800:023C)
+mcga_mountain_row_ptr	equ	0B1B0h			; MCGA row 14 col 48 (A000:B1B0)
+mcga_mountain_dst_a	equ	0B220h			; MCGA mountain half A copy dest (A000:B220)
+mcga_ground_dst		equ	0BBB0h			; MCGA ground destination (A000:BBB0)
+
+; --- Video-mode dispatch state ---
+ega_wrap_addend		equ	0C050h			; EGA wrap-around offset addend (used by modes 1,3,5)
+cga_wrap_limit		equ	6000h			; CGA wrap limit (mode3_hgc)
+ega_wrap_limit		equ	4000h			; EGA/CGA wrap limit
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
-zr2_08		proc	far
+satono_bg_main	proc	far
 
 start:
-		db	 65h, 25h, 00h, 00h, 2Eh,0A2h
-		db	 5Bh, 33h, 8Ch,0CAh, 8Eh,0DAh
-		db	 81h,0C2h, 00h, 10h, 8Eh,0C2h
-		db	0FCh,0BFh, 00h, 00h,0B9h, 80h
-		db	 26h, 33h,0C0h,0F3h,0ABh, 8Ch
-		db	0CAh, 81h,0C2h, 00h, 10h, 8Eh
-		db	0C2h,0BEh,0E7h, 38h,0BFh, 00h
-		db	 00h,0E8h, 32h, 00h,0BEh, 59h
-		db	 47h,0BFh, 40h, 13h,0E8h, 29h
-		db	 00h,0E8h, 48h, 00h, 8Ch,0CAh
-		db	 81h,0C2h, 00h, 10h, 8Eh,0C2h
-		db	0BFh, 00h, 00h,0BEh, 9Eh, 55h
-		db	0B9h, 10h, 00h
+		db	 65h, 25h, 00h, 00h	; 'gs: and ax,0' (4-byte 286+ GS-override nop;
+						;  keeps AL=video_mode unaffected)
+		mov	cs:video_mode,al	; store video_mode byte (2E A2 5B 33)
+		mov	dx,cs
+		mov	ds,dx
+		add	dx,1000h
+		mov	es,dx			; ES = seg1 = CS+1000h (decompression scratch)
+		cld
+		mov	di,0
+		mov	cx,2680h
+		xor	ax,ax
+		rep	stosw			; zero seg1:0000..seg1:4CFFh (9728 words)
+		mov	dx,cs
+		add	dx,1000h
+		mov	es,dx			; restore ES = seg1
+		mov	si,38E7h		; offset mountains0 (runtime CS:38E7)
+		mov	di,0
+		call	rle_decode_mountain_88x56	; unpack to seg1:0000
+		mov	si,4759h		; offset mountains1
+		mov	di,1340h
+		call	rle_decode_mountain_88x56	; unpack to seg1:1340h
+		call	render_mountains	; draw mountain layer for current video_mode
+		mov	dx,cs
+		add	dx,1000h
+		mov	es,dx
+		mov	di,0
+		mov	si,559Eh		; offset ground (runtime CS:559E)
+		mov	cx,10h			; 16 rows
 
-locloop_6:
-		call	bat_func_3
-		loop	locloop_6		; Loop if cx > 0
+gnd0_rle_loop:
+				call	rle_decode_ground_28	; 16 rows x 28 bytes from ground0
+				loop	gnd0_rle_loop
 
-		mov	si,data_16e
+		mov	si,ground1_src_ofs
 		mov	cx,10h
 
-locloop_7:
-		call	bat_func_3
-		loop	locloop_7		; Loop if cx > 0
+gnd1_rle_loop:
+				call	rle_decode_ground_28	; 16 rows x 28 bytes from ground1
+				loop	gnd1_rle_loop
 
-		call	bat_func_4
+		call	render_ground
 		retf				; Return far
-		db	 00h, 33h,0C9h
-loc_8:
-		lodsb				; String [si] to al
-		cmp	al,6
-		mov	ah,1
-		jnz	loc_9			; Jump if not zero
-		lodsw				; String [si] to ax
-loc_9:
-		stosb				; Store al to es:[di]
-		inc	ch
-		cmp	ch,38h			; '8'
-		jne	loc_10			; Jump if not equal
-		xor	ch,ch			; Zero register
-		inc	cl
-		cmp	cl,58h			; 'X'
-		jne	loc_10			; Jump if not equal
-		retn
-loc_10:
-		dec	ah
-		jnz	loc_9			; Jump if not zero
-		jmp	short loc_8
-			                        ;* No entry point to code
+		db	 00h			; 1-byte padding after main proc retf
+
+; --- rle_decode_mountain_88x56 ---
+; 88x56 RLE decoder for mountain layer (opcode 6 = 2-byte fill).
+; Called from main with SI=source, DI=dest (seg1:0 or seg1:1340h).
+
+rle_decode_mountain_88x56:
+		xor	cx,cx			; Zero register (CH=col, CL=row)
+
+rle_mntn_loop:
+				lodsb				; String [si] to al
+				cmp	al,6
+				mov	ah,1
+				jnz	rle_mntn_store		; Jump if not zero
+				lodsw				; String [si] to ax (AL=pixel, AH=count)
+
+rle_mntn_store:
+						stosb				; Store al to es:[di]
+						inc	ch
+						cmp	ch,38h			; 56 rows
+						jne	rle_mntn_more		; Jump if not equal
+						xor	ch,ch			; Zero register
+						inc	cl
+						cmp	cl,58h			; 88 cols
+						jne	rle_mntn_more		; Jump if not equal
+						retn
+
+rle_mntn_more:
+						dec	ah
+						jnz	rle_mntn_store		; Jump if not zero
+				jmp	short rle_mntn_loop
+
+; --- render_mountains ---
+; Dispatch by video_mode: jmp [bx + 0x338A] where bx=video_mode*2.
+; Disp16 0x338A overlaps with the dispatch-table storage ?-- the first two
+; table WORDs (at 0x338A/0x338C) are the jmp opcode/disp bytes themselves,
+; so only entries 2..7 (video_mode values 2..7) are real handler pointers.
+
+render_mountains:
 		xor	bx,bx			; Zero register
-		mov	bl,ds:data_9e
+		mov	bl,ds:video_mode
 		add	bx,bx
-		jmp	word ptr ds:data_10e[bx]	;*
-			                        ;* No entry point to code
-		xchg	si,ax
-		xor	dx,cx
-		xor	dx,cx
-		xor	ax,[bp+si+34h]
-		mov	ax,1034h
-		xor	ax,8C1Eh
-		retf	0C281h			; Return far
-		db	 00h, 10h, 8Eh,0DAh,0BEh, 00h
-		db	 00h,0B8h, 00h,0A0h, 8Eh,0C0h
-		db	0BAh,0C4h, 03h,0B0h, 02h,0EEh
-		db	 42h,0B0h, 01h,0EEh,0E8h, 08h
-		db	 00h,0B0h, 04h,0EEh,0E8h, 02h
-		db	 00h, 1Fh,0C3h,0BFh, 6Ch, 04h
-		db	0B9h, 58h, 00h
+		jmp	word ptr ds:jpt_mountains_render[bx]	;* jmp [bx+0x338A]
 
-locloop_11:
-		push	cx
-		push	di
-		mov	cx,38h
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	di
-		add	di,50h
-		pop	cx
-		loop	locloop_11		; Loop if cx > 0
+; --- jpt_mountains_render continuation (6 word entries starting at 0x338E) ---
+; Bytes here are the handler-pointer words fetched by the jmp above.
+; Each 'dw' value is the runtime CS-offset of the selected handler.
+		dw	3396h			; entry 2: mountains_ega   (file 0x96)
+		dw	33D1h			; entry 3: mountains_cga   (file 0xD1)
+		dw	33D1h			; entry 4: mountains_cga   (duplicate)
+		dw	3442h			; entry 5: mountains_hgc   (file 0x142)
+		dw	34B8h			; entry 6: mountains_mcga  (file 0x1B8)
+		dw	3510h			; entry 7: mountains_cgaalt(file 0x210)
 
-		retn
-			                        ;* No entry point to code
+; --- mountains_ega (video_mode 2): EGA planar mountain render to A000h ---
+; Landing target for handler entry 2. The 6 bytes starting at file 0x96
+; are *also* the last 3 dw entries of the dispatch table above, but they
+; are never executed as code ?-- the jmp skips over them to here at 0x9A.
+
+mountains_ega:
 		push	ds
 		mov	dx,cs
 		add	dx,1000h
 		mov	ds,dx
-		mov	si,data_20e
-		mov	ax,0B800h
-		mov	es,ax
-		mov	di,data_25e
-		mov	cx,58h
-
-locloop_12:
-		push	cx
-		push	di
-		mov	cx,38h
-
-locloop_13:
-		push	cx
-		mov	ah,ds:data_21e[si]
-		lodsb				; String [si] to al
-		xor	dl,dl			; Zero register
-		mov	cx,4
-
-locloop_14:
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		and	bl,0Fh
-		xor	bh,bh			; Zero register
-		add	dl,dl
-		add	dl,dl
-		or	dl,cs:data_11e[bx]
-		loop	locloop_14		; Loop if cx > 0
-
-		mov	al,dl
-		stosb				; Store al to es:[di]
-		pop	cx
-		loop	locloop_13		; Loop if cx > 0
-
-		pop	di
-		add	di,2000h
-		cmp	di,4000h
-		jb	loc_15			; Jump if below
-		add	di,data_18e
-loc_15:
-		pop	cx
-		loop	locloop_12		; Loop if cx > 0
-
-		pop	ds
-		retn
-		db	 00h, 03h, 01h, 02h, 00h, 03h
-		db	 01h, 02h, 00h, 03h, 01h, 02h
-		db	 00h, 03h, 01h, 02h, 1Eh, 8Ch
-		db	0CAh, 81h,0C2h, 00h, 10h, 8Eh
-		db	0DAh,0BEh, 00h, 00h,0B8h, 00h
-		db	0B0h, 8Eh,0C0h,0BFh,0FDh, 04h
-		db	0B9h, 58h, 00h
-
-locloop_16:
-		push	cx
-		push	di
-		mov	cx,38h
-
-locloop_17:
-		push	cx
-		mov	ah,data_3[si]
-		lodsb				; String [si] to al
-		xor	dl,dl			; Zero register
-		mov	cx,4
-
-locloop_18:
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		and	bl,0Fh
-		xor	bh,bh			; Zero register
-		add	dl,dl
-		add	dl,dl
-		or	dl,cs:data_11e[bx]
-		loop	locloop_18		; Loop if cx > 0
-
-		mov	al,dl
-		stosb				; Store al to es:[di]
-		pop	cx
-		loop	locloop_17		; Loop if cx > 0
-
-		pop	di
-		add	di,2000h
-		cmp	di,data_17e
-		jb	loc_19			; Jump if below
-		push	ds
-		push	si
-		push	cx
-		push	di
-		push	es
-		pop	ds
-		mov	si,di
-		sub	si,2000h
-		mov	cx,38h
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	di
-		pop	cx
-		pop	si
-		pop	ds
-		add	di,0A05Ah
-loc_19:
-		pop	cx
-		loop	locloop_16		; Loop if cx > 0
-
-		pop	ds
-		retn
-			                        ;* No entry point to code
-		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
-		mov	si,data_20e
+		mov	si,0
 		mov	ax,0A000h
 		mov	es,ax
-		mov	di,11B0h
-		mov	cx,58h
+		mov	dx,3C4h			; EGA sequencer address port
+		mov	al,2			; map-mask register
+		out	dx,al
+		inc	dx			; 3C5h sequencer data
+		mov	al,1			; plane 0
+		out	dx,al
+		call	ega_mtn_blit_88_rows
+		mov	al,4			; plane 2
+		out	dx,al
+		call	ega_mtn_blit_88_rows
+		pop	ds
+		retn
 
-locloop_20:
-		push	cx
-		push	di
-		mov	cx,38h
+ega_mtn_blit_88_rows:
+		mov	di,46Ch			; EGA starting VGA offset
+		mov	cx,58h			; 88 rows
 
-locloop_21:
-		push	cx
-		mov	dh,ds:data_21e[si]
-		mov	dl,[si]
-		inc	si
-		call	bat_func_1
-		stosb				; Store al to es:[di]
-		call	bat_func_1
-		stosb				; Store al to es:[di]
-		call	bat_func_1
-		stosb				; Store al to es:[di]
-		call	bat_func_1
-		stosb				; Store al to es:[di]
-		pop	cx
-		loop	locloop_21		; Loop if cx > 0
+ega_mtn_row_loop:
+				push	cx
+				push	di
+				mov	cx,38h			; 56 bytes per row
+				rep	movsb			; copy row from seg1 to A000
+				pop	di
+				add	di,50h			; next EGA row (80 bytes)
+				pop	cx
+				loop	ega_mtn_row_loop
 
-		pop	di
-		add	di,140h
-		pop	cx
-		loop	locloop_20		; Loop if cx > 0
+		retn
+
+; --- mountains_cga (video_mode 3 or 4): CGA/Tandy 4-color mountain render ---
+
+mountains_cga:
+		push	ds
+		mov	dx,cs
+		add	dx,1000h
+		mov	ds,dx
+		mov	si,seg1_buf_base
+		mov	ax,0B800h
+		mov	es,ax
+		mov	di,cga_mountain_dst	; B800:023C
+		mov	cx,58h			; 88 scanlines
+
+cga_mtn_row_loop:
+				push	cx
+				push	di
+				mov	cx,38h			; 56 dest bytes per row
+
+cga_mtn_col_loop:
+						push	cx
+						mov	ah,ds:seg1_mountains1_buf[si]	; plane B source
+						lodsb				; plane A source
+						xor	dl,dl			; Zero register
+						mov	cx,4
+
+cga_mtn_expand_loop:
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						and	bl,0Fh
+						xor	bh,bh			; Zero register
+						add	dl,dl
+						add	dl,dl
+						or	dl,cs:cga_color_lut_mountains[bx]
+						loop	cga_mtn_expand_loop	; Loop if cx > 0
+
+						mov	al,dl
+						stosb				; Store al to es:[di]
+						pop	cx
+						loop	cga_mtn_col_loop	; Loop if cx > 0
+
+				pop	di
+				add	di,2000h		; next CGA interlaced bank
+				cmp	di,ega_wrap_limit	; 0x4000
+				jb	cga_mtn_no_wrap
+				add	di,ega_wrap_addend	; wrap to next 4 scanlines
+
+cga_mtn_no_wrap:
+				pop	cx
+				loop	cga_mtn_row_loop
+
+		pop	ds
+		retn
+		db	 00h, 03h, 01h, 02h, 00h, 03h	; cga_color_lut_mountains bytes (4..15)
+		db	 01h, 02h, 00h, 03h, 01h, 02h	; (first 4 bytes overlap with loop/retn above)
+		db	 00h, 03h, 01h, 02h
+
+; --- mountains_hgc (video_mode 5): Hercules 720x348 mono render at B000h ---
+
+mountains_hgc:
+		push	ds
+		mov	dx,cs
+		add	dx,1000h
+		mov	ds,dx
+		mov	si,0
+		mov	ax,0B000h
+		mov	es,ax
+		mov	di,4FDh			; Hercules destination offset
+		mov	cx,58h			; 88 scanlines
+
+hgc_mtn_row_loop:
+				push	cx
+				push	di
+				mov	cx,38h			; 56 bytes per row
+
+hgc_mtn_col_loop:
+						push	cx
+						mov	ah,ds:seg1_mountains1_buf[si]	; plane B source
+						lodsb				; plane A source
+						xor	dl,dl			; Zero register
+						mov	cx,4
+
+hgc_mtn_expand_loop:
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						and	bl,0Fh
+						xor	bh,bh			; Zero register
+						add	dl,dl
+						add	dl,dl
+						or	dl,cs:cga_color_lut_mountains[bx]
+						loop	hgc_mtn_expand_loop	; Loop if cx > 0
+
+						mov	al,dl
+						stosb				; Store al to es:[di]
+						pop	cx
+						loop	hgc_mtn_col_loop	; Loop if cx > 0
+
+				pop	di
+				add	di,2000h		; next HGC bank
+				cmp	di,cga_wrap_limit	; 0x6000
+				jb	hgc_mtn_no_wrap		; below -> no wrap
+				push	ds			; above limit: copy row forward and wrap
+				push	si
+				push	cx
+				push	di
+				push	es
+				pop	ds
+				mov	si,di
+				sub	si,2000h
+				mov	cx,38h
+				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+				pop	di
+				pop	cx
+				pop	si
+				pop	ds
+				add	di,0A05Ah		; HGC wrap addend
+
+hgc_mtn_no_wrap:
+				pop	cx
+				loop	hgc_mtn_row_loop
 
 		pop	ds
 		retn
 
-zr2_08		endp
+; --- mountains_mcga (video_mode 6): MCGA 320x200 byte-per-pixel at A000h ---
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+mountains_mcga:
+		push	ds
+		mov	dx,cs
+		add	dx,1000h
+		mov	ds,dx
+		mov	si,seg1_buf_base
+		mov	ax,0A000h
+		mov	es,ax
+		mov	di,11B0h		; MCGA destination (row 14, col 48)
+		mov	cx,58h			; 88 scanlines
 
-bat_func_1		proc	near
+mcga_mtn_row_loop:
+				push	cx
+				push	di
+				mov	cx,38h			; 56 pixel-pairs per row
+
+mcga_mtn_col_loop:
+						push	cx
+						mov	dh,ds:seg1_mountains1_buf[si]
+						mov	dl,[si]
+						inc	si
+						call	pixel_expand_mcga
+						stosb				; Store al to es:[di]
+						call	pixel_expand_mcga
+						stosb				; Store al to es:[di]
+						call	pixel_expand_mcga
+						stosb				; Store al to es:[di]
+						call	pixel_expand_mcga
+						stosb				; Store al to es:[di]
+						pop	cx
+						loop	mcga_mtn_col_loop
+
+				pop	di
+				add	di,140h			; next MCGA scanline (320)
+				pop	cx
+				loop	mcga_mtn_row_loop
+
+		pop	ds
+		retn
+
+satono_bg_main	endp
+
+pixel_expand_mcga		proc	near
 		xor	al,al			; Zero register
 		add	dh,dh
 		adc	al,al
@@ -304,571 +422,629 @@ bat_func_1		proc	near
 		add	dl,dl
 		adc	al,al
 		retn
-bat_func_1		endp
 
-			                        ;* No entry point to code
+pixel_expand_mcga		endp
+
+; --- mountains_cgaalt (video_mode 7): CGA alt-mode 4-color mountain render ---
+; Uses cga_color_lut_alt_mount via pixel_expand_cga (reads from CS:357D).
+
+mountains_cgaalt:
 		push	ds
 		mov	dx,cs
 		add	dx,1000h
 		mov	ds,dx
-		mov	si,data_20e
+		mov	si,seg1_buf_base
 		mov	ax,0B800h
 		mov	es,ax
-		mov	di,41F8h
-		mov	cx,58h
+		mov	di,41F8h		; CGA alt destination offset
+		mov	cx,58h			; 88 scanlines
 
-locloop_22:
-		push	cx
-		push	di
-		mov	cx,38h
+cgaalt_mtn_row_loop:
+				push	cx
+				push	di
+				mov	cx,38h
 
-locloop_23:
-		push	cx
-		mov	dh,ds:data_21e[si]
-		mov	dl,[si]
-		inc	si
-		call	bat_process_loop
-		stosb				; Store al to es:[di]
-		call	bat_process_loop
-		stosb				; Store al to es:[di]
-		pop	cx
-		loop	locloop_23		; Loop if cx > 0
+cgaalt_mtn_col_loop:
+						push	cx
+						mov	dh,ds:seg1_mountains1_buf[si]	; plane B source
+						mov	dl,[si]				; plane A source
+						inc	si
+						call	pixel_expand_cga
+						stosb				; Store al to es:[di]
+						call	pixel_expand_cga
+						stosb				; Store al to es:[di]
+						pop	cx
+						loop	cgaalt_mtn_col_loop
 
-		pop	di
-		add	di,2000h
-		cmp	di,8000h
-		jb	loc_24			; Jump if below
-		add	di,80A0h
-loc_24:
-		pop	cx
-		loop	locloop_22		; Loop if cx > 0
+				pop	di
+				add	di,2000h
+				cmp	di,8000h
+				jb	cgaalt_mtn_no_wrap
+				add	di,80A0h
+
+cgaalt_mtn_no_wrap:
+				pop	cx
+				loop	cgaalt_mtn_row_loop
 
 		pop	ds
 		retn
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-
-bat_process_loop		proc	near
+pixel_expand_cga		proc	near
 		xor	al,al			; Zero register
 		mov	cx,2
 
-locloop_25:
-		add	dh,dh
-		adc	bl,bl
-		add	dl,dl
-		adc	bl,bl
-		add	dh,dh
-		adc	bl,bl
-		add	dl,dl
-		adc	bl,bl
-		and	bl,0Fh
-		xor	bh,bh			; Zero register
-		add	al,al
-		add	al,al
-		add	al,al
-		add	al,al
-		or	al,cs:data_12e[bx]
-		loop	locloop_25		; Loop if cx > 0
+cga_expand_iter:
+				add	dh,dh
+				adc	bl,bl
+				add	dl,dl
+				adc	bl,bl
+				add	dh,dh
+				adc	bl,bl
+				add	dl,dl
+				adc	bl,bl
+				and	bl,0Fh
+				xor	bh,bh			; Zero register
+				add	al,al
+				add	al,al
+				add	al,al
+				add	al,al
+				or	al,cs:cga_color_lut_alt_mount[bx]
+				loop	cga_expand_iter
 
 		retn
-bat_process_loop		endp
 
+pixel_expand_cga		endp
+
+; --- cga_color_lut_alt_mount_lbl (CS:357D referenced with bx in 0-15) ---
+
+cga_color_lut_alt_mount_lbl:
 		db	 00h, 07h, 09h, 01h, 07h, 0Fh
 		db	 0Bh, 07h, 09h, 0Bh, 0Bh, 03h
 		db	 01h, 07h, 03h
-		db	9
+		db	9			; last LUT byte (also serves as 'push cs' stall byte?)
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+; --- rle_decode_ground_28 (equiv IDA RLE_extract_28_bytes) ---
+; 28-byte-per-row RLE decoder: high-nibble=6 means "emit low_nibble zeros",
+; anything else emits the byte literally. Emits until 28 bytes written.
 
-bat_func_3		proc	near
-		xor	bl,bl			; Zero register
-loc_26:
-		lodsb				; String [si] to al
-		mov	ah,al
-		and	ah,0F0h
-		cmp	ah,60h			; '`'
-		mov	ah,1
-		jnz	loc_27			; Jump if not zero
-		and	al,0Fh
-		mov	ah,al
-		xor	al,al			; Zero register
-loc_27:
-		stosb				; Store al to es:[di]
-		inc	bl
-		dec	ah
-		jnz	loc_27			; Jump if not zero
-		cmp	bl,1Ch
-		jne	loc_26			; Jump if not equal
+rle_decode_ground_28		proc	near
+		xor	bl,bl			; Zero register (output count)
+
+rle_gnd_next_byte:
+				lodsb				; String [si] to al
+				mov	ah,al
+				and	ah,0F0h			; high nibble
+				cmp	ah,60h			; '6' prefix = zero-run
+				mov	ah,1
+				jnz	rle_gnd_emit		; normal literal
+				and	al,0Fh			; low nibble = count
+				mov	ah,al
+				xor	al,al			; emit zeros
+
+rle_gnd_emit:
+						stosb
+						inc	bl
+						dec	ah
+						jnz	rle_gnd_emit		; repeat (count)
+				cmp	bl,1Ch			; 28 bytes written?
+				jne	rle_gnd_next_byte
 		retn
-bat_func_3		endp
 
+rle_decode_ground_28		endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+; --- render_ground ---
+; Dispatch by video_mode: jmp [bx + 0x35BB] where bx = video_mode*2.
+; Same overlap pattern as render_mountains: first 4 table bytes are the jmp
+; opcode/disp. Entries at 0x35BF onward select one of the ground_* handlers.
 
-bat_func_4		proc	near
-		xor	bx,bx			; Zero register
-		mov	bl,ds:data_9e
+render_ground		proc	near
+		xor	bx,bx
+		mov	bl,ds:video_mode
 		add	bx,bx
-		jmp	word ptr ds:data_13e[bx]	;*
-bat_func_4		endp
+		jmp	word ptr ds:jpt_ground_render[bx]	;* jmp [bx+0x35BB]
 
-		db	0C7h, 35h, 43h, 36h, 43h, 36h
-		db	0C6h, 36h, 4Eh, 37h, 00h, 38h
-		db	 1Eh, 8Ch,0CAh, 81h,0C2h, 00h
-		db	 10h, 8Eh,0DAh,0BEh, 00h, 00h
-		db	0B8h, 00h,0A0h, 8Eh,0C0h,0BFh
-		db	 6Ch, 2Ch,0BAh,0C4h, 03h,0B0h
-		db	 02h,0EEh, 42h,0B9h, 08h, 00h
+render_ground		endp
 
-locloop_28:
-		mov	al,4
-		out	dx,al			; port 0, DMA-1 bas&add ch 0
-		call	copy_buffer
-		mov	al,2
-		out	dx,al			; port 0, DMA-1 bas&add ch 0
-		call	copy_buffer
-		add	di,50h
-		loop	locloop_28		; Loop if cx > 0
+; --- jpt_ground_render continuation (6 word entries at 0x35BF) ---
+		dw	35C7h			; entry 2: ground_ega    (file 0x2C7)
+		dw	3643h			; entry 3: ground_cga    (file 0x343)
+		dw	3643h			; entry 4: ground_cga    (duplicate)
+		dw	36C6h			; entry 5: ground_hgc    (file 0x3C6)
+		dw	374Eh			; entry 6: ground_mcga   (file 0x44E)
+		dw	3800h			; entry 7: ground_cgaalt (file 0x500)
 
-		mov	di,2EECh
-		mov	cx,8
+; --- ground_ega (video_mode 2): EGA planar ground render to A000h ---
+; Uses two write passes (plane 2 then plane 1) via the EGA map mask reg,
+; then a GR mode-register switch to set up VGA odd-even mode for the final
+; stride-adjusted copy pass.
 
-locloop_29:
-		mov	al,1
-		out	dx,al			; port 0, DMA-1 bas&add ch 0
-		call	copy_buffer
-		mov	al,2
-		out	dx,al			; port 0, DMA-1 bas&add ch 0
-		call	copy_buffer
-		add	di,50h
-		loop	locloop_29		; Loop if cx > 0
-
-		mov	al,7
-		out	dx,al			; port 0, DMA-1 bas&add ch 0
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		push	es
-		pop	ds
-		mov	si,data_7e
-		mov	di,data_8e
-		mov	ah,10h
-loc_30:
-		mov	cx,1Ch
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		add	di,34h
-		add	si,34h
-		dec	ah
-		jnz	loc_30			; Jump if not zero
-		mov	dx,3CEh
-		mov	ax,5
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		pop	ds
-		retn
-
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-
-copy_buffer		proc	near
-		push	di
-		push	cx
-		mov	cx,1Ch
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	cx
-		pop	di
-		retn
-copy_buffer		endp
-
-			                        ;* No entry point to code
+ground_ega:
 		push	ds
 		mov	dx,cs
 		add	dx,1000h
 		mov	ds,dx
-		mov	si,data_20e
-		mov	ax,0B800h
+		mov	si,0
+		mov	ax,0A000h
 		mov	es,ax
-		mov	di,data_26e
-		mov	cx,10h
+		mov	di,ega_ground_dst_0	; 0x2C6C
+		mov	dx,3C4h			; EGA sequencer address port
+		mov	al,2			; map-mask register
+		out	dx,al
+		inc	dx			; 3C5h sequencer data
+		mov	cx,8			; 8 plane-selection iterations
 
-locloop_31:
-		push	cx
-		push	di
-		mov	cx,1Ch
+ega_gnd_pass_a_loop:
+				mov	al,4			; plane 2
+				out	dx,al
+				call	copy_28b_ega
+				mov	al,2			; plane 1
+				out	dx,al
+				call	copy_28b_ega
+				add	di,50h			; next EGA row (80 bytes)
+				loop	ega_gnd_pass_a_loop
 
-locloop_32:
-		push	cx
-		mov	ah,[si+1Ch]
-		lodsb				; String [si] to al
-		xor	dl,dl			; Zero register
-		mov	cx,4
+		mov	di,2EECh		; second pass destination
+		mov	cx,8
 
-locloop_33:
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		and	bl,0Fh
-		xor	bh,bh			; Zero register
-		add	dl,dl
-		add	dl,dl
-		or	dl,cs:data_14e[bx]
-		loop	locloop_33		; Loop if cx > 0
+ega_gnd_pass_b_loop:
+				mov	al,1			; plane 0
+				out	dx,al
+				call	copy_28b_ega
+				mov	al,2			; plane 1
+				out	dx,al
+				call	copy_28b_ega
+				add	di,50h			; next EGA row
+				loop	ega_gnd_pass_b_loop
 
-		mov	al,dl
-		stosb				; Store al to es:[di]
-		pop	cx
-		loop	locloop_32		; Loop if cx > 0
-
-		push	ds
-		push	si
+		mov	al,7			; re-enable all planes
+		out	dx,al
+		mov	dx,3CEh			; EGA graphics controller index
+		mov	ax,105h			; al=5 (GC mode reg), ah=1 (mode=1 odd-even)
+		out	dx,ax
 		push	es
 		pop	ds
-		mov	si,di
-		sub	si,1Ch
-		mov	cx,0Eh
-		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-		pop	si
+		mov	si,ega_ground_dst_0	; 0x2C6C
+		mov	di,ega_ground_copy_dst	; 0x2C88
+		mov	ah,10h			; 16 rows to duplicate
+
+ega_gnd_dup_loop:
+				mov	cx,1Ch
+				rep	movsb			; copy 28 bytes
+				add	di,34h			; next dest row stride
+				add	si,34h			; next src row stride
+				dec	ah
+				jnz	ega_gnd_dup_loop
+		mov	dx,3CEh
+		mov	ax,5			; restore GC mode 0
+		out	dx,ax
 		pop	ds
-		add	si,1Ch
-		pop	di
-		add	di,2000h
-		cmp	di,4000h
-		jb	loc_34			; Jump if below
-		add	di,data_18e
-loc_34:
+		retn
+
+copy_28b_ega		proc	near
+		push	di
+		push	cx
+		mov	cx,1Ch
+		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 		pop	cx
-		loop	locloop_31		; Loop if cx > 0
+		pop	di
+		retn
+
+copy_28b_ega		endp
+
+; --- ground_cga (video_mode 3 or 4): CGA/Tandy 4-color ground render to B800h ---
+
+ground_cga:
+		push	ds
+		mov	dx,cs
+		add	dx,1000h
+		mov	ds,dx
+		mov	si,seg1_buf_base
+		mov	ax,0B800h
+		mov	es,ax
+		mov	di,cga_ground_dst	; B800:163C
+		mov	cx,10h			; 16 scanlines
+
+cga_gnd_row_loop:
+				push	cx
+				push	di
+				mov	cx,1Ch			; 28 dest bytes per row
+
+cga_gnd_col_loop:
+						push	cx
+						mov	ah,[si+1Ch]		; plane B (seg1_ground1_buf)
+						lodsb				; plane A
+						xor	dl,dl			; Zero register
+						mov	cx,4
+
+cga_gnd_expand_loop:
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						and	bl,0Fh
+						xor	bh,bh			; Zero register
+						add	dl,dl
+						add	dl,dl
+						or	dl,cs:cga_color_lut_ground[bx]
+						loop	cga_gnd_expand_loop
+
+						mov	al,dl
+						stosb				; Store al to es:[di]
+						pop	cx
+						loop	cga_gnd_col_loop
+
+				push	ds
+				push	si
+				push	es
+				pop	ds
+				mov	si,di
+				sub	si,1Ch
+				mov	cx,0Eh
+				rep	movsw			; duplicate row forward (14 words)
+				pop	si
+				pop	ds
+				add	si,1Ch
+				pop	di
+				add	di,2000h		; next CGA bank
+				cmp	di,ega_wrap_limit
+				jb	cga_gnd_no_wrap
+				add	di,ega_wrap_addend
+
+cga_gnd_no_wrap:
+				pop	cx
+				loop	cga_gnd_row_loop
 
 		pop	ds
 		retn
-		db	 00h, 03h, 02h, 01h, 01h, 03h
+		db	 00h, 03h, 02h, 01h, 01h, 03h	; cga_color_lut_ground bytes (0..15)
 		db	 03h, 03h, 02h, 03h, 01h, 02h
-		db	 02h, 03h, 03h, 03h, 1Eh, 8Ch
+		db	 02h, 03h, 03h, 03h
+
+; --- ground_hgc (video_mode 5): Hercules 720x348 mono ground render at B000h ---
+
+ground_hgc:
+		db	 1Eh, 8Ch			; push ds; mov dx,cs (first 2 bytes)
 		db	0CAh, 81h,0C2h, 00h, 10h, 8Eh
 		db	0DAh,0BEh, 00h, 00h,0B8h, 00h
 		db	0B0h, 8Eh,0C0h,0BFh,0C1h, 53h
-		db	0B9h, 10h, 00h
+		db	0B9h, 10h, 00h			; mov cx, 16 (scanlines)
 
-locloop_35:
-		push	cx
-		push	di
-		mov	cx,1Ch
+hgc_gnd_row_loop:
+				push	cx
+				push	di
+				mov	cx,1Ch			; 28 bytes per row
 
-locloop_36:
-		push	cx
-		mov	ah,[si+1Ch]
-		lodsb				; String [si] to al
-		xor	dl,dl			; Zero register
-		mov	cx,4
+hgc_gnd_col_loop:
+						push	cx
+						mov	ah,[si+1Ch]		; plane B
+						lodsb				; plane A
+						xor	dl,dl			; Zero register
+						mov	cx,4
 
-locloop_37:
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		and	bl,0Fh
-		xor	bh,bh			; Zero register
-		add	dl,dl
-		add	dl,dl
-		or	dl,cs:data_14e[bx]
-		loop	locloop_37		; Loop if cx > 0
+hgc_gnd_expand_loop:
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						and	bl,0Fh
+						xor	bh,bh			; Zero register
+						add	dl,dl
+						add	dl,dl
+						or	dl,cs:cga_color_lut_ground[bx]
+						loop	hgc_gnd_expand_loop
 
-		mov	al,dl
-		stosb				; Store al to es:[di]
-		pop	cx
-		loop	locloop_36		; Loop if cx > 0
+						mov	al,dl
+						stosb
+						pop	cx
+						loop	hgc_gnd_col_loop
 
-		push	ds
-		push	si
-		push	es
-		pop	ds
-		mov	si,di
-		sub	si,1Ch
-		mov	cx,0Eh
-		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-		pop	si
-		pop	ds
-		add	si,1Ch
-		pop	di
-		add	di,2000h
-		cmp	di,data_17e
-		jb	loc_38			; Jump if below
-		push	ds
-		push	si
-		push	cx
-		push	di
-		push	es
-		pop	ds
-		mov	si,di
-		sub	si,2000h
-		mov	cx,38h
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	di
-		pop	cx
-		pop	si
-		pop	ds
-		add	di,0A05Ah
-loc_38:
-		pop	cx
-		loop	locloop_35		; Loop if cx > 0
+				push	ds
+				push	si
+				push	es
+				pop	ds
+				mov	si,di
+				sub	si,1Ch
+				mov	cx,0Eh
+				rep	movsw			; duplicate row forward (14 words)
+				pop	si
+				pop	ds
+				add	si,1Ch
+				pop	di
+				add	di,2000h		; next HGC bank
+				cmp	di,cga_wrap_limit	; 0x6000
+				jb	hgc_gnd_no_wrap
+				push	ds
+				push	si
+				push	cx
+				push	di
+				push	es
+				pop	ds
+				mov	si,di
+				sub	si,2000h
+				mov	cx,38h
+				rep	movsb			; wrap-copy 56 bytes
+				pop	di
+				pop	cx
+				pop	si
+				pop	ds
+				add	di,0A05Ah		; HGC wrap addend
+
+hgc_gnd_no_wrap:
+				pop	cx
+				loop	hgc_gnd_row_loop
 
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+; --- ground_mcga (video_mode 6): MCGA 320x200 byte-per-pixel ground render ---
+; Writes two horizontally-tiled ground bands, then duplicates to right half.
+
+ground_mcga:
 		push	ds
 		mov	dx,cs
 		add	dx,1000h
 		mov	ds,dx
-		mov	si,data_20e
+		mov	si,seg1_buf_base
 		mov	ax,0A000h
 		mov	es,ax
-		mov	di,data_22e
+		mov	di,mcga_mountain_row_ptr	; 0xB1B0 (row 14+16*8, col 48)
+		mov	cx,8			; 8 tile rows
+
+mcga_gnd_a_row_loop:
+				push	cx
+				push	si
+				push	di
+				mov	cx,0Eh			; 14 tiles per row
+
+mcga_gnd_a_tile_loop:
+						push	cx
+						mov	dx,[si]
+						mov	bx,[si+1Ch]
+						xchg	dl,dh
+						xchg	bl,bh
+						mov	cx,8
+
+mcga_gnd_a_pix_loop:
+						xor	al,al			; Zero register
+						add	dx,dx
+						adc	al,al
+						add	bx,bx
+						adc	al,al
+						add	al,al
+						add	dx,dx
+						adc	al,al
+						add	bx,bx
+						adc	al,al
+						add	al,al
+						stosb
+						loop	mcga_gnd_a_pix_loop
+
+						inc	si
+						inc	si
+						pop	cx
+						loop	mcga_gnd_a_tile_loop
+
+				pop	di
+				add	di,140h			; next MCGA scanline
+				pop	si
+				add	si,38h			; next tile-row source stride
+				pop	cx
+				loop	mcga_gnd_a_row_loop
+
+		mov	di,mcga_ground_dst	; 0xBBB0 (second band)
 		mov	cx,8
 
-locloop_39:
-		push	cx
-		push	si
-		push	di
-		mov	cx,0Eh
+mcga_gnd_b_row_loop:
+				push	cx
+				push	si
+				push	di
+				mov	cx,0Eh
 
-locloop_40:
-		push	cx
-		mov	dx,[si]
-		mov	bx,[si+1Ch]
-		xchg	dl,dh
-		xchg	bl,bh
-		mov	cx,8
+mcga_gnd_b_tile_loop:
+						push	cx
+						mov	bx,[si]
+						mov	dx,[si+1Ch]
+						xchg	dl,dh
+						xchg	bl,bh
+						mov	cx,8
 
-locloop_41:
-		xor	al,al			; Zero register
-		add	dx,dx
-		adc	al,al
-		add	bx,bx
-		adc	al,al
-		add	al,al
-		add	dx,dx
-		adc	al,al
-		add	bx,bx
-		adc	al,al
-		add	al,al
-		stosb				; Store al to es:[di]
-		loop	locloop_41		; Loop if cx > 0
+mcga_gnd_b_pix_loop:
+						xor	al,al
+						add	dx,dx
+						adc	al,al
+						add	bx,bx
+						adc	al,al
+						add	al,al
+						add	dx,dx
+						adc	al,al
+						add	bx,bx
+						adc	al,al
+						stosb
+						loop	mcga_gnd_b_pix_loop
 
-		inc	si
-		inc	si
-		pop	cx
-		loop	locloop_40		; Loop if cx > 0
+						inc	si
+						inc	si
+						pop	cx
+						loop	mcga_gnd_b_tile_loop
 
-		pop	di
-		add	di,140h
-		pop	si
-		add	si,38h
-		pop	cx
-		loop	locloop_39		; Loop if cx > 0
-
-		mov	di,data_24e
-		mov	cx,8
-
-locloop_42:
-		push	cx
-		push	si
-		push	di
-		mov	cx,0Eh
-
-locloop_43:
-		push	cx
-		mov	bx,[si]
-		mov	dx,[si+1Ch]
-		xchg	dl,dh
-		xchg	bl,bh
-		mov	cx,8
-
-locloop_44:
-		xor	al,al			; Zero register
-		add	dx,dx
-		adc	al,al
-		add	bx,bx
-		adc	al,al
-		add	al,al
-		add	dx,dx
-		adc	al,al
-		add	bx,bx
-		adc	al,al
-		stosb				; Store al to es:[di]
-		loop	locloop_44		; Loop if cx > 0
-
-		inc	si
-		inc	si
-		pop	cx
-		loop	locloop_43		; Loop if cx > 0
-
-		pop	di
-		add	di,140h
-		pop	si
-		add	si,38h
-		pop	cx
-		loop	locloop_42		; Loop if cx > 0
+				pop	di
+				add	di,140h
+				pop	si
+				add	si,38h
+				pop	cx
+				loop	mcga_gnd_b_row_loop
 
 		push	es
 		pop	ds
-		mov	si,data_22e
-		mov	di,data_23e
-		mov	ah,10h
-loc_45:
-		mov	cx,38h
-		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-		add	di,0D0h
-		add	si,0D0h
-		dec	ah
-		jnz	loc_45			; Jump if not zero
+		mov	si,mcga_mountain_row_ptr	; src = first band
+		mov	di,mcga_mountain_dst_a		; dst = right half
+		mov	ah,10h			; 16 rows
+
+mcga_gnd_dup_loop:
+				mov	cx,38h			; 56 words per row
+				rep	movsw
+				add	di,0D0h			; next row dst stride
+				add	si,0D0h			; next row src stride
+				dec	ah
+				jnz	mcga_gnd_dup_loop
 		pop	ds
 		retn
-			                        ;* No entry point to code
+
+; --- ground_cgaalt (video_mode 7): CGA alt 4-color ground render (B800h) ---
+; Uses pixel_expand_cgaalt with LUT pointer in BP (byte_38C7 or byte_38D7).
+
+ground_cgaalt:
 		push	ds
 		mov	dx,cs
 		add	dx,1000h
 		mov	ds,dx
-		mov	si,data_20e
+		mov	si,seg1_buf_base
 		mov	ax,0B800h
 		mov	es,ax
-		mov	di,55F8h
+		mov	di,55F8h		; CGA alt destination
+		mov	cx,8			; 8 scanlines (first band)
+
+cgaalt_gnd_a_row_loop:
+				push	cx
+				push	di
+				mov	cx,1Ch
+
+cgaalt_gnd_a_col_loop:
+						push	cx
+						mov	dh,[si+1Ch]
+						mov	dl,[si]
+						inc	si
+						mov	bp,38C7h		; cga_alt_lut_a base
+						call	pixel_expand_cgaalt
+						stosb
+						call	pixel_expand_cgaalt
+						stosb
+						pop	cx
+						loop	cgaalt_gnd_a_col_loop
+
+				push	ds
+				push	si
+				push	es
+				pop	ds
+				mov	si,di
+				sub	si,38h
+				mov	cx,1Ch
+				rep	movsw			; duplicate row forward (28 words)
+				pop	si
+				pop	ds
+				add	si,1Ch
+				pop	di
+				add	di,2000h
+				cmp	di,8000h
+				jb	cgaalt_gnd_a_no_wrap
+				add	di,80A0h
+
+cgaalt_gnd_a_no_wrap:
+				pop	cx
+				loop	cgaalt_gnd_a_row_loop
+
+		mov	di,5738h		; second band destination
 		mov	cx,8
 
-locloop_46:
-		push	cx
-		push	di
-		mov	cx,1Ch
+cgaalt_gnd_b_row_loop:
+				push	cx
+				push	di
+				mov	cx,1Ch
 
-locloop_47:
-		push	cx
-		mov	dh,[si+1Ch]
-		mov	dl,[si]
-		inc	si
-		mov	bp,38C7h
-		call	bat_process_loop_2
-		stosb				; Store al to es:[di]
-		call	bat_process_loop_2
-		stosb				; Store al to es:[di]
-		pop	cx
-		loop	locloop_47		; Loop if cx > 0
+cgaalt_gnd_b_col_loop:
+						push	cx
+						mov	dh,[si+1Ch]
+						mov	dl,[si]
+						inc	si
+						mov	bp,38D7h		; cga_alt_lut_b base
+						call	pixel_expand_cgaalt
+						stosb
+						call	pixel_expand_cgaalt
+						stosb
+						pop	cx
+						loop	cgaalt_gnd_b_col_loop
 
-		push	ds
-		push	si
-		push	es
-		pop	ds
-		mov	si,di
-		sub	si,38h
-		mov	cx,1Ch
-		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-		pop	si
-		pop	ds
-		add	si,1Ch
-		pop	di
-		add	di,2000h
-		cmp	di,8000h
-		jb	loc_48			; Jump if below
-		add	di,80A0h
-loc_48:
-		pop	cx
-		loop	locloop_46		; Loop if cx > 0
+				push	ds
+				push	si
+				push	es
+				pop	ds
+				mov	si,di
+				sub	si,38h
+				mov	cx,1Ch
+				rep	movsw			; duplicate row forward
+				pop	si
+				pop	ds
+				add	si,1Ch
+				pop	di
+				add	di,2000h
+				cmp	di,8000h
+				jb	cgaalt_gnd_b_no_wrap
+				add	di,80A0h
 
-		mov	di,5738h
-		mov	cx,8
-
-locloop_49:
-		push	cx
-		push	di
-		mov	cx,1Ch
-
-locloop_50:
-		push	cx
-		mov	dh,[si+1Ch]
-		mov	dl,[si]
-		inc	si
-		mov	bp,38D7h
-		call	bat_process_loop_2
-		stosb				; Store al to es:[di]
-		call	bat_process_loop_2
-		stosb				; Store al to es:[di]
-		pop	cx
-		loop	locloop_50		; Loop if cx > 0
-
-		push	ds
-		push	si
-		push	es
-		pop	ds
-		mov	si,di
-		sub	si,38h
-		mov	cx,1Ch
-		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-		pop	si
-		pop	ds
-		add	si,1Ch
-		pop	di
-		add	di,2000h
-		cmp	di,8000h
-		jb	loc_51			; Jump if below
-		add	di,80A0h
-loc_51:
-		pop	cx
-		loop	locloop_49		; Loop if cx > 0
+cgaalt_gnd_b_no_wrap:
+				pop	cx
+				loop	cgaalt_gnd_b_row_loop
 
 		pop	ds
 		retn
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-
-bat_process_loop_2		proc	near
+pixel_expand_cgaalt		proc	near
 		xor	al,al			; Zero register
 		mov	cx,2
 
-locloop_52:
-		add	dh,dh
-		adc	bl,bl
-		add	dl,dl
-		adc	bl,bl
-		add	dh,dh
-		adc	bl,bl
-		add	dl,dl
-		adc	bl,bl
-		and	bl,0Fh
-		xor	bh,bh			; Zero register
-		add	al,al
-		add	al,al
-		add	al,al
-		add	al,al
-		add	bx,bp
-		or	al,cs:[bx]
-		loop	locloop_52		; Loop if cx > 0
+cgaalt_expand_iter:
+				add	dh,dh
+				adc	bl,bl
+				add	dl,dl
+				adc	bl,bl
+				add	dh,dh
+				adc	bl,bl
+				add	dl,dl
+				adc	bl,bl
+				and	bl,0Fh
+				xor	bh,bh			; Zero register
+				add	al,al
+				add	al,al
+				add	al,al
+				add	al,al
+				add	bx,bp			; add LUT base (byte_38C7 or byte_38D7)
+				or	al,cs:[bx]
+				loop	cgaalt_expand_iter
 
 		retn
-bat_process_loop_2		endp
 
+pixel_expand_cgaalt		endp
+
+; --- cga_alt_lut_a (byte_38C7 in IDA): ground_cgaalt primary LUT ---
+
+cga_alt_lut_a:
 		db	 00h, 03h, 04h, 07h, 03h, 0Bh
 		db	 05h, 0Ah, 04h, 05h, 0Ch, 06h
-		db	 07h, 0Ah, 06h, 0Eh, 00h, 07h
-		db	 04h, 02h, 07h, 0Fh, 0Ch, 0Eh
-		db	 04h, 0Ch, 0Ch, 02h, 02h, 0Eh
-		db	 02h, 0Ah, 06h,0AAh, 70h,0BBh
+		db	 07h, 0Ah, 06h, 0Eh
+; --- cga_alt_lut_b (byte_38D7 in IDA): ground_cgaalt secondary LUT ---
+
+cga_alt_lut_b:
+		db	 00h, 07h, 04h, 02h, 07h, 0Fh
+		db	 0Ch, 0Eh, 04h, 0Ch, 0Ch, 02h
+
+; ==========================================================================
+; mountains0: 88x56 RLE source bitmap for the 'distant' mountain layer.
+; Decoded by rle_decode_mountain_88x56 into seg1:0000.
+; Format: opcode 06h = 2-byte fill (length+pixel), else emit 1 literal byte.
+; Note: cga_alt_lut_b's last byte 0x02 above acts as an initial literal here.
+; ==========================================================================
+
+mountains0:
+		db	 02h, 0Eh, 02h, 0Ah		; initial literals before first 06h fill
+		db	 06h,0AAh, 70h,0BBh		; 06h fill: 0xAA x 112
 		db	0FBh,0BFh,0BBh,0BFh,0BBh,0BBh
 		db	0FFh,0BBh,0BBh,0BFh, 06h,0BBh
 		db	 08h,0FBh,0FFh,0FFh,0BBh,0BFh
@@ -911,7 +1087,7 @@ bat_process_loop_2		endp
 		db	0FFh,0BFh, 06h,0EEh, 08h, 06h
 		db	0AAh, 0Dh,0EEh,0AEh,0AAh,0EEh
 		db	0EEh,0EAh,0AAh,0EEh,0AAh
-data_2		db	0AAh			; Data table (indexed access)
+		db	0AAh			; (Sourcer 'data_2' label removed; byte is mountain data)
 		db	0EAh,0EEh,0EAh,0AAh,0EEh,0EEh
 		db	0FEh,0AAh,0EAh,0AAh,0AEh,0EEh
 		db	0EAh,0AAh,0EEh,0AAh,0EAh,0AEh
@@ -1391,6 +1567,14 @@ data_2		db	0AAh			; Data table (indexed access)
 		db	0AAh,0BEh,0AAh,0FAh, 06h,0AAh
 		db	 05h,0A0h, 2Fh,0EFh,0EAh,0AFh
 		db	0ABh,0EAh,0ABh,0FBh,0AAh,0BFh
+
+; ==========================================================================
+; mountains1: 88x56 RLE source bitmap for the 'near' mountain layer.
+; Decoded by rle_decode_mountain_88x56 into seg1:1340h.
+; Same format as mountains0 (06h = 2-byte fill, else literal).
+; ==========================================================================
+
+mountains1:
 		db	0EAh,0BFh,0BEh,0AAh,0AAh,0BAh
 		db	0AAh,0BEh,0AEh,0AAh,0AAh,0AAh
 		db	0EEh,0EAh,0BAh,0B8h, 3Fh,0B8h
@@ -1441,7 +1625,7 @@ data_2		db	0AAh			; Data table (indexed access)
 		db	0FAh, 06h,0AAh, 06h,0ABh,0EBh
 		db	0AAh,0BAh,0AAh,0AAh,0BAh,0ABh
 		db	0FAh,0BAh
-data_3		db	0BFh			; Data table (indexed access)
+		db	0BFh			; (Sourcer-generated 'data_3' label removed; byte is just mountain data)
 		db	0FAh,0ABh,0AAh,0EAh,0AAh,0BEh
 		db	 06h,0AAh, 06h,0AFh,0AAh,0ABh
 		db	0AAh,0A2h,0EAh,0A0h,0FAh,0AAh
@@ -1609,27 +1793,25 @@ data_3		db	0BFh			; Data table (indexed access)
 		db	 00h, 0Fh,0FEh,0AAh,0AAh, 75h
 		db	0FFh, 55h,0FDh,0D7h, 7Fh,0FFh
 		db	0DFh,0FFh,0F7h, 7Dh, 00h,0B8h
+; --- Misdecoded data block (ground bitmap): Sourcer tried to interpret these ---
+; bytes as instructions. The mnemonics happen to roundtrip correctly through
+; TASM's alt-encoded forms so we keep them here for bit-preservation.
+
 loc_53:
-		or	ch,ss:data_19e[bp+si]
-		ja	loc_53			; Jump if above
+				or	ch,ss:data_19e[bp+si]	; real bytes are ground bitmap
+				ja	loc_53
 		test	al,0AAh
 		stosw				; Store ax to es:[di]
-;*		add	ah,bh
-				add ah,bh			; was: db 000h,0FCh
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
+		add	ah,bh			; TASM alt-encodes to 02 E7
+		db	 0Fh			; pop cs (8088-only opcode byte 0Fh)
 		retn
-			                        ;* No entry point to code
-		aas				; Ascii adjust
-		sti				; Enable interrupts
-		scasb				; Scan es:[di] for al
-;*		sub	byte ptr ss:data_15e[bp+di],0CFh
-				sub byte ptr [bp+di+3C30h],0CFh			; was: db 082h,0ABh,030h,03Ch,0CFh
-		out	dx,al			; port 0, DMA-1 bas&add ch 0
-;*		sub	byte ptr [bp+si],0
-				sub byte ptr [bp+si],0h			; was: db 082h,02Ah,000h
-;*		add	al,dh
-				add al,dh			; was: db 000h,0F0h
+		aas
+		sti
+		scasb
+		sub	byte ptr [bp+di+3C30h],0CFh	; alt-encoded form
+		out	dx,al
+		sub	byte ptr [bp+si],0h
+		add	al,dh			; TASM alt-encodes
 		db	0FFh,0FFh,0FFh,0FCh,0CFh,0C3h
 		db	 33h,0CFh,0CFh,0FFh,0C0h, 00h
 		db	0F3h,0FFh,0AAh,0BAh,0D7h,0FFh
@@ -1886,10 +2068,14 @@ loc_53:
 		db	0EAh, 28h,0A0h, 00h
 		db	 3Fh, 2Ah, 0Ch
 
+; Sourcer thought these data bytes formed a tiny 'retn' stub. Keeping as one
+; mnemonic (retn = 0xC3) so the byte is preserved but labeling it data.
+
 locloop_54:
-		retn
-			                        ;* No entry point to code
-		xor	di,sp
+		retn				; ground data byte 0xC3 (misdecode)
+
+; Ground bitmap data continues (misdecoded as 'xor di, sp'...).
+		xor	di,sp			; ground data bytes 0x33 0xFC (misdecode)
 		db	0FFh,0FFh,0FAh,0BBh,0FAh,0EAh
 		db	 55h, 3Fh,0FFh, 03h,0FEh,0A8h
 		db	 0Ah,0BAh,0A8h, 80h,0AAh, 80h
@@ -1917,8 +2103,12 @@ locloop_54:
 		db	 0Fh,0FFh,0EEh,0EBh,0AAh,0BFh
 		db	 0Ah, 20h, 04h,0DFh, 33h,0C7h
 		db	0CEh,0AAh,0E8h
+; Another misdecoded data slice: A2 8A 33 bytes -> 'mov ds:[0x338A],al'.
+; The label is kept data-only; real handler code elsewhere already references
+; jpt_mountains_render as a CS:-relative constant.
+
 loc_55:
-		mov	ds:data_10e,al
+		mov	ds:jpt_mountains_render,al	; misdecode of ground bitmap bytes
 		db	 3Eh, 8Bh,0C0h,0F0h,0FCh, 00h
 		db	0FFh,0FFh,0FBh,0EAh,0FBh,0A5h
 		db	 10h,0FFh,0FFh, 3Fh,0FEh, 80h
@@ -2121,7 +2311,16 @@ loc_55:
 		db	0EEh, 06h,0AAh, 0Dh,0AEh,0A8h
 		db	0AAh,0AAh,0AAh,0AEh, 06h,0AAh
 		db	 1Ah, 2Ah, 06h,0AAh, 07h,0A8h
-		db	 06h,0AAh, 14h,0AEh,0AAh,0AAh
+
+; ==========================================================================
+; ground: 16-row RLE source for foreground ground/grass layer.
+; Decoded by rle_decode_ground_28 into seg1:0000 (16 rows x 28 bytes).
+; Format: high-nibble 6 = 'emit low_nibble zeros', else emit byte as-is.
+; ==========================================================================
+
+ground:
+		db	 06h,0AAh, 14h,0AEh		; 0Ah 'emit 6 zeros' style prefix
+		db	0AAh,0AAh
 		db	 7Dh, 17h,0DDh, 47h, 55h, 35h
 		db	 54h, 7Dh, 1Fh, 45h,0F5h,0F4h
 		db	 7Dh, 51h,0DFh,0D5h, 54h, 1Dh
@@ -2175,7 +2374,16 @@ loc_55:
 		db	0D5h, 57h, 55h, 6Eh, 6Eh,0AEh
 		db	14 dup (0AAh)
 		db	0ABh,0AAh,0AAh,0EAh,0ABh,0AAh
-		db	0AAh,0AAh,0AAh,0AAh,0AAh,0AAh
+		db	0AAh,0AAh,0AAh			; last 3 AAh's of 'ground'
+
+; ==========================================================================
+; ground1: 16-row RLE source for the second (tiled) ground band.
+; Referenced via 'mov si, ground1_src_ofs' (= 0x56F1).
+; Same RLE format as 'ground' above.
+; ==========================================================================
+
+ground1:
+		db	0AAh,0AAh,0AAh			; 3 literal AAh rows then 'i', 0Ch, 'oc...'
 		db	0AAh
 		db	'i', 0Ch, 'ocUUUUU'
 		db	'UUUU]EUU]uU'
@@ -2240,7 +2448,5 @@ loc_55:
 		db	 5Fh, 75h
 
 seg_a		ends
-
-
 
 		end	start
