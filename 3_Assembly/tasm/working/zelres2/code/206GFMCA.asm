@@ -3,7 +3,13 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  ENEMY_AI - Code Module
+;  206GFMCA.BIN - MCGA Graphics Fill Driver (zelres2 chunk 6)
+;
+;  MCGA (PS/2 Model 30) graphics variant of the battle/gameplay sprite-fill
+;  driver. Renders sprites, tiles, scrolling backgrounds, and hero/enemy
+;  graphics for MCGA 320x200x256 mode at A000h. Parallels 202GFEGA in
+;  structure (same dispatch table layout, same drv_init_stub patchable
+;  byte, same sprite-scan loop).
 ;
 ;==========================================================================
 
@@ -95,7 +101,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zr2_06		proc	far
+gfmca_main		proc	far
 
 start:
 		pop	bp
@@ -254,7 +260,7 @@ loc_23:
 		jnz	loc_12			; Jump if not zero
 		retn
 
-zr2_06		endp
+gfmca_main		endp
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE

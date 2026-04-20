@@ -3,7 +3,12 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  PHYSICS_SUBSYSTEMS - Code Module
+;  203GFCGA.BIN - CGA Graphics Fill Driver (zelres2 chunk 3)
+;
+;  CGA variant of the battle/gameplay sprite-fill driver. Renders sprites,
+;  tiles, scrolling backgrounds, and hero/enemy graphics for 4-color CGA
+;  graphics mode at B800h. Parallels 202GFEGA in structure (same dispatch
+;  table layout, same drv_init_stub patchable byte, same sprite-scan loop).
 ;
 ;==========================================================================
 
@@ -97,7 +102,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zr2_03		proc	far
+gfcga_main		proc	far
 
 start:
 		aas				; Ascii adjust
@@ -252,7 +257,7 @@ loc_21:
 		jnz	loc_10			; Jump if not zero
 		retn
 
-zr2_03		endp
+gfcga_main		endp
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
