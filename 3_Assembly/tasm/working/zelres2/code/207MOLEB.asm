@@ -3,7 +3,41 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  ENEMY_SLIME - Code Module
+;  207MOLEB - Level/World Graphics Init Module (MOLE.BIN)
+;
+;  Loaded into CS+3000h by game.asm as the "level/world system" chunk.
+;  Called via CALL FAR with AL = gvar_game_phase (graphics mode index).
+;
+;  Stores AL to cs:[0x499] (game_phase / mode index), then copies several
+;  source graphics blocks into planar buffers at 0x2926 / 0x3286 and
+;  dispatches to mode-specific planar decoders via two jump tables:
+;
+;    jmp_tbl_decode_a (offset 0xE2) - 6 entries, indexed by game_phase*2
+;    jmp_tbl_decode_b (offset 0x360) - 6 entries, indexed by game_phase*2
+;
+;  The six dispatch targets select 4-plane EGA (A000h), 2-plane CGA
+;  (B800h), or single-plane mono (B000h) write paths for each tile.
+;
+;  Key subsystems:
+;    module_init         - offset 0: entry; stores phase, calls mode init,
+;                          copies sprite data, invokes decoders, returns far
+;    ega_init            - offset 0xAF: program EGA Graphics Controller regs
+;                          (Set/Reset, Enable, Color Compare, Mode, BitMask)
+;    dispatch_decode_a   - offset 0xD4: indexed jmp through jmp_tbl_decode_a
+;    dispatch_decode_b   - offset 0x352: indexed jmp through jmp_tbl_decode_b
+;    ega_plane_blit      - 0x0EA: mode-0 handler; EGA 4-plane via 3C4h/3C5h
+;    cga_shift_blit      - 0x140: mode 1/2 handler; CGA B800h 2-field
+;    hgc_blit            - 0x1BA: mode 3 handler; Hercules B000h
+;    vga_blit            - 0x24B: mode 4 handler; VGA 320x200 linear
+;    cga_hires_blit      - 0x2BE: mode 5 handler; CGA with 2-field interlace
+;    ega_decode_b        - 0x36C: mode-0 for dispatch_b; EGA plane-2 copy
+;    vga_chain4_decode   - 0x3CF: mode-5 for dispatch_b; VGA with sub-calls
+;    unpack_nibble_stream- 0x458: compressed byte-stream sprite unpacker
+;    extract_bits        - 0x40B: bitplane nibble -> 8-pixel byte merger
+;
+;  Decoders share three small scratch tables at offsets 0x1AA, 0x2AE, 0x33E
+;  (4bpp pixel unpack LUT for the nibble-stream format used by the sprite
+;  data). Remaining bulk of the file (0x498+) is raw sprite/tile image data.
 ;
 ;==========================================================================
 
@@ -11,149 +45,154 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
+; External data references (all CS-relative; this chunk is loaded raw at CS+3000h).
+;
+; Variables in this chunk's own CS segment (indexed from 0x0499):
 
-; The following equates show data references outside the range of the program.
+game_phase_var	equ	499h			; [byte] stored game_phase / mode index (set on entry)
+dispatch_flag_1	equ	497h			; [byte] control flag A (written by init: 0x10, then 0x50)
+dispatch_flag_2	equ	498h			; [byte] control flag B (written by init: 0xFF)
 
-data_1e		equ	499h			;*
-data_82e	equ	2A08h			;*
-data_83e	equ	2A41h			;*
-data_84e	equ	2E02h			;*
-data_85e	equ	36EAh			;*
-data_86e	equ	3A41h			;*
-data_87e	equ	3AA8h			;*
-data_88e	equ	4102h			;*
-data_89e	equ	4108h			;*
-data_90e	equ	410Ah			;*
-data_91e	equ	4111h			;*
-data_92e	equ	4113h			;*
-data_93e	equ	4120h			;*
-data_94e	equ	4128h			;*
-data_95e	equ	412Eh			;*
-data_96e	equ	4180h			;*
-data_97e	equ	4188h			;*
-data_98e	equ	41A0h			;*
-data_99e	equ	41A2h			;*
-data_100e	equ	41A8h			;*
-data_101e	equ	41CBh			;*
-data_102e	equ	41EBh			;*
-data_103e	equ	4202h			;*
-data_104e	equ	420Ah			;*
-data_105e	equ	4220h			;*
-data_106e	equ	423Ah			;*
-data_107e	equ	4280h			;*
-data_108e	equ	428Ah			;*
-data_109e	equ	42A0h			;*
-data_110e	equ	42A3h			;*
-data_111e	equ	42E2h			;*
-data_112e	equ	4308h			;*
-data_113e	equ	4320h			;*
-data_114e	equ	4380h			;*
-data_115e	equ	4382h			;*
-data_116e	equ	4688h			;*
-data_117e	equ	4880h			;*
-data_118e	equ	4B01h			;*
-data_119e	equ	6000h			;*
-data_120e	equ	8002h			;*
-data_121e	equ	800Ah			;*
-data_122e	equ	800Bh			;*
-data_123e	equ	8022h			;*
-data_124e	equ	802Eh			;*
-data_125e	equ	803Ah			;*
-data_126e	equ	8041h			;*
-data_127e	equ	8043h			;*
-data_129e	equ	8045h			;*
-data_130e	equ	8080h			;*
-data_131e	equ	808Ah			;*
-data_132e	equ	8228h			;*
-data_133e	equ	822Ah			;*
-data_134e	equ	8242h			;*
-data_135e	equ	8820h			;*
-data_136e	equ	8841h			;*
-data_137e	equ	8888h			;*
-data_138e	equ	88FBh			;*
-data_139e	equ	8A02h			;*
-data_140e	equ	8A41h			;*
-data_141e	equ	8EFAh			;*
-data_142e	equ	99A2h			;*
-data_143e	equ	0A000h			;*
-data_144e	equ	0A02Ah			;*
-data_145e	equ	0A041h			;*
-data_146e	equ	0A042h			;*
-data_147e	equ	0A044h			;*
-data_148e	equ	0A0A0h			;*
-data_149e	equ	0A202h			;*
-data_150e	equ	0A211h			;*
-data_151e	equ	0A214h			;*
-data_152e	equ	0A241h			;*
-data_153e	equ	0A2A0h			;*
-data_154e	equ	0A2FAh			;*
-data_155e	equ	0A3ABh			;*
-data_156e	equ	0A80Ah			;*
-data_157e	equ	0A811h			;*
-data_158e	equ	0A812h			;*
-data_159e	equ	0A82Bh			;*
-data_160e	equ	0AB83h			;*
-data_161e	equ	0AFBAh			;*
-data_162e	equ	0BAA0h			;*
-data_163e	equ	0BABBh			;*
-data_164e	equ	0C050h			;*
-data_165e	equ	0C0ECh			;*
-data_166e	equ	0CA22h			;*
-data_167e	equ	0CA91h			;*
-data_168e	equ	0CB22h			;*
-data_169e	equ	0E241h			;*
-data_170e	equ	0E2A0h			;*
-data_171e	equ	0E808h			;*
-data_172e	equ	0E8BAh			;*
-data_173e	equ	0E8EBh			;*
-data_174e	equ	0EA41h			;*
-data_175e	equ	0EA8Eh			;*
-data_176e	equ	0FA91h			;*
-data_177e	equ	0FBF0h			;*
-data_178e	equ	3BF0h
-data_179e	equ	6778h
+; Internal constants used by the planar decoders:
+
+wrap_delta	equ	0C050h			; planar wraparound delta (added when di hits 4000h)
+vga_limit	equ	6000h			; VGA framebuffer size limit (cmp against di)
+mcga_wrap_b	equ	80A0h			; MCGA wraparound delta (after di >= 8000h)
+
+; Non-instruction scratch buffers (referenced in decoded-but-not-taken branches):
+
+cs_dispatch_178	equ	3BF0h			; post-blit di target used by decode_5col_blit_loop
+cs_dispatch_179	equ	6778h			; post-blit di target used by mono_scan_loop
+
+; The following EQUs are address constants that appear as disassembled
+; operands on instructions that are actually misaligned -- i.e. inside
+; raw sprite/bitmap data blocks that Sourcer attempted to decode. They
+; are not real variables; the names are kept to preserve bit-perfect
+; output after TASM re-encodes the misaligned mnemonics.
+;
+misdec_99A2	equ	99A2h			; operand in fake "add [99A2h],ch" at 0x0003
+misdec_A000	equ	0A000h			; operand in fake "add [A000h+bx],ch" at 0x02CB
+misdec_BAA0	equ	0BAA0h			; operand in fake "adc [BAA0h+bx+si],cx" at 0x1B45
+misdec_EA41	equ	0EA41h			; operand in fake "or ch,[EA41h+bx+si]" at 0x1B54
+misdec_822A	equ	822Ah			; operand in fake "mov al,[822Ah]" at 0x1B4F
+misdec_41A2	equ	41A2h			; operand in fake "adc [41A2h+bp+si],cx" at 0x1B52
+misdec_4B01	equ	4B01h			; operand in fake "add [4B01h+bp+si],di" at 0x00E7
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
-zr2_07		proc	far
+module_init		proc	far
+
+; --- Entry point at offset 0x0000 ---
+; Called FAR from game.asm with:
+;   DS = game segment, AL = gvar_game_phase
+; The first 8 bytes (offsets 0-7) assemble as 3 mnemonics with benign
+; side effects on ES:[bx+si] and DS:[99A2h]. Real initialization begins
+; at offset 0x08 (mov ax,cs), but offsets 0-7 produce the required bit
+; pattern and must be kept as-is for byte-identity.
 
 start:
-		sub	es:[bx+si],ax
-		add	ds:data_142e,ch
-		add	al,8Ch
-		db	0C8h, 8Eh,0D8h, 8Eh,0C0h,0FCh
-		db	0E8h, 95h, 00h,0BEh,0AEh, 04h
-		db	0BFh, 26h, 29h,0E8h, 3Dh, 04h
-		db	0BEh, 3Dh, 07h,0BFh, 86h, 32h
-		db	0E8h, 34h, 04h,0BEh, 26h, 29h
-		db	0BDh, 60h, 09h,0BBh, 00h, 0Ch
-		db	0B9h, 0Dh, 38h,0E8h,0A1h, 00h
-		db	0C6h, 06h, 97h, 04h, 10h,0BEh
-		db	0CDh, 08h,0BFh, 26h, 29h,0E8h
-		db	 17h, 04h,0BEh,0DBh, 10h,0BFh
-		db	 86h, 32h,0E8h, 0Eh, 04h,0BEh
-		db	 26h, 29h,0BDh, 60h, 09h,0BBh
-		db	 00h, 00h,0B9h,0C8h, 0Ch,0E8h
-		db	 7Bh, 00h,0BEh, 61h, 18h,0BFh
-		db	 26h, 29h,0E8h,0F6h, 03h,0BEh
-		db	 88h, 20h,0BFh, 86h, 32h,0E8h
-		db	0EDh, 03h,0BEh, 26h, 29h,0BDh
-		db	 60h, 09h,0BBh, 00h, 44h,0B9h
-		db	0C8h, 0Ch,0E8h, 5Ah, 00h,0C6h
-		db	 06h, 98h, 04h,0FFh,0C6h, 06h
-		db	 97h, 04h, 50h,0BEh, 99h, 27h
-		db	0BFh, 26h, 29h,0E8h,0CBh, 03h
-		db	0BFh, 86h, 32h,0B9h,0B0h, 04h
-		db	 33h,0C0h,0F3h,0ABh,0BDh, 60h
-		db	 09h,0BBh, 9Eh, 0Ch,0B9h, 2Ah
-		db	 38h,0E8h, 31h, 00h,0E8h,0ACh
-		db	 02h,0CBh,0F6h, 06h, 99h, 04h
-		db	0FFh, 74h, 01h,0C3h
-loc_6:
+		sub	es:[bx+si],ax		; {26 29 00}  filler: pads to offset 3
+		add	ds:misdec_99A2,ch	; {00 2E A2 99}  filler: pads to offset 7
+		add	al,8Ch			; {04 8C}  filler: last byte doubles as "mov ax,cs" opcode
+;
+; Real init code below (offsets 0x08..0xA6) -- assembled as db to preserve
+; alignment. Decoded manually, these bytes are:
+;
+;   08: mov  ax, cs                 {8C C8}           ; DS = ES = CS
+;   0A: mov  ds, ax                 {8E D8}
+;   0C: mov  es, ax                 {8E C0}
+;   0E: cld                         {FC}
+;   0F: call 00A7h                  {E8 95 00}        ; -> test game_phase, jz ega_init
+;   12: mov  si, 04AEh              {BE AE 04}        ; src block 1
+;   15: mov  di, 2926h              {BF 26 29}        ; dst buffer A
+;   18: call 0458h                  {E8 3D 04}        ; -> unpack_nibble_stream
+;   1B: mov  si, 073Dh              {BE 3D 07}        ; src block 2
+;   1E: mov  di, 3286h              {BF 86 32}        ; dst buffer B
+;   21: call 0458h                  {E8 34 04}        ; -> unpack_nibble_stream
+;   24: mov  si, 2926h              {BE 26 29}        ; src = dst buffer A (unpacked)
+;   27: mov  bp, 0960h              {BD 60 09}
+;   2A: mov  bx, 0C00h              {BB 00 0C}        ; y=12, x=0
+;   2D: mov  cx, 380Dh              {B9 0D 38}        ; 56 rows of 13 bytes (0x38/0x0D)
+;   30: call 00D4h                  {E8 A1 00}        ; -> dispatch_decode_a
+;   33: mov  byte ptr [0497h], 10h  {C6 06 97 04 10}  ; dispatch_flag_1 = 10h
+;   38: mov  si, 08CDh              {BE CD 08}        ; src block 3
+;   3B: mov  di, 2926h              {BF 26 29}        ; dst A
+;   3E: call 0458h                  {E8 17 04}        ; -> unpack_nibble_stream
+;   41: mov  si, 10DBh              {BE DB 10}        ; src block 4
+;   44: mov  di, 3286h              {BF 86 32}        ; dst B
+;   47: call 0458h                  {E8 0E 04}        ; -> unpack_nibble_stream
+;   4A: mov  si, 2926h              {BE 26 29}
+;   4D: mov  bp, 0960h              {BD 60 09}
+;   50: mov  bx, 0000h              {BB 00 00}        ; y=0, x=0
+;   53: mov  cx, 0CC8h              {B9 C8 0C}        ; 12 rows x 200 bytes
+;   56: call 00D4h                  {E8 7B 00}        ; -> dispatch_decode_a
+;   59: mov  si, 1861h              {BE 61 18}        ; src block 5
+;   5C: mov  di, 2926h              {BF 26 29}
+;   5F: call 0458h                  {E8 F6 03}        ; -> unpack_nibble_stream
+;   62: mov  si, 2088h              {BE 88 20}        ; src block 6
+;   65: mov  di, 3286h              {BF 86 32}
+;   68: call 0458h                  {E8 ED 03}        ; -> unpack_nibble_stream
+;   6B: mov  si, 2926h              {BE 26 29}
+;   6E: mov  bp, 0960h              {BD 60 09}
+;   71: mov  bx, 4400h              {BB 00 44}        ; y=68, x=0
+;   74: mov  cx, 0CC8h              {B9 C8 0C}
+;   77: call 00D4h                  {E8 5A 00}        ; -> dispatch_decode_a
+;   7A: mov  byte ptr [0498h], FFh  {C6 06 98 04 FF}  ; dispatch_flag_2 = FFh
+;   7F: mov  byte ptr [0497h], 50h  {C6 06 97 04 50}  ; dispatch_flag_1 = 50h
+;   84: mov  si, 2799h              {BE 99 27}        ; src block 7 (last)
+;   87: mov  di, 2926h              {BF 26 29}
+;   8A: call 0458h                  {E8 CB 03}        ; -> unpack_nibble_stream
+;   8D: mov  di, 3286h              {BF 86 32}        ; clear dst B
+;   90: mov  cx, 04B0h              {B9 B0 04}        ; 0x4B0 words = 2400 bytes
+;   93: xor  ax, ax                 {33 C0}
+;   95: rep  stosw                  {F3 AB}
+;   97: mov  bp, 0960h              {BD 60 09}
+;   9A: mov  bx, 0C9Eh              {BB 9E 0C}        ; y=12, x=0x9E
+;   9D: mov  cx, 382Ah              {B9 2A 38}        ; 56 rows x 42 bytes
+;   A0: call 00D4h                  {E8 31 00}        ; -> dispatch_decode_a
+;   A3: call 0352h                  {E8 AC 02}        ; -> dispatch_decode_b
+;   A6: retf                        {CB}              ; far return to game.asm
+;
+; 00A7: test byte ptr [0499h], FFh  {F6 06 99 04 FF}  ; is game_phase set?
+; 00AC: jz   00AF  (= ega_init)     {74 01}           ; first call: init EGA
+; 00AE: retn                        {C3}              ; subsequent: skip init
+;
+		db	0C8h, 8Eh,0D8h, 8Eh,0C0h,0FCh	; 08-0D
+		db	0E8h, 95h, 00h,0BEh,0AEh, 04h	; 0E-13
+		db	0BFh, 26h, 29h,0E8h, 3Dh, 04h	; 14-19
+		db	0BEh, 3Dh, 07h,0BFh, 86h, 32h	; 1A-1F
+		db	0E8h, 34h, 04h,0BEh, 26h, 29h	; 20-25
+		db	0BDh, 60h, 09h,0BBh, 00h, 0Ch	; 26-2B
+		db	0B9h, 0Dh, 38h,0E8h,0A1h, 00h	; 2C-31
+		db	0C6h, 06h, 97h, 04h, 10h,0BEh	; 32-37
+		db	0CDh, 08h,0BFh, 26h, 29h,0E8h	; 38-3D
+		db	 17h, 04h,0BEh,0DBh, 10h,0BFh	; 3E-43
+		db	 86h, 32h,0E8h, 0Eh, 04h,0BEh	; 44-49
+		db	 26h, 29h,0BDh, 60h, 09h,0BBh	; 4A-4F
+		db	 00h, 00h,0B9h,0C8h, 0Ch,0E8h	; 50-55
+		db	 7Bh, 00h,0BEh, 61h, 18h,0BFh	; 56-5B
+		db	 26h, 29h,0E8h,0F6h, 03h,0BEh	; 5C-61
+		db	 88h, 20h,0BFh, 86h, 32h,0E8h	; 62-67
+		db	0EDh, 03h,0BEh, 26h, 29h,0BDh	; 68-6D
+		db	 60h, 09h,0BBh, 00h, 44h,0B9h	; 6E-73
+		db	0C8h, 0Ch,0E8h, 5Ah, 00h,0C6h	; 74-79
+		db	 06h, 98h, 04h,0FFh,0C6h, 06h	; 7A-7F
+		db	 97h, 04h, 50h,0BEh, 99h, 27h	; 80-85
+		db	0BFh, 26h, 29h,0E8h,0CBh, 03h	; 86-8B
+		db	0BFh, 86h, 32h,0B9h,0B0h, 04h	; 8C-91
+		db	 33h,0C0h,0F3h,0ABh,0BDh, 60h	; 92-97
+		db	 09h,0BBh, 9Eh, 0Ch,0B9h, 2Ah	; 98-9D
+		db	 38h,0E8h, 31h, 00h,0E8h,0ACh	; 9E-A3
+		db	 02h,0CBh,0F6h, 06h, 99h, 04h	; A4-A9
+		db	0FFh, 74h, 01h,0C3h		; AA-AD
+; ega_init: program EGA Graphics Controller registers for planar writes.
+; Reached from offset 0x0F via "call 0A7h -> jz 0AFh" fall-through on first
+; entry (when game_phase_var is still zero). Subsequent calls skip init.
+
+ega_init:
 		mov	dx,3CCh
 		xor	al,al			; Zero register
 		out	dx,al			; port 3CCh, EGA graphics 1 pos
@@ -181,25 +220,37 @@ loc_6:
 						;  al = 8, data bit mask
 		retn
 
-zr2_07		endp
+module_init		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-slime_func_1		proc	near
+dispatch_decode_a		proc	near
 		xor	ax,ax			; Zero register
-		mov	al,ds:data_1e
+		mov	al,ds:game_phase_var
 		add	ax,ax
 		add	ax,0DEh
 		mov	di,ax
 		jmp	word ptr [di]		;*
-slime_func_1		endp
 
-		db	0EAh, 00h, 40h, 01h, 40h	; jmp far 4001h:4000h (absolute; TASM won't compile as mnemonic)
-			                        ;* No entry point to code
-		add	ss:data_118e[bp+si],di
-		add	bh,ss:data_20[bp]
+dispatch_decode_a		endp
+
+; --- jmp_tbl_decode_a: 6-entry dispatch table, indexed by game_phase*2 ---
+; This 5-byte encoding resembles "jmp far ptr 4001h:4000h" but is actually
+; the first 2.5 words of the jump table (targets 0xEA, 0x140, 0x140, ...).
+; TASM cannot express this as a mnemonic because the far-jmp is absolute.
+
+jmp_tbl_decode_a	label	word
+		db	0EAh, 00h, 40h, 01h, 40h	; words at +0, +2, +4: 40EAh, 40h, 4001h (raw bytes)
+
+; --- ega_plane_blit: dispatch target for mode 0 (EGA) at offset 0x00EA ---
+; Reads sprite data via DS:[BP+SI] / DS:[SI], writes to EGA framebuffer A000h
+; using Map Mask register (3C4h/3C5h) to select planes 1, 2, 4 per byte.
+; Called via dispatch_decode_a when game_phase=2 (EGA). Stack on entry: ES saved.
+; The "add ss:... / add bh,..." instructions decode the final 7 bytes of
+; jmp_tbl_decode_a (dispatch entries at +6, +8, +10) as a fake side-effect
+; prologue; execution resumes with "mov ax,50h" at offset 0x00F0.
+
+ega_plane_blit:
+		add	ss:misdec_4B01[bp+si],di	; {BA 4B01 BD}  dispatch entry 3 (1BAh) misaligned
+		add	bh,ss:data_20[bp]		; {02 BE 0602}   dispatch entry 4 (24Bh) misaligned
 		mov	ax,50h
 		mul	bl			; ax = reg * al
 		mov	bl,bh
@@ -214,41 +265,48 @@ slime_func_1		endp
 						;  al = 2, map mask register
 		inc	dx
 		mov	bx,cx
-loc_7:
-		push	di
-		push	cx
-loc_8:
-		mov	ah,ds:[bp+si]
-		lodsb				; String [si] to al
-		mov	cl,ah
-		or	cl,al
-		xor	cl,al
-		mov	ch,cl
-		or	al,ch
-		not	ch
-		and	ah,ch
-		mov	ch,al
-		mov	al,1
-		out	dx,al			; port 3C5h, EGA sequencr func
-		mov	es:[di],ch
-		mov	al,2
-		out	dx,al			; port 3C5h, EGA sequencr func
-		mov	es:[di],ah
-		mov	al,4
-		out	dx,al			; port 3C5h, EGA sequencr func
-		mov	es:[di],cl
-		inc	di
-		dec	bh
-		jnz	loc_8			; Jump if not zero
-		pop	cx
-		pop	di
-		add	di,50h
-		mov	bh,ch
-		dec	bl
-		jnz	loc_7			; Jump if not zero
+
+ega_row_loop:
+				push	di
+				push	cx
+
+ega_plane_byte_loop:
+						mov	ah,ds:[bp+si]
+						lodsb				; String [si] to al
+						mov	cl,ah
+						or	cl,al
+						xor	cl,al
+						mov	ch,cl
+						or	al,ch
+						not	ch
+						and	ah,ch
+						mov	ch,al
+						mov	al,1
+						out	dx,al			; port 3C5h, EGA sequencr func
+						mov	es:[di],ch
+						mov	al,2
+						out	dx,al			; port 3C5h, EGA sequencr func
+						mov	es:[di],ah
+						mov	al,4
+						out	dx,al			; port 3C5h, EGA sequencr func
+						mov	es:[di],cl
+						inc	di
+						dec	bh
+						jnz	ega_plane_byte_loop			; Jump if not zero
+				pop	cx
+				pop	di
+				add	di,50h
+				mov	bh,ch
+				dec	bl
+				jnz	ega_row_loop			; Jump if not zero
 		pop	es
 		retn
-			                        ;* No entry point to code
+; --- cga_shift_blit: dispatch target for modes 1/2 (CGA) at offset 0x0140 ---
+; Writes to CGA framebuffer B800h (with interleaved-line layout, 2000h stride).
+; Wraps to B800h+4000h+C050h boundary for second field.
+; Entered via dispatch_decode_a for modes 1/2 (or called directly at 0x0140).
+
+cga_shift_blit:
 		push	es
 		mov	ax,50h
 		shr	bl,1			; Shift w/zeros fill
@@ -263,119 +321,156 @@ loc_8:
 		mov	ax,0B800h
 		mov	es,ax
 		mov	bx,cx
-loc_9:
-		push	di
-		push	cx
-loc_10:
-		push	bx
-		mov	ah,ds:[bp+si]
-		lodsb				; String [si] to al
-		xor	dl,dl			; Zero register
-		mov	cx,4
 
-locloop_11:
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		and	bl,0Fh
-		xor	bh,bh			; Zero register
-		add	dl,dl
-		add	dl,dl
-		or	dl,byte ptr ds:[1AAh][bx]
-		loop	locloop_11		; Loop if cx > 0
+cga_row_loop:
+				push	di
+				push	cx
 
-		mov	al,dl
-		stosb				; Store al to es:[di]
-		pop	bx
-		dec	bh
-		jnz	loc_10			; Jump if not zero
-		pop	cx
-		pop	di
-		add	di,2000h
-		cmp	di,4000h
-		jb	loc_12			; Jump if below
-		add	di,data_164e
-loc_12:
-		mov	bh,ch
-		dec	bl
-		jnz	loc_9			; Jump if not zero
+cga_byte_loop:
+						push	bx
+						mov	ah,ds:[bp+si]
+						lodsb				; String [si] to al
+						xor	dl,dl			; Zero register
+						mov	cx,4
+
+cga_bit_unpack_loop:
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						and	bl,0Fh
+						xor	bh,bh			; Zero register
+						add	dl,dl
+						add	dl,dl
+						or	dl,byte ptr ds:[1AAh][bx]   ; LUT at 0x01AA: 4bpp->CGA 2bpp
+						loop	cga_bit_unpack_loop		; Loop if cx > 0
+
+						mov	al,dl
+						stosb				; Store al to es:[di]
+						pop	bx
+						dec	bh
+						jnz	cga_byte_loop			; Jump if not zero
+				pop	cx
+				pop	di
+				add	di,2000h
+				cmp	di,4000h
+				jb	cga_row_continue			; Jump if below
+				add	di,wrap_delta
+
+cga_row_continue:
+				mov	bh,ch
+				dec	bl
+				jnz	cga_row_loop			; Jump if not zero
 		pop	es
 		retn
+; --- LUT at 0x01AA: 4-bit nibble -> 2-bit CGA/HGC pair unpacker ---
+; Used by cga_bit_unpack_loop and hgc_bit_unpack_loop via "ds:[1AAh][bx]".
+; 16 entries mapping 4bpp planar nibble to CGA-style color pair.
+
+nibble_to_2bpp_lut	label	byte
 		db	 00h, 03h, 02h, 01h, 01h, 03h
 		db	 02h, 01h, 00h, 03h, 02h, 01h
-		db	 01h, 03h, 02h, 01h, 06h, 33h
-		db	0C0h, 8Ah,0C3h, 05h, 1Ch, 00h
-		db	0B2h, 03h,0F6h,0F2h, 8Ah,0F4h
-		db	0D0h,0CEh,0D0h,0CEh,0D0h,0CEh
-		db	0B4h, 5Ah,0F6h,0E4h, 81h,0E2h
-		db	 00h, 60h, 03h,0C2h, 80h,0C7h
-		db	 05h, 8Ah,0DFh, 32h,0FFh, 03h
-		db	0C3h, 8Bh,0F8h,0B8h, 00h,0B0h
-		db	 8Eh,0C0h, 8Bh,0D9h
-loc_13:
-		push	di
-		push	cx
-loc_14:
-		push	bx
-		mov	ah,ds:[bp+si]
-		lodsb				; String [si] to al
-		xor	dl,dl			; Zero register
-		mov	cx,4
+		db	 01h, 03h, 02h, 01h
 
-locloop_15:
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		add	ah,ah
-		adc	bl,bl
-		add	al,al
-		adc	bl,bl
-		and	bl,0Fh
-		xor	bh,bh			; Zero register
-		add	dl,dl
-		add	dl,dl
-		or	dl,byte ptr ds:[1AAh][bx]
-		loop	locloop_15		; Loop if cx > 0
+; --- hgc_blit: dispatch target for mode 3 (HGC) at offset 0x01BA ---
+; Hercules graphics (720x348, 2-field interlace at B000h/B000h+2000h).
+; Uses nibble_to_2bpp_lut for pixel unpacking. On di wrap (>= vga_limit),
+; copies field A -> field B and applies A05Ah row stride.
 
-		mov	al,dl
-		stosb				; Store al to es:[di]
-		pop	bx
-		dec	bh
-		jnz	loc_14			; Jump if not zero
-		pop	cx
-		pop	di
-		add	di,2000h
-		cmp	di,data_119e
-		jb	loc_16			; Jump if below
-		push	ds
-		push	si
-		push	cx
-		push	di
-		push	es
-		pop	ds
-		mov	si,di
-		sub	si,2000h
-		mov	cl,ch
-		xor	ch,ch			; Zero register
-		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		pop	di
-		pop	cx
-		pop	si
-		pop	ds
-		add	di,0A05Ah
-loc_16:
-		mov	bh,ch
-		dec	bl
-		jnz	loc_13			; Jump if not zero
+hgc_blit:
+		push	es		; 06
+		xor	ax,ax		; 33 C0
+		mov	al,bl		; 8A C3
+		add	ax,1Ch		; 05 1C 00
+		mov	dl,3		; B2 03
+		div	dl		; F6 F2
+		mov	dh,ah		; 8A F4
+		ror	dh,1		; D0 CE
+		ror	dh,1		; D0 CE
+		ror	dh,1		; D0 CE
+		mov	ah,5Ah		; B4 5A
+		mul	ah		; F6 E4
+		and	dx,6000h	; 81 E2 00 60
+		add	ax,dx		; 03 C2
+		add	bh,5		; 80 C7 05
+		mov	bl,bh		; 8A DF
+		xor	bh,bh		; 32 FF
+		add	ax,bx		; 03 C3
+		mov	di,ax		; 8B F8
+		mov	ax,0B000h	; B8 00 B0  -- HGC segment
+		mov	es,ax		; 8E C0
+		mov	bx,cx		; 8B D9
+
+hgc_row_loop:
+				push	di
+				push	cx
+
+hgc_byte_loop:
+						push	bx
+						mov	ah,ds:[bp+si]
+						lodsb				; String [si] to al
+						xor	dl,dl			; Zero register
+						mov	cx,4
+
+hgc_bit_unpack_loop:
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						add	ah,ah
+						adc	bl,bl
+						add	al,al
+						adc	bl,bl
+						and	bl,0Fh
+						xor	bh,bh			; Zero register
+						add	dl,dl
+						add	dl,dl
+						or	dl,byte ptr ds:[1AAh][bx]    ; LUT: nibble -> 2bpp
+						loop	hgc_bit_unpack_loop		; Loop if cx > 0
+
+						mov	al,dl
+						stosb				; Store al to es:[di]
+						pop	bx
+						dec	bh
+						jnz	hgc_byte_loop			; Jump if not zero
+				pop	cx
+				pop	di
+				add	di,2000h
+				cmp	di,vga_limit
+				jb	hgc_row_continue			; Jump if below
+				; Wrap: copy row from field A to field B
+				push	ds
+				push	si
+				push	cx
+				push	di
+				push	es
+				pop	ds
+				mov	si,di
+				sub	si,2000h
+				mov	cl,ch
+				xor	ch,ch			; Zero register
+				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+				pop	di
+				pop	cx
+				pop	si
+				pop	ds
+				add	di,0A05Ah
+
+hgc_row_continue:
+				mov	bh,ch
+				dec	bl
+				jnz	hgc_row_loop			; Jump if not zero
 		pop	es
 		retn
-			                        ;* No entry point to code
+; --- vga_blit: dispatch target for mode 4 (VGA/MCGA 320x200 linear) at 0x024B ---
+; Writes 4 bytes per input nibble to VGA A000h with 140h stride (320 bytes/row).
+; Uses vga_pixel_unpack (below) with ds:[2AEh][bx] = 16-entry VGA color LUT.
+
+vga_blit:
 		push	es
 		xor	dx,dx			; Zero register
 		mov	dl,bh
@@ -391,39 +486,37 @@ loc_16:
 		mov	ax,0A000h
 		mov	es,ax
 		mov	bx,cx
-loc_17:
-		push	di
-		push	cx
-loc_18:
-		push	bx
-		mov	dh,ds:[bp+si]
-		mov	dl,[si]
-		call	slime_func_2
-		stosb				; Store al to es:[di]
-		call	slime_func_2
-		stosb				; Store al to es:[di]
-		call	slime_func_2
-		stosb				; Store al to es:[di]
-		call	slime_func_2
-		stosb				; Store al to es:[di]
-		inc	si
-		pop	bx
-		dec	bh
-		jnz	loc_18			; Jump if not zero
-		pop	cx
-		pop	di
-		add	di,140h
-		mov	bh,ch
-		dec	bl
-		jnz	loc_17			; Jump if not zero
+
+vga_row_loop:
+				push	di
+				push	cx
+
+vga_byte_loop:
+						push	bx
+						mov	dh,ds:[bp+si]
+						mov	dl,[si]
+						call	vga_pixel_unpack
+						stosb				; Store al to es:[di]
+						call	vga_pixel_unpack
+						stosb				; Store al to es:[di]
+						call	vga_pixel_unpack
+						stosb				; Store al to es:[di]
+						call	vga_pixel_unpack
+						stosb				; Store al to es:[di]
+						inc	si
+						pop	bx
+						dec	bh
+						jnz	vga_byte_loop			; Jump if not zero
+				pop	cx
+				pop	di
+				add	di,140h
+				mov	bh,ch
+				dec	bl
+				jnz	vga_row_loop			; Jump if not zero
 		pop	es
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-slime_func_2		proc	near
+vga_pixel_unpack		proc	near
 		add	dh,dh
 		adc	bl,bl
 		add	dl,dl
@@ -436,215 +529,269 @@ slime_func_2		proc	near
 		xor	bh,bh			; Zero register
 		mov	al,byte ptr ds:[2AEh][bx]
 		retn
-slime_func_2		endp
 
+vga_pixel_unpack		endp
+
+; --- LUT at 0x02AE: 4-bit nibble -> VGA pixel pair (16 entries) ---
+; Used by vga_pixel_unpack via "ds:[2AEh][bx]".
+
+nibble_to_vga_lut	label	byte
 		db	 00h, 01h, 05h, 03h, 08h, 09h
 		db	 0Dh, 0Bh, 28h, 29h, 2Dh, 2Bh
-		db	 18h, 19h, 1Dh, 1Bh, 06h, 8Ah
-		db	0F3h,0D0h,0CEh,0D0h,0CEh,0D0h
-		db	0CEh, 81h,0E2h, 00h, 60h,0D0h
-		db	0EBh,0D0h,0EBh,0B8h,0A0h, 00h
-		db	0F6h,0E3h, 03h,0C2h, 8Ah,0DFh
-		db	 32h,0FFh, 03h,0DBh, 03h,0C3h
-		db	 8Bh,0F8h,0B8h, 00h,0B8h, 8Eh
-		db	0C0h, 8Bh,0D9h
-loc_19:
-		push	di
-		push	cx
-loc_20:
-		push	bx
-		mov	dh,ds:[bp+si]
-		mov	dl,[si]
-		call	slime_process_loop
-		stosb				; Store al to es:[di]
-		call	slime_process_loop
-		stosb				; Store al to es:[di]
-		inc	si
-		pop	bx
-		dec	bh
-		jnz	loc_20			; Jump if not zero
-		pop	cx
-		pop	di
-		add	di,2000h
-		cmp	di,8000h
-		jb	loc_21			; Jump if below
-		add	di,80A0h
-loc_21:
-		mov	bh,ch
-		dec	bl
-		jnz	loc_19			; Jump if not zero
+		db	 18h, 19h, 1Dh, 1Bh
+
+; --- cga_hires_blit: dispatch target for mode 5 at offset 0x02BE ---
+; CGA-segment B800h blitter variant using the 2-field interlace layout
+; (row*A0 + field_select via bl shifted into dx 6000h mask).
+
+cga_hires_blit:
+		push	es		; 06
+		mov	dh,bl		; 8A F3
+		ror	dh,1		; D0 CE
+		ror	dh,1		; D0 CE
+		ror	dh,1		; D0 CE
+		and	dx,6000h	; 81 E2 00 60
+		shr	bl,1		; D0 EB
+		shr	bl,1		; D0 EB
+		mov	ax,0A0h		; B8 A0 00
+		mul	bl		; F6 E3
+		add	ax,dx		; 03 C2
+		mov	bl,bh		; 8A DF
+		xor	bh,bh		; 32 FF
+		add	bx,bx		; 03 DB
+		add	ax,bx		; 03 C3
+		mov	di,ax		; 8B F8
+		mov	ax,0B800h	; B8 00 B8  -- CGA segment (field A)
+		mov	es,ax		; 8E C0
+		mov	bx,cx		; 8B D9
+
+cga_hires_row_loop:
+				push	di
+				push	cx
+
+cga_hires_byte_loop:
+						push	bx
+						mov	dh,ds:[bp+si]
+						mov	dl,[si]
+						call	mcga_pixel_unpack
+						stosb				; Store al to es:[di]
+						call	mcga_pixel_unpack
+						stosb				; Store al to es:[di]
+						inc	si
+						pop	bx
+						dec	bh
+						jnz	cga_hires_byte_loop			; Jump if not zero
+				pop	cx
+				pop	di
+				add	di,2000h
+				cmp	di,8000h
+				jb	cga_hires_row_continue			; Jump if below
+				add	di,80A0h
+
+cga_hires_row_continue:
+				mov	bh,ch
+				dec	bl
+				jnz	cga_hires_row_loop			; Jump if not zero
 		pop	es
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-slime_process_loop		proc	near
+mcga_pixel_unpack		proc	near
 		xor	al,al			; Zero register
 		mov	cx,2
 
-locloop_22:
-		add	dh,dh
-		adc	bl,bl
-		add	dl,dl
-		adc	bl,bl
-		add	dh,dh
-		adc	bl,bl
-		add	dl,dl
-		adc	bl,bl
-		and	bl,0Fh
-		xor	bh,bh			; Zero register
-		add	al,al
-		add	al,al
-		add	al,al
-		add	al,al
-		or	al,byte ptr ds:[33Eh][bx]
-		loop	locloop_22		; Loop if cx > 0
+mcga_nibble_loop:
+				add	dh,dh
+				adc	bl,bl
+				add	dl,dl
+				adc	bl,bl
+				add	dh,dh
+				adc	bl,bl
+				add	dl,dl
+				adc	bl,bl
+				and	bl,0Fh
+				xor	bh,bh			; Zero register
+				add	al,al
+				add	al,al
+				add	al,al
+				add	al,al
+				or	al,byte ptr ds:[33Eh][bx]
+				loop	mcga_nibble_loop		; Loop if cx > 0
 
 		retn
-slime_process_loop		endp
 
+mcga_pixel_unpack		endp
+
+; --- LUT at 0x033E: 4-bit -> MCGA pixel pair (16 entries) ---
+; Used by mcga_pixel_unpack via "ds:[33Eh][bx]".
+
+nibble_to_mcga_lut	label	byte
 		db	 00h, 07h, 01h, 02h, 07h, 0Fh
 		db	 03h, 0Ah, 01h, 03h, 09h, 0Bh
 		db	 02h, 0Ah, 0Bh, 0Eh
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-slime_func_4		proc	near
+dispatch_decode_b		proc	near
 		xor	ax,ax			; Zero register
-		mov	al,ds:data_1e
+		mov	al,ds:game_phase_var
 		add	ax,ax
 		add	ax,35Ch
 		mov	di,ax
 		jmp	word ptr [di]		;*
-slime_func_4		endp
 
-		db	 68h, 03h, 8Bh, 03h, 8Bh, 03h
-		db	 8Bh, 03h, 8Ch, 03h,0CFh, 03h
-		db	0B8h, 00h,0A0h, 8Eh,0C0h,0BAh
-		db	0C4h, 03h,0B8h, 02h, 04h,0EFh
-		db	0BEh, 9Ah, 04h,0BFh,0B2h, 0Eh
-		db	0E8h, 03h
-data_15		dw	0BF00h			; Data table (indexed access)
-		db	0FCh, 0Eh,0B9h, 05h, 00h
+dispatch_decode_b		endp
 
-locloop_23:
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,4Eh
-		loop	locloop_23		; Loop if cx > 0
+; --- jmp_tbl_decode_b: 6-entry dispatch table at 0x0360 ---
+; Targets for game_phase 0..5:
+;   phase 0 -> 0x0368 (EGA)
+;   phase 1/2/3 -> 0x038B (retn stub; modes CGA/HGC/TGA do nothing)
+;   phase 4 -> 0x038C (retn stub; MCGA also nothing)
+;   phase 5 -> 0x03CF (VGA-chain4; copies 3ACBh block then does full scan)
+; The bytes at 0x0368 overlap: they form both the last 2 dispatch entries
+; AND the opening instructions of the EGA-mode handler.
 
-		retn
-			                        ;* No entry point to code
-		retn
-			                        ;* No entry point to code
+jmp_tbl_decode_b	label	word
+		db	 68h, 03h, 8Bh, 03h, 8Bh, 03h	; phase 0/1/2 -> 0368h, 038Bh, 038Bh
+		db	 8Bh, 03h, 8Ch, 03h,0CFh, 03h	; phase 3/4/5 -> 038Bh, 038Ch, 03CFh
+
+; --- ega_decode_b: mode-0 (EGA) handler at 0x036C ---
+; Sets up EGA plane write (port 3C4/3C5, index 2 = Map Mask, value 4 = plane 2),
+; copies 5 rows of 2 bytes each with 0x4E stride to planar destination.
+; Runs THROUGH the dispatch entry bytes (0x368-0x36B are interpreted as code).
+
+ega_decode_b:					; logical mode-0 entry = 0x036C
+		mov	ax,0A000h		; B8 00 A0  -- VGA/EGA segment
+		mov	es,ax			; 8E C0
+		mov	dx,3C4h			; BA C4 03
+		mov	ax,0402h		; B8 02 04  -- Map Mask reg, plane 2
+		out	dx,ax			; EF
+		mov	si,49Ah			; BE 9A 04
+		mov	di,0EB2h		; BF B2 0E
+		; The call+mov di below share overlapping bytes. The high byte
+		; of the call rel16 (at 0x0380) doubles as the low byte of a word
+		; "data_15 = 0BF00h" that is read elsewhere via "sub bp,data_15[bx]".
+		db	0E8h, 03h		; call rel16 opcode + low byte (rel = 3)
+data_15		dw	0BF00h			; rel16 high byte (00) | next instr opcode (BF)
+		db	0FCh, 0Eh		; remainder of "mov di,0EFCh"
+
+; --- copy_5_rows_2bytes: inline subroutine at 0x0384 ---
+; Copies 5 sprite rows of 2 bytes each from DS:[si] to ES:[di] with 0x4E stride
+; between rows (total row stride = 2+0x4E = 0x50 = 80 bytes = EGA planar row).
+
+copy_5_rows_2bytes:
+		mov	cx,5			; B9 05 00
+
+row_copy_loop_23:
+				movsb				; A4  -- Mov [si] to es:[di]
+				movsb				; A4  -- Mov [si] to es:[di]
+				add	di,4Eh			; 83 C7 4E
+				loop	row_copy_loop_23	; E2 F9  -- Loop if cx > 0
+
+		retn				; C3  -- at 038Eh; also phase 1-3 dispatch target -1
+		                        ;* Unreachable retn at 0x038F (phase 4 dispatch target -1)
+		retn				; C3  -- at 038Fh; phase 1-4 fall-through
+
+; --- vga_chain4_decode: phase-5 handler at 0x03CF ---
+; (Entry here reached via dispatch table target 0x03CF, falls into following block)
+
+vga_chain4_decode:
 		mov	ax,0A000h
 		mov	es,ax
 		mov	si,49Ah
 		mov	di,3AC8h
-		call	slime_process_loop_2
-		mov	di,data_178e
+		call	decode_5col_blit_loop
+		mov	di,cs_dispatch_178
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-slime_process_loop_2		proc	near
+decode_5col_blit_loop		proc	near
 		mov	cx,5
 
-locloop_24:
-		push	cx
-		push	di
-		lodsb				; String [si] to al
-		call	slime_process_loop_3
-		lodsb				; String [si] to al
-		call	slime_process_loop_3
-		pop	di
-		add	di,140h
-		pop	cx
-		loop	locloop_24		; Loop if cx > 0
+col_unpack_loop:
+				push	cx
+				push	di
+				lodsb				; String [si] to al
+				call	decode_4bit_unpack
+				lodsb				; String [si] to al
+				call	decode_4bit_unpack
+				pop	di
+				add	di,140h
+				pop	cx
+				loop	col_unpack_loop		; Loop if cx > 0
 
 		retn
-slime_process_loop_2		endp
 
+decode_5col_blit_loop		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-slime_process_loop_3		proc	near
+decode_4bit_unpack		proc	near
 		mov	cx,4
 
-locloop_25:
-		xor	ah,ah			; Zero register
-		add	al,al
-		adc	ah,ah
-		add	ah,ah
-		add	ah,ah
-		add	al,al
-		adc	ah,ah
-		add	ah,ah
-		add	ah,ah
-		or	es:[di],ah
-		inc	di
-		loop	locloop_25		; Loop if cx > 0
+bit_spread_loop:
+				xor	ah,ah			; Zero register
+				add	al,al
+				adc	ah,ah
+				add	ah,ah
+				add	ah,ah
+				add	al,al
+				adc	ah,ah
+				add	ah,ah
+				add	ah,ah
+				or	es:[di],ah
+				inc	di
+				loop	bit_spread_loop		; Loop if cx > 0
 
 		retn
-slime_process_loop_3		endp
 
-			                        ;* No entry point to code
+decode_4bit_unpack		endp
+
+; --- cga_scan_entry: alt entry; sets ES=B800h and calls mono_scan_loop ---
+; Reached via dispatch (one of the jmp_tbl_decode_b targets lands here).
+
+cga_scan_entry:
 		mov	ax,0B800h
 		mov	es,ax
 		mov	di,66E4h
 		mov	dh,0FFh
-		call	slime_scan_loop
-		mov	di,data_179e
+		call	mono_scan_loop
+		mov	di,cs_dispatch_179
 		xor	dh,dh			; Zero register
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-slime_scan_loop		proc	near
+mono_scan_loop		proc	near
 		mov	cx,5
 
-locloop_26:
-		push	cx
-		push	di
-		xor	dl,dl			; Zero register
-		mov	cx,4
+mono_outer_loop:
+				push	cx
+				push	di
+				xor	dl,dl			; Zero register
+				mov	cx,4
 
-locloop_27:
-		mov	al,es:[di]
-		call	extract_bits
-		stosb				; Store al to es:[di]
-		loop	locloop_27		; Loop if cx > 0
+mono_inner_loop:
+						mov	al,es:[di]
+						call	extract_bits
+						stosb				; Store al to es:[di]
+						loop	mono_inner_loop		; Loop if cx > 0
 
-		pop	di
-		add	di,2000h
-		cmp	di,8000h
-		jb	loc_28			; Jump if below
-		add	di,80A0h
-loc_28:
-		pop	cx
-		loop	locloop_26		; Loop if cx > 0
+				pop	di
+				add	di,2000h
+				cmp	di,8000h
+				jb	mono_row_continue			; Jump if below
+				add	di,80A0h
+
+mono_row_continue:
+				pop	cx
+				loop	mono_outer_loop		; Loop if cx > 0
 
 		retn
-slime_scan_loop		endp
 
+mono_scan_loop		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+; --- extract_bits: bitplane nibble merge ---
+; Takes AL (packed byte), uses CS LUT at 0x0444 to map high/low nibbles
+; to 4-pixel bytes.  DL = input mask (0xFF enables), DH = output-modify flag.
+; Returns merged 8-pixel byte in AL; updates DL=0xFF if first write.
 
 extract_bits		proc	near
 		test	dl,0FFh
-		jz	loc_29			; Jump if zero
+		jz	extract_do_merge		; Jump if zero
 		retn
-loc_29:
+
+extract_do_merge:
 		mov	ah,al
 		mov	bl,ah
 		shr	bl,1			; Shift w/zeros fill
@@ -653,97 +800,116 @@ loc_29:
 		shr	bl,1			; Shift w/zeros fill
 		xor	bh,bh			; Zero register
 		mov	si,bx
-		mov	al,byte ptr cs:[444h][bx]
+		mov	al,byte ptr cs:[444h][bx]	; LUT: high nibble -> 4 pixels
 		add	al,al
 		add	al,al
 		add	al,al
 		add	al,al
 		mov	bl,ah
 		and	bl,0Fh
-		or	al,byte ptr cs:[444h][bx]
+		or	al,byte ptr cs:[444h][bx]	; LUT: low nibble -> 4 pixels
 		or	si,si			; Zero ?
-		jz	loc_30			; Jump if zero
+		jz	extract_check_dh		; Jump if zero
 		retn
-loc_30:
+
+extract_check_dh:
 		test	dh,0FFh
-		jnz	loc_31			; Jump if not zero
+		jnz	extract_first_write		; Jump if not zero
 		retn
-loc_31:
+
+extract_first_write:
 		mov	al,ah
 		mov	dl,0FFh
 		retn
+
 extract_bits		endp
 
+; --- LUT at 0x0444: 4-bit nibble -> 4-pixel bitmap byte (16 entries) ---
+; Used by extract_bits via "cs:[444h][bx]".
+
+nibble_to_4px_lut	label	byte
 		db	 00h, 04h, 05h, 05h, 04h, 05h
 		db	 05h, 07h, 08h, 0Ch, 0Dh, 0Dh
 		db	 0Ch, 0Dh, 0Dh, 0Fh
-loc_32:
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jnz	loc_33			; Jump if not zero
-		retn
-loc_33:
-		mov	ah,al
-		and	ah,0F0h
-		cmp	ah,byte ptr ds:[497h]
-		jne	loc_34			; Jump if not equal
-		and	al,0Fh
-		mov	ah,al
-		mov	al,0AAh
-		jmp	short loc_37
-loc_34:
-		cmp	ah,40h			; '@'
-		jne	loc_35			; Jump if not equal
-		and	al,0Fh
-		mov	ah,al
-		xor	al,al			; Zero register
-		jmp	short loc_37
-loc_35:
-		test	byte ptr ds:[498h],0FFh
-		jz	loc_36			; Jump if zero
-		cmp	ah,0D0h
-		jne	loc_36			; Jump if not equal
-		and	al,0Fh
-		mov	ah,al
-		mov	al,0FFh
-		jmp	short loc_37
-loc_36:
-		mov	ah,1
-loc_37:
-		stosb				; Store al to es:[di]
-		dec	ah
-		jnz	loc_37			; Jump if not zero
-		jmp	short loc_32
-			                        ;* No entry point to code
-		nop
-		add	[bx+si],al
-		and	[bx+si],al
-		adc	al,[bx+si]
-		stosw				; Store ax to es:[di]
-		add	ds:data_143e[bx],ch
-		add	[bx+si],al
-		sub	[bx+si],al
-		sub	al,[bp+si]
-		stosw				; Store ax to es:[di]
-		add	bh,data_41[bx]
-		cmp	dl,byte ptr ss:[0FCFFh][bp+di]
-		sub	dl,byte ptr ss:[0FCFFh][bp+di]
-		sub	dl,byte ptr ss:[0FCFFh][bp+di]
-		sub	dl,byte ptr ss:[0FCFFh][bp+di]
-		sub	bp,data_15[bx]
-		loopnz	$+5			; Loop if zf=0, cx>0
 
-		db	0EBh, 0FAh			; jmp short -6 (absolute target; TASM won't compile as mnemonic)
-		db	0FFh,0FCh, 2Ah, 93h,0FFh,0FCh
-		db	 2Ah, 93h,0FFh,0FCh, 2Ah, 93h
-		db	0FFh,0FCh, 2Ah, 92h,0ACh,0EAh
-		db	 43h,0EAh,0A8h, 44h,0EAh,0A8h
-		db	 44h,0EAh,0A8h, 44h,0EAh,0A8h
-		db	 42h,0B0h, 28h, 0Ch, 0Eh, 42h
-		db	0EAh,0A8h
-		db	44h
+; --- unpack_nibble_stream: byte-stream decoder for compressed sprite data ---
+; Reads a stream at DS:[SI], writes unpacked pixel runs to ES:[DI].
+; Each byte has a high nibble (command) and low nibble (count-1):
+;   hi == [0x497]  (dispatch_flag_1)   -> emit 0xAA (black/2bpp pattern)
+;   hi == 0x40                         -> emit 0x00
+;   hi == 0xD0 and [0x498] nonzero     -> emit 0xFF (all-on)
+;   otherwise                          -> emit count 1 pixel
+; Zero byte terminates the stream.
 
-locloop_39:
+unpack_nibble_stream:
+				lodsb				; String [si] to al
+				or	al,al			; Zero ?
+				jnz	unpack_dispatch		; Jump if not zero
+				retn
+
+unpack_dispatch:
+				mov	ah,al
+				and	ah,0F0h
+				cmp	ah,byte ptr ds:[497h]	; dispatch_flag_1
+				jne	unpack_check_40		; Jump if not equal
+				and	al,0Fh
+				mov	ah,al
+				mov	al,0AAh			; emit 0xAA pattern
+				jmp	short unpack_emit_run
+
+unpack_check_40:
+				cmp	ah,40h			; '@'
+				jne	unpack_check_D0		; Jump if not equal
+				and	al,0Fh
+				mov	ah,al
+				xor	al,al			; Zero register (emit zeros)
+				jmp	short unpack_emit_run
+
+unpack_check_D0:
+				test	byte ptr ds:[498h],0FFh	; dispatch_flag_2 set?
+				jz	unpack_single		; Jump if zero
+				cmp	ah,0D0h
+				jne	unpack_single		; Jump if not equal
+				and	al,0Fh
+				mov	ah,al
+				mov	al,0FFh			; emit 0xFF (all-on)
+				jmp	short unpack_emit_run
+
+unpack_single:
+				mov	ah,1			; default: single-pixel emit
+
+unpack_emit_run:
+						stosb				; Store al to es:[di]
+						dec	ah
+						jnz	unpack_emit_run		; Jump if not zero
+				jmp	short unpack_nibble_stream
+; --- Sprite graphics data block starting at 0x049B ---
+; Compressed sprite/tilemap data read by unpack_nibble_stream above.
+; Sourcer mis-decoded this as x86 instructions; actually it is pixel data.
+;* No entry point to code -- data block (pixel runs)
+
+sprite_data_start	label	byte
+		db	 90h, 00h, 00h, 20h, 00h, 12h	; offsets 049B-04A0
+		db	 00h,0ABh, 00h,0AFh, 00h,0A0h	; offsets 04A1-04A6
+		db	 00h, 00h, 28h, 00h, 2Ah, 02h	; offsets 04A7-04AC
+		db	0ABh, 02h,0BFh, 00h, 0Fh, 3Ah	; offsets 04AD-04B2
+		db	 93h,0FFh,0FCh, 2Ah, 93h,0FFh	; offsets 04B3-04B8
+		db	0FCh, 2Ah, 93h,0FFh,0FCh, 2Ah	; offsets 04B9-04BE
+		db	 93h,0FFh,0FCh, 2Bh,0AFh, 80h	; offsets 04BF-04C4
+		db	  3h,0E0h, 03h,0EBh,0FAh,0FFh	; offsets 04C5-04CA
+		db	0FCh, 2Ah, 93h,0FFh,0FCh, 2Ah	; offsets 04CB-04D0
+		db	 93h,0FFh,0FCh, 2Ah, 93h,0FFh	; offsets 04D1-04D6
+		db	0FCh, 2Ah, 92h,0ACh,0EAh, 43h	; offsets 04D7-04DC
+		db	0EAh,0A8h, 44h,0EAh,0A8h, 44h	; offsets 04DD-04E2
+		db	0EAh,0A8h, 44h,0EAh,0A8h, 42h	; offsets 04E3-04E8
+		db	0B0h, 28h, 0Ch, 0Eh, 42h,0EAh	; offsets 04E9-04EE
+		db	0A8h, 44h				; offsets 04EF-04F0
+
+; --- Sprite graphics data continues (was mis-labeled locloop_39) ---
+; Sourcer placed a locloop_39 label here because it mis-decoded a nearby
+; byte as a backward conditional jump. Actually this is pure sprite data.
+
+sprite_data_row_0	label	byte
 		db	0EAh, 0A8h, 44h, 0EAh, 0A8h	; jmp far ptr A8EA:44A8
 		db	 44h,0EAh,0A8h, 43h,0ABh,0E8h
 		db	0AFh,0FAh,0EFh,0E8h, 28h, 2Bh
@@ -1748,28 +1914,33 @@ data_61		db	88h			; Data table (indexed access)
 		db	0BAh, 11h, 2Ah, 12h, 82h,0A0h
 		db	41h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-slime_func_9		proc	near
+; --- misdec_port_stub: NOT CALLED; Sourcer-fabricated fake proc at 0x1B40 ---
+; Dead code. Sourcer decoded the byte 0xEE (part of sprite data) as "out dx,al"
+; and created a synthetic "proc". Verified: no call sites in the whole module.
+; Kept as mnemonics because TASM re-encodes them to the same bytes via the
+; misdec_* and data_29 EQUs. This section is truly sprite pixel data.
+misdec_port_stub		proc	near
 		out	dx,al			; port 1, DMA-1 bas&cnt ch 0
 		db	82h, 0A0h, 0A8h, 3Ah, 0A8h	; and byte ptr [bx+si+3AA8h],0A8h (alt encoding: 82/4 not 80/4)
 		sub	ch,byte ptr data_29
 		test	al,41h			; 'A'
 		lodsb				; String [si] to al
-		adc	ds:data_162e[bx+si],cx
-		mov	al,ds:data_133e
-		adc	ss:data_99e[bp+si],cx
+		adc	ds:misdec_BAA0[bx+si],cx
+		mov	al,ds:misdec_822A
+		adc	ss:misdec_41A2[bp+si],cx
 		jmp	short $+0Ch
-slime_func_9		endp
 
-			                        ;* No entry point to code
+misdec_port_stub		endp
+
+; --- Sprite data continues at 0x1B5A (Sourcer decoded it as fake mnemonics) ---
+;* No entry point to code -- data block (pixel runs)
+
+sprite_data_row_2	label	byte
 		inc	cx
 		test	al,3Ah			; ':'
 		test	al,11h
 		mov	dl,[bx+di]
-		or	ch,ds:data_174e[bx+si]
+		or	ch,ds:misdec_EA41[bx+si]
 		db	0C0h, 03h,0A0h,0BAh,0A0h, 2Ah
 		db	 8Ah,0AEh, 8Ah,0A0h, 41h,0EAh
 		db	0BEh,0BAh,0A8h, 3Ah,0A8h, 11h
@@ -2380,7 +2551,5 @@ data_80		dw	5F5Fh, 0AF54h		; Data table (indexed access)
 		db	 5Ch, 00h
 
 seg_a		ends
-
-
 
 		end	start
