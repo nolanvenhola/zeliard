@@ -3600,7 +3600,7 @@ shift_blit_data_a	label	byte
 		db	 31h, 4Ah, 91h			; xor [bp+si-6Fh],cx (3 bytes)
 		db	 4Ah				; dec dx
 		db	 91h, 4Ah			; xchg cx,ax; dec dx
-		db	0F1h, 4Ah			; Fixup bytes
+		db	0F1h, 4Ah			; (data table bytes — Sourcer flagged as undecodable)
 		db	45 dup (0)
 		db	 02h, 00h, 00h, 00h, 06h, 00h
 		db	 00h, 00h, 06h, 00h, 00h, 00h

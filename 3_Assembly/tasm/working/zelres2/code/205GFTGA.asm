@@ -103,16 +103,14 @@ start:
 		add	[si],ch
 		xor	ds:tga_offs_723b,al
 		inc	ax
-;*		jg	loc_1			;*Jump if >
-		db	 7Fh, 3Fh		;  Fixup - byte match
+		db	 7Fh, 3Fh		; (proc-header bytes; Sourcer decoded as 'jg' but no real target)
 		mov	cx,9E42h
 		inc	si
 		sub	[bx+di+6Eh],ax
 		xor	bl,[di]
 		cmp	[bx+di],cx
 		inc	bx
-;*		jp	loc_3			;*Jump if parity=1
-		db	 7Ah, 42h		;  Fixup - byte match
+		db	 7Ah, 42h		; (proc-header bytes; Sourcer decoded as 'jp' but no real target)
                            lock	cmp	al,[bx+di+44h]
 		mov	bx,546h
 		inc	di
@@ -1547,12 +1545,8 @@ loc_118:
 ; 16-bit shape bitmap stored as 16x (word-aligned) pairs. The first bytes
 ; look like code to Sourcer but are really shape/mask header bytes.
 
-sprite_shape_tbl:
-		mov	al,3Ah			; ':'  (B0 3A - part of table header)
-;*		jo	loc_119			;*Jump if overflow=1
-		db	 70h, 3Ah		;  header bytes
-		xor	[bp+si],bh
-                           lock	cmp	[bx+si],ax
+sprite_shape_tbl:				; 9-byte header — Sourcer mis-decoded as code
+		db	0B0h, 3Ah, 70h, 3Ah, 30h, 3Ah,0F0h, 39h, 00h
 		db	16 dup (0)
 		db	 0Fh,0F0h, 00h, 00h, 3Fh,0FCh
 		db	 00h, 00h,0FCh, 3Fh, 00h, 00h
@@ -3641,48 +3635,14 @@ copy_fn_commit:
 ; is a series of frame/glyph-index bytes + a set of short descriptor
 ; tables; the trailing bytes transition into sprite_shape_tbl data.
 
-anim_seq_tbl:
-		pop	es			; 07 -- data byte decoded as code
-		or	[bx+di],cl		; 08 09 -- data bytes
-		or	al,[bx]			; data bytes
-		or	[bp+di],cl		; data bytes
-		or	al,7			; data byte
-		or	[bx+di],cl		; data bytes
-		or	bl,[bx+di]		; data bytes
-		cmp	ax,2761h		; data bytes
-		sbb	ax,1D1Eh		; data bytes
-		push	ds
-		pop	ds
-		and	[bx],bl
-		and	[di],bl
-		push	ds
-		pop	ds
-		and	[di],cl
-		push	cs
-;*		pop	cs			; data byte (0F)
-		db	0Fh			; data byte
-		adc	[bx],cl
-		adc	[di],cl
-		push	cs
-;*		pop	cs			; data byte (0F)
-		db	0Fh			; data byte
-		adc	[bx],dl
-		sbb	ds:sprite_lookup_base,bh
-		sub	ah,es:[di]
-		and	[bp+si],sp
-		and	[bp+si],sp
-		and	sp,[si]
-		and	[bp+si],sp
-		and	[bp+si],sp
-		or	[bp+si],cx
-		pop	es
-		or	[bx],al
-		or	[bx+di],cl
-		or	al,[bx]
-		or	[bx+di],bl
-		push	sp
-		pop	cx
-		pop	bp
+anim_seq_tbl:					; 70 bytes of frame index data — Sourcer mis-decoded as code
+		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 0Bh, 0Ch, 07h, 08h
+		db	 09h, 0Ah, 19h, 3Dh, 61h, 27h, 1Dh, 1Eh, 1Dh, 1Eh
+		db	 1Fh, 20h, 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h, 0Dh, 0Eh
+		db	 0Fh, 10h, 0Fh, 10h, 0Dh, 0Eh, 0Fh, 10h, 17h, 18h
+		db	 3Eh, 5Ch, 62h, 26h, 2Ah, 25h, 21h, 22h, 21h, 22h
+		db	 23h, 24h, 21h, 22h, 21h, 22h, 09h, 0Ah, 07h, 08h
+		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 19h, 54h, 59h, 5Dh
 		db	 63h, 32h, 2Fh, 2Eh, 1Fh, 20h
 		db	 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h
 		db	 1Fh, 20h, 0Fh, 10h, 11h, 12h

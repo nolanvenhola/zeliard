@@ -1407,7 +1407,7 @@ sprite_shape_tbl:
 		db	 7Fh,0FEh			; 0x0915 shape bytes
 		db	 80h, 07h, 0D0h			; 0x0917
 		db	 0Bh, 0E0h			; 0x091A
-		db	 0Fh				; 0x091C (Sourcer Fixup db)
+		db	 0Fh				; 0x091C shape byte
 		db	 00h, 00h			; 0x091D
 		db	 0F0h, 3Ch, 00h			; 0x091F (lock prefix + cmp)
 		db	 00h, 3Ch			; 0x0922
@@ -1416,12 +1416,12 @@ sprite_shape_tbl:
 		db	 00h, 0Eh, 0F0h, 00h		; 0x092A
 		db	 00h, 0Fh			; 0x092E
 		db	 0F0h, 00h, 00h			; 0x0930
-		db	 0Fh				; 0x0933 (Sourcer Fixup db)
+		db	 0Fh				; 0x0933 shape byte
 		db	 70h, 00h			; 0x0934
 		db	 00h, 0Eh, 78h, 00h		; 0x0936
 		db	 00h, 1Eh, 3Ch, 00h		; 0x093A (=0x003C = drv_init_stub offset)
 		db	 00h, 3Ch			; 0x093E
-		db	 0Fh				; 0x0940 (Sourcer Fixup db)
+		db	 0Fh				; 0x0940 shape byte
 		db	 00h, 00h			; 0x0941
 		db	 0F0h, 07h			; 0x0943 (lock pop es)
 		db	 0D0h, 0Bh			; 0x0945
@@ -3396,7 +3396,9 @@ lane_selector_body:
 lane_sel_cl_1:					; reached when cmp above is cl=2 je
 		mov	cl,1
 		retn
-			                        ;* No entry point to code
+
+; lane 3 entry (dispatch table dw 46FDh): swap cl 1<->0 (else fall through to lane 4)
+lane_sel_C:
 		cmp	cl,1
 		jne	lane_sel_B_skip		; Jump if not equal
 		mov	cl,0
@@ -3410,7 +3412,9 @@ lane_sel_B_skip:
 lane_sel_set_cl_1:
 		mov	cl,1
 		retn
-			                        ;* No entry point to code
+
+; lane 4 entry (dispatch table dw 470Eh): swap cl 2<->3 (else fall through to lane 5)
+lane_sel_D:
 		cmp	cl,2
 		jne	lane_sel_C_skip		; Jump if not equal
 		mov	cl,3
@@ -3424,7 +3428,9 @@ lane_sel_C_skip:
 lane_sel_set_cl_2:
 		mov	cl,2
 		retn
-			                        ;* No entry point to code
+
+; lane 5 entry (orphan tail): swap cl 1->3 only
+lane_sel_E:
 		cmp	cl,1
 		je	lane_sel_set_cl_3	; Jump if equal
 		retn
