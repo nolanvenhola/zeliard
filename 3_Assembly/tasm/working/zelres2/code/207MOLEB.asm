@@ -196,8 +196,7 @@ slime_func_1		proc	near
 		jmp	word ptr [di]		;*
 slime_func_1		endp
 
-;*		jmp	far ptr loc_61		;*
-				jmp	far ptr 4000h:4001h			; was: db 0EAh + dw 000h,040h,001h,040h
+		db	0EAh, 00h, 40h, 01h, 40h	; jmp far 4001h:4000h (absolute; TASM won't compile as mnemonic)
 			                        ;* No entry point to code
 		add	ss:data_118e[bp+si],di
 		add	bh,ss:data_20[bp]
@@ -734,8 +733,7 @@ loc_37:
 		sub	bp,data_15[bx]
 		loopnz	$+5			; Loop if zf=0, cx>0
 
-;*		jmp	short loc_38		;*
-				jmp 4C4h			; was: db 0EBh,0FAh
+		db	0EBh, 0FAh			; jmp short -6 (absolute target; TASM won't compile as mnemonic)
 		db	0FFh,0FCh, 2Ah, 93h,0FFh,0FCh
 		db	 2Ah, 93h,0FFh,0FCh, 2Ah, 93h
 		db	0FFh,0FCh, 2Ah, 92h,0ACh,0EAh
@@ -1756,8 +1754,7 @@ data_61		db	88h			; Data table (indexed access)
 
 slime_func_9		proc	near
 		out	dx,al			; port 1, DMA-1 bas&cnt ch 0
-;*		and	byte ptr ds:data_87e[bx+si],0A8h
-				and byte ptr [bx+si+3AA8h],0A8h			; was: db 082h,0A0h,0A8h,03Ah,0A8h
+		db	82h, 0A0h, 0A8h, 3Ah, 0A8h	; and byte ptr [bx+si+3AA8h],0A8h (alt encoding: 82/4 not 80/4)
 		sub	ch,byte ptr data_29
 		test	al,41h			; 'A'
 		lodsb				; String [si] to al
