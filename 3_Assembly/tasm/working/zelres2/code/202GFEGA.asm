@@ -159,21 +159,35 @@ start:
 		db	 8Ah, 42h,0AEh, 41h, 31h, 3Ah  ;   (garbled as code by Sourcer; treated as table data)
 		db	0D0h, 43h, 75h, 46h,0BDh, 46h	;  (EGA init table cont.)
 		db	0BAh, 47h, 9Fh, 41h,0DDh, 4Ah	;  (EGA init table cont.)
-		db	 2Dh, 4Bh,0B4h, 4Ch, 66h, 50h	;  (EGA init table cont.) ; last entry before push cs
-; [0x002E] push eax (66 50, 32-bit prefix) x2 = 2 pushes; then real init code:
-		db	 66h, 50h, 0Eh, 07h,0BFh, 97h	;  push eax; push eax; push cs; pop es; mov di,0x5097
-		db	 50h, 33h,0C0h,0B9h, 80h, 00h	;  (cont) +sprite_cache_tbl; xor ax,ax; mov cx,0x80
-		db	0F3h,0ABh			;  rep stosw  (clear sprite_cache_tbl, 0x80 words)
-; [0x003C] drv_init_stub label lands at the start of 'inc byte [anim_phase]' (FE 06 78 50)
-drv_init_stub	db	0FEh			;  FE (inc byte opcode) -- drv_init_stub = patchable stub byte
-		db	 06h, 78h, 50h,0C7h, 06h, 69h	;  inc byte [0x5078]; mov word [0x5069],0x046C
-		db	 50h, 6Ch, 04h, 8Bh, 36h, 31h	;  (cont) ; mov si,[0xFF31]
-		db	0FFh, 83h,0EEh, 21h,0E8h	;  (cont) ; sub si,0x21 ; call near (E8 = opcode)
-; [0x004E] ega_row_ofs label lands at the displacement bytes of the call near above
-ega_row_ofs	db	65h			;  call displacement lo byte: call 0x16B5 (ega_row_ofs used as patch target)
-		db	 16h, 33h,0DBh,0F6h, 04h, 80h	;  call disp hi; xor bx,bx; test byte [si],0x80
-		db	 74h, 03h,0E8h, 07h, 03h, 46h	;  jz +3; call 0x0361; inc si
-		db	0B9h, 06h, 00h			;  mov cx,6
+		db	 2Dh, 4Bh,0B4h, 4Ch, 66h, 50h	;  (EGA init table cont.)
+		db	 66h, 50h			;  (EGA init table cont.) -- 66h/50h are data values, not instructions
+; [0x0030] Real init code (common to all GF* drivers):
+		push	cs
+		pop	es
+		mov	di,sprite_cache_tbl
+		xor	ax,ax
+		mov	cx,80h
+		rep	stosw				; zero sprite_cache_tbl (0x80 words)
+; [0x003C] drv_init_stub: label is at instruction start, so full mnemonic is valid.
+; The opcode byte (FEh) is a patch target — callers may overwrite it to skip or alter init.
+drv_init_stub:
+		inc	byte ptr ds:[anim_phase]	; FE 06 78 50  (opcode byte patched by caller)
+		mov	word ptr ds:[vga_row_ptr],046Ch
+		mov	si,word ptr ds:[sprite_data_ptr]
+		sub	si,21h
+; [0x004D-0x004F] call with mid-instruction label: ega_row_ofs labels the displacement bytes.
+; Callers patch the displacement (ega_row_ofs) to redirect this call at runtime.
+; Current target: 0050h + 1665h = 16B5h.
+		db	0E8h				; call near opcode
+ega_row_ofs	db	65h,16h			; displacement (patch target); initially calls 16B5h
+; [0x0050] resumes as normal code:
+		xor	bx,bx
+		test	byte ptr [si],80h
+		jz	init_scan_next			; skip if slot empty
+		call	sprite_slot_remove
+init_scan_next:
+		inc	si
+		mov	cx,6
 
 sprite_scan_loop:
 							push	cx
@@ -365,7 +379,10 @@ sprite_state_update		endp
 ; Called via dispatch_tbl[bx]; called with SI=sprite_data, DI=sprite_buf slot.
 
 anim_cycle_2frame_1B:
-		js	loc_29+1		; jumps +1 into loc_29 body — skips the mov [di-1] setup byte
+		js	loc_29+1		; Overlapping-instruction trick: jumps to byte 1 of the 4-byte MOV at loc_29.
+					; CPU reads: 45h=inc bp / FF FEh=dec si / 3C 04h=cmp al,4 (shared path).
+					; JB path (loc_29+0): mov byte ptr [di-1],0FEh then cmp al,4.
+					; JS path (loc_29+1): inc bp / dec si / cmp al,4 — deliberate code-density trick.
 		cbw				; Convrt byte to word
 		db	 31h,0CEh		; xor si, cx  (alt encoding: 31/CE = XOR r/m16,r16; TASM uses 33/C6)
 		xor	[si+32h],cx
@@ -398,8 +415,8 @@ anim_cycle_6frame_1D:
 		jb	loc_29			; Jump if below
 		retn
 
-loc_29:
-		mov	byte ptr [di-1],0FEh
+loc_29:				; Entry +0: JB path — marks sprite slot active, then checks frame phase.
+		mov	byte ptr [di-1],0FEh	; +0: slot marker (JS path enters at +1: inc bp / dec si)
 		cmp	al,4
 		jae	loc_32			; Jump if above or =
 		or	al,al			; Zero ?
@@ -1590,7 +1607,7 @@ loc_83:
 		db	0Fh			;  Fixup - byte match
 		jo	$+2			; delay for I/O
 		add	byte ptr ds:[78h],cl
-		add	drv_init_stub,bl
+		add	byte ptr drv_init_stub,bl
 		add	[si],bh
 ;*		pop	cs			; Dangerous-8088 only
 		db	0Fh			;  Fixup - byte match
@@ -3005,31 +3022,62 @@ phase_ptr_advance		endp
 ;  Radius 0x29: BL=X-9, DL=X-9+0x29, BH=Y-9, DH=Y-9+0x29 -> call fade_gradient_loop
 
 ega_color_fade_init:
-		db	 00h, 00h		; null header
-		db	 06h, 50h, 0Ch,0A0h	; push es; push ax; or al,0A0h
-		db	 12h,0F0h,0A0h, 83h, 00h, 02h	; adc dh,al; mov al,[83h]; add al,al
-		db	0C0h, 02h,0C0h, 02h,0C0h, 8Ah	; add al,al; add al,al; mov ah,
-		db	 26h, 84h, 00h, 02h,0E4h, 02h	; [84h]; add ah,ah
-		db	0E4h, 02h,0E4h,0A2h, 67h, 50h	; add ah,ah; add ah,ah; mov [cur_color_pair],al
-		db	 88h, 26h, 68h, 50h,0E8h, 23h	; mov [cur_color_pair+1],ah; call 0x1614
-		db	 02h,0C6h, 06h, 78h, 50h, 06h	; ; mov [anim_phase],6
-		db	0E8h, 0Bh, 00h,0C6h, 06h, 78h	; call ega_inner_fade; mov [anim_phase],
-		db	 50h, 00h,0E8h, 03h, 00h,0E9h	; 0; call ega_inner_fade; jmp 0x1614
+		db	 00h, 00h		; 2-byte alignment header (decodes as 'add [bx+si],al'; not reached)
+		push	es
+		push	ax
+		or	al,0A0h
+		adc	dh,al
+		mov	al,ds:[83h]		; X coord (game_seg global)
+		add	al,al			; X * 2
+		add	al,al			; X * 4
+		add	al,al			; X * 8 -> EGA palette X offset
+		mov	ah,ds:[84h]		; Y coord (game_seg global)
+		add	ah,ah			; Y * 2
+		add	ah,ah			; Y * 4
+		add	ah,ah			; Y * 8 -> EGA palette Y offset
+		mov	ds:cur_color_pair,al
+		mov	byte ptr ds:[cur_color_pair+1],ah
+		call	hud_clear		; clear HUD around fade region
+		mov	byte ptr ds:[anim_phase],6
+		call	ega_inner_fade
+		mov	byte ptr ds:[anim_phase],0
+		call	ega_inner_fade
+		jmp	hud_clear
 
-ega_inner_fade:					; radius loop: 3 passes
-		db	 10h, 02h,0A0h, 67h, 50h,0FEh	; ; mov al,[cur_color_pair]; dec al
-		db	0C8h, 8Ah,0D8h, 04h, 19h, 8Ah	; mov bl,al; add al,0x19; mov dl,al
-		db	0D0h,0A0h, 68h, 50h,0FEh,0C8h	; mov al,[cur_color_pair+1]; dec al
-		db	 8Ah,0F8h, 04h, 19h, 8Ah,0F0h	; mov bh,al; add al,0x19; mov dh,al
-		db	0E8h, 2Fh, 00h,0A0h, 67h, 50h	; call fade_gradient_loop; mov al,[cur_color_pair]
-		db	 2Ch, 05h, 8Ah,0D8h, 04h, 21h	; sub al,5; mov bl,al; add al,0x21
-		db	 8Ah,0D0h,0A0h, 68h, 50h, 2Ch	; mov dl,al; mov al,[cur_color_pair+1]; sub al,5
-		db	 05h, 8Ah,0F8h, 04h, 21h, 8Ah	; mov bh,al; add al,0x21
-		db	0F0h,0E8h, 16h, 00h,0A0h, 67h	; mov dh,al; call fade_gradient_loop; mov al,[cur_color_pair]
-		db	 50h, 2Ch, 09h, 8Ah,0D8h, 04h	; sub al,9; mov bl,al
-		db	 29h, 8Ah,0D0h,0A0h, 68h, 50h	; add al,0x29; mov dl,al; mov al,[cur_color_pair+1]
-		db	 2Ch, 09h, 8Ah,0F8h, 04h, 29h	; sub al,9; mov bh,al; add al,0x29
-		db	 8Ah,0F0h			; mov dh,al  [-> fall through to fade_gradient_loop]
+ega_inner_fade:					; radius loop: 3 passes (radii 0x19, 0x21, 0x29)
+		mov	al,ds:cur_color_pair
+		dec	al
+		mov	bl,al
+		add	al,19h
+		mov	dl,al
+		mov	al,ds:[cur_color_pair+1]
+		dec	al
+		mov	bh,al
+		add	al,19h
+		mov	dh,al
+		call	fade_gradient_loop
+		mov	al,ds:cur_color_pair
+		sub	al,5
+		mov	bl,al
+		add	al,21h
+		mov	dl,al
+		mov	al,ds:[cur_color_pair+1]
+		sub	al,5
+		mov	bh,al
+		add	al,21h
+		mov	dh,al
+		call	fade_gradient_loop
+		mov	al,ds:cur_color_pair
+		sub	al,9
+		mov	bl,al
+		add	al,29h
+		mov	dl,al
+		mov	al,ds:[cur_color_pair+1]
+		sub	al,9
+		mov	bh,al
+		add	al,29h
+		mov	dh,al
+		; falls through to fade_gradient_loop
 
 fade_gradient_loop		proc	near
 		mov	cx,9
@@ -3592,11 +3640,13 @@ ui_tile_idx_tbl:
 ; Followed by bg_tile_row_loop ?-- called as part of bg tile blit dispatch.
 
 bg_tile_blit_init:
-; [2-byte dispatch header: aas; push es] then init code -- label lands mid-dispatch,
-; so kept as db. Code: mov [anim_phase],al; mov si,0x48E5; mov [vga_row_ptr],0x046C; mov cx,0x12
-		db	 3Fh, 06h,0A2h, 78h, 50h,0BEh  ; aas; push es; mov [anim_phase],al; mov si,0x48E5
-		db	0E5h, 48h,0C7h, 06h, 69h, 50h	;  (cont) mov word [vga_row_ptr],0x046C
-		db	 6Ch, 04h,0B9h, 12h, 00h	;  (cont) ; mov cx,0x12  (18 tile rows)
+		aas				; (header byte; harmless side effect on AL)
+		push	es
+		mov	ds:[anim_phase],al
+		mov	si,48E5h		; bg tile index table source
+		mov	word ptr ds:[vga_row_ptr],046Ch
+		mov	cx,12h			; 18 tile rows
+		; falls through to bg_tile_row_loop
 
 bg_tile_row_loop:
 							push	cx
@@ -3702,61 +3752,61 @@ ega_plane_mode_dispatch:
 		db	 7Fh, 48h		; jg +0x48 -> entry 8 (dispatch header byte 2)
 		db	 90h, 48h		; nop; dec ax  (dispatch header bytes 3-4)
 		db	0AAh, 48h		; stosb; dec ax (dispatch header bytes 5-6: pad to entry 0)
-					; -- Entry 0: MapMask=0x06, color=3, call ega_col_write_loop
-		db	0B8h, 02h, 06h		; mov ax,0602h  (seq idx=2,map=6=planes 1+2)
-		db	0EFh			; out dx,ax
-		db	0B3h, 03h		; mov bl,3
-		db	0E8h, 55h, 00h		; call ega_col_write_loop
-					; -- Entry 1: MapMask=0x07, color=5, jmp ega_col_write_loop
-		db	0B8h, 02h, 07h		; mov ax,0702h  (map=7=all planes)
-		db	0EFh			; out dx,ax
-		db	0B3h, 05h		; mov bl,5
-		db	0EBh, 4Dh		; jmp ega_col_write_loop
-					; -- Entry 2: MapMask=0x04, color=2, jmp ega_col_write_loop
-		db	0B8h, 02h, 04h		; mov ax,0402h  (map=4=plane 2)
-		db	0EFh			; out dx,ax
-		db	0B3h, 02h		; mov bl,2
-		db	0EBh, 45h		; jmp ega_col_write_loop
-					; -- Entry 3: MapMask=0x04, color=5, call ega_col_write_loop
-		db	0B8h, 02h, 04h		; mov ax,0402h
-		db	0EFh			; out dx,ax
-		db	0B3h, 05h		; mov bl,5
-		db	0E8h, 3Ch, 00h		; call ega_col_write_loop
-					; -- Entry 4: MapMask=0x07, color=4, jmp ega_col_write_loop
-		db	0B8h, 02h, 07h		; mov ax,0702h
-		db	0EFh			; out dx,ax
-		db	0B3h, 04h		; mov bl,4
-		db	0EBh, 34h		; jmp ega_col_write_loop
-					; -- Entry 5: MapMask=0x04, color=3, call ega_col_write_loop
-		db	0B8h, 02h, 04h		; mov ax,0402h
-		db	0EFh			; out dx,ax
-		db	0B3h, 03h		; mov bl,3
-		db	0E8h, 2Bh, 00h		; call ega_col_write_loop
-					; -- Entry 6: MapMask=0x07, color=5, call ega_col_write_loop
-		db	0B8h, 02h, 07h		; mov ax,0702h
-		db	0EFh			; out dx,ax
-		db	0B3h, 05h		; mov bl,5
-		db	0E8h, 22h, 00h		; call ega_col_write_loop
-					; -- Entry 7 (ja target): MapMask=0x06, color=7, jmp ega_col_write_loop
-		db	0B8h, 02h, 06h		; mov ax,0602h
-		db	0EFh			; out dx,ax
-		db	0B3h, 07h		; mov bl,7
-		db	0EBh, 1Ah		; jmp ega_col_write_loop
-					; -- Entry 8 (jg target): MapMask=0x07, color=5, call ega_col_write_loop
-		db	0B8h, 02h, 07h		; mov ax,0702h
-		db	0EFh			; out dx,ax
-		db	0B3h, 05h		; mov bl,5
-		db	0E8h, 11h, 00h		; call ega_col_write_loop
-					; -- Entry 9: MapMask=0x04, color=7, call ega_col_write_loop
-		db	0B8h, 02h, 04h		; mov ax,0402h
-		db	0EFh			; out dx,ax
-		db	0B3h, 07h		; mov bl,7
-		db	0E8h, 08h, 00h		; call ega_col_write_loop
-					; -- Entry 10: MapMask=0x06, color=4, jmp+0 -> fall into ega_col_write_loop
-		db	0B8h, 02h, 06h		; mov ax,0602h
-		db	0EFh			; out dx,ax
-		db	0B3h, 04h		; mov bl,4
-		db	0EBh, 00h		; jmp $+2 (fall into ega_col_write_loop)
+					; -- Entry 0: MapMask=0x06, color=3
+		mov	ax,0602h		; seq idx=2, map=6 (planes 1+2)
+		out	dx,ax
+		mov	bl,3
+		call	ega_col_write_loop
+					; -- Entry 1: MapMask=0x07, color=5
+		mov	ax,0702h		; map=7 (all planes)
+		out	dx,ax
+		mov	bl,5
+		jmp	short ega_col_write_loop
+					; -- Entry 2: MapMask=0x04, color=2
+		mov	ax,0402h		; map=4 (plane 2)
+		out	dx,ax
+		mov	bl,2
+		jmp	short ega_col_write_loop
+					; -- Entry 3: MapMask=0x04, color=5
+		mov	ax,0402h
+		out	dx,ax
+		mov	bl,5
+		call	ega_col_write_loop
+					; -- Entry 4: MapMask=0x07, color=4
+		mov	ax,0702h
+		out	dx,ax
+		mov	bl,4
+		jmp	short ega_col_write_loop
+					; -- Entry 5: MapMask=0x04, color=3
+		mov	ax,0402h
+		out	dx,ax
+		mov	bl,3
+		call	ega_col_write_loop
+					; -- Entry 6: MapMask=0x07, color=5
+		mov	ax,0702h
+		out	dx,ax
+		mov	bl,5
+		call	ega_col_write_loop
+					; -- Entry 7 (ja target): MapMask=0x06, color=7
+		mov	ax,0602h
+		out	dx,ax
+		mov	bl,7
+		jmp	short ega_col_write_loop
+					; -- Entry 8 (jg target): MapMask=0x07, color=5
+		mov	ax,0702h
+		out	dx,ax
+		mov	bl,5
+		call	ega_col_write_loop
+					; -- Entry 9: MapMask=0x04, color=7
+		mov	ax,0402h
+		out	dx,ax
+		mov	bl,7
+		call	ega_col_write_loop
+					; -- Entry 10: MapMask=0x06, color=4 (falls into ega_col_write_loop)
+		mov	ax,0602h
+		out	dx,ax
+		mov	bl,4
+		jmp	short ega_col_write_loop	; assembles as EB 00 (fall-through)
 
 ega_col_write_loop		proc	near
 
@@ -3784,48 +3834,14 @@ ega_col_write_loop		endp
 ; Animation sequence table ?-- frame index pairs for sprite animation cycles.
 ; Sourcer decodes these bytes as code; they are data accessed via CS-relative pointer.
 
-anim_seq_tbl:
-		pop	es
-		or	[bx+di],cl
-		or	al,[bx]
-		or	[bp+di],cl
-		or	al,7
-		or	[bx+di],cl
-		or	bl,[bx+di]
-		cmp	ax,2761h
-		sbb	ax,1D1Eh
-		push	ds
-		pop	ds
-		and	[bx],bl
-		and	[di],bl
-		push	ds
-		pop	ds
-		and	[di],cl
-		push	cs
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
-		adc	[bx],cl
-		adc	[di],cl
-		push	cs
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
-		adc	[bx],dl
-		sbb	ds:sprite_lookup_base,bh
-		sub	ah,es:[di]
-		and	[bp+si],sp
-		and	[bp+si],sp
-		and	sp,[si]
-		and	[bp+si],sp
-		and	[bp+si],sp
-		or	[bp+si],cx
-		pop	es
-		or	[bx],al
-		or	[bx+di],cl
-		or	al,[bx]
-		or	[bx+di],bl
-		push	sp
-		pop	cx
-		pop	bp
+anim_seq_tbl:					; 70 bytes of frame index data — Sourcer mis-decoded as code
+		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 0Bh, 0Ch, 07h, 08h
+		db	 09h, 0Ah, 19h, 3Dh, 61h, 27h, 1Dh, 1Eh, 1Dh, 1Eh
+		db	 1Fh, 20h, 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h, 0Dh, 0Eh
+		db	 0Fh, 10h, 0Fh, 10h, 0Dh, 0Eh, 0Fh, 10h, 17h, 18h
+		db	 3Eh, 5Ch, 62h, 26h, 2Ah, 25h, 21h, 22h, 21h, 22h
+		db	 23h, 24h, 21h, 22h, 21h, 22h, 09h, 0Ah, 07h, 08h
+		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 19h, 54h, 59h, 5Dh
 		db	 63h, 32h, 2Fh, 2Eh, 1Fh, 20h	; anim frame index pairs (continued from above mnemonics)
 		db	 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h	;  (cont.)
 		db	 1Fh, 20h, 0Fh, 10h, 11h, 12h	;  (cont.)
@@ -3993,19 +4009,9 @@ hero_gfx_row_loop:
 ; Sprite shape/gradient data table ?-- accessed via CS-relative pointer for
 ; fade_gradient_loop and ega_fill_bit_range operations. Sourcer decodes as code.
 
-sprite_shape_tbl:
-		xchg	sp,ax
-		dec	bx
-		xchg	sp,ax
-		dec	bx
-		xchg	sp,ax
-		dec	bx
-		hlt				; Halt processor
-		dec	bx
-		hlt				; Halt processor
-		dec	bx
-		push	sp
-		dec	sp
+sprite_shape_tbl:				; 12-byte header + 45 zero-pad — Sourcer mis-decoded as code
+		db	 94h, 4Bh, 94h, 4Bh, 94h, 4Bh	; header pair pattern
+		db	0F4h, 4Bh,0F4h, 4Bh, 54h, 4Ch	; header pair pattern (cont.)
 		db	45 dup (0)			; padding / zero-pad before shape group A
 ; sprite_shape_tbl shape group A (small diamond, left-aligned):
 		db	 02h, 00h, 00h, 00h, 06h, 00h	; rows 0-1 (plane bitmasks)
@@ -4050,10 +4056,17 @@ sprite_shape_tbl:
 		db	 00h, 1Fh, 00h, 00h, 00h, 1Fh	; rows 22-23
 		db	 00h, 00h, 00h, 1Eh, 00h, 00h	; rows 24-25
 		db	 03h, 1Ch,0C0h, 00h, 00h,0FFh	; row 26 (last shape entry) + 0xFF sentinel
-; shift_blit_setup -- inline code (no proc label in Sourcer output).
-; Sets up SI and BP for the shift-blit render path based on AL (sprite type/index).
-; Two entry paths merging at shift_blit_src_set; falls into shift_blit_outer_loop.
-		db	 00h, 00h		; null header (2-byte pad, matching ega_color_fade_init pattern)
+; shift_blit_setup -- sets up SI and BP for the shift-blit render path based on AL
+; (sprite type/index). Two entry paths merge at shift_blit_src_set; falls into
+; shift_blit_outer_loop.
+;
+; Dead code: searched all 137 zelres1/2/3 binaries for the byte sequence "33 1C"
+; (LE for offset 0x1C33) — zero matches. No caller stores this address as a
+; function pointer or near-call target. Likely leftover from an earlier driver
+; version (the CGA variant 203GFCGA has the same structural pattern at this offset).
+
+shift_blit_setup:
+		db	 00h, 00h		; 2-byte alignment header (decodes as 'add [bx+si],al'; harmless)
 		push	ds
 		or	al,al			; test sign of sprite type byte
 		js	shift_blit_neg		; if negative → type-B path (signed sprite)
