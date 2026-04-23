@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  209BOSQE.BIN - Boss Sprite Renderer (zelres2 chunk 10)
+;  209CKPD - Boss Sprite Renderer (CKPD.BIN, zelres2 chunk 10)
 ;
 ;  Renders a large multi-frame boss sprite to EGA (0A000h) and CGA (0B800h)
 ;  framebuffers. The module contains two dispatchers and nine renderer

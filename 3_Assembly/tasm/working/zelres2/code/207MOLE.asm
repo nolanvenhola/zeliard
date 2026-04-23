@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  207MOLEB - Level/World Graphics Init Module (MOLE.BIN)
+;  207MOLE - Level/World Graphics Init Module (mole.bin, zelres2 chunk 8)
 ;
 ;  Loaded into CS+3000h by game.asm as the "level/world system" chunk.
 ;  Called via CALL FAR with AL = gvar_game_phase (graphics mode index).

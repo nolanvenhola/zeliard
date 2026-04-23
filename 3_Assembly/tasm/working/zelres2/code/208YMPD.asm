@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  208SATNO - Satono Town Background Renderer (YMPD.BIN, zelres2 chunk 9)
+;  208YMPD - Satono Town Background Renderer (YMPD.BIN, zelres2 chunk 9)
 ;
 ;  Decodes and renders the mountain + ground scenery backdrop that is
 ;  drawn behind the Satono town building interior dialogs. Loaded by the
