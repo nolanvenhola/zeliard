@@ -3,7 +3,13 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  ENEMY_GHOST - Code Module
+;  212ARMRP - Weapon & Armour Shop Program (ARMRPRO.BIN, zelres2 chunk 14)
+;
+;  Loaded at gvar_game_seg:loaded_code_a (0x3000) by town.bin when player
+;  enters the weapon & armour shop building. Provides the shop menu loop:
+;      Go outside / Repair shield / Buy weapon / Buy shield / Explain goods
+;  along with trade-in pricing, dialog rendering, shopkeeper animation, and
+;  the mid-game "knight's sword exchange" event (honor-crest check).
 ;
 ;==========================================================================
 
@@ -12,87 +18,100 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; External data references (outside this module's CS segment).
 
-data_1e		equ	8000h			;*
-data_57e	equ	2000h			;*
-data_58e	equ	2002h			;*
-data_59e	equ	2004h			;*
-data_60e	equ	2010h			;*
-data_61e	equ	2012h			;*
-data_62e	equ	2016h			;*
-data_63e	equ	201Ah			;*
-data_64e	equ	201Ch			;*
-data_65e	equ	2020h			;*
-data_66e	equ	2040h			;*
-data_67e	equ	2044h			;*
-data_68e	equ	291Dh			;*
-data_69e	equ	3016h			;*
-data_70e	equ	4002h			;*
-data_71e	equ	6004h			;*
-data_72e	equ	6006h			;*
-data_73e	equ	6008h			;*
-data_74e	equ	600Ah			;*
-data_75e	equ	600Ch			;*
-data_76e	equ	600Eh			;*
-data_77e	equ	6010h			;*
-data_78e	equ	6012h			;*
-data_79e	equ	7FE8h			;*
-data_80e	equ	9998h			;*
-data_81e	equ	0A119h			;*
-data_82e	equ	0A176h			;*
-data_83e	equ	0A198h			;*
-data_84e	equ	0A24Bh			;*
-data_85e	equ	0A498h			;*
-data_86e	equ	0A6BFh			;*
-data_87e	equ	0A8FDh			;*
-data_88e	equ	0A90Fh			;*
-data_89e	equ	0AAD0h			;*
-data_90e	equ	0AB68h			;*
-data_91e	equ	0AC9Ch			;*
-data_92e	equ	0ACA2h			;*
-data_93e	equ	0ACAEh			;*
-data_94e	equ	0AD05h			;*
-data_95e	equ	0AD11h			;*
-data_96e	equ	0B3DEh			;*
-data_97e	equ	0BAA7h			;*
-data_98e	equ	0BBFDh			;*
-data_99e	equ	0BBFEh			;*
-data_100e	equ	0BC0Fh			;*
-data_101e	equ	0BC10h			;*
-data_102e	equ	0BC21h			;*
-data_103e	equ	0BC22h			;*
-data_104e	equ	0BC23h			;*
-data_105e	equ	0BC24h			;*
-data_106e	equ	0BC25h			;*
-data_107e	equ	0BC26h			;*
-data_108e	equ	0BC27h			;*
-data_109e	equ	0BC28h			;*
-data_110e	equ	0BC29h			;*
-data_112e	equ	0BC2Ch			;*
-data_113e	equ	0BC2Dh			;*
-data_114e	equ	0BC2Fh			;*
-data_115e	equ	0BC30h			;*
-data_116e	equ	0BC31h			;*
-data_117e	equ	0BC32h			;*
-data_118e	equ	0BC3Bh			;*
-data_119e	equ	0BC41h			;*
-data_120e	equ	0C006h			;*
-data_121e	equ	0FF1Ah			;*
-data_122e	equ	0FF2Ch			;*
-data_123e	equ	0FF4Ch			;*
-data_124e	equ	0FF4Eh			;*
-data_125e	equ	0FF4Fh			;*
-data_126e	equ	0FF50h			;*
-data_127e	equ	0FF52h			;*
-data_128e	equ	0FF53h			;*
-data_129e	equ	0FF54h			;*
-data_130e	equ	0FF56h			;*
-data_131e	equ	0FF57h			;*
-data_132e	equ	0FF58h			;*
-data_133e	equ	0FF68h			;*
-data_134e	equ	0FF6Ah			;*
-data_135e	equ	0FF75h			;*
+; --- Chunk loader scratch / temp buffer (game_seg) ---
+chunk_load_buf	equ	8000h			;* temp buffer for loading chunk into game_seg
+
+; --- Graphics driver function table (drv_seg base 2000h) ---
+gfx_rect_fill_fn	equ	2000h			;* fill rect (bx=col/cx=row/al=char)
+gfx_clear_row_fn	equ	2002h			;* clear row / prep drawing area
+gfx_set_color_fn	equ	2004h			;* set drawing color/palette for bar
+gfx_draw_str_fn		equ	2010h			;* draw string from si
+gfx_init_text_fn	equ	2012h			;* init text area
+gfx_commit_fn		equ	2016h			;* commit rendered row to VGA
+gfx_present_fn		equ	201Ah			;* present / update current frame
+gfx_render_scene_fn	equ	201Ch			;* render scene (jmp indirect, end of transaction)
+gfx_draw_hud_fn		equ	2020h			;* draw HUD/money panel (bx=pos/al=side)
+gfx_cleanup_fn		equ	2040h			;* cleanup / return from shop
+gfx_decompress_fn	equ	2044h			;* decompress fill_buffer (cx=count)
+
+; --- Secondary driver function table (driver base + 3000h) ---
+gfx_glyph_put_fn	equ	3016h			;* render a glyph into screen buffer
+
+; --- Game-code function table (game_seg:6000h-6012h) ---
+script_exec_fn		equ	6004h			;* script interpreter entry (reads from gvar_script_ip)
+render_number_fn	equ	6006h			;* render number (dl:ax value, di:dest)
+input_wait_fn		equ	6008h			;* input-wait / frame-step
+price_check_fn		equ	600Ah			;* price check (returns CY=can't afford)
+transaction_fn		equ	600Ch			;* commit transaction (dl:ax new, 85/86 old)
+menu_init_fn		equ	600Eh			;* menu init (cx=rows,si=str tbl)
+menu_nav_fn		equ	6010h			;* menu navigate (bl=cur row -> updated bl,CY=cancel)
+menu_render_fn		equ	6012h			;* menu render (si=strs,cl=rows,al=color)
+
+; --- Game-segment data (game_seg-relative) ---
+chunk_load_param	equ	4002h			;* chunk-load parameter field
+rect_coord_291D		equ	291Dh			;* rect fill coord constant (bx param in rect_fill)
+dialog_err_str		equ	7FE8h			;* error/not-enough-gold dialog string
+dialog_tip_str		equ	9998h			;* hint/tooltip dialog string
+shop_dispatch_a		equ	0A119h			;* dispatch tbl a (buy weapon path selector)
+shop_dispatch_b		equ	0A176h			;* dispatch tbl b (buy shield path selector)
+shop_dispatch_c		equ	0A198h			;* dispatch tbl c (explain-goods selector)
+shop_status_a		equ	0A24Bh			;* shop status flag variable A
+flag_trade_done		equ	0A498h			;* per-transaction "trade complete" flag byte
+shield_price_tbl	equ	0A6BFh			;* shield price word array (per type)
+shield_price_tbl_end	equ	0A8FDh			;* trade-in multiplier byte table (near shield_price_tbl+0x23E)
+trade_multiplier_tbl_p	equ	0A90Fh			;* trade-in price formula word table pointer
+anim_seq_closed		equ	0AAD0h			;* shopkeeper animation seq (mouth closed)
+anim_seq_open		equ	0AB68h			;* shopkeeper animation seq (mouth open)
+goods_icon_map		equ	0AC9Ch			;* goods icon index lookup base
+explain_dispatch_a	equ	0ACA2h			;* explain-goods text offsets (part A)
+explain_dispatch_b	equ	0ACAEh			;* explain-goods text offsets (part B)
+weapon_name_offs	equ	0AD05h			;* weapon name table offsets (base for si computation)
+shield_name_offs	equ	0AD11h			;* shield name table offsets
+explain_text_tbl	equ	0B3DEh			;* explain-goods text address table (per-item)
+weapon_dlg_tbl		equ	0BAA7h			;* weapon dialog base table (indexed by equipped slot)
+
+; --- Dialog/menu state variables (game_seg local scratch) ---
+cur_weapon_idx		equ	0BBFDh			;* selected weapon slot index byte
+cur_weapon_flag		equ	0BBFEh			;* selected weapon flag byte
+cur_shield_idx		equ	0BC0Fh			;* selected shield slot index byte
+cur_shield_flag		equ	0BC10h			;* selected shield flag byte
+last_menu_choice	equ	0BC21h			;* last menu choice byte
+sub_menu_choice_a	equ	0BC22h			;* sub-menu choice A byte
+trade_active_flag	equ	0BC23h			;* transaction in progress flag
+anim_state_0		equ	0BC24h			;* shopkeeper anim state byte 0
+anim_state_1		equ	0BC25h			;* shopkeeper anim state byte 1
+anim_state_2		equ	0BC26h			;* shopkeeper anim state byte 2
+anim_state_3		equ	0BC27h			;* shopkeeper anim state byte 3
+trade_weapon_flag	equ	0BC28h			;* trade/swap weapon flag byte
+trade_gold_tmp		equ	0BC29h			;* trade-in gold temporary (byte)
+trade_gold_buf_hi	equ	0BC2Ch			;* trade-in gold scratch byte
+trade_gold_buf_hi2	equ	0BC2Dh			;* trade-in gold scratch byte 2
+new_item_flag		equ	0BC2Fh			;* new-item/equip flag byte
+new_item_idx		equ	0BC30h			;* new-item slot index byte
+weapon_cnt		equ	0BC31h			;* number of weapons for sale byte
+shield_cnt		equ	0BC32h			;* number of shields for sale byte
+mouth_anim_A		equ	0BC3Bh			;* mouth anim packed bits A (6 bytes)
+mouth_anim_B		equ	0BC41h			;* mouth anim packed bits B (6 bytes)
+town_npc_state		equ	0C006h			;* town-map NPC/room state byte
+
+; --- Global variables (game_seg:0xFFxx) ---
+gvar_frame_timer	equ	0FF1Ah			;* frame timer counter (increments each interrupt)
+gvar_game_seg		equ	0FF2Ch			;* game segment selector word
+gvar_script_ip		equ	0FF4Ch			;* current script IP (byte stream pointer)
+gvar_text_x		equ	0FF4Eh			;* text cursor X byte
+gvar_text_y		equ	0FF4Fh			;* text cursor Y byte
+gvar_menu_step		equ	0FF50h			;* generic menu step counter word
+gvar_dlg_cols		equ	0FF52h			;* dialog window columns byte
+gvar_dlg_rows		equ	0FF53h			;* dialog window rows byte
+gvar_dlg_pos		equ	0FF54h			;* dialog window position word
+gvar_sel_row		equ	0FF56h			;* current menu row byte
+gvar_sel_flag		equ	0FF57h			;* menu selection flag byte
+gvar_sel_xlat		equ	0FF58h			;* menu selection translate byte
+gvar_ff68		equ	0FF68h			;* (free slot) word
+gvar_dlg_timer		equ	0FF6Ah			;* dialog timer word
+gvar_volume		equ	0FF75h			;* music/effect volume byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -100,150 +119,150 @@ seg_a		segment	byte public
 
 		org	0
 
-zr2_12		proc	far
+armrp_main		proc	far
 
 start:
 		inc	di
 		sbb	al,0
 		add	[si],al
-		mov	al,ds:data_88e
-		mov	es,ds:data_122e
+		mov	al,ds:trade_multiplier_tbl_p
+		mov	es,ds:gvar_game_seg
 		mov	di,8000h
-		mov	si,data_92e
+		mov	si,explain_dispatch_a
 		mov	al,2
 		call	word ptr cs:[10Ch]
 		push	ds
-		mov	ds,cs:data_122e
-		mov	si,data_1e
+		mov	ds,cs:gvar_game_seg
+		mov	si,chunk_load_buf
 		mov	cx,100h
-		call	word ptr cs:data_67e
+		call	word ptr cs:gfx_decompress_fn
 		pop	ds
-		mov	byte ptr ds:data_124e,0
-		mov	byte ptr ds:data_125e,0
-		mov	byte ptr ds:data_102e,0
-		call	word ptr cs:data_58e
-		call	word ptr cs:data_61e
-		mov	si,data_93e
-		call	word ptr cs:data_60e
-		call	ghost_process_loop
-		call	ghost_process_loop_2
+		mov	byte ptr ds:gvar_text_x,0
+		mov	byte ptr ds:gvar_text_y,0
+		mov	byte ptr ds:last_menu_choice,0
+		call	word ptr cs:gfx_clear_row_fn
+		call	word ptr cs:gfx_init_text_fn
+		mov	si,explain_dispatch_b
+		call	word ptr cs:gfx_draw_str_fn
+		call	build_mouth_bitmap_a
+		call	build_mouth_bitmap_b
 		push	cs
 		pop	es
-		mov	bl,ds:data_120e
+		mov	bl,ds:town_npc_state
 		dec	bl
 		add	bl,bl
 		xor	bh,bh			; Zero register
-		mov	si,ds:data_97e[bx]
-		mov	di,data_98e
+		mov	si,ds:weapon_dlg_tbl[bx]
+		mov	di,cur_weapon_idx
 		mov	cx,12h
 		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
 		xor	al,al			; Zero register
-		call	ghost_func_10
-		mov	byte ptr ds:data_104e,0FFh
+		call	render_shopkeeper_frame
+		mov	byte ptr ds:trade_active_flag,0FFh
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:data_57e
-		mov	word ptr ds:data_123e,0ADD3h
+		call	word ptr cs:gfx_rect_fill_fn
+		mov	word ptr ds:gvar_script_ip,0ADD3h
 		test	byte ptr ds:[24h],2
-		jnz	loc_1			; Jump if not zero
-		cmp	byte ptr ds:data_120e,5
-		jne	loc_1			; Jump if not equal
+		jnz	script_loop			; Jump if not zero
+		cmp	byte ptr ds:town_npc_state,5
+		jne	script_loop			; Jump if not equal
 		test	byte ptr ds:[9Bh],0FFh
-		jz	loc_1			; Jump if zero
-		mov	word ptr ds:data_123e,0B2A2h
-		mov	byte ptr ds:data_104e,0
-loc_1:
-		call	word ptr cs:data_71e
+		jz	script_loop			; Jump if zero
+		mov	word ptr ds:gvar_script_ip,0B2A2h
+		mov	byte ptr ds:trade_active_flag,0
+script_loop:
+		call	word ptr cs:script_exec_fn
 		cmp	al,0FFh
-		je	loc_2			; Jump if equal
-		call	ghost_func_3
-		jmp	short loc_1
-loc_2:
-		jmp	word ptr cs:data_66e
+		je	shop_exit			; Jump if equal
+		call	shop_menu_dispatch
+		jmp	short script_loop
+shop_exit:
+		jmp	word ptr cs:gfx_cleanup_fn
 
-zr2_12		endp
+armrp_main		endp
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-ghost_process_loop		proc	near
+build_mouth_bitmap_a		proc	near
 		mov	si,0D2h
-		mov	al,ds:data_120e
+		mov	al,ds:town_npc_state
 		dec	al
 		xor	ah,ah			; Zero register
 		add	si,ax
 		mov	dl,[si]
 		push	cs
 		pop	es
-		mov	di,data_118e
+		mov	di,mouth_anim_A
 		xor	dh,dh			; Zero register
 		mov	cx,6
 
-locloop_3:
+mouth_a_bit_loop:
 		add	dl,dl
-		jnc	loc_5			; Jump if carry=0
+		jnc	mouth_a_skip			; Jump if carry=0
 		mov	al,cl
 		neg	al
 		add	al,6
 		stosb				; Store al to es:[di]
 		inc	dh
-loc_5:
-		loop	locloop_3		; Loop if cx > 0
+mouth_a_skip:
+		loop	mouth_a_bit_loop		; Loop if cx > 0
 
-		mov	ds:data_116e,dh
+		mov	ds:weapon_cnt,dh
 		retn
-ghost_process_loop		endp
+build_mouth_bitmap_a		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-ghost_process_loop_2		proc	near
+build_mouth_bitmap_b		proc	near
 		mov	si,0DBh
-		mov	al,ds:data_120e
+		mov	al,ds:town_npc_state
 		dec	al
 		xor	ah,ah			; Zero register
 		add	si,ax
 		mov	dl,[si]
 		push	cs
 		pop	es
-		mov	di,data_119e
+		mov	di,mouth_anim_B
 		xor	dh,dh			; Zero register
 		mov	cx,6
 
-locloop_6:
+mouth_b_bit_loop:
 		add	dl,dl
-		jnc	loc_7			; Jump if carry=0
+		jnc	mouth_b_skip			; Jump if carry=0
 		mov	al,cl
 		neg	al
 		add	al,6
 		stosb				; Store al to es:[di]
 		inc	dh
-loc_7:
-		loop	locloop_6		; Loop if cx > 0
+mouth_b_skip:
+		loop	mouth_b_bit_loop		; Loop if cx > 0
 
-		mov	ds:data_117e,dh
+		mov	ds:shield_cnt,dh
 		retn
-ghost_process_loop_2		endp
+build_mouth_bitmap_b		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-ghost_func_3		proc	near
+shop_menu_dispatch		proc	near
 		mov	bl,al
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		jmp	word ptr cs:data_81e[bx]	;*
-ghost_func_3		endp
+		jmp	word ptr cs:shop_dispatch_a[bx]	;*
+shop_menu_dispatch		endp
 
 			                        ;* No entry point to code
 		sub	ax,59A1h
-		mov	ds:data_85e,al
+		mov	ds:flag_trade_done,al
 		retf
 			                        ;* No entry point to code
 		cmpsb				; Cmp [si] to es:[di]
@@ -254,472 +273,472 @@ ghost_func_3		endp
 		pop	cx
 		cmpsw				; Cmp [si] to es:[di]
 		db	70h, 0A8h		; jo (rel8; absolute target, TASM won't compile as mnemonic)
-		sub	byte ptr ds:data_87e[bx+si],0E8h
+		sub	byte ptr ds:shield_price_tbl_end[bx+si],0E8h
 		rol	byte ptr [bx],cl	; Rotate
-		mov	bx,data_68e
+		mov	bx,rect_coord_291D
 		mov	cx,1837h
 		mov	al,0FFh
-		call	word ptr cs:data_57e
-		mov	word ptr ds:data_129e,2920h
-		mov	byte ptr ds:data_127e,5
-		mov	byte ptr ds:data_128e,5
+		call	word ptr cs:gfx_rect_fill_fn
+		mov	word ptr ds:gvar_dlg_pos,2920h
+		mov	byte ptr ds:gvar_dlg_cols,5
+		mov	byte ptr ds:gvar_dlg_rows,5
 		mov	cx,5
 		mov	si,0ACC8h
-		call	word ptr cs:data_76e
-		mov	byte ptr ds:data_130e,0
-		mov	bl,ds:data_102e
-		call	word ptr cs:data_77e
-		jnc	loc_8			; Jump if carry=0
+		call	word ptr cs:menu_init_fn
+		mov	byte ptr ds:gvar_sel_row,0
+		mov	bl,ds:last_menu_choice
+		call	word ptr cs:menu_nav_fn
+		jnc	menu_a_choice_ok			; Jump if carry=0
 		xor	bl,bl			; Zero register
-loc_8:
-		mov	ds:data_102e,bl
+menu_a_choice_ok:
+		mov	ds:last_menu_choice,bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		jmp	word ptr ds:data_82e[bx]	;*
+		jmp	word ptr ds:shop_dispatch_b[bx]	;*
 			                        ;* No entry point to code
-		and	byte ptr ds:data_83e[bx+di],44h	; 'D'
-		mov	ds:data_84e,al
+		and	byte ptr ds:shop_dispatch_c[bx+di],44h	; 'D'
+		mov	ds:shop_status_a,al
 		push	dx
-		mov	ds:data_79e,al
+		mov	ds:dialog_err_str,al
 		pop	es
 		mov	si,0B1DEh
-		test	byte ptr ds:data_109e,0FFh
-		jnz	loc_9			; Jump if not zero
+		test	byte ptr ds:trade_weapon_flag,0FFh
+		jnz	save_script_ip			; Jump if not zero
 		db	0E8h, 76h, 05h		; call near (absolute; TASM won't compile as mnemonic)
 		mov	si,0B1FFh
-loc_9:
-		mov	ds:data_123e,si
+save_script_ip:
+		mov	ds:gvar_script_ip,si
 		retn
 			                        ;* No entry point to code
-		call	ghost_func_8
+		call	clear_menu_rect
 		test	byte ptr ds:[93h],0FFh
-		jnz	loc_10			; Jump if not zero
-		mov	word ptr ds:data_123e,0AE4Ah
+		jnz	check_change_wallet			; Jump if not zero
+		mov	word ptr ds:gvar_script_ip,0AE4Ah
 		retn
-loc_10:
+check_change_wallet:
 		mov	ax,word ptr ds:[96h]
 		sub	ax,word ptr ds:[94h]
-		jnz	loc_11			; Jump if not zero
-		mov	word ptr ds:data_123e,0AEB1h
+		jnz	calc_trade_price			; Jump if not zero
+		mov	word ptr ds:gvar_script_ip,0AEB1h
 		retn
-loc_11:
-		mov	byte ptr ds:data_109e,0FFh
+calc_trade_price:
+		mov	byte ptr ds:trade_weapon_flag,0FFh
 		shr	ax,1			; Shift w/zeros fill
 		adc	ax,0
-		mov	ds:data_110e,ax
-		mov	word ptr ds:data_123e,0AEF8h
-		call	word ptr cs:data_71e
+		mov	ds:trade_gold_tmp,ax
+		mov	word ptr ds:gvar_script_ip,0AEF8h
+		call	word ptr cs:script_exec_fn
 		xor	dl,dl			; Zero register
-		mov	ax,ds:data_110e
+		mov	ax,ds:trade_gold_tmp
 		mov	di,0BC33h
-		call	word ptr cs:data_72e
-		mov	si,ds:data_123e
+		call	word ptr cs:render_number_fn
+		mov	si,ds:gvar_script_ip
 		push	si
-		mov	word ptr ds:data_123e,0BC33h
-		call	word ptr cs:data_71e
+		mov	word ptr ds:gvar_script_ip,0BC33h
+		call	word ptr cs:script_exec_fn
 		pop	si
-		mov	ds:data_123e,si
-		call	word ptr cs:data_71e
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_exec_fn
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:data_57e
-		mov	word ptr ds:data_129e,302Eh
-		call	word ptr cs:data_73e
+		call	word ptr cs:gfx_rect_fill_fn
+		mov	word ptr ds:gvar_dlg_pos,302Eh
+		call	word ptr cs:input_wait_fn
 		pushf				; Push flags
-		call	ghost_func_8
+		call	clear_menu_rect
 		popf				; Pop flags
-		mov	word ptr ds:data_123e,0ADEFh
-		jnc	loc_12			; Jump if carry=0
+		mov	word ptr ds:gvar_script_ip,0ADEFh
+		jnc	skip_price_fail			; Jump if carry=0
 		retn
-loc_12:
-		mov	ax,ds:data_110e
+skip_price_fail:
+		mov	ax,ds:trade_gold_tmp
 		xor	dl,dl			; Zero register
-		call	word ptr cs:data_74e
-		mov	word ptr ds:data_123e,0AF53h
-		jnc	loc_13			; Jump if carry=0
+		call	word ptr cs:price_check_fn
+		mov	word ptr ds:gvar_script_ip,0AF53h
+		jnc	commit_trade_weapon			; Jump if carry=0
 		retn
-loc_13:
+commit_trade_weapon:
 		mov	byte ptr ds:[85h],dl
 		mov	word ptr ds:[86h],ax
-		call	word ptr cs:data_62e
-		mov	word ptr ds:data_123e,0AFAFh
+		call	word ptr cs:gfx_commit_fn
+		mov	word ptr ds:gvar_script_ip,0AFAFh
 		retn
 			                        ;* No entry point to code
-		mov	word ptr ds:data_123e,0B026h
+		mov	word ptr ds:gvar_script_ip,0B026h
 		retn
 			                        ;* No entry point to code
-		mov	word ptr ds:data_123e,0B081h
+		mov	word ptr ds:gvar_script_ip,0B081h
 		retn
 			                        ;* No entry point to code
-		mov	word ptr ds:data_123e,0B11Fh
+		mov	word ptr ds:gvar_script_ip,0B11Fh
 		retn
 			                        ;* No entry point to code
-		mov	byte ptr ds:data_109e,0FFh
+		mov	byte ptr ds:trade_weapon_flag,0FFh
 		push	cs
 		pop	es
-		mov	di,data_132e
-		mov	si,data_118e
+		mov	di,gvar_sel_xlat
+		mov	si,mouth_anim_A
 		mov	cx,6
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		mov	al,ds:data_116e
-		mov	ds:data_128e,al
+		mov	al,ds:weapon_cnt
+		mov	ds:gvar_dlg_rows,al
 		cmp	al,3
-		jb	loc_14			; Jump if below
+		jb	cap_weapon_rows			; Jump if below
 		mov	al,3
-loc_14:
-		mov	ds:data_127e,al
-		mov	byte ptr ds:data_130e,0
-		mov	byte ptr ds:data_103e,0
+cap_weapon_rows:
+		mov	ds:gvar_dlg_cols,al
+		mov	byte ptr ds:gvar_sel_row,0
+		mov	byte ptr ds:sub_menu_choice_a,0
 		mov	bx,156Eh
 		mov	cx,2524h
 		mov	al,0FFh
-		call	word ptr cs:data_57e
-		mov	byte ptr ds:data_131e,0FFh
-		mov	word ptr ds:data_129e,1571h
-		mov	word ptr ds:data_134e,21h
-		mov	word ptr ds:data_133e,17h
+		call	word ptr cs:gfx_rect_fill_fn
+		mov	byte ptr ds:gvar_sel_flag,0FFh
+		mov	word ptr ds:gvar_dlg_pos,1571h
+		mov	word ptr ds:gvar_dlg_timer,21h
+		mov	word ptr ds:gvar_ff68,17h
 		mov	si,0AD05h
 		mov	di,0BBFDh
-		mov	cl,ds:data_127e
+		mov	cl,ds:gvar_dlg_cols
 		xor	ch,ch			; Zero register
-		mov	al,ds:data_130e
-		call	word ptr cs:data_78e
-		mov	bl,ds:data_103e
-		call	word ptr cs:data_77e
-		jnc	loc_15			; Jump if carry=0
-		mov	word ptr ds:data_123e,0ADEFh
+		mov	al,ds:gvar_sel_row
+		call	word ptr cs:menu_render_fn
+		mov	bl,ds:sub_menu_choice_a
+		call	word ptr cs:menu_nav_fn
+		jnc	menu_weapon_sel_ok			; Jump if carry=0
+		mov	word ptr ds:gvar_script_ip,0ADEFh
 		retn
-loc_15:
-		mov	ds:data_103e,bl
+menu_weapon_sel_ok:
+		mov	ds:sub_menu_choice_a,bl
 		mov	al,bl
-		add	al,ds:data_130e
-		mov	bx,data_132e
+		add	al,ds:gvar_sel_row
+		mov	bx,gvar_sel_xlat
 		xlat				; al=[al+[bx]] table
-		call	ghost_func_4
+		call	knight_sword_hook_a
 		push	ax
-		mov	word ptr ds:data_123e,0B0DCh
-		call	word ptr cs:data_71e
+		mov	word ptr ds:gvar_script_ip,0B0DCh
+		call	word ptr cs:script_exec_fn
 		pop	ax
 		push	ax
-		mov	si,ds:data_123e
+		mov	si,ds:gvar_script_ip
 		push	si
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
-		mov	ax,ds:data_94e[bx]
-		mov	ds:data_123e,ax
-		call	word ptr cs:data_71e
+		mov	ax,ds:weapon_name_offs[bx]
+		mov	ds:gvar_script_ip,ax
+		call	word ptr cs:script_exec_fn
 		pop	si
-		mov	ds:data_123e,si
-		call	word ptr cs:data_71e
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_exec_fn
 		pop	ax
 		push	ax
 		xor	ah,ah			; Zero register
 		mov	bx,ax
 		add	ax,ax
 		add	ax,bx
-		mov	si,data_98e
+		mov	si,cur_weapon_idx
 		add	si,ax
 		mov	dl,[si]
 		mov	ax,[si+1]
-		mov	ds:data_110e,dl
-		mov	word ptr ds:data_110e+1,ax
-		call	word ptr cs:data_74e
+		mov	ds:trade_gold_tmp,dl
+		mov	word ptr ds:trade_gold_tmp+1,ax
+		call	word ptr cs:price_check_fn
 		pop	bx
-		mov	word ptr ds:data_123e,0AF54h
-		jnc	loc_16			; Jump if carry=0
+		mov	word ptr ds:gvar_script_ip,0AF54h
+		jnc	weapon_trade_ok			; Jump if carry=0
 		retn
-loc_16:
-		mov	ds:data_112e,dl
-		mov	ds:data_113e,ax
+weapon_trade_ok:
+		mov	ds:trade_gold_buf_hi,dl
+		mov	ds:trade_gold_buf_hi2,ax
 		inc	bl
-		mov	ds:data_114e,bl
-		mov	word ptr ds:data_123e,0B106h
-		call	word ptr cs:data_71e
-		mov	dl,ds:data_110e
-		mov	ax,word ptr ds:data_110e+1
+		mov	ds:new_item_flag,bl
+		mov	word ptr ds:gvar_script_ip,0B106h
+		call	word ptr cs:script_exec_fn
+		mov	dl,ds:trade_gold_tmp
+		mov	ax,word ptr ds:trade_gold_tmp+1
 		mov	di,0BC33h
-		call	word ptr cs:data_72e
-		mov	si,ds:data_123e
+		call	word ptr cs:render_number_fn
+		mov	si,ds:gvar_script_ip
 		push	si
-		mov	word ptr ds:data_123e,0BC33h
-		call	word ptr cs:data_71e
+		mov	word ptr ds:gvar_script_ip,0BC33h
+		call	word ptr cs:script_exec_fn
 		pop	si
-		mov	ds:data_123e,si
-		call	word ptr cs:data_71e
-		mov	byte ptr ds:data_110e,0
-		mov	word ptr ds:data_110e+1,0
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_exec_fn
+		mov	byte ptr ds:trade_gold_tmp,0
+		mov	word ptr ds:trade_gold_tmp+1,0
 		test	byte ptr ds:[92h],0FFh
-		jz	loc_17			; Jump if zero
+		jz	skip_weapon_swap			; Jump if zero
 		mov	al,byte ptr ds:[92h]
-		mov	ds:data_115e,al
-		mov	word ptr ds:data_123e,0B046h
-		call	word ptr cs:data_71e
-		mov	al,ds:data_115e
+		mov	ds:new_item_idx,al
+		mov	word ptr ds:gvar_script_ip,0B046h
+		call	word ptr cs:script_exec_fn
+		mov	al,ds:new_item_idx
 		dec	al
 		xor	ah,ah			; Zero register
 		mov	bx,ax
 		add	ax,ax
 		add	bx,ax
-		mov	dl,ds:data_98e[bx]
-		mov	ax,ds:data_99e[bx]
+		mov	dl,ds:cur_weapon_idx[bx]
+		mov	ax,ds:cur_weapon_flag[bx]
 		shr	dl,1			; Shift w/zeros fill
 		rcr	ax,1			; Rotate thru carry
-		mov	ds:data_110e,dl
-		mov	word ptr ds:data_110e+1,ax
+		mov	ds:trade_gold_tmp,dl
+		mov	word ptr ds:trade_gold_tmp+1,ax
 		mov	di,0BC33h
-		call	word ptr cs:data_72e
-		mov	si,ds:data_123e
+		call	word ptr cs:render_number_fn
+		mov	si,ds:gvar_script_ip
 		push	si
-		mov	word ptr ds:data_123e,0BC33h
-		call	word ptr cs:data_71e
+		mov	word ptr ds:gvar_script_ip,0BC33h
+		call	word ptr cs:script_exec_fn
 		pop	si
-		mov	ds:data_123e,si
-		call	word ptr cs:data_71e
-loc_17:
-		mov	word ptr ds:data_123e,0B0EDh
-		call	word ptr cs:data_71e
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_exec_fn
+skip_weapon_swap:
+		mov	word ptr ds:gvar_script_ip,0B0EDh
+		call	word ptr cs:script_exec_fn
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:data_57e
-		mov	word ptr ds:data_129e,302Eh
-		call	word ptr cs:data_73e
-		mov	word ptr ds:data_123e,0ADEFh
-		jnc	loc_18			; Jump if carry=0
+		call	word ptr cs:gfx_rect_fill_fn
+		mov	word ptr ds:gvar_dlg_pos,302Eh
+		call	word ptr cs:input_wait_fn
+		mov	word ptr ds:gvar_script_ip,0ADEFh
+		jnc	weapon_commit			; Jump if carry=0
 		retn
-loc_18:
-		mov	word ptr ds:data_123e,0AE1Ch
-		mov	dl,ds:data_112e
-		mov	ax,ds:data_113e
+weapon_commit:
+		mov	word ptr ds:gvar_script_ip,0AE1Ch
+		mov	dl,ds:trade_gold_buf_hi
+		mov	ax,ds:trade_gold_buf_hi2
 		mov	byte ptr ds:[85h],dl
 		mov	word ptr ds:[86h],ax
-		mov	dl,ds:data_110e
-		mov	ax,word ptr ds:data_110e+1
-		call	word ptr cs:data_75e
-		call	word ptr cs:data_62e
-		test	byte ptr ds:data_115e,0FFh
-		jz	loc_19			; Jump if zero
-		mov	al,ds:data_115e
+		mov	dl,ds:trade_gold_tmp
+		mov	ax,word ptr ds:trade_gold_tmp+1
+		call	word ptr cs:transaction_fn
+		call	word ptr cs:gfx_commit_fn
+		test	byte ptr ds:new_item_idx,0FFh
+		jz	skip_weapon_slot_fix			; Jump if zero
+		mov	al,ds:new_item_idx
 		dec	al
-		mov	bx,data_91e
+		mov	bx,goods_icon_map
 		xlat				; al=[al+[bx]] table
-		mov	bl,ds:data_120e
+		mov	bl,ds:town_npc_state
 		dec	bl
 		xor	bh,bh			; Zero register
 		or	byte ptr ds:[0D2h][bx],al
-loc_19:
-		mov	al,ds:data_114e
+skip_weapon_slot_fix:
+		mov	al,ds:new_item_flag
 		mov	byte ptr ds:[92h],al
 		cmp	al,6
-		jne	loc_20			; Jump if not equal
-		mov	bl,ds:data_120e
+		jne	skip_slot_clear			; Jump if not equal
+		mov	bl,ds:town_npc_state
 		dec	bl
 		xor	bh,bh			; Zero register
 		and	byte ptr ds:[0D2h][bx],0FBh
-loc_20:
-		call	ghost_process_loop
+skip_slot_clear:
+		call	build_mouth_bitmap_a
 		mov	ah,byte ptr ds:[92h]
 		mov	al,4
 		call	word ptr cs:[10Ch]
 		mov	al,byte ptr ds:[92h]
 		mov	bx,18ABh
-		jmp	word ptr cs:data_64e
+		jmp	word ptr cs:gfx_render_scene_fn
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-ghost_func_4		proc	near
+knight_sword_hook_a		proc	near
 		cmp	al,3
-		je	loc_21			; Jump if equal
+		je	knight_hook_a_pass1			; Jump if equal
 		retn
-loc_21:
+knight_hook_a_pass1:
 		test	byte ptr ds:[24h],2
-		jz	loc_22			; Jump if zero
+		jz	knight_hook_a_pass2			; Jump if zero
 		retn
-loc_22:
-		cmp	byte ptr ds:data_120e,5
-		je	loc_23			; Jump if equal
+knight_hook_a_pass2:
+		cmp	byte ptr ds:town_npc_state,5
+		je	knight_hook_a_pass3			; Jump if equal
 		retn
-loc_23:
+knight_hook_a_pass3:
 		pop	ax
-		mov	word ptr ds:data_123e,0B24Ch
+		mov	word ptr ds:gvar_script_ip,0B24Ch
 		retn
-ghost_func_4		endp
+knight_sword_hook_a		endp
 
 			                        ;* No entry point to code
-		mov	byte ptr ds:data_109e,0FFh
+		mov	byte ptr ds:trade_weapon_flag,0FFh
 		push	cs
 		pop	es
-		mov	di,data_132e
-		mov	si,data_119e
+		mov	di,gvar_sel_xlat
+		mov	si,mouth_anim_B
 		mov	cx,6
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		mov	al,ds:data_117e
-		mov	ds:data_128e,al
+		mov	al,ds:shield_cnt
+		mov	ds:gvar_dlg_rows,al
 		cmp	al,3
-		jb	loc_24			; Jump if below
+		jb	cap_shield_rows			; Jump if below
 		mov	al,3
-loc_24:
-		mov	ds:data_127e,al
-		mov	byte ptr ds:data_130e,0
-		mov	byte ptr ds:data_103e,0
+cap_shield_rows:
+		mov	ds:gvar_dlg_cols,al
+		mov	byte ptr ds:gvar_sel_row,0
+		mov	byte ptr ds:sub_menu_choice_a,0
 		mov	bx,156Eh
 		mov	cx,2524h
 		mov	al,0FFh
-		call	word ptr cs:data_57e
-		mov	byte ptr ds:data_131e,0FFh
-		mov	word ptr ds:data_129e,1571h
-		mov	word ptr ds:data_134e,21h
-		mov	word ptr ds:data_133e,17h
+		call	word ptr cs:gfx_rect_fill_fn
+		mov	byte ptr ds:gvar_sel_flag,0FFh
+		mov	word ptr ds:gvar_dlg_pos,1571h
+		mov	word ptr ds:gvar_dlg_timer,21h
+		mov	word ptr ds:gvar_ff68,17h
 		mov	si,0AD11h
 		mov	di,0BC0Fh
-		mov	cl,ds:data_127e
+		mov	cl,ds:gvar_dlg_cols
 		xor	ch,ch			; Zero register
-		mov	al,ds:data_130e
-		call	word ptr cs:data_78e
-		mov	bl,ds:data_103e
-		call	word ptr cs:data_77e
-		jnc	loc_25			; Jump if carry=0
-		mov	word ptr ds:data_123e,0ADEFh
+		mov	al,ds:gvar_sel_row
+		call	word ptr cs:menu_render_fn
+		mov	bl,ds:sub_menu_choice_a
+		call	word ptr cs:menu_nav_fn
+		jnc	menu_shield_sel_ok			; Jump if carry=0
+		mov	word ptr ds:gvar_script_ip,0ADEFh
 		retn
-loc_25:
-		mov	ds:data_103e,bl
-		mov	word ptr ds:data_123e,0B0DCh
-		call	word ptr cs:data_71e
-		mov	al,ds:data_103e
-		add	al,ds:data_130e
-		mov	bx,data_132e
+menu_shield_sel_ok:
+		mov	ds:sub_menu_choice_a,bl
+		mov	word ptr ds:gvar_script_ip,0B0DCh
+		call	word ptr cs:script_exec_fn
+		mov	al,ds:sub_menu_choice_a
+		add	al,ds:gvar_sel_row
+		mov	bx,gvar_sel_xlat
 		xlat				; al=[al+[bx]] table
 		push	ax
-		mov	si,ds:data_123e
+		mov	si,ds:gvar_script_ip
 		push	si
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
-		mov	ax,ds:data_95e[bx]
-		mov	ds:data_123e,ax
-		call	word ptr cs:data_71e
+		mov	ax,ds:shield_name_offs[bx]
+		mov	ds:gvar_script_ip,ax
+		call	word ptr cs:script_exec_fn
 		pop	si
-		mov	ds:data_123e,si
-		call	word ptr cs:data_71e
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_exec_fn
 		pop	ax
 		push	ax
 		xor	ah,ah			; Zero register
 		mov	bx,ax
 		add	ax,ax
 		add	ax,bx
-		mov	si,data_100e
+		mov	si,cur_shield_idx
 		add	si,ax
 		mov	dl,[si]
 		mov	ax,[si+1]
-		mov	ds:data_110e,dl
-		mov	word ptr ds:data_110e+1,ax
-		call	word ptr cs:data_74e
+		mov	ds:trade_gold_tmp,dl
+		mov	word ptr ds:trade_gold_tmp+1,ax
+		call	word ptr cs:price_check_fn
 		pop	bx
-		mov	word ptr ds:data_123e,0AF54h
-		jnc	loc_26			; Jump if carry=0
+		mov	word ptr ds:gvar_script_ip,0AF54h
+		jnc	shield_trade_ok			; Jump if carry=0
 		retn
-loc_26:
-		mov	ds:data_112e,dl
-		mov	ds:data_113e,ax
+shield_trade_ok:
+		mov	ds:trade_gold_buf_hi,dl
+		mov	ds:trade_gold_buf_hi2,ax
 		inc	bl
-		mov	ds:data_114e,bl
-		mov	word ptr ds:data_123e,0B106h
-		call	word ptr cs:data_71e
-		mov	dl,ds:data_110e
-		mov	ax,word ptr ds:data_110e+1
+		mov	ds:new_item_flag,bl
+		mov	word ptr ds:gvar_script_ip,0B106h
+		call	word ptr cs:script_exec_fn
+		mov	dl,ds:trade_gold_tmp
+		mov	ax,word ptr ds:trade_gold_tmp+1
 		mov	di,0BC33h
-		call	word ptr cs:data_72e
-		mov	si,ds:data_123e
+		call	word ptr cs:render_number_fn
+		mov	si,ds:gvar_script_ip
 		push	si
-		mov	word ptr ds:data_123e,0BC33h
-		call	word ptr cs:data_71e
+		mov	word ptr ds:gvar_script_ip,0BC33h
+		call	word ptr cs:script_exec_fn
 		pop	si
-		mov	ds:data_123e,si
-		call	word ptr cs:data_71e
-		mov	byte ptr ds:data_110e,0
-		mov	word ptr ds:data_110e+1,0
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_exec_fn
+		mov	byte ptr ds:trade_gold_tmp,0
+		mov	word ptr ds:trade_gold_tmp+1,0
 		test	byte ptr ds:[93h],0FFh
-		jz	loc_27			; Jump if zero
+		jz	skip_shield_swap			; Jump if zero
 		mov	al,byte ptr ds:[93h]
-		mov	ds:data_115e,al
-		mov	word ptr ds:data_123e,0B0A1h
-		call	word ptr cs:data_71e
-		mov	al,ds:data_115e
+		mov	ds:new_item_idx,al
+		mov	word ptr ds:gvar_script_ip,0B0A1h
+		call	word ptr cs:script_exec_fn
+		mov	al,ds:new_item_idx
 		dec	al
 		xor	ah,ah			; Zero register
 		mov	bx,ax
 		add	ax,ax
 		add	bx,ax
-		mov	dl,ds:data_100e[bx]
-		mov	ax,ds:data_101e[bx]
+		mov	dl,ds:cur_shield_idx[bx]
+		mov	ax,ds:cur_shield_flag[bx]
 		shr	dl,1			; Shift w/zeros fill
 		rcr	ax,1			; Rotate thru carry
-		mov	ds:data_110e,dl
-		mov	word ptr ds:data_110e+1,ax
+		mov	ds:trade_gold_tmp,dl
+		mov	word ptr ds:trade_gold_tmp+1,ax
 		mov	di,0BC33h
-		call	word ptr cs:data_72e
-		mov	si,ds:data_123e
+		call	word ptr cs:render_number_fn
+		mov	si,ds:gvar_script_ip
 		push	si
-		mov	word ptr ds:data_123e,0BC33h
-		call	word ptr cs:data_71e
+		mov	word ptr ds:gvar_script_ip,0BC33h
+		call	word ptr cs:script_exec_fn
 		pop	si
-		mov	ds:data_123e,si
-		call	word ptr cs:data_71e
-loc_27:
-		mov	word ptr ds:data_123e,0B0EDh
-		call	word ptr cs:data_71e
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_exec_fn
+skip_shield_swap:
+		mov	word ptr ds:gvar_script_ip,0B0EDh
+		call	word ptr cs:script_exec_fn
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:data_57e
-		mov	word ptr ds:data_129e,302Eh
-		call	word ptr cs:data_73e
-		mov	word ptr ds:data_123e,0ADEFh
-		jnc	loc_28			; Jump if carry=0
+		call	word ptr cs:gfx_rect_fill_fn
+		mov	word ptr ds:gvar_dlg_pos,302Eh
+		call	word ptr cs:input_wait_fn
+		mov	word ptr ds:gvar_script_ip,0ADEFh
+		jnc	shield_commit			; Jump if carry=0
 		retn
-loc_28:
-		mov	word ptr ds:data_123e,0AE1Ch
-		mov	dl,ds:data_112e
-		mov	ax,ds:data_113e
+shield_commit:
+		mov	word ptr ds:gvar_script_ip,0AE1Ch
+		mov	dl,ds:trade_gold_buf_hi
+		mov	ax,ds:trade_gold_buf_hi2
 		mov	byte ptr ds:[85h],dl
 		mov	word ptr ds:[86h],ax
-		mov	dl,ds:data_110e
-		mov	ax,word ptr ds:data_110e+1
-		call	word ptr cs:data_75e
-		call	word ptr cs:data_62e
-		test	byte ptr ds:data_115e,0FFh
-		jz	loc_29			; Jump if zero
-		mov	al,ds:data_115e
+		mov	dl,ds:trade_gold_tmp
+		mov	ax,word ptr ds:trade_gold_tmp+1
+		call	word ptr cs:transaction_fn
+		call	word ptr cs:gfx_commit_fn
+		test	byte ptr ds:new_item_idx,0FFh
+		jz	skip_shield_slot_fix			; Jump if zero
+		mov	al,ds:new_item_idx
 		dec	al
-		mov	bx,data_91e
+		mov	bx,goods_icon_map
 		xlat				; al=[al+[bx]] table
-		mov	bl,ds:data_120e
+		mov	bl,ds:town_npc_state
 		dec	bl
 		xor	bh,bh			; Zero register
 		or	byte ptr ds:[0DBh][bx],al
-loc_29:
-		mov	al,ds:data_114e
+skip_shield_slot_fix:
+		mov	al,ds:new_item_flag
 		mov	byte ptr ds:[93h],al
-		call	ghost_process_loop_2
+		call	build_mouth_bitmap_b
 		mov	al,byte ptr ds:[93h]
 		mov	bx,3EA4h
-		call	word ptr cs:data_65e
+		call	word ptr cs:gfx_draw_hud_fn
 		mov	bx,0C61Ch
 		xor	al,al			; Zero register
 		mov	ch,17h
-		call	word ptr cs:data_59e
+		call	word ptr cs:gfx_set_color_fn
 		mov	bl,byte ptr ds:[93h]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	ax,ds:data_86e[bx]
+		mov	ax,ds:shield_price_tbl[bx]
 		mov	word ptr ds:[96h],ax
 		mov	word ptr ds:[94h],ax
-		jmp	word ptr cs:data_63e
+		jmp	word ptr cs:gfx_present_fn
 			                        ;* No entry point to code
 		push	ds
 		db	00h, 50h, 00h		; add [bx+si+0],dl (alt encoding: mod=01 disp8 not mod=00)
@@ -729,22 +748,22 @@ loc_29:
 		db	 74h, 08h,0B0h, 01h,0E8h,0F3h
 		db	 02h,0E8h, 91h, 01h,0BEh,0FDh
 		db	0A6h
-loc_30:
+explain_char_next:
 		lodsb				; String [si] to al
 		cmp	al,0FFh
-		jne	loc_31			; Jump if not equal
+		jne	explain_char_do			; Jump if not equal
 		retn
-loc_31:
+explain_char_do:
 		push	si
 		or	al,al			; Zero ?
-		jns	loc_32			; Jump if not sign
-		mov	byte ptr ds:data_135e,20h	; ' '
-loc_32:
+		jns	explain_char_no_pre			; Jump if not sign
+		mov	byte ptr ds:gvar_volume,20h	; ' '
+explain_char_no_pre:
 		and	al,7
-		call	ghost_func_10
-		call	ghost_func_6
+		call	render_shopkeeper_frame
+		call	frame_delay
 		pop	si
-		jmp	short loc_30
+		jmp	short explain_char_next
 			                        ;* No entry point to code
 		add	ax,[si]
 		add	ax,8605h
@@ -756,157 +775,157 @@ loc_32:
 		sbb	bh,bh
 		db	00h, 0E8h		; add al,ch (alt encoding: 00 r/m8,r8 not 02 r8,r/m8)
 		add	[bp+si],ax
-		cmp	byte ptr ds:data_121e,96h
+		cmp	byte ptr ds:gvar_frame_timer,96h
 		db	72h, 0F6h		; jb (rel8; absolute target, TASM won't compile as mnemonic)
 		retn
 			                        ;* No entry point to code
-		call	word ptr cs:data_66e
-		mov	word ptr ds:data_126e,0
-loc_34:
-		cmp	word ptr ds:data_126e,190h
-		jb	loc_34			; Jump if below
+		call	word ptr cs:gfx_cleanup_fn
+		mov	word ptr ds:gvar_menu_step,0
+wait_menu_exit:
+		cmp	word ptr ds:gvar_menu_step,190h
+		jb	wait_menu_exit			; Jump if below
 		mov	ax,word ptr ds:[96h]
 		mov	word ptr ds:[94h],ax
-		call	word ptr cs:data_63e
-		mov	byte ptr ds:data_105e,0
-		mov	byte ptr ds:data_106e,0
-		mov	byte ptr ds:data_107e,0
-		mov	byte ptr ds:data_108e,0
+		call	word ptr cs:gfx_present_fn
+		mov	byte ptr ds:anim_state_0,0
+		mov	byte ptr ds:anim_state_1,0
+		mov	byte ptr ds:anim_state_2,0
+		mov	byte ptr ds:anim_state_3,0
 		xor	al,al			; Zero register
-		call	ghost_func_10
-		mov	byte ptr ds:data_104e,0FFh
-		mov	word ptr ds:data_123e,0AFE0h
+		call	render_shopkeeper_frame
+		mov	byte ptr ds:trade_active_flag,0FFh
+		mov	word ptr ds:gvar_script_ip,0AFE0h
 		retn
 			                        ;* No entry point to code
-		mov	byte ptr ds:data_103e,0
-		mov	byte ptr ds:data_130e,0
-loc_35:
+		mov	byte ptr ds:sub_menu_choice_a,0
+		mov	byte ptr ds:gvar_sel_row,0
+explain_menu_top:
 		push	cs
 		pop	es
-		mov	cl,ds:data_116e
+		mov	cl,ds:weapon_cnt
 		xor	ch,ch			; Zero register
-		mov	si,data_118e
-		mov	di,data_132e
+		mov	si,mouth_anim_A
+		mov	di,gvar_sel_xlat
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		mov	cl,ds:data_117e
-		mov	si,data_119e
+		mov	cl,ds:shield_cnt
+		mov	si,mouth_anim_B
 
-locloop_36:
+copy_anim_b_loop:
 		lodsb				; String [si] to al
 		add	al,6
 		stosb				; Store al to es:[di]
-		loop	locloop_36		; Loop if cx > 0
+		loop	copy_anim_b_loop		; Loop if cx > 0
 
-		mov	al,ds:data_116e
-		add	al,ds:data_117e
-		mov	ds:data_128e,al
-		mov	al,ds:data_128e
+		mov	al,ds:weapon_cnt
+		add	al,ds:shield_cnt
+		mov	ds:gvar_dlg_rows,al
+		mov	al,ds:gvar_dlg_rows
 		cmp	al,6
-		jb	loc_37			; Jump if below
+		jb	cap_explain_rows			; Jump if below
 		mov	al,6
-loc_37:
-		mov	ds:data_127e,al
+cap_explain_rows:
+		mov	ds:gvar_dlg_cols,al
 		mov	bx,2717h
 		mov	cx,1B41h
 		mov	al,0FFh
-		call	word ptr cs:data_57e
-		mov	byte ptr ds:data_131e,0
-		mov	word ptr ds:data_129e,271Ah
-		mov	word ptr ds:data_134e,17h
-		mov	si,data_94e
-		mov	cl,ds:data_127e
+		call	word ptr cs:gfx_rect_fill_fn
+		mov	byte ptr ds:gvar_sel_flag,0
+		mov	word ptr ds:gvar_dlg_pos,271Ah
+		mov	word ptr ds:gvar_dlg_timer,17h
+		mov	si,weapon_name_offs
+		mov	cl,ds:gvar_dlg_cols
 		xor	ch,ch			; Zero register
-		mov	al,ds:data_130e
-		call	word ptr cs:data_78e
-		mov	bl,ds:data_103e
-		call	word ptr cs:data_77e
-		jnc	loc_38			; Jump if carry=0
-		mov	word ptr ds:data_123e,0ADEFh
+		mov	al,ds:gvar_sel_row
+		call	word ptr cs:menu_render_fn
+		mov	bl,ds:sub_menu_choice_a
+		call	word ptr cs:menu_nav_fn
+		jnc	menu_explain_sel_ok			; Jump if carry=0
+		mov	word ptr ds:gvar_script_ip,0ADEFh
 		retn
-loc_38:
-		mov	ds:data_103e,bl
-		mov	word ptr ds:data_123e,0B0EAh
-		call	word ptr cs:data_71e
-		mov	al,ds:data_103e
-		add	al,ds:data_130e
-		mov	bx,data_132e
+menu_explain_sel_ok:
+		mov	ds:sub_menu_choice_a,bl
+		mov	word ptr ds:gvar_script_ip,0B0EAh
+		call	word ptr cs:script_exec_fn
+		mov	al,ds:sub_menu_choice_a
+		add	al,ds:gvar_sel_row
+		mov	bx,gvar_sel_xlat
 		xlat				; al=[al+[bx]] table
-		call	ghost_func_7
+		call	knight_sword_hook_b
 		push	ax
 		push	ax
-		mov	word ptr ds:data_123e,0B0DDh
-		call	word ptr cs:data_71e
+		mov	word ptr ds:gvar_script_ip,0B0DDh
+		call	word ptr cs:script_exec_fn
 		pop	ax
-		mov	si,ds:data_123e
+		mov	si,ds:gvar_script_ip
 		push	si
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
-		mov	ax,ds:data_94e[bx]
-		mov	ds:data_123e,ax
-		call	word ptr cs:data_71e
+		mov	ax,ds:weapon_name_offs[bx]
+		mov	ds:gvar_script_ip,ax
+		call	word ptr cs:script_exec_fn
 		pop	si
-		mov	ds:data_123e,si
-		call	word ptr cs:data_71e
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_exec_fn
 		pop	ax
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
-		mov	ax,ds:data_96e[bx]
-		mov	ds:data_123e,ax
-		call	word ptr cs:data_71e
-		mov	word ptr ds:data_123e,0B1A9h
-		call	word ptr cs:data_71e
+		mov	ax,ds:explain_text_tbl[bx]
+		mov	ds:gvar_script_ip,ax
+		call	word ptr cs:script_exec_fn
+		mov	word ptr ds:gvar_script_ip,0B1A9h
+		call	word ptr cs:script_exec_fn
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:data_57e
-		mov	word ptr ds:data_129e,302Eh
-		call	word ptr cs:data_73e
-		mov	word ptr ds:data_123e,0ADEFh
-		jnc	loc_39			; Jump if carry=0
+		call	word ptr cs:gfx_rect_fill_fn
+		mov	word ptr ds:gvar_dlg_pos,302Eh
+		call	word ptr cs:input_wait_fn
+		mov	word ptr ds:gvar_script_ip,0ADEFh
+		jnc	explain_continue			; Jump if carry=0
 		retn
-loc_39:
-		mov	word ptr ds:data_123e,0B17Eh
-		call	word ptr cs:data_71e
-		jmp	loc_35
+explain_continue:
+		mov	word ptr ds:gvar_script_ip,0B17Eh
+		call	word ptr cs:script_exec_fn
+		jmp	explain_menu_top
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-ghost_func_6		proc	near
-		mov	byte ptr ds:data_121e,0
-loc_40:
-		call	ghost_check_state
-		cmp	byte ptr ds:data_121e,32h	; '2'
-		jb	loc_40			; Jump if below
+frame_delay		proc	near
+		mov	byte ptr ds:gvar_frame_timer,0
+frame_delay_loop:
+		call	shopkeeper_anim_tick
+		cmp	byte ptr ds:gvar_frame_timer,32h	; '2'
+		jb	frame_delay_loop			; Jump if below
 		retn
-ghost_func_6		endp
+frame_delay		endp
 
 			                        ;* No entry point to code
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:data_57e
-		mov	word ptr ds:data_129e,302Eh
-		call	word ptr cs:data_73e
+		call	word ptr cs:gfx_rect_fill_fn
+		mov	word ptr ds:gvar_dlg_pos,302Eh
+		call	word ptr cs:input_wait_fn
 		pushf				; Push flags
-		call	ghost_func_8
+		call	clear_menu_rect
 		popf				; Pop flags
-		mov	word ptr ds:data_123e,0B336h
-		jnc	loc_41			; Jump if carry=0
+		mov	word ptr ds:gvar_script_ip,0B336h
+		jnc	reset_after_trade			; Jump if carry=0
 		retn
-loc_41:
+reset_after_trade:
 		xor	al,al			; Zero register
-		call	ghost_func_10
-		mov	word ptr ds:data_123e,0B375h
-		call	word ptr cs:data_71e
+		call	render_shopkeeper_frame
+		mov	word ptr ds:gvar_script_ip,0B375h
+		call	word ptr cs:script_exec_fn
 		mov	byte ptr ds:[92h],4
 		mov	byte ptr ds:[9Bh],0
 		mov	al,4
 		mov	bx,18ABh
-		call	word ptr cs:data_64e
+		call	word ptr cs:gfx_render_scene_fn
 		and	byte ptr ds:[0D6h],0EFh
 		or	byte ptr ds:[24h],2
 		mov	ah,byte ptr ds:[92h]
@@ -918,23 +937,23 @@ loc_41:
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-ghost_func_7		proc	near
+knight_sword_hook_b		proc	near
 		cmp	al,3
-		je	loc_42			; Jump if equal
+		je	knight_hook_b_pass1			; Jump if equal
 		retn
-loc_42:
+knight_hook_b_pass1:
 		test	byte ptr ds:[24h],2
-		jz	loc_43			; Jump if zero
+		jz	knight_hook_b_pass2			; Jump if zero
 		retn
-loc_43:
-		cmp	byte ptr ds:data_120e,5
-		je	loc_44			; Jump if equal
+knight_hook_b_pass2:
+		cmp	byte ptr ds:town_npc_state,5
+		je	knight_hook_b_pass3			; Jump if equal
 		retn
-loc_44:
+knight_hook_b_pass3:
 		pop	ax
-		mov	word ptr ds:data_123e,0B240h
+		mov	word ptr ds:gvar_script_ip,0B240h
 		retn
-ghost_func_7		endp
+knight_sword_hook_b		endp
 
 		db	0B0h, 03h,0E9h,0CDh, 00h
 
@@ -942,110 +961,110 @@ ghost_func_7		endp
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-ghost_func_8		proc	near
+clear_menu_rect		proc	near
 		mov	bx,2717h
 		mov	cx,1C41h
 		xor	al,al			; Zero register
-		jmp	word ptr cs:data_57e
-ghost_func_8		endp
+		jmp	word ptr cs:gfx_rect_fill_fn
+clear_menu_rect		endp
 
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
-ghost_check_state		proc	near
-		test	byte ptr ds:data_104e,0FFh
-		jnz	loc_45			; Jump if not zero
+shopkeeper_anim_tick		proc	near
+		test	byte ptr ds:trade_active_flag,0FFh
+		jnz	anim_trade_active			; Jump if not zero
 		retn
-loc_45:
-		cmp	word ptr ds:data_126e,2
-		jae	loc_46			; Jump if above or =
+anim_trade_active:
+		cmp	word ptr ds:gvar_menu_step,2
+		jae	anim_frame_tick			; Jump if above or =
 		retn
-loc_46:
-		mov	word ptr ds:data_126e,0
-		inc	byte ptr ds:data_105e
-		cmp	byte ptr ds:data_105e,1Eh
-		jae	loc_47			; Jump if above or =
+anim_frame_tick:
+		mov	word ptr ds:gvar_menu_step,0
+		inc	byte ptr ds:anim_state_0
+		cmp	byte ptr ds:anim_state_0,1Eh
+		jae	anim_half_second			; Jump if above or =
 		retn
-loc_47:
-		mov	byte ptr ds:data_105e,0
-		inc	byte ptr ds:data_106e
-		test	byte ptr ds:data_107e,0FFh
-		jz	loc_51			; Jump if zero
-		cmp	byte ptr ds:data_107e,7Fh
-		jne	loc_48			; Jump if not equal
-		mov	byte ptr ds:data_107e,0FFh
+anim_half_second:
+		mov	byte ptr ds:anim_state_0,0
+		inc	byte ptr ds:anim_state_1
+		test	byte ptr ds:anim_state_2,0FFh
+		jz	anim_closed_pose			; Jump if zero
+		cmp	byte ptr ds:anim_state_2,7Fh
+		jne	anim_phase_7F			; Jump if not equal
+		mov	byte ptr ds:anim_state_2,0FFh
 		mov	al,2
-		jmp	short loc_56
-loc_48:
-		cmp	byte ptr ds:data_107e,80h
-		jne	loc_49			; Jump if not equal
-		mov	byte ptr ds:data_107e,0
+		jmp	short render_frame_top
+anim_phase_7F:
+		cmp	byte ptr ds:anim_state_2,80h
+		jne	anim_phase_80			; Jump if not equal
+		mov	byte ptr ds:anim_state_2,0
 		xor	al,al			; Zero register
-		jmp	short loc_56
-loc_49:
-		mov	si,data_90e
-		mov	al,ds:data_106e
+		jmp	short render_frame_top
+anim_phase_80:
+		mov	si,anim_seq_open
+		mov	al,ds:anim_state_1
 		and	ax,3
 		add	ax,ax
 		add	si,ax
 		mov	bx,0B37h
 		mov	cx,2
 
-locloop_50:
+vert_glyph_col_loop:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:data_69e
+		call	word ptr cs:gfx_glyph_put_fn
 		pop	bx
 		add	bl,8
 		pop	cx
-		loop	locloop_50		; Loop if cx > 0
+		loop	vert_glyph_col_loop		; Loop if cx > 0
 
-		jmp	short loc_53
-loc_51:
-		mov	si,data_89e
-		mov	al,ds:data_106e
+		jmp	short anim_after_pose
+anim_closed_pose:
+		mov	si,anim_seq_closed
+		mov	al,ds:anim_state_1
 		and	ax,3
 		add	ax,ax
 		add	si,ax
 		mov	bx,104Fh
 		mov	cx,2
 
-locloop_52:
+horiz_glyph_col_loop:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:data_69e
+		call	word ptr cs:gfx_glyph_put_fn
 		pop	bx
 		inc	bh
 		pop	cx
-		loop	locloop_52		; Loop if cx > 0
+		loop	horiz_glyph_col_loop		; Loop if cx > 0
 
-loc_53:
+anim_after_pose:
 		call	word ptr cs:[11Ah]
 		and	al,1
-		jz	loc_54			; Jump if zero
+		jz	anim_skip_toggle			; Jump if zero
 		retn
-loc_54:
-		inc	byte ptr ds:data_108e
-		cmp	byte ptr ds:data_108e,1Eh
-		jae	loc_55			; Jump if above or =
+anim_skip_toggle:
+		inc	byte ptr ds:anim_state_3
+		cmp	byte ptr ds:anim_state_3,1Eh
+		jae	anim_toggle_pose			; Jump if above or =
 		retn
-loc_55:
-		mov	byte ptr ds:data_108e,0
-		mov	al,ds:data_107e
+anim_toggle_pose:
+		mov	byte ptr ds:anim_state_3,0
+		mov	al,ds:anim_state_2
 		not	al
 		xor	al,80h
-		mov	ds:data_107e,al
+		mov	ds:anim_state_2,al
 		mov	al,1
-		jmp	short loc_56
+		jmp	short render_frame_top
 
 ;���� External Entry into Subroutine ��������������������������������������
 
-ghost_func_10:
-loc_56:
+render_shopkeeper_frame:
+render_frame_top:
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	cx,ax
@@ -1056,48 +1075,48 @@ loc_56:
 		mov	bx,717h
 		mov	cx,2
 
-locloop_57:
+render_frame_outer_loop:
 		lodsb				; String [si] to al
 		or	al,al			; Zero ?
-		jnz	loc_58			; Jump if not zero
+		jnz	render_frame_inner			; Jump if not zero
 		retn
-loc_58:
+render_frame_inner:
 		push	cx
 		mov	cl,al
 		lodsw				; String [si] to ax
 		xchg	si,ax
 		push	ax
 
-locloop_59:
+render_frame_col_loop:
 		push	cx
 		mov	cx,0Ch
 
-locloop_60:
+render_frame_glyph_loop:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:data_69e
+		call	word ptr cs:gfx_glyph_put_fn
 		pop	bx
 		inc	bh
 		pop	cx
-		loop	locloop_60		; Loop if cx > 0
+		loop	render_frame_glyph_loop		; Loop if cx > 0
 
 		sub	bh,0Ch
 		add	bl,8
 		pop	cx
-		loop	locloop_59		; Loop if cx > 0
+		loop	render_frame_col_loop		; Loop if cx > 0
 
 		pop	si
 		pop	cx
-		loop	locloop_57		; Loop if cx > 0
+		loop	render_frame_outer_loop		; Loop if cx > 0
 
 		retn
-ghost_check_state		endp
+shopkeeper_anim_tick		endp
 
 			                        ;* No entry point to code
 		add	al,[bx+si-56h]
 		push	es
-		mov	ss:data_70e[bp+si],ch
+		mov	ss:chunk_load_param[bp+si],ch
 		stosb				; Store al to es:[di]
 		push	es
 		db	0D8h,0AAh, 02h, 40h,0AAh, 06h
@@ -1192,7 +1211,7 @@ loc_62:
 		xchg	sp,ax
 		xchg	bp,ax
 		xchg	si,ax
-		sub	ds:data_80e[bx],dl
+		sub	ds:dialog_tip_str[bx],dl
 		sub	al,2Dh			; '-'
 		db	 2Eh,0E5h,0E6h,0E7h, 9Bh, 9Ch
 		db	 9Dh, 9Eh, 9Fh,0A0h,0A1h, 39h

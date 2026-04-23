@@ -3,7 +3,17 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  ENEMY_WIZARD - Code Module
+;  215DRUGP - Witchcraft Implement Shop (DRUG.GRP)
+;
+;  Shop module for the magic-potion/witchcraft vendor. Player can Buy,
+;  Sell, or Get description of 8 magic items (Ken'ko Potion, Juu-en
+;  Fruit, Elixir of Kashi, Chikara Powder, Magia Stone, Holy Water of
+;  Acero, Sabre Oil, Kioku Feather), or Go outside.
+;
+;  Runs script bytecode: cs:[6004] reads the next command byte, then
+;  jumps through the command-dispatch table at shop_cmd_tbl.
+;
+;  Module loads at game_seg:0A000h in DS/CS.
 ;
 ;==========================================================================
 
@@ -12,56 +22,78 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; --- External addresses (outside module) -----------------------------------
+; Driver functions at cs:[2000h..2044h] (set up by loader, same for all
+; shop modules 210-217).
 
-data_36e	equ	2000h			;*
-data_37e	equ	2002h			;*
-data_38e	equ	2010h			;*
-data_39e	equ	2012h			;*
-data_40e	equ	2016h			;*
-data_41e	equ	2040h			;*
-data_42e	equ	2044h			;*
-data_43e	equ	3016h			;*
-data_44e	equ	6004h			;*
-data_45e	equ	6006h			;*
-data_46e	equ	6008h			;*
-data_47e	equ	600Ah			;*
-data_48e	equ	600Ch			;*
-data_49e	equ	6010h			;*
-data_50e	equ	6012h			;*
-data_51e	equ	0A0C3h			;*
-data_52e	equ	0A494h			;*
-data_53e	equ	0A5E4h			;*
-data_54e	equ	0A644h			;*
-data_55e	equ	0A69Ch			;*
-data_56e	equ	0A745h			;*
-data_57e	equ	0AB3Ah			;*
-data_58e	equ	0B08Ah			;*
-data_59e	equ	0B10Ch			;*
-data_60e	equ	0B1F6h			;*
-data_61e	equ	0B20Eh			;*
-data_62e	equ	0B20Fh			;*
-data_63e	equ	0B217h			;*
-data_64e	equ	0B218h			;*
-data_65e	equ	0B219h			;*
-data_66e	equ	0B21Ah			;*
-data_67e	equ	0B21Bh			;*
-data_68e	equ	0B21Ch			;*
-data_69e	equ	0C006h			;*
-data_70e	equ	0FF1Ah			;*
-data_71e	equ	0FF2Ch			;*
-data_72e	equ	0FF4Ch			;*
-data_73e	equ	0FF4Eh			;*
-data_74e	equ	0FF4Fh			;*
-data_75e	equ	0FF50h			;*
-data_76e	equ	0FF52h			;*
-data_77e	equ	0FF53h			;*
-data_78e	equ	0FF54h			;*
-data_79e	equ	0FF56h			;*
-data_80e	equ	0FF57h			;*
-data_81e	equ	0FF58h			;*
-data_82e	equ	0FF68h			;*
-data_83e	equ	0FF6Ah			;*
+gfx_fill_rect	equ	2000h			;* fill a tile-rectangle (bx=pos, cx=size, al=color)
+gfx_init_a	equ	2002h			;* graphics init (shop load time)
+gfx_show_sprite	equ	2010h			;* display graphic (si=gfx data ptr)
+gfx_init_b	equ	2012h			;* graphics init 2 (post-load)
+gfx_wait_refresh equ	2016h			;* wait-frame / refresh panel
+gfx_return	equ	2040h			;* jmp to this when script ends (leave shop)
+gfx_copy_buffer	equ	2044h			;* copy cx bytes from si to panel buffer
+
+draw_glyph_tile	equ	3016h			;* draw single glyph at bx=row/col
+
+; Game API (cs:[6004..6012]) script/menu subsystem.
+
+script_read_byte	equ	6004h		;* read next script command byte -> al
+script_format_num	equ	6006h		;* format number dl:ax at di
+script_display_page	equ	6008h		;* display next page of script (CF=cancel)
+script_take_item	equ	600Ah		;* remove item: dl:ax=price (CF=no room)
+script_give_item	equ	600Ch		;* give item: dl:ax=price
+menu_show_list		equ	6010h		;* show menu (bl=idx) -> CF if cancel
+menu_init		equ	6012h		;* init menu (bx=pos, di=buffer, cl=n, al=start)
+
+; Game-segment global variables (game_seg:0FFxx, accessed via DS).
+
+gvar_timer_ticks	equ	0FF1Ah		;* frame timer counter
+gvar_game_seg		equ	0FF2Ch		;* game data segment selector
+script_cur_ptr		equ	0FF4Ch		;* current script byte-pointer (word)
+shop_flag_a		equ	0FF4Eh		;* shop state flag A (zeroed at init)
+shop_flag_b		equ	0FF4Fh		;* shop state flag B (zeroed at init)
+menu_frame_timer	equ	0FF50h		;* menu frame-delay counter (word)
+menu_item_count		equ	0FF52h		;* current menu item count (byte)
+inventory_count		equ	0FF53h		;* live inventory count (byte)
+menu_pos_base		equ	0FF54h		;* menu base position (word)
+menu_start_idx		equ	0FF56h		;* menu start index (byte)
+flag_buy_mode		equ	0FF57h		;* 0FFh=buy mode, 0=sell/describe
+inventory_list		equ	0FF58h		;* live inventory slot buffer (5 bytes)
+menu_col_width		equ	0FF68h		;* menu column width (word)
+menu_row_count		equ	0FF6Ah		;* menu row count (word)
+
+; Current-shop selector (set by caller before entry).
+cur_shop_id		equ	0C006h		;* current shop index (1-based)
+
+; --- Internal module labels (CS-relative = module_offset + 0A000h) ---------
+; The module is loaded at game_seg:0A000h, so cs:0A0xxh addresses map to
+; module offset 0xxxh. The labels below are used with cs: overrides.
+
+shop_cmd_tbl		equ	0A0C3h		;* command dispatch table (word array @ 0xC3)
+shop_inv_bitmasks	equ	0A0C9h		;* inventory bitmasks @ data_4 (0xC9)
+shop_subtitle_tbl	equ	0A494h		;* item subtitle/text lookup @ 0x494
+banner_glyph_tbl	equ	0A5E4h		;* shop banner glyph-code table @ 0x5E4
+shop_entry_init		equ	0A644h		;* shop entry-byte (module header byte) @ 0x644
+price_gfx_tbl		equ	0A69Ch		;* item price/stat glyph table @ 0x69C
+greet_str_tbl		equ	0A745h		;* greeting string table (word array) @ 0x745
+desc_script_tbl		equ	0AB3Ah		;* item description script-ptr table @ 0xB3A
+
+; RAM buffers at end of module (shared with the module's padding).
+item_name_tbl		equ	0B08Ah		;* item name-offset table @ 0x108A
+item_data_tbl		equ	0B10Ch		;* item data-record offset table @ 0x110C
+item_data_records	equ	0B11Eh		;* item data records (9 items Ã— 24 bytes)
+shop_inv_state		equ	0B1F6h		;* shop inventory state (24 bytes RAM)
+
+; Working state in padding area (data after inventory state).
+inv_bit_count		equ	0B20Eh		;* count of set inventory bits
+inv_slot_tbl		equ	0B20Fh		;* 8 inventory slot indices
+timer_dispatch		equ	0B217h		;* timer dispatch flag (reset at start)
+sel_item_idx		equ	0B218h		;* currently-selected item idx
+item_anim_phase		equ	0B219h		;* item-name animation phase counter
+item_anim_set		equ	0B21Ah		;* item-name animation set (0-2)
+item_price_dl		equ	0B21Bh		;* saved item price high byte (dl)
+item_price_ax		equ	0B21Ch		;* saved item price low word (ax)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -74,67 +106,67 @@ zr2_15		proc	far
 start:
 		adc	al,es:[bx+si]
 		add	[si],al
-		mov	al,ds:data_54e
-		mov	es,ds:data_71e
+		mov	al,ds:shop_entry_init
+		mov	es,ds:gvar_game_seg
 		mov	di,8000h
 		mov	si,0A811h
 		mov	al,2
 		call	word ptr cs:data_5
 		push	ds
-		mov	ds,cs:data_71e
+		mov	ds,cs:gvar_game_seg
 		mov	si,8000h
 		mov	cx,100h
-		call	word ptr cs:data_42e
+		call	word ptr cs:gfx_copy_buffer
 		pop	ds
-		mov	byte ptr ds:data_73e,0
-		mov	byte ptr ds:data_74e,0
-		mov	byte ptr ds:data_63e,0
-		call	word ptr cs:data_37e
-		call	word ptr cs:data_39e
+		mov	byte ptr ds:shop_flag_a,0
+		mov	byte ptr ds:shop_flag_b,0
+		mov	byte ptr ds:timer_dispatch,0
+		call	word ptr cs:gfx_init_a
+		call	word ptr cs:gfx_init_b
 		mov	si,0A81Ch
-		call	word ptr cs:data_38e
+		call	word ptr cs:gfx_show_sprite
 		call	wizard_process_loop
 		push	cs
 		pop	es
-		mov	bl,ds:data_69e
+		mov	bl,ds:cur_shop_id
 		dec	bl
 		add	bl,bl
 		xor	bh,bh			; Zero register
-		mov	si,ds:data_59e[bx]
-		mov	di,data_60e
+		mov	si,ds:item_data_tbl[bx]
+		mov	di,shop_inv_state
 		mov	cx,0Ch
 		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
 		call	wizard_process_loop_3
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:data_36e
-		mov	word ptr ds:data_72e,0A86Bh
+		call	word ptr cs:gfx_fill_rect
+		mov	word ptr ds:script_cur_ptr,0A86Bh
 loc_2:
-		call	word ptr cs:data_44e
+		call	word ptr cs:script_read_byte
 		cmp	al,0FFh
 		je	loc_3			; Jump if equal
 		call	wizard_func_2
 		jmp	short loc_2
 loc_3:
-		jmp	word ptr cs:data_41e
+		jmp	word ptr cs:gfx_return
 
 zr2_15		endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 wizard_process_loop		proc	near
 		mov	si,offset data_4
-		mov	al,ds:data_69e
+		mov	al,ds:cur_shop_id
 		dec	al
 		xor	ah,ah			; Zero register
 		add	si,ax
 		mov	dl,[si]
 		push	cs
 		pop	es
-		mov	di,data_62e
+		mov	di,inv_slot_tbl
 		xor	dh,dh			; Zero register
 		mov	cx,8
 
@@ -149,20 +181,20 @@ locloop_4:
 loc_5:
 		loop	locloop_4		; Loop if cx > 0
 
-		mov	ds:data_61e,dh
+		mov	ds:inv_bit_count,dh
 		retn
 wizard_process_loop		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 wizard_func_2		proc	near
 		mov	bl,al
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		jmp	word ptr cs:data_51e[bx]	;*
+		jmp	word ptr cs:shop_cmd_tbl[bx]	;*
 wizard_func_2		endp
 
 		db	0D5h,0A0h
@@ -173,15 +205,15 @@ data_4		db	0EBh
 		db	0FFh, 00h
 loc_6:
 		call	wizard_multiply
-		cmp	byte ptr ds:data_70e,50h	; 'P'
+		cmp	byte ptr ds:gvar_timer_ticks,50h	; 'P'
 		jb	loc_6			; Jump if below
-		mov	si,data_56e
+		mov	si,greet_str_tbl
 		call	wizard_scan_loop
 		retn
 		db	0C6h, 06h, 1Ah,0FFh, 00h
 loc_7:
 		call	wizard_multiply
-		cmp	byte ptr ds:data_70e,50h	; 'P'
+		cmp	byte ptr ds:gvar_timer_ticks,50h	; 'P'
 		jb	loc_7			; Jump if below
 		mov	si,0A74Fh
 		jmp	loc_34
@@ -220,63 +252,63 @@ data_5		dw	0E9A7h
 		db	0B2h,0A2h, 53h,0FFh, 3Ch, 03h
 		db	 72h, 02h,0B0h, 03h
 loc_8:
-		mov	ds:data_76e,al
+		mov	ds:menu_item_count,al
 		mov	bx,156Eh
 		mov	cx,2524h
 		mov	al,0FFh
-		call	word ptr cs:data_36e
-		mov	byte ptr ds:data_80e,0FFh
-		mov	word ptr ds:data_78e,1571h
-		mov	word ptr ds:data_83e,21h
-		mov	word ptr ds:data_82e,17h
+		call	word ptr cs:gfx_fill_rect
+		mov	byte ptr ds:flag_buy_mode,0FFh
+		mov	word ptr ds:menu_pos_base,1571h
+		mov	word ptr ds:menu_row_count,21h
+		mov	word ptr ds:menu_col_width,17h
 		mov	si,0B08Ah
 		mov	di,0B1F6h
-		mov	cl,ds:data_76e
+		mov	cl,ds:menu_item_count
 		xor	ch,ch			; Zero register
-		mov	al,ds:data_79e
-		call	word ptr cs:data_50e
-		mov	bl,ds:data_64e
-		call	word ptr cs:data_49e
+		mov	al,ds:menu_start_idx
+		call	word ptr cs:menu_init
+		mov	bl,ds:sel_item_idx
+		call	word ptr cs:menu_show_list
 		jnc	loc_9			; Jump if carry=0
-		mov	word ptr ds:data_72e,0A965h
+		mov	word ptr ds:script_cur_ptr,0A965h
 		retn
 loc_9:
-		mov	ds:data_64e,bl
+		mov	ds:sel_item_idx,bl
 		mov	al,bl
-		add	al,ds:data_79e
-		mov	bx,data_81e
+		add	al,ds:menu_start_idx
+		mov	bx,inventory_list
 		xlat				; al=[al+[bx]] table
 		push	ax
-		mov	word ptr ds:data_72e,0A8C4h
-		call	word ptr cs:data_44e
+		mov	word ptr ds:script_cur_ptr,0A8C4h
+		call	word ptr cs:script_read_byte
 		pop	ax
 		push	ax
-		mov	si,ds:data_72e
+		mov	si,ds:script_cur_ptr
 		push	si
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
-		mov	ax,ds:data_58e[bx]
-		mov	ds:data_72e,ax
-		call	word ptr cs:data_44e
+		mov	ax,ds:item_name_tbl[bx]
+		mov	ds:script_cur_ptr,ax
+		call	word ptr cs:script_read_byte
 		pop	si
-		mov	ds:data_72e,si
-		call	word ptr cs:data_44e
+		mov	ds:script_cur_ptr,si
+		call	word ptr cs:script_read_byte
 		pop	ax
 		push	ax
 		xor	ah,ah			; Zero register
 		mov	bx,ax
 		add	ax,ax
 		add	ax,bx
-		mov	si,data_60e
+		mov	si,shop_inv_state
 		add	si,ax
 		mov	dl,[si]
 		mov	ax,[si+1]
-		mov	ds:data_67e,dl
-		mov	ds:data_68e,ax
-		call	word ptr cs:data_47e
+		mov	ds:item_price_dl,dl
+		mov	ds:item_price_ax,ax
+		call	word ptr cs:script_take_item
 		pop	bx
-		mov	word ptr ds:data_72e,0A928h
+		mov	word ptr ds:script_cur_ptr,0A928h
 		jc	loc_12			; Jump if carry Set
 		push	dx
 		push	ax
@@ -291,7 +323,7 @@ locloop_10:
 
 		pop	ax
 		pop	dx
-		mov	word ptr ds:data_72e,0A940h
+		mov	word ptr ds:script_cur_ptr,0A940h
 		retn
 loc_11:
 		pop	ax
@@ -300,128 +332,128 @@ loc_11:
 		mov	word ptr ds:[86h],ax
 		inc	bl
 		mov	[si],bl
-		mov	word ptr ds:data_72e,0A8F2h
-		call	word ptr cs:data_44e
-		mov	dl,ds:data_67e
-		mov	ax,ds:data_68e
+		mov	word ptr ds:script_cur_ptr,0A8F2h
+		call	word ptr cs:script_read_byte
+		mov	dl,ds:item_price_dl
+		mov	ax,ds:item_price_ax
 		mov	di,0B21Eh
-		call	word ptr cs:data_45e
-		mov	si,ds:data_72e
+		call	word ptr cs:script_format_num
+		mov	si,ds:script_cur_ptr
 		push	si
-		mov	word ptr ds:data_72e,0B21Eh
-		call	word ptr cs:data_44e
+		mov	word ptr ds:script_cur_ptr,0B21Eh
+		call	word ptr cs:script_read_byte
 		pop	si
-		mov	ds:data_72e,si
+		mov	ds:script_cur_ptr,si
 loc_12:
-		call	word ptr cs:data_44e
-		call	word ptr cs:data_40e
-		mov	word ptr ds:data_72e,0A909h
-		call	word ptr cs:data_44e
+		call	word ptr cs:script_read_byte
+		call	word ptr cs:gfx_wait_refresh
+		mov	word ptr ds:script_cur_ptr,0A909h
+		call	word ptr cs:script_read_byte
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:data_36e
-		mov	word ptr ds:data_78e,302Eh
-		call	word ptr cs:data_46e
+		call	word ptr cs:gfx_fill_rect
+		mov	word ptr ds:menu_pos_base,302Eh
+		call	word ptr cs:script_display_page
 		pushf				; Push flags
 		call	wizard_func_4
 		popf				; Pop flags
-		mov	word ptr ds:data_72e,0A8A8h
+		mov	word ptr ds:script_cur_ptr,0A8A8h
 		jc	loc_13			; Jump if carry Set
 		retn
 loc_13:
-		mov	word ptr ds:data_72e,0A965h
+		mov	word ptr ds:script_cur_ptr,0A965h
 		retn
 			                        ;* No entry point to code
 		call	wizard_process_loop_2
-		mov	byte ptr ds:data_79e,0
-		mov	al,ds:data_77e
+		mov	byte ptr ds:menu_start_idx,0
+		mov	al,ds:inventory_count
 		cmp	al,2
 		jb	loc_14			; Jump if below
 		mov	al,2
 loc_14:
-		mov	ds:data_76e,al
+		mov	ds:menu_item_count,al
 		mov	bx,1778h
 		mov	cx,211Ah
 		mov	al,0FFh
-		call	word ptr cs:data_36e
-		mov	byte ptr ds:data_80e,0
-		mov	word ptr ds:data_78e,197Bh
-		mov	word ptr ds:data_83e,19h
+		call	word ptr cs:gfx_fill_rect
+		mov	byte ptr ds:flag_buy_mode,0
+		mov	word ptr ds:menu_pos_base,197Bh
+		mov	word ptr ds:menu_row_count,19h
 		mov	si,0B08Ah
-		mov	cl,ds:data_76e
+		mov	cl,ds:menu_item_count
 		xor	ch,ch			; Zero register
-		mov	al,ds:data_79e
-		call	word ptr cs:data_50e
+		mov	al,ds:menu_start_idx
+		call	word ptr cs:menu_init
 		xor	bl,bl			; Zero register
-		call	word ptr cs:data_49e
+		call	word ptr cs:menu_show_list
 		jnc	loc_15			; Jump if carry=0
-		mov	word ptr ds:data_72e,0A965h
+		mov	word ptr ds:script_cur_ptr,0A965h
 		retn
 loc_15:
-		mov	ds:data_64e,bl
-		mov	word ptr ds:data_72e,0A8D7h
-		call	word ptr cs:data_44e
-		mov	al,ds:data_64e
-		add	al,ds:data_79e
-		mov	bx,data_81e
+		mov	ds:sel_item_idx,bl
+		mov	word ptr ds:script_cur_ptr,0A8D7h
+		call	word ptr cs:script_read_byte
+		mov	al,ds:sel_item_idx
+		add	al,ds:menu_start_idx
+		mov	bx,inventory_list
 		xlat				; al=[al+[bx]] table
 		push	ax
-		mov	si,ds:data_72e
+		mov	si,ds:script_cur_ptr
 		push	si
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
-		mov	ax,ds:data_58e[bx]
-		mov	ds:data_72e,ax
-		call	word ptr cs:data_44e
+		mov	ax,ds:item_name_tbl[bx]
+		mov	ds:script_cur_ptr,ax
+		call	word ptr cs:script_read_byte
 		pop	si
-		mov	ds:data_72e,si
-		call	word ptr cs:data_44e
+		mov	ds:script_cur_ptr,si
+		call	word ptr cs:script_read_byte
 		pop	ax
 		mov	cl,3
 		mul	cl			; ax = reg * al
-		mov	bx,data_60e
+		mov	bx,shop_inv_state
 		add	bx,ax
 		mov	dl,[bx]
 		mov	ax,[bx+1]
 		shr	dl,1			; Shift w/zeros fill
 		rcr	ax,1			; Rotate thru carry
-		mov	ds:data_67e,dl
-		mov	ds:data_68e,ax
+		mov	ds:item_price_dl,dl
+		mov	ds:item_price_ax,ax
 		push	ax
 		push	dx
-		mov	word ptr ds:data_72e,0A9C4h
-		call	word ptr cs:data_44e
+		mov	word ptr ds:script_cur_ptr,0A9C4h
+		call	word ptr cs:script_read_byte
 		pop	dx
 		pop	ax
 		mov	di,0B21Eh
-		call	word ptr cs:data_45e
-		mov	si,ds:data_72e
+		call	word ptr cs:script_format_num
+		mov	si,ds:script_cur_ptr
 		push	si
-		mov	word ptr ds:data_72e,0B21Eh
-		call	word ptr cs:data_44e
+		mov	word ptr ds:script_cur_ptr,0B21Eh
+		call	word ptr cs:script_read_byte
 		pop	si
-		mov	ds:data_72e,si
-		call	word ptr cs:data_44e
+		mov	ds:script_cur_ptr,si
+		call	word ptr cs:script_read_byte
 		mov	bx,3421h
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:data_36e
-		mov	word ptr ds:data_78e,3524h
-		call	word ptr cs:data_46e
-		mov	word ptr ds:data_72e,0A9FEh
+		call	word ptr cs:gfx_fill_rect
+		mov	word ptr ds:menu_pos_base,3524h
+		call	word ptr cs:script_display_page
+		mov	word ptr ds:script_cur_ptr,0A9FEh
 		jnc	loc_16			; Jump if carry=0
 		retn
 loc_16:
-		mov	dl,ds:data_67e
-		mov	ax,ds:data_68e
-		call	word ptr cs:data_48e
-		mov	word ptr ds:data_72e,0A9ADh
-		call	word ptr cs:data_44e
-		mov	al,ds:data_64e
-		add	al,ds:data_79e
-		mov	bx,data_81e
+		mov	dl,ds:item_price_dl
+		mov	ax,ds:item_price_ax
+		call	word ptr cs:script_give_item
+		mov	word ptr ds:script_cur_ptr,0A9ADh
+		call	word ptr cs:script_read_byte
+		mov	al,ds:sel_item_idx
+		add	al,ds:menu_start_idx
+		mov	bx,inventory_list
 		xlat				; al=[al+[bx]] table
 		inc	al
 		mov	si,0A6h
@@ -438,51 +470,51 @@ loc_18:
 		dec	al
 		xor	ah,ah			; Zero register
 		push	ax
-		mov	al,ds:data_69e
+		mov	al,ds:cur_shop_id
 		dec	al
 		mov	si,offset data_4
 		add	si,ax
 		pop	ax
-		mov	di,data_52e
+		mov	di,shop_subtitle_tbl
 		add	di,ax
 		mov	al,[di]
 		or	[si],al
-		call	word ptr cs:data_40e
+		call	word ptr cs:gfx_wait_refresh
 		call	wizard_process_loop_2
-		mov	word ptr ds:data_72e,0A966h
-		test	byte ptr ds:data_77e,0FFh
+		mov	word ptr ds:script_cur_ptr,0A966h
+		test	byte ptr ds:inventory_count,0FFh
 		jnz	loc_19			; Jump if not zero
 		retn
 loc_19:
-		mov	word ptr ds:data_72e,0AA4Bh
-		call	word ptr cs:data_44e
+		mov	word ptr ds:script_cur_ptr,0AA4Bh
+		call	word ptr cs:script_read_byte
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:data_36e
-		mov	word ptr ds:data_78e,302Eh
-		call	word ptr cs:data_46e
-		mov	word ptr ds:data_72e,0A965h
+		call	word ptr cs:gfx_fill_rect
+		mov	word ptr ds:menu_pos_base,302Eh
+		call	word ptr cs:script_display_page
+		mov	word ptr ds:script_cur_ptr,0A965h
 		jnc	loc_20			; Jump if carry=0
 		retn
 loc_20:
 		call	wizard_func_4
-		mov	word ptr ds:data_72e,0A98Dh
+		mov	word ptr ds:script_cur_ptr,0A98Dh
 		retn
 			                        ;* No entry point to code
 		add	byte ptr [bx+si+20h],10h
 		or	[si],al
 		add	al,[bx+di]
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 wizard_process_loop_2		proc	near
 		push	cs
 		pop	es
 		mov	si,0A6h
-		mov	di,data_81e
+		mov	di,inventory_list
 		mov	cx,5
 		xor	dl,dl			; Zero register
 
@@ -496,109 +528,109 @@ locloop_21:
 loc_22:
 		loop	locloop_21		; Loop if cx > 0
 
-		mov	ds:data_77e,dl
+		mov	ds:inventory_count,dl
 		retn
 wizard_process_loop_2		endp
 
 			                        ;* No entry point to code
-		mov	byte ptr ds:data_64e,0
-		mov	byte ptr ds:data_79e,0
+		mov	byte ptr ds:sel_item_idx,0
+		mov	byte ptr ds:menu_start_idx,0
 loc_23:
 		push	cs
 		pop	es
-		mov	si,data_62e
-		mov	di,data_81e
+		mov	si,inv_slot_tbl
+		mov	di,inventory_list
 		mov	cx,8
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		mov	al,ds:data_61e
-		mov	ds:data_77e,al
-		mov	al,ds:data_77e
+		mov	al,ds:inv_bit_count
+		mov	ds:inventory_count,al
+		mov	al,ds:inventory_count
 		cmp	al,2
 		jb	loc_24			; Jump if below
 		mov	al,2
 loc_24:
-		mov	ds:data_76e,al
+		mov	ds:menu_item_count,al
 		mov	bx,1778h
 		mov	cx,211Ah
 		mov	al,0FFh
-		call	word ptr cs:data_36e
-		mov	byte ptr ds:data_80e,0
-		mov	word ptr ds:data_78e,197Bh
-		mov	word ptr ds:data_83e,19h
+		call	word ptr cs:gfx_fill_rect
+		mov	byte ptr ds:flag_buy_mode,0
+		mov	word ptr ds:menu_pos_base,197Bh
+		mov	word ptr ds:menu_row_count,19h
 		mov	si,0B08Ah
-		mov	cl,ds:data_76e
+		mov	cl,ds:menu_item_count
 		xor	ch,ch			; Zero register
-		mov	al,ds:data_79e
-		call	word ptr cs:data_50e
-		mov	bl,ds:data_64e
-		call	word ptr cs:data_49e
+		mov	al,ds:menu_start_idx
+		call	word ptr cs:menu_init
+		mov	bl,ds:sel_item_idx
+		call	word ptr cs:menu_show_list
 		jnc	loc_25			; Jump if carry=0
-		mov	word ptr ds:data_72e,0A965h
+		mov	word ptr ds:script_cur_ptr,0A965h
 		retn
 loc_25:
-		mov	ds:data_64e,bl
-		mov	word ptr ds:data_72e,0AACAh
-		call	word ptr cs:data_44e
-		mov	al,ds:data_64e
-		add	al,ds:data_79e
-		mov	bx,data_81e
+		mov	ds:sel_item_idx,bl
+		mov	word ptr ds:script_cur_ptr,0AACAh
+		call	word ptr cs:script_read_byte
+		mov	al,ds:sel_item_idx
+		add	al,ds:menu_start_idx
+		mov	bx,inventory_list
 		xlat				; al=[al+[bx]] table
 		push	ax
-		mov	si,ds:data_72e
+		mov	si,ds:script_cur_ptr
 		push	si
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
-		mov	ax,ds:data_58e[bx]
-		mov	ds:data_72e,ax
-		call	word ptr cs:data_44e
+		mov	ax,ds:item_name_tbl[bx]
+		mov	ds:script_cur_ptr,ax
+		call	word ptr cs:script_read_byte
 		pop	si
-		mov	ds:data_72e,si
-		call	word ptr cs:data_44e
+		mov	ds:script_cur_ptr,si
+		call	word ptr cs:script_read_byte
 		pop	ax
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
-		mov	ax,ds:data_57e[bx]
-		mov	ds:data_72e,ax
-		call	word ptr cs:data_44e
-		mov	word ptr ds:data_72e,0AAE9h
-		call	word ptr cs:data_44e
+		mov	ax,ds:desc_script_tbl[bx]
+		mov	ds:script_cur_ptr,ax
+		call	word ptr cs:script_read_byte
+		mov	word ptr ds:script_cur_ptr,0AAE9h
+		call	word ptr cs:script_read_byte
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:data_36e
-		mov	word ptr ds:data_78e,302Eh
-		call	word ptr cs:data_46e
+		call	word ptr cs:gfx_fill_rect
+		mov	word ptr ds:menu_pos_base,302Eh
+		call	word ptr cs:script_display_page
 		pushf				; Push flags
 		call	wizard_func_4
 		popf				; Pop flags
-		mov	word ptr ds:data_72e,0A965h
+		mov	word ptr ds:script_cur_ptr,0A965h
 		jnc	loc_26			; Jump if carry=0
 		retn
 loc_26:
-		mov	word ptr ds:data_72e,0AAA6h
-		call	word ptr cs:data_44e
+		mov	word ptr ds:script_cur_ptr,0AAA6h
+		call	word ptr cs:script_read_byte
 		jmp	loc_23
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 wizard_func_4		proc	near
 		mov	bx,2717h
 		mov	cx,1D41h
 		xor	al,al			; Zero register
-		jmp	word ptr cs:data_36e
+		jmp	word ptr cs:gfx_fill_rect
 wizard_func_4		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 wizard_process_loop_3		proc	near
-		mov	si,data_53e
+		mov	si,banner_glyph_tbl
 		mov	bx,717h
 		mov	cx,8
 
@@ -610,7 +642,7 @@ locloop_28:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:data_43e
+		call	word ptr cs:draw_glyph_tile
 		pop	bx
 		inc	bh
 		pop	cx
@@ -642,32 +674,32 @@ wizard_process_loop_3		endp
 		db	 16h, 17h, 18h, 19h, 1Ah
 		db	1Bh
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 wizard_multiply		proc	near
-		cmp	word ptr ds:data_75e,2
+		cmp	word ptr ds:menu_frame_timer,2
 		jae	loc_29			; Jump if above or =
 		retn
 loc_29:
-		mov	word ptr ds:data_75e,0
-		inc	byte ptr ds:data_65e
-		cmp	byte ptr ds:data_65e,14h
+		mov	word ptr ds:menu_frame_timer,0
+		inc	byte ptr ds:item_anim_phase
+		cmp	byte ptr ds:item_anim_phase,14h
 		jae	loc_30			; Jump if above or =
 		retn
 loc_30:
-		mov	byte ptr ds:data_65e,0
-		mov	al,ds:data_66e
+		mov	byte ptr ds:item_anim_phase,0
+		mov	al,ds:item_anim_set
 		inc	al
 		cmp	al,3
 		jb	loc_31			; Jump if below
 		xor	al,al			; Zero register
 loc_31:
-		mov	ds:data_66e,al
+		mov	ds:item_anim_set,al
 		mov	cl,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	si,data_55e
+		mov	si,price_gfx_tbl
 		add	si,ax
 		mov	bx,0D17h
 		mov	cx,6
@@ -680,7 +712,7 @@ locloop_33:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:data_43e
+		call	word ptr cs:draw_glyph_tile
 		pop	bx
 		inc	bh
 		pop	cx
@@ -701,13 +733,13 @@ wizard_multiply		endp
 		db	'vwxyz{|@ABCDEFGHIJK(LMNOP.Q01RST'
 		db	'UV7WXYZ[\]^'
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 wizard_scan_loop		proc	near
 loc_34:
-		mov	byte ptr ds:data_70e,0
+		mov	byte ptr ds:gvar_timer_ticks,0
 		lodsw				; String [si] to ax
 		cmp	ax,0FFFFh
 		jne	loc_35			; Jump if not equal
@@ -726,7 +758,7 @@ locloop_37:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:data_43e
+		call	word ptr cs:draw_glyph_tile
 		pop	bx
 		inc	bh
 		pop	cx
@@ -739,7 +771,7 @@ locloop_37:
 
 loc_38:
 		call	wizard_multiply
-		cmp	byte ptr ds:data_70e,28h	; '('
+		cmp	byte ptr ds:gvar_timer_ticks,28h	; '('
 		jb	loc_38			; Jump if below
 		pop	si
 		jmp	short loc_34

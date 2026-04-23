@@ -3,7 +3,13 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  ENEMY_GOBLIN - Code Module
+;  213BANKP - Bank Dialog Program (zelres2 chunk 15)
+;
+;  Bank NPC program: "The Bank" menu with options:
+;    Go outside / Exchange almas / Deposit money / Withdraw money /
+;    Check balance
+;  Loaded at gvar_game_seg:loaded_code_a (0x3000) by town.bin when
+;  player enters the bank building.
 ;
 ;==========================================================================
 
@@ -14,58 +20,58 @@ include  srmacros.inc
 
 ; The following equates show data references outside the range of the program.
 
-data_1e		equ	8000h			;*
-data_39e	equ	2000h			;*
-data_40e	equ	2002h			;*
-data_41e	equ	2010h			;*
-data_42e	equ	2012h			;*
-data_43e	equ	2014h			;*
-data_44e	equ	2016h			;*
-data_45e	equ	2040h			;*
-data_46e	equ	2044h			;*
-data_47e	equ	3016h			;*
-data_48e	equ	301Ch			;*
-data_49e	equ	3022h			;*
-data_50e	equ	6004h			;*
-data_51e	equ	6006h			;*
-data_52e	equ	6008h			;*
-data_53e	equ	600Ah			;*
-data_54e	equ	600Ch			;*
-data_55e	equ	600Eh			;*
-data_56e	equ	0A0B8h			;*
-data_57e	equ	0A6C8h			;*
-data_58e	equ	0A839h			;*
-data_59e	equ	0A8BBh			;*
-data_60e	equ	0A8E3h			;*
-data_61e	equ	0A8EEh			;*
-data_62e	equ	0A8FAh			;*
-data_63e	equ	0A8FBh			;*
-data_64e	equ	0A951h			;*
-data_65e	equ	0A96Dh			;*
-data_66e	equ	0AD1Eh			;*
-data_67e	equ	0AD1Fh			;*
-data_68e	equ	0AD21h			;*
-data_69e	equ	0AD22h			;*
-data_70e	equ	0AD23h			;*
-data_71e	equ	0AD24h			;*
-data_72e	equ	0AD25h			;*
-data_73e	equ	0AD26h			;*
-data_74e	equ	0AD27h			;*
-data_75e	equ	0AD29h			;*
-data_76e	equ	0AD2Ah			;*
-data_77e	equ	0AD2Ch			;*
-data_78e	equ	0AD2Dh			;*
-data_79e	equ	0AD2Fh			;*
-data_80e	equ	0C006h			;*
-data_81e	equ	0FF2Ch			;*
-data_82e	equ	0FF4Ch			;*
-data_83e	equ	0FF4Eh			;*
-data_84e	equ	0FF4Fh			;*
-data_85e	equ	0FF50h			;*
-data_86e	equ	0FF52h			;*
-data_87e	equ	0FF53h			;*
-data_88e	equ	0FF54h			;*
-data_89e	equ	0FF57h			;*
+sprite_buf_ofs		equ	8000h			;*
+drv_fill_rect	equ	2000h			;*
+drv_screen_init_a	equ	2002h			;*
+drv_load_msg_header	equ	2010h			;*
+drv_screen_init_b	equ	2012h			;*
+drv_num_commit	equ	2014h			;*
+drv_frame_commit	equ	2016h			;*
+drv_return_to_caller	equ	2040h			;*
+drv_ds_copy	equ	2044h			;*
+drv_draw_glyph	equ	3016h			;*
+drv_draw_string	equ	301Ch			;*
+drv_set_text_pos	equ	3022h			;*
+script_step	equ	6004h			;*
+fmt_num_to_str	equ	6006h			;*
+get_yesno_input	equ	6008h			;*
+save_input_amount	equ	600Ah			;*
+commit_ledger_update	equ	600Ch			;*
+show_menu_items	equ	600Eh			;*
+opcode_dispatch_tbl	equ	0A0B8h			;*
+intro_tile_map	equ	0A6C8h			;*
+intro_text_ptr_list	equ	0A839h			;*
+welcome_text_ptr	equ	0A8BBh			;*
+bank_grp_ref	equ	0A8E3h			;*
+bank_title_hdr	equ	0A8EEh			;*
+exch_denom_in_tbl	equ	0A8FAh			;*
+exch_denom_out_tbl	equ	0A8FBh			;*
+menu_items_deposit	equ	0A951h			;*
+menu_items_withdraw	equ	0A96Dh			;*
+entered_flag	equ	0AD1Eh			;*
+anim_src_ptr	equ	0AD1Fh			;*
+anim_active_flag	equ	0AD21h			;*
+anim_frame_counter	equ	0AD22h			;*
+checked_balance_flag	equ	0AD23h			;*
+goodbye_flag	equ	0AD24h			;*
+cur_exch_in	equ	0AD25h			;*
+cur_exch_out	equ	0AD26h			;*
+script_char_buf	equ	0AD27h			;*
+amount_hi	equ	0AD29h			;*
+amount_lo	equ	0AD2Ah			;*
+amount_max_hi	equ	0AD2Ch			;*
+amount_max_lo	equ	0AD2Dh			;*
+input_repeat_delay	equ	0AD2Fh			;*
+gvar_menu_sel	equ	0C006h			;*
+gvar_game_seg	equ	0FF2Ch			;*
+gvar_script_ptr	equ	0FF4Ch			;*
+gvar_init_flag_a	equ	0FF4Eh			;*
+gvar_init_flag_b	equ	0FF4Fh			;*
+gvar_timer_word	equ	0FF50h			;*
+gvar_col_byte	equ	0FF52h			;*
+gvar_row_byte	equ	0FF53h			;*
+gvar_ui_dst_word	equ	0FF54h			;*
+gvar_ui_misc_byte	equ	0FF57h			;*
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -73,7 +79,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zr2_13		proc	far
+bank_main		proc	far
 
 start:
 		cmp	[di],cl
@@ -82,68 +88,68 @@ start:
 		sub	byte ptr ds:[68Eh][bx],ah
 		sub	al,0FFh
 		mov	di,8000h
-		mov	si,data_60e
+		mov	si,bank_grp_ref
 		mov	al,2
 		call	word ptr cs:data_7
 		push	ds
-		mov	ds,cs:data_81e
-		mov	si,data_1e
+		mov	ds,cs:gvar_game_seg
+		mov	si,sprite_buf_ofs
 		mov	cx,100h
-		call	word ptr cs:data_46e
+		call	word ptr cs:drv_ds_copy
 		pop	ds
-		mov	byte ptr ds:data_83e,0
-		mov	byte ptr ds:data_84e,0
-		mov	byte ptr ds:data_66e,0
-		call	word ptr cs:data_40e
-		call	word ptr cs:data_42e
-		mov	si,data_61e
-		call	word ptr cs:data_41e
-		call	goblin_process_loop
+		mov	byte ptr ds:gvar_init_flag_a,0
+		mov	byte ptr ds:gvar_init_flag_b,0
+		mov	byte ptr ds:entered_flag,0
+		call	word ptr cs:drv_screen_init_a
+		call	word ptr cs:drv_screen_init_b
+		mov	si,bank_title_hdr
+		call	word ptr cs:drv_load_msg_header
+		call	draw_intro_12x8
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:data_39e
-		mov	byte ptr ds:data_68e,0FFh
-		mov	word ptr ds:data_67e,0A773h
-		mov	word ptr ds:data_82e,0A989h
-		call	word ptr cs:data_50e
+		call	word ptr cs:drv_fill_rect
+		mov	byte ptr ds:anim_active_flag,0FFh
+		mov	word ptr ds:anim_src_ptr,0A773h
+		mov	word ptr ds:gvar_script_ptr,0A989h
+		call	word ptr cs:script_step
 		mov	cx,5
 
 locloop_1:
 		push	cx
 		mov	byte ptr ds:[0FF1Ah],0
-		mov	word ptr ds:data_82e,0A98Bh
-		call	word ptr cs:data_50e
+		mov	word ptr ds:gvar_script_ptr,0A98Bh
+		call	word ptr cs:script_step
 loc_2:
-		call	goblin_multiply
+		call	anim_scroll_step
 		cmp	byte ptr ds:[0FF1Ah],3Fh	; '?'
 		jb	loc_2			; Jump if below
 		pop	cx
 		loop	locloop_1		; Loop if cx > 0
 
-		mov	byte ptr ds:data_68e,0
-		mov	word ptr ds:data_82e,0A98Dh
+		mov	byte ptr ds:anim_active_flag,0
+		mov	word ptr ds:gvar_script_ptr,0A98Dh
 loc_3:
-		call	word ptr cs:data_50e
+		call	word ptr cs:script_step
 		cmp	al,0FFh
 		je	loc_4			; Jump if equal
-		call	goblin_func_1
+		call	script_opcode_dispatch
 		jmp	short loc_3
 loc_4:
-		jmp	word ptr cs:data_45e
+		jmp	word ptr cs:drv_return_to_caller
 
-zr2_13		endp
+bank_main		endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-goblin_func_1		proc	near
+script_opcode_dispatch		proc	near
 		mov	bl,al
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		jmp	word ptr cs:data_56e[bx]	;*
-goblin_func_1		endp
+		jmp	word ptr cs:opcode_dispatch_tbl[bx]	;*
+script_opcode_dispatch		endp
 
 		db	0C0h,0A0h,0D2h,0A0h,0F3h,0A5h
 		db	 19h,0A6h,0C6h, 06h, 1Ah,0FFh
@@ -169,70 +175,70 @@ data_7		dw	1016h
 		db	0F6h, 06h, 24h,0ADh,0FFh, 74h
 		db	 01h,0C3h
 loc_5:
-		mov	word ptr ds:data_82e,0AC9Dh
-		test	byte ptr ds:data_70e,0FFh
+		mov	word ptr ds:gvar_script_ptr,0AC9Dh
+		test	byte ptr ds:checked_balance_flag,0FFh
 		jz	loc_6			; Jump if zero
 		retn
 loc_6:
-		mov	word ptr ds:data_82e,0AC5Ah
+		mov	word ptr ds:gvar_script_ptr,0AC5Ah
 		retn
 			                        ;* No entry point to code
-		call	goblin_func_2
-		mov	byte ptr ds:data_68e,0
-		mov	si,data_59e
-		call	goblin_process_loop_2
+		call	clear_dialog_area
+		mov	byte ptr ds:anim_active_flag,0
+		mov	si,welcome_text_ptr
+		call	draw_banner_8x5
 		test	word ptr ds:[8Bh],0FFFFh
-		mov	word ptr ds:data_82e,0A9B2h
+		mov	word ptr ds:gvar_script_ptr,0A9B2h
 		jnz	loc_7			; Jump if not zero
 		retn
 loc_7:
-		mov	bl,ds:data_80e
+		mov	bl,ds:gvar_menu_sel
 		xor	bh,bh			; Zero register
 		dec	bl
 		add	bx,bx
-		mov	al,ds:data_62e[bx]
-		mov	ds:data_72e,al
-		mov	al,ds:data_63e[bx]
-		mov	ds:data_73e,al
-		mov	word ptr ds:data_82e,0A9D9h
-		call	word ptr cs:data_50e
-		mov	al,ds:data_72e
+		mov	al,ds:exch_denom_in_tbl[bx]
+		mov	ds:cur_exch_in,al
+		mov	al,ds:exch_denom_out_tbl[bx]
+		mov	ds:cur_exch_out,al
+		mov	word ptr ds:gvar_script_ptr,0A9D9h
+		call	word ptr cs:script_step
+		mov	al,ds:cur_exch_in
 		add	al,30h			; '0'
-		mov	ds:data_74e,al
-		mov	word ptr ds:data_82e,0AD27h
-		call	word ptr cs:data_50e
-		mov	word ptr ds:data_82e,0A9F1h
-		call	word ptr cs:data_50e
-		mov	al,ds:data_73e
+		mov	ds:script_char_buf,al
+		mov	word ptr ds:gvar_script_ptr,0AD27h
+		call	word ptr cs:script_step
+		mov	word ptr ds:gvar_script_ptr,0A9F1h
+		call	word ptr cs:script_step
+		mov	al,ds:cur_exch_out
 		add	al,30h			; '0'
-		mov	ds:data_74e,al
-		mov	word ptr ds:data_82e,0AD27h
-		call	word ptr cs:data_50e
-		mov	word ptr ds:data_82e,0A9FDh
-		call	word ptr cs:data_50e
+		mov	ds:script_char_buf,al
+		mov	word ptr ds:gvar_script_ptr,0AD27h
+		call	word ptr cs:script_step
+		mov	word ptr ds:gvar_script_ptr,0A9FDh
+		call	word ptr cs:script_step
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:data_39e
-		mov	word ptr ds:data_88e,302Eh
-		call	word ptr cs:data_52e
-		mov	word ptr ds:data_82e,0AA48h
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_ui_dst_word,302Eh
+		call	word ptr cs:get_yesno_input
+		mov	word ptr ds:gvar_script_ptr,0AA48h
 		jnc	loc_8			; Jump if carry=0
 		retn
 loc_8:
 		mov	ax,word ptr ds:[8Bh]
-		mov	dl,ds:data_72e
+		mov	dl,ds:cur_exch_in
 		xor	dh,dh			; Zero register
 		sub	ax,dx
-		mov	word ptr ds:data_82e,0AA1Dh
+		mov	word ptr ds:gvar_script_ptr,0AA1Dh
 		jnc	loc_9			; Jump if carry=0
 		retn
 loc_9:
 		push	dx
-		call	goblin_func_2
+		call	clear_dialog_area
 		pop	dx
-		mov	byte ptr ds:data_70e,0FFh
-		mov	word ptr ds:data_82e,0AA82h
+		mov	byte ptr ds:checked_balance_flag,0FFh
+		mov	word ptr ds:gvar_script_ptr,0AA82h
 loc_10:
 		xor	cx,cx			; Zero register
 loc_11:
@@ -245,11 +251,11 @@ loc_12:
 		mov	word ptr ds:[8Bh],ax
 		push	dx
 		xor	dl,dl			; Zero register
-		mov	al,ds:data_73e
+		mov	al,ds:cur_exch_out
 		xor	ah,ah			; Zero register
-		call	word ptr cs:data_54e
-		call	word ptr cs:data_44e
-		call	word ptr cs:data_43e
+		call	word ptr cs:commit_ledger_update
+		call	word ptr cs:drv_frame_commit
+		call	word ptr cs:drv_num_commit
 		pop	dx
 		pop	cx
 		inc	cx
@@ -257,11 +263,11 @@ loc_12:
 		jnz	loc_11			; Jump if not zero
 		jmp	short loc_10
 			                        ;* No entry point to code
-		call	goblin_func_2
-		mov	byte ptr ds:data_68e,0
-		mov	si,data_59e
-		call	goblin_process_loop_2
-		mov	word ptr ds:data_82e,0AAA1h
+		call	clear_dialog_area
+		mov	byte ptr ds:anim_active_flag,0
+		mov	si,welcome_text_ptr
+		call	draw_banner_8x5
+		mov	word ptr ds:gvar_script_ptr,0AAA1h
 		mov	ax,word ptr ds:[86h]
 		mov	dl,byte ptr ds:[85h]
 		or	dl,al
@@ -269,51 +275,51 @@ loc_12:
 		jnz	loc_13			; Jump if not zero
 		retn
 loc_13:
-		mov	word ptr ds:data_82e,0AACAh
-		call	word ptr cs:data_50e
+		mov	word ptr ds:gvar_script_ptr,0AACAh
+		call	word ptr cs:script_step
 		mov	bx,2C1Dh
 		mov	cx,1237h
 		mov	al,0FFh
-		call	word ptr cs:data_39e
-		mov	word ptr ds:data_88e,2A20h
-		mov	byte ptr ds:data_86e,4
-		mov	byte ptr ds:data_87e,4
-		mov	byte ptr ds:data_89e,0
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_ui_dst_word,2A20h
+		mov	byte ptr ds:gvar_col_byte,4
+		mov	byte ptr ds:gvar_row_byte,4
+		mov	byte ptr ds:gvar_ui_misc_byte,0
 		mov	cx,4
-		mov	si,data_64e
-		call	word ptr cs:data_55e
-		mov	byte ptr ds:data_75e,0
-		mov	word ptr ds:data_76e,0
+		mov	si,menu_items_deposit
+		call	word ptr cs:show_menu_items
+		mov	byte ptr ds:amount_hi,0
+		mov	word ptr ds:amount_lo,0
 		mov	dl,byte ptr ds:[85h]
 		mov	ax,word ptr ds:[86h]
-		mov	ds:data_77e,dl
-		mov	ds:data_78e,ax
+		mov	ds:amount_max_hi,dl
+		mov	ds:amount_max_lo,ax
 loc_14:
-		mov	dl,ds:data_75e
-		mov	ax,ds:data_76e
+		mov	dl,ds:amount_hi
+		mov	ax,ds:amount_lo
 		push	dx
 		push	ax
-		call	word ptr cs:data_53e
-		call	word ptr cs:data_49e
+		call	word ptr cs:save_input_amount
+		call	word ptr cs:drv_set_text_pos
 		mov	bx,312Eh
-		call	word ptr cs:data_48e
+		call	word ptr cs:drv_draw_string
 		pop	ax
 		pop	dx
-		call	word ptr cs:data_49e
+		call	word ptr cs:drv_set_text_pos
 		mov	bx,3148h
-		call	word ptr cs:data_48e
+		call	word ptr cs:drv_draw_string
 		int	61h			; ??INT Non-standard interrupt
-		call	goblin_func_3
+		call	adjust_amount_by_input
 		test	ah,1
 		jnz	loc_18			; Jump if not zero
-		mov	word ptr ds:data_82e,0AA48h
+		mov	word ptr ds:gvar_script_ptr,0AA48h
 		test	ah,2
 		jz	loc_15			; Jump if zero
 		retn
 loc_15:
 		or	al,al			; Zero ?
 		jnz	loc_16			; Jump if not zero
-		mov	byte ptr ds:data_79e,23h	; '#'
+		mov	byte ptr ds:input_repeat_delay,23h	; '#'
 		jmp	short loc_14
 loc_16:
 		mov	byte ptr ds:[0FF1Ah],0
@@ -321,17 +327,17 @@ loc_17:
 		int	61h			; ??INT Non-standard interrupt
 		or	al,al			; Zero ?
 		jz	loc_14			; Jump if zero
-		mov	al,ds:data_79e
+		mov	al,ds:input_repeat_delay
 		cmp	byte ptr ds:[0FF1Ah],al
 		jb	loc_17			; Jump if below
-		sub	byte ptr ds:data_79e,1
+		sub	byte ptr ds:input_repeat_delay,1
 		jnc	loc_14			; Jump if carry=0
-		mov	byte ptr ds:data_79e,1
+		mov	byte ptr ds:input_repeat_delay,1
 		jmp	short loc_14
 loc_18:
-		mov	word ptr ds:data_82e,0AA48h
-		mov	ax,ds:data_76e
-		mov	dl,ds:data_75e
+		mov	word ptr ds:gvar_script_ptr,0AA48h
+		mov	ax,ds:amount_lo
+		mov	dl,ds:amount_hi
 		mov	cl,dl
 		or	cl,al
 		or	cl,ah
@@ -343,21 +349,21 @@ loc_19:
 		cmp	ax,3E8h
 		jb	loc_21			; Jump if below
 loc_20:
-		mov	byte ptr ds:data_68e,0FFh
-		mov	word ptr ds:data_67e,0A7C3h
+		mov	byte ptr ds:anim_active_flag,0FFh
+		mov	word ptr ds:anim_src_ptr,0A7C3h
 loc_21:
 		add	word ptr ds:[89h],ax
 		adc	byte ptr ds:[88h],dl
-		mov	dl,ds:data_75e
-		mov	ax,ds:data_76e
-		call	word ptr cs:data_53e
+		mov	dl,ds:amount_hi
+		mov	ax,ds:amount_lo
+		call	word ptr cs:save_input_amount
 		mov	byte ptr ds:[85h],dl
 		mov	word ptr ds:[86h],ax
-		call	word ptr cs:data_44e
-		mov	byte ptr ds:data_70e,0FFh
-		test	byte ptr ds:data_68e,0FFh
+		call	word ptr cs:drv_frame_commit
+		mov	byte ptr ds:checked_balance_flag,0FFh
+		test	byte ptr ds:anim_active_flag,0FFh
 		jnz	loc_24			; Jump if not zero
-		mov	word ptr ds:data_82e,0ABF7h
+		mov	word ptr ds:gvar_script_ptr,0ABF7h
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
 		or	dl,ah
@@ -365,35 +371,35 @@ loc_21:
 		jnz	loc_22			; Jump if not zero
 		retn
 loc_22:
-		mov	word ptr ds:data_82e,0AC35h
+		mov	word ptr ds:gvar_script_ptr,0AC35h
 		test	al,byte ptr ds:[88h]
 		jnz	loc_23			; Jump if not zero
 		cmp	word ptr ds:[89h],1
 		jne	loc_23			; Jump if not equal
 		retn
 loc_23:
-		mov	word ptr ds:data_82e,0AAF4h
-		call	word ptr cs:data_50e
+		mov	word ptr ds:gvar_script_ptr,0AAF4h
+		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
 		mov	di,0AD30h
-		call	word ptr cs:data_51e
-		mov	si,ds:data_82e
+		call	word ptr cs:fmt_num_to_str
+		mov	si,ds:gvar_script_ptr
 		push	si
-		mov	word ptr ds:data_82e,0AD30h
-		call	word ptr cs:data_50e
+		mov	word ptr ds:gvar_script_ptr,0AD30h
+		call	word ptr cs:script_step
 		pop	si
-		mov	ds:data_82e,si
+		mov	ds:gvar_script_ptr,si
 		retn
 loc_24:
-		mov	word ptr ds:data_82e,0AB10h
+		mov	word ptr ds:gvar_script_ptr,0AB10h
 		retn
 			                        ;* No entry point to code
-		call	goblin_func_2
-		mov	byte ptr ds:data_68e,0
-		mov	si,data_59e
-		call	goblin_process_loop_2
-		mov	word ptr ds:data_82e,0AB32h
+		call	clear_dialog_area
+		mov	byte ptr ds:anim_active_flag,0
+		mov	si,welcome_text_ptr
+		call	draw_banner_8x5
+		mov	word ptr ds:gvar_script_ptr,0AB32h
 		mov	ax,word ptr ds:[89h]
 		mov	dl,byte ptr ds:[88h]
 		or	dl,al
@@ -401,28 +407,28 @@ loc_24:
 		jnz	loc_25			; Jump if not zero
 		retn
 loc_25:
-		mov	word ptr ds:data_82e,0AB80h
-		call	word ptr cs:data_50e
+		mov	word ptr ds:gvar_script_ptr,0AB80h
+		call	word ptr cs:script_step
 		mov	bx,2C1Dh
 		mov	cx,1237h
 		mov	al,0FFh
-		call	word ptr cs:data_39e
-		mov	word ptr ds:data_88e,2A20h
-		mov	byte ptr ds:data_86e,4
-		mov	byte ptr ds:data_87e,4
-		mov	byte ptr ds:data_89e,0
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_ui_dst_word,2A20h
+		mov	byte ptr ds:gvar_col_byte,4
+		mov	byte ptr ds:gvar_row_byte,4
+		mov	byte ptr ds:gvar_ui_misc_byte,0
 		mov	cx,4
-		mov	si,data_65e
-		call	word ptr cs:data_55e
-		mov	byte ptr ds:data_75e,0
-		mov	word ptr ds:data_76e,0
+		mov	si,menu_items_withdraw
+		call	word ptr cs:show_menu_items
+		mov	byte ptr ds:amount_hi,0
+		mov	word ptr ds:amount_lo,0
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
-		mov	ds:data_77e,dl
-		mov	ds:data_78e,ax
+		mov	ds:amount_max_hi,dl
+		mov	ds:amount_max_lo,ax
 loc_26:
-		mov	dl,ds:data_75e
-		mov	ax,ds:data_76e
+		mov	dl,ds:amount_hi
+		mov	ax,ds:amount_lo
 		push	dx
 		push	ax
 		mov	cl,byte ptr ds:[88h]
@@ -431,26 +437,26 @@ loc_26:
 		sbb	cl,dl
 		xchg	bx,ax
 		xchg	dl,cl
-		call	word ptr cs:data_49e
+		call	word ptr cs:drv_set_text_pos
 		mov	bx,312Eh
-		call	word ptr cs:data_48e
+		call	word ptr cs:drv_draw_string
 		pop	ax
 		pop	dx
-		call	word ptr cs:data_49e
+		call	word ptr cs:drv_set_text_pos
 		mov	bx,3148h
-		call	word ptr cs:data_48e
+		call	word ptr cs:drv_draw_string
 		int	61h			; ??INT Non-standard interrupt
-		call	goblin_func_3
+		call	adjust_amount_by_input
 		test	ah,1
 		jnz	loc_30			; Jump if not zero
-		mov	word ptr ds:data_82e,0AA48h
+		mov	word ptr ds:gvar_script_ptr,0AA48h
 		test	ah,2
 		jz	loc_27			; Jump if zero
 		retn
 loc_27:
 		or	al,al			; Zero ?
 		jnz	loc_28			; Jump if not zero
-		mov	byte ptr ds:data_79e,23h	; '#'
+		mov	byte ptr ds:input_repeat_delay,23h	; '#'
 		jmp	short loc_26
 loc_28:
 		mov	byte ptr ds:[0FF1Ah],0
@@ -458,145 +464,145 @@ loc_29:
 		int	61h			; ??INT Non-standard interrupt
 		or	al,al			; Zero ?
 		jz	loc_26			; Jump if zero
-		mov	al,ds:data_79e
+		mov	al,ds:input_repeat_delay
 		cmp	byte ptr ds:[0FF1Ah],al
 		jb	loc_29			; Jump if below
-		sub	byte ptr ds:data_79e,1
+		sub	byte ptr ds:input_repeat_delay,1
 		jnc	loc_26			; Jump if carry=0
-		mov	byte ptr ds:data_79e,1
+		mov	byte ptr ds:input_repeat_delay,1
 		jmp	short loc_26
 loc_30:
-		mov	word ptr ds:data_82e,0AA48h
-		mov	ax,ds:data_76e
-		mov	dl,ds:data_75e
+		mov	word ptr ds:gvar_script_ptr,0AA48h
+		mov	ax,ds:amount_lo
+		mov	dl,ds:amount_hi
 		mov	cl,dl
 		or	cl,al
 		or	cl,ah
 		jnz	loc_31			; Jump if not zero
 		retn
 loc_31:
-		mov	byte ptr ds:data_70e,0FFh
-		mov	word ptr ds:data_82e,0ABC1h
-		mov	dl,ds:data_75e
-		mov	ax,ds:data_76e
+		mov	byte ptr ds:checked_balance_flag,0FFh
+		mov	word ptr ds:gvar_script_ptr,0ABC1h
+		mov	dl,ds:amount_hi
+		mov	ax,ds:amount_lo
 		or	dl,dl			; Zero ?
 		jnz	loc_32			; Jump if not zero
 		cmp	ax,1
 		je	loc_33			; Jump if equal
 loc_32:
-		mov	word ptr ds:data_82e,0ABA4h
-		call	word ptr cs:data_50e
-		mov	dl,ds:data_75e
-		mov	ax,ds:data_76e
+		mov	word ptr ds:gvar_script_ptr,0ABA4h
+		call	word ptr cs:script_step
+		mov	dl,ds:amount_hi
+		mov	ax,ds:amount_lo
 		mov	di,0AD30h
-		call	word ptr cs:data_51e
-		mov	si,ds:data_82e
+		call	word ptr cs:fmt_num_to_str
+		mov	si,ds:gvar_script_ptr
 		push	si
-		mov	word ptr ds:data_82e,0AD30h
-		call	word ptr cs:data_50e
+		mov	word ptr ds:gvar_script_ptr,0AD30h
+		call	word ptr cs:script_step
 		pop	si
-		mov	ds:data_82e,si
+		mov	ds:gvar_script_ptr,si
 loc_33:
-		call	word ptr cs:data_50e
+		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
-		sub	ax,ds:data_76e
-		sbb	dl,ds:data_75e
+		sub	ax,ds:amount_lo
+		sbb	dl,ds:amount_hi
 		mov	byte ptr ds:[88h],dl
 		mov	word ptr ds:[89h],ax
-		mov	word ptr ds:data_82e,0ABDEh
+		mov	word ptr ds:gvar_script_ptr,0ABDEh
 		or	dl,ah
 		or	dl,al
 		jz	loc_35			; Jump if zero
-		mov	word ptr ds:data_82e,0AC35h
+		mov	word ptr ds:gvar_script_ptr,0AC35h
 		test	al,byte ptr ds:[88h]
 		jnz	loc_34			; Jump if not zero
 		cmp	word ptr ds:[89h],1
 		jne	loc_34			; Jump if not equal
 		retn
 loc_34:
-		mov	word ptr ds:data_82e,0AAF4h
-		call	word ptr cs:data_50e
+		mov	word ptr ds:gvar_script_ptr,0AAF4h
+		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
 		mov	di,0AD30h
-		call	word ptr cs:data_51e
-		mov	si,ds:data_82e
+		call	word ptr cs:fmt_num_to_str
+		mov	si,ds:gvar_script_ptr
 		push	si
-		mov	word ptr ds:data_82e,0AD30h
-		call	word ptr cs:data_50e
+		mov	word ptr ds:gvar_script_ptr,0AD30h
+		call	word ptr cs:script_step
 		pop	si
-		mov	ds:data_82e,si
+		mov	ds:gvar_script_ptr,si
 loc_35:
-		mov	dl,ds:data_75e
-		mov	ax,ds:data_76e
-		call	word ptr cs:data_54e
-		jmp	word ptr cs:data_44e
+		mov	dl,ds:amount_hi
+		mov	ax,ds:amount_lo
+		call	word ptr cs:commit_ledger_update
+		jmp	word ptr cs:drv_frame_commit
 			                        ;* No entry point to code
-		call	goblin_func_2
-		mov	word ptr ds:data_82e,0ABF7h
+		call	clear_dialog_area
+		mov	word ptr ds:gvar_script_ptr,0ABF7h
 		mov	al,byte ptr ds:[88h]
 		xor	ah,ah			; Zero register
 		or	ax,word ptr ds:[89h]
 		jnz	loc_36			; Jump if not zero
 		retn
 loc_36:
-		mov	byte ptr ds:data_70e,0FFh
-		mov	word ptr ds:data_82e,0AC35h
+		mov	byte ptr ds:checked_balance_flag,0FFh
+		mov	word ptr ds:gvar_script_ptr,0AC35h
 		test	al,byte ptr ds:[88h]
 		jnz	loc_37			; Jump if not zero
 		cmp	word ptr ds:[89h],1
 		jne	loc_37			; Jump if not equal
 		retn
 loc_37:
-		mov	word ptr ds:data_82e,0AC10h
-		call	word ptr cs:data_50e
+		mov	word ptr ds:gvar_script_ptr,0AC10h
+		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
 		mov	di,0AD30h
-		call	word ptr cs:data_51e
-		mov	si,ds:data_82e
+		call	word ptr cs:fmt_num_to_str
+		mov	si,ds:gvar_script_ptr
 		push	si
-		mov	word ptr ds:data_82e,0AD30h
-		call	word ptr cs:data_50e
+		mov	word ptr ds:gvar_script_ptr,0AD30h
+		call	word ptr cs:script_step
 		pop	si
-		mov	ds:data_82e,si
+		mov	ds:gvar_script_ptr,si
 		retn
 			                        ;* No entry point to code
-		mov	byte ptr ds:data_68e,0
-		mov	si,data_58e
-		call	goblin_func_7
-		mov	byte ptr ds:data_68e,0FFh
-		mov	word ptr ds:data_67e,0A773h
+		mov	byte ptr ds:anim_active_flag,0
+		mov	si,intro_text_ptr_list
+		call	iter_wait_msg_list
+		mov	byte ptr ds:anim_active_flag,0FFh
+		mov	word ptr ds:anim_src_ptr,0A773h
 		mov	byte ptr ds:[0FF1Ah],0
 loc_38:
-		call	goblin_multiply
+		call	anim_scroll_step
 		cmp	byte ptr ds:[0FF1Ah],64h	; 'd'
 		jb	loc_38			; Jump if below
 		retn
 			                        ;* No entry point to code
-		mov	byte ptr ds:data_71e,0FFh
+		mov	byte ptr ds:goodbye_flag,0FFh
 		retn
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-goblin_func_2		proc	near
+clear_dialog_area		proc	near
 		mov	bx,2717h
 		mov	cx,1C41h
 		xor	al,al			; Zero register
-		jmp	word ptr cs:data_39e
-goblin_func_2		endp
+		jmp	word ptr cs:drv_fill_rect
+clear_dialog_area		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-goblin_func_3		proc	near
-		mov	dl,ds:data_75e
-		mov	bx,ds:data_76e
+adjust_amount_by_input		proc	near
+		mov	dl,ds:amount_hi
+		mov	bx,ds:amount_lo
 		test	al,8
 		jz	loc_39			; Jump if zero
 		sub	bx,0Ah
@@ -611,12 +617,12 @@ loc_39:
 		add	bx,0Ah
 		adc	dl,0
 		mov	cx,bx
-		sub	cx,ds:data_78e
+		sub	cx,ds:amount_max_lo
 		mov	cl,dl
-		sbb	cl,ds:data_77e
+		sbb	cl,ds:amount_max_hi
 		jc	loc_42			; Jump if carry Set
-		mov	dl,ds:data_77e
-		mov	bx,ds:data_78e
+		mov	dl,ds:amount_max_hi
+		mov	bx,ds:amount_max_lo
 		jmp	short loc_42
 loc_40:
 		test	al,2
@@ -633,25 +639,25 @@ loc_41:
 		add	bx,1
 		adc	dl,0
 		mov	cx,bx
-		sub	cx,ds:data_78e
+		sub	cx,ds:amount_max_lo
 		mov	cl,dl
-		sbb	cl,ds:data_77e
+		sbb	cl,ds:amount_max_hi
 		jc	loc_42			; Jump if carry Set
-		mov	dl,ds:data_77e
-		mov	bx,ds:data_78e
+		mov	dl,ds:amount_max_hi
+		mov	bx,ds:amount_max_lo
 loc_42:
-		mov	ds:data_75e,dl
-		mov	ds:data_76e,bx
+		mov	ds:amount_hi,dl
+		mov	ds:amount_lo,bx
 		retn
-goblin_func_3		endp
+adjust_amount_by_input		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-goblin_process_loop		proc	near
-		mov	si,data_57e
+draw_intro_12x8		proc	near
+		mov	si,intro_tile_map
 		mov	bx,717h
 		mov	cx,8
 
@@ -663,7 +669,7 @@ locloop_44:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:data_47e
+		call	word ptr cs:drv_draw_glyph
 		pop	bx
 		inc	bh
 		pop	cx
@@ -675,7 +681,7 @@ locloop_44:
 		loop	locloop_43		; Loop if cx > 0
 
 		retn
-goblin_process_loop		endp
+draw_intro_12x8		endp
 
 		db	'lmnopqrstuvwxy'
 		db	 00h, 01h, 02h, 03h, 04h, 05h
@@ -694,35 +700,35 @@ goblin_process_loop		endp
 		db	 9Ch, 9Dh, 9Eh, 9Fh,0A0h,0A1h
 		db	0A2h,0A3h
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-goblin_multiply		proc	near
-		test	byte ptr ds:data_68e,0FFh
+anim_scroll_step		proc	near
+		test	byte ptr ds:anim_active_flag,0FFh
 		jnz	loc_45			; Jump if not zero
 		retn
 loc_45:
-		cmp	word ptr ds:data_85e,1Eh
+		cmp	word ptr ds:gvar_timer_word,1Eh
 		jae	loc_46			; Jump if above or =
 		retn
 loc_46:
-		mov	word ptr ds:data_85e,0
-		inc	byte ptr ds:data_69e
-		mov	al,ds:data_69e
+		mov	word ptr ds:gvar_timer_word,0
+		inc	byte ptr ds:anim_frame_counter
+		mov	al,ds:anim_frame_counter
 		and	al,1
 		mov	cl,28h			; '('
 		mul	cl			; ax = reg * al
 		mov	si,ax
-		add	si,ds:data_67e
-goblin_multiply		endp
+		add	si,ds:anim_src_ptr
+anim_scroll_step		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-goblin_process_loop_2		proc	near
+draw_banner_8x5		proc	near
 		mov	bx,91Fh
 		mov	cx,5
 
@@ -734,7 +740,7 @@ locloop_48:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:data_47e
+		call	word ptr cs:drv_draw_glyph
 		pop	bx
 		inc	bh
 		pop	cx
@@ -746,7 +752,7 @@ locloop_48:
 		loop	locloop_47		; Loop if cx > 0
 
 		retn
-goblin_process_loop_2		endp
+draw_banner_8x5		endp
 
 		db	 00h, 01h, 02h, 03h, 04h, 05h
 		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh
@@ -777,11 +783,11 @@ goblin_process_loop_2		endp
 		db	 18h, 19h
 		db	'bcdefg !"hi>jk'
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-goblin_func_7		proc	near
+iter_wait_msg_list		proc	near
 		mov	byte ptr ds:[0FF1Ah],0
 		lodsw				; String [si] to ax
 		cmp	ax,0FFFFh
@@ -790,12 +796,12 @@ goblin_func_7		proc	near
 loc_49:
 		push	si
 		mov	si,ax
-		call	goblin_process_loop_2
+		call	draw_banner_8x5
 		cmp	byte ptr ds:[0FF1Ah],28h	; '('
 		jb	$-5			; Jump if below
 		pop	si
 		jmp	short $-1Ah
-goblin_func_7		endp
+iter_wait_msg_list		endp
 
 			                        ;* No entry point to code
 		inc	bx
