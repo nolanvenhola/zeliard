@@ -2,10 +2,25 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  239DTATB - Data Tables Module (ZR2_39)
+;  239BSMP - Bosque Village Map Data Table (BSMP.MDT)
 ;
-;  NOTE: Original Sourcer disassembly (ZR2_39.ASM) had 7000+ errors.
-;  This version emits raw data bytes for bit-perfect output.
+;  Data-only resource file referenced by stick.asm entry 'BSMP.MDT'
+;  (zelres1 chunk 0x28).  Loaded by the town engine when the player
+;  enters Bosque Village.
+;
+;  NOT code.  Original Sourcer disassembly (ZR2_39.ASM) produced 7000+
+;  errors because the bytes are pure data, not x86 instructions.
+;
+;  File layout:
+;    [0x000]  header (size word + section word + exec-segment ptr table)
+;    [0x01C]  zero padding
+;    [0x034]  tilemap pages (forest/village tiles, fountain, walls)
+;    [0x4DB]  event/door header
+;    [0x4E8]  town name "Bosque village" (length-prefixed, 0x0E = 14)
+;    [0x4F6]  door/exit + dialog-header bytes
+;    [0x51C]  dialog pointer table (15 word offsets into dialog block)
+;    [0x53A]  NPC dialog strings (separated by 0xFF terminators)
+;    [0xCFA]  event trigger script (ends in FF FF)
 ;
 ;==========================================================================
 
@@ -16,226 +31,472 @@ include  srmacros.inc
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
-start:
-		db	056h,00Dh,000h,000h,0DBh,0C4h,098h,000h,0E0h,0C4h,003h,0F2h,0C4h,0F2h,0C4h,009h
-		db	0C5h,020h,0C5h,0F4h,0CCh,0D7h,0C4h,03Ch,000h,013h,0C5h,000h,000h,000h,000h,000h
-		db	000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h
-		db	000h,000h,000h,096h,097h,097h,097h,097h,097h,097h,097h,0A8h,0BCh,0BEh,0C0h,0C2h
-		db	0C4h,0C6h,0C8h,0A9h,0BDh,0BFh,0C1h,0C3h,0C5h,0C7h,0C9h,0AAh,0C9h,0CBh,0BCh,0CCh
-		db	0CCh,0CCh,0CCh,0B0h,0CAh,0CAh,0BCh,0CCh,0D3h,0D4h,0D4h,0B1h,0A7h,0C1h,0BCh,0CCh
-		db	0D1h,0D2h,0D2h,000h,0B6h,0C6h,0BDh,0CCh,0CCh,0CCh,0CCh,000h,0B7h,0AEh,0BEh,0C5h
-		db	0C6h,0C0h,0C2h,000h,000h,0B1h,0BAh,0C8h,0C3h,0C9h,0CAh,000h,000h,000h,0B5h,0C3h
-		db	0C9h,0BEh,0C5h,000h,000h,000h,000h,09Ch,0C9h,0BFh,0C6h,000h,000h,000h,000h,0B2h
-		db	0B4h,0C0h,0C7h,000h,000h,000h,000h,0B3h,0B5h,0C1h,0C8h,000h,000h,000h,000h,000h
-		db	000h,09Ch,0C9h,000h,000h,000h,000h,000h,000h,0BBh,0BAh,000h,000h,000h,000h,000h
-		db	000h,000h,0B9h,000h,065h,068h,06Ch,06Ch,070h,074h,000h,063h,066h,069h,06Dh,06Dh
-		db	071h,075h,077h,064h,085h,089h,085h,089h,08Eh,08Eh,092h,079h,07Dh,081h,085h,08Ah
-		db	085h,091h,093h,07Ah,07Eh,082h,086h,08Bh,08Fh,08Eh,094h,07Bh,07Fh,083h,087h,08Ch
-		db	08Ch,08Eh,092h,07Ch,080h,084h,088h,08Dh,08Dh,091h,093h,07Ah,07Eh,084h,085h,089h
-		db	08Dh,08Eh,094h,07Bh,081h,085h,086h,08Ah,090h,08Eh,092h,064h,06Ah,086h,087h,08Bh
-		db	088h,091h,093h,000h,06Bh,06Ah,088h,08Ch,08Bh,076h,078h,000h,000h,06Bh,06Fh,072h
-		db	06Fh,000h,000h,000h,000h,00Bh,014h,014h,014h,014h,014h,000h,003h,00Ch,015h,015h
-		db	015h,015h,015h,000h,004h,00Dh,016h,016h,016h,016h,016h,000h,005h,00Dh,016h,016h
-		db	016h,016h,016h,000h,006h,00Dh,016h,051h,016h,016h,016h,000h,006h,00Dh,016h,052h
-		db	01Ch,01Ch,01Ch,000h,006h,00Dh,016h,053h,001h,001h,001h,000h,006h,00Dh,016h,054h
-		db	016h,016h,016h,000h,006h,00Eh,018h,018h,018h,018h,018h,000h,007h,00Fh,019h,019h
-		db	019h,019h,019h,000h,008h,010h,019h,019h,019h,019h,019h,000h,009h,011h,019h,01Dh
-		db	01Dh,019h,019h,000h,05Eh,05Dh,019h,019h,019h,019h,019h,000h,000h,013h,01Bh,01Bh
-		db	01Bh,01Bh,01Bh,000h,065h,068h,06Ch,070h,073h,000h,000h,063h,066h,069h,06Dh,071h
-		db	071h,074h,000h,064h,067h,089h,089h,089h,06Eh,075h,077h,079h,07Dh,081h,085h,08Ah
-		db	08Eh,092h,092h,07Ah,07Eh,082h,086h,08Bh,08Dh,091h,093h,07Bh,07Fh,083h,087h,08Ch
-		db	08Eh,08Eh,092h,07Ch,080h,084h,088h,08Ch,08Ah,091h,092h,000h,080h,085h,081h,086h
-		db	08Bh,090h,094h,063h,066h,085h,084h,088h,08Dh,091h,095h,064h,067h,06Ah,06Eh,06Eh
-		db	06Eh,076h,078h,000h,000h,06Bh,06Fh,072h,06Fh,072h,000h,000h,000h,0D7h,0DDh,000h
-		db	000h,000h,000h,000h,000h,0D8h,0DEh,0E6h,0E6h,0E6h,0E4h,000h,000h,0D8h,0DFh,0E6h
-		db	0E6h,0E6h,0E5h,000h,000h,0D8h,0DEh,0E4h,0E6h,0E6h,0E6h,000h,000h,0D8h,0DFh,0E5h
-		db	0E8h,0E8h,0E8h,000h,000h,0D8h,0DEh,0E4h,001h,001h,001h,000h,000h,0D8h,0DFh,0E5h
-		db	001h,001h,001h,000h,000h,0D8h,0DEh,0E4h,0E9h,0E9h,0E9h,000h,002h,0D9h,0E0h,0E5h
-		db	0EAh,0EAh,0EAh,000h,000h,0DAh,0E1h,0EFh,0EFh,0EEh,0ECh,000h,000h,0DBh,0E1h,0EFh
-		db	0EEh,0EFh,0EDh,000h,000h,0DBh,0E1h,0EFh,0EFh,0EFh,0EEh,000h,000h,0DCh,0E3h,000h
-		db	000h,000h,000h,000h,065h,068h,000h,06Ch,070h,073h,000h,063h,066h,069h,070h,06Dh
-		db	08Dh,075h,077h,079h,07Dh,081h,08Bh,085h,088h,08Eh,094h,07Ah,07Eh,082h,086h,08Bh
-		db	08Fh,08Eh,094h,07Bh,07Fh,083h,087h,08Ch,090h,091h,095h,07Ch,080h,084h,088h,08Dh
-		db	088h,08Eh,092h,064h,081h,085h,06Eh,089h,089h,076h,078h,000h,000h,06Bh,06Fh,072h
-		db	072h,000h,000h,000h,000h,0D7h,023h,023h,023h,023h,023h,000h,000h,0D8h,022h,022h
-		db	022h,022h,022h,000h,000h,0D8h,022h,022h,022h,022h,022h,000h,000h,0D8h,022h,055h
-		db	022h,022h,022h,000h,000h,0D8h,022h,056h,01Ch,01Ch,01Ch,000h,000h,0D8h,022h,057h
-		db	001h,001h,001h,000h,000h,0D9h,022h,058h,022h,022h,022h,000h,000h,0DAh,024h,024h
-		db	024h,024h,024h,000h,000h,0DBh,024h,024h,024h,024h,024h,000h,000h,0DBh,024h,024h
-		db	024h,024h,024h,000h,000h,0DCh,025h,025h,025h,025h,025h,000h,000h,000h,000h,06Ch
-		db	070h,074h,000h,000h,000h,063h,06Dh,06Dh,071h,075h,077h,000h,000h,064h,06Eh,06Eh
-		db	089h,076h,078h,000h,000h,000h,000h,06Fh,072h,000h,000h,000h,000h,000h,05Fh,014h
-		db	014h,014h,014h,000h,000h,003h,062h,01Fh,01Fh,01Fh,020h,000h,000h,004h,00Dh,01Fh
-		db	01Fh,01Fh,020h,000h,000h,005h,00Dh,04Dh,01Fh,01Fh,020h,000h,000h,006h,00Dh,04Eh
-		db	01Ch,01Ch,01Ch,000h,000h,006h,00Dh,04Fh,001h,001h,001h,000h,000h,006h,00Dh,050h
-		db	01Fh,01Fh,020h,000h,000h,006h,00Eh,018h,018h,018h,018h,000h,000h,007h,00Fh,019h
-		db	019h,019h,019h,000h,000h,008h,010h,019h,019h,019h,019h,000h,000h,009h,011h,019h
-		db	019h,019h,019h,000h,000h,05Eh,060h,019h,019h,019h,019h,000h,000h,000h,061h,01Bh
-		db	01Bh,01Bh,01Ah,000h,063h,066h,06Dh,06Dh,071h,075h,077h,000h,064h,067h,06Eh,071h
-		db	071h,076h,078h,000h,000h,000h,06Fh,072h,06Fh,072h,000h,000h,000h,00Bh,014h,014h
-		db	014h,014h,014h,000h,003h,00Ch,015h,015h,015h,015h,015h,000h,004h,00Dh,016h,016h
-		db	016h,016h,016h,000h,005h,00Dh,016h,016h,016h,016h,016h,000h,006h,00Dh,016h,016h
-		db	016h,016h,016h,000h,006h,00Dh,016h,059h,017h,017h,017h,000h,006h,00Dh,016h,05Ah
-		db	01Ch,01Ch,01Ch,000h,006h,00Dh,016h,05Bh,001h,001h,001h,000h,006h,00Dh,016h,05Ch
-		db	016h,016h,016h,000h,006h,00Dh,016h,016h,016h,016h,016h,000h,006h,00Eh,018h,018h
-		db	018h,018h,018h,000h,007h,00Fh,019h,019h,019h,019h,019h,000h,008h,010h,019h,01Ah
-		db	01Ah,019h,019h,000h,009h,011h,019h,01Dh,01Dh,019h,019h,002h,00Ah,012h,019h,019h
-		db	019h,019h,019h,000h,000h,013h,01Bh,01Bh,01Bh,01Bh,01Bh,000h,000h,000h,06Ch,06Ch
-		db	073h,000h,000h,000h,065h,069h,06Dh,06Dh,08Dh,074h,000h,000h,066h,089h,085h,08Dh
-		db	08Dh,075h,077h,07Ch,080h,084h,088h,089h,08Eh,08Eh,094h,000h,064h,06Ah,08Ch,089h
-		db	087h,08Bh,093h,000h,000h,06Bh,06Eh,08Ch,06Eh,076h,078h,000h,000h,000h,000h,072h
-		db	06Fh,072h,000h,000h,000h,000h,000h,000h,000h,09Bh,099h,000h,000h,000h,000h,000h
-		db	000h,09Ch,09Ah,000h,000h,000h,000h,000h,099h,0BCh,0BEh,000h,000h,000h,000h,099h
-		db	0BCh,0BDh,0BFh,000h,000h,000h,099h,09Ah,0BCh,0C0h,0C2h,000h,000h,0A2h,09Ah,0BCh
-		db	0BEh,0C1h,0C3h,000h,000h,0A3h,0C0h,0BDh,0BFh,0C1h,0C6h,000h,0ACh,0ADh,0C1h,0C2h
-		db	0C2h,0C5h,0C7h,000h,0A9h,0C8h,0C2h,0C6h,0C3h,0C8h,0BFh,000h,0A8h,0C9h,0CBh,0BFh
-		db	0C4h,0C9h,0CBh,000h,0A9h,0BCh,0BEh,0CCh,0CCh,0CCh,0CCh,000h,0A6h,0BDh,0BFh,0CCh
-		db	0CDh,0CEh,0CEh,0A5h,0A7h,0C0h,0C2h,0CCh,0CFh,0D0h,0D0h,000h,0A0h,0C1h,0C3h,0CCh
-		db	0CCh,0CCh,0CCh,0A2h,0A4h,0C4h,0C6h,0BFh,0CAh,0BFh,0C5h,09Fh,0A1h,0C5h,0C7h,0C6h
-		db	0C5h,0C5h,0CAh,0A0h,0C4h,0C8h,0CAh,0CAh,0BFh,0CAh,0CAh,096h,097h,097h,097h,097h
-		db	097h,097h,097h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h
-		db	000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,043h,000h,07Bh,000h,004h
-		db	000h,0FFh,000h,001h,018h,0AFh,000h,00Eh,042h,06Fh,073h,071h,075h,065h,020h,076h
-		db	069h,06Ch,06Ch,061h,067h,065h,007h,000h,009h,024h,000h,006h,03Dh,000h,002h,051h
-		db	000h,004h,060h,000h,003h,072h,000h,007h,08Eh,000h,008h,0FFh,0FFh,0B9h,000h,013h
-		db	000h,005h,095h,000h,00Eh,001h,006h,012h,000h,008h,0FAh,0CCh,080h,0FBh,0CCh,00Eh
-		db	0FFh,0FFh,0FFh,0FFh,03Eh,0C5h,005h,0C6h,093h,0C6h,095h,0C7h,0FAh,0C7h,046h,0C8h
-		db	0F9h,0C8h,0B3h,0C9h,03Eh,0CAh,019h,0CBh,08Dh,0CBh,0FAh,0CBh,028h,0CCh,05Ah,0CCh
-		db	0B5h,0CCh,057h,065h,06Ch,063h,06Fh,06Dh,065h,020h,074h,06Fh,020h,042h,06Fh,073h
-		db	071h,075h,065h,020h,056h,069h,06Ch,06Ch,061h,067h,065h,02Ch,020h,062h,072h,061h
-		db	076h,065h,020h,077h,061h,072h,072h,069h,06Fh,072h,02Eh,020h,054h,068h,069h,073h
-		db	020h,06Fh,06Eh,063h,065h,020h,077h,061h,073h,020h,061h,020h,066h,06Fh,072h,065h
-		db	073h,074h,020h,073h,075h,072h,072h,06Fh,075h,06Eh,064h,069h,06Eh,067h,020h,061h
-		db	020h,074h,065h,06Dh,070h,06Ch,065h,02Ch,020h,062h,075h,074h,020h,074h,068h,065h
-		db	020h,074h,065h,06Dh,070h,06Ch,065h,020h,077h,061h,073h,020h,064h,065h,073h,074h
-		db	072h,06Fh,079h,065h,064h,020h,062h,079h,020h,04Ah,061h,073h,068h,069h,069h,06Eh
-		db	02Eh,020h,04Eh,06Fh,077h,020h,074h,068h,065h,020h,076h,069h,06Ch,06Ch,061h,067h
-		db	065h,020h,06Fh,066h,020h,042h,06Fh,073h,071h,075h,065h,020h,069h,073h,020h,064h
-		db	065h,073h,06Fh,06Ch,061h,074h,065h,02Eh,020h,049h,020h,068h,06Fh,070h,065h,020h
-		db	079h,06Fh,075h,020h,061h,072h,065h,020h,068h,065h,072h,065h,020h,074h,06Fh,020h
-		db	068h,065h,06Ch,070h,020h,075h,073h,02Eh,0FFh,04Ch,069h,073h,074h,065h,06Eh,02Ch
-		db	020h,073h,074h,072h,061h,06Eh,067h,065h,072h,02Ch,020h,061h,020h,073h,065h,06Eh
-		db	074h,072h,079h,020h,069h,073h,020h,070h,06Fh,073h,074h,065h,064h,020h,06Fh,06Eh
-		db	020h,074h,068h,065h,020h,06Fh,075h,074h,073h,06Bh,069h,072h,074h,073h,020h,06Fh
-		db	066h,020h,074h,068h,065h,020h,063h,069h,074h,079h,02Eh,020h,049h,05Ch,06Dh,020h
-		db	074h,065h,06Ch,06Ch,069h,06Eh,067h,020h,079h,06Fh,075h,020h,074h,068h,069h,073h
-		db	020h,066h,06Fh,072h,020h,079h,06Fh,075h,072h,020h,06Fh,077h,06Eh,020h,067h,06Fh
-		db	06Fh,064h,03Bh,020h,069h,074h,05Ch,073h,020h,062h,065h,073h,074h,020h,074h,06Fh
-		db	020h,073h,074h,061h,079h,020h,061h,077h,061h,079h,020h,066h,072h,06Fh,06Dh,020h
-		db	074h,068h,065h,072h,065h,02Eh,0FFh,054h,068h,065h,020h,074h,065h,06Dh,070h,06Ch
-		db	065h,020h,074h,068h,061h,074h,020h,06Fh,06Eh,063h,065h,020h,073h,074h,06Fh,06Fh
-		db	064h,020h,068h,065h,072h,065h,020h,068h,061h,064h,020h,074h,068h,065h,020h,063h
-		db	072h,065h,073h,074h,020h,06Fh,066h,020h,074h,068h,065h,020h,057h,061h,072h,072h
-		db	069h,06Fh,072h,020h,047h,06Fh,064h,020h,063h,061h,072h,076h,065h,064h,020h,069h
-		db	06Eh,074h,06Fh,020h,069h,074h,02Eh,020h,057h,069h,06Eh,06Eh,065h,072h,073h,020h
-		db	06Fh,066h,020h,074h,068h,065h,020h,06Dh,061h,072h,074h,069h,061h,06Ch,020h,061h
-		db	072h,074h,073h,020h,063h,06Fh,06Dh,070h,065h,074h,069h,074h,069h,06Fh,06Eh,073h
-		db	020h,068h,065h,06Ch,064h,020h,069h,06Eh,020h,066h,072h,06Fh,06Eh,074h,020h,06Fh
-		db	066h,020h,074h,068h,065h,020h,074h,065h,06Dh,070h,06Ch,065h,020h,077h,065h,072h
-		db	065h,020h,061h,077h,061h,072h,064h,065h,064h,020h,077h,069h,074h,068h,020h,073h
-		db	075h,063h,068h,020h,063h,072h,065h,073h,074h,073h,02Eh,020h,054h,068h,075h,073h
-		db	020h,074h,068h,065h,020h,063h,072h,065h,073h,074h,02Ch,020h,074h,068h,065h,020h
-		db	073h,079h,06Dh,062h,06Fh,06Ch,020h,06Fh,066h,020h,061h,020h,074h,072h,075h,065h
-		db	020h,068h,065h,072h,06Fh,02Ch,020h,062h,065h,063h,061h,06Dh,065h,020h,06Bh,06Eh
-		db	06Fh,077h,06Eh,020h,061h,073h,020h,074h,068h,065h,020h,048h,065h,072h,06Fh,05Ch
-		db	073h,020h,043h,072h,065h,073h,074h,02Eh,0FFh,057h,068h,065h,06Eh,020h,068h,065h
-		db	020h,064h,065h,073h,074h,072h,06Fh,079h,065h,064h,020h,074h,068h,065h,020h,074h
-		db	065h,06Dh,070h,06Ch,065h,02Ch,020h,04Ah,061h,073h,068h,069h,069h,06Eh,020h,073h
-		db	074h,06Fh,06Ch,065h,020h,074h,068h,065h,020h,048h,065h,072h,06Fh,05Ch,073h,020h
-		db	043h,072h,065h,073h,074h,02Eh,020h,020h,04Eh,06Fh,020h,06Fh,06Eh,065h,020h,068h
-		db	061h,073h,020h,061h,06Eh,079h,020h,069h,064h,065h,061h,020h,077h,068h,065h,072h
-		db	065h,020h,074h,06Fh,020h,066h,069h,06Eh,064h,020h,069h,074h,02Eh,0FFh,054h,068h
-		db	065h,020h,063h,072h,065h,073h,074h,020h,06Dh,075h,073h,074h,020h,062h,065h,020h
-		db	068h,069h,064h,064h,065h,06Eh,020h,073h,06Fh,06Dh,065h,077h,068h,065h,072h,065h
-		db	020h,069h,06Eh,020h,074h,068h,065h,020h,066h,06Fh,072h,065h,073h,074h,02Ch,020h
-		db	062h,075h,074h,020h,049h,020h,063h,06Fh,075h,06Ch,064h,06Eh,05Ch,074h,020h,073h
-		db	061h,079h,020h,077h,068h,065h,072h,065h,02Eh,0FFh,057h,068h,065h,06Eh,020h,074h
-		db	068h,065h,020h,074h,065h,06Dh,070h,06Ch,065h,020h,077h,061h,073h,020h,064h,065h
-		db	073h,074h,072h,06Fh,079h,065h,064h,020h,049h,020h,068h,065h,061h,072h,064h,020h
-		db	04Ah,061h,073h,068h,069h,069h,06Eh,020h,06Fh,072h,064h,065h,072h,069h,06Eh,067h
-		db	020h,068h,069h,073h,020h,075h,06Eh,064h,065h,072h,06Ch,069h,06Eh,067h,073h,020h
-		db	074h,06Fh,020h,068h,069h,064h,065h,020h,074h,068h,065h,020h,063h,072h,065h,073h
-		db	074h,020h,069h,06Eh,020h,074h,068h,065h,020h,074h,072h,075h,06Eh,06Bh,020h,06Fh
-		db	066h,020h,074h,068h,065h,020h,062h,069h,067h,067h,065h,073h,074h,020h,074h,072h
-		db	065h,065h,02Eh,020h,054h,068h,061h,074h,020h,06Dh,075h,073h,074h,020h,062h,065h
-		db	020h,077h,068h,065h,072h,065h,020h,069h,074h,020h,069h,073h,020h,068h,069h,064h
-		db	064h,065h,06Eh,02Eh,020h,049h,020h,068h,06Fh,070h,065h,020h,079h,06Fh,075h,020h
-		db	063h,061h,06Eh,020h,066h,069h,06Eh,064h,020h,069h,074h,02Eh,0FFh,041h,020h,073h
-		db	070h,069h,072h,069h,074h,020h,061h,070h,070h,065h,061h,072h,065h,064h,020h,061h
-		db	06Eh,064h,020h,074h,06Fh,06Ch,064h,020h,06Dh,065h,020h,074h,06Fh,020h,073h,061h
-		db	079h,020h,074h,068h,069h,073h,020h,069h,066h,020h,049h,020h,06Dh,065h,074h,020h
-		db	061h,020h,062h,072h,061h,076h,065h,020h,06Dh,061h,06Eh,03Ah,020h,022h,049h,066h
-		db	020h,079h,06Fh,075h,020h,067h,06Fh,020h,074h,068h,072h,06Fh,075h,067h,068h,020h
-		db	074h,068h,065h,020h,064h,06Fh,06Fh,072h,020h,074h,06Fh,020h,074h,068h,065h,020h
-		db	072h,069h,067h,068h,074h,020h,06Fh,066h,020h,074h,068h,065h,020h,074h,072h,065h
-		db	065h,020h,074h,068h,061h,074h,020h,066h,06Fh,072h,06Dh,073h,020h,061h,020h,063h
-		db	072h,06Fh,073h,073h,02Ch,020h,079h,06Fh,075h,020h,077h,069h,06Ch,06Ch,020h,062h
-		db	065h,020h,061h,062h,06Ch,065h,020h,074h,06Fh,020h,067h,06Fh,020h,075h,070h,02Eh
-		db	022h,02Fh,049h,026h,068h,06Fh,070h,065h,020h,069h,074h,020h,068h,065h,06Ch,070h
-		db	073h,020h,079h,06Fh,075h,02Eh,0FFh,049h,020h,068h,061h,076h,065h,020h,073h,06Fh
-		db	06Dh,065h,020h,061h,064h,076h,069h,063h,065h,020h,066h,06Fh,072h,020h,079h,06Fh
-		db	075h,03Ah,020h,042h,065h,020h,063h,061h,072h,065h,066h,075h,06Ch,020h,069h,066h
-		db	020h,079h,06Fh,075h,020h,063h,06Fh,06Dh,065h,020h,074h,06Fh,020h,061h,020h,070h
-		db	06Ch,061h,063h,065h,020h,077h,068h,065h,072h,065h,020h,074h,068h,065h,020h,06Ch
-		db	065h,061h,076h,065h,073h,020h,06Fh,066h,020h,074h,068h,065h,020h,074h,072h,065h
-		db	065h,073h,020h,061h,072h,065h,020h,074h,068h,069h,06Eh,02Eh,020h,054h,068h,065h
-		db	020h,067h,072h,06Fh,075h,06Eh,064h,020h,074h,068h,065h,072h,065h,020h,069h,073h
-		db	020h,06Eh,06Fh,074h,020h,076h,065h,072h,079h,020h,073h,074h,072h,06Fh,06Eh,067h
-		db	02Eh,0FFh,054h,068h,065h,020h,073h,065h,06Eh,074h,072h,079h,020h,061h,074h,020h
-		db	074h,068h,065h,020h,065h,064h,067h,065h,020h,06Fh,066h,020h,074h,06Fh,077h,06Eh
-		db	020h,073h,061h,079h,073h,020h,074h,068h,065h,020h,053h,070h,069h,072h,069h,074h
-		db	073h,020h,063h,061h,06Dh,065h,020h,074h,06Fh,020h,068h,069h,06Dh,020h,069h,06Eh
-		db	020h,061h,020h,064h,072h,065h,061h,06Dh,02Ch,020h,061h,06Eh,064h,020h,074h,06Fh
-		db	06Ch,064h,020h,068h,069h,06Dh,020h,06Eh,06Fh,074h,020h,074h,06Fh,020h,061h,06Ch
-		db	06Ch,06Fh,077h,020h,061h,06Eh,079h,06Fh,06Eh,065h,020h,074h,06Fh,020h,070h,061h
-		db	073h,073h,020h,075h,06Eh,06Ch,065h,073h,073h,020h,074h,068h,065h,079h,020h,062h
-		db	065h,061h,072h,020h,074h,068h,065h,020h,048h,065h,072h,06Fh,05Ch,073h,020h,043h
-		db	072h,065h,073h,074h,02Eh,020h,049h,020h,077h,06Fh,06Eh,064h,065h,072h,020h,069h
-		db	066h,020h,074h,068h,065h,020h,053h,070h,069h,072h,069h,074h,073h,020h,072h,065h
-		db	061h,06Ch,06Ch,079h,020h,06Fh,072h,064h,065h,072h,065h,064h,020h,073h,075h,063h
-		db	068h,020h,061h,020h,074h,068h,069h,06Eh,067h,03Fh,020h,050h,065h,072h,068h,061h
-		db	070h,073h,020h,068h,065h,05Ch,073h,020h,06Dh,061h,064h,02Eh,0FFh,041h,020h,066h
-		db	065h,077h,020h,068h,061h,076h,065h,020h,073h,06Ch,069h,070h,070h,065h,064h,020h
-		db	062h,079h,020h,074h,068h,065h,020h,073h,065h,06Eh,074h,072h,079h,020h,075h,06Eh
-		db	064h,065h,074h,065h,063h,074h,065h,064h,02Ch,020h,062h,075h,074h,020h,06Eh,06Fh
-		db	06Eh,065h,020h,068h,061h,076h,065h,020h,072h,065h,074h,075h,072h,06Eh,065h,064h
-		db	02Eh,020h,054h,068h,065h,072h,065h,020h,06Dh,075h,073h,074h,020h,062h,065h,020h
-		db	073h,06Fh,06Dh,065h,020h,074h,065h,072h,072h,069h,062h,06Ch,065h,020h,06Dh,06Fh
-		db	06Eh,073h,074h,065h,072h,020h,06Fh,075h,074h,020h,074h,068h,065h,072h,065h,02Eh
-		db	0FFh,054h,068h,061h,074h,020h,073h,065h,06Eh,074h,072h,079h,020h,06Dh,075h,073h
-		db	074h,020h,068h,061h,076h,065h,020h,073h,06Fh,06Ch,064h,020h,068h,069h,073h,020h
-		db	073h,06Fh,075h,06Ch,020h,074h,06Fh,020h,04Ah,061h,073h,068h,069h,069h,06Eh,02Eh
-		db	020h,057h,068h,079h,020h,065h,06Ch,073h,065h,020h,077h,06Fh,075h,06Ch,064h,020h
-		db	068h,065h,020h,069h,06Eh,074h,065h,072h,066h,065h,072h,065h,020h,077h,069h,074h
-		db	068h,020h,062h,072h,061h,076h,065h,020h,06Dh,065h,06Eh,020h,073h,075h,063h,068h
-		db	020h,061h,073h,020h,079h,06Fh,075h,072h,073h,065h,06Ch,066h,03Fh,0FFh,048h,06Fh
-		db	06Ch,064h,020h,06Fh,06Eh,020h,074h,068h,065h,072h,065h,021h,020h,044h,06Fh,020h
-		db	079h,06Fh,075h,020h,068h,061h,076h,065h,020h,074h,068h,065h,020h,048h,065h,072h
-		db	06Fh,05Ch,073h,020h,043h,072h,065h,073h,074h,03Fh,020h,081h,044h,06Fh,06Eh,05Ch
-		db	074h,020h,06Ch,069h,065h,02Ch,020h,069h,074h,020h,077h,06Fh,06Eh,05Ch,074h,020h
-		db	064h,06Fh,020h,061h,06Eh,079h,020h,067h,06Fh,06Fh,064h,02Eh,020h,047h,065h,074h
-		db	020h,06Fh,075h,074h,020h,06Fh,066h,020h,068h,065h,072h,065h,021h,0FFh,059h,06Fh
-		db	075h,020h,063h,061h,06Eh,06Eh,06Fh,074h,020h,070h,061h,073h,073h,020h,068h,065h
-		db	072h,065h,020h,077h,069h,074h,068h,06Fh,075h,074h,020h,074h,068h,065h,020h,048h
-		db	065h,072h,06Fh,05Ch,073h,020h,043h,072h,065h,073h,074h,02Eh,020h,04Dh,079h,020h
-		db	06Fh,072h,064h,065h,072h,073h,020h,061h,072h,065h,020h,066h,072h,06Fh,06Dh,020h
-		db	074h,068h,065h,020h,053h,070h,069h,072h,069h,074h,073h,020h,074h,068h,065h,06Dh
-		db	073h,065h,06Ch,076h,065h,073h,021h,020h,0FFh,048h,06Fh,06Ch,064h,020h,06Fh,06Eh
-		db	020h,074h,068h,065h,072h,065h,021h,020h,059h,06Fh,075h,020h,068h,061h,076h,065h
-		db	020h,074h,068h,065h,020h,048h,065h,072h,06Fh,05Ch,073h,020h,043h,072h,065h,073h
-		db	074h,02Ch,020h,049h,020h,073h,065h,065h,02Eh,020h,059h,06Fh,075h,020h,06Dh,061h
-		db	079h,020h,070h,061h,073h,073h,02Eh,0FFh,009h,000h,001h,0CCh,000h,004h,0C0h,00Bh
-		db	065h,000h,081h,019h,000h,000h,000h,002h,015h,000h,004h,08Eh,000h,005h,000h,00Ah
-		db	06Bh,000h,004h,06Fh,000h,005h,000h,006h,057h,000h,084h,025h,000h,006h,000h,004h
-		db	083h,000h,000h,000h,003h,003h,000h,000h,04Fh,000h,000h,022h,000h,001h,000h,001h
-		db	05Ah,000h,000h,089h,000h,002h,000h,007h,02Ch,000h,000h,01Bh,003h,003h,000h,008h
-		db	044h,000h,000h,000h,000h,005h,000h,005h,059h,000h,002h,08Bh,003h,003h,000h,003h
-		db	020h,000h,002h,015h,000h,006h,000h,009h,0FFh,0FFh
+bsmp_start:
+
+; --------------------------------------------------------------------------
+; File header + exec-segment pointer table
+;   dw  0x0D56  = data size (file_size - 4 = 3414)
+;   dw  0x0000  = flag/section word
+;   followed by word pointers into code segment 0xC4xx / 0xC5xx / 0xCCxx
+;   (handler addresses inside the town program 209BOSQE)
+; --------------------------------------------------------------------------
+
+mdt_header:
+		db	056h, 00Dh, 000h, 000h			; size = 0x0D56, flags = 0
+		db	0DBh, 0C4h, 098h, 000h			; exec ptr table
+		db	0E0h, 0C4h, 003h, 0F2h
+		db	0C4h, 0F2h, 0C4h, 009h
+		db	0C5h, 020h, 0C5h, 0F4h
+		db	0CCh, 0D7h, 0C4h, 03Ch
+		db	000h, 013h, 0C5h, 000h
+
+; --------------------------------------------------------------------------
+; Zero padding before first tilemap page
+; --------------------------------------------------------------------------
+
+header_pad:
+		db	20 dup (0)
+		db	000h, 000h, 000h
+
+; --------------------------------------------------------------------------
+; Tilemap page 0 - village fountain / archway tiles
+;   16 cols x 11 rows, indices into tile graphics set
+; --------------------------------------------------------------------------
+
+tilemap_page_0:
+		db	096h, 097h, 097h, 097h, 097h, 097h, 097h, 097h
+		db	0A8h, 0BCh, 0BEh, 0C0h, 0C2h, 0C4h, 0C6h, 0C8h
+		db	0A9h, 0BDh, 0BFh, 0C1h, 0C3h, 0C5h, 0C7h, 0C9h
+		db	0AAh, 0C9h, 0CBh, 0BCh, 0CCh, 0CCh, 0CCh, 0CCh
+		db	0B0h, 0CAh, 0CAh, 0BCh, 0CCh, 0D3h, 0D4h, 0D4h
+		db	0B1h, 0A7h, 0C1h, 0BCh, 0CCh, 0D1h, 0D2h, 0D2h
+		db	000h, 0B6h, 0C6h, 0BDh, 0CCh, 0CCh, 0CCh, 0CCh
+		db	000h, 0B7h, 0AEh, 0BEh, 0C5h, 0C6h, 0C0h, 0C2h
+		db	000h, 000h, 0B1h, 0BAh, 0C8h, 0C3h, 0C9h, 0CAh
+		db	000h, 000h, 000h, 0B5h, 0C3h, 0C9h, 0BEh, 0C5h
+		db	000h, 000h, 000h, 000h, 09Ch, 0C9h, 0BFh, 0C6h
+		db	000h, 000h, 000h, 000h, 0B2h, 0B4h, 0C0h, 0C7h
+		db	000h, 000h, 000h, 000h, 0B3h, 0B5h, 0C1h, 0C8h
+		db	000h, 000h, 000h, 000h, 000h, 000h, 09Ch, 0C9h
+		db	000h, 000h, 000h, 000h, 000h, 000h, 0BBh, 0BAh
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 0B9h
+		db	000h
+
+; --------------------------------------------------------------------------
+; Tilemap page 1 - character glyph row ('e','h','l','l','p','t'...)
+; Used as a template row for one of the village houses.
+; --------------------------------------------------------------------------
+
+tilemap_page_1:
+		db	'ehllpt', 0
+		db	'cfimmquw'
+		db	 64h				; 'd'
+		db	 85h, 89h, 85h, 89h, 8Eh, 8Eh
+		db	 92h
+		db	 79h, 7Dh, 81h, 85h, 8Ah, 85h
+		db	 91h, 93h
+		db	 7Ah, 7Eh, 82h, 86h, 8Bh, 8Fh
+		db	 8Eh, 94h
+		db	 7Bh, 7Fh, 83h, 87h, 8Ch, 8Ch
+		db	 8Eh, 92h
+		db	 7Ch, 80h, 84h, 88h, 8Dh, 8Dh
+		db	 91h, 93h
+		db	 7Ah, 7Eh, 84h, 85h, 89h, 8Dh
+		db	 8Eh, 94h
+		db	 7Bh, 81h, 85h, 86h, 8Ah, 90h
+		db	 8Eh, 92h
+		db	 64h, 6Ah, 86h, 87h, 8Bh, 88h
+		db	 91h, 93h, 00h
+		db	 6Bh, 6Ah, 88h, 8Ch, 8Bh
+		db	'vx', 0
+		db	 00h, 6Bh, 6Fh, 72h, 6Fh
+		db	 00h, 00h, 00h, 00h
+
+; --------------------------------------------------------------------------
+; Tilemap page 2 - interior walls (11 wall tiles)
+; --------------------------------------------------------------------------
+
+tilemap_page_2:
+		db	 0Bh, 14h, 14h, 14h, 14h, 14h, 00h
+		db	 03h, 0Ch, 15h, 15h, 15h, 15h, 15h, 00h
+		db	 04h, 0Dh, 16h, 16h, 16h, 16h, 16h, 00h
+		db	 05h, 0Dh, 16h, 16h, 16h, 16h, 16h, 00h
+		db	 06h, 0Dh, 16h, 51h, 16h, 16h, 16h, 00h
+		db	 06h, 0Dh, 16h, 52h, 1Ch, 1Ch, 1Ch, 00h
+		db	 06h, 0Dh, 16h, 53h, 01h, 01h, 01h, 00h
+		db	 06h, 0Dh, 16h, 54h, 16h, 16h, 16h, 00h
+		db	 06h, 0Eh, 18h, 18h, 18h, 18h, 18h, 00h
+		db	 07h, 0Fh, 19h, 19h, 19h, 19h, 19h, 00h
+		db	 08h, 10h, 19h, 19h, 19h, 19h, 19h, 00h
+		db	 09h, 11h, 19h, 1Dh, 1Dh, 19h, 19h, 00h
+		db	 5Eh, 5Dh, 19h, 19h, 19h, 19h, 19h, 00h
+		db	 00h, 13h, 1Bh, 1Bh, 1Bh, 1Bh, 1Bh, 00h
+
+; --------------------------------------------------------------------------
+; Tilemap page 3 - column/column-alt glyph row
+; --------------------------------------------------------------------------
+
+tilemap_page_3:
+		db	'ehlps', 0, 0
+		db	'cfimqqt', 0
+		db	 64h, 67h, 89h, 89h, 89h
+		db	 6Eh, 75h, 77h
+		db	 79h, 7Dh, 81h, 85h, 8Ah, 8Eh, 92h, 92h
+		db	 7Ah, 7Eh, 82h, 86h, 8Bh, 8Dh, 91h, 93h
+		db	 7Bh, 7Fh, 83h, 87h, 8Ch, 8Eh, 8Eh, 92h
+		db	 7Ch, 80h, 84h, 88h, 8Ch, 8Ah, 91h, 92h, 00h
+		db	 80h, 85h, 81h, 86h, 8Bh, 90h, 94h
+		db	 63h, 66h, 85h, 84h, 88h, 8Dh, 91h, 95h
+		db	 64h, 67h, 6Ah, 6Eh, 6Eh, 6Eh
+		db	'vx', 0, 0
+		db	 6Bh, 6Fh, 72h, 6Fh, 72h
+		db	 00h, 00h, 00h
+
+; --------------------------------------------------------------------------
+; Tilemap page 4 - waterfall / blue tiles
+; --------------------------------------------------------------------------
+
+tilemap_page_4:
+		db	0D7h, 0DDh, 000h
+		db	000h, 000h, 000h, 000h, 000h
+		db	0D8h, 0DEh, 0E6h, 0E6h, 0E6h, 0E4h, 000h, 000h
+		db	0D8h, 0DFh, 0E6h, 0E6h, 0E6h, 0E5h, 000h, 000h
+		db	0D8h, 0DEh, 0E4h, 0E6h, 0E6h, 0E6h, 000h, 000h
+		db	0D8h, 0DFh, 0E5h, 0E8h, 0E8h, 0E8h, 000h, 000h
+		db	0D8h, 0DEh, 0E4h, 001h, 001h, 001h, 000h, 000h
+		db	0D8h, 0DFh, 0E5h, 001h, 001h, 001h, 000h, 000h
+		db	0D8h, 0DEh, 0E4h, 0E9h, 0E9h, 0E9h, 000h
+		db	002h, 0D9h, 0E0h, 0E5h, 0EAh, 0EAh, 0EAh, 000h
+		db	000h, 0DAh, 0E1h, 0EFh, 0EFh, 0EEh, 0ECh, 000h
+		db	000h, 0DBh, 0E1h, 0EFh, 0EEh, 0EFh, 0EDh, 000h
+		db	000h, 0DBh, 0E1h, 0EFh, 0EFh, 0EFh, 0EEh, 000h
+		db	000h, 0DCh, 0E3h, 000h, 000h, 000h, 000h, 000h
+
+; --------------------------------------------------------------------------
+; Tilemap page 5 - char glyph row with embedded partial path/tiles
+; --------------------------------------------------------------------------
+
+tilemap_page_5:
+		db	'eh', 0, 'lps', 0
+		db	'cfip', 6Dh, 8Dh
+		db	 75h, 77h, 79h, 7Dh, 81h, 8Bh, 85h, 88h
+		db	 8Eh, 94h
+		db	 7Ah, 7Eh, 82h, 86h, 8Bh, 8Fh, 8Eh, 94h
+		db	 7Bh, 7Fh, 83h, 87h, 8Ch, 90h, 91h, 95h
+		db	 7Ch, 80h, 84h, 88h, 8Dh, 88h, 8Eh, 92h
+		db	 64h, 81h, 85h, 6Eh, 89h, 89h
+		db	'vx', 0, 0
+		db	 6Bh, 6Fh, 72h, 72h, 00h, 00h, 00h, 00h
+
+; --------------------------------------------------------------------------
+; Tilemap page 6 - walls with door sprite markers (0x55-0x58 = 'U'-'X')
+; --------------------------------------------------------------------------
+
+tilemap_page_6:
+		db	0D7h
+		db	 23h, 23h, 23h, 23h, 23h, 00h, 00h
+		db	0D8h
+		db	 22h, 22h, 22h, 22h, 22h, 00h, 00h
+		db	0D8h
+		db	 22h, 22h, 22h, 22h, 22h, 00h, 00h
+		db	0D8h
+		db	 22h, 55h, 22h, 22h, 22h, 00h, 00h
+		db	0D8h
+		db	 22h, 56h, 1Ch, 1Ch, 1Ch, 00h, 00h
+		db	0D8h
+		db	 22h, 57h, 01h, 01h, 01h, 00h, 00h
+		db	0D9h
+		db	 22h, 58h, 22h, 22h, 22h, 00h, 00h
+		db	0DAh
+		db	 24h, 24h, 24h, 24h, 24h, 00h, 00h
+		db	0DBh
+		db	 24h, 24h, 24h, 24h, 24h, 00h, 00h
+		db	0DBh
+		db	 24h, 24h, 24h, 24h, 24h, 00h, 00h
+		db	0DCh
+		db	 25h, 25h, 25h, 25h, 25h, 00h
+
+; --------------------------------------------------------------------------
+; Tilemap page 7 - short row: 'lpt' partial
+; --------------------------------------------------------------------------
+
+tilemap_page_7:
+		db	 00h, 00h, 00h, 6Ch, 70h, 74h, 00h, 00h
+		db	 00h, 63h, 6Dh, 6Dh, 71h, 75h, 77h, 00h
+		db	 00h, 64h, 6Eh, 6Eh, 89h
+		db	'vx', 0, 0, 0, 0
+		db	 6Fh, 72h, 00h, 00h, 00h, 00h, 00h
+
+; --------------------------------------------------------------------------
+; Tilemap page 8 - interior wall pattern (duplicate of page 2 with variants)
+; --------------------------------------------------------------------------
+
+tilemap_page_8:
+		db	 5Fh, 14h, 14h, 14h, 14h, 00h
+		db	 00h, 03h, 62h, 1Fh, 1Fh, 1Fh, 20h, 00h
+		db	 00h, 04h, 0Dh, 1Fh, 1Fh, 1Fh, 20h, 00h
+		db	 00h, 05h, 0Dh, 4Dh, 1Fh, 1Fh, 20h, 00h
+		db	 00h, 06h, 0Dh, 4Eh, 1Ch, 1Ch, 1Ch, 00h
+		db	 00h, 06h, 0Dh, 4Fh, 01h, 01h, 01h, 00h
+		db	 00h, 06h, 0Dh, 50h, 1Fh, 1Fh, 20h, 00h
+		db	 00h, 06h, 0Eh, 18h, 18h, 18h, 18h, 00h
+		db	 00h, 07h, 0Fh, 19h, 19h, 19h, 19h, 00h
+		db	 00h, 08h, 10h, 19h, 19h, 19h, 19h, 00h
+		db	 00h, 09h, 11h, 19h, 19h, 19h, 19h, 00h
+		db	 00h, 05Eh, 060h, 19h, 19h, 19h, 19h, 00h
+		db	 00h, 00h, 61h, 1Bh, 1Bh, 1Bh, 1Ah, 00h
+
+; --------------------------------------------------------------------------
+; Tilemap page 9 - character glyph rows (short entries)
+; --------------------------------------------------------------------------
+
+tilemap_page_9:
+		db	 63h, 66h, 6Dh, 6Dh, 71h, 75h, 77h, 00h
+		db	 64h, 67h, 6Eh, 71h, 71h, 76h, 78h, 00h
+		db	 00h, 00h, 6Fh, 72h, 6Fh, 72h, 00h, 00h
+
+; --------------------------------------------------------------------------
+; Tilemap page 10 - interior walls (matches page 2 layout)
+; --------------------------------------------------------------------------
+
+tilemap_page_10:
+		db	 00h, 0Bh, 14h, 14h, 14h, 14h, 14h, 00h
+		db	 03h, 0Ch, 15h, 15h, 15h, 15h, 15h, 00h
+		db	 04h, 0Dh, 16h, 16h, 16h, 16h, 16h, 00h
+		db	 05h, 0Dh, 16h, 16h, 16h, 16h, 16h, 00h
+		db	 06h, 0Dh, 16h, 16h, 16h, 16h, 16h, 00h
+		db	 06h, 0Dh, 16h, 59h, 17h, 17h, 17h, 00h
+		db	 06h, 0Dh, 16h, 5Ah, 1Ch, 1Ch, 1Ch, 00h
+		db	 06h, 0Dh, 16h, 5Bh, 01h, 01h, 01h, 00h
+		db	 06h, 0Dh, 16h, 5Ch, 16h, 16h, 16h, 00h
+		db	 06h, 0Dh, 16h, 16h, 16h, 16h, 16h, 00h
+		db	 06h, 0Eh, 18h, 18h, 18h, 18h, 18h, 00h
+		db	 07h, 0Fh, 19h, 19h, 19h, 19h, 19h, 00h
+		db	 08h, 10h, 19h, 1Ah, 1Ah, 19h, 19h, 00h
+		db	 09h, 11h, 19h, 1Dh, 1Dh, 19h, 19h
+		db	 02h, 0Ah, 12h, 19h, 19h, 19h, 19h, 19h, 00h
+		db	 00h, 13h, 1Bh, 1Bh, 1Bh, 1Bh, 1Bh, 00h
+
+; --------------------------------------------------------------------------
+; Tilemap page 11 - short glyph row (sparse)
+; --------------------------------------------------------------------------
+
+tilemap_page_11:
+		db	 00h, 00h, 6Ch, 6Ch, 73h, 00h, 00h, 00h
+		db	 65h, 69h, 6Dh, 6Dh, 8Dh, 74h, 00h, 00h
+		db	 66h, 89h, 85h, 8Dh, 8Dh
+		db	 75h, 77h
+		db	 7Ch, 80h, 84h, 88h, 89h, 8Eh, 8Eh, 94h, 00h
+		db	 64h, 6Ah, 8Ch, 89h, 87h, 8Bh, 93h, 00h
+		db	 00h, 6Bh, 6Eh, 8Ch, 6Eh
+		db	'vx', 0, 0, 0, 0
+		db	 72h, 6Fh, 72h
+		db	 00h, 00h, 00h, 00h, 00h
+
+; --------------------------------------------------------------------------
+; Tilemap page 12 - complex fountain/statue tilemap
+; --------------------------------------------------------------------------
+
+tilemap_page_12:
+		db	 00h, 00h, 9Bh, 99h, 00h, 00h, 00h, 00h
+		db	 00h, 00h, 9Ch, 9Ah, 00h, 00h, 00h, 00h
+		db	 00h, 99h, 0BCh, 0BEh, 00h, 00h, 00h
+		db	 00h, 99h, 0BCh, 0BDh, 0BFh, 00h, 00h, 00h
+		db	 99h, 09Ah, 0BCh, 0C0h, 0C2h, 00h, 00h, 0A2h
+		db	 9Ah, 0BCh, 0BEh, 0C1h, 0C3h, 00h, 00h, 0A3h
+		db	 0C0h, 0BDh, 0BFh, 0C1h, 0C6h, 00h
+		db	 0ACh, 0ADh, 0C1h, 0C2h, 0C2h, 0C5h, 0C7h, 00h
+		db	 0A9h, 0C8h, 0C2h, 0C6h, 0C3h, 0C8h, 0BFh, 00h
+		db	 0A8h, 0C9h, 0CBh, 0BFh, 0C4h, 0C9h, 0CBh, 00h
+		db	 0A9h, 0BCh, 0BEh, 0CCh, 0CCh, 0CCh, 0CCh, 00h
+		db	 0A6h, 0BDh, 0BFh, 0CCh, 0CDh, 0CEh, 0CEh, 0A5h
+		db	 0A7h, 0C0h, 0C2h, 0CCh, 0CFh, 0D0h, 0D0h, 00h
+		db	 0A0h, 0C1h, 0C3h, 0CCh, 0CCh, 0CCh, 0CCh, 0A2h
+		db	 0A4h, 0C4h, 0C6h, 0BFh, 0CAh, 0BFh, 0C5h, 09Fh
+		db	 0A1h, 0C5h, 0C7h, 0C6h, 0C5h, 0C5h, 0CAh, 0A0h
+		db	 0C4h, 0C8h, 0CAh, 0CAh, 0BFh, 0CAh, 0CAh
+		db	 96h, 97h, 97h, 97h, 97h, 97h, 97h, 97h
+		db	 00h
+		db	18 dup (0)
+
+; --------------------------------------------------------------------------
+; Zero padding between final tilemap page and event header
+; --------------------------------------------------------------------------
+		db	5 dup (0)
+
+; --------------------------------------------------------------------------
+; Event/door header + town name + door table
+; --------------------------------------------------------------------------
+
+event_header:
+		db	 43h, 00h, 7Bh, 00h, 04h, 00h,0FFh, 00h
+		db	 01h, 18h,0AFh, 00h
+
+town_name_len:
+		db	 0Eh				; length prefix (14)
+
+town_name:
+		db	'Bosque village'
+
+door_table:
+		db	 07h, 00h, 09h, 24h, 00h, 06h, 3Dh, 00h
+		db	 02h, 51h, 00h, 04h, 60h, 00h, 03h, 72h
+		db	 00h, 07h, 8Eh, 00h, 08h,0FFh,0FFh,0B9h
+		db	 00h, 13h, 00h, 05h, 95h, 00h, 0Eh, 01h
+		db	 06h, 12h, 00h, 08h,0FAh,0CCh, 80h,0FBh
+		db	0CCh, 0Eh,0FFh,0FFh,0FFh,0FFh
+
+; --------------------------------------------------------------------------
+; NPC dialog pointer table (15 word offsets into dialog block)
+; --------------------------------------------------------------------------
+
+dialog_ptr_tbl:
+		db	 3Eh,0C5h, 05h,0C6h, 93h,0C6h, 95h,0C7h
+		db	0FAh,0C7h, 46h,0C8h,0F9h,0C8h,0B3h,0C9h
+		db	 3Eh,0CAh, 19h,0CBh, 8Dh,0CBh,0FAh,0CBh
+		db	 28h,0CCh, 5Ah,0CCh,0B5h,0CCh
+
+; --------------------------------------------------------------------------
+; NPC dialog strings (separated by 0xFF terminators).
+; Each block is one NPC's speech.
+; --------------------------------------------------------------------------
+
+dialog_0_welcome:
+		db	'Welcome to Bosque Village, brave'
+		db	' warrior. This once was a forest'
+		db	' surrounding a temple, but the t'
+		db	'emple was destroyed by Jashiin. '
+		db	'Now the village of Bosque is des'
+		db	'olate. I hope you are here to he'
+		db	'lp us.'
+		db	0FFh
+
+dialog_1_sentry_warning:
+		db	'Listen, stranger, a sentry is po'
+		db	'sted on the outskirts of the cit'
+		db	'y. I\m telling you this for your'
+		db	' own good; it\s best to stay awa'
+		db	'y from there.'
+		db	0FFh
+
+dialog_2_temple_history:
+		db	'The temple that once stood here '
+		db	'had the crest of the Warrior God'
+		db	' carved into it. Winners of the '
+		db	'martial arts competitions held '
+		db	'in front of the temple were awa'
+		db	'rded with such crests. Thus the '
+		db	'crest, the symbol of a true her'
+		db	'o, became known as the Hero\s C'
+		db	'rest.'
+		db	0FFh
+
+dialog_3_crest_stolen:
+		db	'When he destroyed the temple, Ja'
+		db	'shiin stole the Hero\s Crest.  N'
+		db	'o one has any idea where to fin'
+		db	'd it.'
+		db	0FFh
+
+dialog_4_crest_hint:
+		db	'The crest must be hidden somewhe'
+		db	're in the forest, but I couldn'
+		db	'\t say where.'
+		db	0FFh
+
+dialog_5_crest_tree:
+		db	'When the temple was destroyed I '
+		db	'heard Jashiin ordering his unde'
+		db	'rlings to hide the crest in the'
+		db	' trunk of the biggest tree. Tha'
+		db	't must be where it is hidden. I'
+		db	' hope you can find it.'
+		db	0FFh
+
+dialog_6_spirit_cross:
+		db	'A spirit appeared and told me t'
+		db	'o say this if I met a brave man'
+		db	': "If you go through the door t'
+		db	'o the right of the tree that fo'
+		db	'rms a cross, you will be able t'
+		db	'o go up."/I&hope it helps you.'
+		db	0FFh
+
+dialog_7_thin_ground:
+		db	'I have some advice for you: Be '
+		db	'careful if you come to a place '
+		db	'where the leaves of the trees a'
+		db	're thin. The ground there is n'
+		db	'ot very strong.'
+		db	0FFh
+
+dialog_8_spirit_sentry:
+		db	'The sentry at the edge of town '
+		db	'says the Spirits came to him i'
+		db	'n a dream, and told him not to '
+		db	'allow anyone to pass unless th'
+		db	'ey bear the Hero\s Crest. I wo'
+		db	'nder if the Spirits really ord'
+		db	'ered such a thing? Perhaps he\'
+		db	's mad.'
+		db	0FFh
+
+dialog_9_monster:
+		db	'A few have slipped by the sent'
+		db	'ry undetected, but none have r'
+		db	'eturned. There must be some te'
+		db	'rrible monster out there.'
+		db	0FFh
+
+dialog_10_sold_soul:
+		db	'That sentry must have sold his '
+		db	'soul to Jashiin. Why else woul'
+		db	'd he interfere with brave men '
+		db	'such as yourself?'
+		db	0FFh
+
+dialog_11_sentry_challenge:
+		db	'Hold on there! Do you have the '
+		db	'Hero\s Crest? '
+		db	 81h				; portrait/anim code
+		db	'Don'
+		db	'\t lie, it won\t do any good. G'
+		db	'et out of here!'
+		db	0FFh
+
+dialog_12_cannot_pass:
+		db	'You cannot pass here without th'
+		db	'e Hero\s Crest. My orders are f'
+		db	'rom the Spirits themselves! '
+		db	0FFh
+
+dialog_13_may_pass:
+		db	'Hold on there! You have the Her'
+		db	'o\s Crest, I see. You may pass.'
+		db	0FFh
+
+; --------------------------------------------------------------------------
+; Event trigger script (sentry placement / doors / shop entrances).
+; Ends in FF FF.
+; --------------------------------------------------------------------------
+
+event_script:
+		db	 09h, 00h, 01h,0CCh, 00h, 04h,0C0h, 0Bh
+		db	 65h, 00h, 81h, 19h, 00h, 00h, 00h, 02h
+		db	 15h, 00h, 04h, 8Eh, 00h, 05h, 00h, 0Ah
+		db	 6Bh, 00h, 04h, 6Fh, 00h, 05h, 00h, 06h
+		db	 57h, 00h, 84h, 25h, 00h, 06h, 00h, 04h
+		db	 83h, 00h, 00h, 00h, 03h, 03h, 00h, 00h
+		db	 4Fh, 00h, 00h, 22h, 00h, 01h, 00h, 01h
+		db	 5Ah, 00h, 00h, 89h, 00h, 02h, 00h, 07h
+		db	 2Ch, 00h, 00h, 1Bh, 03h, 03h, 00h, 08h
+		db	 44h, 00h, 00h, 00h, 00h, 05h, 00h, 05h
+		db	 59h, 00h, 02h, 8Bh, 03h, 03h, 00h, 03h
+		db	 20h, 00h, 02h, 15h, 00h, 06h, 00h, 09h
+		db	0FFh,0FFh
 
 seg_a		ends
 
-
-		end	start
+		end	bsmp_start
