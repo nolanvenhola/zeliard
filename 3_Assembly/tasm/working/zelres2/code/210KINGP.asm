@@ -25,7 +25,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; External data references (outside this module's CS segment).
 
 ; --- Graphics driver function table (drv_seg base 2000h) -------------------
@@ -58,11 +57,11 @@ gvar_volume		equ	0FF75h		;* music/effect volume byte
 dispatch_tbl_base	equ	0A078h		;* script-cmd dispatch table base (words @ +4..+0B)
 shop_entry_init		equ	0A302h		;* module header byte (probes whole module)
 face_frame_seq		equ	0A0F8h		;* face/crown frame sequence (12 bytes)
-portrait_tile_src	equ	0A16Eh		;* king portrait tile indices (96 bytes = 8×12)
+portrait_tile_src	equ	0A16Eh		;* king portrait tile indices (96 bytes = 8x12)
 portrait_ptr_tbl	equ	0A1CEh		;* per-variant portrait pointer table (word array)
 face_phase_xlat		equ	0A360h		;* XLAT: frame-counter -> face phase (26 bytes)
-face_anim_tbl		equ	0A37Ah		;* face-anim glyph sets (4 bytes/set × N)
-mouth_anim_tbl		equ	0A3D4h		;* mouth-anim glyph sets (10 bytes × 2)
+face_anim_tbl		equ	0A37Ah		;* face-anim glyph sets (4 bytes/set x N)
+mouth_anim_tbl		equ	0A3D4h		;* mouth-anim glyph sets (10 bytes x 2)
 
 ; --- Animation state variables (CS-resident, in padding after code) -------
 mouth_mode_flag		equ	0A79Dh		;* mouth animation enable flag byte
@@ -77,7 +76,6 @@ dialog_done_flag_b	equ	6		;* game-state: dialog complete flag byte B
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
@@ -111,23 +109,25 @@ start:
 		call	word ptr cs:gfx_fill_rect
 		call	select_script_branch
 		mov	ds:gvar_script_ip,si
+
 script_loop:
-		call	word ptr cs:script_read_byte
-		cmp	al,0FFh
-		je	script_exit		; 0FFh = end of script
-		call	script_cmd_dispatch
-		jmp	short script_loop
+			call	word ptr cs:script_read_byte
+			cmp	al,0FFh
+			je	script_exit		; 0FFh = end of script
+			call	script_cmd_dispatch
+			jmp	short script_loop
+
 script_exit:
 		jmp	word ptr cs:gfx_return
 
 kingp_main	endp
-
 
 script_cmd_dispatch	proc	near
 		mov	bl,al
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr cs:dispatch_tbl_base[bx]	; dispatch on script cmd byte
+
 script_cmd_dispatch	endp
 
 ; -- Dispatch table words at module offset 0x7C-0x83 (indexed by bl=al*2).
@@ -138,7 +138,7 @@ script_cmd_dispatch	endp
 ; decodes because Sourcer tried to disassemble the table as code):
 ;   [7C] E4 A0  -> 0xA0E4 = dispatch_cmd_wait_long  (cmd 2, wait 150 frames)
 ;   [7E] 9A A0  -> 0xA09A = dispatch_cmd_face_on    (cmd 3, jmps loc_mouth_tick)
-;   [80] D4 A0  -> 0xA0D4 = dispatch_cmd_set_done   (cmd 4, set dialog_done_flag)
+;   [80] D4 A0  -> 0xA0D4 = land-mid-instruction (add ax,0FF00h; retn -- adjusts ax)
 ;   [82] 92 A0  -> 0xA092 = dispatch_cmd_mouth_off  (cmd 5, jmps loc_mouth_tick)
 
 		;* dispatch table entries at 0x7C (decoded bogusly as instructions)
@@ -168,80 +168,84 @@ mouth_anim_disable:				; fall-through entry: clears mouth anim flag
 ; Reached via dispatch[3] = 0xA09A which lands at the jmp at 0x9A.
 ; The 5 preceding bytes (mov al,0FFh / mov face_mode_flag,al) are the
 ; face-enable prologue.
+
 face_anim_enable:
 		mov	al,0FFh
 		mov	ds:face_mode_flag,al
 		jmp	loc_mouth_tick		; 0x9A: jmp (dispatch[3] target)
 
-; -- Orphan entry: award 1000 gold.
-; Falls through into gold_add_loop which runs 10 iterations adding 100
-; gold each + waiting 0x0F frames. Total: 1000 gold, ~150 frames.
-		db	0B9h, 0Ah, 00h		; mov cx, 10  (alt encoding entry to loop)
+; -- Orphan entry: award 1000 gold. Falls through into gold_add_loop,
+; which runs 10 iterations adding 100 gold each + waiting 0x0F frames.
+; Total: 1000 gold, ~150 frames.
+gold_award_entry:
+		mov	cx,10
 
 gold_add_loop:
-		push	cx
-		mov	ax,word ptr ds:[86h]	; gold low word
-		mov	dl,byte ptr ds:[85h]	; gold high byte
-		add	ax,64h			; += 100
-		adc	dl,0
-		mov	word ptr ds:[86h],ax
-		mov	byte ptr ds:[85h],dl
-		call	word ptr cs:gfx_wait_refresh
-		mov	byte ptr ds:gvar_volume,13h
-		mov	byte ptr ds:gvar_frame_timer,0
+			push	cx
+			mov	ax,word ptr ds:[86h]	; gold low word
+			mov	dl,byte ptr ds:[85h]	; gold high byte
+			add	ax,64h			; += 100
+			adc	dl,0
+			mov	word ptr ds:[86h],ax
+			mov	byte ptr ds:[85h],dl
+			call	word ptr cs:gfx_wait_refresh
+			mov	byte ptr ds:gvar_volume,13h
+			mov	byte ptr ds:gvar_frame_timer,0
+
 gold_add_wait:
-		call	face_anim_tick
-		cmp	byte ptr ds:gvar_frame_timer,0Fh
-		jb	gold_add_wait		; Jump if below
-		pop	cx
-		loop	gold_add_loop		; Loop if cx > 0
+				call	face_anim_tick
+				cmp	byte ptr ds:gvar_frame_timer,0Fh
+				jb	gold_add_wait		; Jump if below
+			pop	cx
+			loop	gold_add_loop		; Loop if cx > 0
 
 		mov	byte ptr ds:dialog_done_flag,0FFh
 		retn
 
-; -- Orphan entry: initialize frame-timer before wait.
-; This 5-byte block `mov [gvar_frame_timer],0` (C6 06 1A FF 00) is the
-; prologue for the long-wait handler at dispatch_cmd_wait_long.
-		db	0C6h, 06h, 1Ah, 0FFh, 00h	; mov byte ptr ds:[gvar_frame_timer],0
+; -- Orphan entry: initialize frame-timer before wait. Prologue for
+; the long-wait handler at dispatch_cmd_wait_long.
+wait_long_init:
+		mov	byte ptr ds:gvar_frame_timer,0
 
 dispatch_cmd_wait_long:				; dispatch[2] = 0xA0E4: wait 150 frames
-		call	face_anim_tick
-		cmp	byte ptr ds:gvar_frame_timer,96h	; 150 frames
-		jb	dispatch_cmd_wait_long	; Jump if below
+			call	face_anim_tick
+			cmp	byte ptr ds:gvar_frame_timer,96h	; 150 frames
+			jb	dispatch_cmd_wait_long	; Jump if below
 		retn
 
 ; -- Orphan entry: render portrait frame sequence.
 ; 15-byte helper that walks face_frame_seq (12 bytes) calling
 ; render_portrait_variant + short_wait for each. Used as an alternate
 ; dispatch entry point.
+
 portrait_play_seq:
 		mov	si,face_frame_seq
 		mov	cx,0Ch			; 12 frames
 
 portrait_play_loop:
-		push	cx
-		lodsb				; String [si] to al
-		push	si
-		call	render_portrait_variant
-		call	short_wait
-		pop	si
-		pop	cx
-		loop	portrait_play_loop	; Loop if cx > 0
+			push	cx
+			lodsb				; String [si] to al
+			push	si
+			call	render_portrait_variant
+			call	short_wait
+			pop	si
+			pop	cx
+			loop	portrait_play_loop	; Loop if cx > 0
 
 		retn
 		db	0, 0, 1, 2, 2, 1	; portrait frame phase pattern
 		db	0, 3, 4, 4, 5, 6	; portrait frame phase pattern
 
-
 short_wait	proc	near
 		mov	byte ptr ds:gvar_frame_timer,0
-short_wait_loop:
-		call	face_anim_tick
-		cmp	byte ptr ds:gvar_frame_timer,19h	; 25 frames
-		jb	short_wait_loop		; Jump if below
-		retn
-short_wait	endp
 
+short_wait_loop:
+			call	face_anim_tick
+			cmp	byte ptr ds:gvar_frame_timer,19h	; 25 frames
+			jb	short_wait_loop		; Jump if below
+		retn
+
+short_wait	endp
 
 render_portrait	proc	near
 		mov	si,portrait_tile_src
@@ -249,32 +253,33 @@ render_portrait	proc	near
 		mov	cx,8				; 8 rows
 
 portrait_row_loop:
-		push	cx
-		mov	cx,0Ch			; 12 tiles per row
+			push	cx
+			mov	cx,0Ch			; 12 tiles per row
 
 portrait_col_loop:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:draw_glyph_tile
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	portrait_col_loop	; Loop if cx > 0
+				push	cx
+				push	bx
+				lodsb				; String [si] to al
+				call	word ptr cs:draw_glyph_tile
+				pop	bx
+				inc	bh
+				pop	cx
+				loop	portrait_col_loop	; Loop if cx > 0
 
-		sub	bh,0Ch
-		add	bl,8
-		pop	cx
-		loop	portrait_row_loop	; Loop if cx > 0
+			sub	bh,0Ch
+			add	bl,8
+			pop	cx
+			loop	portrait_row_loop	; Loop if cx > 0
 
 		test	byte ptr ds:[49h],0FFh	; quest-complete flag?
 		jnz	render_portrait_alt	; Jump if not zero
 		retn
+
 render_portrait_alt:
 		mov	al,6			; alternate portrait variant
+
 render_portrait	endp
 		; fall-through into render_portrait_variant
-
 
 render_portrait_variant	proc	near
 		mov	bl,al
@@ -285,30 +290,32 @@ render_portrait_variant	proc	near
 		mov	cx,7			; 7 rows
 
 portrait_var_row_loop:
-		push	cx
-		mov	cx,6			; 6 cells per row
+			push	cx
+			mov	cx,6			; 6 cells per row
 
 portrait_var_col_loop:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:draw_glyph_tile
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	portrait_var_col_loop	; Loop if cx > 0
+				push	cx
+				push	bx
+				lodsb				; String [si] to al
+				call	word ptr cs:draw_glyph_tile
+				pop	bx
+				inc	bh
+				pop	cx
+				loop	portrait_var_col_loop	; Loop if cx > 0
 
-		sub	bh,6
-		add	bl,8
-		pop	cx
-		loop	portrait_var_row_loop	; Loop if cx > 0
+			sub	bh,6
+			add	bl,8
+			pop	cx
+			loop	portrait_var_row_loop	; Loop if cx > 0
 
 		retn
+
 render_portrait_variant	endp
 
-; -- Portrait variant tile data (8 frames × variable layout).
-; Indexed via portrait_ptr_tbl. Each record is 7 rows × 6 glyphs.
+; -- Portrait variant tile data (8 frames x variable layout).
+; Indexed via portrait_ptr_tbl. Each record is 7 rows x 6 glyphs.
 ; Glyph indices point into the game's tile/character set.
+
 portrait_variant_data:
 		db	 00h, 01h, 02h, 03h, 3Eh, 3Fh	; base frame row 0
 		db	 40h, 41h, 18h, 19h, 1Ah, 1Bh	; row 1
@@ -367,21 +374,23 @@ portrait_variant_data:
 		db	 29h, 17h,0A7h,0A8h,0A9h
 		db	 2Dh, 2Eh
 
-
 face_anim_tick	proc	near
 		cmp	word ptr ds:gvar_menu_step,4
 		jae	face_anim_run		; Jump if above or =
 		retn
+
 face_anim_run:
 		mov	word ptr ds:gvar_menu_step,0
 		call	face_mode_update
 		jmp	short mouth_mode_update
 
 ; -- Entry used by fall-through from gfx refresh path -------------------
+
 face_mode_update:
 		test	byte ptr ds:face_mode_flag,0FFh
 		jnz	face_phase_inc		; Jump if not zero
 		retn
+
 face_phase_inc:
 		inc	byte ptr ds:face_phase_cnt
 		cmp	byte ptr ds:face_phase_cnt,1Ah	; 26-frame cycle
@@ -390,9 +399,11 @@ face_phase_inc:
 		or	al,al			; Zero ?
 		jz	face_phase_reset	; Jump if zero
 		retn
+
 face_phase_reset:
 		mov	byte ptr ds:face_phase_cnt,0FFh
 		retn
+
 face_phase_apply:
 		mov	bx,face_phase_xlat
 		mov	al,ds:face_phase_cnt
@@ -406,14 +417,14 @@ face_phase_apply:
 		mov	cx,4			; 4 glyphs per face row
 
 face_glyph_loop:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:draw_glyph_tile
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	face_glyph_loop		; Loop if cx > 0
+			push	cx
+			push	bx
+			lodsb				; String [si] to al
+			call	word ptr cs:draw_glyph_tile
+			pop	bx
+			inc	bh
+			pop	cx
+			loop	face_glyph_loop		; Loop if cx > 0
 
 		retn
 ; -- face_phase_xlat: 26 bytes at 0x360, maps face_phase_cnt to glyph-set
@@ -426,19 +437,23 @@ face_glyph_loop:
 		db	 00h, 00h, 96h, 97h, 98h, 99h	; [24..25] + face_anim_tbl[0..3] (set 0)
 		db	 96h,0AAh,0ABh,0ACh, 96h,0ADh	; face_anim_tbl[4..11] (sets 1,2a)
 		db	0ABh,0AEh			; face_anim_tbl[12..13] continues
+
 mouth_mode_update:
 		test	byte ptr ds:mouth_mode_flag,0FFh
 		jnz	mouth_phase_inc		; Jump if not zero
 		retn
+
 mouth_phase_inc:
 		inc	byte ptr ds:mouth_phase_cnt
 		cmp	byte ptr ds:mouth_phase_cnt,6	; 6-frame cycle
 		jae	mouth_phase_apply	; Jump if above or =
 		retn
+
 mouth_phase_apply:
 		mov	byte ptr ds:mouth_phase_cnt,0
 		inc	byte ptr ds:mouth_set_idx
 		mov	al,ds:mouth_set_idx
+
 loc_mouth_tick:					; external jmp target (dispatch[3],[5])
 		and	al,1			; select set 0 or 1
 		mov	cl,0Ah
@@ -449,25 +464,26 @@ loc_mouth_tick:					; external jmp target (dispatch[3],[5])
 		mov	cx,2			; 2 rows
 
 mouth_row_loop:
-		push	cx
-		mov	cx,5			; 5 glyphs per row
+			push	cx
+			mov	cx,5			; 5 glyphs per row
 
 mouth_glyph_loop:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:draw_glyph_tile
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	mouth_glyph_loop	; Loop if cx > 0
+				push	cx
+				push	bx
+				lodsb				; String [si] to al
+				call	word ptr cs:draw_glyph_tile
+				pop	bx
+				inc	bh
+				pop	cx
+				loop	mouth_glyph_loop	; Loop if cx > 0
 
-		sub	bh,5
-		add	bl,8
-		pop	cx
-		loop	mouth_row_loop		; Loop if cx > 0
+			sub	bh,5
+			add	bl,8
+			pop	cx
+			loop	mouth_row_loop		; Loop if cx > 0
 
 		retn
+
 face_anim_tick	endp
 
 ; -- Tail bytes of mouth_anim_tbl (starts at 0x3D4 inside the code above).
@@ -486,37 +502,41 @@ face_anim_tick	endp
 		mov	ah,0B5h			; 0x3E7: B4 B5 = mouth glyphs 0xB4,0xB5
 		mov	dh,2Dh			; 0x3E9: B6 2D = mouth 0xB6 + separator 0x2D
 
-
 ; -- Select dialog script address based on current quest state ------------
 ; Flags tested (game-segment DS):
 ;   [5]:  dialog-done flag (set to FF by dispatch_cmd_set_done)
 ;   [6]:  dialog-done flag B
 ;   [49h]: quest-complete flag (Tears of Esmesanti returned)
 ; Returns si = script_ip to run.
+
 select_script_branch	proc	near
 		mov	si,0A42Fh		; default: first-visit briefing script
 		mov	al,byte ptr ds:dialog_done_flag
 		or	al,byte ptr ds:dialog_done_flag_b
 		jnz	branch_chk_flag_b	; first visit: return default
 		retn
+
 branch_chk_flag_b:
 		mov	si,0A53Ch		; second visit: "did you forget..."
 		test	byte ptr ds:dialog_done_flag_b,0FFh
 		jnz	branch_chk_quest_done	; Jump if not zero
 		retn
+
 branch_chk_quest_done:
 		mov	si,0A5D2h		; third visit: "please hurry" nag
 		test	byte ptr ds:[49h],0FFh	; quest-complete flag
 		jnz	branch_post_victory	; Jump if not zero
 		retn
+
 branch_post_victory:
 		mov	si,0A6C1h		; post-victory: thank you + Felicia
 		retn
+
 select_script_branch	endp
 
 ; -- Orphan: reached via the 6th dispatch case (byte pattern that Sourcer
 ;    decoded as 'add [bp+di],dx' etc. are part of the script text tail).
-;    These 6 bytes (01 13 4B 49 4E 47 = ??? 'KING') align with a chunk
+;    These 6 bytes (01 13 4B 49 4E 47 = header + 'KING') align with a chunk
 ;    reference header 'KING' spilling into script data. Kept as db-bytes
 ;    with the script data that follows.
 		;* Script-data tail header bytes decoded as instructions by Sourcer
@@ -590,7 +610,5 @@ data_portrait_tail	db	0FFh		; ah-table base (referenced via [bx+si+06C5] XLAT)
 		db	 00h, 00h, 00h, 00h		; module trailing padding
 
 seg_a		ends
-
-
 
 		end	start
