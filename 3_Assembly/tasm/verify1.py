@@ -57,6 +57,11 @@ def main():
         if not out_bin.exists():
             out_bin = Path(tmp) / (stem + output_ext(stem))
         if not out_bin.exists():
+            # TasmRunner always writes .bin regardless of reference extension
+            out_bin = Path(tmp) / (stem + '.bin')
+        if not out_bin.exists():
+            out_bin = Path(tmp) / (stem.upper() + '.BIN')
+        if not out_bin.exists():
             # Try stripping MZ from .exe
             out_exe = Path(tmp) / (stem.upper() + '.EXE')
             if out_exe.exists():
