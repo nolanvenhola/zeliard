@@ -1,43 +1,87 @@
 
 PAGE  59,132
 
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-;лл					                                 лл
-;лл				ZR2_36	                                 лл
-;лл					                                 лл
-;лл      Created:   16-Feb-26		                                 лл
-;лл      Code type: zero start		                                 лл
-;лл      Passes:    9          Analysis	Options on: none                 лл
-;лл					                                 лл
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
+;==========================================================================
+;
+;  236CMAP.BIN - Felishika Castle Town Map Data (zelres2 chunk 0x25)
+;
+;  Castle map data file loaded by stick.bin as "CMAP.MDT" (chunk_ref entry
+;  1,0x25 in stick.asm at line ~1972). This is the very first town/castle
+;  the player visits -- King Felishika's palace on the outskirts of Muralla.
+;
+;  Unlike the later MRMP/STMP/BSMP/etc. MDT files which follow the stock
+;  8-tile-tall town map format, CMAP has a single-location-specific layout:
+;
+;    +0x00  hdr_ptr_tbl    - WORD pointers / small descriptors (16 bytes)
+;    +0x20  <padding zeros>
+;    +0x34  castle_tile_grid - tile-index column strips rendering the
+;                              castle facade (ASCII-range values 0x20-0x6F
+;                              map to tile cells in the VGA font/tileset)
+;    +0xC3  npc_and_door_cells - per-NPC/door cell records (8 bytes each)
+;                              referencing the tile grid positions
+;    +0x2C3 secondary_tile_grid - same castle rendering data duplicated for
+;                              a second display mode / day-night variant
+;    +0x3A7 castle_hdr      - pascal name 'Felishika\s Castle' + door entries
+;    +0x3CA door_coord_tbl  - warp coordinates (x,y) for each castle door
+;    +0x3D2 event_record_tbl - event / exit record entries (variable length,
+;                              terminated by 0xFFFF)
+;    +0x3F9 npc_text_ptr_tbl - WORD-pointer array, one per dialog line
+;    +0x40C dialog_strings  - packed dialog strings, 0xFF-terminated
+;    +0x898 script_trailer  - script / event trigger bytes (FF-FF end)
+;
+;  The module has NO executable code -- Sourcer's attempt to decode the
+;  header bytes as x86 instructions (mov si,8; add ss:data_17e[bp+di],ch)
+;  produced bogus mnemonics that are re-emitted here as `db` data.
+;
+;  Runtime segment base is 0xC000 (used by CMAP.MDT reader in game code).
+;  Pointers in tables like 0xC3AB resolve to (value - 0xC000) as file offset.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
-; The following equates show data references outside the range of the program.
-
-data_17e	equ	72C3h			;*
-
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
 zr2_36		proc	far
 
 start:
-		mov	si,8
-		add	ss:data_17e[bp+di],ch
-		add	data_4[bx+si],dh
-;*		mov	bl,0CAh
-				mov bl,0CAh			; was: db 0C6h,0C3h,0CAh
-		retn
-		db	 00h, 00h,0F6h,0C3h, 9Ch,0C8h
-		db	0A7h,0C3h, 22h, 00h,0D2h,0C3h
-		db	26 dup (0)
+; ------------------------------------------------------------------
+; Header pointer area (16 bytes): small descriptor fields + pointers
+; into the castle_hdr / event_record_tbl / dialog_strings tables.
+; Runtime segment 0xC000 -- 0xC3AB resolves to file_off 0x03AB, etc.
+; ------------------------------------------------------------------
+
+hdr_ptr_tbl	label	word
+		db	0BEh, 008h			; 0x08BE -- desc/end marker
+		db	000h, 000h			; reserved / zero
+		dw	0C3ABh				; -> castle_hdr_a (0x03AB)
+		db	072h, 000h			; field (count?)
+		db	0B0h, 0C2h			; 0xC2B0 -- possibly map ptr (0x02B0)
+		db	001h, 0B3h			; field
+		dw	0C3CAh				; -> door_coord_tbl (0x03CA)
+		db	000h, 000h			; reserved
+		dw	0C3F6h				; -> event_table_end (0x03F6)
+		dw	0C89Ch				; -> script_trailer offset (0x089C)
+		dw	0C3A7h				; -> castle_hdr_b (0x03A7)
+		db	022h, 000h			; field
+		dw	0C3D2h				; -> event_record_tbl (0x03D2)
+		db	000h, 000h			; reserved (0x1A..0x1B)
+
+		db	24 dup (0)			; zero padding (0x1C..0x33)
+
+; ------------------------------------------------------------------
+; castle_tile_grid -- ASCII-range tile indices that render the castle
+; facade. Values 0x20-0x6F are indices into the VGA font/tile bank;
+; 0x00 bytes are empty cells. Organised as short column-strips of
+; varying length, null-terminated between strips.
+; ------------------------------------------------------------------
+
+castle_tile_grid:
 		db	'<=====UX\ldeimVZ]aeflnWZ^bfgkoTX'
 		db	'\`ddimUY]alejmVZ^bfglnW[_cghioVX'
 		db	'X^\`imVY\_]aooVZ_`ddim', 0
@@ -49,6 +93,15 @@ start:
 		db	 51h, 53h, 00h, 00h, 00h, 00h
 		db	 4Dh, 4Ah
 		db	11 dup (0)
+
+; ------------------------------------------------------------------
+; npc_and_door_cells -- 8-byte records for NPCs and interactive cells.
+; Each record encodes a grid position (x,y) + state/palette bytes.
+; Exact layout depends on cell type (NPC / door / decoration).
+; Runs through 0x1FA (terminator-like `3B 00 ...` and 02 separators).
+; ------------------------------------------------------------------
+
+npc_and_door_cells:
 		db	 38h, 06h, 00h, 00h, 00h, 00h
 		db	 00h, 00h, 39h, 07h, 13h, 13h
 		db	 13h, 13h, 13h, 02h, 3Ah, 08h
@@ -92,7 +145,13 @@ start:
 		db	 39h, 0Bh, 11h, 1Ch, 21h, 27h
 		db	 2Dh, 00h, 3Ah, 0Bh, 11h, 1Dh
 		db	 22h, 28h, 2Eh
-data_4		db	2			; Data table (indexed access)
+
+; ------------------------------------------------------------------
+; Alternate section marker -- the lone `2` byte at offset 0x5F behaves
+; as an inline section delimiter between castle_tile_grid passes.
+; Was auto-named data_4 by Sourcer; renamed but value unchanged.
+; ------------------------------------------------------------------
+cell_boundary	db	2
 		db	 3Ah, 0Bh, 11h, 1Dh, 23h, 29h
 		db	 2Fh, 00h, 3Ah, 0Bh, 11h, 1Eh
 		db	 24h, 2Ah, 30h, 00h, 39h, 0Bh
@@ -136,6 +195,14 @@ data_4		db	2			; Data table (indexed access)
 		db	 3Ah, 08h, 14h, 14h, 14h, 14h
 		db	 14h, 00h, 3Bh, 09h, 00h, 00h
 		db	 00h, 00h, 00h, 00h
+
+; ------------------------------------------------------------------
+; secondary_tile_grid -- second pass of castle tile strips.
+; Same castle-facade tile-index columns, likely a day/night or
+; before/after-event variant of castle_tile_grid above.
+; ------------------------------------------------------------------
+
+secondary_tile_grid:
 		db	 40h, 43h
 		db	'GKNO', 0
 		db	'>ADHLLPRTX\``eimUY]aaflmVZ^bbgkm'
@@ -162,73 +229,154 @@ data_4		db	2			; Data table (indexed access)
 		db	'TX\`'
 		db	 60h, 63h, 69h, 6Dh
 		db	32 dup (0)
+
+; ------------------------------------------------------------------
+; castle_hdr -- castle descriptor: small count/flag bytes followed
+; by the pascal-encoded town name 'Felishika\s Castle'.
+; Word at +04 in hdr_ptr_tbl (0xC3AB) points into this record at 0x3AB.
+; ------------------------------------------------------------------
+
+castle_hdr_b:					; hdr_ptr_tbl +0x14 -> here (0x3A7)
 		db	 33h, 00h, 6Dh, 00h, 00h, 00h
 		db	0FFh, 00h, 00h, 16h,0AFh, 00h
-		db	 12h
+
+castle_hdr_a:					; hdr_ptr_tbl +0x04 -> here (0x3AB), +3 -> name
+		db	 12h				; pascal string length = 18
 		db	'Felishika\s Castle'
 		db	 00h, 01h, 00h, 01h, 5Fh, 00h
-		db	 01h, 34h, 00h, 00h,0FFh,0FFh
-		db	 49h, 00h,0FFh, 0Fh,0C0h, 94h
-		db	 10h,0C0h,0C8h, 8Eh,0C3h, 3Dh
-		db	0A3h,0C8h, 06h,0ABh,0C8h, 07h
-		db	0B3h,0C8h, 08h,0BBh,0C8h, 09h
-		db	0FFh,0FFh, 04h, 00h,0FFh, 9Bh
-		db	0C8h, 05h,0FFh,0FFh,0FFh,0FFh
-		db	 0Ah,0C4h,0ACh,0C4h, 53h,0C5h
-		db	0C3h,0C5h, 2Ch,0C6h,0C4h,0C6h
-		db	0E1h,0C6h, 52h,0C7h,0ABh,0C7h
-		db	 1Fh,0C8h
+		db	 01h, 34h, 00h, 00h
+
+; ------------------------------------------------------------------
+; door_coord_tbl -- castle door warp coordinates (3-byte entries),
+; terminated by 0xFFFF. hdr_ptr_tbl +0x08 (word 0xC3CA) points here.
+; ------------------------------------------------------------------
+
+door_coord_tbl:
+		db	0FFh,0FFh
+		db	 49h, 00h,0FFh
+
+; ------------------------------------------------------------------
+; event_record_tbl -- event/exit table with target addresses, variable
+; length records separated by FF / terminated by FF FF sequences.
+; Each 0xCNNN value is a runtime pointer to either castle_hdr or a
+; string in dialog_strings (subtract 0xC000 for file offset).
+; hdr_ptr_tbl +0x18 (word 0xC3D2) points here (0x3D2).
+; ------------------------------------------------------------------
+
+event_record_tbl:
+		db	 0Fh,0C0h, 94h, 10h,0C0h,0C8h
+		db	 8Eh,0C3h, 3Dh,0A3h,0C8h, 06h
+		db	0ABh,0C8h, 07h,0B3h,0C8h, 08h
+		db	0BBh,0C8h, 09h
+		db	0FFh,0FFh			; terminator
+
+		db	 04h, 00h,0FFh			; extra record
+		db	 9Bh,0C8h, 05h
+		db	0FFh,0FFh,0FFh,0FFh		; double terminator
+
+; ------------------------------------------------------------------
+; npc_text_ptr_tbl -- array of WORD pointers (one per NPC dialog line).
+; Each word is a runtime address 0xCNNN that points into the
+; dialog_strings block below (file_off = value - 0xC000).
+; hdr_ptr_tbl +0x10 (word 0xC3F6) marks end/entry of this table.
+; ------------------------------------------------------------------
+
+npc_text_ptr_tbl:
+		dw	0C40Ah			; -> dialog_str_if_brave   (0x040A)
+		dw	0C4ACh			; -> dialog_str_according  (0x04AC)
+		dw	0C553h			; -> dialog_str_i_have     (0x0553)
+		dw	0C5C3h			; -> dialog_str_chamber    (0x05C3)
+		dw	0C62Ch			; -> dialog_str_brave_kn   (0x062C)
+		dw	0C6C4h			; -> dialog_str_quickly_g  (0x06C4)
+		dw	0C6E1h			; -> dialog_str_ah_nine    (0x06E1)
+		dw	0C752h			; -> dialog_str_this_will  (0x0752)
+		dw	0C7ABh			; -> dialog_str_peace_we   (0x07AB)
+		dw	0C81Fh			; -> dialog_str_quickly_e  (0x081F)
+
+; ------------------------------------------------------------------
+; dialog_strings -- castle NPC dialog, each string terminated by 0xFF.
+; ------------------------------------------------------------------
+
+dialog_str_if_brave:
 		db	'If you are the brave warrior we '
 		db	'have awaited, we have something '
 		db	'to tell you: throughout the ages'
 		db	', many young men have entered th'
 		db	'e caverns, but few have returned'
 		db	'.'
-		db	0FFh, 41h, 63h
-		db	'cording to legend, there may sti'
+		db	0FFh
+
+dialog_str_according:
+		db	'According to legend, there may sti'
 		db	'll be underground places that ha'
 		db	've not been destroyed by Jashiin'
 		db	'. People may still be living the'
 		db	're, and will surely lend you a h'
 		db	'and.'
-		db	0FFh, 49h, 20h
-		db	'have been in the underground tow'
+		db	0FFh
+
+dialog_str_i_have:
+		db	'I have been in the underground tow'
 		db	'n. After I fled, they put a lock'
 		db	' on the door. If the town is sti'
 		db	'll there.... '
-		db	0FFh, 54h, 68h
-		db	'is is the chamber of poor Prince'
+		db	0FFh
+
+dialog_str_chamber:
+		db	'This is the chamber of poor Prince'
 		db	'ss Felicia, who has been turned '
 		db	'to stone. You may enter, Duke Ga'
 		db	'rland.'
-		db	0FFh, 42h, 72h
-		db	'ave knight, you have awakened. W'
+		db	0FFh
+
+dialog_str_brave_kn:
+		db	'Brave knight, you have awakened. W'
 		db	'hen you fell at the hand of Jash'
 		db	'iin, the Spirits brought you her'
 		db	'e. Now make haste to the aid of '
 		db	'the Princess Felicia.'
 		db	0FFh
+
+dialog_str_quickly_g:
 		db	'Quickly, go to the Princess!'
 		db	0FFh
+
+dialog_str_ah_nine:
 		db	'Ah, the Nine Tears of Esmesanti.'
 		db	' Jashiin exists no more and the '
 		db	'light of peace shines once again'
 		db	' on our land... '
-		db	0FFh, 54h, 68h
-		db	'is will benefit the people livin'
+		db	0FFh
+
+dialog_str_this_will:
+		db	'This will benefit the people livin'
 		db	'g underground, as well. Hurry to'
 		db	' the Princess Felicia.'
-		db	0FFh, 54h, 68h
-		db	'e peace we dared not hope for ha'
+		db	0FFh
+
+dialog_str_peace_we:
+		db	'The peace we dared not hope for ha'
 		db	's come. I\ll get my things toget'
 		db	'her and be on my way. I\ve a fam'
 		db	'ily to attend to.'
-		db	0FFh, 51h, 75h
-		db	'ickly, enter this chamber. The h'
+		db	0FFh
+
+dialog_str_quickly_e:
+		db	'Quickly, enter this chamber. The h'
 		db	'oly crystals will break the evil'
 		db	' spell which has turned Princess'
 		db	' Felicia to stone.'
-		db	0FFh, 24h, 00h, 82h, 00h, 03h
+		db	0FFh
+
+; ------------------------------------------------------------------
+; script_trailer -- event / script-byte sequence at the end of the
+; file. Triggered by specific castle events; exact byte semantics
+; parallel the townscript interpreter. hdr_ptr_tbl +0x12 (0xC89C)
+; points into this block.
+; ------------------------------------------------------------------
+
+script_trailer:
+		db	 24h, 00h, 82h, 00h, 03h
 		db	 03h, 80h, 04h, 30h, 00h, 81h
 		db	 18h, 00h, 00h, 00h, 00h, 38h
 		db	 00h, 81h, 18h, 00h, 00h, 00h
@@ -240,7 +388,5 @@ data_4		db	2			; Data table (indexed access)
 zr2_36		endp
 
 seg_a		ends
-
-
 
 		end	start
