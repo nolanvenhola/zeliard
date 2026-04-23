@@ -3204,11 +3204,11 @@ ui_tile_index_tbl	label	byte
 ; fall-through from the data above.
 
 ui_tile_blit_init:
-		db	 06h				; push es
-		db	0A2h,0FFh, 4Fh			; mov ds:anim_phase,al  (4FFFh)
-		db	0BEh, 3Bh, 47h			; mov si, 473Bh (phase_offset_tbl+1B3h)
-		db	0C7h, 06h,0EBh, 4Fh,0B0h, 11h	; mov word ptr ds:vga_row_ptr, 11B0h
-		db	0B9h, 12h, 00h			; mov cx, 12h
+		push	es
+		mov	byte ptr ds:anim_phase,al
+		mov	si,473Bh			; phase_offset_tbl+1B3h
+		mov	word ptr ds:vga_row_ptr,11B0h
+		mov	cx,12h
 
 ui_tile_outer_loop_2:
 			push	cx

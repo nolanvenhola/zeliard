@@ -4088,7 +4088,7 @@ shift_blit_src_set:
 		mov	al,bl			; AL = BL (X column byte)
 		and	al,3			; mask to pixel-in-byte position (0-3)
 		add	al,al			; double → shift amount (0,2,4,6)
-		db	0A2h, 79h, 50h		; mov [shift_count],al  (direct DS:[5079h] write)
+		mov	byte ptr ds:shift_count,al
 		shr	bx,1			; BX >>= 1 (byte address x/8 step 1)
 		shr	bx,1			; BX >>= 1 (byte address x/8 step 2 → x/4 col byte)
 		mov	al,50h			; row stride = 80 bytes

@@ -1592,20 +1592,25 @@ sprite_shape_tbl:				; 9-byte header — Sourcer mis-decoded as code
 ; fall-through from jmp +3Ch which is part of this same block.
 shift_blit_setup:
 		db	 00h			; padding / low byte of BF 59
-		db	0BFh, 59h, 52h		; mov di, 5259h  (sprite_pos)
-		db	 0Eh, 07h		; push cs / pop es
-		db	 33h,0C0h		; xor ax, ax
-		db	0ABh,0ABh,0ABh,0ABh	; stosw x 4
-		db	0AAh			; stosb
-		db	0BFh, 45h, 52h		; mov di, 5245h  (sprite_row_buf)
-		db	0B9h, 08h, 00h		; mov cx, 8
-		db	0F3h,0ABh		; rep stosw
-		db	0EBh, 3Ch		; jmp short +3Ch  (targets ui_tile_col_loop)
-		db	0E8h, 0Eh, 04h		; call +40Eh
-		db	0BFh, 45h, 52h		; mov di, 5245h
-		db	 8Ah, 16h, 35h,0FFh	; mov dl, ds:[FF35h] (enemy_counter)
-		db	0FEh,0CAh		; dec dl
-		db	0B9h, 04h, 00h		; mov cx, 4
+shift_blit_setup_entry:
+		mov	di,sprite_pos
+		push	cs
+		pop	es
+		xor	ax,ax
+		stosw
+		stosw
+		stosw
+		stosw
+		stosb
+		mov	di,sprite_row_buf
+		mov	cx,8
+		rep	stosw
+		jmp	short ui_tile_postloop	; jumps past the loops to 0B46
+		db	0E8h, 0Eh, 04h		; call +40Eh (preserves bytes; orphan in dead path)
+		mov	di,sprite_row_buf
+		mov	dl,byte ptr ds:[0FF35h]	; enemy_counter
+		dec	dl
+		mov	cx,4
 
 ui_tile_row_loop:
 			push	cx
@@ -1636,6 +1641,7 @@ loc_122:
 			pop	cx
 			loop	ui_tile_row_loop		; Loop if cx > 0
 
+ui_tile_postloop:
 		mov	al,byte ptr ds:[84h]
 		xor	ah,ah			; Zero register
 		mov	cx,140h

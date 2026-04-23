@@ -361,12 +361,12 @@ color_remap_lut_a:
 ; --- Frame handler C entry (falls through to cga_copy_loop) ---
 
 frame_handler_c:
-		db	 1Eh			    ; push ds
-		db	 0B8h, 00h,0B0h		    ; mov ax,0B000h
-		db	 8Eh,0C0h		    ; mov es,ax
-		db	 8Eh,0D8h		    ; mov ds,ax
-		db	 0BEh,0FDh, 04h		    ; mov si,04FDh
-		db	 0B4h, 10h		    ; mov ah,10h
+		push	ds
+		mov	ax,0B000h
+		mov	es,ax
+		mov	ds,ax
+		mov	si,04FDh
+		mov	ah,10h
 
 cga_copy_loop:
 				call	vga_row_copy

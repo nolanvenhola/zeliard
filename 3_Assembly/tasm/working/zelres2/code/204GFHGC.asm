@@ -3384,14 +3384,17 @@ lane_selector_tbl:
 ; dispatch body).
 
 lane_selector_body:
-		db	0C3h			; retn                    ; lane 0 entry
-		db	80h, 0F9h, 01h		; cmp cl, 1              ; lane 1 entry
-		db	75h, 03h		; jne +3
-		db	0B1h, 02h		; mov cl, 2
-		db	0C3h			; retn
-		db	80h, 0F9h, 02h		; cmp cl, 2              ; lane 2 entry
-		db	74h, 01h		; je +1
-		db	0C3h			; retn
+lane_sel_A:					; lane 0 entry (46DAh)
+		retn
+lane_sel_B:					; lane 1 entry (46DBh)
+		cmp	cl,1
+		jne	$+5
+		mov	cl,2
+		retn
+lane_sel_cl_2_entry:				; lane 2 entry (46E2h)
+		cmp	cl,2
+		je	$+3
+		retn
 
 lane_sel_cl_1:					; reached when cmp above is cl=2 je
 		mov	cl,1

@@ -707,11 +707,15 @@ cga_gnd_no_wrap:
 ; --- ground_hgc (video_mode 5): Hercules 720x348 mono ground render at B000h ---
 
 ground_hgc:
-		db	 1Eh, 8Ch			; push ds; mov dx,cs (first 2 bytes)
-		db	0CAh, 81h,0C2h, 00h, 10h, 8Eh
-		db	0DAh,0BEh, 00h, 00h,0B8h, 00h
-		db	0B0h, 8Eh,0C0h,0BFh,0C1h, 53h
-		db	0B9h, 10h, 00h			; mov cx, 16 (scanlines)
+		push	ds
+		mov	dx,cs
+		add	dx,1000h
+		mov	ds,dx
+		mov	si,0
+		mov	ax,0B000h
+		mov	es,ax
+		mov	di,53C1h
+		mov	cx,16				; scanlines
 
 hgc_gnd_row_loop:
 				push	cx

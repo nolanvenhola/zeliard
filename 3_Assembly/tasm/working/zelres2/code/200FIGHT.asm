@@ -2411,7 +2411,7 @@ skip_func116:
 		mov	byte ptr ds:gvar_save_flag_3,0
 		mov	byte ptr ds:any_entity_active,0
 ;*		call	game_func_55			;*
-			db	0E8h, 0E3h, 04h			; call near 1524h (unaligned target)
+			db	0E8h, 0E3h, 04h			; call near 1524h (mid-instruction target; keep as bytes)
 		call	word ptr cs:gfx_fn_render_tile
 		call	copy_buffer_2
 		call	game_scan_loop_8
@@ -2815,6 +2815,7 @@ game_func_51		proc	near
 entity_scan_start:
 		push	si
 		push	dx
+entity_scan_skip_push:
 		mov	bx,0E1Eh
 		mov	cx,3410h
 		mov	al,0FFh
@@ -3564,13 +3565,13 @@ game_func_68		endp
 		mov	byte ptr ds:combat_active,al	; A2 F5 9E
 		mov	byte ptr ds:prev_chr_id,al	; A2 FE 9E
 		mov	byte ptr ds:prev_spr_id,al	; A2 FF 9E
-		db	0E8h, 57h, 04h		; call near +0x457
+		call	game_func_73		; +0x457
 		mov	al,0FFh
 		mov	byte ptr ds:sprite_work_buf,al
 		mov	byte ptr ds:[0EB67h],al
 		mov	byte ptr ds:[0EB6Eh],al
 		mov	byte ptr ds:[0EB75h],al
-		db	0C6h, 06h, 3Ah, 0FFh, 00h	; mov byte [cs:0FF3Ah],0
+		mov	byte ptr ds:[0FF3Ah],0
 		mov	es,cs:gvar_game_seg
 		mov	si,sar_ref_scroll
 		mov	di,6000h
@@ -3585,7 +3586,7 @@ game_func_68		endp
 		pop	ds
 		mov	si,ds:map_data_ptr
 		lodsb
-		db	0E8h, 4Dh, 04h		; call near +0x44D
+		call	copy_buffer		; +0x44D
 		call	word ptr cs:[2002h]
 		mov	si,sar_ref_enemy
 		LOAD_CHUNK_ES enemy_id_table, 02h
@@ -3600,8 +3601,8 @@ game_func_68		endp
 		mov	al,byte ptr ds:[0C4h]
 		or	al,al
 		js	$+5
-		db	0E8h, 7Ch, 0F1h		; call near -0xE84 (backward)
-		db	0E9h, 0EBh, 01h		; jmp near +0x1EB
+		call	test_dl			; -0xE84 (backward)
+		jmp	check_c3		; +0x1EB
 
 game_func_69		proc	near
 		call	vga_operation8
@@ -5083,7 +5084,7 @@ entity_fn_b_2:
 																dec	al
 																and	al,3Fh			; '?'
 ;*		jmp	short loc_469		;*
-																	db	0EBh, 0F2h			; jmp short entity_fn_return (unaligned target)
+																	db	0EBh, 0F2h			; jmp short -0xE (mid-instruction target; keep as bytes)
 
 entity_fn_b_3:
 																	                        ; entity_fn_tbl_b target: handler fn 3 (inc al, mask)
@@ -5555,7 +5556,7 @@ fire_entry_col:
 fire_init_loop2:
 									push	cx
 ;*		call	game_func_108			;*
-										db	0E8h, 04Dh, 0FFh		; call near 2854h (unaligned target)
+										db	0E8h, 04Dh, 0FFh		; call near 2854h (mid-instruction target; keep as bytes)
 									add	si,10h
 									pop	cx
 									loop	fire_init_loop2		; Loop if cx > 0
@@ -5813,13 +5814,13 @@ entity_fn_d_1_data:
 ; dispatch targets:
 		test	byte ptr [si+3],80h
 		je	$+5
-		db	0E9h,0D8h,00h		; jmp near +0xD8 (unaligned target)
+		jmp	reset_main_slot		; +0xD8
 		inc	byte ptr [si+4]
 		cmp	byte ptr [si+4],05h
 		jb	$+5
-		db	0E9h,0CCh,00h		; jmp near +0xCC (unaligned target)
-		db	0E8h,0D6h,00h		; call near +0xD6 (unaligned target)
-		db	0E8h,08h,01h		; call near +0x108 (unaligned target)
+		jmp	reset_main_slot		; +0xCC
+		call	game_func_112		; +0xD6
+		call	check_flags_scan	; +0x108
 		jnc	$+3
 		retn
 
@@ -6336,27 +6337,27 @@ entity_fn_e_tbl_data:
 		push	ds			; 1Eh
 		db	9Ah,0E8h,99h,0E4h,0B8h	; call far 0B8E4h:99E8h (unaligned)
 		db	32h, 00h		; xor al,[bx+si] / pad
-		db	0E9h,1Eh,02h		; jmp near +0x21E (unaligned)
+		jmp	game_func_119_body	; +0x21E
 		mov	dx,9A32h
-		db	0E8h,8Dh,0E4h		; call near -0x1B73 (unaligned)
+		call	entity_scan_skip_push	; -0x1B73
 		mov	ax,64h
-		db	0E9h,12h,02h		; jmp near +0x212 (unaligned)
+		jmp	game_func_119_body	; +0x212
 		mov	dx,9ADDh
-		db	0E9h,81h,0E4h		; jmp near -0x1B7F (unaligned)
+		jmp	entity_scan_skip_push	; -0x1B7F
 		mov	dx,9A47h
-		db	0E8h,7Bh,0E4h		; call near -0x1B85 (unaligned)
+		call	entity_scan_skip_push	; -0x1B85
 		mov	ax,1F4h
-		db	0E9h,00h,02h		; jmp near +0x200 (unaligned)
+		jmp	game_func_119_body	; +0x200
 		mov	dx,9A5Ch
-		db	0E8h,6Fh,0E4h		; call near -0x1B91 (unaligned)
+		call	entity_scan_skip_push	; -0x1B91
 		mov	ax,3E8h
-		db	0E9h,0F4h,01h		; jmp near +0x1F4 (unaligned)
+		jmp	game_func_119_body	; +0x1F4
 		mov	dx,9B2Ch
-		db	0E8h,63h,0E4h		; call near -0x1B9D (unaligned)
+		call	entity_scan_skip_push	; -0x1B9D
 		mov	byte ptr ds:[9Bh],0FFh
 		retn
 		mov	dx,9B9Ch
-		db	0E8h,57h,0E4h		; call near -0x1BA9 (unaligned)
+		call	entity_scan_skip_push	; -0x1BA9
 		push	si
 		call	word ptr cs:[3004h]
 		mov	byte ptr ds:[92h],06h
@@ -6368,10 +6369,10 @@ entity_fn_e_tbl_data:
 		call	word ptr cs:[010Ch]	; chunk loader
 		pop	si
 		retn
-		db	0E8h,0A7h,02h		; call near +0x2A7 (unaligned)
+		call	game_func_125		; +0x2A7
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],03h
-		db	0E8h,0D8h,01h		; call near +0x1D8 (unaligned)
+		call	game_scan_loop_10	; +0x1D8
 		jnc	$+3
 		retn
 		mov	byte ptr ds:[0FF75h],10h
@@ -6380,8 +6381,8 @@ entity_fn_e_tbl_data:
 		cmp	al,04h
 		jnz	$+11
 		mov	ax,0001h
-		db	0E8h,0ADh,01h		; call near +0x1AD (unaligned)
-		db	0E9h,7Ah,01h		; jmp near +0x17A (unaligned)
+		call	game_func_120		; +0x1AD
+		jmp	game_func_119		; +0x17A
 
 score_small:
 		cmp	al,5
@@ -6425,22 +6426,22 @@ gfx_fn_clear		dw	0E90Ah
 gfx_fn_blit		dw	offset vga_operation
 gfx_fn_map_ref		dw	offset game_func_142
 		db	02h		; hi-byte of preceding jmp near displacement
-		db	0E8h,6Eh,01h	; call near +0x16E
+		call	game_scan_loop_10	; +0x16E
 		db	73h,01h		; jnc $+3
 gfx_fn_memcpy		dw	0BAC3h
 gfx_fn_map_scroll		dw	9A99h
-		db	0E8h,0B5h,0E3h	; call near -0x1C4B (unaligned)
+		call	entity_scan_skip_push	; -0x1C4B
 		mov	ax,word ptr ds:[0B2h]
 		shr	ax,1
 		shr	ax,1
 		shr	ax,1
 		inc	ax
 		add	word ptr ds:[0C6h],ax
-		db	0E9h,10h,01h	; jmp near +0x110 (unaligned)
+		jmp	game_func_119		; +0x110
 		mov	byte ptr [si+0Fh],0
 		test	byte ptr [si+9],01h
 		jnz	$+44
-		db	0E8h,47h,01h	; call near +0x147 (unaligned)
+		call	game_scan_loop_10	; +0x147
 		jnc	$+3
 		retn
 
@@ -7538,10 +7539,10 @@ entity_fn_tbl_f_data:
 		db	0Ah,93h,9Ah,94h	; or dl,[bp+di+...] (complex)
 		db	9Ah,93h,0Ch,94h	; (continuation)
 		mov	ax,word ptr [si+2]
-		db	0E8h,0Dh,0D6h		; call near -0x29F3 (unaligned)
+		db	0E8h,0Dh,0D6h		; call near -0x29F3 (mid-instruction target; keep as bytes)
 		xchg	di,si
 		add	si,24h
-		db	0E8h,19h,0D6h		; call near -0x29E7 (unaligned)
+		db	0E8h,19h,0D6h		; call near -0x29E7 (mid-instruction target; keep as bytes)
 		xchg	di,si
 		mov	cx,0002h
 
