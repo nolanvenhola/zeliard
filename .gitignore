@@ -21,6 +21,8 @@ logs/
 3_Assembly/tasm/working/**/*.LST
 3_Assembly/tasm/working/**/*.OBJ
 3_Assembly/tasm/working/**/*.SDF
+3_Assembly/tasm/working/**/*.EXE
+3_Assembly/tasm/working/**/*.sdf
 2_SAR/Tools/__pycache__/
 2_SAR/ExtractedChunks/**/*_decomp.bin
 3_Assembly/tasm/research/**/*.LST
