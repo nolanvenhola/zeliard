@@ -85,42 +85,41 @@ gmmcga		proc	far
 
 start:
 		; Function dispatch table (36 CS-relative word pointers, driver loads at game_seg:2000h).
-		dw	driver_base + (offset fn_0)			; fn  0
-		dw	driver_base + (offset fn_1)			; fn  1
-		dw	driver_base + (offset fn_2)			; fn  2
+		dw	2046h			; fn  0
+		dw	2106h			; fn  1
+		dw	2195h			; fn  2
 		dw	2227h			; fn  3  (alt entry: MOV DI,text_field_vga_ofs; draw text field std)
-		dw	driver_base + (offset fn_4)			; fn  4
+		dw	2256h			; fn  4
 		dw	2231h			; fn  5  (alt entry: MOV DI,draw_text_field_alt; draw text field alt)
-		dw	driver_base + (offset fn_6)			; fn  6
-		dw	driver_base + (offset fn_7)			; fn  7
-		dw	driver_base + (offset fn_8)			; fn  8
-		dw	driver_base + (offset fn_9)			; fn  9
-		dw	driver_base + (offset fn_10)			; fn 10
-		dw	driver_base + (offset fn_11)			; fn 11
-		dw	driver_base + (offset fn_12)			; fn 12
-		dw	driver_base + (offset fn_13)			; fn 13
-		dw	driver_base + (offset fn_14)			; fn 14
-		dw	driver_base + (offset fn_15)			; fn 15
-		dw	driver_base + (offset fn_16)			; fn 16
-		dw	driver_base + (offset render_text_char_alt)			; fn 17
-		dw	driver_base + (offset fn_18)			; fn 18
-		dw	driver_base + (offset fn_19)			; fn 19
-		dw	driver_base + (offset fn_20)			; fn 20
-		dw	driver_base + (offset fn_21)			; fn 21
-		dw	driver_base + (offset fn_22)			; fn 22
-		dw	driver_base + (offset sprite_anim_data)			; fn 23
-		dw	driver_base + (offset render_tilemap_large)			; fn 24
-		dw	driver_base + (offset time_to_bcd)			; fn 25
-		dw	driver_base + (offset fn_26)			; fn 26
-		dw	driver_base + (offset fn_27)			; fn 27
-		dw	driver_base + (offset fn_28)			; fn 28
-		dw	driver_base + (offset fn_29)			; fn 29
-		dw	driver_base + (offset fn_30)			; fn 30
-		dw	driver_base + (offset fn_31)			; fn 31
-		dw	driver_base + (offset fn_32)			; fn 32
+		dw	2260h			; fn  6
+		dw	22BFh			; fn  7
+		dw	22CDh			; fn  8
+		dw	2385h			; fn  9
+		dw	238Fh			; fn 10
+		dw	23ACh			; fn 11
+		dw	23CCh			; fn 12
+		dw	23F5h			; fn 13
+		dw	254Ch			; fn 14
+		dw	25E2h			; fn 15
+		dw	25FCh			; fn 16
+		dw	27E9h			; fn 17
+		dw	2857h			; fn 18
+		dw	289Ah			; fn 19
+		dw	28D9h			; fn 20
+		dw	291Ah			; fn 21
+		dw	296Fh			; fn 22
+		dw	29C3h			; fn 23
+		dw	24A3h			; fn 24
+		dw	243Ah			; fn 25
+		dw	2616h			; fn 26
+		dw	2637h			; fn 27
+		dw	22DBh			; fn 28
+		dw	2718h			; fn 29
+		dw	2730h			; fn 30
+		dw	2A1Ch			; fn 31
+		dw	2130h			; fn 32
 		dw	2C01h			; fn 33  (alt entry: mid process_sprite_row)
-		dw	driver_base + (offset fn_34)			; fn 34
-fn_0:
+		dw	2C2Ah			; fn 34
 		dw	3350h			; fn 35 (external)
 
 dispatch_call:
@@ -281,7 +280,6 @@ font_row_loop:
 font_bit_loop:
 												rol	al,1			; Rotate
 												jnc	font_skip_pixel			; Jump if carry=0
-fn_1:
 												mov	byte ptr es:[di],0
 
 font_skip_pixel:
@@ -312,7 +310,6 @@ font_skip_pixel_b:
 												inc	di
 												loop	font_bit_loop_b		; Loop if cx > 0
 
-fn_32:
 												rol	al,1			; Rotate
 												rol	al,1			; Rotate
 												rol	al,1			; Rotate
@@ -383,7 +380,6 @@ fill_col_loop:
 							mov	es:[di],ah
 							add	di,vga_stride
 							loop	fill_col_loop		; Loop if cx > 0
-fn_2:
 
 		mov	es:[di],al
 		pop	di
@@ -494,11 +490,9 @@ fill_blank_cols_loop:
 							mov	bh,5
 							xor	al,al			; Zero register
 							mov	ah,12h
-fn_4:
 							call	fill_vertical_line
 							pop	di
 							inc	di
-fn_6:
 							pop	cx
 							loop	fill_blank_cols_loop		; Loop if cx > 0
 
@@ -580,7 +574,6 @@ text_data_entry:
 		mov	bx,vga_stride
 		mul	bx			; dx:ax = reg * ax
 		pop	di
-fn_7:
 		add	di,di
 		add	di,di
 		add	di,ax
@@ -588,12 +581,10 @@ fn_7:
 		xor	ah,ah			; Zero register
 		mov	bl,al
 		add	di,ax
-fn_8:
 		lodsb				; String [si] to al
 		xor	ch,ch			; Zero register
 		mov	cl,al
 		SET_VGA_ES
-fn_28:
 
 render_line_loop:
 							push	cx
@@ -701,7 +692,6 @@ render_text_char		endp
 		pop	ds
 		retn
 			                        ;* No entry point to code
-fn_9:
 		test	byte ptr cs:[93h],0FFh
 		jnz	draw_timer_entry			; Jump if not zero
 		retn
@@ -710,7 +700,6 @@ draw_timer_entry:
 		push	ds
 		mov	ax,word ptr cs:[94h]
 		xor	dx,dx			; Zero register
-fn_10:
 		call	init_timestamp
 		push	cs
 		pop	ds
@@ -725,7 +714,6 @@ fn_10:
 init_timestamp		proc	near
 		mov	di,2433h
 		call	time_to_bcd
-fn_11:
 		mov	cx,6
 
 check_filled_loop:
@@ -740,7 +728,6 @@ mark_slot_filled:
 
 		retn
 
-fn_12:
 init_timestamp		endp
 
 		db	7 dup (0)
@@ -759,7 +746,6 @@ time_to_bcd		proc	near
 		call	modulo_divide_bcd
 		mov	cs:[di+2],dh
 		mov	bx,3E8h
-fn_13:
 		call	int_divide_bcd
 		mov	cs:[di+3],dh
 		mov	bx,64h
@@ -1007,7 +993,6 @@ tilemap_large_loop:
 		or	al,al			; Zero ?
 		jz	render_tilemap_branch			; Jump if zero
 		mov	ds,cs:gvar_game_seg
-fn_14:
 		dec	al
 		xor	ah,ah			; Zero register
 		mov	cx,0C0h
@@ -1072,7 +1057,6 @@ tile_src_base_lbl:
 		db	 00h,0C0h, 80h, 00h, 00h, 02h	; row 14 odd
 		db	 00h, 00h, 00h, 00h,0FCh,0FFh	; row 15 even
 		db	0FFh, 3Fh, 2Ah,0AAh,0AAh,0A8h	; row 15 odd
-fn_15:
 ; Sprite source selector A: SI = row*192 + game_seg:[0E208h], calls render_tilemap_small
 		push	ds
 		mov	ds,cs:[gvar_game_seg]
@@ -1085,7 +1069,6 @@ fn_15:
 		pop	ds
 		retn
 ; Sprite source selector B: SI = row*192 + game_seg:[0E204h], calls render_tilemap_small
-fn_16:
 		push	ds
 		mov	ds,cs:[gvar_game_seg]
 		xor	ah,ah
@@ -1098,7 +1081,6 @@ fn_16:
 		retn
 
 render_tilemap_small		proc	near
-fn_26:
 		xor	ax,ax			; Zero register
 		mov	al,bh
 		mov	bh,ah
@@ -1115,7 +1097,6 @@ fn_26:
 
 tilemap_small_loop:
 							push	cx
-fn_27:
 							mov	ax,[si]
 							xchg	ah,al
 							mov	cs:bitplane_0,ax
@@ -1164,12 +1145,10 @@ bitplane_bits_loop:
 							adc	ax,ax
 							mov	es:[bp],al
 							inc	bp
-fn_29:
 							loop	bitplane_bits_loop		; Loop if cx > 0
 
 		retn
 
-fn_30:
 extract_bitplane_pixels		endp
 
 render_text_char_alt		proc	near
@@ -1331,7 +1310,6 @@ copy_from_vga_loop:
 		mov	ds,ax
 		SET_VGA_ES
 		mov	bl,ch
-fn_18:
 		xor	bh,bh			; Zero register
 		mov	ch,bh
 		add	bx,bx
@@ -1374,7 +1352,6 @@ check_newline_cmd:
 												push	cx
 												push	bx
 												push	si
-fn_19:
 												mov	ah,cs:char_color
 												call	render_text_char_alt
 												pop	si
@@ -1412,7 +1389,6 @@ set_color_cmd:
 		mov	al,bh
 		mov	bh,ah
 		push	ax
-fn_20:
 		mov	ax,vga_stride
 		mul	bx			; dx:ax = reg * ax
 		pop	di
@@ -1451,7 +1427,6 @@ copy_stride_loop:
 		mov	ds:tile_color,al
 		pop	bx
 		xor	ax,ax			; Zero register
-fn_21:
 		mov	al,bh
 		mov	bh,ah
 		push	ax
@@ -1490,7 +1465,6 @@ fill_rect_row_loop:
 
 		retn
 
-fn_22:
 fill_rectangle		endp
 
 			                        ;* No entry point to code
@@ -1595,7 +1569,6 @@ sprite_anim_data:
 		db	001h, 000h, 003h, 003h, 080h, 080h	; [#.##  ]
 		db	080h, 000h, 009h, 001h, 001h, 009h	; [ .####]
 		db	009h, 000h, 000h, 000h, 000h, 001h	; [#....#]
-fn_31:
 		db	003h, 003h, 000h, 080h, 080h, 000h	; [##.  .]
 		db	009h, 000h, 009h, 001h, 000h, 000h	; [#.##..]
 		db	002h, 002h, 000h, 000h, 000h, 00Bh	; [##...#]
@@ -1737,5 +1710,4 @@ extract_bitplane_bit		endp
 
 seg_a		ends
 
-fn_34:
 		end	start

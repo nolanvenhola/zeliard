@@ -63,41 +63,41 @@ gmtga		proc	far
 
 start:
 		; Function dispatch table (36 CS-relative word pointers, driver loads at game_seg:2000h).
-		dw	driver_base + (offset fn_0)			; fn  0
-		dw	driver_base + (offset fn_1)			; fn  1
-		dw	driver_base + (offset fn_2)			; fn  2
-		dw	driver_base + (offset fn_3)			; fn  3
-		dw	driver_base + (offset fn_4)			; fn  4
-		dw	driver_base + (offset fn_5)			; fn  5
-		dw	driver_base + (offset fn_6)			; fn  6
-		dw	driver_base + (offset fn_7)			; fn  7
-		dw	driver_base + (offset fn_8)			; fn  8
-		dw	driver_base + (offset fn_9)			; fn  9
-		dw	driver_base + (offset fn_10)			; fn 10
-		dw	driver_base + (offset fn_11)			; fn 11
-		dw	driver_base + (offset fn_12)			; fn 12
-		dw	driver_base + (offset fn_13)			; fn 13
-		dw	driver_base + (offset fn_14)			; fn 14
-		dw	driver_base + (offset fn_15)			; fn 15
-		dw	driver_base + (offset fn_16)			; fn 16
-		dw	driver_base + (offset render_text_char_alt)			; fn 17
-		dw	driver_base + (offset fn_18)			; fn 18
-		dw	driver_base + (offset fn_19)			; fn 19
-		dw	driver_base + (offset fn_20)			; fn 20
-		dw	driver_base + (offset fn_21)			; fn 21
-		dw	driver_base + (offset fn_22)			; fn 22
-		dw	driver_base + (offset fn_23)			; fn 23
-		dw	driver_base + (offset render_tilemap_large)			; fn 24
-		dw	driver_base + (offset time_to_bcd)			; fn 25
-		dw	driver_base + (offset fn_26)			; fn 26
-		dw	driver_base + (offset fn_27)			; fn 27
-		dw	driver_base + (offset fn_28)			; fn 28
-		dw	driver_base + (offset fn_29)			; fn 29
-		dw	driver_base + (offset fn_30)			; fn 30
-		dw	driver_base + (offset fn_31)			; fn 31
-		dw	driver_base + (offset fn_32)			; fn 32
-		dw	driver_base + (offset fn_33)			; fn 33
-		dw	driver_base + (offset fn_34)			; fn 34
+		dw	2046h			; fn  0
+		dw	20F0h			; fn  1
+		dw	21B7h			; fn  2
+		dw	22A7h			; fn  3
+		dw	22E1h			; fn  4
+		dw	22B1h			; fn  5
+		dw	22EBh			; fn  6
+		dw	2378h			; fn  7
+		dw	2386h			; fn  8
+		dw	24DCh			; fn  9
+		dw	24E6h			; fn 10
+		dw	2503h			; fn 11
+		dw	2523h			; fn 12
+		dw	254Ch			; fn 13
+		dw	26B0h			; fn 14
+		dw	2771h			; fn 15
+		dw	278Bh			; fn 16
+		dw	29D9h			; fn 17
+		dw	2A68h			; fn 18
+		dw	2ABBh			; fn 19
+		dw	2B0Fh			; fn 20
+		dw	2B65h			; fn 21
+		dw	2BAEh			; fn 22
+		dw	2BFCh			; fn 23
+		dw	25FAh			; fn 24
+		dw	2591h			; fn 25
+		dw	27A5h			; fn 26
+		dw	27C6h			; fn 27
+		dw	2394h			; fn 28
+		dw	28A7h			; fn 29
+		dw	28BFh			; fn 30
+		dw	2C5Bh			; fn 31
+		dw	2124h			; fn 32
+		dw	2DC3h			; fn 33
+		dw	2DF6h			; fn 34
 fn_0:
 		dw	0250h			; fn 35
 ; Dispatch mechanism: AL=fn#, BH=row, BL=col; computes TGA pixel address and branches.

@@ -85,46 +85,47 @@ gmcga		proc	far
 
 start:
 		; Function dispatch table (35 CS-relative word pointers, driver loads at game_seg:2000h).
-		dw	driver_base + (offset fn_0)			; fn  0
-		dw	driver_base + (offset fn_1)			; fn  1
-		dw	driver_base + (offset fn_2)			; fn  2
-		dw	driver_base + (offset fn_3)			; fn  3
-		dw	driver_base + (offset fn_4)			; fn  4
-		dw	driver_base + (offset fn_5)			; fn  5
-		dw	driver_base + (offset fn_6)			; fn  6
-		dw	driver_base + (offset fn_7)			; fn  7
-		dw	driver_base + (offset fn_8)			; fn  8
-		dw	driver_base + (offset fn_9)			; fn  9
-		dw	driver_base + (offset fn_10)			; fn 10
-		dw	driver_base + (offset fn_11)			; fn 11
-		dw	driver_base + (offset fn_12)			; fn 12
-		dw	driver_base + (offset fn_13)			; fn 13
-		dw	driver_base + (offset fn_14)			; fn 14
-		dw	driver_base + (offset fn_15)			; fn 15
-		dw	driver_base + (offset fn_16)			; fn 16
-		dw	driver_base + (offset render_text_char_alt)			; fn 17
-		dw	driver_base + (offset fn_18)			; fn 18
-		dw	driver_base + (offset fn_19)			; fn 19
-		dw	driver_base + (offset fn_20)			; fn 20
-		dw	driver_base + (offset fn_21)			; fn 21
-		dw	driver_base + (offset fn_22)			; fn 22
-		dw	driver_base + (offset fn_23)			; fn 23
-		dw	driver_base + (offset render_tilemap_large)			; fn 24
-		dw	driver_base + (offset time_to_bcd)			; fn 25
-		dw	driver_base + (offset fn_26)			; fn 26
-		dw	driver_base + (offset fn_27)			; fn 27
-		dw	driver_base + (offset fn_28)			; fn 28
-		dw	driver_base + (offset fn_29)			; fn 29
-		dw	driver_base + (offset fn_30)			; fn 30
-		dw	driver_base + (offset fn_31)			; fn 31
-		dw	driver_base + (offset fn_32)			; fn 32
-		dw	driver_base + (offset fn_33)			; fn 33
-		dw	driver_base + (offset fn_34)			; fn 34
+		dw	2046h			; fn  0
+		dw	20F0h			; fn  1
+		dw	2187h			; fn  2
+		dw	225Dh			; fn  3
+		dw	2297h			; fn  4
+		dw	2267h			; fn  5
+		dw	22A1h			; fn  6
+		dw	232Eh			; fn  7
+		dw	233Ch			; fn  8
+		dw	243Ah			; fn  9
+		dw	2444h			; fn 10
+		dw	2461h			; fn 11
+		dw	2481h			; fn 12
+		dw	24AAh			; fn 13
+		dw	262Ch			; fn 14
+		dw	26DBh			; fn 15
+		dw	26F5h			; fn 16
+		dw	294Bh			; fn 17
+		dw	29F5h			; fn 18
+		dw	2A56h			; fn 19
+		dw	2A9Ch			; fn 20
+		dw	2AE4h			; fn 21
+		dw	2B2Fh			; fn 22
+		dw	2B97h			; fn 23
+		dw	2558h			; fn 24
+		dw	24EFh			; fn 25
+		dw	270Fh			; fn 26
+		dw	2730h			; fn 27
+		dw	234Ah			; fn 28
+		dw	2811h			; fn 29
+		dw	2829h			; fn 30
+		dw	2C19h			; fn 31
+		dw	2124h			; fn 32
+		dw	2D66h			; fn 33
+		dw	2D99h			; fn 34
 ; Coordinate-to-CGA-offset calculation + bordered row draw.
 ; Input: BL=col BH=row CL/CH=width/height.
 ; Calculates CGA byte offset: DI = (col/2 & 2000h) + col*80 + row
 ; then draws top border, middle rows, bottom border via fill_horizontal_line.
 ; JZ at byte 23 jumps to set_plot_mode (height=0 ?-> init mode only).
+		db	50h			; push ax (0x46, alt entry / unreferenced)
 		shr	bl,1
 		sbb	di,di
 		and	di,2000h

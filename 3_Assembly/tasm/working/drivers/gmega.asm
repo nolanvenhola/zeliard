@@ -72,41 +72,41 @@ start:
 ; Function dispatch table (35 word entries) followed by dispatch mechanism code.
 ; Entries are CS-relative addresses (driver loads at game_seg:2000h).
 ; First 70 bytes = 35 dw pointers; remaining = dispatch mechanism code.
-		dw	driver_base + (offset dispatch_call)			; fn  0
-		dw	driver_base + (offset fn_1)			; fn  1
-		dw	driver_base + (offset fn_2)			; fn  2
-		dw	driver_base + (offset fn_3)			; fn  3
-		dw	driver_base + (offset fn_4)			; fn  4
-		dw	driver_base + (offset fn_5)			; fn  5
-		dw	driver_base + (offset fn_6)			; fn  6
-		dw	driver_base + (offset fn_7)			; fn  7
-		dw	driver_base + (offset fn_8)			; fn  8
-		dw	driver_base + (offset fn_9)			; fn  9
-		dw	driver_base + (offset fn_10)			; fn 10
-		dw	driver_base + (offset fn_11)			; fn 11
-		dw	driver_base + (offset fn_12)			; fn 12
-		dw	driver_base + (offset fn_13)			; fn 13
-		dw	driver_base + (offset fn_14)			; fn 14
-		dw	driver_base + (offset fn_15)			; fn 15
-		dw	driver_base + (offset fn_16)			; fn 16
-		dw	driver_base + (offset render_text_char_alt)			; fn 17
-		dw	driver_base + (offset fn_18)			; fn 18
-		dw	driver_base + (offset fn_19)			; fn 19
-		dw	driver_base + (offset fn_20)			; fn 20
-		dw	driver_base + (offset fn_21)			; fn 21
-		dw	driver_base + (offset fn_22)			; fn 22
-		dw	driver_base + (offset fn_23)			; fn 23
-		dw	driver_base + (offset render_tilemap_large)			; fn 24
-		dw	driver_base + (offset time_to_bcd)			; fn 25
-		dw	driver_base + (offset fn_26)			; fn 26
-		dw	driver_base + (offset fn_27)			; fn 27
-		dw	driver_base + (offset fn_28)			; fn 28
-		dw	driver_base + (offset fn_29)			; fn 29
-		dw	driver_base + (offset fn_30)			; fn 30
-		dw	driver_base + (offset fn_31)			; fn 31
-		dw	driver_base + (offset fn_32)			; fn 32
-		dw	driver_base + (offset fn_33)			; fn 33
-		dw	driver_base + (offset fn_34)			; fn 34
+		dw	2046h			; fn  0
+		dw	211Eh			; fn  1
+		dw	21C8h			; fn  2
+		dw	22DFh			; fn  3
+		dw	231Ch			; fn  4
+		dw	22E9h			; fn  5
+		dw	2326h			; fn  6
+		dw	23A5h			; fn  7
+		dw	23B3h			; fn  8
+		dw	24BBh			; fn  9
+		dw	24C5h			; fn 10
+		dw	24E2h			; fn 11
+		dw	2502h			; fn 12
+		dw	252Bh			; fn 13
+		dw	26BEh			; fn 14
+		dw	2745h			; fn 15
+		dw	275Fh			; fn 16
+		dw	2958h			; fn 17
+		dw	29E9h			; fn 18
+		dw	2A33h			; fn 19
+		dw	2A8Bh			; fn 20
+		dw	2AE5h			; fn 21
+		dw	2B3Ah			; fn 22
+		dw	2B8Eh			; fn 23
+		dw	25D9h			; fn 24
+		dw	2570h			; fn 25
+		dw	2779h			; fn 26
+		dw	279Ah			; fn 27
+		dw	23C1h			; fn 28
+		dw	287Bh			; fn 29
+		dw	2893h			; fn 30
+		dw	2BF8h			; fn 31
+		dw	214Eh			; fn 32
+		dw	2E63h			; fn 33
+		dw	2E92h			; fn 34
 ; Dispatch mechanism: AL=fn#, BL=col, BH=row. Computes DI=col*80+row.
 ; fn 0 (AL=0) jumps directly to clear_screen (init only path).
 ; fn 1+ PUSHes DI then falls through to border-draw setup at loc_1.
