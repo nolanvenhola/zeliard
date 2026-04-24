@@ -1,59 +1,110 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				_302MAPBC                                ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   5-Apr-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;==========================================================================
+;
+;  302EAI2.BIN - Enemy AI Handler: TAKO (zelres3 chunk 3)
+;
+;  Per-enemy AI controller for the TAKO (octopus) enemy, loaded by
+;  200FIGHT alongside 310TAKO.BIN sprites. Controls movement, swim
+;  pattern, tentacle attack, and collision for the octopus enemy.
+;
+;  Dispatch model (shared across EAI1..EAI8):
+;    SI -> active enemy slot record in game_seg.
+;    [si+5] bit7=facing, bit5=hit flag, [si+6]=anim phase,
+;    [si+8]=attack cooldown, [si+9]=state/substate, [si+Ah]=secondary.
+;    Handler blocks end in `retn` and are entered via
+;    `jmp word ptr ds:<tbl>[bx]` -- Sourcer marks them ;* No entry point.
+;
+;  Resource table constants (DS offsets inside game_seg):
+;    6004h..603Ah = TAKO movement/collision/attack dispatch table slots.
+;    0A4xxh..0A9xxh = TAKO lookup tables (tentacle/swim-pattern animation).
+;    0C002h / 0FF35h / 0FF36h = shared battle globals.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; --- TAKO enemy AI dispatch table (game_seg:6004h..603Ah, in DS at runtime) ---
+ai_fn_tbl_a	equ	6004h			; AI fn: test-collision
+ai_fn_tbl_b	equ	6008h			; AI fn: move-right or swim
+ai_fn_tbl_c	equ	600Ah			; AI fn: check-left
+ai_fn_tbl_d	equ	600Ch			; AI fn: check-right
+ai_fn_tbl_e	equ	600Eh			; AI fn
+ai_fn_tbl_f	equ	6010h			; AI fn
+ai_fn_tbl_g	equ	6012h			; AI fn
+ai_fn_tbl_h	equ	6014h			; AI fn
+ai_fn_tbl_i	equ	6016h			; AI fn
+ai_fn_tbl_j	equ	6028h			; AI fn
+ai_fn_tbl_k	equ	602Ah			; AI fn
+ai_fn_tbl_l	equ	602Ch			; AI fn
+ai_fn_tbl_m	equ	602Eh			; AI fn
+ai_fn_tbl_n	equ	6030h			; AI fn
+ai_fn_tbl_o	equ	6032h			; AI fn
+ai_hide_fn	equ	6034h			; AI fn: hide / despawn
+ai_attack_fn	equ	603Ah			; AI fn: fire tentacle attack
 
-data_10e	equ	6004h			;*
-data_11e	equ	6008h			;*
-data_12e	equ	600Ah			;*
-data_13e	equ	600Ch			;*
-data_14e	equ	600Eh			;*
-data_15e	equ	6010h			;*
-data_16e	equ	6012h			;*
-data_17e	equ	6014h			;*
-data_18e	equ	6016h			;*
-data_19e	equ	6028h			;*
-data_20e	equ	602Ah			;*
-data_21e	equ	602Ch			;*
-data_22e	equ	602Eh			;*
-data_23e	equ	6030h			;*
-data_24e	equ	6032h			;*
-data_25e	equ	6034h			;*
-data_26e	equ	603Ah			;*
-data_27e	equ	0A4FDh			;*
-data_28e	equ	0A4FEh			;*
-data_29e	equ	0A50Ah			;*
-data_30e	equ	0A50Bh			;*
-data_31e	equ	0A517h			;*
-data_32e	equ	0A518h			;*
-data_33e	equ	0A524h			;*
-data_34e	equ	0A525h			;*
-data_35e	equ	0A6D6h			;*
-data_36e	equ	0A6D7h			;*
-data_37e	equ	0A8D2h			;*
-data_38e	equ	0A8D3h			;*
-data_39e	equ	0A8DFh			;*
-data_40e	equ	0A8E0h			;*
-data_41e	equ	0A8F0h			;*
-data_42e	equ	0A956h			;*
-data_43e	equ	0C002h			;*
-data_44e	equ	0FF35h			;*
-data_45e	equ	0FF36h			;*
+; --- TAKO lookup tables (game_seg DS) ---
+tako_tbl_a	equ	0A4FDh
+tako_tbl_b	equ	0A4FEh
+tako_tbl_c	equ	0A50Ah
+tako_tbl_d	equ	0A50Bh
+tako_tbl_e	equ	0A517h
+tako_tbl_f	equ	0A518h
+tako_tbl_g	equ	0A524h
+tako_tbl_h	equ	0A525h
+tako_tbl_i	equ	0A6D6h
+tako_tbl_j	equ	0A6D7h
+tako_tbl_k	equ	0A8D2h
+tako_tbl_l	equ	0A8D3h
+tako_tbl_m	equ	0A8DFh
+tako_tbl_n	equ	0A8E0h
+tako_tbl_o	equ	0A8F0h
+tako_tbl_p	equ	0A956h
+gvar_proj_cnt	equ	0C002h			; active projectile count (shared battle state)
+gvar_frame_cnt	equ	0FF35h			; frame counter byte
+gvar_enemy_cnt	equ	0FF36h			; active enemy counter byte
+
+; Backwards-compat aliases
+data_10e	equ	ai_fn_tbl_a
+data_11e	equ	ai_fn_tbl_b
+data_12e	equ	ai_fn_tbl_c
+data_13e	equ	ai_fn_tbl_d
+data_14e	equ	ai_fn_tbl_e
+data_15e	equ	ai_fn_tbl_f
+data_16e	equ	ai_fn_tbl_g
+data_17e	equ	ai_fn_tbl_h
+data_18e	equ	ai_fn_tbl_i
+data_19e	equ	ai_fn_tbl_j
+data_20e	equ	ai_fn_tbl_k
+data_21e	equ	ai_fn_tbl_l
+data_22e	equ	ai_fn_tbl_m
+data_23e	equ	ai_fn_tbl_n
+data_24e	equ	ai_fn_tbl_o
+data_25e	equ	ai_hide_fn
+data_26e	equ	ai_attack_fn
+data_27e	equ	tako_tbl_a
+data_28e	equ	tako_tbl_b
+data_29e	equ	tako_tbl_c
+data_30e	equ	tako_tbl_d
+data_31e	equ	tako_tbl_e
+data_32e	equ	tako_tbl_f
+data_33e	equ	tako_tbl_g
+data_34e	equ	tako_tbl_h
+data_35e	equ	tako_tbl_i
+data_36e	equ	tako_tbl_j
+data_37e	equ	tako_tbl_k
+data_38e	equ	tako_tbl_l
+data_39e	equ	tako_tbl_m
+data_40e	equ	tako_tbl_n
+data_41e	equ	tako_tbl_o
+data_42e	equ	tako_tbl_p
+data_43e	equ	gvar_proj_cnt
+data_44e	equ	gvar_frame_cnt
+data_45e	equ	gvar_enemy_cnt
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -61,7 +112,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_302MAPBC	proc	far
+tako_ai_main	proc	far
 
 start:
 		mov	al,data_1
@@ -388,11 +439,11 @@ loc_23:
 		db	 03h, 03h, 04h, 04h, 05h, 05h
 		db	 05h, 05h, 05h, 05h,0FFh
 
-_302MAPBC	endp
+tako_ai_main	endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_1		proc	near
 		cmp	byte ptr [si+3],22h	; '"'
@@ -420,9 +471,9 @@ loc_26:
 sub_1		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_2		proc	near
 		mov	ax,[si+2]
@@ -466,9 +517,9 @@ loc_28:
 sub_2		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_3		proc	near
 		cmp	byte ptr [si+3],2
@@ -495,9 +546,9 @@ loc_31:
 sub_3		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_4		proc	near
 		mov	ax,[si+2]
@@ -541,9 +592,9 @@ loc_33:
 sub_4		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_5		proc	near
 		test	byte ptr [si+3],0FFh
@@ -569,9 +620,9 @@ loc_36:
 sub_5		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_6		proc	near
 		mov	ax,[si+2]
@@ -827,9 +878,9 @@ loc_69:
 		db	 00h, 00h, 07h, 03h, 04h, 04h
 		db	 05h
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_7		proc	near
 		mov	al,ds:data_44e
@@ -1020,9 +1071,9 @@ loc_97:
 		mov	byte ptr [si+9],0
 		retn
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_8		proc	near
 		inc	byte ptr [si+6]

@@ -1,22 +1,27 @@
 
 PAGE  59,132
 
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-;лл					                                 лл
-;лл				_355VGARC                                лл
-;лл					                                 лл
-;лл      Created:   5-Apr-26		                                 лл
-;лл      Code type: zero start		                                 лл
-;лл      Passes:    5          Analysis	Options on: none                 лл
-;лл					                                 лл
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
+;==========================================================================
+;
+;  355VGARC.BIN - VGA Register / Palette Data (zelres3 chunk 55)
+;
+;  Extracted as "vgareg55.bin" -- packed VGA palette + register data used
+;  by level/background rendering code in other zelres3 chunks. 897 bytes
+;  of raw data; not executable code, despite Sourcer's "zero start" mode
+;  decoding the leading and trailing bytes as jge/jg/add/push instructions.
+;  Those bytes are palette RGB values and VGA register state.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; The following equates are retained from Sourcer's analysis of the faux
+; "code" at the head/tail of the file. They are effectively unreferenced
+; because the file is pure data; kept so the assembly reproduces the
+; original bytes exactly.
 
 data_1e		equ	5F00h			;*
 data_2e		equ	7F01h			;*
@@ -30,10 +35,10 @@ seg_a		segment	byte public
 _355VGARC	proc	far
 
 start:
-;*		jge	loc_1			;*Jump if > or =
-		db	 7Dh, 03h		;  Fixup - byte match
-		add	[bx+si],al
-		add	[bx+di],al
+vga_reg_palette_data	label	byte
+		db	 7Dh, 03h		; data (Sourcer: jge +3)
+		db	 00h, 00h		; data (Sourcer: add [bx+si],al)
+		db	 00h, 01h		; data (Sourcer: add [bx+di],al)
 		db	 60h,0FFh, 90h, 00h,0FFh, 00h
 		db	 20h, 00h, 20h, 00h, 20h, 00h
 		db	 20h, 00h, 20h, 00h, 20h, 00h
@@ -143,26 +148,25 @@ start:
 		db	0FFh, 40h,0FFh,0A0h,0FFh,0A0h
 		db	0FFh,0D0h,0FFh,0D0h,0FFh,0E8h
 		db	0FFh,0E8h
+; --- From here to end: still data. Sourcer decoded the following bytes
+;     as push/jg/add/mov instructions, but they are palette/register
+;     values. The mnemonics below assemble to the exact original bytes.
 loc_2:
-;*		push	sp
-		db	0FFh,0F4h		;  Fixup - byte match
+		db	0FFh,0F4h		; data (Sourcer: push sp)
 loc_3:
-;*		push	sp
-		db	0FFh,0F4h		;  Fixup - byte match
-		jg	loc_2			; Jump if >
-		jg	loc_3			; Jump if >
-		add	ds:data_2e[bx],bh
-		add	bh,bh
-		add	bh,bh
-		add	bh,bh
-		add	[bx+1],di
-;*		jg	loc_4			;*Jump if >
-		db	 7Fh, 01h		;  Fixup - byte match
-		jg	$+2			; delay for I/O
-		mov	di,0BF00h
-		add	ds:data_1e[bx],bh
-;*		add	[bx+0],bl
-		db	 00h, 5Fh, 00h		;  Fixup - byte match
+		db	0FFh,0F4h		; data (Sourcer: push sp)
+		jg	loc_2			; data 7F FA (Sourcer: jg -6)
+		jg	loc_3			; data 7F FA (Sourcer: jg -6)
+		add	ds:data_2e[bx],bh	; data 00 BF 01 7F
+		add	bh,bh			; data 02 FF
+		add	bh,bh			; data 02 FF
+		add	bh,bh			; data 02 FF
+		add	[bx+1],di		; data 01 7F 01
+		db	 7Fh, 01h		; data (Sourcer: jg +1 fixup)
+		jg	$+2			; data 7F 00
+		mov	di,0BF00h		; data BF 00 BF
+		add	ds:data_1e[bx],bh	; data 00 BF 00 5F
+		db	 00h, 5Fh, 00h		; data (Sourcer: add [bx+0],bl fixup)
 		db	 5Fh, 00h, 2Fh, 00h, 2Fh, 00h
 		db	 2Fh, 00h, 17h, 00h, 17h, 00h
 		db	 17h, 00h, 0Bh, 00h, 0Bh, 00h

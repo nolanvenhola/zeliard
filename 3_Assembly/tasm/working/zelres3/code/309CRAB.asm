@@ -1,60 +1,72 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				_309MAPGC                                ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   5-Apr-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;==========================================================================
+;
+;  309CRAB.BIN - Crab Enemy Code Module (zelres3 chunk 10, 'Cangrejo')
+;
+;  Crab-type enemy sprite/logic module loaded by 200FIGHT.asm alongside
+;  EAI1/EAI2 behavior handlers.  The Spanish name 'Cangrejo' ('crab')
+;  appears as a text marker in the module's trailing data.
+;
+;  Primary entry: eai_scan_and_update -- iterates the enemy slot list
+;  (SI = fight_slot_list), updates each live slot via the EAI behavior
+;  callbacks, then re-spawns crabs when range/slot-count conditions
+;  permit (`sub_1`/`sub_2` adjust fight_hp; `sub_3` emits crab sprite
+;  rows into the slot buffer).
+;
+;  The tail of the file carries 'Cangrejo' as an 8-char name tag used
+;  by the game data loader / debug display.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; Fight-engine callback vectors / shared globals (DS at game_seg).
 
-data_13e	equ	200Ch			;*
-data_14e	equ	6028h			;*
-data_15e	equ	6036h			;*
-data_16e	equ	6038h			;*
-data_17e	equ	8080h			;*
-data_18e	equ	80A1h			;*
-data_19e	equ	0A481h			;*
-data_20e	equ	0A5B6h			;*
-data_21e	equ	0A5F5h			;*
-data_22e	equ	0A5F9h			;*
-data_23e	equ	0A70Ah			;*
-data_24e	equ	0A7C3h			;*
-data_25e	equ	0A7C5h			;*
-data_26e	equ	0A7C6h			;*
-data_27e	equ	0A7DCh			;*
-data_28e	equ	0A7DDh			;*
-data_29e	equ	0A7DEh			;*
-data_30e	equ	0A7DFh			;*
-data_31e	equ	0A7E0h			;*
-data_32e	equ	0A7E1h			;*
-data_33e	equ	0A7E2h			;*
-data_34e	equ	0A7E3h			;*
-data_35e	equ	0A7E5h			;*
-data_36e	equ	0A7E6h			;*
-data_37e	equ	0A7E7h			;*
-data_38e	equ	0A7E8h			;*
-data_39e	equ	0A7E9h			;*
-data_40e	equ	0A7EAh			;*
-data_41e	equ	0A7ECh			;*
-data_42e	equ	0A7EDh			;*
-data_43e	equ	0C002h			;*
-data_44e	equ	0C010h			;*
-data_45e	equ	0ED20h			;*
-data_46e	equ	0FF2Eh			;*
-data_47e	equ	0FF2Fh			;*
-data_48e	equ	0FF30h			;*
-data_49e	equ	0FF75h			;*
+fight_cb_prep		equ	200Ch			; prep/init callback
+fight_cb_record_ofs	equ	6028h			; compute record addr from tile
+fight_cb_anim_step	equ	6036h			; animation advance callback
+fight_cb_hit_check	equ	6038h			; per-slot hit/collision query
+sprite_src_alt		equ	8080h			; alternate sprite-source base
+sprite_src_aux		equ	80A1h			; auxiliary sprite-source base
+
+; Crab-specific global state (DS, game_seg).
+
+crab_spawn_limit	equ	0A481h			; max simultaneous crab spawns
+crab_anim_tbl_a		equ	0A5B6h			; crab animation sequence A
+crab_anim_tbl_b		equ	0A5F5h			; crab animation sequence B (misc)
+crab_anim_tbl_c		equ	0A5F9h			; crab animation sequence C
+crab_pos_tbl		equ	0A70Ah			; crab spawn position/grid table
+fight_hp		equ	0A7C3h			; current fight HP (crab counter)
+crab_phase_base		equ	0A7C5h			; phase-base byte
+crab_phase_limit	equ	0A7C6h			; phase-limit byte
+crab_slot_idx		equ	0A7DCh			; current slot index
+crab_state_bits		equ	0A7DDh			; packed state bits
+crab_frame_idx		equ	0A7DEh			; frame index (0..5)
+crab_flag_d		equ	0A7DFh			; flag byte (phase selector)
+crab_dir_flag		equ	0A7E0h			; direction flag
+crab_sub_phase		equ	0A7E1h			; sub-phase counter
+crab_flag_g		equ	0A7E2h			; crab activity flag
+crab_flag_h		equ	0A7E3h			; crab persistent flag
+crab_idx_e		equ	0A7E5h			; crab helper index E
+crab_anim_idx		equ	0A7E6h			; animation step index
+crab_anim_frame		equ	0A7E7h			; current animation frame
+crab_row_pos		equ	0A7E8h			; current row position
+crab_col_pos		equ	0A7E9h			; current col position
+crab_anim_base		equ	0A7EAh			; animation base (word)
+crab_timer_a		equ	0A7ECh			; phase timer A
+crab_timer_b		equ	0A7EDh			; phase timer B
+fight_state_max		equ	0C002h			; max state index (for wrap)
+fight_slot_list		equ	0C010h			; base of enemy/crab slot list
+sprite_idx_table	equ	0ED20h			; sprite index mapping table
+gvar_death_flag		equ	0FF2Eh			; crab death flag global
+gvar_dir_toggle		equ	0FF2Fh			; dir-toggle flag global
+gvar_completion		equ	0FF30h			; completion/stage flag global
+gvar_spawn_fx_flag	equ	0FF75h			; flag byte for spawn VFX
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -62,13 +74,13 @@ seg_a		segment	byte public
 
 		org	0
 
-_309MAPGC	proc	far
+crab_main	proc	far
 
 start:
 		out	dx,al			; port 0, DMA-1 bas&add ch 0
 		pop	es
 		add	[bx+si],al
-                           lock	mov	ds:data_24e,al
+                           lock	mov	ds:fight_hp,al
 		db	12 dup (0)
 		db	21 dup (6)
 		db	0Fh
@@ -199,18 +211,18 @@ loc_1:
 		db	 83h, 3Ch,0FFh		;  Fixup - byte match
 		jz	loc_4			; Jump if zero
 		mov	ax,[si]
-		call	word ptr cs:data_15e
+		call	word ptr cs:fight_cb_anim_step
 		jc	loc_3			; Jump if carry Set
 		mov	[si+3],bl
 		mov	ax,[si+2]
-		call	word ptr cs:data_14e
-		mov	bl,ds:data_27e
+		call	word ptr cs:fight_cb_record_ofs
+		mov	bl,ds:crab_slot_idx
 		xor	bh,bh			; Zero register
-		mov	al,ds:data_45e[bx]
+		mov	al,ds:sprite_idx_table[bx]
 		mov	[di],al
 		test	byte ptr [si+5],40h	; '@'
 		jz	loc_3			; Jump if zero
-		test	byte ptr ds:data_28e,80h
+		test	byte ptr ds:crab_state_bits,80h
 		jnz	loc_3			; Jump if not zero
 		mov	al,[si+5]
 		and	al,1Fh
@@ -218,22 +230,22 @@ loc_1:
 		jz	loc_2			; Jump if zero
 		or	al,80h
 loc_2:
-		mov	ds:data_28e,al
+		mov	ds:crab_state_bits,al
 loc_3:
-		inc	byte ptr ds:data_27e
+		inc	byte ptr ds:crab_slot_idx
 		add	si,10h
 		jmp	short loc_1
 loc_4:
-		mov	si,ds:data_44e
+		mov	si,ds:fight_slot_list
 		mov	word ptr [si],0FFFFh
-		test	byte ptr ds:data_46e,0FFh
+		test	byte ptr ds:gvar_death_flag,0FFh
 		jnz	loc_8			; Jump if not zero
-		mov	al,ds:data_28e
+		mov	al,ds:crab_state_bits
 		or	al,al			; Zero ?
 		jz	loc_8			; Jump if zero
 		push	ax
 		and	al,1Fh
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_hit_check
 		mov	bl,ah
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -244,16 +256,16 @@ loc_4:
 		add	bx,bx
 loc_5:
 		call	sub_4
-		mov	byte ptr ds:data_49e,22h	; '"'
+		mov	byte ptr ds:gvar_spawn_fx_flag,22h	; '"'
 		mov	ax,data_5
 		add	ax,0Ch
-		mov	bx,ds:data_43e
+		mov	bx,ds:fight_state_max
 		cmp	ax,bx
 		jb	loc_6			; Jump if below
 		mov	ax,bx
 loc_6:
 		xchg	bx,ax
-		mov	ax,ds:data_24e
+		mov	ax,ds:fight_hp
 		add	ax,5
 		cmp	ax,bx
 		jae	loc_7			; Jump if above or =
@@ -264,7 +276,7 @@ loc_7:
 		call	sub_2
 		call	sub_2
 loc_8:
-		test	byte ptr ds:data_36e,0FFh
+		test	byte ptr ds:crab_anim_idx,0FFh
 		jz	loc_9			; Jump if zero
 		jmp	loc_27
 loc_9:
@@ -272,11 +284,11 @@ loc_9:
 		jz	loc_10			; Jump if zero
 		jmp	loc_43
 loc_10:
-		test	byte ptr ds:data_46e,0FFh
+		test	byte ptr ds:gvar_death_flag,0FFh
 		jz	loc_11			; Jump if zero
 		jmp	loc_44
 loc_11:
-		test	byte ptr ds:data_33e,0FFh
+		test	byte ptr ds:crab_flag_g,0FFh
 		jz	loc_12			; Jump if zero
 		jmp	loc_24
 loc_12:
@@ -285,116 +297,116 @@ loc_12:
 		jnz	loc_13			; Jump if not zero
 		jmp	loc_23
 loc_13:
-		test	byte ptr ds:data_31e,0FFh
+		test	byte ptr ds:crab_dir_flag,0FFh
 		jnz	loc_17			; Jump if not zero
-		inc	byte ptr ds:data_32e
-		test	byte ptr ds:data_32e,1
+		inc	byte ptr ds:crab_sub_phase
+		test	byte ptr ds:crab_sub_phase,1
 		jz	loc_14			; Jump if zero
 		jmp	loc_49
 loc_14:
 		call	sub_1
 		jnc	loc_15			; Jump if carry=0
-		mov	byte ptr ds:data_31e,0FFh
+		mov	byte ptr ds:crab_dir_flag,0FFh
 loc_15:
-		inc	byte ptr ds:data_29e
-		cmp	byte ptr ds:data_29e,6
+		inc	byte ptr ds:crab_frame_idx
+		cmp	byte ptr ds:crab_frame_idx,6
 		jae	loc_16			; Jump if above or =
 		jmp	loc_49
 loc_16:
-		mov	byte ptr ds:data_29e,0
+		mov	byte ptr ds:crab_frame_idx,0
 		jmp	loc_49
 loc_17:
-		inc	byte ptr ds:data_32e
-		test	byte ptr ds:data_32e,1
+		inc	byte ptr ds:crab_sub_phase
+		test	byte ptr ds:crab_sub_phase,1
 		jz	loc_18			; Jump if zero
 		jmp	loc_49
 loc_18:
 		call	sub_2
 		jnc	loc_19			; Jump if carry=0
-		mov	byte ptr ds:data_31e,0
+		mov	byte ptr ds:crab_dir_flag,0
 loc_19:
-		dec	byte ptr ds:data_29e
-		cmp	byte ptr ds:data_29e,0FFh
+		dec	byte ptr ds:crab_frame_idx
+		cmp	byte ptr ds:crab_frame_idx,0FFh
 		je	loc_20			; Jump if equal
 		jmp	loc_49
 loc_20:
-		mov	byte ptr ds:data_29e,5
+		mov	byte ptr ds:crab_frame_idx,5
 		jmp	loc_49
 
-_309MAPGC	endp
+crab_main	endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_1		proc	near
-		cmp	byte ptr ds:data_24e,10h
+		cmp	byte ptr ds:fight_hp,10h
 		stc				; Set carry flag
 		jnz	loc_21			; Jump if not zero
 		retn
 loc_21:
-		dec	byte ptr ds:data_24e
+		dec	byte ptr ds:fight_hp
 		clc				; Clear carry flag
 		retn
 sub_1		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_2		proc	near
-		cmp	byte ptr ds:data_24e,31h	; '1'
+		cmp	byte ptr ds:fight_hp,31h	; '1'
 		stc				; Set carry flag
 		jnz	loc_22			; Jump if not zero
 		retn
 loc_22:
-		inc	byte ptr ds:data_24e
+		inc	byte ptr ds:fight_hp
 		clc				; Clear carry flag
 		retn
 sub_2		endp
 
 loc_23:
-		mov	byte ptr ds:data_34e,0
-		mov	byte ptr ds:data_33e,0FFh
+		mov	byte ptr ds:crab_flag_h,0
+		mov	byte ptr ds:crab_flag_g,0FFh
 loc_24:
-		inc	byte ptr ds:data_34e
-		cmp	byte ptr ds:data_34e,8
+		inc	byte ptr ds:crab_flag_h
+		cmp	byte ptr ds:crab_flag_h,8
 ;*		je	loc_25			;*Jump if equal
 		db	 74h, 18h		;  Fixup - byte match
-		mov	bl,ds:data_34e
+		mov	bl,ds:crab_flag_h
 		xor	bh,bh			; Zero register
-		mov	al,ds:data_19e[bx]
-		mov	ds:data_29e,al
+		mov	al,ds:crab_spawn_limit[bx]
+		mov	ds:crab_frame_idx,al
 		jmp	loc_49
 			                        ;* No entry point to code
 		pop	es
 		pop	es
 		or	[bx+si],cl
 		or	[bx+si],cl
-		or	ds:data_18e,al
+		or	ds:sprite_src_aux,al
 		add	[di],al
 		or	al,0
-		mov	bx,ds:data_43e
+		mov	bx,ds:fight_state_max
 		mov	cx,ax
 		sub	cx,bx
 		xchg	bx,ax
 		jc	loc_26			; Jump if carry Set
 		xchg	bx,cx
 loc_26:
-		mov	ax,ds:data_24e
+		mov	ax,ds:fight_hp
 		add	ax,5
 		sub	ax,bx
 		sbb	dl,dl
-		mov	ds:data_31e,dl
-		mov	byte ptr ds:data_33e,0
-		mov	byte ptr ds:data_37e,0
-		mov	byte ptr ds:data_36e,0FFh
+		mov	ds:crab_dir_flag,dl
+		mov	byte ptr ds:crab_flag_g,0
+		mov	byte ptr ds:crab_anim_frame,0
+		mov	byte ptr ds:crab_anim_idx,0FFh
 loc_27:
-		mov	byte ptr ds:data_29e,9
-		mov	bl,ds:data_37e
+		mov	byte ptr ds:crab_frame_idx,9
+		mov	bl,ds:crab_anim_frame
 		xor	bh,bh			; Zero register
-		mov	al,ds:data_22e[bx]
+		mov	al,ds:crab_anim_tbl_c[bx]
 		cmp	al,0FFh
 		jne	loc_28			; Jump if not equal
 ;*		jmp	loc_42			;*
@@ -406,14 +418,14 @@ loc_28:
 		je	loc_29			; Jump if equal
 		shr	al,1			; Shift w/zeros fill
 		sbb	al,0
-		add	al,ds:data_25e
+		add	al,ds:crab_phase_base
 		and	al,3Fh			; '?'
-		mov	ds:data_25e,al
+		mov	ds:crab_phase_base,al
 loc_29:
 		mov	al,ah
 		and	al,0F0h
 		jz	loc_31			; Jump if zero
-		test	byte ptr ds:data_31e,0FFh
+		test	byte ptr ds:crab_dir_flag,0FFh
 		jnz	loc_30			; Jump if not zero
 		call	sub_1
 		jmp	short loc_31
@@ -421,63 +433,63 @@ loc_30:
 		call	sub_2
 loc_31:
 		call	sub_3
-		inc	byte ptr ds:data_37e
+		inc	byte ptr ds:crab_anim_frame
 		retn
 loc_32:
-		test	byte ptr ds:data_38e,0FFh
+		test	byte ptr ds:crab_row_pos,0FFh
 		jnz	loc_37			; Jump if not zero
-		test	byte ptr ds:data_36e,0FFh
+		test	byte ptr ds:crab_anim_idx,0FFh
 		jnz	loc_33			; Jump if not zero
 		retn
 loc_33:
-		mov	di,ds:data_44e
+		mov	di,ds:fight_slot_list
 loc_34:
 		cmp	byte ptr [di+4],14h
 		je	loc_35			; Jump if equal
 		add	di,10h
 		jmp	short loc_34
 loc_35:
-		mov	al,ds:data_37e
+		mov	al,ds:crab_anim_frame
 		mov	[di+6],al
-		cmp	byte ptr ds:data_37e,4
+		cmp	byte ptr ds:crab_anim_frame,4
 		je	loc_36			; Jump if equal
 		retn
 loc_36:
-		mov	byte ptr ds:data_39e,0
-		mov	byte ptr ds:data_38e,0FFh
-		mov	ax,ds:data_24e
+		mov	byte ptr ds:crab_col_pos,0
+		mov	byte ptr ds:crab_row_pos,0FFh
+		mov	ax,ds:fight_hp
 		add	ax,4
-		mov	ds:data_40e,ax
-		mov	al,ds:data_25e
+		mov	ds:crab_anim_base,ax
+		mov	al,ds:crab_phase_base
 		add	al,3
 		and	al,3Fh			; '?'
-		mov	ds:data_41e,al
+		mov	ds:crab_timer_a,al
 loc_37:
-		mov	bl,ds:data_39e
+		mov	bl,ds:crab_col_pos
 		xor	bh,bh			; Zero register
-		inc	byte ptr ds:data_39e
-		mov	al,ds:data_20e[bx]
+		inc	byte ptr ds:crab_col_pos
+		mov	al,ds:crab_anim_tbl_a[bx]
 		cmp	al,0FFh
 		jne	loc_38			; Jump if not equal
-		mov	byte ptr ds:data_38e,0
+		mov	byte ptr ds:crab_row_pos,0
 		retn
 loc_38:
 		or	al,al			; Zero ?
 		jns	loc_40			; Jump if not sign
-		inc	byte ptr ds:data_41e
-		and	byte ptr ds:data_41e,3Fh	; '?'
+		inc	byte ptr ds:crab_timer_a
+		and	byte ptr ds:crab_timer_a,3Fh	; '?'
 loc_40:
 		push	ax
-		mov	ax,ds:data_40e
+		mov	ax,ds:crab_anim_base
 		push	ax
-		call	word ptr cs:data_15e
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		pop	cx
 		jnc	loc_41			; Jump if carry=0
 		retn
 loc_41:
 		mov	[si],ax
-		mov	dl,ds:data_41e
+		mov	dl,ds:crab_timer_a
 		mov	[si+2],dl
 		mov	[si+3],bl
 		mov	byte ptr [si+4],35h	; '5'
@@ -486,31 +498,31 @@ loc_41:
 		mov	byte ptr [si+5],0
 		mov	word ptr [si+10h],0FFFFh
 		mov	ax,[si+2]
-		call	word ptr cs:data_14e
-		mov	bl,ds:data_27e
+		call	word ptr cs:fight_cb_record_ofs
+		mov	bl,ds:crab_slot_idx
 		mov	al,bl
 		or	al,80h
 		xchg	[di],al
 		xor	bh,bh			; Zero register
-		mov	ds:data_45e[bx],al
+		mov	ds:sprite_idx_table[bx],al
 		retn
 			                        ;* No entry point to code
-		add	byte ptr ds:data_17e[bx+si],80h
+		add	byte ptr ds:sprite_src_alt[bx+si],80h
 		add	word ptr ss:[403h][bp+si],0F6FFh
 		push	ss
 ;*		loopnz	locloop_39		;*Loop if zf=0, cx>0
 
 		db	0E0h,0A7h		;  Fixup - byte match
-		mov	byte ptr ds:data_36e,0
-		mov	byte ptr ds:data_35e,0
+		mov	byte ptr ds:crab_anim_idx,0
+		mov	byte ptr ds:crab_idx_e,0
 		mov	byte ptr ds:[0A7E4h],0FFh
 loc_43:
-		mov	bl,ds:data_35e
+		mov	bl,ds:crab_idx_e
 		xor	bh,bh			; Zero register
-		mov	al,ds:data_21e[bx]
-		mov	ds:data_29e,al
-		inc	byte ptr ds:data_35e
-		cmp	byte ptr ds:data_35e,4
+		mov	al,ds:crab_anim_tbl_b[bx]
+		mov	ds:crab_frame_idx,al
+		inc	byte ptr ds:crab_idx_e
+		cmp	byte ptr ds:crab_idx_e,4
 		je	$+5			; Jump if equal
 		jmp	loc_49
 			                        ;* No entry point to code
@@ -525,64 +537,64 @@ loc_43:
 		db	0F8h,0F2h,0F2h,0F2h,0F2h,0F2h
 		db	0FFh
 loc_44:
-		mov	al,ds:data_42e
+		mov	al,ds:crab_timer_b
 		cmp	al,28h			; '('
 		jae	loc_48			; Jump if above or =
 		cmp	al,1Eh
 		jae	loc_45			; Jump if above or =
 		and	al,1
 		jnz	loc_45			; Jump if not zero
-		mov	byte ptr ds:data_49e,23h	; '#'
+		mov	byte ptr ds:gvar_spawn_fx_flag,23h	; '#'
 loc_45:
-		mov	byte ptr ds:data_47e,0FFh
-		cmp	byte ptr ds:data_42e,14h
+		mov	byte ptr ds:gvar_dir_toggle,0FFh
+		cmp	byte ptr ds:crab_timer_b,14h
 		jae	loc_47			; Jump if above or =
-		inc	byte ptr ds:data_42e
-		test	byte ptr ds:data_31e,0FFh
+		inc	byte ptr ds:crab_timer_b
+		test	byte ptr ds:crab_dir_flag,0FFh
 		jnz	loc_46			; Jump if not zero
-		inc	byte ptr ds:data_29e
-		cmp	byte ptr ds:data_29e,6
+		inc	byte ptr ds:crab_frame_idx
+		cmp	byte ptr ds:crab_frame_idx,6
 		jb	loc_49			; Jump if below
-		mov	byte ptr ds:data_29e,5
-		mov	byte ptr ds:data_31e,0FFh
+		mov	byte ptr ds:crab_frame_idx,5
+		mov	byte ptr ds:crab_dir_flag,0FFh
 		jmp	short loc_49
 loc_46:
-		dec	byte ptr ds:data_29e
-		cmp	byte ptr ds:data_29e,0FFh
+		dec	byte ptr ds:crab_frame_idx
+		cmp	byte ptr ds:crab_frame_idx,0FFh
 		jb	loc_49			; Jump if below
-		mov	byte ptr ds:data_29e,0
-		mov	byte ptr ds:data_31e,0
+		mov	byte ptr ds:crab_frame_idx,0
+		mov	byte ptr ds:crab_dir_flag,0
 		jmp	short loc_49
 loc_47:
-		inc	byte ptr ds:data_42e
-		mov	byte ptr ds:data_29e,8
+		inc	byte ptr ds:crab_timer_b
+		mov	byte ptr ds:crab_frame_idx,8
 		jmp	short loc_49
 loc_48:
-		mov	byte ptr ds:data_48e,0FFh
+		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_3		proc	near
 loc_49:
-		mov	bl,ds:data_29e
+		mov	bl,ds:crab_frame_idx
 		add	bl,bl
 		xor	bh,bh			; Zero register
-		mov	di,ds:data_23e[bx]
-		mov	al,ds:data_25e
-		mov	ds:data_30e,al
-		mov	si,ds:data_44e
+		mov	di,ds:crab_pos_tbl[bx]
+		mov	al,ds:crab_phase_base
+		mov	ds:crab_flag_d,al
+		mov	si,ds:fight_slot_list
 		xor	al,al			; Zero register
-		mov	ds:data_27e,al
+		mov	ds:crab_slot_idx,al
 loc_50:
 		push	di
 		push	ax
 		mov	bl,0Ah
 		mul	bl			; ax = reg * al
 		add	di,ax
-		mov	ax,ds:data_24e
+		mov	ax,ds:fight_hp
 		mov	cx,0Ah
 
 locloop_51:
@@ -590,31 +602,31 @@ locloop_51:
 		mov	[si],ax
 		push	di
 		push	ax
-		call	word ptr cs:data_15e
+		call	word ptr cs:fight_cb_anim_step
 		jc	loc_53			; Jump if carry Set
 		mov	al,[di]
 		cmp	al,0FFh
 		je	loc_53			; Jump if equal
 		mov	[si+4],al
-		mov	al,ds:data_30e
+		mov	al,ds:crab_flag_d
 		mov	[si+2],al
 		mov	[si+3],bl
 		mov	byte ptr [si+5],0
-		test	byte ptr ds:data_28e,0FFh
+		test	byte ptr ds:crab_state_bits,0FFh
 		jz	loc_52			; Jump if zero
 		or	byte ptr [si+5],20h	; ' '
 loc_52:
-		mov	al,ds:data_29e
+		mov	al,ds:crab_frame_idx
 		mov	[si+6],al
 		mov	ax,[si+2]
-		call	word ptr cs:data_14e
-		mov	al,ds:data_27e
+		call	word ptr cs:fight_cb_record_ofs
+		mov	al,ds:crab_slot_idx
 		mov	bl,al
 		or	al,80h
 		xchg	[di],al
 		xor	bh,bh			; Zero register
-		mov	ds:data_45e[bx],al
-		inc	byte ptr ds:data_27e
+		mov	ds:sprite_idx_table[bx],al
+		inc	byte ptr ds:crab_slot_idx
 		add	si,10h
 loc_53:
 		pop	ax
@@ -624,8 +636,8 @@ loc_53:
 		pop	cx
 		loop	locloop_51		; Loop if cx > 0
 
-		inc	byte ptr ds:data_30e
-		and	byte ptr ds:data_30e,3Fh	; '?'
+		inc	byte ptr ds:crab_flag_d
+		and	byte ptr ds:crab_flag_d,3Fh	; '?'
 		pop	ax
 		pop	di
 		inc	al
@@ -659,31 +671,31 @@ sub_3		endp
 		db	8
 		db	12 dup (0FFh)
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_4		proc	near
-		mov	ax,ds:data_26e
+		mov	ax,ds:crab_phase_limit
 		sub	ax,bx
 		jnc	loc_54			; Jump if carry=0
 		xor	ax,ax			; Zero register
 loc_54:
-		mov	ds:data_26e,ax
+		mov	ds:crab_phase_limit,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:data_13e
+		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
 		jz	loc_55			; Jump if zero
 		retn
 loc_55:
-		test	byte ptr ds:data_46e,0FFh
+		test	byte ptr ds:gvar_death_flag,0FFh
 		jz	loc_56			; Jump if zero
 		retn
 loc_56:
-		mov	byte ptr ds:data_42e,0
-		mov	byte ptr ds:data_46e,0FFh
+		mov	byte ptr ds:crab_timer_b,0
+		mov	byte ptr ds:gvar_death_flag,0FFh
 		retn
 sub_4		endp
 

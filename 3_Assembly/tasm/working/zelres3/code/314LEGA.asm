@@ -3,7 +3,22 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  LEVEL_RENDERER - Code Module
+;  314LEGA - Level / Map Renderer Code Module - Tarso (zelres3 chunk)
+;
+;  Level renderer and per-frame map update program for the Tarso area
+;  (town name 'Tarso' embedded near the module trailer). Partial prior
+;  cleanup introduced the placeholder name "LEVEL_RENDERER". The main
+;  proc was retained by Sourcer as the generic zr3_14. Contains helper
+;  routine lvrender_get_value (defined at file offset 0x03B9).
+;
+;  Structure:
+;    - Header pointer / descriptor area (file 0x00..0x80) mis-decoded by
+;      Sourcer as sbb/and x86 instructions; preserved as raw bytes
+;    - Large tile/cell layout data block
+;    - Per-frame scan / NPC-cell update loop
+;    - Helper/sub procs and dispatch logic
+;    - Trailer: 10-word handler jump-table + continuation tile data
+;      + 'Tarso' town-name string fragment
 ;
 ;==========================================================================
 
@@ -17,11 +32,16 @@ include  srmacros.inc
 
 
 ; The following equates show data references outside the range of the program.
+; Shared references across 312-319 map-program family:
+;   200Ch..6038h  - game-segment dispatch callback fn ptrs
+;   0C010h        - sprite attribute record base
+;   0ED20h        - char/tile lookup table
+;   0FF2Eh..0FF75h - per-map global state flag bytes
 
-data_8e		equ	200Ch			;*
-data_9e		equ	6028h			;*
-data_10e	equ	6036h			;*
-data_11e	equ	6038h			;*
+data_8e		equ	200Ch			;* scroll/dispatch callback
+data_9e		equ	6028h			;* game-seg callback fn A (tile dispatch)
+data_10e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
+data_11e	equ	6038h			;* game-seg callback fn C
 data_12e	equ	0A3C7h			;*
 data_13e	equ	0A41Bh			;*
 data_14e	equ	0A41Fh			;*
@@ -55,12 +75,12 @@ data_41e	equ	0A7C8h			;*
 data_42e	equ	0A7C9h			;*
 data_43e	equ	0A7CBh			;*
 data_44e	equ	0A7F1h			;*
-data_45e	equ	0C010h			;*
-data_46e	equ	0ED20h			;*
-data_47e	equ	0FF2Eh			;*
-data_48e	equ	0FF2Fh			;*
-data_49e	equ	0FF3Ch			;*
-data_50e	equ	0FF75h			;*
+data_45e	equ	0C010h			;* sprite attribute record base
+data_46e	equ	0ED20h			;* char/tile lookup table
+data_47e	equ	0FF2Eh			;* global state byte
+data_48e	equ	0FF2Fh			;* global state byte
+data_49e	equ	0FF3Ch			;* global state byte
+data_50e	equ	0FF75h			;* global state byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -70,11 +90,17 @@ seg_a		segment	byte public
 
 zr3_14		proc	far
 
+; ------------------------------------------------------------------
+; start: header + embedded tile/cell layout data.
+; The leading "sbb/add/and" x86 decode is Sourcer mis-parsing the
+; module header fields; real code entry is via dispatch from game
+; DS. The 12 zero bytes below are the reserved / padding header area.
+; ------------------------------------------------------------------
 start:
-		sbb	[bx+si],cx
-		add	[bx+si],al
-		and	sp,ss:data_22e[bp+si]
-		db	12 dup (0)
+		sbb	[bx+si],cx		; header field bytes
+		add	[bx+si],al		; header field bytes
+		and	sp,ss:data_22e[bp+si]	; header field bytes
+		db	12 dup (0)		; reserved / padding
 		db	0A0h,0A0h,0A0h,0A0h,0A0h,0A0h
 		db	 50h
 		db	 0Ah, 0Ah
@@ -640,15 +666,22 @@ loc_49:
 		xlat				; al=[al+[bx]] table
 		mov	byte ptr ds:[0A7BAh],al
 		jmp	$-26Dh
+
+; ------------------------------------------------------------------
+; Module trailer: dispatch-table handler body + jump-table words
+; + tile/cell continuation data + 'Tarso' town-name fragment.
+; Entered via dispatch call [data_21e+bx] from main loop.
+; ------------------------------------------------------------------
 			                        ;* No entry point to code
-		add	ax,[bp+di]
-		add	al,4
-		add	ax,0C605h
-		push	es
+		add	ax,[bp+di]		; data bytes
+		add	al,4			; data bytes
+		add	ax,0C605h		; data bytes
+		push	es			; data byte
 ;*		xor	bh,bh			; Zero register
-		db	030h, 0FFh		; xor bh,bh (alt encoding)
+		db	030h, 0FFh		; xor bh,bh (alt encoding) -- data bytes
 ;*		inc	bx
-		db	0FFh, 0C3h		; inc bx (alt encoding)
+		db	0FFh, 0C3h		; inc bx (alt encoding) -- data bytes
+; jump-table: 10 word entries pointing into cs:A6DC..A798 handlers
 		db	0DCh,0A6h,0E3h,0A6h,0ECh,0A6h
 		db	0F6h,0A6h, 01h,0A7h, 0Ch,0A7h
 		db	 18h,0A7h, 22h,0A7h, 2Eh,0A7h
@@ -689,7 +722,9 @@ loc_49:
 		db	 26h, 00h, 07h, 80h, 02h, 70h
 		db	 17h, 08h,0FFh,0ADh,0A7h,0DCh
 		db	 05h, 11h,0BBh, 02h, 05h
-		db	 54h, 61h, 72h, 73h, 6Fh
+; 'Tarso' - town-name / label string fragment
+		db	'Tarso'
+; trailing zero padding to round module size up
 		db	99 dup (0)
 
 seg_a		ends

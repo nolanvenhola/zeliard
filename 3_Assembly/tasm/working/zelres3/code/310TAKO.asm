@@ -1,59 +1,68 @@
 
 PAGE  59,132
 
-;€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-;€€					                                 €€
-;€€				_310MAPFC                                €€
-;€€					                                 €€
-;€€      Created:   5-Apr-26		                                 €€
-;€€      Code type: zero start		                                 €€
-;€€      Passes:    9          Analysis	Options on: none                 €€
-;€€					                                 €€
-;€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
+;==========================================================================
+;
+;  310TAKO.BIN - Tako / Octopus Enemy Code Module (zelres3 chunk 11, 'Pulpo')
+;
+;  Tako (octopus) enemy sprite/logic module loaded by 200FIGHT.asm
+;  alongside EAI2/EAI3 behavior handlers.  The Japanese name "tako" means
+;  octopus; the Spanish marker 'Pulpo' ('octopus') appears as a text tag
+;  in the module's trailing data.
+;
+;  Primary entry: tako_scan_and_update -- iterates the enemy slot list
+;  (SI = fight_slot_list), drives octopus-specific frame/tentacle
+;  animations via the fight callbacks, handles multi-arm sprite columns,
+;  and respawns tentacle projectiles on timed phases.
+;
+;  Large data blocks near the top are tentacle animation frame tables
+;  (cycle indices and 5-byte per-row entries).  Footer carries 'Pulpo'.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; Fight-engine callback vectors / shared globals (DS, game_seg).
 
-data_1e		equ	0AA80h			;*
-data_2e		equ	0AA82h			;*
-data_3e		equ	0AA83h			;*
-data_4e		equ	0AA96h			;*
-data_5e		equ	0AA97h			;*
-data_6e		equ	0AA98h			;*
-data_7e		equ	0AA99h			;*
-data_8e		equ	0AA9Ah			;*
-data_9e		equ	0AA9Bh			;*
-data_10e	equ	0AA9Ch			;*
-data_11e	equ	0AA9Eh			;*
-data_12e	equ	0AA9Fh			;*
-data_13e	equ	0AAA1h			;*
-data_14e	equ	0C010h			;*
-data_15e	equ	0ED20h			;*
-data_16e	equ	0FF2Eh			;*
-data_17e	equ	0FF75h			;*
-data_24e	equ	200Ch			;*
-data_25e	equ	6028h			;*
-data_26e	equ	6036h			;*
-data_27e	equ	6038h			;*
-data_28e	equ	0A57Dh			;*
-data_29e	equ	0A64Dh			;*
-data_30e	equ	0A725h			;*
-data_31e	equ	0A9AFh			;*
-data_32e	equ	0AA80h			;*
-data_33e	equ	0AA96h			;*
-data_34e	equ	0AA97h			;*
-data_35e	equ	0AA99h			;*
-data_36e	equ	0AA9Ah			;*
-data_37e	equ	0AA9Eh			;*
-data_38e	equ	0C010h			;*
-data_39e	equ	0E3A5h			;*
-data_40e	equ	0FF2Fh			;*
-data_41e	equ	0FF30h			;*
-data_42e	equ	0FF75h			;*
+fight_cb_prep		equ	200Ch			; prep/init callback
+fight_cb_record_ofs	equ	6028h			; compute record addr from tile
+fight_cb_anim_step	equ	6036h			; animation advance callback
+fight_cb_hit_check	equ	6038h			; per-slot hit/collision query
+
+; Shared sprite pattern tables used by Tako.
+
+sprite_pat_tbl_a	equ	0A57Dh			; sprite pattern table A
+sprite_pat_tbl_b	equ	0A64Dh			; sprite pattern table B
+dir_xlat_table		equ	0A725h			; direction lookup table (xlat base)
+tako_vector_tbl		equ	0A9AFh			; tako render-vector table
+
+; Tako-specific global state (DS).
+; NOTE: Sourcer emitted duplicate EQUs for the same address (e.g. AA80h
+; appears twice); both point to the same byte so they are aliases.
+
+tako_row_pos_base	equ	0AA80h			; current row position (word base)
+tako_row_delta		equ	0AA82h			; row delta byte
+tako_hp			equ	0AA83h			; Tako HP counter
+tako_phase_a		equ	0AA96h			; phase counter A
+tako_flag_a		equ	0AA97h			; flag byte A (direction)
+tako_flag_b		equ	0AA98h			; flag byte B (state)
+tako_flag_c		equ	0AA99h			; flag byte C (animation)
+tako_frame_idx		equ	0AA9Ah			; frame index
+tako_state		equ	0AA9Bh			; state byte
+tako_alt_state		equ	0AA9Ch			; alternate state byte
+tako_timer_a		equ	0AA9Eh			; timer A (word)
+tako_timer_a_byte	equ	0AA9Fh			; timer A byte
+tako_col_pos		equ	0AAA1h			; col position byte
+fight_slot_list		equ	0C010h			; base of enemy slot list
+sprite_idx_table	equ	0ED20h			; sprite index mapping table
+gvar_death_flag		equ	0FF2Eh			; tako death flag global
+gvar_dir_toggle		equ	0FF2Fh			; dir-toggle flag global
+gvar_completion		equ	0FF30h			; completion/stage flag global
+gvar_spawn_fx_flag	equ	0FF75h			; flag byte for spawn VFX
+sprite_src_base		equ	0E3A5h			; tako sprite-source base
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -61,7 +70,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_310MAPFC	proc	far
+tako_main	proc	far
 
 start:
 		mov	byte ptr ds:[0Ah],al
@@ -178,18 +187,18 @@ loc_1:
 		db	 83h, 3Ch,0FFh		;  Fixup - byte match
 		jz	loc_4			; Jump if zero
 		mov	ax,[si]
-		call	word ptr cs:data_26e
+		call	word ptr cs:fight_cb_anim_step
 		jc	loc_3			; Jump if carry Set
 		mov	[si+3],bl
 		mov	ax,[si+2]
-		call	word ptr cs:data_25e
-		mov	bl,ds:data_8e
+		call	word ptr cs:fight_cb_record_ofs
+		mov	bl,ds:tako_frame_idx
 		xor	bh,bh			; Zero register
-		mov	al,ds:data_15e[bx]
+		mov	al,ds:sprite_idx_table[bx]
 		mov	[di],al
 		test	byte ptr [si+5],40h	; '@'
 		jz	loc_3			; Jump if zero
-		test	byte ptr ds:data_9e,80h
+		test	byte ptr ds:tako_state,80h
 		jnz	loc_3			; Jump if not zero
 		mov	al,[si+5]
 		and	al,1Fh
@@ -197,51 +206,51 @@ loc_1:
 		jb	loc_2			; Jump if below
 		or	al,80h
 loc_2:
-		mov	ds:data_9e,al
+		mov	ds:tako_state,al
 loc_3:
-		inc	byte ptr ds:data_8e
+		inc	byte ptr ds:tako_frame_idx
 		add	si,10h
 		jmp	short loc_1
 loc_4:
-		mov	si,ds:data_14e
+		mov	si,ds:fight_slot_list
 		mov	word ptr [si],0FFFFh
-		mov	al,ds:data_9e
+		mov	al,ds:tako_state
 		or	al,al			; Zero ?
 		jz	loc_7			; Jump if zero
 		push	ax
 		and	al,1Fh
-		call	word ptr cs:data_27e
+		call	word ptr cs:fight_cb_hit_check
 		mov	bl,ah
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		pop	ax
 		or	al,al			; Zero ?
 		jns	loc_5			; Jump if not sign
-		mov	byte ptr ds:data_17e,24h	; '$'
+		mov	byte ptr ds:gvar_spawn_fx_flag,24h	; '$'
 		add	bx,bx
 		jmp	short loc_6
 loc_5:
-		mov	byte ptr ds:data_17e,25h	; '%'
+		mov	byte ptr ds:gvar_spawn_fx_flag,25h	; '%'
 loc_6:
 		call	sub_1
-		test	byte ptr ds:data_6e,10h
+		test	byte ptr ds:tako_flag_b,10h
 		jnz	loc_7			; Jump if not zero
-		mov	bx,data_5e
+		mov	bx,tako_flag_a
 		cmp	byte ptr [bx],10h
 		je	loc_7			; Jump if equal
 		add	byte ptr [bx],8
-		mov	byte ptr ds:data_6e,10h
-		or	byte ptr ds:data_7e,20h	; ' '
-		mov	byte ptr ds:data_17e,26h	; '&'
+		mov	byte ptr ds:tako_flag_b,10h
+		or	byte ptr ds:tako_flag_c,20h	; ' '
+		mov	byte ptr ds:gvar_spawn_fx_flag,26h	; '&'
 loc_7:
-		test	byte ptr ds:data_16e,0FFh
+		test	byte ptr ds:gvar_death_flag,0FFh
 		jz	loc_8			; Jump if zero
 		jmp	loc_32
 loc_8:
-		inc	byte ptr ds:data_4e
-		and	byte ptr ds:data_4e,7
-		mov	dl,ds:data_5e
-		mov	bx,data_6e
+		inc	byte ptr ds:tako_phase_a
+		and	byte ptr ds:tako_phase_a,7
+		mov	dl,ds:tako_flag_a
+		mov	bx,tako_flag_b
 		test	byte ptr [bx],10h
 		jz	loc_10			; Jump if zero
 		xor	byte ptr [bx],20h	; ' '
@@ -259,11 +268,11 @@ loc_9:
 		or	ah,ah			; Zero ?
 		jnz	loc_10			; Jump if not zero
 		and	byte ptr [bx],0EFh
-		and	byte ptr ds:data_7e,0DFh
+		and	byte ptr ds:tako_flag_c,0DFh
 loc_10:
 		cmp	dl,10h
 		jne	loc_14			; Jump if not equal
-		mov	bx,data_7e
+		mov	bx,tako_flag_c
 		test	byte ptr [bx],40h	; '@'
 		jz	loc_11			; Jump if zero
 		mov	al,20h			; ' '
@@ -277,18 +286,18 @@ loc_10:
 		or	al,al			; Zero ?
 		jnz	loc_12			; Jump if not zero
 		mov	byte ptr [bx],0A0h
-		mov	ax,ds:data_1e
+		mov	ax,ds:tako_row_pos_base
 		add	ax,4
-		mov	ds:data_12e,ax
-		mov	al,ds:data_2e
+		mov	ds:tako_timer_a_byte,ax
+		mov	al,ds:tako_row_delta
 		add	al,4
 		and	al,3Fh			; '?'
-		mov	ds:data_13e,al
-		mov	byte ptr ds:data_17e,27h	; '''
+		mov	ds:tako_col_pos,al
+		mov	byte ptr ds:gvar_spawn_fx_flag,27h	; '''
 loc_11:
 		test	byte ptr [bx],0A0h
 		jnz	loc_12			; Jump if not zero
-		test	byte ptr ds:data_6e,10h
+		test	byte ptr ds:tako_flag_b,10h
 		jnz	loc_12			; Jump if not zero
 		or	byte ptr [bx],40h	; '@'
 loc_12:
@@ -305,27 +314,27 @@ loc_13:
 		and	al,0E0h
 		or	al,ah
 		mov	[bx],al
-		dec	word ptr ds:data_12e
+		dec	word ptr ds:tako_timer_a_byte
 		cmp	ah,19h
 		jne	loc_14			; Jump if not equal
 		mov	byte ptr [bx],0
 loc_14:
-		mov	byte ptr ds:data_36e,0
-		mov	bl,ds:data_33e
+		mov	byte ptr ds:tako_frame_idx,0
+		mov	bl,ds:tako_phase_a
 		xor	bh,bh			; Zero register
 		add	bl,dl
 		add	bl,bl
-		mov	di,ds:data_28e[bx]
-		mov	bx,ds:data_31e[bx]
-		mov	ax,ds:data_32e
-		mov	si,ds:data_38e
+		mov	di,ds:sprite_pat_tbl_a[bx]
+		mov	bx,ds:tako_vector_tbl[bx]
+		mov	ax,ds:tako_row_pos_base
+		mov	si,ds:fight_slot_list
 		mov	cx,7
 loc_15:
 		push	cx
 		push	bx
 		push	ax
-		call	word ptr cs:data_26e
-		mov	ds:data_10e,bl
+		call	word ptr cs:fight_cb_anim_step
+		mov	ds:tako_alt_state,bl
 		pop	ax
 		pop	bx
 		jnc	loc_18			; Jump if carry=0
@@ -349,35 +358,35 @@ loc_19:
 		jnc	loc_21			; Jump if carry=0
 		mov	[si],ax
 		add	cl,cl
-		add	cl,ds:data_2e
+		add	cl,ds:tako_row_delta
 		and	cl,3Fh			; '?'
 		mov	[si+2],cl
-		mov	cl,ds:data_10e
+		mov	cl,ds:tako_alt_state
 		mov	[si+3],cl
 		mov	cl,[di]
 		mov	[si+4],cl
 		mov	cl,[di+1]
 		mov	[si+6],cl
 		mov	byte ptr [si+5],0
-		test	byte ptr ds:data_9e,0FFh
+		test	byte ptr ds:tako_state,0FFh
 		jz	loc_20			; Jump if zero
 		or	byte ptr [si+5],20h	; ' '
 loc_20:
 		push	di
 		push	ax
 		mov	ax,[si+2]
-		call	word ptr cs:data_25e
-		mov	bl,ds:data_8e
+		call	word ptr cs:fight_cb_record_ofs
+		mov	bl,ds:tako_frame_idx
 		xor	bh,bh			; Zero register
 		mov	al,bl
 		or	al,80h
 		xchg	[di],al
-		mov	ds:data_15e[bx],al
+		mov	ds:sprite_idx_table[bx],al
 		pop	ax
 		pop	di
 		add	si,10h
 		add	di,2
-		inc	byte ptr ds:data_8e
+		inc	byte ptr ds:tako_frame_idx
 loc_21:
 		pop	bx
 		pop	cx
@@ -395,7 +404,7 @@ loc_22:
 locloop_23:
 		jmp	loc_15
 loc_24:
-		mov	al,ds:data_7e
+		mov	al,ds:tako_flag_c
 		test	al,80h
 		jz	loc_27			; Jump if zero
 		and	al,1Fh
@@ -405,13 +414,13 @@ loc_24:
 		xor	ah,ah			; Zero register
 		add	ax,0AA20h
 		mov	di,ax
-		mov	ax,ds:data_12e
+		mov	ax,ds:tako_timer_a_byte
 		mov	cx,4
 
 locloop_25:
 		push	cx
 		push	ax
-		call	word ptr cs:data_26e
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		jc	loc_26			; Jump if carry Set
 		mov	dl,[di]
@@ -420,7 +429,7 @@ locloop_25:
 		push	di
 		push	ax
 		mov	[si],ax
-		mov	al,ds:data_13e
+		mov	al,ds:tako_col_pos
 		mov	[si+2],al
 		mov	[si+3],bl
 		mov	byte ptr [si+4],30h	; '0'
@@ -428,15 +437,15 @@ locloop_25:
 		mov	[si+6],dl
 		mov	byte ptr [si+5],0
 		mov	ax,[si+2]
-		call	word ptr cs:data_25e
-		mov	bl,ds:data_8e
+		call	word ptr cs:fight_cb_record_ofs
+		mov	bl,ds:tako_frame_idx
 		xor	bh,bh			; Zero register
 		mov	al,bl
 		or	al,80h
 		xchg	[di],al
-		mov	ds:data_15e[bx],al
+		mov	ds:sprite_idx_table[bx],al
 		add	si,10h
-		inc	byte ptr ds:data_8e
+		inc	byte ptr ds:tako_frame_idx
 		pop	ax
 		pop	di
 loc_26:
@@ -449,79 +458,79 @@ loc_27:
 		mov	word ptr [si],0FFFFh
 		retn
 
-_310MAPFC	endp
+tako_main	endp
 
-;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+;ÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩ
 ;                              SUBROUTINE
-;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
+;ÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩ
 
 sub_1		proc	near
-		mov	ax,ds:data_3e
+		mov	ax,ds:tako_hp
 		sub	ax,bx
 		jnc	loc_28			; Jump if carry=0
 		xor	ax,ax			; Zero register
 loc_28:
-		mov	ds:data_3e,ax
+		mov	ds:tako_hp,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:data_24e
+		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
 		jz	loc_29			; Jump if zero
 		retn
 loc_29:
-		test	byte ptr ds:data_16e,0FFh
+		test	byte ptr ds:gvar_death_flag,0FFh
 		jz	loc_30			; Jump if zero
 		retn
 loc_30:
-		mov	byte ptr ds:data_11e,0
-		mov	byte ptr ds:data_16e,0FFh
+		mov	byte ptr ds:tako_timer_a,0
+		mov	byte ptr ds:gvar_death_flag,0FFh
 
 loc_ret_31:
 		retn
 sub_1		endp
 
 loc_32:
-		mov	byte ptr ds:data_35e,0
-		cmp	byte ptr ds:data_37e,28h	; '('
+		mov	byte ptr ds:tako_flag_c,0
+		cmp	byte ptr ds:tako_timer_a,28h	; '('
 		jae	loc_34			; Jump if above or =
-		mov	byte ptr ds:data_40e,0FFh
-		mov	bx,data_37e
+		mov	byte ptr ds:gvar_dir_toggle,0FFh
+		mov	bx,tako_timer_a
 		cmp	byte ptr [bx],14h
 		jae	loc_33			; Jump if above or =
 		inc	byte ptr [bx]
 		mov	al,[bx]
-		mov	bx,data_33e
+		mov	bx,tako_phase_a
 		inc	byte ptr [bx]
 		and	byte ptr [bx],7
 		and	al,1
 		add	al,al
 		add	al,al
 		add	al,al
-		add	al,ds:data_34e
+		add	al,ds:tako_flag_a
 		mov	dl,al
-		mov	byte ptr ds:data_42e,28h	; '('
+		mov	byte ptr ds:gvar_spawn_fx_flag,28h	; '('
 		jmp	loc_14
 loc_33:
 		inc	byte ptr [bx]
-		mov	dl,ds:data_34e
+		mov	dl,ds:tako_flag_a
 		add	dl,8
 		jmp	loc_14
 loc_34:
-		mov	byte ptr ds:data_41e,0FFh
+		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 			                        ;* No entry point to code
-		mov	bp,data_39e
+		mov	bp,sprite_src_base
 		movsw				; Mov [si] to es:[di]
 		pop	es
 		cmpsb				; Cmp [si] to es:[di]
-		sub	ss:data_29e[bp],sp
+		sub	ss:sprite_pat_tbl_b[bp],sp
 		jno	loc_ret_31		; Jump if not overflw
 		xchg	bp,ax
 		cmpsb				; Cmp [si] to es:[di]
 		mov	cx,0DDA6h
 		cmpsb				; Cmp [si] to es:[di]
-		add	ds:data_30e[bx],sp
+		add	ds:dir_xlat_table[bx],sp
 		inc	di
 		cmpsw				; Cmp [si] to es:[di]
 		db	 67h,0A7h, 87h,0A7h,0ABh,0A7h

@@ -1,15 +1,33 @@
 
 PAGE  59,132
 
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-;лл					                                 лл
-;лл				_325MP30                                 лл
-;лл					                                 лл
-;лл      Created:   5-Apr-26		                                 лл
-;лл      Code type: zero start		                                 лл
-;лл      Passes:    9          Analysis	Options on: none                 лл
-;лл					                                 лл
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
+;==========================================================================
+;
+;  325MP30 - Map Data Table: Cavern of Madera, level 3, floor 0 (entrance)
+;
+;  Cavern/labyrinth map resource file loaded as MP30.MDT (zelres3).
+;  Part of the 16-file MP{level}{floor} dungeon-map set (320..335) covering
+;  levels 1-6 of the Zeliard labyrinth.
+;
+;  NOT executable code -- Sourcer mis-decoded the header bytes and data
+;  tables as x86 instructions (the first two bytes are really the file
+;  size word, not 'cmp [bp+si],al' etc).  The bogus mnemonics below all
+;  re-emit the same byte sequence.
+;
+;  General MDT layout (all files in this group share this pattern):
+;    [0x00]   file-size word + flag/reserved word
+;    [0x04+]  pointer table (WORDs 0xCNNN - runtime segment 0xC000)
+;            -> tile grid, event table, exit table, script trailer
+;    [mid]    tile_grid            - column/row-strip tile-index data
+;                                    (values like 0x3F06, 0xC4NN, 0xC5NN)
+;    [later]  event_records        - NPC/door/exit records (FF-terminated)
+;    [late]   cavern_name          - pascal-encoded 'Cavern of Madera'
+;    [end]    exit/trigger records - door warp coords + script bytes
+;    [eof]    terminator           - 0xFFFFFFFF (header_1 label)
+;
+;  Runtime segment base = 0xC000.  Pointer 0xCNNN resolves to file_off NNN.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
@@ -28,6 +46,13 @@ seg_a		segment	byte public
 
 _325MP30	proc	far
 
+
+; ------------------------------------------------------------------
+; mdt_header -- file-size word, flag byte, and table of WORD pointers
+; into the runtime 0xC000 segment.  Sourcer mis-decoded the leading
+; bytes as instructions; they are actually: size word + flag word
+; + attributes pointer + offset of 'strategy' (tile grid start) + ...
+; ------------------------------------------------------------------
 start:
 		xor	[bx],cx
 		add	[bx+si],al
@@ -58,6 +83,15 @@ start:
 		adc	word ptr [bp+di-36h],0C386h
 		mov	sp,es
 ;*		aad	98h			; undocumented inst
+
+; ------------------------------------------------------------------
+; tile_grid -- main cavern/map tile-index data.  Encoded as column
+; or row strips of 1-byte tile indices.  Common runs: 0x3F06 (wall
+; boundary), 0x2C06 (column separator), plus palette-range values
+; (0xC4-0xCC) that select tile rows in the tile bank.  Originally
+; labeled 'strategy' by Sourcer because the header pointer landed
+; on this offset.
+; ------------------------------------------------------------------
 		db	0D5h, 98h		;  Fixup - byte match
 		push	bx
 		add	[di],dx
@@ -586,6 +620,12 @@ data_2		dw	8A81h
 		db	0CEh, 00h,0FFh,0FAh,0CEh,0FFh
 		db	0FFh,0FFh,0FFh,0FFh,0FFh, 17h
 		db	0AFh, 00h, 10h
+
+; ------------------------------------------------------------------
+; cavern_name -- pascal-encoded cavern/area name 'Cavern of Madera'.
+; Preceded by small descriptor bytes; the length byte just before
+; the quoted string matches the string length (0x11/0x0E/etc).
+; ------------------------------------------------------------------
 		db	'Cavern of Madera', 0Dh
 		db	 00h, 02h, 04h, 04h, 0Ah, 00h
 		db	 31h,0FFh, 01h, 00h, 00h, 00h
@@ -713,7 +753,6 @@ data_2		dw	8A81h
 _325MP30	endp
 
 seg_a		ends
-
 
 
 		end	start

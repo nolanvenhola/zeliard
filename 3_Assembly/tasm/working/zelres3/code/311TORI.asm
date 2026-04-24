@@ -1,66 +1,82 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				_311MAPMT                                ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   5-Apr-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;==========================================================================
+;
+;  311TORI.BIN - Tori / Bird Enemy Code Module (zelres3 chunk 12, 'Pollo')
+;
+;  Tori (bird) enemy sprite/logic module loaded by 200FIGHT.asm alongside
+;  EAI3/EAI4 behavior handlers.  The Japanese name "tori" means bird;
+;  the Spanish marker 'Pollo' ('chicken/bird') appears as a text tag
+;  in the module's trailing data.
+;
+;  Primary entry: tori_scan_and_update -- iterates the enemy slot list
+;  (SI = fight_slot_list), handles bird-specific flight/glide patterns,
+;  composes multi-plane sprite rows via sub_1 (row plotter), and spawns
+;  swoop/dive projectiles when in-range.
+;
+;  Sub-functions: sub_1 (bit-stream sprite row renderer with [bp]+[si]),
+;  sub_2..sub_5 (phase counters for glide/turn/swoop states), sub_6
+;  (range-gated spawn / initial state reset).  Tail carries 'Pollo'.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; Fight-engine callback vectors / shared globals (DS, game_seg).
 
-data_11e	equ	200Ch			;*
-data_12e	equ	6028h			;*
-data_13e	equ	6036h			;*
-data_14e	equ	6038h			;*
-data_15e	equ	603Ah			;*
-data_16e	equ	603Ch			;*
-data_17e	equ	0A64Dh			;*
-data_18e	equ	0A682h			;*
-data_19e	equ	0A688h			;*
-data_20e	equ	0A68Eh			;*
-data_21e	equ	0A6CBh			;*
-data_22e	equ	0A766h			;*
-data_23e	equ	0A767h			;*
-data_24e	equ	0A773h			;*
-data_25e	equ	0A775h			;*
-data_26e	equ	0A776h			;*
-data_27e	equ	0A789h			;*
-data_28e	equ	0A78Ah			;*
-data_29e	equ	0A78Bh			;*
-data_30e	equ	0A78Ch			;*
-data_31e	equ	0A78Dh			;*
-data_32e	equ	0A78Eh			;*
-data_33e	equ	0A78Fh			;*
-data_34e	equ	0A790h			;*
-data_35e	equ	0A791h			;*
-data_36e	equ	0A792h			;*
-data_37e	equ	0A793h			;*
-data_38e	equ	0A794h			;*
-data_39e	equ	0A795h			;*
-data_40e	equ	0A796h			;*
-data_41e	equ	0A797h			;*
-data_42e	equ	0A798h			;*
-data_43e	equ	0A799h			;*
-data_44e	equ	0A79Ah			;*
-data_45e	equ	0A79Bh			;*
-data_46e	equ	0A79Ch			;*
-data_47e	equ	0C002h			;*
-data_48e	equ	0C010h			;*
-data_49e	equ	0ED20h			;*
-data_50e	equ	0FF2Eh			;*
-data_51e	equ	0FF2Fh			;*
-data_52e	equ	0FF30h			;*
-data_53e	equ	0FF75h			;*
+fight_cb_prep		equ	200Ch			; prep/init callback
+fight_cb_record_ofs	equ	6028h			; compute record addr from tile
+fight_cb_anim_step	equ	6036h			; animation advance callback
+fight_cb_hit_check	equ	6038h			; per-slot hit/collision query
+fight_cb_aim		equ	603Ah			; aim/target callback
+fight_cb_shutdown	equ	603Ch			; shutdown callback
+
+; Shared pattern / AI tables (DS).
+
+sprite_pat_tbl		equ	0A64Dh			; sprite pattern table
+glide_table_a		equ	0A682h			; glide path A
+glide_table_b		equ	0A688h			; glide path B
+glide_table_c		equ	0A68Eh			; glide path C
+ai_column_tbl		equ	0A6CBh			; AI column-index table (xlat base)
+
+; Tori-specific global state (DS).
+
+tori_spawn_tile		equ	0A766h			; spawn-cell tile
+tori_spawn_col		equ	0A767h			; spawn-cell col
+tori_hp			equ	0A773h			; Tori HP counter
+tori_row_hi		equ	0A775h			; row hi byte
+tori_row_lo		equ	0A776h			; row lo byte
+tori_slot_idx		equ	0A789h			; current slot index
+tori_dir_state		equ	0A78Ah			; direction state byte
+tori_phase_a		equ	0A78Bh			; phase byte A
+tori_glide_flag		equ	0A78Ch			; gliding-active flag
+tori_sub_phase		equ	0A78Dh			; sub-phase counter
+tori_attack_flag	equ	0A78Eh			; attack mode flag
+tori_swoop_ctr		equ	0A78Fh			; swoop counter
+tori_turn_flag		equ	0A790h			; turning flag
+tori_cycle_idx		equ	0A791h			; cycle index byte
+tori_frame_idx		equ	0A792h			; frame-index byte
+tori_anim_state		equ	0A793h			; animation state byte
+tori_pattern_idx	equ	0A794h			; pattern index
+tori_anim_timer		equ	0A795h			; anim-timer byte
+tori_phase_count	equ	0A796h			; phase counter
+tori_phase_limit	equ	0A797h			; phase limit
+tori_dive_flag		equ	0A798h			; dive-flag byte
+tori_turn_cooldown	equ	0A799h			; turn cooldown
+tori_altitude		equ	0A79Ah			; altitude (y) position byte
+tori_alt_state		equ	0A79Bh			; alternate state byte
+tori_tmp_buf		equ	0A79Ch			; temp buffer offset (0x48 bytes)
+fight_state_max		equ	0C002h			; max state index (for wrap)
+fight_slot_list		equ	0C010h			; base of enemy slot list
+sprite_idx_table	equ	0ED20h			; sprite index mapping table
+gvar_death_flag		equ	0FF2Eh			; tori death flag global
+gvar_dir_toggle		equ	0FF2Fh			; dir-toggle flag global
+gvar_completion		equ	0FF30h			; completion/stage flag global
+gvar_spawn_fx_flag	equ	0FF75h			; flag byte for spawn VFX
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -68,7 +84,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_311MAPMT	proc	far
+tori_main	proc	far
 
 start:
 		in	al,7			; port 7, DMA-1 bas&cnt ch 3
@@ -162,18 +178,18 @@ loc_1:
 		db	 83h, 3Ch,0FFh		;  Fixup - byte match
 		jz	loc_4			; Jump if zero
 		mov	ax,[si]
-		call	word ptr cs:data_13e
+		call	word ptr cs:fight_cb_anim_step
 		jc	loc_3			; Jump if carry Set
 		mov	[si+3],bl
 		mov	ax,[si+2]
-		call	word ptr cs:data_12e
-		mov	bl,ds:data_27e
+		call	word ptr cs:fight_cb_record_ofs
+		mov	bl,ds:tori_slot_idx
 		xor	bh,bh			; Zero register
-		mov	al,ds:data_49e[bx]
+		mov	al,ds:sprite_idx_table[bx]
 		mov	[di],al
 		test	byte ptr [si+5],40h	; '@'
 		jz	loc_3			; Jump if zero
-		test	byte ptr ds:data_35e,80h
+		test	byte ptr ds:tori_cycle_idx,80h
 		jnz	loc_3			; Jump if not zero
 		mov	al,[si+5]
 		and	al,1Fh
@@ -181,20 +197,20 @@ loc_1:
 		jnz	loc_2			; Jump if not zero
 		or	al,80h
 loc_2:
-		mov	ds:data_35e,al
+		mov	ds:tori_cycle_idx,al
 loc_3:
-		inc	byte ptr ds:data_27e
+		inc	byte ptr ds:tori_slot_idx
 		add	si,10h
 		jmp	short loc_1
 loc_4:
-		mov	si,ds:data_48e
+		mov	si,ds:fight_slot_list
 		mov	word ptr [si],0FFFh
-		mov	al,ds:data_35e
+		mov	al,ds:tori_cycle_idx
 		or	al,al			; Zero ?
 		jz	loc_8			; Jump if zero
 		push	ax
 		and	al,1Fh
-		call	word ptr cs:data_14e
+		call	word ptr cs:fight_cb_hit_check
 		mov	bl,ah
 		xor	bh,bh			; Zero register
 		pop	ax
@@ -204,226 +220,226 @@ loc_4:
 		add	bx,bx
 		add	bx,bx
 loc_5:
-		mov	byte ptr ds:data_53e,29h	; ')'
+		mov	byte ptr ds:gvar_spawn_fx_flag,29h	; ')'
 		call	sub_6
-		test	byte ptr ds:data_30e,0FFh
+		test	byte ptr ds:tori_glide_flag,0FFh
 		jz	loc_6			; Jump if zero
-		mov	byte ptr ds:data_30e,0
-		mov	byte ptr ds:data_31e,0
-		mov	byte ptr ds:data_32e,0FFh
+		mov	byte ptr ds:tori_glide_flag,0
+		mov	byte ptr ds:tori_sub_phase,0
+		mov	byte ptr ds:tori_attack_flag,0FFh
 loc_6:
 		jnz	loc_7			; Jump if not zero
 		call	sub_5
 loc_7:
-		mov	byte ptr ds:data_39e,4
+		mov	byte ptr ds:tori_anim_timer,4
 loc_8:
-		mov	byte ptr ds:data_29e,0
-		test	byte ptr ds:data_39e,0FFh
+		mov	byte ptr ds:tori_phase_a,0
+		test	byte ptr ds:tori_anim_timer,0FFh
 		jz	loc_9			; Jump if zero
-		dec	byte ptr ds:data_39e
-		mov	byte ptr ds:data_29e,1
+		dec	byte ptr ds:tori_anim_timer
+		mov	byte ptr ds:tori_phase_a,1
 loc_9:
-		test	byte ptr ds:data_30e,0FFh
+		test	byte ptr ds:tori_glide_flag,0FFh
 		jz	loc_14			; Jump if zero
-		cmp	byte ptr ds:data_25e,0Eh
+		cmp	byte ptr ds:tori_row_hi,0Eh
 		je	loc_10			; Jump if equal
-		dec	byte ptr ds:data_25e
+		dec	byte ptr ds:tori_row_hi
 loc_10:
-		inc	byte ptr ds:data_31e
-		and	byte ptr ds:data_31e,3
-		cmp	byte ptr ds:data_31e,2
+		inc	byte ptr ds:tori_sub_phase
+		and	byte ptr ds:tori_sub_phase,3
+		cmp	byte ptr ds:tori_sub_phase,2
 		jne	loc_11			; Jump if not equal
-		mov	byte ptr ds:data_53e,2Bh	; '+'
+		mov	byte ptr ds:gvar_spawn_fx_flag,2Bh	; '+'
 loc_11:
 		call	sub_4
 		jc	loc_12			; Jump if carry Set
-		test	byte ptr ds:data_45e,0FFh
+		test	byte ptr ds:tori_alt_state,0FFh
 		jz	loc_12			; Jump if zero
-		dec	byte ptr ds:data_45e
-		test	byte ptr ds:data_35e,0FFh
+		dec	byte ptr ds:tori_alt_state
+		test	byte ptr ds:tori_cycle_idx,0FFh
 		jz	loc_13			; Jump if zero
 loc_12:
-		mov	byte ptr ds:data_30e,0
-		mov	byte ptr ds:data_31e,0
-		mov	byte ptr ds:data_32e,0FFh
-		mov	byte ptr ds:data_53e,2Ah	; '*'
+		mov	byte ptr ds:tori_glide_flag,0
+		mov	byte ptr ds:tori_sub_phase,0
+		mov	byte ptr ds:tori_attack_flag,0FFh
+		mov	byte ptr ds:gvar_spawn_fx_flag,2Ah	; '*'
 loc_13:
 		jmp	loc_30
 loc_14:
-		test	byte ptr ds:data_32e,0FFh
+		test	byte ptr ds:tori_attack_flag,0FFh
 		jz	loc_17			; Jump if zero
-		cmp	byte ptr ds:data_31e,1
+		cmp	byte ptr ds:tori_sub_phase,1
 		jne	loc_15			; Jump if not equal
-		mov	byte ptr ds:data_32e,0
+		mov	byte ptr ds:tori_attack_flag,0
 		jmp	loc_30
 loc_15:
-		mov	byte ptr ds:data_31e,1
-		cmp	byte ptr ds:data_25e,12h
+		mov	byte ptr ds:tori_sub_phase,1
+		cmp	byte ptr ds:tori_row_hi,12h
 		je	loc_16			; Jump if equal
-		inc	byte ptr ds:data_25e
-		mov	byte ptr ds:data_31e,0
+		inc	byte ptr ds:tori_row_hi
+		mov	byte ptr ds:tori_sub_phase,0
 		call	sub_3
 loc_16:
 		jmp	loc_30
 loc_17:
-		test	byte ptr ds:data_41e,0FFh
+		test	byte ptr ds:tori_phase_limit,0FFh
 		jz	loc_20			; Jump if zero
-		inc	byte ptr ds:data_34e
-		and	byte ptr ds:data_34e,3
+		inc	byte ptr ds:tori_turn_flag
+		and	byte ptr ds:tori_turn_flag,3
 		call	sub_2
 		jnc	loc_18			; Jump if carry=0
 		jmp	loc_30
 loc_18:
-		cmp	byte ptr ds:data_42e,4
+		cmp	byte ptr ds:tori_dive_flag,4
 		jae	loc_19			; Jump if above or =
-		inc	byte ptr ds:data_42e
-		mov	byte ptr ds:data_53e,2Ah	; '*'
-		mov	byte ptr ds:data_39e,4
+		inc	byte ptr ds:tori_dive_flag
+		mov	byte ptr ds:gvar_spawn_fx_flag,2Ah	; '*'
+		mov	byte ptr ds:tori_anim_timer,4
 		jmp	loc_30
 loc_19:
-		mov	byte ptr ds:data_41e,0
-		mov	byte ptr ds:data_31e,0
-		mov	byte ptr ds:data_30e,0FFh
-		mov	byte ptr ds:data_45e,0Fh
+		mov	byte ptr ds:tori_phase_limit,0
+		mov	byte ptr ds:tori_sub_phase,0
+		mov	byte ptr ds:tori_glide_flag,0FFh
+		mov	byte ptr ds:tori_alt_state,0Fh
 		jmp	loc_30
 loc_20:
-		test	byte ptr ds:data_44e,0FFh
+		test	byte ptr ds:tori_altitude,0FFh
 		jz	loc_23			; Jump if zero
 		call	sub_2
 		jnc	loc_21			; Jump if carry=0
 		jmp	loc_30
 loc_21:
-		cmp	byte ptr ds:data_42e,2
+		cmp	byte ptr ds:tori_dive_flag,2
 		jae	loc_22			; Jump if above or =
-		inc	byte ptr ds:data_42e
-		mov	byte ptr ds:data_53e,2Ah	; '*'
-		mov	byte ptr ds:data_39e,2
+		inc	byte ptr ds:tori_dive_flag
+		mov	byte ptr ds:gvar_spawn_fx_flag,2Ah	; '*'
+		mov	byte ptr ds:tori_anim_timer,2
 		jmp	loc_30
 loc_22:
-		mov	ax,ds:data_24e
+		mov	ax,ds:tori_hp
 		add	ax,4
-		call	word ptr cs:data_13e
-		mov	ds:data_22e,bl
-		mov	al,ds:data_25e
+		call	word ptr cs:fight_cb_anim_step
+		mov	ds:tori_spawn_tile,bl
+		mov	al,ds:tori_row_hi
 		add	al,4
 		and	al,3Fh			; '?'
-		mov	ds:data_23e,al
+		mov	ds:tori_spawn_col,al
 		mov	bx,0A766h
-		call	word ptr cs:data_15e
-		mov	byte ptr ds:data_44e,0
+		call	word ptr cs:fight_cb_aim
+		mov	byte ptr ds:tori_altitude,0
 		jmp	loc_30
 loc_23:
-		test	byte ptr ds:data_50e,0FFh
+		test	byte ptr ds:gvar_death_flag,0FFh
 		jz	loc_24			; Jump if zero
 		jmp	loc_55
 loc_24:
-		inc	byte ptr ds:data_34e
-		and	byte ptr ds:data_34e,3
-		test	byte ptr ds:data_35e,0FFh
+		inc	byte ptr ds:tori_turn_flag
+		and	byte ptr ds:tori_turn_flag,3
+		test	byte ptr ds:tori_cycle_idx,0FFh
 		jz	loc_25			; Jump if zero
-		cmp	byte ptr ds:data_24e,14h
+		cmp	byte ptr ds:tori_hp,14h
 		jb	loc_25			; Jump if below
-		mov	byte ptr ds:data_41e,0FFh
-		mov	byte ptr ds:data_42e,0
+		mov	byte ptr ds:tori_phase_limit,0FFh
+		mov	byte ptr ds:tori_dive_flag,0
 loc_25:
-		test	byte ptr ds:data_41e,0FFh
+		test	byte ptr ds:tori_phase_limit,0FFh
 		jnz	loc_26			; Jump if not zero
 		call	word ptr cs:data_6
 		and	al,0Fh
 		jnz	loc_26			; Jump if not zero
-		mov	byte ptr ds:data_44e,0FFh
-		mov	byte ptr ds:data_42e,0
+		mov	byte ptr ds:tori_altitude,0FFh
+		mov	byte ptr ds:tori_dive_flag,0
 loc_26:
-		inc	byte ptr ds:data_40e
-		test	byte ptr ds:data_40e,1
+		inc	byte ptr ds:tori_phase_count
+		test	byte ptr ds:tori_phase_count,1
 		jnz	loc_30			; Jump if not zero
 		mov	al,data_3
 		add	al,data_4
 		xor	ah,ah			; Zero register
 		mov	cx,ax
-		sub	cx,ds:data_47e
+		sub	cx,ds:fight_state_max
 		jc	loc_27			; Jump if carry Set
 		xchg	cx,ax
 loc_27:
-		mov	bl,ds:data_24e
+		mov	bl,ds:tori_hp
 		sub	bl,al
 		cmp	bl,0Ch
 		je	loc_29			; Jump if equal
 		jnc	loc_28			; Jump if carry=0
-		dec	byte ptr ds:data_28e
-		and	byte ptr ds:data_28e,3
+		dec	byte ptr ds:tori_dir_state
+		and	byte ptr ds:tori_dir_state,3
 		call	sub_5
 		jnc	loc_30			; Jump if carry=0
-		mov	byte ptr ds:data_41e,0FFh
-		mov	byte ptr ds:data_42e,0
+		mov	byte ptr ds:tori_phase_limit,0FFh
+		mov	byte ptr ds:tori_dive_flag,0
 		jmp	short loc_30
 loc_28:
-		inc	byte ptr ds:data_28e
-		and	byte ptr ds:data_28e,3
+		inc	byte ptr ds:tori_dir_state
+		and	byte ptr ds:tori_dir_state,3
 		call	sub_3
 loc_29:
 		call	word ptr cs:data_6
 		and	al,1Fh
 		jnz	loc_30			; Jump if not zero
-		mov	byte ptr ds:data_41e,0FFh
-		mov	byte ptr ds:data_42e,0
+		mov	byte ptr ds:tori_phase_limit,0FFh
+		mov	byte ptr ds:tori_dive_flag,0
 loc_30:
-		mov	al,ds:data_25e
-		mov	ds:data_37e,al
+		mov	al,ds:tori_row_hi
+		mov	ds:tori_anim_state,al
 		push	cs
 		pop	es
-		mov	di,data_46e
+		mov	di,tori_tmp_buf
 		mov	al,0FFh
 		mov	cx,48h
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
-		test	byte ptr ds:data_43e,0FFh
+		test	byte ptr ds:tori_turn_cooldown,0FFh
 		jnz	loc_31			; Jump if not zero
-		test	byte ptr ds:data_32e,0FFh
+		test	byte ptr ds:tori_attack_flag,0FFh
 		jz	loc_32			; Jump if zero
 loc_31:
-		mov	al,ds:data_31e
+		mov	al,ds:tori_sub_phase
 		and	al,1
 		add	al,11h
 		call	sub_1
 		jmp	short loc_34
 loc_32:
-		test	byte ptr ds:data_30e,0FFh
+		test	byte ptr ds:tori_glide_flag,0FFh
 		jz	loc_33			; Jump if zero
-		mov	al,ds:data_31e
+		mov	al,ds:tori_sub_phase
 		and	al,3
 		add	al,0Dh
 		call	sub_1
-		mov	al,ds:data_31e
+		mov	al,ds:tori_sub_phase
 		shr	al,1			; Shift w/zeros fill
-		adc	byte ptr ds:data_37e,0
+		adc	byte ptr ds:tori_anim_state,0
 		jmp	short loc_34
 loc_33:
-		mov	al,ds:data_29e
+		mov	al,ds:tori_phase_a
 		call	sub_1
-		mov	al,ds:data_28e
+		mov	al,ds:tori_dir_state
 		add	al,6
 		call	sub_1
-		mov	al,ds:data_33e
+		mov	al,ds:tori_swoop_ctr
 		add	al,0Ah
 		call	sub_1
-		mov	al,ds:data_34e
+		mov	al,ds:tori_turn_flag
 		add	al,2
 		call	sub_1
 loc_34:
-		mov	byte ptr ds:data_27e,0
-		mov	ax,ds:data_24e
-		mov	di,ds:data_48e
-		mov	si,data_46e
+		mov	byte ptr ds:tori_slot_idx,0
+		mov	ax,ds:tori_hp
+		mov	di,ds:fight_slot_list
+		mov	si,tori_tmp_buf
 		mov	cx,9
 
 locloop_35:
 		push	cx
 		push	si
 		push	ax
-		call	word ptr cs:data_13e
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		jc	loc_39			; Jump if carry Set
-		mov	ds:data_36e,bl
+		mov	ds:tori_frame_idx,bl
 		xor	cx,cx			; Zero register
 loc_36:
 		push	cx
@@ -431,11 +447,11 @@ loc_36:
 		cmp	byte ptr [si],0FFh
 		je	loc_38			; Jump if equal
 		mov	[di],ax
-		mov	al,ds:data_37e
+		mov	al,ds:tori_anim_state
 		add	al,cl
 		and	al,3Fh			; '?'
 		mov	[di+2],al
-		mov	al,ds:data_36e
+		mov	al,ds:tori_frame_idx
 		mov	[di+3],al
 		mov	al,[si]
 		mov	ah,al
@@ -447,22 +463,22 @@ loc_36:
 		mov	[di+4],al
 		mov	[di+6],ah
 		mov	byte ptr [di+5],0
-		test	byte ptr ds:data_35e,0FFh
+		test	byte ptr ds:tori_cycle_idx,0FFh
 		jz	loc_37			; Jump if zero
 		or	byte ptr [di+5],20h	; ' '
 loc_37:
 		mov	ax,[di+2]
 		push	di
-		call	word ptr cs:data_12e
-		mov	bl,ds:data_27e
+		call	word ptr cs:fight_cb_record_ofs
+		mov	bl,ds:tori_slot_idx
 		xor	bh,bh			; Zero register
 		mov	al,bl
 		or	al,80h
 		xchg	[di],al
-		mov	ds:data_49e[bx],al
+		mov	ds:sprite_idx_table[bx],al
 		pop	di
 		add	di,10h
-		inc	byte ptr ds:data_27e
+		inc	byte ptr ds:tori_slot_idx
 loc_38:
 		inc	si
 		pop	ax
@@ -480,19 +496,19 @@ loc_39:
 		mov	word ptr [di],0FFFFh
 		retn
 
-_311MAPMT	endp
+tori_main	endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_1		proc	near
 		add	al,al
 		mov	bl,al
 		xor	bh,bh			; Zero register
-		mov	si,ds:data_17e[bx]
-		mov	bp,ds:data_21e[bx]
-		mov	di,data_46e
+		mov	si,ds:sprite_pat_tbl[bx]
+		mov	bp,ds:ai_column_tbl[bx]
+		mov	di,tori_tmp_buf
 		mov	cx,9
 
 locloop_40:
@@ -516,126 +532,126 @@ loc_42:
 sub_1		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_2		proc	near
-		inc	byte ptr ds:data_33e
-		cmp	byte ptr ds:data_33e,3
+		inc	byte ptr ds:tori_swoop_ctr
+		cmp	byte ptr ds:tori_swoop_ctr,3
 		stc				; Set carry flag
 		jz	loc_43			; Jump if zero
 		retn
 loc_43:
-		mov	byte ptr ds:data_33e,0
+		mov	byte ptr ds:tori_swoop_ctr,0
 		clc				; Clear carry flag
 		retn
 sub_2		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_3		proc	near
-		cmp	byte ptr ds:data_24e,0Dh
+		cmp	byte ptr ds:tori_hp,0Dh
 		jae	loc_44			; Jump if above or =
 		retn
 loc_44:
-		dec	byte ptr ds:data_24e
+		dec	byte ptr ds:tori_hp
 		clc				; Clear carry flag
 		retn
 sub_3		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_4		proc	near
-		cmp	byte ptr ds:data_24e,11h
+		cmp	byte ptr ds:tori_hp,11h
 		jae	loc_45			; Jump if above or =
 		retn
 loc_45:
-		dec	byte ptr ds:data_24e
+		dec	byte ptr ds:tori_hp
 		clc				; Clear carry flag
 		retn
 sub_4		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_5		proc	near
-		cmp	byte ptr ds:data_24e,30h	; '0'
+		cmp	byte ptr ds:tori_hp,30h	; '0'
 		cmc				; Complement carry
 		jnc	loc_46			; Jump if carry=0
 		retn
 loc_46:
-		inc	byte ptr ds:data_24e
+		inc	byte ptr ds:tori_hp
 		clc				; Clear carry flag
 		retn
 sub_5		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_6		proc	near
-		mov	ax,ds:data_26e
+		mov	ax,ds:tori_row_lo
 		sub	ax,bx
 		jnc	loc_47			; Jump if carry=0
 		xor	ax,ax			; Zero register
 loc_47:
-		mov	ds:data_26e,ax
+		mov	ds:tori_row_lo,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:data_11e
+		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
 		jz	loc_48			; Jump if zero
 		retn
 loc_48:
-		mov	byte ptr ds:data_50e,0FFh
-		call	word ptr cs:data_16e
-		mov	byte ptr ds:data_41e,0
-		mov	byte ptr ds:data_44e,0
-		mov	byte ptr ds:data_42e,0
-		test	byte ptr ds:data_30e,0FFh
+		mov	byte ptr ds:gvar_death_flag,0FFh
+		call	word ptr cs:fight_cb_shutdown
+		mov	byte ptr ds:tori_phase_limit,0
+		mov	byte ptr ds:tori_altitude,0
+		mov	byte ptr ds:tori_dive_flag,0
+		test	byte ptr ds:tori_glide_flag,0FFh
 		jnz	loc_49			; Jump if not zero
 		retn
 loc_49:
-		mov	byte ptr ds:data_38e,0
-		mov	byte ptr ds:data_30e,0
+		mov	byte ptr ds:tori_pattern_idx,0
+		mov	byte ptr ds:tori_glide_flag,0
 loc_54:
-		mov	byte ptr ds:data_31e,0
-		mov	byte ptr ds:data_32e,0FFh
+		mov	byte ptr ds:tori_sub_phase,0
+		mov	byte ptr ds:tori_attack_flag,0FFh
 		retn
 sub_6		endp
 
 loc_55:
-		mov	al,ds:data_38e
+		mov	al,ds:tori_pattern_idx
 		cmp	al,28h			; '('
 		jae	loc_57			; Jump if above or =
-		mov	byte ptr ds:data_51e,0FFh
-		mov	byte ptr ds:data_29e,1
-		mov	al,ds:data_38e
-		inc	byte ptr ds:data_38e
+		mov	byte ptr ds:gvar_dir_toggle,0FFh
+		mov	byte ptr ds:tori_phase_a,1
+		mov	al,ds:tori_pattern_idx
+		inc	byte ptr ds:tori_pattern_idx
 		cmp	al,14h
 		jae	loc_56			; Jump if above or =
 		call	sub_2
-		inc	byte ptr ds:data_34e
-		and	byte ptr ds:data_34e,3
-		mov	byte ptr ds:data_53e,2Ch	; ','
+		inc	byte ptr ds:tori_turn_flag
+		and	byte ptr ds:tori_turn_flag,3
+		mov	byte ptr ds:gvar_spawn_fx_flag,2Ch	; ','
 		jmp	loc_30
 loc_56:
-		mov	byte ptr ds:data_43e,0FFh
-		mov	byte ptr ds:data_31e,1
+		mov	byte ptr ds:tori_turn_cooldown,0FFh
+		mov	byte ptr ds:tori_sub_phase,1
 		jmp	loc_30
 loc_57:
-		mov	byte ptr ds:data_52e,0FFh
+		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 			                        ;* No entry point to code
 		jnc	loc_49			; Jump if carry=0
@@ -648,10 +664,10 @@ loc_57:
 ;*		jl	loc_53			;*Jump if <
 		db	 7Ch,0A6h		;  Fixup - byte match
 		jle	loc_54			; Jump if < or =
-		and	byte ptr ss:data_18e[bp],84h
+		and	byte ptr ss:glide_table_a[bp],84h
 		cmpsb				; Cmp [si] to es:[di]
-		xchg	ss:data_19e[bp],ah
-		mov	sp,ss:data_20e[bp]
+		xchg	ss:glide_table_b[bp],ah
+		mov	sp,ss:glide_table_c[bp]
 		xchg	cx,ax
 		cmpsb				; Cmp [si] to es:[di]
 		db	 9Bh,0A6h,0A4h,0A6h,0ADh,0A6h

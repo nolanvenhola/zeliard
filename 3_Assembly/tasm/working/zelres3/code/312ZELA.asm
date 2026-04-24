@@ -1,15 +1,29 @@
 
 PAGE  59,132
 
-;��������������������������������������������������������������������������
-;��					                                 ��
-;��				_312MAPST                                ��
-;��					                                 ��
-;��      Created:   5-Apr-26		                                 ��
-;��      Code type: zero start		                                 ��
-;��      Passes:    5          Analysis	Options on: none                 ��
-;��					                                 ��
-;��������������������������������������������������������������������������
+;==========================================================================
+;
+;  312ZELA / _312MAPST - Satono Town Map Program (zelres3 chunk)
+;
+;  Map-program code module for Satono Town (the first major town-area
+;  overworld map in zelres3). Loaded together with the town data file
+;  map_satono_town.bin (312MAPST.bin / renamed from ZELA-prefixed chunk).
+;
+;  Header byte range (file 0x00..0x79) contains small fields + an embedded
+;  data-pointer table; Sourcer mis-decoded the leading bytes as code. The
+;  real executable entry is at loc_1 (file 0x210) after the tile/layout
+;  tables that Sourcer also misidentified as code bytes.
+;
+;  Main responsibilities:
+;    - Per-frame tile scan / NPC-cell update loop (loc_2..loc_4)
+;    - Dispatch table at data_21e (in game DS) invoking scripted handlers
+;    - Map-limit and scroll step helpers (sub_2..sub_6)
+;    - Contains 'gar' string fragment near end (town-name substring)
+;
+;  Note: The name "ZELA" in the filename is a prior-pass working nickname;
+;  the disassembler-stored proc identifier _312MAPST is authoritative.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
@@ -17,55 +31,60 @@ include  srmacros.inc
 
 
 ; The following equates show data references outside the range of the program.
+; Shared references (common to the 312-319 map-program family):
+;   200Ch / 6028h..603Ch   -- game-segment dispatch callback fn ptrs
+;   0C002h / 0C010h        -- sprite attribute / entity record base
+;   0ED20h                 -- char/tile lookup table
+;   0FF2Eh..0FF75h         -- per-map global state flag bytes
 
-data_1e		equ	8802h			;*
-data_2e		equ	8E8Dh			;*
-data_3e		equ	9302h			;*
-data_4e		equ	0A2A1h			;*
-data_14e	equ	6C6h			;*
-data_15e	equ	200Ch			;*
-data_16e	equ	6028h			;*
-data_17e	equ	6036h			;*
-data_18e	equ	6038h			;*
-data_19e	equ	603Ah			;*
-data_20e	equ	603Ch			;*
-data_21e	equ	0A307h			;*
+data_1e		equ	8802h			;* external data word (mis-decoded Fixup target)
+data_2e		equ	8E8Dh			;* external data byte
+data_3e		equ	9302h			;* external data byte (via xchg at loc_1)
+data_4e		equ	0A2A1h			;* far-ptr target (Fixup call far)
+data_14e	equ	6C6h			;* internal address referenced from header
+data_15e	equ	200Ch			;* scroll/dispatch callback (cs-relative)
+data_16e	equ	6028h			;* game-seg callback fn A (tile dispatch)
+data_17e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
+data_18e	equ	6038h			;* game-seg callback fn C (entity step)
+data_19e	equ	603Ah			;* game-seg callback fn D
+data_20e	equ	603Ch			;* game-seg callback fn E (jmp target)
+data_21e	equ	0A307h			;* dispatch word-table base (handler ptrs)
 data_22e	equ	0A33Eh			;*
 data_23e	equ	0A343h			;*
 data_24e	equ	0A348h			;*
-data_25e	equ	0A4EAh			;*
-data_26e	equ	0A552h			;*
+data_25e	equ	0A4EAh			;* tile-index / xlat table base
+data_26e	equ	0A552h			;* data-table row (13-byte records)
 data_27e	equ	0A553h			;*
 data_28e	equ	0A55Fh			;*
 data_29e	equ	0A560h			;*
-data_30e	equ	0A5EEh			;*
-data_31e	equ	0A5F0h			;*
-data_32e	equ	0A5F1h			;*
-data_33e	equ	0A603h			;*
-data_34e	equ	0A604h			;*
-data_35e	equ	0A605h			;*
-data_36e	equ	0A606h			;*
-data_37e	equ	0A607h			;*
-data_38e	equ	0A608h			;*
-data_39e	equ	0A609h			;*
-data_40e	equ	0A60Ah			;*
-data_41e	equ	0A60Bh			;*
-data_42e	equ	0A60Ch			;*
+data_30e	equ	0A5EEh			;* scroll X position (word)
+data_31e	equ	0A5F0h			;* counter byte
+data_32e	equ	0A5F1h			;* scroll Y-ish position (word)
+data_33e	equ	0A603h			;* phase counter byte
+data_34e	equ	0A604h			;* state flag byte
+data_35e	equ	0A605h			;* state flag byte
+data_36e	equ	0A606h			;* flag byte
+data_37e	equ	0A607h			;* state flag
+data_38e	equ	0A608h			;* counter
+data_39e	equ	0A609h			;* counter
+data_40e	equ	0A60Ah			;* loop index byte
+data_41e	equ	0A60Bh			;* counter
+data_42e	equ	0A60Ch			;* speaker/anim byte
 data_43e	equ	0A60Dh			;*
-data_44e	equ	0A60Eh			;*
-data_45e	equ	0A60Fh			;*
-data_46e	equ	0A610h			;*
-data_47e	equ	0A613h			;*
-data_48e	equ	0A619h			;*
-data_49e	equ	0A61Fh			;*
-data_50e	equ	0A625h			;*
-data_51e	equ	0C002h			;*
-data_52e	equ	0C010h			;*
-data_53e	equ	0ED20h			;*
-data_54e	equ	0FF2Eh			;*
-data_55e	equ	0FF2Fh			;*
-data_56e	equ	0FF30h			;*
-data_57e	equ	0FF75h			;*
+data_44e	equ	0A60Eh			;* flag
+data_45e	equ	0A60Fh			;* flag
+data_46e	equ	0A610h			;* DS-base for 12-word loop fill
+data_47e	equ	0A613h			;* field byte
+data_48e	equ	0A619h			;* field byte
+data_49e	equ	0A61Fh			;* field byte
+data_50e	equ	0A625h			;* field byte
+data_51e	equ	0C002h			;* sprite attribute ptr (shared game-seg)
+data_52e	equ	0C010h			;* sprite attribute record base
+data_53e	equ	0ED20h			;* char/tile lookup table (shared)
+data_54e	equ	0FF2Eh			;* global state byte (shared)
+data_55e	equ	0FF2Fh			;* global state byte
+data_56e	equ	0FF30h			;* global state byte
+data_57e	equ	0FF75h			;* global state byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -75,13 +94,28 @@ seg_a		segment	byte public
 
 _312MAPST	proc	far
 
+; ------------------------------------------------------------------
+; start: - entry header + embedded tile/cell layout data
+; The first instruction-decoded bytes are NOT real code; Sourcer
+; mis-parsed the file's header fields and pointer descriptors as
+; x86 instructions. The actual executable entry is reached via the
+; dispatch table in game DS; the real instruction stream begins at
+; loc_1 (file 0x210) after the tile layout data below.
+; ------------------------------------------------------------------
 start:
-		sub	byte ptr ds:[0],al
-		mov	dh,0A1h
-		out	dx,al			; port 0A100h ??I/O Non-standard
-		movsw				; Mov [si] to es:[di]
+		sub	byte ptr ds:[0],al	; header word 0x0028 (file 0..3 as x86)
+		mov	dh,0A1h			; header field
+		out	dx,al			; header field (port 0A100h - not real I/O)
+		movsw				; header field byte
+
+; 12 zero bytes: reserved / padding in header
 		db	12 dup (0)
+
+; 32 bytes of 0x1Eh: palette/colour fill descriptor (one record)
 		db	32 dup (1Eh)
+
+; Pointer table (5 word entries) + descriptor bytes feeding the
+; dispatch logic. Values point inside this module (0xA0xx absolute).
 		db	 3Ah,0A0h, 8Ah,0A0h,0D0h,0A0h
 		db	 16h,0A1h, 66h,0A1h, 02h, 01h
 		db	 02h, 03h, 04h, 02h, 11h, 07h
@@ -294,9 +328,9 @@ loc_17:
 
 _312MAPST	endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+;==========================================================================
+; sub_2 - decrement counter byte (data_31e) modulo 64
+;==========================================================================
 
 sub_2		proc	near
 		dec	byte ptr ds:data_31e
@@ -304,10 +338,16 @@ sub_2		proc	near
 		retn
 sub_2		endp
 
+; ------------------------------------------------------------------
+; Dispatch-table handler (entered via call [data_21e+bx] in main):
+; calls sub_2 then jumps into loc_18 which continues below. The
+; 5 trailing db bytes are a duplicate "call sub_2 / jmp short +0"
+; sequence used by an alternate caller (alt-encoding of call E8h).
+; ------------------------------------------------------------------
 			                        ;* No entry point to code
 		call	sub_2
 		jmp	short loc_18
-		db	0E8h,0E4h,0FFh,0EBh, 00h
+		db	0E8h,0E4h,0FFh,0EBh, 00h	; alt: call sub_2 / jmp short (alt-encoded entry)
 loc_18:
 		test	byte ptr ds:data_45e,0FFh
 		jz	loc_19			; Jump if zero
@@ -486,15 +526,22 @@ loc_41:
 
 		mov	word ptr [si],0FFFFh
 		retn
-			                        ;* No entry point to code
-		add	al,[bx+di]
-		add	[bp+di],al
-		add	al,3
-		add	[bx+di],al
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+; ------------------------------------------------------------------
+; 8 bytes of data between procs -- small lookup row referenced by
+; the dispatch table above. Sourcer decoded as 'add al,[bx+di]...'
+; which is bogus; the real meaning is 4 x 2-byte records.
+; ------------------------------------------------------------------
+			                        ;* No entry point to code
+		add	al,[bx+di]		; data: 02 01
+		add	[bp+di],al		; data: 00 03
+		add	al,3			; data: 04 03
+		add	[bx+di],al		; data: 00 01
+
+;==========================================================================
+; sub_3 - initialise 3 tile-data slots (data_29e/27e/26e/28e)
+;        from current scroll position, then dispatch per-column init
+;==========================================================================
 
 sub_3		proc	near
 		mov	al,ds:data_31e
@@ -618,23 +665,30 @@ loc_50:
 loc_51:
 		mov	byte ptr ds:data_56e,0FFh
 		retn
+
+; ------------------------------------------------------------------
+; Module trailer (file 0x623..0x62B): data records / string fragment.
+; Sourcer mis-decoded the first ~24 bytes as x86 code but they are
+; table data feeding the dispatch entries above. The 'gar' bytes
+; starting at 0x643 are a speaker/name string fragment.
+; ------------------------------------------------------------------
 			                        ;* No entry point to code
-		xor	[bx+si],al
-		or	al,0F4h
+		xor	[bx+si],al		; data row
+		or	al,0F4h			; data bytes
 ;*		add	ax,bp
-		db	 01h,0E8h		;  Fixup - byte match
-		add	cx,[si]
+		db	 01h,0E8h		;  data bytes (Sourcer Fixup)
+		add	cx,[si]			; data row
 ;*		add	bl,bh
-		db	 00h,0FBh		;  Fixup - byte match
-		movsw				; Mov [si] to es:[di]
-		pop	ax
-		add	dl,[bp+si]
-		mov	bx,400h
-		inc	cx
-		db	 67h, 61h, 72h, 00h
-		db	7 dup (0)
-		db	2, 0
-		db	27 dup (0)
+		db	 00h,0FBh		;  data bytes (Sourcer Fixup)
+		movsw				; data byte
+		pop	ax			; data byte
+		add	dl,[bp+si]		; data bytes
+		mov	bx,400h			; data bytes
+		inc	cx			; data byte
+		db	 'gar', 0		; speaker-name fragment
+		db	7 dup (0)		; reserved
+		db	2, 0			; trailer word
+		db	27 dup (0)		; pad to module end
 
 seg_a		ends
 

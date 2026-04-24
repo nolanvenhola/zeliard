@@ -1,15 +1,33 @@
 
 PAGE  59,132
 
-;��������������������������������������������������������������������������
-;��					                                 ��
-;��				ZR3_34	                                 ��
-;��					                                 ��
-;��      Created:   16-Feb-26		                                 ��
-;��      Code type: zero start		                                 ��
-;��      Passes:    9          Analysis	Options on: none                 ��
-;��					                                 ��
-;��������������������������������������������������������������������������
+;==========================================================================
+;
+;  334MP60 - Map Data Table: Cavern of Tesoro, level 6, floor 0 (entrance)
+;
+;  Cavern/labyrinth map resource file loaded as MP60.MDT (zelres3).
+;  Part of the 16-file MP{level}{floor} dungeon-map set (320..335) covering
+;  levels 1-6 of the Zeliard labyrinth.
+;
+;  NOT executable code -- Sourcer mis-decoded the header bytes and data
+;  tables as x86 instructions (the first two bytes are really the file
+;  size word, not 'cmp [bp+si],al' etc).  The bogus mnemonics below all
+;  re-emit the same byte sequence.
+;
+;  General MDT layout (all files in this group share this pattern):
+;    [0x00]   file-size word + flag/reserved word
+;    [0x04+]  pointer table (WORDs 0xCNNN - runtime segment 0xC000)
+;            -> tile grid, event table, exit table, script trailer
+;    [mid]    tile_grid            - column/row-strip tile-index data
+;                                    (values like 0x3F06, 0xC4NN, 0xC5NN)
+;    [later]  event_records        - NPC/door/exit records (FF-terminated)
+;    [late]   cavern_name          - pascal-encoded 'Cavern of Tesoro'
+;    [end]    exit/trigger records - door warp coords + script bytes
+;    [eof]    terminator           - 0xFFFFFFFF (header_1 label)
+;
+;  Runtime segment base = 0xC000.  Pointer 0xCNNN resolves to file_off NNN.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
@@ -36,6 +54,13 @@ seg_a		segment	byte public
 
 zr3_34		proc	far
 
+
+; ------------------------------------------------------------------
+; mdt_header -- file-size word, flag byte, and table of WORD pointers
+; into the runtime 0xC000 segment.  Sourcer mis-decoded the leading
+; bytes as instructions; they are actually: size word + flag word
+; + attributes pointer + offset of 'strategy' (tile grid start) + ...
+; ------------------------------------------------------------------
 start:
 		add	[di],bx
 		add	[bx+si],al
@@ -48,6 +73,15 @@ start:
 		xlat				; al=[al+[bx]] table
 		mov	di,data_13e
 ;*		fcom	dword ptr ds:data_9e	; Compare with st
+
+; ------------------------------------------------------------------
+; tile_grid -- main cavern/map tile-index data.  Encoded as column
+; or row strips of 1-byte tile indices.  Common runs: 0x3F06 (wall
+; boundary), 0x2C06 (column separator), plus palette-range values
+; (0xC4-0xCC) that select tile rows in the tile bank.  Originally
+; labeled 'strategy' by Sourcer because the header pointer landed
+; on this offset.
+; ------------------------------------------------------------------
 		db	0D8h, 016h, 0D9h, 02Fh	; fcom dword ptr [2FD9h]
 ;*		fld	dword ptr data_3	; Push onto stack
 		db	0D9h, 006h, 035h, 001h	; fld dword ptr [135h]
@@ -1232,6 +1266,12 @@ locloop_12:
 		db	 11h,0FFh,0FFh, 2Bh, 00h, 04h
 		db	 5Eh,0D8h,0C0h, 06h,0FFh,0FFh
 		db	0FFh,0FFh, 17h,0AFh, 00h, 10h
+
+; ------------------------------------------------------------------
+; cavern_name -- pascal-encoded cavern/area name 'Cavern of Tesoro'.
+; Preceded by small descriptor bytes; the length byte just before
+; the quoted string matches the string length (0x11/0x0E/etc).
+; ------------------------------------------------------------------
 		db	'Cavern of Tesoro'
 		db	 13h, 00h, 05h, 0Ah, 0Ah, 09h
 		db	 00h, 3Bh,0FFh, 03h, 00h, 00h
@@ -1401,7 +1441,6 @@ locloop_12:
 zr3_34		endp
 
 seg_a		ends
-
 
 
 		end	start

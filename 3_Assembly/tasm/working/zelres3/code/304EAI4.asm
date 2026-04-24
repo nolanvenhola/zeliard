@@ -1,43 +1,77 @@
 
 PAGE  59,132
 
-;��������������������������������������������������������������������������
-;��					                                 ��
-;��				_304MAPFO                                ��
-;��					                                 ��
-;��      Created:   5-Apr-26		                                 ��
-;��      Code type: zero start		                                 ��
-;��      Passes:    9          Analysis	Options on: none                 ��
-;��					                                 ��
-;��������������������������������������������������������������������������
+;==========================================================================
+;
+;  304EAI4.BIN - Enemy AI Handler: ZELA (zelres3 chunk 5)
+;
+;  Per-enemy AI controller for the ZELA enemy, loaded alongside
+;  312ZELA.BIN sprites. ZELA is a mid-game enemy with segmented body
+;  (this file spawns linked body parts in enemy_data_ext[bx] starting
+;  at 0ED20h and chains them via the enemy table at 0C010h).
+;
+;  Dispatch model matches the EAI* family (see 301EAI1.asm).
+;
+;  Resource table constants (DS offsets in game_seg):
+;    6004h..603Eh = ZELA movement/collision/spawn dispatch table slots.
+;    0A45Eh / 0A756h = ZELA attack-pattern and movement direction tables.
+;    0C002h = shared active projectile count (gvar_proj_cnt).
+;    0C010h = enemy slot record base (enemy_attr_base).
+;    0ED20h = extended enemy data area (body segment/chain tracking).
+;    0FF35h / 0FF4Ah = global frame / sub-frame counters.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; --- ZELA enemy AI dispatch table (game_seg:6004h..603Eh, DS-relative) ---
+ai_fn_tbl_a	equ	6004h			; AI fn
+ai_fn_tbl_b	equ	6008h			; AI fn
+ai_fn_tbl_c	equ	6010h			; AI fn
+ai_fn_tbl_d	equ	6012h			; AI fn
+ai_fn_tbl_e	equ	6014h			; AI fn
+ai_fn_tbl_f	equ	6016h			; AI fn
+ai_fn_tbl_g	equ	6028h			; AI fn
+ai_fn_tbl_h	equ	602Ah			; AI fn
+ai_fn_tbl_i	equ	602Ch			; AI fn
+ai_fn_tbl_j	equ	602Eh			; AI fn
+ai_fn_tbl_k	equ	6032h			; AI fn
+ai_hide_fn	equ	6034h			; AI fn: hide / despawn
+ai_spawn_fn	equ	603Eh			; AI fn: spawn body segment
 
-data_10e	equ	6004h			;*
-data_11e	equ	6008h			;*
-data_12e	equ	6010h			;*
-data_13e	equ	6012h			;*
-data_14e	equ	6014h			;*
-data_15e	equ	6016h			;*
-data_16e	equ	6028h			;*
-data_17e	equ	602Ah			;*
-data_18e	equ	602Ch			;*
-data_19e	equ	602Eh			;*
-data_20e	equ	6032h			;*
-data_21e	equ	6034h			;*
-data_22e	equ	603Eh			;*
-data_23e	equ	0A45Eh			;*
-data_24e	equ	0A756h			;*
-data_25e	equ	0C002h			;*
-data_26e	equ	0C010h			;*
-data_27e	equ	0ED20h			;*
-data_28e	equ	0FF35h			;*
-data_29e	equ	0FF4Ah			;*
+; --- ZELA lookup tables / battle globals ---
+zela_tbl_a	equ	0A45Eh			; ZELA pattern/direction lookup A
+zela_tbl_b	equ	0A756h			; ZELA pattern/direction lookup B
+gvar_proj_cnt	equ	0C002h			; shared projectile count
+enemy_attr_base	equ	0C010h			; enemy slot record base (DS:0C010h)
+enemy_data_ext	equ	0ED20h			; extended enemy data area (body chain)
+gvar_frame_cnt	equ	0FF35h			; frame counter byte
+gvar_sub_frame	equ	0FF4Ah			; sub-frame counter byte
+
+; Backwards-compat aliases
+data_10e	equ	ai_fn_tbl_a
+data_11e	equ	ai_fn_tbl_b
+data_12e	equ	ai_fn_tbl_c
+data_13e	equ	ai_fn_tbl_d
+data_14e	equ	ai_fn_tbl_e
+data_15e	equ	ai_fn_tbl_f
+data_16e	equ	ai_fn_tbl_g
+data_17e	equ	ai_fn_tbl_h
+data_18e	equ	ai_fn_tbl_i
+data_19e	equ	ai_fn_tbl_j
+data_20e	equ	ai_fn_tbl_k
+data_21e	equ	ai_hide_fn
+data_22e	equ	ai_spawn_fn
+data_23e	equ	zela_tbl_a
+data_24e	equ	zela_tbl_b
+data_25e	equ	gvar_proj_cnt
+data_26e	equ	enemy_attr_base
+data_27e	equ	enemy_data_ext
+data_28e	equ	gvar_frame_cnt
+data_29e	equ	gvar_sub_frame
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -45,7 +79,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_304MAPFO	proc	far
+zela_ai_main	proc	far
 
 start:
 		inc	si
@@ -614,7 +648,7 @@ loc_68:
 		or	byte ptr [di+9],1
 		retn
 
-_304MAPFO	endp
+zela_ai_main	endp
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE

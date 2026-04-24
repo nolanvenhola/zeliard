@@ -1,15 +1,33 @@
 
 PAGE  59,132
 
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-;лл					                                 лл
-;лл				ZR3_22	                                 лл
-;лл					                                 лл
-;лл      Created:   16-Feb-26		                                 лл
-;лл      Code type: zero start		                                 лл
-;лл      Passes:    9          Analysis	Options on: none                 лл
-;лл					                                 лл
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
+;==========================================================================
+;
+;  322MP20 - Map Data Table: Cavern of Peligro, level 2, floor 0 (entrance)
+;
+;  Cavern/labyrinth map resource file loaded as MP20.MDT (zelres3).
+;  Part of the 16-file MP{level}{floor} dungeon-map set (320..335) covering
+;  levels 1-6 of the Zeliard labyrinth.
+;
+;  NOT executable code -- Sourcer mis-decoded the header bytes and data
+;  tables as x86 instructions (the first two bytes are really the file
+;  size word, not 'cmp [bp+si],al' etc).  The bogus mnemonics below all
+;  re-emit the same byte sequence.
+;
+;  General MDT layout (all files in this group share this pattern):
+;    [0x00]   file-size word + flag/reserved word
+;    [0x04+]  pointer table (WORDs 0xCNNN - runtime segment 0xC000)
+;            -> tile grid, event table, exit table, script trailer
+;    [mid]    tile_grid            - column/row-strip tile-index data
+;                                    (values like 0x3F06, 0xC4NN, 0xC5NN)
+;    [later]  event_records        - NPC/door/exit records (FF-terminated)
+;    [late]   cavern_name          - pascal-encoded 'Cavern of Peligro'
+;    [end]    exit/trigger records - door warp coords + script bytes
+;    [eof]    terminator           - 0xFFFFFFFF (header_1 label)
+;
+;  Runtime segment base = 0xC000.  Pointer 0xCNNN resolves to file_off NNN.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
@@ -24,10 +42,26 @@ seg_a		segment	byte public
 
 zr3_22		proc	far
 
+
+; ------------------------------------------------------------------
+; mdt_header -- file-size word, flag byte, and table of WORD pointers
+; into the runtime 0xC000 segment.  Sourcer mis-decoded the leading
+; bytes as instructions; they are actually: size word + flag word
+; + attributes pointer + offset of 'strategy' (tile grid start) + ...
+; ------------------------------------------------------------------
 start:
 		mov	dh,1Bh
 		add	[bx+si],al
 		das				; Decimal adjust
+
+; ------------------------------------------------------------------
+; tile_grid -- main cavern/map tile-index data.  Encoded as column
+; or row strips of 1-byte tile indices.  Common runs: 0x3F06 (wall
+; boundary), 0x2C06 (column separator), plus palette-range values
+; (0xC4-0xCC) that select tile rows in the tile bank.  Originally
+; labeled 'strategy' by Sourcer because the header pointer landed
+; on this offset.
+; ------------------------------------------------------------------
 		db	0D8h,0E0h, 00h,0F5h,0D6h, 06h
 		db	0D7h, 08h,0D7h, 57h,0D7h,0A1h
 		db	0D7h, 1Ah,0D8h, 34h,0D8h, 02h
@@ -1058,6 +1092,12 @@ loc_1:
 		db	 00h, 04h,0CDh,0D8h, 00h, 00h
 		db	0FFh,0FFh,0FFh,0FFh, 16h,0AFh
 		db	 02h, 11h
+
+; ------------------------------------------------------------------
+; cavern_name -- pascal-encoded cavern/area name 'Cavern of Peligro'.
+; Preceded by small descriptor bytes; the length byte just before
+; the quoted string matches the string length (0x11/0x0E/etc).
+; ------------------------------------------------------------------
 		db	'Cavern of Peligro'
 		db	 0Bh, 00h, 01h, 02h, 02h, 02h
 		db	 00h, 13h,0FFh, 04h, 00h, 00h
@@ -1214,7 +1254,6 @@ loc_1:
 zr3_22		endp
 
 seg_a		ends
-
 
 
 		end	start

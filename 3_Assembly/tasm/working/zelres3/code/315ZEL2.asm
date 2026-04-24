@@ -1,15 +1,25 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				_315MAPHT                                ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   5-Apr-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;==========================================================================
+;
+;  315ZEL2 / _315MAPHT - Helada Town Map Program (zelres3 chunk)
+;
+;  Map-program code module for Helada Town. Loaded together with the town
+;  data file map_helada_town.bin (315MAPHT.bin). Helada is one of the
+;  overworld towns visited in zelres3 (the late-game desert/winter town).
+;
+;  Structure:
+;    - Header / pointer table (file 0x00..~0x80) mis-decoded by Sourcer
+;    - Large embedded tile/layout data block
+;    - Per-frame tile scan / NPC-cell update loop
+;    - Dispatch / scroll / sub_NN helper procs
+;
+;  Note: "ZEL2" is a prior-pass working nickname; proc name _315MAPHT is
+;  authoritative. This is NOT a Zeliard-2 boss fight - it is the Helada
+;  town map program (earlier nickname was misleading).
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
@@ -17,14 +27,19 @@ include  srmacros.inc
 
 
 ; The following equates show data references outside the range of the program.
+; Shared references across 312-319 map-program family:
+;   200Ch..603Ch  - game-segment dispatch callback fn ptrs
+;   0C002h/0C010h - sprite attribute / entity record base
+;   0ED20h        - char/tile lookup table
+;   0FF2Eh..0FF75h - per-map global state flag bytes
 
-data_14e	equ	0C0Bh			;*
-data_15e	equ	200Ch			;*
-data_16e	equ	6028h			;*
-data_17e	equ	6036h			;*
-data_18e	equ	6038h			;*
-data_19e	equ	603Ah			;*
-data_20e	equ	603Ch			;*
+data_14e	equ	0C0Bh			;* internal module address
+data_15e	equ	200Ch			;* scroll/dispatch callback
+data_16e	equ	6028h			;* game-seg callback fn A (tile dispatch)
+data_17e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
+data_18e	equ	6038h			;* game-seg callback fn C
+data_19e	equ	603Ah			;* game-seg callback fn D
+data_20e	equ	603Ch			;* game-seg callback fn E
 data_21e	equ	0A2F8h			;*
 data_22e	equ	0A32Fh			;*
 data_23e	equ	0A334h			;*
@@ -55,13 +70,13 @@ data_47e	equ	0A606h			;*
 data_48e	equ	0A60Ch			;*
 data_49e	equ	0A612h			;*
 data_50e	equ	0A618h			;*
-data_51e	equ	0C002h			;*
-data_52e	equ	0C010h			;*
-data_53e	equ	0ED20h			;*
-data_54e	equ	0FF2Eh			;*
-data_55e	equ	0FF2Fh			;*
-data_56e	equ	0FF30h			;*
-data_57e	equ	0FF75h			;*
+data_51e	equ	0C002h			;* sprite attribute ptr
+data_52e	equ	0C010h			;* sprite attribute record base
+data_53e	equ	0ED20h			;* char/tile lookup table
+data_54e	equ	0FF2Eh			;* global state byte
+data_55e	equ	0FF2Fh			;* global state byte
+data_56e	equ	0FF30h			;* global state byte
+data_57e	equ	0FF75h			;* global state byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -71,12 +86,18 @@ seg_a		segment	byte public
 
 _315MAPHT	proc	far
 
+; ------------------------------------------------------------------
+; start: header + embedded tile/cell layout data.
+; Sourcer mis-decoded header fields as x86 instructions; real entry
+; is via dispatch from game DS. Below is a 12-byte reserved area,
+; then a 32-byte 0x1Eh descriptor row.
+; ------------------------------------------------------------------
 start:
-		sbb	ax,word ptr ds:[0]
-		mov	dh,0A1h
-		db	0DFh,0A5h
-		db	12 dup (0)
-		db	32 dup (1Eh)
+		sbb	ax,word ptr ds:[0]	; header field bytes
+		mov	dh,0A1h			; header field
+		db	0DFh,0A5h		;  header field (Sourcer left as bytes)
+		db	12 dup (0)		; reserved / padding
+		db	32 dup (1Eh)		; 32-byte 0x1Eh descriptor row
 		db	 3Ah,0A0h, 8Ah,0A0h,0D0h,0A0h
 		db	 16h,0A1h, 66h,0A1h, 00h, 01h
 		db	 02h, 03h, 04h, 00h, 11h, 07h
@@ -284,9 +305,9 @@ loc_14:
 
 _315MAPHT	endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_1		proc	near
 		dec	byte ptr ds:data_31e
@@ -482,9 +503,9 @@ loc_38:
 		add	al,3
 		add	[bx+di],al
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_2		proc	near
 		mov	al,ds:data_31e
@@ -512,9 +533,9 @@ sub_2		proc	near
 sub_2		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_3		proc	near
 		cmp	byte ptr ds:data_30e,32h	; '2'
@@ -528,9 +549,9 @@ loc_39:
 sub_3		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_4		proc	near
 		cmp	byte ptr ds:data_30e,11h
@@ -549,9 +570,9 @@ sub_4		endp
 		db	 04h, 00h, 32h, 00h, 78h, 00h
 		db	 00h, 00h, 00h, 00h, 00h
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_5		proc	near
 		mov	ax,ds:data_32e
@@ -608,22 +629,28 @@ loc_47:
 loc_48:
 		mov	byte ptr ds:data_56e,0FFh
 		retn
+
+; ------------------------------------------------------------------
+; Module trailer: dispatch-table bytes + 'aguro' string fragment
+; (speaker-name / label suffix used by the Helada dialog code)
+; + 2-byte record + 27 zero padding bytes.
+; ------------------------------------------------------------------
 			                        ;* No entry point to code
-		xor	[bx+si],al
-		or	al,58h			; 'X'
-		add	bh,ds:data_14e[bx+si]
+		xor	[bx+si],al		; data bytes
+		or	al,58h			; 'X' -- data bytes
+		add	bh,ds:data_14e[bx+si]	; data bytes
 ;*		add	ah,ch
-		db	 00h,0ECh		;  Fixup - byte match
-		movsw				; Mov [si] to es:[di]
-		inc	ax
-		push	es
-		adc	ss:data_12[bp+di],di
-		push	ax
-		db	 61h, 67h, 75h, 72h, 6Fh
-		db	0, 0, 0, 0, 0, 0
-data_12		dw	0			; Data table (indexed access)
-		db	2, 0
-		db	27 dup (0)
+		db	 00h,0ECh		;  data bytes (Sourcer Fixup)
+		movsw				; data byte
+		inc	ax			; data byte
+		push	es			; data byte
+		adc	ss:data_12[bp+di],di	; data bytes
+		push	ax			; data byte
+		db	'aguro'			; speaker/label name fragment
+		db	0, 0, 0, 0, 0, 0	; reserved
+data_12		dw	0			; record terminator word
+		db	2, 0			; trailer word
+		db	27 dup (0)		; pad to module end
 
 seg_a		ends
 

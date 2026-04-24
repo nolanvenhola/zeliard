@@ -1,53 +1,64 @@
 
 PAGE  59,132
 
-;��������������������������������������������������������������������������
-;��					                                 ��
-;��				_307MAPIC                                ��
-;��					                                 ��
-;��      Created:   5-Apr-26		                                 ��
-;��      Code type: zero start		                                 ��
-;��      Passes:    9          Analysis	Options on: none                 ��
-;��					                                 ��
-;��������������������������������������������������������������������������
+;==========================================================================
+;
+;  307EAI7.BIN - Enemy AI Behavior Type 7 (zelres3 chunk 8)
+;
+;  Enemy AI handler loaded by 200FIGHT.asm and paired with LEGA/DRGN
+;  enemy sprite sets.  Behavior type 7 is a multi-phase pursuer that
+;  combines directional stepping, randomised strafe, XLAT-table animation,
+;  aim-refresh timers, and multi-state dispatching through [si+9] phase bits.
+;
+;  Enemy record layout is the same shared format used by all EAI modules
+;  (see 306EAI6.asm header comment for si-relative fields).
+;
+;  Dispatch via CS word-pointer table at start of file.  Sub-functions
+;  sub_1..sub_8 implement: step forward, seek/track, step back,
+;  retreat/advance, range/aim check, fire/spawn, and wrap handler.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
 
-data_10e	equ	6004h			;*
-data_11e	equ	6008h			;*
-data_12e	equ	6010h			;*
-data_13e	equ	6014h			;*
-data_14e	equ	6028h			;*
-data_15e	equ	602Ah			;*
-data_16e	equ	602Ch			;*
-data_17e	equ	602Eh			;*
-data_18e	equ	6030h			;*
-data_19e	equ	6032h			;*
-data_20e	equ	6034h			;*
-data_21e	equ	603Ah			;*
-data_22e	equ	8A89h			;*
-data_23e	equ	8B8Ah			;*
-data_24e	equ	9291h			;*
-data_25e	equ	0A1A0h			;*
-data_26e	equ	0A460h			;*
-data_27e	equ	0A461h			;*
-data_28e	equ	0A46Dh			;*
-data_29e	equ	0A46Eh			;*
-data_30e	equ	0A491h			;*
-data_31e	equ	0A492h			;*
-data_32e	equ	0A701h			;*
-data_33e	equ	0A704h			;*
-data_34e	equ	0A705h			;*
-data_35e	equ	0A711h			;*
-data_36e	equ	0A712h			;*
-data_37e	equ	0A8C7h			;*
-data_38e	equ	0C002h			;*
-data_39e	equ	0FF35h			;*
+fight_cb_rng		equ	6004h			; RNG read callback
+fight_cb_step_neg	equ	6008h			; step -x callback
+fight_cb_map_fwd	equ	6010h			; map-fwd move callback
+fight_cb_blocked	equ	6014h			; blocked/obstacle query
+fight_cb_record_ofs	equ	6028h			; compute record addr from tile
+fight_cb_mark_adj	equ	602Ah			; mark adjacent cell busy
+fight_cb_tile_index	equ	602Ch			; tile-index conversion
+fight_cb_cmp_tile	equ	602Eh			; compare tile type
+fight_cb_alt		equ	6030h			; alternate dispatch callback
+fight_cb_spawn		equ	6032h			; spawn projectile/effect
+fight_cb_fire		equ	6034h			; fire / attack dispatch
+fight_cb_despawn	equ	603Ah			; clear/remove enemy
+
+; Shared enemy spawn/state globals in game_seg DS.
+
+path_tbl_a		equ	8A89h			; path/route data table A
+path_tbl_b		equ	8B8Ah			; path/route data table B
+path_tbl_c		equ	9291h			; path/route data table C
+sprite_src_base		equ	0A1A0h			; enemy-sprite source table base
+enemy_spawn_tile_a	equ	0A460h			; spawn-cell row (path A)
+enemy_spawn_col_a	equ	0A461h			; spawn-cell col (path A)
+enemy_spawn_tile_b	equ	0A46Dh			; spawn-cell row (path B)
+enemy_spawn_col_b	equ	0A46Eh			; spawn-cell col (path B)
+aim_delta_pos		equ	0A491h			; positive aim delta threshold
+aim_delta_neg		equ	0A492h			; negative aim delta threshold
+ai_phase_table		equ	0A701h			; ai phase/wait table
+spawn_cell_row_hi	equ	0A704h			; alt spawn row (phase hi)
+spawn_cell_col_hi	equ	0A705h			; alt spawn col (phase hi)
+spawn_cell_row_lo	equ	0A711h			; alt spawn row (phase lo)
+spawn_cell_col_lo	equ	0A712h			; alt spawn col (phase lo)
+dir_xlat_alt		equ	0A8C7h			; direction xlat (alt state)
+fight_state_max		equ	0C002h			; max state index (for wrap)
+gvar_hero_x		equ	0FF35h			; hero X tile position (global)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -55,7 +66,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_307MAPIC	proc	far
+eai7_main	proc	far
 
 start:
 		iret				; Interrupt return
@@ -149,15 +160,15 @@ data_7		dw	6Dh			; Data table (indexed access)
 		db	 65h, 01h
 		db	 69h, 6Ah, 6Bh, 6Ch
 loc_1:
-		add	ds:data_22e[bx+si],cx
+		add	ds:path_tbl_a[bx+si],cx
 		mov	ax,[bx+di]
-		mov	ds:data_23e[bx+di],cl
-		add	ds:data_24e[bx+si],dx
+		mov	ds:path_tbl_b[bx+di],cl
+		add	ds:path_tbl_c[bx+si],dx
 		xchg	bx,ax
-		add	ds:data_24e[bx+si],dx
+		add	ds:path_tbl_c[bx+si],dx
 		xchg	bx,ax
-		add	ds:data_25e[bx],bx
-		mov	ds:data_32e,al
+		add	ds:sprite_src_base[bx],bx
+		mov	ds:ai_phase_table,al
 		test	al,0
 		add	[bx+di],al
 		db	 00h, 00h, 00h, 00h, 02h, 01h
@@ -261,7 +272,7 @@ loc_16:
 		test	byte ptr [si+5],80h
 		jz	loc_18			; Jump if zero
 		sub	al,[si+3]
-		cmp	al,ds:data_30e
+		cmp	al,ds:aim_delta_pos
 		je	loc_20			; Jump if equal
 		jc	loc_17			; Jump if carry Set
 		call	sub_1
@@ -278,7 +289,7 @@ loc_17:
 loc_18:
 		mov	ah,[si+3]
 		sub	ah,al
-		cmp	ah,ds:data_31e
+		cmp	ah,ds:aim_delta_neg
 		je	loc_20			; Jump if equal
 		jc	loc_19			; Jump if carry Set
 		call	sub_3
@@ -297,12 +308,12 @@ loc_20:
 		and	al,3
 		dec	al
 		add	al,8
-		mov	ds:data_30e,al
+		mov	ds:aim_delta_pos,al
 		call	word ptr cs:data_6
 		and	al,3
 		sub	al,2
 		add	al,9
-		mov	ds:data_31e,al
+		mov	ds:aim_delta_neg,al
 		call	sub_7
 		jnc	loc_26			; Jump if carry=0
 		or	byte ptr [si+9],1
@@ -328,19 +339,19 @@ loc_23:
 		jmp	short loc_26
 loc_24:
 		mov	al,[si+3]
-		mov	ds:data_28e,al
+		mov	ds:enemy_spawn_tile_b,al
 		inc	al
-		mov	ds:data_26e,al
+		mov	ds:enemy_spawn_tile_a,al
 		mov	al,[si+2]
 		inc	al
-		mov	ds:data_29e,al
-		mov	ds:data_27e,al
+		mov	ds:enemy_spawn_col_b,al
+		mov	ds:enemy_spawn_col_a,al
 		mov	bx,0A460h
 		test	byte ptr [si+5],80h
 		jnz	loc_25			; Jump if not zero
 		mov	bx,0A46Dh
 loc_25:
-		call	word ptr cs:data_21e
+		call	word ptr cs:fight_cb_despawn
 		jmp	short loc_26
 		db	 00h, 00h, 30h, 00h, 14h, 00h
 		db	 28h, 00h
@@ -359,7 +370,7 @@ loc_26:
 		retn
 		db	8, 8
 
-_307MAPIC	endp
+eai7_main	endp
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
@@ -377,7 +388,7 @@ loc_27:
 loc_28:
 		mov	bx,[si]
 		inc	bx
-		mov	ax,ds:data_38e
+		mov	ax,ds:fight_state_max
 		sub	ax,bx
 		jnz	loc_29			; Jump if not zero
 		xchg	bx,ax
@@ -397,39 +408,39 @@ sub_1		endp
 
 sub_2		proc	near
 		mov	ax,[si+2]
-		call	word ptr cs:data_14e
+		call	word ptr cs:fight_cb_record_ofs
 		inc	di
 		inc	di
 		mov	cx,4
 
 locloop_30:
 		mov	al,[di]
-		call	word ptr cs:data_17e
+		call	word ptr cs:fight_cb_cmp_tile
 		stc				; Set carry flag
 		jz	loc_31			; Jump if zero
 		retn
 loc_31:
 		xchg	si,di
 		add	si,24h
-		call	word ptr cs:data_15e
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		loop	locloop_30		; Loop if cx > 0
 
 		xchg	si,di
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		mov	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		xchg	si,di
 		add	al,al
@@ -454,7 +465,7 @@ loc_33:
 		dec	ax
 		cmp	ax,0FFFFh
 		jne	loc_34			; Jump if not equal
-		mov	ax,ds:data_38e
+		mov	ax,ds:fight_state_max
 		dec	ax
 loc_34:
 		mov	[si],ax
@@ -472,39 +483,39 @@ sub_3		endp
 
 sub_4		proc	near
 		mov	ax,[si+2]
-		call	word ptr cs:data_14e
+		call	word ptr cs:fight_cb_record_ofs
 		dec	di
 		mov	cx,4
 
 locloop_35:
 		mov	al,[di]
-		call	word ptr cs:data_17e
+		call	word ptr cs:fight_cb_cmp_tile
 		stc				; Set carry flag
 		jz	loc_36			; Jump if zero
 		retn
 loc_36:
 		xchg	si,di
 		add	si,24h
-		call	word ptr cs:data_15e
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		loop	locloop_35		; Loop if cx > 0
 
 		dec	di
 		xchg	si,di
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		mov	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		xchg	si,di
 		add	al,al
@@ -546,16 +557,16 @@ sub_5		endp
 
 sub_6		proc	near
 		mov	ax,[si+2]
-		call	word ptr cs:data_14e
+		call	word ptr cs:fight_cb_record_ofs
 		xchg	si,di
 		add	si,offset data_5
-		call	word ptr cs:data_15e
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		mov	cx,2
 
 locloop_40:
 		mov	al,[di]
-		call	word ptr cs:data_17e
+		call	word ptr cs:fight_cb_cmp_tile
 		stc				; Set carry flag
 		jz	loc_41			; Jump if zero
 		retn
@@ -578,14 +589,14 @@ loc_42:
 		mov	[si+5],al
 		or	al,60h			; '`'
 		mov	[si+15h],al
-		jmp	word ptr cs:data_20e
+		jmp	word ptr cs:fight_cb_fire
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
 sub_7		proc	near
-		mov	al,ds:data_39e
+		mov	al,ds:gvar_hero_x
 		sub	al,[si+2]
 		jns	loc_43			; Jump if not sign
 		neg	al
@@ -689,19 +700,19 @@ loc_58:
 		jmp	short loc_62
 loc_59:
 		mov	al,[si+3]
-		mov	ds:data_35e,al
+		mov	ds:spawn_cell_row_lo,al
 		inc	al
-		mov	ds:data_33e,al
+		mov	ds:spawn_cell_row_hi,al
 		mov	al,[si+2]
 		inc	al
-		mov	ds:data_36e,al
-		mov	ds:data_34e,al
+		mov	ds:spawn_cell_col_lo,al
+		mov	ds:spawn_cell_col_hi,al
 		mov	bx,0A704h
 		test	byte ptr [si+5],80h
 		jnz	loc_60			; Jump if not zero
 		mov	bx,0A711h
 loc_60:
-		call	word ptr cs:data_21e
+		call	word ptr cs:fight_cb_despawn
 		jmp	short loc_62
 		db	 00h, 00h, 32h, 00h, 14h, 00h
 		db	 28h, 00h
@@ -715,7 +726,7 @@ loc_61:
 		mov	[si+5],al
 		or	al,60h			; '`'
 		mov	[si+15h],al
-		jmp	word ptr cs:data_20e
+		jmp	word ptr cs:fight_cb_fire
 loc_62:
 		mov	al,[si+6]
 		mov	[si+16h],al
@@ -727,9 +738,9 @@ loc_62:
 		mov	[si+15h],al
 		retn
 			                        ;* No entry point to code
-		call	word ptr cs:data_18e
+		call	word ptr cs:fight_cb_alt
 		jnz	loc_63			; Jump if not zero
-		jmp	word ptr cs:data_19e
+		jmp	word ptr cs:fight_cb_spawn
 loc_63:
 		test	byte ptr [si+8],0FFh
 		jnz	loc_64			; Jump if not zero
@@ -737,13 +748,13 @@ loc_63:
 loc_64:
 		test	byte ptr [si+5],20h	; ' '
 		jz	loc_65			; Jump if zero
-		jmp	word ptr cs:data_20e
+		jmp	word ptr cs:fight_cb_fire
 loc_65:
 		test	byte ptr [si+9],18h
 		jz	loc_66			; Jump if zero
 		jmp	loc_76
 loc_66:
-		call	word ptr cs:data_13e
+		call	word ptr cs:fight_cb_blocked
 		jc	loc_67			; Jump if carry Set
 		retn
 loc_67:
@@ -759,7 +770,7 @@ loc_67:
 		retn
 loc_68:
 		mov	ax,[si+2]
-		call	word ptr cs:data_14e
+		call	word ptr cs:fight_cb_record_ofs
 		mov	ax,48h
 		test	byte ptr [si+5],80h
 		jz	loc_69			; Jump if zero
@@ -767,10 +778,10 @@ loc_68:
 loc_69:
 		xchg	si,di
 		add	si,ax
-		call	word ptr cs:data_15e
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		mov	al,[di]
-		call	word ptr cs:data_17e
+		call	word ptr cs:fight_cb_cmp_tile
 		jnz	loc_70			; Jump if not zero
 		mov	byte ptr [si+6],0
 		or	byte ptr [si+9],8
@@ -791,8 +802,8 @@ loc_71:
 loc_72:
 		test	byte ptr [si+5],80h
 		jz	loc_74			; Jump if zero
-		call	word ptr cs:data_11e
-		call	word ptr cs:data_11e
+		call	word ptr cs:fight_cb_step_neg
+		call	word ptr cs:fight_cb_step_neg
 		jc	loc_73			; Jump if carry Set
 		retn
 loc_73:
@@ -800,8 +811,8 @@ loc_73:
 		or	byte ptr [si+9],10h
 		retn
 loc_74:
-		call	word ptr cs:data_12e
-		call	word ptr cs:data_12e
+		call	word ptr cs:fight_cb_map_fwd
+		call	word ptr cs:fight_cb_map_fwd
 		jc	loc_75			; Jump if carry Set
 		retn
 loc_75:
@@ -831,7 +842,7 @@ loc_77:
 		mov	cx,0A8B1h
 		test	byte ptr [si+5],80h
 		jnz	loc_78			; Jump if not zero
-		mov	bx,data_37e
+		mov	bx,dir_xlat_alt
 		mov	cx,0A8B8h
 loc_78:
 		test	byte ptr [si+9],10h
@@ -839,7 +850,7 @@ loc_78:
 		xchg	cx,bx
 loc_79:
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:data_10e
+		call	word ptr cs:fight_cb_rng
 		jc	loc_80			; Jump if carry Set
 		retn
 loc_80:
@@ -853,14 +864,14 @@ loc_81:
 loc_82:
 		and	byte ptr [si+9],0
 		mov	byte ptr [si+6],3
-		jmp	word ptr cs:data_13e
+		jmp	word ptr cs:fight_cb_blocked
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
 ;��������������������������������������������������������������������������
 
 sub_8		proc	near
-		mov	al,ds:data_39e
+		mov	al,ds:gvar_hero_x
 		sub	al,[si+2]
 		jns	loc_83			; Jump if not sign
 		neg	al

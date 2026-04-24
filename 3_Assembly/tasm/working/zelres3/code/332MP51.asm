@@ -1,15 +1,33 @@
 
 PAGE  59,132
 
-;��������������������������������������������������������������������������
-;��					                                 ��
-;��				ZR3_32	                                 ��
-;��					                                 ��
-;��      Created:   16-Feb-26		                                 ��
-;��      Code type: zero start		                                 ��
-;��      Passes:    9          Analysis	Options on: none                 ��
-;��					                                 ��
-;��������������������������������������������������������������������������
+;==========================================================================
+;
+;  332MP51 - Map Data Table: Cavern of Cementar, level 5, floor 1
+;
+;  Cavern/labyrinth map resource file loaded as MP51.MDT (zelres3).
+;  Part of the 16-file MP{level}{floor} dungeon-map set (320..335) covering
+;  levels 1-6 of the Zeliard labyrinth.
+;
+;  NOT executable code -- Sourcer mis-decoded the header bytes and data
+;  tables as x86 instructions (the first two bytes are really the file
+;  size word, not 'cmp [bp+si],al' etc).  The bogus mnemonics below all
+;  re-emit the same byte sequence.
+;
+;  General MDT layout (all files in this group share this pattern):
+;    [0x00]   file-size word + flag/reserved word
+;    [0x04+]  pointer table (WORDs 0xCNNN - runtime segment 0xC000)
+;            -> tile grid, event table, exit table, script trailer
+;    [mid]    tile_grid            - column/row-strip tile-index data
+;                                    (values like 0x3F06, 0xC4NN, 0xC5NN)
+;    [later]  event_records        - NPC/door/exit records (FF-terminated)
+;    [late]   cavern_name          - pascal-encoded 'Cavern of Cementar'
+;    [end]    exit/trigger records - door warp coords + script bytes
+;    [eof]    terminator           - 0xFFFFFFFF (header_1 label)
+;
+;  Runtime segment base = 0xC000.  Pointer 0xCNNN resolves to file_off NNN.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
@@ -24,11 +42,27 @@ seg_a		segment	byte public
 
 zr3_32		proc	far
 
+
+; ------------------------------------------------------------------
+; mdt_header -- file-size word, flag byte, and table of WORD pointers
+; into the runtime 0xC000 segment.  Sourcer mis-decoded the leading
+; bytes as instructions; they are actually: size word + flag word
+; + attributes pointer + offset of 'strategy' (tile grid start) + ...
+; ------------------------------------------------------------------
 start:
 		jno	loc_2			; Jump if not overflw
 		add	[bx+si],al
 		or	bl,bl			; Zero ?
 ;*                         lock	add	cl,al
+
+; ------------------------------------------------------------------
+; tile_grid -- main cavern/map tile-index data.  Encoded as column
+; or row strips of 1-byte tile indices.  Common runs: 0x3F06 (wall
+; boundary), 0x2C06 (column separator), plus palette-range values
+; (0xC4-0xCC) that select tile rows in the tile bank.  Originally
+; labeled 'strategy' by Sourcer because the header pointer landed
+; on this offset.
+; ------------------------------------------------------------------
 		db	0F0h, 000h, 0C1h	; lock add cl,al
 ;*		fld	st(6)			; Push onto stack
 		db	0D9h, 0C6h		; fld st(6)
@@ -1219,6 +1253,12 @@ data_2		db	46h			; Data table (indexed access)
 		db	 24h, 00h, 10h, 4Fh,0DAh, 81h
 		db	 0Dh,0FFh,0FFh,0FFh,0FFh, 16h
 		db	0AFh, 00h, 12h
+
+; ------------------------------------------------------------------
+; cavern_name -- pascal-encoded cavern/area name 'Cavern of Cementar'.
+; Preceded by small descriptor bytes; the length byte just before
+; the quoted string matches the string length (0x11/0x0E/etc).
+; ------------------------------------------------------------------
 		db	'Cavern of Cementar'
 		db	 11h, 00h, 04h, 08h, 08h, 03h
 		db	 00h, 2Bh,0FFh, 02h, 00h, 00h
@@ -1422,7 +1462,6 @@ locloop_3:
 zr3_32		endp
 
 seg_a		ends
-
 
 
 		end	start

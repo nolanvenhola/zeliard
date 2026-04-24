@@ -1,22 +1,31 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				_351TILAN                                ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   5-Apr-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    5          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;==========================================================================
+;
+;  351TILAN.BIN - Tile Animation Data (zelres3 chunk 51, tileani.bin)
+;
+;  Packed tile animation sequences used by the level/map renderer.
+;  5463 bytes of raw data; not executable code despite Sourcer's
+;  "zero start" decoding of the leading bytes and a few interior
+;  "fixup" byte groups. Content appears to be:
+;    - Sequences of tile index bytes (e.g. 00..FF, A0..BB ranges)
+;    - ASCII-range pseudo-strings ('abcdefg', 'hij', etc.) that are
+;      simply tile glyph indices in the 0x60..0x7F range
+;    - Frequent 0E6h marker bytes followed by a length byte, suggesting
+;      a simple RLE / section-break encoding
+;  The file is consumed by the tile renderer; exact format is TBD.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; Data references outside this 5463-byte blob. Retained from Sourcer's
+; interpretation of the faux-code bytes at the head/tail; most are
+; artefacts of data bytes being decoded as instructions.
 
 data_1e		equ	0E6h
 data_2e		equ	5000h			;*
@@ -38,6 +47,7 @@ seg_a		segment	byte public
 _351TILAN	proc	far
 
 start:
+tile_anim_data	label	byte
 		push	bx
 		adc	ax,0
 		add	data_6,al
@@ -319,22 +329,22 @@ data_6		db	0B9h
 		db	 01h, 00h, 01h, 00h, 01h, 00h
 		db	 03h,0E6h
 
+; --- Tile animation data continues. Labels locloop_1/locloop_2 below
+;     are Sourcer artefacts; the bytes are tile-pattern / palette data.
+;     Retained mnemonics assemble to the original data bytes exactly.
 locloop_1:
-		add	[bx],ax
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		pop	es
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		pop	es
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
-		clc				; Clear carry flag
-;*		add	al,bh
-		db	 00h,0F8h		;  Fixup - byte match
-		cld				; Clear direction
+		add	[bx],ax			; data 01 07
+		out	1,al			; data E6 01
+		pop	es			; data 07
+		out	1,al			; data E6 01
+		pop	es			; data 07
+		out	1,al			; data E6 01
+		db	0Fh			; data (Sourcer: pop cs)
+		out	1,al			; data E6 01
+		db	0Fh			; data (Sourcer: pop cs)
+		clc				; data F8
+		db	 00h,0F8h		; data (Sourcer: add al,bh)
+		cld				; data FC
                            lock	add	[bx+si+3Eh],dh
 		loopnz	locloop_2		; Loop if zf=0, cx>0
 
@@ -343,9 +353,9 @@ locloop_2:
 		loopnz	locloop_1		; Loop if zf=0, cx>0
 
 ;*		add	ax,si
-		db	 01h,0F0h		;  Fixup - byte match
+		db	 01h,0F0h		; data (Sourcer fake instr)
 ;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		;  Fixup - byte match
+		db	 00h, 40h, 00h		; data (Sourcer fake instr)
 		db	0A0h,0E6h, 01h,0E0h,0E6h, 01h
 		db	0C0h,0E6h, 07h, 02h, 0Ch,0E6h
 		db	 01h, 0Fh, 3Fh,0F0h, 00h, 1Dh
@@ -360,9 +370,7 @@ locloop_2:
 
 _351TILAN	endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 
 sub_1		proc	near
 		or	dl,ch
@@ -496,7 +504,7 @@ loc_3:
 		inc	ax
 		inc	word ptr [bx+si-1Ah]
 ;*		add	ch,bh
-		db	 00h,0FDh		;  Fixup - byte match
+		db	 00h,0FDh		; data (Sourcer fake instr)
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 		hlt				; Halt processor
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
@@ -515,15 +523,15 @@ loc_3:
 		cmc				; Complement carry
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 ;*		aam	1			; undocumented inst
-		db	0D4h, 01h		;  Fixup - byte match
+		db	0D4h, 01h		; data (Sourcer fake instr)
 		add	ds:data_13e,cl
 		add	[bx],cl
 ;*		aad	0C0h			; undocumented inst
-		db	0D5h,0C0h		;  Fixup - byte match
+		db	0D5h,0C0h		; data (Sourcer fake instr)
 ;*		add	bl,al
-		db	 00h,0C3h		;  Fixup - byte match
+		db	 00h,0C3h		; data (Sourcer fake instr)
 ;*		aad	7Ch			; '|' undocumented inst
-		db	0D5h, 7Ch		;  Fixup - byte match
+		db	0D5h, 7Ch		; data (Sourcer fake instr)
 loc_4:
 		std				; Set direction flag
 		js	loc_4			; Jump if sign=1
@@ -535,10 +543,10 @@ loc_4:
 		std				; Set direction flag
 		xor	ax,35D5h
 ;*		aad	0D5h			; undocumented inst
-		db	0D5h,0D5h		;  Fixup - byte match
+		db	0D5h,0D5h		; data (Sourcer fake instr)
 		push	sp
 ;*		aad	54h			; 'T' undocumented inst
-		db	0D5h, 54h		;  Fixup - byte match
+		db	0D5h, 54h		; data (Sourcer fake instr)
 		out	0,al			; port 0, DMA-1 bas&add ch 0
 		inc	ax
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
@@ -546,7 +554,7 @@ loc_4:
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 		inc	ax
 ;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		;  Fixup - byte match
+		db	 00h, 40h, 00h		; data (Sourcer fake instr)
 		db	 40h, 00h, 40h,0E6h, 01h, 5Ch
 		db	0E6h, 01h, 15h,0F0h,0E6h, 00h
 		db	 01h, 50h,0E6h, 01h, 03h, 00h
@@ -567,7 +575,7 @@ loc_4:
 loc_5:
 		add	[bx+si-1Ah],al
 ;*		add	[bx+si+0],ax
-		db	 01h, 40h, 00h		;  Fixup - byte match
+		db	 01h, 40h, 00h		; data (Sourcer fake instr)
 		db	0D0h,0E6h, 01h, 55h,0E6h, 01h
 		db	 07h, 50h,0E6h, 01h, 17h, 32h
 		db	 96h, 00h, 0Fh, 7Ah, 0Eh, 00h
@@ -583,13 +591,13 @@ loc_5:
 		db	 00h, 0Fh
 loc_6:
 ;*		aad	0			; undocumented inst
-		db	0D5h, 00h		;  Fixup - byte match
+		db	0D5h, 00h		; data (Sourcer fake instr)
 		add	[bp+di],ax
 		pop	cx
 ;*		add	bx,si
-		db	 01h,0F3h		;  Fixup - byte match
+		db	 01h,0F3h		; data (Sourcer fake instr)
 ;*		add	ax,si
-		db	 01h,0F0h		;  Fixup - byte match
+		db	 01h,0F0h		; data (Sourcer fake instr)
 		add	ds:data_15e,di
 		pop	es
 		cmc				; Complement carry
@@ -597,7 +605,7 @@ loc_6:
 		jmp	short loc_5
 sub_1		endp
 
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 		call	sub_1
 		stc				; Set carry flag
 		cld				; Clear direction
@@ -608,13 +616,13 @@ sub_1		endp
 		out	0,al			; port 0, DMA-1 bas&add ch 0
                            lock	out	2Ch,al			; port 2Ch ??I/O Non-standard
 ;*		add	si,sp
-		db	 01h,0E6h		;  Fixup - byte match
+		db	 01h,0E6h		; data (Sourcer fake instr)
 		add	[bp+di],ax
 		out	dx,ax			; port 0, DMA-1 bas&add ch 0
 ;*		aam	0E3h			; undocumented inst
-		db	0D4h,0E3h		;  Fixup - byte match
+		db	0D4h,0E3h		; data (Sourcer fake instr)
 ;*		aam	3Eh			; '>' undocumented inst
-		db	0D4h, 3Eh		;  Fixup - byte match
+		db	0D4h, 3Eh		; data (Sourcer fake instr)
 		db	0C0h, 0Eh,0C0h, 7Dh, 00h, 3Dh
 		db	0C0h,0E6h, 00h,0FBh,0E6h, 01h
 		db	0FCh,0E6h, 01h,0FCh,0E6h, 01h
@@ -651,20 +659,20 @@ loc_7:
 		std				; Set direction flag
 		jo	$+2			; delay for I/O
 ;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
+		db	0Fh			; data (Sourcer fake instr)
 		std				; Set direction flag
 		adc	[bx+si],al
 ;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
+		db	0Fh			; data (Sourcer fake instr)
 		cmc				; Complement carry
 		inc	ax
 		add	ds:data_13e[bx],cl
 ;*		add	ch,dh
-		db	 00h,0F5h		;  Fixup - byte match
+		db	 00h,0F5h		; data (Sourcer fake instr)
 		push	sp
 		out	2,al			; port 2, DMA-1 bas&add ch 1
 ;*		xor	dh,ah
-		db	 30h,0E6h		;  Fixup - byte match
+		db	 30h,0E6h		; data (Sourcer fake instr)
 		add	[bx+si],si
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 		shl	dh,1			; Shift w/zeros fill
@@ -678,7 +686,7 @@ loc_7:
 		add	[bx+di],al
 		aas				; Ascii adjust
 ;*		aam	0E6h			; undocumented inst
-		db	0D4h,0E6h		;  Fixup - byte match
+		db	0D4h,0E6h		; data (Sourcer fake instr)
 		add	[di],bh
 		push	bp
 		add	[si],al
@@ -696,7 +704,7 @@ loc_7:
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 		inc	ax
 ;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		;  Fixup - byte match
+		db	 00h, 40h, 00h		; data (Sourcer fake instr)
 		db	 80h,0E6h, 14h, 02h,0E6h, 01h
 		db	 03h,0E6h, 01h, 0Ah,0E6h, 01h
 		db	 0Eh,0E6h, 01h, 08h,0E6h, 0Ch
@@ -726,7 +734,7 @@ loc_8:
 		inc	ax
 		out	2,al			; port 2, DMA-1 bas&add ch 1
 ;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
+		db	0Fh			; data (Sourcer fake instr)
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 		add	ax,[bx+si]
 		add	[bx+si],ax
@@ -768,7 +776,7 @@ loc_8:
 		xor	ax,0BF54h
 		add	[bx],bh
 ;*		add	bh,cl
-		db	 00h,0CFh		;  Fixup - byte match
+		db	 00h,0CFh		; data (Sourcer fake instr)
 		or	byte ptr [bx],80h
 		add	byte ptr [bx+si],0Fh
 		inc	ax
@@ -789,7 +797,7 @@ loc_8:
 		out	0Ah,al			; port 0Ah, DMA-1 mask reg bit
 		mov	al,ds:data_3e
 ;*		add	[si+0],dl
-		db	 00h, 54h, 00h		;  Fixup - byte match
+		db	 00h, 54h, 00h		; data (Sourcer fake instr)
 		db	0A9h,0E6h, 01h, 05h,0E6h, 13h
 		db	 0Ch, 00h, 03h, 00h, 14h, 00h
 		db	 2Bh, 00h, 28h, 00h, 14h,0E6h
@@ -891,7 +899,7 @@ loc_9:
 		add	al,al
 		add	[bx+si],dh
 ;*		add	ax,ax
-		db	 01h,0C0h		;  Fixup - byte match
+		db	 01h,0C0h		; data (Sourcer fake instr)
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 		jo	loc_9			; Jump if overflow=1
 		xor	cx,[bp+si]
@@ -933,7 +941,7 @@ locloop_10:
 		inc	bp
 		add	[bp+si],bl
 ;*		add	dx,cx
-		db	 01h,0CAh		;  Fixup - byte match
+		db	 01h,0CAh		; data (Sourcer fake instr)
 		add	[di],dl
 		add	[bx+di],al
 		add	dx,si
@@ -944,7 +952,7 @@ locloop_10:
 		inc	ax
 		add	ds:data_5e[bx+si],al
 ;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		;  Fixup - byte match
+		db	 00h, 40h, 00h		; data (Sourcer fake instr)
 		db	 50h, 00h,0A0h,0E6h, 00h, 02h
 		db	 0Fh, 55h, 01h, 00h, 3Eh,0D4h
 		db	0E6h, 00h, 7Bh,0D4h, 01h, 40h
@@ -1086,7 +1094,7 @@ locloop_10:
 loc_11:
 		stosw				; Store ax to es:[di]
 ;*		add	[di+0],dl
-		db	 00h, 55h, 00h		;  Fixup - byte match
+		db	 00h, 55h, 00h		; data (Sourcer fake instr)
 		db	 55h, 00h,0ABh, 00h,0ABh, 00h
 		db	 55h, 00h, 55h, 00h,0ABh, 00h
 		db	0ABh, 00h,0FCh, 00h,0FCh,0E6h
@@ -1141,9 +1149,9 @@ loc_11:
 		db	5Ch
 loc_12:
 ;*		add	al,dh
-		db	 00h,0F0h		;  Fixup - byte match
+		db	 00h,0F0h		; data (Sourcer fake instr)
 ;*		add	al,dh
-		db	 00h,0F0h		;  Fixup - byte match
+		db	 00h,0F0h		; data (Sourcer fake instr)
 		out	0Ch,al			; port 0Ch, DMA-1 clr byte ptr
 		inc	word ptr [bx+si]
 		stosb				; Store al to es:[di]
@@ -1151,7 +1159,7 @@ loc_12:
 		add	bl,bh
 		add	dx,[bx+si+2]
 ;*		jg	loc_13			;*Jump if >
-		db	 7Fh, 03h		;  Fixup - byte match
+		db	 7Fh, 03h		; data (Sourcer fake instr)
 		push	ax
 		add	bh,[bx+3]
 		push	ax
@@ -1159,7 +1167,7 @@ loc_12:
 		or	dh,al
 		add	ds:data_4e[bx+si],ah
 ;*		add	[bx+si+0],bh
-		db	 00h, 78h, 00h		;  Fixup - byte match
+		db	 00h, 78h, 00h		; data (Sourcer fake instr)
 		db	 5Ch, 00h, 78h, 00h, 5Ch, 00h
 		db	 78h, 00h, 5Ch, 00h, 78h, 00h
 		db	 03h, 00h, 02h,0FFh, 03h, 00h
@@ -1247,7 +1255,7 @@ locloop_14:
 		loopnz	locloop_14		; Loop if zf=0, cx>0
 
 ;*		add	[bx+si+0],si
-		db	 01h, 70h, 00h		;  Fixup - byte match
+		db	 01h, 70h, 00h		; data (Sourcer fake instr)
 		db	 14h, 00h, 28h, 00h, 08h, 00h
 		db	 14h,0E6h, 04h
 

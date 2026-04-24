@@ -1,43 +1,65 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				_306MAPBK                                ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   5-Apr-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;==========================================================================
+;
+;  306EAI6.BIN - Enemy AI Behavior Type 6 (zelres3 chunk 7)
+;
+;  Enemy AI handler loaded by 200FIGHT.asm and invoked per-tick to update
+;  enemy state (position, frame, direction).  The EAI module is paired
+;  at runtime with one of several enemy sprite sets (MEDA, LEGA-type
+;  enemies).  Behavior type 6 implements a mid-range patroller with
+;  range checking, XLAT-table animation cycling, and aim/intercept logic.
+;
+;  Enemy record layout (SI-relative) shared by all EAI modules:
+;    [si+0]    x-position word
+;    [si+2]    x-tile (row index in aim tests)
+;    [si+3]    y-tile / column
+;    [si+4]    flags byte A (60h bit = anim enable)
+;    [si+5]    flags byte B (80h = facing, 20h = hidden, 60h = visible)
+;    [si+6]    frame counter / phase
+;    [si+8]    cooldown/init-timer
+;    [si+9]    AI state bits (1=advancing, 2=return, 4=attack, 70h=phase mask)
+;    [si+0Ah]  sub-phase counter
+;    [si+10h..16h]  echo/render fields copied back at retn
+;
+;  Dispatch via CS word-pointer table at start of file.  Sub-functions
+;  sub_1..sub_8 implement: range check, step forward, step back,
+;  turn handler, collision/spawn, and wall scan.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
+; These word pointers are the EAI module's only interface to 200FIGHT.
 
-data_9e		equ	6004h			;*
-data_10e	equ	6008h			;*
-data_11e	equ	600Ch			;*
-data_12e	equ	6010h			;*
-data_13e	equ	6014h			;*
-data_14e	equ	6028h			;*
-data_15e	equ	602Ah			;*
-data_16e	equ	602Ch			;*
-data_17e	equ	602Eh			;*
-data_18e	equ	6032h			;*
-data_19e	equ	6034h			;*
-data_20e	equ	603Ah			;*
-data_21e	equ	0A4DDh			;*
-data_22e	equ	0A4DEh			;*
-data_23e	equ	0A4EAh			;*
-data_24e	equ	0A4EBh			;*
-data_25e	equ	0A766h			;*
-data_26e	equ	0C002h			;*
-data_27e	equ	0FF35h			;*
-data_28e	equ	0FF75h			;*
+fight_cb_range		equ	6004h			; aim/range/hit check callback
+fight_cb_step_neg	equ	6008h			; step towards -x callback
+fight_cb_map_fwd	equ	600Ch			; map-fwd move (unsigned)
+fight_cb_step_pos	equ	6010h			; step towards +x callback
+fight_cb_blocked	equ	6014h			; blocked/obstacle query
+fight_cb_record_ofs	equ	6028h			; compute record addr from tile
+fight_cb_mark_adj	equ	602Ah			; mark adjacent cell busy
+fight_cb_tile_index	equ	602Ch			; tile-index conversion
+fight_cb_cmp_tile	equ	602Eh			; compare tile type
+fight_cb_spawn		equ	6032h			; spawn projectile/effect
+fight_cb_fire		equ	6034h			; fire / attack dispatch
+fight_cb_despawn	equ	603Ah			; clear/remove enemy
+
+; Shared enemy spawn/state globals in game_seg DS (0xA4xx range).
+
+enemy_spawn_tile_hi	equ	0A4DDh			; spawn-cell row (set for hatch)
+enemy_spawn_col_hi	equ	0A4DEh			; spawn-cell col (set for hatch)
+enemy_spawn_tile_lo	equ	0A4EAh			; alt spawn row (non-hatch path)
+enemy_spawn_col_lo	equ	0A4EBh			; alt spawn col (non-hatch path)
+dir_xlat_table		equ	0A766h			; direction lookup table (xlat base)
+fight_state_max		equ	0C002h			; max state index (for wrap)
+gvar_hero_x		equ	0FF35h			; hero X tile position (global)
+gvar_spawn_fx_flag	equ	0FF75h			; flag byte for spawn VFX
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -45,7 +67,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_306MAPBK	proc	far
+eai6_main	proc	far
 
 start:
 		ror	byte ptr [bx+di],cl	; Rotate
@@ -295,19 +317,19 @@ loc_10:
 		cmp	byte ptr [si+6],8
 		jne	loc_13			; Jump if not equal
 		mov	al,[si+3]
-		mov	ds:data_23e,al
+		mov	ds:enemy_spawn_tile_lo,al
 		inc	al
-		mov	ds:data_21e,al
+		mov	ds:enemy_spawn_tile_hi,al
 		mov	al,[si+2]
 		inc	al
-		mov	ds:data_24e,al
-		mov	ds:data_22e,al
+		mov	ds:enemy_spawn_col_lo,al
+		mov	ds:enemy_spawn_col_hi,al
 		mov	bx,0A4DDh
 		test	byte ptr [si+5],80h
 		jnz	loc_11			; Jump if not zero
 		mov	bx,0A4EAh
 loc_11:
-		call	word ptr cs:data_20e
+		call	word ptr cs:fight_cb_despawn
 		jmp	short loc_13
 		db	 00h, 00h, 63h, 00h, 14h, 00h
 		db	 14h
@@ -320,7 +342,7 @@ loc_12:
 		mov	[si+5],al
 		or	al,60h			; '`'
 		mov	[si+15h],al
-		jmp	word ptr cs:data_19e
+		jmp	word ptr cs:fight_cb_fire
 loc_13:
 		mov	al,[si+6]
 		mov	[si+16h],al
@@ -334,14 +356,14 @@ loc_13:
 		or	[si+15h],al
 		retn
 
-_306MAPBK	endp
+eai6_main	endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_1		proc	near
-		mov	al,ds:data_27e
+		mov	al,ds:gvar_hero_x
 		sub	al,[si+2]
 		jnc	loc_14			; Jump if carry=0
 		neg	al
@@ -373,9 +395,9 @@ loc_18:
 sub_1		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_2		proc	near
 		cmp	byte ptr [si+3],22h	; '"'
@@ -389,7 +411,7 @@ loc_19:
 loc_20:
 		mov	bx,[si]
 		inc	bx
-		mov	ax,ds:data_26e
+		mov	ax,ds:fight_state_max
 		sub	ax,bx
 		jnz	loc_21			; Jump if not zero
 		xchg	bx,ax
@@ -403,45 +425,45 @@ loc_21:
 sub_2		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_3		proc	near
 		mov	ax,[si+2]
-		call	word ptr cs:data_14e
+		call	word ptr cs:fight_cb_record_ofs
 		inc	di
 		inc	di
 		mov	cx,4
 
 locloop_22:
 		mov	al,[di]
-		call	word ptr cs:data_17e
+		call	word ptr cs:fight_cb_cmp_tile
 		stc				; Set carry flag
 		jz	loc_23			; Jump if zero
 		retn
 loc_23:
 		xchg	si,di
 		add	si,24h
-		call	word ptr cs:data_15e
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		loop	locloop_22		; Loop if cx > 0
 
 		xchg	si,di
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		mov	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		xchg	si,di
 		add	al,al
@@ -449,9 +471,9 @@ loc_23:
 sub_3		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_4		proc	near
 		cmp	byte ptr [si+3],2
@@ -466,7 +488,7 @@ loc_25:
 		dec	ax
 		cmp	ax,0FFFFh
 		jne	loc_26			; Jump if not equal
-		mov	ax,ds:data_26e
+		mov	ax,ds:fight_state_max
 		dec	ax
 loc_26:
 		mov	[si],ax
@@ -478,45 +500,45 @@ loc_26:
 sub_4		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_5		proc	near
 		mov	ax,[si+2]
-		call	word ptr cs:data_14e
+		call	word ptr cs:fight_cb_record_ofs
 		dec	di
 		mov	cx,4
 
 locloop_27:
 		mov	al,[di]
-		call	word ptr cs:data_17e
+		call	word ptr cs:fight_cb_cmp_tile
 		stc				; Set carry flag
 		jz	loc_28			; Jump if zero
 		retn
 loc_28:
 		xchg	si,di
 		add	si,24h
-		call	word ptr cs:data_15e
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		loop	locloop_27		; Loop if cx > 0
 
 		dec	di
 		xchg	si,di
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		mov	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:data_16e
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		xchg	si,di
 		add	al,al
@@ -524,9 +546,9 @@ loc_28:
 sub_5		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_6		proc	near
 		test	byte ptr [si+3],0FFh
@@ -552,22 +574,22 @@ loc_31:
 sub_6		endp
 
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_7		proc	near
 		mov	ax,[si+2]
-		call	word ptr cs:data_14e
+		call	word ptr cs:fight_cb_record_ofs
 		xchg	si,di
 		add	si,offset data_4
-		call	word ptr cs:data_15e
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		mov	cx,2
 
 locloop_32:
 		mov	al,[di]
-		call	word ptr cs:data_17e
+		call	word ptr cs:fight_cb_cmp_tile
 		stc				; Set carry flag
 		jz	loc_33			; Jump if zero
 		retn
@@ -592,7 +614,7 @@ loc_34:
 		jz	loc_35			; Jump if zero
 		mov	byte ptr [si+6],3
 		mov	byte ptr [si+9],1
-		jmp	word ptr cs:data_19e
+		jmp	word ptr cs:fight_cb_fire
 loc_35:
 		test	byte ptr [si+9],2
 		jz	loc_36			; Jump if zero
@@ -622,13 +644,13 @@ loc_39:
 		and	byte ptr [si+5],7Fh
 		or	[si+5],al
 loc_40:
-		mov	al,ds:data_27e
+		mov	al,ds:gvar_hero_x
 		sub	al,[si+2]
 		jns	loc_41			; Jump if not sign
-		call	word ptr cs:data_11e
+		call	word ptr cs:fight_cb_map_fwd
 		jmp	short loc_42
 loc_41:
-		call	word ptr cs:data_13e
+		call	word ptr cs:fight_cb_blocked
 loc_42:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],3
@@ -642,10 +664,10 @@ loc_42:
 		mov	bx,0A75Eh
 		test	byte ptr [si+5],80h
 		jnz	loc_43			; Jump if not zero
-		mov	bx,data_25e
+		mov	bx,dir_xlat_table
 loc_43:
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:data_9e
+		call	word ptr cs:fight_cb_range
 		jc	loc_44			; Jump if carry Set
 		retn
 loc_44:
@@ -688,13 +710,13 @@ loc_48:
 		or	[si+5],al
 		jmp	short loc_49
 loc_49:
-		mov	al,ds:data_27e
+		mov	al,ds:gvar_hero_x
 		sub	al,[si+2]
 		js	loc_50			; Jump if sign=1
-		call	word ptr cs:data_11e
+		call	word ptr cs:fight_cb_map_fwd
 		jmp	short loc_51
 loc_50:
-		call	word ptr cs:data_13e
+		call	word ptr cs:fight_cb_blocked
 loc_51:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],3
@@ -709,10 +731,10 @@ loc_51:
 		mov	bx,0A75Eh
 		test	byte ptr [si+5],80h
 		jnz	loc_52			; Jump if not zero
-		mov	bx,data_25e
+		mov	bx,dir_xlat_table
 loc_52:
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:data_9e
+		call	word ptr cs:fight_cb_range
 		jc	loc_53			; Jump if carry Set
 		retn
 loc_53:
@@ -732,12 +754,12 @@ loc_56:
 		and	byte ptr [si+4],1Fh
 		retn
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_8		proc	near
-		mov	al,ds:data_27e
+		mov	al,ds:gvar_hero_x
 		sub	al,[si+2]
 		jnc	loc_57			; Jump if carry=0
 		neg	al
@@ -775,11 +797,11 @@ sub_8		endp
 loc_62:
 		test	byte ptr [si+5],20h	; ' '
 		jz	loc_63			; Jump if zero
-		jmp	word ptr cs:data_19e
+		jmp	word ptr cs:fight_cb_fire
 loc_63:
 		test	byte ptr [si+9],1
 		jnz	loc_70			; Jump if not zero
-		call	word ptr cs:data_13e
+		call	word ptr cs:fight_cb_blocked
 		jc	loc_64			; Jump if carry Set
 		retn
 loc_64:
@@ -793,12 +815,12 @@ loc_65:
 		and	byte ptr [si+6],0F3h
 		test	byte ptr [si+5],80h
 		jnz	loc_66			; Jump if not zero
-		call	word ptr cs:data_12e
+		call	word ptr cs:fight_cb_step_pos
 		jnc	loc_67			; Jump if carry=0
 		xor	byte ptr [si+5],80h
 		jmp	short loc_67
 loc_66:
-		call	word ptr cs:data_10e
+		call	word ptr cs:fight_cb_step_neg
 		jnc	loc_67			; Jump if carry=0
 		xor	byte ptr [si+5],80h
 loc_67:
@@ -822,15 +844,15 @@ loc_70:
 		mov	byte ptr [si+6],4
 		test	byte ptr [si+5],80h
 		jnz	loc_71			; Jump if not zero
-		call	word ptr cs:data_12e
-		call	word ptr cs:data_12e
+		call	word ptr cs:fight_cb_step_pos
+		call	word ptr cs:fight_cb_step_pos
 		jnc	loc_72			; Jump if carry=0
 		call	sub_10
 		jc	loc_76			; Jump if carry Set
 		jmp	short loc_72
 loc_71:
-		call	word ptr cs:data_10e
-		call	word ptr cs:data_10e
+		call	word ptr cs:fight_cb_step_neg
+		call	word ptr cs:fight_cb_step_neg
 		jnc	loc_72			; Jump if carry=0
 		call	sub_10
 		jc	loc_76			; Jump if carry Set
@@ -855,9 +877,9 @@ loc_75:
 		mov	byte ptr [si+0Ah],0
 		retn
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_9		proc	near
 loc_76:
@@ -877,16 +899,16 @@ loc_78:
 		mov	byte ptr [si+6],4
 		retn
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_10		proc	near
 		test	byte ptr [si+9],4
 		jnz	loc_79			; Jump if not zero
-		jmp	word ptr cs:data_13e
+		jmp	word ptr cs:fight_cb_blocked
 loc_79:
-		call	word ptr cs:data_11e
+		call	word ptr cs:fight_cb_map_fwd
 		jc	loc_80			; Jump if carry Set
 		retn
 loc_80:
@@ -916,7 +938,7 @@ loc_83:
 		or	byte ptr [si+9],1
 		retn
 loc_84:
-		call	word ptr cs:data_13e
+		call	word ptr cs:fight_cb_blocked
 		jc	loc_85			; Jump if carry Set
 		retn
 loc_85:
@@ -931,7 +953,7 @@ loc_85:
 		jb	loc_86			; Jump if below
 		retn
 loc_86:
-		mov	byte ptr ds:data_28e,21h	; '!'
+		mov	byte ptr ds:gvar_spawn_fx_flag,21h	; '!'
 		retn
 loc_87:
 		add	byte ptr [si+6],80h
@@ -945,7 +967,7 @@ loc_88:
 loc_89:
 		and	byte ptr [si+7],0F0h
 		or	byte ptr [si+7],1
-		jmp	word ptr cs:data_18e
+		jmp	word ptr cs:fight_cb_spawn
 
 seg_a		ends
 

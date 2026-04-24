@@ -1,48 +1,101 @@
 
 PAGE  59,132
 
-;��������������������������������������������������������������������������
-;��					                                 ��
-;��				_301MAPCA                                ��
-;��					                                 ��
-;��      Created:   5-Apr-26		                                 ��
-;��      Code type: zero start		                                 ��
-;��      Passes:    9          Analysis	Options on: none                 ��
-;��					                                 ��
-;��������������������������������������������������������������������������
+;==========================================================================
+;
+;  301EAI1.BIN - Enemy AI Handler: CRAB (zelres3 chunk 2)
+;
+;  Per-enemy AI controller code for the CRAB enemy (loaded by 200FIGHT
+;  alongside 309CRAB.BIN sprites). Each EAI*.BIN chunk contains the
+;  movement/collision/attack dispatch logic for one specific enemy type.
+;  The battle engine calls into these handlers via a state-dispatch
+;  jump table stored in the enemy slot record (si+9 = state byte).
+;
+;  Shared calling convention (same across EAI1..EAI8):
+;    SI -> active enemy slot record (game_seg:...)
+;    [si+0]  = X position (word)
+;    [si+2]  = tile X / row coord (byte)
+;    [si+3]  = tile Y / col coord (byte)
+;    [si+5]  = attribute/facing byte (bit7 = direction, bit6 = visible, bit5 = hit)
+;    [si+6]  = animation phase / tick counter
+;    [si+7]  = aux state
+;    [si+8]  = attack cooldown
+;    [si+9]  = state/substate (rotated nibbles used as dispatch index)
+;    [si+Ah] = secondary counter
+;
+;  Each handler block is entered by dispatch (jmp word ptr ds:[...+bx])
+;  where each block ends in 'retn' and is marked ';* No entry point'
+;  by Sourcer because static analysis cannot see the tables in DS.
+;
+;  Resource table references visible in the header data (addresses 6004h..6034h):
+;    6004-603A are function pointers in the CRAB's behavior dispatch table.
+;    0A2xxh / 0A7xxh are lookup tables in the shared enemy data area.
+;    0FF2Eh / 0FF35h / 0FF36h are global frame / timing flags.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; --- CRAB enemy AI dispatch table (game_seg:6004h..6034h, in DS at runtime) ---
+ai_fn_tbl_a	equ	6004h			; AI fn table slot (movement/pathing)
+ai_fn_tbl_b	equ	6006h			; AI fn table slot (alt pathing)
+ai_fn_tbl_c	equ	6008h			; AI fn table slot
+ai_fn_tbl_d	equ	600Ah			; AI fn table slot
+ai_fn_tbl_e	equ	600Ch			; AI fn table slot
+ai_fn_tbl_f	equ	600Eh			; AI fn table slot
+ai_fn_tbl_g	equ	6010h			; AI fn table slot
+ai_fn_tbl_h	equ	6012h			; AI fn table slot
+ai_fn_tbl_i	equ	6014h			; AI fn table slot
+ai_fn_tbl_j	equ	6016h			; AI fn table slot
+ai_fn_tbl_k	equ	6018h			; AI fn table slot
+ai_fn_tbl_l	equ	601Ah			; AI fn table slot
+ai_fn_tbl_m	equ	6028h			; AI fn table slot (spawn/projectile)
+ai_fn_tbl_n	equ	602Ah			; AI fn table slot
+ai_fn_tbl_o	equ	602Eh			; AI fn table slot
+ai_fn_tbl_p	equ	6030h			; AI fn table slot
+ai_fn_tbl_q	equ	6032h			; AI fn table slot
+ai_hide_fn	equ	6034h			; AI fn: hide / remove enemy
 
-data_11e	equ	6004h			;*
-data_12e	equ	6006h			;*
-data_13e	equ	6008h			;*
-data_14e	equ	600Ah			;*
-data_15e	equ	600Ch			;*
-data_16e	equ	600Eh			;*
-data_17e	equ	6010h			;*
-data_18e	equ	6012h			;*
-data_19e	equ	6014h			;*
-data_20e	equ	6016h			;*
-data_21e	equ	6018h			;*
-data_22e	equ	601Ah			;*
-data_23e	equ	6028h			;*
-data_24e	equ	602Ah			;*
-data_25e	equ	602Eh			;*
-data_26e	equ	6030h			;*
-data_27e	equ	6032h			;*
-data_28e	equ	6034h			;*
-data_29e	equ	0A29Dh			;*
-data_30e	equ	0A2D0h			;*
-data_31e	equ	0A723h			;*
-data_32e	equ	0A72Fh			;*
-data_33e	equ	0FF2Eh			;*
-data_34e	equ	0FF35h			;*
-data_35e	equ	0FF36h			;*
+; --- Crab AI lookup tables (in DS at game_seg) ---
+crab_tbl_a	equ	0A29Dh			; crab movement/direction lookup table
+crab_tbl_b	equ	0A2D0h			; crab secondary lookup table
+crab_rotate_a	equ	0A723h			; crab rotation/swap pattern table
+crab_rotate_b	equ	0A72Fh			; crab rotation/swap pattern table B
+
+; --- Global variables (game_seg:0xFFxx, zeliard.inc) ---
+gvar_rng_state	equ	0FF2Eh			; random/LFSR state word
+gvar_frame_cnt	equ	0FF35h			; frame counter byte
+gvar_enemy_cnt	equ	0FF36h			; active enemy counter byte
+
+; Backwards-compat aliases (Sourcer names)
+data_11e	equ	ai_fn_tbl_a
+data_12e	equ	ai_fn_tbl_b
+data_13e	equ	ai_fn_tbl_c
+data_14e	equ	ai_fn_tbl_d
+data_15e	equ	ai_fn_tbl_e
+data_16e	equ	ai_fn_tbl_f
+data_17e	equ	ai_fn_tbl_g
+data_18e	equ	ai_fn_tbl_h
+data_19e	equ	ai_fn_tbl_i
+data_20e	equ	ai_fn_tbl_j
+data_21e	equ	ai_fn_tbl_k
+data_22e	equ	ai_fn_tbl_l
+data_23e	equ	ai_fn_tbl_m
+data_24e	equ	ai_fn_tbl_n
+data_25e	equ	ai_fn_tbl_o
+data_26e	equ	ai_fn_tbl_p
+data_27e	equ	ai_fn_tbl_q
+data_28e	equ	ai_hide_fn
+data_29e	equ	crab_tbl_a
+data_30e	equ	crab_tbl_b
+data_31e	equ	crab_rotate_a
+data_32e	equ	crab_rotate_b
+data_33e	equ	gvar_rng_state
+data_34e	equ	gvar_frame_cnt
+data_35e	equ	gvar_enemy_cnt
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -50,7 +103,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_301MAPCA	proc	far
+crab_ai_main	proc	far
 
 start:
 		aaa				; Ascii adjust
@@ -192,7 +245,9 @@ loc_3:
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr ds:data_29e[bx]	;*
-			                        ;* No entry point to code
+
+; AI sub-state 0 (dispatched via crab_tbl_a[0])
+crab_substate_00:
 		movsw				; Mov [si] to es:[di]
 		mov	ds:data_30e,al
 		jcxz	loc_1			; Jump if cx=0
@@ -216,7 +271,9 @@ loc_5:
 loc_6:
 		mov	byte ptr [si+6],0
 		retn
-			                        ;* No entry point to code
+
+; AI sub-state 1 (dispatched via crab_tbl_a[1]): phase-advance to state 80h
+crab_substate_01:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],7
 		cmp	byte ptr [si+6],3
@@ -225,7 +282,9 @@ loc_6:
 loc_7:
 		mov	byte ptr [si+9],80h
 		retn
-			                        ;* No entry point to code
+
+; AI sub-state 2 (dispatched via crab_tbl_a[2]): distance-check / transition
+crab_substate_02:
 		call	sub_1
 		test	byte ptr ds:data_35e,0FFh
 		jz	loc_8			; Jump if zero
@@ -292,7 +351,9 @@ loc_15:
 loc_16:
 		mov	byte ptr [si+9],0C0h
 		retn
-			                        ;* No entry point to code
+
+; AI sub-state 3 (dispatched via crab_tbl_a[3]): walking / step cycle
+crab_substate_03:
 		test	byte ptr [si+9],20h	; ' '
 		jnz	loc_22			; Jump if not zero
 		call	sub_1
@@ -329,7 +390,7 @@ loc_23:
 		mov	byte ptr [si+9],0
 		retn
 
-_301MAPCA	endp
+crab_ai_main	endp
 
 ;��������������������������������������������������������������������������
 ;                              SUBROUTINE
@@ -346,7 +407,8 @@ loc_24:
 		retn
 sub_1		endp
 
-			                        ;* No entry point to code
+; AI sub-state handler (dispatched from crab_tbl_b or crab_tbl_a -- attack pattern)
+crab_attack_state_a:
 		call	word ptr cs:data_26e
 		jnz	loc_25			; Jump if not zero
 		jmp	word ptr cs:data_27e
@@ -384,7 +446,9 @@ loc_31:
 loc_32:
 		and	byte ptr [si+5],7Fh
 		retn
-			                        ;* No entry point to code
+
+; AI sub-state handler: alternate attack pattern (sibling of crab_attack_state_a)
+crab_attack_state_b:
 		call	word ptr cs:data_26e
 		jnz	loc_33			; Jump if not zero
 		jmp	word ptr cs:data_27e
@@ -490,7 +554,8 @@ loc_47:
 		retn
 sub_2		endp
 
-			                        ;* No entry point to code
+; AI sub-state handler: pincer/grab sequence
+crab_pincer_state:
 		call	word ptr cs:data_26e
 		jnz	loc_48			; Jump if not zero
 		jmp	word ptr cs:data_27e
@@ -721,7 +786,10 @@ loc_82:
 		retn
 sub_3		endp
 
-			                        ;* No entry point to code
+; Trailing data table — frame/position lookup bytes (Sourcer mis-decoded as code).
+; Pattern of 00h/01h..07h bytes suggests per-frame X-offset or tile-advance table.
+; Preserved as emitted so bit-perfect assembly holds.
+crab_trailing_tbl:
 		add	[bx+si],ax
 		add	[bx],al
 		add	ax,[si]

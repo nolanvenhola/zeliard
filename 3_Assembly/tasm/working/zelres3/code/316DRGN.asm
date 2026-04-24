@@ -3,7 +3,21 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  TILE_COLLISION - Code Module
+;  316DRGN - Tile Collision / Map Program Code Module (zelres3 chunk)
+;
+;  Map-program / tile-collision logic module (prior-pass nickname
+;  "TILE_COLLISION"). Sourcer kept the main entry as generic zr3_16. The
+;  entry prologue reads from global state fields (data_32e / sibling
+;  per-map state bytes) and dispatches per-frame scripted behaviour.
+;
+;  Structure:
+;    - Header + dispatch/pointer descriptors (file 0x00..~0xA0) mostly
+;      mis-decoded by Sourcer - preserved as db bytes
+;    - Large embedded tile layout / cell data block
+;    - Per-frame update procs + sub helpers
+;
+;  Note: The "DRGN" nickname suggested a dragon enemy but the code
+;  structure matches the 312-319 sibling map-program family.
 ;
 ;==========================================================================
 
@@ -13,12 +27,17 @@ include  srmacros.inc
 
 
 ; The following equates show data references outside the range of the program.
+; Shared references across 312-319 map-program family:
+;   200Ch..6038h  - game-segment dispatch callback fn ptrs
+;   0C010h        - sprite attribute record base
+;   0ED20h        - char/tile lookup table
+;   0FF2Eh..0FF75h - per-map global state flag bytes
 
-data_14e	equ	200Ch			;*
-data_15e	equ	6028h			;*
-data_16e	equ	6036h			;*
-data_17e	equ	6038h			;*
-data_18e	equ	8000h			;*
+data_14e	equ	200Ch			;* scroll/dispatch callback
+data_15e	equ	6028h			;* game-seg callback fn A (tile dispatch)
+data_16e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
+data_17e	equ	6038h			;* game-seg callback fn C
+data_18e	equ	8000h			;* external buffer / tile source base
 data_19e	equ	0A4BBh			;*
 data_20e	equ	0A783h			;*
 data_21e	equ	0A810h			;*

@@ -1,20 +1,22 @@
 
 PAGE  59,132
 
-;€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-;€€					                                 €€
-;€€				_352TILPL                                €€
-;€€					                                 €€
-;€€      Created:   5-Apr-26		                                 €€
-;€€      Code type: zero start		                                 €€
-;€€      Passes:    5          Analysis	Options on: none                 €€
-;€€					                                 €€
-;€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
+;==========================================================================
+;
+;  352TILPL.BIN - Tile Palette Data (zelres3 chunk 52, tilepal.bin)
+;
+;  Packed tile palette / colour table data paired with 351TILAN.BIN.
+;  4816 bytes of raw data; not executable code despite Sourcer's
+;  default "zero start" code-mode interpretation of the leading bytes
+;  (int 3 / adc / push es / push ss / ...). The file is a byte-stream
+;  of tile palette records consumed by the level/map tile renderer.
+;  A secondary data_/sub_1 block near the tail is also data, not code.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
-
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -25,6 +27,7 @@ seg_a		segment	byte public
 _352TILPL	proc	far
 
 start:
+tile_palette_data	label	byte
 		int	3			; Debug breakpoint
 		adc	al,[bx+si]
 		add	[bx+si],al
@@ -39,7 +42,7 @@ start:
 		sbb	ax,[bp+di]
 		sbb	ax,1EF0h
 ;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
+		db	0Fh			; data (Sourcer fake instr)
 		and	al,30h			; '0'
 		and	ax,2602h
 		or	[bx],ah
@@ -51,7 +54,7 @@ start:
 		dec	dx
 		or	word ptr [bp+di-56h],4Dh
 		retn	0A4Eh
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 		push	cx
 		cmp	dl,[bp+si-52h]
 		push	bx
@@ -59,7 +62,7 @@ start:
 		push	di
 ;*		jmp	far ptr loc_10		;*
 		db	0EAh
-		dw	0AF59h, 885Ah		;  Fixup - byte match
+		dw	0AF59h, 885Ah		; data (Sourcer fake instr)
 data_7		db	5Bh
 		db	0BCh, 5Dh,0EEh, 5Eh,0FCh, 61h
 		db	0B3h, 62h, 23h, 64h,0ACh, 65h
@@ -107,18 +110,18 @@ loc_2:
 		aas				; Ascii adjust
 		push	bp
 ;*		test	dx,[di+0]
-		db	 85h, 55h, 00h		;  Fixup - byte match
+		db	 85h, 55h, 00h		; data (Sourcer fake instr)
 		db	0FDh, 3Fh,0FDh, 5Fh,0FDh, 00h
 		db	0FDh, 3Dh,0FDh, 9Ch,0FDh, 00h
 		db	 55h, 15h, 79h, 01h, 12h, 01h
 		db	0DFh, 00h, 12h
 loc_3:
 ;*		add	bh,bh
-		db	 00h,0FFh		;  Fixup - byte match
+		db	 00h,0FFh		; data (Sourcer fake instr)
 		hlt				; Halt processor
 		adc	ax,1256h
 ;*		add	bh,dh
-		db	 00h,0F7h		;  Fixup - byte match
+		db	 00h,0F7h		; data (Sourcer fake instr)
 		hlt				; Halt processor
 		jnc	loc_3			; Jump if carry=0
 		adc	al,[bx+si]
@@ -394,7 +397,7 @@ loc_6:
 		add	[bx+si],ax
 		jcxz	loc_6			; Jump if cx=0
 ;*		add	[si+0],dl
-		db	 00h, 54h, 00h		;  Fixup - byte match
+		db	 00h, 54h, 00h		; data (Sourcer fake instr)
 		db	 54h,0E0h,0FFh, 10h, 05h, 10h
 		db	 05h, 3Ch, 0Fh, 04h, 00h, 04h
 		db	 00h, 0Eh, 12h, 03h, 0Eh, 83h
@@ -406,7 +409,7 @@ loc_7:
 		add	[bx+si],ax
 		jcxz	loc_7			; Jump if cx=0
 ;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		;  Fixup - byte match
+		db	 00h, 40h, 00h		; data (Sourcer fake instr)
 		db	 40h,0E0h,0FFh, 00h, 05h, 00h
 		db	 05h, 3Ch, 0Fh, 12h, 02h, 0Eh
 		db	 12h, 03h, 0Eh, 83h, 12h, 02h
@@ -420,11 +423,11 @@ loc_7:
 loc_8:
 		mov	byte ptr data_12,al
 		retn
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 ;*		jmp	far ptr loc_12		;*
 		db	0EAh
-		dw	212h, 0FAE3h		;  Fixup - byte match
-			                        ;* No entry point to code
+		dw	212h, 0FAE3h		; data (Sourcer fake instr)
+			                        ; (data -- Sourcer: no entry point)
 		adc	al,[bp+si]
 		db	0E0h,0FFh, 12h, 02h, 3Ch, 0Fh
 		db	 12h, 02h,0CEh, 12h, 03h,0CEh
@@ -666,10 +669,10 @@ loc_8:
 locloop_9:
 		add	[bx+si],dl
 ;*		add	al,dh
-		db	 00h,0F0h		;  Fixup - byte match
+		db	 00h,0F0h		; data (Sourcer fake instr)
 		mov	dl,40h			; '@'
 ;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		;  Fixup - byte match
+		db	 00h, 40h, 00h		; data (Sourcer fake instr)
 		db	0C2h, 30h, 12h, 02h, 02h,0C2h
 		db	 12h, 03h,0C0h, 12h, 03h,0C3h
 		db	 12h, 03h, 0Ch, 12h, 03h, 20h
@@ -895,9 +898,7 @@ data_18		db	12h			; Data table (indexed access)
 
 _352TILPL	endp
 
-;ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
 ;                              SUBROUTINE
-;‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
 
 sub_1		proc	near
 		add	[bx+si],ax
@@ -908,13 +909,13 @@ sub_1		proc	near
 		add	[si],al
 		lodsb				; String [si] to al
 ;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
+		db	0Fh			; data (Sourcer fake instr)
 		adc	[si],al
 		adc	[si],al
 		mov	al,0Eh
 		inc	ax
 ;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		;  Fixup - byte match
+		db	 00h, 40h, 00h		; data (Sourcer fake instr)
 		db	0F0h, 3Eh, 40h, 00h, 40h, 00h
 data_19		dw	3AC0h			; Data table (indexed access)
 		db	 00h, 10h, 00h, 10h,0C0h

@@ -1,15 +1,31 @@
 
 PAGE  59,132
 
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
-;лл					                                 лл
-;лл				_318MAPA5                                лл
-;лл					                                 лл
-;лл      Created:   5-Apr-26		                                 лл
-;лл      Code type: zero start		                                 лл
-;лл      Passes:    9          Analysis	Options on: none                 лл
-;лл					                                 лл
-;лллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл
+;==========================================================================
+;
+;  318MAO1 / _318MAPA5 - Boss 5 Arena Map Program - Jashiin Dialog
+;
+;  Map-program code module for the Boss 5 arena (zelres3 chunk). Loaded
+;  together with the arena data file map_boss5_arena.bin (318MAPA5.bin).
+;
+;  This is the pre-final-boss encounter module. Contains the Jashiin
+;  taunt dialog embedded as text data at ~file 0xA4..0xEB:
+;    "Finally, you reached me."
+;    "I enjoyed your show."
+;    "Come on!  I'll kill you."
+;   followed by the speaker-name byte sequence 'Jashiin'.
+;
+;  Structure:
+;    - Header / dispatch pointer area (file 0x00..~0x80) mis-decoded by
+;      Sourcer as code bytes - preserved as db
+;    - Dispatch word-table (data_24e..data_27e) referencing arena handlers
+;    - Tile/cell layout data + the Jashiin dialog text block
+;    - Per-frame scan + scripting helpers (loc_1..loc_21)
+;
+;  Note: "MAO1" stands for "demon lord 1" (Jp. "Mao") - this is the
+;  pre-Mao boss. MAO2 (319MAO2 / _319MAPA6) is the FINAL boss arena.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 

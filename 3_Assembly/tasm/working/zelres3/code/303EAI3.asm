@@ -1,46 +1,82 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				_303MAPDC                                ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   5-Apr-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;==========================================================================
+;
+;  303EAI3.BIN - Enemy AI Handler: TORI (zelres3 chunk 4)
+;
+;  Per-enemy AI controller for the TORI (bird) enemy, loaded alongside
+;  311TORI.BIN sprites. Manages flight path, swoop attack, and collision
+;  for the flying bird enemy. The TORI uses a more elaborate set of
+;  animation substates (0..7) than ground enemies because it transitions
+;  between hover / dive / retreat behaviours.
+;
+;  Dispatch model matches the EAI* family (see 301EAI1.asm for full
+;  description of the enemy slot record at DS:SI).
+;
+;  Resource table constants (DS offsets in game_seg):
+;    6004h..603Ah = TORI movement/collision/attack dispatch table slots.
+;    0A4EAh..0A662h = TORI flight-pattern / attack-decision lookup tables.
+;    0FF35h = shared gvar_frame_cnt.
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; --- TORI enemy AI dispatch table (game_seg:6004h..603Ah, in DS at runtime) ---
+ai_fn_tbl_a	equ	6004h			; AI fn (dive / swoop)
+ai_fn_tbl_b	equ	6008h			; AI fn
+ai_fn_tbl_c	equ	600Ah			; AI fn
+ai_fn_tbl_d	equ	600Ch			; AI fn
+ai_fn_tbl_e	equ	600Eh			; AI fn
+ai_fn_tbl_f	equ	6010h			; AI fn
+ai_fn_tbl_g	equ	6012h			; AI fn
+ai_fn_tbl_h	equ	6014h			; AI fn
+ai_fn_tbl_i	equ	6016h			; AI fn
+ai_fn_tbl_j	equ	601Ch			; AI fn
+ai_fn_tbl_k	equ	6028h			; AI fn
+ai_fn_tbl_l	equ	602Ah			; AI fn
+ai_fn_tbl_m	equ	602Eh			; AI fn
+ai_hide_fn	equ	6034h			; AI fn: hide / despawn
+ai_attack_fn	equ	603Ah			; AI fn: attack / release projectile
 
-data_7e		equ	6004h			;*
-data_8e		equ	6008h			;*
-data_9e		equ	600Ah			;*
-data_10e	equ	600Ch			;*
-data_11e	equ	600Eh			;*
-data_12e	equ	6010h			;*
-data_13e	equ	6012h			;*
-data_14e	equ	6014h			;*
-data_15e	equ	6016h			;*
-data_16e	equ	601Ch			;*
-data_17e	equ	6028h			;*
-data_18e	equ	602Ah			;*
-data_19e	equ	602Eh			;*
-data_20e	equ	6034h			;*
-data_21e	equ	603Ah			;*
-data_22e	equ	0A4EAh			;*
-data_23e	equ	0A519h			;*
-data_24e	equ	0A5A3h			;*
-data_25e	equ	0A654h			;*
-data_26e	equ	0A655h			;*
-data_27e	equ	0A661h			;*
-data_28e	equ	0A662h			;*
-data_29e	equ	0FF35h			;*
+; --- TORI lookup tables (game_seg DS) ---
+tori_tbl_a	equ	0A4EAh			; TORI flight-pattern base table
+tori_tbl_b	equ	0A519h
+tori_tbl_c	equ	0A5A3h
+tori_tbl_d	equ	0A654h
+tori_tbl_e	equ	0A655h
+tori_tbl_f	equ	0A661h
+tori_tbl_g	equ	0A662h
+gvar_frame_cnt	equ	0FF35h			; frame counter byte
+
+; Backwards-compat aliases
+data_7e		equ	ai_fn_tbl_a
+data_8e		equ	ai_fn_tbl_b
+data_9e		equ	ai_fn_tbl_c
+data_10e	equ	ai_fn_tbl_d
+data_11e	equ	ai_fn_tbl_e
+data_12e	equ	ai_fn_tbl_f
+data_13e	equ	ai_fn_tbl_g
+data_14e	equ	ai_fn_tbl_h
+data_15e	equ	ai_fn_tbl_i
+data_16e	equ	ai_fn_tbl_j
+data_17e	equ	ai_fn_tbl_k
+data_18e	equ	ai_fn_tbl_l
+data_19e	equ	ai_fn_tbl_m
+data_20e	equ	ai_hide_fn
+data_21e	equ	ai_attack_fn
+data_22e	equ	tori_tbl_a
+data_23e	equ	tori_tbl_b
+data_24e	equ	tori_tbl_c
+data_25e	equ	tori_tbl_d
+data_26e	equ	tori_tbl_e
+data_27e	equ	tori_tbl_f
+data_28e	equ	tori_tbl_g
+data_29e	equ	gvar_frame_cnt
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -48,7 +84,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_303MAPDC	proc	far
+tori_ai_main	proc	far
 
 start:
 		aaa				; Ascii adjust
@@ -513,11 +549,11 @@ loc_47:
 		mov	byte ptr [si+0Ah],0
 		retn
 
-_303MAPDC	endp
+tori_ai_main	endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_1		proc	near
 		mov	al,ds:data_29e
@@ -617,9 +653,9 @@ loc_62:
 		mov	byte ptr [si+6],1
 		retn
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 sub_2		proc	near
 		mov	al,ds:data_29e

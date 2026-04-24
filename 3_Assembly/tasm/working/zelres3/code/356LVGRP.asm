@@ -1,22 +1,33 @@
 
 PAGE  59,132
 
-;��������������������������������������������������������������������������
-;��					                                 ��
-;��				ZR356FUL                                 ��
-;��					                                 ��
-;��      Created:   22-Mar-26		                                 ��
-;��      Code type: zero start		                                 ��
-;��      Passes:    9          Analysis	Options on: none                 ��
-;��					                                 ��
-;��������������������������������������������������������������������������
+;==========================================================================
+;
+;  356LVGRP.BIN - Level Graphics Data (zelres3 chunk 56)
+;
+;  Packed level-graphics data (tile patterns, tilemap layout bytes,
+;  palette deltas) consumed by the map/tile renderer. 6265 bytes of
+;  raw data; Sourcer defaulted to "zero start" code mode and decoded
+;  scattered bytes as instructions (jc/mov/jmp far/etc.), but the file
+;  contains no real executable code -- there are no proc/retn sites,
+;  no INT 10h calls, and the "jmp far ptr" bytes at offsets ~319 / ~352
+;  are data (0EAh is just a palette/attribute value here, not an opcode).
+;  These data bytes are also why this file required compile-fix db
+;  blocks for unassemblable "far ptr" and alt-encoding forms.
+;
+;  The 0x39 byte is the apparent tilemap run-length / section marker
+;  (analogous to 0E6h in 351TILAN.BIN).
+;
+;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
 
-; The following equates show data references outside the range of the program.
+; Data-reference equates retained from Sourcer's code-mode analysis.
+; These are data values that happened to land inside mod-r/m byte
+; positions during disassembly; most are not genuine references.
 
 data_1e		equ	0CC0h			;*
 data_2e		equ	5B01h			;*
@@ -56,6 +67,7 @@ seg_a		segment	byte public
 ZR356FUL	proc	far
 
 start:
+level_graphics_data	label	byte
 ;*		jc	loc_3			;*Jump if carry Set
 		db	072h, 018h		; jc 1Ah (absolute)
 		add	[bx+si],al
@@ -237,7 +249,7 @@ locloop_4:
 				db	000h,0EEh	; add dh,ch (alt encoding)
 		add	ax,0F0h
 		retn
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 		xor	ax,0C2h
 		retn	0ACAh
 		db	 00h, 15h,0EAh, 80h, 00h, 75h
@@ -302,9 +314,9 @@ loc_6:
 		add	ss:data_10[bp+si],bp
 		or	al,[bx+si]
 		retf	2A00h
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 ;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
+		db	0Fh			; data (Sourcer fake instr)
 		sub	al,[bx+si]
 		or	al,[bx+si]
 		cli				; Disable interrupts
@@ -318,7 +330,7 @@ loc_6:
 		sub	byte ptr ds:data_38e[bx+si],0
 ;*		jmp	far ptr loc_2		;*
 		db	0EAh, 008h, 0EAh, 008h, 023h	; jmp far 2308:EA08
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 		mov	al,ds:data_34e
 		and	ds:data_32e[bx+si],al
 		or	ch,ds:data_37e[bx+si]
@@ -337,7 +349,7 @@ loc_6:
 		or	al,30h			; '0'
 		add	si,[bx+si]
 		retn
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 		xor	[bp+di],al
 		xor	[bx+si],al
 		cmp	al,8
@@ -351,7 +363,7 @@ loc_6:
 		or	ax,[bx+si]
 ;*		jmp	far ptr loc_1		;*
 		db	0EAh, 000h, 0EAh, 039h, 001h	; jmp far 0139:EA00
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 		add	bh,[bx+di]
 		push	cs
 		out	dx,al			; port 28h ??I/O Non-standard
@@ -362,7 +374,7 @@ loc_6:
 		lodsb				; String [si] to al
 		cmp	[bx+di],ax
 		retf
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 		xor	[bx+di],bh
 		add	[bx+si],dh
 		db	0C0h, 39h, 00h, 82h, 39h, 07h
@@ -949,9 +961,9 @@ loc_9:
 		mov	cl,3
 		rcl	word ptr [bx+di+41h],cl	; Rotate thru carry
 ;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
+		db	0Fh			; data (Sourcer fake instr)
 		iret				; Interrupt return
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 		mov	ds:data_41e,ax
 		call	dword ptr [bp+si]	;*
 		or	dx,ax
@@ -964,7 +976,7 @@ loc_9:
 		add	[bx+si],bh
 		add	[bp+di],ch
 ;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
+		db	0Fh			; data (Sourcer fake instr)
 		dec	sp
 		or	[di+3Fh],cx
 		mov	ds:data_35e,ax
@@ -1001,7 +1013,7 @@ loc_12:
 ;*		add	bl,dl
 				db	000h,0D3h	; add bl,dl (alt encoding)
 		retf	2B00h
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 		out	dx,ax			; port 0, DMA-1 bas&add ch 0
 		mov	di,data_27e
 		jmp	short loc_12
@@ -1019,7 +1031,7 @@ loc_13:
 		add	cl,bh
 		sti				; Enable interrupts
 		jmp	dword ptr [bx]		;*
-			                        ;* No entry point to code
+			                        ; (data -- Sourcer: no entry point)
 		dec	dx
 		neg	word ptr [bp+si-6Eh]
 		mov	sp,0BCFAh
