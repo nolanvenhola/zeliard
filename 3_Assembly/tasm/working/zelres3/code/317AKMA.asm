@@ -26,11 +26,16 @@ include  srmacros.inc
 
 
 ; The following equates show data references outside the range of the program.
+; Shared references across 312-319 map-program family:
+;   200Ch..6038h  - game-segment dispatch callback fn ptrs
+;   0C002h/0C010h - sprite attribute / entity record base
+;   0ED20h        - char/tile lookup table
+;   0FF2Eh..0FF75h - per-map global state flag bytes
 
-data_14e	equ	200Ch			;*
-data_15e	equ	6028h			;*
-data_16e	equ	6036h			;*
-data_17e	equ	6038h			;*
+data_14e	equ	200Ch			;* scroll/dispatch callback
+data_15e	equ	6028h			;* game-seg callback fn A (tile dispatch)
+data_16e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
+data_17e	equ	6038h			;* game-seg callback fn C
 data_18e	equ	0A7EEh			;*
 data_19e	equ	0A870h			;*
 data_20e	equ	0A918h			;*
@@ -54,13 +59,13 @@ data_37e	equ	0AA29h			;*
 data_38e	equ	0AA2Ah			;*
 data_39e	equ	0AA33h			;*
 data_40e	equ	0AA87h			;*
-data_41e	equ	0C002h			;*
-data_42e	equ	0C010h			;*
-data_43e	equ	0ED20h			;*
-data_44e	equ	0FF2Eh			;*
-data_45e	equ	0FF2Fh			;*
-data_46e	equ	0FF30h			;*
-data_47e	equ	0FF75h			;*
+data_41e	equ	0C002h			;* sprite attribute ptr
+data_42e	equ	0C010h			;* sprite attribute record base
+data_43e	equ	0ED20h			;* char/tile lookup table
+data_44e	equ	0FF2Eh			;* global state byte
+data_45e	equ	0FF2Fh			;* global state byte
+data_46e	equ	0FF30h			;* global state byte
+data_47e	equ	0FF75h			;* global state byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -70,14 +75,21 @@ seg_a		segment	byte public
 
 _317MAPA4	proc	far
 
+; ------------------------------------------------------------------
+; start: header + embedded tile/cell layout data.
+; Sourcer mis-decoded header fields as x86 instructions; real entry
+; is via dispatch from game DS. First bytes = header field words.
+; The 33-byte '((((..' row is a 0x28h descriptor fill (one tile row).
+; ------------------------------------------------------------------
 start:
-		cli				; Disable interrupts
-		or	al,[bx+si]
-		add	[bp+di],ch
-		mov	ds:data_23e,ax
-		db	12 dup (0)
+		cli				; header field byte (FA)
+		or	al,[bx+si]		; header field bytes
+		add	[bp+di],ch		; header field bytes
+		mov	ds:data_23e,ax		; header field bytes
+		db	12 dup (0)		; reserved / padding
+; 33-byte descriptor row: 0x28 ('(' ) bytes with 0x50 ('P') in slot 7
 		db	'((((((P((((((((((((((((((((((((('
-		db	'~'
+		db	'~'			; row terminator
 		db	0A0h,0E2h,0A0h, 78h,0A1h, 0Eh
 		db	0A2h, 54h,0A2h, 9Fh,0A2h,0B3h
 		db	0A2h
@@ -959,17 +971,22 @@ loc_67:
 loc_68:
 		mov	byte ptr ds:data_46e,0FFh
 		retn
+
+; ------------------------------------------------------------------
+; Module trailer: boss-arena data bytes + 'Alguien' string
+; ("Alguien" = Spanish for "Someone" - dialog speaker tag for an
+; anonymous NPC or boss in the arena), then 216 zero padding bytes.
+; ------------------------------------------------------------------
 			                        ;* No entry point to code
-		sub	al,[bx+si]
-		add	[bx+si],ah
-		add	si,[bx+si]
-		jnz	$+0Eh			; Jump if not zero
-		add	[bp+di],dl
-		stosb				; Store al to es:[di]
-		db	0D8h, 0Eh, 10h,0BBh, 02h, 07h
-		db	 41h, 6Ch, 67h, 75h, 69h, 65h
-		db	 6Eh, 00h, 00h, 00h,0FFh
-		db	216 dup (0)
+		sub	al,[bx+si]		; data bytes
+		add	[bx+si],ah		; data bytes
+		add	si,[bx+si]		; data bytes
+		jnz	$+0Eh			; data bytes
+		add	[bp+di],dl		; data bytes
+		stosb				; data byte
+		db	0D8h, 0Eh, 10h,0BBh, 02h, 07h	; record header bytes
+		db	'Alguien', 0, 0, 0, 0FFh	; 'Alguien' speaker name + terminator
+		db	216 dup (0)			; pad to module end
 
 seg_a		ends
 

@@ -77,12 +77,12 @@ data_54e	equ	0AA66h			;*
 data_55e	equ	0AA67h			;*
 data_56e	equ	0AA68h			;*
 data_57e	equ	0AA69h			;*
-data_58e	equ	0C010h			;*
-data_59e	equ	0ED20h			;*
-data_60e	equ	0FF2Eh			;*
-data_61e	equ	0FF2Fh			;*
-data_62e	equ	0FF30h			;*
-data_63e	equ	0FF75h			;*
+data_58e	equ	0C010h			;* sprite attribute record base
+data_59e	equ	0ED20h			;* char/tile lookup table
+data_60e	equ	0FF2Eh			;* global state byte
+data_61e	equ	0FF2Fh			;* global state byte
+data_62e	equ	0FF30h			;* global state byte
+data_63e	equ	0FF75h			;* global state byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -92,12 +92,18 @@ seg_a		segment	byte public
 
 zr3_16		proc	far
 
+; ------------------------------------------------------------------
+; start: header + embedded tile/cell layout data.
+; Sourcer mis-decoded header fields as x86 instructions; real entry
+; is via dispatch from game DS. First byte patterns are pointer/
+; descriptor fields; 12 zero bytes follow as reserved area.
+; ------------------------------------------------------------------
 start:
-		test	ax,0Bh
+		test	ax,0Bh			; header field bytes
 ;*		add	ch,bl
-		db	000h, 0DDh		; add ch,bl (alt encoding)
-		mov	ds:data_32e,al
-		db	12 dup (0)
+		db	000h, 0DDh		; add ch,bl (alt encoding) -- header bytes
+		mov	ds:data_32e,al		; header field bytes
+		db	12 dup (0)		; reserved / padding
 		db	 28h, 1Eh, 1Eh, 1Eh, 1Eh, 1Eh
 		db	 1Eh, 1Eh
 		db	 28h, 28h
@@ -899,22 +905,27 @@ loc_62:
 loc_63:
 		mov	byte ptr ds:data_62e,0FFh
 		retn
-			                        ;* No entry point to code
-		push	ds
-		add	[bx+si],cl
-		and	[bp+di],al
-;*		loopnz	locloop_64		;*Loop if zf=0, cx>0
 
-		db	0E0h, 02Eh		; loopne 0A75h (absolute)
-		add	ax,4900h
-		stosb				; Store al to es:[di]
-		les	cx,dword ptr [bx+di]	; Load seg:offset ptr
-		adc	word ptr ss:[600h][bp+di],di
-		inc	sp
+; ------------------------------------------------------------------
+; Module trailer: dispatch-table data + 'aragon' string fragment
+; (suffix of "dragon" or a location/speaker name like "Aragon"),
+; followed by 342 zero padding bytes.
+; ------------------------------------------------------------------
+			                        ;* No entry point to code
+		push	ds			; data bytes
+		add	[bx+si],cl		; data bytes
+		and	[bp+di],al		; data bytes
+;*		loopnz	locloop_64		;*Loop if zf=0, cx>0
+		db	0E0h, 02Eh		; loopne 0A75h (absolute) -- data bytes
+		add	ax,4900h		; data bytes
+		stosb				; data byte
+		les	cx,dword ptr [bx+di]	; data bytes
+		adc	word ptr ss:[600h][bp+di],di	; data bytes
+		inc	sp			; data byte
 ;*		jc	loc_65			;*Jump if carry Set
-		db	072h, 061h		; jc 0AB5h (absolute)
-		db	 67h, 6Fh, 6Eh
-		db	342 dup (0)
+		db	072h, 061h		; jc 0AB5h (absolute) -- data bytes
+		db	'gon'			; tail of 'dragon' / 'aragon' name
+		db	342 dup (0)		; pad to module end
 
 seg_a		ends
 

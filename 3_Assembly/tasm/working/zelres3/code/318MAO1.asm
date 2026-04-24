@@ -33,17 +33,23 @@ include  srmacros.inc
 
 
 ; The following equates show data references outside the range of the program.
+; Shared references across 312-319 map-program family:
+;   2000h..2F2Eh  - driver/service callback functions
+;   6028h..6036h  - game-seg dispatch callbacks
+;   0C010h        - sprite attribute record base
+;   0ED20h        - char/tile lookup table
+;   0FF75h        - global state byte
 
-data_13e	equ	2000h			;*
-data_14e	equ	201Fh			;*
-data_15e	equ	202Ah			;*
-data_16e	equ	2928h			;*
-data_17e	equ	2F2Eh			;*
-data_18e	equ	6028h			;*
-data_19e	equ	6036h			;*
-data_20e	equ	8E77h			;*
-data_21e	equ	9893h			;*
-data_22e	equ	9A00h			;*
+data_13e	equ	2000h			;* driver dispatch entry (load_chunk_ES or similar)
+data_14e	equ	201Fh			;* driver dispatch entry
+data_15e	equ	202Ah			;* driver dispatch entry (blit/render)
+data_16e	equ	2928h			;* driver callback (text render?)
+data_17e	equ	2F2Eh			;* driver callback
+data_18e	equ	6028h			;* game-seg callback fn A (tile dispatch)
+data_19e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
+data_20e	equ	8E77h			;* external data ptr
+data_21e	equ	9893h			;* external data ptr
+data_22e	equ	9A00h			;* external data ptr
 data_23e	equ	0A39Fh			;*
 data_24e	equ	0A3BBh			;*
 data_25e	equ	0A442h			;*
@@ -58,10 +64,10 @@ data_33e	equ	0A59Ch			;*
 data_34e	equ	0A5A1h			;*
 data_35e	equ	0AEABh			;*
 data_36e	equ	0B600h			;*
-data_37e	equ	0C010h			;*
-data_38e	equ	0E939h			;*
-data_39e	equ	0ED20h			;*
-data_40e	equ	0FF75h			;*
+data_37e	equ	0C010h			;* sprite attribute record base
+data_38e	equ	0E939h			;* external data byte
+data_39e	equ	0ED20h			;* char/tile lookup table
+data_40e	equ	0FF75h			;* global state byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -71,13 +77,19 @@ seg_a		segment	byte public
 
 _318MAPA5	proc	far
 
+; ------------------------------------------------------------------
+; start: header + embedded tile/cell layout data.
+; Sourcer mis-decoded header fields as x86 instructions (popf/and/etc);
+; real entry is via dispatch from game DS. First bytes are pointer
+; descriptor fields + a reserved 40-byte zero region.
+; ------------------------------------------------------------------
 start:
-		popf				; Pop flags
-		add	ax,0
-		cmp	al,0A2h
+		popf				; header field byte
+		add	ax,0			; header field bytes
+		cmp	al,0A2h			; header field bytes
 ;*		and	word ptr ds:[0][di],0
-		db	 81h,0A5h, 00h, 00h, 00h, 00h	;  Fixup - byte match
-		db	40 dup (0)
+		db	 81h,0A5h, 00h, 00h, 00h, 00h	;  header field bytes (Fixup)
+		db	40 dup (0)		; reserved / padding
 		db	 3Eh,0A0h, 8Eh,0A0h,0DEh,0A0h
 		db	 2Eh,0A1h, 7Eh,0A1h,0CEh,0A1h
 		db	 19h,0A2h, 01h, 01h, 02h, 03h
@@ -393,12 +405,18 @@ locloop_21:
 		db	0E0h, 08h, 08h, 09h, 09h, 0Ah
 		db	 0Ah, 0Ah,0FFh, 48h,0A4h, 63h
 		db	0A4h, 7Ah,0A4h, 08h, 00h
+; --------------------------------------------------------------
+; Jashiin (pre-final boss) dialog block.  0x08/0x18 are speaker-
+; position / anim codes; 0xFF terminates each line.
+; --------------------------------------------------------------
 		db	'Finally, you reached me.'
 		db	0FFh, 18h, 00h
 		db	'I enjoyed your show.'
 		db	0FFh, 08h, 00h
 		db	'Come on!  I\ll kill you.'
-		db	0FFh,0ABh,0A4h,0B1h,0A4h,0BAh
+		db	0FFh
+; Jump-table following the dialog (9 words pointing to arena handlers)
+		db	0ABh,0A4h,0B1h,0A4h,0BAh
 		db	0A4h,0C4h,0A4h,0CFh,0A4h,0DBh
 		db	0A4h,0E8h,0A4h,0F3h,0A4h,0FFh
 		db	0A4h
@@ -489,8 +507,8 @@ loc_22:
 		db	 00h, 10h, 00h, 01h,0FAh, 00h
 		db	0C8h, 00h, 05h,0FFh, 8Eh,0A5h
 		db	 00h, 00h, 11h,0BBh, 02h, 07h
-		db	 4Ah, 61h, 73h, 68h, 69h, 69h
-		db	 6Eh, 00h, 00h, 00h, 00h
+; 'Jashiin' - Jashiin (pre-final boss) speaker-name string
+		db	'Jashiin', 0, 0, 0, 0
 
 _318MAPA5	endp
 

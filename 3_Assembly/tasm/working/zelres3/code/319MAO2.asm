@@ -30,13 +30,18 @@ include  srmacros.inc
 
 
 ; The following equates show data references outside the range of the program.
+; Shared references across 312-319 map-program family:
+;   200Ch..6038h  - game-segment dispatch callback fn ptrs
+;   0C002h/0C010h - sprite attribute / entity record base
+;   0ED20h        - char/tile lookup table
+;   0FF2Eh..0FF75h - per-map global state flag bytes
 
-data_13e	equ	200Ch			;*
-data_14e	equ	2F2Eh			;*
-data_15e	equ	302Fh			;*
-data_16e	equ	6028h			;*
-data_17e	equ	6036h			;*
-data_18e	equ	6038h			;*
+data_13e	equ	200Ch			;* scroll/dispatch callback
+data_14e	equ	2F2Eh			;* driver callback (boss anim?)
+data_15e	equ	302Fh			;* driver callback
+data_16e	equ	6028h			;* game-seg callback fn A (tile dispatch)
+data_17e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
+data_18e	equ	6038h			;* game-seg callback fn C
 data_19e	equ	0A46Fh			;*
 data_20e	equ	0A666h			;*
 data_21e	equ	0A8A9h			;*
@@ -83,14 +88,14 @@ data_61e	equ	0AC4Ah			;*
 data_62e	equ	0AC65h			;*
 data_63e	equ	0AC6Eh			;*
 data_64e	equ	0AEADh			;*
-data_65e	equ	0C002h			;*
-data_66e	equ	0C010h			;*
-data_67e	equ	0ED20h			;*
-data_68e	equ	0FF21h			;*
-data_69e	equ	0FF2Eh			;*
-data_70e	equ	0FF2Fh			;*
-data_71e	equ	0FF30h			;*
-data_72e	equ	0FF75h			;*
+data_65e	equ	0C002h			;* sprite attribute ptr
+data_66e	equ	0C010h			;* sprite attribute record base
+data_67e	equ	0ED20h			;* char/tile lookup table
+data_68e	equ	0FF21h			;* global state byte
+data_69e	equ	0FF2Eh			;* global state byte
+data_70e	equ	0FF2Fh			;* global state byte
+data_71e	equ	0FF30h			;* global state byte
+data_72e	equ	0FF75h			;* global state byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -100,13 +105,20 @@ seg_a		segment	byte public
 
 _319MAPA6	proc	far
 
+; ------------------------------------------------------------------
+; start: header + embedded tile/cell layout data.
+; Real executable entry is reached via dispatch from game DS. The
+; first 8 bytes are header fields / pointer descriptors; 12 zero
+; bytes reserved; then a 33-byte 'P' (0x50) descriptor fill row.
+; ------------------------------------------------------------------
 start:
-		db	 6Fh, 0Ch, 00h, 00h
-data_2		db	0F2h
-		db	0A2h, 03h,0ACh
-		db	12 dup (0)
+		db	 6Fh, 0Ch, 00h, 00h	; header words
+data_2		db	0F2h			; header field byte
+		db	0A2h, 03h,0ACh		; header field bytes
+		db	12 dup (0)		; reserved / padding
+; 33-byte descriptor row: 0x50 ('P') fill (one tile row of the arena)
 		db	'PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP'
-		db	'|'
+		db	'|'			; row terminator
 data_5		db	0A0h
 		db	0CCh,0A0h, 1Ch,0A1h, 6Ch,0A1h
 		db	 8Fh,0A1h,0A8h,0A1h
@@ -1132,8 +1144,9 @@ loc_88:
 		db	 10h,0ACh, 00h, 00h	;  Fixup - byte match
 		adc	word ptr ss:[702h][bp+di],di
 		dec	dx
-		db	 61h, 73h, 68h, 69h, 69h, 6Eh
-		db	84 dup (0)
+; 'ashiin' - tail of 'Jashiin' speaker-name (first 'J' is preceding byte)
+		db	'ashiin'
+		db	84 dup (0)		; pad to module end
 
 seg_a		ends
 
