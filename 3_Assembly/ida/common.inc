@@ -59,6 +59,8 @@ SHOES_SILKARN      EQU 3
 SHOES_RUZERIA      EQU 4
 CAPE_ASBESTOS      EQU 5
 
+viewport_top_left_vram_addr equ (48+14*320)
+
 ; savegame area
 Cangrejo_Defeated           equ   0     ; 0000 = No, FFFF = Yes
 malicia_items               equ   2     ; +128 - Chest, 50 Golds
@@ -269,7 +271,7 @@ Pirika_Shoes                equ   0a2h  ; feet protection
 Silkarn_Shoes               equ   0a3h  ; climb slopes
 Ruzeria_Shoes               equ   0a4h  ; anti-ice
 Asbestos_Cape               equ   0a5h  ; heat protection
-magic_items                 equ   0a6h  ; A6 - AA - Items
+magic_items                 equ   0a6h  ; A6 - AA - 5 slots for Items
                                         ; 01 - Ken'ko Potion
                                         ; 02 - Juu-en Fruit
                                         ; 03 - Elixir of Kashi
@@ -278,15 +280,14 @@ magic_items                 equ   0a6h  ; A6 - AA - Items
                                         ; 06 - Holy Water of Acero
                                         ; 07 - Sabre Oil
                                         ; 08 - Kioku Feather
-magic_spells                equ   0abh  ; ...
-                                        ; Espada, default:12
-                                        ; Saeta, default: 6
-                                        ; Fuego, default: 8
-                                        ; Lanzar, default: 4
-                                        ; Rascar, default: 3
-                                        ; Agua, default: 4
-                                        ; Guerra, default: 3
-heroMaxHp                   equ   0b2h  ; ...
+spells_espada               equ   0abh  ; Espada, default:12
+spells_saeta                equ   0ach  ; Saeta, default: 6
+spells_fuego                equ   0adh  ; Fuego, default: 8
+spells_lanzar               equ   0aeh  ; Lanzar, default: 4
+spells_rascar               equ   0afh  ; Rascar, default: 3
+spells_agua                 equ   0b0h  ; Agua, default: 4
+spells_guerra               equ   0b1h  ; Guerra, default: 3
+heroMaxHp                   equ   0b2h
 espada_count                equ   0b4h
 saeta_count                 equ   0b5h
 fuego_count                 equ   0b6h
@@ -393,10 +394,10 @@ invincibility_flag          equ   0e8h  ; ...
 
 
 ; stick.bin
-stick_entry0                                       equ 100h
-stick_entry1                                       equ 103h
-stick_entry2                                       equ 106h
-stick_entry3                                       equ 109h
+int9_new_proc                                      equ 100h
+int8_new_proc                                      equ 103h
+int24_new_proc                                     equ 106h
+int61_new_proc                                     equ 109h
 res_dispatcher_proc                                equ 10ch
 reserved_nop_proc                                  equ 10eh
 Confirm_Exit_Dialog_proc                           equ 110h
@@ -424,9 +425,9 @@ Print_Almas_Decimal_proc                           equ 2014h
 Print_Gold_Decimal_proc                            equ 2016h
 Print_Magic_Left_Decimal_proc                      equ 2018h
 Print_ShieldHP_Decimal_proc                        equ 201Ah
-Render_Sprite_18Rows_From_Seg1_proc                equ 201Ch
-Render_Entity_Sprite1_proc                         equ 201Eh
-Render_Mask_Sprite_proc                            equ 2020h
+Render_Sword_Item_Sprite_20x18_proc                equ 201Ch
+Render_Magic_Spell_Item_Sprite_16x16_proc          equ 201Eh
+Render_Shield_Item_Sprite_16x16_proc               equ 2020h
 Render_Font_Glyph_proc                             equ 2022h
 Scroll_Screen_Rect_Down_proc                       equ 2024h
 Capture_Screen_Rect_to_seg3_proc                   equ 2026h
@@ -436,12 +437,12 @@ Copy_Screen_Rect_VRAM_proc                         equ 202Ch
 Draw_Status_Frame_proc                             equ 202Eh
 Render_Decimal_Digits_proc                         equ 2030h
 Convert_32bit_To_Decimal_Digits_proc               equ 2032h
-Render_Sprite_With_Fallback_proc                   equ 2034h
-Render_Sprite_With_Fallback_Alt_proc               equ 2036h
+Render_Wearable_Item_Sprite_16x16_proc             equ 2034h
+Render_Magic_Potion_Item_Sprite_16x16_proc         equ 2036h
 Render_C_String_proc                               equ 2038h
-Render_Sword_Sprite_proc                           equ 203Ah
-Render_Shield_Sprite_proc                          equ 203Ch
-Render_Spell_Icon_proc                             equ 203Eh
+Render_Key_Item_Sprite_16x16_proc                  equ 203Ah
+Render_Crest_Item_Sprite_16x16_proc                equ 203Ch
+Render_Tear_Icon_proc                              equ 203Eh
 Fade_To_Black_Dithered_proc                        equ 2040h
 Clear_Screen_proc                                  equ 2042h
 Reassemble_3_Planes_To_Packed_Bitmap_proc          equ 2044h
@@ -491,6 +492,10 @@ word_A004                                          equ 0A004h
 death_split_table_ptr                              equ 0A006h
 byte_A010                                          equ 0A010h
 
+; select.bin
+Inventory_Screen_proc                              equ 0A000h
+Inventory_Screen_Full_proc                         equ 0A002h
+
 mdt_buffer                                         equ 0C000h
 mapWidth                                           equ 0C002h
 
@@ -507,8 +512,9 @@ is_boss_dead                                       equ 0EDA0h
 
 ; towns
 cache_bytes_ptr                                    equ 0E005h
+bold_font_8x8                                      equ 0F500h
 digits_font                                        equ 0F502h
-letters_font                                       equ 0F504h
+thin_font                                          equ 0F504h
 
 ; shared data
 fn_exit_far_ptr                                    equ 0FF00h
@@ -516,10 +522,11 @@ fn_timer_chain_ptr                                 equ 0FF04h
 heartbeat_volume                                   equ 0FF08h
 exit_pending_flag                                  equ 0FF09h
 joystick_enabled_flag                              equ 0FF0Ah
+byte_FF0B                                          equ 0FF0Bh
 fn_per_tick_callback                               equ 0FF0Ch
 fn_per_tick_callback2                              equ 0FF10h
-segmented_load_flag                                equ 0FF14h
-direct_load_seek_flag                              equ 0FF15h
+video_drv_id                                       equ 0FF14h
+mt32_enabled                                       equ 0FF15h
 ____Alt_Space                                      equ 0FF16h
 ____right_left_down_up                             equ 0FF17h
 F9_F7_F2_F1_KREJSNYQ_Esc_Ctrl_Shift_Enter          equ 0FF18h
@@ -558,8 +565,8 @@ shield_variant_index                               equ 0FF41h
 slope_direction                                    equ 0FF42h ; 1=right, 2=left
 sword_swing_flag                                   equ 0FF43h
 ui_element_dirty                                   equ 0FF44h
-sword_hit_type                                     equ 0FF45h
-sword_down_thrust                                  equ 0FF46h
+sword_hit_type                                     equ 0FF45h ; 0=Forward hit, 1=Overhead swing, 2=Ground downward thrust
+sword_movement_phase                               equ 0FF46h
 down_thrust_held_flag                              equ 0FF47h
 joystick_direction_bits                            equ 0FF48h
 joystick_button_bits                               equ 0FF49h
@@ -577,7 +584,7 @@ menu_digits_render_flag                            equ 0FF57h
 byte_FF58                                          equ 0FF58h
 numeric_display_x_offset                           equ 0FF68h ; relative to generic display buffer
 string_width_bytes                                 equ 0FF6Ah ; rendered strings are copied from buffer to VRAM by 8px columns
-byte_FF6C                                          equ 0FF6Ch
+save_name                                          equ 0FF6Ch
 keyboard_alt_mode_flag                             equ 0FF74h
 soundFX_request                                    equ 0FF75h
 font_highlight_flag                                equ 0FF77h
@@ -585,28 +592,38 @@ disk_swap_suppressed                               equ 0FF78h
 fn_kbd_chain_ptr                                   equ 0FF79h
 
 ; seg1 offsets (code seg + 1000h)
+town_msd_music                                     equ 3000h
+mman_cman_gfx                                      equ 4000h
+tman_gfx                                           equ 6000h ; hero in town
+fman_gfx                                           equ 6000h ; hero in dungeon
 ; functions like draw_tile_to_screen assume that there are packed tiles (48 bytes each) at 8000h
-; other functions like decompress_sprite expect the descriptor table at 8000h:
-packed_tile_ptr                                    equ 08000h
-tile_anim_count_table                              equ 08000h ; pointer to a table
+; other functions like decompress_patterns expect the descriptor table at 8000h:
+packed_tile_ptr                                    equ 8000h
+tile_anim_count_table                              equ 8000h ; pointer to a table
     ; one byte per tile type
     ; `0` = no animation, non-zero = number of animation frames. 
     ; Also used as the loaded-sprites base for `tile_render_and_animate`
-tile_animation_replacement_table                   equ 08004h ; pointer to a table
+table_8002                                         equ 8002h
+tile_animation_replacement_table                   equ 8004h ; pointer to a table
     ; the table at that address is a counted list of (old_tile, new_tile) byte pairs terminated by 0FFh
-packed_tile_graphics                               equ 08100h ; 48 bytes per tile (6 bits per pixel × 8 pixels × 8 rows)
+packed_tile_graphics                               equ 8100h ; 48 bytes per tile (6 bits per pixel × 8 pixels × 8 rows)
+sword_animation_gfx                                equ 0B000h
+sword_reachability_tables                          equ 0B002h
 sprite_transparency_masks                          equ 0D000h
     ; 1 byte per tile-row of the animated sprite, 
     ; 8 bits per row selecting which of the 8 pixels are drawn from the sprite vs the background
-unknown2_sprite_pointer                            equ 0E202h
-shield_sprite_pointer                              equ 0E204h
-unknown3_sprite_pointer                            equ 0E206h
-sword_sprite_pointer                               equ 0E208h
-unknown_sprite_pointer                             equ 0E20Ah
-unknown1_sprite_pointer                            equ 0E20Ch
+sword_item_gfx                                     equ 0E200h
+shield_item_gfx                                    equ 0E202h
+crest_item_gfx                                     equ 0E204h
+magic_spell_item_gfx                               equ 0E206h
+key_item_gfx                                       equ 0E208h
+magic_potion_item_gfx                              equ 0E20Ah
+wearable_item_gfx                                  equ 0E20Ch
 
 
 ; seg2 offsets (code seg + 2000h)
+magic_grp_sprites                                  equ 0
+sword_grp_sprites                                  equ 1800h
 or_blit_buffer                                     equ 6000h
 and_blit_buffer                                    equ 8000h
 mcga_driver_buffer                                 equ 9000h

@@ -21,9 +21,9 @@ start:
                 dw offset Print_Gold_Decimal
                 dw offset Print_Magic_Left_Decimal
                 dw offset Print_ShieldHP_Decimal
-                dw offset Render_Sprite_18Rows_From_Seg1
-                dw offset Render_Entity_Sprite1
-                dw offset Render_Mask_Sprite
+                dw offset Render_Sword_Item_Sprite_20x18
+                dw offset Render_Magic_Spell_Item_Sprite_16x16
+                dw offset Render_Shield_Item_Sprite_16x16
                 dw offset Render_Font_Glyph ; AL: ASCII character code
                                         ; AH: Palette/colour index
                                         ; BX: X pixel coordinate in framebuffer
@@ -48,12 +48,12 @@ start:
                 dw offset Render_Decimal_Digits ; al: marginTop
                                         ; ah: marginLeft4
                 dw offset Convert_32bit_To_Decimal_Digits
-                dw offset Render_Sprite_With_Fallback
-                dw offset Render_Sprite_With_Fallback_Alt
+                dw offset Render_Wearable_Item_Sprite_16x16
+                dw offset Render_Magic_Potion_Item_Sprite_16x16
                 dw offset Render_C_String ; bh: left margin; bl: top margin
-                dw offset Render_Sword_Sprite
-                dw offset Render_Shield_Sprite
-                dw offset Render_Spell_Icon
+                dw offset Render_Key_Item_Sprite_16x16
+                dw offset Render_Crest_Item_Sprite_16x16
+                dw offset Render_Tear_Icon
                 dw offset Fade_To_Black_Dithered
                 dw offset Clear_Screen
                 dw offset Reassemble_3_Planes_To_Packed_Bitmap ; si: src
@@ -209,7 +209,7 @@ clear_rectangular_region endp
 Clear_Viewport  proc near
                 mov     ax, 0A000h
                 mov     es, ax
-                mov     di, 11B0h
+                mov     di, viewport_top_left_vram_addr
                 mov     cx, 8
 
 loc_2111:                               ; ...
@@ -249,7 +249,7 @@ Fade_To_Black_Dithered proc near
 
 loc_213B:                               ; ...
                 push    cx
-                mov     di, 11B0h
+                mov     di, viewport_top_left_vram_addr
                 lodsb
                 push    di
                 mov     cx, 48h ; 'H'
@@ -647,7 +647,7 @@ render_glyph    proc near               ; ...
                 shl     ax, 1
                 shl     ax, 1
                 mov     si, ax
-                add     si, ds:letters_font
+                add     si, ds:thin_font
                 push    di
                 mov     bl, 8
 
@@ -745,14 +745,14 @@ Print_Gold_Decimal endp
 
 
 ; Prints current magic spell count as decimal number
-; No parameters (uses global current_magic_spell and magic_spells table)
+; No parameters (uses global current_magic_spell and spells_espada table)
 
 Print_Magic_Left_Decimal proc near
                 push    ds
                 xor     bx, bx
                 mov     bl, cs:current_magic_spell
                 dec     bl
-                mov     al, cs:magic_spells[bx]
+                mov     al, cs:spells_espada[bx]
                 xor     ah, ah
                 xor     dx, dx
                 call    Prepare_Decimal_Display_Buffer
@@ -1026,24 +1026,24 @@ _Render_Single_Digit_Glyph endp
 ; =============== S U B R O U T I N E =======================================
 
 
-; Renders 18-row sprite from seg1:0E200h with 3-plane decompression
+; Renders 20x18 sword item sprite with 3-plane decompression
 ; AL: sprite index
 ; BH: row offset
-
-Render_Sprite_18Rows_From_Seg1 proc near
+; itemp.grp
+Render_Sword_Item_Sprite_20x18 proc near
                 push    ds
                 mov     ds, word ptr cs:seg1
                 dec     al
                 xor     ah, ah
-                mov     cx, 10Eh
+                mov     cx, 15*18
                 mul     cx
-                add     ax, ds:0E200h
+                add     ax, ds:sword_item_gfx
                 mov     si, ax
                 xor     ax, ax
                 mov     al, bh
                 mov     bh, ah
                 push    ax
-                mov     ax, 140h
+                mov     ax, 320
                 mul     bx
                 pop     bp
                 add     bp, bp
@@ -1052,16 +1052,15 @@ Render_Sprite_18Rows_From_Seg1 proc near
                 add     bp, ax
                 mov     ax, 0A000h
                 mov     es, ax
-                mov     cx, 12h
-
-loc_257E:                               ; ...
+                mov     cx, 18
+next_row_of_18:
                 push    cx
                 mov     ax, [si]
                 xchg    ah, al
                 mov     cs:plane1, ax
                 mov     ax, [si+8]
                 mov     cs:plane2, ax
-                mov     ax, [si+0Ah]
+                mov     ax, [si+10]
                 xchg    ah, al
                 mov     cs:plane3, ax
                 call    _Decode_4_Pixels_From_3_Planes
@@ -1071,7 +1070,7 @@ loc_257E:                               ; ...
                 mov     cs:plane1, ax
                 mov     ax, [si+6]
                 mov     cs:plane2, ax
-                mov     ax, [si+0Ch]
+                mov     ax, [si+12]
                 xchg    ah, al
                 mov     cs:plane3, ax
                 call    _Decode_4_Pixels_From_3_Planes
@@ -1081,69 +1080,66 @@ loc_257E:                               ; ...
                 mov     cs:plane1, ax
                 mov     ah, [si+5]
                 mov     cs:plane2, ax
-                mov     ah, [si+0Eh]
+                mov     ah, [si+14]
                 mov     cs:plane3, ax
                 call    _Decode_4_Pixels_From_3_Planes
-                add     si, 0Fh
-                add     bp, 12Ch
+                add     si, 15
+                add     bp, 300
                 pop     cx
-                loop    loc_257E
+                loop    next_row_of_18
                 pop     ds
                 retn
-Render_Sprite_18Rows_From_Seg1 endp
+Render_Sword_Item_Sprite_20x18 endp
 
 
 ; =============== S U B R O U T I N E =======================================
 
 
-; Renders entity sprite from seg1:0E206h; 16 rows
+; Renders magic spell item sprite with 3-plane decompression
 ; AL: sprite index
-
-Render_Entity_Sprite1 proc near
+Render_Magic_Spell_Item_Sprite_16x16 proc near
                 push    ds
                 mov     ds, word ptr cs:seg1
                 dec     al
                 xor     ah, ah
                 mov     cx, 0C0h
                 mul     cx
-                add     ax, ds:0E206h
+                add     ax, ds:magic_spell_item_gfx
                 mov     si, ax
                 call    Render_3plane_16x16_Sprite
                 pop     ds
                 retn
-Render_Entity_Sprite1 endp
+Render_Magic_Spell_Item_Sprite_16x16 endp
 
 
 ; =============== S U B R O U T I N E =======================================
 
 
-; Renders mask/overlay sprite from seg1:0E202h; 16 rows
-; AL: sprite index
-
-Render_Mask_Sprite proc near
+; Renders shield item sprite with 3-plane decompression
+; AL: sprite index, starts at 1
+Render_Shield_Item_Sprite_16x16 proc near
                 push    ds
                 mov     ds, word ptr cs:seg1
                 dec     al
                 xor     ah, ah
-                mov     cx, 0C0h
+                mov     cx, 16*12
                 mul     cx
-                add     ax, ds:0E202h
+                add     ax, ds:shield_item_gfx
                 mov     si, ax
                 call    Render_3plane_16x16_Sprite
                 pop     ds
                 retn
-Render_Mask_Sprite endp
+Render_Shield_Item_Sprite_16x16 endp
 
 
 ; =============== S U B R O U T I N E =======================================
 
 
-; Conditional sprite render; AL=0 uses built-in table at builtin_sprite_16rows, else seg1:0E20Ch
-; AL: sprite index (0 = use built-in, 1+ = use seg1)
-
-Render_Sprite_With_Fallback proc near
+; Render shoes/cape item sprite with 3-plane decompression
+; AL: sprite index (0 = built-in "no use" icon, 1..5 = use seg1 buffer)
+Render_Wearable_Item_Sprite_16x16 proc near
                 push    ds
-                mov     si, offset builtin_sprite_16rows
+                mov     si, offset no_use_icon
                 or      al, al
                 jz      short loc_2632
                 mov     ds, word ptr cs:seg1
@@ -1151,25 +1147,24 @@ Render_Sprite_With_Fallback proc near
                 xor     ah, ah
                 mov     cx, 0C0h
                 mul     cx
-                add     ax, ds:0E20Ch
+                add     ax, ds:wearable_item_gfx
                 mov     si, ax
 
 loc_2632:
                 call    Render_3plane_16x16_Sprite
                 pop     ds
                 retn
-Render_Sprite_With_Fallback endp
+Render_Wearable_Item_Sprite_16x16 endp
 
 
 ; =============== S U B R O U T I N E =======================================
 
 
-; Conditional sprite render; AL=0 uses built-in table at builtin_sprite_16rows, else seg1:0E20Ah
-; AL: sprite index (0 = use built-in, 1+ = use seg1)
-
-Render_Sprite_With_Fallback_Alt proc near
+; Magic potion sprite render with 3-plane decompression
+; AL: sprite index (0 = built-in "no use" icon, 1..8 = use seg1 buffer)
+Render_Magic_Potion_Item_Sprite_16x16 proc near
                 push    ds
-                mov     si, offset builtin_sprite_16rows
+                mov     si, offset no_use_icon
                 or      al, al
                 jz      short loc_2653
                 mov     ds, word ptr cs:seg1
@@ -1177,16 +1172,16 @@ Render_Sprite_With_Fallback_Alt proc near
                 xor     ah, ah
                 mov     cx, 0C0h
                 mul     cx
-                add     ax, ds:0E20Ah
+                add     ax, ds:magic_potion_item_gfx
                 mov     si, ax
 loc_2653:
                 call    Render_3plane_16x16_Sprite
                 pop     ds
                 retn
-Render_Sprite_With_Fallback_Alt endp
+Render_Magic_Potion_Item_Sprite_16x16 endp
 
 ; Built-in 16-row sprite data table (192 bytes = 16 rows × 12 bytes)
-builtin_sprite_16rows:
+no_use_icon:
                 db  0, 0, 0, 0, 0FCh, 0FFh, 0FFh, 3Fh, 2Ah, 0AAh, 0AAh, 0A8h ; ...
                 db  0, 0, 0, 0, 3, 0, 0, 0C0h, 80h, 0, 0, 2
                 db  0Eh, 38h, 0F8h, 0, 3, 0, 0, 0C0h, 82h, 8, 8, 2
@@ -1207,41 +1202,39 @@ builtin_sprite_16rows:
 ; =============== S U B R O U T I N E =======================================
 
 
-; Renders sword sprite from seg1:0E208h; 16 rows
-; AH: sword type index
-
-Render_Sword_Sprite proc near
+; Renders key item sprite with 3-plane decompression
+; AL: key type index
+Render_Key_Item_Sprite_16x16 proc near
                 push    ds
                 mov     ds, word ptr cs:seg1
                 xor     ah, ah
-                mov     cx, 0C0h
+                mov     cx, 16*12
                 mul     cx
-                add     ax, ds:0E208h
+                add     ax, ds:key_item_gfx
                 mov     si, ax
                 call    Render_3plane_16x16_Sprite
                 pop     ds
                 retn
-Render_Sword_Sprite endp
+Render_Key_Item_Sprite_16x16 endp
 
 
 ; =============== S U B R O U T I N E =======================================
 
 
-; Renders shield sprite from seg1:0E204h; 16 rows
+; Renders crest item sprite with 3-plane decompression
 ; AH: shield type index
-
-Render_Shield_Sprite proc near
+Render_Crest_Item_Sprite_16x16 proc near
                 push    ds
                 mov     ds, word ptr cs:seg1
                 xor     ah, ah
-                mov     cx, 0C0h
+                mov     cx, 16*12
                 mul     cx
-                add     ax, ds:0E204h
+                add     ax, ds:crest_item_gfx
                 mov     si, ax
                 call    Render_3plane_16x16_Sprite
                 pop     ds
                 retn
-Render_Shield_Sprite endp
+Render_Crest_Item_Sprite_16x16 endp
 
 
 ; =============== S U B R O U T I N E =======================================
@@ -1254,7 +1247,6 @@ Render_Shield_Sprite endp
 ; BH: (x-2)/4
 ; Output:
 ; BP: computed destination screen address
-
 Render_3plane_16x16_Sprite proc near
                 xor     ax, ax
                 mov     al, bh
@@ -1293,7 +1285,7 @@ loc_2766:
                 call    _Decode_4_Pixels_From_3_Planes
                 call    _Decode_4_Pixels_From_3_Planes
                 add     si, 12
-                add     bp, 130h     ; next pixel row
+                add     bp, 320-16     ; next pixel row
                 pop     cx
                 loop    loc_2766     ; 16 pixel rows
                 retn
@@ -1305,7 +1297,7 @@ Render_3plane_16x16_Sprite endp
 
 _Decode_4_Pixels_From_3_Planes proc near
                 mov     cx, 4
-loc_27B5:
+next_pixel_of_4:
                 xor     ax, ax
                 rol     cs:plane3, 1
                 adc     ax, ax
@@ -1321,7 +1313,7 @@ loc_27B5:
                 adc     ax, ax
                 mov     es:[bp+0], al  ; render pixel to VRAM at bp addr
                 inc     bp
-                loop    loc_27B5
+                loop    next_pixel_of_4
                 retn
 _Decode_4_Pixels_From_3_Planes endp
 
@@ -1365,14 +1357,14 @@ loc_2809:                               ; ...
                 sub     al, 20h ; ' '
                 add     ax, ax
                 add     ax, ax
-                add     ax, ax
-                add     ax, ds:0F500h   ; letters_font - 4
+                add     ax, ax          ; glyphId*8
+                add     ax, word ptr ds:bold_font_8x8
                 push    ax
                 mov     al, bl
                 and     al, 3
                 add     al, al
                 mov     ds:shadow_color, al
-                mov     ax, 140h
+                mov     ax, 320
                 xor     ch, ch
                 mul     cx
                 add     ax, bx
@@ -1382,22 +1374,22 @@ loc_2809:                               ; ...
                 mov     es, ax
                 mov     cx, 8
 
-loc_283A:                               ; ...
+loc_283A:
                 push    cx
                 lodsb
                 mov     cx, 8
 
-loc_283F:                               ; ...
-                add     al, al
-                jnb     short loc_284B
+next_bit:
+                add     al, al          ; al bit 7
+                jnb     short skip_zero_bit
                 mov     dl, cs:primary_color
                 mov     es:[di], dl
 
-loc_284B:                               ; ...
+skip_zero_bit:
                 inc     di
-                loop    loc_283F
+                loop    next_bit
                 pop     cx
-                add     di, 138h
+                add     di, 320-8
                 loop    loc_283A
                 pop     ds
                 retn
@@ -1746,7 +1738,7 @@ _Draw_Status_Frame_Lines endp
 ; BH: left margin
 ; BL: top margin
 
-Render_Spell_Icon proc near
+Render_Tear_Icon proc near
                 push    ds
                 push    si
                 push    cs
@@ -1758,7 +1750,7 @@ Render_Spell_Icon proc near
                 mov     al, bh
                 mov     bh, ah
                 push    ax
-                mov     ax, 140h
+                mov     ax, 320
                 mul     bx
                 pop     di
                 add     di, di
@@ -1767,32 +1759,30 @@ Render_Spell_Icon proc near
                 mov     ax, 0A000h
                 mov     es, ax
                 mov     si, ds:off_2A5D[si]
-                mov     cx, 0Dh
-
-loc_2A45:                               ; ...
+                mov     cx, 13
+next_row_of_13:
                 push    cx
-                mov     cx, 10h
+                mov     cx, 16
 
-loc_2A49:                               ; ...
+next_pixel_of_16:
                 lodsb
-                cmp     al, 80h
-                jz      short loc_2A50
-                stosb
+                cmp     al, 80h     ; transparent pixel
+                je      short skip_opaque
+                stosb               ; put pixel in VRAM
                 dec     di
-
-loc_2A50:                               ; ...
+skip_opaque:
                 inc     di
-                loop    loc_2A49
+                loop    next_pixel_of_16
                 pop     cx
-                add     di, 130h
-                loop    loc_2A45
+                add     di, 320-16
+                loop    next_row_of_13
                 pop     si
                 pop     ds
                 retn
-Render_Spell_Icon endp
+Render_Tear_Icon endp
 
 ; ---------------------------------------------------------------------------
-off_2A5D        dw offset byte_2A61     ; ...
+off_2A5D        dw offset byte_2A61
                 dw offset byte_2B31
 byte_2A61       db 80h, 80h, 80h, 80h, 80h, 80h, 0, 0, 0, 0, 80h, 0, 80h
                 db 80h, 80h, 80h, 80h, 80h, 80h, 80h, 0, 0, 11h, 11h, 11h, 12h
@@ -1868,35 +1858,35 @@ Clear_Screen endp
 ; si: src
 ; cx: number of 48-byte elements to reassemble
 
-; Reassembles 3-plane sprite data into packed 6bpp bitmap in seg3
-; SI: source offset in seg3 (3-plane data)
-; CX: number of 48-byte elements to reassemble
-
+; Reassembles 3-plane sprite data into packed 6bpp bitmap in place
+; DS:SI: source (3-plane data)
+; CX: number of 48-byte elements to reassemble (24 for magic spells)
+; Output: packed 6bpp bitmap in DS:SI
+; Uses seg3:3000h as temporary buffer
 Reassemble_3_Planes_To_Packed_Bitmap proc near
                 push    cx
                 push    ds
                 push    si
                 mov     ax, cs
                 add     ax, 3000h
-                mov     es, ax
-                mov     ax, 30h ; '0'
+                mov     es, ax          ; seg3
+                mov     ax, 48
                 mul     cx
                 mov     cx, ax
                 mov     di, 0
-                rep movsb
-                pop     di
+                rep movsb              ; copy to seg3:0 buffer
+                pop     di             ; es:di = source
                 pop     es
                 pop     cx
                 mov     ax, cs
                 add     ax, 3000h
                 mov     ds, ax
                 mov     si, 0
-
-loc_2C4D:                               ; ...
+next_48_bytes:
                 push    cx
                 call    assemble_48_bytes
                 pop     cx
-                loop    loc_2C4D
+                loop    next_48_bytes
                 retn
 Reassemble_3_Planes_To_Packed_Bitmap endp
 
@@ -1904,10 +1894,9 @@ Reassemble_3_Planes_To_Packed_Bitmap endp
 ; =============== S U B R O U T I N E =======================================
 
 
-assemble_48_bytes proc near             ; ...
+assemble_48_bytes proc near
                 mov     cx, 8
-
-loc_2C58:                               ; ...
+eight_times:
                 push    cx
                 lodsw
                 xchg    ah, al
@@ -1920,7 +1909,7 @@ loc_2C58:                               ; ...
                 mov     cs:plane3, ax
                 call    assemble_48_bits
                 pop     cx
-                loop    loc_2C58
+                loop    eight_times
                 retn
 assemble_48_bytes endp
 
@@ -1928,10 +1917,9 @@ assemble_48_bytes endp
 ; =============== S U B R O U T I N E =======================================
 
 
-assemble_48_bits proc near              ; ...
+assemble_48_bits proc near
                 mov     cx, 2
-
-loc_2C78:                               ; ...
+two_times:
                 call    assemble_3_bits
                 call    assemble_3_bits
                 call    assemble_3_bits
@@ -1947,7 +1935,7 @@ loc_2C78:                               ; ...
                 call    assemble_3_bits
                 call    assemble_3_bits
                 stosb
-                loop    loc_2C78
+                loop    two_times
                 retn
 assemble_48_bits endp
 
@@ -1955,7 +1943,7 @@ assemble_48_bits endp
 ; =============== S U B R O U T I N E =======================================
 
 
-assemble_3_bits proc near               ; ...
+assemble_3_bits proc near
                 rol     cs:plane3, 1
                 adc     ax, ax
                 rol     cs:plane2, 1

@@ -72,7 +72,13 @@ Render_Viewport_Tiles_proc                         equ 3012h
 Copy_Tile_Buffer_To_VRAM_proc                      equ 3014h
 Update_Local_Attribute_Cache_proc                  equ 3016h
 Render_Viewport_Border_Walls_proc                  equ 3018h
-Load_Sprite_Sheet_proc                             equ 301Ah
+
+; Input: none (uses global current_magic_spell)
+; Reads corresponding sprite group fron seg2:0 buffer to seg1:9350h
+; Output: Loads sprite sheet for current_magic_spell
+; DS:SI -> seg1:9350h buffer
+Load_Magic_Spell_Sprite_Group_proc                 equ 301Ah
+
 Render_Animated_Tile_Strip_proc                    equ 301Ch
 Render_Tilemap_With_Palette_proc                   equ 301Eh
 Calculate_Tile_VRAM_Address_proc                   equ 3020h

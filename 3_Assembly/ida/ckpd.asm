@@ -1,3 +1,4 @@
+include common.inc
                 .286
                 .model tiny
 
@@ -396,7 +397,7 @@ mode4_mcga:
                 mov     ax, 0A000h
                 mov     es, ax
                 mov     ds, ax
-                mov     si, 11B0h
+                mov     si, viewport_top_left_vram_addr
                 mov     di, 1220h
                 mov     ah, 16
 

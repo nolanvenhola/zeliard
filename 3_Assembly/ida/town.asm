@@ -8,7 +8,7 @@ town            segment byte public 'CODE' use16
                 org 6000h
 start:
                 dw offset town_entry_normal
-town_exports    dw offset town_entry_init         ; primary town init, called from fight.bin
+town_exports    dw offset town_entry_init           ; primary town init, called from fight.bin
                 dw offset render_menu_dialog        ; render FF-terminated dialog text
                 dw offset convert_ax_to_decimal     ; convert AX to 7-digit decimal string
                 dw offset show_yes_no_dialog        ; Yes/No confirmation dialog
@@ -37,7 +37,6 @@ town_entry_init   proc near
 ; town_entry_normal — Town re-entry after transitions (sage resurrection,
 ;   falter warp). Clears disable_edge_scroll to enable edge-scroll handler.
 ;   Input: (none — state already set in shared memory)
-
 town_entry_normal:
                 mov     cs:disable_edge_scroll, 0
 
@@ -47,9 +46,8 @@ town_entry_common:
                 mov     ax, cs
                 add     ax, 2000h
                 mov     es, ax
-                assume es:nothing
                 mov     di, 7000h
-                mov     cx, 0A4h
+                mov     cx, 164
                 call    cs:apply_sprite_mask_proc
                 cli
                 mov     sp, 2000h
@@ -61,16 +59,14 @@ town_entry_common:
                 test    byte ptr ds:is_death_already_processed, 0FFh
                 jz      short loc_6061
                 mov     byte ptr ds:invincibility_flag, 0
-
-loc_6061:                               ; ...
+loc_6061:
                 call    cs:Clear_Viewport_proc
-                mov     si, ds:mdt_buffer
-                inc     si
-
-loc_606B:                               ; ...
-                lodsb
+                mov     si, ds:town_descriptor_addr
+                inc     si   ; skip MSD index
+skip_til_ff:
+                lodsb        ; [1]: NPC type; 0 -> mman.grp, 1 -> cman.grp
                 inc     al
-                jnz     short loc_606B
+                jnz     short skip_til_ff
                 lodsb
                 mov     ds:town_has_middle_layer, al
                 lodsb
@@ -159,11 +155,10 @@ loc_6127:                               ; ...
                 call    cs:Print_ShieldHP_Decimal_proc
 
 loc_613F:                               ; ...
-                mov     si, ds:mdt_buffer ; =c6d3 (town descriptor?): 00 00 ff 00 01
+                mov     si, ds:town_descriptor_addr
                 inc     si
-
-skip_until_ff:                          ; ...
-                lodsb                   ; townDescr[1]
+skip_until_ff:
+                lodsb
                 inc     al
                 jnz     short skip_until_ff
                 inc     si
@@ -1617,7 +1612,7 @@ load_patterns_and_call_background        proc near
                 call    load_and_decompress_patterns
 
 call_background_code:
-                mov     al, ds:segmented_load_flag
+                mov     al, ds:video_drv_id
                 push    ds
                 call    dword ptr ds:bg_entry_offset
                 pop     ds
@@ -1641,23 +1636,21 @@ load_town_background        proc near
                 add     si, offset town_bg_load_desc
                 mov     ax, cs
                 add     ax, 2000h
-                mov     ds:bg_entry_segment, ax
+                mov     ds:bg_entry_segment, ax   ; seg2
                 mov     es, ax
                 mov     di, 3300h
-                mov     al, 3
-                call    cs:res_dispatcher_proc ; fn0_buffer_swap_and_go
-                                        ; fn1_load_mdt_idx_ah
-                                        ; ...
+                mov     al, 3     ; fn3_read_virtual_file
+                call    cs:res_dispatcher_proc
                 retn
 load_town_background        endp
 
 ; ---------------------------------------------------------------------------
-town_bg_load_desc       dw 901h                 ; ...
-aYmpdBin        db 'YMPD.BIN',0
-                dw 0A01h
-aCkpdBin        db 'CKPD.BIN',0
-bg_entry_offset       dw 3300h                ; ...
-bg_entry_segment       dw 3000h                ; ...
+town_bg_load_desc  dw 901h                 ; ...
+aYmpdBin           db 'YMPD.BIN',0
+                   dw 0A01h
+aCkpdBin           db 'CKPD.BIN',0
+bg_entry_offset    dw 3300h                ; ...
+bg_entry_segment   dw 3000h                ; ...
 
 ; =============== S U B R O U T I N E =======================================
 
@@ -2180,24 +2173,22 @@ load_town_transition_data        proc near               ; Load transition data 
                                         ; ...
                 pop     ax
                 push    ax
-                mov     cl, 0Bh
+                mov     cl, 11
                 mul     cl
                 mov     si, ax
-                add     si, offset town_npc_grp_desc
+                add     si, offset vfs_mman_grp
                 mov     es, cs:seg1
                 mov     di, 4000h
-                mov     al, 2
-                call    cs:res_dispatcher_proc ; fn0_buffer_swap_and_go
-                                        ; fn1_load_mdt_idx_ah
-                                        ; ...
+                mov     al, 2    ; fn2_segmented_load
+                call    cs:res_dispatcher_proc
                 push    ds
                 mov     ds, cs:seg1
                 mov     si, 4100h
                 mov     ax, cs
                 add     ax, 2000h
-                mov     es, ax
+                mov     es, ax    ; seg2
                 mov     di, 7000h
-                mov     cx, 0A0h
+                mov     cx, 160
                 call    cs:apply_sprite_mask_proc
                 pop     ds
                 pop     ax
@@ -2211,41 +2202,39 @@ locret_6D87:                            ; ...
 load_town_transition_data        endp
 
 ; ---------------------------------------------------------------------------
-town_npc_grp_desc        db 1                    ; town NPC sprite group descriptors
+vfs_mman_grp    db 1                    ; town NPC sprite group descriptors
                 db 1Eh
 aMmanGrp        db 'MMAN.GRP',0
-                db 1
+vfs_cman_grp    db 1
                 db 1Fh
 aCmanGrp        db 'CMAN.GRP',0
 
 ; =============== S U B R O U T I N E =======================================
 
-
-load_and_decompress_patterns proc near       ; Load and decompress pattern tile group
-                ; Loads the pattern group file (CPAT/MPAT/DPAT) indexed by ds:pat_id
-                ; via res_dispatcher_proc, adjusts segment offsets, then calls
-                ; decompress_sprite_proc to unpack the tiles.
-                ; Input: ds:pat_id (pattern group index 0-2)
-                ; Output: patterns loaded and decompressed to seg1:8000h
-                ; Modifies: ax, si, di, es
+; Load and decompress pattern tile group
+; Loads the pattern group file (CPAT/MPAT/DPAT) indexed by ds:pat_id
+; via res_dispatcher_proc, adjusts segment offsets, then calls
+; decompress_patterns_proc to unpack the tiles.
+; Input: ds:pat_id (pattern group index 0-2)
+; Output: patterns loaded and decompressed to seg1:8000h
+; Modifies: ax, si, di, es
+load_and_decompress_patterns proc near       
                 mov     al, 11
                 mul     ds:pat_id
                 add     ax, offset pattern_grp_desc
                 mov     si, ax
                 mov     es, cs:seg1
-                mov     di, 8000h
-                mov     al, 2
-                call    cs:res_dispatcher_proc ; fn0_buffer_swap_and_go
-                                        ; fn1_load_mdt_idx_ah
-                                        ; ...
-                add     word ptr es:[di], 8000h
-                add     word ptr es:[di+2], 8000h
-                add     word ptr es:[di+4], 8000h
-                jmp     cs:decompress_sprite_proc
+                mov     di, tile_anim_count_table
+                mov     al, 2           ; fn2_segmented_load
+                call    cs:res_dispatcher_proc
+                add     word ptr es:[di], tile_anim_count_table
+                add     word ptr es:[di+2], tile_anim_count_table
+                add     word ptr es:[di+4], tile_anim_count_table
+                jmp     cs:decompress_patterns_proc
 load_and_decompress_patterns endp
 
 ; ---------------------------------------------------------------------------
-pattern_grp_desc        db 1                    ; ...
+pattern_grp_desc db 1
                 db 22h
 aCpatGrp        db 'CPAT.GRP',0
 mpat_grp        db 1
@@ -2258,31 +2247,29 @@ aDpatGrp        db 'DPAT.GRP',0
 ; =============== S U B R O U T I N E =======================================
 
 
-load_hero_town_sprite        proc near               ; Load hero sprite for town mode
-                ; Loads TMAN.GRP sprite group to seg1:6000h, then applies
-                ; sprite mask from seg1:6000h to cs+2000h:8000h for town rendering.
-                ; Input: none (uses hardcoded tman_grp descriptor)
-                ; Output: hero sprite loaded and masked to memory
-                ; Modifies: ax, si, di, es, ds
+; Loads TMAN.GRP sprite group to seg1:6000h, then applies
+; sprite mask from seg1:6000h to seg2:8000h for town rendering.
+; Input: none (uses hardcoded tman_grp descriptor)
+; Output: hero sprite loaded and masked to memory
+; Modifies: ax, si, di, es, ds
+load_hero_town_sprite   proc near               ; Load hero sprite for town mode
                 mov     es, cs:seg1
                 mov     si, offset tman_grp
-                mov     di, 6000h
-                mov     al, 2
-                call    cs:res_dispatcher_proc ; fn0_buffer_swap_and_go
-                                        ; fn1_load_mdt_idx_ah
-                                        ; ...
+                mov     di, tman_gfx
+                mov     al, 2   ; fn2_segmented_load
+                call    cs:res_dispatcher_proc
                 push    ds
                 mov     ds, cs:seg1
-                mov     si, 6000h
+                mov     si, tman_gfx
                 mov     ax, cs
                 add     ax, 2000h
-                mov     es, ax
+                mov     es, ax   ; seg2
                 mov     di, 8000h
-                mov     cx, 2Eh ; '.'
+                mov     cx, 46
                 call    cs:apply_sprite_mask_proc
                 pop     ds
                 retn
-load_hero_town_sprite        endp
+load_hero_town_sprite   endp
 
 ; ---------------------------------------------------------------------------
 tman_grp        db 1                    ; hero town sprite descriptor
@@ -2438,7 +2425,7 @@ loc_6F9D:                               ; ...
                 mov     byte ptr ds:place_map_id, ah
                 mov     al, 1
                 call    cs:res_dispatcher_proc ; res_dispatcher
-                mov     si, offset town_npc_grp_desc
+                mov     si, offset vfs_mman_grp
                 mov     es, cs:seg1
                 mov     di, 4000h
                 mov     al, 2
@@ -3468,7 +3455,7 @@ restore_game    proc near               ; restores game from .usr save file
 ; ---------------------------------------------------------------------------
 
 loc_75C6:                               ; ...
-                mov     si, offset byte_FF6C
+                mov     si, offset save_name
                 mov     di, offset save_name_buffer
                 mov     cx, 8
 

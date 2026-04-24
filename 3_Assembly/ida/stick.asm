@@ -1455,7 +1455,7 @@ fn2_segmented_load proc near
                 mov     cx, 4
                 call    read_vfile_to_buffer
                 mov     cx, es:0
-                cmp     byte ptr cs:segmented_load_flag, 0
+                cmp     byte ptr cs:video_drv_id, 0
                 jz      short loc_B5B
                 mov     dx, cx
                 mov     al, 1
@@ -1531,7 +1531,7 @@ fn5_direct_load proc near
                 mov     cx, 4
                 call    read_vfile_to_buffer
                 mov     cx, es:0
-                test    byte ptr cs:direct_load_seek_flag, 0FFh
+                test    byte ptr cs:mt32_enabled, 0FFh
                 jnz     short loc_BEF
                 mov     dx, cx
                 mov     al, 1
