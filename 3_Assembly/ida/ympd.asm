@@ -1779,7 +1779,6 @@ ground1         db 69h, 0Ch, 6Fh, 63h, 55h, 55h, 55h, 55h, 55h, 55h, 55h ; ...
                 db 75h, 0FFh, 0A4h, 0ADh, 2Ah, 0AAh, 0EFh, 0BFh, 0D5h
                 db 71h, 0FDh, 5Fh, 5Fh, 5Fh, 55h, 0DDh, 7Dh, 7Fh, 0FFh
                 db 0D7h, 0FFh, 5Fh, 57h, 0CDh, 77h, 7Eh, 0B1h, 5Fh, 75h
-ympd          ends
-
+ympd            ends
 
                 end     start

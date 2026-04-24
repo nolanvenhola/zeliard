@@ -1,8 +1,6 @@
 include common.inc
                 .286
                 .model small
-; Warning! This version is not original
-; It is modified to run unpacked game
 
 stick           segment byte public 'CODE' use16
                 assume cs:stick
@@ -1359,7 +1357,8 @@ filename_buf             db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 ; =============== S U B R O U T I N E =======================================
 
-
+; DS:SI -> points to file descriptor
+; ES:DI -> destination buffer to unpack
 res_dispatcher  proc near     
                 cmp     al, 0
                 jnz     short loc_A8B
@@ -1384,7 +1383,7 @@ loc_A8B:
                 mov     cl, al
                 mov     bp, cx
                 add     bp, bp
-                call    cs:off_ACA[bp]
+                call    cs:func_selector[bp]
 
 skip_unknown:                 
                 pop     bx
@@ -1403,11 +1402,11 @@ skip_unknown:
 res_dispatcher  endp
 
 ; ---------------------------------------------------------------------------
-off_ACA         dw offset fn1_load_mdt_idx_ah ; ...
+func_selector   dw offset fn1_load_mdt_idx_ah ; ...
                 dw offset fn2_segmented_load
                 dw offset fn3_read_virtual_file ; load binary resource to dest buffer
                 dw offset fn4_load_sword_graphics ; AH: sword id (0..6)
-                dw offset fn5_direct_load
+                dw offset fn5_load_music
                 dw offset fn6_get_virtual_file_size
 
 ; =============== S U B R O U T I N E =======================================
@@ -1444,35 +1443,36 @@ fn2_segmented_load proc near
                 mov     ax, cs
                 add     ax, 3000h
                 mov     es, ax          ; seg3
-                mov     word ptr cs:virt_file_buffer+2, ax
-                call    read_vfile_size
+                mov     word ptr cs:virt_file_buffer+2, ax ; seg3
+                call    read_vfile_size ; to virt_file_size_lo, virt_file_size_hi
                 mov     bx, ax          ; handle
-                mov     cx, 1
-                call    read_vfile_to_buffer
+                mov     cx, 1           ; read 1 byte
+                call    read_vfile_to_buffer  ; virt_file_buffer -> seg3:0
                 mov     cx, cs:virt_file_size_lo
                 dec     cx
                 cmp     byte ptr es:0, 0 ; seg3:0
-                jz      short loc_B5B
+                jz      short loc_B5B    ; 1st byte is 0 => go straight to reading contents
                 mov     word ptr cs:virt_file_buffer, 0
                 mov     cx, 4
-                call    read_vfile_to_buffer
+                call    read_vfile_to_buffer ; virt_file_buffer -> seg3:0
                 mov     cx, es:0
-                cmp     byte ptr cs:segmented_load_flag, 0
-                jz      short loc_B5B
-                mov     dx, cx
+                cmp     byte ptr cs:video_drv_id, 0  ; 0: ega
+                jz      short loc_B5B   ; ega: read all the contents
+                mov     dx, cx          ; otherwise, skip ega stuff
                 mov     al, 1
-                mov     cx, 0
+                mov     cx, 0           ; 0:dx = bytes to seek
                 mov     ah, 42h
                 int     21h             ; DOS - 2+ - MOVE FILE READ/WRITE POINTER (LSEEK)
                                         ; AL = method: offset from present location
-                mov     cx, es:2        ; seg3:2
+                                        ; CX:DX = bytes to seek
+                mov     cx, es:2        ; seg3:2 -> bytes to read
 
 loc_B5B:
                 mov     word ptr cs:virt_file_buffer, 0
-                call    read_vfile_to_buffer
+                call    read_vfile_to_buffer ; read the file contents to ds:dx, cx=bytes to read
                 push    ax
                 call    fclose
-                pop     dx
+                pop     dx              ; dx = packed size
                 pop     es
                 pop     di
                 jmp     unpack
@@ -1482,7 +1482,6 @@ fn2_segmented_load endp
 ; =============== S U B R O U T I N E =======================================
 
 ; AH: sword id (0..6)
-
 fn4_load_sword_graphics proc near
                 mov     bl, ah
                 xor     bh, bh
@@ -1493,14 +1492,14 @@ fn4_load_sword_graphics proc near
                 mov     es, ax          ; seg1
                 add     ax, 1000h
                 mov     ds, ax          ; seg2
-                mov     si, [si]
-                mov     di, 0B000h
+                mov     si, [si]        ; seg2:[180x]
+                mov     di, sword_animation_gfx
                 mov     cx, 800h
                 rep movsw
-                mov     di, 0B000h
+                mov     di, sword_animation_gfx
                 mov     cx, 0Fh
 loc_B96:
-                add     word ptr es:[di], 0B000h
+                add     word ptr es:[di], sword_animation_gfx
                 inc     di
                 inc     di
                 loop    loc_B96
@@ -1519,7 +1518,7 @@ sword_ptrs      dw 1800h ; no sword
 ; =============== S U B R O U T I N E =======================================
 
 
-fn5_direct_load proc near     
+fn5_load_music  proc near     
                 les     di, cs:virt_file_buffer
                 push    di
                 push    es
@@ -1533,7 +1532,7 @@ fn5_direct_load proc near
                 mov     cx, 4
                 call    read_vfile_to_buffer
                 mov     cx, es:0
-                test    byte ptr cs:direct_load_seek_flag, 0FFh
+                test    byte ptr cs:mt32_enabled, 0FFh
                 jnz     short loc_BEF
                 mov     dx, cx
                 mov     al, 1
@@ -1550,7 +1549,7 @@ loc_BEF:
                 mov     word ptr cs:virt_file_buffer+2, es
                 call    read_vfile_to_buffer
                 jmp     fclose
-fn5_direct_load endp
+fn5_load_music  endp
 
 
 ; =============== S U B R O U T I N E =======================================
@@ -1670,7 +1669,7 @@ read_vfile_to_buffer proc near
                 mov     ah, 3Fh
                 int     21h             ; DOS - 2+ - READ FROM FILE WITH HANDLE
                                         ; BX = file handle, CX = number of bytes to read
-                                        ; DS:DX -> buffer
+                                        ; DS:DX -> buffer; ax -> bytes read
                 jnb     short locret_D92
                 jmp     VFS_fatal_error_handler
 
@@ -1695,25 +1694,28 @@ locret_D9C:
 fclose          endp
 
 ; ---------------------------------------------------------------------------
-
+; Input: packed file at seg3:0, DX = packed size
+; Output: unpacked file at es:di, DI = end of unpacked data
 unpack: 
                 push    ds
                 mov     ax, cs
                 add     ax, 3000h
                 mov     ds, ax          ; seg3
                 mov     si, 0
-                call    unpack_dispatcher
+                call    unpack_dispatcher ; unpack from seg3:0 to es:di
                 pop     ds
                 retn
 
 ; =============== S U B R O U T I N E =======================================
 
 
+; Input: packed file at DS:SI, DX = packed size
+; Output: unpacked file at es:di, DI = end of unpacked data
 unpack_dispatcher proc near   
 
                 xor     bx, bx
-                lodsb
-                dec     dx
+                lodsb                   ; 1st byte: compression method
+                dec     dx              ; packed_bytes_left--
                 and     al, 7
                 mov     bl, al
                 add     bx, bx          ; switch 8 cases
@@ -1734,7 +1736,7 @@ jpt_DB7         dw offset fn0_raw_copy
 fn0_raw_copy:                 
                 mov     cx, dx
                 rep movsb
-                retn
+                retn    ; di -> end of unpacked data
 
 ; =============== S U B R O U T I N E =======================================
 
@@ -1755,28 +1757,27 @@ fn1_RLE_with_lookup_table_hi_nib endp
 
 ; =============== S U B R O U T I N E =======================================
 
-
-RLE_with_lookup_table_hi_nib_step proc near ; ...
+; Input: BP: lookup table, AL: byte to look up
+; Output: CX: count (input byte low nibble + 2), AL: byte to output
+RLE_with_lookup_table_hi_nib_step proc near
                 push    bp
                 mov     ah, al
                 and     ah, 0F0h
-                mov     cx, 1
-
+                mov     cx, 1   ; count = 1 (of original byte) if no match
 loc_DE9:
-                test    byte ptr ds:[bp+0], 0Fh
+                test    byte ptr ds:[bp+0], 0Fh  ; Key == 0xFF means end of table
                 jnz     short loc_E06
+                ; lookup_table[i].Key low nibble is always 0
                 cmp     ah, ds:[bp+0]
-                jz      short loc_DFA
+                je      short high_nibbles_match
                 inc     bp
                 inc     bp
                 jmp     short loc_DE9
-
-loc_DFA:
+high_nibbles_match:
                 mov     cl, al
-                mov     al, ds:[bp+1]
+                mov     al, ds:[bp+1] ; lookup_table[i].Value
                 and     cx, 0Fh
                 add     cx, 2
-
 loc_E06:
                 pop     bp
                 retn
@@ -1790,7 +1791,7 @@ scan_till_sentinel_ff proc near
                 lodsb
                 dec     dx
                 cmp     al, 0FFh
-                jnz     short loc_E0F
+                jne     short loc_E0F
                 retn
 
 loc_E0F:
@@ -1812,7 +1813,7 @@ loc_E17:
                 mov     bl, al
                 and     bl, 0F0h
                 cmp     bl, ah
-                jnz     short loc_E2E
+                jne     short loc_E2E
                 mov     cl, al
                 and     cx, 0Fh
                 add     cx, 3
@@ -1841,28 +1842,28 @@ loc_E39:
 ; =============== S U B R O U T I N E =======================================
 
 
+; Input: BP: lookup table, AL: byte to look up
+; Output: CX: count (input byte high nibble + 2), AL: byte to output
 RLE_with_lookup_table_lo_nib_step proc near
                 push    bp
                 mov     ah, al
                 and     ah, 0Fh
                 mov     cx, 1
-
 loc_E4C:
                 test    byte ptr ds:[bp+0], 0F0h
                 jnz     short loc_E71
                 cmp     ah, ds:[bp+0]
-                jz      short loc_E5D
+                je      short low_nibbles_match
                 inc     bp
                 inc     bp
                 jmp     short loc_E4C
-
-loc_E5D:
+low_nibbles_match:
                 shr     al, 1
                 shr     al, 1
                 shr     al, 1
                 shr     al, 1
                 mov     cl, al
-                mov     al, ds:[bp+1]
+                mov     al, ds:[bp+1] ; lookup_table[i].Value
                 and     cx, 0Fh
                 add     cx, 2
 
@@ -1906,7 +1907,7 @@ fn5_byte_pair_RLE:
                 lodsb
                 mov     cx, 1
                 cmp     [si], al
-                jnz     short loc_EB4
+                jne     short loc_EB4
                 mov     cl, [si+1]
                 and     cx, 0FFh
                 add     cx, 2
@@ -1922,13 +1923,11 @@ loc_EB4:
 
 fn6_RLE_with_word_sentinel_table:
                 mov     bp, si
-
 loc_EBC:
                 lodsw
                 sub     dx, 2
                 cmp     ax, 0FFFFh
                 jnz     short loc_EBC
-
 loc_EC5:
                 lodsb
                 call    lookup_byte_read_count
@@ -1943,24 +1942,21 @@ loc_EC5:
 lookup_byte_read_count proc near        ; ...
                 push    bp
                 mov     cx, 1
-
 loc_ED3:
                 cmp     word ptr ds:[bp+0], 0FFFFh
                 jz      short ffff_sentinel_reached
-                cmp     al, ds:[bp+0]
-                jz      short loc_EE4
+                cmp     al, ds:[bp+0]   ; lookup_table[i].Key
+                je      short bytes_match
                 inc     bp
                 inc     bp
                 jmp     short loc_ED3
-
-loc_EE4:
+bytes_match:
                 lodsb
                 dec     dx
                 mov     cl, al
                 mov     al, ds:[bp+1]
                 and     cx, 0FFh
                 add     cx, 2
-
 ffff_sentinel_reached:        
                 pop     bp
                 retn
@@ -1972,24 +1968,22 @@ fn7_three_byte_run_encoding:
                 lodsb
                 dec     dx
                 mov     ah, al
-
-loc_EF9:
+do_while_dx:
                 lodsb
                 mov     cx, 1
                 cmp     al, ah
-                jnz     short loc_F11
+                jne     short loc_F11
+                lodsb           ; al = value
+                mov     cl, al  ; cl = value
                 lodsb
-                mov     cl, al
-                lodsb
-                xchg    al, cl
+                xchg    al, cl  ; cl = count, al = value
                 and     cx, 0FFh
                 add     cx, 3
                 sub     dx, 2
-
 loc_F11:
                 rep stosb
                 dec     dx
-                jnz     short loc_EF9
+                jnz     short do_while_dx
                 retn
 ; ---------------------------------------------------------------------------
 

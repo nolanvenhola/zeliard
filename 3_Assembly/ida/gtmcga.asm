@@ -31,7 +31,7 @@ start           dw offset apply_screen_xor_grid
                 dw offset scroll_hud_up
                 dw offset scroll_hud_down
                 dw offset render_numeric_score
-                dw offset decompress_sprite
+                dw offset decompress_patterns
                 dw offset apply_sprite_mask
 
 ; =============== S U B R O U T I N E =======================================
@@ -323,15 +323,14 @@ background_tile_render_with_blit_cache endp
 ; =============== S U B R O U T I N E =======================================
 
 
-tile_render_and_animate proc near       ; ...
+tile_render_and_animate proc near
                 mov     al, [di-1]
                 mov     byte ptr [di-1], 0FEh
                 inc     al
                 jnz     short loc_31E4
                 retn
 ; ---------------------------------------------------------------------------
-
-loc_31E4:                               ; ...
+loc_31E4:
                 push    bx
                 push    es
                 mov     dl, [si-1]
@@ -346,8 +345,7 @@ loc_31E4:                               ; ...
                 jnz     short loc_3203
                 jmp     background_tile_render_with_blit_cache
 ; ---------------------------------------------------------------------------
-
-loc_3203:                               ; ...
+loc_3203:
                 dec     di
                 dec     si
                 movsb
@@ -357,17 +355,17 @@ loc_3203:                               ; ...
                 push    si
                 push    bx
                 push    dx
-                xor     bh, bh          ; bx: tile y
+                xor     bh, bh          ; bx: y in tiles
                 add     bx, bx
                 add     bx, bx
-                add     bx, bx          ; screen y
+                add     bx, bx          ; y in screen rows
                 mov     ax, 320
                 mul     bx
                 add     ax, ds:current_column_screen_addr
                 mov     di, ax
                 pop     dx
                 mov     ax, 8
-                mul     dl
+                mul     dl      ; 8 bytes mask per tile
                 mov     bp, ax
                 mov     ax, 48
                 mul     dl
@@ -379,70 +377,64 @@ loc_3203:                               ; ...
                 add     bx, bx
                 add     bx, bx
                 add     bx, bx
-                add     bx, ax
-                add     bx, 0A000h
+                add     bx, ax  ; y*64 + column_counter*192
+                add     bx, 0A000h      ; bx points to background tile
                 mov     ds, word ptr cs:seg1
                 mov     ax, 0A000h
                 mov     es, ax
                 mov     cx, 8
-
-loc_3256:                               ; ...
+eight_scanlines_loop:
                 push    cx
-                mov     ah, ds:[bp+0]
+                mov     ah, ds:[bp+0]   ; mask  seg1:[d6bc]
                 inc     bp
                 mov     cx, 2
-
-loc_325F:                               ; ...
+two_nibbles_loop:
                 push    cx
-                lodsb
-                mov     dl, al
-                lodsb
-                mov     dh, al
-                lodsb
-                mov     cl, al
-                mov     ch, dl
+                lodsb                   ; seg1:[a965]=65h
+                mov     dl, al          ; dl=65h
+                lodsb                   ; seg1:[a966]=59h
+                mov     dh, al          ; dh=59h
+                lodsb                   ; seg1:[a967]=96h
+                mov     cl, al          ; cl=96h
+                mov     ch, dl          ; ch=65h
                 shr     dx, 1
-                shr     dx, 1
-                add     ah, ah
+                shr     dx, 1           ; 1659h
+                add     ah, ah          ; 0 -> 0, NC
                 jnb     short loc_3276
-                mov     dh, cs:[bx]
-
-loc_3276:                               ; ...
-                inc     bx
-                mov     es:[di], dh
+                mov     dh, cs:[bx]     ; background plane
+loc_3276:
+                inc     bx              ; aa58 -> aa59; aa5c -> aa5d
+                mov     es:[di], dh     ; vram:79d8 <- 28h; vram:79dc <- 16h
                 shr     dl, 1
-                shr     dl, 1
+                shr     dl, 1           ; 
                 add     ah, ah
                 jnb     short loc_3285
-                mov     dl, cs:[bx]
-
-loc_3285:                               ; ...
-                inc     bx
-                mov     es:[di+1], dl
-                add     cx, cx
-                add     cx, cx
-                and     ch, 3Fh
-                add     ah, ah
+                mov     dl, cs:[bx]     ; background plane
+loc_3285:
+                inc     bx              ; aa59 -> aa5a
+                mov     es:[di+1], dl   ; vram:79d9 <- 0
+                add     cx, cx          ; 36h -> 6ch
+                add     cx, cx          ; 6ch -> d8h
+                and     ch, 3Fh         ; 0
+                add     ah, ah          ; 0 -> 0, NC
                 jnb     short loc_3298
                 mov     ch, cs:[bx]
-
-loc_3298:                               ; ...
-                inc     bx
-                mov     es:[di+2], ch
-                and     al, 3Fh
-                add     ah, ah
+loc_3298:
+                inc     bx              ; aa5a -> aa5b
+                mov     es:[di+2], ch   ; vram:79da <- 0
+                and     al, 3Fh         ; 36h
+                add     ah, ah          ; 0 -> 0, NC
                 jnb     short loc_32A6
                 mov     al, cs:[bx]
-
-loc_32A6:                               ; ...
-                inc     bx
-                mov     es:[di+3], al
-                add     di, 4
+loc_32A6:
+                inc     bx              ; aa5b -> aa5c
+                mov     es:[di+3], al   ; vram:79db <- 36h
+                add     di, 4           ; 79dc
                 pop     cx
-                loop    loc_325F
+                loop    two_nibbles_loop
                 pop     cx
-                add     di, 312
-                loop    loc_3256
+                add     di, 320-8
+                loop    eight_scanlines_loop
                 pop     bx
                 pop     si
                 pop     di
@@ -453,14 +445,12 @@ loc_32A6:                               ; ...
                 jnz     short loc_32C5
                 retn
 ; ---------------------------------------------------------------------------
-
-loc_32C5:                               ; ...
+loc_32C5:
                 cmp     ah, 19h
                 jb      short loc_32CB
                 retn
 ; ---------------------------------------------------------------------------
-
-loc_32CB:                               ; ...
+loc_32CB:
                 push    di
                 push    es
                 mov     es, word ptr cs:seg1
@@ -469,8 +459,7 @@ loc_32CB:                               ; ...
                 or      cl, cl
                 jz      short loc_32F9
                 inc     di
-
-loc_32DF:                               ; ...
+loc_32DF:
                 mov     al, es:[di]
                 cmp     al, 0FFh
                 jz      short loc_32F9
@@ -480,14 +469,12 @@ loc_32DF:                               ; ...
                 mov     [si-1], al
                 jmp     short loc_32F9
 ; ---------------------------------------------------------------------------
-
-loc_32F3:                               ; ...
+loc_32F3:
                 inc     di
                 inc     di
                 dec     cl
                 jnz     short loc_32DF
-
-loc_32F9:                               ; ...
+loc_32F9:
                 pop     es
                 pop     di
                 retn
@@ -586,7 +573,7 @@ special_multi_tile_column_renderer proc near ; ...
 
 loc_3387:                               ; ...
                 mov     si, offset tile_id_staging_buffer
-                mov     di, 64384
+                mov     di, 64000+48*8
                 call    unpack_six_tiles
                 mov     si, cs:npc_array_addr
 
@@ -659,7 +646,7 @@ pre_pass_special_column_initializer proc near ; ...
                 push    es
                 push    ds
                 mov     si, ds:proximity_start_tiles
-                add     si, 37
+                add     si, 36+1
                 mov     di, offset tile_id_staging_buffer
                 movsw
                 movsb
@@ -695,7 +682,7 @@ loc_344C:                               ; ...
                 mov     es, word ptr cs:seg1
                 mov     si, offset tile_id_staging_buffer
                 mov     di, 64000 + 192*2
-                call    composite_3_tiles_to_shadow_buffer
+                call    npc_3_tiles_to_shadow_buffer
                 pop     si
 
 loc_3472:                               ; ...
@@ -766,15 +753,14 @@ advance_sprite_table_to_matching_x endp
 ; =============== S U B R O U T I N E =======================================
 
 
-copy_3_vert_tiles proc near             ; ...
+copy_3_vert_tiles proc near
                 mov     cx, 24
-
-next_8pix_:                              ; ...
+next_8pix_:
                 movsw
                 movsw
                 movsw
                 movsw
-                add     di, 312
+                add     di, 320-8
                 loop    next_8pix_
                 retn
 copy_3_vert_tiles endp
@@ -801,8 +787,8 @@ funcs_34D2      dw offset single_sprite_shadow_compositor
 
 two_sprite_shadow_compositor proc near
                 mov     di, 64000 + 192*2
-                call    composite_3_tiles_to_shadow_buffer
-                jmp     short composite_3_tiles_to_shadow_buffer
+                call    npc_3_tiles_to_shadow_buffer
+                jmp     short npc_3_tiles_to_shadow_buffer
 two_sprite_shadow_compositor endp
 
 
@@ -812,7 +798,7 @@ two_sprite_shadow_compositor endp
 single_sprite_shadow_compositor proc near ; ...
                 add     si, 3
                 mov     di, 64000 + 192*3
-                jmp     short composite_3_tiles_to_shadow_buffer
+                jmp     short npc_3_tiles_to_shadow_buffer
 single_sprite_shadow_compositor endp
 
 
@@ -823,7 +809,7 @@ get_sprite_vram_address proc near       ; ...
                 mov     al, [si+2]
                 mov     ch, al
                 and     al, 7Fh
-                mov     cl, 30h ; '0'
+                mov     cl, 48
                 mul     cl
                 add     ax, 4000h
                 mov     di, ax
@@ -888,7 +874,7 @@ funcs_352E      dw offset sub_354A      ; ...
 sub_353A        proc near               ; ...
                 add     bp, 3
                 mov     di, 64000
-                jmp     short composite_3_tiles_to_shadow_buffer
+                jmp     short npc_3_tiles_to_shadow_buffer
 sub_353A        endp
 
 
@@ -897,8 +883,8 @@ sub_353A        endp
 
 sub_3542        proc near               ; ...
                 mov     di, 64000
-                call    composite_3_tiles_to_shadow_buffer
-                jmp     short composite_3_tiles_to_shadow_buffer
+                call    npc_3_tiles_to_shadow_buffer
+                jmp     short npc_3_tiles_to_shadow_buffer
 sub_3542        endp
 
 
@@ -915,33 +901,32 @@ sub_354A        endp
 ; =============== S U B R O U T I N E =======================================
 
 
-composite_3_tiles_to_shadow_buffer proc near ; ...
+npc_3_tiles_to_shadow_buffer proc near
                 mov     cx, 3
-
-loc_3555:                               ; ...
+loc_3555:
                 push    cx
-                mov     byte ptr [si], 0FFh
+                mov     byte ptr [si], 0FFh  ; tile_id_staging_buffer
                 inc     si
                 push    ds
                 push    si
-                mov     al, es:[bp+0]
+                mov     al, es:[bp+0]        ; seg1:[40xx] - tile indices
                 inc     bp
                 push    es
                 push    bp
                 dec     al
-                push    ax
+                push    ax         ; tile id
                 mov     cl, 48
                 mul     cl
                 mov     si, ax
-                add     si, 4100h
-                pop     ax
+                add     si, 4100h  ; color buffer: 48 bytes per tile (mman/cman)
+                pop     ax         ; tile id
                 mov     cl, 8
-                mul     cl
-                add     ax, 7000h
-                mov     cs:seg2_off, ax
+                mul     cl         ; transparency mask buffer: 8 bytes per tile
+                add     ax, 7000h  ; transparency mask buffer
+                mov     cs:blit_buffer_offset, ax
                 mov     ax, cs
                 add     ax, 2000h
-                mov     cs:seg2, ax
+                mov     cs:blit_buffer_seg, ax
                 mov     ds, word ptr cs:seg1
                 mov     ax, 0A000h
                 mov     es, ax
@@ -953,7 +938,7 @@ loc_3555:                               ; ...
                 pop     cx
                 loop    loc_3555
                 retn
-composite_3_tiles_to_shadow_buffer endp
+npc_3_tiles_to_shadow_buffer endp
 
 
 ; =============== S U B R O U T I N E =======================================
@@ -962,8 +947,7 @@ composite_3_tiles_to_shadow_buffer endp
 blit_6_tiles_to_shadow_memory proc near ; ...
                 mov     di, 64000
                 mov     cx, 6
-
-next_tile:                              ; ...
+next_tile:
                 push    cx
                 lodsb                   ; tile id
                 push    ds
@@ -977,10 +961,10 @@ next_tile:                              ; ...
                 mov     cl, 8
                 mul     cl
                 add     ax, 8000h       ; and-blit buffer in seg2
-                mov     cs:seg2_off, ax ; AND-blit buffer
+                mov     cs:blit_buffer_offset, ax ; AND-blit buffer
                 mov     ax, cs
                 add     ax, 2000h
-                mov     cs:seg2, ax
+                mov     cs:blit_buffer_seg, ax
                 mov     ds, word ptr cs:seg1
                 mov     ax, 0A000h
                 mov     es, ax
@@ -995,33 +979,32 @@ blit_6_tiles_to_shadow_memory endp
 
 ; =============== S U B R O U T I N E =======================================
 
-
-blit_tile_to_shadow_buffer proc near    ; ...
+; Blit a single tile to shadow VRAM
+;  ES:DI - dest VRAM address
+;  DS:SI - tile colors data (48 bytes)
+blit_tile_to_shadow_buffer proc near
                 push    ds
                 push    si
                 push    di
-                lds     si, dword ptr cs:seg2_off
+                lds     si, dword ptr cs:blit_buffer_offset
                 mov     cx, 8
-
-loc_35E2:                               ; ...
+blit_8_rows:
                 push    cx
                 lodsb
                 mov     cx, 8
-
-loc_35E7:                               ; ...
+blit_row:
                 add     al, al
                 sbb     ah, ah          ; al bit7 -> ah all bits
-                and     es:[di], ah     ; clear if al bit7 was 0
+                and     es:[di], ah     ; clear if al bit7 was 0 (AND-blit)
                 inc     di
-                loop    loc_35E7
+                loop    blit_row
                 pop     cx
-                loop    loc_35E2
+                loop    blit_8_rows
                 pop     di
                 pop     si
                 pop     ds
                 mov     cx, 16
-
-next_4_bytes:                           ; ...
+next_4_bytes:
                 lodsw
                 mov     dx, ax
                 lodsb
@@ -1433,7 +1416,7 @@ render_menu_glyph_to_buffer1 proc near  ; ...
                 mov     si, ax
                 push    cs
                 pop     ds
-                add     si, ds:letters_font
+                add     si, ds:thin_font
                 push    di
                 mov     bl, 8
 
@@ -1782,7 +1765,7 @@ scroll_hud_down endp
 apply_screen_xor_grid proc near         ; ...
                 mov     ax, 0A000h
                 mov     es, ax
-                mov     di, 11B0h
+                mov     di, viewport_top_left_vram_addr
                 mov     cx, 8
 
 loc_3A4C:                               ; ...
@@ -1814,35 +1797,35 @@ apply_screen_xor_grid endp
 
 
 ; =============== S U B R O U T I N E =======================================
-
-
+; Apply sprite mask to a 48-byte block of data, in place
+; ds:si = source data pointer
+; es:di = dest pointer for transparency info
+; cx = number of 48-byte blocks
 apply_sprite_mask proc near             ; ...
-                mov     cs:seg2_off, di
-                mov     cs:seg2, es
+                mov     cs:blit_buffer_offset, di
+                mov     cs:blit_buffer_seg, es
                 push    cx
                 push    ds
                 push    si
                 mov     ax, cs
                 add     ax, 3000h
-                mov     es, ax
+                mov     es, ax   ; seg3
                 mov     ax, 48
                 mul     cx
                 mov     cx, ax
-                mov     di, 0
+                mov     di, 0    ; temp buffer in seg3
                 rep movsb
                 pop     di
-                pop     es
+                pop     es       ; es:di points to source data
                 pop     cx
                 mov     ax, cs
                 add     ax, 3000h
-                mov     ds, ax
+                mov     ds, ax   ; seg3
                 mov     si, 0
-
-loc_3A9E:                               ; ...
+next_48_bytes_block:
                 push    cx
                 mov     cx, 8
-
-loc_3AA2:                               ; ...
+loc_3AA2:
                 push    cx
                 lodsw
                 mov     dx, ax
@@ -1868,82 +1851,78 @@ loc_3AA2:                               ; ...
                 xchg    ah, al
                 not     ax
                 mov     cs:transparency_mask_bitplane, ax
-                call    build_48_bits_packed_from_rgb_planes
+                call    build_48_bits_packed_from_rgb_planes ; save 6 bytes to es:di
                 push    es
                 push    di
-                les     di, dword ptr cs:seg2_off
+                les     di, dword ptr cs:blit_buffer_offset
                 call    extract_transparency_byte_from_mask_plane
                 mov     al, dl
                 stosb
-                mov     cs:seg2_off, di
+                mov     cs:blit_buffer_offset, di
                 pop     di
                 pop     es
                 pop     cx
                 loop    loc_3AA2
                 pop     cx
-                loop    loc_3A9E
+                loop    next_48_bytes_block
                 retn
 apply_sprite_mask endp
 
 
 ; =============== S U B R O U T I N E =======================================
 
-
-decompress_sprite proc near             ; ...
+decompress_patterns proc near
                 push    ds
                 mov     ds, word ptr cs:seg1
                 mov     si, packed_tile_graphics
                 mov     ax, cs
-                add     ax, 3000h       ; seg3_seg
-                mov     es, ax
+                add     ax, 3000h
+                mov     es, ax          ; seg3
                 mov     cx, 12000
-                mov     di, 0
+                mov     di, 0           ; temp buffer at seg3:0
                 rep movsb
                 mov     es, word ptr cs:seg1
                 mov     ax, cs
                 add     ax, 3000h
-                mov     ds, ax          ; seg3_seg
+                mov     ds, ax          ; seg3
                 mov     si, 0
-                mov     di, packed_tile_graphics
-                mov     bx, es:tile_anim_count_table
+                mov     di, packed_tile_graphics     ; 8100h
+                mov     bx, es:tile_anim_count_table ; seg1:[8000h] - table of decompression functions for each tile index
                 mov     bp, sprite_transparency_masks
-                mov     cx, 250
-
-loc_3B2E:                               ; ...
+                mov     cx, 256-6
+loc_3B2E:
                 push    cx
                 mov     al, es:[bx]     ; fn #
                 cmp     al, 5
                 jb      short loc_3B38
                 xor     al, al
-
-loc_3B38:                               ; ...
+loc_3B38:
                 push    bx
                 xor     bx, bx
                 mov     bl, al
                 add     bx, bx
-                call    cs:off_3B4B[bx]
+                call    cs:pat_decompress_fn[bx]
                 pop     bx
                 inc     bx
                 pop     cx
                 loop    loc_3B2E
                 pop     ds
                 retn
-decompress_sprite endp
+decompress_patterns endp
 
 ; ---------------------------------------------------------------------------
-off_3B4B        dw offset sprite_plane_decompressor_0 ; ...
-                dw offset sprite_plane_decompressor_b
-                dw offset sprite_plane_decompressor_g
-                dw offset sprite_plane_decompressor_r
-                dw offset build_48_bytes_packed_tile_from_rgb_planes
+pat_decompress_fn   dw offset sprite_plane_decompressor_0
+                    dw offset sprite_plane_decompressor_b
+                    dw offset sprite_plane_decompressor_g
+                    dw offset sprite_plane_decompressor_r
+                    dw offset build_48_bytes_packed_tile_from_rgb_planes
 
 ; =============== S U B R O U T I N E =======================================
 
 
-sprite_plane_decompressor_0 proc near   ; ...
+sprite_plane_decompressor_0 proc near
                 mov     cx, 8
-
-loc_3B58:                               ; ...
+loc_3B58:
                 push    cx
                 lodsw
                 xchg    ah, al
@@ -1966,10 +1945,9 @@ sprite_plane_decompressor_0 endp
 ; =============== S U B R O U T I N E =======================================
 
 
-sprite_plane_decompressor_b proc near   ; ...
+sprite_plane_decompressor_b proc near
                 mov     cx, 8
-
-loc_3B7E:                               ; ...
+loc_3B7E:
                 push    cx
                 lodsw
                 xchg    ah, al
@@ -1994,10 +1972,9 @@ sprite_plane_decompressor_b endp
 ; =============== S U B R O U T I N E =======================================
 
 
-sprite_plane_decompressor_g proc near   ; ...
+sprite_plane_decompressor_g proc near
                 mov     cx, 8
-
-loc_3BAD:                               ; ...
+loc_3BAD:
                 push    cx
                 lodsw
                 xchg    ah, al
@@ -2022,10 +1999,9 @@ sprite_plane_decompressor_g endp
 ; =============== S U B R O U T I N E =======================================
 
 
-sprite_plane_decompressor_r proc near   ; ...
+sprite_plane_decompressor_r proc near
                 mov     cx, 8
-
-loc_3BDC:                               ; ...
+loc_3BDC:
                 push    cx
                 lodsw
                 xchg    ah, al
@@ -2050,10 +2026,9 @@ sprite_plane_decompressor_r endp
 ; =============== S U B R O U T I N E =======================================
 
 
-build_48_bytes_packed_tile_from_rgb_planes proc near ; ...
+build_48_bytes_packed_tile_from_rgb_planes proc near
                 mov     cx, 8
-
-loc_3C0B:                               ; ...
+loc_3C0B:
                 push    cx
                 lodsw
                 xchg    ah, al
@@ -2075,11 +2050,11 @@ build_48_bytes_packed_tile_from_rgb_planes endp
 
 ; =============== S U B R O U T I N E =======================================
 
-
-build_48_bits_packed_from_rgb_planes proc near ; ...
+; Builds 48 bits of packed data from the 3 planes of RGB data.
+; es:di - destination pointer to save 6 bytes
+build_48_bits_packed_from_rgb_planes proc near
                 mov     cx, 2
-
-loc_3C31:                               ; ...
+loc_3C31:
                 call    extract_3_bits_from_rgb_planes
                 call    extract_3_bits_from_rgb_planes
                 call    extract_3_bits_from_rgb_planes
@@ -2117,20 +2092,18 @@ extract_3_bits_from_rgb_planes endp
 ; =============== S U B R O U T I N E =======================================
 
 
-extract_transparency_byte_from_mask_plane proc near ; ...
+extract_transparency_byte_from_mask_plane proc near
                 mov     cx, 8
-
-next_bit:                               ; ...
+next_bit:
                 xor     al, al
                 rol     cs:transparency_mask_bitplane, 1
                 adc     al, al
                 rol     cs:transparency_mask_bitplane, 1
                 adc     al, al
                 cmp     al, 11b
-                jz      short loc_3C8F
+                je      short loc_3C8F
                 xor     al, al
-
-loc_3C8F:                               ; ...
+loc_3C8F:
                 and     al, 1
                 add     dl, dl
                 or      dl, al
@@ -2149,8 +2122,8 @@ r_plane_buffer  dw 0
 g_plane_buffer  dw 0                 
 b_plane_buffer  dw 0                 
 transparency_mask_bitplane dw 0      
-seg2_off        dw 0                 
-seg2            dw 0                 
+blit_buffer_offset        dw 0                 
+blit_buffer_seg            dw 0                 
 string_render_buffer db 0A0h dup(0)  
 string_render_buffer1 db 0A0h dup(0) 
 generic_display_buffer db 500h dup(0)
