@@ -46,6 +46,13 @@ _330MP4D	proc	far
 _330MP4D	endp
 
 
+
+; ------------------------------------------------------------------
+; mdt_header -- file-size word, flag byte, and table of WORD pointers
+; into the runtime 0xC000 segment.  Sourcer mis-decoded the leading
+; bytes as instructions; they are actually: size word + flag word
+; + attributes pointer + offset of 'strategy' (tile grid start) + ...
+; ------------------------------------------------------------------
 strategy_1	proc	far
 		dec	bp
 		add	al,[bx+si]
@@ -68,6 +75,7 @@ char_dev	db	'‡¡‚¡¸¡˛¡'
 
 
 
+; ------------------------------------------------------------------
 ; ------------------------------------------------------------------
 ; tile_grid -- main cavern/map tile-index data.  Encoded as column
 ; or row strips of 1-byte tile indices.  Common runs: 0x3F06 (wall

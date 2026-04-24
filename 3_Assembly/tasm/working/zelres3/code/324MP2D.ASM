@@ -53,6 +53,13 @@ strategy_1	proc	far
 		retn
 strategy_1	endp
 
+
+; ------------------------------------------------------------------
+; mdt_header -- file-size word, flag byte, and table of WORD pointers
+; into the runtime 0xC000 segment.  Sourcer mis-decoded the leading
+; bytes as instructions; they are actually: size word + flag word
+; + attributes pointer + offset of 'strategy' (tile grid start) + ...
+; ------------------------------------------------------------------
 pointers	dw	offset strategy
 		dw	0C2CAh
 char_dev	db	'ฬยฮย่ย๊ย'
@@ -66,6 +73,7 @@ char_dev	db	'ฬยฮย่ย๊ย'
 
 
 
+; ------------------------------------------------------------------
 ; ------------------------------------------------------------------
 ; tile_grid -- main cavern/map tile-index data.  Encoded as column
 ; or row strips of 1-byte tile indices.  Common runs: 0x3F06 (wall

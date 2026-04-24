@@ -75,14 +75,6 @@ strategy_1	endp
 
 
 ; ------------------------------------------------------------------
-; tile_grid -- main cavern/map tile-index data.  Encoded as column
-; or row strips of 1-byte tile indices.  Common runs: 0x3F06 (wall
-; boundary), 0x2C06 (column separator), plus palette-range values
-; (0xC4-0xCC) that select tile rows in the tile bank.  Originally
-; labeled 'strategy' by Sourcer because the header pointer landed
-; on this offset.
-; ------------------------------------------------------------------
-
 ; ------------------------------------------------------------------
 ; tile_grid -- main cavern/map tile-index data.  Encoded as column
 ; or row strips of 1-byte tile indices.  Common runs: 0x3F06 (wall
