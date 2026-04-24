@@ -41,7 +41,7 @@ ZELRES1_NAMES = {
     3: 'GDHGC',   # 103GDHGC - image controller HGC
     4: 'GDTGA',   # 104GDTGA - image controller TGA
     5: 'GDMCA',   # 105GDMCA - image controller MCGA
-    6: 'TOWNB',   # 106TOWNB - town main module
+    6: 'TOWN',    # 106TOWN - town main module (town.bin)
     7: 'GTEGA',   # 107GTEGA - town tiles EGA
     8: 'GTCGA',   # 108GTCGA - town tiles CGA
     9: 'GTHGC',   # 109GTHGC - town tiles HGC

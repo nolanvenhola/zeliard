@@ -183,14 +183,14 @@ def fix_region(asm_path, bin_path, bin_start, bin_end, comment=''):
 
 # Each entry: (bin_file_stem, bin_start, bin_end, comment)
 TABLES = [
-    # 106TOWNB (town.bin) — resource filenames and UI strings
-    ('106TOWNB', 0x073A, 0x0747, 'UI strings: Take/No Take prompt'),
-    ('106TOWNB', 0x0AD9, 0x0AEF, 'SAR chunk references: YMPD.BIN, CKPD.BIN'),
-    ('106TOWNB', 0x0D8E, 0x0DA2, 'Sprite file references: MMAN.GRP, CMAN.GRP'),
-    ('106TOWNB', 0x0DCB, 0x0DF2, 'Pattern/sprite file references: MPAT.GRP, DPAT.GRP'),
-    ('106TOWNB', 0x0F0B, 0x0F7B, 'Building program file references (OMOYPRO, KENJPRO, ARMRPRO...)'),
-    ('106TOWNB', 0x166A, 0x1688, 'Game loader reference: GAME.BIN'),
-    ('106TOWNB', 0x17A9, 0x17C7, 'Input/user string data'),
+    # 106TOWN (town.bin) — resource filenames and UI strings
+    ('106TOWN', 0x073A, 0x0747, 'UI strings: Take/No Take prompt'),
+    ('106TOWN', 0x0AD9, 0x0AEF, 'SAR chunk references: YMPD.BIN, CKPD.BIN'),
+    ('106TOWN', 0x0D8E, 0x0DA2, 'Sprite file references: MMAN.GRP, CMAN.GRP'),
+    ('106TOWN', 0x0DCB, 0x0DF2, 'Pattern/sprite file references: MPAT.GRP, DPAT.GRP'),
+    ('106TOWN', 0x0F0B, 0x0F7B, 'Building program file references (OMOYPRO, KENJPRO, ARMRPRO...)'),
+    ('106TOWN', 0x166A, 0x1688, 'Game loader reference: GAME.BIN'),
+    ('106TOWN', 0x17A9, 0x17C7, 'Input/user string data'),
 
     # 201SELCT (select.bin) — partially fixed; one remaining region
     ('201SELCT', 0x0A10, 0x0A20, 'Menu shortcut table prefix entries'),

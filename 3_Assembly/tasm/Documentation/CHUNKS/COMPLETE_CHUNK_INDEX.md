@@ -19,7 +19,7 @@
 | 03 | 103GDHGC.asm | 8KB | zelres1_chunk_03_walkthrough.md | Image decoding |
 | 04 | 104GDTGA.asm | 9KB | zelres1_chunk_04_stats_walkthrough.md | Player stats |
 | 05 | 105GDMCA.asm | 8KB | zelres1_chunk_05_walkthrough.md | Palette & graphics |
-| 06 | 106TOWNB.asm | 12KB | zelres1_chunk_06_player_advanced_walkthrough.md | Advanced player mechanics |
+| 06 | 106TOWN.asm | 12KB | zelres1_chunk_06_player_advanced_walkthrough.md | Advanced player mechanics |
 | 07 | 107GTEGA.asm | 3.9KB | zelres1_chunk_07_vga_decompressor_walkthrough.md | VGA decompressor |
 | 08 | 108GTCGA.asm | 4.5KB | zelres1_chunk_08_image_decoder_a_walkthrough.md | Image decoder A |
 | 09 | 109GTHGC.asm | 4.3KB | zelres1_chunk_09_image_decoder_b_walkthrough.md | Image decoder B |

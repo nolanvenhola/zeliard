@@ -35,7 +35,7 @@ BIN_DIR    = SCRIPT_DIR / 'bin'
 
 TARGET_FILES = [
     # zelres1/code (skip drivers: 101-111 GD/GT files are graphics drivers)
-    'zelres1/code/106TOWNB.asm',
+    'zelres1/code/106TOWN.asm',
     'zelres1/code/124UTILA.asm',
     'zelres1/code/130UTILB.asm',
     # zelres2/code (skip 202-206 graphics drivers per user request)
@@ -70,7 +70,7 @@ def binary_ext(stem: str) -> str:
 
 def find_bin(asm_path: Path) -> Path | None:
     """Locate the compiled binary for an ASM file."""
-    parts  = asm_path.relative_to(WORKING).parts  # ('zelres1', 'code', '106TOWNB.asm')
+    parts  = asm_path.relative_to(WORKING).parts  # ('zelres1', 'code', '106TOWN.asm')
     subdir = parts[0]                              # 'zelres1' / 'zelres2' / 'zelres3'
     stem   = asm_path.stem
     ext    = binary_ext(stem)

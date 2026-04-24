@@ -11,7 +11,7 @@ converted to proper assembler syntax for readability:
 
 | File | Lines | Description |
 |------|-------|-------------|
-| `zelres1/code/106TOWNB.asm` | 1822, 1851, 2000, 2103 | JMP NEAR (rel) encoded as `db 0E9h,...` |
+| `zelres1/code/106TOWN.asm` | 1822, 1851, 2000, 2103 | JMP NEAR (rel) encoded as `db 0E9h,...` |
 | `zelres2/code/201SELCT.asm` | 245,357,362,490,495,549,562,728,911 + more | CALL/JMP NEAR as `db` |
 | `zelres2/code/200FIGHT.asm` | 416, 2215, 4872, 4877, 5323 + more | CALL/JMP as `db` |
 | `zelres3/code/356LVGRP.asm` | 84, 707 | CALL NEAR as `db` |
@@ -108,7 +108,7 @@ but the inconsistency is misleading for human readers.
 | Name | Correct value (zeliard.inc) | Files that use wrong value |
 |------|-----------------------------|-------------------------------|
 | `gvar_timer_ticks` | `0FF08h` | 215DRUGP (0FF1Ah — should be `gvar_frame_timer`) |
-| `gvar_key_state` | `0FF0Bh` | 100OPDMO, 106TOWNB (0FF29h — should be `gvar_enter_key`) |
+| `gvar_key_state` | `0FF0Bh` | 100OPDMO, 106TOWN (0FF29h — should be `gvar_enter_key`) |
 | `gvar_game_phase` | `0FF15h` | game.asm (0FF14h — should be `gvar_game_phase_flag` or similar) |
 | `gvar_skip_input` | `0FF1Dh` | 250ENDMO (0FF21h — should be a different name) |
 | `gvar_volume_b` | `0FF75h` | game.asm, gmega.asm, gmmcga.asm (0FF77h — should be `gvar_volume_c` or similar) |

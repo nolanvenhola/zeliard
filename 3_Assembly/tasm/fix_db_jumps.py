@@ -332,7 +332,7 @@ TARGET_FILES = [
     'zelres1/code/103GDHGC.asm',
     'zelres1/code/104GDTGA.asm',
     'zelres1/code/105GDMCA.asm',
-    'zelres1/code/106TOWNB.asm',
+    'zelres1/code/106TOWN.asm',
     'zelres1/code/107GTEGA.asm',
     'zelres1/code/108GTCGA.asm',
     'zelres1/code/109GTHGC.asm',

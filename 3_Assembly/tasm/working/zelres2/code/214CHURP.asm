@@ -182,7 +182,7 @@ loc_ret_7:
 ;-- Handler: sermon line 3 -- 'Brave Knight, you look fatigued from battle...'
 ;  Reached via opcode_dispatch_tbl.  The first 5 db bytes form the
 ;  `mov byte ptr ds:[anim_phase_a],0` instruction (0C6 06 E4 A3 00).
-		db	0C6h, 06h,0E4h,0A3h, 00h	; mov byte ptr ds:anim_phase_a,0  (alt encoding)
+		mov	byte ptr ds:anim_phase_a,0
 
 loc_8:						; continuation label for outer loop below
 			mov	byte ptr ds:gvar_timer_byte,0
