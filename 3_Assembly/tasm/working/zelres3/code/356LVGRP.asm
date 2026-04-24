@@ -1,15 +1,15 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				ZR356FUL                                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   22-Mar-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½				ZR356FUL                                 ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½      Created:   22-Mar-26		                                 ï¿½ï¿½
+;ï¿½ï¿½      Code type: zero start		                                 ï¿½ï¿½
+;ï¿½ï¿½      Passes:    9          Analysis	Options on: none                 ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
@@ -57,7 +57,7 @@ ZR356FUL	proc	far
 
 start:
 ;*		jc	loc_3			;*Jump if carry Set
-				jc 1Ah			; was: db 072h,018h
+		db	072h, 018h		; jc 1Ah (absolute)
 		add	[bx+si],al
 		add	byte ptr data_9,al
 		dec	si
@@ -228,13 +228,13 @@ locloop_4:
 		add	ds:data_28e[bx+si],ax
 		add	al,ds:data_21e[bx+si]
 ;*		add	bx,ax
-				add bx,ax			; was: db 001h,0C3h
+				db	001h,0C3h	; add bx,ax (alt encoding)
 ;*		add	bl,ch
-				add bl,ch			; was: db 000h,0EBh
+				db	000h,0EBh	; add bl,ch (alt encoding)
 		push	cs
 		int	3			; Debug breakpoint
 ;*		add	dh,ch
-				add dh,ch			; was: db 000h,0EEh
+				db	000h,0EEh	; add dh,ch (alt encoding)
 		add	ax,0F0h
 		retn
 			                        ;* No entry point to code
@@ -317,7 +317,7 @@ loc_6:
 		stosb				; Store al to es:[di]
 		sub	byte ptr ds:data_38e[bx+si],0
 ;*		jmp	far ptr loc_2		;*
-				jmp	far ptr 0EA08h:2308h			; was: db 0EAh + dw 008h,0EAh,008h,023h
+		db	0EAh, 008h, 0EAh, 008h, 023h	; jmp far 2308:EA08
 			                        ;* No entry point to code
 		mov	al,ds:data_34e
 		and	ds:data_32e[bx+si],al
@@ -350,13 +350,13 @@ loc_6:
 		or	ax,[bx+si]
 		or	ax,[bx+si]
 ;*		jmp	far ptr loc_1		;*
-				jmp	far ptr 0EA00h:139h			; was: db 0EAh + dw 000h,0EAh,039h,001h
+		db	0EAh, 000h, 0EAh, 039h, 001h	; jmp far 0139:EA00
 			                        ;* No entry point to code
 		add	bh,[bx+di]
 		push	cs
 		out	dx,al			; port 28h ??I/O Non-standard
 ;*		add	dh,ch
-				add dh,ch			; was: db 000h,0EEh
+				db	000h,0EEh	; add dh,ch (alt encoding)
 		and	ds:data_36e[bx+si],ch
 		cmp	[bx+di],ax
 		lodsb				; String [si] to al
@@ -403,13 +403,13 @@ loc_6:
 
 locloop_7:
 ;*		add	[bx+0],dh
-				add [bx+0h],dh			; was: db 000h,077h,000h
+				db	000h,077h,000h	; add [bx+0h],dh (alt encoding)
 		db	 77h, 00h, 10h, 00h,0D1h, 40h
 		db	 39h, 00h,0F1h
 		db	 20h, 39h
 loc_8:
 ;*		add	ah,bh
-				add ah,bh			; was: db 000h,0FCh
+				db	000h,0FCh	; add ah,bh (alt encoding)
 		push	ax
 		add	dx,ax
 		add	dx,bp
@@ -441,9 +441,9 @@ loc_8:
 		add	cl,[bx+si]
 		add	cl,[bx+si]
 ;*		add	ah,cl
-				add ah,cl			; was: db 000h,0CCh
+				db	000h,0CCh	; add ah,cl (alt encoding)
 ;*		add	ah,cl
-				add ah,cl			; was: db 000h,0CCh
+				db	000h,0CCh	; add ah,cl (alt encoding)
 		add	ds:data_29e[bx+si],ch
 		add	bp,ss:data_6e[bp+si]
 		push	cs
@@ -454,7 +454,7 @@ loc_8:
 		stosb				; Store al to es:[di]
 		call	$-53FDh
 ;*		adc	bh,bh
-				adc bh,bh			; was: db 010h,0FFh
+				db	010h,0FFh	; adc bh,bh (alt encoding)
 		inc	bp
 		adc	[bx+si],cl
 		jnp	loc_8			; Jump if not parity
@@ -944,7 +944,7 @@ data_20		db	3
 		db	40h
 loc_9:
 ;*		add	byte ptr ds:data_5e[bx+si],0Ch
-				add byte ptr [bx+si-7F57h],0Ch			; was: db 082h,080h,0A9h,080h,00Ch
+				db	082h,080h,0A9h,080h,00Ch	; add byte ptr [bx+si-7F57h],0Ch (alt encoding)
 		or	cl,0A0h
 		mov	cl,3
 		rcl	word ptr [bx+di+41h],cl	; Rotate thru carry
@@ -959,7 +959,7 @@ loc_9:
 		ror	byte ptr [bx],1		; Rotate
 ;*		loopnz	locloop_10		;*Loop if zf=0, cx>0
 
-				loopne 11A7h			; was: db 0E0h,00Fh
+		db	0E0h, 00Fh		; loopne 11A7h (absolute)
 		cmpsw				; Cmp [si] to es:[di]
 		add	[bx+si],bh
 		add	[bp+di],ch
@@ -970,12 +970,12 @@ loc_9:
 		mov	ds:data_35e,ax
 		pop	ds
 ;*		aam	1Fh			; undocumented inst
-				aam 1Fh			; was: db 0D4h,01Fh
+				db	0D4h,01Fh	; aam 1Fh (alt encoding)
 		aam				; Ascii adjust
 		cli				; Disable interrupts
 		or	bh,dl
 ;*		add	[bx+0],bl
-				add [bx+0h],bl			; was: db 000h,05Fh,000h
+				db	000h,05Fh,000h	; add [bx+0h],bl (alt encoding)
 		db	 5Fh, 3Eh,0A0h, 26h,0A0h, 3Ch
 		db	 30h,0FCh, 30h,0CAh,0A0h,0CAh
 		db	0A0h, 35h, 41h, 3Dh, 40h,0FFh
@@ -999,7 +999,7 @@ loc_12:
 		adc	bh,[bx+di]
 		add	ss:data_25e[bp+di],ch
 ;*		add	bl,dl
-				add bl,dl			; was: db 000h,0D3h
+				db	000h,0D3h	; add bl,dl (alt encoding)
 		retf	2B00h
 			                        ;* No entry point to code
 		out	dx,ax			; port 0, DMA-1 bas&add ch 0

@@ -1,15 +1,15 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				ZR3_35	                                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   16-Feb-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½				ZR3_35	                                 ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½      Created:   16-Feb-26		                                 ï¿½ï¿½
+;ï¿½ï¿½      Code type: zero start		                                 ï¿½ï¿½
+;ï¿½ï¿½      Passes:    9          Analysis	Options on: none                 ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
@@ -43,17 +43,17 @@ start:
 		sbb	[bx+si],al
 		add	[di],ah
 ;*		aad	0			; undocumented inst
-				aad 0h			; was: db 0D5h,000h
+				db	0D5h,000h	; aad 0h (alt encoding)
 		add	ds:data_12e[bx+di],ax
 		shl	word ptr ss:data_7e[bp+di],cl	; Shift w/zeros fill
 ;*		aam	0D2h			; undocumented inst
-				aam 0D2h			; was: db 0D4h,0D2h
+				db	0D4h,0D2h	; aam 0D2h (alt encoding)
 ;*		aam	12h			; undocumented inst
-				aam 12h			; was: db 0D4h,012h
+				db	0D4h,012h	; aam 12h (alt encoding)
 ;*		aad	2Ah			; '*' undocumented inst
-				aad 2Ah			; was: db 0D5h,02Ah
+				db	0D5h,02Ah	; aad 2Ah (alt encoding)
 ;*		aad	6			; undocumented inst
-				aad 6h			; was: db 0D5h,006h
+				db	0D5h,006h	; aad 6h (alt encoding)
 		db	0FFh,0FFh,0FFh, 0Ah, 00h, 00h
 		db	 81h,0D3h, 63h, 01h, 1Dh, 53h
 		db	 48h,0C8h,0C9h, 49h,0CBh, 83h
@@ -119,7 +119,7 @@ locloop_2:
 			                        ;* No entry point to code
 		inc	bx
 ;*		mov	bh,al
-				mov bh,al			; was: db 088h,0C7h
+		db	088h, 0C7h		; mov bh,al (alt encoding)
 		int	49h			; ??INT Non-standard interrupt
 		retf				; Return far
 		db	 91h, 82h,0C3h,0C4h, 8Ch,0C3h
@@ -275,7 +275,7 @@ loc_5:
 		js	$+6Ah			; Jump if sign=1
 		jnc	$+3			; Jump if carry=0
 ;*		and	ah,al
-				and ah,al			; was: db 020h,0C4h
+		db	020h, 0C4h		; and ah,al (alt encoding)
 		loopnz	$+7			; Loop if zf=0, cx>0
 
 		add	al,85h
@@ -321,42 +321,42 @@ loc_8:
 		inc	bx
 		test	ax,bx
 ;*		ffree	st(4)			; Set tag to empty
-				ffree st(4)			; was: db 0DDh,0C4h
+		db	0DDh, 0C4h		; ffree st(4) (no WAIT prefix)
 ;*		xchg	ax,bx
-				xchg ax,bx			; was: db 087h,0C3h
+		db	087h, 0C3h		; xchg ax,bx (alt encoding)
 		push	es
 		add	al,84h
 		push	es
 		add	al,0DDh
 ;*		add	byte ptr ds:data_13e[si],0DDh
-				add byte ptr [si-3B3Dh],0DDh			; was: db 082h,084h,0C3h,0C4h,0DDh
+				db	082h,084h,0C3h,0C4h,0DDh	; add byte ptr [si-3B3Dh],0DDh (alt encoding)
 		les	dx,dword ptr ds:data_8e[bx+si]	; Load seg:offset ptr
 		test	ax,bx
 		inc	bx
 ;*		xchg	ax,bx
-				xchg ax,bx			; was: db 087h,0C3h
+				db	087h,0C3h	; xchg ax,bx (alt encoding)
 ;*		fld	qword ptr ds:data_16e	; Push onto stack
-				fld qword ptr [0E004h]			; was: db 0DDh,006h,004h,0E0h
+		db	0DDh, 006h, 004h, 0E0h	; fld qword ptr [0E004h]
 		or	[si],ax
 ;*		add	byte ptr ds:data_9e[si],90h
-				add byte ptr [si+53C3h],90h			; was: db 082h,084h,0C3h,053h,090h
+				db	082h,084h,0C3h,053h,090h	; add byte ptr [si+53C3h],90h (alt encoding)
 		retn
 			                        ;* No entry point to code
 		inc	bx
 		test	ax,bx
 		inc	bx
 ;*		xchg	ax,bx
-				xchg ax,bx			; was: db 087h,0C3h
+				db	087h,0C3h	; xchg ax,bx (alt encoding)
 		adc	al,[si]
 ;*		add	byte ptr ds:data_9e[si],90h
-				add byte ptr [si+53C3h],90h			; was: db 082h,084h,0C3h,053h,090h
+				db	082h,084h,0C3h,053h,090h	; add byte ptr [si+53C3h],90h (alt encoding)
 		retn
 			                        ;* No entry point to code
 		inc	bx
 		test	ax,bx
 		inc	bx
 ;*		xchg	ax,bx
-				xchg ax,bx			; was: db 087h,0C3h
+				db	087h,0C3h	; xchg ax,bx (alt encoding)
 		inc	bx
 ;*		db	0DDh, 08h, 04h,0E0h, 53h,0E0h
 		db	0DDh, 08h, 04h,0E0h, 53h,0E0h	;  Fixup - byte match
@@ -396,7 +396,7 @@ data_3		dw	63C3h, 0C38Bh, 0C4DDh	; Data table (indexed access)
 locloop_10:
 		push	bx
 ;*		or	byte ptr ds:data_14e[bx+si],0C4h
-				or byte ptr [bx+si-3A3Dh],0C4h			; was: db 082h,088h,0C3h,0C5h,0C4h
+				db	082h,088h,0C3h,0C5h,0C4h	; or byte ptr [bx+si-3A3Dh],0C4h (alt encoding)
 		test	ax,bx
 		jnc	loc_9			; Jump if carry=0
 		retn
@@ -408,7 +408,7 @@ locloop_12:
 			                        ;* No entry point to code
 		push	bx
 ;*		or	byte ptr ds:data_8e[bx+si],85h
-				or byte ptr [bx+si+43C3h],85h			; was: db 082h,088h,0C3h,043h,085h
+				db	082h,088h,0C3h,043h,085h	; or byte ptr [bx+si+43C3h],85h (alt encoding)
 		retn
 		db	0C4h,0C5h, 53h, 8Ah,0C3h, 53h
 		db	0DDh, 06h, 04h,0DDh, 8Dh,0C3h
@@ -511,7 +511,7 @@ loc_13:
 		inc	cx
 		inc	ax
 ;*		add	bl,0C8h
-				add bl,0C8h			; was: db 082h,0C3h,0C8h
+				db	082h,0C3h,0C8h	; add bl,0C8h (alt encoding)
 		db	0C9h,0CAh,0CBh, 84h, 82h,0DDh
 		db	 43h, 89h,0C3h, 63h, 8Ah,0C3h
 		db	0C4h
@@ -537,36 +537,36 @@ loc_14:
 locloop_15:
 		xchg	ss:data_8e[bp+si],al
 ;*		mov	bx,ax
-				mov bx,ax			; was: db 089h,0C3h
+				db	089h,0C3h	; mov bx,ax (alt encoding)
 		add	ax,8E04h
 		retn
 			                        ;* No entry point to code
 		inc	bx
 ;*		xchg	ax,bx
-				xchg ax,bx			; was: db 087h,0C3h
+				db	087h,0C3h	; xchg ax,bx (alt encoding)
 		inc	bx
 		test	al,bl
 		jnc	loc_13			; Jump if carry=0
 ;*		sbb	ch,43h			; 'C'
-				sbb ch,43h			; was: db 082h,0DDh,043h
+				db	082h,0DDh,043h	; sbb ch,43h (alt encoding)
 ;*		mov	bx,ax
-				mov bx,ax			; was: db 089h,0C3h
+				db	089h,0C3h	; mov bx,ax (alt encoding)
 		push	bx
 ;*		fld	qword ptr [bp+di-72h]	; Push onto stack
-				fld qword ptr [bp+di-72h]			; was: db 0DDh,043h,08Eh
+				db	0DDh,043h,08Eh	; fld qword ptr [bp+di-72h] (alt encoding)
 		retn
 			                        ;* No entry point to code
 ;*		ffree	st(4)			; Set tag to empty
-				ffree st(4)			; was: db 0DDh,0C4h
+				db	0DDh,0C4h	; ffree st(4) (alt encoding)
 ;*		ffree	st(4)			; Set tag to empty
-				ffree st(4)			; was: db 0DDh,0C4h
+				db	0DDh,0C4h	; ffree st(4) (alt encoding)
 		test	ax,bx
 		inc	bx
 		test	al,bl
 		jnc	loc_14			; Jump if carry=0
 		mov	es,bx
 ;*		jnc	loc_16			;*Jump if carry=0
-				jnc 8ACh			; was: db 073h,0DDh
+		db	073h, 0DDh		; jnc 8ACh (absolute)
 		mov	es,bx
 		db	 63h, 85h,0C3h, 43h, 84h,0C3h
 		db	 73h, 86h, 82h,0C3h, 43h, 89h
@@ -791,10 +791,10 @@ data_6		dw	0C386h, 8C63h		; Data table (indexed access)
 loc_17:
 		push	bx
 ;*		xchg	ax,bx
-				xchg ax,bx			; was: db 087h,0C3h
+				db	087h,0C3h	; xchg ax,bx (alt encoding)
 		inc	bx
 ;*		fld	qword ptr ss:data_8e[bp]	; Push onto stack
-				fld qword ptr [bp+43C3h]			; was: db 0DDh,086h,0C3h,043h
+				db	0DDh,086h,0C3h,043h	; fld qword ptr [bp+43C3h] (alt encoding)
 		test	ax,bx
 		inc	bx
 		test	ax,bx
@@ -938,7 +938,7 @@ locloop_20:
 		lds	ax,dword ptr [bp+di-23h]	; Load seg:offset ptr
 		inc	bx
 ;*		mov	bl,al
-				mov bl,al			; was: db 088h,0C3h
+				db	088h,0C3h	; mov bl,al (alt encoding)
 		inc	bx
 		test	ax,bx
 		les	ax,dword ptr ds:data_1e[di]	; Load seg:offset ptr
@@ -946,7 +946,7 @@ locloop_20:
 		inc	bx
 		test	al,bl
 ;*		mov	bx,ax
-				mov bx,ax			; was: db 089h,0C3h
+				db	089h,0C3h	; mov bx,ax (alt encoding)
 		push	bx
 		xchg	al,bl
 		add	ax,8804h
@@ -960,7 +960,7 @@ locloop_20:
 		mov	es,bx
 		inc	bx
 ;*		fld	qword ptr ss:data_10e[bp]	; Push onto stack
-				fld qword ptr [bp+73C3h]			; was: db 0DDh,086h,0C3h,073h
+				db	0DDh,086h,0C3h,073h	; fld qword ptr [bp+73C3h] (alt encoding)
 ;*		db	0DDh, 88h,0C3h,0C4h,0DDh, 85h
 		db	0DDh, 88h,0C3h,0C4h,0DDh, 85h	;  Fixup - byte match
 		db	0C3h,0C4h, 85h,0C3h,0C4h, 85h

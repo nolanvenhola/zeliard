@@ -1,15 +1,15 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				ZR3_32	                                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   16-Feb-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½				ZR3_32	                                 ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½      Created:   16-Feb-26		                                 ï¿½ï¿½
+;ï¿½ï¿½      Code type: zero start		                                 ï¿½ï¿½
+;ï¿½ï¿½      Passes:    9          Analysis	Options on: none                 ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
@@ -29,27 +29,27 @@ start:
 		add	[bx+si],al
 		or	bl,bl			; Zero ?
 ;*                         lock	add	cl,al
-				lock add cl,al			; was: db 0F0h,000h,0C1h
+		db	0F0h, 000h, 0C1h	; lock add cl,al
 ;*		fld	st(6)			; Push onto stack
-				fld st(6)			; was: db 0D9h,0C6h
+		db	0D9h, 0C6h		; fld st(6)
 ;*		fxch	st			; Exchange st & st(#)
-				fxch st(0)			; was: db 0D9h,0C8h
+		db	0D9h, 0C8h		; fxch st(0)
 ;*		fst	dword ptr [bx+si]	; Store st to memory
-				fst dword ptr [bx+si]			; was: db 0D9h,010h
+		db	0D9h, 010h		; fst dword ptr [bx+si]
 ;*		fisub	dword ptr [bp-26h]	; st = st - memory
-				fisub dword ptr [bp-26h]			; was: db 0DAh,066h,0DAh
+		db	0DAh, 066h, 0DAh	; fisub dword ptr [bp-26h]
 		hlt				; Halt processor
 ;*		fimul	dword ptr [bx]		; st = st * memory
-				fimul dword ptr [bx]			; was: db 0DAh,00Fh
+		db	0DAh, 00Fh		; fimul dword ptr [bx]
 ;*		fild	dword ptr [di]		; Push integer to stk
-				fild dword ptr [di]			; was: db 0DBh,005h
+		db	0DBh, 005h		; fild dword ptr [di]
 		popf				; Pop flags
 		add	[bx+di],dl
 		or	al,[bx+si]
 ;*		add	cl,al
-				add cl,al			; was: db 000h,0C1h
+		db	000h, 0C1h		; add cl,al (alt encoding)
 ;*		fldenv	byte ptr [bp-34h]	; Load Envirnmt state
-				fldenv [bp-34h]			; was: db 0D9h,066h,0CCh
+		db	0D9h, 066h, 0CCh	; fldenv [bp-34h]
 loc_2:
 		xchg	al,ah
 		lds	cx,dword ptr [bx+di]	; Load seg:offset ptr
@@ -66,11 +66,11 @@ loc_2:
 		les	dx,dword ptr [bp-34h]	; Load seg:offset ptr
 		mov	bl,dl
 ;*		fiadd	word ptr [bp+66h]
-				fiadd word ptr [bp+66h]			; was: db 0DEh,046h,066h
+		db	0DEh, 046h, 066h	; fiadd word ptr [bp+66h] (FPU encoding)
 		add	[bx+si],bx
 		test	ax,sp
 ;*		jbe	loc_1			;*Jump if below or =
-				jna 8h			; was: db 076h,0C8h
+		db	076h, 0C8h		; jbe 8h (absolute)
 		jbe	$-70h			; Jump if below or =
 		retn
 			                        ;* No entry point to code
@@ -1392,7 +1392,7 @@ locloop_3:
 		add	[bp+di],bl
 		add	[si],ah
 ;*		add	[bx+si+0],al
-				add [bx+si+0h],al			; was: db 000h,040h,000h
+		db	000h, 040h, 000h	; add [bx+si+0],al (3-byte form)
 		db	 00h, 00h,0FFh, 00h,0FFh, 00h
 		db	 00h, 00h, 00h, 00h, 00h, 00h
 		db	0FFh,0FFh, 00h, 00h, 00h, 00h

@@ -25,9 +25,9 @@ start:
 		sbb	ax,0
 		std				; Set direction flag
 ;*		fdiv	st,st			; st = st / st(#)
-				fdiv st(0)			; was: db 0D8h,0F0h
+		db	0D8h, 0F0h		; fdiv st,st (FPU instruction TASM syntax differs)
 ;*		add	bl,ch
-				add bl,ch			; was: db 000h,0EBh
+		db	000h, 0EBh		; add bl,ch (alt encoding)
 		xlat				; al=[al+[bx]] table
 		stc				; Set carry flag
 		xlat				; al=[al+[bx]] table
@@ -37,7 +37,7 @@ start:
 		jns	$-26h			; Jump if not sign
 		call	trigger_func_1
 ;*		fld	dword ptr [di]		; Push onto stack
-				fld dword ptr [di]			; was: db 0D9h,005h
+		db	0D9h, 005h		; fld dword ptr [di]
 		db	0FFh,0FFh,0FFh, 0Ah, 00h, 00h
 		db	0EBh,0D7h, 83h,0C4h, 56h,0C9h
 		db	0C7h,0CCh, 88h,0C3h, 66h,0CCh
@@ -163,9 +163,9 @@ start:
 
 zr3_31		endp
 
-;ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ;                              SUBROUTINE
-;ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 trigger_func_1		proc	near
 		retf	86D8h

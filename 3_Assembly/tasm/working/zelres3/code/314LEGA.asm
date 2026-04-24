@@ -112,38 +112,18 @@ data_5		dw	1615h			; Data table (indexed access)
 		db	 24h, 1Ah, 25h, 1Dh, 00h, 1Ah
 		db	 1Bh, 1Dh, 1Eh, 00h, 0Dh, 0Eh
 		db	 26h, 27h, 00h, 0Fh, 00h, 28h
-		; Tile index table
-		db	'()', 0		; 0x0001
-		db	'*+./', 0		; 0x0004
-		db	',-01', 0		; 0x0009
-		db	'2367', 0		; 0x000E
-		db	 35h, 19h, 1Ah, 00h, 36h, 37h
-		db	 3Ah, 3Bh, 00h, 19h, 1Ah, 1Ch
-		; Tile/character index table
-		db	'=\'', 0		; 0x0000
-		db	'<=>?', 0		; 0x0003
-		db	'?@CD', 0		; 0x0008
-		db	'ABEF', 0		; 0x000D
-		db	'GHI', 0		; 0x0012
-		db	'J', 0		; 0x0017
-		db	'M\'', 0		; 0x0019
-		db	'45XY', 0		; 0x001C
-		db	'KLNO', 0		; 0x0021
-		db	'PQ', 0		; 0x0026
-		db	'D', 0		; 0x0029
-		db	'XYZ[', 0		; 0x002B
-		; Tile index table (continued)
-		db	'\'(', 0		; 0x0000
-		db	'a,jk', 0		; 0x0003
-		db	',ikl', 0		; 0x0008
-		db	'klmn', 0		; 0x000D
-		db	'nopq', 0		; 0x0012
-		db	'pqZr', 0		; 0x0017
-		db	'\\^_', 0		; 0x001D
-		db	'\\]_`', 0		; 0x0021
-		; Tile index table (continued)
-		db	'vwz{', 0		; 0x0001
-		db	'xy|}', 0		; 0x0006
+		; Tile index tables (Sourcer emitted mis-split strings; raw bytes from reference)
+		db	29h, 00h, 2Ah, 2Bh, 2Eh, 2Fh, 00h, 2Ch, 2Dh, 30h, 31h, 00h
+		db	32h, 33h, 36h, 37h, 00h, 34h, 35h, 19h, 1Ah, 00h, 36h, 37h
+		db	3Ah, 3Bh, 00h, 19h, 1Ah, 1Ch, 1Dh, 00h, 1Ah, 00h, 1Dh, 1Eh
+		db	00h, 0Dh, 0Eh, 3Dh, 27h, 00h, 3Ch, 3Dh, 3Eh, 3Fh, 00h, 3Fh
+		db	40h, 43h, 44h, 00h, 41h, 42h, 45h, 46h, 00h, 47h, 48h, 49h
+		db	00h, 00h, 4Ah, 0Eh, 4Dh, 27h, 00h, 34h, 35h, 58h, 59h, 00h
+		db	4Bh, 4Ch, 4Eh, 4Fh, 00h, 50h, 51h, 00h, 44h, 00h, 58h, 59h
+		db	5Ah, 5Bh, 00h, 53h, 54h, 56h, 57h, 00h, 4Eh, 4Fh, 54h, 55h
+		db	00h, 00h, 00h, 52h, 53h, 00h, 0Dh, 0Eh, 5Dh, 27h, 00h, 0Eh
+		db	0Fh, 27h, 28h, 00h, 61h, 2Ch, 6Ah, 6Bh, 00h, 2Ch, 69h, 6Bh
+		db	6Ch, 00h, 6Bh, 6Ch
 		db	 6Dh, 6Eh, 00h, 6Eh, 6Fh, 70h
 		db	 71h, 00h, 70h, 71h, 5Ah, 72h
 		db	 00h, 00h, 5Ch, 5Eh, 5Fh, 00h
@@ -205,7 +185,7 @@ loc_4:
 		inc	byte ptr ds:data_25e
 		add	si,10h
 ;*		jmp	short loc_2		;*
-				jmp 235h			; was: db 0EBh,0C4h
+		db	0EBh, 0C4h		; jmp short 235h (absolute)
 loc_5:
 		mov	si,ds:data_45e
 		mov	word ptr [si],0FFFFh
@@ -316,7 +296,7 @@ loc_18:
 		jnz	loc_19			; Jump if not zero
 		cmp	byte ptr ds:data_28e,6
 		jne	loc_19			; Jump if not equal
-		call	word ptr cs:data_6
+		call	word ptr cs:[11Ah]	; was: call word ptr cs:data_6 (fn ptr at offset 11Ah)
 		and	al,1
 		jnz	loc_19			; Jump if not zero
 		test	byte ptr ds:data_36e,0FFh
@@ -634,7 +614,7 @@ lvrender_func_4		endp
 loc_47:
 		cmp	byte ptr ds:data_27e,28h	; '('
 ;*		jae	loc_50			;*Jump if above or =
-				jnc 6C6h			; was: db 073h,04Dh
+		db	073h, 04Dh		; jnc 6C6h (absolute)
 		mov	byte ptr ds:data_48e,0FFh
 		inc	byte ptr ds:data_27e
 		cmp	byte ptr ds:data_27e,0Ah
@@ -666,9 +646,9 @@ loc_49:
 		add	ax,0C605h
 		push	es
 ;*		xor	bh,bh			; Zero register
-				xor bh,bh			; was: db 030h,0FFh
+		db	030h, 0FFh		; xor bh,bh (alt encoding)
 ;*		inc	bx
-				inc bx			; was: db 0FFh,0C3h
+		db	0FFh, 0C3h		; inc bx (alt encoding)
 		db	0DCh,0A6h,0E3h,0A6h,0ECh,0A6h
 		db	0F6h,0A6h, 01h,0A7h, 0Ch,0A7h
 		db	 18h,0A7h, 22h,0A7h, 2Eh,0A7h

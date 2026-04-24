@@ -1,15 +1,15 @@
 
 PAGE  59,132
 
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ				ZR3_34	                                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛ      Created:   16-Feb-26		                                 ÛÛ
-;ÛÛ      Code type: zero start		                                 ÛÛ
-;ÛÛ      Passes:    9          Analysis	Options on: none                 ÛÛ
-;ÛÛ					                                 ÛÛ
-;ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½				ZR3_34	                                 ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½      Created:   16-Feb-26		                                 ï¿½ï¿½
+;ï¿½ï¿½      Code type: zero start		                                 ï¿½ï¿½
+;ï¿½ï¿½      Passes:    9          Analysis	Options on: none                 ï¿½ï¿½
+;ï¿½ï¿½					                                 ï¿½ï¿½
+;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
@@ -48,9 +48,9 @@ start:
 		xlat				; al=[al+[bx]] table
 		mov	di,data_13e
 ;*		fcom	dword ptr ds:data_9e	; Compare with st
-				fcom dword ptr [2FD9h]			; was: db 0D8h,016h,0D9h,02Fh
+		db	0D8h, 016h, 0D9h, 02Fh	; fcom dword ptr [2FD9h]
 ;*		fld	dword ptr data_3	; Push onto stack
-				fld dword ptr [135h]			; was: db 0D9h,006h,035h,001h
+		db	0D9h, 006h, 035h, 001h	; fld dword ptr [135h]
 		sub	cl,[bp+si]
 		add	[bx+si],al
 		inc	bp
@@ -593,7 +593,7 @@ data_5		dw	0C388h, 8753h, 53C3h	; Data table (indexed access)
 locloop_4:
 		push	bx
 ;*		ffree	st(4)			; Set tag to empty
-				ffree st(4)			; was: db 0DDh,0C4h
+		db	0DDh, 0C4h		; ffree st(4) (no WAIT prefix)
 		test	ax,bx
 		inc	bx
 		mov	data_7[di],ax
@@ -866,7 +866,7 @@ locloop_6:
 locloop_8:
 		adc	dx,sp
 ;*		xchg	ax,bx
-				xchg ax,bx			; was: db 087h,0C3h
+		db	087h, 0C3h		; xchg ax,bx (alt encoding)
 		loopnz	locloop_5		; Loop if zf=0, cx>0
 
 		retn
@@ -965,7 +965,7 @@ locloop_11:
 		loopnz	locloop_10		; Loop if zf=0, cx>0
 
 ;*		fld	qword ptr [bp+di-7Dh]	; Push onto stack
-				fld qword ptr [bp+di-7Dh]			; was: db 0DDh,043h,083h
+		db	0DDh, 043h, 083h	; fld qword ptr [bp+di-7Dh] (no WAIT prefix)
 		nop
 		retn
 			                        ;* No entry point to code
@@ -993,7 +993,7 @@ locloop_12:
 			                        ;* No entry point to code
 		inc	bx
 ;*		xchg	ax,bx
-				xchg ax,bx			; was: db 087h,0C3h
+		db	087h, 0C3h		; xchg ax,bx (alt encoding)
 		push	bx
 		retf
 			                        ;* No entry point to code
@@ -1006,26 +1006,26 @@ locloop_12:
 			                        ;* No entry point to code
 		push	bx
 ;*		adc	word ptr ds:data_10e[bx+si],0FF87h
-				adc word ptr [bx+si+43C3h],0FFFFFFFFFFFFFF87h			; was: db 083h,090h,0C3h,043h,087h
+		db	083h, 090h, 0C3h, 043h, 087h	; adc word ptr [bx+si+43C3h],-79h
 		retn
 			                        ;* No entry point to code
 		inc	bx
 ;*		fld	qword ptr ds:data_11e[bx]	; Push onto stack
-				fld qword ptr [bx+53C3h]			; was: db 0DDh,087h,0C3h,053h
+		db	0DDh, 087h, 0C3h, 053h	; fld qword ptr [bx+53C3h]
 		xchg	[bx+di],al
 		and	ds:data_11e[bx+si],cl
 ;*		adc	word ptr ds:data_15e[bx+si],0FFC4h
-				adc word ptr [bx+si-223Dh],0FFFFFFFFFFFFFFC4h			; was: db 083h,090h,0C3h,0DDh,0C4h
+		db	083h, 090h, 0C3h, 0DDh, 0C4h	; adc word ptr [bx+si-223Dh],-3Ch
 ;*		xchg	ax,bx
-				xchg ax,bx			; was: db 087h,0C3h
+		db	087h, 0C3h		; xchg ax,bx (alt encoding)
 		push	bx
 ;*		xchg	ax,bx
-				xchg ax,bx			; was: db 087h,0C3h
+		db	087h, 0C3h		; xchg ax,bx (alt encoding)
 		push	bx
 		xchg	[bx+di],al
 		and	ds:data_11e[bx+si],cl
 ;*		adc	word ptr ds:data_10e[bx+si],0FF87h
-				adc word ptr [bx+si+43C3h],0FFFFFFFFFFFFFF87h			; was: db 083h,090h,0C3h,043h,087h
+		db	083h, 090h, 0C3h, 043h, 087h	; adc word ptr [bx+si+43C3h],-79h
 		retn
 			                        ;* No entry point to code
 		lds	ax,dword ptr [bp+di-79h]	; Load seg:offset ptr
@@ -1035,11 +1035,11 @@ locloop_12:
 		xchg	[bx+di],al
 		and	ds:data_2e[bx+si],cl
 ;*		sub	word ptr ds:data_1e[bx],0FF88h
-				sub word ptr [bx+2001h],0FFFFFFFFFFFFFF88h			; was: db 083h,0AFh,001h,020h,088h
+		db	083h, 0AFh, 001h, 020h, 088h	; sub word ptr [bx+2001h],-78h
 		retn
 			                        ;* No entry point to code
 ;*		fld	qword ptr [bp+di-7Dh]	; Push onto stack
-				fld qword ptr [bp+di-7Dh]			; was: db 0DDh,043h,083h
+		db	0DDh, 043h, 083h	; fld qword ptr [bp+di-7Dh]
 		db	 60h,0C2h,0C1h, 41h, 50h, 05h
 		db	 02h, 07h, 01h, 51h, 70h, 51h
 		db	 60h, 51h,0C1h, 41h, 81h, 01h
