@@ -22,7 +22,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; Data references outside this 5463-byte blob. Retained from Sourcer's
 ; interpretation of the faux-code bytes at the head/tail; most are
 ; artefacts of data bytes being decoded as instructions.
@@ -41,12 +40,12 @@ data_15e	equ	1			;*
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
 _351TILAN	proc	far
 
 start:
+
 tile_anim_data	label	byte
 		push	bx
 		adc	ax,0
@@ -332,30 +331,28 @@ data_6		db	0B9h
 ; --- Tile animation data continues. Labels locloop_1/locloop_2 below
 ;     are Sourcer artefacts; the bytes are tile-pattern / palette data.
 ;     Retained mnemonics assemble to the original data bytes exactly.
-locloop_1:
-		add	[bx],ax			; data 01 07
-		out	1,al			; data E6 01
-		pop	es			; data 07
-		out	1,al			; data E6 01
-		pop	es			; data 07
-		out	1,al			; data E6 01
-		db	0Fh			; data (Sourcer: pop cs)
-		out	1,al			; data E6 01
-		db	0Fh			; data (Sourcer: pop cs)
-		clc				; data F8
-		db	 00h,0F8h		; data (Sourcer: add al,bh)
-		cld				; data FC
-                           lock	add	[bx+si+3Eh],dh
-		loopnz	locloop_2		; Loop if zf=0, cx>0
 
+locloop_1:
+			add	[bx],ax			; data 01 07
+			out	1,al			; data E6 01
+			pop	es			; data 07
+			out	1,al			; data E6 01
+			pop	es			; data 07
+			out	1,al			; data E6 01
+			db	0Fh			; data (Sourcer: pop cs)
+			out	1,al			; data E6 01
+			db	0Fh			; data (Sourcer: pop cs)
+			clc				; data F8
+			db	 00h,0F8h		; data (Sourcer: add al,bh)
+			cld				; data FC
+                           lock	add	[bx+si+3Eh],dh
+			loopnz	locloop_2		; Loop if zf=0, cx>0
 
 locloop_2:
-		loopnz	locloop_1		; Loop if zf=0, cx>0
+			loopnz	locloop_1		; Loop if zf=0, cx>0
 
-;*		add	ax,si
-		db	 01h,0F0h		; data (Sourcer fake instr)
-;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		; data (Sourcer fake instr)
+		db	 01h,0F0h		; data (Sourcer: add ax,si)
+		db	 00h, 40h, 00h		; data (Sourcer: add [bx+si+0],al)
 		db	0A0h,0E6h, 01h,0E0h,0E6h, 01h
 		db	0C0h,0E6h, 07h, 02h, 0Ch,0E6h
 		db	 01h, 0Fh, 3Fh,0F0h, 00h, 1Dh
@@ -496,23 +493,23 @@ sub_1		proc	near
 		db	 01h, 0Fh,0E6h, 01h, 03h,0E6h
 		db	 02h,0EBh,0F4h,0E9h,0F4h, 0Bh
 		db	0D0h
+
 loc_3:
-		stosw				; Store ax to es:[di]
-		rol	byte ptr [bp+di],1	; Rotate
-		shr	bh,1			; Shift w/zeros fill
-		rol	byte ptr [bx+si],1	; Rotate
-		inc	ax
-		inc	word ptr [bx+si-1Ah]
-;*		add	ch,bh
-		db	 00h,0FDh		; data (Sourcer fake instr)
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		hlt				; Halt processor
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		hlt				; Halt processor
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		push	ax
-		out	0,al			; port 0, DMA-1 bas&add ch 0
-		jo	loc_3			; Jump if overflow=1
+			stosw				; Store ax to es:[di]
+			rol	byte ptr [bp+di],1	; Rotate
+			shr	bh,1			; Shift w/zeros fill
+			rol	byte ptr [bx+si],1	; Rotate
+			inc	ax
+			inc	word ptr [bx+si-1Ah]
+			db	 00h,0FDh		; data (Sourcer: add ch,bh)
+			out	1,al			; port 1, DMA-1 bas&cnt ch 0
+			hlt				; Halt processor
+			out	1,al			; port 1, DMA-1 bas&cnt ch 0
+			hlt				; Halt processor
+			out	1,al			; port 1, DMA-1 bas&cnt ch 0
+			push	ax
+			out	0,al			; port 0, DMA-1 bas&add ch 0
+			jo	loc_3			; Jump if overflow=1
 		and	ax,3
 		add	ax,[bx+si]
 		add	[bx+si],ax
@@ -522,19 +519,16 @@ loc_3:
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 		cmc				; Complement carry
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-;*		aam	1			; undocumented inst
-		db	0D4h, 01h		; data (Sourcer fake instr)
+		db	0D4h, 01h		; data (Sourcer: aam 1 ; undocumented inst)
 		add	ds:data_13e,cl
 		add	[bx],cl
-;*		aad	0C0h			; undocumented inst
-		db	0D5h,0C0h		; data (Sourcer fake instr)
-;*		add	bl,al
-		db	 00h,0C3h		; data (Sourcer fake instr)
-;*		aad	7Ch			; '|' undocumented inst
-		db	0D5h, 7Ch		; data (Sourcer fake instr)
+		db	0D5h,0C0h		; data (Sourcer: aad 0C0h ; undocumented inst)
+		db	 00h,0C3h		; data (Sourcer: add bl,al)
+		db	0D5h, 7Ch		; data (Sourcer: aad 7Ch ; '|' undocumented inst)
+
 loc_4:
-		std				; Set direction flag
-		js	loc_4			; Jump if sign=1
+			std				; Set direction flag
+			js	loc_4			; Jump if sign=1
 		pop	di
 		cmc				; Complement carry
 		pop	si
@@ -542,19 +536,16 @@ loc_4:
 		pop	es
 		std				; Set direction flag
 		xor	ax,35D5h
-;*		aad	0D5h			; undocumented inst
-		db	0D5h,0D5h		; data (Sourcer fake instr)
+		db	0D5h,0D5h		; data (Sourcer: aad 0D5h ; undocumented inst)
 		push	sp
-;*		aad	54h			; 'T' undocumented inst
-		db	0D5h, 54h		; data (Sourcer fake instr)
+		db	0D5h, 54h		; data (Sourcer: aad 54h ; 'T' undocumented inst)
 		out	0,al			; port 0, DMA-1 bas&add ch 0
 		inc	ax
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 		inc	ax
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 		inc	ax
-;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		; data (Sourcer fake instr)
+		db	 00h, 40h, 00h		; data (Sourcer: add [bx+si+0],al)
 		db	 40h, 00h, 40h,0E6h, 01h, 5Ch
 		db	0E6h, 01h, 15h,0F0h,0E6h, 00h
 		db	 01h, 50h,0E6h, 01h, 03h, 00h
@@ -572,57 +563,53 @@ loc_4:
 		db	 2Bh, 54h, 00h, 2Fh, 15h, 2Fh
 		db	0E6h
 		db	 0Ah, 40h
+
 loc_5:
-		add	[bx+si-1Ah],al
-;*		add	[bx+si+0],ax
-		db	 01h, 40h, 00h		; data (Sourcer fake instr)
-		db	0D0h,0E6h, 01h, 55h,0E6h, 01h
-		db	 07h, 50h,0E6h, 01h, 17h, 32h
-		db	 96h, 00h, 0Fh, 7Ah, 0Eh, 00h
-		db	 05h, 00h, 05h,0E6h, 01h, 0Fh
-		db	0E6h, 01h, 07h, 00h, 01h, 00h
-		db	 06h,0E6h, 01h, 03h,0E6h, 02h
-		db	 80h, 70h, 80h, 00h, 80h, 00h
-		db	 80h, 00h, 80h, 00h,0C0h,0E6h
-		db	 01h,0C0h,0E6h, 01h,0E0h,0E6h
-		db	 01h,0F0h,0E6h, 01h,0F0h,0E6h
-		db	 01h,0F8h,0E6h, 1Ch, 01h, 00h
-		db	 01h, 01h, 00h, 0Eh,0D5h,0E6h
-		db	 00h, 0Fh
+			add	[bx+si-1Ah],al
+			db	 01h, 40h, 00h		; data (Sourcer: add [bx+si+0],ax)
+			db	0D0h,0E6h, 01h, 55h,0E6h, 01h
+			db	 07h, 50h,0E6h, 01h, 17h, 32h
+			db	 96h, 00h, 0Fh, 7Ah, 0Eh, 00h
+			db	 05h, 00h, 05h,0E6h, 01h, 0Fh
+			db	0E6h, 01h, 07h, 00h, 01h, 00h
+			db	 06h,0E6h, 01h, 03h,0E6h, 02h
+			db	 80h, 70h, 80h, 00h, 80h, 00h
+			db	 80h, 00h, 80h, 00h,0C0h,0E6h
+			db	 01h,0C0h,0E6h, 01h,0E0h,0E6h
+			db	 01h,0F0h,0E6h, 01h,0F0h,0E6h
+			db	 01h,0F8h,0E6h, 1Ch, 01h, 00h
+			db	 01h, 01h, 00h, 0Eh,0D5h,0E6h
+			db	 00h, 0Fh
+
 loc_6:
-;*		aad	0			; undocumented inst
-		db	0D5h, 00h		; data (Sourcer fake instr)
-		add	[bp+di],ax
-		pop	cx
-;*		add	bx,si
-		db	 01h,0F3h		; data (Sourcer fake instr)
-;*		add	ax,si
-		db	 01h,0F0h		; data (Sourcer fake instr)
-		add	ds:data_15e,di
-		pop	es
-		cmc				; Complement carry
-		add	[si],al
-		jmp	short loc_5
+				db	0D5h, 00h		; data (Sourcer: aad 0 ; undocumented inst)
+				add	[bp+di],ax
+				pop	cx
+				db	 01h,0F3h		; data (Sourcer: add bx,si)
+				db	 01h,0F0h		; data (Sourcer: add ax,si)
+				add	ds:data_15e,di
+				pop	es
+				cmc				; Complement carry
+				add	[si],al
+				jmp	short loc_5
+
 sub_1		endp
 
-			                        ; (data -- Sourcer: no entry point)
-		call	sub_1
-		stc				; Set carry flag
-		cld				; Clear direction
-		jns	loc_6			; Jump if not sign
+				                        ; (data -- Sourcer: no entry point)
+			call	sub_1
+			stc				; Set carry flag
+			cld				; Clear direction
+			jns	loc_6			; Jump if not sign
 		push	es
 		pop	ds
 		inc	ax
 		out	0,al			; port 0, DMA-1 bas&add ch 0
                            lock	out	2Ch,al			; port 2Ch ??I/O Non-standard
-;*		add	si,sp
-		db	 01h,0E6h		; data (Sourcer fake instr)
+		db	 01h,0E6h		; data (Sourcer: add si,sp)
 		add	[bp+di],ax
 		out	dx,ax			; port 0, DMA-1 bas&add ch 0
-;*		aam	0E3h			; undocumented inst
-		db	0D4h,0E3h		; data (Sourcer fake instr)
-;*		aam	3Eh			; '>' undocumented inst
-		db	0D4h, 3Eh		; data (Sourcer fake instr)
+		db	0D4h,0E3h		; data (Sourcer: aam 0E3h ; undocumented inst)
+		db	0D4h, 3Eh		; data (Sourcer: aam 3Eh ; '>' undocumented inst)
 		db	0C0h, 0Eh,0C0h, 7Dh, 00h, 3Dh
 		db	0C0h,0E6h, 00h,0FBh,0E6h, 01h
 		db	0FCh,0E6h, 01h,0FCh,0E6h, 01h
@@ -654,39 +641,35 @@ sub_1		endp
 		db	0E6h, 01h, 01h, 41h, 00h, 02h
 		db	 80h,0C2h, 80h, 05h, 00h,0C8h
 		db	 00h, 13h,0FCh,0D1h, 00h
+
 loc_7:
-		push	cs
-		std				; Set direction flag
-		jo	$+2			; delay for I/O
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			; data (Sourcer fake instr)
-		std				; Set direction flag
-		adc	[bx+si],al
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			; data (Sourcer fake instr)
-		cmc				; Complement carry
-		inc	ax
-		add	ds:data_13e[bx],cl
-;*		add	ch,dh
-		db	 00h,0F5h		; data (Sourcer fake instr)
-		push	sp
-		out	2,al			; port 2, DMA-1 bas&add ch 1
-;*		xor	dh,ah
-		db	 30h,0E6h		; data (Sourcer fake instr)
-		add	[bx+si],si
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		shl	dh,1			; Shift w/zeros fill
-		add	[bx+si-1Ah],dx
-		add	[bx+si-1Ah],ax
-		or	[di],ax
-		push	ax
-		rol	byte ptr [bx],1		; Rotate
-		out	0,al			; port 0, DMA-1 bas&add ch 0
-		jg	loc_7			; Jump if >
+			push	cs
+			std				; Set direction flag
+			jo	$+2			; delay for I/O
+			db	0Fh		; data (Sourcer: pop cs ; Dangerous-8088 only)
+			std				; Set direction flag
+			adc	[bx+si],al
+			db	0Fh		; data (Sourcer: pop cs ; Dangerous-8088 only)
+			cmc				; Complement carry
+			inc	ax
+			add	ds:data_13e[bx],cl
+			db	 00h,0F5h		; data (Sourcer: add ch,dh)
+			push	sp
+			out	2,al			; port 2, DMA-1 bas&add ch 1
+			db	 30h,0E6h		; data (Sourcer: xor dh,ah)
+			add	[bx+si],si
+			out	1,al			; port 1, DMA-1 bas&cnt ch 0
+			shl	dh,1			; Shift w/zeros fill
+			add	[bx+si-1Ah],dx
+			add	[bx+si-1Ah],ax
+			or	[di],ax
+			push	ax
+			rol	byte ptr [bx],1		; Rotate
+			out	0,al			; port 0, DMA-1 bas&add ch 0
+			jg	loc_7			; Jump if >
 		add	[bx+di],al
 		aas				; Ascii adjust
-;*		aam	0E6h			; undocumented inst
-		db	0D4h,0E6h		; data (Sourcer fake instr)
+		db	0D4h,0E6h		; data (Sourcer: aam 0E6h ; undocumented inst)
 		add	[di],bh
 		push	bp
 		add	[si],al
@@ -703,8 +686,7 @@ loc_7:
 		push	ax
 		out	1,al			; port 1, DMA-1 bas&cnt ch 0
 		inc	ax
-;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		; data (Sourcer fake instr)
+		db	 00h, 40h, 00h		; data (Sourcer: add [bx+si+0],al)
 		db	 80h,0E6h, 14h, 02h,0E6h, 01h
 		db	 03h,0E6h, 01h, 0Ah,0E6h, 01h
 		db	 0Eh,0E6h, 01h, 08h,0E6h, 0Ch
@@ -720,33 +702,33 @@ loc_7:
 		db	 00h,0A0h, 00h, 13h, 3Fh,0E0h
 		db	 10h, 0Dh,0EFh, 50h, 00h, 05h
 		db	0FFh, 50h, 00h, 04h,0FFh
+
 loc_8:
-		push	dx
-		add	[bx+di],al
-		std				; Set direction flag
-		push	dx
-		out	0,al			; port 0, DMA-1 bas&add ch 0
-		adc	ax,0E655h
-		adc	al,80h
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		inc	ax
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		inc	ax
-		out	2,al			; port 2, DMA-1 bas&add ch 1
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			; data (Sourcer fake instr)
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		add	ax,[bx+si]
-		add	[bx+si],ax
-		add	ah,dh
-		or	ax,[bp+di]
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		add	ah,dh
-		add	[di],al
-		push	ax
-		rol	byte ptr [di],1		; Rotate
-		out	0,al			; port 0, DMA-1 bas&add ch 0
-		jg	loc_8			; Jump if >
+			push	dx
+			add	[bx+di],al
+			std				; Set direction flag
+			push	dx
+			out	0,al			; port 0, DMA-1 bas&add ch 0
+			adc	ax,0E655h
+			adc	al,80h
+			out	1,al			; port 1, DMA-1 bas&cnt ch 0
+			inc	ax
+			out	1,al			; port 1, DMA-1 bas&cnt ch 0
+			inc	ax
+			out	2,al			; port 2, DMA-1 bas&add ch 1
+			db	0Fh		; data (Sourcer: pop cs ; Dangerous-8088 only)
+			out	1,al			; port 1, DMA-1 bas&cnt ch 0
+			add	ax,[bx+si]
+			add	[bx+si],ax
+			add	ah,dh
+			or	ax,[bp+di]
+			out	1,al			; port 1, DMA-1 bas&cnt ch 0
+			add	ah,dh
+			add	[di],al
+			push	ax
+			rol	byte ptr [di],1		; Rotate
+			out	0,al			; port 0, DMA-1 bas&add ch 0
+			jg	loc_8			; Jump if >
 		inc	ax
 		add	ds:data_12e[bx],bh
 		add	[bx+54h],bh
@@ -775,8 +757,7 @@ loc_8:
 		mov	ch,54h			; 'T'
 		xor	ax,0BF54h
 		add	[bx],bh
-;*		add	bh,cl
-		db	 00h,0CFh		; data (Sourcer fake instr)
+		db	 00h,0CFh		; data (Sourcer: add bh,cl)
 		or	byte ptr [bx],80h
 		add	byte ptr [bx+si],0Fh
 		inc	ax
@@ -796,8 +777,7 @@ loc_8:
 		add	[si],dl
 		out	0Ah,al			; port 0Ah, DMA-1 mask reg bit
 		mov	al,ds:data_3e
-;*		add	[si+0],dl
-		db	 00h, 54h, 00h		; data (Sourcer fake instr)
+		db	 00h, 54h, 00h		; data (Sourcer: add [si+0],dl)
 		db	0A9h,0E6h, 01h, 05h,0E6h, 13h
 		db	 0Ch, 00h, 03h, 00h, 14h, 00h
 		db	 2Bh, 00h, 28h, 00h, 14h,0E6h
@@ -889,19 +869,19 @@ data_8		db	5			; Data table (indexed access)
 		db	 00h, 80h, 00h, 40h,0E6h, 1Ch
 		db	0A8h, 00h, 50h, 00h
 		db	50h
+
 loc_9:
-		add	ah,ds:data_1e[bx+si]
-		pop	es
-		and	dh,0
-		add	ax,200h
-		add	byte ptr [di],0
-		add	[bx+si],ax
-		add	al,al
-		add	[bx+si],dh
-;*		add	ax,ax
-		db	 01h,0C0h		; data (Sourcer fake instr)
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		jo	loc_9			; Jump if overflow=1
+			add	ah,ds:data_1e[bx+si]
+			pop	es
+			and	dh,0
+			add	ax,200h
+			add	byte ptr [di],0
+			add	[bx+si],ax
+			add	al,al
+			add	[bx+si],dh
+			db	 01h,0C0h		; data (Sourcer: add ax,ax)
+			out	1,al			; port 1, DMA-1 bas&cnt ch 0
+			jo	loc_9			; Jump if overflow=1
 		xor	cx,[bp+si]
 		add	[di],al
 		out	0,al			; port 0, DMA-1 bas&add ch 0
@@ -916,19 +896,19 @@ loc_9:
 		db	 28h, 00h, 54h,0E6h
 
 locloop_10:
-		add	al,2
-		add	[bx+di],al
-		add	[bp+si],cl
-		add	[di],al
-		add	[si],al
-		add	[bp+si],cl
-		out	0Eh,al			; port 0Eh, DMA-1 clr mask reg
-		adc	al,40h			; '@'
-		or	sp,[bx+si]
-		or	al,[bx+si]
-		mov	ch,0E0h
-		out	0,al			; port 0, DMA-1 bas&add ch 0
-		loopnz	locloop_10		; Loop if zf=0, cx>0
+			add	al,2
+			add	[bx+di],al
+			add	[bp+si],cl
+			add	[di],al
+			add	[si],al
+			add	[bp+si],cl
+			out	0Eh,al			; port 0Eh, DMA-1 clr mask reg
+			adc	al,40h			; '@'
+			or	sp,[bx+si]
+			or	al,[bx+si]
+			mov	ch,0E0h
+			out	0,al			; port 0, DMA-1 bas&add ch 0
+			loopnz	locloop_10		; Loop if zf=0, cx>0
 
 		sbb	ax,[bp+di]
 		add	al,0E6h
@@ -940,8 +920,7 @@ locloop_10:
 		pop	es
 		inc	bp
 		add	[bp+si],bl
-;*		add	dx,cx
-		db	 01h,0CAh		; data (Sourcer fake instr)
+		db	 01h,0CAh		; data (Sourcer: add dx,cx)
 		add	[di],dl
 		add	[bx+di],al
 		add	dx,si
@@ -951,8 +930,7 @@ locloop_10:
 		rol	byte ptr [bx+si],1	; Rotate
 		inc	ax
 		add	ds:data_5e[bx+si],al
-;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		; data (Sourcer fake instr)
+		db	 00h, 40h, 00h		; data (Sourcer: add [bx+si+0],al)
 		db	 50h, 00h,0A0h,0E6h, 00h, 02h
 		db	 0Fh, 55h, 01h, 00h, 3Eh,0D4h
 		db	0E6h, 00h, 7Bh,0D4h, 01h, 40h
@@ -1091,10 +1069,10 @@ locloop_10:
 		db	 0Fh, 00h, 0Fh,0FFh, 00h,0FFh
 		db	 00h, 55h, 00h, 55h, 00h,0ABh
 		db	 00h
+
 loc_11:
 		stosw				; Store ax to es:[di]
-;*		add	[di+0],dl
-		db	 00h, 55h, 00h		; data (Sourcer fake instr)
+		db	 00h, 55h, 00h		; data (Sourcer: add [di+0],dl)
 		db	 55h, 00h,0ABh, 00h,0ABh, 00h
 		db	 55h, 00h, 55h, 00h,0ABh, 00h
 		db	0ABh, 00h,0FCh, 00h,0FCh,0E6h
@@ -1147,27 +1125,24 @@ loc_11:
 		db	 55h, 80h,0ABh, 00h,0ABh, 00h
 		db	 5Ch, 00h
 		db	5Ch
+
 loc_12:
-;*		add	al,dh
-		db	 00h,0F0h		; data (Sourcer fake instr)
-;*		add	al,dh
-		db	 00h,0F0h		; data (Sourcer fake instr)
+		db	 00h,0F0h		; data (Sourcer: add al,dh)
+		db	 00h,0F0h		; data (Sourcer: add al,dh)
 		out	0Ch,al			; port 0Ch, DMA-1 clr byte ptr
 		inc	word ptr [bx+si]
 		stosb				; Store al to es:[di]
 		add	dx,ax
 		add	bl,bh
 		add	dx,[bx+si+2]
-;*		jg	loc_13			;*Jump if >
-		db	 7Fh, 03h		; data (Sourcer fake instr)
+		db	 7Fh, 03h		; data (Sourcer: jg loc_13 ;*Jump if >)
 		push	ax
 		add	bh,[bx+3]
 		push	ax
 		add	bh,[bx-1Ah]
 		or	dh,al
 		add	ds:data_4e[bx+si],ah
-;*		add	[bx+si+0],bh
-		db	 00h, 78h, 00h		; data (Sourcer fake instr)
+		db	 00h, 78h, 00h		; data (Sourcer: add [bx+si+0],bh)
 		db	 5Ch, 00h, 78h, 00h, 5Ch, 00h
 		db	 78h, 00h, 5Ch, 00h, 78h, 00h
 		db	 03h, 00h, 02h,0FFh, 03h, 00h
@@ -1240,27 +1215,24 @@ loc_12:
 		db	 0Ah,0E6h, 01h, 07h,0E6h, 01h
 
 locloop_14:
-		push	cs
-		add	[bx+si],ch
-		add	[si],dl
-		add	[bx+si],dl
-		add	[bx+si],ch
-		out	22h,al			; port 22h ??I/O Non-standard
-		add	ax,[bx+si]
-		sbb	al,0
-		push	ax
-		add	[bx],ch
-		add	ds:data_2e[bx+si],ah
-		out	1,al			; port 1, DMA-1 bas&cnt ch 0
-		loopnz	locloop_14		; Loop if zf=0, cx>0
+			push	cs
+			add	[bx+si],ch
+			add	[si],dl
+			add	[bx+si],dl
+			add	[bx+si],ch
+			out	22h,al			; port 22h ??I/O Non-standard
+			add	ax,[bx+si]
+			sbb	al,0
+			push	ax
+			add	[bx],ch
+			add	ds:data_2e[bx+si],ah
+			out	1,al			; port 1, DMA-1 bas&cnt ch 0
+			loopnz	locloop_14		; Loop if zf=0, cx>0
 
-;*		add	[bx+si+0],si
-		db	 01h, 70h, 00h		; data (Sourcer fake instr)
+		db	 01h, 70h, 00h		; data (Sourcer: add [bx+si+0],si)
 		db	 14h, 00h, 28h, 00h, 08h, 00h
 		db	 14h,0E6h, 04h
 
 seg_a		ends
-
-
 
 		end	start

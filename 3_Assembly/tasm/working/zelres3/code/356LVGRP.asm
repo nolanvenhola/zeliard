@@ -24,7 +24,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; Data-reference equates retained from Sourcer's code-mode analysis.
 ; These are data values that happened to land inside mod-r/m byte
 ; positions during disassembly; most are not genuine references.
@@ -61,15 +60,14 @@ data_41e	equ	0FA01h			;*
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
 ZR356FUL	proc	far
 
 start:
+
 level_graphics_data	label	byte
-;*		jc	loc_3			;*Jump if carry Set
-		db	072h, 018h		; jc 1Ah (absolute)
+		db	072h, 018h	; jc 1Ah (absolute)
 		add	[bx+si],al
 		add	byte ptr data_9,al
 		dec	si
@@ -239,13 +237,10 @@ data_15		dw	39h			; Data table (indexed access)
 locloop_4:
 		add	ds:data_28e[bx+si],ax
 		add	al,ds:data_21e[bx+si]
-;*		add	bx,ax
 				db	001h,0C3h	; add bx,ax (alt encoding)
-;*		add	bl,ch
 				db	000h,0EBh	; add bl,ch (alt encoding)
 		push	cs
 		int	3			; Debug breakpoint
-;*		add	dh,ch
 				db	000h,0EEh	; add dh,ch (alt encoding)
 		add	ax,0F0h
 		retn
@@ -310,13 +305,13 @@ data_16		db	0
 		db	 1Eh, 39h, 00h, 0Ch,0FAh, 39h
 		db	 14h,0F0h, 39h, 01h,0AAh
 		db	39h
+
 loc_6:
 		add	ss:data_10[bp+si],bp
 		or	al,[bx+si]
 		retf	2A00h
 			                        ; (data -- Sourcer: no entry point)
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			; data (Sourcer fake instr)
+		db	0Fh		; data (Sourcer: pop cs ; Dangerous-8088 only)
 		sub	al,[bx+si]
 		or	al,[bx+si]
 		cli				; Disable interrupts
@@ -328,7 +323,6 @@ loc_6:
 		cmp	data_10,ax
 		stosb				; Store al to es:[di]
 		sub	byte ptr ds:data_38e[bx+si],0
-;*		jmp	far ptr loc_2		;*
 		db	0EAh, 008h, 0EAh, 008h, 023h	; jmp far 2308:EA08
 			                        ; (data -- Sourcer: no entry point)
 		mov	al,ds:data_34e
@@ -361,13 +355,11 @@ loc_6:
 		add	al,[bx+si]
 		or	ax,[bx+si]
 		or	ax,[bx+si]
-;*		jmp	far ptr loc_1		;*
 		db	0EAh, 000h, 0EAh, 039h, 001h	; jmp far 0139:EA00
 			                        ; (data -- Sourcer: no entry point)
 		add	bh,[bx+di]
 		push	cs
 		out	dx,al			; port 28h ??I/O Non-standard
-;*		add	dh,ch
 				db	000h,0EEh	; add dh,ch (alt encoding)
 		and	ds:data_36e[bx+si],ch
 		cmp	[bx+di],ax
@@ -414,64 +406,60 @@ loc_6:
 		db	43h
 
 locloop_7:
-;*		add	[bx+0],dh
-				db	000h,077h,000h	; add [bx+0h],dh (alt encoding)
-		db	 77h, 00h, 10h, 00h,0D1h, 40h
-		db	 39h, 00h,0F1h
-		db	 20h, 39h
+					db	000h,077h,000h	; add [bx+0h],dh (alt encoding)
+			db	 77h, 00h, 10h, 00h,0D1h, 40h
+			db	 39h, 00h,0F1h
+			db	 20h, 39h
+
 loc_8:
-;*		add	ah,bh
-				db	000h,0FCh	; add ah,bh (alt encoding)
-		push	ax
-		add	dx,ax
-		add	dx,bp
-		add	al,0
-		add	al,1Ch
-		push	es
-		add	ds:data_24e,al
-		add	[si],ax
-		cmp	[bx+si],dx
-		pop	di
-		push	ax
-		cmp	[bx+si],ax
-		scasw				; Scan es:[di] for ax
-		dec	ax
-		cmp	[bx+si],ax
-		pop	ss
-		xchg	sp,ax
-		cmp	[bx+si],ax
-		or	dx,sp
-		cmp	[bx+si],ax
-		add	dx,sp
-		cmp	[bx+di],ax
-		les	di,dword ptr [bx+di]	; Load seg:offset ptr
-		add	[bx+si],si
-		cmp	data_11,ax
-		sbb	[bx+si],bl
-		add	al,[bx+si]
-		sub	ch,[bx+si]
-		add	cl,[bx+si]
-		add	cl,[bx+si]
-;*		add	ah,cl
-				db	000h,0CCh	; add ah,cl (alt encoding)
-;*		add	ah,cl
-				db	000h,0CCh	; add ah,cl (alt encoding)
-		add	ds:data_29e[bx+si],ch
-		add	bp,ss:data_6e[bp+si]
-		push	cs
-		mov	ds:data_30e,al
-		sbb	data_13[bx+si],bp
-		mov	cl,54h			; 'T'
-		mov	sp,200h
-		stosb				; Store al to es:[di]
-		call	$-53FDh
-;*		adc	bh,bh
-				db	010h,0FFh	; adc bh,bh (alt encoding)
-		inc	bp
-		adc	[bx+si],cl
-		jnp	loc_8			; Jump if not parity
-		lds	ax,dword ptr [bx+si]	; Load seg:offset ptr
-		loopnz	locloop_7		; Loop if zf=0, cx>0
+						db	000h,0FCh	; add ah,bh (alt encoding)
+				push	ax
+				add	dx,ax
+				add	dx,bp
+				add	al,0
+				add	al,1Ch
+				push	es
+				add	ds:data_24e,al
+				add	[si],ax
+				cmp	[bx+si],dx
+				pop	di
+				push	ax
+				cmp	[bx+si],ax
+				scasw				; Scan es:[di] for ax
+				dec	ax
+				cmp	[bx+si],ax
+				pop	ss
+				xchg	sp,ax
+				cmp	[bx+si],ax
+				or	dx,sp
+				cmp	[bx+si],ax
+				add	dx,sp
+				cmp	[bx+di],ax
+				les	di,dword ptr [bx+di]	; Load seg:offset ptr
+				add	[bx+si],si
+				cmp	data_11,ax
+				sbb	[bx+si],bl
+				add	al,[bx+si]
+				sub	ch,[bx+si]
+				add	cl,[bx+si]
+				add	cl,[bx+si]
+						db	000h,0CCh	; add ah,cl (alt encoding)
+						db	000h,0CCh	; add ah,cl (alt encoding)
+				add	ds:data_29e[bx+si],ch
+				add	bp,ss:data_6e[bp+si]
+				push	cs
+				mov	ds:data_30e,al
+				sbb	data_13[bx+si],bp
+				mov	cl,54h			; 'T'
+				mov	sp,200h
+				stosb				; Store al to es:[di]
+				call	$-53FDh
+						db	010h,0FFh	; adc bh,bh (alt encoding)
+				inc	bp
+				adc	[bx+si],cl
+				jnp	loc_8			; Jump if not parity
+			lds	ax,dword ptr [bx+si]	; Load seg:offset ptr
+			loopnz	locloop_7		; Loop if zf=0, cx>0
 
 		pop	word ptr [bx+si+60h]
 		sbb	[bp+si],cl
@@ -954,14 +942,13 @@ data_20		db	3
 		db	 7Eh, 08h, 72h, 79h, 39h, 02h
 		db	 81h,0C0h, 01h
 		db	40h
+
 loc_9:
-;*		add	byte ptr ds:data_5e[bx+si],0Ch
 				db	082h,080h,0A9h,080h,00Ch	; add byte ptr [bx+si-7F57h],0Ch (alt encoding)
 		or	cl,0A0h
 		mov	cl,3
 		rcl	word ptr [bx+di+41h],cl	; Rotate thru carry
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			; data (Sourcer fake instr)
+		db	0Fh		; data (Sourcer: pop cs ; Dangerous-8088 only)
 		iret				; Interrupt return
 			                        ; (data -- Sourcer: no entry point)
 		mov	ds:data_41e,ax
@@ -969,24 +956,20 @@ loc_9:
 		or	dx,ax
 		std				; Set direction flag
 		ror	byte ptr [bx],1		; Rotate
-;*		loopnz	locloop_10		;*Loop if zf=0, cx>0
 
-		db	0E0h, 00Fh		; loopne 11A7h (absolute)
+		db	0E0h, 00Fh	; loopne 11A7h (absolute)
 		cmpsw				; Cmp [si] to es:[di]
 		add	[bx+si],bh
 		add	[bp+di],ch
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			; data (Sourcer fake instr)
+		db	0Fh		; data (Sourcer: pop cs ; Dangerous-8088 only)
 		dec	sp
 		or	[di+3Fh],cx
 		mov	ds:data_35e,ax
 		pop	ds
-;*		aam	1Fh			; undocumented inst
 				db	0D4h,01Fh	; aam 1Fh (alt encoding)
 		aam				; Ascii adjust
 		cli				; Disable interrupts
 		or	bh,dl
-;*		add	[bx+0],bl
 				db	000h,05Fh,000h	; add [bx+0h],bl (alt encoding)
 		db	 5Fh, 3Eh,0A0h, 26h,0A0h, 3Ch
 		db	 30h,0FCh, 30h,0CAh,0A0h,0CAh
@@ -999,6 +982,7 @@ loc_9:
 		db	 01h, 09h, 39h, 00h, 04h, 56h
 		db	 39h, 00h, 01h, 2Fh, 39h, 00h
 		db	 40h, 7Fh, 39h, 00h
+
 loc_11:
 		add	ax,397Fh
 		add	[si+39h],al
@@ -1006,17 +990,17 @@ loc_11:
 		adc	bh,[bx+di]
 		add	[bx+si],dh
 		cmp	byte ptr [bx+di],0
+
 loc_12:
-		inc	bp
-		adc	bh,[bx+di]
-		add	ss:data_25e[bp+di],ch
-;*		add	bl,dl
-				db	000h,0D3h	; add bl,dl (alt encoding)
-		retf	2B00h
-			                        ; (data -- Sourcer: no entry point)
-		out	dx,ax			; port 0, DMA-1 bas&add ch 0
-		mov	di,data_27e
-		jmp	short loc_12
+			inc	bp
+			adc	bh,[bx+di]
+			add	ss:data_25e[bp+di],ch
+					db	000h,0D3h	; add bl,dl (alt encoding)
+			retf	2B00h
+				                        ; (data -- Sourcer: no entry point)
+			out	dx,ax			; port 0, DMA-1 bas&add ch 0
+			mov	di,data_27e
+			jmp	short loc_12
 		db	 00h, 01h, 12h,0EFh, 00h, 14h
 		db	 0Ah, 7Fh, 06h, 40h, 17h,0CFh
 		db	0D0h, 00h,0D7h,0FFh, 30h, 14h
@@ -1024,8 +1008,9 @@ loc_12:
 		db	 00h, 5Eh, 00h, 5Fh, 3Eh,0A0h
 		db	 26h,0A0h, 08h, 04h, 7Ch, 5Ch
 		db	 04h, 0Eh
+
 loc_13:
-		jge	loc_13			; Jump if > or =
+			jge	loc_13			; Jump if > or =
 		add	[bx],cl
 		jle	$+81h			; Jump if < or =
 		add	cl,bh
@@ -1316,7 +1301,5 @@ loc_13:
 ZR356FUL	endp
 
 seg_a		ends
-
-
 
 		end	start

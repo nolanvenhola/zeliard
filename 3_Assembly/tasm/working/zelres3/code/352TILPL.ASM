@@ -21,12 +21,12 @@ include  srmacros.inc
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
 _352TILPL	proc	far
 
 start:
+
 tile_palette_data	label	byte
 		int	3			; Debug breakpoint
 		adc	al,[bx+si]
@@ -41,8 +41,7 @@ tile_palette_data	label	byte
 		sbb	al,al
 		sbb	ax,[bp+di]
 		sbb	ax,1EF0h
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			; data (Sourcer fake instr)
+		db	0Fh		; data (Sourcer: pop cs ; Dangerous-8088 only)
 		and	al,30h			; '0'
 		and	ax,2602h
 		or	[bx],ah
@@ -60,9 +59,8 @@ tile_palette_data	label	byte
 		push	bx
 		push	cs
 		push	di
-;*		jmp	far ptr loc_10		;*
 		db	0EAh
-		dw	0AF59h, 885Ah		; data (Sourcer fake instr)
+		dw	0AF59h, 885Ah		; data (Sourcer: jmp far ptr loc_10 ;*)
 data_7		db	5Bh
 		db	0BCh, 5Dh,0EEh, 5Eh,0FCh, 61h
 		db	0B3h, 62h, 23h, 64h,0ACh, 65h
@@ -100,30 +98,29 @@ data_9		db	3Dh			; Data table (indexed access)
 		db	 12h, 00h,0DFh, 00h, 12h, 00h
 data_10		dw	0F4FFh			; Data table (indexed access)
 		db	 15h, 56h, 15h, 54h
+
 loc_2:
-		push	word ptr [si+7Fh]
-		xor	ax,347Fh
-		div	sp			; ax,dx rem=dx:ax/reg
-		jnc	loc_2			; Jump if carry=0
-		jnc	loc_2			; Jump if carry=0
+				push	word ptr [si+7Fh]
+				xor	ax,347Fh
+				div	sp			; ax,dx rem=dx:ax/reg
+				jnc	loc_2			; Jump if carry=0
+			jnc	loc_2			; Jump if carry=0
 		std				; Set direction flag
 		aas				; Ascii adjust
 		push	bp
-;*		test	dx,[di+0]
-		db	 85h, 55h, 00h		; data (Sourcer fake instr)
+		db	 85h, 55h, 00h		; data (Sourcer: test dx,[di+0])
 		db	0FDh, 3Fh,0FDh, 5Fh,0FDh, 00h
 		db	0FDh, 3Dh,0FDh, 9Ch,0FDh, 00h
 		db	 55h, 15h, 79h, 01h, 12h, 01h
 		db	0DFh, 00h, 12h
+
 loc_3:
-;*		add	bh,bh
-		db	 00h,0FFh		; data (Sourcer fake instr)
-		hlt				; Halt processor
-		adc	ax,1256h
-;*		add	bh,dh
-		db	 00h,0F7h		; data (Sourcer fake instr)
-		hlt				; Halt processor
-		jnc	loc_3			; Jump if carry=0
+			db	 00h,0FFh		; data (Sourcer: add bh,bh)
+			hlt				; Halt processor
+			adc	ax,1256h
+			db	 00h,0F7h		; data (Sourcer: add bh,dh)
+			hlt				; Halt processor
+			jnc	loc_3			; Jump if carry=0
 		adc	al,[bx+si]
 		push	word ptr [si+7Fh]
 		adc	al,ss:[bx+si]
@@ -209,26 +206,26 @@ data_13		db	0F3h			; Data table (indexed access)
 		db	 44h, 0Ah
 
 locloop_4:
-		cld				; Clear direction
-		adc	al,[bp+si]
-		mov	ah,dl
-		adc	al,[bx+di]
-		push	ax
-		stosw				; Store ax to es:[di]
-		db	0F3h, 12h, 01h, 40h,0AFh,0CBh
-		db	 12h, 00h, 01h, 00h,0FFh, 0Bh
-		db	 12h, 00h, 04h, 00h,0FCh, 3Ch
-		db	 12h, 00h, 40h, 00h,0C0h,0B3h
-		db	 12h, 02h,0AEh, 2Bh, 12h, 02h
-		db	0BCh,0AEh, 12h, 02h,0F0h,0ACh
-		db	 12h, 02h,0C2h,0F0h, 12h, 00h
-		db	 01h, 00h, 0Fh, 02h, 12h, 02h
-		db	 30h, 8Ah, 12h, 01h, 01h, 32h
-		db	 2Bh, 12h, 02h,0C0h,0ABh, 12h
-		db	 02h
+			cld				; Clear direction
+			adc	al,[bp+si]
+			mov	ah,dl
+			adc	al,[bx+di]
+			push	ax
+			stosw				; Store ax to es:[di]
+			db	0F3h, 12h, 01h, 40h,0AFh,0CBh
+			db	 12h, 00h, 01h, 00h,0FFh, 0Bh
+			db	 12h, 00h, 04h, 00h,0FCh, 3Ch
+			db	 12h, 00h, 40h, 00h,0C0h,0B3h
+			db	 12h, 02h,0AEh, 2Bh, 12h, 02h
+			db	0BCh,0AEh, 12h, 02h,0F0h,0ACh
+			db	 12h, 02h,0C2h,0F0h, 12h, 00h
+			db	 01h, 00h, 0Fh, 02h, 12h, 02h
+			db	 30h, 8Ah, 12h, 01h, 01h, 32h
+			db	 2Bh, 12h, 02h,0C0h,0ABh, 12h
+			db	 02h
 
 locloop_5:
-		loop	locloop_4		; Loop if cx > 0
+			loop	locloop_4		; Loop if cx > 0
 
 		adc	al,[bp+si]
 		or	dh,al
@@ -392,24 +389,24 @@ data_14		db	0Ah			; Data table (indexed access)
 		db	 02h, 0Fh,0A0h, 00h, 40h, 00h
 		db	 40h, 83h,0E2h, 12h, 02h,0C3h
 		db	0EAh
+
 loc_6:
 		add	[bx+si],ax
 		add	[bx+si],ax
 		jcxz	loc_6			; Jump if cx=0
-;*		add	[si+0],dl
-		db	 00h, 54h, 00h		; data (Sourcer fake instr)
+		db	 00h, 54h, 00h		; data (Sourcer: add [si+0],dl)
 		db	 54h,0E0h,0FFh, 10h, 05h, 10h
 		db	 05h, 3Ch, 0Fh, 04h, 00h, 04h
 		db	 00h, 0Eh, 12h, 03h, 0Eh, 83h
 		db	 12h, 02h, 0Fh,0A0h, 12h, 02h
 		db	 83h,0A2h, 01h, 00h, 01h, 00h
 		db	0C3h,0EAh
+
 loc_7:
 		add	[bx+si],ax
 		add	[bx+si],ax
 		jcxz	loc_7			; Jump if cx=0
-;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		; data (Sourcer fake instr)
+		db	 00h, 40h, 00h		; data (Sourcer: add [bx+si+0],al)
 		db	 40h,0E0h,0FFh, 00h, 05h, 00h
 		db	 05h, 3Ch, 0Fh, 12h, 02h, 0Eh
 		db	 12h, 03h, 0Eh, 83h, 12h, 02h
@@ -420,13 +417,13 @@ loc_7:
 		db	0CEh, 0Fh, 12h, 02h, 0Eh, 83h
 		db	 12h, 02h, 0Fh,0A0h, 12h, 02h
 		db	 83h
+
 loc_8:
 		mov	byte ptr data_12,al
 		retn
 			                        ; (data -- Sourcer: no entry point)
-;*		jmp	far ptr loc_12		;*
 		db	0EAh
-		dw	212h, 0FAE3h		; data (Sourcer fake instr)
+		dw	212h, 0FAE3h		; data (Sourcer: jmp far ptr loc_12 ;*)
 			                        ; (data -- Sourcer: no entry point)
 		adc	al,[bp+si]
 		db	0E0h,0FFh, 12h, 02h, 3Ch, 0Fh
@@ -668,11 +665,9 @@ loc_8:
 
 locloop_9:
 		add	[bx+si],dl
-;*		add	al,dh
-		db	 00h,0F0h		; data (Sourcer fake instr)
+		db	 00h,0F0h		; data (Sourcer: add al,dh)
 		mov	dl,40h			; '@'
-;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		; data (Sourcer fake instr)
+		db	 00h, 40h, 00h		; data (Sourcer: add [bx+si+0],al)
 		db	0C2h, 30h, 12h, 02h, 02h,0C2h
 		db	 12h, 03h,0C0h, 12h, 03h,0C3h
 		db	 12h, 03h, 0Ch, 12h, 03h, 20h
@@ -908,14 +903,12 @@ sub_1		proc	near
 		add	[si],al
 		add	[si],al
 		lodsb				; String [si] to al
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			; data (Sourcer fake instr)
+		db	0Fh		; data (Sourcer: pop cs ; Dangerous-8088 only)
 		adc	[si],al
 		adc	[si],al
 		mov	al,0Eh
 		inc	ax
-;*		add	[bx+si+0],al
-		db	 00h, 40h, 00h		; data (Sourcer fake instr)
+		db	 00h, 40h, 00h		; data (Sourcer: add [bx+si+0],al)
 		db	0F0h, 3Eh, 40h, 00h, 40h, 00h
 data_19		dw	3AC0h			; Data table (indexed access)
 		db	 00h, 10h, 00h, 10h,0C0h
@@ -962,11 +955,9 @@ data_26		db	0B8h			; Data table (indexed access)
 		db	 02h, 03h, 8Eh, 01h, 00h, 01h
 		db	 00h, 03h,0AAh, 01h, 00h, 01h
 		db	 00h, 03h,0F8h
+
 sub_1		endp
 
-
 seg_a		ends
-
-
 
 		end	start

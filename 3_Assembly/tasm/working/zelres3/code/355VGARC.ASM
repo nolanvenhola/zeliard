@@ -17,7 +17,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; The following equates are retained from Sourcer's analysis of the faux
 ; "code" at the head/tail of the file. They are effectively unreferenced
 ; because the file is pure data; kept so the assembly reproduces the
@@ -29,12 +28,12 @@ data_2e		equ	7F01h			;*
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
 _355VGARC	proc	far
 
 start:
+
 vga_reg_palette_data	label	byte
 		db	 7Dh, 03h		; data (Sourcer: jge +3)
 		db	 00h, 00h		; data (Sourcer: add [bx+si],al)
@@ -151,12 +150,14 @@ vga_reg_palette_data	label	byte
 ; --- From here to end: still data. Sourcer decoded the following bytes
 ;     as push/jg/add/mov instructions, but they are palette/register
 ;     values. The mnemonics below assemble to the exact original bytes.
+
 loc_2:
-		db	0FFh,0F4h		; data (Sourcer: push sp)
+			db	0FFh,0F4h		; data (Sourcer: push sp)
+
 loc_3:
-		db	0FFh,0F4h		; data (Sourcer: push sp)
-		jg	loc_2			; data 7F FA (Sourcer: jg -6)
-		jg	loc_3			; data 7F FA (Sourcer: jg -6)
+				db	0FFh,0F4h		; data (Sourcer: push sp)
+				jg	loc_2			; data 7F FA (Sourcer: jg -6)
+			jg	loc_3			; data 7F FA (Sourcer: jg -6)
 		add	ds:data_2e[bx],bh	; data 00 BF 01 7F
 		add	bh,bh			; data 02 FF
 		add	bh,bh			; data 02 FF
@@ -206,7 +207,5 @@ loc_3:
 _355VGARC	endp
 
 seg_a		ends
-
-
 
 		end	start
