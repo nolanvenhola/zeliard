@@ -93,3 +93,30 @@ changes, these break.
 
 - Low priority — segment layout is stable
 - Could be converted to `EXTRN` references if stick.asm exports them
+
+---
+
+## 6. Shared gvar_* EQU name conflicts across cleaned files (2026-04-23 audit)
+
+During the bulk cleanup of zelres1/2/3, cleanup agents applied the same `gvar_*`
+name to different addresses in different files. TASM doesn't see these as
+conflicts (each `.asm` compiles independently) and all 98 files are bit-perfect,
+but the inconsistency is misleading for human readers.
+
+**Authoritative definitions** are in `working/core/zeliard.inc`:
+
+| Name | Correct value (zeliard.inc) | Files that use wrong value |
+|------|-----------------------------|-------------------------------|
+| `gvar_timer_ticks` | `0FF08h` | 215DRUGP (0FF1Ah — should be `gvar_frame_timer`) |
+| `gvar_key_state` | `0FF0Bh` | 100OPDMO, 106TOWNB (0FF29h — should be `gvar_enter_key`) |
+| `gvar_game_phase` | `0FF15h` | game.asm (0FF14h — should be `gvar_game_phase_flag` or similar) |
+| `gvar_skip_input` | `0FF1Dh` | 250ENDMO (0FF21h — should be a different name) |
+| `gvar_volume_b` | `0FF75h` | game.asm, gmega.asm, gmmcga.asm (0FF77h — should be `gvar_volume_c` or similar) |
+| `gvar_menu_sel` | `0C006h` | 217KENJP (0FF50h — should be `gvar_frame_count`) |
+| `gvar_timer_word` | `0FF50h` | 217KENJP (0FF18h — should be a different name) |
+
+**Low priority**: doesn't break compilation or introduce semantic bugs (each file's
+EQU value is correct FOR ITS LOCAL USAGE — only the NAME reuse is confusing).
+Fix would be: rename each minority-value EQU to a unique descriptive name per
+its actual address role. Safe to do file-by-file since there are no EXTRN
+references (each `.asm` is self-contained).
