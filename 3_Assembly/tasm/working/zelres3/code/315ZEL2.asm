@@ -13,18 +13,19 @@ PAGE  59,132
 ;    - Header / pointer table (file 0x00..~0x80) mis-decoded by Sourcer
 ;    - Large embedded tile/layout data block
 ;    - Per-frame tile scan / NPC-cell update loop
-;    - Dispatch / scroll / sub_NN helper procs
+;    - Dispatch / scroll / phase-helper sub-procs
 ;
-;  Note: "ZEL2" is a prior-pass working nickname; proc name _315MAPHT is
-;  authoritative. This is NOT a Zeliard-2 boss fight - it is the Helada
-;  town map program (earlier nickname was misleading).
+;  Sibling map-program modules: 312ZELA (Satono), 313MEDA (Bosque/Vista),
+;  314LEGA (Tarso). All four share the same game-segment dispatch ABI
+;  and per-map global state byte layout (0FF2Eh..0FF75h).
+;
+;  Trailer string 'aguro' is the Helada speaker / label name fragment.
 ;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
-
 
 ; The following equates show data references outside the range of the program.
 ; Shared references across 312-319 map-program family:
@@ -33,54 +34,60 @@ include  srmacros.inc
 ;   0ED20h        - char/tile lookup table
 ;   0FF2Eh..0FF75h - per-map global state flag bytes
 
-data_14e	equ	0C0Bh			;* internal module address
-data_15e	equ	200Ch			;* scroll/dispatch callback
-data_16e	equ	6028h			;* game-seg callback fn A (tile dispatch)
-data_17e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
-data_18e	equ	6038h			;* game-seg callback fn C
-data_19e	equ	603Ah			;* game-seg callback fn D
-data_20e	equ	603Ch			;* game-seg callback fn E
-data_21e	equ	0A2F8h			;*
-data_22e	equ	0A32Fh			;*
-data_23e	equ	0A334h			;*
-data_24e	equ	0A339h			;*
-data_25e	equ	0A4DBh			;*
-data_26e	equ	0A543h			;*
-data_27e	equ	0A544h			;*
-data_28e	equ	0A550h			;*
-data_29e	equ	0A551h			;*
-data_30e	equ	0A5DFh			;*
-data_31e	equ	0A5E1h			;*
-data_32e	equ	0A5E2h			;*
-data_33e	equ	0A5F6h			;*
-data_34e	equ	0A5F7h			;*
-data_35e	equ	0A5F8h			;*
-data_36e	equ	0A5F9h			;*
-data_37e	equ	0A5FAh			;*
-data_38e	equ	0A5FBh			;*
-data_39e	equ	0A5FCh			;*
-data_40e	equ	0A5FDh			;*
-data_41e	equ	0A5FEh			;*
-data_42e	equ	0A5FFh			;*
-data_43e	equ	0A600h			;*
-data_44e	equ	0A601h			;*
-data_45e	equ	0A602h			;*
-data_46e	equ	0A603h			;*
-data_47e	equ	0A606h			;*
-data_48e	equ	0A60Ch			;*
-data_49e	equ	0A612h			;*
-data_50e	equ	0A618h			;*
-data_51e	equ	0C002h			;* sprite attribute ptr
-data_52e	equ	0C010h			;* sprite attribute record base
-data_53e	equ	0ED20h			;* char/tile lookup table
-data_54e	equ	0FF2Eh			;* global state byte
-data_55e	equ	0FF2Fh			;* global state byte
-data_56e	equ	0FF30h			;* global state byte
-data_57e	equ	0FF75h			;* global state byte
+; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
+zel2_cb_scroll		equ	200Ch		; scroll / dispatch callback
+zel2_cb_tile_query	equ	6028h		; tile-at-cell callback fn A
+zel2_cb_npc_step	equ	6036h		; NPC step / cell-iter callback fn B
+zel2_cb_entity_act	equ	6038h		; entity action callback fn C
+zel2_cb_init_tiles	equ	603Ah		; init-tile-row callback fn D
+zel2_cb_finalize	equ	603Ch		; finalize / jmp target fn E
+
+; --- Internal tile/render data tables (DS, addressed by hard offset) ---
+zel2_unk_c0b		equ	0C0Bh		; trailer-decoded internal addr (data ref via [bx+si])
+zel2_anim_dispatch_tbl	equ	0A2F8h		; per-anim dispatch table base (call ds:[base+bx])
+zel2_anim_state_a	equ	0A32Fh		; anim state slot A (word, written by 'and ax,2FA3h')
+zel2_anim_state_b	equ	0A334h		; anim state slot B (referenced via [bp+di])
+zel2_anim_state_c	equ	0A339h		; anim state slot C (word)
+zel2_phase_xlat_tbl	equ	0A4DBh		; phase xlat / index table base
+zel2_anim_seg_a		equ	0A543h		; anim segment slot base (idx*0Dh added)
+zel2_anim_seg_a_byte_b	equ	0A544h		; anim segment slot, +01 (byte field 'al')
+zel2_anim_seg_a_byte_c	equ	0A550h		; anim segment slot, +0Dh (byte field)
+zel2_anim_seg_a_byte_d	equ	0A551h		; anim segment slot, +0Eh (byte field)
+
+; --- Scroll / phase state bytes (DS) ---
+zel2_scroll_x		equ	0A5DFh		; scroll X position byte/word
+zel2_phase_step		equ	0A5E1h		; phase step counter (mod 3Fh)
+zel2_scroll_x_max	equ	0A5E2h		; scroll X max (word)
+zel2_phase_byte		equ	0A5F6h		; phase byte (cycle mod 7/8)
+zel2_phase_dir		equ	0A5F7h		; phase 0/1/2 selector
+zel2_phase_a_flag	equ	0A5F8h		; phase-A flag
+zel2_death_handler_flag	equ	0A5F9h		; death-handler flag (reset path)
+zel2_phase_a_subflag	equ	0A5FAh		; phase-A subflag
+zel2_anim_handler_idx	equ	0A5FBh		; anim-handler dispatch index
+zel2_anim_subcounter	equ	0A5FCh		; anim sub-counter (mod 4)
+zel2_npc_idx		equ	0A5FDh		; NPC scan index byte
+zel2_anim_countdown	equ	0A5FEh		; anim countdown (3..0)
+zel2_anim_byte		equ	0A5FFh		; current animation/speaker byte
+zel2_attr_tmp		equ	0A600h		; tile attribute scratch byte
+zel2_idle_step		equ	0A601h		; idle step counter (0..0x28)
+zel2_phase_locked	equ	0A602h		; phase-locked flag
+zel2_render_buf		equ	0A603h		; tile render buffer base (12 words)
+zel2_render_attr_a	equ	0A606h		; render attr slot A
+zel2_render_attr_b	equ	0A60Ch		; render attr slot B
+zel2_render_attr_c	equ	0A612h		; render attr slot C
+zel2_render_attr_d	equ	0A618h		; render attr slot D
+
+; --- Shared game-segment globals (used across map-program family) ---
+zel2_sprite_attr_ptr	equ	0C002h		; sprite attribute scan ptr (DS word)
+enemy_attr_base		equ	0C010h		; sprite/entity record base (DS)
+sprite_xlat_tbl		equ	0ED20h		; char/tile lookup table (shared)
+gvar_death_flag		equ	0FF2Eh		; global death flag
+gvar_dir_toggle		equ	0FF2Fh		; global dir-toggle flag
+zel2_state_ff30		equ	0FF30h		; per-map state flag (idle-out marker)
+gvar_spawn_fx_flag	equ	0FF75h		; spawn VFX flag
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
@@ -92,6 +99,7 @@ _315MAPHT	proc	far
 ; is via dispatch from game DS. Below is a 12-byte reserved area,
 ; then a 32-byte 0x1Eh descriptor row.
 ; ------------------------------------------------------------------
+
 start:
 		sbb	ax,word ptr ds:[0]	; header field bytes
 		mov	dh,0A1h			; header field
@@ -111,11 +119,11 @@ start:
 		db	 00h, 1Ch, 10h, 1Dh, 10h, 00h
 		db	 28h, 10h, 29h, 2Ah, 00h, 18h
 		db	 2Bh, 1Ah, 2Ch, 00h
-data_4		dw	102Dh
+zel2_scroll_target_base		dw	102Dh
 		db	 2Eh, 10h, 00h, 11h, 07h, 12h
 		db	 2Fh, 00h
 		db	30h
-data_5		dw	3115h			; Data table (indexed access)
+zel2_data_word_3115		dw	3115h			; Data table (indexed access)
 		db	 17h, 00h, 32h, 33h, 34h, 35h
 		db	 00h, 41h, 42h, 43h, 44h, 00h
 		db	 1Eh, 50h, 1Fh
@@ -145,7 +153,7 @@ data_5		dw	3115h			; Data table (indexed access)
 		db	 82h, 10h, 59h, 2Ah, 00h, 73h
 		db	 83h, 74h, 84h, 00h
 		db	 76h, 77h, 4Fh, 78h
-data_7		dw	0
+zel2_rng_fn_ptr		dw	0
 		db	 85h, 86h, 87h, 00h, 93h, 94h
 		db	 95h, 96h, 00h, 1Eh,0A1h,0A2h
 		db	0A3h, 00h, 88h, 89h, 8Ah, 8Bh
@@ -175,394 +183,435 @@ data_7		dw	0
 		db	0D5h,0C1h,0D6h, 8Bh, 36h, 10h
 		db	0C0h,0C6h, 06h,0FDh,0A5h, 00h
 		db	0C6h, 06h,0FFh,0A5h, 00h
-loc_1:
+
+zel2_npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-		db	 83h, 3Ch,0FFh		;  Fixup - byte match
-		jz	loc_3			; Jump if zero
-		mov	ax,[si]
-		call	word ptr cs:data_17e
-		jc	loc_2			; Jump if carry Set
-		mov	[si+3],bl
-		mov	ax,[si+2]
-		call	word ptr cs:data_16e
-		mov	bl,ds:data_40e
-		xor	bh,bh			; Zero register
-		mov	al,ds:data_53e[bx]
-		mov	[di],al
-		test	byte ptr [si+5],40h	; '@'
-		jz	loc_2			; Jump if zero
-		test	byte ptr ds:data_42e,80h
-		jnz	loc_2			; Jump if not zero
-		mov	al,[si+5]
-		and	al,1Fh
-		mov	ds:data_42e,al
-loc_2:
-		inc	byte ptr ds:data_40e
-		add	si,10h
-		jmp	short loc_1
-loc_3:
-		mov	si,ds:data_52e
+			db	 83h, 3Ch,0FFh		;  Fixup - byte match
+			jz	zel2_npc_scan_done			; Jump if zero
+			mov	ax,[si]
+			call	word ptr cs:zel2_cb_npc_step
+			jc	zel2_npc_scan_next			; Jump if carry Set
+			mov	[si+3],bl
+			mov	ax,[si+2]
+			call	word ptr cs:zel2_cb_tile_query
+			mov	bl,ds:zel2_npc_idx
+			xor	bh,bh			; Zero register
+			mov	al,ds:sprite_xlat_tbl[bx]
+			mov	[di],al
+			test	byte ptr [si+5],40h	; '@'
+			jz	zel2_npc_scan_next			; Jump if zero
+			test	byte ptr ds:zel2_anim_byte,80h
+			jnz	zel2_npc_scan_next			; Jump if not zero
+			mov	al,[si+5]
+			and	al,1Fh
+			mov	ds:zel2_anim_byte,al
+
+zel2_npc_scan_next:
+			inc	byte ptr ds:zel2_npc_idx
+			add	si,10h
+			jmp	short zel2_npc_scan_loop
+
+zel2_npc_scan_done:
+		mov	si,ds:enemy_attr_base
 		mov	word ptr [si],0FFFFh
-		test	byte ptr ds:data_42e,0FFh
-		jz	loc_6			; Jump if zero
-		mov	al,ds:data_42e
+		test	byte ptr ds:zel2_anim_byte,0FFh
+		jz	zel2_phase_check_dir			; Jump if zero
+		mov	al,ds:zel2_anim_byte
 		push	ax
 		and	al,1Fh
-		call	word ptr cs:data_18e
+		call	word ptr cs:zel2_cb_entity_act
 		mov	bl,ah
 		pop	ax
 		shr	bl,1			; Shift w/zeros fill
 		xor	bh,bh			; Zero register
-		mov	byte ptr ds:data_57e,24h	; '$'
-		call	sub_5
-		mov	ax,data_4
+		mov	byte ptr ds:gvar_spawn_fx_flag,24h	; '$'
+		call	zel2_scroll_finalize
+		mov	ax,zel2_scroll_target_base
 		add	ax,0Fh
 		mov	bx,ax
-		sub	ax,ds:data_51e
-		jc	loc_4			; Jump if carry Set
+		sub	ax,ds:zel2_sprite_attr_ptr
+		jc	zel2_scroll_clamp_a			; Jump if carry Set
 		xchg	bx,ax
-loc_4:
-		mov	ax,ds:data_30e
+
+zel2_scroll_clamp_a:
+		mov	ax,ds:zel2_scroll_x
 		sub	ax,bx
-		jnc	loc_5			; Jump if carry=0
-		call	sub_4
-		call	sub_4
-		jmp	short loc_6
-loc_5:
-		call	sub_3
-		call	sub_3
-loc_6:
-		test	byte ptr ds:data_34e,0FFh
-		jz	loc_7			; Jump if zero
-		jmp	loc_19
-loc_7:
-		test	byte ptr ds:data_35e,0FFh
-		jnz	loc_11			; Jump if not zero
-		call	word ptr cs:data_7
+		jnc	zel2_scroll_dec_path			; Jump if carry=0
+		call	zel2_scroll_dec_step
+		call	zel2_scroll_dec_step
+		jmp	short zel2_phase_check_dir
+
+zel2_scroll_dec_path:
+		call	zel2_scroll_inc_step
+		call	zel2_scroll_inc_step
+
+zel2_phase_check_dir:
+		test	byte ptr ds:zel2_phase_dir,0FFh
+		jz	zel2_phase_check_a_flag			; Jump if zero
+		jmp	zel2_idle_or_spawn_entry
+
+zel2_phase_check_a_flag:
+		test	byte ptr ds:zel2_phase_a_flag,0FFh
+		jnz	zel2_phase_a_advance			; Jump if not zero
+		call	word ptr cs:zel2_rng_fn_ptr
 		and	al,0Fh
-		jz	loc_8			; Jump if zero
-		jmp	loc_19
-loc_8:
-		test	byte ptr ds:data_54e,0FFh
-		jz	loc_9			; Jump if zero
-		jmp	loc_19
-loc_9:
-		mov	byte ptr ds:data_35e,0FFh
-		mov	byte ptr ds:data_37e,0FFh
-		mov	byte ptr ds:data_36e,0FFh
-		mov	byte ptr ds:data_38e,0
-		mov	byte ptr ds:data_39e,0
-		mov	ax,data_4
+		jz	zel2_phase_check_death			; Jump if zero
+		jmp	zel2_idle_or_spawn_entry
+
+zel2_phase_check_death:
+		test	byte ptr ds:gvar_death_flag,0FFh
+		jz	zel2_phase_a_init			; Jump if zero
+		jmp	zel2_idle_or_spawn_entry
+
+zel2_phase_a_init:
+		mov	byte ptr ds:zel2_phase_a_flag,0FFh
+		mov	byte ptr ds:zel2_phase_a_subflag,0FFh
+		mov	byte ptr ds:zel2_death_handler_flag,0FFh
+		mov	byte ptr ds:zel2_anim_handler_idx,0
+		mov	byte ptr ds:zel2_anim_subcounter,0
+		mov	ax,zel2_scroll_target_base
 		add	ax,0Eh
 		mov	bx,ax
-		sub	ax,ds:data_51e
-		jc	loc_10			; Jump if carry Set
+		sub	ax,ds:zel2_sprite_attr_ptr
+		jc	zel2_phase_a_clamp_done			; Jump if carry Set
 		xchg	bx,ax
-loc_10:
-		mov	ax,ds:data_30e
+
+zel2_phase_a_clamp_done:
+		mov	ax,ds:zel2_scroll_x
 		sub	ax,bx
-		jnc	loc_11			; Jump if carry=0
-		mov	byte ptr ds:data_36e,0
-loc_11:
-		add	byte ptr ds:data_33e,2
-		and	byte ptr ds:data_33e,6
-		test	byte ptr ds:data_37e,0FFh
-		jz	loc_14			; Jump if zero
-		inc	byte ptr ds:data_39e
-		and	byte ptr ds:data_39e,3
-		jz	loc_12			; Jump if zero
-		jmp	loc_26
-loc_12:
-		mov	byte ptr ds:data_37e,0
-		test	byte ptr ds:data_35e,80h
-		jz	loc_13			; Jump if zero
-		jmp	loc_26
-loc_13:
-		mov	byte ptr ds:data_35e,0
-		jmp	loc_26
-loc_14:
-		mov	bl,ds:data_38e
-		inc	byte ptr ds:data_38e
+		jnc	zel2_phase_a_advance			; Jump if carry=0
+		mov	byte ptr ds:zel2_death_handler_flag,0
+
+zel2_phase_a_advance:
+		add	byte ptr ds:zel2_phase_byte,2
+		and	byte ptr ds:zel2_phase_byte,6
+		test	byte ptr ds:zel2_phase_a_subflag,0FFh
+		jz	zel2_phase_anim_dispatch			; Jump if zero
+		inc	byte ptr ds:zel2_anim_subcounter
+		and	byte ptr ds:zel2_anim_subcounter,3
+		jz	zel2_phase_subcounter_zero			; Jump if zero
+		jmp	zel2_phase_xlat_apply
+
+zel2_phase_subcounter_zero:
+		mov	byte ptr ds:zel2_phase_a_subflag,0
+		test	byte ptr ds:zel2_phase_a_flag,80h
+		jz	zel2_phase_a_clear			; Jump if zero
+		jmp	zel2_phase_xlat_apply
+
+zel2_phase_a_clear:
+		mov	byte ptr ds:zel2_phase_a_flag,0
+		jmp	zel2_phase_xlat_apply
+
+zel2_phase_anim_dispatch:
+		mov	bl,ds:zel2_anim_handler_idx
+		inc	byte ptr ds:zel2_anim_handler_idx
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		call	word ptr ds:data_21e[bx]	;*
-		jmp	loc_26
-			                        ;* No entry point to code
+		call	word ptr ds:zel2_anim_dispatch_tbl[bx]	;*
+		jmp	zel2_phase_xlat_apply
+
+; ------------------------------------------------------------------
+; Anim-dispatch handler body (entered via call ds:zel2_anim_dispatch_tbl[bx]
+; above; each handler ends in retn and falls into the next handler's
+; body or returns to the caller).  Sourcer could not statically trace
+; the call path because the dispatch table lives in DS at runtime.
+; ------------------------------------------------------------------
+
+zel2_anim_h_set_phase_max:
 		and	ax,2FA3h
-		mov	ds:data_22e,ax
+		mov	ds:zel2_anim_state_a,ax
 		das				; Decimal adjust
-		mov	ds:data_24e,ax
-		cmp	ss:data_23e[bp+di],sp
+		mov	ds:zel2_anim_state_c,ax
+		cmp	ss:zel2_anim_state_b[bp+di],sp
 		xor	al,0A3h
 		xor	al,0A3h
 		or	al,0A3h
-		mov	byte ptr ds:data_35e,7Fh
-		mov	byte ptr ds:data_37e,7Fh
-		mov	byte ptr ds:data_45e,0
-		inc	byte ptr ds:data_31e
-		and	byte ptr ds:data_31e,3Fh	; '?'
+		mov	byte ptr ds:zel2_phase_a_flag,7Fh
+		mov	byte ptr ds:zel2_phase_a_subflag,7Fh
+		mov	byte ptr ds:zel2_phase_locked,0
+		inc	byte ptr ds:zel2_phase_step
+		and	byte ptr ds:zel2_phase_step,3Fh	; '?'
 		retn
 
 _315MAPHT	endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_1		proc	near
-		dec	byte ptr ds:data_31e
-		and	byte ptr ds:data_31e,3Fh	; '?'
+zel2_phase_step_dec		proc	near
+		dec	byte ptr ds:zel2_phase_step
+		and	byte ptr ds:zel2_phase_step,3Fh	; '?'
 		retn
-sub_1		endp
 
-			                        ;* No entry point to code
-		call	sub_1
-		jmp	short loc_15
-		db	0E8h,0E4h,0FFh,0EBh, 00h
-loc_15:
-		test	byte ptr ds:data_45e,0FFh
-		jz	loc_16			; Jump if zero
+zel2_phase_step_dec		endp
+
+; Anim-dispatch handler entries (called via ds:zel2_anim_dispatch_tbl[bx]).
+; Both entries do "phase_step_dec then return", encoded as call+jmp pairs
+; that fall through to zel2_phase_locked_check.  The second entry's bytes
+; are kept as raw bytes because they re-encode the same instructions
+; relative to a different position.
+
+zel2_anim_h_phase_dec_a:
+		call	zel2_phase_step_dec
+		jmp	short zel2_phase_locked_check
+
+zel2_anim_h_phase_dec_b:
+		db	0E8h,0E4h,0FFh		; call zel2_phase_step_dec (rel -1Ch)
+		db	0EBh, 00h		; jmp short zel2_phase_locked_check
+
+zel2_phase_locked_check:
+		test	byte ptr ds:zel2_phase_locked,0FFh
+		jz	zel2_idle_recompute_bx			; Jump if zero
 		retn
-loc_16:
-		mov	ax,data_4
+
+zel2_idle_recompute_bx:
+		mov	ax,zel2_scroll_target_base
 		add	ax,0Ch
 		mov	bx,ax
-		sub	ax,ds:data_51e
-		jc	loc_17			; Jump if carry Set
+		sub	ax,ds:zel2_sprite_attr_ptr
+		jc	zel2_idle_compare_scroll			; Jump if carry Set
 		xchg	bx,ax
-loc_17:
-		mov	ax,ds:data_30e
+
+zel2_idle_compare_scroll:
+		mov	ax,ds:zel2_scroll_x
 		sub	ax,bx
-		jnz	loc_18			; Jump if not zero
+		jnz	zel2_idle_pop_path			; Jump if not zero
 		retn
-loc_18:
+
+zel2_idle_pop_path:
 		pop	ax
-		test	byte ptr ds:data_36e,0FFh
-		jnz	loc_23			; Jump if not zero
-		jmp	short loc_25
-loc_19:
-		test	byte ptr ds:data_54e,0FFh
-		jz	loc_20			; Jump if zero
-		jmp	loc_43
-loc_20:
-		dec	byte ptr ds:data_41e
-		jnz	loc_21			; Jump if not zero
-		mov	byte ptr ds:data_41e,2
-		inc	byte ptr ds:data_33e
-		and	byte ptr ds:data_33e,7
-loc_21:
-		mov	ax,data_4
+		test	byte ptr ds:zel2_death_handler_flag,0FFh
+		jnz	zel2_idle_call_dec			; Jump if not zero
+		jmp	short zel2_idle_call_inc
+
+zel2_idle_or_spawn_entry:
+		test	byte ptr ds:gvar_death_flag,0FFh
+		jz	zel2_idle_anim_count			; Jump if zero
+		jmp	zel2_idle_or_spawn
+
+zel2_idle_anim_count:
+		dec	byte ptr ds:zel2_anim_countdown
+		jnz	zel2_idle_phase_recompute			; Jump if not zero
+		mov	byte ptr ds:zel2_anim_countdown,2
+		inc	byte ptr ds:zel2_phase_byte
+		and	byte ptr ds:zel2_phase_byte,7
+
+zel2_idle_phase_recompute:
+		mov	ax,zel2_scroll_target_base
 		add	ax,12h
 		mov	bx,ax
-		sub	ax,ds:data_51e
-		jnc	loc_22			; Jump if carry=0
+		sub	ax,ds:zel2_sprite_attr_ptr
+		jnc	zel2_idle_clamp_check			; Jump if carry=0
 		xchg	bx,ax
-loc_22:
-		sub	ax,ds:data_30e
-		jnc	loc_24			; Jump if carry=0
-		test	byte ptr ds:data_33e,0FFh
-		jnz	loc_26			; Jump if not zero
-loc_23:
-		call	sub_4
-		jnc	loc_26			; Jump if carry=0
-		mov	byte ptr ds:data_45e,0FFh
-		jmp	short loc_26
-loc_24:
-		cmp	byte ptr ds:data_33e,4
-		jne	loc_26			; Jump if not equal
-loc_25:
-		call	sub_3
-		jnc	loc_26			; Jump if carry=0
-		mov	byte ptr ds:data_45e,0FFh
-loc_26:
-		mov	bl,ds:data_33e
+
+zel2_idle_clamp_check:
+		sub	ax,ds:zel2_scroll_x
+		jnc	zel2_idle_phase_eq4			; Jump if carry=0
+		test	byte ptr ds:zel2_phase_byte,0FFh
+		jnz	zel2_phase_xlat_apply			; Jump if not zero
+
+zel2_idle_call_dec:
+		call	zel2_scroll_dec_step
+		jnc	zel2_phase_xlat_apply			; Jump if carry=0
+		mov	byte ptr ds:zel2_phase_locked,0FFh
+		jmp	short zel2_phase_xlat_apply
+
+zel2_idle_phase_eq4:
+		cmp	byte ptr ds:zel2_phase_byte,4
+		jne	zel2_phase_xlat_apply			; Jump if not equal
+
+zel2_idle_call_inc:
+		call	zel2_scroll_inc_step
+		jnc	zel2_phase_xlat_apply			; Jump if carry=0
+		mov	byte ptr ds:zel2_phase_locked,0FFh
+
+zel2_phase_xlat_apply:
+		mov	bl,ds:zel2_phase_byte
 		xor	bh,bh			; Zero register
-		mov	dl,ds:data_25e[bx]
+		mov	dl,ds:zel2_phase_xlat_tbl[bx]
 		xor	dh,dh			; Zero register
-		mov	di,data_46e
+		mov	di,zel2_render_buf
 		mov	cx,0Ch
 
-locloop_27:
-		mov	[di],dx
-		add	di,2
-		inc	dh
-		loop	locloop_27		; Loop if cx > 0
+zel2_phase_render_loop:
+			mov	[di],dx
+			add	di,2
+			inc	dh
+			loop	zel2_phase_render_loop		; Loop if cx > 0
 
-		test	byte ptr ds:data_35e,0FFh
-		jnz	loc_34			; Jump if not zero
-		test	byte ptr ds:data_34e,0FFh
-		jz	loc_28			; Jump if zero
-		cmp	byte ptr ds:data_34e,1
-		je	loc_33			; Jump if equal
-		jmp	short loc_30
-loc_28:
-		call	word ptr cs:data_7
+		test	byte ptr ds:zel2_phase_a_flag,0FFh
+		jnz	zel2_npc_render_setup			; Jump if not zero
+		test	byte ptr ds:zel2_phase_dir,0FFh
+		jz	zel2_phase_dir_zero_path			; Jump if zero
+		cmp	byte ptr ds:zel2_phase_dir,1
+		je	zel2_phase_dir_b_path			; Jump if equal
+		jmp	short zel2_phase_dir_set_attr_b
+
+zel2_phase_dir_zero_path:
+		call	word ptr cs:zel2_rng_fn_ptr
 		and	al,1
-		jnz	loc_34			; Jump if not zero
-		mov	ax,data_4
+		jnz	zel2_npc_render_setup			; Jump if not zero
+		mov	ax,zel2_scroll_target_base
 		add	ax,12h
 		mov	bx,ax
-		sub	ax,ds:data_51e
-		jc	loc_29			; Jump if carry Set
+		sub	ax,ds:zel2_sprite_attr_ptr
+		jc	zel2_phase_dir_clamp_a			; Jump if carry Set
 		xchg	bx,ax
-loc_29:
-		mov	ax,ds:data_30e
+
+zel2_phase_dir_clamp_a:
+		mov	ax,ds:zel2_scroll_x
 		sub	ax,bx
-		jnc	loc_32			; Jump if carry=0
+		jnc	zel2_phase_dir_b_check			; Jump if carry=0
 		dec	bx
 		dec	bx
-		mov	ax,ds:data_30e
+		mov	ax,ds:zel2_scroll_x
 		add	ax,7
 		sub	ax,bx
-		jnc	loc_34			; Jump if carry=0
-		cmp	byte ptr ds:data_33e,6
-		jne	loc_34			; Jump if not equal
-		mov	byte ptr ds:data_34e,2
-loc_30:
-		mov	byte ptr ds:data_49e,0Ch
-		mov	byte ptr ds:data_50e,0Dh
-		test	byte ptr ds:data_33e,0FFh
-		jnz	loc_31			; Jump if not zero
-		call	sub_2
-loc_31:
-		jmp	short loc_34
-loc_32:
-		cmp	byte ptr ds:data_33e,2
-		jne	loc_34			; Jump if not equal
-		mov	byte ptr ds:data_34e,1
-loc_33:
-		mov	byte ptr ds:data_47e,0Eh
-		mov	byte ptr ds:data_48e,0Fh
-		cmp	byte ptr ds:data_33e,4
-		jne	loc_34			; Jump if not equal
-		call	sub_2
-loc_34:
-		mov	byte ptr ds:data_40e,0
+		jnc	zel2_npc_render_setup			; Jump if carry=0
+		cmp	byte ptr ds:zel2_phase_byte,6
+		jne	zel2_npc_render_setup			; Jump if not equal
+		mov	byte ptr ds:zel2_phase_dir,2
+
+zel2_phase_dir_set_attr_b:
+		mov	byte ptr ds:zel2_render_attr_c,0Ch
+		mov	byte ptr ds:zel2_render_attr_d,0Dh
+		test	byte ptr ds:zel2_phase_byte,0FFh
+		jnz	zel2_phase_dir_call_init			; Jump if not zero
+		call	zel2_setup_anim_segment
+
+zel2_phase_dir_call_init:
+		jmp	short zel2_npc_render_setup
+
+zel2_phase_dir_b_check:
+		cmp	byte ptr ds:zel2_phase_byte,2
+		jne	zel2_npc_render_setup			; Jump if not equal
+		mov	byte ptr ds:zel2_phase_dir,1
+
+zel2_phase_dir_b_path:
+		mov	byte ptr ds:zel2_render_attr_a,0Eh
+		mov	byte ptr ds:zel2_render_attr_b,0Fh
+		cmp	byte ptr ds:zel2_phase_byte,4
+		jne	zel2_npc_render_setup			; Jump if not equal
+		call	zel2_setup_anim_segment
+
+zel2_npc_render_setup:
+		mov	byte ptr ds:zel2_npc_idx,0
 		mov	di,0A603h
-		mov	si,ds:data_52e
-		mov	ax,ds:data_30e
+		mov	si,ds:enemy_attr_base
+		mov	ax,ds:zel2_scroll_x
 		mov	cx,4
 
-locloop_35:
-		push	cx
-		push	ax
-		call	word ptr cs:data_17e
-		pop	ax
-		mov	ds:data_43e,bl
-		jnc	loc_36			; Jump if carry=0
-		add	di,6
-		jmp	short loc_38
-loc_36:
-		mov	bl,ds:data_31e
-		mov	cx,3
+zel2_npc_render_outer_loop:
+			push	cx
+			push	ax
+			call	word ptr cs:zel2_cb_npc_step
+			pop	ax
+			mov	ds:zel2_attr_tmp,bl
+			jnc	zel2_npc_render_inner_init			; Jump if carry=0
+			add	di,6
+			jmp	short zel2_npc_render_advance
 
-locloop_37:
-		push	cx
-		mov	[si],ax
-		mov	[si+2],bl
-		mov	dl,ds:data_43e
-		mov	[si+3],dl
-		mov	dl,[di]
-		mov	[si+4],dl
-		mov	byte ptr [si+5],0
-		mov	dl,[di+1]
-		mov	[si+6],dl
-		add	di,2
-		push	ax
-		push	bx
-		push	di
-		mov	ax,[si+2]
-		call	word ptr cs:data_16e
-		mov	bl,ds:data_40e
-		xor	bh,bh			; Zero register
-		mov	al,bl
-		or	al,80h
-		xchg	[di],al
-		mov	ds:data_53e[bx],al
-		add	si,10h
-		inc	byte ptr ds:data_40e
-		pop	di
-		pop	bx
-		pop	ax
-		add	bl,2
-		and	bl,3Fh			; '?'
-		pop	cx
-		loop	locloop_37		; Loop if cx > 0
+zel2_npc_render_inner_init:
+			mov	bl,ds:zel2_phase_step
+			mov	cx,3
 
-loc_38:
-		inc	ax
-		inc	ax
-		pop	cx
-		loop	locloop_35		; Loop if cx > 0
+zel2_npc_render_inner_loop:
+				push	cx
+				mov	[si],ax
+				mov	[si+2],bl
+				mov	dl,ds:zel2_attr_tmp
+				mov	[si+3],dl
+				mov	dl,[di]
+				mov	[si+4],dl
+				mov	byte ptr [si+5],0
+				mov	dl,[di+1]
+				mov	[si+6],dl
+				add	di,2
+				push	ax
+				push	bx
+				push	di
+				mov	ax,[si+2]
+				call	word ptr cs:zel2_cb_tile_query
+				mov	bl,ds:zel2_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,bl
+				or	al,80h
+				xchg	[di],al
+				mov	ds:sprite_xlat_tbl[bx],al
+				add	si,10h
+				inc	byte ptr ds:zel2_npc_idx
+				pop	di
+				pop	bx
+				pop	ax
+				add	bl,2
+				and	bl,3Fh			; '?'
+				pop	cx
+				loop	zel2_npc_render_inner_loop		; Loop if cx > 0
+
+zel2_npc_render_advance:
+			inc	ax
+			inc	ax
+			pop	cx
+			loop	zel2_npc_render_outer_loop		; Loop if cx > 0
 
 		mov	word ptr [si],0FFFFh
 		retn
-			                        ;* No entry point to code
-		add	al,[bx+di]
-		add	[bp+di],al
-		add	al,3
-		add	[bx+di],al
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+; 8-byte data table (phase delta / anim table).  Sourcer mis-decoded as
+; x86 'add' instructions; preserved as raw data bytes.
 
-sub_2		proc	near
-		mov	al,ds:data_31e
+zel2_anim_delta_tbl		label	byte
+		db	02h, 01h, 00h, 03h
+		db	04h, 03h, 00h, 01h
+
+zel2_setup_anim_segment		proc	near
+		mov	al,ds:zel2_phase_step
 		add	al,3
 		and	al,3Fh			; '?'
-		mov	ds:data_29e,al
-		mov	ds:data_27e,al
-		mov	ax,ds:data_30e
+		mov	ds:zel2_anim_seg_a_byte_d,al
+		mov	ds:zel2_anim_seg_a_byte_b,al
+		mov	ax,ds:zel2_scroll_x
 		inc	ax
-		call	word ptr cs:data_17e
-		mov	ds:data_26e,bl
-		mov	ax,ds:data_30e
+		call	word ptr cs:zel2_cb_npc_step
+		mov	ds:zel2_anim_seg_a,bl
+		mov	ax,ds:zel2_scroll_x
 		add	ax,7
-		call	word ptr cs:data_17e
-		mov	ds:data_28e,bl
-		mov	al,ds:data_34e
+		call	word ptr cs:zel2_cb_npc_step
+		mov	ds:zel2_anim_seg_a_byte_c,bl
+		mov	al,ds:zel2_phase_dir
 		dec	al
 		mov	cl,0Dh
 		mul	cl			; ax = reg * al
 		add	ax,0A543h
 		mov	bx,ax
-		call	word ptr cs:data_19e
-		mov	byte ptr ds:data_34e,0
+		call	word ptr cs:zel2_cb_init_tiles
+		mov	byte ptr ds:zel2_phase_dir,0
 		retn
-sub_2		endp
 
+zel2_setup_anim_segment		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_3		proc	near
-		cmp	byte ptr ds:data_30e,32h	; '2'
+zel2_scroll_inc_step		proc	near
+		cmp	byte ptr ds:zel2_scroll_x,32h	; '2'
 		stc				; Set carry flag
-		jnz	loc_39			; Jump if not zero
+		jnz	zel2_scroll_inc_done			; Jump if not zero
 		retn
-loc_39:
-		inc	byte ptr ds:data_30e
+
+zel2_scroll_inc_done:
+		inc	byte ptr ds:zel2_scroll_x
 		clc				; Clear carry flag
 		retn
-sub_3		endp
 
+zel2_scroll_inc_step		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_4		proc	near
-		cmp	byte ptr ds:data_30e,11h
+zel2_scroll_dec_step		proc	near
+		cmp	byte ptr ds:zel2_scroll_x,11h
 		stc				; Set carry flag
-		jnz	loc_40			; Jump if not zero
+		jnz	zel2_scroll_dec_done			; Jump if not zero
 		retn
-loc_40:
-		dec	byte ptr ds:data_30e
+
+zel2_scroll_dec_done:
+		dec	byte ptr ds:zel2_scroll_x
 		clc				; Clear carry flag
 		retn
-sub_4		endp
+
+zel2_scroll_dec_step		endp
 
 		db	 00h, 00h, 05h, 00h, 32h, 04h
 		db	 78h
@@ -570,90 +619,95 @@ sub_4		endp
 		db	 04h, 00h, 32h, 00h, 78h, 00h
 		db	 00h, 00h, 00h, 00h, 00h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_5		proc	near
-		mov	ax,ds:data_32e
+zel2_scroll_finalize		proc	near
+		mov	ax,ds:zel2_scroll_x_max
 		sub	ax,bx
-		jnc	loc_41			; Jump if carry=0
+		jnc	zel2_scroll_clamp_zero			; Jump if carry=0
 		xor	ax,ax			; Zero register
-loc_41:
-		mov	ds:data_32e,ax
+
+zel2_scroll_clamp_zero:
+		mov	ds:zel2_scroll_x_max,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:data_15e
+		call	word ptr cs:zel2_cb_scroll
 		pop	ax
 		or	ax,ax			; Zero ?
-		jz	loc_42			; Jump if zero
+		jz	zel2_scroll_set_death			; Jump if zero
 		retn
-loc_42:
-		mov	byte ptr ds:data_54e,0FFh
-		mov	byte ptr ds:data_44e,0
-		mov	byte ptr ds:data_34e,0
-		jmp	word ptr cs:data_20e
-sub_5		endp
 
-loc_43:
-		cmp	byte ptr ds:data_44e,28h	; '('
-		jae	loc_48			; Jump if above or =
-		mov	byte ptr ds:data_55e,0FFh
-		inc	byte ptr ds:data_44e
-		cmp	byte ptr ds:data_44e,15h
-		jae	loc_47			; Jump if above or =
-		test	byte ptr ds:data_44e,3
-		jnz	loc_44			; Jump if not zero
-		mov	byte ptr ds:data_57e,28h	; '('
-loc_44:
-		inc	byte ptr ds:data_33e
-		and	byte ptr ds:data_33e,7
-loc_45:
-		mov	bx,data_25e
-		mov	al,ds:data_33e
-		xlat				; al=[al+[bx]] table
-		xor	ah,ah			; Zero register
-		mov	di,data_46e
-		mov	cx,0Ch
+zel2_scroll_set_death:
+		mov	byte ptr ds:gvar_death_flag,0FFh
+		mov	byte ptr ds:zel2_idle_step,0
+		mov	byte ptr ds:zel2_phase_dir,0
+		jmp	word ptr cs:zel2_cb_finalize
 
-locloop_46:
-		mov	[di],ax
-		add	di,2
-		inc	ah
-		loop	locloop_46		; Loop if cx > 0
+zel2_scroll_finalize		endp
 
-		jmp	loc_34
-loc_47:
-		mov	byte ptr ds:data_33e,2
-		jmp	short loc_45
-loc_48:
-		mov	byte ptr ds:data_56e,0FFh
+zel2_idle_or_spawn:
+		cmp	byte ptr ds:zel2_idle_step,28h	; '('
+		jae	zel2_idle_state_set			; Jump if above or =
+		mov	byte ptr ds:gvar_dir_toggle,0FFh
+		inc	byte ptr ds:zel2_idle_step
+		cmp	byte ptr ds:zel2_idle_step,15h
+		jae	zel2_idle_phase_reset			; Jump if above or =
+		test	byte ptr ds:zel2_idle_step,3
+		jnz	zel2_idle_check_phase_dir			; Jump if not zero
+		mov	byte ptr ds:gvar_spawn_fx_flag,28h	; '('
+
+zel2_idle_check_phase_dir:
+		inc	byte ptr ds:zel2_phase_byte
+		and	byte ptr ds:zel2_phase_byte,7
+
+zel2_idle_phase_xlat_apply:
+			mov	bx,zel2_phase_xlat_tbl
+			mov	al,ds:zel2_phase_byte
+			xlat				; al=[al+[bx]] table
+			xor	ah,ah			; Zero register
+			mov	di,zel2_render_buf
+			mov	cx,0Ch
+
+zel2_idle_render_loop:
+				mov	[di],ax
+				add	di,2
+				inc	ah
+				loop	zel2_idle_render_loop		; Loop if cx > 0
+
+			jmp	zel2_npc_render_setup
+
+zel2_idle_phase_reset:
+			mov	byte ptr ds:zel2_phase_byte,2
+			jmp	short zel2_idle_phase_xlat_apply
+
+zel2_idle_state_set:
+		mov	byte ptr ds:zel2_state_ff30,0FFh
 		retn
 
 ; ------------------------------------------------------------------
-; Module trailer: dispatch-table bytes + 'aguro' string fragment
-; (speaker-name / label suffix used by the Helada dialog code)
-; + 2-byte record + 27 zero padding bytes.
+; Module trailer: data bytes + 'aguro' string fragment + record word
+; + 27 zero padding bytes.  'aguro' is the Helada speaker / label name
+; fragment used by the Helada dialog code.  Sourcer mis-decoded the
+; leading bytes as x86 instructions; preserved here in their original
+; mis-decoded form (each line ends in a unique byte sequence that the
+; assembler reproduces verbatim).
 ; ------------------------------------------------------------------
-			                        ;* No entry point to code
+
+zel2_trailer_data:
 		xor	[bx+si],al		; data bytes
 		or	al,58h			; 'X' -- data bytes
-		add	bh,ds:data_14e[bx+si]	; data bytes
+		add	bh,ds:zel2_unk_c0b[bx+si]	; data bytes
 ;*		add	ah,ch
 		db	 00h,0ECh		;  data bytes (Sourcer Fixup)
 		movsw				; data byte
 		inc	ax			; data byte
 		push	es			; data byte
-		adc	ss:data_12[bp+di],di	; data bytes
+		adc	ss:zel2_trailer_word[bp+di],di	; data bytes
 		push	ax			; data byte
 		db	'aguro'			; speaker/label name fragment
 		db	0, 0, 0, 0, 0, 0	; reserved
-data_12		dw	0			; record terminator word
+zel2_trailer_word		dw	0			; record terminator word
 		db	2, 0			; trailer word
 		db	27 dup (0)		; pad to module end
 
 seg_a		ends
-
-
 
 		end	start
