@@ -23,16 +23,17 @@ PAGE  59,132
 ;    [si+0Ah]  sub-phase counter
 ;    [si+10h..16h]  echo/render fields copied back at retn
 ;
-;  Dispatch via CS word-pointer table at start of file.  Sub-functions
-;  sub_1..sub_8 implement: range check, step forward, step back,
-;  turn handler, collision/spawn, and wall scan.
+;  Dispatch via DS word-pointer table at file offset 0x107 (jumped to
+;  via 'jmp ds:[bx+0xA407]' in init prologue, where bx = ([si+4]&0xF)*2).
+;  Sub-state handlers sub01..sub04 implement the per-state behaviour;
+;  helper subs do range check, step fwd/back, turn handler, collision
+;  detection, and wall scan.
 ;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
-
 
 ; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
 ; These word pointers are the EAI module's only interface to 200FIGHT.
@@ -64,7 +65,6 @@ gvar_spawn_fx_flag	equ	0FF75h			; flag byte for spawn VFX
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
 eai6_main	proc	far
@@ -92,11 +92,11 @@ start:
 		db	0DAh,0A3h, 00h, 00h, 00h,0A1h
 		db	0AFh,0A1h, 5Eh,0A2h,0E5h,0A2h
 		db	 1Ch,0A3h, 00h, 00h, 00h, 00h
-data_3		db	0
+eai6_anim_phase		db	0
 		db	 00h, 50h,0A1h,0FFh,0A1h,0AEh
 		db	0A2h, 0Dh,0A3h, 30h,0A3h, 00h
 		db	 00h
-data_4		db	0
+eai6_collide_marker		db	0
 		db	 00h, 00h, 00h,0C1h,0A3h,0C1h
 		db	0A3h, 3Fh,0A3h, 8Ah,0A3h, 4Eh
 		db	0A3h, 62h,0A3h,0B2h,0A3h, 00h
@@ -121,7 +121,7 @@ data_4		db	0
 		db	 09h, 0Ah, 0Bh, 0Ch, 00h, 00h
 		db	 00h, 00h, 00h, 00h
 		db	9
-data_5		dw	0B0Ah
+eai6_rng_fn_ptr		dw	0B0Ah
 		db	 0Ch, 00h, 09h, 0Ah, 0Bh, 17h
 		db	 00h, 09h, 0Ah, 0Bh, 18h, 00h
 		db	 09h, 0Ah, 0Bh, 19h, 00h, 09h
@@ -263,59 +263,69 @@ data_5		dw	0B0Ah
 		db	 74h, 10h, 8Ah, 44h, 05h, 24h
 		db	 1Fh, 3Ch, 01h, 75h, 03h,0E9h
 		db	0C9h, 00h
-loc_1:
+
+sub01_main:
 		and	byte ptr [si+5],9Fh
-loc_2:
+
+sub01_main_clear_render:
 		and	byte ptr [si+15h],0BFh
-		call	sub_6
-		jc	loc_3			; Jump if carry Set
+		call	sub01_collide_outer
+		jc	sub01_state0_path			; Jump if carry Set
 		retn
-loc_3:
+
+sub01_state0_path:
 		test	byte ptr [si+9],1
-		jnz	loc_9			; Jump if not zero
-		call	sub_1
-		jc	loc_8			; Jump if carry Set
-loc_4:
-		inc	byte ptr [si+0Ah]
-		mov	byte ptr [si+6],1
-		or	byte ptr [si+4],60h	; '`'
-		call	word ptr cs:data_5
-		and	al,1
-		jnz	loc_6			; Jump if not zero
-		call	sub_2
-		jnc	loc_5			; Jump if carry=0
-		jmp	loc_13
-loc_5:
-		or	byte ptr [si+5],80h
-		jmp	loc_13
-loc_6:
-		call	sub_4
-		jnc	loc_7			; Jump if carry=0
-		jmp	loc_13
-loc_7:
-		and	byte ptr [si+5],7Fh
-		jmp	loc_13
-loc_8:
-		test	byte ptr [si+0Ah],0F0h
-		jz	loc_4			; Jump if zero
+		jnz	sub01_state1_active			; Jump if not zero
+		call	distance_check_4
+		jc	sub01_check_phase_hi			; Jump if carry Set
+
+sub01_advance_phase:
+			inc	byte ptr [si+0Ah]
+			mov	byte ptr [si+6],1
+			or	byte ptr [si+4],60h	; '`'
+			call	word ptr cs:eai6_rng_fn_ptr
+			and	al,1
+			jnz	sub01_step_back_branch			; Jump if not zero
+			call	phase_step_fwd
+			jnc	sub01_face_west			; Jump if carry=0
+			jmp	sub01_finalize
+
+sub01_face_west:
+			or	byte ptr [si+5],80h
+			jmp	sub01_finalize
+
+sub01_step_back_branch:
+			call	phase_step_back
+			jnc	sub01_face_east			; Jump if carry=0
+			jmp	sub01_finalize
+
+sub01_face_east:
+			and	byte ptr [si+5],7Fh
+			jmp	sub01_finalize
+
+sub01_check_phase_hi:
+			test	byte ptr [si+0Ah],0F0h
+			jz	sub01_advance_phase			; Jump if zero
 		mov	byte ptr [si+0Ah],0
 		mov	byte ptr [si+6],0
 		or	byte ptr [si+9],1
-		jmp	short loc_13
-loc_9:
+		jmp	short sub01_finalize
+
+sub01_state1_active:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],0Fh
-		jnz	loc_10			; Jump if not zero
+		jnz	sub01_state1_phase_check			; Jump if not zero
 		and	byte ptr [si+9],0FEh
 		mov	byte ptr [si+6],1
 		or	byte ptr [si+4],60h	; '`'
-		jmp	short loc_13
-loc_10:
+		jmp	short sub01_finalize
+
+sub01_state1_phase_check:
 		cmp	byte ptr [si+6],4
-		jb	loc_13			; Jump if below
+		jb	sub01_finalize			; Jump if below
 		and	byte ptr [si+4],1Fh
 		cmp	byte ptr [si+6],8
-		jne	loc_13			; Jump if not equal
+		jne	sub01_finalize			; Jump if not equal
 		mov	al,[si+3]
 		mov	ds:enemy_spawn_tile_lo,al
 		inc	al
@@ -326,24 +336,27 @@ loc_10:
 		mov	ds:enemy_spawn_col_hi,al
 		mov	bx,0A4DDh
 		test	byte ptr [si+5],80h
-		jnz	loc_11			; Jump if not zero
+		jnz	sub01_despawn_call			; Jump if not zero
 		mov	bx,0A4EAh
-loc_11:
+
+sub01_despawn_call:
 		call	word ptr cs:fight_cb_despawn
-		jmp	short loc_13
+		jmp	short sub01_finalize
 		db	 00h, 00h, 63h, 00h, 14h, 00h
 		db	 14h
 		db	8 dup (0)
 		db	 63h, 00h, 14h, 04h, 14h, 00h
 		db	 00h, 00h, 00h, 00h, 00h
-loc_12:
+
+sub01_hide_branch:
 		and	al,0BFh
 		or	al,20h			; ' '
 		mov	[si+5],al
 		or	al,60h			; '`'
 		mov	[si+15h],al
 		jmp	word ptr cs:fight_cb_fire
-loc_13:
+
+sub01_finalize:
 		mov	al,[si+6]
 		mov	[si+16h],al
 		mov	al,[si+4]
@@ -358,96 +371,93 @@ loc_13:
 
 eai6_main	endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_1		proc	near
+distance_check_4		proc	near
 		mov	al,ds:gvar_hero_x
 		sub	al,[si+2]
-		jnc	loc_14			; Jump if carry=0
+		jnc	dc4_abs_done			; Jump if carry=0
 		neg	al
-loc_14:
+
+dc4_abs_done:
 		cmp	al,4
 		mov	al,0FFh
-		jc	loc_15			; Jump if carry Set
+		jc	dc4_in_range			; Jump if carry Set
 		retn
-loc_15:
+
+dc4_in_range:
 		cmp	byte ptr [si+3],11h
-		jae	loc_17			; Jump if above or =
+		jae	dc4_far_branch			; Jump if above or =
 		mov	al,80h
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jz	loc_16			; Jump if zero
+		jz	dc4_near_clear			; Jump if zero
 		retn
-loc_16:
+
+dc4_near_clear:
 		clc				; Clear carry flag
 		retn
-loc_17:
+
+dc4_far_branch:
 		xor	al,al			; Zero register
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jnz	loc_18			; Jump if not zero
+		jnz	dc4_far_clear			; Jump if not zero
 		retn
-loc_18:
+
+dc4_far_clear:
 		clc				; Clear carry flag
 		retn
-sub_1		endp
 
+distance_check_4		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_2		proc	near
+phase_step_fwd		proc	near
 		cmp	byte ptr [si+3],22h	; '"'
 		cmc				; Complement carry
-		jnc	loc_19			; Jump if carry=0
+		jnc	psf_chk			; Jump if carry=0
 		retn
-loc_19:
-		call	sub_3
-		jnc	loc_20			; Jump if carry=0
+
+psf_chk:
+		call	collide_check_fwd
+		jnc	psf_apply			; Jump if carry=0
 		retn
-loc_20:
+
+psf_apply:
 		mov	bx,[si]
 		inc	bx
 		mov	ax,ds:fight_state_max
 		sub	ax,bx
-		jnz	loc_21			; Jump if not zero
+		jnz	psf_wrap			; Jump if not zero
 		xchg	bx,ax
-loc_21:
+
+psf_wrap:
 		mov	[si],bx
 		mov	[si+10h],bx
 		inc	byte ptr [si+3]
 		inc	byte ptr [si+13h]
 		clc				; Clear carry flag
 		retn
-sub_2		endp
 
+phase_step_fwd		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_3		proc	near
+collide_check_fwd		proc	near
 		mov	ax,[si+2]
 		call	word ptr cs:fight_cb_record_ofs
 		inc	di
 		inc	di
 		mov	cx,4
 
-locloop_22:
-		mov	al,[di]
-		call	word ptr cs:fight_cb_cmp_tile
-		stc				; Set carry flag
-		jz	loc_23			; Jump if zero
-		retn
-loc_23:
-		xchg	si,di
-		add	si,24h
-		call	word ptr cs:fight_cb_mark_adj
-		xchg	si,di
-		loop	locloop_22		; Loop if cx > 0
+collide_fwd_loop:
+			mov	al,[di]
+			call	word ptr cs:fight_cb_cmp_tile
+			stc				; Set carry flag
+			jz	collide_fwd_iter			; Jump if zero
+			retn
+
+collide_fwd_iter:
+			xchg	si,di
+			add	si,24h
+			call	word ptr cs:fight_cb_mark_adj
+			xchg	si,di
+			loop	collide_fwd_loop		; Loop if cx > 0
 
 		xchg	si,di
 		sub	si,24h
@@ -468,60 +478,56 @@ loc_23:
 		xchg	si,di
 		add	al,al
 		retn
-sub_3		endp
 
+collide_check_fwd		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_4		proc	near
+phase_step_back		proc	near
 		cmp	byte ptr [si+3],2
-		jae	loc_24			; Jump if above or =
+		jae	psb_chk			; Jump if above or =
 		retn
-loc_24:
-		call	sub_5
-		jnc	loc_25			; Jump if carry=0
+
+psb_chk:
+		call	collide_check_back
+		jnc	psb_apply			; Jump if carry=0
 		retn
-loc_25:
+
+psb_apply:
 		mov	ax,[si]
 		dec	ax
 		cmp	ax,0FFFFh
-		jne	loc_26			; Jump if not equal
+		jne	psb_wrap			; Jump if not equal
 		mov	ax,ds:fight_state_max
 		dec	ax
-loc_26:
+
+psb_wrap:
 		mov	[si],ax
 		mov	[si+10h],ax
 		dec	byte ptr [si+3]
 		dec	byte ptr [si+13h]
 		clc				; Clear carry flag
 		retn
-sub_4		endp
 
+phase_step_back		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_5		proc	near
+collide_check_back		proc	near
 		mov	ax,[si+2]
 		call	word ptr cs:fight_cb_record_ofs
 		dec	di
 		mov	cx,4
 
-locloop_27:
-		mov	al,[di]
-		call	word ptr cs:fight_cb_cmp_tile
-		stc				; Set carry flag
-		jz	loc_28			; Jump if zero
-		retn
-loc_28:
-		xchg	si,di
-		add	si,24h
-		call	word ptr cs:fight_cb_mark_adj
-		xchg	si,di
-		loop	locloop_27		; Loop if cx > 0
+collide_back_loop:
+			mov	al,[di]
+			call	word ptr cs:fight_cb_cmp_tile
+			stc				; Set carry flag
+			jz	collide_back_iter			; Jump if zero
+			retn
+
+collide_back_iter:
+			xchg	si,di
+			add	si,24h
+			call	word ptr cs:fight_cb_mark_adj
+			xchg	si,di
+			loop	collide_back_loop		; Loop if cx > 0
 
 		dec	di
 		xchg	si,di
@@ -543,59 +549,55 @@ loc_28:
 		xchg	si,di
 		add	al,al
 		retn
-sub_5		endp
 
+collide_check_back		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_6		proc	near
+sub01_collide_outer		proc	near
 		test	byte ptr [si+3],0FFh
 		stc				; Set carry flag
-		jnz	loc_29			; Jump if not zero
+		jnz	sco_test1			; Jump if not zero
 		retn
-loc_29:
+
+sco_test1:
 		cmp	byte ptr [si+3],23h	; '#'
 		stc				; Set carry flag
-		jnz	loc_30			; Jump if not zero
+		jnz	sco_test2			; Jump if not zero
 		retn
-loc_30:
-		call	sub_7
-		jnc	loc_31			; Jump if carry=0
+
+sco_test2:
+		call	sub01_collide_inner
+		jnc	sco_apply			; Jump if carry=0
 		retn
-loc_31:
+
+sco_apply:
 		inc	byte ptr [si+2]
 		and	byte ptr [si+2],3Fh	; '?'
 		inc	byte ptr [si+12h]
 		and	byte ptr [si+12h],3Fh	; '?'
 		clc				; Clear carry flag
 		retn
-sub_6		endp
 
+sub01_collide_outer		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_7		proc	near
+sub01_collide_inner		proc	near
 		mov	ax,[si+2]
 		call	word ptr cs:fight_cb_record_ofs
 		xchg	si,di
-		add	si,offset data_4
+		add	si,offset eai6_collide_marker
 		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		mov	cx,2
 
-locloop_32:
-		mov	al,[di]
-		call	word ptr cs:fight_cb_cmp_tile
-		stc				; Set carry flag
-		jz	loc_33			; Jump if zero
-		retn
-loc_33:
-		inc	di
-		loop	locloop_32		; Loop if cx > 0
+collide_inner_loop:
+			mov	al,[di]
+			call	word ptr cs:fight_cb_cmp_tile
+			stc				; Set carry flag
+			jz	collide_inner_step			; Jump if zero
+			retn
+
+collide_inner_step:
+			inc	di
+			loop	collide_inner_loop		; Loop if cx > 0
 
 		dec	di
 		mov	al,[di]
@@ -603,55 +605,73 @@ loc_33:
 		or	al,[di-1]
 		add	al,al
 		retn
-sub_7		endp
 
-			                        ;* No entry point to code
+sub01_collide_inner		endp
+
+; ----------------------------------------------------------------
+; sub02_handler  -- AI sub-state 2 dispatch entry (DS-table -> +0xB8 from base)
+; Reached via dispatch JMP in eai6_main when ([si+4]&0xF) selects this slot.
+; Cooldown-seed prologue, then visibility check, then dispatch by state bits
+; into one of: phase-2 retreat (sub_phase2), phase-1 swerve (sub_phase1),
+; phase-4 hide reset (sub_phase4), or default attack/aim path.
+; ----------------------------------------------------------------
+
+sub02_handler:				; * No entry point to code (called via DS dispatch table)
 		test	byte ptr [si+8],0FFh
-		jnz	loc_34			; Jump if not zero
+		jnz	sub02_main			; Jump if not zero
 		mov	byte ptr [si+8],10h
-loc_34:
+
+sub02_main:
 		test	byte ptr [si+5],20h	; ' '
-		jz	loc_35			; Jump if zero
+		jz	sub02_state_check			; Jump if zero
 		mov	byte ptr [si+6],3
 		mov	byte ptr [si+9],1
 		jmp	word ptr cs:fight_cb_fire
-loc_35:
+
+sub02_state_check:
 		test	byte ptr [si+9],2
-		jz	loc_36			; Jump if zero
-		jmp	loc_47
-loc_36:
+		jz	sub02_check_state1			; Jump if zero
+		jmp	sub02_phase2_entry
+
+sub02_check_state1:
 		test	byte ptr [si+9],1
-		jz	loc_37			; Jump if zero
-		jmp	loc_45
-loc_37:
+		jz	sub02_check_state4			; Jump if zero
+		jmp	sub02_phase1_entry
+
+sub02_check_state4:
 		test	byte ptr [si+9],4
-		jz	loc_38			; Jump if zero
-		jmp	loc_55
-loc_38:
-		call	sub_8
-		jc	loc_40			; Jump if carry Set
+		jz	sub02_attack_branch			; Jump if zero
+		jmp	sub02_phase4_entry
+
+sub02_attack_branch:
+		call	distance_check_8
+		jc	sub02_attack_aim			; Jump if carry Set
 		test	byte ptr [si+9],70h	; 'p'
-		jnz	loc_42			; Jump if not zero
+		jnz	sub02_attack_apply			; Jump if not zero
 		cmp	al,0FFh
-		je	loc_39			; Jump if equal
+		je	sub02_attack_rng			; Jump if equal
 		and	byte ptr [si+5],7Fh
 		or	[si+5],al
-		jmp	short loc_40
-loc_39:
-		call	word ptr cs:data_5
+		jmp	short sub02_attack_aim
+
+sub02_attack_rng:
+		call	word ptr cs:eai6_rng_fn_ptr
 		add	al,al
 		and	al,80h
 		and	byte ptr [si+5],7Fh
 		or	[si+5],al
-loc_40:
+
+sub02_attack_aim:
 		mov	al,ds:gvar_hero_x
 		sub	al,[si+2]
-		jns	loc_41			; Jump if not sign
+		jns	sub02_attack_blocked			; Jump if not sign
 		call	word ptr cs:fight_cb_map_fwd
-		jmp	short loc_42
-loc_41:
+		jmp	short sub02_attack_apply
+
+sub02_attack_blocked:
 		call	word ptr cs:fight_cb_blocked
-loc_42:
+
+sub02_attack_apply:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],3
 		add	byte ptr [si+9],10h
@@ -663,61 +683,70 @@ loc_42:
 		and	al,7
 		mov	bx,0A75Eh
 		test	byte ptr [si+5],80h
-		jnz	loc_43			; Jump if not zero
+		jnz	sub02_xlat_call			; Jump if not zero
 		mov	bx,dir_xlat_table
-loc_43:
+
+sub02_xlat_call:
 		xlat				; al=[al+[bx]] table
 		call	word ptr cs:fight_cb_range
-		jc	loc_44			; Jump if carry Set
+		jc	sub02_flip_facing			; Jump if carry Set
 		retn
-loc_44:
+
+sub02_flip_facing:
 		xor	byte ptr [si+5],80h
 		retn
-		db	0, 0, 1, 0, 0, 0
+		db	0, 0, 1, 0, 0, 0	; padding/leftover bytes
 		db	7, 0, 4, 4, 3, 4
 		db	4, 4, 5, 4
-loc_45:
+
+sub02_phase1_entry:
 		or	byte ptr [si+4],60h	; '`'
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],7
 		cmp	byte ptr [si+6],7
-		jae	loc_46			; Jump if above or =
+		jae	sub02_phase1_done			; Jump if above or =
 		retn
-loc_46:
+
+sub02_phase1_done:
 		mov	byte ptr [si+6],8
 		mov	byte ptr [si+0Ah],0
 		mov	byte ptr [si+9],2
 		retn
-loc_47:
+
+sub02_phase2_entry:
 		inc	byte ptr [si+0Ah]
 		cmp	byte ptr [si+0Ah],0Fh
-		jae	loc_54			; Jump if above or =
-		call	sub_8
-		jnc	loc_49			; Jump if carry=0
+		jae	sub02_phase2_done			; Jump if above or =
+		call	distance_check_8
+		jnc	sub02_phase2_aim			; Jump if carry=0
 		test	byte ptr [si+9],70h	; 'p'
-		jnz	loc_51			; Jump if not zero
+		jnz	sub02_phase2_apply			; Jump if not zero
 		cmp	al,0FFh
-		je	loc_48			; Jump if equal
+		je	sub02_phase2_rng			; Jump if equal
 		xor	al,80h
 		and	byte ptr [si+5],7Fh
 		or	[si+5],al
-		jmp	short loc_49
-loc_48:
-		call	word ptr cs:data_5
+		jmp	short sub02_phase2_aim
+
+sub02_phase2_rng:
+		call	word ptr cs:eai6_rng_fn_ptr
 		add	al,al
 		and	al,80h
 		and	byte ptr [si+5],7Fh
 		or	[si+5],al
-		jmp	short loc_49
-loc_49:
+		jmp	short sub02_phase2_aim
+
+sub02_phase2_aim:
 		mov	al,ds:gvar_hero_x
 		sub	al,[si+2]
-		js	loc_50			; Jump if sign=1
+		js	sub02_phase2_blocked			; Jump if sign=1
 		call	word ptr cs:fight_cb_map_fwd
-		jmp	short loc_51
-loc_50:
+		jmp	short sub02_phase2_apply
+
+sub02_phase2_blocked:
 		call	word ptr cs:fight_cb_blocked
-loc_51:
+
+sub02_phase2_apply:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],3
 		or	byte ptr [si+6],8
@@ -730,247 +759,287 @@ loc_51:
 		and	al,7
 		mov	bx,0A75Eh
 		test	byte ptr [si+5],80h
-		jnz	loc_52			; Jump if not zero
+		jnz	sub02_phase2_xlat			; Jump if not zero
 		mov	bx,dir_xlat_table
-loc_52:
+
+sub02_phase2_xlat:
 		xlat				; al=[al+[bx]] table
 		call	word ptr cs:fight_cb_range
-		jc	loc_53			; Jump if carry Set
+		jc	sub02_phase2_flip			; Jump if carry Set
 		retn
-loc_53:
+
+sub02_phase2_flip:
 		xor	byte ptr [si+5],80h
 		retn
-loc_54:
+
+sub02_phase2_done:
 		mov	byte ptr [si+6],0Ch
 		mov	byte ptr [si+9],4
 		retn
-loc_55:
+
+sub02_phase4_entry:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],0Fh
-		jz	loc_56			; Jump if zero
+		jz	sub02_phase4_reset			; Jump if zero
 		retn
-loc_56:
+
+sub02_phase4_reset:
 		mov	byte ptr [si+9],0
 		and	byte ptr [si+4],1Fh
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_8		proc	near
+distance_check_8		proc	near
 		mov	al,ds:gvar_hero_x
 		sub	al,[si+2]
-		jnc	loc_57			; Jump if carry=0
+		jnc	dc8_abs_done			; Jump if carry=0
 		neg	al
-loc_57:
+
+dc8_abs_done:
 		cmp	al,8
 		mov	al,0FFh
-		jc	loc_58			; Jump if carry Set
+		jc	dc8_in_range			; Jump if carry Set
 		retn
-loc_58:
+
+dc8_in_range:
 		cmp	byte ptr [si+3],11h
-		jae	loc_60			; Jump if above or =
+		jae	dc8_far_branch			; Jump if above or =
 		mov	al,80h
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jz	loc_59			; Jump if zero
+		jz	dc8_near_clear			; Jump if zero
 		retn
-loc_59:
+
+dc8_near_clear:
 		clc				; Clear carry flag
 		retn
-loc_60:
+
+dc8_far_branch:
 		xor	al,al			; Zero register
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jnz	loc_61			; Jump if not zero
+		jnz	dc8_far_clear			; Jump if not zero
 		retn
-loc_61:
+
+dc8_far_clear:
 		clc				; Clear carry flag
 		retn
-sub_8		endp
 
-			                        ;* No entry point to code
+distance_check_8		endp
+
+; ----------------------------------------------------------------
+; sub03_handler  -- AI sub-state 3 dispatch entry. Called via DS dispatch
+; table (no static caller). Cooldown-seed prologue, then visibility check,
+; then dispatches to step/charge logic by state bit 1, charge/swerve by
+; bit 2, etc. Uses sub02_flip_to_state2 helper to flip facing+state.
+; ----------------------------------------------------------------
+
+sub03_handler:				; * No entry point to code (called via DS dispatch table)
 		test	byte ptr [si+8],0FFh
-		jnz	loc_62			; Jump if not zero
+		jnz	sub03_main			; Jump if not zero
 		mov	byte ptr [si+8],8
-loc_62:
+
+sub03_main:
 		test	byte ptr [si+5],20h	; ' '
-		jz	loc_63			; Jump if zero
+		jz	sub03_visible			; Jump if zero
 		jmp	word ptr cs:fight_cb_fire
-loc_63:
+
+sub03_visible:
 		test	byte ptr [si+9],1
-		jnz	loc_70			; Jump if not zero
+		jnz	sub03_state1_path			; Jump if not zero
 		call	word ptr cs:fight_cb_blocked
-		jc	loc_64			; Jump if carry Set
+		jc	sub03_blocked			; Jump if carry Set
 		retn
-loc_64:
-		call	sub_8
-		jc	loc_69			; Jump if carry Set
+
+sub03_blocked:
+		call	distance_check_8
+		jc	sub03_in_range			; Jump if carry Set
 		add	byte ptr [si+6],80h
-		jc	loc_65			; Jump if carry Set
+		jc	sub03_step_branch			; Jump if carry Set
 		retn
-loc_65:
+
+sub03_step_branch:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],0F3h
 		test	byte ptr [si+5],80h
-		jnz	loc_66			; Jump if not zero
+		jnz	sub03_step_neg_branch			; Jump if not zero
 		call	word ptr cs:fight_cb_step_pos
-		jnc	loc_67			; Jump if carry=0
+		jnc	sub03_step_done			; Jump if carry=0
 		xor	byte ptr [si+5],80h
-		jmp	short loc_67
-loc_66:
+		jmp	short sub03_step_done
+
+sub03_step_neg_branch:
 		call	word ptr cs:fight_cb_step_neg
-		jnc	loc_67			; Jump if carry=0
+		jnc	sub03_step_done			; Jump if carry=0
 		xor	byte ptr [si+5],80h
-loc_67:
+
+sub03_step_done:
 		dec	byte ptr [si+0Ah]
 		test	byte ptr [si+0Ah],0Fh
-		jz	loc_68			; Jump if zero
+		jz	sub03_step_flip			; Jump if zero
 		retn
-loc_68:
+
+sub03_step_flip:
 		xor	byte ptr [si+5],80h
 		retn
-loc_69:
+
+sub03_in_range:
 		mov	byte ptr [si+9],1
 		mov	byte ptr [si+0Ah],0
 		retn
-loc_70:
+
+sub03_state1_path:
 		test	byte ptr [si+9],2
-		jnz	loc_77			; Jump if not zero
-		call	sub_8
+		jnz	sub03_state2_path			; Jump if not zero
+		call	distance_check_8
 		cmp	al,0FFh
-		je	loc_74			; Jump if equal
+		je	sub03_dist_check_again			; Jump if equal
 		mov	byte ptr [si+6],4
 		test	byte ptr [si+5],80h
-		jnz	loc_71			; Jump if not zero
+		jnz	sub03_charge_neg			; Jump if not zero
 		call	word ptr cs:fight_cb_step_pos
 		call	word ptr cs:fight_cb_step_pos
-		jnc	loc_72			; Jump if carry=0
-		call	sub_10
-		jc	loc_76			; Jump if carry Set
-		jmp	short loc_72
-loc_71:
+		jnc	sub03_charge_done			; Jump if carry=0
+		call	sub02_block_or_advance
+		jc	sub02_flip_to_state2_entry			; Jump if carry Set
+		jmp	short sub03_charge_done
+
+sub03_charge_neg:
 		call	word ptr cs:fight_cb_step_neg
 		call	word ptr cs:fight_cb_step_neg
-		jnc	loc_72			; Jump if carry=0
-		call	sub_10
-		jc	loc_76			; Jump if carry Set
-loc_72:
+		jnc	sub03_charge_done			; Jump if carry=0
+		call	sub02_block_or_advance
+		jc	sub02_flip_to_state2_entry			; Jump if carry Set
+
+sub03_charge_done:
 		inc	byte ptr [si+0Ah]
 		mov	al,[si+0Ah]
 		and	al,0Fh
 		inc	al
-		jnz	loc_73			; Jump if not zero
-		call	sub_9
-loc_73:
+		jnz	sub03_charge_phase_check			; Jump if not zero
+		call	sub02_flip_to_state2
+
+sub03_charge_phase_check:
 		test	byte ptr [si+0Ah],1Fh
-		jz	loc_74			; Jump if zero
+		jz	sub03_dist_check_again			; Jump if zero
 		retn
-loc_74:
-		call	sub_8
-		jnc	loc_75			; Jump if carry=0
+
+sub03_dist_check_again:
+		call	distance_check_8
+		jnc	sub03_reset			; Jump if carry=0
 		retn
-loc_75:
+
+sub03_reset:
 		mov	byte ptr [si+6],0
 		mov	byte ptr [si+9],0
 		mov	byte ptr [si+0Ah],0
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+sub02_flip_to_state2		proc	near
 
-sub_9		proc	near
-loc_76:
+sub02_flip_to_state2_entry:
 		or	byte ptr [si+9],2
 		xor	byte ptr [si+5],80h
 		mov	byte ptr [si+6],5
 		retn
-sub_9		endp
 
-loc_77:
+sub02_flip_to_state2		endp
+
+sub03_state2_path:
 		inc	byte ptr [si+6]
 		test	byte ptr [si+6],7
-		jz	loc_78			; Jump if zero
+		jz	sub03_state2_reset			; Jump if zero
 		retn
-loc_78:
+
+sub03_state2_reset:
 		and	byte ptr [si+9],0FDh
 		mov	byte ptr [si+6],4
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_10		proc	near
+sub02_block_or_advance		proc	near
 		test	byte ptr [si+9],4
-		jnz	loc_79			; Jump if not zero
+		jnz	sub02_boa_map_fwd			; Jump if not zero
 		jmp	word ptr cs:fight_cb_blocked
-loc_79:
+
+sub02_boa_map_fwd:
 		call	word ptr cs:fight_cb_map_fwd
-		jc	loc_80			; Jump if carry Set
+		jc	sub02_boa_set_bit2			; Jump if carry Set
 		retn
-loc_80:
+
+sub02_boa_set_bit2:
 		or	byte ptr [si+9],4
 		retn
-sub_10		endp
 
-			                        ;* No entry point to code
+sub02_block_or_advance		endp
+
+; ----------------------------------------------------------------
+; sub04_handler  -- AI sub-state 4 dispatch entry. Called via DS dispatch
+; table (no static caller). Sets visibility flag bit 20h, then dispatches
+; by state bits 1/2: state2 -> spawn projectile path; state1 -> blocked
+; check + range check using eai6_anim_phase; default -> RNG-gated state set.
+; ----------------------------------------------------------------
+
+sub04_handler:				; * No entry point to code (called via DS dispatch table)
 		or	byte ptr [si+4],20h	; ' '
 		test	byte ptr [si+9],2
-		jnz	loc_87			; Jump if not zero
+		jnz	sub04_state2_path			; Jump if not zero
 		test	byte ptr [si+9],1
-		jnz	loc_84			; Jump if not zero
+		jnz	sub04_state1_path			; Jump if not zero
 		cmp	byte ptr [si+3],8
-		jae	loc_81			; Jump if above or =
+		jae	sub04_range_lo_chk			; Jump if above or =
 		retn
-loc_81:
+
+sub04_range_lo_chk:
 		cmp	byte ptr [si+3],13h
-		jb	loc_82			; Jump if below
+		jb	sub04_rng_check			; Jump if below
 		retn
-loc_82:
-		call	word ptr cs:data_5
+
+sub04_rng_check:
+		call	word ptr cs:eai6_rng_fn_ptr
 		and	al,3
-		jz	loc_83			; Jump if zero
+		jz	sub04_set_state1			; Jump if zero
 		retn
-loc_83:
+
+sub04_set_state1:
 		or	byte ptr [si+9],1
 		retn
-loc_84:
+
+sub04_state1_path:
 		call	word ptr cs:fight_cb_blocked
-		jc	loc_85			; Jump if carry Set
+		jc	sub04_state1_apply			; Jump if carry Set
 		retn
-loc_85:
+
+sub04_state1_apply:
 		or	byte ptr [si+9],2
 		mov	byte ptr [si+6],1
-		mov	ah,data_3
+		mov	ah,eai6_anim_phase
 		dec	ah
 		mov	al,[si+2]
 		sub	al,ah
 		and	al,3Fh			; '?'
 		cmp	al,13h
-		jb	loc_86			; Jump if below
+		jb	sub04_set_spawn_fx			; Jump if below
 		retn
-loc_86:
+
+sub04_set_spawn_fx:
 		mov	byte ptr ds:gvar_spawn_fx_flag,21h	; '!'
 		retn
-loc_87:
+
+sub04_state2_path:
 		add	byte ptr [si+6],80h
-		jc	loc_88			; Jump if carry Set
+		jc	sub04_state2_phase			; Jump if carry Set
 		retn
-loc_88:
+
+sub04_state2_phase:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],3
-		jz	loc_89			; Jump if zero
+		jz	sub04_spawn			; Jump if zero
 		retn
-loc_89:
+
+sub04_spawn:
 		and	byte ptr [si+7],0F0h
 		or	byte ptr [si+7],1
 		jmp	word ptr cs:fight_cb_spawn
 
 seg_a		ends
-
-
 
 		end	start
