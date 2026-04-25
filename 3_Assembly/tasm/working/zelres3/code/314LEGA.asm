@@ -6,17 +6,16 @@ PAGE  59,132
 ;  314LEGA - Level / Map Renderer Code Module - Tarso (zelres3 chunk)
 ;
 ;  Level renderer and per-frame map update program for the Tarso area
-;  (town name 'Tarso' embedded near the module trailer). Partial prior
-;  cleanup introduced the placeholder name "LEVEL_RENDERER". The main
-;  proc was retained by Sourcer as the generic zr3_14. Contains helper
-;  routine lvrender_get_value (defined at file offset 0x03B9).
+;  (town name 'Tarso' embedded near the module trailer). Sibling of
+;  312ZELA (Satono) and 313MEDA (Bosque/Vista); shares the
+;  game-segment dispatch ABI and per-map state byte layout.
 ;
 ;  Structure:
 ;    - Header pointer / descriptor area (file 0x00..0x80) mis-decoded by
 ;      Sourcer as sbb/and x86 instructions; preserved as raw bytes
-;    - Large tile/cell layout data block
-;    - Per-frame scan / NPC-cell update loop
-;    - Helper/sub procs and dispatch logic
+;    - Large tile/cell layout data block (lega_tile_data_block_*)
+;    - Per-frame NPC scan loop (lega_npc_scan_loop..lega_npc_scan_done)
+;    - Phase / state machine + scroll helpers
 ;    - Trailer: 10-word handler jump-table + continuation tile data
 ;      + 'Tarso' town-name string fragment
 ;
@@ -26,11 +25,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-; === AUTO PLACEHOLDERS ===
-; loc_20 is a code label at segment offset 0x03B9 (defined near data at lvrender_get_value)
-; === END PLACEHOLDERS ===
-
-
 ; The following equates show data references outside the range of the program.
 ; Shared references across 312-319 map-program family:
 ;   200Ch..6038h  - game-segment dispatch callback fn ptrs
@@ -38,57 +32,66 @@ include  srmacros.inc
 ;   0ED20h        - char/tile lookup table
 ;   0FF2Eh..0FF75h - per-map global state flag bytes
 
-data_8e		equ	200Ch			;* scroll/dispatch callback
-data_9e		equ	6028h			;* game-seg callback fn A (tile dispatch)
-data_10e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
-data_11e	equ	6038h			;* game-seg callback fn C
-data_12e	equ	0A3C7h			;*
-data_13e	equ	0A41Bh			;*
-data_14e	equ	0A41Fh			;*
-data_15e	equ	0A424h			;*
-data_16e	equ	0A5D8h			;*
-data_17e	equ	0A5D9h			;*
-data_18e	equ	0A69Bh			;*
-data_19e	equ	0A6BCh			;*
-data_20e	equ	0A6C8h			;*
-data_21e	equ	0A744h			;*
-data_22e	equ	0A7A0h			;*
-data_23e	equ	0A7A2h			;*
-data_24e	equ	0A7A3h			;*
-data_25e	equ	0A7B6h			;*
-data_26e	equ	0A7B7h			;*
-data_27e	equ	0A7B8h			;*
-data_28e	equ	0A7B9h			;*
-data_29e	equ	0A7BBh			;*
-data_30e	equ	0A7BCh			;*
-data_31e	equ	0A7BDh			;*
-data_32e	equ	0A7BEh			;*
-data_33e	equ	0A7BFh			;*
-data_34e	equ	0A7C0h			;*
-data_35e	equ	0A7C1h			;*
-data_36e	equ	0A7C2h			;*
-data_37e	equ	0A7C3h			;*
-data_38e	equ	0A7C5h			;*
-data_39e	equ	0A7C6h			;*
-data_40e	equ	0A7C7h			;*
-data_41e	equ	0A7C8h			;*
-data_42e	equ	0A7C9h			;*
-data_43e	equ	0A7CBh			;*
-data_44e	equ	0A7F1h			;*
-data_45e	equ	0C010h			;* sprite attribute record base
-data_46e	equ	0ED20h			;* char/tile lookup table
-data_47e	equ	0FF2Eh			;* global state byte
-data_48e	equ	0FF2Fh			;* global state byte
-data_49e	equ	0FF3Ch			;* global state byte
-data_50e	equ	0FF75h			;* global state byte
+; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
+lega_cb_scroll		equ	200Ch		; scroll / dispatch callback
+lega_cb_tile_query	equ	6028h		; tile-at-cell callback fn A
+lega_cb_npc_step	equ	6036h		; NPC step / cell-iter callback fn B
+lega_cb_entity_act	equ	6038h		; entity action callback fn C
+
+; --- Internal tile/render data tables (CS/DS-relative) ---
+lega_tbl_a3c7		equ	0A3C7h		; (unresolved data ref)
+lega_tbl_a41b		equ	0A41Bh		; xlat table base (mov bx, 0A41Bh + xlat)
+lega_npc_state_a	equ	0A41Fh		; cell-state scan table A (5 bytes, scasb)
+lega_npc_state_b	equ	0A424h		; cell-state scan table B (5 bytes, scasb)
+lega_anim_dx_tbl	equ	0A5D8h		; per-phase delta-X table base
+lega_anim_dy_tbl	equ	0A5D9h		; per-phase delta-Y table base
+lega_phase_xlat_a	equ	0A69Bh		; phase-A xlat table (xlat-indexed)
+lega_phase_xlat_b	equ	0A6BCh		; phase-B xlat table (xlat-indexed)
+lega_unk_a6c8		equ	0A6C8h		; (unresolved table ref)
+lega_dispatch_tbl	equ	0A744h		; trailer dispatch jump-table base
+
+; --- Scroll / phase state bytes (DS) ---
+lega_scroll_x		equ	0A7A0h		; scroll X position (word)
+lega_scroll_phase	equ	0A7A2h		; scroll phase counter byte
+lega_scroll_x_max	equ	0A7A3h		; scroll X max (word)
+
+; --- NPC scan / cell write state bytes (DS) ---
+lega_npc_idx		equ	0A7B6h		; NPC scan index byte
+lega_anim_byte		equ	0A7B7h		; current animation/speaker byte
+lega_idle_step		equ	0A7B8h		; idle step counter (0..0x28)
+lega_phase_step		equ	0A7B9h		; phase step counter (mod 8)
+lega_phase_dir_b	equ	0A7BAh		; per-frame xlat output (written after xlat)
+lega_phase_substep	equ	0A7BBh		; phase sub-step (mod 4)
+lega_attr_tmp		equ	0A7BCh		; tile attribute scratch byte
+lega_phase_locked	equ	0A7BDh		; phase-locked flag
+lega_phase_subflag	equ	0A7BEh		; phase sub-flag
+lega_phase_delay	equ	0A7BFh		; phase delay countdown
+lega_phase_active	equ	0A7C0h		; phase-active flag
+lega_phase_active_b	equ	0A7C1h		; phase-active sub-flag
+lega_anim2_active	equ	0A7C2h		; secondary animation active flag
+lega_anim2_x		equ	0A7C3h		; secondary anim X position (word)
+lega_anim2_y		equ	0A7C5h		; secondary anim Y position
+lega_anim2_frame	equ	0A7C6h		; secondary anim frame index
+lega_anim2_phase	equ	0A7C7h		; secondary anim phase counter
+lega_anim2_subflag	equ	0A7C8h		; secondary anim sub-flag
+lega_render_buf		equ	0A7C9h		; tile render buffer base
+lega_render_buf_b	equ	0A7CBh		; tile render buffer +2
+lega_extra_attr		equ	0A7F1h		; extra-attr byte at scan tail
+
+; --- Shared game-segment globals (used across map-program family) ---
+enemy_attr_base		equ	0C010h		; sprite/entity record base (DS)
+sprite_xlat_tbl		equ	0ED20h		; char/tile lookup table (shared)
+gvar_death_flag		equ	0FF2Eh		; global death flag
+gvar_dir_toggle		equ	0FF2Fh		; global dir-toggle flag
+gvar_unk_ff3c		equ	0FF3Ch		; global state byte (used in header decode)
+gvar_spawn_fx_flag	equ	0FF75h		; spawn VFX flag
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
-zr3_14		proc	far
+lega_main		proc	far
 
 ; ------------------------------------------------------------------
 ; start: header + embedded tile/cell layout data.
@@ -96,15 +99,16 @@ zr3_14		proc	far
 ; module header fields; real code entry is via dispatch from game
 ; DS. The 12 zero bytes below are the reserved / padding header area.
 ; ------------------------------------------------------------------
+
 start:
 		sbb	[bx+si],cx		; header field bytes
 		add	[bx+si],al		; header field bytes
-		and	sp,ss:data_22e[bp+si]	; header field bytes
+		and	sp,ss:lega_scroll_x[bp+si]	; header field bytes
 		db	12 dup (0)		; reserved / padding
 		db	0A0h,0A0h,0A0h,0A0h,0A0h,0A0h
 		db	 50h
 		db	 0Ah, 0Ah
-data_3		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah	; Data table (indexed access)
+lega_tile_data_block_a		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah	; Data table (indexed access)
 		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah
 		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah
 		db	0Ah, 0Ah, '>'
@@ -126,9 +130,9 @@ data_3		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah	; Data table (indexed access)
 		db	 00h,0BCh, 00h, 00h, 09h, 0Ah
 		db	 0Bh, 0Ch, 00h, 0Dh, 0Eh, 10h
 		db	 11h, 00h, 0Eh, 0Fh, 11h, 12h
-data_4		db	0			; Data table (indexed access)
+lega_tile_data_block_b		db	0			; Data table (indexed access)
 		db	 13h, 14h
-data_5		dw	1615h			; Data table (indexed access)
+lega_tile_data_block_c		dw	1615h			; Data table (indexed access)
 		db	 00h, 17h, 18h, 19h, 1Ah, 00h
 		db	 19h, 1Ah, 1Ch, 1Dh, 00h, 1Ah
 		db	 1Bh, 1Dh, 1Eh, 00h, 1Fh, 13h
@@ -187,163 +191,181 @@ data_5		dw	1615h			; Data table (indexed access)
 		db	 00h,0D1h,0D2h, 8Bh, 36h, 10h
 		db	0C0h,0C6h, 06h,0B6h,0A7h, 00h
 		db	0C6h
-loc_1:
+
+lega_npc_scan_loop:
 		push	es
 		mov	bh,0A7h
-		add	ss:data_49e[bp+di],al
-		jz	loc_5			; Jump if zero
+		add	ss:gvar_unk_ff3c[bp+di],al
+		jz	lega_npc_scan_done			; Jump if zero
 		mov	ax,[si]
-		call	word ptr cs:data_10e
-		jc	loc_4			; Jump if carry Set
+		call	word ptr cs:lega_cb_npc_step
+		jc	lega_npc_scan_next			; Jump if carry Set
 		mov	[si+3],bl
 		mov	ax,[si+2]
-		call	word ptr cs:data_9e
-		mov	bl,ds:data_25e
+		call	word ptr cs:lega_cb_tile_query
+		mov	bl,ds:lega_npc_idx
 		xor	bh,bh			; Zero register
-		mov	al,ds:data_46e[bx]
+		mov	al,ds:sprite_xlat_tbl[bx]
 		mov	[di],al
 		test	byte ptr [si+5],40h	; '@'
-		jz	loc_4			; Jump if zero
+		jz	lega_npc_scan_next			; Jump if zero
 		mov	al,[si+5]
 		and	al,1Fh
-		mov	ds:data_26e,al
-loc_4:
-		inc	byte ptr ds:data_25e
+		mov	ds:lega_anim_byte,al
+
+lega_npc_scan_next:
+		inc	byte ptr ds:lega_npc_idx
 		add	si,10h
 ;*		jmp	short loc_2		;*
 		db	0EBh, 0C4h		; jmp short 235h (absolute)
-loc_5:
-		mov	si,ds:data_45e
+
+lega_npc_scan_done:
+		mov	si,ds:enemy_attr_base
 		mov	word ptr [si],0FFFFh
-		test	byte ptr ds:data_26e,0FFh
-		jz	loc_8			; Jump if zero
-		mov	al,ds:data_26e
+		test	byte ptr ds:lega_anim_byte,0FFh
+		jz	lega_post_scan_check_death			; Jump if zero
+		mov	al,ds:lega_anim_byte
 		push	ax
-		call	word ptr cs:data_11e
+		call	word ptr cs:lega_cb_entity_act
 		mov	bl,ah
 		xor	bh,bh			; Zero register
 		pop	ax
 		cmp	al,9
-		je	loc_7			; Jump if equal
+		je	lega_anim_apply_scroll			; Jump if equal
 		cmp	al,1
-		jne	loc_6			; Jump if not equal
+		jne	lega_anim_dispatch_other			; Jump if not equal
 		add	bx,bx
-		jmp	short loc_7
-loc_6:
+		jmp	short lega_anim_apply_scroll
+
+lega_anim_dispatch_other:
 		shr	bx,1			; Shift w/zeros fill
 		shr	bx,1			; Shift w/zeros fill
 		shr	bx,1			; Shift w/zeros fill
-loc_7:
-		call	lvrender_func_4
-		mov	byte ptr ds:data_50e,2Fh	; '/'
-		cmp	byte ptr ds:data_22e,2Fh	; '/'
-		jae	loc_8			; Jump if above or =
-		mov	byte ptr ds:data_33e,14h
-		mov	byte ptr ds:data_31e,0FFh
-loc_8:
-		test	byte ptr ds:data_47e,0FFh
-		jz	loc_9			; Jump if zero
-		jmp	loc_47
-loc_9:
-		test	byte ptr ds:data_34e,0FFh
-		jz	loc_10			; Jump if zero
-		jmp	loc_20
-loc_10:
-		test	byte ptr ds:data_36e,0FFh
-		jz	loc_11			; Jump if zero
-		cmp	byte ptr ds:data_40e,0Dh
-		jae	loc_11			; Jump if above or =
-		jmp	loc_18
-loc_11:
-		test	byte ptr ds:data_31e,0FFh
-		jnz	loc_13			; Jump if not zero
-		mov	byte ptr ds:data_33e,3Ch	; '<'
-		inc	byte ptr ds:data_28e
-		and	byte ptr ds:data_28e,7
-		mov	al,ds:data_28e
+
+lega_anim_apply_scroll:
+		call	lega_scroll_finalize
+		mov	byte ptr ds:gvar_spawn_fx_flag,2Fh	; '/'
+		cmp	byte ptr ds:lega_scroll_x,2Fh	; '/'
+		jae	lega_post_scan_check_death			; Jump if above or =
+		mov	byte ptr ds:lega_phase_delay,14h
+		mov	byte ptr ds:lega_phase_locked,0FFh
+
+lega_post_scan_check_death:
+		test	byte ptr ds:gvar_death_flag,0FFh
+		jz	lega_phase_check_active			; Jump if zero
+		jmp	lega_idle_or_spawn
+
+lega_phase_check_active:
+		test	byte ptr ds:lega_phase_active,0FFh
+		jz	lega_phase_check_anim2			; Jump if zero
+		jmp	lega_phase_active_handler
+
+lega_phase_check_anim2:
+		test	byte ptr ds:lega_anim2_active,0FFh
+		jz	lega_phase_check_locked			; Jump if zero
+		cmp	byte ptr ds:lega_anim2_phase,0Dh
+		jae	lega_phase_check_locked			; Jump if above or =
+		jmp	lega_phase_check_step6
+
+lega_phase_check_locked:
+		test	byte ptr ds:lega_phase_locked,0FFh
+		jnz	lega_phase_locked_branch			; Jump if not zero
+		mov	byte ptr ds:lega_phase_delay,3Ch	; '<'
+		inc	byte ptr ds:lega_phase_step
+		and	byte ptr ds:lega_phase_step,7
+		mov	al,ds:lega_phase_step
 		push	cs
 		pop	es
-		mov	di,data_14e
+		mov	di,lega_npc_state_a
 		mov	cx,5
 		repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
-		jnz	loc_12			; Jump if not zero
+		jnz	lega_phase_a_done			; Jump if not zero
 		push	ax
-		call	lvrender_func_1
+		call	lega_scroll_dec_step
 		sbb	al,al
-		mov	ds:data_31e,al
+		mov	ds:lega_phase_locked,al
 		pop	ax
 		cmp	al,7
-		jne	loc_12			; Jump if not equal
-		call	lvrender_func_1
+		jne	lega_phase_a_done			; Jump if not equal
+		call	lega_scroll_dec_step
 		sbb	al,al
-		mov	ds:data_31e,al
-loc_12:
-		jmp	short loc_18
-loc_13:
-		dec	byte ptr ds:data_33e
-		jnz	loc_14			; Jump if not zero
-		mov	byte ptr ds:data_31e,0
-		jmp	short loc_18
-loc_14:
-		mov	al,ds:data_28e
-		or	al,al			; Zero ?
-		jnz	loc_15			; Jump if not zero
-		mov	al,8
-loc_15:
-		cmp	al,6
-		jne	loc_16			; Jump if not equal
-		sub	al,2
-loc_16:
-		dec	al
-		mov	ds:data_28e,al
-		push	cs
-		pop	es
-		mov	di,data_15e
-		mov	cx,5
-		repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
-		jnz	loc_18			; Jump if not zero
-		push	ax
-		call	lvrender_get_value
+		mov	ds:lega_phase_locked,al
+
+lega_phase_a_done:
+		jmp	short lega_phase_check_step6
+
+lega_phase_locked_branch:
+		dec	byte ptr ds:lega_phase_delay
+		jnz	lega_phase_b_step			; Jump if not zero
+		mov	byte ptr ds:lega_phase_locked,0
+		jmp	short lega_phase_check_step6
+
+lega_phase_b_step:
+			mov	al,ds:lega_phase_step
+			or	al,al			; Zero ?
+			jnz	lega_phase_b_skip0			; Jump if not zero
+			mov	al,8
+
+lega_phase_b_skip0:
+			cmp	al,6
+			jne	lega_phase_b_skip6			; Jump if not equal
+			sub	al,2
+
+lega_phase_b_skip6:
+			dec	al
+			mov	ds:lega_phase_step,al
+			push	cs
+			pop	es
+			mov	di,lega_npc_state_b
+			mov	cx,5
+			repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
+			jnz	lega_phase_check_step6			; Jump if not zero
+			push	ax
+			call	lega_scroll_inc_step
+			cmc				; Complement carry
+			sbb	al,al
+			mov	ds:lega_phase_locked,al
+			pop	ax
+			cmp	al,6
+			je	lega_phase_b_apply			; Jump if equal
+			cmp	al,3
+			jne	lega_phase_b_step			; Jump if not equal
+
+lega_phase_b_apply:
+		call	lega_scroll_inc_step
 		cmc				; Complement carry
 		sbb	al,al
-		mov	ds:data_31e,al
-		pop	ax
-		cmp	al,6
-		je	loc_17			; Jump if equal
-		cmp	al,3
-		jne	loc_14			; Jump if not equal
-loc_17:
-		call	lvrender_get_value
-		cmc				; Complement carry
-		sbb	al,al
-		mov	ds:data_31e,al
-loc_18:
-		test	byte ptr ds:data_31e,0FFh
-		jnz	loc_19			; Jump if not zero
-		cmp	byte ptr ds:data_28e,6
-		jne	loc_19			; Jump if not equal
+		mov	ds:lega_phase_locked,al
+
+lega_phase_check_step6:
+		test	byte ptr ds:lega_phase_locked,0FFh
+		jnz	lega_phase_dir_apply			; Jump if not zero
+		cmp	byte ptr ds:lega_phase_step,6
+		jne	lega_phase_dir_apply			; Jump if not equal
 		call	word ptr cs:[11Ah]	; was: call word ptr cs:data_6 (fn ptr at offset 11Ah)
 		and	al,1
-		jnz	loc_19			; Jump if not zero
-		test	byte ptr ds:data_36e,0FFh
-		jnz	loc_19			; Jump if not zero
-		mov	ax,cs:data_22e
+		jnz	lega_phase_dir_apply			; Jump if not zero
+		test	byte ptr ds:lega_anim2_active,0FFh
+		jnz	lega_phase_dir_apply			; Jump if not zero
+		mov	ax,cs:lega_scroll_x
 		sub	ax,14h
-		jc	loc_19			; Jump if carry Set
-		mov	byte ptr ds:data_34e,0FFh
-		mov	byte ptr ds:data_35e,0
-		mov	byte ptr ds:data_32e,0
-		mov	byte ptr ds:data_28e,8
-		mov	byte ptr ds:data_50e,30h	; '0'
-loc_19:
-		inc	byte ptr ds:data_29e
-		and	byte ptr ds:data_29e,3
-		mov	al,ds:data_29e
-		mov	bx,data_13e
+		jc	lega_phase_dir_apply			; Jump if carry Set
+		mov	byte ptr ds:lega_phase_active,0FFh
+		mov	byte ptr ds:lega_phase_active_b,0
+		mov	byte ptr ds:lega_phase_subflag,0
+		mov	byte ptr ds:lega_phase_step,8
+		mov	byte ptr ds:gvar_spawn_fx_flag,30h	; '0'
+
+lega_phase_dir_apply:
+		inc	byte ptr ds:lega_phase_substep
+		and	byte ptr ds:lega_phase_substep,3
+		mov	al,ds:lega_phase_substep
+		mov	bx,lega_tbl_a41b
 		xlat				; al=[al+[bx]] table
 		mov	byte ptr ds:[0A7BAh],al
 		jmp	$+9Ah
-loc_20:
+
+lega_phase_active_handler:
 		db	0FEh, 06h,0C1h,0A7h, 8Ah, 1Eh
 		db	0C1h,0A7h,0FEh,0CBh, 32h,0FFh
 		db	 03h,0DBh,0FFh,0A7h,0C7h,0A3h
@@ -365,37 +387,31 @@ loc_20:
 		db	 06h, 07h, 00h, 01h, 03h, 06h
 		db	 07h, 07h
 
-zr3_14		endp
+lega_main		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-lvrender_func_1		proc	near
-		mov	ax,ds:data_22e
+lega_scroll_dec_step		proc	near
+		mov	ax,ds:lega_scroll_x
 		dec	ax
 		mov	bx,0Eh
 		sub	bx,ax
-		mov	ds:data_22e,ax
+		mov	ds:lega_scroll_x,ax
 		cmc				; Complement carry
 		jnc	$+3			; Jump if carry=0
 		retn
-lvrender_func_1		endp
+
+lega_scroll_dec_step		endp
 
 		db	0F8h,0C3h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-lvrender_get_value		proc	near
-		mov	ax,ds:data_22e
+lega_scroll_inc_step		proc	near
+		mov	ax,ds:lega_scroll_x
 		inc	ax
 		mov	bx,32h
 		sub	bx,ax
 		jnc	$+3			; Jump if carry=0
 		retn
-lvrender_get_value		endp
+
+lega_scroll_inc_step		endp
 
 		db	0A3h,0A0h,0A7h,0F8h,0C3h
 		db	 0Eh, 07h
@@ -406,167 +422,183 @@ lvrender_get_value		endp
 		db	0AFh, 44h,0A7h
 		db	0BFh,0CBh,0A7h,0B9h, 08h, 00h
 
-locloop_23:
-		push	cx
-		mov	cx,8
+lega_render_outer_loop:
+			push	cx
+			mov	cx,8
 
-locloop_24:
-		rol	byte ptr ds:[bp],1	; Rotate
-		jnc	loc_25			; Jump if carry=0
-		movsb				; Mov [si] to es:[di]
-		dec	di
-loc_25:
-		inc	di
-		loop	locloop_24		; Loop if cx > 0
+lega_render_inner_loop:
+				rol	byte ptr ds:[bp],1	; Rotate
+				jnc	lega_render_inner_advance			; Jump if carry=0
+				movsb				; Mov [si] to es:[di]
+				dec	di
 
-		inc	di
-		inc	di
-		inc	bp
-		pop	cx
-		loop	locloop_23		; Loop if cx > 0
+lega_render_inner_advance:
+				inc	di
+				loop	lega_render_inner_loop		; Loop if cx > 0
+
+			inc	di
+			inc	di
+			inc	bp
+			pop	cx
+			loop	lega_render_outer_loop		; Loop if cx > 0
 
 		mov	al,byte ptr ds:[0A7BAh]
 		add	al,al
-		mov	di,data_44e
-		cmp	byte ptr ds:data_28e,6
-		je	loc_26			; Jump if equal
-		cmp	byte ptr ds:data_28e,8
-		jb	loc_27			; Jump if below
-loc_26:
+		mov	di,lega_extra_attr
+		cmp	byte ptr ds:lega_phase_step,6
+		je	lega_extra_attr_step			; Jump if equal
+		cmp	byte ptr ds:lega_phase_step,8
+		jb	lega_extra_attr_done			; Jump if below
+
+lega_extra_attr_step:
 		inc	di
-loc_27:
+
+lega_extra_attr_done:
 		stosb				; Store al to es:[di]
 		add	di,13h
 		inc	al
 		stosb				; Store al to es:[di]
-		mov	byte ptr ds:data_25e,0
-		mov	ax,ds:data_22e
-		mov	si,ds:data_45e
+		mov	byte ptr ds:lega_npc_idx,0
+		mov	ax,ds:lega_scroll_x
+		mov	si,ds:enemy_attr_base
 		mov	di,0A7C9h
 		mov	cx,8
-loc_28:
+
+lega_render_scan_loop:
 		push	cx
 		push	di
 		push	ax
-		call	word ptr cs:data_10e
+		call	word ptr cs:lega_cb_npc_step
 		pop	ax
-		mov	ds:data_30e,bl
-		jc	loc_32			; Jump if carry Set
+		mov	ds:lega_attr_tmp,bl
+		jc	lega_render_scan_outer_advance			; Jump if carry Set
 		xor	cl,cl			; Zero register
-loc_29:
-		push	cx
-		push	ax
-		cmp	byte ptr [di],0FFh
-		je	loc_31			; Jump if equal
-		mov	[si],ax
-		mov	al,ds:data_23e
-		add	al,cl
-		and	al,3Fh			; '?'
-		mov	[si+2],al
-		mov	al,ds:data_30e
-		mov	[si+3],al
-		mov	al,[di]
-		mov	[si+6],al
-		mov	ah,al
-		add	al,al
-		sbb	al,al
-		and	al,60h			; '`'
-		mov	bl,ah
-		shr	bl,1			; Shift w/zeros fill
-		shr	bl,1			; Shift w/zeros fill
-		shr	bl,1			; Shift w/zeros fill
-		shr	bl,1			; Shift w/zeros fill
-		and	bl,7
-		or	al,bl
-		mov	[si+4],al
-		mov	byte ptr [si+5],0
-		test	byte ptr ds:data_26e,0FFh
-		jz	loc_30			; Jump if zero
-		or	byte ptr [si+5],20h	; ' '
-loc_30:
-		push	di
-		mov	ax,[si+2]
-		call	word ptr cs:data_9e
-		mov	bl,ds:data_25e
-		xor	bh,bh			; Zero register
-		mov	al,bl
-		or	al,80h
-		xchg	[di],al
-		mov	ds:data_46e[bx],al
-		pop	di
-		add	si,10h
-		inc	byte ptr ds:data_25e
-loc_31:
-		inc	di
-		pop	ax
-		pop	cx
-		inc	cl
-		cmp	cl,0Ah
-		jne	loc_29			; Jump if not equal
-loc_32:
+
+lega_render_scan_inner:
+			push	cx
+			push	ax
+			cmp	byte ptr [di],0FFh
+			je	lega_render_scan_advance			; Jump if equal
+			mov	[si],ax
+			mov	al,ds:lega_scroll_phase
+			add	al,cl
+			and	al,3Fh			; '?'
+			mov	[si+2],al
+			mov	al,ds:lega_attr_tmp
+			mov	[si+3],al
+			mov	al,[di]
+			mov	[si+6],al
+			mov	ah,al
+			add	al,al
+			sbb	al,al
+			and	al,60h			; '`'
+			mov	bl,ah
+			shr	bl,1			; Shift w/zeros fill
+			shr	bl,1			; Shift w/zeros fill
+			shr	bl,1			; Shift w/zeros fill
+			shr	bl,1			; Shift w/zeros fill
+			and	bl,7
+			or	al,bl
+			mov	[si+4],al
+			mov	byte ptr [si+5],0
+			test	byte ptr ds:lega_anim_byte,0FFh
+			jz	lega_render_scan_xlat			; Jump if zero
+			or	byte ptr [si+5],20h	; ' '
+
+lega_render_scan_xlat:
+			push	di
+			mov	ax,[si+2]
+			call	word ptr cs:lega_cb_tile_query
+			mov	bl,ds:lega_npc_idx
+			xor	bh,bh			; Zero register
+			mov	al,bl
+			or	al,80h
+			xchg	[di],al
+			mov	ds:sprite_xlat_tbl[bx],al
+			pop	di
+			add	si,10h
+			inc	byte ptr ds:lega_npc_idx
+
+lega_render_scan_advance:
+			inc	di
+			pop	ax
+			pop	cx
+			inc	cl
+			cmp	cl,0Ah
+			jne	lega_render_scan_inner			; Jump if not equal
+
+lega_render_scan_outer_advance:
 		inc	ax
 		pop	di
 		add	di,0Ah
 		pop	cx
-		loop	locloop_33		; Loop if cx > 0
+		loop	lega_render_scan_loop_target		; Loop if cx > 0
 
-		jmp	short loc_34
+		jmp	short lega_render_scan_done
 
-locloop_33:
-		jmp	loc_28
-loc_34:
-		call	lvrender_func_3
+lega_render_scan_loop_target:
+		jmp	lega_render_scan_loop
+
+lega_render_scan_done:
+		call	lega_render_anim2_cell
 		mov	word ptr [si],0FFFFh
-		test	byte ptr ds:data_36e,0FFh
-		jnz	loc_35			; Jump if not zero
+		test	byte ptr ds:lega_anim2_active,0FFh
+		jnz	lega_anim2_check_subflag			; Jump if not zero
 		retn
-loc_35:
-		test	byte ptr ds:data_41e,0FFh
-		jnz	loc_41			; Jump if not zero
-		cmp	byte ptr ds:data_37e,12h
-		jae	loc_36			; Jump if above or =
-		mov	byte ptr ds:data_41e,0FFh
-		mov	byte ptr ds:data_39e,3
-		mov	byte ptr ds:data_50e,32h	; '2'
+
+lega_anim2_check_subflag:
+		test	byte ptr ds:lega_anim2_subflag,0FFh
+		jnz	lega_anim2_subflag_branch			; Jump if not zero
+		cmp	byte ptr ds:lega_anim2_x,12h
+		jae	lega_anim2_step			; Jump if above or =
+		mov	byte ptr ds:lega_anim2_subflag,0FFh
+		mov	byte ptr ds:lega_anim2_frame,3
+		mov	byte ptr ds:gvar_spawn_fx_flag,32h	; '2'
 		retn
-loc_36:
-		mov	bl,ds:data_40e
+
+lega_anim2_step:
+		mov	bl,ds:lega_anim2_phase
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	al,ds:data_16e[bx]
-		add	ds:data_37e,al
-		mov	al,ds:data_17e[bx]
-		add	ds:data_38e,al
-		cmp	byte ptr ds:data_40e,10h
-		adc	byte ptr ds:data_40e,0
-		mov	al,ds:data_39e
+		mov	al,ds:lega_anim_dx_tbl[bx]
+		add	ds:lega_anim2_x,al
+		mov	al,ds:lega_anim_dy_tbl[bx]
+		add	ds:lega_anim2_y,al
+		cmp	byte ptr ds:lega_anim2_phase,10h
+		adc	byte ptr ds:lega_anim2_phase,0
+		mov	al,ds:lega_anim2_frame
 		inc	al
 		cmp	al,3
-		jb	loc_37			; Jump if below
+		jb	lega_anim2_frame_clamp			; Jump if below
 		xor	al,al			; Zero register
-loc_37:
-		mov	ds:data_39e,al
-		cmp	byte ptr ds:data_40e,9
-		jne	loc_38			; Jump if not equal
-		mov	byte ptr ds:data_50e,31h	; '1'
-loc_38:
-		cmp	byte ptr ds:data_40e,0Ch
-		jne	loc_39			; Jump if not equal
-		mov	byte ptr ds:data_50e,31h	; '1'
-loc_39:
-		cmp	byte ptr ds:data_40e,0Fh
-		jne	loc_ret_40		; Jump if not equal
-		mov	byte ptr ds:data_50e,31h	; '1'
 
-loc_ret_40:
+lega_anim2_frame_clamp:
+		mov	ds:lega_anim2_frame,al
+		cmp	byte ptr ds:lega_anim2_phase,9
+		jne	lega_anim2_check_phase_c			; Jump if not equal
+		mov	byte ptr ds:gvar_spawn_fx_flag,31h	; '1'
+
+lega_anim2_check_phase_c:
+		cmp	byte ptr ds:lega_anim2_phase,0Ch
+		jne	lega_anim2_check_phase_f			; Jump if not equal
+		mov	byte ptr ds:gvar_spawn_fx_flag,31h	; '1'
+
+lega_anim2_check_phase_f:
+		cmp	byte ptr ds:lega_anim2_phase,0Fh
+		jne	lega_anim2_finalize_ret		; Jump if not equal
+		mov	byte ptr ds:gvar_spawn_fx_flag,31h	; '1'
+
+lega_anim2_finalize_ret:
 		retn
-loc_41:
-		inc	byte ptr ds:data_39e
-		cmp	byte ptr ds:data_39e,6
-		jae	loc_42			; Jump if above or =
+
+lega_anim2_subflag_branch:
+		inc	byte ptr ds:lega_anim2_frame
+		cmp	byte ptr ds:lega_anim2_frame,6
+		jae	lega_anim2_clear_active			; Jump if above or =
 		retn
-loc_42:
-		mov	byte ptr ds:data_36e,0
+
+lega_anim2_clear_active:
+		mov	byte ptr ds:lega_anim2_active,0
 		retn
 		db	0FFh, 00h,0FFh, 00h,0FFh, 01h
 		db	 00h, 02h,0FFh, 02h, 00h, 02h
@@ -575,94 +607,93 @@ loc_42:
 		db	0FFh, 01h,0FFh, 00h,0FFh, 00h
 		db	0FFh, 00h,0FFh, 00h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+lega_render_anim2_cell		proc	near
+		test	byte ptr ds:lega_anim2_active,0FFh
+		jnz	lega_anim2_cell_query			; Jump if not zero
+		retn
 
-lvrender_func_3		proc	near
-		test	byte ptr ds:data_36e,0FFh
-		jnz	loc_43			; Jump if not zero
-		retn
-loc_43:
-		mov	ax,ds:data_37e
+lega_anim2_cell_query:
+		mov	ax,ds:lega_anim2_x
 		push	ax
-		call	word ptr cs:data_10e
+		call	word ptr cs:lega_cb_npc_step
 		pop	ax
-		jnc	loc_44			; Jump if carry=0
+		jnc	lega_anim2_cell_write			; Jump if carry=0
 		retn
-loc_44:
+
+lega_anim2_cell_write:
 		mov	[si],ax
-		mov	al,ds:data_38e
+		mov	al,ds:lega_anim2_y
 		mov	[si+2],al
 		mov	[si+3],bl
 		mov	byte ptr [si+4],26h	; '&'
 		mov	byte ptr [si+5],0
-		mov	al,ds:data_39e
+		mov	al,ds:lega_anim2_frame
 		mov	[si+6],al
 		mov	ax,[si+2]
-		call	word ptr cs:data_9e
-		mov	bl,ds:data_25e
+		call	word ptr cs:lega_cb_tile_query
+		mov	bl,ds:lega_npc_idx
 		xor	bh,bh			; Zero register
 		mov	al,bl
 		or	al,80h
 		xchg	[di],al
-		mov	ds:data_46e[bx],al
+		mov	ds:sprite_xlat_tbl[bx],al
 		add	si,10h
 		retn
-lvrender_func_3		endp
 
+lega_render_anim2_cell		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-lvrender_func_4		proc	near
-		mov	ax,ds:data_24e
+lega_scroll_finalize		proc	near
+		mov	ax,ds:lega_scroll_x_max
 		sub	ax,bx
-		jnc	loc_45			; Jump if carry=0
+		jnc	lega_scroll_clamp_zero			; Jump if carry=0
 		xor	ax,ax			; Zero register
-loc_45:
-		mov	ds:data_24e,ax
+
+lega_scroll_clamp_zero:
+		mov	ds:lega_scroll_x_max,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:data_8e
+		call	word ptr cs:lega_cb_scroll
 		pop	ax
 		or	ax,ax			; Zero ?
-		jz	loc_46			; Jump if zero
+		jz	lega_scroll_set_death			; Jump if zero
 		retn
-loc_46:
-		mov	byte ptr ds:data_27e,0
-		mov	byte ptr ds:data_36e,0
-		mov	byte ptr ds:data_47e,0FFh
-		retn
-lvrender_func_4		endp
 
-loc_47:
-		cmp	byte ptr ds:data_27e,28h	; '('
+lega_scroll_set_death:
+		mov	byte ptr ds:lega_idle_step,0
+		mov	byte ptr ds:lega_anim2_active,0
+		mov	byte ptr ds:gvar_death_flag,0FFh
+		retn
+
+lega_scroll_finalize		endp
+
+lega_idle_or_spawn:
+		cmp	byte ptr ds:lega_idle_step,28h	; '('
 ;*		jae	loc_50			;*Jump if above or =
 		db	073h, 04Dh		; jnc 6C6h (absolute)
-		mov	byte ptr ds:data_48e,0FFh
-		inc	byte ptr ds:data_27e
-		cmp	byte ptr ds:data_27e,0Ah
-		jae	loc_49			; Jump if above or =
-		mov	al,ds:data_27e
-		mov	bx,data_18e
+		mov	byte ptr ds:gvar_dir_toggle,0FFh
+		inc	byte ptr ds:lega_idle_step
+		cmp	byte ptr ds:lega_idle_step,0Ah
+		jae	lega_idle_late_phase			; Jump if above or =
+		mov	al,ds:lega_idle_step
+		mov	bx,lega_phase_xlat_a
 		xlat				; al=[al+[bx]] table
-		mov	ds:data_28e,al
+		mov	ds:lega_phase_step,al
 		cmp	al,3
-		jb	loc_48			; Jump if below
-		mov	byte ptr ds:data_50e,33h	; '3'
-loc_48:
-		jmp	loc_19
+		jb	lega_idle_apply			; Jump if below
+		mov	byte ptr ds:gvar_spawn_fx_flag,33h	; '3'
+
+lega_idle_apply:
+		jmp	lega_phase_dir_apply
 		db	0, 1, 2, 3, 6, 7
 		db	6, 3, 2, 1
-loc_49:
-		mov	ah,ds:data_27e
+
+lega_idle_late_phase:
+		mov	ah,ds:lega_idle_step
 		mov	al,6
 		cmp	ah,6
 		jae	$+8			; Jump if above or =
 		mov	al,ah
-		mov	bx,data_19e
+		mov	bx,lega_phase_xlat_b
 		xlat				; al=[al+[bx]] table
 		mov	byte ptr ds:[0A7BAh],al
 		jmp	$-26Dh
@@ -670,7 +701,7 @@ loc_49:
 ; ------------------------------------------------------------------
 ; Module trailer: dispatch-table handler body + jump-table words
 ; + tile/cell continuation data + 'Tarso' town-name fragment.
-; Entered via dispatch call [data_21e+bx] from main loop.
+; Entered via dispatch call [lega_dispatch_tbl+bx] from main loop.
 ; ------------------------------------------------------------------
 			                        ;* No entry point to code
 		add	ax,[bp+di]		; data bytes
@@ -728,7 +759,5 @@ loc_49:
 		db	99 dup (0)
 
 seg_a		ends
-
-
 
 		end	start
