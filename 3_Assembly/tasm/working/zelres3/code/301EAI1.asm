@@ -38,7 +38,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; --- CRAB enemy AI dispatch table (game_seg:6004h..6034h, in DS at runtime) ---
 ai_fn_tbl_a	equ	6004h			; AI fn table slot (movement/pathing)
 ai_fn_tbl_b	equ	6006h			; AI fn table slot (alt pathing)
@@ -70,76 +69,88 @@ gvar_rng_state	equ	0FF2Eh			; random/LFSR state word
 gvar_frame_cnt	equ	0FF35h			; frame counter byte
 gvar_enemy_cnt	equ	0FF36h			; active enemy counter byte
 
-; Backwards-compat aliases (Sourcer names)
-data_11e	equ	ai_fn_tbl_a
-data_12e	equ	ai_fn_tbl_b
-data_13e	equ	ai_fn_tbl_c
-data_14e	equ	ai_fn_tbl_d
-data_15e	equ	ai_fn_tbl_e
-data_16e	equ	ai_fn_tbl_f
-data_17e	equ	ai_fn_tbl_g
-data_18e	equ	ai_fn_tbl_h
-data_19e	equ	ai_fn_tbl_i
-data_20e	equ	ai_fn_tbl_j
-data_21e	equ	ai_fn_tbl_k
-data_22e	equ	ai_fn_tbl_l
-data_23e	equ	ai_fn_tbl_m
-data_24e	equ	ai_fn_tbl_n
-data_25e	equ	ai_fn_tbl_o
-data_26e	equ	ai_fn_tbl_p
-data_27e	equ	ai_fn_tbl_q
-data_28e	equ	ai_hide_fn
-data_29e	equ	crab_tbl_a
-data_30e	equ	crab_tbl_b
-data_31e	equ	crab_rotate_a
-data_32e	equ	crab_rotate_b
-data_33e	equ	gvar_rng_state
-data_34e	equ	gvar_frame_cnt
-data_35e	equ	gvar_enemy_cnt
-
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
 crab_ai_main	proc	far
 
+; -------------------------------------------------------------------------
+;  Module header (file offsets 0x000-0x033) -- loaded as data by 200FIGHT.
+;  Sourcer forced 'start:' here as code, but the bytes are a 4-byte length
+;  header, an init src ptr, and a small state buffer (matches 309CRAB layout).
+;  The "instructions" Sourcer prints below assemble to the original data
+;  bytes; they do not execute.
+; -------------------------------------------------------------------------
+
 start:
-		aaa				; Ascii adjust
-		pop	es
-		add	[bx+si],al
-		push	sp
-		mov	byte ptr ds:[0],al
-		add	[bx+si],al
-		inc	ax
-		mov	data_10,al
-		add	ax,3
-		add	[bx+si],al
-		add	[di],al
-		add	ax,80Fh
-		db	28 dup (0)
-		db	0B0h,0A0h,0F6h,0A0h, 1Eh,0A1h
-		db	 64h,0A1h, 00h, 00h, 00h, 00h
-		db	 00h, 00h, 00h, 00h,0A0h,0A1h
-		db	0AFh,0A1h,0BEh,0A1h,0CDh,0A1h
-		db	8 dup (0)
-		db	 2Ch,0A2h, 2Ch,0A2h,0DCh,0A1h
-		db	 13h,0A2h,0EBh,0A1h,0FFh,0A1h
-		db	 1Dh,0A2h, 00h, 00h, 22h,0A2h
-		db	 27h,0A2h
-		db	12 dup (0)
-		db	0D3h,0A0h, 0Ah,0A1h, 41h,0A1h
-		db	 82h,0A1h
-		db	8 dup (0)
-		db	0A0h,0A1h,0AFh,0A1h,0BEh,0A1h
-		db	0CDh,0A1h
-		db	8 dup (0)
-		db	 2Ch,0A2h, 2Ch,0A2h,0DCh,0A1h
-		db	 13h,0A2h,0EBh,0A1h,0FFh,0A1h
-		db	 1Dh,0A2h, 00h, 00h, 22h,0A2h
-		db	 27h,0A2h
-		db	13 dup (0)
+
+file_header:
+		aaa				; byte 37h (file_size word lo)
+		pop	es			; byte 07h (file_size word hi -> 0x0737)
+		add	[bx+si],al		; bytes 00 00 (pad)
+
+crab_ai_init_src:
+		push	sp			; byte 54h
+		mov	byte ptr ds:[0],al	; bytes A2 00 00 -> init src ptr 0xA254 + 0
+		add	[bx+si],al		; bytes 00 00
+		inc	ax			; byte 40h
+		mov	crab_anim_phase_marker,al	; bytes A2 03 02 -> ptr to anim marker
+		add	ax,3			; bytes 05 03 00
+		add	[bx+si],al		; bytes 00 00
+		add	[di],al			; bytes 00 05
+		add	ax,80Fh			; bytes 05 0F 08
+
+		db	28 dup (0)		; reserved / padding (offsets 0x018-0x033)
+
+; -------------------------------------------------------------------------
+;  Animation frame pointer tables (word ptr[], in DS at game_seg).
+;  Each word = runtime address of a frame data block within this file.
+;  Same dual-table layout as 309CRAB.
+; -------------------------------------------------------------------------
+
+crab_frame_ptr_tbl_a	label	word		; offset 0x034 -- group A pointers
+		db	0B0h,0A0h,0F6h,0A0h, 1Eh,0A1h	; -> 0xA0B0, 0xA0F6, 0xA11E
+		db	 64h,0A1h, 00h, 00h, 00h, 00h	; -> 0xA164, slot4=empty
+		db	 00h, 00h, 00h, 00h,0A0h,0A1h	; slots 5-7 empty, -> 0xA1A0
+		db	0AFh,0A1h,0BEh,0A1h,0CDh,0A1h	; -> 0xA1AF, 0xA1BE, 0xA1CD
+		db	8 dup (0)			; reserved
+
+crab_frame_ptr_tbl_b	label	word		; offset 0x048 -- group B pointers
+		db	 2Ch,0A2h, 2Ch,0A2h,0DCh,0A1h	; -> 0xA22C, 0xA22C (dup), 0xA1DC
+		db	 13h,0A2h,0EBh,0A1h,0FFh,0A1h	; -> 0xA213, 0xA1EB, 0xA1FF
+		db	 1Dh,0A2h, 00h, 00h, 22h,0A2h	; -> 0xA21D, slot4=empty, 0xA222
+		db	 27h,0A2h			; -> 0xA227
+		db	12 dup (0)			; reserved
+
+crab_frame_ptr_tbl_c	label	word		; offset 0x06C -- group C pointers
+		db	0D3h,0A0h, 0Ah,0A1h, 41h,0A1h	; -> 0xA0D3, 0xA10A, 0xA141
+		db	 82h,0A1h			; -> 0xA182
+		db	8 dup (0)			; reserved
+
+crab_frame_ptr_tbl_d	label	word		; offset 0x07C -- group D pointers (mirrors A tail)
+		db	0A0h,0A1h,0AFh,0A1h,0BEh,0A1h	; -> 0xA1A0, 0xA1AF, 0xA1BE
+		db	0CDh,0A1h			; -> 0xA1CD
+		db	8 dup (0)			; reserved
+
+crab_frame_ptr_tbl_e	label	word		; offset 0x08C -- group E pointers (mirrors B)
+		db	 2Ch,0A2h, 2Ch,0A2h,0DCh,0A1h	; -> 0xA22C, 0xA22C, 0xA1DC
+		db	 13h,0A2h,0EBh,0A1h,0FFh,0A1h	; -> 0xA213, 0xA1EB, 0xA1FF
+		db	 1Dh,0A2h, 00h, 00h, 22h,0A2h	; -> 0xA21D, empty, 0xA222
+		db	 27h,0A2h			; -> 0xA227
+		db	13 dup (0)			; reserved
+
+; -------------------------------------------------------------------------
+;  Sprite/tile-index frame data (file offsets 0x0B0..0x257).
+;  Each frame is a series of tile bytes terminated by 00h (row markers).
+;  The frame pointer tables above index into this region.
+;  Mid-frame the data table includes a 16-bit function pointer
+;  (crab_facing_fn_ptr) and a 1-byte phase marker (crab_anim_phase_marker)
+;  reused as code-side references via mov/call instructions.
+; -------------------------------------------------------------------------
+
+crab_frame_data:				; offset 0x0B0
 		db	 19h, 1Ah, 1Bh, 1Ch, 00h, 1Dh
 		db	 1Eh, 1Fh, 20h, 00h, 21h, 22h
 		db	 23h, 24h, 00h, 25h, 26h, 27h
@@ -147,7 +158,7 @@ start:
 		db	 00h, 2Dh, 2Eh, 2Fh, 30h, 00h
 		db	 31h, 32h, 33h, 34h, 00h, 19h
 		db	 1Ah, 1Bh, 1Ch, 00h
-		db	'5678', 0
+		db	'5678', 0			; tile bytes 35-38 + row term
 		db	'9:;<', 0
 		db	'=>?@', 0
 		db	'ABCD', 0
@@ -162,7 +173,9 @@ start:
 		db	 00h, 00h, 5Bh, 5Ch, 5Dh, 00h
 		db	 00h, 5Eh, 5Fh, 60h, 00h
 		db	61h
-data_9		dw	5C62h
+crab_facing_fn_ptr		dw	5C62h	; word at 0x11A: facing/dir helper fn ptr
+						;  (called via 'call cs:crab_facing_fn_ptr',
+						;   returns AL with sign-bit set for direction)
 		db	 5Dh, 00h, 63h, 64h, 65h, 66h
 		db	 00h, 75h, 76h, 77h, 78h, 00h
 		db	 75h, 76h, 79h, 78h, 00h, 7Ah
@@ -202,7 +215,9 @@ data_9		dw	5C62h
 		db	 00h, 11h, 12h, 13h, 14h, 00h
 		db	 15h, 16h, 17h, 18h, 00h, 11h
 		db	 12h, 13h, 14h
-data_10		db	2
+crab_anim_phase_marker		db	2	; byte at 0x203: anim phase initializer
+						;  (referenced via 'mov anim_phase_marker, al'
+						;   in the bogus prologue above)
 		db	 0Dh, 0Eh, 0Fh, 10h, 02h, 11h
 		db	 12h, 13h, 14h, 02h, 15h, 16h
 		db	 17h, 18h, 02h, 11h, 12h, 13h
@@ -216,511 +231,608 @@ data_10		db	2
 		db	 00h, 00h,0DEh,0DFh, 4Ch,0A2h
 		db	 50h,0A2h
 		db	50h
-loc_1:
-		mov	byte ptr ds:[0A248h],al
-		add	ax,0
-		add	[di],al
-		add	al,4
-		add	[si],al
-		add	[si],al
-		add	byte ptr ss:[45Ch][bp+si],cl
-		and	bl,0Fh
-		xor	bh,bh			; Zero register
-		add	bx,bx
-		jmp	word ptr ds:[0A262h][bx]	;*
-		db	 6Ah,0A2h,0E7h,0A3h, 3Fh,0A4h
-		db	 17h,0A5h, 2Eh,0FFh, 16h, 30h
-		db	 60h, 75h, 05h, 2Eh,0FFh, 26h
-		db	 32h, 60h,0F6h, 44h, 08h,0FFh
-		db	 75h, 04h,0C6h, 44h, 08h, 02h
-loc_2:
+; -------------------------------------------------------------------------
+;  Trailing tail of the per-frame data tables (file offset 0x247) that runs
+;  straight into the secondary AI dispatch entry.  The `jcxz` from
+;  crab_substate_00 lands here when CX==0 (a calling-convention reset path).
+;  Sourcer mis-decodes the first few bytes as `mov ds:[0xA248],al; add ax,0; ...`
+;  but they're really tile-table tail bytes.  Real executable code begins at
+;  `mov bl,[si+4]` (the AND/XOR/ADD/JMP dispatch sequence below); the JMP
+;  indexes a 4-entry handler table that lives at offset 0xA266 in DS.
+; -------------------------------------------------------------------------
+
+crab_data_block_2:				; offset 0x247 (= jcxz target)
+		mov	byte ptr ds:[0A248h],al	; bytes A2 48 A2 (data tail of frame ptrs)
+		add	ax,0			; bytes 05 00 00
+		add	[di],al			; bytes 00 05
+		add	al,4			; bytes 04 04
+		add	[si],al			; bytes 00 04
+		add	[si],al			; bytes 00 04
+		add	byte ptr ss:[45Ch][bp+si],cl	; bytes 00 8A 5C 04 (overlaps real 'mov bl,[si+4]')
+		and	bl,0Fh			; bytes 80 E3 0F (mask state nibble)
+		xor	bh,bh			; bytes 32 FF
+		add	bx,bx			; bytes 03 DB (scale to word index)
+		jmp	word ptr ds:[0A262h][bx]	; bytes FF A7 62 A2 -- dispatch table at 0xA262
+
+; CRAB AI primary dispatch table (4 valid handlers; first 2 entries overlap
+; the JMP instruction's bytes so they're unreachable). Indexed by [si+4]&0xF.
+
+crab_ai_dispatch_tbl:				; offset 0x266 (= 0xA266 in DS)
+		dw	0A26Ah			; idx 2 -> crab_ai_main_entry
+		dw	0A3E7h			; idx 3 -> crab_attack_state_a
+		dw	0A43Fh			; idx 4 -> crab_attack_state_b
+		dw	0A517h			; idx 5 -> crab_pincer_state
+
+; Inline AI-entry tail (file offsets 0x26E..0x283) -- pre-roll for crab_ai_main_entry:
+;   call cs:[ai_fn_tbl_p]; jnz +5; jmp cs:[ai_fn_tbl_q]
+;   test [si+8], 0FFh;     jnz +4; mov [si+8], 2
+		db	 2Eh,0FFh, 16h, 30h, 60h	; call cs:[ai_fn_tbl_p]
+		db	 75h, 05h			; jnz  crab_ai_main_entry
+		db	 2Eh,0FFh, 26h, 32h, 60h	; jmp  cs:[ai_fn_tbl_q]
+		db	 0F6h, 44h, 08h,0FFh		; test byte ptr [si+8], 0FFh
+		db	 75h, 04h			; jnz  crab_ai_main_entry
+		db	 0C6h, 44h, 08h, 02h		; mov  byte ptr [si+8], 2
+
+crab_ai_main_entry:				; offset 0x284 -- secondary entry (visibility/state dispatch)
 		test	byte ptr [si+5],20h	; ' '
-		jz	loc_3			; Jump if zero
-		jmp	word ptr cs:data_28e
-loc_3:
+		jz	dispatch_by_state_hi			; Jump if zero
+		jmp	word ptr cs:ai_hide_fn
+
+dispatch_by_state_hi:
 		mov	bl,[si+9]
 		rol	bl,1			; Rotate
 		rol	bl,1			; Rotate
 		and	bl,3
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		jmp	word ptr ds:data_29e[bx]	;*
+		jmp	word ptr ds:crab_tbl_a[bx]	;*
 
 ; AI sub-state 0 (dispatched via crab_tbl_a[0])
+
 crab_substate_00:
 		movsw				; Mov [si] to es:[di]
-		mov	ds:data_30e,al
-		jcxz	loc_1			; Jump if cx=0
-		and	word ptr ss:data_33e[bp+di],16h
+		mov	ds:crab_tbl_b,al
+		jcxz	crab_data_block_2			; Jump if cx=0
+		and	word ptr ss:gvar_rng_state[bp+di],16h
 		or	al,60h			; '`'
 		test	byte ptr [si+6],0FFh
-		jz	loc_4			; Jump if zero
+		jz	sub00_check_position			; Jump if zero
 		sub	byte ptr [si+6],10h
 		retn
-loc_4:
+
+sub00_check_position:
 		mov	al,[si+3]
 		sub	al,11h
 		cmp	al,0Ah
-		jb	loc_5			; Jump if below
+		jb	sub00_set_state_40			; Jump if below
 		mov	al,11h
 		sub	al,[si+3]
 		cmp	al,7
-		jae	loc_6			; Jump if above or =
-loc_5:
+		jae	sub00_clear_phase_ret			; Jump if above or =
+
+sub00_set_state_40:
 		mov	byte ptr [si+9],40h	; '@'
-loc_6:
+
+sub00_clear_phase_ret:
 		mov	byte ptr [si+6],0
 		retn
 
 ; AI sub-state 1 (dispatched via crab_tbl_a[1]): phase-advance to state 80h
+
 crab_substate_01:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],7
 		cmp	byte ptr [si+6],3
-		je	loc_7			; Jump if equal
+		je	sub01_advance_to_80			; Jump if equal
 		retn
-loc_7:
+
+sub01_advance_to_80:
 		mov	byte ptr [si+9],80h
 		retn
 
 ; AI sub-state 2 (dispatched via crab_tbl_a[2]): distance-check / transition
+
 crab_substate_02:
-		call	sub_1
-		test	byte ptr ds:data_35e,0FFh
-		jz	loc_8			; Jump if zero
+		call	phase_advance_helper
+		test	byte ptr ds:gvar_enemy_cnt,0FFh
+		jz	sub02_compute_dx			; Jump if zero
 		mov	byte ptr [si+9],0C0h
 		retn
-loc_8:
-		mov	al,ds:data_34e
+
+sub02_compute_dx:
+		mov	al,ds:gvar_frame_cnt
 		sub	al,[si+2]
 		add	al,15h
 		and	al,3Fh			; '?'
 		cmp	al,12h
-		jb	loc_13			; Jump if below
+		jb	sub02_near_range			; Jump if below
 		cmp	al,18h
-		jb	loc_10			; Jump if below
+		jb	sub02_mid_range			; Jump if below
 		cmp	byte ptr [si+3],11h
-		je	loc_15			; Jump if equal
+		je	sub02_try_jump			; Jump if equal
 		cmp	byte ptr [si+3],10h
-		je	loc_15			; Jump if equal
-		jnc	loc_9			; Jump if carry=0
-		call	word ptr cs:data_20e
-		jc	loc_11			; Jump if carry Set
+		je	sub02_try_jump			; Jump if equal
+		jnc	sub02_try_west_far			; Jump if carry=0
+		call	word ptr cs:ai_fn_tbl_j
+		jc	sub02_face_east_step			; Jump if carry Set
 		or	byte ptr [si+5],80h
 		retn
-loc_9:
-		call	word ptr cs:data_18e
-		jc	loc_12			; Jump if carry Set
+
+sub02_try_west_far:
+		call	word ptr cs:ai_fn_tbl_h
+		jc	sub02_face_west_step			; Jump if carry Set
 		and	byte ptr [si+5],7Fh
 		retn
-loc_10:
+
+sub02_mid_range:
 		cmp	byte ptr [si+3],11h
-		je	loc_15			; Jump if equal
+		je	sub02_try_jump			; Jump if equal
 		cmp	byte ptr [si+3],10h
-		je	loc_15			; Jump if equal
-		jnc	loc_12			; Jump if carry=0
-loc_11:
-		call	word ptr cs:data_13e
-		jc	loc_15			; Jump if carry Set
-		or	byte ptr [si+5],80h
-		retn
-loc_12:
-		call	word ptr cs:data_17e
-		jc	loc_15			; Jump if carry Set
+		je	sub02_try_jump			; Jump if equal
+		jnc	sub02_face_west_step			; Jump if carry=0
+
+sub02_face_east_step:
+			call	word ptr cs:ai_fn_tbl_c
+			jc	sub02_try_jump			; Jump if carry Set
+			or	byte ptr [si+5],80h
+			retn
+
+sub02_face_west_step:
+				call	word ptr cs:ai_fn_tbl_g
+				jc	sub02_try_jump			; Jump if carry Set
+				and	byte ptr [si+5],7Fh
+				retn
+
+sub02_near_range:
+				cmp	byte ptr [si+3],11h
+				je	sub02_try_jump			; Jump if equal
+				cmp	byte ptr [si+3],10h
+				je	sub02_try_jump			; Jump if equal
+				jnc	sub02_try_west_step			; Jump if carry=0
+				call	word ptr cs:ai_fn_tbl_d
+				jc	sub02_face_east_step			; Jump if carry Set
+			or	byte ptr [si+5],80h
+			retn
+
+sub02_try_west_step:
+			call	word ptr cs:ai_fn_tbl_f
+			jc	sub02_face_west_step			; Jump if carry Set
 		and	byte ptr [si+5],7Fh
 		retn
-loc_13:
-		cmp	byte ptr [si+3],11h
-		je	loc_15			; Jump if equal
-		cmp	byte ptr [si+3],10h
-		je	loc_15			; Jump if equal
-		jnc	loc_14			; Jump if carry=0
-		call	word ptr cs:data_14e
-		jc	loc_11			; Jump if carry Set
-		or	byte ptr [si+5],80h
+
+sub02_try_jump:
+		call	word ptr cs:ai_fn_tbl_i
+		jc	sub02_advance_to_C0			; Jump if carry Set
 		retn
-loc_14:
-		call	word ptr cs:data_16e
-		jc	loc_12			; Jump if carry Set
-		and	byte ptr [si+5],7Fh
-		retn
-loc_15:
-		call	word ptr cs:data_19e
-		jc	loc_16			; Jump if carry Set
-		retn
-loc_16:
+
+sub02_advance_to_C0:
 		mov	byte ptr [si+9],0C0h
 		retn
 
 ; AI sub-state 3 (dispatched via crab_tbl_a[3]): walking / step cycle
+
 crab_substate_03:
 		test	byte ptr [si+9],20h	; ' '
-		jnz	loc_22			; Jump if not zero
-		call	sub_1
+		jnz	sub03_count_down			; Jump if not zero
+		call	phase_advance_helper
 		test	byte ptr [si+5],80h
-		jz	loc_18			; Jump if zero
-		call	word ptr cs:data_14e
-		jc	loc_17			; Jump if carry Set
+		jz	sub03_step_alt			; Jump if zero
+		call	word ptr cs:ai_fn_tbl_d
+		jc	sub03_clear_facing			; Jump if carry Set
 		retn
-loc_17:
+
+sub03_clear_facing:
 		and	byte ptr [si+5],7Fh
-		jmp	short loc_20
-loc_18:
-		call	word ptr cs:data_16e
-		jc	loc_19			; Jump if carry Set
+		jmp	short sub03_apply_step
+
+sub03_step_alt:
+		call	word ptr cs:ai_fn_tbl_f
+		jc	sub03_set_facing			; Jump if carry Set
 		retn
-loc_19:
+
+sub03_set_facing:
 		or	byte ptr [si+5],80h
-loc_20:
-		call	word ptr cs:data_15e
-		jc	loc_21			; Jump if carry Set
+
+sub03_apply_step:
+		call	word ptr cs:ai_fn_tbl_e
+		jc	sub03_set_step_state			; Jump if carry Set
 		retn
-loc_21:
+
+sub03_set_step_state:
 		or	byte ptr [si+9],20h	; ' '
 		mov	byte ptr [si+6],2
 		retn
-loc_22:
+
+sub03_count_down:
 		dec	byte ptr [si+6]
 		and	byte ptr [si+6],7
 		test	byte ptr [si+6],0FFh
-		jz	loc_23			; Jump if zero
+		jz	sub03_reset_phase			; Jump if zero
 		retn
-loc_23:
+
+sub03_reset_phase:
 		mov	byte ptr [si+6],70h	; 'p'
 		mov	byte ptr [si+9],0
 		retn
 
 crab_ai_main	endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_1		proc	near
+phase_advance_helper		proc	near
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],7
 		cmp	byte ptr [si+6],7
-		jae	loc_24			; Jump if above or =
+		jae	phase7_wrap_to_3			; Jump if above or =
 		retn
-loc_24:
+
+phase7_wrap_to_3:
 		mov	byte ptr [si+6],3
 		retn
-sub_1		endp
+
+phase_advance_helper		endp
 
 ; AI sub-state handler (dispatched from crab_tbl_b or crab_tbl_a -- attack pattern)
+
 crab_attack_state_a:
-		call	word ptr cs:data_26e
-		jnz	loc_25			; Jump if not zero
-		jmp	word ptr cs:data_27e
-loc_25:
+		call	word ptr cs:ai_fn_tbl_p
+		jnz	atk_a_after_check			; Jump if not zero
+		jmp	word ptr cs:ai_fn_tbl_q
+
+atk_a_after_check:
 		test	byte ptr [si+8],0FFh
-		jnz	loc_26			; Jump if not zero
+		jnz	atk_a_seed_cooldown			; Jump if not zero
 		mov	byte ptr [si+8],2
-loc_26:
+
+atk_a_seed_cooldown:
 		test	byte ptr [si+5],20h	; ' '
-		jz	loc_27			; Jump if zero
-		jmp	word ptr cs:data_28e
-loc_27:
-		call	word ptr cs:data_19e
-		jc	loc_28			; Jump if carry Set
+		jz	atk_a_check_jump			; Jump if zero
+		jmp	word ptr cs:ai_hide_fn
+
+atk_a_check_jump:
+		call	word ptr cs:ai_fn_tbl_i
+		jc	atk_a_phase_advance			; Jump if carry Set
 		retn
-loc_28:
+
+atk_a_phase_advance:
 		add	byte ptr [si+6],41h	; 'A'
 		and	byte ptr [si+6],0C3h
 		test	byte ptr [si+6],0F0h
-		jz	loc_29			; Jump if zero
+		jz	atk_a_phase_ready			; Jump if zero
 		retn
-loc_29:
+
+atk_a_phase_ready:
 		cmp	byte ptr [si+3],11h
-		jae	loc_31			; Jump if above or =
-		call	word ptr cs:data_13e
-		jnc	loc_30			; Jump if carry=0
+		jae	atk_a_far_test			; Jump if above or =
+		call	word ptr cs:ai_fn_tbl_c
+		jnc	atk_a_set_facing			; Jump if carry=0
 		retn
-loc_30:
+
+atk_a_set_facing:
 		or	byte ptr [si+5],80h
 		retn
-loc_31:
-		call	word ptr cs:data_17e
-		jnc	loc_32			; Jump if carry=0
+
+atk_a_far_test:
+		call	word ptr cs:ai_fn_tbl_g
+		jnc	atk_a_clear_facing			; Jump if carry=0
 		retn
-loc_32:
+
+atk_a_clear_facing:
 		and	byte ptr [si+5],7Fh
 		retn
 
 ; AI sub-state handler: alternate attack pattern (sibling of crab_attack_state_a)
+
 crab_attack_state_b:
-		call	word ptr cs:data_26e
-		jnz	loc_33			; Jump if not zero
-		jmp	word ptr cs:data_27e
-loc_33:
+		call	word ptr cs:ai_fn_tbl_p
+		jnz	atk_b_after_check			; Jump if not zero
+		jmp	word ptr cs:ai_fn_tbl_q
+
+atk_b_after_check:
 		test	byte ptr [si+8],0FFh
-		jnz	loc_34			; Jump if not zero
+		jnz	atk_b_seed_cooldown			; Jump if not zero
 		mov	byte ptr [si+8],1
-loc_34:
+
+atk_b_seed_cooldown:
 		test	byte ptr [si+5],20h	; ' '
-		jz	loc_35			; Jump if zero
-		jmp	word ptr cs:data_28e
-loc_35:
+		jz	atk_b_check_phase			; Jump if zero
+		jmp	word ptr cs:ai_hide_fn
+
+atk_b_check_phase:
 		test	byte ptr [si+9],8
-		jnz	loc_39			; Jump if not zero
+		jnz	atk_b_jump_active			; Jump if not zero
 		add	byte ptr [si+6],21h	; '!'
 		and	byte ptr [si+6],0E1h
-		call	word ptr cs:data_19e
-		jc	loc_36			; Jump if carry Set
+		call	word ptr cs:ai_fn_tbl_i
+		jc	atk_b_phase_jumped			; Jump if carry Set
 		retn
-loc_36:
-		call	sub_2
-		jc	loc_38			; Jump if carry Set
+
+atk_b_phase_jumped:
+		call	distance_check_8
+		jc	atk_b_set_jump_state			; Jump if carry Set
 		mov	al,[si+6]
 		and	al,0E0h
-		jz	loc_37			; Jump if zero
+		jz	atk_b_check_dist			; Jump if zero
 		retn
-loc_37:
-		call	sub_2
+
+atk_b_check_dist:
+		call	distance_check_8
 		cmp	al,0FFh
-		je	loc_38			; Jump if equal
+		je	atk_b_set_jump_state			; Jump if equal
 		and	byte ptr [si+5],7Fh
 		or	[si+5],al
 		mov	byte ptr [si+6],2
 		or	byte ptr [si+9],8
 		retn
-loc_38:
+
+atk_b_set_jump_state:
 		mov	byte ptr [si+6],2
 		or	byte ptr [si+9],8
-loc_39:
+
+atk_b_jump_active:
 		mov	al,[si+6]
 		mov	ah,al
 		inc	al
 		and	al,7
 		cmp	al,7
-		jae	loc_42			; Jump if above or =
+		jae	atk_b_finish_phase			; Jump if above or =
 		mov	ch,ah
 		and	ch,0F0h
 		or	al,ch
 		mov	[si+6],al
 		mov	bx,0A71Fh
 		test	byte ptr [si+5],80h
-		jnz	loc_40			; Jump if not zero
-		mov	bx,data_31e
-loc_40:
+		jnz	atk_b_use_default_tbl			; Jump if not zero
+		mov	bx,crab_rotate_a
+
+atk_b_use_default_tbl:
 		mov	al,ah
 		sub	al,2
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:data_11e
-		jc	loc_41			; Jump if carry Set
+		call	word ptr cs:ai_fn_tbl_a
+		jc	atk_b_xlat_failed			; Jump if carry Set
 		retn
-loc_41:
-		call	sub_2
-		jc	loc_42			; Jump if carry Set
+
+atk_b_xlat_failed:
+		call	distance_check_8
+		jc	atk_b_finish_phase			; Jump if carry Set
 		xor	byte ptr [si+5],80h
-loc_42:
+
+atk_b_finish_phase:
 		and	byte ptr [si+9],0F7h
 		mov	byte ptr [si+6],0
-		jmp	word ptr cs:data_19e
+		jmp	word ptr cs:ai_fn_tbl_i
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_2		proc	near
-		mov	al,ds:data_34e
+distance_check_8		proc	near
+		mov	al,ds:gvar_frame_cnt
 		sub	al,[si+2]
-		jns	loc_43			; Jump if not sign
+		jns	dist_abs_done			; Jump if not sign
 		neg	al
-loc_43:
+
+dist_abs_done:
 		cmp	al,8
 		mov	al,0FFh
-		jc	loc_44			; Jump if carry Set
+		jc	dist_in_range			; Jump if carry Set
 		retn
-loc_44:
+
+dist_in_range:
 		cmp	byte ptr [si+3],11h
-		jae	loc_46			; Jump if above or =
+		jae	dist_far_branch			; Jump if above or =
 		mov	al,80h
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jz	loc_45			; Jump if zero
+		jz	dist_set_carry_clear			; Jump if zero
 		retn
-loc_45:
+
+dist_set_carry_clear:
 		clc				; Clear carry flag
 		retn
-loc_46:
+
+dist_far_branch:
 		xor	al,al			; Zero register
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jnz	loc_47			; Jump if not zero
+		jnz	dist_far_clear_carry			; Jump if not zero
 		retn
-loc_47:
+
+dist_far_clear_carry:
 		clc				; Clear carry flag
 		retn
-sub_2		endp
+
+distance_check_8		endp
 
 ; AI sub-state handler: pincer/grab sequence
+
 crab_pincer_state:
-		call	word ptr cs:data_26e
-		jnz	loc_48			; Jump if not zero
-		jmp	word ptr cs:data_27e
-loc_48:
+		call	word ptr cs:ai_fn_tbl_p
+		jnz	pincer_after_check			; Jump if not zero
+		jmp	word ptr cs:ai_fn_tbl_q
+
+pincer_after_check:
 		test	byte ptr [si+8],0FFh
-		jnz	loc_49			; Jump if not zero
+		jnz	pincer_seed_cooldown			; Jump if not zero
 		mov	byte ptr [si+8],1
-loc_49:
+
+pincer_seed_cooldown:
 		test	byte ptr [si+5],20h	; ' '
-		jz	loc_50			; Jump if zero
-		jmp	word ptr cs:data_28e
-loc_50:
+		jz	pincer_check_phase			; Jump if zero
+		jmp	word ptr cs:ai_hide_fn
+
+pincer_check_phase:
 		test	byte ptr [si+9],8
-		jz	loc_51			; Jump if zero
-		jmp	loc_68
-loc_51:
+		jz	pincer_check_phase_alt			; Jump if zero
+		jmp	pincer_jump_phase
+
+pincer_check_phase_alt:
 		test	byte ptr [si+9],10h
-		jz	loc_52			; Jump if zero
-		jmp	loc_72
-loc_52:
-		call	word ptr cs:data_19e
-		jc	loc_53			; Jump if carry Set
+		jz	pincer_step_loop			; Jump if zero
+		jmp	pincer_recovery
+
+pincer_step_loop:
+		call	word ptr cs:ai_fn_tbl_i
+		jc	pincer_phase_active			; Jump if carry Set
 		retn
-loc_53:
+
+pincer_phase_active:
 		test	byte ptr [si+9],4
-		jz	loc_60			; Jump if zero
+		jz	pincer_animate			; Jump if zero
 		and	byte ptr [si+6],0F1h
 		or	byte ptr [si+6],4
-		call	sub_3
+		call	distance_check_6
 		cmp	al,0FFh
-		je	loc_54			; Jump if equal
+		je	pincer_phase_advance			; Jump if equal
 		and	byte ptr [si+5],7Fh
 		or	[si+5],al
 		mov	byte ptr [si+6],0
 		or	byte ptr [si+9],2
 		and	byte ptr [si+9],0FBh
 		retn
-loc_54:
+
+pincer_phase_advance:
 		add	byte ptr [si+6],40h	; '@'
-		jc	loc_55			; Jump if carry Set
+		jc	pincer_subphase_inc			; Jump if carry Set
 		retn
-loc_55:
+
+pincer_subphase_inc:
 		mov	al,[si+6]
 		inc	al
 		and	al,1
 		add	al,4
 		mov	[si+6],al
 		add	byte ptr [si+9],40h	; '@'
-		jc	loc_56			; Jump if carry Set
+		jc	pincer_subphase_done			; Jump if carry Set
 		retn
-loc_56:
+
+pincer_subphase_done:
 		and	byte ptr [si+9],0FBh
 		and	byte ptr [si+5],7Fh
-		call	word ptr cs:data_9
+		call	word ptr cs:crab_facing_fn_ptr
 		and	al,80h
 		or	[si+5],al
 		or	al,al			; Zero ?
-		jns	loc_58			; Jump if not sign
-		call	word ptr cs:data_21e
-		jc	loc_57			; Jump if carry Set
+		jns	pincer_face_east_step			; Jump if not sign
+		call	word ptr cs:ai_fn_tbl_k
+		jc	pincer_clear_facing			; Jump if carry Set
 		retn
-loc_57:
+
+pincer_clear_facing:
 		and	byte ptr [si+5],7Fh
 		retn
-loc_58:
-		call	word ptr cs:data_22e
-		jc	loc_59			; Jump if carry Set
+
+pincer_face_east_step:
+		call	word ptr cs:ai_fn_tbl_l
+		jc	pincer_set_facing			; Jump if carry Set
 		retn
-loc_59:
+
+pincer_set_facing:
 		or	byte ptr [si+5],80h
 		retn
-loc_60:
+
+pincer_animate:
 		mov	ax,[si+2]
-		call	word ptr cs:data_23e
+		call	word ptr cs:ai_fn_tbl_m
 		mov	ax,48h
 		test	byte ptr [si+5],80h
-		jz	loc_61			; Jump if zero
+		jz	pincer_pos_offset_done			; Jump if zero
 		inc	ax
-loc_61:
+
+pincer_pos_offset_done:
 		xchg	si,di
 		add	si,ax
-		call	word ptr cs:data_24e
+		call	word ptr cs:ai_fn_tbl_n
 		xchg	si,di
 		mov	al,[di]
-		call	word ptr cs:data_25e
-		jnz	loc_62			; Jump if not zero
+		call	word ptr cs:ai_fn_tbl_o
+		jnz	pincer_count_phase			; Jump if not zero
 		mov	byte ptr [si+6],0
 		or	byte ptr [si+9],8
 		retn
-loc_62:
+
+pincer_count_phase:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],3
 		test	byte ptr [si+9],2
-		jnz	loc_63			; Jump if not zero
+		jnz	pincer_aux_step			; Jump if not zero
 		add	byte ptr [si+0Ah],10h
-		jnc	loc_63			; Jump if carry=0
+		jnc	pincer_aux_step			; Jump if carry=0
 		or	byte ptr [si+9],4
 		retn
-loc_63:
-		call	sub_3
-		jnc	loc_64			; Jump if carry=0
+
+pincer_aux_step:
+		call	distance_check_6
+		jnc	pincer_pick_attack			; Jump if carry=0
 		and	byte ptr [si+5],0FDh
 		mov	byte ptr [si+0Ah],0
-loc_64:
+
+pincer_pick_attack:
 		test	byte ptr [si+5],80h
-		jz	loc_66			; Jump if zero
-		call	word ptr cs:data_13e
-		jc	loc_65			; Jump if carry Set
+		jz	pincer_east_attack			; Jump if zero
+		call	word ptr cs:ai_fn_tbl_c
+		jc	pincer_west_done			; Jump if carry Set
 		retn
-loc_65:
+
+pincer_west_done:
 		mov	byte ptr [si+6],0
 		or	byte ptr [si+9],10h
 		and	byte ptr [si+9],1Fh
 		retn
-loc_66:
-		call	word ptr cs:data_17e
-		jc	loc_67			; Jump if carry Set
+
+pincer_east_attack:
+		call	word ptr cs:ai_fn_tbl_g
+		jc	pincer_east_done			; Jump if carry Set
 		retn
-loc_67:
+
+pincer_east_done:
 		mov	byte ptr [si+6],0
 		or	byte ptr [si+9],10h
 		and	byte ptr [si+9],1Fh
 		retn
-loc_68:
+
+pincer_jump_phase:
 		mov	al,[si+6]
 		mov	ah,al
 		inc	al
 		and	al,3
-		jz	loc_71			; Jump if zero
+		jz	pincer_jump_complete			; Jump if zero
 		and	ah,0F0h
 		or	ah,al
 		mov	[si+6],ah
 		mov	bx,0A71Fh
 		test	byte ptr [si+5],80h
-		jnz	loc_69			; Jump if not zero
-		mov	bx,data_31e
-loc_69:
+		jnz	pincer_jump_use_default			; Jump if not zero
+		mov	bx,crab_rotate_a
+
+pincer_jump_use_default:
 		mov	al,[si+6]
 		xlat				; al=[al+[bx]] table
 		push	ax
-		call	word ptr cs:data_12e
+		call	word ptr cs:ai_fn_tbl_b
 		pop	ax
-		jc	loc_70			; Jump if carry Set
-		jmp	word ptr cs:data_11e
-loc_70:
+		jc	pincer_jump_failed			; Jump if carry Set
+		jmp	word ptr cs:ai_fn_tbl_a
+
+pincer_jump_failed:
 		and	byte ptr [si+9],0F7h
 		or	byte ptr [si+9],4
 		retn
-loc_71:
+
+pincer_jump_complete:
 		and	byte ptr [si+9],0F7h
 		mov	byte ptr [si+6],3
-		jmp	word ptr cs:data_19e
-loc_72:
+		jmp	word ptr cs:ai_fn_tbl_i
+
+pincer_recovery:
 		add	byte ptr [si+9],20h	; ' '
 		test	byte ptr [si+9],20h	; ' '
-		jnz	loc_73			; Jump if not zero
+		jnz	pincer_recovery_step			; Jump if not zero
 		mov	al,[si+6]
 		mov	ah,al
 		inc	al
 		and	al,3
-		jz	loc_77			; Jump if zero
+		jz	pincer_recover_finish			; Jump if zero
 		and	ah,0F0h
 		or	ah,al
 		mov	[si+6],ah
-loc_73:
+
+pincer_recovery_step:
 		mov	al,[si+9]
 		rol	al,1			; Rotate
 		rol	al,1			; Rotate
@@ -729,66 +841,73 @@ loc_73:
 		and	al,7
 		mov	bx,0A727h
 		test	byte ptr [si+5],80h
-		jnz	loc_74			; Jump if not zero
-		mov	bx,data_32e
-loc_74:
+		jnz	pincer_recover_use_default			; Jump if not zero
+		mov	bx,crab_rotate_b
+
+pincer_recover_use_default:
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:data_11e
-		jc	loc_75			; Jump if carry Set
+		call	word ptr cs:ai_fn_tbl_a
+		jc	pincer_recover_failed			; Jump if carry Set
 		retn
-loc_75:
+
+pincer_recover_failed:
 		and	byte ptr [si+9],0EFh
 		or	byte ptr [si+9],4
 		test	byte ptr [si+6],0FFh
-		jnz	loc_76			; Jump if not zero
+		jnz	pincer_recover_set_phase3			; Jump if not zero
 		retn
-loc_76:
+
+pincer_recover_set_phase3:
 		mov	byte ptr [si+6],3
 		retn
-loc_77:
+
+pincer_recover_finish:
 		and	byte ptr [si+9],0EFh
 		mov	byte ptr [si+6],3
-		jmp	word ptr cs:data_19e
+		jmp	word ptr cs:ai_fn_tbl_i
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_3		proc	near
-		mov	al,ds:data_34e
+distance_check_6		proc	near
+		mov	al,ds:gvar_frame_cnt
 		sub	al,[si+2]
-		jns	loc_78			; Jump if not sign
+		jns	dist6_abs_done			; Jump if not sign
 		neg	al
-loc_78:
+
+dist6_abs_done:
 		cmp	al,6
 		mov	al,0FFh
-		jc	loc_79			; Jump if carry Set
+		jc	dist6_in_range			; Jump if carry Set
 		retn
-loc_79:
+
+dist6_in_range:
 		cmp	byte ptr [si+3],11h
-		jae	loc_81			; Jump if above or =
+		jae	dist6_far_branch			; Jump if above or =
 		mov	al,80h
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jz	loc_80			; Jump if zero
+		jz	dist6_set_carry_clear			; Jump if zero
 		retn
-loc_80:
+
+dist6_set_carry_clear:
 		clc				; Clear carry flag
 		retn
-loc_81:
+
+dist6_far_branch:
 		xor	al,al			; Zero register
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jnz	loc_82			; Jump if not zero
+		jnz	dist6_far_clear_carry			; Jump if not zero
 		retn
-loc_82:
+
+dist6_far_clear_carry:
 		clc				; Clear carry flag
 		retn
-sub_3		endp
 
-; Trailing data table — frame/position lookup bytes (Sourcer mis-decoded as code).
+distance_check_6		endp
+
+; Trailing data table ?-- frame/position lookup bytes (Sourcer mis-decoded as code).
 ; Pattern of 00h/01h..07h bytes suggests per-frame X-offset or tile-advance table.
 ; Preserved as emitted so bit-perfect assembly holds.
+
 crab_trailing_tbl:
 		add	[bx+si],ax
 		add	[bx],al
@@ -802,10 +921,8 @@ crab_trailing_tbl:
 		add	al,[bp+di]
 		add	ax,[si]
 		add	al,5
-		db	05h, 06h		; truncated 'add ax,6' — file ends mid-instruction
+		db	05h, 06h		; truncated 'add ax,6' ?-- file ends mid-instruction
 
 seg_a		ends
-
-
 
 		end	start
