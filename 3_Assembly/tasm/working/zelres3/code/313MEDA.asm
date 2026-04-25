@@ -5,17 +5,18 @@ PAGE  59,132
 ;
 ;  313MEDA / _313MAPBT - Bosque Town Map Program (zelres3 chunk)
 ;
-;  Map-program code module for Bosque Town. Loaded together with the town
-;  data file map_bosque_town.bin (313MAPBT.bin). Contains a 'Vista' string
-;  near the end that is part of the town's in-game text data.
+;  Map-program code module for Bosque Town (the "Vista" sub-area). Loaded
+;  together with the town data file map_bosque_town.bin. Pairs with the
+;  MEDA AI handler in 305EAI5.asm (jellyfish enemy controller).
 ;
-;  Structure:
+;  Structure mirrors sibling 312ZELA (Satono Town):
 ;    - Header / pointer table (file 0x00..~0x100) mis-decoded by Sourcer
 ;    - Large embedded tile/layout data block (bulk of the file)
-;    - Per-frame tile scan / NPC cell update loop (loc_2..loc_5)
-;    - Dispatch / scroll / sub_NN helper procs
+;    - Per-frame NPC cell scan loop (npc_scan_loop..npc_scan_done)
+;    - Phase / state machine + scroll / tile-fill helpers
+;    - Trailer string 'Vista' is the in-game town sub-location name
 ;
-;  Note: "MEDA" is a prior-pass working nickname for the chunk; the
+;  Note: "MEDA" is a prior-pass working nickname for this chunk; the
 ;  disassembler-stored proc name _313MAPBT is authoritative.
 ;
 ;==========================================================================
@@ -24,58 +25,71 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; The following equates show data references outside the range of the program.
-; Shared references across 312-319 map-program family:
-;   200Ch..603Ch  - game-segment dispatch callback fn ptrs
-;   0C002h/0C010h - sprite attribute / entity record base
-;   0ED20h        - char/tile lookup table
+; Shared references across the 312-319 map-program family:
+;   200Ch..603Ch   - game-segment dispatch callback fn ptrs
+;   0C002h/0C010h  - sprite attribute / entity record base
+;   0ED20h         - char/tile lookup table
 ;   0FF2Eh..0FF75h - per-map global state flag bytes
 
-data_11e	equ	200Ch			;* scroll/dispatch callback
-data_12e	equ	6028h			;* game-seg callback fn A (tile dispatch)
-data_13e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
-data_14e	equ	6038h			;* game-seg callback fn C
-data_15e	equ	603Ah			;* game-seg callback fn D
-data_16e	equ	603Ch			;* game-seg callback fn E
-data_17e	equ	0A5DCh			;*
-data_18e	equ	0A606h			;*
-data_19e	equ	0A613h			;*
-data_20e	equ	0A623h			;*
-data_21e	equ	0A62Eh			;*
-data_22e	equ	0A682h			;*
-data_23e	equ	0A687h			;*
-data_24e	equ	0A6C7h			;*
-data_25e	equ	0A6E0h			;*
-data_26e	equ	0A6E1h			;*
-data_27e	equ	0A6EDh			;*
-data_28e	equ	0A716h			;*
-data_29e	equ	0A718h			;*
-data_30e	equ	0A719h			;*
-data_31e	equ	0A72Ch			;*
-data_32e	equ	0A72Dh			;*
-data_33e	equ	0A72Eh			;*
-data_34e	equ	0A72Fh			;*
-data_35e	equ	0A730h			;*
-data_36e	equ	0A731h			;*
-data_37e	equ	0A732h			;*
-data_38e	equ	0A733h			;*
-data_39e	equ	0A734h			;*
-data_40e	equ	0A735h			;*
-data_41e	equ	0A736h			;*
-data_42e	equ	0A737h			;*
-data_43e	equ	0A738h			;*
-data_44e	equ	0C002h			;* sprite attribute ptr
-data_45e	equ	0C010h			;* sprite attribute record base
-data_46e	equ	0ED20h			;* char/tile lookup table
-data_47e	equ	0FF2Eh			;* global state byte
-data_48e	equ	0FF2Fh			;* global state byte
-data_49e	equ	0FF30h			;* global state byte
-data_50e	equ	0FF75h			;* global state byte
+; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
+meda_cb_scroll		equ	200Ch		; scroll / dispatch callback
+meda_cb_tile_query	equ	6028h		; tile-at-cell callback fn A
+meda_cb_npc_step	equ	6036h		; NPC step / cell-iter callback fn B
+meda_cb_entity_act	equ	6038h		; entity action callback fn C
+meda_cb_init_tiles	equ	603Ah		; init-tile-row callback fn D
+meda_cb_finalize	equ	603Ch		; finalize / jmp target fn E
+
+; --- Internal tile/render data tables (game-seg DS, addressed by hard offset) ---
+meda_tile_src_a		equ	0A5DCh		; tile source base A (passed to render_tiles)
+meda_tile_src_b		equ	0A606h		; tile mask base B
+meda_tile_src_c		equ	0A613h		; tile source base C
+meda_tile_src_d		equ	0A623h		; tile mask base D
+meda_tile_src_e_tbl	equ	0A62Eh		; tile source E (indexed table)
+meda_tile_src_f		equ	0A682h		; tile mask F
+meda_tile_src_g_tbl	equ	0A687h		; tile source G (indexed table)
+meda_tile_src_h_tbl	equ	0A6C7h		; tile mask H (indexed table)
+
+; --- Sprite/cell write fields (DS) ---
+meda_cell_x		equ	0A6E0h		; cell write X (low byte at sprite base)
+meda_cell_phase		equ	0A6E1h		; cell phase byte
+meda_anim_xlat_tbl	equ	0A6EDh		; per-state animation xlat table
+
+; --- Scroll / phase state bytes (DS) ---
+meda_scroll_x		equ	0A716h		; scroll X position (word)
+meda_scroll_phase	equ	0A718h		; scroll phase counter byte
+meda_scroll_x_max	equ	0A719h		; scroll X max / extra (word)
+
+; --- Sub_8 (render_tiles) parameter slots (DS) ---
+meda_tile_param_row	equ	0A72Ch		; tile param: row index (passed in DS)
+meda_tile_param_col	equ	0A72Dh		; tile param: col index (passed in DS)
+meda_tile_param_attr	equ	0A72Eh		; tile param: attribute byte
+
+; --- Phase / state machine bytes (DS) ---
+meda_phase_dir		equ	0A72Fh		; phase direction selector
+meda_phase_step		equ	0A730h		; phase step counter (mod 5)
+meda_npc_idx		equ	0A731h		; NPC scan index byte
+meda_anim_byte		equ	0A732h		; current animation/speaker byte
+meda_idle_step		equ	0A733h		; idle step counter (0..0x28)
+meda_phase_active	equ	0A734h		; phase-active flag
+meda_phase_subflag	equ	0A735h		; phase sub-flag
+meda_phase_locked	equ	0A736h		; phase-locked flag (clamp boundary)
+meda_phase_delay	equ	0A737h		; phase delay countdown
+
+; --- Tile/render buffer (CS-relative, written via push cs/pop es) ---
+meda_render_buf		equ	0A738h		; tile render buffer base (336 bytes)
+
+; --- Shared game-segment globals (used across map-program family) ---
+gvar_proj_cnt		equ	0C002h		; sprite attribute count (shared)
+enemy_attr_base		equ	0C010h		; sprite/entity record base (DS)
+sprite_xlat_tbl		equ	0ED20h		; char/tile lookup table (shared)
+gvar_death_flag		equ	0FF2Eh		; global death flag (shared)
+gvar_dir_toggle		equ	0FF2Fh		; global dir-toggle flag
+gvar_completion		equ	0FF30h		; completion/stage flag
+gvar_spawn_fx_flag	equ	0FF75h		; spawn VFX flag
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
@@ -87,6 +101,7 @@ _313MAPBT	proc	far
 ; dispatch from game DS. The far-ptr "jmp 0A7:16A1" Sourcer flagged
 ; is a header field word, not a real control-flow jump.
 ; ------------------------------------------------------------------
+
 start:
 		mov	[bx+si],cl		; header field bytes
 		add	[bx+si],al		; header field bytes
@@ -99,7 +114,7 @@ start:
 		db	 40h,0A1h
 		db	20 dup (0)
 		db	 8Bh,0A1h,0DBh,0A1h, 00h
-data_4		db	1			; Data table (indexed access)
+header_tile_row_a		db	1			; Data table (indexed access)
 		db	 00h, 02h, 03h, 00h, 00h, 04h
 		db	 05h, 06h, 00h, 00h, 07h, 16h
 		db	 09h, 00h, 08h, 0Bh, 0Ah, 0Ch
@@ -107,9 +122,9 @@ data_4		db	1			; Data table (indexed access)
 		db	 11h, 12h, 13h, 0Ah, 00h, 14h
 		db	 00h, 0Ah, 15h, 00h, 00h, 17h
 		db	 18h, 19h, 00h, 1Ah, 1Bh, 1Ch
-data_5		dw	0Ah
+header_const_word_a		dw	0Ah
 		db	 1Dh, 1Eh, 1Fh
-data_6		db	' ', 0
+header_text_table		db	' ', 0
 		db	'!"', 0Ah, '#', 0
 		db	0Ah, '$'
 		db	0Ah, '%', 0
@@ -182,43 +197,47 @@ data_6		db	' ', 0
 		db	 8Bh, 36h, 10h,0C0h,0C6h, 06h
 		db	 31h,0A7h, 00h,0C6h, 06h, 32h
 		db	0A7h, 00h
-loc_2:
+
+npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-		db	 83h, 3Ch,0FFh		;  Fixup - byte match
-		jz	loc_5			; Jump if zero
-		mov	ax,[si]
-		call	word ptr cs:data_13e
-		jc	loc_4			; Jump if carry Set
-		mov	[si+3],bl
-		mov	ax,[si+2]
-		call	word ptr cs:data_12e
-		mov	bl,ds:data_36e
-		xor	bh,bh			; Zero register
-		mov	al,ds:data_46e[bx]
-		mov	[di],al
-		test	byte ptr [si+5],40h	; '@'
-		jz	loc_4			; Jump if zero
-		test	byte ptr ds:data_37e,80h
-		jnz	loc_4			; Jump if not zero
-		mov	al,[si+5]
-		and	al,1Fh
-		test	byte ptr [si+4],8
-		jz	loc_3			; Jump if zero
-		or	al,80h
-loc_3:
-		mov	ds:data_37e,al
-loc_4:
-		inc	byte ptr ds:data_36e
-		add	si,10h
-		jmp	short loc_2
-loc_5:
-		mov	si,ds:data_45e
+			db	 83h, 3Ch,0FFh		;  Fixup - byte match
+			jz	npc_scan_done			; Jump if zero
+			mov	ax,[si]
+			call	word ptr cs:meda_cb_npc_step
+			jc	npc_scan_next			; Jump if carry Set
+			mov	[si+3],bl
+			mov	ax,[si+2]
+			call	word ptr cs:meda_cb_tile_query
+			mov	bl,ds:meda_npc_idx
+			xor	bh,bh			; Zero register
+			mov	al,ds:sprite_xlat_tbl[bx]
+			mov	[di],al
+			test	byte ptr [si+5],40h	; '@'
+			jz	npc_scan_next			; Jump if zero
+			test	byte ptr ds:meda_anim_byte,80h
+			jnz	npc_scan_next			; Jump if not zero
+			mov	al,[si+5]
+			and	al,1Fh
+			test	byte ptr [si+4],8
+			jz	npc_scan_set_anim			; Jump if zero
+			or	al,80h
+
+npc_scan_set_anim:
+			mov	ds:meda_anim_byte,al
+
+npc_scan_next:
+			inc	byte ptr ds:meda_npc_idx
+			add	si,10h
+			jmp	short npc_scan_loop
+
+npc_scan_done:
+		mov	si,ds:enemy_attr_base
 		mov	word ptr [si],0FFFFh
-		mov	al,ds:data_37e
+		mov	al,ds:meda_anim_byte
 		and	al,1Fh
-		jz	loc_8			; Jump if zero
+		jz	post_scan_check_death			; Jump if zero
 		push	ax
-		call	word ptr cs:data_14e
+		call	word ptr cs:meda_cb_entity_act
 		mov	bl,ah
 		pop	ax
 		shr	bl,1			; Shift w/zeros fill
@@ -226,358 +245,355 @@ loc_5:
 		shr	bl,1			; Shift w/zeros fill
 		xor	bh,bh			; Zero register
 		cmp	al,1
-		jne	loc_6			; Jump if not equal
-		cmp	byte ptr data_6+0Dh,4	; ('')
-		jb	loc_6			; Jump if below
+		jne	anim_dispatch_other			; Jump if not equal
+		cmp	byte ptr header_text_table+0Dh,4	; ('')
+		jb	anim_dispatch_other			; Jump if below
 		add	bx,bx
 		add	bx,bx
 		add	bx,bx
 		add	bx,bx
 		add	bx,bx
-		mov	byte ptr ds:data_50e,2Dh	; '-'
-		jmp	short loc_7
-loc_6:
-		mov	byte ptr ds:data_50e,2Eh	; '.'
-loc_7:
-		call	sub_9
-loc_8:
-		test	byte ptr ds:data_47e,0FFh
-		jz	loc_9			; Jump if zero
-		jmp	loc_42
-loc_9:
-		test	byte ptr ds:data_39e,0FFh
-		jnz	loc_13			; Jump if not zero
-		cmp	byte ptr ds:data_29e,7
-		jne	loc_11			; Jump if not equal
-		mov	ax,data_5
+		mov	byte ptr ds:gvar_spawn_fx_flag,2Dh	; '-'
+		jmp	short anim_apply_scroll
+
+anim_dispatch_other:
+		mov	byte ptr ds:gvar_spawn_fx_flag,2Eh	; '.'
+
+anim_apply_scroll:
+		call	scroll_step_finalize
+
+post_scan_check_death:
+		test	byte ptr ds:gvar_death_flag,0FFh
+		jz	phase_check_active			; Jump if zero
+		jmp	idle_or_spawn
+
+phase_check_active:
+		test	byte ptr ds:meda_phase_active,0FFh
+		jnz	phase_active_branch			; Jump if not zero
+		cmp	byte ptr ds:meda_scroll_phase,7
+		jne	phase_check_locked			; Jump if not equal
+		mov	ax,header_const_word_a
 		add	ax,10h
 		mov	bx,ax
-		sub	ax,ds:data_44e
-		jc	loc_10			; Jump if carry Set
+		sub	ax,ds:gvar_proj_cnt
+		jc	phase_clamp_b1			; Jump if carry Set
 		xchg	bx,ax
-loc_10:
-		mov	ax,ds:data_28e
+
+phase_clamp_b1:
+		mov	ax,ds:meda_scroll_x
 		add	ax,4
 		sub	ax,bx
-		jnc	loc_11			; Jump if carry=0
-		mov	ax,ds:data_28e
+		jnc	phase_check_locked			; Jump if carry=0
+		mov	ax,ds:meda_scroll_x
 		add	ax,6
 		sub	ax,bx
-		jc	loc_11			; Jump if carry Set
-		mov	byte ptr ds:data_40e,3
-		mov	byte ptr ds:data_39e,0FFh
-loc_11:
-		test	byte ptr ds:data_41e,0FFh
-		jnz	loc_12			; Jump if not zero
-		call	sub_6
-		jnc	loc_16			; Jump if carry=0
-		mov	byte ptr ds:data_41e,0FFh
-		jmp	short loc_16
-loc_12:
-		call	sub_5
-		jnc	loc_16			; Jump if carry=0
-		mov	byte ptr ds:data_41e,0
-		jmp	short loc_16
-loc_13:
-		test	byte ptr ds:data_40e,0FFh
-		jz	loc_14			; Jump if zero
-		dec	byte ptr ds:data_40e
-		jmp	short loc_16
-loc_14:
-		test	byte ptr ds:data_39e,80h
-		jz	loc_15			; Jump if zero
-		call	sub_4
-		jnc	loc_17			; Jump if carry=0
-		mov	byte ptr ds:data_39e,7Fh
-		jmp	short loc_17
-loc_15:
-		call	sub_3
-		jnc	loc_17			; Jump if carry=0
-		mov	byte ptr ds:data_39e,0
-		jmp	short loc_17
-loc_16:
-		mov	bx,ds:data_28e
+		jc	phase_check_locked			; Jump if carry Set
+		mov	byte ptr ds:meda_phase_subflag,3
+		mov	byte ptr ds:meda_phase_active,0FFh
+
+phase_check_locked:
+		test	byte ptr ds:meda_phase_locked,0FFh
+		jnz	phase_locked_branch			; Jump if not zero
+		call	bound_xpos_dec
+		jnc	phase_apply_xlat			; Jump if carry=0
+		mov	byte ptr ds:meda_phase_locked,0FFh
+		jmp	short phase_apply_xlat
+
+phase_locked_branch:
+		call	bound_xpos_inc
+		jnc	phase_apply_xlat			; Jump if carry=0
+		mov	byte ptr ds:meda_phase_locked,0
+		jmp	short phase_apply_xlat
+
+phase_active_branch:
+		test	byte ptr ds:meda_phase_subflag,0FFh
+		jz	phase_subflag_done			; Jump if zero
+		dec	byte ptr ds:meda_phase_subflag
+		jmp	short phase_apply_xlat
+
+phase_subflag_done:
+		test	byte ptr ds:meda_phase_active,80h
+		jz	phase_inc_dir_branch			; Jump if zero
+		call	phase_inc_clamped
+		jnc	phase_post_dir			; Jump if carry=0
+		mov	byte ptr ds:meda_phase_active,7Fh
+		jmp	short phase_post_dir
+
+phase_inc_dir_branch:
+		call	phase_dec_clamped
+		jnc	phase_post_dir			; Jump if carry=0
+		mov	byte ptr ds:meda_phase_active,0
+		jmp	short phase_post_dir
+
+phase_apply_xlat:
+		mov	bx,ds:meda_scroll_x
 		sub	bx,9
-		mov	al,ds:data_27e[bx]
-		mov	ds:data_29e,al
-loc_17:
-		call	sub_1
-		test	byte ptr ds:data_42e,0FFh
-		jz	loc_18			; Jump if zero
-		dec	byte ptr ds:data_42e
-		jmp	loc_30
-loc_18:
-		inc	byte ptr ds:data_35e
-		cmp	byte ptr ds:data_35e,5
-		jne	loc_19			; Jump if not equal
-		mov	byte ptr ds:data_42e,3
-		mov	byte ptr ds:data_35e,0
-loc_19:
-		cmp	byte ptr ds:data_35e,4
-		jne	loc_20			; Jump if not equal
-		call	sub_2
-loc_20:
-		jmp	loc_30
+		mov	al,ds:meda_anim_xlat_tbl[bx]
+		mov	ds:meda_scroll_phase,al
+
+phase_post_dir:
+		call	phase_dir_compute
+		test	byte ptr ds:meda_phase_delay,0FFh
+		jz	phase_inc_step			; Jump if zero
+		dec	byte ptr ds:meda_phase_delay
+		jmp	render_tiles_entry
+
+phase_inc_step:
+		inc	byte ptr ds:meda_phase_step
+		cmp	byte ptr ds:meda_phase_step,5
+		jne	phase_check_step4			; Jump if not equal
+		mov	byte ptr ds:meda_phase_delay,3
+		mov	byte ptr ds:meda_phase_step,0
+
+phase_check_step4:
+		cmp	byte ptr ds:meda_phase_step,4
+		jne	phase_step_done			; Jump if not equal
+		call	phase_clear_cells
+
+phase_step_done:
+		jmp	render_tiles_entry
 
 _313MAPBT	endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_1		proc	near
-		mov	ax,data_5
+phase_dir_compute		proc	near
+		mov	ax,header_const_word_a
 		add	ax,10h
 		mov	bx,ax
-		sub	ax,ds:data_44e
-		jc	loc_21			; Jump if carry Set
+		sub	ax,ds:gvar_proj_cnt
+		jc	dir_compute_clamp_b			; Jump if carry Set
 		xchg	bx,ax
-loc_21:
-		mov	ax,ds:data_28e
+
+dir_compute_clamp_b:
+		mov	ax,ds:meda_scroll_x
 		inc	ax
 		sub	ax,bx
-		jnc	loc_22			; Jump if carry=0
-		mov	ax,ds:data_28e
+		jnc	dir_compute_check_low			; Jump if carry=0
+		mov	ax,ds:meda_scroll_x
 		add	ax,0Ah
 		sub	ax,bx
-		jc	loc_22			; Jump if carry Set
-		mov	byte ptr ds:data_34e,2
+		jc	dir_compute_check_low			; Jump if carry Set
+		mov	byte ptr ds:meda_phase_dir,2
 		retn
-loc_22:
-		mov	ax,ds:data_28e
+
+dir_compute_check_low:
+		mov	ax,ds:meda_scroll_x
 		add	ax,0FFFAh
 		sub	ax,bx
-		jnc	loc_24			; Jump if carry=0
-		mov	ax,ds:data_28e
+		jnc	dir_compute_check_high			; Jump if carry=0
+		mov	ax,ds:meda_scroll_x
 		add	ax,11h
 		sub	ax,bx
-		jc	loc_24			; Jump if carry Set
-		mov	ax,ds:data_28e
+		jc	dir_compute_check_high			; Jump if carry Set
+		mov	ax,ds:meda_scroll_x
 		add	ax,7
 		inc	bx
 		sub	ax,bx
-		jc	loc_23			; Jump if carry Set
-		mov	byte ptr ds:data_34e,1
+		jc	dir_compute_set3			; Jump if carry Set
+		mov	byte ptr ds:meda_phase_dir,1
 		retn
-loc_23:
-		mov	byte ptr ds:data_34e,3
+
+dir_compute_set3:
+		mov	byte ptr ds:meda_phase_dir,3
 		retn
-loc_24:
-		mov	ax,ds:data_28e
+
+dir_compute_check_high:
+		mov	ax,ds:meda_scroll_x
 		add	ax,7
 		inc	bx
 		sub	ax,bx
-		jc	loc_25			; Jump if carry Set
-		mov	byte ptr ds:data_34e,0
+		jc	dir_compute_set4			; Jump if carry Set
+		mov	byte ptr ds:meda_phase_dir,0
 		retn
-loc_25:
-		mov	byte ptr ds:data_34e,4
+
+dir_compute_set4:
+		mov	byte ptr ds:meda_phase_dir,4
 		retn
-sub_1		endp
 
+phase_dir_compute		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_2		proc	near
-		mov	ax,ds:data_28e
+phase_clear_cells		proc	near
+		mov	ax,ds:meda_scroll_x
 		add	ax,6
-		call	word ptr cs:data_13e
-		jc	loc_26			; Jump if carry Set
-		mov	ds:data_25e,bl
-		mov	al,ds:data_29e
+		call	word ptr cs:meda_cb_npc_step
+		jc	clear_cells_second			; Jump if carry Set
+		mov	ds:meda_cell_x,bl
+		mov	al,ds:meda_scroll_phase
 		add	al,0Ch
 		and	al,3Fh			; '?'
-		mov	ds:data_26e,al
+		mov	ds:meda_cell_phase,al
 		mov	bx,0A6E0h
-		call	word ptr cs:data_15e
-loc_26:
-		mov	ax,ds:data_28e
+		call	word ptr cs:meda_cb_init_tiles
+
+clear_cells_second:
+		mov	ax,ds:meda_scroll_x
 		add	ax,7
-		call	word ptr cs:data_13e
-		jnc	loc_27			; Jump if carry=0
+		call	word ptr cs:meda_cb_npc_step
+		jnc	clear_cells_finalize			; Jump if carry=0
 		retn
-loc_27:
-		mov	ds:data_25e,bl
-		mov	al,ds:data_29e
+
+clear_cells_finalize:
+		mov	ds:meda_cell_x,bl
+		mov	al,ds:meda_scroll_phase
 		add	al,0Ah
 		and	al,3Fh			; '?'
-		mov	ds:data_26e,al
+		mov	ds:meda_cell_phase,al
 		mov	bx,0A6E0h
-		jmp	word ptr cs:data_15e
-sub_2		endp
+		jmp	word ptr cs:meda_cb_init_tiles
 
+phase_clear_cells		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_3		proc	near
-		dec	byte ptr ds:data_29e
-		cmp	byte ptr ds:data_29e,7
+phase_dec_clamped		proc	near
+		dec	byte ptr ds:meda_scroll_phase
+		cmp	byte ptr ds:meda_scroll_phase,7
 		retn
-sub_3		endp
 
+phase_dec_clamped		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_4		proc	near
-		inc	byte ptr ds:data_29e
-		cmp	byte ptr ds:data_29e,0Bh
+phase_inc_clamped		proc	near
+		inc	byte ptr ds:meda_scroll_phase
+		cmp	byte ptr ds:meda_scroll_phase,0Bh
 		cmc				; Complement carry
 		retn
-sub_4		endp
 
+phase_inc_clamped		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_5		proc	near
-		cmp	byte ptr ds:data_28e,31h	; '1'
+bound_xpos_inc		proc	near
+		cmp	byte ptr ds:meda_scroll_x,31h	; '1'
 		cmc				; Complement carry
-		jnc	loc_28			; Jump if carry=0
+		jnc	xpos_inc_step			; Jump if carry=0
 		retn
-loc_28:
-		inc	byte ptr ds:data_28e
+
+xpos_inc_step:
+		inc	byte ptr ds:meda_scroll_x
 		retn
-sub_5		endp
 
+bound_xpos_inc		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_6		proc	near
-		cmp	byte ptr ds:data_28e,0Ah
-		jae	loc_29			; Jump if above or =
+bound_xpos_dec		proc	near
+		cmp	byte ptr ds:meda_scroll_x,0Ah
+		jae	xpos_dec_step			; Jump if above or =
 		retn
-loc_29:
-		dec	byte ptr ds:data_28e
+
+xpos_dec_step:
+		dec	byte ptr ds:meda_scroll_x
 		retn
-sub_6		endp
 
+bound_xpos_dec		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+render_tiles_main		proc	near
 
-sub_7		proc	near
-loc_30:
+render_tiles_entry:
 		push	cs
 		pop	es
-		mov	di,data_43e
+		mov	di,meda_render_buf
 		mov	al,0FFh
 		mov	cx,150h
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
-		mov	byte ptr ds:data_31e,0
-		mov	byte ptr ds:data_32e,0
-		mov	si,data_17e
-		mov	bp,data_18e
+		mov	byte ptr ds:meda_tile_param_row,0
+		mov	byte ptr ds:meda_tile_param_col,0
+		mov	si,meda_tile_src_a
+		mov	bp,meda_tile_src_b
 		mov	cx,0Dh
-		call	sub_8
-		mov	byte ptr ds:data_31e,1
-		mov	byte ptr ds:data_32e,8
-		mov	si,data_19e
-		mov	bp,data_20e
+		call	render_tile_row
+		mov	byte ptr ds:meda_tile_param_row,1
+		mov	byte ptr ds:meda_tile_param_col,8
+		mov	si,meda_tile_src_c
+		mov	bp,meda_tile_src_d
 		mov	cx,0Bh
-		call	sub_8
-		mov	byte ptr ds:data_31e,4
-		mov	byte ptr ds:data_32e,3
-		mov	bl,ds:data_34e
+		call	render_tile_row
+		mov	byte ptr ds:meda_tile_param_row,4
+		mov	byte ptr ds:meda_tile_param_col,3
+		mov	bl,ds:meda_phase_dir
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:data_21e[bx]
-		mov	bp,data_22e
+		mov	si,ds:meda_tile_src_e_tbl[bx]
+		mov	bp,meda_tile_src_f
 		mov	cx,5
-		call	sub_8
-		mov	byte ptr ds:data_32e,7
-		mov	bl,ds:data_35e
+		call	render_tile_row
+		mov	byte ptr ds:meda_tile_param_col,7
+		mov	bl,ds:meda_phase_step
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	si,ds:data_23e[bx]
-		mov	bp,ds:data_24e[bx]
+		mov	si,ds:meda_tile_src_g_tbl[bx]
+		mov	bp,ds:meda_tile_src_h_tbl[bx]
 		mov	cx,5
-		call	sub_8
-		mov	byte ptr ds:data_36e,0
-		mov	ax,ds:data_28e
-		mov	di,ds:data_45e
-		mov	si,data_43e
+		call	render_tile_row
+		mov	byte ptr ds:meda_npc_idx,0
+		mov	ax,ds:meda_scroll_x
+		mov	di,ds:enemy_attr_base
+		mov	si,meda_render_buf
 		mov	cx,0Eh
 
-locloop_31:
-		push	cx
-		push	si
-		push	ax
-		call	word ptr cs:data_13e
-		pop	ax
-		mov	ds:data_33e,bl
-		jc	loc_35			; Jump if carry Set
-		xor	cl,cl			; Zero register
-loc_32:
-		push	cx
-		push	ax
-		cmp	byte ptr [si],0FFh
-		je	loc_34			; Jump if equal
-		mov	[di],ax
-		mov	al,ds:data_29e
-		add	al,cl
-		and	al,3Fh			; '?'
-		mov	[di+2],al
-		mov	al,ds:data_33e
-		mov	[di+3],al
-		mov	al,[si]
-		mov	[di+4],al
-		mov	al,[si+1]
-		mov	[di+6],al
-		mov	byte ptr [di+5],0
-		test	byte ptr ds:data_37e,0FFh
-		jz	loc_33			; Jump if zero
-		or	byte ptr [di+5],20h	; ' '
-loc_33:
-		push	di
-		mov	ax,[di+2]
-		call	word ptr cs:data_12e
-		mov	bl,ds:data_36e
-		xor	bh,bh			; Zero register
-		mov	al,bl
-		or	al,80h
-		xchg	[di],al
-		mov	ds:data_46e[bx],al
-		pop	di
-		add	di,10h
-		inc	byte ptr ds:data_36e
-loc_34:
-		inc	si
-		inc	si
-		pop	ax
-		pop	cx
-		inc	cl
-		cmp	cl,0Ch
-		jne	loc_32			; Jump if not equal
-loc_35:
-		inc	ax
-		pop	si
-		add	si,18h
-		pop	cx
-		loop	locloop_31		; Loop if cx > 0
+render_outer_loop:
+			push	cx
+			push	si
+			push	ax
+			call	word ptr cs:meda_cb_npc_step
+			pop	ax
+			mov	ds:meda_tile_param_attr,bl
+			jc	render_outer_advance			; Jump if carry Set
+			xor	cl,cl			; Zero register
+
+render_inner_loop:
+				push	cx
+				push	ax
+				cmp	byte ptr [si],0FFh
+				je	render_advance_si			; Jump if equal
+				mov	[di],ax
+				mov	al,ds:meda_scroll_phase
+				add	al,cl
+				and	al,3Fh			; '?'
+				mov	[di+2],al
+				mov	al,ds:meda_tile_param_attr
+				mov	[di+3],al
+				mov	al,[si]
+				mov	[di+4],al
+				mov	al,[si+1]
+				mov	[di+6],al
+				mov	byte ptr [di+5],0
+				test	byte ptr ds:meda_anim_byte,0FFh
+				jz	render_attr_xlat			; Jump if zero
+				or	byte ptr [di+5],20h	; ' '
+
+render_attr_xlat:
+				push	di
+				mov	ax,[di+2]
+				call	word ptr cs:meda_cb_tile_query
+				mov	bl,ds:meda_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,bl
+				or	al,80h
+				xchg	[di],al
+				mov	ds:sprite_xlat_tbl[bx],al
+				pop	di
+				add	di,10h
+				inc	byte ptr ds:meda_npc_idx
+
+render_advance_si:
+				inc	si
+				inc	si
+				pop	ax
+				pop	cx
+				inc	cl
+				cmp	cl,0Ch
+				jne	render_inner_loop			; Jump if not equal
+
+render_outer_advance:
+			inc	ax
+			pop	si
+			add	si,18h
+			pop	cx
+			loop	render_outer_loop		; Loop if cx > 0
 
 		mov	word ptr [di],0FFFFh
 		retn
-sub_7		endp
 
+render_tiles_main		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_8		proc	near
+render_tile_row		proc	near
 		push	cs
 		pop	es
-		mov	al,ds:data_31e
+		mov	al,ds:meda_tile_param_row
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		add	ax,ax
@@ -585,82 +601,85 @@ sub_8		proc	near
 		mov	dx,ax
 		add	ax,ax
 		add	ax,dx
-		mov	dl,ds:data_32e
+		mov	dl,ds:meda_tile_param_col
 		xor	dh,dh			; Zero register
 		add	dx,dx
 		add	ax,dx
 		mov	di,ax
-		add	di,data_43e
+		add	di,meda_render_buf
 
-locloop_36:
-		push	cx
-		mov	cx,8
+tile_row_loop:
+			push	cx
+			mov	cx,8
 
-locloop_37:
-		rol	byte ptr ds:[bp],1	; Rotate
-		jnc	loc_38			; Jump if carry=0
-		movsw				; Mov [si] to es:[di]
-		dec	di
-		dec	di
-loc_38:
-		inc	di
-		inc	di
-		loop	locloop_37		; Loop if cx > 0
+tile_bit_loop:
+				rol	byte ptr ds:[bp],1	; Rotate
+				jnc	tile_row_advance			; Jump if carry=0
+				movsw				; Mov [si] to es:[di]
+				dec	di
+				dec	di
 
-		add	di,8
-		inc	bp
-		pop	cx
-		loop	locloop_36		; Loop if cx > 0
+tile_row_advance:
+				inc	di
+				inc	di
+				loop	tile_bit_loop		; Loop if cx > 0
+
+			add	di,8
+			inc	bp
+			pop	cx
+			loop	tile_row_loop		; Loop if cx > 0
 
 		retn
-sub_8		endp
 
+render_tile_row		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_9		proc	near
-		mov	ax,ds:data_30e
+scroll_step_finalize		proc	near
+		mov	ax,ds:meda_scroll_x_max
 		sub	ax,bx
-		jnc	loc_39			; Jump if carry=0
+		jnc	scroll_clamp_zero			; Jump if carry=0
 		xor	ax,ax			; Zero register
-loc_39:
-		mov	ds:data_30e,ax
+
+scroll_clamp_zero:
+		mov	ds:meda_scroll_x_max,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:data_11e
+		call	word ptr cs:meda_cb_scroll
 		pop	ax
 		or	ax,ax			; Zero ?
-		jz	loc_40			; Jump if zero
+		jz	scroll_check_death			; Jump if zero
 		retn
-loc_40:
-		test	byte ptr ds:data_47e,0FFh
-		jz	loc_41			; Jump if zero
-		retn
-loc_41:
-		mov	byte ptr ds:data_38e,0
-		mov	byte ptr ds:data_47e,0FFh
-		jmp	word ptr cs:data_16e
-sub_9		endp
 
-loc_42:
-		cmp	byte ptr ds:data_38e,28h	; '('
-		jae	loc_44			; Jump if above or =
-		mov	byte ptr ds:data_48e,0FFh
-		inc	byte ptr ds:data_38e
-		cmp	byte ptr ds:data_38e,14h
-		jae	loc_43			; Jump if above or =
-		mov	byte ptr ds:data_35e,0
-		call	sub_1
-		call	sub_7
-		mov	byte ptr ds:data_50e,23h	; '#'
+scroll_check_death:
+		test	byte ptr ds:gvar_death_flag,0FFh
+		jz	scroll_set_finalize			; Jump if zero
 		retn
-loc_43:
-		mov	byte ptr ds:data_34e,5
-		jmp	loc_30
-loc_44:
-		mov	byte ptr ds:data_49e,0FFh
+
+scroll_set_finalize:
+		mov	byte ptr ds:meda_idle_step,0
+		mov	byte ptr ds:gvar_death_flag,0FFh
+		jmp	word ptr cs:meda_cb_finalize
+
+scroll_step_finalize		endp
+
+idle_or_spawn:
+		cmp	byte ptr ds:meda_idle_step,28h	; '('
+		jae	completion_done			; Jump if above or =
+		mov	byte ptr ds:gvar_dir_toggle,0FFh
+		inc	byte ptr ds:meda_idle_step
+		cmp	byte ptr ds:meda_idle_step,14h
+		jae	idle_set_dir5			; Jump if above or =
+		mov	byte ptr ds:meda_phase_step,0
+		call	phase_dir_compute
+		call	render_tiles_main
+		mov	byte ptr ds:gvar_spawn_fx_flag,23h	; '#'
+		retn
+
+idle_set_dir5:
+		mov	byte ptr ds:meda_phase_dir,5
+		jmp	render_tiles_entry
+
+completion_done:
+		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 		db	 00h, 07h, 00h, 08h, 00h, 09h
 		db	 00h, 00h, 00h, 02h, 00h, 0Ah
@@ -720,7 +739,5 @@ loc_44:
 		db	348 dup (0)
 
 seg_a		ends
-
-
 
 		end	start
