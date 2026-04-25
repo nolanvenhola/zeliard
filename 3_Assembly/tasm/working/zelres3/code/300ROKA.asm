@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  300ROKAD.BIN - Roka Demo Scene (ROKADEMO.BIN, zelres3 chunk 1)
+;  300ROKA.BIN - Roka Demo Scene (ROKADEMO.BIN, zelres3 chunk 1)
 ;
 ;  Animated demo / cutscene played at game start (and between certain
 ;  gameplay transitions).  Loads the "Roka" character sprites and walks
