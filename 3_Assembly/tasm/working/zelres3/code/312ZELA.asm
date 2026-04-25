@@ -11,13 +11,13 @@ PAGE  59,132
 ;
 ;  Header byte range (file 0x00..0x79) contains small fields + an embedded
 ;  data-pointer table; Sourcer mis-decoded the leading bytes as code. The
-;  real executable entry is at loc_1 (file 0x210) after the tile/layout
+;  real executable entry is at main_entry (file 0x210) after the tile/layout
 ;  tables that Sourcer also misidentified as code bytes.
 ;
 ;  Main responsibilities:
-;    - Per-frame tile scan / NPC-cell update loop (loc_2..loc_4)
-;    - Dispatch table at data_21e (in game DS) invoking scripted handlers
-;    - Map-limit and scroll step helpers (sub_2..sub_6)
+;    - Per-frame tile scan / NPC-cell update loop (npc_scan_loop..npc_scan_done)
+;    - Dispatch table at zela_dispatch_tbl (in game DS) invoking scripted handlers
+;    - Map-limit and scroll step helpers (scroll_phase_dec..scroll_apply)
 ;    - Contains 'gar' string fragment near end (town-name substring)
 ;
 ;  Note: The name "ZELA" in the filename is a prior-pass working nickname;
@@ -29,7 +29,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; The following equates show data references outside the range of the program.
 ; Shared references (common to the 312-319 map-program family):
 ;   200Ch / 6028h..603Ch   -- game-segment dispatch callback fn ptrs
@@ -37,58 +36,64 @@ include  srmacros.inc
 ;   0ED20h                 -- char/tile lookup table
 ;   0FF2Eh..0FF75h         -- per-map global state flag bytes
 
-data_1e		equ	8802h			;* external data word (mis-decoded Fixup target)
-data_2e		equ	8E8Dh			;* external data byte
-data_3e		equ	9302h			;* external data byte (via xchg at loc_1)
-data_4e		equ	0A2A1h			;* far-ptr target (Fixup call far)
-data_14e	equ	6C6h			;* internal address referenced from header
-data_15e	equ	200Ch			;* scroll/dispatch callback (cs-relative)
-data_16e	equ	6028h			;* game-seg callback fn A (tile dispatch)
-data_17e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
-data_18e	equ	6038h			;* game-seg callback fn C (entity step)
-data_19e	equ	603Ah			;* game-seg callback fn D
-data_20e	equ	603Ch			;* game-seg callback fn E (jmp target)
-data_21e	equ	0A307h			;* dispatch word-table base (handler ptrs)
-data_22e	equ	0A33Eh			;*
-data_23e	equ	0A343h			;*
-data_24e	equ	0A348h			;*
-data_25e	equ	0A4EAh			;* tile-index / xlat table base
-data_26e	equ	0A552h			;* data-table row (13-byte records)
-data_27e	equ	0A553h			;*
-data_28e	equ	0A55Fh			;*
-data_29e	equ	0A560h			;*
-data_30e	equ	0A5EEh			;* scroll X position (word)
-data_31e	equ	0A5F0h			;* counter byte
-data_32e	equ	0A5F1h			;* scroll Y-ish position (word)
-data_33e	equ	0A603h			;* phase counter byte
-data_34e	equ	0A604h			;* state flag byte
-data_35e	equ	0A605h			;* state flag byte
-data_36e	equ	0A606h			;* flag byte
-data_37e	equ	0A607h			;* state flag
-data_38e	equ	0A608h			;* counter
-data_39e	equ	0A609h			;* counter
-data_40e	equ	0A60Ah			;* loop index byte
-data_41e	equ	0A60Bh			;* counter
-data_42e	equ	0A60Ch			;* speaker/anim byte
-data_43e	equ	0A60Dh			;*
-data_44e	equ	0A60Eh			;* flag
-data_45e	equ	0A60Fh			;* flag
-data_46e	equ	0A610h			;* DS-base for 12-word loop fill
-data_47e	equ	0A613h			;* field byte
-data_48e	equ	0A619h			;* field byte
-data_49e	equ	0A61Fh			;* field byte
-data_50e	equ	0A625h			;* field byte
-data_51e	equ	0C002h			;* sprite attribute ptr (shared game-seg)
-data_52e	equ	0C010h			;* sprite attribute record base
-data_53e	equ	0ED20h			;* char/tile lookup table (shared)
-data_54e	equ	0FF2Eh			;* global state byte (shared)
-data_55e	equ	0FF2Fh			;* global state byte
-data_56e	equ	0FF30h			;* global state byte
-data_57e	equ	0FF75h			;* global state byte
+; --- External targets (mis-decoded Fixup operands; not real refs) ---
+zela_ext_word_a	equ	8802h			; external data word (mis-decoded Fixup target)
+zela_ext_byte_b	equ	8E8Dh			; external data byte
+zela_ext_byte_c	equ	9302h			; external data byte (via xchg at start)
+zela_ext_far_d	equ	0A2A1h			; far-ptr target (Fixup call far)
+zela_ext_addr_e	equ	6C6h			; internal address referenced from header
+
+; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
+zela_cb_scroll		equ	200Ch		; scroll / dispatch callback
+zela_cb_tile_query	equ	6028h		; tile-at-cell callback fn A
+zela_cb_npc_step	equ	6036h		; NPC step / cell-iter callback fn B
+zela_cb_entity_act	equ	6038h		; entity action callback fn C
+zela_cb_init_tiles	equ	603Ah		; init-tile-row callback fn D
+zela_cb_finalize	equ	603Ch		; finalize / jmp target fn E
+
+; --- Internal/DS state (game-seg, addressed by hardcoded offset) ---
+zela_dispatch_tbl	equ	0A307h		; dispatch word-table base (handler ptrs)
+zela_unk_tbl_a		equ	0A33Eh		; unknown table A (referenced by header)
+zela_unk_tbl_b		equ	0A343h		; unknown table B
+zela_unk_tbl_c		equ	0A348h		; unknown table C
+zela_xlat_tbl		equ	0A4EAh		; tile-index / xlat table base
+zela_init_record	equ	0A552h		; init-record row (13-byte records, base)
+zela_init_field_b	equ	0A553h		; init record field B
+zela_init_field_c	equ	0A55Fh		; init record field C
+zela_init_field_d	equ	0A560h		; init record field D
+zela_scroll_x		equ	0A5EEh		; scroll X position (word)
+zela_scroll_phase	equ	0A5F0h		; scroll phase counter byte
+zela_scroll_y		equ	0A5F1h		; scroll Y-ish position (word)
+zela_tile_phase		equ	0A603h		; tile phase counter (mod 8)
+zela_walk_state		equ	0A604h		; walk/state flag byte
+zela_phase_started	equ	0A605h		; phase-started flag
+zela_phase_active	equ	0A606h		; phase-active flag
+zela_phase_subflag	equ	0A607h		; phase sub-flag
+zela_phase_step	equ	0A608h		; phase step counter
+zela_phase_subcnt	equ	0A609h		; phase sub-counter
+zela_npc_idx		equ	0A60Ah		; NPC scan index byte
+zela_anim_timer	equ	0A60Bh		; animation timer counter
+zela_anim_byte		equ	0A60Ch		; animation/speaker byte
+zela_npc_ai_byte	equ	0A60Dh		; saved NPC AI byte
+zela_death_timer	equ	0A60Eh		; death-anim timer
+zela_attack_done	equ	0A60Fh		; attack-done flag
+zela_tile_buf_lbl	equ	0A610h		; DS-base for 12-word tile fill loop
+zela_tile_field_a	equ	0A613h		; tile-buf field A
+zela_tile_field_b	equ	0A619h		; tile-buf field B
+zela_tile_field_c	equ	0A61Fh		; tile-buf field C
+zela_tile_field_d	equ	0A625h		; tile-buf field D
+
+; --- Shared game-segment globals (used across map-program family) ---
+gvar_proj_cnt		equ	0C002h		; sprite attribute count (shared)
+enemy_attr_base	equ	0C010h		; sprite/entity record base (DS)
+sprite_xlat_tbl	equ	0ED20h		; char/tile lookup table (shared)
+gvar_death_flag	equ	0FF2Eh		; global death flag (shared)
+gvar_dir_toggle	equ	0FF2Fh		; global dir-toggle flag
+gvar_completion	equ	0FF30h		; completion/stage flag
+gvar_spawn_fx_flag	equ	0FF75h		; spawn VFX flag
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
@@ -100,8 +105,9 @@ _312MAPST	proc	far
 ; mis-parsed the file's header fields and pointer descriptors as
 ; x86 instructions. The actual executable entry is reached via the
 ; dispatch table in game DS; the real instruction stream begins at
-; loc_1 (file 0x210) after the tile layout data below.
+; main_entry (file 0x210) after the tile layout data below.
 ; ------------------------------------------------------------------
+
 start:
 		sub	byte ptr ds:[0],al	; header word 0x0028 (file 0..3 as x86)
 		mov	dh,0A1h			; header field
@@ -129,7 +135,7 @@ start:
 		db	 02h, 1Ch, 10h, 1Dh, 10h, 02h
 		db	 28h, 10h, 29h, 2Ah, 02h, 18h
 		db	 2Bh, 1Ah, 2Ch, 02h
-data_8		dw	102Dh
+zela_const_word_8		dw	102Dh
 		db	 2Eh, 10h, 02h, 11h, 07h, 12h
 		db	 2Fh, 02h, 30h, 15h, 31h, 17h
 		db	 02h, 32h, 33h, 34h, 35h, 02h
@@ -156,9 +162,10 @@ data_8		dw	102Dh
 		db	 82h, 10h, 59h, 2Ah, 02h, 73h
 		db	 83h, 74h, 84h, 02h
 		db	 76h, 77h, 4Fh, 78h
-data_9		dw	2
+zela_rng_fn_ptr		dw	2
 		db	85h
-loc_1:
+
+main_entry:
 		xchg	byte ptr ds:[9302h][bx],al
 		xchg	sp,ax
 		xchg	bp,ax
@@ -169,7 +176,7 @@ loc_1:
 		xchg	di,ax
 		cbw				; Convrt byte to word
 		cwd				; Word to double word
-;*		call	far ptr sub_7		;*
+;*		call	far ptr zela_far_sub_7		;*
 		db	9Ah
 		dw	0A402h, 0A6A5h		;  Fixup - byte match
 		cmpsw				; Cmp [si] to es:[di]
@@ -198,407 +205,451 @@ loc_1:
 		db	 8Bh, 36h, 10h,0C0h,0C6h, 06h
 		db	 0Ah,0A6h, 00h,0C6h, 06h, 0Ch
 		db	0A6h, 00h
-loc_2:
+
+npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-		db	 83h, 3Ch,0FFh		;  Fixup - byte match
-		jz	loc_4			; Jump if zero
-		mov	ax,[si]
-		call	word ptr cs:data_17e
-		jc	loc_3			; Jump if carry Set
-		mov	[si+3],bl
-		mov	ax,[si+2]
-		call	word ptr cs:data_16e
-		mov	bl,ds:data_40e
-		xor	bh,bh			; Zero register
-		mov	al,ds:data_53e[bx]
-		mov	[di],al
-		test	byte ptr [si+5],40h	; '@'
-		jz	loc_3			; Jump if zero
-		test	byte ptr ds:data_42e,80h
-		jnz	loc_3			; Jump if not zero
-		mov	al,[si+5]
-		and	al,1Fh
-		mov	ds:data_42e,al
-loc_3:
-		inc	byte ptr ds:data_40e
-		add	si,10h
-		jmp	short loc_2
-loc_4:
-		mov	si,ds:data_52e
+			db	 83h, 3Ch,0FFh		;  Fixup - byte match
+			jz	npc_scan_done			; Jump if zero
+			mov	ax,[si]
+			call	word ptr cs:zela_cb_npc_step
+			jc	npc_scan_next			; Jump if carry Set
+			mov	[si+3],bl
+			mov	ax,[si+2]
+			call	word ptr cs:zela_cb_tile_query
+			mov	bl,ds:zela_npc_idx
+			xor	bh,bh			; Zero register
+			mov	al,ds:sprite_xlat_tbl[bx]
+			mov	[di],al
+			test	byte ptr [si+5],40h	; '@'
+			jz	npc_scan_next			; Jump if zero
+			test	byte ptr ds:zela_anim_byte,80h
+			jnz	npc_scan_next			; Jump if not zero
+			mov	al,[si+5]
+			and	al,1Fh
+			mov	ds:zela_anim_byte,al
+
+npc_scan_next:
+			inc	byte ptr ds:zela_npc_idx
+			add	si,10h
+			jmp	short npc_scan_loop
+
+npc_scan_done:
+		mov	si,ds:enemy_attr_base
 		mov	word ptr [si],0FFFFh
-		test	byte ptr ds:data_42e,0FFh
-		jz	loc_9			; Jump if zero
-		mov	al,ds:data_42e
+		test	byte ptr ds:zela_anim_byte,0FFh
+		jz	post_scroll_check_walk			; Jump if zero
+		mov	al,ds:zela_anim_byte
 		push	ax
 		and	al,1Fh
-		call	word ptr cs:data_18e
+		call	word ptr cs:zela_cb_entity_act
 		mov	bl,ah
 		pop	ax
 		shr	bl,1			; Shift w/zeros fill
 		xor	bh,bh			; Zero register
 		cmp	al,4
-		jne	loc_5			; Jump if not equal
+		jne	npc_anim_other			; Jump if not equal
 		add	bx,bx
 		add	bx,bx
-		mov	byte ptr ds:data_57e,24h	; '$'
-		jmp	short loc_6
-loc_5:
-		mov	byte ptr ds:data_57e,25h	; '%'
-loc_6:
-		call	sub_6
-		mov	ax,data_8
+		mov	byte ptr ds:gvar_spawn_fx_flag,24h	; '$'
+		jmp	short npc_anim_apply_scroll
+
+npc_anim_other:
+		mov	byte ptr ds:gvar_spawn_fx_flag,25h	; '%'
+
+npc_anim_apply_scroll:
+		call	scroll_apply
+		mov	ax,zela_const_word_8
 		add	ax,0Fh
 		mov	bx,ax
-		sub	ax,ds:data_51e
-		jc	loc_7			; Jump if carry Set
+		sub	ax,ds:gvar_proj_cnt
+		jc	scroll_clamp_b			; Jump if carry Set
 		xchg	bx,ax
-loc_7:
-		mov	ax,ds:data_30e
+
+scroll_clamp_b:
+		mov	ax,ds:zela_scroll_x
 		sub	ax,bx
-		jnc	loc_8			; Jump if carry=0
-		call	sub_5
-		call	sub_5
-		jmp	short loc_9
-loc_8:
-		call	sub_4
-		call	sub_4
-loc_9:
-		test	byte ptr ds:data_34e,0FFh
-		jz	loc_10			; Jump if zero
-		jmp	loc_22
-loc_10:
-		test	byte ptr ds:data_35e,0FFh
-		jnz	loc_14			; Jump if not zero
-		call	word ptr cs:data_9
+		jnc	scroll_step_inc_x			; Jump if carry=0
+		call	bound_xpos_dec
+		call	bound_xpos_dec
+		jmp	short post_scroll_check_walk
+
+scroll_step_inc_x:
+		call	bound_xpos_inc
+		call	bound_xpos_inc
+
+post_scroll_check_walk:
+		test	byte ptr ds:zela_walk_state,0FFh
+		jz	state_check_phase_started			; Jump if zero
+		jmp	phase_check_death
+
+state_check_phase_started:
+		test	byte ptr ds:zela_phase_started,0FFh
+		jnz	state_post_phase_set			; Jump if not zero
+		call	word ptr cs:zela_rng_fn_ptr
 		and	al,0Fh
-		jz	loc_11			; Jump if zero
-		jmp	loc_22
-loc_11:
-		test	byte ptr ds:data_54e,0FFh
-		jz	loc_12			; Jump if zero
-		jmp	loc_22
-loc_12:
-		mov	byte ptr ds:data_35e,0FFh
-		mov	byte ptr ds:data_37e,0FFh
-		mov	byte ptr ds:data_36e,0FFh
-		mov	byte ptr ds:data_38e,0
-		mov	byte ptr ds:data_39e,0
-		mov	ax,data_8
+		jz	state_check_death_flag			; Jump if zero
+		jmp	phase_check_death
+
+state_check_death_flag:
+		test	byte ptr ds:gvar_death_flag,0FFh
+		jz	state_set_phase_flags			; Jump if zero
+		jmp	phase_check_death
+
+state_set_phase_flags:
+		mov	byte ptr ds:zela_phase_started,0FFh
+		mov	byte ptr ds:zela_phase_subflag,0FFh
+		mov	byte ptr ds:zela_phase_active,0FFh
+		mov	byte ptr ds:zela_phase_step,0
+		mov	byte ptr ds:zela_phase_subcnt,0
+		mov	ax,zela_const_word_8
 		add	ax,0Eh
 		mov	bx,ax
-		sub	ax,ds:data_51e
-		jc	loc_13			; Jump if carry Set
+		sub	ax,ds:gvar_proj_cnt
+		jc	state_phase_clamp_b			; Jump if carry Set
 		xchg	bx,ax
-loc_13:
-		mov	ax,ds:data_30e
+
+state_phase_clamp_b:
+		mov	ax,ds:zela_scroll_x
 		sub	ax,bx
-		jnc	loc_14			; Jump if carry=0
-		mov	byte ptr ds:data_36e,0
-loc_14:
-		add	byte ptr ds:data_33e,2
-		and	byte ptr ds:data_33e,6
-		test	byte ptr ds:data_37e,0FFh
-		jz	loc_17			; Jump if zero
-		inc	byte ptr ds:data_39e
-		and	byte ptr ds:data_39e,3
-		jz	loc_15			; Jump if zero
-		jmp	loc_29
-loc_15:
-		mov	byte ptr ds:data_37e,0
-		test	byte ptr ds:data_35e,80h
-		jz	loc_16			; Jump if zero
-		jmp	loc_29
-loc_16:
-		mov	byte ptr ds:data_35e,0
-		jmp	loc_29
-loc_17:
-		mov	bl,ds:data_38e
-		inc	byte ptr ds:data_38e
+		jnc	state_post_phase_set			; Jump if carry=0
+		mov	byte ptr ds:zela_phase_active,0
+
+state_post_phase_set:
+		add	byte ptr ds:zela_tile_phase,2
+		and	byte ptr ds:zela_tile_phase,6
+		test	byte ptr ds:zela_phase_subflag,0FFh
+		jz	state_idle_advance_phase			; Jump if zero
+		inc	byte ptr ds:zela_phase_subcnt
+		and	byte ptr ds:zela_phase_subcnt,3
+		jz	state_clear_subflag			; Jump if zero
+		jmp	phase_set_tile_pattern
+
+state_clear_subflag:
+		mov	byte ptr ds:zela_phase_subflag,0
+		test	byte ptr ds:zela_phase_started,80h
+		jz	state_clear_phase_started			; Jump if zero
+		jmp	phase_set_tile_pattern
+
+state_clear_phase_started:
+		mov	byte ptr ds:zela_phase_started,0
+		jmp	phase_set_tile_pattern
+
+state_idle_advance_phase:
+		mov	bl,ds:zela_phase_step
+		inc	byte ptr ds:zela_phase_step
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		call	word ptr ds:data_21e[bx]	;*
-		jmp	loc_29
-			                        ;* No entry point to code
-		; Original emitted explicit DS: segment overrides (3E prefix) on several
-		; mov instructions; TASM drops them. Replace with raw bytes from reference.
+		call	word ptr ds:zela_dispatch_tbl[bx]	;*
+		jmp	phase_set_tile_pattern
+
+; -------------------------------------------------------------------------
+; zela_unk_handler_1 -- dispatch handler reached via DS dispatch table
+; (call [zela_dispatch_tbl+bx]).  The bytes assemble to a sequence of
+; mov-immediate stores into 0xA3xx state slots (Sourcer dropped the
+; explicit 3E DS-override prefixes that TASM does not preserve verbatim;
+; reference bytes kept as raw db so the encoding round-trips bit-perfect).
+; Final 'C3' byte = retn.
+; -------------------------------------------------------------------------
+
+zela_unk_handler_1:				; entered via zela_dispatch_tbl
 		db	34h, 0A3h, 3Eh, 0A3h, 3Eh, 0A3h, 3Eh, 0A3h, 48h, 0A3h, 48h, 0A3h
 		db	43h, 0A3h, 43h, 0A3h, 43h, 0A3h, 1Bh, 0A3h, 0C6h, 06h, 05h, 0A6h
 		db	7Fh, 0C6h, 06h, 07h, 0A6h, 7Fh, 0C6h, 06h, 0Fh, 0A6h, 00h, 0FEh
-		db	06h, 0F0h, 0A5h, 80h, 26h, 0F0h, 0A5h, 3Fh, 0C3h
+		db	06h, 0F0h, 0A5h, 80h, 26h, 0F0h, 0A5h, 3Fh, 0C3h	; ends with retn
 
 _312MAPST	endp
 
 ;==========================================================================
-; sub_2 - decrement counter byte (data_31e) modulo 64
+; scroll_phase_dec - decrement counter byte (zela_scroll_phase) modulo 64
 ;==========================================================================
 
-sub_2		proc	near
-		dec	byte ptr ds:data_31e
-		and	byte ptr ds:data_31e,3Fh	; '?'
+scroll_phase_dec		proc	near
+		dec	byte ptr ds:zela_scroll_phase
+		and	byte ptr ds:zela_scroll_phase,3Fh	; '?'
 		retn
-sub_2		endp
+
+scroll_phase_dec		endp
 
 ; ------------------------------------------------------------------
-; Dispatch-table handler (entered via call [data_21e+bx] in main):
-; calls sub_2 then jumps into loc_18 which continues below. The
-; 5 trailing db bytes are a duplicate "call sub_2 / jmp short +0"
-; sequence used by an alternate caller (alt-encoding of call E8h).
+; zela_unk_handler_2 - dispatch handler entered via zela_dispatch_tbl[bx]:
+; calls scroll_phase_dec then jumps into scroll_phase_dispatch which
+; continues below. The 5 trailing db bytes are a duplicate
+; "call scroll_phase_dec / jmp short +0" sequence used by an alternate
+; caller (alt-encoding of call E8h).
 ; ------------------------------------------------------------------
-			                        ;* No entry point to code
-		call	sub_2
-		jmp	short loc_18
-		db	0E8h,0E4h,0FFh,0EBh, 00h	; alt: call sub_2 / jmp short (alt-encoded entry)
-loc_18:
-		test	byte ptr ds:data_45e,0FFh
-		jz	loc_19			; Jump if zero
+
+zela_unk_handler_2:				; entered via zela_dispatch_tbl
+		call	scroll_phase_dec
+		jmp	short scroll_phase_dispatch
+		db	0E8h,0E4h,0FFh,0EBh, 00h	; alt: call scroll_phase_dec / jmp short (alt-encoded entry)
+
+scroll_phase_dispatch:
+		test	byte ptr ds:zela_attack_done,0FFh
+		jz	scroll_phase_check_clamp			; Jump if zero
 		retn
-loc_19:
-		mov	ax,data_8
+
+scroll_phase_check_clamp:
+		mov	ax,zela_const_word_8
 		add	ax,0Ch
 		mov	bx,ax
-		sub	ax,ds:data_51e
-		jc	loc_20			; Jump if carry Set
+		sub	ax,ds:gvar_proj_cnt
+		jc	scroll_phase_check_xpos			; Jump if carry Set
 		xchg	bx,ax
-loc_20:
-		mov	ax,ds:data_30e
+
+scroll_phase_check_xpos:
+		mov	ax,ds:zela_scroll_x
 		sub	ax,bx
-		jnz	loc_21			; Jump if not zero
+		jnz	scroll_phase_pop_dispatch			; Jump if not zero
 		retn
-loc_21:
+
+scroll_phase_pop_dispatch:
 		pop	ax
-		test	byte ptr ds:data_36e,0FFh
-		jnz	loc_26			; Jump if not zero
-		jmp	short loc_28
-loc_22:
-		test	byte ptr ds:data_54e,0FFh
-		jz	loc_23			; Jump if zero
-		jmp	loc_46
-loc_23:
-		dec	byte ptr ds:data_41e
-		jnz	loc_24			; Jump if not zero
-		mov	byte ptr ds:data_41e,2
-		inc	byte ptr ds:data_33e
-		and	byte ptr ds:data_33e,7
-loc_24:
-		mov	ax,data_8
+		test	byte ptr ds:zela_phase_active,0FFh
+		jnz	phase_dispatch_x_dec			; Jump if not zero
+		jmp	short phase_dispatch_x_inc
+
+phase_check_death:
+		test	byte ptr ds:gvar_death_flag,0FFh
+		jz	phase_check_anim_timer			; Jump if zero
+		jmp	death_handler
+
+phase_check_anim_timer:
+		dec	byte ptr ds:zela_anim_timer
+		jnz	phase_clamp_a			; Jump if not zero
+		mov	byte ptr ds:zela_anim_timer,2
+		inc	byte ptr ds:zela_tile_phase
+		and	byte ptr ds:zela_tile_phase,7
+
+phase_clamp_a:
+		mov	ax,zela_const_word_8
 		add	ax,12h
 		mov	bx,ax
-		sub	ax,ds:data_51e
-		jnc	loc_25			; Jump if carry=0
+		sub	ax,ds:gvar_proj_cnt
+		jnc	phase_check_xpos			; Jump if carry=0
 		xchg	bx,ax
-loc_25:
-		sub	ax,ds:data_30e
-		jnc	loc_27			; Jump if carry=0
-		test	byte ptr ds:data_33e,0FFh
-		jnz	loc_29			; Jump if not zero
-loc_26:
-		call	sub_5
-		jnc	loc_29			; Jump if carry=0
-		mov	byte ptr ds:data_45e,0FFh
-		jmp	short loc_29
-loc_27:
-		cmp	byte ptr ds:data_33e,4
-		jne	loc_29			; Jump if not equal
-loc_28:
-		call	sub_4
-		jnc	loc_29			; Jump if carry=0
-		mov	byte ptr ds:data_45e,0FFh
-loc_29:
-		mov	bl,ds:data_33e
+
+phase_check_xpos:
+		sub	ax,ds:zela_scroll_x
+		jnc	phase_check_tile_phase4			; Jump if carry=0
+		test	byte ptr ds:zela_tile_phase,0FFh
+		jnz	phase_set_tile_pattern			; Jump if not zero
+
+phase_dispatch_x_dec:
+		call	bound_xpos_dec
+		jnc	phase_set_tile_pattern			; Jump if carry=0
+		mov	byte ptr ds:zela_attack_done,0FFh
+		jmp	short phase_set_tile_pattern
+
+phase_check_tile_phase4:
+		cmp	byte ptr ds:zela_tile_phase,4
+		jne	phase_set_tile_pattern			; Jump if not equal
+
+phase_dispatch_x_inc:
+		call	bound_xpos_inc
+		jnc	phase_set_tile_pattern			; Jump if carry=0
+		mov	byte ptr ds:zela_attack_done,0FFh
+
+phase_set_tile_pattern:
+		mov	bl,ds:zela_tile_phase
 		xor	bh,bh			; Zero register
-		mov	dl,ds:data_25e[bx]
+		mov	dl,ds:zela_xlat_tbl[bx]
 		xor	dh,dh			; Zero register
-		mov	di,data_46e
+		mov	di,zela_tile_buf_lbl
 		mov	cx,0Ch
 
-locloop_30:
-		mov	[di],dx
-		add	di,2
-		inc	dh
-		loop	locloop_30		; Loop if cx > 0
+tile_fill_loop:
+			mov	[di],dx
+			add	di,2
+			inc	dh
+			loop	tile_fill_loop		; Loop if cx > 0
 
-		test	byte ptr ds:data_35e,0FFh
-		jnz	loc_37			; Jump if not zero
-		test	byte ptr ds:data_34e,0FFh
-		jz	loc_31			; Jump if zero
-		cmp	byte ptr ds:data_34e,1
-		je	loc_36			; Jump if equal
-		jmp	short loc_33
-loc_31:
-		call	word ptr cs:data_9
+		test	byte ptr ds:zela_phase_started,0FFh
+		jnz	npc_state_done			; Jump if not zero
+		test	byte ptr ds:zela_walk_state,0FFh
+		jz	npc_state_idle			; Jump if zero
+		cmp	byte ptr ds:zela_walk_state,1
+		je	npc_state_walk1_set			; Jump if equal
+		jmp	short npc_state_walk2_set
+
+npc_state_idle:
+		call	word ptr cs:zela_rng_fn_ptr
 		and	al,1
-		jnz	loc_37			; Jump if not zero
-		mov	ax,data_8
+		jnz	npc_state_done			; Jump if not zero
+		mov	ax,zela_const_word_8
 		add	ax,12h
 		mov	bx,ax
-		sub	ax,ds:data_51e
-		jc	loc_32			; Jump if carry Set
+		sub	ax,ds:gvar_proj_cnt
+		jc	npc_state_clamp_b			; Jump if carry Set
 		xchg	bx,ax
-loc_32:
-		mov	ax,ds:data_30e
+
+npc_state_clamp_b:
+		mov	ax,ds:zela_scroll_x
 		sub	ax,bx
-		jnc	loc_35			; Jump if carry=0
+		jnc	npc_state_check_walk1			; Jump if carry=0
 		dec	bx
 		dec	bx
-		mov	ax,ds:data_30e
+		mov	ax,ds:zela_scroll_x
 		add	ax,7
 		sub	ax,bx
-		jnc	loc_37			; Jump if carry=0
-		cmp	byte ptr ds:data_33e,6
-		jne	loc_37			; Jump if not equal
-		mov	byte ptr ds:data_34e,2
-loc_33:
-		mov	byte ptr ds:data_49e,0Ch
-		mov	byte ptr ds:data_50e,0Dh
-		test	byte ptr ds:data_33e,0FFh
-		jnz	loc_34			; Jump if not zero
-		call	sub_3
-loc_34:
-		jmp	short loc_37
-loc_35:
-		cmp	byte ptr ds:data_33e,2
-		jne	loc_37			; Jump if not equal
-		mov	byte ptr ds:data_34e,1
-loc_36:
-		mov	byte ptr ds:data_47e,0Eh
-		mov	byte ptr ds:data_48e,0Fh
-		cmp	byte ptr ds:data_33e,4
-		jne	loc_37			; Jump if not equal
-		call	sub_3
-loc_37:
-		mov	byte ptr ds:data_40e,0
+		jnc	npc_state_done			; Jump if carry=0
+		cmp	byte ptr ds:zela_tile_phase,6
+		jne	npc_state_done			; Jump if not equal
+		mov	byte ptr ds:zela_walk_state,2
+
+npc_state_walk2_set:
+		mov	byte ptr ds:zela_tile_field_c,0Ch
+		mov	byte ptr ds:zela_tile_field_d,0Dh
+		test	byte ptr ds:zela_tile_phase,0FFh
+		jnz	npc_state_walk2_skip_init			; Jump if not zero
+		call	init_tile_slots
+
+npc_state_walk2_skip_init:
+		jmp	short npc_state_done
+
+npc_state_check_walk1:
+		cmp	byte ptr ds:zela_tile_phase,2
+		jne	npc_state_done			; Jump if not equal
+		mov	byte ptr ds:zela_walk_state,1
+
+npc_state_walk1_set:
+		mov	byte ptr ds:zela_tile_field_a,0Eh
+		mov	byte ptr ds:zela_tile_field_b,0Fh
+		cmp	byte ptr ds:zela_tile_phase,4
+		jne	npc_state_done			; Jump if not equal
+		call	init_tile_slots
+
+npc_state_done:
+		mov	byte ptr ds:zela_npc_idx,0
 		mov	di,0A610h
-		mov	si,ds:data_52e
-		mov	ax,ds:data_30e
+		mov	si,ds:enemy_attr_base
+		mov	ax,ds:zela_scroll_x
 		mov	cx,4
 
-locloop_38:
-		push	cx
-		push	ax
-		call	word ptr cs:data_17e
-		pop	ax
-		mov	ds:data_43e,bl
-		jnc	loc_39			; Jump if carry=0
-		add	di,6
-		jmp	short loc_41
-loc_39:
-		mov	bl,ds:data_31e
-		mov	cx,3
+npc_update_outer:
+			push	cx
+			push	ax
+			call	word ptr cs:zela_cb_npc_step
+			pop	ax
+			mov	ds:zela_npc_ai_byte,bl
+			jnc	npc_update_emit			; Jump if carry=0
+			add	di,6
+			jmp	short npc_update_outer_next
 
-locloop_40:
-		push	cx
-		mov	[si],ax
-		mov	[si+2],bl
-		mov	dl,ds:data_43e
-		mov	[si+3],dl
-		mov	dl,[di]
-		mov	[si+4],dl
-		mov	byte ptr [si+5],0
-		mov	dl,[di+1]
-		mov	[si+6],dl
-		add	di,2
-		push	ax
-		push	bx
-		push	di
-		mov	ax,[si+2]
-		call	word ptr cs:data_16e
-		mov	bl,ds:data_40e
-		xor	bh,bh			; Zero register
-		mov	al,bl
-		or	al,80h
-		xchg	[di],al
-		mov	ds:data_53e[bx],al
-		add	si,10h
-		inc	byte ptr ds:data_40e
-		pop	di
-		pop	bx
-		pop	ax
-		add	bl,2
-		and	bl,3Fh			; '?'
-		pop	cx
-		loop	locloop_40		; Loop if cx > 0
+npc_update_emit:
+			mov	bl,ds:zela_scroll_phase
+			mov	cx,3
 
-loc_41:
-		inc	ax
-		inc	ax
-		pop	cx
-		loop	locloop_38		; Loop if cx > 0
+npc_update_inner:
+				push	cx
+				mov	[si],ax
+				mov	[si+2],bl
+				mov	dl,ds:zela_npc_ai_byte
+				mov	[si+3],dl
+				mov	dl,[di]
+				mov	[si+4],dl
+				mov	byte ptr [si+5],0
+				mov	dl,[di+1]
+				mov	[si+6],dl
+				add	di,2
+				push	ax
+				push	bx
+				push	di
+				mov	ax,[si+2]
+				call	word ptr cs:zela_cb_tile_query
+				mov	bl,ds:zela_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,bl
+				or	al,80h
+				xchg	[di],al
+				mov	ds:sprite_xlat_tbl[bx],al
+				add	si,10h
+				inc	byte ptr ds:zela_npc_idx
+				pop	di
+				pop	bx
+				pop	ax
+				add	bl,2
+				and	bl,3Fh			; '?'
+				pop	cx
+				loop	npc_update_inner		; Loop if cx > 0
+
+npc_update_outer_next:
+			inc	ax
+			inc	ax
+			pop	cx
+			loop	npc_update_outer		; Loop if cx > 0
 
 		mov	word ptr [si],0FFFFh
 		retn
 
 ; ------------------------------------------------------------------
-; 8 bytes of data between procs -- small lookup row referenced by
-; the dispatch table above. Sourcer decoded as 'add al,[bx+di]...'
-; which is bogus; the real meaning is 4 x 2-byte records.
+; zela_dispatch_lookup_row -- 8 bytes of data between procs.  Small lookup
+; row indexed by entries in zela_dispatch_tbl; values are 4 x 2-byte
+; records (Sourcer mis-decoded as x86 code).  Kept as decoded mnemonics
+; so byte sequence round-trips cleanly while showing the data layout.
 ; ------------------------------------------------------------------
-			                        ;* No entry point to code
+
+zela_dispatch_lookup_row:			; data, referenced via dispatch table
 		add	al,[bx+di]		; data: 02 01
 		add	[bp+di],al		; data: 00 03
 		add	al,3			; data: 04 03
 		add	[bx+di],al		; data: 00 01
 
 ;==========================================================================
-; sub_3 - initialise 3 tile-data slots (data_29e/27e/26e/28e)
+; init_tile_slots - initialise 3 tile-data slots (zela_init_field_d/27e/26e/28e)
 ;        from current scroll position, then dispatch per-column init
 ;==========================================================================
 
-sub_3		proc	near
-		mov	al,ds:data_31e
+init_tile_slots		proc	near
+		mov	al,ds:zela_scroll_phase
 		add	al,3
 		and	al,3Fh			; '?'
-		mov	ds:data_29e,al
-		mov	ds:data_27e,al
-		mov	ax,ds:data_30e
+		mov	ds:zela_init_field_d,al
+		mov	ds:zela_init_field_b,al
+		mov	ax,ds:zela_scroll_x
 		inc	ax
-		call	word ptr cs:data_17e
-		mov	ds:data_26e,bl
-		mov	ax,ds:data_30e
+		call	word ptr cs:zela_cb_npc_step
+		mov	ds:zela_init_record,bl
+		mov	ax,ds:zela_scroll_x
 		add	ax,7
-		call	word ptr cs:data_17e
-		mov	ds:data_28e,bl
-		mov	al,ds:data_34e
+		call	word ptr cs:zela_cb_npc_step
+		mov	ds:zela_init_field_c,bl
+		mov	al,ds:zela_walk_state
 		dec	al
 		mov	cl,0Dh
 		mul	cl			; ax = reg * al
 		add	ax,0A552h
 		mov	bx,ax
-		call	word ptr cs:data_19e
-		mov	byte ptr ds:data_34e,0
+		call	word ptr cs:zela_cb_init_tiles
+		mov	byte ptr ds:zela_walk_state,0
 		retn
-sub_3		endp
 
+init_tile_slots		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_4		proc	near
-		cmp	byte ptr ds:data_30e,32h	; '2'
+bound_xpos_inc		proc	near
+		cmp	byte ptr ds:zela_scroll_x,32h	; '2'
 		stc				; Set carry flag
-		jnz	loc_42			; Jump if not zero
+		jnz	xpos_inc_apply			; Jump if not zero
 		retn
-loc_42:
-		inc	byte ptr ds:data_30e
+
+xpos_inc_apply:
+		inc	byte ptr ds:zela_scroll_x
 		clc				; Clear carry flag
 		retn
-sub_4		endp
 
+bound_xpos_inc		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_5		proc	near
-		cmp	byte ptr ds:data_30e,11h
+bound_xpos_dec		proc	near
+		cmp	byte ptr ds:zela_scroll_x,11h
 		stc				; Set carry flag
-		jnz	loc_43			; Jump if not zero
+		jnz	xpos_dec_apply			; Jump if not zero
 		retn
-loc_43:
-		dec	byte ptr ds:data_30e
+
+xpos_dec_apply:
+		dec	byte ptr ds:zela_scroll_x
 		clc				; Clear carry flag
 		retn
-sub_5		endp
+
+bound_xpos_dec		endp
 
 		db	 00h, 00h, 15h, 00h, 32h, 04h
 		db	 50h
@@ -606,73 +657,78 @@ sub_5		endp
 		db	 14h, 00h, 32h, 00h, 50h, 00h
 		db	 00h, 00h, 00h, 00h, 00h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_6		proc	near
-		mov	ax,ds:data_32e
+scroll_apply		proc	near
+		mov	ax,ds:zela_scroll_y
 		sub	ax,bx
-		jnc	loc_44			; Jump if carry=0
+		jnc	scroll_y_clamped			; Jump if carry=0
 		xor	ax,ax			; Zero register
-loc_44:
-		mov	ds:data_32e,ax
+
+scroll_y_clamped:
+		mov	ds:zela_scroll_y,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:data_15e
+		call	word ptr cs:zela_cb_scroll
 		pop	ax
 		or	ax,ax			; Zero ?
-		jz	loc_45			; Jump if zero
+		jz	scroll_apply_done			; Jump if zero
 		retn
-loc_45:
-		mov	byte ptr ds:data_54e,0FFh
-		mov	byte ptr ds:data_44e,0
-		mov	byte ptr ds:data_34e,0
-		jmp	word ptr cs:data_20e
-sub_6		endp
 
-loc_46:
-		cmp	byte ptr ds:data_44e,28h	; '('
-		jae	loc_51			; Jump if above or =
-		mov	byte ptr ds:data_55e,0FFh
-		inc	byte ptr ds:data_44e
-		cmp	byte ptr ds:data_44e,15h
-		jae	loc_50			; Jump if above or =
-		test	byte ptr ds:data_44e,3
-		jnz	loc_47			; Jump if not zero
-		mov	byte ptr ds:data_57e,28h	; '('
-loc_47:
-		inc	byte ptr ds:data_33e
-		and	byte ptr ds:data_33e,7
-loc_48:
-		mov	bx,data_25e
-		mov	al,ds:data_33e
-		xlat				; al=[al+[bx]] table
-		xor	ah,ah			; Zero register
-		mov	di,data_46e
-		mov	cx,0Ch
+scroll_apply_done:
+		mov	byte ptr ds:gvar_death_flag,0FFh
+		mov	byte ptr ds:zela_death_timer,0
+		mov	byte ptr ds:zela_walk_state,0
+		jmp	word ptr cs:zela_cb_finalize
 
-locloop_49:
-		mov	[di],ax
-		add	di,2
-		inc	ah
-		loop	locloop_49		; Loop if cx > 0
+scroll_apply		endp
 
-		jmp	loc_37
-loc_50:
-		mov	byte ptr ds:data_33e,2
-		jmp	short loc_48
-loc_51:
-		mov	byte ptr ds:data_56e,0FFh
+death_handler:
+		cmp	byte ptr ds:zela_death_timer,28h	; '('
+		jae	death_done_set_completion			; Jump if above or =
+		mov	byte ptr ds:gvar_dir_toggle,0FFh
+		inc	byte ptr ds:zela_death_timer
+		cmp	byte ptr ds:zela_death_timer,15h
+		jae	death_phase_reset			; Jump if above or =
+		test	byte ptr ds:zela_death_timer,3
+		jnz	death_phase_advance			; Jump if not zero
+		mov	byte ptr ds:gvar_spawn_fx_flag,28h	; '('
+
+death_phase_advance:
+		inc	byte ptr ds:zela_tile_phase
+		and	byte ptr ds:zela_tile_phase,7
+
+death_tile_fill:
+			mov	bx,zela_xlat_tbl
+			mov	al,ds:zela_tile_phase
+			xlat				; al=[al+[bx]] table
+			xor	ah,ah			; Zero register
+			mov	di,zela_tile_buf_lbl
+			mov	cx,0Ch
+
+death_tile_fill_loop:
+				mov	[di],ax
+				add	di,2
+				inc	ah
+				loop	death_tile_fill_loop		; Loop if cx > 0
+
+			jmp	npc_state_done
+
+death_phase_reset:
+			mov	byte ptr ds:zela_tile_phase,2
+			jmp	short death_tile_fill
+
+death_done_set_completion:
+		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 
 ; ------------------------------------------------------------------
-; Module trailer (file 0x623..0x62B): data records / string fragment.
-; Sourcer mis-decoded the first ~24 bytes as x86 code but they are
-; table data feeding the dispatch entries above. The 'gar' bytes
-; starting at 0x643 are a speaker/name string fragment.
+; zela_module_trailer -- module trailer (file 0x623..0x62B):
+; data records + 'gar' string fragment.  Sourcer mis-decoded the
+; first ~24 bytes as x86 code but they are table data feeding the
+; dispatch entries above. The 'gar' bytes (file 0x643) are a
+; speaker/name string fragment from a parent label table.
 ; ------------------------------------------------------------------
-			                        ;* No entry point to code
+
+zela_module_trailer:				; module-tail data block
 		xor	[bx+si],al		; data row
 		or	al,0F4h			; data bytes
 ;*		add	ax,bp
@@ -691,7 +747,5 @@ loc_51:
 		db	27 dup (0)		; pad to module end
 
 seg_a		ends
-
-
 
 		end	start
