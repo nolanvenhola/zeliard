@@ -82,7 +82,7 @@ file_header:
 		db	 00h, 00h, 00h, 00h, 9Ah,0A2h	; init src/dst ptr table
 		db	 14h, 0Ah, 0Ah, 14h, 00h, 00h	; per-slot template A
 		db	 00h, 00h, 28h, 28h, 10h, 28h	; per-slot template B
-		db	 00h
+		db	 00h				; per-slot template C (1-byte tail)
 		db	27 dup (0)			; reserved / padding (offsets 0x019-0x033)
 
 tori_frame_ptr_tbl_a	label	word		; offset 0x034 -- group A pointers
@@ -114,92 +114,126 @@ tori_frame_ptr_tbl_e	label	word		; offset 0x094 -- group E pointers (mirrors B)
 		db	 59h,0A2h, 31h,0A2h, 45h,0A2h	; -> 0xA259, 0xA231, 0xA245
 		db	 6Dh,0A2h, 00h, 00h, 8Bh,0A2h	; -> 0xA26D, slot empty, 0xA28B
 		db	 90h,0A2h, 00h, 00h, 00h, 00h	; -> 0xA290, slots empty
-		db	 86h,0A2h, 95h,0A2h, 00h, 00h	; -> 0xA286, 0xA295
-		db	 00h, 00h, 00h, 01h, 02h, 03h
-		db	 04h, 00h, 05h, 06h, 07h, 08h
-		db	 00h, 09h, 0Ah, 0Bh, 0Ch, 00h
-		db	 0Dh, 0Eh, 0Fh, 10h, 00h, 11h
-		db	 12h, 13h, 14h, 00h, 15h, 16h
-		db	 17h, 18h, 00h, 19h, 1Ah, 1Bh
-		db	 1Ch, 00h, 1Dh, 1Eh, 0Fh, 10h
-		db	 00h, 21h, 22h, 00h, 00h, 00h
-		db	 00h, 00h, 21h, 22h, 00h, 00h
-		db	 00h, 23h, 24h, 00h, 25h, 26h
-		db	 27h, 28h, 00h, 1Dh, 1Eh, 0Fh
-		db	 10h, 00h,0BFh, 1Ah,0C0h, 1Ch
-		db	 00h, 15h, 16h,0C1h,0C2h, 00h
-		db	 11h, 12h, 13h, 14h, 00h, 0Dh
-		db	 0Eh, 0Fh, 10h, 00h,0C3h, 0Ah
-		db	0C4h, 1Ch, 00h, 05h, 06h, 20h
-		db	 1Fh, 00h, 01h, 02h, 03h, 04h
-		db	 00h, 21h, 22h, 00h, 00h, 00h
-		db	 00h, 00h, 21h, 22h, 00h, 00h
-		db	 00h, 23h, 24h, 00h, 25h, 26h
-		db	 27h, 28h, 00h, 29h, 2Ah, 2Bh
-		db	 2Ch, 00h, 2Dh, 2Eh, 2Fh, 30h
-		db	 00h, 31h, 32h, 33h, 34h, 00h
-		db	 00h, 00h, 35h, 36h, 00h, 37h
-		db	 38h, 39h, 3Ah, 00h, 3Bh, 3Ch
-		db	 3Dh, 3Eh, 00h, 3Fh, 40h, 41h
-		db	 42h, 00h, 43h, 44h, 45h, 46h
-		db	 00h, 43h, 44h, 45h, 46h, 00h
-		db	 00h, 00h, 47h, 48h, 00h
-		db	 49h, 4Ah
-		db	'KL', 0
-		db	'MNOP', 0
-		db	'QRST', 0
-		db	'UVWX', 0
-		db	'UVWX', 0
-		db	'YZ[\', 0
-		db	']^_`', 0
-		db	'abcd'
-		db	 00h, 00h, 00h, 65h, 66h, 00h
-		db	 00h, 00h, 67h, 68h, 00h, 00h
-		db	 00h, 69h, 6Ah, 00h, 00h, 00h
-		db	 6Bh, 6Ch, 00h, 6Dh, 6Eh, 6Fh
-		db	 70h, 00h, 76h, 77h, 73h, 74h
-		db	 00h, 76h, 78h, 73h, 74h, 00h
-		db	 00h, 00h, 65h, 66h, 00h, 00h
-		db	 00h, 67h, 68h, 00h, 00h, 00h
-		db	 69h, 6Ah, 00h, 00h, 00h, 6Bh
-		db	 6Ch, 00h, 6Dh, 6Eh, 6Fh, 70h
-		db	 00h, 71h, 72h, 73h, 74h, 00h
-		db	 75h, 72h, 73h, 74h, 00h, 7Bh
-		db	 7Ch, 7Dh, 7Eh, 00h, 7Fh, 80h
-		db	 81h, 82h, 00h, 83h, 84h, 85h
-		db	 86h, 01h, 87h, 88h, 89h, 8Ah
-		db	 01h, 8Bh, 8Ch, 8Dh, 8Eh, 01h
-		db	 8Fh, 90h, 91h, 92h, 01h, 93h
-		db	 94h, 95h, 96h, 01h, 97h, 98h
-		db	 99h, 9Ah, 01h, 9Bh, 9Ch, 9Dh
-		db	 9Eh, 01h, 87h, 88h, 89h, 8Ah
-		db	 01h, 9Fh,0A0h,0A1h,0A2h, 01h
-		db	0A3h,0A4h,0A5h,0A6h, 01h,0A7h
-		db	0A8h,0A9h,0AAh, 01h,0ABh,0ACh
-		db	0ADh,0AEh, 01h,0AFh,0B0h,0B1h
-		db	0B2h, 01h,0B3h,0B4h,0B5h,0B6h
-		db	 01h,0B7h,0B8h,0B9h,0BAh, 01h
-		db	0BBh,0BCh,0BDh,0BEh, 01h,0EFh
-		db	0F0h,0F1h,0F2h, 01h,0F3h,0C5h
-		db	0C6h,0C7h, 01h,0C8h,0C9h,0CAh
-		db	0CBh, 00h,0CCh,0CDh,0CEh,0CFh
-		db	 00h,0D0h,0D1h,0D2h,0D3h, 00h
-		db	0D4h,0D5h,0D6h,0D7h, 00h,0D0h
-		db	0D1h,0D2h,0D3h, 02h,0CCh,0CDh
-		db	0CEh,0CFh, 02h,0D0h,0D1h,0D2h
-		db	0D3h, 02h,0D4h,0D5h,0D6h,0D7h
-		db	 02h,0D0h,0D1h,0D2h,0D3h, 00h
-		db	0D8h,0D9h,0DAh,0DBh, 00h,0D8h
-		db	0D9h,0DAh,0DBh, 00h,0D8h,0D9h
-		db	0DAh,0DBh, 00h,0D8h,0D9h,0DAh
-		db	0DBh, 01h,0DCh,0DDh,0DEh,0DFh
-		db	 01h,0E4h,0ECh,0E4h,0ECh, 01h
-		db	0E5h,0ECh,0E6h,0ECh, 01h,0E7h
-		db	0E8h,0E9h,0EAh, 01h, 00h, 00h
-		db	 00h,0EBh, 02h,0E0h,0E1h,0E2h
-		db	0E3h, 00h,0EDh,0EEh, 79h, 7Ah
-		db	 02h,0EDh,0EEh, 79h, 7Ah, 01h
-		db	0F4h,0F5h,0F6h,0F7h			; -- end of frame data (offsets 0x29C..0x29F)
+		db	 86h,0A2h, 95h,0A2h		; -> 0xA286, 0xA295 (tbl_e ends at 0x0B0)
+
+; -------------------------------------------------------------------------
+;  Frame tile-index data (offsets 0x0B0..0x29D).  Each `tori_frame_NN`
+;  block is referenced by one or more entries in tori_frame_ptr_tbl_a..e.
+;  Bytes are tile indices for a character-cell sprite; 00h, 01h, 02h mark
+;  row-end positions (matches 309CRAB / 310TAKO frame layout).
+; -------------------------------------------------------------------------
+
+tori_frame_00:				; offset 0x0B0 -> ptr 0xA0B0 -- group A[0] head pose
+		db	 00h, 00h, 00h, 00h, 00h, 01h	; row 0
+		db	 02h, 03h, 04h, 00h, 05h, 06h	; row 1
+		db	 07h, 08h, 00h, 09h, 0Ah, 0Bh	; row 2
+		db	 0Ch, 00h, 0Dh, 0Eh, 0Fh, 10h	; row 3
+		db	 00h, 11h, 12h, 13h, 14h, 00h	; row 4
+		db	 15h, 16h, 17h, 18h, 00h, 19h	; row 5
+		db	 1Ah, 1Bh, 1Ch, 00h, 1Dh, 1Eh	; row 6
+		db	 0Fh, 10h, 00h, 21h, 22h, 00h	; row 7
+		db	 00h, 00h, 00h, 00h, 21h, 22h	; row 8
+		db	 00h, 00h, 00h, 23h, 24h, 00h	; row 9
+tori_frame_01:				; offset 0x0EC -> ptr 0xA0EC -- group C[1] head pose
+		db	 25h, 26h, 27h, 28h, 00h, 1Dh	; row 0
+		db	 1Eh, 0Fh, 10h, 00h,0BFh, 1Ah	; row 1
+		db	0C0h, 1Ch, 00h, 15h, 16h,0C1h	; row 2
+		db	0C2h, 00h, 11h, 12h, 13h, 14h	; row 3
+		db	 00h, 0Dh, 0Eh, 0Fh, 10h, 00h	; row 4
+		db	0C3h, 0Ah,0C4h, 1Ch, 00h, 05h	; row 5
+		db	 06h, 20h, 1Fh, 00h, 01h, 02h	; row 6
+		db	 03h, 04h, 00h, 21h, 22h, 00h	; row 7
+		db	 00h, 00h, 00h, 00h, 21h, 22h	; row 8
+		db	 00h, 00h, 00h, 23h, 24h, 00h	; row 9
+tori_frame_02:				; offset 0x128 -> ptr 0xA128 -- group A[8] mid pose
+		db	 25h, 26h, 27h, 28h, 00h, 29h	; row 0
+		db	 2Ah, 2Bh, 2Ch, 00h, 2Dh, 2Eh	; row 1
+		db	 2Fh, 30h, 00h	; row 2
+tori_frame_03:				; offset 0x137 -> ptr 0xA137 -- group C[3] mid pose
+		db	 31h, 32h, 33h, 34h, 00h, 00h	; row 0
+		db	 00h, 35h, 36h, 00h, 37h, 38h	; row 1
+		db	 39h, 3Ah, 00h, 3Bh, 3Ch, 3Dh	; row 2
+		db	 3Eh, 00h, 3Fh, 40h, 41h, 42h	; row 3
+		db	 00h, 43h, 44h, 45h, 46h, 00h	; row 4
+tori_frame_04:				; offset 0x155 -> ptr 0xA155 -- group A[1] swoop pose
+		db	 43h, 44h, 45h, 46h, 00h, 00h	; row 0
+		db	 00h, 47h, 48h, 00h, 49h, 4Ah	; row 1
+		db	 4Bh, 4Ch, 00h, 4Dh, 4Eh, 4Fh	; row 2
+		db	 50h, 00h, 51h, 52h, 53h, 54h	; row 3
+		db	 00h, 55h, 56h, 57h, 58h, 00h	; row 4
+tori_frame_05:				; offset 0x173 -> ptr 0xA173 -- group A[9] swoop pose (alt)
+		db	 55h, 56h, 57h, 58h, 00h, 59h	; row 0
+		db	 5Ah, 5Bh, 5Ch, 00h, 5Dh, 5Eh	; row 1
+		db	 5Fh, 60h, 00h	; row 2
+tori_frame_06:				; offset 0x182 -> ptr 0xA182 -- group C[4] swoop pose
+		db	 61h, 62h, 63h, 64h, 00h, 00h	; row 0
+		db	 00h, 65h, 66h, 00h, 00h, 00h	; row 1
+		db	 67h, 68h, 00h, 00h, 00h, 69h	; row 2
+		db	 6Ah, 00h, 00h, 00h, 6Bh, 6Ch	; row 3
+		db	 00h, 6Dh, 6Eh, 6Fh, 70h, 00h	; row 4
+		db	 76h, 77h, 73h, 74h, 00h	; row 5
+tori_frame_07:				; offset 0x1A5 -> ptr 0xA1A5 -- group A[2] dive pose
+		db	 76h, 78h, 73h, 74h, 00h, 00h	; row 0
+		db	 00h, 65h, 66h, 00h, 00h, 00h	; row 1
+		db	 67h, 68h, 00h, 00h, 00h, 69h	; row 2
+		db	 6Ah, 00h, 00h, 00h, 6Bh, 6Ch	; row 3
+		db	 00h, 6Dh, 6Eh, 6Fh, 70h, 00h	; row 4
+		db	 71h, 72h, 73h, 74h, 00h	; row 5
+tori_frame_08:				; offset 0x1C8 -> ptr 0xA1C8 -- group A[10] dive pose (alt)
+		db	 75h, 72h, 73h, 74h, 00h, 7Bh	; row 0
+		db	 7Ch, 7Dh, 7Eh, 00h, 7Fh, 80h	; row 1
+		db	 81h, 82h, 00h	; row 2
+tori_frame_09:				; offset 0x1D7 -> ptr 0xA1D7 -- group A[3] flap pose
+		db	 83h, 84h, 85h, 86h, 01h, 87h	; row 0
+		db	 88h, 89h, 8Ah, 01h, 8Bh, 8Ch	; row 1
+		db	 8Dh, 8Eh, 01h, 8Fh, 90h, 91h	; row 2
+		db	 92h, 01h, 93h, 94h, 95h, 96h	; row 3
+		db	 01h, 97h, 98h, 99h, 9Ah, 01h	; row 4
+tori_frame_0a:				; offset 0x1F5 -> ptr 0xA1F5 -- group C[5] flap pose
+		db	 9Bh, 9Ch, 9Dh, 9Eh, 01h, 87h	; row 0
+		db	 88h, 89h, 8Ah, 01h, 9Fh,0A0h	; row 1
+		db	0A1h,0A2h, 01h,0A3h,0A4h,0A5h	; row 2
+		db	0A6h, 01h,0A7h,0A8h,0A9h,0AAh	; row 3
+		db	 01h,0ABh,0ACh,0ADh,0AEh, 01h	; row 4
+tori_frame_0b:				; offset 0x213 -> ptr 0xA213 -- group A[11] flap pose (alt)
+		db	0AFh,0B0h,0B1h,0B2h, 01h,0B3h	; row 0
+		db	0B4h,0B5h,0B6h, 01h,0B7h,0B8h	; row 1
+		db	0B9h,0BAh, 01h	; row 2
+tori_frame_0c:				; offset 0x222 -> ptr 0xA222 -- group B[2] hover pose
+		db	0BBh,0BCh,0BDh,0BEh, 01h,0EFh	; row 0
+		db	0F0h,0F1h,0F2h, 01h,0F3h,0C5h	; row 1
+		db	0C6h,0C7h, 01h	; row 2
+tori_frame_0d:				; offset 0x231 -> ptr 0xA231 -- group B[4] hover step
+		db	0C8h,0C9h,0CAh,0CBh, 00h,0CCh	; row 0
+		db	0CDh,0CEh,0CFh, 00h,0D0h,0D1h	; row 1
+		db	0D2h,0D3h, 00h,0D4h,0D5h,0D6h	; row 2
+		db	0D7h, 00h	; row 3
+tori_frame_0e:				; offset 0x245 -> ptr 0xA245 -- group B[5] hover step
+		db	0D0h,0D1h,0D2h,0D3h, 02h,0CCh	; row 0
+		db	0CDh,0CEh,0CFh, 02h,0D0h,0D1h	; row 1
+		db	0D2h,0D3h, 02h,0D4h,0D5h,0D6h	; row 2
+		db	0D7h, 02h	; row 3
+tori_frame_0f:				; offset 0x259 -> ptr 0xA259 -- group B[3] retreat pose
+		db	0D0h,0D1h,0D2h,0D3h, 00h,0D8h	; row 0
+		db	0D9h,0DAh,0DBh, 00h,0D8h,0D9h	; row 1
+		db	0DAh,0DBh, 00h,0D8h,0D9h,0DAh	; row 2
+		db	0DBh, 00h	; row 3
+tori_frame_10:				; offset 0x26D -> ptr 0xA26D -- group B[6] retreat step
+		db	0D8h,0D9h,0DAh,0DBh, 01h	; row 0 (single row)
+tori_frame_11:				; offset 0x272 -> ptr 0xA272 -- group B[0,1] death pose
+		db	0DCh,0DDh,0DEh,0DFh, 01h,0E4h	; row 0
+		db	0ECh,0E4h,0ECh, 01h,0E5h,0ECh	; row 1
+		db	0E6h,0ECh, 01h,0E7h,0E8h,0E9h	; row 2
+		db	0EAh, 01h	; row 3
+tori_frame_12:				; offset 0x286 -> ptr 0xA286 -- group B[12] aux pose A
+		db	 00h, 00h, 00h,0EBh, 02h	; row 0 (single row)
+tori_frame_13:				; offset 0x28B -> ptr 0xA28B -- group B[8] aux pose B
+		db	0E0h,0E1h,0E2h,0E3h, 00h	; row 0 (single row)
+tori_frame_14:				; offset 0x290 -> ptr 0xA290 -- group B[9] aux pose C
+		db	0EDh,0EEh, 79h, 7Ah, 02h	; row 0 (single row)
+tori_frame_15:				; offset 0x295 -> ptr 0xA295 -- group B[13] aux pose D
+		db	0EDh,0EEh, 79h, 7Ah, 01h,0F4h	; row 0
+		db	0F5h,0F6h,0F7h	; row 1
 
 ; -------------------------------------------------------------------------
 ;  Aux ptr table (offset 0x29C) + 4-byte aux records (offset 0x2A4).
@@ -762,15 +796,34 @@ dist5_far_clear:
 
 tori_dist_check_5		endp
 
-		db	 00h, 00h, 2Bh, 00h, 0Fh, 00h
-		db	 28h
-		db	8 dup (0)
-		db	 2Bh, 00h, 0Fh, 04h, 28h, 00h
-		db	 00h, 00h, 00h, 00h, 00h,0F6h
-		db	 44h, 08h,0FFh, 75h, 04h,0C6h
-		db	 44h, 08h, 04h,0F6h, 44h, 05h
-		db	 20h, 74h, 05h, 2Eh,0FFh
-		db	 26h, 34h, 60h
+; -------------------------------------------------------------------------
+;  Trailing data block (file offsets 0x658..0x671) followed by the state-5
+;  entry preroll (0x672..0x686).  The data block holds two 7-byte attack
+;  pattern records (A then B) used by the enemy's flight/attack routines;
+;  the values 2Bh, 0Fh, 28h match dispatch constants seen elsewhere in
+;  the AI dispatch tables.  The state-5 entry pointer (tori_state5_entry
+;  = 0xA66E in tori_ai_dispatch_tbl) lands inside this region -- the
+;  first 4 bytes after the data are zero filler that decode as harmless
+;  `add [bx+si],al` filler before the real preroll begins at 0x672.
+; -------------------------------------------------------------------------
+
+tori_s5_attack_pattern_a:				; offset 0x658 -- 7-byte pattern record A
+		db	 00h, 00h, 2Bh, 00h, 0Fh, 00h	; record A bytes 0..5 (header + 2Bh, 0Fh constants)
+		db	 28h				; record A byte 6 (28h constant)
+		db	8 dup (0)			; padding/zero gap (8 bytes)
+
+tori_s5_attack_pattern_b:				; offset 0x667 -- 7-byte pattern record B
+		db	 2Bh, 00h, 0Fh, 04h, 28h, 00h	; record B bytes 0..5 (variant: 04h instead of 00h)
+		db	 00h				; record B byte 6 (zero terminator)
+
+tori_state5_entry:				; offset 0x66E -- state 5 (idx 5 in primary dispatch); 4 bytes filler then preroll
+		db	 00h, 00h, 00h, 00h		; filler -- decodes as `add [bx+si],al` x2 (harmless)
+		db	 0F6h, 44h, 08h,0FFh		; test byte ptr [si+8], 0FFh
+		db	 75h, 04h			; jnz +4 (skip mov)
+		db	 0C6h, 44h, 08h, 04h		; mov byte ptr [si+8], 4 (cooldown=4)
+		db	 0F6h, 44h, 05h, 20h		; test byte ptr [si+5], 20h
+		db	 74h, 05h			; jz +5 (-> tori_s5_main)
+		db	 2Eh,0FFh, 26h, 34h, 60h	; jmp word ptr cs:ai_hide_fn (cs:[6034])
 
 tori_s5_main:
 		mov	al,[si+6]
