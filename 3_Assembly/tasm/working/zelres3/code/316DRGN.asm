@@ -3,28 +3,32 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  316DRGN - Tile Collision / Map Program Code Module (zelres3 chunk)
+;  316DRGN - Map / Arena Program Code Module (zelres3 chunk 16, 0-indexed)
 ;
-;  Map-program / tile-collision logic module (prior-pass nickname
-;  "TILE_COLLISION"). Sourcer kept the main entry as generic zr3_16. The
-;  entry prologue reads from global state fields (data_32e / sibling
-;  per-map state bytes) and dispatches per-frame scripted behaviour.
+;  Per-frame map-program code module. Trailer string fragment 'gon' is the
+;  tail of "dragon" or speaker name "Aragon"; the module follows the same
+;  structural template as the 312-319 sibling map-program family
+;  (312ZELA Satono, 313MEDA Bosque/Vista, 314LEGA Tarso, 315ZEL2 Helada).
+;
+;  The entry runs an NPC-scan loop over the sprite-attribute record table
+;  (0C010h), walks the per-map phase state machine, and emits cell updates
+;  into a render buffer at 0AA69h. Two helper procs scroll the view by
+;  +/- 1 cell; a third packs render rows by 0Ah.
 ;
 ;  Structure:
-;    - Header + dispatch/pointer descriptors (file 0x00..~0xA0) mostly
-;      mis-decoded by Sourcer - preserved as db bytes
-;    - Large embedded tile layout / cell data block
-;    - Per-frame update procs + sub helpers
-;
-;  Note: The "DRGN" nickname suggested a dragon enemy but the code
-;  structure matches the 312-319 sibling map-program family.
+;    - Header + embedded tile/cell layout data block (~file 0x00..0x270)
+;    - Main per-frame update proc (drgn_main: NPC scan, phase machine,
+;      death handler, render-row build)
+;    - drgn_scroll_dec / drgn_scroll_inc helpers
+;    - drgn_render_col_pack helper (mul-by-10 row addressing)
+;    - drgn_phase_step_cb (phase callback that resets state on success)
+;    - Trailer: dispatch-table data + 'gon' name fragment + zero pad
 ;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
-
 
 ; The following equates show data references outside the range of the program.
 ; Shared references across 312-319 map-program family:
@@ -33,64 +37,70 @@ include  srmacros.inc
 ;   0ED20h        - char/tile lookup table
 ;   0FF2Eh..0FF75h - per-map global state flag bytes
 
-data_14e	equ	200Ch			;* scroll/dispatch callback
-data_15e	equ	6028h			;* game-seg callback fn A (tile dispatch)
-data_16e	equ	6036h			;* game-seg callback fn B (tile-at-pos)
-data_17e	equ	6038h			;* game-seg callback fn C
-data_18e	equ	8000h			;* external buffer / tile source base
-data_19e	equ	0A4BBh			;*
-data_20e	equ	0A783h			;*
-data_21e	equ	0A810h			;*
-data_22e	equ	0A87Ah			;*
-data_23e	equ	0A87Dh			;*
-data_24e	equ	0A881h			;*
-data_25e	equ	0A89Ah			;*
-data_26e	equ	0A8B7h			;*
-data_27e	equ	0A8D7h			;*
-data_28e	equ	0A8DEh			;*
-data_29e	equ	0A8FDh			;*
-data_30e	equ	0A96Ch			;*
-data_31e	equ	0A985h			;*
-data_32e	equ	0AA3Ch			;*
-data_33e	equ	0AA3Eh			;*
-data_34e	equ	0AA3Fh			;*
-data_35e	equ	0AA53h			;*
-data_36e	equ	0AA54h			;*
-data_37e	equ	0AA55h			;*
-data_38e	equ	0AA56h			;*
-data_39e	equ	0AA57h			;*
-data_40e	equ	0AA58h			;*
-data_41e	equ	0AA59h			;*
-data_42e	equ	0AA5Ah			;*
-data_43e	equ	0AA5Bh			;*
-data_44e	equ	0AA5Ch			;*
-data_45e	equ	0AA5Dh			;*
-data_46e	equ	0AA5Eh			;*
-data_47e	equ	0AA5Fh			;*
-data_48e	equ	0AA60h			;*
-data_49e	equ	0AA61h			;*
-data_50e	equ	0AA62h			;*
-data_51e	equ	0AA63h			;*
-data_52e	equ	0AA64h			;*
-data_53e	equ	0AA65h			;*
-data_54e	equ	0AA66h			;*
-data_55e	equ	0AA67h			;*
-data_56e	equ	0AA68h			;*
-data_57e	equ	0AA69h			;*
-data_58e	equ	0C010h			;* sprite attribute record base
-data_59e	equ	0ED20h			;* char/tile lookup table
-data_60e	equ	0FF2Eh			;* global state byte
-data_61e	equ	0FF2Fh			;* global state byte
-data_62e	equ	0FF30h			;* global state byte
-data_63e	equ	0FF75h			;* global state byte
+; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
+drgn_cb_scroll		equ	200Ch		; scroll / dispatch callback
+drgn_cb_tile_dispatch	equ	6028h		; tile-at-cell callback fn A
+drgn_cb_tile_at_pos	equ	6036h		; NPC step / cell-iter callback fn B
+drgn_cb_anim_lookup	equ	6038h		; entity action / anim-lookup callback fn C
+
+; --- Internal tile/render data tables (DS, addressed by hard offset) ---
+drgn_buf_tile_src	equ	8000h		; external tile source base (test sp,ds:[8000h+bx])
+drgn_xlat_tbl_a4bb	equ	0A4BBh		; xlat table base (alternate render mode)
+drgn_phase_si_tbl	equ	0A783h		; SI per-phase tbl base (indexed by drgn_phase_dir<<1)
+drgn_phase_bp_tbl	equ	0A810h		; BP per-phase tbl base (indexed by drgn_phase_dir<<1)
+drgn_si_a87a		equ	0A87Ah		; SI tile source (used standalone)
+drgn_bp_a87d		equ	0A87Dh		; BP tile source (used standalone)
+drgn_phase_si_tbl_b	equ	0A881h		; SI per-phase tbl B (indexed by drgn_phase_substep<<1)
+drgn_phase_bp_tbl_b	equ	0A89Ah		; BP per-phase tbl B (indexed by drgn_phase_substep<<1)
+drgn_phase_si_tbl_c	equ	0A8B7h		; SI per-phase tbl C (indexed by drgn_phase_substep<<1)
+drgn_bp_a8d7		equ	0A8D7h		; BP tile source standalone
+drgn_phase_si_tbl_d	equ	0A8DEh		; SI per-phase tbl D (indexed by drgn_phase_step&1<<1)
+drgn_phase_bp_tbl_d	equ	0A8FDh		; BP per-phase tbl D
+drgn_phase_di_tbl_e	equ	0A96Ch		; DI per-phase tbl E (phase-B render path)
+drgn_phase_bp_tbl_e	equ	0A985h		; BP per-phase tbl E (phase-B render path)
+
+; --- State / scroll (DS) ---
+drgn_scroll_x		equ	0AA3Ch		; scroll X position word
+drgn_scroll_x_hi	equ	0AA3Eh		; scroll X high byte
+drgn_scroll_max		equ	0AA3Fh		; scroll max word
+drgn_render_row	equ	0AA53h		; render row counter (bx component lo)
+drgn_render_col	equ	0AA54h		; render col counter (bx component hi)
+drgn_attr_tmp		equ	0AA55h		; attribute scratch byte
+drgn_phase_b_active	equ	0AA56h		; phase-B active flag
+drgn_phase_b_idx	equ	0AA57h		; phase-B index byte (cycles 2..3)
+drgn_death_step		equ	0AA58h		; death animation step counter
+drgn_npc_idx		equ	0AA59h		; NPC scan index byte
+drgn_anim_byte		equ	0AA5Ah		; current animation/speaker byte
+drgn_phase_dir		equ	0AA5Bh		; phase direction byte
+drgn_phase_step		equ	0AA5Ch		; phase step counter (mod table)
+drgn_phase_substep	equ	0AA5Dh		; phase substep
+drgn_phase_delay	equ	0AA5Eh		; phase delay countdown (carry-tick)
+drgn_phase_locked	equ	0AA5Fh		; phase-locked flag
+drgn_phase_lock_ttl	equ	0AA60h		; phase lock TTL countdown
+drgn_phase_a_active	equ	0AA61h		; phase-A active flag
+drgn_phase_a_dir	equ	0AA62h		; phase-A direction
+drgn_phase_a_step	equ	0AA63h		; phase-A step
+drgn_phase_b_step	equ	0AA64h		; phase-B step counter
+drgn_init_render	equ	0AA65h		; init-render flag
+drgn_render_mode	equ	0AA66h		; render mode flag (toggles xlat table)
+drgn_xlat_idx		equ	0AA67h		; xlat index byte
+drgn_xlat_done		equ	0AA68h		; xlat-done flag
+drgn_render_buf		equ	0AA69h		; render buffer base
+
+; --- Shared game-segment globals (used across map-program family) ---
+drgn_sprite_attr_ptr	equ	0C010h		; sprite attribute record ptr (DS)
+drgn_sprite_xlat_tbl	equ	0ED20h		; char/tile xlat table (shared)
+gvar_death_flag		equ	0FF2Eh		; global death flag
+gvar_dir_toggle		equ	0FF2Fh		; global dir-toggle flag
+gvar_state_ff30		equ	0FF30h		; per-map state byte
+gvar_spawn_fx_flag	equ	0FF75h		; spawn VFX flag
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
-zr3_16		proc	far
+drgn_main		proc	far
 
 ; ------------------------------------------------------------------
 ; start: header + embedded tile/cell layout data.
@@ -98,11 +108,12 @@ zr3_16		proc	far
 ; is via dispatch from game DS. First byte patterns are pointer/
 ; descriptor fields; 12 zero bytes follow as reserved area.
 ; ------------------------------------------------------------------
+
 start:
 		test	ax,0Bh			; header field bytes
 ;*		add	ch,bl
 		db	000h, 0DDh		; add ch,bl (alt encoding) -- header bytes
-		mov	ds:data_32e,al		; header field bytes
+		mov	ds:drgn_scroll_x,al		; header field bytes
 		db	12 dup (0)		; reserved / padding
 		db	 28h, 1Eh, 1Eh, 1Eh, 1Eh, 1Eh
 		db	 1Eh, 1Eh
@@ -119,25 +130,26 @@ start:
 		db	 9Dh, 9Eh, 00h, 68h, 90h, 6Dh
 		db	 91h, 00h, 9Ah, 9Bh, 9Dh,0FEh
 		db	 00h, 73h, 74h, 00h, 00h
-data_3		db	0			; Data table (indexed access)
+drgn_tile_data_a		db	0			; Data table (indexed access)
 		db	 6Ah, 6Bh, 6Fh, 70h, 00h, 70h
 		db	 71h, 75h, 76h, 00h
-data_4		db	77h
+drgn_tile_data_b		db	77h
 		db	 78h, 7Ah, 7Bh, 00h, 78h, 79h
 		db	 7Bh, 7Ch, 00h, 7Dh, 7Eh, 77h
 		db	 10h, 00h, 7Fh, 01h, 0Ch, 0Dh
 		db	 00h, 77h, 10h, 00h, 0Eh, 00h
 		db	 97h, 00h
 		db	70h
-data_5		db	71h			; Data table (indexed access)
+drgn_tile_data_c		db	71h			; Data table (indexed access)
 		db	0
-loc_1:
+
+drgn_tile_block_b:
 		mov	bl,75h			; 'u'
 ;*		add	[bx+0],dh
 		db	000h, 077h, 000h	; add [bx+0],dh (3-byte form)
 		db	 76h, 00h, 78h, 79h, 00h,0A6h
 		db	 9Fh, 87h,0A1h, 00h, 99h
-data_6		db	87h			; Data table (indexed access)
+drgn_tile_data_d		db	87h			; Data table (indexed access)
 		db	0B3h, 88h, 00h,0A1h,0A3h, 8Ch
 		db	 89h, 00h, 8Ah, 00h,0ADh, 8Dh
 		db	 00h,0ADh, 8Dh, 8Bh, 10h, 00h
@@ -151,23 +163,25 @@ data_6		db	87h			; Data table (indexed access)
 		db	0ACh,0ADh, 00h,0ACh,0ADh, 67h
 		db	 0Eh, 00h
 		db	 6Eh, 6Fh
-loc_2:
-		test	sp,ds:data_18e[bx]
-;*		add	data_6[bx+di],0B4h
+
+drgn_tile_block_c:
+		test	sp,ds:drgn_buf_tile_src[bx]
+;*		add	drgn_tile_data_d[bx+di],0B4h
 		db	082h, 081h, 0AEh, 000h, 0B4h	; add byte ptr [bx+di+0AEh],0B4h (alt encoding)
 		rol	sp,cl			; Rotate
 		xchg	sp,ax
 ;*		add	bl,dl
 		db	000h, 0D3h		; add bl,dl (alt encoding)
-		add	data_5[si],dl
+		add	drgn_tile_data_c[si],dl
 ;*		test	si,[si+0]
 		db	085h, 074h, 000h	; test [si+0],si (alt encoding)
 		db	 00h, 00h, 00h,0DFh,0E8h,0E9h
 		db	 00h,0E0h,0E1h,0EAh,0EAh, 00h
 		db	0E2h,0E2h,0EAh,0EBh
-data_7		dw	0E300h
+drgn_tile_dispatch_word		dw	0E300h
 		db	0E4h, 00h, 00h, 00h
-loc_5:
+
+drgn_tile_block_d:
 		in	al,0E5h			; port 0E5h ??I/O Non-standard
 		db	 00h, 00h, 00h, 00h,0E7h,0ECh
 		db	0EDh, 00h, 00h,0F5h,0F9h,0FAh
@@ -241,44 +255,48 @@ loc_5:
 		db	 00h,0DDh,0DEh, 8Bh, 36h, 10h
 		db	0C0h,0C6h, 06h, 59h,0AAh, 00h
 		db	0C6h, 06h, 5Ah,0AAh, 00h
-loc_6:
+
+drgn_npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-				cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
-		jz	loc_9			; Jump if zero
-		mov	ax,[si]
-		call	word ptr cs:data_16e
-		jc	loc_8			; Jump if carry Set
-		mov	[si+3],bl
-		mov	ax,[si+2]
-		call	word ptr cs:data_15e
-		mov	bl,ds:data_41e
-		xor	bh,bh			; Zero register
-		mov	al,ds:data_59e[bx]
-		mov	[di],al
-		test	byte ptr [si+5],40h	; '@'
-		jz	loc_8			; Jump if zero
-		test	byte ptr ds:data_42e,80h
-		jnz	loc_8			; Jump if not zero
-		mov	al,[si+5]
-		and	al,1Fh
-		test	byte ptr [si+4],1Fh
-		jnz	loc_7			; Jump if not zero
-		or	al,80h
-loc_7:
-		mov	ds:data_42e,al
-loc_8:
-		inc	byte ptr ds:data_41e
-		add	si,10h
-		jmp	short loc_6
-loc_9:
-		mov	si,ds:data_58e
+					cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
+			jz	drgn_npc_scan_done			; Jump if zero
+			mov	ax,[si]
+			call	word ptr cs:drgn_cb_tile_at_pos
+			jc	drgn_npc_scan_next			; Jump if carry Set
+			mov	[si+3],bl
+			mov	ax,[si+2]
+			call	word ptr cs:drgn_cb_tile_dispatch
+			mov	bl,ds:drgn_npc_idx
+			xor	bh,bh			; Zero register
+			mov	al,ds:drgn_sprite_xlat_tbl[bx]
+			mov	[di],al
+			test	byte ptr [si+5],40h	; '@'
+			jz	drgn_npc_scan_next			; Jump if zero
+			test	byte ptr ds:drgn_anim_byte,80h
+			jnz	drgn_npc_scan_next			; Jump if not zero
+			mov	al,[si+5]
+			and	al,1Fh
+			test	byte ptr [si+4],1Fh
+			jnz	drgn_anim_set_high_bit			; Jump if not zero
+			or	al,80h
+
+drgn_anim_set_high_bit:
+			mov	ds:drgn_anim_byte,al
+
+drgn_npc_scan_next:
+			inc	byte ptr ds:drgn_npc_idx
+			add	si,10h
+			jmp	short drgn_npc_scan_loop
+
+drgn_npc_scan_done:
+		mov	si,ds:drgn_sprite_attr_ptr
 		mov	word ptr [si],0FFFFh
-		test	byte ptr ds:data_42e,0FFh
-		jz	loc_14			; Jump if zero
-		mov	al,ds:data_42e
+		test	byte ptr ds:drgn_anim_byte,0FFh
+		jz	drgn_check_death			; Jump if zero
+		mov	al,ds:drgn_anim_byte
 		push	ax
 		and	al,1Fh
-		call	word ptr cs:data_17e
+		call	word ptr cs:drgn_cb_anim_lookup
 		mov	bl,ah
 		xor	bh,bh			; Zero register
 		pop	ax
@@ -286,342 +304,376 @@ loc_9:
 		and	ah,7Fh
 		shr	bx,1			; Shift w/zeros fill
 		sub	ah,2
-		jc	loc_10			; Jump if carry Set
+		jc	drgn_anim_no_extra_shift			; Jump if carry Set
 		shr	bx,1			; Shift w/zeros fill
 		shr	bx,1			; Shift w/zeros fill
-loc_10:
+
+drgn_anim_no_extra_shift:
 		test	al,80h
-		jz	loc_11			; Jump if zero
-		mov	byte ptr ds:data_53e,0FFh
-		mov	byte ptr ds:data_63e,34h	; '4'
+		jz	drgn_anim_phase_b			; Jump if zero
+		mov	byte ptr ds:drgn_init_render,0FFh
+		mov	byte ptr ds:gvar_spawn_fx_flag,34h	; '4'
 		add	bx,bx
-		jmp	short loc_12
-loc_11:
-		mov	byte ptr ds:data_47e,0FFh
-		mov	byte ptr ds:data_63e,35h	; '5'
-loc_12:
-		call	tilecol_func_4
-		test	byte ptr ds:data_53e,0FFh
-		jz	loc_13			; Jump if zero
-		mov	al,ds:data_43e
+		jmp	short drgn_anim_phase_apply
+
+drgn_anim_phase_b:
+		mov	byte ptr ds:drgn_phase_locked,0FFh
+		mov	byte ptr ds:gvar_spawn_fx_flag,35h	; '5'
+
+drgn_anim_phase_apply:
+		call	drgn_phase_step_cb
+		test	byte ptr ds:drgn_init_render,0FFh
+		jz	drgn_anim_skip_reset			; Jump if zero
+		mov	al,ds:drgn_phase_dir
 		cmp	al,6
 		sbb	al,al
 		neg	al
-		mov	ds:data_54e,al
-		mov	byte ptr ds:data_55e,0
-		mov	byte ptr ds:data_38e,0
-		mov	byte ptr ds:data_49e,0
-		mov	byte ptr ds:data_47e,0FFh
-		mov	byte ptr ds:data_56e,0FFh
-		mov	byte ptr ds:data_48e,8
-loc_13:
-		mov	byte ptr ds:data_53e,0
-loc_14:
-		test	byte ptr ds:data_60e,0FFh
-		jz	loc_15			; Jump if zero
-		jmp	loc_60
-loc_15:
-		inc	byte ptr ds:data_44e
-		test	byte ptr ds:data_38e,0FFh
-		jz	loc_16			; Jump if zero
-		jmp	loc_31
-loc_16:
-		test	byte ptr ds:data_49e,0FFh
-		jz	loc_17			; Jump if zero
-;*		jmp	loc_30			;*
-		db	0E9h, 0E6h, 000h	; jmp 4C6h (absolute)
-loc_17:
-		add	byte ptr ds:data_46e,80h
-		jnc	loc_20			; Jump if carry=0
-		test	byte ptr ds:data_47e,0FFh
-		jnz	loc_18			; Jump if not zero
-		call	tilecol_func_1
-		jc	loc_20			; Jump if carry Set
-		inc	byte ptr ds:data_45e
-		jmp	short loc_20
-loc_18:
-		dec	byte ptr ds:data_48e
-		jnz	loc_19			; Jump if not zero
-		mov	byte ptr ds:data_47e,0
-		jmp	short loc_20
-loc_19:
-		call	tilecol_func_2
+		mov	ds:drgn_render_mode,al
+		mov	byte ptr ds:drgn_xlat_idx,0
+		mov	byte ptr ds:drgn_phase_b_active,0
+		mov	byte ptr ds:drgn_phase_a_active,0
+		mov	byte ptr ds:drgn_phase_locked,0FFh
+		mov	byte ptr ds:drgn_xlat_done,0FFh
+		mov	byte ptr ds:drgn_phase_lock_ttl,8
+
+drgn_anim_skip_reset:
+		mov	byte ptr ds:drgn_init_render,0
+
+drgn_check_death:
+		test	byte ptr ds:gvar_death_flag,0FFh
+		jz	drgn_phase_step_advance			; Jump if zero
+		jmp	drgn_death_handler
+
+drgn_phase_step_advance:
+		inc	byte ptr ds:drgn_phase_step
+		test	byte ptr ds:drgn_phase_b_active,0FFh
+		jz	drgn_phase_a_check			; Jump if zero
+		jmp	drgn_phase_b_step_loop
+
+drgn_phase_a_check:
+		test	byte ptr ds:drgn_phase_a_active,0FFh
+		jz	drgn_phase_delay_tick			; Jump if zero
+		jmp	drgn_phase_inc_dir		; absolute jmp 0x4C6h
+
+drgn_phase_delay_tick:
+		add	byte ptr ds:drgn_phase_delay,80h
+		jnc	drgn_phase_check_xlat			; Jump if carry=0
+		test	byte ptr ds:drgn_phase_locked,0FFh
+		jnz	drgn_phase_unlock_tick			; Jump if not zero
+		call	drgn_scroll_dec
+		jc	drgn_phase_check_xlat			; Jump if carry Set
+		inc	byte ptr ds:drgn_phase_substep
+		jmp	short drgn_phase_check_xlat
+
+drgn_phase_unlock_tick:
+		dec	byte ptr ds:drgn_phase_lock_ttl
+		jnz	drgn_phase_locked_step			; Jump if not zero
+		mov	byte ptr ds:drgn_phase_locked,0
+		jmp	short drgn_phase_check_xlat
+
+drgn_phase_locked_step:
+		call	drgn_scroll_inc
 		sbb	al,al
 		not	al
-		mov	ds:data_47e,al
-		dec	byte ptr ds:data_45e
-loc_20:
-		test	byte ptr ds:data_56e,0FFh
-		jnz	loc_28			; Jump if not zero
-		call	word ptr cs:data_7
+		mov	ds:drgn_phase_locked,al
+		dec	byte ptr ds:drgn_phase_substep
+
+drgn_phase_check_xlat:
+		test	byte ptr ds:drgn_xlat_done,0FFh
+		jnz	drgn_xlat_advance			; Jump if not zero
+		call	word ptr cs:drgn_tile_dispatch_word
 		and	al,0C0h
-		jnz	loc_22			; Jump if not zero
-		test	byte ptr ds:data_43e,0FFh
-		jz	loc_21			; Jump if zero
-		cmp	byte ptr ds:data_43e,4
-		je	loc_21			; Jump if equal
-		cmp	byte ptr ds:data_43e,7
-		jne	loc_22			; Jump if not equal
-loc_21:
-		mov	al,ds:data_43e
-		mov	ds:data_50e,al
-		mov	byte ptr ds:data_51e,0
-		mov	byte ptr ds:data_49e,0FFh
-		jmp	loc_35
-loc_22:
-		mov	al,data_4
+		jnz	drgn_phase_clamp_high			; Jump if not zero
+		test	byte ptr ds:drgn_phase_dir,0FFh
+		jz	drgn_phase_set_active			; Jump if zero
+		cmp	byte ptr ds:drgn_phase_dir,4
+		je	drgn_phase_set_active			; Jump if equal
+		cmp	byte ptr ds:drgn_phase_dir,7
+		jne	drgn_phase_clamp_high			; Jump if not equal
+
+drgn_phase_set_active:
+		mov	al,ds:drgn_phase_dir
+		mov	ds:drgn_phase_a_dir,al
+		mov	byte ptr ds:drgn_phase_a_step,0
+		mov	byte ptr ds:drgn_phase_a_active,0FFh
+		jmp	drgn_render_begin
+
+drgn_phase_clamp_high:
+		mov	al,drgn_tile_data_b
 		add	al,10h
-		cmp	al,ds:data_32e
-		jae	loc_24			; Jump if above or =
+		cmp	al,ds:drgn_scroll_x
+		jae	drgn_phase_clamp_low			; Jump if above or =
 		mov	al,6
-		cmp	byte ptr ds:data_43e,6
-		jb	loc_23			; Jump if below
+		cmp	byte ptr ds:drgn_phase_dir,6
+		jb	drgn_phase_clamp_high_a			; Jump if below
 		mov	al,7
-loc_23:
-		mov	ds:data_43e,al
-		jmp	loc_35
-loc_24:
+
+drgn_phase_clamp_high_a:
+		mov	ds:drgn_phase_dir,al
+		jmp	drgn_render_begin
+
+drgn_phase_clamp_low:
 		sub	al,5
-		cmp	al,ds:data_32e
-		jae	loc_26			; Jump if above or =
+		cmp	al,ds:drgn_scroll_x
+		jae	drgn_phase_clamp_def			; Jump if above or =
 		mov	al,0
-		cmp	byte ptr ds:data_43e,7
-		jb	loc_25			; Jump if below
+		cmp	byte ptr ds:drgn_phase_dir,7
+		jb	drgn_phase_clamp_low_a			; Jump if below
 		mov	al,6
-loc_25:
-		mov	ds:data_43e,al
-		jmp	loc_35
-loc_26:
+
+drgn_phase_clamp_low_a:
+		mov	ds:drgn_phase_dir,al
+		jmp	drgn_render_begin
+
+drgn_phase_clamp_def:
 		mov	al,4
-		cmp	byte ptr ds:data_43e,7
-		jb	loc_27			; Jump if below
+		cmp	byte ptr ds:drgn_phase_dir,7
+		jb	drgn_phase_set_dir			; Jump if below
 		mov	al,6
-loc_27:
-		mov	ds:data_43e,al
-		jmp	loc_35
-loc_28:
+
+drgn_phase_set_dir:
+		mov	ds:drgn_phase_dir,al
+		jmp	drgn_render_begin
+
+drgn_xlat_advance:
 		mov	bx,0A4B4h
-		test	byte ptr ds:data_54e,0FFh
-		jnz	loc_29			; Jump if not zero
-		mov	bx,data_19e
-loc_29:
-		mov	al,ds:data_55e
+		test	byte ptr ds:drgn_render_mode,0FFh
+		jnz	drgn_xlat_use_tbl_a			; Jump if not zero
+		mov	bx,drgn_xlat_tbl_a4bb
+
+drgn_xlat_use_tbl_a:
+		mov	al,ds:drgn_xlat_idx
 		xlat				; al=[al+[bx]] table
 		or	al,al			; Zero ?
 		jns	$+9			; Jump if not sign
 		and	al,7Fh
-		mov	byte ptr ds:data_56e,0
-		mov	ds:data_43e,al
-		inc	byte ptr ds:data_55e
-		jmp	loc_35
-			                        ;* No entry point to code
-		or	cl,[bx+di]
-		push	es
-		add	ax,[bp+si]
-		add	ax,word ptr ss:[203h][bp+si]
-		add	ax,[bp+si]
-		add	[bp+di],ax
-;*		cmp	dh,6
-		db	082h, 0FEh, 006h	; cmp dh,6 (alt encoding)
-		db	 63h,0AAh,0A0h, 63h,0AAh, 24h
-		db	 01h, 02h, 06h, 62h,0AAh,0A2h
-		db	 5Bh,0AAh,0A0h, 63h,0AAh, 3Ch
-		db	 06h, 72h, 69h,0A0h, 62h,0AAh
-		db	0FEh,0C0h,0A2h, 5Bh,0AAh,0C6h
-		db	 06h, 57h,0AAh, 00h,0C6h, 06h
-		db	 64h,0AAh, 00h,0C6h, 06h, 61h
-		db	0AAh, 00h,0C6h, 06h, 56h,0AAh
-		db	0FFh,0C6h, 06h, 75h,0FFh, 36h
-		db	0EBh
-		db	46h
-loc_31:
-		mov	byte ptr ds:data_63e,36h	; '6'
-		mov	al,ds:data_39e
+		mov	byte ptr ds:drgn_xlat_done,0
+		mov	ds:drgn_phase_dir,al
+		inc	byte ptr ds:drgn_xlat_idx
+		jmp	drgn_render_begin
+; Dead-byte gap (14 bytes, file 0x4B8..0x4C5). Sourcer mis-decoded this
+; as x86 (or/push/add/cmp dh,6); the bytes are not executed -- control
+; reaches drgn_phase_inc_dir at file 0x4C6 only via the absolute jmp
+; from drgn_phase_a_check. Likely leftover from an earlier compile.
+		db	0Ah, 09h			; orphan: or cl,[bx+di]
+		db	06h				; orphan: push es
+		db	03h, 02h			; orphan: add ax,[bp+si]
+		db	03h, 82h, 03h, 02h		; orphan: add ax,[bp+si+0203h]
+		db	03h, 02h			; orphan: add ax,[bp+si]
+		db	01h, 03h			; orphan: add [bp+di],ax
+		db	82h				; orphan tail byte (mis-decode prefix)
+
+drgn_phase_inc_dir:				; entry: jmp drgn_phase_a_check->here when phase_a_active
+		inc	byte ptr ds:drgn_phase_a_step	; fe 06 63 aa
+		mov	al,ds:drgn_phase_a_step		; a0 63 aa
+		and	al,1				; 24 01
+		add	al,ds:drgn_phase_a_dir		; 02 06 62 aa
+		mov	ds:drgn_phase_dir,al		; a2 5b aa
+		mov	al,ds:drgn_phase_a_step		; a0 63 aa
+		cmp	al,6				; 3c 06
+		db	72h, 69h			; jc drgn_render_begin (rel +0x69, target inside drgn_render_begin path)
+		mov	al,ds:drgn_phase_a_dir		; a0 62 aa
+		inc	al				; fe c0
+		mov	ds:drgn_phase_dir,al		; a2 5b aa
+		mov	byte ptr ds:drgn_phase_b_idx,0	; c6 06 57 aa 00
+		mov	byte ptr ds:drgn_phase_b_step,0	; c6 06 64 aa 00
+		mov	byte ptr ds:drgn_phase_a_active,0	; c6 06 61 aa 00
+		mov	byte ptr ds:drgn_phase_b_active,0FFh	; c6 06 56 aa ff
+		mov	byte ptr ds:gvar_spawn_fx_flag,36h	; c6 06 75 ff 36 ('6')
+		jmp	short drgn_render_begin		; eb 46 (target 0x546)
+
+drgn_phase_b_step_loop:
+		mov	byte ptr ds:gvar_spawn_fx_flag,36h	; '6'
+		mov	al,ds:drgn_phase_b_idx
 		inc	al
 		cmp	al,4
-		jb	loc_32			; Jump if below
+		jb	drgn_phase_b_idx_set			; Jump if below
 		mov	al,2
-loc_32:
-		mov	ds:data_39e,al
-		inc	byte ptr ds:data_52e
-		mov	al,ds:data_52e
+
+drgn_phase_b_idx_set:
+		mov	ds:drgn_phase_b_idx,al
+		inc	byte ptr ds:drgn_phase_b_step
+		mov	al,ds:drgn_phase_b_step
 		cmp	al,0Ah
-		jb	loc_35			; Jump if below
-		mov	byte ptr ds:data_38e,0
-		jmp	short loc_35
+		jb	drgn_render_begin			; Jump if below
+		mov	byte ptr ds:drgn_phase_b_active,0
+		jmp	short drgn_render_begin
 
-zr3_16		endp
+drgn_main		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-tilecol_func_1		proc	near
-		mov	ax,ds:data_32e
+drgn_scroll_dec		proc	near
+		mov	ax,ds:drgn_scroll_x
 		dec	ax
 		mov	bx,0Eh
 		sub	bx,ax
 		cmc				; Complement carry
-		jnc	loc_33			; Jump if carry=0
+		jnc	drgn_scroll_save_a			; Jump if carry=0
 		retn
-loc_33:
-		mov	ds:data_32e,ax
+
+drgn_scroll_save_a:
+		mov	ds:drgn_scroll_x,ax
 		retn
-tilecol_func_1		endp
 
+drgn_scroll_dec		endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-tilecol_func_2		proc	near
-		mov	ax,ds:data_32e
+drgn_scroll_inc		proc	near
+		mov	ax,ds:drgn_scroll_x
 		inc	ax
 		mov	bx,1Eh
 		sub	bx,ax
-		jnc	loc_34			; Jump if carry=0
+		jnc	drgn_scroll_save_b			; Jump if carry=0
 		retn
-loc_34:
-		mov	ds:data_32e,ax
-		retn
-tilecol_func_2		endp
 
-loc_35:
+drgn_scroll_save_b:
+		mov	ds:drgn_scroll_x,ax
+		retn
+
+drgn_scroll_inc		endp
+
+drgn_render_begin:
 		push	cs
 		pop	es
-		mov	di,data_57e
+		mov	di,drgn_render_buf
 		mov	ax,0FFFFh
 		mov	cx,0A0h
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
-		mov	byte ptr ds:data_35e,0
-		mov	byte ptr ds:data_36e,1
-		mov	bl,ds:data_43e
+		mov	byte ptr ds:drgn_render_row,0
+		mov	byte ptr ds:drgn_render_col,1
+		mov	bl,ds:drgn_phase_dir
 		add	bl,bl
 		xor	bh,bh			; Zero register
-		mov	si,ds:data_20e[bx]
-		mov	bp,ds:data_21e[bx]
+		mov	si,ds:drgn_phase_si_tbl[bx]
+		mov	bp,ds:drgn_phase_bp_tbl[bx]
 		mov	cx,0Ch
-		call	tilecol_multiply
-		mov	byte ptr ds:data_35e,0Ch
-		mov	byte ptr ds:data_36e,0
-		mov	bl,ds:data_44e
+		call	drgn_render_col_pack
+		mov	byte ptr ds:drgn_render_row,0Ch
+		mov	byte ptr ds:drgn_render_col,0
+		mov	bl,ds:drgn_phase_step
 		and	bl,1
 		add	bl,bl
-		mov	si,ds:data_28e[bx]
-		mov	bp,ds:data_29e[bx]
+		mov	si,ds:drgn_phase_si_tbl_d[bx]
+		mov	bp,ds:drgn_phase_bp_tbl_d[bx]
 		mov	cx,0Bh
-		call	tilecol_multiply
-		mov	byte ptr ds:data_35e,9
-		mov	byte ptr ds:data_36e,6
-		mov	bl,ds:data_45e
+		call	drgn_render_col_pack
+		mov	byte ptr ds:drgn_render_row,9
+		mov	byte ptr ds:drgn_render_col,6
+		mov	bl,ds:drgn_phase_substep
 		and	bl,3
 		add	bl,bl
-		mov	si,ds:data_24e[bx]
-		mov	bp,ds:data_25e[bx]
+		mov	si,ds:drgn_phase_si_tbl_b[bx]
+		mov	bp,ds:drgn_phase_bp_tbl_b[bx]
 		mov	cx,7
-		call	tilecol_multiply
-		mov	byte ptr ds:data_35e,11h
-		mov	byte ptr ds:data_36e,6
-		mov	bl,ds:data_45e
+		call	drgn_render_col_pack
+		mov	byte ptr ds:drgn_render_row,11h
+		mov	byte ptr ds:drgn_render_col,6
+		mov	bl,ds:drgn_phase_substep
 		and	bl,3
 		add	bl,bl
-		mov	si,ds:data_26e[bx]
-		mov	bp,data_27e
+		mov	si,ds:drgn_phase_si_tbl_c[bx]
+		mov	bp,drgn_bp_a8d7
 		mov	cx,7
-		call	tilecol_multiply
-		mov	byte ptr ds:data_35e,19h
-		mov	byte ptr ds:data_36e,8
-		mov	si,data_22e
-		mov	bp,data_23e
+		call	drgn_render_col_pack
+		mov	byte ptr ds:drgn_render_row,19h
+		mov	byte ptr ds:drgn_render_col,8
+		mov	si,drgn_si_a87a
+		mov	bp,drgn_bp_a87d
 		mov	cx,4
-		call	tilecol_multiply
-		mov	byte ptr ds:data_41e,0
-		mov	ax,ds:data_32e
-		mov	si,ds:data_58e
-		mov	di,data_57e
+		call	drgn_render_col_pack
+		mov	byte ptr ds:drgn_npc_idx,0
+		mov	ax,ds:drgn_scroll_x
+		mov	si,ds:drgn_sprite_attr_ptr
+		mov	di,drgn_render_buf
 		mov	cx,1Dh
-loc_36:
+
+drgn_render_row_loop:
 		push	cx
 		push	di
 		push	ax
-		call	word ptr cs:data_16e
+		call	word ptr cs:drgn_cb_tile_at_pos
 		pop	ax
-		mov	ds:data_37e,bl
-		jc	loc_40			; Jump if carry Set
+		mov	ds:drgn_attr_tmp,bl
+		jc	drgn_render_row_advance			; Jump if carry Set
 		xor	cl,cl			; Zero register
-loc_37:
-		push	cx
-		push	ax
-		cmp	byte ptr [di],0FFh
-		je	loc_39			; Jump if equal
-		mov	[si],ax
-		mov	al,ds:data_33e
-		add	al,cl
-		and	al,3Fh			; '?'
-		mov	[si+2],al
-		mov	al,ds:data_37e
-		mov	[si+3],al
-		mov	al,[di]
-		mov	ah,al
-		shr	al,1			; Shift w/zeros fill
-		shr	al,1			; Shift w/zeros fill
-		shr	al,1			; Shift w/zeros fill
-		shr	al,1			; Shift w/zeros fill
-		mov	bl,ds:data_60e
-		not	bl
-		and	bl,80h
-		or	al,bl
-		mov	[si+4],al
-		mov	[si+6],ah
-		mov	byte ptr [si+5],0
-		test	byte ptr ds:data_42e,0FFh
-		jz	loc_38			; Jump if zero
-		or	byte ptr [si+5],20h	; ' '
-loc_38:
-		push	di
-		mov	ax,[si+2]
-		call	word ptr cs:data_15e
-		mov	bl,ds:data_41e
-		xor	bh,bh			; Zero register
-		mov	al,bl
-		or	al,80h
-		xchg	[di],al
-		mov	ds:data_59e[bx],al
-		add	si,10h
-		inc	byte ptr ds:data_41e
-		pop	di
-loc_39:
-		inc	di
-		pop	ax
-		pop	cx
-		inc	cl
-		cmp	cl,0Ah
-		jne	loc_37			; Jump if not equal
-loc_40:
+
+drgn_render_cell_loop:
+			push	cx
+			push	ax
+			cmp	byte ptr [di],0FFh
+			je	drgn_render_cell_skip			; Jump if equal
+			mov	[si],ax
+			mov	al,ds:drgn_scroll_x_hi
+			add	al,cl
+			and	al,3Fh			; '?'
+			mov	[si+2],al
+			mov	al,ds:drgn_attr_tmp
+			mov	[si+3],al
+			mov	al,[di]
+			mov	ah,al
+			shr	al,1			; Shift w/zeros fill
+			shr	al,1			; Shift w/zeros fill
+			shr	al,1			; Shift w/zeros fill
+			shr	al,1			; Shift w/zeros fill
+			mov	bl,ds:gvar_death_flag
+			not	bl
+			and	bl,80h
+			or	al,bl
+			mov	[si+4],al
+			mov	[si+6],ah
+			mov	byte ptr [si+5],0
+			test	byte ptr ds:drgn_anim_byte,0FFh
+			jz	drgn_render_apply_anim			; Jump if zero
+			or	byte ptr [si+5],20h	; ' '
+
+drgn_render_apply_anim:
+			push	di
+			mov	ax,[si+2]
+			call	word ptr cs:drgn_cb_tile_dispatch
+			mov	bl,ds:drgn_npc_idx
+			xor	bh,bh			; Zero register
+			mov	al,bl
+			or	al,80h
+			xchg	[di],al
+			mov	ds:drgn_sprite_xlat_tbl[bx],al
+			add	si,10h
+			inc	byte ptr ds:drgn_npc_idx
+			pop	di
+
+drgn_render_cell_skip:
+			inc	di
+			pop	ax
+			pop	cx
+			inc	cl
+			cmp	cl,0Ah
+			jne	drgn_render_cell_loop			; Jump if not equal
+
+drgn_render_row_advance:
 		inc	ax
 		pop	di
 		add	di,0Ah
 		pop	cx
-		loop	locloop_41		; Loop if cx > 0
+		loop	drgn_render_row_loop_jmp		; Loop if cx > 0
 
-		jmp	short loc_42
+		jmp	short drgn_render_terminate
 
-locloop_41:
-		jmp	loc_36
-loc_42:
+drgn_render_row_loop_jmp:
+		jmp	drgn_render_row_loop
+
+drgn_render_terminate:
 		mov	word ptr [si],0FFFFh
-		test	byte ptr ds:data_38e,0FFh
-		jnz	loc_43			; Jump if not zero
+		test	byte ptr ds:drgn_phase_b_active,0FFh
+		jnz	drgn_render_phase_b			; Jump if not zero
 		retn
-loc_43:
+
+drgn_render_phase_b:
 		mov	di,0A917h
 		mov	bp,0A930h
-		cmp	byte ptr ds:data_43e,6
-		jb	loc_44			; Jump if below
-		mov	di,data_30e
-		mov	bp,data_31e
-loc_44:
-		mov	bl,ds:data_39e
+		cmp	byte ptr ds:drgn_phase_dir,6
+		jb	drgn_render_phase_b_pick			; Jump if below
+		mov	di,drgn_phase_di_tbl_e
+		mov	bp,drgn_phase_bp_tbl_e
+
+drgn_render_phase_b_pick:
+		mov	bl,ds:drgn_phase_b_idx
 		and	bl,3
 		add	bl,bl
 		xor	bh,bh			; Zero register
@@ -630,136 +682,141 @@ loc_44:
 		mov	di,bp
 		mov	bp,[bx+di]
 		pop	di
-		mov	ax,ds:data_32e
+		mov	ax,ds:drgn_scroll_x
 		sub	ax,0Ah
-		cmp	byte ptr ds:data_43e,5
-		jne	loc_45			; Jump if not equal
+		cmp	byte ptr ds:drgn_phase_dir,5
+		jne	drgn_render_phase_b_no_off			; Jump if not equal
 		add	ax,4
-loc_45:
+
+drgn_render_phase_b_no_off:
 		mov	cx,0Dh
-loc_46:
+
+drgn_phase_b_row_loop:
 		push	cx
 		push	ax
-		call	word ptr cs:data_16e
+		call	word ptr cs:drgn_cb_tile_at_pos
 		pop	ax
-		mov	ds:data_37e,bl
-		jnc	loc_49			; Jump if carry=0
+		mov	ds:drgn_attr_tmp,bl
+		jnc	drgn_phase_b_emit			; Jump if carry=0
 		mov	cx,8
 
-locloop_47:
-		rol	byte ptr ds:[bp],1	; Rotate
-		jnc	loc_48			; Jump if carry=0
-		inc	di
-loc_48:
-		loop	locloop_47		; Loop if cx > 0
+drgn_phase_b_emit_skip_loop:
+			rol	byte ptr ds:[bp],1	; Rotate
+			jnc	drgn_phase_b_skip_carry			; Jump if carry=0
+			inc	di
 
-		jmp	short loc_52
-loc_49:
+drgn_phase_b_skip_carry:
+			loop	drgn_phase_b_emit_skip_loop		; Loop if cx > 0
+
+		jmp	short drgn_phase_b_row_advance
+
+drgn_phase_b_emit:
 		xor	cl,cl			; Zero register
-loc_50:
-		push	cx
-		push	ax
-		rol	byte ptr ds:[bp],1	; Rotate
-		jnc	loc_51			; Jump if carry=0
-		mov	[si],ax
-		mov	al,ds:data_33e
-		add	al,cl
-		add	al,4
-		and	al,3Fh			; '?'
-		mov	[si+2],al
-		mov	al,ds:data_37e
-		mov	[si+3],al
-		mov	al,[di]
-		mov	ah,al
-		shr	al,1			; Shift w/zeros fill
-		shr	al,1			; Shift w/zeros fill
-		shr	al,1			; Shift w/zeros fill
-		shr	al,1			; Shift w/zeros fill
-		or	al,20h			; ' '
-		mov	[si+4],al
-		mov	[si+6],ah
-		mov	byte ptr [si+5],0
-		push	di
-		mov	ax,[si+2]
-		call	word ptr cs:data_15e
-		mov	bl,ds:data_41e
-		xor	bh,bh			; Zero register
-		mov	al,bl
-		or	al,80h
-		xchg	[di],al
-		mov	ds:data_59e[bx],al
-		add	si,10h
-		inc	byte ptr ds:data_41e
-		pop	di
-		inc	di
-loc_51:
-		pop	ax
-		pop	cx
-		inc	cl
-		cmp	cl,8
-		jne	loc_50			; Jump if not equal
-loc_52:
+
+drgn_phase_b_emit_loop:
+			push	cx
+			push	ax
+			rol	byte ptr ds:[bp],1	; Rotate
+			jnc	drgn_phase_b_skip_emit			; Jump if carry=0
+			mov	[si],ax
+			mov	al,ds:drgn_scroll_x_hi
+			add	al,cl
+			add	al,4
+			and	al,3Fh			; '?'
+			mov	[si+2],al
+			mov	al,ds:drgn_attr_tmp
+			mov	[si+3],al
+			mov	al,[di]
+			mov	ah,al
+			shr	al,1			; Shift w/zeros fill
+			shr	al,1			; Shift w/zeros fill
+			shr	al,1			; Shift w/zeros fill
+			shr	al,1			; Shift w/zeros fill
+			or	al,20h			; ' '
+			mov	[si+4],al
+			mov	[si+6],ah
+			mov	byte ptr [si+5],0
+			push	di
+			mov	ax,[si+2]
+			call	word ptr cs:drgn_cb_tile_dispatch
+			mov	bl,ds:drgn_npc_idx
+			xor	bh,bh			; Zero register
+			mov	al,bl
+			or	al,80h
+			xchg	[di],al
+			mov	ds:drgn_sprite_xlat_tbl[bx],al
+			add	si,10h
+			inc	byte ptr ds:drgn_npc_idx
+			pop	di
+			inc	di
+
+drgn_phase_b_skip_emit:
+			pop	ax
+			pop	cx
+			inc	cl
+			cmp	cl,8
+			jne	drgn_phase_b_emit_loop			; Jump if not equal
+
+drgn_phase_b_row_advance:
 		inc	ax
 		inc	bp
 		pop	cx
-		loop	locloop_53		; Loop if cx > 0
+		loop	drgn_phase_b_row_loop_jmp		; Loop if cx > 0
 
-		jmp	short loc_54
+		jmp	short drgn_phase_b_done
 
-locloop_53:
-		jmp	loc_46
-loc_54:
+drgn_phase_b_row_loop_jmp:
+		jmp	drgn_phase_b_row_loop
+
+drgn_phase_b_done:
 		mov	word ptr [si],0FFFFh
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-tilecol_multiply		proc	near
-		mov	al,ds:data_35e
+drgn_render_col_pack		proc	near
+		mov	al,ds:drgn_render_row
 		mov	bl,0Ah
 		mul	bl			; ax = reg * al
-		mov	bl,ds:data_36e
+		mov	bl,ds:drgn_render_col
 		xor	bh,bh			; Zero register
 		add	ax,bx
 		add	ax,0AA69h
 		mov	di,ax
 
-locloop_55:
-		push	cx
-		mov	cx,8
+drgn_mul_outer_loop:
+			push	cx
+			mov	cx,8
 
-locloop_56:
-		rol	byte ptr ds:[bp],1	; Rotate
-		jnc	loc_57			; Jump if carry=0
-		lodsb				; String [si] to al
-		mov	[di],al
-loc_57:
-		inc	di
-		loop	locloop_56		; Loop if cx > 0
+drgn_mul_inner_loop:
+				rol	byte ptr ds:[bp],1	; Rotate
+				jnc	drgn_mul_skip			; Jump if carry=0
+				lodsb				; String [si] to al
+				mov	[di],al
 
-		inc	di
-		inc	di
-		inc	bp
-		pop	cx
-		loop	locloop_55		; Loop if cx > 0
+drgn_mul_skip:
+				inc	di
+				loop	drgn_mul_inner_loop		; Loop if cx > 0
+
+			inc	di
+			inc	di
+			inc	bp
+			pop	cx
+			loop	drgn_mul_outer_loop		; Loop if cx > 0
 
 		retn
-tilecol_multiply		endp
 
-			                        ;* No entry point to code
-		cwd				; Word to double word
-		cmpsw				; Cmp [si] to es:[di]
-		scasw				; Scan es:[di] for ax
-		cmpsw				; Cmp [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		cmpsw				; Cmp [si] to es:[di]
-		mov	dx,0C5A7h
-		cmpsw				; Cmp [si] to es:[di]
-		iret				; Interrupt return
-			                        ;* No entry point to code
-		cmpsw				; Cmp [si] to es:[di]
+drgn_render_col_pack		endp
+
+; Trailer data block (file 0x788..end).  Loaded into game DS at the
+; module's data-segment slot; the EQUs at the top of the file
+; (drgn_phase_si_tbl @ 0xA783, etc.) point into this region at runtime.
+; Sourcer mis-decoded the leading bytes as cwd/cmpsw/scasw/mov/iret;
+; they are pure data -- preserved verbatim below.
+
+drgn_data_trailer	label	byte
+		db	099h, 0A7h, 0AFh, 0A7h	; cwd cmpsw scasw cmpsw mis-decode
+		db	0A4h, 0A7h, 0BAh, 0A7h	; movsb cmpsw  mov dx,xxx mis-decode
+		db	0C5h, 0A7h, 0CFh	; ... cmpsw iret mis-decode
+		db	0A7h			; cmpsw mis-decode (No-entry #3)
 		db	0DAh,0A7h,0E4h,0A7h,0FAh,0A7h
 		db	0EFh,0A7h, 05h,0A8h, 00h, 02h
 		db	 01h, 10h, 11h, 12h, 13h, 14h
@@ -850,85 +907,85 @@ tilecol_multiply		endp
 		db	 00h, 20h, 00h, 20h, 00h, 20h
 		db	 00h, 00h, 00h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-tilecol_func_4		proc	near
-		mov	ax,ds:data_34e
+drgn_phase_step_cb		proc	near
+		mov	ax,ds:drgn_scroll_max
 		sub	ax,bx
-		jnc	loc_58			; Jump if carry=0
+		jnc	drgn_scroll_clamp_zero			; Jump if carry=0
 		xor	ax,ax			; Zero register
-loc_58:
-		mov	ds:data_34e,ax
+
+drgn_scroll_clamp_zero:
+		mov	ds:drgn_scroll_max,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:data_14e
+		call	word ptr cs:drgn_cb_scroll
 		pop	ax
 		or	ax,ax			; Zero ?
-		jz	loc_59			; Jump if zero
+		jz	drgn_scroll_reset_state			; Jump if zero
 		retn
-loc_59:
-		mov	byte ptr ds:data_40e,0
-		mov	byte ptr ds:data_60e,0FFh
-		mov	byte ptr ds:data_40e,0
-		mov	byte ptr ds:data_53e,0
-		mov	byte ptr ds:data_55e,0
-		mov	byte ptr ds:data_38e,0
-		mov	byte ptr ds:data_49e,0
-		retn
-tilecol_func_4		endp
 
-loc_60:
-		cmp	byte ptr ds:data_40e,28h	; '('
-		jae	loc_63			; Jump if above or =
-		mov	byte ptr ds:data_61e,0FFh
-		inc	byte ptr ds:data_40e
-		cmp	byte ptr ds:data_40e,1Eh
-		jae	loc_62			; Jump if above or =
-		inc	byte ptr ds:data_44e
-		mov	al,ds:data_44e
+drgn_scroll_reset_state:
+		mov	byte ptr ds:drgn_death_step,0
+		mov	byte ptr ds:gvar_death_flag,0FFh
+		mov	byte ptr ds:drgn_death_step,0
+		mov	byte ptr ds:drgn_init_render,0
+		mov	byte ptr ds:drgn_xlat_idx,0
+		mov	byte ptr ds:drgn_phase_b_active,0
+		mov	byte ptr ds:drgn_phase_a_active,0
+		retn
+
+drgn_phase_step_cb		endp
+
+drgn_death_handler:
+		cmp	byte ptr ds:drgn_death_step,28h	; '('
+		jae	drgn_death_finish			; Jump if above or =
+		mov	byte ptr ds:gvar_dir_toggle,0FFh
+		inc	byte ptr ds:drgn_death_step
+		cmp	byte ptr ds:drgn_death_step,1Eh
+		jae	drgn_death_phase_done			; Jump if above or =
+		inc	byte ptr ds:drgn_phase_step
+		mov	al,ds:drgn_phase_step
 		and	al,1
 		add	al,2
-		mov	ds:data_43e,al
-		mov	al,ds:data_44e
+		mov	ds:drgn_phase_dir,al
+		mov	al,ds:drgn_phase_step
 		and	al,3
-		jz	loc_61			; Jump if zero
-		jmp	loc_35
-loc_61:
-		mov	byte ptr ds:data_63e,37h	; '7'
-		jmp	loc_35
-loc_62:
-		mov	byte ptr ds:data_44e,1
-		mov	byte ptr ds:data_43e,0Ah
-		jmp	loc_35
-loc_63:
-		mov	byte ptr ds:data_62e,0FFh
+		jz	drgn_death_set_phase_x			; Jump if zero
+		jmp	drgn_render_begin
+
+drgn_death_set_phase_x:
+		mov	byte ptr ds:gvar_spawn_fx_flag,37h	; '7'
+		jmp	drgn_render_begin
+
+drgn_death_phase_done:
+		mov	byte ptr ds:drgn_phase_step,1
+		mov	byte ptr ds:drgn_phase_dir,0Ah
+		jmp	drgn_render_begin
+
+drgn_death_finish:
+		mov	byte ptr ds:gvar_state_ff30,0FFh
 		retn
 
 ; ------------------------------------------------------------------
-; Module trailer: dispatch-table data + 'aragon' string fragment
+; Module trailer: dispatch-table data + 'gon' string fragment
 ; (suffix of "dragon" or a location/speaker name like "Aragon"),
-; followed by 342 zero padding bytes.
+; followed by 342 zero padding bytes.  Sourcer mis-decoded the leading
+; bytes as push/add/and/loopne/etc.; they are pure data preserved here.
 ; ------------------------------------------------------------------
-			                        ;* No entry point to code
-		push	ds			; data bytes
-		add	[bx+si],cl		; data bytes
-		and	[bp+di],al		; data bytes
-;*		loopnz	locloop_64		;*Loop if zf=0, cx>0
-		db	0E0h, 02Eh		; loopne 0A75h (absolute) -- data bytes
-		add	ax,4900h		; data bytes
-		stosb				; data byte
-		les	cx,dword ptr [bx+di]	; data bytes
-		adc	word ptr ss:[600h][bp+di],di	; data bytes
-		inc	sp			; data byte
-;*		jc	loc_65			;*Jump if carry Set
-		db	072h, 061h		; jc 0AB5h (absolute) -- data bytes
+
+drgn_trailer_data	label	byte
+		db	1Eh			; push ds (mis-decode of data)
+		db	00h, 08h		; add [bx+si],cl mis-decode
+		db	20h, 03h		; and [bp+di],al mis-decode
+		db	0E0h, 2Eh		; loopne mis-decode
+		db	05h, 00h, 49h		; add ax,4900h mis-decode
+		db	0AAh			; stosb mis-decode
+		db	0C4h, 09h		; les cx,[bx+di] mis-decode
+		db	11h, 0BBh, 00h, 06h	; adc ss:[bp+di+0600h],di mis-decode
+		db	44h			; inc sp mis-decode
+		db	72h, 61h		; jc mis-decode (lands on 'a' of 'agon')
 		db	'gon'			; tail of 'dragon' / 'aragon' name
 		db	342 dup (0)		; pad to module end
 
 seg_a		ends
-
-
 
 		end	start
