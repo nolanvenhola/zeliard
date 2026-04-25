@@ -6,25 +6,45 @@ PAGE  59,132
 ;  311TORI.BIN - Tori / Bird Enemy Code Module (zelres3 chunk 12, 'Pollo')
 ;
 ;  Tori (bird) enemy sprite/logic module loaded by 200FIGHT.asm alongside
-;  EAI3/EAI4 behavior handlers.  The Japanese name "tori" means bird;
-;  the Spanish marker 'Pollo' ('chicken/bird') appears as a text tag
-;  in the module's trailing data.
+;  303EAI3 (Tori AI handler).  The Japanese name "tori" means bird; the
+;  Spanish marker 'Pollo' ('chicken/bird') appears as a 5-char Pascal
+;  string in the module's trailing data.
 ;
-;  Primary entry: tori_scan_and_update -- iterates the enemy slot list
-;  (SI = fight_slot_list), handles bird-specific flight/glide patterns,
-;  composes multi-plane sprite rows via sub_1 (row plotter), and spawns
-;  swoop/dive projectiles when in-range.
+;  File layout (loaded at game_seg:0xA000 by 200FIGHT):
+;    0x000..0x003 : file-size header word (= 0x07E4 = file_size - 4) + pad
+;    0x004..0x007 : init src/dst pointers (tori_init_src=0xA1D4,
+;                   tori_init_dst=tori_hp 0xA773)
+;    0x008..0x013 : 12 zero bytes (initial state buffer)
+;    0x014..0x033 : 32-byte template (38h marker + 31x 12h)
+;    0x034..0x051 : tori_frame_ptr_tbl_a -- 15 word ptrs (0xA04E..0xA1C5)
+;    0x052..0x176 : sprite frame data (5/4-byte tile rows w/ 00 terminators)
+;                   plus 2 dual-use bytes (tori_scan_acc_a, tori_scan_acc_b) and embedded
+;                   word constant tori_extern_fn_ptr (= 0x0900) used as a fn ptr
+;    0x177..0x1D7 : tail of frame data
+;    0x1D7..0x1E5 : tori_scan_prolog -- inline mov si,fight_slot_list /
+;                   clear tori_slot_idx, tori_cycle_idx
+;    0x1E5..0x645 : main scan-and-update code (was tori_main / loc_1..loc_57)
+;    0x507..0x57F : sub_1..sub_6 (sprite renderer + hp/altitude helpers)
+;    0x648..0x6C7 : orphan code/data block (no static caller; called via
+;                   200FIGHT DS-resident dispatch slot - reached as a
+;                   per-handler init/setup vector)
+;    0x650..0x66E : 16 word ptrs into the orphan block itself
+;    0x6CE..0x77F : trailing const table (timing/position constants)
+;    0x780..0x787 : 'Pollo' name tag (length-prefixed Pascal string)
+;    0x788..0x7E7 : 91 zero bytes of file padding
 ;
-;  Sub-functions: sub_1 (bit-stream sprite row renderer with [bp]+[si]),
-;  sub_2..sub_5 (phase counters for glide/turn/swoop states), sub_6
-;  (range-gated spawn / initial state reset).  Tail carries 'Pollo'.
+;  Primary entry (via 200FIGHT dispatch): tori_scan_prolog -- iterates
+;  the enemy slot list (SI = fight_slot_list), drives bird-specific
+;  flight/glide phases, composes multi-plane sprite rows via sub_1
+;  (bit-stream row plotter), and spawns swoop/dive projectiles when in
+;  range.  Helpers sub_2..sub_5 manage glide/turn/swoop counters; sub_6
+;  performs HP-decrement plus death/spawn-FX bookkeeping.
 ;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
-
 
 ; Fight-engine callback vectors / shared globals (DS, game_seg).
 
@@ -35,13 +55,13 @@ fight_cb_hit_check	equ	6038h			; per-slot hit/collision query
 fight_cb_aim		equ	603Ah			; aim/target callback
 fight_cb_shutdown	equ	603Ch			; shutdown callback
 
-; Shared pattern / AI tables (DS).
+; Shared sprite-pattern / AI tables (DS).
 
-sprite_pat_tbl		equ	0A64Dh			; sprite pattern table
+sprite_pat_tbl		equ	0A64Dh			; sprite pattern-pointer table
 glide_table_a		equ	0A682h			; glide path A
 glide_table_b		equ	0A688h			; glide path B
 glide_table_c		equ	0A68Eh			; glide path C
-ai_column_tbl		equ	0A6CBh			; AI column-index table (xlat base)
+ai_column_tbl		equ	0A6CBh			; AI column-index table
 
 ; Tori-specific global state (DS).
 
@@ -49,7 +69,7 @@ tori_spawn_tile		equ	0A766h			; spawn-cell tile
 tori_spawn_col		equ	0A767h			; spawn-cell col
 tori_hp			equ	0A773h			; Tori HP counter
 tori_row_hi		equ	0A775h			; row hi byte
-tori_row_lo		equ	0A776h			; row lo byte
+tori_row_lo		equ	0A776h			; row lo byte (word at A776h)
 tori_slot_idx		equ	0A789h			; current slot index
 tori_dir_state		equ	0A78Ah			; direction state byte
 tori_phase_a		equ	0A78Bh			; phase byte A
@@ -69,7 +89,7 @@ tori_dive_flag		equ	0A798h			; dive-flag byte
 tori_turn_cooldown	equ	0A799h			; turn cooldown
 tori_altitude		equ	0A79Ah			; altitude (y) position byte
 tori_alt_state		equ	0A79Bh			; alternate state byte
-tori_tmp_buf		equ	0A79Ch			; temp buffer offset (0x48 bytes)
+tori_tmp_buf		equ	0A79Ch			; temp render buffer (0x48 bytes)
 fight_state_max		equ	0C002h			; max state index (for wrap)
 fight_slot_list		equ	0C010h			; base of enemy slot list
 sprite_idx_table	equ	0ED20h			; sprite index mapping table
@@ -78,28 +98,64 @@ gvar_dir_toggle		equ	0FF2Fh			; dir-toggle flag global
 gvar_completion		equ	0FF30h			; completion/stage flag global
 gvar_spawn_fx_flag	equ	0FF75h			; flag byte for spawn VFX
 
+; ----- Slot-record layout helpers (for readability in code below) -----
+;   [si+0..1] = sprite tile word   [si+4] = attribute  [si+5] = flags
+;   [si+2..3] = record indices     [si+6] = frame      [si+10h] = next
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
 tori_main	proc	far
 
+; -------------------------------------------------------------------------
+;  Module header (file 0x000..0x033) -- loaded as data by 200FIGHT.
+;  Sourcer forced `start:` here but no execution lands here; the bytes
+;  are a 4-byte file-length header, a 4-byte init src/dst pair, then
+;  two state-buffer blocks consumed by 200FIGHT's per-slot init.
+; -------------------------------------------------------------------------
+
 start:
-		in	al,7			; port 7, DMA-1 bas&cnt ch 3
-		add	[bx+si],al
-;*		aam	0A1h			; undocumented inst
-		db	0D4h,0A1h		;  Fixup - byte match
-		jnc	$-57h			; Jump if carry=0
-		db	12 dup (0)
-		db	 38h, 12h
-		db	30 dup (12h)
-		db	 4Eh,0A0h, 67h,0A0h, 94h,0A0h
-		db	0BCh,0A0h,0DAh,0A0h, 02h,0A1h
-		db	 16h,0A1h, 2Ah,0A1h, 3Eh,0A1h
-		db	 52h,0A1h, 57h,0A1h, 70h,0A1h
-		db	 8Eh,0A1h,0ACh,0A1h,0C5h,0A1h
+
+file_header:
+		db	 0E4h, 07h		; file length word: 0x07E4 (= file_size - 4)
+		db	 00h, 00h		; pad / flag word
+
+tori_init_src_dst:
+		db	 0D4h,0A1h		; init src ptr = 0xA1D4 (into frame data)
+		db	 73h,0A7h		; init dst ptr = tori_hp (0xA773)
+
+		db	12 dup (0)		; initial per-slot state buffer
+
+tori_state_template:				; 32-byte template
+		db	 38h			; marker byte
+		db	30 dup (12h)		; 30x 12h (slot defaults)
+		db	 12h			; final 12h
+
+; -------------------------------------------------------------------------
+;  Frame pointer tables (file 0x034..0x051).
+;  Each entry = runtime address in game_seg (= 0xA000 + file offset).
+; -------------------------------------------------------------------------
+
+tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers
+		db	 4Eh,0A0h, 67h,0A0h, 94h,0A0h	; -> 0xA04E, 0xA067, 0xA094
+		db	0BCh,0A0h,0DAh,0A0h, 02h,0A1h	; -> 0xA0BC, 0xA0DA, 0xA102
+		db	 16h,0A1h, 2Ah,0A1h, 3Eh,0A1h	; -> 0xA116, 0xA12A, 0xA13E
+		db	 52h,0A1h, 57h,0A1h, 70h,0A1h	; -> 0xA152, 0xA157, 0xA170
+		db	 8Eh,0A1h,0ACh,0A1h,0C5h,0A1h	; -> 0xA18E, 0xA1AC, 0xA1C5
+
+; -------------------------------------------------------------------------
+;  Sprite frame data (file 0x052..0x176).
+;  Tile-index rows (variable length, 0x00 row-terminators) indexed by
+;  tori_frame_ptr_tbl_a.  Two single bytes (tori_scan_acc_a, tori_scan_acc_b) are dual-use
+;  loop counters referenced from the main scan code.  The word constant
+;  tori_extern_fn_ptr (= 0x0900) embedded mid-table is invoked via `call cs:tori_extern_fn_ptr`
+;  as a function pointer (the runtime resolves it via game-segment fixup;
+;  static analysis cannot trace it).
+; -------------------------------------------------------------------------
+
+tori_frame_00:					; -> 0xA052
 		db	 00h, 01h, 02h, 03h, 04h, 00h
 		db	 9Ch, 02h, 9Dh, 04h, 00h, 29h
 		db	 2Ah, 2Bh, 2Ch, 00h, 6Ah, 6Bh
@@ -108,12 +164,12 @@ start:
 		db	 00h, 2Dh, 32h, 2Eh, 2Fh, 00h
 		db	 2Dh, 49h, 2Eh, 50h, 00h, 2Dh
 		db	 00h, 2Eh, 58h, 00h
-data_3		db	0
+tori_scan_acc_a		db	 00h			; dual-use: scan-loop accumulator
 		db	 62h, 66h
-data_4		db	67h
+tori_scan_acc_b		db	 67h			; dual-use: scan-loop accumulator
 		db	 00h, 7Dh, 7Eh, 00h, 87h, 00h
 		db	 7Dh, 7Eh
-data_5		db	0			; Data table (indexed access)
+tori_glyph_tbl		db	 00h			; data table (indexed access)
 		db	 19h, 00h, 00h, 00h, 8Fh, 90h
 		db	 00h, 96h, 97h, 98h, 99h, 00h
 		db	 10h, 11h, 14h, 00h, 00h, 00h
@@ -138,7 +194,7 @@ data_5		db	0			; Data table (indexed access)
 		db	 00h, 08h, 09h, 1Ch, 1Dh, 00h
 		db	 08h, 09h, 19h, 1Fh, 00h
 		db	 08h, 09h, 21h, 22h
-data_6		dw	900h
+tori_extern_fn_ptr		dw	900h			; embedded fn-ptr (used via call cs:tori_extern_fn_ptr)
 		db	 0Ah, 1Ah, 1Bh, 00h, 09h, 0Ah
 		db	 1Dh, 1Eh, 00h, 09h, 0Ah, 1Fh
 		db	 20h, 00h, 09h, 0Ah, 22h, 23h
@@ -170,44 +226,59 @@ data_6		dw	900h
 		db	 00h, 3Fh, 00h, 8Bh, 8Ch, 00h
 		db	 44h, 45h, 47h, 48h, 00h, 80h
 		db	 81h, 00h, 00h, 00h, 00h, 00h
-		db	 8Dh, 8Eh, 8Bh, 36h, 10h,0C0h
-		db	0C6h, 06h, 89h,0A7h, 00h,0C6h
-		db	 06h, 91h,0A7h, 00h
-loc_1:
+		db	 8Dh, 8Eh
+
+; -------------------------------------------------------------------------
+;  Inline scan-prolog (file 0x1D7..0x1E4) -- decoded x86, NOT data.
+;  Falls through directly into scan_slot_loop.  Same structure as
+;  309CRAB / 310TAKO scan prologs.
+; -------------------------------------------------------------------------
+
+tori_scan_prolog:
+		db	 8Bh, 36h, 10h,0C0h		; mov si, fight_slot_list
+		db	0C6h, 06h, 89h,0A7h, 00h	; mov byte ptr tori_slot_idx, 0
+		db	0C6h, 06h, 91h,0A7h, 00h	; mov byte ptr tori_cycle_idx, 0
+
+scan_slot_loop:					; was loc_1
 ;*		cmp	word ptr [si],0FFFFh
-		db	 83h, 3Ch,0FFh		;  Fixup - byte match
-		jz	loc_4			; Jump if zero
-		mov	ax,[si]
-		call	word ptr cs:fight_cb_anim_step
-		jc	loc_3			; Jump if carry Set
-		mov	[si+3],bl
-		mov	ax,[si+2]
-		call	word ptr cs:fight_cb_record_ofs
-		mov	bl,ds:tori_slot_idx
-		xor	bh,bh			; Zero register
-		mov	al,ds:sprite_idx_table[bx]
-		mov	[di],al
-		test	byte ptr [si+5],40h	; '@'
-		jz	loc_3			; Jump if zero
-		test	byte ptr ds:tori_cycle_idx,80h
-		jnz	loc_3			; Jump if not zero
-		mov	al,[si+5]
-		and	al,1Fh
-		test	byte ptr [si+4],0FFh
-		jnz	loc_2			; Jump if not zero
-		or	al,80h
-loc_2:
-		mov	ds:tori_cycle_idx,al
-loc_3:
-		inc	byte ptr ds:tori_slot_idx
-		add	si,10h
-		jmp	short loc_1
-loc_4:
+			db	 83h, 3Ch,0FFh		; cmp word ptr [si], 0FFFFh
+							;  (alt encoding: sign-extended imm8 form;
+							;   TASM emits 4-byte form, so keep as db)
+			jz	scan_done		; was loc_4 -- end of slot list
+			mov	ax,[si]
+			call	word ptr cs:fight_cb_anim_step
+			jc	scan_next_slot		; was loc_3 -- callback consumed slot
+			mov	[si+3],bl
+			mov	ax,[si+2]
+			call	word ptr cs:fight_cb_record_ofs
+			mov	bl,ds:tori_slot_idx
+			xor	bh,bh			; Zero register
+			mov	al,ds:sprite_idx_table[bx]
+			mov	[di],al
+			test	byte ptr [si+5],40h	; '@'  bit6 = active
+			jz	scan_next_slot
+			test	byte ptr ds:tori_cycle_idx,80h
+			jnz	scan_next_slot
+			mov	al,[si+5]
+			and	al,1Fh
+			test	byte ptr [si+4],0FFh
+			jnz	apply_cycle_bits	; was loc_2
+			or	al,80h
+
+apply_cycle_bits:				; was loc_2
+			mov	ds:tori_cycle_idx,al
+
+scan_next_slot:					; was loc_3
+			inc	byte ptr ds:tori_slot_idx
+			add	si,10h
+			jmp	short scan_slot_loop
+
+scan_done:					; was loc_4
 		mov	si,ds:fight_slot_list
 		mov	word ptr [si],0FFFh
 		mov	al,ds:tori_cycle_idx
 		or	al,al			; Zero ?
-		jz	loc_8			; Jump if zero
+		jz	dispatch_phase		; was loc_8
 		push	ax
 		and	al,1Fh
 		call	word ptr cs:fight_cb_hit_check
@@ -216,106 +287,124 @@ loc_4:
 		pop	ax
 		add	bx,bx
 		or	al,al			; Zero ?
-		jns	loc_5			; Jump if not sign
+		jns	hit_pos_branch		; was loc_5
 		add	bx,bx
 		add	bx,bx
-loc_5:
+
+hit_pos_branch:					; was loc_5
 		mov	byte ptr ds:gvar_spawn_fx_flag,29h	; ')'
 		call	sub_6
 		test	byte ptr ds:tori_glide_flag,0FFh
-		jz	loc_6			; Jump if zero
+		jz	hit_check_attack	; was loc_6
 		mov	byte ptr ds:tori_glide_flag,0
 		mov	byte ptr ds:tori_sub_phase,0
 		mov	byte ptr ds:tori_attack_flag,0FFh
-loc_6:
-		jnz	loc_7			; Jump if not zero
+
+hit_check_attack:				; was loc_6
+		jnz	hit_skip_alt_inc	; was loc_7
 		call	sub_5
-loc_7:
+
+hit_skip_alt_inc:				; was loc_7
 		mov	byte ptr ds:tori_anim_timer,4
-loc_8:
+
+dispatch_phase:					; was loc_8
 		mov	byte ptr ds:tori_phase_a,0
 		test	byte ptr ds:tori_anim_timer,0FFh
-		jz	loc_9			; Jump if zero
+		jz	check_glide_branch	; was loc_9
 		dec	byte ptr ds:tori_anim_timer
 		mov	byte ptr ds:tori_phase_a,1
-loc_9:
+
+check_glide_branch:				; was loc_9
 		test	byte ptr ds:tori_glide_flag,0FFh
-		jz	loc_14			; Jump if zero
+		jz	check_attack_branch	; was loc_14
 		cmp	byte ptr ds:tori_row_hi,0Eh
-		je	loc_10			; Jump if equal
+		je	glide_skip_dec_row	; was loc_10
 		dec	byte ptr ds:tori_row_hi
-loc_10:
+
+glide_skip_dec_row:				; was loc_10
 		inc	byte ptr ds:tori_sub_phase
 		and	byte ptr ds:tori_sub_phase,3
 		cmp	byte ptr ds:tori_sub_phase,2
-		jne	loc_11			; Jump if not equal
+		jne	glide_skip_fx2b		; was loc_11
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Bh	; '+'
-loc_11:
+
+glide_skip_fx2b:				; was loc_11
 		call	sub_4
-		jc	loc_12			; Jump if carry Set
+		jc	glide_force_attack	; was loc_12
 		test	byte ptr ds:tori_alt_state,0FFh
-		jz	loc_12			; Jump if zero
+		jz	glide_force_attack
 		dec	byte ptr ds:tori_alt_state
 		test	byte ptr ds:tori_cycle_idx,0FFh
-		jz	loc_13			; Jump if zero
-loc_12:
+		jz	emit_setup_jmp		; was loc_13
+
+glide_force_attack:				; was loc_12
 		mov	byte ptr ds:tori_glide_flag,0
 		mov	byte ptr ds:tori_sub_phase,0
 		mov	byte ptr ds:tori_attack_flag,0FFh
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Ah	; '*'
-loc_13:
-		jmp	loc_30
-loc_14:
+
+emit_setup_jmp:					; was loc_13
+		jmp	emit_setup		; was loc_30
+
+check_attack_branch:				; was loc_14
 		test	byte ptr ds:tori_attack_flag,0FFh
-		jz	loc_17			; Jump if zero
+		jz	check_phase_limit	; was loc_17
 		cmp	byte ptr ds:tori_sub_phase,1
-		jne	loc_15			; Jump if not equal
+		jne	attack_advance		; was loc_15
 		mov	byte ptr ds:tori_attack_flag,0
-		jmp	loc_30
-loc_15:
+		jmp	emit_setup
+
+attack_advance:					; was loc_15
 		mov	byte ptr ds:tori_sub_phase,1
 		cmp	byte ptr ds:tori_row_hi,12h
-		je	loc_16			; Jump if equal
+		je	attack_skip		; was loc_16
 		inc	byte ptr ds:tori_row_hi
 		mov	byte ptr ds:tori_sub_phase,0
 		call	sub_3
-loc_16:
-		jmp	loc_30
-loc_17:
+
+attack_skip:					; was loc_16
+		jmp	emit_setup
+
+check_phase_limit:				; was loc_17
 		test	byte ptr ds:tori_phase_limit,0FFh
-		jz	loc_20			; Jump if zero
+		jz	check_altitude		; was loc_20
 		inc	byte ptr ds:tori_turn_flag
 		and	byte ptr ds:tori_turn_flag,3
 		call	sub_2
-		jnc	loc_18			; Jump if carry=0
-		jmp	loc_30
-loc_18:
+		jnc	dive_step_a		; was loc_18
+		jmp	emit_setup
+
+dive_step_a:					; was loc_18
 		cmp	byte ptr ds:tori_dive_flag,4
-		jae	loc_19			; Jump if above or =
+		jae	dive_to_glide		; was loc_19
 		inc	byte ptr ds:tori_dive_flag
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Ah	; '*'
 		mov	byte ptr ds:tori_anim_timer,4
-		jmp	loc_30
-loc_19:
+		jmp	emit_setup
+
+dive_to_glide:					; was loc_19
 		mov	byte ptr ds:tori_phase_limit,0
 		mov	byte ptr ds:tori_sub_phase,0
 		mov	byte ptr ds:tori_glide_flag,0FFh
 		mov	byte ptr ds:tori_alt_state,0Fh
-		jmp	loc_30
-loc_20:
+		jmp	emit_setup
+
+check_altitude:					; was loc_20
 		test	byte ptr ds:tori_altitude,0FFh
-		jz	loc_23			; Jump if zero
+		jz	check_death		; was loc_23
 		call	sub_2
-		jnc	loc_21			; Jump if carry=0
-		jmp	loc_30
-loc_21:
+		jnc	dive_step_b		; was loc_21
+		jmp	emit_setup
+
+dive_step_b:					; was loc_21
 		cmp	byte ptr ds:tori_dive_flag,2
-		jae	loc_22			; Jump if above or =
+		jae	land_aim		; was loc_22
 		inc	byte ptr ds:tori_dive_flag
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Ah	; '*'
 		mov	byte ptr ds:tori_anim_timer,2
-		jmp	loc_30
-loc_22:
+		jmp	emit_setup
+
+land_aim:					; was loc_22
 		mov	ax,ds:tori_hp
 		add	ax,4
 		call	word ptr cs:fight_cb_anim_step
@@ -324,66 +413,82 @@ loc_22:
 		add	al,4
 		and	al,3Fh			; '?'
 		mov	ds:tori_spawn_col,al
-		mov	bx,0A766h
+		mov	bx,tori_spawn_tile
 		call	word ptr cs:fight_cb_aim
 		mov	byte ptr ds:tori_altitude,0
-		jmp	loc_30
-loc_23:
+		jmp	emit_setup
+
+check_death:					; was loc_23
 		test	byte ptr ds:gvar_death_flag,0FFh
-		jz	loc_24			; Jump if zero
-		jmp	loc_55
-loc_24:
+		jz	walk_dispatch		; was loc_24
+		jmp	death_phase		; was loc_55
+
+walk_dispatch:					; was loc_24
 		inc	byte ptr ds:tori_turn_flag
 		and	byte ptr ds:tori_turn_flag,3
 		test	byte ptr ds:tori_cycle_idx,0FFh
-		jz	loc_25			; Jump if zero
+		jz	check_phase_arm		; was loc_25
 		cmp	byte ptr ds:tori_hp,14h
-		jb	loc_25			; Jump if below
+		jb	check_phase_arm
 		mov	byte ptr ds:tori_phase_limit,0FFh
 		mov	byte ptr ds:tori_dive_flag,0
-loc_25:
+
+check_phase_arm:				; was loc_25
 		test	byte ptr ds:tori_phase_limit,0FFh
-		jnz	loc_26			; Jump if not zero
-		call	word ptr cs:data_6
+		jnz	walk_count_step		; was loc_26
+		call	word ptr cs:tori_extern_fn_ptr
 		and	al,0Fh
-		jnz	loc_26			; Jump if not zero
+		jnz	walk_count_step
 		mov	byte ptr ds:tori_altitude,0FFh
 		mov	byte ptr ds:tori_dive_flag,0
-loc_26:
+
+walk_count_step:				; was loc_26
 		inc	byte ptr ds:tori_phase_count
 		test	byte ptr ds:tori_phase_count,1
-		jnz	loc_30			; Jump if not zero
-		mov	al,data_3
-		add	al,data_4
+		jnz	emit_setup
+		mov	al,tori_scan_acc_a
+		add	al,tori_scan_acc_b
 		xor	ah,ah			; Zero register
 		mov	cx,ax
 		sub	cx,ds:fight_state_max
-		jc	loc_27			; Jump if carry Set
+		jc	walk_skip_swap		; was loc_27
 		xchg	cx,ax
-loc_27:
+
+walk_skip_swap:					; was loc_27
 		mov	bl,ds:tori_hp
 		sub	bl,al
 		cmp	bl,0Ch
-		je	loc_29			; Jump if equal
-		jnc	loc_28			; Jump if carry=0
+		je	walk_random_arm		; was loc_29
+		jnc	walk_dir_inc		; was loc_28
 		dec	byte ptr ds:tori_dir_state
 		and	byte ptr ds:tori_dir_state,3
 		call	sub_5
-		jnc	loc_30			; Jump if carry=0
+		jnc	emit_setup
 		mov	byte ptr ds:tori_phase_limit,0FFh
 		mov	byte ptr ds:tori_dive_flag,0
-		jmp	short loc_30
-loc_28:
+		jmp	short emit_setup
+
+walk_dir_inc:					; was loc_28
 		inc	byte ptr ds:tori_dir_state
 		and	byte ptr ds:tori_dir_state,3
 		call	sub_3
-loc_29:
-		call	word ptr cs:data_6
+
+walk_random_arm:				; was loc_29
+		call	word ptr cs:tori_extern_fn_ptr
 		and	al,1Fh
-		jnz	loc_30			; Jump if not zero
+		jnz	emit_setup
 		mov	byte ptr ds:tori_phase_limit,0FFh
 		mov	byte ptr ds:tori_dive_flag,0
-loc_30:
+
+; -------------------------------------------------------------------------
+;  emit_setup (was loc_30) -- common merge for all phase branches.
+;  Stores anim_state, clears tmp render buffer (0x48 bytes), then runs
+;  one of three sprite-row composers (turn/glide/normal) before falling
+;  into the per-slot copy loop that scans the staging buffer into the
+;  fight slot list.
+; -------------------------------------------------------------------------
+
+emit_setup:					; was loc_30
 		mov	al,ds:tori_row_hi
 		mov	ds:tori_anim_state,al
 		push	cs
@@ -393,18 +498,20 @@ loc_30:
 		mov	cx,48h
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
 		test	byte ptr ds:tori_turn_cooldown,0FFh
-		jnz	loc_31			; Jump if not zero
+		jnz	turn_compose		; was loc_31
 		test	byte ptr ds:tori_attack_flag,0FFh
-		jz	loc_32			; Jump if zero
-loc_31:
+		jz	check_glide_compose	; was loc_32
+
+turn_compose:					; was loc_31
 		mov	al,ds:tori_sub_phase
 		and	al,1
 		add	al,11h
 		call	sub_1
-		jmp	short loc_34
-loc_32:
+		jmp	short copy_to_slots	; was loc_34
+
+check_glide_compose:				; was loc_32
 		test	byte ptr ds:tori_glide_flag,0FFh
-		jz	loc_33			; Jump if zero
+		jz	normal_compose		; was loc_33
 		mov	al,ds:tori_sub_phase
 		and	al,3
 		add	al,0Dh
@@ -412,8 +519,9 @@ loc_32:
 		mov	al,ds:tori_sub_phase
 		shr	al,1			; Shift w/zeros fill
 		adc	byte ptr ds:tori_anim_state,0
-		jmp	short loc_34
-loc_33:
+		jmp	short copy_to_slots
+
+normal_compose:					; was loc_33
 		mov	al,ds:tori_phase_a
 		call	sub_1
 		mov	al,ds:tori_dir_state
@@ -425,82 +533,90 @@ loc_33:
 		mov	al,ds:tori_turn_flag
 		add	al,2
 		call	sub_1
-loc_34:
+
+copy_to_slots:					; was loc_34
 		mov	byte ptr ds:tori_slot_idx,0
 		mov	ax,ds:tori_hp
 		mov	di,ds:fight_slot_list
 		mov	si,tori_tmp_buf
 		mov	cx,9
 
-locloop_35:
-		push	cx
-		push	si
-		push	ax
-		call	word ptr cs:fight_cb_anim_step
-		pop	ax
-		jc	loc_39			; Jump if carry Set
-		mov	ds:tori_frame_idx,bl
-		xor	cx,cx			; Zero register
-loc_36:
-		push	cx
-		push	ax
-		cmp	byte ptr [si],0FFh
-		je	loc_38			; Jump if equal
-		mov	[di],ax
-		mov	al,ds:tori_anim_state
-		add	al,cl
-		and	al,3Fh			; '?'
-		mov	[di+2],al
-		mov	al,ds:tori_frame_idx
-		mov	[di+3],al
-		mov	al,[si]
-		mov	ah,al
-		shr	al,1			; Shift w/zeros fill
-		shr	al,1			; Shift w/zeros fill
-		shr	al,1			; Shift w/zeros fill
-		shr	al,1			; Shift w/zeros fill
-		and	al,0Fh
-		mov	[di+4],al
-		mov	[di+6],ah
-		mov	byte ptr [di+5],0
-		test	byte ptr ds:tori_cycle_idx,0FFh
-		jz	loc_37			; Jump if zero
-		or	byte ptr [di+5],20h	; ' '
-loc_37:
-		mov	ax,[di+2]
-		push	di
-		call	word ptr cs:fight_cb_record_ofs
-		mov	bl,ds:tori_slot_idx
-		xor	bh,bh			; Zero register
-		mov	al,bl
-		or	al,80h
-		xchg	[di],al
-		mov	ds:sprite_idx_table[bx],al
-		pop	di
-		add	di,10h
-		inc	byte ptr ds:tori_slot_idx
-loc_38:
-		inc	si
-		pop	ax
-		pop	cx
-		inc	cx
-		cmp	cx,8
-		jne	loc_36			; Jump if not equal
-loc_39:
-		inc	ax
-		pop	si
-		add	si,8
-		pop	cx
-		loop	locloop_35		; Loop if cx > 0
+emit_outer_loop:				; was locloop_35
+			push	cx
+			push	si
+			push	ax
+			call	word ptr cs:fight_cb_anim_step
+			pop	ax
+			jc	emit_outer_advance	; was loc_39
+			mov	ds:tori_frame_idx,bl
+			xor	cx,cx			; Zero register
+
+emit_inner_loop:				; was loc_36
+				push	cx
+				push	ax
+				cmp	byte ptr [si],0FFh
+				je	emit_inner_skip		; was loc_38
+				mov	[di],ax
+				mov	al,ds:tori_anim_state
+				add	al,cl
+				and	al,3Fh			; '?'
+				mov	[di+2],al
+				mov	al,ds:tori_frame_idx
+				mov	[di+3],al
+				mov	al,[si]
+				mov	ah,al
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				and	al,0Fh
+				mov	[di+4],al
+				mov	[di+6],ah
+				mov	byte ptr [di+5],0
+				test	byte ptr ds:tori_cycle_idx,0FFh
+				jz	emit_no_cycle_bit	; was loc_37
+				or	byte ptr [di+5],20h	; ' '
+
+emit_no_cycle_bit:				; was loc_37
+				mov	ax,[di+2]
+				push	di
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:tori_slot_idx
+				xor	bh,bh			; Zero register
+				mov	al,bl
+				or	al,80h
+				xchg	[di],al
+				mov	ds:sprite_idx_table[bx],al
+				pop	di
+				add	di,10h
+				inc	byte ptr ds:tori_slot_idx
+
+emit_inner_skip:				; was loc_38
+				inc	si
+				pop	ax
+				pop	cx
+				inc	cx
+				cmp	cx,8
+				jne	emit_inner_loop
+
+emit_outer_advance:				; was loc_39
+			inc	ax
+			pop	si
+			add	si,8
+			pop	cx
+			loop	emit_outer_loop		; Loop if cx > 0
 
 		mov	word ptr [di],0FFFFh
 		retn
 
 tori_main	endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+; -------------------------------------------------------------------------
+;  sub_1 -- bit-stream sprite row plotter.
+;  AL = pattern index; expands a 2-pattern source via mask bits in
+;  ai_column_tbl, writing tile bytes into tori_tmp_buf.  9 outer rows x
+;  8 inner mask bits.
+; -------------------------------------------------------------------------
 
 sub_1		proc	near
 		add	al,al
@@ -511,194 +627,245 @@ sub_1		proc	near
 		mov	di,tori_tmp_buf
 		mov	cx,9
 
-locloop_40:
-		push	cx
-		mov	cx,8
+row_outer_loop:					; was locloop_40
+			push	cx
+			mov	cx,8
 
-locloop_41:
-		rol	byte ptr ds:[bp],1	; Rotate
-		jnc	loc_42			; Jump if carry=0
-		lodsb				; String [si] to al
-		mov	[di],al
-loc_42:
-		inc	di
-		loop	locloop_41		; Loop if cx > 0
+row_inner_loop:					; was locloop_41
+				rol	byte ptr ds:[bp],1	; Rotate
+				jnc	row_inner_skip		; was loc_42
+				lodsb				; String [si] to al
+				mov	[di],al
 
-		inc	bp
-		pop	cx
-		loop	locloop_40		; Loop if cx > 0
+row_inner_skip:					; was loc_42
+				inc	di
+				loop	row_inner_loop
+
+			inc	bp
+			pop	cx
+			loop	row_outer_loop
 
 		retn
+
 sub_1		endp
 
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+; -------------------------------------------------------------------------
+;  sub_2 -- swoop counter step (mod 3).  Sets CF when wrapping back to
+;  0 (i.e. swoop tick complete).
+; -------------------------------------------------------------------------
 
 sub_2		proc	near
 		inc	byte ptr ds:tori_swoop_ctr
 		cmp	byte ptr ds:tori_swoop_ctr,3
 		stc				; Set carry flag
-		jz	loc_43			; Jump if zero
+		jz	swoop_wrap		; was loc_43
 		retn
-loc_43:
+
+swoop_wrap:					; was loc_43
 		mov	byte ptr ds:tori_swoop_ctr,0
 		clc				; Clear carry flag
 		retn
+
 sub_2		endp
 
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+; -------------------------------------------------------------------------
+;  sub_3 -- conditional HP decrement (only if hp >= 0Dh; clears CF).
+; -------------------------------------------------------------------------
 
 sub_3		proc	near
 		cmp	byte ptr ds:tori_hp,0Dh
-		jae	loc_44			; Jump if above or =
+		jae	hp_dec_a		; was loc_44
 		retn
-loc_44:
+
+hp_dec_a:					; was loc_44
 		dec	byte ptr ds:tori_hp
 		clc				; Clear carry flag
 		retn
+
 sub_3		endp
 
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+; -------------------------------------------------------------------------
+;  sub_4 -- conditional HP decrement (only if hp >= 11h; clears CF).
+; -------------------------------------------------------------------------
 
 sub_4		proc	near
 		cmp	byte ptr ds:tori_hp,11h
-		jae	loc_45			; Jump if above or =
+		jae	hp_dec_b		; was loc_45
 		retn
-loc_45:
+
+hp_dec_b:					; was loc_45
 		dec	byte ptr ds:tori_hp
 		clc				; Clear carry flag
 		retn
+
 sub_4		endp
 
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+; -------------------------------------------------------------------------
+;  sub_5 -- conditional HP increment (only if hp < 30h; clears CF).
+;  Uses cmc to invert CF after the cmp so the early-exit is sense-flipped.
+; -------------------------------------------------------------------------
 
 sub_5		proc	near
 		cmp	byte ptr ds:tori_hp,30h	; '0'
 		cmc				; Complement carry
-		jnc	loc_46			; Jump if carry=0
+		jnc	hp_inc_a		; was loc_46
 		retn
-loc_46:
+
+hp_inc_a:					; was loc_46
 		inc	byte ptr ds:tori_hp
 		clc				; Clear carry flag
 		retn
+
 sub_5		endp
 
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
+; -------------------------------------------------------------------------
+;  sub_6 -- damage-apply / death arming.
+;  AX = current row word; BX = damage; subtracts and floors at 0; calls
+;  fight_cb_prep to validate; on first true zero arms gvar_death_flag
+;  and resets glide/sub_phase state.
+; -------------------------------------------------------------------------
 
 sub_6		proc	near
 		mov	ax,ds:tori_row_lo
 		sub	ax,bx
-		jnc	loc_47			; Jump if carry=0
+		jnc	sub6_store		; was loc_47
 		xor	ax,ax			; Zero register
-loc_47:
+
+sub6_store:					; was loc_47
 		mov	ds:tori_row_lo,ax
 		mov	bx,ax
 		push	ax
 		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
-		jz	loc_48			; Jump if zero
+		jz	sub6_arm_death		; was loc_48
 		retn
-loc_48:
+
+sub6_arm_death:					; was loc_48
 		mov	byte ptr ds:gvar_death_flag,0FFh
 		call	word ptr cs:fight_cb_shutdown
 		mov	byte ptr ds:tori_phase_limit,0
 		mov	byte ptr ds:tori_altitude,0
 		mov	byte ptr ds:tori_dive_flag,0
 		test	byte ptr ds:tori_glide_flag,0FFh
-		jnz	loc_49			; Jump if not zero
+		jnz	sub6_reset_glide	; was loc_49
 		retn
-loc_49:
+
+sub6_reset_glide:				; was loc_49
 		mov	byte ptr ds:tori_pattern_idx,0
 		mov	byte ptr ds:tori_glide_flag,0
-loc_54:
+
+sub6_clear_phase:				; was loc_54
 		mov	byte ptr ds:tori_sub_phase,0
 		mov	byte ptr ds:tori_attack_flag,0FFh
 		retn
+
 sub_6		endp
 
-loc_55:
+; -------------------------------------------------------------------------
+;  death_phase (was loc_55) -- runs when gvar_death_flag is set.
+;  Increments tori_pattern_idx up to 0x28 driving a fixed turn/spawn
+;  animation, then sets gvar_completion (stage advance).
+; -------------------------------------------------------------------------
+
+death_phase:					; was loc_55
 		mov	al,ds:tori_pattern_idx
 		cmp	al,28h			; '('
-		jae	loc_57			; Jump if above or =
+		jae	death_complete		; was loc_57
 		mov	byte ptr ds:gvar_dir_toggle,0FFh
 		mov	byte ptr ds:tori_phase_a,1
 		mov	al,ds:tori_pattern_idx
 		inc	byte ptr ds:tori_pattern_idx
 		cmp	al,14h
-		jae	loc_56			; Jump if above or =
+		jae	death_late_phase	; was loc_56
 		call	sub_2
 		inc	byte ptr ds:tori_turn_flag
 		and	byte ptr ds:tori_turn_flag,3
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Ch	; ','
-		jmp	loc_30
-loc_56:
+		jmp	emit_setup
+
+death_late_phase:				; was loc_56
 		mov	byte ptr ds:tori_turn_cooldown,0FFh
 		mov	byte ptr ds:tori_sub_phase,1
-		jmp	loc_30
-loc_57:
+		jmp	emit_setup
+
+death_complete:					; was loc_57
 		mov	byte ptr ds:gvar_completion,0FFh
 		retn
-			                        ;* No entry point to code
-		jnc	loc_49			; Jump if carry=0
-;*		jnz	loc_50			;*Jump if not zero
-		db	 75h,0A6h		;  Fixup - byte match
-;*		ja	loc_51			;*Jump if above
-		db	 77h,0A6h		;  Fixup - byte match
-;*		jp	loc_52			;*Jump if parity=1
-		db	 7Ah,0A6h		;  Fixup - byte match
-;*		jl	loc_53			;*Jump if <
-		db	 7Ch,0A6h		;  Fixup - byte match
-		jle	loc_54			; Jump if < or =
-		and	byte ptr ss:glide_table_a[bp],84h
-		cmpsb				; Cmp [si] to es:[di]
-		xchg	ss:glide_table_b[bp],ah
-		mov	sp,ss:glide_table_c[bp]
-		xchg	cx,ax
-		cmpsb				; Cmp [si] to es:[di]
-		db	 9Bh,0A6h,0A4h,0A6h,0ADh,0A6h
-		db	0B7h,0A6h,0C1h,0A6h, 00h, 30h
-		db	 01h, 30h, 80h, 70h, 90h, 71h
-		db	 81h, 72h, 82h, 73h, 83h
+
+; -------------------------------------------------------------------------
+;  Orphan / dispatch-table-only block (file 0x648..0x6C7).
+;  Reached via a 200FIGHT DS-resident dispatch slot (no static caller in
+;  this module).  Sourcer mis-decoded the leading bytes as a chain of
+;  conditional jumps; the actual runtime role is a small init/setup
+;  routine bundled with a 16-entry word-pointer table that indexes
+;  positions inside this same orphan block.  Kept as raw bytes since
+;  the consumer logic lives in 200FIGHT.
+; -------------------------------------------------------------------------
+
+tori_orphan_init:				; was ';* No entry point' marker
+		db	 73h,0A6h			; jnc -90  (Sourcer fixup byte)
+		db	 75h,0A6h			; jnz -90  (Sourcer fixup byte)
+		db	 77h,0A6h			; ja  -90  (Sourcer fixup byte)
+		db	 7Ah,0A6h			; jp  -90  (Sourcer fixup byte)
+		db	 7Ch,0A6h			; jl  -90  (Sourcer fixup byte)
+		db	 7Eh,0A6h			; jle -90  (Sourcer fixup byte)
+		db	 80h,0A6h, 82h,0A6h		; cmp ss:[bp+0A682h], al
+		db	 84h,0A6h, 86h,0A6h		; test ss:[bp+0A686h], al
+		db	 88h,0A6h			; mov [bx+si-58h], al
+		db	 8Bh,0A6h, 8Eh,0A6h, 91h,0A6h	; mov sp, ss:[bp+0A691h]
+		db	 9Bh,0A6h			; wait / cmpsb sequence
+		db	 0A4h,0A6h			; movsb (cmpsb at 0xA6A4)
+		db	 0ADh,0A6h			; lodsw / cmpsb (lodsw at 0xA6AD)
+		db	 0B7h,0A6h			; ... (further dispatch table refs)
+		db	 0C1h,0A6h
+
+tori_orphan_data:
+		db	 00h, 30h, 01h, 30h, 80h, 70h
+		db	 90h, 71h, 81h, 72h, 82h, 73h
+		db	 83h
 		db	'P`QaRbSc'
 		db	 10h, 40h, 20h, 17h, 46h, 26h
 		db	 18h, 47h, 27h, 02h, 11h,0A0h
-		db	0C0h, 21h, 41h,0E0h, 31h,0B0h
-		db	0D0h, 02h, 12h, 22h, 42h,0B1h
+		db	 0C0h, 21h, 41h,0E0h, 31h,0B0h
+		db	 0D0h, 02h, 12h, 22h, 42h,0B1h
 		db	 32h,0A1h,0C1h,0D1h, 02h, 33h
-		db	0B2h, 13h, 43h,0C2h, 23h,0A2h
-		db	0D2h, 02h, 14h, 44h,0C3h, 24h
-		db	0A3h,0C1h,0D1h, 34h,0B3h, 03h
+		db	 0B2h, 13h, 43h,0C2h, 23h,0A2h
+		db	 0D2h, 02h, 14h, 44h,0C3h, 24h
+		db	 0A3h,0C1h,0D1h, 34h,0B3h, 03h
 		db	 25h, 15h, 35h,0A4h,0D3h, 45h
-		db	0B4h,0E1h,0C4h, 04h, 25h, 16h
+		db	 0B4h,0E1h,0C4h, 04h, 25h, 16h
 		db	 35h,0A4h,0C5h, 45h,0B5h,0D4h
-		db	0E2h,0F1h,0A6h,0F1h,0A6h,0FAh
-		db	0A6h, 03h,0A7h, 03h,0A7h, 03h
-		db	0A7h, 0Ch,0A7h, 0Ch,0A7h, 0Ch
-		db	0A7h, 0Ch,0A7h, 15h,0A7h, 1Eh
-		db	0A7h, 27h,0A7h, 30h,0A7h, 39h
-		db	0A7h, 42h,0A7h, 4Bh,0A7h, 54h
-		db	0A7h, 5Dh,0A7h, 00h, 00h
-		db	50h
+		db	 0E2h
+
+; -------------------------------------------------------------------------
+;  Secondary pointer table (file 0x6CD..0x6EF) -- 17 word ptrs into
+;  the trailing constant table below (range 0xA6F1..0xA75D).  Referenced
+;  by 200FIGHT through a DS-resident dispatch slot (consumer not in this
+;  module).
+; -------------------------------------------------------------------------
+
+tori_const_ptr_tbl	label	word
+		db	 0F1h,0A6h, 0F1h,0A6h, 0FAh,0A6h	; -> 0xA6F1, 0xA6F1, 0xA6FA
+		db	 03h,0A7h,  03h,0A7h,  03h,0A7h	; -> 0xA703 x3
+		db	 0Ch,0A7h,  0Ch,0A7h,  0Ch,0A7h	; -> 0xA70C x3
+		db	 0Ch,0A7h,  15h,0A7h,  1Eh,0A7h	; -> 0xA70C, 0xA715, 0xA71E
+		db	 27h,0A7h,  30h,0A7h,  39h,0A7h	; -> 0xA727, 0xA730, 0xA739
+		db	 42h,0A7h,  4Bh,0A7h,  54h,0A7h	; -> 0xA742, 0xA74B, 0xA754
+		db	 5Dh,0A7h,  00h, 00h			; -> 0xA75D, end-of-list
+
+; -------------------------------------------------------------------------
+;  Trailing constant table (file 0x6F1..0x77F) -- timing/position bytes
+;  consumed by 200FIGHT during tori init/spawn (per-slot offset records).
+; -------------------------------------------------------------------------
+
+tori_const_table:					; runtime addr 0xA6F1
+		db	 50h
 		db	12 dup (0)
 		db	 04h, 0Ch
 		db	7 dup (0)
-		db	4, 0, 4, 0, 0, 0
-		db	4, 4
+		db	  4,   0,   4,   0,   0,   0
+		db	  4,   4
 		db	8 dup (0)
 		db	 50h, 00h, 40h, 00h, 00h, 00h
 		db	 00h, 00h, 00h, 50h, 00h, 20h
@@ -717,12 +884,18 @@ loc_57:
 		db	 00h, 00h, 00h, 00h, 00h, 00h
 		db	 2Eh, 00h, 12h,0F4h, 01h,0F4h
 		db	 01h, 08h,0FFh, 80h,0A7h,0F4h
-		db	 01h, 12h,0BBh, 00h, 05h
-		db	 50h, 6Fh, 6Ch, 6Ch, 6Fh
-		db	91 dup (0)
+		db	 01h, 12h,0BBh, 00h, 5		; final 5 = Pascal-string len for 'Pollo'
+
+; -------------------------------------------------------------------------
+;  'Pollo' name tag (file 0x780) -- 5-char Pascal string with length-prefix
+;  byte 5 (last byte of tori_const_table above).  Plus 91 zero bytes of
+;  trailing padding to file size 2024 (0x7E8).
+; -------------------------------------------------------------------------
+
+tori_name_tag:
+		db	'Pollo'			; 5 chars (length prefix is last byte of tori_const_table)
+		db	91 dup (0)		; pad to end-of-file
 
 seg_a		ends
-
-
 
 		end	start
