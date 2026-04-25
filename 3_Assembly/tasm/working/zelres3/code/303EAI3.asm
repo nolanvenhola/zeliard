@@ -25,7 +25,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-
 ; --- TORI enemy AI dispatch table (game_seg:6004h..603Ah, in DS at runtime) ---
 ai_fn_tbl_a	equ	6004h			; AI fn (dive / swoop)
 ai_fn_tbl_b	equ	6008h			; AI fn
@@ -54,69 +53,68 @@ tori_tbl_g	equ	0A662h
 gvar_frame_cnt	equ	0FF35h			; frame counter byte
 
 ; Backwards-compat aliases
-data_7e		equ	ai_fn_tbl_a
-data_8e		equ	ai_fn_tbl_b
-data_9e		equ	ai_fn_tbl_c
-data_10e	equ	ai_fn_tbl_d
-data_11e	equ	ai_fn_tbl_e
-data_12e	equ	ai_fn_tbl_f
-data_13e	equ	ai_fn_tbl_g
-data_14e	equ	ai_fn_tbl_h
-data_15e	equ	ai_fn_tbl_i
-data_16e	equ	ai_fn_tbl_j
-data_17e	equ	ai_fn_tbl_k
-data_18e	equ	ai_fn_tbl_l
-data_19e	equ	ai_fn_tbl_m
-data_20e	equ	ai_hide_fn
-data_21e	equ	ai_attack_fn
-data_22e	equ	tori_tbl_a
-data_23e	equ	tori_tbl_b
-data_24e	equ	tori_tbl_c
-data_25e	equ	tori_tbl_d
-data_26e	equ	tori_tbl_e
-data_27e	equ	tori_tbl_f
-data_28e	equ	tori_tbl_g
-data_29e	equ	gvar_frame_cnt
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
 tori_ai_main	proc	far
 
+; -------------------------------------------------------------------------
+;  Module header (file offsets 0x000-0x033) -- loaded as data by 200FIGHT.
+;  Sourcer mis-decoded the leading bytes as code (`aaa / pop es /
+;  add [bx+si],al / mov dl, 0A2h`).  The bytes are actually a 4-byte
+;  length header, an init src/dst pointer pair, and a small per-slot
+;  template buffer (matches 309CRAB / 310TAKO module-header pattern).
+;
+;  Following the header (offsets 0x034..0x09F) are 5 animation frame
+;  pointer tables (groups A..E) -- word ptrs into the frame data area.
+; -------------------------------------------------------------------------
+
 start:
-		aaa				; Ascii adjust
-		pop	es
-		add	[bx+si],al
-		mov	dl,0A2h
-		db	 00h, 00h, 00h, 00h, 9Ah,0A2h
-		db	 14h, 0Ah, 0Ah, 14h, 00h, 00h
-		db	 00h, 00h, 28h, 28h, 10h, 28h
+
+file_header:
+		aaa				; byte 0x37: file length word lo
+		pop	es			; byte 0x07: file length word hi -> length = 0x0737
+		add	[bx+si],al		; bytes 00 00: pad
+		mov	dl,0A2h			; bytes B2 A2: init pointer hi (Sourcer mis-decode)
+		db	 00h, 00h, 00h, 00h, 9Ah,0A2h	; init src/dst ptr table
+		db	 14h, 0Ah, 0Ah, 14h, 00h, 00h	; per-slot template A
+		db	 00h, 00h, 28h, 28h, 10h, 28h	; per-slot template B
 		db	 00h
-		db	27 dup (0)
-		db	0B0h,0A0h, 55h,0A1h,0A5h,0A1h
-		db	0D7h,0A1h, 00h, 00h, 00h, 00h
-		db	 00h, 00h, 00h, 00h, 28h,0A1h
-		db	 73h,0A1h,0C8h,0A1h, 13h,0A2h
-		db	8 dup (0)
-		db	 72h,0A2h, 72h,0A2h, 22h,0A2h
-		db	 59h,0A2h, 31h,0A2h, 45h,0A2h
-		db	 6Dh,0A2h, 00h, 00h, 8Bh,0A2h
-		db	 90h,0A2h, 00h, 00h, 00h, 00h
-		db	 86h,0A2h, 95h,0A2h, 00h, 00h
-		db	 00h, 00h,0ECh,0A0h, 37h,0A1h
-		db	 82h,0A1h,0F5h,0A1h, 00h
-		db	7 dup (0)
-		db	 28h,0A1h, 73h,0A1h,0C8h,0A1h
-		db	 13h,0A2h
-		db	8 dup (0)
-		db	 72h,0A2h, 72h,0A2h, 22h,0A2h
-		db	 59h,0A2h, 31h,0A2h, 45h,0A2h
-		db	 6Dh,0A2h, 00h, 00h, 8Bh,0A2h
-		db	 90h,0A2h, 00h, 00h, 00h, 00h
-		db	 86h,0A2h, 95h,0A2h, 00h, 00h
+		db	27 dup (0)			; reserved / padding (offsets 0x019-0x033)
+
+tori_frame_ptr_tbl_a	label	word		; offset 0x034 -- group A pointers
+		db	0B0h,0A0h, 55h,0A1h,0A5h,0A1h	; -> 0xA0B0, 0xA155, 0xA1A5
+		db	0D7h,0A1h, 00h, 00h, 00h, 00h	; -> 0xA1D7, slot4=empty, slot5=empty
+		db	 00h, 00h, 00h, 00h, 28h,0A1h	; slots 6,7 empty, -> 0xA128
+		db	 73h,0A1h,0C8h,0A1h, 13h,0A2h	; -> 0xA173, 0xA1C8, 0xA213
+		db	8 dup (0)			; reserved
+
+tori_frame_ptr_tbl_b	label	word		; offset 0x054 -- group B pointers
+		db	 72h,0A2h, 72h,0A2h, 22h,0A2h	; -> 0xA272, 0xA272 (dup), 0xA222
+		db	 59h,0A2h, 31h,0A2h, 45h,0A2h	; -> 0xA259, 0xA231, 0xA245
+		db	 6Dh,0A2h, 00h, 00h, 8Bh,0A2h	; -> 0xA26D, slot empty, 0xA28B
+		db	 90h,0A2h, 00h, 00h, 00h, 00h	; -> 0xA290, slots empty
+		db	 86h,0A2h, 95h,0A2h, 00h, 00h	; -> 0xA286, 0xA295
+
+tori_frame_ptr_tbl_c	label	word		; offset 0x070 -- group C pointers
+		db	 00h, 00h,0ECh,0A0h, 37h,0A1h	; pad, -> 0xA0EC, 0xA137
+		db	 82h,0A1h,0F5h,0A1h, 00h	; -> 0xA182, 0xA1F5, slot empty
+		db	7 dup (0)			; reserved
+
+tori_frame_ptr_tbl_d	label	word		; offset 0x084 -- group D pointers (mirrors A tail)
+		db	 28h,0A1h, 73h,0A1h,0C8h,0A1h	; -> 0xA128, 0xA173, 0xA1C8
+		db	 13h,0A2h			; -> 0xA213
+		db	8 dup (0)			; reserved
+
+tori_frame_ptr_tbl_e	label	word		; offset 0x094 -- group E pointers (mirrors B)
+		db	 72h,0A2h, 72h,0A2h, 22h,0A2h	; -> 0xA272, 0xA272, 0xA222
+		db	 59h,0A2h, 31h,0A2h, 45h,0A2h	; -> 0xA259, 0xA231, 0xA245
+		db	 6Dh,0A2h, 00h, 00h, 8Bh,0A2h	; -> 0xA26D, slot empty, 0xA28B
+		db	 90h,0A2h, 00h, 00h, 00h, 00h	; -> 0xA290, slots empty
+		db	 86h,0A2h, 95h,0A2h, 00h, 00h	; -> 0xA286, 0xA295
 		db	 00h, 00h, 00h, 01h, 02h, 03h
 		db	 04h, 00h, 05h, 06h, 07h, 08h
 		db	 00h, 09h, 0Ah, 0Bh, 0Ch, 00h
@@ -201,391 +199,568 @@ start:
 		db	 00h,0EBh, 02h,0E0h,0E1h,0E2h
 		db	0E3h, 00h,0EDh,0EEh, 79h, 7Ah
 		db	 02h,0EDh,0EEh, 79h, 7Ah, 01h
-		db	0F4h,0F5h,0F6h,0F7h,0A2h,0A2h
-		db	0A6h,0A2h,0AAh,0A2h,0AEh,0A2h
-		db	 04h, 04h, 00h, 00h, 05h, 05h
-		db	 00h, 00h, 04h, 04h, 04h, 04h
-		db	 05h, 05h, 05h, 05h, 8Ah, 5Ch
-		db	 04h, 80h,0E3h, 0Fh, 32h,0FFh
-		db	 03h,0DBh,0FFh,0A7h,0C0h,0A2h
-		db	0C8h,0A2h, 4Dh,0A4h,0F0h,0A4h
-		db	 6Eh,0A6h,0F6h, 44h, 08h,0FFh
-		db	 75h, 04h,0C6h, 44h, 08h, 02h
-		db	0F6h, 44h, 05h, 20h, 74h, 05h
-		db	 2Eh,0FFh, 26h, 34h, 60h, 8Ah
-		db	 5Ch, 09h, 83h,0E3h, 07h, 03h
-		db	0DBh,0FFh,0A7h,0E9h,0A2h,0F9h
-		db	0A2h, 56h,0A3h, 67h,0A3h, 74h
-		db	0A3h,0ACh,0A3h,0E0h,0A3h, 05h
-		db	0A4h, 0Eh,0A4h,0FEh, 44h, 06h
-		db	 80h, 64h, 06h, 07h, 2Eh,0FFh
-		db	 16h, 1Ch, 60h, 73h, 46h,0F6h
-		db	 44h, 06h, 01h, 75h, 01h,0C3h
-		db	 8Ah, 44h, 03h, 3Ch, 12h, 72h
-		db	 04h, 3Ch, 15h
-		db	 72h, 34h
-loc_1:
+		db	0F4h,0F5h,0F6h,0F7h			; -- end of frame data (offsets 0x29C..0x29F)
+
+; -------------------------------------------------------------------------
+;  Aux ptr table (offset 0x29C) + 4-byte aux records (offset 0x2A4).
+;  Same overlap pattern as 302EAI2 / 301EAI1 -- 4 ptr entries followed by
+;  4 4-byte records.
+; -------------------------------------------------------------------------
+
+tori_aux_ptr_tbl	label	word		; offset 0x29C -- aux ptr table (4 entries)
+		db	0A2h,0A2h			; -> 0xA2A2 (overlaps into aux records below)
+		db	0A6h,0A2h			; -> 0xA2A6
+		db	0AAh,0A2h			; -> 0xA2AA
+		db	0AEh,0A2h			; -> 0xA2AE
+
+tori_aux_records:				; offset 0x2A4 -- 4-byte aux records
+		db	 04h, 04h, 00h, 00h	; record 0
+		db	 05h, 05h, 00h, 00h	; record 1
+		db	 04h, 04h, 04h, 04h	; record 2
+		db	 05h, 05h, 05h, 05h	; record 3
+
+; -------------------------------------------------------------------------
+;  Trailing AI primary dispatch (offset 0x2B4) -- runs straight into the
+;  state-byte dispatch.  Mirrors 302EAI2's `tako_ai_dispatch_pre` pattern:
+;  the JMP indexes a table whose first 4 bytes overlap with the JMP
+;  encoding itself, making the first 2 entries unreachable placeholders.
+; -------------------------------------------------------------------------
+
+tori_ai_dispatch_pre:				; offset 0x2B4 -- entry from primary dispatch
+		mov	bl,[si+4]		; bytes 8A 5C 04
+		and	bl,0Fh			; bytes 80 E3 0F  (mask state nibble)
+		xor	bh,bh			; bytes 32 FF
+		add	bx,bx			; bytes 03 DB     (scale to word index)
+		jmp	word ptr ds:[bx+0A2C0h]	; bytes FF A7 C0 A2 -- table at 0xA2C0
+
+; AI primary dispatch table (4 valid handlers; first 2 entries overlap the
+; JMP bytes so they're unreachable).  Indexed by [si+4]&0x0F.
+
+; AI primary dispatch table: idx 0,1 overlap with the JMP encoding above
+; (FF A7 C0 A2 = JMP word ptr ds:[bx+0A2C0h]); only idx 2..5 are valid.
+;
+; tori_ai_dispatch_tbl  (conceptual layout at offset 0xA2C0)
+;   idx 0,1 -> JMP encoding bytes (unreachable)
+;   idx 2 -> tori_state2_entry (0xA2C8)
+;   idx 3 -> tori_state3_entry (0xA44D)
+;   idx 4 -> tori_state4_entry (0xA4F0)
+;   idx 5 -> tori_state5_entry (0xA66E)
+
+tori_ai_dispatch_tbl:				; offset 0x2C0 -- 4 valid entries (idx 2..5)
+		db	 0C8h,0A2h		; idx 2 -> tori_state2_entry (0xA2C8)
+		db	 4Dh,0A4h		; idx 3 -> tori_state3_entry (0xA44D)
+
+; State-2 entry tail (offset 0x2C8).  Bytes at 0xA2C8 = `F0 A4 6E A6` are
+; dispatch-table tail (idx 4,5) which decode as `lock movsb / outsb /
+; cmpsb` -- harmless filler before the AI-entry preroll begins at 0xA2CC.
+
+tori_state2_entry:				; offset 0x2C8 -- state 2 (idx 2 in primary)
+		db	 0F0h,0A4h		; idx 4 -> tori_state4_entry (0xA4F0) (also: lock/movsb)
+		db	 6Eh,0A6h		; idx 5 -> tori_state5_entry (0xA66E) (also: outsb/cmpsb)
+
+tori_state2_preroll:				; offset 0x2CC
+		test	byte ptr [si+8],0FFh	; bytes F6 44 08 FF
+		jnz	tori_s2_pre_done		; bytes 75 04
+		mov	byte ptr [si+8],2	; bytes C6 44 08 02 (cooldown=2)
+
+tori_s2_pre_done:
+		test	byte ptr [si+5],20h	; bytes F6 44 05 20
+		jz	tori_s2_substate_dispatch	; bytes 74 05
+		jmp	word ptr cs:ai_hide_fn	; bytes 2E FF 26 34 60
+
+tori_s2_substate_dispatch:
+		mov	bl,[si+9]		; bytes 8A 5C 09
+		and	bx,7			; bytes 83 E3 07 (sign-ext 16-bit AND)
+		add	bx,bx			; bytes 03 DB
+		jmp	word ptr ds:[bx+0A2E9h]	; bytes FF A7 E9 A2 -- table at 0xA2E9
+
+; State-2 substate dispatch table: idx 0,1 overlap with JMP encoding above
+; (FF A7 E9 A2 = JMP word ptr ds:[bx+0A2E9h]); only idx 2..7 are valid.
+
+tori_s2_substate_tbl:				; offset 0x2E9 -- 6 valid entries (idx 2..7)
+		db	 0F9h,0A2h		; idx 2 -> tori_substate_2 (0xA2F9)
+		db	 56h,0A3h		; idx 3 -> tori_substate_3 (0xA356)
+		db	 67h,0A3h		; idx 4 -> tori_substate_4 (0xA367)
+		db	 74h,0A3h		; idx 5 -> tori_substate_5 (0xA374)
+		db	 0ACh,0A3h		; idx 6 -> tori_substate_6 (0xA3AC)
+		db	 0E0h,0A3h		; idx 7 -> tori_substate_7 (0xA3E0)
+
+; tori_substate_2 (idx 2 in state-2 substate table).  First 4 bytes are
+; extended dispatch table entries (idx 8,9 unused due to &7 mask) which
+; decode as harmless `add ax,0xA40E / movsb` filler before real code.
+
+tori_substate_2:				; offset 0x2F9 -- substate 2 (range/phase check)
+		db	 05h,0A4h, 0Eh,0A4h	; overlap (extended dispatch idx 8,9 -- unreachable)
+
+tori_sub2_real:					; offset 0x2FD -- substate-2 main body
+		inc	byte ptr [si+6]		; bytes FE 44 06
+		and	byte ptr [si+6],7	; bytes 80 64 06 07
+		call	word ptr cs:ai_fn_tbl_j	; bytes 2E FF 16 1C 60 (= cs:[601C])
+		jnc	tori_sub2_set_state1	; bytes 73 46 (jnc +0x46 -> 0x351)
+		test	byte ptr [si+6],1	; bytes F6 44 06 01
+		jnz	tori_sub2_check_dist	; bytes 75 01
+		retn				; byte C3
+
+tori_sub2_check_dist:
+		mov	al,[si+3]		; bytes 8A 44 03
+		cmp	al,12h			; bytes 3C 12
+		jb	tori_sub2_loc		; bytes 72 04 (-> 0x31D)
+		cmp	al,15h			; bytes 3C 15
+		jb	tori_sub2_set_state1	; bytes 72 34 (-> 0x351)
+
+tori_sub2_loc:
 		test	byte ptr [si+5],80h
-		jnz	loc_4			; Jump if not zero
-		call	word ptr cs:data_12e
-		jc	loc_2			; Jump if carry Set
+		jnz	tori_sub2_facing_west			; Jump if not zero
+		call	word ptr cs:ai_fn_tbl_f
+		jc	tori_sub2_advance_e			; Jump if carry Set
 		retn
-loc_2:
+
+tori_sub2_advance_e:
 		xor	al,al			; Zero register
 		xchg	[si+0Ah],al
 		xor	byte ptr [si+5],80h
 		test	al,1
-		jz	loc_3			; Jump if zero
+		jz	tori_sub2_skip_to_state1			; Jump if zero
 		retn
-loc_3:
-		jmp	short loc_6
-loc_4:
-		call	word ptr cs:data_8e
-		jc	loc_5			; Jump if carry Set
+
+tori_sub2_skip_to_state1:
+		jmp	short tori_sub2_set_state1
+
+tori_sub2_facing_west:
+		call	word ptr cs:ai_fn_tbl_b
+		jc	tori_sub2_advance_w			; Jump if carry Set
 		retn
-loc_5:
+
+tori_sub2_advance_w:
 		xor	al,al			; Zero register
 		xchg	[si+0Ah],al
 		xor	byte ptr [si+5],80h
 		test	al,1
-		jz	loc_6			; Jump if zero
+		jz	tori_sub2_set_state1			; Jump if zero
 		retn
-loc_6:
+
+tori_sub2_set_state1:
 		mov	byte ptr [si+9],1
 		mov	byte ptr [si+6],8
 		retn
-			                        ;* No entry point to code
-		call	word ptr cs:data_14e
-		jc	loc_7			; Jump if carry Set
+
+; tori_substate_3 -- entered via tori_s2_substate_tbl[3] (DS:0xA2EF -> 0xA356); phase advance, then state 2.
+
+tori_substate_3:				; was '* No entry point to code' marker
+		call	word ptr cs:ai_fn_tbl_h
+		jc	tori_sub3_advance			; Jump if carry Set
 		retn
-loc_7:
+
+tori_sub3_advance:
 		mov	byte ptr [si+9],2
 		mov	byte ptr [si+6],9
 		retn
-			                        ;* No entry point to code
+
+; tori_substate_4 -- entered via tori_s2_substate_tbl[4] (DS:0xA2F1 -> 0xA367); init state 3 with phase 0xA.
+
+tori_substate_4:				; was '* No entry point to code' marker
 		mov	byte ptr [si+9],3
 		mov	byte ptr [si+6],0Ah
 		mov	byte ptr [si+0Ah],0
 		retn
-			                        ;* No entry point to code
+
+; tori_substate_5 -- entered via tori_s2_substate_tbl[5] (DS:0xA2F3 -> 0xA374); counter step with state-4 advance.
+
+tori_substate_5:				; was '* No entry point to code' marker
 		cmp	byte ptr [si+0Ah],1
-		jne	loc_8			; Jump if not equal
+		jne	tori_sub5_set_phase			; Jump if not equal
 		mov	byte ptr [si+9],4
 		mov	byte ptr [si+0Ah],0FFh
-loc_8:
+
+tori_sub5_set_phase:
 		mov	byte ptr [si+6],0Bh
 		test	byte ptr [si+5],80h
-		jnz	loc_10			; Jump if not zero
+		jnz	tori_sub5_west_branch			; Jump if not zero
 		inc	byte ptr [si+0Ah]
-		call	word ptr cs:data_11e
-		jc	loc_9			; Jump if carry Set
+		call	word ptr cs:ai_fn_tbl_e
+		jc	tori_sub5_flip_a			; Jump if carry Set
 		retn
-loc_9:
+
+tori_sub5_flip_a:
 		xor	byte ptr [si+5],80h
 		retn
-loc_10:
+
+tori_sub5_west_branch:
 		inc	byte ptr [si+0Ah]
-		call	word ptr cs:data_9e
-		jc	loc_11			; Jump if carry Set
+		call	word ptr cs:ai_fn_tbl_c
+		jc	tori_sub5_flip_b			; Jump if carry Set
 		retn
-loc_11:
+
+tori_sub5_flip_b:
 		xor	byte ptr [si+5],80h
 		retn
-			                        ;* No entry point to code
+
+; tori_substate_6 -- entered via tori_s2_substate_tbl[6] (DS:0xA2F5 -> 0xA3AC); counter step alt with state-5 advance.
+
+tori_substate_6:				; was '* No entry point to code' marker
 		cmp	byte ptr [si+0Ah],1
-		jne	loc_12			; Jump if not equal
+		jne	tori_sub6_set_phase			; Jump if not equal
 		mov	byte ptr [si+9],5
-loc_12:
+
+tori_sub6_set_phase:
 		mov	byte ptr [si+6],8
 		test	byte ptr [si+5],80h
-		jnz	loc_14			; Jump if not zero
+		jnz	tori_sub6_west_branch			; Jump if not zero
 		inc	byte ptr [si+0Ah]
-		call	word ptr cs:data_12e
-		jc	loc_13			; Jump if carry Set
+		call	word ptr cs:ai_fn_tbl_f
+		jc	tori_sub6_flip_a			; Jump if carry Set
 		retn
-loc_13:
+
+tori_sub6_flip_a:
 		xor	byte ptr [si+5],80h
 		retn
-loc_14:
+
+tori_sub6_west_branch:
 		inc	byte ptr [si+0Ah]
-		call	word ptr cs:data_8e
-		jc	loc_15			; Jump if carry Set
+		call	word ptr cs:ai_fn_tbl_b
+		jc	tori_sub6_flip_b			; Jump if carry Set
 		retn
-loc_15:
+
+tori_sub6_flip_b:
 		xor	byte ptr [si+5],80h
 		retn
-			                        ;* No entry point to code
+
+; tori_substate_7 -- entered via tori_s2_substate_tbl[7] (DS:0xA2F7 -> 0xA3E0); alt step + state-6 advance.
+
+tori_substate_7:				; was '* No entry point to code' marker
 		mov	byte ptr [si+6],8
 		test	byte ptr [si+5],80h
-		jnz	loc_17			; Jump if not zero
-		call	word ptr cs:data_13e
-		jc	loc_16			; Jump if carry Set
+		jnz	tori_sub7_west_branch			; Jump if not zero
+		call	word ptr cs:ai_fn_tbl_g
+		jc	tori_sub7_advance_state6			; Jump if carry Set
 		retn
-loc_16:
-		mov	byte ptr [si+6],9
-		mov	byte ptr [si+9],6
-		retn
-loc_17:
-		call	word ptr cs:data_15e
-		jc	loc_18			; Jump if carry Set
-		retn
-loc_18:
-		jmp	short loc_16
-			                        ;* No entry point to code
+
+tori_sub7_advance_state6:
+			mov	byte ptr [si+6],9
+			mov	byte ptr [si+9],6
+			retn
+
+tori_sub7_west_branch:
+			call	word ptr cs:ai_fn_tbl_i
+			jc	tori_sub7_advance_alt			; Jump if carry Set
+			retn
+
+tori_sub7_advance_alt:
+			jmp	short tori_sub7_advance_state6
+
+; tori_alt_state_a -- fall-through after `jmp short tori_sub7_advance_state6` -- alt phase setup (phase=0xA, state=7).
+
+tori_alt_state_a:				; was '* No entry point to code' marker
 		mov	byte ptr [si+6],0Ah
 		mov	byte ptr [si+9],7
 		retn
-			                        ;* No entry point to code
+
+; tori_alt_state_b -- fall-through after retn above -- alt state-7 with attack-callback chain.
+
+tori_alt_state_b:				; was '* No entry point to code' marker
 		mov	byte ptr [si+6],8
 		test	byte ptr [si+5],80h
-		jnz	loc_21			; Jump if not zero
-		call	word ptr cs:data_11e
-		jc	loc_19			; Jump if carry Set
+		jnz	tori_alt_b_west			; Jump if not zero
+		call	word ptr cs:ai_fn_tbl_e
+		jc	tori_alt_b_chain_a			; Jump if carry Set
 		retn
-loc_19:
-		call	word ptr cs:data_16e
-		jc	loc_20			; Jump if carry Set
+
+tori_alt_b_chain_a:
+		call	word ptr cs:ai_fn_tbl_j
+		jc	tori_alt_b_reset			; Jump if carry Set
 		xor	byte ptr [si+5],80h
 		retn
-loc_20:
-		mov	byte ptr [si+9],0
-		mov	byte ptr [si+6],0
-		mov	byte ptr [si+0Ah],1
-		retn
-loc_21:
-		call	word ptr cs:data_9e
-		jc	loc_22			; Jump if carry Set
-		retn
-loc_22:
-		call	word ptr cs:data_10e
-		jc	loc_20			; Jump if carry Set
+
+tori_alt_b_reset:
+			mov	byte ptr [si+9],0
+			mov	byte ptr [si+6],0
+			mov	byte ptr [si+0Ah],1
+			retn
+
+tori_alt_b_west:
+			call	word ptr cs:ai_fn_tbl_c
+			jc	tori_alt_b_chain_b			; Jump if carry Set
+			retn
+
+tori_alt_b_chain_b:
+			call	word ptr cs:ai_fn_tbl_d
+			jc	tori_alt_b_reset			; Jump if carry Set
 		xor	byte ptr [si+5],80h
 		retn
-			                        ;* No entry point to code
+
+; tori_state3_entry -- entered via tori_ai_dispatch_tbl[3] (DS:0xA2C6 -> 0xA44D); state 3 (cooldown=2).
+
+tori_state3_entry:				; was '* No entry point to code' marker
 		test	byte ptr [si+8],0FFh
-		jnz	loc_23			; Jump if not zero
+		jnz	tori_s3_pre_done			; Jump if not zero
 		mov	byte ptr [si+8],2
-loc_23:
+
+tori_s3_pre_done:
 		test	byte ptr [si+5],20h	; ' '
-		jz	loc_24			; Jump if zero
-		jmp	word ptr cs:data_20e
-loc_24:
+		jz	tori_s3_check_state			; Jump if zero
+		jmp	word ptr cs:ai_hide_fn
+
+tori_s3_check_state:
 		test	byte ptr [si+9],8
-		jnz	loc_28			; Jump if not zero
+		jnz	tori_s3_state8_active			; Jump if not zero
 		test	byte ptr [si+9],4
-		jnz	loc_25			; Jump if not zero
+		jnz	tori_s3_step			; Jump if not zero
 		or	byte ptr [si+5],80h
 		cmp	byte ptr [si+3],11h
-		jb	loc_25			; Jump if below
+		jb	tori_s3_step			; Jump if below
 		xor	byte ptr [si+5],80h
-loc_25:
-		call	word ptr cs:data_14e
-		jc	loc_26			; Jump if carry Set
+
+tori_s3_step:
+		call	word ptr cs:ai_fn_tbl_h
+		jc	tori_s3_phase_carry			; Jump if carry Set
 		retn
-loc_26:
+
+tori_s3_phase_carry:
 		and	byte ptr [si+6],0F0h
 		add	byte ptr [si+6],80h
-		jc	loc_27			; Jump if carry Set
+		jc	tori_s3_phase_high			; Jump if carry Set
 		retn
-loc_27:
+
+tori_s3_phase_high:
 		mov	byte ptr [si+6],0
 		or	byte ptr [si+9],8
 		retn
-loc_28:
+
+tori_s3_state8_active:
 		and	byte ptr [si+9],0FBh
 		mov	al,[si+6]
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],7
 		cmp	byte ptr [si+6],6
-		jb	loc_29			; Jump if below
+		jb	tori_s3_xlat_step			; Jump if below
 		mov	byte ptr [si+6],0
 		and	byte ptr [si+9],0F7h
-loc_29:
+
+tori_s3_xlat_step:
 		mov	bx,0A4E4h
 		test	byte ptr [si+5],80h
-		jnz	loc_30			; Jump if not zero
-		mov	bx,data_22e
-loc_30:
+		jnz	tori_s3_xlat_call			; Jump if not zero
+		mov	bx,tori_tbl_a
+
+tori_s3_xlat_call:
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:data_7e
-		jc	loc_31			; Jump if carry Set
+		call	word ptr cs:ai_fn_tbl_a
+		jc	tori_s3_xlat_ok			; Jump if carry Set
 		retn
-loc_31:
+
+tori_s3_xlat_ok:
 		and	byte ptr [si+9],0F7h
 		cmp	byte ptr [si+6],1
-		jne	loc_32			; Jump if not equal
+		jne	tori_s3_clear_phase			; Jump if not equal
 		or	byte ptr [si+9],4
 		xor	byte ptr [si+5],80h
-loc_32:
+
+tori_s3_clear_phase:
 		mov	byte ptr [si+6],0
-		jmp	word ptr cs:data_14e
-			                        ;* No entry point to code
-		add	[bx+di],ax
-		add	[bx+si],al
-		pop	es
-		pop	es
-		add	ax,[bp+di]
-		add	al,4
-		add	ax,0F605h
-		inc	sp
-;*		or	bh,bh			; Zero ?
-		db	 08h,0FFh		;  Fixup - byte match
-		jnz	loc_33			; Jump if not zero
+		jmp	word ptr cs:ai_fn_tbl_h
+
+; tori_state4_entry -- entered via tori_ai_dispatch_tbl[4] (DS:0xA2C8 -> 0xA4F0).
+; Sourcer mis-decoded the leading bytes as `add [bx+di],ax / add [bx+si],al
+; / pop es / pop es / ...`.  These bytes are actually overlap from the
+; previous code block's tail; they execute as harmless filler before the
+; real AI-entry preroll begins (`test [si+8], 0xFF / mov [si+8], 4`).
+
+tori_state4_entry:				; offset 0x4F0 -- state 4 (idx 4 in primary)
+		add	[bx+di],ax		; bytes 01 01 (overlap filler)
+		add	[bx+si],al		; bytes 00 00 (overlap filler)
+		pop	es			; byte 07 (overlap filler)
+		pop	es			; byte 07 (overlap filler)
+		add	ax,[bp+di]		; bytes 03 03 (overlap filler)
+		add	al,4			; bytes 04 04
+		add	ax,0F605h		; bytes 05 05 F6
+		inc	sp			; byte 44
+;*		or	bh,bh			; alt encoding for `test [si+8],0FFh` start
+		db	 08h,0FFh		; (alt encoding; pairs with prior 'inc sp' byte)
+		jnz	tori_s4_pre_done			; Jump if not zero
 		mov	byte ptr [si+8],4
-loc_33:
+
+tori_s4_pre_done:
 		test	byte ptr [si+5],20h	; ' '
-		jz	loc_34			; Jump if zero
-		jmp	word ptr cs:data_20e
-loc_34:
-		call	word ptr cs:data_14e
-		jc	loc_35			; Jump if carry Set
+		jz	tori_s4_step			; Jump if zero
+		jmp	word ptr cs:ai_hide_fn
+
+tori_s4_step:
+		call	word ptr cs:ai_fn_tbl_h
+		jc	tori_s4_dispatch			; Jump if carry Set
 		retn
-loc_35:
+
+tori_s4_dispatch:
 		mov	bl,[si+9]
 		and	bx,3
 		add	bx,bx
-		jmp	word ptr ds:data_23e[bx]	;*
-			                        ;* No entry point to code
-		and	ds:data_24e[di],sp
+		jmp	word ptr ds:tori_tbl_b[bx]	;*
+
+; tori_s4_substate_dispatch -- entered after primary dispatch JMP (overlap of dispatch JMP encoding).
+
+tori_s4_substate_dispatch:				; was '* No entry point to code' marker
+		and	ds:tori_tbl_c[di],sp
 		mov	dx,12A5h
 		cmpsb				; Cmp [si] to es:[di]
 		or	byte ptr [si+4],60h	; '`'
 		add	byte ptr [si+6],80h
-		jc	loc_36			; Jump if carry Set
+		jc	tori_s4a_phase_carry			; Jump if carry Set
 		retn
-loc_36:
+
+tori_s4a_phase_carry:
 		inc	byte ptr [si+6]
 		and	byte ptr [si+6],1
-		jz	loc_37			; Jump if zero
+		jz	tori_s4a_phase_zero			; Jump if zero
 		retn
-loc_37:
+
+tori_s4a_phase_zero:
 		inc	byte ptr [si+0Ah]
 		cmp	byte ptr [si+0Ah],7
-		jb	loc_38			; Jump if below
+		jb	tori_s4a_test_facing			; Jump if below
 		mov	byte ptr [si+9],1
 		mov	byte ptr [si+6],2
-loc_38:
+
+tori_s4a_test_facing:
 		test	byte ptr [si+5],80h
-		jz	loc_40			; Jump if zero
+		jz	tori_s4a_west			; Jump if zero
 		mov	ax,[si+2]
-		call	word ptr cs:data_17e
+		call	word ptr cs:ai_fn_tbl_k
 		xchg	si,di
 		add	si,4Ah
-		call	word ptr cs:data_18e
+		call	word ptr cs:ai_fn_tbl_l
 		xchg	si,di
 		mov	al,[di]
-		call	word ptr cs:data_19e
-		jz	loc_39			; Jump if zero
-		jmp	word ptr cs:data_8e
-loc_39:
+		call	word ptr cs:ai_fn_tbl_m
+		jz	tori_s4a_jmp_b			; Jump if zero
+		jmp	word ptr cs:ai_fn_tbl_b
+
+tori_s4a_jmp_b:
 		and	byte ptr [si+5],7Fh
-		jmp	word ptr cs:data_12e
-loc_40:
+		jmp	word ptr cs:ai_fn_tbl_f
+
+tori_s4a_west:
 		mov	ax,[si+2]
-		call	word ptr cs:data_17e
+		call	word ptr cs:ai_fn_tbl_k
 		xchg	si,di
 		add	si,47h
-		call	word ptr cs:data_18e
+		call	word ptr cs:ai_fn_tbl_l
 		xchg	si,di
 		mov	al,[di]
-		call	word ptr cs:data_19e
-		jz	loc_41			; Jump if zero
-		jmp	word ptr cs:data_12e
-loc_41:
+		call	word ptr cs:ai_fn_tbl_m
+		jz	tori_s4a_jmp_f			; Jump if zero
+		jmp	word ptr cs:ai_fn_tbl_f
+
+tori_s4a_jmp_f:
 		or	byte ptr [si+5],80h
-		jmp	word ptr cs:data_8e
-			                        ;* No entry point to code
+		jmp	word ptr cs:ai_fn_tbl_b
+
+; tori_s4_sub2 -- entered via tori_tbl_b[2] dispatch (DS:0xA51D -> 0xA5A3); phase counter substate.
+
+tori_s4_sub2:				; was '* No entry point to code' marker
 		and	byte ptr [si+4],1Fh
 		inc	byte ptr [si+6]
 		cmp	byte ptr [si+6],5
-		je	loc_42			; Jump if equal
+		je	tori_s4b_advance			; Jump if equal
 		retn
-loc_42:
+
+tori_s4b_advance:
 		mov	byte ptr [si+9],2
 		mov	byte ptr [si+0Ah],0
 		retn
-			                        ;* No entry point to code
+
+; tori_s4_sub3 -- entered via tori_tbl_b[3] dispatch (DS:0xA51F -> 0xA5BA); attack phase substate.
+
+tori_s4_sub3:				; was '* No entry point to code' marker
 		test	byte ptr [si+9],80h
-		jnz	loc_44			; Jump if not zero
+		jnz	tori_atk_set_state3			; Jump if not zero
 		add	byte ptr [si+6],40h	; '@'
-		jc	loc_43			; Jump if carry Set
+		jc	tori_atk_phase_carry			; Jump if carry Set
 		retn
-loc_43:
+
+tori_atk_phase_carry:
 		xor	byte ptr [si+5],80h
-		call	sub_1
-		jc	loc_45			; Jump if carry Set
+		call	tori_dist_check_5
+		jc	tori_atk_setup			; Jump if carry Set
 		inc	byte ptr [si+0Ah]
 		cmp	byte ptr [si+0Ah],3
-		je	loc_44			; Jump if equal
+		je	tori_atk_set_state3			; Jump if equal
 		retn
-loc_44:
+
+tori_atk_set_state3:
 		mov	byte ptr [si+9],3
 		mov	byte ptr [si+6],5
 		retn
-loc_45:
+
+tori_atk_setup:
 		mov	byte ptr [si+6],6
 		or	byte ptr [si+9],80h
 		mov	al,[si+3]
-		mov	ds:data_27e,al
+		mov	ds:tori_tbl_f,al
 		inc	al
-		mov	ds:data_25e,al
+		mov	ds:tori_tbl_d,al
 		mov	al,[si+2]
 		and	al,3Fh			; '?'
-		mov	ds:data_28e,al
-		mov	ds:data_26e,al
+		mov	ds:tori_tbl_g,al
+		mov	ds:tori_tbl_e,al
 		mov	bx,0A654h
 		test	byte ptr [si+5],80h
-		jnz	loc_46			; Jump if not zero
+		jnz	tori_atk_jmp			; Jump if not zero
 		mov	bx,0A661h
-loc_46:
-		jmp	word ptr cs:data_21e
-			                        ;* No entry point to code
+
+tori_atk_jmp:
+		jmp	word ptr cs:ai_attack_fn
+
+; tori_s4_decel -- fall-through after retn above -- decel/reset substate.
+
+tori_s4_decel:				; was '* No entry point to code' marker
 		dec	byte ptr [si+6]
 		cmp	byte ptr [si+6],1
-		je	loc_47			; Jump if equal
+		je	tori_decel_reset			; Jump if equal
 		retn
-loc_47:
+
+tori_decel_reset:
 		mov	byte ptr [si+9],0
 		mov	byte ptr [si+0Ah],0
 		retn
 
 tori_ai_main	endp
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_1		proc	near
-		mov	al,ds:data_29e
+tori_dist_check_5		proc	near
+		mov	al,ds:gvar_frame_cnt
 		sub	al,[si+2]
-		jns	loc_48			; Jump if not sign
+		jns	dist5_abs_done			; Jump if not sign
 		neg	al
-loc_48:
+
+dist5_abs_done:
 		cmp	al,5
 		mov	al,0FFh
-		jc	loc_49			; Jump if carry Set
+		jc	dist5_in_range			; Jump if carry Set
 		retn
-loc_49:
+
+dist5_in_range:
 		cmp	byte ptr [si+3],11h
-		jae	loc_51			; Jump if above or =
+		jae	dist5_far_branch			; Jump if above or =
 		mov	al,80h
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jz	loc_50			; Jump if zero
+		jz	dist5_clear_carry			; Jump if zero
 		retn
-loc_50:
+
+dist5_clear_carry:
 		clc				; Clear carry flag
 		retn
-loc_51:
+
+dist5_far_branch:
 		xor	al,al			; Zero register
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jnz	loc_52			; Jump if not zero
+		jnz	dist5_far_clear			; Jump if not zero
 		retn
-loc_52:
+
+dist5_far_clear:
 		clc				; Clear carry flag
 		retn
-sub_1		endp
+
+tori_dist_check_5		endp
 
 		db	 00h, 00h, 2Bh, 00h, 0Fh, 00h
 		db	 28h
@@ -596,106 +771,115 @@ sub_1		endp
 		db	 44h, 08h, 04h,0F6h, 44h, 05h
 		db	 20h, 74h, 05h, 2Eh,0FFh
 		db	 26h, 34h, 60h
-loc_53:
+
+tori_s5_main:
 		mov	al,[si+6]
 		push	ax
 		mov	byte ptr [si+6],0
-		call	word ptr cs:data_14e
+		call	word ptr cs:ai_fn_tbl_h
 		pop	ax
-		jc	loc_54			; Jump if carry Set
+		jc	tori_s5_after_step			; Jump if carry Set
 		retn
-loc_54:
+
+tori_s5_after_step:
 		mov	[si+6],al
 		test	byte ptr [si+9],1
-		jnz	loc_58			; Jump if not zero
+		jnz	tori_s5_state1_active			; Jump if not zero
 		mov	byte ptr [si+6],1
 		mov	byte ptr [si+0Ah],0
-		call	sub_2
-		jc	loc_56			; Jump if carry Set
+		call	tori_dist_check_6
+		jc	tori_s5_dist_carry			; Jump if carry Set
 		cmp	al,0FFh
-		jne	loc_55			; Jump if not equal
+		jne	tori_s5_apply_facing			; Jump if not equal
 		retn
-loc_55:
+
+tori_s5_apply_facing:
 		and	byte ptr [si+5],7Fh
 		or	[si+5],al
 		retn
-loc_56:
+
+tori_s5_dist_carry:
 		cmp	ah,0Ah
-		jb	loc_57			; Jump if below
+		jb	tori_s5_set_state1			; Jump if below
 		retn
-loc_57:
+
+tori_s5_set_state1:
 		or	byte ptr [si+9],1
 		retn
-loc_58:
+
+tori_s5_state1_active:
 		inc	byte ptr [si+0Ah]
 		cmp	byte ptr [si+0Ah],14h
-		je	loc_59			; Jump if equal
+		je	tori_s5_state1_finish			; Jump if equal
 		test	byte ptr [si+5],80h
-		jnz	loc_60			; Jump if not zero
-		call	word ptr cs:data_12e
-		jnc	loc_61			; Jump if carry=0
-		call	word ptr cs:data_11e
-		jnc	loc_61			; Jump if carry=0
-loc_59:
-		and	byte ptr [si+9],0FEh
-		retn
-loc_60:
-		call	word ptr cs:data_8e
-		jnc	loc_61			; Jump if carry=0
-		call	word ptr cs:data_9e
-		jc	loc_59			; Jump if carry Set
-loc_61:
+		jnz	tori_s5_state1_west			; Jump if not zero
+		call	word ptr cs:ai_fn_tbl_f
+		jnc	tori_s5_state1_step			; Jump if carry=0
+		call	word ptr cs:ai_fn_tbl_e
+		jnc	tori_s5_state1_step			; Jump if carry=0
+
+tori_s5_state1_finish:
+			and	byte ptr [si+9],0FEh
+			retn
+
+tori_s5_state1_west:
+			call	word ptr cs:ai_fn_tbl_b
+			jnc	tori_s5_state1_step			; Jump if carry=0
+			call	word ptr cs:ai_fn_tbl_c
+			jc	tori_s5_state1_finish			; Jump if carry Set
+
+tori_s5_state1_step:
 		inc	byte ptr [si+6]
 		cmp	byte ptr [si+6],6
-		jae	loc_62			; Jump if above or =
+		jae	tori_s5_state1_reset			; Jump if above or =
 		retn
-loc_62:
+
+tori_s5_state1_reset:
 		mov	byte ptr [si+6],1
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
-sub_2		proc	near
-		mov	al,ds:data_29e
+tori_dist_check_6		proc	near
+		mov	al,ds:gvar_frame_cnt
 		sub	al,[si+2]
-		jns	loc_63			; Jump if not sign
+		jns	dist6_abs_done			; Jump if not sign
 		neg	al
-loc_63:
+
+dist6_abs_done:
 		cmp	al,6
 		mov	al,0FFh
-		jc	loc_64			; Jump if carry Set
+		jc	dist6_in_range			; Jump if carry Set
 		retn
-loc_64:
+
+dist6_in_range:
 		mov	al,11h
 		sub	al,[si+3]
-		jc	loc_66			; Jump if carry Set
+		jc	dist6_far_branch			; Jump if carry Set
 		mov	ah,al
 		mov	al,80h
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jz	loc_65			; Jump if zero
+		jz	dist6_clear_carry			; Jump if zero
 		retn
-loc_65:
+
+dist6_clear_carry:
 		clc				; Clear carry flag
 		retn
-loc_66:
+
+dist6_far_branch:
 		neg	al
 		mov	ah,al
 		xor	al,al			; Zero register
 		test	byte ptr [si+5],80h
 		stc				; Set carry flag
-		jnz	loc_67			; Jump if not zero
+		jnz	dist6_far_clear			; Jump if not zero
 		retn
-loc_67:
+
+dist6_far_clear:
 		clc				; Clear carry flag
 		retn
-sub_2		endp
 
+tori_dist_check_6		endp
 
 seg_a		ends
-
-
 
 		end	start
