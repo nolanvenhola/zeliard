@@ -73,151 +73,201 @@ start:
 		mov	cx,0A2h
 		add	[bx+si],al
 		db	00h, 9Fh, 0A2h, 0FFh	; add ds:gvar_proj_flag[bx],bl (force disp16; TASM picks disp8)
-		db	0FFh,0FFh,0FFh,0FFh, 00h, 00h
-		db	 00h,0A0h,0A0h
-		db	 3Ch, 50h, 50h
+; ----------------------------------------------------------------
+; eai8_init_params  -- spawn parameter block (init/timer constants)
+; ----------------------------------------------------------------
+eai8_init_params:
+		db	0FFh,0FFh,0FFh,0FFh, 00h, 00h	; row 0: 4xFF guard + zero pad
+		db	 00h,0A0h,0A0h			; row 1: pad + A0,A0
+		db	 3Ch, 50h, 50h			; row 2: timer constants 3C,50,50
 		db	27 dup (0)
-		db	0B0h,0A0h,0FBh,0A0h, 46h,0A1h
-		db	0A5h,0A1h,0E6h,0A1h, 00h, 00h
-		db	 00h, 00h, 00h, 00h,0ECh,0A0h
-		db	 37h,0A1h, 96h,0A1h,0D7h,0A1h
-		db	0FAh,0A1h, 00h, 00h, 00h, 00h
-		db	 00h, 00h, 86h,0A2h, 00h, 00h
-		db	 09h,0A2h, 54h,0A2h, 18h,0A2h
-		db	 2Ch,0A2h, 7Ch,0A2h, 81h,0A2h
-		db	 72h,0A2h, 77h,0A2h, 00h, 00h
-		db	 40h,0A2h, 9Ah,0A2h, 00h, 00h
-		db	 00h, 00h, 00h, 00h,0CEh,0A0h
-		db	 19h,0A1h, 6Eh,0A1h,0BEh,0A1h
-		db	0E6h,0A1h, 00h, 00h, 00h, 00h
-		db	 00h, 00h,0ECh,0A0h, 37h,0A1h
-		db	 96h,0A1h,0D7h,0A1h,0FAh,0A1h
-		db	 00h, 00h, 00h, 00h, 00h, 00h
-		db	 86h,0A2h, 00h, 00h, 09h,0A2h
-		db	 54h,0A2h, 18h,0A2h, 2Ch,0A2h
-		db	 7Ch,0A2h, 81h,0A2h, 72h,0A2h
-		db	 77h,0A2h, 00h, 00h, 40h,0A2h
-		db	 9Ah,0A2h
+; ----------------------------------------------------------------
+; eai8_jump_tbl_a  -- DS pointer table (CS-relative addresses A0xx..A2xx)
+; Bank A: dispatch entries for sub-state idx 0..N (low-nibble of [si+4]).
+; ----------------------------------------------------------------
+eai8_jump_tbl_a:
+		db	0B0h,0A0h,0FBh,0A0h, 46h,0A1h	; row 0: ptrs A0B0,A0FB,A146
+		db	0A5h,0A1h,0E6h,0A1h, 00h, 00h	; row 1: ptrs A1A5,A1E6 + zero pad
+		db	 00h, 00h, 00h, 00h,0ECh,0A0h	; row 2: zero pad + ptr A0EC
+		db	 37h,0A1h, 96h,0A1h,0D7h,0A1h	; row 3: ptrs A137,A196,A1D7
+		db	0FAh,0A1h, 00h, 00h, 00h, 00h	; row 4: ptr A1FA + zero pad
+		db	 00h, 00h, 86h,0A2h, 00h, 00h	; row 5: zero pad + ptr A286
+		db	 09h,0A2h, 54h,0A2h, 18h,0A2h	; row 6: ptrs A209,A254,A218
+		db	 2Ch,0A2h, 7Ch,0A2h, 81h,0A2h	; row 7: ptrs A22C,A27C,A281
+		db	 72h,0A2h, 77h,0A2h, 00h, 00h	; row 8: ptrs A272,A277 + zero pad
+		db	 40h,0A2h, 9Ah,0A2h, 00h, 00h	; row 9: ptrs A240,A29A + zero pad
+		db	 00h, 00h, 00h, 00h,0CEh,0A0h	; row 10: zero pad + ptr A0CE
+		db	 19h,0A1h, 6Eh,0A1h,0BEh,0A1h	; row 11: ptrs A119,A16E,A1BE
+		db	0E6h,0A1h, 00h, 00h, 00h, 00h	; row 12: ptr A1E6 + zero pad
+		db	 00h, 00h,0ECh,0A0h, 37h,0A1h	; row 13: zero pad + ptrs A0EC,A137
+		db	 96h,0A1h,0D7h,0A1h,0FAh,0A1h	; row 14: ptrs A196,A1D7,A1FA
+		db	 00h, 00h, 00h, 00h, 00h, 00h	; row 15: zero pad
+		db	 86h,0A2h, 00h, 00h, 09h,0A2h	; row 16: ptr A286 + pad + A209
+		db	 54h,0A2h, 18h,0A2h, 2Ch,0A2h	; row 17: ptrs A254,A218,A22C
+		db	 7Ch,0A2h, 81h,0A2h, 72h,0A2h	; row 18: ptrs A27C,A281,A272
+		db	 77h,0A2h, 00h, 00h, 40h,0A2h	; row 19: ptr A277 + pad + A240
+		db	 9Ah,0A2h			; row 20: ptr A29A
 		db	7 dup (0)
-		db	 01h, 02h, 03h, 04h, 00h, 01h
-		db	 02h, 03h, 04h, 00h, 01h, 02h
-		db	 03h, 04h, 00h, 01h, 02h, 11h
-		db	 04h, 00h, 01h, 02h, 16h, 04h
-		db	 00h, 01h, 02h, 1Bh, 04h, 00h
-		db	20h
-		db	'!"#', 0
-		db	' !"#', 0
-		db	' !"#', 0
-		db	' !"0', 0
-		db	' !"5', 0
-		db	' !":', 0
-		db	'?@AB'
-		db	 02h, 47h, 48h, 49h, 4Ah, 02h
-		db	 4Fh, 50h, 51h, 52h, 02h, 05h
-		db	 06h, 07h, 08h, 02h, 09h, 0Ah
-		db	 0Bh, 0Ch, 02h, 0Dh, 0Eh, 0Fh
-		db	 10h, 02h, 12h, 13h, 14h, 15h
-		db	 02h, 17h, 18h, 19h, 1Ah, 02h
-		db	 1Ch
+; ----------------------------------------------------------------
+; eai8_anim_idx_a  -- animation index/dispatch index table
+; Small constants (01..04 grouped by 5) used as XLAT lookup feeding
+; the state-dispatch jump table.
+; ----------------------------------------------------------------
+eai8_anim_idx_a:
+		db	 01h, 02h, 03h, 04h, 00h, 01h	; row 0: 01,02,03,04,00,01
+		db	 02h, 03h, 04h, 00h, 01h, 02h	; row 1: 02,03,04,00,01,02
+		db	 03h, 04h, 00h, 01h, 02h, 11h	; row 2: 03,04,00,01,02,11
+		db	 04h, 00h, 01h, 02h, 16h, 04h	; row 3: 04,00,01,02,16,04
+		db	 00h, 01h, 02h, 1Bh, 04h, 00h	; row 4: 00,01,02,1B,04,00
+; ----------------------------------------------------------------
+; eai8_sprite_tbl_20  -- sprite tile-index table (frames 0x20..0x54)
+; Frames stored as 4-byte ASCII-printable runs separated by 0x00.
+; ----------------------------------------------------------------
+eai8_sprite_tbl_20:
+		db	20h				; frame 0 lead byte (' ')
+		db	'!"#', 0			; frame 0 tail: 21,22,23 + sep
+		db	' !"#', 0			; frame 1: 20,21,22,23 + sep
+		db	' !"#', 0			; frame 2: 20,21,22,23 + sep
+		db	' !"0', 0			; frame 3: 20,21,22,30 + sep
+		db	' !"5', 0			; frame 4: 20,21,22,35 + sep
+		db	' !":', 0			; frame 5: 20,21,22,3A + sep
+		db	'?@AB'				; frame 6: 3F,40,41,42
+		db	 02h, 47h, 48h, 49h, 4Ah, 02h	; row 0: flag + 47,48,49,4A + flag
+		db	 4Fh, 50h, 51h, 52h, 02h, 05h	; row 1: 4F,50,51,52,flag,05
+		db	 06h, 07h, 08h, 02h, 09h, 0Ah	; row 2: 06,07,08,flag,09,0A
+		db	 0Bh, 0Ch, 02h, 0Dh, 0Eh, 0Fh	; row 3: 0B,0C,flag,0D,0E,0F
+		db	 10h, 02h, 12h, 13h, 14h, 15h	; row 4: 10,flag,12,13,14,15
+		db	 02h, 17h, 18h, 19h, 1Ah, 02h	; row 5: flag,17,18,19,1A,flag
+		db	 1Ch				; row 6 lead: 1C
 eai8_rng_fn_ptr		dw	1E1Dh
-		db	 1Fh, 02h, 24h, 25h, 26h, 27h
-		db	 02h, 28h, 29h, 2Ah, 2Bh, 02h
-		db	 2Ch, 2Dh, 2Eh, 2Fh, 02h, 31h
-		db	 32h, 33h, 34h, 02h, 36h, 37h
-		db	 38h, 39h, 02h, 3Bh, 3Ch, 3Dh
-		db	 3Eh, 00h, 43h, 44h, 45h, 46h
-		db	 02h, 4Bh, 4Ch, 4Dh, 4Eh, 02h
-		db	 53h, 54h
-		db	'UV', 0
-		db	'WXYZ', 0
-		db	'[\]^', 0
-		db	'_`ab', 0
-		db	'cdef', 0
-		db	'WXYZ', 0
-		db	'[\]^', 0
-		db	'ghij', 0
-		db	'klmn', 0
-		db	'opqr', 0
-		db	'stuv', 0
-		db	'wxyz', 0
-		db	'{|}~', 0
-		db	'opqr', 0
-		db	'stuv', 0
-		db	 7Fh, 80h, 81h, 82h, 00h, 83h
-		db	 84h, 85h, 86h, 00h, 87h, 88h
-		db	 89h, 8Ah, 00h, 8Bh, 8Ch, 8Dh
-		db	 8Eh, 02h, 8Fh, 90h, 91h, 92h
-		db	 00h, 93h, 94h, 95h, 96h, 00h
-		db	 97h, 98h, 99h, 9Ah, 00h, 9Bh
-		db	 9Ch, 9Dh, 9Eh, 00h,0A3h,0A4h
-		db	 95h, 96h, 00h,0A5h,0A6h, 95h
-		db	 96h, 00h, 93h, 94h, 95h, 96h
-		db	 00h, 97h, 98h, 99h, 9Ah, 00h
-		db	 9Bh, 9Ch, 9Dh, 9Eh, 00h, 9Fh
-		db	0A0h, 95h, 96h, 00h,0A1h,0A2h
-		db	 95h, 96h, 00h,0A7h,0A8h, 95h
-		db	 96h, 00h,0A9h,0AAh,0ABh,0ACh
-		db	 00h,0ADh,0AEh,0AFh,0B0h, 02h
-		db	0B1h,0B2h,0B3h,0B4h, 02h,0B5h
-		db	0B6h,0B7h,0B8h, 02h,0B9h,0BAh
-		db	0BBh,0BCh, 02h,0BDh,0BEh,0BFh
-		db	0C0h, 02h,0C1h,0C2h,0C3h,0C4h
-		db	 02h,0C5h,0C6h,0C7h,0C8h, 02h
-		db	0C9h,0CAh, 00h, 00h, 01h,0CBh
-		db	0CCh,0CDh,0CEh, 01h,0CFh,0D0h
-		db	0D1h,0D2h, 01h,0D3h,0D4h,0D5h
-		db	0D6h, 00h,0D7h,0D8h,0D9h,0DAh
-		db	 00h,0DBh,0DCh,0DDh,0DEh, 00h
-		db	0DFh,0E0h,0E1h,0E2h, 00h,0DBh
-		db	0DCh,0DDh,0DEh, 02h,0D7h,0D8h
-		db	0D9h,0DAh, 02h,0DBh,0DCh,0DDh
-		db	0DEh, 02h,0DFh,0E0h,0E1h,0E2h
-		db	 02h,0DBh,0DCh,0DDh,0DEh, 01h
-		db	0D7h,0D8h,0D9h,0DAh, 01h,0DBh
-		db	0DCh,0DDh,0DEh, 01h,0DFh,0E0h
-		db	0E1h,0E2h, 01h,0DBh,0DCh,0DDh
-		db	0DEh, 00h,0E3h,0E4h,0E5h,0E6h
-		db	 00h,0E3h,0E4h,0E5h,0E6h, 00h
-		db	0E3h,0E4h,0E5h,0E6h, 00h,0E3h
-		db	0E4h,0E5h,0E6h, 00h,0E3h,0E4h
-		db	0E5h,0E6h, 00h,0E3h,0E4h,0E5h
-		db	0E6h, 00h,0EBh,0ECh,0EDh,0EEh
-		db	 02h,0EBh,0ECh,0EDh,0EEh, 01h
-		db	0E7h,0E8h,0E9h,0EAh, 01h,0EFh
-		db	0F0h,0F1h,0F2h, 02h,0F3h,0F3h
-		db	0F3h,0F3h, 02h,0F4h,0F4h,0F5h
-		db	0F5h, 02h,0F6h, 00h,0F3h,0F7h
-		db	 02h, 00h, 00h,0F7h,0F8h, 02h
-		db	0F9h,0FAh,0FBh,0FCh,0A9h,0A2h
-		db	0A9h,0A2h,0ADh,0A2h,0B1h,0A2h
-		db	0B5h,0A2h, 0Bh, 0Bh, 0Bh, 0Bh
-		db	 05h, 05h, 00h, 00h, 0Bh, 0Bh
-		db	 05h, 05h, 0Bh, 05h, 00h, 00h
-		db	 8Ah, 5Ch, 04h, 80h,0E3h, 0Fh
-		db	 32h,0FFh, 03h,0DBh,0FFh,0A7h
-		db	0C7h,0A2h,0D2h,0A2h,0D1h,0A2h
-		db	 83h,0A4h, 38h,0A5h, 8Fh,0A6h
-		db	0C3h,0F6h, 44h, 08h,0FFh, 75h
-		db	 04h,0C6h, 44h, 08h, 64h,0F6h
-		db	 44h, 05h, 20h, 74h, 03h,0E9h
-		db	 80h, 00h, 80h, 64h, 15h,0BFh
-		db	0F6h, 44h, 09h, 01h, 75h, 2Ah
-		db	 80h, 44h, 06h, 80h, 73h, 03h
-		db	0E8h, 4Bh, 00h,0C6h, 44h, 0Ah
-		db	 00h,0E8h, 5Eh, 04h, 72h, 0Dh
-		db	 3Ch,0FFh, 74h, 4Dh, 80h, 64h
-		db	 05h, 7Fh, 08h, 44h, 05h,0EBh
-		db	 44h, 80h,0FCh, 0Fh, 73h, 3Fh
-		db	 80h, 4Ch, 09h, 01h,0EBh, 39h
-		db	0FEh, 44h, 0Ah, 8Ah, 44h, 0Ah
-		db	 3Ch, 10h, 74h, 1Ah,0F6h, 44h
-		db	 05h, 80h, 75h, 0Ah,0E8h,0D2h
-		db	 00h, 72h, 0Fh,0E8h, 12h, 00h
-		db	0EBh, 1Fh,0E8h, 43h, 00h, 72h
-		db	 05h,0E8h, 08h, 00h,0EBh, 15h
-		db	 80h, 64h, 09h,0FEh,0EBh, 0Fh
-		db	0FEh, 44h, 06h, 80h, 7Ch, 06h
-		db	 06h, 73h, 01h,0C3h
+		db	 1Fh, 02h, 24h, 25h, 26h, 27h	; row 7: 1F,flag,24,25,26,27
+		db	 02h, 28h, 29h, 2Ah, 2Bh, 02h	; row 8: flag,28,29,2A,2B,flag
+		db	 2Ch, 2Dh, 2Eh, 2Fh, 02h, 31h	; row 9: 2C,2D,2E,2F,flag,31
+		db	 32h, 33h, 34h, 02h, 36h, 37h	; row 10: 32,33,34,flag,36,37
+		db	 38h, 39h, 02h, 3Bh, 3Ch, 3Dh	; row 11: 38,39,flag,3B,3C,3D
+		db	 3Eh, 00h, 43h, 44h, 45h, 46h	; row 12: 3E,00,43,44,45,46
+		db	 02h, 4Bh, 4Ch, 4Dh, 4Eh, 02h	; row 13: flag,4B,4C,4D,4E,flag
+		db	 53h, 54h			; row 14: 53,54
+; ----------------------------------------------------------------
+; eai8_sprite_tbl_55  -- sprite tile-index table (frames 0x55..0xAC)
+; Frames stored as 4-byte ASCII-printable runs separated by 0x00.
+; ----------------------------------------------------------------
+eai8_sprite_tbl_55:
+		db	'UV', 0				; frame 0 tail: 55,56 + sep
+		db	'WXYZ', 0			; frame 1: 57,58,59,5A + sep
+		db	'[\]^', 0			; frame 2: 5B,5C,5D,5E + sep
+		db	'_`ab', 0			; frame 3: 5F,60,61,62 + sep
+		db	'cdef', 0			; frame 4: 63,64,65,66 + sep
+		db	'WXYZ', 0			; frame 5: 57,58,59,5A + sep
+		db	'[\]^', 0			; frame 6: 5B,5C,5D,5E + sep
+		db	'ghij', 0			; frame 7: 67,68,69,6A + sep
+		db	'klmn', 0			; frame 8: 6B,6C,6D,6E + sep
+		db	'opqr', 0			; frame 9: 6F,70,71,72 + sep
+		db	'stuv', 0			; frame 10: 73,74,75,76 + sep
+		db	'wxyz', 0			; frame 11: 77,78,79,7A + sep
+		db	'{|}~', 0			; frame 12: 7B,7C,7D,7E + sep
+		db	'opqr', 0			; frame 13: 6F,70,71,72 + sep
+		db	'stuv', 0			; frame 14: 73,74,75,76 + sep
+		db	 7Fh, 80h, 81h, 82h, 00h, 83h	; row 0: 7F,80,81,82,00,83
+		db	 84h, 85h, 86h, 00h, 87h, 88h	; row 1: 84,85,86,00,87,88
+		db	 89h, 8Ah, 00h, 8Bh, 8Ch, 8Dh	; row 2: 89,8A,00,8B,8C,8D
+		db	 8Eh, 02h, 8Fh, 90h, 91h, 92h	; row 3: 8E,flag,8F,90,91,92
+		db	 00h, 93h, 94h, 95h, 96h, 00h	; row 4: 00,93,94,95,96,00
+		db	 97h, 98h, 99h, 9Ah, 00h, 9Bh	; row 5: 97,98,99,9A,00,9B
+		db	 9Ch, 9Dh, 9Eh, 00h,0A3h,0A4h	; row 6: 9C,9D,9E,00,A3,A4
+		db	 95h, 96h, 00h,0A5h,0A6h, 95h	; row 7: 95,96,00,A5,A6,95
+		db	 96h, 00h, 93h, 94h, 95h, 96h	; row 8: 96,00,93,94,95,96
+		db	 00h, 97h, 98h, 99h, 9Ah, 00h	; row 9: 00,97,98,99,9A,00
+		db	 9Bh, 9Ch, 9Dh, 9Eh, 00h, 9Fh	; row 10: 9B,9C,9D,9E,00,9F
+		db	0A0h, 95h, 96h, 00h,0A1h,0A2h	; row 11: A0,95,96,00,A1,A2
+		db	 95h, 96h, 00h,0A7h,0A8h, 95h	; row 12: 95,96,00,A7,A8,95
+		db	 96h, 00h,0A9h,0AAh,0ABh,0ACh	; row 13: 96,00,A9,AA,AB,AC
+; ----------------------------------------------------------------
+; eai8_sprite_tbl_ad  -- sprite tile-index table (frames 0xAD..0xFC)
+; Boss-class extended frame set with 00/01/02 phase-flag separators.
+; ----------------------------------------------------------------
+eai8_sprite_tbl_ad:
+		db	 00h,0ADh,0AEh,0AFh,0B0h, 02h	; row 0: 00,AD,AE,AF,B0,flag
+		db	0B1h,0B2h,0B3h,0B4h, 02h,0B5h	; row 1: B1,B2,B3,B4,flag,B5
+		db	0B6h,0B7h,0B8h, 02h,0B9h,0BAh	; row 2: B6,B7,B8,flag,B9,BA
+		db	0BBh,0BCh, 02h,0BDh,0BEh,0BFh	; row 3: BB,BC,flag,BD,BE,BF
+		db	0C0h, 02h,0C1h,0C2h,0C3h,0C4h	; row 4: C0,flag,C1,C2,C3,C4
+		db	 02h,0C5h,0C6h,0C7h,0C8h, 02h	; row 5: flag,C5,C6,C7,C8,flag
+		db	0C9h,0CAh, 00h, 00h, 01h,0CBh	; row 6: C9,CA,00,00,01,CB
+		db	0CCh,0CDh,0CEh, 01h,0CFh,0D0h	; row 7: CC,CD,CE,01,CF,D0
+		db	0D1h,0D2h, 01h,0D3h,0D4h,0D5h	; row 8: D1,D2,01,D3,D4,D5
+		db	0D6h, 00h,0D7h,0D8h,0D9h,0DAh	; row 9: D6,00,D7,D8,D9,DA
+		db	 00h,0DBh,0DCh,0DDh,0DEh, 00h	; row 10: 00,DB,DC,DD,DE,00
+		db	0DFh,0E0h,0E1h,0E2h, 00h,0DBh	; row 11: DF,E0,E1,E2,00,DB
+		db	0DCh,0DDh,0DEh, 02h,0D7h,0D8h	; row 12: DC,DD,DE,flag,D7,D8
+		db	0D9h,0DAh, 02h,0DBh,0DCh,0DDh	; row 13: D9,DA,flag,DB,DC,DD
+		db	0DEh, 02h,0DFh,0E0h,0E1h,0E2h	; row 14: DE,flag,DF,E0,E1,E2
+		db	 02h,0DBh,0DCh,0DDh,0DEh, 01h	; row 15: flag,DB,DC,DD,DE,01
+		db	0D7h,0D8h,0D9h,0DAh, 01h,0DBh	; row 16: D7,D8,D9,DA,01,DB
+		db	0DCh,0DDh,0DEh, 01h,0DFh,0E0h	; row 17: DC,DD,DE,01,DF,E0
+		db	0E1h,0E2h, 01h,0DBh,0DCh,0DDh	; row 18: E1,E2,01,DB,DC,DD
+		db	0DEh, 00h,0E3h,0E4h,0E5h,0E6h	; row 19: DE,00,E3,E4,E5,E6
+		db	 00h,0E3h,0E4h,0E5h,0E6h, 00h	; row 20: 00,E3,E4,E5,E6,00
+		db	0E3h,0E4h,0E5h,0E6h, 00h,0E3h	; row 21: E3,E4,E5,E6,00,E3
+		db	0E4h,0E5h,0E6h, 00h,0E3h,0E4h	; row 22: E4,E5,E6,00,E3,E4
+		db	0E5h,0E6h, 00h,0E3h,0E4h,0E5h	; row 23: E5,E6,00,E3,E4,E5
+		db	0E6h, 00h,0EBh,0ECh,0EDh,0EEh	; row 24: E6,00,EB,EC,ED,EE
+		db	 02h,0EBh,0ECh,0EDh,0EEh, 01h	; row 25: flag,EB,EC,ED,EE,01
+		db	0E7h,0E8h,0E9h,0EAh, 01h,0EFh	; row 26: E7,E8,E9,EA,01,EF
+		db	0F0h,0F1h,0F2h, 02h,0F3h,0F3h	; row 27: F0,F1,F2,flag,F3,F3
+		db	0F3h,0F3h, 02h,0F4h,0F4h,0F5h	; row 28: F3,F3,flag,F4,F4,F5
+		db	0F5h, 02h,0F6h, 00h,0F3h,0F7h	; row 29: F5,flag,F6,00,F3,F7
+		db	 02h, 00h, 00h,0F7h,0F8h, 02h	; row 30: flag,00,00,F7,F8,flag
+		db	0F9h,0FAh,0FBh,0FCh		; row 31 tail: F9,FA,FB,FC
+; ----------------------------------------------------------------
+; eai8_phase_ptr_tbl  -- 5-entry phase-jump pointer table (CS-relative)
+; Indexed by sub-phase counter [si+0Ah]; entries at A2A9..A2B5.
+; ----------------------------------------------------------------
+eai8_phase_ptr_tbl:
+		db	0A9h,0A2h			; row 0: ptr A2A9
+		db	0A9h,0A2h,0ADh,0A2h,0B1h,0A2h	; row 1: ptrs A2A9,A2AD,A2B1
+		db	0B5h,0A2h			; row 2: ptr A2B5
+; ----------------------------------------------------------------
+; eai8_rng_shift_const  -- RNG output shift/mask constants
+; Used by RNG-driven facing/attack pick (and cooldown gating).
+; ----------------------------------------------------------------
+eai8_rng_shift_const:
+		db	 0Bh, 0Bh, 0Bh, 0Bh		; row 0: 0B x4
+		db	 05h, 05h, 00h, 00h, 0Bh, 0Bh	; row 1: 05,05,00,00,0B,0B
+		db	 05h, 05h, 0Bh, 05h, 00h, 00h	; row 2: 05,05,0B,05,00,00
+; ----------------------------------------------------------------
+; eai8_unk_data_at_0x276  -- mixed opcode/ptr block (boss-attack helper)
+; Bank-A pointers (A2C7..A68F) embedded in raw inline opcode stream
+; that is patched/copied at runtime (likely a self-modified handler
+; for the boss multi-pass attack pattern).  Tail is opcode bytes for
+; the dispatch prologue (mov bl,[si+4]; and bl,0F; jmp ds:[bx+...]).
+; ----------------------------------------------------------------
+eai8_unk_data_at_0x276:
+		db	 8Ah, 5Ch, 04h, 80h,0E3h, 0Fh	; row 0: opcode (mov bl,[si+4]; and bl,0F)
+		db	 32h,0FFh, 03h,0DBh,0FFh,0A7h	; row 1: opcode (xor bh,bh; add bx,bx; jmp ds:[bx+...])
+		db	0C7h,0A2h,0D2h,0A2h,0D1h,0A2h	; row 2: ptrs A2C7,A2D2,A2D1
+		db	 83h,0A4h, 38h,0A5h, 8Fh,0A6h	; row 3: ptrs A483,A538,A68F
+		db	0C3h,0F6h, 44h, 08h,0FFh, 75h	; row 4: opcode (retn; test [si+8],FF; jnz)
+		db	 04h,0C6h, 44h, 08h, 64h,0F6h	; row 5: opcode (mov [si+8],64; test ...)
+		db	 44h, 05h, 20h, 74h, 03h,0E9h	; row 6: opcode (test [si+5],20; jz; jmp far)
+		db	 80h, 00h, 80h, 64h, 15h,0BFh	; row 7: opcode (and [si+15],BF disp)
+		db	0F6h, 44h, 09h, 01h, 75h, 2Ah	; row 8: opcode (test [si+9],1; jnz +2A)
+		db	 80h, 44h, 06h, 80h, 73h, 03h	; row 9: opcode (add [si+6],80; jnc +03)
+		db	0E8h, 4Bh, 00h,0C6h, 44h, 0Ah	; row 10: opcode (call +4B; mov [si+0A],0)
+		db	 00h,0E8h, 5Eh, 04h, 72h, 0Dh	; row 11: opcode (00; call +45E; jc +0D)
+		db	 3Ch,0FFh, 74h, 4Dh, 80h, 64h	; row 12: opcode (cmp al,FF; jz +4D)
+		db	 05h, 7Fh, 08h, 44h, 05h,0EBh	; row 13: opcode (and [si+5],7F; or ...)
+		db	 44h, 80h,0FCh, 0Fh, 73h, 3Fh	; row 14: opcode (jmp; cmp ah,0F; jnc +3F)
+		db	 80h, 4Ch, 09h, 01h,0EBh, 39h	; row 15: opcode (or [si+9],1; jmp +39)
+		db	0FEh, 44h, 0Ah, 8Ah, 44h, 0Ah	; row 16: opcode (inc [si+0A]; mov al,[si+0A])
+		db	 3Ch, 10h, 74h, 1Ah,0F6h, 44h	; row 17: opcode (cmp al,10; jz +1A)
+		db	 05h, 80h, 75h, 0Ah,0E8h,0D2h	; row 18: opcode (test [si+5],80; jnz +0A)
+		db	 00h, 72h, 0Fh,0E8h, 12h, 00h	; row 19: opcode (jc +0F; call +12)
+		db	0EBh, 1Fh,0E8h, 43h, 00h, 72h	; row 20: opcode (jmp +1F; call +43; jc)
+		db	 05h,0E8h, 08h, 00h,0EBh, 15h	; row 21: opcode (+05; call +08; jmp +15)
+		db	 80h, 64h, 09h,0FEh,0EBh, 0Fh	; row 22: opcode (and [si+9],FE; jmp +0F)
+		db	0FEh, 44h, 06h, 80h, 7Ch, 06h	; row 23: opcode (inc [si+6]; cmp al,06)
+		db	 06h, 73h, 01h,0C3h		; row 24 tail: opcode (push es; jnc +01; retn)
 
 eai8_phase_reset_stub:				; dispatched via DS table @ 0xA2CB (idx 1)
 		mov	byte ptr [si+6],0
@@ -646,11 +696,17 @@ sub02_spawn_call:
 		or	byte ptr [si+9],2
 		mov	byte ptr [si+0Ah],0
 		retn
-		db	 00h, 00h, 2Ah, 00h, 12h, 00h
-		db	 50h
+; ----------------------------------------------------------------
+; eai8_spawn_param_blk  -- spawn param block (post-spawn render record)
+; Two 16-byte sub-blocks (path-A / path-B) with offsets, sprite ids,
+; and trailing zero pad consumed by the projectile spawn callback.
+; ----------------------------------------------------------------
+eai8_spawn_param_blk:
+		db	 00h, 00h, 2Ah, 00h, 12h, 00h	; row 0: x-offset 0, y-offset 2A, sprite 12
+		db	 50h				; row 1: speed/timer 50
 		db	8 dup (0)
-		db	 2Bh, 00h, 12h, 04h, 01h, 00h
-		db	 00h, 00h, 00h, 00h, 00h
+		db	 2Bh, 00h, 12h, 04h, 01h, 00h	; row 2: alt y-offset 2B, sprite 12, flag 04, 01
+		db	 00h, 00h, 00h, 00h, 00h	; row 3: zero pad (5 bytes)
 
 phase_advance_helper		proc	near
 		mov	al,[si+6]
@@ -740,9 +796,15 @@ sub03_xlat_call:
 sub03_flip_facing:
 		xor	byte ptr [si+5],80h
 		retn
-		db	0, 0, 1, 0, 0, 0
-		db	7, 0, 4, 4, 3, 4
-		db	4, 4, 5, 4
+; ----------------------------------------------------------------
+; eai8_xlat_dir_tbl  -- 16-byte XLAT direction lookup table
+; Local fallback table referenced by sub03 dir-translate path; maps
+; phase-counter 0..F to a tile-step delta (0/1/3/4/5/7).
+; ----------------------------------------------------------------
+eai8_xlat_dir_tbl:
+		db	0, 0, 1, 0, 0, 0		; row 0: 0,0,1,0,0,0
+		db	7, 0, 4, 4, 3, 4		; row 1: 7,0,4,4,3,4
+		db	4, 4, 5, 4			; row 2: 4,4,5,4
 
 distance_check_8		proc	near
 		mov	al,ds:gvar_hero_x
