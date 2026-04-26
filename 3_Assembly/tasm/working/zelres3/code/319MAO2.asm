@@ -129,57 +129,61 @@ mao2_hdr_byte_5		db	0F2h			; header field byte
 		db	'PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP'
 		db	'|'			; row terminator
 mao2_layout_extended		db	0A0h
-		db	0CCh,0A0h, 1Ch,0A1h, 6Ch,0A1h
-		db	 8Fh,0A1h,0A8h,0A1h
+mao2_layout_ptr_tbl_a	label	byte		; word ptrs into A0xx layout pages
+		db	0CCh,0A0h, 1Ch,0A1h, 6Ch,0A1h	; layout-page word ptr
+		db	 8Fh,0A1h,0A8h,0A1h	; layout-page word ptr
 		db	52 dup (0)
-		db	0B7h,0A1h, 07h,0A2h, 57h,0A2h
-		db	0A7h,0A2h,0CAh,0A2h,0E3h,0A2h
+mao2_layout_ptr_tbl_b	label	byte		; word ptrs into A1/A2xx layout pages
+		db	0B7h,0A1h, 07h,0A2h, 57h,0A2h	; layout-page word ptr
+		db	0A7h,0A2h,0CAh,0A2h,0E3h,0A2h	; layout-page word ptr
 mao2_layout_count_a		db	1
-		db	1, 2
+		db	1, 2				; layout count pair
 mao2_layout_count_b		db	3
-		db	 04h, 01h, 05h, 06h, 08h, 09h
-		db	 01h, 00h, 07h, 0Ah, 0Bh, 01h
-		db	 0Ch, 0Dh, 0Fh, 10h, 01h, 0Eh
-		db	 0Fh, 11h, 12h, 01h, 12h, 13h
-		db	 15h, 16h, 01h, 00h, 14h, 18h
-		db	 19h, 01h, 16h, 17h, 18h, 1Bh
-		db	 01h, 0Ch, 0Dh, 1Ch, 1Dh, 01h
-		db	 1Eh, 1Fh, 20h, 21h, 01h, 20h
-		db	 21h, 18h, 22h, 01h, 21h, 00h
-		db	 22h, 23h, 01h, 05h, 06h,0F3h
-		db	0F4h, 01h,0F7h,0F8h, 25h, 26h
-		db	 01h, 27h, 28h, 2Ah, 2Bh, 01h
-		db	 2Bh, 2Ch, 18h, 2Eh, 01h,0F5h
-		db	0F6h, 00h, 24h, 01h, 11h, 27h
-		db	 29h, 2Ah, 01h, 00h, 29h, 18h
-		db	 2Dh, 01h,0F7h,0F8h, 30h, 31h
-		db	 01h, 33h, 34h, 35h, 36h, 01h
-		db	 35h, 36h, 37h, 38h, 01h, 00h
-		db	 00h,0F5h,0F6h, 01h, 2Fh, 30h
-		db	 32h, 33h, 01h, 0Ch, 70h, 72h
-		db	 73h, 01h, 75h, 76h, 78h, 79h
-		db	 01h, 71h, 72h, 74h, 75h, 01h
-		db	 74h, 75h, 18h, 78h, 01h, 76h
-		db	 00h, 79h, 7Ah, 01h, 0Ch, 0Dh
-		db	 0Fh, 10h, 01h, 12h, 13h
-		db	7Ch
+mao2_layout_cells_a	label	byte		; per-row tile cell layout (5-byte rows w/01h sep)
+		db	 04h, 01h, 05h, 06h, 08h, 09h	; tile cell run
+		db	 01h, 00h, 07h, 0Ah, 0Bh, 01h	; tile cell run
+		db	 0Ch, 0Dh, 0Fh, 10h, 01h, 0Eh	; tile cell run
+		db	 0Fh, 11h, 12h, 01h, 12h, 13h	; tile cell run
+		db	 15h, 16h, 01h, 00h, 14h, 18h	; tile cell run
+		db	 19h, 01h, 16h, 17h, 18h, 1Bh	; tile cell run
+		db	 01h, 0Ch, 0Dh, 1Ch, 1Dh, 01h	; tile cell run
+		db	 1Eh, 1Fh, 20h, 21h, 01h, 20h	; tile cell run
+		db	 21h, 18h, 22h, 01h, 21h, 00h	; tile cell run
+		db	 22h, 23h, 01h, 05h, 06h,0F3h	; tile cell run
+		db	0F4h, 01h,0F7h,0F8h, 25h, 26h	; tile cell run
+		db	 01h, 27h, 28h, 2Ah, 2Bh, 01h	; tile cell run
+		db	 2Bh, 2Ch, 18h, 2Eh, 01h,0F5h	; tile cell run
+		db	0F6h, 00h, 24h, 01h, 11h, 27h	; tile cell run
+		db	 29h, 2Ah, 01h, 00h, 29h, 18h	; tile cell run
+		db	 2Dh, 01h,0F7h,0F8h, 30h, 31h	; tile cell run
+		db	 01h, 33h, 34h, 35h, 36h, 01h	; tile cell run
+		db	 35h, 36h, 37h, 38h, 01h, 00h	; tile cell run
+		db	 00h,0F5h,0F6h, 01h, 2Fh, 30h	; tile cell run
+		db	 32h, 33h, 01h, 0Ch, 70h, 72h	; tile cell run
+		db	 73h, 01h, 75h, 76h, 78h, 79h	; tile cell run
+		db	 01h, 71h, 72h, 74h, 75h, 01h	; tile cell run
+		db	 74h, 75h, 18h, 78h, 01h, 76h	; tile cell run
+		db	 00h, 79h, 7Ah, 01h, 0Ch, 0Dh	; tile cell run
+		db	 0Fh, 10h, 01h, 12h, 13h		; row continues into dispatch_ptr below
+mao2_layout_cells_a_tail	db	7Ch		; final row byte before dispatch ptr
 mao2_dispatch_ptr		dw	offset mao2_main_dispatch
-		db	 7Dh, 00h, 7Eh, 00h, 01h, 13h
-		db	 00h, 7Bh, 7Ch, 01h, 00h, 7Dh
-		db	 00h, 7Eh, 01h, 0Eh, 0Fh, 11h
-		db	 12h, 01h, 7Bh, 7Ch, 00h, 7Dh
-		db	 01h, 75h, 1Ah, 7Dh, 7Dh, 01h
-		db	 7Dh, 7Dh, 7Eh, 7Eh, 01h, 8Eh
-		db	 06h, 08h, 09h, 01h, 00h, 8Dh
-		db	 00h, 8Fh, 01h, 00h, 8Fh, 90h
-		db	 91h, 01h, 96h, 06h, 08h, 09h
-		db	 01h, 00h, 00h, 94h, 95h, 01h
-		db	 00h, 00h, 92h, 93h, 01h, 00h
-		db	 97h, 99h, 9Ah, 01h, 98h, 99h
-		db	 9Bh, 9Ch, 01h, 0Ch, 0Dh,0B1h
-		db	0B2h, 01h,0B1h,0B2h,0B4h,0B5h
-		db	 01h,0B2h, 00h,0B5h,0B6h, 01h
-		db	 00h, 07h,0ADh,0AEh, 01h
+mao2_layout_cells_b	label	byte		; cell layout continued (post dispatch_ptr)
+		db	 7Dh, 00h, 7Eh, 00h, 01h, 13h	; tile cell run
+		db	 00h, 7Bh, 7Ch, 01h, 00h, 7Dh	; tile cell run
+		db	 00h, 7Eh, 01h, 0Eh, 0Fh, 11h	; tile cell run
+		db	 12h, 01h, 7Bh, 7Ch, 00h, 7Dh	; tile cell run
+		db	 01h, 75h, 1Ah, 7Dh, 7Dh, 01h	; tile cell run
+		db	 7Dh, 7Dh, 7Eh, 7Eh, 01h, 8Eh	; tile cell run
+		db	 06h, 08h, 09h, 01h, 00h, 8Dh	; tile cell run
+		db	 00h, 8Fh, 01h, 00h, 8Fh, 90h	; tile cell run
+		db	 91h, 01h, 96h, 06h, 08h, 09h	; tile cell run
+		db	 01h, 00h, 00h, 94h, 95h, 01h	; tile cell run
+		db	 00h, 00h, 92h, 93h, 01h, 00h	; tile cell run
+		db	 97h, 99h, 9Ah, 01h, 98h, 99h	; tile cell run
+		db	 9Bh, 9Ch, 01h, 0Ch, 0Dh,0B1h	; tile cell run
+		db	0B2h, 01h,0B1h,0B2h,0B4h,0B5h	; tile cell run
+		db	 01h,0B2h, 00h,0B5h,0B6h, 01h	; tile cell run
+		db	 00h, 07h,0ADh,0AEh, 01h	; tile cell run
 
 _319MAPA6	endp
 
@@ -192,72 +196,78 @@ mao2_main_dispatch		proc	near
 		add	mao2_layout_data_b[di],ch
 		cwd				; Word to double word
 ;*		calls	far ptr sub_10		;*
-		db	9Ah
+		db	9Ah				; opcode 9Ah byte (call far prefix in sourcer view)
 		dw	0AEB7h, 9801h		;  Fixup - byte match
 		cwd				; Word to double word
-		db	 9Bh,0B7h, 01h,0C3h,0C4h,0C5h
-		db	0C6h, 01h,0CBh,0CCh,0CDh,0CEh
-		db	 01h,0CFh,0D0h,0D1h,0D2h, 01h
-		db	0D3h,0D4h,0D5h,0D6h, 01h,0D7h
-		db	0D8h,0D9h,0DAh, 00h,0DBh
+mao2_layout_cells_c	label	byte		; cell layout continued (mid-block)
+		db	 9Bh,0B7h, 01h,0C3h,0C4h,0C5h	; tile cell run
+		db	0C6h, 01h,0CBh,0CCh,0CDh,0CEh	; tile cell run
+		db	 01h,0CFh,0D0h,0D1h,0D2h, 01h	; tile cell run
+		db	0D3h,0D4h,0D5h,0D6h, 01h,0D7h	; tile cell run
+		db	0D8h,0D9h,0DAh, 00h,0DBh	; tile cell run
 mao2_layout_data_b		db	0DCh			; Data table (indexed access)
-		db	0DDh,0DEh, 00h,0DFh,0E0h,0E1h
-		db	0E2h, 00h,0E3h,0E4h,0E5h,0E6h
-		db	 01h, 39h, 3Ah, 3Bh, 3Ch, 01h
-		db	 3Dh, 3Eh, 3Fh, 40h, 01h, 41h
-		db	 00h, 44h, 45h, 01h, 42h, 43h
-		db	 46h, 47h, 01h, 49h, 4Ah, 4Dh
-		db	 4Eh, 01h, 4Ch, 4Dh, 50h, 51h
-		db	 01h, 47h, 48h, 4Ah, 4Bh, 01h
-		db	 4Fh, 00h, 52h, 51h, 01h, 42h
-		db	 43h, 53h, 54h, 01h, 55h, 56h
-		db	 57h, 58h, 01h, 57h, 58h, 5Ah
-		db	 51h, 01h, 00h, 57h, 59h, 5Ah
-		db	 01h, 3Dh, 3Eh,0F9h,0FAh, 01h
-		db	0FBh,0FCh, 5Bh, 5Ch, 01h, 5Eh
-		db	 5Fh, 61h, 62h, 01h, 60h, 61h
-		db	 64h, 51h, 01h,0FDh,0FEh, 5Dh
-		db	 00h, 01h, 5Fh, 4Bh, 62h, 63h
-		db	 01h, 63h, 00h, 65h, 51h, 01h
-		db	0FBh,0FCh, 66h, 67h, 01h, 69h
-		db	 6Ah, 6Ch, 6Dh, 01h, 6Ch, 6Dh
-		db	 6Eh, 6Fh, 01h, 00h, 00h,0FDh
-		db	0FEh, 01h, 67h, 68h, 6Ah, 6Bh
-		db	 01h, 7Fh, 43h, 80h, 81h, 01h
-		db	 83h, 84h, 87h, 88h, 01h, 81h
-		db	 82h, 84h, 85h, 01h, 84h, 85h
-		db	 88h, 51h, 01h, 00h, 83h, 86h
-		db	 87h, 01h, 42h, 43h, 46h, 47h
-		db	 01h, 49h, 4Ah, 8Ah, 89h, 01h
-		db	 00h, 8Bh, 00h, 8Ch, 01h, 47h
-		db	 48h, 4Ah, 4Bh, 01h, 89h, 8Ah
-		db	 8Bh, 00h, 01h, 00h, 49h, 89h
-		db	 8Ah, 01h, 8Bh, 00h, 8Ch, 00h
-		db	 01h, 77h, 84h, 8Bh, 8Bh, 01h
-		db	 8Bh, 8Bh, 8Ch, 8Ch, 01h, 3Dh
-		db	 9Dh, 3Fh, 40h, 01h, 9Eh, 00h
-		db	 9Fh, 00h, 01h, 9Fh, 00h,0A0h
-		db	0A1h, 01h, 3Dh,0A2h, 3Fh, 40h
-		db	 01h, 00h, 00h,0A3h,0A4h, 01h
-		db	 00h, 00h,0A5h,0A6h, 01h,0A7h
-		db	 00h,0A8h,0A9h, 01h,0A9h,0AAh
-		db	0ABh,0ACh, 01h, 42h, 43h,0BAh
-		db	0BBh, 01h,0BAh,0BBh,0BFh,0C0h
-		db	 01h, 00h,0BAh,0BEh,0BFh, 01h
-		db	 41h, 00h,0B8h,0B9h, 01h,0BCh
-		db	0BDh,0C1h, 51h, 01h, 9Fh, 00h
-		db	0B8h,0B9h, 01h, 00h, 00h,0B8h
-		db	0B9h, 01h,0A8h,0A9h,0B8h,0C2h
-		db	 01h,0A9h,0AAh,0C2h,0ACh, 01h
-		db	0C7h,0C8h,0C9h,0CAh, 01h,0CBh
-		db	0CCh,0CDh,0CEh, 01h,0CFh,0D0h
-		db	0D1h,0D2h, 01h,0D3h,0D4h,0D5h
-		db	0D6h, 01h,0D7h,0D8h,0D9h,0DAh
-		db	 00h,0E7h,0E8h,0E9h,0EAh, 00h
-		db	0EBh,0ECh,0EDh,0EEh, 00h,0EFh
-		db	0F0h,0F1h,0F2h, 8Bh, 36h, 10h
-		db	0C0h,0C6h, 06h, 1Dh,0ACh, 00h
-		db	0C6h, 06h, 1Ch,0ACh, 00h
+mao2_layout_cells_d	label	byte		; cell layout continued (3Xh tile range)
+		db	0DDh,0DEh, 00h,0DFh,0E0h,0E1h	; tile cell run
+		db	0E2h, 00h,0E3h,0E4h,0E5h,0E6h	; tile cell run
+		db	 01h, 39h, 3Ah, 3Bh, 3Ch, 01h	; tile cell run
+		db	 3Dh, 3Eh, 3Fh, 40h, 01h, 41h	; tile cell run
+		db	 00h, 44h, 45h, 01h, 42h, 43h	; tile cell run
+		db	 46h, 47h, 01h, 49h, 4Ah, 4Dh	; tile cell run
+		db	 4Eh, 01h, 4Ch, 4Dh, 50h, 51h	; tile cell run
+		db	 01h, 47h, 48h, 4Ah, 4Bh, 01h	; tile cell run
+		db	 4Fh, 00h, 52h, 51h, 01h, 42h	; tile cell run
+		db	 43h, 53h, 54h, 01h, 55h, 56h	; tile cell run
+		db	 57h, 58h, 01h, 57h, 58h, 5Ah	; tile cell run
+		db	 51h, 01h, 00h, 57h, 59h, 5Ah	; tile cell run
+		db	 01h, 3Dh, 3Eh,0F9h,0FAh, 01h	; tile cell run
+		db	0FBh,0FCh, 5Bh, 5Ch, 01h, 5Eh	; tile cell run
+		db	 5Fh, 61h, 62h, 01h, 60h, 61h	; tile cell run
+		db	 64h, 51h, 01h,0FDh,0FEh, 5Dh	; tile cell run
+		db	 00h, 01h, 5Fh, 4Bh, 62h, 63h	; tile cell run
+		db	 01h, 63h, 00h, 65h, 51h, 01h	; tile cell run
+		db	0FBh,0FCh, 66h, 67h, 01h, 69h	; tile cell run
+		db	 6Ah, 6Ch, 6Dh, 01h, 6Ch, 6Dh	; tile cell run
+		db	 6Eh, 6Fh, 01h, 00h, 00h,0FDh	; tile cell run
+		db	0FEh, 01h, 67h, 68h, 6Ah, 6Bh	; tile cell run
+		db	 01h, 7Fh, 43h, 80h, 81h, 01h	; tile cell run
+		db	 83h, 84h, 87h, 88h, 01h, 81h	; tile cell run
+		db	 82h, 84h, 85h, 01h, 84h, 85h	; tile cell run
+		db	 88h, 51h, 01h, 00h, 83h, 86h	; tile cell run
+		db	 87h, 01h, 42h, 43h, 46h, 47h	; tile cell run
+		db	 01h, 49h, 4Ah, 8Ah, 89h, 01h	; tile cell run
+		db	 00h, 8Bh, 00h, 8Ch, 01h, 47h	; tile cell run
+		db	 48h, 4Ah, 4Bh, 01h, 89h, 8Ah	; tile cell run
+		db	 8Bh, 00h, 01h, 00h, 49h, 89h	; tile cell run
+		db	 8Ah, 01h, 8Bh, 00h, 8Ch, 00h	; tile cell run
+		db	 01h, 77h, 84h, 8Bh, 8Bh, 01h	; tile cell run
+		db	 8Bh, 8Bh, 8Ch, 8Ch, 01h, 3Dh	; tile cell run
+mao2_layout_cells_e	label	byte		; cell layout continued (9Dh-Cxh tile range)
+		db	 9Dh, 3Fh, 40h, 01h, 9Eh, 00h	; tile cell run
+		db	 9Fh, 00h, 01h, 9Fh, 00h,0A0h	; tile cell run
+		db	0A1h, 01h, 3Dh,0A2h, 3Fh, 40h	; tile cell run
+		db	 01h, 00h, 00h,0A3h,0A4h, 01h	; tile cell run
+		db	 00h, 00h,0A5h,0A6h, 01h,0A7h	; tile cell run
+		db	 00h,0A8h,0A9h, 01h,0A9h,0AAh	; tile cell run
+		db	0ABh,0ACh, 01h, 42h, 43h,0BAh	; tile cell run
+		db	0BBh, 01h,0BAh,0BBh,0BFh,0C0h	; tile cell run
+		db	 01h, 00h,0BAh,0BEh,0BFh, 01h	; tile cell run
+		db	 41h, 00h,0B8h,0B9h, 01h,0BCh	; tile cell run
+		db	0BDh,0C1h, 51h, 01h, 9Fh, 00h	; tile cell run
+		db	0B8h,0B9h, 01h, 00h, 00h,0B8h	; tile cell run
+		db	0B9h, 01h,0A8h,0A9h,0B8h,0C2h	; tile cell run
+		db	 01h,0A9h,0AAh,0C2h,0ACh, 01h	; tile cell run
+mao2_layout_cells_f	label	byte		; cell layout final (C7h-F2h tile range)
+		db	0C7h,0C8h,0C9h,0CAh, 01h,0CBh	; tile cell run
+		db	0CCh,0CDh,0CEh, 01h,0CFh,0D0h	; tile cell run
+		db	0D1h,0D2h, 01h,0D3h,0D4h,0D5h	; tile cell run
+		db	0D6h, 01h,0D7h,0D8h,0D9h,0DAh	; tile cell run
+		db	 00h,0E7h,0E8h,0E9h,0EAh, 00h	; tile cell run
+		db	0EBh,0ECh,0EDh,0EEh, 00h,0EFh	; tile cell run
+		db	0F0h,0F1h,0F2h				; final cell row
+mao2_npc_scan_init	label	byte		; mov si,word ptr ds:[10C0h] - NPC scan loop init
+		db	 8Bh, 36h, 10h			; mov si,[10C0h] (loaded sprite_attr_ptr)
+		db	0C0h,0C6h, 06h, 1Dh,0ACh, 00h	; mov byte ptr ds:[mao2_attr_byte],0
+		db	0C6h, 06h, 1Ch,0ACh, 00h	; mov byte ptr ds:[mao2_npc_idx],0
 
 mao2_npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
@@ -421,9 +431,10 @@ mao2_phase_step_high2:
 mao2_phase_step_finish:
 		mov	byte ptr ds:mao2_phase_active,0
 		jmp	mao2_dlg_a_check
-		db	 00h, 00h, 07h, 07h, 09h, 0Ah
-		db	 0Ah, 0Bh, 0Bh
-		db	0Ch
+mao2_phase_ofs_data	label	byte		; phase substate offset xlat data (xlat tbl base)
+		db	 00h, 00h, 07h, 07h, 09h, 0Ah	; phase substate xlat entry
+		db	 0Ah, 0Bh, 0Bh	; phase substate xlat entry
+mao2_phase_ofs_data_end	db	0Ch		; xlat table terminator/last entry
 
 mao2_pick_target_idx:
 		mov	byte ptr ds:mao2_speech_dx_lo,9
@@ -641,14 +652,15 @@ mao2_handler_step_done:
 		jne	mao2_render_emit_top			; Jump if not equal
 		mov	byte ptr ds:mao2_handler_step,0
 		jmp	short mao2_render_emit_top
-		db	 00h, 00h, 04h, 00h, 00h, 04h
-		db	 00h,0FEh, 05h, 01h,0FEh, 05h
-		db	 01h,0FEh, 05h, 01h, 00h, 06h
-		db	 01h, 00h, 06h, 01h, 00h, 06h
-		db	 01h, 02h, 06h, 01h, 02h, 06h
-		db	 01h, 02h, 06h, 00h, 00h, 04h
-		db	 00h, 00h, 04h, 00h, 00h, 00h
-		db	 80h
+mao2_handler_step_data	label	byte	; phase-handler 3-byte step table (step,dx_delta,substate)
+		db	 00h, 00h, 04h, 00h, 00h, 04h	; handler step (step,dx,sub)
+		db	 00h,0FEh, 05h, 01h,0FEh, 05h	; handler step (step,dx,sub)
+		db	 01h,0FEh, 05h, 01h, 00h, 06h	; handler step (step,dx,sub)
+		db	 01h, 00h, 06h, 01h, 00h, 06h	; handler step (step,dx,sub)
+		db	 01h, 02h, 06h, 01h, 02h, 06h	; handler step (step,dx,sub)
+		db	 01h, 02h, 06h, 00h, 00h, 04h	; handler step (step,dx,sub)
+		db	 00h, 00h, 04h, 00h, 00h, 00h	; handler step (step,dx,sub)
+mao2_handler_step_data_end	db	80h	; step-table terminator (cmp [bx+3],80h)
 
 mao2_target_dec:
 		mov	ax,ds:mao2_npc_target_idx
@@ -1059,69 +1071,81 @@ mao2_orphan_block_a	label	byte
 		sub	dh,[si]
 		xor	al,[bx+si]
 		sub	ds:mao2_drv_misc_cb,bp
-		db	 36h, 2Ch, 35h, 32h, 00h, 29h
-		db	 2Eh, 2Fh, 30h, 00h,0AAh, 08h
-		db	0AAh, 0Fh,0AAh, 17h,0AAh, 1Eh
-		db	0AAh, 26h,0AAh, 2Eh,0AAh, 35h
-		db	0AAh, 3Eh,0AAh, 47h,0AAh, 50h
-		db	0AAh, 57h,0AAh, 5Fh,0AAh, 68h
-		db	0AAh, 05h, 00h, 01h, 03h, 04h
-		db	 06h, 02h, 07h, 0Bh, 00h, 01h
-		db	 08h, 09h, 0Ah, 02h, 0Fh, 00h
-		db	 0Ch, 0Dh, 0Eh, 11h, 10h, 12h
-		db	 00h, 0Ch, 13h, 14h, 15h, 17h
-		db	 16h, 1Ch, 00h, 01h, 18h, 19h
-		db	 1Ah, 1Bh, 02h, 22h, 00h, 01h
-		db	 1Dh, 1Eh, 20h, 21h, 02h, 00h
-		db	 01h, 18h, 24h, 25h, 1Ah, 02h
-		db	 05h, 00h, 26h, 03h, 04h, 06h
-		db	 27h, 28h, 07h, 05h, 00h, 29h
-		db	 03h, 04h, 06h, 2Ah, 07h, 2Bh
-		db	 05h, 00h, 29h, 03h, 04h, 06h
-		db	 2Ch, 07h, 2Dh, 30h, 00h, 01h
-		db	 2Eh, 2Fh, 31h, 32h, 30h, 00h
-		db	 26h, 2Eh, 2Fh, 27h, 33h, 32h
-		db	 30h, 00h
+mao2_orphan_trailer_a	label	byte		; orphan: dialog opcode/index byte stream
+		db	 36h, 2Ch, 35h, 32h, 00h, 29h	; orphan: dialog opcode/index byte
+		db	 2Eh, 2Fh, 30h, 00h	; orphan: dialog opcode/index byte
+mao2_orphan_a_ptr_tbl	label	byte		; 0AAxxh word ptr table (12 entries into trailer)
+		db	0AAh, 08h	; 0AAxxh word ptr entry
+		db	0AAh, 0Fh,0AAh, 17h,0AAh, 1Eh	; 0AAxxh word ptr entry
+		db	0AAh, 26h,0AAh, 2Eh,0AAh, 35h	; 0AAxxh word ptr entry
+		db	0AAh, 3Eh,0AAh, 47h,0AAh, 50h	; 0AAxxh word ptr entry
+		db	0AAh, 57h,0AAh, 5Fh,0AAh, 68h	; 0AAxxh word ptr entry
+		db	0AAh	; 0AAxxh word ptr entry
+mao2_orphan_a_xlat_tbl	label	byte		; xlat/dispatch byte table (small dialog-state ints)
+		db	 05h, 00h, 01h, 03h, 04h	; xlat/dispatch byte
+		db	 06h, 02h, 07h, 0Bh, 00h, 01h	; xlat/dispatch byte
+		db	 08h, 09h, 0Ah, 02h, 0Fh, 00h	; xlat/dispatch byte
+		db	 0Ch, 0Dh, 0Eh, 11h, 10h, 12h	; xlat/dispatch byte
+		db	 00h, 0Ch, 13h, 14h, 15h, 17h	; xlat/dispatch byte
+		db	 16h, 1Ch, 00h, 01h, 18h, 19h	; xlat/dispatch byte
+		db	 1Ah, 1Bh, 02h, 22h, 00h, 01h	; xlat/dispatch byte
+		db	 1Dh, 1Eh, 20h, 21h, 02h, 00h	; xlat/dispatch byte
+		db	 01h, 18h, 24h, 25h, 1Ah, 02h	; xlat/dispatch byte
+		db	 05h, 00h, 26h, 03h, 04h, 06h	; xlat/dispatch byte
+		db	 27h, 28h, 07h, 05h, 00h, 29h	; xlat/dispatch byte
+		db	 03h, 04h, 06h, 2Ah, 07h, 2Bh	; xlat/dispatch byte
+		db	 05h, 00h, 29h, 03h, 04h, 06h	; xlat/dispatch byte
+		db	 2Ch, 07h, 2Dh, 30h, 00h, 01h	; xlat/dispatch byte
+		db	 2Eh, 2Fh, 31h, 32h, 30h, 00h	; xlat/dispatch byte
+		db	 26h, 2Eh, 2Fh, 27h, 33h, 32h	; xlat/dispatch byte
+		db	 30h, 00h	; xlat/dispatch byte
 		db	')./*42+0'
-		db	 00h, 29h, 2Eh, 2Fh, 2Ch, 35h
-		db	 32h, 36h, 8Dh,0AAh, 93h,0AAh
-		db	 99h,0AAh, 9Fh,0AAh,0A5h,0AAh
-		db	0ABh,0AAh,0B1h,0AAh,0B7h,0AAh
-		db	0BDh,0AAh,0C3h,0AAh,0C9h,0AAh
-		db	0CFh,0AAh,0D5h,0AAh,0DBh,0AAh
-		db	 00h, 00h, 11h, 04h,0AAh, 01h
-		db	 00h, 00h, 10h, 00h,0ABh, 01h
-		db	 00h, 00h, 09h, 02h,0AAh, 01h
-		db	 00h, 00h, 10h, 04h,0ABh, 00h
-		db	 00h, 00h, 08h, 03h, 55h, 01h
-		db	 00h, 00h, 10h, 05h,0AAh, 02h
-		db	 00h, 00h, 10h, 04h,0ABh, 00h
-		db	 00h, 00h, 31h, 04h,0AAh, 01h
-		db	 40h, 00h, 41h, 04h,0AAh, 01h
-		db	 00h, 10h, 21h, 04h,0AAh, 01h
-		db	 00h, 00h, 05h, 00h, 2Bh, 01h
-		db	 00h, 00h, 0Dh, 00h, 2Bh, 01h
-		db	 10h, 00h, 15h, 00h, 2Bh, 01h
-		db	 00h, 04h, 0Dh, 00h, 2Bh, 01h
-		db	0FDh,0AAh, 03h,0ABh, 09h,0ABh
-		db	 0Fh,0ABh, 15h,0ABh, 1Bh,0ABh
-		db	 21h,0ABh, 27h,0ABh, 2Dh,0ABh
-		db	 33h,0ABh, 39h,0ABh, 3Fh,0ABh
-		db	 45h,0ABh, 4Bh,0ABh, 01h,0AAh
-		db	 04h, 11h, 00h, 00h, 01h,0ABh
-		db	 00h, 10h, 00h, 00h, 01h,0AAh
-		db	 02h, 09h, 00h, 00h, 00h,0ABh
-		db	 04h, 10h, 00h, 00h, 01h, 55h
-		db	 03h, 08h, 00h, 00h, 02h,0AAh
-		db	 05h, 10h, 00h, 00h, 00h,0ABh
-		db	 04h, 10h, 00h, 00h, 01h,0AAh
-		db	 04h, 31h, 00h, 00h, 01h,0AAh
-		db	 04h, 41h, 00h, 40h, 01h,0AAh
-		db	 04h, 21h, 10h, 00h, 01h, 2Bh
-		db	 00h, 05h, 00h, 00h, 01h, 2Bh
-		db	 00h, 0Dh, 00h, 00h, 01h, 2Bh
-		db	 00h, 15h, 00h, 10h, 01h, 2Bh
-		db	 00h, 0Dh, 04h, 00h
+mao2_orphan_a_xlat_tail	label	byte		; xlat-table tail (final 8 bytes 00h..36h)
+		db	 00h, 29h, 2Eh, 2Fh, 2Ch, 35h	; xlat tail byte
+		db	 32h, 36h	; xlat tail byte
+mao2_orphan_a_ptr_tbl_b	label	byte		; 14 word ptrs (0AA8Dh..0AADBh) - dialog handler tbl
+		db	 8Dh,0AAh, 93h,0AAh	; 0AAxxh word ptr entry
+		db	 99h,0AAh, 9Fh,0AAh,0A5h,0AAh	; 0AAxxh word ptr entry
+		db	0ABh,0AAh,0B1h,0AAh,0B7h,0AAh	; 0AAxxh word ptr entry
+		db	0BDh,0AAh,0C3h,0AAh,0C9h,0AAh	; 0AAxxh word ptr entry
+		db	0CFh,0AAh,0D5h,0AAh,0DBh,0AAh	; 0AAxxh word ptr entry
+mao2_orphan_a_step_recs_a	label	byte	; 6-byte handler step records
+		db	 00h, 00h, 11h, 04h,0AAh, 01h	; 6-byte handler step record
+		db	 00h, 00h, 10h, 00h,0ABh, 01h	; 6-byte handler step record
+		db	 00h, 00h, 09h, 02h,0AAh, 01h	; 6-byte handler step record
+		db	 00h, 00h, 10h, 04h,0ABh, 00h	; 6-byte handler step record
+		db	 00h, 00h, 08h, 03h, 55h, 01h	; 6-byte handler step record
+		db	 00h, 00h, 10h, 05h,0AAh, 02h	; 6-byte handler step record
+		db	 00h, 00h, 10h, 04h,0ABh, 00h	; 6-byte handler step record
+		db	 00h, 00h, 31h, 04h,0AAh, 01h	; 6-byte handler step record
+		db	 40h, 00h, 41h, 04h,0AAh, 01h	; 6-byte handler step record
+		db	 00h, 10h, 21h, 04h,0AAh, 01h	; 6-byte handler step record
+		db	 00h, 00h, 05h, 00h, 2Bh, 01h	; 6-byte handler step record
+		db	 00h, 00h, 0Dh, 00h, 2Bh, 01h	; 6-byte handler step record
+		db	 10h, 00h, 15h, 00h, 2Bh, 01h	; 6-byte handler step record
+		db	 00h, 04h, 0Dh, 00h, 2Bh, 01h	; 6-byte handler step record
+mao2_orphan_a_ptr_tbl_c	label	byte	; 14 word ptrs (0AAFDh..0AB4Bh) - alt dialog handlers
+		db	0FDh,0AAh, 03h,0ABh, 09h,0ABh	; 0ABxxh word ptr entry
+		db	 0Fh,0ABh, 15h,0ABh, 1Bh,0ABh	; 0ABxxh word ptr entry
+		db	 21h,0ABh, 27h,0ABh, 2Dh,0ABh	; 0ABxxh word ptr entry
+		db	 33h,0ABh, 39h,0ABh, 3Fh,0ABh	; 0ABxxh word ptr entry
+		db	 45h,0ABh, 4Bh,0ABh	; 0ABxxh word ptr entry
+mao2_orphan_a_step_recs_b	label	byte	; alt 6-byte handler step records
+		db	 01h,0AAh	; 6-byte handler step record
+		db	 04h, 11h, 00h, 00h, 01h,0ABh	; 6-byte handler step record
+		db	 00h, 10h, 00h, 00h, 01h,0AAh	; 6-byte handler step record
+		db	 02h, 09h, 00h, 00h, 00h,0ABh	; 6-byte handler step record
+		db	 04h, 10h, 00h, 00h, 01h, 55h	; 6-byte handler step record
+		db	 03h, 08h, 00h, 00h, 02h,0AAh	; 6-byte handler step record
+		db	 05h, 10h, 00h, 00h, 00h,0ABh	; 6-byte handler step record
+		db	 04h, 10h, 00h, 00h, 01h,0AAh	; 6-byte handler step record
+		db	 04h, 31h, 00h, 00h, 01h,0AAh	; 6-byte handler step record
+		db	 04h, 41h, 00h, 40h, 01h,0AAh	; 6-byte handler step record
+		db	 04h, 21h, 10h, 00h, 01h, 2Bh	; 6-byte handler step record
+		db	 00h, 05h, 00h, 00h, 01h, 2Bh	; 6-byte handler step record
+		db	 00h, 0Dh, 00h, 00h, 01h, 2Bh	; 6-byte handler step record
+		db	 00h, 15h, 00h, 10h, 01h, 2Bh	; 6-byte handler step record
+		db	 00h, 0Dh, 04h, 00h	; 6-byte handler step record
 
 mao2_pos_sub		proc	near
 		mov	ax,ds:mao2_pos_word
