@@ -173,29 +173,31 @@ data_3		db	0			; (Sourcer's data_3) referenced as `add si,offset data_3`
 ;  and used by inline xlat / call patterns.
 ; -------------------------------------------------------------------------
 
-tako_frame_data:				; offset 0x0BC
-		db	'!"#$'
-		db	0
-		db	'%&', 27h, '(', 0
-		db	')*+,', 0
-		db	'%&', 27h, '(', 0
-		db	'%&', 27h, '(', 0
-		db	'%&', 27h, '(', 0
-		db	'%&', 27h, '(', 0
-		db	'%&', 27h, '(', 0
-		db	'-./0', 0
-		db	'1234', 0
-		db	'5678', 0
-		db	'1234', 0
-		db	'1234', 0
-		db	'1234', 0
-		db	'1234', 0
-		db	'1234', 0
-		db	'9:;<', 0
-		db	'=', 0
-		db	'>?'
-		db	0, 0, 0, 0, 0, 0
-		db	 40h, 41h
+tako_frame_data:				; offset 0x0B4 (frame at 0xA0B0 starts 4 bytes earlier in pad)
+		db	'!"#$'				; tako_frame_A0_tail (0xA0B4): tiles 21-24
+		db	0				; row term (closes A[0] / 0xA0B0 frame -- A[0]=A0B0 idle pose)
+tako_frame_A0D8	label	byte			; 0xA0D8 -- C[0] pose (group C[0] body alt)
+		db	'%&', 27h, '(', 0		; row 0: tiles 25-28 + term
+		db	')*+,', 0			; row 1: tiles 29-2C + term
+		db	'%&', 27h, '(', 0		; row 2 (re-uses tiles 25-28)
+		db	'%&', 27h, '(', 0		; row 3 (re-uses tiles 25-28)
+		db	'%&', 27h, '(', 0		; row 4 (re-uses tiles 25-28)
+		db	'%&', 27h, '(', 0		; row 5 (re-uses tiles 25-28)
+		db	'%&', 27h, '(', 0		; row 6 (re-uses tiles 25-28)
+tako_frame_A100	label	byte			; 0xA100 -- A[6]/D[0] -- start of mid-pose group (line cont. inside)
+		db	'-./0', 0			; row 0: tiles 2D-30 + term
+		db	'1234', 0			; row 1: tiles 31-34 + term
+		db	'5678', 0			; row 2: tiles 35-38 + term
+		db	'1234', 0			; row 3 (re-uses tiles 31-34)
+		db	'1234', 0			; row 4 (re-uses tiles 31-34) -- A1 frame at 0xA10F starts mid-row
+		db	'1234', 0			; row 5 (re-uses tiles 31-34)
+		db	'1234', 0			; row 6 (re-uses tiles 31-34)
+		db	'1234', 0			; row 7 (re-uses tiles 31-34)
+		db	'9:;<', 0			; row 8: tiles 39-3C + term
+		db	'=', 0				; row 9: tile 3D + term
+		db	'>?'				; row 10 head: tiles 3E-3F (no term, frame ends here)
+		db	0, 0, 0, 0, 0, 0		; offset 0x108-0x10D: zero pad (5 bytes also serve as row terms for A1@0xA10F frame head)
+		db	 40h, 41h			; offset 0x10E-0x10F: tiles 40-41 (last 2 bytes feed A1 frame at 0xA10F)
 
 tako_helper_anchor	label	byte		; helper xlat anchor (used as `cs:data_6+4`)
 data_6		db	'BC', 0			; (Sourcer's data_6) -- referenced as `cs:data_6+4`
@@ -216,87 +218,93 @@ data_6		db	'BC', 0			; (Sourcer's data_6) -- referenced as `cs:data_6+4`
 		db	'S`]V', 0
 		db	'bcde', 0
 		db	'fghi', 0
-		db	'jklm'
-		db	 02h, 00h, 00h, 7Dh, 7Eh, 02h
-		db	 00h, 00h, 7Fh, 80h, 02h, 00h
-		db	 00h, 83h, 84h, 02h, 85h, 86h
-		db	 87h, 88h, 02h, 85h, 86h, 87h
-		db	 88h, 02h, 00h, 00h, 83h, 84h
-		db	 02h, 00h, 00h, 7Fh, 80h, 02h
-		db	 00h, 00h, 7Dh, 7Eh, 02h, 00h
-		db	 00h, 89h, 8Ah, 02h, 00h, 00h
-		db	 8Bh, 8Ch, 02h, 00h, 00h, 89h
-		db	 8Ah, 02h, 00h, 00h, 8Dh, 8Eh
-		db	 02h, 00h, 00h, 91h, 92h, 02h
-		db	 93h, 94h, 95h, 96h, 02h, 97h
-		db	 98h, 99h, 9Ah, 00h, 9Bh, 9Ch
-		db	 9Dh, 9Eh, 00h, 9Bh, 9Ch, 9Fh
-		db	 9Eh, 00h,0A1h,0A2h,0A3h,0A4h
-		db	 00h,0A5h,0A2h,0A6h,0A7h, 00h
-		db	0A8h,0A9h,0AAh,0ABh, 00h,0ACh
-		db	0ADh,0AEh,0AFh, 00h, 9Bh, 9Ch
-		db	 9Dh, 9Eh, 00h, 9Bh, 9Ch,0A0h
-		db	 9Eh, 00h,0B4h,0B5h,0B6h,0B7h
-		db	 00h,0B4h,0B5h,0B6h,0B8h, 00h
-		db	0BAh,0BBh,0BCh,0BDh, 00h,0BAh
-		db	0BEh,0BFh,0C0h, 00h,0C1h,0C2h
-		db	0C3h,0C4h, 00h,0C5h,0C6h,0C7h
-		db	0C8h, 00h,0B4h,0B5h,0B6h,0B7h
-		db	 00h,0B4h,0B5h,0B6h,0B9h, 00h
-		db	0CDh,0CEh,0CFh,0D0h, 00h,0D1h
-		db	0D2h,0D3h,0D4h, 00h, 00h, 00h
-		db	0D7h,0D8h, 00h,0D9h,0DAh,0DBh
-		db	0DCh, 00h,0E1h,0E2h,0E3h,0E4h
-		db	 00h,0E1h,0E2h,0E3h,0E4h, 00h
-		db	0E5h,0E6h,0E7h,0E8h, 00h,0E9h
-		db	0EAh,0EBh,0ECh, 00h,0E5h,0E6h
-		db	0E7h,0E8h, 00h,0EDh,0EEh,0EFh
-		db	0F0h, 00h,0D9h,0DAh,0DBh,0DCh
-		db	 00h,0DDh,0DEh,0DFh,0E0h, 00h
-		db	0DDh,0DEh,0DFh,0E0h, 00h, 81h
-		db	 82h, 8Fh, 90h, 00h,0B0h,0B1h
-		db	0B2h,0B3h, 00h, 81h, 82h, 8Fh
-		db	 90h, 00h,0C9h,0CAh,0CBh,0CCh
-		db	 00h,0D5h,0D6h,0F1h,0F2h, 00h
-		db	0F3h,0F4h,0F5h,0F6h, 00h,0F7h
-		db	0F8h,0F9h,0FAh, 01h,0D9h,0DAh
-		db	0DBh,0DCh, 01h,0E1h,0E2h,0E3h
-		db	0E4h, 01h,0E1h,0E2h,0E3h,0E4h
-		db	 01h,0E5h,0E6h,0E7h,0E8h, 01h
-		db	0E9h,0EAh,0EBh,0ECh, 01h,0E5h
-		db	0E6h,0E7h,0E8h, 01h,0EDh,0EEh
-		db	0EFh,0F0h, 01h,0D9h,0DAh,0DBh
-		db	0DCh, 01h,0DDh,0DEh,0DFh,0E0h
-		db	 01h,0DDh,0DEh,0DFh,0E0h, 01h
-		db	 81h, 82h, 8Fh, 90h, 01h,0B0h
-		db	0B1h,0B2h,0B3h, 01h, 81h, 82h
-		db	 8Fh, 90h, 01h,0C9h,0CAh,0CBh
-		db	0CCh, 01h,0D5h,0D6h,0F1h,0F2h
-		db	 01h,0F3h,0F4h,0F5h,0F6h, 01h
-		db	0F7h,0F8h,0F9h,0FAh, 01h, 01h
-		db	 02h, 03h, 04h, 01h, 05h, 06h
-		db	 07h, 08h, 01h, 09h, 0Ah, 0Bh
-		db	 0Ch, 00h, 0Dh, 0Eh, 0Fh, 10h
-		db	 00h, 11h, 12h, 13h, 14h, 00h
-		db	 15h, 16h, 17h, 18h, 00h, 11h
-		db	 12h, 13h, 14h, 02h, 0Dh, 0Eh
-		db	 0Fh, 10h, 02h, 11h, 12h, 13h
-		db	 14h, 02h, 15h, 16h, 17h, 18h
-		db	 02h, 11h, 12h, 13h, 14h, 01h
-		db	 0Dh, 0Eh, 0Fh, 10h, 01h, 11h
-		db	 12h, 13h, 14h, 01h, 15h, 16h
-		db	 17h, 18h, 01h, 11h, 12h, 13h
-		db	 14h, 00h, 19h, 1Ah, 1Bh, 1Ch
-		db	 00h, 19h, 1Ah, 1Bh, 1Ch, 00h
-		db	 19h, 1Ah, 1Bh, 1Ch, 00h, 19h
-		db	 1Ah, 1Bh, 1Ch, 01h, 1Dh, 1Eh
-		db	 1Fh, 20h, 01h, 6Eh, 6Eh, 6Eh
-		db	 6Eh, 01h, 6Fh, 70h, 71h, 72h
-		db	 01h, 73h, 74h, 75h, 76h, 01h
-		db	 00h, 00h, 77h, 78h, 02h, 79h
-		db	 7Ah, 7Bh, 7Ch, 00h,0FBh,0FCh
-		db	0FDh,0FEh, 02h,0FBh,0FCh,0FDh
-		db	0FEh
+		db	'jklm'				; 0x165: tiles 6A-6D (data_6 last entry head, no term)
+		db	 02h, 00h, 00h, 7Dh, 7Eh, 02h	; 0x169: row 0 (B-table content begins; tiles 7D-7E)
+		db	 00h, 00h, 7Fh, 80h, 02h, 00h	; 0x16F: row 1 (tiles 7F-80)
+		db	 00h, 83h, 84h, 02h, 85h, 86h	; 0x175: row 2 (tiles 83-86) -- A2/C2 frame at 0xA16E starts mid-row
+		db	 87h, 88h, 02h, 85h, 86h, 87h	; 0x17B: row 3 (tiles 87-88, 85-87)
+		db	 88h, 02h, 00h, 00h, 83h, 84h	; 0x181: row 4 (tile 88; tiles 83-84)
+		db	 02h, 00h, 00h, 7Fh, 80h, 02h	; 0x187: row 5 (tiles 7F-80)
+		db	 00h, 00h, 7Dh, 7Eh, 02h, 00h	; 0x18D: row 6 (tiles 7D-7E)
+		db	 00h, 89h, 8Ah, 02h, 00h, 00h	; 0x193: row 7 (tiles 89-8A)
+		db	 8Bh, 8Ch, 02h, 00h, 00h, 89h	; 0x199: row 8 (tiles 8B-8C; tile 89)
+		db	 8Ah, 02h, 00h, 00h, 8Dh, 8Eh	; 0x19F: row 9 (tile 8A; tiles 8D-8E)
+		db	 02h, 00h, 00h, 91h, 92h, 02h	; 0x1A5: row 10 (tiles 91-92) -- A8/D2 frame at 0xA1AA starts mid-row
+		db	 93h, 94h, 95h, 96h, 02h, 97h	; 0x1AB: row 11 (tiles 93-96; tile 97)
+		db	 98h, 99h, 9Ah, 00h, 9Bh, 9Ch	; 0x1B1: row 12 (tiles 98-9A; tiles 9B-9C)
+tako_frame_A1B9	label	byte			; 0xA1B9 -- A[3] (frame start mid-row at offset 0x1B9)
+		db	 9Dh, 9Eh, 00h, 9Bh, 9Ch, 9Fh	; 0x1B7: row 13 (tiles 9D-9E; tiles 9B-9C, 9F)
+		db	 9Eh, 00h,0A1h,0A2h,0A3h,0A4h	; 0x1BD: row 14 (tile 9E; tiles A1-A4)
+		db	 00h,0A5h,0A2h,0A6h,0A7h, 00h	; 0x1C3: row 15 (tiles A5,A2,A6,A7)
+		db	0A8h,0A9h,0AAh,0ABh, 00h,0ACh	; 0x1C9: row 16 (tiles A8-AB; tile AC)
+		db	0ADh,0AEh,0AFh, 00h, 9Bh, 9Ch	; 0x1CF: row 17 (tiles AD-AF; tiles 9B-9C)
+		db	 9Dh, 9Eh, 00h, 9Bh, 9Ch,0A0h	; 0x1D5: row 18 (tiles 9D-9E; tiles 9B-9C,A0)
+		db	 9Eh, 00h,0B4h,0B5h,0B6h,0B7h	; 0x1DB: row 19 (tile 9E; tiles B4-B7) -- C3 frame at 0xA1E1 starts mid-row
+tako_frame_A1E1	label	byte			; 0xA1E1 -- C[3] (frame ptr lands cleanly at line start below)
+		db	 00h,0B4h,0B5h,0B6h,0B8h, 00h	; 0x1E1: row 20 (tiles B4-B6, B8)
+		db	0BAh,0BBh,0BCh,0BDh, 00h,0BAh	; 0x1E7: row 21 (tiles BA-BD; tile BA)
+		db	0BEh,0BFh,0C0h, 00h,0C1h,0C2h	; 0x1ED: row 22 (tiles BE-C0; tiles C1-C2)
+		db	0C3h,0C4h, 00h,0C5h,0C6h,0C7h	; 0x1F3: row 23 (tiles C3-C4; tiles C5-C7)
+		db	0C8h, 00h,0B4h,0B5h,0B6h,0B7h	; 0x1F9: row 24 (tile C8; tiles B4-B7)
+		db	 00h,0B4h,0B5h,0B6h,0B9h, 00h	; 0x1FF: row 25 (tiles B4-B6, B9)
+		db	0CDh,0CEh,0CFh,0D0h, 00h,0D1h	; 0x205: row 26 (tiles CD-D0; tile D1) -- A9/D3 frame at 0xA209 starts mid-row
+		db	0D2h,0D3h,0D4h, 00h, 00h, 00h	; 0x20B: row 27 (tiles D2-D4; pad)
+		db	0D7h,0D8h, 00h,0D9h,0DAh,0DBh	; 0x211: row 28 (tiles D7-D8; tiles D9-DB)
+		db	0DCh, 00h,0E1h,0E2h,0E3h,0E4h	; 0x217: row 29 (tile DC; tiles E1-E4) -- A4 frame at 0xA218 starts mid-row
+		db	 00h,0E1h,0E2h,0E3h,0E4h, 00h	; 0x21D: row 30 (tiles E1-E4)
+		db	0E5h,0E6h,0E7h,0E8h, 00h,0E9h	; 0x223: row 31 (tiles E5-E8; tile E9)
+		db	0EAh,0EBh,0ECh, 00h,0E5h,0E6h	; 0x229: row 32 (tiles EA-EC; tiles E5-E6)
+		db	0E7h,0E8h, 00h,0EDh,0EEh,0EFh	; 0x22F: row 33 (tiles E7-E8; tiles ED-EF)
+		db	0F0h, 00h,0D9h,0DAh,0DBh,0DCh	; 0x235: row 34 (tile F0; tiles D9-DC)
+tako_frame_A23B	label	byte			; 0xA23B -- C[4] (frame ptr lands cleanly at line start below)
+		db	 00h,0DDh,0DEh,0DFh,0E0h, 00h	; 0x23B: row 35 (tiles DD-E0)
+		db	0DDh,0DEh,0DFh,0E0h, 00h, 81h	; 0x241: row 36 (tiles DD-E0; tile 81)
+		db	 82h, 8Fh, 90h, 00h,0B0h,0B1h	; 0x247: row 37 (tiles 82, 8F-90; tiles B0-B1)
+		db	0B2h,0B3h, 00h, 81h, 82h, 8Fh	; 0x24D: row 38 (tiles B2-B3; tiles 81-82, 8F)
+		db	 90h, 00h,0C9h,0CAh,0CBh,0CCh	; 0x253: row 39 (tile 90; tiles C9-CC)
+		db	 00h,0D5h,0D6h,0F1h,0F2h, 00h	; 0x259: row 40 (tiles D5-D6, F1-F2) -- A10/D4 frame at 0xA25E starts mid-row
+		db	0F3h,0F4h,0F5h,0F6h, 00h,0F7h	; 0x25F: row 41 (tiles F3-F6; tile F7)
+		db	0F8h,0F9h,0FAh, 01h,0D9h,0DAh	; 0x265: row 42 (tiles F8-FA; row-marker 01; tiles D9-DA)
+		db	0DBh,0DCh, 01h,0E1h,0E2h,0E3h	; 0x26B: row 43 (tiles DB-DC; tiles E1-E3) -- A5 frame at 0xA26D starts mid-row
+		db	0E4h, 01h,0E1h,0E2h,0E3h,0E4h	; 0x271: row 44 (tile E4; tiles E1-E4)
+		db	 01h,0E5h,0E6h,0E7h,0E8h, 01h	; 0x277: row 45 (tiles E5-E8)
+		db	0E9h,0EAh,0EBh,0ECh, 01h,0E5h	; 0x27D: row 46 (tiles E9-EC; tile E5)
+		db	0E6h,0E7h,0E8h, 01h,0EDh,0EEh	; 0x283: row 47 (tiles E6-E8; tiles ED-EE)
+		db	0EFh,0F0h, 01h,0D9h,0DAh,0DBh	; 0x289: row 48 (tiles EF-F0; tiles D9-DB)
+		db	0DCh, 01h,0DDh,0DEh,0DFh,0E0h	; 0x28F: row 49 (tile DC; tiles DD-E0) -- C5 frame at 0xA290 starts mid-row
+		db	 01h,0DDh,0DEh,0DFh,0E0h, 01h	; 0x295: row 50 (tiles DD-E0)
+		db	 81h, 82h, 8Fh, 90h, 01h,0B0h	; 0x29B: row 51 (tiles 81-82, 8F-90; tile B0)
+		db	0B1h,0B2h,0B3h, 01h, 81h, 82h	; 0x2A1: row 52 (tiles B1-B3; tiles 81-82)
+		db	 8Fh, 90h, 01h,0C9h,0CAh,0CBh	; 0x2A7: row 53 (tiles 8F-90; tiles C9-CB)
+		db	0CCh, 01h,0D5h,0D6h,0F1h,0F2h	; 0x2AD: row 54 (tile CC; tiles D5-D6, F1-F2)
+tako_frame_A2B3	label	byte			; 0xA2B3 -- A[11]/D[5] (frame ptr lands cleanly at line start below)
+		db	 01h,0F3h,0F4h,0F5h,0F6h, 01h	; 0x2B3: row 55 (tiles F3-F6)
+		db	0F7h,0F8h,0F9h,0FAh, 01h, 01h	; 0x2B9: row 56 (tiles F7-FA)
+		db	 02h, 03h, 04h, 01h, 05h, 06h	; 0x2BF: row 57 (tiles 02-04; tiles 05-06) -- B2 frame at 0xA2C2 starts mid-row
+		db	 07h, 08h, 01h, 09h, 0Ah, 0Bh	; 0x2C5: row 58 (tiles 07-08; tiles 09-0B)
+		db	 0Ch, 00h, 0Dh, 0Eh, 0Fh, 10h	; 0x2CB: row 59 (tile 0C; tiles 0D-10)
+tako_frame_A2D1	label	byte			; 0xA2D1 -- B[4] (frame ptr lands cleanly at line start below)
+		db	 00h, 11h, 12h, 13h, 14h, 00h	; 0x2D1: row 60 (tiles 11-14)
+		db	 15h, 16h, 17h, 18h, 00h, 11h	; 0x2D7: row 61 (tiles 15-18; tile 11)
+		db	 12h, 13h, 14h, 02h, 0Dh, 0Eh	; 0x2DD: row 62 (tiles 12-14; tiles 0D-0E)
+		db	 0Fh, 10h, 02h, 11h, 12h, 13h	; 0x2E3: row 63 (tiles 0F-10; tiles 11-13) -- B5 frame at 0xA2E5 starts mid-row
+		db	 14h, 02h, 15h, 16h, 17h, 18h	; 0x2E9: row 64 (tile 14; tiles 15-18)
+		db	 02h, 11h, 12h, 13h, 14h, 01h	; 0x2EF: row 65 (tiles 11-14)
+		db	 0Dh, 0Eh, 0Fh, 10h, 01h, 11h	; 0x2F5: row 66 (tiles 0D-10; tile 11) -- B9 frame at 0xA2F9 starts mid-row
+		db	 12h, 13h, 14h, 01h, 15h, 16h	; 0x2FB: row 67 (tiles 12-14; tiles 15-16)
+		db	 17h, 18h, 01h, 11h, 12h, 13h	; 0x301: row 68 (tiles 17-18; tiles 11-13)
+		db	 14h, 00h, 19h, 1Ah, 1Bh, 1Ch	; 0x307: row 69 (tile 14; tiles 19-1C)
+tako_frame_A30D	label	byte			; 0xA30D -- B[3] (frame ptr lands cleanly at line start below)
+		db	 00h, 19h, 1Ah, 1Bh, 1Ch, 00h	; 0x30D: row 70 (tiles 19-1C)
+		db	 19h, 1Ah, 1Bh, 1Ch, 00h, 19h	; 0x313: row 71 (tiles 19-1C; tile 19)
+		db	 1Ah, 1Bh, 1Ch, 01h, 1Dh, 1Eh	; 0x319: row 72 (tiles 1A-1C; tiles 1D-1E)
+		db	 1Fh, 20h, 01h, 6Eh, 6Eh, 6Eh	; 0x31F: row 73 (tiles 1F-20; tile 6E ×3) -- B6 frame at 0xA321 starts mid-row
+		db	 6Eh, 01h, 6Fh, 70h, 71h, 72h	; 0x325: row 74 (tile 6E; tiles 6F-72) -- B0 frame at 0xA326 starts mid-row
+		db	 01h, 73h, 74h, 75h, 76h, 01h	; 0x32B: row 75 (tiles 73-76)
+		db	 00h, 00h, 77h, 78h, 02h, 79h	; 0x331: row 76 (tiles 77-78; tile 79)
+		db	 7Ah, 7Bh, 7Ch, 00h,0FBh,0FCh	; 0x337: row 77 (tiles 7A-7C; tiles FB-FC) -- B10 frame at 0xA33A starts mid-row
+		db	0FDh,0FEh, 02h,0FBh,0FCh,0FDh	; 0x33D: row 78 (tiles FD-FE; tiles FB-FD) -- B7 frame at 0xA33F starts mid-row
+		db	0FEh				; 0x343: row 79 tail (tile FE; B8 frame at 0xA344 follows in aux ptr tbl)
 
 ; -------------------------------------------------------------------------
 ;  Tentacle / aux ptr table (offset 0x34D..0x358) + 4-byte aux records
