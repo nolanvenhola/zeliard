@@ -48,23 +48,30 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; The following equates show data references outside the range of the program.
-; Shared references across 312-319 map-program family:
-;   200Ch..6038h  - game-segment dispatch callback fn ptrs
-;   0C002h/0C010h - sprite attribute / entity record base
-;   0ED20h        - char/tile lookup table
-;   0FF2Eh..0FF75h - per-map global state flag bytes
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+gvar_state_ff30	equ	0FF30h		; per-map state byte
 
-; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
 
-; --- Internal per-phase tile-source tables (DS, addressed by hard offset) ---
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 akma_phase_si_tbl_a	equ	0A7EEh		; SI per-phase tbl A (phase-A render path)
 akma_phase_di_tbl_a	equ	0A870h		; DI per-phase tbl A
 akma_phase_si_tbl_b	equ	0A918h		; SI per-phase tbl B (active-mode swap)
 akma_phase_si_tbl_c	equ	0A940h		; SI per-phase tbl C (mid-stage)
 akma_xlat_tbl_a969	equ	0A969h		; xlat table base (active-mode alt)
+akma_render_buf	equ	0AA2Ah		; render buffer base
+akma_render_buf_b	equ	0AA33h		; secondary render buffer base
+akma_render_buf_c	equ	0AA87h		; tertiary render buffer base
+akma_sprite_attr_ptr	equ	0C010h		; sprite attribute record ptr (DS)
+akma_sprite_xlat_tbl	equ	0ED20h		; char/tile xlat table (shared)
 
-; --- State / scroll (DS) ---
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 akma_scroll_x		equ	0AA06h		; scroll X position word
 akma_scroll_x_hi	equ	0AA08h		; scroll X high byte
 akma_scroll_max	equ	0AA09h		; scroll max word
@@ -80,15 +87,8 @@ akma_phase_b_idx	equ	0AA26h		; phase-B index byte
 akma_render_mode	equ	0AA27h		; render mode flag (toggles xlat table)
 akma_death_step	equ	0AA28h		; death animation step counter
 akma_death_subcnt	equ	0AA29h		; death sub-counter (cmp 28h / 1Eh)
-akma_render_buf	equ	0AA2Ah		; render buffer base
-akma_render_buf_b	equ	0AA33h		; secondary render buffer base
-akma_render_buf_c	equ	0AA87h		; tertiary render buffer base
-
-; --- Shared game-segment globals (used across map-program family) ---
 akma_sprite_attr_cnt	equ	0C002h		; sprite attribute count (DS)
-akma_sprite_attr_ptr	equ	0C010h		; sprite attribute record ptr (DS)
-akma_sprite_xlat_tbl	equ	0ED20h		; char/tile xlat table (shared)
-gvar_state_ff30	equ	0FF30h		; per-map state byte
+
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

@@ -47,29 +47,31 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; The following equates show data references outside the range of the program.
-; Shared references (common to the 312-319 map-program family):
-;   200Ch / 6028h..603Ch   -- game-segment dispatch callback fn ptrs
-;   0C002h / 0C010h        -- sprite attribute / entity record base
-;   0ED20h                 -- char/tile lookup table
-;   0FF2Eh..0FF75h         -- per-map global state flag bytes
-
-; --- External targets (mis-decoded Fixup operands; not real refs) ---
+; ----------------------------------------------------------------------
+; Section 2: Module-local exports
+; ----------------------------------------------------------------------
 zela_ext_word_a	equ	8802h			; external data word (mis-decoded Fixup target)
 zela_ext_byte_b	equ	8E8Dh			; external data byte
 zela_ext_byte_c	equ	9302h			; external data byte (via xchg at start)
-zela_ext_far_d	equ	0A2A1h			; far-ptr target (Fixup call far)
+
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 zela_ext_addr_e	equ	6C6h			; internal address referenced from header
-
-; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
-
-; --- Internal/DS state (game-seg, addressed by hardcoded offset) ---
 zela_dispatch_tbl	equ	0A307h		; dispatch word-table base (handler ptrs)
 zela_unk_tbl_a		equ	0A33Eh		; unknown table A (referenced by header)
 zela_unk_tbl_b		equ	0A343h		; unknown table B
 zela_unk_tbl_c		equ	0A348h		; unknown table C
 zela_xlat_tbl		equ	0A4EAh		; tile-index / xlat table base
 zela_init_record	equ	0A552h		; init-record row (13-byte records, base)
+zela_tile_buf_lbl	equ	0A610h		; DS-base for 12-word tile fill loop
+
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+zela_ext_far_d	equ	0A2A1h			; far-ptr target (Fixup call far)
 zela_init_field_b	equ	0A553h		; init record field B
 zela_init_field_c	equ	0A55Fh		; init record field C
 zela_init_field_d	equ	0A560h		; init record field D
@@ -89,13 +91,11 @@ zela_anim_byte		equ	0A60Ch		; animation/speaker byte
 zela_npc_ai_byte	equ	0A60Dh		; saved NPC AI byte
 zela_death_timer	equ	0A60Eh		; death-anim timer
 zela_attack_done	equ	0A60Fh		; attack-done flag
-zela_tile_buf_lbl	equ	0A610h		; DS-base for 12-word tile fill loop
 zela_tile_field_a	equ	0A613h		; tile-buf field A
 zela_tile_field_b	equ	0A619h		; tile-buf field B
 zela_tile_field_c	equ	0A61Fh		; tile-buf field C
 zela_tile_field_d	equ	0A625h		; tile-buf field D
 
-; --- Shared game-segment globals (used across map-program family) ---
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

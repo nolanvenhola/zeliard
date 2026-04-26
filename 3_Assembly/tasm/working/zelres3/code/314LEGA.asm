@@ -43,33 +43,35 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; The following equates show data references outside the range of the program.
-; Shared references across 312-319 map-program family:
-;   200Ch..6038h  - game-segment dispatch callback fn ptrs
-;   0C010h        - sprite attribute record base
-;   0ED20h        - char/tile lookup table
-;   0FF2Eh..0FF75h - per-map global state flag bytes
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+gvar_unk_ff3c		equ	0FF3Ch		; global state byte (used in header decode)
 
-; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
 
-; --- Internal tile/render data tables (CS/DS-relative) ---
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 lega_tbl_a3c7		equ	0A3C7h		; (unresolved data ref)
 lega_tbl_a41b		equ	0A41Bh		; xlat table base (mov bx, 0A41Bh + xlat)
-lega_npc_state_a	equ	0A41Fh		; cell-state scan table A (5 bytes, scasb)
-lega_npc_state_b	equ	0A424h		; cell-state scan table B (5 bytes, scasb)
 lega_anim_dx_tbl	equ	0A5D8h		; per-phase delta-X table base
 lega_anim_dy_tbl	equ	0A5D9h		; per-phase delta-Y table base
 lega_phase_xlat_a	equ	0A69Bh		; phase-A xlat table (xlat-indexed)
 lega_phase_xlat_b	equ	0A6BCh		; phase-B xlat table (xlat-indexed)
-lega_unk_a6c8		equ	0A6C8h		; (unresolved table ref)
 lega_dispatch_tbl	equ	0A744h		; trailer dispatch jump-table base
+lega_render_buf		equ	0A7C9h		; tile render buffer base
+lega_render_buf_b	equ	0A7CBh		; tile render buffer +2
 
-; --- Scroll / phase state bytes (DS) ---
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+lega_npc_state_a	equ	0A41Fh		; cell-state scan table A (5 bytes, scasb)
+lega_npc_state_b	equ	0A424h		; cell-state scan table B (5 bytes, scasb)
+lega_unk_a6c8		equ	0A6C8h		; (unresolved table ref)
 lega_scroll_x		equ	0A7A0h		; scroll X position (word)
 lega_scroll_phase	equ	0A7A2h		; scroll phase counter byte
 lega_scroll_x_max	equ	0A7A3h		; scroll X max (word)
-
-; --- NPC scan / cell write state bytes (DS) ---
 lega_npc_idx		equ	0A7B6h		; NPC scan index byte
 lega_anim_byte		equ	0A7B7h		; current animation/speaker byte
 lega_idle_step		equ	0A7B8h		; idle step counter (0..0x28)
@@ -88,12 +90,8 @@ lega_anim2_y		equ	0A7C5h		; secondary anim Y position
 lega_anim2_frame	equ	0A7C6h		; secondary anim frame index
 lega_anim2_phase	equ	0A7C7h		; secondary anim phase counter
 lega_anim2_subflag	equ	0A7C8h		; secondary anim sub-flag
-lega_render_buf		equ	0A7C9h		; tile render buffer base
-lega_render_buf_b	equ	0A7CBh		; tile render buffer +2
 lega_extra_attr		equ	0A7F1h		; extra-attr byte at scan tail
 
-; --- Shared game-segment globals (used across map-program family) ---
-gvar_unk_ff3c		equ	0FF3Ch		; global state byte (used in header decode)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

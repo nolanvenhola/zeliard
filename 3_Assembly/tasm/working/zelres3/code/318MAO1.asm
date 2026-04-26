@@ -52,49 +52,51 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; The following equates show data references outside the range of the program.
-; Shared references across 312-319 map-program family:
-;   2000h..2F2Eh  - driver/service callback functions
-;   6028h..6036h  - game-seg dispatch callbacks
-;   0C010h        - sprite attribute record base
-;   0ED20h        - char/tile lookup table
-;   0FF75h        - global state byte
-
-; --- Driver dispatch / callback fn ptrs (CS-relative ptrs in driver/game DS) ---
+; ----------------------------------------------------------------------
+; Section 2: Module-local exports
+; ----------------------------------------------------------------------
 mao1_drv_load_chunk	equ	2000h			; driver dispatch (load_chunk_ES or similar)
 mao1_drv_dispatch_a	equ	201Fh			; driver dispatch entry
 mao1_drv_blit_render	equ	202Ah			; driver dispatch entry (blit/render)
 mao1_drv_text_render	equ	2928h			; driver callback (text render)
 mao1_drv_misc_callback	equ	2F2Eh			; driver callback
-
-; --- External data ptrs (DS - addressed by hard offset in caller's DS) ---
 mao1_ext_8e77		equ	8E77h			; external data ptr
 mao1_ext_9893		equ	9893h			; external data ptr
 mao1_ext_9a00		equ	9A00h			; external data ptr
 
-; --- Internal phase / dispatch tables (DS, addressed by hard offset) ---
+
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+mao1_gvar_state_byte	equ	0FF75h			; global state byte (per-map)
+
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 mao1_phase_tbl_a39f	equ	0A39Fh			; phase table base A
 mao1_phase_tbl_a3bb	equ	0A3BBh			; phase table base B
 mao1_dialog_lo_tbl	equ	0A442h			; dialog handler lo-byte table
 mao1_phase_di_tbl	equ	0A495h			; DI per-phase table
 mao1_phase_bp_tbl	equ	0A52Fh			; BP per-phase table
-
-; --- State / scratch (DS) ---
 mao1_speech_dx_base	equ	0A581h			; speech DX base word (write-target of dx after dispatch)
 mao1_speech_dx_lo	equ	0A583h			; speech DX low (read by emit-cell to gate +cl)
+mao1_alt_buf		equ	0AEABh			; alternate buffer ptr
+mao1_render_buf		equ	0B600h			; render buffer base
+mao1_sprite_attr_ptr	equ	0C010h			; sprite attribute record ptr (DS)
+mao1_text_dst		equ	0E939h			; text-buffer destination
+mao1_sprite_xlat_tbl	equ	0ED20h			; char/tile xlat table (shared)
+
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 mao1_npc_idx		equ	0A599h			; NPC scan index byte (incremented per-cell)
 mao1_phase_dir		equ	0A59Ah			; phase direction byte (BL-saved cell attr)
 mao1_phase_step	equ	0A59Bh			; phase step counter (incremented per-frame)
 mao1_phase_substate	equ	0A59Ch			; phase substate (xlat result, signed dispatch)
 mao1_attr_tmp		equ	0A5A1h			; attribute scratch byte (data_34e)
-mao1_alt_buf		equ	0AEABh			; alternate buffer ptr
-mao1_render_buf		equ	0B600h			; render buffer base
 
-; --- Shared game-segment globals ---
-mao1_sprite_attr_ptr	equ	0C010h			; sprite attribute record ptr (DS)
-mao1_text_dst		equ	0E939h			; text-buffer destination
-mao1_sprite_xlat_tbl	equ	0ED20h			; char/tile xlat table (shared)
-mao1_gvar_state_byte	equ	0FF75h			; global state byte (per-map)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

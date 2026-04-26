@@ -47,14 +47,15 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; --- References into the 200FIGHT battle binary (caller segment) ---
-battle_ref_a	equ	0A2AEh			; ref into 200FIGHT code (battle entry A)
-battle_ref_b	equ	0B5B4h			; ref into 200FIGHT code (battle entry B)
-
-; --- MEDA enemy AI dispatch table (game_seg:1312h..6040h, DS-relative) ---
+; ----------------------------------------------------------------------
+; Section 2: Module-local exports
+; ----------------------------------------------------------------------
 ai_fn_intro	equ	1312h			; intro/spawn fn (early table)
 
-; --- MEDA lookup tables (game_seg DS) ---
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 meda_tbl_a	equ	0A1E6h			; MEDA behaviour lookup A
 meda_tbl_b	equ	0A268h			; MEDA behaviour lookup B
 meda_tbl_c	equ	0A29Ah			; MEDA behaviour lookup C
@@ -63,6 +64,14 @@ meda_tbl_e	equ	0A41Bh			; MEDA behaviour lookup E
 meda_tbl_f	equ	0A41Ch			; MEDA behaviour lookup F
 meda_tbl_g	equ	0A428h			; MEDA behaviour lookup G
 meda_tbl_h	equ	0A429h			; MEDA behaviour lookup H
+
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+battle_ref_a	equ	0A2AEh			; ref into 200FIGHT code (battle entry A)
+battle_ref_b	equ	0B5B4h			; ref into 200FIGHT code (battle entry B)
+
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

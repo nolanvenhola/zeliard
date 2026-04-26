@@ -53,18 +53,28 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+gvar_hero_x		equ	0FF35h			; hero X tile position (global)
+gvar_proj_flag		equ	0FFA2h			; projectile spawn flag
 
-; Shared enemy spawn/state globals in game_seg DS.
 
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 enemy_spawn_tile_hi	equ	0A666h			; spawn-cell row (phase hi)
 enemy_spawn_col_hi	equ	0A667h			; spawn-cell col (phase hi)
 enemy_spawn_tile_lo	equ	0A673h			; spawn-cell row (phase lo)
 enemy_spawn_col_lo	equ	0A674h			; spawn-cell col (phase lo)
-dir_xlat_alt		equ	0A71Bh			; direction lookup table (alt facing)
 dir_xlat_table		equ	0A723h			; direction lookup table (xlat base)
-gvar_hero_x		equ	0FF35h			; hero X tile position (global)
-gvar_proj_flag		equ	0FFA2h			; projectile spawn flag
+
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+dir_xlat_alt		equ	0A71Bh			; direction lookup table (alt facing)
+
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

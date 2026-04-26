@@ -66,19 +66,20 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; Fight-engine callback vectors / shared globals (DS at game_seg).
-
-; Shared sprite pattern tables used by Tako (DS, game_seg).
-
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 sprite_pat_tbl_a	equ	0A57Dh			; sprite pattern table A
 sprite_pat_tbl_b	equ	0A64Dh			; sprite pattern table B
 dir_xlat_table		equ	0A725h			; direction lookup table (xlat base)
 tako_vector_tbl		equ	0A9AFh			; tako render-vector table
+tako_row_pos_base	equ	0AA80h			; current row position (word base)
 sprite_src_base		equ	0E3A5h			; tako sprite-source base
 
-; Tako-specific global state (DS at game_seg).
 
-tako_row_pos_base	equ	0AA80h			; current row position (word base)
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 tako_row_delta		equ	0AA82h			; row delta byte
 tako_hp			equ	0AA83h			; Tako HP counter
 tako_phase_a		equ	0AA96h			; phase counter A
@@ -92,9 +93,6 @@ tako_timer_a		equ	0AA9Eh			; timer A (word)
 tako_timer_a_byte	equ	0AA9Fh			; timer A byte (low half)
 tako_col_pos		equ	0AAA1h			; col position byte
 
-; ----- Slot-record layout helpers (for readability in code below) -----
-;   [si+0..1] = sprite tile word   [si+4] = attribute  [si+5] = flags
-;   [si+2..3] = record indices     [si+6] = frame      [si+10h] = next
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

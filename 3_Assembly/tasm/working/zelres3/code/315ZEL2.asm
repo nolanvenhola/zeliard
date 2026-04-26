@@ -46,28 +46,32 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; The following equates show data references outside the range of the program.
-; Shared references across 312-319 map-program family:
-;   200Ch..603Ch  - game-segment dispatch callback fn ptrs
-;   0C002h/0C010h - sprite attribute / entity record base
-;   0ED20h        - char/tile lookup table
-;   0FF2Eh..0FF75h - per-map global state flag bytes
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+zel2_state_ff30		equ	0FF30h		; per-map state flag (idle-out marker)
 
-; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
 
-; --- Internal tile/render data tables (DS, addressed by hard offset) ---
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 zel2_unk_c0b		equ	0C0Bh		; trailer-decoded internal addr (data ref via [bx+si])
 zel2_anim_dispatch_tbl	equ	0A2F8h		; per-anim dispatch table base (call ds:[base+bx])
+zel2_phase_xlat_tbl	equ	0A4DBh		; phase xlat / index table base
+zel2_render_buf		equ	0A603h		; tile render buffer base (12 words)
+zel2_sprite_attr_ptr	equ	0C002h		; sprite attribute scan ptr (DS word)
+
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 zel2_anim_state_a	equ	0A32Fh		; anim state slot A (word, written by 'and ax,2FA3h')
 zel2_anim_state_b	equ	0A334h		; anim state slot B (referenced via [bp+di])
 zel2_anim_state_c	equ	0A339h		; anim state slot C (word)
-zel2_phase_xlat_tbl	equ	0A4DBh		; phase xlat / index table base
 zel2_anim_seg_a		equ	0A543h		; anim segment slot base (idx*0Dh added)
 zel2_anim_seg_a_byte_b	equ	0A544h		; anim segment slot, +01 (byte field 'al')
 zel2_anim_seg_a_byte_c	equ	0A550h		; anim segment slot, +0Dh (byte field)
 zel2_anim_seg_a_byte_d	equ	0A551h		; anim segment slot, +0Eh (byte field)
-
-; --- Scroll / phase state bytes (DS) ---
 zel2_scroll_x		equ	0A5DFh		; scroll X position byte/word
 zel2_phase_step		equ	0A5E1h		; phase step counter (mod 3Fh)
 zel2_scroll_x_max	equ	0A5E2h		; scroll X max (word)
@@ -84,15 +88,11 @@ zel2_anim_byte		equ	0A5FFh		; current animation/speaker byte
 zel2_attr_tmp		equ	0A600h		; tile attribute scratch byte
 zel2_idle_step		equ	0A601h		; idle step counter (0..0x28)
 zel2_phase_locked	equ	0A602h		; phase-locked flag
-zel2_render_buf		equ	0A603h		; tile render buffer base (12 words)
 zel2_render_attr_a	equ	0A606h		; render attr slot A
 zel2_render_attr_b	equ	0A60Ch		; render attr slot B
 zel2_render_attr_c	equ	0A612h		; render attr slot C
 zel2_render_attr_d	equ	0A618h		; render attr slot D
 
-; --- Shared game-segment globals (used across map-program family) ---
-zel2_sprite_attr_ptr	equ	0C002h		; sprite attribute scan ptr (DS word)
-zel2_state_ff30		equ	0FF30h		; per-map state flag (idle-out marker)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

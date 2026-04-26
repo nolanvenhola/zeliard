@@ -44,16 +44,9 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; The following equates show data references outside the range of the program.
-; Shared references across the 312-319 map-program family:
-;   200Ch..603Ch   - game-segment dispatch callback fn ptrs
-;   0C002h/0C010h  - sprite attribute / entity record base
-;   0ED20h         - char/tile lookup table
-;   0FF2Eh..0FF75h - per-map global state flag bytes
-
-; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
-
-; --- Internal tile/render data tables (game-seg DS, addressed by hard offset) ---
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 meda_tile_src_a		equ	0A5DCh		; tile source base A (passed to render_tiles)
 meda_tile_src_b		equ	0A606h		; tile mask base B
 meda_tile_src_c		equ	0A613h		; tile source base C
@@ -62,23 +55,21 @@ meda_tile_src_e_tbl	equ	0A62Eh		; tile source E (indexed table)
 meda_tile_src_f		equ	0A682h		; tile mask F
 meda_tile_src_g_tbl	equ	0A687h		; tile source G (indexed table)
 meda_tile_src_h_tbl	equ	0A6C7h		; tile mask H (indexed table)
+meda_anim_xlat_tbl	equ	0A6EDh		; per-state animation xlat table
+meda_render_buf		equ	0A738h		; tile render buffer base (336 bytes)
 
-; --- Sprite/cell write fields (DS) ---
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 meda_cell_x		equ	0A6E0h		; cell write X (low byte at sprite base)
 meda_cell_phase		equ	0A6E1h		; cell phase byte
-meda_anim_xlat_tbl	equ	0A6EDh		; per-state animation xlat table
-
-; --- Scroll / phase state bytes (DS) ---
 meda_scroll_x		equ	0A716h		; scroll X position (word)
 meda_scroll_phase	equ	0A718h		; scroll phase counter byte
 meda_scroll_x_max	equ	0A719h		; scroll X max / extra (word)
-
-; --- Sub_8 (render_tiles) parameter slots (DS) ---
 meda_tile_param_row	equ	0A72Ch		; tile param: row index (passed in DS)
 meda_tile_param_col	equ	0A72Dh		; tile param: col index (passed in DS)
 meda_tile_param_attr	equ	0A72Eh		; tile param: attribute byte
-
-; --- Phase / state machine bytes (DS) ---
 meda_phase_dir		equ	0A72Fh		; phase direction selector
 meda_phase_step		equ	0A730h		; phase step counter (mod 5)
 meda_npc_idx		equ	0A731h		; NPC scan index byte
@@ -89,10 +80,6 @@ meda_phase_subflag	equ	0A735h		; phase sub-flag
 meda_phase_locked	equ	0A736h		; phase-locked flag (clamp boundary)
 meda_phase_delay	equ	0A737h		; phase delay countdown
 
-; --- Tile/render buffer (CS-relative, written via push cs/pop es) ---
-meda_render_buf		equ	0A738h		; tile render buffer base (336 bytes)
-
-; --- Shared game-segment globals (used across map-program family) ---
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

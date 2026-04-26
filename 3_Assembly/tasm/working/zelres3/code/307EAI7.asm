@@ -56,27 +56,42 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
-
-; Shared enemy spawn/state globals in game_seg DS.
-
+; ----------------------------------------------------------------------
+; Section 2: Module-local exports
+; ----------------------------------------------------------------------
 path_tbl_a		equ	8A89h			; path/route data table A
 path_tbl_b		equ	8B8Ah			; path/route data table B
 path_tbl_c		equ	9291h			; path/route data table C
+
+
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+gvar_hero_x		equ	0FF35h			; hero X tile position (global)
+
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 sprite_src_base		equ	0A1A0h			; enemy-sprite source table base
 enemy_spawn_tile_a	equ	0A460h			; spawn-cell row (path A)
 enemy_spawn_col_a	equ	0A461h			; spawn-cell col (path A)
 enemy_spawn_tile_b	equ	0A46Dh			; spawn-cell row (path B)
 enemy_spawn_col_b	equ	0A46Eh			; spawn-cell col (path B)
+ai_phase_table		equ	0A701h			; ai phase/wait table
+spawn_cell_col_hi	equ	0A705h			; alt spawn col (phase hi)
+spawn_cell_col_lo	equ	0A712h			; alt spawn col (phase lo)
+
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 aim_delta_pos		equ	0A491h			; positive aim delta threshold
 aim_delta_neg		equ	0A492h			; negative aim delta threshold
-ai_phase_table		equ	0A701h			; ai phase/wait table
 spawn_cell_row_hi	equ	0A704h			; alt spawn row (phase hi)
-spawn_cell_col_hi	equ	0A705h			; alt spawn col (phase hi)
 spawn_cell_row_lo	equ	0A711h			; alt spawn row (phase lo)
-spawn_cell_col_lo	equ	0A712h			; alt spawn col (phase lo)
 dir_xlat_alt		equ	0A8C7h			; direction xlat (alt state)
-gvar_hero_x		equ	0FF35h			; hero X tile position (global)
+
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

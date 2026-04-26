@@ -61,16 +61,20 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; --- CRAB enemy AI dispatch table (game_seg:6004h..6034h, in DS at runtime) ---
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+gvar_rng_state	equ	0FF2Eh			; random/LFSR state word
 
-; --- Crab AI lookup tables (in DS at game_seg) ---
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 crab_tbl_a	equ	0A29Dh			; crab movement/direction lookup table
 crab_tbl_b	equ	0A2D0h			; crab secondary lookup table
 crab_rotate_a	equ	0A723h			; crab rotation/swap pattern table
 crab_rotate_b	equ	0A72Fh			; crab rotation/swap pattern table B
 
-; --- Global variables (game_seg:0xFFxx, zeliard.inc) ---
-gvar_rng_state	equ	0FF2Eh			; random/LFSR state word
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

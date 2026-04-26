@@ -51,17 +51,22 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; Fight-engine callback vectors / shared globals (DS at game_seg).
-
-; Crab-specific global state (DS, game_seg).
-
-crab_spawn_limit	equ	0A481h			; max simultaneous crab spawns
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 crab_anim_tbl_a		equ	0A5B6h			; crab animation sequence A
 crab_anim_tbl_b		equ	0A5F5h			; crab animation sequence B (misc)
 crab_anim_tbl_c		equ	0A5F9h			; crab animation sequence C
 crab_pos_tbl		equ	0A70Ah			; crab spawn position/grid table
-fight_hp		equ	0A7C3h			; current fight HP (crab counter)
 crab_phase_base		equ	0A7C5h			; phase-base byte
+crab_anim_base		equ	0A7EAh			; animation base (word)
+
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+crab_spawn_limit	equ	0A481h			; max simultaneous crab spawns
+fight_hp		equ	0A7C3h			; current fight HP (crab counter)
 crab_phase_limit	equ	0A7C6h			; phase-limit byte
 crab_slot_idx		equ	0A7DCh			; current slot index
 crab_state_bits		equ	0A7DDh			; packed state bits
@@ -77,13 +82,9 @@ crab_anim_idx		equ	0A7E6h			; animation step index
 crab_anim_frame		equ	0A7E7h			; current animation frame
 crab_row_pos		equ	0A7E8h			; current row position
 crab_col_pos		equ	0A7E9h			; current col position
-crab_anim_base		equ	0A7EAh			; animation base (word)
 crab_timer_a		equ	0A7ECh			; phase timer A
 crab_timer_b		equ	0A7EDh			; phase timer B (death animation)
 
-; ----- Slot-record layout helpers (for readability in code below) -----
-;   [si+0..1] = sprite tile word   [si+4] = attribute  [si+5] = flags
-;   [si+2..3] = record indices     [si+6] = frame      [si+10h] = next
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

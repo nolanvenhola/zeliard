@@ -48,32 +48,42 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; The following equates show data references outside the range of the program.
-; Shared references across 312-319 map-program family:
-;   200Ch..6038h  - game-segment dispatch callback fn ptrs
-;   0C010h        - sprite attribute record base
-;   0ED20h        - char/tile lookup table
-;   0FF2Eh..0FF75h - per-map global state flag bytes
-
-; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
-
-; --- Internal tile/render data tables (DS, addressed by hard offset) ---
+; ----------------------------------------------------------------------
+; Section 2: Module-local exports
+; ----------------------------------------------------------------------
 drgn_buf_tile_src	equ	8000h		; external tile source base (test sp,ds:[8000h+bx])
+
+
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+gvar_state_ff30		equ	0FF30h		; per-map state byte
+
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 drgn_xlat_tbl_a4bb	equ	0A4BBh		; xlat table base (alternate render mode)
 drgn_phase_si_tbl	equ	0A783h		; SI per-phase tbl base (indexed by drgn_phase_dir<<1)
 drgn_phase_bp_tbl	equ	0A810h		; BP per-phase tbl base (indexed by drgn_phase_dir<<1)
-drgn_si_a87a		equ	0A87Ah		; SI tile source (used standalone)
-drgn_bp_a87d		equ	0A87Dh		; BP tile source (used standalone)
 drgn_phase_si_tbl_b	equ	0A881h		; SI per-phase tbl B (indexed by drgn_phase_substep<<1)
 drgn_phase_bp_tbl_b	equ	0A89Ah		; BP per-phase tbl B (indexed by drgn_phase_substep<<1)
 drgn_phase_si_tbl_c	equ	0A8B7h		; SI per-phase tbl C (indexed by drgn_phase_substep<<1)
-drgn_bp_a8d7		equ	0A8D7h		; BP tile source standalone
 drgn_phase_si_tbl_d	equ	0A8DEh		; SI per-phase tbl D (indexed by drgn_phase_step&1<<1)
 drgn_phase_bp_tbl_d	equ	0A8FDh		; BP per-phase tbl D
 drgn_phase_di_tbl_e	equ	0A96Ch		; DI per-phase tbl E (phase-B render path)
 drgn_phase_bp_tbl_e	equ	0A985h		; BP per-phase tbl E (phase-B render path)
+drgn_render_buf		equ	0AA69h		; render buffer base
+drgn_sprite_attr_ptr	equ	0C010h		; sprite attribute record ptr (DS)
+drgn_sprite_xlat_tbl	equ	0ED20h		; char/tile xlat table (shared)
 
-; --- State / scroll (DS) ---
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+drgn_si_a87a		equ	0A87Ah		; SI tile source (used standalone)
+drgn_bp_a87d		equ	0A87Dh		; BP tile source (used standalone)
+drgn_bp_a8d7		equ	0A8D7h		; BP tile source standalone
 drgn_scroll_x		equ	0AA3Ch		; scroll X position word
 drgn_scroll_x_hi	equ	0AA3Eh		; scroll X high byte
 drgn_scroll_max		equ	0AA3Fh		; scroll max word
@@ -99,12 +109,7 @@ drgn_init_render	equ	0AA65h		; init-render flag
 drgn_render_mode	equ	0AA66h		; render mode flag (toggles xlat table)
 drgn_xlat_idx		equ	0AA67h		; xlat index byte
 drgn_xlat_done		equ	0AA68h		; xlat-done flag
-drgn_render_buf		equ	0AA69h		; render buffer base
 
-; --- Shared game-segment globals (used across map-program family) ---
-drgn_sprite_attr_ptr	equ	0C010h		; sprite attribute record ptr (DS)
-drgn_sprite_xlat_tbl	equ	0ED20h		; char/tile xlat table (shared)
-gvar_state_ff30		equ	0FF30h		; per-map state byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

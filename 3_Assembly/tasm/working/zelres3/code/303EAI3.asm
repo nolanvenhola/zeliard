@@ -42,9 +42,9 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; --- TORI enemy AI dispatch table (game_seg:6004h..603Ah, in DS at runtime) ---
-
-; --- TORI lookup tables (game_seg DS) ---
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 tori_tbl_a	equ	0A4EAh			; TORI flight-pattern base table
 tori_tbl_b	equ	0A519h
 tori_tbl_c	equ	0A5A3h
@@ -53,7 +53,6 @@ tori_tbl_e	equ	0A655h
 tori_tbl_f	equ	0A661h
 tori_tbl_g	equ	0A662h
 
-; Backwards-compat aliases
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

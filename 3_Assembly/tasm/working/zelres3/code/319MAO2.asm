@@ -53,18 +53,26 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; The following equates show data references outside the range of the program.
-; Shared references across 312-319 map-program family:
-;   200Ch..6038h  - game-segment dispatch callback fn ptrs
-;   0C002h/0C010h - sprite attribute / entity record base
-;   0ED20h        - char/tile lookup table
-;   0FF2Eh..0FF75h - per-map global state flag bytes
-
-; --- Driver dispatch / callback fn ptrs (CS-relative ptrs in driver/game DS) ---
+; ----------------------------------------------------------------------
+; Section 2: Module-local exports
+; ----------------------------------------------------------------------
 mao2_drv_anim_cb	equ	2F2Eh			; driver callback (boss anim)
 mao2_drv_misc_cb	equ	302Fh			; driver callback
 
-; --- Internal phase / dispatch / handler tables (DS, hard offsets) ---
+
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+mao2_gvar_state_a	equ	0FF21h			; global state byte A
+mao2_gvar_state_b	equ	0FF2Eh			; global state byte B (skip-frame flag)
+mao2_gvar_state_c	equ	0FF2Fh			; global state byte C
+mao2_gvar_state_d	equ	0FF30h			; global state byte D
+mao2_gvar_phase_byte	equ	0FF75h			; global state byte (per-map phase)
+
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 mao2_phase_ofs_tbl	equ	0A46Fh			; per-phase substate offset xlat table
 mao2_handler_step_tbl	equ	0A666h			; phase-handler 3-byte step table base
 mao2_dlg_state_word_a	equ	0A8A9h			; dialog-state word in trailer data region
@@ -73,10 +81,21 @@ mao2_dlg_state_word_b	equ	0A98Ah			; dialog-state byte in trailer data region
 mao2_dlg_state_word_c	equ	0A9DBh			; dialog-state byte in trailer data region
 mao2_dialog_bp_tbl_a	equ	0AA71h			; BP per-dialog phase table (alt set A)
 mao2_phase_handler_tbl	equ	0ABF9h			; secondary phase handler ptr table
-
-; --- State / scratch (DS) ---
-mao2_npc_target_idx	equ	0AC03h			; NPC scan target index byte
 mao2_speech_dx_lo	equ	0AC05h			; speech dx low byte (data_28e equiv)
+mao2_attr_ptr_save	equ	0AC26h			; saved attribute ptr (sprite_attr_ptr)
+mao2_clear_buf		equ	0AC39h			; clear-buffer (54 bytes of FFh)
+mao2_clear_buf_p1	equ	0AC41h			; clear-buf+8 patch-target byte
+mao2_clear_buf_p2	equ	0AC4Ah			; clear-buf+11h patch-target byte
+mao2_clear_buf_p3	equ	0AC65h			; clear-buf+2Ch patch-target byte
+mao2_clear_buf_p4	equ	0AC6Eh			; clear-buf+35h patch-target byte
+mao2_sprite_attr_ptr	equ	0C010h			; sprite attribute record base ptr
+mao2_sprite_xlat_tbl	equ	0ED20h			; char/tile xlat table (shared)
+
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+mao2_npc_target_idx	equ	0AC03h			; NPC scan target index byte
 mao2_pos_word		equ	0AC06h			; render position word (data_29e)
 mao2_phase_substate	equ	0AC1Bh			; phase substate (xlat result)
 mao2_npc_idx		equ	0AC1Ch			; NPC scan index byte
@@ -89,7 +108,6 @@ mao2_attr_high_nib	equ	0AC22h			; attribute high-nibble OR mask
 mao2_phase_active	equ	0AC23h			; phase-active flag
 mao2_rng_bit		equ	0AC24h			; RNG bit (rotated from callback)
 mao2_phase_step	equ	0AC25h			; phase step counter
-mao2_attr_ptr_save	equ	0AC26h			; saved attribute ptr (sprite_attr_ptr)
 mao2_dlg_a_active	equ	0AC28h			; dialog-A active flag
 mao2_dlg_a_dx		equ	0AC29h			; dialog-A current dx (column)
 mao2_dlg_a_cl		equ	0AC2Ah			; dialog-A current cl (column-2)
@@ -107,22 +125,9 @@ mao2_phase_b_step	equ	0AC35h			; phase-B step counter
 mao2_phase_c_active	equ	0AC36h			; phase-C active flag
 mao2_phase_c_step	equ	0AC37h			; phase-C step counter
 mao2_phase_c_idx	equ	0AC38h			; phase-C frame index counter
-mao2_clear_buf		equ	0AC39h			; clear-buffer (54 bytes of FFh)
-mao2_clear_buf_p1	equ	0AC41h			; clear-buf+8 patch-target byte
-mao2_clear_buf_p2	equ	0AC4Ah			; clear-buf+11h patch-target byte
-mao2_clear_buf_p3	equ	0AC65h			; clear-buf+2Ch patch-target byte
-mao2_clear_buf_p4	equ	0AC6Eh			; clear-buf+35h patch-target byte
 mao2_alt_state_byte	equ	0AEADh			; alternate state byte (in trailer data region)
-
-; --- Shared game-segment globals ---
 mao2_sprite_attr_max	equ	0C002h			; sprite attribute max-index byte
-mao2_sprite_attr_ptr	equ	0C010h			; sprite attribute record base ptr
-mao2_sprite_xlat_tbl	equ	0ED20h			; char/tile xlat table (shared)
-mao2_gvar_state_a	equ	0FF21h			; global state byte A
-mao2_gvar_state_b	equ	0FF2Eh			; global state byte B (skip-frame flag)
-mao2_gvar_state_c	equ	0FF2Fh			; global state byte C
-mao2_gvar_state_d	equ	0FF30h			; global state byte D
-mao2_gvar_phase_byte	equ	0FF75h			; global state byte (per-map phase)
+
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

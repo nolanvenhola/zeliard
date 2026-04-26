@@ -54,17 +54,21 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
-; These word pointers are the EAI module's only interface to 200FIGHT.
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+gvar_hero_x		equ	0FF35h			; hero X tile position (global)
 
-; Shared enemy spawn/state globals in game_seg DS (0xA4xx range).
 
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 enemy_spawn_tile_hi	equ	0A4DDh			; spawn-cell row (set for hatch)
 enemy_spawn_col_hi	equ	0A4DEh			; spawn-cell col (set for hatch)
 enemy_spawn_tile_lo	equ	0A4EAh			; alt spawn row (non-hatch path)
 enemy_spawn_col_lo	equ	0A4EBh			; alt spawn col (non-hatch path)
 dir_xlat_table		equ	0A766h			; direction lookup table (xlat base)
-gvar_hero_x		equ	0FF35h			; hero X tile position (global)
+
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

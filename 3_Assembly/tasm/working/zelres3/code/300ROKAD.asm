@@ -59,9 +59,9 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-; --- Graphics driver dispatch table (CS-relative function pointers in
-; this module's segment, populated by the loaded driver chunk at +3000h).
-;
+; ----------------------------------------------------------------------
+; Section 2: Module-local exports
+; ----------------------------------------------------------------------
 gfx_fillrect_fn	equ	2000h			; fill rectangle (BX=base, CX=size word, AL=color)
 gfx_blit_fn	equ	2026h			; tile/sprite blit  (AH,AL coords, CX size, DI clip)
 gfx_blit_fn_b	equ	2028h			; alt tile/sprite blit (used in 'erase' phase)
@@ -71,21 +71,30 @@ gfx_palette_fn	equ	3024h			; palette wipe / switch (no params)
 gfx_tile_draw	equ	3026h			; draw tile (AL=tile, BL=row, CL=col)
 gfx_decode_fn	equ	3028h			; decode sprite palette/tile buffer (SI=src,BP=dst,CX=count)
 
-; --- Scene-tile pose table base used by draw_pose_3x3 ---
-;     Code computes SI = tile_pose_tbl_base + (scene_idx * 9) and reads 9
-;     tile indices for a 3x3 grid.  The actual table data starts at
-;     pose_tile_data (= tile_pose_tbl_base + 4); the first 4 bytes 0A435h
-;     fall inside draw_pose_3x3's epilogue and are never read because
-;     scene_idx 0 is unused.
-tile_pose_tbl_base equ	0A435h
 
-; --- Demo data table bases (ds, in this module's tail data) ---
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
+; ----------------------------------------------------------------------
+gvar_roka_scene	equ	000A0h			; demo scene counter (1..9), bumped per call
+gvar_pose_idx	equ	000E7h			; live pose index used by draw_pose_3x3
+gvar_timer_lo	equ	0FF1Ah			; frame timer low byte
+gvar_enable_all	equ	0FF26h			; enable-all flag byte
+gvar_game_seg	equ	0FF2Ch			; game segment selector word
+gvar_anim_speed	equ	0FF33h			; animation speed counter byte
+gvar_volume_b	equ	0FF75h			; audio volume / env byte
+
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
+tile_pose_tbl_base equ	0A435h
 pose_y_tbl_base	equ	0A569h			; per-scene Y-target byte; read as [base+bx], bx=scene-1
 pose_vec_tbl_base equ	0A572h			; per-scene pose-vector word; read as [base+2*bx]
 
-; --- Scene state / demo control vars (DS = game_seg) ---
-gvar_roka_scene	equ	000A0h			; demo scene counter (1..9), bumped per call
-gvar_pose_idx	equ	000E7h			; live pose index used by draw_pose_3x3
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 cur_pose_y	equ	0A59Ah			; current pose row (Y) byte
 cur_pose_x	equ	0A59Bh			; current pose col (X) byte, init = 2
 bres_pos_y	equ	0A59Ch			; line-interp: current Y (target = 94h, see bres_setup)
@@ -101,12 +110,6 @@ draw_phase_aux	equ	0A5A5h			; secondary phase / sub-step byte
 draw_phase_state equ	0A5A6h			; phase state low byte
 draw_phase_pal	equ	0A5A7h			; palette-cycle phase byte (cycles 0C8h..0C8h+2)
 
-; --- Global variables (game_seg, DS-relative; mirrors zeliard.inc) ---
-gvar_timer_lo	equ	0FF1Ah			; frame timer low byte
-gvar_enable_all	equ	0FF26h			; enable-all flag byte
-gvar_game_seg	equ	0FF2Ch			; game segment selector word
-gvar_anim_speed	equ	0FF33h			; animation speed counter byte
-gvar_volume_b	equ	0FF75h			; audio volume / env byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

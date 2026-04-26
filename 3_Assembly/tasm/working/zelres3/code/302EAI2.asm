@@ -57,9 +57,9 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; --- TAKO enemy AI dispatch table (game_seg:6004h..603Ah, in DS at runtime) ---
-
-; --- TAKO lookup tables (DS at game_seg, runtime addresses) ---
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 tako_tbl_a	equ	0A4FDh			; swim pattern table 1 hi
 tako_tbl_b	equ	0A4FEh			; swim pattern table 1 lo
 tako_tbl_c	equ	0A50Ah			; swim pattern table 2 hi
@@ -76,15 +76,10 @@ tako_tbl_m	equ	0A8DFh			; tentacle pattern B
 tako_tbl_n	equ	0A8E0h			; tentacle pattern B lo
 tako_tbl_o	equ	0A8F0h			; tentacle xlat table (default west)
 tako_tbl_p	equ	0A956h			; tako_state_dispatch (4 word-ptr)
-
-; --- Inline (CS-relative) data references ---
 tako_facing_fn_ptr	equ	(offset data_6) + 4	; CS-relative: pseudo-fn used by
 							; `call word ptr cs:[...]` -- returns
 							; AL with sign-bit set as facing/dir
-;   tako_state_a = 0xA8ECh   (alt xlat used when [si+5] bit7=1)
-;   tako_pat_alt = 0xA8DFh   (= tako_tbl_m, used in alt-attack branch)
 
-; --- Shared globals (game_seg DS, see zeliard.inc) ---
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

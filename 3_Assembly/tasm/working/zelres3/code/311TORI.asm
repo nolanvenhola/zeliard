@@ -62,27 +62,30 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr3com.inc
 
-; Fight-engine callback vectors / shared globals (DS, game_seg).
-
-; Shared sprite-pattern / AI tables (DS).
-
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 sprite_pat_tbl		equ	0A64Dh			; sprite pattern-pointer table
 glide_table_a		equ	0A682h			; glide path A
 glide_table_b		equ	0A688h			; glide path B
 glide_table_c		equ	0A68Eh			; glide path C
 ai_column_tbl		equ	0A6CBh			; AI column-index table
-
-; Tori-specific global state (DS).
-
 tori_spawn_tile		equ	0A766h			; spawn-cell tile
 tori_spawn_col		equ	0A767h			; spawn-cell col
+tori_glide_flag		equ	0A78Ch			; gliding-active flag
+tori_pattern_idx	equ	0A794h			; pattern index
+tori_tmp_buf		equ	0A79Ch			; temp render buffer (0x48 bytes)
+
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 tori_hp			equ	0A773h			; Tori HP counter
 tori_row_hi		equ	0A775h			; row hi byte
 tori_row_lo		equ	0A776h			; row lo byte (word at A776h)
 tori_slot_idx		equ	0A789h			; current slot index
 tori_dir_state		equ	0A78Ah			; direction state byte
 tori_phase_a		equ	0A78Bh			; phase byte A
-tori_glide_flag		equ	0A78Ch			; gliding-active flag
 tori_sub_phase		equ	0A78Dh			; sub-phase counter
 tori_attack_flag	equ	0A78Eh			; attack mode flag
 tori_swoop_ctr		equ	0A78Fh			; swoop counter
@@ -90,7 +93,6 @@ tori_turn_flag		equ	0A790h			; turning flag
 tori_cycle_idx		equ	0A791h			; cycle index byte
 tori_frame_idx		equ	0A792h			; frame-index byte
 tori_anim_state		equ	0A793h			; animation state byte
-tori_pattern_idx	equ	0A794h			; pattern index
 tori_anim_timer		equ	0A795h			; anim-timer byte
 tori_phase_count	equ	0A796h			; phase counter
 tori_phase_limit	equ	0A797h			; phase limit
@@ -98,11 +100,7 @@ tori_dive_flag		equ	0A798h			; dive-flag byte
 tori_turn_cooldown	equ	0A799h			; turn cooldown
 tori_altitude		equ	0A79Ah			; altitude (y) position byte
 tori_alt_state		equ	0A79Bh			; alternate state byte
-tori_tmp_buf		equ	0A79Ch			; temp render buffer (0x48 bytes)
 
-; ----- Slot-record layout helpers (for readability in code below) -----
-;   [si+0..1] = sprite tile word   [si+4] = attribute  [si+5] = flags
-;   [si+2..3] = record indices     [si+6] = frame      [si+10h] = next
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
