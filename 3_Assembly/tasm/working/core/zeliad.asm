@@ -11,6 +11,22 @@ PAGE  59,132
 ;  Created:   16-Feb-26
 ;  Passes:    9          Analysis Options on: none
 ;
+;  Connections:
+;    Loads:        stdply.bin (player config, game_seg:0x0000) or save file,
+;                  stick.bin (input driver, game_seg:0x0100),
+;                  gm{ega,cga,hgc,tga,mcga}.bin (graphics-mode driver per
+;                  RESOURCE.CFG, game_seg:driver_offset_table[mode]),
+;                  music driver (.bin, e.g. mt32/sblaster/adlib music engine),
+;                  joystick driver, then game.bin at game_seg:0xA000
+;    Calls into:   game.bin entry (jmp dword ptr cs:game_entry_ofs),
+;                  video_mode_table[bx] for INT 10h video-mode setup,
+;                  zeliad_callback (own SAR chunk loader exposed via
+;                  gvar_chunk_load_fn / gvar_chunk_load_seg)
+;    Called by:    DOS COMMAND.COM (program entry, MZ exe)
+;    Reads/writes: gvar_* family at FF00-FF7B (input/gfx fn ptrs, timer,
+;                  game phase, save state, music, joystick) - the canonical
+;                  owner of these globals; drivers + game.bin consume them
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

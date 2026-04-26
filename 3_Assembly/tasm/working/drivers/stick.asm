@@ -22,6 +22,25 @@ PAGE  59,132
 ;  Created:   16-Feb-26
 ;  Passes:    9          Analysis Options on: none
 ;
+;  Connections:
+;    Loads:        SAR chunks for save/load (via gvar_chunk_load_fn callback
+;                  installed by zeliad.exe; chunks vary by save state).
+;                  This driver also installs sar_loader_fn at CS:0x010C —
+;                  the entry point game.bin and zelres1/2 chunks call to
+;                  request SAR loads.
+;    Calls into:   gvar_chunk_load_fn (CS:FF00, zeliad-owned SAR loader),
+;                  gvar_gfx_fn_ofs (CS:FF10 → stdply gfx handler),
+;                  gvar_input_fn_ofs (CS:FF0C → stick input handler),
+;                  gvar_state_c (CS:FF1F game state callback),
+;                  gvar_old_int08/09_ofs (chained ISRs),
+;                  gfx_fn_clear/draw/setup/restore, gfx_screen_base
+;                  (CS dispatch slots, called as far ptrs)
+;    Called by:    zeliad.exe (loaded at game_seg:0x0100 with INT 09/08/61
+;                  hooks pointing into this driver); also reached via
+;                  cs:[10Ch] sar_loader_fn calls from game.bin and chunks
+;    Reads/writes: gvar_* family at FF00-FF7B (zeliad-owned input state,
+;                  timer ticks, key state, joystick, save/load flags)
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

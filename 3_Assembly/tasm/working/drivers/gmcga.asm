@@ -9,6 +9,18 @@ PAGE  59,132
 ;  but adapted for CGA's 4-color palette and interleaved memory layout.
 ;  CGA video memory at 0xB800, odd/even scanline interleaving.
 ;
+;  Connections:
+;    Loads:        none (pure renderer; loaded chunks fight/select read tile
+;                  src buffers from driver_base + offset tile_src_base_b_lbl)
+;    Calls into:   render_fn_ptr (CS:0x4216 dispatch slot, set by caller),
+;                  cga_dispatch_fn (CS, mode-table jmp inside driver)
+;    Called by:    zeliad.exe loader (when RESOURCE.CFG selects CGA mode);
+;                  game.bin invokes via gfx_call_a/b/c at game_seg:0x201C/E/2020;
+;                  fight.bin/town.bin call gfx_* dispatch entries
+;    Reads/writes: gvar_game_seg (FF2C) [zeliad-owned], palette_state (FF01),
+;                  anim_ptr_0..4 (E200/E202/E206/E20A/E20C, fight-owned),
+;                  font_ptr_a/b/c (F500/F502/F504, font.grp-owned)
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

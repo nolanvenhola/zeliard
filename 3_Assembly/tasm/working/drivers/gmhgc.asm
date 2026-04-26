@@ -8,6 +8,18 @@ PAGE  59,132
 ;  HGC variant of the graphics driver API. Uses monochrome framebuffer
 ;  at 0xB000 with bit-level pixel operations. 4 interleaved banks.
 ;
+;  Connections:
+;    Loads:        none (pure renderer; loaded chunks fight/select read tile
+;                  src buffers from driver_base + offset)
+;    Calls into:   render_fn_ptr (CS dispatch slot set by caller),
+;                  hgc_dispatch_fn (mode-table jmp inside driver)
+;    Called by:    zeliad.exe loader (when RESOURCE.CFG selects HGC mode);
+;                  game.bin invokes via gfx_call_a/b/c at game_seg:0x201C/E/2020;
+;                  fight.bin/town.bin call gfx_* dispatch entries
+;    Reads/writes: gvar_game_seg (FF2C) [zeliad-owned], anim_ptr_0..4
+;                  (E200/E202/E206/E20A/E20C, fight-owned), font_ptr_a/b/c
+;                  (F500/F502/F504, font.grp-owned)
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

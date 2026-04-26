@@ -2,7 +2,32 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  OPENING_SCENE - Code Module
+;  OPENING_SCENE - Code Module (zelres1 chunk 1, opdemo.bin)
+;
+;  Plays the opening cinematic + title sequence (slideshow with narration,
+;  Zeliard logo build, save-restore prompt). Loaded into game_seg:0x6000
+;  by game.bin via SAR (raw, AL=3).
+;
+;  Connections:
+;    Loads:        zelres1 image chunks via res_*/scene_data_* SAR refs
+;                  (sar_loader_fn at cs:[10Ch]):
+;                    ame.grp ch14, dmaou.grp ch15, hime.grp ch16,
+;                    hou.grp ch18, isi.grp ch19, maop.grp ch20,
+;                    nec.grp ch23, oui.grp ch26, oup.grp ch27,
+;                    sei.grp ch28, ttl1/2/3.grp ch30/31/32,
+;                    waku.grp ch33, yuu1/2/3/4.grp ch34-37,
+;                    yuup.grp ch38, zend.msd ch39, zopn.msd ch40
+;    Calls into:   sar_loader_fn (cs:[10Ch] in stick.bin),
+;                  gfx_init_fn (CS:0x2042), gfx_draw_fn (CS:0x3002),
+;                  gfx_update_fn (CS:0x3004), gfx_mode_fn (CS:0x3006),
+;                  gfx_palette_fn (CS:0x3008) - graphics driver dispatch,
+;                  gfx_render_a..d via cs:[110h/112h/116h/118h]
+;    Called by:    game.bin LOAD_CHUNK chunk_ref_opdemo (loaded_code_b at
+;                  CS:0x6000 entry); also re-entered for ending sequence
+;    Reads/writes: gvar_timer_lo (FF1A), gvar_skip_input (FF1D),
+;                  gvar_enable_all (FF26), gvar_key_state (FF29),
+;                  gvar_game_seg (FF2C), gvar_volume_b (FF75)
+;                  - all zeliad-owned globals
 ;
 ;==========================================================================
 

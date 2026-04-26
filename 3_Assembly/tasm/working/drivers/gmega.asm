@@ -8,6 +8,18 @@ PAGE  59,132
 ;  EGA variant of the graphics driver API. Uses EGA planar memory
 ;  at 0xA000 with Map Mask and Bit Mask registers for pixel access.
 ;
+;  Connections:
+;    Loads:        none (pure renderer; loaded chunks fight/select read tile
+;                  src buffers from driver_base + offset tile_src_base)
+;    Calls into:   music_fn_ptr (DS:0xDEA2 - music/timer in game seg),
+;                  EGA plot dispatch tables (ega_plot_tbl_a..f at A523/BB23/...)
+;    Called by:    zeliad.exe loader (when RESOURCE.CFG selects EGA mode);
+;                  game.bin invokes via gfx_call_a/b/c at game_seg:0x201C/E/2020;
+;                  fight.bin/town.bin call gfx_* dispatch entries
+;    Reads/writes: gvar_game_seg (FF2C) [zeliad-owned], gvar_volume_b (FF77),
+;                  anim_ptr_0..4 (E200/E202/E206/E20A/E20C, fight-owned),
+;                  font_ptr_a/b/c (F500/F502/F504, font.grp-owned)
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

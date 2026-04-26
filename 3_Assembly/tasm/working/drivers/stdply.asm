@@ -18,6 +18,20 @@ PAGE  59,132
 ;    0x00AB-0x00C3  Animation color LUT (drv_color_lut base = 0xAB)
 ;    0x00C4-0x00E8  Player sprite / hitbox data
 ;
+;  Connections:
+;    Loads:        none (pure data; no executable code)
+;    Calls into:   none (data-only)
+;    Called by:    not directly — zeliad.exe loads this file at
+;                  game_seg:0x0000 before stick.bin / game.bin. Active save
+;                  files override this with the player's saved state at the
+;                  same load address. Read by gm*.bin graphics drivers
+;                  (CS-relative offsets into ply_*/drv_* fields) and by
+;                  game.bin / fight.bin via the same shared segment.
+;    Reads/writes: provides initial values for ply_walk_speed, ply_accel,
+;                  ply_jump_flag, drv_timer_flag, drv_time_param_a/b/c,
+;                  drv_text_src, drv_sprite_flag, drv_color_lut at
+;                  game_seg:0x0080-0x00C3 (stdply-owned slots)
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

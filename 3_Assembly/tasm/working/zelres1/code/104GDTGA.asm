@@ -3,7 +3,24 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  PLAYER_STATS - Code Module
+;  PLAYER_STATS - 104GDTGA Sprite/Image Renderer (zelres1 chunk 5, gdtga.bin)
+;
+;  TGA variant of the in-game image / sprite controller. Loaded by
+;  game.bin into the game segment (gfx_mode_tbl_all entry, mode 5) when
+;  Tandy mode is selected. Provides sprite blit, scroll, palette, and
+;  screen primitives used by 100OPDMO opening/title and 106TOWN
+;  town/dungeon code.
+;
+;  Connections:
+;    Loads:        none (rendering primitives only)
+;    Calls into:   render_fn_ptr (CS dispatch slot, set by caller),
+;                  palette_xlat_jmp (CS dispatch for palette mode jmp)
+;    Called by:    game.bin LOAD_CHUNK chunk_ref_gdtga via gfx_mode_tbl_all
+;                  (loaded_code_a CS:0x3000 entry for graphics-driver init);
+;                  100OPDMO + 106TOWN invoke gfx_init/draw/update/palette
+;                  thunks that resolve into this chunk
+;    Reads/writes: gvar_frame_timer (FF1A), gvar_game_seg (FF2C)
+;                  - zeliad-owned shared globals
 ;
 ;==========================================================================
 

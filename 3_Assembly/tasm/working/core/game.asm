@@ -13,6 +13,21 @@ PAGE  59,132
 ;  Created:   16-Feb-26
 ;  Passes:    9          Analysis Options on: none
 ;
+;  Connections:
+;    Loads:        zelres1 ch1 (opdemo.bin), ch7 (town.bin), ch13 (font.grp),
+;                  zelres2 ch1 (fight.bin), ch2 (select.bin), ch8 (mole.bin),
+;                  ch1B (sword.grp), ch1C (itemp.grp), ch1D (magic.grp);
+;                  graphics/tile/font drivers per gfx_mode (gd*/gt*/gf* tables)
+;    Calls into:   sar_loader_fn (CS:0x010C in stick.bin),
+;                  loaded_code_a (CS:0x3000, gfx-driver init),
+;                  loaded_code_b (CS:0x6000, fight.bin/town.bin entry),
+;                  gfx_call_a/b/c (CS:0x201C/201E/2020 in gd*/gt*/gf* drivers),
+;                  sound_load_track_fn (CS:0x203E in music driver),
+;                  music_player_fn (CS:0x18AB)
+;    Called by:    zeliad.exe (entry point at game_seg:0xA000 via game_entry_ofs)
+;    Reads/writes: gvar_* family at FF08-FF77 (timer, music, palette, joystick,
+;                  volume, debug) shared with zeliad.exe + drivers
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

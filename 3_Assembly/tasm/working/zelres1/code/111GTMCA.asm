@@ -3,7 +3,24 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  111GTMCA - Town Tiles MCGA Renderer
+;  111GTMCA - Town Tiles MCGA Renderer (zelres1 chunk 12, gtmcga.bin)
+;
+;  MCGA/VGA-specific tilemap renderer for the town/overworld engine.
+;  Loaded by game.bin into the game segment (gfx_mode_tbl_all entry,
+;  mode 4) alongside 106TOWN (town.bin). Provides tile blit, scroll,
+;  character cell rendering, and text-glyph functions exposed via
+;  dispatch slots consumed by 106TOWN. Uses VGA framebuffer at A000:0.
+;
+;  Connections:
+;    Loads:        none (rendering primitives only)
+;    Calls into:   render_fn_tbl_* (CS dispatch tables, set internally
+;                  per tile type); VGA framebuffer writes to A000:0
+;    Called by:    game.bin LOAD_CHUNK chunk_ref_gtmcga via gfx_mode_tbl_all
+;                  (gfx-driver init at loaded_code_a CS:0x3000); 106TOWN
+;                  invokes gfx_draw_tile/draw_player/render_*/scroll_*/
+;                  text_layout/draw_str/draw_char etc. through this chunk
+;    Reads/writes: gvar_game_seg (FF2C) [zeliad-owned]; tile flag bytes
+;                  in town-owned segment range
 ;
 ;==========================================================================
 

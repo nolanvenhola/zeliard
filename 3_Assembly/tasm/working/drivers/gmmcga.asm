@@ -19,6 +19,18 @@ PAGE  59,132
 ;  Created:   16-Feb-26
 ;  Passes:    9          Analysis Options on: none
 ;
+;  Connections:
+;    Loads:        none (pure renderer; loaded chunks fight/select read tile
+;                  src buffers from driver_base + offset tile_src_base_lbl)
+;    Calls into:   internal CS dispatch slots only (no external call thunks);
+;                  VGA framebuffer writes to A000:0
+;    Called by:    zeliad.exe loader (when RESOURCE.CFG selects MCGA/VGA);
+;                  game.bin invokes via gfx_call_a/b/c at game_seg:0x201C/E/2020;
+;                  fight.bin/town.bin call gfx_* dispatch entries
+;    Reads/writes: gvar_game_seg (FF2C) [zeliad-owned], anim_ptr_0..4
+;                  (E200/E202/E206/E20A/E20C, fight-owned), font_ptr_a/b/c
+;                  (F500/F502/F504, font.grp-owned), VGA palette via DAC ports
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

@@ -3,7 +3,33 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  PLAYER_ADVANCED - Code Module
+;  PLAYER_ADVANCED - 106TOWN Town/Overworld Engine (zelres1 chunk 7, town.bin)
+;
+;  Drives the town/overworld game state: tile-based map walking, NPC
+;  interaction, dialog boxes, save-file management, item menus, magic
+;  selection, and chapter transitions. Loaded by game.bin at game_seg:0x6000
+;  (LOAD_CHUNK chunk_ref_town). Calls back into the active gfx-mode tile
+;  renderer (107-111 GT*.bin) for drawing.
+;
+;  Connections:
+;    Loads:        SAR chunks via sar_loader_fn (cs:[10Ch]) for additional
+;                  resources (font.grp ch13, magic.grp/sword.grp/itemp.grp
+;                  pre-loaded by game.bin); various map/data chunks loaded
+;                  on town entry
+;    Calls into:   sar_loader_fn (cs:[10Ch] in stick.bin),
+;                  gfx_fill/clear/draw/render_*/scroll_*/sel_*/copy/blit_fn
+;                  (CS:0x2000-0x3026 dispatch slots in gd*/gt* drivers),
+;                  player_jump_fn (CS:0xA004), town_npc_fn_ptr (CS:0x7C47),
+;                  music_fn_ptr (CS:0x6AE9), game_exit_fn (CS:0x7686)
+;    Called by:    game.bin LOAD_CHUNK chunk_ref_town (loaded_code_b at
+;                  game_seg:0x6000 entry)
+;    Reads/writes: gvar_fn_tbl (FF00), gvar_joy_state (FF18),
+;                  gvar_frame_timer (FF1A), gvar_skip_input (FF1D),
+;                  gvar_enable_all (FF26), gvar_key_state (FF29),
+;                  gvar_tile_ptr (FF2A), gvar_game_seg (FF2C),
+;                  gvar_anim_frames (FF33), gvar_dialog_ptr (FF4C),
+;                  gvar_save_name (FF6C), gvar_volume (FF75),
+;                  gvar_load_flag (FF78) - zeliad-owned shared state
 ;
 ;==========================================================================
 

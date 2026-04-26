@@ -3,7 +3,24 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  110GTTGA - Town Tiles TGA Renderer
+;  110GTTGA - Town Tiles TGA Renderer (zelres1 chunk 11, gttga.bin)
+;
+;  Tandy-specific tilemap renderer for the town/overworld engine. Loaded
+;  by game.bin into the game segment (gfx_mode_tbl_all entry, mode 5)
+;  alongside 106TOWN (town.bin). Provides tile blit, scroll, character
+;  cell rendering, and text-glyph functions exposed via dispatch slots
+;  consumed by 106TOWN.
+;
+;  Connections:
+;    Loads:        none (rendering primitives only)
+;    Calls into:   render_fn_tbl_* (CS dispatch tables, set internally
+;                  per tile type)
+;    Called by:    game.bin LOAD_CHUNK chunk_ref_gttga via gfx_mode_tbl_all
+;                  (gfx-driver init at loaded_code_a CS:0x3000); 106TOWN
+;                  invokes gfx_draw_tile/draw_player/render_*/scroll_*/
+;                  text_layout/draw_str/draw_char etc. through this chunk
+;    Reads/writes: gvar_game_seg (FF2C) [zeliad-owned]; tile flag bytes
+;                  in town-owned segment range
 ;
 ;==========================================================================
 
