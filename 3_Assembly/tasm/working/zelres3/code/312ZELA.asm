@@ -122,48 +122,61 @@ start:
 
 ; Pointer table (5 word entries) + descriptor bytes feeding the
 ; dispatch logic. Values point inside this module (0xA0xx absolute).
-		db	 3Ah,0A0h, 8Ah,0A0h,0D0h,0A0h
-		db	 16h,0A1h, 66h,0A1h, 02h, 01h
-		db	 02h, 03h, 04h, 02h, 11h, 07h
-		db	 12h, 13h, 02h, 1Eh, 16h, 1Fh
-		db	 20h, 02h, 05h, 06h, 07h, 08h
-		db	 02h, 14h, 15h, 16h, 17h, 02h
-		db	 21h, 22h, 23h, 24h, 02h, 09h
-		db	 0Ah, 0Bh, 0Ch, 02h, 18h, 19h
-		db	 1Ah, 1Bh, 02h, 25h, 26h, 27h
-		db	 1Dh, 02h, 0Dh, 0Eh, 0Fh, 10h
-		db	 02h, 1Ch, 10h, 1Dh, 10h, 02h
-		db	 28h, 10h, 29h, 2Ah, 02h, 18h
-		db	 2Bh, 1Ah, 2Ch, 02h
-zela_const_word_8		dw	102Dh
-		db	 2Eh, 10h, 02h, 11h, 07h, 12h
-		db	 2Fh, 02h, 30h, 15h, 31h, 17h
-		db	 02h, 32h, 33h, 34h, 35h, 02h
-		db	 41h, 42h, 43h, 44h, 02h, 1Eh
-		db	 50h, 1Fh, 51h, 02h, 36h, 37h
-		db	 38h, 39h, 02h, 45h, 46h, 47h
-		db	 48h, 02h, 52h, 53h, 54h, 24h
-		db	 02h, 3Ah, 3Bh, 3Ch, 3Dh, 02h
-		db	 49h, 4Ah, 4Bh, 4Ch, 02h, 55h
-		db	 4Fh, 56h, 57h, 02h, 3Eh, 00h
-		db	 3Fh, 40h, 02h, 4Dh, 4Eh, 4Fh
-		db	 10h, 02h, 58h, 10h, 59h, 2Ah
-		db	 02h, 49h, 5Ah, 4Bh, 5Bh, 02h
-		db	 5Ch, 4Eh, 5Dh, 5Eh, 02h, 00h
-		db	 32h, 5Fh, 60h, 02h, 6Bh, 6Ch
-		db	 6Dh, 6Eh, 02h, 79h, 7Ah, 7Bh
-		db	 7Ch, 02h, 61h, 62h, 63h, 64h
-		db	 02h, 6Fh, 70h, 71h, 72h, 02h
-		db	 7Dh, 7Eh, 7Fh, 24h, 02h, 65h
-		db	 66h, 67h, 68h, 02h, 73h, 1Dh
-		db	 74h, 75h, 02h, 80h, 4Fh, 81h
-		db	 59h, 02h, 69h, 00h, 6Ah, 00h
-		db	 02h, 76h, 77h, 4Fh, 78h, 02h
-		db	 82h, 10h, 59h, 2Ah, 02h, 73h
-		db	 83h, 74h, 84h, 02h
-		db	 76h, 77h, 4Fh, 78h
-zela_rng_fn_ptr		dw	2
-		db	85h
+zela_ptr_table_a:				; 5 word ptrs into module (0xA0xx range)
+		db	 3Ah,0A0h, 8Ah,0A0h,0D0h,0A0h	; ptrs[0..2]: A03A, A08A, A0D0
+		db	 16h,0A1h, 66h,0A1h		; ptrs[3..4]: A116, A166
+; tile/cell descriptor records: 5-byte rows, 02h marker + 4 cell indices.
+; Rows enumerate sequential tile/animation cells used by the render loop.
+zela_cell_records_a:				; cell descriptor table (records of 5 bytes each)
+		db	 02h, 01h, 02h, 03h, 04h	; row  0
+		db	 02h, 11h, 07h, 12h, 13h	; row  1
+		db	 02h, 1Eh, 16h, 1Fh, 20h	; row  2
+		db	 02h, 05h, 06h, 07h, 08h	; row  3
+		db	 02h, 14h, 15h, 16h, 17h	; row  4
+		db	 02h, 21h, 22h, 23h, 24h	; row  5
+		db	 02h, 09h, 0Ah, 0Bh, 0Ch	; row  6
+		db	 02h, 18h, 19h, 1Ah, 1Bh	; row  7
+		db	 02h, 25h, 26h, 27h, 1Dh	; row  8
+		db	 02h, 0Dh, 0Eh, 0Fh, 10h	; row  9
+		db	 02h, 1Ch, 10h, 1Dh, 10h	; row 10
+		db	 02h, 28h, 10h, 29h, 2Ah	; row 11
+		db	 02h, 18h, 2Bh, 1Ah, 2Ch	; row 12 (last row before const word)
+		db	 02h				; row-13 leading marker (split by const word)
+zela_const_word_8		dw	102Dh		; embedded constant word inside cell-records
+		db	 2Eh, 10h			; row 13 trailing cells
+		db	 02h, 11h, 07h, 12h, 2Fh	; row 14
+		db	 02h, 30h, 15h, 31h, 17h	; row 15
+		db	 02h, 32h, 33h, 34h, 35h	; row 16
+		db	 02h, 41h, 42h, 43h, 44h	; row 17
+		db	 02h, 1Eh, 50h, 1Fh, 51h	; row 18
+		db	 02h, 36h, 37h, 38h, 39h	; row 19
+		db	 02h, 45h, 46h, 47h, 48h	; row 20
+		db	 02h, 52h, 53h, 54h, 24h	; row 21
+		db	 02h, 3Ah, 3Bh, 3Ch, 3Dh	; row 22
+		db	 02h, 49h, 4Ah, 4Bh, 4Ch	; row 23
+		db	 02h, 55h, 4Fh, 56h, 57h	; row 24
+		db	 02h, 3Eh, 00h, 3Fh, 40h	; row 25
+		db	 02h, 4Dh, 4Eh, 4Fh, 10h	; row 26
+		db	 02h, 58h, 10h, 59h, 2Ah	; row 27
+		db	 02h, 49h, 5Ah, 4Bh, 5Bh	; row 28
+		db	 02h, 5Ch, 4Eh, 5Dh, 5Eh	; row 29
+		db	 02h, 00h, 32h, 5Fh, 60h	; row 30
+		db	 02h, 6Bh, 6Ch, 6Dh, 6Eh	; row 31
+		db	 02h, 79h, 7Ah, 7Bh, 7Ch	; row 32
+		db	 02h, 61h, 62h, 63h, 64h	; row 33
+		db	 02h, 6Fh, 70h, 71h, 72h	; row 34
+		db	 02h, 7Dh, 7Eh, 7Fh, 24h	; row 35
+		db	 02h, 65h, 66h, 67h, 68h	; row 36
+		db	 02h, 73h, 1Dh, 74h, 75h	; row 37
+		db	 02h, 80h, 4Fh, 81h, 59h	; row 38
+		db	 02h, 69h, 00h, 6Ah, 00h	; row 39
+		db	 02h, 76h, 77h, 4Fh, 78h	; row 40
+		db	 02h, 82h, 10h, 59h, 2Ah	; row 41
+		db	 02h, 73h, 83h, 74h, 84h	; row 42
+		db	 02h				; row-43 leading marker (split by RNG word)
+		db	 76h, 77h, 4Fh, 78h		; row 43 trailing cells
+zela_rng_fn_ptr		dw	2			; CS-relative RNG fn ptr (call thru cs:zela_rng_fn_ptr)
+		db	85h				; trailing descriptor byte before main_entry
 
 main_entry:
 		xchg	byte ptr ds:[9302h][bx],al
@@ -177,34 +190,45 @@ main_entry:
 		cbw				; Convrt byte to word
 		cwd				; Word to double word
 ;*		call	far ptr zela_far_sub_7		;*
-		db	9Ah
-		dw	0A402h, 0A6A5h		;  Fixup - byte match
-		cmpsw				; Cmp [si] to es:[di]
-		add	cl,byte ptr ds:[8E8Dh][si]
-		db	 67h, 02h, 9Bh, 9Ch, 9Dh, 9Eh
-		db	 02h, 25h, 26h, 27h, 1Dh, 02h
-		db	 8Fh, 90h, 91h, 92h, 02h, 1Dh
-		db	 9Fh,0A0h, 10h, 02h, 28h, 10h
-		db	 29h, 2Ah, 02h, 00h, 00h, 00h
-		db	 00h, 02h, 00h, 00h, 00h, 00h
-		db	 02h, 93h,0A8h, 95h,0A9h, 02h
-		db	0AAh,0ABh,0ACh,0ADh, 02h, 00h
-		db	0AEh, 00h,0AFh, 02h,0BBh,0BCh
-		db	0BDh,0BEh, 02h, 1Eh,0CAh,0A2h
-		db	0CBh, 02h,0B0h,0B1h,0B2h,0B3h
-		db	 02h,0BFh,0C0h,0C1h,0C2h, 02h
-		db	0CCh,0CDh,0CEh,0CFh, 02h,0B4h
-		db	0B5h,0B6h,0B7h, 02h,0C3h,0C4h
-		db	0C5h,0C6h, 02h,0D0h,0D1h,0D2h
-		db	0D3h, 02h,0B8h, 00h,0B9h,0BAh
-		db	 02h,0C7h,0C8h, 4Fh,0C9h, 02h
-		db	0D4h, 10h, 1Dh, 2Ah, 02h, 00h
-		db	 00h, 00h, 00h, 02h, 00h, 00h
-		db	 00h, 00h, 02h,0BBh,0BCh,0BDh
-		db	0BEh, 02h,0BFh,0D5h,0C1h,0D6h
-		db	 8Bh, 36h, 10h,0C0h,0C6h, 06h
-		db	 0Ah,0A6h, 00h,0C6h, 06h, 0Ch
-		db	0A6h, 00h
+		db	9Ah					; opcode prefix (Sourcer Fixup)
+		dw	0A402h, 0A6A5h			; Fixup - byte match
+		cmpsw					; Cmp [si] to es:[di]
+		add	cl,byte ptr ds:[8E8Dh][si]	; final mis-decoded insn before cell-records continuation
+
+; ---- continuation of cell-descriptor table (cell_records_b) ----
+; Same 5-byte-row layout as zela_cell_records_a above (02h marker + 4 cells).
+zela_cell_records_b:
+		db	 67h				; row-0 trailing byte (record split by Sourcer)
+		db	 02h, 9Bh, 9Ch, 9Dh, 9Eh	; row  1
+		db	 02h, 25h, 26h, 27h, 1Dh	; row  2
+		db	 02h, 8Fh, 90h, 91h, 92h	; row  3
+		db	 02h, 1Dh, 9Fh,0A0h, 10h	; row  4
+		db	 02h, 28h, 10h, 29h, 2Ah	; row  5
+		db	 02h, 00h, 00h, 00h, 00h	; row  6 (zero/empty cell)
+		db	 02h, 00h, 00h, 00h, 00h	; row  7 (zero/empty cell)
+		db	 02h, 93h,0A8h, 95h,0A9h	; row  8
+		db	 02h,0AAh,0ABh,0ACh,0ADh	; row  9
+		db	 02h, 00h,0AEh, 00h,0AFh	; row 10
+		db	 02h,0BBh,0BCh,0BDh,0BEh	; row 11
+		db	 02h, 1Eh,0CAh,0A2h,0CBh	; row 12
+		db	 02h,0B0h,0B1h,0B2h,0B3h	; row 13
+		db	 02h,0BFh,0C0h,0C1h,0C2h	; row 14
+		db	 02h,0CCh,0CDh,0CEh,0CFh	; row 15
+		db	 02h,0B4h,0B5h,0B6h,0B7h	; row 16
+		db	 02h,0C3h,0C4h,0C5h,0C6h	; row 17
+		db	 02h,0D0h,0D1h,0D2h,0D3h	; row 18
+		db	 02h,0B8h, 00h,0B9h,0BAh	; row 19
+		db	 02h,0C7h,0C8h, 4Fh,0C9h	; row 20
+		db	 02h,0D4h, 10h, 1Dh, 2Ah	; row 21
+		db	 02h, 00h, 00h, 00h, 00h	; row 22 (zero/empty)
+		db	 02h, 00h, 00h, 00h, 00h	; row 23 (zero/empty)
+		db	 02h,0BBh,0BCh,0BDh,0BEh	; row 24 (duplicate of row 11)
+		db	 02h,0BFh,0D5h,0C1h,0D6h	; row 25
+; ---- real instruction stream resumes here (mov si,[10C0h]; mov [A60Ah],0; mov [A60Ch],0) ----
+zela_main_resume:				; first real instruction after cell_records_b
+		db	 8Bh, 36h, 10h,0C0h		; mov si,word ptr ds:[10C0h]  (Sourcer Fixup absolute addr)
+		db	 0C6h, 06h, 0Ah,0A6h, 00h	; mov byte ptr ds:[A60Ah],0   (zela_npc_idx clear)
+		db	 0C6h, 06h, 0Ch,0A6h, 00h	; mov byte ptr ds:[A60Ch],0   (zela_anim_byte clear)
 
 npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
@@ -352,10 +376,19 @@ state_idle_advance_phase:
 ; -------------------------------------------------------------------------
 
 zela_unk_handler_1:				; entered via zela_dispatch_tbl
-		db	34h, 0A3h, 3Eh, 0A3h, 3Eh, 0A3h, 3Eh, 0A3h, 48h, 0A3h, 48h, 0A3h
-		db	43h, 0A3h, 43h, 0A3h, 43h, 0A3h, 1Bh, 0A3h, 0C6h, 06h, 05h, 0A6h
-		db	7Fh, 0C6h, 06h, 07h, 0A6h, 7Fh, 0C6h, 06h, 0Fh, 0A6h, 00h, 0FEh
-		db	06h, 0F0h, 0A5h, 80h, 26h, 0F0h, 0A5h, 3Fh, 0C3h	; ends with retn
+; Block of 10 words at A3xx (state slot pointers / target addresses):
+		db	34h, 0A3h, 3Eh, 0A3h, 3Eh, 0A3h	; A334, A33E, A33E
+		db	3Eh, 0A3h, 48h, 0A3h, 48h, 0A3h	; A33E, A348, A348
+		db	43h, 0A3h, 43h, 0A3h, 43h, 0A3h	; A343, A343, A343
+		db	1Bh, 0A3h			; A31B
+; Three byte-immediate stores (Sourcer dropped 3E DS-override prefixes):
+		db	0C6h, 06h, 05h, 0A6h, 7Fh	; mov byte ptr [A605h],7Fh  (zela_phase_started=7Fh)
+		db	0C6h, 06h, 07h, 0A6h, 7Fh	; mov byte ptr [A607h],7Fh  (zela_phase_subflag=7Fh)
+		db	0C6h, 06h, 0Fh, 0A6h, 00h	; mov byte ptr [A60Fh],00h  (zela_attack_done clear)
+; Increment + mask scroll_phase, then return:
+		db	0FEh, 06h, 0F0h, 0A5h		; inc byte ptr [A5F0h]      (zela_scroll_phase++)
+		db	80h, 26h, 0F0h, 0A5h, 3Fh	; and byte ptr [A5F0h],3Fh  (zela_scroll_phase &= 63)
+		db	0C3h				; retn
 
 _312MAPST	endp
 
@@ -651,11 +684,21 @@ xpos_dec_apply:
 
 bound_xpos_dec		endp
 
-		db	 00h, 00h, 15h, 00h, 32h, 04h
-		db	 50h
-		db	8 dup (0)
-		db	 14h, 00h, 32h, 00h, 50h, 00h
-		db	 00h, 00h, 00h, 00h, 00h
+; ------------------------------------------------------------------
+; zela_xpos_bounds_tbl -- inter-proc data block (29 bytes):
+; small word/byte tables consulted by the scroll/xpos clamp helpers.
+; Two parallel records of low/high bounds + zero-padding.
+; ------------------------------------------------------------------
+zela_xpos_bounds_tbl:
+		db	 00h, 00h			; word 0000h (low bound base)
+		db	 15h, 00h			; word 0015h (mid bound)
+		db	 32h, 04h			; word 0432h (high bound)
+		db	 50h				; lone byte 50h (extra step)
+		db	8 dup (0)			; padding (8 zero bytes)
+		db	 14h, 00h			; word 0014h
+		db	 32h, 00h			; word 0032h
+		db	 50h, 00h			; word 0050h
+		db	 00h, 00h, 00h, 00h, 00h	; trailing zero pad
 
 scroll_apply		proc	near
 		mov	ax,ds:zela_scroll_y
