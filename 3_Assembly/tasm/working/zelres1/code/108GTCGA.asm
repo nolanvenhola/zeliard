@@ -29,13 +29,19 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_game_seg		equ	0FF2Ch			;*  global: game data segment selector
+gvar_scroll_flag	equ	0FF57h			;*  global: scroll/redraw flag
+gvar_char_y_ofs		equ	0FF68h			;*  global: character Y row offset
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; restored after factoring (different value than zr1com.inc would supply):
 font_ptr_a               equ     0F502h
 font_ptr_b               equ     0F504h
-
-; The following equates show data references outside the range of the program.
-
-tileset_index		equ	8000h			;* tileset index table (game_seg:8000h)
 tile_subst_tbl_ptr	equ	8004h			;* pointer to tile substitution table
 tile_pixels		equ	8100h			;* tile pixel source data base
 cga_tile_dest_ofs	equ	127Ch			;*  CGA tile blit destination offset
@@ -48,7 +54,6 @@ anim_frame_data		equ	39B4h			;*  animation frame data table (byte 1 of status_bu
 tile_render_disp	equ	3C04h			;*  tile type render dispatch table
 color_lut		equ	3D0Bh			;*  color lookup table (bitplane index->CGA color)
 tile_col_x		equ	3D6Dh			;*  current tile column x position (word)
-tile_col_idx		equ	3D6Fh			;*  current tile column counter (byte, 0..1Bh)
 tile_char_a		equ	3D70h			;*  tile char slot A (byte)
 tile_map_arr		equ	3D71h			;*  tile map working array
 tile_char_b		equ	3D73h			;*  tile char slot B (byte, checked for 0FDh)
@@ -70,9 +75,6 @@ cga_wrap		equ	0C050h			;*  CGA interleave wrap offset (B800:0 -> B800:2000+C050)
 hud_status_ptr		equ	0E005h			;*  HUD/status byte pointer
 font_data_tbl		equ	0F502h			;*  font glyph data table
 font_char_data		equ	0F504h			;*  font character pixel data
-gvar_game_seg		equ	0FF2Ch			;*  global: game data segment selector
-gvar_scroll_flag	equ	0FF57h			;*  global: scroll/redraw flag
-gvar_char_y_ofs		equ	0FF68h			;*  global: character Y row offset
 cga_hud_ofs_l		equ	23Ch			; CGA HUD area offset left column
 cga_hud_ofs_r		equ	273h			; CGA HUD area offset right column
 cga_tilemap_b0		equ	163Ch			; CGA tilemap base row 0 even bank
@@ -81,6 +83,12 @@ cga_tilemap_b2		equ	177Ch			; CGA tilemap base row 2 even bank
 cga_tilemap_b3		equ	17B3h			; CGA tilemap base row 3 even bank
 cga_wrap_si2		equ	3FB0h			; CGA interleave wrap add for SI (dup of cga_wrap_si)
 cga_wrap2		equ	0C050h			; CGA interleave wrap offset (dup of cga_wrap)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+tileset_index		equ	8000h			;* tileset index table (game_seg:8000h)
+tile_col_idx		equ	3D6Fh			;*  current tile column counter (byte, 0..1Bh)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

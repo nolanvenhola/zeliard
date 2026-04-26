@@ -29,12 +29,18 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_frame_timer	equ	0FF1Ah			;*
+gvar_game_seg		equ	0FF2Ch			;*
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; restored after factoring (consensus value, but not all files agree):
 sprite_row_buf_b         equ     5500h
 sprite_mask_off          equ     1A8Eh
-
-; The following equates show data references outside the range of the program.
-
 cga_plane2_buf		equ	29DCh			;*
 tga_mask_tbl_a		equ	32FCh			;*
 tga_mask_tbl_b		equ	3304h			;*
@@ -46,15 +52,9 @@ color_pair_tbl		equ	3BFBh			;*
 color_pair_tbl_b	equ	3BFCh			;*
 tga_palette_xlat	equ	4BD4h			;*
 tga_color_lut		equ	4BFDh			;*
-src_word_a		equ	4BFFh			;*
-src_word_b		equ	4C01h			;*
-src_word_c		equ	4C03h			;*
-src_word_d		equ	4C05h			;*
-src_word_e		equ	4C07h			;*
 cur_col_ctr		equ	4C09h			;*
 cur_row_ctr		equ	4C0Ah			;*
 cur_pass_ctr		equ	4C0Bh			;*
-render_mode_flag	equ	4C0Ch			;*
 render_fn_ptr		equ	4C0Fh			;*
 saved_di		equ	4C11h			;*
 saved_es		equ	4C13h			;*
@@ -63,14 +63,26 @@ tga_bank_wrap		equ	80A0h			;*  Tandy bank advance after 0x8000 wrap
 tga_color_reg		equ	0BF07h			;*
 tga_vram_seg		equ	0B800h			;   Tandy framebuffer segment
 font_ptr_a		equ	0F500h			;*
-gvar_frame_timer	equ	0FF1Ah			;*
-gvar_game_seg		equ	0FF2Ch			;*
-tga_screen_start	equ	0			;*  Tandy framebuffer copy-back start
 tga_work_buf		equ	8000h			;*  Tandy work buffer base
 tga_work_buf_p2		equ	80A0h			;*  tga_work_buf second bank
+tga_buf_wrap		equ	80A0h
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+src_word_a		equ	4BFFh			;*
+src_word_b		equ	4C01h			;*
+src_word_c		equ	4C03h			;*
+src_word_d		equ	4C05h			;*
+src_word_e		equ	4C07h			;*
+render_mode_flag	equ	4C0Ch			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+tga_screen_start	equ	0			;*  Tandy framebuffer copy-back start
 tga_src_start		equ	0			;*
 tga_dst_start		equ	0
-tga_buf_wrap		equ	80A0h
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

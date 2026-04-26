@@ -36,27 +36,32 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  stdply.inc
 
-; The following equates show data references outside the range of the program.
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+palette_state	equ	0FF01h			;*
+gvar_game_seg	equ	0FF2Ch			;*
+gvar_volume_b	equ	0FF77h			;*
 
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 stride_minus_20		equ	12Ch
-tile_src_base		equ	driver_base + (offset tile_src_base_lbl)
 anim_ptr_0		equ	0E200h			;*
 anim_ptr_1		equ	0E202h			;*
 anim_ptr_2		equ	0E206h			;*
 anim_ptr_3		equ	0E20Ah			;*
 anim_ptr_4		equ	0E20Ch			;*
-plot_mode	equ	2226h			;*
 text_vga_ofs_a	equ	2434h			;*
 text_vga_ofs_b	equ	2435h			;*
 text_vga_ofs_c	equ	2437h			;*
 tile_color_tbl	equ	24EAh			;*
 tile_offset_tbl	equ	2A5Dh			;*
 tile_color	equ	2CBDh			;*
-tile_row_idx	equ	2CBEh			;*
 char_color	equ	2CBFh			;*
 char_src_ptr	equ	2CC0h			;*
-char_bit_idx	equ	2CC2h			;*
 bitplane_0	equ	2CC3h			;*
 bitplane_1	equ	2CC5h			;*
 bitplane_2	equ	2CC7h			;*
@@ -64,23 +69,29 @@ dispatch_tbl	equ	9521h			;*
 font_ptr_a	equ	0F500h			;*
 font_ptr_b	equ	0F502h			;*
 font_ptr_c	equ	0F504h			;*
-palette_state	equ	0FF01h			;*
-gvar_game_seg	equ	0FF2Ch			;*
-gvar_volume_b	equ	0FF77h			;*
-zero_offset	equ	0			;*
 vga_stride	equ	140h			; VGA mode 13h row stride (320 bytes)
 skip_2_rows	equ	280h			; VGA offset to skip 2 rows (2 * 320)
 skip_8_rows	equ	0A00h			; VGA offset to skip 8 rows (8 * 320)
-char_width	equ	0E0h			; character/tile render width in pixels (224)
 char_row_advance equ	1A0h			; VGA advance to next character row (320+96 bytes)
-char_width_half	equ	0A0h			; half character render width (160)
 hud_vga_ofs	equ	11B0h			; VGA offset for HUD row (row 14, col 48)
 text_field_vga_ofs equ	0CC14h			; VGA offset for timer/text field (row 163, col 84)
-; stdply.bin player state field offsets (shared with all gm*.bin drivers)
-include  stdply.inc
-
 driver_base	equ	2000h			; driver loads at game_seg:2000h
 vga_seg		equ	0A000h			; VGA framebuffer segment
+tile_src_base		equ	driver_base + (offset tile_src_base_lbl)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+plot_mode	equ	2226h			;*
+tile_row_idx	equ	2CBEh			;*
+char_bit_idx	equ	2CC2h			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+zero_offset	equ	0			;*
+char_width	equ	0E0h			; character/tile render width in pixels (224)
+char_width_half	equ	0A0h			; half character render width (160)
 
 ; Set ES to the VGA framebuffer segment (0xA000)
 SET_VGA_ES	MACRO

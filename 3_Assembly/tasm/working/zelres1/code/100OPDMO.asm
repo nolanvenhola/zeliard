@@ -36,15 +36,25 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_timer_lo	equ	0FF1Ah		; timer counter low word (0xFF1A)
+gvar_skip_input	equ	0FF1Dh		; input skip flag (zeliard.inc: gvar_skip_input)
+gvar_enable_all	equ	0FF26h		; enable all flag (zeliard.inc: gvar_enable_all)
+gvar_key_state	equ	0FF29h		; key state (0xFF29)
+gvar_game_seg	equ	0FF2Ch		; game data segment (zeliard.inc: gvar_game_seg)
+gvar_volume_b	equ	0FF75h		; volume B (zeliard.inc: gvar_volume_b)
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; Graphics driver function table offsets (in loaded CS segment)
 gfx_init_fn		equ	02042h		; graphics initialisation function
 gfx_draw_fn		equ	03002h		; graphics draw function
 gfx_update_fn		equ	03004h		; graphics update/display function
 gfx_mode_fn		equ	03006h		; graphics mode setup function
 gfx_palette_fn		equ	03008h		; graphics palette switch (driver_fn4)
-
-; The following equates show data references outside the range of the program.
-
 font_plane_a		equ	660h		; character font data plane A
 font_scanline_ofs		equ	819h		; font scanline offset
 pixel_mask_a		equ	0D20h		; pixel mask plane A
@@ -60,14 +70,9 @@ sprite_buf_a	equ	9C40h		; sprite buffer A
 sprite_buf_b	equ	0A9C0h		; sprite buffer B
 sprite_buf_c	equ	0AB40h		; sprite buffer C
 ext_segment	equ	0D000h		; extended segment (0xD000)
-scene_framebuf	equ	4000h		; scene frame buffer (0x4000)
 scene_data_a	equ	64EAh		; scene initialisation data A
-render_state_a	equ	653Dh		; render state A (word)
-render_state_b	equ	653Fh		; render state B (byte, x-advance)
 scene_data_b	equ	6A73h		; scene data B
 script_pc	equ	6D56h		; script program counter (execution pointer)
-text_x_pos	equ	6D58h		; text cursor X position
-text_y_pos	equ	6D5Ah		; text cursor Y / layout mode
 text_color_fg	equ	6D5Bh		; text foreground color
 text_color_bg	equ	6D5Ch		; text background color
 text_attr	equ	6D5Dh		; text attribute / speaker style code
@@ -106,16 +111,22 @@ scene_data_i	equ	97C0h		; scene data I (runtime buffer, not in resource table)
 aux_buf_seg	equ	0B000h		; auxiliary buffer segment (0xB000)
 cga_text_seg	equ	0B800h		; CGA text mode VGA segment (0xB800)
 ext_seg_d000	equ	0D000h		; extended segment 0xD000
-gvar_timer_lo	equ	0FF1Ah		; timer counter low word (0xFF1A)
-gvar_skip_input	equ	0FF1Dh		; input skip flag (zeliard.inc: gvar_skip_input)
-gvar_enable_all	equ	0FF26h		; enable all flag (zeliard.inc: gvar_enable_all)
-gvar_key_state	equ	0FF29h		; key state (0xFF29)
-gvar_game_seg	equ	0FF2Ch		; game data segment (zeliard.inc: gvar_game_seg)
-gvar_volume_b	equ	0FF75h		; volume B (zeliard.inc: gvar_volume_b)
-null_ofs	equ	0		; null/zero offset
 font_plane_b	equ	660h		; character font data plane B
 font_plane_c	equ	0CC0h		; character font data plane C
 
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+scene_framebuf	equ	4000h		; scene frame buffer (0x4000)
+render_state_a	equ	653Dh		; render state A (word)
+render_state_b	equ	653Fh		; render state B (byte, x-advance)
+text_x_pos	equ	6D58h		; text cursor X position
+text_y_pos	equ	6D5Ah		; text cursor Y / layout mode
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+null_ofs	equ	0		; null/zero offset
 ; Bytes 0x01-0x08 and 0x80-0x9F appear between individual characters in
 ; animated speech to advance a color-cycle counter, making the text shimmer.
 ; Named by hex value for clarity.
@@ -159,7 +170,6 @@ ANIM_9C	equ	09Ch
 ANIM_9D	equ	09Dh
 ANIM_9E	equ	09Eh
 ANIM_9F	equ	09Fh
-
 ; Used in narration db sequences between text strings.
 SCR_END_SCRIPT	equ	0FFh	; end of script / page terminator
 CR		equ	0Dh	; carriage return (line break in prologue text)
@@ -191,7 +201,6 @@ WAIT_FRAME	MACRO	delay
 		mov	al, delay
 		call	timer_wait_loop
 		ENDM
-
 ; LOAD_DATA src, dst
 ;   Load a data chunk via the chunk loader (call cs:[10Ch], AL=2).
 LOAD_DATA	MACRO	src, dst
@@ -202,7 +211,6 @@ LOAD_DATA	MACRO	src, dst
 		mov	al, 2
 		call	word ptr cs:[10Ch]
 		ENDM
-
 ; RESET_STACK
 ;   Atomically reset SP to 2000h (interrupts disabled during the write).
 RESET_STACK	MACRO
@@ -210,7 +218,6 @@ RESET_STACK	MACRO
 		mov	sp, 2000h
 		sti
 		ENDM
-
 ; GFX_BLIT bx_val, cx_val, di_val
 ;   Set up registers and call gfx_update_fn.
 GFX_BLIT	MACRO	bx_val, cx_val, di_val

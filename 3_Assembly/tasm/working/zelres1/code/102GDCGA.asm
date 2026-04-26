@@ -28,13 +28,21 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_frame_timer	equ	0FF1Ah			;*
+gvar_game_seg	equ	0FF2Ch			;*
+gvar_ff5f	equ	0FF5Fh			;*
+gvar_ff60	equ	0FF60h			;*
+gvar_ff61	equ	0FF61h			;*
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; restored after factoring (consensus value, but not all files agree):
 sprite_row_buf_b         equ     5500h
 sprite_mask_off          equ     1A8Eh
-
-; The following equates show data references outside the range of the program.
-
-cga_screen_start		equ	0
 cga_dispatch_fn	equ	2022h			;*
 cga_plane2_buf	equ	2050h			;*
 cga_plane3_buf	equ	29DCh			;*
@@ -51,14 +59,9 @@ move_seq_horiz	equ	3AC9h			;*
 color_pair_tbl	equ	3AFCh			;*
 cga_palette_xlat	equ	4A97h			;*
 cga_color_lut	equ	4AA0h			;*
-src_word_a	equ	4AA2h			;*
-src_word_b	equ	4AA4h			;*
-src_word_c	equ	4AA6h			;*
-src_word_d	equ	4AA8h			;*
 cur_col_ctr	equ	4AAAh			;*
 cur_row_ctr	equ	4AABh			;*
 cur_pass_ctr	equ	4AACh			;*
-render_mode_flag	equ	4AADh			;*
 render_fn_ptr	equ	4AAEh			;*
 saved_di	equ	4AB0h			;*
 saved_es	equ	4AB2h			;*
@@ -66,13 +69,22 @@ sprite_row_buf	equ	4DD4h			;*
 sprite_img_base	equ	9F36h			;*
 cga_bank2_wrap	equ	0C050h			;*
 font_ptr_a	equ	0F500h			;*
-gvar_frame_timer	equ	0FF1Ah			;*
-gvar_game_seg	equ	0FF2Ch			;*
-gvar_ff5f	equ	0FF5Fh			;*
-gvar_ff60	equ	0FF60h			;*
-gvar_ff61	equ	0FF61h			;*
 cga_work_buf	equ	4000h			;*
 cga_work_buf_p2	equ	4050h			;*
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+src_word_a	equ	4AA2h			;*
+src_word_b	equ	4AA4h			;*
+src_word_c	equ	4AA6h			;*
+src_word_d	equ	4AA8h			;*
+render_mode_flag	equ	4AADh			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+cga_screen_start		equ	0
 cga_buf_reset	equ	0			;*
 
 seg_a		segment	byte public

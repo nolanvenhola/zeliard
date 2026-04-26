@@ -34,8 +34,9 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zeliard.inc
 
-; Additional zeliad-only constants not in zeliard.inc
-
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
 gvar_chunk_load_fn	equ	0FF00h		; Chunk loader function pointer
 gvar_chunk_load_seg	equ	0FF02h		; Chunk loader code segment
 gvar_old_int08_ofs	equ	0FF04h		; Saved INT 08h offset
@@ -78,15 +79,20 @@ gvar_unk_FF78		equ	0FF78h		; Unknown state byte (cleared at startup)
 gvar_old_int09_ofs	equ	0FF79h		; Saved INT 09h offset
 gvar_old_int09_seg	equ	0FF7Bh		; Saved INT 09h segment
 gvar_old_int61_ofs	equ	0FF7Bh		; Saved INT 61h offset
-PSP_cmd_size		equ	80h
-PSP_cmd_line		equ	81h
-zero_offset		equ	0
 
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; Driver entry-point offsets within the music driver segment (CS + 0xFF0h)
 stick_input_fn_ofs	equ	100h		; stick.bin input handler entry point
 stdply_gfx_fn_ofs	equ	1100h		; stdply.bin graphics handler entry point
 
-;------------------------------------------------------------  seg_a   ----
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+PSP_cmd_size		equ	80h
+PSP_cmd_line		equ	81h
+zero_offset		equ	0
 
 seg_a		segment	byte public
 		assume cs:seg_a  , ds:seg_a , ss:stack_seg_b

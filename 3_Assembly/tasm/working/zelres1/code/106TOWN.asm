@@ -38,22 +38,46 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
-;-----------------------------------------------------------------------------
-; Local macros
-;
-; fill_cursor_buf: fill the cursor overlay buffer (0xE000, 224 bytes) with 0xFE
-; Appears 4 times in the rendering/dialog code to reset the cursor overlay.
-fill_cursor_buf	macro
-		push	cs
-		pop	es
-		mov	al,0FEh
-		mov	di,cursor_buf
-		mov	cx,0E0h
-		rep	stosb
-		endm
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_fn_tbl	equ	0FF00h			;*
+gvar_joy_state	equ	0FF18h			;*
+gvar_frame_timer	equ	0FF1Ah			;*
+gvar_skip_input	equ	0FF1Dh			;*
+gvar_skip_flag2	equ	0FF1Eh			;*
+gvar_enable_all	equ	0FF26h			;*
+gvar_key_state	equ	0FF29h			;*
+gvar_tile_ptr	equ	0FF2Ah			;*
+gvar_game_seg	equ	0FF2Ch			;*
+gvar_anim_frames	equ	0FF33h			;*
+gvar_dialog_ptr	equ	0FF4Ch			;*
+gvar_text_x	equ	0FF4Eh			;*
+gvar_text_y	equ	0FF4Fh			;*
+gvar_dlg_cols	equ	0FF52h			;*
+gvar_dlg_rows	equ	0FF53h			;*
+gvar_dlg_pos	equ	0FF54h			;*
+gvar_sel_row	equ	0FF56h			;*
+gvar_sel_flag	equ	0FF57h			;*
+gvar_sel_xlat	equ	0FF58h			;*
+gvar_dlg_timer	equ	0FF6Ah			;*
+gvar_save_name	equ	0FF6Ch			;*
+gvar_save_ctrl	equ	0FF74h			;*
+gvar_volume	equ	0FF75h			;*
+gvar_load_flag	equ	0FF78h			;*
+gvar_music_idx	equ	0FF14h			;*
+gvar_input_timer	equ	0FF17h			;*
 
-; The following equates show data references outside the range of the program.
+; ----------------------------------------------------------------------
+; Section 4: Shared dispatch slot references (file-local)
+; ----------------------------------------------------------------------
+save_draw_fn	equ	6014h			;*
+save_scroll_up_fn	equ	6018h			;*
+save_scroll_dn_fn	equ	601Ah			;*
 
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 town_base_4100		equ	4100h			;*
 npc_list_ptr		equ	8002h			;*
 town_desc_0C000		equ	0C000h			;*
@@ -95,12 +119,8 @@ gfx_sel_scroll_up_fn	equ	301Eh			;*
 gfx_sel_scroll_dn_fn	equ	3020h			;*
 gfx_ret_fn	equ	3024h			;*
 gfx_copy_fn	equ	3026h			;*
-screen_pos_481C	equ	481Ch			;*
 snd_id_4D4D	equ	4D4Dh			;*
 snd_id_534D	equ	534Dh			;*
-save_draw_fn	equ	6014h			;*
-save_scroll_up_fn	equ	6018h			;*
-save_scroll_dn_fn	equ	601Ah			;*
 npc_walk_left	equ	6A59h			;*
 gseg_chunk_ptr	equ	6AEBh			;*
 icon_data_a	equ	6C93h			;*
@@ -112,33 +132,19 @@ scene_map_data	equ	6FEDh			;*
 save_default_name	equ	77BAh			;*
 char_width_tbl	equ	7B82h			;*
 char_glyph_tbl	equ	7BE2h			;*
-town_scene_flag	equ	7C42h			;*
-town_init_flag	equ	7C43h			;*
-town_load_flag	equ	7C44h			;*
 town_map_side	equ	7C45h			;*
-town_palette_idx	equ	7C46h			;*
 town_npc_fn_ptr	equ	7C47h			;*
 town_npc_col	equ	7C49h			;*
-town_exit_flag	equ	7C4Bh			;*
-town_char_idx	equ	7C4Ch			;*
 text_draw_x	equ	7C4Eh			;*
 text_draw_x2	equ	7C50h			;*
 text_line_ctr	equ	7C52h			;*
-text_col_pos	equ	7C53h			;*
 text_box_cols	equ	7C54h			;*
-text_box_flag	equ	7C55h			;*
-text_anim_step	equ	7C56h			;*
-text_row_flag	equ	7C57h			;*
 text_str_ptr	equ	7C58h			;*
 text_layout_cx	equ	7C5Ah			;*
-text_done_flag	equ	7C5Ch			;*
-text_wrap_flag	equ	7C5Dh			;*
 save_name_len	equ	7C5Eh			;*
 save_name_maxlen	equ	7C5Fh			;*
 save_cursor_x	equ	7C60h			;*
 save_cursor_y	equ	7C62h			;*
-save_del_flag	equ	7C63h			;*
-save_new_flag	equ	7C64h			;*
 save_name_buf	equ	7C67h			;*
 save_name_end	equ	7C6Eh			;*
 npc_anim_buf	equ	7C74h			;*
@@ -161,37 +167,48 @@ cursor_buf_cnt	equ	0E001h			;*
 cursor_buf_end	equ	0E1FDh			;*
 cursor_buf_tail	equ	0E1FFh			;*
 font_disp_data	equ	0F605h			;*
-gvar_fn_tbl	equ	0FF00h			;*
-gvar_joy_state	equ	0FF18h			;*
-gvar_frame_timer	equ	0FF1Ah			;*
-gvar_skip_input	equ	0FF1Dh			;*
-gvar_skip_flag2	equ	0FF1Eh			;*
-gvar_enable_all	equ	0FF26h			;*
-gvar_key_state	equ	0FF29h			;*
-gvar_tile_ptr	equ	0FF2Ah			;*
-gvar_game_seg	equ	0FF2Ch			;*
-gvar_anim_frames	equ	0FF33h			;*
-gvar_dialog_ptr	equ	0FF4Ch			;*
-gvar_text_x	equ	0FF4Eh			;*
-gvar_text_y	equ	0FF4Fh			;*
-gvar_dlg_cols	equ	0FF52h			;*
-gvar_dlg_rows	equ	0FF53h			;*
-gvar_dlg_pos	equ	0FF54h			;*
-gvar_sel_row	equ	0FF56h			;*
-gvar_sel_flag	equ	0FF57h			;*
-gvar_sel_xlat	equ	0FF58h			;*
-gvar_dlg_timer	equ	0FF6Ah			;*
-gvar_save_name	equ	0FF6Ch			;*
-gvar_save_ctrl	equ	0FF74h			;*
-gvar_volume	equ	0FF75h			;*
-gvar_load_flag	equ	0FF78h			;*
+music_fn_ptr	equ	6AE9h			;*
+game_exit_fn	equ	7686h			;*
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+screen_pos_481C	equ	481Ch			;*
+town_scene_flag	equ	7C42h			;*
+town_init_flag	equ	7C43h			;*
+town_load_flag	equ	7C44h			;*
+town_palette_idx	equ	7C46h			;*
+town_exit_flag	equ	7C4Bh			;*
+town_char_idx	equ	7C4Ch			;*
+text_col_pos	equ	7C53h			;*
+text_box_flag	equ	7C55h			;*
+text_anim_step	equ	7C56h			;*
+text_row_flag	equ	7C57h			;*
+text_done_flag	equ	7C5Ch			;*
+text_wrap_flag	equ	7C5Dh			;*
+save_del_flag	equ	7C63h			;*
+save_new_flag	equ	7C64h			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
 area_load_flag	equ	49h			;*
 player_col	equ	83h			;*
 player_facing	equ	0C2h			;*
-music_fn_ptr	equ	6AE9h			;*
-game_exit_fn	equ	7686h			;*
-gvar_music_idx	equ	0FF14h			;*
-gvar_input_timer	equ	0FF17h			;*
+
+;-----------------------------------------------------------------------------
+; Local macros
+;
+; fill_cursor_buf: fill the cursor overlay buffer (0xE000, 224 bytes) with 0xFE
+; Appears 4 times in the rendering/dialog code to reset the cursor overlay.
+fill_cursor_buf	macro
+		push	cs
+		pop	es
+		mov	al,0FEh
+		mov	di,cursor_buf
+		mov	cx,0E0h
+		rep	stosb
+		endm
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

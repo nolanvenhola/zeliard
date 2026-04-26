@@ -26,17 +26,23 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  stdply.inc
 
-; The following equates show data references outside the range of the program.
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+palette_state	equ	0FF01h			;*
+gvar_game_seg	equ	0FF2Ch			;*
 
-tile_src_base_b		equ	driver_base + (offset tile_src_base_b_lbl)
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 anim_ptr_0		equ	0E200h			;*
 anim_ptr_1		equ	0E202h			;*
 anim_ptr_2		equ	0E206h			;*
 anim_ptr_3		equ	0E20Ah			;*
 anim_ptr_4		equ	0E20Ch			;*
 tile_src_base	equ	217Fh			;*
-plot_mode	equ	225Ch			;*
 text_vga_ofs_a	equ	24E9h			;*
 tile_color_tbl	equ	24EAh			;*
 text_vga_ofs_b	equ	24ECh			;*
@@ -47,7 +53,6 @@ tile_fg_mask	equ	2DE1h			;*
 tile_bg_mask	equ	2DE2h			;*
 char_color	equ	2DE3h			;*
 char_src_ptr	equ	2DE4h			;*
-char_bit_idx	equ	2DE6h			;*
 bitplane_0	equ	2DE7h			;*
 bitplane_1	equ	2DE9h			;*
 bitplane_2	equ	2DEBh			;*
@@ -58,29 +63,32 @@ cga_wrap	equ	0C050h			;*
 font_ptr_a	equ	0F500h			;*
 font_ptr_b	equ	0F502h			;*
 font_ptr_c	equ	0F504h			;*
-palette_state	equ	0FF01h			;*
-gvar_game_seg	equ	0FF2Ch			;*
-zero_offset	equ	0			;*
 cga_hud_ofs	equ	23Ch
 cga_tile_stride	equ	18BCh
-
 cga_seg		equ	0B800h			; CGA framebuffer segment
 driver_base	equ	2000h			; driver loads at game_seg:2000h; CS-relative ptr = driver_base + (offset label)
-; Sprite animation frame table CS address (used as base for indexed frame loads)
-sprite_anim_frames_cs equ driver_base + (offset sprite_anim_frames)
-
-; stdply.bin player state field offsets (shared with all gm*.bin drivers)
-include  stdply.inc
 timestamp_buf	equ	24E8h			; timestamp storage area (6 bytes)
-
 ; Segment offsets (add ax, offset to set ES/DS to that data segment)
 level_seg_ofs	equ	3000h			; CS+3000h = level/map data segment
-
 ; Tilemap source data addresses (CS-relative, within driver or game segment)
 tilemap_src_a	equ	26BBh			; tilemap source A  (driver offset 06BBh)
 tilemap_src_b	equ	13BBh			; tilemap source B  (pre-driver game_seg area)
 tilemap_src_c	equ	37BBh			; tilemap source C  (post-driver segment area)
 tilemap_src_d	equ	3EBBh			; tilemap source D  (font/tile graphics area)
+tile_src_base_b		equ	driver_base + (offset tile_src_base_b_lbl)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+plot_mode	equ	225Ch			;*
+char_bit_idx	equ	2DE6h			;*
+; Sprite animation frame table CS address (used as base for indexed frame loads)
+sprite_anim_frames_cs equ driver_base + (offset sprite_anim_frames)
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+zero_offset	equ	0			;*
 
 ; Set ES to the CGA framebuffer segment (0xB800)
 SET_CGA_ES	MACRO

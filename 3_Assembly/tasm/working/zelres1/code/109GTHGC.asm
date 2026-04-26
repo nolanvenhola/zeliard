@@ -29,12 +29,22 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_game_seg		equ	0FF2Ch			;* game segment selector word
+
+; ----------------------------------------------------------------------
+; Section 4: Shared dispatch slot references (file-local)
+; ----------------------------------------------------------------------
+drv_init_tbl		equ	0F435h			;* driver init dispatch table offset
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; restored after factoring (per-file value, not in shared inc):
 font_ptr_a               equ     0F502h
 font_ptr_b               equ     0F504h
-
-; The following equates show data references outside the range of the program.
-
 tile_alt_base		equ	4100h			;* tile alternate pixel data base
 tile_bank2_base		equ	6000h			;* tile pixel data bank 2 base (external CS ref)
 tile_mask_base		equ	0D000h			;* tile transparency mask data base
@@ -46,9 +56,7 @@ tile_type_tbl		equ	3B1Dh			;* tile type dispatch table (word[N])
 pixel_encode_tbl	equ	3C24h			;* pixel encoding lookup table
 tile_hgc_ofs		equ	3CACh			;* current HGC framebuffer byte offset for tile row (word)
 tile_row_ctr		equ	3CAEh			;* current tile row counter (byte, 0..1Ch)
-tile_idx_a		equ	3CAFh			;* tile index A (byte)
 tile_dest_ofs		equ	3CB0h			;* tile destination offset (word)
-tile_idx_b		equ	3CB2h			;* tile index B (byte, 0FDh = none)
 tile_col_ctr		equ	3CB5h			;* current tile column position counter (word)
 bitplane_w0		equ	3CB7h			;* bitplane word 0
 bitplane_w1		equ	3CB9h			;* bitplane word 1
@@ -68,9 +76,6 @@ hgc_bank_bdy		equ	6000h			;* HGC bank boundary = 6000h (external ref)
 sprite_data_base	equ	0A000h			;* sprite data CS offset base
 hgc_stride_a		equ	0A058h			;* HGC stride adjustment A (bank overflow fix)
 hgc_stride		equ	0A05Ah			;* HGC interleave stride (0xA05A per scanline set)
-drv_init_tbl		equ	0F435h			;* driver init dispatch table offset
-gvar_game_seg		equ	0FF2Ch			;* game segment selector word
-
 hgc_cursor_ofs		equ	4FDh			; HGC cursor position offset
 scroll_src_b		equ	34CFh			; scroll source offset B (right scroll)
 scroll_src_a		equ	3506h			; scroll source offset A (left scroll)
@@ -79,6 +84,12 @@ hgc_bank_size		equ	6000h			; HGC bank size (24576 bytes = 0x6000)
 hgc_wrap_fwd		equ	7FA6h			; HGC bank forward-wrap constant
 hgc_stride_c		equ	0A058h			; HGC stride variant C (= hgc_stride_a)
 hgc_stride_b		equ	0A05Ah			; HGC stride variant B (= hgc_stride)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+tile_idx_a		equ	3CAFh			;* tile index A (byte)
+tile_idx_b		equ	3CB2h			;* tile index B (byte, 0FDh = none)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

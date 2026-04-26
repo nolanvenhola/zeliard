@@ -27,11 +27,17 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_frame_timer	equ	0FF1Ah			;*
+gvar_game_seg	equ	0FF2Ch			;*
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; restored after factoring (consensus value, but not all files agree):
 sprite_img_base          equ     97C0h
-
-; The following equates show data references outside the range of the program.
-
 ega_plane2_buf	equ	2050h			;*
 mask_tbl_a	equ	32A7h			;*
 mask_tbl_b	equ	32AFh			;*
@@ -46,7 +52,6 @@ ega_palette_buf	equ	416Ah			;*
 cur_col_ctr	equ	4210h			;*
 cur_color	equ	4211h			;*
 cur_row_ctr	equ	4212h			;*
-plane_enable_flags	equ	4213h			;*
 img_stride	equ	4214h			;*
 render_fn_ptr	equ	4216h			;*
 saved_di	equ	4218h			;*
@@ -56,8 +61,6 @@ sprite_row_buf	equ	453Ch			;*
 sprite_row_buf_b	equ	455Eh			;*
 scroll_mask_off	equ	39ACh			;* CS offset of scroll_pixel_masks data
 font_ptr_a	equ	0F500h			;*
-gvar_frame_timer	equ	0FF1Ah			;*
-gvar_game_seg	equ	0FF2Ch			;*
 sprite_mask_off	equ	1A8Fh			;*
 sprite_or_off	equ	1A90h			;*
 ega_row_m1	equ	13Fh
@@ -67,6 +70,11 @@ move_up_left	equ	0FEBFh
 move_up	equ	0FEC0h
 move_up_right	equ	0FEC1h
 sprite_backbuf_plane_sz equ	1028h		; bytes per plane in sprite back-buffer (at CS+3000h)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+plane_enable_flags	equ	4213h			;*
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

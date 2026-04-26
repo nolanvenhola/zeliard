@@ -34,46 +34,9 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-; SAR chunk loader entry point (installed at runtime by font.grp init code)
-sar_loader_fn	equ	010Ch			; call word ptr cs:sar_loader_fn
-
-; External references - addresses in other loaded segments
-
-music_player_fn	equ	18ABh			; Music player function
-gfx_call_a	equ	201Ch			; Graphics driver call A
-gfx_call_b	equ	201Eh			; Graphics driver call B
-gfx_call_c	equ	2020h			; Graphics driver call C
-sound_load_track_fn equ	203Eh			; Sound driver: load/init music track
-loaded_code_a	equ	3000h			; Loaded chunk code entry A
-tile_gfx_base	equ	37A4h			; Tile graphics base address
-font_gfx_base	equ	3EA4h			; Font graphics base address
-loaded_code_b	equ	6000h			; Loaded chunk code entry B
-loaded_code_b_fn equ	6002h			; Loaded chunk function B
-; zeliad loads game.bin at this offset in the game segment.
-; Using GAME_CODE_BASE + (offset label) makes these auto-update
-; when code is added or removed above each label.
-GAME_CODE_BASE  equ     0A000h
-gfx_mode_tbl_ega equ	GAME_CODE_BASE + (offset gfx_mode_tbl_ega_lbl)
-gfx_mode_tbl_cga equ	GAME_CODE_BASE + (offset gfx_mode_tbl_cga_lbl)
-gfx_mode_tbl_all equ	GAME_CODE_BASE + (offset gfx_mode_tbl_all_lbl)
-level_system_ref equ	GAME_CODE_BASE + (offset level_system_ref_lbl)
-level_data_ref	equ	GAME_CODE_BASE + (offset level_data_ref_lbl)
-palette_base_tbl equ	GAME_CODE_BASE + (offset palette_base_tbl_lbl)
-game_init_fn	equ	GAME_CODE_BASE + (offset game_init_fn_lbl)
-save_mode_flag	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
-level_chunk_ref	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
-; Chunk reference addresses (GAME_CODE_BASE + offset of [archive][chunk] record)
-chunk_ref_font_grp equ	GAME_CODE_BASE + (offset ref_font_grp)
-chunk_ref_mole	equ	GAME_CODE_BASE + (offset ref_mole)
-chunk_ref_itemp	equ	GAME_CODE_BASE + (offset ref_itemp)
-chunk_ref_select equ	GAME_CODE_BASE + (offset ref_select)
-chunk_ref_magic	equ	GAME_CODE_BASE + (offset ref_magic)
-chunk_ref_sword	equ	GAME_CODE_BASE + (offset ref_sword)
-chunk_ref_fight	equ	GAME_CODE_BASE + (offset ref_fight)
-chunk_ref_town	equ	GAME_CODE_BASE + (offset ref_town)
-chunk_ref_opdemo equ	GAME_CODE_BASE + (offset ref_opdemo)
-save_data_base	equ	0C000h			; Save data load address
-
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
 ; Game state variables (0xFF00+ range, shared with zeliad.exe)
 gvar_timer_ticks equ	0FF08h			; Timer tick counter
 gvar_game_phase	equ	0FF14h			; Current game phase / graphics mode
@@ -92,6 +55,54 @@ gvar_joy_count	equ	0FF4Bh			; Joystick count
 gvar_volume_a	equ	0FF74h			; Volume setting A
 gvar_volume_b	equ	0FF77h			; Volume setting B
 
+; ----------------------------------------------------------------------
+; Section 4: Shared dispatch slot references (file-local)
+; ----------------------------------------------------------------------
+loaded_code_b_fn equ	6002h			; Loaded chunk function B
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
+; SAR chunk loader entry point (installed at runtime by font.grp init code)
+sar_loader_fn	equ	010Ch			; call word ptr cs:sar_loader_fn
+music_player_fn	equ	18ABh			; Music player function
+gfx_call_a	equ	201Ch			; Graphics driver call A
+gfx_call_b	equ	201Eh			; Graphics driver call B
+gfx_call_c	equ	2020h			; Graphics driver call C
+sound_load_track_fn equ	203Eh			; Sound driver: load/init music track
+loaded_code_a	equ	3000h			; Loaded chunk code entry A
+tile_gfx_base	equ	37A4h			; Tile graphics base address
+font_gfx_base	equ	3EA4h			; Font graphics base address
+loaded_code_b	equ	6000h			; Loaded chunk code entry B
+; zeliad loads game.bin at this offset in the game segment.
+; Using GAME_CODE_BASE + (offset label) makes these auto-update
+; when code is added or removed above each label.
+GAME_CODE_BASE  equ     0A000h
+gfx_mode_tbl_ega equ	GAME_CODE_BASE + (offset gfx_mode_tbl_ega_lbl)
+gfx_mode_tbl_cga equ	GAME_CODE_BASE + (offset gfx_mode_tbl_cga_lbl)
+gfx_mode_tbl_all equ	GAME_CODE_BASE + (offset gfx_mode_tbl_all_lbl)
+level_system_ref equ	GAME_CODE_BASE + (offset level_system_ref_lbl)
+level_data_ref	equ	GAME_CODE_BASE + (offset level_data_ref_lbl)
+palette_base_tbl equ	GAME_CODE_BASE + (offset palette_base_tbl_lbl)
+game_init_fn	equ	GAME_CODE_BASE + (offset game_init_fn_lbl)
+level_chunk_ref	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
+; Chunk reference addresses (GAME_CODE_BASE + offset of [archive][chunk] record)
+chunk_ref_font_grp equ	GAME_CODE_BASE + (offset ref_font_grp)
+chunk_ref_mole	equ	GAME_CODE_BASE + (offset ref_mole)
+chunk_ref_itemp	equ	GAME_CODE_BASE + (offset ref_itemp)
+chunk_ref_select equ	GAME_CODE_BASE + (offset ref_select)
+chunk_ref_magic	equ	GAME_CODE_BASE + (offset ref_magic)
+chunk_ref_sword	equ	GAME_CODE_BASE + (offset ref_sword)
+chunk_ref_fight	equ	GAME_CODE_BASE + (offset ref_fight)
+chunk_ref_town	equ	GAME_CODE_BASE + (offset ref_town)
+chunk_ref_opdemo equ	GAME_CODE_BASE + (offset ref_opdemo)
+save_data_base	equ	0C000h			; Save data load address
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+save_mode_flag	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
+
 ; Load a chunk from a SAR archive into ES:DI
 ; Usage: LOAD_CHUNK chunk_ref, dest_offset, archive_index
 LOAD_CHUNK	MACRO	chunk_ref, dest_offset, archive
@@ -100,7 +111,6 @@ LOAD_CHUNK	MACRO	chunk_ref, dest_offset, archive
 		mov	al, archive
 		call	word ptr cs:sar_loader_fn
 		ENDM
-
 ; Set ES to CS + a segment paragraph offset (e.g. 1000h, 2000h, 3000h)
 ; Usage: SET_ES_SEG 2000h
 SET_ES_SEG	MACRO	seg_offset

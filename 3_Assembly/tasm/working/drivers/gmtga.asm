@@ -25,9 +25,17 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  stdply.inc
 
-; The following equates show data references outside the range of the program.
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+palette_state	equ	0FF01h			;*
+gvar_game_seg	equ	0FF2Ch			;*
 
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 anim_ptr_0	equ	0E200h			;*
 anim_ptr_1	equ	0E202h			;*
 anim_ptr_5	equ	0E204h			;*
@@ -36,7 +44,6 @@ anim_ptr_6	equ	0E208h			;*
 anim_ptr_3	equ	0E20Ah			;*
 anim_ptr_4	equ	0E20Ch			;*
 tile_src_base	equ	21A7h			;*
-plot_mode	equ	22A6h			;*
 tile_color_tbl	equ	262Eh			;*
 pixel_mask_tbl	equ	2999h			;*
 tile_offset_tbl	equ	2CB7h			;*
@@ -45,7 +52,6 @@ tile_fg_mask	equ	2E6Ch			;*
 tile_bg_mask	equ	2E6Dh			;*
 char_color	equ	2E6Eh			;*
 char_src_ptr	equ	2E6Fh			;*
-char_bit_idx	equ	2E71h			;*
 bitplane_0	equ	2E72h			;*
 bitplane_1	equ	2E74h			;*
 bitplane_2	equ	2E76h			;*
@@ -55,16 +61,20 @@ tile_col_tbl	equ	0EB22h			;*
 font_ptr_a	equ	0F500h			;*
 font_ptr_b	equ	0F502h			;*
 font_ptr_c	equ	0F504h			;*
-palette_state	equ	0FF01h			;*
-gvar_game_seg	equ	0FF2Ch			;*
-zero_offset	equ	0			;*
 tga_hud_ofs	equ	41F8h
-
 driver_base	equ	2000h			; driver loads at game_seg:2000h
 tga_seg		equ	80A0h			; Tandy framebuffer segment (0x8000 area)
 
-; stdply.bin player state field offsets (shared with all gm*.bin drivers)
-include  stdply.inc
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+plot_mode	equ	22A6h			;*
+char_bit_idx	equ	2E71h			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+zero_offset	equ	0			;*
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

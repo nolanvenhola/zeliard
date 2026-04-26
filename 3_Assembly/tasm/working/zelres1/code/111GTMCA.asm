@@ -29,11 +29,19 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_plystate	equ	0FF2Ah			;* global player state struct pointer
+gvar_game_seg	equ	0FF2Ch			;* global game segment selector
+gvar_flag57	equ	0FF57h			;* global boolean flag at FF57h
+gvar_scroll_idx	equ	0FF68h			;* global scroll index word
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; restored after factoring (different value than zr1com.inc would supply):
 font_ptr_a               equ     0F502h
-
-; The following equates show data references outside the range of the program.
-
 ; --- game segment data (DS = gvar_game_seg) ---
 tile_cache_base	equ	8000h			;* tile graphics cache lookup table
 map_overlay_ptr	equ	8004h			;* map overlay data pointer
@@ -45,7 +53,6 @@ char_glyph_base	equ	37C3h			;* character glyph bitmap data base
 border_glyph_ptr equ	392Ah			;* border glyph source pointer
 dispatch_tbl_c	equ	3B4Bh			;* tile-type function dispatch table C
 tile_vga_ofs	equ	3C98h			;* current VGA tile destination offset (word)
-tile_col_idx	equ	3C9Ah			;* tile column index counter (byte, 0..27)
 tile_id_a	equ	3C9Bh			;* tile ID byte A (3-byte region)
 tile_id_b	equ	3C9Eh			;* tile ID byte B
 scroll_col	equ	3CA1h			;* scroll column position word
@@ -64,32 +71,34 @@ scroll_entry_ptr equ	0C00Fh			;* scroll/tilemap entry list pointer
 npc_flag_ptr	equ	0E005h			;* NPC presence flag pointer
 font_ptr_b	equ	0F502h			;* font B graphics pointer (see gmmcga font_ptr_b)
 font_ptr_c	equ	0F504h			;* font C graphics pointer (see gmmcga font_ptr_c)
-gvar_plystate	equ	0FF2Ah			;* global player state struct pointer
-gvar_game_seg	equ	0FF2Ch			;* global game segment selector
-gvar_flag57	equ	0FF57h			;* global boolean flag at FF57h
-gvar_scroll_idx	equ	0FF68h			;* global scroll index word
-
-; --- numeric constants (internal) ---
-half_stride	equ	80h			; 128: half of VGA row stride
 stride_minus_8	equ	138h			; 312: VGA stride minus 8 (skip row after 8px tile)
 vga_stride	equ	140h			; 320: VGA mode 13h row stride in bytes
 hud_vga_ofs	equ	11B0h			; VGA offset for HUD row (row 14, col 48)
 hud_vga_ofs2	equ	128Eh			; VGA offset for second HUD element
 tile_buf_ofs	equ	3200h			; scroll tile staging buffer offset
 tile_id_mid	equ	3C9Ch			; middle byte of tile ID triplet (tile_id_a+1)
-
 ; --- on-screen VGA tile positions ---
 vga_tile_left	equ	93B0h			; VGA offset: left tile column row 118, col 48
 vga_tile_l2	equ	0B1B0h			; VGA offset: second left tile area row 142, col 48
 vga_tile_r2	equ	0B28Eh			; VGA offset: second right tile area row 142, col 270
 vga_tile_l3	equ	0BBB0h			; VGA offset: third left tile area row 150, col 48
 vga_tile_r3	equ	0BC8Eh			; VGA offset: third right tile area row 150, col 270
-
 ; --- off-screen VGA tile work buffers (A000:FA00-FFFF) ---
 tile_offscr_a	equ	0FA00h			; off-screen tile buffer A (col 0)
 tile_offscr_b	equ	0FAC0h			; off-screen tile buffer B (col 192)
 tile_offscr_c	equ	0FB80h			; off-screen tile buffer C (row+1)
 tile_offscr_d	equ	0FC40h			; off-screen tile buffer D (row+2)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+tile_col_idx	equ	3C9Ah			;* tile column index counter (byte, 0..27)
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+; --- numeric constants (internal) ---
+half_stride	equ	80h			; 128: half of VGA row stride
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

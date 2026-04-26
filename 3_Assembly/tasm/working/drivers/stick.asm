@@ -46,16 +46,15 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
-
-; stick.bin exports + shared game state layout
 include  stick.inc
 include  ..\core\zeliard.inc
 
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; stick.asm uses zeliard.inc canonical names throughout (see zeliard.inc).
 ; Only truly stick-local constants remain below:
 herc_video_seg	equ	0B000h			; HGC framebuffer segment (stick-only)
-zero_offset	equ	0			; Zero constant
-
 ; Scan state + DTA buffer: runtime CS addresses of the 51-byte zero block.
 ; stick.bin uses org 0, loads at CS:+0x0100. A label at file-offset F generates
 ; cs:[F], which at runtime accesses file[F - 0x0100]. So to access the scan
@@ -69,33 +68,32 @@ zero_offset	equ	0			; Zero constant
 scan_buf_ptr	equ	(offset scan_data_lbl) + ISR_STUBS_BASE
 search_path_ptr	equ	(offset scan_data_lbl) + ISR_STUBS_BASE + 4
 dta_buffer	equ	(offset scan_data_lbl) + ISR_STUBS_BASE + 8
-
 ; Hercules bank table CS address (herc_bank_table label is at file offset, +ISR_STUBS_BASE for runtime).
 herc_bank_tbl_cs	equ	(offset herc_bank_table) + ISR_STUBS_BASE	; CS:0x0BA0
-
 ; fill_buffer opcode dispatch table CS address.
 ; dcmp_opcode0 label sits at the table start (file offset computed by TASM).
 dcmp_dispatch_tbl	equ	(offset dcmp_opcode0) + ISR_STUBS_BASE		; CS:0x0DBC
-
 ; map_driver_tbl slot base CS address (+0x0C from map_driver_tbl = first slot field).
 ; Used in sav_fn_compute: ax = al*11 + map_driver_slot_base gives CS slot ptr.
 map_driver_slot_base	equ	(offset map_driver_tbl) + ISR_STUBS_BASE + 0Ch	; CS:0x0F68
-
 ; Save/load file I/O data area CS addresses.
 ; Labels are placed in fio_read_done data region; EQUs compute CS-relative addresses.
 fio_filename	equ	(offset fio_filename_lbl) + ISR_STUBS_BASE	; CS:0x0D3B 'zelres1.sar\0' (byte[6] patched with slot)
 fio_filename_digit	equ	fio_filename + 6				; CS:0x0D41 digit '1' in filename patched with slot num
 fio_disk_msg	equ	(offset fio_disk_msg_lbl) + ISR_STUBS_BASE	; CS:0x0D47 disk-insert prompt string
 fio_disk_msg_digit	equ	fio_disk_msg + 17h				; CS:0x0D5E digit '1' in 'DISK1' patched with disk num
-fio_slot_flag	equ	(offset fio_slot_flag_lbl) + ISR_STUBS_BASE	; CS:0x0D79 slot/dirname flag byte
 fio_seek_buf	equ	(offset fio_seek_buf_lbl) + ISR_STUBS_BASE	; CS:0x0D7A 4-byte seek-offset read buffer
 fio_seek_buf_hi	equ	fio_seek_buf + 2				; CS:0x0D7C high word of seek buffer
 fio_default_name	equ	(offset fio_default_name_lbl) + ISR_STUBS_BASE	; CS:0x0D7E 'dummy\0' default name (also FCB area)
-
 ; Timer ISR state flags embedded in tis_chain_int08 padding area (CS:0x02BC..0x02C4).
 ; Labels are placed in the padding bytes; EQUs compute CS-relative addresses.
 subsample_ctr	equ	(offset subsample_ctr_lbl) + ISR_STUBS_BASE	; CS:0x02BC subsample counter
 chain_int_ctr	equ	(offset chain_int_ctr_lbl) + ISR_STUBS_BASE	; CS:0x02BD chain-INT-08 counter
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+fio_slot_flag	equ	(offset fio_slot_flag_lbl) + ISR_STUBS_BASE	; CS:0x0D79 slot/dirname flag byte
 pause_key_state	equ	(offset pause_key_state_lbl) + ISR_STUBS_BASE	; CS:0x02BE pause key toggle
 btn1_state	equ	pause_key_state + 1				; CS:0x02BF button-1 state
 joy_btna_state	equ	pause_key_state + 2				; CS:0x02C0 joystick button A
@@ -103,6 +101,11 @@ joy_btnb_state	equ	pause_key_state + 3				; CS:0x02C1 joystick button B
 skip_key_state	equ	pause_key_state + 4				; CS:0x02C2 skip key hold
 sound_key_state	equ	pause_key_state + 5				; CS:0x02C3 sound key hold
 frame_ctr8	equ	pause_key_state + 6				; CS:0x02C4 8-bit frame counter
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+zero_offset	equ	0			; Zero constant
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

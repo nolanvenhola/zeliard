@@ -29,12 +29,17 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_game_seg		equ	0FF2Ch			;* global: game data segment selector
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; restored after factoring (per-file value, not in shared inc):
 font_ptr_a               equ     0F502h
 font_ptr_b               equ     0F504h
-
-; The following equates show data references outside the range of the program.
-
 dispatch_tbl_a		equ	35BAh			;* draw-cell dispatch function table A (word[N])
 dispatch_tbl_b		equ	3616h			;* draw-cell dispatch function table B (word[N])
 tile_gfx_data		equ	386Ch			;* tile graphics row source data
@@ -42,7 +47,6 @@ anim_frame_data		equ	3A20h			;* animation / icon frame data table
 tile_render_disp	equ	3C68h			;* tile type render dispatch table (word[N])
 color_lut		equ	3DCBh			;* color lookup table (bitplane index -> TGA nibble)
 tile_col_x		equ	3E64h			;* current tile column TGA byte offset (word)
-tile_col_idx		equ	3E66h			;* current tile column counter (byte, 0..1Ch)
 tile_char_a		equ	3E67h			;* tile char slot A (byte)
 tile_map_arr		equ	3E68h			;* tile map working array (2 bytes)
 tile_char_b		equ	3E6Ah			;* tile char slot B (byte, 0FDh = none)
@@ -60,7 +64,6 @@ tile_cache_tbl		equ	431Bh			;* tile VGA address cache table (indexed by tile id)
 scroll_dst_ofs		equ	5238h			;* scroll destination offset in TGA buffer
 tga_wrap_sub		equ	7F60h			;* TGA segment wrap: add when di/si wraps past 8000h
 tga_wrap		equ	80A0h			;* TGA segment base (Tandy B800 wrap constant)
-gvar_game_seg		equ	0FF2Ch			;* global: game data segment selector
 tga_hud_ofs		equ	41F8h			; TGA HUD area top-left offset in B800 segment
 scroll_r16_src		equ	4266h			; scroll-right 16-wide source offset
 scroll_l8_src_b		equ	55F8h			; scroll-left 8-wide source offset B
@@ -71,6 +74,11 @@ tga_wrap_sub2		equ	7F60h			; TGA segment wrap subtraction (dup of tga_wrap_sub)
 tga_wrap2		equ	80A0h			; TGA segment wrap constant (dup of tga_wrap)
 bcd_time_buf		equ	3A1Fh			; 7-byte BCD time buffer (tens-hours/hours/mins/secs/frames)
 glyph_render_ofs	equ	3ECBh			; render start offset within glyph_buf (glyph_buf + 50h)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+tile_col_idx		equ	3E66h			;* current tile column counter (byte, 0..1Ch)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

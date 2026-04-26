@@ -29,9 +29,67 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_frame_timer	equ	0FF1Ah			;* Global frame timer counter
+gvar_game_seg	equ	0FF2Ch			;* Global game data segment
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; restored after factoring (consensus value, but not all files agree):
 sprite_row_buf_b         equ     5500h
 sprite_mask_off          equ     1A8Eh
+hgc_seg		equ	0B000h                  ; Hercules Graphics Card framebuffer segment
+hgc_plane2_off	equ	240h                    ; Offset to second HGC interlace plane
+hgc_dispatch_fn	equ	2022h			;* Dispatch function table
+hgc_plane2_buf	equ	2050h			;* Second render plane buffer
+hgc_plane3_buf	equ	29DCh			;* Third render plane buffer
+hgc_plane_stride	equ	2A80h			;* Stride between HGC planes
+hgc_mask_tbl_a	equ	32BBh			;* First blit mask table (even passes)
+hgc_mask_tbl_b	equ	32CBh			;* Second blit mask table (odd passes)
+sprite_src_tbl	equ	3645h			;* Sprite source frame pointer table
+sprite_frame_tbl	equ	3647h			;* Sprite animation frame index table
+move_seq_horiz	equ	3ACBh			;* Horizontal movement sequence data
+move_seq_up	equ	3B8Fh			;* Vertical (up) movement sequence data
+color_pair_tbl	equ	3BC2h			;* Color pair lookup table
+hgc_palette_xlat	equ	44F5h			;* Palette translation table (HGC)
+hgc_color_lut	equ	4C23h			;* Color lookup table (HGC)
+render_lut_ptr	equ	4C52h			;* Pointer into color lookup table for current render
+cur_col_ctr	equ	4C5Ch			;* Current column counter within blit pass
+cur_row_ctr	equ	4C5Dh			;* Current row counter (pass index)
+cur_pass_ctr	equ	4C5Eh			;* Current pass counter (outer blit loop)
+render_fn_ptr	equ	4C60h			;* Pointer to active render sub-function
+saved_di	equ	4C62h			;* Saved destination offset (DI)
+saved_es	equ	4C64h			;* Saved destination segment (ES)
+sprite_row_buf	equ	4F86h			;* Sprite row render buffer
+hgc_bank1_end_m1	equ	5FA6h			;* HGC bank wrap adjust for reverse direction
+hgc_bank2_wrap	equ	0A05Ah			;* HGC offset added when DI wraps past bank1_end
+font_ptr_a	equ	0F500h			;* Font bitmap data pointer
+hgc_work_buf	equ	4000h			;* HGC working render buffer base
+hgc_work_buf_p2	equ	4050h			;* HGC working render buffer plane 2
+hgc_capture_src	equ	232Fh                   ; HGC capture source offset
+hgc_bank1_end	equ	6000h                   ; HGC bank 1 end boundary (4 x 2000h banks)
+hgc_bank2_base_m1	equ	0A059h                  ; HGC bank2 base minus 1 (stosb target before wrap)
+hgc_bank2_wrap_b	equ	0A05Ah                  ; HGC bank2 wrap offset (byte-path alias)
+hgc_bank2_wrap_w	equ	0A058h                  ; HGC bank2 wrap offset after stosw (word-path)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+src_word_a	equ	4C54h			;* Render source word A (plane 0)
+src_word_b	equ	4C56h			;* Render source word B (plane 1)
+src_word_c	equ	4C58h			;* Render source word C (plane 2)
+src_word_d	equ	4C5Ah			;* Render source word D (plane 3)
+render_mode_flag	equ	4C5Fh			;* Render mode: 0=overwrite, FF=mask-blend
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+hgc_screen_start	equ	0                       ; HGC framebuffer start offset (DI init)
+hgc_buf_start	equ	0			;* HGC render buffer start (DI init, screen)
+hgc_buf_reset	equ	0			;* HGC source buffer reset value (SI init)
 
 ; Macro: advance DI by 0x2000 (one HGC interlaced bank) and check bank boundary.
 ; Jumps to no_wrap_label if DI stays within bank 1 (< hgc_bank1_end).
@@ -41,7 +99,6 @@ hgc_advance_di	macro	no_wrap_label
 		cmp	di,hgc_bank1_end	; past bank 1 boundary?
 		jb	no_wrap_label		; no: continue in bank 1
 endm
-
 ; Macro: advance DI by 0x2000 and check bank boundary (wrap-path variant).
 ; Jumps to wrap_label when DI >= hgc_bank1_end (bank wrap needed).
 ; Falls through when no wrap needed.
@@ -50,7 +107,6 @@ hgc_advance_di_wrap	macro	wrap_label
 		cmp	di,hgc_bank1_end	; past bank 1 boundary?
 		jae	wrap_label		; yes: handle wrap
 endm
-
 ; Macro: write one masked pixel to HGC with interlaced bank wrapping.
 ; Loads next byte from SI, masks with cur_row_ctr, OR with [SI+3] pattern,
 ; stores to ES:DI, advances DI by 0x1FFF. If DI >= hgc_bank1_end writes
@@ -67,52 +123,6 @@ hgc_write_pixel	macro	next_label
 		stosb				; yes: write to bank 2 as well
 		add	di,hgc_bank2_base_m1	; advance past bank boundary
 endm
-
-; The following equates show data references outside the range of the program.
-
-hgc_seg		equ	0B000h                  ; Hercules Graphics Card framebuffer segment
-hgc_screen_start	equ	0                       ; HGC framebuffer start offset (DI init)
-hgc_plane2_off	equ	240h                    ; Offset to second HGC interlace plane
-hgc_dispatch_fn	equ	2022h			;* Dispatch function table
-hgc_plane2_buf	equ	2050h			;* Second render plane buffer
-hgc_plane3_buf	equ	29DCh			;* Third render plane buffer
-hgc_plane_stride	equ	2A80h			;* Stride between HGC planes
-hgc_mask_tbl_a	equ	32BBh			;* First blit mask table (even passes)
-hgc_mask_tbl_b	equ	32CBh			;* Second blit mask table (odd passes)
-sprite_src_tbl	equ	3645h			;* Sprite source frame pointer table
-sprite_frame_tbl	equ	3647h			;* Sprite animation frame index table
-move_seq_horiz	equ	3ACBh			;* Horizontal movement sequence data
-move_seq_up	equ	3B8Fh			;* Vertical (up) movement sequence data
-color_pair_tbl	equ	3BC2h			;* Color pair lookup table
-hgc_palette_xlat	equ	44F5h			;* Palette translation table (HGC)
-hgc_color_lut	equ	4C23h			;* Color lookup table (HGC)
-render_lut_ptr	equ	4C52h			;* Pointer into color lookup table for current render
-src_word_a	equ	4C54h			;* Render source word A (plane 0)
-src_word_b	equ	4C56h			;* Render source word B (plane 1)
-src_word_c	equ	4C58h			;* Render source word C (plane 2)
-src_word_d	equ	4C5Ah			;* Render source word D (plane 3)
-cur_col_ctr	equ	4C5Ch			;* Current column counter within blit pass
-cur_row_ctr	equ	4C5Dh			;* Current row counter (pass index)
-cur_pass_ctr	equ	4C5Eh			;* Current pass counter (outer blit loop)
-render_mode_flag	equ	4C5Fh			;* Render mode: 0=overwrite, FF=mask-blend
-render_fn_ptr	equ	4C60h			;* Pointer to active render sub-function
-saved_di	equ	4C62h			;* Saved destination offset (DI)
-saved_es	equ	4C64h			;* Saved destination segment (ES)
-sprite_row_buf	equ	4F86h			;* Sprite row render buffer
-hgc_bank1_end_m1	equ	5FA6h			;* HGC bank wrap adjust for reverse direction
-hgc_bank2_wrap	equ	0A05Ah			;* HGC offset added when DI wraps past bank1_end
-font_ptr_a	equ	0F500h			;* Font bitmap data pointer
-gvar_frame_timer	equ	0FF1Ah			;* Global frame timer counter
-gvar_game_seg	equ	0FF2Ch			;* Global game data segment
-hgc_buf_start	equ	0			;* HGC render buffer start (DI init, screen)
-hgc_work_buf	equ	4000h			;* HGC working render buffer base
-hgc_work_buf_p2	equ	4050h			;* HGC working render buffer plane 2
-hgc_buf_reset	equ	0			;* HGC source buffer reset value (SI init)
-hgc_capture_src	equ	232Fh                   ; HGC capture source offset
-hgc_bank1_end	equ	6000h                   ; HGC bank 1 end boundary (4 x 2000h banks)
-hgc_bank2_base_m1	equ	0A059h                  ; HGC bank2 base minus 1 (stosb target before wrap)
-hgc_bank2_wrap_b	equ	0A05Ah                  ; HGC bank2 wrap offset (byte-path alias)
-hgc_bank2_wrap_w	equ	0A058h                  ; HGC bank2 wrap offset after stosw (word-path)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

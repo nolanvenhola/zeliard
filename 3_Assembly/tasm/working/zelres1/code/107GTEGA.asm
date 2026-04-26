@@ -29,30 +29,29 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_game_seg	equ	0FF2Ch			;* game segment selector word
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; restored after factoring (per-file value, not in shared inc):
 font_ptr_a               equ     0F502h
 font_ptr_b               equ     0F504h
-
-; The following equates show data references outside the range of the program.
-
-ega_row_stride	equ	4Eh			; EGA bytes per row (78 = 640/8)
 tile_type_tbl	equ	32EBh			;* tile type dispatch table (word[4])
 render_fn_tbl_a	equ	35BEh			;* render function pointer table A (word[N])
 render_fn_tbl_b	equ	361Ah			;* render function pointer table B (word[N])
-tile_state_flag	equ	3628h			;* tile state flag byte
 tile_row_data	equ	38B9h			;* tile row source data pointer
 icon_seq_tbl	equ	3A32h			;* icon/status sequence table
 tile_vga_ofs	equ	3BB1h			;* current tile row VGA byte offset (word)
 tile_row_ctr	equ	3BB3h			;* current tile row counter (byte, 0..1Ch)
-tile_idx_a	equ	3BB4h			;* tile index A (byte)
-tile_idx_b	equ	3BB7h			;* tile index B (byte, 0FDh = none)
 tile_col_ctr	equ	3BBAh			;* current tile column counter (word)
 char_render_buf	equ	3BBCh			;* character/sprite render buffer
 text_render_buf	equ	3BE4h			;* text glyph render buffer
 tile_cache_tbl	equ	3D4Ch			;* tile VGA address cache table (word[N])
 tile_disp_tbl	equ	3E80h			;* tile column displacement table (word[N]) ;*
-tile_flip_flag	equ	0C583h			;* tile flip/mirror flag byte
-gvar_game_seg	equ	0FF2Ch			;* game segment selector word
 ega_hud_top	equ	46Ch			; EGA framebuffer HUD top-left offset
 ega_hud_b	equ	4A3h			; EGA framebuffer HUD area B offset
 ega_mid_ofs	equ	0C80h			; EGA framebuffer middle column offset constant
@@ -66,6 +65,19 @@ tile_buf_a	equ	3E80h			; tile render buffer A (column 0)
 tile_buf_b	equ	3EB0h			; tile render buffer B (column 1)
 tile_buf_c	equ	3EE0h			; tile render buffer C (column 2)
 tile_buf_d	equ	3F10h			; tile render buffer D (column 3)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+tile_state_flag	equ	3628h			;* tile state flag byte
+tile_idx_a	equ	3BB4h			;* tile index A (byte)
+tile_idx_b	equ	3BB7h			;* tile index B (byte, 0FDh = none)
+tile_flip_flag	equ	0C583h			;* tile flip/mirror flag byte
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+ega_row_stride	equ	4Eh			; EGA bytes per row (78 = 640/8)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

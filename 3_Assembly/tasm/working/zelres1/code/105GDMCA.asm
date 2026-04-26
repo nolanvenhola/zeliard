@@ -29,15 +29,20 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr1com.inc
 
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_frame_timer	equ	0FF1Ah			;*
+gvar_game_seg	equ	0FF2Ch			;*
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 ; restored after factoring (consensus value, but not all files agree):
 sprite_img_base          equ     97C0h
-
 ; restored after factoring (consensus value, but not all files agree):
 sprite_row_buf_b         equ     5500h
 sprite_mask_off          equ     1A8Eh
-
-; The following equates show data references outside the range of the program.
-
 ega_plane3_buf	equ	29DCh			;*
 mask_tbl_a	equ	32B9h			;*
 mask_tbl_b	equ	32C1h			;*
@@ -51,31 +56,36 @@ pal_r_reg	equ	4289h			;*
 pal_g_reg	equ	428Ah			;*
 pal_b_reg	equ	428Bh			;*
 cur_pal_ptr	equ	44F8h			;*
-cur_pal_idx	equ	44FAh			;*
-src_word_a	equ	44FBh			;*
-src_word_b	equ	44FDh			;*
-src_word_c	equ	44FFh			;*
-src_word_d	equ	4501h			;*
-mask_word	equ	4503h			;*
 cur_col_ctr	equ	4505h			;*
 cur_row_ctr	equ	4506h			;*
 cur_pass_ctr	equ	4507h			;*
-render_mode_flag	equ	4508h			;*
 render_fn_ptr	equ	450Bh			;*
 saved_di	equ	450Dh			;*
 saved_es	equ	450Fh			;*
 sprite_row_buf	equ	5191h			;*
 sprite_plane_mask	equ	6666h			;*
 font_ptr_a	equ	0F500h			;*
-gvar_frame_timer	equ	0FF1Ah			;*
-gvar_game_seg	equ	0FF2Ch			;*
-sprite_buf_start	equ	0			;*
-screen_start_off	equ	0
 vga_row_stride	equ	140h
-
 text_dest_off	equ	4511h				;* Text output destination offset in VGA
 pal_cycle_tbl	equ	3637h				;* Palette cycle RGB table
 pal_step_tbl	equ	3A5Fh				;* Palette step data table offset
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+cur_pal_idx	equ	44FAh			;*
+src_word_a	equ	44FBh			;*
+src_word_b	equ	44FDh			;*
+src_word_c	equ	44FFh			;*
+src_word_d	equ	4501h			;*
+mask_word	equ	4503h			;*
+render_mode_flag	equ	4508h			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+sprite_buf_start	equ	0			;*
+screen_start_off	equ	0
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

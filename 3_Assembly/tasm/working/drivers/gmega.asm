@@ -25,9 +25,17 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  stdply.inc
 
-; The following equates show data references outside the range of the program.
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+gvar_game_seg	equ	0FF2Ch			;*
+gvar_volume_b	equ	0FF77h			;*
 
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 tile_src_base	equ	27BBh			;* tilemap source base (default SI)
 anim_ptr_0	equ	0E200h			;*
 anim_ptr_1	equ	0E202h			;*
@@ -35,7 +43,6 @@ anim_ptr_2	equ	0E206h			;*
 anim_ptr_3	equ	0E20Ah			;*
 anim_ptr_4	equ	0E20Ch			;*
 tile_src_base_b	equ	21C0h			;* hud mask tile source B
-plot_mode	equ	22DEh			;* plot mode flag byte
 text_vga_ofs_a	equ	256Ah			;* VGA offset for text function A
 text_vga_ofs_b	equ	256Bh			;* VGA offset for text function B
 text_vga_ofs_c	equ	256Dh			;* VGA offset for text function C
@@ -57,15 +64,14 @@ font_ptr_b	equ	0F502h			;*
 font_ptr_c	equ	0F504h			;*
 ega_plot_tbl_f	equ	0F828h			;*
 ega_col_stride	equ	0FE71h			;* EGA text column stride (-399; net +1 after 5-row char)
-gvar_game_seg	equ	0FF2Ch			;*
-gvar_volume_b	equ	0FF77h			;*
 ega_pixel_ofs	equ	316Ch			;* initial EGA byte offset for pixel plot
 ega_hud_ofs	equ	46Ch			;* HUD area starting offset in EGA framebuffer
-
 driver_base	equ	2000h			; driver loads at game_seg:2000h
 
-; stdply.bin player state field offsets (shared with all gm*.bin drivers)
-include  stdply.inc
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+plot_mode	equ	22DEh			;* plot mode flag byte
 
 ; Set ES to the EGA framebuffer segment (0xA000)
 SET_EGA_ES	MACRO

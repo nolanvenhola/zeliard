@@ -25,16 +25,28 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  stdply.inc
 
-; The following equates show data references outside the range of the program.
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in shared inc
+; ----------------------------------------------------------------------
+palette_state	equ	0FF01h			;*
+gvar_game_seg	equ	0FF2Ch			;*
 
+; ----------------------------------------------------------------------
+; Section 4: Shared dispatch slot references (file-local)
+; ----------------------------------------------------------------------
+drv_state_byte	equ	0F92Ah			;*
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 anim_ptr_0		equ	0E200h			;*
 anim_ptr_1		equ	0E202h			;*
 anim_ptr_2		equ	0E206h			;*
 anim_ptr_3		equ	0E20Ah			;*
 anim_ptr_4		equ	0E20Ch			;*
 fade_mask_tbl	equ	21D6h			;*
-plot_mode	equ	22D5h			;*
 tile_color_tbl	equ	2600h			;*
 pixel_lut	equ	2994h			;*
 tile_color_tbl_b	equ	2CA7h			;*
@@ -42,7 +54,6 @@ tile_fg_mask	equ	2E7Fh			;*
 tile_bg_mask	equ	2E80h			;*
 char_color	equ	2E81h			;*
 char_src_ptr	equ	2E82h			;*
-char_bit_idx	equ	2E84h			;*
 bitplane_0	equ	2E85h			;*
 bitplane_1	equ	2E87h			;*
 bitplane_2	equ	2E89h			;*
@@ -53,17 +64,20 @@ hgc_reg_a	equ	0BB23h			;*
 font_ptr_a	equ	0F500h			;*
 font_ptr_b	equ	0F502h			;*
 font_ptr_c	equ	0F504h			;*
-drv_state_byte	equ	0F92Ah			;*
-palette_state	equ	0FF01h			;*
-gvar_game_seg	equ	0FF2Ch			;*
-zero_offset	equ	0			;*
 hgc_cursor_ofs	equ	4FDh
-
 driver_base	equ	2000h			; driver loads at game_seg:2000h
 hgc_seg		equ	0B000h			; HGC framebuffer segment
 
-; stdply.bin player state field offsets (shared with all gm*.bin drivers)
-include  stdply.inc
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+plot_mode	equ	22D5h			;*
+char_bit_idx	equ	2E84h			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+zero_offset	equ	0			;*
 
 ; Set ES to the HGC framebuffer segment (0xB000)
 SET_HGC_ES	MACRO
