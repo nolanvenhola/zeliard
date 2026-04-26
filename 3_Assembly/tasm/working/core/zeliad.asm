@@ -605,6 +605,8 @@ found_3char_mode:
 		mov	graphics_mode,al
 		retn
 
+parse_graphics_mode endp
+
 ; Mode lookup tables: 4 or 3 ASCII name bytes followed by mode index byte
 mode_4char_table db	'cga2', 02h	; CGA 2-color ?-> mode 2
 		db	'mcga', 04h	; MCGA        ?-> mode 4
@@ -618,7 +620,7 @@ mode_3char_table db	'cga',  01h	; CGA         ?-> mode 1
 ;  If name matches "mscmt.drv", enables music (music_enabled = 0xFF)
 ;==========================================================================
 
-parse_music_driver:
+parse_music_driver proc	near
 		mov	byte ptr cs:music_enabled,0
 		push	cs
 		pop	es
@@ -644,13 +646,15 @@ music_is_mt32:
 		mov	byte ptr music_enabled,0FFh
 		retn
 
+parse_music_driver endp
+
 str_mscmt_drv	db	'mscmt.drv'
 
 ;==========================================================================
 ;  parse_joystick_name - Parse joystick driver name from config
 ;==========================================================================
 
-parse_joystick_name:
+parse_joystick_name proc near
 		push	cs
 		pop	es
 		call	find_colon_in_line
@@ -666,12 +670,14 @@ joy_name_ok:
 		stosb				; Null-terminate
 		retn
 
+parse_joystick_name endp
+
 ;==========================================================================
 ;  parse_joystick_enable - Parse "yes"/"no" from config
 ;  Sets joystick_enabled flag. Jumps to cfg_error on bad input.
 ;==========================================================================
 
-parse_joystick_enable:
+parse_joystick_enable proc near
 		push	cs
 		pop	es
 		call	find_colon_in_line
@@ -695,6 +701,8 @@ try_no:
 		mov	byte ptr cs:joystick_enabled,0
 		retn
 
+parse_joystick_enable endp
+
 str_yes		db	'yes'
 str_no		db	'no'
 
@@ -706,8 +714,6 @@ cfg_error:
 				int	21h			; "Error in RESOURCE.CFG"
 				mov	ax,4C00h
 				int	21h			; Exit
-
-parse_graphics_mode endp
 
 ;==========================================================================
 ;  find_colon_in_line - Find ':' delimiter in config line buffer

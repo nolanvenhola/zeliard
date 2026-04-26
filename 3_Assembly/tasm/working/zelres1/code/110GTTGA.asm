@@ -245,7 +245,9 @@ limg_multiply		proc	near
 		jne	draw_cell_start			; Jump if not equal
 		jmp	draw_anim_tile
 
-limg_func_3:
+limg_multiply		endp
+
+limg_func_3		proc	near
 
 draw_cell_start:
 		mov	al,[di-1]
@@ -417,7 +419,9 @@ cached_r7_si_ok:
 		pop	es
 		retn
 
-limg_func_4:
+limg_func_3		endp
+
+limg_func_4		proc	near
 		mov	al,[di-1]
 		mov	byte ptr [di-1],0FEh
 		inc	al
@@ -573,12 +577,15 @@ subst_done:
 		pop	es
 		pop	di
 		retn
+
+limg_func_4		endp
 		db	0BFh, 9Bh, 41h		; mov di,419Bh  (dispatch entry: set di=tga_row_buf_a then fall to limg_func_5)
 
-limg_func_5:
+limg_func_5		proc	near
 		mov	cx,6
+limg_func_5		endp
 
-limg_func_6:
+limg_func_6		proc	near
 		push	cs
 		pop	es
 
@@ -600,6 +607,8 @@ copy_tile_loop:
 									loop	copy_tile_loop		; Loop if cx > 0
 
 		retn
+
+limg_func_6		endp
 
 draw_anim_tile:
 		push	ds
@@ -690,8 +699,6 @@ draw_anim_done:
 		pop	ds
 		retn
 
-limg_multiply		endp
-
 limg_multiply_2		proc	near
 		push	es
 		push	ds
@@ -775,8 +782,9 @@ limg_func_8		endp
 
 limg_func_9		proc	near
 		mov	si,ds:tile_list_ptr
+limg_func_9		endp
 
-limg_func_10:
+limg_func_10		proc	near
 
 scan_entry_loop:
 									cmp	dx,[si]
@@ -787,7 +795,7 @@ scan_entry_next:
 									add	si,8
 									jmp	short scan_entry_loop
 
-limg_func_9		endp
+limg_func_10		endp
 
 limg_check_state		proc	near
 		mov	cx,3

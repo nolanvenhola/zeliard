@@ -247,7 +247,9 @@ decb_func_2		proc	near
 		jne	func2_not_door			; Jump if not equal
 		jmp	handle_door_tile
 
-decb_func_3:
+decb_func_2		endp
+
+decb_func_3		proc	near
 
 func2_not_door:
 		mov	al,[di-1]
@@ -347,7 +349,9 @@ tile_blit_cached_si_wrap:
 		pop	es
 		retn
 
-decb_func_4:
+decb_func_3		endp
+
+decb_func_4		proc	near
 		mov	al,[di-1]
 		mov	byte ptr [di-1],0FEh
 		inc	al
@@ -479,12 +483,15 @@ tile_overlay_done:
 		pop	es
 		pop	di
 		retn
+
+decb_func_4		endp
 		db	0BFh, 53h, 3Eh		; mov di,3E53h (dispatch table stub: render_fn_b1 entry bytes)
 
-decb_func_5:
+decb_func_5		proc	near
 		mov	cx,6
+decb_func_5		endp
 
-decb_func_6:
+decb_func_6		proc	near
 		push	cs
 		pop	es
 
@@ -512,6 +519,8 @@ copy_tile_pixels_loop:
 							loop	copy_tile_pixels_loop		; Loop if cx > 0
 
 		retn
+
+decb_func_6		endp
 
 handle_door_tile:
 		push	ds
@@ -613,8 +622,6 @@ door_blit_done:
 		pop	ds
 		retn
 
-decb_func_2		endp
-
 decb_multiply		proc	near
 		push	es
 		push	ds
@@ -698,8 +705,9 @@ decb_func_8		endp
 
 decb_func_9		proc	near
 		mov	si,ds:tile_list_ptr
+decb_func_9		endp
 
-decb_func_10:
+decb_func_10		proc	near
 
 func9_search_loop:
 							cmp	dx,[si]
@@ -710,7 +718,7 @@ func9_no_match:
 							add	si,8
 							jmp	short func9_search_loop
 
-decb_func_9		endp
+decb_func_10		endp
 
 decb_scan_loop_2		proc	near
 		mov	cx,18h

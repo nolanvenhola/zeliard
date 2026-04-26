@@ -550,7 +550,9 @@ pf2_set_done_l:
 		mov	byte ptr ds:text_done_flag,0FFh
 		jmp	short text_start
 
-player_func_3:
+player_func_2		endp
+
+player_func_3		proc	near
 
 text_start:
 		and	byte ptr [si+6],7Fh
@@ -586,14 +588,15 @@ text_pos_right:
 		mov	byte ptr ds:gvar_skip_flag2,0
 		retn
 
-player_func_2		endp
+player_func_3		endp
 
 player_multiply		proc	near
 
 render_set_dirty:
 		or	byte ptr ds:[0E7h],1
+player_multiply		endp
 
-player_func_5:
+player_func_5		proc	near
 		mov	ds:text_draw_x2,ax
 		mov	ds:text_draw_x,ax
 		xor	bh,bh			; Zero register
@@ -807,7 +810,9 @@ render_page_done:
 		mov	byte ptr ds:gvar_volume,1Dh
 		jmp	render_char_loop
 
-player_func_6:
+player_func_5		endp
+
+player_func_6		proc	near
 
 text_end_seq:
 		mov	byte ptr ds:gvar_skip_input,0
@@ -846,7 +851,9 @@ text_end_wait2_b:
 								jz	text_end_loop2			; Jump if zero
 		retn
 
-player_func_7:
+player_func_6		endp
+
+player_func_7		proc	near
 		xor	cx,cx			; Zero register
 
 wwidth_loop:
@@ -874,7 +881,9 @@ wwidth_not_slash:
 								adc	ch,bh
 								jmp	short wwidth_loop
 
-player_func_8:
+player_func_7		endp
+
+player_func_8		proc	near
 		xor	cx,cx			; Zero register
 		xor	dx,dx			; Zero register
 
@@ -921,6 +930,8 @@ linecnt_end:
 linecnt_inc:
 		inc	cx
 		retn
+
+player_func_8		endp
 
 ctrl_set_bit4:
 		or	byte ptr ds:[4],80h
@@ -1007,8 +1018,6 @@ ctrl_89_slot_set:
 		mov	ax,ds:town_char_idx
 		mov	bl,8
 		jmp	render_set_dirty
-
-player_multiply		endp
 
 player_func_9		proc	near
 		mov	byte ptr ds:gvar_dlg_cols,2
@@ -1234,8 +1243,9 @@ player_func_12		endp
 
 player_multiply_2		proc	near
 		call	player_func_26
+player_multiply_2		endp
 
-player_func_14:
+player_func_14		proc	near
 		call	player_func_18
 		call	player_func_17
 		call	word ptr cs:gfx_update_fn
@@ -1261,7 +1271,7 @@ frame_no_clear:
 		mov	byte ptr ds:gvar_frame_timer,0
 		retn
 
-player_multiply_2		endp
+player_func_14		endp
 
 fill_buffer		proc	near
 		test	word ptr ds:gvar_joy_state,1
@@ -1470,8 +1480,9 @@ player_scan_loop_2		endp
 
 player_func_20		proc	near
 		mov	si,ds:npc_obj_list
+player_func_20		endp
 
-player_func_21:
+player_func_21		proc	near
 
 npc_dx_loop:
 								cmp	dx,[si]
@@ -1482,19 +1493,20 @@ npc_dx_next:
 								add	si,8
 								jmp	short npc_dx_loop
 
-player_func_20		endp
+player_func_21		endp
 
 player_func_22		proc	near
 		call	player_func_32
+player_func_22		endp
 
-player_func_23:
+player_func_23		proc	near
 		mov	al,ds:gvar_music_idx
 		push	ds
 		call	dword ptr ds:music_fn_ptr
 		pop	ds
 		retn
 
-player_func_22		endp
+player_func_23		endp
 
 player_load_chunk		proc	near
 		mov	al,ds:town_map_side
@@ -1711,7 +1723,9 @@ npc_anim_loop5:
 								jmp	short npc_anim_cycle
 		db	0C3h				; retn (tail of npc_type5_fn / padding before player_func_27)
 
-player_func_27:
+player_func_26		endp
+
+player_func_27		proc	near
 
 npc_restore_entry:
 		mov	si,ds:npc_obj_list
@@ -1733,7 +1747,7 @@ npc_restore_next:
 								add	si,8
 								jmp	short npc_restore_loop
 
-player_func_26		endp
+player_func_27		endp
 
 player_func_28		proc	near
 		mov	si,ds:npc_obj_list
@@ -1863,7 +1877,7 @@ door_alt_execute:
 		mov	word ptr ds:[80h],0
 		jmp	frame_update
 
-player_func_31:
+player_func_31		proc	near
 		or	al,80h
 		mov	byte ptr ds:[0C4h],al
 		lodsw				; String [si] to ax
@@ -1899,6 +1913,8 @@ player_func_31:
 
 pf31_done:
 		retn
+
+player_func_31		endp
 			                        ;* No entry point to code  (data: sprite file reference table, reachable via sar_chunk_tbl)
 		add	ds:snd_id_4D4D,bx
 		; Sprite file references: MMAN.GRP, CMAN.GRP
@@ -1906,7 +1922,7 @@ pf31_done:
 		db	001h, 01Fh		; 0x0009
 		db	'CMAN.GRP', 0		; 0x000B
 
-player_func_32:
+player_func_32		proc	near
 		mov	al,0Bh
 		mul	byte ptr ds:town_palette_idx	; ax = data * al
 		add	ax,6DCEh
@@ -1919,6 +1935,8 @@ player_func_32:
 		add	word ptr es:[di+2],8000h
 		add	word ptr es:[di+4],8000h
 		jmp	word ptr cs:gfx_ret_fn
+
+player_func_32		endp
 			                        ;* No entry point to code  (data: pattern/sprite file reference table)
 		add	[bp+si],sp
 		inc	bx
@@ -1933,7 +1951,7 @@ player_func_32:
 		db	001h		; 0x001D
 		db	'$DPAT.GRP', 0		; 0x001E
 
-player_func_33:
+player_func_33		proc	near
 		mov	es,cs:gvar_game_seg
 		mov	si,6E1Eh
 		mov	di,6000h
@@ -1950,6 +1968,8 @@ player_func_33:
 		call	word ptr cs:gfx_copy_fn
 		pop	ds
 		retn
+
+player_func_33		endp
 			                        ;* No entry point to code  (data: .GRP file reference stub before door table)
 		add	[bx+si],sp
 		push	sp
@@ -2327,7 +2347,9 @@ player_scan_loop_3		proc	near
 dlg_skip_scroll:
 		retn
 
-player_func_36:
+player_scan_loop_3		endp
+
+player_func_36		proc	near
 
 dlg_indent_check:
 		cmp	byte ptr ds:gvar_text_y,5
@@ -2349,7 +2371,7 @@ dlg_indent_loop:
 
 		retn
 
-player_scan_loop_3		endp
+player_func_36		endp
 
 dlg_ctrl_0F:
 		call	player_func_37
@@ -3526,7 +3548,7 @@ nameinput_dn_wait:
 		pop	di
 		retn
 
-player_func_55:
+player_func_55		proc	near
 
 cursor_draw:
 		push	si
@@ -3575,7 +3597,9 @@ cursor_place:
 		pop	si
 		retn
 
-player_func_56:
+player_func_55		endp
+
+player_func_56		proc	near
 		push	si
 		mov	ax,ds:save_cursor_x
 		shr	ax,1			; Shift w/zeros fill
@@ -3591,6 +3615,8 @@ player_func_56:
 		call	word ptr cs:gfx_draw_str_fn
 		pop	si
 		retn
+
+player_func_56		endp
 
 backspace_exec:
 		call	fill_buffer_2

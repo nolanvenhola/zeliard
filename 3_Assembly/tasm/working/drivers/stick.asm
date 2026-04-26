@@ -168,7 +168,7 @@ pjb_joy_on:
 		call	decode_joystick_bits
 		jmp	short pjb_btnb_check
 
-decode_joystick_bits:
+decode_joystick_bits	proc	near
 		test	byte ptr cs:joy_btna_state,0FFh
 		jz	pjb_btna_off			; Jump if zero
 		test	al,10h
@@ -188,6 +188,8 @@ pjb_btna_off:
 pjb_btna_set:
 		mov	byte ptr cs:joy_btna_state,0FFh
 		retn
+
+decode_joystick_bits	endp
 
 pjb_btnb_check:
 		test	byte ptr cs:joy_btnb_state,0FFh
@@ -1109,8 +1111,9 @@ sav_ok:
 
 handle_pause_key2		proc	near
 		mov	byte ptr cs:gvar_volume_b,2
+handle_pause_key2		endp
 
-handle_pause_key3:
+handle_pause_key3		proc	near
 		mov	ax,0C46h
 		mov	cx,1028h
 		mov	di,3C80h
@@ -1120,7 +1123,7 @@ handle_pause_key3:
 		mov	al,0FFh
 		jmp	word ptr cs:gfx_screen_base
 
-handle_pause_key2		endp
+handle_pause_key3		endp
 
 handle_pause_key4		proc	near
 		mov	ax,0C46h
@@ -1595,7 +1598,7 @@ fio_seek_buf_lbl	label	byte		; anchor: 4-byte seek offset buffer (CS:0x0D7A)
 fio_default_name_lbl	label	byte		; anchor: default save filename (CS:0x0D7E)
 		db	'dummy', 0		; Default save filename placeholder
 
-handle_pause_key7:
+handle_pause_key7	proc	near
 		lds	dx,dword ptr cs:file_read_buf_ptr	; Load seg:offset ptr
 		mov	ah,3Fh
 		int	21h			; DOS Services  ah=function 3Fh
@@ -1607,7 +1610,9 @@ handle_pause_key7:
 loc_ret_108:
 		retn
 
-handle_pause_key8:
+handle_pause_key7	endp
+
+handle_pause_key8	proc	near
 
 fio_close:
 		mov	ah,3Eh
@@ -1619,6 +1624,8 @@ fio_close:
 loc_ret_110:
 		retn
 
+handle_pause_key8	endp
+
 fio_decomp_entry:
 		push	ds
 		mov	ax,cs
@@ -1629,7 +1636,7 @@ fio_decomp_entry:
 		pop	ds
 		retn
 
-handle_pause_key9:
+handle_pause_key9	proc	near
 		xor	bx,bx			; Zero register
 		lodsb				; String [si] to al
 		dec	dx
@@ -1637,6 +1644,9 @@ handle_pause_key9:
 		mov	bl,al
 		add	bx,bx
 		jmp	word ptr cs:dcmp_dispatch_tbl[bx]	;*
+
+handle_pause_key9	endp
+
 			                        ; Dispatch table (dcmp_dispatch_tbl = dcmp_opcode0 + ISR_STUBS_BASE): opcode 0 = raw/verbatim copy
 
 dcmp_opcode0:
@@ -1664,7 +1674,7 @@ dcmp_copy_loop:
 								jnz	dcmp_copy_loop			; Jump if not zero
 		retn
 
-poll_joystick_buttons0:
+poll_joystick_buttons0	proc	near
 		push	bp
 		mov	ah,al
 		and	ah,0F0h
@@ -1688,6 +1698,8 @@ dcmp_tbl_found:
 dcmp_tbl_miss:
 		pop	bp
 		retn
+
+poll_joystick_buttons0	endp
 
 dcmp_skip_loop:
 								lodsb				; String [si] to al
@@ -1730,7 +1742,7 @@ dcmp_rle6_loop:
 								jnz	dcmp_rle6_loop			; Jump if not zero
 		retn
 
-poll_joystick_buttons1:
+poll_joystick_buttons1	proc	near
 		push	bp
 		mov	ah,al
 		and	ah,0Fh
@@ -1758,6 +1770,8 @@ dcmp_rle6_found:
 dcmp_rle6_miss:
 		pop	bp
 		retn
+
+poll_joystick_buttons1	endp
 		db	0ACh, 4Ah, 8Ah,0E0h		; lodsb; dec dx; mov ah,al ?-- load escape marker into AH (dispatch stub)
 
 dcmp_rle4_loop:
@@ -1815,7 +1829,7 @@ dcmp_rle7_loop:
 								jnz	dcmp_rle7_loop			; Jump if not zero
 		retn
 
-poll_joystick_buttons2:
+poll_joystick_buttons2	proc	near
 		push	bp
 		mov	cx,1
 
@@ -1839,6 +1853,8 @@ dcmp_rle2_found:
 dcmp_rle2_miss:
 		pop	bp
 		retn
+
+poll_joystick_buttons2	endp
 		db	0ACh, 4Ah, 8Ah,0E0h		; lodsb; dec dx; mov ah,al ?-- load escape marker into AH (dispatch stub)
 
 dcmp_rle1_loop:

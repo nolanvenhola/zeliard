@@ -259,7 +259,9 @@ vgadec_multiply		proc	near
 		jne	tile_render_entry			; Jump if not equal
 		jmp	door_tile_handler
 
-vgadec_func_3:
+vgadec_multiply		endp
+
+vgadec_func_3		proc	near
 
 tile_render_entry:
 		mov	al,[di-1]
@@ -396,7 +398,9 @@ tile_cached:
 		pop	es
 		retn
 
-vgadec_func_4:
+vgadec_func_3		endp
+
+vgadec_func_4		proc	near
 		mov	al,[di-1]
 		mov	byte ptr [di-1],0FEh
 		inc	al
@@ -647,15 +651,19 @@ plane_clear_loop:
 		pop	ds
 		retn
 
+vgadec_func_4		endp
+
 ; tile_col6_render: called with di=tile_buf_a, cx=6, renders 6 tile columns to EGA
 
-tile_col6_render:
+tile_col6_render	proc	near
 		db	0BFh, 80h, 3Eh			; mov di,tile_buf_a (3E80h)
+tile_col6_render	endp
 
-vgadec_func_5:
+vgadec_func_5		proc	near
 		mov	cx,6
+vgadec_func_5		endp
 
-vgadec_func_6:
+vgadec_func_6		proc	near
 		mov	ax,0A000h
 		mov	es,ax
 
@@ -697,6 +705,8 @@ tile_plane_loop:
 						loop	tile_col_loop		; Loop if cx > 0
 
 		retn
+
+vgadec_func_6		endp
 
 door_tile_handler:
 		push	ds
@@ -800,8 +810,6 @@ door_blit_done:
 		pop	ds
 		retn
 
-vgadec_multiply		endp
-
 vgadec_multiply_2		proc	near
 		push	es
 		push	ds
@@ -897,8 +905,9 @@ vgadec_func_8		endp
 
 vgadec_func_9		proc	near
 		mov	si,ds:tile_list_ptr
+vgadec_func_9		endp
 
-vga_operation0:
+vga_operation0		proc	near
 
 tile_match_check:
 						cmp	dx,[si]
@@ -909,7 +918,7 @@ tile_match_next:
 						add	si,8
 						jmp	short tile_match_check
 
-vgadec_func_9		endp
+vga_operation0		endp
 
 vga_operation1		proc	near
 		mov	bx,4Eh

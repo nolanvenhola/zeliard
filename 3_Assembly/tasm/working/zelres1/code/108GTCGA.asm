@@ -248,7 +248,9 @@ draw_door_tile		proc	near
 		jne	check_tile_state			; Jump if not equal
 		jmp	handle_fd_tile
 
-draw_opaque_tile:
+draw_door_tile		endp
+
+draw_opaque_tile	proc	near
 
 check_tile_state:
 		mov	al,[di-1]
@@ -419,7 +421,9 @@ skip_wrap_si_i:
 		pop	es
 		retn
 
-draw_masked_tile:
+draw_opaque_tile	endp
+
+draw_masked_tile	proc	near
 		mov	al,[di-1]
 		mov	byte ptr [di-1],0FEh
 		inc	al
@@ -540,12 +544,15 @@ subst_done:
 		pop	es
 		pop	di
 		retn
+
+draw_masked_tile	endp
 		db	0BFh, 14h, 3Fh		; mov di,cga_row_buf_a -- alternate entry prologue
 
-load_6tiles_to_buf:
+load_6tiles_to_buf	proc	near
 		mov	cx,6
+load_6tiles_to_buf	endp
 
-load_tiles_to_buf:
+load_tiles_to_buf	proc	near
 		push	cs
 		pop	es
 
@@ -567,6 +574,8 @@ copy_tileset_loop:
 					loop	copy_tileset_loop		; Loop if cx > 0
 
 		retn
+
+load_tiles_to_buf	endp
 
 handle_fd_tile:
 		push	ds
@@ -658,8 +667,6 @@ blit_cleanup:
 		pop	ds
 		retn
 
-draw_door_tile		endp
-
 draw_door_init		proc	near
 		push	es
 		push	ds
@@ -743,8 +750,9 @@ find_nonfd_entry		endp
 
 scan_entity_tbl		proc	near
 		mov	si,ds:entity_tbl_ptr
+scan_entity_tbl		endp
 
-scan_entity_next:
+scan_entity_next	proc	near
 
 find_entry_loop:
 					cmp	dx,[si]
@@ -755,7 +763,7 @@ advance_entry:
 					add	si,8
 					jmp	short find_entry_loop
 
-scan_entity_tbl		endp
+scan_entity_next	endp
 
 blit_3rows_to_cga		proc	near
 		mov	cx,3

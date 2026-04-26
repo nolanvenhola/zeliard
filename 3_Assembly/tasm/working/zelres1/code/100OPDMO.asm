@@ -560,7 +560,7 @@ timer_check_input:
 		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 
-interrupt_handler_cascade:
+interrupt_handler_cascade	proc	near
 		push	si
 		push	ax
 		call	word ptr cs:[110h]
@@ -570,6 +570,8 @@ interrupt_handler_cascade:
 		pop	ax
 		pop	si
 		retn
+
+interrupt_handler_cascade	endp
 
 timer_exit_to_game:
 		mov	byte ptr ds:gvar_state_flag,8
@@ -607,7 +609,7 @@ timer_wait_gfx:
 		call	credits_scroll_display
 		jmp	short trans_exit
 
-scene_transition_wait:
+scene_transition_wait	proc	near
 
 trans_wait_timer:
 							test	byte ptr cs:gvar_skip_input,0FFh
@@ -620,6 +622,8 @@ trans_wait_timer:
 		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 
+scene_transition_wait	endp
+
 trans_exit:
 		mov	byte ptr ds:gvar_state_flag,8
 		call	word ptr cs:gfx_init_fn
@@ -631,7 +635,7 @@ trans_wait_gfx:
 		mov	byte ptr cs:gvar_key_state,0
 		jmp	begin_gameplay
 
-credits_scroll_display:
+credits_scroll_display	proc	near
 		mov	bx,20h
 		mov	cx,5078h
 		call	word ptr cs:anim_fn_wipe
@@ -672,6 +676,8 @@ credits_fade_loop:
 							loop	credits_fade_loop		; Loop if cx > 0
 
 		retn
+
+credits_scroll_display	endp
 		db	ANIM_87, ' '	; animation code + space (script entry point)
 		db	'   Copyright (C)1987,1990 GAME ARTS    ', CR, '    Copyright (C)1990 Sierra On-Line    '
 		db	SCR_END_SCRIPT		; end of script / copyright page terminator
@@ -997,7 +1003,7 @@ gameplay_frame_loop:
 
 		jmp	short gameplay_exit_to_menu
 
-gameplay_timer_loop:
+gameplay_timer_loop	proc	near
 
 gameplay_wait_elapsed:
 							call	gameplay_input_handler
@@ -1006,7 +1012,9 @@ gameplay_wait_elapsed:
 		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 
-gameplay_input_handler:
+gameplay_timer_loop	endp
+
+gameplay_input_handler	proc	near
 		test	byte ptr cs:gvar_skip_input,0FFh
 		jnz	gameplay_exit_to_menu			; Jump if not zero
 		cmp	byte ptr cs:gvar_key_state,ENTER_KEY
@@ -1020,6 +1028,8 @@ gameplay_input_handler:
 		pop	ax
 		pop	si
 		retn
+
+gameplay_input_handler	endp
 
 gameplay_exit_to_menu:
 		mov	bx,0
@@ -1469,7 +1479,7 @@ decompress_image		proc	near
 		call	rle_unpack_core
 		jmp	short decomp_palette_transform
 
-rle_unpack_core:
+rle_unpack_core		proc	near
 		push	di
 		lodsw				; String [si] to ax
 		mov	cx,ax
@@ -1505,6 +1515,8 @@ decomp_next_bit:
 		add	cx,cx
 		pop	di
 		retn
+
+rle_unpack_core		endp
 
 decomp_palette_transform:
 		xor	dh,dh			; Zero register

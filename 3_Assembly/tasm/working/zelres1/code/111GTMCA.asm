@@ -258,7 +258,9 @@ simg_multiply		proc	near
 		jne	render_tile			; Jump if not equal
 		jmp	handle_scroll_tile
 
-simg_func_3:
+simg_multiply		endp
+
+simg_func_3		proc	near
 
 render_tile:
 		mov	al,[di-1]
@@ -361,7 +363,9 @@ blit_cached_loop:
 		pop	es
 		retn
 
-simg_func_4:
+simg_func_3		endp
+
+simg_func_4		proc	near
 		mov	al,[di-1]
 		mov	byte ptr [di-1],0FEh
 		inc	al
@@ -526,15 +530,19 @@ anim_done:
 		pop	es
 		pop	di
 		retn
+
+simg_func_4		endp
 ; Dispatch entry: set DI=tile_offscr_a then fall through to simg_func_6
 
-simg_func_5_alt:
+simg_func_5_alt	proc	near
 		mov	di,tile_offscr_a	; = 0FA00h
+simg_func_5_alt	endp
 
-simg_func_5:
+simg_func_5		proc	near
 		mov	cx,6
+simg_func_5		endp
 
-simg_func_6:
+simg_func_6		proc	near
 		mov	ax,0A000h
 		mov	es,ax
 
@@ -577,6 +585,8 @@ blit_tile_3planes:
 					loop	blit_n_tiles_loop		; Loop if cx > 0
 
 		retn
+
+simg_func_6		endp
 
 handle_scroll_tile:
 		push	ds
@@ -668,8 +678,6 @@ blit_bot_done:
 		pop	ds
 		retn
 
-simg_multiply		endp
-
 simg_multiply_2		proc	near
 		push	es
 		push	ds
@@ -754,8 +762,9 @@ simg_func_8		endp
 
 simg_func_9		proc	near
 		mov	si,ds:scroll_entry_ptr
+simg_func_9		endp
 
-vga_operation0:
+vga_operation0		proc	near
 
 scan_col_match:
 					cmp	dx,[si]
@@ -766,7 +775,7 @@ col_next:
 					add	si,8
 					jmp	short scan_col_match
 
-simg_func_9		endp
+vga_operation0		endp
 
 vga_operation1		proc	near
 		mov	cx,18h
