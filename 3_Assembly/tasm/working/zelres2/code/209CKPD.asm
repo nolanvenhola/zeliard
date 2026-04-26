@@ -86,54 +86,28 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-; --- External data references (game DS segment; accessed via ds:) ---
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 bos_src_col_a	equ	4F25h			;* sprite source column A (hi-nibble)
 bos_src_col_b	equ	50E5h			;* sprite source column B (lo-nibble)
 cga_wrap_c	equ	0A05Ah			;* CGA/planar wrap offset C
-bos_var_25e	equ	2022h			;* boss state var 25 (ds-relative)
-bos_var_26e	equ	2208h			;* boss state var 26
-bos_var_27e	equ	2222h			;* boss state var 27
-bos_var_28e	equ	2A11h			;* boss state var 28
-bos_var_29e	equ	2A42h			;* boss state var 29
-bos_mode	equ	3388h			;* current boss render mode byte (CS-relative)
 bos_anim_tbl	equ	3395h			;* animation frame dispatch table (word array)
 bos_color_lut_a	equ	3497h			;* EGA color LUT A (16 bytes)
 bos_color_lut_b	equ	3654h			;* EGA color LUT B
-bos_var_34e	equ	3694h			;* render state var 34
 bos_color_lut_c	equ	3753h			;* EGA color LUT C
 bos_color_lut_d	equ	38D0h			;* CGA color LUT D
 bos_gfx_hdr	equ	38E0h			;* boss sprite graphics header
-bos_var_38e	equ	3F03h			;* boss var 38
-bos_var_39e	equ	3FE8h			;* boss var 39
-bos_var_40e	equ	410Ah			;* boss var 40
-bos_var_41e	equ	413Bh			;* boss var 41
-bos_var_42e	equ	41A0h			;* boss var 42
 bos_gfx_src_b	equ	426Ah			;* boss gfx source B
-bos_var_44e	equ	43A8h			;* boss var 44
 bos_src_d	equ	4C6Dh			;* sprite source D
 bos_src_e	equ	4DB8h			;* sprite source E
 bos_src_f	equ	4F25h			;* sprite source F (= bos_src_col_a)
 bos_src_g	equ	50E5h			;* sprite source G (= bos_src_col_b)
 bos_dst_vga	equ	53C1h			;* VGA destination offset
 bos_limit_6000	equ	6000h			;* wrap boundary (6000h)
-bos_var_51e	equ	8041h			;* boss var 51
 bos_limit_wrap	equ	80A0h			;* wrap delta 80A0h
-bos_var_53e	equ	8808h			;* boss var 53
-bos_var_54e	equ	8A28h			;* boss var 54
 cga_wrap_55e	equ	0A05Ah			;* CGA wrap 55 (= cga_wrap_c)
-bos_var_56e	equ	0A202h			;* boss var 56
-bos_var_57e	equ	0A211h			;* boss var 57
-bos_var_58e	equ	0A841h			;* boss var 58
-bos_var_59e	equ	0A88Ah			;* boss var 59
-bos_var_60e	equ	0AB41h			;* boss var 60
-bos_var_61e	equ	0BA80h			;* boss var 61
-bos_var_62e	equ	0BAEAh			;* boss var 62
-bos_var_63e	equ	0C003h			;* boss var 63
 bos_wrap_c050	equ	0C050h			;* wrap delta C050h
-bos_var_65e	equ	0FA41h			;* boss var 65
-bos_dst_zero	equ	0			;* zero offset (for clear loop)
-
-; --- Internal (CS-relative) table offsets, within this binary ---
 rle_src_46c	equ	46Ch			; RLE-decoded sprite dest A (used by ega mode a)
 rle_dst_488	equ	488h			; EGA row dest offset (init = 0488h)
 cga_src_11b0	equ	11B0h			; CGA mode-a source offset
@@ -142,6 +116,40 @@ cga_dst_2c6c	equ	2C6Ch			; CGA mode-b destination offset
 cga_src_23c	equ	23Ch			; CGA mode-b source offset (= 0x23C)
 vga_dst_163c	equ	163Ch			; VGA/EGA dest offset 163Ch
 vga_dst_41f8	equ	41F8h			; VGA dest 41F8h
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+bos_var_25e	equ	2022h			;* boss state var 25 (ds-relative)
+bos_var_26e	equ	2208h			;* boss state var 26
+bos_var_27e	equ	2222h			;* boss state var 27
+bos_var_28e	equ	2A11h			;* boss state var 28
+bos_var_29e	equ	2A42h			;* boss state var 29
+bos_mode	equ	3388h			;* current boss render mode byte (CS-relative)
+bos_var_34e	equ	3694h			;* render state var 34
+bos_var_38e	equ	3F03h			;* boss var 38
+bos_var_39e	equ	3FE8h			;* boss var 39
+bos_var_40e	equ	410Ah			;* boss var 40
+bos_var_41e	equ	413Bh			;* boss var 41
+bos_var_42e	equ	41A0h			;* boss var 42
+bos_var_44e	equ	43A8h			;* boss var 44
+bos_var_51e	equ	8041h			;* boss var 51
+bos_var_53e	equ	8808h			;* boss var 53
+bos_var_54e	equ	8A28h			;* boss var 54
+bos_var_56e	equ	0A202h			;* boss var 56
+bos_var_57e	equ	0A211h			;* boss var 57
+bos_var_58e	equ	0A841h			;* boss var 58
+bos_var_59e	equ	0A88Ah			;* boss var 59
+bos_var_60e	equ	0AB41h			;* boss var 60
+bos_var_61e	equ	0BA80h			;* boss var 61
+bos_var_62e	equ	0BAEAh			;* boss var 62
+bos_var_63e	equ	0C003h			;* boss var 63
+bos_var_65e	equ	0FA41h			;* boss var 65
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+bos_dst_zero	equ	0			;* zero offset (for clear loop)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

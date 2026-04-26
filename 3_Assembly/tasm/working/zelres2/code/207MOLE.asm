@@ -68,31 +68,25 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-; External data references (all CS-relative; this chunk is loaded raw at CS+3000h).
-;
-; Variables in this chunk's own CS segment (indexed from 0x0499):
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
+wrap_delta	equ	0C050h			; planar wraparound delta (added when di hits 4000h)
+vga_limit	equ	6000h			; VGA framebuffer size limit (cmp against di)
+mcga_wrap_b	equ	80A0h			; MCGA wraparound delta (after di >= 8000h)
+cs_dispatch_178	equ	3BF0h			; post-blit di target used by decode_5col_blit_loop
+cs_dispatch_179	equ	6778h			; post-blit di target used by mono_scan_loop
 
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 game_phase_var	equ	499h			; [byte] stored game_phase / mode index (set on entry)
 dispatch_flag_1	equ	497h			; [byte] control flag A (written by init: 0x10, then 0x50)
 dispatch_flag_2	equ	498h			; [byte] control flag B (written by init: 0xFF)
 
-; Internal constants used by the planar decoders:
-
-wrap_delta	equ	0C050h			; planar wraparound delta (added when di hits 4000h)
-vga_limit	equ	6000h			; VGA framebuffer size limit (cmp against di)
-mcga_wrap_b	equ	80A0h			; MCGA wraparound delta (after di >= 8000h)
-
-; Non-instruction scratch buffers (referenced in decoded-but-not-taken branches):
-
-cs_dispatch_178	equ	3BF0h			; post-blit di target used by decode_5col_blit_loop
-cs_dispatch_179	equ	6778h			; post-blit di target used by mono_scan_loop
-
-; The following EQUs are address constants that appear as disassembled
-; operands on instructions that are actually misaligned -- i.e. inside
-; raw sprite/bitmap data blocks that Sourcer attempted to decode. They
-; are not real variables; the names are kept to preserve bit-perfect
-; output after TASM re-encodes the misaligned mnemonics.
-;
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
 misdec_99A2	equ	99A2h			; operand in fake "add [99A2h],ch" at 0x0003
 misdec_A000	equ	0A000h			; operand in fake "add [A000h+bx],ch" at 0x02CB
 misdec_BAA0	equ	0BAA0h			; operand in fake "adc [BAA0h+bx+si],cx" at 0x1B45

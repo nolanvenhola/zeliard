@@ -51,21 +51,14 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; External data references (outside this module's CS segment).
-
-; --- Graphics driver function table (drv_seg base 2000h) -------------------
-; drv_load_msg_header = 2010h (in zr2com.inc) -- was gfx_draw_banner
-
-; --- Game API (cs:[6004..6012]) script/menu subsystem ---------------------
-
-; --- Game-segment global variables (game_seg:0FFxx via DS) ----------------
-; gvar_frame_timer    = 0FF1Ah (in zr2com.inc)
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
 gvar_game_seg		equ	0FF2Ch		;* game data segment selector word
 
-; --- Internal module labels (CS-relative = module_offset + 0A000h) --------
-; The module is loaded at game_seg:0A000h, so cs:0A0xxh addresses map to
-; module offset 0xxxh. These EQUs pin the offsets Sourcer generated.
-
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 dispatch_tbl_base	equ	0A078h		;* script-cmd dispatch table base (words @ +4..+0B)
 shop_entry_init		equ	0A302h		;* module header byte (probes whole module)
 face_frame_seq		equ	0A0F8h		;* face/crown frame sequence (12 bytes)
@@ -75,14 +68,18 @@ face_phase_xlat		equ	0A360h		;* XLAT: frame-counter -> face phase (26 bytes)
 face_anim_tbl		equ	0A37Ah		;* face-anim glyph sets (4 bytes/set x N)
 mouth_anim_tbl		equ	0A3D4h		;* mouth-anim glyph sets (10 bytes x 2)
 
-; --- Animation state variables (CS-resident, in padding after code) -------
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 mouth_mode_flag		equ	0A79Dh		;* mouth animation enable flag byte
 mouth_phase_cnt		equ	0A79Eh		;* mouth animation phase counter byte
 mouth_set_idx		equ	0A79Fh		;* mouth animation set index byte
 face_mode_flag		equ	0A7A0h		;* face animation enable flag byte
 face_phase_cnt		equ	0A7A1h		;* face animation phase counter byte
 
-; --- Chunk-loader parameter fields (game_seg:[5]/[6]) ---------------------
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
 dialog_done_flag	equ	5		;* game-state: dialog complete flag byte
 dialog_done_flag_b	equ	6		;* game-state: dialog complete flag byte B
 

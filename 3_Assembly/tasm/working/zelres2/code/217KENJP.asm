@@ -65,24 +65,31 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; ------------------------------------------------------------------------
-; Graphics driver dispatch table (driver loads at game_seg:2000h).
-; Each entry is a word pointer at CS:2000h+offset; called via
-;   call word ptr cs:drv_fn_NN
-; ------------------------------------------------------------------------
-; drv_screen_init_a, drv_palette_push, drv_load_msg_header, drv_screen_init_b,
-; drv_anim_step, drv_render_char, drv_return_to_caller, drv_ds_copy
-; defined in zr2com.inc.
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
+gvar_sage_id	equ	0C006h			;* global: sage id (1..8), set by caller
+gvar_save_buf	equ	0E000h			;* global: save-file buffer base (256 bytes)
+gvar_save_data	equ	0E801h			;* global: save-file data area
+gvar_key_flag	equ	0FF1Dh			;* global: key-pressed flag
+gvar_enter_flag	equ	0FF1Eh			;* global: ENTER-pressed flag
+gvar_key_code	equ	0FF29h			;* global: last key code byte
+gvar_game_seg	equ	0FF2Ch			;* global: game segment selector word
+gvar_name_page	equ	0FF56h			;* global: name entry page counter
+gvar_ui_delay	equ	0FF6Ah			;* global: UI delay counter word (0Ah)
+gvar_name_prev	equ	0FF6Ch			;* global: previous name buffer (8 bytes, for resume)
+gvar_input_lock	equ	0FF74h			;* global: input-locked flag (FFh=locked)
+
+; ----------------------------------------------------------------------
+; Section 4: Shared dispatch slot references (file-local overrides)
+; ----------------------------------------------------------------------
 drv_fn_palette_a	equ	2006h			;* fn 3: palette push A (writes 7-byte LUT)
 drv_fn_blit_on	equ	2026h			;* fn 13h: enable blit / show dialog area
 drv_fn_blit_off	equ	2028h			;* fn 14h: disable blit / hide dialog area
 drv_fn_draw_str	equ	202Ah			;* fn 15h: draw text string (BX=pos, CL=col, SI=str)
-; CS-relative 4-byte records in driver; referenced by `ds:tbl[bx+si]` arith.
 drv_tbl_a	equ	2802h			;* driver lookup table A (indexed by sage/state)
 drv_tbl_b	equ	2C02h			;* driver lookup table B (indexed by sage/state)
-; Secondary driver dispatch table.
 drv_fn2_init	equ	3000h			;* fn2 0: init ancillary hardware
-; drv_draw_glyph (3016h) defined in zr2com.inc
 drv_fn2_text_setup	equ	301Ah			;* fn2 D: text position setup (AL=x)
 drv_fn2_text_render	equ	301Ch			;* fn2 E: text render entry
 drv_fn2_cursor_draw	equ	301Eh			;* fn2 F: cursor draw (BX=pos, AL=phase)
@@ -90,20 +97,13 @@ drv_fn2_cursor_clear	equ	3020h			;* fn2 10: cursor clear (BX=pos, AL=phase)
 drv_ident_val	equ	362Ch			;* driver identity/version byte
 drv_init_val	equ	51E8h			;* driver init parameter byte (read by start)
 
-; ------------------------------------------------------------------------
-; Script interpreter function table (game code base + 6000h).
-; Called via `call word ptr cs:script_fn_XX`.
-; ------------------------------------------------------------------------
-; script_step (6004h) defined in zr2com.inc
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 script_fn_menu_init	equ	6014h			;* menu: init selection list
 script_fn_menu_poll	equ	6016h			;* menu: poll input / advance
 script_fn_menu_up	equ	6018h			;* menu: cursor up (BL=cur_idx)
 script_fn_menu_dn	equ	601Ah			;* menu: cursor down (BL=cur_idx)
-
-; ------------------------------------------------------------------------
-; Per-sage dispatch jump tables (game-segment, filled by caller).
-; Each is a word table indexed by (sage_id*2) or menu-selection*2.
-; ------------------------------------------------------------------------
 sage_cmd_tbl	equ	0A0AFh			;* cmd-code jump table (BL=cmd, used in kenja_cmd_dispatch)
 sage_init_tbl	equ	0A114h			;* per-state jump table (used in main dispatch)
 sage_anim_a	equ	0A1FDh			;* sage intro animation pattern A (3 entries)
@@ -123,19 +123,11 @@ sage_result_tbl	equ	0B029h			;* menu-result jump table (state code -> next handl
 sage_indihar_hint	equ	0B51Eh			;* Indihar-specific hint text base
 sage_blessing_tbl	equ	0B5EBh			;* blessing text pointer table (indexed by sage_id-1)
 disk_error_prompt	equ	0B9FFh			;* disk error prompt area
-
-; ------------------------------------------------------------------------
-; Working state variables (game-segment scratch area 0BB12h..0BB36h).
-; ------------------------------------------------------------------------
 state_script_ptr	equ	0BB12h			;* current script pointer (word)
-state_cmd_byte	equ	0BB14h			;* current command byte
-state_sage_flag	equ	0BB15h			;* general per-sage flag byte
 state_indihar_flg	equ	0BB17h			;* Indihar-only flag byte (final sage)
-state_see_flag	equ	0BB18h			;* "See Power" flag byte
 state_record_flg	equ	0BB19h			;* "Record Experience" flag byte
 state_listen_flg	equ	0BB1Ah			;* "Listen Knowledge" flag byte
 state_blink_sel	equ	0BB1Bh			;* cursor-blink selector (which table)
-state_anim_phase	equ	0BB1Ch			;* main animation phase (0..0Fh)
 state_anim_col	equ	0BB1Dh			;* animation column counter
 state_blink_parity	equ	0BB1Eh			;* cursor blink parity byte
 state_blink_ctr	equ	0BB1Fh			;* cursor blink wait counter
@@ -150,24 +142,14 @@ state_name_term	equ	0BB2Eh			;* save-name terminator byte (at +7)
 state_color_tmp_cs	equ	0BB34h			;* CS-side temporary color word (src for palette xfer)
 state_color_tmp_cs2	equ	0BB36h			;* CS-side temporary color word 2 (7-byte buffer)
 
-gvar_sage_id	equ	0C006h			;* global: sage id (1..8), set by caller
-gvar_save_buf	equ	0E000h			;* global: save-file buffer base (256 bytes)
-gvar_save_data	equ	0E801h			;* global: save-file data area
-
-; ------------------------------------------------------------------------
-; Global game-state (game_seg:0xFFxx).
-; ------------------------------------------------------------------------
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+state_cmd_byte	equ	0BB14h			;* current command byte
+state_sage_flag	equ	0BB15h			;* general per-sage flag byte
+state_see_flag	equ	0BB18h			;* "See Power" flag byte
+state_anim_phase	equ	0BB1Ch			;* main animation phase (0..0Fh)
 kenjp_timer_ff18	equ	0FF18h			;* global: timer word (tested for bit 0 parity)
-; gvar_frame_timer, gvar_script_ip, gvar_text_x, gvar_text_y, gvar_timer_word,
-; gvar_dlg_cols, gvar_dlg_rows, gvar_dlg_pos defined in zr2com.inc.
-gvar_key_flag	equ	0FF1Dh			;* global: key-pressed flag
-gvar_enter_flag	equ	0FF1Eh			;* global: ENTER-pressed flag
-gvar_key_code	equ	0FF29h			;* global: last key code byte
-gvar_game_seg	equ	0FF2Ch			;* global: game segment selector word
-gvar_name_page	equ	0FF56h			;* global: name entry page counter
-gvar_ui_delay	equ	0FF6Ah			;* global: UI delay counter word (0Ah)
-gvar_name_prev	equ	0FF6Ch			;* global: previous name buffer (8 bytes, for resume)
-gvar_input_lock	equ	0FF74h			;* global: input-locked flag (FFh=locked)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

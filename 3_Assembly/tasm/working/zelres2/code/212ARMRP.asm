@@ -45,28 +45,27 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; External data references (outside this module's CS segment).
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
+gvar_game_seg		equ	0FF2Ch			;* game segment selector word
+gvar_sel_row		equ	0FF56h			;* current menu row byte
+gvar_sel_flag		equ	0FF57h			;* menu selection flag byte
+gvar_sel_xlat		equ	0FF58h			;* menu selection translate byte
+gvar_ff68		equ	0FF68h			;* (free slot) word
+gvar_dlg_timer		equ	0FF6Ah			;* dialog timer word
 
-; --- Chunk loader scratch / temp buffer (game_seg) ---
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 chunk_load_buf	equ	8000h			;* temp buffer for loading chunk into game_seg
-
-; --- Graphics driver function table (drv_seg base 2000h) ---
-;   drv_fill_rect, drv_screen_init_a, drv_load_msg_header, drv_screen_init_b,
-;   drv_frame_commit, drv_return_to_caller, drv_ds_copy, drv_draw_glyph
-;   are defined in zr2com.inc.
 gfx_set_color_fn	equ	2004h			;* set drawing color/palette for bar
 gfx_present_fn		equ	201Ah			;* present / update current frame
 gfx_render_scene_fn	equ	201Ch			;* render scene (jmp indirect, end of transaction)
 gfx_draw_hud_fn		equ	2020h			;* draw HUD/money panel (bx=pos/al=side)
-
-; --- Game-code function table (game_seg:6000h-6012h) ---
-;   script_step, script_format_num, script_display_page, script_take_item,
-;   script_give_item are defined in zr2com.inc.
 menu_init_fn		equ	600Eh			;* menu init (cx=rows,si=str tbl)
 menu_nav_fn		equ	6010h			;* menu navigate (bl=cur row -> updated bl,CY=cancel)
 menu_render_fn		equ	6012h			;* menu render (si=strs,cl=rows,al=color)
-
-; --- Game-segment data (game_seg-relative) ---
 chunk_load_param	equ	4002h			;* chunk-load parameter field
 rect_coord_291D		equ	291Dh			;* rect fill coord constant (bx param in rect_fill)
 dialog_err_str		equ	7FE8h			;* error/not-enough-gold dialog string
@@ -79,8 +78,6 @@ flag_trade_done		equ	0A498h			;* per-transaction "trade complete" flag byte
 shield_price_tbl	equ	0A6BFh			;* shield price word array (per type)
 shield_price_tbl_end	equ	0A8FDh			;* trade-in multiplier byte table (near shield_price_tbl+0x23E)
 trade_multiplier_tbl_p	equ	0A90Fh			;* trade-in price formula word table pointer
-anim_seq_closed		equ	0AAD0h			;* shopkeeper animation seq (mouth closed)
-anim_seq_open		equ	0AB68h			;* shopkeeper animation seq (mouth open)
 goods_icon_map		equ	0AC9Ch			;* goods icon index lookup base
 explain_dispatch_a	equ	0ACA2h			;* explain-goods text offsets (part A)
 explain_dispatch_b	equ	0ACAEh			;* explain-goods text offsets (part B)
@@ -88,40 +85,38 @@ weapon_name_offs	equ	0AD05h			;* weapon name table offsets (base for si computat
 shield_name_offs	equ	0AD11h			;* shield name table offsets
 explain_text_tbl	equ	0B3DEh			;* explain-goods text address table (per-item)
 weapon_dlg_tbl		equ	0BAA7h			;* weapon dialog base table (indexed by equipped slot)
+last_menu_choice	equ	0BC21h			;* last menu choice byte
+sub_menu_choice_a	equ	0BC22h			;* sub-menu choice A byte
+trade_gold_tmp		equ	0BC29h			;* trade-in gold temporary (byte)
+trade_gold_buf_hi	equ	0BC2Ch			;* trade-in gold scratch byte
+trade_gold_buf_hi2	equ	0BC2Dh			;* trade-in gold scratch byte 2
+mouth_anim_A		equ	0BC3Bh			;* mouth anim packed bits A (6 bytes)
+mouth_anim_B		equ	0BC41h			;* mouth anim packed bits B (6 bytes)
 
-; --- Dialog/menu state variables (game_seg local scratch) ---
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
 cur_weapon_idx		equ	0BBFDh			;* selected weapon slot index byte
 cur_weapon_flag		equ	0BBFEh			;* selected weapon flag byte
 cur_shield_idx		equ	0BC0Fh			;* selected shield slot index byte
 cur_shield_flag		equ	0BC10h			;* selected shield flag byte
-last_menu_choice	equ	0BC21h			;* last menu choice byte
-sub_menu_choice_a	equ	0BC22h			;* sub-menu choice A byte
 trade_active_flag	equ	0BC23h			;* transaction in progress flag
-anim_state_0		equ	0BC24h			;* shopkeeper anim state byte 0
-anim_state_1		equ	0BC25h			;* shopkeeper anim state byte 1
-anim_state_2		equ	0BC26h			;* shopkeeper anim state byte 2
-anim_state_3		equ	0BC27h			;* shopkeeper anim state byte 3
 trade_weapon_flag	equ	0BC28h			;* trade/swap weapon flag byte
-trade_gold_tmp		equ	0BC29h			;* trade-in gold temporary (byte)
-trade_gold_buf_hi	equ	0BC2Ch			;* trade-in gold scratch byte
-trade_gold_buf_hi2	equ	0BC2Dh			;* trade-in gold scratch byte 2
 new_item_flag		equ	0BC2Fh			;* new-item/equip flag byte
 new_item_idx		equ	0BC30h			;* new-item slot index byte
 weapon_cnt		equ	0BC31h			;* number of weapons for sale byte
 shield_cnt		equ	0BC32h			;* number of shields for sale byte
-mouth_anim_A		equ	0BC3Bh			;* mouth anim packed bits A (6 bytes)
-mouth_anim_B		equ	0BC41h			;* mouth anim packed bits B (6 bytes)
 town_npc_state		equ	0C006h			;* town-map NPC/room state byte
 
-; --- Global variables (game_seg:0xFFxx) ---
-;   gvar_frame_timer, gvar_dlg_cols, gvar_dlg_rows, gvar_dlg_pos
-;   are defined in zr2com.inc.
-gvar_game_seg		equ	0FF2Ch			;* game segment selector word
-gvar_sel_row		equ	0FF56h			;* current menu row byte
-gvar_sel_flag		equ	0FF57h			;* menu selection flag byte
-gvar_sel_xlat		equ	0FF58h			;* menu selection translate byte
-gvar_ff68		equ	0FF68h			;* (free slot) word
-gvar_dlg_timer		equ	0FF6Ah			;* dialog timer word
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+anim_seq_closed		equ	0AAD0h			;* shopkeeper animation seq (mouth closed)
+anim_seq_open		equ	0AB68h			;* shopkeeper animation seq (mouth open)
+anim_state_0		equ	0BC24h			;* shopkeeper anim state byte 0
+anim_state_1		equ	0BC25h			;* shopkeeper anim state byte 1
+anim_state_2		equ	0BC26h			;* shopkeeper anim state byte 2
+anim_state_3		equ	0BC27h			;* shopkeeper anim state byte 3
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

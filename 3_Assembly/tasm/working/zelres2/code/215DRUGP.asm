@@ -45,37 +45,20 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; --- External addresses (outside module) -----------------------------------
-; Driver functions at cs:[2000h..2044h] (set up by loader, same for all
-; shop modules 210-217).
-
-; drv_load_msg_header (2010h) defined in zr2com.inc -- was gfx_show_sprite
-
-; Game API (cs:[6004..6012]) script/menu subsystem.
-;   script_format_num, script_display_page, script_take_item, script_give_item
-;   defined in zr2com.inc.
-menu_show_list		equ	6010h		;* show menu (bl=idx) -> CF if cancel
-menu_init		equ	6012h		;* init menu (bx=pos, di=buffer, cl=n, al=start)
-
-; Game-segment global variables (game_seg:0FFxx, accessed via DS).
-;   gvar_frame_timer, gvar_script_ip, gvar_text_x, gvar_text_y,
-;   gvar_timer_word, gvar_dlg_cols, gvar_dlg_rows, gvar_dlg_pos
-;   defined in zr2com.inc.
-
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
 gvar_game_seg		equ	0FF2Ch		;* game data segment selector
-menu_start_idx		equ	0FF56h		;* menu start index (byte)
-flag_buy_mode		equ	0FF57h		;* 0FFh=buy mode, 0=sell/describe
 inventory_list		equ	0FF58h		;* live inventory slot buffer (5 bytes)
 menu_col_width		equ	0FF68h		;* menu column width (word)
 menu_row_count		equ	0FF6Ah		;* menu row count (word)
 
-; Current-shop selector (set by caller before entry).
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
+menu_show_list		equ	6010h		;* show menu (bl=idx) -> CF if cancel
+menu_init		equ	6012h		;* init menu (bx=pos, di=buffer, cl=n, al=start)
 cur_shop_id		equ	0C006h		;* current shop index (1-based)
-
-; --- Internal module labels (CS-relative = module_offset + 0A000h) ---------
-; The module is loaded at game_seg:0A000h, so cs:0A0xxh addresses map to
-; module offset 0xxxh. The labels below are used with cs: overrides.
-
 shop_cmd_tbl		equ	0A0C3h		;* command dispatch table (word array @ 0xC3)
 shop_inv_bitmasks	equ	0A0C9h		;* inventory bitmasks @ data_4 (0xC9)
 shop_subtitle_tbl	equ	0A494h		;* item subtitle/text lookup @ 0x494
@@ -84,22 +67,24 @@ shop_entry_init		equ	0A644h		;* shop entry-byte (module header byte) @ 0x644
 price_gfx_tbl		equ	0A69Ch		;* item price/stat glyph table @ 0x69C
 greet_str_tbl		equ	0A745h		;* greeting string table (word array) @ 0x745
 desc_script_tbl		equ	0AB3Ah		;* item description script-ptr table @ 0xB3A
-
-; RAM buffers at end of module (shared with the module's padding).
 item_name_tbl		equ	0B08Ah		;* item name-offset table @ 0x108A
 item_data_tbl		equ	0B10Ch		;* item data-record offset table @ 0x110C
 item_data_records	equ	0B11Eh		;* item data records (9 items ?? 24 bytes)
-shop_inv_state		equ	0B1F6h		;* shop inventory state (24 bytes RAM)
-
-; Working state in padding area (data after inventory state).
 inv_bit_count		equ	0B20Eh		;* count of set inventory bits
 inv_slot_tbl		equ	0B20Fh		;* 8 inventory slot indices
 timer_dispatch		equ	0B217h		;* timer dispatch flag (reset at start)
-sel_item_idx		equ	0B218h		;* currently-selected item idx
-item_anim_phase		equ	0B219h		;* item-name animation phase counter
 item_anim_set		equ	0B21Ah		;* item-name animation set (0-2)
 item_price_dl		equ	0B21Bh		;* saved item price high byte (dl)
 item_price_ax		equ	0B21Ch		;* saved item price low word (ax)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+menu_start_idx		equ	0FF56h		;* menu start index (byte)
+flag_buy_mode		equ	0FF57h		;* 0FFh=buy mode, 0=sell/describe
+shop_inv_state		equ	0B1F6h		;* shop inventory state (24 bytes RAM)
+sel_item_idx		equ	0B218h		;* currently-selected item idx
+item_anim_phase		equ	0B219h		;* item-name animation phase counter
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

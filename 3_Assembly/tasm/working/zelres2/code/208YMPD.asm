@@ -74,25 +74,19 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-; --- Internal CS-relative addresses (loaded at CS:+3300h in game_seg) ---
-video_mode		equ	335Bh			; byte: rendering mode 0..5 (AL on entry)
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 jpt_mountains_render	equ	338Ah			; dw table [6] : mountain render per mode
 cga_color_lut_mountains	equ	3432h			; db[16] : CGA 4-plane -> 2bpp LUT (mountains)
 cga_color_lut_alt_mount	equ	357Dh			; db[16] : CGA alt 4-plane LUT (mountains)
 jpt_ground_render	equ	35BBh			; dw table [6] : ground render per mode
 cga_color_lut_ground	equ	36B6h			; db[16] : CGA 4-plane -> 2bpp LUT (ground)
 ground1_src_ofs		equ	56F1h			; ground1 RLE-source offset (CS:56F1) loaded into SI
-
-; --- Constants referenced only by Sourcer's commented-out mis-decoded bytes ---
 data_15e		equ	3C30h			;* inside mountains1 data (mis-decoded ';*' fake instruction)
 data_19e		equ	0FD57h			;* inside ground1 data    (mis-decoded ';*' fake instruction)
-
-; --- Source/destination offsets into the CS+1000h decompression scratch segment ---
-seg1_buf_base		equ	0			; seg1:0000 - mountains0 / ground decode destination
 seg1_mountains1_buf	equ	1340h			; seg1:1340 - mountains1 decode destination
 seg1_ground1_buf	equ	01C0h			; seg1:01C0 - ground1 decode destination (not referenced by name - 448 byte offset)
-
-; --- External video-memory destination offsets (A000h / B000h / B800h) ---
 ega_ground_dst_0	equ	2C6Ch			; EGA ground render base (A000:2C6C)
 ega_ground_copy_dst	equ	2C88h			; EGA ground plane-copy destination (A000:2C88)
 cga_ground_dst		equ	163Ch			; CGA ground start offset (B800:163C)
@@ -100,11 +94,19 @@ cga_mountain_dst	equ	23Ch			; CGA mountain start offset (B800:023C)
 mcga_mountain_row_ptr	equ	0B1B0h			; MCGA row 14 col 48 (A000:B1B0)
 mcga_mountain_dst_a	equ	0B220h			; MCGA mountain half A copy dest (A000:B220)
 mcga_ground_dst		equ	0BBB0h			; MCGA ground destination (A000:BBB0)
-
-; --- Video-mode dispatch state ---
 ega_wrap_addend		equ	0C050h			; EGA wrap-around offset addend (used by modes 1,3,5)
 cga_wrap_limit		equ	6000h			; CGA wrap limit (mode3_hgc)
 ega_wrap_limit		equ	4000h			; EGA/CGA wrap limit
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+video_mode		equ	335Bh			; byte: rendering mode 0..5 (AL on entry)
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+seg1_buf_base		equ	0			; seg1:0000 - mountains0 / ground decode destination
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

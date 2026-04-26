@@ -40,15 +40,15 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; The following equates show data references outside the range of the program.
-
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 tga_vram_wrap		equ	80A0h			;*
 tga_buf_8cf0		equ	8CF0h			;*
 sprite_src_base		equ	0B000h			;*
 plane_alt_b17e		equ	0B17Eh			;*
 pattern_buf_d000		equ	0D000h			;*
 dispatch_tbl	equ	3172h			;*
-anim_frame_tbl	equ	3915h			;*
 pattern_ptr_tbl	equ	39E8h			;*
 color_map_tbl	equ	4264h			;*
 bg_tile_src	equ	4771h			;*
@@ -59,19 +59,10 @@ cur_color_pair	equ	522Fh			;*
 vga_row_ptr	equ	5231h			;*
 scroll_vga_ofs	equ	5233h			;*
 scroll_src_ofs	equ	5235h			;*
-row_counter	equ	5237h			;*
-col_idx	equ	5238h			;*
-row_idx	equ	5239h			;*
-palette_byte	equ	523Ah			;*
-bitmask_word	equ	523Bh			;*
 scroll_gfx_ptr	equ	523Dh			;*
 scroll_delta	equ	523Fh			;*
-mask_word	equ	5241h			;*
-anim_phase	equ	5243h			;*
 shift_count	equ	5244h			;*
 sprite_row_buf	equ	5245h			;*
-sprite_state_a	equ	5255h			;*
-sprite_state_b	equ	5256h			;*
 sprite_pos	equ	5259h			;*
 sprite_cache_tbl	equ	5262h			;*
 bg_save_buf	equ	5362h			;*
@@ -79,9 +70,27 @@ tga_sprite_buf	equ	5562h			;*
 tga_decode_buf	equ	5682h			;*
 tga_offs_723b	equ	723Bh			;*
 tga_vram_wrap_b	equ	80A0h			;*
-tga_row_stride	equ	0A0h
 tga_vram_buf	equ	41F8h
 tga_vram_wrap_c	equ	80A0h
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+row_counter	equ	5237h			;*
+col_idx	equ	5238h			;*
+row_idx	equ	5239h			;*
+palette_byte	equ	523Ah			;*
+bitmask_word	equ	523Bh			;*
+mask_word	equ	5241h			;*
+sprite_state_a	equ	5255h			;*
+sprite_state_b	equ	5256h			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+anim_frame_tbl	equ	3915h			;*
+anim_phase	equ	5243h			;*
+tga_row_stride	equ	0A0h
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

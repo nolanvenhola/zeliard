@@ -44,17 +44,23 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; restored after factoring (consensus value, but not all files agree):
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
 gvar_menu_sel            equ     0C006h
+gvar_game_seg	equ	0FF2Ch			;*
+gvar_ui_misc_byte	equ	0FF57h			;*
 
-; gvar_timer_word, script_step, script_format_num, script_display_page,
-; script_take_item, script_give_item are defined in zr2com.inc.
-
-; The following equates show data references outside the range of the program.
-
-bank_drv_2014	equ	2014h			;*
+; ----------------------------------------------------------------------
+; Section 4: Shared dispatch slot references (file-local overrides)
+; ----------------------------------------------------------------------
 drv_draw_string	equ	301Ch			;*
 drv_set_text_pos	equ	3022h			;*
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
+bank_drv_2014	equ	2014h			;*
 show_menu_items	equ	600Eh			;*
 opcode_dispatch_tbl	equ	0A0B8h			;*
 intro_tile_map	equ	0A6C8h			;*
@@ -66,12 +72,6 @@ exch_denom_in_tbl	equ	0A8FAh			;*
 exch_denom_out_tbl	equ	0A8FBh			;*
 menu_items_deposit	equ	0A951h			;*
 menu_items_withdraw	equ	0A96Dh			;*
-entered_flag	equ	0AD1Eh			;*
-anim_src_ptr	equ	0AD1Fh			;*
-anim_active_flag	equ	0AD21h			;*
-anim_frame_counter	equ	0AD22h			;*
-checked_balance_flag	equ	0AD23h			;*
-goodbye_flag	equ	0AD24h			;*
 cur_exch_in	equ	0AD25h			;*
 cur_exch_out	equ	0AD26h			;*
 script_char_buf	equ	0AD27h			;*
@@ -80,9 +80,20 @@ amount_lo	equ	0AD2Ah			;*
 amount_max_hi	equ	0AD2Ch			;*
 amount_max_lo	equ	0AD2Dh			;*
 input_repeat_delay	equ	0AD2Fh			;*
-gvar_game_seg	equ	0FF2Ch			;*
-; gvar_dlg_cols, gvar_dlg_rows, gvar_dlg_pos defined in zr2com.inc.
-gvar_ui_misc_byte	equ	0FF57h			;*
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+entered_flag	equ	0AD1Eh			;*
+checked_balance_flag	equ	0AD23h			;*
+goodbye_flag	equ	0AD24h			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+anim_src_ptr	equ	0AD1Fh			;*
+anim_active_flag	equ	0AD21h			;*
+anim_frame_counter	equ	0AD22h			;*
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

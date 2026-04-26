@@ -64,137 +64,9 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; Mapped addresses (auto-fixed from original chunk)
-game_func_142		equ	036E8h
-
-; The following equates show data references outside the range of the program.
-
-enemy_id_table		equ	8000h			;*
-fire1_slot_table		equ	8018h			;*
-fire2_slot_table		equ	801Ch			;*
-atk_slot_table		equ	8020h			;*
-move_slot_a_table		equ	8024h			;*
-move_slot_b_table		equ	8028h			;*
-move_slot_c_table		equ	802Ch			;*
-entity_ptr_table		equ	0B002h			;*
-world_state_base		equ	0C000h			;*
-sprite_load_dest	equ	4000h			;*
-scroll_dispatch_a	equ	6CFEh			;*
-scroll_dispatch_b	equ	6D17h			;*
-area_lookup_tbl	equ	7516h			;*
-entity_dispatch_tbl	equ	76CEh			;*
-atk_speed_tbl_a	equ	77C7h			;*
-atk_speed_tbl_b	equ	77D7h			;*
-combat_data_tbl	equ	79B4h			;*
-combat_byte_a	equ	79B6h			;*
-combat_byte_b	equ	79CAh			;*
-entity_fn_tbl_a	equ	8244h			;*
-entity_type_map	equ	83D7h			;*
-entity_fn_tbl_b	equ	8581h			;*
-entity_fn_tbl_c	equ	85C2h			;*
-entity_rotate_buf	equ	85EEh			;*
-entity_data_base	equ	8790h			;*
-entity_fn_tbl_d	equ	883Fh			;*
-boss_data_buf	equ	8C79h			;*
-boss_sprite_buf	equ	8C8Dh			;*
-entity_fn_tbl_e	equ	8F33h			;*
-boss_render_buf	equ	90CAh			;*
-collision_map_tbl	equ	9185h			;*
-entity_state_tbl	equ	920Ah			;*
-entity_attr_tbl	equ	9234h			;*
-entity_fn_tbl_f	equ	972Fh			;*
-boss_fn_tbl	equ	9788h			;*
-anim_frame_tbl_a	equ	98B8h			;*
-anim_frame_tbl_b	equ	98BEh			;*
-hitbox_map_tbl	equ	9985h			;*
-spawn_data_tbl	equ	9C1Eh			;*
-anim_ctr_x	equ	9EEDh			;*
-anim_ctr_y	equ	9EEEh			;*
-enemy_scroll_flag	equ	9EEFh			;*
-player_scroll_flag	equ	9EF0h			;*
-scroll_row_cnt	equ	9EF1h			;*
-scroll_bx_save	equ	9EF2h			;*
-scroll_cx_save	equ	9EF4h			;*
-combat_active	equ	9EF5h			;*
-combat_flag2	equ	9EF6h			;*
-tile_set_id	equ	9EF7h			;*
-player_chr_id	equ	9EF8h			;*
-player_spr_id	equ	9EF9h			;*
-music_track_id	equ	9EFAh			;*
-prev_chr_id	equ	9EFEh			;*
-prev_spr_id	equ	9EFFh			;*
-room_count	equ	9F00h			;*
-loaded_flag	equ	9F01h			;*
-loading_flag	equ	9F02h			;*
-map_cur_ptr	equ	9F03h			;*
-scroll_cur_ptr	equ	9F05h			;*
-state_byte_9F07	equ	9F07h			;*
-state_byte_9F08	equ	9F08h			;*
-hp_countdown	equ	9F09h			;*
-frame_parity	equ	9F0Ah			;*
-action_pending	equ	9F0Bh			;*
-hp_midpoint	equ	9F0Ch			;*
-hp_max	equ	9F0Dh			;*
-entity_slot_tbl	equ	9F0Eh			;*
-state_word_9F10	equ	9F10h			;*
-state_word_9F12	equ	9F12h			;*
-any_entity_active	equ	9F14h			;*
-escape_flag	equ	9F15h			;*
-state_byte_9F16	equ	9F16h			;*
-state_byte_9F17	equ	9F17h			;*
-state_byte_9F18	equ	9F18h			;*
-state_byte_9F19	equ	9F19h			;*
-scroll_count	equ	9F1Ah			;*
-scroll_dir	equ	9F1Ch			;*
-state_byte_9F1D	equ	9F1Dh			;*
-state_byte_9F1E	equ	9F1Eh			;*
-state_byte_9F1F	equ	9F1Fh			;*
-invul_timer	equ	9F20h			;*
-pending_invul	equ	9F21h			;*
-move_dir	equ	9F22h			;*
-move_axis	equ	9F23h			;*
-input_prev	equ	9F24h			;*
-frame_ctr	equ	9F25h			;*
-scene_trans_flag	equ	9F26h			;*
-level_load_flag	equ	9F27h			;*
-state_byte_9F28	equ	9F28h			;*
-state_byte_9F29	equ	9F29h			;*
-state_byte_9F2A	equ	9F2Ah			;*
-state_byte_9F2B	equ	9F2Bh			;*
-atk_dist_x	equ	9F2Ch			;*
-atk_dist_y	equ	9F2Dh			;*
-entity_extra_tbl	equ	9F85h			;*
-game_fn_vtable	equ	0A000h			;*
-obj_data_ptr	equ	0A002h			;*
-render_dest_ptr	equ	0A006h			;*
-tile_data_ptr	equ	0A008h			;*
-tile_type_map	equ	0A010h			;*
-map_data_ptr	equ	0C000h			;*
-map_width	equ	0C002h			;*
-map_top_ptr	equ	0C004h			;*
-map_bot_ptr	equ	0C006h			;*
-map_extra_ptr	equ	0C008h			;*
-map_seg_ptr	equ	0C00Ch			;*
-bg_data_ptr	equ	0C00Eh			;*
-object_list_ptr	equ	0C010h			;*
-area_num	equ	0C012h			;*
-target_id	equ	0C013h			;*
-target_y	equ	0C015h			;*
-player_y	equ	0C016h			;*
-state_byte_C017	equ	0C017h			;*
-scroll_end_ptr	equ	0C019h			;*
-map_col_ptr	equ	0C01Bh			;*
-scroll_buf	equ	0E000h			;*
-scroll_buf_p1	equ	0E001h			;*
-scroll_buf_end1	equ	0E8FEh			;*
-scroll_buf_end	equ	0E8FFh			;*
-hud_buf	equ	0E900h			;*
-hud_enemy_area	equ	0E921h			;*
-hud_player_area	equ	0E939h			;*
-sprite_work_buf	equ	0EB60h			;*
-enemy_data_buf	equ	0EB80h			;*
-enemy_data_ext	equ	0ED20h			;*
-enemy_data_buf2	equ	0EDA0h			;*
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
 gvar_timer_ff08	equ	0FF08h			;* was gvar_timer_ticks
 gvar_timer_counter	equ	0FF18h			;*
 gvar_frame_timer	equ	0FF1Ah			;*
@@ -230,6 +102,104 @@ gvar_flag_FF4A	equ	0FF4Ah			;*
 gvar_flag_FF4B	equ	0FF4Bh			;*
 gvar_volume_b	equ	0FF75h			;*
 
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
+game_func_142		equ	036E8h
+enemy_id_table		equ	8000h			;*
+fire1_slot_table		equ	8018h			;*
+fire2_slot_table		equ	801Ch			;*
+atk_slot_table		equ	8020h			;*
+move_slot_a_table		equ	8024h			;*
+move_slot_b_table		equ	8028h			;*
+move_slot_c_table		equ	802Ch			;*
+entity_ptr_table		equ	0B002h			;*
+world_state_base		equ	0C000h			;*
+sprite_load_dest	equ	4000h			;*
+scroll_dispatch_a	equ	6CFEh			;*
+scroll_dispatch_b	equ	6D17h			;*
+area_lookup_tbl	equ	7516h			;*
+entity_dispatch_tbl	equ	76CEh			;*
+atk_speed_tbl_a	equ	77C7h			;*
+atk_speed_tbl_b	equ	77D7h			;*
+combat_data_tbl	equ	79B4h			;*
+entity_fn_tbl_a	equ	8244h			;*
+entity_type_map	equ	83D7h			;*
+entity_fn_tbl_b	equ	8581h			;*
+entity_fn_tbl_c	equ	85C2h			;*
+entity_rotate_buf	equ	85EEh			;*
+entity_data_base	equ	8790h			;*
+entity_fn_tbl_d	equ	883Fh			;*
+boss_data_buf	equ	8C79h			;*
+boss_sprite_buf	equ	8C8Dh			;*
+entity_fn_tbl_e	equ	8F33h			;*
+boss_render_buf	equ	90CAh			;*
+collision_map_tbl	equ	9185h			;*
+entity_state_tbl	equ	920Ah			;*
+entity_attr_tbl	equ	9234h			;*
+entity_fn_tbl_f	equ	972Fh			;*
+boss_fn_tbl	equ	9788h			;*
+hitbox_map_tbl	equ	9985h			;*
+spawn_data_tbl	equ	9C1Eh			;*
+scroll_bx_save	equ	9EF2h			;*
+scroll_cx_save	equ	9EF4h			;*
+combat_active	equ	9EF5h			;*
+tile_set_id	equ	9EF7h			;*
+player_chr_id	equ	9EF8h			;*
+player_spr_id	equ	9EF9h			;*
+music_track_id	equ	9EFAh			;*
+prev_chr_id	equ	9EFEh			;*
+prev_spr_id	equ	9EFFh			;*
+room_count	equ	9F00h			;*
+map_cur_ptr	equ	9F03h			;*
+scroll_cur_ptr	equ	9F05h			;*
+hp_countdown	equ	9F09h			;*
+frame_parity	equ	9F0Ah			;*
+action_pending	equ	9F0Bh			;*
+hp_midpoint	equ	9F0Ch			;*
+hp_max	equ	9F0Dh			;*
+entity_slot_tbl	equ	9F0Eh			;*
+any_entity_active	equ	9F14h			;*
+scroll_count	equ	9F1Ah			;*
+scroll_dir	equ	9F1Ch			;*
+pending_invul	equ	9F21h			;*
+move_dir	equ	9F22h			;*
+move_axis	equ	9F23h			;*
+input_prev	equ	9F24h			;*
+frame_ctr	equ	9F25h			;*
+atk_dist_x	equ	9F2Ch			;*
+atk_dist_y	equ	9F2Dh			;*
+entity_extra_tbl	equ	9F85h			;*
+game_fn_vtable	equ	0A000h			;*
+obj_data_ptr	equ	0A002h			;*
+render_dest_ptr	equ	0A006h			;*
+tile_data_ptr	equ	0A008h			;*
+tile_type_map	equ	0A010h			;*
+map_data_ptr	equ	0C000h			;*
+map_width	equ	0C002h			;*
+map_top_ptr	equ	0C004h			;*
+map_bot_ptr	equ	0C006h			;*
+map_extra_ptr	equ	0C008h			;*
+map_seg_ptr	equ	0C00Ch			;*
+bg_data_ptr	equ	0C00Eh			;*
+object_list_ptr	equ	0C010h			;*
+area_num	equ	0C012h			;*
+target_id	equ	0C013h			;*
+target_y	equ	0C015h			;*
+player_y	equ	0C016h			;*
+scroll_end_ptr	equ	0C019h			;*
+map_col_ptr	equ	0C01Bh			;*
+scroll_buf	equ	0E000h			;*
+scroll_buf_p1	equ	0E001h			;*
+scroll_buf_end1	equ	0E8FEh			;*
+scroll_buf_end	equ	0E8FFh			;*
+hud_buf	equ	0E900h			;*
+hud_enemy_area	equ	0E921h			;*
+hud_player_area	equ	0E939h			;*
+sprite_work_buf	equ	0EB60h			;*
+enemy_data_buf	equ	0EB80h			;*
+enemy_data_ext	equ	0ED20h			;*
+enemy_data_buf2	equ	0EDA0h			;*
 music_ref_tbl		equ	9E53h			;* chunk ref table base for music tracks (indexed by id*11)
 sar_ref_bg		equ	9BF1h			;* SAR reference pointer for background load
 spr_ref_tbl		equ	9D8Dh			;* chunk ref table base for sprite sets (indexed by spr_id*11)
@@ -252,6 +222,46 @@ sar_ref_boss		equ	9C08h			;* SAR reference for boss data chunk
 sar_ref_map		equ	9C2Dh			;* SAR reference for map tile chunk
 sar_ref_tileset		equ	9C43h			;* SAR reference for tileset chunk
 chr_ref_tbl		equ	9CBCh			;* chunk ref table base for character sprites (indexed by chr_id*11)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+combat_byte_a	equ	79B6h			;*
+combat_byte_b	equ	79CAh			;*
+enemy_scroll_flag	equ	9EEFh			;*
+player_scroll_flag	equ	9EF0h			;*
+scroll_row_cnt	equ	9EF1h			;*
+combat_flag2	equ	9EF6h			;*
+loaded_flag	equ	9F01h			;*
+loading_flag	equ	9F02h			;*
+state_byte_9F07	equ	9F07h			;*
+state_byte_9F08	equ	9F08h			;*
+state_word_9F10	equ	9F10h			;*
+state_word_9F12	equ	9F12h			;*
+escape_flag	equ	9F15h			;*
+state_byte_9F16	equ	9F16h			;*
+state_byte_9F17	equ	9F17h			;*
+state_byte_9F18	equ	9F18h			;*
+state_byte_9F19	equ	9F19h			;*
+state_byte_9F1D	equ	9F1Dh			;*
+state_byte_9F1E	equ	9F1Eh			;*
+state_byte_9F1F	equ	9F1Fh			;*
+invul_timer	equ	9F20h			;*
+scene_trans_flag	equ	9F26h			;*
+level_load_flag	equ	9F27h			;*
+state_byte_9F28	equ	9F28h			;*
+state_byte_9F29	equ	9F29h			;*
+state_byte_9F2A	equ	9F2Ah			;*
+state_byte_9F2B	equ	9F2Bh			;*
+state_byte_C017	equ	0C017h			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+anim_frame_tbl_a	equ	98B8h			;*
+anim_frame_tbl_b	equ	98BEh			;*
+anim_ctr_x	equ	9EEDh			;*
+anim_ctr_y	equ	9EEEh			;*
 
 ; Load a SAR chunk into the game segment.
 ; SI must already point to the SAR chunk reference descriptor.

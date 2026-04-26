@@ -64,18 +64,15 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; External data references (outside this module's CS segment).
-
-; --- Game-segment data pointers (in game_seg via DS) ---
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 mca_sprite_src	equ	6333h			;* MCGA sprite source table (game_seg)
 mca_sprite_src_b equ	0B000h			;* MCGA alternate sprite src base
 mca_plane_alt	equ	0B17Eh			;* alternate plane/offset table
 mca_pattern_base equ	0D000h			;* pattern/tile data base
-
-; --- Internal driver tables (CS-relative) ---
 init_xor_src	equ	2939h			;* init XOR source addr referenced in start header
 dispatch_tbl	equ	3176h			;* function dispatch table (word array)
-anim_frame_tbl	equ	3893h			;* animation frame offset table
 pattern_ptr_tbl	equ	389Bh			;* pattern pointer table
 init_tbl_59	equ	3963h			;* init table at 3963h (referenced in start header)
 init_tbl_60	equ	3F38h			;* init table at 3F38h (referenced in start header)
@@ -84,43 +81,43 @@ phase_offset_tbl equ	4588h			;* phase/shift offset table
 bg_tile_src	equ	46D4h			;* background tile source pointer
 copy_fn_tbl	equ	4A25h			;* copy function pointer table (word array)
 hero_gfx_tbl	equ	4F8Ch			;* hero graphics data table
-
-; --- Driver state variables (CS-segment scratch area) ---
 cur_color_pair	equ	4FE9h			;* current color pair word (set from table)
 vga_row_ptr	equ	4FEBh			;* current VGA row byte offset (word)
 scroll_vga_ofs	equ	4FEDh			;* scroll destination VGA byte offset (word)
 rle_tmp_a	equ	4FEFh			;* RLE temp word A (cs: scratch)
-row_counter	equ	4FF1h			;* row countdown (0x12 rows per frame)
-col_idx		equ	4FF2h			;* current column index (byte)
-row_idx		equ	4FF3h			;* current row index (byte)
-palette_byte	equ	4FF4h			;* palette byte for current sprite
 rle_tmp_b	equ	4FF5h			;* RLE temp word B (cs: scratch)
 scroll_src_ofs	equ	4FF7h			;* scroll source VGA byte offset (word)
 scroll_gfx_ptr	equ	4FF9h			;* scroll graphics data pointer (word)
 scroll_delta	equ	4FFBh			;* scroll delta (word: col byte + row byte)
 rle_mask	equ	4FFDh			;* RLE mask word (cs: scratch)
-anim_phase	equ	4FFFh			;* animation pass counter (0-7, decremented)
 sprite_row_buf	equ	5000h			;* sprite row intermediate buffer base
-sprite_state_a	equ	5010h			;* sprite slot state byte A (0xFF=empty, 0xFC=hidden)
-sprite_state_b	equ	5011h			;* sprite slot state byte B
 sprite_pos	equ	5014h			;* sprite position word (col/row packed)
 sprite_cache_tbl equ	501Dh			;* sprite cache table (word array, indexed by slot*2)
 sprite_tmp_buf	equ	511Dh			;* sprite temporary pixel buffer
-
-; --- Game-segment lookup tables ---
 sprite_src_base	equ	0A030h			;* sprite source graphics base offset (game_seg)
-
-; --- Global variables (game_seg:0xFFxx) ---
 mca_temp_buf	equ	0FA00h			;* MCGA temp intermediate buffer (game_seg)
-
-; --- Fixed MCGA layout constants ---
 mca_row_stride	equ	138h			; MCGA bytes per row (312 dec) -- row advance in tight pixel loops
 mca_2row_stride	equ	500h			; two-row stride used by blit routines
 mca_vga_base_ofs equ	11B0h			; MCGA VGA framebuffer working offset base
 mca_temp_buf_a	equ	0FA00h			; MCGA temp buffer A (dup of mca_temp_buf for literal form)
 mca_temp_buf_b	equ	0FA40h			; MCGA temp buffer B
-
 mca_seg		equ	0A000h			; MCGA framebuffer segment (same as VGA mode 13h)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+row_counter	equ	4FF1h			;* row countdown (0x12 rows per frame)
+col_idx		equ	4FF2h			;* current column index (byte)
+row_idx		equ	4FF3h			;* current row index (byte)
+palette_byte	equ	4FF4h			;* palette byte for current sprite
+sprite_state_a	equ	5010h			;* sprite slot state byte A (0xFF=empty, 0xFC=hidden)
+sprite_state_b	equ	5011h			;* sprite slot state byte B
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+anim_frame_tbl	equ	3893h			;* animation frame offset table
+anim_phase	equ	4FFFh			;* animation pass counter (0-7, decremented)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

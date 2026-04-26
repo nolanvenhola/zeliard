@@ -41,21 +41,16 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; restored after factoring (consensus value, but not all files agree):
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 dispatch_tbl             equ     3170h
-
-; External data references (outside this module's CS segment).
-
-; --- Game-segment data pointers (in game_seg via DS) ---
 cga_sprite_base equ	6333h			;* CGA sprite graphics base (stage2 lookup)
 bg_save_buf_a	equ	8640h			;* background save buffer A
 bg_save_buf_b	equ	8690h			;* background save buffer B
 cga_sprite_src	equ	0B000h			;* CGA sprite source data base (16-byte blocks)
 cga_plane_alt	equ	0B17Eh			;* CGA alternate plane offset
 cga_sprite_mid	equ	0D000h			;* CGA mid-priority sprite source base
-
-; --- Internal driver tables (CS-relative) ---
-anim_frame_tbl	equ	38D1h			;* animation frame offset table
 pattern_ptr_tbl	equ	397Dh			;* pattern pointer table
 sprite_tmp_buf	equ	4643h			;* sprite temporary pixel buffer
 color_map_tbl	equ	4777h			;* CGA color map table
@@ -63,49 +58,47 @@ phase_offset_tbl equ	47BEh			;* phase/shift offset table
 bg_tile_src	equ	4A3Ah			;* background tile source pointer
 copy_fn_tbl	equ	4F88h			;* CGA copy function pointer table (word array)
 hero_gfx_tbl	equ	4FCFh			;* hero graphics data table
-
-; --- Driver state variables (CS-segment scratch area) ---
 color_pair_tbl	equ	500Fh			;* CGA color pair lookup table (word array)
 cur_color_pair	equ	506Bh			;* current CGA color pair word (set from table)
 vga_row_ptr	equ	506Dh			;* current CGA row byte offset (word, +0x140/row)
 scroll_vga_ofs	equ	506Fh			;* scroll destination CGA byte offset (word)
 cga_ofs_5071	equ	5071h			;* CGA offset 0x5071 (scratch word)
-row_counter	equ	5073h			;* row countdown (0x12 rows per frame)
-col_idx		equ	5074h			;* current column index (byte)
-row_idx		equ	5075h			;* current row index (byte)
-palette_byte	equ	5076h			;* CGA color/palette byte for current sprite
-bitmask_byte	equ	5077h			;* CGA bit mask byte for blitter
 scroll_src_ofs	equ	5078h			;* scroll source CGA byte offset (word)
 scroll_gfx_ptr	equ	507Ah			;* scroll graphics data pointer (word)
 scroll_delta	equ	507Ch			;* scroll delta (word: col byte + row byte)
 sprite_row_buf	equ	507Eh			;* sprite row intermediate buffer (word)
-anim_phase	equ	5080h			;* animation pass counter (decremented)
 shift_count	equ	5081h			;* CGA shift count byte
 sprite_work_buf	equ	5082h			;* sprite work buffer (word array)
-sprite_state_a	equ	5092h			;* sprite slot state byte A (0xFF=empty, 0xFC=hidden)
-sprite_state_b	equ	5093h			;* sprite slot state byte B
 sprite_pos	equ	5096h			;* sprite position word (col/row packed)
 sprite_cache_tbl equ	509Fh			;* sprite CGA cache table (word array)
 cache_tbl_b	equ	519Fh			;* second cache table
 cache_tbl_c	equ	529Fh			;* third cache table
 cache_tbl_d	equ	532Fh			;* fourth cache table
-
-; --- Game-segment lookup tables ---
 sprite_src_base_ds equ	0A030h			;* sprite source table (game_seg)
 vga_wrap_adj	equ	0C050h			;* VGA wrap adjust (+0xC050 when di >= 0x4000)
-
-; --- Pattern/background data (game_seg) ---
 enemy_spawn_ctrl equ	0FB3Ah			;* enemy spawn control byte
-
-; --- Global variables (game_seg:0xFFxx) ---
-
-; --- Fixed CGA layout constants ---
-cga_col_stride	equ	0A0h			; CGA bytes per interleaved row (160)
 hud_ofs		equ	23Ch			; HUD area starting byte offset in CGA framebuffer
 ui_ofs		equ	0D94h			; UI area byte offset
 cga_wrap_add	equ	0C050h			; CGA interleave wrap adjust (same as vga_wrap_adj)
-
 cga_seg		equ	0B800h			; CGA framebuffer segment
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+row_counter	equ	5073h			;* row countdown (0x12 rows per frame)
+col_idx		equ	5074h			;* current column index (byte)
+row_idx		equ	5075h			;* current row index (byte)
+palette_byte	equ	5076h			;* CGA color/palette byte for current sprite
+bitmask_byte	equ	5077h			;* CGA bit mask byte for blitter
+sprite_state_a	equ	5092h			;* sprite slot state byte A (0xFF=empty, 0xFC=hidden)
+sprite_state_b	equ	5093h			;* sprite slot state byte B
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+anim_frame_tbl	equ	38D1h			;* animation frame offset table
+anim_phase	equ	5080h			;* animation pass counter (decremented)
+cga_col_stride	equ	0A0h			; CGA bytes per interleaved row (160)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

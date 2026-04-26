@@ -42,19 +42,26 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; gvar_timer_word, script_step, drv_palette_push, drv_anim_step
-; are defined in zr2com.inc.
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
+gvar_game_seg		equ	0FF2Ch			;* game-code segment selector word
 
-; The following equates show data references outside the range of the program.
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 opcode_dispatch_tbl	equ	0A078h			;* script opcode dispatch table base
 sermon_data_a		equ	0A089h			;* dialog/sermon glyph source A
 sermon_data_b		equ	0A0CBh			;* dialog/sermon glyph source B
 intro_tile_map		equ	0A177h			;* intro 12x8 tile glyph map
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
 anim_text_ptr_a		equ	0A234h			;* animated title glyph source A
 anim_text_ptr_b		equ	0A27Ch			;* animated title glyph source B
 anim_phase_a		equ	0A3E4h			;* animation outer phase byte (0..4)
 anim_phase_b		equ	0A3E5h			;* animation inner sub-phase byte (0..2)
-gvar_game_seg		equ	0FF2Ch			;* game-code segment selector word
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

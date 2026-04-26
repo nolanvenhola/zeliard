@@ -41,15 +41,23 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; Graphics driver function table (driver loads at game_seg:2000h).
-; Each entry is a CS-relative word pointer into the driver dispatch table.
-; drv_palette_push    = 2008h (in zr2com.inc) -- fn  4: redraw character stat display
-; drv_anim_step       = 2018h (in zr2com.inc) -- fn 12: timestamp init area
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
+gvar_selct_state	equ	0A00Bh			;* game-seg byte: character select entry state
+gvar_timer_counter	equ	0FF18h			;* global: joystick hold timer counter
+gvar_frame_timer	equ	0FF1Ah			;* global: frame timer tick counter
+gvar_item_result	equ	0FF4Bh			;* global: selected item result (written on use)
+gvar_volume_b		equ	0FF75h			;* global: display region / rendering mode byte
+gvar_display_mode	equ	0FF24h			;* global: display mode flag (set before save)
+
+; ----------------------------------------------------------------------
+; Section 4: Shared dispatch slot references (file-local overrides)
+; ----------------------------------------------------------------------
 drv_fn_13		equ	201Ah			;* fn 13: time decode entry
 drv_fn_14		equ	201Ch			;* fn 14: render tile from anim_ptr_4
 drv_fn_15		equ	201Eh			;* fn 15: sprite source selector A
 drv_fn_16		equ	2020h			;* fn 16: sprite source selector B
-; drv_render_char     = 2022h (in zr2com.inc) -- fn 17: render_text_char_alt (BX=pos, CL=col, AL=char, AH=color)
 drv_fn_19		equ	2026h			;* fn 19: char render pipeline entry
 drv_fn_20		equ	2028h			;* fn 20: VGA block copy (stride loop)
 drv_fn_sprite		equ	202Eh			;* fn 23: sprite_anim_data dispatch (BX=sprite offset)
@@ -60,21 +68,14 @@ drv_fn_27		equ	2036h			;* fn 27: display text string row (BX=pos, AL=char)
 drv_fn_28		equ	2038h			;* fn 28: text render helper A
 drv_fn_29		equ	203Ah			;* fn 29: text render helper B
 drv_fn_30		equ	203Ch			;* fn 30: fill_rectangle helper
-; drv_return_to_caller = 2040h (in zr2com.inc) -- fn 32: palette/sync call
 
-; Game segment data references (outside module address range).
-gvar_selct_state	equ	0A00Bh			;* game-seg byte: character select entry state
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 panel_dispatch_tbl	equ	0A0C4h			;* jump table: panel_idx -> handler (words, filled by caller)
 selct_param		equ	0A2B9h			;* game-seg word: selection screen parameter
-item_use_dispatch_tbl	equ	0A452h			;* jump table: item_cursor-1 -> use handler (words, filled by caller)
 item_effect_tbl		equ	0A520h			;* item effect value table (words, indexed by magic type)
 portrait_rect_tbl	equ	0A9FCh			;* portrait display rect table (4 x 5 bytes: BX,CL,mode)
-; Module load offset: this binary loads at game_seg:SELCT_BASE.
-; String/table EQUs below use SELCT_BASE + (offset label) so they
-; auto-recalculate if data above the label shifts.
-SELCT_BASE		equ	9FEEh			; game-segment load address of this module
-
-; Named string/pointer-table addresses (within this module's data section).
 str_empty		equ	SELCT_BASE + (offset str_empty_lbl)		;* blank panel text (empty/null string)
 str_no_use_notice	equ	SELCT_BASE + (offset str_no_use_notice_lbl)	;* item panel notice string (no-use hint)
 str_item_used_count	equ	SELCT_BASE + (offset str_item_used_count_lbl)	;* item-use box: count label
@@ -87,27 +88,35 @@ item_name_ptrs		equ	SELCT_BASE + (offset item_name_ptrs_lbl)	;* item name string
 weapon_detail_ptrs	equ	SELCT_BASE + (offset weapon_detail_ptrs_lbl)	;* weapon detail string pointer table (6 words)
 shield_detail_ptrs	equ	SELCT_BASE + (offset shield_detail_ptrs_lbl)	;* magic detail string pointer table (6 words)
 portrait_data_tbl	equ	0ADE8h			;* portrait rect data table (4 x 4 bytes: BX/CX pairs)
-has_items_flag		equ	0ADF8h			;* byte: non-zero if character has usable items
-cur_panel_idx		equ	0ADF9h			;* byte: current panel (0=weapon, 1=magic, 2=item)
 weapon_count		equ	0ADFAh			;* byte: number of available weapons
 weapon_cursor		equ	0ADFBh			;* byte: current weapon selection cursor (0-based)
 magic_count		equ	0ADFCh			;* byte: number of available magic spells
 magic_cursor		equ	0ADFDh			;* byte: current magic selection cursor
 item_count		equ	0ADFEh			;* byte: number of available items
 item_cursor		equ	0ADFFh			;* byte: current item selection cursor
-item_sel_idx		equ	0AE00h			;* byte: item select confirm index
 exit_queued		equ	0AE01h			;* byte: non-zero -> queue exit on next poll
 portrait_vis		equ	0AE02h			;* byte: portrait box visible flag (0=hidden, FFh=shown)
 weapon_idx_tbl		equ	0AE03h			;* 7-byte table: available weapon indices (1-based)
 magic_idx_tbl		equ	0AE0Ah			;* 6-byte table: available magic indices (1-based)
 item_idx_tbl		equ	0AE10h			;* 5-byte table: available item indices (1-based)
 num_fmt_buf		equ	0AE16h			;* 7-byte scratch buffer for fmt_number output
-gvar_timer_counter	equ	0FF18h			;* global: joystick hold timer counter
-gvar_frame_timer	equ	0FF1Ah			;* global: frame timer tick counter
-gvar_item_result	equ	0FF4Bh			;* global: selected item result (written on use)
-gvar_volume_b		equ	0FF75h			;* global: display region / rendering mode byte
+weap_spr_base		equ	0E1Ah			;* weapon portrait sprite table base (8 bytes/entry)
+magic_spr_base		equ	0E53h			;* magic portrait sprite table base (5 bytes/entry)
+item_spr_base		equ	0E81h			;* item portrait sprite table base (5 bytes/entry)
+joy_hold_threshold	equ	0286h			; joystick button hold count for item confirm (646 ticks)
+item_use_dispatch_tbl	equ	0A452h			;* jump table: item_cursor-1 -> use handler (words, filled by caller)
 
-; Character stat / inventory variables (low game-segment offsets).
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+has_items_flag		equ	0ADF8h			;* byte: non-zero if character has usable items
+cur_panel_idx		equ	0ADF9h			;* byte: current panel (0=weapon, 1=magic, 2=item)
+item_sel_idx		equ	0AE00h			;* byte: item select confirm index
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+SELCT_BASE		equ	9FEEh			; game-segment load address of this module
 magic_flags		equ	0A1h			;* 5-byte table: magic spell possession flags (at DS:0A1h)
 item_flags		equ	0A6h			;* 5-byte table: item possession flags (at DS:0A6h)
 weapon_flags		equ	0BBh			;* 7-byte table: weapon possession flags (1-based, at DS:0BBh)
@@ -127,18 +136,9 @@ cur_weapon_idx		equ	09Dh			;* byte: cached selected weapon type index (1-based)
 cur_magic_idx		equ	09Eh			;* byte: cached selected magic type index (1-based)
 item_qty_count		equ	08Dh			;* byte: item count value shown in use-confirm box
 item_effect_val		equ	08Eh			;* word: item effect value shown in use-confirm box
-
-; Sprite table base addresses in game segment.
-weap_spr_base		equ	0E1Ah			;* weapon portrait sprite table base (8 bytes/entry)
-magic_spr_base		equ	0E53h			;* magic portrait sprite table base (5 bytes/entry)
-item_spr_base		equ	0E81h			;* item portrait sprite table base (5 bytes/entry)
 anim_param_buf		equ	0A584h			;* 2-byte animation parameter staging buffer
 anim_spr_tbl		equ	0EB60h			;* sprite animation table (7 bytes/entry, 4 entries)
-
-; Timing and display constants.
-joy_hold_threshold	equ	0286h			; joystick button hold count for item confirm (646 ticks)
 timer_wait_feather	equ	078h			; frame timer target for Kioku Feather save delay (120 frames)
-gvar_display_mode	equ	0FF24h			;* global: display mode flag (set before save)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

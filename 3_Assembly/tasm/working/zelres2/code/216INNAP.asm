@@ -36,18 +36,22 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; restored after factoring (consensus value, but not all files agree):
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
 gvar_menu_sel            equ     0C006h
+gvar_game_seg		equ	0FF2Ch			;*
 
-; gvar_timer_word, script_step, drv_palette_push, drv_anim_step
-; defined in zr2com.inc.
-
-; The following equates show data references outside the range of the program.
-
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 opcode_dispatch_tbl	equ	0A080h			;*
 intro_tile_map		equ	0A1CFh			;*
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
 anim_active_flag	equ	0A505h			;*
-gvar_game_seg		equ	0FF2Ch			;*
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

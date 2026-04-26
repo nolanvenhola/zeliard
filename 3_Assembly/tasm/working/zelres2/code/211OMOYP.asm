@@ -53,35 +53,17 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; --- External addresses (outside module) -----------------------------------
-; Driver functions at cs:[2000h..2044h] (set up by loader, same convention
-; as the sibling shop modules 210-217).
-;
-; All driver/script slots are defined in zr2com.inc:
-;   drv_screen_init_a   = 2002h
-;   drv_load_msg_header = 2010h
-;   drv_screen_init_b   = 2012h
-;   drv_return_to_caller = 2040h
-;   drv_ds_copy         = 2044h
-;   drv_draw_glyph      = 3016h
-;   gvar_timer_word     = 0FF50h
-
-; Game API / script dispatcher.
-
-omoyp_script_6016		equ	6016h			;* script step / read next byte -> al
-
-; Game-segment global variables (game_seg:0FFxx, accessed via DS).
-
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
 gvar_gfx_mode		equ	0FF14h			;* current graphics mode selector byte
 gvar_script_skip	equ	0FF1Dh			;* script skip / cancel flag byte
 gvar_game_seg		equ	0FF2Ch			;* game data segment selector word
 
-; --- Internal module labels ------------------------------------------------
-; The module binary is placed in the game data segment such that file offset
-; 0 corresponds to game_seg:9FFCh (file_offset = game_offset - 9FFCh). The
-; shop module code references its own internal data by game-segment address
-; rather than CS-offset because DS is set to gvar_game_seg at call time.
-
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
+omoyp_script_6016		equ	6016h			;* script step / read next byte -> al
 shop_entry_probe	equ	0A004h			;* init probe byte (file +0x08)
 ref_enddemo_addr	equ	0A0ADh			;* ref_enddemo record (file +0xB1)
 gfx_driver_ref_tbl	equ	0A0BBh			;* gfx-driver ref-ptr table (file +0xBF)

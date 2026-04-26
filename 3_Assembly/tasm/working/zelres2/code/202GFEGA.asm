@@ -57,17 +57,12 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; restored after factoring (consensus value, but not all files agree):
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 dispatch_tbl             equ     3170h
-
-; External data references (outside this module's CS segment).
-
-; --- Game-segment data pointers (in game_seg via DS) ---
 ega_sprite_src	equ	0B000h			;* EGA sprite source data base
 ega_plane_alt	equ	0B17Eh			;* EGA alternate plane offset
-
-; --- Internal driver tables (CS-relative) ---
-anim_frame_tbl	equ	3863h			;* animation frame offset table
 pattern_ptr_tbl	equ	3929h			;* pattern pointer table
 sprite_tmp_buf	equ	3E80h			;* sprite temporary pixel buffer
 color_map_tbl	equ	4199h			;* EGA color map table
@@ -75,45 +70,19 @@ phase_offset_tbl equ	43C8h			;* phase/shift offset table
 bg_tile_src	equ	472Eh			;* background tile source pointer
 copy_fn_tbl	equ	485Ch			;* VGA copy function pointer table (word array)
 hero_gfx_tbl	equ	4B88h			;* hero graphics data table
-
-; --- Driver state variables (CS-segment scratch area) ---
 color_pair_tbl	equ	505Ah			;* EGA color pair lookup table (word array)
 cur_color_pair	equ	5067h			;* current EGA color pair word (set from table)
 vga_row_ptr	equ	5069h			;* current VGA row byte offset (word, +0x280/row)
 scroll_vga_ofs	equ	506Bh			;* scroll destination VGA byte offset (word)
-row_counter	equ	506Dh			;* row countdown (0x12 rows per frame)
-col_idx		equ	506Eh			;* current column index (byte)
-row_idx		equ	506Fh			;* current row index (byte)
-palette_byte	equ	5070h			;* EGA color/palette byte for current sprite
-bitmask_byte	equ	5071h			;* EGA bit mask byte for blitter
 scroll_src_ofs	equ	5072h			;* scroll source VGA byte offset (word)
 scroll_gfx_ptr	equ	5074h			;* scroll graphics data pointer (word)
 scroll_delta	equ	5076h			;* scroll delta (word: col byte + row byte)
-anim_phase	equ	5078h			;* animation pass counter (0-7, decremented)
 shift_count	equ	5079h			;* EGA shift count byte
 sprite_row_buf	equ	507Ah			;* sprite row intermediate buffer (word)
-sprite_state_a	equ	508Ah			;* sprite slot state byte A (0xFF=empty, 0xFC=hidden)
-sprite_state_b	equ	508Bh			;* sprite slot state byte B
 sprite_pos	equ	508Eh			;* sprite position word (col/row packed)
 sprite_cache_tbl equ	5097h			;* sprite EGA cache table (word array, indexed by slot*2)
-
-; --- Game-segment lookup tables ---
-
-; --- Sprite attribute table ---
-sprite_flags	equ	0AF3Fh			;* sprite flags byte (used for initialization)
-
-; --- Pattern/background data ---
-
-; --- Global variables (game_seg:0xFFxx) ---
-
-; --- Fixed EGA/VGA layout constants ---
 ega_row_stride	equ	140h			; EGA bytes per row (320 dec)
 ega_2row_stride	equ	280h			; EGA stride for 2 rows (640 dec)
-ega_plane_row	equ	50h			; EGA planar row stride (80 bytes = 320px / 4 planes)
-ega_plane_stride equ	4Eh			; EGA planar stride after movsw (plane_row - 2)
-sprite_data_stride equ	30h			; sprite data stride per row (48 bytes = 3 planes * 2 bytes * 8px)
-sprite_record_size equ	24h			; sprite attribute record size (36 bytes)
-sprite_slot_stride equ	1Ch			; sprite slot stride within sprite_buf (28 bytes)
 hud_ofs		equ	46Ch			; HUD area starting byte offset in EGA framebuffer
 ui_ofs		equ	0C8Ch			; UI area byte offset
 vga_buf_ofs	equ	1B04h			; VGA work buffer byte offset
@@ -121,8 +90,30 @@ sprite_tmp2	equ	3E80h			; sprite temporary buffer (same as sprite_tmp_buf)
 tile_ega_buf	equ	3E90h			; tile EGA staging buffer offset
 bg_buf		equ	3F20h			; background save/restore buffer offset
 sprite_src_base	equ	8000h			; sprite source graphics base offset in game_seg
-
 ega_seg		equ	0A000h			; EGA framebuffer segment
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+row_counter	equ	506Dh			;* row countdown (0x12 rows per frame)
+col_idx		equ	506Eh			;* current column index (byte)
+row_idx		equ	506Fh			;* current row index (byte)
+palette_byte	equ	5070h			;* EGA color/palette byte for current sprite
+bitmask_byte	equ	5071h			;* EGA bit mask byte for blitter
+sprite_state_a	equ	508Ah			;* sprite slot state byte A (0xFF=empty, 0xFC=hidden)
+sprite_state_b	equ	508Bh			;* sprite slot state byte B
+sprite_flags	equ	0AF3Fh			;* sprite flags byte (used for initialization)
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+anim_frame_tbl	equ	3863h			;* animation frame offset table
+anim_phase	equ	5078h			;* animation pass counter (0-7, decremented)
+ega_plane_row	equ	50h			; EGA planar row stride (80 bytes = 320px / 4 planes)
+ega_plane_stride equ	4Eh			; EGA planar stride after movsw (plane_row - 2)
+sprite_data_stride equ	30h			; sprite data stride per row (48 bytes = 3 planes * 2 bytes * 8px)
+sprite_record_size equ	24h			; sprite attribute record size (36 bytes)
+sprite_slot_stride equ	1Ch			; sprite slot stride within sprite_buf (28 bytes)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

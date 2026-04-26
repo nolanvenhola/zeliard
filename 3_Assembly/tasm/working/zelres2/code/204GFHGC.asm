@@ -40,19 +40,21 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; External data references (outside this module's CS segment).
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
+gvar_game_seg_b	equ	6000h			;* duplicate of game_data_base (type-A sprite tbl base)
 
-; --- Game-segment data pointers (in game_seg via DS) ---
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 hgc_src_base2	equ	6333h			;* secondary HGC source base in game_seg
 hgc_plane_buf_a	equ	8640h			;* HGC plane buffer A (64-byte table)
 sprite_src_base	equ	8690h			;* sprite source graphics base offset in game_seg
 hgc_sprite_src	equ	0B000h			;* HGC sprite source data base (monochrome)
 hgc_plane_alt	equ	0B17Eh			;* HGC alternate plane offset
 hgc_extended_src equ	0D000h			;* HGC extended source buffer
-
-; --- Internal driver tables (CS-relative) ---
 dispatch_tbl	equ	317Eh			;* function dispatch table (word array)
-anim_frame_tbl	equ	37A2h			;* animation frame offset table
 pattern_ptr_tbl	equ	3844h			;* pattern pointer table
 sprite_tmp_buf	equ	45ABh			;* sprite temporary pixel buffer
 color_map_tbl	equ	46D0h			;* color map table (word array)
@@ -61,42 +63,21 @@ bg_tile_src	equ	4C38h			;* background tile source pointer
 copy_fn_tbl	equ	4EFFh			;* HGC copy function pointer table (word array)
 internal_tbl_68	equ	4F46h			;* internal 64-byte table (copied to hgc_plane_buf_a)
 hero_gfx_tbl	equ	4F86h			;* hero graphics data table
-
-; --- Driver state variables (CS-segment scratch area) ---
 cur_color_pair	equ	4FE2h			;* current color pair word (set from palette byte)
 vga_row_ptr	equ	4FE4h			;* current VGA row byte offset (word)
 scroll_vga_ofs	equ	4FE6h			;* scroll destination VGA byte offset (word)
-scroll_state	equ	4FE8h			;* scroll state word
-row_counter	equ	4FEAh			;* row countdown (0x12 rows per frame)
-col_idx		equ	4FEBh			;* current column index (byte)
-row_idx		equ	4FECh			;* current row index (byte)
-palette_byte	equ	4FEDh			;* palette byte for current sprite
 scroll_src_ofs	equ	4FEFh			;* scroll source VGA byte offset (word)
 scroll_gfx_ptr	equ	4FF1h			;* scroll graphics data pointer (word)
 scroll_delta	equ	4FF3h			;* scroll delta (word: col byte + row byte)
 shift_count	equ	4FF5h			;* shift count byte
-anim_phase	equ	4FF7h			;* animation pass counter (0-7, decremented)
-hgc_mask_state	equ	4FF8h			;* HGC mask state byte (writer fill mask)
 sprite_row_buf	equ	4FF9h			;* sprite row intermediate buffer (word)
-sprite_state_a	equ	5009h			;* sprite slot state byte A (0xFF=empty, 0xFC=hidden)
-sprite_state_b	equ	500Ah			;* sprite slot state byte B
 sprite_pos	equ	500Dh			;* sprite position word (col/row packed)
 sprite_cache_tbl equ	5016h			;* sprite HGC cache table (word array, indexed by slot*2)
 sprite_cache_b	equ	5116h			;* sprite cache table B (32-entry word array)
 sprite_ring_buf	equ	5216h			;* sprite ring buffer 0x90 bytes
 pattern_buf	equ	52A6h			;* pattern scratch buffer
-
-; --- Game-segment lookup tables ---
-gvar_game_seg_b	equ	6000h			;* duplicate of game_data_base (type-A sprite tbl base)
 sprite_src_c	equ	0A05Ah			;* sprite source table C (wrap constant)
 hgc_plane_alt_b	equ	0B24Fh			;* alternate HGC plane offset B
-
-; --- Pattern/background data ---
-
-; --- Global variables (game_seg:0xFFxx) ---
-
-; --- Fixed HGC/VGA layout constants ---
-zero_ofs	equ	0			;* zero constant
 hgc_hud_ofs	equ	4FDh			;* HUD/status area byte offset in HGC framebuffer
 hgc_ui_ofs	equ	0D85h			;* UI area byte offset
 hgc_draw_ofs	equ	47CDh			;* drawing area byte offset
@@ -104,8 +85,26 @@ hgc_wrap_limit	equ	6000h			;* HGC row-wrap test limit (same as game_data_base)
 hgc_wrap_add_a	equ	0A058h			;* HGC row-wrap addend A
 hgc_wrap_add_b	equ	0A05Ah			;* HGC row-wrap addend B (same as sprite_src_c)
 level_seg_ofs	equ	2000h			;* segment offset for level/map data
-
 hgc_seg		equ	0B000h			;* HGC framebuffer segment (monochrome)
+
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+scroll_state	equ	4FE8h			;* scroll state word
+row_counter	equ	4FEAh			;* row countdown (0x12 rows per frame)
+col_idx		equ	4FEBh			;* current column index (byte)
+row_idx		equ	4FECh			;* current row index (byte)
+palette_byte	equ	4FEDh			;* palette byte for current sprite
+hgc_mask_state	equ	4FF8h			;* HGC mask state byte (writer fill mask)
+sprite_state_a	equ	5009h			;* sprite slot state byte A (0xFF=empty, 0xFC=hidden)
+sprite_state_b	equ	500Ah			;* sprite slot state byte B
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+anim_frame_tbl	equ	37A2h			;* animation frame offset table
+anim_phase	equ	4FF7h			;* animation pass counter (0-7, decremented)
+zero_ofs	equ	0			;* zero constant
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

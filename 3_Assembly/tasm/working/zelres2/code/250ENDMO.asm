@@ -80,9 +80,18 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
 
-; ------------------------------------------------------------------
-; Graphics driver function table (in this module's CS segment, at 3000h+)
-; ------------------------------------------------------------------
+; ----------------------------------------------------------------------
+; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
+; ----------------------------------------------------------------------
+gvar_timer_lo		equ	0FF1Ah		; frame timer low byte (zeliard.inc)
+gvar_skip_input		equ	0FF21h		; input skip flag (zeliard.inc)
+gvar_game_seg		equ	0FF2Ch		; game data segment word (zeliard.inc)
+gvar_credits_pos	equ	0FF50h		; credits scroll/row position word
+gvar_volume_b		equ	0FF75h		; audio volume B (zeliard.inc)
+
+; ----------------------------------------------------------------------
+; Section 5: File-internal data table addresses
+; ----------------------------------------------------------------------
 gfx_draw_fn		equ	3004h		; draw / blit rectangle (AL=colour)
 gfx_update_fn		equ	3006h		; update / refresh rect
 gfx_palette_fn		equ	3008h		; palette switch (AX=palette index)
@@ -93,11 +102,6 @@ gfx_scene_fn3		equ	3024h		; set scene state word 3
 gfx_sprite_fn		equ	3028h		; sprite render
 gfx_scroll_jmp		equ	302Eh		; scroll/credits jump vector
 gfx_putchar_fn		equ	3030h		; render single char at (BX,CX)
-
-; ------------------------------------------------------------------
-; Narration / credits script data (in cs: if via cs:, else in DS/game_seg)
-; ------------------------------------------------------------------
-null_ofs		equ	0		; zero offset
 rle_stride_a		equ	18D8h		; plane stride for rle_interleave_planes
 plane_mid_ofs		equ	29E0h		; middle-plane base in OR/AND mask compose
 framebuf_a		equ	4000h		; frame buffer A (game_seg:4000h)
@@ -114,27 +118,26 @@ text_color_bg		equ	6636h		; narration: background colour byte
 text_style		equ	6637h		; narration: speaker/attribute style
 credit_scene_fn_tbl	equ	6820h		; credits: scene-dispatch fn pointer table
 credits_pc		equ	6965h		; credits: script program counter (word)
-credits_col_byte	equ	6967h		; credits: current column byte
-credits_row_byte	equ	6968h		; credits: current row byte
 credits_pause_ticks	equ	6969h		; credits: pause/delay word
 credits_tick_delay	equ	696Bh		; credits: inter-tick delay
-credits_scene_idx	equ	696Ch		; credits: scene handler index byte
 glyph_advance_tbl	equ	807Dh		; character advance (width) table
 glyph_space_tbl		equ	80DDh		; character space (width-inc) table
 ref_gualand2_palette	equ	815Dh		; chunk ref: palette (815Dh)
 ref_heroclose_grp	equ	8173h		; chunk ref: hero close-up grp
 ref_felicia_grp		equ	8194h		; chunk ref: Felicia close-up grp
 vga_seg			equ	0A000h		; VGA segment (A000h)
-gvar_timer_lo		equ	0FF1Ah		; frame timer low byte (zeliard.inc)
-gvar_skip_input		equ	0FF21h		; input skip flag (zeliard.inc)
-gvar_game_seg		equ	0FF2Ch		; game data segment word (zeliard.inc)
-gvar_credits_pos	equ	0FF50h		; credits scroll/row position word
-gvar_volume_b		equ	0FF75h		; audio volume B (zeliard.inc)
 
-; ------------------------------------------------------------------
-; Script byte-stream control codes (shared with 100OPDMO; see skill).
-; Appear in narration & credits scripts embedded in the data section.
-; ------------------------------------------------------------------
+; ----------------------------------------------------------------------
+; Section 6: File-internal state variables
+; ----------------------------------------------------------------------
+credits_col_byte	equ	6967h		; credits: current column byte
+credits_row_byte	equ	6968h		; credits: current row byte
+credits_scene_idx	equ	696Ch		; credits: scene handler index byte
+
+; ----------------------------------------------------------------------
+; Section 7: Constants
+; ----------------------------------------------------------------------
+null_ofs		equ	0		; zero offset
 SCR_END_SCRIPT	equ	0FFh	; end of script / page terminator
 SCR_SCROLL	equ	0FEh	; scroll text up / page break
 SCR_BREAK	equ	0FDh	; section break
@@ -156,8 +159,6 @@ SCR_SPK_NARR	equ	0EDh	; speaker: narrator (attr '?')
 SCR_SPK_DEMON	equ	0ECh	; speaker: Jashiin demon (attr '@')
 SCR_SPK_PRINC	equ	0EBh	; speaker: Princess Felicia (attr 'A')
 CR		equ	0Dh	; carriage return
-
-; Per-character animated colour cycle codes (appear between glyphs).
 ANIM_80		equ	080h
 ANIM_81		equ	081h
 ANIM_82		equ	082h
