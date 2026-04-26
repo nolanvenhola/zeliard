@@ -35,15 +35,10 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; Fight-engine callback vectors / shared globals (DS at game_seg).
 
-fight_cb_prep		equ	200Ch			; prep/init callback
-fight_cb_record_ofs	equ	6028h			; compute record addr from tile
-fight_cb_anim_step	equ	6036h			; animation advance callback
-fight_cb_hit_check	equ	6038h			; per-slot hit/collision query
-sprite_src_alt		equ	8080h			; alternate sprite-source base
-sprite_src_aux		equ	80A1h			; auxiliary sprite-source base
 
 ; Crab-specific global state (DS, game_seg).
 
@@ -72,13 +67,6 @@ crab_col_pos		equ	0A7E9h			; current col position
 crab_anim_base		equ	0A7EAh			; animation base (word)
 crab_timer_a		equ	0A7ECh			; phase timer A
 crab_timer_b		equ	0A7EDh			; phase timer B (death animation)
-fight_state_max		equ	0C002h			; max state index (for wrap)
-fight_slot_list		equ	0C010h			; base of enemy/crab slot list
-sprite_idx_table	equ	0ED20h			; sprite index mapping table
-gvar_death_flag		equ	0FF2Eh			; crab death flag global
-gvar_dir_toggle		equ	0FF2Fh			; dir-toggle flag global
-gvar_completion		equ	0FF30h			; completion/stage flag global
-gvar_spawn_fx_flag	equ	0FF75h			; flag byte for spawn VFX
 
 ; ----- Slot-record layout helpers (for readability in code below) -----
 ;   [si+0..1] = sprite tile word   [si+4] = attribute  [si+5] = flags

@@ -35,6 +35,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; --- TAKO enemy AI dispatch table (game_seg:6004h..603Ah, in DS at runtime) ---
 ai_fn_tbl_a	equ	6004h			; AI fn: test-collision (tako tbl_o xlat)
@@ -81,9 +82,6 @@ tako_facing_fn_ptr	equ	(offset data_6) + 4	; CS-relative: pseudo-fn used by
 ;   tako_pat_alt = 0xA8DFh   (= tako_tbl_m, used in alt-attack branch)
 
 ; --- Shared globals (game_seg DS, see zeliard.inc) ---
-gvar_proj_cnt	equ	0C002h			; active projectile count (shared battle state)
-gvar_frame_cnt	equ	0FF35h			; frame counter byte
-gvar_enemy_cnt	equ	0FF36h			; active enemy counter byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

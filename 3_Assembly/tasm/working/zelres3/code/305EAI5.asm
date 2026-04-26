@@ -25,6 +25,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; --- References into the 200FIGHT battle binary (caller segment) ---
 battle_ref_a	equ	0A2AEh			; ref into 200FIGHT code (battle entry A)
@@ -56,10 +57,6 @@ meda_tbl_e	equ	0A41Bh			; MEDA behaviour lookup E
 meda_tbl_f	equ	0A41Ch			; MEDA behaviour lookup F
 meda_tbl_g	equ	0A428h			; MEDA behaviour lookup G
 meda_tbl_h	equ	0A429h			; MEDA behaviour lookup H
-gvar_proj_cnt	equ	0C002h			; shared projectile count
-enemy_data_ext	equ	0ED20h			; extended enemy data area
-gvar_frame_cnt	equ	0FF35h			; frame counter byte
-gvar_sub_frame	equ	0FF4Ah			; sub-frame counter byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

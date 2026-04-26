@@ -25,6 +25,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; --- ZELA enemy AI dispatch table (game_seg:6004h..603Eh, DS-relative) ---
 ai_fn_tbl_a	equ	6004h			; AI fn
@@ -46,11 +47,6 @@ zela_tbl_a	equ	0A45Eh			; ZELA pattern/direction lookup A (east-facing)
 zela_tbl_a_alt	equ	0A456h			; ZELA pattern/direction lookup A (west-facing, alt)
 zela_tbl_b	equ	0A756h			; ZELA pattern/direction lookup B (east-facing)
 zela_tbl_b_alt	equ	0A7CEh			; ZELA pattern/direction lookup B (west-facing, alt)
-gvar_proj_cnt	equ	0C002h			; shared projectile count
-enemy_attr_base	equ	0C010h			; enemy slot record base (DS:0C010h)
-enemy_data_ext	equ	0ED20h			; extended enemy data area (body chain)
-gvar_frame_cnt	equ	0FF35h			; frame counter byte
-gvar_sub_frame	equ	0FF4Ah			; sub-frame counter byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

@@ -24,6 +24,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; --- TORI enemy AI dispatch table (game_seg:6004h..603Ah, in DS at runtime) ---
 ai_fn_tbl_a	equ	6004h			; AI fn (dive / swoop)
@@ -50,7 +51,6 @@ tori_tbl_d	equ	0A654h
 tori_tbl_e	equ	0A655h
 tori_tbl_f	equ	0A661h
 tori_tbl_g	equ	0A662h
-gvar_frame_cnt	equ	0FF35h			; frame counter byte
 
 ; Backwards-compat aliases
 

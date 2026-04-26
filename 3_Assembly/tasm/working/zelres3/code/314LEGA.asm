@@ -24,6 +24,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; The following equates show data references outside the range of the program.
 ; Shared references across 312-319 map-program family:
@@ -79,12 +80,7 @@ lega_render_buf_b	equ	0A7CBh		; tile render buffer +2
 lega_extra_attr		equ	0A7F1h		; extra-attr byte at scan tail
 
 ; --- Shared game-segment globals (used across map-program family) ---
-enemy_attr_base		equ	0C010h		; sprite/entity record base (DS)
-sprite_xlat_tbl		equ	0ED20h		; char/tile lookup table (shared)
-gvar_death_flag		equ	0FF2Eh		; global death flag
-gvar_dir_toggle		equ	0FF2Fh		; global dir-toggle flag
 gvar_unk_ff3c		equ	0FF3Ch		; global state byte (used in header decode)
-gvar_spawn_fx_flag	equ	0FF75h		; spawn VFX flag
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

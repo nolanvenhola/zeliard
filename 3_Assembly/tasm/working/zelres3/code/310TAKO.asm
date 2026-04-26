@@ -50,13 +50,10 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; Fight-engine callback vectors / shared globals (DS at game_seg).
 
-fight_cb_prep		equ	200Ch			; prep/init callback
-fight_cb_record_ofs	equ	6028h			; compute record addr from tile
-fight_cb_anim_step	equ	6036h			; animation advance callback
-fight_cb_hit_check	equ	6038h			; per-slot hit/collision query
 
 ; Shared sprite pattern tables used by Tako (DS, game_seg).
 
@@ -64,8 +61,6 @@ sprite_pat_tbl_a	equ	0A57Dh			; sprite pattern table A
 sprite_pat_tbl_b	equ	0A64Dh			; sprite pattern table B
 dir_xlat_table		equ	0A725h			; direction lookup table (xlat base)
 tako_vector_tbl		equ	0A9AFh			; tako render-vector table
-sprite_src_alt		equ	8080h			; alternate sprite-source base
-sprite_src_aux		equ	80A1h			; auxiliary sprite-source base
 sprite_src_base		equ	0E3A5h			; tako sprite-source base
 
 ; Tako-specific global state (DS at game_seg).
@@ -83,12 +78,6 @@ tako_alt_state		equ	0AA9Ch			; alternate state byte
 tako_timer_a		equ	0AA9Eh			; timer A (word)
 tako_timer_a_byte	equ	0AA9Fh			; timer A byte (low half)
 tako_col_pos		equ	0AAA1h			; col position byte
-fight_slot_list		equ	0C010h			; base of enemy slot list
-sprite_idx_table	equ	0ED20h			; sprite index mapping table
-gvar_death_flag		equ	0FF2Eh			; tako death flag global
-gvar_dir_toggle	equ	0FF2Fh			; dir-toggle flag global
-gvar_completion	equ	0FF30h			; completion/stage flag global
-gvar_spawn_fx_flag	equ	0FF75h			; flag byte for spawn VFX
 
 ; ----- Slot-record layout helpers (for readability in code below) -----
 ;   [si+0..1] = sprite tile word   [si+4] = attribute  [si+5] = flags

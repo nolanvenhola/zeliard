@@ -26,6 +26,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; The following equates show data references outside the range of the program.
 ; Shared references across 312-319 map-program family:
@@ -79,12 +80,7 @@ zel2_render_attr_d	equ	0A618h		; render attr slot D
 
 ; --- Shared game-segment globals (used across map-program family) ---
 zel2_sprite_attr_ptr	equ	0C002h		; sprite attribute scan ptr (DS word)
-enemy_attr_base		equ	0C010h		; sprite/entity record base (DS)
-sprite_xlat_tbl		equ	0ED20h		; char/tile lookup table (shared)
-gvar_death_flag		equ	0FF2Eh		; global death flag
-gvar_dir_toggle		equ	0FF2Fh		; global dir-toggle flag
 zel2_state_ff30		equ	0FF30h		; per-map state flag (idle-out marker)
-gvar_spawn_fx_flag	equ	0FF75h		; spawn VFX flag
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

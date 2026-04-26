@@ -34,22 +34,15 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
 ; These word pointers are the EAI module's only interface to 200FIGHT.
 
 fight_cb_range		equ	6004h			; aim/range/hit check callback
-fight_cb_step_neg	equ	6008h			; step towards -x callback
 fight_cb_map_fwd	equ	600Ch			; map-fwd move (unsigned)
 fight_cb_step_pos	equ	6010h			; step towards +x callback
-fight_cb_blocked	equ	6014h			; blocked/obstacle query
-fight_cb_record_ofs	equ	6028h			; compute record addr from tile
-fight_cb_mark_adj	equ	602Ah			; mark adjacent cell busy
-fight_cb_tile_index	equ	602Ch			; tile-index conversion
-fight_cb_cmp_tile	equ	602Eh			; compare tile type
 fight_cb_spawn		equ	6032h			; spawn projectile/effect
-fight_cb_fire		equ	6034h			; fire / attack dispatch
-fight_cb_despawn	equ	603Ah			; clear/remove enemy
 
 ; Shared enemy spawn/state globals in game_seg DS (0xA4xx range).
 
@@ -58,9 +51,7 @@ enemy_spawn_col_hi	equ	0A4DEh			; spawn-cell col (set for hatch)
 enemy_spawn_tile_lo	equ	0A4EAh			; alt spawn row (non-hatch path)
 enemy_spawn_col_lo	equ	0A4EBh			; alt spawn col (non-hatch path)
 dir_xlat_table		equ	0A766h			; direction lookup table (xlat base)
-fight_state_max		equ	0C002h			; max state index (for wrap)
 gvar_hero_x		equ	0FF35h			; hero X tile position (global)
-gvar_spawn_fx_flag	equ	0FF75h			; flag byte for spawn VFX
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

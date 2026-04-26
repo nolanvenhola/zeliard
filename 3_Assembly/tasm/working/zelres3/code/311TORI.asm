@@ -44,13 +44,10 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; Fight-engine callback vectors / shared globals (DS, game_seg).
 
-fight_cb_prep		equ	200Ch			; prep/init callback
-fight_cb_record_ofs	equ	6028h			; compute record addr from tile
-fight_cb_anim_step	equ	6036h			; animation advance callback
-fight_cb_hit_check	equ	6038h			; per-slot hit/collision query
 fight_cb_aim		equ	603Ah			; aim/target callback
 fight_cb_shutdown	equ	603Ch			; shutdown callback
 
@@ -89,13 +86,6 @@ tori_turn_cooldown	equ	0A799h			; turn cooldown
 tori_altitude		equ	0A79Ah			; altitude (y) position byte
 tori_alt_state		equ	0A79Bh			; alternate state byte
 tori_tmp_buf		equ	0A79Ch			; temp render buffer (0x48 bytes)
-fight_state_max		equ	0C002h			; max state index (for wrap)
-fight_slot_list		equ	0C010h			; base of enemy slot list
-sprite_idx_table	equ	0ED20h			; sprite index mapping table
-gvar_death_flag		equ	0FF2Eh			; tori death flag global
-gvar_dir_toggle		equ	0FF2Fh			; dir-toggle flag global
-gvar_completion		equ	0FF30h			; completion/stage flag global
-gvar_spawn_fx_flag	equ	0FF75h			; flag byte for spawn VFX
 
 ; ----- Slot-record layout helpers (for readability in code below) -----
 ;   [si+0..1] = sprite tile word   [si+4] = attribute  [si+5] = flags

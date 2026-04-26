@@ -37,6 +37,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; --- CRAB enemy AI dispatch table (game_seg:6004h..6034h, in DS at runtime) ---
 ai_fn_tbl_a	equ	6004h			; AI fn table slot (movement/pathing)
@@ -66,8 +67,6 @@ crab_rotate_b	equ	0A72Fh			; crab rotation/swap pattern table B
 
 ; --- Global variables (game_seg:0xFFxx, zeliard.inc) ---
 gvar_rng_state	equ	0FF2Eh			; random/LFSR state word
-gvar_frame_cnt	equ	0FF35h			; frame counter byte
-gvar_enemy_cnt	equ	0FF36h			; active enemy counter byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

@@ -35,21 +35,14 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
 
 fight_cb_rng		equ	6004h			; RNG read callback
-fight_cb_step_neg	equ	6008h			; step -x callback
 fight_cb_map_fwd	equ	6010h			; map-fwd move callback
-fight_cb_blocked	equ	6014h			; blocked/obstacle query
-fight_cb_record_ofs	equ	6028h			; compute record addr from tile
-fight_cb_mark_adj	equ	602Ah			; mark adjacent cell busy
-fight_cb_tile_index	equ	602Ch			; tile-index conversion
-fight_cb_cmp_tile	equ	602Eh			; compare tile type
 fight_cb_alt		equ	6030h			; alternate dispatch callback
 fight_cb_spawn		equ	6032h			; spawn projectile/effect
-fight_cb_fire		equ	6034h			; fire / attack dispatch
-fight_cb_despawn	equ	603Ah			; clear/remove enemy
 
 ; Shared enemy spawn/state globals in game_seg DS.
 
@@ -69,7 +62,6 @@ spawn_cell_col_hi	equ	0A705h			; alt spawn col (phase hi)
 spawn_cell_row_lo	equ	0A711h			; alt spawn row (phase lo)
 spawn_cell_col_lo	equ	0A712h			; alt spawn col (phase lo)
 dir_xlat_alt		equ	0A8C7h			; direction xlat (alt state)
-fight_state_max		equ	0C002h			; max state index (for wrap)
 gvar_hero_x		equ	0FF35h			; hero X tile position (global)
 
 seg_a		segment	byte public
