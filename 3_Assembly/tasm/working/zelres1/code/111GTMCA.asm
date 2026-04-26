@@ -95,11 +95,11 @@ start:
 		sub	[bx+si],dh
 		push	cx
 		xor	[bx+si],ch
-		db	 36h, 77h, 36h,0A4h, 36h,0F1h
-		db	 36h,0FCh, 32h, 26h, 35h, 9Ah
-		db	 35h,0ECh, 34h, 1Ch, 37h, 85h
-		db	 37h, 05h, 38h,0CCh, 37h, 99h
-		db	 39h,0EFh, 39h, 8Eh, 38h,0F9h
+		db	 36h, 77h, 36h,0A4h, 36h,0F1h	; dispatch words: 3677h, 36A4h, 36F1h
+		db	 36h,0FCh, 32h, 26h, 35h, 9Ah	; dispatch words: 36FCh, 3226h, 359Ah
+		db	 35h,0ECh, 34h, 1Ch, 37h, 85h	; dispatch words: 35ECh, 341Ch, 3785h
+		db	 37h, 05h, 38h,0CCh, 37h, 99h	; dispatch words: 3705h, 38CCh, 3799h
+		db	 39h,0EFh, 39h, 8Eh, 38h,0F9h	; dispatch words: 39EFh, 398Eh, 38F9h
 		db	 3Ah, 71h, 3Ah, 1Eh,0BEh,0B0h	; last 2 words (3A71h,3A1Eh) + MOV SI,61B0h start
 		db	 61h,0BFh, 00h,0A0h, 0Eh, 07h	; MOV DI,0A000h; PUSH CS; POP ES
 		db	0B8h, 00h,0A0h, 8Eh,0D8h,0B9h	; MOV AX,0A000h; MOV DS,AX; MOV CX,...

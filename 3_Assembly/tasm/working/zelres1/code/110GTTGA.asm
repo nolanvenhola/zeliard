@@ -85,13 +85,13 @@ start:
 		db	0D0h, 37h		;  Fixup - byte match
 		xchg	bx,ax
 		xor	cx,[bx+si]
-		db	 36h, 77h, 36h,0CEh, 35h, 00h
-		db	 38h, 3Fh, 38h,0C2h, 38h, 90h
-		db	 38h, 8Fh, 3Ah,0E7h, 3Ah, 83h
-		db	 39h, 16h, 3Ch, 81h, 3Bh, 1Eh
-		db	0BEh,0F8h, 4Bh,0BFh, 00h,0A0h
-		db	 0Eh, 07h,0B8h, 00h,0B8h, 8Eh
-		db	0D8h,0B9h, 1Ch, 00h
+		db	 36h, 77h, 36h,0CEh, 35h, 00h	; dispatch words: 3677h, 36CEh, 3500h
+		db	 38h, 3Fh, 38h,0C2h, 38h, 90h	; dispatch words: 383Fh, 38C2h, 3890h
+		db	 38h, 8Fh, 3Ah,0E7h, 3Ah, 83h	; dispatch words: 388Fh, 3AE7h, 3A83h
+		db	 39h, 16h, 3Ch, 81h, 3Bh, 1Eh	; dispatch words: 3916h, 3C81h, 3B1Eh + push ds
+		db	0BEh,0F8h, 4Bh,0BFh, 00h,0A0h	; mov si,4BF8h; mov di,0A000h
+		db	 0Eh, 07h,0B8h, 00h,0B8h, 8Eh	; push cs; pop es; mov ax,0B800h; mov ds,...
+		db	0D8h,0B9h, 1Ch, 00h		; mov ds,ax; mov cx,1Ch -> col_blit_loop
 
 col_blit_loop:
 									push	cx
@@ -884,11 +884,11 @@ limg_get_value		endp
 ;   xor ax, 35BEh        -- entry 0: di=tga_row_buf_b (425Bh), then call mul4_loop entry
 ;   mov di, tga_row_buf_b; call +0x70; jmp mul4_start
 ;   add si, 3; mov di, tga_row_buf_c; jmp mul4_start  -- entry 2: advance si, set di=tga_row_buf_c
-		db	0C6h, 35h,0BEh, 35h,0BFh, 5Bh
-		db	 42h,0E8h, 70h, 00h,0EBh, 6Eh
-		db	 83h,0C6h, 03h,0BFh,0BBh, 42h
-		db	0EBh
-		db	66h
+		db	0C6h, 35h,0BEh, 35h,0BFh, 5Bh	; entry 0: mov si,35BEh; mov di,425Bh
+		db	 42h,0E8h, 70h, 00h,0EBh, 6Eh	; (cont) call rel +70h; jmp +6Eh (mul4_start)
+		db	 83h,0C6h, 03h,0BFh,0BBh, 42h	; entry 2: add si,3; mov di,42BBh
+		db	0EBh					; jmp short ...
+		db	66h					; ...rel offset (continues into mul4_start)
 
 limg_multiply_3		proc	near
 		mov	al,[si+2]
@@ -1322,16 +1322,16 @@ icon_blit_wrap_ok:
 ; Row 3: CC 00 0C CC C0 00
 ; Row 4: 0C CC 00 00 0C C0
 ; Row 5: 00 00 00 00 00 00  (blank)
-		db	 00h, 00h, 00h, 00h, 0Ch,0C0h
-		db	 00h, 00h, 0Ch,0CCh, 00h, 00h
-		db	 0Ch,0CCh,0C0h, 00h, 0Ch,0CCh
-		db	0CCh, 00h, 0Ch,0CCh,0C0h, 00h
-		db	 0Ch,0CCh, 00h, 00h, 0Ch,0C0h
-		db	 00h, 00h, 00h, 00h, 00h, 00h
+		db	 00h, 00h, 00h, 00h, 0Ch,0C0h	; row 0
+		db	 00h, 00h, 0Ch,0CCh, 00h, 00h	; row 1
+		db	 0Ch,0CCh,0C0h, 00h, 0Ch,0CCh	; row 2
+		db	0CCh, 00h, 0Ch,0CCh,0C0h, 00h	; row 3
+		db	 0Ch,0CCh, 00h, 00h, 0Ch,0C0h	; row 4
+		db	 00h, 00h, 00h, 00h, 00h, 00h	; row 5
 ; Setup code for movsw_rep_loop: call +0x598; mov di,ax; mov si,glyph_buf; mov ax,0B800h; mov es,ax; mov cx,9
-		db	 02h,0FFh,0E8h, 98h, 05h, 8Bh
-		db	0F8h,0BEh, 7Bh, 3Eh,0B8h, 00h
-		db	0B8h, 8Eh,0C0h,0B9h, 09h, 00h
+		db	 02h,0FFh,0E8h, 98h, 05h, 8Bh	; opcodes: 02FFh; call +0598h; mov ...
+		db	0F8h,0BEh, 7Bh, 3Eh,0B8h, 00h	; mov di,ax; mov si,3E7Bh; mov ax,...
+		db	0B8h, 8Eh,0C0h,0B9h, 09h, 00h	; ...0B8h; mov es,ax; mov cx,9
 
 movsw_rep_loop:
 									push	cx
@@ -2107,18 +2107,18 @@ limg_process_loop_5		endp
 
 ; color_lut_data: 62-entry bitplane-index to TGA 4-bit color lookup table (color_lut equ 3DCBh)
 ; Indexed by 6-bit bitplane combination [bp2:bp1:bp0] x 2 passes; maps to TGA nibble color.
-		db	 00h, 07h, 04h, 02h, 03h, 01h
-		db	 08h, 05h, 07h, 0Fh, 0Ch, 0Eh
-		db	 0Bh, 09h, 0Eh, 0Dh, 04h, 0Ch
-		db	 0Ch, 0Eh, 07h, 05h, 06h, 0Ch
-		db	 02h, 0Eh, 0Eh, 0Ah, 0Ah, 03h
-		db	 0Ah, 07h, 03h, 0Bh, 07h, 0Ah
-		db	 0Bh, 09h, 0Ah, 09h, 01h, 09h
-		db	 05h, 03h, 09h, 09h, 07h, 05h
-		db	 08h, 0Eh, 06h, 0Ah, 0Ah, 07h
-		db	 0Eh, 0Ch, 05h, 0Dh, 0Ch, 07h
-		db	 09h, 05h
-		db	 0Ch, 0Dh
+		db	 00h, 07h, 04h, 02h, 03h, 01h	; color_lut[ 0..5]
+		db	 08h, 05h, 07h, 0Fh, 0Ch, 0Eh	; color_lut[ 6..11]
+		db	 0Bh, 09h, 0Eh, 0Dh, 04h, 0Ch	; color_lut[12..17]
+		db	 0Ch, 0Eh, 07h, 05h, 06h, 0Ch	; color_lut[18..23]
+		db	 02h, 0Eh, 0Eh, 0Ah, 0Ah, 03h	; color_lut[24..29]
+		db	 0Ah, 07h, 03h, 0Bh, 07h, 0Ah	; color_lut[30..35]
+		db	 0Bh, 09h, 0Ah, 09h, 01h, 09h	; color_lut[36..41]
+		db	 05h, 03h, 09h, 09h, 07h, 05h	; color_lut[42..47]
+		db	 08h, 0Eh, 06h, 0Ah, 0Ah, 07h	; color_lut[48..53]
+		db	 0Eh, 0Ch, 05h, 0Dh, 0Ch, 07h	; color_lut[54..59]
+		db	 09h, 05h			; color_lut[60..61]
+		db	 0Ch, 0Dh			; color_lut[62..63] (continued)
 
 limg_scan_loop_3		proc	near
 		mov	cx,8

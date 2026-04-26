@@ -84,13 +84,13 @@ start:
 		db	 09h, 3Bh, 8Eh, 39h,0B0h, 3Bh	; entries 10-12
 		db	0B0h, 3Bh		; entry 13 (scroll_right, repeated)
 		; inline EGA init: push ds; mov si,186Ch; mov di,0A000h
-		db	1Eh,0BEh, 6Ch, 18h
+		db	1Eh,0BEh, 6Ch, 18h	; push ds; mov si,186Ch
 		db	0BFh, 00h,0A0h		; push cs; pop es; mov ax,0A000h
-		db	 0Eh, 07h,0B8h
+		db	 0Eh, 07h,0B8h		; (continued) mov ax,0A000h opcode prefix
 		db	 00h,0A0h, 8Eh,0D8h	; mov ds,ax; mov dx,3CEh
-		db	0BAh,0CEh
+		db	0BAh,0CEh		; (continued) mov dx,3CEh operand
 		db	 03h,0B0h, 04h,0EEh	; mov al,4; out dx,al; inc dx
-		db	 42h,0B9h
+		db	 42h,0B9h		; (continued) mov cx,... opcode prefix
 		db	 1Ch, 00h		; mov cx,1Ch -> fall into tile_col_scan_loop
 
 tile_col_scan_loop:
@@ -517,8 +517,8 @@ remap_done:
 ; render_fn_tbl_a: word table of EGA plane-mix render functions (4 entries)
 ; [0]=plane_mix_a_entry [1]=plane_mix_b_entry [2]=plane_mix_c_entry [3]=plane_clear_entry
 			                        ;* No entry point to code
-		db	0F3h, 32h, 27h, 33h, 62h, 33h
-		db	 94h, 33h
+		db	0F3h, 32h, 27h, 33h, 62h, 33h	; word table: 32F3h, 3327h, 3362h
+		db	 94h, 33h			; word table entry: 3394h
 
 ; plane_mix_a_entry: called via render_fn_tbl_a[0], sets cx=8 then mixes planes
 			                        ;* No entry point to code

@@ -78,20 +78,20 @@ start:
 		inc	dx
 		int	3			; Debug breakpoint
 		inc	sp
-		db	0C9h, 32h, 2Ch, 33h,0B7h, 33h
-		db	 37h, 34h, 4Fh, 36h,0ABh, 36h
-		db	 07h, 37h,0FCh, 30h, 32h, 37h
-		db	0B4h, 37h,0E6h, 38h, 1Ch, 3Ch
-		db	 79h, 3Dh, 35h, 3Eh, 8Bh, 3Eh
-		db	 80h, 40h, 62h, 41h, 05h, 42h
-		db	0DEh, 44h, 50h, 53h, 51h, 1Eh
-		db	 8Ah,0C5h,0F6h,0E1h, 8Bh,0E8h
-		db	 06h, 1Fh, 8Bh,0F7h, 8Ch,0C8h
-		db	 05h, 00h, 30h, 8Eh,0C0h,0BFh
-		db	 00h, 00h, 2Eh,0C7h, 06h,0FDh
-		db	 44h, 00h, 00h, 2Eh,0C7h, 06h
-		db	0FFh, 44h, 00h, 00h, 8Bh,0CDh
-		db	0D1h,0E9h
+		db	0C9h, 32h, 2Ch, 33h,0B7h, 33h	; dispatch words: 32C9h, 332Ch, 33B7h
+		db	 37h, 34h, 4Fh, 36h,0ABh, 36h	; dispatch words: 3437h, 364Fh, 36ABh
+		db	 07h, 37h,0FCh, 30h, 32h, 37h	; dispatch words: 3707h, 30FCh, 3732h
+		db	0B4h, 37h,0E6h, 38h, 1Ch, 3Ch	; dispatch words: 37B4h, 38E6h, 3C1Ch
+		db	 79h, 3Dh, 35h, 3Eh, 8Bh, 3Eh	; dispatch words: 3D79h, 3E35h, 3E8Bh
+		db	 80h, 40h, 62h, 41h, 05h, 42h	; dispatch words: 4080h, 4162h, 4205h
+		db	0DEh, 44h, 50h, 53h, 51h, 1Eh	; dispatch word: 44DEh + push ax/bx/cx/ds
+		db	 8Ah,0C5h,0F6h,0E1h, 8Bh,0E8h	; mov al,ch; mul cl; mov bp,ax
+		db	 06h, 1Fh, 8Bh,0F7h, 8Ch,0C8h	; push es/pop ds; mov si,di; mov ax,cs
+		db	 05h, 00h, 30h, 8Eh,0C0h,0BFh	; add ax,3000h; mov es,ax; mov di,...
+		db	 00h, 00h, 2Eh,0C7h, 06h,0FDh	; ...0; mov word ptr cs:[44FDh],...
+		db	 44h, 00h, 00h, 2Eh,0C7h, 06h	; ...0; mov word ptr cs:[44FFh],...
+		db	0FFh, 44h, 00h, 00h, 8Bh,0CDh	; ...0; mov cx,bp
+		db	0D1h,0E9h			; shr cx,1 -> render_plane_a_loop
 
 render_plane_a_loop:
 							mov	ax,ds:[bp+si]
@@ -923,26 +923,26 @@ pal_mul_pixel_loop:
 pal_multiply		endp
 
 disp_scroll_a:					;* Dispatcher entry: scroll function A
-		db	 00h, 90h, 20h, 06h, 80h, 91h
-		db	 20h, 06h, 00h, 93h, 20h, 06h
-		db	 80h, 94h, 20h, 06h, 00h, 96h
-		db	 18h, 04h,0C0h, 96h, 18h, 04h
-		db	 80h, 97h, 18h, 04h, 40h, 98h
-		db	 18h, 04h, 1Fh, 1Fh, 00h, 0Fh
-		db	 0Fh, 00h, 1Fh, 1Fh, 1Fh, 0Fh
-		db	 0Fh, 0Fh, 1Fh, 00h, 1Fh, 0Fh
-		db	 00h, 0Fh, 1Fh, 00h, 00h, 0Fh
-		db	 00h, 00h, 1Eh, 53h, 32h,0E4h
-		db	0BAh,0C0h, 0Ch,0F7h,0E2h, 05h
-		db	 40h,0ABh
+		db	 00h, 90h, 20h, 06h, 80h, 91h	; CRTC seq: (00h,90h),(20h,06h),(80h,91h)
+		db	 20h, 06h, 00h, 93h, 20h, 06h	; CRTC seq: (20h,06h),(00h,93h),(20h,06h)
+		db	 80h, 94h, 20h, 06h, 00h, 96h	; CRTC seq: (80h,94h),(20h,06h),(00h,96h)
+		db	 18h, 04h,0C0h, 96h, 18h, 04h	; CRTC seq: (18h,04h),(C0h,96h),(18h,04h)
+		db	 80h, 97h, 18h, 04h, 40h, 98h	; CRTC seq: (80h,97h),(18h,04h),(40h,98h)
+		db	 18h, 04h, 1Fh, 1Fh, 00h, 0Fh	; CRTC seq + plane mix tbl: 1F1F 000F
+		db	 0Fh, 00h, 1Fh, 1Fh, 1Fh, 0Fh	; plane mix table (4 bytes/entry)
+		db	 0Fh, 0Fh, 1Fh, 00h, 1Fh, 0Fh	; plane mix table (cont.)
+		db	 00h, 0Fh, 1Fh, 00h, 00h, 0Fh	; plane mix table (cont.)
+		db	 00h, 00h, 1Eh, 53h, 32h,0E4h	; plane mix tbl tail + push ds; push bx; xor ah
+		db	0BAh,0C0h, 0Ch,0F7h,0E2h, 05h	; mov dx,0CC0h; mul dx; add ax,...
+		db	 40h,0ABh			; ...4000h marker; stosw (continued by next inline word)
 		db	2Eh					; CS segment override prefix (with next 2 bytes = MOV DS,[BX])
 scroll_a_plane_b	dw	1E8Eh		; Bytes 8Eh,1Eh = MOV DS,[BX] in disp_scroll_a code; label offset used as plane B displacement in render_ab_buf_loop
-		db	 2Ch,0FFh, 8Bh,0F0h, 8Ch,0C8h
-		db	 05h, 00h, 30h, 8Eh,0C0h,0BFh
-		db	 00h, 00h, 2Eh,0C7h, 06h, 01h
-		db	 45h, 00h, 00h, 2Eh,0C7h, 06h
-		db	0FFh, 44h, 00h, 00h,0B9h, 30h
-		db	 03h
+		db	 2Ch,0FFh, 8Bh,0F0h, 8Ch,0C8h	; (cont.) sub al,FFh; mov si,ax; mov ax,cs
+		db	 05h, 00h, 30h, 8Eh,0C0h,0BFh	; add ax,3000h; mov es,ax; mov di,...
+		db	 00h, 00h, 2Eh,0C7h, 06h, 01h	; ...0; mov word ptr cs:[4501h],...
+		db	 45h, 00h, 00h, 2Eh,0C7h, 06h	; ...0; mov word ptr cs:[44FFh],...
+		db	0FFh, 44h, 00h, 00h,0B9h, 30h	; ...0; mov cx,330h
+		db	 03h				; (cont. mov cx high byte) -> render_ab_buf_loop
 
 render_ab_buf_loop:
 							mov	ax,scroll_a_plane_b[si]
@@ -1459,67 +1459,67 @@ extract_bit2:
 extract_bits		endp
 
 pal_plane_sel_tbl:
-		db	 00h, 00h, 00h, 03h, 80h, 80h
-		db	 85h, 84h, 03h, 03h, 03h, 03h
-		db	 84h, 84h, 84h, 84h, 03h, 03h
-		db	 03h, 03h, 84h, 84h, 84h,0D4h
-		db	 00h, 00h, 00h,0FFh, 00h, 00h
-		db	 55h, 00h, 00h, 00h, 01h,0FFh
-		db	 02h, 02h, 56h, 00h, 00h, 00h
-		db	 00h,0FFh, 40h, 40h, 55h, 00h
-		db	 00h, 00h, 00h,0C0h, 01h, 01h
-		db	 61h, 21h,0C0h,0C0h,0C0h,0C0h
-		db	 21h, 21h, 21h, 21h,0C0h,0C0h
-		db	0C0h,0C0h, 21h, 21h, 21h, 21h
-		db	0C0h,0E0h,0E0h,0E0h, 2Bh, 01h
-		db	 01h, 01h, 03h, 03h, 03h, 03h
-		db	0D4h, 84h, 84h, 84h, 03h, 03h
-		db	 03h, 03h, 84h, 84h, 84h, 84h
-		db	 03h, 02h, 00h, 00h, 84h, 85h
-		db	 80h, 80h,0FFh,0AAh, 00h, 00h
-		db	 00h, 55h, 00h, 00h,0FFh,0A8h
-		db	 00h, 00h, 00h, 56h, 02h, 02h
-		db	0FFh,0FFh, 00h, 00h, 00h, 55h
-		db	 40h, 40h,0C0h,0C0h,0C0h,0C0h
-		db	 2Bh, 21h, 21h, 21h,0C0h,0C0h
-		db	0C0h,0C0h, 21h, 21h, 21h, 21h
-		db	0C0h, 80h, 00h, 00h, 21h, 61h
-		db	 01h, 01h, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 00h, 00h, 00h, 00h
-		db	 07h, 07h, 07h, 07h, 80h, 80h
-		db	 80h, 80h,0E0h,0E0h,0E0h,0E0h
-		db	 01h, 01h, 01h, 01h,0FFh,0FFh
-		db	0FFh,0FFh, 00h, 00h, 00h, 00h
-		db	 01h, 02h, 03h
-		db	20 dup (16h)
-		db	 0Bh, 0Ch, 0Dh, 00h, 0Eh, 0Fh
-		db	66 dup (15h)
-		db	 10h, 0Eh, 13h, 00h, 12h, 11h
-		db	19 dup (17h)
-		db	 0Ah, 09h, 08h, 07h, 00h, 04h
-		db	 06h
-		db	66 dup (14h)
-		db	 05h, 04h, 00h, 18h, 46h, 18h
-		db	 45h, 17h, 44h, 16h, 43h, 15h
-		db	 42h, 14h, 41h, 13h, 40h, 12h
-		db	 3Fh, 11h, 3Eh, 10h, 3Dh, 0Fh
-		db	 3Ch, 0Eh, 3Bh, 0Dh, 3Ah, 0Ch
-		db	 39h, 0Bh, 38h, 0Ah, 37h, 09h
-		db	 36h, 08h, 35h, 07h, 34h, 06h
-		db	 33h, 05h, 32h, 04h, 31h, 03h
-		db	 30h, 02h, 2Fh, 01h, 2Eh, 00h
-		db	 02h, 55h, 03h,0FFh, 01h, 55h
-		db	 1Eh, 2Eh,0A2h, 08h, 45h, 53h
-		db	 51h, 8Ah,0C5h,0F6h,0E1h, 8Bh
-		db	0E8h, 06h, 1Fh, 8Bh,0F7h, 8Ch
-		db	0C8h, 05h, 00h, 30h, 8Eh,0C0h
-		db	0BFh, 00h, 00h, 2Eh,0C7h, 06h
-		db	 01h, 45h, 00h, 00h, 2Eh,0C7h
-		db	 06h,0FBh, 44h, 00h, 00h, 2Eh
-		db	0C7h, 06h,0FDh, 44h, 00h, 00h
-		db	 2Eh,0C7h, 06h,0FFh, 44h, 00h
-		db	 00h, 8Bh,0CDh,0D1h,0E9h
+		db	 00h, 00h, 00h, 03h, 80h, 80h	; sel row  0
+		db	 85h, 84h, 03h, 03h, 03h, 03h	; sel row  1
+		db	 84h, 84h, 84h, 84h, 03h, 03h	; sel row  2
+		db	 03h, 03h, 84h, 84h, 84h,0D4h	; sel row  3
+		db	 00h, 00h, 00h,0FFh, 00h, 00h	; sel row  4
+		db	 55h, 00h, 00h, 00h, 01h,0FFh	; sel row  5
+		db	 02h, 02h, 56h, 00h, 00h, 00h	; sel row  6
+		db	 00h,0FFh, 40h, 40h, 55h, 00h	; sel row  7
+		db	 00h, 00h, 00h,0C0h, 01h, 01h	; sel row  8
+		db	 61h, 21h,0C0h,0C0h,0C0h,0C0h	; sel row  9
+		db	 21h, 21h, 21h, 21h,0C0h,0C0h	; sel row 10
+		db	0C0h,0C0h, 21h, 21h, 21h, 21h	; sel row 11
+		db	0C0h,0E0h,0E0h,0E0h, 2Bh, 01h	; sel row 12
+		db	 01h, 01h, 03h, 03h, 03h, 03h	; sel row 13
+		db	0D4h, 84h, 84h, 84h, 03h, 03h	; sel row 14
+		db	 03h, 03h, 84h, 84h, 84h, 84h	; sel row 15
+		db	 03h, 02h, 00h, 00h, 84h, 85h	; sel row 16
+		db	 80h, 80h,0FFh,0AAh, 00h, 00h	; sel row 17
+		db	 00h, 55h, 00h, 00h,0FFh,0A8h	; sel row 18
+		db	 00h, 00h, 00h, 56h, 02h, 02h	; sel row 19
+		db	0FFh,0FFh, 00h, 00h, 00h, 55h	; sel row 20
+		db	 40h, 40h,0C0h,0C0h,0C0h,0C0h	; sel row 21
+		db	 2Bh, 21h, 21h, 21h,0C0h,0C0h	; sel row 22
+		db	0C0h,0C0h, 21h, 21h, 21h, 21h	; sel row 23
+		db	0C0h, 80h, 00h, 00h, 21h, 61h	; sel row 24
+		db	 01h, 01h, 00h, 00h,0FFh,0FFh	; sel row 25
+		db	 00h, 00h, 00h, 00h,0FFh,0FFh	; sel row 26
+		db	 00h, 00h, 00h, 00h, 00h, 00h	; sel row 27
+		db	 07h, 07h, 07h, 07h, 80h, 80h	; sel row 28
+		db	 80h, 80h,0E0h,0E0h,0E0h,0E0h	; sel row 29
+		db	 01h, 01h, 01h, 01h,0FFh,0FFh	; sel row 30
+		db	0FFh,0FFh, 00h, 00h, 00h, 00h	; sel row 31
+		db	 01h, 02h, 03h			; pal_seq A: indices 1,2,3
+		db	20 dup (16h)			; pal_seq A: 20 entries of value 16h
+		db	 0Bh, 0Ch, 0Dh, 00h, 0Eh, 0Fh	; pal_seq B: indices 0Bh-0Fh
+		db	66 dup (15h)			; pal_seq B: 66 entries of value 15h
+		db	 10h, 0Eh, 13h, 00h, 12h, 11h	; pal_seq C: indices 10h-13h
+		db	19 dup (17h)			; pal_seq C: 19 entries of value 17h
+		db	 0Ah, 09h, 08h, 07h, 00h, 04h	; pal_seq D: indices 04h-0Ah
+		db	 06h				; pal_seq D: index 06h
+		db	66 dup (14h)			; pal_seq D: 66 entries of value 14h
+		db	 05h, 04h, 00h, 18h, 46h, 18h	; final fade-out pair table:
+		db	 45h, 17h, 44h, 16h, 43h, 15h	;   pairs (reg, val)
+		db	 42h, 14h, 41h, 13h, 40h, 12h	;
+		db	 3Fh, 11h, 3Eh, 10h, 3Dh, 0Fh	;
+		db	 3Ch, 0Eh, 3Bh, 0Dh, 3Ah, 0Ch	;
+		db	 39h, 0Bh, 38h, 0Ah, 37h, 09h	;
+		db	 36h, 08h, 35h, 07h, 34h, 06h	;
+		db	 33h, 05h, 32h, 04h, 31h, 03h	;
+		db	 30h, 02h, 2Fh, 01h, 2Eh, 00h	;
+		db	 02h, 55h, 03h,0FFh, 01h, 55h	; param tag bytes (caller signature)
+		db	 1Eh, 2Eh,0A2h, 08h, 45h, 53h	; push ds; mov [cs:4508h],al; push bx
+		db	 51h, 8Ah,0C5h,0F6h,0E1h, 8Bh	; push cx; mov al,ch; mul cl; mov bp,...
+		db	0E8h, 06h, 1Fh, 8Bh,0F7h, 8Ch	; ...ax; push es; pop ds; mov si,di; mov ax,cs
+		db	0C8h, 05h, 00h, 30h, 8Eh,0C0h	; (cont) add ax,3000h; mov es,ax
+		db	0BFh, 00h, 00h, 2Eh,0C7h, 06h	; mov di,0; mov word ptr cs:[4501h],...
+		db	 01h, 45h, 00h, 00h, 2Eh,0C7h	; ...0; mov word ptr cs:[44FBh],...
+		db	 06h,0FBh, 44h, 00h, 00h, 2Eh	; ...0; cs override
+		db	0C7h, 06h,0FDh, 44h, 00h, 00h	; mov word ptr cs:[44FDh],0
+		db	 2Eh,0C7h, 06h,0FFh, 44h, 00h	; mov word ptr cs:[44FFh],...
+		db	 00h, 8Bh,0CDh,0D1h,0E9h	; ...0; mov cx,bp; shr cx,1 -> render_plane_sel_loop
 
 render_plane_sel_loop:
 							push	si
@@ -2288,83 +2288,83 @@ pal_dac_write_loop:
 vga_operation9		endp
 
 pal_step_data:					; Palette step data table (addr 3A5Fh, ref by pal_func_7)
-		db	 00h, 00h, 00h, 00h, 0Fh, 0Fh
-		db	 00h, 00h, 1Fh, 1Fh, 1Fh, 1Fh
-		db	 00h, 00h, 00h, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 07h, 07h, 07h, 0Fh, 0Fh, 0Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 1Fh, 00h, 00h, 1Fh, 1Fh
-		db	 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh
-		db	 00h, 00h, 00h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	12 dup (1Fh)
-		db	 07h, 07h, 07h, 0Fh, 0Fh, 0Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	12 dup (1Fh)
-		db	 00h, 00h, 00h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 00h, 00h, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 07h, 07h, 07h, 0Fh, 0Fh, 0Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 1Fh, 00h, 00h, 1Fh, 1Fh
-		db	 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh
-		db	 00h, 00h, 00h, 1Fh, 00h, 00h
-		db	 00h, 00h, 1Fh, 1Fh, 1Fh, 1Fh
-		db	 00h, 00h, 1Fh, 1Fh, 1Fh, 1Fh
-		db	 00h, 00h, 00h, 1Fh, 1Fh, 1Fh
-		db	 07h, 07h, 07h, 1Fh, 1Fh, 1Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 1Fh, 00h, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 0Fh, 0Fh, 0Fh
-		db	 00h, 00h, 00h, 00h, 00h, 0Fh
-		db	 0Fh, 00h, 00h, 0Fh, 00h, 0Fh
-		db	 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 07h, 07h, 07h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 1Fh, 1Fh, 00h, 1Fh, 1Fh
-		db	 0Fh, 0Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 00h, 00h, 00h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 00h, 0Fh, 0Fh
-		db	 00h, 1Fh, 00h, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 07h, 07h, 07h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 1Fh, 1Fh, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 00h, 00h, 00h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 00h, 00h, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 07h, 07h, 07h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 1Fh, 1Fh, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 00h, 00h, 00h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 1Fh, 00h, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 07h, 07h, 07h, 0Fh, 0Fh, 0Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	12 dup (1Fh)
-		db	 00h, 00h, 00h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 00h, 1Fh, 00h
-		db	 00h, 00h, 00h, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 07h, 07h, 07h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 1Fh, 1Fh, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 00h, 00h, 00h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 0Fh, 00h, 00h
-		db	 00h, 1Fh, 00h, 1Fh, 00h, 00h
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
-		db	 07h, 07h, 07h, 00h, 00h, 1Fh
-		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh
-		db	 00h, 1Fh, 1Fh, 00h, 1Fh, 1Fh
-		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh
+		db	 00h, 00h, 00h, 00h, 0Fh, 0Fh	; step  0  (6B/row, RGB tris)
+		db	 00h, 00h, 1Fh, 1Fh, 1Fh, 1Fh	; step  1
+		db	 00h, 00h, 00h, 00h, 1Fh, 1Fh	; step  2
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step  3
+		db	 07h, 07h, 07h, 0Fh, 0Fh, 0Fh	; step  4
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step  5
+		db	 00h, 1Fh, 00h, 00h, 1Fh, 1Fh	; step  6
+		db	 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh	; step  7
+		db	 00h, 00h, 00h, 00h, 00h, 1Fh	; step  8
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step  9
+		db	12 dup (1Fh)			; step 10 (white pad)
+		db	 07h, 07h, 07h, 0Fh, 0Fh, 0Fh	; step 11
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 12
+		db	12 dup (1Fh)			; step 13 (white pad)
+		db	 00h, 00h, 00h, 00h, 00h, 1Fh	; step 14
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 15
+		db	 00h, 00h, 00h, 00h, 1Fh, 1Fh	; step 16
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 17
+		db	 07h, 07h, 07h, 0Fh, 0Fh, 0Fh	; step 18
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 19
+		db	 00h, 1Fh, 00h, 00h, 1Fh, 1Fh	; step 20
+		db	 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh	; step 21
+		db	 00h, 00h, 00h, 1Fh, 00h, 00h	; step 22
+		db	 00h, 00h, 1Fh, 1Fh, 1Fh, 1Fh	; step 23
+		db	 00h, 00h, 1Fh, 1Fh, 1Fh, 1Fh	; step 24
+		db	 00h, 00h, 00h, 1Fh, 1Fh, 1Fh	; step 25
+		db	 07h, 07h, 07h, 1Fh, 1Fh, 1Fh	; step 26
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 27
+		db	 00h, 1Fh, 00h, 00h, 1Fh, 1Fh	; step 28
+		db	 1Fh, 1Fh, 00h, 0Fh, 0Fh, 0Fh	; step 29
+		db	 00h, 00h, 00h, 00h, 00h, 0Fh	; step 30
+		db	 0Fh, 00h, 00h, 0Fh, 00h, 0Fh	; step 31
+		db	 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh	; step 32
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 33
+		db	 07h, 07h, 07h, 00h, 00h, 1Fh	; step 34
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 35
+		db	 00h, 1Fh, 1Fh, 00h, 1Fh, 1Fh	; step 36
+		db	 0Fh, 0Fh, 00h, 1Fh, 1Fh, 1Fh	; step 37
+		db	 00h, 00h, 00h, 00h, 00h, 1Fh	; step 38
+		db	 1Fh, 00h, 00h, 00h, 0Fh, 0Fh	; step 39
+		db	 00h, 1Fh, 00h, 00h, 1Fh, 1Fh	; step 40
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 41
+		db	 07h, 07h, 07h, 00h, 00h, 1Fh	; step 42
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 43
+		db	 00h, 1Fh, 1Fh, 00h, 1Fh, 1Fh	; step 44
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 45
+		db	 00h, 00h, 00h, 00h, 00h, 1Fh	; step 46
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 47
+		db	 00h, 00h, 00h, 00h, 1Fh, 1Fh	; step 48
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 49
+		db	 07h, 07h, 07h, 00h, 00h, 1Fh	; step 50
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 51
+		db	 00h, 1Fh, 1Fh, 00h, 1Fh, 1Fh	; step 52
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 53
+		db	 00h, 00h, 00h, 00h, 00h, 1Fh	; step 54
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 55
+		db	 00h, 1Fh, 00h, 00h, 1Fh, 1Fh	; step 56
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 57
+		db	 07h, 07h, 07h, 0Fh, 0Fh, 0Fh	; step 58
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 59
+		db	12 dup (1Fh)			; step 60 (white pad)
+		db	 00h, 00h, 00h, 00h, 00h, 1Fh	; step 61
+		db	 1Fh, 00h, 00h, 00h, 1Fh, 00h	; step 62
+		db	 00h, 00h, 00h, 00h, 1Fh, 1Fh	; step 63
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 64
+		db	 07h, 07h, 07h, 00h, 00h, 1Fh	; step 65
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 66
+		db	 00h, 1Fh, 1Fh, 00h, 1Fh, 1Fh	; step 67
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 68
+		db	 00h, 00h, 00h, 00h, 00h, 1Fh	; step 69
+		db	 1Fh, 00h, 00h, 0Fh, 00h, 00h	; step 70
+		db	 00h, 1Fh, 00h, 1Fh, 00h, 00h	; step 71
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 72
+		db	 07h, 07h, 07h, 00h, 00h, 1Fh	; step 73
+		db	 1Fh, 00h, 00h, 1Fh, 00h, 1Fh	; step 74
+		db	 00h, 1Fh, 1Fh, 00h, 1Fh, 1Fh	; step 75
+		db	 1Fh, 1Fh, 00h, 1Fh, 1Fh, 1Fh	; step 76
 
 pal_process_loop		proc	near
 		push	cx

@@ -917,13 +917,13 @@ imgctl_process_loop_3		endp
 ; EGA sequencer/CRTC register table: pairs of (count_byte, EGA_reg, row_height)
 
 ega_reg_tbl:
-		db	 00h, 90h, 20h, 06h, 80h, 91h
-		db	 20h, 06h, 00h, 93h, 20h, 06h
-		db	 80h, 94h, 20h, 06h, 00h, 96h
-		db	 18h, 04h,0C0h, 96h, 18h, 04h
-		db	 80h, 97h, 18h, 04h, 40h, 98h
-		db	 18h, 04h, 36h, 06h, 3Fh, 07h
-		db	 2Dh, 05h, 24h, 04h, 1Eh, 32h
+		db	 00h, 90h, 20h, 06h, 80h, 91h	; entries 0-1: (count,reg,height)
+		db	 20h, 06h, 00h, 93h, 20h, 06h	; entries 2-3
+		db	 80h, 94h, 20h, 06h, 00h, 96h	; entries 4-5
+		db	 18h, 04h,0C0h, 96h, 18h, 04h	; entries 6-7
+		db	 80h, 97h, 18h, 04h, 40h, 98h	; entries 8-9
+		db	 18h, 04h, 36h, 06h, 3Fh, 07h	; entries 10-11
+		db	 2Dh, 05h, 24h, 04h, 1Eh, 32h	; entries 12-13 (last + start of copy_planes code)
 ; EGA plane copy setup: waits retrace, selects game seg, computes src/dst, writes 2 planes
 
 imgctl_copy_game_planes:
@@ -938,7 +938,7 @@ imgctl_copy_game_planes:
 		db	 01h,0EEh,0E8h, 02h, 00h, 1Fh	; out dx,al; call copy_17w_row_loop+3; pop ds
 		db	0C3h			; retn
 ; Entry: push di; mov cx,30h then fall into copy_17w_row_loop
-		db	 57h,0B9h, 30h, 00h
+		db	 57h,0B9h, 30h, 00h		; push di; mov cx,30h
 
 copy_17w_row_loop:
 							push	di
@@ -1514,59 +1514,59 @@ imgctl_func_11		endp
 ; EGA bit-mask data for scroll animation (8 entries ?? 8 bytes = pixel-column masks, 2 planes)
 
 scroll_pixel_masks:
-		db	 00h, 00h, 00h, 03h, 80h, 80h
-		db	 85h, 84h, 03h, 03h, 03h, 03h
-		db	 84h, 84h, 84h, 84h, 03h, 03h
-		db	 03h, 03h, 84h, 84h, 84h,0D4h
-		db	 00h, 00h, 00h,0FFh, 00h, 00h
-		db	 55h, 00h, 00h, 00h, 01h,0FFh
-		db	 02h, 02h, 56h, 00h, 00h, 00h
-		db	 00h,0FFh, 40h, 40h, 55h, 00h
-		db	 00h, 00h, 00h,0C0h, 01h, 01h
-		db	 61h, 21h,0C0h,0C0h,0C0h,0C0h
-		db	 21h, 21h, 21h, 21h,0C0h,0C0h
-		db	0C0h,0C0h, 21h, 21h, 21h, 21h
-		db	0C0h,0E0h,0E0h,0E0h, 2Bh, 01h
-		db	 01h, 01h, 03h, 03h, 03h, 03h
-		db	0D4h, 84h, 84h, 84h, 03h, 03h
-		db	 03h, 03h, 84h, 84h, 84h, 84h
-		db	 03h, 02h, 00h, 00h, 84h, 85h
-		db	 80h, 80h,0FFh,0AAh, 00h, 00h
-		db	 00h, 55h, 00h, 00h,0FFh,0A8h
-		db	 00h, 00h, 00h, 56h, 02h, 02h
-		db	0FFh,0FFh, 00h, 00h, 00h, 55h
-		db	 40h, 40h,0C0h,0C0h,0C0h,0C0h
-		db	 2Bh, 21h, 21h, 21h,0C0h,0C0h
-		db	0C0h,0C0h, 21h, 21h, 21h, 21h
-		db	0C0h, 80h, 00h, 00h, 21h, 61h
-		db	 01h, 01h, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 00h, 00h, 00h, 00h
-		db	 07h, 07h, 07h, 07h, 80h, 80h
-		db	 80h, 80h,0E0h,0E0h,0E0h,0E0h
-		db	 01h, 01h, 01h, 01h,0FFh,0FFh
-		db	0FFh,0FFh, 00h, 00h, 00h, 00h
+		db	 00h, 00h, 00h, 03h, 80h, 80h	; mask row  0
+		db	 85h, 84h, 03h, 03h, 03h, 03h	; mask row  1
+		db	 84h, 84h, 84h, 84h, 03h, 03h	; mask row  2
+		db	 03h, 03h, 84h, 84h, 84h,0D4h	; mask row  3
+		db	 00h, 00h, 00h,0FFh, 00h, 00h	; mask row  4
+		db	 55h, 00h, 00h, 00h, 01h,0FFh	; mask row  5
+		db	 02h, 02h, 56h, 00h, 00h, 00h	; mask row  6
+		db	 00h,0FFh, 40h, 40h, 55h, 00h	; mask row  7
+		db	 00h, 00h, 00h,0C0h, 01h, 01h	; mask row  8
+		db	 61h, 21h,0C0h,0C0h,0C0h,0C0h	; mask row  9
+		db	 21h, 21h, 21h, 21h,0C0h,0C0h	; mask row 10
+		db	0C0h,0C0h, 21h, 21h, 21h, 21h	; mask row 11
+		db	0C0h,0E0h,0E0h,0E0h, 2Bh, 01h	; mask row 12
+		db	 01h, 01h, 03h, 03h, 03h, 03h	; mask row 13
+		db	0D4h, 84h, 84h, 84h, 03h, 03h	; mask row 14
+		db	 03h, 03h, 84h, 84h, 84h, 84h	; mask row 15
+		db	 03h, 02h, 00h, 00h, 84h, 85h	; mask row 16
+		db	 80h, 80h,0FFh,0AAh, 00h, 00h	; mask row 17
+		db	 00h, 55h, 00h, 00h,0FFh,0A8h	; mask row 18
+		db	 00h, 00h, 00h, 56h, 02h, 02h	; mask row 19
+		db	0FFh,0FFh, 00h, 00h, 00h, 55h	; mask row 20
+		db	 40h, 40h,0C0h,0C0h,0C0h,0C0h	; mask row 21
+		db	 2Bh, 21h, 21h, 21h,0C0h,0C0h	; mask row 22
+		db	0C0h,0C0h, 21h, 21h, 21h, 21h	; mask row 23
+		db	0C0h, 80h, 00h, 00h, 21h, 61h	; mask row 24
+		db	 01h, 01h, 00h, 00h,0FFh,0FFh	; mask row 25
+		db	 00h, 00h, 00h, 00h,0FFh,0FFh	; mask row 26
+		db	 00h, 00h, 00h, 00h, 00h, 00h	; mask row 27
+		db	 07h, 07h, 07h, 07h, 80h, 80h	; mask row 28
+		db	 80h, 80h,0E0h,0E0h,0E0h,0E0h	; mask row 29
+		db	 01h, 01h, 01h, 01h,0FFh,0FFh	; mask row 30
+		db	0FFh,0FFh, 00h, 00h, 00h, 00h	; mask row 31
 ; EGA palette sequence index tables: pairs (EGA_reg_index, palette_value) for fade
 
 ega_palette_seq_tbl:
-		db	 01h, 02h, 03h
-		db	20 dup (16h)
-		db	 0Bh, 0Ch, 0Dh, 00h, 0Eh, 0Fh
-		db	66 dup (15h)
-		db	 10h, 0Eh, 13h, 00h, 12h, 11h
-		db	19 dup (17h)
-		db	 0Ah, 09h, 08h, 07h, 00h, 04h
-		db	 06h
-		db	66 dup (14h)
-		db	 05h, 04h, 00h, 18h, 46h, 18h
-		db	 45h, 17h, 44h, 16h, 43h, 15h
-		db	 42h, 14h, 41h, 13h, 40h, 12h
-		db	 3Fh, 11h, 3Eh, 10h, 3Dh, 0Fh
-		db	 3Ch, 0Eh, 3Bh, 0Dh, 3Ah, 0Ch
-		db	 39h, 0Bh, 38h, 0Ah, 37h, 09h
-		db	 36h, 08h, 35h, 07h, 34h, 06h
-		db	 33h, 05h, 32h, 04h, 31h, 03h
-		db	 30h, 02h, 2Fh, 01h, 2Eh, 00h
+		db	 01h, 02h, 03h			; seq A: indices 1,2,3
+		db	20 dup (16h)			; seq A: 20 entries of value 16h
+		db	 0Bh, 0Ch, 0Dh, 00h, 0Eh, 0Fh	; seq B: indices 0Bh-0Fh
+		db	66 dup (15h)			; seq B: 66 entries of value 15h
+		db	 10h, 0Eh, 13h, 00h, 12h, 11h	; seq C: indices 10h-13h
+		db	19 dup (17h)			; seq C: 19 entries of value 17h
+		db	 0Ah, 09h, 08h, 07h, 00h, 04h	; seq D: indices 04h-0Ah
+		db	 06h				; seq D: index 06h
+		db	66 dup (14h)			; seq D: 66 entries of value 14h
+		db	 05h, 04h, 00h, 18h, 46h, 18h	; final fade-out pair table:
+		db	 45h, 17h, 44h, 16h, 43h, 15h	;   pairs (reg, val)
+		db	 42h, 14h, 41h, 13h, 40h, 12h	;
+		db	 3Fh, 11h, 3Eh, 10h, 3Dh, 0Fh	;
+		db	 3Ch, 0Eh, 3Bh, 0Dh, 3Ah, 0Ch	;
+		db	 39h, 0Bh, 38h, 0Ah, 37h, 09h	;
+		db	 36h, 08h, 35h, 07h, 34h, 06h	;
+		db	 33h, 05h, 32h, 04h, 31h, 03h	;
+		db	 30h, 02h, 2Fh, 01h, 2Eh, 00h	;
 ; Color fade setup: al=plane_flags, cx=render_fn, ch=rows, cl=cols
 
 imgctl_color_fade_setup:
@@ -2387,39 +2387,39 @@ vga_operation4		endp
 ; Used by vga_operation4 via ega_palette_buf index ?? 0x10
 
 ega_palette_data:
-		db	 00h, 03h, 09h, 3Fh, 00h, 1Bh
-		db	 36h, 3Fh, 38h, 07h, 24h, 2Dh
-		db	 12h, 1Bh, 06h, 07h, 00h
-		db	9, '$'
-		db	'-????8'
-		db	 07h, 24h, 2Dh, 3Fh, 3Fh, 3Fh
-		db	 3Fh, 00h, 09h, 24h, 2Dh, 00h
-		db	 1Bh, 36h, 3Fh, 38h, 07h, 24h
-		db	 2Dh, 12h, 1Bh, 06h, 07h, 00h
-		db	 24h, 09h, 3Fh, 09h, 3Fh, 00h
-		db	 3Fh, 38h, 3Fh, 24h, 2Dh, 12h
-		db	 1Bh, 36h, 07h, 00h, 01h, 04h
-		db	 05h, 03h, 03h
-		db	'6?8', 9, '$'
-		db	'-', 1Bh, 1Bh
-		db	 06h, 3Fh, 00h, 09h, 24h, 03h
-		db	 12h
-		db	1Bh, '6?8', 9, '$'
-		db	'-', 1Bh, 1Bh, '6?'
-		db	 00h, 09h, 24h, 2Dh, 00h
-		db	1Bh, '6?8', 9, '$'
-		db	'-', 1Bh, 1Bh, '6?'
-		db	 00h, 09h, 24h, 2Dh, 12h, 1Bh
-		db	 36h, 3Fh, 38h, 07h, 24h, 2Dh
-		db	 3Fh, 3Fh, 3Fh, 3Fh, 00h, 09h
-		db	 24h, 12h, 00h
-		db	1Bh, '6?8', 9, '$'
-		db	'-', 1Bh, 1Bh, '6?'
-		db	 00h, 09h, 24h, 04h, 12h
-		db	'$'
-		db	'6?8', 9, '$'
-		db	'-', 1Bh, 1Bh, '6?.'
-		db	0FFh, 26h, 22h, 20h,0C3h
+		db	 00h, 03h, 09h, 3Fh, 00h, 1Bh	; palette set 0: regs 0..5
+		db	 36h, 3Fh, 38h, 07h, 24h, 2Dh	; palette set 0: regs 6..11
+		db	 12h, 1Bh, 06h, 07h, 00h	; palette set 0: regs 12..15 + filler
+		db	9, '$'				; palette set 1: regs 0..1
+		db	'-????8'			; palette set 1: regs 2..7 (mixed text-encoded vals)
+		db	 07h, 24h, 2Dh, 3Fh, 3Fh, 3Fh	; palette set 1: regs 8..13
+		db	 3Fh, 00h, 09h, 24h, 2Dh, 00h	; palette set 1: regs 14..15 + set 2: regs 0..3
+		db	 1Bh, 36h, 3Fh, 38h, 07h, 24h	; palette set 2: regs 4..9
+		db	 2Dh, 12h, 1Bh, 06h, 07h, 00h	; palette set 2: regs 10..15
+		db	 24h, 09h, 3Fh, 09h, 3Fh, 00h	; palette set 3: regs 0..5
+		db	 3Fh, 38h, 3Fh, 24h, 2Dh, 12h	; palette set 3: regs 6..11
+		db	 1Bh, 36h, 07h, 00h, 01h, 04h	; palette set 3: regs 12..15 + set 4: regs 0..1
+		db	 05h, 03h, 03h			; palette set 4: regs 2..4
+		db	'6?8', 9, '$'			; palette set 4: regs 5..9
+		db	'-', 1Bh, 1Bh			; palette set 4: regs 10..12
+		db	 06h, 3Fh, 00h, 09h, 24h, 03h	; palette set 4: regs 13..15 + set 5: regs 0..2
+		db	 12h				; palette set 5: reg 3
+		db	1Bh, '6?8', 9, '$'		; palette set 5: regs 4..9
+		db	'-', 1Bh, 1Bh, '6?'		; palette set 5: regs 10..14
+		db	 00h, 09h, 24h, 2Dh, 00h	; palette set 5: reg 15 + set 6: regs 0..3
+		db	1Bh, '6?8', 9, '$'		; palette set 6: regs 4..9
+		db	'-', 1Bh, 1Bh, '6?'		; palette set 6: regs 10..14
+		db	 00h, 09h, 24h, 2Dh, 12h, 1Bh	; palette set 6: reg 15 + set 7: regs 0..4
+		db	 36h, 3Fh, 38h, 07h, 24h, 2Dh	; palette set 7: regs 5..10
+		db	 3Fh, 3Fh, 3Fh, 3Fh, 00h, 09h	; palette set 7: regs 11..15 + set 8: reg 0
+		db	 24h, 12h, 00h			; palette set 8: regs 1..3
+		db	1Bh, '6?8', 9, '$'		; palette set 8: regs 4..9
+		db	'-', 1Bh, 1Bh, '6?'		; palette set 8: regs 10..14
+		db	 00h, 09h, 24h, 04h, 12h	; palette set 8: reg 15 + trailing ext data
+		db	'$'				; trailing data byte
+		db	'6?8', 9, '$'			; trailing data
+		db	'-', 1Bh, 1Bh, '6?.'		; trailing data
+		db	0FFh, 26h, 22h, 20h,0C3h	; sentinel + final return code (FFh terminator + retn opcode)
 		db	730 dup (0)
 hscroll_plane4_buf		db	0
 		db	149 dup (0)

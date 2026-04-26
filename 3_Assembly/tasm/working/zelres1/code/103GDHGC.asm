@@ -107,22 +107,22 @@ hgc_gfx_driver	proc	far
 start:
 		retf	1Fh			; Return far - dispatch table entry 0 (module init/reset)
 		; HGC driver dispatch table (encoded far-call targets; Sourcer cannot decode as x86)
-		db	 00h, 2Bh, 4Ch, 32h, 30h, 78h
-		db	 30h,0C2h, 30h, 7Ah, 42h,0D8h
-		db	 4Bh,0DBh, 32h, 33h, 33h,0CAh
-		db	 33h, 4Ah, 34h, 65h, 36h,0B1h
-		db	 36h, 2Bh, 4Ch,0DAh, 30h,0FDh
-		db	 36h, 7Fh, 37h, 7Dh, 38h,0C5h
-		db	 3Bh, 30h, 3Dh, 49h, 3Eh, 9Fh
-		db	 3Eh, 9Ch, 40h,0A6h, 41h, 56h
-		db	 42h, 13h, 4Ch, 50h, 53h, 51h
-		db	 1Eh, 8Ah,0C5h,0F6h,0E1h, 8Bh
-		db	0E8h, 06h, 1Fh, 8Bh,0F7h, 8Ch
-		db	0C8h, 05h, 00h, 30h, 8Eh,0C0h
-		db	0BFh, 00h, 00h, 2Eh,0C7h, 06h
-		db	 56h, 4Ch, 00h, 00h, 2Eh,0C7h
-		db	 06h, 58h, 4Ch, 00h, 00h, 8Bh
-		db	0CDh,0D1h,0E9h
+		db	 00h, 2Bh, 4Ch, 32h, 30h, 78h	; dispatch words: 2B00h, 324Ch, 7830h
+		db	 30h,0C2h, 30h, 7Ah, 42h,0D8h	; dispatch words: C230h, 7A30h, D842h
+		db	 4Bh,0DBh, 32h, 33h, 33h,0CAh	; dispatch words: DB4Bh, 3332h, CA33h
+		db	 33h, 4Ah, 34h, 65h, 36h,0B1h	; dispatch words: 4A33h, 6534h, B136h
+		db	 36h, 2Bh, 4Ch,0DAh, 30h,0FDh	; dispatch words: 2B36h, DA4Ch, FD30h
+		db	 36h, 7Fh, 37h, 7Dh, 38h,0C5h	; dispatch words: 7F36h, 7D37h, C538h
+		db	 3Bh, 30h, 3Dh, 49h, 3Eh, 9Fh	; dispatch words: 303Bh, 493Dh, 9F3Eh
+		db	 3Eh, 9Ch, 40h,0A6h, 41h, 56h	; dispatch words: 9C3Eh, A640h, 5641h
+		db	 42h, 13h, 4Ch, 50h, 53h, 51h	; dispatch words: 1342h, 504Ch + push bx,cx
+		db	 1Eh, 8Ah,0C5h,0F6h,0E1h, 8Bh	; push ds; mov al,ch; mul cl; mov bp,...
+		db	0E8h, 06h, 1Fh, 8Bh,0F7h, 8Ch	; ...ax; push es; pop ds; mov si,di; mov ax,...
+		db	0C8h, 05h, 00h, 30h, 8Eh,0C0h	; ...cs; add ax,3000h; mov es,ax
+		db	0BFh, 00h, 00h, 2Eh,0C7h, 06h	; mov di,0; mov word ptr cs:[4C56h],...
+		db	 56h, 4Ch, 00h, 00h, 2Eh,0C7h	; ...0; mov word ptr cs:[4C58h],...
+		db	 06h, 58h, 4Ch, 00h, 00h, 8Bh	; ...0; mov cx,bp
+		db	0CDh,0D1h,0E9h			; mov cx,bp; shr cx,1 -> blit_plane_a_loop
 
 blit_plane_a_loop:
 								mov	ax,ds:[bp+si]
@@ -467,16 +467,16 @@ render_clear_loop:
 		pop	di
 		retn
 		; HGC 2bpp bitmask pattern table (00h/03h/0Ch/30h/0C0h = black..white columns)
-		db	 00h,0C0h, 00h, 0Ch,0C0h, 00h
-		db	 0Ch, 00h, 00h, 30h, 00h, 03h
-		db	 30h, 00h, 03h, 00h, 03h, 00h
-		db	 30h, 00h, 00h, 03h, 00h, 30h
-		db	 0Ch, 00h,0C0h, 00h, 00h, 0Ch
+		db	 00h,0C0h, 00h, 0Ch,0C0h, 00h	; bitmask row 0
+		db	 0Ch, 00h, 00h, 30h, 00h, 03h	; bitmask row 1
+		db	 30h, 00h, 03h, 00h, 03h, 00h	; bitmask row 2
+		db	 30h, 00h, 00h, 03h, 00h, 30h	; bitmask row 3
+		db	 0Ch, 00h,0C0h, 00h, 00h, 0Ch	; bitmask row 4
 		; Inline dispatch entry (machine code not decoded by Sourcer)
-		db	 00h,0C0h, 0Eh, 07h,0BFh, 66h
-		db	 4Ch, 33h,0C0h,0B9h, 90h, 01h
-		db	0F3h,0ABh,0BFh
-		db	 66h, 4Ch
+		db	 00h,0C0h, 0Eh, 07h,0BFh, 66h	; bitmask row 5 tail + push cs;pop es; mov di,...
+		db	 4Ch, 33h,0C0h,0B9h, 90h, 01h	; mov di,4C66h; xor ax,ax; mov cx,190h
+		db	0F3h,0ABh,0BFh			; rep stosw; mov di,...
+		db	 66h, 4Ch			; ...4C66h (operand) -> text_char_loop
 
 text_char_loop:
 								lodsb				; String [si] to al
@@ -997,20 +997,20 @@ process3_pixel_loop:
 imgdec_process_loop_3		endp
 
 		; Inline dispatch entry + data_3 block (machine code + render plane source table)
-		db	 00h, 90h, 20h, 06h, 80h, 91h
-		db	 20h, 06h, 00h, 93h, 20h, 06h
-		db	 80h, 94h, 20h, 06h, 00h, 96h
-		db	 18h, 04h,0C0h, 96h, 18h
+		db	 00h, 90h, 20h, 06h, 80h, 91h	; CRTC pairs: (00,90) (20,06) (80,91)
+		db	 20h, 06h, 00h, 93h, 20h, 06h	; CRTC pairs: (20,06) (00,93) (20,06)
+		db	 80h, 94h, 20h, 06h, 00h, 96h	; CRTC pairs: (80,94) (20,06) (00,96)
+		db	 18h, 04h,0C0h, 96h, 18h	; CRTC pairs: (18,04) (C0,96) + half (18..)
 data_3		dw	8004h			; Data table (indexed access)
-		db	 97h, 18h, 04h, 40h, 98h, 18h
-		db	 04h, 1Eh, 53h, 32h,0E4h,0BAh
-		db	0C0h, 0Ch,0F7h,0E2h, 05h, 40h
-		db	0ABh, 2Eh, 8Eh, 1Eh, 2Ch,0FFh
-		db	 8Bh,0F0h, 8Ch,0C8h, 05h, 00h
-		db	 30h, 8Eh,0C0h,0BFh, 00h, 00h
-		db	 2Eh,0C7h, 06h, 5Ah, 4Ch, 00h
-		db	 00h, 2Eh,0C7h, 06h, 58h, 4Ch
-		db	 00h, 00h,0B9h, 30h, 03h
+		db	 97h, 18h, 04h, 40h, 98h, 18h	; CRTC pairs: (..97) (18,04) (40,98) (18..)
+		db	 04h, 1Eh, 53h, 32h,0E4h,0BAh	; CRTC tail + push ds; push bx; xor ah; mov dx
+		db	0C0h, 0Ch,0F7h,0E2h, 05h, 40h	; ...,0CC0h; mul dx; add ax,4000h
+		db	0ABh, 2Eh, 8Eh, 1Eh, 2Ch,0FFh	; stosw; mov ds,[cs:gvar]; sub al,FFh
+		db	 8Bh,0F0h, 8Ch,0C8h, 05h, 00h	; mov si,ax; mov ax,cs; add ax,...
+		db	 30h, 8Eh,0C0h,0BFh, 00h, 00h	; ...3000h; mov es,ax; mov di,0
+		db	 2Eh,0C7h, 06h, 5Ah, 4Ch, 00h	; mov word ptr cs:[4C5Ah],...
+		db	 00h, 2Eh,0C7h, 06h, 58h, 4Ch	; ...0; mov word ptr cs:[4C58h],...
+		db	 00h, 00h,0B9h, 30h, 03h	; ...0; mov cx,330h -> render_words_loop
 
 render_words_loop:
 								mov	ax,data_3[si]
@@ -1476,67 +1476,67 @@ func9_done:
 imgdec_func_9		endp
 
 		; HGC 2bpp grayscale pattern table for sprite rendering (4-shade: 00h/03h/AAh/C0h/FFh columns)
-		db	 00h, 00h, 00h, 03h, 80h, 80h
-		db	 8Ah, 88h, 03h, 03h, 03h, 03h
-		db	 88h, 88h, 88h, 88h, 03h, 03h
-		db	 03h, 03h, 88h, 88h, 88h,0A8h
-		db	 00h, 00h, 00h,0FFh, 00h, 00h
-		db	0AAh, 00h, 00h, 00h, 00h,0FFh
-		db	 02h, 02h,0AAh, 00h, 00h, 00h
-		db	 00h,0FFh, 80h, 80h,0AAh, 00h
-		db	 00h, 00h, 00h,0C0h, 02h, 02h
-		db	0A2h, 22h,0C0h,0C0h,0C0h,0C0h
-		db	 22h, 22h, 22h, 22h,0C0h,0C0h
-		db	0C0h,0C0h, 22h, 22h, 22h, 22h
-		db	0C0h,0C0h,0C0h,0C0h, 2Ah, 02h
-		db	 02h, 02h, 03h, 03h, 03h, 03h
-		db	0A8h, 88h, 88h, 88h, 03h, 03h
-		db	 03h, 03h, 88h, 88h, 88h, 88h
-		db	 03h, 00h, 00h, 00h, 88h, 8Ah
-		db	 80h, 80h,0FFh, 00h, 00h, 00h
-		db	 00h,0AAh, 00h, 00h,0FFh, 00h
-		db	 00h, 00h, 00h,0AAh, 02h, 02h
-		db	0FFh, 00h, 00h, 00h, 00h,0AAh
-		db	 80h, 80h,0C0h,0C0h,0C0h,0C0h
-		db	 2Ah, 22h, 22h, 22h,0C0h,0C0h
-		db	0C0h,0C0h, 22h, 22h, 22h, 22h
-		db	0C0h, 00h, 00h, 00h, 22h,0A2h
-		db	 02h, 02h, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 00h, 00h, 00h, 00h
-		db	 03h, 03h, 03h, 03h, 80h, 80h
-		db	 80h, 80h,0C0h,0C0h,0C0h,0C0h
-		db	 02h, 02h, 02h, 02h,0FFh,0FFh
-		db	0FFh,0FFh, 00h, 00h, 00h, 00h
-		db	 01h, 02h, 03h
-		db	20 dup (16h)
-		db	 0Bh, 0Ch, 0Dh, 00h, 0Eh, 0Fh
-		db	66 dup (15h)
-		db	 10h, 0Eh, 13h, 00h, 12h, 11h
-		db	19 dup (17h)
-		db	 0Ah, 09h, 08h, 07h, 00h, 04h
-		db	 06h
-		db	66 dup (14h)
-		db	 05h, 04h, 00h, 18h, 46h, 18h
-		db	 45h, 17h, 44h, 16h, 43h, 15h
-		db	 42h, 14h, 41h, 13h, 40h, 12h
-		db	 3Fh, 11h, 3Eh, 10h, 3Dh, 0Fh
-		db	 3Ch, 0Eh, 3Bh, 0Dh, 3Ah, 0Ch
-		db	 39h, 0Bh, 38h, 0Ah, 37h, 09h
-		db	 36h, 08h, 35h, 07h, 34h, 06h
-		db	 33h, 05h, 32h, 04h, 31h, 03h
-		db	 30h, 02h, 2Fh, 01h, 2Eh, 00h
-		db	 00h,0AAh, 55h, 1Eh, 2Eh,0A2h
-		db	 5Fh, 4Ch, 53h, 51h, 8Ah,0C5h
-		db	0F6h,0E1h, 8Bh,0E8h, 06h, 1Fh
-		db	 8Bh,0F7h, 8Ch,0C8h, 05h, 00h
-		db	 30h, 8Eh,0C0h,0BFh, 00h, 00h
-		db	 2Eh,0C7h, 06h, 5Ah, 4Ch, 00h
-		db	 00h, 2Eh,0C7h, 06h, 54h, 4Ch
-		db	 00h, 00h, 2Eh,0C7h, 06h, 56h
-		db	 4Ch, 00h, 00h, 2Eh,0C7h, 06h
-		db	 58h, 4Ch, 00h, 00h, 8Bh,0CDh
-		db	0D1h,0E9h
+		db	 00h, 00h, 00h, 03h, 80h, 80h	; pattern row  0
+		db	 8Ah, 88h, 03h, 03h, 03h, 03h	; pattern row  1
+		db	 88h, 88h, 88h, 88h, 03h, 03h	; pattern row  2
+		db	 03h, 03h, 88h, 88h, 88h,0A8h	; pattern row  3
+		db	 00h, 00h, 00h,0FFh, 00h, 00h	; pattern row  4
+		db	0AAh, 00h, 00h, 00h, 00h,0FFh	; pattern row  5
+		db	 02h, 02h,0AAh, 00h, 00h, 00h	; pattern row  6
+		db	 00h,0FFh, 80h, 80h,0AAh, 00h	; pattern row  7
+		db	 00h, 00h, 00h,0C0h, 02h, 02h	; pattern row  8
+		db	0A2h, 22h,0C0h,0C0h,0C0h,0C0h	; pattern row  9
+		db	 22h, 22h, 22h, 22h,0C0h,0C0h	; pattern row 10
+		db	0C0h,0C0h, 22h, 22h, 22h, 22h	; pattern row 11
+		db	0C0h,0C0h,0C0h,0C0h, 2Ah, 02h	; pattern row 12
+		db	 02h, 02h, 03h, 03h, 03h, 03h	; pattern row 13
+		db	0A8h, 88h, 88h, 88h, 03h, 03h	; pattern row 14
+		db	 03h, 03h, 88h, 88h, 88h, 88h	; pattern row 15
+		db	 03h, 00h, 00h, 00h, 88h, 8Ah	; pattern row 16
+		db	 80h, 80h,0FFh, 00h, 00h, 00h	; pattern row 17
+		db	 00h,0AAh, 00h, 00h,0FFh, 00h	; pattern row 18
+		db	 00h, 00h, 00h,0AAh, 02h, 02h	; pattern row 19
+		db	0FFh, 00h, 00h, 00h, 00h,0AAh	; pattern row 20
+		db	 80h, 80h,0C0h,0C0h,0C0h,0C0h	; pattern row 21
+		db	 2Ah, 22h, 22h, 22h,0C0h,0C0h	; pattern row 22
+		db	0C0h,0C0h, 22h, 22h, 22h, 22h	; pattern row 23
+		db	0C0h, 00h, 00h, 00h, 22h,0A2h	; pattern row 24
+		db	 02h, 02h, 00h, 00h,0FFh,0FFh	; pattern row 25
+		db	 00h, 00h, 00h, 00h,0FFh,0FFh	; pattern row 26
+		db	 00h, 00h, 00h, 00h, 00h, 00h	; pattern row 27
+		db	 03h, 03h, 03h, 03h, 80h, 80h	; pattern row 28
+		db	 80h, 80h,0C0h,0C0h,0C0h,0C0h	; pattern row 29
+		db	 02h, 02h, 02h, 02h,0FFh,0FFh	; pattern row 30
+		db	0FFh,0FFh, 00h, 00h, 00h, 00h	; pattern row 31
+		db	 01h, 02h, 03h			; pal_seq A: indices 1,2,3
+		db	20 dup (16h)			; pal_seq A: 20 entries of value 16h
+		db	 0Bh, 0Ch, 0Dh, 00h, 0Eh, 0Fh	; pal_seq B: indices 0Bh-0Fh
+		db	66 dup (15h)			; pal_seq B: 66 entries of value 15h
+		db	 10h, 0Eh, 13h, 00h, 12h, 11h	; pal_seq C: indices 10h-13h
+		db	19 dup (17h)			; pal_seq C: 19 entries of value 17h
+		db	 0Ah, 09h, 08h, 07h, 00h, 04h	; pal_seq D: indices 04h-0Ah
+		db	 06h				; pal_seq D: index 06h
+		db	66 dup (14h)			; pal_seq D: 66 entries of value 14h
+		db	 05h, 04h, 00h, 18h, 46h, 18h	; final fade-out pair table (reg, val pairs):
+		db	 45h, 17h, 44h, 16h, 43h, 15h	;
+		db	 42h, 14h, 41h, 13h, 40h, 12h	;
+		db	 3Fh, 11h, 3Eh, 10h, 3Dh, 0Fh	;
+		db	 3Ch, 0Eh, 3Bh, 0Dh, 3Ah, 0Ch	;
+		db	 39h, 0Bh, 38h, 0Ah, 37h, 09h	;
+		db	 36h, 08h, 35h, 07h, 34h, 06h	;
+		db	 33h, 05h, 32h, 04h, 31h, 03h	;
+		db	 30h, 02h, 2Fh, 01h, 2Eh, 00h	;
+		db	 00h,0AAh, 55h, 1Eh, 2Eh,0A2h	; param tag bytes + push ds; mov [cs:..],al
+		db	 5Fh, 4Ch, 53h, 51h, 8Ah,0C5h	; ...4C5Fh,al; push bx; push cx; mov al,ch
+		db	0F6h,0E1h, 8Bh,0E8h, 06h, 1Fh	; mul cl; mov bp,ax; push es; pop ds
+		db	 8Bh,0F7h, 8Ch,0C8h, 05h, 00h	; mov si,di; mov ax,cs; add ax,...
+		db	 30h, 8Eh,0C0h,0BFh, 00h, 00h	; ...3000h; mov es,ax; mov di,0
+		db	 2Eh,0C7h, 06h, 5Ah, 4Ch, 00h	; mov word ptr cs:[4C5Ah],...
+		db	 00h, 2Eh,0C7h, 06h, 54h, 4Ch	; ...0; mov word ptr cs:[4C54h],...
+		db	 00h, 00h, 2Eh,0C7h, 06h, 56h	; ...0; mov word ptr cs:[4C56h],...
+		db	 4Ch, 00h, 00h, 2Eh,0C7h, 06h	; ...0; mov word ptr cs:[4C58h],...
+		db	 58h, 4Ch, 00h, 00h, 8Bh,0CDh	; ...0; mov cx,bp
+		db	0D1h,0E9h			; shr cx,1 -> render_src_sel_loop
 
 render_src_sel_loop:
 								push	si
@@ -2336,374 +2336,374 @@ set_render_lut_entry:
 		retn
 		; Sprite movement/animation pattern data (sprite_obj_tbl area)
 		db	17 dup (0)
-		db	2, 0
+		db	2, 0                                               ; sprite_data offset 0x011 (2 bytes)
 		db	15 dup (0)
-		db	1, 0, 0, 0, 0, 0
-		db	0, 0, 1
+		db	1, 0, 0, 0, 0, 0                                   ; sprite_data offset 0x022 (6 bytes)
+		db	0, 0, 1                                            ; sprite_data offset 0x028 (3 bytes)
 		db	8 dup (0)
-		db	1, 0, 0, 0, 0, 0
-		db	0, 0, 1
+		db	1, 0, 0, 0, 0, 0                                   ; sprite_data offset 0x033 (6 bytes)
+		db	0, 0, 1                                            ; sprite_data offset 0x039 (3 bytes)
 		db	8 dup (0)
-		db	3, 3, 3, 3, 0, 3
-		db	0, 0, 3, 3, 3, 3
-		db	0, 0, 0, 0, 3, 3
-		db	3, 3, 0, 3, 0, 0
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 3, 3, 3, 3
-		db	0, 3, 0, 0, 3, 3
-		db	3, 3, 0, 0, 0, 0
-		db	3, 3, 3, 3, 0, 3
-		db	0, 0, 3, 3, 3, 3
-		db	0
+		db	3, 3, 3, 3, 0, 3                                   ; sprite_data offset 0x044 (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; sprite_data offset 0x04A (6 bytes)
+		db	0, 0, 0, 0, 3, 3                                   ; sprite_data offset 0x050 (6 bytes)
+		db	3, 3, 0, 3, 0, 0                                   ; sprite_data offset 0x056 (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; sprite_data offset 0x05C (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; sprite_data offset 0x062 (6 bytes)
+		db	0, 3, 0, 0, 3, 3                                   ; sprite_data offset 0x068 (6 bytes)
+		db	3, 3, 0, 0, 0, 0                                   ; sprite_data offset 0x06E (6 bytes)
+		db	3, 3, 3, 3, 0, 3                                   ; sprite_data offset 0x074 (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; sprite_data offset 0x07A (6 bytes)
+		db	0                                                  ; sprite_data offset 0x080 (1 bytes)
 		db	7 dup (0)
-		db	1, 0
+		db	1, 0                                               ; sprite_data offset 0x088 (2 bytes)
 		db	10 dup (0)
-		db	3, 3, 3, 3, 0, 1
+		db	3, 3, 3, 3, 0, 1                                   ; sprite_data offset 0x094 (6 bytes)
 		db	8 dup (0)
-		db	1, 0, 0, 0, 0, 0
-		db	0, 0, 1
+		db	1, 0, 0, 0, 0, 0                                   ; sprite_data offset 0x0A2 (6 bytes)
+		db	0, 0, 1                                            ; sprite_data offset 0x0A8 (3 bytes)
 		db	8 dup (0)
-		db	1, 0, 0, 0, 0, 0
-		db	0, 0, 1
+		db	1, 0, 0, 0, 0, 0                                   ; sprite_data offset 0x0B3 (6 bytes)
+		db	0, 0, 1                                            ; sprite_data offset 0x0B9 (3 bytes)
 		db	8 dup (0)
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 3, 3, 3, 3
-		db	0, 0, 0, 0, 3, 3
-		db	3, 3, 0, 0, 0, 0
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 3, 3, 3, 3
-		db	0, 0, 0, 0, 3, 3
-		db	3, 3, 0, 0, 0, 0
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 3, 3, 3, 3
-		db	0, 0, 0, 0, 0, 1
-		db	2, 0
+		db	3, 3, 3, 3, 0, 0                                   ; sprite_data offset 0x0C4 (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; sprite_data offset 0x0CA (6 bytes)
+		db	0, 0, 0, 0, 3, 3                                   ; sprite_data offset 0x0D0 (6 bytes)
+		db	3, 3, 0, 0, 0, 0                                   ; sprite_data offset 0x0D6 (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; sprite_data offset 0x0DC (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; sprite_data offset 0x0E2 (6 bytes)
+		db	0, 0, 0, 0, 3, 3                                   ; sprite_data offset 0x0E8 (6 bytes)
+		db	3, 3, 0, 0, 0, 0                                   ; sprite_data offset 0x0EE (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; sprite_data offset 0x0F4 (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; sprite_data offset 0x0FA (6 bytes)
+		db	0, 0, 0, 0, 0, 1                                   ; sprite_data offset 0x100 (6 bytes)
+		db	2, 0                                               ; sprite_data offset 0x106 (2 bytes)
 		db	9 dup (0)
-		db	1, 1, 2, 0, 1, 2
-		db	1, 0
+		db	1, 1, 2, 0, 1, 2                                   ; sprite_data offset 0x111 (6 bytes)
+		db	1, 0                                               ; sprite_data offset 0x117 (2 bytes)
 		db	8 dup (0)
-		db	1, 2, 0, 0, 2, 2
-		db	2, 0
+		db	1, 2, 0, 0, 2, 2                                   ; sprite_data offset 0x121 (6 bytes)
+		db	2, 0                                               ; sprite_data offset 0x127 (2 bytes)
 		db	8 dup (0)
-		db	2, 0, 2, 0, 1, 2
-		db	2, 0
+		db	2, 0, 2, 0, 1, 2                                   ; sprite_data offset 0x131 (6 bytes)
+		db	2, 0                                               ; sprite_data offset 0x137 (2 bytes)
 		db	12 dup (0)
-		db	1, 2
+		db	1, 2                                               ; sprite_data offset 0x145 (2 bytes)
 		db	9 dup (0)
-		db	1, 1, 2, 1, 1, 1
-		db	1, 3
+		db	1, 1, 2, 1, 1, 1                                   ; sprite_data offset 0x150 (6 bytes)
+		db	1, 3                                               ; sprite_data offset 0x156 (2 bytes)
 		db	8 dup (0)
-		db	2, 1, 2, 2, 2, 1
-		db	3, 3
+		db	2, 1, 2, 2, 2, 1                                   ; sprite_data offset 0x160 (6 bytes)
+		db	3, 3                                               ; sprite_data offset 0x166 (2 bytes)
 		db	9 dup (0)
-		db	1, 2, 2, 0, 3, 3
-		db	3, 0
+		db	1, 2, 2, 0, 3, 3                                   ; sprite_data offset 0x171 (6 bytes)
+		db	3, 0                                               ; sprite_data offset 0x177 (2 bytes)
 		db	32 dup (0)
-		db	3, 0
+		db	3, 0                                               ; sprite_data offset 0x199 (2 bytes)
 		db	15 dup (0)
-		db	2, 0
+		db	2, 0                                               ; sprite_data offset 0x1AA (2 bytes)
 		db	15 dup (0)
-		db	2, 0
+		db	2, 0                                               ; sprite_data offset 0x1BB (2 bytes)
 		db	15 dup (0)
-		db	1, 0
+		db	1, 0                                               ; sprite_data offset 0x1CC (2 bytes)
 		db	15 dup (0)
-		db	1, 0
+		db	1, 0                                               ; sprite_data offset 0x1DD (2 bytes)
 		db	15 dup (0)
-		db	3, 0
+		db	3, 0                                               ; sprite_data offset 0x1EE (2 bytes)
 		db	15 dup (0)
-		db	3, 0, 0, 0, 1, 0
-		db	1, 0, 1, 0
+		db	3, 0, 0, 0, 1, 0                                   ; sprite_data offset 0x1FF (6 bytes)
+		db	1, 0, 1, 0                                         ; sprite_data offset 0x205 (4 bytes)
 		db	8 dup (0)
-		db	2, 1, 2, 1, 2, 0
-		db	2, 0
+		db	2, 1, 2, 1, 2, 0                                   ; sprite_data offset 0x211 (6 bytes)
+		db	2, 0                                               ; sprite_data offset 0x217 (2 bytes)
 		db	8 dup (0)
-		db	1, 1, 3, 1, 3, 0
-		db	3, 0
+		db	1, 1, 3, 1, 3, 0                                   ; sprite_data offset 0x221 (6 bytes)
+		db	3, 0                                               ; sprite_data offset 0x227 (2 bytes)
 		db	7 dup (0)
-		db	1, 2, 3, 3, 3, 3
-		db	0, 3
+		db	1, 2, 3, 3, 3, 3                                   ; sprite_data offset 0x230 (6 bytes)
+		db	0, 3                                               ; sprite_data offset 0x236 (2 bytes)
 		db	9 dup (0)
-		db	1, 1, 3, 1, 3, 0
-		db	3, 0
+		db	1, 1, 3, 1, 3, 0                                   ; sprite_data offset 0x241 (6 bytes)
+		db	3, 0                                               ; sprite_data offset 0x247 (2 bytes)
 		db	7 dup (0)
-		db	1, 2, 3, 3, 3, 3
-		db	0, 3
+		db	1, 2, 3, 3, 3, 3                                   ; sprite_data offset 0x250 (6 bytes)
+		db	0, 3                                               ; sprite_data offset 0x256 (2 bytes)
 		db	10 dup (0)
 data_40		dw	0			; Data table (indexed access)
-		db	0, 0, 0, 1, 0
+		db	0, 0, 0, 1, 0                                      ; sprite_data offset 0x262 (5 bytes)
 		db	7 dup (0)
-		db	1, 2, 3, 3, 3, 3
-		db	1, 3
+		db	1, 2, 3, 3, 3, 3                                   ; sprite_data offset 0x26E (6 bytes)
+		db	1, 3                                               ; sprite_data offset 0x274 (2 bytes)
 		db	33 dup (0)
-		db	3, 0
+		db	3, 0                                               ; sprite_data offset 0x297 (2 bytes)
 		db	15 dup (0)
-		db	2, 0
+		db	2, 0                                               ; sprite_data offset 0x2A8 (2 bytes)
 		db	15 dup (0)
-		db	2, 0
+		db	2, 0                                               ; sprite_data offset 0x2B9 (2 bytes)
 		db	15 dup (0)
-		db	1, 0
+		db	1, 0                                               ; sprite_data offset 0x2CA (2 bytes)
 		db	15 dup (0)
-		db	1, 0
+		db	1, 0                                               ; sprite_data offset 0x2DB (2 bytes)
 		db	15 dup (0)
-		db	2, 0
+		db	2, 0                                               ; sprite_data offset 0x2EC (2 bytes)
 		db	15 dup (0)
-		db	3, 0, 0, 0, 2, 1
-		db	1, 2, 3, 0, 1, 2
-		db	2, 1, 1, 2, 3, 0
-		db	1, 2, 2, 1, 1, 1
-		db	1, 0, 1, 2, 2, 1
-		db	1, 1, 1, 0, 2, 2
-		db	2, 1, 1, 2, 3, 0
-		db	2, 2, 2, 1, 1, 2
-		db	3, 2, 2, 2, 2, 1
-		db	1, 2, 2, 0, 2, 2
-		db	1, 1, 2, 2, 3, 1
-		db	1, 1, 1, 1, 1, 3
-		db	3, 1, 1, 1, 1, 1
-		db	1, 3, 3, 1, 1, 1
-		db	1, 1, 1, 3, 3, 1
-		db	1, 1, 1, 1, 1, 3
-		db	3, 2, 1, 2, 2, 3
-		db	3, 3, 3, 2, 2, 2
-		db	2, 3, 3, 3, 3, 3
-		db	1, 3, 2, 3, 3, 3
-		db	3, 3, 1, 2, 2, 3
-		db	3, 3, 3, 0, 0, 0
-		db	0, 1, 1, 2, 3, 0
-		db	0, 0, 2, 1, 1, 2
-		db	3, 1, 1, 2, 2, 1
-		db	1, 2, 1, 0, 1, 2
-		db	2, 1, 1, 1, 1, 2
-		db	2, 2, 2, 1, 1, 2
-		db	2, 0, 2, 2, 2, 1
-		db	1, 2, 3, 2, 2, 2
-		db	1, 1, 1, 2, 2, 2
-		db	2, 2, 2, 1, 1, 2
-		db	2, 1, 1, 1, 1, 1
-		db	1, 3, 3, 1, 1, 1
-		db	1, 1, 1, 3, 3, 1
-		db	1, 1, 2, 1, 1, 3
-		db	3, 1, 1, 1, 1, 1
-		db	1, 3, 3, 2, 1, 2
-		db	2, 3, 3, 3, 3, 2
-		db	1, 2, 2, 3, 3, 3
-		db	3, 3, 1, 3, 3, 3
-		db	3, 3, 3, 3, 1, 3
-		db	2, 3, 3, 3, 3, 0
-		db	0, 0, 1, 1, 1, 2
-		db	3, 0, 1, 2, 2, 1
-		db	1, 2, 3, 0, 1, 2
-		db	3, 1, 1, 1, 1, 0
-		db	1, 2, 2, 1, 1, 1
-		db	1, 0, 2, 2, 3, 1
-		db	1, 2, 3, 0, 2, 2
-		db	2, 1, 1, 2, 3, 1
+		db	3, 0, 0, 0, 2, 1                                   ; sprite_data offset 0x2FD (6 bytes)
+		db	1, 2, 3, 0, 1, 2                                   ; sprite_data offset 0x303 (6 bytes)
+		db	2, 1, 1, 2, 3, 0                                   ; sprite_data offset 0x309 (6 bytes)
+		db	1, 2, 2, 1, 1, 1                                   ; sprite_data offset 0x30F (6 bytes)
+		db	1, 0, 1, 2, 2, 1                                   ; sprite_data offset 0x315 (6 bytes)
+		db	1, 1, 1, 0, 2, 2                                   ; sprite_data offset 0x31B (6 bytes)
+		db	2, 1, 1, 2, 3, 0                                   ; sprite_data offset 0x321 (6 bytes)
+		db	2, 2, 2, 1, 1, 2                                   ; sprite_data offset 0x327 (6 bytes)
+		db	3, 2, 2, 2, 2, 1                                   ; sprite_data offset 0x32D (6 bytes)
+		db	1, 2, 2, 0, 2, 2                                   ; sprite_data offset 0x333 (6 bytes)
+		db	1, 1, 2, 2, 3, 1                                   ; sprite_data offset 0x339 (6 bytes)
+		db	1, 1, 1, 1, 1, 3                                   ; sprite_data offset 0x33F (6 bytes)
+		db	3, 1, 1, 1, 1, 1                                   ; sprite_data offset 0x345 (6 bytes)
+		db	1, 3, 3, 1, 1, 1                                   ; sprite_data offset 0x34B (6 bytes)
+		db	1, 1, 1, 3, 3, 1                                   ; sprite_data offset 0x351 (6 bytes)
+		db	1, 1, 1, 1, 1, 3                                   ; sprite_data offset 0x357 (6 bytes)
+		db	3, 2, 1, 2, 2, 3                                   ; sprite_data offset 0x35D (6 bytes)
+		db	3, 3, 3, 2, 2, 2                                   ; sprite_data offset 0x363 (6 bytes)
+		db	2, 3, 3, 3, 3, 3                                   ; sprite_data offset 0x369 (6 bytes)
+		db	1, 3, 2, 3, 3, 3                                   ; sprite_data offset 0x36F (6 bytes)
+		db	3, 3, 1, 2, 2, 3                                   ; sprite_data offset 0x375 (6 bytes)
+		db	3, 3, 3, 0, 0, 0                                   ; sprite_data offset 0x37B (6 bytes)
+		db	0, 1, 1, 2, 3, 0                                   ; sprite_data offset 0x381 (6 bytes)
+		db	0, 0, 2, 1, 1, 2                                   ; sprite_data offset 0x387 (6 bytes)
+		db	3, 1, 1, 2, 2, 1                                   ; sprite_data offset 0x38D (6 bytes)
+		db	1, 2, 1, 0, 1, 2                                   ; sprite_data offset 0x393 (6 bytes)
+		db	2, 1, 1, 1, 1, 2                                   ; sprite_data offset 0x399 (6 bytes)
+		db	2, 2, 2, 1, 1, 2                                   ; sprite_data offset 0x39F (6 bytes)
+		db	2, 0, 2, 2, 2, 1                                   ; sprite_data offset 0x3A5 (6 bytes)
+		db	1, 2, 3, 2, 2, 2                                   ; sprite_data offset 0x3AB (6 bytes)
+		db	1, 1, 1, 2, 2, 2                                   ; sprite_data offset 0x3B1 (6 bytes)
+		db	2, 2, 2, 1, 1, 2                                   ; sprite_data offset 0x3B7 (6 bytes)
+		db	2, 1, 1, 1, 1, 1                                   ; sprite_data offset 0x3BD (6 bytes)
+		db	1, 3, 3, 1, 1, 1                                   ; sprite_data offset 0x3C3 (6 bytes)
+		db	1, 1, 1, 3, 3, 1                                   ; sprite_data offset 0x3C9 (6 bytes)
+		db	1, 1, 2, 1, 1, 3                                   ; sprite_data offset 0x3CF (6 bytes)
+		db	3, 1, 1, 1, 1, 1                                   ; sprite_data offset 0x3D5 (6 bytes)
+		db	1, 3, 3, 2, 1, 2                                   ; sprite_data offset 0x3DB (6 bytes)
+		db	2, 3, 3, 3, 3, 2                                   ; sprite_data offset 0x3E1 (6 bytes)
+		db	1, 2, 2, 3, 3, 3                                   ; sprite_data offset 0x3E7 (6 bytes)
+		db	3, 3, 1, 3, 3, 3                                   ; sprite_data offset 0x3ED (6 bytes)
+		db	3, 3, 3, 3, 1, 3                                   ; sprite_data offset 0x3F3 (6 bytes)
+		db	2, 3, 3, 3, 3, 0                                   ; sprite_data offset 0x3F9 (6 bytes)
+		db	0, 0, 1, 1, 1, 2                                   ; sprite_data offset 0x3FF (6 bytes)
+		db	3, 0, 1, 2, 2, 1                                   ; sprite_data offset 0x405 (6 bytes)
+		db	1, 2, 3, 0, 1, 2                                   ; sprite_data offset 0x40B (6 bytes)
+		db	3, 1, 1, 1, 1, 0                                   ; sprite_data offset 0x411 (6 bytes)
+		db	1, 2, 2, 1, 1, 1                                   ; sprite_data offset 0x417 (6 bytes)
+		db	1, 0, 2, 2, 3, 1                                   ; sprite_data offset 0x41D (6 bytes)
+		db	1, 2, 3, 0, 2, 2                                   ; sprite_data offset 0x423 (6 bytes)
+		db	2, 1, 1, 2, 3, 1                                   ; sprite_data offset 0x429 (6 bytes)
 		db	7 dup (3)
-		db	0, 3, 3, 3, 3, 3
-		db	3, 3, 1, 1, 1, 3
-		db	1, 1, 3, 3, 1, 1
-		db	1, 1, 1, 1, 3, 3
-		db	1, 1, 1, 3, 1, 1
-		db	3, 3, 1, 1, 1, 1
-		db	1, 1, 3, 3, 2, 1
-		db	2, 3, 3, 3, 3, 3
-		db	2, 2, 2, 2, 3, 3
-		db	3, 3, 3, 1
+		db	0, 3, 3, 3, 3, 3                                   ; sprite_data offset 0x436 (6 bytes)
+		db	3, 3, 1, 1, 1, 3                                   ; sprite_data offset 0x43C (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; sprite_data offset 0x442 (6 bytes)
+		db	1, 1, 1, 1, 3, 3                                   ; sprite_data offset 0x448 (6 bytes)
+		db	1, 1, 1, 3, 1, 1                                   ; sprite_data offset 0x44E (6 bytes)
+		db	3, 3, 1, 1, 1, 1                                   ; sprite_data offset 0x454 (6 bytes)
+		db	1, 1, 3, 3, 2, 1                                   ; sprite_data offset 0x45A (6 bytes)
+		db	2, 3, 3, 3, 3, 3                                   ; sprite_data offset 0x460 (6 bytes)
+		db	2, 2, 2, 2, 3, 3                                   ; sprite_data offset 0x466 (6 bytes)
+		db	3, 3, 3, 1                                         ; sprite_data offset 0x46C (4 bytes)
 		db	7 dup (3)
-		db	1, 2, 2, 3, 3, 3
-		db	3, 0, 0, 0, 0, 1
-		db	1, 2, 3, 0, 0, 0
-		db	2, 1, 1, 2, 3, 1
-		db	1, 2, 3, 1, 1, 2
-		db	1, 0, 1, 2, 2, 1
-		db	1, 1, 1, 2, 2, 2
-		db	3, 1, 1, 2, 2, 0
-		db	2, 2, 2, 1, 1, 2
-		db	3, 2, 2, 2, 3, 1
-		db	1, 2, 2, 2, 2, 2
-		db	2, 1, 1, 2, 2, 1
-		db	1, 1, 3, 1, 1, 3
-		db	3, 1, 1, 1, 1, 1
-		db	1, 3, 3, 1, 1, 1
-		db	3, 1, 1, 3, 3, 1
-		db	1, 1, 1, 1, 1, 3
-		db	3, 2, 1, 2, 3, 3
-		db	3, 3, 3, 2, 1, 2
-		db	2, 3, 3, 3, 3, 3
-		db	1, 3, 3, 3, 3, 3
-		db	3, 3, 1, 3, 2, 3
-		db	3, 3, 3, 0, 0, 0
-		db	0, 0, 1, 2, 3, 0
-		db	1, 2, 2, 1, 1, 2
-		db	3, 0, 1, 2, 2, 0
-		db	1, 1, 1, 0, 1, 2
-		db	2, 1, 1, 1, 1, 0
-		db	2, 2, 2, 0, 2, 2
-		db	3, 0, 2, 2, 2, 1
-		db	1, 2, 3, 0, 2, 2
-		db	2, 0, 2, 3, 3, 0
-		db	3, 3, 3, 3, 3, 3
-		db	3, 0, 0, 0, 0, 0
-		db	0, 2, 0, 1, 1, 1
-		db	1, 1, 1, 3, 3, 1
-		db	1, 2, 2, 0, 3, 3
-		db	3, 1, 1, 1, 1, 1
-		db	1, 3, 3, 2, 1, 2
-		db	3, 2, 3, 3, 3, 2
-		db	2, 2, 2, 3, 3, 3
-		db	3, 3, 1, 3, 3, 0
-		db	3, 3, 3, 3, 1, 2
-		db	2, 3, 3, 3, 3, 0
-		db	0, 0, 0, 1, 1, 2
-		db	3, 0, 0, 0, 2, 1
-		db	1, 2, 3, 1, 1, 2
-		db	3, 1, 1, 2, 1, 0
-		db	1, 2, 2, 1, 1, 1
-		db	1, 2, 2, 2, 3, 1
-		db	1, 2, 2, 0, 2, 2
-		db	2, 1, 1, 2, 3, 2
-		db	2, 2, 3, 1, 1, 2
-		db	2, 2, 2, 2, 2, 1
-		db	1, 2, 2, 1, 1, 1
-		db	3, 1, 1, 3, 3, 1
-		db	1, 1, 1, 1, 1, 3
-		db	3, 1, 1, 1, 3, 1
-		db	1, 3, 3, 1, 1, 1
-		db	1, 1, 1, 3, 3, 2
-		db	1, 2, 3, 3, 3, 3
-		db	3, 2, 1, 2, 2, 3
-		db	3, 3, 3, 3, 1, 3
-		db	3, 3, 3, 3, 3, 3
-		db	1, 3, 2, 3, 3, 3
-		db	3, 0, 1, 0, 0, 1
-		db	1, 2, 1, 0, 1, 2
-		db	2, 1, 1, 2, 3, 1
-		db	1, 2, 2, 1, 1, 1
-		db	1, 0, 1, 2, 2, 1
-		db	1, 1, 1, 0
+		db	1, 2, 2, 3, 3, 3                                   ; sprite_data offset 0x477 (6 bytes)
+		db	3, 0, 0, 0, 0, 1                                   ; sprite_data offset 0x47D (6 bytes)
+		db	1, 2, 3, 0, 0, 0                                   ; sprite_data offset 0x483 (6 bytes)
+		db	2, 1, 1, 2, 3, 1                                   ; sprite_data offset 0x489 (6 bytes)
+		db	1, 2, 3, 1, 1, 2                                   ; sprite_data offset 0x48F (6 bytes)
+		db	1, 0, 1, 2, 2, 1                                   ; sprite_data offset 0x495 (6 bytes)
+		db	1, 1, 1, 2, 2, 2                                   ; sprite_data offset 0x49B (6 bytes)
+		db	3, 1, 1, 2, 2, 0                                   ; sprite_data offset 0x4A1 (6 bytes)
+		db	2, 2, 2, 1, 1, 2                                   ; sprite_data offset 0x4A7 (6 bytes)
+		db	3, 2, 2, 2, 3, 1                                   ; sprite_data offset 0x4AD (6 bytes)
+		db	1, 2, 2, 2, 2, 2                                   ; sprite_data offset 0x4B3 (6 bytes)
+		db	2, 1, 1, 2, 2, 1                                   ; sprite_data offset 0x4B9 (6 bytes)
+		db	1, 1, 3, 1, 1, 3                                   ; sprite_data offset 0x4BF (6 bytes)
+		db	3, 1, 1, 1, 1, 1                                   ; sprite_data offset 0x4C5 (6 bytes)
+		db	1, 3, 3, 1, 1, 1                                   ; sprite_data offset 0x4CB (6 bytes)
+		db	3, 1, 1, 3, 3, 1                                   ; sprite_data offset 0x4D1 (6 bytes)
+		db	1, 1, 1, 1, 1, 3                                   ; sprite_data offset 0x4D7 (6 bytes)
+		db	3, 2, 1, 2, 3, 3                                   ; sprite_data offset 0x4DD (6 bytes)
+		db	3, 3, 3, 2, 1, 2                                   ; sprite_data offset 0x4E3 (6 bytes)
+		db	2, 3, 3, 3, 3, 3                                   ; sprite_data offset 0x4E9 (6 bytes)
+		db	1, 3, 3, 3, 3, 3                                   ; sprite_data offset 0x4EF (6 bytes)
+		db	3, 3, 1, 3, 2, 3                                   ; sprite_data offset 0x4F5 (6 bytes)
+		db	3, 3, 3, 0, 0, 0                                   ; sprite_data offset 0x4FB (6 bytes)
+		db	0, 0, 1, 2, 3, 0                                   ; sprite_data offset 0x501 (6 bytes)
+		db	1, 2, 2, 1, 1, 2                                   ; sprite_data offset 0x507 (6 bytes)
+		db	3, 0, 1, 2, 2, 0                                   ; sprite_data offset 0x50D (6 bytes)
+		db	1, 1, 1, 0, 1, 2                                   ; sprite_data offset 0x513 (6 bytes)
+		db	2, 1, 1, 1, 1, 0                                   ; sprite_data offset 0x519 (6 bytes)
+		db	2, 2, 2, 0, 2, 2                                   ; sprite_data offset 0x51F (6 bytes)
+		db	3, 0, 2, 2, 2, 1                                   ; sprite_data offset 0x525 (6 bytes)
+		db	1, 2, 3, 0, 2, 2                                   ; sprite_data offset 0x52B (6 bytes)
+		db	2, 0, 2, 3, 3, 0                                   ; sprite_data offset 0x531 (6 bytes)
+		db	3, 3, 3, 3, 3, 3                                   ; sprite_data offset 0x537 (6 bytes)
+		db	3, 0, 0, 0, 0, 0                                   ; sprite_data offset 0x53D (6 bytes)
+		db	0, 2, 0, 1, 1, 1                                   ; sprite_data offset 0x543 (6 bytes)
+		db	1, 1, 1, 3, 3, 1                                   ; sprite_data offset 0x549 (6 bytes)
+		db	1, 2, 2, 0, 3, 3                                   ; sprite_data offset 0x54F (6 bytes)
+		db	3, 1, 1, 1, 1, 1                                   ; sprite_data offset 0x555 (6 bytes)
+		db	1, 3, 3, 2, 1, 2                                   ; sprite_data offset 0x55B (6 bytes)
+		db	3, 2, 3, 3, 3, 2                                   ; sprite_data offset 0x561 (6 bytes)
+		db	2, 2, 2, 3, 3, 3                                   ; sprite_data offset 0x567 (6 bytes)
+		db	3, 3, 1, 3, 3, 0                                   ; sprite_data offset 0x56D (6 bytes)
+		db	3, 3, 3, 3, 1, 2                                   ; sprite_data offset 0x573 (6 bytes)
+		db	2, 3, 3, 3, 3, 0                                   ; sprite_data offset 0x579 (6 bytes)
+		db	0, 0, 0, 1, 1, 2                                   ; sprite_data offset 0x57F (6 bytes)
+		db	3, 0, 0, 0, 2, 1                                   ; sprite_data offset 0x585 (6 bytes)
+		db	1, 2, 3, 1, 1, 2                                   ; sprite_data offset 0x58B (6 bytes)
+		db	3, 1, 1, 2, 1, 0                                   ; sprite_data offset 0x591 (6 bytes)
+		db	1, 2, 2, 1, 1, 1                                   ; sprite_data offset 0x597 (6 bytes)
+		db	1, 2, 2, 2, 3, 1                                   ; sprite_data offset 0x59D (6 bytes)
+		db	1, 2, 2, 0, 2, 2                                   ; sprite_data offset 0x5A3 (6 bytes)
+		db	2, 1, 1, 2, 3, 2                                   ; sprite_data offset 0x5A9 (6 bytes)
+		db	2, 2, 3, 1, 1, 2                                   ; sprite_data offset 0x5AF (6 bytes)
+		db	2, 2, 2, 2, 2, 1                                   ; sprite_data offset 0x5B5 (6 bytes)
+		db	1, 2, 2, 1, 1, 1                                   ; sprite_data offset 0x5BB (6 bytes)
+		db	3, 1, 1, 3, 3, 1                                   ; sprite_data offset 0x5C1 (6 bytes)
+		db	1, 1, 1, 1, 1, 3                                   ; sprite_data offset 0x5C7 (6 bytes)
+		db	3, 1, 1, 1, 3, 1                                   ; sprite_data offset 0x5CD (6 bytes)
+		db	1, 3, 3, 1, 1, 1                                   ; sprite_data offset 0x5D3 (6 bytes)
+		db	1, 1, 1, 3, 3, 2                                   ; sprite_data offset 0x5D9 (6 bytes)
+		db	1, 2, 3, 3, 3, 3                                   ; sprite_data offset 0x5DF (6 bytes)
+		db	3, 2, 1, 2, 2, 3                                   ; sprite_data offset 0x5E5 (6 bytes)
+		db	3, 3, 3, 3, 1, 3                                   ; sprite_data offset 0x5EB (6 bytes)
+		db	3, 3, 3, 3, 3, 3                                   ; sprite_data offset 0x5F1 (6 bytes)
+		db	1, 3, 2, 3, 3, 3                                   ; sprite_data offset 0x5F7 (6 bytes)
+		db	3, 0, 1, 0, 0, 1                                   ; sprite_data offset 0x5FD (6 bytes)
+		db	1, 2, 1, 0, 1, 2                                   ; sprite_data offset 0x603 (6 bytes)
+		db	2, 1, 1, 2, 3, 1                                   ; sprite_data offset 0x609 (6 bytes)
+		db	1, 2, 2, 1, 1, 1                                   ; sprite_data offset 0x60F (6 bytes)
+		db	1, 0, 1, 2, 2, 1                                   ; sprite_data offset 0x615 (6 bytes)
+		db	1, 1, 1, 0                                         ; sprite_data offset 0x61B (4 bytes)
 		db	7 dup (2)
-		db	0, 2, 2, 2, 1, 1
-		db	2, 3, 0, 2, 2, 2
-		db	2, 2, 3, 2, 0, 3
-		db	3, 3, 3, 3, 3, 3
-		db	1, 1, 2, 2, 1, 1
-		db	2, 3, 1, 1, 1, 1
-		db	1, 1, 3, 3, 1, 1
-		db	2, 2, 1, 3, 3, 1
-		db	1, 1, 1, 1, 1, 1
-		db	3, 3, 2, 1, 2, 3
-		db	2, 3, 3, 3, 2, 2
-		db	2, 2, 3, 3, 3, 3
-		db	1, 1, 2, 2, 3, 1
-		db	3, 3, 3, 1, 2, 2
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 1, 1, 2, 3
-		db	0, 0, 0, 2, 1, 1
-		db	2, 3, 1, 1, 2, 3
-		db	1, 1, 2, 1, 0, 1
-		db	2, 2, 1, 1, 1, 1
-		db	2, 2, 2, 3, 1, 1
-		db	2, 2, 0, 2, 2, 2
-		db	1, 1, 2, 3, 2, 2
-		db	2, 3, 1, 1, 2, 2
-		db	2, 2, 2, 2, 1, 1
-		db	2, 2, 1, 1, 1, 3
-		db	1, 1, 3, 3, 1, 1
-		db	1, 1, 1, 1, 3, 3
-		db	1, 1, 1, 3, 1, 1
-		db	3, 3, 1, 1, 1, 1
-		db	1, 1, 3, 3, 2, 1
-		db	2, 3, 3, 3, 3, 3
-		db	2, 1, 2, 2, 3, 3
-		db	3, 3, 3, 1, 3, 3
-		db	3, 3, 3, 3, 3, 1
-		db	3, 2, 3, 3, 3, 3
-		db	0, 0, 0, 0, 0, 1
-		db	2, 3, 0, 1, 2, 2
-		db	1, 1, 2, 3, 0, 1
-		db	2, 1, 0, 1, 1, 1
-		db	0, 1, 2, 2, 1, 1
-		db	1, 1, 0, 2, 2, 1
-		db	0, 2, 2, 3, 0, 2
-		db	2, 2, 1, 1, 2, 3
-		db	0, 1, 1, 1, 0, 1
-		db	2, 3, 0, 3, 3, 3
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 0, 0, 2, 0
-		db	1, 1, 1, 1, 1, 1
-		db	3, 3, 1, 1, 2, 1
-		db	0, 3, 3, 3, 1, 1
-		db	1, 1, 1, 1, 3, 3
-		db	2, 1, 2, 2, 2, 3
-		db	3, 3, 2, 2, 2, 2
-		db	3, 3, 3, 3, 3, 1
-		db	3, 3, 0, 3, 3, 3
-		db	3, 1, 2, 2, 3, 3
-		db	3, 3, 0, 0, 0, 0
-		db	1, 1, 2, 3, 0, 0
-		db	0, 2, 1, 1, 2, 3
-		db	1, 1, 2, 3, 1, 1
-		db	2, 1, 0, 1, 2, 2
-		db	1, 1, 1, 1, 2, 2
-		db	2, 3, 1, 1, 2, 2
-		db	0, 2, 2, 2, 1, 1
-		db	2, 3, 2, 2, 2, 3
-		db	1, 1, 2, 2, 2, 2
-		db	2, 2, 1, 1, 2, 2
-		db	1, 1, 1, 3, 1, 1
-		db	3, 3, 1, 1, 1, 1
-		db	1, 1, 3, 3, 1, 1
-		db	1, 3, 1, 1, 3, 3
-		db	1, 1, 1, 1, 1, 1
-		db	3, 3, 2, 1, 2, 3
-		db	3, 3, 3, 3, 2, 1
-		db	2, 2, 3, 3, 3, 3
-		db	3, 1, 3, 3, 3, 3
-		db	3, 3, 3, 1, 3, 2
-		db	3, 3, 3, 3, 0, 0
-		db	0, 1, 1, 1, 2, 3
-		db	0, 1, 2, 2, 1, 1
-		db	2, 3, 0, 1, 2, 2
-		db	1, 1, 1, 1, 0, 1
-		db	2, 2, 1, 1, 1, 1
-		db	0, 2, 2, 2, 1, 1
-		db	2, 3, 0, 2, 2, 2
-		db	1, 1, 2, 3, 1
+		db	0, 2, 2, 2, 1, 1                                   ; sprite_data offset 0x626 (6 bytes)
+		db	2, 3, 0, 2, 2, 2                                   ; sprite_data offset 0x62C (6 bytes)
+		db	2, 2, 3, 2, 0, 3                                   ; sprite_data offset 0x632 (6 bytes)
+		db	3, 3, 3, 3, 3, 3                                   ; sprite_data offset 0x638 (6 bytes)
+		db	1, 1, 2, 2, 1, 1                                   ; sprite_data offset 0x63E (6 bytes)
+		db	2, 3, 1, 1, 1, 1                                   ; sprite_data offset 0x644 (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; sprite_data offset 0x64A (6 bytes)
+		db	2, 2, 1, 3, 3, 1                                   ; sprite_data offset 0x650 (6 bytes)
+		db	1, 1, 1, 1, 1, 1                                   ; sprite_data offset 0x656 (6 bytes)
+		db	3, 3, 2, 1, 2, 3                                   ; sprite_data offset 0x65C (6 bytes)
+		db	2, 3, 3, 3, 2, 2                                   ; sprite_data offset 0x662 (6 bytes)
+		db	2, 2, 3, 3, 3, 3                                   ; sprite_data offset 0x668 (6 bytes)
+		db	1, 1, 2, 2, 3, 1                                   ; sprite_data offset 0x66E (6 bytes)
+		db	3, 3, 3, 1, 2, 2                                   ; sprite_data offset 0x674 (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; sprite_data offset 0x67A (6 bytes)
+		db	0, 0, 1, 1, 2, 3                                   ; sprite_data offset 0x680 (6 bytes)
+		db	0, 0, 0, 2, 1, 1                                   ; sprite_data offset 0x686 (6 bytes)
+		db	2, 3, 1, 1, 2, 3                                   ; sprite_data offset 0x68C (6 bytes)
+		db	1, 1, 2, 1, 0, 1                                   ; sprite_data offset 0x692 (6 bytes)
+		db	2, 2, 1, 1, 1, 1                                   ; sprite_data offset 0x698 (6 bytes)
+		db	2, 2, 2, 3, 1, 1                                   ; sprite_data offset 0x69E (6 bytes)
+		db	2, 2, 0, 2, 2, 2                                   ; sprite_data offset 0x6A4 (6 bytes)
+		db	1, 1, 2, 3, 2, 2                                   ; sprite_data offset 0x6AA (6 bytes)
+		db	2, 3, 1, 1, 2, 2                                   ; sprite_data offset 0x6B0 (6 bytes)
+		db	2, 2, 2, 2, 1, 1                                   ; sprite_data offset 0x6B6 (6 bytes)
+		db	2, 2, 1, 1, 1, 3                                   ; sprite_data offset 0x6BC (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; sprite_data offset 0x6C2 (6 bytes)
+		db	1, 1, 1, 1, 3, 3                                   ; sprite_data offset 0x6C8 (6 bytes)
+		db	1, 1, 1, 3, 1, 1                                   ; sprite_data offset 0x6CE (6 bytes)
+		db	3, 3, 1, 1, 1, 1                                   ; sprite_data offset 0x6D4 (6 bytes)
+		db	1, 1, 3, 3, 2, 1                                   ; sprite_data offset 0x6DA (6 bytes)
+		db	2, 3, 3, 3, 3, 3                                   ; sprite_data offset 0x6E0 (6 bytes)
+		db	2, 1, 2, 2, 3, 3                                   ; sprite_data offset 0x6E6 (6 bytes)
+		db	3, 3, 3, 1, 3, 3                                   ; sprite_data offset 0x6EC (6 bytes)
+		db	3, 3, 3, 3, 3, 1                                   ; sprite_data offset 0x6F2 (6 bytes)
+		db	3, 2, 3, 3, 3, 3                                   ; sprite_data offset 0x6F8 (6 bytes)
+		db	0, 0, 0, 0, 0, 1                                   ; sprite_data offset 0x6FE (6 bytes)
+		db	2, 3, 0, 1, 2, 2                                   ; sprite_data offset 0x704 (6 bytes)
+		db	1, 1, 2, 3, 0, 1                                   ; sprite_data offset 0x70A (6 bytes)
+		db	2, 1, 0, 1, 1, 1                                   ; sprite_data offset 0x710 (6 bytes)
+		db	0, 1, 2, 2, 1, 1                                   ; sprite_data offset 0x716 (6 bytes)
+		db	1, 1, 0, 2, 2, 1                                   ; sprite_data offset 0x71C (6 bytes)
+		db	0, 2, 2, 3, 0, 2                                   ; sprite_data offset 0x722 (6 bytes)
+		db	2, 2, 1, 1, 2, 3                                   ; sprite_data offset 0x728 (6 bytes)
+		db	0, 1, 1, 1, 0, 1                                   ; sprite_data offset 0x72E (6 bytes)
+		db	2, 3, 0, 3, 3, 3                                   ; sprite_data offset 0x734 (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; sprite_data offset 0x73A (6 bytes)
+		db	0, 0, 0, 0, 2, 0                                   ; sprite_data offset 0x740 (6 bytes)
+		db	1, 1, 1, 1, 1, 1                                   ; sprite_data offset 0x746 (6 bytes)
+		db	3, 3, 1, 1, 2, 1                                   ; sprite_data offset 0x74C (6 bytes)
+		db	0, 3, 3, 3, 1, 1                                   ; sprite_data offset 0x752 (6 bytes)
+		db	1, 1, 1, 1, 3, 3                                   ; sprite_data offset 0x758 (6 bytes)
+		db	2, 1, 2, 2, 2, 3                                   ; sprite_data offset 0x75E (6 bytes)
+		db	3, 3, 2, 2, 2, 2                                   ; sprite_data offset 0x764 (6 bytes)
+		db	3, 3, 3, 3, 3, 1                                   ; sprite_data offset 0x76A (6 bytes)
+		db	3, 3, 0, 3, 3, 3                                   ; sprite_data offset 0x770 (6 bytes)
+		db	3, 1, 2, 2, 3, 3                                   ; sprite_data offset 0x776 (6 bytes)
+		db	3, 3, 0, 0, 0, 0                                   ; sprite_data offset 0x77C (6 bytes)
+		db	1, 1, 2, 3, 0, 0                                   ; sprite_data offset 0x782 (6 bytes)
+		db	0, 2, 1, 1, 2, 3                                   ; sprite_data offset 0x788 (6 bytes)
+		db	1, 1, 2, 3, 1, 1                                   ; sprite_data offset 0x78E (6 bytes)
+		db	2, 1, 0, 1, 2, 2                                   ; sprite_data offset 0x794 (6 bytes)
+		db	1, 1, 1, 1, 2, 2                                   ; sprite_data offset 0x79A (6 bytes)
+		db	2, 3, 1, 1, 2, 2                                   ; sprite_data offset 0x7A0 (6 bytes)
+		db	0, 2, 2, 2, 1, 1                                   ; sprite_data offset 0x7A6 (6 bytes)
+		db	2, 3, 2, 2, 2, 3                                   ; sprite_data offset 0x7AC (6 bytes)
+		db	1, 1, 2, 2, 2, 2                                   ; sprite_data offset 0x7B2 (6 bytes)
+		db	2, 2, 1, 1, 2, 2                                   ; sprite_data offset 0x7B8 (6 bytes)
+		db	1, 1, 1, 3, 1, 1                                   ; sprite_data offset 0x7BE (6 bytes)
+		db	3, 3, 1, 1, 1, 1                                   ; sprite_data offset 0x7C4 (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; sprite_data offset 0x7CA (6 bytes)
+		db	1, 3, 1, 1, 3, 3                                   ; sprite_data offset 0x7D0 (6 bytes)
+		db	1, 1, 1, 1, 1, 1                                   ; sprite_data offset 0x7D6 (6 bytes)
+		db	3, 3, 2, 1, 2, 3                                   ; sprite_data offset 0x7DC (6 bytes)
+		db	3, 3, 3, 3, 2, 1                                   ; sprite_data offset 0x7E2 (6 bytes)
+		db	2, 2, 3, 3, 3, 3                                   ; sprite_data offset 0x7E8 (6 bytes)
+		db	3, 1, 3, 3, 3, 3                                   ; sprite_data offset 0x7EE (6 bytes)
+		db	3, 3, 3, 1, 3, 2                                   ; sprite_data offset 0x7F4 (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; sprite_data offset 0x7FA (6 bytes)
+		db	0, 1, 1, 1, 2, 3                                   ; sprite_data offset 0x800 (6 bytes)
+		db	0, 1, 2, 2, 1, 1                                   ; sprite_data offset 0x806 (6 bytes)
+		db	2, 3, 0, 1, 2, 2                                   ; sprite_data offset 0x80C (6 bytes)
+		db	1, 1, 1, 1, 0, 1                                   ; sprite_data offset 0x812 (6 bytes)
+		db	2, 2, 1, 1, 1, 1                                   ; sprite_data offset 0x818 (6 bytes)
+		db	0, 2, 2, 2, 1, 1                                   ; sprite_data offset 0x81E (6 bytes)
+		db	2, 3, 0, 2, 2, 2                                   ; sprite_data offset 0x824 (6 bytes)
+		db	1, 1, 2, 3, 1                                      ; sprite_data offset 0x82A (5 bytes)
 		db	7 dup (2)
-		db	0, 2, 2, 2, 2, 2
-		db	2, 2, 1, 1, 1, 2
-		db	1, 1, 3, 3, 1, 1
-		db	1, 1, 1, 1, 3, 3
-		db	1, 1, 1, 2, 1, 1
-		db	2, 2, 1, 1, 1, 1
-		db	1, 1, 2, 2, 2, 1
-		db	2, 2, 3, 2, 3, 3
-		db	2, 2, 2, 2, 3, 3
-		db	3, 3, 3, 1, 3, 2
-		db	3, 2, 3, 3, 3, 1
-		db	2, 2, 3, 3, 3, 3
-		db	0, 0, 0, 0, 1, 1
-		db	2, 3, 0, 0, 0, 2
-		db	1, 1, 2, 3, 1, 1
-		db	2, 3, 1, 1, 2, 1
-		db	0, 1, 2, 2, 1, 1
-		db	1, 1, 2, 2, 2, 3
-		db	1, 1, 2, 2, 0, 2
-		db	2, 2, 1, 1, 2, 3
-		db	2, 2, 2, 3, 1, 1
-		db	2, 2, 2, 2, 2, 2
-		db	1, 1, 2, 2, 1, 1
-		db	1, 3, 1, 1, 3, 3
-		db	1, 1, 1, 1, 1, 1
-		db	3, 3, 1, 1, 1, 3
-		db	1, 1, 3, 3, 1, 1
-		db	1, 1, 1, 1, 3, 3
-		db	2, 1, 2, 3, 3, 2
-		db	3, 3, 2, 1, 2, 2
-		db	3, 3, 3, 3, 3, 1
-		db	3, 3, 3, 2, 3, 3
-		db	3, 1, 3, 2, 3, 3
-		db	3, 3
+		db	0, 2, 2, 2, 2, 2                                   ; sprite_data offset 0x836 (6 bytes)
+		db	2, 2, 1, 1, 1, 2                                   ; sprite_data offset 0x83C (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; sprite_data offset 0x842 (6 bytes)
+		db	1, 1, 1, 1, 3, 3                                   ; sprite_data offset 0x848 (6 bytes)
+		db	1, 1, 1, 2, 1, 1                                   ; sprite_data offset 0x84E (6 bytes)
+		db	2, 2, 1, 1, 1, 1                                   ; sprite_data offset 0x854 (6 bytes)
+		db	1, 1, 2, 2, 2, 1                                   ; sprite_data offset 0x85A (6 bytes)
+		db	2, 2, 3, 2, 3, 3                                   ; sprite_data offset 0x860 (6 bytes)
+		db	2, 2, 2, 2, 3, 3                                   ; sprite_data offset 0x866 (6 bytes)
+		db	3, 3, 3, 1, 3, 2                                   ; sprite_data offset 0x86C (6 bytes)
+		db	3, 2, 3, 3, 3, 1                                   ; sprite_data offset 0x872 (6 bytes)
+		db	2, 2, 3, 3, 3, 3                                   ; sprite_data offset 0x878 (6 bytes)
+		db	0, 0, 0, 0, 1, 1                                   ; sprite_data offset 0x87E (6 bytes)
+		db	2, 3, 0, 0, 0, 2                                   ; sprite_data offset 0x884 (6 bytes)
+		db	1, 1, 2, 3, 1, 1                                   ; sprite_data offset 0x88A (6 bytes)
+		db	2, 3, 1, 1, 2, 1                                   ; sprite_data offset 0x890 (6 bytes)
+		db	0, 1, 2, 2, 1, 1                                   ; sprite_data offset 0x896 (6 bytes)
+		db	1, 1, 2, 2, 2, 3                                   ; sprite_data offset 0x89C (6 bytes)
+		db	1, 1, 2, 2, 0, 2                                   ; sprite_data offset 0x8A2 (6 bytes)
+		db	2, 2, 1, 1, 2, 3                                   ; sprite_data offset 0x8A8 (6 bytes)
+		db	2, 2, 2, 3, 1, 1                                   ; sprite_data offset 0x8AE (6 bytes)
+		db	2, 2, 2, 2, 2, 2                                   ; sprite_data offset 0x8B4 (6 bytes)
+		db	1, 1, 2, 2, 1, 1                                   ; sprite_data offset 0x8BA (6 bytes)
+		db	1, 3, 1, 1, 3, 3                                   ; sprite_data offset 0x8C0 (6 bytes)
+		db	1, 1, 1, 1, 1, 1                                   ; sprite_data offset 0x8C6 (6 bytes)
+		db	3, 3, 1, 1, 1, 3                                   ; sprite_data offset 0x8CC (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; sprite_data offset 0x8D2 (6 bytes)
+		db	1, 1, 1, 1, 3, 3                                   ; sprite_data offset 0x8D8 (6 bytes)
+		db	2, 1, 2, 3, 3, 2                                   ; sprite_data offset 0x8DE (6 bytes)
+		db	3, 3, 2, 1, 2, 2                                   ; sprite_data offset 0x8E4 (6 bytes)
+		db	3, 3, 3, 3, 3, 1                                   ; sprite_data offset 0x8EA (6 bytes)
+		db	3, 3, 3, 2, 3, 3                                   ; sprite_data offset 0x8F0 (6 bytes)
+		db	3, 1, 3, 2, 3, 3                                   ; sprite_data offset 0x8F6 (6 bytes)
+		db	3, 3                                               ; sprite_data offset 0x8FC (2 bytes)
 
 imgdec_process_loop_5		proc	near
 		push	cx
@@ -2780,8 +2780,8 @@ color_xlat_dispatch_entry:
 		mov	ah,cs:hgc_color_lut[bx]
 		pop	bx
 		jmp	word ptr cs:hgc_dispatch_fn
-		db	 00h, 05h, 02h, 07h, 03h, 04h	; Inline dispatch stub (9 bytes)
-		db	 06h, 01h,0C3h
+		db	 00h, 05h, 02h, 07h, 03h, 04h	; hgc_color_lut[0..5]: 0,5,2,7,3,4
+		db	 06h, 01h,0C3h			; hgc_color_lut[6..7]=6,1; retn (C3h)
 
 math_calc		proc	near
 		xor	ax,ax			; Zero register

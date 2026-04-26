@@ -86,14 +86,14 @@ start:
 		xor	ds:drv_init_tbl[bx+di],cl
 		xor	ax,362Ch
 		xchg	bp,ax
-		db	 36h,0B3h, 32h,0C8h, 34h, 33h
-		db	 35h, 8Eh, 34h,0CBh, 36h, 09h
-		db	 37h, 83h, 37h, 49h, 37h, 44h
-		db	 39h,0A6h, 39h, 23h, 38h,0CBh
-		db	 3Ah, 48h, 3Ah, 1Eh,0BEh, 5Fh
-		db	 2Ch,0BFh, 00h,0A0h, 0Eh, 07h
-		db	0B8h, 00h,0B0h, 8Eh,0D8h,0B9h
-		db	 1Ch, 00h
+		db	 36h,0B3h, 32h,0C8h, 34h, 33h	; dispatch words: 36B3h, 32C8h, 3433h
+		db	 35h, 8Eh, 34h,0CBh, 36h, 09h	; dispatch words: 358Eh, 34CBh, 3609h
+		db	 37h, 83h, 37h, 49h, 37h, 44h	; dispatch words: 3783h, 3749h, 3744h
+		db	 39h,0A6h, 39h, 23h, 38h,0CBh	; dispatch words: 39A6h, 3923h, 38CBh
+		db	 3Ah, 48h, 3Ah, 1Eh,0BEh, 5Fh	; dispatch words: 3A48h, 3A1Eh + push ds; mov si,...
+		db	 2Ch,0BFh, 00h,0A0h, 0Eh, 07h	; mov si,2C5Fh; mov di,0A000h; push cs; pop es
+		db	0B8h, 00h,0B0h, 8Eh,0D8h,0B9h	; mov ax,0B000h; mov ds,ax; mov cx,...
+		db	 1Ch, 00h			; mov cx,1Ch -> draw_map_col_outer
 
 draw_map_col_outer:
 							push	cx
@@ -1989,17 +1989,17 @@ decb_process_loop_5		endp
 ; Each entry maps a 6-bit (3 bitplane pairs) index to a 2-bit HGC pixel value (0-3)
 
 pixel_encode_tbl_data:
-		db	0, 1, 0, 1, 1, 0
-		db	3, 2, 1, 3, 2, 3
-		db	1, 3, 3, 2, 2, 2
-		db	2, 1, 1, 2, 2, 2
-		db	1, 3, 1, 3, 1, 1
-		db	2, 2, 1, 1, 1, 1
-		db	1, 1, 3, 2, 0, 3
-		db	2, 1, 1, 1, 3, 2
-		db	3, 3, 2, 2, 3, 3
-		db	3, 2, 1, 2, 2, 2
-		db	2, 2, 2, 2
+		db	0, 1, 0, 1, 1, 0	; pixel_encode_tbl[ 0..5]
+		db	3, 2, 1, 3, 2, 3	; pixel_encode_tbl[ 6..11]
+		db	1, 3, 3, 2, 2, 2	; pixel_encode_tbl[12..17]
+		db	2, 1, 1, 2, 2, 2	; pixel_encode_tbl[18..23]
+		db	1, 3, 1, 3, 1, 1	; pixel_encode_tbl[24..29]
+		db	2, 2, 1, 1, 1, 1	; pixel_encode_tbl[30..35]
+		db	1, 1, 3, 2, 0, 3	; pixel_encode_tbl[36..41]
+		db	2, 1, 1, 1, 3, 2	; pixel_encode_tbl[42..47]
+		db	3, 3, 2, 2, 3, 3	; pixel_encode_tbl[48..53]
+		db	3, 2, 1, 2, 2, 2	; pixel_encode_tbl[54..59]
+		db	2, 2, 2, 2		; pixel_encode_tbl[60..63]
 
 decb_scan_loop_4		proc	near
 		mov	cx,8

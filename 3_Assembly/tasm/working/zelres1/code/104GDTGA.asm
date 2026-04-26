@@ -83,23 +83,23 @@ start:
 
 render_fn_disp_tbl:
 		db	00Ch			; was: db 07Fh, 034h (count=12)
-		db	 60h, 36h,0B4h, 36h, 08h, 37h
-		db	0ECh, 30h, 47h, 37h,0C9h, 37h
-		db	0C3h, 38h, 01h, 3Ch, 4Bh, 3Dh
-		db	 06h, 3Eh, 5Ch, 3Eh, 39h, 40h
-		db	 19h, 41h,0B2h, 41h,0C4h, 4Bh
-		db	 50h, 53h, 51h, 1Eh, 8Ah,0C5h
-		db	0F6h,0E1h, 8Bh,0E8h, 06h, 1Fh
-		db	 8Bh,0F7h, 8Ch,0C8h, 05h, 00h
-		db	 30h, 8Eh,0C0h,0BFh
+		db	 60h, 36h,0B4h, 36h, 08h, 37h	; dispatch words: 3660h, 36B4h, 3708h
+		db	0ECh, 30h, 47h, 37h,0C9h, 37h	; dispatch words: 30ECh, 3747h, 37C9h
+		db	0C3h, 38h, 01h, 3Ch, 4Bh, 3Dh	; dispatch words: 38C3h, 3C01h, 3D4Bh
+		db	 06h, 3Eh, 5Ch, 3Eh, 39h, 40h	; dispatch words: 3E06h, 3E5Ch, 4039h
+		db	 19h, 41h,0B2h, 41h,0C4h, 4Bh	; dispatch words: 4119h, 41B2h, 4BC4h
+		db	 50h, 53h, 51h, 1Eh, 8Ah,0C5h	; push ax/bx/cx/ds; mov al,ch
+		db	0F6h,0E1h, 8Bh,0E8h, 06h, 1Fh	; mul cl; mov bp,ax; push es; pop ds
+		db	 8Bh,0F7h, 8Ch,0C8h, 05h, 00h	; mov si,di; mov ax,cs; add ax,...
+		db	 30h, 8Eh,0C0h,0BFh		; ...3000h; mov es,ax; mov di,...
 
 ; Self-modifying init: clears src_word_a/src_word_b, then sets up CX for render loop
 
 init_data_block:
-		db	 00h, 00h, 2Eh,0C7h, 06h, 01h
-		db	 4Ch, 00h, 00h, 2Eh,0C7h, 06h
-		db	 03h, 4Ch, 00h, 00h, 8Bh,0CDh
-		db	0D1h,0E9h
+		db	 00h, 00h, 2Eh,0C7h, 06h, 01h	; mov word ptr cs:[4C01h],...
+		db	 4Ch, 00h, 00h, 2Eh,0C7h, 06h	; ...0; mov word ptr cs:[4C03h],...
+		db	 03h, 4Ch, 00h, 00h, 8Bh,0CDh	; ...0; mov cx,bp
+		db	0D1h,0E9h			; shr cx,1 -> render_2plane_loop
 
 render_2plane_loop:
 							mov	ax,ds:[bp+si]
@@ -965,20 +965,20 @@ stats_multiply		endp
 ; Patches CS:[4C05h] and CS:[4C01h] then sets cx for render_2plane_loop
 
 render_3plane_stub:
-		db	 00h, 90h, 20h, 06h, 80h, 91h
-		db	 20h, 06h, 00h, 93h, 20h, 06h
-		db	 80h, 94h, 20h, 06h, 00h, 96h
-		db	 18h, 04h,0C0h, 96h, 18h, 04h
-		db	 80h, 97h, 18h, 04h
+		db	 00h, 90h, 20h, 06h, 80h, 91h	; CRTC pairs: (00,90)(20,06)(80,91)
+		db	 20h, 06h, 00h, 93h, 20h, 06h	; CRTC pairs: (20,06)(00,93)(20,06)
+		db	 80h, 94h, 20h, 06h, 00h, 96h	; CRTC pairs: (80,94)(20,06)(00,96)
+		db	 18h, 04h,0C0h, 96h, 18h, 04h	; CRTC pairs: (18,04)(C0,96)(18,04)
+		db	 80h, 97h, 18h, 04h		; CRTC pair: (80,97)(18,04 head)
 xor3_plane2_off	dw	9840h			; Plane B base offset for XOR 3-plane render
-		db	 18h, 04h, 1Eh, 53h, 32h,0E4h
-		db	0BAh,0C0h, 0Ch,0F7h,0E2h, 05h
-		db	 40h,0ABh, 2Eh, 8Eh, 1Eh, 2Ch
-		db	0FFh, 8Bh,0F0h, 8Ch,0C8h, 05h
-		db	 00h, 30h, 8Eh,0C0h,0BFh, 00h
-		db	 00h, 2Eh,0C7h, 06h, 05h, 4Ch
-		db	 00h, 00h, 2Eh,0C7h, 06h, 03h
-		db	 4Ch, 00h, 00h,0B9h, 30h, 03h
+		db	 18h, 04h, 1Eh, 53h, 32h,0E4h	; CRTC pair tail + push ds; push bx; xor ah
+		db	0BAh,0C0h, 0Ch,0F7h,0E2h, 05h	; mov dx,0CC0h; mul dx; add ax,...
+		db	 40h,0ABh, 2Eh, 8Eh, 1Eh, 2Ch	; ...4000h; stosw; mov ds,[cs:gvar]; sub al
+		db	0FFh, 8Bh,0F0h, 8Ch,0C8h, 05h	; ...0FFh; mov si,ax; mov ax,cs; add ax
+		db	 00h, 30h, 8Eh,0C0h,0BFh, 00h	; ...3000h; mov es,ax; mov di,...
+		db	 00h, 2Eh,0C7h, 06h, 05h, 4Ch	; ...0; mov word ptr cs:[4C05h],...
+		db	 00h, 00h, 2Eh,0C7h, 06h, 03h	; ...0; mov word ptr cs:[4C03h],...
+		db	 4Ch, 00h, 00h,0B9h, 30h, 03h	; ...0; mov cx,330h -> plane_xor_loop
 
 plane_xor_loop:
 							mov	ax,xor3_plane2_off[si]
@@ -1001,15 +1001,15 @@ plane_xor_loop:
 ; Self-modifying stub: render_fn_ptr dispatcher init for 1-plane mode
 
 render_1plane_stub:
-		db	 1Eh, 53h, 32h,0E4h
+		db	 1Eh, 53h, 32h,0E4h		; push ds; push bx; xor ah,ah
 face_panel2_anchor	db	0BAh
-		db	 80h, 04h,0F7h,0E2h, 05h,0C0h
-		db	 97h, 2Eh, 8Eh, 1Eh, 2Ch,0FFh
-		db	 8Bh,0F0h, 8Ch,0C8h, 05h, 00h
-		db	 30h, 8Eh,0C0h,0BFh, 00h, 00h
-		db	 2Eh,0C7h, 06h, 05h, 4Ch, 00h
-		db	 00h, 2Eh,0C7h, 06h, 03h, 4Ch
-		db	 00h, 00h,0B9h, 20h, 01h
+		db	 80h, 04h,0F7h,0E2h, 05h,0C0h	; mov dx,0480h; mul dx; add ax,...
+		db	 97h, 2Eh, 8Eh, 1Eh, 2Ch,0FFh	; ...97C0h; mov ds,[cs:gvar]; sub al,FF
+		db	 8Bh,0F0h, 8Ch,0C8h, 05h, 00h	; mov si,ax; mov ax,cs; add ax,...
+		db	 30h, 8Eh,0C0h,0BFh, 00h, 00h	; ...3000h; mov es,ax; mov di,0
+		db	 2Eh,0C7h, 06h, 05h, 4Ch, 00h	; mov word ptr cs:[4C05h],...
+		db	 00h, 2Eh,0C7h, 06h, 03h, 4Ch	; ...0; mov word ptr cs:[4C03h],...
+		db	 00h, 00h,0B9h, 20h, 01h	; ...0; mov cx,120h -> plane_xor2_loop
 
 plane_xor2_loop:
 							mov	ax,ds:cga_plane2_off[si]
@@ -1064,7 +1064,7 @@ clr_plane2_done:
 							loop	tga_clear_row_loop		; Loop if cx > 0
 
 		retn
-		db	 33h,0DBh,0B9h, 19h, 00h
+		db	 33h,0DBh,0B9h, 19h, 00h	; xor bx,bx; mov cx,19h -> char_render_row_loop
 
 char_render_row_loop:
 							push	cx
@@ -1486,67 +1486,68 @@ xtb_bit3_set:
 
 extract_bits		endp
 
-		db	 00h, 00h, 00h, 03h, 80h, 80h
-		db	 85h, 84h, 03h, 03h, 03h, 03h
-		db	 84h, 84h, 84h, 84h, 03h, 03h
-		db	 03h, 03h, 84h, 84h, 84h,0D4h
-		db	 00h, 00h, 00h,0FFh, 00h, 00h
-		db	 55h, 00h, 00h, 00h, 01h,0FFh
-		db	 02h, 02h, 56h, 00h, 00h, 00h
-		db	 00h,0FFh, 40h, 40h, 55h, 00h
-		db	 00h, 00h, 00h,0C0h, 01h, 01h
-		db	 61h, 21h,0C0h,0C0h,0C0h,0C0h
-		db	 21h, 21h, 21h, 21h,0C0h,0C0h
-		db	0C0h,0C0h, 21h, 21h, 21h, 21h
-		db	0C0h,0E0h,0E0h,0E0h, 2Bh, 01h
-		db	 01h, 01h, 03h, 03h, 03h, 03h
-		db	0D4h, 84h, 84h, 84h, 03h, 03h
-		db	 03h, 03h, 84h, 84h, 84h, 84h
-		db	 03h, 02h, 00h, 00h, 84h, 85h
-		db	 80h, 80h,0FFh,0AAh, 00h, 00h
-		db	 00h, 55h, 00h, 00h,0FFh,0A8h
-		db	 00h, 00h, 00h, 56h, 02h, 02h
-		db	0FFh,0FFh, 00h, 00h, 00h, 55h
-		db	 40h, 40h,0C0h,0C0h,0C0h,0C0h
-		db	 2Bh, 21h, 21h, 21h,0C0h,0C0h
-		db	0C0h,0C0h, 21h, 21h, 21h, 21h
-		db	0C0h, 80h, 00h, 00h, 21h, 61h
-		db	 01h, 01h, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 00h, 00h, 00h, 00h
-		db	 07h, 07h, 07h, 07h, 80h, 80h
-		db	 80h, 80h,0E0h,0E0h,0E0h,0E0h
-		db	 01h, 01h, 01h, 01h,0FFh,0FFh
-		db	0FFh,0FFh, 00h, 00h, 00h, 00h
-		db	 01h, 02h, 03h
-		db	20 dup (16h)
-		db	 0Bh, 0Ch, 0Dh, 00h, 0Eh, 0Fh
-		db	66 dup (15h)
-		db	 10h, 0Eh, 13h, 00h, 12h, 11h
-		db	19 dup (17h)
-		db	 0Ah, 09h, 08h, 07h, 00h, 04h
-		db	 06h
-		db	66 dup (14h)
-		db	 05h, 04h, 00h, 18h, 46h, 18h
-		db	 45h, 17h, 44h, 16h, 43h, 15h
-		db	 42h, 14h, 41h, 13h, 40h, 12h
-		db	 3Fh, 11h, 3Eh, 10h, 3Dh, 0Fh
-		db	 3Ch, 0Eh, 3Bh, 0Dh, 3Ah, 0Ch
-		db	 39h, 0Bh, 38h, 0Ah, 37h, 09h
-		db	 36h, 08h, 35h, 07h, 34h, 06h
-		db	 33h, 05h, 32h, 04h, 31h, 03h
-		db	 30h, 02h, 2Fh, 01h, 2Eh, 00h
-		db	 02h, 55h, 03h,0FFh, 01h, 55h
-		db	 1Eh, 2Eh,0A2h, 0Ch, 4Ch, 53h
-		db	 51h, 8Ah,0C5h,0F6h,0E1h, 8Bh
-		db	0E8h, 06h, 1Fh, 8Bh,0F7h, 8Ch
-		db	0C8h, 05h, 00h, 30h, 8Eh,0C0h
-		db	0BFh, 00h, 00h, 2Eh,0C7h, 06h
-		db	 05h, 4Ch, 00h, 00h, 2Eh,0C7h
-		db	 06h,0FFh, 4Bh, 00h, 00h, 2Eh
-		db	0C7h, 06h, 01h, 4Ch, 00h, 00h
-		db	 2Eh,0C7h, 06h, 03h, 4Ch, 00h
-		db	 00h, 8Bh,0CDh,0D1h,0E9h
+		; tga_pixel_mask_tbl: 32 rows x 6B = 4-shade pixel masks (TGA 4bpp packed)
+		db	 00h, 00h, 00h, 03h, 80h, 80h	; mask row  0
+		db	 85h, 84h, 03h, 03h, 03h, 03h	; mask row  1
+		db	 84h, 84h, 84h, 84h, 03h, 03h	; mask row  2
+		db	 03h, 03h, 84h, 84h, 84h,0D4h	; mask row  3
+		db	 00h, 00h, 00h,0FFh, 00h, 00h	; mask row  4
+		db	 55h, 00h, 00h, 00h, 01h,0FFh	; mask row  5
+		db	 02h, 02h, 56h, 00h, 00h, 00h	; mask row  6
+		db	 00h,0FFh, 40h, 40h, 55h, 00h	; mask row  7
+		db	 00h, 00h, 00h,0C0h, 01h, 01h	; mask row  8
+		db	 61h, 21h,0C0h,0C0h,0C0h,0C0h	; mask row  9
+		db	 21h, 21h, 21h, 21h,0C0h,0C0h	; mask row 10
+		db	0C0h,0C0h, 21h, 21h, 21h, 21h	; mask row 11
+		db	0C0h,0E0h,0E0h,0E0h, 2Bh, 01h	; mask row 12
+		db	 01h, 01h, 03h, 03h, 03h, 03h	; mask row 13
+		db	0D4h, 84h, 84h, 84h, 03h, 03h	; mask row 14
+		db	 03h, 03h, 84h, 84h, 84h, 84h	; mask row 15
+		db	 03h, 02h, 00h, 00h, 84h, 85h	; mask row 16
+		db	 80h, 80h,0FFh,0AAh, 00h, 00h	; mask row 17
+		db	 00h, 55h, 00h, 00h,0FFh,0A8h	; mask row 18
+		db	 00h, 00h, 00h, 56h, 02h, 02h	; mask row 19
+		db	0FFh,0FFh, 00h, 00h, 00h, 55h	; mask row 20
+		db	 40h, 40h,0C0h,0C0h,0C0h,0C0h	; mask row 21
+		db	 2Bh, 21h, 21h, 21h,0C0h,0C0h	; mask row 22
+		db	0C0h,0C0h, 21h, 21h, 21h, 21h	; mask row 23
+		db	0C0h, 80h, 00h, 00h, 21h, 61h	; mask row 24
+		db	 01h, 01h, 00h, 00h,0FFh,0FFh	; mask row 25
+		db	 00h, 00h, 00h, 00h,0FFh,0FFh	; mask row 26
+		db	 00h, 00h, 00h, 00h, 00h, 00h	; mask row 27
+		db	 07h, 07h, 07h, 07h, 80h, 80h	; mask row 28
+		db	 80h, 80h,0E0h,0E0h,0E0h,0E0h	; mask row 29
+		db	 01h, 01h, 01h, 01h,0FFh,0FFh	; mask row 30
+		db	0FFh,0FFh, 00h, 00h, 00h, 00h	; mask row 31
+		db	 01h, 02h, 03h			; pal_seq A: indices 1,2,3
+		db	20 dup (16h)			; pal_seq A: 20 entries of value 16h
+		db	 0Bh, 0Ch, 0Dh, 00h, 0Eh, 0Fh	; pal_seq B: indices 0Bh-0Fh
+		db	66 dup (15h)			; pal_seq B: 66 entries of value 15h
+		db	 10h, 0Eh, 13h, 00h, 12h, 11h	; pal_seq C: indices 10h-13h
+		db	19 dup (17h)			; pal_seq C: 19 entries of value 17h
+		db	 0Ah, 09h, 08h, 07h, 00h, 04h	; pal_seq D: indices 04h-0Ah
+		db	 06h				; pal_seq D: index 06h
+		db	66 dup (14h)			; pal_seq D: 66 entries of value 14h
+		db	 05h, 04h, 00h, 18h, 46h, 18h	; final fade-out pair table (reg, val pairs):
+		db	 45h, 17h, 44h, 16h, 43h, 15h	;
+		db	 42h, 14h, 41h, 13h, 40h, 12h	;
+		db	 3Fh, 11h, 3Eh, 10h, 3Dh, 0Fh	;
+		db	 3Ch, 0Eh, 3Bh, 0Dh, 3Ah, 0Ch	;
+		db	 39h, 0Bh, 38h, 0Ah, 37h, 09h	;
+		db	 36h, 08h, 35h, 07h, 34h, 06h	;
+		db	 33h, 05h, 32h, 04h, 31h, 03h	;
+		db	 30h, 02h, 2Fh, 01h, 2Eh, 00h	;
+		db	 02h, 55h, 03h,0FFh, 01h, 55h	; param tag bytes (caller signature)
+		db	 1Eh, 2Eh,0A2h, 0Ch, 4Ch, 53h	; push ds; mov [cs:4C0Ch],al; push bx
+		db	 51h, 8Ah,0C5h,0F6h,0E1h, 8Bh	; push cx; mov al,ch; mul cl; mov bp...
+		db	0E8h, 06h, 1Fh, 8Bh,0F7h, 8Ch	; ...,ax; push es; pop ds; mov si,di; mov ax
+		db	0C8h, 05h, 00h, 30h, 8Eh,0C0h	; ...,cs; add ax,3000h; mov es,ax
+		db	0BFh, 00h, 00h, 2Eh,0C7h, 06h	; mov di,0; mov word ptr cs:[4C05h],...
+		db	 05h, 4Ch, 00h, 00h, 2Eh,0C7h	; ...0; mov word ptr cs:[4BFFh],...
+		db	 06h,0FFh, 4Bh, 00h, 00h, 2Eh	; ...0; cs override
+		db	0C7h, 06h, 01h, 4Ch, 00h, 00h	; mov word ptr cs:[4C01h],0
+		db	 2Eh,0C7h, 06h, 03h, 4Ch, 00h	; mov word ptr cs:[4C03h],...
+		db	 00h, 8Bh,0CDh,0D1h,0E9h	; ...0; mov cx,bp; shr cx,1 -> spr_multiplane_loop
 
 spr_multiplane_loop:
 							push	si
@@ -2243,336 +2244,336 @@ set_lut_ptr:
 		add	ax,41E4h
 		mov	cs:tga_color_lut,ax
 		retn
-		db	 00h, 01h, 04h, 05h, 07h, 07h
-		db	 07h, 07h, 08h, 07h, 04h, 05h
-		db	 07h, 07h, 07h, 07h, 01h, 09h
-		db	 05h, 05h, 09h, 09h, 09h, 09h
-		db	 01h, 09h, 05h, 05h, 09h, 09h
-		db	 09h, 09h, 04h, 05h, 0Ch, 0Dh
-		db	 0Ch, 0Ch, 0Ch, 0Ch, 04h, 0Ch
-		db	 0Ch, 0Dh, 0Ch, 0Ch, 0Ch, 0Ch
-		db	 05h, 05h, 0Dh, 0Dh, 0Dh, 0Dh
-		db	 0Dh, 0Dh, 05h
+		db	 00h, 01h, 04h, 05h, 07h, 07h                      ; tga_color_lut offset 0x000 (6 bytes)
+		db	 07h, 07h, 08h, 07h, 04h, 05h                      ; tga_color_lut offset 0x006 (6 bytes)
+		db	 07h, 07h, 07h, 07h, 01h, 09h                      ; tga_color_lut offset 0x00C (6 bytes)
+		db	 05h, 05h, 09h, 09h, 09h, 09h                      ; tga_color_lut offset 0x012 (6 bytes)
+		db	 01h, 09h, 05h, 05h, 09h, 09h                      ; tga_color_lut offset 0x018 (6 bytes)
+		db	 09h, 09h, 04h, 05h, 0Ch, 0Dh                      ; tga_color_lut offset 0x01E (6 bytes)
+		db	 0Ch, 0Ch, 0Ch, 0Ch, 04h, 0Ch                      ; tga_color_lut offset 0x024 (6 bytes)
+		db	 0Ch, 0Dh, 0Ch, 0Ch, 0Ch, 0Ch                      ; tga_color_lut offset 0x02A (6 bytes)
+		db	 05h, 05h, 0Dh, 0Dh, 0Dh, 0Dh                      ; tga_color_lut offset 0x030 (6 bytes)
+		db	 0Dh, 0Dh, 05h                                     ; tga_color_lut offset 0x036 (3 bytes)
 		db	7 dup (0Dh)
-		db	 07h, 09h, 0Ch, 0Dh, 0Fh, 0Fh
-		db	 0Fh, 0Fh, 07h, 0Fh, 0Ch, 0Dh
-		db	 0Fh, 0Fh, 0Fh, 0Fh, 07h, 09h
-		db	 0Ch, 0Dh, 0Fh, 0Fh, 0Fh, 0Fh
-		db	 07h, 0Fh, 0Ch, 0Dh, 0Fh, 0Fh
-		db	 0Fh, 0Fh, 07h, 09h, 0Ch, 0Dh
-		db	 0Fh, 0Fh, 0Fh, 0Fh, 07h, 0Fh
-		db	 0Ch, 0Dh, 0Fh, 0Fh, 0Fh, 0Fh
-		db	 07h, 09h, 0Ch, 0Dh, 0Fh, 0Fh
-		db	 0Fh, 0Fh, 07h, 0Fh, 0Ch, 0Dh
-		db	 0Fh, 0Fh, 0Fh, 0Fh, 00h, 01h
-		db	 04h, 05h, 07h, 07h, 07h, 07h
-		db	 08h, 07h, 04h, 05h, 07h, 07h
-		db	 07h, 07h, 07h, 09h, 0Ch, 0Dh
-		db	 0Fh, 0Fh, 0Fh, 0Fh, 07h, 0Fh
-		db	 0Ch, 0Dh, 0Fh, 0Fh, 0Fh, 0Fh
-		db	 04h, 05h, 0Ch, 0Dh, 0Ch, 0Ch
-		db	 0Ch, 0Ch, 04h, 0Ch, 0Ch, 0Dh
-		db	 0Ch, 0Ch, 0Ch, 0Ch, 05h, 05h
-		db	 0Dh, 0Dh, 0Dh, 0Dh, 0Dh, 0Dh
-		db	 05h
+		db	 07h, 09h, 0Ch, 0Dh, 0Fh, 0Fh                      ; tga_color_lut offset 0x040 (6 bytes)
+		db	 0Fh, 0Fh, 07h, 0Fh, 0Ch, 0Dh                      ; tga_color_lut offset 0x046 (6 bytes)
+		db	 0Fh, 0Fh, 0Fh, 0Fh, 07h, 09h                      ; tga_color_lut offset 0x04C (6 bytes)
+		db	 0Ch, 0Dh, 0Fh, 0Fh, 0Fh, 0Fh                      ; tga_color_lut offset 0x052 (6 bytes)
+		db	 07h, 0Fh, 0Ch, 0Dh, 0Fh, 0Fh                      ; tga_color_lut offset 0x058 (6 bytes)
+		db	 0Fh, 0Fh, 07h, 09h, 0Ch, 0Dh                      ; tga_color_lut offset 0x05E (6 bytes)
+		db	 0Fh, 0Fh, 0Fh, 0Fh, 07h, 0Fh                      ; tga_color_lut offset 0x064 (6 bytes)
+		db	 0Ch, 0Dh, 0Fh, 0Fh, 0Fh, 0Fh                      ; tga_color_lut offset 0x06A (6 bytes)
+		db	 07h, 09h, 0Ch, 0Dh, 0Fh, 0Fh                      ; tga_color_lut offset 0x070 (6 bytes)
+		db	 0Fh, 0Fh, 07h, 0Fh, 0Ch, 0Dh                      ; tga_color_lut offset 0x076 (6 bytes)
+		db	 0Fh, 0Fh, 0Fh, 0Fh, 00h, 01h                      ; tga_color_lut offset 0x07C (6 bytes)
+		db	 04h, 05h, 07h, 07h, 07h, 07h                      ; tga_color_lut offset 0x082 (6 bytes)
+		db	 08h, 07h, 04h, 05h, 07h, 07h                      ; tga_color_lut offset 0x088 (6 bytes)
+		db	 07h, 07h, 07h, 09h, 0Ch, 0Dh                      ; tga_color_lut offset 0x08E (6 bytes)
+		db	 0Fh, 0Fh, 0Fh, 0Fh, 07h, 0Fh                      ; tga_color_lut offset 0x094 (6 bytes)
+		db	 0Ch, 0Dh, 0Fh, 0Fh, 0Fh, 0Fh                      ; tga_color_lut offset 0x09A (6 bytes)
+		db	 04h, 05h, 0Ch, 0Dh, 0Ch, 0Ch                      ; tga_color_lut offset 0x0A0 (6 bytes)
+		db	 0Ch, 0Ch, 04h, 0Ch, 0Ch, 0Dh                      ; tga_color_lut offset 0x0A6 (6 bytes)
+		db	 0Ch, 0Ch, 0Ch, 0Ch, 05h, 05h                      ; tga_color_lut offset 0x0AC (6 bytes)
+		db	 0Dh, 0Dh, 0Dh, 0Dh, 0Dh, 0Dh                      ; tga_color_lut offset 0x0B2 (6 bytes)
+		db	 05h                                               ; tga_color_lut offset 0x0B8 (1 bytes)
 		db	7 dup (0Dh)
-		db	 07h, 09h, 0Ch, 0Dh, 0Fh, 0Fh
-		db	 0Fh, 0Fh, 07h, 0Fh, 0Ch, 0Dh
-		db	 0Fh, 0Fh, 0Fh, 0Fh, 07h, 09h
-		db	 0Ch, 0Dh, 0Fh, 0Fh, 0Fh, 0Fh
-		db	 07h, 0Fh, 0Ch, 0Dh, 0Fh, 0Fh
-		db	 0Fh, 0Fh, 07h, 09h, 0Ch, 0Dh
-		db	 0Fh, 0Fh, 0Fh, 0Fh, 07h, 0Fh
-		db	 0Ch, 0Dh, 0Fh, 0Fh, 0Fh, 0Fh
-		db	 07h, 09h, 0Ch, 0Dh, 0Fh, 0Fh
-		db	 0Fh, 0Fh, 07h, 0Fh, 0Ch, 0Dh
-		db	 0Fh, 0Fh, 0Fh, 0Fh, 00h, 01h
-		db	 04h, 05h, 00h, 03h, 06h, 07h
-		db	 08h, 07h, 04h, 05h, 02h, 03h
-		db	 06h, 08h, 01h, 09h, 05h, 05h
-		db	 01h, 09h, 02h, 09h, 01h, 09h
-		db	 05h, 05h, 03h, 0Bh, 05h, 09h
-		db	 04h, 05h, 0Ch, 0Dh, 04h, 0Dh
-		db	 06h, 0Ch, 04h, 0Ch, 0Ch, 0Dh
-		db	 0Dh, 0Dh, 06h, 0Ch, 05h, 05h
-		db	 0Dh, 0Dh, 05h, 0Dh, 06h, 0Dh
-		db	 05h, 0Dh, 0Dh, 0Dh, 0Dh, 0Dh
-		db	 06h, 0Dh, 00h, 01h, 04h, 05h
-		db	 00h, 03h, 06h, 07h, 00h, 07h
-		db	 04h, 05h, 02h, 03h, 06h, 08h
-		db	 03h, 09h, 0Dh, 0Dh, 03h, 0Bh
-		db	 0Ah, 0Bh, 03h, 0Ah, 0Dh, 0Dh
-		db	 0Ah, 0Bh, 0Ah, 0Bh, 06h, 02h
-		db	 06h, 06h, 06h, 0Ah, 0Eh, 0Eh
-		db	 06h, 0Eh, 06h, 06h, 0Ah, 0Ah
-		db	 0Eh, 0Eh, 07h, 09h, 0Ch, 0Dh
-		db	 07h, 0Bh, 0Eh, 0Fh, 07h, 0Fh
-		db	 0Ch, 0Dh, 0Ah, 0Bh, 0Eh, 0Fh
-		db	 08h, 01h, 04h, 05h, 00h, 03h
-		db	 06h, 07h, 07h, 07h, 04h, 05h
-		db	 02h, 03h, 06h, 07h, 07h, 09h
-		db	 0Ch, 0Dh, 07h, 0Ah, 0Eh, 0Fh
-		db	 07h, 0Fh, 0Ch, 0Dh, 0Ah, 0Ah
-		db	 0Eh, 0Fh, 04h, 05h, 0Ch, 0Dh
-		db	 04h, 0Dh, 06h, 0Ch, 04h, 0Ch
-		db	 0Ch, 0Dh, 05h, 0Ch, 06h, 0Ch
-		db	 05h, 05h, 0Dh, 0Dh, 05h, 0Dh
-		db	 06h, 0Dh, 05h, 0Dh, 0Dh, 0Dh
-		db	 0Dh, 0Dh, 06h, 0Dh, 02h, 03h
-		db	 0Dh, 0Dh, 02h, 0Ah, 0Ah, 0Ah
-		db	 02h, 0Ah, 05h, 0Dh, 0Dh, 0Ah
-		db	 0Ah, 0Ah, 03h, 09h, 0Dh, 0Dh
-		db	 03h, 0Bh, 0Ah, 0Bh, 03h, 0Ah
-		db	 0Dh, 0Dh, 0Ah, 0Bh, 0Ah, 0Bh
-		db	 06h, 02h, 06h, 06h, 06h, 0Ah
-		db	 0Eh, 0Eh, 06h, 0Eh, 06h, 06h
-		db	 0Ah, 0Ah, 0Eh, 0Eh, 07h, 09h
-		db	 0Ch, 0Dh, 07h, 0Bh, 0Eh, 0Fh
-		db	 07h, 0Fh, 0Ch, 0Dh, 0Ah, 0Bh
-		db	 0Eh, 0Fh, 00h, 04h, 01h, 07h
-		db	 01h, 07h, 00h, 07h
+		db	 07h, 09h, 0Ch, 0Dh, 0Fh, 0Fh                      ; tga_color_lut offset 0x0C0 (6 bytes)
+		db	 0Fh, 0Fh, 07h, 0Fh, 0Ch, 0Dh                      ; tga_color_lut offset 0x0C6 (6 bytes)
+		db	 0Fh, 0Fh, 0Fh, 0Fh, 07h, 09h                      ; tga_color_lut offset 0x0CC (6 bytes)
+		db	 0Ch, 0Dh, 0Fh, 0Fh, 0Fh, 0Fh                      ; tga_color_lut offset 0x0D2 (6 bytes)
+		db	 07h, 0Fh, 0Ch, 0Dh, 0Fh, 0Fh                      ; tga_color_lut offset 0x0D8 (6 bytes)
+		db	 0Fh, 0Fh, 07h, 09h, 0Ch, 0Dh                      ; tga_color_lut offset 0x0DE (6 bytes)
+		db	 0Fh, 0Fh, 0Fh, 0Fh, 07h, 0Fh                      ; tga_color_lut offset 0x0E4 (6 bytes)
+		db	 0Ch, 0Dh, 0Fh, 0Fh, 0Fh, 0Fh                      ; tga_color_lut offset 0x0EA (6 bytes)
+		db	 07h, 09h, 0Ch, 0Dh, 0Fh, 0Fh                      ; tga_color_lut offset 0x0F0 (6 bytes)
+		db	 0Fh, 0Fh, 07h, 0Fh, 0Ch, 0Dh                      ; tga_color_lut offset 0x0F6 (6 bytes)
+		db	 0Fh, 0Fh, 0Fh, 0Fh, 00h, 01h                      ; tga_color_lut offset 0x0FC (6 bytes)
+		db	 04h, 05h, 00h, 03h, 06h, 07h                      ; tga_color_lut offset 0x102 (6 bytes)
+		db	 08h, 07h, 04h, 05h, 02h, 03h                      ; tga_color_lut offset 0x108 (6 bytes)
+		db	 06h, 08h, 01h, 09h, 05h, 05h                      ; tga_color_lut offset 0x10E (6 bytes)
+		db	 01h, 09h, 02h, 09h, 01h, 09h                      ; tga_color_lut offset 0x114 (6 bytes)
+		db	 05h, 05h, 03h, 0Bh, 05h, 09h                      ; tga_color_lut offset 0x11A (6 bytes)
+		db	 04h, 05h, 0Ch, 0Dh, 04h, 0Dh                      ; tga_color_lut offset 0x120 (6 bytes)
+		db	 06h, 0Ch, 04h, 0Ch, 0Ch, 0Dh                      ; tga_color_lut offset 0x126 (6 bytes)
+		db	 0Dh, 0Dh, 06h, 0Ch, 05h, 05h                      ; tga_color_lut offset 0x12C (6 bytes)
+		db	 0Dh, 0Dh, 05h, 0Dh, 06h, 0Dh                      ; tga_color_lut offset 0x132 (6 bytes)
+		db	 05h, 0Dh, 0Dh, 0Dh, 0Dh, 0Dh                      ; tga_color_lut offset 0x138 (6 bytes)
+		db	 06h, 0Dh, 00h, 01h, 04h, 05h                      ; tga_color_lut offset 0x13E (6 bytes)
+		db	 00h, 03h, 06h, 07h, 00h, 07h                      ; tga_color_lut offset 0x144 (6 bytes)
+		db	 04h, 05h, 02h, 03h, 06h, 08h                      ; tga_color_lut offset 0x14A (6 bytes)
+		db	 03h, 09h, 0Dh, 0Dh, 03h, 0Bh                      ; tga_color_lut offset 0x150 (6 bytes)
+		db	 0Ah, 0Bh, 03h, 0Ah, 0Dh, 0Dh                      ; tga_color_lut offset 0x156 (6 bytes)
+		db	 0Ah, 0Bh, 0Ah, 0Bh, 06h, 02h                      ; tga_color_lut offset 0x15C (6 bytes)
+		db	 06h, 06h, 06h, 0Ah, 0Eh, 0Eh                      ; tga_color_lut offset 0x162 (6 bytes)
+		db	 06h, 0Eh, 06h, 06h, 0Ah, 0Ah                      ; tga_color_lut offset 0x168 (6 bytes)
+		db	 0Eh, 0Eh, 07h, 09h, 0Ch, 0Dh                      ; tga_color_lut offset 0x16E (6 bytes)
+		db	 07h, 0Bh, 0Eh, 0Fh, 07h, 0Fh                      ; tga_color_lut offset 0x174 (6 bytes)
+		db	 0Ch, 0Dh, 0Ah, 0Bh, 0Eh, 0Fh                      ; tga_color_lut offset 0x17A (6 bytes)
+		db	 08h, 01h, 04h, 05h, 00h, 03h                      ; tga_color_lut offset 0x180 (6 bytes)
+		db	 06h, 07h, 07h, 07h, 04h, 05h                      ; tga_color_lut offset 0x186 (6 bytes)
+		db	 02h, 03h, 06h, 07h, 07h, 09h                      ; tga_color_lut offset 0x18C (6 bytes)
+		db	 0Ch, 0Dh, 07h, 0Ah, 0Eh, 0Fh                      ; tga_color_lut offset 0x192 (6 bytes)
+		db	 07h, 0Fh, 0Ch, 0Dh, 0Ah, 0Ah                      ; tga_color_lut offset 0x198 (6 bytes)
+		db	 0Eh, 0Fh, 04h, 05h, 0Ch, 0Dh                      ; tga_color_lut offset 0x19E (6 bytes)
+		db	 04h, 0Dh, 06h, 0Ch, 04h, 0Ch                      ; tga_color_lut offset 0x1A4 (6 bytes)
+		db	 0Ch, 0Dh, 05h, 0Ch, 06h, 0Ch                      ; tga_color_lut offset 0x1AA (6 bytes)
+		db	 05h, 05h, 0Dh, 0Dh, 05h, 0Dh                      ; tga_color_lut offset 0x1B0 (6 bytes)
+		db	 06h, 0Dh, 05h, 0Dh, 0Dh, 0Dh                      ; tga_color_lut offset 0x1B6 (6 bytes)
+		db	 0Dh, 0Dh, 06h, 0Dh, 02h, 03h                      ; tga_color_lut offset 0x1BC (6 bytes)
+		db	 0Dh, 0Dh, 02h, 0Ah, 0Ah, 0Ah                      ; tga_color_lut offset 0x1C2 (6 bytes)
+		db	 02h, 0Ah, 05h, 0Dh, 0Dh, 0Ah                      ; tga_color_lut offset 0x1C8 (6 bytes)
+		db	 0Ah, 0Ah, 03h, 09h, 0Dh, 0Dh                      ; tga_color_lut offset 0x1CE (6 bytes)
+		db	 03h, 0Bh, 0Ah, 0Bh, 03h, 0Ah                      ; tga_color_lut offset 0x1D4 (6 bytes)
+		db	 0Dh, 0Dh, 0Ah, 0Bh, 0Ah, 0Bh                      ; tga_color_lut offset 0x1DA (6 bytes)
+		db	 06h, 02h, 06h, 06h, 06h, 0Ah                      ; tga_color_lut offset 0x1E0 (6 bytes)
+		db	 0Eh, 0Eh, 06h, 0Eh, 06h, 06h                      ; tga_color_lut offset 0x1E6 (6 bytes)
+		db	 0Ah, 0Ah, 0Eh, 0Eh, 07h, 09h                      ; tga_color_lut offset 0x1EC (6 bytes)
+		db	 0Ch, 0Dh, 07h, 0Bh, 0Eh, 0Fh                      ; tga_color_lut offset 0x1F2 (6 bytes)
+		db	 07h, 0Fh, 0Ch, 0Dh, 0Ah, 0Bh                      ; tga_color_lut offset 0x1F8 (6 bytes)
+		db	 0Eh, 0Fh, 00h, 04h, 01h, 07h                      ; tga_color_lut offset 0x1FE (6 bytes)
+		db	 01h, 07h, 00h, 07h                                ; tga_color_lut offset 0x204 (4 bytes)
 		db	8 dup (0)
-		db	 04h, 0Ch, 05h, 0Ch, 05h, 0Ch
-		db	 04h, 0Ch, 00h
+		db	 04h, 0Ch, 05h, 0Ch, 05h, 0Ch                      ; tga_color_lut offset 0x210 (6 bytes)
+		db	 04h, 0Ch, 00h                                     ; tga_color_lut offset 0x216 (3 bytes)
 		db	7 dup (0)
-		db	1, 5, 9, 3, 9, 3
-		db	1
-		db	9
+		db	1, 5, 9, 3, 9, 3                                   ; tga_color_lut offset 0x220 (6 bytes)
+		db	1                                                  ; tga_color_lut offset 0x226 (1 bytes)
+		db	9                                                  ; tga_color_lut offset 0x227 (1 bytes)
 		db	8 dup (0)
-		db	 07h, 0Ch, 03h, 0Fh, 03h, 0Fh
-		db	 07h, 0Fh
+		db	 07h, 0Ch, 03h, 0Fh, 03h, 0Fh                      ; tga_color_lut offset 0x230 (6 bytes)
+		db	 07h, 0Fh                                          ; tga_color_lut offset 0x236 (2 bytes)
 		db	8 dup (0)
-		db	1, 5, 9, 3, 9, 3
-		db	1
-		db	9
+		db	1, 5, 9, 3, 9, 3                                   ; tga_color_lut offset 0x240 (6 bytes)
+		db	1                                                  ; tga_color_lut offset 0x246 (1 bytes)
+		db	9                                                  ; tga_color_lut offset 0x247 (1 bytes)
 		db	8 dup (0)
-		db	 07h, 0Ch, 03h, 0Fh, 03h, 0Fh
-		db	 07h, 0Fh
+		db	 07h, 0Ch, 03h, 0Fh, 03h, 0Fh                      ; tga_color_lut offset 0x250 (6 bytes)
+		db	 07h, 0Fh                                          ; tga_color_lut offset 0x256 (2 bytes)
 		db	9 dup (0)
-		db	4, 1, 7, 1, 7, 0
-		db	7
+		db	4, 1, 7, 1, 7, 0                                   ; tga_color_lut offset 0x261 (6 bytes)
+		db	7                                                  ; tga_color_lut offset 0x267 (1 bytes)
 		db	8 dup (0)
-		db	 07h, 0Ch, 03h, 0Fh, 03h, 0Fh
-		db	 07h, 0Fh
+		db	 07h, 0Ch, 03h, 0Fh, 03h, 0Fh                      ; tga_color_lut offset 0x270 (6 bytes)
+		db	 07h, 0Fh                                          ; tga_color_lut offset 0x276 (2 bytes)
 		db	137 dup (0)
-		db	1, 4, 5, 3, 3
+		db	1, 4, 5, 3, 3                                      ; tga_color_lut offset 0x301 (5 bytes)
 face_color_lut	dw	706h			; Face render 3-plane color lookup table
-		db	 08h, 01h, 04h, 05h, 03h, 03h
-		db	 06h, 07h, 01h, 09h, 05h, 05h
-		db	 09h, 09h, 02h, 03h, 01h, 09h
-		db	 05h, 05h, 09h, 09h, 02h, 03h
-		db	 04h, 05h, 0Ch, 0Dh, 0Dh, 0Dh
-		db	 06h, 0Ch, 04h, 05h, 0Ch, 0Dh
-		db	 0Dh, 0Dh, 06h, 0Ch, 05h, 05h
-		db	 0Dh, 0Dh, 0Dh, 0Dh, 0Ch, 0Dh
-		db	 05h, 05h, 0Dh, 0Dh, 0Dh, 0Dh
-		db	 0Ch, 0Dh, 03h, 09h, 0Dh, 0Dh
-		db	 0Bh, 0Bh, 0Ah, 0Bh, 03h, 09h
-		db	 0Dh, 0Dh, 0Bh, 0Bh, 0Ah, 0Bh
-		db	 03h, 09h, 0Dh, 0Dh, 0Bh, 0Bh
-		db	 0Ah, 0Bh, 03h, 09h, 0Dh, 0Dh
-		db	 0Bh, 0Bh, 0Ah, 0Bh, 06h, 02h
-		db	 06h, 0Ch, 0Ah, 0Ah, 0Eh, 0Eh
-		db	 06h, 02h, 06h, 0Ch, 0Ah, 0Ah
-		db	 0Eh, 0Eh, 07h, 03h, 0Ch, 0Dh
-		db	 0Bh, 0Bh, 0Eh, 0Fh, 07h, 03h
-		db	 0Ch, 0Dh, 0Bh, 0Bh, 0Eh, 0Fh
-		db	 08h, 01h, 04h, 05h, 03h, 03h
-		db	 06h, 07h, 08h, 01h, 04h, 05h
-		db	 03h, 03h, 07h, 07h, 01h, 09h
-		db	 05h, 05h, 09h, 09h, 02h, 03h
-		db	 01h, 09h, 05h, 05h, 09h, 09h
-		db	 02h, 03h, 04h, 05h, 0Ch, 0Dh
-		db	 0Dh, 0Dh, 06h, 0Ch, 04h, 05h
-		db	 0Ch, 0Dh, 0Dh, 0Dh, 06h, 0Ch
-		db	 05h, 05h, 0Dh, 0Dh, 0Dh, 0Dh
-		db	 0Ch, 0Dh, 05h, 05h, 0Dh, 0Dh
-		db	 0Dh, 0Dh, 0Ch, 0Dh, 03h, 09h
-		db	 0Dh, 0Dh, 0Bh, 0Bh, 0Ah, 0Bh
-		db	 03h, 09h, 0Dh, 0Dh, 0Bh, 0Bh
-		db	 0Ah, 0Bh, 03h, 09h, 0Dh, 0Dh
-		db	 0Bh, 0Bh, 0Ah, 0Bh, 03h, 09h
-		db	 0Dh, 0Dh, 0Bh, 0Bh, 0Ah, 0Bh
-		db	 06h, 02h, 06h, 0Ch, 0Ah, 0Ah
-		db	 0Eh, 0Eh, 06h, 02h, 06h, 0Ch
-		db	 0Ah, 0Ah, 0Eh, 0Eh, 07h, 03h
-		db	 0Ch, 0Dh, 0Bh, 0Bh, 0Eh, 0Fh
-		db	 07h, 03h, 0Ch, 0Dh, 0Bh, 0Bh
-		db	 0Eh, 0Fh, 00h, 01h, 04h, 03h
-		db	 02h, 03h, 06h, 07h
+		db	 08h, 01h, 04h, 05h, 03h, 03h                      ; face_color_lut offset 0x000 (6 bytes)
+		db	 06h, 07h, 01h, 09h, 05h, 05h                      ; face_color_lut offset 0x006 (6 bytes)
+		db	 09h, 09h, 02h, 03h, 01h, 09h                      ; face_color_lut offset 0x00C (6 bytes)
+		db	 05h, 05h, 09h, 09h, 02h, 03h                      ; face_color_lut offset 0x012 (6 bytes)
+		db	 04h, 05h, 0Ch, 0Dh, 0Dh, 0Dh                      ; face_color_lut offset 0x018 (6 bytes)
+		db	 06h, 0Ch, 04h, 05h, 0Ch, 0Dh                      ; face_color_lut offset 0x01E (6 bytes)
+		db	 0Dh, 0Dh, 06h, 0Ch, 05h, 05h                      ; face_color_lut offset 0x024 (6 bytes)
+		db	 0Dh, 0Dh, 0Dh, 0Dh, 0Ch, 0Dh                      ; face_color_lut offset 0x02A (6 bytes)
+		db	 05h, 05h, 0Dh, 0Dh, 0Dh, 0Dh                      ; face_color_lut offset 0x030 (6 bytes)
+		db	 0Ch, 0Dh, 03h, 09h, 0Dh, 0Dh                      ; face_color_lut offset 0x036 (6 bytes)
+		db	 0Bh, 0Bh, 0Ah, 0Bh, 03h, 09h                      ; face_color_lut offset 0x03C (6 bytes)
+		db	 0Dh, 0Dh, 0Bh, 0Bh, 0Ah, 0Bh                      ; face_color_lut offset 0x042 (6 bytes)
+		db	 03h, 09h, 0Dh, 0Dh, 0Bh, 0Bh                      ; face_color_lut offset 0x048 (6 bytes)
+		db	 0Ah, 0Bh, 03h, 09h, 0Dh, 0Dh                      ; face_color_lut offset 0x04E (6 bytes)
+		db	 0Bh, 0Bh, 0Ah, 0Bh, 06h, 02h                      ; face_color_lut offset 0x054 (6 bytes)
+		db	 06h, 0Ch, 0Ah, 0Ah, 0Eh, 0Eh                      ; face_color_lut offset 0x05A (6 bytes)
+		db	 06h, 02h, 06h, 0Ch, 0Ah, 0Ah                      ; face_color_lut offset 0x060 (6 bytes)
+		db	 0Eh, 0Eh, 07h, 03h, 0Ch, 0Dh                      ; face_color_lut offset 0x066 (6 bytes)
+		db	 0Bh, 0Bh, 0Eh, 0Fh, 07h, 03h                      ; face_color_lut offset 0x06C (6 bytes)
+		db	 0Ch, 0Dh, 0Bh, 0Bh, 0Eh, 0Fh                      ; face_color_lut offset 0x072 (6 bytes)
+		db	 08h, 01h, 04h, 05h, 03h, 03h                      ; face_color_lut offset 0x078 (6 bytes)
+		db	 06h, 07h, 08h, 01h, 04h, 05h                      ; face_color_lut offset 0x07E (6 bytes)
+		db	 03h, 03h, 07h, 07h, 01h, 09h                      ; face_color_lut offset 0x084 (6 bytes)
+		db	 05h, 05h, 09h, 09h, 02h, 03h                      ; face_color_lut offset 0x08A (6 bytes)
+		db	 01h, 09h, 05h, 05h, 09h, 09h                      ; face_color_lut offset 0x090 (6 bytes)
+		db	 02h, 03h, 04h, 05h, 0Ch, 0Dh                      ; face_color_lut offset 0x096 (6 bytes)
+		db	 0Dh, 0Dh, 06h, 0Ch, 04h, 05h                      ; face_color_lut offset 0x09C (6 bytes)
+		db	 0Ch, 0Dh, 0Dh, 0Dh, 06h, 0Ch                      ; face_color_lut offset 0x0A2 (6 bytes)
+		db	 05h, 05h, 0Dh, 0Dh, 0Dh, 0Dh                      ; face_color_lut offset 0x0A8 (6 bytes)
+		db	 0Ch, 0Dh, 05h, 05h, 0Dh, 0Dh                      ; face_color_lut offset 0x0AE (6 bytes)
+		db	 0Dh, 0Dh, 0Ch, 0Dh, 03h, 09h                      ; face_color_lut offset 0x0B4 (6 bytes)
+		db	 0Dh, 0Dh, 0Bh, 0Bh, 0Ah, 0Bh                      ; face_color_lut offset 0x0BA (6 bytes)
+		db	 03h, 09h, 0Dh, 0Dh, 0Bh, 0Bh                      ; face_color_lut offset 0x0C0 (6 bytes)
+		db	 0Ah, 0Bh, 03h, 09h, 0Dh, 0Dh                      ; face_color_lut offset 0x0C6 (6 bytes)
+		db	 0Bh, 0Bh, 0Ah, 0Bh, 03h, 09h                      ; face_color_lut offset 0x0CC (6 bytes)
+		db	 0Dh, 0Dh, 0Bh, 0Bh, 0Ah, 0Bh                      ; face_color_lut offset 0x0D2 (6 bytes)
+		db	 06h, 02h, 06h, 0Ch, 0Ah, 0Ah                      ; face_color_lut offset 0x0D8 (6 bytes)
+		db	 0Eh, 0Eh, 06h, 02h, 06h, 0Ch                      ; face_color_lut offset 0x0DE (6 bytes)
+		db	 0Ah, 0Ah, 0Eh, 0Eh, 07h, 03h                      ; face_color_lut offset 0x0E4 (6 bytes)
+		db	 0Ch, 0Dh, 0Bh, 0Bh, 0Eh, 0Fh                      ; face_color_lut offset 0x0EA (6 bytes)
+		db	 07h, 03h, 0Ch, 0Dh, 0Bh, 0Bh                      ; face_color_lut offset 0x0F0 (6 bytes)
+		db	 0Eh, 0Fh, 00h, 01h, 04h, 03h                      ; face_color_lut offset 0x0F6 (6 bytes)
+		db	 02h, 03h, 06h, 07h                                ; face_color_lut offset 0x0FC (4 bytes)
 		db	8 dup (0)
-		db	1, 9, 5, 9, 2, 9
-		db	2, 3, 0
+		db	1, 9, 5, 9, 2, 9                                   ; face_color_lut offset 0x108 (6 bytes)
+		db	2, 3, 0                                            ; face_color_lut offset 0x10E (3 bytes)
 		db	7 dup (0)
-		db	 04h, 05h, 0Ch, 05h, 08h, 05h
-		db	 06h, 0Ch, 00h
+		db	 04h, 05h, 0Ch, 05h, 08h, 05h                      ; face_color_lut offset 0x118 (6 bytes)
+		db	 06h, 0Ch, 00h                                     ; face_color_lut offset 0x11E (3 bytes)
 		db	7 dup (0)
-		db	 03h, 09h, 05h, 0Bh, 0Ah, 0Bh
-		db	 07h, 0Bh, 00h
+		db	 03h, 09h, 05h, 0Bh, 0Ah, 0Bh                      ; face_color_lut offset 0x128 (6 bytes)
+		db	 07h, 0Bh, 00h                                     ; face_color_lut offset 0x12E (3 bytes)
 		db	7 dup (0)
-		db	 02h, 02h, 08h, 0Ah, 0Ah, 0Ah
-		db	 0Eh, 07h
+		db	 02h, 02h, 08h, 0Ah, 0Ah, 0Ah                      ; face_color_lut offset 0x138 (6 bytes)
+		db	 0Eh, 07h                                          ; face_color_lut offset 0x13E (2 bytes)
 		db	8 dup (0)
-		db	 03h, 09h, 05h, 0Bh, 0Ah, 0Bh
-		db	 07h, 0Bh, 00h
+		db	 03h, 09h, 05h, 0Bh, 0Ah, 0Bh                      ; face_color_lut offset 0x148 (6 bytes)
+		db	 07h, 0Bh, 00h                                     ; face_color_lut offset 0x14E (3 bytes)
 		db	7 dup (0)
-		db	 06h, 02h, 06h, 07h, 0Eh, 07h
-		db	 0Eh, 0Eh
+		db	 06h, 02h, 06h, 07h, 0Eh, 07h                      ; face_color_lut offset 0x158 (6 bytes)
+		db	 0Eh, 0Eh                                          ; face_color_lut offset 0x15E (2 bytes)
 		db	8 dup (0)
-		db	 07h, 03h, 0Ch, 0Bh, 07h, 0Bh
-		db	 0Eh, 0Fh, 00h
+		db	 07h, 03h, 0Ch, 0Bh, 07h, 0Bh                      ; face_color_lut offset 0x168 (6 bytes)
+		db	 0Eh, 0Fh, 00h                                     ; face_color_lut offset 0x16E (3 bytes)
 		db	136 dup (0)
-		db	 01h, 04h, 05h, 00h, 03h, 06h
-		db	 07h, 08h, 07h, 04h, 05h, 02h
-		db	 03h, 06h, 08h, 01h, 09h, 05h
-		db	 05h, 01h, 09h, 02h, 09h, 01h
-		db	 09h, 05h, 05h, 03h, 0Bh, 05h
-		db	 09h, 04h, 05h, 0Ch, 0Dh, 04h
-		db	 08h, 06h, 0Ch, 04h, 0Ch, 0Ch
-		db	 0Dh, 0Dh, 0Dh, 06h, 0Ch, 05h
-		db	 05h, 0Dh, 0Dh, 05h, 08h, 06h
-		db	 0Dh, 05h, 0Dh, 0Dh, 0Dh, 0Dh
-		db	 0Dh, 06h, 0Dh, 00h, 01h, 04h
-		db	 05h, 00h, 03h, 06h, 07h, 00h
-		db	 07h, 04h, 05h, 02h, 03h, 06h
-		db	 08h, 03h, 09h, 08h, 08h, 03h
-		db	 0Bh, 0Ah, 0Bh, 03h, 0Ah, 0Dh
-		db	 0Dh, 0Ah, 0Bh, 0Ah, 0Bh, 06h
-		db	 02h, 06h, 06h, 06h, 0Ah, 0Eh
-		db	 0Eh, 06h, 0Eh, 06h, 06h, 0Ah
-		db	 0Ah, 0Eh, 0Eh, 07h, 09h, 0Ch
-		db	 0Dh, 07h, 0Bh, 0Eh, 0Fh, 07h
-		db	 0Fh, 0Ch, 0Dh, 0Ah, 0Bh, 0Eh
-		db	 0Fh, 08h, 01h, 04h, 05h, 00h
-		db	 03h, 06h, 07h, 07h, 07h, 04h
-		db	 05h, 02h, 03h, 06h, 07h, 07h
-		db	 09h, 0Ch, 0Dh, 07h, 0Ah, 0Eh
-		db	 0Fh, 07h, 0Fh, 0Ch, 0Dh, 0Ah
-		db	 0Ah, 0Eh, 0Fh, 04h, 05h, 0Ch
-		db	 0Dh, 04h, 0Dh, 06h, 0Ch, 04h
-		db	 0Ch, 0Ch, 0Dh, 05h, 0Ch, 06h
-		db	 0Ch, 05h, 05h, 0Dh, 0Dh, 05h
-		db	 0Dh, 06h, 0Dh, 05h, 0Dh, 0Dh
-		db	 0Dh, 0Dh, 0Dh, 06h, 0Dh, 02h
-		db	 03h, 0Dh, 0Dh, 02h, 0Ah, 0Ah
-		db	 0Ah, 02h, 0Ah, 05h, 0Dh, 0Dh
-		db	 0Ah, 0Ah, 0Ah, 03h, 09h, 0Dh
-		db	 0Dh, 03h, 0Bh, 0Ah, 0Bh, 03h
-		db	 0Ah, 0Dh, 0Dh, 0Ah, 0Bh, 0Ah
-		db	 0Bh, 06h, 02h, 06h, 06h, 06h
-		db	 0Ah, 0Eh, 0Eh, 06h, 0Eh, 06h
-		db	 06h, 0Ah, 0Ah, 0Eh, 0Eh, 07h
-		db	 09h, 0Ch, 0Dh, 07h, 0Bh, 0Eh
-		db	 0Fh, 07h, 0Fh, 0Ch, 0Dh, 0Ah
-		db	 0Bh, 0Eh, 0Fh, 00h, 01h, 04h
-		db	 05h, 02h, 03h, 06h, 07h, 08h
-		db	 01h, 04h, 05h, 03h, 03h, 06h
-		db	 07h, 01h, 09h, 05h, 05h, 03h
-		db	 09h, 02h, 03h, 01h, 09h, 05h
-		db	 05h, 09h, 09h, 02h, 03h, 04h
-		db	 05h, 0Ch, 0Dh, 06h, 08h, 06h
-		db	 0Ch, 04h, 05h, 0Ch, 0Dh, 08h
-		db	 08h, 06h, 0Ch, 05h, 05h, 0Dh
-		db	 0Dh, 08h, 08h, 0Ch, 0Dh, 05h
-		db	 05h, 0Dh, 0Dh, 08h, 08h, 0Ch
-		db	 0Dh, 02h, 03h, 06h, 08h, 0Ah
-		db	 0Bh, 0Eh, 0Ah, 02h, 03h, 06h
-		db	 08h, 0Ah, 0Bh, 0Eh, 0Ah, 03h
-		db	 09h, 08h, 08h, 0Bh, 0Bh, 0Ah
-		db	 0Bh, 03h, 09h, 08h, 08h, 0Bh
-		db	 0Bh, 0Ah, 0Bh, 06h, 02h, 06h
-		db	 0Ch, 0Eh, 0Ah, 0Eh, 0Eh, 06h
-		db	 02h, 06h, 0Ch, 0Ah, 0Ah, 0Eh
-		db	 0Eh, 07h, 03h, 0Ch, 0Dh, 0Ah
-		db	 0Bh, 0Eh, 0Fh, 07h, 03h, 0Ch
-		db	 0Dh, 0Bh, 0Bh, 0Eh, 0Fh, 08h
-		db	 01h, 04h, 05h, 02h, 03h, 06h
-		db	 07h, 08h, 01h, 04h, 05h, 03h
-		db	 03h, 07h, 07h, 01h, 09h, 05h
-		db	 05h, 03h, 09h, 02h, 03h, 01h
-		db	 09h, 05h, 05h, 09h, 09h, 02h
-		db	 03h, 04h, 05h, 0Ch, 0Dh, 06h
-		db	 08h, 06h, 0Ch, 04h, 05h, 0Ch
-		db	 0Dh, 08h, 08h, 06h, 0Ch, 05h
-		db	 05h, 0Dh, 0Dh, 08h, 08h, 0Ch
-		db	 0Dh, 05h, 05h, 0Dh, 0Dh, 08h
-		db	 08h, 0Ch, 0Dh, 03h, 09h, 08h
-		db	 08h, 0Ah, 0Bh, 0Ah, 0Bh, 03h
-		db	 09h, 08h, 08h, 0Bh, 0Bh, 0Ah
-		db	 0Bh, 03h, 09h, 08h, 08h, 0Bh
-		db	 0Bh, 0Ah, 0Bh, 03h, 09h, 08h
-		db	 08h, 0Bh, 0Bh, 0Ah, 0Bh, 06h
-		db	 02h, 06h, 0Ch, 0Eh, 0Ah, 0Eh
-		db	 0Eh, 06h, 02h, 06h, 0Ch, 0Ah
-		db	 0Ah, 0Eh, 0Eh, 07h, 03h, 0Ch
-		db	 0Dh, 0Ah, 0Bh, 0Eh, 0Fh, 07h
-		db	 03h, 0Ch, 0Dh, 0Bh, 0Bh, 0Eh
-		db	 0Fh, 00h, 01h, 04h, 02h, 00h
-		db	 03h, 06h, 07h, 08h, 07h, 04h
-		db	 05h, 02h, 03h, 06h, 08h, 01h
-		db	 09h, 05h, 03h, 01h, 09h, 02h
-		db	 09h, 01h, 09h, 05h, 05h, 03h
-		db	 0Bh, 05h, 09h, 04h, 05h, 0Ch
-		db	 06h, 04h, 08h, 06h, 0Ch, 04h
-		db	 0Ch, 0Ch, 08h, 0Dh, 0Dh, 06h
-		db	 0Ch, 02h, 03h, 06h, 0Ah, 02h
-		db	 0Bh, 0Eh, 0Ah, 02h, 03h, 06h
-		db	 08h, 0Ah, 0Bh, 0Eh, 0Ah, 00h
-		db	 01h, 04h, 02h, 00h, 03h, 06h
-		db	 07h, 00h, 07h, 04h, 05h, 02h
-		db	 03h, 06h, 08h, 03h, 09h, 08h
-		db	 0Bh, 03h, 0Bh, 0Ah, 0Bh, 03h
-		db	 0Ah, 08h, 08h, 0Ah, 0Bh, 0Ah
-		db	 0Bh, 06h, 02h, 06h, 0Eh, 06h
-		db	 0Ah, 0Eh, 0Eh, 06h, 0Eh, 06h
-		db	 06h, 0Ah, 0Ah, 0Eh, 0Eh, 07h
-		db	 09h, 0Ch, 0Ah, 07h, 0Bh, 0Eh
-		db	 0Fh, 07h, 0Fh, 0Ch, 0Dh, 0Ah
-		db	 0Bh, 0Eh, 0Fh, 08h, 01h, 04h
-		db	 02h, 00h, 03h, 06h, 07h, 07h
-		db	 07h, 04h, 05h, 02h, 03h, 06h
-		db	 07h, 07h, 09h, 0Ch, 03h, 07h
-		db	 0Ah, 0Eh, 0Fh, 07h, 0Fh, 0Ch
-		db	 0Dh, 0Ah, 0Ah, 0Eh, 0Fh, 04h
-		db	 05h, 0Ch, 06h, 04h, 08h, 06h
-		db	 0Ch, 04h, 0Ch, 0Ch, 08h, 05h
-		db	 0Ch, 06h, 0Ch, 05h, 05h, 0Dh
-		db	 08h, 05h, 08h, 06h, 0Dh, 05h
-		db	 0Dh, 0Dh, 08h, 0Dh, 0Dh, 06h
-		db	 0Dh, 02h, 03h, 0Dh, 0Ah, 02h
-		db	 0Ah, 0Ah, 0Ah, 02h, 0Ah, 05h
-		db	 0Dh, 0Dh, 0Ah, 0Ah, 0Ah, 03h
-		db	 09h, 08h, 0Bh, 03h, 0Bh, 0Ah
-		db	 0Bh, 03h, 0Ah, 08h, 08h, 0Ah
-		db	 0Bh, 0Ah, 0Bh, 06h, 02h, 06h
-		db	 0Eh, 06h, 0Ah, 0Eh, 0Eh, 06h
-		db	 0Eh, 06h, 06h, 0Ah, 0Ah, 0Eh
-		db	 0Eh, 07h, 09h, 0Ch, 0Ah, 07h
-		db	 0Bh, 0Eh, 0Fh, 07h, 0Fh, 0Ch
-		db	 0Dh, 0Ah, 0Bh, 0Eh, 0Fh, 00h
-		db	 01h, 04h, 04h, 02h, 04h, 06h
-		db	 07h
+		db	 01h, 04h, 05h, 00h, 03h, 06h                      ; face_color_lut offset 0x1F9 (6 bytes)
+		db	 07h, 08h, 07h, 04h, 05h, 02h                      ; face_color_lut offset 0x1FF (6 bytes)
+		db	 03h, 06h, 08h, 01h, 09h, 05h                      ; face_color_lut offset 0x205 (6 bytes)
+		db	 05h, 01h, 09h, 02h, 09h, 01h                      ; face_color_lut offset 0x20B (6 bytes)
+		db	 09h, 05h, 05h, 03h, 0Bh, 05h                      ; face_color_lut offset 0x211 (6 bytes)
+		db	 09h, 04h, 05h, 0Ch, 0Dh, 04h                      ; face_color_lut offset 0x217 (6 bytes)
+		db	 08h, 06h, 0Ch, 04h, 0Ch, 0Ch                      ; face_color_lut offset 0x21D (6 bytes)
+		db	 0Dh, 0Dh, 0Dh, 06h, 0Ch, 05h                      ; face_color_lut offset 0x223 (6 bytes)
+		db	 05h, 0Dh, 0Dh, 05h, 08h, 06h                      ; face_color_lut offset 0x229 (6 bytes)
+		db	 0Dh, 05h, 0Dh, 0Dh, 0Dh, 0Dh                      ; face_color_lut offset 0x22F (6 bytes)
+		db	 0Dh, 06h, 0Dh, 00h, 01h, 04h                      ; face_color_lut offset 0x235 (6 bytes)
+		db	 05h, 00h, 03h, 06h, 07h, 00h                      ; face_color_lut offset 0x23B (6 bytes)
+		db	 07h, 04h, 05h, 02h, 03h, 06h                      ; face_color_lut offset 0x241 (6 bytes)
+		db	 08h, 03h, 09h, 08h, 08h, 03h                      ; face_color_lut offset 0x247 (6 bytes)
+		db	 0Bh, 0Ah, 0Bh, 03h, 0Ah, 0Dh                      ; face_color_lut offset 0x24D (6 bytes)
+		db	 0Dh, 0Ah, 0Bh, 0Ah, 0Bh, 06h                      ; face_color_lut offset 0x253 (6 bytes)
+		db	 02h, 06h, 06h, 06h, 0Ah, 0Eh                      ; face_color_lut offset 0x259 (6 bytes)
+		db	 0Eh, 06h, 0Eh, 06h, 06h, 0Ah                      ; face_color_lut offset 0x25F (6 bytes)
+		db	 0Ah, 0Eh, 0Eh, 07h, 09h, 0Ch                      ; face_color_lut offset 0x265 (6 bytes)
+		db	 0Dh, 07h, 0Bh, 0Eh, 0Fh, 07h                      ; face_color_lut offset 0x26B (6 bytes)
+		db	 0Fh, 0Ch, 0Dh, 0Ah, 0Bh, 0Eh                      ; face_color_lut offset 0x271 (6 bytes)
+		db	 0Fh, 08h, 01h, 04h, 05h, 00h                      ; face_color_lut offset 0x277 (6 bytes)
+		db	 03h, 06h, 07h, 07h, 07h, 04h                      ; face_color_lut offset 0x27D (6 bytes)
+		db	 05h, 02h, 03h, 06h, 07h, 07h                      ; face_color_lut offset 0x283 (6 bytes)
+		db	 09h, 0Ch, 0Dh, 07h, 0Ah, 0Eh                      ; face_color_lut offset 0x289 (6 bytes)
+		db	 0Fh, 07h, 0Fh, 0Ch, 0Dh, 0Ah                      ; face_color_lut offset 0x28F (6 bytes)
+		db	 0Ah, 0Eh, 0Fh, 04h, 05h, 0Ch                      ; face_color_lut offset 0x295 (6 bytes)
+		db	 0Dh, 04h, 0Dh, 06h, 0Ch, 04h                      ; face_color_lut offset 0x29B (6 bytes)
+		db	 0Ch, 0Ch, 0Dh, 05h, 0Ch, 06h                      ; face_color_lut offset 0x2A1 (6 bytes)
+		db	 0Ch, 05h, 05h, 0Dh, 0Dh, 05h                      ; face_color_lut offset 0x2A7 (6 bytes)
+		db	 0Dh, 06h, 0Dh, 05h, 0Dh, 0Dh                      ; face_color_lut offset 0x2AD (6 bytes)
+		db	 0Dh, 0Dh, 0Dh, 06h, 0Dh, 02h                      ; face_color_lut offset 0x2B3 (6 bytes)
+		db	 03h, 0Dh, 0Dh, 02h, 0Ah, 0Ah                      ; face_color_lut offset 0x2B9 (6 bytes)
+		db	 0Ah, 02h, 0Ah, 05h, 0Dh, 0Dh                      ; face_color_lut offset 0x2BF (6 bytes)
+		db	 0Ah, 0Ah, 0Ah, 03h, 09h, 0Dh                      ; face_color_lut offset 0x2C5 (6 bytes)
+		db	 0Dh, 03h, 0Bh, 0Ah, 0Bh, 03h                      ; face_color_lut offset 0x2CB (6 bytes)
+		db	 0Ah, 0Dh, 0Dh, 0Ah, 0Bh, 0Ah                      ; face_color_lut offset 0x2D1 (6 bytes)
+		db	 0Bh, 06h, 02h, 06h, 06h, 06h                      ; face_color_lut offset 0x2D7 (6 bytes)
+		db	 0Ah, 0Eh, 0Eh, 06h, 0Eh, 06h                      ; face_color_lut offset 0x2DD (6 bytes)
+		db	 06h, 0Ah, 0Ah, 0Eh, 0Eh, 07h                      ; face_color_lut offset 0x2E3 (6 bytes)
+		db	 09h, 0Ch, 0Dh, 07h, 0Bh, 0Eh                      ; face_color_lut offset 0x2E9 (6 bytes)
+		db	 0Fh, 07h, 0Fh, 0Ch, 0Dh, 0Ah                      ; face_color_lut offset 0x2EF (6 bytes)
+		db	 0Bh, 0Eh, 0Fh, 00h, 01h, 04h                      ; face_color_lut offset 0x2F5 (6 bytes)
+		db	 05h, 02h, 03h, 06h, 07h, 08h                      ; face_color_lut offset 0x2FB (6 bytes)
+		db	 01h, 04h, 05h, 03h, 03h, 06h                      ; face_color_lut offset 0x301 (6 bytes)
+		db	 07h, 01h, 09h, 05h, 05h, 03h                      ; face_color_lut offset 0x307 (6 bytes)
+		db	 09h, 02h, 03h, 01h, 09h, 05h                      ; face_color_lut offset 0x30D (6 bytes)
+		db	 05h, 09h, 09h, 02h, 03h, 04h                      ; face_color_lut offset 0x313 (6 bytes)
+		db	 05h, 0Ch, 0Dh, 06h, 08h, 06h                      ; face_color_lut offset 0x319 (6 bytes)
+		db	 0Ch, 04h, 05h, 0Ch, 0Dh, 08h                      ; face_color_lut offset 0x31F (6 bytes)
+		db	 08h, 06h, 0Ch, 05h, 05h, 0Dh                      ; face_color_lut offset 0x325 (6 bytes)
+		db	 0Dh, 08h, 08h, 0Ch, 0Dh, 05h                      ; face_color_lut offset 0x32B (6 bytes)
+		db	 05h, 0Dh, 0Dh, 08h, 08h, 0Ch                      ; face_color_lut offset 0x331 (6 bytes)
+		db	 0Dh, 02h, 03h, 06h, 08h, 0Ah                      ; face_color_lut offset 0x337 (6 bytes)
+		db	 0Bh, 0Eh, 0Ah, 02h, 03h, 06h                      ; face_color_lut offset 0x33D (6 bytes)
+		db	 08h, 0Ah, 0Bh, 0Eh, 0Ah, 03h                      ; face_color_lut offset 0x343 (6 bytes)
+		db	 09h, 08h, 08h, 0Bh, 0Bh, 0Ah                      ; face_color_lut offset 0x349 (6 bytes)
+		db	 0Bh, 03h, 09h, 08h, 08h, 0Bh                      ; face_color_lut offset 0x34F (6 bytes)
+		db	 0Bh, 0Ah, 0Bh, 06h, 02h, 06h                      ; face_color_lut offset 0x355 (6 bytes)
+		db	 0Ch, 0Eh, 0Ah, 0Eh, 0Eh, 06h                      ; face_color_lut offset 0x35B (6 bytes)
+		db	 02h, 06h, 0Ch, 0Ah, 0Ah, 0Eh                      ; face_color_lut offset 0x361 (6 bytes)
+		db	 0Eh, 07h, 03h, 0Ch, 0Dh, 0Ah                      ; face_color_lut offset 0x367 (6 bytes)
+		db	 0Bh, 0Eh, 0Fh, 07h, 03h, 0Ch                      ; face_color_lut offset 0x36D (6 bytes)
+		db	 0Dh, 0Bh, 0Bh, 0Eh, 0Fh, 08h                      ; face_color_lut offset 0x373 (6 bytes)
+		db	 01h, 04h, 05h, 02h, 03h, 06h                      ; face_color_lut offset 0x379 (6 bytes)
+		db	 07h, 08h, 01h, 04h, 05h, 03h                      ; face_color_lut offset 0x37F (6 bytes)
+		db	 03h, 07h, 07h, 01h, 09h, 05h                      ; face_color_lut offset 0x385 (6 bytes)
+		db	 05h, 03h, 09h, 02h, 03h, 01h                      ; face_color_lut offset 0x38B (6 bytes)
+		db	 09h, 05h, 05h, 09h, 09h, 02h                      ; face_color_lut offset 0x391 (6 bytes)
+		db	 03h, 04h, 05h, 0Ch, 0Dh, 06h                      ; face_color_lut offset 0x397 (6 bytes)
+		db	 08h, 06h, 0Ch, 04h, 05h, 0Ch                      ; face_color_lut offset 0x39D (6 bytes)
+		db	 0Dh, 08h, 08h, 06h, 0Ch, 05h                      ; face_color_lut offset 0x3A3 (6 bytes)
+		db	 05h, 0Dh, 0Dh, 08h, 08h, 0Ch                      ; face_color_lut offset 0x3A9 (6 bytes)
+		db	 0Dh, 05h, 05h, 0Dh, 0Dh, 08h                      ; face_color_lut offset 0x3AF (6 bytes)
+		db	 08h, 0Ch, 0Dh, 03h, 09h, 08h                      ; face_color_lut offset 0x3B5 (6 bytes)
+		db	 08h, 0Ah, 0Bh, 0Ah, 0Bh, 03h                      ; face_color_lut offset 0x3BB (6 bytes)
+		db	 09h, 08h, 08h, 0Bh, 0Bh, 0Ah                      ; face_color_lut offset 0x3C1 (6 bytes)
+		db	 0Bh, 03h, 09h, 08h, 08h, 0Bh                      ; face_color_lut offset 0x3C7 (6 bytes)
+		db	 0Bh, 0Ah, 0Bh, 03h, 09h, 08h                      ; face_color_lut offset 0x3CD (6 bytes)
+		db	 08h, 0Bh, 0Bh, 0Ah, 0Bh, 06h                      ; face_color_lut offset 0x3D3 (6 bytes)
+		db	 02h, 06h, 0Ch, 0Eh, 0Ah, 0Eh                      ; face_color_lut offset 0x3D9 (6 bytes)
+		db	 0Eh, 06h, 02h, 06h, 0Ch, 0Ah                      ; face_color_lut offset 0x3DF (6 bytes)
+		db	 0Ah, 0Eh, 0Eh, 07h, 03h, 0Ch                      ; face_color_lut offset 0x3E5 (6 bytes)
+		db	 0Dh, 0Ah, 0Bh, 0Eh, 0Fh, 07h                      ; face_color_lut offset 0x3EB (6 bytes)
+		db	 03h, 0Ch, 0Dh, 0Bh, 0Bh, 0Eh                      ; face_color_lut offset 0x3F1 (6 bytes)
+		db	 0Fh, 00h, 01h, 04h, 02h, 00h                      ; face_color_lut offset 0x3F7 (6 bytes)
+		db	 03h, 06h, 07h, 08h, 07h, 04h                      ; face_color_lut offset 0x3FD (6 bytes)
+		db	 05h, 02h, 03h, 06h, 08h, 01h                      ; face_color_lut offset 0x403 (6 bytes)
+		db	 09h, 05h, 03h, 01h, 09h, 02h                      ; face_color_lut offset 0x409 (6 bytes)
+		db	 09h, 01h, 09h, 05h, 05h, 03h                      ; face_color_lut offset 0x40F (6 bytes)
+		db	 0Bh, 05h, 09h, 04h, 05h, 0Ch                      ; face_color_lut offset 0x415 (6 bytes)
+		db	 06h, 04h, 08h, 06h, 0Ch, 04h                      ; face_color_lut offset 0x41B (6 bytes)
+		db	 0Ch, 0Ch, 08h, 0Dh, 0Dh, 06h                      ; face_color_lut offset 0x421 (6 bytes)
+		db	 0Ch, 02h, 03h, 06h, 0Ah, 02h                      ; face_color_lut offset 0x427 (6 bytes)
+		db	 0Bh, 0Eh, 0Ah, 02h, 03h, 06h                      ; face_color_lut offset 0x42D (6 bytes)
+		db	 08h, 0Ah, 0Bh, 0Eh, 0Ah, 00h                      ; face_color_lut offset 0x433 (6 bytes)
+		db	 01h, 04h, 02h, 00h, 03h, 06h                      ; face_color_lut offset 0x439 (6 bytes)
+		db	 07h, 00h, 07h, 04h, 05h, 02h                      ; face_color_lut offset 0x43F (6 bytes)
+		db	 03h, 06h, 08h, 03h, 09h, 08h                      ; face_color_lut offset 0x445 (6 bytes)
+		db	 0Bh, 03h, 0Bh, 0Ah, 0Bh, 03h                      ; face_color_lut offset 0x44B (6 bytes)
+		db	 0Ah, 08h, 08h, 0Ah, 0Bh, 0Ah                      ; face_color_lut offset 0x451 (6 bytes)
+		db	 0Bh, 06h, 02h, 06h, 0Eh, 06h                      ; face_color_lut offset 0x457 (6 bytes)
+		db	 0Ah, 0Eh, 0Eh, 06h, 0Eh, 06h                      ; face_color_lut offset 0x45D (6 bytes)
+		db	 06h, 0Ah, 0Ah, 0Eh, 0Eh, 07h                      ; face_color_lut offset 0x463 (6 bytes)
+		db	 09h, 0Ch, 0Ah, 07h, 0Bh, 0Eh                      ; face_color_lut offset 0x469 (6 bytes)
+		db	 0Fh, 07h, 0Fh, 0Ch, 0Dh, 0Ah                      ; face_color_lut offset 0x46F (6 bytes)
+		db	 0Bh, 0Eh, 0Fh, 08h, 01h, 04h                      ; face_color_lut offset 0x475 (6 bytes)
+		db	 02h, 00h, 03h, 06h, 07h, 07h                      ; face_color_lut offset 0x47B (6 bytes)
+		db	 07h, 04h, 05h, 02h, 03h, 06h                      ; face_color_lut offset 0x481 (6 bytes)
+		db	 07h, 07h, 09h, 0Ch, 03h, 07h                      ; face_color_lut offset 0x487 (6 bytes)
+		db	 0Ah, 0Eh, 0Fh, 07h, 0Fh, 0Ch                      ; face_color_lut offset 0x48D (6 bytes)
+		db	 0Dh, 0Ah, 0Ah, 0Eh, 0Fh, 04h                      ; face_color_lut offset 0x493 (6 bytes)
+		db	 05h, 0Ch, 06h, 04h, 08h, 06h                      ; face_color_lut offset 0x499 (6 bytes)
+		db	 0Ch, 04h, 0Ch, 0Ch, 08h, 05h                      ; face_color_lut offset 0x49F (6 bytes)
+		db	 0Ch, 06h, 0Ch, 05h, 05h, 0Dh                      ; face_color_lut offset 0x4A5 (6 bytes)
+		db	 08h, 05h, 08h, 06h, 0Dh, 05h                      ; face_color_lut offset 0x4AB (6 bytes)
+		db	 0Dh, 0Dh, 08h, 0Dh, 0Dh, 06h                      ; face_color_lut offset 0x4B1 (6 bytes)
+		db	 0Dh, 02h, 03h, 0Dh, 0Ah, 02h                      ; face_color_lut offset 0x4B7 (6 bytes)
+		db	 0Ah, 0Ah, 0Ah, 02h, 0Ah, 05h                      ; face_color_lut offset 0x4BD (6 bytes)
+		db	 0Dh, 0Dh, 0Ah, 0Ah, 0Ah, 03h                      ; face_color_lut offset 0x4C3 (6 bytes)
+		db	 09h, 08h, 0Bh, 03h, 0Bh, 0Ah                      ; face_color_lut offset 0x4C9 (6 bytes)
+		db	 0Bh, 03h, 0Ah, 08h, 08h, 0Ah                      ; face_color_lut offset 0x4CF (6 bytes)
+		db	 0Bh, 0Ah, 0Bh, 06h, 02h, 06h                      ; face_color_lut offset 0x4D5 (6 bytes)
+		db	 0Eh, 06h, 0Ah, 0Eh, 0Eh, 06h                      ; face_color_lut offset 0x4DB (6 bytes)
+		db	 0Eh, 06h, 06h, 0Ah, 0Ah, 0Eh                      ; face_color_lut offset 0x4E1 (6 bytes)
+		db	 0Eh, 07h, 09h, 0Ch, 0Ah, 07h                      ; face_color_lut offset 0x4E7 (6 bytes)
+		db	 0Bh, 0Eh, 0Fh, 07h, 0Fh, 0Ch                      ; face_color_lut offset 0x4ED (6 bytes)
+		db	 0Dh, 0Ah, 0Bh, 0Eh, 0Fh, 00h                      ; face_color_lut offset 0x4F3 (6 bytes)
+		db	 01h, 04h, 04h, 02h, 04h, 06h                      ; face_color_lut offset 0x4F9 (6 bytes)
+		db	 07h                                               ; face_color_lut offset 0x4FF (1 bytes)
 		db	8 dup (0)
-		db	 01h, 09h, 05h, 0Ch, 02h, 0Ch
-		db	 02h, 03h, 00h
+		db	 01h, 09h, 05h, 0Ch, 02h, 0Ch                      ; face_color_lut offset 0x508 (6 bytes)
+		db	 02h, 03h, 00h                                     ; face_color_lut offset 0x50E (3 bytes)
 		db	7 dup (0)
-		db	 04h, 05h, 0Ch, 05h, 08h, 05h
-		db	 06h, 0Ch, 00h
+		db	 04h, 05h, 0Ch, 05h, 08h, 05h                      ; face_color_lut offset 0x518 (6 bytes)
+		db	 06h, 0Ch, 00h                                     ; face_color_lut offset 0x51E (3 bytes)
 		db	7 dup (0)
-		db	 04h, 0Ch, 05h, 0Ch, 0Dh, 0Ch
-		db	 07h, 0Ch, 00h
+		db	 04h, 0Ch, 05h, 0Ch, 0Dh, 0Ch                      ; face_color_lut offset 0x528 (6 bytes)
+		db	 07h, 0Ch, 00h                                     ; face_color_lut offset 0x52E (3 bytes)
 		db	7 dup (0)
-		db	 02h, 02h, 08h, 0Dh, 0Ah, 0Dh
-		db	 0Eh, 07h
+		db	 02h, 02h, 08h, 0Dh, 0Ah, 0Dh                      ; face_color_lut offset 0x538 (6 bytes)
+		db	 0Eh, 07h                                          ; face_color_lut offset 0x53E (2 bytes)
 		db	8 dup (0)
-		db	 04h, 0Ch, 05h, 0Ch, 0Dh, 0Ch
-		db	 07h, 0Ch, 00h
+		db	 04h, 0Ch, 05h, 0Ch, 0Dh, 0Ch                      ; face_color_lut offset 0x548 (6 bytes)
+		db	 07h, 0Ch, 00h                                     ; face_color_lut offset 0x54E (3 bytes)
 		db	7 dup (0)
-		db	 06h, 02h, 06h, 07h, 0Eh, 07h
-		db	 0Eh, 0Eh
+		db	 06h, 02h, 06h, 07h, 0Eh, 07h                      ; face_color_lut offset 0x558 (6 bytes)
+		db	 0Eh, 0Eh                                          ; face_color_lut offset 0x55E (2 bytes)
 		db	8 dup (0)
-		db	 07h, 03h, 0Ch, 0Ch, 07h, 0Ch
-		db	 0Eh, 0Fh
+		db	 07h, 03h, 0Ch, 0Ch, 07h, 0Ch                      ; face_color_lut offset 0x568 (6 bytes)
+		db	 0Eh, 0Fh                                          ; face_color_lut offset 0x56E (2 bytes)
 		db	136 dup (0)
 
 stats_process_loop_4		proc	near
@@ -2684,8 +2685,8 @@ palette_xlat_entry:
 		mov	ah,cs:tga_palette_xlat[bx]
 		pop	bx
 		jmp	word ptr cs:palette_xlat_jmp
-		db	0, 5, 2, 7, 3, 4
-		db	6, 1
+		db	0, 5, 2, 7, 3, 4                                   ; face_color_lut offset 0x5F8 (6 bytes)
+		db	6, 1                                               ; face_color_lut offset 0x5FE (2 bytes)
 
 extract_bits_2		proc	near
 		add	bh,bh
@@ -2706,8 +2707,8 @@ extract_bits_2		proc	near
 
 extract_bits_2		endp
 
-		db	0C3h
-		db	1057 dup (0)
+		db	0C3h			; trailing retn opcode (sentinel byte)
+		db	1057 dup (0)		; zero pad to palette_xlat_jmp
 palette_xlat_jmp		dw	0
 		db	44 dup (0)
 plane3_merge_buf		db	0			; Data table (indexed access)

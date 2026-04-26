@@ -2004,17 +2004,17 @@ encode_bitplanes_cga		endp
 
 		; color_lut (64 bytes): 3-bitplane index -> CGA color code (0-3)
 		; Indexed as [plane2_bit<<3 | plane1_bit<<2 | plane0_bit<<1 | plane_pair]
-		db	0, 1, 0, 1, 1, 0
-		db	3, 2, 1, 3, 2, 3
-		db	1, 3, 3, 2, 2, 2
-		db	2, 1, 1, 2, 2, 2
-		db	1, 3, 1, 3, 1, 1
-		db	2, 2, 1, 1, 1, 1
-		db	1, 1, 3, 2, 0, 3
-		db	2, 1, 1, 1, 3, 2
-		db	3, 3, 2, 2, 3, 3
-		db	3, 2, 1, 2, 2, 2
-		db	2, 2, 2, 2
+		db	0, 1, 0, 1, 1, 0	; color_lut[ 0..5]
+		db	3, 2, 1, 3, 2, 3	; color_lut[ 6..11]
+		db	1, 3, 3, 2, 2, 2	; color_lut[12..17]
+		db	2, 1, 1, 2, 2, 2	; color_lut[18..23]
+		db	1, 3, 1, 3, 1, 1	; color_lut[24..29]
+		db	2, 2, 1, 1, 1, 1	; color_lut[30..35]
+		db	1, 1, 3, 2, 0, 3	; color_lut[36..41]
+		db	2, 1, 1, 1, 3, 2	; color_lut[42..47]
+		db	3, 3, 2, 2, 3, 3	; color_lut[48..53]
+		db	3, 2, 1, 2, 2, 2	; color_lut[54..59]
+		db	2, 2, 2, 2		; color_lut[60..63]
 
 encode_mask_cga		proc	near
 		mov	cx,8

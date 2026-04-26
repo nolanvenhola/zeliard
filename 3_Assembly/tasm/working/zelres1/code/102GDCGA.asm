@@ -85,11 +85,11 @@ start:
 		mov	ax,ss:sprite_img_base
 		dec	dx
 		jmp	$-12CDh
-		db	 36h, 6Fh, 37h, 16h, 38h,0FFh
-		db	':@<', 0Dh, '=c=??$'
-		db	'@'
-		db	0BDh, 40h, 87h, 4Ah, 50h, 53h
-		db	 51h, 1Eh
+		db	 36h, 6Fh, 37h, 16h, 38h,0FFh	; dispatch words: 6F36h, 1637h, FF38h
+		db	':@<', 0Dh, '=c=??$'		; dispatch words (text-encoded): 403Ah, 0D3Ch, ...
+		db	'@'				; dispatch table padding byte
+		db	0BDh, 40h, 87h, 4Ah, 50h, 53h	; dispatch word: 40BDh + push ax/bx
+		db	 51h, 1Eh			; push cx; push ds (entry preamble)
 
 render_plane_a_entry:
 		mov	al,ch
@@ -449,15 +449,15 @@ blit_clear_loop:
 		pop	di
 		retn
 		; inline data / dead-zone bytes between blit_clear and text_char_loop
-		db	 00h,0C0h, 00h, 0Ch,0C0h, 00h
-		db	 0Ch, 00h, 00h, 30h, 00h, 03h
-		db	 30h, 00h, 03h, 00h, 03h, 00h
-		db	 30h, 00h, 00h, 03h, 00h, 30h
-		db	 0Ch, 00h,0C0h, 00h, 00h, 0Ch
-		db	 00h,0C0h, 0Eh, 07h,0BFh,0B4h
-		db	 4Ah, 33h,0C0h,0B9h, 90h, 01h
-		db	0F3h,0ABh,0BFh,0B4h
-		db	4Ah
+		db	 00h,0C0h, 00h, 0Ch,0C0h, 00h	; pixel-clear pattern row 0
+		db	 0Ch, 00h, 00h, 30h, 00h, 03h	; pixel-clear pattern row 1
+		db	 30h, 00h, 03h, 00h, 03h, 00h	; pixel-clear pattern row 2
+		db	 30h, 00h, 00h, 03h, 00h, 30h	; pixel-clear pattern row 3
+		db	 0Ch, 00h,0C0h, 00h, 00h, 0Ch	; pixel-clear pattern row 4
+		db	 00h,0C0h, 0Eh, 07h,0BFh,0B4h	; pixel-clear tail + push cs; pop es; mov di,...
+		db	 4Ah, 33h,0C0h,0B9h, 90h, 01h	; mov di,4AB4h; xor ax,ax; mov cx,190h
+		db	0F3h,0ABh,0BFh,0B4h		; rep stosw; mov di,...
+		db	4Ah				; ...4AB4h (operand high byte) -> text_char_loop
 
 text_char_loop:
 								lodsb				; String [si] to al
@@ -953,22 +953,22 @@ multiply_row_wrap:
 equip_multiply		endp
 
 		; inline data / dead-zone bytes before plane_mix_loop entry
-		db	 00h, 90h, 20h, 06h, 80h, 91h
-		db	 20h, 06h, 00h, 93h, 20h, 06h
-		db	 80h, 94h, 20h, 06h, 00h, 96h
-		db	 18h, 04h,0C0h, 96h, 18h, 04h
-		db	 80h, 97h, 18h, 04h, 40h, 98h
-		db	 18h, 04h, 1Eh, 53h, 32h,0E4h
-		db	0BAh,0C0h
-		db	0Ch
+		db	 00h, 90h, 20h, 06h, 80h, 91h	; CRTC seq: (00h,90h),(20h,06h),(80h,91h)
+		db	 20h, 06h, 00h, 93h, 20h, 06h	; CRTC seq: (20h,06h),(00h,93h),(20h,06h)
+		db	 80h, 94h, 20h, 06h, 00h, 96h	; CRTC seq: (80h,94h),(20h,06h),(00h,96h)
+		db	 18h, 04h,0C0h, 96h, 18h, 04h	; CRTC seq: (18h,04h),(C0h,96h),(18h,04h)
+		db	 80h, 97h, 18h, 04h, 40h, 98h	; CRTC seq: (80h,97h),(18h,04h),(40h,98h)
+		db	 18h, 04h, 1Eh, 53h, 32h,0E4h	; CRTC seq tail + push ds; push bx; xor ah
+		db	0BAh,0C0h			; mov dx,0C0h (low byte/operand)
+		db	0Ch				; (cont. mov dx high byte = 0Ch -> dx=0CC0h)
 plane_mix_word		dw	0E2F7h			; word read by plane_mix_loop via [plane_mix_word+si]
-		db	 05h, 40h,0ABh, 2Eh, 8Eh, 1Eh
-		db	 2Ch,0FFh, 8Bh,0F0h, 8Ch,0C8h
-		db	 05h, 00h, 30h, 8Eh,0C0h,0BFh
-		db	 00h, 00h, 2Eh,0C7h, 06h,0A8h
-		db	 4Ah, 00h, 00h, 2Eh,0C7h, 06h
-		db	0A6h, 4Ah, 00h, 00h,0B9h, 30h
-		db	 03h
+		db	 05h, 40h,0ABh, 2Eh, 8Eh, 1Eh	; add ax,4000h; stosw; mov ds,[cs:gvar]
+		db	 2Ch,0FFh, 8Bh,0F0h, 8Ch,0C8h	; sub al,FFh; mov si,ax; mov ax,cs
+		db	 05h, 00h, 30h, 8Eh,0C0h,0BFh	; add ax,3000h; mov es,ax; mov di,...
+		db	 00h, 00h, 2Eh,0C7h, 06h,0A8h	; ...0; mov word ptr cs:[4AA8h],...
+		db	 4Ah, 00h, 00h, 2Eh,0C7h, 06h	; ...0; mov word ptr cs:[4AA6h],...
+		db	0A6h, 4Ah, 00h, 00h,0B9h, 30h	; ...0; mov cx,330h
+		db	 03h				; (cont. mov cx high byte) -> plane_mix_loop
 
 plane_mix_loop:
 								mov	ax,plane_mix_word[si]
@@ -1372,67 +1372,67 @@ equip_func_7		endp
 
 		; CGA cell color pattern table (8 bytes per cell, used by equip_func_7 / cga_scroll_mask_off)
 		; followed by color index map and entry code bytes for extract_src_planes_loop
-		db	 00h, 00h, 00h, 03h, 80h, 80h
-		db	 8Ah, 88h, 03h, 03h, 03h, 03h
-		db	 88h, 88h, 88h, 88h, 03h, 03h
-		db	 03h, 03h, 88h, 88h, 88h,0A8h
-		db	 00h, 00h, 00h,0FFh, 00h, 00h
-		db	0AAh, 00h, 00h, 00h, 00h,0FFh
-		db	 02h, 02h,0AAh, 00h, 00h, 00h
-		db	 00h,0FFh, 80h, 80h,0AAh, 00h
-		db	 00h, 00h, 00h,0C0h, 02h, 02h
-		db	0A2h, 22h,0C0h,0C0h,0C0h,0C0h
-		db	 22h, 22h, 22h, 22h,0C0h,0C0h
-		db	0C0h,0C0h, 22h, 22h, 22h, 22h
-		db	0C0h,0C0h,0C0h,0C0h, 2Ah, 02h
-		db	 02h, 02h, 03h, 03h, 03h, 03h
-		db	0A8h, 88h, 88h, 88h, 03h, 03h
-		db	 03h, 03h, 88h, 88h, 88h, 88h
-		db	 03h, 00h, 00h, 00h, 88h, 8Ah
-		db	 80h, 80h,0FFh, 00h, 00h, 00h
-		db	 00h,0AAh, 00h, 00h,0FFh, 00h
-		db	 00h, 00h, 00h,0AAh, 02h, 02h
-		db	0FFh, 00h, 00h, 00h, 00h,0AAh
-		db	 80h, 80h,0C0h,0C0h,0C0h,0C0h
-		db	 2Ah, 22h, 22h, 22h,0C0h,0C0h
-		db	0C0h,0C0h, 22h, 22h, 22h, 22h
-		db	0C0h, 00h, 00h, 00h, 22h,0A2h
-		db	 02h, 02h, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h, 00h, 00h, 00h, 00h
-		db	 03h, 03h, 03h, 03h, 80h, 80h
-		db	 80h, 80h,0C0h,0C0h,0C0h,0C0h
-		db	 02h, 02h, 02h, 02h,0FFh,0FFh
-		db	0FFh,0FFh, 00h, 00h, 00h, 00h
-		db	 01h, 02h, 03h
-		db	20 dup (16h)
-		db	 0Bh, 0Ch, 0Dh, 00h, 0Eh, 0Fh
-		db	66 dup (15h)
-		db	 10h, 0Eh, 13h, 00h, 12h, 11h
-		db	19 dup (17h)
-		db	 0Ah, 09h, 08h, 07h, 00h, 04h
-		db	 06h
-		db	66 dup (14h)
-		db	 05h, 04h, 00h, 18h, 46h, 18h
-		db	 45h, 17h, 44h, 16h, 43h, 15h
-		db	 42h, 14h, 41h, 13h, 40h, 12h
-		db	 3Fh, 11h, 3Eh, 10h, 3Dh, 0Fh
-		db	 3Ch, 0Eh, 3Bh, 0Dh, 3Ah, 0Ch
-		db	 39h, 0Bh, 38h, 0Ah, 37h, 09h
-		db	 36h, 08h, 35h, 07h, 34h, 06h
-		db	 33h, 05h, 32h, 04h, 31h, 03h
-		db	 30h, 02h, 2Fh, 01h, 2Eh, 00h
-		db	 00h,0AAh, 55h, 1Eh, 2Eh,0A2h
-		db	0ADh, 4Ah, 53h, 51h, 8Ah,0C5h
-		db	0F6h,0E1h, 8Bh,0E8h, 06h, 1Fh
-		db	 8Bh,0F7h, 8Ch,0C8h, 05h, 00h
-		db	 30h, 8Eh,0C0h,0BFh, 00h, 00h
-		db	 2Eh,0C7h, 06h,0A8h, 4Ah, 00h
-		db	 00h, 2Eh,0C7h, 06h,0A2h, 4Ah
-		db	 00h, 00h, 2Eh,0C7h, 06h,0A4h
-		db	 4Ah, 00h, 00h, 2Eh,0C7h, 06h
-		db	0A6h, 4Ah, 00h, 00h, 8Bh,0CDh
-		db	0D1h,0E9h
+		db	 00h, 00h, 00h, 03h, 80h, 80h	; cell row  0
+		db	 8Ah, 88h, 03h, 03h, 03h, 03h	; cell row  1
+		db	 88h, 88h, 88h, 88h, 03h, 03h	; cell row  2
+		db	 03h, 03h, 88h, 88h, 88h,0A8h	; cell row  3
+		db	 00h, 00h, 00h,0FFh, 00h, 00h	; cell row  4
+		db	0AAh, 00h, 00h, 00h, 00h,0FFh	; cell row  5
+		db	 02h, 02h,0AAh, 00h, 00h, 00h	; cell row  6
+		db	 00h,0FFh, 80h, 80h,0AAh, 00h	; cell row  7
+		db	 00h, 00h, 00h,0C0h, 02h, 02h	; cell row  8
+		db	0A2h, 22h,0C0h,0C0h,0C0h,0C0h	; cell row  9
+		db	 22h, 22h, 22h, 22h,0C0h,0C0h	; cell row 10
+		db	0C0h,0C0h, 22h, 22h, 22h, 22h	; cell row 11
+		db	0C0h,0C0h,0C0h,0C0h, 2Ah, 02h	; cell row 12
+		db	 02h, 02h, 03h, 03h, 03h, 03h	; cell row 13
+		db	0A8h, 88h, 88h, 88h, 03h, 03h	; cell row 14
+		db	 03h, 03h, 88h, 88h, 88h, 88h	; cell row 15
+		db	 03h, 00h, 00h, 00h, 88h, 8Ah	; cell row 16
+		db	 80h, 80h,0FFh, 00h, 00h, 00h	; cell row 17
+		db	 00h,0AAh, 00h, 00h,0FFh, 00h	; cell row 18
+		db	 00h, 00h, 00h,0AAh, 02h, 02h	; cell row 19
+		db	0FFh, 00h, 00h, 00h, 00h,0AAh	; cell row 20
+		db	 80h, 80h,0C0h,0C0h,0C0h,0C0h	; cell row 21
+		db	 2Ah, 22h, 22h, 22h,0C0h,0C0h	; cell row 22
+		db	0C0h,0C0h, 22h, 22h, 22h, 22h	; cell row 23
+		db	0C0h, 00h, 00h, 00h, 22h,0A2h	; cell row 24
+		db	 02h, 02h, 00h, 00h,0FFh,0FFh	; cell row 25
+		db	 00h, 00h, 00h, 00h,0FFh,0FFh	; cell row 26
+		db	 00h, 00h, 00h, 00h, 00h, 00h	; cell row 27
+		db	 03h, 03h, 03h, 03h, 80h, 80h	; cell row 28
+		db	 80h, 80h,0C0h,0C0h,0C0h,0C0h	; cell row 29
+		db	 02h, 02h, 02h, 02h,0FFh,0FFh	; cell row 30
+		db	0FFh,0FFh, 00h, 00h, 00h, 00h	; cell row 31
+		db	 01h, 02h, 03h			; pal_seq A: indices 1,2,3
+		db	20 dup (16h)			; pal_seq A: 20 entries of value 16h
+		db	 0Bh, 0Ch, 0Dh, 00h, 0Eh, 0Fh	; pal_seq B: indices 0Bh-0Fh
+		db	66 dup (15h)			; pal_seq B: 66 entries of value 15h
+		db	 10h, 0Eh, 13h, 00h, 12h, 11h	; pal_seq C: indices 10h-13h
+		db	19 dup (17h)			; pal_seq C: 19 entries of value 17h
+		db	 0Ah, 09h, 08h, 07h, 00h, 04h	; pal_seq D: indices 04h-0Ah
+		db	 06h				; pal_seq D: index 06h
+		db	66 dup (14h)			; pal_seq D: 66 entries of value 14h
+		db	 05h, 04h, 00h, 18h, 46h, 18h	; final fade-out pair table (reg, val pairs):
+		db	 45h, 17h, 44h, 16h, 43h, 15h	;
+		db	 42h, 14h, 41h, 13h, 40h, 12h	;
+		db	 3Fh, 11h, 3Eh, 10h, 3Dh, 0Fh	;
+		db	 3Ch, 0Eh, 3Bh, 0Dh, 3Ah, 0Ch	;
+		db	 39h, 0Bh, 38h, 0Ah, 37h, 09h	;
+		db	 36h, 08h, 35h, 07h, 34h, 06h	;
+		db	 33h, 05h, 32h, 04h, 31h, 03h	;
+		db	 30h, 02h, 2Fh, 01h, 2Eh, 00h	;
+		db	 00h,0AAh, 55h, 1Eh, 2Eh,0A2h	; param tag bytes (caller signature) + push ds; mov [cs:..],al
+		db	0ADh, 4Ah, 53h, 51h, 8Ah,0C5h	; ...4AADh,al; push bx; push cx; mov al,ch
+		db	0F6h,0E1h, 8Bh,0E8h, 06h, 1Fh	; mul cl; mov bp,ax; push es; pop ds
+		db	 8Bh,0F7h, 8Ch,0C8h, 05h, 00h	; mov si,di; mov ax,cs; add ax,...
+		db	 30h, 8Eh,0C0h,0BFh, 00h, 00h	; ...3000h; mov es,ax; mov di,0
+		db	 2Eh,0C7h, 06h,0A8h, 4Ah, 00h	; mov word ptr cs:[4AA8h],...
+		db	 00h, 2Eh,0C7h, 06h,0A2h, 4Ah	; ...0; mov word ptr cs:[4AA2h],...
+		db	 00h, 00h, 2Eh,0C7h, 06h,0A4h	; ...0; mov word ptr cs:[4AA4h],...
+		db	 4Ah, 00h, 00h, 2Eh,0C7h, 06h	; ...0; mov word ptr cs:[4AA6h],...
+		db	0A6h, 4Ah, 00h, 00h, 8Bh,0CDh	; ...0; mov cx,bp
+		db	0D1h,0E9h			; shr cx,1 -> extract_src_planes_loop
 
 extract_src_planes_loop:
 								push	si
@@ -2036,10 +2036,10 @@ extract_bits_2		endp
 		; entry code for disp_frame_render3 (push ds; mov saved_di,di; mov saved_es,es;
 		;   mov es,0B800h; mov ds,[saved_es]; mov cx,39h) -- jumps into extract3_row_loop
 disp_frame_render3		db	1Eh			; push ds
-		db	 89h, 3Eh,0B0h, 4Ah, 8Ch, 06h
-		db	0B2h, 4Ah,0B8h, 00h,0B8h, 8Eh
-		db	0C0h, 2Eh, 8Eh, 1Eh,0B2h, 4Ah
-		db	0B9h, 39h, 00h
+		db	 89h, 3Eh,0B0h, 4Ah, 8Ch, 06h	; mov [4AB0h],di; mov [...],es
+		db	0B2h, 4Ah,0B8h, 00h,0B8h, 8Eh	; ...4AB2h; mov ax,0B800h; mov es,...
+		db	0C0h, 2Eh, 8Eh, 1Eh,0B2h, 4Ah	; ...ax; mov ds,[cs:saved_es]
+		db	0B9h, 39h, 00h			; mov cx,39h -> extract3_row_loop
 
 extract3_row_loop:
 								mov	byte ptr cs:gvar_frame_timer,0
@@ -2147,375 +2147,375 @@ disp_hfill_row:
 
 frame_plane_a_tbl:
 		db	17 dup (0)
-		db	2, 0
+		db	2, 0                                               ; plane_a offset 0x011 (2 bytes)
 		db	15 dup (0)
-		db	1, 0, 0, 0, 0, 0
-		db	0, 0, 1
+		db	1, 0, 0, 0, 0, 0                                   ; plane_a offset 0x022 (6 bytes)
+		db	0, 0, 1                                            ; plane_a offset 0x028 (3 bytes)
 		db	8 dup (0)
-		db	1, 0, 0, 0, 0, 0
-		db	0, 0, 1
+		db	1, 0, 0, 0, 0, 0                                   ; plane_a offset 0x033 (6 bytes)
+		db	0, 0, 1                                            ; plane_a offset 0x039 (3 bytes)
 		db	8 dup (0)
-		db	3, 3, 3, 3, 0, 3
-		db	0, 0, 3, 3, 3, 3
-		db	0, 0, 0, 0, 3, 3
-		db	3, 3, 0, 3, 0, 0
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 3, 3, 3, 3
-		db	0, 3, 0, 0, 3, 3
-		db	3, 3, 0, 0, 0, 0
-		db	3, 3, 3, 3, 0, 3
-		db	0, 0, 3, 3, 3, 3
-		db	0
+		db	3, 3, 3, 3, 0, 3                                   ; plane_a offset 0x044 (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; plane_a offset 0x04A (6 bytes)
+		db	0, 0, 0, 0, 3, 3                                   ; plane_a offset 0x050 (6 bytes)
+		db	3, 3, 0, 3, 0, 0                                   ; plane_a offset 0x056 (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; plane_a offset 0x05C (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; plane_a offset 0x062 (6 bytes)
+		db	0, 3, 0, 0, 3, 3                                   ; plane_a offset 0x068 (6 bytes)
+		db	3, 3, 0, 0, 0, 0                                   ; plane_a offset 0x06E (6 bytes)
+		db	3, 3, 3, 3, 0, 3                                   ; plane_a offset 0x074 (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; plane_a offset 0x07A (6 bytes)
+		db	0                                                  ; plane_a offset 0x080 (1 bytes)
 		db	7 dup (0)
-		db	1, 0
+		db	1, 0                                               ; plane_a offset 0x088 (2 bytes)
 		db	10 dup (0)
-		db	3, 3, 3, 3, 0, 1
+		db	3, 3, 3, 3, 0, 1                                   ; plane_a offset 0x094 (6 bytes)
 		db	8 dup (0)
-		db	1, 0, 0, 0, 0, 0
-		db	0, 0, 1
+		db	1, 0, 0, 0, 0, 0                                   ; plane_a offset 0x0A2 (6 bytes)
+		db	0, 0, 1                                            ; plane_a offset 0x0A8 (3 bytes)
 		db	8 dup (0)
-		db	1, 0, 0, 0, 0, 0
-		db	0, 0, 1
+		db	1, 0, 0, 0, 0, 0                                   ; plane_a offset 0x0B3 (6 bytes)
+		db	0, 0, 1                                            ; plane_a offset 0x0B9 (3 bytes)
 		db	8 dup (0)
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 3, 3, 3, 3
-		db	0, 0, 0, 0, 3, 3
-		db	3, 3, 0, 0, 0, 0
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 3, 3, 3, 3
-		db	0, 0, 0, 0, 3, 3
-		db	3, 3, 0, 0, 0, 0
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 3, 3, 3, 3
-		db	0, 0, 0, 0, 0, 1
-		db	2, 0
+		db	3, 3, 3, 3, 0, 0                                   ; plane_a offset 0x0C4 (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; plane_a offset 0x0CA (6 bytes)
+		db	0, 0, 0, 0, 3, 3                                   ; plane_a offset 0x0D0 (6 bytes)
+		db	3, 3, 0, 0, 0, 0                                   ; plane_a offset 0x0D6 (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; plane_a offset 0x0DC (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; plane_a offset 0x0E2 (6 bytes)
+		db	0, 0, 0, 0, 3, 3                                   ; plane_a offset 0x0E8 (6 bytes)
+		db	3, 3, 0, 0, 0, 0                                   ; plane_a offset 0x0EE (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; plane_a offset 0x0F4 (6 bytes)
+		db	0, 0, 3, 3, 3, 3                                   ; plane_a offset 0x0FA (6 bytes)
+		db	0, 0, 0, 0, 0, 1                                   ; plane_a offset 0x100 (6 bytes)
+		db	2, 0                                               ; plane_a offset 0x106 (2 bytes)
 		db	9 dup (0)
-		db	1, 1, 2, 0, 1, 2
-		db	1, 0
+		db	1, 1, 2, 0, 1, 2                                   ; plane_a offset 0x111 (6 bytes)
+		db	1, 0                                               ; plane_a offset 0x117 (2 bytes)
 		db	8 dup (0)
-		db	1, 2, 0, 0, 2, 2
-		db	2, 0
+		db	1, 2, 0, 0, 2, 2                                   ; plane_a offset 0x121 (6 bytes)
+		db	2, 0                                               ; plane_a offset 0x127 (2 bytes)
 		db	8 dup (0)
-		db	2, 0, 2, 0, 1, 2
-		db	2, 0
+		db	2, 0, 2, 0, 1, 2                                   ; plane_a offset 0x131 (6 bytes)
+		db	2, 0                                               ; plane_a offset 0x137 (2 bytes)
 		db	12 dup (0)
-		db	1, 2
+		db	1, 2                                               ; plane_a offset 0x145 (2 bytes)
 		db	9 dup (0)
-		db	1, 1, 2, 1, 1, 1
-		db	1, 3
+		db	1, 1, 2, 1, 1, 1                                   ; plane_a offset 0x150 (6 bytes)
+		db	1, 3                                               ; plane_a offset 0x156 (2 bytes)
 		db	8 dup (0)
-		db	2, 1, 2, 2, 2, 1
-		db	3, 3
+		db	2, 1, 2, 2, 2, 1                                   ; plane_a offset 0x160 (6 bytes)
+		db	3, 3                                               ; plane_a offset 0x166 (2 bytes)
 		db	9 dup (0)
-		db	1, 2, 2, 0, 3, 3
-		db	3, 0
+		db	1, 2, 2, 0, 3, 3                                   ; plane_a offset 0x171 (6 bytes)
+		db	3, 0                                               ; plane_a offset 0x177 (2 bytes)
 		db	32 dup (0)
-		db	3, 0
+		db	3, 0                                               ; plane_a offset 0x199 (2 bytes)
 		db	15 dup (0)
-		db	2, 0
+		db	2, 0                                               ; plane_a offset 0x1AA (2 bytes)
 		db	15 dup (0)
-		db	2, 0
+		db	2, 0                                               ; plane_a offset 0x1BB (2 bytes)
 		db	15 dup (0)
-		db	1, 0
+		db	1, 0                                               ; plane_a offset 0x1CC (2 bytes)
 		db	15 dup (0)
-		db	1, 0
+		db	1, 0                                               ; plane_a offset 0x1DD (2 bytes)
 		db	15 dup (0)
-		db	3, 0
+		db	3, 0                                               ; plane_a offset 0x1EE (2 bytes)
 		db	15 dup (0)
-		db	3, 0, 0, 0, 1, 0
-		db	1, 0, 1, 0
+		db	3, 0, 0, 0, 1, 0                                   ; plane_a offset 0x1FF (6 bytes)
+		db	1, 0, 1, 0                                         ; plane_a offset 0x205 (4 bytes)
 		db	8 dup (0)
-		db	2, 1, 2, 1, 2, 0
-		db	2, 0
+		db	2, 1, 2, 1, 2, 0                                   ; plane_a offset 0x211 (6 bytes)
+		db	2, 0                                               ; plane_a offset 0x217 (2 bytes)
 		db	8 dup (0)
-		db	1, 1, 3, 1, 3, 0
-		db	3, 0
+		db	1, 1, 3, 1, 3, 0                                   ; plane_a offset 0x221 (6 bytes)
+		db	3, 0                                               ; plane_a offset 0x227 (2 bytes)
 		db	7 dup (0)
-		db	1, 2, 3, 3, 3, 3
-		db	0, 3
+		db	1, 2, 3, 3, 3, 3                                   ; plane_a offset 0x230 (6 bytes)
+		db	0, 3                                               ; plane_a offset 0x236 (2 bytes)
 		db	9 dup (0)
-		db	1, 1, 3, 1, 3, 0
-		db	3, 0
+		db	1, 1, 3, 1, 3, 0                                   ; plane_a offset 0x241 (6 bytes)
+		db	3, 0                                               ; plane_a offset 0x247 (2 bytes)
 		db	7 dup (0)
-		db	1, 2, 3, 3, 3, 3
-		db	0, 3
+		db	1, 2, 3, 3, 3, 3                                   ; plane_a offset 0x250 (6 bytes)
+		db	0, 3                                               ; plane_a offset 0x256 (2 bytes)
 		db	15 dup (0)
-		db	1, 0
+		db	1, 0                                               ; plane_a offset 0x267 (2 bytes)
 		db	7 dup (0)
-		db	1, 2, 3, 3, 3, 3
-		db	1, 3
+		db	1, 2, 3, 3, 3, 3                                   ; plane_a offset 0x270 (6 bytes)
+		db	1, 3                                               ; plane_a offset 0x276 (2 bytes)
 		db	33 dup (0)
-		db	3, 0
+		db	3, 0                                               ; plane_a offset 0x299 (2 bytes)
 		db	15 dup (0)
-		db	2, 0
+		db	2, 0                                               ; plane_a offset 0x2AA (2 bytes)
 		db	15 dup (0)
-		db	2, 0
+		db	2, 0                                               ; plane_a offset 0x2BB (2 bytes)
 		db	15 dup (0)
-		db	1, 0
+		db	1, 0                                               ; plane_a offset 0x2CC (2 bytes)
 		db	15 dup (0)
-		db	1, 0
+		db	1, 0                                               ; plane_a offset 0x2DD (2 bytes)
 		db	15 dup (0)
-		db	2, 0
+		db	2, 0                                               ; plane_a offset 0x2EE (2 bytes)
 		db	15 dup (0)
-		db	3, 0, 0, 0, 2, 1
-		db	1, 2, 3, 0, 1, 2
-		db	2, 1, 1, 2, 3, 0
-		db	1, 2, 2, 1, 1, 1
-		db	1, 0, 1, 2, 2, 1
-		db	1, 1, 1, 0, 2, 2
-		db	2, 1, 1, 2, 3, 0
-		db	2, 2, 2, 1, 1, 2
-		db	3, 2, 2, 2, 2, 1
-		db	1, 2, 2, 0, 2, 2
-		db	1, 1, 2, 2, 3, 1
-		db	1, 1, 1, 1, 1, 3
-		db	3, 1, 1, 1, 1, 1
-		db	1, 3, 3, 1, 1, 1
-		db	1, 1, 1, 3, 3, 1
-		db	1, 1, 1, 1, 1, 3
-		db	3, 2, 1, 2, 2, 3
-		db	3, 3, 3, 2, 2, 2
-		db	2, 3, 3, 3, 3, 3
-		db	1, 3, 2, 3, 3, 3
-		db	3, 3, 1, 2, 2, 3
-		db	3, 3, 3, 0, 0, 0
-		db	0, 1, 1, 2, 3, 0
-		db	0, 0, 2, 1, 1, 2
-		db	3, 1, 1, 2, 2, 1
-		db	1, 2, 1, 0, 1, 2
-		db	2, 1, 1, 1, 1, 2
-		db	2, 2, 2, 1, 1, 2
-		db	2, 0, 2, 2, 2, 1
-		db	1, 2, 3, 2, 2, 2
-		db	1, 1, 1, 2, 2, 2
-		db	2, 2, 2, 1, 1, 2
-		db	2, 1, 1, 1, 1, 1
-		db	1, 3, 3, 1, 1, 1
-		db	1, 1, 1, 3, 3, 1
-		db	1, 1, 2, 1, 1, 3
-		db	3, 1, 1, 1, 1, 1
-		db	1, 3, 3, 2, 1, 2
-		db	2, 3, 3, 3, 3, 2
-		db	1, 2, 2, 3
+		db	3, 0, 0, 0, 2, 1                                   ; plane_a offset 0x2FF (6 bytes)
+		db	1, 2, 3, 0, 1, 2                                   ; plane_a offset 0x305 (6 bytes)
+		db	2, 1, 1, 2, 3, 0                                   ; plane_a offset 0x30B (6 bytes)
+		db	1, 2, 2, 1, 1, 1                                   ; plane_a offset 0x311 (6 bytes)
+		db	1, 0, 1, 2, 2, 1                                   ; plane_a offset 0x317 (6 bytes)
+		db	1, 1, 1, 0, 2, 2                                   ; plane_a offset 0x31D (6 bytes)
+		db	2, 1, 1, 2, 3, 0                                   ; plane_a offset 0x323 (6 bytes)
+		db	2, 2, 2, 1, 1, 2                                   ; plane_a offset 0x329 (6 bytes)
+		db	3, 2, 2, 2, 2, 1                                   ; plane_a offset 0x32F (6 bytes)
+		db	1, 2, 2, 0, 2, 2                                   ; plane_a offset 0x335 (6 bytes)
+		db	1, 1, 2, 2, 3, 1                                   ; plane_a offset 0x33B (6 bytes)
+		db	1, 1, 1, 1, 1, 3                                   ; plane_a offset 0x341 (6 bytes)
+		db	3, 1, 1, 1, 1, 1                                   ; plane_a offset 0x347 (6 bytes)
+		db	1, 3, 3, 1, 1, 1                                   ; plane_a offset 0x34D (6 bytes)
+		db	1, 1, 1, 3, 3, 1                                   ; plane_a offset 0x353 (6 bytes)
+		db	1, 1, 1, 1, 1, 3                                   ; plane_a offset 0x359 (6 bytes)
+		db	3, 2, 1, 2, 2, 3                                   ; plane_a offset 0x35F (6 bytes)
+		db	3, 3, 3, 2, 2, 2                                   ; plane_a offset 0x365 (6 bytes)
+		db	2, 3, 3, 3, 3, 3                                   ; plane_a offset 0x36B (6 bytes)
+		db	1, 3, 2, 3, 3, 3                                   ; plane_a offset 0x371 (6 bytes)
+		db	3, 3, 1, 2, 2, 3                                   ; plane_a offset 0x377 (6 bytes)
+		db	3, 3, 3, 0, 0, 0                                   ; plane_a offset 0x37D (6 bytes)
+		db	0, 1, 1, 2, 3, 0                                   ; plane_a offset 0x383 (6 bytes)
+		db	0, 0, 2, 1, 1, 2                                   ; plane_a offset 0x389 (6 bytes)
+		db	3, 1, 1, 2, 2, 1                                   ; plane_a offset 0x38F (6 bytes)
+		db	1, 2, 1, 0, 1, 2                                   ; plane_a offset 0x395 (6 bytes)
+		db	2, 1, 1, 1, 1, 2                                   ; plane_a offset 0x39B (6 bytes)
+		db	2, 2, 2, 1, 1, 2                                   ; plane_a offset 0x3A1 (6 bytes)
+		db	2, 0, 2, 2, 2, 1                                   ; plane_a offset 0x3A7 (6 bytes)
+		db	1, 2, 3, 2, 2, 2                                   ; plane_a offset 0x3AD (6 bytes)
+		db	1, 1, 1, 2, 2, 2                                   ; plane_a offset 0x3B3 (6 bytes)
+		db	2, 2, 2, 1, 1, 2                                   ; plane_a offset 0x3B9 (6 bytes)
+		db	2, 1, 1, 1, 1, 1                                   ; plane_a offset 0x3BF (6 bytes)
+		db	1, 3, 3, 1, 1, 1                                   ; plane_a offset 0x3C5 (6 bytes)
+		db	1, 1, 1, 3, 3, 1                                   ; plane_a offset 0x3CB (6 bytes)
+		db	1, 1, 2, 1, 1, 3                                   ; plane_a offset 0x3D1 (6 bytes)
+		db	3, 1, 1, 1, 1, 1                                   ; plane_a offset 0x3D7 (6 bytes)
+		db	1, 3, 3, 2, 1, 2                                   ; plane_a offset 0x3DD (6 bytes)
+		db	2, 3, 3, 3, 3, 2                                   ; plane_a offset 0x3E3 (6 bytes)
+		db	1, 2, 2, 3                                         ; plane_a offset 0x3E9 (4 bytes)
 frame_plane_b_tbl		dw	303h			; 2-bit color data for frame plane B (used by extract_bits_2/3)
-		db	3, 3, 1
+		db	3, 3, 1                                            ; plane_b offset 0x000 (3 bytes)
 		db	7 dup (3)
-		db	1, 3, 2, 3, 3, 3
-		db	3, 0, 0, 0, 1, 1
-		db	1, 2, 3, 0, 1, 2
-		db	2, 1, 1, 2, 3, 0
-		db	1, 2, 3, 1, 1, 1
-		db	1, 0, 1, 2, 2, 1
-		db	1, 1, 1, 0, 2, 2
-		db	3, 1, 1, 2, 3, 0
-		db	2, 2, 2, 1, 1, 2
-		db	3, 1
+		db	1, 3, 2, 3, 3, 3                                   ; plane_b offset 0x00A (6 bytes)
+		db	3, 0, 0, 0, 1, 1                                   ; plane_b offset 0x010 (6 bytes)
+		db	1, 2, 3, 0, 1, 2                                   ; plane_b offset 0x016 (6 bytes)
+		db	2, 1, 1, 2, 3, 0                                   ; plane_b offset 0x01C (6 bytes)
+		db	1, 2, 3, 1, 1, 1                                   ; plane_b offset 0x022 (6 bytes)
+		db	1, 0, 1, 2, 2, 1                                   ; plane_b offset 0x028 (6 bytes)
+		db	1, 1, 1, 0, 2, 2                                   ; plane_b offset 0x02E (6 bytes)
+		db	3, 1, 1, 2, 3, 0                                   ; plane_b offset 0x034 (6 bytes)
+		db	2, 2, 2, 1, 1, 2                                   ; plane_b offset 0x03A (6 bytes)
+		db	3, 1                                               ; plane_b offset 0x040 (2 bytes)
 		db	7 dup (3)
-		db	0, 3, 3, 3, 3, 3
-		db	3, 3, 1, 1, 1, 3
-		db	1, 1, 3, 3, 1, 1
-		db	1, 1, 1, 1, 3, 3
-		db	1, 1, 1, 3, 1, 1
-		db	3, 3, 1, 1, 1, 1
-		db	1, 1, 3, 3, 2, 1
-		db	2, 3, 3, 3, 3, 3
-		db	2, 2, 2, 2, 3, 3
-		db	3, 3, 3, 1
+		db	0, 3, 3, 3, 3, 3                                   ; plane_b offset 0x049 (6 bytes)
+		db	3, 3, 1, 1, 1, 3                                   ; plane_b offset 0x04F (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; plane_b offset 0x055 (6 bytes)
+		db	1, 1, 1, 1, 3, 3                                   ; plane_b offset 0x05B (6 bytes)
+		db	1, 1, 1, 3, 1, 1                                   ; plane_b offset 0x061 (6 bytes)
+		db	3, 3, 1, 1, 1, 1                                   ; plane_b offset 0x067 (6 bytes)
+		db	1, 1, 3, 3, 2, 1                                   ; plane_b offset 0x06D (6 bytes)
+		db	2, 3, 3, 3, 3, 3                                   ; plane_b offset 0x073 (6 bytes)
+		db	2, 2, 2, 2, 3, 3                                   ; plane_b offset 0x079 (6 bytes)
+		db	3, 3, 3, 1                                         ; plane_b offset 0x07F (4 bytes)
 		db	7 dup (3)
-		db	1, 2, 2, 3, 3, 3
-		db	3, 0, 0, 0, 0, 1
-		db	1, 2, 3, 0, 0, 0
-		db	2, 1, 1, 2, 3, 1
-		db	1, 2, 3, 1, 1, 2
-		db	1, 0, 1, 2, 2, 1
-		db	1, 1, 1, 2, 2, 2
-		db	3, 1, 1, 2, 2, 0
-		db	2, 2, 2, 1, 1, 2
-		db	3, 2, 2, 2, 3, 1
-		db	1, 2, 2, 2, 2, 2
-		db	2, 1, 1, 2, 2, 1
-		db	1, 1, 3, 1, 1, 3
-		db	3, 1, 1, 1, 1, 1
-		db	1, 3, 3, 1, 1, 1
-		db	3, 1, 1, 3, 3, 1
-		db	1, 1, 1, 1, 1, 3
-		db	3, 2, 1, 2, 3, 3
-		db	3, 3, 3, 2, 1, 2
-		db	2, 3, 3, 3, 3, 3
-		db	1, 3, 3, 3, 3, 3
-		db	3, 3, 1, 3, 2, 3
-		db	3, 3, 3, 0, 0, 0
-		db	0, 0, 1, 2, 3, 0
-		db	1, 2, 2, 1, 1, 2
-		db	3, 0, 1, 2, 2, 0
-		db	1, 1, 1, 0, 1, 2
-		db	2, 1, 1, 1, 1, 0
-		db	2, 2, 2, 0, 2, 2
-		db	3, 0, 2, 2, 2, 1
-		db	1, 2, 3, 0, 2, 2
-		db	2, 0, 2, 3, 3, 0
-		db	3, 3, 3, 3, 3, 3
-		db	3, 0, 0, 0, 0, 0
-		db	0, 2, 0, 1, 1, 1
-		db	1, 1, 1, 3, 3, 1
-		db	1, 2, 2, 0, 3, 3
-		db	3, 1, 1, 1, 1, 1
-		db	1, 3, 3, 2, 1, 2
-		db	3, 2, 3, 3, 3, 2
-		db	2, 2, 2, 3, 3, 3
-		db	3, 3, 1, 3, 3, 0
-		db	3, 3, 3, 3, 1, 2
-		db	2, 3, 3, 3, 3, 0
-		db	0, 0, 0, 1, 1, 2
-		db	3, 0, 0, 0, 2, 1
-		db	1, 2, 3, 1, 1, 2
-		db	3, 1, 1, 2, 1, 0
-		db	1, 2, 2, 1, 1, 1
-		db	1, 2, 2, 2, 3, 1
-		db	1, 2, 2, 0, 2, 2
-		db	2, 1, 1, 2, 3, 2
-		db	2, 2, 3, 1, 1, 2
-		db	2, 2, 2, 2, 2, 1
-		db	1, 2, 2, 1, 1, 1
-		db	3, 1, 1, 3, 3, 1
-		db	1, 1, 1, 1, 1, 3
-		db	3, 1, 1, 1, 3, 1
-		db	1, 3, 3, 1, 1, 1
-		db	1, 1, 1, 3, 3, 2
-		db	1, 2, 3, 3, 3, 3
-		db	3, 2, 1, 2, 2, 3
-		db	3, 3, 3, 3, 1, 3
-		db	3, 3, 3, 3, 3, 3
-		db	1, 3, 2, 3, 3, 3
-		db	3, 0, 1, 0, 0, 1
-		db	1, 2, 1, 0, 1, 2
-		db	2, 1, 1, 2, 3, 1
-		db	1, 2, 2, 1, 1, 1
-		db	1, 0, 1, 2, 2, 1
-		db	1, 1, 1, 0
+		db	1, 2, 2, 3, 3, 3                                   ; plane_b offset 0x08A (6 bytes)
+		db	3, 0, 0, 0, 0, 1                                   ; plane_b offset 0x090 (6 bytes)
+		db	1, 2, 3, 0, 0, 0                                   ; plane_b offset 0x096 (6 bytes)
+		db	2, 1, 1, 2, 3, 1                                   ; plane_b offset 0x09C (6 bytes)
+		db	1, 2, 3, 1, 1, 2                                   ; plane_b offset 0x0A2 (6 bytes)
+		db	1, 0, 1, 2, 2, 1                                   ; plane_b offset 0x0A8 (6 bytes)
+		db	1, 1, 1, 2, 2, 2                                   ; plane_b offset 0x0AE (6 bytes)
+		db	3, 1, 1, 2, 2, 0                                   ; plane_b offset 0x0B4 (6 bytes)
+		db	2, 2, 2, 1, 1, 2                                   ; plane_b offset 0x0BA (6 bytes)
+		db	3, 2, 2, 2, 3, 1                                   ; plane_b offset 0x0C0 (6 bytes)
+		db	1, 2, 2, 2, 2, 2                                   ; plane_b offset 0x0C6 (6 bytes)
+		db	2, 1, 1, 2, 2, 1                                   ; plane_b offset 0x0CC (6 bytes)
+		db	1, 1, 3, 1, 1, 3                                   ; plane_b offset 0x0D2 (6 bytes)
+		db	3, 1, 1, 1, 1, 1                                   ; plane_b offset 0x0D8 (6 bytes)
+		db	1, 3, 3, 1, 1, 1                                   ; plane_b offset 0x0DE (6 bytes)
+		db	3, 1, 1, 3, 3, 1                                   ; plane_b offset 0x0E4 (6 bytes)
+		db	1, 1, 1, 1, 1, 3                                   ; plane_b offset 0x0EA (6 bytes)
+		db	3, 2, 1, 2, 3, 3                                   ; plane_b offset 0x0F0 (6 bytes)
+		db	3, 3, 3, 2, 1, 2                                   ; plane_b offset 0x0F6 (6 bytes)
+		db	2, 3, 3, 3, 3, 3                                   ; plane_b offset 0x0FC (6 bytes)
+		db	1, 3, 3, 3, 3, 3                                   ; plane_b offset 0x102 (6 bytes)
+		db	3, 3, 1, 3, 2, 3                                   ; plane_b offset 0x108 (6 bytes)
+		db	3, 3, 3, 0, 0, 0                                   ; plane_b offset 0x10E (6 bytes)
+		db	0, 0, 1, 2, 3, 0                                   ; plane_b offset 0x114 (6 bytes)
+		db	1, 2, 2, 1, 1, 2                                   ; plane_b offset 0x11A (6 bytes)
+		db	3, 0, 1, 2, 2, 0                                   ; plane_b offset 0x120 (6 bytes)
+		db	1, 1, 1, 0, 1, 2                                   ; plane_b offset 0x126 (6 bytes)
+		db	2, 1, 1, 1, 1, 0                                   ; plane_b offset 0x12C (6 bytes)
+		db	2, 2, 2, 0, 2, 2                                   ; plane_b offset 0x132 (6 bytes)
+		db	3, 0, 2, 2, 2, 1                                   ; plane_b offset 0x138 (6 bytes)
+		db	1, 2, 3, 0, 2, 2                                   ; plane_b offset 0x13E (6 bytes)
+		db	2, 0, 2, 3, 3, 0                                   ; plane_b offset 0x144 (6 bytes)
+		db	3, 3, 3, 3, 3, 3                                   ; plane_b offset 0x14A (6 bytes)
+		db	3, 0, 0, 0, 0, 0                                   ; plane_b offset 0x150 (6 bytes)
+		db	0, 2, 0, 1, 1, 1                                   ; plane_b offset 0x156 (6 bytes)
+		db	1, 1, 1, 3, 3, 1                                   ; plane_b offset 0x15C (6 bytes)
+		db	1, 2, 2, 0, 3, 3                                   ; plane_b offset 0x162 (6 bytes)
+		db	3, 1, 1, 1, 1, 1                                   ; plane_b offset 0x168 (6 bytes)
+		db	1, 3, 3, 2, 1, 2                                   ; plane_b offset 0x16E (6 bytes)
+		db	3, 2, 3, 3, 3, 2                                   ; plane_b offset 0x174 (6 bytes)
+		db	2, 2, 2, 3, 3, 3                                   ; plane_b offset 0x17A (6 bytes)
+		db	3, 3, 1, 3, 3, 0                                   ; plane_b offset 0x180 (6 bytes)
+		db	3, 3, 3, 3, 1, 2                                   ; plane_b offset 0x186 (6 bytes)
+		db	2, 3, 3, 3, 3, 0                                   ; plane_b offset 0x18C (6 bytes)
+		db	0, 0, 0, 1, 1, 2                                   ; plane_b offset 0x192 (6 bytes)
+		db	3, 0, 0, 0, 2, 1                                   ; plane_b offset 0x198 (6 bytes)
+		db	1, 2, 3, 1, 1, 2                                   ; plane_b offset 0x19E (6 bytes)
+		db	3, 1, 1, 2, 1, 0                                   ; plane_b offset 0x1A4 (6 bytes)
+		db	1, 2, 2, 1, 1, 1                                   ; plane_b offset 0x1AA (6 bytes)
+		db	1, 2, 2, 2, 3, 1                                   ; plane_b offset 0x1B0 (6 bytes)
+		db	1, 2, 2, 0, 2, 2                                   ; plane_b offset 0x1B6 (6 bytes)
+		db	2, 1, 1, 2, 3, 2                                   ; plane_b offset 0x1BC (6 bytes)
+		db	2, 2, 3, 1, 1, 2                                   ; plane_b offset 0x1C2 (6 bytes)
+		db	2, 2, 2, 2, 2, 1                                   ; plane_b offset 0x1C8 (6 bytes)
+		db	1, 2, 2, 1, 1, 1                                   ; plane_b offset 0x1CE (6 bytes)
+		db	3, 1, 1, 3, 3, 1                                   ; plane_b offset 0x1D4 (6 bytes)
+		db	1, 1, 1, 1, 1, 3                                   ; plane_b offset 0x1DA (6 bytes)
+		db	3, 1, 1, 1, 3, 1                                   ; plane_b offset 0x1E0 (6 bytes)
+		db	1, 3, 3, 1, 1, 1                                   ; plane_b offset 0x1E6 (6 bytes)
+		db	1, 1, 1, 3, 3, 2                                   ; plane_b offset 0x1EC (6 bytes)
+		db	1, 2, 3, 3, 3, 3                                   ; plane_b offset 0x1F2 (6 bytes)
+		db	3, 2, 1, 2, 2, 3                                   ; plane_b offset 0x1F8 (6 bytes)
+		db	3, 3, 3, 3, 1, 3                                   ; plane_b offset 0x1FE (6 bytes)
+		db	3, 3, 3, 3, 3, 3                                   ; plane_b offset 0x204 (6 bytes)
+		db	1, 3, 2, 3, 3, 3                                   ; plane_b offset 0x20A (6 bytes)
+		db	3, 0, 1, 0, 0, 1                                   ; plane_b offset 0x210 (6 bytes)
+		db	1, 2, 1, 0, 1, 2                                   ; plane_b offset 0x216 (6 bytes)
+		db	2, 1, 1, 2, 3, 1                                   ; plane_b offset 0x21C (6 bytes)
+		db	1, 2, 2, 1, 1, 1                                   ; plane_b offset 0x222 (6 bytes)
+		db	1, 0, 1, 2, 2, 1                                   ; plane_b offset 0x228 (6 bytes)
+		db	1, 1, 1, 0                                         ; plane_b offset 0x22E (4 bytes)
 		db	7 dup (2)
-		db	0, 2, 2, 2, 1, 1
-		db	2, 3, 0, 2, 2, 2
-		db	2, 2, 3, 2, 0, 3
-		db	3, 3, 3, 3, 3, 3
-		db	1, 1, 2, 2, 1, 1
-		db	2, 3, 1, 1, 1, 1
-		db	1, 1, 3, 3, 1, 1
-		db	2, 2, 1, 3, 3, 1
-		db	1, 1, 1, 1, 1, 1
-		db	3, 3, 2, 1, 2, 3
-		db	2, 3, 3, 3, 2, 2
-		db	2, 2, 3, 3, 3, 3
-		db	1, 1, 2, 2, 3, 1
-		db	3, 3, 3, 1, 2, 2
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 1, 1, 2, 3
-		db	0, 0, 0, 2, 1, 1
-		db	2, 3, 1, 1, 2, 3
-		db	1, 1, 2, 1, 0, 1
-		db	2, 2, 1, 1, 1, 1
-		db	2, 2, 2, 3, 1, 1
-		db	2, 2, 0, 2, 2, 2
-		db	1, 1, 2, 3, 2, 2
-		db	2, 3, 1, 1, 2, 2
-		db	2, 2, 2, 2, 1, 1
-		db	2, 2, 1, 1, 1, 3
-		db	1, 1, 3, 3, 1, 1
-		db	1, 1, 1, 1, 3, 3
-		db	1, 1, 1, 3, 1, 1
-		db	3, 3, 1, 1, 1, 1
-		db	1, 1, 3, 3, 2, 1
-		db	2, 3, 3, 3, 3, 3
-		db	2, 1, 2, 2, 3, 3
-		db	3, 3, 3, 1, 3, 3
-		db	3, 3, 3, 3, 3, 1
-		db	3, 2, 3, 3, 3, 3
-		db	0, 0, 0, 0, 0, 1
-		db	2, 3, 0, 1, 2, 2
-		db	1, 1, 2, 3, 0, 1
-		db	2, 1, 0, 1, 1, 1
-		db	0, 1, 2, 2, 1, 1
-		db	1, 1, 0, 2, 2, 1
-		db	0, 2, 2, 3, 0, 2
-		db	2, 2, 1, 1, 2, 3
-		db	0, 1, 1, 1, 0, 1
-		db	2, 3, 0, 3, 3, 3
-		db	3, 3, 3, 3, 0, 0
-		db	0, 0, 0, 0, 2, 0
-		db	1, 1, 1, 1, 1, 1
-		db	3, 3, 1, 1, 2, 1
-		db	0, 3, 3, 3, 1, 1
-		db	1, 1, 1, 1, 3, 3
-		db	2, 1, 2, 2, 2, 3
-		db	3, 3, 2, 2, 2, 2
-		db	3, 3, 3, 3, 3, 1
-		db	3, 3, 0, 3, 3, 3
-		db	3, 1, 2, 2, 3, 3
-		db	3, 3, 0, 0, 0, 0
-		db	1, 1, 2, 3, 0, 0
-		db	0, 2, 1, 1, 2, 3
-		db	1, 1, 2, 3, 1, 1
-		db	2, 1, 0, 1, 2, 2
-		db	1, 1, 1, 1, 2, 2
-		db	2, 3, 1, 1, 2, 2
-		db	0, 2, 2, 2, 1, 1
-		db	2, 3, 2, 2, 2, 3
-		db	1, 1, 2, 2, 2, 2
-		db	2, 2, 1, 1, 2, 2
-		db	1, 1, 1, 3, 1, 1
-		db	3, 3, 1, 1, 1, 1
-		db	1, 1, 3, 3, 1, 1
-		db	1, 3, 1, 1, 3, 3
-		db	1, 1, 1, 1, 1, 1
-		db	3, 3, 2, 1, 2, 3
-		db	3, 3, 3, 3, 2, 1
-		db	2, 2, 3, 3, 3, 3
-		db	3, 1, 3, 3, 3, 3
-		db	3, 3, 3, 1, 3, 2
-		db	3, 3, 3, 3, 0, 0
-		db	0, 1, 1, 1, 2, 3
-		db	0, 1, 2, 2, 1, 1
-		db	2, 3, 0, 1, 2, 2
-		db	1, 1, 1, 1, 0, 1
-		db	2, 2, 1, 1, 1, 1
-		db	0, 2, 2, 2, 1, 1
-		db	2, 3, 0, 2, 2, 2
-		db	1, 1, 2, 3, 1
+		db	0, 2, 2, 2, 1, 1                                   ; plane_b offset 0x239 (6 bytes)
+		db	2, 3, 0, 2, 2, 2                                   ; plane_b offset 0x23F (6 bytes)
+		db	2, 2, 3, 2, 0, 3                                   ; plane_b offset 0x245 (6 bytes)
+		db	3, 3, 3, 3, 3, 3                                   ; plane_b offset 0x24B (6 bytes)
+		db	1, 1, 2, 2, 1, 1                                   ; plane_b offset 0x251 (6 bytes)
+		db	2, 3, 1, 1, 1, 1                                   ; plane_b offset 0x257 (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; plane_b offset 0x25D (6 bytes)
+		db	2, 2, 1, 3, 3, 1                                   ; plane_b offset 0x263 (6 bytes)
+		db	1, 1, 1, 1, 1, 1                                   ; plane_b offset 0x269 (6 bytes)
+		db	3, 3, 2, 1, 2, 3                                   ; plane_b offset 0x26F (6 bytes)
+		db	2, 3, 3, 3, 2, 2                                   ; plane_b offset 0x275 (6 bytes)
+		db	2, 2, 3, 3, 3, 3                                   ; plane_b offset 0x27B (6 bytes)
+		db	1, 1, 2, 2, 3, 1                                   ; plane_b offset 0x281 (6 bytes)
+		db	3, 3, 3, 1, 2, 2                                   ; plane_b offset 0x287 (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; plane_b offset 0x28D (6 bytes)
+		db	0, 0, 1, 1, 2, 3                                   ; plane_b offset 0x293 (6 bytes)
+		db	0, 0, 0, 2, 1, 1                                   ; plane_b offset 0x299 (6 bytes)
+		db	2, 3, 1, 1, 2, 3                                   ; plane_b offset 0x29F (6 bytes)
+		db	1, 1, 2, 1, 0, 1                                   ; plane_b offset 0x2A5 (6 bytes)
+		db	2, 2, 1, 1, 1, 1                                   ; plane_b offset 0x2AB (6 bytes)
+		db	2, 2, 2, 3, 1, 1                                   ; plane_b offset 0x2B1 (6 bytes)
+		db	2, 2, 0, 2, 2, 2                                   ; plane_b offset 0x2B7 (6 bytes)
+		db	1, 1, 2, 3, 2, 2                                   ; plane_b offset 0x2BD (6 bytes)
+		db	2, 3, 1, 1, 2, 2                                   ; plane_b offset 0x2C3 (6 bytes)
+		db	2, 2, 2, 2, 1, 1                                   ; plane_b offset 0x2C9 (6 bytes)
+		db	2, 2, 1, 1, 1, 3                                   ; plane_b offset 0x2CF (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; plane_b offset 0x2D5 (6 bytes)
+		db	1, 1, 1, 1, 3, 3                                   ; plane_b offset 0x2DB (6 bytes)
+		db	1, 1, 1, 3, 1, 1                                   ; plane_b offset 0x2E1 (6 bytes)
+		db	3, 3, 1, 1, 1, 1                                   ; plane_b offset 0x2E7 (6 bytes)
+		db	1, 1, 3, 3, 2, 1                                   ; plane_b offset 0x2ED (6 bytes)
+		db	2, 3, 3, 3, 3, 3                                   ; plane_b offset 0x2F3 (6 bytes)
+		db	2, 1, 2, 2, 3, 3                                   ; plane_b offset 0x2F9 (6 bytes)
+		db	3, 3, 3, 1, 3, 3                                   ; plane_b offset 0x2FF (6 bytes)
+		db	3, 3, 3, 3, 3, 1                                   ; plane_b offset 0x305 (6 bytes)
+		db	3, 2, 3, 3, 3, 3                                   ; plane_b offset 0x30B (6 bytes)
+		db	0, 0, 0, 0, 0, 1                                   ; plane_b offset 0x311 (6 bytes)
+		db	2, 3, 0, 1, 2, 2                                   ; plane_b offset 0x317 (6 bytes)
+		db	1, 1, 2, 3, 0, 1                                   ; plane_b offset 0x31D (6 bytes)
+		db	2, 1, 0, 1, 1, 1                                   ; plane_b offset 0x323 (6 bytes)
+		db	0, 1, 2, 2, 1, 1                                   ; plane_b offset 0x329 (6 bytes)
+		db	1, 1, 0, 2, 2, 1                                   ; plane_b offset 0x32F (6 bytes)
+		db	0, 2, 2, 3, 0, 2                                   ; plane_b offset 0x335 (6 bytes)
+		db	2, 2, 1, 1, 2, 3                                   ; plane_b offset 0x33B (6 bytes)
+		db	0, 1, 1, 1, 0, 1                                   ; plane_b offset 0x341 (6 bytes)
+		db	2, 3, 0, 3, 3, 3                                   ; plane_b offset 0x347 (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; plane_b offset 0x34D (6 bytes)
+		db	0, 0, 0, 0, 2, 0                                   ; plane_b offset 0x353 (6 bytes)
+		db	1, 1, 1, 1, 1, 1                                   ; plane_b offset 0x359 (6 bytes)
+		db	3, 3, 1, 1, 2, 1                                   ; plane_b offset 0x35F (6 bytes)
+		db	0, 3, 3, 3, 1, 1                                   ; plane_b offset 0x365 (6 bytes)
+		db	1, 1, 1, 1, 3, 3                                   ; plane_b offset 0x36B (6 bytes)
+		db	2, 1, 2, 2, 2, 3                                   ; plane_b offset 0x371 (6 bytes)
+		db	3, 3, 2, 2, 2, 2                                   ; plane_b offset 0x377 (6 bytes)
+		db	3, 3, 3, 3, 3, 1                                   ; plane_b offset 0x37D (6 bytes)
+		db	3, 3, 0, 3, 3, 3                                   ; plane_b offset 0x383 (6 bytes)
+		db	3, 1, 2, 2, 3, 3                                   ; plane_b offset 0x389 (6 bytes)
+		db	3, 3, 0, 0, 0, 0                                   ; plane_b offset 0x38F (6 bytes)
+		db	1, 1, 2, 3, 0, 0                                   ; plane_b offset 0x395 (6 bytes)
+		db	0, 2, 1, 1, 2, 3                                   ; plane_b offset 0x39B (6 bytes)
+		db	1, 1, 2, 3, 1, 1                                   ; plane_b offset 0x3A1 (6 bytes)
+		db	2, 1, 0, 1, 2, 2                                   ; plane_b offset 0x3A7 (6 bytes)
+		db	1, 1, 1, 1, 2, 2                                   ; plane_b offset 0x3AD (6 bytes)
+		db	2, 3, 1, 1, 2, 2                                   ; plane_b offset 0x3B3 (6 bytes)
+		db	0, 2, 2, 2, 1, 1                                   ; plane_b offset 0x3B9 (6 bytes)
+		db	2, 3, 2, 2, 2, 3                                   ; plane_b offset 0x3BF (6 bytes)
+		db	1, 1, 2, 2, 2, 2                                   ; plane_b offset 0x3C5 (6 bytes)
+		db	2, 2, 1, 1, 2, 2                                   ; plane_b offset 0x3CB (6 bytes)
+		db	1, 1, 1, 3, 1, 1                                   ; plane_b offset 0x3D1 (6 bytes)
+		db	3, 3, 1, 1, 1, 1                                   ; plane_b offset 0x3D7 (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; plane_b offset 0x3DD (6 bytes)
+		db	1, 3, 1, 1, 3, 3                                   ; plane_b offset 0x3E3 (6 bytes)
+		db	1, 1, 1, 1, 1, 1                                   ; plane_b offset 0x3E9 (6 bytes)
+		db	3, 3, 2, 1, 2, 3                                   ; plane_b offset 0x3EF (6 bytes)
+		db	3, 3, 3, 3, 2, 1                                   ; plane_b offset 0x3F5 (6 bytes)
+		db	2, 2, 3, 3, 3, 3                                   ; plane_b offset 0x3FB (6 bytes)
+		db	3, 1, 3, 3, 3, 3                                   ; plane_b offset 0x401 (6 bytes)
+		db	3, 3, 3, 1, 3, 2                                   ; plane_b offset 0x407 (6 bytes)
+		db	3, 3, 3, 3, 0, 0                                   ; plane_b offset 0x40D (6 bytes)
+		db	0, 1, 1, 1, 2, 3                                   ; plane_b offset 0x413 (6 bytes)
+		db	0, 1, 2, 2, 1, 1                                   ; plane_b offset 0x419 (6 bytes)
+		db	2, 3, 0, 1, 2, 2                                   ; plane_b offset 0x41F (6 bytes)
+		db	1, 1, 1, 1, 0, 1                                   ; plane_b offset 0x425 (6 bytes)
+		db	2, 2, 1, 1, 1, 1                                   ; plane_b offset 0x42B (6 bytes)
+		db	0, 2, 2, 2, 1, 1                                   ; plane_b offset 0x431 (6 bytes)
+		db	2, 3, 0, 2, 2, 2                                   ; plane_b offset 0x437 (6 bytes)
+		db	1, 1, 2, 3, 1                                      ; plane_b offset 0x43D (5 bytes)
 		db	7 dup (2)
-		db	0, 2, 2, 2, 2, 2
-		db	2, 2, 1, 1, 1, 2
-		db	1, 1, 3, 3, 1, 1
-		db	1, 1, 1, 1, 3, 3
-		db	1, 1, 1, 2, 1, 1
-		db	2, 2, 1, 1, 1, 1
-		db	1, 1, 2, 2, 2, 1
-		db	2, 2, 3, 2, 3, 3
-		db	2, 2, 2, 2, 3, 3
-		db	3, 3, 3, 1, 3, 2
-		db	3, 2, 3, 3, 3, 1
-		db	2, 2, 3, 3, 3, 3
-		db	0, 0, 0, 0, 1, 1
-		db	2, 3, 0, 0, 0, 2
-		db	1, 1, 2, 3, 1, 1
-		db	2, 3, 1, 1, 2, 1
-		db	0, 1, 2, 2, 1, 1
-		db	1, 1, 2, 2, 2, 3
-		db	1, 1, 2, 2, 0, 2
-		db	2, 2, 1, 1, 2, 3
-		db	2, 2, 2, 3, 1, 1
-		db	2, 2, 2, 2, 2, 2
-		db	1, 1, 2, 2, 1, 1
-		db	1, 3, 1, 1, 3, 3
-		db	1, 1, 1, 1, 1, 1
-		db	3, 3, 1, 1, 1, 3
-		db	1, 1, 3, 3, 1, 1
-		db	1, 1, 1, 1, 3, 3
-		db	2, 1, 2, 3, 3, 2
-		db	3, 3, 2, 1, 2, 2
-		db	3, 3, 3, 3, 3, 1
-		db	3, 3, 3, 2, 3, 3
-		db	3, 1, 3, 2, 3, 3
-		db	3, 3
+		db	0, 2, 2, 2, 2, 2                                   ; plane_b offset 0x449 (6 bytes)
+		db	2, 2, 1, 1, 1, 2                                   ; plane_b offset 0x44F (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; plane_b offset 0x455 (6 bytes)
+		db	1, 1, 1, 1, 3, 3                                   ; plane_b offset 0x45B (6 bytes)
+		db	1, 1, 1, 2, 1, 1                                   ; plane_b offset 0x461 (6 bytes)
+		db	2, 2, 1, 1, 1, 1                                   ; plane_b offset 0x467 (6 bytes)
+		db	1, 1, 2, 2, 2, 1                                   ; plane_b offset 0x46D (6 bytes)
+		db	2, 2, 3, 2, 3, 3                                   ; plane_b offset 0x473 (6 bytes)
+		db	2, 2, 2, 2, 3, 3                                   ; plane_b offset 0x479 (6 bytes)
+		db	3, 3, 3, 1, 3, 2                                   ; plane_b offset 0x47F (6 bytes)
+		db	3, 2, 3, 3, 3, 1                                   ; plane_b offset 0x485 (6 bytes)
+		db	2, 2, 3, 3, 3, 3                                   ; plane_b offset 0x48B (6 bytes)
+		db	0, 0, 0, 0, 1, 1                                   ; plane_b offset 0x491 (6 bytes)
+		db	2, 3, 0, 0, 0, 2                                   ; plane_b offset 0x497 (6 bytes)
+		db	1, 1, 2, 3, 1, 1                                   ; plane_b offset 0x49D (6 bytes)
+		db	2, 3, 1, 1, 2, 1                                   ; plane_b offset 0x4A3 (6 bytes)
+		db	0, 1, 2, 2, 1, 1                                   ; plane_b offset 0x4A9 (6 bytes)
+		db	1, 1, 2, 2, 2, 3                                   ; plane_b offset 0x4AF (6 bytes)
+		db	1, 1, 2, 2, 0, 2                                   ; plane_b offset 0x4B5 (6 bytes)
+		db	2, 2, 1, 1, 2, 3                                   ; plane_b offset 0x4BB (6 bytes)
+		db	2, 2, 2, 3, 1, 1                                   ; plane_b offset 0x4C1 (6 bytes)
+		db	2, 2, 2, 2, 2, 2                                   ; plane_b offset 0x4C7 (6 bytes)
+		db	1, 1, 2, 2, 1, 1                                   ; plane_b offset 0x4CD (6 bytes)
+		db	1, 3, 1, 1, 3, 3                                   ; plane_b offset 0x4D3 (6 bytes)
+		db	1, 1, 1, 1, 1, 1                                   ; plane_b offset 0x4D9 (6 bytes)
+		db	3, 3, 1, 1, 1, 3                                   ; plane_b offset 0x4DF (6 bytes)
+		db	1, 1, 3, 3, 1, 1                                   ; plane_b offset 0x4E5 (6 bytes)
+		db	1, 1, 1, 1, 3, 3                                   ; plane_b offset 0x4EB (6 bytes)
+		db	2, 1, 2, 3, 3, 2                                   ; plane_b offset 0x4F1 (6 bytes)
+		db	3, 3, 2, 1, 2, 2                                   ; plane_b offset 0x4F7 (6 bytes)
+		db	3, 3, 3, 3, 3, 1                                   ; plane_b offset 0x4FD (6 bytes)
+		db	3, 3, 3, 2, 3, 3                                   ; plane_b offset 0x503 (6 bytes)
+		db	3, 1, 3, 2, 3, 3                                   ; plane_b offset 0x509 (6 bytes)
+		db	3, 3                                               ; plane_b offset 0x50F (2 bytes)
 
 equip_process_loop_5		proc	near
 		push	cx
@@ -2592,9 +2592,9 @@ disp_palette_xlat:
 		mov	ah,cs:cga_palette_xlat[bx]
 		pop	bx
 		jmp	word ptr cs:cga_dispatch_fn
-		db	 00h, 05h, 02h, 07h, 03h, 04h
-		db	 06h, 01h,0C3h
-		db	888 dup (0)
+		db	 00h, 05h, 02h, 07h, 03h, 04h	; cga_palette_xlat[0..5]: 0,5,2,7,3,4
+		db	 06h, 01h,0C3h			; cga_palette_xlat[6..7]=6,1; retn (C3h)
+		db	888 dup (0)			; trailing zero pad
 
 seg_a		ends
 

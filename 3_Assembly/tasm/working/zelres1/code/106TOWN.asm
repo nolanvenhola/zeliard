@@ -1441,8 +1441,8 @@ player_func_18		endp
 		db	 14h, 16h, 18h, 15h, 17h, 19h	; step 24-29
 		db	 1Ah, 1Ch, 1Eh, 1Bh, 1Dh, 1Fh	; step 30-35
 		db	 20h, 22h, 24h, 21h, 23h, 25h	; step 36-41
-		db	 1Ah
-		db	'&(', 1Bh, 27h, ') *,!+-'	; step 42-47 (mixed text/control codes as frame ids)
+		db	 1Ah				; step 42 (frame 26h prefix)
+		db	'&(', 1Bh, 27h, ') *,!+-'	; step 43-47 (mixed text/control codes as frame ids)
 		db	 14h, 16h, 18h, 15h, 17h, 19h	; step 48-53 (tail / wrap-around)
 
 player_scan_loop_2		proc	near
@@ -1584,16 +1584,16 @@ player_func_26		proc	near
 		jmp	short $-1Ch
 			                        ;* No entry point to code  (npc_dispatch_tbl: NPC type fn-ptr table + shared movement code at 0x6B41)
 		push	cx				; start of shared NPC movement code block
-		db	 6Bh, 6Ch, 6Bh,0A6h, 6Bh,0B7h	; fn ptrs (LE words): npc_type0, npc_type1, npc_type2...
-		db	 6Bh,0D2h, 6Bh,0ECh, 6Bh, 19h
-		db	 6Ch, 2Ah, 6Ch, 80h, 4Ch, 02h
-		db	 80h, 8Ah, 1Eh, 83h, 00h, 80h
-		db	0C3h, 04h, 32h,0FFh, 03h, 1Eh
-		db	 80h, 00h, 3Bh,0DAh, 72h, 6Ch
-		db	 80h, 64h, 02h, 7Fh,0EBh, 66h
-		db	 8Ah, 44h, 04h, 04h, 10h, 88h
-		db	 44h, 04h, 8Ah,0E8h, 24h, 10h
-		db	 74h, 01h,0C3h
+		db	 6Bh, 6Ch, 6Bh,0A6h, 6Bh,0B7h	; fn ptrs (LE words): npc_type0=6C6Bh, type1=6BA6h, type2=6BB7h
+		db	 6Bh,0D2h, 6Bh,0ECh, 6Bh, 19h	; fn ptrs (LE words): type3=6BD2h, type4=6BECh, type5=6C19h
+		db	 6Ch, 2Ah, 6Ch, 80h, 4Ch, 02h	; fn ptrs: type6=6C2Ah, type7=6C80h + shared code start
+		db	 80h, 8Ah, 1Eh, 83h, 00h, 80h	; npc shared code: cmp+mov bl,ds:[8300h]; cmp byte ptr...
+		db	0C3h, 04h, 32h,0FFh, 03h, 1Eh	; shared code: add bl,4; xor bh,bh; add bx,...
+		db	 80h, 00h, 3Bh,0DAh, 72h, 6Ch	; shared code: 8000h offset; cmp bx,dx; jb +6Ch
+		db	 80h, 64h, 02h, 7Fh,0EBh, 66h	; shared code: and byte ptr [si+2],7Fh; jmp +66h
+		db	 8Ah, 44h, 04h, 04h, 10h, 88h	; shared code: mov al,[si+4]; add al,10h; mov [si+4]...
+		db	 44h, 04h, 8Ah,0E8h, 24h, 10h	; shared code: mov [si+4],al; mov ch,al; and al,10h
+		db	 74h, 01h,0C3h			; shared code: jz +1; ret
 
 npc_anim_advance:
 								inc	ch
@@ -1956,7 +1956,7 @@ player_func_33:
 		dec	bp
 		inc	cx
 		dec	si
-		db	 2Eh, 47h, 52h, 50h, 00h
+		db	 2Eh, 47h, 52h, 50h, 00h	; ".GRP" filename suffix + null terminator
 
 door_scan_entry:
 		or	byte ptr ds:[0E7h],1
@@ -3031,7 +3031,7 @@ clear_buffer		endp
 		db	'User File', 0		; 0x0001
 		db	'Not Found', 0		; 0x000B
 		db	'GAME.BI', 0		; 0x0017
-		db	0
+		db	0			; final string-terminator pad
 
 copy_buffer		proc	near
 		mov	ax,cs
@@ -3627,39 +3627,41 @@ backspace_done:
 
 player_copy_buf		endp
 
-		db	0, 2, 2, 3, 1, 0
-		db	0, 2, 2, 3, 1, 1
-		db	1, 2, 2, 0, 1, 2
-		db	8 dup (1)
-		db	3, 2, 1, 1, 2, 1
-		db	9 dup (0)
-		db	2, 0
-		db	9 dup (0)
-		db	1, 0, 0, 0, 0, 0
-		db	1, 2, 2, 2, 1, 1
-		db	1, 0, 0, 1, 0, 1
-		db	1, 0, 0, 2, 1, 0
-		db	2, 0, 1, 1, 0, 0
-		db	0, 1, 1, 0, 0, 0
-		db	1, 1, 1, 2, 0, 3
-		db	1, 0, 5, 4, 4, 4
-		db	6, 8, 5, 3, 4, 4
-		db	6, 6, 6, 5, 6, 8
-		db	7, 5, 7, 7, 7, 7
-		db	7, 7, 7, 7, 3, 4
-		db	6, 6, 6, 7
-		db	9 dup (8)
-		db	5, 8, 8
-		db	8 dup (8)
-		db	7, 8, 8, 8, 8, 8
-		db	7, 5, 3, 5, 6, 7
-		db	7, 8, 8, 7, 8, 7
-		db	7, 8, 8, 5, 6, 8
-		db	5, 8, 7, 7, 8, 8
-		db	8, 7, 6, 8, 8, 8
-		db	7, 7, 7, 4, 8, 4
-		db	7, 8, 0
-		db	58 dup (0)
+		; town_tile_attr_tbl: tile attribute / sector lookup table (town walking grid)
+		; Each value 0..8 is a tile-class index used by player movement / NPC spawn checks.
+		db	0, 2, 2, 3, 1, 0	; row 0  (cols 0-5)
+		db	0, 2, 2, 3, 1, 1	; row 1  (cols 0-5)
+		db	1, 2, 2, 0, 1, 2	; row 2  (cols 0-5)
+		db	8 dup (1)		; row 3  (8 cols of class 1)
+		db	3, 2, 1, 1, 2, 1	; row 4  (cols 0-5)
+		db	9 dup (0)		; row 5  (9 cols of class 0)
+		db	2, 0			; row 6  (cols 0-1)
+		db	9 dup (0)		; row 7  (9 cols of class 0)
+		db	1, 0, 0, 0, 0, 0	; row 8
+		db	1, 2, 2, 2, 1, 1	; row 9
+		db	1, 0, 0, 1, 0, 1	; row 10
+		db	1, 0, 0, 2, 1, 0	; row 11
+		db	2, 0, 1, 1, 0, 0	; row 12
+		db	0, 1, 1, 0, 0, 0	; row 13
+		db	1, 1, 1, 2, 0, 3	; row 14
+		db	1, 0, 5, 4, 4, 4	; row 15
+		db	6, 8, 5, 3, 4, 4	; row 16
+		db	6, 6, 6, 5, 6, 8	; row 17
+		db	7, 5, 7, 7, 7, 7	; row 18
+		db	7, 7, 7, 7, 3, 4	; row 19
+		db	6, 6, 6, 7		; row 20
+		db	9 dup (8)		; row 21 (9 cols of class 8)
+		db	5, 8, 8			; row 22
+		db	8 dup (8)		; row 23 (8 cols of class 8)
+		db	7, 8, 8, 8, 8, 8	; row 24
+		db	7, 5, 3, 5, 6, 7	; row 25
+		db	7, 8, 8, 7, 8, 7	; row 26
+		db	7, 8, 8, 5, 6, 8	; row 27
+		db	5, 8, 7, 7, 8, 8	; row 28
+		db	8, 7, 6, 8, 8, 8	; row 29
+		db	7, 7, 7, 4, 8, 4	; row 30
+		db	7, 8, 0			; row 31
+		db	58 dup (0)		; trailing zero pad to align block
 
 seg_a		ends
 

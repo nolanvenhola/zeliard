@@ -2263,7 +2263,7 @@ narration_chapter_3:
 		db	ANIM_92, 'i', ANIM_97, 's', ANIM_98, ' '
 		db	ANIM_97, ANIM_95, 'p', ANIM_96, ANIM_90, 'l'
 		db	'a', ANIM_93, 'ce."'
-		db	ANIM_94
+		db	ANIM_94					; trailing color-cycle marker
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
@@ -2374,7 +2374,7 @@ narration_chapter_3:
 		db	SCR_WAIT				; pause
 		db	SCR_SCROLL				; scroll text up
 		db	SCR_BREAK				; end of section
-		db	ANIM_99
+		db	ANIM_99					; color-cycle marker
 		db	SCR_WAIT				; pause
 		db	SCR_SCROLL,SCR_PARA,SCR_BOLD,SCR_SPK_UNK, ANIM_9A, '"'		; scroll-text-up | layout-mode 1 | text-style: color 7 bold | speaker: unknown (attr =)
 		; Style-encoded speech -- Jashiin (cont.)
@@ -2402,7 +2402,7 @@ narration_chapter_4:
 		db	SCR_PARA				; layout: paragraph
 		db	SCR_COLOR6				; color 6 text
 		db	'"You shall address me as the Emperor of Chaos... '
-		db	ANIM_9B
+		db	ANIM_9B					; color-cycle marker (emphasis)
 		db	'THE EMPEROR OF CHAOS!"'
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
@@ -2535,20 +2535,20 @@ disp_narr_chap4	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
 		; Script continuation (0x00-0x1F = custom font glyphs / animation codes; 0xFC = no-op)
 		db	'X', '%', SCR_RESET
 		db	0, 0, ANIM_03, 'h', '!'
-		db	0FCh, 0FCh
+		db	0FCh, 0FCh			; SCR_NOP, SCR_NOP (no-op padding)
 		db	ANIM_04, ANIM_07, 'p', '#', ANIM_01
-		db	SCR_BREAK
+		db	SCR_BREAK			; end of section
 		db	ANIM_04, ANIM_07, 'p', '$', ANIM_04
-		db	SCR_BREAK
+		db	SCR_BREAK			; end of section
 		db	ANIM_04, ANIM_07, 'x', '%', ANIM_06
-		db	SCR_SCROLL
+		db	SCR_SCROLL			; scroll text up
 		db	ANIM_04, ANIM_07, 'x', '(', ANIM_06, ANIM_02
 		db	ANIM_04, ANIM_07, 'p', ')', ANIM_04, ANIM_03
 		db	ANIM_04, ANIM_07, 'p', '*', ANIM_01, ANIM_03
 		db	ANIM_04, ANIM_07, 'h', ',', 0FCh
-		db	ANIM_04, ANIM_04, ANIM_07
-		db	SCR_END_SCRIPT
-		db	ANIM_01
+		db	ANIM_04, ANIM_04, ANIM_07	; trailing color-cycle markers
+		db	SCR_END_SCRIPT			; end of script
+		db	ANIM_01					; color-cycle marker
 
 		; Style-encoded speech -- Jashiin (departing threat)
 		; "Beware, for I shall wake from my sleep of 2,000 years
@@ -2578,7 +2578,7 @@ disp_narr_chap4	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
 		db	'v', ANIM_04, 'er ', ANIM_01
 		db	'the ', ANIM_04, 'w'
 		db	'or', ANIM_03, 'ld.'
-		db	ANIM_02
+		db	ANIM_02					; trailing color-cycle marker
 
 		; Animation frame timing sequence (end-of-chapter transition)
 		; First byte is a null terminator consumed by caller; sequence follows
@@ -2594,17 +2594,17 @@ disp_narr_chap4	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
 		db	ANIM_02				; ANIM_02
 		db	ANIM_03				; ANIM_03
 		db	ANIM_03				; ANIM_03
-		db	ANIM_05
+		db	ANIM_05				; ANIM_05 (sequence end)
 		; Maps ASCII codes (0x00 to 0xC1) to glyph indices in the font sheet.
 		; Index 0 = no glyph (space/unprintable). Used by the text renderer
 		; to look up which glyph bitmap to draw for each character.
 
 char_glyph_index:
-		db	7 dup (0)
-		db	001h, 002h, 003h, 004h
-		db	6 dup (0)
-		db	005h, 006h, 007h, 008h
-		db	009h, 00Ah, 00Bh, 00Ch, 00Dh
+		db	7 dup (0)			; ASCII 0x00-0x06: unprintable
+		db	001h, 002h, 003h, 004h		; glyphs for ASCII 0x07-0x0A
+		db	6 dup (0)			; ASCII 0x0B-0x10: unprintable
+		db	005h, 006h, 007h, 008h		; glyphs for ASCII 0x11-0x14
+		db	009h, 00Ah, 00Bh, 00Ch, 00Dh	; glyphs for ASCII 0x15-0x19
 		db	0Eh				; 0Eh
 		db	0Fh				; 0Fh
 		db	10h				; 10h
@@ -2631,7 +2631,7 @@ char_glyph_index:
 		db	000h, 000h, '/012'
 		db	'3', 000h, 000h, '456'
 		db	'78', 000h, '9&:'
-		db	 00h
+		db	 00h				; padding byte
 		db	18 dup (0)
 		db	';<=', 000h, 000h, 000h
 		db	'>?@A'
@@ -2666,22 +2666,22 @@ char_glyph_index:
 		db	24 dup (0)
 		db	'tuvwxyz{|}'
 		db	24 dup (0)
-		db	'~', 07Fh, 080h, 081h, 082h, 083h
-		db	084h, 085h, 086h, 087h, 088h, 089h
-		db	0, 0, 0, 0
-		db	00Fh
-		db	08Ah, 08Bh, 08Ch
-		db	0
-		db	13 dup (0)
-		db	'/', 08Dh, 08Eh, 08Fh, 090h, 091h
-		db	092h, 093h, 094h, 095h, 096h, 097h
-		db	0, 0, 0
-		db	098h, 099h, 09Ah, 09Bh, 09Ch, 09Dh
-		db	14 dup (0)
-		db	09Eh, 09Fh
-		db	0A0h
-		db	0A1h
-		db	0A2h
+		db	'~', 07Fh, 080h, 081h, 082h, 083h	; glyphs for ASCII 0x7E-0x83
+		db	084h, 085h, 086h, 087h, 088h, 089h	; glyphs for ASCII 0x84-0x89
+		db	0, 0, 0, 0				; ASCII 0x8A-0x8D: unprintable
+		db	00Fh					; glyph for ASCII 0x8E
+		db	08Ah, 08Bh, 08Ch			; glyphs for ASCII 0x8F-0x91
+		db	0					; ASCII 0x92: unprintable
+		db	13 dup (0)				; ASCII 0x93-0x9F: unprintable
+		db	'/', 08Dh, 08Eh, 08Fh, 090h, 091h	; glyphs for ASCII 0xA0-0xA5
+		db	092h, 093h, 094h, 095h, 096h, 097h	; glyphs for ASCII 0xA6-0xAB
+		db	0, 0, 0					; ASCII 0xAC-0xAE: unprintable
+		db	098h, 099h, 09Ah, 09Bh, 09Ch, 09Dh	; glyphs for ASCII 0xAF-0xB4
+		db	14 dup (0)				; ASCII 0xB5-0xC2: unprintable
+		db	09Eh, 09Fh				; glyphs for ASCII 0xC3-0xC4
+		db	0A0h					; glyph for ASCII 0xC5
+		db	0A1h					; glyph for ASCII 0xC6
+		db	0A2h					; glyph for ASCII 0xC7
 		db	0A3h				; 0A3h
 		db	0A4h				; 0A4h
 		db	0A5h				; 0A5h
