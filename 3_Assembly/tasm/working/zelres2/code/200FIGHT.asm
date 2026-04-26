@@ -3400,9 +3400,9 @@ game_check_state_4		endp
 ; First 16 bytes: squared distance steps 0??..15?? (0,1,4,9,16,25,36,49,64,81,100,121,144,169,196,225)
 
 atk_dist_sq_tbl:
-		db	 00h, 01h, 04h, 09h, 10h, 19h
-		db	 24h, 31h, 40h, 51h, 64h, 79h
-		db	 90h,0A9h,0C4h,0E1h
+		db	 00h, 01h, 04h, 09h, 10h, 19h			; squared distances 0..5: 0,1,4,9,16,25
+		db	 24h, 31h, 40h, 51h, 64h, 79h			; squared distances 6..11: 36,49,64,81,100,121
+		db	 90h,0A9h,0C4h,0E1h			; squared distances 12..15: 144,169,196,225
 ; Attack speed step-down table by distance range
 		db	17 dup (0Fh)
 		db	20 dup (0Eh)
@@ -7743,7 +7743,7 @@ boss_fn_tbl_data:
 		inc	ax
 		push	word ptr [bp+si]
 		ror	byte ptr ss:[103Eh][bp+di],cl	; Rotate
-		db	0C0h
+		db	0C0h			; trailing pad byte ending boss_fn_tbl_data
 
 obj_link_scan:
 ;*		cmp	word ptr [di],0FFFFh
@@ -7883,198 +7883,198 @@ next_level_start:
 item_msg_table:
 		db	 26h, 00h			; table header: item count=0x26, terminator
 		db	'You get 50 golds.'
-		db	0FFh, 22h, 00h
+		db	0FFh, 22h, 00h			; entry 00: term=0xFF, value=0x22 (34), end=00
 		db	'You get 100 golds.'
-		db	0FFh, 22h, 00h
+		db	0FFh, 22h, 00h			; entry 01: term=0xFF, value=0x22 (34), end=00
 		db	'You get 500 golds.'
-		db	0FFh, 1Eh, 00h
+		db	0FFh, 1Eh, 00h			; entry 02: term=0xFF, value=0x1E (30), end=00
 		db	'You get 1000 golds.'
-		db	0FFh, 32h, 00h
+		db	0FFh, 32h, 00h			; entry 03: term=0xFF, value=0x32 (50), end=00
 		db	'You get a Key'
 ; gfx_fn_hitbox_data: base of hitbox bitmask table (test bx,[base+bx] pattern).
 ; Dual-use: these bytes also form the end of 'You get a Key.' + its message terminator.
 
 gfx_fn_hitbox_data	label	word		; hitbox bitmask table base (test bx,[base+bx])
-		db	2Eh			; '.'  ?-- completes 'You get a Key.'
-		db	0FFh, 1Ch, 00h		; message terminator, key item value, entry end
+		db	2Eh			; '.'  -- completes 'You get a Key.'
+		db	0FFh, 1Ch, 00h		; entry 04: term=0xFF, value=0x1C (28), end=00
 		db	'You have recovered.'
-		db	0FFh, 08h, 00h
+		db	0FFh, 08h, 00h			; entry 05: term=0xFF, value=0x08, end=00
 		db	'You have recovered full.'
-		db	0FFh, 3Ch, 00h
+		db	0FFh, 3Ch, 00h			; entry 06: term=0xFF, value=0x3C (60), end=00
 		db	'Shield broken.'
-		db	0FFh, 14h, 00h
+		db	0FFh, 14h, 00h			; entry 07: term=0xFF, value=0x14 (20), end=00
 		db	'Can\t open this door.'
-		db	0FFh, 1Ch, 00h
+		db	0FFh, 1Ch, 00h			; entry 08: term=0xFF, value=0x1C (28), end=00
 		db	'Nothing in the box.'
-		db	0FFh, 06h, 00h
+		db	0FFh, 06h, 00h			; entry 09: term=0xFF, value=0x06, end=00
 		db	'You get the Hero\s Crest.'
-		db	0FFh, 00h, 00h
+		db	0FFh, 00h, 00h			; entry 0A: term=0xFF, value=0x00, end=00
 		db	'You get the Ruzeria shoes.'
-		db	0FFh, 08h, 00h
+		db	0FFh, 08h, 00h			; entry 0B: term=0xFF, value=0x08, end=00
 		db	'You get the Glory Crest.'
-		db	0FFh, 06h, 00h
+		db	0FFh, 06h, 00h			; entry 0C: term=0xFF, value=0x06, end=00
 		db	'You get the Pirika shoes.'
-		db	0FFh, 06h, 00h
+		db	0FFh, 06h, 00h			; entry 0D: term=0xFF, value=0x06, end=00
 		db	'You get the Feruza shoes.'
-		db	0FFh, 00h, 00h
+		db	0FFh, 00h, 00h			; entry 0E: term=0xFF, value=0x00, end=00
 		db	'You get the Silkarn shoes.'
-		db	0FFh, 00h, 00h
+		db	0FFh, 00h, 00h			; entry 0F: term=0xFF, value=0x00, end=00
 		db	'Get the Enchantment sword.'
-		db	0FFh, 30h, 00h
+		db	0FFh, 30h, 00h			; entry 10: term=0xFF, value=0x30 (48), end=00
 		db	'It\s too hot !!'
-		db	0FFh, 08h, 00h
+		db	0FFh, 08h, 00h			; entry 11: term=0xFF, value=0x08, end=00
 		db	'Get the lion\s head Key.'
-		db	0FFh, 02h
+		db	0FFh, 02h			; entry 12: term=0xFF, value=0x02 (start of resource_name_table follows)
 ; Resource file name table: [chunk_id_byte][filename][NUL][archive_0based][chunk_1based]
 ; Each entry loads a SAR chunk (sprite or audio) for the corresponding enemy/music ID
 
 resource_name_table:
 		db	'4FMAN.GRP'
-		db	0, 2
+		db	0, 2			; 4FMAN.GRP: arch=0(z1), chunk=2 (stage-2 reread placeholder)
 		db	'8ENCNT.GRP'
-		db	0, 2
+		db	0, 2			; 8ENCNT.GRP: arch=0(z1), chunk=2
 		db	'5ROKA.GRP'
-		db	0, 1
+		db	0, 1			; 5ROKA.GRP: arch=0(z1), chunk=1
 		db	':ROKA.GRP'
-		db	0, 2
+		db	0, 2			; :ROKA.GRP: arch=0(z1), chunk=2
 		db	'7DCHR.GRP'
-		db	0, 2, 1
+		db	0, 2, 1			; 7DCHR.GRP: arch=0(z1), chunk=2; +next_byte=1 starts ROKADEMO len byte
 		db	'ROKADEMO.BIN'
-		db	 00h, 01h, 1Eh
+		db	 00h, 01h, 1Eh			; ROKADEMO.BIN: arch=0(z1)?, chunk=1, len_or_id=0x1E (30)
 		db	'MMAN.GRP'
-		db	 00h, 01h, 1Fh
+		db	 00h, 01h, 1Fh			; MMAN.GRP: arch=0, chunk=1, id=0x1F
 		db	'CMAN.GRP'
-		db	0, 2
+		db	0, 2			; CMAN.GRP: arch=0, chunk=2
 		db	'KMPP1.GRP'
-		db	0, 2
+		db	0, 2			; KMPP1.GRP: arch=0, chunk=2 (boss palette 1)
 		db	'LMPP2.GRP'
-		db	0, 2
+		db	0, 2			; LMPP2.GRP: arch=0, chunk=2 (boss palette 2)
 		db	'MMPP3.GRP'
-		db	0, 2
+		db	0, 2			; MMPP3.GRP: arch=0, chunk=2 (boss palette 3)
 		db	'NMPP4.GRP'
-		db	0, 2
+		db	0, 2			; NMPP4.GRP: arch=0, chunk=2 (boss palette 4)
 		db	'OMPP5.GRP'
-		db	0, 2
+		db	0, 2			; OMPP5.GRP: arch=0, chunk=2 (boss palette 5)
 		db	'PMPP6.GRP'
-		db	0, 2
+		db	0, 2			; PMPP6.GRP: arch=0, chunk=2 (boss palette 6)
 		db	'QMPP7.GRP'
-		db	0, 2
+		db	0, 2			; QMPP7.GRP: arch=0, chunk=2 (boss palette 7)
 		db	'RMPP8.GRP'
-		db	0, 2
+		db	0, 2			; RMPP8.GRP: arch=0, chunk=2 (boss palette 8)
 		db	'SMPP9.GRP'
-		db	0, 2
+		db	0, 2			; SMPP9.GRP: arch=0, chunk=2 (boss palette 9)
 		db	'TMPPA.GRP'
-		db	0, 2
+		db	0, 2			; TMPPA.GRP: arch=0, chunk=2 (boss palette A)
 		db	'UMPPB.GRP'
-		db	0, 2, 2
+		db	0, 2, 2			; UMPPB.GRP: arch=0, chunk=2; +next byte=2 starts EAI1 lead char
 		db	'EAI1.BIN'
-		db	0, 2
-		db	0Ah, 'CRAB.BIN'
-		db	0, 2, 3
+		db	0, 2			; EAI1.BIN: arch=0, chunk=2
+		db	0Ah, 'CRAB.BIN'			; len byte 0x0A then 'CRAB.BIN'
+		db	0, 2, 3			; CRAB.BIN: arch=0, chunk=2; +next byte=3 starts EAI2 lead
 		db	'EAI2.BIN'
-		db	 00h, 02h, 0Bh
+		db	 00h, 02h, 0Bh			; EAI2.BIN: arch=0, chunk=2; +0x0B starts TAKO lead
 		db	'TAKO.BIN'
-		db	0, 2, 4
+		db	0, 2, 4			; TAKO.BIN: arch=0, chunk=2; +next byte=4 starts EAI3 lead
 		db	'EAI3.BIN'
-		db	0, 2
-		db	0Ch, 'TORI.BIN'
-		db	0, 2, 5
+		db	0, 2			; EAI3.BIN: arch=0, chunk=2
+		db	0Ch, 'TORI.BIN'			; len byte 0x0C then 'TORI.BIN'
+		db	0, 2, 5			; TORI.BIN: arch=0, chunk=2; +next byte=5 starts EAI4 lead
 		db	'EAI4.BIN'
-		db	0, 2
-		db	0Dh, 'ZELA.BIN'
-		db	0, 2, 6
+		db	0, 2			; EAI4.BIN: arch=0, chunk=2
+		db	0Dh, 'ZELA.BIN'			; len byte 0x0D then 'ZELA.BIN'
+		db	0, 2, 6			; ZELA.BIN: arch=0, chunk=2; +next byte=6 starts EAI5 lead
 		db	'EAI5.BIN'
-		db	 00h, 02h, 0Eh
+		db	 00h, 02h, 0Eh			; EAI5.BIN: arch=0, chunk=2; +0x0E starts MEDA lead
 		db	'MEDA.BIN'
-		db	0, 2, 7
+		db	0, 2, 7			; MEDA.BIN: arch=0, chunk=2; +next byte=7 starts EAI6 lead
 		db	'EAI6.BIN'
-		db	 00h, 02h, 0Fh
+		db	 00h, 02h, 0Fh			; EAI6.BIN: arch=0, chunk=2; +0x0F starts LEGA lead
 		db	'LEGA.BIN'
-		db	0, 2
-		db	8, 'EAI7.BIN'
-		db	 00h, 02h, 11h
+		db	0, 2			; LEGA.BIN: arch=0, chunk=2
+		db	8, 'EAI7.BIN'			; len byte 0x08 then 'EAI7.BIN'
+		db	 00h, 02h, 11h			; EAI7.BIN: arch=0, chunk=2; +0x11 starts DRGN lead
 		db	'DRGN.BIN'
-		db	0, 2
-		db	9, 'EAI8.BIN'
-		db	 00h, 02h, 12h
+		db	0, 2			; DRGN.BIN: arch=0, chunk=2
+		db	9, 'EAI8.BIN'			; len byte 0x09 then 'EAI8.BIN'
+		db	 00h, 02h, 12h			; EAI8.BIN: arch=0, chunk=2; +0x12 starts AKMA lead
 		db	'AKMA.BIN'
-		db	 00h, 02h, 13h
+		db	 00h, 02h, 13h			; AKMA.BIN: arch=0, chunk=2; +0x13 starts MAO1 lead
 		db	'MAO1.BIN'
-		db	 00h, 02h, 14h
+		db	 00h, 02h, 14h			; MAO1.BIN: arch=0, chunk=2; +0x14 starts MAO2 lead
 		db	'MAO2.BIN'
-		db	 00h, 02h, 10h
+		db	 00h, 02h, 10h			; MAO2.BIN: arch=0, chunk=2; +0x10 starts ZEL2 lead
 		db	'ZEL2.BIN'
-		db	0, 2
+		db	0, 2			; ZEL2.BIN: arch=0, chunk=2
 		db	'9ENP1.GRP'
-		db	0, 2
+		db	0, 2			; 9ENP1.GRP: arch=0, chunk=2 (enemy palette 1)
 		db	'ACRAB.GRP'
-		db	0, 2
+		db	0, 2			; ACRAB.GRP: arch=0, chunk=2 (CRAB sprites)
 		db	':ENP2.GRP'
-		db	0, 2
+		db	0, 2			; :ENP2.GRP: arch=0, chunk=2 (enemy palette 2)
 		db	'BTAKO.GRP'
-		db	0, 2
+		db	0, 2			; BTAKO.GRP: arch=0, chunk=2 (TAKO sprites)
 		db	';ENP3.GRP'
-		db	0, 2
+		db	0, 2			; ;ENP3.GRP: arch=0, chunk=2 (enemy palette 3)
 		db	'CTORI.GRP'
-		db	0, 2
+		db	0, 2			; CTORI.GRP: arch=0, chunk=2 (TORI sprites)
 		db	'<ENP4.GRP'
-		db	0, 2
+		db	0, 2			; <ENP4.GRP: arch=0, chunk=2 (enemy palette 4)
 		db	'DZELA.GRP'
-		db	0, 2
+		db	0, 2			; DZELA.GRP: arch=0, chunk=2 (ZELA sprites)
 		db	'=ENP5.GRP'
-		db	0, 2
+		db	0, 2			; =ENP5.GRP: arch=0, chunk=2 (enemy palette 5)
 		db	'EMEDA.GRP'
-		db	0, 2
+		db	0, 2			; EMEDA.GRP: arch=0, chunk=2 (MEDA sprites)
 		db	'>ENP6.GRP'
-		db	0, 2
+		db	0, 2			; >ENP6.GRP: arch=0, chunk=2 (enemy palette 6)
 		db	'FLEGA.GRP'
-		db	0, 2
+		db	0, 2			; FLEGA.GRP: arch=0, chunk=2 (LEGA sprites)
 		db	'?ENP7.GRP'
-		db	0, 2
+		db	0, 2			; ?ENP7.GRP: arch=0, chunk=2 (enemy palette 7)
 		db	'GDRGN.GRP'
-		db	0, 2
+		db	0, 2			; GDRGN.GRP: arch=0, chunk=2 (DRGN sprites)
 		db	'@ENP8.GRP'
-		db	0, 2
+		db	0, 2			; @ENP8.GRP: arch=0, chunk=2 (enemy palette 8)
 		db	'HAKMA.GRP'
-		db	0, 2
+		db	0, 2			; HAKMA.GRP: arch=0, chunk=2 (AKMA sprites)
 		db	'IMAO1.GRP'
-		db	0, 2
+		db	0, 2			; IMAO1.GRP: arch=0, chunk=2 (MAO1 sprites)
 		db	'JMAO2.GRP'
-		db	0, 1
+		db	0, 1			; JMAO2.GRP: arch=0, chunk=1 (MAO2 sprites)
 		db	'/MGT1.MSD'
-		db	0, 1
+		db	0, 1			; /MGT1.MSD: arch=0, chunk=1 (music: MIDI gameplay 1)
 		db	'1UGM1.MSD'
-		db	0, 1
+		db	0, 1			; 1UGM1.MSD: arch=0, chunk=1 (music: underground 1)
 		db	'0MGT2.MSD'
-		db	0, 1
+		db	0, 1			; 0MGT2.MSD: arch=0, chunk=1 (music: MIDI gameplay 2)
 		db	'2UGM2.MSD'
-		db	0, 2
+		db	0, 2			; 2UGM2.MSD: arch=0, chunk=2 (music: underground 2)
 		db	'VMUS1.MSD'
-		db	0, 2
+		db	0, 2			; VMUS1.MSD: arch=0, chunk=2 (music: stage 1 BGM)
 		db	'WMUS2.MSD'
-		db	0, 2
+		db	0, 2			; WMUS2.MSD: arch=0, chunk=2 (music: stage 2 BGM)
 		db	'XMUS3.MSD'
-		db	0, 2
+		db	0, 2			; XMUS3.MSD: arch=0, chunk=2 (music: stage 3 BGM)
 		db	'YMUS4.MSD'
-		db	0, 2
+		db	0, 2			; YMUS4.MSD: arch=0, chunk=2 (music: stage 4 BGM)
 		db	'ZMUS5.MSD'
-		db	0, 2
+		db	0, 2			; ZMUS5.MSD: arch=0, chunk=2 (music: stage 5 BGM)
 		db	'[MUS6.MSD'
-		db	0, 2
+		db	0, 2			; [MUS6.MSD: arch=0, chunk=2 (music: stage 6 BGM)
 		db	'\MUS7.MSD'
-		db	0, 2
+		db	0, 2			; \MUS7.MSD: arch=0, chunk=2 (music: stage 7 BGM)
 		db	']MUS8.MSD'
-		db	0, 2
+		db	0, 2			; ]MUS8.MSD: arch=0, chunk=2 (music: stage 8 BGM)
 		db	'^MBOS.MSD'
-		db	0, 2
+		db	0, 2			; ^MBOS.MSD: arch=0, chunk=2 (music: boss BGM)
 		db	'`MMAO.MSD'
-		db	9 dup (0)
-		db	0FFh, 00h
-		db	7 dup (0)
-		db	0FFh,0FFh, 00h
-		db	12 dup (0)
-		db	2, 0
-		db	31 dup (0)
+		db	9 dup (0)			; trailing pad: 9 zero bytes after MAO theme entry
+		db	0FFh, 00h			; sentinel/end marker pair
+		db	7 dup (0)			; pad: 7 zero bytes
+		db	0FFh,0FFh, 00h			; double-FF terminator + zero
+		db	12 dup (0)			; pad: 12 zero bytes
+		db	2, 0			; trailing tag bytes (pad alignment, function unclear)
+		db	31 dup (0)			; final 31-byte zero pad to round table size
 
 seg_a		ends
 

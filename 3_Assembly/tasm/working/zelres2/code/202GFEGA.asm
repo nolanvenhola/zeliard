@@ -3807,13 +3807,13 @@ ega_col_write_loop		endp
 ; Sourcer decodes these bytes as code; they are data accessed via CS-relative pointer.
 
 anim_seq_tbl:					; 70 bytes of frame index data ?-- Sourcer mis-decoded as code
-		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 0Bh, 0Ch, 07h, 08h
-		db	 09h, 0Ah, 19h, 3Dh, 61h, 27h, 1Dh, 1Eh, 1Dh, 1Eh
-		db	 1Fh, 20h, 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h, 0Dh, 0Eh
-		db	 0Fh, 10h, 0Fh, 10h, 0Dh, 0Eh, 0Fh, 10h, 17h, 18h
-		db	 3Eh, 5Ch, 62h, 26h, 2Ah, 25h, 21h, 22h, 21h, 22h
-		db	 23h, 24h, 21h, 22h, 21h, 22h, 09h, 0Ah, 07h, 08h
-		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 19h, 54h, 59h, 5Dh
+		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 0Bh, 0Ch, 07h, 08h	; row 0: anim frame indices 0..9
+		db	 09h, 0Ah, 19h, 3Dh, 61h, 27h, 1Dh, 1Eh, 1Dh, 1Eh	; row 1: anim frame indices 10..19
+		db	 1Fh, 20h, 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h, 0Dh, 0Eh	; row 2: anim frame indices 20..29
+		db	 0Fh, 10h, 0Fh, 10h, 0Dh, 0Eh, 0Fh, 10h, 17h, 18h	; row 3: anim frame indices 30..39
+		db	 3Eh, 5Ch, 62h, 26h, 2Ah, 25h, 21h, 22h, 21h, 22h	; row 4: anim frame indices 40..49
+		db	 23h, 24h, 21h, 22h, 21h, 22h, 09h, 0Ah, 07h, 08h	; row 5: anim frame indices 50..59
+		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 19h, 54h, 59h, 5Dh	; row 6: anim frame indices 60..69
 		db	 63h, 32h, 2Fh, 2Eh, 1Fh, 20h	; anim frame index pairs (continued from above mnemonics)
 		db	 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h	;  (cont.)
 		db	 1Fh, 20h, 0Fh, 10h, 11h, 12h	;  (cont.)

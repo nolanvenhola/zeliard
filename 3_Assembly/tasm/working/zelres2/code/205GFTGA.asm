@@ -1516,44 +1516,47 @@ loc_118:
 ; look like code to Sourcer but are really shape/mask header bytes.
 
 sprite_shape_tbl:				; 9-byte header ?-- Sourcer mis-decoded as code
-		db	0B0h, 3Ah, 70h, 3Ah, 30h, 3Ah,0F0h, 39h, 00h
+		db	0B0h, 3Ah, 70h, 3Ah, 30h, 3Ah,0F0h, 39h, 00h	; shape ptrs: 3AB0,3A70,3A30,39F0 + 00 term
 		db	16 dup (0)
-		db	 0Fh,0F0h, 00h, 00h, 3Fh,0FCh
-		db	 00h, 00h,0FCh, 3Fh, 00h, 00h
-		db	0F0h, 0Fh, 00h, 00h,0F0h, 0Fh
-		db	 00h, 00h,0FCh, 3Fh, 00h, 00h
-		db	 3Fh,0FCh, 00h, 00h, 0Fh,0F0h
+; --- TGA shape 0: small projectile / spark (5 rows x 6 bytes) ---
+		db	 0Fh,0F0h, 00h, 00h, 3Fh,0FCh			; shape 0 row 0
+		db	 00h, 00h,0FCh, 3Fh, 00h, 00h			; shape 0 row 1
+		db	0F0h, 0Fh, 00h, 00h,0F0h, 0Fh			; shape 0 row 2
+		db	 00h, 00h,0FCh, 3Fh, 00h, 00h			; shape 0 row 3
+		db	 3Fh,0FCh, 00h, 00h, 0Fh,0F0h			; shape 0 row 4
 		db	26 dup (0)
-		db	 0Fh,0F0h, 00h, 00h, 3Fh,0FCh
-		db	 00h, 00h,0FFh,0FFh, 00h, 00h
-		db	0FCh, 3Fh, 00h, 03h,0F0h, 0Fh
-		db	0C0h, 03h,0C0h, 03h,0C0h, 03h
-		db	0C0h, 03h,0C0h, 03h,0F0h, 0Fh
-		db	0C0h, 00h,0FCh, 3Fh, 00h, 00h
-		db	0FFh,0FFh, 00h, 00h, 3Fh,0FCh
-		db	 00h, 00h, 0Fh,0F0h
+; --- TGA shape 1: medium projectile / star (8 rows x 6 bytes) ---
+		db	 0Fh,0F0h, 00h, 00h, 3Fh,0FCh			; shape 1 row 0
+		db	 00h, 00h,0FFh,0FFh, 00h, 00h			; shape 1 row 1
+		db	0FCh, 3Fh, 00h, 03h,0F0h, 0Fh			; shape 1 row 2
+		db	0C0h, 03h,0C0h, 03h,0C0h, 03h			; shape 1 row 3 (center)
+		db	0C0h, 03h,0C0h, 03h,0F0h, 0Fh			; shape 1 row 4
+		db	0C0h, 00h,0FCh, 3Fh, 00h, 00h			; shape 1 row 5
+		db	0FFh,0FFh, 00h, 00h, 3Fh,0FCh			; shape 1 row 6
+		db	 00h, 00h, 0Fh,0F0h			; shape 1 row 7 (4-byte partial)
 		db	10 dup (0)
-		db	 0Fh,0F0h, 00h, 00h,0FFh,0FFh
-		db	 00h, 03h,0FFh,0FFh,0C0h, 0Fh
-		db	0FFh,0FFh,0F0h, 3Fh,0F0h, 0Fh
-		db	0FCh, 3Fh,0C0h, 03h,0FCh,0FFh
-		db	 00h, 00h,0FFh,0FFh, 00h, 00h
-		db	0FFh,0FFh, 00h, 00h,0FFh,0FFh
-		db	 00h, 00h,0FFh, 3Fh,0C0h, 03h
-		db	0FCh, 3Fh,0F0h, 0Fh,0FCh, 0Fh
-		db	0FFh,0FFh,0F0h, 03h,0FFh,0FFh
-		db	0C0h, 00h,0FFh,0FFh, 00h, 00h
-		db	 0Fh,0F0h, 00h, 00h, 3Fh,0FCh
-		db	 00h, 03h,0FFh,0FFh,0C0h, 0Fh
-		db	0C0h, 03h,0F0h, 3Fh, 00h, 00h
-		db	0FCh, 3Ch, 00h, 00h, 3Ch,0FCh
-		db	 00h, 00h, 3Fh,0F0h, 00h, 00h
-		db	 0Fh,0F0h, 00h, 00h, 0Fh,0F0h
-		db	 00h, 00h, 0Fh,0F0h, 00h, 00h
-		db	 0Fh,0FCh, 00h, 00h, 3Fh, 3Ch
-		db	 00h, 00h, 3Ch, 3Fh, 00h, 00h
-		db	0FCh, 0Fh,0C0h, 03h,0F0h, 03h
-		db	0FFh,0FFh,0C0h, 00h, 3Fh,0FCh
+; --- TGA shape 2: large explosion / spell burst (~21 rows x 6 bytes) ---
+		db	 0Fh,0F0h, 00h, 00h,0FFh,0FFh			; shape 2 row 0
+		db	 00h, 03h,0FFh,0FFh,0C0h, 0Fh			; shape 2 row 1
+		db	0FFh,0FFh,0F0h, 3Fh,0F0h, 0Fh			; shape 2 row 2
+		db	0FCh, 3Fh,0C0h, 03h,0FCh,0FFh			; shape 2 row 3
+		db	 00h, 00h,0FFh,0FFh, 00h, 00h			; shape 2 row 4
+		db	0FFh,0FFh, 00h, 00h,0FFh,0FFh			; shape 2 row 5
+		db	 00h, 00h,0FFh, 3Fh,0C0h, 03h			; shape 2 row 6
+		db	0FCh, 3Fh,0F0h, 0Fh,0FCh, 0Fh			; shape 2 row 7
+		db	0FFh,0FFh,0F0h, 03h,0FFh,0FFh			; shape 2 row 8
+		db	0C0h, 00h,0FFh,0FFh, 00h, 00h			; shape 2 row 9
+		db	 0Fh,0F0h, 00h, 00h, 3Fh,0FCh			; shape 2 row 10
+		db	 00h, 03h,0FFh,0FFh,0C0h, 0Fh			; shape 2 row 11
+		db	0C0h, 03h,0F0h, 3Fh, 00h, 00h			; shape 2 row 12
+		db	0FCh, 3Ch, 00h, 00h, 3Ch,0FCh			; shape 2 row 13
+		db	 00h, 00h, 3Fh,0F0h, 00h, 00h			; shape 2 row 14
+		db	 0Fh,0F0h, 00h, 00h, 0Fh,0F0h			; shape 2 row 15
+		db	 00h, 00h, 0Fh,0F0h, 00h, 00h			; shape 2 row 16
+		db	 0Fh,0FCh, 00h, 00h, 3Fh, 3Ch			; shape 2 row 17
+		db	 00h, 00h, 3Ch, 3Fh, 00h, 00h			; shape 2 row 18
+		db	0FCh, 0Fh,0C0h, 03h,0F0h, 03h			; shape 2 row 19
+		db	0FFh,0FFh,0C0h, 00h, 3Fh,0FCh			; shape 2 row 20
 
 ; shift_blit_setup: alternate init entry (parallels EGA shift_blit_setup).
 ; Appears to be dead code -- no reachable caller. Decoded bytes show an
@@ -2583,11 +2586,15 @@ loc_204:
 
 tga_plane_decode		endp
 
-		db	 77h,0FFh, 33h,0BBh, 22h,0AAh
-		db	 77h,0FFh, 33h,0BBh, 88h,0EEh
-		db	 02h,0FFh,0E8h, 3Fh, 0Fh,0A3h
-		db	 33h, 52h,0EBh
-		db	0Dh
+; TGA color/blend lookup table (12 bytes) + trailing code stub
+; Pattern matches tga_plane_decode bitmask_word usage
+gf_tga_blend_tbl:
+		db	 77h,0FFh, 33h,0BBh, 22h,0AAh			; blend pairs: 77/FF, 33/BB, 22/AA
+		db	 77h,0FFh, 33h,0BBh, 88h,0EEh			; blend pairs: 77/FF, 33/BB, 88/EE
+; --- trailing TGA blit code stub (Sourcer mis-decoded) ---
+		db	 02h,0FFh,0E8h, 3Fh, 0Fh,0A3h			; code: add bh,bh; call rel; mov [...],ax
+		db	 33h, 52h,0EBh			; code: xor dx; push dx; jmp short
+		db	0Dh			; code: trailing offset byte for jmp short
 
 hero_sprite_col_blit		proc	near
 
@@ -3372,35 +3379,38 @@ loc_263:
 		pop	ds
 		pop	si
 		retn
-		db	 00h, 01h, 02h, 04h, 07h, 09h
-		db	 0Dh, 10h, 04h, 15h, 17h, 1Ch
-		db	 1Eh, 04h, 07h, 09h, 22h, 02h
-		db	 25h, 08h, 02h, 28h, 02h, 2Dh
-		db	 31h, 36h, 3Bh, 40h, 00h, 01h
-		db	 03h, 06h, 08h, 0Ah, 0Eh, 11h
-		db	 06h, 08h, 18h, 0Eh, 1Eh, 04h
-		db	8, 0Ah, '#$'
-		db	'&', 8, 27h, ')*'
-		db	 04h, 32h, 37h, 3Ch, 06h, 00h
-		db	 01h, 02h, 05h, 08h, 02h, 0Eh
-		db	 12h, 06h, 08h, 19h, 0Eh, 1Eh
-		db	 04h, 08h, 02h, 23h, 24h, 26h
-		db	 08h, 25h, 29h, 02h, 2Eh, 33h
-		db	 38h, 3Dh, 06h, 00h, 01h, 03h
-		db	 06h, 08h, 0Bh, 0Eh, 13h, 06h
-		db	 08h, 1Ah, 0Eh, 1Fh, 04h, 08h
-		db	 0Bh
-		db	'#$'
-		db	'&', 8, 27h, ')+/49>'
-		db	 06h, 00h, 01h, 02h, 04h, 08h
-		db	 0Ch, 0Fh, 14h, 04h, 16h, 1Bh
-		db	 1Dh
-		db	' !', 8, 0Ch, '#$'
-		db	'&', 8
-		db	 02h, 28h, 2Ch, 30h, 35h, 3Ah
-		db	 3Fh, 06h,0A2h, 43h, 52h,0BEh
-		db	 55h, 49h,0C7h, 06h, 31h, 52h
-		db	0F8h, 41h,0B9h, 12h, 00h
+; --- gf_tga_phase_idx_tbl: animation phase index table (5 sets of ~28 entries) ---
+gf_tga_phase_idx_tbl:
+		db	 00h, 01h, 02h, 04h, 07h, 09h			; set 0 row 0: phase indices 0..5
+		db	 0Dh, 10h, 04h, 15h, 17h, 1Ch			; set 0 row 1: phase indices 6..11
+		db	 1Eh, 04h, 07h, 09h, 22h, 02h			; set 0 row 2: phase indices 12..17
+		db	 25h, 08h, 02h, 28h, 02h, 2Dh			; set 0 row 3: phase indices 18..23
+		db	 31h, 36h, 3Bh, 40h, 00h, 01h			; set 0 row 4 + start of set 1
+		db	 03h, 06h, 08h, 0Ah, 0Eh, 11h			; set 1 row 0
+		db	 06h, 08h, 18h, 0Eh, 1Eh, 04h			; set 1 row 1
+		db	8, 0Ah, '#$'			; set 1 row 2 (chars '#$' = 0x23 0x24)
+		db	'&', 8, 27h, ')*'			; set 1 row 3 (ASCII frame chars)
+		db	 04h, 32h, 37h, 3Ch, 06h, 00h			; set 1 row 4 + start of set 2
+		db	 01h, 02h, 05h, 08h, 02h, 0Eh			; set 2 row 0
+		db	 12h, 06h, 08h, 19h, 0Eh, 1Eh			; set 2 row 1
+		db	 04h, 08h, 02h, 23h, 24h, 26h			; set 2 row 2
+		db	 08h, 25h, 29h, 02h, 2Eh, 33h			; set 2 row 3
+		db	 38h, 3Dh, 06h, 00h, 01h, 03h			; set 2 row 4 + start of set 3
+		db	 06h, 08h, 0Bh, 0Eh, 13h, 06h			; set 3 row 0
+		db	 08h, 1Ah, 0Eh, 1Fh, 04h, 08h			; set 3 row 1
+		db	 0Bh			; set 3 row 2 (1 byte)
+		db	'#$'			; set 3 row 2 cont (chars '#$')
+		db	'&', 8, 27h, ')+/49>'			; set 3 row 3: ASCII indices
+		db	 06h, 00h, 01h, 02h, 04h, 08h			; set 3 row 4 + start of set 4
+		db	 0Ch, 0Fh, 14h, 04h, 16h, 1Bh			; set 4 row 0
+		db	 1Dh			; set 4 row 1 (1 byte)
+		db	' !', 8, 0Ch, '#$'			; set 4 row 1 cont (chars ' !.#$')
+		db	'&', 8			; set 4 row 2 (chars '&.')
+		db	 02h, 28h, 2Ch, 30h, 35h, 3Ah			; set 4 row 3
+; --- trailing TGA blit code stub (Sourcer mis-decoded) ---
+		db	 3Fh, 06h,0A2h, 43h, 52h,0BEh			; code: cmp; push es; mov [5243h],al; mov si
+		db	 55h, 49h,0C7h, 06h, 31h, 52h			; code: ...inc di; mov word [5231h]
+		db	0F8h, 41h,0B9h, 12h, 00h			; code: clc; inc cx; mov cx,12h
 
 anim_pass_outer:
 				push	cx
@@ -3614,39 +3624,39 @@ copy_fn_commit:
 ; tables; the trailing bytes transition into sprite_shape_tbl data.
 
 anim_seq_tbl:					; 70 bytes of frame index data ?-- Sourcer mis-decoded as code
-		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 0Bh, 0Ch, 07h, 08h
-		db	 09h, 0Ah, 19h, 3Dh, 61h, 27h, 1Dh, 1Eh, 1Dh, 1Eh
-		db	 1Fh, 20h, 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h, 0Dh, 0Eh
-		db	 0Fh, 10h, 0Fh, 10h, 0Dh, 0Eh, 0Fh, 10h, 17h, 18h
-		db	 3Eh, 5Ch, 62h, 26h, 2Ah, 25h, 21h, 22h, 21h, 22h
-		db	 23h, 24h, 21h, 22h, 21h, 22h, 09h, 0Ah, 07h, 08h
-		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 19h, 54h, 59h, 5Dh
-		db	 63h, 32h, 2Fh, 2Eh, 1Fh, 20h
-		db	 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h
-		db	 1Fh, 20h, 0Fh, 10h, 11h, 12h
-		db	 0Fh, 10h, 0Dh, 0Eh, 17h, 18h
-		db	'PUZ^df(0#$'
-		db	'!"#$'
-		db	'!"#$'
-		db	 07h, 08h, 0Ah, 0Ch, 07h, 08h
-		db	 09h, 0Ah, 1Ah
-		db	'4QV[_eg/-'
-		db	 1Dh, 1Eh, 1Fh, 20h, 1Dh, 1Eh
-		db	 1Fh, 20h, 1Dh, 1Eh, 0Fh, 10h
-		db	 0Dh, 0Eh, 0Dh, 0Eh, 17h, 18h
-		db	 49h, 4Dh, 52h, 57h, 00h
-		db	'`ihjk(&!"+&!"!"'
-		db	7
-		db	8, 9, 0Ah, 9, 0Ah, 1Bh, 'FJNSX'
-		db	 00h, 00h, 00h, 00h, 69h, 6Ch
-		db	 31h, 2Dh, 1Fh, 20h, 2Ch, 2Dh
-		db	 1Fh, 20h, 1Fh, 20h, 13h, 14h
-		db	 13h, 14h, 17h, 18h
-		db	 43h, 47h, 4Bh, 4Fh
-		db	7 dup (0)
-		db	'mno)&!"*%!"'
-		db	 15h, 16h, 15h, 16h, 1Ch
-		db	 35h, 44h, 48h, 4Ch
+		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 0Bh, 0Ch, 07h, 08h	; row 0: anim frame indices 0..9
+		db	 09h, 0Ah, 19h, 3Dh, 61h, 27h, 1Dh, 1Eh, 1Dh, 1Eh	; row 1: anim frame indices 10..19
+		db	 1Fh, 20h, 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h, 0Dh, 0Eh	; row 2: anim frame indices 20..29
+		db	 0Fh, 10h, 0Fh, 10h, 0Dh, 0Eh, 0Fh, 10h, 17h, 18h	; row 3: anim frame indices 30..39
+		db	 3Eh, 5Ch, 62h, 26h, 2Ah, 25h, 21h, 22h, 21h, 22h	; row 4: anim frame indices 40..49
+		db	 23h, 24h, 21h, 22h, 21h, 22h, 09h, 0Ah, 07h, 08h	; row 5: anim frame indices 50..59
+		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 19h, 54h, 59h, 5Dh	; row 6: anim frame indices 60..69
+		db	 63h, 32h, 2Fh, 2Eh, 1Fh, 20h			; row 7: continuation
+		db	 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h			; row 8: continuation
+		db	 1Fh, 20h, 0Fh, 10h, 11h, 12h			; row 9: continuation
+		db	 0Fh, 10h, 0Dh, 0Eh, 17h, 18h			; row 10: continuation
+		db	'PUZ^df(0#$'			; row 11: ASCII frame indices (10 bytes)
+		db	'!"#$'			; row 12: ASCII frame indices (4 bytes)
+		db	'!"#$'			; row 13: ASCII frame indices (4 bytes)
+		db	 07h, 08h, 0Ah, 0Ch, 07h, 08h			; row 14: anim frame indices
+		db	 09h, 0Ah, 1Ah			; row 15: 3-byte partial
+		db	'4QV[_eg/-'			; row 16: ASCII frame indices (9 bytes)
+		db	 1Dh, 1Eh, 1Fh, 20h, 1Dh, 1Eh			; row 17: anim frame indices
+		db	 1Fh, 20h, 1Dh, 1Eh, 0Fh, 10h			; row 18: anim frame indices
+		db	 0Dh, 0Eh, 0Dh, 0Eh, 17h, 18h			; row 19: anim frame indices
+		db	 49h, 4Dh, 52h, 57h, 00h			; row 20: 5-byte partial + zero terminator
+		db	'`ihjk(&!"+&!"!"'			; row 21: ASCII frame indices (15 bytes)
+		db	7			; row 22: 1-byte
+		db	8, 9, 0Ah, 9, 0Ah, 1Bh, 'FJNSX'			; row 23: anim indices + ASCII
+		db	 00h, 00h, 00h, 00h, 69h, 6Ch			; row 24: 4 zeros + 0x69,0x6C
+		db	 31h, 2Dh, 1Fh, 20h, 2Ch, 2Dh			; row 25: anim frame indices
+		db	 1Fh, 20h, 1Fh, 20h, 13h, 14h			; row 26: anim frame indices
+		db	 13h, 14h, 17h, 18h			; row 27: 4-byte partial
+		db	 43h, 47h, 4Bh, 4Fh			; row 28: 4-byte partial
+		db	7 dup (0)			; row 29: 7-byte zero pad
+		db	'mno)&!"*%!"'			; row 30: ASCII frame indices (11 bytes)
+		db	 15h, 16h, 15h, 16h, 1Ch			; row 31: 5-byte partial
+		db	 35h, 44h, 48h, 4Ch			; row 32: 4-byte partial
 		; Character encoding / font lookup table
 		db	'CGKO', 0		; 0x0000
 		db	'mno)&!"*%!"', 0		; 0x000B
@@ -3658,27 +3668,28 @@ anim_seq_tbl:					; 70 bytes of frame index data ?-- Sourcer mis-decoded as code
 		db	018h		; 0x0033
 		db	'8:?BE', 0		; 0x0034
 		db	'muwyo+&)&', 0		; 0x0045
-		db	 01h, 02h, 01h, 02h, 01h, 02h
-		db	 01h, 02h, 01h, 02h, 01h, 02h
-		db	 01h, 02h, 01h, 02h, 01h, 02h
+		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 0: (1,2) x3
+		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 1: (1,2) x3
+		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 2: (1,2) x3
 		; Character encoding table (continued)
 		db	'49;@A', 0		; 0x0000
 		db	'vxz{12', 0		; 0x0013
-		db	 03h, 04h, 03h, 04h, 03h, 04h
-		db	 03h, 04h, 03h, 04h, 03h, 04h
-		db	 03h, 04h, 03h, 04h, 03h, 04h
-		db	 03h, 04h, 05h, 06h, 05h, 06h
-		db	 05h, 06h, 05h, 06h, 05h, 06h
-		db	 05h, 06h, 05h, 06h, 05h, 06h
-		db	 05h, 06h, 05h, 06h, 05h, 06h
-		db	 06h, 05h, 05h, 06h, 05h, 06h
-		db	 1Eh, 50h, 02h,0FFh,0E8h, 60h
-		db	 06h, 8Bh,0F8h, 2Eh,0C7h, 06h
-		db	 2Fh, 52h,0DEh, 51h, 58h,0B1h
-		db	 20h,0F6h,0E1h, 05h, 00h, 60h
-		db	 8Bh,0F0h, 2Eh, 8Eh, 1Eh, 2Ch
-		db	0FFh,0B8h, 00h,0B8h, 8Eh,0C0h
-		db	0B9h, 08h, 00h
+		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 3: (3,4) x3
+		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 4: (3,4) x3
+		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 5: (3,4) x3
+		db	 03h, 04h, 05h, 06h, 05h, 06h			; tile pair lookup row 6: (3,4) + (5,6) x2
+		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 7: (5,6) x3
+		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 8: (5,6) x3
+		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 9: (5,6) x3
+		db	 06h, 05h, 05h, 06h, 05h, 06h			; tile pair lookup row 10: swapped + (5,6) x2
+; --- trailing TGA blit code stub (Sourcer mis-decoded as data) ---
+		db	 1Eh, 50h, 02h,0FFh,0E8h, 60h			; code: push ds; push ax; add bh,bh; call
+		db	 06h, 8Bh,0F8h, 2Eh,0C7h, 06h			; code: push es; mov di,ax; cs prefix; mov word
+		db	 2Fh, 52h,0DEh, 51h, 58h,0B1h			; code: ...mov [522F],...; push cx; pop ax; mov cl
+		db	 20h,0F6h,0E1h, 05h, 00h, 60h			; code: cl=20h; mul cl; add ax,6000h
+		db	 8Bh,0F0h, 2Eh, 8Eh, 1Eh, 2Ch			; code: mov si,ax; mov ds,cs:[2Ch]
+		db	0FFh,0B8h, 00h,0B8h, 8Eh,0C0h			; code: ...mov ax,B800h; mov es,ax
+		db	0B9h, 08h, 00h			; code: mov cx,8 immediate
 
 shift_blit_row_loop:
 				lodsw				; String [si] to ax
@@ -3759,61 +3770,68 @@ sprite_shape_tbl_2:
 		dec	sp			; data byte 4C
 		pop	es			; data byte 07 (header)
 		dec	sp			; data byte 4C
-		db	 67h, 4Ch, 67h, 4Ch,0C7h, 4Ch
+		db	 67h, 4Ch, 67h, 4Ch,0C7h, 4Ch			; sprite pointer trio (4C67 x2 + 4CC7)
 		db	45 dup (0)
-		db	 02h, 00h, 00h, 00h, 06h, 00h
-		db	 00h, 00h, 06h, 00h, 00h, 00h
-		db	 0Eh, 00h, 00h, 00h, 0Eh, 00h
-		db	 00h, 00h, 0Ch, 00h, 00h, 00h
-		db	 0Eh, 00h, 00h, 00h, 1Ch, 00h
-		db	 00h, 00h, 0Ch, 00h, 00h, 00h
-		db	 1Ch, 00h, 00h, 00h, 1Ch, 00h
-		db	 00h, 00h, 1Ch, 00h, 00h, 00h
-		db	 1Ch
+; --- gf_tga_proj_sprite_a: small TGA projectile bitmap ---
+gf_tga_proj_sprite_a:
+		db	 02h, 00h, 00h, 00h, 06h, 00h			; sprite a row 0
+		db	 00h, 00h, 06h, 00h, 00h, 00h			; sprite a row 1
+		db	 0Eh, 00h, 00h, 00h, 0Eh, 00h			; sprite a row 2
+		db	 00h, 00h, 0Ch, 00h, 00h, 00h			; sprite a row 3
+		db	 0Eh, 00h, 00h, 00h, 1Ch, 00h			; sprite a row 4
+		db	 00h, 00h, 0Ch, 00h, 00h, 00h			; sprite a row 5
+		db	 1Ch, 00h, 00h, 00h, 1Ch, 00h			; sprite a row 6
+		db	 00h, 00h, 1Ch, 00h, 00h, 00h			; sprite a row 7
+		db	 1Ch			; sprite a row 8 (1-byte trail)
 		db	16 dup (0)
-		db	 80h, 00h, 00h, 01h, 80h, 00h
-		db	 00h, 03h, 80h, 00h, 00h, 03h
-		db	 00h, 00h, 00h, 07h, 80h, 00h
-		db	 00h, 07h, 00h, 00h, 00h, 07h
-		db	 00h, 00h, 00h, 0Fh, 00h, 00h
-		db	 00h, 0Eh, 00h, 00h, 00h, 0Fh
-		db	 00h, 00h, 00h, 1Eh, 00h, 00h
-		db	 00h, 0Eh, 00h, 00h, 00h, 1Fh
-		db	 00h, 00h, 00h, 1Eh, 00h, 00h
-		db	 00h, 1Fh, 00h, 00h, 00h, 1Eh
-		db	 00h, 00h, 00h, 1Eh, 00h, 00h
-		db	 00h, 1Eh, 00h, 00h, 00h, 1Eh
-		db	 00h, 00h, 00h, 1Ch, 00h, 00h
-		db	 00h
-		db	3Fh
+; --- gf_tga_proj_sprite_b: medium TGA projectile bitmap ---
+gf_tga_proj_sprite_b:
+		db	 80h, 00h, 00h, 01h, 80h, 00h			; sprite b row 0
+		db	 00h, 03h, 80h, 00h, 00h, 03h			; sprite b row 1
+		db	 00h, 00h, 00h, 07h, 80h, 00h			; sprite b row 2
+		db	 00h, 07h, 00h, 00h, 00h, 07h			; sprite b row 3
+		db	 00h, 00h, 00h, 0Fh, 00h, 00h			; sprite b row 4
+		db	 00h, 0Eh, 00h, 00h, 00h, 0Fh			; sprite b row 5
+		db	 00h, 00h, 00h, 1Eh, 00h, 00h			; sprite b row 6
+		db	 00h, 0Eh, 00h, 00h, 00h, 1Fh			; sprite b row 7
+		db	 00h, 00h, 00h, 1Eh, 00h, 00h			; sprite b row 8
+		db	 00h, 1Fh, 00h, 00h, 00h, 1Eh			; sprite b row 9
+		db	 00h, 00h, 00h, 1Eh, 00h, 00h			; sprite b row 10
+		db	 00h, 1Eh, 00h, 00h, 00h, 1Eh			; sprite b row 11
+		db	 00h, 00h, 00h, 1Ch, 00h, 00h			; sprite b row 12
+		db	 00h			; sprite b row 13 (1 byte)
+		db	3Fh			; sprite b terminator
 		db	12 dup (0)
-		db	 40h, 00h, 00h, 00h,0C0h, 00h
-		db	 00h, 01h,0C0h, 00h, 00h, 03h
-		db	 80h, 00h, 00h, 03h, 80h, 00h
-		db	 00h, 07h, 80h, 00h, 00h, 07h
-		db	 00h, 00h, 00h, 07h, 00h, 00h
-		db	 00h, 0Fh, 00h, 00h, 00h, 0Fh
-		db	 00h, 00h, 00h, 0Eh, 00h, 00h
-		db	 00h, 1Fh, 00h, 00h, 00h, 0Eh
-		db	 00h, 00h, 00h, 1Fh, 00h, 00h
-		db	 00h, 1Eh, 00h, 00h, 00h, 1Fh
-		db	 00h, 00h, 00h, 1Eh, 00h, 00h
-		db	 00h, 1Fh, 00h, 00h, 00h, 1Fh
-		db	 00h, 00h, 00h, 1Eh, 00h, 00h
-		db	 03h, 1Ch,0C0h, 00h, 00h,0FFh
-		db	 00h, 00h, 2Eh,0C7h, 06h, 3Bh
-		db	 52h, 77h,0FFh, 1Eh, 0Ah,0C0h
-		db	 78h, 10h, 24h, 03h,0B2h, 40h
-		db	0F6h,0E2h, 05h,0E8h, 4Dh, 8Bh
-		db	0F0h,0BDh, 01h, 00h,0EBh, 0Eh
-		db	 24h, 01h, 8Ah,0E0h, 32h,0C0h
-		db	 05h,0E8h, 4Eh, 8Bh,0F0h,0BDh
-		db	 04h, 00h, 8Ah,0C3h, 24h, 01h
-		db	 02h,0C0h, 02h,0C0h,0A2h, 44h
-		db	 52h,0D1h,0EBh, 8Ah,0FBh, 8Ah
-		db	0D9h,0E8h, 4Fh, 04h, 8Bh,0F8h
-		db	0B8h, 00h,0B8h, 8Eh,0C0h, 8Bh
-		db	0CDh
+; --- gf_tga_proj_sprite_c: large TGA projectile bitmap ---
+gf_tga_proj_sprite_c:
+		db	 40h, 00h, 00h, 00h,0C0h, 00h			; sprite c row 0
+		db	 00h, 01h,0C0h, 00h, 00h, 03h			; sprite c row 1
+		db	 80h, 00h, 00h, 03h, 80h, 00h			; sprite c row 2
+		db	 00h, 07h, 80h, 00h, 00h, 07h			; sprite c row 3
+		db	 00h, 00h, 00h, 07h, 00h, 00h			; sprite c row 4
+		db	 00h, 0Fh, 00h, 00h, 00h, 0Fh			; sprite c row 5
+		db	 00h, 00h, 00h, 0Eh, 00h, 00h			; sprite c row 6
+		db	 00h, 1Fh, 00h, 00h, 00h, 0Eh			; sprite c row 7
+		db	 00h, 00h, 00h, 1Fh, 00h, 00h			; sprite c row 8
+		db	 00h, 1Eh, 00h, 00h, 00h, 1Fh			; sprite c row 9
+		db	 00h, 00h, 00h, 1Eh, 00h, 00h			; sprite c row 10
+		db	 00h, 1Fh, 00h, 00h, 00h, 1Fh			; sprite c row 11
+		db	 00h, 00h, 00h, 1Eh, 00h, 00h			; sprite c row 12
+		db	 03h, 1Ch,0C0h, 00h, 00h,0FFh			; sprite c row 13 (last data row)
+; --- trailing TGA blit code stub (Sourcer mis-decoded) ---
+		db	 00h, 00h, 2Eh,0C7h, 06h, 3Bh			; code: cs prefix; mov word [523B],...
+		db	 52h, 77h,0FFh, 1Eh, 0Ah,0C0h			; code: ja 0FFh; push ds; or al,c0h
+		db	 78h, 10h, 24h, 03h,0B2h, 40h			; code: js +10; and al,3; mov dl,40h
+		db	0F6h,0E2h, 05h,0E8h, 4Dh, 8Bh			; code: mul dl; add ax,4DE8h; mov si,ax
+		db	0F0h,0BDh, 01h, 00h,0EBh, 0Eh			; code: ...mov bp,1; jmp short +0Eh
+		db	 24h, 01h, 8Ah,0E0h, 32h,0C0h			; code: and al,1; mov ah,al; xor al,al
+		db	 05h,0E8h, 4Eh, 8Bh,0F0h,0BDh			; code: add ax,4EE8h; mov si,ax; mov bp
+		db	 04h, 00h, 8Ah,0C3h, 24h, 01h			; code: bp=4; mov al,bl; and al,1
+		db	 02h,0C0h, 02h,0C0h,0A2h, 44h			; code: add al,al x2; mov [5244],al
+		db	 52h,0D1h,0EBh, 8Ah,0FBh, 8Ah			; code: ...shr bx,1; mov bh,bl; mov bl
+		db	0D9h,0E8h, 4Fh, 04h, 8Bh,0F8h			; code: ...call rel+044F; mov di,ax
+		db	0B8h, 00h,0B8h, 8Eh,0C0h, 8Bh			; code: mov ax,B800h; mov es,ax; mov...
+		db	0CDh			; code: ...cx (final byte)
 
 shift_blit_outer:
 				push	cx
@@ -3890,97 +3908,112 @@ ega_fill_bit_range_wide		proc	near
 ega_fill_bit_range_wide		endp
 
 		db	22 dup (0)
-		db	 10h, 00h, 00h, 10h, 60h, 00h
-		db	 00h, 07h,0C0h, 00h, 00h, 07h
-		db	0C0h, 00h, 00h, 07h,0C0h, 00h
-		db	 00h, 0Ch, 10h, 00h, 00h, 10h
-		db	 00h
+; --- gf_tga_tile_set: TGA tile/sprite frames ---
+gf_tga_tile_set:
+gf_tga_tile_00:
+		db	 10h, 00h, 00h, 10h, 60h, 00h			; tile 00 row 0
+		db	 00h, 07h,0C0h, 00h, 00h, 07h			; tile 00 row 1
+		db	0C0h, 00h, 00h, 07h,0C0h, 00h			; tile 00 row 2
+		db	 00h, 0Ch, 10h, 00h, 00h, 10h			; tile 00 row 3
+		db	 00h			; tile 00 row 4 (1 byte trail)
 		db	26 dup (0)
-		db	 01h, 00h, 00h, 00h, 01h, 00h
-		db	 00h, 00h, 40h, 04h, 00h, 00h
-		db	 01h, 00h, 00h, 00h, 09h, 20h
-		db	 00h, 00h, 03h, 80h, 00h, 04h
-		db	 57h,0D4h, 80h, 00h, 03h, 80h
-		db	 00h, 00h, 09h, 20h, 00h, 00h
-		db	 01h, 00h, 00h, 00h, 40h, 04h
-		db	 00h, 00h, 01h, 00h, 00h, 00h
-		db	 01h
+gf_tga_tile_01:
+		db	 01h, 00h, 00h, 00h, 01h, 00h			; tile 01 row 0
+		db	 00h, 00h, 40h, 04h, 00h, 00h			; tile 01 row 1
+		db	 01h, 00h, 00h, 00h, 09h, 20h			; tile 01 row 2
+		db	 00h, 00h, 03h, 80h, 00h, 04h			; tile 01 row 3
+		db	 57h,0D4h, 80h, 00h, 03h, 80h			; tile 01 row 4
+		db	 00h, 00h, 09h, 20h, 00h, 00h			; tile 01 row 5
+		db	 01h, 00h, 00h, 00h, 40h, 04h			; tile 01 row 6
+		db	 00h, 00h, 01h, 00h, 00h, 00h			; tile 01 row 7
+		db	 01h			; tile 01 row 8 (1 byte trail)
 		db	7 dup (0)
-		db	 01h, 00h, 00h, 00h, 01h, 00h
-		db	 00h, 00h, 01h, 00h, 00h, 00h
-		db	 02h, 80h, 00h, 00h, 83h, 80h
-		db	 00h, 00h, 23h, 88h, 00h, 00h
-		db	 0Dh,0B0h, 00h, 00h, 0Bh,0E8h
-		db	 00h, 96h,0FFh,0FFh,0B9h, 00h
-		db	 17h,0E8h, 00h, 00h, 0Bh, 58h
-		db	 00h, 00h, 23h, 82h, 00h, 00h
-		db	 02h, 80h, 80h, 02h, 01h, 00h
-		db	 00h, 00h, 01h, 00h, 00h, 00h
-		db	 01h, 00h
+gf_tga_tile_02:
+		db	 01h, 00h, 00h, 00h, 01h, 00h			; tile 02 row 0
+		db	 00h, 00h, 01h, 00h, 00h, 00h			; tile 02 row 1
+		db	 02h, 80h, 00h, 00h, 83h, 80h			; tile 02 row 2
+		db	 00h, 00h, 23h, 88h, 00h, 00h			; tile 02 row 3
+		db	 0Dh,0B0h, 00h, 00h, 0Bh,0E8h			; tile 02 row 4
+		db	 00h, 96h,0FFh,0FFh,0B9h, 00h			; tile 02 row 5 (center)
+		db	 17h,0E8h, 00h, 00h, 0Bh, 58h			; tile 02 row 6
+		db	 00h, 00h, 23h, 82h, 00h, 00h			; tile 02 row 7
+		db	 02h, 80h, 80h, 02h, 01h, 00h			; tile 02 row 8
+		db	 00h, 00h, 01h, 00h, 00h, 00h			; tile 02 row 9
+		db	 01h, 00h			; tile 02 row 10 (2 byte trail)
 		db	8 dup (0)
-		db	 10h, 10h, 00h, 00h, 00h, 04h
-		db	 00h, 00h, 80h, 00h, 80h, 03h
-		db	 00h, 00h, 71h, 0Ch, 00h, 00h
-		db	 3Dh, 38h, 00h, 00h, 07h,0F0h
-		db	 00h, 00h, 97h,0E5h, 00h, 00h
-		db	 0Fh,0F0h, 00h, 00h, 1Fh, 38h
-		db	 00h, 00h, 39h, 0Eh, 00h, 00h
-		db	0E1h, 01h, 80h, 01h, 00h, 00h
-		db	 40h, 04h, 00h, 00h, 08h, 10h
+gf_tga_tile_03:
+		db	 10h, 10h, 00h, 00h, 00h, 04h			; tile 03 row 0
+		db	 00h, 00h, 80h, 00h, 80h, 03h			; tile 03 row 1
+		db	 00h, 00h, 71h, 0Ch, 00h, 00h			; tile 03 row 2
+		db	 3Dh, 38h, 00h, 00h, 07h,0F0h			; tile 03 row 3
+		db	 00h, 00h, 97h,0E5h, 00h, 00h			; tile 03 row 4
+		db	 0Fh,0F0h, 00h, 00h, 1Fh, 38h			; tile 03 row 5
+		db	 00h, 00h, 39h, 0Eh, 00h, 00h			; tile 03 row 6
+		db	0E1h, 01h, 80h, 01h, 00h, 00h			; tile 03 row 7
+		db	 40h, 04h, 00h, 00h, 08h, 10h			; tile 03 row 8
 		db	35 dup (0)
-		db	 92h, 4Ah,0AAh,0EBh, 00h
+gf_tga_tile_04:
+		db	 92h, 4Ah,0AAh,0EBh, 00h			; tile 04: 5-byte solid pattern
 		db	34 dup (0)
-		db	 01h, 00h, 00h, 00h, 01h, 00h
-		db	 00h, 01h, 01h, 00h, 00h, 00h
-		db	 82h, 00h, 00h, 00h,0ABh, 00h
-		db	 00h, 01h, 5Dh, 04h, 24h,0AEh
-		db	0EFh,0FFh,0FFh,0FFh,0FFh, 04h
-		db	 24h,0ABh,0EFh, 00h, 00h, 01h
-		db	 5Dh, 00h, 00h, 00h, 22h, 00h
-		db	 00h, 00h, 81h, 00h, 00h, 00h
-		db	 01h, 00h, 00h, 00h, 01h, 00h
+gf_tga_tile_05:
+		db	 01h, 00h, 00h, 00h, 01h, 00h			; tile 05 row 0
+		db	 00h, 01h, 01h, 00h, 00h, 00h			; tile 05 row 1
+		db	 82h, 00h, 00h, 00h,0ABh, 00h			; tile 05 row 2
+		db	 00h, 01h, 5Dh, 04h, 24h,0AEh			; tile 05 row 3
+		db	0EFh,0FFh,0FFh,0FFh,0FFh, 04h			; tile 05 row 4 (full center)
+		db	 24h,0ABh,0EFh, 00h, 00h, 01h			; tile 05 row 5
+		db	 5Dh, 00h, 00h, 00h, 22h, 00h			; tile 05 row 6
+		db	 00h, 00h, 81h, 00h, 00h, 00h			; tile 05 row 7
+		db	 01h, 00h, 00h, 00h, 01h, 00h			; tile 05 row 8
 		db	19 dup (0)
-		db	 81h, 00h, 00h, 00h,0C4h, 00h
-		db	 00h, 00h,0BCh, 00h, 00h, 00h
-		db	0EEh,0EAh, 24h, 20h,0FFh,0FFh
-		db	0FFh,0FFh,0FBh,0AAh, 24h, 20h
-		db	0FDh, 40h, 00h, 00h,0E6h, 00h
-		db	 00h, 00h, 40h, 80h, 00h, 00h
-		db	 00h
-		db	20h
+gf_tga_tile_06:
+		db	 81h, 00h, 00h, 00h,0C4h, 00h			; tile 06 row 0
+		db	 00h, 00h,0BCh, 00h, 00h, 00h			; tile 06 row 1
+		db	0EEh,0EAh, 24h, 20h,0FFh,0FFh			; tile 06 row 2
+		db	0FFh,0FFh,0FBh,0AAh, 24h, 20h			; tile 06 row 3
+		db	0FDh, 40h, 00h, 00h,0E6h, 00h			; tile 06 row 4
+		db	 00h, 00h, 40h, 80h, 00h, 00h			; tile 06 row 5
+		db	 00h			; tile 06 row 6 (1 byte)
+		db	20h			; tile 06 trailing marker
 		db	42 dup (0)
-		db	0D7h, 55h, 52h, 49h
+gf_tga_tile_07:
+		db	0D7h, 55h, 52h, 49h			; tile 07: 4-byte solid bar
 		db	60 dup (0)
-		db	0A7h, 54h, 90h, 04h, 00h
+gf_tga_tile_08:
+		db	0A7h, 54h, 90h, 04h, 00h			; tile 08: 5-byte pattern
 		db	37 dup (0)
-		db	 10h, 00h, 00h, 00h, 04h, 00h
-		db	 00h, 00h, 00h, 80h, 00h, 00h
-		db	 00h, 71h, 00h, 00h, 00h, 3Dh
-		db	 00h, 00h, 00h, 07h, 10h, 04h
-		db	 00h, 97h, 00h, 00h, 00h, 0Fh
-		db	 00h, 00h, 00h, 1Fh, 00h, 00h
-		db	 00h, 39h, 00h, 00h, 00h,0E1h
-		db	 00h, 00h, 01h, 00h, 00h, 00h
-		db	 04h, 00h, 00h, 00h, 10h, 00h
-		db	 00h, 00h, 00h, 00h, 00h, 10h
+gf_tga_tile_09:
+		db	 10h, 00h, 00h, 00h, 04h, 00h			; tile 09 row 0
+		db	 00h, 00h, 00h, 80h, 00h, 00h			; tile 09 row 1
+		db	 00h, 71h, 00h, 00h, 00h, 3Dh			; tile 09 row 2
+		db	 00h, 00h, 00h, 07h, 10h, 04h			; tile 09 row 3
+		db	 00h, 97h, 00h, 00h, 00h, 0Fh			; tile 09 row 4
+		db	 00h, 00h, 00h, 1Fh, 00h, 00h			; tile 09 row 5
+		db	 00h, 39h, 00h, 00h, 00h,0E1h			; tile 09 row 6
+		db	 00h, 00h, 01h, 00h, 00h, 00h			; tile 09 row 7
+		db	 04h, 00h, 00h, 00h, 10h, 00h			; tile 09 row 8
+		db	 00h, 00h, 00h, 00h, 00h, 10h			; tile 09 row 9 (trailing 0x10)
 		db	7 dup (0)
-		db	 80h, 00h, 00h, 03h, 00h, 00h
-		db	 00h, 0Ch, 00h, 00h, 00h, 38h
-		db	 00h, 00h, 00h,0F0h, 00h, 00h
-		db	 00h,0E5h, 02h, 00h, 10h,0F0h
-		db	 00h, 00h, 00h, 3Ch, 00h, 00h
-		db	 00h, 07h, 00h, 00h, 00h, 00h
-		db	0C0h, 00h, 00h, 00h, 20h, 00h
-		db	 00h, 00h, 04h
+gf_tga_tile_0A:
+		db	 80h, 00h, 00h, 03h, 00h, 00h			; tile 0A row 0
+		db	 00h, 0Ch, 00h, 00h, 00h, 38h			; tile 0A row 1
+		db	 00h, 00h, 00h,0F0h, 00h, 00h			; tile 0A row 2
+		db	 00h,0E5h, 02h, 00h, 10h,0F0h			; tile 0A row 3
+		db	 00h, 00h, 00h, 3Ch, 00h, 00h			; tile 0A row 4
+		db	 00h, 07h, 00h, 00h, 00h, 00h			; tile 0A row 5
+		db	0C0h, 00h, 00h, 00h, 20h, 00h			; tile 0A row 6
+		db	 00h, 00h, 04h			; tile 0A row 7 (3-byte trail)
 		db	38 dup (0)
-		db	 20h, 09h, 2Ah,0E5h
+gf_tga_tile_0B:
+		db	 20h, 09h, 2Ah,0E5h			; tile 0B: 4-byte pattern
 		db	28 dup (0)
-		db	 51h, 1Eh, 56h, 8Ch,0C8h, 05h
-		db	 00h, 30h, 8Eh,0C0h,0B8h, 20h
-		db	 00h,0F7h,0E1h, 8Bh,0C8h,0BFh
-		db	 00h, 00h,0F3h,0A4h, 5Fh, 07h
-		db	 59h, 8Ch,0C8h, 05h, 00h, 30h
-		db	 8Eh,0D8h,0BEh, 00h, 00h
+; --- fade_outer_loop setup code stub (Sourcer mis-decoded) ---
+		db	 51h, 1Eh, 56h, 8Ch,0C8h, 05h			; code: push cx; push ds; push si; mov ax,cs
+		db	 00h, 30h, 8Eh,0C0h,0B8h, 20h			; code: add ax,3000h; mov es,ax; mov ax,20h
+		db	 00h,0F7h,0E1h, 8Bh,0C8h,0BFh			; code: mul cx; mov cx,ax; mov di
+		db	 00h, 00h,0F3h,0A4h, 5Fh, 07h			; code: rep movsb; pop di; pop es
+		db	 59h, 8Ch,0C8h, 05h, 00h, 30h			; code: pop cx; mov ax,cs; add ax,3000h
+		db	 8Eh,0D8h,0BEh, 00h, 00h			; code: mov ds,ax; mov si,0
 
 fade_outer_loop:
 				push	cx
@@ -4102,23 +4135,27 @@ ega_row_addr_calc		proc	near
 
 ega_row_addr_calc		endp
 
-		db	0DEh, 51h,0EEh, 51h,0FEh, 51h
-		db	 0Eh, 52h, 1Eh, 52h, 0Eh, 52h
-		db	 00h, 07h, 04h, 02h, 07h, 0Fh
-		db	 0Ch, 0Eh, 04h, 0Ch, 0Ch, 0Eh
-		db	 02h, 0Eh, 0Eh, 0Ah, 00h, 04h
-		db	 03h, 08h, 04h, 0Ch, 07h, 06h
-		db	 03h, 07h, 0Bh, 0Ah, 08h, 06h
-		db	 0Ah, 0Eh, 00h, 07h, 03h, 01h
-		db	 07h, 0Fh, 0Bh, 09h, 03h, 0Bh
-		db	 0Bh, 09h, 01h, 09h, 09h, 09h
-		db	 00h, 01h, 08h, 05h, 01h, 09h
-		db	 07h, 05h, 08h, 07h, 0Eh, 0Ch
-		db	 05h, 05h, 0Ch, 0Dh, 00h, 08h
-		db	 01h, 05h, 08h, 0Eh, 07h, 0Ch
-		db	 01h, 07h, 09h, 05h, 05h, 0Ch
-		db	 05h, 0Dh,0C3h, 00h
-		db	1138 dup (0)
+; --- gf_tga_color_jump_tbl: 6-entry word jump table for color decode dispatch ---
+gf_tga_color_jump_tbl:
+		db	0DEh, 51h,0EEh, 51h,0FEh, 51h			; jump entries 0..2: 51DE, 51EE, 51FE
+		db	 0Eh, 52h, 1Eh, 52h, 0Eh, 52h			; jump entries 3..5: 520E, 521E, 520E
+; --- gf_tga_color_lookup_tbl: 14 rows x 6-byte CGA-to-TGA color/shade mapping (84 bytes total) ---
+gf_tga_color_lookup_tbl:
+		db	 00h, 07h, 04h, 02h, 07h, 0Fh			; row 0: color/shade indices
+		db	 0Ch, 0Eh, 04h, 0Ch, 0Ch, 0Eh			; row 1: color/shade indices
+		db	 02h, 0Eh, 0Eh, 0Ah, 00h, 04h			; row 2: color/shade indices
+		db	 03h, 08h, 04h, 0Ch, 07h, 06h			; row 3: color/shade indices
+		db	 03h, 07h, 0Bh, 0Ah, 08h, 06h			; row 4: color/shade indices
+		db	 0Ah, 0Eh, 00h, 07h, 03h, 01h			; row 5: color/shade indices
+		db	 07h, 0Fh, 0Bh, 09h, 03h, 0Bh			; row 6: color/shade indices
+		db	 0Bh, 09h, 01h, 09h, 09h, 09h			; row 7: color/shade indices
+		db	 00h, 01h, 08h, 05h, 01h, 09h			; row 8: color/shade indices
+		db	 07h, 05h, 08h, 07h, 0Eh, 0Ch			; row 9: color/shade indices
+		db	 05h, 05h, 0Ch, 0Dh, 00h, 08h			; row 10: color/shade indices
+		db	 01h, 05h, 08h, 0Eh, 07h, 0Ch			; row 11: color/shade indices
+		db	 01h, 07h, 09h, 05h, 05h, 0Ch			; row 12: color/shade indices
+		db	 05h, 0Dh,0C3h, 00h			; row 13 (4-byte trail with retn (0xC3) + zero pad)
+		db	1138 dup (0)			; trailing zero pad to fill chunk
 
 seg_a		ends
 
