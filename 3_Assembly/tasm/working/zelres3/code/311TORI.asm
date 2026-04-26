@@ -314,7 +314,7 @@ tori_scan_prolog:
 		db	0C6h, 06h, 89h,0A7h, 00h	; mov byte ptr tori_slot_idx, 0
 		db	0C6h, 06h, 91h,0A7h, 00h	; mov byte ptr tori_cycle_idx, 0
 
-scan_slot_loop:					; was loc_1
+scan_slot_loop:
 ;*		cmp	word ptr [si],0FFFFh
 					db	 83h, 3Ch,0FFh		; cmp word ptr [si], 0FFFFh
 									;  (alt encoding: sign-extended imm8 form;
@@ -337,23 +337,23 @@ scan_slot_loop:					; was loc_1
 					mov	al,[si+5]
 					and	al,1Fh
 					test	byte ptr [si+4],0FFh
-					jnz	apply_cycle_bits	; was loc_2
+					jnz	apply_cycle_bits
 					or	al,80h
 
-apply_cycle_bits:				; was loc_2
+apply_cycle_bits:
 					mov	ds:tori_cycle_idx,al
 
-scan_next_slot:					; was loc_3
+scan_next_slot:
 					inc	byte ptr ds:tori_slot_idx
 					add	si,10h
 					jmp	short scan_slot_loop
 
-scan_done:					; was loc_4
+scan_done:
 		mov	si,ds:fight_slot_list
 		mov	word ptr [si],0FFFh
 		mov	al,ds:tori_cycle_idx
 		or	al,al			; Zero ?
-		jz	dispatch_phase		; was loc_8
+		jz	dispatch_phase
 		push	ax
 		and	al,1Fh
 		call	word ptr cs:fight_cb_hit_check
@@ -362,124 +362,122 @@ scan_done:					; was loc_4
 		pop	ax
 		add	bx,bx
 		or	al,al			; Zero ?
-		jns	hit_pos_branch		; was loc_5
+		jns	hit_pos_branch
 		add	bx,bx
 		add	bx,bx
 
-hit_pos_branch:					; was loc_5
+hit_pos_branch:
 		mov	byte ptr ds:gvar_spawn_fx_flag,29h	; ')'
 		call	sub_6
 		test	byte ptr ds:tori_glide_flag,0FFh
-		jz	hit_check_attack	; was loc_6
+		jz	hit_check_attack
 		mov	byte ptr ds:tori_glide_flag,0
 		mov	byte ptr ds:tori_sub_phase,0
 		mov	byte ptr ds:tori_attack_flag,0FFh
 
-hit_check_attack:				; was loc_6
-		jnz	hit_skip_alt_inc	; was loc_7
+hit_check_attack:
+		jnz	hit_skip_alt_inc
 		call	sub_5
 
-hit_skip_alt_inc:				; was loc_7
+hit_skip_alt_inc:
 		mov	byte ptr ds:tori_anim_timer,4
 
-dispatch_phase:					; was loc_8
+dispatch_phase:
 		mov	byte ptr ds:tori_phase_a,0
 		test	byte ptr ds:tori_anim_timer,0FFh
-		jz	check_glide_branch	; was loc_9
+		jz	check_glide_branch
 		dec	byte ptr ds:tori_anim_timer
 		mov	byte ptr ds:tori_phase_a,1
 
-check_glide_branch:				; was loc_9
+check_glide_branch:
 		test	byte ptr ds:tori_glide_flag,0FFh
-		jz	check_attack_branch	; was loc_14
+		jz	check_attack_branch
 		cmp	byte ptr ds:tori_row_hi,0Eh
-		je	glide_skip_dec_row	; was loc_10
+		je	glide_skip_dec_row
 		dec	byte ptr ds:tori_row_hi
 
-glide_skip_dec_row:				; was loc_10
+glide_skip_dec_row:
 		inc	byte ptr ds:tori_sub_phase
 		and	byte ptr ds:tori_sub_phase,3
 		cmp	byte ptr ds:tori_sub_phase,2
-		jne	glide_skip_fx2b		; was loc_11
+		jne	glide_skip_fx2b
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Bh	; '+'
 
-glide_skip_fx2b:				; was loc_11
+glide_skip_fx2b:
 		call	sub_4
-		jc	glide_force_attack	; was loc_12
+		jc	glide_force_attack
 		test	byte ptr ds:tori_alt_state,0FFh
 		jz	glide_force_attack
 		dec	byte ptr ds:tori_alt_state
 		test	byte ptr ds:tori_cycle_idx,0FFh
-		jz	emit_setup_jmp		; was loc_13
-
-glide_force_attack:				; was loc_12
+		jz	emit_setup_jmp
+glide_force_attack:
 		mov	byte ptr ds:tori_glide_flag,0
 		mov	byte ptr ds:tori_sub_phase,0
 		mov	byte ptr ds:tori_attack_flag,0FFh
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Ah	; '*'
 
-emit_setup_jmp:					; was loc_13
-		jmp	emit_setup		; was loc_30
-
-check_attack_branch:				; was loc_14
+emit_setup_jmp:
+		jmp	emit_setup
+check_attack_branch:
 		test	byte ptr ds:tori_attack_flag,0FFh
-		jz	check_phase_limit	; was loc_17
+		jz	check_phase_limit
 		cmp	byte ptr ds:tori_sub_phase,1
-		jne	attack_advance		; was loc_15
+		jne	attack_advance
 		mov	byte ptr ds:tori_attack_flag,0
 		jmp	emit_setup
 
-attack_advance:					; was loc_15
+attack_advance:
 		mov	byte ptr ds:tori_sub_phase,1
 		cmp	byte ptr ds:tori_row_hi,12h
-		je	attack_skip		; was loc_16
+		je	attack_skip
 		inc	byte ptr ds:tori_row_hi
 		mov	byte ptr ds:tori_sub_phase,0
 		call	sub_3
 
-attack_skip:					; was loc_16
+attack_skip:
 		jmp	emit_setup
 
-check_phase_limit:				; was loc_17
+check_phase_limit:
 		test	byte ptr ds:tori_phase_limit,0FFh
-		jz	check_altitude		; was loc_20
+		jz	check_altitude
 		inc	byte ptr ds:tori_turn_flag
 		and	byte ptr ds:tori_turn_flag,3
 		call	sub_2
-		jnc	dive_step_a		; was loc_18
+		jnc	dive_step_a
 		jmp	emit_setup
 
-dive_step_a:					; was loc_18
+dive_step_a:
 		cmp	byte ptr ds:tori_dive_flag,4
-		jae	dive_to_glide		; was loc_19
+		jae	dive_to_glide
 		inc	byte ptr ds:tori_dive_flag
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Ah	; '*'
 		mov	byte ptr ds:tori_anim_timer,4
 		jmp	emit_setup
 
-dive_to_glide:					; was loc_19
+dive_to_glide:
 		mov	byte ptr ds:tori_phase_limit,0
 		mov	byte ptr ds:tori_sub_phase,0
 		mov	byte ptr ds:tori_glide_flag,0FFh
 		mov	byte ptr ds:tori_alt_state,0Fh
 		jmp	emit_setup
 
-check_altitude:					; was loc_20
+check_altitude:
 		test	byte ptr ds:tori_altitude,0FFh
-		jz	check_death		; was loc_23
+		jz	check_death
 		call	sub_2
-		jnc	dive_step_b		; was loc_21
+		jnc	dive_step_b
 		jmp	emit_setup
 
-dive_step_b:					; was loc_21
+dive_step_b:
 		cmp	byte ptr ds:tori_dive_flag,2
-		jae	land_aim		; was loc_22
+		jae	land_aim
 		inc	byte ptr ds:tori_dive_flag
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Ah	; '*'
 		mov	byte ptr ds:tori_anim_timer,2
 		jmp	emit_setup
 
-land_aim:					; was loc_22
+land_aim:
 		mov	ax,ds:tori_hp
 		add	ax,4
 		call	word ptr cs:fight_cb_anim_step
@@ -493,31 +491,30 @@ land_aim:					; was loc_22
 		mov	byte ptr ds:tori_altitude,0
 		jmp	emit_setup
 
-check_death:					; was loc_23
+check_death:
 		test	byte ptr ds:gvar_death_flag,0FFh
-		jz	walk_dispatch		; was loc_24
-		jmp	death_phase		; was loc_55
-
-walk_dispatch:					; was loc_24
+		jz	walk_dispatch
+		jmp	death_phase
+walk_dispatch:
 		inc	byte ptr ds:tori_turn_flag
 		and	byte ptr ds:tori_turn_flag,3
 		test	byte ptr ds:tori_cycle_idx,0FFh
-		jz	check_phase_arm		; was loc_25
+		jz	check_phase_arm
 		cmp	byte ptr ds:tori_hp,14h
 		jb	check_phase_arm
 		mov	byte ptr ds:tori_phase_limit,0FFh
 		mov	byte ptr ds:tori_dive_flag,0
 
-check_phase_arm:				; was loc_25
+check_phase_arm:
 		test	byte ptr ds:tori_phase_limit,0FFh
-		jnz	walk_count_step		; was loc_26
+		jnz	walk_count_step
 		call	word ptr cs:tori_extern_fn_ptr
 		and	al,0Fh
 		jnz	walk_count_step
 		mov	byte ptr ds:tori_altitude,0FFh
 		mov	byte ptr ds:tori_dive_flag,0
 
-walk_count_step:				; was loc_26
+walk_count_step:
 		inc	byte ptr ds:tori_phase_count
 		test	byte ptr ds:tori_phase_count,1
 		jnz	emit_setup
@@ -526,15 +523,15 @@ walk_count_step:				; was loc_26
 		xor	ah,ah			; Zero register
 		mov	cx,ax
 		sub	cx,ds:fight_state_max
-		jc	walk_skip_swap		; was loc_27
+		jc	walk_skip_swap
 		xchg	cx,ax
 
-walk_skip_swap:					; was loc_27
+walk_skip_swap:
 		mov	bl,ds:tori_hp
 		sub	bl,al
 		cmp	bl,0Ch
-		je	walk_random_arm		; was loc_29
-		jnc	walk_dir_inc		; was loc_28
+		je	walk_random_arm
+		jnc	walk_dir_inc
 		dec	byte ptr ds:tori_dir_state
 		and	byte ptr ds:tori_dir_state,3
 		call	sub_5
@@ -543,12 +540,12 @@ walk_skip_swap:					; was loc_27
 		mov	byte ptr ds:tori_dive_flag,0
 		jmp	short emit_setup
 
-walk_dir_inc:					; was loc_28
+walk_dir_inc:
 		inc	byte ptr ds:tori_dir_state
 		and	byte ptr ds:tori_dir_state,3
 		call	sub_3
 
-walk_random_arm:				; was loc_29
+walk_random_arm:
 		call	word ptr cs:tori_extern_fn_ptr
 		and	al,1Fh
 		jnz	emit_setup
@@ -563,7 +560,7 @@ walk_random_arm:				; was loc_29
 ;  fight slot list.
 ; -------------------------------------------------------------------------
 
-emit_setup:					; was loc_30
+emit_setup:
 		mov	al,ds:tori_row_hi
 		mov	ds:tori_anim_state,al
 		push	cs
@@ -573,20 +570,18 @@ emit_setup:					; was loc_30
 		mov	cx,48h
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
 		test	byte ptr ds:tori_turn_cooldown,0FFh
-		jnz	turn_compose		; was loc_31
+		jnz	turn_compose
 		test	byte ptr ds:tori_attack_flag,0FFh
-		jz	check_glide_compose	; was loc_32
-
-turn_compose:					; was loc_31
+		jz	check_glide_compose
+turn_compose:
 		mov	al,ds:tori_sub_phase
 		and	al,1
 		add	al,11h
 		call	sub_1
-		jmp	short copy_to_slots	; was loc_34
-
-check_glide_compose:				; was loc_32
+		jmp	short copy_to_slots
+check_glide_compose:
 		test	byte ptr ds:tori_glide_flag,0FFh
-		jz	normal_compose		; was loc_33
+		jz	normal_compose
 		mov	al,ds:tori_sub_phase
 		and	al,3
 		add	al,0Dh
@@ -596,7 +591,7 @@ check_glide_compose:				; was loc_32
 		adc	byte ptr ds:tori_anim_state,0
 		jmp	short copy_to_slots
 
-normal_compose:					; was loc_33
+normal_compose:
 		mov	al,ds:tori_phase_a
 		call	sub_1
 		mov	al,ds:tori_dir_state
@@ -609,28 +604,28 @@ normal_compose:					; was loc_33
 		add	al,2
 		call	sub_1
 
-copy_to_slots:					; was loc_34
+copy_to_slots:
 		mov	byte ptr ds:tori_slot_idx,0
 		mov	ax,ds:tori_hp
 		mov	di,ds:fight_slot_list
 		mov	si,tori_tmp_buf
 		mov	cx,9
 
-emit_outer_loop:				; was locloop_35
+emit_outer_loop:
 					push	cx
 					push	si
 					push	ax
 					call	word ptr cs:fight_cb_anim_step
 					pop	ax
-					jc	emit_outer_advance	; was loc_39
+					jc	emit_outer_advance
 					mov	ds:tori_frame_idx,bl
 					xor	cx,cx			; Zero register
 
-emit_inner_loop:				; was loc_36
+emit_inner_loop:
 								push	cx
 								push	ax
 								cmp	byte ptr [si],0FFh
-								je	emit_inner_skip		; was loc_38
+								je	emit_inner_skip
 								mov	[di],ax
 								mov	al,ds:tori_anim_state
 								add	al,cl
@@ -649,10 +644,10 @@ emit_inner_loop:				; was loc_36
 								mov	[di+6],ah
 								mov	byte ptr [di+5],0
 								test	byte ptr ds:tori_cycle_idx,0FFh
-								jz	emit_no_cycle_bit	; was loc_37
+								jz	emit_no_cycle_bit
 								or	byte ptr [di+5],20h	; ' '
 
-emit_no_cycle_bit:				; was loc_37
+emit_no_cycle_bit:
 								mov	ax,[di+2]
 								push	di
 								call	word ptr cs:fight_cb_record_ofs
@@ -666,7 +661,7 @@ emit_no_cycle_bit:				; was loc_37
 								add	di,10h
 								inc	byte ptr ds:tori_slot_idx
 
-emit_inner_skip:				; was loc_38
+emit_inner_skip:
 								inc	si
 								pop	ax
 								pop	cx
@@ -674,7 +669,7 @@ emit_inner_skip:				; was loc_38
 								cmp	cx,8
 								jne	emit_inner_loop
 
-emit_outer_advance:				; was loc_39
+emit_outer_advance:
 					inc	ax
 					pop	si
 					add	si,8
@@ -702,17 +697,17 @@ sub_1		proc	near
 		mov	di,tori_tmp_buf
 		mov	cx,9
 
-row_outer_loop:					; was locloop_40
+row_outer_loop:
 					push	cx
 					mov	cx,8
 
-row_inner_loop:					; was locloop_41
+row_inner_loop:
 								rol	byte ptr ds:[bp],1	; Rotate
-								jnc	row_inner_skip		; was loc_42
+								jnc	row_inner_skip
 								lodsb				; String [si] to al
 								mov	[di],al
 
-row_inner_skip:					; was loc_42
+row_inner_skip:
 								inc	di
 								loop	row_inner_loop
 
@@ -733,10 +728,10 @@ sub_2		proc	near
 		inc	byte ptr ds:tori_swoop_ctr
 		cmp	byte ptr ds:tori_swoop_ctr,3
 		stc				; Set carry flag
-		jz	swoop_wrap		; was loc_43
+		jz	swoop_wrap
 		retn
 
-swoop_wrap:					; was loc_43
+swoop_wrap:
 		mov	byte ptr ds:tori_swoop_ctr,0
 		clc				; Clear carry flag
 		retn
@@ -749,10 +744,10 @@ sub_2		endp
 
 sub_3		proc	near
 		cmp	byte ptr ds:tori_hp,0Dh
-		jae	hp_dec_a		; was loc_44
+		jae	hp_dec_a
 		retn
 
-hp_dec_a:					; was loc_44
+hp_dec_a:
 		dec	byte ptr ds:tori_hp
 		clc				; Clear carry flag
 		retn
@@ -765,10 +760,10 @@ sub_3		endp
 
 sub_4		proc	near
 		cmp	byte ptr ds:tori_hp,11h
-		jae	hp_dec_b		; was loc_45
+		jae	hp_dec_b
 		retn
 
-hp_dec_b:					; was loc_45
+hp_dec_b:
 		dec	byte ptr ds:tori_hp
 		clc				; Clear carry flag
 		retn
@@ -783,10 +778,10 @@ sub_4		endp
 sub_5		proc	near
 		cmp	byte ptr ds:tori_hp,30h	; '0'
 		cmc				; Complement carry
-		jnc	hp_inc_a		; was loc_46
+		jnc	hp_inc_a
 		retn
 
-hp_inc_a:					; was loc_46
+hp_inc_a:
 		inc	byte ptr ds:tori_hp
 		clc				; Clear carry flag
 		retn
@@ -803,34 +798,34 @@ sub_5		endp
 sub_6		proc	near
 		mov	ax,ds:tori_row_lo
 		sub	ax,bx
-		jnc	sub6_store		; was loc_47
+		jnc	sub6_store
 		xor	ax,ax			; Zero register
 
-sub6_store:					; was loc_47
+sub6_store:
 		mov	ds:tori_row_lo,ax
 		mov	bx,ax
 		push	ax
 		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
-		jz	sub6_arm_death		; was loc_48
+		jz	sub6_arm_death
 		retn
 
-sub6_arm_death:					; was loc_48
+sub6_arm_death:
 		mov	byte ptr ds:gvar_death_flag,0FFh
 		call	word ptr cs:fight_cb_shutdown
 		mov	byte ptr ds:tori_phase_limit,0
 		mov	byte ptr ds:tori_altitude,0
 		mov	byte ptr ds:tori_dive_flag,0
 		test	byte ptr ds:tori_glide_flag,0FFh
-		jnz	sub6_reset_glide	; was loc_49
+		jnz	sub6_reset_glide
 		retn
 
-sub6_reset_glide:				; was loc_49
+sub6_reset_glide:
 		mov	byte ptr ds:tori_pattern_idx,0
 		mov	byte ptr ds:tori_glide_flag,0
 
-sub6_clear_phase:				; was loc_54
+sub6_clear_phase:
 		mov	byte ptr ds:tori_sub_phase,0
 		mov	byte ptr ds:tori_attack_flag,0FFh
 		retn
@@ -843,28 +838,28 @@ sub_6		endp
 ;  animation, then sets gvar_completion (stage advance).
 ; -------------------------------------------------------------------------
 
-death_phase:					; was loc_55
+death_phase:
 		mov	al,ds:tori_pattern_idx
 		cmp	al,28h			; '('
-		jae	death_complete		; was loc_57
+		jae	death_complete
 		mov	byte ptr ds:gvar_dir_toggle,0FFh
 		mov	byte ptr ds:tori_phase_a,1
 		mov	al,ds:tori_pattern_idx
 		inc	byte ptr ds:tori_pattern_idx
 		cmp	al,14h
-		jae	death_late_phase	; was loc_56
+		jae	death_late_phase
 		call	sub_2
 		inc	byte ptr ds:tori_turn_flag
 		and	byte ptr ds:tori_turn_flag,3
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Ch	; ','
 		jmp	emit_setup
 
-death_late_phase:				; was loc_56
+death_late_phase:
 		mov	byte ptr ds:tori_turn_cooldown,0FFh
 		mov	byte ptr ds:tori_sub_phase,1
 		jmp	emit_setup
 
-death_complete:					; was loc_57
+death_complete:
 		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 

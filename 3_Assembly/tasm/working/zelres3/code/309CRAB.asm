@@ -292,7 +292,7 @@ crab_scan_prolog:
 ;  dispatches the per-frame phase (loc_27/loc_43/loc_44/loc_24/loc_23).
 ; -------------------------------------------------------------------------
 
-scan_slot_loop:					; was loc_1
+scan_slot_loop:
 ;*		cmp	word ptr [si],0FFFFh
 				db	 83h, 3Ch,0FFh		; cmp word ptr [si], 0FFFFh
 								;  (alt encoding: sign-extended imm8 form;
@@ -315,18 +315,18 @@ scan_slot_loop:					; was loc_1
 				mov	al,[si+5]
 				and	al,1Fh
 				test	byte ptr [si+4],10h
-				jz	apply_state_bits	; was loc_2
+				jz	apply_state_bits
 				or	al,80h
 
-apply_state_bits:				; was loc_2
+apply_state_bits:
 				mov	ds:crab_state_bits,al
 
-scan_next_slot:					; was loc_3
+scan_next_slot:
 				inc	byte ptr ds:crab_slot_idx
 				add	si,10h
 				jmp	short scan_slot_loop
 
-scan_done:					; was loc_4
+scan_done:
 		mov	si,ds:fight_slot_list
 		mov	word ptr [si],0FFFFh
 		test	byte ptr ds:gvar_death_flag,0FFh
@@ -343,30 +343,30 @@ scan_done:					; was loc_4
 		add	bx,bx
 		pop	ax
 		or	al,al			; Zero ?
-		jns	hp_target_ready		; was loc_5
+		jns	hp_target_ready
 		add	bx,bx
 
-hp_target_ready:				; was loc_5
+hp_target_ready:
 		call	prep_phase
 		mov	byte ptr ds:gvar_spawn_fx_flag,22h	; '"'
 		mov	ax,crab_const_2600
 		add	ax,0Ch
 		mov	bx,ds:fight_state_max
 		cmp	ax,bx
-		jb	hp_target_clamped	; was loc_6
+		jb	hp_target_clamped
 		mov	ax,bx
 
-hp_target_clamped:				; was loc_6
+hp_target_clamped:
 		xchg	bx,ax
 		mov	ax,ds:fight_hp
 		add	ax,5
 		cmp	ax,bx
-		jae	hp_inc_two		; was loc_7
+		jae	hp_inc_two
 		call	hp_dec
 		call	hp_dec
 		jmp	short dispatch_phase
 
-hp_inc_two:					; was loc_7
+hp_inc_two:
 		call	hp_inc
 		call	hp_inc
 
@@ -380,73 +380,67 @@ hp_inc_two:					; was loc_7
 ;    else -> call cs:crab_const_2692 (RNG/timer) and walk / swap-dir.
 ; -------------------------------------------------------------------------
 
-dispatch_phase:					; was loc_8
+dispatch_phase:
 		test	byte ptr ds:crab_anim_idx,0FFh
-		jz	disp_try_alt		; was loc_9
-		jmp	anim_step_entry		; was loc_27
-
-disp_try_alt:					; was loc_9
+		jz	disp_try_alt
+		jmp	anim_step_entry
+disp_try_alt:
 		test	byte ptr ds:crab_alt_phase,0FFh
-		jz	disp_try_death		; was loc_10
-		jmp	idle_dispatch		; was loc_43
-
-disp_try_death:					; was loc_10
+		jz	disp_try_death
+		jmp	idle_dispatch
+disp_try_death:
 		test	byte ptr ds:gvar_death_flag,0FFh
-		jz	disp_try_spawn		; was loc_11
-		jmp	death_anim		; was loc_44
-
-disp_try_spawn:					; was loc_11
+		jz	disp_try_spawn
+		jmp	death_anim
+disp_try_spawn:
 		test	byte ptr ds:crab_flag_g,0FFh
-		jz	disp_walk		; was loc_12
-		jmp	spawn_subloop		; was loc_24
-
-disp_walk:					; was loc_12
+		jz	disp_walk
+		jmp	spawn_subloop
+disp_walk:
 		call	word ptr cs:crab_const_2692	; call RNG/timer fn
 		and	al,7
-		jnz	walk_active		; was loc_13
-		jmp	walk_reset		; was loc_23
-
-walk_active:					; was loc_13
+		jnz	walk_active
+		jmp	walk_reset
+walk_active:
 		test	byte ptr ds:crab_dir_flag,0FFh
-		jnz	walk_dir1		; was loc_17
+		jnz	walk_dir1
 		inc	byte ptr ds:crab_sub_phase
 		test	byte ptr ds:crab_sub_phase,1
-		jz	walk_dir0_step		; was loc_14
-		jmp	emit_sprite_rows	; was loc_49
-
-walk_dir0_step:					; was loc_14
+		jz	walk_dir0_step
+		jmp	emit_sprite_rows
+walk_dir0_step:
 		call	hp_dec
-		jnc	walk_dir0_advance	; was loc_15
+		jnc	walk_dir0_advance
 		mov	byte ptr ds:crab_dir_flag,0FFh
 
-walk_dir0_advance:				; was loc_15
+walk_dir0_advance:
 		inc	byte ptr ds:crab_frame_idx
 		cmp	byte ptr ds:crab_frame_idx,6
-		jae	walk_dir0_wrap		; was loc_16
+		jae	walk_dir0_wrap
 		jmp	emit_sprite_rows
 
-walk_dir0_wrap:					; was loc_16
+walk_dir0_wrap:
 		mov	byte ptr ds:crab_frame_idx,0
 		jmp	emit_sprite_rows
 
-walk_dir1:					; was loc_17
+walk_dir1:
 		inc	byte ptr ds:crab_sub_phase
 		test	byte ptr ds:crab_sub_phase,1
-		jz	walk_dir1_step		; was loc_18
+		jz	walk_dir1_step
 		jmp	emit_sprite_rows
 
-walk_dir1_step:					; was loc_18
+walk_dir1_step:
 		call	hp_inc
-		jnc	walk_dir1_advance	; was loc_19
+		jnc	walk_dir1_advance
 		mov	byte ptr ds:crab_dir_flag,0
 
-walk_dir1_advance:				; was loc_19
+walk_dir1_advance:
 		dec	byte ptr ds:crab_frame_idx
 		cmp	byte ptr ds:crab_frame_idx,0FFh
-		je	walk_dir1_wrap		; was loc_20
+		je	walk_dir1_wrap
 		jmp	emit_sprite_rows
 
-walk_dir1_wrap:					; was loc_20
+walk_dir1_wrap:
 		mov	byte ptr ds:crab_frame_idx,5
 		jmp	emit_sprite_rows
 
@@ -460,10 +454,10 @@ crab_main	endp
 hp_dec		proc	near
 		cmp	byte ptr ds:fight_hp,10h
 		stc				; Set carry flag
-		jnz	hp_dec_do		; was loc_21
+		jnz	hp_dec_do
 		retn
 
-hp_dec_do:					; was loc_21
+hp_dec_do:
 		dec	byte ptr ds:fight_hp
 		clc				; Clear carry flag
 		retn
@@ -478,10 +472,10 @@ hp_dec		endp
 hp_inc		proc	near
 		cmp	byte ptr ds:fight_hp,31h	; '1'
 		stc				; Set carry flag
-		jnz	hp_inc_do		; was loc_22
+		jnz	hp_inc_do
 		retn
 
-hp_inc_do:					; was loc_22
+hp_inc_do:
 		inc	byte ptr ds:fight_hp
 		clc				; Clear carry flag
 		retn
@@ -492,11 +486,11 @@ hp_inc		endp
 ;  walk_reset (loc_23) -- clear flag_h, set flag_g to drive spawn_subloop.
 ; -------------------------------------------------------------------------
 
-walk_reset:					; was loc_23
+walk_reset:
 		mov	byte ptr ds:crab_flag_h,0
 		mov	byte ptr ds:crab_flag_g,0FFh
 
-spawn_subloop:					; was loc_24
+spawn_subloop:
 		inc	byte ptr ds:crab_flag_h
 		cmp	byte ptr ds:crab_flag_h,8
 ;*		je	spawn_phase_reset	; target = loc_25 (Sourcer dropped label, code below)
@@ -534,10 +528,10 @@ spawn_phase_reset:				; was loc_25 (label restored from byte-form je fixup)
 		mov	cx,ax
 		sub	cx,bx
 		xchg	bx,ax
-		jc	reset_dir_ready		; was loc_26
+		jc	reset_dir_ready
 		xchg	bx,cx
 
-reset_dir_ready:				; was loc_26
+reset_dir_ready:
 		mov	ax,ds:fight_hp
 		add	ax,5
 		sub	ax,bx
@@ -547,69 +541,69 @@ reset_dir_ready:				; was loc_26
 		mov	byte ptr ds:crab_anim_frame,0
 		mov	byte ptr ds:crab_anim_idx,0FFh
 
-anim_step_entry:				; was loc_27
+anim_step_entry:
 		mov	byte ptr ds:crab_frame_idx,9
 		mov	bl,ds:crab_anim_frame
 		xor	bh,bh			; Zero register
 		mov	al,ds:crab_anim_tbl_c[bx]
 		cmp	al,0FFh
-		jne	anim_step_do		; was loc_28
+		jne	anim_step_do
 ;*		jmp	anim_step_end		; target = loc_42 (dead-code / data region)
 		db	0E9h,0F1h, 00h		; jmp +0xF1 -> 0x5C4 (lands inside crab_alt_phase_arm
 						;  between emit_sprite_rows tail and idle_dispatch)
 
-anim_step_do:					; was loc_28
+anim_step_do:
 		mov	ah,al
 		and	al,0Fh
 		cmp	al,8
-		je	anim_step_no_phase	; was loc_29
+		je	anim_step_no_phase
 		shr	al,1			; Shift w/zeros fill
 		sbb	al,0
 		add	al,ds:crab_phase_base
 		and	al,3Fh			; '?'
 		mov	ds:crab_phase_base,al
 
-anim_step_no_phase:				; was loc_29
+anim_step_no_phase:
 		mov	al,ah
 		and	al,0F0h
-		jz	anim_step_emit		; was loc_31
+		jz	anim_step_emit
 		test	byte ptr ds:crab_dir_flag,0FFh
-		jnz	anim_step_inc		; was loc_30
+		jnz	anim_step_inc
 		call	hp_dec
 		jmp	short anim_step_emit
 
-anim_step_inc:					; was loc_30
+anim_step_inc:
 		call	hp_inc
 
-anim_step_emit:					; was loc_31
+anim_step_emit:
 		call	emit_sprite_rows_proc
 		inc	byte ptr ds:crab_anim_frame
 		retn
 
-emit_from_grid:					; was loc_32
+emit_from_grid:
 		test	byte ptr ds:crab_row_pos,0FFh
-		jnz	emit_cell		; was loc_37
+		jnz	emit_cell
 		test	byte ptr ds:crab_anim_idx,0FFh
-		jnz	emit_find_slot		; was loc_33
+		jnz	emit_find_slot
 		retn
 
-emit_find_slot:					; was loc_33
+emit_find_slot:
 		mov	di,ds:fight_slot_list
 
-emit_find_slot_loop:				; was loc_34
+emit_find_slot_loop:
 				cmp	byte ptr [di+4],14h
-				je	emit_slot_found		; was loc_35
+				je	emit_slot_found
 				add	di,10h
 				jmp	short emit_find_slot_loop
 
-emit_slot_found:				; was loc_35
+emit_slot_found:
 		mov	al,ds:crab_anim_frame
 		mov	[di+6],al
 		cmp	byte ptr ds:crab_anim_frame,4
-		je	emit_grid_init		; was loc_36
+		je	emit_grid_init
 		retn
 
-emit_grid_init:					; was loc_36
+emit_grid_init:
 		mov	byte ptr ds:crab_col_pos,0
 		mov	byte ptr ds:crab_row_pos,0FFh
 		mov	ax,ds:fight_hp
@@ -620,33 +614,33 @@ emit_grid_init:					; was loc_36
 		and	al,3Fh			; '?'
 		mov	ds:crab_timer_a,al
 
-emit_cell:					; was loc_37
+emit_cell:
 		mov	bl,ds:crab_col_pos
 		xor	bh,bh			; Zero register
 		inc	byte ptr ds:crab_col_pos
 		mov	al,ds:crab_anim_tbl_a[bx]
 		cmp	al,0FFh
-		jne	emit_cell_nonend	; was loc_38
+		jne	emit_cell_nonend
 		mov	byte ptr ds:crab_row_pos,0
 		retn
 
-emit_cell_nonend:				; was loc_38
+emit_cell_nonend:
 		or	al,al			; Zero ?
-		jns	emit_cell_step		; was loc_40
+		jns	emit_cell_step
 		inc	byte ptr ds:crab_timer_a
 		and	byte ptr ds:crab_timer_a,3Fh	; '?'
 
-emit_cell_step:					; was loc_40
+emit_cell_step:
 		push	ax
 		mov	ax,ds:crab_anim_base
 		push	ax
 		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		pop	cx
-		jnc	emit_cell_write		; was loc_41
+		jnc	emit_cell_write
 		retn
 
-emit_cell_write:				; was loc_41
+emit_cell_write:
 		mov	[si],ax
 		mov	dl,ds:crab_timer_a
 		mov	[si+2],dl
@@ -691,7 +685,7 @@ crab_alt_phase_arm:				; live entry: jmp from anim_step_do lands here
 		mov	byte ptr ds:crab_idx_e,0
 		mov	byte ptr ds:crab_alt_phase,0FFh	; arm alt-phase -> idle_dispatch
 
-idle_dispatch:					; was loc_43
+idle_dispatch:
 		mov	bl,ds:crab_idx_e
 		xor	bh,bh			; Zero register
 		mov	al,ds:crab_anim_tbl_b[bx]
@@ -699,8 +693,7 @@ idle_dispatch:					; was loc_43
 		inc	byte ptr ds:crab_idx_e
 		cmp	byte ptr ds:crab_idx_e,4
 		je	$+5			; skip the next `jmp` -> falls into idle_done_clear
-		jmp	emit_sprite_rows	; was loc_49
-
+		jmp	emit_sprite_rows
 ; idle_done_clear: reached by the `je $+5` above when crab_idx_e == 4.
 ; Clears alt-phase and jumps into the sprite-emit stage.
 
@@ -731,23 +724,23 @@ crab_death_aux_tbl:				; was ';* No entry point' #4
 ;  switches to frame 8, and at 0x28 it sets gvar_completion.
 ; -------------------------------------------------------------------------
 
-death_anim:					; was loc_44
+death_anim:
 		mov	al,ds:crab_timer_b
 		cmp	al,28h			; '('
-		jae	death_complete		; was loc_48
+		jae	death_complete
 		cmp	al,1Eh
-		jae	death_walk		; was loc_45
+		jae	death_walk
 		and	al,1
 		jnz	death_walk
 		mov	byte ptr ds:gvar_spawn_fx_flag,23h	; '#'
 
-death_walk:					; was loc_45
+death_walk:
 		mov	byte ptr ds:gvar_dir_toggle,0FFh
 		cmp	byte ptr ds:crab_timer_b,14h
-		jae	death_frame8		; was loc_47
+		jae	death_frame8
 		inc	byte ptr ds:crab_timer_b
 		test	byte ptr ds:crab_dir_flag,0FFh
-		jnz	death_step_down		; was loc_46
+		jnz	death_step_down
 		inc	byte ptr ds:crab_frame_idx
 		cmp	byte ptr ds:crab_frame_idx,6
 		jb	emit_sprite_rows
@@ -755,7 +748,7 @@ death_walk:					; was loc_45
 		mov	byte ptr ds:crab_dir_flag,0FFh
 		jmp	short emit_sprite_rows
 
-death_step_down:				; was loc_46
+death_step_down:
 		dec	byte ptr ds:crab_frame_idx
 		cmp	byte ptr ds:crab_frame_idx,0FFh
 		jb	emit_sprite_rows
@@ -763,12 +756,12 @@ death_step_down:				; was loc_46
 		mov	byte ptr ds:crab_dir_flag,0
 		jmp	short emit_sprite_rows
 
-death_frame8:					; was loc_47
+death_frame8:
 		inc	byte ptr ds:crab_timer_b
 		mov	byte ptr ds:crab_frame_idx,8
 		jmp	short emit_sprite_rows
 
-death_complete:					; was loc_48
+death_complete:
 		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 
@@ -785,7 +778,7 @@ death_complete:					; was loc_48
 
 emit_sprite_rows_proc	proc	near
 
-emit_sprite_rows:				; was loc_49
+emit_sprite_rows:
 		mov	bl,ds:crab_frame_idx
 		add	bl,bl
 		xor	bh,bh			; Zero register
@@ -796,7 +789,7 @@ emit_sprite_rows:				; was loc_49
 		xor	al,al			; Zero register
 		mov	ds:crab_slot_idx,al
 
-emit_row_outer:					; was loc_50
+emit_row_outer:
 				push	di
 				push	ax
 				mov	bl,0Ah
@@ -805,13 +798,13 @@ emit_row_outer:					; was loc_50
 				mov	ax,ds:fight_hp
 				mov	cx,0Ah
 
-emit_row_loop:					; was locloop_51
+emit_row_loop:
 						push	cx
 						mov	[si],ax
 						push	di
 						push	ax
 						call	word ptr cs:fight_cb_anim_step
-						jc	emit_row_next		; was loc_53
+						jc	emit_row_next
 						mov	al,[di]
 						cmp	al,0FFh
 						je	emit_row_next
@@ -821,10 +814,10 @@ emit_row_loop:					; was locloop_51
 						mov	[si+3],bl
 						mov	byte ptr [si+5],0
 						test	byte ptr ds:crab_state_bits,0FFh
-						jz	emit_row_no_bit		; was loc_52
+						jz	emit_row_no_bit
 						or	byte ptr [si+5],20h	; ' '
 
-emit_row_no_bit:				; was loc_52
+emit_row_no_bit:
 						mov	al,ds:crab_frame_idx
 						mov	[si+6],al
 						mov	ax,[si+2]
@@ -838,7 +831,7 @@ emit_row_no_bit:				; was loc_52
 						inc	byte ptr ds:crab_slot_idx
 						add	si,10h
 
-emit_row_next:					; was loc_53
+emit_row_next:
 						pop	ax
 						inc	ax
 						pop	di
@@ -910,25 +903,25 @@ crab_lookup_b:					; offset 0x762 -- second sparse index table
 prep_phase	proc	near
 		mov	ax,ds:crab_phase_limit
 		sub	ax,bx
-		jnc	prep_store		; was loc_54
+		jnc	prep_store
 		xor	ax,ax			; Zero register
 
-prep_store:					; was loc_54
+prep_store:
 		mov	ds:crab_phase_limit,ax
 		mov	bx,ax
 		push	ax
 		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
-		jz	prep_check_death	; was loc_55
+		jz	prep_check_death
 		retn
 
-prep_check_death:				; was loc_55
+prep_check_death:
 		test	byte ptr ds:gvar_death_flag,0FFh
-		jz	prep_arm_death		; was loc_56
+		jz	prep_arm_death
 		retn
 
-prep_arm_death:					; was loc_56
+prep_arm_death:
 		mov	byte ptr ds:crab_timer_b,0
 		mov	byte ptr ds:gvar_death_flag,0FFh
 		retn

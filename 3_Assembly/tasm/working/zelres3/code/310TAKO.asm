@@ -305,23 +305,23 @@ scan_slot_loop:					; was loc_1 (file 0x28F)
 				mov	al,[si+5]
 				and	al,1Fh
 				cmp	byte ptr [si+4],0Eh
-				jb	apply_state_bits	; was loc_2
+				jb	apply_state_bits
 				or	al,80h
 
-apply_state_bits:				; was loc_2
+apply_state_bits:
 				mov	ds:tako_state,al
 
-scan_next_slot:					; was loc_3
+scan_next_slot:
 				inc	byte ptr ds:tako_frame_idx
 				add	si,10h
 				jmp	short scan_slot_loop
 
-scan_done:					; was loc_4
+scan_done:
 		mov	si,ds:fight_slot_list
 		mov	word ptr [si],0FFFFh
 		mov	al,ds:tako_state
 		or	al,al			; Zero ?
-		jz	prep_phase_check	; was loc_7
+		jz	prep_phase_check
 		push	ax
 		and	al,1Fh
 		call	word ptr cs:fight_cb_hit_check
@@ -330,18 +330,17 @@ scan_done:					; was loc_4
 		add	bx,bx
 		pop	ax
 		or	al,al			; Zero ?
-		jns	hit_pos_branch		; was loc_5
+		jns	hit_pos_branch
 		mov	byte ptr ds:gvar_spawn_fx_flag,24h	; '$'
 		add	bx,bx
-		jmp	short hit_apply		; was loc_6
-
-hit_pos_branch:					; was loc_5
+		jmp	short hit_apply
+hit_pos_branch:
 		mov	byte ptr ds:gvar_spawn_fx_flag,25h	; '%'
 
-hit_apply:					; was loc_6
-		call	hp_dec			; was sub_1
+hit_apply:
+		call	hp_dec
 		test	byte ptr ds:tako_flag_b,10h
-		jnz	prep_phase_check	; was loc_7
+		jnz	prep_phase_check
 		mov	bx,tako_flag_a
 		cmp	byte ptr [bx],10h
 		je	prep_phase_check
@@ -350,24 +349,23 @@ hit_apply:					; was loc_6
 		or	byte ptr ds:tako_flag_c,20h	; ' '
 		mov	byte ptr ds:gvar_spawn_fx_flag,26h	; '&'
 
-prep_phase_check:				; was loc_7
+prep_phase_check:
 		test	byte ptr ds:gvar_death_flag,0FFh
-		jz	dispatch_phase		; was loc_8
-		jmp	death_phase		; was loc_32
-
-dispatch_phase:					; was loc_8
+		jz	dispatch_phase
+		jmp	death_phase
+dispatch_phase:
 		inc	byte ptr ds:tako_phase_a
 		and	byte ptr ds:tako_phase_a,7
 		mov	dl,ds:tako_flag_a
 		mov	bx,tako_flag_b
 		test	byte ptr [bx],10h
-		jz	flag_b_skip		; was loc_10
+		jz	flag_b_skip
 		xor	byte ptr [bx],20h	; ' '
 		test	byte ptr [bx],20h	; ' '
-		jnz	flag_b_step		; was loc_9
+		jnz	flag_b_step
 		sub	dl,8
 
-flag_b_step:					; was loc_9
+flag_b_step:
 		mov	al,[bx]
 		mov	ah,al
 		and	al,0F0h
@@ -380,12 +378,12 @@ flag_b_step:					; was loc_9
 		and	byte ptr [bx],0EFh
 		and	byte ptr ds:tako_flag_c,0DFh
 
-flag_b_skip:					; was loc_10
+flag_b_skip:
 		cmp	dl,10h
-		jne	emit_setup		; was loc_14
+		jne	emit_setup
 		mov	bx,tako_flag_c
 		test	byte ptr [bx],40h	; '@'
-		jz	flag_c_check_a0		; was loc_11
+		jz	flag_c_check_a0
 		mov	al,20h			; ' '
 		xor	al,[bx]
 		mov	ah,al
@@ -395,7 +393,7 @@ flag_b_skip:					; was loc_10
 		or	ah,al
 		mov	[bx],ah
 		or	al,al			; Zero ?
-		jnz	flag_c_active		; was loc_12
+		jnz	flag_c_active
 		mov	byte ptr [bx],0A0h
 		mov	ax,ds:tako_row_pos_base
 		add	ax,4
@@ -406,19 +404,19 @@ flag_b_skip:					; was loc_10
 		mov	ds:tako_col_pos,al
 		mov	byte ptr ds:gvar_spawn_fx_flag,27h	; '''
 
-flag_c_check_a0:				; was loc_11
+flag_c_check_a0:
 		test	byte ptr [bx],0A0h
 		jnz	flag_c_active
 		test	byte ptr ds:tako_flag_b,10h
 		jnz	flag_c_active
 		or	byte ptr [bx],40h	; '@'
 
-flag_c_active:					; was loc_12
+flag_c_active:
 		test	byte ptr [bx],20h	; ' '
-		jnz	flag_c_high		; was loc_13
+		jnz	flag_c_high
 		add	dl,8
 
-flag_c_high:					; was loc_13
+flag_c_high:
 		test	byte ptr [bx],80h
 		jz	emit_setup
 		mov	al,[bx]
@@ -433,7 +431,7 @@ flag_c_high:					; was loc_13
 		jne	emit_setup
 		mov	byte ptr [bx],0
 
-emit_setup:					; was loc_14
+emit_setup:
 		mov	byte ptr ds:tako_frame_idx,0
 		mov	bl,ds:tako_phase_a
 		xor	bh,bh			; Zero register
@@ -445,7 +443,7 @@ emit_setup:					; was loc_14
 		mov	si,ds:fight_slot_list
 		mov	cx,7
 
-emit_outer_loop:				; was loc_15
+emit_outer_loop:
 		push	cx
 		push	bx
 		push	ax
@@ -453,28 +451,27 @@ emit_outer_loop:				; was loc_15
 		mov	ds:tako_alt_state,bl
 		pop	ax
 		pop	bx
-		jnc	emit_active_arm		; was loc_18
+		jnc	emit_active_arm
 		mov	cx,8
 
-emit_skip_arm_loop:				; was locloop_16
+emit_skip_arm_loop:
 				rol	byte ptr [bx],1		; Rotate
-				jnc	emit_skip_arm_next	; was loc_17
+				jnc	emit_skip_arm_next
 				inc	di
 				inc	di
 
-emit_skip_arm_next:				; was loc_17
+emit_skip_arm_next:
 				loop	emit_skip_arm_loop	; Loop if cx > 0
 
-		jmp	short emit_outer_advance	; was loc_22
-
-emit_active_arm:				; was loc_18
+		jmp	short emit_outer_advance
+emit_active_arm:
 		xor	cx,cx			; Zero register
 
-emit_arm_loop:					; was loc_19
+emit_arm_loop:
 				push	cx
 				push	bx
 				rol	byte ptr [bx],1		; Rotate
-				jnc	emit_arm_next		; was loc_21
+				jnc	emit_arm_next
 				mov	[si],ax
 				add	cl,cl
 				add	cl,ds:tako_row_delta
@@ -488,10 +485,10 @@ emit_arm_loop:					; was loc_19
 				mov	[si+6],cl
 				mov	byte ptr [si+5],0
 				test	byte ptr ds:tako_state,0FFh
-				jz	emit_arm_no_bit		; was loc_20
+				jz	emit_arm_no_bit
 				or	byte ptr [si+5],20h	; ' '
 
-emit_arm_no_bit:				; was loc_20
+emit_arm_no_bit:
 				push	di
 				push	ax
 				mov	ax,[si+2]
@@ -508,28 +505,26 @@ emit_arm_no_bit:				; was loc_20
 				add	di,2
 				inc	byte ptr ds:tako_frame_idx
 
-emit_arm_next:					; was loc_21
+emit_arm_next:
 				pop	bx
 				pop	cx
 				inc	cx
 				cmp	cx,8
 				jne	emit_arm_loop
 
-emit_outer_advance:				; was loc_22
+emit_outer_advance:
 		inc	bx
 		add	ax,2
 		pop	cx
-		loop	emit_outer_iter		; was locloop_23
-
-		jmp	short emit_proj_phase	; was loc_24
-
-emit_outer_iter:				; was locloop_23
+		loop	emit_outer_iter
+		jmp	short emit_proj_phase
+emit_outer_iter:
 		jmp	emit_outer_loop
 
-emit_proj_phase:				; was loc_24
+emit_proj_phase:
 		mov	al,ds:tako_flag_c
 		test	al,80h
-		jz	emit_done		; was loc_27
+		jz	emit_done
 		and	al,1Fh
 		dec	al
 		add	al,al
@@ -540,12 +535,12 @@ emit_proj_phase:				; was loc_24
 		mov	ax,ds:tako_timer_a_byte
 		mov	cx,4
 
-emit_proj_loop:					; was locloop_25
+emit_proj_loop:
 				push	cx
 				push	ax
 				call	word ptr cs:fight_cb_anim_step
 				pop	ax
-				jc	emit_proj_next		; was loc_26
+				jc	emit_proj_next
 				mov	dl,[di]
 				or	dl,dl			; Zero ?
 				jz	emit_proj_next
@@ -572,13 +567,13 @@ emit_proj_loop:					; was locloop_25
 				pop	ax
 				pop	di
 
-emit_proj_next:					; was loc_26
+emit_proj_next:
 				inc	di
 				inc	ax
 				pop	cx
 				loop	emit_proj_loop
 
-emit_done:					; was loc_27
+emit_done:
 		mov	word ptr [si],0FFFFh
 		retn
 
@@ -593,25 +588,25 @@ tako_main	endp
 hp_dec		proc	near
 		mov	ax,ds:tako_hp
 		sub	ax,bx
-		jnc	hp_dec_store		; was loc_28
+		jnc	hp_dec_store
 		xor	ax,ax			; Zero register
 
-hp_dec_store:					; was loc_28
+hp_dec_store:
 		mov	ds:tako_hp,ax
 		mov	bx,ax
 		push	ax
 		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
-		jz	hp_dec_check_death	; was loc_29
+		jz	hp_dec_check_death
 		retn
 
-hp_dec_check_death:				; was loc_29
+hp_dec_check_death:
 		test	byte ptr ds:gvar_death_flag,0FFh
-		jz	hp_dec_arm_death	; was loc_30
+		jz	hp_dec_arm_death
 		retn
 
-hp_dec_arm_death:				; was loc_30
+hp_dec_arm_death:
 		mov	byte ptr ds:tako_timer_a,0
 		mov	byte ptr ds:gvar_death_flag,0FFh
 
@@ -626,14 +621,14 @@ hp_dec		endp
 ;  and at 0x28 it sets gvar_completion (stage advance).
 ; -------------------------------------------------------------------------
 
-death_phase:					; was loc_32
+death_phase:
 		mov	byte ptr ds:tako_flag_c,0
 		cmp	byte ptr ds:tako_timer_a,28h	; '('
-		jae	death_complete		; was loc_34
+		jae	death_complete
 		mov	byte ptr ds:gvar_dir_toggle,0FFh
 		mov	bx,tako_timer_a
 		cmp	byte ptr [bx],14h
-		jae	death_alt_swing		; was loc_33
+		jae	death_alt_swing
 		inc	byte ptr [bx]
 		mov	al,[bx]
 		mov	bx,tako_phase_a
@@ -646,15 +641,14 @@ death_phase:					; was loc_32
 		add	al,ds:tako_flag_a
 		mov	dl,al
 		mov	byte ptr ds:gvar_spawn_fx_flag,28h	; '('
-		jmp	emit_setup		; was loc_14
-
-death_alt_swing:				; was loc_33
+		jmp	emit_setup
+death_alt_swing:
 		inc	byte ptr [bx]
 		mov	dl,ds:tako_flag_a
 		add	dl,8
 		jmp	emit_setup
 
-death_complete:					; was loc_34
+death_complete:
 		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 
