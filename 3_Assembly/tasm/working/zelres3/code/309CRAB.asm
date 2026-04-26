@@ -136,152 +136,153 @@ crab_frame_ptr_tbl_b	label	word		; indexed frame pointers (group B)
 ;  mark row-terminator positions within a frame.
 ; -------------------------------------------------------------------------
 
-crab_frame_00:					; offset 0x05C -> ptr 0xA05C
-		db	 00h, 00h, 00h, 00h, 01h, 00h
-		db	 00h, 00h, 26h, 27h, 00h, 00h
-		db	 00h, 00h, 01h, 00h, 00h, 00h
-		db	 26h, 27h, 00h, 00h, 00h, 00h
-		db	 01h, 00h, 00h, 00h, 26h, 27h
-		db	 00h, 00h
-crab_const_2600	dw	2600h			; shared word constant (used via `mov ax`)
-		db	 27h, 00h, 00h, 00h, 26h, 27h
-		db	 00h, 00h, 00h, 00h, 00h, 00h
+crab_frame_00:					; offset 0x05C -> ptr 0xA05C (first 4 bytes alias into ptr_tbl_b tail: A5 A2 D7 A2)
+		db	 00h, 00h, 00h, 00h, 01h, 00h   ; row 0
+		db	 00h, 00h, 26h, 27h, 00h, 00h   ; row 1
+		db	 00h, 00h, 01h, 00h, 00h, 00h   ; row 2
+		db	 26h, 27h, 00h, 00h, 00h, 00h   ; row 3
+		db	 01h, 00h, 00h, 00h, 26h, 27h   ; row 4
+		db	 00h, 00h                       ; row 5
+crab_const_2600	dw	2600h           ; shared word constant (used via `mov ax`)
+		db	 27h, 00h, 00h, 00h, 26h, 27h   ; row 6
+		db	 00h, 00h, 00h, 00h, 00h, 00h   ; row 7
 
 crab_frame_01:					; offset 0x08E -> ptr 0xA08E
-		db	 01h, 02h, 0Ah, 0Bh, 00h, 00h
-		db	 00h, 02h, 00h, 00h, 00h, 00h
-		db	 28h, 29h, 00h, 00h, 00h, 02h
-		db	 00h, 00h, 00h, 00h, 28h, 29h
-		db	 00h, 00h, 00h, 02h, 00h, 00h
-		db	 00h, 00h, 28h, 29h, 00h, 00h
-		db	 00h, 28h, 29h, 00h, 00h, 00h
-		db	 28h, 29h, 00h, 00h
+		db	 01h, 02h, 0Ah, 0Bh, 00h, 00h   ; row 0
+		db	 00h, 02h, 00h, 00h, 00h, 00h   ; row 1
+		db	 28h, 29h, 00h, 00h, 00h, 02h   ; row 2
+		db	 00h, 00h, 00h, 00h, 28h, 29h   ; row 3
+		db	 00h, 00h, 00h, 02h, 00h, 00h   ; row 4
+		db	 00h, 00h, 28h, 29h, 00h, 00h   ; row 5
+		db	 00h, 28h, 29h, 00h, 00h, 00h   ; row 6
+		db	 28h, 29h, 00h                  ; row 7
 
 crab_frame_02:					; offset 0x0BB -> ptr 0xA0BB
-		db	 00h, 00h, 00h, 00h, 03h, 04h, 00h, 05h
-		db	 00h, 2Ah, 2Bh, 2Ch, 2Dh, 00h
-		db	 03h, 04h, 00h, 47h, 00h, 2Ah
-		db	 2Bh, 2Ch, 58h, 00h, 03h, 04h
-		db	 00h, 69h, 00h, 2Ah, 2Bh, 2Ch
-		db	 72h, 00h, 03h, 04h, 00h, 05h
-		db	 00h, 03h, 04h, 00h, 05h, 00h
-		db	 8Fh, 90h, 00h, 91h, 00h
+		db	 00h, 00h, 00h, 00h, 00h, 03h   ; row 0
+		db	 04h, 00h, 05h, 00h, 2Ah, 2Bh   ; row 1
+		db	 2Ch, 2Dh, 00h, 03h, 04h, 00h   ; row 2
+		db	 47h, 00h, 2Ah, 2Bh, 2Ch, 58h   ; row 3
+		db	 00h, 03h, 04h, 00h, 69h, 00h   ; row 4
+		db	 2Ah, 2Bh, 2Ch, 72h, 00h, 03h   ; row 5
+		db	 04h, 00h, 05h, 00h, 03h, 04h   ; row 6
+		db	 00h, 05h, 00h, 8Fh, 90h, 00h   ; row 7
+		db	 91h, 00h                       ; row 8
 
 crab_frame_03:					; offset 0x0ED -> ptr 0xA0ED
-		db	0ADh
-		db	0AEh,0AFh,0B0h, 00h, 06h, 07h
-		db	 08h, 09h, 00h, 06h, 2Fh, 30h
-		db	 31h, 00h, 06h, 07h, 48h, 49h
-		db	 00h, 06h, 2Fh, 59h, 5Ah, 00h
-		db	 06h, 07h, 59h, 5Ah, 00h, 06h
-		db	 2Fh, 73h, 74h, 00h, 06h, 2Fh
-		db	 08h, 09h, 00h, 06h, 2Fh, 08h
-		db	 09h, 00h
+		db	0ADh,0AEh,0AFh,0B0h, 00h, 06h   ; row 0
+		db	 07h, 08h, 09h, 00h, 06h, 2Fh   ; row 1
+		db	 30h, 31h, 00h, 06h, 07h, 48h   ; row 2
+		db	 49h, 00h, 06h, 2Fh, 59h, 5Ah   ; row 3
+		db	 00h, 06h, 07h, 59h, 5Ah, 00h   ; row 4
+		db	 06h, 2Fh, 73h, 74h, 00h, 06h   ; row 5
+		db	 2Fh, 08h, 09h, 00h, 06h, 2Fh   ; row 6
+		db	 08h, 09h, 00h                  ; row 7
+crab_const_2692	dw	2692h           ; shared word constant (also used via `call word ptr cs:`)
+		db	 93h, 94h, 00h                  ; row 8
 
 crab_frame_04:					; offset 0x11F -> ptr 0xA11F
-crab_const_2692	dw	2692h			; shared word constant (also used via `call word ptr cs:`)
-		db	 93h, 94h, 00h,0B1h, 07h,0B2h
-		db	0B3h, 00h, 0Ah, 0Bh, 0Ch, 0Dh
-		db	 00h, 32h, 33h, 0Ch, 0Dh, 00h
-		db	 0Ah, 0Bh, 0Ch, 0Dh, 00h, 32h
-		db	 33h, 0Ch, 0Dh, 00h, 0Ah, 0Bh
-		db	 0Ch, 0Dh, 00h, 32h, 33h, 0Ch
-		db	 0Dh, 00h, 32h, 33h,0C5h,0C6h
+		db	0B1h, 07h,0B2h,0B3h, 00h, 0Ah   ; row 0
+		db	 0Bh, 0Ch, 0Dh, 00h, 32h, 33h   ; row 1
+		db	 0Ch, 0Dh, 00h, 0Ah, 0Bh, 0Ch   ; row 2
+		db	 0Dh, 00h, 32h, 33h, 0Ch, 0Dh   ; row 3
+		db	 00h, 0Ah, 0Bh, 0Ch, 0Dh, 00h   ; row 4
+		db	 32h, 33h, 0Ch, 0Dh, 00h, 32h   ; row 5
+		db	 33h,0C5h,0C6h, 00h, 32h, 33h   ; row 6
+		db	 0Ch, 0Dh, 00h                  ; row 7
 
 crab_frame_05:					; offset 0x14C -> ptr 0xA14C
-		db	 00h, 32h, 33h, 0Ch, 0Dh, 00h
-		db	 27h, 28h, 32h, 33h, 00h, 0Eh
-		db	 35h, 10h, 11h, 00h, 34h, 35h
-		db	 36h, 37h, 00h, 0Eh, 35h, 4Ah
-		db	 4Bh, 00h, 34h, 35h, 5Bh, 5Ch
-		db	 00h, 0Eh, 35h, 5Bh, 5Ch, 00h
-		db	 34h, 35h, 75h, 76h, 00h, 34h
-		db	 35h, 84h, 85h, 00h, 34h
+		db	 27h, 28h, 32h, 33h, 00h, 0Eh   ; row 0
+		db	 35h, 10h, 11h, 00h, 34h, 35h   ; row 1
+		db	 36h, 37h, 00h, 0Eh, 35h, 4Ah   ; row 2
+		db	 4Bh, 00h, 34h, 35h, 5Bh, 5Ch   ; row 3
+		db	 00h, 0Eh, 35h, 5Bh, 5Ch, 00h   ; row 4
+		db	 34h, 35h, 75h, 76h, 00h, 34h   ; row 5
+		db	 35h, 84h, 85h, 00h, 34h, 35h   ; row 6
+		db	 84h, 85h, 00h, 29h, 95h, 96h   ; row 7
+		db	 97h, 00h                       ; row 8
 
 crab_frame_06:					; offset 0x17E -> ptr 0xA17E
-		db	 35h
-		db	 84h, 85h, 00h, 29h, 95h, 96h
-		db	 97h, 00h, 0Eh,0B4h,0B5h,0B6h
-		db	 00h, 12h, 13h, 14h, 15h, 00h
-		db	 38h, 39h, 3Ah, 00h, 00h, 12h
-		db	 13h, 4Ch, 15h, 00h, 38h, 39h
-		db	 5Dh, 00h, 00h, 12h, 13h, 5Dh
-		db	 15h, 00h, 38h, 39h, 77h, 00h
-		db	 00h, 12h, 13h, 14h, 15h, 00h
+		db	 0Eh,0B4h,0B5h,0B6h, 00h, 12h   ; row 0
+		db	 13h, 14h, 15h, 00h, 38h, 39h   ; row 1
+		db	 3Ah, 00h, 00h, 12h, 13h, 4Ch   ; row 2
+		db	 15h, 00h, 38h, 39h, 5Dh, 00h   ; row 3
+		db	 00h, 12h, 13h, 5Dh, 15h, 00h   ; row 4
+		db	 38h, 39h, 77h, 00h, 00h, 12h   ; row 5
+		db	 13h, 14h, 15h, 00h, 12h, 13h   ; row 6
+		db	 14h, 15h, 00h, 98h, 99h, 9Ah   ; row 7
+		db	 00h, 00h                       ; row 8
 
 crab_frame_07:					; offset 0x1B0 -> ptr 0xA1B0
-		db	 12h, 13h, 14h, 15h, 00h, 98h
-		db	 99h, 9Ah, 00h, 00h,0B7h,0B8h
-		db	0B9h,0BAh, 00h, 00h, 16h, 00h
-		db	 17h, 00h, 00h, 3Bh, 3Ch, 3Dh
-		db	 00h, 00h, 4Dh, 00h, 4Eh, 00h
-		db	 5Eh, 5Fh, 00h, 60h, 00h, 0Fh
-		db	 2Eh, 6Ah, 6Bh, 00h, 78h, 79h
-		db	 7Ah, 7Bh, 00h, 86h, 87h, 00h
-		db	 88h, 00h
+		db	0B7h,0B8h,0B9h,0BAh, 00h, 00h   ; row 0
+		db	 16h, 00h, 17h, 00h, 00h, 3Bh   ; row 1
+		db	 3Ch, 3Dh, 00h, 00h, 4Dh, 00h   ; row 2
+		db	 4Eh, 00h, 5Eh, 5Fh, 00h, 60h   ; row 3
+		db	 00h, 0Fh, 2Eh, 6Ah, 6Bh, 00h   ; row 4
+		db	 78h, 79h, 7Ah, 7Bh, 00h, 86h   ; row 5
+		db	 87h, 00h, 88h, 00h, 86h, 87h   ; row 6
+		db	 00h, 88h, 00h, 9Bh, 9Ch, 9Dh   ; row 7
+		db	 9Eh, 00h                       ; row 8
 
 crab_frame_08:					; offset 0x1E2 -> ptr 0xA1E2
-		db	 86h, 87h, 00h, 88h
-		db	 00h, 9Bh, 9Ch, 9Dh, 9Eh, 00h
-		db	0BBh,0BFh,0BCh, 00h, 00h, 23h
-		db	 24h, 25h, 00h, 00h, 3Eh, 00h
-		db	 3Fh, 00h, 00h, 55h, 00h, 56h
-		db	 57h, 00h, 65h, 66h, 67h, 68h
-		db	 00h, 6Fh, 70h, 71h, 00h, 00h
-		db	 80h, 81h, 82h, 83h, 00h, 8Bh
-		db	 8Ch, 8Dh, 8Eh, 00h
+		db	0BBh,0BFh,0BCh, 00h, 00h, 23h   ; row 0
+		db	 24h, 25h, 00h, 00h, 3Eh, 00h   ; row 1
+		db	 3Fh, 00h, 00h, 55h, 00h, 56h   ; row 2
+		db	 57h, 00h, 65h, 66h, 67h, 68h   ; row 3
+		db	 00h, 6Fh, 70h, 71h, 00h, 00h   ; row 4
+		db	 80h, 81h, 82h, 83h, 00h, 8Bh   ; row 5
+		db	 8Ch, 8Dh, 8Eh, 00h, 8Bh, 8Ch   ; row 6
+		db	 8Dh, 8Eh, 00h,0A9h,0AAh,0ABh   ; row 7
+		db	0ACh, 00h                       ; row 8
 
 crab_frame_09:					; offset 0x214 -> ptr 0xA214
-		db	 8Bh, 8Ch
-		db	 8Dh, 8Eh, 00h,0A9h,0AAh,0ABh
-		db	0ACh, 00h, 00h,0C1h, 00h,0C2h
-		db	 00h, 18h, 19h, 1Ah, 1Bh, 00h
-		db	 40h, 19h, 42h, 43h, 00h, 4Fh
-		db	 19h, 50h, 51h, 00h, 61h, 19h
-		db	 62h, 1Bh, 00h, 6Ch, 19h, 6Dh
-		db	 43h, 00h, 7Ch, 19h, 7Dh, 43h
-		db	 00h, 18h, 19h, 00h, 1Bh, 00h
+		db	 00h,0C1h, 00h,0C2h, 00h, 18h   ; row 0
+		db	 19h, 1Ah, 1Bh, 00h, 40h, 19h   ; row 1
+		db	 42h, 43h, 00h, 4Fh, 19h, 50h   ; row 2
+		db	 51h, 00h, 61h, 19h, 62h, 1Bh   ; row 3
+		db	 00h, 6Ch, 19h, 6Dh, 43h, 00h   ; row 4
+		db	 7Ch, 19h, 7Dh, 43h, 00h, 18h   ; row 5
+		db	 19h, 00h, 1Bh, 00h, 18h, 19h   ; row 6
+		db	 00h, 1Bh, 00h, 9Fh,0A0h,0A1h   ; row 7
+		db	0A2h, 00h                       ; row 8
 
 crab_frame_10:					; offset 0x246 -> ptr 0xA246
-		db	 18h, 19h, 00h, 1Bh, 00h, 9Fh
-		db	0A0h,0A1h,0A2h, 00h,0BDh, 19h
-		db	0BFh, 43h, 00h, 1Ch, 1Dh, 1Eh
-		db	 00h, 00h, 1Ch, 1Dh, 00h, 44h
-		db	 00h, 1Ch, 1Dh, 1Eh, 44h, 00h
-		db	 1Ch, 1Dh, 1Eh, 00h, 00h, 1Ch
-		db	 1Dh, 00h, 00h, 00h, 1Ch, 1Dh
-		db	 00h, 44h, 00h
+		db	0BDh, 19h,0BFh, 43h, 00h, 1Ch   ; row 0
+		db	 1Dh, 1Eh, 00h, 00h, 1Ch, 1Dh   ; row 1
+		db	 00h, 44h, 00h, 1Ch, 1Dh, 1Eh   ; row 2
+		db	 44h, 00h, 1Ch, 1Dh, 1Eh, 00h   ; row 3
+		db	 00h, 1Ch, 1Dh, 00h, 00h, 00h   ; row 4
+		db	 1Ch, 1Dh, 00h, 44h, 00h, 1Ch   ; row 5
+		db	 1Dh, 1Eh, 00h, 00h, 1Ch, 1Dh   ; row 6
+		db	 1Eh, 00h, 00h                  ; row 7
 
 crab_frame_11:					; offset 0x273 -> ptr 0xA273
-		db	 1Ch, 1Dh, 1Eh
-		db	 00h, 00h, 1Ch, 1Dh, 1Eh, 00h
-		db	 00h, 0Ch, 0Dh,0A3h,0A4h, 00h
-		db	 1Fh, 20h, 21h, 22h, 00h, 1Fh
-		db	 41h, 45h, 46h, 00h, 1Fh, 52h
-		db	 53h, 54h, 00h, 1Fh, 63h, 21h
-		db	 64h, 00h, 1Fh, 63h, 21h, 6Eh
-		db	 00h, 1Fh, 7Eh, 53h, 7Fh, 00h
-		db	 1Fh, 89h, 21h, 8Ah, 00h
+		db	 0Ch, 0Dh,0A3h,0A4h, 00h, 1Fh   ; row 0
+		db	 20h, 21h, 22h, 00h, 1Fh, 41h   ; row 1
+		db	 45h, 46h, 00h, 1Fh, 52h, 53h   ; row 2
+		db	 54h, 00h, 1Fh, 63h, 21h, 64h   ; row 3
+		db	 00h, 1Fh, 63h, 21h, 6Eh, 00h   ; row 4
+		db	 1Fh, 7Eh, 53h, 7Fh, 00h, 1Fh   ; row 5
+		db	 89h, 21h, 8Ah, 00h, 1Fh, 89h   ; row 6
+		db	 21h, 8Ah, 00h,0A5h,0A6h,0A7h   ; row 7
+		db	0A8h, 00h                       ; row 8
 
 crab_frame_12:					; offset 0x2A5 -> ptr 0xA2A5
-		db	 1Fh
-		db	 89h, 21h, 8Ah, 00h,0A5h,0A6h
-		db	0A7h,0A8h, 00h, 1Fh,0BEh, 21h
-		db	0C0h, 00h,0C7h,0C8h, 1Ch, 1Dh
-		db	 00h,0C9h,0CAh, 1Ch, 1Dh, 00h
-		db	0CBh,0CCh,0CDh,0CEh, 00h,0CFh
-		db	0D0h,0D1h,0D2h, 00h,0D3h,0D4h
-		db	0D5h,0D6h, 00h,0C3h,0C4h, 1Ch
-		db	 1Dh, 00h,0C5h,0C6h, 1Ch, 1Dh
+		db	 1Fh,0BEh, 21h,0C0h, 00h,0C7h   ; row 0
+		db	0C8h, 1Ch, 1Dh, 00h,0C9h,0CAh   ; row 1
+		db	 1Ch, 1Dh, 00h,0CBh,0CCh,0CDh   ; row 2
+		db	0CEh, 00h,0CFh,0D0h,0D1h,0D2h   ; row 3
+		db	 00h,0D3h,0D4h,0D5h,0D6h, 00h   ; row 4
+		db	0C3h,0C4h, 1Ch, 1Dh, 00h,0C5h   ; row 5
+		db	0C6h, 1Ch, 1Dh, 00h, 0Ch, 0Dh   ; row 6
+		db	 1Ch, 1Dh, 00h, 0Ch, 0Dh, 1Ch   ; row 7
+		db	 1Dh, 00h                       ; row 8
 
 crab_frame_13:					; offset 0x2D7 -> ptr 0xA2D7
-		db	 00h, 0Ch, 0Dh, 1Ch, 1Dh, 00h
-		db	 0Ch, 0Dh, 1Ch, 1Dh, 00h, 0Ch
-		db	 0Dh, 1Ch, 1Dh, 00h,0D7h,0D8h
-		db	0D9h, 00h, 00h,0DAh,0DBh,0DCh
-		db	0DDh, 00h,0DEh,0DFh, 00h, 00h
-		db	 00h,0E0h,0E1h, 00h, 00h, 00h
-		db	0E2h,0E3h, 00h, 00h
+		db	 0Ch, 0Dh, 1Ch, 1Dh, 00h,0D7h   ; row 0
+		db	0D8h,0D9h, 00h, 00h,0DAh,0DBh   ; row 1
+		db	0DCh,0DDh, 00h,0DEh,0DFh, 00h   ; row 2
+		db	 00h, 00h,0E0h,0E1h, 00h, 00h   ; row 3
+		db	 00h,0E2h,0E3h, 00h, 00h        ; row 4
 
 ; Small trailing tail before the first executable label (used by slot-setup).
 ;   Bytes: 8Bh 36h 10h 0C0h  C6h 06h DCh A7h 00h  C6h 06h DDh A7h 00h
@@ -731,10 +732,10 @@ crab_death_aux_tbl:				; was ';* No entry point' #4
 		db	 07h				; 1 byte
 		db	 08h, 08h			; 2 bytes
 ;*		add	cl,dh			; alt encoding (00 F1) -- TASM emits 02 CE
-		db	 00h,0F1h		; keep as db to preserve exact byte form
-		db	0F1h,0F1h,0F1h,0F1h,0F8h,0F8h
-		db	0F8h,0F2h,0F2h,0F2h,0F2h,0F2h
-		db	0FFh
+		db	 00h,0F1h			; keep as db to preserve exact byte form
+		db	0F1h,0F1h,0F1h,0F1h,0F8h,0F8h	; flicker pattern (F1 x4, F8 x2)
+		db	0F8h,0F2h,0F2h,0F2h,0F2h,0F2h	; flicker pattern (F8, F2 x5)
+		db	0FFh				; sentinel terminator
 
 ; -------------------------------------------------------------------------
 ;  death_anim (loc_44) -- runs when gvar_death_flag is set.  crab_timer_b
@@ -884,33 +885,33 @@ emit_sprite_rows_proc	endp
 ; -------------------------------------------------------------------------
 
 crab_tail_ptrs:					; offset 0x70E -- 9 x word 0xA71E + word 0xA75A
-		db	 1Eh,0A7h, 1Eh,0A7h, 1Eh,0A7h
-		db	 1Eh,0A7h, 1Eh,0A7h, 1Eh,0A7h
-		db	 1Eh,0A7h, 1Eh,0A7h, 1Eh,0A7h
-		db	 5Ah,0A7h,0FFh,0FFh,0FFh, 00h
+		db	 1Eh,0A7h, 1Eh,0A7h, 1Eh,0A7h	; ptrs[0..2] -> 0xA71E
+		db	 1Eh,0A7h, 1Eh,0A7h, 1Eh,0A7h	; ptrs[3..5] -> 0xA71E
+		db	 1Eh,0A7h, 1Eh,0A7h, 1Eh,0A7h	; ptrs[6..8] -> 0xA71E
+		db	 5Ah,0A7h,0FFh,0FFh,0FFh, 00h	; ptr[9] -> 0xA75A; FFh sentinels + pad
 
 crab_lookup_a:					; offset 0x726 -- sparse index table, 0xFF sentinels
-		db	0FFh, 01h
-		db	14 dup (0FFh)
-		db	 02h,0FFh, 03h,0FFh, 04h,0FFh
-		db	 05h,0FFh, 06h
-		db	11 dup (0FFh)
-		db	 07h,0FFh, 10h,0FFh, 11h,0FFh
-		db	 12h,0FFh
-		db	8
-		db	15 dup (0FFh)
+		db	0FFh, 01h			; entry 0=FF, 1=01
+		db	14 dup (0FFh)			; entries 2..15 = FF
+		db	 02h,0FFh, 03h,0FFh, 04h,0FFh	; entries 16,18,20 = 02,03,04
+		db	 05h,0FFh, 06h			; entries 22=05, 24=06
+		db	11 dup (0FFh)			; entries 25..35 = FF
+		db	 07h,0FFh, 10h,0FFh, 11h,0FFh	; entries 36,38,40 = 07,10,11
+		db	 12h,0FFh			; entry 42 = 12
+		db	8				; entry 44 = 08
+		db	15 dup (0FFh)			; entries 45..59 = FF
 
 crab_lookup_b:					; offset 0x762 -- second sparse index table
-		db	 00h,0FFh,0FFh,0FFh,0FFh,0FFh
-		db	0FFh,0FFh, 03h,0FFh,0FFh,0FFh
-		db	 05h,0FFh,0FFh,0FFh, 02h,0FFh
-		db	0FFh,0FFh, 14h,0FFh,0FFh,0FFh
-		db	 06h,0FFh,0FFh,0FFh, 90h,0FFh
-		db	0FFh,0FFh, 12h,0FFh,0FFh,0FFh
-		db	0FFh, 07h,0FFh,0FFh,0FFh,0FFh
-		db	0FFh
-		db	8
-		db	12 dup (0FFh)
+		db	 00h,0FFh,0FFh,0FFh,0FFh,0FFh	; entry 0 = 00, then FF padding
+		db	0FFh,0FFh, 03h,0FFh,0FFh,0FFh	; entry 8 = 03
+		db	 05h,0FFh,0FFh,0FFh, 02h,0FFh	; entry 12 = 05, entry 16 = 02
+		db	0FFh,0FFh, 14h,0FFh,0FFh,0FFh	; entry 20 = 14
+		db	 06h,0FFh,0FFh,0FFh, 90h,0FFh	; entry 24 = 06, entry 28 = 90
+		db	0FFh,0FFh, 12h,0FFh,0FFh,0FFh	; entry 32 = 12
+		db	0FFh, 07h,0FFh,0FFh,0FFh,0FFh	; entry 37 = 07
+		db	0FFh				; entry 42 = FF
+		db	8				; entry 43 = 08
+		db	12 dup (0FFh)			; entries 44..55 = FF
 
 ; -------------------------------------------------------------------------
 ;  prep_phase (sub_4) -- called from scan_done when the state bits need
@@ -960,9 +961,9 @@ prep_phase	endp
 ; -------------------------------------------------------------------------
 
 crab_tail_const:				; 0x7C7 -- 16 timing/position constants
-		db	 2Bh, 00h, 0Ch, 96h, 00h, 78h
-		db	 00h, 0Ch, 00h,0D0h,0A7h, 96h
-		db	 00h, 10h,0BBh, 00h
+		db	 2Bh, 00h, 0Ch, 96h, 00h, 78h	; spawn-tick + position constants [0..5]
+		db	 00h, 0Ch, 00h,0D0h,0A7h, 96h	; constants [6..11] (0xA7D0 = anim_base-0x1A)
+		db	 00h, 10h,0BBh, 00h		; constants [12..15] (10h, BBh literals)
 
 crab_name_tag:					; 0x7D7 -- 'Cangrejo' pascal string
 		db	8, 'Cangrejo'
