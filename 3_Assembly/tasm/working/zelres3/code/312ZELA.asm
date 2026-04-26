@@ -110,11 +110,13 @@ start:
 
 ; Pointer table (5 word entries) + descriptor bytes feeding the
 ; dispatch logic. Values point inside this module (0xA0xx absolute).
+
 zela_ptr_table_a:				; 5 word ptrs into module (0xA0xx range)
 		db	 3Ah,0A0h, 8Ah,0A0h,0D0h,0A0h	; ptrs[0..2]: A03A, A08A, A0D0
 		db	 16h,0A1h, 66h,0A1h		; ptrs[3..4]: A116, A166
 ; tile/cell descriptor records: 5-byte rows, 02h marker + 4 cell indices.
 ; Rows enumerate sequential tile/animation cells used by the render loop.
+
 zela_cell_records_a:				; cell descriptor table (records of 5 bytes each)
 		db	 02h, 01h, 02h, 03h, 04h	; row  0
 		db	 02h, 11h, 07h, 12h, 13h	; row  1
@@ -185,6 +187,7 @@ main_entry:
 
 ; ---- continuation of cell-descriptor table (cell_records_b) ----
 ; Same 5-byte-row layout as zela_cell_records_a above (02h marker + 4 cells).
+
 zela_cell_records_b:
 		db	 67h				; row-0 trailing byte (record split by Sourcer)
 		db	 02h, 9Bh, 9Ch, 9Dh, 9Eh	; row  1
@@ -213,6 +216,7 @@ zela_cell_records_b:
 		db	 02h,0BBh,0BCh,0BDh,0BEh	; row 24 (duplicate of row 11)
 		db	 02h,0BFh,0D5h,0C1h,0D6h	; row 25
 ; ---- real instruction stream resumes here (mov si,[10C0h]; mov [A60Ah],0; mov [A60Ch],0) ----
+
 zela_main_resume:				; first real instruction after cell_records_b
 		db	 8Bh, 36h, 10h,0C0h		; mov si,word ptr ds:[10C0h]  (Sourcer Fixup absolute addr)
 		db	 0C6h, 06h, 0Ah,0A6h, 00h	; mov byte ptr ds:[A60Ah],0   (zela_npc_idx clear)
@@ -220,30 +224,30 @@ zela_main_resume:				; first real instruction after cell_records_b
 
 npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		;  Fixup - byte match
-			jz	npc_scan_done			; Jump if zero
-			mov	ax,[si]
-			call	word ptr cs:fight_cb_anim_step
-			jc	npc_scan_next			; Jump if carry Set
-			mov	[si+3],bl
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:zela_npc_idx
-			xor	bh,bh			; Zero register
-			mov	al,ds:sprite_xlat_tbl[bx]
-			mov	[di],al
-			test	byte ptr [si+5],40h	; '@'
-			jz	npc_scan_next			; Jump if zero
-			test	byte ptr ds:zela_anim_byte,80h
-			jnz	npc_scan_next			; Jump if not zero
-			mov	al,[si+5]
-			and	al,1Fh
-			mov	ds:zela_anim_byte,al
+				db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				jz	npc_scan_done			; Jump if zero
+				mov	ax,[si]
+				call	word ptr cs:fight_cb_anim_step
+				jc	npc_scan_next			; Jump if carry Set
+				mov	[si+3],bl
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:zela_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,ds:sprite_xlat_tbl[bx]
+				mov	[di],al
+				test	byte ptr [si+5],40h	; '@'
+				jz	npc_scan_next			; Jump if zero
+				test	byte ptr ds:zela_anim_byte,80h
+				jnz	npc_scan_next			; Jump if not zero
+				mov	al,[si+5]
+				and	al,1Fh
+				mov	ds:zela_anim_byte,al
 
 npc_scan_next:
-			inc	byte ptr ds:zela_npc_idx
-			add	si,10h
-			jmp	short npc_scan_loop
+				inc	byte ptr ds:zela_npc_idx
+				add	si,10h
+				jmp	short npc_scan_loop
 
 npc_scan_done:
 		mov	si,ds:enemy_attr_base
@@ -479,10 +483,10 @@ phase_set_tile_pattern:
 		mov	cx,0Ch
 
 tile_fill_loop:
-			mov	[di],dx
-			add	di,2
-			inc	dh
-			loop	tile_fill_loop		; Loop if cx > 0
+				mov	[di],dx
+				add	di,2
+				inc	dh
+				loop	tile_fill_loop		; Loop if cx > 0
 
 		test	byte ptr ds:zela_phase_started,0FFh
 		jnz	npc_state_done			; Jump if not zero
@@ -547,57 +551,57 @@ npc_state_done:
 		mov	cx,4
 
 npc_update_outer:
-			push	cx
-			push	ax
-			call	word ptr cs:fight_cb_anim_step
-			pop	ax
-			mov	ds:zela_npc_ai_byte,bl
-			jnc	npc_update_emit			; Jump if carry=0
-			add	di,6
-			jmp	short npc_update_outer_next
+				push	cx
+				push	ax
+				call	word ptr cs:fight_cb_anim_step
+				pop	ax
+				mov	ds:zela_npc_ai_byte,bl
+				jnc	npc_update_emit			; Jump if carry=0
+				add	di,6
+				jmp	short npc_update_outer_next
 
 npc_update_emit:
-			mov	bl,ds:zela_scroll_phase
-			mov	cx,3
+				mov	bl,ds:zela_scroll_phase
+				mov	cx,3
 
 npc_update_inner:
-				push	cx
-				mov	[si],ax
-				mov	[si+2],bl
-				mov	dl,ds:zela_npc_ai_byte
-				mov	[si+3],dl
-				mov	dl,[di]
-				mov	[si+4],dl
-				mov	byte ptr [si+5],0
-				mov	dl,[di+1]
-				mov	[si+6],dl
-				add	di,2
-				push	ax
-				push	bx
-				push	di
-				mov	ax,[si+2]
-				call	word ptr cs:fight_cb_record_ofs
-				mov	bl,ds:zela_npc_idx
-				xor	bh,bh			; Zero register
-				mov	al,bl
-				or	al,80h
-				xchg	[di],al
-				mov	ds:sprite_xlat_tbl[bx],al
-				add	si,10h
-				inc	byte ptr ds:zela_npc_idx
-				pop	di
-				pop	bx
-				pop	ax
-				add	bl,2
-				and	bl,3Fh			; '?'
-				pop	cx
-				loop	npc_update_inner		; Loop if cx > 0
+						push	cx
+						mov	[si],ax
+						mov	[si+2],bl
+						mov	dl,ds:zela_npc_ai_byte
+						mov	[si+3],dl
+						mov	dl,[di]
+						mov	[si+4],dl
+						mov	byte ptr [si+5],0
+						mov	dl,[di+1]
+						mov	[si+6],dl
+						add	di,2
+						push	ax
+						push	bx
+						push	di
+						mov	ax,[si+2]
+						call	word ptr cs:fight_cb_record_ofs
+						mov	bl,ds:zela_npc_idx
+						xor	bh,bh			; Zero register
+						mov	al,bl
+						or	al,80h
+						xchg	[di],al
+						mov	ds:sprite_xlat_tbl[bx],al
+						add	si,10h
+						inc	byte ptr ds:zela_npc_idx
+						pop	di
+						pop	bx
+						pop	ax
+						add	bl,2
+						and	bl,3Fh			; '?'
+						pop	cx
+						loop	npc_update_inner		; Loop if cx > 0
 
 npc_update_outer_next:
-			inc	ax
-			inc	ax
-			pop	cx
-			loop	npc_update_outer		; Loop if cx > 0
+				inc	ax
+				inc	ax
+				pop	cx
+				loop	npc_update_outer		; Loop if cx > 0
 
 		mov	word ptr [si],0FFFFh
 		retn
@@ -677,6 +681,7 @@ bound_xpos_dec		endp
 ; small word/byte tables consulted by the scroll/xpos clamp helpers.
 ; Two parallel records of low/high bounds + zero-padding.
 ; ------------------------------------------------------------------
+
 zela_xpos_bounds_tbl:
 		db	 00h, 00h			; word 0000h (low bound base)
 		db	 15h, 00h			; word 0015h (mid bound)
@@ -728,24 +733,24 @@ death_phase_advance:
 		and	byte ptr ds:zela_tile_phase,7
 
 death_tile_fill:
-			mov	bx,zela_xlat_tbl
-			mov	al,ds:zela_tile_phase
-			xlat				; al=[al+[bx]] table
-			xor	ah,ah			; Zero register
-			mov	di,zela_tile_buf_lbl
-			mov	cx,0Ch
+				mov	bx,zela_xlat_tbl
+				mov	al,ds:zela_tile_phase
+				xlat				; al=[al+[bx]] table
+				xor	ah,ah			; Zero register
+				mov	di,zela_tile_buf_lbl
+				mov	cx,0Ch
 
 death_tile_fill_loop:
-				mov	[di],ax
-				add	di,2
-				inc	ah
-				loop	death_tile_fill_loop		; Loop if cx > 0
+						mov	[di],ax
+						add	di,2
+						inc	ah
+						loop	death_tile_fill_loop		; Loop if cx > 0
 
-			jmp	npc_state_done
+				jmp	npc_state_done
 
 death_phase_reset:
-			mov	byte ptr ds:zela_tile_phase,2
-			jmp	short death_tile_fill
+				mov	byte ptr ds:zela_tile_phase,2
+				jmp	short death_tile_fill
 
 death_done_set_completion:
 		mov	byte ptr ds:gvar_completion,0FFh

@@ -141,6 +141,7 @@ crab_frame_00:					; offset 0x0B5 -> ptr 0xA0B0 (5 leading zeros from padding ta
 		db	 23h, 24h, 00h, 25h, 26h, 27h	; row 2
 		db	 28h, 00h, 29h, 2Ah, 2Bh, 2Ch	; row 3
 		db	 00h, 2Dh, 2Eh, 2Fh, 30h, 00h	; row 4
+
 crab_frame_01:					; offset 0x0D3 -> ptr 0xA0D3 -- group C[0] body pose alt
 		db	 31h, 32h, 33h, 34h, 00h, 19h	; row 0
 		db	 1Ah, 1Bh, 1Ch, 00h		; row 1 tail (re-uses frame_00 row 0 head)
@@ -149,12 +150,14 @@ crab_frame_01:					; offset 0x0D3 -> ptr 0xA0D3 -- group C[0] body pose alt
 		db	'=>?@', 0			; row 4 (tiles 3D-40)
 		db	'ABCD', 0			; row 5 (tiles 41-44)
 		db	'EFGH', 0			; row 6 (tiles 45-48)
+
 crab_frame_02:					; offset 0x0F6 -> ptr 0xA0F6 -- group A[1] short-pose
 		db	'IJKL', 0			; row 0 (tiles 49-4C)
 		db	'M', 0				; row 1 (single-tile + term)
 		db	'OP', 0				; row 2 (tiles 4F-50)
 		db	'Q', 0				; row 3 (single tile)
 		db	'RS', 0				; row 4 (tiles 52-53)
+
 crab_frame_03:					; offset 0x10A -> ptr 0xA10A -- group C[1] short-pose
 		db	'TUOP', 0			; row 0 (tiles 54-55, 4F-50)
 		db	'VWXY'				; row 1 head (tiles 56-59, no term)
@@ -163,6 +166,7 @@ crab_frame_03:					; offset 0x10A -> ptr 0xA10A -- group C[1] short-pose
 		db	61h				; row 4 head (tile 61)
 crab_facing_fn_ptr		dw	5C62h	; word at 0x11A: facing/dir helper fn ptr (overlaps tile bytes 62 5C)
 		db	 5Dh, 00h		; row 4 tail (tile 5D + term)
+
 crab_frame_04:					; offset 0x11E -> ptr 0xA11E -- group A[2] mid pose
 		db	 63h, 64h, 65h, 66h		; row 0 head (tiles 63-66)
 		db	 00h, 75h, 76h, 77h, 78h, 00h	; row 0 term + row 1 (tiles 75-78)
@@ -171,6 +175,7 @@ crab_frame_04:					; offset 0x11E -> ptr 0xA11E -- group A[2] mid pose
 		db	 7Fh, 80h, 00h, 81h, 82h, 83h	; row 4 tail + row 5 head (81-83)
 		db	 84h, 00h, 85h, 86h, 87h, 88h	; row 5 tail + row 6 head (85-88)
 		db	 00h, 89h			; row 6 term + row 7 head (89)
+
 crab_frame_05:					; offset 0x141 -> ptr 0xA141 -- group C[2] mid pose alt
 		db	 8Ah, 8Bh, 8Ch, 00h, 8Dh	; row 0 (tiles 8A-8C) + row 1 head (8D)
 		db	 8Eh, 8Fh, 90h, 00h, 8Dh	; row 1 tail + row 2 head (8D)
@@ -178,44 +183,53 @@ crab_frame_05:					; offset 0x141 -> ptr 0xA141 -- group C[2] mid pose alt
 		db	 94h, 95h, 00h, 92h, 96h, 97h	; row 3 tail + row 4 head (92,96,97)
 		db	 98h, 00h, 99h, 9Ah, 9Bh, 9Ch	; row 4 tail + row 5 head (99-9C)
 		db	 00h, 9Dh, 9Eh, 9Fh,0A0h, 00h	; row 5 term + row 6 (tiles 9D-A0)
+
 crab_frame_06:					; offset 0x164 -> ptr 0xA164 -- group A[3] long pose
 		db	0A1h,0A2h,0A3h,0A4h, 00h, 67h	; row 0 (tiles A1-A4) + row 1 head (67)
 		db	 68h, 69h, 6Ah, 00h, 6Bh, 6Ch	; row 1 tail + row 2 head (6B,6C)
 		db	 6Dh, 6Eh, 00h, 6Fh, 70h, 71h	; row 2 tail + row 3 head (6F-71)
 		db	 72h, 00h, 73h, 74h,0E0h,0E1h	; row 3 tail + row 4 head (73,74,E0,E1)
 		db	 00h,0F2h,0F3h,0F4h,0F5h, 00h	; row 4 term + row 5 (tiles F2-F5)
+
 crab_frame_07:					; offset 0x182 -> ptr 0xA182 -- group C[3] long pose alt
 		db	0F6h,0F7h,0F4h,0F5h, 00h,0E2h	; row 0 (tiles F6,F7,F4,F5) + row 1 head (E2)
 		db	0E3h,0E4h,0E5h, 00h,0E6h,0E7h	; row 1 tail + row 2 head (E6,E7)
 		db	0E8h,0E9h, 00h,0EAh,0EBh,0ECh	; row 2 tail + row 3 head (EA-EC)
 		db	0EDh, 00h,0EEh,0EFh,0F0h,0F1h	; row 3 tail + row 4 head (EE-F1)
 		db	 00h,0F2h,0F3h,0F4h,0F5h, 00h	; row 4 term + row 5 (tiles F2-F5)
+
 crab_frame_08:					; offset 0x1A0 -> ptr 0xA1A0 (group A[4] / D[0]) -- attack frame head
 		db	0F6h,0F7h,0F4h,0F5h, 00h,0A5h	; row 0 (tiles F6,F7,F4,F5) + row 1 head (A5)
 		db	0A6h,0A7h,0A8h, 00h,0A9h,0AAh	; row 1 tail + row 2 head (A9,AA)
 		db	0ABh,0ACh, 00h			; row 2 tail (tiles AB,AC + term)
+
 crab_frame_09:					; offset 0x1AF -> ptr 0xA1AF (group A[5] / D[1]) -- attack frame mid
 		db	0ADh,0AEh,0AFh			; row 0 head (tiles AD-AF)
 		db	0B0h, 00h,0B1h,0B2h,0B3h,0B4h	; row 0 tail + row 1 head (B1-B4)
 		db	 00h,0B5h,0B6h,0B7h,0B8h, 00h	; row 1 term + row 2 (tiles B5-B8)
+
 crab_frame_0a:					; offset 0x1BE -> ptr 0xA1BE (group A[6] / D[2]) -- attack frame tail
 		db	0B9h,0BAh,0BBh,0BCh, 00h,0BDh	; row 0 (tiles B9-BC) + row 1 head (BD)
 		db	0BEh,0BFh,0C0h, 00h,0C1h,0C2h	; row 1 tail + row 2 head (C1,C2)
 		db	0C3h,0C4h, 00h			; row 2 tail (tiles C3,C4 + term)
+
 crab_frame_0b:					; offset 0x1CD -> ptr 0xA1CD (group A[7] / D[3]) -- aux pose
 		db	 00h, 00h,0C7h			; row 0 (2 leading zeros + tile C7)
 		db	0C8h, 00h,0F8h,0F9h,0FAh,0FBh	; row 1 (tile C8 + term) + row 2 head (F8-FB)
 		db	 00h,0FCh,0FDh, 5Ah, 4Eh, 00h	; row 2 term + row 3 (tiles FC,FD,5A,4E)
 		db	 00h, 00h,0C5h,0C6h		; row 4 (2 leading zeros + tiles C5,C6)
+
 crab_frame_0c:					; offset 0x1DC -> ptr 0xA1DC (group B[2]) -- pincer/walk frame A (rows separated by 01h)
 		db	 01h, 01h			; row 0 separator + row 1 separator (empty rows)
 		db	 02h, 03h, 04h, 01h, 05h, 06h	; row 2 (tiles 02-04) + row 3 head (05,06)
 		db	 07h, 08h, 01h			; row 3 tail (tiles 07,08 + sep)
+
 crab_frame_0d:					; offset 0x1EB -> ptr 0xA1EB (group B[4]) -- walk step
 		db	 09h, 0Ah, 0Bh			; row 0 head (tiles 09-0B)
 		db	 0Ch, 00h, 0Dh, 0Eh, 0Fh, 10h	; row 0 tail + row 1 (tiles 0D-10)
 		db	 00h, 11h, 12h, 13h, 14h, 00h	; row 2 (tiles 11-14)
 		db	 15h, 16h, 17h, 18h, 00h	; row 3 (tiles 15-18)
+
 crab_frame_0e:					; offset 0x1FF -> ptr 0xA1FF (group B[5]) -- walk step alt
 		db	 11h				; row 0 head (tile 11)
 		db	 12h, 13h, 14h			; row 0 tail (tiles 12-14)
@@ -223,15 +237,20 @@ crab_anim_phase_marker		db	2	; byte at 0x203: anim phase initializer (also a til
 		db	 0Dh, 0Eh, 0Fh, 10h, 02h, 11h	; row 1 (tiles 0D-10, sep 02) + row 2 head (11)
 		db	 12h, 13h, 14h, 02h, 15h, 16h	; row 2 tail + row 3 head (15,16)
 		db	 17h, 18h, 02h, 11h, 12h, 13h	; row 3 tail + row 4 head (11-13)
+
 crab_frame_0f:					; offset 0x213 -> ptr 0xA213 (group B[3]) -- pincer attack frame
 		db	 14h, 00h,0C9h,0CAh,0CBh,0CCh	; row 0 (tiles 14, then C9-CC)
 		db	 00h,0C9h,0CAh,0CBh,0CCh, 01h	; row 1 (tiles C9-CC + sep)
+
 crab_frame_10:					; offset 0x21D -> ptr 0xA21D (group B[6]) -- pincer recovery
 		db	0CDh,0CEh,0CFh,0D0h, 00h	; row 0 (tiles CD-D0)
+
 crab_frame_11:					; offset 0x222 -> ptr 0xA222 (group B[7]) -- recovery alt
 		db	0D1h,0D2h,0D3h,0D4h, 02h,0D1h,0D2h	; row 0 (tiles D1-D4 + sep) + row 1 head (D1,D2)
+
 crab_frame_12:					; offset 0x227 -> ptr 0xA227 (group B[8]) -- recovery aux
 		db	0D3h,0D4h, 01h			; row 0 (tiles D3,D4 + sep)
+
 crab_frame_13:					; offset 0x22C -> ptr 0xA22C (group B[0,1]) -- death/explode frame (used twice in tbl_b/e)
 		db	0D5h,0D5h,0D5h			; row 0 head (4x tile D5)
 		db	0D5h, 01h,0D6h,0D7h,0D8h,0D9h	; row 0 tail + row 1 head (D6-D9)
@@ -380,31 +399,31 @@ sub02_mid_range:
 		jnc	sub02_face_west_step			; Jump if carry=0
 
 sub02_face_east_step:
-			call	word ptr cs:fight_cb_step_neg
-			jc	sub02_try_jump			; Jump if carry Set
-			or	byte ptr [si+5],80h
-			retn
-
-sub02_face_west_step:
-				call	word ptr cs:fight_cb_step_pos
+				call	word ptr cs:fight_cb_step_neg
 				jc	sub02_try_jump			; Jump if carry Set
-				and	byte ptr [si+5],7Fh
+				or	byte ptr [si+5],80h
 				retn
 
+sub02_face_west_step:
+						call	word ptr cs:fight_cb_step_pos
+						jc	sub02_try_jump			; Jump if carry Set
+						and	byte ptr [si+5],7Fh
+						retn
+
 sub02_near_range:
-				cmp	byte ptr [si+3],11h
-				je	sub02_try_jump			; Jump if equal
-				cmp	byte ptr [si+3],10h
-				je	sub02_try_jump			; Jump if equal
-				jnc	sub02_try_west_step			; Jump if carry=0
-				call	word ptr cs:fight_cb_step_neg_2
-				jc	sub02_face_east_step			; Jump if carry Set
-			or	byte ptr [si+5],80h
-			retn
+						cmp	byte ptr [si+3],11h
+						je	sub02_try_jump			; Jump if equal
+						cmp	byte ptr [si+3],10h
+						je	sub02_try_jump			; Jump if equal
+						jnc	sub02_try_west_step			; Jump if carry=0
+						call	word ptr cs:fight_cb_step_neg_2
+						jc	sub02_face_east_step			; Jump if carry Set
+				or	byte ptr [si+5],80h
+				retn
 
 sub02_try_west_step:
-			call	word ptr cs:fight_cb_map_back
-			jc	sub02_face_west_step			; Jump if carry Set
+				call	word ptr cs:fight_cb_map_back
+				jc	sub02_face_west_step			; Jump if carry Set
 		and	byte ptr [si+5],7Fh
 		retn
 

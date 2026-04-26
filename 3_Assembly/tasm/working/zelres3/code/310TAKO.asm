@@ -32,7 +32,7 @@ PAGE  59,132
 ;    0x599..0x5C2 : tako_row_data_ptrs -- 21 word ptrs (last entry = 0x0000 end)
 ;    0x5C3..0x766 : tako_row_data_head -- 15 unreferenced 28-byte sub-blocks
 ;    0x767..0x9B2 : tako_row_data_blk_00..blk_19 -- ptr-targeted sub-blocks
-;                   (sizes 32,36,34,34,28×15,32; 1008 bytes total for row_data)
+;                   (sizes 32,36,34,34,28??15,32; 1008 bytes total for row_data)
 ;    0x9B3..0x9EE : tako_pattern_ptr_tbl -- 30 word ptrs into 7-byte patterns
 ;    0x9EF..0xA1F : tako_sprite_patterns -- 7-byte sprite-row patterns
 ;    0xA20..0xA84 : tako_row_template -- 100-byte row template table
@@ -53,7 +53,6 @@ include  srmacros.inc
 include  zr3com.inc
 
 ; Fight-engine callback vectors / shared globals (DS at game_seg).
-
 
 ; Shared sprite pattern tables used by Tako (DS, game_seg).
 
@@ -285,37 +284,37 @@ tako_scan_prolog:
 
 scan_slot_loop:					; was loc_1 (file 0x28F)
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		; cmp word ptr [si],0FFFFh
-							;  (alt encoding: sign-extended imm8 form;
-							;   TASM emits 4-byte form, so keep as db)
-			jz	scan_done		; was loc_4 -- end of slot list
-			mov	ax,[si]
-			call	word ptr cs:fight_cb_anim_step
-			jc	scan_next_slot		; was loc_3 -- callback consumed slot
-			mov	[si+3],bl
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:tako_frame_idx
-			xor	bh,bh			; Zero register
-			mov	al,ds:sprite_idx_table[bx]
-			mov	[di],al
-			test	byte ptr [si+5],40h	; '@'  bit6 = active
-			jz	scan_next_slot
-			test	byte ptr ds:tako_state,80h
-			jnz	scan_next_slot
-			mov	al,[si+5]
-			and	al,1Fh
-			cmp	byte ptr [si+4],0Eh
-			jb	apply_state_bits	; was loc_2
-			or	al,80h
+				db	 83h, 3Ch,0FFh		; cmp word ptr [si],0FFFFh
+								;  (alt encoding: sign-extended imm8 form;
+								;   TASM emits 4-byte form, so keep as db)
+				jz	scan_done		; was loc_4 -- end of slot list
+				mov	ax,[si]
+				call	word ptr cs:fight_cb_anim_step
+				jc	scan_next_slot		; was loc_3 -- callback consumed slot
+				mov	[si+3],bl
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:tako_frame_idx
+				xor	bh,bh			; Zero register
+				mov	al,ds:sprite_idx_table[bx]
+				mov	[di],al
+				test	byte ptr [si+5],40h	; '@'  bit6 = active
+				jz	scan_next_slot
+				test	byte ptr ds:tako_state,80h
+				jnz	scan_next_slot
+				mov	al,[si+5]
+				and	al,1Fh
+				cmp	byte ptr [si+4],0Eh
+				jb	apply_state_bits	; was loc_2
+				or	al,80h
 
 apply_state_bits:				; was loc_2
-			mov	ds:tako_state,al
+				mov	ds:tako_state,al
 
 scan_next_slot:					; was loc_3
-			inc	byte ptr ds:tako_frame_idx
-			add	si,10h
-			jmp	short scan_slot_loop
+				inc	byte ptr ds:tako_frame_idx
+				add	si,10h
+				jmp	short scan_slot_loop
 
 scan_done:					; was loc_4
 		mov	si,ds:fight_slot_list
@@ -458,13 +457,13 @@ emit_outer_loop:				; was loc_15
 		mov	cx,8
 
 emit_skip_arm_loop:				; was locloop_16
-			rol	byte ptr [bx],1		; Rotate
-			jnc	emit_skip_arm_next	; was loc_17
-			inc	di
-			inc	di
+				rol	byte ptr [bx],1		; Rotate
+				jnc	emit_skip_arm_next	; was loc_17
+				inc	di
+				inc	di
 
 emit_skip_arm_next:				; was loc_17
-			loop	emit_skip_arm_loop	; Loop if cx > 0
+				loop	emit_skip_arm_loop	; Loop if cx > 0
 
 		jmp	short emit_outer_advance	; was loc_22
 
@@ -472,49 +471,49 @@ emit_active_arm:				; was loc_18
 		xor	cx,cx			; Zero register
 
 emit_arm_loop:					; was loc_19
-			push	cx
-			push	bx
-			rol	byte ptr [bx],1		; Rotate
-			jnc	emit_arm_next		; was loc_21
-			mov	[si],ax
-			add	cl,cl
-			add	cl,ds:tako_row_delta
-			and	cl,3Fh			; '?'
-			mov	[si+2],cl
-			mov	cl,ds:tako_alt_state
-			mov	[si+3],cl
-			mov	cl,[di]
-			mov	[si+4],cl
-			mov	cl,[di+1]
-			mov	[si+6],cl
-			mov	byte ptr [si+5],0
-			test	byte ptr ds:tako_state,0FFh
-			jz	emit_arm_no_bit		; was loc_20
-			or	byte ptr [si+5],20h	; ' '
+				push	cx
+				push	bx
+				rol	byte ptr [bx],1		; Rotate
+				jnc	emit_arm_next		; was loc_21
+				mov	[si],ax
+				add	cl,cl
+				add	cl,ds:tako_row_delta
+				and	cl,3Fh			; '?'
+				mov	[si+2],cl
+				mov	cl,ds:tako_alt_state
+				mov	[si+3],cl
+				mov	cl,[di]
+				mov	[si+4],cl
+				mov	cl,[di+1]
+				mov	[si+6],cl
+				mov	byte ptr [si+5],0
+				test	byte ptr ds:tako_state,0FFh
+				jz	emit_arm_no_bit		; was loc_20
+				or	byte ptr [si+5],20h	; ' '
 
 emit_arm_no_bit:				; was loc_20
-			push	di
-			push	ax
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:tako_frame_idx
-			xor	bh,bh			; Zero register
-			mov	al,bl
-			or	al,80h
-			xchg	[di],al
-			mov	ds:sprite_idx_table[bx],al
-			pop	ax
-			pop	di
-			add	si,10h
-			add	di,2
-			inc	byte ptr ds:tako_frame_idx
+				push	di
+				push	ax
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:tako_frame_idx
+				xor	bh,bh			; Zero register
+				mov	al,bl
+				or	al,80h
+				xchg	[di],al
+				mov	ds:sprite_idx_table[bx],al
+				pop	ax
+				pop	di
+				add	si,10h
+				add	di,2
+				inc	byte ptr ds:tako_frame_idx
 
 emit_arm_next:					; was loc_21
-			pop	bx
-			pop	cx
-			inc	cx
-			cmp	cx,8
-			jne	emit_arm_loop
+				pop	bx
+				pop	cx
+				inc	cx
+				cmp	cx,8
+				jne	emit_arm_loop
 
 emit_outer_advance:				; was loc_22
 		inc	bx
@@ -542,42 +541,42 @@ emit_proj_phase:				; was loc_24
 		mov	cx,4
 
 emit_proj_loop:					; was locloop_25
-			push	cx
-			push	ax
-			call	word ptr cs:fight_cb_anim_step
-			pop	ax
-			jc	emit_proj_next		; was loc_26
-			mov	dl,[di]
-			or	dl,dl			; Zero ?
-			jz	emit_proj_next
-			push	di
-			push	ax
-			mov	[si],ax
-			mov	al,ds:tako_col_pos
-			mov	[si+2],al
-			mov	[si+3],bl
-			mov	byte ptr [si+4],30h	; '0'
-			dec	dl
-			mov	[si+6],dl
-			mov	byte ptr [si+5],0
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:tako_frame_idx
-			xor	bh,bh			; Zero register
-			mov	al,bl
-			or	al,80h
-			xchg	[di],al
-			mov	ds:sprite_idx_table[bx],al
-			add	si,10h
-			inc	byte ptr ds:tako_frame_idx
-			pop	ax
-			pop	di
+				push	cx
+				push	ax
+				call	word ptr cs:fight_cb_anim_step
+				pop	ax
+				jc	emit_proj_next		; was loc_26
+				mov	dl,[di]
+				or	dl,dl			; Zero ?
+				jz	emit_proj_next
+				push	di
+				push	ax
+				mov	[si],ax
+				mov	al,ds:tako_col_pos
+				mov	[si+2],al
+				mov	[si+3],bl
+				mov	byte ptr [si+4],30h	; '0'
+				dec	dl
+				mov	[si+6],dl
+				mov	byte ptr [si+5],0
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:tako_frame_idx
+				xor	bh,bh			; Zero register
+				mov	al,bl
+				or	al,80h
+				xchg	[di],al
+				mov	ds:sprite_idx_table[bx],al
+				add	si,10h
+				inc	byte ptr ds:tako_frame_idx
+				pop	ax
+				pop	di
 
 emit_proj_next:					; was loc_26
-			inc	di
-			inc	ax
-			pop	cx
-			loop	emit_proj_loop
+				inc	di
+				inc	ax
+				pop	cx
+				loop	emit_proj_loop
 
 emit_done:					; was loc_27
 		mov	word ptr [si],0FFFFh

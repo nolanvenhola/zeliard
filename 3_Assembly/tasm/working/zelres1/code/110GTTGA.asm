@@ -16,7 +16,6 @@ include  zr1com.inc
 font_ptr_a               equ     0F502h
 font_ptr_b               equ     0F504h
 
-
 ; The following equates show data references outside the range of the program.
 
 dispatch_tbl_a		equ	35BAh			;* draw-cell dispatch function table A (word[N])
@@ -95,25 +94,25 @@ start:
 		db	0D8h,0B9h, 1Ch, 00h
 
 col_blit_loop:
-								push	cx
-								push	si
-								mov	cx,18h
+									push	cx
+									push	si
+									mov	cx,18h
 
 row_blit_loop:
-														movsw				; Mov [si] to es:[di]
-														movsw				; Mov [si] to es:[di]
-														add	si,1FFCh
-														cmp	si,8000h
-														jb	row_wrap_ok			; Jump if below
-														add	si,tga_wrap
+																movsw				; Mov [si] to es:[di]
+																movsw				; Mov [si] to es:[di]
+																add	si,1FFCh
+																cmp	si,8000h
+																jb	row_wrap_ok			; Jump if below
+																add	si,tga_wrap
 
 row_wrap_ok:
-														loop	row_blit_loop		; Loop if cx > 0
+																loop	row_blit_loop		; Loop if cx > 0
 
-								pop	si
-								pop	cx
-								add	si,4
-								loop	col_blit_loop		; Loop if cx > 0
+									pop	si
+									pop	cx
+									add	si,4
+									loop	col_blit_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -142,59 +141,59 @@ draw_init_start:
 		mov	byte ptr ds:tile_col_idx,0
 
 draw_col_loop:
-								call	limg_scan_loop
-								xor	bl,bl			; Zero register
-								cmpsb				; Cmp [si] to es:[di]
-								jz	skip_func4_a			; Jump if zero
-								call	limg_func_4
+									call	limg_scan_loop
+									xor	bl,bl			; Zero register
+									cmpsb				; Cmp [si] to es:[di]
+									jz	skip_func4_a			; Jump if zero
+									call	limg_func_4
 
 skip_func4_a:
-								inc	bl
-								cmpsb				; Cmp [si] to es:[di]
-								jz	skip_func4_b			; Jump if zero
-								call	limg_func_4
+									inc	bl
+									cmpsb				; Cmp [si] to es:[di]
+									jz	skip_func4_b			; Jump if zero
+									call	limg_func_4
 
 skip_func4_b:
-								inc	bl
-								cmpsb				; Cmp [si] to es:[di]
-								jz	skip_func4_c			; Jump if zero
-								call	limg_func_4
+									inc	bl
+									cmpsb				; Cmp [si] to es:[di]
+									jz	skip_func4_c			; Jump if zero
+									call	limg_func_4
 
 skip_func4_c:
-								inc	bl
-								cmpsb				; Cmp [si] to es:[di]
-								jz	skip_func3_a			; Jump if zero
-								call	limg_func_3
+									inc	bl
+									cmpsb				; Cmp [si] to es:[di]
+									jz	skip_func3_a			; Jump if zero
+									call	limg_func_3
 
 skip_func3_a:
-								inc	bl
-								cmpsb				; Cmp [si] to es:[di]
-								jz	skip_func3_b			; Jump if zero
-								call	limg_func_3
+									inc	bl
+									cmpsb				; Cmp [si] to es:[di]
+									jz	skip_func3_b			; Jump if zero
+									call	limg_func_3
 
 skip_func3_b:
-								inc	bl
-								cmpsb				; Cmp [si] to es:[di]
-								jz	skip_multiply			; Jump if zero
-								call	limg_multiply
+									inc	bl
+									cmpsb				; Cmp [si] to es:[di]
+									jz	skip_multiply			; Jump if zero
+									call	limg_multiply
 
 skip_multiply:
-								inc	bl
-								cmpsb				; Cmp [si] to es:[di]
-								jz	skip_func3_c			; Jump if zero
-								call	limg_func_3
+									inc	bl
+									cmpsb				; Cmp [si] to es:[di]
+									jz	skip_func3_c			; Jump if zero
+									call	limg_func_3
 
 skip_func3_c:
-								inc	bl
-								cmpsb				; Cmp [si] to es:[di]
-								jz	draw_col_next			; Jump if zero
-								call	limg_func_3
+									inc	bl
+									cmpsb				; Cmp [si] to es:[di]
+									jz	draw_col_next			; Jump if zero
+									call	limg_func_3
 
 draw_col_next:
-								add	word ptr ds:tile_col_x,4
-								inc	byte ptr ds:tile_col_idx
-								cmp	byte ptr ds:tile_col_idx,1Ch
-								jne	draw_col_loop			; Jump if not equal
+									add	word ptr ds:tile_col_x,4
+									inc	byte ptr ds:tile_col_idx
+									cmp	byte ptr ds:tile_col_idx,1Ch
+									jne	draw_col_loop			; Jump if not equal
 		retn
 
 tga_module_entry	endp
@@ -226,13 +225,13 @@ scan_col_match:
 		mov	cx,2
 
 scan_state_loop:
-								push	cx
-								push	di
-								call	limg_check_state
-								pop	di
-								add	di,4
-								pop	cx
-								loop	scan_state_loop		; Loop if cx > 0
+									push	cx
+									push	di
+									call	limg_check_state
+									pop	di
+									add	di,4
+									pop	cx
+									loop	scan_state_loop		; Loop if cx > 0
 
 		pop	si
 		pop	es
@@ -289,15 +288,15 @@ draw_cell_new:
 		mov	cx,8
 
 draw_tile_row_loop:
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								add	di,1FFCh
-								cmp	di,8000h
-								jb	draw_tile_wrap_ok			; Jump if below
-								add	di,tga_wrap2
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									add	di,1FFCh
+									cmp	di,8000h
+									jb	draw_tile_wrap_ok			; Jump if below
+									add	di,tga_wrap2
 
 draw_tile_wrap_ok:
-								loop	draw_tile_row_loop		; Loop if cx > 0
+									loop	draw_tile_row_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	si
@@ -481,31 +480,31 @@ draw_fg_masked:
 		mov	cx,8
 
 draw_fg_row_loop:
-								push	cx
-								mov	al,ds:[bp]
-								call	limg_process_loop_6
-								mov	cl,al
-								mov	ax,cs:[bx]
-								and	ax,dx
-								or	ax,[si]
-								stosw				; Store ax to es:[di]
-								mov	al,cl
-								call	limg_process_loop_6
-								mov	ax,cs:[bx+2]
-								and	ax,dx
-								or	ax,[si+2]
-								stosw				; Store ax to es:[di]
-								inc	bp
-								add	bx,4
-								add	si,4
-								add	di,1FFCh
-								cmp	di,8000h
-								jb	draw_fg_wrap_ok			; Jump if below
-								add	di,tga_wrap2
+									push	cx
+									mov	al,ds:[bp]
+									call	limg_process_loop_6
+									mov	cl,al
+									mov	ax,cs:[bx]
+									and	ax,dx
+									or	ax,[si]
+									stosw				; Store ax to es:[di]
+									mov	al,cl
+									call	limg_process_loop_6
+									mov	ax,cs:[bx+2]
+									and	ax,dx
+									or	ax,[si+2]
+									stosw				; Store ax to es:[di]
+									inc	bp
+									add	bx,4
+									add	si,4
+									add	di,1FFCh
+									cmp	di,8000h
+									jb	draw_fg_wrap_ok			; Jump if below
+									add	di,tga_wrap2
 
 draw_fg_wrap_ok:
-								pop	cx
-								loop	draw_fg_row_loop		; Loop if cx > 0
+									pop	cx
+									loop	draw_fg_row_loop		; Loop if cx > 0
 
 		jmp	short draw_fg_done
 
@@ -513,20 +512,20 @@ draw_fg_opaque:
 		mov	cx,8
 
 draw_fg_opaque_loop:
-								push	cx
-								mov	ax,cs:[bx]
-								stosw				; Store ax to es:[di]
-								mov	ax,cs:[bx+2]
-								stosw				; Store ax to es:[di]
-								add	bx,4
-								add	di,1FFCh
-								cmp	di,8000h
-								jb	draw_fg_opaque_wrap			; Jump if below
-								add	di,tga_wrap
+									push	cx
+									mov	ax,cs:[bx]
+									stosw				; Store ax to es:[di]
+									mov	ax,cs:[bx+2]
+									stosw				; Store ax to es:[di]
+									add	bx,4
+									add	di,1FFCh
+									cmp	di,8000h
+									jb	draw_fg_opaque_wrap			; Jump if below
+									add	di,tga_wrap
 
 draw_fg_opaque_wrap:
-								pop	cx
-								loop	draw_fg_opaque_loop		; Loop if cx > 0
+									pop	cx
+									loop	draw_fg_opaque_loop		; Loop if cx > 0
 
 draw_fg_done:
 		pop	bx
@@ -555,20 +554,20 @@ draw_fg_subst_scan:
 		inc	di
 
 subst_scan_loop:
-								mov	al,es:[di]
-								cmp	al,0FFh
-								je	subst_done			; Jump if equal
-								cmp	ah,al
-								jne	subst_scan_next			; Jump if not equal
-								mov	al,es:[di+1]
-								mov	[si-1],al
-								jmp	short subst_done
+									mov	al,es:[di]
+									cmp	al,0FFh
+									je	subst_done			; Jump if equal
+									cmp	ah,al
+									jne	subst_scan_next			; Jump if not equal
+									mov	al,es:[di+1]
+									mov	[si-1],al
+									jmp	short subst_done
 
 subst_scan_next:
-								inc	di
-								inc	di
-								dec	cl
-								jnz	subst_scan_loop			; Jump if not zero
+									inc	di
+									inc	di
+									dec	cl
+									jnz	subst_scan_loop			; Jump if not zero
 
 subst_done:
 		pop	es
@@ -584,21 +583,21 @@ limg_func_6:
 		pop	es
 
 copy_tile_loop:
-								push	cx
-								lodsb				; String [si] to al
-								push	ds
-								push	si
-								mov	cl,20h			; ' '
-								mul	cl			; ax = reg * al
-								mov	si,ax
-								add	si,tile_pixel_base
-								mov	ds,cs:gvar_game_seg
-								mov	cx,10h
-								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-								pop	si
-								pop	ds
-								pop	cx
-								loop	copy_tile_loop		; Loop if cx > 0
+									push	cx
+									lodsb				; String [si] to al
+									push	ds
+									push	si
+									mov	cl,20h			; ' '
+									mul	cl			; ax = reg * al
+									mov	si,ax
+									add	si,tile_pixel_base
+									mov	ds,cs:gvar_game_seg
+									mov	cx,10h
+									rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+									pop	si
+									pop	ds
+									pop	cx
+									loop	copy_tile_loop		; Loop if cx > 0
 
 		retn
 
@@ -632,23 +631,23 @@ draw_anim_no_b:
 		mov	si,cs:tile_list_ptr
 
 draw_anim_scan_loop:
-								call	limg_scan_loop_2
-								or	bl,bl			; Zero ?
-								jz	draw_anim_skip			; Jump if zero
-								push	si
-								push	bx
-								call	limg_multiply_3
-								pop	bx
-								mov	es,cs:gvar_game_seg
-								mov	si,tile_char_a
-								call	limg_get_value
-								pop	si
+									call	limg_scan_loop_2
+									or	bl,bl			; Zero ?
+									jz	draw_anim_skip			; Jump if zero
+									push	si
+									push	bx
+									call	limg_multiply_3
+									pop	bx
+									mov	es,cs:gvar_game_seg
+									mov	si,tile_char_a
+									call	limg_get_value
+									pop	si
 
 draw_anim_skip:
-								add	si,8
+									add	si,8
 ;*		cmp	word ptr [si],0FFFFh
-								db	 83h, 3Ch,0FFh		;  Fixup - byte match
-								jnz	draw_anim_scan_loop			; Jump if not zero
+									db	 83h, 3Ch,0FFh		;  Fixup - byte match
+									jnz	draw_anim_scan_loop			; Jump if not zero
 		pop	di
 		pop	es
 		mov	ch,es:[di-1]
@@ -718,29 +717,29 @@ anim2_no_fd:
 		mov	si,cs:tile_list_ptr
 
 anim2_scan_loop:
-								call	limg_scan_loop_2
-								or	bl,bl			; Zero ?
-								jz	anim2_skip			; Jump if zero
-								push	si
-								dec	bl
-								mov	al,3
-								mul	bl			; ax = reg * al
-								push	ax
-								call	limg_multiply_3
-								pop	ax
-								add	di,ax
-								mov	bp,di
-								mov	es,cs:gvar_game_seg
-								mov	si,tile_char_a
-								mov	di,tga_row_buf_b
-								call	limg_multiply_4
-								pop	si
+									call	limg_scan_loop_2
+									or	bl,bl			; Zero ?
+									jz	anim2_skip			; Jump if zero
+									push	si
+									dec	bl
+									mov	al,3
+									mul	bl			; ax = reg * al
+									push	ax
+									call	limg_multiply_3
+									pop	ax
+									add	di,ax
+									mov	bp,di
+									mov	es,cs:gvar_game_seg
+									mov	si,tile_char_a
+									mov	di,tga_row_buf_b
+									call	limg_multiply_4
+									pop	si
 
 anim2_skip:
-								add	si,8
+									add	si,8
 ;*		cmp	word ptr [si],0FFFFh
-								db	 83h, 3Ch,0FFh		;  Fixup - byte match
-								jnz	anim2_scan_loop			; Jump if not zero
+									db	 83h, 3Ch,0FFh		;  Fixup - byte match
+									jnz	anim2_scan_loop			; Jump if not zero
 		mov	di,scroll_dst_ofs
 		mov	si,tga_row_buf_b
 		mov	ax,0B800h
@@ -765,11 +764,11 @@ limg_func_8		proc	near
 		retn
 
 func8_next_entry:
-								add	si,8
-								call	limg_func_10
-								mov	al,[si+3]
-								cmp	al,0FDh
-								je	func8_next_entry			; Jump if equal
+									add	si,8
+									call	limg_func_10
+									mov	al,[si+3]
+									cmp	al,0FDh
+									je	func8_next_entry			; Jump if equal
 		retn
 
 limg_func_8		endp
@@ -780,13 +779,13 @@ limg_func_9		proc	near
 limg_func_10:
 
 scan_entry_loop:
-								cmp	dx,[si]
-								jne	scan_entry_next			; Jump if not equal
-								retn
+									cmp	dx,[si]
+									jne	scan_entry_next			; Jump if not equal
+									retn
 
 scan_entry_next:
-								add	si,8
-								jmp	short scan_entry_loop
+									add	si,8
+									jmp	short scan_entry_loop
 
 limg_func_9		endp
 
@@ -920,14 +919,14 @@ limg_scan_loop_2		proc	near
 		mov	dx,ds:tile_row_ctr
 
 scan2_match_loop:
-								mov	bl,cl
-								cmp	[si],dx
-								jne	scan2_no_match			; Jump if not equal
-								retn
+									mov	bl,cl
+									cmp	[si],dx
+									jne	scan2_no_match			; Jump if not equal
+									retn
 
 scan2_no_match:
-								inc	dx
-								loop	scan2_match_loop		; Loop if cx > 0
+									inc	dx
+									loop	scan2_match_loop		; Loop if cx > 0
 
 		mov	bl,cl
 		retn
@@ -974,37 +973,37 @@ mul4_start:
 		mov	cx,3
 
 mul4_loop:
-								push	cx
-								mov	byte ptr [si],0FFh
-								inc	si
-								push	ds
-								push	si
-								mov	al,es:[bp]
-								inc	bp
-								push	es
-								push	bp
-								dec	al
-								mov	cl,20h			; ' '
-								mul	cl			; ax = reg * al
-								mov	si,ax
-								add	si,tile_src_b
-								shr	ax,1			; Shift w/zeros fill
-								shr	ax,1			; Shift w/zeros fill
-								add	ax,7000h
-								mov	cs:far_ptr_tmp,ax
-								mov	ax,cs
-								add	ax,2000h
-								mov	word ptr cs:far_ptr_tmp+2,ax
-								mov	ds,cs:gvar_game_seg
-								push	cs
-								pop	es
-								call	limg_process_loop
-								pop	bp
-								pop	es
-								pop	si
-								pop	ds
-								pop	cx
-								loop	mul4_loop		; Loop if cx > 0
+									push	cx
+									mov	byte ptr [si],0FFh
+									inc	si
+									push	ds
+									push	si
+									mov	al,es:[bp]
+									inc	bp
+									push	es
+									push	bp
+									dec	al
+									mov	cl,20h			; ' '
+									mul	cl			; ax = reg * al
+									mov	si,ax
+									add	si,tile_src_b
+									shr	ax,1			; Shift w/zeros fill
+									shr	ax,1			; Shift w/zeros fill
+									add	ax,7000h
+									mov	cs:far_ptr_tmp,ax
+									mov	ax,cs
+									add	ax,2000h
+									mov	word ptr cs:far_ptr_tmp+2,ax
+									mov	ds,cs:gvar_game_seg
+									push	cs
+									pop	es
+									call	limg_process_loop
+									pop	bp
+									pop	es
+									pop	si
+									pop	ds
+									pop	cx
+									loop	mul4_loop		; Loop if cx > 0
 
 		retn
 
@@ -1019,27 +1018,27 @@ fn_load_tiles_a:
 		mov	cx,6
 
 tile_load_loop:
-								push	cx
-								lodsb				; String [si] to al
-								push	ds
-								push	si
-								mov	cl,20h			; ' '
-								mul	cl			; ax = reg * al
-								mov	si,ax
-								add	si,tile_src_a
-								shr	ax,1			; Shift w/zeros fill
-								shr	ax,1			; Shift w/zeros fill
-								add	ax,8000h
-								mov	cs:far_ptr_tmp,ax
-								mov	ax,cs
-								add	ax,2000h
-								mov	word ptr cs:far_ptr_tmp+2,ax
-								mov	ds,cs:gvar_game_seg
-								call	limg_process_loop
-								pop	si
-								pop	ds
-								pop	cx
-								loop	tile_load_loop		; Loop if cx > 0
+									push	cx
+									lodsb				; String [si] to al
+									push	ds
+									push	si
+									mov	cl,20h			; ' '
+									mul	cl			; ax = reg * al
+									mov	si,ax
+									add	si,tile_src_a
+									shr	ax,1			; Shift w/zeros fill
+									shr	ax,1			; Shift w/zeros fill
+									add	ax,8000h
+									mov	cs:far_ptr_tmp,ax
+									mov	ax,cs
+									add	ax,2000h
+									mov	word ptr cs:far_ptr_tmp+2,ax
+									mov	ds,cs:gvar_game_seg
+									call	limg_process_loop
+									pop	si
+									pop	ds
+									pop	cx
+									loop	tile_load_loop		; Loop if cx > 0
 
 		retn
 
@@ -1051,15 +1050,15 @@ limg_process_loop		proc	near
 		mov	cx,8
 
 proc_mask_loop:
-								push	cx
-								lodsb				; String [si] to al
-								call	limg_process_loop_6
-								and	es:[di],dx
-								call	limg_process_loop_6
-								and	es:[di+2],dx
-								add	di,4
-								pop	cx
-								loop	proc_mask_loop		; Loop if cx > 0
+									push	cx
+									lodsb				; String [si] to al
+									call	limg_process_loop_6
+									and	es:[di],dx
+									call	limg_process_loop_6
+									and	es:[di+2],dx
+									add	di,4
+									pop	cx
+									loop	proc_mask_loop		; Loop if cx > 0
 
 		pop	di
 		pop	si
@@ -1067,12 +1066,12 @@ proc_mask_loop:
 		mov	cx,8
 
 proc_or_loop:
-								lodsw				; String [si] to ax
-								or	es:[di],ax
-								lodsw				; String [si] to ax
-								or	es:[di+2],ax
-								add	di,4
-								loop	proc_or_loop		; Loop if cx > 0
+									lodsw				; String [si] to ax
+									or	es:[di],ax
+									lodsw				; String [si] to ax
+									or	es:[di+2],ax
+									add	di,4
+									loop	proc_or_loop		; Loop if cx > 0
 
 		retn
 
@@ -1090,46 +1089,46 @@ fn_scroll_left:
 		mov	al,8
 
 scroll_l16_row:
-								push	si
-								mov	di,si
-								sub	si,4
-								mov	cx,36h
-								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-								add	si,3Ch
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								pop	si
-								add	si,2000h
-								cmp	si,8000h
-								jb	scroll_l16_wrap			; Jump if below
-								add	si,80A0h
+									push	si
+									mov	di,si
+									sub	si,4
+									mov	cx,36h
+									rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+									add	si,3Ch
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									pop	si
+									add	si,2000h
+									cmp	si,8000h
+									jb	scroll_l16_wrap			; Jump if below
+									add	si,80A0h
 
 scroll_l16_wrap:
-								dec	al
-								jnz	scroll_l16_row			; Jump if not zero
+									dec	al
+									jnz	scroll_l16_row			; Jump if not zero
 		mov	si,scroll_r8_src_b
 		mov	al,8
 
 scroll_l8_row:
-								push	si
-								mov	di,si
-								sub	si,8
-								mov	cx,34h
-								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-								add	si,40h
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								pop	si
-								add	si,2000h
-								cmp	si,8000h
-								jb	scroll_l8_wrap			; Jump if below
-								add	si,80A0h
+									push	si
+									mov	di,si
+									sub	si,8
+									mov	cx,34h
+									rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+									add	si,40h
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									pop	si
+									add	si,2000h
+									cmp	si,8000h
+									jb	scroll_l8_wrap			; Jump if below
+									add	si,80A0h
 
 scroll_l8_wrap:
-								dec	al
-								jnz	scroll_l8_row			; Jump if not zero
+									dec	al
+									jnz	scroll_l8_row			; Jump if not zero
 		pop	ds
 		cld				; Clear direction
 		retn
@@ -1146,23 +1145,23 @@ fn_scroll_right_16:
 		mov	al,10h
 
 scroll_r16_row:
-								push	si
-								mov	di,si
-								dec	si
-								dec	si
-								mov	cx,37h
-								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-								add	si,3Ah
-								movsw				; Mov [si] to es:[di]
-								pop	si
-								add	si,2000h
-								cmp	si,8000h
-								jb	scroll_r16_wrap			; Jump if below
-								add	si,80A0h
+									push	si
+									mov	di,si
+									dec	si
+									dec	si
+									mov	cx,37h
+									rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+									add	si,3Ah
+									movsw				; Mov [si] to es:[di]
+									pop	si
+									add	si,2000h
+									cmp	si,8000h
+									jb	scroll_r16_wrap			; Jump if below
+									add	si,80A0h
 
 scroll_r16_wrap:
-								dec	al
-								jnz	scroll_r16_row			; Jump if not zero
+									dec	al
+									jnz	scroll_r16_row			; Jump if not zero
 		pop	ds
 		cld				; Clear direction
 		retn
@@ -1177,46 +1176,46 @@ fn_scroll_right_8:
 		mov	al,8
 
 scroll_r8a_row:
-								push	si
-								mov	di,si
-								add	si,4
-								mov	cx,36h
-								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-								sub	si,3Ch
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								pop	si
-								add	si,2000h
-								cmp	si,8000h
-								jb	scroll_r8a_wrap			; Jump if below
-								add	si,80A0h
+									push	si
+									mov	di,si
+									add	si,4
+									mov	cx,36h
+									rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+									sub	si,3Ch
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									pop	si
+									add	si,2000h
+									cmp	si,8000h
+									jb	scroll_r8a_wrap			; Jump if below
+									add	si,80A0h
 
 scroll_r8a_wrap:
-								dec	al
-								jnz	scroll_r8a_row			; Jump if not zero
+									dec	al
+									jnz	scroll_r8a_row			; Jump if not zero
 		mov	si,scroll_r8_src_a
 		mov	al,8
 
 scroll_r8b_row:
-								push	si
-								mov	di,si
-								add	si,8
-								mov	cx,34h
-								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-								sub	si,40h
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								pop	si
-								add	si,2000h
-								cmp	si,8000h
-								jb	scroll_r8b_wrap			; Jump if below
-								add	si,80A0h
+									push	si
+									mov	di,si
+									add	si,8
+									mov	cx,34h
+									rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+									sub	si,40h
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									pop	si
+									add	si,2000h
+									cmp	si,8000h
+									jb	scroll_r8b_wrap			; Jump if below
+									add	si,80A0h
 
 scroll_r8b_wrap:
-								dec	al
-								jnz	scroll_r8b_row			; Jump if not zero
+									dec	al
+									jnz	scroll_r8b_row			; Jump if not zero
 		pop	ds
 		retn
 	; fn_scroll_right_16b: scroll-right 16-wide rows from HUD offset (16 rows, forward)
@@ -1230,23 +1229,23 @@ fn_scroll_right_16b:
 		mov	al,10h
 
 scroll_r16b_row:
-								push	si
-								mov	di,si
-								inc	si
-								inc	si
-								mov	cx,37h
-								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-								sub	si,3Ah
-								movsw				; Mov [si] to es:[di]
-								pop	si
-								add	si,2000h
-								cmp	si,8000h
-								jb	scroll_r16b_wrap			; Jump if below
-								add	si,80A0h
+									push	si
+									mov	di,si
+									inc	si
+									inc	si
+									mov	cx,37h
+									rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+									sub	si,3Ah
+									movsw				; Mov [si] to es:[di]
+									pop	si
+									add	si,2000h
+									cmp	si,8000h
+									jb	scroll_r16b_wrap			; Jump if below
+									add	si,80A0h
 
 scroll_r16b_wrap:
-								dec	al
-								jnz	scroll_r16b_row			; Jump if not zero
+									dec	al
+									jnz	scroll_r16b_row			; Jump if not zero
 		pop	ds
 		retn
 ; fn_blit_tile_seg: blit tile from game_seg:8000h to TGA B800 via extract_bits
@@ -1272,15 +1271,15 @@ fn_blit_tile_seg:
 		mov	cx,8
 
 blit_seg_row_loop:
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								add	di,1FFCh
-								cmp	di,8000h
-								jb	blit_seg_wrap_ok			; Jump if below
-								add	di,80A0h
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									add	di,1FFCh
+									cmp	di,8000h
+									jb	blit_seg_wrap_ok			; Jump if below
+									add	di,80A0h
 
 blit_seg_wrap_ok:
-								loop	blit_seg_row_loop		; Loop if cx > 0
+									loop	blit_seg_row_loop		; Loop if cx > 0
 
 		pop	si
 		pop	ds
@@ -1302,15 +1301,15 @@ fn_blit_icon:
 		mov	cx,9
 
 icon_blit_loop:
-								movsw				; Mov [si] to es:[di]
-								movsw				; Mov [si] to es:[di]
-								add	di,1FFCh
-								cmp	di,8000h
-								jb	icon_blit_wrap_ok			; Jump if below
-								add	di,tga_wrap
+									movsw				; Mov [si] to es:[di]
+									movsw				; Mov [si] to es:[di]
+									add	di,1FFCh
+									cmp	di,8000h
+									jb	icon_blit_wrap_ok			; Jump if below
+									add	di,tga_wrap
 
 icon_blit_wrap_ok:
-								loop	icon_blit_loop		; Loop if cx > 0
+									loop	icon_blit_loop		; Loop if cx > 0
 
 		pop	di
 		pop	si
@@ -1335,22 +1334,22 @@ icon_blit_wrap_ok:
 		db	0B8h, 8Eh,0C0h,0B9h, 09h, 00h
 
 movsw_rep_loop:
-								push	cx
-								push	di
-								push	si
-								mov	cx,ds:gvar_copy_width
-								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-								pop	si
-								add	si,50h
-								pop	di
-								add	di,2000h
-								cmp	di,8000h
-								jb	movsw_wrap_ok			; Jump if below
-								add	di,80A0h
+									push	cx
+									push	di
+									push	si
+									mov	cx,ds:gvar_copy_width
+									rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+									pop	si
+									add	si,50h
+									pop	di
+									add	di,2000h
+									cmp	di,8000h
+									jb	movsw_wrap_ok			; Jump if below
+									add	di,80A0h
 
 movsw_wrap_ok:
-								pop	cx
-								loop	movsw_rep_loop		; Loop if cx > 0
+									pop	cx
+									loop	movsw_rep_loop		; Loop if cx > 0
 
 		retn
 ; fn_draw_char: render string char-by-char into glyph_buf, optionally with item overlay
@@ -1397,22 +1396,22 @@ limg_func_17		proc	near
 		xor	bl,bl			; Zero register
 
 func17_loop:
-								lodsb				; String [si] to al
-								or	al,al			; Zero ?
-								jnz	func17_nonzero			; Jump if not zero
-								retn
+									lodsb				; String [si] to al
+									or	al,al			; Zero ?
+									jnz	func17_nonzero			; Jump if not zero
+									retn
 
 func17_nonzero:
-								push	bx
-								push	ds
-								push	si
-								and	bl,1
-								call	limg_func_18
-								pop	si
-								pop	ds
-								pop	bx
-								inc	bl
-								jmp	short func17_loop
+									push	bx
+									push	ds
+									push	si
+									and	bl,1
+									call	limg_func_18
+									pop	si
+									pop	ds
+									pop	bx
+									inc	bl
+									jmp	short func17_loop
 
 limg_func_17		endp
 
@@ -1433,27 +1432,27 @@ limg_func_18		proc	near
 		mov	bl,8
 
 func18_bit_loop:
-								push	bx
-								lodsb				; String [si] to al
-								call	limg_func_19
-								push	ax
-								call	limg_func_19
-								pop	bx
-								mov	bl,ah
-								mov	dh,bl
-								xor	dl,dl			; Zero register
-								shr	bx,cl			; Shift w/zeros fill
-								shr	dx,cl			; Shift w/zeros fill
-								mov	dh,dl
-								xor	dl,dl			; Zero register
-								xchg	bh,bl
-								xchg	dh,dl
-								or	es:[di],bx
-								or	es:[di+2],dx
-								add	di,50h
-								pop	bx
-								dec	bl
-								jnz	func18_bit_loop			; Jump if not zero
+									push	bx
+									lodsb				; String [si] to al
+									call	limg_func_19
+									push	ax
+									call	limg_func_19
+									pop	bx
+									mov	bl,ah
+									mov	dh,bl
+									xor	dl,dl			; Zero register
+									shr	bx,cl			; Shift w/zeros fill
+									shr	dx,cl			; Shift w/zeros fill
+									mov	dh,dl
+									xor	dl,dl			; Zero register
+									xchg	bh,bl
+									xchg	dh,dl
+									or	es:[di],bx
+									or	es:[di+2],dx
+									add	di,50h
+									pop	bx
+									dec	bl
+									jnz	func18_bit_loop			; Jump if not zero
 		pop	di
 		inc	di
 		inc	di
@@ -1472,16 +1471,16 @@ limg_func_19		proc	near
 		mov	dl,2
 
 func19_bit_loop:
-								add	al,al
-								sbb	dh,dh
-								and	dh,0Fh
-								add	ah,ah
-								add	ah,ah
-								add	ah,ah
-								add	ah,ah
-								or	ah,dh
-								dec	dl
-								jnz	func19_bit_loop			; Jump if not zero
+									add	al,al
+									sbb	dh,dh
+									and	dh,0Fh
+									add	ah,ah
+									add	ah,ah
+									add	ah,ah
+									add	ah,ah
+									or	ah,dh
+									dec	dl
+									jnz	func19_bit_loop			; Jump if not zero
 		retn
 
 limg_func_19		endp
@@ -1520,16 +1519,16 @@ limg_process_loop_2		proc	near
 		mov	cx,6
 
 proc2_col_loop:
-								push	cx
-								push	di
-								lodsb				; String [si] to al
-								push	si
-								call	limg_process_loop_3
-								pop	si
-								pop	di
-								add	di,3
-								pop	cx
-								loop	proc2_col_loop		; Loop if cx > 0
+									push	cx
+									push	di
+									lodsb				; String [si] to al
+									push	si
+									call	limg_process_loop_3
+									pop	si
+									pop	di
+									add	di,3
+									pop	cx
+									loop	proc2_col_loop		; Loop if cx > 0
 
 		retn
 
@@ -1551,17 +1550,17 @@ proc3_nonzero:
 		mov	cx,7
 
 proc3_row_loop:
-								lodsb				; String [si] to al
-								add	al,al
-								add	al,al
-								call	limg_func_19
-								or	es:[di],ah
-								call	limg_func_19
-								or	es:[di+1],ah
-								call	limg_func_19
-								or	es:[di+2],ah
-								add	di,50h
-								loop	proc3_row_loop		; Loop if cx > 0
+									lodsb				; String [si] to al
+									add	al,al
+									add	al,al
+									call	limg_func_19
+									or	es:[di],ah
+									call	limg_func_19
+									or	es:[di+1],ah
+									call	limg_func_19
+									or	es:[di+2],ah
+									add	di,50h
+									loop	proc3_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1573,14 +1572,14 @@ limg_process_loop_4		proc	near
 		mov	cx,6
 
 proc4_check_loop:
-								test	byte ptr cs:[di],0FFh
-								jz	proc4_write_ff			; Jump if zero
-								retn
+									test	byte ptr cs:[di],0FFh
+									jz	proc4_write_ff			; Jump if zero
+									retn
 
 proc4_write_ff:
-								mov	byte ptr cs:[di],0FFh
-								inc	di
-								loop	proc4_check_loop		; Loop if cx > 0
+									mov	byte ptr cs:[di],0FFh
+									inc	di
+									loop	proc4_check_loop		; Loop if cx > 0
 
 		retn
 
@@ -1622,17 +1621,17 @@ limg_func_24		proc	near
 		xor	dh,dh			; Zero register
 
 func24_div_loop:
-								sub	dl,cl
-								jc	func24_done			; Jump if carry Set
-								sub	ax,bx
-								jnc	func24_inc_dh			; Jump if carry=0
-								or	dl,dl			; Zero ?
-								jz	func24_add_back			; Jump if zero
-								dec	dl
+									sub	dl,cl
+									jc	func24_done			; Jump if carry Set
+									sub	ax,bx
+									jnc	func24_inc_dh			; Jump if carry=0
+									or	dl,dl			; Zero ?
+									jz	func24_add_back			; Jump if zero
+									dec	dl
 
 func24_inc_dh:
-								inc	dh
-								jmp	short func24_div_loop
+									inc	dh
+									jmp	short func24_div_loop
 
 func24_add_back:
 		add	ax,bx
@@ -1677,25 +1676,25 @@ scrollback_si_ok:
 		xor	ch,ch			; Zero register
 
 scrollback_row_loop:
-								push	cx
-								push	di
-								push	si
-								mov	cx,bx
-								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-								pop	si
-								pop	di
-								sub	si,2000h
-								jnc	scrollback_si_wrap			; Jump if carry=0
-								add	si,tga_wrap_sub
+									push	cx
+									push	di
+									push	si
+									mov	cx,bx
+									rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+									pop	si
+									pop	di
+									sub	si,2000h
+									jnc	scrollback_si_wrap			; Jump if carry=0
+									add	si,tga_wrap_sub
 
 scrollback_si_wrap:
-								sub	di,2000h
-								jnc	scrollback_di_wrap			; Jump if carry=0
-								add	di,tga_wrap_sub2
+									sub	di,2000h
+									jnc	scrollback_di_wrap			; Jump if carry=0
+									add	di,tga_wrap_sub2
 
 scrollback_di_wrap:
-								pop	cx
-								loop	scrollback_row_loop		; Loop if cx > 0
+									pop	cx
+									loop	scrollback_row_loop		; Loop if cx > 0
 
 		pop	ax
 		mov	dl,50h			; 'P'
@@ -1731,27 +1730,27 @@ scrollfwd_si_ok:
 		xor	ch,ch			; Zero register
 
 scrollfwd_row_loop:
-								push	cx
-								push	di
-								push	si
-								mov	cx,bx
-								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-								pop	si
-								pop	di
-								add	si,2000h
-								cmp	si,8000h
-								jb	scrollfwd_si_wrap			; Jump if below
-								add	si,tga_wrap
+									push	cx
+									push	di
+									push	si
+									mov	cx,bx
+									rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+									pop	si
+									pop	di
+									add	si,2000h
+									cmp	si,8000h
+									jb	scrollfwd_si_wrap			; Jump if below
+									add	si,tga_wrap
 
 scrollfwd_si_wrap:
-								add	di,2000h
-								cmp	di,8000h
-								jb	scrollfwd_di_wrap			; Jump if below
-								add	di,tga_wrap2
+									add	di,2000h
+									cmp	di,8000h
+									jb	scrollfwd_di_wrap			; Jump if below
+									add	di,tga_wrap2
 
 scrollfwd_di_wrap:
-								pop	cx
-								loop	scrollfwd_row_loop		; Loop if cx > 0
+									pop	cx
+									loop	scrollfwd_row_loop		; Loop if cx > 0
 
 		pop	ax
 		mov	dl,50h			; 'P'
@@ -1773,36 +1772,36 @@ fn_flash_screen:
 		mov	cx,8
 
 flash_page_loop:
-								push	cx
-								push	di
-								mov	cx,12h
+									push	cx
+									push	di
+									mov	cx,12h
 
 flash_row_loop:
-														push	cx
-														push	di
-														mov	cx,38h
-														mov	ax,0EEEEh
+																push	cx
+																push	di
+																mov	cx,38h
+																mov	ax,0EEEEh
 
 flash_col_loop:
-														xor	es:[di],ax
-														inc	di
-														inc	di
-														loop	flash_col_loop		; Loop if cx > 0
+																xor	es:[di],ax
+																inc	di
+																inc	di
+																loop	flash_col_loop		; Loop if cx > 0
 
-														pop	di
-														add	di,140h
-														pop	cx
-														loop	flash_row_loop		; Loop if cx > 0
+																pop	di
+																add	di,140h
+																pop	cx
+																loop	flash_row_loop		; Loop if cx > 0
 
-								pop	di
-								add	di,2000h
-								cmp	di,8000h
-								jb	flash_page_wrap			; Jump if below
-								add	di,80A0h
+									pop	di
+									add	di,2000h
+									cmp	di,8000h
+									jb	flash_page_wrap			; Jump if below
+									add	di,80A0h
 
 flash_page_wrap:
-								pop	cx
-								loop	flash_page_loop		; Loop if cx > 0
+									pop	cx
+									loop	flash_page_loop		; Loop if cx > 0
 
 		retn
 ; fn_encode_tiles: encode tile pixel data into TGA nibble format (cs+3000h dest)
@@ -1830,57 +1829,57 @@ fn_encode_tiles:
 		mov	si,zero_offset
 
 encode_page_loop:
-								push	cx
-								mov	cx,8
+									push	cx
+									mov	cx,8
 
 encode_tile_loop:
-														push	cx
-														lodsw				; String [si] to ax
-														mov	dx,ax
-														lodsw				; String [si] to ax
-														mov	cx,ax
-														lodsw				; String [si] to ax
-														mov	bx,ax
-														mov	bp,ax
-														or	ax,cx
-														or	ax,dx
-														and	bp,cx
-														and	bp,dx
-														not	bp
-														and	dx,bp
-														and	cx,bp
-														and	bx,bp
-														xchg	dh,dl
-														mov	cs:bitplane_0,dx
-														xchg	ch,cl
-														mov	cs:bitplane_1,cx
-														xchg	bh,bl
-														mov	cs:bitplane_2,bx
-														xchg	ah,al
-														not	ax
-														mov	cs:bitplane_3,ax
-														call	limg_process_loop_5
-														mov	ax,dx
-														xchg	ah,al
-														stosw				; Store ax to es:[di]
-														call	limg_process_loop_5
-														mov	ax,dx
-														xchg	ah,al
-														stosw				; Store ax to es:[di]
-														push	es
-														push	di
-														les	di,dword ptr cs:far_ptr_tmp	; Load seg:offset ptr
-														call	limg_scan_loop_3
-														mov	al,dl
-														stosb				; Store al to es:[di]
-														mov	cs:far_ptr_tmp,di
-														pop	di
-														pop	es
-														pop	cx
-														loop	encode_tile_loop		; Loop if cx > 0
+																push	cx
+																lodsw				; String [si] to ax
+																mov	dx,ax
+																lodsw				; String [si] to ax
+																mov	cx,ax
+																lodsw				; String [si] to ax
+																mov	bx,ax
+																mov	bp,ax
+																or	ax,cx
+																or	ax,dx
+																and	bp,cx
+																and	bp,dx
+																not	bp
+																and	dx,bp
+																and	cx,bp
+																and	bx,bp
+																xchg	dh,dl
+																mov	cs:bitplane_0,dx
+																xchg	ch,cl
+																mov	cs:bitplane_1,cx
+																xchg	bh,bl
+																mov	cs:bitplane_2,bx
+																xchg	ah,al
+																not	ax
+																mov	cs:bitplane_3,ax
+																call	limg_process_loop_5
+																mov	ax,dx
+																xchg	ah,al
+																stosw				; Store ax to es:[di]
+																call	limg_process_loop_5
+																mov	ax,dx
+																xchg	ah,al
+																stosw				; Store ax to es:[di]
+																push	es
+																push	di
+																les	di,dword ptr cs:far_ptr_tmp	; Load seg:offset ptr
+																call	limg_scan_loop_3
+																mov	al,dl
+																stosb				; Store al to es:[di]
+																mov	cs:far_ptr_tmp,di
+																pop	di
+																pop	es
+																pop	cx
+																loop	encode_tile_loop		; Loop if cx > 0
 
-								pop	cx
-								loop	encode_page_loop		; Loop if cx > 0
+									pop	cx
+									loop	encode_page_loop		; Loop if cx > 0
 
 		retn
 ; fn_load_tile_pixels: copy tile pixel data from game_seg then dispatch encode by tile type
@@ -1906,22 +1905,22 @@ fn_load_tile_pixels:
 		mov	cx,0FAh
 
 tile_type_loop:
-								push	cx
-								mov	al,es:[bx]
-								cmp	al,5
-								jb	tile_type_clamp			; Jump if below
-								xor	al,al			; Zero register
+									push	cx
+									mov	al,es:[bx]
+									cmp	al,5
+									jb	tile_type_clamp			; Jump if below
+									xor	al,al			; Zero register
 
 tile_type_clamp:
-								push	bx
-								xor	bx,bx			; Zero register
-								mov	bl,al
-								add	bx,bx
-								call	word ptr cs:tile_render_disp[bx]	;*
-								pop	bx
-								inc	bx
-								pop	cx
-								loop	tile_type_loop		; Loop if cx > 0
+									push	bx
+									xor	bx,bx			; Zero register
+									mov	bl,al
+									add	bx,bx
+									call	word ptr cs:tile_render_disp[bx]	;*
+									pop	bx
+									inc	bx
+									pop	cx
+									loop	tile_type_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1936,28 +1935,28 @@ fn_encode_mode:
 		mov	cx,8
 
 encode_mode0_loop:
-								push	cx
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_0,ax
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_1,ax
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_2,ax
-								call	limg_process_loop_5
-								mov	ax,dx
-								xchg	ah,al
-								stosw				; Store ax to es:[di]
-								call	limg_process_loop_5
-								mov	ax,dx
-								xchg	ah,al
-								stosw				; Store ax to es:[di]
-								mov	byte ptr es:[bp],0
-								inc	bp
-								pop	cx
-								loop	encode_mode0_loop		; Loop if cx > 0
+									push	cx
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_0,ax
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_1,ax
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_2,ax
+									call	limg_process_loop_5
+									mov	ax,dx
+									xchg	ah,al
+									stosw				; Store ax to es:[di]
+									call	limg_process_loop_5
+									mov	ax,dx
+									xchg	ah,al
+									stosw				; Store ax to es:[di]
+									mov	byte ptr es:[bp],0
+									inc	bp
+									pop	cx
+									loop	encode_mode0_loop		; Loop if cx > 0
 
 		retn
 		db	0B9h			; first byte of: mov cx,8 (entry for encode_mode1 + encode_mode0)
@@ -1966,115 +1965,115 @@ encode_mode1_top:
 		or	[bx+si],al
 
 encode_mode1_loop:
-								push	cx
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_0,ax
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_1,ax
-								mov	word ptr cs:bitplane_2,0
-								lodsw				; String [si] to ax
-								xchg	al,ah
-								mov	cs:bitplane_3,ax
-								call	limg_process_loop_5
-								mov	ax,dx
-								xchg	ah,al
-								stosw				; Store ax to es:[di]
-								call	limg_process_loop_5
-								mov	ax,dx
-								xchg	ah,al
-								stosw				; Store ax to es:[di]
-								call	limg_scan_loop_3
-								mov	es:[bp],dl
-								inc	bp
-								pop	cx
-								loop	encode_mode1_loop		; Loop if cx > 0
+									push	cx
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_0,ax
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_1,ax
+									mov	word ptr cs:bitplane_2,0
+									lodsw				; String [si] to ax
+									xchg	al,ah
+									mov	cs:bitplane_3,ax
+									call	limg_process_loop_5
+									mov	ax,dx
+									xchg	ah,al
+									stosw				; Store ax to es:[di]
+									call	limg_process_loop_5
+									mov	ax,dx
+									xchg	ah,al
+									stosw				; Store ax to es:[di]
+									call	limg_scan_loop_3
+									mov	es:[bp],dl
+									inc	bp
+									pop	cx
+									loop	encode_mode1_loop		; Loop if cx > 0
 
 		retn
 		db	0B9h, 08h, 00h		; mov cx,8  (loop init for encode_mode2_loop)
 
 encode_mode2_loop:
-								push	cx
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_0,ax
-								lodsw				; String [si] to ax
-								xchg	al,ah
-								mov	cs:bitplane_3,ax
-								mov	word ptr cs:bitplane_1,0
-								lodsw				; String [si] to ax
-								xchg	al,ah
-								mov	cs:bitplane_2,ax
-								call	limg_process_loop_5
-								mov	ax,dx
-								xchg	ah,al
-								stosw				; Store ax to es:[di]
-								call	limg_process_loop_5
-								mov	ax,dx
-								xchg	ah,al
-								stosw				; Store ax to es:[di]
-								call	limg_scan_loop_3
-								mov	es:[bp],dl
-								inc	bp
-								pop	cx
-								loop	encode_mode2_loop		; Loop if cx > 0
+									push	cx
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_0,ax
+									lodsw				; String [si] to ax
+									xchg	al,ah
+									mov	cs:bitplane_3,ax
+									mov	word ptr cs:bitplane_1,0
+									lodsw				; String [si] to ax
+									xchg	al,ah
+									mov	cs:bitplane_2,ax
+									call	limg_process_loop_5
+									mov	ax,dx
+									xchg	ah,al
+									stosw				; Store ax to es:[di]
+									call	limg_process_loop_5
+									mov	ax,dx
+									xchg	ah,al
+									stosw				; Store ax to es:[di]
+									call	limg_scan_loop_3
+									mov	es:[bp],dl
+									inc	bp
+									pop	cx
+									loop	encode_mode2_loop		; Loop if cx > 0
 
 		retn
 		db	0B9h, 08h, 00h		; mov cx,8  (loop init for encode_mode3_loop)
 
 encode_mode3_loop:
-								push	cx
-								lodsw				; String [si] to ax
-								xchg	al,ah
-								mov	cs:bitplane_3,ax
-								mov	word ptr cs:bitplane_0,0
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_1,ax
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_2,ax
-								call	limg_process_loop_5
-								mov	ax,dx
-								xchg	ah,al
-								stosw				; Store ax to es:[di]
-								call	limg_process_loop_5
-								mov	ax,dx
-								xchg	ah,al
-								stosw				; Store ax to es:[di]
-								call	limg_scan_loop_3
-								mov	es:[bp],dl
-								inc	bp
-								pop	cx
-								loop	encode_mode3_loop		; Loop if cx > 0
+									push	cx
+									lodsw				; String [si] to ax
+									xchg	al,ah
+									mov	cs:bitplane_3,ax
+									mov	word ptr cs:bitplane_0,0
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_1,ax
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_2,ax
+									call	limg_process_loop_5
+									mov	ax,dx
+									xchg	ah,al
+									stosw				; Store ax to es:[di]
+									call	limg_process_loop_5
+									mov	ax,dx
+									xchg	ah,al
+									stosw				; Store ax to es:[di]
+									call	limg_scan_loop_3
+									mov	es:[bp],dl
+									inc	bp
+									pop	cx
+									loop	encode_mode3_loop		; Loop if cx > 0
 
 		retn
 		db	0B9h, 08h, 00h		; mov cx,8  (loop init for encode_mode4_loop)
 
 encode_mode4_loop:
-								push	cx
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_0,ax
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_1,ax
-								lodsw				; String [si] to ax
-								xchg	ah,al
-								mov	cs:bitplane_2,ax
-								call	limg_process_loop_5
-								mov	ax,dx
-								xchg	ah,al
-								stosw				; Store ax to es:[di]
-								call	limg_process_loop_5
-								mov	ax,dx
-								xchg	ah,al
-								stosw				; Store ax to es:[di]
-								mov	byte ptr es:[bp],0FFh
-								inc	bp
-								pop	cx
-								loop	encode_mode4_loop		; Loop if cx > 0
+									push	cx
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_0,ax
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_1,ax
+									lodsw				; String [si] to ax
+									xchg	ah,al
+									mov	cs:bitplane_2,ax
+									call	limg_process_loop_5
+									mov	ax,dx
+									xchg	ah,al
+									stosw				; Store ax to es:[di]
+									call	limg_process_loop_5
+									mov	ax,dx
+									xchg	ah,al
+									stosw				; Store ax to es:[di]
+									mov	byte ptr es:[bp],0FFh
+									inc	bp
+									pop	cx
+									loop	encode_mode4_loop		; Loop if cx > 0
 
 		retn
 
@@ -2082,25 +2081,25 @@ limg_process_loop_5		proc	near
 		mov	cx,4
 
 proc5_nibble_loop:
-								xor	bx,bx			; Zero register
-								rol	word ptr cs:bitplane_2,1	; Rotate
-								adc	bx,bx
-								rol	word ptr cs:bitplane_1,1	; Rotate
-								adc	bx,bx
-								rol	word ptr cs:bitplane_0,1	; Rotate
-								adc	bx,bx
-								rol	word ptr cs:bitplane_2,1	; Rotate
-								adc	bx,bx
-								rol	word ptr cs:bitplane_1,1	; Rotate
-								adc	bx,bx
-								rol	word ptr cs:bitplane_0,1	; Rotate
-								adc	bx,bx
-								add	dx,dx
-								add	dx,dx
-								add	dx,dx
-								add	dx,dx
-								or	dl,cs:color_lut[bx]
-								loop	proc5_nibble_loop		; Loop if cx > 0
+									xor	bx,bx			; Zero register
+									rol	word ptr cs:bitplane_2,1	; Rotate
+									adc	bx,bx
+									rol	word ptr cs:bitplane_1,1	; Rotate
+									adc	bx,bx
+									rol	word ptr cs:bitplane_0,1	; Rotate
+									adc	bx,bx
+									rol	word ptr cs:bitplane_2,1	; Rotate
+									adc	bx,bx
+									rol	word ptr cs:bitplane_1,1	; Rotate
+									adc	bx,bx
+									rol	word ptr cs:bitplane_0,1	; Rotate
+									adc	bx,bx
+									add	dx,dx
+									add	dx,dx
+									add	dx,dx
+									add	dx,dx
+									or	dl,cs:color_lut[bx]
+									loop	proc5_nibble_loop		; Loop if cx > 0
 
 		retn
 
@@ -2125,20 +2124,20 @@ limg_scan_loop_3		proc	near
 		mov	cx,8
 
 scan3_bit_loop:
-								xor	al,al			; Zero register
-								rol	word ptr cs:bitplane_3,1	; Rotate
-								adc	al,al
-								rol	word ptr cs:bitplane_3,1	; Rotate
-								adc	al,al
-								cmp	al,3
-								je	scan3_is_3			; Jump if equal
-								xor	al,al			; Zero register
+									xor	al,al			; Zero register
+									rol	word ptr cs:bitplane_3,1	; Rotate
+									adc	al,al
+									rol	word ptr cs:bitplane_3,1	; Rotate
+									adc	al,al
+									cmp	al,3
+									je	scan3_is_3			; Jump if equal
+									xor	al,al			; Zero register
 
 scan3_is_3:
-								and	al,1
-								add	dl,dl
-								or	dl,al
-								loop	scan3_bit_loop		; Loop if cx > 0
+									and	al,1
+									add	dl,dl
+									or	dl,al
+									loop	scan3_bit_loop		; Loop if cx > 0
 
 		retn
 
@@ -2166,15 +2165,15 @@ limg_process_loop_6		proc	near
 		mov	cx,4
 
 proc6_bit_loop:
-								add	al,al
-								sbb	ah,ah
-								and	ah,0Fh
-								add	dx,dx
-								add	dx,dx
-								add	dx,dx
-								add	dx,dx
-								or	dl,ah
-								loop	proc6_bit_loop		; Loop if cx > 0
+									add	al,al
+									sbb	ah,ah
+									and	ah,0Fh
+									add	dx,dx
+									add	dx,dx
+									add	dx,dx
+									add	dx,dx
+									or	dl,ah
+									loop	proc6_bit_loop		; Loop if cx > 0
 
 		xchg	dh,dl
 		retn

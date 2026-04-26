@@ -94,6 +94,7 @@ start:
 		add	[bp+di],ch		; header field bytes
 		mov	ds:akma_scroll_x,ax		; header field bytes
 		db	12 dup (0)		; reserved / padding
+
 akma_descr_row_a:				; descriptor row: 28h ('(') with 50h ('P') in slot 7
 		db	'((((((P((((((((((((((((((((((((('	; descriptor bytes
 		db	'~'				; row terminator
@@ -203,19 +204,19 @@ akma_cell_map_c:				; tile/cell run-list (continued)
 		db	0E6h				; tile cell run trailing byte
 
 akma_unk_handler_2:
-			out	0E8h,ax			; port 0E8h ??I/O Non-standard
-			add	[bx+di],al
-			jmpn	akma_unk_handler_3
+				out	0E8h,ax			; port 0E8h ??I/O Non-standard
+				add	[bx+di],al
+				jmpn	akma_unk_handler_3
 
 akma_unk_handler_3:
 ;*		add	cl,ch
-			db	 00h,0E9h		;  Fixup - byte match
+				db	 00h,0E9h		;  Fixup - byte match
 ;*		jmp	far ptr loc_1		;*
-			db	0EAh			;  Fixup - byte match (jmp far prefix)
-			dw	0, 100h			;  Fixup - byte match
-			jmp	short $+2		; delay for I/O
-			add	[bx+si],al
-			jmp	short akma_unk_handler_2
+				db	0EAh			;  Fixup - byte match (jmp far prefix)
+				dw	0, 100h			;  Fixup - byte match
+				jmp	short $+2		; delay for I/O
+				add	[bx+si],al
+				jmp	short akma_unk_handler_2
 
 akma_cell_map_d:				; tile/cell run-list (continued, EBh/F0h tile range)
 		db	 00h,0EDh, 00h, 01h,0EBh,0F8h	; tile cell run
@@ -263,35 +264,35 @@ akma_init_code_a:				; embedded code-as-data: mov si,[10C0h] / mov [AA1Eh],0 / m
 
 akma_npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		;  Fixup - byte match
-			jz	akma_npc_scan_done			; Jump if zero
-			mov	ax,[si]
-			call	word ptr cs:fight_cb_anim_step
-			jc	akma_npc_scan_next			; Jump if carry Set
-			mov	[si+3],bl
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:akma_npc_idx
-			xor	bh,bh			; Zero register
-			mov	al,ds:akma_sprite_xlat_tbl[bx]
-			mov	[di],al
-			test	byte ptr [si+5],40h	; '@'
-			jz	akma_npc_scan_next			; Jump if zero
-			test	byte ptr ds:akma_anim_byte,80h
-			jnz	akma_npc_scan_next			; Jump if not zero
-			mov	al,[si+5]
-			and	al,1Fh
-			cmp	byte ptr [si+4],5
-			jne	akma_anim_set_high_bit			; Jump if not equal
-			or	al,80h
+				db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				jz	akma_npc_scan_done			; Jump if zero
+				mov	ax,[si]
+				call	word ptr cs:fight_cb_anim_step
+				jc	akma_npc_scan_next			; Jump if carry Set
+				mov	[si+3],bl
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:akma_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,ds:akma_sprite_xlat_tbl[bx]
+				mov	[di],al
+				test	byte ptr [si+5],40h	; '@'
+				jz	akma_npc_scan_next			; Jump if zero
+				test	byte ptr ds:akma_anim_byte,80h
+				jnz	akma_npc_scan_next			; Jump if not zero
+				mov	al,[si+5]
+				and	al,1Fh
+				cmp	byte ptr [si+4],5
+				jne	akma_anim_set_high_bit			; Jump if not equal
+				or	al,80h
 
 akma_anim_set_high_bit:
-			mov	ds:akma_anim_byte,al
+				mov	ds:akma_anim_byte,al
 
 akma_npc_scan_next:
-			inc	byte ptr ds:akma_npc_idx
-			add	si,10h
-			jmp	short akma_npc_scan_loop
+				inc	byte ptr ds:akma_npc_idx
+				add	si,10h
+				jmp	short akma_npc_scan_loop
 
 akma_npc_scan_done:
 		mov	si,ds:akma_sprite_attr_ptr
@@ -506,10 +507,10 @@ akma_phase_active_pick_b:
 		mov	cx,5
 
 akma_pick_loop:
-			movsb				; Mov [si] to es:[di]
-			movsb				; Mov [si] to es:[di]
-			add	di,0Eh
-			loop	akma_pick_loop		; Loop if cx > 0
+				movsb				; Mov [si] to es:[di]
+				movsb				; Mov [si] to es:[di]
+				add	di,0Eh
+				loop	akma_pick_loop		; Loop if cx > 0
 
 		mov	di,0AAD3h
 		mov	si,0A94Ah
@@ -545,54 +546,54 @@ akma_render_row_loop:
 		xor	cl,cl			; Zero register
 
 akma_render_cell_loop:
-			push	cx
-			push	ax
-			cmp	byte ptr [di],0FFh
-			je	akma_render_cell_skip			; Jump if equal
-			mov	[si],ax
-			mov	al,ds:akma_scroll_x_hi
-			add	al,cl
-			and	al,3Fh			; '?'
-			mov	[si+2],al
-			mov	al,ds:akma_attr_tmp
-			mov	[si+3],al
-			mov	al,[di]
-			mov	ah,al
-			shr	al,1			; Shift w/zeros fill
-			shr	al,1			; Shift w/zeros fill
-			shr	al,1			; Shift w/zeros fill
-			shr	al,1			; Shift w/zeros fill
-			and	al,0Fh
-			mov	[si+4],al
-			mov	[si+6],ah
-			mov	al,ds:akma_phase_active
-			and	al,80h
-			mov	[si+5],al
-			test	byte ptr ds:akma_anim_byte,0FFh
-			jz	akma_render_apply_anim			; Jump if zero
-			or	byte ptr [si+5],20h	; ' '
+				push	cx
+				push	ax
+				cmp	byte ptr [di],0FFh
+				je	akma_render_cell_skip			; Jump if equal
+				mov	[si],ax
+				mov	al,ds:akma_scroll_x_hi
+				add	al,cl
+				and	al,3Fh			; '?'
+				mov	[si+2],al
+				mov	al,ds:akma_attr_tmp
+				mov	[si+3],al
+				mov	al,[di]
+				mov	ah,al
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				and	al,0Fh
+				mov	[si+4],al
+				mov	[si+6],ah
+				mov	al,ds:akma_phase_active
+				and	al,80h
+				mov	[si+5],al
+				test	byte ptr ds:akma_anim_byte,0FFh
+				jz	akma_render_apply_anim			; Jump if zero
+				or	byte ptr [si+5],20h	; ' '
 
 akma_render_apply_anim:
-			push	di
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	al,ds:akma_npc_idx
-			mov	bl,al
-			or	al,80h
-			xchg	[di],al
-			xor	bh,bh			; Zero register
-			mov	ds:akma_sprite_xlat_tbl[bx],al
-			inc	byte ptr ds:akma_npc_idx
-			add	si,10h
-			pop	di
+				push	di
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	al,ds:akma_npc_idx
+				mov	bl,al
+				or	al,80h
+				xchg	[di],al
+				xor	bh,bh			; Zero register
+				mov	ds:akma_sprite_xlat_tbl[bx],al
+				inc	byte ptr ds:akma_npc_idx
+				add	si,10h
+				pop	di
 
 akma_render_cell_skip:
-			inc	di
-			pop	ax
-			pop	cx
-			inc	cl
-			cmp	cl,10h
-			jne	akma_render_cell_loop			; Jump if not equal
+				inc	di
+				pop	ax
+				pop	cx
+				inc	cl
+				cmp	cl,10h
+				jne	akma_render_cell_loop			; Jump if not equal
 
 akma_render_row_advance:
 		inc	ax
@@ -634,23 +635,23 @@ akma_phase_b_active_phase_a:
 		xor	ch,ch			; Zero register
 
 akma_phase_b_a_loop:
-			push	cx
-			dec	ax
-			dec	ax
-			inc	dl
-			push	dx
-			push	ax
-			call	word ptr cs:fight_cb_anim_step
-			pop	ax
-			pop	dx
-			mov	ds:akma_attr_tmp,bl
-			jc	akma_phase_b_a_skip			; Jump if carry Set
-			mov	bx,2603h
-			call	akma_render_emit_cell
+				push	cx
+				dec	ax
+				dec	ax
+				inc	dl
+				push	dx
+				push	ax
+				call	word ptr cs:fight_cb_anim_step
+				pop	ax
+				pop	dx
+				mov	ds:akma_attr_tmp,bl
+				jc	akma_phase_b_a_skip			; Jump if carry Set
+				mov	bx,2603h
+				call	akma_render_emit_cell
 
 akma_phase_b_a_skip:
-			pop	cx
-			loop	akma_phase_b_a_loop		; Loop if cx > 0
+				pop	cx
+				loop	akma_phase_b_a_loop		; Loop if cx > 0
 
 akma_phase_b_a_final:
 		dec	ax
@@ -681,23 +682,23 @@ akma_phase_b_active_b:
 		xor	ch,ch			; Zero register
 
 akma_phase_b_b_loop:
-			push	cx
-			inc	ax
-			inc	ax
-			inc	dl
-			push	dx
-			push	ax
-			call	word ptr cs:fight_cb_anim_step
-			pop	ax
-			pop	dx
-			mov	ds:akma_attr_tmp,bl
-			jc	akma_phase_b_b_skip			; Jump if carry Set
-			mov	bx,2603h
-			call	akma_render_emit_cell
+				push	cx
+				inc	ax
+				inc	ax
+				inc	dl
+				push	dx
+				push	ax
+				call	word ptr cs:fight_cb_anim_step
+				pop	ax
+				pop	dx
+				mov	ds:akma_attr_tmp,bl
+				jc	akma_phase_b_b_skip			; Jump if carry Set
+				mov	bx,2603h
+				call	akma_render_emit_cell
 
 akma_phase_b_b_skip:
-			pop	cx
-			loop	akma_phase_b_b_loop		; Loop if cx > 0
+				pop	cx
+				loop	akma_phase_b_b_loop		; Loop if cx > 0
 
 akma_phase_b_b_final:
 		inc	ax
@@ -730,24 +731,24 @@ akma_phase_c_render:
 		xor	ch,ch			; Zero register
 
 akma_phase_c_a_loop:
-			push	cx
-			dec	ax
-			dec	ax
-			inc	dl
-			inc	dl
-			push	dx
-			push	ax
-			call	word ptr cs:fight_cb_anim_step
-			pop	ax
-			pop	dx
-			mov	ds:akma_attr_tmp,bl
-			jc	akma_phase_c_a_skip			; Jump if carry Set
-			mov	bx,2607h
-			call	akma_render_emit_cell
+				push	cx
+				dec	ax
+				dec	ax
+				inc	dl
+				inc	dl
+				push	dx
+				push	ax
+				call	word ptr cs:fight_cb_anim_step
+				pop	ax
+				pop	dx
+				mov	ds:akma_attr_tmp,bl
+				jc	akma_phase_c_a_skip			; Jump if carry Set
+				mov	bx,2607h
+				call	akma_render_emit_cell
 
 akma_phase_c_a_skip:
-			pop	cx
-			loop	akma_phase_c_a_loop		; Loop if cx > 0
+				pop	cx
+				loop	akma_phase_c_a_loop		; Loop if cx > 0
 
 akma_phase_c_a_final:
 		dec	ax
@@ -779,24 +780,24 @@ akma_phase_c_b:
 		xor	ch,ch			; Zero register
 
 akma_phase_c_b_loop:
-			push	cx
-			inc	ax
-			inc	ax
-			inc	dl
-			inc	dl
-			push	dx
-			push	ax
-			call	word ptr cs:fight_cb_anim_step
-			pop	ax
-			pop	dx
-			mov	ds:akma_attr_tmp,bl
-			jc	akma_phase_c_b_skip			; Jump if carry Set
-			mov	bx,2607h
-			call	akma_render_emit_cell
+				push	cx
+				inc	ax
+				inc	ax
+				inc	dl
+				inc	dl
+				push	dx
+				push	ax
+				call	word ptr cs:fight_cb_anim_step
+				pop	ax
+				pop	dx
+				mov	ds:akma_attr_tmp,bl
+				jc	akma_phase_c_b_skip			; Jump if carry Set
+				mov	bx,2607h
+				call	akma_render_emit_cell
 
 akma_phase_c_b_skip:
-			pop	cx
-			loop	akma_phase_c_b_loop		; Loop if cx > 0
+				pop	cx
+				loop	akma_phase_c_b_loop		; Loop if cx > 0
 
 akma_phase_c_b_final:
 		inc	ax
@@ -851,29 +852,29 @@ akma_render_col_pack		proc	near
 		mov	cx,0Dh
 
 akma_pack_outer_loop:
-			push	cx
-			mov	cx,2
+				push	cx
+				mov	cx,2
 
 akma_pack_mid_loop:
-				push	cx
-				mov	cx,8
+						push	cx
+						mov	cx,8
 
 akma_pack_inner_loop:
-				rol	byte ptr ds:[bp],1	; Rotate
-				jnc	akma_pack_skip			; Jump if carry=0
-				lodsb				; String [si] to al
-				mov	[di],al
+						rol	byte ptr ds:[bp],1	; Rotate
+						jnc	akma_pack_skip			; Jump if carry=0
+						lodsb				; String [si] to al
+						mov	[di],al
 
 akma_pack_skip:
-				inc	di
-				loop	akma_pack_inner_loop		; Loop if cx > 0
+						inc	di
+						loop	akma_pack_inner_loop		; Loop if cx > 0
 
-				inc	bp
+						inc	bp
+						pop	cx
+						loop	akma_pack_mid_loop		; Loop if cx > 0
+
 				pop	cx
-				loop	akma_pack_mid_loop		; Loop if cx > 0
-
-			pop	cx
-			loop	akma_pack_outer_loop		; Loop if cx > 0
+				loop	akma_pack_outer_loop		; Loop if cx > 0
 
 		retn
 

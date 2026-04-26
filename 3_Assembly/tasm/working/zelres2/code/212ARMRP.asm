@@ -18,7 +18,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-
 ; External data references (outside this module's CS segment).
 
 ; --- Chunk loader scratch / temp buffer (game_seg) ---
@@ -100,7 +99,6 @@ gvar_dlg_timer		equ	0FF6Ah			;* dialog timer word
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
 armrp_main		proc	far
@@ -156,20 +154,18 @@ start:
 		jz	script_loop			; Jump if zero
 		mov	word ptr ds:gvar_script_ip,0B2A2h
 		mov	byte ptr ds:trade_active_flag,0
+
 script_loop:
-		call	word ptr cs:script_step
-		cmp	al,0FFh
-		je	shop_exit			; Jump if equal
-		call	shop_menu_dispatch
-		jmp	short script_loop
+			call	word ptr cs:script_step
+			cmp	al,0FFh
+			je	shop_exit			; Jump if equal
+			call	shop_menu_dispatch
+			jmp	short script_loop
+
 shop_exit:
 		jmp	word ptr cs:drv_return_to_caller
 
 armrp_main		endp
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 build_mouth_bitmap_a		proc	near
 		mov	si,0D2h
@@ -185,24 +181,21 @@ build_mouth_bitmap_a		proc	near
 		mov	cx,6
 
 mouth_a_bit_loop:
-		add	dl,dl
-		jnc	mouth_a_skip			; Jump if carry=0
-		mov	al,cl
-		neg	al
-		add	al,6
-		stosb				; Store al to es:[di]
-		inc	dh
+			add	dl,dl
+			jnc	mouth_a_skip			; Jump if carry=0
+			mov	al,cl
+			neg	al
+			add	al,6
+			stosb				; Store al to es:[di]
+			inc	dh
+
 mouth_a_skip:
-		loop	mouth_a_bit_loop		; Loop if cx > 0
+			loop	mouth_a_bit_loop		; Loop if cx > 0
 
 		mov	ds:weapon_cnt,dh
 		retn
+
 build_mouth_bitmap_a		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 build_mouth_bitmap_b		proc	near
 		mov	si,0DBh
@@ -218,30 +211,28 @@ build_mouth_bitmap_b		proc	near
 		mov	cx,6
 
 mouth_b_bit_loop:
-		add	dl,dl
-		jnc	mouth_b_skip			; Jump if carry=0
-		mov	al,cl
-		neg	al
-		add	al,6
-		stosb				; Store al to es:[di]
-		inc	dh
+			add	dl,dl
+			jnc	mouth_b_skip			; Jump if carry=0
+			mov	al,cl
+			neg	al
+			add	al,6
+			stosb				; Store al to es:[di]
+			inc	dh
+
 mouth_b_skip:
-		loop	mouth_b_bit_loop		; Loop if cx > 0
+			loop	mouth_b_bit_loop		; Loop if cx > 0
 
 		mov	ds:shield_cnt,dh
 		retn
+
 build_mouth_bitmap_b		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 shop_menu_dispatch		proc	near
 		mov	bl,al
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr cs:shop_dispatch_a[bx]	;*
+
 shop_menu_dispatch		endp
 
 			                        ;* No entry point to code
@@ -274,6 +265,7 @@ shop_menu_dispatch		endp
 		call	word ptr cs:menu_nav_fn
 		jnc	menu_a_choice_ok			; Jump if carry=0
 		xor	bl,bl			; Zero register
+
 menu_a_choice_ok:
 		mov	ds:last_menu_choice,bl
 		xor	bh,bh			; Zero register
@@ -290,6 +282,7 @@ menu_a_choice_ok:
 		jnz	save_script_ip			; Jump if not zero
 		db	0E8h, 76h, 05h		; call near (absolute; TASM won't compile as mnemonic)
 		mov	si,0B1FFh
+
 save_script_ip:
 		mov	ds:gvar_script_ip,si
 		retn
@@ -299,12 +292,14 @@ save_script_ip:
 		jnz	check_change_wallet			; Jump if not zero
 		mov	word ptr ds:gvar_script_ip,0AE4Ah
 		retn
+
 check_change_wallet:
 		mov	ax,word ptr ds:[96h]
 		sub	ax,word ptr ds:[94h]
 		jnz	calc_trade_price			; Jump if not zero
 		mov	word ptr ds:gvar_script_ip,0AEB1h
 		retn
+
 calc_trade_price:
 		mov	byte ptr ds:trade_weapon_flag,0FFh
 		shr	ax,1			; Shift w/zeros fill
@@ -335,6 +330,7 @@ calc_trade_price:
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		jnc	skip_price_fail			; Jump if carry=0
 		retn
+
 skip_price_fail:
 		mov	ax,ds:trade_gold_tmp
 		xor	dl,dl			; Zero register
@@ -342,6 +338,7 @@ skip_price_fail:
 		mov	word ptr ds:gvar_script_ip,0AF53h
 		jnc	commit_trade_weapon			; Jump if carry=0
 		retn
+
 commit_trade_weapon:
 		mov	byte ptr ds:[85h],dl
 		mov	word ptr ds:[86h],ax
@@ -370,6 +367,7 @@ commit_trade_weapon:
 		cmp	al,3
 		jb	cap_weapon_rows			; Jump if below
 		mov	al,3
+
 cap_weapon_rows:
 		mov	ds:gvar_dlg_cols,al
 		mov	byte ptr ds:gvar_sel_row,0
@@ -393,6 +391,7 @@ cap_weapon_rows:
 		jnc	menu_weapon_sel_ok			; Jump if carry=0
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		retn
+
 menu_weapon_sel_ok:
 		mov	ds:sub_menu_choice_a,bl
 		mov	al,bl
@@ -433,6 +432,7 @@ menu_weapon_sel_ok:
 		mov	word ptr ds:gvar_script_ip,0AF54h
 		jnc	weapon_trade_ok			; Jump if carry=0
 		retn
+
 weapon_trade_ok:
 		mov	ds:trade_gold_buf_hi,dl
 		mov	ds:trade_gold_buf_hi2,ax
@@ -480,6 +480,7 @@ weapon_trade_ok:
 		pop	si
 		mov	ds:gvar_script_ip,si
 		call	word ptr cs:script_step
+
 skip_weapon_swap:
 		mov	word ptr ds:gvar_script_ip,0B0EDh
 		call	word ptr cs:script_step
@@ -492,6 +493,7 @@ skip_weapon_swap:
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		jnc	weapon_commit			; Jump if carry=0
 		retn
+
 weapon_commit:
 		mov	word ptr ds:gvar_script_ip,0AE1Ch
 		mov	dl,ds:trade_gold_buf_hi
@@ -512,6 +514,7 @@ weapon_commit:
 		dec	bl
 		xor	bh,bh			; Zero register
 		or	byte ptr ds:[0D2h][bx],al
+
 skip_weapon_slot_fix:
 		mov	al,ds:new_item_flag
 		mov	byte ptr ds:[92h],al
@@ -521,6 +524,7 @@ skip_weapon_slot_fix:
 		dec	bl
 		xor	bh,bh			; Zero register
 		and	byte ptr ds:[0D2h][bx],0FBh
+
 skip_slot_clear:
 		call	build_mouth_bitmap_a
 		mov	ah,byte ptr ds:[92h]
@@ -530,26 +534,26 @@ skip_slot_clear:
 		mov	bx,18ABh
 		jmp	word ptr cs:gfx_render_scene_fn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 knight_sword_hook_a		proc	near
 		cmp	al,3
 		je	knight_hook_a_pass1			; Jump if equal
 		retn
+
 knight_hook_a_pass1:
 		test	byte ptr ds:[24h],2
 		jz	knight_hook_a_pass2			; Jump if zero
 		retn
+
 knight_hook_a_pass2:
 		cmp	byte ptr ds:town_npc_state,5
 		je	knight_hook_a_pass3			; Jump if equal
 		retn
+
 knight_hook_a_pass3:
 		pop	ax
 		mov	word ptr ds:gvar_script_ip,0B24Ch
 		retn
+
 knight_sword_hook_a		endp
 
 			                        ;* No entry point to code
@@ -565,6 +569,7 @@ knight_sword_hook_a		endp
 		cmp	al,3
 		jb	cap_shield_rows			; Jump if below
 		mov	al,3
+
 cap_shield_rows:
 		mov	ds:gvar_dlg_cols,al
 		mov	byte ptr ds:gvar_sel_row,0
@@ -588,6 +593,7 @@ cap_shield_rows:
 		jnc	menu_shield_sel_ok			; Jump if carry=0
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		retn
+
 menu_shield_sel_ok:
 		mov	ds:sub_menu_choice_a,bl
 		mov	word ptr ds:gvar_script_ip,0B0DCh
@@ -625,6 +631,7 @@ menu_shield_sel_ok:
 		mov	word ptr ds:gvar_script_ip,0AF54h
 		jnc	shield_trade_ok			; Jump if carry=0
 		retn
+
 shield_trade_ok:
 		mov	ds:trade_gold_buf_hi,dl
 		mov	ds:trade_gold_buf_hi2,ax
@@ -672,6 +679,7 @@ shield_trade_ok:
 		pop	si
 		mov	ds:gvar_script_ip,si
 		call	word ptr cs:script_step
+
 skip_shield_swap:
 		mov	word ptr ds:gvar_script_ip,0B0EDh
 		call	word ptr cs:script_step
@@ -684,6 +692,7 @@ skip_shield_swap:
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		jnc	shield_commit			; Jump if carry=0
 		retn
+
 shield_commit:
 		mov	word ptr ds:gvar_script_ip,0AE1Ch
 		mov	dl,ds:trade_gold_buf_hi
@@ -704,6 +713,7 @@ shield_commit:
 		dec	bl
 		xor	bh,bh			; Zero register
 		or	byte ptr ds:[0DBh][bx],al
+
 skip_shield_slot_fix:
 		mov	al,ds:new_item_flag
 		mov	byte ptr ds:[93h],al
@@ -732,22 +742,25 @@ skip_shield_slot_fix:
 		db	 74h, 08h,0B0h, 01h,0E8h,0F3h
 		db	 02h,0E8h, 91h, 01h,0BEh,0FDh
 		db	0A6h
+
 explain_char_next:
-		lodsb				; String [si] to al
-		cmp	al,0FFh
-		jne	explain_char_do			; Jump if not equal
-		retn
+			lodsb				; String [si] to al
+			cmp	al,0FFh
+			jne	explain_char_do			; Jump if not equal
+			retn
+
 explain_char_do:
-		push	si
-		or	al,al			; Zero ?
-		jns	explain_char_no_pre			; Jump if not sign
-		mov	byte ptr ds:gvar_volume,20h	; ' '
+			push	si
+			or	al,al			; Zero ?
+			jns	explain_char_no_pre			; Jump if not sign
+			mov	byte ptr ds:gvar_volume,20h	; ' '
+
 explain_char_no_pre:
-		and	al,7
-		call	render_shopkeeper_frame
-		call	frame_delay
-		pop	si
-		jmp	short explain_char_next
+			and	al,7
+			call	render_shopkeeper_frame
+			call	frame_delay
+			pop	si
+			jmp	short explain_char_next
 			                        ;* No entry point to code
 		add	ax,[si]
 		add	ax,8605h
@@ -765,9 +778,10 @@ explain_char_no_pre:
 			                        ;* No entry point to code
 		call	word ptr cs:drv_return_to_caller
 		mov	word ptr ds:gvar_menu_step,0
+
 wait_menu_exit:
-		cmp	word ptr ds:gvar_menu_step,190h
-		jb	wait_menu_exit			; Jump if below
+			cmp	word ptr ds:gvar_menu_step,190h
+			jb	wait_menu_exit			; Jump if below
 		mov	ax,word ptr ds:[96h]
 		mov	word ptr ds:[94h],ax
 		call	word ptr cs:gfx_present_fn
@@ -783,6 +797,7 @@ wait_menu_exit:
 			                        ;* No entry point to code
 		mov	byte ptr ds:sub_menu_choice_a,0
 		mov	byte ptr ds:gvar_sel_row,0
+
 explain_menu_top:
 		push	cs
 		pop	es
@@ -795,10 +810,10 @@ explain_menu_top:
 		mov	si,mouth_anim_B
 
 copy_anim_b_loop:
-		lodsb				; String [si] to al
-		add	al,6
-		stosb				; Store al to es:[di]
-		loop	copy_anim_b_loop		; Loop if cx > 0
+			lodsb				; String [si] to al
+			add	al,6
+			stosb				; Store al to es:[di]
+			loop	copy_anim_b_loop		; Loop if cx > 0
 
 		mov	al,ds:weapon_cnt
 		add	al,ds:shield_cnt
@@ -807,6 +822,7 @@ copy_anim_b_loop:
 		cmp	al,6
 		jb	cap_explain_rows			; Jump if below
 		mov	al,6
+
 cap_explain_rows:
 		mov	ds:gvar_dlg_cols,al
 		mov	bx,2717h
@@ -826,6 +842,7 @@ cap_explain_rows:
 		jnc	menu_explain_sel_ok			; Jump if carry=0
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		retn
+
 menu_explain_sel_ok:
 		mov	ds:sub_menu_choice_a,bl
 		mov	word ptr ds:gvar_script_ip,0B0EAh
@@ -869,22 +886,21 @@ menu_explain_sel_ok:
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		jnc	explain_continue			; Jump if carry=0
 		retn
+
 explain_continue:
 		mov	word ptr ds:gvar_script_ip,0B17Eh
 		call	word ptr cs:script_step
 		jmp	explain_menu_top
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 frame_delay		proc	near
 		mov	byte ptr ds:gvar_frame_timer,0
+
 frame_delay_loop:
-		call	shopkeeper_anim_tick
-		cmp	byte ptr ds:gvar_frame_timer,32h	; '2'
-		jb	frame_delay_loop			; Jump if below
+			call	shopkeeper_anim_tick
+			cmp	byte ptr ds:gvar_frame_timer,32h	; '2'
+			jb	frame_delay_loop			; Jump if below
 		retn
+
 frame_delay		endp
 
 			                        ;* No entry point to code
@@ -900,6 +916,7 @@ frame_delay		endp
 		mov	word ptr ds:gvar_script_ip,0B336h
 		jnc	reset_after_trade			; Jump if carry=0
 		retn
+
 reset_after_trade:
 		xor	al,al			; Zero register
 		call	render_shopkeeper_frame
@@ -917,60 +934,55 @@ reset_after_trade:
 		call	word ptr cs:[10Ch]
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 knight_sword_hook_b		proc	near
 		cmp	al,3
 		je	knight_hook_b_pass1			; Jump if equal
 		retn
+
 knight_hook_b_pass1:
 		test	byte ptr ds:[24h],2
 		jz	knight_hook_b_pass2			; Jump if zero
 		retn
+
 knight_hook_b_pass2:
 		cmp	byte ptr ds:town_npc_state,5
 		je	knight_hook_b_pass3			; Jump if equal
 		retn
+
 knight_hook_b_pass3:
 		pop	ax
 		mov	word ptr ds:gvar_script_ip,0B240h
 		retn
+
 knight_sword_hook_b		endp
 
 		db	0B0h, 03h,0E9h,0CDh, 00h
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 clear_menu_rect		proc	near
 		mov	bx,2717h
 		mov	cx,1C41h
 		xor	al,al			; Zero register
 		jmp	word ptr cs:drv_fill_rect
+
 clear_menu_rect		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 shopkeeper_anim_tick		proc	near
 		test	byte ptr ds:trade_active_flag,0FFh
 		jnz	anim_trade_active			; Jump if not zero
 		retn
+
 anim_trade_active:
 		cmp	word ptr ds:gvar_menu_step,2
 		jae	anim_frame_tick			; Jump if above or =
 		retn
+
 anim_frame_tick:
 		mov	word ptr ds:gvar_menu_step,0
 		inc	byte ptr ds:anim_state_0
 		cmp	byte ptr ds:anim_state_0,1Eh
 		jae	anim_half_second			; Jump if above or =
 		retn
+
 anim_half_second:
 		mov	byte ptr ds:anim_state_0,0
 		inc	byte ptr ds:anim_state_1
@@ -981,12 +993,14 @@ anim_half_second:
 		mov	byte ptr ds:anim_state_2,0FFh
 		mov	al,2
 		jmp	short render_frame_top
+
 anim_phase_7F:
 		cmp	byte ptr ds:anim_state_2,80h
 		jne	anim_phase_80			; Jump if not equal
 		mov	byte ptr ds:anim_state_2,0
 		xor	al,al			; Zero register
 		jmp	short render_frame_top
+
 anim_phase_80:
 		mov	si,anim_seq_open
 		mov	al,ds:anim_state_1
@@ -997,16 +1011,17 @@ anim_phase_80:
 		mov	cx,2
 
 vert_glyph_col_loop:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:drv_draw_glyph
-		pop	bx
-		add	bl,8
-		pop	cx
-		loop	vert_glyph_col_loop		; Loop if cx > 0
+			push	cx
+			push	bx
+			lodsb				; String [si] to al
+			call	word ptr cs:drv_draw_glyph
+			pop	bx
+			add	bl,8
+			pop	cx
+			loop	vert_glyph_col_loop		; Loop if cx > 0
 
 		jmp	short anim_after_pose
+
 anim_closed_pose:
 		mov	si,anim_seq_closed
 		mov	al,ds:anim_state_1
@@ -1017,25 +1032,27 @@ anim_closed_pose:
 		mov	cx,2
 
 horiz_glyph_col_loop:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:drv_draw_glyph
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	horiz_glyph_col_loop		; Loop if cx > 0
+			push	cx
+			push	bx
+			lodsb				; String [si] to al
+			call	word ptr cs:drv_draw_glyph
+			pop	bx
+			inc	bh
+			pop	cx
+			loop	horiz_glyph_col_loop		; Loop if cx > 0
 
 anim_after_pose:
 		call	word ptr cs:[11Ah]
 		and	al,1
 		jz	anim_skip_toggle			; Jump if zero
 		retn
+
 anim_skip_toggle:
 		inc	byte ptr ds:anim_state_3
 		cmp	byte ptr ds:anim_state_3,1Eh
 		jae	anim_toggle_pose			; Jump if above or =
 		retn
+
 anim_toggle_pose:
 		mov	byte ptr ds:anim_state_3,0
 		mov	al,ds:anim_state_2
@@ -1045,9 +1062,8 @@ anim_toggle_pose:
 		mov	al,1
 		jmp	short render_frame_top
 
-;���� External Entry into Subroutine ��������������������������������������
-
 render_shopkeeper_frame:
+
 render_frame_top:
 		xor	ah,ah			; Zero register
 		add	ax,ax
@@ -1060,41 +1076,43 @@ render_frame_top:
 		mov	cx,2
 
 render_frame_outer_loop:
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jnz	render_frame_inner			; Jump if not zero
-		retn
+			lodsb				; String [si] to al
+			or	al,al			; Zero ?
+			jnz	render_frame_inner			; Jump if not zero
+			retn
+
 render_frame_inner:
-		push	cx
-		mov	cl,al
-		lodsw				; String [si] to ax
-		xchg	si,ax
-		push	ax
+			push	cx
+			mov	cl,al
+			lodsw				; String [si] to ax
+			xchg	si,ax
+			push	ax
 
 render_frame_col_loop:
-		push	cx
-		mov	cx,0Ch
+				push	cx
+				mov	cx,0Ch
 
 render_frame_glyph_loop:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:drv_draw_glyph
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	render_frame_glyph_loop		; Loop if cx > 0
+				push	cx
+				push	bx
+				lodsb				; String [si] to al
+				call	word ptr cs:drv_draw_glyph
+				pop	bx
+				inc	bh
+				pop	cx
+				loop	render_frame_glyph_loop		; Loop if cx > 0
 
-		sub	bh,0Ch
-		add	bl,8
-		pop	cx
-		loop	render_frame_col_loop		; Loop if cx > 0
+				sub	bh,0Ch
+				add	bl,8
+				pop	cx
+				loop	render_frame_col_loop		; Loop if cx > 0
 
-		pop	si
-		pop	cx
-		loop	render_frame_outer_loop		; Loop if cx > 0
+			pop	si
+			pop	cx
+			loop	render_frame_outer_loop		; Loop if cx > 0
 
 		retn
+
 shopkeeper_anim_tick		endp
 
 			                        ;* No entry point to code
@@ -1174,11 +1192,13 @@ shopkeeper_anim_tick		endp
 		db	0DBh,0B5h,0DCh,0DDh,0DEh
 		db	0Ch, ',-./0', 0Ch, 'j'
 		db	 9Ch, 9Dh,0DFh,0E0h, 0Ch, 69h
+
 loc_61:
 		cmp	[bp+si],di
 		cmp	di,[si]
 		or	al,0Ch
 		db	0C0h,0E1h,0E2h,0C1h, 8Ah, 71h
+
 loc_62:
 		inc	bp
 		inc	si
@@ -1205,6 +1225,7 @@ loc_62:
 		db	0F3h,0F4h,0F5h,0F6h,0F7h,0F8h
 		db	0F9h, 24h, 25h, 94h, 95h, 96h
 		db	 28h, 97h, 98h
+
 loc_63:
 		cwd				; Word to double word
 		sub	al,2Dh			; '-'
@@ -1212,6 +1233,7 @@ loc_63:
 		db	 9Dh, 9Eh, 9Fh,0A0h,0A1h, 39h
 		db	 3Ah,0FAh,0FBh,0EAh,0EBh,0A4h
 		db	0A5h,0A6h,0A7h,0ECh,0EDh
+
 loc_64:
 		inc	bp
 		inc	si
@@ -1227,6 +1249,7 @@ loc_64:
 		add	[di],dx
 		inc	cx
 		push	dx
+
 loc_65:
 		dec	bp
 		dec	di
@@ -1234,6 +1257,7 @@ loc_65:
 		db	 2Eh, 47h, 52h, 50h, 00h, 10h
 		db	0AFh, 00h, 16h
 		db	 57h, 65h
+
 loc_66:
 		db	'apon and Armour ShopGo outside', 0
 		db	'Repair shield', 0
@@ -1502,7 +1526,5 @@ loc_66:
 		db	74 dup (0)
 
 seg_a		ends
-
-
 
 		end	start

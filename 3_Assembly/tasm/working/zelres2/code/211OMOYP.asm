@@ -117,9 +117,9 @@ omoya_main:					; entry from town dispatch
 		mov	byte ptr ds:gvar_script_skip,0
 
 omoya_main_loop:
-			call	word ptr cs:omoyp_script_6016
-			test	byte ptr ds:gvar_script_skip,0FFh
-			jz	omoya_main_loop			; Jump if zero
+				call	word ptr cs:omoyp_script_6016
+				test	byte ptr ds:gvar_script_skip,0FFh
+				jz	omoya_main_loop			; Jump if zero
 		jmp	word ptr cs:drv_return_to_caller
 
 ;--------------------------------------------------------------------------
@@ -232,23 +232,23 @@ draw_hut_banner	proc	near
 		mov	cx,10h				; 16 rows
 
 banner_row_loop:
-			push	cx
-			mov	cx,11h				; 17 cols per row
+				push	cx
+				mov	cx,11h				; 17 cols per row
 
 banner_col_loop:
-				push	cx
-				push	bx
-				lodsb					; next tile id
-				call	word ptr cs:drv_draw_glyph
-				pop	bx
-				inc	bh				; next col
-				pop	cx
-				loop	banner_col_loop			; Loop if cx > 0
+						push	cx
+						push	bx
+						lodsb					; next tile id
+						call	word ptr cs:drv_draw_glyph
+						pop	bx
+						inc	bh				; next col
+						pop	cx
+						loop	banner_col_loop			; Loop if cx > 0
 
-			sub	bh,11h				; reset col
-			add	bl,8				; advance row
-			pop	cx
-			loop	banner_row_loop			; Loop if cx > 0
+				sub	bh,11h				; reset col
+				add	bl,8				; advance row
+				pop	cx
+				loop	banner_row_loop			; Loop if cx > 0
 
 		retn
 

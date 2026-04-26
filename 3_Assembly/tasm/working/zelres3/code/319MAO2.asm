@@ -126,16 +126,19 @@ mao2_hdr_byte_5		db	0F2h			; header field byte
 		db	'PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP'
 		db	'|'			; row terminator
 mao2_layout_extended		db	0A0h
+
 mao2_layout_ptr_tbl_a	label	byte		; word ptrs into A0xx layout pages
 		db	0CCh,0A0h, 1Ch,0A1h, 6Ch,0A1h	; layout-page word ptr
 		db	 8Fh,0A1h,0A8h,0A1h	; layout-page word ptr
 		db	52 dup (0)
+
 mao2_layout_ptr_tbl_b	label	byte		; word ptrs into A1/A2xx layout pages
 		db	0B7h,0A1h, 07h,0A2h, 57h,0A2h	; layout-page word ptr
 		db	0A7h,0A2h,0CAh,0A2h,0E3h,0A2h	; layout-page word ptr
 mao2_layout_count_a		db	1
 		db	1, 2				; layout count pair
 mao2_layout_count_b		db	3
+
 mao2_layout_cells_a	label	byte		; per-row tile cell layout (5-byte rows w/01h sep)
 		db	 04h, 01h, 05h, 06h, 08h, 09h	; tile cell run
 		db	 01h, 00h, 07h, 0Ah, 0Bh, 01h	; tile cell run
@@ -164,6 +167,7 @@ mao2_layout_cells_a	label	byte		; per-row tile cell layout (5-byte rows w/01h se
 		db	 0Fh, 10h, 01h, 12h, 13h		; row continues into dispatch_ptr below
 mao2_layout_cells_a_tail	db	7Ch		; final row byte before dispatch ptr
 mao2_dispatch_ptr		dw	offset mao2_main_dispatch
+
 mao2_layout_cells_b	label	byte		; cell layout continued (post dispatch_ptr)
 		db	 7Dh, 00h, 7Eh, 00h, 01h, 13h	; tile cell run
 		db	 00h, 7Bh, 7Ch, 01h, 00h, 7Dh	; tile cell run
@@ -196,6 +200,7 @@ mao2_main_dispatch		proc	near
 		db	9Ah				; opcode 9Ah byte (call far prefix in sourcer view)
 		dw	0AEB7h, 9801h		;  Fixup - byte match
 		cwd				; Word to double word
+
 mao2_layout_cells_c	label	byte		; cell layout continued (mid-block)
 		db	 9Bh,0B7h, 01h,0C3h,0C4h,0C5h	; tile cell run
 		db	0C6h, 01h,0CBh,0CCh,0CDh,0CEh	; tile cell run
@@ -203,6 +208,7 @@ mao2_layout_cells_c	label	byte		; cell layout continued (mid-block)
 		db	0D3h,0D4h,0D5h,0D6h, 01h,0D7h	; tile cell run
 		db	0D8h,0D9h,0DAh, 00h,0DBh	; tile cell run
 mao2_layout_data_b		db	0DCh			; Data table (indexed access)
+
 mao2_layout_cells_d	label	byte		; cell layout continued (3Xh tile range)
 		db	0DDh,0DEh, 00h,0DFh,0E0h,0E1h	; tile cell run
 		db	0E2h, 00h,0E3h,0E4h,0E5h,0E6h	; tile cell run
@@ -238,6 +244,7 @@ mao2_layout_cells_d	label	byte		; cell layout continued (3Xh tile range)
 		db	 8Ah, 01h, 8Bh, 00h, 8Ch, 00h	; tile cell run
 		db	 01h, 77h, 84h, 8Bh, 8Bh, 01h	; tile cell run
 		db	 8Bh, 8Bh, 8Ch, 8Ch, 01h, 3Dh	; tile cell run
+
 mao2_layout_cells_e	label	byte		; cell layout continued (9Dh-Cxh tile range)
 		db	 9Dh, 3Fh, 40h, 01h, 9Eh, 00h	; tile cell run
 		db	 9Fh, 00h, 01h, 9Fh, 00h,0A0h	; tile cell run
@@ -253,6 +260,7 @@ mao2_layout_cells_e	label	byte		; cell layout continued (9Dh-Cxh tile range)
 		db	0B8h,0B9h, 01h, 00h, 00h,0B8h	; tile cell run
 		db	0B9h, 01h,0A8h,0A9h,0B8h,0C2h	; tile cell run
 		db	 01h,0A9h,0AAh,0C2h,0ACh, 01h	; tile cell run
+
 mao2_layout_cells_f	label	byte		; cell layout final (C7h-F2h tile range)
 		db	0C7h,0C8h,0C9h,0CAh, 01h,0CBh	; tile cell run
 		db	0CCh,0CDh,0CEh, 01h,0CFh,0D0h	; tile cell run
@@ -261,6 +269,7 @@ mao2_layout_cells_f	label	byte		; cell layout final (C7h-F2h tile range)
 		db	 00h,0E7h,0E8h,0E9h,0EAh, 00h	; tile cell run
 		db	0EBh,0ECh,0EDh,0EEh, 00h,0EFh	; tile cell run
 		db	0F0h,0F1h,0F2h				; final cell row
+
 mao2_npc_scan_init	label	byte		; mov si,word ptr ds:[10C0h] - NPC scan loop init
 		db	 8Bh, 36h, 10h			; mov si,[10C0h] (loaded sprite_attr_ptr)
 		db	0C0h,0C6h, 06h, 1Dh,0ACh, 00h	; mov byte ptr ds:[mao2_attr_byte],0
@@ -268,37 +277,37 @@ mao2_npc_scan_init	label	byte		; mov si,word ptr ds:[10C0h] - NPC scan loop init
 
 mao2_npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		;  Fixup - byte match
-			jz	mao2_npc_scan_done			; Jump if zero
-			mov	ax,[si]
-			call	word ptr cs:fight_cb_anim_step
-			jc	mao2_npc_scan_next			; Jump if carry Set
-			mov	[si+3],bl
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:mao2_npc_idx
-			xor	bh,bh			; Zero register
-			mov	al,ds:mao2_sprite_xlat_tbl[bx]
-			mov	[di],al
-			test	byte ptr ds:mao2_attr_byte,80h
-			jnz	mao2_npc_scan_next			; Jump if not zero
-			test	byte ptr [si+5],40h	; '@'
-			jz	mao2_npc_scan_next			; Jump if zero
-			mov	al,[si+5]
-			and	al,1Fh
-			test	byte ptr [si+4],1Fh
-			jnz	mao2_npc_attr_set			; Jump if not zero
-			test	byte ptr [si+6],0Fh
-			jnz	mao2_npc_attr_set			; Jump if not zero
-			or	al,80h
+				db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				jz	mao2_npc_scan_done			; Jump if zero
+				mov	ax,[si]
+				call	word ptr cs:fight_cb_anim_step
+				jc	mao2_npc_scan_next			; Jump if carry Set
+				mov	[si+3],bl
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:mao2_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,ds:mao2_sprite_xlat_tbl[bx]
+				mov	[di],al
+				test	byte ptr ds:mao2_attr_byte,80h
+				jnz	mao2_npc_scan_next			; Jump if not zero
+				test	byte ptr [si+5],40h	; '@'
+				jz	mao2_npc_scan_next			; Jump if zero
+				mov	al,[si+5]
+				and	al,1Fh
+				test	byte ptr [si+4],1Fh
+				jnz	mao2_npc_attr_set			; Jump if not zero
+				test	byte ptr [si+6],0Fh
+				jnz	mao2_npc_attr_set			; Jump if not zero
+				or	al,80h
 
 mao2_npc_attr_set:
-			mov	ds:mao2_attr_byte,al
+				mov	ds:mao2_attr_byte,al
 
 mao2_npc_scan_next:
-			inc	byte ptr ds:mao2_npc_idx
-			add	si,10h
-			jmp	short mao2_npc_scan_loop
+				inc	byte ptr ds:mao2_npc_idx
+				add	si,10h
+				jmp	short mao2_npc_scan_loop
 
 mao2_npc_scan_done:
 		mov	si,ds:mao2_sprite_attr_ptr
@@ -428,6 +437,7 @@ mao2_phase_step_high2:
 mao2_phase_step_finish:
 		mov	byte ptr ds:mao2_phase_active,0
 		jmp	mao2_dlg_a_check
+
 mao2_phase_ofs_data	label	byte		; phase substate offset xlat data (xlat tbl base)
 		db	 00h, 00h, 07h, 07h, 09h, 0Ah	; phase substate xlat entry
 		db	 0Ah, 0Bh, 0Bh	; phase substate xlat entry
@@ -649,6 +659,7 @@ mao2_handler_step_done:
 		jne	mao2_render_emit_top			; Jump if not equal
 		mov	byte ptr ds:mao2_handler_step,0
 		jmp	short mao2_render_emit_top
+
 mao2_handler_step_data	label	byte	; phase-handler 3-byte step table (step,dx_delta,substate)
 		db	 00h, 00h, 04h, 00h, 00h, 04h	; handler step (step,dx,sub)
 		db	 00h,0FEh, 05h, 01h,0FEh, 05h	; handler step (step,dx,sub)
@@ -736,53 +747,53 @@ mao2_render_attr_loop:
 		xor	cl,cl			; Zero register
 
 mao2_render_emit_inner:
-			push	cx
-			push	ax
-			cmp	byte ptr [di],0FFh
-			je	mao2_render_inner_advance			; Jump if equal
-			mov	[si],ax
-			add	cl,ds:mao2_speech_dx_lo
-			and	cl,3Fh			; '?'
-			mov	[si+2],cl
-			mov	al,ds:mao2_attr_tmp
-			mov	[si+3],al
-			mov	al,[di]
-			mov	ah,al
-			shr	al,1			; Shift w/zeros fill
-			shr	al,1			; Shift w/zeros fill
-			shr	al,1			; Shift w/zeros fill
-			shr	al,1			; Shift w/zeros fill
-			or	al,ds:mao2_attr_high_nib
-			mov	[si+4],al
-			mov	[si+6],ah
-			mov	al,ds:mao2_phase_dir
-			and	al,80h
-			mov	[si+5],al
-			test	byte ptr ds:mao2_attr_byte,0FFh
-			jz	mao2_render_attr_apply			; Jump if zero
-			or	byte ptr [si+5],20h	; ' '
+				push	cx
+				push	ax
+				cmp	byte ptr [di],0FFh
+				je	mao2_render_inner_advance			; Jump if equal
+				mov	[si],ax
+				add	cl,ds:mao2_speech_dx_lo
+				and	cl,3Fh			; '?'
+				mov	[si+2],cl
+				mov	al,ds:mao2_attr_tmp
+				mov	[si+3],al
+				mov	al,[di]
+				mov	ah,al
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				or	al,ds:mao2_attr_high_nib
+				mov	[si+4],al
+				mov	[si+6],ah
+				mov	al,ds:mao2_phase_dir
+				and	al,80h
+				mov	[si+5],al
+				test	byte ptr ds:mao2_attr_byte,0FFh
+				jz	mao2_render_attr_apply			; Jump if zero
+				or	byte ptr [si+5],20h	; ' '
 
 mao2_render_attr_apply:
-			push	di
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:mao2_npc_idx
-			xor	bh,bh			; Zero register
-			mov	al,bl
-			or	al,80h
-			xchg	[di],al
-			mov	ds:mao2_sprite_xlat_tbl[bx],al
-			pop	di
-			add	si,10h
-			inc	byte ptr ds:mao2_npc_idx
+				push	di
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:mao2_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,bl
+				or	al,80h
+				xchg	[di],al
+				mov	ds:mao2_sprite_xlat_tbl[bx],al
+				pop	di
+				add	si,10h
+				inc	byte ptr ds:mao2_npc_idx
 
 mao2_render_inner_advance:
-			inc	di
-			pop	ax
-			pop	cx
-			inc	cl
-			cmp	cl,9
-			jne	mao2_render_emit_inner			; Jump if not equal
+				inc	di
+				pop	ax
+				pop	cx
+				inc	cl
+				cmp	cl,9
+				jne	mao2_render_emit_inner			; Jump if not equal
 
 mao2_render_outer_advance:
 		inc	ax
@@ -973,24 +984,24 @@ mao2_unpack_bp_to_buf		proc	near
 		mov	cx,6
 
 mao2_unpack_outer_loop:
-			push	cx
-			mov	cx,8
+				push	cx
+				mov	cx,8
 
 mao2_unpack_inner_loop:
-				rol	byte ptr ds:[bp],1	; Rotate
-				jnc	mao2_unpack_skip			; Jump if carry=0
-				mov	al,[di]
-				mov	[si],al
-				inc	di
+						rol	byte ptr ds:[bp],1	; Rotate
+						jnc	mao2_unpack_skip			; Jump if carry=0
+						mov	al,[di]
+						mov	[si],al
+						inc	di
 
 mao2_unpack_skip:
-				inc	si
-				loop	mao2_unpack_inner_loop		; Loop if cx > 0
+						inc	si
+						loop	mao2_unpack_inner_loop		; Loop if cx > 0
 
-			inc	bp
-			inc	si
-			pop	cx
-			loop	mao2_unpack_outer_loop		; Loop if cx > 0
+				inc	bp
+				inc	si
+				pop	cx
+				loop	mao2_unpack_outer_loop		; Loop if cx > 0
 
 		retn
 
@@ -1068,9 +1079,11 @@ mao2_dlg_data_block_a	label	byte
 		sub	dh,[si]
 		xor	al,[bx+si]
 		sub	ds:mao2_drv_misc_cb,bp
+
 mao2_dlg_msg_data_a	label	byte		; dialog opcode/index byte stream
 		db	 36h, 2Ch, 35h, 32h, 00h, 29h	; dialog opcode/index byte
 		db	 2Eh, 2Fh, 30h, 00h	; dialog opcode/index byte
+
 mao2_dlg_msg_ptr_tbl_a	label	byte		; 0AAxxh word ptr table (12 entries into msg-data)
 		db	0AAh, 08h	; 0AAxxh word ptr entry
 		db	0AAh, 0Fh,0AAh, 17h,0AAh, 1Eh	; 0AAxxh word ptr entry
@@ -1078,6 +1091,7 @@ mao2_dlg_msg_ptr_tbl_a	label	byte		; 0AAxxh word ptr table (12 entries into msg-
 		db	0AAh, 3Eh,0AAh, 47h,0AAh, 50h	; 0AAxxh word ptr entry
 		db	0AAh, 57h,0AAh, 5Fh,0AAh, 68h	; 0AAxxh word ptr entry
 		db	0AAh	; 0AAxxh word ptr entry
+
 mao2_dlg_state_xlat	label	byte		; xlat/dispatch byte table (small dialog-state ints)
 		db	 05h, 00h, 01h, 03h, 04h	; xlat/dispatch byte
 		db	 06h, 02h, 07h, 0Bh, 00h, 01h	; xlat/dispatch byte
@@ -1097,15 +1111,18 @@ mao2_dlg_state_xlat	label	byte		; xlat/dispatch byte table (small dialog-state i
 		db	 26h, 2Eh, 2Fh, 27h, 33h, 32h	; xlat/dispatch byte
 		db	 30h, 00h	; xlat/dispatch byte
 		db	')./*42+0'
+
 mao2_dlg_state_xlat_tail	label	byte		; xlat-table tail (final 8 bytes 00h..36h)
 		db	 00h, 29h, 2Eh, 2Fh, 2Ch, 35h	; xlat tail byte
 		db	 32h, 36h	; xlat tail byte
+
 mao2_dlg_handler_tbl_a	label	byte		; 14 word ptrs (0AA8Dh..0AADBh) - dialog handler tbl
 		db	 8Dh,0AAh, 93h,0AAh	; 0AAxxh word ptr entry
 		db	 99h,0AAh, 9Fh,0AAh,0A5h,0AAh	; 0AAxxh word ptr entry
 		db	0ABh,0AAh,0B1h,0AAh,0B7h,0AAh	; 0AAxxh word ptr entry
 		db	0BDh,0AAh,0C3h,0AAh,0C9h,0AAh	; 0AAxxh word ptr entry
 		db	0CFh,0AAh,0D5h,0AAh,0DBh,0AAh	; 0AAxxh word ptr entry
+
 mao2_dlg_step_recs_a	label	byte		; 6-byte handler step records
 		db	 00h, 00h, 11h, 04h,0AAh, 01h	; 6-byte handler step record
 		db	 00h, 00h, 10h, 00h,0ABh, 01h	; 6-byte handler step record
@@ -1121,12 +1138,14 @@ mao2_dlg_step_recs_a	label	byte		; 6-byte handler step records
 		db	 00h, 00h, 0Dh, 00h, 2Bh, 01h	; 6-byte handler step record
 		db	 10h, 00h, 15h, 00h, 2Bh, 01h	; 6-byte handler step record
 		db	 00h, 04h, 0Dh, 00h, 2Bh, 01h	; 6-byte handler step record
+
 mao2_dlg_handler_tbl_b	label	byte	; 14 word ptrs (0AAFDh..0AB4Bh) - alt dialog handlers
 		db	0FDh,0AAh, 03h,0ABh, 09h,0ABh	; 0ABxxh word ptr entry
 		db	 0Fh,0ABh, 15h,0ABh, 1Bh,0ABh	; 0ABxxh word ptr entry
 		db	 21h,0ABh, 27h,0ABh, 2Dh,0ABh	; 0ABxxh word ptr entry
 		db	 33h,0ABh, 39h,0ABh, 3Fh,0ABh	; 0ABxxh word ptr entry
 		db	 45h,0ABh, 4Bh,0ABh	; 0ABxxh word ptr entry
+
 mao2_dlg_step_recs_b	label	byte		; alt 6-byte handler step records
 		db	 01h,0AAh	; 6-byte handler step record
 		db	 04h, 11h, 00h, 00h, 01h,0ABh	; 6-byte handler step record

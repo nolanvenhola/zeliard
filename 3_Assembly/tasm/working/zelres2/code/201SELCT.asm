@@ -136,17 +136,17 @@ init_continue:
 		mov	cx,4
 
 draw_portraits_loop:
-					push	cx
-					lodsw				; String [si] to ax
-					mov	bx,ax
-					lodsw				; String [si] to ax
-					mov	cx,ax
-					push	si
-					mov	al,0FFh
-					call	word ptr cs:drv_fill_rect
-					pop	si
-					pop	cx
-					loop	draw_portraits_loop		; Loop if cx > 0
+						push	cx
+						lodsw				; String [si] to ax
+						mov	bx,ax
+						lodsw				; String [si] to ax
+						mov	cx,ax
+						push	si
+						mov	al,0FFh
+						call	word ptr cs:drv_fill_rect
+						pop	si
+						pop	cx
+						loop	draw_portraits_loop		; Loop if cx > 0
 
 		call	draw_portrait_tabs
 		push	cs
@@ -157,17 +157,17 @@ draw_portraits_loop:
 		mov	ch,1
 
 scan_weapon_flags:
-					lodsb				; String [si] to al
-					or	al,al			; Zero ?
-					jz	scan_weapon_next			; Jump if zero
-					mov	al,ch
-					stosb				; Store al to es:[di]
-					inc	cl
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	scan_weapon_next			; Jump if zero
+						mov	al,ch
+						stosb				; Store al to es:[di]
+						inc	cl
 
 scan_weapon_next:
-					inc	ch
-					cmp	ch,8
-					jne	scan_weapon_flags			; Jump if not equal
+						inc	ch
+						cmp	ch,8
+						jne	scan_weapon_flags			; Jump if not equal
 		mov	ds:weapon_count,cl
 		mov	si,magic_flags
 		mov	di,magic_idx_tbl
@@ -177,15 +177,15 @@ scan_weapon_next:
 		mov	ch,5
 
 scan_item_flags:
-					lodsb				; String [si] to al
-					or	al,al			; Zero ?
-					jz	scan_item_next			; Jump if zero
-					stosb				; Store al to es:[di]
-					inc	cl
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	scan_item_next			; Jump if zero
+						stosb				; Store al to es:[di]
+						inc	cl
 
 scan_item_next:
-					dec	ch
-					jnz	scan_item_flags			; Jump if not zero
+						dec	ch
+						jnz	scan_item_flags			; Jump if not zero
 		or	cl,cl			; Zero ?
 		jz	init_panels			; Jump if zero
 		inc	cl
@@ -213,8 +213,8 @@ init_panels:
 		jnz	set_panel			; Jump if not zero
 
 wait_confirm_loop:
-					call	poll_input
-					jnc	wait_confirm_loop			; Jump if carry=0
+						call	poll_input
+						jnc	wait_confirm_loop			; Jump if carry=0
 		retn
 
 set_panel:
@@ -234,52 +234,52 @@ panel_dispatch:
 		call	show_weapon_portrait
 
 wait_joy_neutral:
-					int	61h			; ??INT Non-standard interrupt
-					and	al,3
-					jnz	wait_joy_neutral			; Jump if not zero
+						int	61h			; ??INT Non-standard interrupt
+						and	al,3
+						jnz	wait_joy_neutral			; Jump if not zero
 
 weapon_input_loop:
-								call	poll_input
-								jnc	weapon_poll_input			; Jump if carry=0
-								retn
+										call	poll_input
+										jnc	weapon_poll_input			; Jump if carry=0
+										retn
 
 weapon_poll_input:
-								int	61h			; ??INT Non-standard interrupt
-								and	al,0Eh
-								jz	weapon_input_loop			; Jump if zero
-								and	al,0Ch
-								jnz	weapon_joy_down			; Jump if not zero
-								jmp	weapon_confirm
+										int	61h			; ??INT Non-standard interrupt
+										and	al,0Eh
+										jz	weapon_input_loop			; Jump if zero
+										and	al,0Ch
+										jnz	weapon_joy_down			; Jump if not zero
+										jmp	weapon_confirm
 
 weapon_joy_down:
-								test	al,4
-								jnz	weapon_joy_up			; Jump if not zero
-								mov	al,ds:weapon_cursor
-								inc	al
-								mov	ah,ds:weapon_count
-								dec	ah
-								cmp	ah,al
-								jb	weapon_input_loop			; Jump if below
-								xor	al,al			; Zero register
-								call	show_weapon_portrait
-								inc	byte ptr ds:weapon_cursor
-								mov	al,2
-								call	show_weapon_portrait
-								mov	byte ptr ds:gvar_volume_b,0Ch
-								call	draw_weapon_cursor
-								jmp	short weapon_input_loop
+										test	al,4
+										jnz	weapon_joy_up			; Jump if not zero
+										mov	al,ds:weapon_cursor
+										inc	al
+										mov	ah,ds:weapon_count
+										dec	ah
+										cmp	ah,al
+										jb	weapon_input_loop			; Jump if below
+										xor	al,al			; Zero register
+										call	show_weapon_portrait
+										inc	byte ptr ds:weapon_cursor
+										mov	al,2
+										call	show_weapon_portrait
+										mov	byte ptr ds:gvar_volume_b,0Ch
+										call	draw_weapon_cursor
+										jmp	short weapon_input_loop
 
 weapon_joy_up:
-								test	byte ptr ds:weapon_cursor,0FFh
-								jz	weapon_input_loop			; Jump if zero
-					xor	al,al			; Zero register
-					call	show_weapon_portrait
-					dec	byte ptr ds:weapon_cursor
-					mov	al,2
-					call	show_weapon_portrait
-					mov	byte ptr ds:gvar_volume_b,0Ch
-					call	draw_weapon_cursor
-					jmp	short weapon_input_loop
+										test	byte ptr ds:weapon_cursor,0FFh
+										jz	weapon_input_loop			; Jump if zero
+						xor	al,al			; Zero register
+						call	show_weapon_portrait
+						dec	byte ptr ds:weapon_cursor
+						mov	al,2
+						call	show_weapon_portrait
+						mov	byte ptr ds:gvar_volume_b,0Ch
+						call	draw_weapon_cursor
+						jmp	short weapon_input_loop
 
 selct_main		endp
 
@@ -309,9 +309,9 @@ draw_weapon_cursor		proc	near
 		call	word ptr cs:drv_anim_step
 
 wait_joy_clear_weapon:
-					int	61h			; ??INT Non-standard interrupt
-					and	al,0Ch
-					jnz	wait_joy_clear_weapon			; Jump if not zero
+						int	61h			; ??INT Non-standard interrupt
+						and	al,0Ch
+						jnz	wait_joy_clear_weapon			; Jump if not zero
 		retn
 
 draw_weapon_cursor		endp
@@ -349,53 +349,53 @@ weapon_switch_panel:
 		call	show_magic_portrait
 
 magic_wait_neutral:
-					int	61h			; ??INT Non-standard interrupt
-					and	al,3
-					jnz	magic_wait_neutral			; Jump if not zero
+						int	61h			; ??INT Non-standard interrupt
+						and	al,3
+						jnz	magic_wait_neutral			; Jump if not zero
 
 magic_input_loop:
-								call	poll_input
-								jnc	magic_poll_input			; Jump if carry=0
-								retn
+										call	poll_input
+										jnc	magic_poll_input			; Jump if carry=0
+										retn
 
 magic_poll_input:
-								int	61h			; ??INT Non-standard interrupt
-								and	al,0Fh
-								jz	magic_input_loop			; Jump if zero
-								mov	ah,al
-								and	al,0Ch
-								jnz	magic_joy_down_chk			; Jump if not zero
-								jmp	magic_check_confirm
+										int	61h			; ??INT Non-standard interrupt
+										and	al,0Fh
+										jz	magic_input_loop			; Jump if zero
+										mov	ah,al
+										and	al,0Ch
+										jnz	magic_joy_down_chk			; Jump if not zero
+										jmp	magic_check_confirm
 
 magic_joy_down_chk:
-								test	al,4
-								jnz	magic_joy_up			; Jump if not zero
-								mov	al,ds:magic_cursor
-								inc	al
-								mov	ah,ds:magic_count
-								dec	ah
-								cmp	ah,al
-								jb	magic_input_loop			; Jump if below
-								xor	al,al			; Zero register
-								call	show_magic_portrait
-								inc	byte ptr ds:magic_cursor
-								mov	al,2
-								call	show_magic_portrait
-								mov	byte ptr ds:gvar_volume_b,0Ch
-								call	draw_magic_cursor
-								jmp	short magic_input_loop
+										test	al,4
+										jnz	magic_joy_up			; Jump if not zero
+										mov	al,ds:magic_cursor
+										inc	al
+										mov	ah,ds:magic_count
+										dec	ah
+										cmp	ah,al
+										jb	magic_input_loop			; Jump if below
+										xor	al,al			; Zero register
+										call	show_magic_portrait
+										inc	byte ptr ds:magic_cursor
+										mov	al,2
+										call	show_magic_portrait
+										mov	byte ptr ds:gvar_volume_b,0Ch
+										call	draw_magic_cursor
+										jmp	short magic_input_loop
 
 magic_joy_up:
-								test	byte ptr ds:magic_cursor,0FFh
-								jz	magic_input_loop			; Jump if zero
-					xor	al,al			; Zero register
-					call	show_magic_portrait
-					dec	byte ptr ds:magic_cursor
-					mov	al,2
-					call	show_magic_portrait
-					mov	byte ptr ds:gvar_volume_b,0Ch
-					call	draw_magic_cursor
-					jmp	short magic_input_loop
+										test	byte ptr ds:magic_cursor,0FFh
+										jz	magic_input_loop			; Jump if zero
+						xor	al,al			; Zero register
+						call	show_magic_portrait
+						dec	byte ptr ds:magic_cursor
+						mov	al,2
+						call	show_magic_portrait
+						mov	byte ptr ds:gvar_volume_b,0Ch
+						call	draw_magic_cursor
+						jmp	short magic_input_loop
 
 draw_magic_cursor		proc	near
 		mov	bx,magic_idx_tbl
@@ -424,9 +424,9 @@ draw_magic_cursor		proc	near
 		db	00Ch			; was: db 0E8h, 0CCh, 007h
 
 wait_joy_clear_magic:
-					int	61h			; ??INT Non-standard interrupt
-					and	al,0Ch
-					jnz	wait_joy_clear_magic			; Jump if not zero
+						int	61h			; ??INT Non-standard interrupt
+						and	al,0Ch
+						jnz	wait_joy_clear_magic			; Jump if not zero
 		retn
 
 draw_magic_cursor		endp
@@ -478,65 +478,65 @@ magic_switch_panel:
 		call	show_item_portrait
 
 item_wait_neutral:
-					int	61h			; ??INT Non-standard interrupt
-					and	al,3
-					jnz	item_wait_neutral			; Jump if not zero
+						int	61h			; ??INT Non-standard interrupt
+						and	al,3
+						jnz	item_wait_neutral			; Jump if not zero
 
 item_input_loop:
-								call	poll_input
-								jnc	item_poll_input			; Jump if carry=0
-								retn
+										call	poll_input
+										jnc	item_poll_input			; Jump if carry=0
+										retn
 
 item_poll_input:
-								cmp	word ptr ds:gvar_timer_counter,joy_hold_threshold
-								jne	item_not_confirm			; Jump if not equal
-								jmp	item_confirm_chk
+										cmp	word ptr ds:gvar_timer_counter,joy_hold_threshold
+										jne	item_not_confirm			; Jump if not equal
+										jmp	item_confirm_chk
 
 item_not_confirm:
-								int	61h			; ??INT Non-standard interrupt
-								and	ah,1
-								jz	item_no_button			; Jump if zero
-								jmp	item_button_select
+										int	61h			; ??INT Non-standard interrupt
+										and	ah,1
+										jz	item_no_button			; Jump if zero
+										jmp	item_button_select
 
 item_no_button:
-								and	al,0Dh
-								jz	item_input_loop			; Jump if zero
-								push	ax
-								call	hide_portrait_box
-								pop	ax
-								and	al,0Ch
-								jnz	item_joy_down_chk			; Jump if not zero
-								jmp	item_check_tab
+										and	al,0Dh
+										jz	item_input_loop			; Jump if zero
+										push	ax
+										call	hide_portrait_box
+										pop	ax
+										and	al,0Ch
+										jnz	item_joy_down_chk			; Jump if not zero
+										jmp	item_check_tab
 
 item_joy_down_chk:
-								test	al,4
-								jnz	item_joy_up			; Jump if not zero
-								mov	al,ds:item_sel_idx
-								inc	al
-								mov	ah,ds:item_count
-								dec	ah
-								cmp	ah,al
-								jb	item_input_loop			; Jump if below
-								xor	al,al			; Zero register
-								call	show_item_portrait
-								inc	byte ptr ds:item_sel_idx
-								mov	al,2
-								call	show_item_portrait
-								mov	byte ptr ds:gvar_volume_b,0Ch
-								call	draw_item_cursor
-								jmp	short item_input_loop
+										test	al,4
+										jnz	item_joy_up			; Jump if not zero
+										mov	al,ds:item_sel_idx
+										inc	al
+										mov	ah,ds:item_count
+										dec	ah
+										cmp	ah,al
+										jb	item_input_loop			; Jump if below
+										xor	al,al			; Zero register
+										call	show_item_portrait
+										inc	byte ptr ds:item_sel_idx
+										mov	al,2
+										call	show_item_portrait
+										mov	byte ptr ds:gvar_volume_b,0Ch
+										call	draw_item_cursor
+										jmp	short item_input_loop
 
 item_joy_up:
-								test	byte ptr ds:item_sel_idx,0FFh
-								jz	item_input_loop			; Jump if zero
-					xor	al,al			; Zero register
-					call	show_item_portrait
-					dec	byte ptr ds:item_sel_idx
-					mov	al,2
-					call	show_item_portrait
-					mov	byte ptr ds:gvar_volume_b,0Ch
-					call	draw_item_cursor
-					jmp	short item_input_loop
+										test	byte ptr ds:item_sel_idx,0FFh
+										jz	item_input_loop			; Jump if zero
+						xor	al,al			; Zero register
+						call	show_item_portrait
+						dec	byte ptr ds:item_sel_idx
+						mov	al,2
+						call	show_item_portrait
+						mov	byte ptr ds:gvar_volume_b,0Ch
+						call	draw_item_cursor
+						jmp	short item_input_loop
 
 draw_item_cursor		proc	near
 		mov	bx,item_idx_tbl
@@ -565,9 +565,9 @@ draw_item_cursor		proc	near
 		db	00Ch			; was: db 0E8h, 0B8h, 006h
 
 wait_joy_clear_item:
-					int	61h			; ??INT Non-standard interrupt
-					and	al,0Ch
-					jnz	wait_joy_clear_item			; Jump if not zero
+						int	61h			; ??INT Non-standard interrupt
+						and	al,0Ch
+						jnz	wait_joy_clear_item			; Jump if not zero
 		retn
 
 draw_item_cursor		endp
@@ -657,14 +657,14 @@ item_use_action:
 		mov	bx,item_flags
 
 find_item_by_idx:
-					test	byte ptr [bx],0FFh
-					jz	find_item_next			; Jump if zero
-					inc	ch
+						test	byte ptr [bx],0FFh
+						jz	find_item_next			; Jump if zero
+						inc	ch
 
 find_item_next:
-					inc	bx
-					cmp	ch,cl
-					jne	find_item_by_idx			; Jump if not equal
+						inc	bx
+						cmp	ch,cl
+						jne	find_item_by_idx			; Jump if not equal
 		mov	byte ptr [bx-1],0
 		call	rebuild_item_idx
 		mov	al,ds:item_cursor
@@ -694,6 +694,7 @@ use_hp_potion:				; item 0: restore 80 HP (caps at max)
 		jc	hp_potion_nocap
 		mov	ax,word ptr ds:char_hp_max
 		mov	word ptr ds:char_hp,ax		; cap at max HP
+
 hp_potion_nocap:
 		call	word ptr cs:drv_palette_push
 		jmp	draw_item_detail_entry+1	;* off-by-one: skips call show_portrait_box
@@ -805,8 +806,8 @@ use_kioku_feather:			; item 7: use Kioku Feather (memory feather / save game)
 		mov	byte ptr ds:gvar_frame_timer,0		; reset frame timer
 
 wait_timer_done:
-					cmp	byte ptr ds:gvar_frame_timer,timer_wait_feather	; 'x'
-					jb	wait_timer_done			; Jump if below
+						cmp	byte ptr ds:gvar_frame_timer,timer_wait_feather	; 'x'
+						jb	wait_timer_done			; Jump if below
 		call	word ptr cs:drv_return_to_caller
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
@@ -899,15 +900,15 @@ rebuild_item_idx		proc	near
 		mov	ch,5
 
 item_idx_scan:
-					lodsb				; String [si] to al
-					or	al,al			; Zero ?
-					jz	item_idx_skip			; Jump if zero
-					stosb				; Store al to es:[di]
-					inc	cl
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	item_idx_skip			; Jump if zero
+						stosb				; Store al to es:[di]
+						inc	cl
 
 item_idx_skip:
-					dec	ch
-					jnz	item_idx_scan			; Jump if not zero
+						dec	ch
+						jnz	item_idx_scan			; Jump if not zero
 		or	cl,cl			; Zero ?
 		jz	item_idx_done			; Jump if zero
 		inc	cl
@@ -927,16 +928,16 @@ draw_item_panel		proc	near
 		mov	si,item_idx_tbl
 
 draw_item_panel_loop:
-					push	cx
-					lodsb				; String [si] to al
-					push	si
-					push	bx
-					call	word ptr cs:drv_fn_27
-					pop	bx
-					pop	si
-					add	bx,500h
-					pop	cx
-					loop	draw_item_panel_loop		; Loop if cx > 0
+						push	cx
+						lodsb				; String [si] to al
+						push	si
+						push	bx
+						call	word ptr cs:drv_fn_27
+						pop	bx
+						pop	si
+						add	bx,500h
+						pop	cx
+						loop	draw_item_panel_loop		; Loop if cx > 0
 
 		mov	byte ptr ds:item_cursor,0
 		mov	byte ptr ds:item_sel_idx,0
@@ -981,16 +982,16 @@ draw_magic_panel		proc	near
 		mov	si,magic_idx_tbl
 
 draw_magic_panel_loop:
-					push	cx
-					lodsb				; String [si] to al
-					push	si
-					push	bx
-					call	word ptr cs:drv_fn_26
-					pop	bx
-					pop	si
-					add	bx,500h
-					pop	cx
-					loop	draw_magic_panel_loop		; Loop if cx > 0
+						push	cx
+						lodsb				; String [si] to al
+						push	si
+						push	bx
+						call	word ptr cs:drv_fn_26
+						pop	bx
+						pop	si
+						add	bx,500h
+						pop	cx
+						loop	draw_magic_panel_loop		; Loop if cx > 0
 
 		push	cs
 		pop	es
@@ -1117,23 +1118,23 @@ draw_abilities:
 		mov	cx,3
 
 draw_ability_loop:
-					push	cx
-					lodsb				; String [si] to al
-					or	al,al			; Zero ?
-					jz	ability_row_skip			; Jump if zero
-					mov	al,cl
-					neg	al
-					add	al,3
-					push	bx
-					push	si
-					call	word ptr cs:drv_fn_30
-					pop	si
-					pop	bx
-					add	bx,600h
+						push	cx
+						lodsb				; String [si] to al
+						or	al,al			; Zero ?
+						jz	ability_row_skip			; Jump if zero
+						mov	al,cl
+						neg	al
+						add	al,3
+						push	bx
+						push	si
+						call	word ptr cs:drv_fn_30
+						pop	si
+						pop	bx
+						add	bx,600h
 
 ability_row_skip:
-					pop	cx
-					loop	draw_ability_loop		; Loop if cx > 0
+						pop	cx
+						loop	draw_ability_loop		; Loop if cx > 0
 
 		retn
 
@@ -1190,16 +1191,16 @@ draw_weapon_panel:
 		mov	si,weapon_idx_tbl
 
 draw_weapon_panel_loop:
-					push	cx
-					lodsb				; String [si] to al
-					push	si
-					push	bx
-					call	word ptr cs:drv_fn_15
-					pop	bx
-					pop	si
-					add	bx,800h
-					pop	cx
-					loop	draw_weapon_panel_loop		; Loop if cx > 0
+						push	cx
+						lodsb				; String [si] to al
+						push	si
+						push	bx
+						call	word ptr cs:drv_fn_15
+						pop	bx
+						pop	si
+						add	bx,800h
+						pop	cx
+						loop	draw_weapon_panel_loop		; Loop if cx > 0
 
 		call	draw_weapon_list
 		push	cs
@@ -1248,67 +1249,67 @@ draw_weapon_list:
 		xor	ch,ch			; Zero register
 
 draw_weapon_list_loop:
-					push	cx
-					lodsb				; String [si] to al
-					push	si
-					push	dx
-					dec	al
-					mov	bl,al
-					xor	bh,bh			; Zero register
-					mov	al,byte ptr ds:weap_dur_cur[bx]
-					mov	ah,byte ptr ds:weap_dur_max[bx]
-					push	ax
-					push	dx
-					push	ax
-					push	dx
-					mov	bx,dx
-					mov	cx,508h
-					xor	al,al			; Zero register
-					call	word ptr cs:drv_fill_rect
-					pop	dx
-					pop	ax
-					xor	ah,ah			; Zero register
-					mov	bl,1
-					mov	cx,3
-					call	fmt_number
-					pop	dx
-					add	dx,9
-					push	dx
-					sub	dx,200h
-					mov	cl,dl
-					mov	bl,dh
-					xor	bh,bh			; Zero register
-					add	bx,bx
-					add	bx,bx
-					inc	bx
-					inc	bx
-					mov	al,28h			; '('
-					mov	ah,4
-					call	word ptr cs:drv_render_char
-					pop	dx
-					pop	ax
-					mov	al,ah
-					push	dx
-					xor	ah,ah			; Zero register
-					mov	bl,4
-					mov	cx,3
-					call	fmt_number
-					pop	dx
-					add	dx,400h
-					mov	cl,dl
-					mov	bl,dh
-					xor	bh,bh			; Zero register
-					add	bx,bx
-					add	bx,bx
-					dec	bx
-					mov	al,29h			; ')'
-					mov	ah,4
-					call	word ptr cs:drv_render_char
-					pop	dx
-					add	dx,800h
-					pop	si
-					pop	cx
-					loop	draw_weapon_list_loop		; Loop if cx > 0
+						push	cx
+						lodsb				; String [si] to al
+						push	si
+						push	dx
+						dec	al
+						mov	bl,al
+						xor	bh,bh			; Zero register
+						mov	al,byte ptr ds:weap_dur_cur[bx]
+						mov	ah,byte ptr ds:weap_dur_max[bx]
+						push	ax
+						push	dx
+						push	ax
+						push	dx
+						mov	bx,dx
+						mov	cx,508h
+						xor	al,al			; Zero register
+						call	word ptr cs:drv_fill_rect
+						pop	dx
+						pop	ax
+						xor	ah,ah			; Zero register
+						mov	bl,1
+						mov	cx,3
+						call	fmt_number
+						pop	dx
+						add	dx,9
+						push	dx
+						sub	dx,200h
+						mov	cl,dl
+						mov	bl,dh
+						xor	bh,bh			; Zero register
+						add	bx,bx
+						add	bx,bx
+						inc	bx
+						inc	bx
+						mov	al,28h			; '('
+						mov	ah,4
+						call	word ptr cs:drv_render_char
+						pop	dx
+						pop	ax
+						mov	al,ah
+						push	dx
+						xor	ah,ah			; Zero register
+						mov	bl,4
+						mov	cx,3
+						call	fmt_number
+						pop	dx
+						add	dx,400h
+						mov	cl,dl
+						mov	bl,dh
+						xor	bh,bh			; Zero register
+						add	bx,bx
+						add	bx,bx
+						dec	bx
+						mov	al,29h			; ')'
+						mov	ah,4
+						call	word ptr cs:drv_render_char
+						pop	dx
+						add	dx,800h
+						pop	si
+						pop	cx
+						loop	draw_weapon_list_loop		; Loop if cx > 0
 
 		retn
 
@@ -1335,26 +1336,26 @@ draw_portrait_tabs:
 		mov	cx,4
 
 draw_tabs_loop:
-					push	cx
-					mov	dh,cl
-					lodsw				; String [si] to ax
-					mov	bx,ax
-					lodsb				; String [si] to al
-					mov	cl,al
-					mov	dl,ds:cur_panel_idx
-					neg	dh
-					add	dh,4
-					mov	ah,3
-					cmp	dl,dh
-					jne	tab_not_active			; Jump if not equal
-					mov	ah,2
+						push	cx
+						mov	dh,cl
+						lodsw				; String [si] to ax
+						mov	bx,ax
+						lodsb				; String [si] to al
+						mov	cl,al
+						mov	dl,ds:cur_panel_idx
+						neg	dh
+						add	dh,4
+						mov	ah,3
+						cmp	dl,dh
+						jne	tab_not_active			; Jump if not equal
+						mov	ah,2
 
 tab_not_active:
 ;*		call	draw_portrait_tabs_fn21			;*
-					call	scan_draw_string
-					db	00Ch			; was: db 0E8h, 033h, 000h
-					pop	cx
-					loop	draw_tabs_loop		; Loop if cx > 0
+						call	scan_draw_string
+						db	00Ch			; was: db 0E8h, 033h, 000h
+						pop	cx
+						loop	draw_tabs_loop		; Loop if cx > 0
 
 		retn
 			                        ;* No entry point to code
@@ -1372,38 +1373,38 @@ tab_not_active:
 		db	00h				; 0x0A3E: null terminator
 
 scan_draw_string:					; string-scan function entry point
-					lodsb				; load byte from [DS:SI], advance SI
-					or	al,al				; test if zero (null terminator)
-					jnz	scan_char_notnull			; Jump if not zero
-					retn
+						lodsb				; load byte from [DS:SI], advance SI
+						or	al,al				; test if zero (null terminator)
+						jnz	scan_char_notnull			; Jump if not zero
+						retn
 
 scan_char_notnull:
-					push	si
-					cmp	ah,1
-					je	scan_char_draw			; Jump if equal
-					push	bx
-					push	cx
-					push	ax
-					inc	bx
-					inc	cl
-					mov	ah,5
-					call	word ptr cs:drv_render_char
-					pop	ax
-					pop	cx
-					pop	bx
+						push	si
+						cmp	ah,1
+						je	scan_char_draw			; Jump if equal
+						push	bx
+						push	cx
+						push	ax
+						inc	bx
+						inc	cl
+						mov	ah,5
+						call	word ptr cs:drv_render_char
+						pop	ax
+						pop	cx
+						pop	bx
 
 scan_char_draw:
-					push	bx
-					push	cx
-					push	ax
-					call	word ptr cs:drv_render_char
-					pop	ax
-					pop	cx
-					pop	bx
-					pop	si
-					add	bx,8
+						push	bx
+						push	cx
+						push	ax
+						call	word ptr cs:drv_render_char
+						pop	ax
+						pop	cx
+						pop	bx
+						pop	si
+						add	bx,8
 ;*		jmp	short init_panels6		;*
-					jmp	short scan_draw_string
+						jmp	short scan_draw_string
 		db	00Ch			; was: db 0EBh, 0D3h
 
 poll_input:
@@ -1440,16 +1441,20 @@ draw_magic_panel		endp
 
 ; ---- String table (module data section, game_seg:SELCT_BASE + file offset) ----
 
-str_empty_lbl		label	word		; str_empty — blank/empty panel placeholder
+str_empty_lbl		label	word		; str_empty ?-- blank/empty panel placeholder
 		db	'NOTHING', 0
-str_no_use_notice_lbl	label	word		; str_no_use_notice — "no item/magic" hint line
+
+str_no_use_notice_lbl	label	word		; str_no_use_notice ?-- "no item/magic" hint line
 		db	'NO USE', 0
 		db	00h				; padding
-str_item_used_count_lbl	label	word		; str_item_used_count — count row label
+
+str_item_used_count_lbl	label	word		; str_item_used_count ?-- count row label
 		db	'LEVEL', 0
-str_item_used_total_lbl	label	word		; str_item_used_total — total row label
+
+str_item_used_total_lbl	label	word		; str_item_used_total ?-- total row label
 		db	'EXP', 0
-str_item_detail_hdr_lbl	label	word		; str_item_detail_hdr — item-use header prefix
+
+str_item_detail_hdr_lbl	label	word		; str_item_detail_hdr ?-- item-use header prefix
 		db	'I have used', 0
 
 spell_name_ptrs_lbl	label	word		; attack spell name pointer table (7 entries, 1-based index)
@@ -1462,11 +1467,17 @@ spell_name_ptrs_lbl	label	word		; attack spell name pointer table (7 entries, 1-
 		dw	SELCT_BASE + (offset spell_str_guerra)	; [7] Guerra
 
 spell_str_espada:	db	'Espada', 0
+
 spell_str_saeta:	db	'Saeta', 0
+
 spell_str_fuego:	db	'Fuego', 0
+
 spell_str_lanzar:	db	'Lanzar', 0
+
 spell_str_rascar:	db	'Rascar', 0
+
 spell_str_agua:		db	'Agua', 0
+
 spell_str_guerra:	db	'Guerra', 0
 
 shoe_name_ptrs_lbl	label	word		; footwear/clothing item name pointer table (6 entries, 0=none)
@@ -1479,12 +1490,16 @@ shoe_name_ptrs_lbl	label	word		; footwear/clothing item name pointer table (6 en
 
 shoe_str_feruza:	db	'Feruza', 0
 			db	'      shoes', 0
+
 shoe_str_pirika:	db	'Pirika', 0
 			db	'      shoes', 0
+
 shoe_str_silkarn:	db	'Silkarn', 0
 			db	'      shoes', 0
+
 shoe_str_ruzeria:	db	'Ruzeria', 0
 			db	'      shoes', 0
+
 shoe_str_asbestos:	db	'Asbestos', 0
 			db	'       cape', 0
 
@@ -1499,12 +1514,19 @@ item_detail_ptrs_lbl	label	word		; item detail pointer table (8 entries, 1-based
 		dw	SELCT_BASE + (offset item_det_str_kioku)	; [8] Kioku Feather
 
 item_det_str_kenko:	db	'       a Ken\ko Potion.', 0
+
 item_det_str_juuen:	db	'        a Juu-en Fruit.', 0
+
 item_det_str_elixir:	db	'     a Elixir of Kashi.', 0
+
 item_det_str_chikara:	db	'      a Chikara Powder.', 0
+
 item_det_str_magia:	db	'         a Magia Stone.', 0
+
 item_det_str_holywater:	db	' a Holy Water of Acero.', 0
+
 item_det_str_sabreoil:	db	'           a Sabre Oil.', 0
+
 item_det_str_kioku:	db	'       a Kioku Feather.', 0
 
 item_name_ptrs_lbl	label	word		; item name pointer table (9 entries: [0]=no item, [1-8]=items)
@@ -1520,18 +1542,25 @@ item_name_ptrs_lbl	label	word		; item name pointer table (9 entries: [0]=no item
 
 item_str_kenko:		db	'Ken\ko', 0
 			db	'      Potion', 0
+
 item_str_juuen:		db	'Juu-en ', 0
 			db	'       Fruit', 0
+
 item_str_elixir:	db	'Elixir', 0
 			db	'    of Kashi', 0
+
 item_str_chikara:	db	'Chikara', 0
 			db	'      Powder', 0
+
 item_str_magia:		db	'Magia Stone'
 			db	0, 0
+
 item_str_holywater:	db	'Holy Water', 0
 			db	'    of Acero', 0
+
 item_str_sabreoil:	db	'Sabre Oil', 0
 			db	0			; padding
+
 item_str_kioku:		db	'Kioku', 0
 			db	'     feather', 0
 
@@ -1545,14 +1574,19 @@ weapon_detail_ptrs_lbl	label	word		; weapon detail pointer table (6 entries, 1-b
 
 weap_det_str_training:		db	'Training', 0
 				db	'     Sword', 0
+
 weap_det_str_wisemans:		db	'Wise man\s', 0
 				db	'      Sword', 0
+
 weap_det_str_spirit:		db	'Spirit', 0
 				db	'    Sword', 0
+
 weap_det_str_knights:		db	'Knight\s', 0
 				db	'    Sword', 0
+
 weap_det_str_illumination:	db	'Illumination', 0
 				db	'       Sword', 0
+
 weap_det_str_enchantment:	db	'Enchantment', 0
 				db	'       Sword', 0
 
@@ -1566,14 +1600,19 @@ shield_detail_ptrs_lbl	label	word		; shield detail pointer table (6 entries, 1-b
 
 shield_det_str_clay:		db	'Clay', 0
 				db	'     Shield', 0
+
 shield_det_str_wisemans:	db	'Wise Man\s', 0
 				db	'      Shield', 0
+
 shield_det_str_stone:		db	'Stone', 0
 				db	'     Shield', 0
+
 shield_det_str_honor:		db	'Honor', 0
 				db	'     Shield', 0
+
 shield_det_str_light:		db	'Light', 0
 				db	'     Shield', 0
+
 shield_det_str_titanium:	db	'Titanium', 0
 				db	'      Shield', 0
 		db	0Eh

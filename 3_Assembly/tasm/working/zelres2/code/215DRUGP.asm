@@ -22,13 +22,11 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-
 ; --- External addresses (outside module) -----------------------------------
 ; Driver functions at cs:[2000h..2044h] (set up by loader, same for all
 ; shop modules 210-217).
 
 ; drv_load_msg_header (2010h) defined in zr2com.inc -- was gfx_show_sprite
-
 
 ; Game API (cs:[6004..6012]) script/menu subsystem.
 ;   script_format_num, script_display_page, script_take_item, script_give_item
@@ -67,7 +65,7 @@ desc_script_tbl		equ	0AB3Ah		;* item description script-ptr table @ 0xB3A
 ; RAM buffers at end of module (shared with the module's padding).
 item_name_tbl		equ	0B08Ah		;* item name-offset table @ 0x108A
 item_data_tbl		equ	0B10Ch		;* item data-record offset table @ 0x110C
-item_data_records	equ	0B11Eh		;* item data records (9 items × 24 bytes)
+item_data_records	equ	0B11Eh		;* item data records (9 items ?? 24 bytes)
 shop_inv_state		equ	0B1F6h		;* shop inventory state (24 bytes RAM)
 
 ; Working state in padding area (data after inventory state).
@@ -82,7 +80,6 @@ item_price_ax		equ	0B21Ch		;* saved item price low word (ax)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
-
 
 		org	0
 
@@ -127,20 +124,18 @@ start:
 		mov	al,0FFh
 		call	word ptr cs:drv_fill_rect
 		mov	word ptr ds:gvar_script_ip,0A86Bh
+
 loc_2:
-		call	word ptr cs:script_step
-		cmp	al,0FFh
-		je	loc_3			; Jump if equal
-		call	wizard_func_2
-		jmp	short loc_2
+			call	word ptr cs:script_step
+			cmp	al,0FFh
+			je	loc_3			; Jump if equal
+			call	wizard_func_2
+			jmp	short loc_2
+
 loc_3:
 		jmp	word ptr cs:drv_return_to_caller
 
 zr2_15		endp
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 wizard_process_loop		proc	near
 		mov	si,offset data_4
@@ -156,30 +151,28 @@ wizard_process_loop		proc	near
 		mov	cx,8
 
 locloop_4:
-		add	dl,dl
-		jnc	loc_5			; Jump if carry=0
-		mov	al,cl
-		neg	al
-		add	al,8
-		stosb				; Store al to es:[di]
-		inc	dh
+			add	dl,dl
+			jnc	loc_5			; Jump if carry=0
+			mov	al,cl
+			neg	al
+			add	al,8
+			stosb				; Store al to es:[di]
+			inc	dh
+
 loc_5:
-		loop	locloop_4		; Loop if cx > 0
+			loop	locloop_4		; Loop if cx > 0
 
 		mov	ds:inv_bit_count,dh
 		retn
+
 wizard_process_loop		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 wizard_func_2		proc	near
 		mov	bl,al
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr cs:shop_cmd_tbl[bx]	;*
+
 wizard_func_2		endp
 
 		db	0D5h,0A0h
@@ -188,18 +181,20 @@ data_4		db	0EBh
 		db	0A1h, 00h,0A3h,0BAh,0A4h, 00h
 		db	0A1h, 06h,0A1h,0C6h, 06h, 1Ah
 		db	0FFh, 00h
+
 loc_6:
-		call	wizard_multiply
-		cmp	byte ptr ds:gvar_frame_timer,50h	; 'P'
-		jb	loc_6			; Jump if below
+			call	wizard_multiply
+			cmp	byte ptr ds:gvar_frame_timer,50h	; 'P'
+			jb	loc_6			; Jump if below
 		mov	si,greet_str_tbl
 		call	wizard_scan_loop
 		retn
 		db	0C6h, 06h, 1Ah,0FFh, 00h
+
 loc_7:
-		call	wizard_multiply
-		cmp	byte ptr ds:gvar_frame_timer,50h	; 'P'
-		jb	loc_7			; Jump if below
+			call	wizard_multiply
+			cmp	byte ptr ds:gvar_frame_timer,50h	; 'P'
+			jb	loc_7			; Jump if below
 		mov	si,0A74Fh
 		jmp	loc_34
 			                        ;* No entry point to code
@@ -236,6 +231,7 @@ data_5		dw	0E9A7h
 		db	 06h, 18h,0B2h, 00h,0A0h, 0Eh
 		db	0B2h,0A2h, 53h,0FFh, 3Ch, 03h
 		db	 72h, 02h,0B0h, 03h
+
 loc_8:
 		mov	ds:gvar_dlg_cols,al
 		mov	bx,156Eh
@@ -257,6 +253,7 @@ loc_8:
 		jnc	loc_9			; Jump if carry=0
 		mov	word ptr ds:gvar_script_ip,0A965h
 		retn
+
 loc_9:
 		mov	ds:sel_item_idx,bl
 		mov	al,bl
@@ -301,15 +298,16 @@ loc_9:
 		mov	cx,5
 
 locloop_10:
-		test	byte ptr [si],0FFh
-		jz	loc_11			; Jump if zero
-		inc	si
-		loop	locloop_10		; Loop if cx > 0
+			test	byte ptr [si],0FFh
+			jz	loc_11			; Jump if zero
+			inc	si
+			loop	locloop_10		; Loop if cx > 0
 
 		pop	ax
 		pop	dx
 		mov	word ptr ds:gvar_script_ip,0A940h
 		retn
+
 loc_11:
 		pop	ax
 		pop	dx
@@ -329,6 +327,7 @@ loc_11:
 		call	word ptr cs:script_step
 		pop	si
 		mov	ds:gvar_script_ip,si
+
 loc_12:
 		call	word ptr cs:script_step
 		call	word ptr cs:drv_frame_commit
@@ -346,6 +345,7 @@ loc_12:
 		mov	word ptr ds:gvar_script_ip,0A8A8h
 		jc	loc_13			; Jump if carry Set
 		retn
+
 loc_13:
 		mov	word ptr ds:gvar_script_ip,0A965h
 		retn
@@ -356,6 +356,7 @@ loc_13:
 		cmp	al,2
 		jb	loc_14			; Jump if below
 		mov	al,2
+
 loc_14:
 		mov	ds:gvar_dlg_cols,al
 		mov	bx,1778h
@@ -375,6 +376,7 @@ loc_14:
 		jnc	loc_15			; Jump if carry=0
 		mov	word ptr ds:gvar_script_ip,0A965h
 		retn
+
 loc_15:
 		mov	ds:sel_item_idx,bl
 		mov	word ptr ds:gvar_script_ip,0A8D7h
@@ -430,6 +432,7 @@ loc_15:
 		mov	word ptr ds:gvar_script_ip,0A9FEh
 		jnc	loc_16			; Jump if carry=0
 		retn
+
 loc_16:
 		mov	dl,ds:item_price_dl
 		mov	ax,ds:item_price_ax
@@ -445,10 +448,10 @@ loc_16:
 		mov	cx,5
 
 locloop_17:
-		cmp	al,[si]
-		je	loc_18			; Jump if equal
-		inc	si
-		loop	locloop_17		; Loop if cx > 0
+			cmp	al,[si]
+			je	loc_18			; Jump if equal
+			inc	si
+			loop	locloop_17		; Loop if cx > 0
 
 loc_18:
 		mov	byte ptr [si],0
@@ -470,6 +473,7 @@ loc_18:
 		test	byte ptr ds:gvar_dlg_rows,0FFh
 		jnz	loc_19			; Jump if not zero
 		retn
+
 loc_19:
 		mov	word ptr ds:gvar_script_ip,0AA4Bh
 		call	word ptr cs:script_step
@@ -482,6 +486,7 @@ loc_19:
 		mov	word ptr ds:gvar_script_ip,0A965h
 		jnc	loc_20			; Jump if carry=0
 		retn
+
 loc_20:
 		call	wizard_func_4
 		mov	word ptr ds:gvar_script_ip,0A98Dh
@@ -490,10 +495,6 @@ loc_20:
 		add	byte ptr [bx+si+20h],10h
 		or	[si],al
 		add	al,[bx+di]
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 wizard_process_loop_2		proc	near
 		push	cs
@@ -504,22 +505,25 @@ wizard_process_loop_2		proc	near
 		xor	dl,dl			; Zero register
 
 locloop_21:
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jz	loc_22			; Jump if zero
-		dec	al
-		stosb				; Store al to es:[di]
-		inc	dl
+			lodsb				; String [si] to al
+			or	al,al			; Zero ?
+			jz	loc_22			; Jump if zero
+			dec	al
+			stosb				; Store al to es:[di]
+			inc	dl
+
 loc_22:
-		loop	locloop_21		; Loop if cx > 0
+			loop	locloop_21		; Loop if cx > 0
 
 		mov	ds:gvar_dlg_rows,dl
 		retn
+
 wizard_process_loop_2		endp
 
 			                        ;* No entry point to code
 		mov	byte ptr ds:sel_item_idx,0
 		mov	byte ptr ds:menu_start_idx,0
+
 loc_23:
 		push	cs
 		pop	es
@@ -533,6 +537,7 @@ loc_23:
 		cmp	al,2
 		jb	loc_24			; Jump if below
 		mov	al,2
+
 loc_24:
 		mov	ds:gvar_dlg_cols,al
 		mov	bx,1778h
@@ -552,6 +557,7 @@ loc_24:
 		jnc	loc_25			; Jump if carry=0
 		mov	word ptr ds:gvar_script_ip,0A965h
 		retn
+
 loc_25:
 		mov	ds:sel_item_idx,bl
 		mov	word ptr ds:gvar_script_ip,0AACAh
@@ -593,26 +599,19 @@ loc_25:
 		mov	word ptr ds:gvar_script_ip,0A965h
 		jnc	loc_26			; Jump if carry=0
 		retn
+
 loc_26:
 		mov	word ptr ds:gvar_script_ip,0AAA6h
 		call	word ptr cs:script_step
 		jmp	loc_23
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 wizard_func_4		proc	near
 		mov	bx,2717h
 		mov	cx,1D41h
 		xor	al,al			; Zero register
 		jmp	word ptr cs:drv_fill_rect
+
 wizard_func_4		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 wizard_process_loop_3		proc	near
 		mov	si,banner_glyph_tbl
@@ -620,25 +619,26 @@ wizard_process_loop_3		proc	near
 		mov	cx,8
 
 locloop_27:
-		push	cx
-		mov	cx,0Ch
+			push	cx
+			mov	cx,0Ch
 
 locloop_28:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:drv_draw_glyph
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	locloop_28		; Loop if cx > 0
+				push	cx
+				push	bx
+				lodsb				; String [si] to al
+				call	word ptr cs:drv_draw_glyph
+				pop	bx
+				inc	bh
+				pop	cx
+				loop	locloop_28		; Loop if cx > 0
 
-		sub	bh,0Ch
-		add	bl,8
-		pop	cx
-		loop	locloop_27		; Loop if cx > 0
+			sub	bh,0Ch
+			add	bl,8
+			pop	cx
+			loop	locloop_27		; Loop if cx > 0
 
 		retn
+
 wizard_process_loop_3		endp
 
 		db	 00h, 01h, 02h, 03h, 04h, 05h
@@ -659,20 +659,18 @@ wizard_process_loop_3		endp
 		db	 16h, 17h, 18h, 19h, 1Ah
 		db	1Bh
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 wizard_multiply		proc	near
 		cmp	word ptr ds:gvar_timer_word,2
 		jae	loc_29			; Jump if above or =
 		retn
+
 loc_29:
 		mov	word ptr ds:gvar_timer_word,0
 		inc	byte ptr ds:item_anim_phase
 		cmp	byte ptr ds:item_anim_phase,14h
 		jae	loc_30			; Jump if above or =
 		retn
+
 loc_30:
 		mov	byte ptr ds:item_anim_phase,0
 		mov	al,ds:item_anim_set
@@ -680,6 +678,7 @@ loc_30:
 		cmp	al,3
 		jb	loc_31			; Jump if below
 		xor	al,al			; Zero register
+
 loc_31:
 		mov	ds:item_anim_set,al
 		mov	cl,24h			; '$'
@@ -690,25 +689,26 @@ loc_31:
 		mov	cx,6
 
 locloop_32:
-		push	cx
-		mov	cx,6
+			push	cx
+			mov	cx,6
 
 locloop_33:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:drv_draw_glyph
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	locloop_33		; Loop if cx > 0
+				push	cx
+				push	bx
+				lodsb				; String [si] to al
+				call	word ptr cs:drv_draw_glyph
+				pop	bx
+				inc	bh
+				pop	cx
+				loop	locloop_33		; Loop if cx > 0
 
-		sub	bh,6
-		add	bl,8
-		pop	cx
-		loop	locloop_32		; Loop if cx > 0
+			sub	bh,6
+			add	bl,8
+			pop	cx
+			loop	locloop_32		; Loop if cx > 0
 
 		retn
+
 wizard_multiply		endp
 
 		db	 1Ch, 1Dh, 1Eh, 1Fh
@@ -718,48 +718,47 @@ wizard_multiply		endp
 		db	'vwxyz{|@ABCDEFGHIJK(LMNOP.Q01RST'
 		db	'UV7WXYZ[\]^'
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 wizard_scan_loop		proc	near
+
 loc_34:
-		mov	byte ptr ds:gvar_frame_timer,0
-		lodsw				; String [si] to ax
-		cmp	ax,0FFFFh
-		jne	loc_35			; Jump if not equal
-		retn
+			mov	byte ptr ds:gvar_frame_timer,0
+			lodsw				; String [si] to ax
+			cmp	ax,0FFFFh
+			jne	loc_35			; Jump if not equal
+			retn
+
 loc_35:
-		push	si
-		mov	si,ax
-		mov	bx,91Fh
-		mov	cx,7
+			push	si
+			mov	si,ax
+			mov	bx,91Fh
+			mov	cx,7
 
 locloop_36:
-		push	cx
-		mov	cx,4
+				push	cx
+				mov	cx,4
 
 locloop_37:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:drv_draw_glyph
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	locloop_37		; Loop if cx > 0
+				push	cx
+				push	bx
+				lodsb				; String [si] to al
+				call	word ptr cs:drv_draw_glyph
+				pop	bx
+				inc	bh
+				pop	cx
+				loop	locloop_37		; Loop if cx > 0
 
-		sub	bh,4
-		add	bl,8
-		pop	cx
-		loop	locloop_36		; Loop if cx > 0
+				sub	bh,4
+				add	bl,8
+				pop	cx
+				loop	locloop_36		; Loop if cx > 0
 
 loc_38:
-		call	wizard_multiply
-		cmp	byte ptr ds:gvar_frame_timer,28h	; '('
-		jb	loc_38			; Jump if below
-		pop	si
-		jmp	short loc_34
+				call	wizard_multiply
+				cmp	byte ptr ds:gvar_frame_timer,28h	; '('
+				jb	loc_38			; Jump if below
+			pop	si
+			jmp	short loc_34
+
 wizard_scan_loop		endp
 
 		db	 69h,0A7h, 85h,0A7h,0A1h,0A7h
@@ -981,7 +980,5 @@ wizard_scan_loop		endp
 		db	49 dup (0)
 
 seg_a		ends
-
-
 
 		end	start

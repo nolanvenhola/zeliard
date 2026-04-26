@@ -31,7 +31,6 @@ include  zr2com.inc
 ; --- Graphics driver function table (drv_seg base 2000h) -------------------
 ; drv_load_msg_header = 2010h (in zr2com.inc) -- was gfx_draw_banner
 
-
 ; --- Game API (cs:[6004..6012]) script/menu subsystem ---------------------
 
 ; --- Game-segment global variables (game_seg:0FFxx via DS) ----------------
@@ -99,11 +98,11 @@ start:
 		mov	ds:gvar_script_ip,si
 
 script_loop:
-			call	word ptr cs:script_step
-			cmp	al,0FFh
-			je	script_exit		; 0FFh = end of script
-			call	script_cmd_dispatch
-			jmp	short script_loop
+				call	word ptr cs:script_step
+				cmp	al,0FFh
+				je	script_exit		; 0FFh = end of script
+				call	script_cmd_dispatch
+				jmp	short script_loop
 
 script_exit:
 		jmp	word ptr cs:drv_return_to_caller
@@ -165,40 +164,42 @@ face_anim_enable:
 ; -- Orphan entry: award 1000 gold. Falls through into gold_add_loop,
 ; which runs 10 iterations adding 100 gold each + waiting 0x0F frames.
 ; Total: 1000 gold, ~150 frames.
+
 gold_award_entry:
 		mov	cx,10
 
 gold_add_loop:
-			push	cx
-			mov	ax,word ptr ds:[86h]	; gold low word
-			mov	dl,byte ptr ds:[85h]	; gold high byte
-			add	ax,64h			; += 100
-			adc	dl,0
-			mov	word ptr ds:[86h],ax
-			mov	byte ptr ds:[85h],dl
-			call	word ptr cs:drv_frame_commit
-			mov	byte ptr ds:gvar_volume,13h
-			mov	byte ptr ds:gvar_frame_timer,0
+				push	cx
+				mov	ax,word ptr ds:[86h]	; gold low word
+				mov	dl,byte ptr ds:[85h]	; gold high byte
+				add	ax,64h			; += 100
+				adc	dl,0
+				mov	word ptr ds:[86h],ax
+				mov	byte ptr ds:[85h],dl
+				call	word ptr cs:drv_frame_commit
+				mov	byte ptr ds:gvar_volume,13h
+				mov	byte ptr ds:gvar_frame_timer,0
 
 gold_add_wait:
-				call	face_anim_tick
-				cmp	byte ptr ds:gvar_frame_timer,0Fh
-				jb	gold_add_wait		; Jump if below
-			pop	cx
-			loop	gold_add_loop		; Loop if cx > 0
+						call	face_anim_tick
+						cmp	byte ptr ds:gvar_frame_timer,0Fh
+						jb	gold_add_wait		; Jump if below
+				pop	cx
+				loop	gold_add_loop		; Loop if cx > 0
 
 		mov	byte ptr ds:dialog_done_flag,0FFh
 		retn
 
 ; -- Orphan entry: initialize frame-timer before wait. Prologue for
 ; the long-wait handler at dispatch_cmd_wait_long.
+
 wait_long_init:
 		mov	byte ptr ds:gvar_frame_timer,0
 
 dispatch_cmd_wait_long:				; dispatch[2] = 0xA0E4: wait 150 frames
-			call	face_anim_tick
-			cmp	byte ptr ds:gvar_frame_timer,96h	; 150 frames
-			jb	dispatch_cmd_wait_long	; Jump if below
+				call	face_anim_tick
+				cmp	byte ptr ds:gvar_frame_timer,96h	; 150 frames
+				jb	dispatch_cmd_wait_long	; Jump if below
 		retn
 
 ; -- Orphan entry: render portrait frame sequence.
@@ -211,14 +212,14 @@ portrait_play_seq:
 		mov	cx,0Ch			; 12 frames
 
 portrait_play_loop:
-			push	cx
-			lodsb				; String [si] to al
-			push	si
-			call	render_portrait_variant
-			call	short_wait
-			pop	si
-			pop	cx
-			loop	portrait_play_loop	; Loop if cx > 0
+				push	cx
+				lodsb				; String [si] to al
+				push	si
+				call	render_portrait_variant
+				call	short_wait
+				pop	si
+				pop	cx
+				loop	portrait_play_loop	; Loop if cx > 0
 
 		retn
 		db	0, 0, 1, 2, 2, 1	; portrait frame phase pattern
@@ -228,9 +229,9 @@ short_wait	proc	near
 		mov	byte ptr ds:gvar_frame_timer,0
 
 short_wait_loop:
-			call	face_anim_tick
-			cmp	byte ptr ds:gvar_frame_timer,19h	; 25 frames
-			jb	short_wait_loop		; Jump if below
+				call	face_anim_tick
+				cmp	byte ptr ds:gvar_frame_timer,19h	; 25 frames
+				jb	short_wait_loop		; Jump if below
 		retn
 
 short_wait	endp
@@ -241,23 +242,23 @@ render_portrait	proc	near
 		mov	cx,8				; 8 rows
 
 portrait_row_loop:
-			push	cx
-			mov	cx,0Ch			; 12 tiles per row
+				push	cx
+				mov	cx,0Ch			; 12 tiles per row
 
 portrait_col_loop:
-				push	cx
-				push	bx
-				lodsb				; String [si] to al
-				call	word ptr cs:drv_draw_glyph
-				pop	bx
-				inc	bh
-				pop	cx
-				loop	portrait_col_loop	; Loop if cx > 0
+						push	cx
+						push	bx
+						lodsb				; String [si] to al
+						call	word ptr cs:drv_draw_glyph
+						pop	bx
+						inc	bh
+						pop	cx
+						loop	portrait_col_loop	; Loop if cx > 0
 
-			sub	bh,0Ch
-			add	bl,8
-			pop	cx
-			loop	portrait_row_loop	; Loop if cx > 0
+				sub	bh,0Ch
+				add	bl,8
+				pop	cx
+				loop	portrait_row_loop	; Loop if cx > 0
 
 		test	byte ptr ds:[49h],0FFh	; quest-complete flag?
 		jnz	render_portrait_alt	; Jump if not zero
@@ -278,23 +279,23 @@ render_portrait_variant	proc	near
 		mov	cx,7			; 7 rows
 
 portrait_var_row_loop:
-			push	cx
-			mov	cx,6			; 6 cells per row
+				push	cx
+				mov	cx,6			; 6 cells per row
 
 portrait_var_col_loop:
-				push	cx
-				push	bx
-				lodsb				; String [si] to al
-				call	word ptr cs:drv_draw_glyph
-				pop	bx
-				inc	bh
-				pop	cx
-				loop	portrait_var_col_loop	; Loop if cx > 0
+						push	cx
+						push	bx
+						lodsb				; String [si] to al
+						call	word ptr cs:drv_draw_glyph
+						pop	bx
+						inc	bh
+						pop	cx
+						loop	portrait_var_col_loop	; Loop if cx > 0
 
-			sub	bh,6
-			add	bl,8
-			pop	cx
-			loop	portrait_var_row_loop	; Loop if cx > 0
+				sub	bh,6
+				add	bl,8
+				pop	cx
+				loop	portrait_var_row_loop	; Loop if cx > 0
 
 		retn
 
@@ -405,14 +406,14 @@ face_phase_apply:
 		mov	cx,4			; 4 glyphs per face row
 
 face_glyph_loop:
-			push	cx
-			push	bx
-			lodsb				; String [si] to al
-			call	word ptr cs:drv_draw_glyph
-			pop	bx
-			inc	bh
-			pop	cx
-			loop	face_glyph_loop		; Loop if cx > 0
+				push	cx
+				push	bx
+				lodsb				; String [si] to al
+				call	word ptr cs:drv_draw_glyph
+				pop	bx
+				inc	bh
+				pop	cx
+				loop	face_glyph_loop		; Loop if cx > 0
 
 		retn
 ; -- face_phase_xlat: 26 bytes at 0x360, maps face_phase_cnt to glyph-set
@@ -452,23 +453,23 @@ loc_mouth_tick:					; external jmp target (dispatch[3],[5])
 		mov	cx,2			; 2 rows
 
 mouth_row_loop:
-			push	cx
-			mov	cx,5			; 5 glyphs per row
+				push	cx
+				mov	cx,5			; 5 glyphs per row
 
 mouth_glyph_loop:
-				push	cx
-				push	bx
-				lodsb				; String [si] to al
-				call	word ptr cs:drv_draw_glyph
-				pop	bx
-				inc	bh
-				pop	cx
-				loop	mouth_glyph_loop	; Loop if cx > 0
+						push	cx
+						push	bx
+						lodsb				; String [si] to al
+						call	word ptr cs:drv_draw_glyph
+						pop	bx
+						inc	bh
+						pop	cx
+						loop	mouth_glyph_loop	; Loop if cx > 0
 
-			sub	bh,5
-			add	bl,8
-			pop	cx
-			loop	mouth_row_loop		; Loop if cx > 0
+				sub	bh,5
+				add	bl,8
+				pop	cx
+				loop	mouth_row_loop		; Loop if cx > 0
 
 		retn
 

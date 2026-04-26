@@ -27,7 +27,6 @@ include  zr2com.inc
 ; gvar_timer_word, script_step, drv_palette_push, drv_anim_step
 ; are defined in zr2com.inc.
 
-
 ; The following equates show data references outside the range of the program.
 opcode_dispatch_tbl	equ	0A078h			;* script opcode dispatch table base
 sermon_data_a		equ	0A089h			;* dialog/sermon glyph source A
@@ -82,11 +81,11 @@ start:
 		mov	ds:gvar_script_ptr,si
 
 loc_1:
-			call	word ptr cs:script_step
-			cmp	al,0FFh
-			je	loc_2			; Jump if equal
-			call	script_opcode_dispatch
-			jmp	short loc_1
+				call	word ptr cs:script_step
+				cmp	al,0FFh
+				je	loc_2			; Jump if equal
+				call	script_opcode_dispatch
+				jmp	short loc_1
 
 loc_2:
 		jmp	word ptr cs:drv_return_to_caller
@@ -127,27 +126,27 @@ op_handler_a:					; reached via opcode_dispatch_tbl[bx]
 rest_wait_loop	dw	00FFh			; sentinel word -- also mid-instruction 'FF 00' bytes
 
 loc_3:
-			call	anim_scroll_step
-			cmp	byte ptr ds:gvar_timer_byte,0FAh
-			jb	loc_3			; Jump if below
+				call	anim_scroll_step
+				cmp	byte ptr ds:gvar_timer_byte,0FAh
+				jb	loc_3			; Jump if below
 		retn
 
 ;-- Handler: bump rest_wait_loop sentinel (+8), fall through after delay.
 
 loc_4:
-			mov	ax,word ptr rest_wait_loop
-			add	ax,8
-			cmp	ax,word ptr ds:[0B2h]
-			jae	loc_6			; Jump if above or =
-			mov	word ptr rest_wait_loop,ax
-			call	word ptr cs:drv_palette_push
-			mov	byte ptr ds:gvar_timer_byte,0
+				mov	ax,word ptr rest_wait_loop
+				add	ax,8
+				cmp	ax,word ptr ds:[0B2h]
+				jae	loc_6			; Jump if above or =
+				mov	word ptr rest_wait_loop,ax
+				call	word ptr cs:drv_palette_push
+				mov	byte ptr ds:gvar_timer_byte,0
 
 loc_5:
-				call	anim_scroll_step
-				cmp	byte ptr ds:gvar_timer_byte,14h
-				jb	loc_5			; Jump if below
-			jmp	short loc_4
+						call	anim_scroll_step
+						cmp	byte ptr ds:gvar_timer_byte,14h
+						jb	loc_5			; Jump if below
+				jmp	short loc_4
 
 loc_6:
 		mov	ax,word ptr ds:[0B2h]
@@ -173,45 +172,45 @@ loc_ret_7:
 		mov	byte ptr ds:anim_phase_a,0
 
 loc_8:						; continuation label for outer loop below
-			mov	byte ptr ds:gvar_timer_byte,0
-			cmp	byte ptr ds:anim_phase_a,5
-			jb	loc_9			; Jump if below
-			retn
+				mov	byte ptr ds:gvar_timer_byte,0
+				cmp	byte ptr ds:anim_phase_a,5
+				jb	loc_9			; Jump if below
+				retn
 
 loc_9:
-			mov	al,ds:anim_phase_a
-			mov	cl,6
-			mul	cl			; ax = reg * al
-			add	ax,0A134h
-			mov	si,ax
-			mov	bx,163Fh
-			mov	cx,3
+				mov	al,ds:anim_phase_a
+				mov	cl,6
+				mul	cl			; ax = reg * al
+				add	ax,0A134h
+				mov	si,ax
+				mov	bx,163Fh
+				mov	cx,3
 
 sermon_outer_loop:
-				push	cx
-				mov	cx,2
+						push	cx
+						mov	cx,2
 
 sermon_inner_loop:
-				push	cx
-				push	bx
-				lodsb				; String [si] to al
-				call	word ptr cs:drv_draw_glyph
-				pop	bx
-				inc	bh
-				pop	cx
-				loop	sermon_inner_loop	; Loop if cx > 0
+						push	cx
+						push	bx
+						lodsb				; String [si] to al
+						call	word ptr cs:drv_draw_glyph
+						pop	bx
+						inc	bh
+						pop	cx
+						loop	sermon_inner_loop	; Loop if cx > 0
 
-				sub	bh,2
-				add	bl,8
-				pop	cx
-				loop	sermon_outer_loop	; Loop if cx > 0
+						sub	bh,2
+						add	bl,8
+						pop	cx
+						loop	sermon_outer_loop	; Loop if cx > 0
 
 loc_13:
-				call	anim_scroll_step
-				cmp	byte ptr ds:gvar_timer_byte,20h	; ' '
-				jb	loc_13			; Jump if below
-			inc	byte ptr ds:anim_phase_a
-			jmp	short loc_8
+						call	anim_scroll_step
+						cmp	byte ptr ds:gvar_timer_byte,20h	; ' '
+						jb	loc_13			; Jump if below
+				inc	byte ptr ds:anim_phase_a
+				jmp	short loc_8
 
 ;-- Glyph index table used indirectly by sermon handler (reached by si
 ;  computed as A134 + phase*6).  Printable bytes are the tile glyph
@@ -224,23 +223,23 @@ draw_intro_12x8	proc	near
 		mov	cx,8
 
 intro_row_loop:
-			push	cx
-			mov	cx,0Ch
+				push	cx
+				mov	cx,0Ch
 
 intro_col_loop:
-				push	cx
-				push	bx
-				lodsb				; String [si] to al
-				call	word ptr cs:drv_draw_glyph
-				pop	bx
-				inc	bh
-				pop	cx
-				loop	intro_col_loop		; Loop if cx > 0
+						push	cx
+						push	bx
+						lodsb				; String [si] to al
+						call	word ptr cs:drv_draw_glyph
+						pop	bx
+						inc	bh
+						pop	cx
+						loop	intro_col_loop		; Loop if cx > 0
 
-			sub	bh,0Ch
-			add	bl,8
-			pop	cx
-			loop	intro_row_loop		; Loop if cx > 0
+				sub	bh,0Ch
+				add	bl,8
+				pop	cx
+				loop	intro_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -292,27 +291,27 @@ anim_draw_a:
 		mov	cx,2
 
 anim_a_row_loop:
-			push	cx
-			mov	cx,3
+				push	cx
+				mov	cx,3
 
 anim_a_col_loop:
-				push	cx
-				push	bx
-				lodsb				; String [si] to al
-				cmp	al,0FFh
-				je	anim_a_skip		; Jump if equal
-				call	word ptr cs:drv_draw_glyph
+						push	cx
+						push	bx
+						lodsb				; String [si] to al
+						cmp	al,0FFh
+						je	anim_a_skip		; Jump if equal
+						call	word ptr cs:drv_draw_glyph
 
 anim_a_skip:
-				pop	bx
-				inc	bh
-				pop	cx
-				loop	anim_a_col_loop		; Loop if cx > 0
+						pop	bx
+						inc	bh
+						pop	cx
+						loop	anim_a_col_loop		; Loop if cx > 0
 
-			sub	bh,3
-			add	bl,8
-			pop	cx
-			loop	anim_a_row_loop		; Loop if cx > 0
+				sub	bh,3
+				add	bl,8
+				pop	cx
+				loop	anim_a_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -342,27 +341,27 @@ anim_draw_b:
 		mov	cx,2
 
 anim_b_row_loop:
-			push	cx
-			mov	cx,2
+				push	cx
+				mov	cx,2
 
 anim_b_col_loop:
-				push	cx
-				push	bx
-				lodsb				; String [si] to al
-				cmp	al,0FFh
-				je	anim_b_skip		; Jump if equal
-				call	word ptr cs:drv_draw_glyph
+						push	cx
+						push	bx
+						lodsb				; String [si] to al
+						cmp	al,0FFh
+						je	anim_b_skip		; Jump if equal
+						call	word ptr cs:drv_draw_glyph
 
 anim_b_skip:
-				pop	bx
-				inc	bh
-				pop	cx
-				loop	anim_b_col_loop		; Loop if cx > 0
+						pop	bx
+						inc	bh
+						pop	cx
+						loop	anim_b_col_loop		; Loop if cx > 0
 
-			sub	bh,2
-			add	bl,8
-			pop	cx
-			loop	anim_b_row_loop		; Loop if cx > 0
+				sub	bh,2
+				add	bl,8
+				pop	cx
+				loop	anim_b_row_loop		; Loop if cx > 0
 
 		retn
 

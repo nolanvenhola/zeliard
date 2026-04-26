@@ -269,35 +269,35 @@ drgn_render_init_code:				; embedded code-as-data: mov si,[10C0h] / mov [AA59h],
 
 drgn_npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-						cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
-				jz	drgn_npc_scan_done			; Jump if zero
-				mov	ax,[si]
-				call	word ptr cs:fight_cb_anim_step
-				jc	drgn_npc_scan_next			; Jump if carry Set
-				mov	[si+3],bl
-				mov	ax,[si+2]
-				call	word ptr cs:fight_cb_record_ofs
-				mov	bl,ds:drgn_npc_idx
-				xor	bh,bh			; Zero register
-				mov	al,ds:drgn_sprite_xlat_tbl[bx]
-				mov	[di],al
-				test	byte ptr [si+5],40h	; '@'
-				jz	drgn_npc_scan_next			; Jump if zero
-				test	byte ptr ds:drgn_anim_byte,80h
-				jnz	drgn_npc_scan_next			; Jump if not zero
-				mov	al,[si+5]
-				and	al,1Fh
-				test	byte ptr [si+4],1Fh
-				jnz	drgn_anim_set_high_bit			; Jump if not zero
-				or	al,80h
+							cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
+					jz	drgn_npc_scan_done			; Jump if zero
+					mov	ax,[si]
+					call	word ptr cs:fight_cb_anim_step
+					jc	drgn_npc_scan_next			; Jump if carry Set
+					mov	[si+3],bl
+					mov	ax,[si+2]
+					call	word ptr cs:fight_cb_record_ofs
+					mov	bl,ds:drgn_npc_idx
+					xor	bh,bh			; Zero register
+					mov	al,ds:drgn_sprite_xlat_tbl[bx]
+					mov	[di],al
+					test	byte ptr [si+5],40h	; '@'
+					jz	drgn_npc_scan_next			; Jump if zero
+					test	byte ptr ds:drgn_anim_byte,80h
+					jnz	drgn_npc_scan_next			; Jump if not zero
+					mov	al,[si+5]
+					and	al,1Fh
+					test	byte ptr [si+4],1Fh
+					jnz	drgn_anim_set_high_bit			; Jump if not zero
+					or	al,80h
 
 drgn_anim_set_high_bit:
-				mov	ds:drgn_anim_byte,al
+					mov	ds:drgn_anim_byte,al
 
 drgn_npc_scan_next:
-				inc	byte ptr ds:drgn_npc_idx
-				add	si,10h
-				jmp	short drgn_npc_scan_loop
+					inc	byte ptr ds:drgn_npc_idx
+					add	si,10h
+					jmp	short drgn_npc_scan_loop
 
 drgn_npc_scan_done:
 		mov	si,ds:drgn_sprite_attr_ptr
@@ -611,55 +611,55 @@ drgn_render_row_loop:
 		xor	cl,cl			; Zero register
 
 drgn_render_cell_loop:
-				push	cx
-				push	ax
-				cmp	byte ptr [di],0FFh
-				je	drgn_render_cell_skip			; Jump if equal
-				mov	[si],ax
-				mov	al,ds:drgn_scroll_x_hi
-				add	al,cl
-				and	al,3Fh			; '?'
-				mov	[si+2],al
-				mov	al,ds:drgn_attr_tmp
-				mov	[si+3],al
-				mov	al,[di]
-				mov	ah,al
-				shr	al,1			; Shift w/zeros fill
-				shr	al,1			; Shift w/zeros fill
-				shr	al,1			; Shift w/zeros fill
-				shr	al,1			; Shift w/zeros fill
-				mov	bl,ds:gvar_death_flag
-				not	bl
-				and	bl,80h
-				or	al,bl
-				mov	[si+4],al
-				mov	[si+6],ah
-				mov	byte ptr [si+5],0
-				test	byte ptr ds:drgn_anim_byte,0FFh
-				jz	drgn_render_apply_anim			; Jump if zero
-				or	byte ptr [si+5],20h	; ' '
+					push	cx
+					push	ax
+					cmp	byte ptr [di],0FFh
+					je	drgn_render_cell_skip			; Jump if equal
+					mov	[si],ax
+					mov	al,ds:drgn_scroll_x_hi
+					add	al,cl
+					and	al,3Fh			; '?'
+					mov	[si+2],al
+					mov	al,ds:drgn_attr_tmp
+					mov	[si+3],al
+					mov	al,[di]
+					mov	ah,al
+					shr	al,1			; Shift w/zeros fill
+					shr	al,1			; Shift w/zeros fill
+					shr	al,1			; Shift w/zeros fill
+					shr	al,1			; Shift w/zeros fill
+					mov	bl,ds:gvar_death_flag
+					not	bl
+					and	bl,80h
+					or	al,bl
+					mov	[si+4],al
+					mov	[si+6],ah
+					mov	byte ptr [si+5],0
+					test	byte ptr ds:drgn_anim_byte,0FFh
+					jz	drgn_render_apply_anim			; Jump if zero
+					or	byte ptr [si+5],20h	; ' '
 
 drgn_render_apply_anim:
-				push	di
-				mov	ax,[si+2]
-				call	word ptr cs:fight_cb_record_ofs
-				mov	bl,ds:drgn_npc_idx
-				xor	bh,bh			; Zero register
-				mov	al,bl
-				or	al,80h
-				xchg	[di],al
-				mov	ds:drgn_sprite_xlat_tbl[bx],al
-				add	si,10h
-				inc	byte ptr ds:drgn_npc_idx
-				pop	di
+					push	di
+					mov	ax,[si+2]
+					call	word ptr cs:fight_cb_record_ofs
+					mov	bl,ds:drgn_npc_idx
+					xor	bh,bh			; Zero register
+					mov	al,bl
+					or	al,80h
+					xchg	[di],al
+					mov	ds:drgn_sprite_xlat_tbl[bx],al
+					add	si,10h
+					inc	byte ptr ds:drgn_npc_idx
+					pop	di
 
 drgn_render_cell_skip:
-				inc	di
-				pop	ax
-				pop	cx
-				inc	cl
-				cmp	cl,0Ah
-				jne	drgn_render_cell_loop			; Jump if not equal
+					inc	di
+					pop	ax
+					pop	cx
+					inc	cl
+					cmp	cl,0Ah
+					jne	drgn_render_cell_loop			; Jump if not equal
 
 drgn_render_row_advance:
 		inc	ax
@@ -716,12 +716,12 @@ drgn_phase_b_row_loop:
 		mov	cx,8
 
 drgn_phase_b_emit_skip_loop:
-				rol	byte ptr ds:[bp],1	; Rotate
-				jnc	drgn_phase_b_skip_carry			; Jump if carry=0
-				inc	di
+					rol	byte ptr ds:[bp],1	; Rotate
+					jnc	drgn_phase_b_skip_carry			; Jump if carry=0
+					inc	di
 
 drgn_phase_b_skip_carry:
-				loop	drgn_phase_b_emit_skip_loop		; Loop if cx > 0
+					loop	drgn_phase_b_emit_skip_loop		; Loop if cx > 0
 
 		jmp	short drgn_phase_b_row_advance
 
@@ -729,48 +729,48 @@ drgn_phase_b_emit:
 		xor	cl,cl			; Zero register
 
 drgn_phase_b_emit_loop:
-				push	cx
-				push	ax
-				rol	byte ptr ds:[bp],1	; Rotate
-				jnc	drgn_phase_b_skip_emit			; Jump if carry=0
-				mov	[si],ax
-				mov	al,ds:drgn_scroll_x_hi
-				add	al,cl
-				add	al,4
-				and	al,3Fh			; '?'
-				mov	[si+2],al
-				mov	al,ds:drgn_attr_tmp
-				mov	[si+3],al
-				mov	al,[di]
-				mov	ah,al
-				shr	al,1			; Shift w/zeros fill
-				shr	al,1			; Shift w/zeros fill
-				shr	al,1			; Shift w/zeros fill
-				shr	al,1			; Shift w/zeros fill
-				or	al,20h			; ' '
-				mov	[si+4],al
-				mov	[si+6],ah
-				mov	byte ptr [si+5],0
-				push	di
-				mov	ax,[si+2]
-				call	word ptr cs:fight_cb_record_ofs
-				mov	bl,ds:drgn_npc_idx
-				xor	bh,bh			; Zero register
-				mov	al,bl
-				or	al,80h
-				xchg	[di],al
-				mov	ds:drgn_sprite_xlat_tbl[bx],al
-				add	si,10h
-				inc	byte ptr ds:drgn_npc_idx
-				pop	di
-				inc	di
+					push	cx
+					push	ax
+					rol	byte ptr ds:[bp],1	; Rotate
+					jnc	drgn_phase_b_skip_emit			; Jump if carry=0
+					mov	[si],ax
+					mov	al,ds:drgn_scroll_x_hi
+					add	al,cl
+					add	al,4
+					and	al,3Fh			; '?'
+					mov	[si+2],al
+					mov	al,ds:drgn_attr_tmp
+					mov	[si+3],al
+					mov	al,[di]
+					mov	ah,al
+					shr	al,1			; Shift w/zeros fill
+					shr	al,1			; Shift w/zeros fill
+					shr	al,1			; Shift w/zeros fill
+					shr	al,1			; Shift w/zeros fill
+					or	al,20h			; ' '
+					mov	[si+4],al
+					mov	[si+6],ah
+					mov	byte ptr [si+5],0
+					push	di
+					mov	ax,[si+2]
+					call	word ptr cs:fight_cb_record_ofs
+					mov	bl,ds:drgn_npc_idx
+					xor	bh,bh			; Zero register
+					mov	al,bl
+					or	al,80h
+					xchg	[di],al
+					mov	ds:drgn_sprite_xlat_tbl[bx],al
+					add	si,10h
+					inc	byte ptr ds:drgn_npc_idx
+					pop	di
+					inc	di
 
 drgn_phase_b_skip_emit:
-				pop	ax
-				pop	cx
-				inc	cl
-				cmp	cl,8
-				jne	drgn_phase_b_emit_loop			; Jump if not equal
+					pop	ax
+					pop	cx
+					inc	cl
+					cmp	cl,8
+					jne	drgn_phase_b_emit_loop			; Jump if not equal
 
 drgn_phase_b_row_advance:
 		inc	ax
@@ -798,24 +798,24 @@ drgn_render_col_pack		proc	near
 		mov	di,ax
 
 drgn_mul_outer_loop:
-				push	cx
-				mov	cx,8
+					push	cx
+					mov	cx,8
 
 drgn_mul_inner_loop:
-						rol	byte ptr ds:[bp],1	; Rotate
-						jnc	drgn_mul_skip			; Jump if carry=0
-						lodsb				; String [si] to al
-						mov	[di],al
+								rol	byte ptr ds:[bp],1	; Rotate
+								jnc	drgn_mul_skip			; Jump if carry=0
+								lodsb				; String [si] to al
+								mov	[di],al
 
 drgn_mul_skip:
-						inc	di
-						loop	drgn_mul_inner_loop		; Loop if cx > 0
+								inc	di
+								loop	drgn_mul_inner_loop		; Loop if cx > 0
 
-				inc	di
-				inc	di
-				inc	bp
-				pop	cx
-				loop	drgn_mul_outer_loop		; Loop if cx > 0
+					inc	di
+					inc	di
+					inc	bp
+					pop	cx
+					loop	drgn_mul_outer_loop		; Loop if cx > 0
 
 		retn
 

@@ -36,7 +36,6 @@ include  zr3com.inc
 
 ; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
 
-
 ; Shared enemy spawn/state globals in game_seg DS.
 
 enemy_spawn_tile_hi	equ	0A666h			; spawn-cell row (phase hi)
@@ -65,6 +64,7 @@ start:
 ; ----------------------------------------------------------------
 ; eai8_init_params  -- spawn parameter block (init/timer constants)
 ; ----------------------------------------------------------------
+
 eai8_init_params:
 		db	0FFh,0FFh,0FFh,0FFh, 00h, 00h	; row 0: 4xFF guard + zero pad
 		db	 00h,0A0h,0A0h			; row 1: pad + A0,A0
@@ -74,6 +74,7 @@ eai8_init_params:
 ; eai8_jump_tbl_a  -- DS pointer table (CS-relative addresses A0xx..A2xx)
 ; Bank A: dispatch entries for sub-state idx 0..N (low-nibble of [si+4]).
 ; ----------------------------------------------------------------
+
 eai8_jump_tbl_a:
 		db	0B0h,0A0h,0FBh,0A0h, 46h,0A1h	; row 0: ptrs A0B0,A0FB,A146
 		db	0A5h,0A1h,0E6h,0A1h, 00h, 00h	; row 1: ptrs A1A5,A1E6 + zero pad
@@ -102,6 +103,7 @@ eai8_jump_tbl_a:
 ; Small constants (01..04 grouped by 5) used as XLAT lookup feeding
 ; the state-dispatch jump table.
 ; ----------------------------------------------------------------
+
 eai8_anim_idx_a:
 		db	 01h, 02h, 03h, 04h, 00h, 01h	; row 0: 01,02,03,04,00,01
 		db	 02h, 03h, 04h, 00h, 01h, 02h	; row 1: 02,03,04,00,01,02
@@ -112,6 +114,7 @@ eai8_anim_idx_a:
 ; eai8_sprite_tbl_20  -- sprite tile-index table (frames 0x20..0x54)
 ; Frames stored as 4-byte ASCII-printable runs separated by 0x00.
 ; ----------------------------------------------------------------
+
 eai8_sprite_tbl_20:
 		db	20h				; frame 0 lead byte (' ')
 		db	'!"#', 0			; frame 0 tail: 21,22,23 + sep
@@ -141,6 +144,7 @@ eai8_rng_fn_ptr		dw	1E1Dh
 ; eai8_sprite_tbl_55  -- sprite tile-index table (frames 0x55..0xAC)
 ; Frames stored as 4-byte ASCII-printable runs separated by 0x00.
 ; ----------------------------------------------------------------
+
 eai8_sprite_tbl_55:
 		db	'UV', 0				; frame 0 tail: 55,56 + sep
 		db	'WXYZ', 0			; frame 1: 57,58,59,5A + sep
@@ -175,6 +179,7 @@ eai8_sprite_tbl_55:
 ; eai8_sprite_tbl_ad  -- sprite tile-index table (frames 0xAD..0xFC)
 ; Boss-class extended frame set with 00/01/02 phase-flag separators.
 ; ----------------------------------------------------------------
+
 eai8_sprite_tbl_ad:
 		db	 00h,0ADh,0AEh,0AFh,0B0h, 02h	; row 0: 00,AD,AE,AF,B0,flag
 		db	0B1h,0B2h,0B3h,0B4h, 02h,0B5h	; row 1: B1,B2,B3,B4,flag,B5
@@ -212,6 +217,7 @@ eai8_sprite_tbl_ad:
 ; eai8_phase_ptr_tbl  -- 5-entry phase-jump pointer table (CS-relative)
 ; Indexed by sub-phase counter [si+0Ah]; entries at A2A9..A2B5.
 ; ----------------------------------------------------------------
+
 eai8_phase_ptr_tbl:
 		db	0A9h,0A2h			; row 0: ptr A2A9
 		db	0A9h,0A2h,0ADh,0A2h,0B1h,0A2h	; row 1: ptrs A2A9,A2AD,A2B1
@@ -220,6 +226,7 @@ eai8_phase_ptr_tbl:
 ; eai8_rng_shift_const  -- RNG output shift/mask constants
 ; Used by RNG-driven facing/attack pick (and cooldown gating).
 ; ----------------------------------------------------------------
+
 eai8_rng_shift_const:
 		db	 0Bh, 0Bh, 0Bh, 0Bh		; row 0: 0B x4
 		db	 05h, 05h, 00h, 00h, 0Bh, 0Bh	; row 1: 05,05,00,00,0B,0B
@@ -231,6 +238,7 @@ eai8_rng_shift_const:
 ; for the boss multi-pass attack pattern).  Tail is opcode bytes for
 ; the dispatch prologue (mov bl,[si+4]; and bl,0F; jmp ds:[bx+...]).
 ; ----------------------------------------------------------------
+
 eai8_unk_data_at_0x276:
 		db	 8Ah, 5Ch, 04h, 80h,0E3h, 0Fh	; row 0: opcode (mov bl,[si+4]; and bl,0F)
 		db	 32h,0FFh, 03h,0DBh,0FFh,0A7h	; row 1: opcode (xor bh,bh; add bx,bx; jmp ds:[bx+...])
@@ -334,18 +342,18 @@ collide_check_fwd		proc	near
 		mov	cx,4
 
 collide_fwd_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_fwd_iter			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_fwd_iter			; Jump if zero
+				retn
 
 collide_fwd_iter:
-			xchg	si,di
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			xchg	si,di
-			loop	collide_fwd_loop		; Loop if cx > 0
+				xchg	si,di
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				xchg	si,di
+				loop	collide_fwd_loop		; Loop if cx > 0
 
 		xchg	si,di
 		sub	si,24h
@@ -408,18 +416,18 @@ collide_check_back		proc	near
 		mov	cx,4
 
 collide_back_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_back_iter			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_back_iter			; Jump if zero
+				retn
 
 collide_back_iter:
-			xchg	si,di
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			xchg	si,di
-			loop	collide_back_loop		; Loop if cx > 0
+				xchg	si,di
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				xchg	si,di
+				loop	collide_back_loop		; Loop if cx > 0
 
 		dec	di
 		xchg	si,di
@@ -690,6 +698,7 @@ sub02_spawn_call:
 ; Two 16-byte sub-blocks (path-A / path-B) with offsets, sprite ids,
 ; and trailing zero pad consumed by the projectile spawn callback.
 ; ----------------------------------------------------------------
+
 eai8_spawn_param_blk:
 		db	 00h, 00h, 2Ah, 00h, 12h, 00h	; row 0: x-offset 0, y-offset 2A, sprite 12
 		db	 50h				; row 1: speed/timer 50
@@ -790,6 +799,7 @@ sub03_flip_facing:
 ; Local fallback table referenced by sub03 dir-translate path; maps
 ; phase-counter 0..F to a tile-step delta (0/1/3/4/5/7).
 ; ----------------------------------------------------------------
+
 eai8_xlat_dir_tbl:
 		db	0, 0, 1, 0, 0, 0		; row 0: 0,0,1,0,0,0
 		db	7, 0, 4, 4, 3, 4		; row 1: 7,0,4,4,3,4

@@ -64,6 +64,7 @@ start:
 ;  Zero entries indicate unused/sentinel slots.  Used during east-facing
 ;  pose/anim selection by fight_cb_blocked.
 ; -------------------------------------------------------------------------
+
 zela_frame_ptr_tbl_a:
 		db	0B0h,0A0h, 5Fh,0A1h, 96h,0A1h	; ptrs 0xA0B0,0xA15F,0xA196 (head poses)
 		db	0A0h,0A1h,0B9h,0A1h, 00h, 00h	; ptrs 0xA1A0,0xA1B9 + sentinel
@@ -81,6 +82,7 @@ zela_frame_ptr_tbl_a:
 ;  (zela_tbl_a_alt branch in state_bit3_lookup).  Begins with 9-byte gap
 ;  (sentinels for low-index slots), pointer fragments parallel tbl_a.
 ; -------------------------------------------------------------------------
+
 zela_frame_ptr_tbl_b:
 		db	9 dup (0)			; 9-byte zero gap (low-index sentinels)
 		db	0A1h, 5Fh,0A1h, 96h,0A1h,0A0h	; ptr fragments mirroring 0xA15F,0xA196,0xA0??
@@ -101,6 +103,7 @@ zela_anim_state_marker		db	0	; offset 0xAE: anim-state marker
 ;  zela_lookup_state (`mov cx,5`).  6-byte rows = 5 indices + separator.
 ;  Values 00..5C = tile-row / sub-state indices into zela_anim_phase_seq.
 ; -------------------------------------------------------------------------
+
 zela_anim_table_a:
 		db	 01h, 00h, 01h, 02h, 03h, 01h	; row 0
 		db	 00h, 01h, 05h, 06h, 01h, 00h	; row 1
@@ -141,6 +144,7 @@ zela_phase_marker		db	1		; offset 0x127: phase marker byte
 ;  rows as ASCII because tile values 0x5D..0x7E are printable, but they are
 ;  sprite-tile indices, not text.  Row terminators are 00h or 02h.
 ; -------------------------------------------------------------------------
+
 zela_anim_table_b:
 		db	']^', 0				; row 0: tiles 5D 5E + sep
 		db	'_`ab', 0			; row 1: tiles 5F 60 61 62 + sep
@@ -172,6 +176,7 @@ zela_anim_phase_idx		db	91h		; Data table (indexed access) - row 13 byte
 ;  zela_anim_phase_seq -- phase-sequence indices paired with tables above
 ;  (5-byte rows of sprite-tile indices, 02h or 00h separators).
 ; -------------------------------------------------------------------------
+
 zela_anim_phase_seq:
 		db	 01h, 10h, 13h, 16h, 1Ch, 01h	; row 0
 		db	 1Fh, 22h, 25h, 28h, 00h, 2Bh	; row 1 + row 2 head
@@ -197,6 +202,7 @@ zela_anim_phase_seq:
 ;  Targets 0xA259..0xA265 within ZELA atlas; preceded by tail of preceding row.
 ; -------------------------------------------------------------------------
 		db	 0D5h, 0D6h			; row 22 tail (2 trailing tile bytes)
+
 zela_pose_ptr_tbl:
 		db	 59h,0A2h, 5Dh,0A2h		; ptrs 0xA259, 0xA25D
 		db	 61h,0A2h, 61h,0A2h, 65h,0A2h	; ptrs 0xA261(dup), 0xA265
@@ -205,6 +211,7 @@ zela_pose_ptr_tbl:
 ;  zela_pose_count_tbl -- 16-byte per-pose tile count table.  Values are
 ;  frame counts {01,04,05} for each pose anchor in zela_pose_ptr_tbl.
 ; -------------------------------------------------------------------------
+
 zela_pose_count_tbl:
 		db	 05h, 04h, 04h, 05h, 04h, 04h	; counts row 0 (poses 0-5)
 		db	 04h, 04h, 01h, 01h, 01h, 01h	; counts row 1 (poses 6-11)
@@ -214,6 +221,7 @@ zela_pose_count_tbl:
 ;  zela_misc_data -- mixed scalar/mask/pointer block that precedes the
 ;  zela_attack_data_tail/zela_attack_state code section.
 ; -------------------------------------------------------------------------
+
 zela_misc_data:
 		db	 8Ah, 5Ch			; scalar params (138, 92)
 		db	 04h, 80h,0E3h, 0Fh, 32h,0FFh	; mask fields (04 80 E3 0F 32 FF)
@@ -574,60 +582,60 @@ attack_state_retry:
 		mov	si,bx
 
 attack_state_call_e:
-			call	word ptr cs:fight_cb_blocked
-			jc	attack_state_decrement			; Jump if carry Set
-			retn
+				call	word ptr cs:fight_cb_blocked
+				jc	attack_state_decrement			; Jump if carry Set
+				retn
 
 attack_state_decrement:
-			sub	byte ptr [si+6],10h
-			test	byte ptr [si+6],0F0h
-			jz	attack_state_check_dir			; Jump if zero
-			retn
+				sub	byte ptr [si+6],10h
+				test	byte ptr [si+6],0F0h
+				jz	attack_state_check_dir			; Jump if zero
+				retn
 
 attack_state_check_dir:
-			or	byte ptr [si+6],40h	; '@'
-			mov	al,ds:gvar_frame_cnt
-			cmp	al,[si+2]
-			je	attack_state_match			; Jump if equal
-			inc	al
-			and	al,3Fh			; '?'
-			cmp	al,[si+2]
-			je	attack_state_match			; Jump if equal
-			test	byte ptr [si+5],80h
-			jnz	attack_state_set_dir			; Jump if not zero
-			jmp	short attack_state_clear_dir
+				or	byte ptr [si+6],40h	; '@'
+				mov	al,ds:gvar_frame_cnt
+				cmp	al,[si+2]
+				je	attack_state_match			; Jump if equal
+				inc	al
+				and	al,3Fh			; '?'
+				cmp	al,[si+2]
+				je	attack_state_match			; Jump if equal
+				test	byte ptr [si+5],80h
+				jnz	attack_state_set_dir			; Jump if not zero
+				jmp	short attack_state_clear_dir
 
 attack_state_match:
-			mov	al,10h
-			cmp	al,[si+3]
-			jae	attack_state_set_dir			; Jump if above or =
+				mov	al,10h
+				cmp	al,[si+3]
+				jae	attack_state_set_dir			; Jump if above or =
 
 attack_state_clear_dir:
-			and	byte ptr [si+5],7Fh
-			call	word ptr cs:fight_cb_step_pos
-			jc	attack_state_set_dir			; Jump if carry Set
-			retn
+				and	byte ptr [si+5],7Fh
+				call	word ptr cs:fight_cb_step_pos
+				jc	attack_state_set_dir			; Jump if carry Set
+				retn
 
 attack_state_set_dir:
-			or	byte ptr [si+5],80h
-			call	word ptr cs:fight_cb_step_neg
-			jc	attack_state_chain_c			; Jump if carry Set
-			retn
+				or	byte ptr [si+5],80h
+				call	word ptr cs:fight_cb_step_neg
+				jc	attack_state_chain_c			; Jump if carry Set
+				retn
 
 attack_state_chain_c:
-			and	byte ptr [si+5],7Fh
-			jmp	word ptr cs:fight_cb_step_pos
+				and	byte ptr [si+5],7Fh
+				jmp	word ptr cs:fight_cb_step_pos
 
 attack_state_secondary:
-			mov	al,[si+6]
-			mov	ah,al
-			inc	al
-			and	al,7
-			and	ah,0F0h
-			or	ah,al
-			mov	[si+6],ah
-			cmp	al,6
-			jne	attack_state_call_e			; Jump if not equal
+				mov	al,[si+6]
+				mov	ah,al
+				inc	al
+				and	al,7
+				and	ah,0F0h
+				or	ah,al
+				mov	[si+6],ah
+				cmp	al,6
+				jne	attack_state_call_e			; Jump if not equal
 		and	[si+6],ah
 		mov	al,[si+0Ah]
 		mov	cl,10h
@@ -757,21 +765,21 @@ collide_check_dist		proc	near
 		mov	cx,3
 
 collide_check_loop:
-			mov	al,[si]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jnz	collide_check_done			; Jump if not zero
-			mov	al,[si+1]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jnz	collide_check_done			; Jump if not zero
-			mov	al,[si+2]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jnz	collide_check_done			; Jump if not zero
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			loop	collide_check_loop		; Loop if cx > 0
+				mov	al,[si]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jnz	collide_check_done			; Jump if not zero
+				mov	al,[si+1]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jnz	collide_check_done			; Jump if not zero
+				mov	al,[si+2]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jnz	collide_check_done			; Jump if not zero
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				loop	collide_check_loop		; Loop if cx > 0
 
 		clc				; Clear carry flag
 
@@ -868,17 +876,17 @@ zela_lookup_e:
 		mov	cx,5
 
 zela_lookup_loop:
-			push	cx
-			push	bx
-			mov	al,[bx]
-			call	word ptr cs:fight_cb_range
-			pop	bx
-			pop	cx
-			jnc	zela_lookup_match			; Jump if carry=0
-			inc	bx
-			inc	bx
-			inc	bx
-			loop	zela_lookup_loop		; Loop if cx > 0
+				push	cx
+				push	bx
+				mov	al,[bx]
+				call	word ptr cs:fight_cb_range
+				pop	bx
+				pop	cx
+				jnc	zela_lookup_match			; Jump if carry=0
+				inc	bx
+				inc	bx
+				inc	bx
+				loop	zela_lookup_loop		; Loop if cx > 0
 
 		xor	byte ptr [si+5],80h
 		retn

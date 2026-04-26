@@ -141,9 +141,9 @@ cfg_line4_ok:
 		mov	bx, 4000h		; Request 256KB (0x4000 paragraphs)
 		mov	ah, 48h
 		int	21h			; DOS: allocate memory block
-		jnb	memory_allocated	; Success → continue
+		jnb	memory_allocated	; Success ?-> continue
 		cmp	ax, 8			; Error 8 = not enough memory
-		jnz	memory_error		; Other error → generic handler
+		jnz	memory_error		; Other error ?-> generic handler
 		mov	dx, offset str_not_enough_mem
 		mov	ah, 9
 		int	21h			; Print "Not enough memory..."
@@ -254,18 +254,18 @@ skip_music_init:
 		mov	cx,8
 
 copy_save_name:
-			lodsb
-			cmp	al,2Eh			; '.'
-			je	save_name_done
-			cmp	al,61h			; 'a'
-			jb	not_lowercase
-			cmp	al,7Bh			; '{'
-			jae	not_lowercase
-			and	al,5Fh			; Convert to uppercase
+				lodsb
+				cmp	al,2Eh			; '.'
+				je	save_name_done
+				cmp	al,61h			; 'a'
+				jb	not_lowercase
+				cmp	al,7Bh			; '{'
+				jae	not_lowercase
+				and	al,5Fh			; Convert to uppercase
 
 not_lowercase:
-			stosb
-			loop	copy_save_name
+				stosb
+				loop	copy_save_name
 
 save_name_done:
 		mov	al,cs:graphics_mode
@@ -428,13 +428,13 @@ show_error_filename:
 		pop	ds
 
 print_error_name:
-			mov	dl,[di]
-			or	dl,dl
-			jz	cleanup_and_exit
-			mov	ah,2
-			int	21h
-			inc	di
-			jmp	short print_error_name
+				mov	dl,[di]
+				or	dl,dl
+				jz	cleanup_and_exit
+				mov	ah,2
+				int	21h
+				inc	di
+				jmp	short print_error_name
 
 cleanup_and_exit:
 		; Restore original interrupt vectors
@@ -482,10 +482,10 @@ flush_keyboard	proc	near
 		push	dx
 
 flush_loop:
-			mov	dl,0FFh
-			mov	ah,6
-			int	21h			; Direct console I/O (check key)
-			jnz	flush_loop		; Loop while keys available
+				mov	dl,0FFh
+				mov	ah,6
+				int	21h			; Direct console I/O (check key)
+				jnz	flush_loop		; Loop while keys available
 		pop	dx
 		retn
 
@@ -505,34 +505,34 @@ read_config_line proc	near
 		mov	byte ptr cfg_line_length,0
 
 skip_whitespace:
-			mov	cx,1
-			mov	ah,3Fh
-			int	21h			; Read 1 byte
-			or	ax,ax
-			stc				; Set CF (EOF)
-			jnz	got_char
-			retn
-
-got_char:
-			mov	si,dx
-			cmp	byte ptr [si],20h	; Skip control chars
-			jb	skip_whitespace
-
-read_next_char:
-			inc	cfg_line_length
-			or	byte ptr [si],20h	; Force lowercase
-			inc	dx
-
-read_more:
 				mov	cx,1
 				mov	ah,3Fh
 				int	21h			; Read 1 byte
 				or	ax,ax
-				jz	line_done
+				stc				; Set CF (EOF)
+				jnz	got_char
+				retn
+
+got_char:
 				mov	si,dx
-				cmp	byte ptr [si],20h	; Space = separator
-				je	read_more		; Skip spaces
-			jnc	read_next_char		; Continue if printable
+				cmp	byte ptr [si],20h	; Skip control chars
+				jb	skip_whitespace
+
+read_next_char:
+				inc	cfg_line_length
+				or	byte ptr [si],20h	; Force lowercase
+				inc	dx
+
+read_more:
+						mov	cx,1
+						mov	ah,3Fh
+						int	21h			; Read 1 byte
+						or	ax,ax
+						jz	line_done
+						mov	si,dx
+						cmp	byte ptr [si],20h	; Space = separator
+						je	read_more		; Skip spaces
+				jnc	read_next_char		; Continue if printable
 
 line_done:
 		clc				; Clear CF (success)
@@ -562,17 +562,17 @@ try_4char_modes:
 		mov	cx,2
 
 match_4char_loop:
-			push	cx
-			push	si
-			push	di
-			mov	cx,4
-			repe	cmpsb
-			pop	di
-			pop	si
-			pop	cx
-			jz	found_4char_mode
-			add	di,5
-			loop	match_4char_loop
+				push	cx
+				push	si
+				push	di
+				mov	cx,4
+				repe	cmpsb
+				pop	di
+				pop	si
+				pop	cx
+				jz	found_4char_mode
+				add	di,5
+				loop	match_4char_loop
 		jmp	cfg_error
 
 found_4char_mode:
@@ -586,17 +586,17 @@ try_3char_modes:
 		mov	cx,4
 
 match_3char_loop:
-			push	cx
-			push	si
-			push	di
-			mov	cx,3
-			repe	cmpsb
-			pop	di
-			pop	si
-			pop	cx
-			jz	found_3char_mode
-			add	di,4
-			loop	match_3char_loop
+				push	cx
+				push	si
+				push	di
+				mov	cx,3
+				repe	cmpsb
+				pop	di
+				pop	si
+				pop	cx
+				jz	found_3char_mode
+				add	di,4
+				loop	match_3char_loop
 		jmp	cfg_error
 
 found_3char_mode:
@@ -606,12 +606,12 @@ found_3char_mode:
 		retn
 
 ; Mode lookup tables: 4 or 3 ASCII name bytes followed by mode index byte
-mode_4char_table db	'cga2', 02h	; CGA 2-color → mode 2
-		db	'mcga', 04h	; MCGA        → mode 4
-mode_3char_table db	'cga',  01h	; CGA         → mode 1
-		db	'ega',  00h	; EGA         → mode 0
-		db	'hgc',  03h	; HGC         → mode 3
-		db	'tga',  05h	; TGA         → mode 5
+mode_4char_table db	'cga2', 02h	; CGA 2-color ?-> mode 2
+		db	'mcga', 04h	; MCGA        ?-> mode 4
+mode_3char_table db	'cga',  01h	; CGA         ?-> mode 1
+		db	'ega',  00h	; EGA         ?-> mode 0
+		db	'hgc',  03h	; HGC         ?-> mode 3
+		db	'tga',  05h	; TGA         ?-> mode 5
 
 ;==========================================================================
 ;  parse_music_driver - Parse music driver name from config line
@@ -699,13 +699,13 @@ str_yes		db	'yes'
 str_no		db	'no'
 
 cfg_error:
-			mov	ah,3Eh
-			int	21h			; Close file
-			mov	dx,offset str_cfg_error
-			mov	ah,9
-			int	21h			; "Error in RESOURCE.CFG"
-			mov	ax,4C00h
-			int	21h			; Exit
+				mov	ah,3Eh
+				int	21h			; Close file
+				mov	dx,offset str_cfg_error
+				mov	ah,9
+				int	21h			; "Error in RESOURCE.CFG"
+				mov	ax,4C00h
+				int	21h			; Exit
 
 parse_graphics_mode endp
 
@@ -715,21 +715,21 @@ parse_graphics_mode endp
 ;==========================================================================
 
 find_colon_in_line proc	near
-			push	cs
-			pop	ds
-			mov	si,offset cfg_line_buffer
-			xor	cx,cx
-			mov	cl,cfg_line_length
+				push	cs
+				pop	ds
+				mov	si,offset cfg_line_buffer
+				xor	cx,cx
+				mov	cl,cfg_line_length
 
 scan_for_colon:
-				lodsb
-				cmp	al,3Ah			; ':'
-				jne	next_colon_char
-				retn
+						lodsb
+						cmp	al,3Ah			; ':'
+						jne	next_colon_char
+						retn
 
 next_colon_char:
-				loop	scan_for_colon
-			jmp	short cfg_error
+						loop	scan_for_colon
+				jmp	short cfg_error
 
 find_colon_in_line endp
 
@@ -797,13 +797,13 @@ display_file_error proc	near
 		add	di,2			; Skip to filename
 
 print_filename:
-			mov	dl,[di]
-			or	dl,dl
-			jz	show_error_code
-			mov	ah,2
-			int	21h
-			inc	di
-			jmp	short print_filename
+				mov	dl,[di]
+				or	dl,dl
+				jz	show_error_code
+				mov	ah,2
+				int	21h
+				inc	di
+				jmp	short print_filename
 
 show_error_code:
 		pop	bx			; BX = error code
@@ -896,14 +896,14 @@ set_mode_hgc:
 		mov	dx,3B4h
 
 hgc_init_loop:
-			mov	al,ah
-			out	dx,al			; CRT register index
-			lodsb
-			inc	dx
-			out	dx,al			; CRT register data
-			dec	dx
-			inc	ah
-			loop	hgc_init_loop
+				mov	al,ah
+				out	dx,al			; CRT register index
+				lodsb
+				inc	dx
+				out	dx,al			; CRT register data
+				dec	dx
+				inc	ah
+				loop	hgc_init_loop
 
 		mov	al,2Ah
 		mov	dx,3B8h
@@ -947,28 +947,28 @@ has_args:
 		mov	si,PSP_cmd_line
 
 skip_leading_spaces:
-			cmp	byte ptr es:[si],20h
-			jne	found_arg_start
-			inc	si
-			loop	skip_leading_spaces
+				cmp	byte ptr es:[si],20h
+				jne	found_arg_start
+				inc	si
+				loop	skip_leading_spaces
 		retn
 
 found_arg_start:
 		xor	ah,ah			; Flag: found non-space char
 
 copy_arg_chars:
-			mov	al,es:[si]
-			cmp	al,20h			; Space = end
-			je	next_arg_char
-			cmp	al,0Dh			; CR = end
-			je	next_arg_char
-			mov	ah,0FFh			; Mark as having content
-			mov	[di],al
-			inc	di
+				mov	al,es:[si]
+				cmp	al,20h			; Space = end
+				je	next_arg_char
+				cmp	al,0Dh			; CR = end
+				je	next_arg_char
+				mov	ah,0FFh			; Mark as having content
+				mov	[di],al
+				inc	di
 
 next_arg_char:
-			inc	si
-			loop	copy_arg_chars
+				inc	si
+				loop	copy_arg_chars
 
 		or	ah,ah
 		jnz	set_savefile_flag
@@ -1029,13 +1029,14 @@ driver_offset_table dw	0812h		; mode 0: EGA  (gmega.bin)
 		dw	0843h		; mode 5: TGA  (gmtga.bin)
 ; Driver file entries: [dw load_ofs][filename\0]
 ; Load offset bytes interleave: each entry's trailing null = next entry's load_ofs low byte,
-; and the next entry's leading ' ' = load_ofs high byte (0x20 → 0x2000).
+; and the next entry's leading ' ' = load_ofs high byte (0x20 ?-> 0x2000).
 ; The dw 0100h is BOTH driver_offset_table[6] AND stick.bin's load_ofs word.
+
 entry_stick:
 		dw	0100h		; DUAL-USE: table[6] AND stick.bin load offset (CS:0100h)
 		db	'stick.bin'
 		db	0, 0		; null + gmega load_ofs low (0x00)
-		db	' gmega.bin'	; ' '=load_ofs high (0x20 → 0x2000)
+		db	' gmega.bin'	; ' '=load_ofs high (0x20 ?-> 0x2000)
 		db	0, 0
 		db	' gmcga.bin'
 		db	0, 0
@@ -1045,10 +1046,12 @@ entry_stick:
 		db	0, 0
 		db	' gmtga.bin'
 		db	0		; gmtga null
+
 entry_game:
 		db	0, 0A0h		; game.bin load_ofs (0xA000: lo=00 hi=A0)
 		db	'game.bin'
 		db	0		; game.bin null
+
 entry_stdply_nosave:
 		db	0, 0		; stdply load_ofs (0x0000)
 		db	'stdply.bin'

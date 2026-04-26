@@ -157,6 +157,7 @@ data_3		db	0			; (Sourcer's data_3) referenced as `add si,offset data_3`
 tako_frame_data:				; offset 0x0B4 (frame at 0xA0B0 starts 4 bytes earlier in pad)
 		db	'!"#$'				; tako_frame_A0_tail (0xA0B4): tiles 21-24
 		db	0				; row term (closes A[0] / 0xA0B0 frame -- A[0]=A0B0 idle pose)
+
 tako_frame_A0D8	label	byte			; 0xA0D8 -- C[0] pose (group C[0] body alt)
 		db	'%&', 27h, '(', 0		; row 0: tiles 25-28 + term
 		db	')*+,', 0			; row 1: tiles 29-2C + term
@@ -165,6 +166,7 @@ tako_frame_A0D8	label	byte			; 0xA0D8 -- C[0] pose (group C[0] body alt)
 		db	'%&', 27h, '(', 0		; row 4 (re-uses tiles 25-28)
 		db	'%&', 27h, '(', 0		; row 5 (re-uses tiles 25-28)
 		db	'%&', 27h, '(', 0		; row 6 (re-uses tiles 25-28)
+
 tako_frame_A100	label	byte			; 0xA100 -- A[6]/D[0] -- start of mid-pose group (line cont. inside)
 		db	'-./0', 0			; row 0: tiles 2D-30 + term
 		db	'1234', 0			; row 1: tiles 31-34 + term
@@ -213,6 +215,7 @@ data_6		db	'BC', 0			; (Sourcer's data_6) -- referenced as `cs:data_6+4`
 		db	 02h, 00h, 00h, 91h, 92h, 02h	; 0x1A5: row 10 (tiles 91-92) -- A8/D2 frame at 0xA1AA starts mid-row
 		db	 93h, 94h, 95h, 96h, 02h, 97h	; 0x1AB: row 11 (tiles 93-96; tile 97)
 		db	 98h, 99h, 9Ah, 00h, 9Bh, 9Ch	; 0x1B1: row 12 (tiles 98-9A; tiles 9B-9C)
+
 tako_frame_A1B9	label	byte			; 0xA1B9 -- A[3] (frame start mid-row at offset 0x1B9)
 		db	 9Dh, 9Eh, 00h, 9Bh, 9Ch, 9Fh	; 0x1B7: row 13 (tiles 9D-9E; tiles 9B-9C, 9F)
 		db	 9Eh, 00h,0A1h,0A2h,0A3h,0A4h	; 0x1BD: row 14 (tile 9E; tiles A1-A4)
@@ -221,6 +224,7 @@ tako_frame_A1B9	label	byte			; 0xA1B9 -- A[3] (frame start mid-row at offset 0x1
 		db	0ADh,0AEh,0AFh, 00h, 9Bh, 9Ch	; 0x1CF: row 17 (tiles AD-AF; tiles 9B-9C)
 		db	 9Dh, 9Eh, 00h, 9Bh, 9Ch,0A0h	; 0x1D5: row 18 (tiles 9D-9E; tiles 9B-9C,A0)
 		db	 9Eh, 00h,0B4h,0B5h,0B6h,0B7h	; 0x1DB: row 19 (tile 9E; tiles B4-B7) -- C3 frame at 0xA1E1 starts mid-row
+
 tako_frame_A1E1	label	byte			; 0xA1E1 -- C[3] (frame ptr lands cleanly at line start below)
 		db	 00h,0B4h,0B5h,0B6h,0B8h, 00h	; 0x1E1: row 20 (tiles B4-B6, B8)
 		db	0BAh,0BBh,0BCh,0BDh, 00h,0BAh	; 0x1E7: row 21 (tiles BA-BD; tile BA)
@@ -237,6 +241,7 @@ tako_frame_A1E1	label	byte			; 0xA1E1 -- C[3] (frame ptr lands cleanly at line s
 		db	0EAh,0EBh,0ECh, 00h,0E5h,0E6h	; 0x229: row 32 (tiles EA-EC; tiles E5-E6)
 		db	0E7h,0E8h, 00h,0EDh,0EEh,0EFh	; 0x22F: row 33 (tiles E7-E8; tiles ED-EF)
 		db	0F0h, 00h,0D9h,0DAh,0DBh,0DCh	; 0x235: row 34 (tile F0; tiles D9-DC)
+
 tako_frame_A23B	label	byte			; 0xA23B -- C[4] (frame ptr lands cleanly at line start below)
 		db	 00h,0DDh,0DEh,0DFh,0E0h, 00h	; 0x23B: row 35 (tiles DD-E0)
 		db	0DDh,0DEh,0DFh,0E0h, 00h, 81h	; 0x241: row 36 (tiles DD-E0; tile 81)
@@ -258,12 +263,14 @@ tako_frame_A23B	label	byte			; 0xA23B -- C[4] (frame ptr lands cleanly at line s
 		db	0B1h,0B2h,0B3h, 01h, 81h, 82h	; 0x2A1: row 52 (tiles B1-B3; tiles 81-82)
 		db	 8Fh, 90h, 01h,0C9h,0CAh,0CBh	; 0x2A7: row 53 (tiles 8F-90; tiles C9-CB)
 		db	0CCh, 01h,0D5h,0D6h,0F1h,0F2h	; 0x2AD: row 54 (tile CC; tiles D5-D6, F1-F2)
+
 tako_frame_A2B3	label	byte			; 0xA2B3 -- A[11]/D[5] (frame ptr lands cleanly at line start below)
 		db	 01h,0F3h,0F4h,0F5h,0F6h, 01h	; 0x2B3: row 55 (tiles F3-F6)
 		db	0F7h,0F8h,0F9h,0FAh, 01h, 01h	; 0x2B9: row 56 (tiles F7-FA)
 		db	 02h, 03h, 04h, 01h, 05h, 06h	; 0x2BF: row 57 (tiles 02-04; tiles 05-06) -- B2 frame at 0xA2C2 starts mid-row
 		db	 07h, 08h, 01h, 09h, 0Ah, 0Bh	; 0x2C5: row 58 (tiles 07-08; tiles 09-0B)
 		db	 0Ch, 00h, 0Dh, 0Eh, 0Fh, 10h	; 0x2CB: row 59 (tile 0C; tiles 0D-10)
+
 tako_frame_A2D1	label	byte			; 0xA2D1 -- B[4] (frame ptr lands cleanly at line start below)
 		db	 00h, 11h, 12h, 13h, 14h, 00h	; 0x2D1: row 60 (tiles 11-14)
 		db	 15h, 16h, 17h, 18h, 00h, 11h	; 0x2D7: row 61 (tiles 15-18; tile 11)
@@ -275,11 +282,12 @@ tako_frame_A2D1	label	byte			; 0xA2D1 -- B[4] (frame ptr lands cleanly at line s
 		db	 12h, 13h, 14h, 01h, 15h, 16h	; 0x2FB: row 67 (tiles 12-14; tiles 15-16)
 		db	 17h, 18h, 01h, 11h, 12h, 13h	; 0x301: row 68 (tiles 17-18; tiles 11-13)
 		db	 14h, 00h, 19h, 1Ah, 1Bh, 1Ch	; 0x307: row 69 (tile 14; tiles 19-1C)
+
 tako_frame_A30D	label	byte			; 0xA30D -- B[3] (frame ptr lands cleanly at line start below)
 		db	 00h, 19h, 1Ah, 1Bh, 1Ch, 00h	; 0x30D: row 70 (tiles 19-1C)
 		db	 19h, 1Ah, 1Bh, 1Ch, 00h, 19h	; 0x313: row 71 (tiles 19-1C; tile 19)
 		db	 1Ah, 1Bh, 1Ch, 01h, 1Dh, 1Eh	; 0x319: row 72 (tiles 1A-1C; tiles 1D-1E)
-		db	 1Fh, 20h, 01h, 6Eh, 6Eh, 6Eh	; 0x31F: row 73 (tiles 1F-20; tile 6E ×3) -- B6 frame at 0xA321 starts mid-row
+		db	 1Fh, 20h, 01h, 6Eh, 6Eh, 6Eh	; 0x31F: row 73 (tiles 1F-20; tile 6E ??3) -- B6 frame at 0xA321 starts mid-row
 		db	 6Eh, 01h, 6Fh, 70h, 71h, 72h	; 0x325: row 74 (tile 6E; tiles 6F-72) -- B0 frame at 0xA326 starts mid-row
 		db	 01h, 73h, 74h, 75h, 76h, 01h	; 0x32B: row 75 (tiles 73-76)
 		db	 00h, 00h, 77h, 78h, 02h, 79h	; 0x331: row 76 (tiles 77-78; tile 79)
@@ -578,18 +586,18 @@ collide_check_right		proc	near
 		mov	cx,4
 
 collide_right_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_right_continue			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_right_continue			; Jump if zero
+				retn
 
 collide_right_continue:
-			xchg	si,di
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			xchg	si,di
-			loop	collide_right_loop		; Loop if cx > 0
+				xchg	si,di
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				xchg	si,di
+				loop	collide_right_loop		; Loop if cx > 0
 
 		xchg	si,di
 		sub	si,24h
@@ -648,18 +656,18 @@ collide_check_left		proc	near
 		mov	cx,4
 
 collide_left_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_left_continue			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_left_continue			; Jump if zero
+				retn
 
 collide_left_continue:
-			xchg	si,di
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			xchg	si,di
-			loop	collide_left_loop		; Loop if cx > 0
+				xchg	si,di
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				xchg	si,di
+				loop	collide_left_loop		; Loop if cx > 0
 
 		dec	di
 		xchg	si,di
@@ -721,15 +729,15 @@ collide_check_y		proc	near
 		mov	cx,2
 
 collide_y_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_y_continue			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_y_continue			; Jump if zero
+				retn
 
 collide_y_continue:
-			inc	di
-			loop	collide_y_loop		; Loop if cx > 0
+				inc	di
+				loop	collide_y_loop		; Loop if cx > 0
 
 		dec	di
 		mov	al,[di]
@@ -1169,31 +1177,31 @@ sub02_mid_range:
 		jnc	sub02_face_west_step			; Jump if carry=0
 
 sub02_face_east_step:
-			call	word ptr cs:fight_cb_step_neg
-			jc	sub02_try_jump			; Jump if carry Set
-			or	byte ptr [si+5],80h
-			retn
-
-sub02_face_west_step:
-				call	word ptr cs:fight_cb_step_pos
+				call	word ptr cs:fight_cb_step_neg
 				jc	sub02_try_jump			; Jump if carry Set
-				and	byte ptr [si+5],7Fh
+				or	byte ptr [si+5],80h
 				retn
 
+sub02_face_west_step:
+						call	word ptr cs:fight_cb_step_pos
+						jc	sub02_try_jump			; Jump if carry Set
+						and	byte ptr [si+5],7Fh
+						retn
+
 sub02_near_range:
-				cmp	byte ptr [si+3],11h
-				je	sub02_try_jump			; Jump if equal
-				cmp	byte ptr [si+3],10h
-				je	sub02_try_jump			; Jump if equal
-				jnc	sub02_try_west_step			; Jump if carry=0
-				call	word ptr cs:fight_cb_step_neg_2
-				jc	sub02_face_east_step			; Jump if carry Set
-			or	byte ptr [si+5],80h
-			retn
+						cmp	byte ptr [si+3],11h
+						je	sub02_try_jump			; Jump if equal
+						cmp	byte ptr [si+3],10h
+						je	sub02_try_jump			; Jump if equal
+						jnc	sub02_try_west_step			; Jump if carry=0
+						call	word ptr cs:fight_cb_step_neg_2
+						jc	sub02_face_east_step			; Jump if carry Set
+				or	byte ptr [si+5],80h
+				retn
 
 sub02_try_west_step:
-			call	word ptr cs:fight_cb_map_back
-			jc	sub02_face_west_step			; Jump if carry Set
+				call	word ptr cs:fight_cb_map_back
+				jc	sub02_face_west_step			; Jump if carry Set
 		and	byte ptr [si+5],7Fh
 		retn
 

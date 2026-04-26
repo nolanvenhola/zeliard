@@ -138,17 +138,17 @@ border_bank_ok:
 		xor	ch,ch			; Zero register
 
 border_row_loop:
-							mov	byte ptr es:[di],0F0h
-							mov	byte ptr es:[bx+di],0Fh
-							add	di,2000h
-							cmp	di,6000h
-							jb	border_loop_bank_ok			; Jump if below
-							mov	byte ptr es:[di],0F0h
-							mov	byte ptr es:[bx+di],0Fh
-							add	di,hgc_stride
+								mov	byte ptr es:[di],0F0h
+								mov	byte ptr es:[bx+di],0Fh
+								add	di,2000h
+								cmp	di,6000h
+								jb	border_loop_bank_ok			; Jump if below
+								mov	byte ptr es:[di],0F0h
+								mov	byte ptr es:[bx+di],0Fh
+								add	di,hgc_stride
 
 border_loop_bank_ok:
-							loop	border_row_loop		; Loop if cx > 0
+								loop	border_row_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	cx
@@ -166,10 +166,10 @@ fill_horizontal_line		proc	near
 		sub	bh,2
 
 fill_hline_inner:
-							or	byte ptr es:[di],0FFh
-							inc	di
-							dec	bh
-							jnz	fill_hline_inner			; Jump if not zero
+								or	byte ptr es:[di],0FFh
+								inc	di
+								dec	bh
+								jnz	fill_hline_inner			; Jump if not zero
 		or	es:[di],ah
 		pop	di
 		add	di,2000h
@@ -204,16 +204,16 @@ clear_screen_start:
 		mov	ah,cl
 
 clear_screen_row_loop:
-							call	clear_screen_row
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	clear_row_bank_ok			; Jump if below
-							call	clear_screen_row
-							add	di,0A05Ah
+								call	clear_screen_row
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	clear_row_bank_ok			; Jump if below
+								call	clear_screen_row
+								add	di,0A05Ah
 
 clear_row_bank_ok:
-							dec	ah
-							jnz	clear_screen_row_loop			; Jump if not zero
+								dec	ah
+								jnz	clear_screen_row_loop			; Jump if not zero
 		retn
 
 clear_screen		endp
@@ -238,25 +238,25 @@ clear_cursor_area:				; called externally: clear HGC framebuffer cursor region (
 		mov	cx,90h
 
 clear_cursor_row_loop:
-							push	cx
-							push	di
-							mov	cx,38h
-							xor	al,al			; Zero register
-							rep	stosb			; Rep when cx >0 Store al to es:[di]
-							pop	di
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	clear_cursor_bank_ok			; Jump if below
-							push	di
-							mov	cx,38h
-							xor	al,al			; Zero register
-							rep	stosb			; Rep when cx >0 Store al to es:[di]
-							pop	di
-							add	di,0A05Ah
+								push	cx
+								push	di
+								mov	cx,38h
+								xor	al,al			; Zero register
+								rep	stosb			; Rep when cx >0 Store al to es:[di]
+								pop	di
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	clear_cursor_bank_ok			; Jump if below
+								push	di
+								mov	cx,38h
+								xor	al,al			; Zero register
+								rep	stosb			; Rep when cx >0 Store al to es:[di]
+								pop	di
+								add	di,0A05Ah
 
 clear_cursor_bank_ok:
-							pop	cx
-							loop	clear_cursor_row_loop		; Loop if cx > 0
+								pop	cx
+								loop	clear_cursor_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -267,74 +267,76 @@ fn_10_fade_screen:				; dispatch fn 10: fade screen using bit-mask table (8 step
 		mov	cx,8
 
 fade_outer_loop:
-							push	cx
-							mov	di,4FDh
-							lodsb				; String [si] to al
-							push	di
-							mov	cx,48h
+								push	cx
+								mov	di,4FDh
+								lodsb				; String [si] to al
+								push	di
+								mov	cx,48h
 
 fade_row_loop_a:
-												push	cx
-												call	fade_screen_row
-												add	di,2000h
-												cmp	di,6000h
-												jb	fade_row_a_bank_ok			; Jump if below
-												call	fade_screen_row
-												add	di,0A05Ah
+														push	cx
+														call	fade_screen_row
+														add	di,2000h
+														cmp	di,6000h
+														jb	fade_row_a_bank_ok			; Jump if below
+														call	fade_screen_row
+														add	di,0A05Ah
 
 fade_row_a_bank_ok:
-												add	di,2000h
-												cmp	di,6000h
-												jb	fade_row_a_bank_ok2			; Jump if below
-												add	di,0A05Ah
+														add	di,2000h
+														cmp	di,6000h
+														jb	fade_row_a_bank_ok2			; Jump if below
+														add	di,0A05Ah
 
 fn_1:
-fade_row_a_bank_ok2:
-												rol	al,1			; Rotate
-												rol	al,1			; Rotate
-												rol	al,1			; Rotate
-												pop	cx
-												loop	fade_row_loop_a		; Loop if cx > 0
 
-							pop	di
-							add	di,2000h
-							cmp	di,6000h
-							jb	fade_iter_bank_ok			; Jump if below
-							add	di,0A05Ah
+fade_row_a_bank_ok2:
+														rol	al,1			; Rotate
+														rol	al,1			; Rotate
+														rol	al,1			; Rotate
+														pop	cx
+														loop	fade_row_loop_a		; Loop if cx > 0
+
+								pop	di
+								add	di,2000h
+								cmp	di,6000h
+								jb	fade_iter_bank_ok			; Jump if below
+								add	di,0A05Ah
 
 fade_iter_bank_ok:
-							mov	cx,48h
+								mov	cx,48h
 
 fade_row_loop_b:
-												push	cx
-												call	fade_screen_row
-												add	di,2000h
-												cmp	di,6000h
-												jb	fade_row_b_bank_ok			; Jump if below
-												call	fade_screen_row
-												add	di,0A05Ah
+														push	cx
+														call	fade_screen_row
+														add	di,2000h
+														cmp	di,6000h
+														jb	fade_row_b_bank_ok			; Jump if below
+														call	fade_screen_row
+														add	di,0A05Ah
 
 fade_row_b_bank_ok:
-												add	di,2000h
-												cmp	di,6000h
-												jb	fade_row_b_bank_ok2			; Jump if below
-												add	di,hgc_stride
+														add	di,2000h
+														cmp	di,6000h
+														jb	fade_row_b_bank_ok2			; Jump if below
+														add	di,hgc_stride
+
 fn_32:
 
 fade_row_b_bank_ok2:
-												rol	al,1			; Rotate
-												rol	al,1			; Rotate
-												rol	al,1			; Rotate
-												pop	cx
-												loop	fade_row_loop_b		; Loop if cx > 0
+														rol	al,1			; Rotate
+														rol	al,1			; Rotate
+														rol	al,1			; Rotate
+														pop	cx
+														loop	fade_row_loop_b		; Loop if cx > 0
 
-							mov	cx,3E80h
+								mov	cx,3E80h
 
 fade_delay_loop:
-												loop	fade_delay_loop		; Loop if cx > 0
+														loop	fade_delay_loop		; Loop if cx > 0
 
-							pop	cx
-							loop	fade_outer_loop		; Loop if cx > 0
+								pop	cx
+								loop	fade_outer_loop		; Loop if cx > 0
 
 		retn
 
@@ -343,9 +345,9 @@ fade_screen_row		proc	near
 		mov	cx,38h
 
 fade_row_inner:
-							and	es:[di],al
-							inc	di
-							loop	fade_row_inner		; Loop if cx > 0
+								and	es:[di],al
+								inc	di
+								loop	fade_row_inner		; Loop if cx > 0
 
 		pop	di
 		retn
@@ -401,18 +403,19 @@ set_plot_pos:
 		jz	plot_partial_check			; Jump if zero
 
 plot_full_bytes_loop:
-							push	cx
-							mov	ax,0FFFFh
-							call	plot_pixel
-							pop	cx
-							inc	di
-							dec	cl
-							jnz	plot_full_bytes_loop			; Jump if not zero
+								push	cx
+								mov	ax,0FFFFh
+								call	plot_pixel
+								pop	cx
+								inc	di
+								dec	cl
+								jnz	plot_full_bytes_loop			; Jump if not zero
 
 plot_partial_check:
 		and	ch,3
 		jnz	plot_right_partial			; Jump if not zero
 		retn
+
 fn_2:
 
 plot_right_partial:
@@ -431,15 +434,15 @@ plot_pixel		proc	near
 		mov	cx,9
 
 plot_clear_col_loop:
-							and	es:[di],ah
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	plot_clear_bank_ok			; Jump if below
-							and	es:[di],ah
-							add	di,hgc_stride
+								and	es:[di],ah
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	plot_clear_bank_ok			; Jump if below
+								and	es:[di],ah
+								add	di,hgc_stride
 
 plot_clear_bank_ok:
-							loop	plot_clear_col_loop		; Loop if cx > 0
+								loop	plot_clear_col_loop		; Loop if cx > 0
 
 		and	es:[di],ah
 		or	es:[di],al
@@ -456,17 +459,17 @@ plot_patterned:
 		mov	cx,0Ah
 
 plot_pattern_col_loop:
-							and	es:[di],ah
-							or	es:[di],al
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	plot_pattern_bank_ok			; Jump if below
-							and	es:[di],ah
-							or	es:[di],al
-							add	di,hgc_stride
+								and	es:[di],ah
+								or	es:[di],al
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	plot_pattern_bank_ok			; Jump if below
+								and	es:[di],ah
+								or	es:[di],al
+								add	di,hgc_stride
 
 plot_pattern_bank_ok:
-							loop	plot_pattern_col_loop		; Loop if cx > 0
+								loop	plot_pattern_col_loop		; Loop if cx > 0
 
 		pop	di
 		retn
@@ -477,15 +480,15 @@ plot_xor_mode:
 		mov	cx,0Ah
 
 plot_xor_col_loop:
-							and	es:[di],al
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	plot_xor_bank_ok			; Jump if below
-							and	es:[di],al
-							add	di,0A05Ah
+								and	es:[di],al
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	plot_xor_bank_ok			; Jump if below
+								and	es:[di],al
+								add	di,0A05Ah
 
 plot_xor_bank_ok:
-							loop	plot_xor_col_loop		; Loop if cx > 0
+								loop	plot_xor_col_loop		; Loop if cx > 0
 
 		pop	di
 		retn
@@ -508,17 +511,17 @@ draw_text_field_common:
 		push	ax
 
 draw_full_bytes_loop:
-							or	bl,bl			; Zero ?
-							jz	draw_partial_check			; Jump if zero
-							push	di
-							mov	bh,6
-							mov	al,0AAh
-							mov	ah,55h			; 'U'
-							call	fill_vertical_line
-							dec	bl
-							pop	di
-							inc	di
-							jmp	short draw_full_bytes_loop
+								or	bl,bl			; Zero ?
+								jz	draw_partial_check			; Jump if zero
+								push	di
+								mov	bh,6
+								mov	al,0AAh
+								mov	ah,55h			; 'U'
+								call	fill_vertical_line
+								dec	bl
+								pop	di
+								inc	di
+								jmp	short draw_full_bytes_loop
 
 draw_partial_check:
 		pop	ax
@@ -549,17 +552,17 @@ draw_text_line:
 		push	bx
 
 draw_text_left_loop:
-							or	bl,bl			; Zero ?
-							jz	draw_left_done			; Jump if zero
-							push	di
-							mov	bh,5
-							mov	al,55h			; 'U'
-							mov	ah,0AAh
-							call	fill_vertical_line
-							dec	bl
-							pop	di
-							inc	di
-							jmp	short draw_text_left_loop
+								or	bl,bl			; Zero ?
+								jz	draw_left_done			; Jump if zero
+								push	di
+								mov	bh,5
+								mov	al,55h			; 'U'
+								mov	ah,0AAh
+								call	fill_vertical_line
+								dec	bl
+								pop	di
+								inc	di
+								jmp	short draw_text_left_loop
 
 draw_left_done:
 		pop	bx
@@ -576,10 +579,12 @@ draw_left_done:
 		inc	bl
 
 draw_fill_start:
+
 fn_4:
 		mov	bh,19h
 		sub	bh,bl
 		jnz	draw_fill_nonzero			; Jump if not zero
+
 fn_6:
 		retn
 
@@ -587,15 +592,15 @@ draw_fill_nonzero:
 		mov	bl,bh
 
 draw_fill_loop:
-							push	di
-							mov	bh,5
-							xor	al,al			; Zero register
-							mov	ah,0AAh
-							call	fill_vertical_line
-							pop	di
-							inc	di
-							dec	bl
-							jnz	draw_fill_loop			; Jump if not zero
+								push	di
+								mov	bh,5
+								xor	al,al			; Zero register
+								mov	ah,0AAh
+								call	fill_vertical_line
+								pop	di
+								inc	di
+								dec	bl
+								jnz	draw_fill_loop			; Jump if not zero
 		retn
 
 calc_text_width		proc	near
@@ -624,18 +629,18 @@ calc_text_width		endp
 fill_vertical_line		proc	near
 
 fill_vline_inner:
-							and	es:[di],ah
-							or	es:[di],al
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	fill_vline_bank_ok			; Jump if below
-							and	es:[di],ah
-							or	es:[di],al
-							add	di,0A05Ah
+								and	es:[di],ah
+								or	es:[di],al
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	fill_vline_bank_ok			; Jump if below
+								and	es:[di],ah
+								or	es:[di],al
+								add	di,0A05Ah
 
 fill_vline_bank_ok:
-							dec	bh
-							jnz	fill_vline_inner			; Jump if not zero
+								dec	bh
+								jnz	fill_vline_inner			; Jump if not zero
 		retn
 
 fill_vertical_line		endp
@@ -659,22 +664,22 @@ set_tile_mode_c:				; fg=FFh bg=00h + compute HGC address then draw chars
 		SET_HGC_ES			; mov ax,0B000h / mov es,ax
 
 render_char_loop:
-							lodsb				; String [si] to al
-							or	al,al			; Zero ?
-							jnz	render_char_nonzero			; Jump if not zero
-							retn
+								lodsb				; String [si] to al
+								or	al,al			; Zero ?
+								jnz	render_char_nonzero			; Jump if not zero
+								retn
 
 render_char_nonzero:
-							push	bx
-							push	ds
-							push	si
-							and	bl,3
-							call	render_text_char
-							pop	si
-							pop	ds
-							pop	bx
-							inc	bl
-							jmp	short render_char_loop
+								push	bx
+								push	ds
+								push	si
+								and	bl,3
+								call	render_text_char
+								pop	si
+								pop	ds
+								pop	bx
+								inc	bl
+								jmp	short render_char_loop
 
 render_chars_data:				; jumped to from set_tile_mode_a/b: read char coord + draw
 		lodsb				; String [si] to al
@@ -684,6 +689,7 @@ render_chars_data:				; jumped to from set_tile_mode_a/b: read char coord + draw
 		call	calc_hgc_address
 		mov	di,ax
 		lodsb				; String [si] to al
+
 fn_7:
 		mov	bl,al
 		lodsb				; String [si] to al
@@ -693,19 +699,19 @@ fn_7:
 		mov	es,ax
 
 render_chars_loop:
-							push	cx
-							lodsb				; String [si] to al
-							push	bx
-							push	ds
-							push	si
-							and	bl,3
-							call	render_text_char
-							pop	si
-							pop	ds
-							pop	bx
-							inc	bl
-							pop	cx
-							loop	render_chars_loop		; Loop if cx > 0
+								push	cx
+								lodsb				; String [si] to al
+								push	bx
+								push	ds
+								push	si
+								and	bl,3
+								call	render_text_char
+								pop	si
+								pop	ds
+								pop	bx
+								inc	bl
+								pop	cx
+								loop	render_chars_loop		; Loop if cx > 0
 
 		retn
 
@@ -723,52 +729,52 @@ render_text_char		proc	near
 		mov	bl,8
 
 render_char_rows:
-							push	bx
-							lodsb				; String [si] to al
-							mov	dl,4
+								push	bx
+								lodsb				; String [si] to al
+								mov	dl,4
 
 render_char_bit_loop:
-												add	ax,ax
-												add	ah,ah
-												dec	dl
-												jnz	render_char_bit_loop			; Jump if not zero
-							mov	al,ah
-							shr	ah,1			; Shift w/zeros fill
-							or	al,ah
-							xor	bl,bl			; Zero register
-							mov	bh,al
-							shr	bx,cl			; Shift w/zeros fill
-							push	bx
-							shr	bx,1			; Shift w/zeros fill
-							shr	bx,1			; Shift w/zeros fill
-							xchg	bh,bl
-							not	bx
-							and	es:[di],bx
-							not	bx
-							and	bh,ds:tile_bg_mask
-							and	bl,ds:tile_bg_mask
-							or	es:[di],bx
-							pop	bx
-							xchg	bh,bl
-							not	bx
-							and	es:[di],bx
-							not	bx
-							and	bh,ds:tile_fg_mask
-							and	bl,ds:tile_fg_mask
-							or	es:[di],bx
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	render_char_row_bank_ok			; Jump if below
-							mov	bx,di
-							sub	bx,2000h
-							mov	ax,es:[bx]
-							mov	es:[di],ax
-							add	di,0A05Ah
+														add	ax,ax
+														add	ah,ah
+														dec	dl
+														jnz	render_char_bit_loop			; Jump if not zero
+								mov	al,ah
+								shr	ah,1			; Shift w/zeros fill
+								or	al,ah
+								xor	bl,bl			; Zero register
+								mov	bh,al
+								shr	bx,cl			; Shift w/zeros fill
+								push	bx
+								shr	bx,1			; Shift w/zeros fill
+								shr	bx,1			; Shift w/zeros fill
+								xchg	bh,bl
+								not	bx
+								and	es:[di],bx
+								not	bx
+								and	bh,ds:tile_bg_mask
+								and	bl,ds:tile_bg_mask
+								or	es:[di],bx
+								pop	bx
+								xchg	bh,bl
+								not	bx
+								and	es:[di],bx
+								not	bx
+								and	bh,ds:tile_fg_mask
+								and	bl,ds:tile_fg_mask
+								or	es:[di],bx
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	render_char_row_bank_ok			; Jump if below
+								mov	bx,di
+								sub	bx,2000h
+								mov	ax,es:[bx]
+								mov	es:[di],ax
+								add	di,0A05Ah
 
 render_char_row_bank_ok:
-							pop	bx
-							dec	bl
-							jnz	render_char_rows			; Jump if not zero
+								pop	bx
+								dec	bl
+								jnz	render_char_rows			; Jump if not zero
 		pop	di
 		inc	di
 		cmp	cl,6
@@ -818,6 +824,7 @@ render_large_tilemap_b:				; called externally: render large tilemap B (cs:[86h]
 		retn
 
 fn_9:
+
 render_large_tilemap_c:				; called externally: render large tilemap C (cs:[9Dh] frame select via anim_lut, di=255Bh, cx=103h)
 		push	ds
 		xor	bx,bx			; Zero register
@@ -826,6 +833,7 @@ render_large_tilemap_c:				; called externally: render large tilemap C (cs:[9Dh]
 		mov	al,byte ptr cs:[0ABh][bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
+
 fn_10:
 		call	init_timestamp
 		push	cs
@@ -841,6 +849,7 @@ fn_10:
 render_sprite_if_active:			; called externally: render sprite at di=255Bh if cs:[93h] != 0
 		test	byte ptr cs:[93h],0FFh
 		jnz	render_sprite_active			; Jump if not zero
+
 fn_11:
 		retn
 
@@ -856,6 +865,7 @@ render_sprite_active:
 		mov	ax,3EBBh
 		mov	bx,palette_state
 		call	render_tilemap_large
+
 fn_12:
 		pop	ds
 		retn
@@ -866,14 +876,14 @@ init_timestamp		proc	near
 		mov	cx,6
 
 timestamp_fill_loop:
-							test	byte ptr cs:[di],0FFh
-							jz	timestamp_slot_empty			; Jump if zero
-							retn
+								test	byte ptr cs:[di],0FFh
+								jz	timestamp_slot_empty			; Jump if zero
+								retn
 
 timestamp_slot_empty:
-							mov	byte ptr cs:[di],0FFh
-							inc	di
-							loop	timestamp_fill_loop		; Loop if cx > 0
+								mov	byte ptr cs:[di],0FFh
+								inc	di
+								loop	timestamp_fill_loop		; Loop if cx > 0
 
 fn_13:
 		retn
@@ -913,17 +923,17 @@ modulo_divide_bcd		proc	near
 		xor	dh,dh			; Zero register
 
 moddiv_loop:
-							sub	dl,cl
-							jc	moddiv_exit			; Jump if carry Set
-							sub	ax,bx
-							jnc	moddiv_inc			; Jump if carry=0
-							or	dl,dl			; Zero ?
-							jz	moddiv_no_inc			; Jump if zero
-							dec	dl
+								sub	dl,cl
+								jc	moddiv_exit			; Jump if carry Set
+								sub	ax,bx
+								jnc	moddiv_inc			; Jump if carry=0
+								or	dl,dl			; Zero ?
+								jz	moddiv_no_inc			; Jump if zero
+								dec	dl
 
 moddiv_inc:
-							inc	dh
-							jmp	short moddiv_loop
+								inc	dh
+								jmp	short moddiv_loop
 
 moddiv_no_inc:
 		add	ax,bx
@@ -956,25 +966,25 @@ render_tilemap_large		proc	near
 		mov	es,ax
 
 render_tilemap_tile_loop:
-							mov	al,[di]
-							inc	di
-							push	bx
-							push	cx
-							push	di
-							push	ds
-							mov	di,bx
-							call	decode_bitplane_tile
-							pop	ds
-							pop	di
-							pop	cx
-							pop	bx
-							mov	al,ch
-							and	ax,1
-							add	bx,ax
-							inc	bx
-							inc	ch
-							dec	cl
-							jnz	render_tilemap_tile_loop			; Jump if not zero
+								mov	al,[di]
+								inc	di
+								push	bx
+								push	cx
+								push	di
+								push	ds
+								mov	di,bx
+								call	decode_bitplane_tile
+								pop	ds
+								pop	di
+								pop	cx
+								pop	bx
+								mov	al,ch
+								and	ax,1
+								add	bx,ax
+								inc	bx
+								inc	ch
+								dec	cl
+								jnz	render_tilemap_tile_loop			; Jump if not zero
 		retn
 
 render_tilemap_large		endp
@@ -998,15 +1008,15 @@ tile_even_col:
 		mov	cx,7
 
 tile_clear_col_loop:
-							and	es:[di],bx
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	tile_clear_bank_ok			; Jump if below
-							and	es:[di],bx
-							add	di,hgc_stride
+								and	es:[di],bx
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	tile_clear_bank_ok			; Jump if below
+								and	es:[di],bx
+								add	di,hgc_stride
 
 tile_clear_bank_ok:
-							loop	tile_clear_col_loop		; Loop if cx > 0
+								loop	tile_clear_col_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	di
@@ -1029,39 +1039,39 @@ tile_nonblank:
 		mov	cl,7
 
 tile_row_loop:
-							lodsb				; String [si] to al
-							mov	ah,8
+								lodsb				; String [si] to al
+								mov	ah,8
 
 tile_bit_loop:
-												add	al,al
-												adc	dx,dx
-												add	dx,dx
-												dec	ah
-												jnz	tile_bit_loop			; Jump if not zero
-							mov	ax,dx
-							shr	dx,1			; Shift w/zeros fill
-							or	ax,dx
-							test	ch,1
-							jnz	tile_odd_col			; Jump if not zero
-							add	ax,ax
-							add	ax,ax
-							add	ax,ax
-							add	ax,ax
+														add	al,al
+														adc	dx,dx
+														add	dx,dx
+														dec	ah
+														jnz	tile_bit_loop			; Jump if not zero
+								mov	ax,dx
+								shr	dx,1			; Shift w/zeros fill
+								or	ax,dx
+								test	ch,1
+								jnz	tile_odd_col			; Jump if not zero
+								add	ax,ax
+								add	ax,ax
+								add	ax,ax
+								add	ax,ax
 
 tile_odd_col:
-							xchg	ah,al
-							and	ah,cs:tile_fg_mask
-							and	al,cs:tile_fg_mask
-							or	es:[di],ax
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	tile_row_bank_ok			; Jump if below
-							or	es:[di],ax
-							add	di,0A05Ah
+								xchg	ah,al
+								and	ah,cs:tile_fg_mask
+								and	al,cs:tile_fg_mask
+								or	es:[di],ax
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	tile_row_bank_ok			; Jump if below
+								or	es:[di],ax
+								add	di,0A05Ah
 
 tile_row_bank_ok:
-							dec	cl
-							jnz	tile_row_loop			; Jump if not zero
+								dec	cl
+								jnz	tile_row_loop			; Jump if not zero
 		retn
 
 decode_bitplane_tile		endp
@@ -1127,6 +1137,7 @@ sprite_row_loop:
 		mov	es:[bp+2],ax
 		mov	al,es:[di+4]
 		mov	es:[bp+4],al
+
 fn_14:
 		add	bp,0A05Ah
 
@@ -1203,6 +1214,7 @@ fn_5_render_anim_tiles_b:			; dispatch fn 5: render small animated tiles (anim_p
 render_small_tiles_b_entry:
 		call	render_tilemap_small
 		pop	ds
+
 fn_15:
 		retn
 
@@ -1216,6 +1228,7 @@ sprite_anim_data:				; 16 rows x 12 bytes: HGC sprite animation bitplane data (3
 		db	 0Fh,0BBh, 8Eh, 00h, 03h, 00h	; row  3
 		db	 00h,0C0h, 80h, 88h, 82h, 02h	; row  3 hi
 		db	 0Fh,0FBh, 8Eh, 00h, 03h, 00h	; row  4
+
 fn_16:
 		db	 00h,0C0h, 80h, 08h, 82h, 02h	; row  4 hi
 		db	 0Eh,0FBh, 8Eh, 00h, 03h, 00h	; row  5
@@ -1229,6 +1242,7 @@ fn_16:
 		db	 0Eh, 38h,0FBh,0F8h, 03h, 00h	; row  9
 		db	 00h,0C0h, 82h, 08h, 08h, 0Ah	; row  9 hi
 		db	 0Eh, 3Bh, 83h, 80h, 03h, 00h	; row 10
+
 fn_26:
 		db	 00h,0C0h, 82h, 08h, 80h, 82h	; row 10 hi
 		db	 0Eh, 38h,0E3h,0C0h, 03h, 00h	; row 11
@@ -1246,6 +1260,7 @@ render_small_tiles_a:				; load si=game_seg:anim_ptr[E208h], call render_tilemap
 		push	ds
 		mov	ds, cs:gvar_game_seg
 		xor	ah, ah			; Zero register
+
 fn_27:
 		mov	cx, 0C0h
 		mul	cx			; dx:ax = reg * ax
@@ -1294,17 +1309,19 @@ small_tile_row_loop:
 		mov	dx,[si+0Ah]
 		xchg	dh,dl
 		mov	cs:bitplane_2,dx
+
 fn_29:
 		call	extract_bitplane_pixels
 		xor	bl,bl			; Zero register
 		mov	cx,4
 
 fn_30:
+
 small_tile_shift_loop:
-							shr	ax,1			; Shift w/zeros fill
-							rcr	dx,1			; Rotate thru carry
-							rcr	bl,1			; Rotate thru carry
-							loop	small_tile_shift_loop		; Loop if cx > 0
+								shr	ax,1			; Shift w/zeros fill
+								rcr	dx,1			; Rotate thru carry
+								rcr	bl,1			; Rotate thru carry
+								loop	small_tile_shift_loop		; Loop if cx > 0
 
 		mov	es:[bp],ah
 		mov	es:[bp+1],al
@@ -1340,23 +1357,23 @@ extract_bitplane_pixels		proc	near
 		mov	cx,8
 
 extract_pixel_loop:
-							xor	bx,bx			; Zero register
-							rol	word ptr cs:bitplane_2,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:bitplane_1,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:bitplane_0,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:bitplane_2,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:bitplane_1,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:bitplane_0,1	; Rotate
-							adc	bx,bx
-							add	dx,dx
-							add	dx,dx
-							or	dl,cs:pixel_lut[bx]
-							loop	extract_pixel_loop		; Loop if cx > 0
+								xor	bx,bx			; Zero register
+								rol	word ptr cs:bitplane_2,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:bitplane_1,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:bitplane_0,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:bitplane_2,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:bitplane_1,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:bitplane_0,1	; Rotate
+								adc	bx,bx
+								add	dx,dx
+								add	dx,dx
+								or	dl,cs:pixel_lut[bx]
+								loop	extract_pixel_loop		; Loop if cx > 0
 
 		retn
 
@@ -1419,41 +1436,41 @@ render_text_char_alt		proc	near
 		mov	cx,8
 
 dbl_char_render_loop:
-							push	cx
-							lodsb				; String [si] to al
-							call	double_char_bits
-							mov	cl,cs:tile_bg_mask
-							mov	ah,dl
-							xor	dl,dl			; Zero register
-							mov	al,dl
-							shr	dx,cl			; Shift w/zeros fill
-							shr	ax,cl			; Shift w/zeros fill
-							or	dl,ah
-							mov	ch,al
-							xchg	dh,dl
-							mov	bx,dx
-							mov	cl,ch
-							not	bx
-							not	cl
-							and	dl,cs:tile_fg_mask
-							and	dh,cs:tile_fg_mask
-							and	ch,cs:tile_fg_mask
-							and	es:[di],bx
-							and	es:[di+2],cl
-							or	es:[di],dx
-							or	es:[di+2],ch
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	dbl_char_bank_ok			; Jump if below
-							and	es:[di],bx
-							and	es:[di+2],cl
-							or	es:[di],dx
-							or	es:[di+2],ch
-							add	di,0A05Ah
+								push	cx
+								lodsb				; String [si] to al
+								call	double_char_bits
+								mov	cl,cs:tile_bg_mask
+								mov	ah,dl
+								xor	dl,dl			; Zero register
+								mov	al,dl
+								shr	dx,cl			; Shift w/zeros fill
+								shr	ax,cl			; Shift w/zeros fill
+								or	dl,ah
+								mov	ch,al
+								xchg	dh,dl
+								mov	bx,dx
+								mov	cl,ch
+								not	bx
+								not	cl
+								and	dl,cs:tile_fg_mask
+								and	dh,cs:tile_fg_mask
+								and	ch,cs:tile_fg_mask
+								and	es:[di],bx
+								and	es:[di+2],cl
+								or	es:[di],dx
+								or	es:[di+2],ch
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	dbl_char_bank_ok			; Jump if below
+								and	es:[di],bx
+								and	es:[di+2],cl
+								or	es:[di],dx
+								or	es:[di+2],ch
+								add	di,0A05Ah
 
 dbl_char_bank_ok:
-							pop	cx
-							loop	dbl_char_render_loop		; Loop if cx > 0
+								pop	cx
+								loop	dbl_char_render_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1464,10 +1481,10 @@ double_char_bits		proc	near
 		mov	cx,8
 
 double_bits_loop:
-							add	al,al
-							adc	bx,bx
-							add	bx,bx
-							loop	double_bits_loop		; Loop if cx > 0
+								add	al,al
+								adc	bx,bx
+								add	bx,bx
+								loop	double_bits_loop		; Loop if cx > 0
 
 		mov	dx,bx
 		shr	dx,1			; Shift w/zeros fill
@@ -1497,33 +1514,33 @@ copy_sprite_bank_ok:
 		xor	ch,ch			; Zero register
 
 copy_sprite_row_loop:
-							push	cx
-							push	di
-							push	si
-							mov	cx,bx
-							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-							pop	si
-							pop	di
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	copy_sprite_bank_wrap			; Jump if below
-							push	di
-							push	si
-							mov	cx,bx
-							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-							pop	si
-							pop	di
-							add	di,0A05Ah
+								push	cx
+								push	di
+								push	si
+								mov	cx,bx
+								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+								pop	si
+								pop	di
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	copy_sprite_bank_wrap			; Jump if below
+								push	di
+								push	si
+								mov	cx,bx
+								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+								pop	si
+								pop	di
+								add	di,0A05Ah
 
 copy_sprite_bank_wrap:
-							add	si,2000h
-							cmp	si,6000h
-							jb	copy_sprite_src_bank_ok			; Jump if below
-							add	si,0A05Ah
+								add	si,2000h
+								cmp	si,6000h
+								jb	copy_sprite_src_bank_ok			; Jump if below
+								add	si,0A05Ah
 
 copy_sprite_src_bank_ok:
-							pop	cx
-							loop	copy_sprite_row_loop		; Loop if cx > 0
+								pop	cx
+								loop	copy_sprite_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1537,6 +1554,7 @@ hgc_read_region:
 		mov	si,ax
 		mov	ax,cs
 		add	ax,3000h
+
 fn_18:
 		mov	es,ax
 		mov	ax,0B000h
@@ -1546,19 +1564,19 @@ fn_18:
 		mov	ch,bh
 
 save_sprite_row_loop:
-							push	cx
-							push	si
-							mov	cx,bx
-							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-							pop	si
-							add	si,2000h
-							cmp	si,6000h
-							jb	save_sprite_bank_ok			; Jump if below
-							add	si,0A05Ah
+								push	cx
+								push	si
+								mov	cx,bx
+								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+								pop	si
+								add	si,2000h
+								cmp	si,6000h
+								jb	save_sprite_bank_ok			; Jump if below
+								add	si,0A05Ah
 
 save_sprite_bank_ok:
-							pop	cx
-							loop	save_sprite_row_loop		; Loop if cx > 0
+								pop	cx
+								loop	save_sprite_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1581,30 +1599,31 @@ hgc_copy_to_level:
 		mov	ch,bh
 
 restore_sprite_row_loop:
-							push	cx
-							push	si
-							push	di
-							mov	cx,bx
-							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-							pop	di
-							pop	si
-							add	di,2000h
+								push	cx
+								push	si
+								push	di
+								mov	cx,bx
+								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+								pop	di
+								pop	si
+								add	di,2000h
+
 fn_19:
-							cmp	di,hgc_bank_size
-							jb	restore_sprite_bank_ok			; Jump if below
-							push	si
-							push	di
-							mov	cx,bx
-							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-							pop	di
-							pop	si
-							add	di,0A05Ah
+								cmp	di,hgc_bank_size
+								jb	restore_sprite_bank_ok			; Jump if below
+								push	si
+								push	di
+								mov	cx,bx
+								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+								pop	di
+								pop	si
+								add	di,0A05Ah
 
 restore_sprite_bank_ok:
-							add	si,bx
-							add	si,bx
-							pop	cx
-							loop	restore_sprite_row_loop		; Loop if cx > 0
+								add	si,bx
+								add	si,bx
+								pop	cx
+								loop	restore_sprite_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1615,38 +1634,39 @@ render_string:					; called externally: init char_src_ptr=bx, char_bit_idx=cl, c
 		mov	byte ptr cs:char_color,1
 
 render_string_next_char:
-												lodsb				; String [si] to al
-												cmp	al,0FFh
-												jne	render_string_not_end			; Jump if not equal
-												retn
+														lodsb				; String [si] to al
+														cmp	al,0FFh
+														jne	render_string_not_end			; Jump if not equal
+														retn
 
 render_string_not_end:
-												cmp	al,0Dh
+														cmp	al,0Dh
+
 fn_20:
-												je	render_string_newline			; Jump if equal
-												or	al,al			; Zero ?
-												js	render_string_color			; Jump if sign=1
-												push	cx
-												push	bx
-												push	si
-												mov	ah,cs:char_color
-												call	render_text_char_alt
-												pop	si
-												pop	bx
-												pop	cx
-												add	bx,8
-												jmp	short render_string_next_char
+														je	render_string_newline			; Jump if equal
+														or	al,al			; Zero ?
+														js	render_string_color			; Jump if sign=1
+														push	cx
+														push	bx
+														push	si
+														mov	ah,cs:char_color
+														call	render_text_char_alt
+														pop	si
+														pop	bx
+														pop	cx
+														add	bx,8
+														jmp	short render_string_next_char
 
 render_string_newline:
-												add	byte ptr cs:char_bit_idx,8
-												mov	cl,cs:char_bit_idx
-												mov	bx,cs:char_src_ptr
-												jmp	short render_string_next_char
+														add	byte ptr cs:char_bit_idx,8
+														mov	cl,cs:char_bit_idx
+														mov	bx,cs:char_src_ptr
+														jmp	short render_string_next_char
 
 render_string_color:
-							and	al,7
-							mov	cs:char_color,al
-							jmp	short render_string_next_char
+								and	al,7
+								mov	cs:char_color,al
+								jmp	short render_string_next_char
 
 fn_0_blit_region:				; dispatch fn 0: blit rectangular region from (bh/ch) to (dx) in HGC framebuffer
 		push	ds
@@ -1666,40 +1686,42 @@ fn_0_blit_region:				; dispatch fn 0: blit rectangular region from (bh/ch) to (d
 		xor	ch,ch			; Zero register
 
 blit_region_row_loop:
+
 fn_21:
-							push	cx
-							push	di
-							push	si
-							mov	cx,bx
-							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-							pop	si
-							pop	di
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	blit_region_bank_ok			; Jump if below
-							push	di
-							push	si
-							mov	cx,bx
-							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-							pop	si
-							pop	di
-							add	di,0A05Ah
+								push	cx
+								push	di
+								push	si
+								mov	cx,bx
+								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+								pop	si
+								pop	di
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	blit_region_bank_ok			; Jump if below
+								push	di
+								push	si
+								mov	cx,bx
+								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+								pop	si
+								pop	di
+								add	di,0A05Ah
 
 blit_region_bank_ok:
-							add	si,2000h
-							cmp	si,6000h
-							jb	blit_region_src_bank_ok			; Jump if below
-							add	si,0A05Ah
+								add	si,2000h
+								cmp	si,6000h
+								jb	blit_region_src_bank_ok			; Jump if below
+								add	si,0A05Ah
 
 blit_region_src_bank_ok:
-							pop	cx
-							loop	blit_region_row_loop		; Loop if cx > 0
+								pop	cx
+								loop	blit_region_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
 
 fn_1_draw_digit:				; dispatch fn 1: draw score digit at (bh,al) using tile_color_tbl_b pattern
 		push	bx
+
 fn_22:
 		xor	bx,bx			; Zero register
 		mov	bl,al
@@ -1714,29 +1736,29 @@ fn_22:
 		mov	cx,10h
 
 draw_digit_row_loop:
-							mov	al,ds:tile_fg_mask
-							and	al,0F0h
-							and	byte ptr es:[di],0Fh
-							or	es:[di],al
-							mov	al,ds:tile_fg_mask
-							and	al,0Fh
-							and	byte ptr es:[di+4],0F0h
-							or	es:[di+4],al
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	draw_digit_bank_ok			; Jump if below
-							mov	al,ds:tile_fg_mask
-							and	al,0F0h
-							and	byte ptr es:[di],0Fh
-							or	es:[di],al
-							mov	al,ds:tile_fg_mask
-							and	al,0Fh
-							and	byte ptr es:[di+4],0F0h
-							or	es:[di+4],al
-							add	di,hgc_stride
+								mov	al,ds:tile_fg_mask
+								and	al,0F0h
+								and	byte ptr es:[di],0Fh
+								or	es:[di],al
+								mov	al,ds:tile_fg_mask
+								and	al,0Fh
+								and	byte ptr es:[di+4],0F0h
+								or	es:[di+4],al
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	draw_digit_bank_ok			; Jump if below
+								mov	al,ds:tile_fg_mask
+								and	al,0F0h
+								and	byte ptr es:[di],0Fh
+								or	es:[di],al
+								mov	al,ds:tile_fg_mask
+								and	al,0Fh
+								and	byte ptr es:[di+4],0F0h
+								or	es:[di+4],al
+								add	di,hgc_stride
 
 draw_digit_bank_ok:
-							loop	draw_digit_row_loop		; Loop if cx > 0
+								loop	draw_digit_row_loop		; Loop if cx > 0
 
 		call	fill_rectangle
 		retn
@@ -1745,26 +1767,27 @@ fill_rectangle		proc	near
 		mov	cx,2
 
 fill_rect_row_loop:
-							push	cx
-							push	di
+								push	cx
+								push	di
+
 fn_23:
-							mov	al,ds:tile_fg_mask
-							mov	cx,5
-							rep	stosb			; Rep when cx >0 Store al to es:[di]
-							pop	di
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	fill_rect_bank_ok			; Jump if below
-							push	di
-							mov	al,ds:tile_fg_mask
-							mov	cx,5
-							rep	stosb			; Rep when cx >0 Store al to es:[di]
-							pop	di
-							add	di,0A05Ah
+								mov	al,ds:tile_fg_mask
+								mov	cx,5
+								rep	stosb			; Rep when cx >0 Store al to es:[di]
+								pop	di
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	fill_rect_bank_ok			; Jump if below
+								push	di
+								mov	al,ds:tile_fg_mask
+								mov	cx,5
+								rep	stosb			; Rep when cx >0 Store al to es:[di]
+								pop	di
+								add	di,0A05Ah
 
 fill_rect_bank_ok:
-							pop	cx
-							loop	fill_rect_row_loop		; Loop if cx > 0
+								pop	cx
+								loop	fill_rect_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1791,38 +1814,38 @@ draw_sprite_entry:				; set DS=CS, compute sprite ptr+screen addr, fall into dra
 		mov	cx, 0Dh
 
 draw_sprite_row_loop:
-							push	cx
-							mov	al,[bx]
-							and	es:[di],al
-							mov	al,[bx+1]
-							and	es:[di+1],al
-							mov	al,[bx+2]
-							and	es:[di+2],al
-							mov	al,[bx+3]
-							and	es:[di+3],al
-							lodsb				; String [si] to al
-							or	es:[di],al
-							lodsb				; String [si] to al
-							or	es:[di+1],al
-							lodsb				; String [si] to al
-							or	es:[di+2],al
-							lodsb				; String [si] to al
-							or	es:[di+3],al
-							add	bx,4
-							add	di,2000h
-							cmp	di,hgc_bank_size
-							jb	draw_sprite_bank_ok			; Jump if below
-							mov	bp,di
-							sub	bp,2000h
-							mov	ax,es:[bp]
-							mov	es:[di],ax
-							mov	ax,es:[bp+2]
-							mov	es:[di+2],ax
-							add	di,0A05Ah
+								push	cx
+								mov	al,[bx]
+								and	es:[di],al
+								mov	al,[bx+1]
+								and	es:[di+1],al
+								mov	al,[bx+2]
+								and	es:[di+2],al
+								mov	al,[bx+3]
+								and	es:[di+3],al
+								lodsb				; String [si] to al
+								or	es:[di],al
+								lodsb				; String [si] to al
+								or	es:[di+1],al
+								lodsb				; String [si] to al
+								or	es:[di+2],al
+								lodsb				; String [si] to al
+								or	es:[di+3],al
+								add	bx,4
+								add	di,2000h
+								cmp	di,hgc_bank_size
+								jb	draw_sprite_bank_ok			; Jump if below
+								mov	bp,di
+								sub	bp,2000h
+								mov	ax,es:[bp]
+								mov	es:[di],ax
+								mov	ax,es:[bp+2]
+								mov	es:[di+2],ax
+								add	di,0A05Ah
 
 draw_sprite_bank_ok:
-							pop	cx
-							loop	draw_sprite_row_loop		; Loop if cx > 0
+								pop	cx
+								loop	draw_sprite_row_loop		; Loop if cx > 0
 
 		pop	si
 		pop	ds
@@ -1927,10 +1950,10 @@ fn_12_decode_sprites:				; dispatch fn 12: decode sprite bitplanes from CS+3000h
 		mov	si,zero_offset
 
 sprite_decode_row_loop:
-							push	cx
-							call	process_sprite_row
-							pop	cx
-							loop	sprite_decode_row_loop		; Loop if cx > 0
+								push	cx
+								call	process_sprite_row
+								pop	cx
+								loop	sprite_decode_row_loop		; Loop if cx > 0
 
 fn_34:
 		retn
@@ -1939,18 +1962,18 @@ process_sprite_row		proc	near
 		mov	cx,8
 
 sprite_decode_inner_loop:
-							push	cx
-							lodsw				; String [si] to ax
-							mov	cs:bitplane_0,ax
-							lodsw				; String [si] to ax
-							mov	cs:bitplane_1,ax
-							lodsw				; String [si] to ax
-							mov	cs:bitplane_2,ax
-							call	extract_bitplane_pixels
-							mov	ax,dx
-							stosw				; Store ax to es:[di]
-							pop	cx
-							loop	sprite_decode_inner_loop		; Loop if cx > 0
+								push	cx
+								lodsw				; String [si] to ax
+								mov	cs:bitplane_0,ax
+								lodsw				; String [si] to ax
+								mov	cs:bitplane_1,ax
+								lodsw				; String [si] to ax
+								mov	cs:bitplane_2,ax
+								call	extract_bitplane_pixels
+								mov	ax,dx
+								stosw				; Store ax to es:[di]
+								pop	cx
+								loop	sprite_decode_inner_loop		; Loop if cx > 0
 
 		retn
 

@@ -119,6 +119,7 @@ tori_frame_00:				; offset 0x0B0 -> ptr 0xA0B0 -- group A[0] head pose
 		db	 0Fh, 10h, 00h, 21h, 22h, 00h	; row 7
 		db	 00h, 00h, 00h, 00h, 21h, 22h	; row 8
 		db	 00h, 00h, 00h, 23h, 24h, 00h	; row 9
+
 tori_frame_01:				; offset 0x0EC -> ptr 0xA0EC -- group C[1] head pose
 		db	 25h, 26h, 27h, 28h, 00h, 1Dh	; row 0
 		db	 1Eh, 0Fh, 10h, 00h,0BFh, 1Ah	; row 1
@@ -130,26 +131,31 @@ tori_frame_01:				; offset 0x0EC -> ptr 0xA0EC -- group C[1] head pose
 		db	 03h, 04h, 00h, 21h, 22h, 00h	; row 7
 		db	 00h, 00h, 00h, 00h, 21h, 22h	; row 8
 		db	 00h, 00h, 00h, 23h, 24h, 00h	; row 9
+
 tori_frame_02:				; offset 0x128 -> ptr 0xA128 -- group A[8] mid pose
 		db	 25h, 26h, 27h, 28h, 00h, 29h	; row 0
 		db	 2Ah, 2Bh, 2Ch, 00h, 2Dh, 2Eh	; row 1
 		db	 2Fh, 30h, 00h	; row 2
+
 tori_frame_03:				; offset 0x137 -> ptr 0xA137 -- group C[3] mid pose
 		db	 31h, 32h, 33h, 34h, 00h, 00h	; row 0
 		db	 00h, 35h, 36h, 00h, 37h, 38h	; row 1
 		db	 39h, 3Ah, 00h, 3Bh, 3Ch, 3Dh	; row 2
 		db	 3Eh, 00h, 3Fh, 40h, 41h, 42h	; row 3
 		db	 00h, 43h, 44h, 45h, 46h, 00h	; row 4
+
 tori_frame_04:				; offset 0x155 -> ptr 0xA155 -- group A[1] swoop pose
 		db	 43h, 44h, 45h, 46h, 00h, 00h	; row 0
 		db	 00h, 47h, 48h, 00h, 49h, 4Ah	; row 1
 		db	 4Bh, 4Ch, 00h, 4Dh, 4Eh, 4Fh	; row 2
 		db	 50h, 00h, 51h, 52h, 53h, 54h	; row 3
 		db	 00h, 55h, 56h, 57h, 58h, 00h	; row 4
+
 tori_frame_05:				; offset 0x173 -> ptr 0xA173 -- group A[9] swoop pose (alt)
 		db	 55h, 56h, 57h, 58h, 00h, 59h	; row 0
 		db	 5Ah, 5Bh, 5Ch, 00h, 5Dh, 5Eh	; row 1
 		db	 5Fh, 60h, 00h	; row 2
+
 tori_frame_06:				; offset 0x182 -> ptr 0xA182 -- group C[4] swoop pose
 		db	 61h, 62h, 63h, 64h, 00h, 00h	; row 0
 		db	 00h, 65h, 66h, 00h, 00h, 00h	; row 1
@@ -157,6 +163,7 @@ tori_frame_06:				; offset 0x182 -> ptr 0xA182 -- group C[4] swoop pose
 		db	 6Ah, 00h, 00h, 00h, 6Bh, 6Ch	; row 3
 		db	 00h, 6Dh, 6Eh, 6Fh, 70h, 00h	; row 4
 		db	 76h, 77h, 73h, 74h, 00h	; row 5
+
 tori_frame_07:				; offset 0x1A5 -> ptr 0xA1A5 -- group A[2] dive pose
 		db	 76h, 78h, 73h, 74h, 00h, 00h	; row 0
 		db	 00h, 65h, 66h, 00h, 00h, 00h	; row 1
@@ -164,58 +171,72 @@ tori_frame_07:				; offset 0x1A5 -> ptr 0xA1A5 -- group A[2] dive pose
 		db	 6Ah, 00h, 00h, 00h, 6Bh, 6Ch	; row 3
 		db	 00h, 6Dh, 6Eh, 6Fh, 70h, 00h	; row 4
 		db	 71h, 72h, 73h, 74h, 00h	; row 5
+
 tori_frame_08:				; offset 0x1C8 -> ptr 0xA1C8 -- group A[10] dive pose (alt)
 		db	 75h, 72h, 73h, 74h, 00h, 7Bh	; row 0
 		db	 7Ch, 7Dh, 7Eh, 00h, 7Fh, 80h	; row 1
 		db	 81h, 82h, 00h	; row 2
+
 tori_frame_09:				; offset 0x1D7 -> ptr 0xA1D7 -- group A[3] flap pose
 		db	 83h, 84h, 85h, 86h, 01h, 87h	; row 0
 		db	 88h, 89h, 8Ah, 01h, 8Bh, 8Ch	; row 1
 		db	 8Dh, 8Eh, 01h, 8Fh, 90h, 91h	; row 2
 		db	 92h, 01h, 93h, 94h, 95h, 96h	; row 3
 		db	 01h, 97h, 98h, 99h, 9Ah, 01h	; row 4
+
 tori_frame_0a:				; offset 0x1F5 -> ptr 0xA1F5 -- group C[5] flap pose
 		db	 9Bh, 9Ch, 9Dh, 9Eh, 01h, 87h	; row 0
 		db	 88h, 89h, 8Ah, 01h, 9Fh,0A0h	; row 1
 		db	0A1h,0A2h, 01h,0A3h,0A4h,0A5h	; row 2
 		db	0A6h, 01h,0A7h,0A8h,0A9h,0AAh	; row 3
 		db	 01h,0ABh,0ACh,0ADh,0AEh, 01h	; row 4
+
 tori_frame_0b:				; offset 0x213 -> ptr 0xA213 -- group A[11] flap pose (alt)
 		db	0AFh,0B0h,0B1h,0B2h, 01h,0B3h	; row 0
 		db	0B4h,0B5h,0B6h, 01h,0B7h,0B8h	; row 1
 		db	0B9h,0BAh, 01h	; row 2
+
 tori_frame_0c:				; offset 0x222 -> ptr 0xA222 -- group B[2] hover pose
 		db	0BBh,0BCh,0BDh,0BEh, 01h,0EFh	; row 0
 		db	0F0h,0F1h,0F2h, 01h,0F3h,0C5h	; row 1
 		db	0C6h,0C7h, 01h	; row 2
+
 tori_frame_0d:				; offset 0x231 -> ptr 0xA231 -- group B[4] hover step
 		db	0C8h,0C9h,0CAh,0CBh, 00h,0CCh	; row 0
 		db	0CDh,0CEh,0CFh, 00h,0D0h,0D1h	; row 1
 		db	0D2h,0D3h, 00h,0D4h,0D5h,0D6h	; row 2
 		db	0D7h, 00h	; row 3
+
 tori_frame_0e:				; offset 0x245 -> ptr 0xA245 -- group B[5] hover step
 		db	0D0h,0D1h,0D2h,0D3h, 02h,0CCh	; row 0
 		db	0CDh,0CEh,0CFh, 02h,0D0h,0D1h	; row 1
 		db	0D2h,0D3h, 02h,0D4h,0D5h,0D6h	; row 2
 		db	0D7h, 02h	; row 3
+
 tori_frame_0f:				; offset 0x259 -> ptr 0xA259 -- group B[3] retreat pose
 		db	0D0h,0D1h,0D2h,0D3h, 00h,0D8h	; row 0
 		db	0D9h,0DAh,0DBh, 00h,0D8h,0D9h	; row 1
 		db	0DAh,0DBh, 00h,0D8h,0D9h,0DAh	; row 2
 		db	0DBh, 00h	; row 3
+
 tori_frame_10:				; offset 0x26D -> ptr 0xA26D -- group B[6] retreat step
 		db	0D8h,0D9h,0DAh,0DBh, 01h	; row 0 (single row)
+
 tori_frame_11:				; offset 0x272 -> ptr 0xA272 -- group B[0,1] death pose
 		db	0DCh,0DDh,0DEh,0DFh, 01h,0E4h	; row 0
 		db	0ECh,0E4h,0ECh, 01h,0E5h,0ECh	; row 1
 		db	0E6h,0ECh, 01h,0E7h,0E8h,0E9h	; row 2
 		db	0EAh, 01h	; row 3
+
 tori_frame_12:				; offset 0x286 -> ptr 0xA286 -- group B[12] aux pose A
 		db	 00h, 00h, 00h,0EBh, 02h	; row 0 (single row)
+
 tori_frame_13:				; offset 0x28B -> ptr 0xA28B -- group B[8] aux pose B
 		db	0E0h,0E1h,0E2h,0E3h, 00h	; row 0 (single row)
+
 tori_frame_14:				; offset 0x290 -> ptr 0xA290 -- group B[9] aux pose C
 		db	0EDh,0EEh, 79h, 7Ah, 02h	; row 0 (single row)
+
 tori_frame_15:				; offset 0x295 -> ptr 0xA295 -- group B[13] aux pose D
 		db	0EDh,0EEh, 79h, 7Ah, 01h,0F4h	; row 0
 		db	0F5h,0F6h,0F7h	; row 1
@@ -455,17 +476,17 @@ tori_substate_7:				; was '* No entry point to code' marker
 		retn
 
 tori_sub7_advance_state6:
-			mov	byte ptr [si+6],9
-			mov	byte ptr [si+9],6
-			retn
+				mov	byte ptr [si+6],9
+				mov	byte ptr [si+9],6
+				retn
 
 tori_sub7_west_branch:
-			call	word ptr cs:fight_cb_dist_check
-			jc	tori_sub7_advance_alt			; Jump if carry Set
-			retn
+				call	word ptr cs:fight_cb_dist_check
+				jc	tori_sub7_advance_alt			; Jump if carry Set
+				retn
 
 tori_sub7_advance_alt:
-			jmp	short tori_sub7_advance_state6
+				jmp	short tori_sub7_advance_state6
 
 ; tori_alt_state_a -- fall-through after `jmp short tori_sub7_advance_state6` -- alt phase setup (phase=0xA, state=7).
 
@@ -491,19 +512,19 @@ tori_alt_b_chain_a:
 		retn
 
 tori_alt_b_reset:
-			mov	byte ptr [si+9],0
-			mov	byte ptr [si+6],0
-			mov	byte ptr [si+0Ah],1
-			retn
+				mov	byte ptr [si+9],0
+				mov	byte ptr [si+6],0
+				mov	byte ptr [si+0Ah],1
+				retn
 
 tori_alt_b_west:
-			call	word ptr cs:fight_cb_step_neg_2
-			jc	tori_alt_b_chain_b			; Jump if carry Set
-			retn
+				call	word ptr cs:fight_cb_step_neg_2
+				jc	tori_alt_b_chain_b			; Jump if carry Set
+				retn
 
 tori_alt_b_chain_b:
-			call	word ptr cs:fight_cb_map_fwd
-			jc	tori_alt_b_reset			; Jump if carry Set
+				call	word ptr cs:fight_cb_map_fwd
+				jc	tori_alt_b_reset			; Jump if carry Set
 		xor	byte ptr [si+5],80h
 		retn
 
@@ -857,14 +878,14 @@ tori_s5_state1_active:
 		jnc	tori_s5_state1_step			; Jump if carry=0
 
 tori_s5_state1_finish:
-			and	byte ptr [si+9],0FEh
-			retn
+				and	byte ptr [si+9],0FEh
+				retn
 
 tori_s5_state1_west:
-			call	word ptr cs:fight_cb_step_neg
-			jnc	tori_s5_state1_step			; Jump if carry=0
-			call	word ptr cs:fight_cb_step_neg_2
-			jc	tori_s5_state1_finish			; Jump if carry Set
+				call	word ptr cs:fight_cb_step_neg
+				jnc	tori_s5_state1_step			; Jump if carry=0
+				call	word ptr cs:fight_cb_step_neg_2
+				jc	tori_s5_state1_finish			; Jump if carry Set
 
 tori_s5_state1_step:
 		inc	byte ptr [si+6]

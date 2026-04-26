@@ -295,18 +295,18 @@ start:
 		mov	si,scene_sprite_c
 
 scene_sprite_loop:
-						mov	byte ptr ds:gvar_timer_lo,0
-						lodsb				; String [si] to al
-						or	al,al			; Zero ?
-						jz	scene_after_anim			; Jump if zero
-						push	si
-						dec	al
-						mov	bx,1720h
-						call	word ptr cs:disp_narr_chap2
-						pop	si
-						mov	al,14h
-						call	timer_wait_loop
-						jmp	short scene_sprite_loop
+							mov	byte ptr ds:gvar_timer_lo,0
+							lodsb				; String [si] to al
+							or	al,al			; Zero ?
+							jz	scene_after_anim			; Jump if zero
+							push	si
+							dec	al
+							mov	bx,1720h
+							call	word ptr cs:disp_narr_chap2
+							pop	si
+							mov	al,14h
+							call	timer_wait_loop
+							jmp	short scene_sprite_loop
 
 scene_after_anim:
 		WAIT_FRAME 0F0h
@@ -386,26 +386,26 @@ scene_after_anim:
 		mov	cx,64h
 
 scene_color_rotate_loop:
-						push	cx
-						mov	byte ptr ds:gvar_timer_lo,0
-						push	ax
-						call	word ptr cs:disp_set_drv_seg
-						pop	ax
-						push	ax
-						mov	al,ah
-						call	word ptr cs:disp_set_drv_seg
-						mov	al,50h			; 'P'
-						call	timer_wait_loop
-						pop	ax
-						add	ah,2
-						sub	al,2
-						pop	cx
-						loop	scene_color_rotate_loop		; Loop if cx > 0
+							push	cx
+							mov	byte ptr ds:gvar_timer_lo,0
+							push	ax
+							call	word ptr cs:disp_set_drv_seg
+							pop	ax
+							push	ax
+							mov	al,ah
+							call	word ptr cs:disp_set_drv_seg
+							mov	al,50h			; 'P'
+							call	timer_wait_loop
+							pop	ax
+							add	ah,2
+							sub	al,2
+							pop	cx
+							loop	scene_color_rotate_loop		; Loop if cx > 0
 
 scene_wait_gfx_enabled:
-						call	interrupt_handler_cascade
-						test	byte ptr ds:gvar_enable_all,0FFh
-						jz	scene_wait_gfx_enabled			; Jump if zero
+							call	interrupt_handler_cascade
+							test	byte ptr ds:gvar_enable_all,0FFh
+							jz	scene_wait_gfx_enabled			; Jump if zero
 		jmp	timer_exit_to_game
 
 opening_scene_main		endp
@@ -418,29 +418,29 @@ sprite_anim_proc		proc	near
 		mov	byte ptr ds:render_state_b,8Ah
 
 anim_main_loop:
-						mov	byte ptr ds:gvar_timer_lo,0
+							mov	byte ptr ds:gvar_timer_lo,0
 
 anim_read_byte:
-										lodsb				; String [si] to al
-										or	al,al			; Zero ?
-										jnz	anim_check_frame_opcode			; Jump if not zero
-										retn
+												lodsb				; String [si] to al
+												or	al,al			; Zero ?
+												jnz	anim_check_frame_opcode			; Jump if not zero
+												retn
 
 anim_check_frame_opcode:
-										cmp	al,5
-										jae	anim_char_render			; Jump if above or =
-										push	si
-										dec	al
-										mov	bx,1F70h
-										call	word ptr cs:disp_chap2_call
-										pop	si
-										jmp	short anim_read_byte
+												cmp	al,5
+												jae	anim_char_render			; Jump if above or =
+												push	si
+												dec	al
+												mov	bx,1F70h
+												call	word ptr cs:disp_chap2_call
+												pop	si
+												jmp	short anim_read_byte
 
 anim_char_render:
-						call	char_render_proc
-						mov	al,14h
-						call	timer_wait_loop
-						jmp	short anim_main_loop
+							call	char_render_proc
+							mov	al,14h
+							call	timer_wait_loop
+							jmp	short anim_main_loop
 
 sprite_anim_proc		endp
 
@@ -506,38 +506,38 @@ animate_scanline		proc	near
 		mov	si,6FF0h
 
 scanline_data_loop:
-						call	word ptr cs:anim_fn_fade
-						push	si
-						mov	cx,0Ah
+							call	word ptr cs:anim_fn_fade
+							push	si
+							mov	cx,0Ah
 
 scanline_frame_loop:
-										push	cx
-										mov	ax,cx
-										neg	ax
-										add	ax,0Ah
-										mov	bx,20h
-										mov	cx,5078h
-										call	word ptr cs:anim_fn_draw
-										mov	al,1Ch
-										call	timer_wait_loop
-										pop	cx
-										loop	scanline_frame_loop		; Loop if cx > 0
+												push	cx
+												mov	ax,cx
+												neg	ax
+												add	ax,0Ah
+												mov	bx,20h
+												mov	cx,5078h
+												call	word ptr cs:anim_fn_draw
+												mov	al,1Ch
+												call	timer_wait_loop
+												pop	cx
+												loop	scanline_frame_loop		; Loop if cx > 0
 
-						pop	si
-						cmp	byte ptr [si-1],0FFh
-						jne	scanline_data_loop			; Jump if not equal
+							pop	si
+							cmp	byte ptr [si-1],0FFh
+							jne	scanline_data_loop			; Jump if not equal
 		mov	cx,78h
 
 scanline_fade_loop:
-						push	cx
-						xor	ax,ax			; Zero register
-						mov	bx,20h
-						mov	cx,5078h
-						call	word ptr cs:anim_fn_draw
-						mov	al,1Ch
-						call	timer_wait_loop
-						pop	cx
-						loop	scanline_fade_loop		; Loop if cx > 0
+							push	cx
+							xor	ax,ax			; Zero register
+							mov	bx,20h
+							mov	cx,5078h
+							call	word ptr cs:anim_fn_draw
+							mov	al,1Ch
+							call	timer_wait_loop
+							pop	cx
+							loop	scanline_fade_loop		; Loop if cx > 0
 
 		retn
 
@@ -550,13 +550,13 @@ animate_scanline		endp
 timer_wait_loop		proc	near
 
 timer_check_input:
-						test	byte ptr cs:gvar_skip_input,0FFh
-						jnz	timer_exit_to_game			; Jump if not zero
-						cmp	byte ptr cs:gvar_key_state,ENTER_KEY
-						je	timer_exit_to_game			; Jump if equal
-						call	interrupt_handler_cascade
-						cmp	cs:gvar_timer_lo,al
-						jb	timer_check_input			; Jump if below
+							test	byte ptr cs:gvar_skip_input,0FFh
+							jnz	timer_exit_to_game			; Jump if not zero
+							cmp	byte ptr cs:gvar_key_state,ENTER_KEY
+							je	timer_exit_to_game			; Jump if equal
+							call	interrupt_handler_cascade
+							cmp	cs:gvar_timer_lo,al
+							jb	timer_check_input			; Jump if below
 		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 
@@ -579,8 +579,8 @@ timer_exit_to_game:
 		call	word ptr cs:gfx_mode_fn
 
 timer_wait_gfx:
-						test	byte ptr ds:gvar_enable_all,0FFh
-						jz	timer_wait_gfx			; Jump if zero
+							test	byte ptr ds:gvar_enable_all,0FFh
+							jz	timer_wait_gfx			; Jump if zero
 		mov	byte ptr cs:gvar_skip_input,0
 		mov	byte ptr cs:gvar_key_state,0
 		jmp	short $+2		; delay for I/O
@@ -610,13 +610,13 @@ timer_wait_gfx:
 scene_transition_wait:
 
 trans_wait_timer:
-						test	byte ptr cs:gvar_skip_input,0FFh
-						jnz	trans_exit			; Jump if not zero
-						cmp	byte ptr cs:gvar_key_state,ENTER_KEY
-						je	trans_exit			; Jump if equal
-						call	interrupt_handler_cascade
-						cmp	cs:gvar_timer_lo,al
-						jb	trans_wait_timer			; Jump if below
+							test	byte ptr cs:gvar_skip_input,0FFh
+							jnz	trans_exit			; Jump if not zero
+							cmp	byte ptr cs:gvar_key_state,ENTER_KEY
+							je	trans_exit			; Jump if equal
+							call	interrupt_handler_cascade
+							cmp	cs:gvar_timer_lo,al
+							jb	trans_wait_timer			; Jump if below
 		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 
@@ -625,8 +625,8 @@ trans_exit:
 		call	word ptr cs:gfx_init_fn
 
 trans_wait_gfx:
-						test	byte ptr ds:gvar_enable_all,0FFh
-						jz	trans_wait_gfx			; Jump if zero
+							test	byte ptr ds:gvar_enable_all,0FFh
+							jz	trans_wait_gfx			; Jump if zero
 		mov	byte ptr cs:gvar_skip_input,0
 		mov	byte ptr cs:gvar_key_state,0
 		jmp	begin_gameplay
@@ -638,38 +638,38 @@ credits_scroll_display:
 		mov	si,742Fh
 
 credits_scanline_loop:
-						call	word ptr cs:anim_fn_fade
-						push	si
-						mov	cx,0Ah
+							call	word ptr cs:anim_fn_fade
+							push	si
+							mov	cx,0Ah
 
 credits_frame_loop:
-										push	cx
-										mov	ax,cx
-										neg	ax
-										add	ax,0Ah
-										mov	bx,20h
-										mov	cx,5078h
-										call	word ptr cs:anim_fn_draw
-										mov	al,1Ch
-										call	scene_transition_wait
-										pop	cx
-										loop	credits_frame_loop		; Loop if cx > 0
+												push	cx
+												mov	ax,cx
+												neg	ax
+												add	ax,0Ah
+												mov	bx,20h
+												mov	cx,5078h
+												call	word ptr cs:anim_fn_draw
+												mov	al,1Ch
+												call	scene_transition_wait
+												pop	cx
+												loop	credits_frame_loop		; Loop if cx > 0
 
-						pop	si
-						cmp	byte ptr [si-1],0FFh
-						jne	credits_scanline_loop			; Jump if not equal
+							pop	si
+							cmp	byte ptr [si-1],0FFh
+							jne	credits_scanline_loop			; Jump if not equal
 		mov	cx,78h
 
 credits_fade_loop:
-						push	cx
-						xor	ax,ax			; Zero register
-						mov	bx,20h
-						mov	cx,5078h
-						call	word ptr cs:anim_fn_draw
-						mov	al,1Ch
-						call	scene_transition_wait
-						pop	cx
-						loop	credits_fade_loop		; Loop if cx > 0
+							push	cx
+							xor	ax,ax			; Zero register
+							mov	bx,20h
+							mov	cx,5078h
+							call	word ptr cs:anim_fn_draw
+							mov	al,1Ch
+							call	scene_transition_wait
+							pop	cx
+							loop	credits_fade_loop		; Loop if cx > 0
 
 		retn
 		db	ANIM_87, ' '	; animation code + space (script entry point)
@@ -885,20 +885,20 @@ begin_gameplay:
 		mov	cx,18h
 
 gameplay_timer_loop_start:
-						push	cx
-						push	dx
-						push	bx
-						mov	byte ptr cs:gvar_timer_lo,0
-						mov	cx,dx
-						call	word ptr cs:disp_load_setup
-						mov	al,0Fh
-						call	gameplay_timer_loop
-						pop	bx
-						pop	dx
-						inc	bh
-						dec	dh
-						pop	cx
-						loop	gameplay_timer_loop_start		; Loop if cx > 0
+							push	cx
+							push	dx
+							push	bx
+							mov	byte ptr cs:gvar_timer_lo,0
+							mov	cx,dx
+							call	word ptr cs:disp_load_setup
+							mov	al,0Fh
+							call	gameplay_timer_loop
+							pop	bx
+							pop	dx
+							inc	bh
+							dec	dh
+							pop	cx
+							loop	gameplay_timer_loop_start		; Loop if cx > 0
 
 		mov	bx,2C15h
 		mov	cx,1A5Dh
@@ -918,20 +918,20 @@ gameplay_timer_loop_start:
 		mov	cx,18h
 
 gameplay_input_loop:
-						push	cx
-						push	dx
-						push	bx
-						mov	byte ptr cs:gvar_timer_lo,0
-						mov	cx,dx
-						call	word ptr cs:disp_load_setup
-						mov	al,0Fh
-						call	gameplay_timer_loop
-						pop	bx
-						pop	dx
-						inc	bh
-						dec	dh
-						pop	cx
-						loop	gameplay_input_loop		; Loop if cx > 0
+							push	cx
+							push	dx
+							push	bx
+							mov	byte ptr cs:gvar_timer_lo,0
+							mov	cx,dx
+							call	word ptr cs:disp_load_setup
+							mov	al,0Fh
+							call	gameplay_timer_loop
+							pop	bx
+							pop	dx
+							inc	bh
+							dec	dh
+							pop	cx
+							loop	gameplay_input_loop		; Loop if cx > 0
 
 		xor	ax,ax			; Zero register
 		call	word ptr cs:disp_font_inv
@@ -989,20 +989,20 @@ gameplay_input_loop:
 		mov	cx,0Ah
 
 gameplay_frame_loop:
-						push	cx
-						mov	al,0C8h
-						call	gameplay_timer_loop
-						pop	cx
-						loop	gameplay_frame_loop		; Loop if cx > 0
+							push	cx
+							mov	al,0C8h
+							call	gameplay_timer_loop
+							pop	cx
+							loop	gameplay_frame_loop		; Loop if cx > 0
 
 		jmp	short gameplay_exit_to_menu
 
 gameplay_timer_loop:
 
 gameplay_wait_elapsed:
-						call	gameplay_input_handler
-						cmp	cs:gvar_timer_lo,al
-						jb	gameplay_wait_elapsed			; Jump if below
+							call	gameplay_input_handler
+							cmp	cs:gvar_timer_lo,al
+							jb	gameplay_wait_elapsed			; Jump if below
 		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 
@@ -1245,22 +1245,22 @@ script_set_colors:
 		jmp	script_loop
 
 script_reset_position:
-						mov	word ptr ds:text_x_pos,0
-						mov	ds:text_y_pos,ah
-						jmp	script_loop
+							mov	word ptr ds:text_x_pos,0
+							mov	ds:text_y_pos,ah
+							jmp	script_loop
 
 script_newline:
-						mov	word ptr ds:text_x_pos,0
-						inc	byte ptr ds:text_y_pos
-						jmp	script_loop
+							mov	word ptr ds:text_x_pos,0
+							inc	byte ptr ds:text_y_pos
+							jmp	script_loop
 
 script_clear_screen:
-						mov	bx,8Fh
-						mov	cx,5039h
-						xor	al,al			; Zero register
-						call	word ptr cs:jashiin_speech_2+80h	; ('es')
-						xor	ah,ah			; Zero register
-						jmp	short script_reset_position
+							mov	bx,8Fh
+							mov	cx,5039h
+							xor	al,al			; Zero register
+							call	word ptr cs:jashiin_speech_2+80h	; ('es')
+							xor	ah,ah			; Zero register
+							jmp	short script_reset_position
 
 script_do_pause:
 		mov	al,0F0h
@@ -1355,56 +1355,56 @@ calc_text_width		proc	near
 		xor	cx,cx			; Zero register
 
 width_char_loop:
-										lodsb				; String [si] to al
-										cmp	al,20h			; ' '
-										jne	width_end_on_space			; Jump if not equal
-										retn
+												lodsb				; String [si] to al
+												cmp	al,20h			; ' '
+												jne	width_end_on_space			; Jump if not equal
+												retn
 
 width_end_on_space:
-										cmp	al,0FFh
-										jne	width_end_on_eof			; Jump if not equal
-										retn
+												cmp	al,0FFh
+												jne	width_end_on_eof			; Jump if not equal
+												retn
 
 width_end_on_eof:
-										cmp	al,0FEh
-										jne	width_end_on_fe			; Jump if not equal
-										retn
+												cmp	al,0FEh
+												jne	width_end_on_fe			; Jump if not equal
+												retn
 
 width_end_on_fe:
-										cmp	al,0FDh
-										jne	width_end_on_fd			; Jump if not equal
-										retn
+												cmp	al,0FDh
+												jne	width_end_on_fd			; Jump if not equal
+												retn
 
 width_end_on_fd:
-										cmp	al,0F7h
-										jne	width_end_on_f7			; Jump if not equal
-										retn
+												cmp	al,0F7h
+												jne	width_end_on_f7			; Jump if not equal
+												retn
 
 width_end_on_f7:
-										cmp	al,0F3h
-										jne	width_end_on_f3			; Jump if not equal
-										retn
+												cmp	al,0F3h
+												jne	width_end_on_f3			; Jump if not equal
+												retn
 
 width_end_on_f3:
-										cmp	al,0F2h
-										jne	width_end_on_f2			; Jump if not equal
-										retn
+												cmp	al,0F2h
+												jne	width_end_on_f2			; Jump if not equal
+												retn
 
 width_end_on_f2:
-										cmp	al,0F1h
-										jne	width_end_on_f1			; Jump if not equal
-										retn
+												cmp	al,0F1h
+												jne	width_end_on_f1			; Jump if not equal
+												retn
 
 width_end_on_f1:
-										or	al,al			; Zero ?
-										js	width_char_loop			; Jump if sign=1
-										sub	al,20h			; ' '
-										jc	width_char_loop			; Jump if carry Set
-						mov	bl,al
-						xor	bh,bh			; Zero register
-						add	cl,cs:char_glyph_tbl[bx]
-						adc	ch,bh
-						jmp	short width_char_loop
+												or	al,al			; Zero ?
+												js	width_char_loop			; Jump if sign=1
+												sub	al,20h			; ' '
+												jc	width_char_loop			; Jump if carry Set
+							mov	bl,al
+							xor	bh,bh			; Zero register
+							add	cl,cs:char_glyph_tbl[bx]
+							adc	ch,bh
+							jmp	short width_char_loop
 
 calc_text_width		endp
 
@@ -1416,38 +1416,38 @@ animate_scanline_alt		proc	near
 		pop	si
 
 alt_scanline_loop:
-						call	word ptr cs:anim_fn_fade
-						push	si
-						mov	cx,0Ah
+							call	word ptr cs:anim_fn_fade
+							push	si
+							mov	cx,0Ah
 
 alt_frame_loop:
-										push	cx
-										mov	ax,cx
-										neg	ax
-										add	ax,0Ah
-										mov	bx,14h
-										mov	cx,50A0h
-										call	word ptr cs:anim_fn_draw
-										mov	al,1Ch
-										call	gameplay_timer_loop
-										pop	cx
-										loop	alt_frame_loop		; Loop if cx > 0
+												push	cx
+												mov	ax,cx
+												neg	ax
+												add	ax,0Ah
+												mov	bx,14h
+												mov	cx,50A0h
+												call	word ptr cs:anim_fn_draw
+												mov	al,1Ch
+												call	gameplay_timer_loop
+												pop	cx
+												loop	alt_frame_loop		; Loop if cx > 0
 
-						pop	si
-						cmp	byte ptr [si-1],0FFh
-						jne	alt_scanline_loop			; Jump if not equal
+							pop	si
+							cmp	byte ptr [si-1],0FFh
+							jne	alt_scanline_loop			; Jump if not equal
 		mov	cx,0A0h
 
 alt_fade_loop:
-						push	cx
-						xor	ax,ax			; Zero register
-						mov	bx,14h
-						mov	cx,50A0h
-						call	word ptr cs:anim_fn_draw
-						mov	al,1Ch
-						call	gameplay_timer_loop
-						pop	cx
-						loop	alt_fade_loop		; Loop if cx > 0
+							push	cx
+							xor	ax,ax			; Zero register
+							mov	bx,14h
+							mov	cx,50A0h
+							call	word ptr cs:anim_fn_draw
+							mov	al,1Ch
+							call	gameplay_timer_loop
+							pop	cx
+							loop	alt_fade_loop		; Loop if cx > 0
 
 		retn
 
@@ -1478,26 +1478,26 @@ rle_unpack_core:
 		add	si,cx
 
 decomp_bit_scan_loop:
-						push	cx
-						xor	al,al			; Zero register
-						mov	cx,8
+							push	cx
+							xor	al,al			; Zero register
+							mov	cx,8
 
 decomp_bit_loop:
-										rol	byte ptr ds:[bp],1	; Rotate
-										jc	decomp_copy_literal			; Jump if carry Set
-										stosb				; Store al to es:[di]
-										loop	decomp_bit_loop		; Loop if cx > 0
+												rol	byte ptr ds:[bp],1	; Rotate
+												jc	decomp_copy_literal			; Jump if carry Set
+												stosb				; Store al to es:[di]
+												loop	decomp_bit_loop		; Loop if cx > 0
 
-										jmp	short decomp_next_bit
+												jmp	short decomp_next_bit
 
 decomp_copy_literal:
-										movsb				; Mov [si] to es:[di]
-										loop	decomp_bit_loop		; Loop if cx > 0
+												movsb				; Mov [si] to es:[di]
+												loop	decomp_bit_loop		; Loop if cx > 0
 
 decomp_next_bit:
-						inc	bp
-						pop	cx
-						loop	decomp_bit_scan_loop		; Loop if cx > 0
+							inc	bp
+							pop	cx
+							loop	decomp_bit_scan_loop		; Loop if cx > 0
 
 		pop	cx
 		add	cx,cx
@@ -1510,43 +1510,43 @@ decomp_palette_transform:
 		xor	dh,dh			; Zero register
 
 decomp_palette_loop:
-						xor	al,al			; Zero register
-						rcl	byte ptr es:[di],1	; Rotate thru carry
-						adc	al,al
-						rcl	byte ptr es:[di],1	; Rotate thru carry
-						adc	al,al
-						xor	dh,al
-						mov	ah,dh
-						xor	al,al			; Zero register
-						rcl	byte ptr es:[di],1	; Rotate thru carry
-						adc	al,al
-						rcl	byte ptr es:[di],1	; Rotate thru carry
-						adc	al,al
-						xor	dh,al
-						add	ah,ah
-						add	ah,ah
-						or	ah,dh
-						xor	al,al			; Zero register
-						rcl	byte ptr es:[di],1	; Rotate thru carry
-						adc	al,al
-						rcl	byte ptr es:[di],1	; Rotate thru carry
-						adc	al,al
-						xor	dh,al
-						add	ah,ah
-						add	ah,ah
-						or	ah,dh
-						xor	al,al			; Zero register
-						rcl	byte ptr es:[di],1	; Rotate thru carry
-						adc	al,al
-						rcl	byte ptr es:[di],1	; Rotate thru carry
-						adc	al,al
-						xor	dh,al
-						add	ah,ah
-						add	ah,ah
-						or	ah,dh
-						mov	al,ah
-						stosb				; Store al to es:[di]
-						loop	decomp_palette_loop		; Loop if cx > 0
+							xor	al,al			; Zero register
+							rcl	byte ptr es:[di],1	; Rotate thru carry
+							adc	al,al
+							rcl	byte ptr es:[di],1	; Rotate thru carry
+							adc	al,al
+							xor	dh,al
+							mov	ah,dh
+							xor	al,al			; Zero register
+							rcl	byte ptr es:[di],1	; Rotate thru carry
+							adc	al,al
+							rcl	byte ptr es:[di],1	; Rotate thru carry
+							adc	al,al
+							xor	dh,al
+							add	ah,ah
+							add	ah,ah
+							or	ah,dh
+							xor	al,al			; Zero register
+							rcl	byte ptr es:[di],1	; Rotate thru carry
+							adc	al,al
+							rcl	byte ptr es:[di],1	; Rotate thru carry
+							adc	al,al
+							xor	dh,al
+							add	ah,ah
+							add	ah,ah
+							or	ah,dh
+							xor	al,al			; Zero register
+							rcl	byte ptr es:[di],1	; Rotate thru carry
+							adc	al,al
+							rcl	byte ptr es:[di],1	; Rotate thru carry
+							adc	al,al
+							xor	dh,al
+							add	ah,ah
+							add	ah,ah
+							or	ah,dh
+							mov	al,ah
+							stosb				; Store al to es:[di]
+							loop	decomp_palette_loop		; Loop if cx > 0
 
 		retn
 
@@ -1559,36 +1559,36 @@ decompress_image		endp
 fill_buffer		proc	near
 
 fill_loop:
-										test	byte ptr [si],40h	; '@'
-										jz	fill_raw_byte			; Jump if zero
-										lodsw				; String [si] to ax
-										xchg	ah,al
-										mov	cx,ax
-										cmp	ax,0FFFFh
-										jne	fill_process_count			; Jump if not equal
-										retn
+												test	byte ptr [si],40h	; '@'
+												jz	fill_raw_byte			; Jump if zero
+												lodsw				; String [si] to ax
+												xchg	ah,al
+												mov	cx,ax
+												cmp	ax,0FFFFh
+												jne	fill_process_count			; Jump if not equal
+												retn
 
 fill_process_count:
-										and	cx,3FFFh
-										test	ax,8000h
-										jz	fill_copy_bytes			; Jump if zero
+												and	cx,3FFFh
+												test	ax,8000h
+												jz	fill_copy_bytes			; Jump if zero
 
 fill_repeat_byte:
-										lodsb				; String [si] to al
-										rep	stosb			; Rep when cx >0 Store al to es:[di]
-										jmp	short fill_loop
+												lodsb				; String [si] to al
+												rep	stosb			; Rep when cx >0 Store al to es:[di]
+												jmp	short fill_loop
 
 fill_copy_bytes:
-										rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-										jmp	short fill_loop
+												rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+												jmp	short fill_loop
 
 fill_raw_byte:
-										lodsb				; String [si] to al
-										mov	cl,al
-										and	cx,3Fh
-										test	al,80h
-										jz	fill_copy_bytes			; Jump if zero
-						jmp	short fill_repeat_byte
+												lodsb				; String [si] to al
+												mov	cl,al
+												and	cx,3Fh
+												test	al,80h
+												jz	fill_copy_bytes			; Jump if zero
+							jmp	short fill_repeat_byte
 
 fill_buffer		endp
 
@@ -1655,16 +1655,16 @@ copy_buffer		proc	near
 		add	di,ax
 
 copy_line_loop:
-						push	cx
-						push	di
-						mov	cl,ch
-						xor	ch,ch			; Zero register
-						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-						pop	di
-						add	di,22h
-						pop	cx
-						dec	cl
-						jnz	copy_line_loop			; Jump if not zero
+							push	cx
+							push	di
+							mov	cl,ch
+							xor	ch,ch			; Zero register
+							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+							pop	di
+							add	di,22h
+							pop	cx
+							dec	cl
+							jnz	copy_line_loop			; Jump if not zero
 		pop	cx
 		pop	bx
 		retn
@@ -1693,24 +1693,24 @@ color_rotation		proc	near
 		mov	cx,30h
 
 rotate_row_loop:
-						push	cx
-						mov	cx,22h
+							push	cx
+							mov	cx,22h
 
 rotate_byte_loop:
-										mov	ah,ds:font_plane_a[si]
-										lodsb				; String [si] to al
-										mov	bh,al
-										not	bh
-										and	bh,ah
-										xor	ah,bh
-										mov	es:[di],al
-										mov	es:font_plane_b[di],bh
-										mov	es:font_plane_c[di],ah
-										inc	di
-										loop	rotate_byte_loop		; Loop if cx > 0
+												mov	ah,ds:font_plane_a[si]
+												lodsb				; String [si] to al
+												mov	bh,al
+												not	bh
+												and	bh,ah
+												xor	ah,bh
+												mov	es:[di],al
+												mov	es:font_plane_b[di],bh
+												mov	es:font_plane_c[di],ah
+												inc	di
+												loop	rotate_byte_loop		; Loop if cx > 0
 
-						pop	cx
-						loop	rotate_row_loop		; Loop if cx > 0
+							pop	cx
+							loop	rotate_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1726,41 +1726,41 @@ palette_blend		proc	near
 		mov	cx,30h
 
 blend_row_loop:
-						push	cx
-						push	di
-						mov	cx,11h
+							push	cx
+							push	di
+							mov	cx,11h
 
 blend_word_loop:
-										push	cx
-										mov	ax,es:[di]
-										mov	bx,es:plane_data_a[di]
-										not	ax
-										not	bx
-										and	ax,bx
-										and	ax,es:plane_data_b[di]
-										mov	dx,ax
-										not	dx
-										mov	bx,ax
-										and	ax,[si]
-										and	es:[di],dx
-										or	es:[di],ax
-										mov	ax,bx
-										and	ax,ds:font_plane_b[si]
-										and	es:plane_data_a[di],dx
-										or	es:plane_data_a[di],ax
-										mov	ax,bx
-										and	ax,ds:font_plane_c[si]
-										and	es:plane_data_b[di],dx
-										or	es:plane_data_b[di],ax
-										add	di,2
-										add	si,2
-										pop	cx
-										loop	blend_word_loop		; Loop if cx > 0
+												push	cx
+												mov	ax,es:[di]
+												mov	bx,es:plane_data_a[di]
+												not	ax
+												not	bx
+												and	ax,bx
+												and	ax,es:plane_data_b[di]
+												mov	dx,ax
+												not	dx
+												mov	bx,ax
+												and	ax,[si]
+												and	es:[di],dx
+												or	es:[di],ax
+												mov	ax,bx
+												and	ax,ds:font_plane_b[si]
+												and	es:plane_data_a[di],dx
+												or	es:plane_data_a[di],ax
+												mov	ax,bx
+												and	ax,ds:font_plane_c[si]
+												and	es:plane_data_b[di],dx
+												or	es:plane_data_b[di],ax
+												add	di,2
+												add	si,2
+												pop	cx
+												loop	blend_word_loop		; Loop if cx > 0
 
-						pop	di
-						add	di,48h
-						pop	cx
-						loop	blend_row_loop		; Loop if cx > 0
+							pop	di
+							add	di,48h
+							pop	cx
+							loop	blend_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1772,42 +1772,42 @@ xor_mask_render		proc	near
 		mov	cx,0A0h
 
 mask_row_loop:
-						push	cx
-						push	di
-						mov	cx,15h
+							push	cx
+							push	di
+							mov	cx,15h
 
 mask_byte_loop:
-										push	cx
-										mov	al,es:[si]
-										and	al,es:pixel_mask_a[si]
-										mov	ah,es:pixel_mask_b[si]
-										not	ah
-										and	al,ah
-										not	al
-										mov	ah,es:[si]
-										or	ah,es:pixel_mask_a[si]
-										or	ah,es:pixel_mask_b[si]
-										and	es:[si],al
-										and	es:pixel_mask_a[si],al
-										not	ah
-										and	es:[di],ah
-										and	es:gfx_plane_b[di],ah
-										and	es:framebuffer_b[di],ah
-										mov	al,es:[si]
-										or	es:[di],al
-										mov	al,es:pixel_mask_a[si]
-										or	es:gfx_plane_b[di],al
-										mov	al,es:pixel_mask_b[si]
-										or	es:framebuffer_b[di],al
-										inc	di
-										inc	si
-										pop	cx
-										loop	mask_byte_loop		; Loop if cx > 0
+												push	cx
+												mov	al,es:[si]
+												and	al,es:pixel_mask_a[si]
+												mov	ah,es:pixel_mask_b[si]
+												not	ah
+												and	al,ah
+												not	al
+												mov	ah,es:[si]
+												or	ah,es:pixel_mask_a[si]
+												or	ah,es:pixel_mask_b[si]
+												and	es:[si],al
+												and	es:pixel_mask_a[si],al
+												not	ah
+												and	es:[di],ah
+												and	es:gfx_plane_b[di],ah
+												and	es:framebuffer_b[di],ah
+												mov	al,es:[si]
+												or	es:[di],al
+												mov	al,es:pixel_mask_a[si]
+												or	es:gfx_plane_b[di],al
+												mov	al,es:pixel_mask_b[si]
+												or	es:framebuffer_b[di],al
+												inc	di
+												inc	si
+												pop	cx
+												loop	mask_byte_loop		; Loop if cx > 0
 
-						pop	di
-						add	di,40h
-						pop	cx
-						loop	mask_row_loop		; Loop if cx > 0
+							pop	di
+							add	di,40h
+							pop	cx
+							loop	mask_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1820,20 +1820,20 @@ merge_gfx_planes		proc	near
 		mov	cx,3000h
 
 merge_loop:
-						mov	byte ptr es:framebuffer_b[di],0
-						mov	al,es:gfx_plane_b[di]
-						mov	ah,es:[di]
-						not	ah
-						and	al,ah
-						or	es:[di],al
-						or	es:framebuffer_b[di],al
-						not	al
-						and	es:gfx_plane_b[di],al
-						mov	al,es:gfx_plane_b[di]
-						and	al,es:[di]
-						or	es:framebuffer_b[di],al
-						inc	di
-						loop	merge_loop		; Loop if cx > 0
+							mov	byte ptr es:framebuffer_b[di],0
+							mov	al,es:gfx_plane_b[di]
+							mov	ah,es:[di]
+							not	ah
+							and	al,ah
+							or	es:[di],al
+							or	es:framebuffer_b[di],al
+							not	al
+							and	es:gfx_plane_b[di],al
+							mov	al,es:gfx_plane_b[di]
+							and	al,es:[di]
+							or	es:framebuffer_b[di],al
+							inc	di
+							loop	merge_loop		; Loop if cx > 0
 
 		pop	di
 		pop	es

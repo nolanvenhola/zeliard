@@ -39,7 +39,6 @@ include  zr3com.inc
 
 ; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
 
-
 ; Shared enemy spawn/state globals in game_seg DS.
 
 path_tbl_a		equ	8A89h			; path/route data table A
@@ -72,6 +71,7 @@ start:
 ; ----------------------------------------------------------------
 ; eai7_init_params  -- spawn parameter block (init/timer constants)
 ; ----------------------------------------------------------------
+
 eai7_init_params:
 		db	 08h, 00h, 00h,0F1h,0A2h, 00h	; row 0
 		db	 00h, 00h, 00h,0DBh,0A2h, 50h	; row 1
@@ -83,6 +83,7 @@ eai7_init_params:
 ; eai7_jump_tbl_a  -- DS pointer table (CS-relative addresses A0xx..A2xx)
 ; Bank A: dispatch entries at sub-state idx 0,2,4,6,8 etc.
 ; ----------------------------------------------------------------
+
 eai7_jump_tbl_a:
 		db	0B0h,0A0h, 0Fh,0A1h, 6Eh,0A1h	; row 0: ptrs A0B0,A10F,A16E
 		db	0CDh,0A1h, 2Ch,0A2h		; row 1: ptrs A1CD,A22C
@@ -109,6 +110,7 @@ eai7_collide_marker		db	0
 ; ----------------------------------------------------------------
 ; eai7_sprite_tbl_b0  -- sprite tile-index table (frames 0xB0..0xBF)
 ; ----------------------------------------------------------------
+
 eai7_sprite_tbl_b0:
 		db	 00h, 00h, 00h, 00h, 00h,0B0h	; frame 0 (5 zeros + B0)
 		db	0B1h,0B2h,0B3h, 00h,0B8h,0B9h	; frame 1: B1,B2,B3,0,B8,B9
@@ -224,6 +226,7 @@ eai7_anim_idx_b:
 ; eai7_unk_data_at_0x276  -- mixed sprite/ptr table (frames 6E/84/A2)
 ; Sprite indices interleaved with CS-relative pointers (A2E5..A2ED).
 ; ----------------------------------------------------------------
+
 eai7_unk_data_at_0x276:
 		db	 00h,0FCh,0FDh, 6Eh, 84h, 02h	; row 0: sprite frames + flag
 		db	0FCh,0FDh, 6Eh, 84h,0E5h,0A2h	; row 1: ptrs A2E5
@@ -397,6 +400,7 @@ sub01_despawn_call:
 ; sub01_spawn_param_tbl  -- spawn-cell offset/coord block (sub01)
 ; Two parallel records: facing+/facing- variants (row,col,row,col,...)
 ; ----------------------------------------------------------------
+
 sub01_spawn_param_tbl:
 		db	 00h, 00h, 30h, 00h, 14h, 00h	; row 0: rec A header
 		db	 28h, 00h			; row 1: rec A tail
@@ -455,18 +459,18 @@ collide_check_fwd		proc	near
 		mov	cx,4
 
 collide_fwd_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_fwd_iter			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_fwd_iter			; Jump if zero
+				retn
 
 collide_fwd_iter:
-			xchg	si,di
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			xchg	si,di
-			loop	collide_fwd_loop		; Loop if cx > 0
+				xchg	si,di
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				xchg	si,di
+				loop	collide_fwd_loop		; Loop if cx > 0
 
 		xchg	si,di
 		sub	si,24h
@@ -525,18 +529,18 @@ collide_check_back		proc	near
 		mov	cx,4
 
 collide_back_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_back_iter			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_back_iter			; Jump if zero
+				retn
 
 collide_back_iter:
-			xchg	si,di
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			xchg	si,di
-			loop	collide_back_loop		; Loop if cx > 0
+				xchg	si,di
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				xchg	si,di
+				loop	collide_back_loop		; Loop if cx > 0
 
 		dec	di
 		xchg	si,di
@@ -598,15 +602,15 @@ sub01_collide_inner		proc	near
 		mov	cx,2
 
 collide_inner_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_inner_step			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_inner_step			; Jump if zero
+				retn
 
 collide_inner_step:
-			inc	di
-			loop	collide_inner_loop		; Loop if cx > 0
+				inc	di
+				loop	collide_inner_loop		; Loop if cx > 0
 
 		dec	di
 		mov	al,[di]
@@ -702,46 +706,46 @@ sub02_collide_chk:
 		jc	sub02_state0_alt			; Jump if carry Set
 
 sub02_phase_inc:
-				add	byte ptr [si+6],80h
-				jc	sub02_phase_active			; Jump if carry Set
-				jmp	sub02_finalize
+						add	byte ptr [si+6],80h
+						jc	sub02_phase_active			; Jump if carry Set
+						jmp	sub02_finalize
 
 sub02_phase_active:
-				inc	byte ptr [si+6]
-				and	byte ptr [si+6],3
-				test	byte ptr [si+6],1
-				jz	sub02_phase_low			; Jump if zero
-				jmp	sub02_finalize
+						inc	byte ptr [si+6]
+						and	byte ptr [si+6],3
+						test	byte ptr [si+6],1
+						jz	sub02_phase_low			; Jump if zero
+						jmp	sub02_finalize
 
 sub02_phase_low:
-				mov	al,10h
-				cmp	al,[si+3]
-				jb	sub02_phase_high			; Jump if below
-				call	phase_step_fwd
-				jnc	sub02_set_facing			; Jump if carry=0
-				jmp	sub02_finalize
+						mov	al,10h
+						cmp	al,[si+3]
+						jb	sub02_phase_high			; Jump if below
+						call	phase_step_fwd
+						jnc	sub02_set_facing			; Jump if carry=0
+						jmp	sub02_finalize
 
 sub02_set_facing:
-				or	byte ptr [si+5],80h
-				jmp	sub02_finalize
+						or	byte ptr [si+5],80h
+						jmp	sub02_finalize
 
 sub02_phase_high:
-				call	phase_step_back
-				jnc	sub02_clear_facing			; Jump if carry=0
-				jmp	sub02_finalize
+						call	phase_step_back
+						jnc	sub02_clear_facing			; Jump if carry=0
+						jmp	sub02_finalize
 
 sub02_clear_facing:
-				and	byte ptr [si+5],7Fh
-				jmp	sub02_finalize
+						and	byte ptr [si+5],7Fh
+						jmp	sub02_finalize
 
 sub02_state0_alt:
-				call	word ptr cs:eai7_rng_fn_ptr
-				and	al,0C0h
+						call	word ptr cs:eai7_rng_fn_ptr
+						and	al,0C0h
+						jnz	sub02_phase_inc			; Jump if not zero
+				mov	al,[si+6]
+				not	al
+				and	al,1
 				jnz	sub02_phase_inc			; Jump if not zero
-			mov	al,[si+6]
-			not	al
-			and	al,1
-			jnz	sub02_phase_inc			; Jump if not zero
 		or	byte ptr [si+9],1
 		mov	byte ptr [si+6],4
 		jmp	short sub02_finalize
@@ -781,6 +785,7 @@ sub02_despawn_call:
 ; sub02_spawn_param_tbl  -- spawn-cell offset/coord block (sub02)
 ; Two parallel records: facing+/facing- variants (row,col,row,col,...)
 ; ----------------------------------------------------------------
+
 sub02_spawn_param_tbl:
 		db	 00h, 00h, 32h, 00h, 14h, 00h	; row 0: rec A header
 		db	 28h, 00h			; row 1: rec A tail

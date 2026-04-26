@@ -16,7 +16,6 @@ include  zr1com.inc
 sprite_row_buf_b         equ     5500h
 sprite_mask_off          equ     1A8Eh
 
-
 ; Macro: advance DI by 0x2000 (one HGC interlaced bank) and check bank boundary.
 ; Jumps to no_wrap_label if DI stays within bank 1 (< hgc_bank1_end).
 ; Falls through when bank wrap needed (caller must handle the wrap case).
@@ -126,13 +125,13 @@ start:
 		db	0CDh,0D1h,0E9h
 
 blit_plane_a_loop:
-							mov	ax,ds:[bp+si]
-							mov	cs:src_word_d,ax
-							lodsw				; String [si] to ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosw				; Store ax to es:[di]
-							loop	blit_plane_a_loop		; Loop if cx > 0
+								mov	ax,ds:[bp+si]
+								mov	cs:src_word_d,ax
+								lodsw				; String [si] to ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosw				; Store ax to es:[di]
+								loop	blit_plane_a_loop		; Loop if cx > 0
 
 		pop	ds
 		pop	cx
@@ -161,17 +160,17 @@ render_ab_init_entry:
 		shr	cx,1			; Shift w/zeros fill
 
 blit_plane_ab_loop:
-							add	bp,bp
-							mov	ax,ds:[bp+si]
-							mov	cs:src_word_c,ax
-							shr	bp,1			; Shift w/zeros fill
-							mov	ax,ds:[bp+si]
-							mov	cs:src_word_b,ax
-							lodsw				; String [si] to ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosw				; Store ax to es:[di]
-							loop	blit_plane_ab_loop		; Loop if cx > 0
+								add	bp,bp
+								mov	ax,ds:[bp+si]
+								mov	cs:src_word_c,ax
+								shr	bp,1			; Shift w/zeros fill
+								mov	ax,ds:[bp+si]
+								mov	cs:src_word_b,ax
+								lodsw				; String [si] to ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosw				; Store ax to es:[di]
+								loop	blit_plane_ab_loop		; Loop if cx > 0
 
 		pop	ds
 		pop	cx
@@ -215,13 +214,13 @@ render_plane_c_entry:
 		shr	cx,1			; Shift w/zeros fill
 
 blit_plane_c_loop:
-							mov	ax,ds:[bp+si]
-							mov	cs:src_word_c,ax
-							lodsw				; String [si] to ax
-							mov	cs:src_word_b,ax
-							call	imgdec_process_loop_5
-							stosw				; Store ax to es:[di]
-							loop	blit_plane_c_loop		; Loop if cx > 0
+								mov	ax,ds:[bp+si]
+								mov	cs:src_word_c,ax
+								lodsw				; String [si] to ax
+								mov	cs:src_word_b,ax
+								call	imgdec_process_loop_5
+								stosw				; Store ax to es:[di]
+								loop	blit_plane_c_loop		; Loop if cx > 0
 
 		pop	ds
 		pop	cx
@@ -288,42 +287,42 @@ render_pass_top:
 		push	di
 
 render_col_loop:
-							mov	bl,cs:cur_col_ctr
-							and	bx,7
-							add	bx,bx
-							mov	bx,cs:hgc_mask_tbl_a[bx]
-							push	bx
-							call	word ptr cs:render_fn_ptr
-							pop	bx
-							inc	byte ptr cs:cur_col_ctr
-							hgc_advance_di	render_col_next_row			; Jump if below
-							call	word ptr cs:render_fn_ptr
-							add	di,hgc_bank2_wrap
+								mov	bl,cs:cur_col_ctr
+								and	bx,7
+								add	bx,bx
+								mov	bx,cs:hgc_mask_tbl_a[bx]
+								push	bx
+								call	word ptr cs:render_fn_ptr
+								pop	bx
+								inc	byte ptr cs:cur_col_ctr
+								hgc_advance_di	render_col_next_row			; Jump if below
+								call	word ptr cs:render_fn_ptr
+								add	di,hgc_bank2_wrap
 
 render_col_next_row:
-							mov	al,ch
-							xor	ah,ah			; Zero register
-							add	si,ax
-							dec	cl
-							jz	render_col_done			; Jump if zero
-							mov	bl,cs:cur_col_ctr
-							and	bx,7
-							add	bx,bx
-							mov	bx,cs:hgc_mask_tbl_b[bx]
-							push	bx
-							call	word ptr cs:render_fn_ptr
-							pop	bx
-							inc	byte ptr cs:cur_col_ctr
-							hgc_advance_di	render_col_odd_next			; Jump if below
-							call	word ptr cs:render_fn_ptr
-							add	di,hgc_bank2_wrap
+								mov	al,ch
+								xor	ah,ah			; Zero register
+								add	si,ax
+								dec	cl
+								jz	render_col_done			; Jump if zero
+								mov	bl,cs:cur_col_ctr
+								and	bx,7
+								add	bx,bx
+								mov	bx,cs:hgc_mask_tbl_b[bx]
+								push	bx
+								call	word ptr cs:render_fn_ptr
+								pop	bx
+								inc	byte ptr cs:cur_col_ctr
+								hgc_advance_di	render_col_odd_next			; Jump if below
+								call	word ptr cs:render_fn_ptr
+								add	di,hgc_bank2_wrap
 
 render_col_odd_next:
-							mov	al,ch
-							xor	ah,ah			; Zero register
-							add	si,ax
-							dec	cl
-							jnz	render_col_loop			; Jump if not zero
+								mov	al,ch
+								xor	ah,ah			; Zero register
+								add	si,ax
+								dec	cl
+								jnz	render_col_loop			; Jump if not zero
 
 render_col_done:
 		pop	di
@@ -332,8 +331,8 @@ render_col_done:
 		inc	byte ptr cs:cur_row_ctr
 
 render_wait_timer:
-							cmp	byte ptr cs:gvar_frame_timer,14h
-							jb	render_wait_timer			; Jump if below
+								cmp	byte ptr cs:gvar_frame_timer,14h
+								jb	render_wait_timer			; Jump if below
 		dec	bp
 		jz	render_func_done		; Jump if zero
 		jmp	render_pass_top
@@ -355,14 +354,14 @@ render_mask_blend_entry:
 		xor	ch,ch			; Zero register
 
 render_mask_blend_loop:
-							and	es:[di],bl
-							lodsb				; String [si] to al
-							and	al,dl
-							or	es:[di],al
-							inc	di
-							xchg	dh,dl
-							xchg	bh,bl
-							loop	render_mask_blend_loop		; Loop if cx > 0
+								and	es:[di],bl
+								lodsb				; String [si] to al
+								and	al,dl
+								or	es:[di],al
+								inc	di
+								xchg	dh,dl
+								xchg	bh,bl
+								loop	render_mask_blend_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	di
@@ -377,12 +376,12 @@ render_overwrite_entry:
 		xor	ch,ch			; Zero register
 
 render_overwrite_loop:
-							lodsb				; String [si] to al
-							and	al,bl
-							or	es:[di],al
-							inc	di
-							xchg	bh,bl
-							loop	render_overwrite_loop		; Loop if cx > 0
+								lodsb				; String [si] to al
+								and	al,bl
+								or	es:[di],al
+								inc	di
+								xchg	bh,bl
+								loop	render_overwrite_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	di
@@ -399,31 +398,31 @@ render_expand_entry:
 		xor	ch,ch			; Zero register
 
 render_expand_loop:
-							push	cx
-							lodsb				; String [si] to al
-							mov	ah,al
-							mov	dl,3
-							mov	cx,4
+								push	cx
+								lodsb				; String [si] to al
+								mov	ah,al
+								mov	dl,3
+								mov	cx,4
 
 render_expand_bits:
-												test	ah,dl
-												jz	render_expand_bit_set			; Jump if zero
-												or	ah,dl
+														test	ah,dl
+														jz	render_expand_bit_set			; Jump if zero
+														or	ah,dl
 
 render_expand_bit_set:
-												add	dl,dl
-												add	dl,dl
-												loop	render_expand_bits		; Loop if cx > 0
+														add	dl,dl
+														add	dl,dl
+														loop	render_expand_bits		; Loop if cx > 0
 
-							and	ah,bl
-							not	ah
-							and	es:[di],ah
-							and	al,bl
-							or	es:[di],al
-							inc	di
-							xchg	bh,bl
-							pop	cx
-							loop	render_expand_loop		; Loop if cx > 0
+								and	ah,bl
+								not	ah
+								and	es:[di],ah
+								and	al,bl
+								or	es:[di],al
+								inc	di
+								xchg	bh,bl
+								pop	cx
+								loop	render_expand_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	di
@@ -438,12 +437,12 @@ render_overwrite2_entry:
 		xor	ch,ch			; Zero register
 
 render_overwrite2_loop:
-							lodsb				; String [si] to al
-							and	al,bl
-							or	es:[di],al
-							inc	di
-							xchg	bh,bl
-							loop	render_overwrite2_loop		; Loop if cx > 0
+								lodsb				; String [si] to al
+								and	al,bl
+								or	es:[di],al
+								inc	di
+								xchg	bh,bl
+								loop	render_overwrite2_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	di
@@ -458,11 +457,11 @@ render_clear_entry:
 		xor	ch,ch			; Zero register
 
 render_clear_loop:
-							and	es:[di],bl
-							inc	di
-							xchg	dh,dl
-							xchg	bh,bl
-							loop	render_clear_loop		; Loop if cx > 0
+								and	es:[di],bl
+								inc	di
+								xchg	dh,dl
+								xchg	bh,bl
+								loop	render_clear_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	di
@@ -480,52 +479,52 @@ render_clear_loop:
 		db	 66h, 4Ch
 
 text_char_loop:
-							lodsb				; String [si] to al
-							cmp	al,0FFh
-							jne	text_char_check_printable			; Jump if not equal
-							retn
+								lodsb				; String [si] to al
+								cmp	al,0FFh
+								jne	text_char_check_printable			; Jump if not equal
+								retn
 
 text_char_check_printable:
-							sub	al,20h			; ' '
-							jnc	text_char_render			; Jump if carry=0
-							retn
+								sub	al,20h			; ' '
+								jnc	text_char_render			; Jump if carry=0
+								retn
 
 text_char_render:
-							jz	text_char_advance			; Jump if zero
-							push	si
-							push	di
-							xor	ah,ah			; Zero register
-							add	ax,ax
-							add	ax,ax
-							add	ax,ax
-							add	ax,ds:font_ptr_a
-							mov	si,ax
-							mov	cx,8
+								jz	text_char_advance			; Jump if zero
+								push	si
+								push	di
+								xor	ah,ah			; Zero register
+								add	ax,ax
+								add	ax,ax
+								add	ax,ax
+								add	ax,ds:font_ptr_a
+								mov	si,ax
+								mov	cx,8
 
 text_char_row_loop:
-												push	cx
-												lodsb				; String [si] to al
-												call	imgdec_process_loop
-												mov	es:[di],dx
-												add	di,50h
-												pop	cx
-												loop	text_char_row_loop		; Loop if cx > 0
+														push	cx
+														lodsb				; String [si] to al
+														call	imgdec_process_loop
+														mov	es:[di],dx
+														add	di,50h
+														pop	cx
+														loop	text_char_row_loop		; Loop if cx > 0
 
-							pop	di
-							pop	si
+								pop	di
+								pop	si
 
 text_char_advance:
-							add	di,2
-							jmp	short text_char_loop
+								add	di,2
+								jmp	short text_char_loop
 
 imgdec_process_loop		proc	near
 		mov	cx,8
 
 pixel_expand_bits:
-							add	al,al
-							adc	bx,bx
-							add	bx,bx
-							loop	pixel_expand_bits		; Loop if cx > 0
+								add	al,al
+								adc	bx,bx
+								add	bx,bx
+								loop	pixel_expand_bits		; Loop if cx > 0
 
 		mov	dx,bx
 		shr	dx,1			; Shift w/zeros fill
@@ -589,17 +588,17 @@ scroll_row_entry:
 		xor	ch,ch			; Zero register
 
 scroll_row_loop:
-							push	cx
-							call	imgdec_process_loop_2
-							hgc_advance_di	scroll_row_wrap			; Jump if below
-							call	imgdec_process_loop_2
-							add	di,hgc_bank2_wrap_b
+								push	cx
+								call	imgdec_process_loop_2
+								hgc_advance_di	scroll_row_wrap			; Jump if below
+								call	imgdec_process_loop_2
+								add	di,hgc_bank2_wrap_b
 
 scroll_row_wrap:
-							add	bp,bx
-							add	si,bx
-							pop	cx
-							loop	scroll_row_loop		; Loop if cx > 0
+								add	bp,bx
+								add	si,bx
+								pop	cx
+								loop	scroll_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -612,12 +611,12 @@ imgdec_process_loop_2		proc	near
 		shr	cx,1			; Shift w/zeros fill
 
 copy_or_words_loop:
-							lodsw				; String [si] to ax
-							or	ax,ds:[bp]
-							stosw				; Store ax to es:[di]
-							inc	bp
-							inc	bp
-							loop	copy_or_words_loop		; Loop if cx > 0
+								lodsw				; String [si] to ax
+								or	ax,ds:[bp]
+								stosw				; Store ax to es:[di]
+								inc	bp
+								inc	bp
+								loop	copy_or_words_loop		; Loop if cx > 0
 
 		pop	bp
 		pop	si
@@ -646,17 +645,17 @@ render_plane_ab_entry:
 		shr	cx,1			; Shift w/zeros fill
 
 render_ab_inner_loop:
-							add	bp,bp
-							mov	ax,ds:[bp+si]
-							mov	cs:src_word_c,ax
-							shr	bp,1			; Shift w/zeros fill
-							mov	ax,ds:[bp+si]
-							mov	cs:src_word_b,ax
-							lodsw				; String [si] to ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosw				; Store ax to es:[di]
-							loop	render_ab_inner_loop		; Loop if cx > 0
+								add	bp,bp
+								mov	ax,ds:[bp+si]
+								mov	cs:src_word_c,ax
+								shr	bp,1			; Shift w/zeros fill
+								mov	ax,ds:[bp+si]
+								mov	cs:src_word_b,ax
+								lodsw				; String [si] to ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosw				; Store ax to es:[di]
+								loop	render_ab_inner_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	bx
@@ -677,26 +676,26 @@ blit_to_hgc_entry:
 		xor	ch,ch			; Zero register
 
 blit_hgc_row_loop:
-							push	cx
-							push	si
-							push	di
-							mov	cx,bx
-							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-							pop	di
-							pop	si
-							hgc_advance_di	blit_hgc_row_next			; Jump if below
-							push	si
-							push	di
-							mov	cx,bx
-							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-							pop	di
-							pop	si
-							add	di,hgc_bank2_wrap
+								push	cx
+								push	si
+								push	di
+								mov	cx,bx
+								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+								pop	di
+								pop	si
+								hgc_advance_di	blit_hgc_row_next			; Jump if below
+								push	si
+								push	di
+								mov	cx,bx
+								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+								pop	di
+								pop	si
+								add	di,hgc_bank2_wrap
 
 blit_hgc_row_next:
-							add	si,bx
-							pop	cx
-							loop	blit_hgc_row_loop		; Loop if cx > 0
+								add	si,bx
+								pop	cx
+								loop	blit_hgc_row_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -709,23 +708,23 @@ sprite_init_entry:
 		mov	cx,9
 
 sprite_tbl_init_loop:
-							mov	al,1
-							stosb				; Store al to es:[di]
-							mov	ax,dx
-							stosw				; Store ax to es:[di]
-							movsw				; Mov [si] to es:[di]
-							stosw				; Store ax to es:[di]
-							mov	ax,101h
-							stosw				; Store ax to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							xor	al,al			; Zero register
-							stosb				; Store al to es:[di]
-							stosb				; Store al to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							add	dx,0C0h
-							loop	sprite_tbl_init_loop		; Loop if cx > 0
+								mov	al,1
+								stosb				; Store al to es:[di]
+								mov	ax,dx
+								stosw				; Store ax to es:[di]
+								movsw				; Mov [si] to es:[di]
+								stosw				; Store ax to es:[di]
+								mov	ax,101h
+								stosw				; Store ax to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								xor	al,al			; Zero register
+								stosb				; Store al to es:[di]
+								stosb				; Store al to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								add	dx,0C0h
+								loop	sprite_tbl_init_loop		; Loop if cx > 0
 
 		mov	byte ptr ds:gvar_frame_timer,0
 
@@ -807,77 +806,77 @@ sprite_draw_start:
 		mov	cx,9
 
 sprite_draw_loop:
-							push	cx
-							test	byte ptr cs:[si],0FFh
-							jz	sprite_draw_next			; Jump if zero
-							xor	bx,bx			; Zero register
-							mov	bl,[si+0Dh]
-							add	bx,bx
-							add	bx,bx
-							mov	bp,ds:sprite_src_tbl[bx]
-							mov	cx,[si+7]
-							mov	dl,[si]
-							mov	byte ptr [si],0
-							mov	ax,[si+3]
-							cmp	ah,4Bh			; 'K'
-							jae	sprite_draw_next			; Jump if above or =
-							cmp	al,0A0h
-							jae	sprite_draw_next			; Jump if above or =
-							mov	[si],dl
-							mov	di,[si+5]
-							push	ds
-							push	si
-							mov	ax,hgc_seg
-							mov	es,ax
-							mov	ds,cs:gvar_game_seg
-							mov	si,bp
-							call	imgdec_multiply
-							pop	si
-							pop	ds
+								push	cx
+								test	byte ptr cs:[si],0FFh
+								jz	sprite_draw_next			; Jump if zero
+								xor	bx,bx			; Zero register
+								mov	bl,[si+0Dh]
+								add	bx,bx
+								add	bx,bx
+								mov	bp,ds:sprite_src_tbl[bx]
+								mov	cx,[si+7]
+								mov	dl,[si]
+								mov	byte ptr [si],0
+								mov	ax,[si+3]
+								cmp	ah,4Bh			; 'K'
+								jae	sprite_draw_next			; Jump if above or =
+								cmp	al,0A0h
+								jae	sprite_draw_next			; Jump if above or =
+								mov	[si],dl
+								mov	di,[si+5]
+								push	ds
+								push	si
+								mov	ax,hgc_seg
+								mov	es,ax
+								mov	ds,cs:gvar_game_seg
+								mov	si,bp
+								call	imgdec_multiply
+								pop	si
+								pop	ds
 
 sprite_draw_next:
-							pop	cx
-							add	si,0Fh
-							loop	sprite_draw_loop		; Loop if cx > 0
+								pop	cx
+								add	si,0Fh
+								loop	sprite_draw_loop		; Loop if cx > 0
 
 sprite_wait_timer:
-							cmp	byte ptr cs:gvar_frame_timer,1Eh
-							jb	sprite_wait_timer			; Jump if below
+								cmp	byte ptr cs:gvar_frame_timer,1Eh
+								jb	sprite_wait_timer			; Jump if below
 		mov	byte ptr cs:gvar_frame_timer,0
 		mov	si,sprite_obj_tbl
 		mov	cx,9
 
 sprite_restore_loop:
-							push	cx
-							mov	bp,[si+1]
-							mov	di,[si+5]
-							mov	cx,[si+7]
-							push	ds
-							push	si
-							mov	ax,hgc_seg
-							mov	es,ax
-							mov	ax,cs
-							add	ax,3000h
-							mov	ds,ax
-							mov	si,bp
-							call	copy_buffer_2
-							pop	si
-							pop	ds
-							pop	cx
-							add	si,0Fh
-							loop	sprite_restore_loop		; Loop if cx > 0
+								push	cx
+								mov	bp,[si+1]
+								mov	di,[si+5]
+								mov	cx,[si+7]
+								push	ds
+								push	si
+								mov	ax,hgc_seg
+								mov	es,ax
+								mov	ax,cs
+								add	ax,3000h
+								mov	ds,ax
+								mov	si,bp
+								call	copy_buffer_2
+								pop	si
+								pop	ds
+								pop	cx
+								add	si,0Fh
+								loop	sprite_restore_loop		; Loop if cx > 0
 
 		mov	si,sprite_obj_tbl
 		mov	cx,9
 
 sprite_active_check:
-							test	byte ptr [si],0FFh
-							jz	sprite_all_done			; Jump if zero
-							jmp	sprite_update_top
+								test	byte ptr [si],0FFh
+								jz	sprite_all_done			; Jump if zero
+								jmp	sprite_update_top
 
 sprite_all_done:
-							add	si,0Fh
-							loop	sprite_active_check		; Loop if cx > 0
+								add	si,0Fh
+								loop	sprite_active_check		; Loop if cx > 0
 
 		retn
 
@@ -886,21 +885,21 @@ copy_buffer		proc	near
 		push	cx
 
 copy_buf_row:
-							push	si
-							push	cx
-							mov	cl,ch
-							xor	ch,ch			; Zero register
-							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-							pop	cx
-							pop	si
-							add	si,2000h
-							cmp	si,hgc_bank1_end
-							jb	copy_buf_row_next			; Jump if below
-							add	si,hgc_bank2_wrap
+								push	si
+								push	cx
+								mov	cl,ch
+								xor	ch,ch			; Zero register
+								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+								pop	cx
+								pop	si
+								add	si,2000h
+								cmp	si,hgc_bank1_end
+								jb	copy_buf_row_next			; Jump if below
+								add	si,hgc_bank2_wrap
 
 copy_buf_row_next:
-							dec	cl
-							jnz	copy_buf_row			; Jump if not zero
+								dec	cl
+								jnz	copy_buf_row			; Jump if not zero
 		pop	cx
 		pop	si
 		retn
@@ -912,31 +911,31 @@ copy_buffer_2		proc	near
 		push	cx
 
 copy_buf2_row:
-							push	cx
-							mov	cl,ch
-							xor	ch,ch			; Zero register
-							push	si
-							push	di
-							push	cx
-							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-							pop	cx
-							pop	di
-							pop	si
-							hgc_advance_di	copy_buf2_row_next			; Jump if below
-							push	si
-							push	di
-							push	cx
-							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-							pop	cx
-							pop	di
-							pop	si
-							add	di,hgc_bank2_wrap
+								push	cx
+								mov	cl,ch
+								xor	ch,ch			; Zero register
+								push	si
+								push	di
+								push	cx
+								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+								pop	cx
+								pop	di
+								pop	si
+								hgc_advance_di	copy_buf2_row_next			; Jump if below
+								push	si
+								push	di
+								push	cx
+								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+								pop	cx
+								pop	di
+								pop	si
+								add	di,hgc_bank2_wrap
 
 copy_buf2_row_next:
-							add	si,cx
-							pop	cx
-							dec	cl
-							jnz	copy_buf2_row			; Jump if not zero
+								add	si,cx
+								pop	cx
+								dec	cl
+								jnz	copy_buf2_row			; Jump if not zero
 		pop	cx
 		pop	di
 		retn
@@ -953,19 +952,19 @@ imgdec_multiply		proc	near
 		mov	word ptr cs:src_word_c,0
 
 multiply_row_loop:
-							push	cx
-							mov	cl,ch
-							xor	ch,ch			; Zero register
-							call	imgdec_process_loop_3
-							hgc_advance_di	multiply_row_wrap			; Jump if below
-							call	imgdec_process_loop_3
-							add	di,hgc_bank2_wrap
+								push	cx
+								mov	cl,ch
+								xor	ch,ch			; Zero register
+								call	imgdec_process_loop_3
+								hgc_advance_di	multiply_row_wrap			; Jump if below
+								call	imgdec_process_loop_3
+								add	di,hgc_bank2_wrap
 
 multiply_row_wrap:
-							add	si,cx
-							pop	cx
-							dec	cl
-							jnz	multiply_row_loop			; Jump if not zero
+								add	si,cx
+								pop	cx
+								dec	cl
+								jnz	multiply_row_loop			; Jump if not zero
 		pop	cx
 		pop	di
 		retn
@@ -978,17 +977,17 @@ imgdec_process_loop_3		proc	near
 		push	cx
 
 process3_pixel_loop:
-							xor	ah,ah			; Zero register
-							mov	al,[bx+si]
-							mov	cs:src_word_b,ax
-							lodsb				; String [si] to al
-							mov	cs:src_word_a,ax
-							push	bx
-							call	imgdec_process_loop_5
-							pop	bx
-							or	es:[di],al
-							inc	di
-							loop	process3_pixel_loop		; Loop if cx > 0
+								xor	ah,ah			; Zero register
+								mov	al,[bx+si]
+								mov	cs:src_word_b,ax
+								lodsb				; String [si] to al
+								mov	cs:src_word_a,ax
+								push	bx
+								call	imgdec_process_loop_5
+								pop	bx
+								or	es:[di],al
+								inc	di
+								loop	process3_pixel_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	si
@@ -1014,13 +1013,13 @@ data_3		dw	8004h			; Data table (indexed access)
 		db	 00h, 00h,0B9h, 30h, 03h
 
 render_words_loop:
-							mov	ax,data_3[si]
-							mov	cs:src_word_a,ax
-							lodsw				; String [si] to ax
-							mov	cs:src_word_b,ax
-							call	imgdec_process_loop_5
-							stosw				; Store ax to es:[di]
-							loop	render_words_loop		; Loop if cx > 0
+								mov	ax,data_3[si]
+								mov	cs:src_word_a,ax
+								lodsw				; String [si] to ax
+								mov	cs:src_word_b,ax
+								call	imgdec_process_loop_5
+								stosw				; Store ax to es:[di]
+								loop	render_words_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	ds
@@ -1046,13 +1045,13 @@ sprite_img_blit_entry:
 		mov	cx,120h
 
 sprite_img_decode_loop:
-							mov	ax,ds:hgc_plane2_off[si]
-							mov	cs:src_word_b,ax
-							lodsw				; String [si] to ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosw				; Store ax to es:[di]
-							loop	sprite_img_decode_loop		; Loop if cx > 0
+								mov	ax,ds:hgc_plane2_off[si]
+								mov	cs:src_word_b,ax
+								lodsw				; String [si] to ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosw				; Store ax to es:[di]
+								loop	sprite_img_decode_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	ds
@@ -1062,27 +1061,27 @@ sprite_img_decode_loop:
 		db	 33h,0DBh,0B9h, 19h, 00h	; Inline dispatch stub (5 bytes)
 
 map_tile_row_loop:
-							push	cx
-							mov	cx,22h
+								push	cx
+								mov	cx,22h
 
 map_tile_col_loop:
-												push	cx
-												lodsb				; String [si] to al
-												push	bx
-												push	ds
-												push	si
-												call	imgdec_multiply_2
-												pop	si
-												pop	ds
-												pop	bx
-												inc	bh
-												pop	cx
-												loop	map_tile_col_loop		; Loop if cx > 0
+														push	cx
+														lodsb				; String [si] to al
+														push	bx
+														push	ds
+														push	si
+														call	imgdec_multiply_2
+														pop	si
+														pop	ds
+														pop	bx
+														inc	bh
+														pop	cx
+														loop	map_tile_col_loop		; Loop if cx > 0
 
-							xor	bh,bh			; Zero register
-							inc	bl
-							pop	cx
-							loop	map_tile_row_loop		; Loop if cx > 0
+								xor	bh,bh			; Zero register
+								inc	bl
+								pop	cx
+								loop	map_tile_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1094,10 +1093,10 @@ imgdec_multiply_2		proc	near
 		xor	ah,ah			; Zero register
 
 div_row_compute:
-							sub	al,28h			; '('
-							jc	div_row_done			; Jump if carry Set
-							inc	ah
-							jmp	short div_row_compute
+								sub	al,28h			; '('
+								jc	div_row_done			; Jump if carry Set
+								inc	ah
+								jmp	short div_row_compute
 
 div_row_done:
 		add	al,28h			; '('
@@ -1123,23 +1122,23 @@ div_row_done:
 		mov	cx,3
 
 tile_plane_loop:
-							push	cx
-							push	di
-							push	si
-							mov	cx,8
+								push	cx
+								push	di
+								push	si
+								mov	cx,8
 
 tile_row_copy_loop:
-												movsb				; Mov [si] to es:[di]
-												add	di,21h
-												add	si,27h
-												loop	tile_row_copy_loop		; Loop if cx > 0
+														movsb				; Mov [si] to es:[di]
+														add	di,21h
+														add	si,27h
+														loop	tile_row_copy_loop		; Loop if cx > 0
 
-							pop	si
-							pop	di
-							add	di,1A90h
-							add	si,640h
-							pop	cx
-							loop	tile_plane_loop		; Loop if cx > 0
+								pop	si
+								pop	di
+								add	di,1A90h
+								add	si,640h
+								pop	cx
+								loop	tile_plane_loop		; Loop if cx > 0
 
 		retn
 
@@ -1168,17 +1167,17 @@ char_row_render_entry:
 		mov	cx,44h
 
 bit_reverse_loop:
-							mov	al,es:[di]
-							mov	dx,8
+								mov	al,es:[di]
+								mov	dx,8
 
 bit_reverse_inner:
-												ror	al,1			; Rotate
-												adc	ah,ah
-												dec	dx
-												jnz	bit_reverse_inner			; Jump if not zero
-							mov	es:[di],ah
-							inc	di
-							loop	bit_reverse_loop		; Loop if cx > 0
+														ror	al,1			; Rotate
+														adc	ah,ah
+														dec	dx
+														jnz	bit_reverse_inner			; Jump if not zero
+								mov	es:[di],ah
+								inc	di
+								loop	bit_reverse_loop		; Loop if cx > 0
 
 		pop	si
 		pop	ax
@@ -1194,16 +1193,16 @@ bit_reverse_inner:
 		mov	cx,11h
 
 sprite_row_fwd_loop:
-							lodsw				; String [si] to ax
-							mov	cs:src_word_b,ax
-							mov	ax,ds:sprite_mask_off[si]
-							mov	cs:src_word_c,ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							or	es:[di],ax
-							inc	di
-							inc	di
-							loop	sprite_row_fwd_loop		; Loop if cx > 0
+								lodsw				; String [si] to ax
+								mov	cs:src_word_b,ax
+								mov	ax,ds:sprite_mask_off[si]
+								mov	cs:src_word_c,ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								or	es:[di],ax
+								inc	di
+								inc	di
+								loop	sprite_row_fwd_loop		; Loop if cx > 0
 
 		pop	si
 		pop	di
@@ -1211,16 +1210,16 @@ sprite_row_fwd_loop:
 		mov	cx,11h
 
 sprite_row_fwd_wrap:
-							lodsw				; String [si] to ax
-							mov	cs:src_word_b,ax
-							mov	ax,ds:sprite_mask_off[si]
-							mov	cs:src_word_c,ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							or	es:[di],ax
-							inc	di
-							inc	di
-							loop	sprite_row_fwd_wrap		; Loop if cx > 0
+								lodsw				; String [si] to ax
+								mov	cs:src_word_b,ax
+								mov	ax,ds:sprite_mask_off[si]
+								mov	cs:src_word_c,ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								or	es:[di],ax
+								inc	di
+								inc	di
+								loop	sprite_row_fwd_wrap		; Loop if cx > 0
 
 sprite_row_fwd_done:
 		pop	di
@@ -1232,18 +1231,18 @@ sprite_row_fwd_done:
 		mov	cx,11h
 
 sprite_row_rev_loop:
-							lodsw				; String [si] to ax
-							xchg	ah,al
-							mov	cs:src_word_b,ax
-							mov	ax,[si+20h]
-							xchg	ah,al
-							mov	cs:src_word_c,ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							or	es:[di],ax
-							dec	di
-							dec	di
-							loop	sprite_row_rev_loop		; Loop if cx > 0
+								lodsw				; String [si] to ax
+								xchg	ah,al
+								mov	cs:src_word_b,ax
+								mov	ax,[si+20h]
+								xchg	ah,al
+								mov	cs:src_word_c,ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								or	es:[di],ax
+								dec	di
+								dec	di
+								loop	sprite_row_rev_loop		; Loop if cx > 0
 
 		pop	di
 		hgc_advance_di	sprite_row_rev_done			; Jump if below
@@ -1251,18 +1250,18 @@ sprite_row_rev_loop:
 		mov	cx,11h
 
 sprite_row_rev_wrap:
-							lodsw				; String [si] to ax
-							xchg	ah,al
-							mov	cs:src_word_b,ax
-							mov	ax,[si+20h]
-							xchg	ah,al
-							mov	cs:src_word_c,ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							or	es:[di],ax
-							dec	di
-							dec	di
-							loop	sprite_row_rev_wrap		; Loop if cx > 0
+								lodsw				; String [si] to ax
+								xchg	ah,al
+								mov	cs:src_word_b,ax
+								mov	ax,[si+20h]
+								xchg	ah,al
+								mov	cs:src_word_c,ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								or	es:[di],ax
+								dec	di
+								dec	di
+								loop	sprite_row_rev_wrap		; Loop if cx > 0
 
 sprite_row_rev_done:
 		pop	ds
@@ -1278,17 +1277,17 @@ trail_render_entry:
 		mov	si,move_seq_horiz
 
 trail_horiz_loop:
-							lodsb				; String [si] to al
-							or	al,al			; Zero ?
-							jz	trail_vert_start			; Jump if zero
-							call	imgdec_func_9
-							add	di,205Ah
-							cmp	di,hgc_bank1_end
-							jb	trail_horiz_next			; Jump if below
-							add	di,hgc_bank2_wrap
+								lodsb				; String [si] to al
+								or	al,al			; Zero ?
+								jz	trail_vert_start			; Jump if zero
+								call	imgdec_func_9
+								add	di,205Ah
+								cmp	di,hgc_bank1_end
+								jb	trail_horiz_next			; Jump if below
+								add	di,hgc_bank2_wrap
 
 trail_horiz_next:
-							jmp	short trail_horiz_loop
+								jmp	short trail_horiz_loop
 
 trail_vert_start:
 		sub	di,2059h
@@ -1296,12 +1295,12 @@ trail_vert_start:
 		add	di,hgc_bank1_end_m1
 
 trail_vert_loop:
-							lodsb				; String [si] to al
-							or	al,al			; Zero ?
-							jz	trail_horiz_back_start			; Jump if zero
-							call	imgdec_func_9
-							inc	di
-							jmp	short trail_vert_loop
+								lodsb				; String [si] to al
+								or	al,al			; Zero ?
+								jz	trail_horiz_back_start			; Jump if zero
+								call	imgdec_func_9
+								inc	di
+								jmp	short trail_vert_loop
 
 trail_horiz_back_start:
 		sub	di,205Bh
@@ -1309,16 +1308,16 @@ trail_horiz_back_start:
 		add	di,hgc_bank1_end_m1
 
 trail_horiz_back_loop:
-							lodsb				; String [si] to al
-							or	al,al			; Zero ?
-							jz	trail_vert_back_start			; Jump if zero
-							call	imgdec_func_9
-							sub	di,205Ah
-							jnc	trail_horiz_back_next			; Jump if carry=0
-							add	di,hgc_bank1_end_m1
+								lodsb				; String [si] to al
+								or	al,al			; Zero ?
+								jz	trail_vert_back_start			; Jump if zero
+								call	imgdec_func_9
+								sub	di,205Ah
+								jnc	trail_horiz_back_next			; Jump if carry=0
+								add	di,hgc_bank1_end_m1
 
 trail_horiz_back_next:
-							jmp	short trail_horiz_back_loop
+								jmp	short trail_horiz_back_loop
 
 trail_vert_back_start:
 		add	di,2059h
@@ -1327,12 +1326,12 @@ trail_vert_back_start:
 		add	di,hgc_bank2_wrap
 
 trail_vert_back_loop:
-							lodsb				; String [si] to al
-							or	al,al			; Zero ?
-							jz	trail_vert_back_next			; Jump if zero
-							call	imgdec_func_9
-							dec	di
-							jmp	short trail_vert_back_loop
+								lodsb				; String [si] to al
+								or	al,al			; Zero ?
+								jz	trail_vert_back_next			; Jump if zero
+								call	imgdec_func_9
+								dec	di
+								jmp	short trail_vert_back_loop
 
 trail_vert_back_next:
 		add	di,205Bh
@@ -1355,17 +1354,17 @@ trail_down_start:
 		mov	cl,al
 
 trail_down_loop:
-							push	cx
-							mov	al,18h
-							call	imgdec_func_9
-							add	di,205Ah
-							cmp	di,hgc_bank1_end
-							jb	trail_down_next			; Jump if below
-							add	di,hgc_bank2_wrap
+								push	cx
+								mov	al,18h
+								call	imgdec_func_9
+								add	di,205Ah
+								cmp	di,hgc_bank1_end
+								jb	trail_down_next			; Jump if below
+								add	di,hgc_bank2_wrap
 
 trail_down_next:
-							pop	cx
-							loop	trail_down_loop		; Loop if cx > 0
+								pop	cx
+								loop	trail_down_loop		; Loop if cx > 0
 
 		sub	di,205Ah
 		jnc	trail_right_start			; Jump if carry=0
@@ -1382,12 +1381,12 @@ trail_right_top:
 		mov	cl,al
 
 trail_right_loop:
-							push	cx
-							mov	al,18h
-							call	imgdec_func_9
-							inc	di
-							pop	cx
-							loop	trail_right_loop		; Loop if cx > 0
+								push	cx
+								mov	al,18h
+								call	imgdec_func_9
+								inc	di
+								pop	cx
+								loop	trail_right_loop		; Loop if cx > 0
 
 		dec	di
 		lodsb				; String [si] to al
@@ -1400,16 +1399,16 @@ trail_up_top:
 		mov	cl,al
 
 trail_up_loop:
-							push	cx
-							mov	al,18h
-							call	imgdec_func_9
-							sub	di,205Ah
-							jnc	trail_up_next			; Jump if carry=0
-							add	di,hgc_bank1_end_m1
+								push	cx
+								mov	al,18h
+								call	imgdec_func_9
+								sub	di,205Ah
+								jnc	trail_up_next			; Jump if carry=0
+								add	di,hgc_bank1_end_m1
 
 trail_up_next:
-							pop	cx
-							loop	trail_up_loop		; Loop if cx > 0
+								pop	cx
+								loop	trail_up_loop		; Loop if cx > 0
 
 		add	di,205Ah
 		cmp	di,hgc_bank1_end
@@ -1427,18 +1426,18 @@ trail_left_top2:
 		mov	cl,al
 
 trail_left_loop:
-							push	cx
-							mov	al,18h
-							call	imgdec_func_9
-							dec	di
-							pop	cx
-							loop	trail_left_loop		; Loop if cx > 0
+								push	cx
+								mov	al,18h
+								call	imgdec_func_9
+								dec	di
+								pop	cx
+								loop	trail_left_loop		; Loop if cx > 0
 
 		inc	di
 
 trail_wait_timer:
-							cmp	byte ptr cs:gvar_frame_timer,0Ch
-							jb	trail_wait_timer			; Jump if below
+								cmp	byte ptr cs:gvar_frame_timer,0Ch
+								jb	trail_wait_timer			; Jump if below
 		jmp	trail_draw_top
 
 imgdec_func_9		proc	near
@@ -1540,33 +1539,33 @@ imgdec_func_9		endp
 		db	0D1h,0E9h
 
 render_src_sel_loop:
-							push	si
-							test	byte ptr cs:render_mode_flag,1
-							jz	render_src_b_check			; Jump if zero
-							mov	ax,[si]
-							mov	cs:src_word_a,ax
-							add	si,bp
+								push	si
+								test	byte ptr cs:render_mode_flag,1
+								jz	render_src_b_check			; Jump if zero
+								mov	ax,[si]
+								mov	cs:src_word_a,ax
+								add	si,bp
 
 render_src_b_check:
-							test	byte ptr cs:render_mode_flag,2
-							jz	render_src_c_check			; Jump if zero
-							mov	ax,[si]
-							mov	cs:src_word_b,ax
-							add	si,bp
+								test	byte ptr cs:render_mode_flag,2
+								jz	render_src_c_check			; Jump if zero
+								mov	ax,[si]
+								mov	cs:src_word_b,ax
+								add	si,bp
 
 render_src_c_check:
-							test	byte ptr cs:render_mode_flag,4
-							jz	render_src_call			; Jump if zero
-							mov	ax,[si]
-							mov	cs:src_word_c,ax
+								test	byte ptr cs:render_mode_flag,4
+								jz	render_src_call			; Jump if zero
+								mov	ax,[si]
+								mov	cs:src_word_c,ax
 
 render_src_call:
-							call	imgdec_process_loop_5
-							stosw				; Store ax to es:[di]
-							pop	si
-							inc	si
-							inc	si
-							loop	render_src_sel_loop		; Loop if cx > 0
+								call	imgdec_process_loop_5
+								stosw				; Store ax to es:[di]
+								pop	si
+								inc	si
+								inc	si
+								loop	render_src_sel_loop		; Loop if cx > 0
 
 		pop	cx
 		pop	bx
@@ -1583,30 +1582,30 @@ render_src_call:
 		mov	cx,8
 
 render_pass_loop:
-							push	cx
-							mov	al,cs:cur_pass_ctr
-							mov	cs:cur_row_ctr,al
-							mov	byte ptr cs:gvar_frame_timer,0
-							mov	cx,0Dh
+								push	cx
+								mov	al,cs:cur_pass_ctr
+								mov	cs:cur_row_ctr,al
+								mov	byte ptr cs:gvar_frame_timer,0
+								mov	cx,0Dh
 
 render_col_inner_loop:
-												push	cx
-												push	bx
-												push	si
-												call	imgdec_multiply_3
-												pop	si
-												pop	bx
-												pop	cx
-												add	byte ptr cs:cur_row_ctr,8
-												loop	render_col_inner_loop		; Loop if cx > 0
+														push	cx
+														push	bx
+														push	si
+														call	imgdec_multiply_3
+														pop	si
+														pop	bx
+														pop	cx
+														add	byte ptr cs:cur_row_ctr,8
+														loop	render_col_inner_loop		; Loop if cx > 0
 
-							pop	cx
+								pop	cx
 
 render_pass_wait_timer:
-												cmp	byte ptr cs:gvar_frame_timer,14h
-												jb	render_pass_wait_timer			; Jump if below
-							inc	byte ptr cs:cur_pass_ctr
-							loop	render_pass_loop		; Loop if cx > 0
+														cmp	byte ptr cs:gvar_frame_timer,14h
+														jb	render_pass_wait_timer			; Jump if below
+								inc	byte ptr cs:cur_pass_ctr
+								loop	render_pass_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1634,22 +1633,22 @@ imgdec_multiply_3		proc	near
 		mov	cx,48h
 
 multiply3_col_loop:
-							push	cx
-							mov	byte ptr es:[di],0
-							cmp	cs:cur_col_ctr,bh
-							jb	multiply3_col_skip			; Jump if below
-							mov	al,bh
-							add	al,byte ptr cs:render_fn_ptr+1
-							cmp	cs:cur_col_ctr,al
-							jae	multiply3_col_skip			; Jump if above or =
-							movsb				; Mov [si] to es:[di]
-							dec	di
+								push	cx
+								mov	byte ptr es:[di],0
+								cmp	cs:cur_col_ctr,bh
+								jb	multiply3_col_skip			; Jump if below
+								mov	al,bh
+								add	al,byte ptr cs:render_fn_ptr+1
+								cmp	cs:cur_col_ctr,al
+								jae	multiply3_col_skip			; Jump if above or =
+								movsb				; Mov [si] to es:[di]
+								dec	di
 
 multiply3_col_skip:
-							inc	di
-							inc	byte ptr cs:cur_col_ctr
-							pop	cx
-							loop	multiply3_col_loop		; Loop if cx > 0
+								inc	di
+								inc	byte ptr cs:cur_col_ctr
+								pop	cx
+								loop	multiply3_col_loop		; Loop if cx > 0
 
 		pop	di
 		hgc_advance_di_wrap	multiply3_wrap_copy		; Jump if above or =
@@ -1707,25 +1706,25 @@ fill_buf_second_pass:
 		pop	cx
 
 fill_rows_loop:
-							push	cx
-							call	imgdec_get_value
-							or	byte ptr es:[di],30h	; '0'
-							and	byte ptr es:[di],0F0h
-							or	byte ptr es:[bx+di-1],0Ch
-							and	byte ptr es:[bx+di-1],0Fh
-							inc	byte ptr cs:cur_row_ctr
-							hgc_advance_di	fill_rows_next			; Jump if below
-							call	imgdec_get_value
-							or	byte ptr es:[di],30h	; '0'
-							and	byte ptr es:[di],0F0h
-							or	byte ptr es:[bx+di-1],0Ch
-							and	byte ptr es:[bx+di-1],0Fh
-							inc	byte ptr cs:cur_row_ctr
-							add	di,hgc_bank2_wrap
+								push	cx
+								call	imgdec_get_value
+								or	byte ptr es:[di],30h	; '0'
+								and	byte ptr es:[di],0F0h
+								or	byte ptr es:[bx+di-1],0Ch
+								and	byte ptr es:[bx+di-1],0Fh
+								inc	byte ptr cs:cur_row_ctr
+								hgc_advance_di	fill_rows_next			; Jump if below
+								call	imgdec_get_value
+								or	byte ptr es:[di],30h	; '0'
+								and	byte ptr es:[di],0F0h
+								or	byte ptr es:[bx+di-1],0Ch
+								and	byte ptr es:[bx+di-1],0Fh
+								inc	byte ptr cs:cur_row_ctr
+								add	di,hgc_bank2_wrap
 
 fill_rows_next:
-							pop	cx
-							loop	fill_rows_loop		; Loop if cx > 0
+								pop	cx
+								loop	fill_rows_loop		; Loop if cx > 0
 
 		mov	cx,1
 		call	clear_buffer
@@ -1760,38 +1759,38 @@ fill_buffer		endp
 clear_buffer		proc	near
 
 clear_buf_row_loop:
-							push	cx
-							push	di
-							call	imgdec_get_value
-							or	byte ptr es:[di],30h	; '0'
-							and	byte ptr es:[di],0F0h
-							inc	di
-							mov	cx,bx
-							sub	cx,2
-							xor	al,al			; Zero register
-							rep	stosb			; Rep when cx >0 Store al to es:[di]
-							or	byte ptr es:[di],0Ch
-							and	byte ptr es:[di],0Fh
-							pop	di
-							inc	byte ptr cs:cur_row_ctr
-							hgc_advance_di	clear_buf_row_wrap			; Jump if below
-							push	di
-							call	imgdec_get_value
-							or	byte ptr es:[di],30h	; '0'
-							and	byte ptr es:[di],0F0h
-							inc	di
-							mov	cx,bx
-							sub	cx,2
-							xor	al,al			; Zero register
-							rep	stosb			; Rep when cx >0 Store al to es:[di]
-							or	byte ptr es:[di],0Ch
-							and	byte ptr es:[di],0Fh
-							pop	di
-							add	di,hgc_bank2_wrap
+								push	cx
+								push	di
+								call	imgdec_get_value
+								or	byte ptr es:[di],30h	; '0'
+								and	byte ptr es:[di],0F0h
+								inc	di
+								mov	cx,bx
+								sub	cx,2
+								xor	al,al			; Zero register
+								rep	stosb			; Rep when cx >0 Store al to es:[di]
+								or	byte ptr es:[di],0Ch
+								and	byte ptr es:[di],0Fh
+								pop	di
+								inc	byte ptr cs:cur_row_ctr
+								hgc_advance_di	clear_buf_row_wrap			; Jump if below
+								push	di
+								call	imgdec_get_value
+								or	byte ptr es:[di],30h	; '0'
+								and	byte ptr es:[di],0F0h
+								inc	di
+								mov	cx,bx
+								sub	cx,2
+								xor	al,al			; Zero register
+								rep	stosb			; Rep when cx >0 Store al to es:[di]
+								or	byte ptr es:[di],0Ch
+								and	byte ptr es:[di],0Fh
+								pop	di
+								add	di,hgc_bank2_wrap
 
 clear_buf_row_wrap:
-							pop	cx
-							loop	clear_buf_row_loop		; Loop if cx > 0
+								pop	cx
+								loop	clear_buf_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -1810,28 +1809,28 @@ plane_merge_entry:
 		mov	cx,1028h
 
 plane_merge_loop:
-							mov	al,es:[di]
-							and	al,byte ptr es:[1028h][di]
-							mov	ah,es:hgc_plane2_buf[di]
-							not	ah
-							and	al,ah
-							not	al
-							and	es:[di],al
-							and	byte ptr es:[1028h][di],al
-							and	es:hgc_plane2_buf[di],al
-							mov	al,es:hgc_plane2_buf[di]
-							mov	ah,es:[di]
-							not	ah
-							and	al,ah
-							mov	ah,byte ptr es:[1028h][di]
-							not	ah
-							and	al,ah
-							or	es:[di],al
-							or	byte ptr es:[1028h][di],al
-							not	al
-							and	es:hgc_plane2_buf[di],al
-							inc	di
-							loop	plane_merge_loop		; Loop if cx > 0
+								mov	al,es:[di]
+								and	al,byte ptr es:[1028h][di]
+								mov	ah,es:hgc_plane2_buf[di]
+								not	ah
+								and	al,ah
+								not	al
+								and	es:[di],al
+								and	byte ptr es:[1028h][di],al
+								and	es:hgc_plane2_buf[di],al
+								mov	al,es:hgc_plane2_buf[di]
+								mov	ah,es:[di]
+								not	ah
+								and	al,ah
+								mov	ah,byte ptr es:[1028h][di]
+								not	ah
+								and	al,ah
+								or	es:[di],al
+								or	byte ptr es:[1028h][di],al
+								not	al
+								and	es:hgc_plane2_buf[di],al
+								inc	di
+								loop	plane_merge_loop		; Loop if cx > 0
 
 		pop	di
 		pop	es
@@ -1855,66 +1854,66 @@ border_draw_entry:
 		mov	cx,44h
 
 scan_outer_loop:
-							push	cx
-							mov	byte ptr cs:gvar_frame_timer,0
-							mov	ax,44h
-							sub	ax,cx
-							add	ax,ax
-							push	ax
-							mov	bl,al
-							mov	al,50h			; 'P'
-							mul	bl			; ax = reg * al
-							push	ax
-							xor	bh,bh			; Zero register
-							call	math_calc
-							mov	di,ax
-							pop	ax
-							add	ax,cs:saved_di
-							mov	si,ax
-							pop	ax
-							cmp	ax,16h
-							jb	scan_row_even_else			; Jump if below
-							cmp	ax,71h
-							jae	scan_row_even_else			; Jump if above or =
-							call	imgdec_scan_loop_2
-							jmp	short scan_row_even_done
+								push	cx
+								mov	byte ptr cs:gvar_frame_timer,0
+								mov	ax,44h
+								sub	ax,cx
+								add	ax,ax
+								push	ax
+								mov	bl,al
+								mov	al,50h			; 'P'
+								mul	bl			; ax = reg * al
+								push	ax
+								xor	bh,bh			; Zero register
+								call	math_calc
+								mov	di,ax
+								pop	ax
+								add	ax,cs:saved_di
+								mov	si,ax
+								pop	ax
+								cmp	ax,16h
+								jb	scan_row_even_else			; Jump if below
+								cmp	ax,71h
+								jae	scan_row_even_else			; Jump if above or =
+								call	imgdec_scan_loop_2
+								jmp	short scan_row_even_done
 
 scan_row_even_else:
-							call	imgdec_scan_loop
+								call	imgdec_scan_loop
 
 scan_row_even_done:
-							pop	cx
-							push	cx
-							mov	ax,cx
-							add	ax,ax
-							dec	ax
-							push	ax
-							mov	bl,al
-							mov	al,50h			; 'P'
-							mul	bl			; ax = reg * al
-							push	ax
-							xor	bh,bh			; Zero register
-							call	math_calc
-							mov	di,ax
-							pop	ax
-							add	ax,cs:saved_di
-							mov	si,ax
-							pop	ax
-							cmp	ax,16h
-							jb	scan_row_odd_else			; Jump if below
-							cmp	ax,71h
-							jae	scan_row_odd_else			; Jump if above or =
-							call	imgdec_scan_loop_2
-							jmp	short scan_row_wait_timer
+								pop	cx
+								push	cx
+								mov	ax,cx
+								add	ax,ax
+								dec	ax
+								push	ax
+								mov	bl,al
+								mov	al,50h			; 'P'
+								mul	bl			; ax = reg * al
+								push	ax
+								xor	bh,bh			; Zero register
+								call	math_calc
+								mov	di,ax
+								pop	ax
+								add	ax,cs:saved_di
+								mov	si,ax
+								pop	ax
+								cmp	ax,16h
+								jb	scan_row_odd_else			; Jump if below
+								cmp	ax,71h
+								jae	scan_row_odd_else			; Jump if above or =
+								call	imgdec_scan_loop_2
+								jmp	short scan_row_wait_timer
 
 scan_row_odd_else:
-							call	imgdec_scan_loop
+								call	imgdec_scan_loop
 
 scan_row_wait_timer:
-												cmp	byte ptr cs:gvar_frame_timer,4
-												jb	scan_row_wait_timer			; Jump if below
-							pop	cx
-							loop	scan_outer_loop		; Loop if cx > 0
+														cmp	byte ptr cs:gvar_frame_timer,4
+														jb	scan_row_wait_timer			; Jump if below
+								pop	cx
+								loop	scan_outer_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -1924,23 +1923,23 @@ imgdec_scan_loop		proc	near
 		mov	word ptr cs:src_word_d,0
 
 scan_words_loop:
-							mov	ax,ds:sprite_row_buf_b[si]
-							mov	cs:src_word_c,ax
-							mov	ax,ds:hgc_plane_stride[si]
-							mov	cs:src_word_b,ax
-							lodsw				; String [si] to ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosw				; Store ax to es:[di]
-							push	di
-							add	di,1FFEh
-							cmp	di,hgc_bank1_end
-							jb	scan_words_wrap			; Jump if below
-							stosw				; Store ax to es:[di]
+								mov	ax,ds:sprite_row_buf_b[si]
+								mov	cs:src_word_c,ax
+								mov	ax,ds:hgc_plane_stride[si]
+								mov	cs:src_word_b,ax
+								lodsw				; String [si] to ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosw				; Store ax to es:[di]
+								push	di
+								add	di,1FFEh
+								cmp	di,hgc_bank1_end
+								jb	scan_words_wrap			; Jump if below
+								stosw				; Store ax to es:[di]
 
 scan_words_wrap:
-							pop	di
-							loop	scan_words_loop		; Loop if cx > 0
+								pop	di
+								loop	scan_words_loop		; Loop if cx > 0
 
 		retn
 
@@ -1951,71 +1950,71 @@ imgdec_scan_loop_2		proc	near
 		mov	word ptr cs:src_word_d,0
 
 scan2_top_loop:
-							xor	ah,ah			; Zero register
-							mov	al,ds:sprite_row_buf_b[si]
-							mov	cs:src_word_c,ax
-							mov	al,ds:hgc_plane_stride[si]
-							mov	cs:src_word_b,ax
-							lodsb				; String [si] to al
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosb				; Store al to es:[di]
-							push	di
-							add	di,1FFFh
-							cmp	di,hgc_bank1_end
-							jb	scan2_top_wrap			; Jump if below
-							stosb				; Store al to es:[di]
+								xor	ah,ah			; Zero register
+								mov	al,ds:sprite_row_buf_b[si]
+								mov	cs:src_word_c,ax
+								mov	al,ds:hgc_plane_stride[si]
+								mov	cs:src_word_b,ax
+								lodsb				; String [si] to al
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosb				; Store al to es:[di]
+								push	di
+								add	di,1FFFh
+								cmp	di,hgc_bank1_end
+								jb	scan2_top_wrap			; Jump if below
+								stosb				; Store al to es:[di]
 
 scan2_top_wrap:
-							pop	di
-							loop	scan2_top_loop		; Loop if cx > 0
+								pop	di
+								loop	scan2_top_loop		; Loop if cx > 0
 
 		add	si,18h
 		add	di,18h
 		mov	cx,5
 
 scan2_mid_loop:
-							mov	ax,ds:sprite_row_buf_b[si]
-							mov	cs:src_word_c,ax
-							mov	ax,ds:hgc_plane_stride[si]
-							mov	cs:src_word_b,ax
-							lodsw				; String [si] to ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosw				; Store ax to es:[di]
-							push	di
-							add	di,1FFEh
-							cmp	di,hgc_bank1_end
-							jb	scan2_mid_wrap			; Jump if below
-							stosw				; Store ax to es:[di]
+								mov	ax,ds:sprite_row_buf_b[si]
+								mov	cs:src_word_c,ax
+								mov	ax,ds:hgc_plane_stride[si]
+								mov	cs:src_word_b,ax
+								lodsw				; String [si] to ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosw				; Store ax to es:[di]
+								push	di
+								add	di,1FFEh
+								cmp	di,hgc_bank1_end
+								jb	scan2_mid_wrap			; Jump if below
+								stosw				; Store ax to es:[di]
 
 scan2_mid_wrap:
-							pop	di
-							loop	scan2_mid_loop		; Loop if cx > 0
+								pop	di
+								loop	scan2_mid_loop		; Loop if cx > 0
 
 		add	si,18h
 		add	di,18h
 		mov	cx,0Bh
 
 scan2_bot_loop:
-							xor	ah,ah			; Zero register
-							mov	al,ds:sprite_row_buf_b[si]
-							mov	cs:src_word_c,ax
-							mov	al,ds:hgc_plane_stride[si]
-							mov	cs:src_word_b,ax
-							lodsb				; String [si] to al
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosb				; Store al to es:[di]
-							push	di
-							add	di,1FFFh
-							cmp	di,hgc_bank1_end
-							jb	scan2_bot_wrap			; Jump if below
-							stosb				; Store al to es:[di]
+								xor	ah,ah			; Zero register
+								mov	al,ds:sprite_row_buf_b[si]
+								mov	cs:src_word_c,ax
+								mov	al,ds:hgc_plane_stride[si]
+								mov	cs:src_word_b,ax
+								lodsb				; String [si] to al
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosb				; Store al to es:[di]
+								push	di
+								add	di,1FFFh
+								cmp	di,hgc_bank1_end
+								jb	scan2_bot_wrap			; Jump if below
+								stosb				; Store al to es:[di]
 
 scan2_bot_wrap:
-							pop	di
-							loop	scan2_bot_loop		; Loop if cx > 0
+								pop	di
+								loop	scan2_bot_loop		; Loop if cx > 0
 
 		retn
 
@@ -2029,10 +2028,10 @@ imgdec_process_loop_4		proc	near
 		mov	cx,5Bh
 
 border_top_loop:
-							mov	byte ptr es:[di],30h	; '0'
-							mov	byte ptr es:[di+19h],0Ch
-							add	di,50h
-							loop	border_top_loop		; Loop if cx > 0
+								mov	byte ptr es:[di],30h	; '0'
+								mov	byte ptr es:[di+19h],0Ch
+								add	di,50h
+								loop	border_top_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
 		call	fill_buffer_2
@@ -2045,13 +2044,13 @@ border_top_loop:
 		mov	cx,2Dh
 
 border_sides_loop:
-							mov	byte ptr es:[di],0B0h
-							mov	byte ptr es:[di+19h],0Eh
-							add	di,50h
-							mov	byte ptr es:[di],70h	; 'p'
-							mov	byte ptr es:[di+19h],0Dh
-							add	di,50h
-							loop	border_sides_loop		; Loop if cx > 0
+								mov	byte ptr es:[di],0B0h
+								mov	byte ptr es:[di+19h],0Eh
+								add	di,50h
+								mov	byte ptr es:[di],70h	; 'p'
+								mov	byte ptr es:[di+19h],0Dh
+								add	di,50h
+								loop	border_sides_loop		; Loop if cx > 0
 
 		mov	byte ptr es:[di],0B0h
 		mov	byte ptr es:[di+19h],0Eh
@@ -2066,10 +2065,10 @@ border_sides_loop:
 		mov	cx,5Bh
 
 border_bot_loop:
-							mov	byte ptr es:[di],30h	; '0'
-							mov	byte ptr es:[di+19h],0Ch
-							add	di,50h
-							loop	border_bot_loop		; Loop if cx > 0
+								mov	byte ptr es:[di],30h	; '0'
+								mov	byte ptr es:[di+19h],0Ch
+								add	di,50h
+								loop	border_bot_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
 		call	fill_buffer_2
@@ -2098,24 +2097,24 @@ imgdec_multiply_4_entry:
 		mov	cx,39h
 
 multiply4_outer_loop:
-							mov	byte ptr cs:gvar_frame_timer,0
-							push	cx
-							mov	ax,cx
-							neg	ax
-							add	ax,39h
-							add	ax,ax
-							call	imgdec_multiply_4
-							pop	ax
-							push	ax
-							add	ax,ax
-							dec	ax
-							call	imgdec_multiply_4
+								mov	byte ptr cs:gvar_frame_timer,0
+								push	cx
+								mov	ax,cx
+								neg	ax
+								add	ax,39h
+								add	ax,ax
+								call	imgdec_multiply_4
+								pop	ax
+								push	ax
+								add	ax,ax
+								dec	ax
+								call	imgdec_multiply_4
 
 multiply4_wait_timer:
-												cmp	byte ptr cs:gvar_frame_timer,4
-												jb	multiply4_wait_timer			; Jump if below
-							pop	cx
-							loop	multiply4_outer_loop		; Loop if cx > 0
+														cmp	byte ptr cs:gvar_frame_timer,4
+														jb	multiply4_wait_timer			; Jump if below
+								pop	cx
+								loop	multiply4_outer_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -2148,24 +2147,24 @@ multiply4_col_draw:
 		mov	word ptr cs:src_word_d,0
 
 multiply4_draw_loop:
-							xor	ah,ah			; Zero register
-							mov	al,ds:hgc_plane3_buf[si]
-							mov	cs:src_word_c,ax
-							mov	al,byte ptr data_40[si]
-							mov	cs:src_word_b,ax
-							lodsb				; String [si] to al
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosb				; Store al to es:[di]
-							push	di
-							add	di,1FFFh
-							cmp	di,hgc_bank1_end
-							jb	multiply4_draw_wrap			; Jump if below
-							stosb				; Store al to es:[di]
+								xor	ah,ah			; Zero register
+								mov	al,ds:hgc_plane3_buf[si]
+								mov	cs:src_word_c,ax
+								mov	al,byte ptr data_40[si]
+								mov	cs:src_word_b,ax
+								lodsb				; String [si] to al
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosb				; Store al to es:[di]
+								push	di
+								add	di,1FFFh
+								cmp	di,hgc_bank1_end
+								jb	multiply4_draw_wrap			; Jump if below
+								stosb				; Store al to es:[di]
 
 multiply4_draw_wrap:
-							pop	di
-							loop	multiply4_draw_loop		; Loop if cx > 0
+								pop	di
+								loop	multiply4_draw_loop		; Loop if cx > 0
 
 		retn
 
@@ -2174,24 +2173,24 @@ multiply4_partial:
 		mov	word ptr cs:src_word_d,0
 
 multiply4_partial_loop:
-							xor	ah,ah			; Zero register
-							mov	al,ds:hgc_plane3_buf[si]
-							mov	cs:src_word_c,ax
-							mov	al,byte ptr data_40[si]
-							mov	cs:src_word_b,ax
-							lodsb				; String [si] to al
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosb				; Store al to es:[di]
-							push	di
-							add	di,1FFFh
-							cmp	di,hgc_bank1_end
-							jb	multiply4_partial_wrap			; Jump if below
-							stosb				; Store al to es:[di]
+								xor	ah,ah			; Zero register
+								mov	al,ds:hgc_plane3_buf[si]
+								mov	cs:src_word_c,ax
+								mov	al,byte ptr data_40[si]
+								mov	cs:src_word_b,ax
+								lodsb				; String [si] to al
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosb				; Store al to es:[di]
+								push	di
+								add	di,1FFFh
+								cmp	di,hgc_bank1_end
+								jb	multiply4_partial_wrap			; Jump if below
+								stosb				; Store al to es:[di]
 
 multiply4_partial_wrap:
-							pop	di
-							loop	multiply4_partial_loop		; Loop if cx > 0
+								pop	di
+								loop	multiply4_partial_loop		; Loop if cx > 0
 
 		xor	ah,ah			; Zero register
 		mov	al,ds:hgc_plane3_buf[si]
@@ -2226,24 +2225,24 @@ imgdec_multiply_5_entry:
 		mov	cx,39h
 
 multiply5_outer_loop:
-							mov	byte ptr cs:gvar_frame_timer,0
-							push	cx
-							mov	ax,cx
-							neg	ax
-							add	ax,39h
-							add	ax,ax
-							call	imgdec_multiply_5
-							pop	ax
-							push	ax
-							add	ax,ax
-							dec	ax
-							call	imgdec_multiply_5
+								mov	byte ptr cs:gvar_frame_timer,0
+								push	cx
+								mov	ax,cx
+								neg	ax
+								add	ax,39h
+								add	ax,ax
+								call	imgdec_multiply_5
+								pop	ax
+								push	ax
+								add	ax,ax
+								dec	ax
+								call	imgdec_multiply_5
 
 multiply5_wait_timer:
-												cmp	byte ptr cs:gvar_frame_timer,4
-												jb	multiply5_wait_timer			; Jump if below
-							pop	cx
-							loop	multiply5_outer_loop		; Loop if cx > 0
+														cmp	byte ptr cs:gvar_frame_timer,4
+														jb	multiply5_wait_timer			; Jump if below
+								pop	cx
+								loop	multiply5_outer_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -2269,23 +2268,23 @@ imgdec_multiply_5		proc	near
 		mov	word ptr cs:src_word_d,0
 
 multiply5_words_loop:
-							mov	ax,ds:hgc_plane3_buf[si]
-							mov	cs:src_word_c,ax
-							mov	ax,data_40[si]
-							mov	cs:src_word_b,ax
-							lodsw				; String [si] to ax
-							mov	cs:src_word_a,ax
-							call	imgdec_process_loop_5
-							stosw				; Store ax to es:[di]
-							push	di
-							add	di,1FFEh
-							cmp	di,hgc_bank1_end
-							jb	multiply5_words_wrap			; Jump if below
-							stosw				; Store ax to es:[di]
+								mov	ax,ds:hgc_plane3_buf[si]
+								mov	cs:src_word_c,ax
+								mov	ax,data_40[si]
+								mov	cs:src_word_b,ax
+								lodsw				; String [si] to ax
+								mov	cs:src_word_a,ax
+								call	imgdec_process_loop_5
+								stosw				; Store ax to es:[di]
+								push	di
+								add	di,1FFEh
+								cmp	di,hgc_bank1_end
+								jb	multiply5_words_wrap			; Jump if below
+								stosw				; Store ax to es:[di]
 
 multiply5_words_wrap:
-							pop	di
-							loop	multiply5_words_loop		; Loop if cx > 0
+								pop	di
+								loop	multiply5_words_loop		; Loop if cx > 0
 
 		mov	cx,21h
 
@@ -2316,15 +2315,15 @@ write_pixel_entry:
 		mov	cx,8
 
 write_pixel_loop:
-							stosw				; Store ax to es:[di]
-							add	di,1FFEh
-							cmp	di,hgc_bank1_end
-							jb	write_pixel_wrap			; Jump if below
-							stosw				; Store ax to es:[di]
-							add	di,hgc_bank2_wrap_w
+								stosw				; Store ax to es:[di]
+								add	di,1FFEh
+								cmp	di,hgc_bank1_end
+								jb	write_pixel_wrap			; Jump if below
+								stosw				; Store ax to es:[di]
+								add	di,hgc_bank2_wrap_w
 
 write_pixel_wrap:
-							loop	write_pixel_loop		; Loop if cx > 0
+								loop	write_pixel_loop		; Loop if cx > 0
 
 		retn
 
@@ -2713,27 +2712,27 @@ imgdec_process_loop_5		proc	near
 		mov	cx,8
 
 process5_bit_loop:
-							xor	bx,bx			; Zero register
-							rol	word ptr cs:src_word_d,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:src_word_c,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:src_word_b,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:src_word_a,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:src_word_d,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:src_word_c,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:src_word_b,1	; Rotate
-							adc	bx,bx
-							rol	word ptr cs:src_word_a,1	; Rotate
-							adc	bx,bx
-							add	ax,ax
-							add	ax,ax
-							or	al,cs:[bx+si]
-							loop	process5_bit_loop		; Loop if cx > 0
+								xor	bx,bx			; Zero register
+								rol	word ptr cs:src_word_d,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:src_word_c,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:src_word_b,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:src_word_a,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:src_word_d,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:src_word_c,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:src_word_b,1	; Rotate
+								adc	bx,bx
+								rol	word ptr cs:src_word_a,1	; Rotate
+								adc	bx,bx
+								add	ax,ax
+								add	ax,ax
+								or	al,cs:[bx+si]
+								loop	process5_bit_loop		; Loop if cx > 0
 
 		pop	si
 		pop	cx
@@ -2753,19 +2752,19 @@ hgc_capture_entry:
 		mov	cx,0C8h
 
 hgc_capture_loop:
-							push	cx
-							push	si
-							mov	cx,28h
-							rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-							pop	si
-							add	si,2000h
-							cmp	si,hgc_bank1_end
-							jb	hgc_capture_wrap			; Jump if below
-							add	si,hgc_bank2_wrap
+								push	cx
+								push	si
+								mov	cx,28h
+								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+								pop	si
+								add	si,2000h
+								cmp	si,hgc_bank1_end
+								jb	hgc_capture_wrap			; Jump if below
+								add	si,hgc_bank2_wrap
 
 hgc_capture_wrap:
-							pop	cx
-							loop	hgc_capture_loop		; Loop if cx > 0
+								pop	cx
+								loop	hgc_capture_loop		; Loop if cx > 0
 
 		pop	ds
 		xor	ax,ax			; Zero register

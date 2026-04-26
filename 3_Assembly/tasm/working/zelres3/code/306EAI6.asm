@@ -39,7 +39,6 @@ include  zr3com.inc
 ; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
 ; These word pointers are the EAI module's only interface to 200FIGHT.
 
-
 ; Shared enemy spawn/state globals in game_seg DS (0xA4xx range).
 
 enemy_spawn_tile_hi	equ	0A4DDh			; spawn-cell row (set for hatch)
@@ -267,32 +266,32 @@ sub01_state0_path:
 		jc	sub01_check_phase_hi			; Jump if carry Set
 
 sub01_advance_phase:
-			inc	byte ptr [si+0Ah]
-			mov	byte ptr [si+6],1
-			or	byte ptr [si+4],60h	; '`'
-			call	word ptr cs:eai6_rng_fn_ptr
-			and	al,1
-			jnz	sub01_step_back_branch			; Jump if not zero
-			call	phase_step_fwd
-			jnc	sub01_face_west			; Jump if carry=0
-			jmp	sub01_finalize
+				inc	byte ptr [si+0Ah]
+				mov	byte ptr [si+6],1
+				or	byte ptr [si+4],60h	; '`'
+				call	word ptr cs:eai6_rng_fn_ptr
+				and	al,1
+				jnz	sub01_step_back_branch			; Jump if not zero
+				call	phase_step_fwd
+				jnc	sub01_face_west			; Jump if carry=0
+				jmp	sub01_finalize
 
 sub01_face_west:
-			or	byte ptr [si+5],80h
-			jmp	sub01_finalize
+				or	byte ptr [si+5],80h
+				jmp	sub01_finalize
 
 sub01_step_back_branch:
-			call	phase_step_back
-			jnc	sub01_face_east			; Jump if carry=0
-			jmp	sub01_finalize
+				call	phase_step_back
+				jnc	sub01_face_east			; Jump if carry=0
+				jmp	sub01_finalize
 
 sub01_face_east:
-			and	byte ptr [si+5],7Fh
-			jmp	sub01_finalize
+				and	byte ptr [si+5],7Fh
+				jmp	sub01_finalize
 
 sub01_check_phase_hi:
-			test	byte ptr [si+0Ah],0F0h
-			jz	sub01_advance_phase			; Jump if zero
+				test	byte ptr [si+0Ah],0F0h
+				jz	sub01_advance_phase			; Jump if zero
 		mov	byte ptr [si+0Ah],0
 		mov	byte ptr [si+6],0
 		or	byte ptr [si+9],1
@@ -336,6 +335,7 @@ sub01_despawn_call:
 ; sub01_hide_branch.  Read by sibling sub-handlers via offset
 ; arithmetic; treated here as raw byte tables.
 ; ----------------------------------------------------------------
+
 eai6_sub01_state1_inline_data:
 		db	 00h, 00h, 63h, 00h, 14h, 00h	; row 0
 		db	 14h	; row 1
@@ -441,18 +441,18 @@ collide_check_fwd		proc	near
 		mov	cx,4
 
 collide_fwd_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_fwd_iter			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_fwd_iter			; Jump if zero
+				retn
 
 collide_fwd_iter:
-			xchg	si,di
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			xchg	si,di
-			loop	collide_fwd_loop		; Loop if cx > 0
+				xchg	si,di
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				xchg	si,di
+				loop	collide_fwd_loop		; Loop if cx > 0
 
 		xchg	si,di
 		sub	si,24h
@@ -511,18 +511,18 @@ collide_check_back		proc	near
 		mov	cx,4
 
 collide_back_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_back_iter			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_back_iter			; Jump if zero
+				retn
 
 collide_back_iter:
-			xchg	si,di
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			xchg	si,di
-			loop	collide_back_loop		; Loop if cx > 0
+				xchg	si,di
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				xchg	si,di
+				loop	collide_back_loop		; Loop if cx > 0
 
 		dec	di
 		xchg	si,di
@@ -584,15 +584,15 @@ sub01_collide_inner		proc	near
 		mov	cx,2
 
 collide_inner_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_inner_step			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_inner_step			; Jump if zero
+				retn
 
 collide_inner_step:
-			inc	di
-			loop	collide_inner_loop		; Loop if cx > 0
+				inc	di
+				loop	collide_inner_loop		; Loop if cx > 0
 
 		dec	di
 		mov	al,[di]
@@ -695,6 +695,7 @@ sub02_flip_facing:
 ; eai6_sub02_inline_data -- 16 inline bytes after sub02_flip_facing.
 ; Read by phase2/phase4 logic via fixed offsets.
 ; ----------------------------------------------------------------
+
 eai6_sub02_inline_data:
 		db	0, 0, 1, 0, 0, 0	; padding/leftover bytes
 		db	7, 0, 4, 4, 3, 4	; row 0

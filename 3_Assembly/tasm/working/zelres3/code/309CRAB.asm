@@ -39,7 +39,6 @@ include  zr3com.inc
 
 ; Fight-engine callback vectors / shared globals (DS at game_seg).
 
-
 ; Crab-specific global state (DS, game_seg).
 
 crab_spawn_limit	equ	0A481h			; max simultaneous crab spawns
@@ -295,37 +294,37 @@ crab_scan_prolog:
 
 scan_slot_loop:					; was loc_1
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		; cmp word ptr [si], 0FFFFh
-							;  (alt encoding: sign-extended imm8 form;
-							;   TASM emits 4-byte form, so keep as db)
-			jz	scan_done		; end-of-list sentinel
-			mov	ax,[si]
-			call	word ptr cs:fight_cb_anim_step
-			jc	scan_next_slot		; callback consumed slot -> skip
-			mov	[si+3],bl
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:crab_slot_idx
-			xor	bh,bh			; Zero register
-			mov	al,ds:sprite_idx_table[bx]
-			mov	[di],al
-			test	byte ptr [si+5],40h	; '@'  bit6 = active
-			jz	scan_next_slot
-			test	byte ptr ds:crab_state_bits,80h
-			jnz	scan_next_slot
-			mov	al,[si+5]
-			and	al,1Fh
-			test	byte ptr [si+4],10h
-			jz	apply_state_bits	; was loc_2
-			or	al,80h
+				db	 83h, 3Ch,0FFh		; cmp word ptr [si], 0FFFFh
+								;  (alt encoding: sign-extended imm8 form;
+								;   TASM emits 4-byte form, so keep as db)
+				jz	scan_done		; end-of-list sentinel
+				mov	ax,[si]
+				call	word ptr cs:fight_cb_anim_step
+				jc	scan_next_slot		; callback consumed slot -> skip
+				mov	[si+3],bl
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:crab_slot_idx
+				xor	bh,bh			; Zero register
+				mov	al,ds:sprite_idx_table[bx]
+				mov	[di],al
+				test	byte ptr [si+5],40h	; '@'  bit6 = active
+				jz	scan_next_slot
+				test	byte ptr ds:crab_state_bits,80h
+				jnz	scan_next_slot
+				mov	al,[si+5]
+				and	al,1Fh
+				test	byte ptr [si+4],10h
+				jz	apply_state_bits	; was loc_2
+				or	al,80h
 
 apply_state_bits:				; was loc_2
-			mov	ds:crab_state_bits,al
+				mov	ds:crab_state_bits,al
 
 scan_next_slot:					; was loc_3
-			inc	byte ptr ds:crab_slot_idx
-			add	si,10h
-			jmp	short scan_slot_loop
+				inc	byte ptr ds:crab_slot_idx
+				add	si,10h
+				jmp	short scan_slot_loop
 
 scan_done:					; was loc_4
 		mov	si,ds:fight_slot_list
@@ -598,10 +597,10 @@ emit_find_slot:					; was loc_33
 		mov	di,ds:fight_slot_list
 
 emit_find_slot_loop:				; was loc_34
-			cmp	byte ptr [di+4],14h
-			je	emit_slot_found		; was loc_35
-			add	di,10h
-			jmp	short emit_find_slot_loop
+				cmp	byte ptr [di+4],14h
+				je	emit_slot_found		; was loc_35
+				add	di,10h
+				jmp	short emit_find_slot_loop
 
 emit_slot_found:				; was loc_35
 		mov	al,ds:crab_anim_frame
@@ -686,6 +685,7 @@ crab_alt_phase_consts:				; was crab_orphan_data_a (DS-dispatch consts)
 		db	 16h				; push ss (in aligned decode)
 ;*		loopnz	$-87			; target = mid-instruction (alt-encoding fixup)
 		db	0E0h,0A7h		; loopne -89  (alt-encoding; stays as Fixup)
+
 crab_alt_phase_arm:				; live entry: jmp from anim_step_do lands here
 		mov	byte ptr ds:crab_anim_idx,0
 		mov	byte ptr ds:crab_idx_e,0
@@ -797,62 +797,62 @@ emit_sprite_rows:				; was loc_49
 		mov	ds:crab_slot_idx,al
 
 emit_row_outer:					; was loc_50
-			push	di
-			push	ax
-			mov	bl,0Ah
-			mul	bl			; ax = reg * al
-			add	di,ax
-			mov	ax,ds:fight_hp
-			mov	cx,0Ah
-
-emit_row_loop:					; was locloop_51
-				push	cx
-				mov	[si],ax
 				push	di
 				push	ax
-				call	word ptr cs:fight_cb_anim_step
-				jc	emit_row_next		; was loc_53
-				mov	al,[di]
-				cmp	al,0FFh
-				je	emit_row_next
-				mov	[si+4],al
-				mov	al,ds:crab_flag_d
-				mov	[si+2],al
-				mov	[si+3],bl
-				mov	byte ptr [si+5],0
-				test	byte ptr ds:crab_state_bits,0FFh
-				jz	emit_row_no_bit		; was loc_52
-				or	byte ptr [si+5],20h	; ' '
+				mov	bl,0Ah
+				mul	bl			; ax = reg * al
+				add	di,ax
+				mov	ax,ds:fight_hp
+				mov	cx,0Ah
+
+emit_row_loop:					; was locloop_51
+						push	cx
+						mov	[si],ax
+						push	di
+						push	ax
+						call	word ptr cs:fight_cb_anim_step
+						jc	emit_row_next		; was loc_53
+						mov	al,[di]
+						cmp	al,0FFh
+						je	emit_row_next
+						mov	[si+4],al
+						mov	al,ds:crab_flag_d
+						mov	[si+2],al
+						mov	[si+3],bl
+						mov	byte ptr [si+5],0
+						test	byte ptr ds:crab_state_bits,0FFh
+						jz	emit_row_no_bit		; was loc_52
+						or	byte ptr [si+5],20h	; ' '
 
 emit_row_no_bit:				; was loc_52
-				mov	al,ds:crab_frame_idx
-				mov	[si+6],al
-				mov	ax,[si+2]
-				call	word ptr cs:fight_cb_record_ofs
-				mov	al,ds:crab_slot_idx
-				mov	bl,al
-				or	al,80h
-				xchg	[di],al
-				xor	bh,bh			; Zero register
-				mov	ds:sprite_idx_table[bx],al
-				inc	byte ptr ds:crab_slot_idx
-				add	si,10h
+						mov	al,ds:crab_frame_idx
+						mov	[si+6],al
+						mov	ax,[si+2]
+						call	word ptr cs:fight_cb_record_ofs
+						mov	al,ds:crab_slot_idx
+						mov	bl,al
+						or	al,80h
+						xchg	[di],al
+						xor	bh,bh			; Zero register
+						mov	ds:sprite_idx_table[bx],al
+						inc	byte ptr ds:crab_slot_idx
+						add	si,10h
 
 emit_row_next:					; was loc_53
-				pop	ax
-				inc	ax
-				pop	di
-				inc	di
-				pop	cx
-				loop	emit_row_loop
+						pop	ax
+						inc	ax
+						pop	di
+						inc	di
+						pop	cx
+						loop	emit_row_loop
 
-			inc	byte ptr ds:crab_flag_d
-			and	byte ptr ds:crab_flag_d,3Fh	; '?'
-			pop	ax
-			pop	di
-			inc	al
-			cmp	al,6
-			jne	emit_row_outer
+				inc	byte ptr ds:crab_flag_d
+				and	byte ptr ds:crab_flag_d,3Fh	; '?'
+				pop	ax
+				pop	di
+				inc	al
+				cmp	al,6
+				jne	emit_row_outer
 		mov	word ptr [si],0FFFFh
 		jmp	emit_from_grid
 

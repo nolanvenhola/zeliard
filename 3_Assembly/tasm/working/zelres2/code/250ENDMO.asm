@@ -235,31 +235,31 @@ main_entry:
 		mov	cx,59h
 
 init_wipe_loop:
-			push	cx
-			mov	ax,cs
-			add	ax,2000h
-			mov	es,ax
-			mov	ax,cx
-			dec	ax
-			add	ax,ax
-			push	ds
-			mov	di,null_ofs
-			mov	ds,cs:gvar_game_seg
-			mov	si,script_src_a
-			call	fill_credits_triplane
-			pop	ds
-			pop	cx
-			push	cx
-			mov	bx,cx
-			add	bx,17h
-			mov	bh,2Dh			; '-'
-			mov	di,0
-			mov	cx,1858h
-			call	word ptr cs:gfx_blit_fn
-			mov	al,0Ah
-			call	timer_wait_loop
-			pop	cx
-			loop	init_wipe_loop		; Loop if cx > 0
+				push	cx
+				mov	ax,cs
+				add	ax,2000h
+				mov	es,ax
+				mov	ax,cx
+				dec	ax
+				add	ax,ax
+				push	ds
+				mov	di,null_ofs
+				mov	ds,cs:gvar_game_seg
+				mov	si,script_src_a
+				call	fill_credits_triplane
+				pop	ds
+				pop	cx
+				push	cx
+				mov	bx,cx
+				add	bx,17h
+				mov	bh,2Dh			; '-'
+				mov	di,0
+				mov	cx,1858h
+				call	word ptr cs:gfx_blit_fn
+				mov	al,0Ah
+				call	timer_wait_loop
+				pop	cx
+				loop	init_wipe_loop		; Loop if cx > 0
 
 		push	cs
 		pop	es
@@ -418,12 +418,12 @@ init_wipe_loop:
 		mov	cx,64h
 
 gradient_fill_loop:
-			push	cx
-			mov	cx,1Ah
-			rep	stosb			; Rep when cx >0 Store al to es:[di]
-			ror	al,1			; Rotate
-			pop	cx
-			loop	gradient_fill_loop		; Loop if cx > 0
+				push	cx
+				mov	cx,1Ah
+				rep	stosb			; Rep when cx >0 Store al to es:[di]
+				ror	al,1			; Rotate
+				pop	cx
+				loop	gradient_fill_loop		; Loop if cx > 0
 
 		xor	al,al			; Zero register
 		mov	di,4000h
@@ -442,9 +442,9 @@ ending_scene_main	endp
 timer_wait_loop		proc	near
 
 timer_wait_poll:
-			call	gfx_driver_tick_full
-			cmp	cs:gvar_timer_lo,al
-			jb	timer_wait_poll			; Jump if below
+				call	gfx_driver_tick_full
+				cmp	cs:gvar_timer_lo,al
+				jb	timer_wait_poll			; Jump if below
 		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 
@@ -671,22 +671,22 @@ set_color_pair:
 		jmp	narration_tick_top
 
 new_line_reset:
-			mov	word ptr ds:render_x_pos,0
-			mov	ds:text_layout,ah
-			jmp	narration_tick_top
+				mov	word ptr ds:render_x_pos,0
+				mov	ds:text_layout,ah
+				jmp	narration_tick_top
 
 line_wrap:
-			mov	word ptr ds:render_x_pos,0
-			inc	byte ptr ds:text_layout
-			jmp	narration_tick_top
+				mov	word ptr ds:render_x_pos,0
+				inc	byte ptr ds:text_layout
+				jmp	narration_tick_top
 
 full_scroll:
-			mov	bx,8Fh
-			mov	cx,5039h
-			xor	al,al			; Zero register
-			call	word ptr cs:full_scroll_fn_ptr
-			xor	ah,ah			; Zero register
-			jmp	short new_line_reset
+				mov	bx,8Fh
+				mov	cx,5039h
+				xor	al,al			; Zero register
+				call	word ptr cs:full_scroll_fn_ptr
+				xor	ah,ah			; Zero register
+				jmp	short new_line_reset
 
 short_wait:
 		mov	al,0F0h
@@ -828,56 +828,56 @@ measure_script_word_width		proc	near
 		xor	cx,cx			; Zero register
 
 measure_next:
-				lodsb				; String [si] to al
-				cmp	al,20h			; ' '
-				jne	measure_not_FF			; Jump if not equal
-				retn
+						lodsb				; String [si] to al
+						cmp	al,20h			; ' '
+						jne	measure_not_FF			; Jump if not equal
+						retn
 
 measure_not_FF:
-				cmp	al,0FFh
-				jne	measure_not_FE			; Jump if not equal
-				retn
+						cmp	al,0FFh
+						jne	measure_not_FE			; Jump if not equal
+						retn
 
 measure_not_FE:
-				cmp	al,0FEh
-				jne	measure_not_FD			; Jump if not equal
-				retn
+						cmp	al,0FEh
+						jne	measure_not_FD			; Jump if not equal
+						retn
 
 measure_not_FD:
-				cmp	al,0FDh
-				jne	measure_not_F7			; Jump if not equal
-				retn
+						cmp	al,0FDh
+						jne	measure_not_F7			; Jump if not equal
+						retn
 
 measure_not_F7:
-				cmp	al,0F7h
-				jne	measure_not_F3			; Jump if not equal
-				retn
+						cmp	al,0F7h
+						jne	measure_not_F3			; Jump if not equal
+						retn
 
 measure_not_F3:
-				cmp	al,0F3h
-				jne	measure_not_F2			; Jump if not equal
-				retn
+						cmp	al,0F3h
+						jne	measure_not_F2			; Jump if not equal
+						retn
 
 measure_not_F2:
-				cmp	al,0F2h
-				jne	measure_not_F1			; Jump if not equal
-				retn
+						cmp	al,0F2h
+						jne	measure_not_F1			; Jump if not equal
+						retn
 
 measure_not_F1:
-				cmp	al,0F1h
-				jne	measure_add_glyph			; Jump if not equal
-				retn
+						cmp	al,0F1h
+						jne	measure_add_glyph			; Jump if not equal
+						retn
 
 measure_add_glyph:
-				or	al,al			; Zero ?
-				js	measure_next			; Jump if sign=1
-				sub	al,20h			; ' '
-				jc	measure_next			; Jump if carry Set
-			mov	bl,al
-			xor	bh,bh			; Zero register
-			add	cl,cs:glyph_space_tbl[bx]
-			adc	ch,bh
-			jmp	short measure_next
+						or	al,al			; Zero ?
+						js	measure_next			; Jump if sign=1
+						sub	al,20h			; ' '
+						jc	measure_next			; Jump if carry Set
+				mov	bl,al
+				xor	bh,bh			; Zero register
+				add	cl,cs:glyph_space_tbl[bx]
+				adc	ch,bh
+				jmp	short measure_next
 
 measure_script_word_width		endp
 
@@ -938,8 +938,8 @@ credits_scene_start:
 		call	credits_loop_main
 
 credits_tick_loop:
-			call	credits_driver_tick
-			jmp	short credits_tick_loop
+				call	credits_driver_tick
+				jmp	short credits_tick_loop
 
 credits_loop_main		proc	near
 		mov	byte ptr ds:gvar_timer_lo,0
@@ -1021,9 +1021,9 @@ credits_after_newline:
 		jmp	credits_fetch_byte
 
 credits_wait_skip:
-			call	credits_driver_tick
-			test	byte ptr ds:gvar_skip_input,0FFh
-			jz	credits_wait_skip			; Jump if zero
+				call	credits_driver_tick
+				test	byte ptr ds:gvar_skip_input,0FFh
+				jz	credits_wait_skip			; Jump if zero
 		mov	byte ptr ds:gvar_skip_input,0
 		mov	word ptr ds:gvar_credits_pos,0
 		jmp	credits_fetch_byte
@@ -1039,10 +1039,10 @@ credits_delay_page:
 		call	credits_putchar
 
 credits_delay_poll:
-			call	credits_driver_tick
-			mov	ax,ds:gvar_credits_pos
-			cmp	ax,ds:credits_pause_ticks
-			jb	credits_delay_poll			; Jump if below
+				call	credits_driver_tick
+				mov	ax,ds:gvar_credits_pos
+				cmp	ax,ds:credits_pause_ticks
+				jb	credits_delay_poll			; Jump if below
 		mov	word ptr ds:gvar_credits_pos,0
 		jmp	credits_fetch_byte
 
@@ -1218,9 +1218,9 @@ ending_credits_dispatch:
 credits_wait_tick		proc	near
 
 credits_wait_poll:
-			call	credits_driver_tick
-			cmp	cs:gvar_timer_lo,al
-			jb	credits_wait_poll			; Jump if below
+				call	credits_driver_tick
+				cmp	cs:gvar_timer_lo,al
+				jb	credits_wait_poll			; Jump if below
 		mov	byte ptr cs:gvar_timer_lo,0
 		retn
 
@@ -1252,26 +1252,26 @@ rle_decode_plane:
 		add	si,cx
 
 rle_word_loop:
-			push	cx
-			xor	al,al			; Zero register
-			mov	cx,8
+				push	cx
+				xor	al,al			; Zero register
+				mov	cx,8
 
 rle_bit_loop:
-				rol	byte ptr ds:[bp],1	; Rotate
-				jc	rle_bit_one			; Jump if carry Set
-				stosb				; Store al to es:[di]
-				loop	rle_bit_loop		; Loop if cx > 0
+						rol	byte ptr ds:[bp],1	; Rotate
+						jc	rle_bit_one			; Jump if carry Set
+						stosb				; Store al to es:[di]
+						loop	rle_bit_loop		; Loop if cx > 0
 
-				jmp	short rle_word_tail
+						jmp	short rle_word_tail
 
 rle_bit_one:
-				movsb				; Mov [si] to es:[di]
-				loop	rle_bit_loop		; Loop if cx > 0
+						movsb				; Mov [si] to es:[di]
+						loop	rle_bit_loop		; Loop if cx > 0
 
 rle_word_tail:
-			inc	bp
-			pop	cx
-			loop	rle_word_loop		; Loop if cx > 0
+				inc	bp
+				pop	cx
+				loop	rle_word_loop		; Loop if cx > 0
 
 		pop	cx
 		add	cx,cx
@@ -1284,79 +1284,79 @@ rle_interleave_planes:
 		xor	dh,dh			; Zero register
 
 interleave_plane_loop:
-			xor	al,al			; Zero register
-			rcl	byte ptr es:[di],1	; Rotate thru carry
-			adc	al,al
-			rcl	byte ptr es:[di],1	; Rotate thru carry
-			adc	al,al
-			xor	dh,al
-			mov	ah,dh
-			xor	al,al			; Zero register
-			rcl	byte ptr es:[di],1	; Rotate thru carry
-			adc	al,al
-			rcl	byte ptr es:[di],1	; Rotate thru carry
-			adc	al,al
-			xor	dh,al
-			add	ah,ah
-			add	ah,ah
-			or	ah,dh
-			xor	al,al			; Zero register
-			rcl	byte ptr es:[di],1	; Rotate thru carry
-			adc	al,al
-			rcl	byte ptr es:[di],1	; Rotate thru carry
-			adc	al,al
-			xor	dh,al
-			add	ah,ah
-			add	ah,ah
-			or	ah,dh
-			xor	al,al			; Zero register
-			rcl	byte ptr es:[di],1	; Rotate thru carry
-			adc	al,al
-			rcl	byte ptr es:[di],1	; Rotate thru carry
-			adc	al,al
-			xor	dh,al
-			add	ah,ah
-			add	ah,ah
-			or	ah,dh
-			mov	al,ah
-			stosb				; Store al to es:[di]
-			loop	interleave_plane_loop		; Loop if cx > 0
+				xor	al,al			; Zero register
+				rcl	byte ptr es:[di],1	; Rotate thru carry
+				adc	al,al
+				rcl	byte ptr es:[di],1	; Rotate thru carry
+				adc	al,al
+				xor	dh,al
+				mov	ah,dh
+				xor	al,al			; Zero register
+				rcl	byte ptr es:[di],1	; Rotate thru carry
+				adc	al,al
+				rcl	byte ptr es:[di],1	; Rotate thru carry
+				adc	al,al
+				xor	dh,al
+				add	ah,ah
+				add	ah,ah
+				or	ah,dh
+				xor	al,al			; Zero register
+				rcl	byte ptr es:[di],1	; Rotate thru carry
+				adc	al,al
+				rcl	byte ptr es:[di],1	; Rotate thru carry
+				adc	al,al
+				xor	dh,al
+				add	ah,ah
+				add	ah,ah
+				or	ah,dh
+				xor	al,al			; Zero register
+				rcl	byte ptr es:[di],1	; Rotate thru carry
+				adc	al,al
+				rcl	byte ptr es:[di],1	; Rotate thru carry
+				adc	al,al
+				xor	dh,al
+				add	ah,ah
+				add	ah,ah
+				or	ah,dh
+				mov	al,ah
+				stosb				; Store al to es:[di]
+				loop	interleave_plane_loop		; Loop if cx > 0
 
 		retn
 
 rle_blit_pair		endp
 
 tile_rle_blit:
-				test	byte ptr [si],40h	; '@'
-				jz	tile_rle_byte_mode			; Jump if zero
-				lodsw				; String [si] to ax
-				xchg	ah,al
-				mov	cx,ax
-				cmp	ax,0FFFFh
-				jne	tile_rle_word_mode			; Jump if not equal
-				retn
+						test	byte ptr [si],40h	; '@'
+						jz	tile_rle_byte_mode			; Jump if zero
+						lodsw				; String [si] to ax
+						xchg	ah,al
+						mov	cx,ax
+						cmp	ax,0FFFFh
+						jne	tile_rle_word_mode			; Jump if not equal
+						retn
 
 tile_rle_word_mode:
-				and	cx,3FFFh
-				test	ax,8000h
-				jz	tile_rle_copy			; Jump if zero
+						and	cx,3FFFh
+						test	ax,8000h
+						jz	tile_rle_copy			; Jump if zero
 
 tile_rle_fill:
-				lodsb				; String [si] to al
-				rep	stosb			; Rep when cx >0 Store al to es:[di]
-				jmp	short tile_rle_blit
+						lodsb				; String [si] to al
+						rep	stosb			; Rep when cx >0 Store al to es:[di]
+						jmp	short tile_rle_blit
 
 tile_rle_copy:
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				jmp	short tile_rle_blit
+						rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+						jmp	short tile_rle_blit
 
 tile_rle_byte_mode:
-				lodsb				; String [si] to al
-				mov	cl,al
-				and	cx,3Fh
-				test	al,80h
-				jz	tile_rle_copy			; Jump if zero
-			jmp	short tile_rle_fill
+						lodsb				; String [si] to al
+						mov	cl,al
+						and	cx,3Fh
+						test	al,80h
+						jz	tile_rle_copy			; Jump if zero
+				jmp	short tile_rle_fill
 
 fill_credits_triplane		proc	near
 		mov	bx,18h
@@ -1405,46 +1405,46 @@ or_triplane_mask:
 		mov	cx,35h
 
 triplane_row_loop:
-			push	cx
-			push	di
-			mov	cx,13h
+				push	cx
+				push	di
+				mov	cx,13h
 
 triplane_or_inner:
-				lodsw				; String [si] to ax
-				or	es:[di],ax
-				or	es:plane_mid_ofs[di],ax
-				or	es:plane_top_ofs[di],ax
-				inc	di
-				inc	di
-				loop	triplane_or_inner		; Loop if cx > 0
+						lodsw				; String [si] to ax
+						or	es:[di],ax
+						or	es:plane_mid_ofs[di],ax
+						or	es:plane_top_ofs[di],ax
+						inc	di
+						inc	di
+						loop	triplane_or_inner		; Loop if cx > 0
 
-			pop	di
-			add	di,50h
-			pop	cx
-			loop	triplane_row_loop		; Loop if cx > 0
+				pop	di
+				add	di,50h
+				pop	cx
+				loop	triplane_row_loop		; Loop if cx > 0
 
 		mov	di,or_mask_base
 		mov	cx,35h
 
 triplane_and_loop:
-			push	cx
-			push	di
-			mov	cx,13h
+				push	cx
+				push	di
+				mov	cx,13h
 
 triplane_and_inner:
-				lodsw				; String [si] to ax
-				not	ax
-				and	es:[di],ax
-				and	es:plane_mid_ofs[di],ax
-				and	es:plane_top_ofs[di],ax
-				inc	di
-				inc	di
-				loop	triplane_and_inner		; Loop if cx > 0
+						lodsw				; String [si] to ax
+						not	ax
+						and	es:[di],ax
+						and	es:plane_mid_ofs[di],ax
+						and	es:plane_top_ofs[di],ax
+						inc	di
+						inc	di
+						loop	triplane_and_inner		; Loop if cx > 0
 
-			pop	di
-			add	di,50h
-			pop	cx
-			loop	triplane_and_loop		; Loop if cx > 0
+				pop	di
+				add	di,50h
+				pop	cx
+				loop	triplane_and_loop		; Loop if cx > 0
 
 		pop	ds
 		retn

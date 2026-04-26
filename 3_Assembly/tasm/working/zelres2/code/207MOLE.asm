@@ -267,38 +267,38 @@ ega_plane_blit:
 		mov	bx,cx
 
 ega_row_loop:
-				push	di
-				push	cx
+					push	di
+					push	cx
 
 ega_plane_byte_loop:
-						mov	ah,ds:[bp+si]
-						lodsb				; String [si] to al
-						mov	cl,ah
-						or	cl,al
-						xor	cl,al
-						mov	ch,cl
-						or	al,ch
-						not	ch
-						and	ah,ch
-						mov	ch,al
-						mov	al,1
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	es:[di],ch
-						mov	al,2
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	es:[di],ah
-						mov	al,4
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	es:[di],cl
-						inc	di
-						dec	bh
-						jnz	ega_plane_byte_loop			; Jump if not zero
-				pop	cx
-				pop	di
-				add	di,50h
-				mov	bh,ch
-				dec	bl
-				jnz	ega_row_loop			; Jump if not zero
+								mov	ah,ds:[bp+si]
+								lodsb				; String [si] to al
+								mov	cl,ah
+								or	cl,al
+								xor	cl,al
+								mov	ch,cl
+								or	al,ch
+								not	ch
+								and	ah,ch
+								mov	ch,al
+								mov	al,1
+								out	dx,al			; port 3C5h, EGA sequencr func
+								mov	es:[di],ch
+								mov	al,2
+								out	dx,al			; port 3C5h, EGA sequencr func
+								mov	es:[di],ah
+								mov	al,4
+								out	dx,al			; port 3C5h, EGA sequencr func
+								mov	es:[di],cl
+								inc	di
+								dec	bh
+								jnz	ega_plane_byte_loop			; Jump if not zero
+					pop	cx
+					pop	di
+					add	di,50h
+					mov	bh,ch
+					dec	bl
+					jnz	ega_row_loop			; Jump if not zero
 		pop	es
 		retn
 ; --- cga_shift_blit: dispatch target for modes 1/2 (CGA) at offset 0x0140 ---
@@ -323,48 +323,48 @@ cga_shift_blit:
 		mov	bx,cx
 
 cga_row_loop:
-				push	di
-				push	cx
+					push	di
+					push	cx
 
 cga_byte_loop:
-						push	bx
-						mov	ah,ds:[bp+si]
-						lodsb				; String [si] to al
-						xor	dl,dl			; Zero register
-						mov	cx,4
+								push	bx
+								mov	ah,ds:[bp+si]
+								lodsb				; String [si] to al
+								xor	dl,dl			; Zero register
+								mov	cx,4
 
 cga_bit_unpack_loop:
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						and	bl,0Fh
-						xor	bh,bh			; Zero register
-						add	dl,dl
-						add	dl,dl
-						or	dl,byte ptr ds:[1AAh][bx]   ; LUT at 0x01AA: 4bpp->CGA 2bpp
-						loop	cga_bit_unpack_loop		; Loop if cx > 0
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								and	bl,0Fh
+								xor	bh,bh			; Zero register
+								add	dl,dl
+								add	dl,dl
+								or	dl,byte ptr ds:[1AAh][bx]   ; LUT at 0x01AA: 4bpp->CGA 2bpp
+								loop	cga_bit_unpack_loop		; Loop if cx > 0
 
-						mov	al,dl
-						stosb				; Store al to es:[di]
-						pop	bx
-						dec	bh
-						jnz	cga_byte_loop			; Jump if not zero
-				pop	cx
-				pop	di
-				add	di,2000h
-				cmp	di,4000h
-				jb	cga_row_continue			; Jump if below
-				add	di,wrap_delta
+								mov	al,dl
+								stosb				; Store al to es:[di]
+								pop	bx
+								dec	bh
+								jnz	cga_byte_loop			; Jump if not zero
+					pop	cx
+					pop	di
+					add	di,2000h
+					cmp	di,4000h
+					jb	cga_row_continue			; Jump if below
+					add	di,wrap_delta
 
 cga_row_continue:
-				mov	bh,ch
-				dec	bl
-				jnz	cga_row_loop			; Jump if not zero
+					mov	bh,ch
+					dec	bl
+					jnz	cga_row_loop			; Jump if not zero
 		pop	es
 		retn
 ; --- LUT at 0x01AA: 4-bit nibble -> 2-bit CGA/HGC pair unpacker ---
@@ -406,64 +406,64 @@ hgc_blit:
 		mov	bx,cx		; 8B D9
 
 hgc_row_loop:
-				push	di
-				push	cx
+					push	di
+					push	cx
 
 hgc_byte_loop:
-						push	bx
-						mov	ah,ds:[bp+si]
-						lodsb				; String [si] to al
-						xor	dl,dl			; Zero register
-						mov	cx,4
+								push	bx
+								mov	ah,ds:[bp+si]
+								lodsb				; String [si] to al
+								xor	dl,dl			; Zero register
+								mov	cx,4
 
 hgc_bit_unpack_loop:
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						and	bl,0Fh
-						xor	bh,bh			; Zero register
-						add	dl,dl
-						add	dl,dl
-						or	dl,byte ptr ds:[1AAh][bx]    ; LUT: nibble -> 2bpp
-						loop	hgc_bit_unpack_loop		; Loop if cx > 0
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								and	bl,0Fh
+								xor	bh,bh			; Zero register
+								add	dl,dl
+								add	dl,dl
+								or	dl,byte ptr ds:[1AAh][bx]    ; LUT: nibble -> 2bpp
+								loop	hgc_bit_unpack_loop		; Loop if cx > 0
 
-						mov	al,dl
-						stosb				; Store al to es:[di]
-						pop	bx
-						dec	bh
-						jnz	hgc_byte_loop			; Jump if not zero
-				pop	cx
-				pop	di
-				add	di,2000h
-				cmp	di,vga_limit
-				jb	hgc_row_continue			; Jump if below
-				; Wrap: copy row from field A to field B
-				push	ds
-				push	si
-				push	cx
-				push	di
-				push	es
-				pop	ds
-				mov	si,di
-				sub	si,2000h
-				mov	cl,ch
-				xor	ch,ch			; Zero register
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	di
-				pop	cx
-				pop	si
-				pop	ds
-				add	di,0A05Ah
+								mov	al,dl
+								stosb				; Store al to es:[di]
+								pop	bx
+								dec	bh
+								jnz	hgc_byte_loop			; Jump if not zero
+					pop	cx
+					pop	di
+					add	di,2000h
+					cmp	di,vga_limit
+					jb	hgc_row_continue			; Jump if below
+					; Wrap: copy row from field A to field B
+					push	ds
+					push	si
+					push	cx
+					push	di
+					push	es
+					pop	ds
+					mov	si,di
+					sub	si,2000h
+					mov	cl,ch
+					xor	ch,ch			; Zero register
+					rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+					pop	di
+					pop	cx
+					pop	si
+					pop	ds
+					add	di,0A05Ah
 
 hgc_row_continue:
-				mov	bh,ch
-				dec	bl
-				jnz	hgc_row_loop			; Jump if not zero
+					mov	bh,ch
+					dec	bl
+					jnz	hgc_row_loop			; Jump if not zero
 		pop	es
 		retn
 ; --- vga_blit: dispatch target for mode 4 (VGA/MCGA 320x200 linear) at 0x024B ---
@@ -488,31 +488,31 @@ vga_blit:
 		mov	bx,cx
 
 vga_row_loop:
-				push	di
-				push	cx
+					push	di
+					push	cx
 
 vga_byte_loop:
-						push	bx
-						mov	dh,ds:[bp+si]
-						mov	dl,[si]
-						call	vga_pixel_unpack
-						stosb				; Store al to es:[di]
-						call	vga_pixel_unpack
-						stosb				; Store al to es:[di]
-						call	vga_pixel_unpack
-						stosb				; Store al to es:[di]
-						call	vga_pixel_unpack
-						stosb				; Store al to es:[di]
-						inc	si
-						pop	bx
-						dec	bh
-						jnz	vga_byte_loop			; Jump if not zero
-				pop	cx
-				pop	di
-				add	di,140h
-				mov	bh,ch
-				dec	bl
-				jnz	vga_row_loop			; Jump if not zero
+								push	bx
+								mov	dh,ds:[bp+si]
+								mov	dl,[si]
+								call	vga_pixel_unpack
+								stosb				; Store al to es:[di]
+								call	vga_pixel_unpack
+								stosb				; Store al to es:[di]
+								call	vga_pixel_unpack
+								stosb				; Store al to es:[di]
+								call	vga_pixel_unpack
+								stosb				; Store al to es:[di]
+								inc	si
+								pop	bx
+								dec	bh
+								jnz	vga_byte_loop			; Jump if not zero
+					pop	cx
+					pop	di
+					add	di,140h
+					mov	bh,ch
+					dec	bl
+					jnz	vga_row_loop			; Jump if not zero
 		pop	es
 		retn
 
@@ -566,32 +566,32 @@ cga_hires_blit:
 		mov	bx,cx		; 8B D9
 
 cga_hires_row_loop:
-				push	di
-				push	cx
+					push	di
+					push	cx
 
 cga_hires_byte_loop:
-						push	bx
-						mov	dh,ds:[bp+si]
-						mov	dl,[si]
-						call	mcga_pixel_unpack
-						stosb				; Store al to es:[di]
-						call	mcga_pixel_unpack
-						stosb				; Store al to es:[di]
-						inc	si
-						pop	bx
-						dec	bh
-						jnz	cga_hires_byte_loop			; Jump if not zero
-				pop	cx
-				pop	di
-				add	di,2000h
-				cmp	di,8000h
-				jb	cga_hires_row_continue			; Jump if below
-				add	di,80A0h
+								push	bx
+								mov	dh,ds:[bp+si]
+								mov	dl,[si]
+								call	mcga_pixel_unpack
+								stosb				; Store al to es:[di]
+								call	mcga_pixel_unpack
+								stosb				; Store al to es:[di]
+								inc	si
+								pop	bx
+								dec	bh
+								jnz	cga_hires_byte_loop			; Jump if not zero
+					pop	cx
+					pop	di
+					add	di,2000h
+					cmp	di,8000h
+					jb	cga_hires_row_continue			; Jump if below
+					add	di,80A0h
 
 cga_hires_row_continue:
-				mov	bh,ch
-				dec	bl
-				jnz	cga_hires_row_loop			; Jump if not zero
+					mov	bh,ch
+					dec	bl
+					jnz	cga_hires_row_loop			; Jump if not zero
 		pop	es
 		retn
 
@@ -600,22 +600,22 @@ mcga_pixel_unpack		proc	near
 		mov	cx,2
 
 mcga_nibble_loop:
-				add	dh,dh
-				adc	bl,bl
-				add	dl,dl
-				adc	bl,bl
-				add	dh,dh
-				adc	bl,bl
-				add	dl,dl
-				adc	bl,bl
-				and	bl,0Fh
-				xor	bh,bh			; Zero register
-				add	al,al
-				add	al,al
-				add	al,al
-				add	al,al
-				or	al,byte ptr ds:[33Eh][bx]
-				loop	mcga_nibble_loop		; Loop if cx > 0
+					add	dh,dh
+					adc	bl,bl
+					add	dl,dl
+					adc	bl,bl
+					add	dh,dh
+					adc	bl,bl
+					add	dl,dl
+					adc	bl,bl
+					and	bl,0Fh
+					xor	bh,bh			; Zero register
+					add	al,al
+					add	al,al
+					add	al,al
+					add	al,al
+					or	al,byte ptr ds:[33Eh][bx]
+					loop	mcga_nibble_loop		; Loop if cx > 0
 
 		retn
 
@@ -680,10 +680,10 @@ copy_5_rows_2bytes:
 		mov	cx,5			; B9 05 00
 
 row_copy_loop_23:
-				movsb				; A4  -- Mov [si] to es:[di]
-				movsb				; A4  -- Mov [si] to es:[di]
-				add	di,4Eh			; 83 C7 4E
-				loop	row_copy_loop_23	; E2 F9  -- Loop if cx > 0
+					movsb				; A4  -- Mov [si] to es:[di]
+					movsb				; A4  -- Mov [si] to es:[di]
+					add	di,4Eh			; 83 C7 4E
+					loop	row_copy_loop_23	; E2 F9  -- Loop if cx > 0
 
 		retn				; C3  -- at 038Eh; also phase 1-3 dispatch target -1
 		                        ;* Unreachable retn at 0x038F (phase 4 dispatch target -1)
@@ -704,16 +704,16 @@ decode_5col_blit_loop		proc	near
 		mov	cx,5
 
 col_unpack_loop:
-				push	cx
-				push	di
-				lodsb				; String [si] to al
-				call	decode_4bit_unpack
-				lodsb				; String [si] to al
-				call	decode_4bit_unpack
-				pop	di
-				add	di,140h
-				pop	cx
-				loop	col_unpack_loop		; Loop if cx > 0
+					push	cx
+					push	di
+					lodsb				; String [si] to al
+					call	decode_4bit_unpack
+					lodsb				; String [si] to al
+					call	decode_4bit_unpack
+					pop	di
+					add	di,140h
+					pop	cx
+					loop	col_unpack_loop		; Loop if cx > 0
 
 		retn
 
@@ -723,18 +723,18 @@ decode_4bit_unpack		proc	near
 		mov	cx,4
 
 bit_spread_loop:
-				xor	ah,ah			; Zero register
-				add	al,al
-				adc	ah,ah
-				add	ah,ah
-				add	ah,ah
-				add	al,al
-				adc	ah,ah
-				add	ah,ah
-				add	ah,ah
-				or	es:[di],ah
-				inc	di
-				loop	bit_spread_loop		; Loop if cx > 0
+					xor	ah,ah			; Zero register
+					add	al,al
+					adc	ah,ah
+					add	ah,ah
+					add	ah,ah
+					add	al,al
+					adc	ah,ah
+					add	ah,ah
+					add	ah,ah
+					or	es:[di],ah
+					inc	di
+					loop	bit_spread_loop		; Loop if cx > 0
 
 		retn
 
@@ -756,26 +756,26 @@ mono_scan_loop		proc	near
 		mov	cx,5
 
 mono_outer_loop:
-				push	cx
-				push	di
-				xor	dl,dl			; Zero register
-				mov	cx,4
+					push	cx
+					push	di
+					xor	dl,dl			; Zero register
+					mov	cx,4
 
 mono_inner_loop:
-						mov	al,es:[di]
-						call	extract_bits
-						stosb				; Store al to es:[di]
-						loop	mono_inner_loop		; Loop if cx > 0
+								mov	al,es:[di]
+								call	extract_bits
+								stosb				; Store al to es:[di]
+								loop	mono_inner_loop		; Loop if cx > 0
 
-				pop	di
-				add	di,2000h
-				cmp	di,8000h
-				jb	mono_row_continue			; Jump if below
-				add	di,80A0h
+					pop	di
+					add	di,2000h
+					cmp	di,8000h
+					jb	mono_row_continue			; Jump if below
+					add	di,80A0h
 
 mono_row_continue:
-				pop	cx
-				loop	mono_outer_loop		; Loop if cx > 0
+					pop	cx
+					loop	mono_outer_loop		; Loop if cx > 0
 
 		retn
 
@@ -842,47 +842,47 @@ nibble_to_4px_lut	label	byte
 ; Zero byte terminates the stream.
 
 unpack_nibble_stream:
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jnz	unpack_dispatch		; Jump if not zero
-				retn
+					lodsb				; String [si] to al
+					or	al,al			; Zero ?
+					jnz	unpack_dispatch		; Jump if not zero
+					retn
 
 unpack_dispatch:
-				mov	ah,al
-				and	ah,0F0h
-				cmp	ah,byte ptr ds:[497h]	; dispatch_flag_1
-				jne	unpack_check_40		; Jump if not equal
-				and	al,0Fh
-				mov	ah,al
-				mov	al,0AAh			; emit 0xAA pattern
-				jmp	short unpack_emit_run
+					mov	ah,al
+					and	ah,0F0h
+					cmp	ah,byte ptr ds:[497h]	; dispatch_flag_1
+					jne	unpack_check_40		; Jump if not equal
+					and	al,0Fh
+					mov	ah,al
+					mov	al,0AAh			; emit 0xAA pattern
+					jmp	short unpack_emit_run
 
 unpack_check_40:
-				cmp	ah,40h			; '@'
-				jne	unpack_check_D0		; Jump if not equal
-				and	al,0Fh
-				mov	ah,al
-				xor	al,al			; Zero register (emit zeros)
-				jmp	short unpack_emit_run
+					cmp	ah,40h			; '@'
+					jne	unpack_check_D0		; Jump if not equal
+					and	al,0Fh
+					mov	ah,al
+					xor	al,al			; Zero register (emit zeros)
+					jmp	short unpack_emit_run
 
 unpack_check_D0:
-				test	byte ptr ds:[498h],0FFh	; dispatch_flag_2 set?
-				jz	unpack_single		; Jump if zero
-				cmp	ah,0D0h
-				jne	unpack_single		; Jump if not equal
-				and	al,0Fh
-				mov	ah,al
-				mov	al,0FFh			; emit 0xFF (all-on)
-				jmp	short unpack_emit_run
+					test	byte ptr ds:[498h],0FFh	; dispatch_flag_2 set?
+					jz	unpack_single		; Jump if zero
+					cmp	ah,0D0h
+					jne	unpack_single		; Jump if not equal
+					and	al,0Fh
+					mov	ah,al
+					mov	al,0FFh			; emit 0xFF (all-on)
+					jmp	short unpack_emit_run
 
 unpack_single:
-				mov	ah,1			; default: single-pixel emit
+					mov	ah,1			; default: single-pixel emit
 
 unpack_emit_run:
-						stosb				; Store al to es:[di]
-						dec	ah
-						jnz	unpack_emit_run		; Jump if not zero
-				jmp	short unpack_nibble_stream
+								stosb				; Store al to es:[di]
+								dec	ah
+								jnz	unpack_emit_run		; Jump if not zero
+					jmp	short unpack_nibble_stream
 ; --- Sprite graphics data block starting at 0x049B ---
 ; Compressed sprite/tilemap data read by unpack_nibble_stream above.
 ; Sourcer mis-decoded this as x86 instructions; actually it is pixel data.
@@ -1919,6 +1919,7 @@ data_61		db	88h			; Data table (indexed access)
 ; and created a synthetic "proc". Verified: no call sites in the whole module.
 ; Kept as mnemonics because TASM re-encodes them to the same bytes via the
 ; misdec_* and data_29 EQUs. This section is truly sprite pixel data.
+
 misdec_port_stub		proc	near
 		out	dx,al			; port 1, DMA-1 bas&cnt ch 0
 		db	82h, 0A0h, 0A8h, 3Ah, 0A8h	; and byte ptr [bx+si+3AA8h],0A8h (alt encoding: 82/4 not 80/4)

@@ -101,10 +101,12 @@ start:
 ; --- Embedded tile/cell layout descriptor data block ---
 
 mao1_layout_data	label	byte
+
 mao1_layout_ptr_tbl	label	word
 		db	 3Eh,0A0h, 8Eh,0A0h,0DEh,0A0h	; ptrs A03E/A08E/A0DE
 		db	 2Eh,0A1h, 7Eh,0A1h,0CEh,0A1h	; ptrs A12E/A17E/A1CE
 		db	 19h,0A2h			; ptr A219
+
 mao1_layout_cells	label	byte		; per-row tile cell layout
 		db	 01h, 01h, 02h, 03h	; tile cell run
 		db	 04h, 01h, 05h, 06h, 0Ch, 00h	; tile cell run
@@ -147,6 +149,7 @@ mao1_data_byte_d	db	40h			; data byte (indexed access)
 		db	 54h, 38h, 01h	; tile cell run
 		db	 57h, 3Ch, 58h, 40h	; tile cell run
 mao1_data_byte_e	db	1			; data byte (indexed access)
+
 mao1_layout_cells_ext	label	byte		; extended tile cell layout rows
 		db	 59h, 44h, 46h, 47h, 01h, 55h	; tile cell run
 		db	 56h, 00h, 00h, 01h, 00h, 03h	; tile cell run
@@ -219,6 +222,7 @@ mao1_layout_data_a	label	byte
 		pop	word ptr [bx+si]
 		xchg	bp,ax
 		add	[bx+si],ax
+
 mao1_layout_cells_tail	label	byte		; trailing tile cell rows (layout-data continuation)
 		db	 9Bh, 00h, 00h, 01h, 00h, 00h	; tile cell run (tail)
 		db	0C4h,0C5h, 01h, 04h,0CAh,0CFh	; tile cell run (tail)
@@ -234,6 +238,7 @@ mao1_layout_cells_tail	label	byte		; trailing tile cell rows (layout-data contin
 		db	0BEh,0BFh, 01h,0C7h,0C8h,0CCh	; tile cell run (tail)
 		db	0CDh, 01h, 00h,0C6h, 00h,0CBh	; tile cell run (tail)
 		db	 01h, 00h, 00h, 00h	; tile cell run (tail)
+
 mao1_layout_cells_tail_end	label	byte
 		db	 07h, 8Bh			; trailing init seed bytes
 		db	 36h, 10h,0C0h,0C6h, 06h, 99h	; ss override + mov [bp]+const, mov ss:[06h],99h pattern
@@ -246,23 +251,23 @@ mao1_layout_cells_tail_end	label	byte
 
 mao1_npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		;  Fixup - byte match
-			jz	mao1_npc_scan_done	; Jump if zero
-			mov	ax,[si]
-			call	word ptr cs:fight_cb_anim_step
-			jc	mao1_npc_scan_next	; Jump if carry Set
-			mov	[si+3],bl
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:mao1_npc_idx
-			xor	bh,bh			; Zero register
-			mov	al,ds:mao1_sprite_xlat_tbl[bx]
-			mov	[di],al
+				db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				jz	mao1_npc_scan_done	; Jump if zero
+				mov	ax,[si]
+				call	word ptr cs:fight_cb_anim_step
+				jc	mao1_npc_scan_next	; Jump if carry Set
+				mov	[si+3],bl
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:mao1_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,ds:mao1_sprite_xlat_tbl[bx]
+				mov	[di],al
 
 mao1_npc_scan_next:
-			inc	byte ptr ds:mao1_npc_idx
-			add	si,10h
-			jmp	short mao1_npc_scan_loop
+				inc	byte ptr ds:mao1_npc_idx
+				add	si,10h
+				jmp	short mao1_npc_scan_loop
 
 mao1_npc_scan_done:
 		mov	si,ds:mao1_sprite_attr_ptr
@@ -305,12 +310,12 @@ mao1_phase_outer_loop:
 		mov	cx,8
 
 mao1_phase_skip_inner_loop:
-				rol	byte ptr ds:[bp],1	; Rotate
-				jnc	mao1_phase_skip_no_inc	; Jump if carry=0
-				inc	di
+					rol	byte ptr ds:[bp],1	; Rotate
+					jnc	mao1_phase_skip_no_inc	; Jump if carry=0
+					inc	di
 
 mao1_phase_skip_no_inc:
-				loop	mao1_phase_skip_inner_loop	; Loop if cx > 0
+					loop	mao1_phase_skip_inner_loop	; Loop if cx > 0
 
 		jmp	short mao1_phase_inner_done
 
@@ -318,48 +323,48 @@ mao1_phase_emit_cells:
 		xor	cl,cl			; Zero register
 
 mao1_phase_emit_loop:
-			push	cx
-			push	ax
-			rol	byte ptr ds:[bp],1	; Rotate
-			jnc	mao1_phase_emit_skip	; Jump if carry=0
-			mov	[si],ax
-			add	cl,cl
-			mov	al,ds:mao1_speech_dx_lo	; data_29e: speech dx low
-			add	al,cl
-			and	al,3Fh			; '?'
-			mov	[si+2],al
-			mov	al,ds:mao1_phase_dir
-			mov	[si+3],al
-			mov	al,[di]
-			mov	ah,al
-			shr	al,1			; Shift w/zeros fill
-			shr	al,1			; Shift w/zeros fill
-			shr	al,1			; Shift w/zeros fill
-			shr	al,1			; Shift w/zeros fill
-			mov	[si+4],al
-			and	ah,0Fh
-			mov	[si+6],ah
-			mov	byte ptr [si+5],0
-			push	di
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:mao1_npc_idx
-			xor	bh,bh			; Zero register
-			mov	al,bl
-			or	al,80h
-			xchg	[di],al
-			mov	ds:mao1_sprite_xlat_tbl[bx],al
-			add	si,10h
-			inc	byte ptr ds:mao1_npc_idx
-			pop	di
-			inc	di
+				push	cx
+				push	ax
+				rol	byte ptr ds:[bp],1	; Rotate
+				jnc	mao1_phase_emit_skip	; Jump if carry=0
+				mov	[si],ax
+				add	cl,cl
+				mov	al,ds:mao1_speech_dx_lo	; data_29e: speech dx low
+				add	al,cl
+				and	al,3Fh			; '?'
+				mov	[si+2],al
+				mov	al,ds:mao1_phase_dir
+				mov	[si+3],al
+				mov	al,[di]
+				mov	ah,al
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				shr	al,1			; Shift w/zeros fill
+				mov	[si+4],al
+				and	ah,0Fh
+				mov	[si+6],ah
+				mov	byte ptr [si+5],0
+				push	di
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:mao1_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,bl
+				or	al,80h
+				xchg	[di],al
+				mov	ds:mao1_sprite_xlat_tbl[bx],al
+				add	si,10h
+				inc	byte ptr ds:mao1_npc_idx
+				pop	di
+				inc	di
 
 mao1_phase_emit_skip:
-			pop	ax
-			pop	cx
-			inc	cl
-			cmp	cl,8
-			jne	mao1_phase_emit_loop	; Jump if not equal
+				pop	ax
+				pop	cx
+				inc	cl
+				cmp	cl,8
+				jne	mao1_phase_emit_loop	; Jump if not equal
 
 mao1_phase_inner_done:
 		inc	bp
@@ -435,14 +440,14 @@ mao1_dispatch_text_fill:
 		mov	cx,2
 
 mao1_text_fill_loop:
-				push	cx
-				push	di
-				mov	cx,1Ah
-				rep	stosb			; Rep when cx >0 Store al to es:[di]
-				pop	di
-				add	di,1Ch
-				pop	cx
-				loop	mao1_text_fill_loop	; Loop if cx > 0
+					push	cx
+					push	di
+					mov	cx,1Ah
+					rep	stosb			; Rep when cx >0 Store al to es:[di]
+					pop	di
+					add	di,1Ch
+					pop	cx
+					loop	mao1_text_fill_loop	; Loop if cx > 0
 
 		retn
 
@@ -455,22 +460,27 @@ mao1_trailer_data	label	byte
 		db	10 dup (0)
 		db	 80h, 00h, 00h			; xlat: 80h=show dialog opcode
 		db	28 dup (0)
+
 mao1_xlat_row_c0_a	label	byte		; xlat row: C0h=text fill opcode + level-1 tiles
 		db	0C0h, 00h, 01h, 01h, 02h, 02h	; xlat row
 		db	 03h, 03h, 03h, 03h, 03h, 81h	; 81h=show dialog (slot 1)
 		db	 03h, 03h, 03h	; xlat row
 		db	26 dup (3)
+
 mao1_xlat_row_c0_b	label	byte		; xlat row: more level tiles + slot-2 dialog
 		db	0C0h, 03h, 03h, 03h, 04h, 04h	; xlat row
 		db	 05h, 82h, 05h, 05h		; 82h=show dialog (slot 2)
 		db	28 dup (5)
+
 mao1_xlat_row_c0_c	label	byte		; xlat row: trailing levels + state-set + terminator
 		db	0C0h, 05h, 05h, 06h, 06h, 07h	; xlat row
 		db	0E0h, 08h, 08h, 09h, 09h, 0Ah	; E0h=set state byte
 		db	 0Ah, 0Ah,0FFh			; FFh=clear data_byte_d (terminator)
+
 mao1_dialog_lo_tbl_data	label	byte	; dialog handler lo-byte ptrs (A448/A463/A47A)
 		db	 48h,0A4h, 63h	; dialog handler ptr
 		db	0A4h, 7Ah,0A4h	; dialog handler ptr
+
 mao1_dialog_lead_in	label	byte		; speaker / anim code prefix bytes
 		db	 08h, 00h	; speaker / anim prefix
 
@@ -572,11 +582,13 @@ mao1_dialog_data_b	label	byte
 		dec	ax
 		dec	cx
 		db	'ace`bd[\]^NVWXYZE'
+
 mao1_arena_ptr_tbl	label	byte		; 11 word ptrs (A545h..A57Bh) into arena segment
 		db	0A5h, 4Bh,0A5h, 51h,0A5h, 57h	; A545, A551, A557
 		db	0A5h, 5Dh,0A5h, 63h,0A5h, 57h	; A55D, A563, A557 (dup)
 		db	0A5h, 69h,0A5h, 6Fh,0A5h, 75h	; A569, A56F, A575
 		db	0A5h, 7Bh,0A5h			; A57B
+
 mao1_glyph_atlas	label	byte		; small 3-bpp glyph atlas (6-byte rows)
 		db	 00h, 00h, 04h	; glyph atlas row
 		db	 0Ch, 08h, 18h, 00h, 00h, 0Ch	; glyph atlas row
@@ -588,6 +600,7 @@ mao1_glyph_atlas	label	byte		; small 3-bpp glyph atlas (6-byte rows)
 		db	 7Ch, 7Ch, 00h, 00h	; glyph atlas row
 		db	' p||', 8, '``p||'
 		db	 00h, 00h,0E0h,0E0h, 7Ch, 7Ch	; glyph atlas row
+
 mao1_arena_init_params	label	byte	; arena init parameters (timer/coords/state seeds)
 		db	 00h, 10h, 00h, 01h,0FAh, 00h	; arena init param
 		db	0C8h, 00h, 05h,0FFh, 8Eh,0A5h	; FFh=stop marker, A58Eh=ptr fixup

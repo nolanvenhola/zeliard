@@ -48,7 +48,6 @@ include  zr3com.inc
 
 ; Fight-engine callback vectors / shared globals (DS, game_seg).
 
-
 ; Shared sprite-pattern / AI tables (DS).
 
 sprite_pat_tbl		equ	0A64Dh			; sprite pattern-pointer table
@@ -317,37 +316,37 @@ tori_scan_prolog:
 
 scan_slot_loop:					; was loc_1
 ;*		cmp	word ptr [si],0FFFFh
-				db	 83h, 3Ch,0FFh		; cmp word ptr [si], 0FFFFh
-								;  (alt encoding: sign-extended imm8 form;
-								;   TASM emits 4-byte form, so keep as db)
-				jz	scan_done		; was loc_4 -- end of slot list
-				mov	ax,[si]
-				call	word ptr cs:fight_cb_anim_step
-				jc	scan_next_slot		; was loc_3 -- callback consumed slot
-				mov	[si+3],bl
-				mov	ax,[si+2]
-				call	word ptr cs:fight_cb_record_ofs
-				mov	bl,ds:tori_slot_idx
-				xor	bh,bh			; Zero register
-				mov	al,ds:sprite_idx_table[bx]
-				mov	[di],al
-				test	byte ptr [si+5],40h	; '@'  bit6 = active
-				jz	scan_next_slot
-				test	byte ptr ds:tori_cycle_idx,80h
-				jnz	scan_next_slot
-				mov	al,[si+5]
-				and	al,1Fh
-				test	byte ptr [si+4],0FFh
-				jnz	apply_cycle_bits	; was loc_2
-				or	al,80h
+					db	 83h, 3Ch,0FFh		; cmp word ptr [si], 0FFFFh
+									;  (alt encoding: sign-extended imm8 form;
+									;   TASM emits 4-byte form, so keep as db)
+					jz	scan_done		; was loc_4 -- end of slot list
+					mov	ax,[si]
+					call	word ptr cs:fight_cb_anim_step
+					jc	scan_next_slot		; was loc_3 -- callback consumed slot
+					mov	[si+3],bl
+					mov	ax,[si+2]
+					call	word ptr cs:fight_cb_record_ofs
+					mov	bl,ds:tori_slot_idx
+					xor	bh,bh			; Zero register
+					mov	al,ds:sprite_idx_table[bx]
+					mov	[di],al
+					test	byte ptr [si+5],40h	; '@'  bit6 = active
+					jz	scan_next_slot
+					test	byte ptr ds:tori_cycle_idx,80h
+					jnz	scan_next_slot
+					mov	al,[si+5]
+					and	al,1Fh
+					test	byte ptr [si+4],0FFh
+					jnz	apply_cycle_bits	; was loc_2
+					or	al,80h
 
 apply_cycle_bits:				; was loc_2
-				mov	ds:tori_cycle_idx,al
+					mov	ds:tori_cycle_idx,al
 
 scan_next_slot:					; was loc_3
-				inc	byte ptr ds:tori_slot_idx
-				add	si,10h
-				jmp	short scan_slot_loop
+					inc	byte ptr ds:tori_slot_idx
+					add	si,10h
+					jmp	short scan_slot_loop
 
 scan_done:					; was loc_4
 		mov	si,ds:fight_slot_list
@@ -618,69 +617,69 @@ copy_to_slots:					; was loc_34
 		mov	cx,9
 
 emit_outer_loop:				; was locloop_35
-				push	cx
-				push	si
-				push	ax
-				call	word ptr cs:fight_cb_anim_step
-				pop	ax
-				jc	emit_outer_advance	; was loc_39
-				mov	ds:tori_frame_idx,bl
-				xor	cx,cx			; Zero register
+					push	cx
+					push	si
+					push	ax
+					call	word ptr cs:fight_cb_anim_step
+					pop	ax
+					jc	emit_outer_advance	; was loc_39
+					mov	ds:tori_frame_idx,bl
+					xor	cx,cx			; Zero register
 
 emit_inner_loop:				; was loc_36
-						push	cx
-						push	ax
-						cmp	byte ptr [si],0FFh
-						je	emit_inner_skip		; was loc_38
-						mov	[di],ax
-						mov	al,ds:tori_anim_state
-						add	al,cl
-						and	al,3Fh			; '?'
-						mov	[di+2],al
-						mov	al,ds:tori_frame_idx
-						mov	[di+3],al
-						mov	al,[si]
-						mov	ah,al
-						shr	al,1			; Shift w/zeros fill
-						shr	al,1			; Shift w/zeros fill
-						shr	al,1			; Shift w/zeros fill
-						shr	al,1			; Shift w/zeros fill
-						and	al,0Fh
-						mov	[di+4],al
-						mov	[di+6],ah
-						mov	byte ptr [di+5],0
-						test	byte ptr ds:tori_cycle_idx,0FFh
-						jz	emit_no_cycle_bit	; was loc_37
-						or	byte ptr [di+5],20h	; ' '
+								push	cx
+								push	ax
+								cmp	byte ptr [si],0FFh
+								je	emit_inner_skip		; was loc_38
+								mov	[di],ax
+								mov	al,ds:tori_anim_state
+								add	al,cl
+								and	al,3Fh			; '?'
+								mov	[di+2],al
+								mov	al,ds:tori_frame_idx
+								mov	[di+3],al
+								mov	al,[si]
+								mov	ah,al
+								shr	al,1			; Shift w/zeros fill
+								shr	al,1			; Shift w/zeros fill
+								shr	al,1			; Shift w/zeros fill
+								shr	al,1			; Shift w/zeros fill
+								and	al,0Fh
+								mov	[di+4],al
+								mov	[di+6],ah
+								mov	byte ptr [di+5],0
+								test	byte ptr ds:tori_cycle_idx,0FFh
+								jz	emit_no_cycle_bit	; was loc_37
+								or	byte ptr [di+5],20h	; ' '
 
 emit_no_cycle_bit:				; was loc_37
-						mov	ax,[di+2]
-						push	di
-						call	word ptr cs:fight_cb_record_ofs
-						mov	bl,ds:tori_slot_idx
-						xor	bh,bh			; Zero register
-						mov	al,bl
-						or	al,80h
-						xchg	[di],al
-						mov	ds:sprite_idx_table[bx],al
-						pop	di
-						add	di,10h
-						inc	byte ptr ds:tori_slot_idx
+								mov	ax,[di+2]
+								push	di
+								call	word ptr cs:fight_cb_record_ofs
+								mov	bl,ds:tori_slot_idx
+								xor	bh,bh			; Zero register
+								mov	al,bl
+								or	al,80h
+								xchg	[di],al
+								mov	ds:sprite_idx_table[bx],al
+								pop	di
+								add	di,10h
+								inc	byte ptr ds:tori_slot_idx
 
 emit_inner_skip:				; was loc_38
-						inc	si
-						pop	ax
-						pop	cx
-						inc	cx
-						cmp	cx,8
-						jne	emit_inner_loop
+								inc	si
+								pop	ax
+								pop	cx
+								inc	cx
+								cmp	cx,8
+								jne	emit_inner_loop
 
 emit_outer_advance:				; was loc_39
-				inc	ax
-				pop	si
-				add	si,8
-				pop	cx
-				loop	emit_outer_loop		; Loop if cx > 0
+					inc	ax
+					pop	si
+					add	si,8
+					pop	cx
+					loop	emit_outer_loop		; Loop if cx > 0
 
 		mov	word ptr [di],0FFFFh
 		retn
@@ -704,22 +703,22 @@ sub_1		proc	near
 		mov	cx,9
 
 row_outer_loop:					; was locloop_40
-				push	cx
-				mov	cx,8
+					push	cx
+					mov	cx,8
 
 row_inner_loop:					; was locloop_41
-						rol	byte ptr ds:[bp],1	; Rotate
-						jnc	row_inner_skip		; was loc_42
-						lodsb				; String [si] to al
-						mov	[di],al
+								rol	byte ptr ds:[bp],1	; Rotate
+								jnc	row_inner_skip		; was loc_42
+								lodsb				; String [si] to al
+								mov	[di],al
 
 row_inner_skip:					; was loc_42
-						inc	di
-						loop	row_inner_loop
+								inc	di
+								loop	row_inner_loop
 
-				inc	bp
-				pop	cx
-				loop	row_outer_loop
+					inc	bp
+					pop	cx
+					loop	row_outer_loop
 
 		retn
 

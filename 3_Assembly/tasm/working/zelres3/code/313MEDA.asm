@@ -99,15 +99,18 @@ start:
 		db	11 dup (0)			; reserved / padding in header
 		db	32 dup (1Eh)			; palette/colour fill descriptor (one record)
 ; Pointer table (4 word entries) into module (0xA0xx absolute addresses)
+
 meda_ptr_table_a:
 		db	 50h,0A0h,0A0h,0A0h,0F0h,0A0h	; ptrs[0..2]: A050, A0A0, A0F0
 		db	 40h,0A1h			; ptrs[3]: A140
 		db	20 dup (0)			; reserved gap (zero fill)
 ; second pointer pair / tail of header pointer block
+
 meda_ptr_table_b:
 		db	 8Bh,0A1h,0DBh,0A1h, 00h	; ptrs: A18B, A1DB + trailing zero
 header_tile_row_a		db	1			; Data table (indexed access)
 ; tile/index map A - groups of 6-byte rows (cell index lookup, 00 = empty cell)
+
 meda_tile_map_a:
 		db	 00h, 02h, 03h, 00h, 00h, 04h	; row 0
 		db	 05h, 06h, 00h, 00h, 07h, 16h	; row 1
@@ -151,6 +154,7 @@ header_text_table		db	' ', 0
 		db	'vwxy', 0
 		db	'z{|}', 0
 ; tile/index map B - 6-byte rows continuing the cell-index lookup
+
 meda_tile_map_b:
 		db	 7Eh, 7Fh, 68h, 69h, 00h, 80h	; row B0
 		db	 81h, 6Ch, 6Dh, 00h, 82h, 83h	; row B1
@@ -193,6 +197,7 @@ meda_tile_map_b:
 		db	0DCh, 00h,0DDh,0C5h,0DEh,0C7h	; row B38 (last row before main_resume)
 ; ---- real instruction stream resumes here ----
 ; mov si,word ptr ds:[10C0h]; clears at meda_tile_src_e_tbl[0..1]
+
 meda_main_resume:
 		db	 8Bh, 36h, 10h,0C0h			; mov si,word ptr ds:[10C0h]  (Sourcer Fixup absolute)
 		db	 0C6h, 06h, 31h,0A7h, 00h		; mov byte ptr ds:[A731h],0   (meda_npc_idx clear)
@@ -200,35 +205,35 @@ meda_main_resume:
 
 npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		;  Fixup - byte match
-			jz	npc_scan_done			; Jump if zero
-			mov	ax,[si]
-			call	word ptr cs:fight_cb_anim_step
-			jc	npc_scan_next			; Jump if carry Set
-			mov	[si+3],bl
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:meda_npc_idx
-			xor	bh,bh			; Zero register
-			mov	al,ds:sprite_xlat_tbl[bx]
-			mov	[di],al
-			test	byte ptr [si+5],40h	; '@'
-			jz	npc_scan_next			; Jump if zero
-			test	byte ptr ds:meda_anim_byte,80h
-			jnz	npc_scan_next			; Jump if not zero
-			mov	al,[si+5]
-			and	al,1Fh
-			test	byte ptr [si+4],8
-			jz	npc_scan_set_anim			; Jump if zero
-			or	al,80h
+				db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				jz	npc_scan_done			; Jump if zero
+				mov	ax,[si]
+				call	word ptr cs:fight_cb_anim_step
+				jc	npc_scan_next			; Jump if carry Set
+				mov	[si+3],bl
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:meda_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,ds:sprite_xlat_tbl[bx]
+				mov	[di],al
+				test	byte ptr [si+5],40h	; '@'
+				jz	npc_scan_next			; Jump if zero
+				test	byte ptr ds:meda_anim_byte,80h
+				jnz	npc_scan_next			; Jump if not zero
+				mov	al,[si+5]
+				and	al,1Fh
+				test	byte ptr [si+4],8
+				jz	npc_scan_set_anim			; Jump if zero
+				or	al,80h
 
 npc_scan_set_anim:
-			mov	ds:meda_anim_byte,al
+				mov	ds:meda_anim_byte,al
 
 npc_scan_next:
-			inc	byte ptr ds:meda_npc_idx
-			add	si,10h
-			jmp	short npc_scan_loop
+				inc	byte ptr ds:meda_npc_idx
+				add	si,10h
+				jmp	short npc_scan_loop
 
 npc_scan_done:
 		mov	si,ds:enemy_attr_base
@@ -525,65 +530,65 @@ render_tiles_entry:
 		mov	cx,0Eh
 
 render_outer_loop:
-			push	cx
-			push	si
-			push	ax
-			call	word ptr cs:fight_cb_anim_step
-			pop	ax
-			mov	ds:meda_tile_param_attr,bl
-			jc	render_outer_advance			; Jump if carry Set
-			xor	cl,cl			; Zero register
+				push	cx
+				push	si
+				push	ax
+				call	word ptr cs:fight_cb_anim_step
+				pop	ax
+				mov	ds:meda_tile_param_attr,bl
+				jc	render_outer_advance			; Jump if carry Set
+				xor	cl,cl			; Zero register
 
 render_inner_loop:
-				push	cx
-				push	ax
-				cmp	byte ptr [si],0FFh
-				je	render_advance_si			; Jump if equal
-				mov	[di],ax
-				mov	al,ds:meda_scroll_phase
-				add	al,cl
-				and	al,3Fh			; '?'
-				mov	[di+2],al
-				mov	al,ds:meda_tile_param_attr
-				mov	[di+3],al
-				mov	al,[si]
-				mov	[di+4],al
-				mov	al,[si+1]
-				mov	[di+6],al
-				mov	byte ptr [di+5],0
-				test	byte ptr ds:meda_anim_byte,0FFh
-				jz	render_attr_xlat			; Jump if zero
-				or	byte ptr [di+5],20h	; ' '
+						push	cx
+						push	ax
+						cmp	byte ptr [si],0FFh
+						je	render_advance_si			; Jump if equal
+						mov	[di],ax
+						mov	al,ds:meda_scroll_phase
+						add	al,cl
+						and	al,3Fh			; '?'
+						mov	[di+2],al
+						mov	al,ds:meda_tile_param_attr
+						mov	[di+3],al
+						mov	al,[si]
+						mov	[di+4],al
+						mov	al,[si+1]
+						mov	[di+6],al
+						mov	byte ptr [di+5],0
+						test	byte ptr ds:meda_anim_byte,0FFh
+						jz	render_attr_xlat			; Jump if zero
+						or	byte ptr [di+5],20h	; ' '
 
 render_attr_xlat:
-				push	di
-				mov	ax,[di+2]
-				call	word ptr cs:fight_cb_record_ofs
-				mov	bl,ds:meda_npc_idx
-				xor	bh,bh			; Zero register
-				mov	al,bl
-				or	al,80h
-				xchg	[di],al
-				mov	ds:sprite_xlat_tbl[bx],al
-				pop	di
-				add	di,10h
-				inc	byte ptr ds:meda_npc_idx
+						push	di
+						mov	ax,[di+2]
+						call	word ptr cs:fight_cb_record_ofs
+						mov	bl,ds:meda_npc_idx
+						xor	bh,bh			; Zero register
+						mov	al,bl
+						or	al,80h
+						xchg	[di],al
+						mov	ds:sprite_xlat_tbl[bx],al
+						pop	di
+						add	di,10h
+						inc	byte ptr ds:meda_npc_idx
 
 render_advance_si:
-				inc	si
-				inc	si
-				pop	ax
-				pop	cx
-				inc	cl
-				cmp	cl,0Ch
-				jne	render_inner_loop			; Jump if not equal
+						inc	si
+						inc	si
+						pop	ax
+						pop	cx
+						inc	cl
+						cmp	cl,0Ch
+						jne	render_inner_loop			; Jump if not equal
 
 render_outer_advance:
-			inc	ax
-			pop	si
-			add	si,18h
-			pop	cx
-			loop	render_outer_loop		; Loop if cx > 0
+				inc	ax
+				pop	si
+				add	si,18h
+				pop	cx
+				loop	render_outer_loop		; Loop if cx > 0
 
 		mov	word ptr [di],0FFFFh
 		retn
@@ -609,25 +614,25 @@ render_tile_row		proc	near
 		add	di,meda_render_buf
 
 tile_row_loop:
-			push	cx
-			mov	cx,8
+				push	cx
+				mov	cx,8
 
 tile_bit_loop:
-				rol	byte ptr ds:[bp],1	; Rotate
-				jnc	tile_row_advance			; Jump if carry=0
-				movsw				; Mov [si] to es:[di]
-				dec	di
-				dec	di
+						rol	byte ptr ds:[bp],1	; Rotate
+						jnc	tile_row_advance			; Jump if carry=0
+						movsw				; Mov [si] to es:[di]
+						dec	di
+						dec	di
 
 tile_row_advance:
-				inc	di
-				inc	di
-				loop	tile_bit_loop		; Loop if cx > 0
+						inc	di
+						inc	di
+						loop	tile_bit_loop		; Loop if cx > 0
 
-			add	di,8
-			inc	bp
-			pop	cx
-			loop	tile_row_loop		; Loop if cx > 0
+				add	di,8
+				inc	bp
+				pop	cx
+				loop	tile_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -689,6 +694,7 @@ completion_done:
 ; ====================================================================
 ; meda_tile_src_a (DS:0xA5DC) - tile source A: 42 bytes of cell-pair data
 ; (passed to render_tile_row at row=0,col=0,len=0xD)
+
 meda_tile_src_a_data:
 		db	 00h, 07h, 00h, 08h, 00h, 09h	; cell pairs A0..A2
 		db	 00h, 00h, 00h, 02h, 00h, 0Ah	; cell pairs A3..A5
@@ -698,25 +704,30 @@ meda_tile_src_a_data:
 		db	 00h, 0Eh, 00h, 0Fh, 00h, 01h	; cell pairs A15..A17
 		db	 01h, 00h, 01h, 01h, 01h, 02h	; cell pairs A18..A20
 ; meda_tile_src_b (DS:0xA606) - tile mask B: 13 bytes (mirror-symmetric pattern)
+
 meda_tile_src_b_data:
 		db	 2Ah, 80h, 55h, 00h, 41h, 00h	; mask bits B0..B5
 		db	 40h, 00h, 41h, 00h, 55h, 80h	; mask bits B6..B11 (mirror of B5..B0)
 		db	 2Ah				; mask centre B12
 ; meda_tile_src_c (DS:0xA613) - tile source C: 16 bytes (row=1,col=8,len=0xB)
+
 meda_tile_src_c_data:
 		db	 01h, 03h, 01h, 04h, 0Eh, 02h	; cell pairs C0..C2
 		db	 0Eh, 00h, 0Eh, 01h, 0Eh, 03h	; cell pairs C3..C5
 		db	 01h, 05h, 01h, 06h		; cell pairs C6..C7
 ; meda_tile_src_d (DS:0xA623) - tile mask D: 11 bytes
+
 meda_tile_src_d_data:
 		db	0C0h, 10h, 40h, 00h, 00h, 00h	; mask bits D0..D5
 		db	 00h, 00h, 40h, 10h,0C0h	; mask bits D6..D10
-; meda_tile_src_e_tbl (DS:0xA62E) - 6-entry word ptr table indexed by phase_dir×2
+; meda_tile_src_e_tbl (DS:0xA62E) - 6-entry word ptr table indexed by phase_dir??2
 ; Entries point at 5 sub-arrays of 12-byte tile data each (per direction set)
+
 meda_tile_src_e_tbl_data:
 		db	 3Ah,0A6h, 46h,0A6h, 52h,0A6h	; ptrs[0..2]: A63A, A646, A652
 		db	 5Eh,0A6h, 6Ah,0A6h, 76h,0A6h	; ptrs[3..5]: A65E, A66A, A676
-; --- phase-dir tile data sets (5 × 12 bytes, pointed-to by tile_src_e_tbl) ---
+; --- phase-dir tile data sets (5 ?? 12 bytes, pointed-to by tile_src_e_tbl) ---
+
 meda_tile_src_e_sets:
 		db	 01h, 0Ah, 01h, 0Dh, 01h, 0Bh	; set 0 (dir 0): cell pairs
 		db	 01h, 0Eh, 01h, 0Ch, 01h, 0Fh	; set 0 (cont)
@@ -731,13 +742,16 @@ meda_tile_src_e_sets:
 		db	 03h, 08h, 03h, 0Bh, 03h, 09h	; trailing/extra set
 		db	 03h, 0Ch, 03h, 0Ah, 03h, 0Dh	; trailing/extra (cont)
 ; meda_tile_src_f (DS:0xA682) - tile mask F: 5 bytes
+
 meda_tile_src_f_data:
 		db	0A0h, 00h,0A0h, 00h,0A0h	; mask bits F0..F4
-; meda_tile_src_g_tbl (DS:0xA687) - 5-entry word ptr table indexed by phase_step×2
+; meda_tile_src_g_tbl (DS:0xA687) - 5-entry word ptr table indexed by phase_step??2
+
 meda_tile_src_g_tbl_data:
 		db	 91h,0A6h, 9Bh,0A6h,0A5h,0A6h	; ptrs[0..2]: A691, A69B, A6A5
 		db	0B1h,0A6h,0BDh,0A6h		; ptrs[3..4]: A6B1, A6BD
 ; --- phase-step tile data sets (pointed-to by tile_src_g_tbl) ---
+
 meda_tile_src_g_sets:
 		db	 0Eh, 06h, 0Eh, 04h, 01h, 08h	; set 0
 		db	 0Eh, 05h, 0Eh, 07h, 0Eh, 06h	; set 0 (cont)
@@ -748,28 +762,33 @@ meda_tile_src_g_sets:
 		db	 0Fh, 00h, 01h, 08h, 0Eh, 0Fh	; set 3
 		db	 0Eh, 07h, 0Eh, 06h, 0Fh, 01h	; set 3 (cont)
 		db	 01h, 08h, 0Fh, 02h, 0Eh, 07h	; set 4
-; meda_tile_src_h_tbl (DS:0xA6C7) - 5-entry word ptr table indexed by phase_step×2
+; meda_tile_src_h_tbl (DS:0xA6C7) - 5-entry word ptr table indexed by phase_step??2
+
 meda_tile_src_h_tbl_data:
 		db	0D1h,0A6h,0D1h,0A6h,0D6h,0A6h	; ptrs[0..2]: A6D1, A6D1, A6D6
 		db	0DBh,0A6h,0D1h,0A6h		; ptrs[3..4]: A6DB, A6D1
 ; --- phase-step mask data sets (pointed-to by tile_src_h_tbl) ---
+
 meda_tile_src_h_sets:
 		db	 10h, 20h, 80h, 20h, 10h, 10h	; mask set 0/1 (shared at A6D1)
 		db	 30h, 80h, 20h, 10h, 10h, 28h	; mask set 2 (A6D6) + set 3 start
 		db	 80h, 20h, 10h			; mask set 3 (A6DB) tail
 ; --- sprite/cell write fields begin here (DS:0xA6E0 = meda_cell_x) ---
+
 meda_cell_state_init:
 		db	 00h, 00h, 30h, 00h		; initial cell state (cell_x, cell_phase + spare)
 		db	 32h, 06h, 50h, 00h, 00h, 00h	; anim/state init bytes
 		db	 00h, 00h, 00h			; padding/state zeros
 ; meda_anim_xlat_tbl (DS:0xA6ED) - 5-entry phase-to-state translation table
+
 meda_anim_xlat_tbl_data:
-		db	 0Ch, 0Bh, 0Ah, 09h, 08h	; xlat[0..4] (phase → state byte)
+		db	 0Ch, 0Bh, 0Ah, 09h, 08h	; xlat[0..4] (phase ?-> state byte)
 ; padding fill (31 bytes of 7) - default state for unused phase slots
 		db	31 dup (7)
 ; meda_anim_xlat_tbl trailer / counter sequence
 		db	 08h, 09h, 0Ah, 0Bh, 0Ch		; xlat trailer (mirror of head)
 ; trailing setup data: scroll bounds + initial state seeding for module init
+
 meda_init_seed:
 		db	 30h, 00h, 0Bh,0BCh, 02h,0B8h	; init bytes / scroll-x_max seed
 		db	 0Bh, 0Ch, 00h, 23h,0A7h, 20h	; cb_npc_step setup + addr A723

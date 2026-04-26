@@ -111,6 +111,7 @@ lega_ptr_table_a	db	0A0h, 8Eh,0A0h,0DEh,0A0h, 2Eh	; ptrs[0..2]: A08E,A0DE,A12E
 		db	0A1h, 7Eh,0A1h,0CEh,0A1h, 05h	; ptrs[3..5]: A17E,A1CE,A205
 		db	0A2h			; trailing high-byte
 ; --- cell index map A: 6-byte rows (00 = empty cell) ---
+
 lega_cell_map_a:
 		db	 02h, 00h, 00h, 00h, 03h	; row A header (5 bytes)
 		db	 02h, 00h, 00h, 04h, 00h, 02h	; row 0
@@ -132,6 +133,7 @@ lega_tile_data_block_b		db	0			; Data table (indexed access)
 		db	 13h, 14h			; trailing pair
 lega_tile_data_block_c		dw	1615h			; Data table (indexed access)
 ; --- cell index map B: 6-byte rows continuing the lookup ---
+
 lega_cell_map_b:
 		db	 00h, 17h, 18h, 19h, 1Ah, 00h	; row B0
 		db	 19h, 1Ah, 1Ch, 1Dh, 00h, 1Ah	; row B1
@@ -143,6 +145,7 @@ lega_cell_map_b:
 		db	 1Bh, 1Dh, 1Eh, 00h, 0Dh, 0Eh	; row B7
 		db	 26h, 27h, 00h, 0Fh, 00h, 28h	; row B8
 ; --- cell index map C: dense 12-byte rows (Sourcer mis-split as strings) ---
+
 lega_cell_map_c:
 		db	29h, 00h, 2Ah, 2Bh, 2Eh, 2Fh, 00h, 2Ch, 2Dh, 30h, 31h, 00h	; row C0
 		db	32h, 33h, 36h, 37h, 00h, 34h, 35h, 19h, 1Ah, 00h, 36h, 37h	; row C1
@@ -156,6 +159,7 @@ lega_cell_map_c:
 		db	0Fh, 27h, 28h, 00h, 61h, 2Ch, 6Ah, 6Bh, 00h, 2Ch, 69h, 6Bh	; row C9
 		db	6Ch, 00h, 6Bh, 6Ch		; row C10 partial
 ; --- cell index map D: 6-byte rows (resumes after C) ---
+
 lega_cell_map_d:
 		db	 6Dh, 6Eh, 00h, 6Eh, 6Fh, 70h	; row D0
 		db	 71h, 00h, 70h, 71h, 5Ah, 72h	; row D1
@@ -194,6 +198,7 @@ lega_cell_map_d:
 		db	 00h,0D1h,0D2h			; row D34 trailing
 ; --- real instruction stream resumes here (Sourcer split it across data) ---
 ; mov si,word ptr ds:[10C0h]; mov byte ptr ds:[A7B6h],0; mov byte ptr ds:[A7B7h],0
+
 lega_main_resume:
 		db	 8Bh, 36h, 10h			; mov si,...
 		db	0C0h,0C6h, 06h,0B6h,0A7h, 00h	; mov byte ptr ds:[A7B6h],0  (lega_npc_idx clear)
@@ -308,35 +313,35 @@ lega_phase_locked_branch:
 		jmp	short lega_phase_check_step6
 
 lega_phase_b_step:
-			mov	al,ds:lega_phase_step
-			or	al,al			; Zero ?
-			jnz	lega_phase_b_skip0			; Jump if not zero
-			mov	al,8
+				mov	al,ds:lega_phase_step
+				or	al,al			; Zero ?
+				jnz	lega_phase_b_skip0			; Jump if not zero
+				mov	al,8
 
 lega_phase_b_skip0:
-			cmp	al,6
-			jne	lega_phase_b_skip6			; Jump if not equal
-			sub	al,2
+				cmp	al,6
+				jne	lega_phase_b_skip6			; Jump if not equal
+				sub	al,2
 
 lega_phase_b_skip6:
-			dec	al
-			mov	ds:lega_phase_step,al
-			push	cs
-			pop	es
-			mov	di,lega_npc_state_b
-			mov	cx,5
-			repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
-			jnz	lega_phase_check_step6			; Jump if not zero
-			push	ax
-			call	lega_scroll_inc_step
-			cmc				; Complement carry
-			sbb	al,al
-			mov	ds:lega_phase_locked,al
-			pop	ax
-			cmp	al,6
-			je	lega_phase_b_apply			; Jump if equal
-			cmp	al,3
-			jne	lega_phase_b_step			; Jump if not equal
+				dec	al
+				mov	ds:lega_phase_step,al
+				push	cs
+				pop	es
+				mov	di,lega_npc_state_b
+				mov	cx,5
+				repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
+				jnz	lega_phase_check_step6			; Jump if not zero
+				push	ax
+				call	lega_scroll_inc_step
+				cmc				; Complement carry
+				sbb	al,al
+				mov	ds:lega_phase_locked,al
+				pop	ax
+				cmp	al,6
+				je	lega_phase_b_apply			; Jump if equal
+				cmp	al,3
+				jne	lega_phase_b_step			; Jump if not equal
 
 lega_phase_b_apply:
 		call	lega_scroll_inc_step
@@ -439,24 +444,24 @@ lega_scroll_inc_step		endp
 		db	0BFh,0CBh,0A7h,0B9h, 08h, 00h	; mov di,A7CBh; mov cx,8
 
 lega_render_outer_loop:
-			push	cx
-			mov	cx,8
+				push	cx
+				mov	cx,8
 
 lega_render_inner_loop:
-				rol	byte ptr ds:[bp],1	; Rotate
-				jnc	lega_render_inner_advance			; Jump if carry=0
-				movsb				; Mov [si] to es:[di]
-				dec	di
+						rol	byte ptr ds:[bp],1	; Rotate
+						jnc	lega_render_inner_advance			; Jump if carry=0
+						movsb				; Mov [si] to es:[di]
+						dec	di
 
 lega_render_inner_advance:
-				inc	di
-				loop	lega_render_inner_loop		; Loop if cx > 0
+						inc	di
+						loop	lega_render_inner_loop		; Loop if cx > 0
 
-			inc	di
-			inc	di
-			inc	bp
-			pop	cx
-			loop	lega_render_outer_loop		; Loop if cx > 0
+				inc	di
+				inc	di
+				inc	bp
+				pop	cx
+				loop	lega_render_outer_loop		; Loop if cx > 0
 
 		mov	al,byte ptr ds:[0A7BAh]
 		add	al,al
@@ -491,57 +496,57 @@ lega_render_scan_loop:
 		xor	cl,cl			; Zero register
 
 lega_render_scan_inner:
-			push	cx
-			push	ax
-			cmp	byte ptr [di],0FFh
-			je	lega_render_scan_advance			; Jump if equal
-			mov	[si],ax
-			mov	al,ds:lega_scroll_phase
-			add	al,cl
-			and	al,3Fh			; '?'
-			mov	[si+2],al
-			mov	al,ds:lega_attr_tmp
-			mov	[si+3],al
-			mov	al,[di]
-			mov	[si+6],al
-			mov	ah,al
-			add	al,al
-			sbb	al,al
-			and	al,60h			; '`'
-			mov	bl,ah
-			shr	bl,1			; Shift w/zeros fill
-			shr	bl,1			; Shift w/zeros fill
-			shr	bl,1			; Shift w/zeros fill
-			shr	bl,1			; Shift w/zeros fill
-			and	bl,7
-			or	al,bl
-			mov	[si+4],al
-			mov	byte ptr [si+5],0
-			test	byte ptr ds:lega_anim_byte,0FFh
-			jz	lega_render_scan_xlat			; Jump if zero
-			or	byte ptr [si+5],20h	; ' '
+				push	cx
+				push	ax
+				cmp	byte ptr [di],0FFh
+				je	lega_render_scan_advance			; Jump if equal
+				mov	[si],ax
+				mov	al,ds:lega_scroll_phase
+				add	al,cl
+				and	al,3Fh			; '?'
+				mov	[si+2],al
+				mov	al,ds:lega_attr_tmp
+				mov	[si+3],al
+				mov	al,[di]
+				mov	[si+6],al
+				mov	ah,al
+				add	al,al
+				sbb	al,al
+				and	al,60h			; '`'
+				mov	bl,ah
+				shr	bl,1			; Shift w/zeros fill
+				shr	bl,1			; Shift w/zeros fill
+				shr	bl,1			; Shift w/zeros fill
+				shr	bl,1			; Shift w/zeros fill
+				and	bl,7
+				or	al,bl
+				mov	[si+4],al
+				mov	byte ptr [si+5],0
+				test	byte ptr ds:lega_anim_byte,0FFh
+				jz	lega_render_scan_xlat			; Jump if zero
+				or	byte ptr [si+5],20h	; ' '
 
 lega_render_scan_xlat:
-			push	di
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:lega_npc_idx
-			xor	bh,bh			; Zero register
-			mov	al,bl
-			or	al,80h
-			xchg	[di],al
-			mov	ds:sprite_xlat_tbl[bx],al
-			pop	di
-			add	si,10h
-			inc	byte ptr ds:lega_npc_idx
+				push	di
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:lega_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,bl
+				or	al,80h
+				xchg	[di],al
+				mov	ds:sprite_xlat_tbl[bx],al
+				pop	di
+				add	si,10h
+				inc	byte ptr ds:lega_npc_idx
 
 lega_render_scan_advance:
-			inc	di
-			pop	ax
-			pop	cx
-			inc	cl
-			cmp	cl,0Ah
-			jne	lega_render_scan_inner			; Jump if not equal
+				inc	di
+				pop	ax
+				pop	cx
+				inc	cl
+				cmp	cl,0Ah
+				jne	lega_render_scan_inner			; Jump if not equal
 
 lega_render_scan_outer_advance:
 		inc	ax
@@ -618,6 +623,7 @@ lega_anim2_clear_active:
 		retn
 ; --- anim2 per-phase delta table (lega_anim_dx_tbl/dy_tbl base = A5D8h) ---
 ; 17 (dx,dy) pairs as signed bytes; phase 0..0x10 indexed via bx*=2 above
+
 lega_anim2_dxdy_tbl:
 		db	0FFh, 00h,0FFh, 00h,0FFh, 01h	; phase 0..2: (-1,0)(-1,0)(-1,1)
 		db	 00h, 02h,0FFh, 02h, 00h, 02h	; phase 3..5: (0,2)(-1,2)(0,2)
@@ -734,12 +740,14 @@ lega_idle_late_phase:
 ;*		inc	bx
 		db	0FFh, 0C3h		; inc bx (alt encoding) -- data bytes
 ; --- dispatch jump-table: 10 word entries pointing into cs:A6DC..A798 handlers ---
+
 lega_dispatch_tbl_data:
 		db	0DCh,0A6h,0E3h,0A6h,0ECh,0A6h	; entries [0..2]: A6DC, A6E3, A6EC
 		db	0F6h,0A6h, 01h,0A7h, 0Ch,0A7h	; entries [3..5]: A6F6, A701, A70C
 		db	 18h,0A7h, 22h,0A7h, 2Eh,0A7h	; entries [6..8]: A718, A722, A72E
 		db	 39h,0A7h			; entry [9]: A739
 ; --- tile-index bank A: 6-byte cell-index rows (continuation of cell maps) ---
+
 lega_cell_map_e:
 		db	 11h, 10h, 12h, 13h	; row E0 partial (4 cells)
 		db	 14h, 15h, 16h, 11h, 17h, 19h	; row E1
@@ -757,18 +765,21 @@ lega_cell_map_e:
 		db	10h				; row E10 lead byte
 		db	'?AEFXYZOPRTVQSUW'		; row E10 (16 cells)
 ; --- two extra-attr style 6-byte rows + 'CAh','CEh' separators ---
+
 lega_cell_map_f:
 		db	0CAh, 42h, 47h, 40h, 48h, 3Eh	; row F0
 		db	 10h, 3Fh, 41h, 45h, 46h,0CEh	; row F1
 		db	 42h, 4Dh, 40h, 4Ch, 3Eh, 10h	; row F2
 		db	 3Fh, 41h, 45h, 46h		; row F3 partial (4 cells)
 ; --- secondary dispatch jump-table: 10 word entries A758..A798 ---
+
 lega_dispatch_tbl_b:
 		db	 58h,0A7h			; entry [0]: A758
 		db	 60h,0A7h, 68h,0A7h, 70h,0A7h	; entries [1..3]: A760, A768, A770
 		db	 78h,0A7h, 80h,0A7h, 88h,0A7h	; entries [4..6]: A778, A780, A788
 		db	 90h,0A7h, 98h,0A7h, 98h,0A7h	; entries [7..9]: A790, A798, A798(dup)
 ; --- entity/spawn record block (6-byte records: position, flags, type) ---
+
 lega_spawn_records:
 		db	 00h, 00h, 00h, 00h, 20h,0ABh	; rec 0: spawn at (0,0), AB20
 		db	 01h, 00h, 00h, 00h, 00h, 00h	; rec 1

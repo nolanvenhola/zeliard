@@ -97,10 +97,12 @@ start:
 		db	12 dup (0)		; reserved / padding
 		db	32 dup (1Eh)		; 32-byte 0x1Eh descriptor row
 ; --- pointer/jump-table words (5 entries: A03A, A08A, A0D0, A116, A166) ---
+
 zel2_ptr_table_a:
 		db	 3Ah,0A0h, 8Ah,0A0h,0D0h,0A0h	; ptrs[0..2]: A03A,A08A,A0D0
 		db	 16h,0A1h, 66h,0A1h, 00h, 01h	; ptrs[3..4]: A116,A166 + 0001
 ; --- cell index map A: 6-byte rows (00 = empty cell) ---
+
 zel2_cell_map_a:
 		db	 02h, 03h, 04h, 00h, 11h, 07h	; row A0
 		db	 12h, 13h, 00h, 1Eh, 16h, 1Fh	; row A1
@@ -115,16 +117,19 @@ zel2_cell_map_a:
 		db	 2Bh, 1Ah, 2Ch, 00h		; row A10 (4 bytes; merges with target_base word)
 zel2_scroll_target_base		dw	102Dh
 ; --- cell index map A continuation (post-target_base) ---
+
 zel2_cell_map_a_cont:
 		db	 2Eh, 10h, 00h, 11h, 07h, 12h	; row A11
 		db	 2Fh, 00h			; row A12 head (2 bytes)
 		db	30h				; row A12 byte (merges with data_word)
 zel2_data_word_3115		dw	3115h			; Data table (indexed access)
-; --- cell index map A tail rows (3 rows × 6) and ASCII tile glyph table ---
+; --- cell index map A tail rows (3 rows ?? 6) and ASCII tile glyph table ---
+
 zel2_cell_map_a_tail:
 		db	 17h, 00h, 32h, 33h, 34h, 35h	; row A13
 		db	 00h, 41h, 42h, 43h, 44h, 00h	; row A14
 		db	 1Eh, 50h, 1Fh			; row A15 head (3 bytes)
+
 zel2_glyph_table:
 		db	'Q', 0				; glyph row [0]
 		db	'6789', 0			; glyph row [1]
@@ -138,6 +143,7 @@ zel2_glyph_table:
 		db	'?@', 0				; glyph row [8]
 		db	'MNO'				; glyph row [9]
 ; --- cell index map B: 6-byte rows (00 = empty cell) ---
+
 zel2_cell_map_b:
 		db	 10h, 00h, 58h, 10h, 59h, 2Ah	; row B0
 		db	 00h, 49h, 5Ah, 4Bh, 5Bh, 00h	; row B1
@@ -156,6 +162,7 @@ zel2_cell_map_b:
 		db	 76h, 77h, 4Fh, 78h		; row B14 (4 bytes; precedes rng_fn_ptr)
 zel2_rng_fn_ptr		dw	0
 ; --- cell index map C: 6-byte rows continuing post-rng_fn_ptr ---
+
 zel2_cell_map_c:
 		db	 85h, 86h, 87h, 00h, 93h, 94h	; row C0
 		db	 95h, 96h, 00h, 1Eh,0A1h,0A2h	; row C1
@@ -170,6 +177,7 @@ zel2_cell_map_c:
 		db	 29h, 2Ah			; row C9 tail (2 bytes)
 		db	11 dup (0)			; padding to next descriptor
 ; --- cell index map D: 6-byte rows ---
+
 zel2_cell_map_d:
 		db	 93h,0A8h, 95h,0A9h, 00h,0AAh	; row D0
 		db	0ABh,0ACh,0ADh, 00h, 00h,0AEh	; row D1
@@ -185,39 +193,41 @@ zel2_cell_map_d:
 		db	 10h, 1Dh, 2Ah, 00h		; row D11 (4 bytes)
 		db	10 dup (0)			; padding
 ; --- cell index map E + trailing init code stub ---
+
 zel2_cell_map_e:
 		db	0BBh,0BCh,0BDh,0BEh, 00h,0BFh	; row E0
 		db	0D5h,0C1h,0D6h, 8Bh, 36h, 10h	; row E1 (last 3 bytes = 'mov si,...')
+
 zel2_init_code_stub:
 		db	0C0h,0C6h, 06h,0FDh,0A5h, 00h	; init stub bytes (mis-decoded)
 		db	0C6h, 06h,0FFh,0A5h, 00h	; init stub bytes (continued)
 
 zel2_npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		;  Fixup - byte match
-			jz	zel2_npc_scan_done			; Jump if zero
-			mov	ax,[si]
-			call	word ptr cs:fight_cb_anim_step
-			jc	zel2_npc_scan_next			; Jump if carry Set
-			mov	[si+3],bl
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:zel2_npc_idx
-			xor	bh,bh			; Zero register
-			mov	al,ds:sprite_xlat_tbl[bx]
-			mov	[di],al
-			test	byte ptr [si+5],40h	; '@'
-			jz	zel2_npc_scan_next			; Jump if zero
-			test	byte ptr ds:zel2_anim_byte,80h
-			jnz	zel2_npc_scan_next			; Jump if not zero
-			mov	al,[si+5]
-			and	al,1Fh
-			mov	ds:zel2_anim_byte,al
+				db	 83h, 3Ch,0FFh		;  Fixup - byte match
+				jz	zel2_npc_scan_done			; Jump if zero
+				mov	ax,[si]
+				call	word ptr cs:fight_cb_anim_step
+				jc	zel2_npc_scan_next			; Jump if carry Set
+				mov	[si+3],bl
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:zel2_npc_idx
+				xor	bh,bh			; Zero register
+				mov	al,ds:sprite_xlat_tbl[bx]
+				mov	[di],al
+				test	byte ptr [si+5],40h	; '@'
+				jz	zel2_npc_scan_next			; Jump if zero
+				test	byte ptr ds:zel2_anim_byte,80h
+				jnz	zel2_npc_scan_next			; Jump if not zero
+				mov	al,[si+5]
+				and	al,1Fh
+				mov	ds:zel2_anim_byte,al
 
 zel2_npc_scan_next:
-			inc	byte ptr ds:zel2_npc_idx
-			add	si,10h
-			jmp	short zel2_npc_scan_loop
+				inc	byte ptr ds:zel2_npc_idx
+				add	si,10h
+				jmp	short zel2_npc_scan_loop
 
 zel2_npc_scan_done:
 		mov	si,ds:enemy_attr_base
@@ -439,10 +449,10 @@ zel2_phase_xlat_apply:
 		mov	cx,0Ch
 
 zel2_phase_render_loop:
-			mov	[di],dx
-			add	di,2
-			inc	dh
-			loop	zel2_phase_render_loop		; Loop if cx > 0
+				mov	[di],dx
+				add	di,2
+				inc	dh
+				loop	zel2_phase_render_loop		; Loop if cx > 0
 
 		test	byte ptr ds:zel2_phase_a_flag,0FFh
 		jnz	zel2_npc_render_setup			; Jump if not zero
@@ -507,57 +517,57 @@ zel2_npc_render_setup:
 		mov	cx,4
 
 zel2_npc_render_outer_loop:
-			push	cx
-			push	ax
-			call	word ptr cs:fight_cb_anim_step
-			pop	ax
-			mov	ds:zel2_attr_tmp,bl
-			jnc	zel2_npc_render_inner_init			; Jump if carry=0
-			add	di,6
-			jmp	short zel2_npc_render_advance
+				push	cx
+				push	ax
+				call	word ptr cs:fight_cb_anim_step
+				pop	ax
+				mov	ds:zel2_attr_tmp,bl
+				jnc	zel2_npc_render_inner_init			; Jump if carry=0
+				add	di,6
+				jmp	short zel2_npc_render_advance
 
 zel2_npc_render_inner_init:
-			mov	bl,ds:zel2_phase_step
-			mov	cx,3
+				mov	bl,ds:zel2_phase_step
+				mov	cx,3
 
 zel2_npc_render_inner_loop:
-				push	cx
-				mov	[si],ax
-				mov	[si+2],bl
-				mov	dl,ds:zel2_attr_tmp
-				mov	[si+3],dl
-				mov	dl,[di]
-				mov	[si+4],dl
-				mov	byte ptr [si+5],0
-				mov	dl,[di+1]
-				mov	[si+6],dl
-				add	di,2
-				push	ax
-				push	bx
-				push	di
-				mov	ax,[si+2]
-				call	word ptr cs:fight_cb_record_ofs
-				mov	bl,ds:zel2_npc_idx
-				xor	bh,bh			; Zero register
-				mov	al,bl
-				or	al,80h
-				xchg	[di],al
-				mov	ds:sprite_xlat_tbl[bx],al
-				add	si,10h
-				inc	byte ptr ds:zel2_npc_idx
-				pop	di
-				pop	bx
-				pop	ax
-				add	bl,2
-				and	bl,3Fh			; '?'
-				pop	cx
-				loop	zel2_npc_render_inner_loop		; Loop if cx > 0
+						push	cx
+						mov	[si],ax
+						mov	[si+2],bl
+						mov	dl,ds:zel2_attr_tmp
+						mov	[si+3],dl
+						mov	dl,[di]
+						mov	[si+4],dl
+						mov	byte ptr [si+5],0
+						mov	dl,[di+1]
+						mov	[si+6],dl
+						add	di,2
+						push	ax
+						push	bx
+						push	di
+						mov	ax,[si+2]
+						call	word ptr cs:fight_cb_record_ofs
+						mov	bl,ds:zel2_npc_idx
+						xor	bh,bh			; Zero register
+						mov	al,bl
+						or	al,80h
+						xchg	[di],al
+						mov	ds:sprite_xlat_tbl[bx],al
+						add	si,10h
+						inc	byte ptr ds:zel2_npc_idx
+						pop	di
+						pop	bx
+						pop	ax
+						add	bl,2
+						and	bl,3Fh			; '?'
+						pop	cx
+						loop	zel2_npc_render_inner_loop		; Loop if cx > 0
 
 zel2_npc_render_advance:
-			inc	ax
-			inc	ax
-			pop	cx
-			loop	zel2_npc_render_outer_loop		; Loop if cx > 0
+				inc	ax
+				inc	ax
+				pop	cx
+				loop	zel2_npc_render_outer_loop		; Loop if cx > 0
 
 		mov	word ptr [si],0FFFFh
 		retn
@@ -622,10 +632,12 @@ zel2_scroll_dec_done:
 zel2_scroll_dec_step		endp
 
 ; --- scroll-state init record: 2 parallel 16-byte slots (record A / record B) ---
+
 zel2_scroll_init_record_a:
 		db	 00h, 00h, 05h, 00h, 32h, 04h	; record A bytes [0..5]
 		db	 78h				; record A byte [6]
 		db	8 dup (0)			; record A padding [7..14]
+
 zel2_scroll_init_record_b:
 		db	 04h, 00h, 32h, 00h, 78h, 00h	; record B bytes [0..5]
 		db	 00h, 00h, 00h, 00h, 00h	; record B padding [6..10]
@@ -670,24 +682,24 @@ zel2_idle_check_phase_dir:
 		and	byte ptr ds:zel2_phase_byte,7
 
 zel2_idle_phase_xlat_apply:
-			mov	bx,zel2_phase_xlat_tbl
-			mov	al,ds:zel2_phase_byte
-			xlat				; al=[al+[bx]] table
-			xor	ah,ah			; Zero register
-			mov	di,zel2_render_buf
-			mov	cx,0Ch
+				mov	bx,zel2_phase_xlat_tbl
+				mov	al,ds:zel2_phase_byte
+				xlat				; al=[al+[bx]] table
+				xor	ah,ah			; Zero register
+				mov	di,zel2_render_buf
+				mov	cx,0Ch
 
 zel2_idle_render_loop:
-				mov	[di],ax
-				add	di,2
-				inc	ah
-				loop	zel2_idle_render_loop		; Loop if cx > 0
+						mov	[di],ax
+						add	di,2
+						inc	ah
+						loop	zel2_idle_render_loop		; Loop if cx > 0
 
-			jmp	zel2_npc_render_setup
+				jmp	zel2_npc_render_setup
 
 zel2_idle_phase_reset:
-			mov	byte ptr ds:zel2_phase_byte,2
-			jmp	short zel2_idle_phase_xlat_apply
+				mov	byte ptr ds:zel2_phase_byte,2
+				jmp	short zel2_idle_phase_xlat_apply
 
 zel2_idle_state_set:
 		mov	byte ptr ds:zel2_state_ff30,0FFh

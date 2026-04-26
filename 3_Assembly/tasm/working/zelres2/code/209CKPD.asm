@@ -221,12 +221,12 @@ frame_handler_a:
 		mov	ah,10h
 
 ega_mode_a_row_loop:
-				mov	cx,1Ch
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				add	si,34h
-				add	di,34h
-				dec	ah
-				jnz	ega_mode_a_row_loop			; Jump if not zero
+					mov	cx,1Ch
+					rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+					add	si,34h
+					add	di,34h
+					dec	ah
+					jnz	ega_mode_a_row_loop			; Jump if not zero
 		mov	dx,3CEh
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -242,29 +242,29 @@ ega_mode_a_row_loop:
 		mov	cx,10h
 
 ega_mode_a_outer:
-				push	cx
-				push	di
-				mov	cx,1Ch
+					push	cx
+					push	di
+					mov	cx,1Ch
 
 ega_mode_a_col_loop:
-						mov	al,2
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	al,ds:bos_src_f[si]
-						mov	es:[di],al
-						mov	es:[di+1Ch],al
-						mov	al,4
-						out	dx,al			; port 3C5h, EGA sequencr func
-						mov	al,ds:bos_src_g[si]
-						mov	es:[di],al
-						mov	es:[di+1Ch],al
-						inc	di
-						inc	si
-						loop	ega_mode_a_col_loop		; Loop if cx > 0
+								mov	al,2
+								out	dx,al			; port 3C5h, EGA sequencr func
+								mov	al,ds:bos_src_f[si]
+								mov	es:[di],al
+								mov	es:[di+1Ch],al
+								mov	al,4
+								out	dx,al			; port 3C5h, EGA sequencr func
+								mov	al,ds:bos_src_g[si]
+								mov	es:[di],al
+								mov	es:[di+1Ch],al
+								inc	di
+								inc	si
+								loop	ega_mode_a_col_loop		; Loop if cx > 0
 
-				pop	di
-				add	di,50h
-				pop	cx
-				loop	ega_mode_a_outer		; Loop if cx > 0
+					pop	di
+					add	di,50h
+					pop	cx
+					loop	ega_mode_a_outer		; Loop if cx > 0
 
 		retn
 
@@ -281,69 +281,69 @@ frame_handler_b:
 		mov	ah,10h
 
 cga_mode_a_loop:
-				push	si
-				mov	di,si
-				add	di,1Ch
-				mov	cx,0Eh
-				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-				pop	si
-				add	si,2000h
-				cmp	si,4000h
-				jb	cga_mode_a_skip			; Jump if below
-				add	si,bos_wrap_c050
+					push	si
+					mov	di,si
+					add	di,1Ch
+					mov	cx,0Eh
+					rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+					pop	si
+					add	si,2000h
+					cmp	si,4000h
+					jb	cga_mode_a_skip			; Jump if below
+					add	si,bos_wrap_c050
 
 cga_mode_a_skip:
-				dec	ah
-				jnz	cga_mode_a_loop			; Jump if not zero
+					dec	ah
+					jnz	cga_mode_a_loop			; Jump if not zero
 		pop	ds
 		xor	si,si			; Zero register
 		mov	di,vga_dst_163c
 		mov	cx,10h
 
 cga_mode_a_outer:
-				push	cx
-				push	di
-				mov	cx,1Ch
+					push	cx
+					push	di
+					mov	cx,1Ch
 
 cga_mode_a_col_loop:
-						push	cx
-						mov	ah,ds:bos_src_g[si]
-						mov	al,ds:bos_src_f[si]
-						inc	si
-						xor	dl,dl			; Zero register
-						mov	cx,4
+								push	cx
+								mov	ah,ds:bos_src_g[si]
+								mov	al,ds:bos_src_f[si]
+								inc	si
+								xor	dl,dl			; Zero register
+								mov	cx,4
 
 cga_mode_a_decode_loop:
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						and	bl,0Fh
-						xor	bh,bh			; Zero register
-						add	dl,dl
-						add	dl,dl
-						or	dl,ds:bos_color_lut_a[bx]
-						loop	cga_mode_a_decode_loop		; Loop if cx > 0
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								and	bl,0Fh
+								xor	bh,bh			; Zero register
+								add	dl,dl
+								add	dl,dl
+								or	dl,ds:bos_color_lut_a[bx]
+								loop	cga_mode_a_decode_loop		; Loop if cx > 0
 
-						mov	es:[di],dl
-						mov	es:[di+1Ch],dl
-						inc	di
-						pop	cx
-						loop	cga_mode_a_col_loop		; Loop if cx > 0
+								mov	es:[di],dl
+								mov	es:[di+1Ch],dl
+								inc	di
+								pop	cx
+								loop	cga_mode_a_col_loop		; Loop if cx > 0
 
-				pop	di
-				add	di,2000h
-				cmp	di,4000h
-				jb	cga_mode_a_branch			; Jump if below
-				add	di,0C050h
+					pop	di
+					add	di,2000h
+					cmp	di,4000h
+					jb	cga_mode_a_branch			; Jump if below
+					add	di,0C050h
 
 cga_mode_a_branch:
-				pop	cx
-				loop	cga_mode_a_outer		; Loop if cx > 0
+					pop	cx
+					loop	cga_mode_a_outer		; Loop if cx > 0
 
 		retn
 
@@ -369,81 +369,81 @@ frame_handler_c:
 		mov	ah,10h
 
 cga_copy_loop:
-				call	vga_row_copy
-				add	si,2000h
-				cmp	si,6000h
-				jb	cga_copy_skip			; Jump if below
-				call	vga_row_copy
-				add	si,cga_wrap_c
+					call	vga_row_copy
+					add	si,2000h
+					cmp	si,6000h
+					jb	cga_copy_skip			; Jump if below
+					call	vga_row_copy
+					add	si,cga_wrap_c
 
 cga_copy_skip:
-				dec	ah
-				jnz	cga_copy_loop			; Jump if not zero
+					dec	ah
+					jnz	cga_copy_loop			; Jump if not zero
 		pop	ds
 		xor	si,si			; Zero register
 		mov	di,bos_dst_vga
 		mov	cx,10h
 
 cga_mode_b_outer:
-				push	cx
-				push	di
-				mov	cx,1Ch
+					push	cx
+					push	di
+					mov	cx,1Ch
 
 cga_mode_b_col_loop:
-						push	cx
-						mov	ah,ds:bos_src_col_b[si]
-						mov	al,ds:bos_src_col_a[si]
-						inc	si
-						xor	dl,dl			; Zero register
-						mov	cx,4
+								push	cx
+								mov	ah,ds:bos_src_col_b[si]
+								mov	al,ds:bos_src_col_a[si]
+								inc	si
+								xor	dl,dl			; Zero register
+								mov	cx,4
 
 cga_mode_b_decode_loop:
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						and	bl,0Fh
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								and	bl,0Fh
 
 cga_mode_b_branch:
-						xor	bh,bh			; Zero register
-						add	dl,dl
-						add	dl,dl
-						or	dl,ds:bos_color_lut_a[bx]
-						loop	cga_mode_b_decode_loop		; Loop if cx > 0
+								xor	bh,bh			; Zero register
+								add	dl,dl
+								add	dl,dl
+								or	dl,ds:bos_color_lut_a[bx]
+								loop	cga_mode_b_decode_loop		; Loop if cx > 0
 
-						mov	es:[di],dl
-						mov	es:[di+1Ch],dl
-						inc	di
-						pop	cx
-						loop	cga_mode_b_col_loop		; Loop if cx > 0
+								mov	es:[di],dl
+								mov	es:[di+1Ch],dl
+								inc	di
+								pop	cx
+								loop	cga_mode_b_col_loop		; Loop if cx > 0
 
-				pop	di
-				add	di,2000h
-				cmp	di,bos_limit_6000
-				jb	cga_mode_b_skip			; Jump if below
-				push	ds
-				push	si
-				push	cx
-				push	di
-				push	es
-				pop	ds
-				mov	si,di
-				sub	si,2000h
-				mov	cx,38h
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	di
-				pop	cx
-				pop	si
-				pop	ds
-				add	di,cga_wrap_55e
+					pop	di
+					add	di,2000h
+					cmp	di,bos_limit_6000
+					jb	cga_mode_b_skip			; Jump if below
+					push	ds
+					push	si
+					push	cx
+					push	di
+					push	es
+					pop	ds
+					mov	si,di
+					sub	si,2000h
+					mov	cx,38h
+					rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+					pop	di
+					pop	cx
+					pop	si
+					pop	ds
+					add	di,cga_wrap_55e
 
 cga_mode_b_skip:
-				pop	cx
-				loop	cga_mode_b_outer		; Loop if cx > 0
+					pop	cx
+					loop	cga_mode_b_outer		; Loop if cx > 0
 
 		retn
 
@@ -473,44 +473,44 @@ frame_handler_d:
 		mov	ah,10h
 
 vga_copy_loop:
-				mov	cx,38h
-				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-				add	si,0D0h
-				add	di,0D0h
-				dec	ah
-				jnz	vga_copy_loop			; Jump if not zero
+					mov	cx,38h
+					rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+					add	si,0D0h
+					add	di,0D0h
+					dec	ah
+					jnz	vga_copy_loop			; Jump if not zero
 		pop	ds
 		xor	si,si			; Zero register
 		mov	di,0B1B0h
 		mov	cx,10h
 
 vga_mode_a_outer:
-				push	cx
-				push	di
-				mov	cx,1Ch
+					push	cx
+					push	di
+					mov	cx,1Ch
 
 vga_mode_a_col_loop:
-						mov	dl,ds:bos_src_f[si]
-						mov	dh,ds:bos_src_g[si]
-						call	nibble_expand_8
-						stosb				; Store al to es:[di]
-						mov	es:[di+6Fh],al
-						call	nibble_expand_8
-						stosb				; Store al to es:[di]
-						mov	es:[di+6Fh],al
-						call	nibble_expand_8
-						stosb				; Store al to es:[di]
-						mov	es:[di+6Fh],al
-						call	nibble_expand_8
-						stosb				; Store al to es:[di]
-						mov	es:[di+6Fh],al
-						inc	si
-						loop	vga_mode_a_col_loop		; Loop if cx > 0
+								mov	dl,ds:bos_src_f[si]
+								mov	dh,ds:bos_src_g[si]
+								call	nibble_expand_8
+								stosb				; Store al to es:[di]
+								mov	es:[di+6Fh],al
+								call	nibble_expand_8
+								stosb				; Store al to es:[di]
+								mov	es:[di+6Fh],al
+								call	nibble_expand_8
+								stosb				; Store al to es:[di]
+								mov	es:[di+6Fh],al
+								call	nibble_expand_8
+								stosb				; Store al to es:[di]
+								mov	es:[di+6Fh],al
+								inc	si
+								loop	vga_mode_a_col_loop		; Loop if cx > 0
 
-				pop	di
-				add	di,140h
-				pop	cx
-				loop	vga_mode_a_outer		; Loop if cx > 0
+					pop	di
+					add	di,140h
+					pop	cx
+					loop	vga_mode_a_outer		; Loop if cx > 0
 
 		retn
 
@@ -543,53 +543,53 @@ frame_handler_e:
 		mov	ah,10h
 
 cga_mode_c_loop:
-				push	si
-				mov	di,si
-				add	di,38h
-				mov	cx,1Ch
-				rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-				pop	si
-				add	si,2000h
-				cmp	si,8000h
-				jb	cga_mode_c_skip			; Jump if below
-				add	si,bos_limit_wrap
+					push	si
+					mov	di,si
+					add	di,38h
+					mov	cx,1Ch
+					rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
+					pop	si
+					add	si,2000h
+					cmp	si,8000h
+					jb	cga_mode_c_skip			; Jump if below
+					add	si,bos_limit_wrap
 
 cga_mode_c_skip:
-				dec	ah
-				jnz	cga_mode_c_loop			; Jump if not zero
+					dec	ah
+					jnz	cga_mode_c_loop			; Jump if not zero
 		pop	ds
 		xor	si,si			; Zero register
 		mov	di,55F8h
 		mov	cx,10h
 
 cga_mode_c_outer:
-				push	cx
-				push	di
-				mov	cx,1Ch
+					push	cx
+					push	di
+					mov	cx,1Ch
 
 cga_mode_c_col_loop:
-						push	cx
-						mov	dh,ds:bos_src_g[si]
-						mov	dl,ds:bos_src_f[si]
-						call	nibble_decode_inner
-						mov	es:[di+38h],al
-						stosb				; Store al to es:[di]
-						call	nibble_decode_inner
-						mov	es:[di+38h],al
-						stosb				; Store al to es:[di]
-						inc	si
-						pop	cx
-						loop	cga_mode_c_col_loop		; Loop if cx > 0
+								push	cx
+								mov	dh,ds:bos_src_g[si]
+								mov	dl,ds:bos_src_f[si]
+								call	nibble_decode_inner
+								mov	es:[di+38h],al
+								stosb				; Store al to es:[di]
+								call	nibble_decode_inner
+								mov	es:[di+38h],al
+								stosb				; Store al to es:[di]
+								inc	si
+								pop	cx
+								loop	cga_mode_c_col_loop		; Loop if cx > 0
 
-				pop	di
-				add	di,2000h
-				cmp	di,8000h
-				jb	cga_mode_c_branch			; Jump if below
-				add	di,80A0h
+					pop	di
+					add	di,2000h
+					cmp	di,8000h
+					jb	cga_mode_c_branch			; Jump if below
+					add	di,80A0h
 
 cga_mode_c_branch:
-				pop	cx
-				loop	cga_mode_c_outer		; Loop if cx > 0
+					pop	cx
+					loop	cga_mode_c_outer		; Loop if cx > 0
 
 		retn
 
@@ -598,22 +598,22 @@ nibble_decode_inner		proc	near
 		mov	cx,2
 
 nibble_decode_step:
-				add	dh,dh
-				adc	bl,bl
-				add	dl,dl
-				adc	bl,bl
-				add	dh,dh
-				adc	bl,bl
-				add	dl,dl
-				adc	bl,bl
-				and	bl,0Fh
-				xor	bh,bh			; Zero register
-				add	al,al
-				add	al,al
-				add	al,al
-				add	al,al
-				or	al,ds:bos_color_lut_b[bx]
-				loop	nibble_decode_step		; Loop if cx > 0
+					add	dh,dh
+					adc	bl,bl
+					add	dl,dl
+					adc	bl,bl
+					add	dh,dh
+					adc	bl,bl
+					add	dl,dl
+					adc	bl,bl
+					and	bl,0Fh
+					xor	bh,bh			; Zero register
+					add	al,al
+					add	al,al
+					add	al,al
+					add	al,al
+					or	al,ds:bos_color_lut_b[bx]
+					loop	nibble_decode_step		; Loop if cx > 0
 
 		retn
 
@@ -627,37 +627,37 @@ sprite_rle_decode		proc	near
 		mov	bx,di
 
 rle_read_next:
-				lodsb				; String [si] to al
-				or	al,al			; Zero ?
-				jnz	rle_check_op			; Jump if not zero
-				retn
+					lodsb				; String [si] to al
+					or	al,al			; Zero ?
+					jnz	rle_check_op			; Jump if not zero
+					retn
 
 rle_check_op:
-				mov	ah,al
-				and	ah,0F0h
-				cmp	ah,10h
-				jne	rle_check_op40			; Jump if not equal
-				and	al,0Fh
-				mov	ah,al
-				xor	al,al			; Zero register
-				jmp	short rle_store_loop
+					mov	ah,al
+					and	ah,0F0h
+					cmp	ah,10h
+					jne	rle_check_op40			; Jump if not equal
+					and	al,0Fh
+					mov	ah,al
+					xor	al,al			; Zero register
+					jmp	short rle_store_loop
 
 rle_check_op40:
-				cmp	ah,40h			; '@'
-				jne	rle_single_literal			; Jump if not equal
-				and	al,0Fh
-				mov	ah,al
-				mov	al,0AAh
-				jmp	short rle_store_loop
+					cmp	ah,40h			; '@'
+					jne	rle_single_literal			; Jump if not equal
+					and	al,0Fh
+					mov	ah,al
+					mov	al,0AAh
+					jmp	short rle_store_loop
 
 rle_single_literal:
-				mov	ah,1
+					mov	ah,1
 
 rle_store_loop:
-						stosb				; Store al to es:[di]
-						dec	ah
-						jnz	rle_store_loop			; Jump if not zero
-				jmp	short rle_read_next
+								stosb				; Store al to es:[di]
+								dec	ah
+								jnz	rle_store_loop			; Jump if not zero
+					jmp	short rle_read_next
 
 sprite_rle_decode		endp
 
@@ -712,23 +712,23 @@ mode_handler_f_setup:
 		db	0D9h
 
 ega_mode_b_outer:
-				push	di
+					push	di
 
 ega_mode_b_col_loop:
-						mov	al,1
-						out	dx,al			; port 0, DMA-1 bas&add ch 0
-						mov	ah,ds:[bp+si]
-						movsb				; Mov [si] to es:[di]
-						mov	al,4
-						out	dx,al			; port 0, DMA-1 bas&add ch 0
-						mov	es:[di-1],ah
-						dec	bh
-						jnz	ega_mode_b_col_loop			; Jump if not zero
-				pop	di
-				add	di,50h
-				mov	bh,ch
-				dec	bl
-				jnz	ega_mode_b_outer			; Jump if not zero
+								mov	al,1
+								out	dx,al			; port 0, DMA-1 bas&add ch 0
+								mov	ah,ds:[bp+si]
+								movsb				; Mov [si] to es:[di]
+								mov	al,4
+								out	dx,al			; port 0, DMA-1 bas&add ch 0
+								mov	es:[di-1],ah
+								dec	bh
+								jnz	ega_mode_b_col_loop			; Jump if not zero
+					pop	di
+					add	di,50h
+					mov	bh,ch
+					dec	bl
+					jnz	ega_mode_b_outer			; Jump if not zero
 		retn
 
 ; --- Mode handler G: CGA (0B800h) sprite render with column/row address calc ---
@@ -752,48 +752,48 @@ mode_handler_g:
 		mov	bx,cx
 
 cga_mode_d_outer:
-				push	di
-				push	cx
+					push	di
+					push	cx
 
 cga_mode_d_col_loop:
-						push	bx
-						mov	ah,ds:[bp+si]
-						lodsb				; String [si] to al
-						xor	dl,dl			; Zero register
-						mov	cx,4
+								push	bx
+								mov	ah,ds:[bp+si]
+								lodsb				; String [si] to al
+								xor	dl,dl			; Zero register
+								mov	cx,4
 
 cga_mode_d_decode_loop:
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						and	bl,0Fh
-						xor	bh,bh			; Zero register
-						add	dl,dl
-						add	dl,dl
-						or	dl,cs:bos_color_lut_c[bx]
-						loop	cga_mode_d_decode_loop		; Loop if cx > 0
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								and	bl,0Fh
+								xor	bh,bh			; Zero register
+								add	dl,dl
+								add	dl,dl
+								or	dl,cs:bos_color_lut_c[bx]
+								loop	cga_mode_d_decode_loop		; Loop if cx > 0
 
-						mov	al,dl
-						stosb				; Store al to es:[di]
-						pop	bx
-						dec	bh
-						jnz	cga_mode_d_col_loop			; Jump if not zero
-				pop	cx
-				pop	di
-				add	di,2000h
-				cmp	di,4000h
-				jb	cga_mode_d_skip			; Jump if below
-				add	di,bos_wrap_c050
+								mov	al,dl
+								stosb				; Store al to es:[di]
+								pop	bx
+								dec	bh
+								jnz	cga_mode_d_col_loop			; Jump if not zero
+					pop	cx
+					pop	di
+					add	di,2000h
+					cmp	di,4000h
+					jb	cga_mode_d_skip			; Jump if below
+					add	di,bos_wrap_c050
 
 cga_mode_d_skip:
-				mov	bh,ch
-				dec	bl
-				jnz	cga_mode_d_outer			; Jump if not zero
+					mov	bh,ch
+					dec	bl
+					jnz	cga_mode_d_outer			; Jump if not zero
 		retn
 		db	 00h, 03h, 02h, 01h, 01h, 03h
 		db	 02h, 01h, 00h, 03h, 02h, 01h
@@ -808,63 +808,63 @@ cga_mode_d_skip:
 		db	0C0h, 8Bh,0D9h
 
 cga_mode_e_outer:
-				push	di
-				push	cx
+					push	di
+					push	cx
 
 cga_mode_e_col_loop:
-						push	bx
-						mov	ah,ds:[bp+si]
-						lodsb				; String [si] to al
-						xor	dl,dl			; Zero register
-						mov	cx,4
+								push	bx
+								mov	ah,ds:[bp+si]
+								lodsb				; String [si] to al
+								xor	dl,dl			; Zero register
+								mov	cx,4
 
 cga_mode_e_decode_loop:
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						and	bl,0Fh
-						xor	bh,bh			; Zero register
-						add	dl,dl
-						add	dl,dl
-						or	dl,cs:bos_color_lut_c[bx]
-						loop	cga_mode_e_decode_loop		; Loop if cx > 0
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								and	bl,0Fh
+								xor	bh,bh			; Zero register
+								add	dl,dl
+								add	dl,dl
+								or	dl,cs:bos_color_lut_c[bx]
+								loop	cga_mode_e_decode_loop		; Loop if cx > 0
 
-						mov	al,dl
-						stosb				; Store al to es:[di]
-						pop	bx
-						dec	bh
-						jnz	cga_mode_e_col_loop			; Jump if not zero
-				pop	cx
-				pop	di
-				add	di,2000h
-				cmp	di,bos_limit_6000
-				jb	cga_mode_e_branch			; Jump if below
-				push	ds
-				push	si
-				push	cx
-				push	di
-				push	es
-				pop	ds
-				mov	si,di
-				sub	si,2000h
-				mov	cl,ch
-				xor	ch,ch			; Zero register
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	di
-				pop	cx
-				pop	si
-				pop	ds
-				add	di,0A05Ah
+								mov	al,dl
+								stosb				; Store al to es:[di]
+								pop	bx
+								dec	bh
+								jnz	cga_mode_e_col_loop			; Jump if not zero
+					pop	cx
+					pop	di
+					add	di,2000h
+					cmp	di,bos_limit_6000
+					jb	cga_mode_e_branch			; Jump if below
+					push	ds
+					push	si
+					push	cx
+					push	di
+					push	es
+					pop	ds
+					mov	si,di
+					sub	si,2000h
+					mov	cl,ch
+					xor	ch,ch			; Zero register
+					rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+					pop	di
+					pop	cx
+					pop	si
+					pop	ds
+					add	di,0A05Ah
 
 cga_mode_e_branch:
-				mov	bh,ch
-				dec	bl
-				jnz	cga_mode_e_outer			; Jump if not zero
+					mov	bh,ch
+					dec	bl
+					jnz	cga_mode_e_outer			; Jump if not zero
 		retn
 
 ; --- Mode handler H: VGA (0A000h) sprite render with 320-byte row stride ---
@@ -888,31 +888,31 @@ mode_handler_h:
 		mov	bx,cx
 
 vga_mode_b_outer:
-				push	di
-				push	cx
+					push	di
+					push	cx
 
 vga_mode_b_col_loop:
-						push	bx
-						mov	dl,[si]
-						mov	dh,ds:[bp+si]
-						call	nibble_expand_8_b
-						stosb				; Store al to es:[di]
-						call	nibble_expand_8_b
-						stosb				; Store al to es:[di]
-						call	nibble_expand_8_b
-						stosb				; Store al to es:[di]
-						call	nibble_expand_8_b
-						stosb				; Store al to es:[di]
-						inc	si
-						pop	bx
-						dec	bh
-						jnz	vga_mode_b_col_loop			; Jump if not zero
-				pop	cx
-				pop	di
-				add	di,140h
-				mov	bh,ch
-				dec	bl
-				jnz	vga_mode_b_outer			; Jump if not zero
+								push	bx
+								mov	dl,[si]
+								mov	dh,ds:[bp+si]
+								call	nibble_expand_8_b
+								stosb				; Store al to es:[di]
+								call	nibble_expand_8_b
+								stosb				; Store al to es:[di]
+								call	nibble_expand_8_b
+								stosb				; Store al to es:[di]
+								call	nibble_expand_8_b
+								stosb				; Store al to es:[di]
+								inc	si
+								pop	bx
+								dec	bh
+								jnz	vga_mode_b_col_loop			; Jump if not zero
+					pop	cx
+					pop	di
+					add	di,140h
+					mov	bh,ch
+					dec	bl
+					jnz	vga_mode_b_outer			; Jump if not zero
 		retn
 
 nibble_expand_8_b		proc	near
@@ -957,32 +957,32 @@ mode_handler_i:
 		mov	bx,cx
 
 cga_mode_f_outer:
-				push	di
-				push	cx
+					push	di
+					push	cx
 
 cga_mode_f_col_loop:
-						push	bx
-						mov	dh,ds:[bp+si]
-						mov	dl,[si]
-						call	nibble_decode_inner_2
-						stosb				; Store al to es:[di]
-						call	nibble_decode_inner_2
-						stosb				; Store al to es:[di]
-						inc	si
-						pop	bx
-						dec	bh
-						jnz	cga_mode_f_col_loop			; Jump if not zero
-				pop	cx
-				pop	di
-				add	di,2000h
-				cmp	di,8000h
-				jb	cga_mode_f_skip			; Jump if below
-				add	di,80A0h
+								push	bx
+								mov	dh,ds:[bp+si]
+								mov	dl,[si]
+								call	nibble_decode_inner_2
+								stosb				; Store al to es:[di]
+								call	nibble_decode_inner_2
+								stosb				; Store al to es:[di]
+								inc	si
+								pop	bx
+								dec	bh
+								jnz	cga_mode_f_col_loop			; Jump if not zero
+					pop	cx
+					pop	di
+					add	di,2000h
+					cmp	di,8000h
+					jb	cga_mode_f_skip			; Jump if below
+					add	di,80A0h
 
 cga_mode_f_skip:
-				mov	bh,ch
-				dec	bl
-				jnz	cga_mode_f_outer			; Jump if not zero
+					mov	bh,ch
+					dec	bl
+					jnz	cga_mode_f_outer			; Jump if not zero
 		retn
 
 nibble_decode_inner_2		proc	near
@@ -990,22 +990,22 @@ nibble_decode_inner_2		proc	near
 		mov	cx,2
 
 nibble_decode_step_2:
-				add	dh,dh
-				adc	bl,bl
-				add	dl,dl
-				adc	bl,bl
-				add	dh,dh
-				adc	bl,bl
-				add	dl,dl
-				adc	bl,bl
-				and	bl,0Fh
-				xor	bh,bh			; Zero register
-				add	al,al
-				add	al,al
-				add	al,al
-				add	al,al
-				or	al,cs:bos_color_lut_d[bx]
-				loop	nibble_decode_step_2		; Loop if cx > 0
+					add	dh,dh
+					adc	bl,bl
+					add	dl,dl
+					adc	bl,bl
+					add	dh,dh
+					adc	bl,bl
+					add	dl,dl
+					adc	bl,bl
+					and	bl,0Fh
+					xor	bh,bh			; Zero register
+					add	al,al
+					add	al,al
+					add	al,al
+					add	al,al
+					or	al,cs:bos_color_lut_d[bx]
+					loop	nibble_decode_step_2		; Loop if cx > 0
 
 		retn
 

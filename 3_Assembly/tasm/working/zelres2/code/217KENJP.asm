@@ -37,7 +37,6 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-
 ; ------------------------------------------------------------------------
 ; Graphics driver dispatch table (driver loads at game_seg:2000h).
 ; Each entry is a word pointer at CS:2000h+offset; called via
@@ -145,7 +144,6 @@ gvar_input_lock	equ	0FF74h			;* global: input-locked flag (FFh=locked)
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
-
 		org	0
 
 kenja_main		proc	far
@@ -176,20 +174,18 @@ start:
 		call	word ptr cs:drv_fill_rect
 		call	sage_intro_dispatch
 		mov	ds:gvar_script_ip,si
+
 script_run_loop:
-		call	word ptr cs:script_step
-		cmp	al,0FFh
-		je	kenja_exit			; Jump if equal
-		call	kenja_cmd_dispatch
-		jmp	short script_run_loop
+			call	word ptr cs:script_step
+			cmp	al,0FFh
+			je	kenja_exit			; Jump if equal
+			call	kenja_cmd_dispatch
+			jmp	short script_run_loop
+
 kenja_exit:
 		jmp	word ptr cs:drv_return_to_caller
 
 kenja_main		endp
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 load_sage_chunk		proc	near
 		mov	es,ds:gvar_game_seg
@@ -213,18 +209,15 @@ load_sage_chunk		proc	near
 		add	bx,bx
 		mov	si,ds:sage_cmd_msg_tbl[bx]
 		jmp	word ptr cs:drv_load_msg_header
+
 load_sage_chunk		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 kenja_cmd_dispatch		proc	near
 		mov	bl,al
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr cs:sage_cmd_tbl[bx]	;*
+
 kenja_cmd_dispatch		endp
 
 			                        ;* No entry point to code
@@ -248,6 +241,7 @@ data_11		db	0C6h
 		db	 00h, 8Ah, 1Eh, 14h,0BBh, 2Eh
 		db	0FFh, 16h, 10h, 60h, 73h, 02h
 		db	 32h,0DBh
+
 sage_state_jump:
 		mov	ds:state_cmd_byte,bl
 		xor	bh,bh			; Zero register
@@ -264,9 +258,11 @@ data_13		dw	0A157h
 		db	0BFh,0A7h,0AEh,0F6h, 06h, 17h
 		db	0BBh,0FFh, 74h, 03h,0BFh, 03h
 		db	0AFh
+
 ret_save_state_ptr:
 		mov	ds:gvar_script_ip,di
 		retn
+
 set_ptr_AE42:
 		mov	word ptr ds:gvar_script_ip,0AE42h
 		retn
@@ -281,12 +277,14 @@ set_ptr_AE42:
 		call	word ptr cs:script_step
 		mov	word ptr ds:gvar_script_ip,0ADBFh
 		retn
+
 cmd_record_entry:
 		call	clear_sage_region
 		call	record_experience_entry
 		mov	word ptr ds:gvar_script_ip,0ADBFh
 		jnc	cmd_record_cancel			; Jump if carry=0
 		retn
+
 cmd_record_cancel:
 		mov	word ptr ds:gvar_script_ip,0AF7Ch
 		retn
@@ -297,11 +295,12 @@ cmd_record_cancel:
 		mov	byte ptr ds:state_see_flag,0FFh
 		mov	byte ptr ds:state_record_flg,0FFh
 		mov	word ptr ds:gvar_script_ip,0AFDEh
+
 see_power_wait_loop:
-		call	wait_frames_140
-		call	word ptr cs:script_step
-		cmp	al,4
-		je	see_power_wait_loop			; Jump if equal
+			call	wait_frames_140
+			call	word ptr cs:script_step
+			cmp	al,4
+			je	see_power_wait_loop			; Jump if equal
 		mov	byte ptr ds:state_listen_flg,0FFh
 		db	0E8h, 43h, 00h		; call near (absolute; TASM won't compile as mnemonic)
 		call	word ptr cs:script_step
@@ -312,10 +311,6 @@ see_power_wait_loop:
 		mov	ds:gvar_script_ip,ax
 		retn
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 scan_blessing_attrs		proc	near
 		mov	si,sage_anim_a
 		mov	byte ptr ds:state_record_flg,0FFh
@@ -323,20 +318,22 @@ scan_blessing_attrs		proc	near
 		mov	cx,3
 
 scan_anim_a_loop:
-		push	cx
-		mov	byte ptr ds:gvar_frame_timer,0
-		lodsb				; String [si] to al
-		push	si
-		call	render_glyph_32
+			push	cx
+			mov	byte ptr ds:gvar_frame_timer,0
+			lodsb				; String [si] to al
+			push	si
+			call	render_glyph_32
+
 scan_anim_a_delay:
-		cmp	byte ptr ds:gvar_frame_timer,19h
-		jb	scan_anim_a_delay			; Jump if below
-		pop	si
-		pop	cx
-		loop	scan_anim_a_loop		; Loop if cx > 0
+				cmp	byte ptr ds:gvar_frame_timer,19h
+				jb	scan_anim_a_delay			; Jump if below
+			pop	si
+			pop	cx
+			loop	scan_anim_a_loop		; Loop if cx > 0
 
 		mov	byte ptr ds:state_record_flg,0
 		retn
+
 scan_blessing_attrs		endp
 
 			                        ;* No entry point to code
@@ -346,26 +343,23 @@ scan_blessing_attrs		endp
 		mov	cx,2
 
 scan_anim_b_loop:
-		push	cx
-		mov	byte ptr ds:gvar_frame_timer,0
-		mov	al,[si]
-		dec	si
-		push	si
-		call	render_glyph_32
+			push	cx
+			mov	byte ptr ds:gvar_frame_timer,0
+			mov	al,[si]
+			dec	si
+			push	si
+			call	render_glyph_32
+
 scan_anim_b_delay:
-		cmp	byte ptr ds:gvar_frame_timer,19h
-		jb	scan_anim_b_delay			; Jump if below
-		pop	si
-		pop	cx
-		loop	scan_anim_b_loop		; Loop if cx > 0
+				cmp	byte ptr ds:gvar_frame_timer,19h
+				jb	scan_anim_b_delay			; Jump if below
+			pop	si
+			pop	cx
+			loop	scan_anim_b_loop		; Loop if cx > 0
 
 		mov	byte ptr ds:state_record_flg,0
 		mov	byte ptr ds:state_blink_sel,0
 		retn
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 check_hp_exp_tier		proc	near
 		xor	bx,bx			; Zero register
@@ -373,6 +367,7 @@ check_hp_exp_tier		proc	near
 		cmp	bl,0Fh
 		jb	tier_clamp_a			; Jump if below
 		mov	bl,0Fh
+
 tier_clamp_a:
 		add	bx,bx
 		add	bx,sage_hp_thresh
@@ -383,6 +378,7 @@ tier_clamp_a:
 		cmp	word ptr ds:[8Eh],cx
 		jae	tier_check_low			; Jump if above or =
 		retn
+
 tier_check_low:
 		mov	ax,dx
 		shr	cx,1			; Shift w/zeros fill
@@ -392,11 +388,13 @@ tier_check_low:
 		cmp	word ptr ds:[8Eh],cx
 		jae	tier_check_high			; Jump if above or =
 		retn
+
 tier_check_high:
 		mov	ax,2
 		cmp	word ptr ds:[8Eh],dx
 		jae	tier_final_test			; Jump if above or =
 		retn
+
 tier_final_test:
 		xor	bx,bx			; Zero register
 		mov	bl,ds:gvar_sage_id
@@ -407,10 +405,12 @@ tier_final_test:
 		cmp	cl,[bx]
 		jae	tier_is_max			; Jump if above or =
 		retn
+
 tier_is_max:
 		mov	byte ptr ds:state_indihar_flg,0FFh
 		mov	ax,4
 		retn
+
 check_hp_exp_tier		endp
 
 			                        ;* No entry point to code
@@ -434,6 +434,7 @@ check_hp_exp_tier		endp
 		retn
 		db	 60h,0EAh, 03h, 06h, 09h, 0Bh
 		db	 0Dh, 0Fh, 12h,0FFh,0C6h
+
 palette_fade_start:
 		push	es
 		push	ss
@@ -441,14 +442,15 @@ palette_fade_start:
 		or	[bx+si],al
 
 palette_fade_wait_loop:
-		push	cx
-		call	word ptr cs:drv_fn2_init
-		mov	byte ptr ds:gvar_frame_timer,0
+			push	cx
+			call	word ptr cs:drv_fn2_init
+			mov	byte ptr ds:gvar_frame_timer,0
+
 palette_fade_delay:
-		cmp	byte ptr ds:gvar_frame_timer,0Ah
-		jb	palette_fade_delay			; Jump if below
-		pop	cx
-		loop	palette_fade_wait_loop		; Loop if cx > 0
+				cmp	byte ptr ds:gvar_frame_timer,0Ah
+				jb	palette_fade_delay			; Jump if below
+			pop	cx
+			loop	palette_fade_wait_loop		; Loop if cx > 0
 
 		push	cs
 		pop	es
@@ -461,15 +463,17 @@ palette_fade_delay:
 		mov	di,state_color_tmp_cs2
 
 palette_brighten_loop:
-		lodsb				; String [si] to al
-		add	al,2
-		jnc	palette_clamp_ff			; Jump if carry=0
-		mov	al,0FFh
+			lodsb				; String [si] to al
+			add	al,2
+			jnc	palette_clamp_ff			; Jump if carry=0
+			mov	al,0FFh
+
 palette_clamp_ff:
-		stosb				; Store al to es:[di]
-		loop	palette_brighten_loop		; Loop if cx > 0
+			stosb				; Store al to es:[di]
+			loop	palette_brighten_loop		; Loop if cx > 0
 
 		jmp	short palette_apply
+
 palette_load_row:
 		mov	bl,9
 		mul	bl			; ax = reg * al
@@ -478,11 +482,13 @@ palette_load_row:
 		mov	di,state_color_tmp_cs
 		mov	cx,9
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+
 palette_apply:
 		mov	al,byte ptr ds:[8Dh]
 		inc	al
 		jnz	palette_idx_wrap			; Jump if not zero
 		mov	al,0FFh
+
 palette_idx_wrap:
 		mov	byte ptr ds:[8Dh],al
 		mov	ax,ds:state_color_tmp_cs
@@ -503,6 +509,7 @@ palette_idx_wrap:
 		test	byte ptr ds:[9Dh],0FFh
 		jz	palette_post_xfer			; Jump if zero
 		call	word ptr cs:drv_anim_step
+
 palette_post_xfer:
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr ds:[8Dh]
@@ -510,6 +517,7 @@ palette_post_xfer:
 		cmp	bl,0Fh
 		jb	palette_hp_clamp_a			; Jump if below
 		mov	bl,0Fh
+
 palette_hp_clamp_a:
 		add	bx,bx
 		mov	ax,ds:sage_hp_thresh[bx]
@@ -519,6 +527,7 @@ palette_hp_clamp_a:
 		cmp	bl,0Fh
 		jb	palette_hp_clamp_b			; Jump if below
 		mov	bl,0Fh
+
 palette_hp_clamp_b:
 		add	bx,bx
 		mov	ax,ds:sage_hp_thresh[bx]
@@ -599,26 +608,20 @@ palette_hp_done:
 		cmp	al,48h			; 'H'
 		adc	ax,0C10h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 wait_frames_140		proc	near
 		mov	byte ptr ds:gvar_frame_timer,0
+
 wait_frames_tick:
-		call	anim_tick
-		cmp	byte ptr ds:gvar_frame_timer,8Ch
-		jb	wait_frames_tick			; Jump if below
+			call	anim_tick
+			cmp	byte ptr ds:gvar_frame_timer,8Ch
+			jb	wait_frames_tick			; Jump if below
 		retn
+
 wait_frames_140		endp
 
 			                        ;* No entry point to code
 		mov	word ptr ds:gvar_script_ip,0ADBFh
 		retn
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 record_experience_entry		proc	near
 		push	cs
@@ -654,12 +657,12 @@ record_experience_entry		proc	near
 		mov	cx,8
 
 name_prefill_loop:
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jz	name_prefill_done			; Jump if zero
-		inc	byte ptr ds:state_name_len
-		stosb				; Store al to es:[di]
-		loop	name_prefill_loop		; Loop if cx > 0
+			lodsb				; String [si] to al
+			or	al,al			; Zero ?
+			jz	name_prefill_done			; Jump if zero
+			inc	byte ptr ds:state_name_len
+			stosb				; Store al to es:[di]
+			loop	name_prefill_loop		; Loop if cx > 0
 
 name_prefill_done:
 		mov	al,ds:state_name_len
@@ -676,6 +679,7 @@ name_prefill_done:
 		cmp	al,5
 		jb	name_clamp_5			; Jump if below
 		mov	al,5
+
 name_clamp_5:
 		xor	ah,ah			; Zero register
 		mov	cx,ax
@@ -683,6 +687,7 @@ name_clamp_5:
 		mov	si,0E001h
 		jcxz	name_input_entry			; Jump if cx=0
 		call	draw_char_row
+
 name_input_entry:
 		mov	si,0E001h
 		mov	al,ds:gvar_save_buf
@@ -697,6 +702,7 @@ name_input_entry:
 		popf				; Pop flags
 		jnc	name_input_ok			; Jump if carry=0
 		retn
+
 name_input_ok:
 		push	cs
 		pop	es
@@ -708,67 +714,64 @@ name_input_ok:
 		stc				; Set carry flag
 		jnz	name_copy_to_prev			; Jump if not zero
 		retn
+
 name_copy_to_prev:
 		mov	si,state_name_buf
 		mov	di,gvar_name_prev
+
 name_copy_loop:
-		lodsb				; String [si] to al
-		cmp	al,0FFh
-		clc				; Clear carry flag
-		jnz	name_copy_test_space			; Jump if not zero
-		retn
+			lodsb				; String [si] to al
+			cmp	al,0FFh
+			clc				; Clear carry flag
+			jnz	name_copy_test_space			; Jump if not zero
+			retn
+
 name_copy_test_space:
-		cmp	al,60h			; '`'
-		clc				; Clear carry flag
-		jnz	name_copy_store			; Jump if not zero
-		retn
+			cmp	al,60h			; '`'
+			clc				; Clear carry flag
+			jnz	name_copy_store			; Jump if not zero
+			retn
+
 name_copy_store:
-		stosb				; Store al to es:[di]
-		jmp	short name_copy_loop
+			stosb				; Store al to es:[di]
+			jmp	short name_copy_loop
+
 record_experience_entry		endp
 
 		db	 2Ah, 2Eh, 75h, 73h, 72h, 00h
 		db	'Input name:'
 		db	0FFh
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 draw_char_row		proc	near
 		xor	ah,ah			; Zero register
 
 draw_char_row_loop:
-		push	cx
-		push	si
-		push	ax
-		call	word ptr cs:drv_fn2_text_setup
-		pop	ax
-		push	ax
-		mov	al,ah
-		xor	ah,ah			; Zero register
-		add	ax,ax
-		mov	bx,ax
-		add	ax,ax
-		add	ax,ax
-		add	bx,ax
-		add	bx,ds:gvar_dlg_pos
-		add	bx,300h
-		call	word ptr cs:drv_fn2_text_render
-		pop	ax
-		inc	al
-		inc	ah
-		pop	si
-		pop	cx
-		loop	draw_char_row_loop		; Loop if cx > 0
+			push	cx
+			push	si
+			push	ax
+			call	word ptr cs:drv_fn2_text_setup
+			pop	ax
+			push	ax
+			mov	al,ah
+			xor	ah,ah			; Zero register
+			add	ax,ax
+			mov	bx,ax
+			add	ax,ax
+			add	ax,ax
+			add	bx,ax
+			add	bx,ds:gvar_dlg_pos
+			add	bx,300h
+			call	word ptr cs:drv_fn2_text_render
+			pop	ax
+			inc	al
+			inc	ah
+			pop	si
+			pop	cx
+			loop	draw_char_row_loop		; Loop if cx > 0
 
 		retn
+
 draw_char_row		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 name_input_loop		proc	near
 		mov	byte ptr ds:gvar_input_lock,0FFh
@@ -782,10 +785,12 @@ name_input_loop		proc	near
 		test	byte ptr ds:gvar_dlg_rows,0FFh
 		jz	name_in_init_ok			; Jump if zero
 		call	word ptr cs:script_fn_menu_init
+
 name_in_init_ok:
 		call	redraw_name_field
 		xor	al,al			; Zero register
 		call	update_name_cursor
+
 name_in_poll_loop:
 		call	word ptr cs:script_fn_menu_poll
 		mov	byte ptr ds:gvar_frame_timer,0
@@ -795,10 +800,12 @@ name_in_poll_loop:
 		test	word ptr cs:kenjp_timer_ff18,1
 		jz	name_in_no_key			; Jump if zero
 		clc				; Clear carry flag
+
 name_in_exit:
 		mov	byte ptr ds:gvar_input_lock,0
 		mov	byte ptr ds:gvar_enter_flag,0
 		retn
+
 name_in_no_key:
 		test	byte ptr ds:gvar_key_flag,0FFh
 		jz	name_in_joystick			; Jump if zero
@@ -821,12 +828,12 @@ name_in_no_key:
 		mov	cx,8
 
 name_in_load_preset_loop:
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jz	name_in_load_preset_done			; Jump if zero
-		inc	byte ptr ds:state_name_len
-		stosb				; Store al to es:[di]
-		loop	name_in_load_preset_loop		; Loop if cx > 0
+			lodsb				; String [si] to al
+			or	al,al			; Zero ?
+			jz	name_in_load_preset_done			; Jump if zero
+			inc	byte ptr ds:state_name_len
+			stosb				; Store al to es:[di]
+			loop	name_in_load_preset_loop		; Loop if cx > 0
 
 name_in_load_preset_done:
 		mov	al,ds:state_name_len
@@ -845,6 +852,7 @@ name_in_load_preset_done:
 		xor	al,al			; Zero register
 		call	update_name_cursor
 		jmp	name_in_poll_loop
+
 name_in_joystick:
 		mov	cx,0A592h
 		push	cx
@@ -855,48 +863,57 @@ name_in_joystick:
 		cmp	al,0Dh
 		jne	name_in_backspace			; Jump if not equal
 		retn
+
 name_in_backspace:
 		cmp	al,8
 		jne	name_in_append_char			; Jump if not equal
 		jmp	name_in_backspace_impl
+
 name_in_append_char:
 		xor	bx,bx			; Zero register
 		mov	bl,ds:state_name_len
 		cmp	byte ptr ds:state_name_buf[bx],60h	; '`'
 		jne	name_in_append_len_ok			; Jump if not equal
 		inc	byte ptr ds:state_name_maxlen
+
 name_in_append_len_ok:
 		mov	ds:state_name_buf[bx],al
 		call	redraw_name_field
 		mov	al,1
 		jmp	update_name_cursor_entry
+
 name_in_joy_read:
 		int	61h			; ??INT Non-standard interrupt
 		test	al,8
 		jz	name_in_joy_btn2			; Jump if zero
 		mov	al,1
 		call	update_name_cursor
+
 name_in_joy_btn1_hold:
-		int	61h			; ??INT Non-standard interrupt
-		test	al,8
-		jnz	name_in_joy_btn1_hold			; Jump if not zero
+			int	61h			; ??INT Non-standard interrupt
+			test	al,8
+			jnz	name_in_joy_btn1_hold			; Jump if not zero
 		mov	byte ptr ds:gvar_key_code,0
 		retn
+
 name_in_joy_btn2:
 		test	al,4
 		jz	name_in_dir_test			; Jump if zero
 		mov	al,0FFh
 		call	update_name_cursor
+
 name_in_joy_btn2_hold:
-		int	61h			; ??INT Non-standard interrupt
-		test	al,4
-		jnz	name_in_joy_btn2_hold			; Jump if not zero
+			int	61h			; ??INT Non-standard interrupt
+			test	al,4
+			jnz	name_in_joy_btn2_hold			; Jump if not zero
 		mov	byte ptr ds:gvar_key_code,0
 		retn
+
 name_in_dir_test:
 		test	byte ptr ds:gvar_dlg_rows,0FFh
 		jnz	name_in_dir_check			; Jump if not zero
 		retn
+
 name_in_dir_check:
 		and	al,3
 		cmp	al,1
@@ -907,10 +924,12 @@ name_in_dir_check:
 		call	word ptr cs:script_fn_menu_up
 		dec	byte ptr ds:state_name_cursor
 		retn
+
 name_in_up_handler:
 		test	byte ptr ds:gvar_name_page,0FFh
 		jnz	name_in_page_up			; Jump if not zero
 		retn
+
 name_in_page_up:
 		push	di
 		push	si
@@ -921,35 +940,38 @@ name_in_page_up:
 		mov	cx,0Ah
 
 name_in_page_up_loop:
-		push	cx
-		mov	bx,ds:gvar_dlg_pos
-		add	bx,301h
-		mov	al,cl
-		dec	al
-		mov	cl,ds:gvar_dlg_cols
-		add	cl,cl
-		mov	dl,cl
-		add	cl,cl
-		add	cl,cl
-		add	cl,dl
-		sub	cl,2
-		mov	ch,ds:gvar_ui_delay
-		call	word ptr cs:drv_fn2_cursor_draw
+			push	cx
+			mov	bx,ds:gvar_dlg_pos
+			add	bx,301h
+			mov	al,cl
+			dec	al
+			mov	cl,ds:gvar_dlg_cols
+			add	cl,cl
+			mov	dl,cl
+			add	cl,cl
+			add	cl,cl
+			add	cl,dl
+			sub	cl,2
+			mov	ch,ds:gvar_ui_delay
+			call	word ptr cs:drv_fn2_cursor_draw
+
 name_in_page_up_wait:
-		call	word ptr cs:script_fn_menu_poll
-		cmp	byte ptr ds:gvar_frame_timer,4
-		jb	name_in_page_up_wait			; Jump if below
-		mov	byte ptr ds:gvar_frame_timer,0
-		pop	cx
-		loop	name_in_page_up_loop		; Loop if cx > 0
+				call	word ptr cs:script_fn_menu_poll
+				cmp	byte ptr ds:gvar_frame_timer,4
+				jb	name_in_page_up_wait			; Jump if below
+			mov	byte ptr ds:gvar_frame_timer,0
+			pop	cx
+			loop	name_in_page_up_loop		; Loop if cx > 0
 
 		pop	si
 		pop	di
 		retn
+
 name_in_test_down:
 		cmp	al,2
 		je	name_in_down_ok			; Jump if equal
 		retn
+
 name_in_down_ok:
 		mov	al,ds:state_name_cursor
 		add	al,ds:gvar_name_page
@@ -959,6 +981,7 @@ name_in_down_ok:
 		cmp	ah,al
 		jae	name_in_down_handler			; Jump if above or =
 		retn
+
 name_in_down_handler:
 		mov	al,ds:gvar_dlg_cols
 		dec	al
@@ -968,6 +991,7 @@ name_in_down_handler:
 		call	word ptr cs:script_fn_menu_dn
 		inc	byte ptr ds:state_name_cursor
 		retn
+
 name_in_page_down:
 		push	di
 		push	si
@@ -978,36 +1002,36 @@ name_in_page_down:
 		mov	cx,0Ah
 
 name_in_page_down_loop:
-		push	cx
-		mov	bx,ds:gvar_dlg_pos
-		add	bx,301h
-		mov	al,cl
-		neg	al
-		add	al,0Ah
-		mov	cl,ds:gvar_dlg_cols
-		add	cl,cl
-		mov	dl,cl
-		add	cl,cl
-		add	cl,cl
-		add	cl,dl
-		sub	cl,2
-		mov	ch,ds:gvar_ui_delay
-		call	word ptr cs:drv_fn2_cursor_clear
+			push	cx
+			mov	bx,ds:gvar_dlg_pos
+			add	bx,301h
+			mov	al,cl
+			neg	al
+			add	al,0Ah
+			mov	cl,ds:gvar_dlg_cols
+			add	cl,cl
+			mov	dl,cl
+			add	cl,cl
+			add	cl,cl
+			add	cl,dl
+			sub	cl,2
+			mov	ch,ds:gvar_ui_delay
+			call	word ptr cs:drv_fn2_cursor_clear
+
 name_in_page_down_wait:
-		call	word ptr cs:script_fn_menu_poll
-		cmp	byte ptr ds:gvar_frame_timer,4
-		jb	name_in_page_down_wait			; Jump if below
-		mov	byte ptr ds:gvar_frame_timer,0
-		pop	cx
-		loop	name_in_page_down_loop		; Loop if cx > 0
+				call	word ptr cs:script_fn_menu_poll
+				cmp	byte ptr ds:gvar_frame_timer,4
+				jb	name_in_page_down_wait			; Jump if below
+			mov	byte ptr ds:gvar_frame_timer,0
+			pop	cx
+			loop	name_in_page_down_loop		; Loop if cx > 0
 
 		pop	si
 		pop	di
 		retn
 
-;���� External Entry into Subroutine ��������������������������������������
-
 update_name_cursor:
+
 update_name_cursor_entry:
 		push	si
 		push	ax
@@ -1028,15 +1052,18 @@ update_name_cursor_entry:
 		test	byte ptr ds:state_name_len,80h
 		jz	cursor_len_wrap			; Jump if zero
 		mov	byte ptr ds:state_name_len,0
+
 cursor_len_wrap:
 		cmp	byte ptr ds:state_name_len,8
 		jb	cursor_len_clamp			; Jump if below
 		dec	byte ptr ds:state_name_len
+
 cursor_len_clamp:
 		mov	al,ds:state_name_maxlen
 		cmp	ds:state_name_len,al
 		jb	cursor_len_max			; Jump if below
 		mov	ds:state_name_len,al
+
 cursor_len_max:
 		mov	bx,ds:state_name_box_x
 		mov	cl,ds:state_name_box_y
@@ -1051,8 +1078,6 @@ cursor_len_max:
 		call	word ptr cs:drv_render_char
 		pop	si
 		retn
-
-;���� External Entry into Subroutine ��������������������������������������
 
 redraw_name_field:
 		push	si
@@ -1070,12 +1095,14 @@ redraw_name_field:
 		call	word ptr cs:drv_fn_draw_str
 		pop	si
 		retn
+
 name_in_backspace_impl:
 		push	si
 		mov	bl,ds:state_name_len
 		or	bl,bl			; Zero ?
 		jnz	name_backspace_min_one			; Jump if not zero
 		inc	bl
+
 name_backspace_min_one:
 		xor	bh,bh			; Zero register
 		push	cs
@@ -1092,6 +1119,7 @@ name_backspace_min_one:
 		test	byte ptr ds:state_name_maxlen,0FFh
 		jz	name_backspace_maxlen_dec			; Jump if zero
 		dec	byte ptr ds:state_name_maxlen
+
 name_backspace_maxlen_dec:
 		mov	byte ptr ds:state_name_term,60h	; '`'
 		mov	al,0FFh
@@ -1099,6 +1127,7 @@ name_backspace_maxlen_dec:
 		call	redraw_name_field
 		pop	si
 		retn
+
 name_input_loop		endp
 
 			                        ;* No entry point to code
@@ -1109,11 +1138,11 @@ name_input_loop		endp
 		mov	cx,8
 
 save_name_copy_loop:
-		lodsb				; String [si] to al
-		or	al,al			; Zero ?
-		jz	save_name_ext_usr			; Jump if zero
-		stosb				; Store al to es:[di]
-		loop	save_name_copy_loop		; Loop if cx > 0
+			lodsb				; String [si] to al
+			or	al,al			; Zero ?
+			jz	save_name_ext_usr			; Jump if zero
+			stosb				; Store al to es:[di]
+			loop	save_name_copy_loop		; Loop if cx > 0
 
 save_name_ext_usr:
 		mov	byte ptr es:[di],2Eh	; '.'
@@ -1144,6 +1173,7 @@ save_name_ext_usr:
 		popf				; Pop flags
 		jc	save_disk_error			; Jump if carry Set
 		retn
+
 save_disk_error:
 		mov	ax,849h
 		mov	cx,1926h
@@ -1158,9 +1188,10 @@ save_disk_error:
 		mov	si,0B5ACh
 		call	word ptr cs:drv_fn_draw_str
 		mov	byte ptr ds:gvar_key_flag,0
+
 save_wait_key_loop:
-		test	byte ptr ds:gvar_key_flag,0FFh
-		jz	save_wait_key_loop			; Jump if zero
+			test	byte ptr ds:gvar_key_flag,0FFh
+			jz	save_wait_key_loop			; Jump if zero
 		mov	byte ptr ds:gvar_key_flag,0
 		mov	ax,849h
 		mov	cx,1926h
@@ -1194,21 +1225,13 @@ save_wait_key_loop:
 		db	0FFh, 26h, 18h
 		db	20h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 clear_sage_region		proc	near
 		mov	bx,2717h
 		mov	cx,1D41h
 		xor	al,al			; Zero register
 		jmp	word ptr cs:drv_fill_rect
+
 clear_sage_region		endp
-
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 draw_sage_tile_grid		proc	near
 		mov	si,sage_scan_data
@@ -1216,25 +1239,26 @@ draw_sage_tile_grid		proc	near
 		mov	cx,8
 
 sage_tile_row_loop:
-		push	cx
-		mov	cx,0Ch
+			push	cx
+			mov	cx,0Ch
 
 sage_tile_col_loop:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:drv_draw_glyph
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	sage_tile_col_loop		; Loop if cx > 0
+				push	cx
+				push	bx
+				lodsb				; String [si] to al
+				call	word ptr cs:drv_draw_glyph
+				pop	bx
+				inc	bh
+				pop	cx
+				loop	sage_tile_col_loop		; Loop if cx > 0
 
-		sub	bh,0Ch
-		add	bl,8
-		pop	cx
-		loop	sage_tile_row_loop		; Loop if cx > 0
+			sub	bh,0Ch
+			add	bl,8
+			pop	cx
+			loop	sage_tile_row_loop		; Loop if cx > 0
 
 		retn
+
 draw_sage_tile_grid		endp
 
 		db	 00h, 01h, 02h, 03h, 04h, 05h
@@ -1248,10 +1272,6 @@ draw_sage_tile_grid		endp
 		db	',-./0123456789:;<=>?@ABCDEFGHIJK'
 		db	'LMNOPQRSTUVWXYZ[\]'
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 render_glyph_32		proc	near
 		mov	cl,20h			; ' '
 		mul	cl			; ax = reg * al
@@ -1262,25 +1282,26 @@ render_glyph_32		proc	near
 		mov	cx,4
 
 glyph_row_loop:
-		push	cx
-		mov	cx,8
+			push	cx
+			mov	cx,8
 
 glyph_col_loop:
-		push	cx
-		push	bx
-		lodsb				; String [si] to al
-		call	word ptr cs:drv_draw_glyph
-		pop	bx
-		inc	bh
-		pop	cx
-		loop	glyph_col_loop		; Loop if cx > 0
+				push	cx
+				push	bx
+				lodsb				; String [si] to al
+				call	word ptr cs:drv_draw_glyph
+				pop	bx
+				inc	bh
+				pop	cx
+				loop	glyph_col_loop		; Loop if cx > 0
 
-		sub	bh,8
-		add	bl,8
-		pop	cx
-		loop	glyph_row_loop		; Loop if cx > 0
+			sub	bh,8
+			add	bl,8
+			pop	cx
+			loop	glyph_row_loop		; Loop if cx > 0
 
 		retn
+
 render_glyph_32		endp
 
 			                        ;* No entry point to code
@@ -1329,14 +1350,11 @@ render_glyph_32		endp
 		db	0A5h
 		db	43h
 
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
-
 anim_tick		proc	near
 		cmp	word ptr ds:gvar_timer_word,2
 		jae	anim_tick_active			; Jump if above or =
 		retn
+
 anim_tick_active:
 		mov	word ptr ds:gvar_timer_word,0
 		test	byte ptr ds:state_see_flag,0FFh
@@ -1352,11 +1370,13 @@ anim_tick_active:
 		mov	byte ptr ds:state_anim_phase,0
 		mov	byte ptr ds:state_anim_col,0
 		jmp	short anim_check_record
+
 anim_tick_listen:
 		inc	byte ptr ds:state_see_ctr
 		cmp	byte ptr ds:state_see_ctr,14h
 		jae	anim_advance_column			; Jump if above or =
 		retn
+
 anim_advance_column:
 		mov	byte ptr ds:state_see_ctr,0
 		inc	byte ptr ds:state_anim_col
@@ -1367,17 +1387,21 @@ anim_advance_column:
 		mov	al,ds:sage_blink_b[bx]
 		call	render_glyph_32
 		inc	byte ptr ds:state_anim_phase
+
 anim_phase_wrap:
 		and	byte ptr ds:state_anim_phase,0Fh
+
 anim_check_record:
 		test	byte ptr ds:state_record_flg,0FFh
 		jz	anim_record_wait			; Jump if zero
 		retn
+
 anim_record_wait:
 		inc	byte ptr ds:state_blink_ctr
 		cmp	byte ptr ds:state_blink_ctr,14h
 		jae	anim_record_tick			; Jump if above or =
 		retn
+
 anim_record_tick:
 		mov	byte ptr ds:state_blink_ctr,0
 		mov	bl,ds:state_blink_parity
@@ -1388,21 +1412,19 @@ anim_record_tick:
 		test	byte ptr ds:state_blink_sel,0FFh
 		jz	anim_record_use_blink_b			; Jump if zero
 		mov	di,sage_blink_a
+
 anim_record_use_blink_b:
 		mov	al,[bx+di]
 		mov	bx,ds:state_script_ptr
 		add	bx,718h
 		jmp	word ptr cs:drv_draw_glyph
+
 anim_tick		endp
 
 		db	29h
 data_17		dw	672Ah			; Data table (indexed access)
 		db	 68h, 05h, 06h, 07h, 06h, 05h
 		db	 04h, 03h, 04h
-
-;��������������������������������������������������������������������������
-;                              SUBROUTINE
-;��������������������������������������������������������������������������
 
 sage_intro_dispatch		proc	near
 		mov	si,0AD9Dh
@@ -1411,6 +1433,7 @@ sage_intro_dispatch		proc	near
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr ds:sage_intro_tbl[bx]	;*
+
 sage_intro_dispatch		endp
 
 			                        ;* No entry point to code
@@ -1425,6 +1448,7 @@ sage_intro_dispatch		endp
 		db	0B1h, 80h, 0Eh,0E5h, 00h, 80h
 		db	0C3h,0F6h, 06h,0E5h, 00h, 40h
 		db	 74h, 01h,0C3h
+
 hint_yasmin_set:
 		mov	si,0B22Dh
 		or	data_11,40h		; '@'
@@ -1433,6 +1457,7 @@ hint_yasmin_set:
 		test	data_11,20h		; ' '
 		jz	hint_climb_set			; Jump if zero
 		retn
+
 hint_climb_set:
 		mov	si,0B29Fh
 		or	data_11,20h		; ' '
@@ -1441,6 +1466,7 @@ hint_climb_set:
 		test	data_11,10h
 		jz	hint_exit_set			; Jump if zero
 		retn
+
 hint_exit_set:
 		mov	si,0B317h
 		or	data_11,10h
@@ -1449,6 +1475,7 @@ hint_exit_set:
 		test	data_11,8
 		jz	hint_spirits_set			; Jump if zero
 		retn
+
 hint_spirits_set:
 		mov	si,0B38Ch
 		or	data_11,8
@@ -1457,6 +1484,7 @@ hint_spirits_set:
 		test	data_11,4
 		jz	hint_demons_set			; Jump if zero
 		retn
+
 hint_demons_set:
 		mov	si,0B400h
 		or	data_11,4
@@ -1465,6 +1493,7 @@ hint_demons_set:
 		test	data_11,2
 		jz	hint_silkarn_set			; Jump if zero
 		retn
+
 hint_silkarn_set:
 		mov	si,0B488h
 		or	data_11,2
@@ -1473,6 +1502,7 @@ hint_silkarn_set:
 		test	data_11,1
 		jz	hint_indihar_set			; Jump if zero
 		retn
+
 hint_indihar_set:
 		mov	si,sage_indihar_hint
 		or	data_11,1
@@ -1683,7 +1713,5 @@ data_21		db	'I shall call upon the Spirits an'
 		db	42 dup (0)
 
 seg_a		ends
-
-
 
 		end	start

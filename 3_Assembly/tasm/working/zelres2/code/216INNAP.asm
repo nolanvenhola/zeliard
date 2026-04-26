@@ -22,10 +22,8 @@ include  zr2com.inc
 ; restored after factoring (consensus value, but not all files agree):
 gvar_menu_sel            equ     0C006h
 
-
 ; gvar_timer_word, script_step, drv_palette_push, drv_anim_step
 ; defined in zr2com.inc.
-
 
 ; The following equates show data references outside the range of the program.
 
@@ -71,11 +69,11 @@ start:
 		mov	word ptr ds:gvar_script_ptr,0A2F6h
 
 inn_main_loop:
-				call	word ptr cs:script_step
-				cmp	al,0FFh
-				je	inn_main_exit			; Jump if equal
-				call	inn_opcode_dispatch
-				jmp	short inn_main_loop
+					call	word ptr cs:script_step
+					cmp	al,0FFh
+					je	inn_main_exit			; Jump if equal
+					call	inn_opcode_dispatch
+					jmp	short inn_main_loop
 
 inn_main_exit:
 		jmp	word ptr cs:drv_return_to_caller
@@ -197,13 +195,13 @@ data_8		dw	0A505h				;  = anim_active_flag address (also doubles
 ;--------------------------------------------------------------------------
 
 rest_loop:
-				push	ax
-				call	inn_anim_step
-				call	inn_wait_short
-				pop	ax
-				inc	al
-				cmp	al,4
-				jne	rest_loop			; Jump if not equal
+					push	ax
+					call	inn_anim_step
+					call	inn_wait_short
+					pop	ax
+					inc	al
+					cmp	al,4
+					jne	rest_loop			; Jump if not equal
 		retn
 
 ;--------------------------------------------------------------------------
@@ -242,9 +240,9 @@ inn_wait_long	proc	near
 		mov	byte ptr ds:gvar_timer_byte,0
 
 inn_wait_long_loop:
-				call	inn_anim_scan
-				cmp	byte ptr ds:gvar_timer_byte,96h
-				jb	inn_wait_long_loop		; Jump if below
+					call	inn_anim_scan
+					cmp	byte ptr ds:gvar_timer_byte,96h
+					jb	inn_wait_long_loop		; Jump if below
 		retn
 
 inn_wait_long	endp
@@ -257,9 +255,9 @@ inn_wait_short	proc	near
 		mov	byte ptr ds:gvar_timer_byte,0
 
 inn_wait_short_loop:
-				call	inn_anim_scan
-				cmp	byte ptr ds:gvar_timer_byte,32h	; '2'
-				jb	inn_wait_short_loop		; Jump if below
+					call	inn_anim_scan
+					cmp	byte ptr ds:gvar_timer_byte,32h	; '2'
+					jb	inn_wait_short_loop		; Jump if below
 		retn
 
 inn_wait_short	endp
@@ -278,23 +276,23 @@ inn_anim_step	proc	near
 		mov	cx,4
 
 anim_step_outer:
-				push	cx
-				mov	cx,5
+					push	cx
+					mov	cx,5
 
 anim_step_inner:
-						push	cx
-						push	bx
-						lodsb				; String [si] to al
-						call	word ptr cs:drv_draw_glyph
-						pop	bx
-						inc	bh
-						pop	cx
-						loop	anim_step_inner		; Loop if cx > 0
+								push	cx
+								push	bx
+								lodsb				; String [si] to al
+								call	word ptr cs:drv_draw_glyph
+								pop	bx
+								inc	bh
+								pop	cx
+								loop	anim_step_inner		; Loop if cx > 0
 
-				sub	bh,5
-				add	bl,8
-				pop	cx
-				loop	anim_step_outer		; Loop if cx > 0
+					sub	bh,5
+					add	bl,8
+					pop	cx
+					loop	anim_step_outer		; Loop if cx > 0
 
 		retn
 
@@ -311,23 +309,23 @@ draw_intro_tile_map	proc	near
 		mov	cx,8
 
 intro_map_outer:
-				push	cx
-				mov	cx,0Ch
+					push	cx
+					mov	cx,0Ch
 
 intro_map_inner:
-						push	cx
-						push	bx
-						lodsb				; String [si] to al
-						call	word ptr cs:drv_draw_glyph
-						pop	bx
-						inc	bh
-						pop	cx
-						loop	intro_map_inner		; Loop if cx > 0
+								push	cx
+								push	bx
+								lodsb				; String [si] to al
+								call	word ptr cs:drv_draw_glyph
+								pop	bx
+								inc	bh
+								pop	cx
+								loop	intro_map_inner		; Loop if cx > 0
 
-				sub	bh,0Ch
-				add	bl,8
-				pop	cx
-				loop	intro_map_outer		; Loop if cx > 0
+					sub	bh,0Ch
+					add	bl,8
+					pop	cx
+					loop	intro_map_outer		; Loop if cx > 0
 
 		retn
 
@@ -382,23 +380,23 @@ anim_scan_ready:
 		mov	cx,2
 
 scan_outer:
-				push	cx
-				mov	cx,2
+					push	cx
+					mov	cx,2
 
 scan_inner:
-						push	cx
-						push	bx
-						lodsb				; String [si] to al
-						call	word ptr cs:drv_draw_glyph
-						pop	bx
-						inc	bh
-						pop	cx
-						loop	scan_inner		; Loop if cx > 0
+								push	cx
+								push	bx
+								lodsb				; String [si] to al
+								call	word ptr cs:drv_draw_glyph
+								pop	bx
+								inc	bh
+								pop	cx
+								loop	scan_inner		; Loop if cx > 0
 
-				sub	bh,2
-				add	bl,8
-				pop	cx
-				loop	scan_outer		; Loop if cx > 0
+					sub	bh,2
+					add	bl,8
+					pop	cx
+					loop	scan_outer		; Loop if cx > 0
 
 		retn
 

@@ -122,15 +122,15 @@ start:
 		mov	cx,10h			; 16 rows
 
 gnd0_rle_loop:
-				call	rle_decode_ground_28	; 16 rows x 28 bytes from ground0
-				loop	gnd0_rle_loop
+					call	rle_decode_ground_28	; 16 rows x 28 bytes from ground0
+					loop	gnd0_rle_loop
 
 		mov	si,ground1_src_ofs
 		mov	cx,10h
 
 gnd1_rle_loop:
-				call	rle_decode_ground_28	; 16 rows x 28 bytes from ground1
-				loop	gnd1_rle_loop
+					call	rle_decode_ground_28	; 16 rows x 28 bytes from ground1
+					loop	gnd1_rle_loop
 
 		call	render_ground
 		retf				; Return far
@@ -144,27 +144,27 @@ rle_decode_mountain_88x56:
 		xor	cx,cx			; Zero register (CH=col, CL=row)
 
 rle_mntn_loop:
-				lodsb				; String [si] to al
-				cmp	al,6
-				mov	ah,1
-				jnz	rle_mntn_store		; Jump if not zero
-				lodsw				; String [si] to ax (AL=pixel, AH=count)
+					lodsb				; String [si] to al
+					cmp	al,6
+					mov	ah,1
+					jnz	rle_mntn_store		; Jump if not zero
+					lodsw				; String [si] to ax (AL=pixel, AH=count)
 
 rle_mntn_store:
-						stosb				; Store al to es:[di]
-						inc	ch
-						cmp	ch,38h			; 56 rows
-						jne	rle_mntn_more		; Jump if not equal
-						xor	ch,ch			; Zero register
-						inc	cl
-						cmp	cl,58h			; 88 cols
-						jne	rle_mntn_more		; Jump if not equal
-						retn
+								stosb				; Store al to es:[di]
+								inc	ch
+								cmp	ch,38h			; 56 rows
+								jne	rle_mntn_more		; Jump if not equal
+								xor	ch,ch			; Zero register
+								inc	cl
+								cmp	cl,58h			; 88 cols
+								jne	rle_mntn_more		; Jump if not equal
+								retn
 
 rle_mntn_more:
-						dec	ah
-						jnz	rle_mntn_store		; Jump if not zero
-				jmp	short rle_mntn_loop
+								dec	ah
+								jnz	rle_mntn_store		; Jump if not zero
+					jmp	short rle_mntn_loop
 
 ; --- render_mountains ---
 ; Dispatch by video_mode: jmp [bx + 0x338A] where bx=video_mode*2.
@@ -219,14 +219,14 @@ ega_mtn_blit_88_rows:
 		mov	cx,58h			; 88 rows
 
 ega_mtn_row_loop:
-				push	cx
-				push	di
-				mov	cx,38h			; 56 bytes per row
-				rep	movsb			; copy row from seg1 to A000
-				pop	di
-				add	di,50h			; next EGA row (80 bytes)
-				pop	cx
-				loop	ega_mtn_row_loop
+					push	cx
+					push	di
+					mov	cx,38h			; 56 bytes per row
+					rep	movsb			; copy row from seg1 to A000
+					pop	di
+					add	di,50h			; next EGA row (80 bytes)
+					pop	cx
+					loop	ega_mtn_row_loop
 
 		retn
 
@@ -244,47 +244,47 @@ mountains_cga:
 		mov	cx,58h			; 88 scanlines
 
 cga_mtn_row_loop:
-				push	cx
-				push	di
-				mov	cx,38h			; 56 dest bytes per row
+					push	cx
+					push	di
+					mov	cx,38h			; 56 dest bytes per row
 
 cga_mtn_col_loop:
-						push	cx
-						mov	ah,ds:seg1_mountains1_buf[si]	; plane B source
-						lodsb				; plane A source
-						xor	dl,dl			; Zero register
-						mov	cx,4
+								push	cx
+								mov	ah,ds:seg1_mountains1_buf[si]	; plane B source
+								lodsb				; plane A source
+								xor	dl,dl			; Zero register
+								mov	cx,4
 
 cga_mtn_expand_loop:
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						and	bl,0Fh
-						xor	bh,bh			; Zero register
-						add	dl,dl
-						add	dl,dl
-						or	dl,cs:cga_color_lut_mountains[bx]
-						loop	cga_mtn_expand_loop	; Loop if cx > 0
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								and	bl,0Fh
+								xor	bh,bh			; Zero register
+								add	dl,dl
+								add	dl,dl
+								or	dl,cs:cga_color_lut_mountains[bx]
+								loop	cga_mtn_expand_loop	; Loop if cx > 0
 
-						mov	al,dl
-						stosb				; Store al to es:[di]
-						pop	cx
-						loop	cga_mtn_col_loop	; Loop if cx > 0
+								mov	al,dl
+								stosb				; Store al to es:[di]
+								pop	cx
+								loop	cga_mtn_col_loop	; Loop if cx > 0
 
-				pop	di
-				add	di,2000h		; next CGA interlaced bank
-				cmp	di,ega_wrap_limit	; 0x4000
-				jb	cga_mtn_no_wrap
-				add	di,ega_wrap_addend	; wrap to next 4 scanlines
+					pop	di
+					add	di,2000h		; next CGA interlaced bank
+					cmp	di,ega_wrap_limit	; 0x4000
+					jb	cga_mtn_no_wrap
+					add	di,ega_wrap_addend	; wrap to next 4 scanlines
 
 cga_mtn_no_wrap:
-				pop	cx
-				loop	cga_mtn_row_loop
+					pop	cx
+					loop	cga_mtn_row_loop
 
 		pop	ds
 		retn
@@ -306,61 +306,61 @@ mountains_hgc:
 		mov	cx,58h			; 88 scanlines
 
 hgc_mtn_row_loop:
-				push	cx
-				push	di
-				mov	cx,38h			; 56 bytes per row
+					push	cx
+					push	di
+					mov	cx,38h			; 56 bytes per row
 
 hgc_mtn_col_loop:
-						push	cx
-						mov	ah,ds:seg1_mountains1_buf[si]	; plane B source
-						lodsb				; plane A source
-						xor	dl,dl			; Zero register
-						mov	cx,4
+								push	cx
+								mov	ah,ds:seg1_mountains1_buf[si]	; plane B source
+								lodsb				; plane A source
+								xor	dl,dl			; Zero register
+								mov	cx,4
 
 hgc_mtn_expand_loop:
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						and	bl,0Fh
-						xor	bh,bh			; Zero register
-						add	dl,dl
-						add	dl,dl
-						or	dl,cs:cga_color_lut_mountains[bx]
-						loop	hgc_mtn_expand_loop	; Loop if cx > 0
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								and	bl,0Fh
+								xor	bh,bh			; Zero register
+								add	dl,dl
+								add	dl,dl
+								or	dl,cs:cga_color_lut_mountains[bx]
+								loop	hgc_mtn_expand_loop	; Loop if cx > 0
 
-						mov	al,dl
-						stosb				; Store al to es:[di]
-						pop	cx
-						loop	hgc_mtn_col_loop	; Loop if cx > 0
+								mov	al,dl
+								stosb				; Store al to es:[di]
+								pop	cx
+								loop	hgc_mtn_col_loop	; Loop if cx > 0
 
-				pop	di
-				add	di,2000h		; next HGC bank
-				cmp	di,cga_wrap_limit	; 0x6000
-				jb	hgc_mtn_no_wrap		; below -> no wrap
-				push	ds			; above limit: copy row forward and wrap
-				push	si
-				push	cx
-				push	di
-				push	es
-				pop	ds
-				mov	si,di
-				sub	si,2000h
-				mov	cx,38h
-				rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-				pop	di
-				pop	cx
-				pop	si
-				pop	ds
-				add	di,0A05Ah		; HGC wrap addend
+					pop	di
+					add	di,2000h		; next HGC bank
+					cmp	di,cga_wrap_limit	; 0x6000
+					jb	hgc_mtn_no_wrap		; below -> no wrap
+					push	ds			; above limit: copy row forward and wrap
+					push	si
+					push	cx
+					push	di
+					push	es
+					pop	ds
+					mov	si,di
+					sub	si,2000h
+					mov	cx,38h
+					rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+					pop	di
+					pop	cx
+					pop	si
+					pop	ds
+					add	di,0A05Ah		; HGC wrap addend
 
 hgc_mtn_no_wrap:
-				pop	cx
-				loop	hgc_mtn_row_loop
+					pop	cx
+					loop	hgc_mtn_row_loop
 
 		pop	ds
 		retn
@@ -379,30 +379,30 @@ mountains_mcga:
 		mov	cx,58h			; 88 scanlines
 
 mcga_mtn_row_loop:
-				push	cx
-				push	di
-				mov	cx,38h			; 56 pixel-pairs per row
+					push	cx
+					push	di
+					mov	cx,38h			; 56 pixel-pairs per row
 
 mcga_mtn_col_loop:
-						push	cx
-						mov	dh,ds:seg1_mountains1_buf[si]
-						mov	dl,[si]
-						inc	si
-						call	pixel_expand_mcga
-						stosb				; Store al to es:[di]
-						call	pixel_expand_mcga
-						stosb				; Store al to es:[di]
-						call	pixel_expand_mcga
-						stosb				; Store al to es:[di]
-						call	pixel_expand_mcga
-						stosb				; Store al to es:[di]
-						pop	cx
-						loop	mcga_mtn_col_loop
+								push	cx
+								mov	dh,ds:seg1_mountains1_buf[si]
+								mov	dl,[si]
+								inc	si
+								call	pixel_expand_mcga
+								stosb				; Store al to es:[di]
+								call	pixel_expand_mcga
+								stosb				; Store al to es:[di]
+								call	pixel_expand_mcga
+								stosb				; Store al to es:[di]
+								call	pixel_expand_mcga
+								stosb				; Store al to es:[di]
+								pop	cx
+								loop	mcga_mtn_col_loop
 
-				pop	di
-				add	di,140h			; next MCGA scanline (320)
-				pop	cx
-				loop	mcga_mtn_row_loop
+					pop	di
+					add	di,140h			; next MCGA scanline (320)
+					pop	cx
+					loop	mcga_mtn_row_loop
 
 		pop	ds
 		retn
@@ -440,31 +440,31 @@ mountains_cgaalt:
 		mov	cx,58h			; 88 scanlines
 
 cgaalt_mtn_row_loop:
-				push	cx
-				push	di
-				mov	cx,38h
+					push	cx
+					push	di
+					mov	cx,38h
 
 cgaalt_mtn_col_loop:
-						push	cx
-						mov	dh,ds:seg1_mountains1_buf[si]	; plane B source
-						mov	dl,[si]				; plane A source
-						inc	si
-						call	pixel_expand_cga
-						stosb				; Store al to es:[di]
-						call	pixel_expand_cga
-						stosb				; Store al to es:[di]
-						pop	cx
-						loop	cgaalt_mtn_col_loop
+								push	cx
+								mov	dh,ds:seg1_mountains1_buf[si]	; plane B source
+								mov	dl,[si]				; plane A source
+								inc	si
+								call	pixel_expand_cga
+								stosb				; Store al to es:[di]
+								call	pixel_expand_cga
+								stosb				; Store al to es:[di]
+								pop	cx
+								loop	cgaalt_mtn_col_loop
 
-				pop	di
-				add	di,2000h
-				cmp	di,8000h
-				jb	cgaalt_mtn_no_wrap
-				add	di,80A0h
+					pop	di
+					add	di,2000h
+					cmp	di,8000h
+					jb	cgaalt_mtn_no_wrap
+					add	di,80A0h
 
 cgaalt_mtn_no_wrap:
-				pop	cx
-				loop	cgaalt_mtn_row_loop
+					pop	cx
+					loop	cgaalt_mtn_row_loop
 
 		pop	ds
 		retn
@@ -474,22 +474,22 @@ pixel_expand_cga		proc	near
 		mov	cx,2
 
 cga_expand_iter:
-				add	dh,dh
-				adc	bl,bl
-				add	dl,dl
-				adc	bl,bl
-				add	dh,dh
-				adc	bl,bl
-				add	dl,dl
-				adc	bl,bl
-				and	bl,0Fh
-				xor	bh,bh			; Zero register
-				add	al,al
-				add	al,al
-				add	al,al
-				add	al,al
-				or	al,cs:cga_color_lut_alt_mount[bx]
-				loop	cga_expand_iter
+					add	dh,dh
+					adc	bl,bl
+					add	dl,dl
+					adc	bl,bl
+					add	dh,dh
+					adc	bl,bl
+					add	dl,dl
+					adc	bl,bl
+					and	bl,0Fh
+					xor	bh,bh			; Zero register
+					add	al,al
+					add	al,al
+					add	al,al
+					add	al,al
+					or	al,cs:cga_color_lut_alt_mount[bx]
+					loop	cga_expand_iter
 
 		retn
 
@@ -511,23 +511,23 @@ rle_decode_ground_28		proc	near
 		xor	bl,bl			; Zero register (output count)
 
 rle_gnd_next_byte:
-				lodsb				; String [si] to al
-				mov	ah,al
-				and	ah,0F0h			; high nibble
-				cmp	ah,60h			; '6' prefix = zero-run
-				mov	ah,1
-				jnz	rle_gnd_emit		; normal literal
-				and	al,0Fh			; low nibble = count
-				mov	ah,al
-				xor	al,al			; emit zeros
+					lodsb				; String [si] to al
+					mov	ah,al
+					and	ah,0F0h			; high nibble
+					cmp	ah,60h			; '6' prefix = zero-run
+					mov	ah,1
+					jnz	rle_gnd_emit		; normal literal
+					and	al,0Fh			; low nibble = count
+					mov	ah,al
+					xor	al,al			; emit zeros
 
 rle_gnd_emit:
-						stosb
-						inc	bl
-						dec	ah
-						jnz	rle_gnd_emit		; repeat (count)
-				cmp	bl,1Ch			; 28 bytes written?
-				jne	rle_gnd_next_byte
+								stosb
+								inc	bl
+								dec	ah
+								jnz	rle_gnd_emit		; repeat (count)
+					cmp	bl,1Ch			; 28 bytes written?
+					jne	rle_gnd_next_byte
 		retn
 
 rle_decode_ground_28		endp
@@ -574,27 +574,27 @@ ground_ega:
 		mov	cx,8			; 8 plane-selection iterations
 
 ega_gnd_pass_a_loop:
-				mov	al,4			; plane 2
-				out	dx,al
-				call	copy_28b_ega
-				mov	al,2			; plane 1
-				out	dx,al
-				call	copy_28b_ega
-				add	di,50h			; next EGA row (80 bytes)
-				loop	ega_gnd_pass_a_loop
+					mov	al,4			; plane 2
+					out	dx,al
+					call	copy_28b_ega
+					mov	al,2			; plane 1
+					out	dx,al
+					call	copy_28b_ega
+					add	di,50h			; next EGA row (80 bytes)
+					loop	ega_gnd_pass_a_loop
 
 		mov	di,2EECh		; second pass destination
 		mov	cx,8
 
 ega_gnd_pass_b_loop:
-				mov	al,1			; plane 0
-				out	dx,al
-				call	copy_28b_ega
-				mov	al,2			; plane 1
-				out	dx,al
-				call	copy_28b_ega
-				add	di,50h			; next EGA row
-				loop	ega_gnd_pass_b_loop
+					mov	al,1			; plane 0
+					out	dx,al
+					call	copy_28b_ega
+					mov	al,2			; plane 1
+					out	dx,al
+					call	copy_28b_ega
+					add	di,50h			; next EGA row
+					loop	ega_gnd_pass_b_loop
 
 		mov	al,7			; re-enable all planes
 		out	dx,al
@@ -608,12 +608,12 @@ ega_gnd_pass_b_loop:
 		mov	ah,10h			; 16 rows to duplicate
 
 ega_gnd_dup_loop:
-				mov	cx,1Ch
-				rep	movsb			; copy 28 bytes
-				add	di,34h			; next dest row stride
-				add	si,34h			; next src row stride
-				dec	ah
-				jnz	ega_gnd_dup_loop
+					mov	cx,1Ch
+					rep	movsb			; copy 28 bytes
+					add	di,34h			; next dest row stride
+					add	si,34h			; next src row stride
+					dec	ah
+					jnz	ega_gnd_dup_loop
 		mov	dx,3CEh
 		mov	ax,5			; restore GC mode 0
 		out	dx,ax
@@ -645,58 +645,58 @@ ground_cga:
 		mov	cx,10h			; 16 scanlines
 
 cga_gnd_row_loop:
-				push	cx
-				push	di
-				mov	cx,1Ch			; 28 dest bytes per row
+					push	cx
+					push	di
+					mov	cx,1Ch			; 28 dest bytes per row
 
 cga_gnd_col_loop:
-						push	cx
-						mov	ah,[si+1Ch]		; plane B (seg1_ground1_buf)
-						lodsb				; plane A
-						xor	dl,dl			; Zero register
-						mov	cx,4
+								push	cx
+								mov	ah,[si+1Ch]		; plane B (seg1_ground1_buf)
+								lodsb				; plane A
+								xor	dl,dl			; Zero register
+								mov	cx,4
 
 cga_gnd_expand_loop:
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						and	bl,0Fh
-						xor	bh,bh			; Zero register
-						add	dl,dl
-						add	dl,dl
-						or	dl,cs:cga_color_lut_ground[bx]
-						loop	cga_gnd_expand_loop
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								and	bl,0Fh
+								xor	bh,bh			; Zero register
+								add	dl,dl
+								add	dl,dl
+								or	dl,cs:cga_color_lut_ground[bx]
+								loop	cga_gnd_expand_loop
 
-						mov	al,dl
-						stosb				; Store al to es:[di]
-						pop	cx
-						loop	cga_gnd_col_loop
+								mov	al,dl
+								stosb				; Store al to es:[di]
+								pop	cx
+								loop	cga_gnd_col_loop
 
-				push	ds
-				push	si
-				push	es
-				pop	ds
-				mov	si,di
-				sub	si,1Ch
-				mov	cx,0Eh
-				rep	movsw			; duplicate row forward (14 words)
-				pop	si
-				pop	ds
-				add	si,1Ch
-				pop	di
-				add	di,2000h		; next CGA bank
-				cmp	di,ega_wrap_limit
-				jb	cga_gnd_no_wrap
-				add	di,ega_wrap_addend
+					push	ds
+					push	si
+					push	es
+					pop	ds
+					mov	si,di
+					sub	si,1Ch
+					mov	cx,0Eh
+					rep	movsw			; duplicate row forward (14 words)
+					pop	si
+					pop	ds
+					add	si,1Ch
+					pop	di
+					add	di,2000h		; next CGA bank
+					cmp	di,ega_wrap_limit
+					jb	cga_gnd_no_wrap
+					add	di,ega_wrap_addend
 
 cga_gnd_no_wrap:
-				pop	cx
-				loop	cga_gnd_row_loop
+					pop	cx
+					loop	cga_gnd_row_loop
 
 		pop	ds
 		retn
@@ -718,72 +718,72 @@ ground_hgc:
 		mov	cx,16				; scanlines
 
 hgc_gnd_row_loop:
-				push	cx
-				push	di
-				mov	cx,1Ch			; 28 bytes per row
+					push	cx
+					push	di
+					mov	cx,1Ch			; 28 bytes per row
 
 hgc_gnd_col_loop:
-						push	cx
-						mov	ah,[si+1Ch]		; plane B
-						lodsb				; plane A
-						xor	dl,dl			; Zero register
-						mov	cx,4
+								push	cx
+								mov	ah,[si+1Ch]		; plane B
+								lodsb				; plane A
+								xor	dl,dl			; Zero register
+								mov	cx,4
 
 hgc_gnd_expand_loop:
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						add	ah,ah
-						adc	bl,bl
-						add	al,al
-						adc	bl,bl
-						and	bl,0Fh
-						xor	bh,bh			; Zero register
-						add	dl,dl
-						add	dl,dl
-						or	dl,cs:cga_color_lut_ground[bx]
-						loop	hgc_gnd_expand_loop
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								add	ah,ah
+								adc	bl,bl
+								add	al,al
+								adc	bl,bl
+								and	bl,0Fh
+								xor	bh,bh			; Zero register
+								add	dl,dl
+								add	dl,dl
+								or	dl,cs:cga_color_lut_ground[bx]
+								loop	hgc_gnd_expand_loop
 
-						mov	al,dl
-						stosb
-						pop	cx
-						loop	hgc_gnd_col_loop
+								mov	al,dl
+								stosb
+								pop	cx
+								loop	hgc_gnd_col_loop
 
-				push	ds
-				push	si
-				push	es
-				pop	ds
-				mov	si,di
-				sub	si,1Ch
-				mov	cx,0Eh
-				rep	movsw			; duplicate row forward (14 words)
-				pop	si
-				pop	ds
-				add	si,1Ch
-				pop	di
-				add	di,2000h		; next HGC bank
-				cmp	di,cga_wrap_limit	; 0x6000
-				jb	hgc_gnd_no_wrap
-				push	ds
-				push	si
-				push	cx
-				push	di
-				push	es
-				pop	ds
-				mov	si,di
-				sub	si,2000h
-				mov	cx,38h
-				rep	movsb			; wrap-copy 56 bytes
-				pop	di
-				pop	cx
-				pop	si
-				pop	ds
-				add	di,0A05Ah		; HGC wrap addend
+					push	ds
+					push	si
+					push	es
+					pop	ds
+					mov	si,di
+					sub	si,1Ch
+					mov	cx,0Eh
+					rep	movsw			; duplicate row forward (14 words)
+					pop	si
+					pop	ds
+					add	si,1Ch
+					pop	di
+					add	di,2000h		; next HGC bank
+					cmp	di,cga_wrap_limit	; 0x6000
+					jb	hgc_gnd_no_wrap
+					push	ds
+					push	si
+					push	cx
+					push	di
+					push	es
+					pop	ds
+					mov	si,di
+					sub	si,2000h
+					mov	cx,38h
+					rep	movsb			; wrap-copy 56 bytes
+					pop	di
+					pop	cx
+					pop	si
+					pop	ds
+					add	di,0A05Ah		; HGC wrap addend
 
 hgc_gnd_no_wrap:
-				pop	cx
-				loop	hgc_gnd_row_loop
+					pop	cx
+					loop	hgc_gnd_row_loop
 
 		pop	ds
 		retn
@@ -803,88 +803,88 @@ ground_mcga:
 		mov	cx,8			; 8 tile rows
 
 mcga_gnd_a_row_loop:
-				push	cx
-				push	si
-				push	di
-				mov	cx,0Eh			; 14 tiles per row
+					push	cx
+					push	si
+					push	di
+					mov	cx,0Eh			; 14 tiles per row
 
 mcga_gnd_a_tile_loop:
-						push	cx
-						mov	dx,[si]
-						mov	bx,[si+1Ch]
-						xchg	dl,dh
-						xchg	bl,bh
-						mov	cx,8
+								push	cx
+								mov	dx,[si]
+								mov	bx,[si+1Ch]
+								xchg	dl,dh
+								xchg	bl,bh
+								mov	cx,8
 
 mcga_gnd_a_pix_loop:
-						xor	al,al			; Zero register
-						add	dx,dx
-						adc	al,al
-						add	bx,bx
-						adc	al,al
-						add	al,al
-						add	dx,dx
-						adc	al,al
-						add	bx,bx
-						adc	al,al
-						add	al,al
-						stosb
-						loop	mcga_gnd_a_pix_loop
+								xor	al,al			; Zero register
+								add	dx,dx
+								adc	al,al
+								add	bx,bx
+								adc	al,al
+								add	al,al
+								add	dx,dx
+								adc	al,al
+								add	bx,bx
+								adc	al,al
+								add	al,al
+								stosb
+								loop	mcga_gnd_a_pix_loop
 
-						inc	si
-						inc	si
-						pop	cx
-						loop	mcga_gnd_a_tile_loop
+								inc	si
+								inc	si
+								pop	cx
+								loop	mcga_gnd_a_tile_loop
 
-				pop	di
-				add	di,140h			; next MCGA scanline
-				pop	si
-				add	si,38h			; next tile-row source stride
-				pop	cx
-				loop	mcga_gnd_a_row_loop
+					pop	di
+					add	di,140h			; next MCGA scanline
+					pop	si
+					add	si,38h			; next tile-row source stride
+					pop	cx
+					loop	mcga_gnd_a_row_loop
 
 		mov	di,mcga_ground_dst	; 0xBBB0 (second band)
 		mov	cx,8
 
 mcga_gnd_b_row_loop:
-				push	cx
-				push	si
-				push	di
-				mov	cx,0Eh
+					push	cx
+					push	si
+					push	di
+					mov	cx,0Eh
 
 mcga_gnd_b_tile_loop:
-						push	cx
-						mov	bx,[si]
-						mov	dx,[si+1Ch]
-						xchg	dl,dh
-						xchg	bl,bh
-						mov	cx,8
+								push	cx
+								mov	bx,[si]
+								mov	dx,[si+1Ch]
+								xchg	dl,dh
+								xchg	bl,bh
+								mov	cx,8
 
 mcga_gnd_b_pix_loop:
-						xor	al,al
-						add	dx,dx
-						adc	al,al
-						add	bx,bx
-						adc	al,al
-						add	al,al
-						add	dx,dx
-						adc	al,al
-						add	bx,bx
-						adc	al,al
-						stosb
-						loop	mcga_gnd_b_pix_loop
+								xor	al,al
+								add	dx,dx
+								adc	al,al
+								add	bx,bx
+								adc	al,al
+								add	al,al
+								add	dx,dx
+								adc	al,al
+								add	bx,bx
+								adc	al,al
+								stosb
+								loop	mcga_gnd_b_pix_loop
 
-						inc	si
-						inc	si
-						pop	cx
-						loop	mcga_gnd_b_tile_loop
+								inc	si
+								inc	si
+								pop	cx
+								loop	mcga_gnd_b_tile_loop
 
-				pop	di
-				add	di,140h
-				pop	si
-				add	si,38h
-				pop	cx
-				loop	mcga_gnd_b_row_loop
+					pop	di
+					add	di,140h
+					pop	si
+					add	si,38h
+					pop	cx
+					loop	mcga_gnd_b_row_loop
 
 		push	es
 		pop	ds
@@ -893,12 +893,12 @@ mcga_gnd_b_pix_loop:
 		mov	ah,10h			; 16 rows
 
 mcga_gnd_dup_loop:
-				mov	cx,38h			; 56 words per row
-				rep	movsw
-				add	di,0D0h			; next row dst stride
-				add	si,0D0h			; next row src stride
-				dec	ah
-				jnz	mcga_gnd_dup_loop
+					mov	cx,38h			; 56 words per row
+					rep	movsw
+					add	di,0D0h			; next row dst stride
+					add	si,0D0h			; next row src stride
+					dec	ah
+					jnz	mcga_gnd_dup_loop
 		pop	ds
 		retn
 
@@ -917,85 +917,85 @@ ground_cgaalt:
 		mov	cx,8			; 8 scanlines (first band)
 
 cgaalt_gnd_a_row_loop:
-				push	cx
-				push	di
-				mov	cx,1Ch
+					push	cx
+					push	di
+					mov	cx,1Ch
 
 cgaalt_gnd_a_col_loop:
-						push	cx
-						mov	dh,[si+1Ch]
-						mov	dl,[si]
-						inc	si
-						mov	bp,38C7h		; cga_alt_lut_a base
-						call	pixel_expand_cgaalt
-						stosb
-						call	pixel_expand_cgaalt
-						stosb
-						pop	cx
-						loop	cgaalt_gnd_a_col_loop
+								push	cx
+								mov	dh,[si+1Ch]
+								mov	dl,[si]
+								inc	si
+								mov	bp,38C7h		; cga_alt_lut_a base
+								call	pixel_expand_cgaalt
+								stosb
+								call	pixel_expand_cgaalt
+								stosb
+								pop	cx
+								loop	cgaalt_gnd_a_col_loop
 
-				push	ds
-				push	si
-				push	es
-				pop	ds
-				mov	si,di
-				sub	si,38h
-				mov	cx,1Ch
-				rep	movsw			; duplicate row forward (28 words)
-				pop	si
-				pop	ds
-				add	si,1Ch
-				pop	di
-				add	di,2000h
-				cmp	di,8000h
-				jb	cgaalt_gnd_a_no_wrap
-				add	di,80A0h
+					push	ds
+					push	si
+					push	es
+					pop	ds
+					mov	si,di
+					sub	si,38h
+					mov	cx,1Ch
+					rep	movsw			; duplicate row forward (28 words)
+					pop	si
+					pop	ds
+					add	si,1Ch
+					pop	di
+					add	di,2000h
+					cmp	di,8000h
+					jb	cgaalt_gnd_a_no_wrap
+					add	di,80A0h
 
 cgaalt_gnd_a_no_wrap:
-				pop	cx
-				loop	cgaalt_gnd_a_row_loop
+					pop	cx
+					loop	cgaalt_gnd_a_row_loop
 
 		mov	di,5738h		; second band destination
 		mov	cx,8
 
 cgaalt_gnd_b_row_loop:
-				push	cx
-				push	di
-				mov	cx,1Ch
+					push	cx
+					push	di
+					mov	cx,1Ch
 
 cgaalt_gnd_b_col_loop:
-						push	cx
-						mov	dh,[si+1Ch]
-						mov	dl,[si]
-						inc	si
-						mov	bp,38D7h		; cga_alt_lut_b base
-						call	pixel_expand_cgaalt
-						stosb
-						call	pixel_expand_cgaalt
-						stosb
-						pop	cx
-						loop	cgaalt_gnd_b_col_loop
+								push	cx
+								mov	dh,[si+1Ch]
+								mov	dl,[si]
+								inc	si
+								mov	bp,38D7h		; cga_alt_lut_b base
+								call	pixel_expand_cgaalt
+								stosb
+								call	pixel_expand_cgaalt
+								stosb
+								pop	cx
+								loop	cgaalt_gnd_b_col_loop
 
-				push	ds
-				push	si
-				push	es
-				pop	ds
-				mov	si,di
-				sub	si,38h
-				mov	cx,1Ch
-				rep	movsw			; duplicate row forward
-				pop	si
-				pop	ds
-				add	si,1Ch
-				pop	di
-				add	di,2000h
-				cmp	di,8000h
-				jb	cgaalt_gnd_b_no_wrap
-				add	di,80A0h
+					push	ds
+					push	si
+					push	es
+					pop	ds
+					mov	si,di
+					sub	si,38h
+					mov	cx,1Ch
+					rep	movsw			; duplicate row forward
+					pop	si
+					pop	ds
+					add	si,1Ch
+					pop	di
+					add	di,2000h
+					cmp	di,8000h
+					jb	cgaalt_gnd_b_no_wrap
+					add	di,80A0h
 
 cgaalt_gnd_b_no_wrap:
-				pop	cx
-				loop	cgaalt_gnd_b_row_loop
+					pop	cx
+					loop	cgaalt_gnd_b_row_loop
 
 		pop	ds
 		retn
@@ -1005,23 +1005,23 @@ pixel_expand_cgaalt		proc	near
 		mov	cx,2
 
 cgaalt_expand_iter:
-				add	dh,dh
-				adc	bl,bl
-				add	dl,dl
-				adc	bl,bl
-				add	dh,dh
-				adc	bl,bl
-				add	dl,dl
-				adc	bl,bl
-				and	bl,0Fh
-				xor	bh,bh			; Zero register
-				add	al,al
-				add	al,al
-				add	al,al
-				add	al,al
-				add	bx,bp			; add LUT base (byte_38C7 or byte_38D7)
-				or	al,cs:[bx]
-				loop	cgaalt_expand_iter
+					add	dh,dh
+					adc	bl,bl
+					add	dl,dl
+					adc	bl,bl
+					add	dh,dh
+					adc	bl,bl
+					add	dl,dl
+					adc	bl,bl
+					and	bl,0Fh
+					xor	bh,bh			; Zero register
+					add	al,al
+					add	al,al
+					add	al,al
+					add	al,al
+					add	bx,bp			; add LUT base (byte_38C7 or byte_38D7)
+					or	al,cs:[bx]
+					loop	cgaalt_expand_iter
 
 		retn
 
@@ -1802,8 +1802,8 @@ mountains1:
 ; TASM's alt-encoded forms so we keep them here for bit-preservation.
 
 loc_53:
-				or	ch,ss:data_19e[bp+si]	; real bytes are ground bitmap
-				ja	loc_53
+					or	ch,ss:data_19e[bp+si]	; real bytes are ground bitmap
+					ja	loc_53
 		test	al,0AAh
 		stosw				; Store ax to es:[di]
 		add	ah,bh			; TASM alt-encodes to 02 E7

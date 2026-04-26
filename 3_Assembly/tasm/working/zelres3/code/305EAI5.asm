@@ -70,6 +70,7 @@ start:
 ;  (DS-relative). Entries are 2-byte LE pointers into the MEDA sprite
 ;  atlas (0xA0xx-0xA2xx). Zero entries are sentinels for unused slots.
 ; -------------------------------------------------------------------------
+
 meda_frame_ptr_tbl_a:
 		db	0B0h,0A0h, 37h,0A1h,0BEh,0A1h	; ptrs 0xA0B0,0xA137,0xA1BE
 		db	0F5h,0A1h, 40h,0A2h, 00h, 00h	; ptrs 0xA1F5,0xA240 + sentinel
@@ -82,6 +83,7 @@ meda_frame_ptr_tbl_a:
 ; sequences are LE pointers, not opcodes).  Bytes are preserved
 ; bit-perfect via mixed code/db emission.
 ; ----------------------------------------------------------------
+
 init_inline_1:
 		scasw				; was AF A1   -- ptr 0xA1AF (frag)
 		mov	ax,ds:meda_tbl_a	; was A1 E6 A1 -- ptr 0xA1E6 (frag)
@@ -95,6 +97,7 @@ init_inline_1:
 ;  real bytes form pointers 0xA286, 0xA29A, 0xA2E5 + sentinels + a tail
 ;  pointer table (0xA317, 0xA31C, 0xA312, 0xA2AE).
 ; -------------------------------------------------------------------------
+
 init_retn_marker:
 		retn	86A2h			; was C2 A2 86 A2 -- ptrs 0xA2C2, 0xA286
 		mov	ds:meda_tbl_c,al	; was 9A A2     -- ptr 0xA29A (frag)
@@ -112,6 +115,7 @@ init_retn_marker:
 ;  0xA231, 0xA268.  Trailing meda_collide_marker / meda_anim_state_ref
 ;  are inline scalars used by sub01/sub02 collision tests.
 ; -------------------------------------------------------------------------
+
 meda_frame_ptr_tbl_b:
 		db	0ECh,0A0h, 73h,0A1h,0BEh,0A1h	; ptrs 0xA0EC,0xA173,0xA1BE
 		db	 13h,0A2h, 40h,0A2h, 00h, 00h	; ptrs 0xA213,0xA240 + sentinel
@@ -126,6 +130,7 @@ meda_anim_state_ref		db	0	; offset 0x98: anim-state ref scalar
 ;  meda_frame_ptr_tbl_c -- attack/projectile pointer table (12 entries).
 ;  Pointers into MEDA atlas at 0xA2EA..0xA3AE plus tail 0xA317/A31C/A312.
 ; -------------------------------------------------------------------------
+
 meda_frame_ptr_tbl_c:
 		db	 00h,0EAh,0A2h,0FEh,0A2h, 77h	; pad + ptrs 0xA2EA,0xA2FE + frag
 		db	0A2h,0C2h,0A2h, 86h,0A2h, 9Ah	; ptrs 0xA277,0xA2C2,0xA286 + frag
@@ -140,6 +145,7 @@ meda_frame_ptr_tbl_c:
 ;  Sourcer rendered a few rows as ASCII for tile values 0x5D..0x7E but
 ;  these are tile indices, not text.
 ; -------------------------------------------------------------------------
+
 meda_anim_table_a:
 		db	 01h, 8Fh, 90h, 79h, 7Ah, 01h	; row 0: tiles 8F 90 79 7A + sep
 		db	 7Fh, 80h, 81h, 82h, 01h, 87h	; row 1 + row 2 head
@@ -171,6 +177,7 @@ meda_rng_fn_ptr		dw	0B1CFh			; offset 0x11A: RNG fn ptr (CF B1)
 ;  structure (5-byte rows, 01h separator, 4 tile indices).  Indexes
 ;  symmetric pose set to anim_table_a (e.g. 7B 7C 7D 7E mirrors 8F 90 79 7A).
 ; -------------------------------------------------------------------------
+
 meda_anim_table_b:
 		db	 01h, 83h, 84h, 85h, 86h, 01h	; row 0 + sep
 		db	 7Bh, 7Ch, 7Dh, 7Eh, 01h, 8Bh	; row 1 + row 2 head
@@ -191,18 +198,18 @@ meda_anim_idx_b		db	0B6h		; Data table (indexed access) -- row 14 tail
 		db	0C3h,0BCh,0C5h,0C6h, 01h,0BBh	; row 16 + row 17 head
 
 init_inline_loop:
-			mov	sp,0BEBDh
-			add	ss:battle_ref_b[bp+di],si
-			mov	dh,1
-			mov	bl,0B4h
-			mov	ch,0B6h
-			add	ss:battle_ref_b[bp+di],si
-			mov	dh,1
-			mov	bl,0B4h
-			mov	ch,0B6h
-			add	ss:battle_ref_b[bp+di],si
-			mov	dh,1
-			loopnz	init_inline_loop		; Loop if zf=0, cx>0
+				mov	sp,0BEBDh
+				add	ss:battle_ref_b[bp+di],si
+				mov	dh,1
+				mov	bl,0B4h
+				mov	ch,0B6h
+				add	ss:battle_ref_b[bp+di],si
+				mov	dh,1
+				mov	bl,0B4h
+				mov	ch,0B6h
+				add	ss:battle_ref_b[bp+di],si
+				mov	dh,1
+				loopnz	init_inline_loop		; Loop if zf=0, cx>0
 
 ;*		loop	locloop_4		;*Loop if cx > 0
 
@@ -224,6 +231,7 @@ init_inline_loop:
 ;  Rows of 4 tile indices (atlas tiles 0x0D..0x76) for animation phase
 ;  sequences.  Mis-decoded as code by Sourcer; raw db form preserved.
 ; -------------------------------------------------------------------------
+
 meda_anim_table_c:
 		or	ax,0F0Eh		; was 0D 0E 0F 10 -- tiles row 0
 		adc	[bx+si],al		; was 00 11        -- sep + tile row 1 head
@@ -256,6 +264,7 @@ meda_anim_table_c:
 ;  emitted them as strings, but they are sprite-tile indices.
 ;  Each row = 4 tile indices + 00h separator.
 ; -------------------------------------------------------------------------
+
 meda_anim_table_d:
 		and	ax,0			; was 28 29 -- tile row 11 tail (continues from above)
 		db	27h, '()*', 0			; row 12: tiles 27 28 29 2A
@@ -290,6 +299,7 @@ meda_anim_table_d:
 ;  Continues with phase-attack pose indices and projectile sprite
 ;  references (tiles 0xA0..0xFB span the projectile/effect range).
 ; -------------------------------------------------------------------------
+
 meda_anim_table_e:
 		db	 26h, 01h, 67h, 68h, 6Fh, 70h	; row 38 tail + row 39 head
 		db	 01h, 71h, 72h,0A0h,0C0h, 00h	; sep + row 40 + sep
@@ -309,6 +319,7 @@ meda_anim_table_e:
 ;  7 duplicate rows of {D0, D8, D9, DC} = idle/hover pose; final row
 ;  switches to {DD, DE, DF, EC} = attack-spawn pose.
 ; -------------------------------------------------------------------------
+
 meda_phase_pose_tbl:
 		db	0D0h,0D8h,0D9h,0DCh, 00h,0D0h	; row 0 + row 1 head
 		db	0D8h,0D9h,0DCh, 00h,0D0h,0D8h	; row 1 tail + row 2 head
@@ -322,6 +333,7 @@ meda_phase_pose_tbl:
 ;  4-byte rows with tile values 0xF1..0xFB (effect sprite range).
 ;  Last two rows use sep=02h (attack-emission marker).
 ; -------------------------------------------------------------------------
+
 meda_proj_pose_tbl:
 		db	0DEh,0DFh,0ECh, 00h,0F1h,0F1h	; row 7 tail + row 8 head
 		db	0F1h,0F1h, 00h,0F1h,0F1h,0F3h	; row 8 tail + row 9 head
@@ -339,6 +351,7 @@ meda_proj_pose_tbl:
 ;  Indexed by ([si+4]&0xF)*2.  Targets sub-state handlers:
 ;    0xA32B (idx?), 0xA32B (dup), 0xA32F, 0xA333, 0xA333 (dup).
 ; -------------------------------------------------------------------------
+
 meda_dispatch_jmp_tbl:
 		db	 2Bh,0A3h, 2Fh,0A3h, 33h,0A3h	; ptrs 0xA32B,0xA32F,0xA333
 		db	 33h,0A3h			; ptr 0xA333 (dup)
@@ -348,6 +361,7 @@ meda_dispatch_jmp_tbl:
 ;  (5 frames per pose nominal, 4 for some, 0 for unused tail slots).
 ;  Read in parallel with meda_phase_pose_tbl during animation tick.
 ; -------------------------------------------------------------------------
+
 meda_phase_count_tbl:
 		db	 0Bh, 05h, 05h, 05h		; counts row 0: 0B, 05, 05, 05
 		db	 05h, 04h, 05h, 04h, 05h, 00h	; counts row 1: 05, 04, 05, 04, 05, 00
@@ -413,41 +427,41 @@ sub01_state0_path:
 		jmp	sub01_finalize
 
 sub01_phase_inc:
-				inc	byte ptr [si+6]
-				and	byte ptr [si+6],7
-				test	byte ptr [si+6],3
-				jz	sub01_check_x_lo			; Jump if zero
-				jmp	sub01_finalize
+						inc	byte ptr [si+6]
+						and	byte ptr [si+6],7
+						test	byte ptr [si+6],3
+						jz	sub01_check_x_lo			; Jump if zero
+						jmp	sub01_finalize
 
 sub01_check_x_lo:
-				mov	al,10h
-				cmp	al,[si+3]
-				jb	sub01_check_x_hi			; Jump if below
-				call	phase_step_fwd
-				jnc	sub01_face_west			; Jump if carry=0
-				jmp	sub01_finalize
+						mov	al,10h
+						cmp	al,[si+3]
+						jb	sub01_check_x_hi			; Jump if below
+						call	phase_step_fwd
+						jnc	sub01_face_west			; Jump if carry=0
+						jmp	sub01_finalize
 
 sub01_face_west:
-				or	byte ptr [si+5],80h
-				jmp	sub01_finalize
+						or	byte ptr [si+5],80h
+						jmp	sub01_finalize
 
 sub01_check_x_hi:
-				call	phase_step_back
-				jnc	sub01_face_east			; Jump if carry=0
-				jmp	sub01_finalize
+						call	phase_step_back
+						jnc	sub01_face_east			; Jump if carry=0
+						jmp	sub01_finalize
 
 sub01_face_east:
-				and	byte ptr [si+5],7Fh
-				jmp	sub01_finalize
+						and	byte ptr [si+5],7Fh
+						jmp	sub01_finalize
 
 sub01_state0_alt:
-				call	word ptr cs:meda_rng_fn_ptr
-				and	al,0C0h
+						call	word ptr cs:meda_rng_fn_ptr
+						and	al,0C0h
+						jnz	sub01_phase_inc			; Jump if not zero
+				mov	al,[si+6]
+				not	al
+				and	al,3
 				jnz	sub01_phase_inc			; Jump if not zero
-			mov	al,[si+6]
-			not	al
-			and	al,3
-			jnz	sub01_phase_inc			; Jump if not zero
 		or	byte ptr [si+9],1
 		mov	byte ptr [si+6],8
 		jmp	short sub01_finalize
@@ -490,6 +504,7 @@ sub01_xlat_call:
 ;  (sentinel, sentinel, range_byte, _, vel_byte, _, dist_byte, ...).
 ;  Row 0 is east-facing, row 1 (with vel=04h) is west-facing.
 ; -------------------------------------------------------------------------
+
 meda_attack_param_tbl:
 		db	 00h, 00h,0B1h, 00h, 14h, 00h	; row 0: sentinels + 0xB1 + vel=14h
 		db	 28h, 00h			; row 0 tail: 0x28 + sep
@@ -556,18 +571,18 @@ collide_check_fwd		proc	near
 		mov	cx,4
 
 collide_fwd_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_fwd_iter			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_fwd_iter			; Jump if zero
+				retn
 
 collide_fwd_iter:
-			xchg	si,di
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			xchg	si,di
-			loop	collide_fwd_loop		; Loop if cx > 0
+				xchg	si,di
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				xchg	si,di
+				loop	collide_fwd_loop		; Loop if cx > 0
 
 		xchg	si,di
 		sub	si,24h
@@ -626,18 +641,18 @@ collide_check_back		proc	near
 		mov	cx,4
 
 collide_back_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	collide_back_iter			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	collide_back_iter			; Jump if zero
+				retn
 
 collide_back_iter:
-			xchg	si,di
-			add	si,24h
-			call	word ptr cs:fight_cb_mark_adj
-			xchg	si,di
-			loop	collide_back_loop		; Loop if cx > 0
+				xchg	si,di
+				add	si,24h
+				call	word ptr cs:fight_cb_mark_adj
+				xchg	si,di
+				loop	collide_back_loop		; Loop if cx > 0
 
 		dec	di
 		xchg	si,di
@@ -699,15 +714,15 @@ sub01_collide_inner		proc	near
 		mov	cx,2
 
 sub01_collide_loop:
-			mov	al,[di]
-			call	word ptr cs:fight_cb_cmp_tile
-			stc				; Set carry flag
-			jz	sub01_collide_step			; Jump if zero
-			retn
+				mov	al,[di]
+				call	word ptr cs:fight_cb_cmp_tile
+				stc				; Set carry flag
+				jz	sub01_collide_step			; Jump if zero
+				retn
 
 sub01_collide_step:
-			inc	di
-			loop	sub01_collide_loop		; Loop if cx > 0
+				inc	di
+				loop	sub01_collide_loop		; Loop if cx > 0
 
 		dec	di
 		mov	al,[di]
@@ -836,25 +851,25 @@ sub02_decr_loop:
 		mov	cx,3
 
 sub02_east_scan:
-			lodsb				; String [si] to al
-			call	word ptr cs:fight_cb_cmp_tile
-			xchg	bx,si
-			jz	sub02_east_scan_2			; Jump if zero
-			jmp	sub02_finalize
+				lodsb				; String [si] to al
+				call	word ptr cs:fight_cb_cmp_tile
+				xchg	bx,si
+				jz	sub02_east_scan_2			; Jump if zero
+				jmp	sub02_finalize
 
 sub02_east_scan_2:
-			xchg	bx,si
-			lodsb				; String [si] to al
-			call	word ptr cs:fight_cb_cmp_tile
-			xchg	bx,si
-			jz	sub02_east_scan_3			; Jump if zero
-			jmp	sub02_finalize
+				xchg	bx,si
+				lodsb				; String [si] to al
+				call	word ptr cs:fight_cb_cmp_tile
+				xchg	bx,si
+				jz	sub02_east_scan_3			; Jump if zero
+				jmp	sub02_finalize
 
 sub02_east_scan_3:
-			xchg	bx,si
-			add	si,22h
-			call	word ptr cs:fight_cb_mark_adj
-			loop	sub02_east_scan		; Loop if cx > 0
+				xchg	bx,si
+				add	si,22h
+				call	word ptr cs:fight_cb_mark_adj
+				loop	sub02_east_scan		; Loop if cx > 0
 
 		sub	si,48h
 		call	word ptr cs:fight_cb_tile_index
@@ -903,19 +918,19 @@ sub02_west_iter:
 		mov	cx,3
 
 sub02_west_scan:
-			lodsb				; String [si] to al
-			call	word ptr cs:fight_cb_cmp_tile
-			xchg	bx,si
-			jnz	sub02_finalize			; Jump if not zero
-			xchg	bx,si
-			lodsb				; String [si] to al
-			call	word ptr cs:fight_cb_cmp_tile
-			xchg	bx,si
-			jnz	sub02_finalize			; Jump if not zero
-			xchg	bx,si
-			add	si,22h
-			call	word ptr cs:fight_cb_mark_adj
-			loop	sub02_west_scan		; Loop if cx > 0
+				lodsb				; String [si] to al
+				call	word ptr cs:fight_cb_cmp_tile
+				xchg	bx,si
+				jnz	sub02_finalize			; Jump if not zero
+				xchg	bx,si
+				lodsb				; String [si] to al
+				call	word ptr cs:fight_cb_cmp_tile
+				xchg	bx,si
+				jnz	sub02_finalize			; Jump if not zero
+				xchg	bx,si
+				add	si,22h
+				call	word ptr cs:fight_cb_mark_adj
+				loop	sub02_west_scan		; Loop if cx > 0
 
 		sub	si,47h
 		call	word ptr cs:fight_cb_tile_index
@@ -1135,29 +1150,29 @@ sub03_check_carry:
 		retn
 
 sub03_dir_test:
-			test	byte ptr [si+5],80h
-			jnz	sub03_dir_east			; Jump if not zero
-			call	word ptr cs:fight_cb_step_pos
-			jc	sub03_dir_west			; Jump if carry Set
-			retn
+				test	byte ptr [si+5],80h
+				jnz	sub03_dir_east			; Jump if not zero
+				call	word ptr cs:fight_cb_step_pos
+				jc	sub03_dir_west			; Jump if carry Set
+				retn
 
 sub03_dir_west:
-			mov	byte ptr [si+9],2
-			retn
+				mov	byte ptr [si+9],2
+				retn
 
 sub03_dir_east:
-			call	word ptr cs:fight_cb_step_neg
-			jc	sub03_set_state2			; Jump if carry Set
-			retn
+				call	word ptr cs:fight_cb_step_neg
+				jc	sub03_set_state2			; Jump if carry Set
+				retn
 
 sub03_set_state2:
-			mov	byte ptr [si+9],2
-			retn
+				mov	byte ptr [si+9],2
+				retn
 
 sub03_alt_branch:
-			inc	byte ptr [si+0Ah]
-			cmp	byte ptr [si+0Ah],5
-			jb	sub03_dir_test			; Jump if below
+				inc	byte ptr [si+0Ah]
+				cmp	byte ptr [si+0Ah],5
+				jb	sub03_dir_test			; Jump if below
 		mov	byte ptr [si+6],5
 		test	byte ptr [si+5],80h
 		jnz	sub03_alt_set2_b			; Jump if not zero

@@ -41,7 +41,6 @@ include  zr2com.inc
 ; restored after factoring (consensus value, but not all files agree):
 dispatch_tbl             equ     3170h
 
-
 ; External data references (outside this module's CS segment).
 
 ; --- Game-segment data pointers (in game_seg via DS) ---
@@ -140,7 +139,8 @@ start:
 		mov	cx,80h
 		rep	stosw				; zero sprite_cache_tbl (0x80 words)
 ; [0x003C] drv_init_stub: label is at instruction start, so full mnemonic is valid.
-; The opcode byte (FEh) is a patch target — callers may overwrite it to skip or alter init.
+; The opcode byte (FEh) is a patch target ?-- callers may overwrite it to skip or alter init.
+
 drv_init_stub:
 		inc	byte ptr ds:[anim_phase]	; FE 06 78 50  (opcode byte patched by caller)
 		mov	word ptr ds:[vga_row_ptr],046Ch
@@ -156,42 +156,43 @@ ega_row_ofs	db	65h,16h			; displacement (patch target); initially calls 16B5h
 		test	byte ptr [si],80h
 		jz	init_scan_next			; skip if slot empty
 		call	sprite_slot_remove
+
 init_scan_next:
 		inc	si
 		mov	cx,6
 
 sprite_scan_loop:
-							push	cx
-							test	byte ptr [si],80h
-							jz	loc_2			; Jump if zero
-							call	sprite_slot_init
+								push	cx
+								test	byte ptr [si],80h
+								jz	loc_2			; Jump if zero
+								call	sprite_slot_init
 
 loc_2:
-							inc	si
-							inc	bx
-							test	byte ptr [si],80h
-							jz	loc_3			; Jump if zero
-							call	sprite_slot_init
+								inc	si
+								inc	bx
+								test	byte ptr [si],80h
+								jz	loc_3			; Jump if zero
+								call	sprite_slot_init
 
 loc_3:
-							inc	si
-							inc	bx
-							test	byte ptr [si],80h
-							jz	loc_4			; Jump if zero
-							call	sprite_slot_init
+								inc	si
+								inc	bx
+								test	byte ptr [si],80h
+								jz	loc_4			; Jump if zero
+								call	sprite_slot_init
 
 loc_4:
-							inc	si
-							inc	bx
-							test	byte ptr [si],80h
-							jz	loc_5			; Jump if zero
-							call	sprite_slot_init
+								inc	si
+								inc	bx
+								test	byte ptr [si],80h
+								jz	loc_5			; Jump if zero
+								call	sprite_slot_init
 
 loc_5:
-							inc	si
-							inc	bx
-							pop	cx
-							loop	sprite_scan_loop	; Loop if cx > 0
+								inc	si
+								inc	bx
+								pop	cx
+								loop	sprite_scan_loop	; Loop if cx > 0
 
 		test	byte ptr [si],80h
 		jz	loc_6			; Jump if zero
@@ -223,81 +224,81 @@ row_scan_done:
 		mov	byte ptr ds:row_counter,12h
 
 row_render_loop:
-							call	frame_row_driver
-							xor	bx,bx			; Zero register
-							add	si,3
-							lodsb				; String [si] to al
-							or	al,al			; Zero ?
-							jns	loc_11			; Jump if not sign
-							call	sprite_wide_row_render
+								call	frame_row_driver
+								xor	bx,bx			; Zero register
+								add	si,3
+								lodsb				; String [si] to al
+								or	al,al			; Zero ?
+								jns	loc_11			; Jump if not sign
+								call	sprite_wide_row_render
 
 loc_11:
-							mov	cx,6
+								mov	cx,6
 
 col_scan_loop:
-												push	cx
-												cmpsb				; Cmp [si] to es:[di]
-												jz	loc_13			; Jump if zero
-												call	sprite_state_update
+														push	cx
+														cmpsb				; Cmp [si] to es:[di]
+														jz	loc_13			; Jump if zero
+														call	sprite_state_update
 
 loc_13:
-												inc	bx
-												cmpsb				; Cmp [si] to es:[di]
-												jz	loc_14			; Jump if zero
-												call	sprite_state_update
+														inc	bx
+														cmpsb				; Cmp [si] to es:[di]
+														jz	loc_14			; Jump if zero
+														call	sprite_state_update
 
 loc_14:
-												inc	bx
-												cmpsb				; Cmp [si] to es:[di]
-												jz	loc_15			; Jump if zero
-												call	sprite_state_update
+														inc	bx
+														cmpsb				; Cmp [si] to es:[di]
+														jz	loc_15			; Jump if zero
+														call	sprite_state_update
 
 loc_15:
-												inc	bx
-												cmpsb				; Cmp [si] to es:[di]
-												jz	loc_16			; Jump if zero
-												call	sprite_state_update
+														inc	bx
+														cmpsb				; Cmp [si] to es:[di]
+														jz	loc_16			; Jump if zero
+														call	sprite_state_update
 
 loc_16:
-												inc	bx
-												pop	cx
-												loop	col_scan_loop		; Loop if cx > 0
+														inc	bx
+														pop	cx
+														loop	col_scan_loop		; Loop if cx > 0
 
-							cmpsb				; Cmp [si] to es:[di]
-							jz	loc_17			; Jump if zero
-							call	sprite_state_update
+								cmpsb				; Cmp [si] to es:[di]
+								jz	loc_17			; Jump if zero
+								call	sprite_state_update
 
 loc_17:
-							inc	bx
-							cmpsb				; Cmp [si] to es:[di]
-							jz	loc_18			; Jump if zero
-							call	sprite_state_update
+								inc	bx
+								cmpsb				; Cmp [si] to es:[di]
+								jz	loc_18			; Jump if zero
+								call	sprite_state_update
 
 loc_18:
-							inc	bx
-							cmpsb				; Cmp [si] to es:[di]
-							jz	loc_19			; Jump if zero
-							call	sprite_state_update
+								inc	bx
+								cmpsb				; Cmp [si] to es:[di]
+								jz	loc_19			; Jump if zero
+								call	sprite_state_update
 
 loc_19:
-							inc	bx
-							lodsb				; String [si] to al
-							inc	di
-							or	al,al			; Zero ?
-							jns	loc_20			; Jump if not sign
-							jmp	player_offscreen
+								inc	bx
+								lodsb				; String [si] to al
+								inc	di
+								or	al,al			; Zero ?
+								jns	loc_20			; Jump if not sign
+								jmp	player_offscreen
 
 loc_20:
-							cmp	al,es:[di-1]
-							je	row_advance		; Jump if equal
-							call	sprite_state_update
+								cmp	al,es:[di-1]
+								je	row_advance		; Jump if equal
+								call	sprite_state_update
 
 row_advance:
-							add	si,4
-							call	si_wrap_hi
-							add	word ptr ds:vga_row_ptr,ega_2row_stride
-							dec	byte ptr ds:row_counter
-							jnz	row_render_loop		; Jump if not zero
+								add	si,4
+								call	si_wrap_hi
+								add	word ptr ds:vga_row_ptr,ega_2row_stride
+								dec	byte ptr ds:row_counter
+								jnz	row_render_loop		; Jump if not zero
 		retn
 
 gfega_main	endp
@@ -353,7 +354,7 @@ anim_cycle_2frame_1B:
 		js	loc_29+1		; Overlapping-instruction trick: jumps to byte 1 of the 4-byte MOV at loc_29.
 					; CPU reads: 45h=inc bp / FF FEh=dec si / 3C 04h=cmp al,4 (shared path).
 					; JB path (loc_29+0): mov byte ptr [di-1],0FEh then cmp al,4.
-					; JS path (loc_29+1): inc bp / dec si / cmp al,4 — deliberate code-density trick.
+					; JS path (loc_29+1): inc bp / dec si / cmp al,4 ?-- deliberate code-density trick.
 		cbw				; Convrt byte to word
 		db	 31h,0CEh		; xor si, cx  (alt encoding: 31/CE = XOR r/m16,r16; TASM uses 33/C6)
 		xor	[si+32h],cx
@@ -386,7 +387,7 @@ anim_cycle_6frame_1D:
 		jb	loc_29			; Jump if below
 		retn
 
-loc_29:				; Entry +0: JB path — marks sprite slot active, then checks frame phase.
+loc_29:				; Entry +0: JB path ?-- marks sprite slot active, then checks frame phase.
 		mov	byte ptr [di-1],0FEh	; +0: slot marker (JS path enters at +1: inc bp / dec si)
 		cmp	al,4
 		jae	loc_32			; Jump if above or =
@@ -546,33 +547,33 @@ loc_41:
 		mov	cx,4
 
 plane_1_2_4_loop:
-							mov	al,1
-							out	dx,al			; port 3C5h, EGA sequencr func
-							movsw				; Mov [si] to es:[di]
-							mov	al,2
-							out	dx,al			; port 3C5h, EGA sequencr func
-							lodsw				; String [si] to ax
-							mov	es:[di-2],ax
-							dec	di
-							dec	di
-							mov	al,4
-							out	dx,al			; port 3C5h, EGA sequencr func
-							movsw				; Mov [si] to es:[di]
-							add	di,bx
-							mov	al,1
-							out	dx,al			; port 3C5h, EGA sequencr func
-							movsw				; Mov [si] to es:[di]
-							mov	al,2
-							out	dx,al			; port 3C5h, EGA sequencr func
-							lodsw				; String [si] to ax
-							mov	es:[di-2],ax
-							dec	di
-							dec	di
-							mov	al,4
-							out	dx,al			; port 3C5h, EGA sequencr func
-							movsw				; Mov [si] to es:[di]
-							add	di,bx
-							loop	plane_1_2_4_loop		; Loop if cx > 0
+								mov	al,1
+								out	dx,al			; port 3C5h, EGA sequencr func
+								movsw				; Mov [si] to es:[di]
+								mov	al,2
+								out	dx,al			; port 3C5h, EGA sequencr func
+								lodsw				; String [si] to ax
+								mov	es:[di-2],ax
+								dec	di
+								dec	di
+								mov	al,4
+								out	dx,al			; port 3C5h, EGA sequencr func
+								movsw				; Mov [si] to es:[di]
+								add	di,bx
+								mov	al,1
+								out	dx,al			; port 3C5h, EGA sequencr func
+								movsw				; Mov [si] to es:[di]
+								mov	al,2
+								out	dx,al			; port 3C5h, EGA sequencr func
+								lodsw				; String [si] to ax
+								mov	es:[di-2],ax
+								dec	di
+								dec	di
+								mov	al,4
+								out	dx,al			; port 3C5h, EGA sequencr func
+								movsw				; Mov [si] to es:[di]
+								add	di,bx
+								loop	plane_1_2_4_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	si
@@ -1071,65 +1072,65 @@ ega_sprite_render_blended:
 		mov	cx,8
 
 blend_row_loop:
-							push	cx
-							lodsw				; String [si] to ax
-							xchg	al,ah
-							mov	bx,ax
-							lodsw				; String [si] to ax
-							xchg	al,ah
-							mov	cx,ax
-							mov	ax,3
-							out	dx,ax			; port 3CEh, EGA graphic index
-											;  al = 3, data rotate
-							mov	al,8
-							out	dx,al			; port 3CEh, EGA graphic index
-											;  al = 8, data bit mask
-							inc	dx
-							mov	ax,bx
-							or	ax,cx
-							mov	bp,ax
-							shl	bp,1			; Shift w/zeros fill
-							or	ax,bp
-							shr	bp,1			; Shift w/zeros fill
-							shr	bp,1			; Shift w/zeros fill
-							or	ax,bp
-							xchg	al,ah
-							out	dx,al			; port 3CFh, EGA graphic func
-							xor	al,al			; Zero register
-							xchg	es:[di],al
-							mov	al,ah
-							out	dx,al			; port 3CFh, EGA graphic func
-							xor	al,al			; Zero register
-							xchg	es:[di+1],al
-							dec	dx
-							mov	ax,1003h
-							out	dx,ax			; port 3CEh, EGA graphic index
-											;  al = 3, data rotate
-							mov	al,8
-							out	dx,al			; port 3CEh, EGA graphic index
-											;  al = 8, data bit mask
-							inc	dx
-							mov	al,bh
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,cs:cur_color_pair
-							xchg	es:[di],al
-							mov	al,bl
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,cs:cur_color_pair
-							xchg	es:[di+1],al
-							mov	al,ch
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,byte ptr cs:cur_color_pair+1
-							xchg	es:[di],al
-							mov	al,cl
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,byte ptr cs:cur_color_pair+1
-							xchg	es:[di+1],al
-							dec	dx
-							inc	di
-							inc	di
-							pop	cx
-							loop	blend_row_loop		; Loop if cx > 0
+								push	cx
+								lodsw				; String [si] to ax
+								xchg	al,ah
+								mov	bx,ax
+								lodsw				; String [si] to ax
+								xchg	al,ah
+								mov	cx,ax
+								mov	ax,3
+								out	dx,ax			; port 3CEh, EGA graphic index
+												;  al = 3, data rotate
+								mov	al,8
+								out	dx,al			; port 3CEh, EGA graphic index
+												;  al = 8, data bit mask
+								inc	dx
+								mov	ax,bx
+								or	ax,cx
+								mov	bp,ax
+								shl	bp,1			; Shift w/zeros fill
+								or	ax,bp
+								shr	bp,1			; Shift w/zeros fill
+								shr	bp,1			; Shift w/zeros fill
+								or	ax,bp
+								xchg	al,ah
+								out	dx,al			; port 3CFh, EGA graphic func
+								xor	al,al			; Zero register
+								xchg	es:[di],al
+								mov	al,ah
+								out	dx,al			; port 3CFh, EGA graphic func
+								xor	al,al			; Zero register
+								xchg	es:[di+1],al
+								dec	dx
+								mov	ax,1003h
+								out	dx,ax			; port 3CEh, EGA graphic index
+												;  al = 3, data rotate
+								mov	al,8
+								out	dx,al			; port 3CEh, EGA graphic index
+												;  al = 8, data bit mask
+								inc	dx
+								mov	al,bh
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,cs:cur_color_pair
+								xchg	es:[di],al
+								mov	al,bl
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,cs:cur_color_pair
+								xchg	es:[di+1],al
+								mov	al,ch
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,byte ptr cs:cur_color_pair+1
+								xchg	es:[di],al
+								mov	al,cl
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,byte ptr cs:cur_color_pair+1
+								xchg	es:[di+1],al
+								dec	dx
+								inc	di
+								inc	di
+								pop	cx
+								loop	blend_row_loop		; Loop if cx > 0
 
 		mov	ax,3
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -1156,43 +1157,43 @@ ega_sprite_render_solid		proc	near
 		mov	cx,8
 
 solid_row_loop:
-							mov	ax,3
-							out	dx,ax			; port 3CEh, EGA graphic index
-											;  al = 3, data rotate
-							mov	ax,0FF08h
-							out	dx,ax			; port 3CEh, EGA graphic index
-											;  al = 8, data bit mask
-							xor	al,al			; Zero register
-							xchg	es:[di],al
-							xor	al,al			; Zero register
-							xchg	es:[di+1],al
-							mov	ax,1003h
-							out	dx,ax			; port 3CEh, EGA graphic index
-											;  al = 3, data rotate
-							mov	al,8
-							out	dx,al			; port 3CEh, EGA graphic index
-											;  al = 8, data bit mask
-							inc	dx
-							lodsw				; String [si] to ax
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,cs:cur_color_pair
-							xchg	es:[di],al
-							mov	al,ah
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,cs:cur_color_pair
-							xchg	es:[di+1],al
-							lodsw				; String [si] to ax
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,byte ptr cs:cur_color_pair+1
-							xchg	es:[di],al
-							mov	al,ah
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,byte ptr cs:cur_color_pair+1
-							xchg	es:[di+1],al
-							dec	dx
-							inc	di
-							inc	di
-							loop	solid_row_loop		; Loop if cx > 0
+								mov	ax,3
+								out	dx,ax			; port 3CEh, EGA graphic index
+												;  al = 3, data rotate
+								mov	ax,0FF08h
+								out	dx,ax			; port 3CEh, EGA graphic index
+												;  al = 8, data bit mask
+								xor	al,al			; Zero register
+								xchg	es:[di],al
+								xor	al,al			; Zero register
+								xchg	es:[di+1],al
+								mov	ax,1003h
+								out	dx,ax			; port 3CEh, EGA graphic index
+												;  al = 3, data rotate
+								mov	al,8
+								out	dx,al			; port 3CEh, EGA graphic index
+												;  al = 8, data bit mask
+								inc	dx
+								lodsw				; String [si] to ax
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,cs:cur_color_pair
+								xchg	es:[di],al
+								mov	al,ah
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,cs:cur_color_pair
+								xchg	es:[di+1],al
+								lodsw				; String [si] to ax
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,byte ptr cs:cur_color_pair+1
+								xchg	es:[di],al
+								mov	al,ah
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,byte ptr cs:cur_color_pair+1
+								xchg	es:[di+1],al
+								dec	dx
+								inc	di
+								inc	di
+								loop	solid_row_loop		; Loop if cx > 0
 
 		mov	ax,3
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -1255,19 +1256,19 @@ ega_3plane_copy		proc	near
 		mov	cx,8
 
 plane_copy_loop:
-							mov	al,1
-							out	dx,al			; port 3C5h, EGA sequencr func
-							movsw				; Mov [si] to es:[di]
-							mov	al,2
-							out	dx,al			; port 3C5h, EGA sequencr func
-							lodsw				; String [si] to ax
-							mov	es:[di-2],ax
-							dec	di
-							dec	di
-							mov	al,4
-							out	dx,al			; port 3C5h, EGA sequencr func
-							movsw				; Mov [si] to es:[di]
-							loop	plane_copy_loop		; Loop if cx > 0
+								mov	al,1
+								out	dx,al			; port 3C5h, EGA sequencr func
+								movsw				; Mov [si] to es:[di]
+								mov	al,2
+								out	dx,al			; port 3C5h, EGA sequencr func
+								lodsw				; String [si] to ax
+								mov	es:[di-2],ax
+								dec	di
+								dec	di
+								mov	al,4
+								out	dx,al			; port 3C5h, EGA sequencr func
+								movsw				; Mov [si] to es:[di]
+								loop	plane_copy_loop		; Loop if cx > 0
 
 		retn
 
@@ -1357,11 +1358,11 @@ loc_73:
 		xor	cl,cl			; Zero register
 
 loc_74:
-							cmp	byte ptr [di],0FFh
-							je	loc_75			; Jump if equal
-							add	di,4
-							inc	cl
-							jmp	short loc_74
+								cmp	byte ptr [di],0FFh
+								je	loc_75			; Jump if equal
+								add	di,4
+								inc	cl
+								jmp	short loc_74
 
 loc_75:
 		cmp	cl,20h			; ' '
@@ -1369,10 +1370,10 @@ loc_75:
 		retn
 
 loc_76:
-							call	word ptr cs:[11Ah]
-							and	al,3
-							cmp	al,3
-							je	loc_76			; Jump if equal
+								call	word ptr cs:[11Ah]
+								and	al,3
+								cmp	al,3
+								je	loc_76			; Jump if equal
 		dec	al
 		add	al,ds:col_idx
 		cmp	al,0FFh
@@ -1388,10 +1389,10 @@ loc_78:
 		stosb				; Store al to es:[di]
 
 loc_79:
-							call	word ptr cs:[11Ah]
-							and	al,3
-							cmp	al,3
-							je	loc_79			; Jump if equal
+								call	word ptr cs:[11Ah]
+								and	al,3
+								cmp	al,3
+								je	loc_79			; Jump if equal
 		dec	al
 		add	al,ds:row_idx
 		cmp	al,0FFh
@@ -1484,24 +1485,24 @@ loc_81:
 		mov	cx,10h
 
 proj_blit_row_loop:
-							lodsw				; String [si] to ax
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,ds:bitmask_byte
-							xchg	es:[di],al
-							mov	al,ah
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,ds:bitmask_byte
-							xchg	es:[di+1],al
-							lodsw				; String [si] to ax
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,ds:bitmask_byte
-							xchg	es:[di+2],al
-							mov	al,ah
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,ds:bitmask_byte
-							xchg	es:[di+3],al
-							add	di,ega_plane_row
-							loop	proj_blit_row_loop		; Loop if cx > 0
+								lodsw				; String [si] to ax
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,ds:bitmask_byte
+								xchg	es:[di],al
+								mov	al,ah
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,ds:bitmask_byte
+								xchg	es:[di+1],al
+								lodsw				; String [si] to ax
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,ds:bitmask_byte
+								xchg	es:[di+2],al
+								mov	al,ah
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,ds:bitmask_byte
+								xchg	es:[di+3],al
+								add	di,ega_plane_row
+								loop	proj_blit_row_loop		; Loop if cx > 0
 
 		dec	dx
 		mov	ax,5
@@ -1561,7 +1562,7 @@ sprite_bitmask_tbl:
 		db	 00h, 01h			;  (cont. last bytes)
 
 loc_83:
-							jg	loc_83			; Jump if >
+								jg	loc_83			; Jump if >
 		add	byte ptr [bx],0D0h
 		or	sp,ax
 ;*		pop	cs			; Dangerous-8088 only
@@ -1590,7 +1591,7 @@ loc_83:
 		db	0E0h, 01h		;  Fixup - byte match
 
 loc_84:
-							jg	loc_84			; Jump if >
+								jg	loc_84			; Jump if >
 		add	byte ptr [bx+si],2Fh	; '/'
 		hlt				; Halt processor
 		add	ds:sprite_pos[bx],bh
@@ -1618,33 +1619,33 @@ scroll_row_build:
 		mov	cx,4
 
 enemy_row_scan_loop:
-							push	cx
-							and	dl,3Fh			; '?'
-							mov	al,sprite_record_size
-							mul	dl			; ax = reg * al
-							mov	bx,ax
-							add	bx,pattern_base
-							mov	al,byte ptr ds:[83h]
-							add	al,3
-							xor	ah,ah			; Zero register
-							add	bx,ax
-							mov	cx,4
+								push	cx
+								and	dl,3Fh			; '?'
+								mov	al,sprite_record_size
+								mul	dl			; ax = reg * al
+								mov	bx,ax
+								add	bx,pattern_base
+								mov	al,byte ptr ds:[83h]
+								add	al,3
+								xor	ah,ah			; Zero register
+								add	bx,ax
+								mov	cx,4
 
 enemy_slot_scan_loop:
-												mov	al,[bx]
-												or	al,al			; Zero ?
-												js	loc_88			; Jump if sign=1
-												xor	al,al			; Zero register
+														mov	al,[bx]
+														or	al,al			; Zero ?
+														js	loc_88			; Jump if sign=1
+														xor	al,al			; Zero register
 
 loc_88:
-												mov	[di],al
-												inc	bx
-												inc	di
-												loop	enemy_slot_scan_loop		; Loop if cx > 0
+														mov	[di],al
+														inc	bx
+														inc	di
+														loop	enemy_slot_scan_loop		; Loop if cx > 0
 
-							inc	dl
-							pop	cx
-							loop	enemy_row_scan_loop		; Loop if cx > 0
+								inc	dl
+								pop	cx
+								loop	enemy_row_scan_loop		; Loop if cx > 0
 
 loc_89:
 		mov	al,byte ptr ds:[84h]
@@ -1663,79 +1664,79 @@ loc_89:
 		mov	cx,3
 
 sprite_row_blit_loop:
-							push	cx
-							mov	cx,3
+								push	cx
+								mov	cx,3
 
 sprite_col_blit_loop:
-												push	cx
-												mov	ax,3B12h
-												push	ax
-												mov	al,[di]
-												or	al,[di+1]
-												or	al,[di+4]
-												or	al,[di+5]
-												jnz	loc_92			; Jump if not zero
-												jmp	loc_129
+														push	cx
+														mov	ax,3B12h
+														push	ax
+														mov	al,[di]
+														or	al,[di+1]
+														or	al,[di+4]
+														or	al,[di+5]
+														jnz	loc_92			; Jump if not zero
+														jmp	loc_129
 
 loc_92:
-												test	byte ptr [di],0FFh
-												jz	loc_93			; Jump if zero
-												mov	al,[di]
-												push	si
-												call	sprite_src_setup
-												inc	si
-												inc	si
-												inc	si
-												mov	al,[si]
-												pop	si
-												jmp	loc_131
+														test	byte ptr [di],0FFh
+														jz	loc_93			; Jump if zero
+														mov	al,[di]
+														push	si
+														call	sprite_src_setup
+														inc	si
+														inc	si
+														inc	si
+														mov	al,[si]
+														pop	si
+														jmp	loc_131
 
 loc_93:
-												test	byte ptr [di+1],0FFh
-												jz	loc_94			; Jump if zero
-												mov	al,[di+1]
-												push	si
-												call	sprite_src_setup
-												inc	si
-												inc	si
-												mov	al,[si]
-												pop	si
-												jmp	loc_131
+														test	byte ptr [di+1],0FFh
+														jz	loc_94			; Jump if zero
+														mov	al,[di+1]
+														push	si
+														call	sprite_src_setup
+														inc	si
+														inc	si
+														mov	al,[si]
+														pop	si
+														jmp	loc_131
 
 loc_94:
-												test	byte ptr [di+4],0FFh
-												jz	loc_95			; Jump if zero
-												mov	al,[di+4]
-												push	si
-												call	sprite_src_setup
-												inc	si
-												mov	al,[si]
-												pop	si
-												jmp	loc_131
+														test	byte ptr [di+4],0FFh
+														jz	loc_95			; Jump if zero
+														mov	al,[di+4]
+														push	si
+														call	sprite_src_setup
+														inc	si
+														mov	al,[si]
+														pop	si
+														jmp	loc_131
 
 loc_95:
-												mov	al,[di+5]
-												push	si
-												call	sprite_src_setup
-												mov	cl,[si]
-												pop	si
-												mov	[si],al
-												mov	al,cl
-												jmp	loc_131
+														mov	al,[di+5]
+														push	si
+														call	sprite_src_setup
+														mov	cl,[si]
+														pop	si
+														mov	[si],al
+														mov	al,cl
+														jmp	loc_131
 
 ; Inner loop continuation: reached after loc_129/loc_131 return to sprite_col_blit_loop caller.
 ; Sourcer marks unreachable because it cannot trace through the jmp-then-retn pattern.
 
 loc_col_advance:
-												inc	byte ptr ds:col_idx
-												inc	di
-												inc	si
-												pop	cx
-												loop	sprite_col_blit_loop		; Loop if cx > 0
+														inc	byte ptr ds:col_idx
+														inc	di
+														inc	si
+														pop	cx
+														loop	sprite_col_blit_loop		; Loop if cx > 0
 
-							pop	cx
-							inc	di
-							loop	sprite_row_blit_loop		; Loop if cx > 0
+								pop	cx
+								inc	di
+								loop	sprite_row_blit_loop		; Loop if cx > 0
 
 		mov	bl,ds:color_sel
 		and	bl,3
@@ -2016,38 +2017,38 @@ loc_124:
 hero_sprite_col_blit		proc	near
 
 hero_col_blit_loop:
-							push	cx
-							mov	al,es:[si]
-							or	al,al			; Zero ?
-							jz	loc_126			; Jump if zero
-							push	es
-							push	ds
-							push	si
-							push	di
-							mov	ch,20h			; ' '
-							mul	ch			; ax = reg * al
-							add	ax,6333h
-							mov	si,ax
-							mov	ds,cs:game_seg
-							mov	di,dx
-							mov	ax,0A000h
-							mov	es,ax
-							mov	al,cs:col_idx
-							mov	cl,10h
-							mul	cl			; ax = reg * al
-							add	ax,3E90h
-							mov	di,ax
-							call	ega_sprite_render_blended
-							pop	di
-							pop	si
-							pop	ds
-							pop	es
+								push	cx
+								mov	al,es:[si]
+								or	al,al			; Zero ?
+								jz	loc_126			; Jump if zero
+								push	es
+								push	ds
+								push	si
+								push	di
+								mov	ch,20h			; ' '
+								mul	ch			; ax = reg * al
+								add	ax,6333h
+								mov	si,ax
+								mov	ds,cs:game_seg
+								mov	di,dx
+								mov	ax,0A000h
+								mov	es,ax
+								mov	al,cs:col_idx
+								mov	cl,10h
+								mul	cl			; ax = reg * al
+								add	ax,3E90h
+								mov	di,ax
+								call	ega_sprite_render_blended
+								pop	di
+								pop	si
+								pop	ds
+								pop	es
 
 loc_126:
-							inc	si
-							inc	byte ptr ds:col_idx
-							pop	cx
-							loop	hero_col_blit_loop		; Loop if cx > 0
+								inc	si
+								inc	byte ptr ds:col_idx
+								pop	cx
+								loop	hero_col_blit_loop		; Loop if cx > 0
 
 		retn
 
@@ -2169,11 +2170,11 @@ scroll_pos_load		proc	near
 		mov	cx,3
 
 scroll_pos_mov_loop:
-							movsw				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							add	si,21h
-							call	si_wrap_hi
-							loop	scroll_pos_mov_loop		; Loop if cx > 0
+								movsw				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								add	si,21h
+								call	si_wrap_hi
+								loop	scroll_pos_mov_loop		; Loop if cx > 0
 
 		retn
 
@@ -2367,16 +2368,16 @@ bg_save:
 		mov	cx,20h
 
 bg_save_row_loop:
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							add	si,48h
-							loop	bg_save_row_loop		; Loop if cx > 0
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								add	si,48h
+								loop	bg_save_row_loop		; Loop if cx > 0
 
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -2400,16 +2401,16 @@ bg_restore_impl:
 		mov	cx,20h
 
 bg_restore_row_loop:
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							movsb				; Mov [si] to es:[di]
-							add	di,48h
-							loop	bg_restore_row_loop		; Loop if cx > 0
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								movsb				; Mov [si] to es:[di]
+								add	di,48h
+								loop	bg_restore_row_loop		; Loop if cx > 0
 
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -2433,24 +2434,24 @@ scroll_cache_invalidate:
 		mov	cx,4
 
 scroll_cache_row_loop:
-							push	cx
-							mov	cx,4
+								push	cx
+								mov	cx,4
 
 scroll_cache_col_loop:
-												push	cx
-												mov	bl,[si]
-												inc	si
-												and	bl,7Fh
-												xor	bh,bh			; Zero register
-												add	bx,bx
-												mov	word ptr ds:sprite_cache_tbl[bx],0
-												pop	cx
-												loop	scroll_cache_col_loop		; Loop if cx > 0
+														push	cx
+														mov	bl,[si]
+														inc	si
+														and	bl,7Fh
+														xor	bh,bh			; Zero register
+														add	bx,bx
+														mov	word ptr ds:sprite_cache_tbl[bx],0
+														pop	cx
+														loop	scroll_cache_col_loop		; Loop if cx > 0
 
-							add	si,20h
-							call	si_wrap_hi
-							pop	cx
-							loop	scroll_cache_row_loop		; Loop if cx > 0
+								add	si,20h
+								call	si_wrap_hi
+								pop	cx
+								loop	scroll_cache_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -2664,22 +2665,22 @@ loc_166:
 		mov	cx,3
 
 tile_3x3_row_loop:
-							push	cx
-							mov	cx,3
+								push	cx
+								mov	cx,3
 
 tile_3x3_col_loop:
-												push	cx
-												push	di
-												call	ega_blit_2bytes_8rows
-												pop	di
-												inc	di
-												inc	di
-												pop	cx
-												loop	tile_3x3_col_loop		; Loop if cx > 0
+														push	cx
+														push	di
+														call	ega_blit_2bytes_8rows
+														pop	di
+														inc	di
+														inc	di
+														pop	cx
+														loop	tile_3x3_col_loop		; Loop if cx > 0
 
-							add	di,27Ah
-							pop	cx
-							loop	tile_3x3_row_loop		; Loop if cx > 0
+								add	di,27Ah
+								pop	cx
+								loop	tile_3x3_row_loop		; Loop if cx > 0
 
 		pop	bx
 		pop	di
@@ -2714,65 +2715,65 @@ draw_sprite_3plane:
 		mov	cx,8
 
 sprite_3plane_row_loop:
-							push	cx
-							mov	ax,3
-							out	dx,ax			; port 3CEh, EGA graphic index
-											;  al = 3, data rotate
-							mov	al,8
-							out	dx,al			; port 3CEh, EGA graphic index
-											;  al = 8, data bit mask
-							inc	dx
-							lodsw				; String [si] to ax
-							mov	cx,ax
-							lodsw				; String [si] to ax
-							mov	bx,ax
-							lodsw				; String [si] to ax
-							mov	bp,ax
-							or	ax,cx
-							or	ax,bx
-							out	dx,al			; port 3CFh, EGA graphic func
-							xor	al,al			; Zero register
-							xchg	es:[di],al
-							mov	al,ah
-							out	dx,al			; port 3CFh, EGA graphic func
-							xor	al,al			; Zero register
-							xchg	es:[di+1],al
-							dec	dx
-							mov	ax,1003h
-							out	dx,ax			; port 3CEh, EGA graphic index
-											;  al = 3, data rotate
-							mov	al,8
-							out	dx,al			; port 3CEh, EGA graphic index
-											;  al = 8, data bit mask
-							inc	dx
-							mov	al,cl
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,1
-							xchg	es:[di],al
-							mov	al,ch
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,1
-							xchg	es:[di+1],al
-							mov	al,bl
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,2
-							xchg	es:[di],al
-							mov	al,bh
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,2
-							xchg	es:[di+1],al
-							mov	ax,bp
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,4
-							xchg	es:[di],al
-							mov	al,ah
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,4
-							xchg	es:[di+1],al
-							dec	dx
-							add	di,ega_plane_row
-							pop	cx
-							loop	sprite_3plane_row_loop		; Loop if cx > 0
+								push	cx
+								mov	ax,3
+								out	dx,ax			; port 3CEh, EGA graphic index
+												;  al = 3, data rotate
+								mov	al,8
+								out	dx,al			; port 3CEh, EGA graphic index
+												;  al = 8, data bit mask
+								inc	dx
+								lodsw				; String [si] to ax
+								mov	cx,ax
+								lodsw				; String [si] to ax
+								mov	bx,ax
+								lodsw				; String [si] to ax
+								mov	bp,ax
+								or	ax,cx
+								or	ax,bx
+								out	dx,al			; port 3CFh, EGA graphic func
+								xor	al,al			; Zero register
+								xchg	es:[di],al
+								mov	al,ah
+								out	dx,al			; port 3CFh, EGA graphic func
+								xor	al,al			; Zero register
+								xchg	es:[di+1],al
+								dec	dx
+								mov	ax,1003h
+								out	dx,ax			; port 3CEh, EGA graphic index
+												;  al = 3, data rotate
+								mov	al,8
+								out	dx,al			; port 3CEh, EGA graphic index
+												;  al = 8, data bit mask
+								inc	dx
+								mov	al,cl
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,1
+								xchg	es:[di],al
+								mov	al,ch
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,1
+								xchg	es:[di+1],al
+								mov	al,bl
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,2
+								xchg	es:[di],al
+								mov	al,bh
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,2
+								xchg	es:[di+1],al
+								mov	ax,bp
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,4
+								xchg	es:[di],al
+								mov	al,ah
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,4
+								xchg	es:[di+1],al
+								dec	dx
+								add	di,ega_plane_row
+								pop	cx
+								loop	sprite_3plane_row_loop		; Loop if cx > 0
 
 		mov	ax,3
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -2797,38 +2798,38 @@ anim_refresh_all:
 		mov	byte ptr ds:anim_phase,8
 
 anim_pass_start:
-							mov	word ptr ds:vga_row_ptr,46Ch
-							mov	byte ptr ds:gvar_frame_timer,0
-							mov	si,ds:sprite_data_ptr
-							mov	di,sprite_buf
-							mov	cx,12h
+								mov	word ptr ds:vga_row_ptr,46Ch
+								mov	byte ptr ds:gvar_frame_timer,0
+								mov	si,ds:sprite_data_ptr
+								mov	di,sprite_buf
+								mov	cx,12h
 
 anim_row_loop:
-												push	cx
-												add	si,4
-												xor	bx,bx			; Zero register
-												mov	cx,1Ch
+														push	cx
+														add	si,4
+														xor	bx,bx			; Zero register
+														mov	cx,1Ch
 
 anim_slot_loop:
-												push	cx
-												lodsb				; String [si] to al
-												call	ega_tile_anim_update
-												inc	di
-												inc	bl
-												pop	cx
-												loop	anim_slot_loop		; Loop if cx > 0
+														push	cx
+														lodsb				; String [si] to al
+														call	ega_tile_anim_update
+														inc	di
+														inc	bl
+														pop	cx
+														loop	anim_slot_loop		; Loop if cx > 0
 
-												add	si,4
-												call	si_wrap_hi
-												add	word ptr ds:vga_row_ptr,ega_2row_stride
-												pop	cx
-												loop	anim_row_loop		; Loop if cx > 0
+														add	si,4
+														call	si_wrap_hi
+														add	word ptr ds:vga_row_ptr,ega_2row_stride
+														pop	cx
+														loop	anim_row_loop		; Loop if cx > 0
 
 wait_frame_timer:
-												cmp	byte ptr ds:gvar_frame_timer,10h
-												jb	wait_frame_timer	; Jump if below
-							dec	byte ptr ds:anim_phase
-							jnz	anim_pass_start		; Jump if not zero
+														cmp	byte ptr ds:gvar_frame_timer,10h
+														jb	wait_frame_timer	; Jump if below
+								dec	byte ptr ds:anim_phase
+								jnz	anim_pass_start		; Jump if not zero
 		mov	dx,3CEh
 		mov	ax,0FF08h
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -2903,23 +2904,23 @@ ega_plane_write_2row:
 		mov	cx,2
 
 plane_write_2row_loop:
-							mov	al,1
-							out	dx,al			; port 3C5h, EGA sequencr func
-							lodsb				; String [si] to al
-							xchg	es:[di],al
-							inc	si
-							mov	al,2
-							out	dx,al			; port 3C5h, EGA sequencr func
-							lodsb				; String [si] to al
-							xchg	es:[di],al
-							inc	si
-							mov	al,4
-							out	dx,al			; port 3C5h, EGA sequencr func
-							lodsb				; String [si] to al
-							xchg	es:[di],al
-							add	di,140h
-							add	si,13h
-							loop	plane_write_2row_loop		; Loop if cx > 0
+								mov	al,1
+								out	dx,al			; port 3C5h, EGA sequencr func
+								lodsb				; String [si] to al
+								xchg	es:[di],al
+								inc	si
+								mov	al,2
+								out	dx,al			; port 3C5h, EGA sequencr func
+								lodsb				; String [si] to al
+								xchg	es:[di],al
+								inc	si
+								mov	al,4
+								out	dx,al			; port 3C5h, EGA sequencr func
+								lodsb				; String [si] to al
+								xchg	es:[di],al
+								add	di,140h
+								add	si,13h
+								loop	plane_write_2row_loop		; Loop if cx > 0
 
 		retn
 
@@ -3054,39 +3055,39 @@ fade_gradient_loop		proc	near
 		mov	cx,9
 
 fade_pass_loop:
-							push	cx
-							push	dx
-							push	bx
-							call	ega_fade_blit
-							pop	bx
-							pop	dx
-							sub	bl,0Ch
-							jnc	loc_179			; Jump if carry=0
-							xor	bl,bl			; Zero register
+								push	cx
+								push	dx
+								push	bx
+								call	ega_fade_blit
+								pop	bx
+								pop	dx
+								sub	bl,0Ch
+								jnc	loc_179			; Jump if carry=0
+								xor	bl,bl			; Zero register
 
 loc_179:
-							sub	bh,0Ch
-							jnc	loc_180			; Jump if carry=0
-							xor	bh,bh			; Zero register
+								sub	bh,0Ch
+								jnc	loc_180			; Jump if carry=0
+								xor	bh,bh			; Zero register
 
 loc_180:
-							add	dl,0Ch
-							jnc	loc_181			; Jump if carry=0
-							mov	dl,0FFh
+								add	dl,0Ch
+								jnc	loc_181			; Jump if carry=0
+								mov	dl,0FFh
 
 loc_181:
-							add	dh,0Ch
-							jnc	loc_182			; Jump if carry=0
-							mov	dh,0FFh
+								add	dh,0Ch
+								jnc	loc_182			; Jump if carry=0
+								mov	dh,0FFh
 
 loc_182:
-							push	dx
-							push	bx
-							call	frame_wait_loop
-							pop	bx
-							pop	dx
-							pop	cx
-							loop	fade_pass_loop		; Loop if cx > 0
+								push	dx
+								push	bx
+								call	frame_wait_loop
+								pop	bx
+								pop	dx
+								pop	cx
+								loop	fade_pass_loop		; Loop if cx > 0
 
 		retn
 
@@ -3201,10 +3202,10 @@ loc_191:
 						;  al = 8, data bit mask
 
 fill_range_loop:
-							mov	al,ds:anim_phase
-							xchg	es:[di],al
-							add	di,ega_plane_row
-							loop	fill_range_loop		; Loop if cx > 0
+								mov	al,ds:anim_phase
+								xchg	es:[di],al
+								add	di,ega_plane_row
+								loop	fill_range_loop		; Loop if cx > 0
 
 		retn
 
@@ -3307,10 +3308,10 @@ loc_205:
 		out	dx,al			; port 3CFh, EGA graphic func
 
 fill_wide_center_loop:
-							mov	al,ds:anim_phase
-							xchg	es:[di],al
-							inc	di
-							loop	fill_wide_center_loop		; Loop if cx > 0
+								mov	al,ds:anim_phase
+								xchg	es:[di],al
+								inc	di
+								loop	fill_wide_center_loop		; Loop if cx > 0
 
 		mov	al,ah
 		out	dx,al			; port 3CFh, EGA graphic func
@@ -3355,15 +3356,15 @@ frame_wait_loop		proc	near
 		mul	cl			; ax = reg * al
 
 loc_209:
-							push	ax
-							call	word ptr cs:[110h]
-							call	word ptr cs:[112h]
-							call	word ptr cs:[114h]
-							call	word ptr cs:[116h]
-							call	word ptr cs:[118h]
-							pop	ax
-							cmp	ds:gvar_frame_timer,al
-							jb	loc_209			; Jump if below
+								push	ax
+								call	word ptr cs:[110h]
+								call	word ptr cs:[112h]
+								call	word ptr cs:[114h]
+								call	word ptr cs:[116h]
+								call	word ptr cs:[118h]
+								pop	ax
+								cmp	ds:gvar_frame_timer,al
+								jb	loc_209			; Jump if below
 		mov	byte ptr ds:gvar_frame_timer,0
 		retn
 
@@ -3390,30 +3391,30 @@ hud_clear:
 		mov	cx,8
 
 hud_col_loop:
-							push	cx
-							push	di
-							mov	cx,12h
+								push	cx
+								push	di
+								mov	cx,12h
 
 hud_row_loop:
-												push	cx
-												push	di
-												mov	cx,38h
+														push	cx
+														push	di
+														mov	cx,38h
 
 hud_fill_loop:
-												mov	al,2
-												xchg	es:[di],al
-												inc	di
-												loop	hud_fill_loop		; Loop if cx > 0
+														mov	al,2
+														xchg	es:[di],al
+														inc	di
+														loop	hud_fill_loop		; Loop if cx > 0
 
-												pop	di
-												add	di,280h
-												pop	cx
-												loop	hud_row_loop		; Loop if cx > 0
+														pop	di
+														add	di,280h
+														pop	cx
+														loop	hud_row_loop		; Loop if cx > 0
 
-							pop	di
-							add	di,ega_plane_row
-							pop	cx
-							loop	hud_col_loop		; Loop if cx > 0
+								pop	di
+								add	di,ega_plane_row
+								pop	cx
+								loop	hud_col_loop		; Loop if cx > 0
 
 		mov	dx,3CEh
 		mov	ax,3
@@ -3520,49 +3521,49 @@ draw_ui_tiles:
 		mov	cx,5
 
 ui_tile_row_loop:
-							push	cx
-							mov	cx,1Ch
+								push	cx
+								mov	cx,1Ch
 
 ui_tile_col_loop:
-												push	cx
-												lodsb				; String [si] to al
-												push	ds
-												push	si
-												mov	ds,cs:game_seg
-												xor	ah,ah			; Zero register
-												add	ax,ax
-												add	ax,ax
-												add	ax,ax
-												add	ax,ax
-												add	ax,sprite_gfx_base
-												mov	si,ax
-												push	di
-												mov	cx,8
+														push	cx
+														lodsb				; String [si] to al
+														push	ds
+														push	si
+														mov	ds,cs:game_seg
+														xor	ah,ah			; Zero register
+														add	ax,ax
+														add	ax,ax
+														add	ax,ax
+														add	ax,ax
+														add	ax,sprite_gfx_base
+														mov	si,ax
+														push	di
+														mov	cx,8
 
 ui_tile_pixel_loop:
-												lodsb				; String [si] to al
-												out	dx,al			; port 3CFh, EGA graphic func
-												mov	al,2
-												xchg	es:[di],al
-												inc	di
-												lodsb				; String [si] to al
-												out	dx,al			; port 3CFh, EGA graphic func
-												mov	al,2
-												xchg	es:[di],al
-												add	di,4Fh
-												loop	ui_tile_pixel_loop		; Loop if cx > 0
+														lodsb				; String [si] to al
+														out	dx,al			; port 3CFh, EGA graphic func
+														mov	al,2
+														xchg	es:[di],al
+														inc	di
+														lodsb				; String [si] to al
+														out	dx,al			; port 3CFh, EGA graphic func
+														mov	al,2
+														xchg	es:[di],al
+														add	di,4Fh
+														loop	ui_tile_pixel_loop		; Loop if cx > 0
 
-												pop	di
-												inc	di
-												inc	di
-												pop	si
-												pop	ds
-												pop	cx
-												loop	ui_tile_col_loop		; Loop if cx > 0
+														pop	di
+														inc	di
+														inc	di
+														pop	si
+														pop	ds
+														pop	cx
+														loop	ui_tile_col_loop		; Loop if cx > 0
 
-							add	di,248h
-							pop	cx
-							loop	ui_tile_row_loop		; Loop if cx > 0
+								add	di,248h
+								pop	cx
+								loop	ui_tile_row_loop		; Loop if cx > 0
 
 		dec	dx
 		mov	ax,5
@@ -3620,22 +3621,22 @@ bg_tile_blit_init:
 		; falls through to bg_tile_row_loop
 
 bg_tile_row_loop:
-							push	cx
-							mov	cx,1Ch
+								push	cx
+								mov	cx,1Ch
 
 bg_tile_col_loop:
-												push	cx
-												lodsb				; String [si] to al
-												push	si
-												call	ega_bg_tile_blit
-												pop	si
-												add	word ptr ds:vga_row_ptr,2
-												pop	cx
-												loop	bg_tile_col_loop		; Loop if cx > 0
+														push	cx
+														lodsb				; String [si] to al
+														push	si
+														call	ega_bg_tile_blit
+														pop	si
+														add	word ptr ds:vga_row_ptr,2
+														pop	cx
+														loop	bg_tile_col_loop		; Loop if cx > 0
 
-							add	word ptr ds:vga_row_ptr,248h
-							pop	cx
-							loop	bg_tile_row_loop		; Loop if cx > 0
+								add	word ptr ds:vga_row_ptr,248h
+								pop	cx
+								loop	bg_tile_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -3658,33 +3659,33 @@ ega_bg_tile_blit		proc	near
 		mov	cx,4
 
 bg_plane_copy_loop:
-							mov	al,1
-							out	dx,al			; port 3C5h, EGA sequencr func
-							movsw				; Mov [si] to es:[di]
-							mov	al,2
-							out	dx,al			; port 3C5h, EGA sequencr func
-							lodsw				; String [si] to ax
-							mov	es:[di-2],ax
-							dec	di
-							dec	di
-							mov	al,4
-							out	dx,al			; port 3C5h, EGA sequencr func
-							movsw				; Mov [si] to es:[di]
-							add	di,bx
-							mov	al,1
-							out	dx,al			; port 3C5h, EGA sequencr func
-							movsw				; Mov [si] to es:[di]
-							mov	al,2
-							out	dx,al			; port 3C5h, EGA sequencr func
-							lodsw				; String [si] to ax
-							mov	es:[di-2],ax
-							dec	di
-							dec	di
-							mov	al,4
-							out	dx,al			; port 3C5h, EGA sequencr func
-							movsw				; Mov [si] to es:[di]
-							add	di,bx
-							loop	bg_plane_copy_loop		; Loop if cx > 0
+								mov	al,1
+								out	dx,al			; port 3C5h, EGA sequencr func
+								movsw				; Mov [si] to es:[di]
+								mov	al,2
+								out	dx,al			; port 3C5h, EGA sequencr func
+								lodsw				; String [si] to ax
+								mov	es:[di-2],ax
+								dec	di
+								dec	di
+								mov	al,4
+								out	dx,al			; port 3C5h, EGA sequencr func
+								movsw				; Mov [si] to es:[di]
+								add	di,bx
+								mov	al,1
+								out	dx,al			; port 3C5h, EGA sequencr func
+								movsw				; Mov [si] to es:[di]
+								mov	al,2
+								out	dx,al			; port 3C5h, EGA sequencr func
+								lodsw				; String [si] to ax
+								mov	es:[di-2],ax
+								dec	di
+								dec	di
+								mov	al,4
+								out	dx,al			; port 3C5h, EGA sequencr func
+								movsw				; Mov [si] to es:[di]
+								add	di,bx
+								loop	bg_plane_copy_loop		; Loop if cx > 0
 
 		mov	al,7
 		out	dx,al			; port 3C5h, EGA sequencr func
@@ -3788,15 +3789,15 @@ loc_223:
 		mov	cx,8
 
 col_write_row_loop:
-							mov	ah,es:[si]
-							out	dx,ax			; port 0, DMA-1 bas&add ch 0
-							mov	es:[si],bl
-							inc	si
-							mov	ah,es:[si]
-							out	dx,ax			; port 0, DMA-1 bas&add ch 0
-							mov	es:[si],bl
-							add	si,di
-							loop	col_write_row_loop		; Loop if cx > 0
+								mov	ah,es:[si]
+								out	dx,ax			; port 0, DMA-1 bas&add ch 0
+								mov	es:[si],bl
+								inc	si
+								mov	ah,es:[si]
+								out	dx,ax			; port 0, DMA-1 bas&add ch 0
+								mov	es:[si],bl
+								add	si,di
+								loop	col_write_row_loop		; Loop if cx > 0
 
 		retn
 
@@ -3805,7 +3806,7 @@ ega_col_write_loop		endp
 ; Animation sequence table ?-- frame index pairs for sprite animation cycles.
 ; Sourcer decodes these bytes as code; they are data accessed via CS-relative pointer.
 
-anim_seq_tbl:					; 70 bytes of frame index data — Sourcer mis-decoded as code
+anim_seq_tbl:					; 70 bytes of frame index data ?-- Sourcer mis-decoded as code
 		db	 07h, 08h, 09h, 0Ah, 07h, 08h, 0Bh, 0Ch, 07h, 08h
 		db	 09h, 0Ah, 19h, 3Dh, 61h, 27h, 1Dh, 1Eh, 1Dh, 1Eh
 		db	 1Fh, 20h, 1Fh, 20h, 1Dh, 1Eh, 1Fh, 20h, 0Dh, 0Eh
@@ -3896,23 +3897,23 @@ plane_blit_init:
 		mov	cx,4			; 4 planes
 
 plane_1_2_blit_loop:
-							mov	al,1
-							out	dx,al			; port 0, DMA-1 bas&add ch 0
-							movsw				; Mov [si] to es:[di]
-							mov	al,2
-							out	dx,al			; port 0, DMA-1 bas&add ch 0
-							lodsw				; String [si] to ax
-							mov	es:[di-2],ax
-							add	di,bx
-							mov	al,1
-							out	dx,al			; port 0, DMA-1 bas&add ch 0
-							movsw				; Mov [si] to es:[di]
-							mov	al,2
-							out	dx,al			; port 0, DMA-1 bas&add ch 0
-							lodsw				; String [si] to ax
-							mov	es:[di-2],ax
-							add	di,bx
-							loop	plane_1_2_blit_loop		; Loop if cx > 0
+								mov	al,1
+								out	dx,al			; port 0, DMA-1 bas&add ch 0
+								movsw				; Mov [si] to es:[di]
+								mov	al,2
+								out	dx,al			; port 0, DMA-1 bas&add ch 0
+								lodsw				; String [si] to ax
+								mov	es:[di-2],ax
+								add	di,bx
+								mov	al,1
+								out	dx,al			; port 0, DMA-1 bas&add ch 0
+								movsw				; Mov [si] to es:[di]
+								mov	al,2
+								out	dx,al			; port 0, DMA-1 bas&add ch 0
+								lodsw				; String [si] to ax
+								mov	es:[di-2],ax
+								add	di,bx
+								loop	plane_1_2_blit_loop		; Loop if cx > 0
 
 		pop	ds
 		retn
@@ -3945,27 +3946,27 @@ draw_hero_gfx:
 		mov	cx,18h
 
 hero_gfx_row_loop:
-							lodsb				; String [si] to al
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,1
-							xchg	es:[di],al
-							inc	di
-							lodsb				; String [si] to al
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,1
-							xchg	es:[di],al
-							inc	di
-							lodsb				; String [si] to al
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,1
-							xchg	es:[di],al
-							inc	di
-							lodsb				; String [si] to al
-							out	dx,al			; port 3CFh, EGA graphic func
-							mov	al,1
-							xchg	es:[di],al
-							add	di,4Dh
-							loop	hero_gfx_row_loop		; Loop if cx > 0
+								lodsb				; String [si] to al
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,1
+								xchg	es:[di],al
+								inc	di
+								lodsb				; String [si] to al
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,1
+								xchg	es:[di],al
+								inc	di
+								lodsb				; String [si] to al
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,1
+								xchg	es:[di],al
+								inc	di
+								lodsb				; String [si] to al
+								out	dx,al			; port 3CFh, EGA graphic func
+								mov	al,1
+								xchg	es:[di],al
+								add	di,4Dh
+								loop	hero_gfx_row_loop		; Loop if cx > 0
 
 		dec	dx
 		mov	ax,5
@@ -3980,7 +3981,7 @@ hero_gfx_row_loop:
 ; Sprite shape/gradient data table ?-- accessed via CS-relative pointer for
 ; fade_gradient_loop and ega_fill_bit_range operations. Sourcer decodes as code.
 
-sprite_shape_tbl:				; 12-byte header + 45 zero-pad — Sourcer mis-decoded as code
+sprite_shape_tbl:				; 12-byte header + 45 zero-pad ?-- Sourcer mis-decoded as code
 		db	 94h, 4Bh, 94h, 4Bh, 94h, 4Bh	; header pair pattern
 		db	0F4h, 4Bh,0F4h, 4Bh, 54h, 4Ch	; header pair pattern (cont.)
 		db	45 dup (0)			; padding / zero-pad before shape group A
@@ -4032,7 +4033,7 @@ sprite_shape_tbl:				; 12-byte header + 45 zero-pad — Sourcer mis-decoded as c
 ; shift_blit_outer_loop.
 ;
 ; Dead code: searched all 137 zelres1/2/3 binaries for the byte sequence "33 1C"
-; (LE for offset 0x1C33) — zero matches. No caller stores this address as a
+; (LE for offset 0x1C33) ?-- zero matches. No caller stores this address as a
 ; function pointer or near-call target. Likely leftover from an earlier driver
 ; version (the CGA variant 203GFCGA has the same structural pattern at this offset).
 
@@ -4040,7 +4041,7 @@ shift_blit_setup:
 		db	 00h, 00h		; 2-byte alignment header (decodes as 'add [bx+si],al'; harmless)
 		push	ds
 		or	al,al			; test sign of sprite type byte
-		js	shift_blit_neg		; if negative → type-B path (signed sprite)
+		js	shift_blit_neg		; if negative ?-> type-B path (signed sprite)
 		and	al,3			; mask to 2-bit index (0-3)
 		mov	dl,40h			; multiplier = 64
 		mul	dl			; ax = al * 0x40 (type-A sprite table stride)
@@ -4048,23 +4049,25 @@ shift_blit_setup:
 		mov	si,ax			; SI = sprite source ptr (type-A)
 		mov	bp,1			; BP = 1 plane pass
 		jmp	short shift_blit_src_set ; skip type-B path
+
 shift_blit_neg:
 		and	al,1			; mask to 1-bit index (0-1)
 		mov	ah,al			; AH = index
-		xor	al,al			; AL = 0 → AX = index * 256
+		xor	al,al			; AL = 0 ?-> AX = index * 256
 		add	ax,4E5Ah		; + type-B sprite table base (CS:0x4E5A)
 		mov	si,ax			; SI = sprite source ptr (type-B)
 		mov	bp,4			; BP = 4 plane passes
+
 shift_blit_src_set:
 		mov	al,bl			; AL = BL (X column byte)
 		and	al,3			; mask to pixel-in-byte position (0-3)
-		add	al,al			; double → shift amount (0,2,4,6)
+		add	al,al			; double ?-> shift amount (0,2,4,6)
 		mov	byte ptr ds:shift_count,al
 		shr	bx,1			; BX >>= 1 (byte address x/8 step 1)
-		shr	bx,1			; BX >>= 1 (byte address x/8 step 2 → x/4 col byte)
+		shr	bx,1			; BX >>= 1 (byte address x/8 step 2 ?-> x/4 col byte)
 		mov	al,50h			; row stride = 80 bytes
 		mul	cl			; ax = row * 80
-		add	ax,bx			; + col byte → VGA byte offset
+		add	ax,bx			; + col byte ?-> VGA byte offset
 		mov	di,ax			; DI = VGA framebuffer destination offset
 		mov	ax,0A000h
 		mov	es,ax			; ES = EGA framebuffer segment
@@ -4079,51 +4082,52 @@ shift_blit_src_set:
 		inc	dx			; DX = 3CFh (EGA graphics controller data)
 		mov	cx,bp			; CX = plane pass count (1 or 4)
 		mov	bp,4Ch			; BP = 0x4C = 76 byte stride (EGA row advance)
+
 shift_blit_outer_loop:
-							push	cx
-							push	di
-							mov	cx,10h
+								push	cx
+								push	di
+								mov	cx,10h
 
 shift_blit_mid_loop:
-												push	cx
-												mov	cx,2
+														push	cx
+														mov	cx,2
 
 shift_blit_inner_loop:
-												push	cx
-												lodsw				; String [si] to ax
-												mov	bh,al
-												xor	bl,bl			; Zero register
-												mov	cl,cs:shift_count
-												shr	bx,cl			; Shift w/zeros fill
-												xor	al,al			; Zero register
-												shr	ax,cl			; Shift w/zeros fill
-												or	bl,ah
-												mov	ah,al
-												mov	al,bh
-												out	dx,al			; port 0, DMA-1 bas&add ch 0
-												mov	al,1
-												xchg	es:[di],al
-												inc	di
-												mov	al,bl
-												out	dx,al			; port 0, DMA-1 bas&add ch 0
-												mov	al,1
-												xchg	es:[di],al
-												inc	di
-												mov	al,ah
-												out	dx,al			; port 0, DMA-1 bas&add ch 0
-												mov	al,1
-												xchg	es:[di],al
-												pop	cx
-												loop	shift_blit_inner_loop		; Loop if cx > 0
+														push	cx
+														lodsw				; String [si] to ax
+														mov	bh,al
+														xor	bl,bl			; Zero register
+														mov	cl,cs:shift_count
+														shr	bx,cl			; Shift w/zeros fill
+														xor	al,al			; Zero register
+														shr	ax,cl			; Shift w/zeros fill
+														or	bl,ah
+														mov	ah,al
+														mov	al,bh
+														out	dx,al			; port 0, DMA-1 bas&add ch 0
+														mov	al,1
+														xchg	es:[di],al
+														inc	di
+														mov	al,bl
+														out	dx,al			; port 0, DMA-1 bas&add ch 0
+														mov	al,1
+														xchg	es:[di],al
+														inc	di
+														mov	al,ah
+														out	dx,al			; port 0, DMA-1 bas&add ch 0
+														mov	al,1
+														xchg	es:[di],al
+														pop	cx
+														loop	shift_blit_inner_loop		; Loop if cx > 0
 
-												add	di,bp
-												pop	cx
-												loop	shift_blit_mid_loop		; Loop if cx > 0
+														add	di,bp
+														pop	cx
+														loop	shift_blit_mid_loop		; Loop if cx > 0
 
-							pop	di
-							add	di,4
-							pop	cx
-							loop	shift_blit_outer_loop		; Loop if cx > 0
+								pop	di
+								add	di,4
+								pop	cx
+								loop	shift_blit_outer_loop		; Loop if cx > 0
 
 		dec	dx
 		mov	ax,5
