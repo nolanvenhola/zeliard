@@ -3174,8 +3174,6 @@ copy_buffer		endp
 		db	'*.usr', 0		; 0x0003
 		db	'Input name:', 0		; 0x0009
 		db	'Re-Start', 0		; 0x0015
-;                              SUBROUTINE
-
 player_func_51		proc	near
 		mov	byte ptr cs:save_new_flag,0
 		push	cs
