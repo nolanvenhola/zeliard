@@ -31,6 +31,25 @@ PAGE  59,132
 ;  Animation dispatch via dispatch_tbl (game DS): 5 handler procs at
 ;  CS:0174h..0250h for 2-/4-/6-frame cycling and removal.
 ;
+;  Connections:
+;    Loads:        none -- driver is resident; sprite/tile data is staged
+;                  by 200FIGHT into game_seg buffers before each call.
+;    Calls into:   ds:dispatch_tbl[bx] (game-DS animation handler table:
+;                    anim_cycle_2frame/4frame/6frame/neg/remove);
+;                  internal CS dispatchers (frame_row_driver, anim_refresh_all,
+;                    fade_gradient_loop, projectile_spawn_check); no
+;                    cross-chunk calls outside its own driver function table.
+;    Called by:    200FIGHT (and 201SELCT) via the graphics-driver dispatch
+;                    slots at cs:[2000h..303Ch] -- this module IS the
+;                    EGA driver. Loaded at game_seg:9000h by game.asm
+;                    when gvar_gfx_mode selects EGA. drv_init_stub is
+;                    the standard entry called via cs:[10Ch].
+;    Reads/writes: ega_sprite_src / ega_plane_alt (DS:0B000h / 0B17Eh),
+;                  scroll_vga_ofs / vga_row_ptr / row_counter / anim_phase
+;                    (CS-resident driver state at CS:506Bh+), color_pair_tbl
+;                    + cur_color_pair, EGA Sequencer (3C4h/3C5h) +
+;                    Graphics Controller (3CEh/3CFh) ports.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

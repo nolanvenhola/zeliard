@@ -46,6 +46,28 @@ PAGE  59,132
 ;    pixel_expand_cgaalt       - expand 2 source bytes -> 2-bit CGA alt pair
 ;    copy_28b_ega              - EGA plane copy helper (1Ch bytes per plane)
 ;
+;  Connections:
+;    Loads:        none -- module is itself the loaded chunk; mountain0/1
+;                  and ground/ground1 RLE source streams are embedded
+;                  in this binary's data section.
+;    Calls into:   none cross-chunk. Internal: jpt_mountains_render
+;                    (CS:338Ah, 6-entry word table indexed by
+;                    video_mode*2) -> mountains_ega/cga/hgc/mcga/cgaalt;
+;                    jpt_ground_render (CS:35BBh) -> ground_ega/cga/hgc/
+;                    mcga/cgaalt; rle_decode_mountain_88x56 +
+;                    rle_decode_ground_28 + pixel_expand_* helpers.
+;    Called by:    106TOWN town dispatcher (loaded raw at game_seg:3300h
+;                    via SAR loader, far call entry with AL=video_mode)
+;                    when player enters a Satono Town building scene
+;                    that needs the mountain backdrop. Returns far to
+;                    the town code that called it.
+;    Reads/writes: video_mode (CS:335Bh -- saved AL on entry); CS+1000h
+;                  scratch decompression segment (seg1:0000..4CFFh,
+;                  zeroed on entry, then filled with decoded mountain
+;                  and ground tile bitmaps); active video framebuffer
+;                  (A000h / B000h / B800h per video_mode dispatch);
+;                  CGA color regs (port 3D9h) for cgaalt path.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

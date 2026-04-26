@@ -39,6 +39,29 @@ PAGE  59,132
 ;  (4bpp pixel unpack LUT for the nibble-stream format used by the sprite
 ;  data). Remaining bulk of the file (0x498+) is raw sprite/tile image data.
 ;
+;  Connections:
+;    Loads:        none -- module is itself the loaded chunk; the embedded
+;                  sprite/tile bitmap data (file offset 0x498..end) is the
+;                  "source graphics" copied into planar buffers by the
+;                  decoders.
+;    Calls into:   none cross-chunk. Internal: jmp_tbl_decode_a /
+;                    jmp_tbl_decode_b (CS:0E2h / 0360h, 6-entry tables
+;                    indexed by game_phase*2) dispatch to ega_plane_blit /
+;                    cga_shift_blit / hgc_blit / vga_blit / cga_hires_blit /
+;                    ega_decode_b / vga_chain4_decode; unpack_nibble_stream
+;                    + extract_bits handle the 4bpp sprite stream.
+;    Called by:    zeliad.exe game.asm via CALL FAR after loading this
+;                    chunk raw at game_seg:6000h (overlay onto town code
+;                    area). AL on entry = gvar_game_phase (graphics mode).
+;                    Returns far. Used during underground/mole sequences
+;                    and as the generic level-graphics initializer.
+;    Reads/writes: game_phase_var (CS:0499h -- saved AL on entry),
+;                  dispatch_flag_1/2 (CS:0497h/0498h -- init state bytes),
+;                  EGA Sequencer (3C4h/3C5h) + Graphics Controller
+;                  (3CEh/3CFh) registers (Set/Reset, Enable, Color Compare,
+;                  Mode, BitMask), and the active video framebuffer
+;                  (A000h EGA / B000h Hercules / B800h CGA per dispatch).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

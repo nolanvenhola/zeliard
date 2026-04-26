@@ -11,6 +11,28 @@ PAGE  59,132
 ;  in structure (same dispatch table layout, same drv_init_stub patchable
 ;  byte, same sprite-scan loop).
 ;
+;  Connections:
+;    Loads:        none -- driver is resident; sprite/tile data staged by
+;                  200FIGHT into game_seg buffers (hgc_sprite_src,
+;                  hgc_extended_src, hgc_plane_buf_a).
+;    Calls into:   ds:dispatch_tbl[bx] (game-DS animation handler table);
+;                  cs:copy_fn_tbl entries (HGC plane copy variants);
+;                  internal frame_row_driver / anim_refresh_all /
+;                  projectile_spawn_check dispatchers; cs:[11Ah] -- driver
+;                  fn (input/page advance); no cross-chunk calls outside
+;                  its own driver fn table.
+;    Called by:    200FIGHT (and 201SELCT) via the graphics-driver dispatch
+;                    slots at cs:[2000h..303Ch] -- this module IS the HGC
+;                    driver. Loaded at game_seg:9000h by game.asm when
+;                    gvar_gfx_mode selects Hercules. Entry via drv_init_stub
+;                    at cs:[10Ch].
+;    Reads/writes: hgc_sprite_src / hgc_plane_alt / hgc_extended_src
+;                    (DS:0B000h / 0B17Eh / 0D000h), hgc_plane_buf_a
+;                    (DS:8640h, populated from internal_tbl_68), cur_color_pair
+;                    + vga_row_ptr / scroll_vga_ofs / row_counter (CS-resident
+;                    driver state at CS:4FE2h+), Hercules B000h framebuffer
+;                    (1bpp, 4-bank interlace +2000h).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

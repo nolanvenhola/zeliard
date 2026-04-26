@@ -9,6 +9,31 @@ PAGE  59,132
 ;  Displays character portraits with weapon, magic, and item panels.
 ;  Player navigates with joystick (int 61h) or keyboard.
 ;
+;  Connections:
+;    Loads:        none directly -- inventory data already resident in
+;                  game-segment DS (chr_/weap_/magic_/item_ flag arrays).
+;    Calls into:   drv_fill_rect, drv_palette_push, drv_anim_step,
+;                  drv_render_char, drv_return_to_caller, drv_fn_sprite,
+;                  drv_fn_render_bg, drv_fn_num_fmt
+;                    (graphics-driver dispatch slots, cs:[2000h..203Ch],
+;                    populated by the active GFxxx driver).
+;                  cs:[110h..118h] -- driver palette/save-state init
+;                    sequence (run on entry/exit).
+;                  panel_dispatch_tbl (DS:0A0C4h) -- weapon/magic/item
+;                    panel handler jump table (filled by caller).
+;                  item_use_dispatch_tbl (DS:0A452h) -- per-item use
+;                    handler jump table.
+;    Called by:    zeliad.exe game.asm at game start (character-select
+;                    entry); re-entered mid-game when player opens the
+;                    inventory/equip screen via menu.
+;    Reads/writes: gvar_selct_state (DS:0A00Bh -- entry sub-state),
+;                  gvar_volume_b (DS:0FF75h -- display/render mode),
+;                  gvar_frame_timer / gvar_timer_counter
+;                    (DS:0FF1Ah / 0FF18h -- joystick hold + Kioku Feather
+;                    save delay), gvar_item_result (DS:0FF4Bh -- selected
+;                    item code returned to caller), char stat block at
+;                    DS:[80h..0E4h] (HP/EXP/equipped weapon/magic/items).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

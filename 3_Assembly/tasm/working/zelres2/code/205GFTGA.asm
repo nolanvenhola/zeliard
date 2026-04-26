@@ -11,6 +11,28 @@ PAGE  59,132
 ;  structure (same dispatch table layout, same drv_init_stub patchable
 ;  byte, same sprite-scan loop).
 ;
+;  Connections:
+;    Loads:        none -- driver is resident; sprite/tile data staged by
+;                  200FIGHT into game_seg buffers (sprite_src_base at
+;                  0B000h, pattern_buf_d000 at 0D000h, tga_buf_8cf0).
+;    Calls into:   ds:dispatch_tbl[bx] (game-DS animation handler table);
+;                  cs:copy_fn_tbl entries (Tandy plane copy variants);
+;                  internal frame_row_driver / anim_refresh_all /
+;                  projectile_spawn_check dispatchers; cs:[11Ah] -- driver
+;                  fn (input/page advance); no cross-chunk calls outside
+;                  its own driver fn table.
+;    Called by:    200FIGHT (and 201SELCT) via the graphics-driver dispatch
+;                    slots at cs:[2000h..303Ch] -- this module IS the Tandy
+;                    driver. Loaded at game_seg:9000h by game.asm when
+;                    gvar_gfx_mode selects Tandy. Entry via drv_init_stub
+;                    at cs:[10Ch].
+;    Reads/writes: sprite_src_base / plane_alt_b17e / pattern_buf_d000
+;                    (DS:0B000h / 0B17Eh / 0D000h), tga_vram_wrap (80A0h),
+;                    cur_color_pair + vga_row_ptr / scroll_vga_ofs /
+;                    row_counter (CS-resident driver state at CS:522Fh+),
+;                    Tandy 16-color framebuffer (port 3D8h/3D9h color regs,
+;                    +80A0h vram wrap delta).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

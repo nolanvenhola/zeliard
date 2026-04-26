@@ -14,6 +14,26 @@ PAGE  59,132
 ;  B800h (1FFEh between even/odd plane words; wrap back +C050h) instead of
 ;  EGA planar mapped A000h with sequencer register writes.
 ;
+;  Connections:
+;    Loads:        none -- driver is resident; sprite/tile data staged by
+;                  200FIGHT into game_seg buffers (cga_sprite_src/_mid).
+;    Calls into:   ds:dispatch_tbl[bx] (game-DS animation handler table);
+;                  cs:copy_fn_tbl entries (CGA plane copy variants);
+;                  internal frame_row_driver / anim_refresh_all /
+;                  projectile_spawn_check / fade_gradient_loop dispatchers;
+;                  cs:[11Ah] -- driver fn (input/page advance); no
+;                  cross-chunk calls outside its own driver fn table.
+;    Called by:    200FIGHT (and 201SELCT) via the graphics-driver dispatch
+;                    slots at cs:[2000h..303Ch] -- this module IS the CGA
+;                    driver. Loaded at game_seg:9000h by game.asm when
+;                    gvar_gfx_mode selects CGA. Standard entry via
+;                    drv_init_stub at cs:[10Ch].
+;    Reads/writes: cga_sprite_src / cga_sprite_mid / cga_plane_alt
+;                    (DS:0B000h / 0D000h / 0B17Eh), bg_save_buf_a/b
+;                    (DS:8640h/8690h), color_pair_tbl + cur_color_pair
+;                    (CS-resident driver state), B800h CGA framebuffer
+;                    (interleaved even/odd planes, +1FFEh stride).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

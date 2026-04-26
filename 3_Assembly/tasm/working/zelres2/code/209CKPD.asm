@@ -54,6 +54,32 @@ PAGE  59,132
 ;  patterns; the entire region is kept as raw db with data_10..data_22
 ;  labels preserved for the few cross-references from the real code above.
 ;
+;  Connections:
+;    Loads:        none -- module is itself the loaded chunk; boss
+;                  sprite RLE-packed bitmaps + per-mode color LUTs are
+;                  embedded in this binary's data section (file+1497h..
+;                  file+18D0h LUTs; file+5D4h..end pixel bytes).
+;    Calls into:   none cross-chunk. Internal: bos_frame_dispatch ->
+;                    ds:[bos_anim_tbl + 2*bos_mode] (5 frame_handler_a..e
+;                    in game DS, populated by the boss-arena entry code);
+;                    render_dispatch_2 -> cs:[36A5h + 2*bos_mode]
+;                    (mode_handler_f..i CS-resident); sprite_rle_decode
+;                    + nibble_expand_8 / nibble_decode_inner helpers.
+;    Called by:    106TOWN dispatch (boss-arena entry path) -- loaded
+;                    raw into the game segment via SAR loader and
+;                    invoked by far call with bos_mode preset by the
+;                    arena setup code (zelres3 boss handler chunks).
+;                    Returns far to the boss-arena driver after rendering
+;                    the frame.
+;    Reads/writes: bos_mode (CS:3388h -- frame/mode selector byte set
+;                  by caller); bos_anim_tbl (CS:3395h -- frame handler
+;                  pointer table); bos_color_lut_a..d (CS:3497h/3654h/
+;                  3753h/38D0h); bos_src_col_a/_b (DS:4F25h/50E5h --
+;                  sprite source columns) + bos_var_25e..29e boss-state
+;                  vars in game DS; CS+1000h decompression scratch
+;                  segment; A000h (EGA/VGA) and B800h (CGA) framebuffers
+;                  via Map Mask / Graphics Mode 5 register writes.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

@@ -34,6 +34,29 @@ PAGE  59,132
 ;  Animation dispatch via dispatch_tbl (game DS): 5 handler procs
 ;  anim_cycle_2frame_1B/6frame_1D/2frame_2C/4frame_25 and the neg handler.
 ;
+;  Connections:
+;    Loads:        none -- driver is resident; sprite/tile data staged by
+;                  200FIGHT into game_seg buffers (mca_sprite_src at 6333h,
+;                  mca_sprite_src_b at 0B000h, mca_pattern_base at 0D000h).
+;    Calls into:   ds:dispatch_tbl[bx] (game-DS animation handler table);
+;                  cs:copy_fn_tbl entries (MCGA chunky-pixel copy variants);
+;                  internal frame_row_driver / anim_refresh_all /
+;                  projectile_spawn_check / projectile_render_list /
+;                  fade_gradient_rect dispatchers; cs:[11Ah] -- driver fn
+;                  (input/page advance); no cross-chunk calls outside its
+;                  own driver fn table.
+;    Called by:    200FIGHT (and 201SELCT) via the graphics-driver dispatch
+;                    slots at cs:[2000h..303Ch] -- this module IS the MCGA
+;                    driver. Loaded at game_seg:9000h by game.asm when
+;                    gvar_gfx_mode selects MCGA/VGA-256. Entry via
+;                    drv_init_stub at cs:[10Ch].
+;    Reads/writes: mca_sprite_src / mca_sprite_src_b / mca_plane_alt /
+;                    mca_pattern_base (DS:6333h / 0B000h / 0B17Eh / 0D000h),
+;                    cur_color_pair + vga_row_ptr / scroll_vga_ofs /
+;                    row_counter / anim_phase (CS-resident driver state),
+;                    MCGA A000h linear framebuffer (320x200 chunky, one
+;                    byte per pixel; no plane registers).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
