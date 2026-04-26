@@ -20,6 +20,36 @@ PAGE  59,132
 ;    0ED20h = extended enemy data area (enemy_data_ext).
 ;    0FF35h / 0FF4Ah = global frame / sub-frame counters.
 ;
+;  State machine (MEDA -- jellyfish, 4 sub-handlers):
+;
+;    Primary dispatch by [si+4]&0xF (table at 0xA345):
+;      idx 4/5 -> sub01_handler  (idle/hover, cooldown=0x18)
+;      idx 6   -> sub02_handler  (projectile spawn, cooldown=0x10)
+;      idx 7   -> sub03_handler  (chase/dist4, cooldown=8)
+;      idx 8   -> sub04_handler  (boundary patrol, cooldown=8)
+;
+;    sub01 (idle/hover):
+;       collide_outer --no--> retn
+;            |yes
+;            v
+;       [si+9]&1 ? --no--> distance_check_4 ? --yes--> rng-gate -> [si+9]|=1
+;            |yes                              --no--> phase step pos/neg
+;            v                                          (face hero, cycle)
+;       phase_inc -> anim 8..0xB then [si+9]&=~1 (back to idle)
+;       advance_xy -> ai_attack_fn (xlat via meda_tbl_e..h)
+;
+;    sub02 (proj spawn): visibility/anim-id checks (1/4/5/6/8 -> hide);
+;       fight_cb_spawn_alt -> emit clone projectile to enemy_data_ext;
+;       phase_advance -> step toward hero, [si+9]&=~2 done.
+;
+;    sub03 (chase): [si+9].4 -> alt double-step branch
+;       [si+9].2 -> phase 4 = sets state via dist4 then rng-gate -> state0
+;       no bits -> phase advance + step pos/neg, sets state2 on success.
+;
+;    sub04 (patrol): [si+9].1 -> branch_b (block + anim_inc -> state2)
+;       [si+9].2 -> branch_c (low/high range alt step branches)
+;       no bits -> anim_step + map_fwd/step_neg/pos cycle.
+;
 ;  Connections:
 ;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
 ;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:

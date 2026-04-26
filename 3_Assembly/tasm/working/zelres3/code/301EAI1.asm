@@ -32,6 +32,34 @@ PAGE  59,132
 ;    0A2xxh / 0A7xxh are lookup tables in the shared enemy data area.
 ;    0FF2Eh / 0FF35h / 0FF36h are global frame / timing flags.
 ;
+;  State machine (CRAB):
+;
+;    Primary dispatch by [si+4]&0xF (table at 0xA266):
+;      idx 2 -> crab_ai_main_entry      (walk/seek main)
+;      idx 3 -> crab_attack_state_a     (jump-attack pattern A)
+;      idx 4 -> crab_attack_state_b     (jump-attack pattern B)
+;      idx 5 -> crab_pincer_state       (pincer/grab sequence)
+;
+;    crab_ai_main_entry: secondary dispatch by [si+9] hi-nibble bits 6:5
+;    via crab_tbl_a[bx]:
+;
+;      sub00 (idle)  --visible+pos_ok--> sub01 (phase advance to 0x80)
+;        |                                   |
+;        |  pos!=ok  -> [si+9]=0x40          v
+;                                        sub02 (chase / range select)
+;                                            |
+;            +-------blocked-----------------+
+;            v                               v
+;        sub02 jumps to [si+9]=0xC0      sub03 (step cycle)
+;                                            |
+;                                       step done -> [si+9]=0
+;                                       (phase wraps back to sub00)
+;
+;    Attack pattern handlers seed [si+8] cooldown then either:
+;      - jmp ai_hide_fn (when [si+5] & 0x20 visibility flag)
+;      - run xlat-driven step pattern via crab_rotate_a/b tables
+;      - dist_check_8 / dist_check_6 gate transitions back to walk
+;
 ;  Connections:
 ;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
 ;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:

@@ -30,6 +30,36 @@ PAGE  59,132
 ;    idx 7 -> sub02_handler alt entry (offset -1)
 ;    idx 8 -> sub03_handler
 ;
+;  State machine (Type 7 -- DRGN multi-phase pursuer):
+;
+;    sub01 (main entry, no cooldown):
+;
+;       hidden? --yes--> hide_branch (ai_fire)
+;       hit?    --yes--> hide_branch
+;            |no
+;            v
+;       collide_outer --no--> retn
+;            |yes
+;            v
+;       [si+9]&1 ? --yes--> state1_active (phase 6=spawn, 8=clear+state0)
+;            |no
+;            v
+;       distance_check_5 ? --no--> aim_setup (compare to aim_delta_pos/neg,
+;            |yes                  step fwd/back to maintain aim window;
+;            v                     refresh deltas via rng_fn_ptr;
+;       phase advance via xor[si+5],80h (face flip on dist=FF)
+;       step pos/neg with phase_inc (0..3) -> finalize
+;
+;    sub02 (cooldown=0x40): same shape as sub01 but uses despawn into
+;       spawn_cell_row_hi/lo and phase 6 = spawn_setup.
+;
+;    sub03 (cooldown=8): fight_cb_alt --no--> fight_cb_spawn (init).
+;       Visible: [si+9]&0x18 ? -- yes --> state18_active (xlat via
+;       dir_xlat_alt + tables 0xA8B1/B8/BF, range-gated;
+;       on completion -> phase=3 + fight_cb_blocked).
+;       no -- > step_setup: dist6 + record_ofs + cmp_tile to choose
+;       step direction; sets [si+9]|=8 on tile match, |=0x10 on step done.
+;
 ;  Connections:
 ;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
 ;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:

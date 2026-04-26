@@ -20,6 +20,40 @@ PAGE  59,132
 ;    0ED20h = extended enemy data area (body segment/chain tracking).
 ;    0FF35h / 0FF4Ah = global frame / sub-frame counters.
 ;
+;  State machine (ZELA -- segmented body):
+;
+;    dispatch_by_state_hi tests [si+5]&0x20 visibility, then routes by
+;    bits in [si+9]:
+;
+;          dispatch_by_state_hi
+;                  |
+;         visible? +--no--> ai_hide_fn
+;                  |yes
+;                  v
+;       [si+9]&8 ? --yes--> state_bit3_anim_inc (lookup via zela_tbl_a)
+;                  |no
+;                  v
+;       [si+9]&4 ? --yes--> state_bit2_anim_step (double step pos/neg)
+;                  |no
+;                  v
+;       fight_cb_blocked --no_carry--> retn
+;                  |carry
+;                  v
+;       [si+9]&1 ? --yes--> state_bit0_anim_inc (anim 8..0xB cycle)
+;       [si+9]&2 ? --yes--> state_bit1_anim_dec (anim 0xB..8 cycle)
+;                  |no/no
+;                  v
+;       phase_advance_lo -> phase_check_frame
+;          (frame match -> rng-gate state5; far -> step pos -> state9)
+;
+;    zela_attack_state (dispatch idx): cooldown=0x10, anim-id checks
+;    (1/4/5/6/8 = hide), spawns body segment via ai_spawn_fn into
+;    enemy_data_ext[bx], chains via [si+0Ah] secondary index.
+;
+;    zela_low_state: short-range encounter -- [si+9]|=1 then spawn.
+;    zela_spawn_state: range-gated zela_lookup_state walks 5x triplet
+;    rows in zela_pattern_data; sets new (anim,state,phase) on match.
+;
 ;  Connections:
 ;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
 ;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:

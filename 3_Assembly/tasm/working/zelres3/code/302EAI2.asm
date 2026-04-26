@@ -30,6 +30,35 @@ PAGE  59,132
 ;  with bx = 2 * (rotated [si+9] bits 6:5).  Sourcer cannot trace these
 ;  jumps because the dispatch tables live in DS.
 ;
+;  State machine (TAKO):
+;
+;    Primary dispatch by [si+4]&0xF (table at 0xA37B):
+;      idx 2/3 -> tako_ai_main_entry   (idle/swim/attack)
+;      idx 4   -> tako_alt_state_a     (tentacle launch A, cooldown=4)
+;      idx 5   -> tako_alt_state_b     (tentacle launch B, cooldown=2)
+;      idx 6/7 -> tako_seek_state      (4-substate seek dispatcher)
+;
+;    Main entry flow:
+;
+;      check_hit ([si+15h]&0x40) --hit--> enter_hide_state
+;          |
+;       step_swim_y (vertical drift)
+;          |
+;          v
+;      [si+9]&1 ? -- yes --> state_swim_active (phase 6=launch tentacles,
+;          | no                                phase 8=finish)
+;          v
+;      state_idle_branch (distance_check_5)
+;          |
+;       close: aim toward hero, set_swim_targets -> [si+9]|=1
+;       far : phase advance, step pos/neg
+;          |
+;       random_attack_test --gate--> enter_attack_state ([si+9]|=3)
+;
+;    seek_state secondary dispatch via tako_state_dispatch (DS 0xA956),
+;    bx = 2 * (rotated [si+9] bits 6:5):
+;      sub00 (idle/decel) -> sub01 -> sub02 (chase) -> sub03 (step) -> sub00
+;
 ;  Connections:
 ;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
 ;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:

@@ -19,6 +19,33 @@ PAGE  59,132
 ;    0A4EAh..0A662h = TORI flight-pattern / attack-decision lookup tables.
 ;    0FF35h = shared gvar_frame_cnt.
 ;
+;  State machine (TORI -- two-level dispatch):
+;
+;    Primary dispatch by [si+4]&0xF (table at 0xA2C0):
+;      idx 2 -> tori_state2_entry  (hover/swoop substates 2..7)
+;      idx 3 -> tori_state3_entry  (dive cycle, [si+9] bits 4/8)
+;      idx 4 -> tori_state4_entry  (flap, substates 0..3 via tori_tbl_b)
+;      idx 5 -> tori_state5_entry  (retreat / step1 cycle, cooldown=4)
+;
+;    state2 secondary dispatch by [si+9] & 0x7 (table at 0xA2E9):
+;
+;      sub2 (range/phase) --in_range--> sub5 (counter step E/W)
+;        |  ([si+6] flags)                |
+;        v                                v
+;      sub3 (advance) --[si+9]=2-->     sub6 (counter step alt)
+;        |                                |
+;        v                                v
+;      sub4 (init [si+9]=3) ---------->  sub7 (alt step + state6)
+;                                          |
+;                              tori_alt_state_a (-> state 7)
+;                              tori_alt_state_b (attack chain, ->reset)
+;
+;    state3 phase machine: [si+6] high nibble = phase counter;
+;    [si+9].8 -> xlat-driven attack via tori_tbl_a; reset clears.
+;
+;    state5: dist_check_6 / dist_check_5 gate facing flips and
+;    transitions to/from state1 (active retreat) and idle.
+;
 ;  Connections:
 ;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
 ;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:

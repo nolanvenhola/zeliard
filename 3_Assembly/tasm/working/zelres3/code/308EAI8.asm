@@ -27,6 +27,44 @@ PAGE  59,132
 ;  bx = ([si+4]&0xF)*2).  Sub-state handlers eai8_subNN_handler
 ;  implement the per-state behaviour.
 ;
+;  State machine (Type 8 -- AKMA boss-class aggressive attacker):
+;
+;    Primary dispatch by [si+4]&0xF (DS table at 0xA2C7):
+;      idx 1 -> eai8_phase_reset_stub  (clear [si+6], retn)
+;      idx 2 -> eai8_sub01_handler     (advance/charge, cooldown=0x30)
+;      idx 3 -> eai8_sub02_handler     (multi-pass strafe-attack, =0x40)
+;      idx 4 -> eai8_sub03_handler     (xlat-driven aim/fire, =0x60)
+;
+;    sub01 (advance):
+;       hidden? --yes--> ai_fire
+;       blocked --no--> retn
+;            |yes
+;            v
+;       [si+9]&1 ? --no--> state0: distance_check_5 sets facing,
+;            |yes              FF -> phase_inc; phase wraps -> step pos/neg;
+;            |                 step blocked -> [si+9]=0, flip facing.
+;            v
+;       state1: dec [si+0Ah]; every 4 ticks recheck dist + step;
+;       blocked -> [si+9]=0 (back to state0).
+;
+;    sub02 (multi-pass attack):
+;       hidden? --> ai_fire;  blocked? --no--> retn
+;       [si+9]&4 ? --yes--> spawn_setup (3-tick gather -> spawn_emit:
+;            |              despawn into enemy_spawn_tile_*, [si+9]|=2)
+;            |no
+;       [si+9]&1 ? --yes--> state1_active (8-phase advance ->
+;            |                set_state2: rng pick strafe fwd/back;
+;            |                cmp_tile gates step pos/neg)
+;            |              [si+9]&2 -> state2_clear ([si+9]&=~1, phase=0)
+;            |no
+;       attack_chk: rng_pick_facing -> phase_advance_helper;
+;            rng_gate -> [si+9]=1 (advance phase).
+;
+;    sub03 (aim/fire): phase_inc; on phase-carry distance_check_8
+;       drives rng_facing or aim_apply -> map_fwd/blocked + xlat
+;       direction (dir_xlat_alt / dir_xlat_table) -> fight_cb_range;
+;       carry -> flip facing.
+;
 ;  Connections:
 ;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
 ;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:

@@ -29,6 +29,37 @@ PAGE  59,132
 ;  helper subs do range check, step fwd/back, turn handler, collision
 ;  detection, and wall scan.
 ;
+;  State machine (Type 6 -- LEGA mid-range patroller):
+;
+;    Primary dispatch by [si+4]&0xF (table 0xA407):
+;      sub01_handler  (idle/spawn-prepare, cooldown=0x30)
+;      sub02_handler  (multi-phase pursue/aim,  cooldown=0x10)
+;      sub03_handler  (charge/strafe,           cooldown=8)
+;      sub04_handler  (range-gated spawner,     cooldown=4)
+;
+;    sub01 main path:
+;       collide_outer --no--> retn
+;            |yes
+;            v
+;       [si+9]&1 ? --no--> distance_check_4 ? --yes--> phase=0,[si+9]|=1
+;            |yes                              --no--> rng-gated step+phase_inc
+;            v
+;       phase 4..8 -> spawn cell at enemy_spawn_tile_*; despawn callback
+;
+;    sub02 dispatch by [si+9] bits 1/2/4:
+;       bit2 -> phase2_entry (15-tick aim refresh, dist8 -> phase4)
+;       bit1 -> phase1_entry (anim cycle 0..7, then state2)
+;       bit4 -> phase4_entry (16-tick reset to state0)
+;       none -> attack_branch: dist8 + xlat dir_xlat_table -> facing flip
+;
+;    sub03: state0 = blocked/dist8 step;  state1 (charge) -> dist8
+;       check + double step pos/neg + sub02_block_or_advance;
+;       state2 (return) = anim cycle then back to state0.
+;
+;    sub04: state0 = range gate (8..0x13) + rng -> state1;
+;       state1 = blocked + range gate -> spawn fx;
+;       state2 = phase advance -> fight_cb_spawn (projectile).
+;
 ;  Connections:
 ;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
 ;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
