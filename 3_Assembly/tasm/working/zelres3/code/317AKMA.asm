@@ -100,40 +100,46 @@ start:
 		add	[bp+di],ch		; header field bytes
 		mov	ds:akma_scroll_x,ax		; header field bytes
 		db	12 dup (0)		; reserved / padding
-; 33-byte descriptor row: 0x28 ('(' ) bytes with 0x50 ('P') in slot 7
-		db	'((((((P((((((((((((((((((((((((('
-		db	'~'			; row terminator
-		db	0A0h,0E2h,0A0h, 78h,0A1h, 0Eh
-		db	0A2h, 54h,0A2h, 9Fh,0A2h,0B3h
-		db	0A2h
-		db	50 dup (0)
-		db	0B0h,0A0h, 2Dh,0A1h,0C3h,0A1h
-		db	 31h,0A2h, 77h,0A2h,0A9h,0A2h
+akma_descr_row_a:				; descriptor row: 28h ('(') with 50h ('P') in slot 7
+		db	'((((((P((((((((((((((((((((((((('	; descriptor bytes
+		db	'~'				; row terminator
+
+akma_ptr_tbl_a:					; word ptr table A: 7 entries into A0xx..A2xx data
+		db	0A0h,0E2h,0A0h, 78h,0A1h, 0Eh	; ptrs[0..2]: A0E2,A078,A10E (LE)
+		db	0A2h, 54h,0A2h, 9Fh,0A2h,0B3h	; ptrs[3..5]: ...A254,A29F,A2B3
+		db	0A2h				; ptr trailing byte
+		db	50 dup (0)			; reserved padding tail
+
+akma_ptr_tbl_b:					; word ptr table B: 6 entries into A0xx..A2xx data
+		db	0B0h,0A0h, 2Dh,0A1h,0C3h,0A1h	; ptrs[0..2]: A0B0,A12D,A1C3
+		db	 31h,0A2h, 77h,0A2h,0A9h,0A2h	; ptrs[3..5]: A231,A277,A2A9
 akma_data_word_a		dw	0A2EFh
-		db	0
+		db	0				; ptr terminator
 akma_data_byte_b		db	0
-		db	 02h, 03h, 04h, 00h, 05h, 06h
-		db	 07h, 08h, 00h, 09h, 0Ah, 0Dh
-		db	 0Eh, 00h, 0Bh, 0Ch, 0Fh, 10h
-		db	 00h, 0Fh, 10h, 11h,0BDh, 00h
-		db	0F3h, 00h,0BBh,0F4h, 00h
+
+akma_cell_map_a:				; tile/cell run-list (00h-separated rows)
+		db	 02h, 03h, 04h, 00h, 05h, 06h	; tile cell run
+		db	 07h, 08h, 00h, 09h, 0Ah, 0Dh	; tile cell run
+		db	 0Eh, 00h, 0Bh, 0Ch, 0Fh, 10h	; tile cell run
+		db	 00h, 0Fh, 10h, 11h,0BDh, 00h	; tile cell run
+		db	0F3h, 00h,0BBh,0F4h, 00h	; tile cell run
 akma_data_byte_c		db	0BBh
-		db	0F4h,0BEh,0BFh, 00h,0F4h,0BCh
-		db	0BFh,0C0h, 00h,0BBh, 5Ah,0BEh
-		db	0BFh, 00h, 5Ah, 5Bh,0BFh,0C0h
-		db	 00h, 12h, 00h, 15h, 16h, 00h
-		db	 13h, 14h, 17h, 18h, 00h, 1Ch
-		db	 1Dh, 20h, 21h, 00h, 1Ah, 1Bh
-		db	 1Eh, 1Fh, 00h, 1Eh, 1Fh,0C6h
-		db	 22h, 00h, 00h,0F5h,0F6h,0C2h
-		db	 00h,0F6h,0C2h,0C4h,0C5h, 00h
-		db	0C1h,0F6h,0C3h,0C4h, 00h,0A6h
-		db	0A7h,0C3h,0C4h, 00h,0A7h,0C2h
-		db	0C4h,0C5h, 00h, 00h, 35h, 3Ch
-		db	 3Dh, 00h, 3Dh, 3Eh, 41h, 42h
-		db	 00h, 31h, 32h, 35h, 36h, 00h
-		db	 00h, 2Ah, 2Eh, 23h, 00h, 24h
-		db	 25h, 2Ah, 00h, 00h, 00h
+		db	0F4h,0BEh,0BFh, 00h,0F4h,0BCh	; tile cell run
+		db	0BFh,0C0h, 00h,0BBh, 5Ah,0BEh	; tile cell run
+		db	0BFh, 00h, 5Ah, 5Bh,0BFh,0C0h	; tile cell run
+		db	 00h, 12h, 00h, 15h, 16h, 00h	; tile cell run
+		db	 13h, 14h, 17h, 18h, 00h, 1Ch	; tile cell run
+		db	 1Dh, 20h, 21h, 00h, 1Ah, 1Bh	; tile cell run
+		db	 1Eh, 1Fh, 00h, 1Eh, 1Fh,0C6h	; tile cell run
+		db	 22h, 00h, 00h,0F5h,0F6h,0C2h	; tile cell run
+		db	 00h,0F6h,0C2h,0C4h,0C5h, 00h	; tile cell run
+		db	0C1h,0F6h,0C3h,0C4h, 00h,0A6h	; tile cell run
+		db	0A7h,0C3h,0C4h, 00h,0A7h,0C2h	; tile cell run
+		db	0C4h,0C5h, 00h, 00h, 35h, 3Ch	; tile cell run
+		db	 3Dh, 00h, 3Dh, 3Eh, 41h, 42h	; tile cell run
+		db	 00h, 31h, 32h, 35h, 36h, 00h	; tile cell run
+		db	 00h, 2Ah, 2Eh, 23h, 00h, 24h	; tile cell run
+		db	 25h, 2Ah, 00h, 00h, 00h	; tile cell run
 		db	',/-', 0
 		db	'3#78', 0
 		db	'##C#', 0
@@ -142,23 +148,25 @@ akma_data_byte_c		db	0BBh
 		db	'####', 0
 		db	'9:#@', 0
 		db	'#@@'
-		db	 00h, 00h, 00h, 29h, 27h, 28h
-		db	 00h, 23h, 00h, 3Ah, 3Bh, 00h
-		db	 71h, 00h, 00h, 73h, 00h, 73h
-		db	 74h, 77h, 78h, 00h, 77h, 70h
-		db	 77h, 70h, 00h, 82h, 83h, 88h
-		db	 70h, 00h, 88h, 70h, 00h, 88h
-		db	 00h, 00h, 77h, 81h, 82h, 00h
-		db	 79h, 7Ah, 78h, 79h, 00h, 70h
-		db	 78h, 84h, 85h, 00h, 70h, 70h
-		db	 70h, 8Ch, 00h, 8Fh, 90h, 91h
-		db	 92h, 00h, 75h, 76h, 7Ah, 7Bh
-		db	 00h, 7Bh, 00h, 7Ch, 7Dh, 00h
-		db	 7Fh, 80h, 86h, 87h, 00h, 89h
-		db	 8Ah, 8Dh, 8Eh, 00h, 87h, 00h
-		db	 8Ah, 8Bh, 00h, 00h, 00h, 48h
-		db	 49h, 00h, 00h, 00h, 00h, 4Bh
-		db	 00h
+
+akma_cell_map_b:				; tile/cell run-list (continued)
+		db	 00h, 00h, 00h, 29h, 27h, 28h	; tile cell run
+		db	 00h, 23h, 00h, 3Ah, 3Bh, 00h	; tile cell run
+		db	 71h, 00h, 00h, 73h, 00h, 73h	; tile cell run
+		db	 74h, 77h, 78h, 00h, 77h, 70h	; tile cell run
+		db	 77h, 70h, 00h, 82h, 83h, 88h	; tile cell run
+		db	 70h, 00h, 88h, 70h, 00h, 88h	; tile cell run
+		db	 00h, 00h, 77h, 81h, 82h, 00h	; tile cell run
+		db	 79h, 7Ah, 78h, 79h, 00h, 70h	; tile cell run
+		db	 78h, 84h, 85h, 00h, 70h, 70h	; tile cell run
+		db	 70h, 8Ch, 00h, 8Fh, 90h, 91h	; tile cell run
+		db	 92h, 00h, 75h, 76h, 7Ah, 7Bh	; tile cell run
+		db	 00h, 7Bh, 00h, 7Ch, 7Dh, 00h	; tile cell run
+		db	 7Fh, 80h, 86h, 87h, 00h, 89h	; tile cell run
+		db	 8Ah, 8Dh, 8Eh, 00h, 87h, 00h	; tile cell run
+		db	 8Ah, 8Bh, 00h, 00h, 00h, 48h	; tile cell run
+		db	 49h, 00h, 00h, 00h, 00h, 4Bh	; tile cell run
+		db	 00h				; tile cell run terminator
 		db	'NOST', 0
 		db	'LMPQ', 0
 		db	'U#WX', 0
@@ -168,35 +176,37 @@ akma_data_byte_c		db	0BBh
 		db	'K^gh', 0
 		db	'_`i#', 0
 		db	'DnF'
-		db	 47h, 00h, 00h, 00h, 4Bh, 4Ch
-		db	 00h, 61h, 62h, 23h, 6Bh, 00h
-		db	 00h, 00h, 4Ch, 4Dh, 00h, 63h
-		db	 64h, 6Ch, 6Dh, 00h, 00h, 00h
-		db	 65h, 66h, 00h, 00h, 98h, 00h
-		db	 9Dh, 00h,0A2h, 70h,0A2h,0A6h
-		db	 00h, 4Bh, 4Ch, 99h, 9Ah, 00h
-		db	 9Eh, 9Fh,0A3h,0A4h, 00h, 00h
-		db	 00h, 4Dh, 00h, 00h, 9Bh, 9Ch
-		db	0A0h,0A1h, 00h, 00h, 00h, 4Bh
-		db	 97h, 00h,0B1h,0B2h,0B8h,0B9h
-		db	 00h,0AFh,0B0h, 70h,0B7h, 00h
-		db	 8Fh, 90h, 91h, 92h, 00h, 00h
-		db	 00h, 4Ch, 4Dh, 00h,0ADh,0AEh
-		db	0B5h, 70h, 00h, 00h, 00h, 4Bh
-		db	 4Ch, 00h,0ABh,0ACh,0B3h,0B4h
-		db	 00h, 00h, 00h,0A9h,0AAh, 00h
-		db	0CBh,0CCh,0CDh,0CEh, 00h, 00h
-		db	0C9h,0CFh,0D0h, 00h,0C7h,0C8h
-		db	0C9h,0CAh, 00h,0D2h, 00h,0D4h
-		db	0D5h, 00h,0D4h,0D5h,0D6h,0D7h
-		db	 00h,0D5h,0C9h,0D7h,0D0h, 00h
-		db	0C7h,0C8h,0C9h,0CAh, 00h,0D8h
-		db	0D9h,0DAh,0DBh, 00h,0DBh, 00h
-		db	0DDh,0DEh, 00h,0E1h,0E2h,0DFh
-		db	0E0h, 00h,0D8h,0D9h,0DAh,0DBh
-		db	 00h,0E3h,0E4h,0E5h,0E6h, 00h
-		db	0DBh,0E5h,0DDh,0E7h, 00h,0E5h
-		db	0E6h
+
+akma_cell_map_c:				; tile/cell run-list (continued)
+		db	 47h, 00h, 00h, 00h, 4Bh, 4Ch	; tile cell run
+		db	 00h, 61h, 62h, 23h, 6Bh, 00h	; tile cell run
+		db	 00h, 00h, 4Ch, 4Dh, 00h, 63h	; tile cell run
+		db	 64h, 6Ch, 6Dh, 00h, 00h, 00h	; tile cell run
+		db	 65h, 66h, 00h, 00h, 98h, 00h	; tile cell run
+		db	 9Dh, 00h,0A2h, 70h,0A2h,0A6h	; tile cell run
+		db	 00h, 4Bh, 4Ch, 99h, 9Ah, 00h	; tile cell run
+		db	 9Eh, 9Fh,0A3h,0A4h, 00h, 00h	; tile cell run
+		db	 00h, 4Dh, 00h, 00h, 9Bh, 9Ch	; tile cell run
+		db	0A0h,0A1h, 00h, 00h, 00h, 4Bh	; tile cell run
+		db	 97h, 00h,0B1h,0B2h,0B8h,0B9h	; tile cell run
+		db	 00h,0AFh,0B0h, 70h,0B7h, 00h	; tile cell run
+		db	 8Fh, 90h, 91h, 92h, 00h, 00h	; tile cell run
+		db	 00h, 4Ch, 4Dh, 00h,0ADh,0AEh	; tile cell run
+		db	0B5h, 70h, 00h, 00h, 00h, 4Bh	; tile cell run
+		db	 4Ch, 00h,0ABh,0ACh,0B3h,0B4h	; tile cell run
+		db	 00h, 00h, 00h,0A9h,0AAh, 00h	; tile cell run
+		db	0CBh,0CCh,0CDh,0CEh, 00h, 00h	; tile cell run
+		db	0C9h,0CFh,0D0h, 00h,0C7h,0C8h	; tile cell run
+		db	0C9h,0CAh, 00h,0D2h, 00h,0D4h	; tile cell run
+		db	0D5h, 00h,0D4h,0D5h,0D6h,0D7h	; tile cell run
+		db	 00h,0D5h,0C9h,0D7h,0D0h, 00h	; tile cell run
+		db	0C7h,0C8h,0C9h,0CAh, 00h,0D8h	; tile cell run
+		db	0D9h,0DAh,0DBh, 00h,0DBh, 00h	; tile cell run
+		db	0DDh,0DEh, 00h,0E1h,0E2h,0DFh	; tile cell run
+		db	0E0h, 00h,0D8h,0D9h,0DAh,0DBh	; tile cell run
+		db	 00h,0E3h,0E4h,0E5h,0E6h, 00h	; tile cell run
+		db	0DBh,0E5h,0DDh,0E7h, 00h,0E5h	; tile cell run
+		db	0E6h				; tile cell run trailing byte
 
 akma_unk_handler_2:
 			out	0E8h,ax			; port 0E8h ??I/O Non-standard
@@ -207,47 +217,55 @@ akma_unk_handler_3:
 ;*		add	cl,ch
 			db	 00h,0E9h		;  Fixup - byte match
 ;*		jmp	far ptr loc_1		;*
-			db	0EAh
+			db	0EAh			;  Fixup - byte match (jmp far prefix)
 			dw	0, 100h			;  Fixup - byte match
 			jmp	short $+2		; delay for I/O
 			add	[bx+si],al
 			jmp	short akma_unk_handler_2
-		db	 00h,0EDh, 00h, 01h,0EBh,0F8h
-		db	0F7h, 00h, 01h,0EBh, 00h,0FAh
-		db	 00h, 01h,0EBh, 00h,0FCh, 00h
-		db	0EEh,0EFh, 00h, 00h, 00h,0EFh
-		db	 19h, 00h, 00h, 00h,0F0h,0F1h
-		db	0F2h, 00h, 00h,0F1h, 19h, 00h
-		db	 00h, 00h,0F0h,0F1h,0F2h, 4Ah
-		db	 00h,0F0h,0F1h,0F2h, 34h, 00h
-		db	0F0h,0F1h,0F2h,0FFh, 00h,0F1h
-		db	 19h, 4Ah, 5Ch, 00h, 00h, 6Fh
-		db	 6Ah, 93h, 00h, 72h, 7Eh, 94h
-		db	 95h, 00h, 96h,0A5h,0B6h,0BAh
-		db	 00h,0A8h, 00h,0D1h,0D3h, 00h
-		db	 01h,0EBh,0F9h,0F7h, 00h, 01h
-		db	0EBh,0F8h,0F7h, 00h, 00h, 00h
-		db	0F9h,0F7h, 00h, 00h, 00h,0F8h
-		db	0F7h, 00h, 01h,0EBh, 00h,0FBh
-		db	 00h, 01h,0EBh, 00h,0FAh, 00h
-		db	 00h,0FAh,0FBh, 00h, 00h, 00h
-		db	0FAh,0FAh, 00h, 00h, 01h,0EBh
-		db	 00h,0FEh, 00h, 01h,0EBh, 00h
-		db	0FCh, 00h, 00h,0FDh,0FEh, 00h
-		db	 00h, 00h,0FDh,0FCh, 00h, 00h
-		db	0F1h, 19h, 4Ah, 5Dh, 00h,0F1h
-		db	 19h, 4Ah, 5Ch, 00h, 00h, 00h
-		db	 4Ah, 5Dh, 00h, 00h, 00h, 4Ah
-		db	 5Ch, 00h,0F1h, 19h, 3Fh, 00h
-		db	 00h,0F1h, 19h, 34h, 00h, 00h
-		db	 34h, 00h, 00h, 3Fh, 00h, 34h
-		db	 00h, 00h, 34h, 00h,0F1h, 19h
-		db	 30h, 00h, 00h,0F1h, 19h,0FFh
-		db	 00h, 00h, 2Bh, 00h, 00h, 30h
-		db	 00h, 2Bh, 00h, 00h,0FFh, 8Bh
-		db	 36h, 10h,0C0h,0C6h, 06h, 1Eh
-		db	0AAh, 00h,0C6h, 06h, 1Fh,0AAh
-		db	 00h
+
+akma_cell_map_d:				; tile/cell run-list (continued, EBh/F0h tile range)
+		db	 00h,0EDh, 00h, 01h,0EBh,0F8h	; tile cell run
+		db	0F7h, 00h, 01h,0EBh, 00h,0FAh	; tile cell run
+		db	 00h, 01h,0EBh, 00h,0FCh, 00h	; tile cell run
+		db	0EEh,0EFh, 00h, 00h, 00h,0EFh	; tile cell run
+		db	 19h, 00h, 00h, 00h,0F0h,0F1h	; tile cell run
+		db	0F2h, 00h, 00h,0F1h, 19h, 00h	; tile cell run
+		db	 00h, 00h,0F0h,0F1h,0F2h, 4Ah	; tile cell run
+		db	 00h,0F0h,0F1h,0F2h, 34h, 00h	; tile cell run
+		db	0F0h,0F1h,0F2h,0FFh, 00h,0F1h	; tile cell run
+		db	 19h, 4Ah, 5Ch, 00h, 00h, 6Fh	; tile cell run
+		db	 6Ah, 93h, 00h, 72h, 7Eh, 94h	; tile cell run
+		db	 95h, 00h, 96h,0A5h,0B6h,0BAh	; tile cell run
+		db	 00h,0A8h, 00h,0D1h,0D3h, 00h	; tile cell run
+
+akma_cell_map_e:				; tile/cell run-list (continued, EBh/F7h alt rows)
+		db	 01h,0EBh,0F9h,0F7h, 00h, 01h	; tile cell run
+		db	0EBh,0F8h,0F7h, 00h, 00h, 00h	; tile cell run
+		db	0F9h,0F7h, 00h, 00h, 00h,0F8h	; tile cell run
+		db	0F7h, 00h, 01h,0EBh, 00h,0FBh	; tile cell run
+		db	 00h, 01h,0EBh, 00h,0FAh, 00h	; tile cell run
+		db	 00h,0FAh,0FBh, 00h, 00h, 00h	; tile cell run
+		db	0FAh,0FAh, 00h, 00h, 01h,0EBh	; tile cell run
+		db	 00h,0FEh, 00h, 01h,0EBh, 00h	; tile cell run
+		db	0FCh, 00h, 00h,0FDh,0FEh, 00h	; tile cell run
+		db	 00h, 00h,0FDh,0FCh, 00h, 00h	; tile cell run
+
+akma_cell_map_f:				; tile/cell run-list (continued, F1/19h state rows)
+		db	0F1h, 19h, 4Ah, 5Dh, 00h,0F1h	; tile cell run
+		db	 19h, 4Ah, 5Ch, 00h, 00h, 00h	; tile cell run
+		db	 4Ah, 5Dh, 00h, 00h, 00h, 4Ah	; tile cell run
+		db	 5Ch, 00h,0F1h, 19h, 3Fh, 00h	; tile cell run
+		db	 00h,0F1h, 19h, 34h, 00h, 00h	; tile cell run
+		db	 34h, 00h, 00h, 3Fh, 00h, 34h	; tile cell run
+		db	 00h, 00h, 34h, 00h,0F1h, 19h	; tile cell run
+		db	 30h, 00h, 00h,0F1h, 19h,0FFh	; tile cell run
+		db	 00h, 00h, 2Bh, 00h, 00h, 30h	; tile cell run
+		db	 00h, 2Bh, 00h, 00h,0FFh, 8Bh	; tile cell run + run trailer
+
+akma_init_code_a:				; embedded code-as-data: mov si,[10C0h] / mov [AA1Eh],0 / mov [AA1Fh],0
+		db	 36h, 10h,0C0h,0C6h, 06h, 1Eh	; init code bytes
+		db	0AAh, 00h,0C6h, 06h, 1Fh,0AAh	; init code bytes
+		db	 00h				; init code byte
 
 akma_npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
@@ -915,57 +933,76 @@ akma_data_trailer	label	byte
 		push	ds
 ;*		add	[bx+di+0],dl
 		db	 00h, 51h, 00h		;  Fixup - byte match
-		db	 50h, 20h, 01h, 02h, 51h, 21h
-		db	 22h, 03h, 04h
-		db	'#$'
-		db	8, 9, '%& !', 8, '"#', 9, '$'
-		db	'%'
-		db	 03h, 04h, 26h, 01h, 02h, 50h
-		db	 00h, 51h, 00h, 50h, 27h, 01h
-		db	 02h, 51h, 28h, 29h, 03h, 04h
-		db	 2Ah, 2Bh, 05h, 06h, 07h, 2Ch
-		db	 2Dh, 2Eh, 2Eh, 2Ch, 2Dh, 07h
-		db	 2Ah, 2Bh, 05h, 06h, 28h, 29h
-		db	 03h, 04h, 27h, 01h, 02h, 50h
-		db	 00h, 51h, 7Ch,0A8h,0B0h,0A8h
-		db	0E4h,0A8h, 96h,0A8h,0CAh,0A8h
-		db	0FEh,0A8h, 00h, 00h, 01h, 08h
-		db	 04h, 00h, 2Ah,0A8h, 40h, 00h
-		db	 2Ah,0B0h, 00h, 00h, 56h, 30h
-		db	 88h, 10h
-		db	14 dup (0)
-		db	 88h, 10h, 56h, 30h, 00h, 00h
-		db	 2Ah,0B0h, 40h, 00h, 2Ah,0A8h
-		db	 04h, 00h, 01h, 08h, 00h, 00h
-		db	 00h, 00h, 00h, 00h, 01h, 08h
-		db	 00h, 00h, 02h,0A8h, 00h, 00h
-		db	 02h,0B0h, 00h, 00h, 01h, 50h
-		db	 00h, 10h, 00h,0A0h, 00h, 00h
-		db	9 dup (0)
-		db	0A0h, 00h, 10h, 01h, 50h, 00h
-		db	 00h, 02h,0B0h, 00h, 00h, 02h
-		db	0A8h, 00h, 00h, 01h, 08h, 00h
-		db	 00h, 00h, 00h, 00h, 00h, 01h
-		db	 08h, 00h, 00h, 02h,0A8h, 00h
-		db	 00h, 02h,0B0h, 00h, 00h, 0Ah
-		db	 30h, 00h, 10h, 0Ah, 00h, 00h
-		db	 00h, 04h, 00h, 00h, 00h, 04h
-		db	 00h, 00h, 00h, 0Ah, 00h, 00h
-		db	 10h, 0Ah, 30h, 00h, 00h, 02h
-		db	0B0h, 00h, 00h, 02h,0A8h, 00h
-		db	 00h, 01h, 08h, 00h, 00h, 00h
-		db	 00h,0FFh, 30h,0FFh,0FFh,0FFh
-		db	 31h, 32h,0FFh,0FFh,0FFh,0FFh
-		db	0FFh, 33h, 34h,0FFh, 35h, 36h
-		db	0FFh,0FFh,0FFh, 30h,0FFh,0FFh
-		db	 31h,0FFh,0FFh,0FFh, 32h,0FFh
-		db	0FFh, 33h,0FFh,0FFh, 35h, 34h
-		db	 36h,0FFh,0FFh,0FFh,0FFh
-		db	'@ABCDCECFC@ABCDGECFC<<=>??'
-		db	0, 0, 0, 1
-		db	23 dup (1)
-		db	0, 0, 0
-		db	 3Fh, 3Fh, 3Eh, 3Dh, 3Ch, 3Ch
+
+akma_trailer_pattern_a:				; index/state pattern bytes (00h/51h/50h tile-id markers)
+		db	 50h, 20h, 01h, 02h, 51h, 21h	; pattern row
+		db	 22h, 03h, 04h			; pattern row
+		db	'#$'				; pattern bytes (23h,24h)
+		db	8, 9, '%& !', 8, '"#', 9, '$'	; pattern bytes (08-09 tabs + ASCII run)
+		db	'%'				; pattern byte (25h)
+		db	 03h, 04h, 26h, 01h, 02h, 50h	; pattern row
+		db	 00h, 51h, 00h, 50h, 27h, 01h	; pattern row
+		db	 02h, 51h, 28h, 29h, 03h, 04h	; pattern row
+		db	 2Ah, 2Bh, 05h, 06h, 07h, 2Ch	; pattern row
+		db	 2Dh, 2Eh, 2Eh, 2Ch, 2Dh, 07h	; pattern row
+		db	 2Ah, 2Bh, 05h, 06h, 28h, 29h	; pattern row
+		db	 03h, 04h, 27h, 01h, 02h, 50h	; pattern row
+		db	 00h, 51h			; pattern row tail
+
+akma_phase_si_word_tbl:				; SI/DI word ptr table (entries into akma_phase_* @ A87Ch..)
+		db	 7Ch,0A8h,0B0h,0A8h		; ptr A87C, A8B0
+		db	0E4h,0A8h, 96h,0A8h,0CAh,0A8h	; ptr A8E4, A896, A8CA
+		db	0FEh,0A8h			; ptr A8FE
+
+akma_state_block_a:				; phase-state block A (3-row VFX coord matrix)
+		db	 00h, 00h, 01h, 08h		; state row
+		db	 04h, 00h, 2Ah,0A8h, 40h, 00h	; state row
+		db	 2Ah,0B0h, 00h, 00h, 56h, 30h	; state row
+		db	 88h, 10h			; state row tail
+		db	14 dup (0)			; pad / reserved
+
+akma_state_block_b:				; phase-state block B (mirror of block_a, reversed)
+		db	 88h, 10h, 56h, 30h, 00h, 00h	; state row
+		db	 2Ah,0B0h, 40h, 00h, 2Ah,0A8h	; state row
+		db	 04h, 00h, 01h, 08h, 00h, 00h	; state row
+		db	 00h, 00h, 00h, 00h, 01h, 08h	; state row
+		db	 00h, 00h, 02h,0A8h, 00h, 00h	; state row
+		db	 02h,0B0h, 00h, 00h, 01h, 50h	; state row
+		db	 00h, 10h, 00h,0A0h, 00h, 00h	; state row
+		db	9 dup (0)			; pad / reserved
+
+akma_state_block_c:				; phase-state block C
+		db	0A0h, 00h, 10h, 01h, 50h, 00h	; state row
+		db	 00h, 02h,0B0h, 00h, 00h, 02h	; state row
+		db	0A8h, 00h, 00h, 01h, 08h, 00h	; state row
+		db	 00h, 00h, 00h, 00h, 00h, 01h	; state row
+		db	 08h, 00h, 00h, 02h,0A8h, 00h	; state row
+		db	 00h, 02h,0B0h, 00h, 00h, 0Ah	; state row
+		db	 30h, 00h, 10h, 0Ah, 00h, 00h	; state row
+		db	 00h, 04h, 00h, 00h, 00h, 04h	; state row
+		db	 00h, 00h, 00h, 0Ah, 00h, 00h	; state row
+		db	 10h, 0Ah, 30h, 00h, 00h, 02h	; state row
+		db	0B0h, 00h, 00h, 02h,0A8h, 00h	; state row
+		db	 00h, 01h, 08h, 00h, 00h, 00h	; state row
+		db	 00h				; state row tail
+
+akma_xlat_tbl_a969_data:			; xlat table @ A969h: tile-id remap with 0FFh masks
+		db	0FFh, 30h,0FFh,0FFh,0FFh	; xlat row
+		db	 31h, 32h,0FFh,0FFh,0FFh,0FFh	; xlat row
+		db	0FFh, 33h, 34h,0FFh, 35h, 36h	; xlat row
+		db	0FFh,0FFh,0FFh, 30h,0FFh,0FFh	; xlat row
+		db	 31h,0FFh,0FFh,0FFh, 32h,0FFh	; xlat row
+		db	0FFh, 33h,0FFh,0FFh, 35h, 34h	; xlat row
+		db	 36h,0FFh,0FFh,0FFh,0FFh	; xlat row tail
+
+akma_pattern_string_a:				; tile-id char pattern (40h..47h with mid-pattern)
+		db	'@ABCDCECFC@ABCDGECFC<<=>??'	; tile pattern string
+
+akma_pad_block_a:				; padding/pattern bytes (00..03h fillers)
+		db	0, 0, 0, 1			; pad bytes
+		db	23 dup (1)			; 23 fill 01h bytes
+		db	0, 0, 0				; pad bytes
+		db	 3Fh, 3Fh, 3Eh, 3Dh, 3Ch, 3Ch	; descending step pattern
 
 akma_phase_step_cb		proc	near
 		mov	ax,ds:akma_scroll_max
