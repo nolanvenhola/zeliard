@@ -38,17 +38,13 @@ PAGE  59,132
 ;                  inline music-init code sequence -- see ref_stdply at
 ;                  module offset ~0x4C2).
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
-;                  drv_palette_push, drv_anim_step, drv_render_char,
-;                  drv_ds_copy, drv_return_to_caller, drv_fn_palette_a
-;                  (cs:[2006h]), drv_fn_blit_on/off (cs:[2026h/2028h])
-;                    (graphics driver dispatch slots)
-;                  script_step (cs:[6004h]), script_format_num,
-;                  script_display_page, script_take_item, script_give_item
-;                    (script interpreter slots)
+;                  drv_ds_copy (graphics driver dispatch slots)
+;                  script_step at cs:[6004h] (script interpreter step)
+;                  script_display_page at cs:[6008h] (raw db-encoded call)
 ;                  sage_cmd_tbl[bx] (CS-relative dispatch by AL menu cmd)
 ;                  sage_init_tbl[bx] (DS-resident, indexed by gvar_sage_id)
 ;                  INT 21h functions 3Ch (create), 40h (write), 3Eh (close)
-;                    -- write *.usr save file in cmd_record_experience.
+;                    -- write *.usr save file (record_experience handler).
 ;    Called by:    106TOWN building dispatch when player visits a Sage
 ;                    (loaded as loaded_code_a at game_seg:3000h via SAR
 ;                    loader; per-sage selection via gvar_sage_id 1..8).

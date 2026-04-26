@@ -173,19 +173,25 @@ def check_calls_into(files, inc_syms, results):
         actual_calls = parse_file_calls(path)
         body = load_file(path)
         body_nc = re.sub(r';.*', '', body, flags=re.M)
-        # Numeric dispatch addresses called from this file
+
+        def norm_addr(s):
+            """Normalize hex like '010Ch' / '10Ch' / '0x10C' to canonical form."""
+            s = s.upper().rstrip('H').lstrip('0') or '0'
+            return s + 'h'
+
         numeric_calls = set()
         for m in re.finditer(r'(?:call|jmp)\s+(?:word\s+ptr\s+)?(?:cs|ds):\[([0-9a-fA-F]+h?)\]', body_nc):
-            numeric_calls.add(m.group(1).upper().rstrip('H') + 'h')
+            numeric_calls.add(norm_addr(m.group(1)))
+        for m in re.finditer(r'cs:\[([0-9a-fA-F]+h?)\]', body):
+            numeric_calls.add(norm_addr(m.group(1)))
 
         for sym in claimed:
             if sym in actual_calls:
                 continue
             if re.search(rf'\b{re.escape(sym)}\b', body_nc):
                 continue
-            # Resolve sym → address; if file uses that address numerically, accept
             if sym in inc_syms:
-                val = inc_syms[sym][0].upper().rstrip('H') + 'h'
+                val = norm_addr(inc_syms[sym][0])
                 if val in numeric_calls:
                     continue
             if sym in ('SAR', 'DS', 'CS', 'cs', 'ds', 'fight', 'sar'):
