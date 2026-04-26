@@ -19,12 +19,15 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+dispatch_tbl             equ     3170h
+
 
 ; External data references (outside this module's CS segment).
 
 ; --- Game-segment data pointers (in game_seg via DS) ---
-sprite_gfx_base	equ	4000h			;* game segment sprite graphics base
-game_data_base	equ	6000h			;* game segment data base offset
 cga_sprite_base equ	6333h			;* CGA sprite graphics base (stage2 lookup)
 bg_save_buf_a	equ	8640h			;* background save buffer A
 bg_save_buf_b	equ	8690h			;* background save buffer B
@@ -33,7 +36,6 @@ cga_plane_alt	equ	0B17Eh			;* CGA alternate plane offset
 cga_sprite_mid	equ	0D000h			;* CGA mid-priority sprite source base
 
 ; --- Internal driver tables (CS-relative) ---
-dispatch_tbl	equ	3170h			;* function dispatch table (word array)
 anim_frame_tbl	equ	38D1h			;* animation frame offset table
 pattern_ptr_tbl	equ	397Dh			;* pattern pointer table
 sprite_tmp_buf	equ	4643h			;* sprite temporary pixel buffer
@@ -70,41 +72,13 @@ cache_tbl_c	equ	529Fh			;* third cache table
 cache_tbl_d	equ	532Fh			;* fourth cache table
 
 ; --- Game-segment lookup tables ---
-sprite_lookup_base equ	625Ch			;* sprite graphics lookup base offset
 sprite_src_base_ds equ	0A030h			;* sprite source table (game_seg)
-sprite_attr_base equ	0C010h			;* sprite attribute record base
-sprite_attr_b	equ	0C012h			;* sprite attribute record +2 (sub-field)
 vga_wrap_adj	equ	0C050h			;* VGA wrap adjust (+0xC050 when di >= 0x4000)
 
 ; --- Pattern/background data (game_seg) ---
-pattern_base	equ	0E000h			;* background pattern data base
-sprite_buf	equ	0E900h			;* sprite staging buffer base
-sprite_buf_b	equ	0E91Bh			;* sprite staging buffer +0x1B
-char_lookup	equ	0ED20h			;* character/tile lookup table
-projectile_list	equ	0EDA0h			;* projectile slot list base
 enemy_spawn_ctrl equ	0FB3Ah			;* enemy spawn control byte
 
 ; --- Global variables (game_seg:0xFFxx) ---
-frame_timer	equ	0FF1Ah			;* frame timer counter (increments each interrupt)
-game_seg	equ	0FF2Ch			;* game segment selector word
-flag_shadow	equ	0FF2Fh			;* shadow/invincibility flag byte
-sprite_data_ptr	equ	0FF31h			;* sprite data table pointer (word)
-anim_speed	equ	0FF33h			;* animation speed counter byte
-flag_equip_b	equ	0FF34h			;* equipment state flag B
-color_sel	equ	0FF36h			;* CGA color selector byte
-redraw_lock	equ	0FF37h			;* redraw lock/busy flag byte
-flag_shield	equ	0FF38h			;* shield equipped flag byte
-flag_climbing	equ	0FF39h			;* climbing/jump state flag byte
-flag_riding	equ	0FF3Ah			;* riding/mount state flag byte
-equip_byte	equ	0FF3Dh			;* equipment state byte (packed flags)
-hero_frame	equ	0FF3Fh			;* hero animation frame index byte
-flag_hero_state	equ	0FF40h			;* hero state flag byte
-weapon_state	equ	0FF41h			;* weapon animation state byte
-shield_sel	equ	0FF42h			;* shield type selector byte
-scroll_active	equ	0FF43h			;* scrolling active flag byte
-restore_pending	equ	0FF44h			;* restore-to-background pending flag byte
-scroll_phase	equ	0FF45h			;* scroll animation phase byte
-scroll_step	equ	0FF46h			;* scroll step counter byte
 
 ; --- Fixed CGA layout constants ---
 cga_col_stride	equ	0A0h			; CGA bytes per interleaved row (160)

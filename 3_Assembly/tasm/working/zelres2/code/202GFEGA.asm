@@ -36,16 +36,19 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+dispatch_tbl             equ     3170h
+
 
 ; External data references (outside this module's CS segment).
 
 ; --- Game-segment data pointers (in game_seg via DS) ---
-game_data_base	equ	6000h			;* game segment data base offset
 ega_sprite_src	equ	0B000h			;* EGA sprite source data base
 ega_plane_alt	equ	0B17Eh			;* EGA alternate plane offset
 
 ; --- Internal driver tables (CS-relative) ---
-dispatch_tbl	equ	3170h			;* function dispatch table (word array)
 anim_frame_tbl	equ	3863h			;* animation frame offset table
 pattern_ptr_tbl	equ	3929h			;* pattern pointer table
 sprite_tmp_buf	equ	3E80h			;* sprite temporary pixel buffer
@@ -77,46 +80,15 @@ sprite_pos	equ	508Eh			;* sprite position word (col/row packed)
 sprite_cache_tbl equ	5097h			;* sprite EGA cache table (word array, indexed by slot*2)
 
 ; --- Game-segment lookup tables ---
-sprite_lookup_base equ	625Ch			;* sprite graphics lookup base offset
 
 ; --- Sprite attribute table ---
-sprite_src_b	equ	0A030h			;* sprite source table B
 sprite_flags	equ	0AF3Fh			;* sprite flags byte (used for initialization)
-sprite_attr_base equ	0C010h			;* sprite attribute record base
-sprite_attr_b	equ	0C012h			;* sprite attribute record +2 (sub-field)
 
 ; --- Pattern/background data ---
-pattern_base	equ	0E000h			;* background pattern data base
-sprite_buf	equ	0E900h			;* sprite staging buffer base
-sprite_buf_b	equ	0E91Bh			;* sprite staging buffer +0x1B
-char_lookup	equ	0ED20h			;* character/tile lookup table
-projectile_list	equ	0EDA0h			;* projectile slot list base
 
 ; --- Global variables (game_seg:0xFFxx) ---
-frame_timer	equ	0FF1Ah			;* frame timer counter (increments each interrupt)
-game_seg	equ	0FF2Ch			;* game segment selector word
-flag_shadow	equ	0FF2Fh			;* shadow/invincibility flag byte
-sprite_data_ptr	equ	0FF31h			;* sprite data table pointer (word)
-anim_speed	equ	0FF33h			;* animation speed counter byte
-flag_equip_b	equ	0FF34h			;* equipment state flag B
-enemy_counter	equ	0FF35h			;* active enemy count byte
-color_sel	equ	0FF36h			;* EGA color selector byte
-redraw_lock	equ	0FF37h			;* redraw lock/busy flag byte
-flag_shield	equ	0FF38h			;* shield equipped flag byte
-flag_climbing	equ	0FF39h			;* climbing/jump state flag byte
-flag_riding	equ	0FF3Ah			;* riding/mount state flag byte
-equip_byte	equ	0FF3Dh			;* equipment state byte (packed flags)
-hero_frame	equ	0FF3Fh			;* hero animation frame index byte
-flag_hero_state	equ	0FF40h			;* hero state flag byte
-weapon_state	equ	0FF41h			;* weapon animation state byte
-shield_sel	equ	0FF42h			;* shield type selector byte
-scroll_active	equ	0FF43h			;* scrolling active flag byte
-restore_pending	equ	0FF44h			;* restore-to-background pending flag byte
-scroll_phase	equ	0FF45h			;* scroll animation phase byte
-scroll_step	equ	0FF46h			;* scroll step counter byte
 
 ; --- Fixed EGA/VGA layout constants ---
-bg_copy_dst	equ	9350h			;* background copy destination offset
 ega_row_stride	equ	140h			; EGA bytes per row (320 dec)
 ega_2row_stride	equ	280h			; EGA stride for 2 rows (640 dec)
 ega_plane_row	equ	50h			; EGA planar row stride (80 bytes = 320px / 4 planes)
@@ -130,7 +102,6 @@ vga_buf_ofs	equ	1B04h			; VGA work buffer byte offset
 sprite_tmp2	equ	3E80h			; sprite temporary buffer (same as sprite_tmp_buf)
 tile_ega_buf	equ	3E90h			; tile EGA staging buffer offset
 bg_buf		equ	3F20h			; background save/restore buffer offset
-sprite_gfx_base	equ	4000h			; sprite graphics base offset in game_seg
 sprite_src_base	equ	8000h			; sprite source graphics base offset in game_seg
 
 ega_seg		equ	0A000h			; EGA framebuffer segment

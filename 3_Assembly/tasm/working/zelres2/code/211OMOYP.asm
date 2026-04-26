@@ -28,6 +28,11 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+gvar_timer_word          equ     0FF50h
+
 
 ; --- External addresses (outside module) -----------------------------------
 ; Driver functions at cs:[2000h..2044h] (set up by loader, same convention
@@ -50,7 +55,6 @@ script_step		equ	6016h			;* script step / read next byte -> al
 gvar_gfx_mode		equ	0FF14h			;* current graphics mode selector byte
 gvar_script_skip	equ	0FF1Dh			;* script skip / cancel flag byte
 gvar_game_seg		equ	0FF2Ch			;* game data segment selector word
-gvar_timer_word		equ	0FF50h			;* frame-delay timer counter (word)
 
 ; --- Internal module labels ------------------------------------------------
 ; The module binary is placed in the game data segment such that file offset

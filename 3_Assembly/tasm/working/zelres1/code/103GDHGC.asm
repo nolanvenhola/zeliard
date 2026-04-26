@@ -10,6 +10,12 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+sprite_row_buf_b         equ     5500h
+sprite_mask_off          equ     1A8Eh
+
 
 ; Macro: advance DI by 0x2000 (one HGC interlaced bank) and check bank boundary.
 ; Jumps to no_wrap_label if DI stays within bank 1 (< hgc_bank1_end).
@@ -77,16 +83,12 @@ render_fn_ptr	equ	4C60h			;* Pointer to active render sub-function
 saved_di	equ	4C62h			;* Saved destination offset (DI)
 saved_es	equ	4C64h			;* Saved destination segment (ES)
 sprite_row_buf	equ	4F86h			;* Sprite row render buffer
-sprite_row_buf_b	equ	5500h			;* Second sprite row render buffer
 hgc_bank1_end_m1	equ	5FA6h			;* HGC bank wrap adjust for reverse direction
-sprite_obj_tbl	equ	0A000h			;* Sprite object table (CS offset)
 hgc_bank2_wrap	equ	0A05Ah			;* HGC offset added when DI wraps past bank1_end
 font_ptr_a	equ	0F500h			;* Font bitmap data pointer
 gvar_frame_timer	equ	0FF1Ah			;* Global frame timer counter
 gvar_game_seg	equ	0FF2Ch			;* Global game data segment
 hgc_buf_start	equ	0			;* HGC render buffer start (DI init, screen)
-sprite_plane_b_off	equ	1A6Eh			;* Offset to sprite plane B data
-sprite_mask_off	equ	1A8Eh			;* Offset to sprite mask data
 hgc_work_buf	equ	4000h			;* HGC working render buffer base
 hgc_work_buf_p2	equ	4050h			;* HGC working render buffer plane 2
 hgc_buf_reset	equ	0			;* HGC source buffer reset value (SI init)

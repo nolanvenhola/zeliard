@@ -10,15 +10,15 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
+
+; restored after factoring (per-file value, not in shared inc):
+font_ptr_a               equ     0F502h
+font_ptr_b               equ     0F504h
+
 
 ; The following equates show data references outside the range of the program.
 
-tile_src_b		equ	4100h			;* tile pixel data bank B (game_seg:4100h)
-tile_src_a		equ	6000h			;* tile pixel data bank A (game_seg:6000h)
-tileset_buf_a		equ	8000h			;* tileset index/cache buffer A
-tileset_buf_b		equ	8004h			;* pointer to tile substitution table
-tile_pixel_base		equ	8100h			;* tile pixel source data base (0x20 bytes/tile)
-tile_mask_data		equ	0D000h			;* tile mask/transparency bitplane data
 dispatch_tbl_a		equ	35BAh			;* draw-cell dispatch function table A (word[N])
 dispatch_tbl_b		equ	3616h			;* draw-cell dispatch function table B (word[N])
 tile_gfx_data		equ	386Ch			;* tile graphics row source data
@@ -44,16 +44,7 @@ tile_cache_tbl		equ	431Bh			;* tile VGA address cache table (indexed by tile id)
 scroll_dst_ofs		equ	5238h			;* scroll destination offset in TGA buffer
 tga_wrap_sub		equ	7F60h			;* TGA segment wrap: add when di/si wraps past 8000h
 tga_wrap		equ	80A0h			;* TGA segment base (Tandy B800 wrap constant)
-tile_list_ptr		equ	0C00Fh			;* pointer to tile/entity entry list (8-byte records)
-marker_buf		equ	0E005h			;* marker/sentinel output buffer (3 bytes)
-font_ptr_a		equ	0F502h			;* font glyph data pointer A
-font_ptr_b		equ	0F504h			;* font glyph data pointer B
-gvar_map_ptr		equ	0FF2Ah			;* global: current map/player struct pointer
 gvar_game_seg		equ	0FF2Ch			;* global: game data segment selector
-gvar_item_flag		equ	0FF57h			;* global: item/pickup flag byte
-gvar_text_ofs		equ	0FF68h			;* global: text render column offset (word)
-gvar_copy_width		equ	0FF6Ah			;* global: tile copy width in bytes (word)
-zero_offset		equ	0			;* zero segment offset constant
 tga_hud_ofs		equ	41F8h			; TGA HUD area top-left offset in B800 segment
 scroll_r16_src		equ	4266h			; scroll-right 16-wide source offset
 scroll_l8_src_b		equ	55F8h			; scroll-left 8-wide source offset B

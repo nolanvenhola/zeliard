@@ -16,23 +16,26 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+gvar_menu_sel            equ     0C006h
+
+
+; restored after factoring (consensus value, but not all files agree):
+gvar_timer_word          equ     0FF50h
+
+
+; restored after factoring (consensus value, but not all files agree):
+script_step              equ     6004h
+
 
 
 ; The following equates show data references outside the range of the program.
 
-sprite_buf_ofs		equ	8000h			;*
-drv_fill_rect	equ	2000h			;*
-drv_screen_init_a	equ	2002h			;*
-drv_load_msg_header	equ	2010h			;*
-drv_screen_init_b	equ	2012h			;*
 drv_num_commit	equ	2014h			;*
-drv_frame_commit	equ	2016h			;*
-drv_return_to_caller	equ	2040h			;*
-drv_ds_copy	equ	2044h			;*
-drv_draw_glyph	equ	3016h			;*
 drv_draw_string	equ	301Ch			;*
 drv_set_text_pos	equ	3022h			;*
-script_step	equ	6004h			;*
 fmt_num_to_str	equ	6006h			;*
 get_yesno_input	equ	6008h			;*
 save_input_amount	equ	600Ah			;*
@@ -62,12 +65,7 @@ amount_lo	equ	0AD2Ah			;*
 amount_max_hi	equ	0AD2Ch			;*
 amount_max_lo	equ	0AD2Dh			;*
 input_repeat_delay	equ	0AD2Fh			;*
-gvar_menu_sel	equ	0C006h			;*
 gvar_game_seg	equ	0FF2Ch			;*
-gvar_script_ptr	equ	0FF4Ch			;*
-gvar_init_flag_a	equ	0FF4Eh			;*
-gvar_init_flag_b	equ	0FF4Fh			;*
-gvar_timer_word	equ	0FF50h			;*
 gvar_col_byte	equ	0FF52h			;*
 gvar_row_byte	equ	0FF53h			;*
 gvar_ui_dst_word	equ	0FF54h			;*

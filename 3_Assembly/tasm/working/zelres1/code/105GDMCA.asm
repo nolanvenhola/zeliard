@@ -10,13 +10,20 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+sprite_img_base          equ     97C0h
+
+
+; restored after factoring (consensus value, but not all files agree):
+sprite_row_buf_b         equ     5500h
+sprite_mask_off          equ     1A8Eh
+
 
 ; The following equates show data references outside the range of the program.
 
-cga_plane2_off		equ	240h
-bios_crt_port_off		equ	63h
 ega_plane3_buf	equ	29DCh			;*
-ega_plane_stride	equ	2A80h			;*
 mask_tbl_a	equ	32B9h			;*
 mask_tbl_b	equ	32C1h			;*
 sprite_frame_tbl	equ	3617h			;*
@@ -43,28 +50,17 @@ render_fn_ptr	equ	450Bh			;*
 saved_di	equ	450Dh			;*
 saved_es	equ	450Fh			;*
 sprite_row_buf	equ	5191h			;*
-sprite_row_buf_b	equ	5500h			;*
 sprite_plane_mask	equ	6666h			;*
-sprite_obj_tbl	equ	0A000h			;*
-font_ctrl_byte	equ	0BF07h			;*
 font_ptr_a	equ	0F500h			;*
 gvar_frame_timer	equ	0FF1Ah			;*
 gvar_game_seg	equ	0FF2Ch			;*
-cga_buf_start	equ	0			;*
-ega_row_w	equ	140h			;*
-sprite_plane_b_off	equ	1A6Eh			;*
-sprite_mask_off	equ	1A8Eh			;*
 sprite_buf_start	equ	0			;*
 screen_start_off	equ	0
 vga_row_stride	equ	140h
 
-vga_seg		equ	0A000h				;* VGA framebuffer segment
 text_dest_off	equ	4511h				;* Text output destination offset in VGA
-sprite_img_base	equ	97C0h				;* Sprite image data base offset in game seg
 pal_cycle_tbl	equ	3637h				;* Palette cycle RGB table
 pal_step_tbl	equ	3A5Fh				;* Palette step data table offset
-scroll_plane2_off equ	14EEh				;* Scroll buffer plane-2 offset
-hscroll_plane_off equ	3CDh				;* Horizontal scroll buffer plane-2 offset
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

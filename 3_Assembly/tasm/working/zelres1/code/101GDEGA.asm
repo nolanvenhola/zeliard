@@ -10,12 +10,15 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+sprite_img_base          equ     97C0h
+
 
 ; The following equates show data references outside the range of the program.
 
-bios_crt_port_off		equ	63h
 ega_plane2_buf	equ	2050h			;*
-ega_plane_stride	equ	2A80h			;*
 mask_tbl_a	equ	32A7h			;*
 mask_tbl_b	equ	32AFh			;*
 sprite_src_tbl	equ	35ADh			;*
@@ -37,21 +40,13 @@ saved_es	equ	421Ah			;*
 text_dest_off	equ	421Ch			;*
 sprite_row_buf	equ	453Ch			;*
 sprite_row_buf_b	equ	455Eh			;*
-sprite_obj_tbl	equ	0A000h			;* sprite object table offset in CS
-vga_seg		equ	0A000h			;* VGA framebuffer segment
 scroll_mask_off	equ	39ACh			;* CS offset of scroll_pixel_masks data
-scroll_plane2_off equ	14EEh			;* Stride to second EGA plane in scroll buffers
-sprite_img_base	equ	97C0h			;* Base offset of sprite image data in game seg
-hscroll_plane_off equ	3CDh			;* Horizontal scroll buffer plane-2 offset
-font_ctrl_byte	equ	0BF07h			;*
 font_ptr_a	equ	0F500h			;*
 gvar_frame_timer	equ	0FF1Ah			;*
 gvar_game_seg	equ	0FF2Ch			;*
-sprite_plane_b_off	equ	1A6Eh			;*
 sprite_mask_off	equ	1A8Fh			;*
 sprite_or_off	equ	1A90h			;*
 ega_row_m1	equ	13Fh
-ega_row_w	equ	140h
 ega_row_p1	equ	141h
 screen_start_off	equ	504h
 move_up_left	equ	0FEBFh

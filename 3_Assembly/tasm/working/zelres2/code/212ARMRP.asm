@@ -16,6 +16,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
 
 
 ; External data references (outside this module's CS segment).
@@ -99,10 +100,6 @@ town_npc_state		equ	0C006h			;* town-map NPC/room state byte
 ; --- Global variables (game_seg:0xFFxx) ---
 gvar_frame_timer	equ	0FF1Ah			;* frame timer counter (increments each interrupt)
 gvar_game_seg		equ	0FF2Ch			;* game segment selector word
-gvar_script_ip		equ	0FF4Ch			;* current script IP (byte stream pointer)
-gvar_text_x		equ	0FF4Eh			;* text cursor X byte
-gvar_text_y		equ	0FF4Fh			;* text cursor Y byte
-gvar_menu_step		equ	0FF50h			;* generic menu step counter word
 gvar_dlg_cols		equ	0FF52h			;* dialog window columns byte
 gvar_dlg_rows		equ	0FF53h			;* dialog window rows byte
 gvar_dlg_pos		equ	0FF54h			;* dialog window position word
@@ -111,7 +108,6 @@ gvar_sel_flag		equ	0FF57h			;* menu selection flag byte
 gvar_sel_xlat		equ	0FF58h			;* menu selection translate byte
 gvar_ff68		equ	0FF68h			;* (free slot) word
 gvar_dlg_timer		equ	0FF6Ah			;* dialog timer word
-gvar_volume		equ	0FF75h			;* music/effect volume byte
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

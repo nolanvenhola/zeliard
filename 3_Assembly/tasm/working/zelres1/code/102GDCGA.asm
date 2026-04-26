@@ -10,15 +10,19 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+sprite_row_buf_b         equ     5500h
+sprite_mask_off          equ     1A8Eh
+
 
 ; The following equates show data references outside the range of the program.
 
 cga_screen_start		equ	0
-cga_plane2_off		equ	240h
 cga_dispatch_fn	equ	2022h			;*
 cga_plane2_buf	equ	2050h			;*
 cga_plane3_buf	equ	29DCh			;*
-cga_plane_stride	equ	2A80h			;*
 cga_blit_fn_a	equ	3238h			;* CGA inner blit loop A (mode 0)
 cga_blit_fn_b	equ	3275h			;* CGA inner blit loop B (with mode flag)
 cga_blit_fn_c	equ	32AFh			;* CGA inner blit loop C (reverse)
@@ -44,9 +48,7 @@ render_fn_ptr	equ	4AAEh			;*
 saved_di	equ	4AB0h			;*
 saved_es	equ	4AB2h			;*
 sprite_row_buf	equ	4DD4h			;*
-sprite_row_buf_b	equ	5500h			;*
 sprite_img_base	equ	9F36h			;*
-sprite_obj_tbl	equ	0A000h			;*
 cga_bank2_wrap	equ	0C050h			;*
 font_ptr_a	equ	0F500h			;*
 gvar_frame_timer	equ	0FF1Ah			;*
@@ -54,9 +56,6 @@ gvar_game_seg	equ	0FF2Ch			;*
 gvar_ff5f	equ	0FF5Fh			;*
 gvar_ff60	equ	0FF60h			;*
 gvar_ff61	equ	0FF61h			;*
-cga_buf_start	equ	0			;*
-sprite_plane_b_off	equ	1A6Eh			;*
-sprite_mask_off	equ	1A8Eh			;*
 cga_work_buf	equ	4000h			;*
 cga_work_buf_p2	equ	4050h			;*
 cga_buf_reset	equ	0			;*

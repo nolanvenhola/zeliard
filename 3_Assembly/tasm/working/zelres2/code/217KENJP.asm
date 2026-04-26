@@ -35,6 +35,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
 
 
 ; ------------------------------------------------------------------------
@@ -42,7 +43,6 @@ include  srmacros.inc
 ; Each entry is a word pointer at CS:2000h+offset; called via
 ;   call word ptr cs:drv_fn_NN
 ; ------------------------------------------------------------------------
-drv_fn_dispatch	equ	2000h			;* fn 0: coordinate dispatch (BX,CX = region; AL = op)
 drv_fn_clear	equ	2002h			;* fn 1: clear VGA work area
 drv_fn_palette_a	equ	2006h			;* fn 3: palette push A (writes 7-byte LUT)
 drv_fn_palette_b	equ	2008h			;* fn 4: palette push B (writes secondary LUT)

@@ -10,14 +10,17 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
+
+; restored after factoring (per-file value, not in shared inc):
+font_ptr_a               equ     0F502h
+font_ptr_b               equ     0F504h
+
 
 ; The following equates show data references outside the range of the program.
 
 tile_alt_base		equ	4100h			;* tile alternate pixel data base
 tile_bank2_base		equ	6000h			;* tile pixel data bank 2 base (external CS ref)
-tileset_buf_a		equ	8000h			;* tileset lookup/cache buffer A
-tileset_buf_b		equ	8004h			;* tileset buffer B pointer word
-tile_pixel_base		equ	8100h			;* tile pixel data base (0x10 bytes per tile)
 tile_mask_base		equ	0D000h			;* tile transparency mask data base
 render_fn_tbl_a		equ	347Ah			;* render function pointer table A (word[N])
 render_fn_tbl_b		equ	34D6h			;* render function pointer table B (word[N])
@@ -49,17 +52,8 @@ hgc_bank_bdy		equ	6000h			;* HGC bank boundary = 6000h (external ref)
 sprite_data_base	equ	0A000h			;* sprite data CS offset base
 hgc_stride_a		equ	0A058h			;* HGC stride adjustment A (bank overflow fix)
 hgc_stride		equ	0A05Ah			;* HGC interleave stride (0xA05A per scanline set)
-tile_list_ptr		equ	0C00Fh			;* pointer to tile entry list (8-byte records)
-marker_buf		equ	0E005h			;* marker/sentinel output buffer (3 bytes)
 drv_init_tbl		equ	0F435h			;* driver init dispatch table offset
-font_ptr_a		equ	0F502h			;* font glyph data pointer A
-font_ptr_b		equ	0F504h			;* font glyph data pointer B
-gvar_map_ptr		equ	0FF2Ah			;* ptr to map/player data block (game seg)
 gvar_game_seg		equ	0FF2Ch			;* game segment selector word
-gvar_item_flag		equ	0FF57h			;* item/pickup flag byte
-gvar_text_ofs		equ	0FF68h			;* text render column offset (word)
-gvar_copy_width		equ	0FF6Ah			;* tile copy width in bytes (word)
-zero_offset		equ	0			;* zero/null offset
 
 hgc_cursor_ofs		equ	4FDh			; HGC cursor position offset
 scroll_src_b		equ	34CFh			; scroll source offset B (right scroll)

@@ -24,31 +24,19 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
 
 ; External data references (outside this module's CS segment).
 
 ; --- Graphics driver function table (drv_seg base 2000h) -------------------
-gfx_fill_rect		equ	2000h		;* fill tile-rect (bx=pos, cx=size, al=color)
-gfx_init_a		equ	2002h		;* graphics init A (shop entry)
 gfx_draw_banner		equ	2010h		;* draw title banner/string (si=text ptr)
-gfx_init_b		equ	2012h		;* graphics init B (post-load)
-gfx_wait_refresh	equ	2016h		;* wait-frame / refresh panel
-gfx_return		equ	2040h		;* jmp target on script end (leave palace)
-gfx_copy_buffer		equ	2044h		;* copy cx bytes from si to panel buffer
 
-draw_glyph_tile		equ	3016h		;* draw single glyph at bx=row/col, al=glyph
 
 ; --- Game API (cs:[6004..6012]) script/menu subsystem ---------------------
-script_read_byte	equ	6004h		;* read next script command byte -> al
 
 ; --- Game-segment global variables (game_seg:0FFxx via DS) ----------------
 gvar_frame_timer	equ	0FF1Ah		;* frame timer counter (incremented by ISR)
 gvar_game_seg		equ	0FF2Ch		;* game data segment selector word
-gvar_script_ip		equ	0FF4Ch		;* current script byte-pointer (word)
-gvar_text_x		equ	0FF4Eh		;* text/menu flag A (zeroed at init)
-gvar_text_y		equ	0FF4Fh		;* text/menu flag B (zeroed at init)
-gvar_menu_step		equ	0FF50h		;* generic step counter (word, compared to 4)
-gvar_volume		equ	0FF75h		;* music/effect volume byte
 
 ; --- Internal module labels (CS-relative = module_offset + 0A000h) --------
 ; The module is loaded at game_seg:0A000h, so cs:0A0xxh addresses map to

@@ -22,20 +22,20 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+gvar_timer_word          equ     0FF50h
+
+
+; restored after factoring (consensus value, but not all files agree):
+script_step              equ     6004h
+
 
 ; The following equates show data references outside the range of the program.
 
-sprite_buf_ofs		equ	8000h			;* sprite staging buffer (game_seg)
-drv_fill_rect		equ	2000h			;* driver: fill rect with color
-drv_screen_init_a	equ	2002h			;* driver: screen init stage A
 drv_palette_push	equ	2008h			;* driver: palette push / refresh panel
-drv_load_msg_header	equ	2010h			;* driver: load message/title header
-drv_screen_init_b	equ	2012h			;* driver: screen init stage B
 drv_anim_step		equ	2018h			;* driver: advance background animation
-drv_return_to_caller	equ	2040h			;* driver: return control to town.bin
-drv_ds_copy		equ	2044h			;* driver: DS-based bulk byte copy
-drv_draw_glyph		equ	3016h			;* driver: draw single glyph at bx
-script_step		equ	6004h			;* script interpreter: step one byte
 opcode_dispatch_tbl	equ	0A078h			;* script opcode dispatch table base
 sermon_data_a		equ	0A089h			;* dialog/sermon glyph source A
 sermon_data_b		equ	0A0CBh			;* dialog/sermon glyph source B
@@ -44,12 +44,7 @@ anim_text_ptr_a		equ	0A234h			;* animated title glyph source A
 anim_text_ptr_b		equ	0A27Ch			;* animated title glyph source B
 anim_phase_a		equ	0A3E4h			;* animation outer phase byte (0..4)
 anim_phase_b		equ	0A3E5h			;* animation inner sub-phase byte (0..2)
-gvar_timer_byte		equ	0FF1Ah			;* timer tick counter byte
 gvar_game_seg		equ	0FF2Ch			;* game-code segment selector word
-gvar_script_ptr		equ	0FF4Ch			;* script byte-stream pointer
-gvar_init_flag_a	equ	0FF4Eh			;* init flag A (cleared on entry)
-gvar_init_flag_b	equ	0FF4Fh			;* init flag B (cleared on entry)
-gvar_timer_word		equ	0FF50h			;* timer word (frame-accumulator)
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

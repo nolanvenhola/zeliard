@@ -10,15 +10,18 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
+
+
+; restored after factoring (different value than zr1com.inc would supply):
+font_ptr_a               equ     0F502h
+font_ptr_b               equ     0F504h
 
 ; The following equates show data references outside the range of the program.
 
-tile_src_b		equ	4100h			;* tile pixel data segment B (game_seg:4100h)
-tile_src_a		equ	6000h			;* tile pixel data segment A (game_seg:6000h)
 tileset_index		equ	8000h			;* tileset index table (game_seg:8000h)
 tile_subst_tbl_ptr	equ	8004h			;* pointer to tile substitution table
 tile_pixels		equ	8100h			;* tile pixel source data base
-tile_mask_data		equ	0D000h			;* tile mask/transparency bitplane data
 cga_tile_dest_ofs	equ	127Ch			;*  CGA tile blit destination offset
 dispatch_init_tbl	equ	2135h			;*  init dispatch word-pair table
 dispatch_tbl_a		equ	3568h			;*  draw-cell dispatch table A
@@ -46,18 +49,14 @@ cga_row_buf_b		equ	3F74h			;*  CGA tile row buffer B
 cga_row_buf_c		equ	3FA4h			;*  CGA tile row buffer C
 cga_wrap_si		equ	3FB0h			;*  CGA interleave wrap add for SI
 tile_cache		equ	3FD4h			;*  tile pixel cache table (indexed by tile id)
-vga_seg			equ	0A000h			;*  VGA framebuffer segment (used as row base)
 entity_tbl_ptr		equ	0C00Fh			;*  NPC/entity table pointer
 cga_wrap		equ	0C050h			;*  CGA interleave wrap offset (B800:0 -> B800:2000+C050)
 hud_status_ptr		equ	0E005h			;*  HUD/status byte pointer
 font_data_tbl		equ	0F502h			;*  font glyph data table
 font_char_data		equ	0F504h			;*  font character pixel data
-gvar_map_ptr		equ	0FF2Ah			;*  global: current map/player struct pointer
 gvar_game_seg		equ	0FF2Ch			;*  global: game data segment selector
 gvar_scroll_flag	equ	0FF57h			;*  global: scroll/redraw flag
 gvar_char_y_ofs		equ	0FF68h			;*  global: character Y row offset
-gvar_tile_width		equ	0FF6Ah			;*  global: tile copy width in bytes
-zero_offset		equ	0			;*  zero segment offset
 cga_hud_ofs_l		equ	23Ch			; CGA HUD area offset left column
 cga_hud_ofs_r		equ	273h			; CGA HUD area offset right column
 cga_tilemap_b0		equ	163Ch			; CGA tilemap base row 0 even bank

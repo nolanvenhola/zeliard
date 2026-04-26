@@ -20,25 +20,18 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
 
 
 ; --- External addresses (outside module) -----------------------------------
 ; Driver functions at cs:[2000h..2044h] (set up by loader, same for all
 ; shop modules 210-217).
 
-gfx_fill_rect	equ	2000h			;* fill a tile-rectangle (bx=pos, cx=size, al=color)
-gfx_init_a	equ	2002h			;* graphics init (shop load time)
 gfx_show_sprite	equ	2010h			;* display graphic (si=gfx data ptr)
-gfx_init_b	equ	2012h			;* graphics init 2 (post-load)
-gfx_wait_refresh equ	2016h			;* wait-frame / refresh panel
-gfx_return	equ	2040h			;* jmp to this when script ends (leave shop)
-gfx_copy_buffer	equ	2044h			;* copy cx bytes from si to panel buffer
 
-draw_glyph_tile	equ	3016h			;* draw single glyph at bx=row/col
 
 ; Game API (cs:[6004..6012]) script/menu subsystem.
 
-script_read_byte	equ	6004h		;* read next script command byte -> al
 script_format_num	equ	6006h		;* format number dl:ax at di
 script_display_page	equ	6008h		;* display next page of script (CF=cancel)
 script_take_item	equ	600Ah		;* remove item: dl:ax=price (CF=no room)

@@ -10,12 +10,16 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+sprite_row_buf_b         equ     5500h
+sprite_mask_off          equ     1A8Eh
+
 
 ; The following equates show data references outside the range of the program.
 
-cga_plane2_off		equ	240h
 cga_plane2_buf		equ	29DCh			;*
-cga_plane_stride	equ	2A80h			;*
 tga_mask_tbl_a		equ	32FCh			;*
 tga_mask_tbl_b		equ	3304h			;*
 sprite_src_tbl		equ	3640h			;*
@@ -39,17 +43,13 @@ render_fn_ptr		equ	4C0Fh			;*
 saved_di		equ	4C11h			;*
 saved_es		equ	4C13h			;*
 sprite_row_buf		equ	5255h			;*
-sprite_row_buf_b	equ	5500h			;*
 tga_bank_wrap		equ	80A0h			;*  Tandy bank advance after 0x8000 wrap
-sprite_obj_tbl		equ	0A000h			;*
 tga_color_reg		equ	0BF07h			;*
 tga_vram_seg		equ	0B800h			;   Tandy framebuffer segment
 font_ptr_a		equ	0F500h			;*
 gvar_frame_timer	equ	0FF1Ah			;*
 gvar_game_seg		equ	0FF2Ch			;*
 tga_screen_start	equ	0			;*  Tandy framebuffer copy-back start
-sprite_plane_b_off	equ	1A6Eh			;*
-sprite_mask_off		equ	1A8Eh			;*
 tga_work_buf		equ	8000h			;*  Tandy work buffer base
 tga_work_buf_p2		equ	80A0h			;*  tga_work_buf second bank
 tga_src_start		equ	0			;*

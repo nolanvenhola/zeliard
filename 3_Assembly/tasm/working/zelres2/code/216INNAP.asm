@@ -17,31 +17,28 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
+
+; restored after factoring (consensus value, but not all files agree):
+gvar_menu_sel            equ     0C006h
+
+
+; restored after factoring (consensus value, but not all files agree):
+gvar_timer_word          equ     0FF50h
+
+
+; restored after factoring (consensus value, but not all files agree):
+script_step              equ     6004h
+
 
 ; The following equates show data references outside the range of the program.
 
-sprite_buf_ofs		equ	8000h			;*
-drv_fill_rect		equ	2000h			;*
-drv_screen_init_a	equ	2002h			;*
 drv_num_commit		equ	2008h			;*
-drv_load_msg_header	equ	2010h			;*
-drv_screen_init_b	equ	2012h			;*
-drv_frame_commit	equ	2016h			;*
 drv_dispatch_update	equ	2018h			;*
-drv_return_to_caller	equ	2040h			;*
-drv_ds_copy		equ	2044h			;*
-drv_draw_glyph		equ	3016h			;*
-script_step		equ	6004h			;*
 opcode_dispatch_tbl	equ	0A080h			;*
 intro_tile_map		equ	0A1CFh			;*
 anim_active_flag	equ	0A505h			;*
-gvar_menu_sel		equ	0C006h			;*
-gvar_timer_byte		equ	0FF1Ah			;*
 gvar_game_seg		equ	0FF2Ch			;*
-gvar_script_ptr		equ	0FF4Ch			;*
-gvar_init_flag_a	equ	0FF4Eh			;*
-gvar_init_flag_b	equ	0FF4Fh			;*
-gvar_timer_word		equ	0FF50h			;*
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a

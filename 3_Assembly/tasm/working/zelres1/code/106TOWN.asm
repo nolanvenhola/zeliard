@@ -10,6 +10,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
 
 ;-----------------------------------------------------------------------------
 ; Local macros
@@ -139,7 +140,6 @@ gvar_joy_state	equ	0FF18h			;*
 gvar_frame_timer	equ	0FF1Ah			;*
 gvar_skip_input	equ	0FF1Dh			;*
 gvar_skip_flag2	equ	0FF1Eh			;*
-gvar_state_flag	equ	0FF24h			;*
 gvar_enable_all	equ	0FF26h			;*
 gvar_key_state	equ	0FF29h			;*
 gvar_tile_ptr	equ	0FF2Ah			;*

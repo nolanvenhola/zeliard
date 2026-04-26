@@ -10,6 +10,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
 
 ; Mapped addresses (auto-fixed from original chunk)
 game_func_142		equ	036E8h
@@ -121,7 +122,6 @@ map_width	equ	0C002h			;*
 map_top_ptr	equ	0C004h			;*
 map_bot_ptr	equ	0C006h			;*
 map_extra_ptr	equ	0C008h			;*
-entity_list_ptr	equ	0C00Ah			;*
 map_seg_ptr	equ	0C00Ch			;*
 bg_data_ptr	equ	0C00Eh			;*
 object_list_ptr	equ	0C010h			;*

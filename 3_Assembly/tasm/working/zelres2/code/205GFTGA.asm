@@ -16,11 +16,10 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
 
 ; The following equates show data references outside the range of the program.
 
-sprite_gfx_base		equ	4000h			;*
-game_data_base		equ	6000h			;*
 tga_vram_wrap		equ	80A0h			;*
 tga_buf_8cf0		equ	8CF0h			;*
 sprite_src_base		equ	0B000h			;*
@@ -56,37 +55,8 @@ sprite_cache_tbl	equ	5262h			;*
 bg_save_buf	equ	5362h			;*
 tga_sprite_buf	equ	5562h			;*
 tga_decode_buf	equ	5682h			;*
-sprite_lookup_base	equ	625Ch			;*
 tga_offs_723b	equ	723Bh			;*
 tga_vram_wrap_b	equ	80A0h			;*
-sprite_src_b	equ	0A030h			;*
-sprite_attr_base	equ	0C010h			;*
-sprite_attr_b	equ	0C012h			;*
-pattern_base	equ	0E000h			;*
-sprite_buf	equ	0E900h			;*
-sprite_buf_b	equ	0E91Bh			;*
-char_lookup	equ	0ED20h			;*
-projectile_list	equ	0EDA0h			;*
-frame_timer	equ	0FF1Ah			;*
-game_seg	equ	0FF2Ch			;*
-flag_shadow	equ	0FF2Fh			;*
-sprite_data_ptr	equ	0FF31h			;*
-anim_speed	equ	0FF33h			;*
-flag_equip_b	equ	0FF34h			;*
-color_sel	equ	0FF36h			;*
-redraw_lock	equ	0FF37h			;*
-flag_shield	equ	0FF38h			;*
-flag_climbing	equ	0FF39h			;*
-flag_riding	equ	0FF3Ah			;*
-equip_byte	equ	0FF3Dh			;*
-hero_frame	equ	0FF3Fh			;*
-flag_hero_state	equ	0FF40h			;*
-weapon_state	equ	0FF41h			;*
-shield_sel	equ	0FF42h			;*
-scroll_active	equ	0FF43h			;*
-restore_pending	equ	0FF44h			;*
-scroll_phase	equ	0FF45h			;*
-scroll_step	equ	0FF46h			;*
 tga_row_stride	equ	0A0h
 tga_vram_buf	equ	41F8h
 tga_vram_wrap_c	equ	80A0h

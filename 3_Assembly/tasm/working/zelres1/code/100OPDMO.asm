@@ -9,6 +9,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
 
 ; Graphics driver function table offsets (in loaded CS segment)
 gfx_init_fn		equ	02042h		; graphics initialisation function
@@ -77,13 +78,11 @@ scene_data_h	equ	9609h		; scene data H (resource table: yuup.grp, zelres1 chunk 
 res_oup_grp	equ	9613h		; resource ref: oup.grp (zelres1 chunk 27)
 res_maop_grp	equ	961Eh		; resource ref: maop.grp (enemy image, zelres1 chunk 20)
 scene_data_i	equ	97C0h		; scene data I (runtime buffer, not in resource table)
-vga_seg	equ	0A000h		; VGA segment / game data (0xA000)
 aux_buf_seg	equ	0B000h		; auxiliary buffer segment (0xB000)
 cga_text_seg	equ	0B800h		; CGA text mode VGA segment (0xB800)
 ext_seg_d000	equ	0D000h		; extended segment 0xD000
 gvar_timer_lo	equ	0FF1Ah		; timer counter low word (0xFF1A)
 gvar_skip_input	equ	0FF1Dh		; input skip flag (zeliard.inc: gvar_skip_input)
-gvar_state_flag	equ	0FF24h		; game state flag (0xFF24)
 gvar_enable_all	equ	0FF26h		; enable all flag (zeliard.inc: gvar_enable_all)
 gvar_key_state	equ	0FF29h		; key state (0xFF29)
 gvar_game_seg	equ	0FF2Ch		; game data segment (zeliard.inc: gvar_game_seg)

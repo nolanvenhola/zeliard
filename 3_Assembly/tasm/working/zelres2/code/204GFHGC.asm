@@ -16,12 +16,11 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
 
 ; External data references (outside this module's CS segment).
 
 ; --- Game-segment data pointers (in game_seg via DS) ---
-sprite_gfx_base	equ	4000h			;* sprite graphics base offset in game_seg
-game_data_base	equ	6000h			;* game segment data base offset
 hgc_src_base2	equ	6333h			;* secondary HGC source base in game_seg
 hgc_plane_buf_a	equ	8640h			;* HGC plane buffer A (64-byte table)
 sprite_src_base	equ	8690h			;* sprite source graphics base offset in game_seg
@@ -67,42 +66,12 @@ pattern_buf	equ	52A6h			;* pattern scratch buffer
 
 ; --- Game-segment lookup tables ---
 gvar_game_seg_b	equ	6000h			;* duplicate of game_data_base (type-A sprite tbl base)
-sprite_lookup_base equ	625Ch			;* sprite graphics lookup base offset
-sprite_src_b	equ	0A030h			;* sprite source table B
 sprite_src_c	equ	0A05Ah			;* sprite source table C (wrap constant)
 hgc_plane_alt_b	equ	0B24Fh			;* alternate HGC plane offset B
-sprite_attr_base equ	0C010h			;* sprite attribute record base
-sprite_attr_b	equ	0C012h			;* sprite attribute record +2 (sub-field)
 
 ; --- Pattern/background data ---
-pattern_base	equ	0E000h			;* background pattern data base
-sprite_buf	equ	0E900h			;* sprite staging buffer base
-sprite_buf_b	equ	0E91Bh			;* sprite staging buffer +0x1B
-char_lookup	equ	0ED20h			;* character/tile lookup table
-projectile_list	equ	0EDA0h			;* projectile slot list base
 
 ; --- Global variables (game_seg:0xFFxx) ---
-frame_timer	equ	0FF1Ah			;* frame timer counter (increments each interrupt)
-game_seg	equ	0FF2Ch			;* game segment selector word
-flag_shadow	equ	0FF2Fh			;* shadow/invincibility flag byte
-sprite_data_ptr	equ	0FF31h			;* sprite data table pointer (word)
-anim_speed	equ	0FF33h			;* animation speed counter byte
-flag_equip_b	equ	0FF34h			;* equipment state flag B
-enemy_counter	equ	0FF35h			;* active enemy count byte
-color_sel	equ	0FF36h			;* color selector byte
-redraw_lock	equ	0FF37h			;* redraw lock/busy flag byte
-flag_shield	equ	0FF38h			;* shield equipped flag byte
-flag_climbing	equ	0FF39h			;* climbing/jump state flag byte
-flag_riding	equ	0FF3Ah			;* riding/mount state flag byte
-equip_byte	equ	0FF3Dh			;* equipment state byte (packed flags)
-hero_frame	equ	0FF3Fh			;* hero animation frame index byte
-flag_hero_state	equ	0FF40h			;* hero state flag byte
-weapon_state	equ	0FF41h			;* weapon animation state byte
-shield_sel	equ	0FF42h			;* shield type selector byte
-scroll_active	equ	0FF43h			;* scrolling active flag byte
-restore_pending	equ	0FF44h			;* restore-to-background pending flag byte
-scroll_phase	equ	0FF45h			;* scroll animation phase byte
-scroll_step	equ	0FF46h			;* scroll step counter byte
 
 ; --- Fixed HGC/VGA layout constants ---
 zero_ofs	equ	0			;* zero constant

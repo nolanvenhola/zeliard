@@ -14,10 +14,10 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr2com.inc
 
 ; Graphics driver function table (driver loads at game_seg:2000h).
 ; Each entry is a CS-relative word pointer into the driver dispatch table.
-drv_fn_dispatch		equ	2000h			;* fn  0: coordinate dispatch (clear/fill rect)
 drv_fn_4		equ	2008h			;* fn  4: redraw character stat display
 drv_fn_12		equ	2018h			;* fn 12: timestamp init area
 drv_fn_13		equ	201Ah			;* fn 13: time decode entry
@@ -77,7 +77,6 @@ weapon_idx_tbl		equ	0AE03h			;* 7-byte table: available weapon indices (1-based)
 magic_idx_tbl		equ	0AE0Ah			;* 6-byte table: available magic indices (1-based)
 item_idx_tbl		equ	0AE10h			;* 5-byte table: available item indices (1-based)
 num_fmt_buf		equ	0AE16h			;* 7-byte scratch buffer for fmt_number output
-entity_list_ptr		equ	0C00Ah			;* game-seg word: entity list pointer (unused here)
 gvar_timer_counter	equ	0FF18h			;* global: joystick hold timer counter
 gvar_frame_timer	equ	0FF1Ah			;* global: frame timer tick counter
 gvar_item_result	equ	0FF4Bh			;* global: selected item result (written on use)

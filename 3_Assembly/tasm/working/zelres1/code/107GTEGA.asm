@@ -10,13 +10,16 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
+
+; restored after factoring (per-file value, not in shared inc):
+font_ptr_a               equ     0F502h
+font_ptr_b               equ     0F504h
+
 
 ; The following equates show data references outside the range of the program.
 
 ega_row_stride	equ	4Eh			; EGA bytes per row (78 = 640/8)
-tileset_buf_a	equ	8000h			;* tileset lookup/cache buffer A
-tileset_buf_b	equ	8004h			;* tileset buffer B pointer word
-tile_pixel_base	equ	8100h			;* tile pixel data base (0x30 bytes per tile)
 tile_type_tbl	equ	32EBh			;* tile type dispatch table (word[4])
 render_fn_tbl_a	equ	35BEh			;* render function pointer table A (word[N])
 render_fn_tbl_b	equ	361Ah			;* render function pointer table B (word[N])
@@ -32,16 +35,8 @@ char_render_buf	equ	3BBCh			;* character/sprite render buffer
 text_render_buf	equ	3BE4h			;* text glyph render buffer
 tile_cache_tbl	equ	3D4Ch			;* tile VGA address cache table (word[N])
 tile_disp_tbl	equ	3E80h			;* tile column displacement table (word[N]) ;*
-tile_list_ptr	equ	0C00Fh			;* pointer to tile entry list (8-byte records)
 tile_flip_flag	equ	0C583h			;* tile flip/mirror flag byte
-marker_buf	equ	0E005h			;* marker/sentinel output buffer (3 bytes)
-font_ptr_a	equ	0F502h			;* font glyph data pointer A
-font_ptr_b	equ	0F504h			;* font glyph data pointer B
-gvar_map_ptr	equ	0FF2Ah			;* ptr to map/player data block (game seg)
 gvar_game_seg	equ	0FF2Ch			;* game segment selector word
-gvar_item_flag	equ	0FF57h			;* item/pickup flag byte
-gvar_text_ofs	equ	0FF68h			;* text render column offset (word)
-gvar_copy_width	equ	0FF6Ah			;* tile copy width in bytes (word)
 ega_hud_top	equ	46Ch			; EGA framebuffer HUD top-left offset
 ega_hud_b	equ	4A3h			; EGA framebuffer HUD area B offset
 ega_mid_ofs	equ	0C80h			; EGA framebuffer middle column offset constant

@@ -10,6 +10,11 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr1com.inc
+
+
+; restored after factoring (different value than zr1com.inc would supply):
+font_ptr_a               equ     0F502h
 
 ; The following equates show data references outside the range of the program.
 
@@ -39,7 +44,6 @@ glyph_rowbuf	equ	3DEFh			;* glyph row staging buffer
 tileset_base	equ	4100h			;* tileset graphics base in game segment
 tile_cache_tbl	equ	42EFh			;* tile VGA cache table (word array, 256 entries)
 chunk0_base	equ	6000h			;* chunk 0 (opening scene) base offset
-vga_seg		equ	0A000h			;* VGA framebuffer segment (mode 13h)
 scroll_entry_ptr equ	0C00Fh			;* scroll/tilemap entry list pointer
 npc_flag_ptr	equ	0E005h			;* NPC presence flag pointer
 font_ptr_b	equ	0F502h			;* font B graphics pointer (see gmmcga font_ptr_b)
@@ -48,8 +52,6 @@ gvar_plystate	equ	0FF2Ah			;* global player state struct pointer
 gvar_game_seg	equ	0FF2Ch			;* global game segment selector
 gvar_flag57	equ	0FF57h			;* global boolean flag at FF57h
 gvar_scroll_idx	equ	0FF68h			;* global scroll index word
-gvar_tile_width	equ	0FF6Ah			;* global tile render column width
-zero_offset	equ	0			;* zero base offset
 
 ; --- numeric constants (internal) ---
 half_stride	equ	80h			; 128: half of VGA row stride
