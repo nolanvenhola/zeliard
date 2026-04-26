@@ -33,20 +33,6 @@ battle_ref_b	equ	0B5B4h			; ref into 200FIGHT code (battle entry B)
 
 ; --- MEDA enemy AI dispatch table (game_seg:1312h..6040h, DS-relative) ---
 ai_fn_intro	equ	1312h			; intro/spawn fn (early table)
-ai_fn_tbl_a	equ	6008h			; AI fn
-ai_fn_tbl_b	equ	600Ah			; AI fn
-ai_fn_tbl_c	equ	600Ch			; AI fn
-ai_fn_tbl_d	equ	600Eh			; AI fn
-ai_fn_tbl_e	equ	6010h			; AI fn
-ai_fn_tbl_f	equ	6014h			; AI fn
-ai_fn_tbl_g	equ	6028h			; AI fn
-ai_fn_tbl_h	equ	602Ah			; AI fn
-ai_fn_tbl_i	equ	602Ch			; AI fn
-ai_fn_tbl_j	equ	602Eh			; AI fn
-ai_hide_fn	equ	6034h			; AI fn: hide / despawn
-ai_attack_fn	equ	603Ah			; AI fn: attack
-ai_fn_tbl_k	equ	603Eh			; AI fn
-ai_fn_tbl_l	equ	6040h			; AI fn
 
 ; --- MEDA lookup tables (game_seg DS) ---
 meda_tbl_a	equ	0A1E6h			; MEDA behaviour lookup A
@@ -149,7 +135,7 @@ meda_frame_ptr_tbl_c:
 		db	8 dup (0)			; 8-byte zero pad
 ; -------------------------------------------------------------------------
 ;  meda_anim_table_a -- east-facing pose/tile index table read in 5-byte
-;  rows by ai_fn_tbl_e.  Each row begins with the 01h separator and is
+;  rows by fight_cb_step_pos.  Each row begins with the 01h separator and is
 ;  followed by 4 sprite-tile indices (atlas tile offsets).
 ;  Sourcer rendered a few rows as ASCII for tile values 0x5D..0x7E but
 ;  these are tile indices, not text.
@@ -564,14 +550,14 @@ phase_step_fwd		endp
 
 collide_check_fwd		proc	near
 		mov	ax,[si+2]
-		call	word ptr cs:ai_fn_tbl_g
+		call	word ptr cs:fight_cb_record_ofs
 		inc	di
 		inc	di
 		mov	cx,4
 
 collide_fwd_loop:
 			mov	al,[di]
-			call	word ptr cs:ai_fn_tbl_j
+			call	word ptr cs:fight_cb_cmp_tile
 			stc				; Set carry flag
 			jz	collide_fwd_iter			; Jump if zero
 			retn
@@ -579,25 +565,25 @@ collide_fwd_loop:
 collide_fwd_iter:
 			xchg	si,di
 			add	si,24h
-			call	word ptr cs:ai_fn_tbl_h
+			call	word ptr cs:fight_cb_mark_adj
 			xchg	si,di
 			loop	collide_fwd_loop		; Loop if cx > 0
 
 		xchg	si,di
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		mov	al,[si]
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		xchg	si,di
 		add	al,al
@@ -635,13 +621,13 @@ phase_step_back		endp
 
 collide_check_back		proc	near
 		mov	ax,[si+2]
-		call	word ptr cs:ai_fn_tbl_g
+		call	word ptr cs:fight_cb_record_ofs
 		dec	di
 		mov	cx,4
 
 collide_back_loop:
 			mov	al,[di]
-			call	word ptr cs:ai_fn_tbl_j
+			call	word ptr cs:fight_cb_cmp_tile
 			stc				; Set carry flag
 			jz	collide_back_iter			; Jump if zero
 			retn
@@ -649,26 +635,26 @@ collide_back_loop:
 collide_back_iter:
 			xchg	si,di
 			add	si,24h
-			call	word ptr cs:ai_fn_tbl_h
+			call	word ptr cs:fight_cb_mark_adj
 			xchg	si,di
 			loop	collide_back_loop		; Loop if cx > 0
 
 		dec	di
 		xchg	si,di
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		mov	al,[si]
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		or	al,[si]
 		xchg	si,di
 		add	al,al
@@ -705,16 +691,16 @@ sub01_collide_outer		endp
 
 sub01_collide_inner		proc	near
 		mov	ax,[si+2]
-		call	word ptr cs:ai_fn_tbl_g
+		call	word ptr cs:fight_cb_record_ofs
 		xchg	si,di
 		add	si,offset meda_collide_marker
-		call	word ptr cs:ai_fn_tbl_h
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		mov	cx,2
 
 sub01_collide_loop:
 			mov	al,[di]
-			call	word ptr cs:ai_fn_tbl_j
+			call	word ptr cs:fight_cb_cmp_tile
 			stc				; Set carry flag
 			jz	sub01_collide_step			; Jump if zero
 			retn
@@ -819,14 +805,14 @@ sub02_clear_vis:
 		jmp	sub02_finalize
 
 sub02_call_27:
-		call	word ptr cs:ai_fn_tbl_k
+		call	word ptr cs:fight_cb_spawn_alt
 		jnc	sub02_after_27			; Jump if carry=0
 		jmp	sub02_finalize
 
 sub02_after_27:
 		push	di
 		mov	ax,[si+2]
-		call	word ptr cs:ai_fn_tbl_g
+		call	word ptr cs:fight_cb_record_ofs
 		mov	bx,di
 		pop	di
 		test	byte ptr [si+5],80h
@@ -846,12 +832,12 @@ sub02_decr_loop:
 		inc	bx
 		xchg	bx,si
 		sub	si,24h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		mov	cx,3
 
 sub02_east_scan:
 			lodsb				; String [si] to al
-			call	word ptr cs:ai_fn_tbl_j
+			call	word ptr cs:fight_cb_cmp_tile
 			xchg	bx,si
 			jz	sub02_east_scan_2			; Jump if zero
 			jmp	sub02_finalize
@@ -859,7 +845,7 @@ sub02_east_scan:
 sub02_east_scan_2:
 			xchg	bx,si
 			lodsb				; String [si] to al
-			call	word ptr cs:ai_fn_tbl_j
+			call	word ptr cs:fight_cb_cmp_tile
 			xchg	bx,si
 			jz	sub02_east_scan_3			; Jump if zero
 			jmp	sub02_finalize
@@ -867,11 +853,11 @@ sub02_east_scan_2:
 sub02_east_scan_3:
 			xchg	bx,si
 			add	si,22h
-			call	word ptr cs:ai_fn_tbl_h
+			call	word ptr cs:fight_cb_mark_adj
 			loop	sub02_east_scan		; Loop if cx > 0
 
 		sub	si,48h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		xchg	si,bx
 		push	dx
 		or	dl,80h
@@ -913,26 +899,26 @@ sub02_west_iter:
 		dec	bx
 		xchg	bx,si
 		sub	si,25h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		mov	cx,3
 
 sub02_west_scan:
 			lodsb				; String [si] to al
-			call	word ptr cs:ai_fn_tbl_j
+			call	word ptr cs:fight_cb_cmp_tile
 			xchg	bx,si
 			jnz	sub02_finalize			; Jump if not zero
 			xchg	bx,si
 			lodsb				; String [si] to al
-			call	word ptr cs:ai_fn_tbl_j
+			call	word ptr cs:fight_cb_cmp_tile
 			xchg	bx,si
 			jnz	sub02_finalize			; Jump if not zero
 			xchg	bx,si
 			add	si,22h
-			call	word ptr cs:ai_fn_tbl_h
+			call	word ptr cs:fight_cb_mark_adj
 			loop	sub02_west_scan		; Loop if cx > 0
 
 		sub	si,47h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		xchg	si,bx
 		push	dx
 		or	dl,80h
@@ -975,7 +961,7 @@ sub02_set_phase1:
 		or	byte ptr [si+9],1
 
 sub02_finalize:
-		call	word ptr cs:ai_fn_tbl_l
+		call	word ptr cs:fight_cb_aux_40
 		mov	al,[si+9]
 		and	byte ptr [si+9],0FEh
 		test	al,1
@@ -989,7 +975,7 @@ sub02_phase_advance:
 		inc	al
 		and	al,0F3h
 		mov	[si+6],al
-		call	word ptr cs:ai_fn_tbl_f
+		call	word ptr cs:fight_cb_blocked
 		jc	sub02_phase_check			; Jump if carry Set
 		retn
 
@@ -1023,19 +1009,19 @@ sub02_match_eq:
 
 sub02_match_chk_dir:
 		and	byte ptr [si+5],7Fh
-		call	word ptr cs:ai_fn_tbl_e
+		call	word ptr cs:fight_cb_step_pos
 		jc	sub02_dir_set			; Jump if carry Set
 		retn
 
 sub02_dir_set:
 		or	byte ptr [si+5],80h
-		call	word ptr cs:ai_fn_tbl_a
+		call	word ptr cs:fight_cb_step_neg
 		jc	sub02_dir_clear			; Jump if carry Set
 		retn
 
 sub02_dir_clear:
 		and	byte ptr [si+5],7Fh
-		jmp	word ptr cs:ai_fn_tbl_e
+		jmp	word ptr cs:fight_cb_step_pos
 
 sub02_phase_inc_lo:
 		inc	byte ptr [si+6]
@@ -1065,13 +1051,13 @@ sub03_main:
 		jmp	word ptr cs:ai_hide_fn
 
 sub03_visible:
-		call	word ptr cs:ai_fn_tbl_l
+		call	word ptr cs:fight_cb_aux_40
 		test	byte ptr [si+9],4
 		jz	sub03_no_bit2			; Jump if zero
 		jmp	sub03_alt_branch
 
 sub03_no_bit2:
-		call	word ptr cs:ai_fn_tbl_f
+		call	word ptr cs:fight_cb_blocked
 		jc	sub03_after_call_f			; Jump if carry Set
 		retn
 
@@ -1151,7 +1137,7 @@ sub03_check_carry:
 sub03_dir_test:
 			test	byte ptr [si+5],80h
 			jnz	sub03_dir_east			; Jump if not zero
-			call	word ptr cs:ai_fn_tbl_e
+			call	word ptr cs:fight_cb_step_pos
 			jc	sub03_dir_west			; Jump if carry Set
 			retn
 
@@ -1160,7 +1146,7 @@ sub03_dir_west:
 			retn
 
 sub03_dir_east:
-			call	word ptr cs:ai_fn_tbl_a
+			call	word ptr cs:fight_cb_step_neg
 			jc	sub03_set_state2			; Jump if carry Set
 			retn
 
@@ -1175,8 +1161,8 @@ sub03_alt_branch:
 		mov	byte ptr [si+6],5
 		test	byte ptr [si+5],80h
 		jnz	sub03_alt_set2_b			; Jump if not zero
-		call	word ptr cs:ai_fn_tbl_e
-		call	word ptr cs:ai_fn_tbl_e
+		call	word ptr cs:fight_cb_step_pos
+		call	word ptr cs:fight_cb_step_pos
 		jc	sub03_alt_set2_a			; Jump if carry Set
 		retn
 
@@ -1186,8 +1172,8 @@ sub03_alt_set2_a:
 		retn
 
 sub03_alt_set2_b:
-		call	word ptr cs:ai_fn_tbl_a
-		call	word ptr cs:ai_fn_tbl_a
+		call	word ptr cs:fight_cb_step_neg
+		call	word ptr cs:fight_cb_step_neg
 		jc	sub03_alt_set2_c			; Jump if carry Set
 		retn
 
@@ -1212,7 +1198,7 @@ sub04_main:
 		jmp	word ptr cs:ai_hide_fn
 
 sub04_visible:
-		call	word ptr cs:ai_fn_tbl_l
+		call	word ptr cs:fight_cb_aux_40
 		test	byte ptr [si+9],1
 		jnz	sub04_branch_b			; Jump if not zero
 		test	byte ptr [si+9],2
@@ -1235,7 +1221,7 @@ sub04_anim_step:
 		or	[si+6],al
 
 sub04_anim_or:
-		call	word ptr cs:ai_fn_tbl_c
+		call	word ptr cs:fight_cb_map_fwd
 		add	byte ptr [si+6],80h
 		jc	sub04_phase_test			; Jump if carry Set
 		retn
@@ -1244,20 +1230,20 @@ sub04_phase_test:
 		mov	al,10h
 		cmp	al,[si+3]
 		jb	sub04_call_e			; Jump if below
-		call	word ptr cs:ai_fn_tbl_a
+		call	word ptr cs:fight_cb_step_neg
 		jc	sub04_branch_a			; Jump if carry Set
 		retn
 
 sub04_branch_a:
-		jmp	word ptr cs:ai_fn_tbl_e
+		jmp	word ptr cs:fight_cb_step_pos
 
 sub04_call_e:
-		call	word ptr cs:ai_fn_tbl_e
+		call	word ptr cs:fight_cb_step_pos
 		jc	sub04_call_e2			; Jump if carry Set
 		retn
 
 sub04_call_e2:
-		jmp	word ptr cs:ai_fn_tbl_a
+		jmp	word ptr cs:fight_cb_step_neg
 
 sub04_branch_b:
 		mov	al,[si+6]
@@ -1268,8 +1254,8 @@ sub04_branch_b:
 		retn
 
 sub04_call_f:
-		call	word ptr cs:ai_fn_tbl_f
-		call	word ptr cs:ai_fn_tbl_f
+		call	word ptr cs:fight_cb_blocked
+		call	word ptr cs:fight_cb_blocked
 		jc	sub04_anim_inc			; Jump if carry Set
 		retn
 
@@ -1287,13 +1273,13 @@ sub04_branch_c:
 		mov	al,10h
 		cmp	al,[si+3]
 		jb	sub04_low_anim			; Jump if below
-		call	word ptr cs:ai_fn_tbl_c
-		call	word ptr cs:ai_fn_tbl_b
+		call	word ptr cs:fight_cb_map_fwd
+		call	word ptr cs:fight_cb_step_neg_2
 		jc	sub04_call_c			; Jump if carry Set
 		retn
 
 sub04_call_c:
-		call	word ptr cs:ai_fn_tbl_c
+		call	word ptr cs:fight_cb_map_fwd
 		jc	sub04_after_c			; Jump if carry Set
 		retn
 
@@ -1302,13 +1288,13 @@ sub04_after_c:
 		retn
 
 sub04_low_anim:
-		call	word ptr cs:ai_fn_tbl_c
-		call	word ptr cs:ai_fn_tbl_d
+		call	word ptr cs:fight_cb_map_fwd
+		call	word ptr cs:fight_cb_map_back
 		jc	sub04_low_anim_b			; Jump if carry Set
 		retn
 
 sub04_low_anim_b:
-		call	word ptr cs:ai_fn_tbl_c
+		call	word ptr cs:fight_cb_map_fwd
 		jc	sub04_clear_bit1			; Jump if carry Set
 		retn
 

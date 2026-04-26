@@ -18,13 +18,13 @@ include  zr2com.inc
 
 ; Graphics driver function table (driver loads at game_seg:2000h).
 ; Each entry is a CS-relative word pointer into the driver dispatch table.
-drv_fn_4		equ	2008h			;* fn  4: redraw character stat display
-drv_fn_12		equ	2018h			;* fn 12: timestamp init area
+; drv_palette_push    = 2008h (in zr2com.inc) -- fn  4: redraw character stat display
+; drv_anim_step       = 2018h (in zr2com.inc) -- fn 12: timestamp init area
 drv_fn_13		equ	201Ah			;* fn 13: time decode entry
 drv_fn_14		equ	201Ch			;* fn 14: render tile from anim_ptr_4
 drv_fn_15		equ	201Eh			;* fn 15: sprite source selector A
 drv_fn_16		equ	2020h			;* fn 16: sprite source selector B
-drv_fn_render_char	equ	2022h			;* fn 17: render_text_char_alt (BX=pos, CL=col, AL=char, AH=color)
+; drv_render_char     = 2022h (in zr2com.inc) -- fn 17: render_text_char_alt (BX=pos, CL=col, AL=char, AH=color)
 drv_fn_19		equ	2026h			;* fn 19: char render pipeline entry
 drv_fn_20		equ	2028h			;* fn 20: VGA block copy (stride loop)
 drv_fn_sprite		equ	202Eh			;* fn 23: sprite_anim_data dispatch (BX=sprite offset)
@@ -35,7 +35,7 @@ drv_fn_27		equ	2036h			;* fn 27: display text string row (BX=pos, AL=char)
 drv_fn_28		equ	2038h			;* fn 28: text render helper A
 drv_fn_29		equ	203Ah			;* fn 29: text render helper B
 drv_fn_30		equ	203Ch			;* fn 30: fill_rectangle helper
-drv_fn_32		equ	2040h			;* fn 32: palette/sync call
+; drv_return_to_caller = 2040h (in zr2com.inc) -- fn 32: palette/sync call
 
 ; Game segment data references (outside module address range).
 gvar_selct_state	equ	0A00Bh			;* game-seg byte: character select entry state
@@ -143,7 +143,7 @@ draw_portraits_loop:
 					mov	cx,ax
 					push	si
 					mov	al,0FFh
-					call	word ptr cs:drv_fn_dispatch
+					call	word ptr cs:drv_fill_rect
 					pop	si
 					pop	cx
 					loop	draw_portraits_loop		; Loop if cx > 0
@@ -291,7 +291,7 @@ draw_weapon_cursor		proc	near
 		mov	bx,2711h
 		mov	cx,1009h
 		xor	al,al			; Zero register
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		mov	bl,byte ptr ds:cur_weapon_idx
 		dec	bl
 		xor	bh,bh			; Zero register
@@ -306,7 +306,7 @@ draw_weapon_cursor		proc	near
 		mov	al,byte ptr ds:cur_weapon_idx
 		mov	bx,37A4h
 		call	word ptr cs:drv_fn_15
-		call	word ptr cs:drv_fn_12
+		call	word ptr cs:drv_anim_step
 
 wait_joy_clear_weapon:
 					int	61h			; ??INT Non-standard interrupt
@@ -405,7 +405,7 @@ draw_magic_cursor		proc	near
 		mov	bx,1742h
 		mov	cx,1611h
 		xor	al,al			; Zero register
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		mov	bl,byte ptr ds:cur_magic_idx
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -546,7 +546,7 @@ draw_item_cursor		proc	near
 		mov	bx,1570h
 		mov	cx,1811h
 		xor	al,al			; Zero register
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		mov	bl,ds:item_cursor
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -612,7 +612,7 @@ item_use_entry:
 		mov	bx,1B43h
 		mov	cx,1A24h
 		mov	al,0FFh
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		mov	si,str_item_used_count
 		mov	bx,80h
 		mov	cl,4Ch			; 'L'
@@ -695,14 +695,14 @@ use_hp_potion:				; item 0: restore 80 HP (caps at max)
 		mov	ax,word ptr ds:char_hp_max
 		mov	word ptr ds:char_hp,ax		; cap at max HP
 hp_potion_nocap:
-		call	word ptr cs:drv_fn_4
+		call	word ptr cs:drv_palette_push
 		jmp	draw_item_detail_entry+1	;* off-by-one: skips call show_portrait_box
 
 use_hp_full:				; item 1: restore HP to maximum
 		mov	byte ptr ds:gvar_volume_b,0Eh
 		mov	ax,word ptr ds:char_hp_max
 		mov	word ptr ds:char_hp,ax
-		call	word ptr cs:drv_fn_4
+		call	word ptr cs:drv_palette_push
 		jmp	draw_item_detail_entry+1	;* off-by-one: skips call show_portrait_box
 
 use_weapon_restore:			; item 2: restore equipped weapon durability
@@ -717,7 +717,7 @@ use_item_apply:
 		xor	bh,bh			; Zero register
 		mov	al,byte ptr ds:weap_dur_max[bx]
 		mov	byte ptr ds:weap_dur_cur[bx],al
-		call	word ptr cs:drv_fn_12
+		call	word ptr cs:drv_anim_step
 		call	draw_weapon_list
 		jmp	draw_item_detail_entry
 
@@ -729,7 +729,7 @@ use_all_weapons_restore:		; item 3: restore all 7 weapon durabilities
 		mov	di,weap_dur_cur
 		mov	cx,7
 		rep	movsb			; copy all 7 max values -> cur values
-		call	word ptr cs:drv_fn_12
+		call	word ptr cs:drv_anim_step
 		call	draw_weapon_list
 		jmp	draw_item_detail_entry
 
@@ -807,7 +807,7 @@ use_kioku_feather:			; item 7: use Kioku Feather (memory feather / save game)
 wait_timer_done:
 					cmp	byte ptr ds:gvar_frame_timer,timer_wait_feather	; 'x'
 					jb	wait_timer_done			; Jump if below
-		call	word ptr cs:drv_fn_32
+		call	word ptr cs:drv_return_to_caller
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
 		retn
@@ -818,7 +818,7 @@ init_item_panel		proc	near
 		mov	bx,item_spr_base+2
 		mov	cx,1E10h
 		xor	al,al			; Zero register
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		test	byte ptr ds:item_count,0FFh
 		jnz	check_item_present			; Jump if not zero
 		mov	byte ptr ds:item_count,1
@@ -837,7 +837,7 @@ draw_item_detail_entry:
 		mov	bx,0F43h
 		mov	cx,3224h
 		mov	al,0FFh
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		mov	si,str_item_detail_hdr
 		mov	bx,44h
 		mov	cl,4Ch			; 'L'
@@ -951,7 +951,7 @@ item_panel_has_items:
 		mov	bx,1570h
 		mov	cx,1811h
 		xor	al,al			; Zero register
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		mov	si,str_no_use_notice
 		mov	bx,54h
 		mov	cl,71h			; 'q'
@@ -1085,7 +1085,7 @@ draw_stat_98h:
 		mov	cl,7Eh			; '~'
 		mov	al,5Eh			; '^'
 		mov	ah,1
-		call	word ptr cs:drv_fn_render_char
+		call	word ptr cs:drv_render_char
 		mov	al,byte ptr ds:char_speed
 		xor	ah,ah			; Zero register
 		mov	cx,1
@@ -1103,7 +1103,7 @@ draw_stat_99h:
 		mov	cl,7Eh			; '~'
 		mov	al,5Eh			; '^'
 		mov	ah,1
-		call	word ptr cs:drv_fn_render_char
+		call	word ptr cs:drv_render_char
 		mov	al,byte ptr ds:char_power
 		xor	ah,ah			; Zero register
 		mov	cx,1
@@ -1147,12 +1147,12 @@ draw_exp_bar:
 		mov	cl,69h			; 'i'
 		mov	al,28h			; '('
 		mov	ah,4
-		call	word ptr cs:drv_fn_render_char
+		call	word ptr cs:drv_render_char
 		mov	bx,0E0h
 		mov	cl,69h			; 'i'
 		mov	al,29h			; ')'
 		mov	ah,4
-		jmp	word ptr cs:drv_fn_render_char
+		jmp	word ptr cs:drv_render_char
 
 draw_key_count:
 		test	byte ptr ds:key_count,0FFh
@@ -1163,12 +1163,12 @@ draw_key_count_body:
 		mov	bx,3257h
 		mov	cx,408h
 		xor	al,al			; Zero register
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		mov	bx,0CAh
 		mov	cl,57h			; 'W'
 		mov	al,28h			; '('
 		mov	ah,1
-		call	word ptr cs:drv_fn_render_char
+		call	word ptr cs:drv_render_char
 		mov	al,byte ptr ds:key_count
 		xor	ah,ah			; Zero register
 		mov	dx,3457h
@@ -1179,7 +1179,7 @@ draw_key_count_body:
 		mov	cl,57h			; 'W'
 		mov	al,29h			; ')'
 		mov	ah,1
-		jmp	word ptr cs:drv_fn_render_char
+		jmp	word ptr cs:drv_render_char
 
 draw_weapon_panel:
 		test	byte ptr ds:weapon_count,0FFh
@@ -1264,7 +1264,7 @@ draw_weapon_list_loop:
 					mov	bx,dx
 					mov	cx,508h
 					xor	al,al			; Zero register
-					call	word ptr cs:drv_fn_dispatch
+					call	word ptr cs:drv_fill_rect
 					pop	dx
 					pop	ax
 					xor	ah,ah			; Zero register
@@ -1284,7 +1284,7 @@ draw_weapon_list_loop:
 					inc	bx
 					mov	al,28h			; '('
 					mov	ah,4
-					call	word ptr cs:drv_fn_render_char
+					call	word ptr cs:drv_render_char
 					pop	dx
 					pop	ax
 					mov	al,ah
@@ -1303,7 +1303,7 @@ draw_weapon_list_loop:
 					dec	bx
 					mov	al,29h			; ')'
 					mov	ah,4
-					call	word ptr cs:drv_fn_render_char
+					call	word ptr cs:drv_render_char
 					pop	dx
 					add	dx,800h
 					pop	si
@@ -1387,7 +1387,7 @@ scan_char_notnull:
 					inc	bx
 					inc	cl
 					mov	ah,5
-					call	word ptr cs:drv_fn_render_char
+					call	word ptr cs:drv_render_char
 					pop	ax
 					pop	cx
 					pop	bx
@@ -1396,7 +1396,7 @@ scan_char_draw:
 					push	bx
 					push	cx
 					push	ax
-					call	word ptr cs:drv_fn_render_char
+					call	word ptr cs:drv_render_char
 					pop	ax
 					pop	cx
 					pop	bx

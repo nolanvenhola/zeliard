@@ -40,10 +40,6 @@ include  zr3com.inc
 ;   0FF2Eh..0FF75h - per-map global state flag bytes
 
 ; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
-akma_cb_scroll		equ	200Ch		; scroll / dispatch callback
-akma_cb_tile_dispatch	equ	6028h		; tile-at-cell callback fn A
-akma_cb_tile_at_pos	equ	6036h		; NPC step / cell-iter callback fn B
-akma_cb_anim_lookup	equ	6038h		; entity action / anim-lookup callback fn C
 
 ; --- Internal per-phase tile-source tables (DS, addressed by hard offset) ---
 akma_phase_si_tbl_a	equ	0A7EEh		; SI per-phase tbl A (phase-A render path)
@@ -270,11 +266,11 @@ akma_npc_scan_loop:
 			db	 83h, 3Ch,0FFh		;  Fixup - byte match
 			jz	akma_npc_scan_done			; Jump if zero
 			mov	ax,[si]
-			call	word ptr cs:akma_cb_tile_at_pos
+			call	word ptr cs:fight_cb_anim_step
 			jc	akma_npc_scan_next			; Jump if carry Set
 			mov	[si+3],bl
 			mov	ax,[si+2]
-			call	word ptr cs:akma_cb_tile_dispatch
+			call	word ptr cs:fight_cb_record_ofs
 			mov	bl,ds:akma_npc_idx
 			xor	bh,bh			; Zero register
 			mov	al,ds:akma_sprite_xlat_tbl[bx]
@@ -305,7 +301,7 @@ akma_npc_scan_done:
 		mov	al,ds:akma_anim_byte
 		push	ax
 		and	al,1Fh
-		call	word ptr cs:akma_cb_anim_lookup
+		call	word ptr cs:fight_cb_hit_check
 		mov	bl,ah
 		pop	ax
 		xor	bh,bh			; Zero register
@@ -542,7 +538,7 @@ akma_render_row_loop:
 		push	cx
 		push	di
 		push	ax
-		call	word ptr cs:akma_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		mov	ds:akma_attr_tmp,bl
 		jc	akma_render_row_advance			; Jump if carry Set
@@ -579,7 +575,7 @@ akma_render_cell_loop:
 akma_render_apply_anim:
 			push	di
 			mov	ax,[si+2]
-			call	word ptr cs:akma_cb_tile_dispatch
+			call	word ptr cs:fight_cb_record_ofs
 			mov	al,ds:akma_npc_idx
 			mov	bl,al
 			or	al,80h
@@ -644,7 +640,7 @@ akma_phase_b_a_loop:
 			inc	dl
 			push	dx
 			push	ax
-			call	word ptr cs:akma_cb_tile_at_pos
+			call	word ptr cs:fight_cb_anim_step
 			pop	ax
 			pop	dx
 			mov	ds:akma_attr_tmp,bl
@@ -662,7 +658,7 @@ akma_phase_b_a_final:
 		inc	dl
 		push	dx
 		push	ax
-		call	word ptr cs:akma_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		pop	dx
 		mov	ds:akma_attr_tmp,bl
@@ -691,7 +687,7 @@ akma_phase_b_b_loop:
 			inc	dl
 			push	dx
 			push	ax
-			call	word ptr cs:akma_cb_tile_at_pos
+			call	word ptr cs:fight_cb_anim_step
 			pop	ax
 			pop	dx
 			mov	ds:akma_attr_tmp,bl
@@ -709,7 +705,7 @@ akma_phase_b_b_final:
 		inc	dl
 		push	dx
 		push	ax
-		call	word ptr cs:akma_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		pop	dx
 		mov	ds:akma_attr_tmp,bl
@@ -741,7 +737,7 @@ akma_phase_c_a_loop:
 			inc	dl
 			push	dx
 			push	ax
-			call	word ptr cs:akma_cb_tile_at_pos
+			call	word ptr cs:fight_cb_anim_step
 			pop	ax
 			pop	dx
 			mov	ds:akma_attr_tmp,bl
@@ -760,7 +756,7 @@ akma_phase_c_a_final:
 		inc	dl
 		push	dx
 		push	ax
-		call	word ptr cs:akma_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		pop	dx
 		mov	ds:akma_attr_tmp,bl
@@ -790,7 +786,7 @@ akma_phase_c_b_loop:
 			inc	dl
 			push	dx
 			push	ax
-			call	word ptr cs:akma_cb_tile_at_pos
+			call	word ptr cs:fight_cb_anim_step
 			pop	ax
 			pop	dx
 			mov	ds:akma_attr_tmp,bl
@@ -809,7 +805,7 @@ akma_phase_c_b_final:
 		inc	dl
 		push	dx
 		push	ax
-		call	word ptr cs:akma_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		pop	dx
 		mov	ds:akma_attr_tmp,bl
@@ -835,7 +831,7 @@ akma_render_emit_cell		proc	near
 		and	dh,80h
 		mov	[si+5],dh
 		mov	ax,[si+2]
-		call	word ptr cs:akma_cb_tile_dispatch
+		call	word ptr cs:fight_cb_record_ofs
 		mov	al,ds:akma_npc_idx
 		mov	bl,al
 		or	al,80h
@@ -1012,7 +1008,7 @@ akma_scroll_clamp_zero:
 		mov	ds:akma_scroll_max,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:akma_cb_scroll
+		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
 		jz	akma_scroll_check_death			; Jump if zero

@@ -48,8 +48,6 @@ include  zr3com.inc
 
 ; Fight-engine callback vectors / shared globals (DS, game_seg).
 
-fight_cb_aim		equ	603Ah			; aim/target callback
-fight_cb_shutdown	equ	603Ch			; shutdown callback
 
 ; Shared sprite-pattern / AI tables (DS).
 
@@ -492,7 +490,7 @@ land_aim:					; was loc_22
 		and	al,3Fh			; '?'
 		mov	ds:tori_spawn_col,al
 		mov	bx,tori_spawn_tile
-		call	word ptr cs:fight_cb_aim
+		call	word ptr cs:fight_cb_despawn
 		mov	byte ptr ds:tori_altitude,0
 		jmp	emit_setup
 

@@ -15,7 +15,7 @@ PAGE  59,132
 ;  Uses the standard town-building dispatch: chunk loader fills scratch
 ;  buffer, graphics driver renders the portrait tile-grid, and the game
 ;  script interpreter at cs:[6004] walks the dialog bytestream. Returns
-;  to town via jmp cs:[2040] (gfx_return).
+;  to town via jmp cs:[2040] (drv_return_to_caller).
 ;
 ;  Module loads at game_seg:0A000h (CS=DS).
 ;
@@ -29,13 +29,13 @@ include  zr2com.inc
 ; External data references (outside this module's CS segment).
 
 ; --- Graphics driver function table (drv_seg base 2000h) -------------------
-gfx_draw_banner		equ	2010h		;* draw title banner/string (si=text ptr)
+; drv_load_msg_header = 2010h (in zr2com.inc) -- was gfx_draw_banner
 
 
 ; --- Game API (cs:[6004..6012]) script/menu subsystem ---------------------
 
 ; --- Game-segment global variables (game_seg:0FFxx via DS) ----------------
-gvar_frame_timer	equ	0FF1Ah		;* frame timer counter (incremented by ISR)
+; gvar_frame_timer    = 0FF1Ah (in zr2com.inc)
 gvar_game_seg		equ	0FF2Ch		;* game data segment selector word
 
 ; --- Internal module labels (CS-relative = module_offset + 0A000h) --------
@@ -82,31 +82,31 @@ start:
 		mov	ds,cs:gvar_game_seg
 		mov	si,8000h
 		mov	cx,100h
-		call	word ptr cs:gfx_copy_buffer
+		call	word ptr cs:drv_ds_copy
 		pop	ds
 		mov	byte ptr ds:gvar_text_x,0
 		mov	byte ptr ds:gvar_text_y,0
-		call	word ptr cs:gfx_init_a
-		call	word ptr cs:gfx_init_b
+		call	word ptr cs:drv_screen_init_a
+		call	word ptr cs:drv_screen_init_b
 		mov	si,0A41Ah		; title-banner text ('King of Felishika')
-		call	word ptr cs:gfx_draw_banner
+		call	word ptr cs:drv_load_msg_header
 		call	render_portrait
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:gfx_fill_rect
+		call	word ptr cs:drv_fill_rect
 		call	select_script_branch
 		mov	ds:gvar_script_ip,si
 
 script_loop:
-			call	word ptr cs:script_read_byte
+			call	word ptr cs:script_step
 			cmp	al,0FFh
 			je	script_exit		; 0FFh = end of script
 			call	script_cmd_dispatch
 			jmp	short script_loop
 
 script_exit:
-		jmp	word ptr cs:gfx_return
+		jmp	word ptr cs:drv_return_to_caller
 
 kingp_main	endp
 
@@ -176,7 +176,7 @@ gold_add_loop:
 			adc	dl,0
 			mov	word ptr ds:[86h],ax
 			mov	byte ptr ds:[85h],dl
-			call	word ptr cs:gfx_wait_refresh
+			call	word ptr cs:drv_frame_commit
 			mov	byte ptr ds:gvar_volume,13h
 			mov	byte ptr ds:gvar_frame_timer,0
 
@@ -248,7 +248,7 @@ portrait_col_loop:
 				push	cx
 				push	bx
 				lodsb				; String [si] to al
-				call	word ptr cs:draw_glyph_tile
+				call	word ptr cs:drv_draw_glyph
 				pop	bx
 				inc	bh
 				pop	cx
@@ -285,7 +285,7 @@ portrait_var_col_loop:
 				push	cx
 				push	bx
 				lodsb				; String [si] to al
-				call	word ptr cs:draw_glyph_tile
+				call	word ptr cs:drv_draw_glyph
 				pop	bx
 				inc	bh
 				pop	cx
@@ -408,7 +408,7 @@ face_glyph_loop:
 			push	cx
 			push	bx
 			lodsb				; String [si] to al
-			call	word ptr cs:draw_glyph_tile
+			call	word ptr cs:drv_draw_glyph
 			pop	bx
 			inc	bh
 			pop	cx
@@ -459,7 +459,7 @@ mouth_glyph_loop:
 				push	cx
 				push	bx
 				lodsb				; String [si] to al
-				call	word ptr cs:draw_glyph_tile
+				call	word ptr cs:drv_draw_glyph
 				pop	bx
 				inc	bh
 				pop	cx

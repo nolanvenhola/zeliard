@@ -34,10 +34,6 @@ include  zr3com.inc
 ;   0FF2Eh..0FF75h - per-map global state flag bytes
 
 ; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
-lega_cb_scroll		equ	200Ch		; scroll / dispatch callback
-lega_cb_tile_query	equ	6028h		; tile-at-cell callback fn A
-lega_cb_npc_step	equ	6036h		; NPC step / cell-iter callback fn B
-lega_cb_entity_act	equ	6038h		; entity action callback fn C
 
 ; --- Internal tile/render data tables (CS/DS-relative) ---
 lega_tbl_a3c7		equ	0A3C7h		; (unresolved data ref)
@@ -209,11 +205,11 @@ lega_npc_scan_loop:
 		add	ss:gvar_unk_ff3c[bp+di],al
 		jz	lega_npc_scan_done			; Jump if zero
 		mov	ax,[si]
-		call	word ptr cs:lega_cb_npc_step
+		call	word ptr cs:fight_cb_anim_step
 		jc	lega_npc_scan_next			; Jump if carry Set
 		mov	[si+3],bl
 		mov	ax,[si+2]
-		call	word ptr cs:lega_cb_tile_query
+		call	word ptr cs:fight_cb_record_ofs
 		mov	bl,ds:lega_npc_idx
 		xor	bh,bh			; Zero register
 		mov	al,ds:sprite_xlat_tbl[bx]
@@ -237,7 +233,7 @@ lega_npc_scan_done:
 		jz	lega_post_scan_check_death			; Jump if zero
 		mov	al,ds:lega_anim_byte
 		push	ax
-		call	word ptr cs:lega_cb_entity_act
+		call	word ptr cs:fight_cb_hit_check
 		mov	bl,ah
 		xor	bh,bh			; Zero register
 		pop	ax
@@ -488,7 +484,7 @@ lega_render_scan_loop:
 		push	cx
 		push	di
 		push	ax
-		call	word ptr cs:lega_cb_npc_step
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		mov	ds:lega_attr_tmp,bl
 		jc	lega_render_scan_outer_advance			; Jump if carry Set
@@ -528,7 +524,7 @@ lega_render_scan_inner:
 lega_render_scan_xlat:
 			push	di
 			mov	ax,[si+2]
-			call	word ptr cs:lega_cb_tile_query
+			call	word ptr cs:fight_cb_record_ofs
 			mov	bl,ds:lega_npc_idx
 			xor	bh,bh			; Zero register
 			mov	al,bl
@@ -638,7 +634,7 @@ lega_render_anim2_cell		proc	near
 lega_anim2_cell_query:
 		mov	ax,ds:lega_anim2_x
 		push	ax
-		call	word ptr cs:lega_cb_npc_step
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		jnc	lega_anim2_cell_write			; Jump if carry=0
 		retn
@@ -653,7 +649,7 @@ lega_anim2_cell_write:
 		mov	al,ds:lega_anim2_frame
 		mov	[si+6],al
 		mov	ax,[si+2]
-		call	word ptr cs:lega_cb_tile_query
+		call	word ptr cs:fight_cb_record_ofs
 		mov	bl,ds:lega_npc_idx
 		xor	bh,bh			; Zero register
 		mov	al,bl
@@ -675,7 +671,7 @@ lega_scroll_clamp_zero:
 		mov	ds:lega_scroll_x_max,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:lega_cb_scroll
+		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
 		jz	lega_scroll_set_death			; Jump if zero

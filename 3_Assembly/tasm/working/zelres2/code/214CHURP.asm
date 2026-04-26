@@ -24,18 +24,11 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; restored after factoring (consensus value, but not all files agree):
-gvar_timer_word          equ     0FF50h
-
-
-; restored after factoring (consensus value, but not all files agree):
-script_step              equ     6004h
+; gvar_timer_word, script_step, drv_palette_push, drv_anim_step
+; are defined in zr2com.inc.
 
 
 ; The following equates show data references outside the range of the program.
-
-drv_palette_push	equ	2008h			;* driver: palette push / refresh panel
-drv_anim_step		equ	2018h			;* driver: advance background animation
 opcode_dispatch_tbl	equ	0A078h			;* script opcode dispatch table base
 sermon_data_a		equ	0A089h			;* dialog/sermon glyph source A
 sermon_data_b		equ	0A0CBh			;* dialog/sermon glyph source B

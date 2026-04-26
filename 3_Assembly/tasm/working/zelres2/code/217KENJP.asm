@@ -43,24 +43,19 @@ include  zr2com.inc
 ; Each entry is a word pointer at CS:2000h+offset; called via
 ;   call word ptr cs:drv_fn_NN
 ; ------------------------------------------------------------------------
-drv_fn_clear	equ	2002h			;* fn 1: clear VGA work area
+; drv_screen_init_a, drv_palette_push, drv_load_msg_header, drv_screen_init_b,
+; drv_anim_step, drv_render_char, drv_return_to_caller, drv_ds_copy
+; defined in zr2com.inc.
 drv_fn_palette_a	equ	2006h			;* fn 3: palette push A (writes 7-byte LUT)
-drv_fn_palette_b	equ	2008h			;* fn 4: palette push B (writes secondary LUT)
-drv_fn_dispatch_a	equ	2010h			;* fn 8: secondary dispatch (CS-resident fn ptr)
-drv_fn_dispatch_b	equ	2012h			;* fn 9: init secondary dispatch
-drv_fn_palette_upd	equ	2018h			;* fn C: palette update / fade
-drv_fn_dialog_box	equ	2022h			;* fn 11h: draw dialog text box frame
 drv_fn_blit_on	equ	2026h			;* fn 13h: enable blit / show dialog area
 drv_fn_blit_off	equ	2028h			;* fn 14h: disable blit / hide dialog area
 drv_fn_draw_str	equ	202Ah			;* fn 15h: draw text string (BX=pos, CL=col, SI=str)
-drv_fn_exit	equ	2040h			;* fn 20h: exit / far return to caller
-drv_fn_memcpy	equ	2044h			;* fn 22h: block memcpy (SI->ES:DI, CX bytes)
 ; CS-relative 4-byte records in driver; referenced by `ds:tbl[bx+si]` arith.
 drv_tbl_a	equ	2802h			;* driver lookup table A (indexed by sage/state)
 drv_tbl_b	equ	2C02h			;* driver lookup table B (indexed by sage/state)
 ; Secondary driver dispatch table.
 drv_fn2_init	equ	3000h			;* fn2 0: init ancillary hardware
-drv_fn2_draw_tile	equ	3016h			;* fn2 B: draw tile (BX=pos, AL=char)
+; drv_draw_glyph (3016h) defined in zr2com.inc
 drv_fn2_text_setup	equ	301Ah			;* fn2 D: text position setup (AL=x)
 drv_fn2_text_render	equ	301Ch			;* fn2 E: text render entry
 drv_fn2_cursor_draw	equ	301Eh			;* fn2 F: cursor draw (BX=pos, AL=phase)
@@ -72,7 +67,7 @@ drv_init_val	equ	51E8h			;* driver init parameter byte (read by start)
 ; Script interpreter function table (game code base + 6000h).
 ; Called via `call word ptr cs:script_fn_XX`.
 ; ------------------------------------------------------------------------
-script_fn_step	equ	6004h			;* next script byte / dispatch handler
+; script_step (6004h) defined in zr2com.inc
 script_fn_menu_init	equ	6014h			;* menu: init selection list
 script_fn_menu_poll	equ	6016h			;* menu: poll input / advance
 script_fn_menu_up	equ	6018h			;* menu: cursor up (BL=cur_idx)
@@ -135,19 +130,13 @@ gvar_save_data	equ	0E801h			;* global: save-file data area
 ; ------------------------------------------------------------------------
 ; Global game-state (game_seg:0xFFxx).
 ; ------------------------------------------------------------------------
-gvar_timer_word	equ	0FF18h			;* global: timer word (tested for bit 0 parity)
-gvar_frame_timer	equ	0FF1Ah			;* global: frame timer (incremented by ISR)
+kenjp_timer_ff18	equ	0FF18h			;* global: timer word (tested for bit 0 parity)
+; gvar_frame_timer, gvar_script_ip, gvar_text_x, gvar_text_y, gvar_timer_word,
+; gvar_dlg_cols, gvar_dlg_rows, gvar_dlg_pos defined in zr2com.inc.
 gvar_key_flag	equ	0FF1Dh			;* global: key-pressed flag
 gvar_enter_flag	equ	0FF1Eh			;* global: ENTER-pressed flag
 gvar_key_code	equ	0FF29h			;* global: last key code byte
 gvar_game_seg	equ	0FF2Ch			;* global: game segment selector word
-gvar_state_ptr	equ	0FF4Ch			;* global: current script/state pointer (word)
-gvar_state_flg1	equ	0FF4Eh			;* global: state flag 1 byte
-gvar_state_flg2	equ	0FF4Fh			;* global: state flag 2 byte
-gvar_menu_sel	equ	0FF50h			;* global: menu selection word (compared to 2)
-gvar_name_maxlen	equ	0FF52h			;* global: max name length (5)
-gvar_name_opt	equ	0FF53h			;* global: name-entry option (0 = skip, FFh = active)
-gvar_ui_pos	equ	0FF54h			;* global: UI position base word (3463h)
 gvar_name_page	equ	0FF56h			;* global: name entry page counter
 gvar_ui_delay	equ	0FF6Ah			;* global: UI delay counter word (0Ah)
 gvar_name_prev	equ	0FF6Ch			;* global: previous name buffer (8 bytes, for resume)
@@ -174,8 +163,8 @@ start:
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:drv_fn_dispatch
-		mov	word ptr ds:gvar_state_ptr,0BA67h
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_script_ip,0BA67h
 		jmp	short script_run_loop
 			                        ;* No entry point to code
 		call	load_sage_chunk
@@ -184,17 +173,17 @@ start:
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		call	sage_intro_dispatch
-		mov	ds:gvar_state_ptr,si
+		mov	ds:gvar_script_ip,si
 script_run_loop:
-		call	word ptr cs:script_fn_step
+		call	word ptr cs:script_step
 		cmp	al,0FFh
 		je	kenja_exit			; Jump if equal
 		call	kenja_cmd_dispatch
 		jmp	short script_run_loop
 kenja_exit:
-		jmp	word ptr cs:drv_fn_exit
+		jmp	word ptr cs:drv_return_to_caller
 
 kenja_main		endp
 
@@ -212,18 +201,18 @@ load_sage_chunk		proc	near
 		mov	ds,cs:gvar_game_seg
 		mov	si,8000h
 		mov	cx,100h
-		call	word ptr cs:drv_fn_memcpy
+		call	word ptr cs:drv_ds_copy
 		pop	ds
-		mov	byte ptr ds:gvar_state_flg1,0
-		mov	byte ptr ds:gvar_state_flg2,0
-		call	word ptr cs:drv_fn_clear
-		call	word ptr cs:drv_fn_dispatch_b
+		mov	byte ptr ds:gvar_text_x,0
+		mov	byte ptr ds:gvar_text_y,0
+		call	word ptr cs:drv_screen_init_a
+		call	word ptr cs:drv_screen_init_b
 		mov	bl,ds:gvar_sage_id
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	si,ds:sage_cmd_msg_tbl[bx]
-		jmp	word ptr cs:drv_fn_dispatch_a
+		jmp	word ptr cs:drv_load_msg_header
 load_sage_chunk		endp
 
 
@@ -276,10 +265,10 @@ data_13		dw	0A157h
 		db	0BBh,0FFh, 74h, 03h,0BFh, 03h
 		db	0AFh
 ret_save_state_ptr:
-		mov	ds:gvar_state_ptr,di
+		mov	ds:gvar_script_ip,di
 		retn
 set_ptr_AE42:
-		mov	word ptr ds:gvar_state_ptr,0AE42h
+		mov	word ptr ds:gvar_script_ip,0AE42h
 		retn
 			                        ;* No entry point to code
 		call	clear_sage_region
@@ -288,18 +277,18 @@ set_ptr_AE42:
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	si,ds:sage_blessing_tbl[bx]
-		mov	ds:gvar_state_ptr,si
-		call	word ptr cs:script_fn_step
-		mov	word ptr ds:gvar_state_ptr,0ADBFh
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_step
+		mov	word ptr ds:gvar_script_ip,0ADBFh
 		retn
 cmd_record_entry:
 		call	clear_sage_region
 		call	record_experience_entry
-		mov	word ptr ds:gvar_state_ptr,0ADBFh
+		mov	word ptr ds:gvar_script_ip,0ADBFh
 		jnc	cmd_record_cancel			; Jump if carry=0
 		retn
 cmd_record_cancel:
-		mov	word ptr ds:gvar_state_ptr,0AF7Ch
+		mov	word ptr ds:gvar_script_ip,0AF7Ch
 		retn
 			                        ;* No entry point to code
 		mov	byte ptr ds:state_sage_flag,0FFh
@@ -307,20 +296,20 @@ cmd_record_cancel:
 		call	wait_frames_140
 		mov	byte ptr ds:state_see_flag,0FFh
 		mov	byte ptr ds:state_record_flg,0FFh
-		mov	word ptr ds:gvar_state_ptr,0AFDEh
+		mov	word ptr ds:gvar_script_ip,0AFDEh
 see_power_wait_loop:
 		call	wait_frames_140
-		call	word ptr cs:script_fn_step
+		call	word ptr cs:script_step
 		cmp	al,4
 		je	see_power_wait_loop			; Jump if equal
 		mov	byte ptr ds:state_listen_flg,0FFh
 		db	0E8h, 43h, 00h		; call near (absolute; TASM won't compile as mnemonic)
-		call	word ptr cs:script_fn_step
+		call	word ptr cs:script_step
 		call	check_hp_exp_tier
 		add	ax,ax
 		mov	bx,ax
 		mov	ax,ds:sage_result_tbl[bx]
-		mov	ds:gvar_state_ptr,ax
+		mov	ds:gvar_script_ip,ax
 		retn
 
 ;��������������������������������������������������������������������������
@@ -500,7 +489,7 @@ palette_idx_wrap:
 		mov	word ptr ds:[0B2h],ax
 		mov	word ptr ds:[90h],ax
 		call	word ptr cs:drv_fn_palette_a
-		call	word ptr cs:drv_fn_palette_b
+		call	word ptr cs:drv_palette_push
 		push	cs
 		pop	es
 		mov	di,offset data_9
@@ -513,7 +502,7 @@ palette_idx_wrap:
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 		test	byte ptr ds:[9Dh],0FFh
 		jz	palette_post_xfer			; Jump if zero
-		call	word ptr cs:drv_fn_palette_upd
+		call	word ptr cs:drv_anim_step
 palette_post_xfer:
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr ds:[8Dh]
@@ -624,7 +613,7 @@ wait_frames_tick:
 wait_frames_140		endp
 
 			                        ;* No entry point to code
-		mov	word ptr ds:gvar_state_ptr,0ADBFh
+		mov	word ptr ds:gvar_script_ip,0ADBFh
 		retn
 
 ;��������������������������������������������������������������������������
@@ -646,11 +635,11 @@ record_experience_entry		proc	near
 		mov	bx,offset data_18+7	; ('e IndiharGo outside')
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		mov	bx,offset data_18+7	; ('e IndiharGo outside')
 		mov	cx,2637h
 		mov	al,0FFh
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		push	cs
 		pop	es
 		mov	di,state_name_buf
@@ -681,7 +670,7 @@ name_prefill_done:
 		call	word ptr cs:drv_fn_draw_str
 		mov	word ptr ds:state_name_box_x,60h
 		mov	byte ptr ds:state_name_box_y,7Eh	; '~'
-		mov	word ptr ds:gvar_ui_pos,3463h
+		mov	word ptr ds:gvar_dlg_pos,3463h
 		mov	word ptr ds:gvar_ui_delay,0Ah
 		mov	al,ds:gvar_save_buf
 		cmp	al,5
@@ -697,14 +686,14 @@ name_clamp_5:
 name_input_entry:
 		mov	si,0E001h
 		mov	al,ds:gvar_save_buf
-		mov	ds:gvar_name_opt,al
-		mov	byte ptr ds:gvar_name_maxlen,5
+		mov	ds:gvar_dlg_rows,al
+		mov	byte ptr ds:gvar_dlg_cols,5
 		call	name_input_loop
 		pushf				; Push flags
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		popf				; Pop flags
 		jnc	name_input_ok			; Jump if carry=0
 		retn
@@ -763,7 +752,7 @@ draw_char_row_loop:
 		add	ax,ax
 		add	ax,ax
 		add	bx,ax
-		add	bx,ds:gvar_ui_pos
+		add	bx,ds:gvar_dlg_pos
 		add	bx,300h
 		call	word ptr cs:drv_fn2_text_render
 		pop	ax
@@ -790,7 +779,7 @@ name_input_loop		proc	near
 		mov	byte ptr ds:gvar_name_page,0
 		mov	byte ptr ds:state_name_cursor,0
 		xor	bl,bl			; Zero register
-		test	byte ptr ds:gvar_name_opt,0FFh
+		test	byte ptr ds:gvar_dlg_rows,0FFh
 		jz	name_in_init_ok			; Jump if zero
 		call	word ptr cs:script_fn_menu_init
 name_in_init_ok:
@@ -803,7 +792,7 @@ name_in_poll_loop:
 		test	byte ptr ds:gvar_enter_flag,0FFh
 		stc				; Set carry flag
 		jnz	name_in_exit			; Jump if not zero
-		test	word ptr cs:gvar_timer_word,1
+		test	word ptr cs:kenjp_timer_ff18,1
 		jz	name_in_no_key			; Jump if zero
 		clc				; Clear carry flag
 name_in_exit:
@@ -851,7 +840,7 @@ name_in_load_preset_done:
 		mov	bl,ds:state_name_box_y
 		mov	cx,1010h
 		xor	al,al			; Zero register
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		call	redraw_name_field
 		xor	al,al			; Zero register
 		call	update_name_cursor
@@ -905,7 +894,7 @@ name_in_joy_btn2_hold:
 		mov	byte ptr ds:gvar_key_code,0
 		retn
 name_in_dir_test:
-		test	byte ptr ds:gvar_name_opt,0FFh
+		test	byte ptr ds:gvar_dlg_rows,0FFh
 		jnz	name_in_dir_check			; Jump if not zero
 		retn
 name_in_dir_check:
@@ -933,11 +922,11 @@ name_in_page_up:
 
 name_in_page_up_loop:
 		push	cx
-		mov	bx,ds:gvar_ui_pos
+		mov	bx,ds:gvar_dlg_pos
 		add	bx,301h
 		mov	al,cl
 		dec	al
-		mov	cl,ds:gvar_name_maxlen
+		mov	cl,ds:gvar_dlg_cols
 		add	cl,cl
 		mov	dl,cl
 		add	cl,cl
@@ -965,13 +954,13 @@ name_in_down_ok:
 		mov	al,ds:state_name_cursor
 		add	al,ds:gvar_name_page
 		inc	al
-		mov	ah,ds:gvar_name_opt
+		mov	ah,ds:gvar_dlg_rows
 		dec	ah
 		cmp	ah,al
 		jae	name_in_down_handler			; Jump if above or =
 		retn
 name_in_down_handler:
-		mov	al,ds:gvar_name_maxlen
+		mov	al,ds:gvar_dlg_cols
 		dec	al
 		cmp	ds:state_name_cursor,al
 		jae	name_in_page_down			; Jump if above or =
@@ -990,12 +979,12 @@ name_in_page_down:
 
 name_in_page_down_loop:
 		push	cx
-		mov	bx,ds:gvar_ui_pos
+		mov	bx,ds:gvar_dlg_pos
 		add	bx,301h
 		mov	al,cl
 		neg	al
 		add	al,0Ah
-		mov	cl,ds:gvar_name_maxlen
+		mov	cl,ds:gvar_dlg_cols
 		add	cl,cl
 		mov	dl,cl
 		add	cl,cl
@@ -1033,7 +1022,7 @@ update_name_cursor_entry:
 		add	bl,8
 		mov	cx,208h
 		xor	al,al			; Zero register
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		pop	ax
 		add	ds:state_name_len,al
 		test	byte ptr ds:state_name_len,80h
@@ -1059,7 +1048,7 @@ cursor_len_max:
 		add	bx,ax
 		add	cl,8
 		mov	ax,67Fh
-		call	word ptr cs:drv_fn_dialog_box
+		call	word ptr cs:drv_render_char
 		pop	si
 		retn
 
@@ -1074,7 +1063,7 @@ redraw_name_field:
 		mov	bl,ds:state_name_box_y
 		mov	cx,1008h
 		xor	al,al			; Zero register
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		mov	bx,ds:state_name_box_x
 		mov	cl,ds:state_name_box_y
 		mov	si,0BB27h
@@ -1163,7 +1152,7 @@ save_disk_error:
 		mov	bx,1049h
 		mov	cx,3226h
 		mov	al,0FFh
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		mov	bx,4Ch
 		mov	cl,50h			; 'P'
 		mov	si,0B5ACh
@@ -1180,7 +1169,7 @@ save_wait_key_loop:
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:drv_fn_dispatch
+		call	word ptr cs:drv_fill_rect
 		jmp	cmd_record_entry
 		db	0, 0
 		db	'STDPLY.BIN'
@@ -1213,7 +1202,7 @@ clear_sage_region		proc	near
 		mov	bx,2717h
 		mov	cx,1D41h
 		xor	al,al			; Zero register
-		jmp	word ptr cs:drv_fn_dispatch
+		jmp	word ptr cs:drv_fill_rect
 clear_sage_region		endp
 
 
@@ -1234,7 +1223,7 @@ sage_tile_col_loop:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:drv_fn2_draw_tile
+		call	word ptr cs:drv_draw_glyph
 		pop	bx
 		inc	bh
 		pop	cx
@@ -1280,7 +1269,7 @@ glyph_col_loop:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:drv_fn2_draw_tile
+		call	word ptr cs:drv_draw_glyph
 		pop	bx
 		inc	bh
 		pop	cx
@@ -1345,11 +1334,11 @@ render_glyph_32		endp
 ;��������������������������������������������������������������������������
 
 anim_tick		proc	near
-		cmp	word ptr ds:gvar_menu_sel,2
+		cmp	word ptr ds:gvar_timer_word,2
 		jae	anim_tick_active			; Jump if above or =
 		retn
 anim_tick_active:
-		mov	word ptr ds:gvar_menu_sel,0
+		mov	word ptr ds:gvar_timer_word,0
 		test	byte ptr ds:state_see_flag,0FFh
 		jz	anim_check_record			; Jump if zero
 		test	byte ptr ds:state_listen_flg,0FFh
@@ -1403,7 +1392,7 @@ anim_record_use_blink_b:
 		mov	al,[bx+di]
 		mov	bx,ds:state_script_ptr
 		add	bx,718h
-		jmp	word ptr cs:drv_fn2_draw_tile
+		jmp	word ptr cs:drv_draw_glyph
 anim_tick		endp
 
 		db	29h

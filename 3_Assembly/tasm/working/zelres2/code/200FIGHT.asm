@@ -143,7 +143,7 @@ sprite_work_buf	equ	0EB60h			;*
 enemy_data_buf	equ	0EB80h			;*
 enemy_data_ext	equ	0ED20h			;*
 enemy_data_buf2	equ	0EDA0h			;*
-gvar_timer_ticks	equ	0FF08h			;*
+gvar_timer_ff08	equ	0FF08h			;* was gvar_timer_ticks
 gvar_timer_counter	equ	0FF18h			;*
 gvar_frame_timer	equ	0FF1Ah			;*
 gvar_skip_input	equ	0FF1Dh			;*
@@ -3386,11 +3386,11 @@ atk_dist_y_set:
 		jc	target_check_done			; Jump if carry Set
 		mov	bx,atk_speed_tbl_b
 		xlat				; al=[al+[bx]] table
-		mov	ds:gvar_timer_ticks,al
+		mov	ds:gvar_timer_ff08,al
 		retn
 
 target_check_done:
-		mov	byte ptr ds:gvar_timer_ticks,0
+		mov	byte ptr ds:gvar_timer_ff08,0
 		retn
 
 game_check_state_4		endp
@@ -4025,7 +4025,7 @@ game_func_73		proc	near
 		mov	ds:enemy_scroll_flag,al
 		mov	ds:gvar_flag_FF3E,al
 		mov	ds:gvar_flag_FF4B,al
-		mov	ds:gvar_timer_ticks,al
+		mov	ds:gvar_timer_ff08,al
 		mov	byte ptr ds:[0E7h],al
 		mov	ax,0FFFFh
 		mov	ds:enemy_data_buf,al
@@ -7862,7 +7862,7 @@ setup_next_level:
 		jmp	short next_level_start
 
 next_level_start:
-		mov	byte ptr ds:gvar_timer_ticks,0
+		mov	byte ptr ds:gvar_timer_ff08,0
 		mov	ah,byte ptr ds:[0C5h]
 		mov	byte ptr ds:[0C4h],ah
 		mov	al,1

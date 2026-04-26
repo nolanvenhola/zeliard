@@ -39,10 +39,6 @@ include  zr3com.inc
 
 ; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
 
-fight_cb_rng		equ	6004h			; RNG read callback
-fight_cb_map_fwd	equ	6010h			; map-fwd move callback
-fight_cb_alt		equ	6030h			; alternate dispatch callback
-fight_cb_spawn		equ	6032h			; spawn projectile/effect
 
 ; Shared enemy spawn/state globals in game_seg DS.
 
@@ -906,8 +902,8 @@ sub03_step_neg_done:
 		retn
 
 sub03_step_pos_path:
-		call	word ptr cs:fight_cb_map_fwd
-		call	word ptr cs:fight_cb_map_fwd
+		call	word ptr cs:fight_cb_step_pos
+		call	word ptr cs:fight_cb_step_pos
 		jc	sub03_step_pos_done			; Jump if carry Set
 		retn
 
@@ -950,7 +946,7 @@ sub03_xlat_swap:
 
 sub03_xlat_call:
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:fight_cb_rng
+		call	word ptr cs:fight_cb_range
 		jc	sub03_rng_gate			; Jump if carry Set
 		retn
 

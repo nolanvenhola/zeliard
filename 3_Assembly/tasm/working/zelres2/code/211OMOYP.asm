@@ -11,7 +11,7 @@ PAGE  59,132
 ;  enters the hut. Displays the OMOYA.GRP graphic and a dialog banner.
 ;
 ;  The module also contains a secondary entry point (end_demo_transition)
-;  reached via the DS dispatch table at drv_fn_exit_jmp (2040h). This
+;  reached via the DS dispatch table at drv_return_to_caller (2040h). This
 ;  entry loads enddemo.bin and the currently-selected mode-specific
 ;  graphics driver (gdega/gdcga/gdhgc/gdmcga/gdtga) keyed off
 ;  gvar_gfx_mode (0FF14h), then jumps into the loaded demo.
@@ -30,25 +30,22 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zr2com.inc
 
-; restored after factoring (consensus value, but not all files agree):
-gvar_timer_word          equ     0FF50h
-
-
 ; --- External addresses (outside module) -----------------------------------
 ; Driver functions at cs:[2000h..2044h] (set up by loader, same convention
 ; as the sibling shop modules 210-217).
-
-drv_fn_screen_init_a	equ	2002h			;* graphics init A (shop load time)
-drv_fn_load_msg_header	equ	2010h			;* display msg header (si=gfx data ptr)
-drv_fn_screen_init_b	equ	2012h			;* graphics init B (post-load)
-drv_fn_exit_jmp		equ	2040h			;* jmp target when script returns
-drv_fn_ds_copy		equ	2044h			;* copy cx bytes from si to buffer
-
-drv_fn2_draw_glyph	equ	3016h			;* draw single glyph at bx=row/col
+;
+; All driver/script slots are defined in zr2com.inc:
+;   drv_screen_init_a   = 2002h
+;   drv_load_msg_header = 2010h
+;   drv_screen_init_b   = 2012h
+;   drv_return_to_caller = 2040h
+;   drv_ds_copy         = 2044h
+;   drv_draw_glyph      = 3016h
+;   gvar_timer_word     = 0FF50h
 
 ; Game API / script dispatcher.
 
-script_step		equ	6016h			;* script step / read next byte -> al
+omoyp_script_6016		equ	6016h			;* script step / read next byte -> al
 
 ; Game-segment global variables (game_seg:0FFxx, accessed via DS).
 
@@ -108,32 +105,32 @@ omoya_main:					; entry from town dispatch
 		mov	ds,cs:gvar_game_seg
 		mov	si,8000h
 		mov	cx,100h
-		call	word ptr cs:drv_fn_ds_copy
+		call	word ptr cs:drv_ds_copy
 		pop	ds
-		call	word ptr cs:drv_fn_screen_init_a
-		call	word ptr cs:drv_fn_screen_init_b
+		call	word ptr cs:drv_screen_init_a
+		call	word ptr cs:drv_screen_init_b
 		mov	si,banner_msg_addr		; -> "In the Hut" banner header
-		call	word ptr cs:drv_fn_load_msg_header
+		call	word ptr cs:drv_load_msg_header
 		call	draw_hut_banner
 		test	byte ptr ds:[49h],0FFh
 		jnz	short end_demo_transition	; skip dialog loop -> end demo
 		mov	byte ptr ds:gvar_script_skip,0
 
 omoya_main_loop:
-			call	word ptr cs:script_step
+			call	word ptr cs:omoyp_script_6016
 			test	byte ptr ds:gvar_script_skip,0FFh
 			jz	omoya_main_loop			; Jump if zero
-		jmp	word ptr cs:drv_fn_exit_jmp
+		jmp	word ptr cs:drv_return_to_caller
 
 ;--------------------------------------------------------------------------
 ; end_demo_transition - secondary entry point.
-; Reached via the DS-resident dispatch table at drv_fn_exit_jmp. Loads
+; Reached via the DS-resident dispatch table at drv_return_to_caller. Loads
 ; enddemo.bin into CS:6000h and the mode-specific graphics driver keyed
 ; off gvar_gfx_mode into CS:3000h, waits 300 timer ticks, then jumps
 ; into the loaded enddemo.
 ;--------------------------------------------------------------------------
 
-end_demo_transition:				; dispatch target (via drv_fn_exit_jmp)
+end_demo_transition:				; dispatch target (via drv_return_to_caller)
 		pop	ax				; discard caller return addr
 		mov	ax,cs
 		mov	ds,ax
@@ -225,7 +222,7 @@ omoyp		endp
 ; draw_hut_banner
 ;
 ; Blit a 16-row by 17-column tile-id grid (banner_tile_grid at +0x129)
-; to the screen starting at row/col 0x0C1E via drv_fn2_draw_glyph.
+; to the screen starting at row/col 0x0C1E via drv_draw_glyph.
 ;
 ;==========================================================================
 
@@ -242,7 +239,7 @@ banner_col_loop:
 				push	cx
 				push	bx
 				lodsb					; next tile id
-				call	word ptr cs:drv_fn2_draw_glyph
+				call	word ptr cs:drv_draw_glyph
 				pop	bx
 				inc	bh				; next col
 				pop	cx
@@ -307,7 +304,7 @@ banner_tile_grid_lbl	label	byte		; @ +0x129
 ;--------------------------------------------------------------------------
 ; OMOYA.GRP chunk reference @ 0A239h:
 ;   [archive=1, chunk=14h, 'OMOYA.GRP', 0, header_fields...]
-; banner_msg_header @ 0A245h (passed to drv_fn_load_msg_header):
+; banner_msg_header @ 0A245h (passed to drv_load_msg_header):
 ;   [16h, AFh, 02h, length=0Ah, 'In the Hut']
 ;--------------------------------------------------------------------------
 ref_omoya_grp	db	 01h, 14h			; archive=1, chunk=14h

@@ -23,18 +23,12 @@ include  zr2com.inc
 gvar_menu_sel            equ     0C006h
 
 
-; restored after factoring (consensus value, but not all files agree):
-gvar_timer_word          equ     0FF50h
-
-
-; restored after factoring (consensus value, but not all files agree):
-script_step              equ     6004h
+; gvar_timer_word, script_step, drv_palette_push, drv_anim_step
+; defined in zr2com.inc.
 
 
 ; The following equates show data references outside the range of the program.
 
-drv_num_commit		equ	2008h			;*
-drv_dispatch_update	equ	2018h			;*
 opcode_dispatch_tbl	equ	0A080h			;*
 intro_tile_map		equ	0A1CFh			;*
 anim_active_flag	equ	0A505h			;*
@@ -226,7 +220,7 @@ inn_cleanup_and_return:					;* dispatch table target (reachable via DS opcode_di
 		call	inn_wait_long
 		mov	ax,data_6
 		mov	data_3,ax
-		call	word ptr cs:drv_num_commit
+		call	word ptr cs:drv_palette_push
 		push	cs
 		pop	es
 		mov	si,offset data_7
@@ -235,7 +229,7 @@ inn_cleanup_and_return:					;* dispatch table target (reachable via DS opcode_di
 		rep	movsb				; Rep when cx >0 Mov [si] to es:[di]
 		test	data_4,0FFh
 		jz	inn_skip_dispatch_update	; Jump if zero
-		call	word ptr cs:drv_dispatch_update
+		call	word ptr cs:drv_anim_step
 
 inn_skip_dispatch_update:
 		jmp	draw_intro_banner		; back to top of loop

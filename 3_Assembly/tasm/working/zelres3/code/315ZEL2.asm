@@ -36,12 +36,6 @@ include  zr3com.inc
 ;   0FF2Eh..0FF75h - per-map global state flag bytes
 
 ; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
-zel2_cb_scroll		equ	200Ch		; scroll / dispatch callback
-zel2_cb_tile_query	equ	6028h		; tile-at-cell callback fn A
-zel2_cb_npc_step	equ	6036h		; NPC step / cell-iter callback fn B
-zel2_cb_entity_act	equ	6038h		; entity action callback fn C
-zel2_cb_init_tiles	equ	603Ah		; init-tile-row callback fn D
-zel2_cb_finalize	equ	603Ch		; finalize / jmp target fn E
 
 ; --- Internal tile/render data tables (DS, addressed by hard offset) ---
 zel2_unk_c0b		equ	0C0Bh		; trailer-decoded internal addr (data ref via [bx+si])
@@ -203,11 +197,11 @@ zel2_npc_scan_loop:
 			db	 83h, 3Ch,0FFh		;  Fixup - byte match
 			jz	zel2_npc_scan_done			; Jump if zero
 			mov	ax,[si]
-			call	word ptr cs:zel2_cb_npc_step
+			call	word ptr cs:fight_cb_anim_step
 			jc	zel2_npc_scan_next			; Jump if carry Set
 			mov	[si+3],bl
 			mov	ax,[si+2]
-			call	word ptr cs:zel2_cb_tile_query
+			call	word ptr cs:fight_cb_record_ofs
 			mov	bl,ds:zel2_npc_idx
 			xor	bh,bh			; Zero register
 			mov	al,ds:sprite_xlat_tbl[bx]
@@ -233,7 +227,7 @@ zel2_npc_scan_done:
 		mov	al,ds:zel2_anim_byte
 		push	ax
 		and	al,1Fh
-		call	word ptr cs:zel2_cb_entity_act
+		call	word ptr cs:fight_cb_hit_check
 		mov	bl,ah
 		pop	ax
 		shr	bl,1			; Shift w/zeros fill
@@ -515,7 +509,7 @@ zel2_npc_render_setup:
 zel2_npc_render_outer_loop:
 			push	cx
 			push	ax
-			call	word ptr cs:zel2_cb_npc_step
+			call	word ptr cs:fight_cb_anim_step
 			pop	ax
 			mov	ds:zel2_attr_tmp,bl
 			jnc	zel2_npc_render_inner_init			; Jump if carry=0
@@ -542,7 +536,7 @@ zel2_npc_render_inner_loop:
 				push	bx
 				push	di
 				mov	ax,[si+2]
-				call	word ptr cs:zel2_cb_tile_query
+				call	word ptr cs:fight_cb_record_ofs
 				mov	bl,ds:zel2_npc_idx
 				xor	bh,bh			; Zero register
 				mov	al,bl
@@ -583,11 +577,11 @@ zel2_setup_anim_segment		proc	near
 		mov	ds:zel2_anim_seg_a_byte_b,al
 		mov	ax,ds:zel2_scroll_x
 		inc	ax
-		call	word ptr cs:zel2_cb_npc_step
+		call	word ptr cs:fight_cb_anim_step
 		mov	ds:zel2_anim_seg_a,bl
 		mov	ax,ds:zel2_scroll_x
 		add	ax,7
-		call	word ptr cs:zel2_cb_npc_step
+		call	word ptr cs:fight_cb_anim_step
 		mov	ds:zel2_anim_seg_a_byte_c,bl
 		mov	al,ds:zel2_phase_dir
 		dec	al
@@ -595,7 +589,7 @@ zel2_setup_anim_segment		proc	near
 		mul	cl			; ax = reg * al
 		add	ax,0A543h
 		mov	bx,ax
-		call	word ptr cs:zel2_cb_init_tiles
+		call	word ptr cs:fight_cb_despawn
 		mov	byte ptr ds:zel2_phase_dir,0
 		retn
 
@@ -646,7 +640,7 @@ zel2_scroll_clamp_zero:
 		mov	ds:zel2_scroll_x_max,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:zel2_cb_scroll
+		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
 		jz	zel2_scroll_set_death			; Jump if zero
@@ -656,7 +650,7 @@ zel2_scroll_set_death:
 		mov	byte ptr ds:gvar_death_flag,0FFh
 		mov	byte ptr ds:zel2_idle_step,0
 		mov	byte ptr ds:zel2_phase_dir,0
-		jmp	word ptr cs:zel2_cb_finalize
+		jmp	word ptr cs:fight_cb_shutdown
 
 zel2_scroll_finalize		endp
 

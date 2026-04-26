@@ -22,24 +22,15 @@ include  zr2com.inc
 gvar_menu_sel            equ     0C006h
 
 
-; restored after factoring (consensus value, but not all files agree):
-gvar_timer_word          equ     0FF50h
-
-
-; restored after factoring (consensus value, but not all files agree):
-script_step              equ     6004h
-
+; gvar_timer_word, script_step, script_format_num, script_display_page,
+; script_take_item, script_give_item are defined in zr2com.inc.
 
 
 ; The following equates show data references outside the range of the program.
 
-drv_num_commit	equ	2014h			;*
+bank_drv_2014	equ	2014h			;*
 drv_draw_string	equ	301Ch			;*
 drv_set_text_pos	equ	3022h			;*
-fmt_num_to_str	equ	6006h			;*
-get_yesno_input	equ	6008h			;*
-save_input_amount	equ	600Ah			;*
-commit_ledger_update	equ	600Ch			;*
 show_menu_items	equ	600Eh			;*
 opcode_dispatch_tbl	equ	0A0B8h			;*
 intro_tile_map	equ	0A6C8h			;*
@@ -66,9 +57,7 @@ amount_max_hi	equ	0AD2Ch			;*
 amount_max_lo	equ	0AD2Dh			;*
 input_repeat_delay	equ	0AD2Fh			;*
 gvar_game_seg	equ	0FF2Ch			;*
-gvar_col_byte	equ	0FF52h			;*
-gvar_row_byte	equ	0FF53h			;*
-gvar_ui_dst_word	equ	0FF54h			;*
+; gvar_dlg_cols, gvar_dlg_rows, gvar_dlg_pos defined in zr2com.inc.
 gvar_ui_misc_byte	equ	0FF57h			;*
 
 seg_a		segment	byte public
@@ -218,8 +207,8 @@ loc_7:
 		mov	cx,0C19h
 		mov	al,0FFh
 		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_ui_dst_word,302Eh
-		call	word ptr cs:get_yesno_input
+		mov	word ptr ds:gvar_dlg_pos,302Eh
+		call	word ptr cs:script_display_page
 		mov	word ptr ds:gvar_script_ptr,0AA48h
 		jnc	loc_8			; Jump if carry=0
 		retn
@@ -251,9 +240,9 @@ loc_12:
 		xor	dl,dl			; Zero register
 		mov	al,ds:cur_exch_out
 		xor	ah,ah			; Zero register
-		call	word ptr cs:commit_ledger_update
+		call	word ptr cs:script_give_item
 		call	word ptr cs:drv_frame_commit
-		call	word ptr cs:drv_num_commit
+		call	word ptr cs:bank_drv_2014
 		pop	dx
 		pop	cx
 		inc	cx
@@ -279,9 +268,9 @@ loc_13:
 		mov	cx,1237h
 		mov	al,0FFh
 		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_ui_dst_word,2A20h
-		mov	byte ptr ds:gvar_col_byte,4
-		mov	byte ptr ds:gvar_row_byte,4
+		mov	word ptr ds:gvar_dlg_pos,2A20h
+		mov	byte ptr ds:gvar_dlg_cols,4
+		mov	byte ptr ds:gvar_dlg_rows,4
 		mov	byte ptr ds:gvar_ui_misc_byte,0
 		mov	cx,4
 		mov	si,menu_items_deposit
@@ -297,7 +286,7 @@ loc_14:
 		mov	ax,ds:amount_lo
 		push	dx
 		push	ax
-		call	word ptr cs:save_input_amount
+		call	word ptr cs:script_take_item
 		call	word ptr cs:drv_set_text_pos
 		mov	bx,312Eh
 		call	word ptr cs:drv_draw_string
@@ -354,7 +343,7 @@ loc_21:
 		adc	byte ptr ds:[88h],dl
 		mov	dl,ds:amount_hi
 		mov	ax,ds:amount_lo
-		call	word ptr cs:save_input_amount
+		call	word ptr cs:script_take_item
 		mov	byte ptr ds:[85h],dl
 		mov	word ptr ds:[86h],ax
 		call	word ptr cs:drv_frame_commit
@@ -381,7 +370,7 @@ loc_23:
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
 		mov	di,0AD30h
-		call	word ptr cs:fmt_num_to_str
+		call	word ptr cs:script_format_num
 		mov	si,ds:gvar_script_ptr
 		push	si
 		mov	word ptr ds:gvar_script_ptr,0AD30h
@@ -411,9 +400,9 @@ loc_25:
 		mov	cx,1237h
 		mov	al,0FFh
 		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_ui_dst_word,2A20h
-		mov	byte ptr ds:gvar_col_byte,4
-		mov	byte ptr ds:gvar_row_byte,4
+		mov	word ptr ds:gvar_dlg_pos,2A20h
+		mov	byte ptr ds:gvar_dlg_cols,4
+		mov	byte ptr ds:gvar_dlg_rows,4
 		mov	byte ptr ds:gvar_ui_misc_byte,0
 		mov	cx,4
 		mov	si,menu_items_withdraw
@@ -493,7 +482,7 @@ loc_32:
 		mov	dl,ds:amount_hi
 		mov	ax,ds:amount_lo
 		mov	di,0AD30h
-		call	word ptr cs:fmt_num_to_str
+		call	word ptr cs:script_format_num
 		mov	si,ds:gvar_script_ptr
 		push	si
 		mov	word ptr ds:gvar_script_ptr,0AD30h
@@ -524,7 +513,7 @@ loc_34:
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
 		mov	di,0AD30h
-		call	word ptr cs:fmt_num_to_str
+		call	word ptr cs:script_format_num
 		mov	si,ds:gvar_script_ptr
 		push	si
 		mov	word ptr ds:gvar_script_ptr,0AD30h
@@ -534,7 +523,7 @@ loc_34:
 loc_35:
 		mov	dl,ds:amount_hi
 		mov	ax,ds:amount_lo
-		call	word ptr cs:commit_ledger_update
+		call	word ptr cs:script_give_item
 		jmp	word ptr cs:drv_frame_commit
 			                        ;* No entry point to code
 		call	clear_dialog_area
@@ -558,7 +547,7 @@ loc_37:
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
 		mov	di,0AD30h
-		call	word ptr cs:fmt_num_to_str
+		call	word ptr cs:script_format_num
 		mov	si,ds:gvar_script_ptr
 		push	si
 		mov	word ptr ds:gvar_script_ptr,0AD30h

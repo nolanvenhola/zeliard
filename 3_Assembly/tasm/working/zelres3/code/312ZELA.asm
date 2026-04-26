@@ -45,12 +45,6 @@ zela_ext_far_d	equ	0A2A1h			; far-ptr target (Fixup call far)
 zela_ext_addr_e	equ	6C6h			; internal address referenced from header
 
 ; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
-zela_cb_scroll		equ	200Ch		; scroll / dispatch callback
-zela_cb_tile_query	equ	6028h		; tile-at-cell callback fn A
-zela_cb_npc_step	equ	6036h		; NPC step / cell-iter callback fn B
-zela_cb_entity_act	equ	6038h		; entity action callback fn C
-zela_cb_init_tiles	equ	603Ah		; init-tile-row callback fn D
-zela_cb_finalize	equ	603Ch		; finalize / jmp target fn E
 
 ; --- Internal/DS state (game-seg, addressed by hardcoded offset) ---
 zela_dispatch_tbl	equ	0A307h		; dispatch word-table base (handler ptrs)
@@ -229,11 +223,11 @@ npc_scan_loop:
 			db	 83h, 3Ch,0FFh		;  Fixup - byte match
 			jz	npc_scan_done			; Jump if zero
 			mov	ax,[si]
-			call	word ptr cs:zela_cb_npc_step
+			call	word ptr cs:fight_cb_anim_step
 			jc	npc_scan_next			; Jump if carry Set
 			mov	[si+3],bl
 			mov	ax,[si+2]
-			call	word ptr cs:zela_cb_tile_query
+			call	word ptr cs:fight_cb_record_ofs
 			mov	bl,ds:zela_npc_idx
 			xor	bh,bh			; Zero register
 			mov	al,ds:sprite_xlat_tbl[bx]
@@ -259,7 +253,7 @@ npc_scan_done:
 		mov	al,ds:zela_anim_byte
 		push	ax
 		and	al,1Fh
-		call	word ptr cs:zela_cb_entity_act
+		call	word ptr cs:fight_cb_hit_check
 		mov	bl,ah
 		pop	ax
 		shr	bl,1			; Shift w/zeros fill
@@ -555,7 +549,7 @@ npc_state_done:
 npc_update_outer:
 			push	cx
 			push	ax
-			call	word ptr cs:zela_cb_npc_step
+			call	word ptr cs:fight_cb_anim_step
 			pop	ax
 			mov	ds:zela_npc_ai_byte,bl
 			jnc	npc_update_emit			; Jump if carry=0
@@ -582,7 +576,7 @@ npc_update_inner:
 				push	bx
 				push	di
 				mov	ax,[si+2]
-				call	word ptr cs:zela_cb_tile_query
+				call	word ptr cs:fight_cb_record_ofs
 				mov	bl,ds:zela_npc_idx
 				xor	bh,bh			; Zero register
 				mov	al,bl
@@ -634,11 +628,11 @@ init_tile_slots		proc	near
 		mov	ds:zela_init_field_b,al
 		mov	ax,ds:zela_scroll_x
 		inc	ax
-		call	word ptr cs:zela_cb_npc_step
+		call	word ptr cs:fight_cb_anim_step
 		mov	ds:zela_init_record,bl
 		mov	ax,ds:zela_scroll_x
 		add	ax,7
-		call	word ptr cs:zela_cb_npc_step
+		call	word ptr cs:fight_cb_anim_step
 		mov	ds:zela_init_field_c,bl
 		mov	al,ds:zela_walk_state
 		dec	al
@@ -646,7 +640,7 @@ init_tile_slots		proc	near
 		mul	cl			; ax = reg * al
 		add	ax,0A552h
 		mov	bx,ax
-		call	word ptr cs:zela_cb_init_tiles
+		call	word ptr cs:fight_cb_despawn
 		mov	byte ptr ds:zela_walk_state,0
 		retn
 
@@ -704,7 +698,7 @@ scroll_y_clamped:
 		mov	ds:zela_scroll_y,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:zela_cb_scroll
+		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
 		jz	scroll_apply_done			; Jump if zero
@@ -714,7 +708,7 @@ scroll_apply_done:
 		mov	byte ptr ds:gvar_death_flag,0FFh
 		mov	byte ptr ds:zela_death_timer,0
 		mov	byte ptr ds:zela_walk_state,0
-		jmp	word ptr cs:zela_cb_finalize
+		jmp	word ptr cs:fight_cb_shutdown
 
 scroll_apply		endp
 

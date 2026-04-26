@@ -39,10 +39,6 @@ include  zr3com.inc
 ; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
 ; These word pointers are the EAI module's only interface to 200FIGHT.
 
-fight_cb_range		equ	6004h			; aim/range/hit check callback
-fight_cb_map_fwd	equ	600Ch			; map-fwd move (unsigned)
-fight_cb_step_pos	equ	6010h			; step towards +x callback
-fight_cb_spawn		equ	6032h			; spawn projectile/effect
 
 ; Shared enemy spawn/state globals in game_seg DS (0xA4xx range).
 

@@ -36,9 +36,6 @@ include  zr3com.inc
 
 ; Fight-engine callback vector table (in game_seg DS at 6004h..603Ah).
 
-fight_cb_range		equ	6004h			; aim/range/hit check callback
-fight_cb_map_fwd	equ	600Ch			; map-fwd move callback
-fight_cb_step_pos	equ	6010h			; step +x callback
 
 ; Shared enemy spawn/state globals in game_seg DS.
 

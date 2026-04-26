@@ -34,12 +34,6 @@ include  zr3com.inc
 ;   0FF2Eh..0FF75h - per-map global state flag bytes
 
 ; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
-meda_cb_scroll		equ	200Ch		; scroll / dispatch callback
-meda_cb_tile_query	equ	6028h		; tile-at-cell callback fn A
-meda_cb_npc_step	equ	6036h		; NPC step / cell-iter callback fn B
-meda_cb_entity_act	equ	6038h		; entity action callback fn C
-meda_cb_init_tiles	equ	603Ah		; init-tile-row callback fn D
-meda_cb_finalize	equ	603Ch		; finalize / jmp target fn E
 
 ; --- Internal tile/render data tables (game-seg DS, addressed by hard offset) ---
 meda_tile_src_a		equ	0A5DCh		; tile source base A (passed to render_tiles)
@@ -209,11 +203,11 @@ npc_scan_loop:
 			db	 83h, 3Ch,0FFh		;  Fixup - byte match
 			jz	npc_scan_done			; Jump if zero
 			mov	ax,[si]
-			call	word ptr cs:meda_cb_npc_step
+			call	word ptr cs:fight_cb_anim_step
 			jc	npc_scan_next			; Jump if carry Set
 			mov	[si+3],bl
 			mov	ax,[si+2]
-			call	word ptr cs:meda_cb_tile_query
+			call	word ptr cs:fight_cb_record_ofs
 			mov	bl,ds:meda_npc_idx
 			xor	bh,bh			; Zero register
 			mov	al,ds:sprite_xlat_tbl[bx]
@@ -243,7 +237,7 @@ npc_scan_done:
 		and	al,1Fh
 		jz	post_scan_check_death			; Jump if zero
 		push	ax
-		call	word ptr cs:meda_cb_entity_act
+		call	word ptr cs:fight_cb_hit_check
 		mov	bl,ah
 		pop	ax
 		shr	bl,1			; Shift w/zeros fill
@@ -420,7 +414,7 @@ phase_dir_compute		endp
 phase_clear_cells		proc	near
 		mov	ax,ds:meda_scroll_x
 		add	ax,6
-		call	word ptr cs:meda_cb_npc_step
+		call	word ptr cs:fight_cb_anim_step
 		jc	clear_cells_second			; Jump if carry Set
 		mov	ds:meda_cell_x,bl
 		mov	al,ds:meda_scroll_phase
@@ -428,12 +422,12 @@ phase_clear_cells		proc	near
 		and	al,3Fh			; '?'
 		mov	ds:meda_cell_phase,al
 		mov	bx,0A6E0h
-		call	word ptr cs:meda_cb_init_tiles
+		call	word ptr cs:fight_cb_despawn
 
 clear_cells_second:
 		mov	ax,ds:meda_scroll_x
 		add	ax,7
-		call	word ptr cs:meda_cb_npc_step
+		call	word ptr cs:fight_cb_anim_step
 		jnc	clear_cells_finalize			; Jump if carry=0
 		retn
 
@@ -444,7 +438,7 @@ clear_cells_finalize:
 		and	al,3Fh			; '?'
 		mov	ds:meda_cell_phase,al
 		mov	bx,0A6E0h
-		jmp	word ptr cs:meda_cb_init_tiles
+		jmp	word ptr cs:fight_cb_despawn
 
 phase_clear_cells		endp
 
@@ -534,7 +528,7 @@ render_outer_loop:
 			push	cx
 			push	si
 			push	ax
-			call	word ptr cs:meda_cb_npc_step
+			call	word ptr cs:fight_cb_anim_step
 			pop	ax
 			mov	ds:meda_tile_param_attr,bl
 			jc	render_outer_advance			; Jump if carry Set
@@ -564,7 +558,7 @@ render_inner_loop:
 render_attr_xlat:
 				push	di
 				mov	ax,[di+2]
-				call	word ptr cs:meda_cb_tile_query
+				call	word ptr cs:fight_cb_record_ofs
 				mov	bl,ds:meda_npc_idx
 				xor	bh,bh			; Zero register
 				mov	al,bl
@@ -649,7 +643,7 @@ scroll_clamp_zero:
 		mov	ds:meda_scroll_x_max,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:meda_cb_scroll
+		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
 		jz	scroll_check_death			; Jump if zero
@@ -663,7 +657,7 @@ scroll_check_death:
 scroll_set_finalize:
 		mov	byte ptr ds:meda_idle_step,0
 		mov	byte ptr ds:gvar_death_flag,0FFh
-		jmp	word ptr cs:meda_cb_finalize
+		jmp	word ptr cs:fight_cb_shutdown
 
 scroll_step_finalize		endp
 

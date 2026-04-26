@@ -40,24 +40,6 @@ include  srmacros.inc
 include  zr3com.inc
 
 ; --- CRAB enemy AI dispatch table (game_seg:6004h..6034h, in DS at runtime) ---
-ai_fn_tbl_a	equ	6004h			; AI fn table slot (movement/pathing)
-ai_fn_tbl_b	equ	6006h			; AI fn table slot (alt pathing)
-ai_fn_tbl_c	equ	6008h			; AI fn table slot
-ai_fn_tbl_d	equ	600Ah			; AI fn table slot
-ai_fn_tbl_e	equ	600Ch			; AI fn table slot
-ai_fn_tbl_f	equ	600Eh			; AI fn table slot
-ai_fn_tbl_g	equ	6010h			; AI fn table slot
-ai_fn_tbl_h	equ	6012h			; AI fn table slot
-ai_fn_tbl_i	equ	6014h			; AI fn table slot
-ai_fn_tbl_j	equ	6016h			; AI fn table slot
-ai_fn_tbl_k	equ	6018h			; AI fn table slot
-ai_fn_tbl_l	equ	601Ah			; AI fn table slot
-ai_fn_tbl_m	equ	6028h			; AI fn table slot (spawn/projectile)
-ai_fn_tbl_n	equ	602Ah			; AI fn table slot
-ai_fn_tbl_o	equ	602Eh			; AI fn table slot
-ai_fn_tbl_p	equ	6030h			; AI fn table slot
-ai_fn_tbl_q	equ	6032h			; AI fn table slot
-ai_hide_fn	equ	6034h			; AI fn: hide / remove enemy
 
 ; --- Crab AI lookup tables (in DS at game_seg) ---
 crab_tbl_a	equ	0A29Dh			; crab movement/direction lookup table
@@ -290,11 +272,11 @@ crab_ai_dispatch_tbl:				; offset 0x266 (= 0xA266 in DS)
 		dw	0A517h			; idx 5 -> crab_pincer_state
 
 ; Inline AI-entry tail (file offsets 0x26E..0x283) -- pre-roll for crab_ai_main_entry:
-;   call cs:[ai_fn_tbl_p]; jnz +5; jmp cs:[ai_fn_tbl_q]
+;   call cs:[fight_cb_alt]; jnz +5; jmp cs:[fight_cb_spawn]
 ;   test [si+8], 0FFh;     jnz +4; mov [si+8], 2
-		db	 2Eh,0FFh, 16h, 30h, 60h	; call cs:[ai_fn_tbl_p]
+		db	 2Eh,0FFh, 16h, 30h, 60h	; call cs:[fight_cb_alt]
 		db	 75h, 05h			; jnz  crab_ai_main_entry
-		db	 2Eh,0FFh, 26h, 32h, 60h	; jmp  cs:[ai_fn_tbl_q]
+		db	 2Eh,0FFh, 26h, 32h, 60h	; jmp  cs:[fight_cb_spawn]
 		db	 0F6h, 44h, 08h,0FFh		; test byte ptr [si+8], 0FFh
 		db	 75h, 04h			; jnz  crab_ai_main_entry
 		db	 0C6h, 44h, 08h, 02h		; mov  byte ptr [si+8], 2
@@ -379,13 +361,13 @@ sub02_compute_dx:
 		cmp	byte ptr [si+3],10h
 		je	sub02_try_jump			; Jump if equal
 		jnc	sub02_try_west_far			; Jump if carry=0
-		call	word ptr cs:ai_fn_tbl_j
+		call	word ptr cs:fight_cb_dist_check
 		jc	sub02_face_east_step			; Jump if carry Set
 		or	byte ptr [si+5],80h
 		retn
 
 sub02_try_west_far:
-		call	word ptr cs:ai_fn_tbl_h
+		call	word ptr cs:fight_cb_step_pos_2
 		jc	sub02_face_west_step			; Jump if carry Set
 		and	byte ptr [si+5],7Fh
 		retn
@@ -398,13 +380,13 @@ sub02_mid_range:
 		jnc	sub02_face_west_step			; Jump if carry=0
 
 sub02_face_east_step:
-			call	word ptr cs:ai_fn_tbl_c
+			call	word ptr cs:fight_cb_step_neg
 			jc	sub02_try_jump			; Jump if carry Set
 			or	byte ptr [si+5],80h
 			retn
 
 sub02_face_west_step:
-				call	word ptr cs:ai_fn_tbl_g
+				call	word ptr cs:fight_cb_step_pos
 				jc	sub02_try_jump			; Jump if carry Set
 				and	byte ptr [si+5],7Fh
 				retn
@@ -415,19 +397,19 @@ sub02_near_range:
 				cmp	byte ptr [si+3],10h
 				je	sub02_try_jump			; Jump if equal
 				jnc	sub02_try_west_step			; Jump if carry=0
-				call	word ptr cs:ai_fn_tbl_d
+				call	word ptr cs:fight_cb_step_neg_2
 				jc	sub02_face_east_step			; Jump if carry Set
 			or	byte ptr [si+5],80h
 			retn
 
 sub02_try_west_step:
-			call	word ptr cs:ai_fn_tbl_f
+			call	word ptr cs:fight_cb_map_back
 			jc	sub02_face_west_step			; Jump if carry Set
 		and	byte ptr [si+5],7Fh
 		retn
 
 sub02_try_jump:
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_blocked
 		jc	sub02_advance_to_C0			; Jump if carry Set
 		retn
 
@@ -443,7 +425,7 @@ crab_substate_03:
 		call	phase_advance_helper
 		test	byte ptr [si+5],80h
 		jz	sub03_step_alt			; Jump if zero
-		call	word ptr cs:ai_fn_tbl_d
+		call	word ptr cs:fight_cb_step_neg_2
 		jc	sub03_clear_facing			; Jump if carry Set
 		retn
 
@@ -452,7 +434,7 @@ sub03_clear_facing:
 		jmp	short sub03_apply_step
 
 sub03_step_alt:
-		call	word ptr cs:ai_fn_tbl_f
+		call	word ptr cs:fight_cb_map_back
 		jc	sub03_set_facing			; Jump if carry Set
 		retn
 
@@ -460,7 +442,7 @@ sub03_set_facing:
 		or	byte ptr [si+5],80h
 
 sub03_apply_step:
-		call	word ptr cs:ai_fn_tbl_e
+		call	word ptr cs:fight_cb_map_fwd
 		jc	sub03_set_step_state			; Jump if carry Set
 		retn
 
@@ -499,9 +481,9 @@ phase_advance_helper		endp
 ; AI sub-state handler (dispatched from crab_tbl_b or crab_tbl_a -- attack pattern)
 
 crab_attack_state_a:
-		call	word ptr cs:ai_fn_tbl_p
+		call	word ptr cs:fight_cb_alt
 		jnz	atk_a_after_check			; Jump if not zero
-		jmp	word ptr cs:ai_fn_tbl_q
+		jmp	word ptr cs:fight_cb_spawn
 
 atk_a_after_check:
 		test	byte ptr [si+8],0FFh
@@ -514,7 +496,7 @@ atk_a_seed_cooldown:
 		jmp	word ptr cs:ai_hide_fn
 
 atk_a_check_jump:
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_blocked
 		jc	atk_a_phase_advance			; Jump if carry Set
 		retn
 
@@ -528,7 +510,7 @@ atk_a_phase_advance:
 atk_a_phase_ready:
 		cmp	byte ptr [si+3],11h
 		jae	atk_a_far_test			; Jump if above or =
-		call	word ptr cs:ai_fn_tbl_c
+		call	word ptr cs:fight_cb_step_neg
 		jnc	atk_a_set_facing			; Jump if carry=0
 		retn
 
@@ -537,7 +519,7 @@ atk_a_set_facing:
 		retn
 
 atk_a_far_test:
-		call	word ptr cs:ai_fn_tbl_g
+		call	word ptr cs:fight_cb_step_pos
 		jnc	atk_a_clear_facing			; Jump if carry=0
 		retn
 
@@ -548,9 +530,9 @@ atk_a_clear_facing:
 ; AI sub-state handler: alternate attack pattern (sibling of crab_attack_state_a)
 
 crab_attack_state_b:
-		call	word ptr cs:ai_fn_tbl_p
+		call	word ptr cs:fight_cb_alt
 		jnz	atk_b_after_check			; Jump if not zero
-		jmp	word ptr cs:ai_fn_tbl_q
+		jmp	word ptr cs:fight_cb_spawn
 
 atk_b_after_check:
 		test	byte ptr [si+8],0FFh
@@ -567,7 +549,7 @@ atk_b_check_phase:
 		jnz	atk_b_jump_active			; Jump if not zero
 		add	byte ptr [si+6],21h	; '!'
 		and	byte ptr [si+6],0E1h
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_blocked
 		jc	atk_b_phase_jumped			; Jump if carry Set
 		retn
 
@@ -613,7 +595,7 @@ atk_b_use_default_tbl:
 		mov	al,ah
 		sub	al,2
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:ai_fn_tbl_a
+		call	word ptr cs:fight_cb_range
 		jc	atk_b_xlat_failed			; Jump if carry Set
 		retn
 
@@ -625,7 +607,7 @@ atk_b_xlat_failed:
 atk_b_finish_phase:
 		and	byte ptr [si+9],0F7h
 		mov	byte ptr [si+6],0
-		jmp	word ptr cs:ai_fn_tbl_i
+		jmp	word ptr cs:fight_cb_blocked
 
 distance_check_8		proc	near
 		mov	al,ds:gvar_frame_cnt
@@ -668,9 +650,9 @@ distance_check_8		endp
 ; AI sub-state handler: pincer/grab sequence
 
 crab_pincer_state:
-		call	word ptr cs:ai_fn_tbl_p
+		call	word ptr cs:fight_cb_alt
 		jnz	pincer_after_check			; Jump if not zero
-		jmp	word ptr cs:ai_fn_tbl_q
+		jmp	word ptr cs:fight_cb_spawn
 
 pincer_after_check:
 		test	byte ptr [si+8],0FFh
@@ -693,7 +675,7 @@ pincer_check_phase_alt:
 		jmp	pincer_recovery
 
 pincer_step_loop:
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_blocked
 		jc	pincer_phase_active			; Jump if carry Set
 		retn
 
@@ -735,7 +717,7 @@ pincer_subphase_done:
 		or	[si+5],al
 		or	al,al			; Zero ?
 		jns	pincer_face_east_step			; Jump if not sign
-		call	word ptr cs:ai_fn_tbl_k
+		call	word ptr cs:fight_cb_aux_18
 		jc	pincer_clear_facing			; Jump if carry Set
 		retn
 
@@ -744,7 +726,7 @@ pincer_clear_facing:
 		retn
 
 pincer_face_east_step:
-		call	word ptr cs:ai_fn_tbl_l
+		call	word ptr cs:fight_cb_aux_1a
 		jc	pincer_set_facing			; Jump if carry Set
 		retn
 
@@ -754,7 +736,7 @@ pincer_set_facing:
 
 pincer_animate:
 		mov	ax,[si+2]
-		call	word ptr cs:ai_fn_tbl_m
+		call	word ptr cs:fight_cb_record_ofs
 		mov	ax,48h
 		test	byte ptr [si+5],80h
 		jz	pincer_pos_offset_done			; Jump if zero
@@ -763,10 +745,10 @@ pincer_animate:
 pincer_pos_offset_done:
 		xchg	si,di
 		add	si,ax
-		call	word ptr cs:ai_fn_tbl_n
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		mov	al,[di]
-		call	word ptr cs:ai_fn_tbl_o
+		call	word ptr cs:fight_cb_cmp_tile
 		jnz	pincer_count_phase			; Jump if not zero
 		mov	byte ptr [si+6],0
 		or	byte ptr [si+9],8
@@ -791,7 +773,7 @@ pincer_aux_step:
 pincer_pick_attack:
 		test	byte ptr [si+5],80h
 		jz	pincer_east_attack			; Jump if zero
-		call	word ptr cs:ai_fn_tbl_c
+		call	word ptr cs:fight_cb_step_neg
 		jc	pincer_west_done			; Jump if carry Set
 		retn
 
@@ -802,7 +784,7 @@ pincer_west_done:
 		retn
 
 pincer_east_attack:
-		call	word ptr cs:ai_fn_tbl_g
+		call	word ptr cs:fight_cb_step_pos
 		jc	pincer_east_done			; Jump if carry Set
 		retn
 
@@ -830,10 +812,10 @@ pincer_jump_use_default:
 		mov	al,[si+6]
 		xlat				; al=[al+[bx]] table
 		push	ax
-		call	word ptr cs:ai_fn_tbl_b
+		call	word ptr cs:fight_cb_alt_b
 		pop	ax
 		jc	pincer_jump_failed			; Jump if carry Set
-		jmp	word ptr cs:ai_fn_tbl_a
+		jmp	word ptr cs:fight_cb_range
 
 pincer_jump_failed:
 		and	byte ptr [si+9],0F7h
@@ -843,7 +825,7 @@ pincer_jump_failed:
 pincer_jump_complete:
 		and	byte ptr [si+9],0F7h
 		mov	byte ptr [si+6],3
-		jmp	word ptr cs:ai_fn_tbl_i
+		jmp	word ptr cs:fight_cb_blocked
 
 pincer_recovery:
 		add	byte ptr [si+9],20h	; ' '
@@ -872,7 +854,7 @@ pincer_recovery_step:
 
 pincer_recover_use_default:
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:ai_fn_tbl_a
+		call	word ptr cs:fight_cb_range
 		jc	pincer_recover_failed			; Jump if carry Set
 		retn
 
@@ -890,7 +872,7 @@ pincer_recover_set_phase3:
 pincer_recover_finish:
 		and	byte ptr [si+9],0EFh
 		mov	byte ptr [si+6],3
-		jmp	word ptr cs:ai_fn_tbl_i
+		jmp	word ptr cs:fight_cb_blocked
 
 distance_check_6		proc	near
 		mov	al,ds:gvar_frame_cnt

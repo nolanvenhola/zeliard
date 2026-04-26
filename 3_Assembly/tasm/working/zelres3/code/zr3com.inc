@@ -1,17 +1,17 @@
 ;==========================================================================
 ;
-;  eai_common.inc - Shared runtime addresses for zelres3 enemy AI handlers
-;                   and sprite/arena modules (300-319).
+;  zr3com.inc - Shared runtime addresses for zelres3 enemy AI handlers
+;               and sprite/arena modules (300-319).
 ;
 ;  Each chunk in zelres3 is loaded into the game segment at runtime by
 ;  the SAR loader.  The values below are STABLE INTERFACE addresses owned
 ;  by 200FIGHT.bin (loaded at game_seg:0xC000) and zeliad.bin (game state
 ;  at 0xFFxx).  They never shift even if individual chunks are recompiled
-;  — this is the original developers' cross-chunk linking convention.
+;  -- this is the original developers' cross-chunk linking convention.
 ;
-;  Aliases: where a single address has multiple historical names in
-;  different chunks, both are kept here.  TASM accepts multiple symbols
-;  at the same value.
+;  Aliases: where a single address has multiple historical / semantic
+;  names, both are kept here as `equ` aliases.  TASM accepts multiple
+;  symbols at the same value.
 ;
 ;==========================================================================
 
@@ -24,7 +24,7 @@ gvar_enemy_cnt          equ     0FF36h  ; active enemy count
 gvar_sub_frame          equ     0FF4Ah  ; sub-frame counter
 gvar_spawn_fx_flag      equ     0FF75h  ; spawn FX trigger
                                         ; (NOTE: same byte as gvar_volume_b
-                                        ;  in zeliad/game context — repurposed
+                                        ;  in zeliad/game context -- repurposed
                                         ;  during fight phase)
 
 ;-- Fight-engine state (DS=game_seg, 0xC000+ = fight.bin load region) ------
@@ -43,18 +43,45 @@ sprite_src_alt          equ     8080h   ; alternate sprite-source base
 sprite_src_aux          equ     80A1h   ; auxiliary sprite-source base
 
 ;-- Fight-engine callback vectors (DS=game_seg, fight.bin export table) ----
-;  Stable dispatch slots called via `call word ptr ds:[<vec>]`.
-;  Used directly by sprite modules (309-311) and EAI 6/7/8 (306-308).
-;  EAI 1-5 (301-305) call the same physical addresses but treat them as
-;  a positional `ai_fn_tbl_a..N` table — those names stay file-local.
-fight_cb_prep           equ     200Ch   ; prep / init callback
+;  Stable dispatch slots called via `call word ptr ds:[<vec>]`.  The same
+;  physical address has one canonical name shared by every chunk that
+;  references it -- this used to be a chaotic mess of file-local aliases
+;  (ai_fn_tbl_a..N, akma_cb_*, drgn_cb_*, lega_cb_*, mao1_cb_*, mao2_cb_*,
+;  meda_cb_*, zel2_cb_*, zela_cb_*, fight_cb_rng, etc.) all pointing at
+;  the same fight.bin export table.  Names below are the standardized
+;  semantic names; `equ` aliases at the bottom preserve a few old labels
+;  that conveyed distinct semantic intent at the same address.
+
+fight_cb_prep           equ     200Ch   ; prep / init / scroll dispatch callback
+fight_cb_range          equ     6004h   ; range / RNG / aim probe
+fight_cb_alt_b          equ     6006h   ; alt-pathing slot (301 only)
 fight_cb_step_neg       equ     6008h   ; step in -ve direction
+fight_cb_step_neg_2     equ     600Ah   ; step in -ve direction (alt)
+fight_cb_map_fwd        equ     600Ch   ; map-fwd move callback
+fight_cb_map_back       equ     600Eh   ; map-back move callback
+fight_cb_step_pos       equ     6010h   ; step in +ve direction
+fight_cb_step_pos_2     equ     6012h   ; step in +ve direction (alt)
 fight_cb_blocked        equ     6014h   ; blocked-check
+fight_cb_dist_check     equ     6016h   ; distance / range check
+fight_cb_aux_18         equ     6018h   ; aux probe slot (301 only)
+fight_cb_aux_1a         equ     601Ah   ; aux probe slot (301 only)
+fight_cb_aux_1c         equ     601Ch   ; aux probe slot (303 only)
 fight_cb_record_ofs     equ     6028h   ; compute record addr from tile
 fight_cb_mark_adj       equ     602Ah   ; mark adjacent tile
 fight_cb_tile_index     equ     602Ch   ; query tile index
 fight_cb_cmp_tile       equ     602Eh   ; compare tile / tile match
+fight_cb_alt            equ     6030h   ; alternate dispatch callback
+fight_cb_spawn          equ     6032h   ; spawn projectile/effect
 fight_cb_fire           equ     6034h   ; fire / projectile spawn
 fight_cb_anim_step      equ     6036h   ; animation step
 fight_cb_hit_check      equ     6038h   ; hit / collision query
 fight_cb_despawn        equ     603Ah   ; despawn slot
+fight_cb_shutdown       equ     603Ch   ; shutdown / finalize callback
+fight_cb_spawn_alt      equ     603Eh   ; spawn alt (e.g. body-segment)
+fight_cb_aux_40         equ     6040h   ; aux probe slot (305 only)
+
+;-- Semantic aliases at same address as canonical name ---------------------
+;  These capture different semantic intents; kept as aliases.
+ai_hide_fn              equ     fight_cb_fire        ; AI fn: hide / remove enemy
+ai_attack_fn            equ     fight_cb_despawn     ; AI fn: attack / projectile release
+ai_spawn_fn             equ     fight_cb_spawn_alt   ; AI fn: spawn body segment

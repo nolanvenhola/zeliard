@@ -2798,7 +2798,7 @@ anim_refresh_all:
 
 anim_pass_start:
 							mov	word ptr ds:vga_row_ptr,46Ch
-							mov	byte ptr ds:frame_timer,0
+							mov	byte ptr ds:gvar_frame_timer,0
 							mov	si,ds:sprite_data_ptr
 							mov	di,sprite_buf
 							mov	cx,12h
@@ -2825,7 +2825,7 @@ anim_slot_loop:
 												loop	anim_row_loop		; Loop if cx > 0
 
 wait_frame_timer:
-												cmp	byte ptr ds:frame_timer,10h
+												cmp	byte ptr ds:gvar_frame_timer,10h
 												jb	wait_frame_timer	; Jump if below
 							dec	byte ptr ds:anim_phase
 							jnz	anim_pass_start		; Jump if not zero
@@ -3362,9 +3362,9 @@ loc_209:
 							call	word ptr cs:[116h]
 							call	word ptr cs:[118h]
 							pop	ax
-							cmp	ds:frame_timer,al
+							cmp	ds:gvar_frame_timer,al
 							jb	loc_209			; Jump if below
-		mov	byte ptr ds:frame_timer,0
+		mov	byte ptr ds:gvar_frame_timer,0
 		retn
 
 frame_wait_loop		endp

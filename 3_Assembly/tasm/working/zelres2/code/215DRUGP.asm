@@ -27,29 +27,21 @@ include  zr2com.inc
 ; Driver functions at cs:[2000h..2044h] (set up by loader, same for all
 ; shop modules 210-217).
 
-gfx_show_sprite	equ	2010h			;* display graphic (si=gfx data ptr)
+; drv_load_msg_header (2010h) defined in zr2com.inc -- was gfx_show_sprite
 
 
 ; Game API (cs:[6004..6012]) script/menu subsystem.
-
-script_format_num	equ	6006h		;* format number dl:ax at di
-script_display_page	equ	6008h		;* display next page of script (CF=cancel)
-script_take_item	equ	600Ah		;* remove item: dl:ax=price (CF=no room)
-script_give_item	equ	600Ch		;* give item: dl:ax=price
+;   script_format_num, script_display_page, script_take_item, script_give_item
+;   defined in zr2com.inc.
 menu_show_list		equ	6010h		;* show menu (bl=idx) -> CF if cancel
 menu_init		equ	6012h		;* init menu (bx=pos, di=buffer, cl=n, al=start)
 
 ; Game-segment global variables (game_seg:0FFxx, accessed via DS).
+;   gvar_frame_timer, gvar_script_ip, gvar_text_x, gvar_text_y,
+;   gvar_timer_word, gvar_dlg_cols, gvar_dlg_rows, gvar_dlg_pos
+;   defined in zr2com.inc.
 
-gvar_timer_ticks	equ	0FF1Ah		;* frame timer counter
 gvar_game_seg		equ	0FF2Ch		;* game data segment selector
-script_cur_ptr		equ	0FF4Ch		;* current script byte-pointer (word)
-shop_flag_a		equ	0FF4Eh		;* shop state flag A (zeroed at init)
-shop_flag_b		equ	0FF4Fh		;* shop state flag B (zeroed at init)
-menu_frame_timer	equ	0FF50h		;* menu frame-delay counter (word)
-menu_item_count		equ	0FF52h		;* current menu item count (byte)
-inventory_count		equ	0FF53h		;* live inventory count (byte)
-menu_pos_base		equ	0FF54h		;* menu base position (word)
 menu_start_idx		equ	0FF56h		;* menu start index (byte)
 flag_buy_mode		equ	0FF57h		;* 0FFh=buy mode, 0=sell/describe
 inventory_list		equ	0FF58h		;* live inventory slot buffer (5 bytes)
@@ -109,15 +101,15 @@ start:
 		mov	ds,cs:gvar_game_seg
 		mov	si,8000h
 		mov	cx,100h
-		call	word ptr cs:gfx_copy_buffer
+		call	word ptr cs:drv_ds_copy
 		pop	ds
-		mov	byte ptr ds:shop_flag_a,0
-		mov	byte ptr ds:shop_flag_b,0
+		mov	byte ptr ds:gvar_text_x,0
+		mov	byte ptr ds:gvar_text_y,0
 		mov	byte ptr ds:timer_dispatch,0
-		call	word ptr cs:gfx_init_a
-		call	word ptr cs:gfx_init_b
+		call	word ptr cs:drv_screen_init_a
+		call	word ptr cs:drv_screen_init_b
 		mov	si,0A81Ch
-		call	word ptr cs:gfx_show_sprite
+		call	word ptr cs:drv_load_msg_header
 		call	wizard_process_loop
 		push	cs
 		pop	es
@@ -133,16 +125,16 @@ start:
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:gfx_fill_rect
-		mov	word ptr ds:script_cur_ptr,0A86Bh
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_script_ip,0A86Bh
 loc_2:
-		call	word ptr cs:script_read_byte
+		call	word ptr cs:script_step
 		cmp	al,0FFh
 		je	loc_3			; Jump if equal
 		call	wizard_func_2
 		jmp	short loc_2
 loc_3:
-		jmp	word ptr cs:gfx_return
+		jmp	word ptr cs:drv_return_to_caller
 
 zr2_15		endp
 
@@ -198,7 +190,7 @@ data_4		db	0EBh
 		db	0FFh, 00h
 loc_6:
 		call	wizard_multiply
-		cmp	byte ptr ds:gvar_timer_ticks,50h	; 'P'
+		cmp	byte ptr ds:gvar_frame_timer,50h	; 'P'
 		jb	loc_6			; Jump if below
 		mov	si,greet_str_tbl
 		call	wizard_scan_loop
@@ -206,7 +198,7 @@ loc_6:
 		db	0C6h, 06h, 1Ah,0FFh, 00h
 loc_7:
 		call	wizard_multiply
-		cmp	byte ptr ds:gvar_timer_ticks,50h	; 'P'
+		cmp	byte ptr ds:gvar_frame_timer,50h	; 'P'
 		jb	loc_7			; Jump if below
 		mov	si,0A74Fh
 		jmp	loc_34
@@ -245,25 +237,25 @@ data_5		dw	0E9A7h
 		db	0B2h,0A2h, 53h,0FFh, 3Ch, 03h
 		db	 72h, 02h,0B0h, 03h
 loc_8:
-		mov	ds:menu_item_count,al
+		mov	ds:gvar_dlg_cols,al
 		mov	bx,156Eh
 		mov	cx,2524h
 		mov	al,0FFh
-		call	word ptr cs:gfx_fill_rect
+		call	word ptr cs:drv_fill_rect
 		mov	byte ptr ds:flag_buy_mode,0FFh
-		mov	word ptr ds:menu_pos_base,1571h
+		mov	word ptr ds:gvar_dlg_pos,1571h
 		mov	word ptr ds:menu_row_count,21h
 		mov	word ptr ds:menu_col_width,17h
 		mov	si,0B08Ah
 		mov	di,0B1F6h
-		mov	cl,ds:menu_item_count
+		mov	cl,ds:gvar_dlg_cols
 		xor	ch,ch			; Zero register
 		mov	al,ds:menu_start_idx
 		call	word ptr cs:menu_init
 		mov	bl,ds:sel_item_idx
 		call	word ptr cs:menu_show_list
 		jnc	loc_9			; Jump if carry=0
-		mov	word ptr ds:script_cur_ptr,0A965h
+		mov	word ptr ds:gvar_script_ip,0A965h
 		retn
 loc_9:
 		mov	ds:sel_item_idx,bl
@@ -272,21 +264,21 @@ loc_9:
 		mov	bx,inventory_list
 		xlat				; al=[al+[bx]] table
 		push	ax
-		mov	word ptr ds:script_cur_ptr,0A8C4h
-		call	word ptr cs:script_read_byte
+		mov	word ptr ds:gvar_script_ip,0A8C4h
+		call	word ptr cs:script_step
 		pop	ax
 		push	ax
-		mov	si,ds:script_cur_ptr
+		mov	si,ds:gvar_script_ip
 		push	si
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
 		mov	ax,ds:item_name_tbl[bx]
-		mov	ds:script_cur_ptr,ax
-		call	word ptr cs:script_read_byte
+		mov	ds:gvar_script_ip,ax
+		call	word ptr cs:script_step
 		pop	si
-		mov	ds:script_cur_ptr,si
-		call	word ptr cs:script_read_byte
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_step
 		pop	ax
 		push	ax
 		xor	ah,ah			; Zero register
@@ -301,7 +293,7 @@ loc_9:
 		mov	ds:item_price_ax,ax
 		call	word ptr cs:script_take_item
 		pop	bx
-		mov	word ptr ds:script_cur_ptr,0A928h
+		mov	word ptr ds:gvar_script_ip,0A928h
 		jc	loc_12			; Jump if carry Set
 		push	dx
 		push	ax
@@ -316,7 +308,7 @@ locloop_10:
 
 		pop	ax
 		pop	dx
-		mov	word ptr ds:script_cur_ptr,0A940h
+		mov	word ptr ds:gvar_script_ip,0A940h
 		retn
 loc_11:
 		pop	ax
@@ -325,84 +317,84 @@ loc_11:
 		mov	word ptr ds:[86h],ax
 		inc	bl
 		mov	[si],bl
-		mov	word ptr ds:script_cur_ptr,0A8F2h
-		call	word ptr cs:script_read_byte
+		mov	word ptr ds:gvar_script_ip,0A8F2h
+		call	word ptr cs:script_step
 		mov	dl,ds:item_price_dl
 		mov	ax,ds:item_price_ax
 		mov	di,0B21Eh
 		call	word ptr cs:script_format_num
-		mov	si,ds:script_cur_ptr
+		mov	si,ds:gvar_script_ip
 		push	si
-		mov	word ptr ds:script_cur_ptr,0B21Eh
-		call	word ptr cs:script_read_byte
+		mov	word ptr ds:gvar_script_ip,0B21Eh
+		call	word ptr cs:script_step
 		pop	si
-		mov	ds:script_cur_ptr,si
+		mov	ds:gvar_script_ip,si
 loc_12:
-		call	word ptr cs:script_read_byte
-		call	word ptr cs:gfx_wait_refresh
-		mov	word ptr ds:script_cur_ptr,0A909h
-		call	word ptr cs:script_read_byte
+		call	word ptr cs:script_step
+		call	word ptr cs:drv_frame_commit
+		mov	word ptr ds:gvar_script_ip,0A909h
+		call	word ptr cs:script_step
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:gfx_fill_rect
-		mov	word ptr ds:menu_pos_base,302Eh
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_dlg_pos,302Eh
 		call	word ptr cs:script_display_page
 		pushf				; Push flags
 		call	wizard_func_4
 		popf				; Pop flags
-		mov	word ptr ds:script_cur_ptr,0A8A8h
+		mov	word ptr ds:gvar_script_ip,0A8A8h
 		jc	loc_13			; Jump if carry Set
 		retn
 loc_13:
-		mov	word ptr ds:script_cur_ptr,0A965h
+		mov	word ptr ds:gvar_script_ip,0A965h
 		retn
 			                        ;* No entry point to code
 		call	wizard_process_loop_2
 		mov	byte ptr ds:menu_start_idx,0
-		mov	al,ds:inventory_count
+		mov	al,ds:gvar_dlg_rows
 		cmp	al,2
 		jb	loc_14			; Jump if below
 		mov	al,2
 loc_14:
-		mov	ds:menu_item_count,al
+		mov	ds:gvar_dlg_cols,al
 		mov	bx,1778h
 		mov	cx,211Ah
 		mov	al,0FFh
-		call	word ptr cs:gfx_fill_rect
+		call	word ptr cs:drv_fill_rect
 		mov	byte ptr ds:flag_buy_mode,0
-		mov	word ptr ds:menu_pos_base,197Bh
+		mov	word ptr ds:gvar_dlg_pos,197Bh
 		mov	word ptr ds:menu_row_count,19h
 		mov	si,0B08Ah
-		mov	cl,ds:menu_item_count
+		mov	cl,ds:gvar_dlg_cols
 		xor	ch,ch			; Zero register
 		mov	al,ds:menu_start_idx
 		call	word ptr cs:menu_init
 		xor	bl,bl			; Zero register
 		call	word ptr cs:menu_show_list
 		jnc	loc_15			; Jump if carry=0
-		mov	word ptr ds:script_cur_ptr,0A965h
+		mov	word ptr ds:gvar_script_ip,0A965h
 		retn
 loc_15:
 		mov	ds:sel_item_idx,bl
-		mov	word ptr ds:script_cur_ptr,0A8D7h
-		call	word ptr cs:script_read_byte
+		mov	word ptr ds:gvar_script_ip,0A8D7h
+		call	word ptr cs:script_step
 		mov	al,ds:sel_item_idx
 		add	al,ds:menu_start_idx
 		mov	bx,inventory_list
 		xlat				; al=[al+[bx]] table
 		push	ax
-		mov	si,ds:script_cur_ptr
+		mov	si,ds:gvar_script_ip
 		push	si
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
 		mov	ax,ds:item_name_tbl[bx]
-		mov	ds:script_cur_ptr,ax
-		call	word ptr cs:script_read_byte
+		mov	ds:gvar_script_ip,ax
+		call	word ptr cs:script_step
 		pop	si
-		mov	ds:script_cur_ptr,si
-		call	word ptr cs:script_read_byte
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_step
 		pop	ax
 		mov	cl,3
 		mul	cl			; ax = reg * al
@@ -416,34 +408,34 @@ loc_15:
 		mov	ds:item_price_ax,ax
 		push	ax
 		push	dx
-		mov	word ptr ds:script_cur_ptr,0A9C4h
-		call	word ptr cs:script_read_byte
+		mov	word ptr ds:gvar_script_ip,0A9C4h
+		call	word ptr cs:script_step
 		pop	dx
 		pop	ax
 		mov	di,0B21Eh
 		call	word ptr cs:script_format_num
-		mov	si,ds:script_cur_ptr
+		mov	si,ds:gvar_script_ip
 		push	si
-		mov	word ptr ds:script_cur_ptr,0B21Eh
-		call	word ptr cs:script_read_byte
+		mov	word ptr ds:gvar_script_ip,0B21Eh
+		call	word ptr cs:script_step
 		pop	si
-		mov	ds:script_cur_ptr,si
-		call	word ptr cs:script_read_byte
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_step
 		mov	bx,3421h
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:gfx_fill_rect
-		mov	word ptr ds:menu_pos_base,3524h
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_dlg_pos,3524h
 		call	word ptr cs:script_display_page
-		mov	word ptr ds:script_cur_ptr,0A9FEh
+		mov	word ptr ds:gvar_script_ip,0A9FEh
 		jnc	loc_16			; Jump if carry=0
 		retn
 loc_16:
 		mov	dl,ds:item_price_dl
 		mov	ax,ds:item_price_ax
 		call	word ptr cs:script_give_item
-		mov	word ptr ds:script_cur_ptr,0A9ADh
-		call	word ptr cs:script_read_byte
+		mov	word ptr ds:gvar_script_ip,0A9ADh
+		call	word ptr cs:script_step
 		mov	al,ds:sel_item_idx
 		add	al,ds:menu_start_idx
 		mov	bx,inventory_list
@@ -472,27 +464,27 @@ loc_18:
 		add	di,ax
 		mov	al,[di]
 		or	[si],al
-		call	word ptr cs:gfx_wait_refresh
+		call	word ptr cs:drv_frame_commit
 		call	wizard_process_loop_2
-		mov	word ptr ds:script_cur_ptr,0A966h
-		test	byte ptr ds:inventory_count,0FFh
+		mov	word ptr ds:gvar_script_ip,0A966h
+		test	byte ptr ds:gvar_dlg_rows,0FFh
 		jnz	loc_19			; Jump if not zero
 		retn
 loc_19:
-		mov	word ptr ds:script_cur_ptr,0AA4Bh
-		call	word ptr cs:script_read_byte
+		mov	word ptr ds:gvar_script_ip,0AA4Bh
+		call	word ptr cs:script_step
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:gfx_fill_rect
-		mov	word ptr ds:menu_pos_base,302Eh
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_dlg_pos,302Eh
 		call	word ptr cs:script_display_page
-		mov	word ptr ds:script_cur_ptr,0A965h
+		mov	word ptr ds:gvar_script_ip,0A965h
 		jnc	loc_20			; Jump if carry=0
 		retn
 loc_20:
 		call	wizard_func_4
-		mov	word ptr ds:script_cur_ptr,0A98Dh
+		mov	word ptr ds:gvar_script_ip,0A98Dh
 		retn
 			                        ;* No entry point to code
 		add	byte ptr [bx+si+20h],10h
@@ -521,7 +513,7 @@ locloop_21:
 loc_22:
 		loop	locloop_21		; Loop if cx > 0
 
-		mov	ds:inventory_count,dl
+		mov	ds:gvar_dlg_rows,dl
 		retn
 wizard_process_loop_2		endp
 
@@ -536,74 +528,74 @@ loc_23:
 		mov	cx,8
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 		mov	al,ds:inv_bit_count
-		mov	ds:inventory_count,al
-		mov	al,ds:inventory_count
+		mov	ds:gvar_dlg_rows,al
+		mov	al,ds:gvar_dlg_rows
 		cmp	al,2
 		jb	loc_24			; Jump if below
 		mov	al,2
 loc_24:
-		mov	ds:menu_item_count,al
+		mov	ds:gvar_dlg_cols,al
 		mov	bx,1778h
 		mov	cx,211Ah
 		mov	al,0FFh
-		call	word ptr cs:gfx_fill_rect
+		call	word ptr cs:drv_fill_rect
 		mov	byte ptr ds:flag_buy_mode,0
-		mov	word ptr ds:menu_pos_base,197Bh
+		mov	word ptr ds:gvar_dlg_pos,197Bh
 		mov	word ptr ds:menu_row_count,19h
 		mov	si,0B08Ah
-		mov	cl,ds:menu_item_count
+		mov	cl,ds:gvar_dlg_cols
 		xor	ch,ch			; Zero register
 		mov	al,ds:menu_start_idx
 		call	word ptr cs:menu_init
 		mov	bl,ds:sel_item_idx
 		call	word ptr cs:menu_show_list
 		jnc	loc_25			; Jump if carry=0
-		mov	word ptr ds:script_cur_ptr,0A965h
+		mov	word ptr ds:gvar_script_ip,0A965h
 		retn
 loc_25:
 		mov	ds:sel_item_idx,bl
-		mov	word ptr ds:script_cur_ptr,0AACAh
-		call	word ptr cs:script_read_byte
+		mov	word ptr ds:gvar_script_ip,0AACAh
+		call	word ptr cs:script_step
 		mov	al,ds:sel_item_idx
 		add	al,ds:menu_start_idx
 		mov	bx,inventory_list
 		xlat				; al=[al+[bx]] table
 		push	ax
-		mov	si,ds:script_cur_ptr
+		mov	si,ds:gvar_script_ip
 		push	si
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
 		mov	ax,ds:item_name_tbl[bx]
-		mov	ds:script_cur_ptr,ax
-		call	word ptr cs:script_read_byte
+		mov	ds:gvar_script_ip,ax
+		call	word ptr cs:script_step
 		pop	si
-		mov	ds:script_cur_ptr,si
-		call	word ptr cs:script_read_byte
+		mov	ds:gvar_script_ip,si
+		call	word ptr cs:script_step
 		pop	ax
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
 		mov	ax,ds:desc_script_tbl[bx]
-		mov	ds:script_cur_ptr,ax
-		call	word ptr cs:script_read_byte
-		mov	word ptr ds:script_cur_ptr,0AAE9h
-		call	word ptr cs:script_read_byte
+		mov	ds:gvar_script_ip,ax
+		call	word ptr cs:script_step
+		mov	word ptr ds:gvar_script_ip,0AAE9h
+		call	word ptr cs:script_step
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:gfx_fill_rect
-		mov	word ptr ds:menu_pos_base,302Eh
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_dlg_pos,302Eh
 		call	word ptr cs:script_display_page
 		pushf				; Push flags
 		call	wizard_func_4
 		popf				; Pop flags
-		mov	word ptr ds:script_cur_ptr,0A965h
+		mov	word ptr ds:gvar_script_ip,0A965h
 		jnc	loc_26			; Jump if carry=0
 		retn
 loc_26:
-		mov	word ptr ds:script_cur_ptr,0AAA6h
-		call	word ptr cs:script_read_byte
+		mov	word ptr ds:gvar_script_ip,0AAA6h
+		call	word ptr cs:script_step
 		jmp	loc_23
 
 ;��������������������������������������������������������������������������
@@ -614,7 +606,7 @@ wizard_func_4		proc	near
 		mov	bx,2717h
 		mov	cx,1D41h
 		xor	al,al			; Zero register
-		jmp	word ptr cs:gfx_fill_rect
+		jmp	word ptr cs:drv_fill_rect
 wizard_func_4		endp
 
 
@@ -635,7 +627,7 @@ locloop_28:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:draw_glyph_tile
+		call	word ptr cs:drv_draw_glyph
 		pop	bx
 		inc	bh
 		pop	cx
@@ -672,11 +664,11 @@ wizard_process_loop_3		endp
 ;��������������������������������������������������������������������������
 
 wizard_multiply		proc	near
-		cmp	word ptr ds:menu_frame_timer,2
+		cmp	word ptr ds:gvar_timer_word,2
 		jae	loc_29			; Jump if above or =
 		retn
 loc_29:
-		mov	word ptr ds:menu_frame_timer,0
+		mov	word ptr ds:gvar_timer_word,0
 		inc	byte ptr ds:item_anim_phase
 		cmp	byte ptr ds:item_anim_phase,14h
 		jae	loc_30			; Jump if above or =
@@ -705,7 +697,7 @@ locloop_33:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:draw_glyph_tile
+		call	word ptr cs:drv_draw_glyph
 		pop	bx
 		inc	bh
 		pop	cx
@@ -732,7 +724,7 @@ wizard_multiply		endp
 
 wizard_scan_loop		proc	near
 loc_34:
-		mov	byte ptr ds:gvar_timer_ticks,0
+		mov	byte ptr ds:gvar_frame_timer,0
 		lodsw				; String [si] to ax
 		cmp	ax,0FFFFh
 		jne	loc_35			; Jump if not equal
@@ -751,7 +743,7 @@ locloop_37:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:draw_glyph_tile
+		call	word ptr cs:drv_draw_glyph
 		pop	bx
 		inc	bh
 		pop	cx
@@ -764,7 +756,7 @@ locloop_37:
 
 loc_38:
 		call	wizard_multiply
-		cmp	byte ptr ds:gvar_timer_ticks,28h	; '('
+		cmp	byte ptr ds:gvar_frame_timer,28h	; '('
 		jb	loc_38			; Jump if below
 		pop	si
 		jmp	short loc_34

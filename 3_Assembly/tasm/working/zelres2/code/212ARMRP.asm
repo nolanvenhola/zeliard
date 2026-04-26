@@ -25,27 +25,17 @@ include  zr2com.inc
 chunk_load_buf	equ	8000h			;* temp buffer for loading chunk into game_seg
 
 ; --- Graphics driver function table (drv_seg base 2000h) ---
-gfx_rect_fill_fn	equ	2000h			;* fill rect (bx=col/cx=row/al=char)
-gfx_clear_row_fn	equ	2002h			;* clear row / prep drawing area
+;   drv_fill_rect, drv_screen_init_a, drv_load_msg_header, drv_screen_init_b,
+;   drv_frame_commit, drv_return_to_caller, drv_ds_copy, drv_draw_glyph
+;   are defined in zr2com.inc.
 gfx_set_color_fn	equ	2004h			;* set drawing color/palette for bar
-gfx_draw_str_fn		equ	2010h			;* draw string from si
-gfx_init_text_fn	equ	2012h			;* init text area
-gfx_commit_fn		equ	2016h			;* commit rendered row to VGA
 gfx_present_fn		equ	201Ah			;* present / update current frame
 gfx_render_scene_fn	equ	201Ch			;* render scene (jmp indirect, end of transaction)
 gfx_draw_hud_fn		equ	2020h			;* draw HUD/money panel (bx=pos/al=side)
-gfx_cleanup_fn		equ	2040h			;* cleanup / return from shop
-gfx_decompress_fn	equ	2044h			;* decompress fill_buffer (cx=count)
-
-; --- Secondary driver function table (driver base + 3000h) ---
-gfx_glyph_put_fn	equ	3016h			;* render a glyph into screen buffer
 
 ; --- Game-code function table (game_seg:6000h-6012h) ---
-script_exec_fn		equ	6004h			;* script interpreter entry (reads from gvar_script_ip)
-render_number_fn	equ	6006h			;* render number (dl:ax value, di:dest)
-input_wait_fn		equ	6008h			;* input-wait / frame-step
-price_check_fn		equ	600Ah			;* price check (returns CY=can't afford)
-transaction_fn		equ	600Ch			;* commit transaction (dl:ax new, 85/86 old)
+;   script_step, script_format_num, script_display_page, script_take_item,
+;   script_give_item are defined in zr2com.inc.
 menu_init_fn		equ	600Eh			;* menu init (cx=rows,si=str tbl)
 menu_nav_fn		equ	6010h			;* menu navigate (bl=cur row -> updated bl,CY=cancel)
 menu_render_fn		equ	6012h			;* menu render (si=strs,cl=rows,al=color)
@@ -98,11 +88,9 @@ mouth_anim_B		equ	0BC41h			;* mouth anim packed bits B (6 bytes)
 town_npc_state		equ	0C006h			;* town-map NPC/room state byte
 
 ; --- Global variables (game_seg:0xFFxx) ---
-gvar_frame_timer	equ	0FF1Ah			;* frame timer counter (increments each interrupt)
+;   gvar_frame_timer, gvar_dlg_cols, gvar_dlg_rows, gvar_dlg_pos
+;   are defined in zr2com.inc.
 gvar_game_seg		equ	0FF2Ch			;* game segment selector word
-gvar_dlg_cols		equ	0FF52h			;* dialog window columns byte
-gvar_dlg_rows		equ	0FF53h			;* dialog window rows byte
-gvar_dlg_pos		equ	0FF54h			;* dialog window position word
 gvar_sel_row		equ	0FF56h			;* current menu row byte
 gvar_sel_flag		equ	0FF57h			;* menu selection flag byte
 gvar_sel_xlat		equ	0FF58h			;* menu selection translate byte
@@ -131,15 +119,15 @@ start:
 		mov	ds,cs:gvar_game_seg
 		mov	si,chunk_load_buf
 		mov	cx,100h
-		call	word ptr cs:gfx_decompress_fn
+		call	word ptr cs:drv_ds_copy
 		pop	ds
 		mov	byte ptr ds:gvar_text_x,0
 		mov	byte ptr ds:gvar_text_y,0
 		mov	byte ptr ds:last_menu_choice,0
-		call	word ptr cs:gfx_clear_row_fn
-		call	word ptr cs:gfx_init_text_fn
+		call	word ptr cs:drv_screen_init_a
+		call	word ptr cs:drv_screen_init_b
 		mov	si,explain_dispatch_b
-		call	word ptr cs:gfx_draw_str_fn
+		call	word ptr cs:drv_load_msg_header
 		call	build_mouth_bitmap_a
 		call	build_mouth_bitmap_b
 		push	cs
@@ -158,7 +146,7 @@ start:
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
-		call	word ptr cs:gfx_rect_fill_fn
+		call	word ptr cs:drv_fill_rect
 		mov	word ptr ds:gvar_script_ip,0ADD3h
 		test	byte ptr ds:[24h],2
 		jnz	script_loop			; Jump if not zero
@@ -169,13 +157,13 @@ start:
 		mov	word ptr ds:gvar_script_ip,0B2A2h
 		mov	byte ptr ds:trade_active_flag,0
 script_loop:
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		cmp	al,0FFh
 		je	shop_exit			; Jump if equal
 		call	shop_menu_dispatch
 		jmp	short script_loop
 shop_exit:
-		jmp	word ptr cs:gfx_cleanup_fn
+		jmp	word ptr cs:drv_return_to_caller
 
 armrp_main		endp
 
@@ -274,7 +262,7 @@ shop_menu_dispatch		endp
 		mov	bx,rect_coord_291D
 		mov	cx,1837h
 		mov	al,0FFh
-		call	word ptr cs:gfx_rect_fill_fn
+		call	word ptr cs:drv_fill_rect
 		mov	word ptr ds:gvar_dlg_pos,2920h
 		mov	byte ptr ds:gvar_dlg_cols,5
 		mov	byte ptr ds:gvar_dlg_rows,5
@@ -323,24 +311,24 @@ calc_trade_price:
 		adc	ax,0
 		mov	ds:trade_gold_tmp,ax
 		mov	word ptr ds:gvar_script_ip,0AEF8h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		xor	dl,dl			; Zero register
 		mov	ax,ds:trade_gold_tmp
 		mov	di,0BC33h
-		call	word ptr cs:render_number_fn
+		call	word ptr cs:script_format_num
 		mov	si,ds:gvar_script_ip
 		push	si
 		mov	word ptr ds:gvar_script_ip,0BC33h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	si
 		mov	ds:gvar_script_ip,si
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:gfx_rect_fill_fn
+		call	word ptr cs:drv_fill_rect
 		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:input_wait_fn
+		call	word ptr cs:script_display_page
 		pushf				; Push flags
 		call	clear_menu_rect
 		popf				; Pop flags
@@ -350,14 +338,14 @@ calc_trade_price:
 skip_price_fail:
 		mov	ax,ds:trade_gold_tmp
 		xor	dl,dl			; Zero register
-		call	word ptr cs:price_check_fn
+		call	word ptr cs:script_take_item
 		mov	word ptr ds:gvar_script_ip,0AF53h
 		jnc	commit_trade_weapon			; Jump if carry=0
 		retn
 commit_trade_weapon:
 		mov	byte ptr ds:[85h],dl
 		mov	word ptr ds:[86h],ax
-		call	word ptr cs:gfx_commit_fn
+		call	word ptr cs:drv_frame_commit
 		mov	word ptr ds:gvar_script_ip,0AFAFh
 		retn
 			                        ;* No entry point to code
@@ -389,7 +377,7 @@ cap_weapon_rows:
 		mov	bx,156Eh
 		mov	cx,2524h
 		mov	al,0FFh
-		call	word ptr cs:gfx_rect_fill_fn
+		call	word ptr cs:drv_fill_rect
 		mov	byte ptr ds:gvar_sel_flag,0FFh
 		mov	word ptr ds:gvar_dlg_pos,1571h
 		mov	word ptr ds:gvar_dlg_timer,21h
@@ -414,7 +402,7 @@ menu_weapon_sel_ok:
 		call	knight_sword_hook_a
 		push	ax
 		mov	word ptr ds:gvar_script_ip,0B0DCh
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	ax
 		push	ax
 		mov	si,ds:gvar_script_ip
@@ -424,10 +412,10 @@ menu_weapon_sel_ok:
 		mov	bx,ax
 		mov	ax,ds:weapon_name_offs[bx]
 		mov	ds:gvar_script_ip,ax
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	si
 		mov	ds:gvar_script_ip,si
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	ax
 		push	ax
 		xor	ah,ah			; Zero register
@@ -440,7 +428,7 @@ menu_weapon_sel_ok:
 		mov	ax,[si+1]
 		mov	ds:trade_gold_tmp,dl
 		mov	word ptr ds:trade_gold_tmp+1,ax
-		call	word ptr cs:price_check_fn
+		call	word ptr cs:script_take_item
 		pop	bx
 		mov	word ptr ds:gvar_script_ip,0AF54h
 		jnc	weapon_trade_ok			; Jump if carry=0
@@ -451,18 +439,18 @@ weapon_trade_ok:
 		inc	bl
 		mov	ds:new_item_flag,bl
 		mov	word ptr ds:gvar_script_ip,0B106h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	dl,ds:trade_gold_tmp
 		mov	ax,word ptr ds:trade_gold_tmp+1
 		mov	di,0BC33h
-		call	word ptr cs:render_number_fn
+		call	word ptr cs:script_format_num
 		mov	si,ds:gvar_script_ip
 		push	si
 		mov	word ptr ds:gvar_script_ip,0BC33h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	si
 		mov	ds:gvar_script_ip,si
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	byte ptr ds:trade_gold_tmp,0
 		mov	word ptr ds:trade_gold_tmp+1,0
 		test	byte ptr ds:[92h],0FFh
@@ -470,7 +458,7 @@ weapon_trade_ok:
 		mov	al,byte ptr ds:[92h]
 		mov	ds:new_item_idx,al
 		mov	word ptr ds:gvar_script_ip,0B046h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	al,ds:new_item_idx
 		dec	al
 		xor	ah,ah			; Zero register
@@ -484,23 +472,23 @@ weapon_trade_ok:
 		mov	ds:trade_gold_tmp,dl
 		mov	word ptr ds:trade_gold_tmp+1,ax
 		mov	di,0BC33h
-		call	word ptr cs:render_number_fn
+		call	word ptr cs:script_format_num
 		mov	si,ds:gvar_script_ip
 		push	si
 		mov	word ptr ds:gvar_script_ip,0BC33h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	si
 		mov	ds:gvar_script_ip,si
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 skip_weapon_swap:
 		mov	word ptr ds:gvar_script_ip,0B0EDh
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:gfx_rect_fill_fn
+		call	word ptr cs:drv_fill_rect
 		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:input_wait_fn
+		call	word ptr cs:script_display_page
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		jnc	weapon_commit			; Jump if carry=0
 		retn
@@ -512,8 +500,8 @@ weapon_commit:
 		mov	word ptr ds:[86h],ax
 		mov	dl,ds:trade_gold_tmp
 		mov	ax,word ptr ds:trade_gold_tmp+1
-		call	word ptr cs:transaction_fn
-		call	word ptr cs:gfx_commit_fn
+		call	word ptr cs:script_give_item
+		call	word ptr cs:drv_frame_commit
 		test	byte ptr ds:new_item_idx,0FFh
 		jz	skip_weapon_slot_fix			; Jump if zero
 		mov	al,ds:new_item_idx
@@ -584,7 +572,7 @@ cap_shield_rows:
 		mov	bx,156Eh
 		mov	cx,2524h
 		mov	al,0FFh
-		call	word ptr cs:gfx_rect_fill_fn
+		call	word ptr cs:drv_fill_rect
 		mov	byte ptr ds:gvar_sel_flag,0FFh
 		mov	word ptr ds:gvar_dlg_pos,1571h
 		mov	word ptr ds:gvar_dlg_timer,21h
@@ -603,7 +591,7 @@ cap_shield_rows:
 menu_shield_sel_ok:
 		mov	ds:sub_menu_choice_a,bl
 		mov	word ptr ds:gvar_script_ip,0B0DCh
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	al,ds:sub_menu_choice_a
 		add	al,ds:gvar_sel_row
 		mov	bx,gvar_sel_xlat
@@ -616,10 +604,10 @@ menu_shield_sel_ok:
 		mov	bx,ax
 		mov	ax,ds:shield_name_offs[bx]
 		mov	ds:gvar_script_ip,ax
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	si
 		mov	ds:gvar_script_ip,si
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	ax
 		push	ax
 		xor	ah,ah			; Zero register
@@ -632,7 +620,7 @@ menu_shield_sel_ok:
 		mov	ax,[si+1]
 		mov	ds:trade_gold_tmp,dl
 		mov	word ptr ds:trade_gold_tmp+1,ax
-		call	word ptr cs:price_check_fn
+		call	word ptr cs:script_take_item
 		pop	bx
 		mov	word ptr ds:gvar_script_ip,0AF54h
 		jnc	shield_trade_ok			; Jump if carry=0
@@ -643,18 +631,18 @@ shield_trade_ok:
 		inc	bl
 		mov	ds:new_item_flag,bl
 		mov	word ptr ds:gvar_script_ip,0B106h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	dl,ds:trade_gold_tmp
 		mov	ax,word ptr ds:trade_gold_tmp+1
 		mov	di,0BC33h
-		call	word ptr cs:render_number_fn
+		call	word ptr cs:script_format_num
 		mov	si,ds:gvar_script_ip
 		push	si
 		mov	word ptr ds:gvar_script_ip,0BC33h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	si
 		mov	ds:gvar_script_ip,si
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	byte ptr ds:trade_gold_tmp,0
 		mov	word ptr ds:trade_gold_tmp+1,0
 		test	byte ptr ds:[93h],0FFh
@@ -662,7 +650,7 @@ shield_trade_ok:
 		mov	al,byte ptr ds:[93h]
 		mov	ds:new_item_idx,al
 		mov	word ptr ds:gvar_script_ip,0B0A1h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	al,ds:new_item_idx
 		dec	al
 		xor	ah,ah			; Zero register
@@ -676,23 +664,23 @@ shield_trade_ok:
 		mov	ds:trade_gold_tmp,dl
 		mov	word ptr ds:trade_gold_tmp+1,ax
 		mov	di,0BC33h
-		call	word ptr cs:render_number_fn
+		call	word ptr cs:script_format_num
 		mov	si,ds:gvar_script_ip
 		push	si
 		mov	word ptr ds:gvar_script_ip,0BC33h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	si
 		mov	ds:gvar_script_ip,si
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 skip_shield_swap:
 		mov	word ptr ds:gvar_script_ip,0B0EDh
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:gfx_rect_fill_fn
+		call	word ptr cs:drv_fill_rect
 		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:input_wait_fn
+		call	word ptr cs:script_display_page
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		jnc	shield_commit			; Jump if carry=0
 		retn
@@ -704,8 +692,8 @@ shield_commit:
 		mov	word ptr ds:[86h],ax
 		mov	dl,ds:trade_gold_tmp
 		mov	ax,word ptr ds:trade_gold_tmp+1
-		call	word ptr cs:transaction_fn
-		call	word ptr cs:gfx_commit_fn
+		call	word ptr cs:script_give_item
+		call	word ptr cs:drv_frame_commit
 		test	byte ptr ds:new_item_idx,0FFh
 		jz	skip_shield_slot_fix			; Jump if zero
 		mov	al,ds:new_item_idx
@@ -775,7 +763,7 @@ explain_char_no_pre:
 		db	72h, 0F6h		; jb (rel8; absolute target, TASM won't compile as mnemonic)
 		retn
 			                        ;* No entry point to code
-		call	word ptr cs:gfx_cleanup_fn
+		call	word ptr cs:drv_return_to_caller
 		mov	word ptr ds:gvar_menu_step,0
 wait_menu_exit:
 		cmp	word ptr ds:gvar_menu_step,190h
@@ -824,7 +812,7 @@ cap_explain_rows:
 		mov	bx,2717h
 		mov	cx,1B41h
 		mov	al,0FFh
-		call	word ptr cs:gfx_rect_fill_fn
+		call	word ptr cs:drv_fill_rect
 		mov	byte ptr ds:gvar_sel_flag,0
 		mov	word ptr ds:gvar_dlg_pos,271Ah
 		mov	word ptr ds:gvar_dlg_timer,17h
@@ -841,7 +829,7 @@ cap_explain_rows:
 menu_explain_sel_ok:
 		mov	ds:sub_menu_choice_a,bl
 		mov	word ptr ds:gvar_script_ip,0B0EAh
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	al,ds:sub_menu_choice_a
 		add	al,ds:gvar_sel_row
 		mov	bx,gvar_sel_xlat
@@ -850,7 +838,7 @@ menu_explain_sel_ok:
 		push	ax
 		push	ax
 		mov	word ptr ds:gvar_script_ip,0B0DDh
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	ax
 		mov	si,ds:gvar_script_ip
 		push	si
@@ -859,31 +847,31 @@ menu_explain_sel_ok:
 		mov	bx,ax
 		mov	ax,ds:weapon_name_offs[bx]
 		mov	ds:gvar_script_ip,ax
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	si
 		mov	ds:gvar_script_ip,si
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		pop	ax
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	bx,ax
 		mov	ax,ds:explain_text_tbl[bx]
 		mov	ds:gvar_script_ip,ax
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	word ptr ds:gvar_script_ip,0B1A9h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:gfx_rect_fill_fn
+		call	word ptr cs:drv_fill_rect
 		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:input_wait_fn
+		call	word ptr cs:script_display_page
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		jnc	explain_continue			; Jump if carry=0
 		retn
 explain_continue:
 		mov	word ptr ds:gvar_script_ip,0B17Eh
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		jmp	explain_menu_top
 
 ;��������������������������������������������������������������������������
@@ -903,9 +891,9 @@ frame_delay		endp
 		mov	bx,2F2Bh
 		mov	cx,0C19h
 		mov	al,0FFh
-		call	word ptr cs:gfx_rect_fill_fn
+		call	word ptr cs:drv_fill_rect
 		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:input_wait_fn
+		call	word ptr cs:script_display_page
 		pushf				; Push flags
 		call	clear_menu_rect
 		popf				; Pop flags
@@ -916,7 +904,7 @@ reset_after_trade:
 		xor	al,al			; Zero register
 		call	render_shopkeeper_frame
 		mov	word ptr ds:gvar_script_ip,0B375h
-		call	word ptr cs:script_exec_fn
+		call	word ptr cs:script_step
 		mov	byte ptr ds:[92h],4
 		mov	byte ptr ds:[9Bh],0
 		mov	al,4
@@ -961,7 +949,7 @@ clear_menu_rect		proc	near
 		mov	bx,2717h
 		mov	cx,1C41h
 		xor	al,al			; Zero register
-		jmp	word ptr cs:gfx_rect_fill_fn
+		jmp	word ptr cs:drv_fill_rect
 clear_menu_rect		endp
 
 
@@ -1012,7 +1000,7 @@ vert_glyph_col_loop:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:gfx_glyph_put_fn
+		call	word ptr cs:drv_draw_glyph
 		pop	bx
 		add	bl,8
 		pop	cx
@@ -1032,7 +1020,7 @@ horiz_glyph_col_loop:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:gfx_glyph_put_fn
+		call	word ptr cs:drv_draw_glyph
 		pop	bx
 		inc	bh
 		pop	cx
@@ -1091,7 +1079,7 @@ render_frame_glyph_loop:
 		push	cx
 		push	bx
 		lodsb				; String [si] to al
-		call	word ptr cs:gfx_glyph_put_fn
+		call	word ptr cs:drv_draw_glyph
 		pop	bx
 		inc	bh
 		pop	cx

@@ -27,21 +27,6 @@ include  srmacros.inc
 include  zr3com.inc
 
 ; --- TORI enemy AI dispatch table (game_seg:6004h..603Ah, in DS at runtime) ---
-ai_fn_tbl_a	equ	6004h			; AI fn (dive / swoop)
-ai_fn_tbl_b	equ	6008h			; AI fn
-ai_fn_tbl_c	equ	600Ah			; AI fn
-ai_fn_tbl_d	equ	600Ch			; AI fn
-ai_fn_tbl_e	equ	600Eh			; AI fn
-ai_fn_tbl_f	equ	6010h			; AI fn
-ai_fn_tbl_g	equ	6012h			; AI fn
-ai_fn_tbl_h	equ	6014h			; AI fn
-ai_fn_tbl_i	equ	6016h			; AI fn
-ai_fn_tbl_j	equ	601Ch			; AI fn
-ai_fn_tbl_k	equ	6028h			; AI fn
-ai_fn_tbl_l	equ	602Ah			; AI fn
-ai_fn_tbl_m	equ	602Eh			; AI fn
-ai_hide_fn	equ	6034h			; AI fn: hide / despawn
-ai_attack_fn	equ	603Ah			; AI fn: attack / release projectile
 
 ; --- TORI lookup tables (game_seg DS) ---
 tori_tbl_a	equ	0A4EAh			; TORI flight-pattern base table
@@ -329,7 +314,7 @@ tori_substate_2:				; offset 0x2F9 -- substate 2 (range/phase check)
 tori_sub2_real:					; offset 0x2FD -- substate-2 main body
 		inc	byte ptr [si+6]		; bytes FE 44 06
 		and	byte ptr [si+6],7	; bytes 80 64 06 07
-		call	word ptr cs:ai_fn_tbl_j	; bytes 2E FF 16 1C 60 (= cs:[601C])
+		call	word ptr cs:fight_cb_aux_1c	; bytes 2E FF 16 1C 60 (= cs:[601C])
 		jnc	tori_sub2_set_state1	; bytes 73 46 (jnc +0x46 -> 0x351)
 		test	byte ptr [si+6],1	; bytes F6 44 06 01
 		jnz	tori_sub2_check_dist	; bytes 75 01
@@ -345,7 +330,7 @@ tori_sub2_check_dist:
 tori_sub2_loc:
 		test	byte ptr [si+5],80h
 		jnz	tori_sub2_facing_west			; Jump if not zero
-		call	word ptr cs:ai_fn_tbl_f
+		call	word ptr cs:fight_cb_step_pos
 		jc	tori_sub2_advance_e			; Jump if carry Set
 		retn
 
@@ -361,7 +346,7 @@ tori_sub2_skip_to_state1:
 		jmp	short tori_sub2_set_state1
 
 tori_sub2_facing_west:
-		call	word ptr cs:ai_fn_tbl_b
+		call	word ptr cs:fight_cb_step_neg
 		jc	tori_sub2_advance_w			; Jump if carry Set
 		retn
 
@@ -381,7 +366,7 @@ tori_sub2_set_state1:
 ; tori_substate_3 -- entered via tori_s2_substate_tbl[3] (DS:0xA2EF -> 0xA356); phase advance, then state 2.
 
 tori_substate_3:				; was '* No entry point to code' marker
-		call	word ptr cs:ai_fn_tbl_h
+		call	word ptr cs:fight_cb_blocked
 		jc	tori_sub3_advance			; Jump if carry Set
 		retn
 
@@ -411,7 +396,7 @@ tori_sub5_set_phase:
 		test	byte ptr [si+5],80h
 		jnz	tori_sub5_west_branch			; Jump if not zero
 		inc	byte ptr [si+0Ah]
-		call	word ptr cs:ai_fn_tbl_e
+		call	word ptr cs:fight_cb_map_back
 		jc	tori_sub5_flip_a			; Jump if carry Set
 		retn
 
@@ -421,7 +406,7 @@ tori_sub5_flip_a:
 
 tori_sub5_west_branch:
 		inc	byte ptr [si+0Ah]
-		call	word ptr cs:ai_fn_tbl_c
+		call	word ptr cs:fight_cb_step_neg_2
 		jc	tori_sub5_flip_b			; Jump if carry Set
 		retn
 
@@ -441,7 +426,7 @@ tori_sub6_set_phase:
 		test	byte ptr [si+5],80h
 		jnz	tori_sub6_west_branch			; Jump if not zero
 		inc	byte ptr [si+0Ah]
-		call	word ptr cs:ai_fn_tbl_f
+		call	word ptr cs:fight_cb_step_pos
 		jc	tori_sub6_flip_a			; Jump if carry Set
 		retn
 
@@ -451,7 +436,7 @@ tori_sub6_flip_a:
 
 tori_sub6_west_branch:
 		inc	byte ptr [si+0Ah]
-		call	word ptr cs:ai_fn_tbl_b
+		call	word ptr cs:fight_cb_step_neg
 		jc	tori_sub6_flip_b			; Jump if carry Set
 		retn
 
@@ -465,7 +450,7 @@ tori_substate_7:				; was '* No entry point to code' marker
 		mov	byte ptr [si+6],8
 		test	byte ptr [si+5],80h
 		jnz	tori_sub7_west_branch			; Jump if not zero
-		call	word ptr cs:ai_fn_tbl_g
+		call	word ptr cs:fight_cb_step_pos_2
 		jc	tori_sub7_advance_state6			; Jump if carry Set
 		retn
 
@@ -475,7 +460,7 @@ tori_sub7_advance_state6:
 			retn
 
 tori_sub7_west_branch:
-			call	word ptr cs:ai_fn_tbl_i
+			call	word ptr cs:fight_cb_dist_check
 			jc	tori_sub7_advance_alt			; Jump if carry Set
 			retn
 
@@ -495,12 +480,12 @@ tori_alt_state_b:				; was '* No entry point to code' marker
 		mov	byte ptr [si+6],8
 		test	byte ptr [si+5],80h
 		jnz	tori_alt_b_west			; Jump if not zero
-		call	word ptr cs:ai_fn_tbl_e
+		call	word ptr cs:fight_cb_map_back
 		jc	tori_alt_b_chain_a			; Jump if carry Set
 		retn
 
 tori_alt_b_chain_a:
-		call	word ptr cs:ai_fn_tbl_j
+		call	word ptr cs:fight_cb_aux_1c
 		jc	tori_alt_b_reset			; Jump if carry Set
 		xor	byte ptr [si+5],80h
 		retn
@@ -512,12 +497,12 @@ tori_alt_b_reset:
 			retn
 
 tori_alt_b_west:
-			call	word ptr cs:ai_fn_tbl_c
+			call	word ptr cs:fight_cb_step_neg_2
 			jc	tori_alt_b_chain_b			; Jump if carry Set
 			retn
 
 tori_alt_b_chain_b:
-			call	word ptr cs:ai_fn_tbl_d
+			call	word ptr cs:fight_cb_map_fwd
 			jc	tori_alt_b_reset			; Jump if carry Set
 		xor	byte ptr [si+5],80h
 		retn
@@ -545,7 +530,7 @@ tori_s3_check_state:
 		xor	byte ptr [si+5],80h
 
 tori_s3_step:
-		call	word ptr cs:ai_fn_tbl_h
+		call	word ptr cs:fight_cb_blocked
 		jc	tori_s3_phase_carry			; Jump if carry Set
 		retn
 
@@ -578,7 +563,7 @@ tori_s3_xlat_step:
 
 tori_s3_xlat_call:
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:ai_fn_tbl_a
+		call	word ptr cs:fight_cb_range
 		jc	tori_s3_xlat_ok			; Jump if carry Set
 		retn
 
@@ -591,7 +576,7 @@ tori_s3_xlat_ok:
 
 tori_s3_clear_phase:
 		mov	byte ptr [si+6],0
-		jmp	word ptr cs:ai_fn_tbl_h
+		jmp	word ptr cs:fight_cb_blocked
 
 ; tori_state4_entry -- entered via tori_ai_dispatch_tbl[4] (DS:0xA2C8 -> 0xA4F0).
 ; Sourcer mis-decoded the leading bytes as `add [bx+di],ax / add [bx+si],al
@@ -619,7 +604,7 @@ tori_s4_pre_done:
 		jmp	word ptr cs:ai_hide_fn
 
 tori_s4_step:
-		call	word ptr cs:ai_fn_tbl_h
+		call	word ptr cs:fight_cb_blocked
 		jc	tori_s4_dispatch			; Jump if carry Set
 		retn
 
@@ -657,35 +642,35 @@ tori_s4a_test_facing:
 		test	byte ptr [si+5],80h
 		jz	tori_s4a_west			; Jump if zero
 		mov	ax,[si+2]
-		call	word ptr cs:ai_fn_tbl_k
+		call	word ptr cs:fight_cb_record_ofs
 		xchg	si,di
 		add	si,4Ah
-		call	word ptr cs:ai_fn_tbl_l
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		mov	al,[di]
-		call	word ptr cs:ai_fn_tbl_m
+		call	word ptr cs:fight_cb_cmp_tile
 		jz	tori_s4a_jmp_b			; Jump if zero
-		jmp	word ptr cs:ai_fn_tbl_b
+		jmp	word ptr cs:fight_cb_step_neg
 
 tori_s4a_jmp_b:
 		and	byte ptr [si+5],7Fh
-		jmp	word ptr cs:ai_fn_tbl_f
+		jmp	word ptr cs:fight_cb_step_pos
 
 tori_s4a_west:
 		mov	ax,[si+2]
-		call	word ptr cs:ai_fn_tbl_k
+		call	word ptr cs:fight_cb_record_ofs
 		xchg	si,di
 		add	si,47h
-		call	word ptr cs:ai_fn_tbl_l
+		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		mov	al,[di]
-		call	word ptr cs:ai_fn_tbl_m
+		call	word ptr cs:fight_cb_cmp_tile
 		jz	tori_s4a_jmp_f			; Jump if zero
-		jmp	word ptr cs:ai_fn_tbl_f
+		jmp	word ptr cs:fight_cb_step_pos
 
 tori_s4a_jmp_f:
 		or	byte ptr [si+5],80h
-		jmp	word ptr cs:ai_fn_tbl_b
+		jmp	word ptr cs:fight_cb_step_neg
 
 ; tori_s4_sub2 -- entered via tori_tbl_b[2] dispatch (DS:0xA51D -> 0xA5A3); phase counter substate.
 
@@ -829,7 +814,7 @@ tori_s5_main:
 		mov	al,[si+6]
 		push	ax
 		mov	byte ptr [si+6],0
-		call	word ptr cs:ai_fn_tbl_h
+		call	word ptr cs:fight_cb_blocked
 		pop	ax
 		jc	tori_s5_after_step			; Jump if carry Set
 		retn
@@ -866,9 +851,9 @@ tori_s5_state1_active:
 		je	tori_s5_state1_finish			; Jump if equal
 		test	byte ptr [si+5],80h
 		jnz	tori_s5_state1_west			; Jump if not zero
-		call	word ptr cs:ai_fn_tbl_f
+		call	word ptr cs:fight_cb_step_pos
 		jnc	tori_s5_state1_step			; Jump if carry=0
-		call	word ptr cs:ai_fn_tbl_e
+		call	word ptr cs:fight_cb_map_back
 		jnc	tori_s5_state1_step			; Jump if carry=0
 
 tori_s5_state1_finish:
@@ -876,9 +861,9 @@ tori_s5_state1_finish:
 			retn
 
 tori_s5_state1_west:
-			call	word ptr cs:ai_fn_tbl_b
+			call	word ptr cs:fight_cb_step_neg
 			jnc	tori_s5_state1_step			; Jump if carry=0
-			call	word ptr cs:ai_fn_tbl_c
+			call	word ptr cs:fight_cb_step_neg_2
 			jc	tori_s5_state1_finish			; Jump if carry Set
 
 tori_s5_state1_step:

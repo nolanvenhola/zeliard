@@ -39,10 +39,6 @@ include  zr3com.inc
 ;   0FF2Eh..0FF75h - per-map global state flag bytes
 
 ; --- Game-segment dispatch callbacks (CS-relative ptrs in game DS) ---
-drgn_cb_scroll		equ	200Ch		; scroll / dispatch callback
-drgn_cb_tile_dispatch	equ	6028h		; tile-at-cell callback fn A
-drgn_cb_tile_at_pos	equ	6036h		; NPC step / cell-iter callback fn B
-drgn_cb_anim_lookup	equ	6038h		; entity action / anim-lookup callback fn C
 
 ; --- Internal tile/render data tables (DS, addressed by hard offset) ---
 drgn_buf_tile_src	equ	8000h		; external tile source base (test sp,ds:[8000h+bx])
@@ -276,11 +272,11 @@ drgn_npc_scan_loop:
 						cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
 				jz	drgn_npc_scan_done			; Jump if zero
 				mov	ax,[si]
-				call	word ptr cs:drgn_cb_tile_at_pos
+				call	word ptr cs:fight_cb_anim_step
 				jc	drgn_npc_scan_next			; Jump if carry Set
 				mov	[si+3],bl
 				mov	ax,[si+2]
-				call	word ptr cs:drgn_cb_tile_dispatch
+				call	word ptr cs:fight_cb_record_ofs
 				mov	bl,ds:drgn_npc_idx
 				xor	bh,bh			; Zero register
 				mov	al,ds:drgn_sprite_xlat_tbl[bx]
@@ -311,7 +307,7 @@ drgn_npc_scan_done:
 		mov	al,ds:drgn_anim_byte
 		push	ax
 		and	al,1Fh
-		call	word ptr cs:drgn_cb_anim_lookup
+		call	word ptr cs:fight_cb_hit_check
 		mov	bl,ah
 		xor	bh,bh			; Zero register
 		pop	ax
@@ -608,7 +604,7 @@ drgn_render_row_loop:
 		push	cx
 		push	di
 		push	ax
-		call	word ptr cs:drgn_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		mov	ds:drgn_attr_tmp,bl
 		jc	drgn_render_row_advance			; Jump if carry Set
@@ -646,7 +642,7 @@ drgn_render_cell_loop:
 drgn_render_apply_anim:
 				push	di
 				mov	ax,[si+2]
-				call	word ptr cs:drgn_cb_tile_dispatch
+				call	word ptr cs:fight_cb_record_ofs
 				mov	bl,ds:drgn_npc_idx
 				xor	bh,bh			; Zero register
 				mov	al,bl
@@ -713,7 +709,7 @@ drgn_render_phase_b_no_off:
 drgn_phase_b_row_loop:
 		push	cx
 		push	ax
-		call	word ptr cs:drgn_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		mov	ds:drgn_attr_tmp,bl
 		jnc	drgn_phase_b_emit			; Jump if carry=0
@@ -757,7 +753,7 @@ drgn_phase_b_emit_loop:
 				mov	byte ptr [si+5],0
 				push	di
 				mov	ax,[si+2]
-				call	word ptr cs:drgn_cb_tile_dispatch
+				call	word ptr cs:fight_cb_record_ofs
 				mov	bl,ds:drgn_npc_idx
 				xor	bh,bh			; Zero register
 				mov	al,bl
@@ -954,7 +950,7 @@ drgn_scroll_clamp_zero:
 		mov	ds:drgn_scroll_max,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:drgn_cb_scroll
+		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
 		jz	drgn_scroll_reset_state			; Jump if zero

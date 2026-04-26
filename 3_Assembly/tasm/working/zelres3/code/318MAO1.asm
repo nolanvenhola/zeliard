@@ -30,6 +30,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; The following equates show data references outside the range of the program.
 ; Shared references across 312-319 map-program family:
@@ -45,8 +46,6 @@ mao1_drv_dispatch_a	equ	201Fh			; driver dispatch entry
 mao1_drv_blit_render	equ	202Ah			; driver dispatch entry (blit/render)
 mao1_drv_text_render	equ	2928h			; driver callback (text render)
 mao1_drv_misc_callback	equ	2F2Eh			; driver callback
-mao1_cb_tile_dispatch	equ	6028h			; game-seg callback fn A (tile dispatch)
-mao1_cb_tile_at_pos	equ	6036h			; game-seg callback fn B (tile-at-pos)
 
 ; --- External data ptrs (DS - addressed by hard offset in caller's DS) ---
 mao1_ext_8e77		equ	8E77h			; external data ptr
@@ -250,11 +249,11 @@ mao1_npc_scan_loop:
 			db	 83h, 3Ch,0FFh		;  Fixup - byte match
 			jz	mao1_npc_scan_done	; Jump if zero
 			mov	ax,[si]
-			call	word ptr cs:mao1_cb_tile_at_pos
+			call	word ptr cs:fight_cb_anim_step
 			jc	mao1_npc_scan_next	; Jump if carry Set
 			mov	[si+3],bl
 			mov	ax,[si+2]
-			call	word ptr cs:mao1_cb_tile_dispatch
+			call	word ptr cs:fight_cb_record_ofs
 			mov	bl,ds:mao1_npc_idx
 			xor	bh,bh			; Zero register
 			mov	al,ds:mao1_sprite_xlat_tbl[bx]
@@ -299,7 +298,7 @@ mao1_phase_set_dx_short:
 mao1_phase_outer_loop:
 		push	cx
 		push	ax
-		call	word ptr cs:mao1_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		mov	ds:mao1_phase_dir,bl	; data_31e: save attr byte
 		jnc	mao1_phase_emit_cells	; Jump if carry=0
@@ -343,7 +342,7 @@ mao1_phase_emit_loop:
 			mov	byte ptr [si+5],0
 			push	di
 			mov	ax,[si+2]
-			call	word ptr cs:mao1_cb_tile_dispatch
+			call	word ptr cs:fight_cb_record_ofs
 			mov	bl,ds:mao1_npc_idx
 			xor	bh,bh			; Zero register
 			mov	al,bl

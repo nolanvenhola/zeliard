@@ -28,19 +28,6 @@ include  srmacros.inc
 include  zr3com.inc
 
 ; --- ZELA enemy AI dispatch table (game_seg:6004h..603Eh, DS-relative) ---
-ai_fn_tbl_a	equ	6004h			; AI fn
-ai_fn_tbl_b	equ	6008h			; AI fn
-ai_fn_tbl_c	equ	6010h			; AI fn
-ai_fn_tbl_d	equ	6012h			; AI fn
-ai_fn_tbl_e	equ	6014h			; AI fn
-ai_fn_tbl_f	equ	6016h			; AI fn
-ai_fn_tbl_g	equ	6028h			; AI fn
-ai_fn_tbl_h	equ	602Ah			; AI fn
-ai_fn_tbl_i	equ	602Ch			; AI fn
-ai_fn_tbl_j	equ	602Eh			; AI fn
-ai_fn_tbl_k	equ	6032h			; AI fn
-ai_hide_fn	equ	6034h			; AI fn: hide / despawn
-ai_spawn_fn	equ	603Eh			; AI fn: spawn body segment
 
 ; --- ZELA lookup tables / battle globals ---
 zela_tbl_a	equ	0A45Eh			; ZELA pattern/direction lookup A (east-facing)
@@ -75,7 +62,7 @@ start:
 ;  zela_frame_ptr_tbl_a -- 29-entry sprite-frame pointer table (DS-relative).
 ;  Each entry is 2 bytes (LE) targeting the ZELA sprite atlas (0xA0xx-0xA2xx).
 ;  Zero entries indicate unused/sentinel slots.  Used during east-facing
-;  pose/anim selection by ai_fn_tbl_e.
+;  pose/anim selection by fight_cb_blocked.
 ; -------------------------------------------------------------------------
 zela_frame_ptr_tbl_a:
 		db	0B0h,0A0h, 5Fh,0A1h, 96h,0A1h	; ptrs 0xA0B0,0xA15F,0xA196 (head poses)
@@ -252,7 +239,7 @@ state_test_bit2:
 		jmp	state_bit2_anim_step
 
 state_default_call:
-		call	word ptr cs:ai_fn_tbl_e
+		call	word ptr cs:fight_cb_blocked
 		jc	state_default_post			; Jump if carry Set
 		retn
 
@@ -300,7 +287,7 @@ phase_skip_state5:
 
 phase_clear_dir_a:
 		and	byte ptr [si+5],7Fh
-		call	word ptr cs:ai_fn_tbl_c
+		call	word ptr cs:fight_cb_step_pos
 		jc	phase_set_state9_a			; Jump if carry Set
 		retn
 
@@ -310,7 +297,7 @@ phase_set_state9_a:
 
 phase_set_dir_west_a:
 		or	byte ptr [si+5],80h
-		call	word ptr cs:ai_fn_tbl_b
+		call	word ptr cs:fight_cb_step_neg
 		jc	phase_set_state9_b			; Jump if carry Set
 		retn
 
@@ -378,14 +365,14 @@ state_bit2_set_anim:
 		mov	[si+6],al
 		test	byte ptr [si+5],80h
 		jz	state_bit2_west_branch			; Jump if zero
-		call	word ptr cs:ai_fn_tbl_f
-		call	word ptr cs:ai_fn_tbl_f
+		call	word ptr cs:fight_cb_dist_check
+		call	word ptr cs:fight_cb_dist_check
 		jc	state_bit2_carry_a			; Jump if carry Set
 		retn
 
 state_bit2_carry_a:
-		call	word ptr cs:ai_fn_tbl_b
-		call	word ptr cs:ai_fn_tbl_b
+		call	word ptr cs:fight_cb_step_neg
+		call	word ptr cs:fight_cb_step_neg
 		jc	state_bit2_carry_b			; Jump if carry Set
 		retn
 
@@ -394,14 +381,14 @@ state_bit2_carry_b:
 		jmp	short state_bit2_finish
 
 state_bit2_west_branch:
-		call	word ptr cs:ai_fn_tbl_d
-		call	word ptr cs:ai_fn_tbl_d
+		call	word ptr cs:fight_cb_step_pos_2
+		call	word ptr cs:fight_cb_step_pos_2
 		jc	state_bit2_west_carry_a			; Jump if carry Set
 		retn
 
 state_bit2_west_carry_a:
-		call	word ptr cs:ai_fn_tbl_c
-		call	word ptr cs:ai_fn_tbl_c
+		call	word ptr cs:fight_cb_step_pos
+		call	word ptr cs:fight_cb_step_pos
 		jc	state_bit2_west_carry_b			; Jump if carry Set
 		retn
 
@@ -425,7 +412,7 @@ state_bit3_set_anim:
 		mov	[si+6],al
 		test	byte ptr [si+0Ah],1
 		jnz	state_bit3_aux4_check			; Jump if not zero
-		call	word ptr cs:ai_fn_tbl_e
+		call	word ptr cs:fight_cb_blocked
 		add	byte ptr [si+9],10h
 		test	byte ptr [si+9],0F0h
 		jz	state_bit3_set_aux1			; Jump if zero
@@ -441,10 +428,10 @@ state_bit3_aux4_check:
 		or	byte ptr [si+0Ah],4
 		test	byte ptr [si+0Ah],8
 		jnz	state_bit3_aux8_jmp_c			; Jump if not zero
-		jmp	word ptr cs:ai_fn_tbl_b
+		jmp	word ptr cs:fight_cb_step_neg
 
 state_bit3_aux8_jmp_c:
-		jmp	word ptr cs:ai_fn_tbl_c
+		jmp	word ptr cs:fight_cb_step_pos
 
 state_bit3_lookup:
 		mov	bx,zela_tbl_a_alt
@@ -466,7 +453,7 @@ state_bit3_lookup_done:
 
 state_bit3_xlat_call:
 		xlat				; al=[al+[bx]] table
-		call	word ptr cs:ai_fn_tbl_a
+		call	word ptr cs:fight_cb_range
 		jc	state_bit3_attr_check			; Jump if carry Set
 		retn
 
@@ -587,7 +574,7 @@ attack_state_retry:
 		mov	si,bx
 
 attack_state_call_e:
-			call	word ptr cs:ai_fn_tbl_e
+			call	word ptr cs:fight_cb_blocked
 			jc	attack_state_decrement			; Jump if carry Set
 			retn
 
@@ -617,19 +604,19 @@ attack_state_match:
 
 attack_state_clear_dir:
 			and	byte ptr [si+5],7Fh
-			call	word ptr cs:ai_fn_tbl_c
+			call	word ptr cs:fight_cb_step_pos
 			jc	attack_state_set_dir			; Jump if carry Set
 			retn
 
 attack_state_set_dir:
 			or	byte ptr [si+5],80h
-			call	word ptr cs:ai_fn_tbl_b
+			call	word ptr cs:fight_cb_step_neg
 			jc	attack_state_chain_c			; Jump if carry Set
 			retn
 
 attack_state_chain_c:
 			and	byte ptr [si+5],7Fh
-			jmp	word ptr cs:ai_fn_tbl_c
+			jmp	word ptr cs:fight_cb_step_pos
 
 attack_state_secondary:
 			mov	al,[si+6]
@@ -649,7 +636,7 @@ attack_state_secondary:
 		mov	di,ax
 		push	di
 		mov	ax,[si+2]
-		call	word ptr cs:ai_fn_tbl_g
+		call	word ptr cs:fight_cb_record_ofs
 		mov	bx,si
 		mov	si,di
 		pop	di
@@ -766,24 +753,24 @@ zela_ai_main	endp
 collide_check_dist		proc	near
 		push	si
 		sub	si,ax
-		call	word ptr cs:ai_fn_tbl_i
+		call	word ptr cs:fight_cb_tile_index
 		mov	cx,3
 
 collide_check_loop:
 			mov	al,[si]
-			call	word ptr cs:ai_fn_tbl_j
+			call	word ptr cs:fight_cb_cmp_tile
 			stc				; Set carry flag
 			jnz	collide_check_done			; Jump if not zero
 			mov	al,[si+1]
-			call	word ptr cs:ai_fn_tbl_j
+			call	word ptr cs:fight_cb_cmp_tile
 			stc				; Set carry flag
 			jnz	collide_check_done			; Jump if not zero
 			mov	al,[si+2]
-			call	word ptr cs:ai_fn_tbl_j
+			call	word ptr cs:fight_cb_cmp_tile
 			stc				; Set carry flag
 			jnz	collide_check_done			; Jump if not zero
 			add	si,24h
-			call	word ptr cs:ai_fn_tbl_h
+			call	word ptr cs:fight_cb_mark_adj
 			loop	collide_check_loop		; Loop if cx > 0
 
 		clc				; Clear carry flag
@@ -825,14 +812,14 @@ low_dist_set_phase:
 		retn
 
 low_state_active:
-		call	word ptr cs:ai_fn_tbl_e
+		call	word ptr cs:fight_cb_blocked
 		jc	low_state_init_attack			; Jump if carry Set
 		retn
 
 low_state_init_attack:
 		and	byte ptr [si+7],0F0h
 		or	byte ptr [si+7],1
-		jmp	word ptr cs:ai_fn_tbl_k
+		jmp	word ptr cs:fight_cb_spawn
 
 ; -------------------------------------------------------------------------
 ;  zela_spawn_state -- entered via DS state-dispatch table.
@@ -884,7 +871,7 @@ zela_lookup_loop:
 			push	cx
 			push	bx
 			mov	al,[bx]
-			call	word ptr cs:ai_fn_tbl_a
+			call	word ptr cs:fight_cb_range
 			pop	bx
 			pop	cx
 			jnc	zela_lookup_match			; Jump if carry=0

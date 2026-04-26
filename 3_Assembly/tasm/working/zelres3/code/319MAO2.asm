@@ -30,6 +30,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; The following equates show data references outside the range of the program.
 ; Shared references across 312-319 map-program family:
@@ -39,12 +40,8 @@ include  srmacros.inc
 ;   0FF2Eh..0FF75h - per-map global state flag bytes
 
 ; --- Driver dispatch / callback fn ptrs (CS-relative ptrs in driver/game DS) ---
-mao2_drv_scroll_cb	equ	200Ch			; scroll/dispatch callback
 mao2_drv_anim_cb	equ	2F2Eh			; driver callback (boss anim)
 mao2_drv_misc_cb	equ	302Fh			; driver callback
-mao2_cb_tile_dispatch	equ	6028h			; game-seg callback fn A (tile dispatch)
-mao2_cb_tile_at_pos	equ	6036h			; game-seg callback fn B (tile-at-pos)
-mao2_cb_emit_attr	equ	6038h			; game-seg callback fn C (emit attribute)
 
 ; --- Internal phase / dispatch / handler tables (DS, hard offsets) ---
 mao2_phase_ofs_tbl	equ	0A46Fh			; per-phase substate offset xlat table
@@ -274,11 +271,11 @@ mao2_npc_scan_loop:
 			db	 83h, 3Ch,0FFh		;  Fixup - byte match
 			jz	mao2_npc_scan_done			; Jump if zero
 			mov	ax,[si]
-			call	word ptr cs:mao2_cb_tile_at_pos
+			call	word ptr cs:fight_cb_anim_step
 			jc	mao2_npc_scan_next			; Jump if carry Set
 			mov	[si+3],bl
 			mov	ax,[si+2]
-			call	word ptr cs:mao2_cb_tile_dispatch
+			call	word ptr cs:fight_cb_record_ofs
 			mov	bl,ds:mao2_npc_idx
 			xor	bh,bh			; Zero register
 			mov	al,ds:mao2_sprite_xlat_tbl[bx]
@@ -313,7 +310,7 @@ mao2_npc_scan_done:
 		mov	al,ds:mao2_attr_byte
 		and	al,1Fh
 		push	ax
-		call	word ptr cs:mao2_cb_emit_attr
+		call	word ptr cs:fight_cb_hit_check
 		mov	bl,ah
 		pop	ax
 		xor	bh,bh			; Zero register
@@ -732,7 +729,7 @@ mao2_render_attr_loop:
 		push	cx
 		push	di
 		push	ax
-		call	word ptr cs:mao2_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		mov	ds:mao2_attr_tmp,bl
 		jc	mao2_render_outer_advance			; Jump if carry Set
@@ -768,7 +765,7 @@ mao2_render_emit_inner:
 mao2_render_attr_apply:
 			push	di
 			mov	ax,[si+2]
-			call	word ptr cs:mao2_cb_tile_dispatch
+			call	word ptr cs:fight_cb_record_ofs
 			mov	bl,ds:mao2_npc_idx
 			xor	bh,bh			; Zero register
 			mov	al,bl
@@ -832,7 +829,7 @@ mao2_dlg_a_emit:
 		mov	al,ds:mao2_dlg_a_dx
 		xor	ah,ah			; Zero register
 		push	ax
-		call	word ptr cs:mao2_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		jc	mao2_dlg_a_advance			; Jump if carry Set
 		mov	[si],ax
@@ -854,7 +851,7 @@ mao2_dlg_a_set_pos:
 		and	al,80h
 		mov	[si+5],al
 		mov	ax,[si+2]
-		call	word ptr cs:mao2_cb_tile_dispatch
+		call	word ptr cs:fight_cb_record_ofs
 		mov	bl,ds:mao2_npc_idx
 		xor	bh,bh			; Zero register
 		mov	al,bl
@@ -897,7 +894,7 @@ mao2_dlg_b_dx_set:
 		xor	ah,ah			; Zero register
 		push	dx
 		push	ax
-		call	word ptr cs:mao2_cb_tile_at_pos
+		call	word ptr cs:fight_cb_anim_step
 		pop	ax
 		pop	dx
 		jc	mao2_dlg_b_advance			; Jump if carry Set
@@ -911,7 +908,7 @@ mao2_dlg_b_dx_set:
 		and	al,80h
 		mov	[si+5],al
 		mov	ax,[si+2]
-		call	word ptr cs:mao2_cb_tile_dispatch
+		call	word ptr cs:fight_cb_record_ofs
 		mov	bl,ds:mao2_npc_idx
 		xor	bh,bh			; Zero register
 		mov	al,bl
@@ -1157,7 +1154,7 @@ mao2_pos_sub_clamp:
 		mov	ds:mao2_pos_word,ax
 		mov	bx,ax
 		push	ax
-		call	word ptr cs:mao2_drv_scroll_cb
+		call	word ptr cs:fight_cb_prep
 		pop	ax
 		or	ax,ax			; Zero ?
 		jz	mao2_pos_sub_check_b			; Jump if zero
@@ -1197,7 +1194,7 @@ mao2_pos_step_advance:
 mao2_pos_step_save:
 		mov	ds:mao2_pos_word,bx
 		mov	byte ptr ds:mao2_gvar_phase_byte,3Ch	; '<'
-		jmp	word ptr cs:mao2_drv_scroll_cb
+		jmp	word ptr cs:fight_cb_prep
 
 mao2_pos_step		endp
 
