@@ -95,6 +95,20 @@ anim_src_ptr	equ	0AD1Fh			;*
 anim_active_flag	equ	0AD21h			;*
 anim_frame_counter	equ	0AD22h			;*
 
+; FORMAT_AND_RUN
+;   Format AX/DL (number) into the dialog buffer at 0AD30h (script_format_num),
+;   save current script_ptr, run the formatted script, then restore script_ptr.
+FORMAT_AND_RUN	MACRO
+		mov	di, 0AD30h
+		call	word ptr cs:script_format_num
+		mov	si, ds:gvar_script_ptr
+		push	si
+		mov	word ptr ds:gvar_script_ptr, 0AD30h
+		call	word ptr cs:script_step
+		pop	si
+		mov	ds:gvar_script_ptr, si
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -426,14 +440,7 @@ loc_23:
 		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
-		mov	di,0AD30h
-		call	word ptr cs:script_format_num
-		mov	si,ds:gvar_script_ptr
-		push	si
-		mov	word ptr ds:gvar_script_ptr,0AD30h
-		call	word ptr cs:script_step
-		pop	si
-		mov	ds:gvar_script_ptr,si
+		FORMAT_AND_RUN
 		retn
 
 loc_24:
@@ -547,14 +554,7 @@ loc_32:
 		call	word ptr cs:script_step
 		mov	dl,ds:amount_hi
 		mov	ax,ds:amount_lo
-		mov	di,0AD30h
-		call	word ptr cs:script_format_num
-		mov	si,ds:gvar_script_ptr
-		push	si
-		mov	word ptr ds:gvar_script_ptr,0AD30h
-		call	word ptr cs:script_step
-		pop	si
-		mov	ds:gvar_script_ptr,si
+		FORMAT_AND_RUN
 
 loc_33:
 		call	word ptr cs:script_step
@@ -580,14 +580,7 @@ loc_34:
 		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
-		mov	di,0AD30h
-		call	word ptr cs:script_format_num
-		mov	si,ds:gvar_script_ptr
-		push	si
-		mov	word ptr ds:gvar_script_ptr,0AD30h
-		call	word ptr cs:script_step
-		pop	si
-		mov	ds:gvar_script_ptr,si
+		FORMAT_AND_RUN
 
 loc_35:
 		mov	dl,ds:amount_hi
@@ -617,14 +610,7 @@ loc_37:
 		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:[88h]
 		mov	ax,word ptr ds:[89h]
-		mov	di,0AD30h
-		call	word ptr cs:script_format_num
-		mov	si,ds:gvar_script_ptr
-		push	si
-		mov	word ptr ds:gvar_script_ptr,0AD30h
-		call	word ptr cs:script_step
-		pop	si
-		mov	ds:gvar_script_ptr,si
+		FORMAT_AND_RUN
 		retn
 			                        ;* No entry point to code
 		mov	byte ptr ds:anim_active_flag,0

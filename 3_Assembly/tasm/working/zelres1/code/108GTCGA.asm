@@ -90,6 +90,25 @@ cga_wrap2		equ	0C050h			; CGA interleave wrap offset (dup of cga_wrap)
 tileset_index		equ	8000h			;* tileset index table (game_seg:8000h)
 tile_col_idx		equ	3D6Fh			;*  current tile column counter (byte, 0..1Bh)
 
+; CGA_PIXEL_ADDR
+;   Compute CGA byte/bank offset into DI from BL (row).
+;   bit0 of BL selects bank (0/2000h); high bits index 80-byte rows.
+CGA_PIXEL_ADDR	MACRO
+		shr	bl, 1
+		sbb	di, di
+		and	di, 2000h
+		mov	al, 50h
+		mul	bl
+		add	di, ax
+		ENDM
+; SET_ES_DS_CGA
+;   ES = DS = B800h (set both segments to CGA framebuffer).
+SET_ES_DS_CGA	MACRO
+		mov	ax, 0B800h
+		mov	es, ax
+		mov	ds, ax
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -344,9 +363,7 @@ skip_wrap_di_b:
 
 tile_cached:
 		mov	si,ds:tile_cache[bx]
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_CGA
 		movsw				; Mov [si] to es:[di]
 		add	di,1FFEh
 		cmp	di,4000h
@@ -1048,9 +1065,7 @@ blend_tile_planes		endp
 
 scroll_tiles_left:				;* No entry point to code
 		push	ds
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_CGA
 		std				; Set direction flag
 		mov	si,cga_tilemap_b1
 		mov	al,8
@@ -1104,9 +1119,7 @@ sl_b3_wrap:
 
 scroll_hud_left:				;* No entry point to code
 		push	ds
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_CGA
 		std				; Set direction flag
 		mov	si,cga_hud_ofs_r
 		mov	al,10h
@@ -1136,9 +1149,7 @@ sl_hud_wrap:
 
 scroll_tiles_right:				;* No entry point to code
 		push	ds
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_CGA
 		mov	si,cga_tilemap_b0
 		mov	al,8
 
@@ -1191,9 +1202,7 @@ sr_b2_wrap:
 
 scroll_hud_right:				;* No entry point to code
 		push	ds
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_CGA
 		mov	si,cga_hud_ofs_l
 		mov	al,10h
 
@@ -1229,12 +1238,7 @@ blit_tile_from_index:				;* No entry point to code
 		add	ax,ax
 		mov	si,ax
 		add	si,tileset_index
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -1266,12 +1270,7 @@ blit_hud_border_tile:				;* No entry point to code
 		push	di
 		push	cs
 		pop	ds
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
@@ -1626,12 +1625,7 @@ copy_row_to_prev:				;* No entry point to code
 		push	ax
 		add	bl,cl
 		dec	bl
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
@@ -1641,9 +1635,7 @@ copy_row_to_prev:				;* No entry point to code
 		add	si,cga_wrap_si2
 
 si_nowrap:
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_CGA
 		mov	bl,ch
 		xor	bh,bh			; Zero register
 		xor	ch,ch			; Zero register
@@ -1686,12 +1678,7 @@ dst_nowrap:
 copy_row_to_next:				;* No entry point to code
 		push	ds
 		push	ax
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
@@ -1702,9 +1689,7 @@ copy_row_to_next:				;* No entry point to code
 		add	si,cga_wrap2
 
 si_advance_nowrap:
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_CGA
 		mov	bl,ch
 		xor	bh,bh			; Zero register
 		xor	ch,ch			; Zero register

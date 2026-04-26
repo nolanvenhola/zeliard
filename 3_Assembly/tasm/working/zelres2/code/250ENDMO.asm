@@ -192,6 +192,31 @@ ANIM_B8		equ	0B8h
 ANIM_C0		equ	0C0h
 ANIM_C1		equ	0C1h
 
+; DECOMPRESS_RLE dst
+;   ES=game_seg, SI=vga_seg, DI=dst, then call rle_blit_pair.
+DECOMPRESS_RLE	MACRO	dst
+		mov	es, cs:gvar_game_seg
+		mov	si, vga_seg
+		mov	di, dst
+		call	rle_blit_pair
+		ENDM
+; SET_ES_2000
+;   Compute ES = CS + 2000h (load ES with the secondary code/data segment).
+SET_ES_2000	MACRO
+		mov	ax, cs
+		add	ax, 2000h
+		mov	es, ax
+		ENDM
+; LOAD_CHUNK_AT src, dst
+;   SI=src, DI=dst, AL=2 (fill_buffer), then call SAR loader at cs:[10Ch].
+;   src = chunk-ref pointer, dst = destination offset in current segment.
+LOAD_CHUNK_AT	MACRO	src, dst
+		mov	si, src
+		mov	di, dst
+		mov	al, 2
+		call	word ptr cs:[10Ch]
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -228,29 +253,18 @@ start:
 main_entry:
 		add	ch,bitmap_row_byte
 		or	al,1
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,framebuf_b
-		call	rle_blit_pair
+		DECOMPRESS_RLE framebuf_b
 		push	cs
 		pop	es
-		mov	si,ref_heroclose_grp
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,script_src_b
-		call	rle_blit_pair
+		LOAD_CHUNK_AT ref_heroclose_grp, vga_seg
+		DECOMPRESS_RLE script_src_b
 		mov	es,cs:gvar_game_seg
 		mov	di,framebuf_b
 		mov	al,0FFh
 		mov	bx,0B18h
 		mov	cx,1858h
 		call	word ptr cs:gfx_draw_fn
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		push	ds
 		mov	di,null_ofs
 		mov	ds,cs:gvar_game_seg
@@ -270,9 +284,7 @@ main_entry:
 
 init_wipe_loop:
 				push	cx
-				mov	ax,cs
-				add	ax,2000h
-				mov	es,ax
+				SET_ES_2000
 				mov	ax,cx
 				dec	ax
 				add	ax,ax
@@ -297,13 +309,8 @@ init_wipe_loop:
 
 		push	cs
 		pop	es
-		mov	si,813Dh
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		LOAD_CHUNK_AT 813Dh, vga_seg
+		SET_ES_2000
 		mov	si,vga_seg
 		mov	di,0
 		call	rle_blit_pair
@@ -312,14 +319,8 @@ init_wipe_loop:
 		call	render_narration_page
 		push	cs
 		pop	es
-		mov	si,817Eh
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,framebuf_b
-		call	rle_blit_pair
+		LOAD_CHUNK_AT 817Eh, vga_seg
+		DECOMPRESS_RLE framebuf_b
 		mov	ax,1
 		call	word ptr cs:gfx_scene_fn1
 		mov	ax,7
@@ -333,14 +334,8 @@ init_wipe_loop:
 		call	render_narration_page
 		push	cs
 		pop	es
-		mov	si,8148h
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,framebuf_b
-		call	rle_blit_pair
+		LOAD_CHUNK_AT 8148h, vga_seg
+		DECOMPRESS_RLE framebuf_b
 		mov	di,framebuf_b
 		mov	bx,1610h
 		mov	cx,2468h
@@ -349,24 +344,12 @@ init_wipe_loop:
 		call	render_narration_page
 		push	cs
 		pop	es
-		mov	si,8152h
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,framebuf_b
-		call	rle_blit_pair
+		LOAD_CHUNK_AT 8152h, vga_seg
+		DECOMPRESS_RLE framebuf_b
 		push	cs
 		pop	es
-		mov	si,ref_gualand2_palette
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,script_src_b
-		call	rle_blit_pair
+		LOAD_CHUNK_AT ref_gualand2_palette, vga_seg
+		DECOMPRESS_RLE script_src_b
 		xor	ax,ax			; Zero register
 		call	word ptr cs:gfx_scene_fn1
 		mov	ax,6
@@ -390,14 +373,8 @@ init_wipe_loop:
 		call	render_narration_page
 		push	cs
 		pop	es
-		mov	si,8168h
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,script_src_b
-		call	rle_blit_pair
+		LOAD_CHUNK_AT 8168h, vga_seg
+		DECOMPRESS_RLE script_src_b
 		mov	es,cs:gvar_game_seg
 		mov	di,script_src_b
 		mov	al,0FFh
@@ -407,24 +384,12 @@ init_wipe_loop:
 		call	render_narration_page
 		push	cs
 		pop	es
-		mov	si,8189h
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,framebuf_b
-		call	rle_blit_pair
+		LOAD_CHUNK_AT 8189h, vga_seg
+		DECOMPRESS_RLE framebuf_b
 		push	cs
 		pop	es
-		mov	si,ref_felicia_grp
-		mov	di,vga_seg
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,script_src_b
-		call	rle_blit_pair
+		LOAD_CHUNK_AT ref_felicia_grp, vga_seg
+		DECOMPRESS_RLE script_src_b
 		mov	ax,2
 		call	word ptr cs:gfx_scene_fn1
 		mov	ax,7
@@ -933,33 +898,13 @@ credits_scene_start:
 		mov	di,3000h
 		mov	al,5
 		call	word ptr cs:[10Ch]
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
-		mov	si,819Fh
-		mov	di,0
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	si,81AAh
-		mov	di,3400h
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	si,81B5h
-		mov	di,5E00h
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	si,81C0h
-		mov	di,8A00h
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	si,81CBh
-		mov	di,0B800h
-		mov	al,2
-		call	word ptr cs:[10Ch]
-		mov	si,81D6h
-		mov	di,0E200h
-		mov	al,2
-		call	word ptr cs:[10Ch]
+		SET_ES_2000
+		LOAD_CHUNK_AT 819Fh, 0
+		LOAD_CHUNK_AT 81AAh, 3400h
+		LOAD_CHUNK_AT 81B5h, 5E00h
+		LOAD_CHUNK_AT 81C0h, 8A00h
+		LOAD_CHUNK_AT 81CBh, 0B800h
+		LOAD_CHUNK_AT 81D6h, 0E200h
 		mov	ax,7
 		call	word ptr cs:gfx_palette_fn
 		push	ds

@@ -87,6 +87,24 @@ render_mode_flag	equ	4508h			;*
 sprite_buf_start	equ	0			;*
 screen_start_off	equ	0
 
+; SET_ES_3000
+;   Compute ES = CS + 3000h (load ES with the +3000h work-buffer segment).
+SET_ES_3000	MACRO
+		mov	ax, cs
+		add	ax, 3000h
+		mov	es, ax
+		ENDM
+; EXPAND_CH_4X
+;   Save CX, then CX = CH * 4 (zero-extended 8-bit count -> 16-bit, shifted x4).
+;   Used at the entry of each blit row helper to compute the byte count.
+EXPAND_CH_4X	MACRO
+		push	cx
+		mov	cl, ch
+		xor	ch, ch
+		add	cx, cx
+		add	cx, cx
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -155,9 +173,7 @@ disp_render_a_only:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	cx,bp
@@ -217,9 +233,7 @@ disp_render_a_full:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_a,0
 		mov	cx,bp
@@ -364,11 +378,7 @@ disp_blit_masked:
 		jz	blit_or_entry			; Jump if zero
 		push	si
 		push	di
-		push	cx
-		mov	cl,ch
-		xor	ch,ch			; Zero register
-		add	cx,cx
-		add	cx,cx
+		EXPAND_CH_4X
 
 blit_write_loop:
 							lodsb				; String [si] to al
@@ -388,11 +398,7 @@ blit_write_skip:
 blit_or_entry:
 							push	si
 							push	di
-							push	cx
-							mov	cl,ch
-							xor	ch,ch			; Zero register
-							add	cx,cx
-							add	cx,cx
+							EXPAND_CH_4X
 
 blit_or_loop:
 												lodsb				; String [si] to al
@@ -413,11 +419,7 @@ disp_blit_expand:
 							jz	blit_or_entry			; Jump if zero
 		push	si
 		push	di
-		push	cx
-		mov	cl,ch
-		xor	ch,ch			; Zero register
-		add	cx,cx
-		add	cx,cx
+		EXPAND_CH_4X
 
 blit_write_nonzero_loop:
 							lodsb				; String [si] to al
@@ -618,9 +620,7 @@ render_plane_ab_2_entry:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	cx,bp
@@ -749,9 +749,7 @@ sprite_anim_advance:
 							push	si
 							mov	ax,vga_seg
 							mov	ds,ax
-							mov	ax,cs
-							add	ax,3000h
-							mov	es,ax
+							SET_ES_3000
 							mov	si,di
 							mov	di,bp
 							call	copy_buffer
@@ -865,11 +863,7 @@ copy_buffer		proc	near
 
 copy_buf_row_loop:
 							push	si
-							push	cx
-							mov	cl,ch
-							xor	ch,ch			; Zero register
-							add	cx,cx
-							add	cx,cx
+							EXPAND_CH_4X
 							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 							pop	cx
 							pop	si
@@ -888,11 +882,7 @@ copy_buffer_2		proc	near
 
 copy_buf2_row_loop:
 							push	di
-							push	cx
-							mov	cl,ch
-							xor	ch,ch			; Zero register
-							add	cx,cx
-							add	cx,cx
+							EXPAND_CH_4X
 							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 							pop	cx
 							pop	di
@@ -1003,9 +993,7 @@ disp_render_ab_gseg:
 		add	ax,sprite_img_base
 		mov	ds,cs:gvar_game_seg
 		mov	si,ax
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	word ptr cs:src_word_c,0

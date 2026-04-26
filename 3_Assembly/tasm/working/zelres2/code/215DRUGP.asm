@@ -86,6 +86,18 @@ shop_inv_state		equ	0B1F6h		;* shop inventory state (24 bytes RAM)
 sel_item_idx		equ	0B218h		;* currently-selected item idx
 item_anim_phase		equ	0B219h		;* item-name animation phase counter
 
+; FILL_DLG_RECT
+;   Fill the dialog rectangle (0FFh) and prep gvar_dlg_pos at 302Eh,
+;   then call script_display_page.
+FILL_DLG_RECT	MACRO
+		mov	bx, 2F2Bh
+		mov	cx, 0C19h
+		mov	al, 0FFh
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_dlg_pos, 302Eh
+		call	word ptr cs:script_display_page
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -347,12 +359,7 @@ loc_12:
 		call	word ptr cs:drv_frame_commit
 		mov	word ptr ds:gvar_script_ip,0A909h
 		call	word ptr cs:script_step
-		mov	bx,2F2Bh
-		mov	cx,0C19h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:script_display_page
+		FILL_DLG_RECT
 		pushf				; Push flags
 		call	wizard_func_4
 		popf				; Pop flags
@@ -491,12 +498,7 @@ loc_18:
 loc_19:
 		mov	word ptr ds:gvar_script_ip,0AA4Bh
 		call	word ptr cs:script_step
-		mov	bx,2F2Bh
-		mov	cx,0C19h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:script_display_page
+		FILL_DLG_RECT
 		mov	word ptr ds:gvar_script_ip,0A965h
 		jnc	loc_20			; Jump if carry=0
 		retn
@@ -601,12 +603,7 @@ loc_25:
 		call	word ptr cs:script_step
 		mov	word ptr ds:gvar_script_ip,0AAE9h
 		call	word ptr cs:script_step
-		mov	bx,2F2Bh
-		mov	cx,0C19h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:script_display_page
+		FILL_DLG_RECT
 		pushf				; Push flags
 		call	wizard_func_4
 		popf				; Pop flags

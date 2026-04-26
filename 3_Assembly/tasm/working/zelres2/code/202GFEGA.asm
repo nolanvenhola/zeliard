@@ -115,6 +115,17 @@ sprite_data_stride equ	30h			; sprite data stride per row (48 bytes = 3 planes *
 sprite_record_size equ	24h			; sprite attribute record size (36 bytes)
 sprite_slot_stride equ	1Ch			; sprite slot stride within sprite_buf (28 bytes)
 
+; EGA_SETUP_702_205
+;   EGA mode-setup for sprite render: sequencer map-mask=07, graphics mode=05.
+EGA_SETUP_702_205	MACRO
+		mov	dx, 3C4h
+		mov	ax, 702h
+		out	dx, ax
+		mov	dx, 3CEh
+		mov	ax, 205h
+		out	dx, ax
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -1079,13 +1090,7 @@ ega_sprite_blit_ex		proc	near
 ega_sprite_blit_ex		endp
 
 ega_sprite_render_blended		proc	near
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_702_205
 						;  al = 5, mode
 		mov	cx,8
 
@@ -1164,13 +1169,7 @@ blend_row_loop:
 ega_sprite_render_blended		endp
 
 ega_sprite_render_solid		proc	near
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_702_205
 						;  al = 5, mode
 		mov	cx,8
 
@@ -1488,13 +1487,7 @@ loc_81:
 		pop	di
 		mov	ax,0A000h
 		mov	es,ax
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_702_205
 						;  al = 5, mode
 		mov	al,8
 		out	dx,al			; port 3CEh, EGA graphic index
@@ -2505,13 +2498,7 @@ loc_155:
 		mov	es,ax
 		mov	di,cs:scroll_src_ofs
 		mov	si,cs:scroll_gfx_ptr
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_702_205
 						;  al = 5, mode
 		mov	al,8
 		out	dx,al			; port 3CEh, EGA graphic index
@@ -2728,13 +2715,7 @@ draw_sprite_3plane:
 		add	ax,sprite_src_base
 		mov	si,ax
 		mov	ds,cs:game_seg
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_702_205
 						;  al = 5, mode
 		mov	ax,0A000h
 		mov	es,ax
@@ -3125,13 +3106,7 @@ ega_fade_blit		proc	near
 		push	dx
 		mov	ax,0A000h
 		mov	es,ax
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_702_205
 						;  al = 5, mode
 		pop	dx
 		push	dx
@@ -3534,13 +3509,7 @@ draw_ui_tiles:
 		mov	di,ui_ofs
 		mov	ax,0A000h
 		mov	es,ax
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_702_205
 						;  al = 5, mode
 		mov	al,8
 		out	dx,al			; port 3CEh, EGA graphic index
@@ -3959,13 +3928,7 @@ draw_hero_gfx:
 		mov	di,vga_buf_ofs
 		mov	ax,0A000h
 		mov	es,ax
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_702_205
 						;  al = 5, mode
 		mov	al,8
 		out	dx,al			; port 3CEh, EGA graphic index
@@ -4099,12 +4062,7 @@ shift_blit_src_set:
 		mov	di,ax			; DI = VGA framebuffer destination offset
 		mov	ax,0A000h
 		mov	es,ax			; ES = EGA framebuffer segment
-		mov	dx,3C4h			; EGA sequencer index port
-		mov	ax,702h			; AH=7 (write mode), AL=2 (map mask register)
-		out	dx,ax			; write map mask + mode
-		mov	dx,3CEh			; EGA graphics controller index port
-		mov	ax,205h			; AH=2 (read mode 0+write mode 2), AL=5 (mode reg)
-		out	dx,ax			; write graphics mode
+		EGA_SETUP_702_205
 		mov	al,8			; AL=8 (bit mask register index)
 		out	dx,al			; select bit mask register
 		inc	dx			; DX = 3CFh (EGA graphics controller data)

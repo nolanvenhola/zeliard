@@ -100,6 +100,14 @@ tile_col_idx	equ	3C9Ah			;* tile column index counter (byte, 0..27)
 ; --- numeric constants (internal) ---
 half_stride	equ	80h			; 128: half of VGA row stride
 
+; SET_ES_DS_VGA
+;   ES = DS = A000h (set both segments to VGA framebuffer).
+SET_ES_DS_VGA	MACRO
+		mov	ax, 0A000h
+		mov	es, ax
+		mov	ds, ax
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -256,9 +264,7 @@ vga_op_do_copy:
 		xor	ah,ah			; Zero register
 		mov	di,ax
 		add	di,vga_tile_left
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		mov	si,tile_offscr_a
 		mov	cx,2
 
@@ -368,9 +374,7 @@ blit_3planes_loop:
 
 tile_cached:
 		mov	si,ds:tile_cache_tbl[bx]
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		mov	cx,8
 
 blit_cached_loop:
@@ -672,9 +676,7 @@ scroll_next_entry:
 		add	di,tile_buf_ofs
 		push	di
 		mov	si,tile_offscr_c
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		inc	ch
 		jz	blit_top_skip			; Jump if zero
 		call	vga_operation1
@@ -754,9 +756,7 @@ scroll2_next_entry:
 					jnz	scroll2_entry_loop			; Jump if not zero
 		mov	di,vga_tile_left
 		mov	si,tile_offscr_c
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		call	vga_operation1
 		pop	ds
 		pop	es
@@ -1053,9 +1053,7 @@ vga_operation6		endp
 
 scroll_left:				;* No entry point to code
 		push	ds
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		std				; Set direction flag
 		mov	si,vga_tile_r2
 		mov	al,8
@@ -1096,9 +1094,7 @@ scroll_left2_body:
 
 scroll_up:				;* No entry point to code
 		push	ds
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		std				; Set direction flag
 		mov	si,hud_vga_ofs2
 		mov	al,10h
@@ -1123,9 +1119,7 @@ scroll_up_body:
 
 scroll_right:				;* No entry point to code
 		push	ds
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		mov	si,vga_tile_l2
 		mov	al,8
 
@@ -1164,9 +1158,7 @@ scroll_right2_body:
 
 scroll_down:				;* No entry point to code
 		push	ds
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		mov	si,hud_vga_ofs
 		mov	al,10h
 
@@ -1610,9 +1602,7 @@ copy_rows_up:				;* No entry point to code
 		add	di,ax
 		mov	si,di
 		sub	si,140h
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		mov	bl,ch
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -1660,9 +1650,7 @@ copy_rows_down:				;* No entry point to code
 		add	di,ax
 		mov	si,di
 		add	si,vga_stride
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		mov	bl,ch
 		xor	bh,bh			; Zero register
 		add	bx,bx

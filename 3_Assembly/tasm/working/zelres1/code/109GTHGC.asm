@@ -91,6 +91,14 @@ hgc_stride_b		equ	0A05Ah			; HGC stride variant B (= hgc_stride)
 tile_idx_a		equ	3CAFh			;* tile index A (byte)
 tile_idx_b		equ	3CB2h			;* tile index B (byte, 0FDh = none)
 
+; SET_ES_DS_HGC
+;   ES = DS = B000h (set both segments to HGC framebuffer).
+SET_ES_DS_HGC	MACRO
+		mov	ax, 0B000h
+		mov	es, ax
+		mov	ds, ax
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -347,9 +355,7 @@ tile_blit_new_wrap:
 
 tile_draw_cached:
 		mov	si,ds:tile_cache_tbl[bx]
-		mov	ax,0B000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_HGC
 		mov	cx,8
 
 tile_blit_cached_loop:
@@ -977,9 +983,7 @@ decb_process_loop		endp
 
 scroll_left:				;* No entry point to code
 		push	ds
-		mov	ax,0B000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_HGC
 		std				; Set direction flag
 		mov	si,53F8h
 		mov	al,8
@@ -1048,9 +1052,7 @@ copy_buffer_2		endp
 
 scroll_right:				;* No entry point to code
 		push	ds
-		mov	ax,0B000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_HGC
 		std				; Set direction flag
 		mov	si,534h
 		mov	al,10h
@@ -1087,9 +1089,7 @@ copy_buffer_3		endp
 
 scroll_up:				;* No entry point to code
 		push	ds
-		mov	ax,0B000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_HGC
 		mov	si,53C1h
 		mov	al,8
 
@@ -1156,9 +1156,7 @@ copy_buffer_5		endp
 
 scroll_down:				;* No entry point to code
 		push	ds
-		mov	ax,0B000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_HGC
 		mov	si,4FDh
 		mov	al,10h
 
@@ -1612,9 +1610,7 @@ copy_tile_up:				;* No entry point to code
 		add	si,hgc_bank_back
 
 copy_up_si_nowrap:
-		mov	ax,0B000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_HGC
 		mov	bl,ch
 		xor	bh,bh			; Zero register
 		xor	ch,ch			; Zero register
@@ -1673,9 +1669,7 @@ copy_tile_down:				;* No entry point to code
 		add	si,hgc_stride_b
 
 copy_dn_si_nowrap:
-		mov	ax,0B000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_HGC
 		mov	bl,ch
 		xor	bh,bh			; Zero register
 		xor	ch,ch			; Zero register

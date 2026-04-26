@@ -76,6 +76,18 @@ sprite_backbuf_plane_sz equ	1028h		; bytes per plane in sprite back-buffer (at C
 ; ----------------------------------------------------------------------
 plane_enable_flags	equ	4213h			;*
 
+; EGA_SETUP_F02_205
+;   Standard EGA mode-setup: sequencer map-mask=0F, graphics mode=05.
+;   Used by ega_setup_mode1/2/3 and the inner palette setup at +1308h.
+EGA_SETUP_F02_205	MACRO
+		mov	dx, 3C4h
+		mov	ax, 0F02h
+		out	dx, ax
+		mov	dx, 3CEh
+		mov	ax, 205h
+		out	dx, ax
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -156,13 +168,7 @@ ega_render_two_planes:
 
 ega_setup_mode1:
 		push	ax
-		mov	dx,3C4h
-		mov	ax,0F02h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_F02_205
 						;  al = 5, mode
 		mov	word ptr cs:render_fn_ptr,30C5h	; CS:30C5h = mode1 inner row renderer
 		pop	ax
@@ -210,13 +216,7 @@ skip_plane0_render:
 		retn
 
 ega_setup_mode2:
-		mov	dx,3C4h
-		mov	ax,0F02h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_F02_205
 						;  al = 5, mode
 		mov	word ptr cs:render_fn_ptr,3121h	; CS:3121h = mode2 inner row renderer
 		mov	al,0FFh
@@ -234,13 +234,7 @@ ega_fill_plane0:
 		jmp	fill_plane_entry
 
 ega_setup_mode3:
-		mov	dx,3C4h
-		mov	ax,0F02h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_F02_205
 						;  al = 5, mode
 		mov	word ptr cs:render_fn_ptr,314Dh	; CS:314Dh = mode3 inner row renderer
 		xor	al,al			; Zero register
@@ -1309,13 +1303,7 @@ imgctl_scroll_snake:
 		mov	ds:cur_col_ctr,al
 		mov	ax,vga_seg
 		mov	es,ax
-		mov	dx,3C4h
-		mov	ax,0F02h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_F02_205
 						;  al = 5, mode
 		mov	di,screen_start_off
 		mov	si,move_seq_up

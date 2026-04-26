@@ -84,6 +84,23 @@ tga_screen_start	equ	0			;*  Tandy framebuffer copy-back start
 tga_src_start		equ	0			;*
 tga_dst_start		equ	0
 
+; SET_ES_3000
+;   Compute ES = CS + 3000h (load ES with the +3000h work-buffer segment).
+SET_ES_3000	MACRO
+		mov	ax, cs
+		add	ax, 3000h
+		mov	es, ax
+		ENDM
+; EXPAND_CH_2X
+;   Save CX, then CX = CH * 2 (zero-extended 8-bit count -> 16-bit, shifted x2).
+;   Used at the entry of each blit row helper to compute the byte count.
+EXPAND_CH_2X	MACRO
+		push	cx
+		mov	cl, ch
+		xor	ch, ch
+		add	cx, cx
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -161,9 +178,7 @@ render_3plane_setup:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	cx,bp
@@ -219,9 +234,7 @@ render_4plane_alt:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_a,0
 		mov	cx,bp
@@ -373,10 +386,7 @@ blit_mask_blend:
 		jz	mask_or_entry			; Jump if zero
 		push	si
 		push	di
-		push	cx
-		mov	cl,ch
-		xor	ch,ch			; Zero register
-		add	cx,cx
+		EXPAND_CH_2X
 
 mask_blend_loop:
 							lodsb				; String [si] to al
@@ -406,10 +416,7 @@ blend_lo_nibble:
 mask_or_entry:
 							push	si
 							push	di
-							push	cx
-							mov	cl,ch
-							xor	ch,ch			; Zero register
-							add	cx,cx
+							EXPAND_CH_2X
 
 mask_or_loop:
 												lodsb				; String [si] to al
@@ -439,10 +446,7 @@ blit_mask_transp:
 							jz	mask_or_entry			; Jump if zero
 		push	si
 		push	di
-		push	cx
-		mov	cl,ch
-		xor	ch,ch			; Zero register
-		add	cx,cx
+		EXPAND_CH_2X
 
 transp_blend_loop:
 							lodsb				; String [si] to al
@@ -668,9 +672,7 @@ render_xor_entry:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	cx,bp
@@ -798,9 +800,7 @@ obj_update_frame:
 							push	si
 							mov	ax,tga_vram_seg
 							mov	ds,ax
-							mov	ax,cs
-							add	ax,3000h
-							mov	es,ax
+							SET_ES_3000
 							mov	si,di
 							mov	di,bp
 							call	copy_buffer
@@ -896,10 +896,7 @@ copy_buffer		proc	near
 
 cpybuf_row_loop:
 							push	si
-							push	cx
-							mov	cl,ch
-							xor	ch,ch			; Zero register
-							add	cx,cx
+							EXPAND_CH_2X
 							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 							pop	cx
 							pop	si
@@ -923,10 +920,7 @@ copy_buffer_2		proc	near
 
 cpybuf2_row_loop:
 							push	di
-							push	cx
-							mov	cl,ch
-							xor	ch,ch			; Zero register
-							add	cx,cx
+							EXPAND_CH_2X
 							rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 							pop	cx
 							pop	di

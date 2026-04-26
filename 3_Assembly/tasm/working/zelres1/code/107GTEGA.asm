@@ -79,6 +79,24 @@ tile_flip_flag	equ	0C583h			;* tile flip/mirror flag byte
 ; ----------------------------------------------------------------------
 ega_row_stride	equ	4Eh			; EGA bytes per row (78 = 640/8)
 
+; EGA_SETUP_702_105
+;   EGA mode-setup for tile rendering: sequencer map-mask=07, graphics mode=01.
+EGA_SETUP_702_105	MACRO
+		mov	dx, 3C4h
+		mov	ax, 702h
+		out	dx, ax
+		mov	dx, 3CEh
+		mov	ax, 105h
+		out	dx, ax
+		ENDM
+; SET_ES_DS_VGA
+;   ES = DS = A000h (set both segments to VGA framebuffer).
+SET_ES_DS_VGA	MACRO
+		mov	ax, 0A000h
+		mov	es, ax
+		mov	ds, ax
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -251,17 +269,9 @@ do_tile_blit:
 		xor	ah,ah			; Zero register
 		mov	di,ax
 		add	di,tile_dest_ofs
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_VGA
 		mov	si,tile_buf_a
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		EGA_SETUP_702_105
 						;  al = 5, mode
 		mov	cx,2
 
@@ -375,17 +385,8 @@ tile_plane_write_loop:
 
 tile_cached:
 		mov	si,ds:tile_cache_tbl[bx]
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		EGA_SETUP_702_105
+		SET_ES_DS_VGA
 		mov	bx,ega_row_stride
 		movsb				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
@@ -795,16 +796,8 @@ door_list_next:
 		add	di,ega_mid_ofs
 		push	di
 		mov	si,tile_buf_c
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		SET_ES_DS_VGA
+		EGA_SETUP_702_105
 						;  al = 5, mode
 		inc	ch
 		jz	door_skip_top			; Jump if zero
@@ -889,16 +882,8 @@ door_list_next_2:
 						jnz	door_list_loop_2			; Jump if not zero
 		mov	di,tile_dest_ofs
 		mov	si,tile_buf_c
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		SET_ES_DS_VGA
+		EGA_SETUP_702_105
 						;  al = 5, mode
 		call	vga_operation1
 		mov	ax,5
@@ -1249,17 +1234,8 @@ vga_operation6		endp
 
 scroll_left_entry:
 		push	ds
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		EGA_SETUP_702_105
+		SET_ES_DS_VGA
 		std				; Set direction flag
 		mov	si,scroll_left_b
 		mov	al,8
@@ -1308,17 +1284,8 @@ scroll_left_row_b:
 
 scroll_down_entry:
 		push	ds
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		EGA_SETUP_702_105
+		SET_ES_DS_VGA
 		std				; Set direction flag
 		mov	si,ega_hud_b
 		mov	al,10h
@@ -1347,17 +1314,8 @@ scroll_down_row:
 
 scroll_right_entry:
 		push	ds
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		EGA_SETUP_702_105
+		SET_ES_DS_VGA
 		mov	si,scroll_left_a
 		mov	al,8
 
@@ -1404,17 +1362,8 @@ scroll_right_row_b:
 
 scroll_up_entry:
 		push	ds
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
+		EGA_SETUP_702_105
+		SET_ES_DS_VGA
 		mov	si,ega_hud_top
 		mov	al,10h
 
@@ -1854,16 +1803,8 @@ scroll_region_up_entry:
 		sub	ax,50h
 		add	si,ax
 		add	di,ax
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		SET_ES_DS_VGA
+		EGA_SETUP_702_105
 						;  al = 5, mode
 		mov	bl,ch
 		xor	bh,bh			; Zero register
@@ -1915,16 +1856,8 @@ scroll_region_dn_entry:
 		mov	di,ax
 		mov	si,di
 		add	si,50h
-		mov	ax,0A000h
-		mov	es,ax
-		mov	ds,ax
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,105h
-		out	dx,ax			; port 3CEh, EGA graphic index
+		SET_ES_DS_VGA
+		EGA_SETUP_702_105
 						;  al = 5, mode
 		mov	bl,ch
 		xor	bh,bh			; Zero register

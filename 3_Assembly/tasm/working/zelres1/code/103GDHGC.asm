@@ -123,6 +123,21 @@ hgc_write_pixel	macro	next_label
 		stosb				; yes: write to bank 2 as well
 		add	di,hgc_bank2_base_m1	; advance past bank boundary
 endm
+; SET_ES_3000
+;   Compute ES = CS + 3000h (load ES with the +3000h work-buffer segment).
+SET_ES_3000	MACRO
+		mov	ax, cs
+		add	ax, 3000h
+		mov	es, ax
+		ENDM
+; EXPAND_CH_BYTE
+;   Save CX, then CX = CH zero-extended (CH bytes count).
+;   Used at the entry of each blit row helper.
+EXPAND_CH_BYTE	MACRO
+		push	cx
+		mov	cl, ch
+		xor	ch, ch
+		ENDM
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -178,9 +193,7 @@ render_ab_init_entry:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	cx,bp
@@ -231,9 +244,7 @@ render_plane_c_entry:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	word ptr cs:src_word_a,0
@@ -398,9 +409,7 @@ render_mask_blend_loop:
 render_overwrite_entry:
 		push	si
 		push	di
-		push	cx
-		mov	cl,ch
-		xor	ch,ch			; Zero register
+		EXPAND_CH_BYTE
 
 render_overwrite_loop:
 								lodsb				; String [si] to al
@@ -420,9 +429,7 @@ render_expand_entry:
 		jz	render_overwrite2_entry			; Jump if zero
 		push	si
 		push	di
-		push	cx
-		mov	cl,ch
-		xor	ch,ch			; Zero register
+		EXPAND_CH_BYTE
 
 render_expand_loop:
 								push	cx
@@ -459,9 +466,7 @@ render_expand_bit_set:
 render_overwrite2_entry:
 		push	si
 		push	di
-		push	cx
-		mov	cl,ch
-		xor	ch,ch			; Zero register
+		EXPAND_CH_BYTE
 
 render_overwrite2_loop:
 								lodsb				; String [si] to al
@@ -663,9 +668,7 @@ render_plane_ab_entry:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	cx,bp
@@ -809,9 +812,7 @@ sprite_update_frame:
 		push	si
 		mov	ax,hgc_seg
 		mov	ds,ax
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	si,di
 		mov	di,bp
 		call	copy_buffer
@@ -913,9 +914,7 @@ copy_buffer		proc	near
 
 copy_buf_row:
 								push	si
-								push	cx
-								mov	cl,ch
-								xor	ch,ch			; Zero register
+								EXPAND_CH_BYTE
 								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 								pop	cx
 								pop	si
@@ -938,9 +937,7 @@ copy_buffer_2		proc	near
 		push	cx
 
 copy_buf2_row:
-								push	cx
-								mov	cl,ch
-								xor	ch,ch			; Zero register
+								EXPAND_CH_BYTE
 								push	si
 								push	di
 								push	cx
@@ -979,9 +976,7 @@ imgdec_multiply		proc	near
 		mov	word ptr cs:src_word_c,0
 
 multiply_row_loop:
-								push	cx
-								mov	cl,ch
-								xor	ch,ch			; Zero register
+								EXPAND_CH_BYTE
 								call	imgdec_process_loop_3
 								hgc_advance_di	multiply_row_wrap			; Jump if below
 								call	imgdec_process_loop_3
@@ -1063,9 +1058,7 @@ sprite_img_blit_entry:
 		add	ax,97C0h
 		mov	ds,cs:gvar_game_seg
 		mov	si,ax
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	word ptr cs:src_word_c,0

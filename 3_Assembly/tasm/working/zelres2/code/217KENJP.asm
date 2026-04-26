@@ -151,6 +151,17 @@ state_see_flag	equ	0BB18h			;* "See Power" flag byte
 state_anim_phase	equ	0BB1Ch			;* main animation phase (0..0Fh)
 kenjp_timer_ff18	equ	0FF18h			;* global: timer word (tested for bit 0 parity)
 
+; BANNER_FILL_RECT
+;   Fill the dialog banner rectangle (BX=0D60h, CX=3637h, AL=0FFh) and
+;   call drv_fill_rect.  The standard "draw the title-bar background"
+;   used by all building-dialog modules.
+BANNER_FILL_RECT	MACRO
+		mov	bx, 0D60h
+		mov	cx, 3637h
+		mov	al, 0FFh
+		call	word ptr cs:drv_fill_rect
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -168,20 +179,14 @@ start:
 		push	es
 		adc	bh,byte ptr ss:data_21+0Ah[bp+di]	; ('ll upon the Spirits and ')
 		call	draw_sage_tile_grid
-		mov	bx,0D60h
-		mov	cx,3637h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
+		BANNER_FILL_RECT
 		mov	word ptr ds:gvar_script_ip,0BA67h
 		jmp	short script_run_loop
 			                        ;* No entry point to code
 		call	load_sage_chunk
 		mov	word ptr ds:state_script_ptr,717h
 		call	draw_sage_tile_grid
-		mov	bx,0D60h
-		mov	cx,3637h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
+		BANNER_FILL_RECT
 		call	sage_intro_dispatch
 		mov	ds:gvar_script_ip,si
 
@@ -712,10 +717,7 @@ name_input_entry:
 		mov	byte ptr ds:gvar_dlg_cols,5
 		call	name_input_loop
 		pushf				; Push flags
-		mov	bx,0D60h
-		mov	cx,3637h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
+		BANNER_FILL_RECT
 		popf				; Pop flags
 		jnc	name_input_ok			; Jump if carry=0
 		retn
@@ -1220,10 +1222,7 @@ save_wait_key_loop:
 		mov	cx,1926h
 		xor	di,di			; Zero register
 		call	word ptr cs:drv_fn_blit_off
-		mov	bx,0D60h
-		mov	cx,3637h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
+		BANNER_FILL_RECT
 		jmp	cmd_record_entry
 ; -- ref_stdply: chunk-loader reference for STDPLY.BIN (audio driver) +
 ;    inline orphan x86 code for music init.  Sourcer can't follow.

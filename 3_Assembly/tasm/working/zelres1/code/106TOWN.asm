@@ -209,6 +209,13 @@ fill_cursor_buf	macro
 		mov	cx,0E0h
 		rep	stosb
 		endm
+; SET_ES_2000
+;   Compute ES = CS + 2000h (load ES with the secondary code/data segment).
+SET_ES_2000	MACRO
+		mov	ax, cs
+		add	ax, 2000h
+		mov	es, ax
+		ENDM
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -240,9 +247,7 @@ init_entry:
 init_load_tiles:
 		mov	ds,cs:gvar_game_seg
 		mov	si,4100h
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	di,7000h
 		mov	cx,0A4h
 		call	word ptr cs:gfx_copy_fn
@@ -1941,9 +1946,7 @@ player_func_31		proc	near
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,town_base_4100
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	di,7000h
 		mov	cx,0A0h
 		call	word ptr cs:gfx_copy_fn
@@ -2003,9 +2006,7 @@ player_func_33		proc	near
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,6000h
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	di,8000h
 		mov	cx,2Eh
 		call	word ptr cs:gfx_copy_fn

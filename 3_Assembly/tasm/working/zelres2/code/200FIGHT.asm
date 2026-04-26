@@ -291,6 +291,27 @@ SWAP_CALL       MACRO   ofs, fn
                 xchg    si, di
                 ENDM
 
+; Render-pair: vga_operation8 followed by vga_operation5 with SI advance.
+;   Used 8 times in the per-frame entity update chain.
+VGAOP_8_ADV5_5  MACRO
+                call    vga_operation8
+                add     si, 6Dh
+                call    vga_operation5
+                ENDM
+
+; SAR-load-then-memcpy boilerplate.
+;   Push DS; switch to game segment; copy 100h words from sprite_load_dest
+;   through gfx_fn_memcpy; restore DS. Used after LOAD_CHUNK_ES.
+SAR_COPY_100H   MACRO
+                push    ds
+                mov     ds, cs:gvar_game_seg
+                mov     si, sprite_load_dest
+                mov     bp, game_fn_vtable
+                mov     cx, 100h
+                call    word ptr cs:gfx_fn_memcpy
+                pop     ds
+                ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -416,13 +437,7 @@ zr2_00		endp
 
 vga_operation		proc	near
 		LOAD_CHUNK_ES sprite_load_dest, 2
-		push	ds
-		mov	ds,cs:gvar_game_seg
-		mov	si,sprite_load_dest
-		mov	bp,game_fn_vtable
-		mov	cx,100h
-		call	word ptr cs:gfx_fn_memcpy
-		pop	ds
+		SAR_COPY_100H
 
 main_loop_entry:
 		mov	si,ds:obj_data_ptr
@@ -826,9 +841,7 @@ check_invul:
 
 decrement_invul:
 		dec	byte ptr ds:invul_timer
-		call	vga_operation8
-		add	si,6Dh
-		call	vga_operation5
+		VGAOP_8_ADV5_5
 		mov	al,[si]
 		cmp	al,40h			; '@'
 		jb	check_move_axis			; Jump if below
@@ -1564,9 +1577,7 @@ right_no_c2b1:
 										call	game_func_17
 
 check_vga8_c:
-										call	vga_operation8
-										add	si,6Dh
-										call	vga_operation5
+										VGAOP_8_ADV5_5
 										mov	al,[si]
 										call	game_check_state_2
 										jz	check_si_ok			; Jump if zero
@@ -1589,9 +1600,7 @@ left_no_c2b1:
 		call	game_func_17
 
 check_vga8_d:
-		call	vga_operation8
-		add	si,6Dh
-		call	vga_operation5
+		VGAOP_8_ADV5_5
 		mov	al,[si]
 		call	game_check_state_2
 		jz	check_si_ok_b			; Jump if zero
@@ -1673,9 +1682,7 @@ game_func_22		proc	near
 
 check_debug_val_b:
 		call	game_func_78
-		call	vga_operation8
-		add	si,6Dh
-		call	vga_operation5
+		VGAOP_8_ADV5_5
 		call	game_get_value
 		jc	music_advance_loop			; Jump if carry Set
 		test	byte ptr ds:gvar_music_flag_b,0FFh
@@ -1690,9 +1697,7 @@ set_music_a_flag:
 		retn
 
 music_advance_loop:
-										call	vga_operation8
-										add	si,6Dh
-										call	vga_operation5
+										VGAOP_8_ADV5_5
 										inc	byte ptr ds:[0E7h]
 										mov	al,[si]
 										call	game_check_state_2
@@ -1751,9 +1756,7 @@ set_music_a_ff:
 game_func_23		endp
 
 game_func_24		proc	near
-		call	vga_operation8
-		add	si,6Dh
-		call	vga_operation5
+		VGAOP_8_ADV5_5
 		mov	di,si
 		call	vga_operation9
 		add	al,al
@@ -2810,13 +2813,7 @@ load_new_map:
 		mov	bl,0Bh
 		mul	bl			; ax = reg * al
 		LOAD_CHUNK_REF spr_ref_tbl, sprite_load_dest, 2
-		push	ds
-		mov	ds,cs:gvar_game_seg
-		mov	si,sprite_load_dest
-		mov	bp,game_fn_vtable
-		mov	cx,100h
-		call	word ptr cs:gfx_fn_memcpy
-		pop	ds
+		SAR_COPY_100H
 		mov	byte ptr ds:gvar_save_flag_1,0
 		mov	si,ds:map_data_ptr
 		add	si,8
@@ -4208,13 +4205,7 @@ spr_changed:
 		mov	al,0Bh
 		mul	bl			; ax = reg * al
 		LOAD_CHUNK_REF spr_ref_tbl, sprite_load_dest, 2
-		push	ds
-		mov	ds,cs:gvar_game_seg
-		mov	si,sprite_load_dest
-		mov	bp,game_fn_vtable
-		mov	cx,100h
-		call	word ptr cs:gfx_fn_memcpy
-		pop	ds
+		SAR_COPY_100H
 
 music_check:
 		mov	bl,ds:music_track_id
@@ -4291,9 +4282,7 @@ game_func_78		proc	near
 		retn
 
 check_music_b5:
-		call	vga_operation8
-		add	si,6Dh
-		call	vga_operation5
+		VGAOP_8_ADV5_5
 		mov	dl,40h			; '@'
 		call	game_func_82
 		jz	top_find_entry			; Jump if zero
@@ -4563,9 +4552,7 @@ bot_item_next:
 game_scan_loop_5		endp
 
 game_func_84		proc	near
-		call	vga_operation8
-		add	si,6Dh
-		call	vga_operation5
+		VGAOP_8_ADV5_5
 		mov	dl,43h			; 'C'
 		call	game_func_82
 		jz	bot_find_entry			; Jump if zero

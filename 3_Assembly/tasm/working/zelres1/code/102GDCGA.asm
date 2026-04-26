@@ -87,6 +87,25 @@ render_mode_flag	equ	4AADh			;*
 cga_screen_start		equ	0
 cga_buf_reset	equ	0			;*
 
+; CGA_PIXEL_ADDR
+;   Compute CGA byte/bank offset into DI from BL (row).
+;   bit0 of BL selects bank (0/2000h); high bits index 80-byte rows.
+CGA_PIXEL_ADDR	MACRO
+		shr	bl, 1
+		sbb	di, di
+		and	di, 2000h
+		mov	al, 50h
+		mul	bl
+		add	di, ax
+		ENDM
+; SET_ES_3000
+;   Compute ES = CS + 3000h (load ES with the +3000h work-buffer segment).
+SET_ES_3000	MACRO
+		mov	ax, cs
+		add	ax, 3000h
+		mov	es, ax
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -126,9 +145,7 @@ render_plane_a_entry:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_b,0
 		mov	word ptr cs:src_word_c,0
@@ -162,9 +179,7 @@ disp_render_a_only:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	cx,bp
@@ -195,12 +210,7 @@ disp_render_a_rev:
 		push	ax
 		push	es
 		push	di
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
@@ -222,9 +232,7 @@ disp_render_a_full:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	word ptr cs:src_word_a,0
@@ -249,12 +257,7 @@ render_plane_ba_loop:
 		push	ax
 		push	es
 		push	di
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
@@ -278,12 +281,7 @@ render_blit_entry:
 		push	ax
 		push	es
 		push	di
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
@@ -574,12 +572,7 @@ disp_scroll_copy:
 		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
 		pop	bx
 		push	bx
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
@@ -641,9 +634,7 @@ sprite_render_entry:
 		push	es
 		pop	ds
 		mov	si,di
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	cx,bp
@@ -669,12 +660,7 @@ sprite_render_loop:
 
 sprite_blit_entry:
 		push	ds
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
@@ -786,9 +772,7 @@ sprite_update_frame:
 		push	si
 		mov	ax,0B800h
 		mov	ds,ax
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	si,di
 		mov	di,bp
 		call	copy_buffer
@@ -1022,9 +1006,7 @@ disp_sprite_plane_mix:
 		add	ax,97C0h
 		mov	ds,cs:gvar_game_seg
 		mov	si,ax
-		mov	ax,cs
-		add	ax,3000h
-		mov	es,ax
+		SET_ES_3000
 		mov	di,0
 		mov	word ptr cs:src_word_d,0
 		mov	word ptr cs:src_word_c,0
@@ -1587,12 +1569,7 @@ extract_bits		endp
 
 disp_draw_status:
 		mov	cs:cur_row_ctr,bl
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
@@ -1751,12 +1728,7 @@ frame_render_row_top:
 		mov	al,50h			; 'P'
 		mul	bl			; ax = reg * al
 		push	ax
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		pop	ax
 		add	ax,cs:saved_di
 		mov	si,ax
@@ -1782,12 +1754,7 @@ frame_render_row_bot:
 		mov	al,50h			; 'P'
 		mul	bl			; ax = reg * al
 		push	ax
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		pop	ax
 		add	ax,cs:saved_di
 		mov	si,ax
@@ -1993,12 +1960,7 @@ extract_bits_2		proc	near
 		mul	bl			; ax = reg * al
 		add	ax,cs:saved_di
 		mov	si,ax
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		pop	ax
 		cmp	ax,14h
 		jae	extract2_short_row			; Jump if above or =
@@ -2101,12 +2063,7 @@ extract_bits_3		proc	near
 		add	ax,cs:saved_di
 		mov	si,ax
 		add	bl,14h
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		add	di,21h
 		pop	ax
 		cmp	ax,5Eh
@@ -2137,12 +2094,7 @@ extract_bits_3		endp
 
 disp_frame_render2:
 		push	ax
-		shr	bl,1			; Shift w/zeros fill
-		sbb	di,di
-		and	di,2000h
-		mov	al,50h			; 'P'
-		mul	bl			; ax = reg * al
-		add	di,ax
+		CGA_PIXEL_ADDR
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx

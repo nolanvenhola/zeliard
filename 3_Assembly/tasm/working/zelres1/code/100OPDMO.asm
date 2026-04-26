@@ -228,6 +228,21 @@ GFX_BLIT	MACRO	bx_val, cx_val, di_val
 		mov	di, di_val
 		call	word ptr cs:gfx_update_fn
 		ENDM
+; SET_ES_2000
+;   Compute ES = CS + 2000h (load ES with the secondary code/data segment).
+SET_ES_2000	MACRO
+		mov	ax, cs
+		add	ax, 2000h
+		mov	es, ax
+		ENDM
+; DECOMPRESS_VGA dst
+;   ES=game_seg, SI=vga_seg, DI=dst, then call decompress_image.
+DECOMPRESS_VGA	MACRO	dst
+		mov	es, cs:gvar_game_seg
+		mov	si, vga_seg
+		mov	di, dst
+		call	decompress_image
+		ENDM
 
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
@@ -274,10 +289,7 @@ start:
 		mov	di,cga_text_seg
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_framebuf
-		call	decompress_image
+		DECOMPRESS_VGA scene_framebuf
 		call	word ptr cs:gfx_init_fn
 		mov	byte ptr cs:gvar_skip_input,0
 		mov	byte ptr cs:gvar_key_state,0
@@ -306,19 +318,14 @@ start:
 		mov	si,scene_sprite_a
 		call	word ptr cs:disp_data_6F59
 		LOAD_DATA scene_data_c, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_data_i
-		call	decompress_image
+		DECOMPRESS_VGA scene_data_i
 		call	palette_lookup
 		mov	bx,1220h
 		mov	cx,2C68h
 		call	word ptr cs:gfx_mode_fn
 		mov	ax,3
 		call	word ptr cs:gfx_palette_fn
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	al,0FFh
 		mov	bx,1720h
 		mov	cx,2270h
@@ -723,22 +730,15 @@ begin_gameplay:
 		mov	ax,5
 		call	word ptr cs:gfx_palette_fn
 		LOAD_DATA res_zend_msd, vga_seg
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	si,vga_seg
 		mov	di,0
 		call	decompress_image
 		LOAD_DATA scene_data_e, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_framebuf
-		call	decompress_image
+		DECOMPRESS_VGA scene_framebuf
 		mov	bx,0
 		mov	cx,5088h
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	di,0
 		call	word ptr cs:disp_game_fn
 		mov	bx,410h
@@ -755,10 +755,7 @@ begin_gameplay:
 		mov	di,scene_framebuf
 		call	word ptr cs:disp_game_fn
 		LOAD_DATA res_ame_grp, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_framebuf
-		call	decompress_image
+		DECOMPRESS_VGA scene_framebuf
 		call	script_interpreter
 		xor	ax,ax			; Zero register
 		call	word ptr cs:disp_font_inv
@@ -770,16 +767,11 @@ begin_gameplay:
 		mov	di,scene_framebuf
 		call	word ptr cs:disp_game_fn
 		LOAD_DATA scene_data_c, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_data_i
-		call	decompress_image
+		DECOMPRESS_VGA scene_data_i
 		call	script_interpreter
 		mov	al,4
 		call	busy_wait_delay
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	di,0
 		call	palette_blend
 		mov	bx,410h
@@ -789,9 +781,7 @@ begin_gameplay:
 		call	word ptr cs:disp_game_fn
 		call	script_interpreter
 		call	script_interpreter
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	di,0
 		mov	bx,1728h
 		mov	cx,2230h
@@ -801,9 +791,7 @@ begin_gameplay:
 		call	script_interpreter
 		mov	al,2
 		call	busy_wait_delay
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	di,0
 		mov	bx,1728h
 		mov	cx,2230h
@@ -813,18 +801,13 @@ begin_gameplay:
 		call	gameplay_timer_loop
 		mov	al,3
 		call	busy_wait_delay
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	di,0
 		mov	bx,1728h
 		mov	cx,2230h
 		call	word ptr cs:disp_game_fn
 		LOAD_DATA scene_data_f, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_framebuf
-		call	decompress_image
+		DECOMPRESS_VGA scene_framebuf
 		mov	bx,410h
 		mov	cx,4868h
 		call	word ptr cs:gfx_mode_fn
@@ -834,10 +817,7 @@ begin_gameplay:
 		GFX_BLIT 410h, 4868h, 4000h
 		call	script_interpreter
 		LOAD_DATA res_isi_grp, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_framebuf
-		call	decompress_image
+		DECOMPRESS_VGA scene_framebuf
 		xor	al,al			; Zero register
 		mov	bx,410h
 		mov	cx,4868h
@@ -847,10 +827,7 @@ begin_gameplay:
 		call	script_interpreter
 		call	script_interpreter
 		LOAD_DATA res_oui_grp, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_framebuf
-		call	decompress_image
+		DECOMPRESS_VGA scene_framebuf
 		mov	di,scene_framebuf
 		mov	bx,1610h
 		mov	cx,2468h
@@ -861,21 +838,12 @@ begin_gameplay:
 		call	word ptr cs:disp_font_inv
 		call	script_interpreter
 		LOAD_DATA res_sei_grp, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_framebuf
-		call	decompress_image
+		DECOMPRESS_VGA scene_framebuf
 		GFX_BLIT 410h, 4868h, scene_framebuf
 		LOAD_DATA scene_data_g, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_framebuf
-		call	decompress_image
+		DECOMPRESS_VGA scene_framebuf
 		LOAD_DATA scene_data_h, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,screen_buf_1
-		call	decompress_image
+		DECOMPRESS_VGA screen_buf_1
 		call	script_interpreter
 		call	script_interpreter
 		xor	ax,ax			; Zero register
@@ -901,10 +869,7 @@ begin_gameplay:
 		call	script_interpreter
 		call	script_interpreter
 		LOAD_DATA res_oup_grp, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,screen_buf_1
-		call	decompress_image
+		DECOMPRESS_VGA screen_buf_1
 		xor	ax,ax			; Zero register
 		call	word ptr cs:disp_font_inv
 		mov	ax,8
@@ -976,10 +941,7 @@ gameplay_input_loop:
 		mov	ax,7
 		call	word ptr cs:gfx_palette_fn
 		LOAD_DATA res_yuu1_grp, vga_seg
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_framebuf
-		call	decompress_image
+		DECOMPRESS_VGA scene_framebuf
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		mov	bx,1010h
@@ -991,10 +953,7 @@ gameplay_input_loop:
 		mov	di,ext_seg_d000
 		mov	al,2
 		call	word ptr cs:[10Ch]
-		mov	es,cs:gvar_game_seg
-		mov	si,vga_seg
-		mov	di,scene_framebuf
-		call	decompress_image
+		DECOMPRESS_VGA scene_framebuf
 		mov	bx,0
 		mov	cx,50C8h
 		call	word ptr cs:gfx_mode_fn
@@ -1638,9 +1597,7 @@ fill_buffer		endp
 
 palette_lookup		proc	near
 		push	ds
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	di,null_ofs
 		mov	cx,1650h
 		xor	ax,ax			; Zero register
@@ -1723,9 +1680,7 @@ busy_wait_delay		proc	near
 		add	ax,0AB40h
 		mov	ds,cs:gvar_game_seg
 		mov	si,ax
-		mov	ax,cs
-		add	ax,2000h
-		mov	es,ax
+		SET_ES_2000
 		mov	di,null_ofs
 		call	color_rotation
 		pop	ds

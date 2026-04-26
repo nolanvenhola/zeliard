@@ -80,6 +80,14 @@ glyph_render_ofs	equ	3ECBh			; render start offset within glyph_buf (glyph_buf +
 ; ----------------------------------------------------------------------
 tile_col_idx		equ	3E66h			;* current tile column counter (byte, 0..1Ch)
 
+; SET_ES_DS_TGA
+;   ES = DS = B800h (set both segments to Tandy/CGA framebuffer).
+SET_ES_DS_TGA	MACRO
+		mov	ax, 0B800h
+		mov	es, ax
+		mov	ds, ax
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -334,9 +342,7 @@ draw_tile_wrap_ok:
 
 draw_tile_cached:
 		mov	si,ds:tile_cache_tbl[bx]
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_TGA
 		movsw				; Mov [si] to es:[di]
 		movsw				; Mov [si] to es:[di]
 		add	di,1FFCh
@@ -1114,9 +1120,7 @@ limg_process_loop		endp
 
 fn_scroll_left:
 		push	ds
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_TGA
 		std				; Set direction flag
 		mov	si,scroll_l16_src
 		mov	al,8
@@ -1170,9 +1174,7 @@ scroll_l8_wrap:
 
 fn_scroll_right_16:
 		push	ds
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_TGA
 		std				; Set direction flag
 		mov	si,scroll_r16_src
 		mov	al,10h
@@ -1202,9 +1204,7 @@ scroll_r16_wrap:
 
 fn_scroll_right_8:
 		push	ds
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_TGA
 		mov	si,scroll_l8_src_b
 		mov	al,8
 
@@ -1255,9 +1255,7 @@ scroll_r8b_wrap:
 
 fn_scroll_right_16b:
 		push	ds
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_TGA
 		mov	si,tga_hud_ofs
 		mov	al,10h
 
@@ -1701,9 +1699,7 @@ fn_scroll_back:
 		add	si,tga_wrap_sub2
 
 scrollback_si_ok:
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_TGA
 		mov	bl,ch
 		xor	bh,bh			; Zero register
 		xor	ch,ch			; Zero register
@@ -1755,9 +1751,7 @@ fn_scroll_fwd:
 		add	si,tga_wrap2
 
 scrollfwd_si_ok:
-		mov	ax,0B800h
-		mov	es,ax
-		mov	ds,ax
+		SET_ES_DS_TGA
 		mov	bl,ch
 		xor	bh,bh			; Zero register
 		xor	ch,ch			; Zero register

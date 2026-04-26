@@ -108,6 +108,14 @@ video_mode		equ	335Bh			; byte: rendering mode 0..5 (AL on entry)
 ; ----------------------------------------------------------------------
 seg1_buf_base		equ	0			; seg1:0000 - mountains0 / ground decode destination
 
+; SET_DS_CS_1000
+;   DS = CS + 1000h (set DS to scratch decompression segment).
+SET_DS_CS_1000	MACRO
+		mov	dx, cs
+		add	dx, 1000h
+		mov	ds, dx
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -223,9 +231,7 @@ render_mountains		endp
 
 mountains_ega:
 		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
+		SET_DS_CS_1000
 		mov	si,0
 		mov	ax,0A000h
 		mov	es,ax
@@ -264,9 +270,7 @@ ega_mtn_blit_88_rows		endp
 
 mountains_cga:
 		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
+		SET_DS_CS_1000
 		mov	si,seg1_buf_base
 		mov	ax,0B800h
 		mov	es,ax
@@ -326,9 +330,7 @@ cga_mtn_no_wrap:
 
 mountains_hgc:
 		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
+		SET_DS_CS_1000
 		mov	si,0
 		mov	ax,0B000h
 		mov	es,ax
@@ -399,9 +401,7 @@ hgc_mtn_no_wrap:
 
 mountains_mcga:
 		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
+		SET_DS_CS_1000
 		mov	si,seg1_buf_base
 		mov	ax,0A000h
 		mov	es,ax
@@ -460,9 +460,7 @@ pixel_expand_mcga		endp
 
 mountains_cgaalt:
 		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
+		SET_DS_CS_1000
 		mov	si,seg1_buf_base
 		mov	ax,0B800h
 		mov	es,ax
@@ -590,9 +588,7 @@ render_ground		endp
 
 ground_ega:
 		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
+		SET_DS_CS_1000
 		mov	si,0
 		mov	ax,0A000h
 		mov	es,ax
@@ -665,9 +661,7 @@ copy_28b_ega		endp
 
 ground_cga:
 		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
+		SET_DS_CS_1000
 		mov	si,seg1_buf_base
 		mov	ax,0B800h
 		mov	es,ax
@@ -738,9 +732,7 @@ cga_gnd_no_wrap:
 
 ground_hgc:
 		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
+		SET_DS_CS_1000
 		mov	si,0
 		mov	ax,0B000h
 		mov	es,ax
@@ -823,9 +815,7 @@ hgc_gnd_no_wrap:
 
 ground_mcga:
 		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
+		SET_DS_CS_1000
 		mov	si,seg1_buf_base
 		mov	ax,0A000h
 		mov	es,ax
@@ -937,9 +927,7 @@ mcga_gnd_dup_loop:
 
 ground_cgaalt:
 		push	ds
-		mov	dx,cs
-		add	dx,1000h
-		mov	ds,dx
+		SET_DS_CS_1000
 		mov	si,seg1_buf_base
 		mov	ax,0B800h
 		mov	es,ax

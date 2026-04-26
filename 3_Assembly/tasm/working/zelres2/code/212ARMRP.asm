@@ -118,6 +118,31 @@ anim_state_1		equ	0BC25h			;* shopkeeper anim state byte 1
 anim_state_2		equ	0BC26h			;* shopkeeper anim state byte 2
 anim_state_3		equ	0BC27h			;* shopkeeper anim state byte 3
 
+; FORMAT_AND_RUN
+;   Format AX/DL (number) into the dialog buffer at 0BC33h (script_format_num),
+;   save current script_ip, run the formatted script, then restore script_ip.
+FORMAT_AND_RUN	MACRO
+		mov	di, 0BC33h
+		call	word ptr cs:script_format_num
+		mov	si, ds:gvar_script_ip
+		push	si
+		mov	word ptr ds:gvar_script_ip, 0BC33h
+		call	word ptr cs:script_step
+		pop	si
+		mov	ds:gvar_script_ip, si
+		ENDM
+; FILL_DLG_RECT
+;   Fill the dialog rectangle (0FFh) and prep gvar_dlg_pos at 302Eh,
+;   then call script_display_page.
+FILL_DLG_RECT	MACRO
+		mov	bx, 2F2Bh
+		mov	cx, 0C19h
+		mov	al, 0FFh
+		call	word ptr cs:drv_fill_rect
+		mov	word ptr ds:gvar_dlg_pos, 302Eh
+		call	word ptr cs:script_display_page
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -331,21 +356,9 @@ calc_trade_price:
 		call	word ptr cs:script_step
 		xor	dl,dl			; Zero register
 		mov	ax,ds:trade_gold_tmp
-		mov	di,0BC33h
-		call	word ptr cs:script_format_num
-		mov	si,ds:gvar_script_ip
-		push	si
-		mov	word ptr ds:gvar_script_ip,0BC33h
+		FORMAT_AND_RUN
 		call	word ptr cs:script_step
-		pop	si
-		mov	ds:gvar_script_ip,si
-		call	word ptr cs:script_step
-		mov	bx,2F2Bh
-		mov	cx,0C19h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:script_display_page
+		FILL_DLG_RECT
 		pushf				; Push flags
 		call	clear_menu_rect
 		popf				; Pop flags
@@ -464,14 +477,7 @@ weapon_trade_ok:
 		call	word ptr cs:script_step
 		mov	dl,ds:trade_gold_tmp
 		mov	ax,word ptr ds:trade_gold_tmp+1
-		mov	di,0BC33h
-		call	word ptr cs:script_format_num
-		mov	si,ds:gvar_script_ip
-		push	si
-		mov	word ptr ds:gvar_script_ip,0BC33h
-		call	word ptr cs:script_step
-		pop	si
-		mov	ds:gvar_script_ip,si
+		FORMAT_AND_RUN
 		call	word ptr cs:script_step
 		mov	byte ptr ds:trade_gold_tmp,0
 		mov	word ptr ds:trade_gold_tmp+1,0
@@ -493,25 +499,13 @@ weapon_trade_ok:
 		rcr	ax,1			; Rotate thru carry
 		mov	ds:trade_gold_tmp,dl
 		mov	word ptr ds:trade_gold_tmp+1,ax
-		mov	di,0BC33h
-		call	word ptr cs:script_format_num
-		mov	si,ds:gvar_script_ip
-		push	si
-		mov	word ptr ds:gvar_script_ip,0BC33h
-		call	word ptr cs:script_step
-		pop	si
-		mov	ds:gvar_script_ip,si
+		FORMAT_AND_RUN
 		call	word ptr cs:script_step
 
 skip_weapon_swap:
 		mov	word ptr ds:gvar_script_ip,0B0EDh
 		call	word ptr cs:script_step
-		mov	bx,2F2Bh
-		mov	cx,0C19h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:script_display_page
+		FILL_DLG_RECT
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		jnc	weapon_commit			; Jump if carry=0
 		retn
@@ -663,14 +657,7 @@ shield_trade_ok:
 		call	word ptr cs:script_step
 		mov	dl,ds:trade_gold_tmp
 		mov	ax,word ptr ds:trade_gold_tmp+1
-		mov	di,0BC33h
-		call	word ptr cs:script_format_num
-		mov	si,ds:gvar_script_ip
-		push	si
-		mov	word ptr ds:gvar_script_ip,0BC33h
-		call	word ptr cs:script_step
-		pop	si
-		mov	ds:gvar_script_ip,si
+		FORMAT_AND_RUN
 		call	word ptr cs:script_step
 		mov	byte ptr ds:trade_gold_tmp,0
 		mov	word ptr ds:trade_gold_tmp+1,0
@@ -692,25 +679,13 @@ shield_trade_ok:
 		rcr	ax,1			; Rotate thru carry
 		mov	ds:trade_gold_tmp,dl
 		mov	word ptr ds:trade_gold_tmp+1,ax
-		mov	di,0BC33h
-		call	word ptr cs:script_format_num
-		mov	si,ds:gvar_script_ip
-		push	si
-		mov	word ptr ds:gvar_script_ip,0BC33h
-		call	word ptr cs:script_step
-		pop	si
-		mov	ds:gvar_script_ip,si
+		FORMAT_AND_RUN
 		call	word ptr cs:script_step
 
 skip_shield_swap:
 		mov	word ptr ds:gvar_script_ip,0B0EDh
 		call	word ptr cs:script_step
-		mov	bx,2F2Bh
-		mov	cx,0C19h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:script_display_page
+		FILL_DLG_RECT
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		jnc	shield_commit			; Jump if carry=0
 		retn
@@ -902,12 +877,7 @@ menu_explain_sel_ok:
 		call	word ptr cs:script_step
 		mov	word ptr ds:gvar_script_ip,0B1A9h
 		call	word ptr cs:script_step
-		mov	bx,2F2Bh
-		mov	cx,0C19h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:script_display_page
+		FILL_DLG_RECT
 		mov	word ptr ds:gvar_script_ip,0ADEFh
 		jnc	explain_continue			; Jump if carry=0
 		retn
@@ -927,14 +897,7 @@ frame_delay_loop:
 		retn
 
 frame_delay		endp
-
-			                        ;* No entry point to code
-		mov	bx,2F2Bh
-		mov	cx,0C19h
-		mov	al,0FFh
-		call	word ptr cs:drv_fill_rect
-		mov	word ptr ds:gvar_dlg_pos,302Eh
-		call	word ptr cs:script_display_page
+		FILL_DLG_RECT
 		pushf				; Push flags
 		call	clear_menu_rect
 		popf				; Pop flags
