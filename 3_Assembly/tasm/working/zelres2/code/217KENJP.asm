@@ -221,43 +221,47 @@ kenja_cmd_dispatch		proc	near
 kenja_cmd_dispatch		endp
 
 			                        ;* No entry point to code
-		retf				; Return far
-data_9		db	0A0h
-		db	 8Eh,0A1h, 14h,0A9h, 62h,0A8h
-data_10		db	10h			; Data table (indexed access)
-		db	0A4h,0B4h,0A2h, 20h,0A4h, 3Bh
-		db	0A9h, 3Fh,0A9h, 43h,0A9h, 47h
-		db	0A9h, 4Bh,0A9h, 4Fh,0A9h, 53h
-		db	0A9h,0E8h,0B5h, 08h,0BBh, 22h
-		db	 27h,0B9h, 2Dh, 1Ch,0B0h,0FFh
-		db	 2Eh,0FFh, 16h, 00h, 20h,0C7h
-		db	 06h, 54h,0FFh
-		db	 25h, 27h
-data_11		db	0C6h
-		db	 06h, 52h,0FFh, 04h,0C6h, 06h
-		db	 53h,0FFh, 04h,0B9h, 04h, 00h
-		db	0BEh, 65h,0ADh, 2Eh,0FFh, 16h
-		db	 0Eh, 60h,0C6h, 06h, 56h,0FFh
-		db	 00h, 8Ah, 1Eh, 14h,0BBh, 2Eh
-		db	0FFh, 16h, 10h, 60h, 73h, 02h
-		db	 32h,0DBh
+; -- sage_cmd_tbl word table (8 entries for 4 cmds + jump targets), referenced
+;    via DS:[bx]; Sourcer can't follow.  Bytes are kept literal.
+		retf				; first byte CB (table sentinel; far-ret used as marker)
+data_9		db	0A0h			; cmd entry low byte
+		db	 8Eh,0A1h, 14h,0A9h, 62h,0A8h	; cmd ptrs A18E, A914, A862
+data_10		db	10h			; cmd-result lookup table (indexed by state)
+		db	0A4h,0B4h,0A2h, 20h,0A4h, 3Bh	; entries A410, A2B4, A420, A93B (split byte)
+		db	0A9h, 3Fh,0A9h, 43h,0A9h, 47h	; ptrs A93F, A943, A947
+		db	0A9h, 4Bh,0A9h, 4Fh,0A9h, 53h	; ptrs A94B, A94F, A953
+		db	0A9h,0E8h,0B5h, 08h,0BBh, 22h	; ptr A9 + call rel B5E8 + start of inline x86
+		db	 27h,0B9h, 2Dh, 1Ch,0B0h,0FFh	; ...mov bx,2722; mov cx,1C2D; mov al,FF
+		db	 2Eh,0FFh, 16h, 00h, 20h,0C7h	; call cs:[2000] (drv_fill_rect); mov word..
+		db	 06h, 54h,0FFh			; ..[FF54],..
+		db	 25h, 27h			; ..,2725 (gvar_dlg_pos)
+data_11		db	0C6h				; mov byte... (start of next opcode)
+		db	 06h, 52h,0FFh, 04h,0C6h, 06h	; mov [FF52],04 (gvar_dlg_cols); mov..
+		db	 53h,0FFh, 04h,0B9h, 04h, 00h	; ..[FF53],04 (gvar_dlg_rows); mov cx,4
+		db	0BEh, 65h,0ADh, 2Eh,0FFh, 16h	; mov si,AD65; call cs:..
+		db	 0Eh, 60h,0C6h, 06h, 56h,0FFh	; ...[600E] (show_menu_items); mov [FF56]..
+		db	 00h, 8Ah, 1Eh, 14h,0BBh, 2Eh	; ..,00; mov bl,[BB14] (state_cmd_byte)
+		db	0FFh, 16h, 10h, 60h, 73h, 02h	; call cs:[6010] (menu_show_list); pushf; jnc +2
+		db	 32h,0DBh			; xor bl,bl
 
 sage_state_jump:
 		mov	ds:state_cmd_byte,bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr ds:sage_init_tbl[bx]	;*
-		db	 1Ch,0A1h, 26h,0A1h
-data_13		dw	0A157h
-		db	 78h,0A1h,0E8h, 64h, 08h,0C7h
-		db	 06h, 4Ch,0FFh,0EBh,0ADh,0C3h
-		db	0E8h, 5Ah, 08h,0F6h, 06h, 15h
-		db	0BBh,0FFh, 75h, 07h,0C7h, 06h
-		db	 4Ch,0FFh, 08h,0AEh,0C3h,0F6h
-		db	 06h, 16h,0BBh,0FFh, 75h, 12h
-		db	0BFh,0A7h,0AEh,0F6h, 06h, 17h
-		db	0BBh,0FFh, 74h, 03h,0BFh, 03h
-		db	0AFh
+; -- sage_init_tbl partial entries + inline orphan x86 code.  Reached only via
+;    DS dispatch; Sourcer can't follow statically.
+		db	 1Ch,0A1h, 26h,0A1h		; sage_init_tbl entries: A11C, A126
+data_13		dw	0A157h				; sage_init_tbl entry: A157
+		db	 78h,0A1h,0E8h, 64h, 08h,0C7h	; entry A178; call rel; mov word..
+		db	 06h, 4Ch,0FFh,0EBh,0ADh,0C3h	; ..[FF4C],ADEB; retn
+		db	0E8h, 5Ah, 08h,0F6h, 06h, 15h	; call rel; test byte [BB15]
+		db	0BBh,0FFh, 75h, 07h,0C7h, 06h	; ..,FF; jnz +7; mov word..
+		db	 4Ch,0FFh, 08h,0AEh,0C3h,0F6h	; ..[FF4C],AE08; retn; test byte..
+		db	 06h, 16h,0BBh,0FFh, 75h, 12h	; ..[BB16],FF; jnz +18
+		db	0BFh,0A7h,0AEh,0F6h, 06h, 17h	; mov di,AEA7; test byte [BB17]
+		db	0BBh,0FFh, 74h, 03h,0BFh, 03h	; ..,FF; jz +3; mov di,AF03
+		db	0AFh				; (last byte of mov di,xxx)
 
 ret_save_state_ptr:
 		mov	ds:gvar_script_ip,di
@@ -432,8 +436,11 @@ check_hp_exp_tier		endp
 		pushf				; Push flags
 		push	ax
 		retn
-		db	 60h,0EAh, 03h, 06h, 09h, 0Bh
-		db	 0Dh, 0Fh, 12h,0FFh,0C6h
+; -- 11-byte palette-fade delta table (referenced via SI in palette_fade loops).
+;    Each byte is an HP/EXP delta value used to step palette indices.
+kenjp_palette_fade_deltas:
+		db	 60h,0EAh, 03h, 06h, 09h, 0Bh	; deltas 0-5
+		db	 0Dh, 0Fh, 12h,0FFh,0C6h	; deltas 6-10 (last byte spills into next opcode)
 
 palette_fade_start:
 		push	es
@@ -738,9 +745,11 @@ name_copy_store:
 
 record_experience_entry		endp
 
-		db	 2Ah, 2Eh, 75h, 73h, 72h, 00h
-		db	'Input name:'
-		db	0FFh
+; -- Save filename mask + input prompt strings.
+kenjp_save_file_mask:
+		db	 2Ah, 2Eh, 75h, 73h, 72h, 00h	; '*.usr',00 - DOS file-mask for save files
+		db	'Input name:'			; prompt text drawn during name entry
+		db	0FFh				; SCR_END terminator
 
 draw_char_row		proc	near
 		xor	ah,ah			; Zero register
@@ -1202,28 +1211,31 @@ save_wait_key_loop:
 		mov	al,0FFh
 		call	word ptr cs:drv_fill_rect
 		jmp	cmd_record_entry
-		db	0, 0
-		db	'STDPLY.BIN'
-		db	 00h,0BBh, 2Bh, 2Fh,0B9h, 19h
-		db	 0Ch,0B0h,0FFh, 2Eh,0FFh, 16h
-		db	 00h, 20h,0C7h, 06h, 54h,0FFh
-		db	 2Eh, 30h, 2Eh,0FFh, 16h, 08h
-		db	 60h, 9Ch,0E8h, 53h, 00h, 9Dh
-		db	 72h, 01h,0C3h, 33h,0C0h, 2Eh
-		db	0FFh, 2Eh, 00h,0FFh,0B0h, 01h
-		db	0EBh, 18h,0B0h, 02h,0EBh, 14h
-		db	0B0h, 03h,0EBh, 10h,0B0h, 04h
-		db	0EBh, 0Ch,0B0h, 05h,0EBh, 08h
-		db	0B0h, 06h,0EBh, 04h,0B0h, 07h
-		db	0EBh, 00h, 50h,0BBh, 1Ch,0AAh
-		db	 32h,0C0h,0B5h, 17h, 2Eh,0FFh
-		db	 16h, 04h, 20h, 58h,0A2h, 9Dh
-		db	 00h, 8Ah,0D8h,0FEh,0CBh, 32h
-		db	0FFh,0C6h, 87h,0BBh, 00h,0FFh
-		db	0A0h, 9Dh, 00h,0BBh,0A4h, 37h
-		db	 2Eh,0FFh, 16h, 1Eh, 20h, 2Eh
-		db	0FFh, 26h, 18h
-		db	20h
+; -- ref_stdply: chunk-loader reference for STDPLY.BIN (audio driver) +
+;    inline orphan x86 code for music init.  Sourcer can't follow.
+ref_stdply:
+		db	0, 0				; archive=0 (zelres1) + chunk=0 (placeholder bytes)
+		db	'STDPLY.BIN'			; filename
+		db	 00h,0BBh, 2Bh, 2Fh,0B9h, 19h	; filename term + mov bx,2F2B; mov cx,..
+		db	 0Ch,0B0h,0FFh, 2Eh,0FFh, 16h	; ..,190C; mov al,FF; call cs:..
+		db	 00h, 20h,0C7h, 06h, 54h,0FFh	; ..[2000] (drv_fill_rect); mov [FF54]..
+		db	 2Eh, 30h, 2Eh,0FFh, 16h, 08h	; ..,302E; call cs:[6008] (script_display_page)
+		db	 60h, 9Ch,0E8h, 53h, 00h, 9Dh	; pushf; pushf; call rel; popf
+		db	 72h, 01h,0C3h, 33h,0C0h, 2Eh	; jc +1; retn; xor ax,ax; ..
+		db	0FFh, 2Eh, 00h,0FFh,0B0h, 01h	; jmp far cs:[FF00]; mov al,01
+		db	0EBh, 18h,0B0h, 02h,0EBh, 14h	; jmp +24; mov al,02; jmp +20
+		db	0B0h, 03h,0EBh, 10h,0B0h, 04h	; mov al,03; jmp +16; mov al,04
+		db	0EBh, 0Ch,0B0h, 05h,0EBh, 08h	; jmp +12; mov al,05; jmp +8
+		db	0B0h, 06h,0EBh, 04h,0B0h, 07h	; mov al,06; jmp +4; mov al,07
+		db	0EBh, 00h, 50h,0BBh, 1Ch,0AAh	; jmp +0; push ax; mov bx,AA1C
+		db	 32h,0C0h,0B5h, 17h, 2Eh,0FFh	; xor al,al; mov ch,17; call cs:..
+		db	 16h, 04h, 20h, 58h,0A2h, 9Dh	; ..[2004] (drv_fn_palette_a); pop ax; mov..
+		db	 00h, 8Ah,0D8h,0FEh,0CBh, 32h	; ..[009D],al; mov bl,al; dec bl; xor..
+		db	0FFh,0C6h, 87h,0BBh, 00h,0FFh	; bl,bh; mov [BB87],FFh
+		db	0A0h, 9Dh, 00h,0BBh,0A4h, 37h	; mov al,[009D]; mov bx,A4 + cx,..
+		db	 2Eh,0FFh, 16h, 1Eh, 20h, 2Eh	; ..; call cs:[201E] (drv_fn2_cursor_draw)
+		db	0FFh, 26h, 18h			; jmp far cs:[18..]
+		db	20h				; (operand high byte)
 
 clear_sage_region		proc	near
 		mov	bx,2717h
@@ -1261,16 +1273,19 @@ sage_tile_col_loop:
 
 draw_sage_tile_grid		endp
 
-		db	 00h, 01h, 02h, 03h, 04h, 05h
-		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh
-		db	 0Ch, 0Dh, 0Eh, 0Fh, 10h, 11h
-		db	 12h, 13h, 14h, 15h, 16h, 17h
-		db	 18h, 19h, 1Ah, 1Bh, 1Ch, 1Dh
-		db	 1Eh, 1Fh
-		db	1Bh, ' !"#$'
-		db	'%', 1Bh, '&', 27h, '()', 1Bh, '+'
-		db	',-./0123456789:;<=>?@ABCDEFGHIJK'
-		db	'LMNOPQRSTUVWXYZ[\]'
+; -- sage_scan_data: 12-wide x 8-tall tile glyph map for the sage tile grid.
+;    Drawn by draw_sage_tile_grid using state_script_ptr as start position.
+kenjp_sage_scan_data:
+		db	 00h, 01h, 02h, 03h, 04h, 05h	; row 0 cols 0-5
+		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh	; row 0 cols 6-11
+		db	 0Ch, 0Dh, 0Eh, 0Fh, 10h, 11h	; row 1 cols 0-5
+		db	 12h, 13h, 14h, 15h, 16h, 17h	; row 1 cols 6-11
+		db	 18h, 19h, 1Ah, 1Bh, 1Ch, 1Dh	; row 2 cols 0-5
+		db	 1Eh, 1Fh			; row 2 cols 6-7
+		db	1Bh, ' !"#$'			; row 2/3 cont (ASCII glyphs)
+		db	'%', 1Bh, '&', 27h, '()', 1Bh, '+'	; row 3 ASCII glyphs (with 1B separators)
+		db	',-./0123456789:;<=>?@ABCDEFGHIJK'	; rows 4-5 ASCII glyphs
+		db	'LMNOPQRSTUVWXYZ[\]'		; row 6/7 ASCII glyphs (last 18 entries)
 
 render_glyph_32		proc	near
 		mov	cl,20h			; ' '
@@ -1317,38 +1332,47 @@ render_glyph_32		endp
 		xor	[bx+di],dh
 		xor	dh,[bp+di]
 		xor	al,35h			; '5'
-		db	'67<=>?@ABC'
-		db	 1Ah, 1Bh, 1Ch, 1Dh, 1Eh, 1Fh
-		db	1Bh, ' %', 1Bh, 'q', 27h, '(t', 1Bh
-		db	'+01u34v67<=>?@ABC^_'
-		db	 1Ch, 1Dh, 1Eh, 1Fh
-		db	'`abcdefgij0klmnop7<=>?@ABC'
-		db	 1Ah, 1Bh, 1Ch, 1Dh, 1Eh
-		db	'wx %', 1Bh, 'yezrs+0{|}~'
-		db	 7Fh, 36h, 37h, 3Ch, 80h, 81h
-		db	 3Fh, 40h, 41h, 42h, 43h, 1Ah
-		db	 1Bh, 1Ch, 1Dh, 1Eh, 1Fh, 1Bh
-		db	 20h, 25h, 82h, 83h, 65h, 7Ah
-		db	 84h, 85h, 2Bh, 30h, 86h, 87h
-		db	 7Dh, 88h, 89h
-		db	'67<=>?@ABC'
-		db	 1Ah, 1Bh, 1Ch, 1Dh, 1Eh, 1Fh
-		db	 1Bh, 20h, 25h, 8Ah, 8Bh, 65h
-		db	 66h, 8Ch, 8Dh, 2Bh, 30h, 8Eh
-		db	 8Fh, 7Dh, 90h, 91h, 92h
-		db	'7<=>?@ABC'
-		db	 1Ah, 1Bh, 1Ch, 1Dh, 1Eh, 1Fh
-		db	 1Bh, 20h, 25h, 93h, 94h, 65h
-		db	 95h, 96h, 97h, 2Bh, 30h, 31h
-		db	 98h, 7Dh, 88h, 99h, 9Ah
-		db	'7<=>?@ABC'
-		db	 1Ah, 9Bh, 9Ch, 1Dh, 1Eh, 1Fh
-		db	 1Bh, 20h, 25h, 9Dh, 9Eh, 65h
-		db	 95h, 9Fh, 1Bh, 2Bh, 30h,0A0h
-		db	0A1h, 7Dh, 6Eh,0A2h,0A3h, 37h
-		db	 3Ch, 3Dh, 3Eh, 3Fh, 40h,0A4h
-		db	0A5h
-		db	43h
+; -- sage_glyph_tbl: 32-byte glyph blocks for each sage portrait variant.
+;    Indexed via render_glyph_32 (cl=20h * char idx); 8 sages x 32 bytes each.
+kenjp_sage_glyph_tbl:
+; Variant 0 (Marid)
+		db	'67<=>?@ABC'			; sage 0 row 0 ASCII glyphs
+		db	 1Ah, 1Bh, 1Ch, 1Dh, 1Eh, 1Fh	; sage 0 row 0 cont (tile glyphs)
+		db	1Bh, ' %', 1Bh, 'q', 27h, '(t', 1Bh	; sage 0 row 1 (mixed ASCII + 1B separators)
+		db	'+01u34v67<=>?@ABC^_'		; sage 0 row 1/2 cont
+; Variant 1 (Yasmin)
+		db	 1Ch, 1Dh, 1Eh, 1Fh		; sage 1 row 0 (4 tile glyphs)
+		db	'`abcdefgij0klmnop7<=>?@ABC'	; sage 1 row 0/1 cont (ASCII glyphs)
+		db	 1Ah, 1Bh, 1Ch, 1Dh, 1Eh	; sage 1 row 2 (tile glyphs)
+		db	'wx %', 1Bh, 'yezrs+0{|}~'	; sage 1 row 2 cont (ASCII)
+; Variant 2 (Hajjar)
+		db	 7Fh, 36h, 37h, 3Ch, 80h, 81h	; sage 2 row 0 (mixed glyphs)
+		db	 3Fh, 40h, 41h, 42h, 43h, 1Ah	; sage 2 row 0 cont
+		db	 1Bh, 1Ch, 1Dh, 1Eh, 1Fh, 1Bh	; sage 2 row 1 (tiles + 1B separators)
+		db	 20h, 25h, 82h, 83h, 65h, 7Ah	; sage 2 row 1 cont
+		db	 84h, 85h, 2Bh, 30h, 86h, 87h	; sage 2 row 2
+		db	 7Dh, 88h, 89h			; sage 2 row 2 cont (last 3 glyphs)
+; Variant 3 (Chiriga)
+		db	'67<=>?@ABC'			; sage 3 row 0 ASCII
+		db	 1Ah, 1Bh, 1Ch, 1Dh, 1Eh, 1Fh	; sage 3 row 0 cont
+		db	 1Bh, 20h, 25h, 8Ah, 8Bh, 65h	; sage 3 row 1
+		db	 66h, 8Ch, 8Dh, 2Bh, 30h, 8Eh	; sage 3 row 1 cont
+		db	 8Fh, 7Dh, 90h, 91h, 92h	; sage 3 row 2 (last 5)
+; Variant 4 (Hisham)
+		db	'7<=>?@ABC'			; sage 4 row 0 ASCII (9 chars)
+		db	 1Ah, 1Bh, 1Ch, 1Dh, 1Eh, 1Fh	; sage 4 row 0 cont
+		db	 1Bh, 20h, 25h, 93h, 94h, 65h	; sage 4 row 1
+		db	 95h, 96h, 97h, 2Bh, 30h, 31h	; sage 4 row 1 cont
+		db	 98h, 7Dh, 88h, 99h, 9Ah	; sage 4 row 2 (5 entries)
+; Variant 5 (Maryam)
+		db	'7<=>?@ABC'			; sage 5 row 0 ASCII
+		db	 1Ah, 9Bh, 9Ch, 1Dh, 1Eh, 1Fh	; sage 5 row 0 cont (with 9B,9C variants)
+		db	 1Bh, 20h, 25h, 9Dh, 9Eh, 65h	; sage 5 row 1
+		db	 95h, 9Fh, 1Bh, 2Bh, 30h,0A0h	; sage 5 row 1 cont
+		db	0A1h, 7Dh, 6Eh,0A2h,0A3h, 37h	; sage 5 row 2
+		db	 3Ch, 3Dh, 3Eh, 3Fh, 40h,0A4h	; sage 5 row 2/3
+		db	0A5h				; sage 5 last glyph (A5)
+		db	43h				; trailing pad (43h, used as filler)
 
 anim_tick		proc	near
 		cmp	word ptr ds:gvar_timer_word,2
@@ -1421,10 +1445,12 @@ anim_record_use_blink_b:
 
 anim_tick		endp
 
-		db	29h
-data_17		dw	672Ah			; Data table (indexed access)
-		db	 68h, 05h, 06h, 07h, 06h, 05h
-		db	 04h, 03h, 04h
+; -- sage_anim_a/_b 9-byte phase table (used by anim_tick).
+;    First word forms data_17; trailing 9 bytes are the phase increments.
+		db	29h				; first byte of data_17 word (low)
+data_17		dw	672Ah			; data table sentinel word (672A)
+		db	 68h, 05h, 06h, 07h, 06h, 05h	; phase incs 0-5
+		db	 04h, 03h, 04h			; phase incs 6-8
 
 sage_intro_dispatch		proc	near
 		mov	si,0AD9Dh
@@ -1442,12 +1468,14 @@ sage_intro_dispatch		endp
 		lodsb				; String [si] to al
 		pop	bx
 		lodsb				; String [si] to al
-		db	 6Ch,0ACh, 7Dh,0ACh, 8Eh,0ACh
-		db	 9Fh,0ACh,0F6h, 06h,0E5h, 00h
-		db	 80h, 74h, 01h,0C3h,0BEh,0B8h
-		db	0B1h, 80h, 0Eh,0E5h, 00h, 80h
-		db	0C3h,0F6h, 06h,0E5h, 00h, 40h
-		db	 74h, 01h,0C3h
+; -- sage_intro_tbl ptrs + inline x86 hint-set bytes (orphan handlers reached
+;    via DS-resident jump table; Sourcer can't follow).
+		db	 6Ch,0ACh, 7Dh,0ACh, 8Eh,0ACh	; sage_intro_tbl entries 0-2: AC6C, AC7D, AC8E
+		db	 9Fh,0ACh,0F6h, 06h,0E5h, 00h	; entry 3: AC9F + test byte [00E5]..
+		db	 80h, 74h, 01h,0C3h,0BEh,0B8h	; ..,80; jz +1; retn; mov si,B1B8
+		db	0B1h, 80h, 0Eh,0E5h, 00h, 80h	; ..; or byte [00E5],80
+		db	0C3h,0F6h, 06h,0E5h, 00h, 40h	; retn; test byte [00E5],40
+		db	 74h, 01h,0C3h			; jz +1; retn
 
 hint_yasmin_set:
 		mov	si,0B22Dh
@@ -1515,202 +1543,219 @@ hint_indihar_set:
 		dec	dx
 		pop	cx
 		inc	cx
-		db	 2Eh, 47h, 52h, 50h, 00h,0CDh
-		db	0ACh,0DFh,0ACh,0F2h,0ACh, 05h
-		db	0ADh, 19h,0ADh, 2Ch,0ADh, 3Fh
-		db	0ADh, 51h,0ADh, 16h,0AFh, 00h
-		db	 0Eh
+; -- ref_kenja_grp_tail: trailing chars of "KENJ.GRP",0 + sage_cmd_msg_tbl.
+;    sage_cmd_msg_tbl is an 8-entry word table -> per-sage banner-msg pointers.
+		db	 2Eh, 47h, 52h, 50h, 00h,0CDh	; '.GRP',00 + first ptr lo (CD)
+		db	0ACh,0DFh,0ACh,0F2h,0ACh, 05h	; ptrs ACCD, ACDF, ACF2, AD05 (sages 0-3)
+		db	0ADh, 19h,0ADh, 2Ch,0ADh, 3Fh	; ptr cont + ptrs AD19, AD2C, AD3F (sages 4-6)
+		db	0ADh, 51h,0ADh, 16h,0AFh, 00h	; ptr cont + AD51 (sage 7) + start of header AF16
+		db	 0Eh				; banner len = 14 ('The Sage Marid')
 		db	'The Sage Marid'
-		db	 15h,0AFh, 00h, 0Fh
+		db	 15h,0AFh, 00h, 0Fh		; banner hdr: pos AF15, attr 00, len 0F
 		db	'The Sage Yasmin'
-		db	 14h,0AFh, 00h, 0Fh
+		db	 14h,0AFh, 00h, 0Fh		; banner hdr: pos AF14
 		db	'The Sage Hajjar'
-		db	 14h,0AFh, 02h, 10h
+		db	 14h,0AFh, 02h, 10h		; banner hdr: pos AF14, attr 02, len 16 ('The Sage Chiriga')
 		db	'The Sage Chiriga'
-		db	 14h,0AFh, 00h, 0Fh
+		db	 14h,0AFh, 00h, 0Fh		; banner hdr: pos AF14
 		db	'The Sage Hisham'
-		db	 14h,0AFh, 00h, 0Fh
+		db	 14h,0AFh, 00h, 0Fh		; banner hdr
 		db	'The Sage Maryam'
-		db	 15h,0AFh, 00h, 0Eh
+		db	 15h,0AFh, 00h, 0Eh		; banner hdr: len 14 ('The Sage Saied')
 		db	'The Sage Saied'
-		db	 14h,0AFh, 00h, 10h
+		db	 14h,0AFh, 00h, 10h		; banner hdr: pos AF14, attr 00, len 16 ('The Sage Indihar')
 data_18		db	'The Sage IndiharGo outside', 0
 		db	'See Power', 0
 		db	'Listen Knowledge', 0
 		db	'Record Experience', 0
-		db	0Ch, 'How can I help you, Brav'
-		db	 65h, 20h, 4Fh, 6Eh, 65h, 3Fh
-		db	 2Fh,0FFh, 00h
-		db	0Ch, 'Is there anything else I ca'
+		db	0Ch, 'How can I help you, Brav'		; CR + opening text
+		db	 65h, 20h, 4Fh, 6Eh, 65h, 3Fh	; 'e One?'
+		db	 2Fh,0FFh, 00h			; '/' + SCR_END opcode 00
+		db	0Ch, 'Is there anything else I ca'	; CR + text
 		db	'n do for you?/'
-		db	0FFh, 00h
-		db	0Ch, 'The Spirits are with you.'
-		db	 11h,0FFh,0FFh, 0Ch
+		db	0FFh, 00h			; SCR_END opcode 00
+		db	0Ch, 'The Spirits are with you.'	; CR + text (See Power success)
+		db	 11h,0FFh,0FFh, 0Ch		; ANIM-prefix + SCR_END terminator + CR
 data_21		db	'I shall call upon the Spirits an'
 		db	'd their po'
 		db	'wers..... /'
-		db	0FFh, 04h,0FFh, 01h
-		db	0Ch, 'I fear the spirits are no l'
+		db	0FFh, 04h,0FFh, 01h		; SCR_END opcode 04 + 01
+		db	0Ch, 'I fear the spirits are no l'	; CR + text
 		db	'onger with you. No matter how ma'
 		db	'ny times I try, it comes out'
 		db	' the same. '
-		db	0FFh, 00h, 0Ch
+		db	0FFh, 00h, 0Ch			; SCR_END 00 + CR
 		db	'You are brave, but your experien'
 		db	'ce is lacking. Come back when yo'
 		db	'u have accomplished more.'
-		db	0FFh, 00h
-		db	0Ch, 'I can no longer impart the '
+		db	0FFh, 00h			; SCR_END opcode 00
+		db	0Ch, 'I can no longer impart the '	; CR + text (max-blessing reached)
 		db	'power of the Spirits to you. Con'
 		db	'tinue on your quest. You will so'
 		db	'on find others to help you.'
-		db	0FFh, 00h
-		db	0Ch, 'I shall record your experie'
+		db	0FFh, 00h			; SCR_END opcode 00
+		db	0Ch, 'I shall record your experie'	; CR + text (Record Experience prompt)
 		db	'nces./'
-		db	0FFh, 03h
+		db	0FFh, 03h			; SCR_END opcode 03
 		db	'Place is saved on user disk. Wil'
 		db	'l you continue your quest?'
-		db	0FFh, 02h,0FFh, 06h, 13h,0FFh
-		db	 04h
-		db	4Fh
+		db	0FFh, 02h,0FFh, 06h, 13h,0FFh	; SCR_END 02 + 06 + 13h + SCR_END
+		db	 04h				; SCR_END opcode 04 (continued)
+		db	4Fh				; 'O' first char of next line
 		db	'h, Holy Spirits, purify my thoug'
 		db	'hts and grant me strength. '
-		db	0FFh, 04h,0FFh, 04h, 0Dh, 15h
-		db	0FFh, 00h,0FFh, 00h,0FFh,0FFh
-		db	 33h,0B0h, 69h,0B0h, 8Fh,0B0h
-		db	0E2h,0B0h, 3Fh,0B1h
-		db	59h
+		db	0FFh, 04h,0FFh, 04h, 0Dh, 15h	; SCR_END 04 + 04 + CR + 15
+		db	0FFh, 00h,0FFh, 00h,0FFh,0FFh	; SCR_END 00 + 00 + SCR_END terminator
+; -- sage_blessing_tbl: 5-entry word table -> blessing-tier text pointers
+;    indexed by tier (0..4 from sage_hp_check).
+kenjp_blessing_text_ptrs:
+		db	 33h,0B0h, 69h,0B0h, 8Fh,0B0h	; tier 0..2: ptrs B033, B069, B08F
+		db	0E2h,0B0h, 3Fh,0B1h		; tier 3..4: ptrs B0E2, B13F
+		db	59h				; 'Y' first char of tier-0 text
 		db	'our experience is lacking. Perse'
 		db	'vere in your quest.'
-		db	0FFh, 00h
+		db	0FFh, 00h			; SCR_END opcode 00
 		db	'You must accumulate more experie'
 		db	'nce.'
-		db	0FFh, 00h
+		db	0FFh, 00h			; SCR_END opcode 00
 		db	'I can see the faint light of the'
 		db	' Spirits in you. You must endure'
 		db	' a little longer.'
-		db	0FFh, 00h
+		db	0FFh, 00h			; SCR_END opcode 00
 		db	'The light of the Spirits is burs'
 		db	'ting forth within you. '
-		db	0FFh, 04h
-		db	0Dh, 'Indeed, your power has grow'
+		db	0FFh, 04h			; SCR_END opcode 04
+		db	0Dh, 'Indeed, your power has grow'	; CR + text (max-blessing)
 		db	'n.'
-		db	0FFh, 05h,0FFh, 04h,0FFh, 00h
+		db	0FFh, 05h,0FFh, 04h,0FFh, 00h	; SCR_END 05 + 04 + 00
 		db	'I can no longer impart the power'
 		db	' of the Spirits to you. Continue'
 		db	' on your quest. You'
 		db	' wi'
 		db	'll so'
 		db	'on find others to help you. '
-		db	0FFh, 00h, 49h, 20h
+		db	0FFh, 00h, 49h, 20h		; SCR_END 00 + 'I '
 		db	'am the Sage Marid./You are very '
 		db	'brave to embark on such a danger'
 		db	'ous journey. I&shall assist you '
 		db	'i'
 		db	'n your travels. '
-		db	0FFh, 00h, 49h, 20h
+		db	0FFh, 00h, 49h, 20h		; SCR_END 00 + 'I '
 		db	'am the Sage Yasmin./I have been '
 		db	'expecting you. I&shall teach you'
 		db	' the Magic Spell of Throwing '
 		db	'Swords: Espada.'
-		db	0FFh, 07h,0FFh, 00h
+		db	0FFh, 07h,0FFh, 00h		; SCR_END opcode 07 + 00
 		db	'I am the Sage Hajjar./I am happy'
 		db	' to see you\ve made it this far.'
 		db	' I&shall teach you the'
 		db	' Magic Spell of Arrows: Saeta.'
-		db	0FFh, 08h,0FFh, 00h
+		db	0FFh, 08h,0FFh, 00h		; SCR_END opcode 08 + 00
 		db	'I am the Sage Chiriga./You have '
 		db	'come far, and you must be cold. '
 		db	'I&shall teach you the Magic '
 		db	'Spell of Fire: Fuego.'
-		db	0FFh, 09h,0FFh, 00h
+		db	0FFh, 09h,0FFh, 00h		; SCR_END opcode 09 + 00
 		db	'I am the Sage Hisham./You are do'
 		db	'ing well to stand before me. I&s'
 		db	'hall teach you '
 		db	'the Magic '
 		db	'Spell of Flame: Lanzar.'
-		db	0FFh, 0Ah,0FFh, 00h
+		db	0FFh, 0Ah,0FFh, 00h		; SCR_END opcode 0A + 00
 		db	'I am the Sage Maryam./You have m'
 		db	'ade the Spirits proud with your '
 		db	'bravery. I&shall teach you the M'
 		db	'agic Spell of Falling Rocks: Ras'
 		db	'car.'
-		db	0FFh, 0Bh,0FFh, 00h
+		db	0FFh, 0Bh,0FFh, 00h		; SCR_END opcode 0B + 00
 		db	'I am the Sage Saied./You have li'
 		db	'ved through much, but your journ'
 		db	'ey is not over. You must be hot.'
 		db	' I&shall teach you the Magic Spe'
 		db	'll of Water: Agua.'
-		db	0FFh, 0Ch,0FFh, 00h
+		db	0FFh, 0Ch,0FFh, 00h		; SCR_END opcode 0C + 00
 		db	'I am the Sage of All Sages, Indi'
 		db	'har./Brave lad, you\ve done well'
 		db	' to get this far./'
-		db	0Fh
+		db	0Fh				; opcode 0F (Indihar special)
 		db	'I&shall teach you the Magic Spel'
 		db	'l of Lightning: Guerra.'
-		db	0FFh, 0Dh,0FFh, 00h
+		db	0FFh, 0Dh,0FFh, 00h		; SCR_END opcode 0D + 00
 		db	'      Disk error.', 0Dh, 'Please'
 		db	' check your disk', 0Dh, '  and p'
 		db	'ress spacebar.'
-		db	0FFh,0FBh,0B5h, 70h,0B6h,0EBh
-		db	0B6h, 6Dh,0B7h, 1Ch,0B8h,0B2h
-		db	0B8h, 54h,0B9h,0AFh,0B9h
-		db	0Ch, 'My master, the Sage Yasmin,'
+; -- sage_hint_ptr_tbl: 8-entry word table of per-sage knowledge-hint pointers,
+;    indexed by sage_id-1 (matches the 8 hints below).
+kenjp_sage_hint_ptr_tbl:
+		db	0FFh,0FBh,0B5h, 70h,0B6h,0EBh	; SCR_END marker + ptrs B5FB, B670, B6EB
+		db	0B6h, 6Dh,0B7h, 1Ch,0B8h,0B2h	; ptrs B66D (alias), B71C, B8B2
+		db	0B8h, 54h,0B9h,0AFh,0B9h		; ptrs B8B2 cont, B954, B9AF
+; -- per-sage hint texts (8 hints, each ends with 11h,FFh,00h,0C = ANIM + SCR_END + CR)
+; Hint 0 (Marid)
+		db	0Ch, 'My master, the Sage Yasmin,'	; CR + text
 		db	' resides in the underground town'
 		db	'. She is a person you can turn t'
 		db	'o if you are in need. '
-		db	 11h,0FFh, 00h, 0Ch
+		db	 11h,0FFh, 00h, 0Ch		; ANIM-prefix + SCR_END opcode 00 + CR
+; Hint 1 (Yasmin)
 		db	'When you leave the city, climb t'
 		db	'o the plateau on the left. You\l'
 		db	'l see a door that looks like the'
 		db	' exit from this world. '
-		db	 11h,0FFh, 00h, 0Ch
+		db	 11h,0FFh, 00h, 0Ch		; ANIM + SCR_END 00 + CR
+; Hint 2 (Hajjar)
 		db	'The exit from this world is very'
 		db	' near the exit from the village.'
 		db	' However, before you go there yo'
 		db	'u must have the Hero\s Crest. '
-		db	 11h,0FFh, 00h, 0Ch
+		db	 11h,0FFh, 00h, 0Ch		; ANIM + SCR_END 00 + CR
+; Hint 3 (Chiriga)
 		db	'This is a message from the Spiri'
 		db	'ts: Bend when you walk a low roa'
 		db	'd. Walk not on the steep path wi'
 		db	'th the needles of ice, choose an'
 		db	'other path instead. Heed well th'
 		db	'ese words. '
-		db	 11h,0FFh, 00h, 0Ch
+		db	 11h,0FFh, 00h, 0Ch		; ANIM + SCR_END 00 + CR
+; Hint 4 (Hisham)
 		db	'You can\t defeat the demons at t'
 		db	'he edge of the badlands without '
 		db	'the Knight\s Sword. Until you ge'
 		db	't that sword, do not open the do'
 		db	'or of the demons. '
-		db	 11h,0FFh, 00h, 0Ch
+		db	 11h,0FFh, 00h, 0Ch		; ANIM + SCR_END 00 + CR
+; Hint 5 (Maryam)
 		db	'Once you leave this world, get t'
 		db	'he Silkarn shoes made by the spi'
 		db	'rits at the behest of Percel. If'
 		db	' you do not get those, you canno'
 		db	't travel far from this world. '
-		db	 11h,0FFh, 00h, 0Ch
+		db	 11h,0FFh, 00h, 0Ch		; ANIM + SCR_END 00 + CR
+; Hint 6 (Saied)
 		db	'That world is controlled by drag'
 		db	'ons. To get there, you have to o'
 		db	'pen three closed doors.'
-		db	 11h,0FFh, 00h, 0Ch
+		db	 11h,0FFh, 00h, 0Ch		; ANIM + SCR_END 00 + CR
 		db	'At the edge of this world is the'
 		db	' final foe, Jashiin./To fight Ja'
 		db	'shiin, you must have the Sword o'
 		db	'f the Fairy Flame. And to get th'
 		db	'ere, you must topple the invinci'
 		db	'ble monster Alguien.'
-		db	 11h,0FFh, 00h, 0Ch
+		db	 11h,0FFh, 00h, 0Ch		; ANIM + SCR_END 00 + CR (end Indihar hint)
+; -- "wake up" / departure script (post-record, played after save)
 		db	'While you were unconscious, the '
 		db	'spirits brought you here./'
-		db	0FFh, 04h,0FFh, 04h
+		db	0FFh, 04h,0FFh, 04h		; SCR_END opcode 04 + 04
 		db	'Be careful not to exhaust yourse'
 		db	'lf in battle./'
-		db	0FFh, 04h
+		db	0FFh, 04h			; SCR_END opcode 04
 		db	'Now be on your way. '
-		db	0FFh, 04h, 54h
+		db	0FFh, 04h, 54h			; SCR_END opcode 04 + 'T' (start of next phrase)
 		db	'he spirits ar'
 		db	'e looking after you. '
-		db	 11h,0FFh,0FFh, 00h
-		db	42 dup (0)
+		db	 11h,0FFh,0FFh, 00h		; ANIM-prefix + SCR_END terminator + 00
+		db	42 dup (0)			; trailing pad to chunk boundary
 
 seg_a		ends
 

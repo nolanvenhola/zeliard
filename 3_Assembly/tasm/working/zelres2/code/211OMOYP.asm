@@ -193,27 +193,27 @@ gfx_driver_ref_tbl_lbl	label	word		; @ 0A0BBh (file +0xBF)
 ref_gdega_lbl	label	byte			; @ 0A0C7h (file +0xCB)
 		db	 00h, 02h			; archive=0, chunk=02h
 		db	'gdega.bin'
-		db	 00h
+		db	 00h				; filename terminator
 
 ref_gdcga_lbl	label	byte			; @ 0A0D3h (file +0xD7)
 		db	 00h, 03h			; archive=0, chunk=03h
 		db	'gdcga.bin'
-		db	 00h
+		db	 00h				; filename terminator
 
 ref_gdhgc_lbl	label	byte			; @ 0A0DFh (file +0xE3)
 		db	 00h, 04h			; archive=0, chunk=04h
 		db	'gdhgc.bin'
-		db	 00h
+		db	 00h				; filename terminator
 
 ref_gdmcga_lbl	label	byte			; @ 0A0EBh (file +0xEF)
 		db	 00h, 06h			; archive=0, chunk=06h
 		db	'gdmcga.bin'
-		db	 00h
+		db	 00h				; filename terminator
 
 ref_gdtga_lbl	label	byte			; @ 0A0F8h (file +0xFC)
 		db	 00h, 05h			; archive=0, chunk=05h
 		db	'gdtga.bin'
-		db	 00h
+		db	 00h				; filename terminator
 
 omoyp		endp
 
@@ -263,44 +263,44 @@ draw_hut_banner	endp
 ;--------------------------------------------------------------------------
 
 banner_tile_grid_lbl	label	byte		; @ +0x129
-		db	7 dup (0)
-		db	1, 2
-		db	14 dup (0)
-		db	3, 4, 5, 6, 0
-		db	12 dup (0)
-		db	 07h, 08h, 09h, 0Ah, 00h
-		db	12 dup (0)
-		db	 0Bh, 0Ch, 0Dh, 0Eh, 00h
-		db	12 dup (0)
-		db	 0Fh, 10h, 11h, 12h, 00h
-		db	12 dup (0)
-		db	 13h, 14h, 15h, 16h, 00h
-		db	12 dup (0)
-		db	 17h, 18h, 19h, 1Ah, 00h
-		db	7 dup (0)
-		db	 1Bh, 1Ch, 1Dh, 1Eh, 1Fh
-		db	 20h, 21h, 22h, 23h
-		db	7 dup (0)
-		db	'$'
-		db	'%&', 27h, '()*+,-'
-		db	7 dup (0)
-		db	'./012345678'
-		db	0, 0, 0, 0, 0, 0
-		db	'9:;<=>?@ABC'
-		db	 00h, 00h, 00h, 00h, 00h, 00h
-		db	 44h, 45h, 46h, 47h, 00h, 48h
-		db	 49h, 4Ah, 4Bh, 4Ch, 4Dh, 00h
-		db	 00h, 00h, 00h, 00h, 00h, 4Eh
-		db	 4Fh, 50h, 51h, 00h, 52h, 53h
-		db	 54h, 55h, 56h, 57h, 58h, 00h
-		db	 00h, 00h, 00h, 00h
-		db	'YZ[\]^_`abcdef'
-		db	0, 0, 0
-		db	'ghijklmnopqrstu'
-		db	0, 0
-		db	'vwxyz{|}~'
-		db	 7Fh, 80h, 81h, 82h, 83h, 84h
-		db	 85h, 86h
+		db	7 dup (0)			; row 0a: 7 blank cells (left margin)
+		db	1, 2				; row 0b: tile ids 1,2
+		db	14 dup (0)			; row 0c: 14 blank cells
+		db	3, 4, 5, 6, 0			; row 1a: tile ids 3-6 + blank
+		db	12 dup (0)			; row 1b: 12 blank cells
+		db	 07h, 08h, 09h, 0Ah, 00h	; row 2a: tile ids 7-10 + blank
+		db	12 dup (0)			; row 2b: 12 blank cells
+		db	 0Bh, 0Ch, 0Dh, 0Eh, 00h	; row 3a: tile ids 11-14 + blank
+		db	12 dup (0)			; row 3b: 12 blank cells
+		db	 0Fh, 10h, 11h, 12h, 00h	; row 4a: tile ids 15-18 + blank
+		db	12 dup (0)			; row 4b: 12 blank cells
+		db	 13h, 14h, 15h, 16h, 00h	; row 5a: tile ids 19-22 + blank
+		db	12 dup (0)			; row 5b: 12 blank cells
+		db	 17h, 18h, 19h, 1Ah, 00h	; row 6a: tile ids 23-26 + blank
+		db	7 dup (0)			; row 6b: 7 blank cells
+		db	 1Bh, 1Ch, 1Dh, 1Eh, 1Fh	; row 7a: tile ids 27-31
+		db	 20h, 21h, 22h, 23h		; row 7b: tile ids 32-35
+		db	7 dup (0)			; row 7c: 7 blank cells
+		db	'$'				; row 8a: tile id 0x24
+		db	'%&', 27h, '()*+,-'		; row 8b: tile ids 0x25-0x2D (ASCII)
+		db	7 dup (0)			; row 8c: 7 blank cells
+		db	'./012345678'			; row 9a: tile ids 0x2E-0x38
+		db	0, 0, 0, 0, 0, 0		; row 9b: 6 blank cells
+		db	'9:;<=>?@ABC'			; row 10a: tile ids 0x39-0x43
+		db	 00h, 00h, 00h, 00h, 00h, 00h	; row 10b: 6 blank cells
+		db	 44h, 45h, 46h, 47h, 00h, 48h	; row 11a: tile ids 0x44-0x48 with one blank
+		db	 49h, 4Ah, 4Bh, 4Ch, 4Dh, 00h	; row 11b: tile ids 0x49-0x4D + blank
+		db	 00h, 00h, 00h, 00h, 00h, 4Eh	; row 12a: 5 blanks then tile 0x4E
+		db	 4Fh, 50h, 51h, 00h, 52h, 53h	; row 12b: tile ids 0x4F-0x53 with one blank
+		db	 54h, 55h, 56h, 57h, 58h, 00h	; row 12c: tile ids 0x54-0x58 + blank
+		db	 00h, 00h, 00h, 00h		; row 13a: 4 blank cells
+		db	'YZ[\]^_`abcdef'		; row 13b: tile ids 0x59-0x66 (ASCII)
+		db	0, 0, 0				; row 14a: 3 blank cells
+		db	'ghijklmnopqrstu'		; row 14b: tile ids 0x67-0x75 (ASCII)
+		db	0, 0				; row 15a: 2 blank cells
+		db	'vwxyz{|}~'			; row 15b: tile ids 0x76-0x7E (ASCII)
+		db	 7Fh, 80h, 81h, 82h, 83h, 84h	; row 15c: tile ids 0x7F-0x84
+		db	 85h, 86h			; row 15d: tile ids 0x85,0x86 (last 2)
 ;--------------------------------------------------------------------------
 ; OMOYA.GRP chunk reference @ 0A239h:
 ;   [archive=1, chunk=14h, 'OMOYA.GRP', 0, header_fields...]

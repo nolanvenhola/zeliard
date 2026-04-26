@@ -247,12 +247,13 @@ draw_intro_12x8	endp
 
 ;-- intro_tile_map data: 12 wide x 8 tall glyph indices drawn by
 ;  draw_intro_12x8.  Shows the church interior pixel art.
-		db	 00h, 01h, 02h, 03h, 04h, 05h
-		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh
-		db	 0Ch, 0Dh, 0Eh, 0Fh, 10h, 11h
-		db	 12h, 10h, 13h, 14h, 15h, 16h
-		db	 17h, 18h, 19h, 1Ah, 1Bh, 1Ch
-		db	 1Dh, 1Eh, 1Fh
+churp_intro_tile_map:
+		db	 00h, 01h, 02h, 03h, 04h, 05h	; row 0 (cols 0-5)
+		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh	; row 0 cont. (cols 6-11)
+		db	 0Ch, 0Dh, 0Eh, 0Fh, 10h, 11h	; row 1 (cols 0-5)
+		db	 12h, 10h, 13h, 14h, 15h, 16h	; row 1 cont. (cols 6-11)
+		db	 17h, 18h, 19h, 1Ah, 1Bh, 1Ch	; row 2 (cols 0-5)
+		db	 1Dh, 1Eh, 1Fh			; row 2 cont. (cols 6-8); rest is ASCII below
 		db	' !"#$'
 		db	'%&&', 27h, '(&)*+,-./0123456789:'
 		db	';'
@@ -421,8 +422,8 @@ church_title_text:
 		db	' and let the Spirit heal you. '
 		db	0FFh, 02h		; SCR_END + layout 2
 		db	'/May God go with you.'
-		db	0FFh, 00h, 11h,0FFh,0FFh, 00h
-		db	 00h
+		db	0FFh, 00h, 11h,0FFh,0FFh, 00h	; SCR_END + 00 + 11 + SCR_END + 0FFh,00h (terminator)
+		db	 00h				; final padding byte
 
 seg_a		ends
 

@@ -306,62 +306,62 @@ render_portrait_variant	endp
 ; Glyph indices point into the game's tile/character set.
 
 portrait_variant_data:
-		db	 00h, 01h, 02h, 03h, 3Eh, 3Fh	; base frame row 0
-		db	 40h, 41h, 18h, 19h, 1Ah, 1Bh	; row 1
-		db	 04h, 05h, 06h, 07h, 42h, 43h	; row 2
-		db	 44h, 45h, 1Ch, 1Dh, 1Eh, 1Fh	; row 3
-		db	8, 9, 0Ah, 'FGHIJK !"'		; row 4 (mix of tile ids + text glyphs)
-		db	0Bh
-		db	0Ch, 0Dh, 'LMNOPQ#$'		; row 5
-		db	'%'
-		db	 0Eh, 0Fh, 10h
-		db	'RSTUVW&', 27h, '('		; row 6
-		db	 11h, 12h, 13h
-		db	'XYZ[\)*+,'
-		db	 14h, 15h, 16h, 17h
-		db	']^_-./0123456789:;<='
-		db	0DCh,0A1h, 06h,0A2h, 30h,0A2h	; variant pointer words (embedded)
-		db	 5Ah,0A2h, 84h,0A2h,0AEh,0A2h
-		db	0D8h,0A2h, 03h, 3Eh, 3Fh, 40h	; variant 2 data begins
-		db	 41h, 18h, 07h, 42h, 43h, 44h
-		db	 45h, 1Ch
-		db	'FGHIJKLMNOPQRSTUVWXYZ[\)'
-		db	 17h, 5Dh, 5Eh, 5Fh, 2Dh, 2Eh
-		db	 03h, 3Eh, 3Fh, 40h, 41h, 18h
-		db	 07h, 42h, 43h, 44h, 45h, 1Ch
-		db	'FGHIJKLMNOPQR`abVWXYZ[\)'
-		db	 17h, 5Dh, 5Eh, 5Fh, 2Dh, 2Eh
-		db	 03h, 3Eh, 3Fh, 40h, 41h, 18h
-		db	 07h, 42h, 43h, 44h, 45h, 1Ch
-		db	'FGHIJKLMNOPQRcdeVWXYZ[\)'
-		db	 17h, 5Dh, 5Eh, 5Fh, 2Dh, 2Eh
-		db	 03h, 66h, 67h, 68h, 69h, 18h
-		db	 07h, 6Ah, 6Bh, 6Ch, 6Dh, 1Ch
-		db	'nopqrstuvwxyz{|}~'
-		db	 7Fh, 80h, 81h, 82h, 83h, 84h
-		db	 29h, 17h, 85h, 86h, 87h, 2Dh
-		db	 2Eh, 03h, 88h, 89h, 8Ah, 8Bh
-		db	 18h, 07h, 8Ch, 8Dh, 8Eh, 8Fh
-		db	 1Ch, 90h, 91h, 92h, 93h, 94h
-		db	 95h, 96h,0ADh,0ABh,0AEh, 9Ah
-		db	 9Bh, 9Ch, 9Dh, 9Eh, 9Fh,0A0h
-		db	0A1h,0A2h,0A3h,0A4h,0A5h,0A6h
-		db	 29h, 17h,0A7h,0A8h,0A9h, 2Dh
-		db	 2Eh, 03h, 88h, 89h, 8Ah, 8Bh
-		db	 18h, 07h, 8Ch, 8Dh, 8Eh, 8Fh
-		db	 1Ch, 90h, 91h, 92h, 93h, 94h
-		db	 95h, 96h,0AAh,0ABh,0ACh, 9Ah
-		db	 9Bh, 9Ch, 9Dh, 9Eh, 9Fh,0A0h
-		db	0A1h,0A2h,0A3h,0A4h,0A5h,0A6h
-		db	 29h, 17h,0A7h,0A8h,0A9h, 2Dh
-		db	 2Eh, 03h, 88h, 89h, 8Ah, 8Bh
-		db	 18h, 07h, 8Ch, 8Dh, 8Eh, 8Fh
-		db	 1Ch, 90h, 91h, 92h, 93h, 94h
-		db	 95h, 96h, 97h, 98h, 99h, 9Ah
-		db	 9Bh, 9Ch, 9Dh, 9Eh, 9Fh,0A0h
-		db	0A1h,0A2h,0A3h,0A4h,0A5h,0A6h
-		db	 29h, 17h,0A7h,0A8h,0A9h
-		db	 2Dh, 2Eh
+		db	 00h, 01h, 02h, 03h, 3Eh, 3Fh	; variant 0 row 0 (6 glyphs)
+		db	 40h, 41h, 18h, 19h, 1Ah, 1Bh	; variant 0 row 1
+		db	 04h, 05h, 06h, 07h, 42h, 43h	; variant 0 row 2
+		db	 44h, 45h, 1Ch, 1Dh, 1Eh, 1Fh	; variant 0 row 3
+		db	8, 9, 0Ah, 'FGHIJK !"'		; variant 0 row 4 partial (3 tiles + ASCII glyphs spanning into row 5)
+		db	0Bh				; variant 0 row 4 cont (last glyph)
+		db	0Ch, 0Dh, 'LMNOPQ#$'		; variant 0 row 5 (2 tiles + ASCII glyphs)
+		db	'%'				; variant 0 row 5 cont
+		db	 0Eh, 0Fh, 10h			; variant 0 row 5 last 3 glyphs
+		db	'RSTUVW&', 27h, '('		; variant 0 row 6 (ASCII glyphs)
+		db	 11h, 12h, 13h			; variant 0 row 6 cont
+		db	'XYZ[\)*+,'			; variant 0 row 6/end (ASCII glyphs)
+		db	 14h, 15h, 16h, 17h		; variant 0 trailing 4 glyphs
+		db	']^_-./0123456789:;<='		; variant 0 trailing ASCII glyphs
+		db	0DCh,0A1h, 06h,0A2h, 30h,0A2h	; portrait_ptr_tbl entries 0-2 (A1DC, A206, A230)
+		db	 5Ah,0A2h, 84h,0A2h,0AEh,0A2h	; portrait_ptr_tbl entries 3-5 (A25A, A284, A2AE)
+		db	0D8h,0A2h, 03h, 3Eh, 3Fh, 40h	; portrait_ptr_tbl entry 6 (A2D8) + variant 1 row 0 begins
+		db	 41h, 18h, 07h, 42h, 43h, 44h	; variant 1 row 0 cont + row 1
+		db	 45h, 1Ch			; variant 1 row 1 cont
+		db	'FGHIJKLMNOPQRSTUVWXYZ[\)'	; variant 1 ASCII glyphs (rows 2-4)
+		db	 17h, 5Dh, 5Eh, 5Fh, 2Dh, 2Eh	; variant 1 trailing 6 glyphs
+		db	 03h, 3Eh, 3Fh, 40h, 41h, 18h	; variant 2 row 0
+		db	 07h, 42h, 43h, 44h, 45h, 1Ch	; variant 2 row 1
+		db	'FGHIJKLMNOPQR`abVWXYZ[\)'	; variant 2 ASCII glyphs (note `ab variant)
+		db	 17h, 5Dh, 5Eh, 5Fh, 2Dh, 2Eh	; variant 2 trailing
+		db	 03h, 3Eh, 3Fh, 40h, 41h, 18h	; variant 3 row 0
+		db	 07h, 42h, 43h, 44h, 45h, 1Ch	; variant 3 row 1
+		db	'FGHIJKLMNOPQRcdeVWXYZ[\)'	; variant 3 ASCII glyphs (note cde variant)
+		db	 17h, 5Dh, 5Eh, 5Fh, 2Dh, 2Eh	; variant 3 trailing
+		db	 03h, 66h, 67h, 68h, 69h, 18h	; variant 4 row 0 (different glyph set)
+		db	 07h, 6Ah, 6Bh, 6Ch, 6Dh, 1Ch	; variant 4 row 1
+		db	'nopqrstuvwxyz{|}~'		; variant 4 ASCII glyphs
+		db	 7Fh, 80h, 81h, 82h, 83h, 84h	; variant 4 trailing tile glyphs (high indices)
+		db	 29h, 17h, 85h, 86h, 87h, 2Dh	; variant 4 trailing
+		db	 2Eh, 03h, 88h, 89h, 8Ah, 8Bh	; variant 5 begins (post-victory variant)
+		db	 18h, 07h, 8Ch, 8Dh, 8Eh, 8Fh	; variant 5 row 0 cont
+		db	 1Ch, 90h, 91h, 92h, 93h, 94h	; variant 5 row 1
+		db	 95h, 96h,0ADh,0ABh,0AEh, 9Ah	; variant 5 row 2 (eyes/mouth alt set: AD AB AE)
+		db	 9Bh, 9Ch, 9Dh, 9Eh, 9Fh,0A0h	; variant 5 row 3
+		db	0A1h,0A2h,0A3h,0A4h,0A5h,0A6h	; variant 5 row 4
+		db	 29h, 17h,0A7h,0A8h,0A9h, 2Dh	; variant 5 trailing
+		db	 2Eh, 03h, 88h, 89h, 8Ah, 8Bh	; variant 6 row 0 (alt eyes/mouth)
+		db	 18h, 07h, 8Ch, 8Dh, 8Eh, 8Fh	; variant 6 row 0 cont
+		db	 1Ch, 90h, 91h, 92h, 93h, 94h	; variant 6 row 1
+		db	 95h, 96h,0AAh,0ABh,0ACh, 9Ah	; variant 6 row 2 (eyes/mouth alt: AA AB AC)
+		db	 9Bh, 9Ch, 9Dh, 9Eh, 9Fh,0A0h	; variant 6 row 3
+		db	0A1h,0A2h,0A3h,0A4h,0A5h,0A6h	; variant 6 row 4
+		db	 29h, 17h,0A7h,0A8h,0A9h, 2Dh	; variant 6 trailing
+		db	 2Eh, 03h, 88h, 89h, 8Ah, 8Bh	; variant 7 row 0
+		db	 18h, 07h, 8Ch, 8Dh, 8Eh, 8Fh	; variant 7 row 0 cont
+		db	 1Ch, 90h, 91h, 92h, 93h, 94h	; variant 7 row 1
+		db	 95h, 96h, 97h, 98h, 99h, 9Ah	; variant 7 row 2 (default eyes/mouth: 97 98 99)
+		db	 9Bh, 9Ch, 9Dh, 9Eh, 9Fh,0A0h	; variant 7 row 3
+		db	0A1h,0A2h,0A3h,0A4h,0A5h,0A6h	; variant 7 row 4
+		db	 29h, 17h,0A7h,0A8h,0A9h	; variant 7 trailing 5 glyphs
+		db	 2Dh, 2Eh			; variant 7 last 2 glyphs
 
 face_anim_tick	proc	near
 		cmp	word ptr ds:gvar_menu_step,4
@@ -538,64 +538,64 @@ select_script_branch	endp
 ; Control codes: 0xFF = function call, 0x0C = scroll/clear, 0x0D = CR,
 ; 0x11 = small-pause? 0xFFxx = two-byte dispatch. Strings are rendered
 ; as text between control sequences.
-		db	'King of Felishika', 0Ch
-		db	0FFh, 00h,0FFh, 03h,0FFh, 04h
+		db	'King of Felishika', 0Ch		; banner title + CR (0Ch = clear/scroll)
+		db	0FFh, 00h,0FFh, 03h,0FFh, 04h	; SCR_END opcode 00 + 03 + 04 (intro pause/anim)
 		db	'Brave Duke Garland, '
-		db	0FFh, 05h,0FFh, 02h,0FFh, 04h
+		db	0FFh, 05h,0FFh, 02h,0FFh, 04h	; SCR_END opcodes 05 + 02 + 04 (mid-pause)
 		db	'you\ll need money for your journ'
 		db	'ey./I&hereby bestow upon you 100'
 		db	'0&Go'
-		db	 6Ch, 64h, 73h, 2Eh,0FFh, 05h	; 'lds.', 0FF, 05
-		db	0FFh, 02h,0FFh, 01h, 0Dh,0FFh
-		db	 04h
+		db	 6Ch, 64h, 73h, 2Eh,0FFh, 05h	; 'lds.', SCR_END opcode 05 (gold-award trigger)
+		db	0FFh, 02h,0FFh, 01h, 0Dh,0FFh	; SCR_END 02 + 01 + CR + SCR_END
+		db	 04h				; SCR_END opcode 04 (continued)
 		db	'Go to town and outfit yourself, '
 		db	'then make haste to the labyrinth'
 		db	' to defeat the forces of Jashiin'
 		db	'. My kingdom and the life of my '
 		db	'daughter are at stake.'
-		db	0FFh, 05h, 11h,0FFh,0FFh, 0Ch
+		db	0FFh, 05h, 11h,0FFh,0FFh, 0Ch	; SCR_END 05 + ANIM-prefix 11 + SCR_END terminator + CR
 ; -- Second-visit script: "did you forget something?" --------------------
-		db	0FFh, 00h,0FFh, 03h,0FFh, 04h
+		db	0FFh, 00h,0FFh, 03h,0FFh, 04h	; SCR_END opcodes 00 + 03 + 04 (intro)
 		db	'Brave Duke, did you forget somet'
 		db	'hing?'
-		db	0FFh, 05h,0FFh, 02h, 0Dh,0FFh
-		db	 04h
+		db	0FFh, 05h,0FFh, 02h, 0Dh,0FFh	; SCR_END 05 + 02 + CR + SCR_END
+		db	 04h				; SCR_END opcode 04
 		db	'The entrance to the labyrinth is'
 		db	' at the edge of town.'
-		db	0FFh, 05h, 0Dh,0FFh, 04h
+		db	0FFh, 05h, 0Dh,0FFh, 04h		; SCR_END 05 + CR + SCR_END 04
 		db	'Please hurry, before it\s too la'
 		db	'te! '
-		db	0FFh, 05h, 11h,0FFh,0FFh, 0Ch
+		db	0FFh, 05h, 11h,0FFh,0FFh, 0Ch	; SCR_END 05 + ANIM-prefix 11 + SCR_END terminator + CR
 ; -- Third-visit script: "I am in debt to you" (quest incomplete) --------
-		db	0FFh, 00h,0FFh, 03h,0FFh, 04h
+		db	0FFh, 00h,0FFh, 03h,0FFh, 04h	; SCR_END opcodes 00 + 03 + 04
 		db	'Duke Garland, '
-		db	0FFh, 05h,0FFh, 02h,0FFh, 04h
+		db	0FFh, 05h,0FFh, 02h,0FFh, 04h	; SCR_END 05 + 02 + 04
 		db	'I am in debt to you for your eff'
 		db	'orts. '
-		db	0FFh, 05h,0FFh, 02h,0FFh, 04h
+		db	0FFh, 05h,0FFh, 02h,0FFh, 04h	; SCR_END 05 + 02 + 04
 		db	'Have you not yet succeeded in va'
 		db	'nquishing Jash'
-		db	 69h, 69h, 6Eh, 3Fh, 20h,0FFh	; 'iin? ', 0FF
-		db	 05h,0FFh, 02h, 0Dh,0FFh, 04h
+		db	 69h, 69h, 6Eh, 3Fh, 20h,0FFh	; 'iin? ' + SCR_END marker
+		db	 05h,0FFh, 02h, 0Dh,0FFh, 04h	; SCR_END opcode 05 + 02 + CR + SCR_END 04
 		db	'I pray that the spirits will gui'
 		db	'de you. Please don\t give up, th'
 		db	'e people of Zeliard are dependin'
 		db	'g on you!'
-		db	0FFh, 05h, 11h,0FFh,0FFh, 0Ch
+		db	0FFh, 05h, 11h,0FFh,0FFh, 0Ch	; SCR_END 05 + ANIM-prefix + SCR_END terminator + CR
 ; -- Post-victory script at 0x6C5: "You have conquered Jashiin" ----------
-data_portrait_tail	db	0FFh		; ah-table base (referenced via [bx+si+06C5] XLAT)
-		db	 03h,0FFh, 04h
+data_portrait_tail	db	0FFh		; ah-table base (referenced via [bx+si+06C5] XLAT) + SCR_END marker
+		db	 03h,0FFh, 04h			; SCR_END opcode 03 + SCR_END 04
 		db	'Duke Garland, '
-		db	0FFh, 05h,0FFh, 02h,0FFh, 04h
+		db	0FFh, 05h,0FFh, 02h,0FFh, 04h	; SCR_END 05 + 02 + 04
 		db	'you are a brave man. You have co'
 		db	'nquered Jashiin and returned the'
 		db	' nine Tears of Esmesanti. '
-		db	0FFh, 05h,0FFh, 02h, 0Dh,0FFh
-		db	 04h
+		db	0FFh, 05h,0FFh, 02h, 0Dh,0FFh	; SCR_END 05 + 02 + CR + SCR_END
+		db	 04h				; SCR_END opcode 04
 		db	'Now go quickly to the chamber of'
 		db	' Princess Felicia. The&crystals '
 		db	'will bring her back to life. '
-		db	0FFh, 05h, 11h,0FFh,0FFh, 00h
+		db	0FFh, 05h, 11h,0FFh,0FFh, 00h	; SCR_END 05 + ANIM-prefix + SCR_END terminator + 00
 		db	 00h, 00h, 00h, 00h		; module trailing padding
 
 seg_a		ends

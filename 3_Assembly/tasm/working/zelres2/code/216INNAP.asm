@@ -338,14 +338,14 @@ draw_intro_tile_map	endp
 ;--------------------------------------------------------------------------
 
 intro_glyph_row_a	label	byte		; 32 glyphs: '...'
-		db	 00h, 01h, 02h, 03h, 04h, 05h
-		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh
-		db	 0Ch, 0Dh, 0Eh, 0Fh, 10h, 11h
-		db	 12h, 13h, 14h, 15h, 16h, 17h
-		db	 18h, 19h, 1Ah, 1Bh, 10h, 1Ch
-		db	 1Dh, 1Eh, 1Fh, 20h, 21h, 22h
-		db	 23h, 24h, 25h, 26h, 10h
-		db	 27h
+		db	 00h, 01h, 02h, 03h, 04h, 05h	; row 0 cols 0-5  (intro tile glyph indices)
+		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh	; row 0 cols 6-11
+		db	 0Ch, 0Dh, 0Eh, 0Fh, 10h, 11h	; row 1 cols 0-5
+		db	 12h, 13h, 14h, 15h, 16h, 17h	; row 1 cols 6-11
+		db	 18h, 19h, 1Ah, 1Bh, 10h, 1Ch	; row 2 cols 0-5
+		db	 1Dh, 1Eh, 1Fh, 20h, 21h, 22h	; row 2 cols 6-11
+		db	 23h, 24h, 25h, 26h, 10h	; row 3 cols 0-4
+		db	 27h				; row 3 col 5; remaining cells are ASCII below
 
 intro_glyph_row_b	label	byte		; printable ASCII 0x28..0x5D
 		db	'()*+,-./0123456789:;<=>?@ABCDEFG'
@@ -409,20 +409,20 @@ inn_anim_scan	endp
 ;--------------------------------------------------------------------------
 
 inn_tile_map_tail:					;* glyph index tail (reached via DS dispatch only)
-		db	 19h, 1Ah, 24h, 25h		;  sprite row tokens
-		db	'^_$`'				;  0x5E, 0x5F, 0x24, 0x60
-		db	 19h, 1Ah, 1Bh, 10h, 1Ch, 24h, 25h, 26h, 10h, 27h
-		db	'/0123;<=>?'			;  glyph indices 0x2F..0x3F
-		db	 19h, 1Ah, 1Bh, 10h, 1Ch, 24h, 25h, 26h, 10h, 27h
-		db	'/0123;<=>?'
-		db	 19h, 1Ah, 1Bh, 10h, 1Ch, 24h
-		db	'ab'
-		db	 10h
-		db	 27h
-		db	'/cd23;ef>?'
-		db	 19h, 1Ah, 1Bh, 10h, 1Ch
-		db	'$'
-		db	'%&gh/ijkl;mno?'
+		db	 19h, 1Ah, 24h, 25h		; tail row 0: sprite row tokens
+		db	'^_$`'				; tail row 0 cont: ASCII glyphs 0x5E,0x5F,0x24,0x60
+		db	 19h, 1Ah, 1Bh, 10h, 1Ch, 24h, 25h, 26h, 10h, 27h	; tail row 1: 10 sprite tokens
+		db	'/0123;<=>?'			; tail row 1 cont: glyph indices 0x2F..0x3F
+		db	 19h, 1Ah, 1Bh, 10h, 1Ch, 24h, 25h, 26h, 10h, 27h	; tail row 2: same 10 sprite tokens
+		db	'/0123;<=>?'			; tail row 2 cont: glyph indices 0x2F..0x3F
+		db	 19h, 1Ah, 1Bh, 10h, 1Ch, 24h	; tail row 3a: 6 sprite tokens
+		db	'ab'				; tail row 3a cont: ASCII 'a','b'
+		db	 10h				; tail row 3a cont: token 0x10
+		db	 27h				; tail row 3a cont: token 0x27
+		db	'/cd23;ef>?'			; tail row 3b: ASCII glyphs
+		db	 19h, 1Ah, 1Bh, 10h, 1Ch		; tail row 4: 5 sprite tokens
+		db	'$'				; tail row 4 cont: ASCII '$'
+		db	'%&gh/ijkl;mno?'		; tail row 4 cont: ASCII glyphs
 
 ;--------------------------------------------------------------------------
 ;  inn_delay_tbl (0x02D5) -- 8-entry word table of delay counts used to

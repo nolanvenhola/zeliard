@@ -135,29 +135,33 @@ script_opcode_dispatch		proc	near
 
 script_opcode_dispatch		endp
 
-		db	0C0h,0A0h,0D2h,0A0h,0F3h,0A5h
-		db	 19h,0A6h,0C6h, 06h, 1Ah,0FFh
-		db	 00h, 80h, 3Eh, 1Ah,0FFh, 3Ch
-		db	 72h,0F9h,0BEh, 2Fh,0A8h,0E9h
-		db	 41h, 07h,0E8h, 4Ah, 05h,0BBh
-		db	 1Dh, 28h,0B9h, 37h, 1Ah,0B0h
-		db	0FFh, 2Eh,0FFh, 16h, 00h, 20h
-		db	0C7h, 06h, 54h,0FFh, 20h, 28h
-		db	0C6h, 06h, 52h,0FFh, 05h,0C6h
-		db	 06h, 53h,0FFh, 05h,0B9h, 05h
-		db	 00h,0BEh, 0Ch,0A9h, 2Eh,0FFh
-		db	 16h, 0Eh, 60h,0C6h, 06h, 56h
-		db	0FFh, 00h, 8Ah, 1Eh, 1Eh,0ADh
-		db	 2Eh,0FFh
-data_7		dw	1016h
-		db	 60h, 73h, 02h, 32h,0DBh, 88h
-		db	 1Eh, 1Eh,0ADh, 32h,0FFh, 03h
-		db	0DBh,0FFh,0A7h, 1Bh,0A1h, 25h
-		db	0A1h, 4Bh,0A1h, 3Bh,0A2h,0D0h
-		db	0A3h, 95h,0A5h,0E8h,0F7h, 04h
-		db	0C7h, 06h, 4Ch,0FFh,0D4h,0ACh
-		db	0F6h, 06h, 24h,0ADh,0FFh, 74h
-		db	 01h,0C3h
+; -- Dispatch handler block (raw bytes Sourcer cannot decode statically;
+;    bodies of the script-opcode handlers reachable only through the
+;    DS-resident opcode_dispatch_tbl).  Bytes are kept literal.
+bankp_dispatch_handlers:
+		db	0C0h,0A0h,0D2h,0A0h,0F3h,0A5h	; opcode_dispatch_tbl entries 0-2 (A0C0, A0D2, A5F3)
+		db	 19h,0A6h,0C6h, 06h, 1Ah,0FFh	; entry 3 (A619) + start of 'mov [FF1A],imm' opcode
+		db	 00h, 80h, 3Eh, 1Ah,0FFh, 3Ch	; imm + 'cmp [FF1A],3C' (anim wait threshold)
+		db	 72h,0F9h,0BEh, 2Fh,0A8h,0E9h	; jb -7; mov si,A82F; jmp far
+		db	 41h, 07h,0E8h, 4Ah, 05h,0BBh	; rel offset; call rel; mov bx,..
+		db	 1Dh, 28h,0B9h, 37h, 1Ah,0B0h	; cont. + mov cx,1A37; mov al,..
+		db	0FFh, 2Eh,0FFh, 16h, 00h, 20h	; FFh; call cs:[2000] (drv_fill_rect)
+		db	0C7h, 06h, 54h,0FFh, 20h, 28h	; mov word [FF54],2820
+		db	0C6h, 06h, 52h,0FFh, 05h,0C6h	; mov byte [FF52],05; mov...
+		db	 06h, 53h,0FFh, 05h,0B9h, 05h	; ...byte [FF53],05; mov cx,5
+		db	 00h,0BEh, 0Ch,0A9h, 2Eh,0FFh	; (cx hi) + mov si,A90C; call cs:..
+		db	 16h, 0Eh, 60h,0C6h, 06h, 56h	; ...[600E] (show_menu_items); mov...
+		db	0FFh, 00h, 8Ah, 1Eh, 1Eh,0ADh	; ...[FF56],00; mov bl,[AD1E]
+		db	 2Eh,0FFh			; call cs:.. (data_7 below = 1016h)
+data_7		dw	1016h				; cs:[1016] script-step entry word
+		db	 60h, 73h, 02h, 32h,0DBh, 88h	; pushf/jnc/xor/mov sequence
+		db	 1Eh, 1Eh,0ADh, 32h,0FFh, 03h	; mov [AD1E],bl; xor bh,bh; add..
+		db	0DBh,0FFh,0A7h, 1Bh,0A1h, 25h	; bx,bx; jmp cs:[bx+A11B] (jmp tbl)
+		db	0A1h, 4Bh,0A1h, 3Bh,0A2h,0D0h	; jmp tbl entries: A125, A14B, A23B, A3D0
+		db	0A3h, 95h,0A5h,0E8h,0F7h, 04h	; A3xx; A595; call rel +04F7
+		db	0C7h, 06h, 4Ch,0FFh,0D4h,0ACh	; mov word [FF4C],ACD4 (script ptr)
+		db	0F6h, 06h, 24h,0ADh,0FFh, 74h	; test byte [AD24],FF; jz +1
+		db	 01h,0C3h			; (rel offset) + retn
 
 loc_5:
 		mov	word ptr ds:gvar_script_ptr,0AC9Dh
@@ -694,22 +698,25 @@ locloop_44:
 
 draw_intro_12x8		endp
 
-		db	'lmnopqrstuvwxy'
-		db	 00h, 01h, 02h, 03h, 04h, 05h
-		db	 06h, 07h, 7Ah, 7Bh, 7Ch, 7Dh
-		db	 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh
-		db	 0Eh, 0Fh, 7Eh, 7Fh, 80h, 81h
-		db	 10h, 11h, 12h, 13h, 14h, 15h
-		db	 16h, 17h, 82h, 83h, 84h, 85h
-		db	 18h, 19h, 1Ah, 1Bh, 1Ch, 1Dh
-		db	 1Eh, 1Fh, 86h, 87h, 88h, 89h
-		db	' !"#$'
-		db	'%&', 27h
-		db	 8Ah, 8Bh, 8Ch, 8Dh, 8Eh, 8Fh
-		db	 90h, 91h, 92h, 93h, 94h, 95h
-		db	 96h, 97h, 98h, 99h, 9Ah, 9Bh
-		db	 9Ch, 9Dh, 9Eh, 9Fh,0A0h,0A1h
-		db	0A2h,0A3h
+; -- bankp_intro_tile_map: 12-wide x 8-tall glyph indices (96 bytes) used by
+;    draw_intro_12x8 to render the bank interior banner.
+bankp_intro_tile_map:
+		db	'lmnopqrstuvwxy'		; row 0a (ASCII glyph indices spanning into row 1)
+		db	 00h, 01h, 02h, 03h, 04h, 05h	; row 0/1: tile glyphs 0-5
+		db	 06h, 07h, 7Ah, 7Bh, 7Ch, 7Dh	; row cont: tile glyphs 6-7 + 7A-7D
+		db	 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh	; row 2: tile glyphs 8-13
+		db	 0Eh, 0Fh, 7Eh, 7Fh, 80h, 81h	; row 2 cont: tile glyphs 14-15 + 7E-81
+		db	 10h, 11h, 12h, 13h, 14h, 15h	; row 3: tile glyphs 16-21
+		db	 16h, 17h, 82h, 83h, 84h, 85h	; row 3 cont: tile glyphs 22-23 + 82-85
+		db	 18h, 19h, 1Ah, 1Bh, 1Ch, 1Dh	; row 4: tile glyphs 24-29
+		db	 1Eh, 1Fh, 86h, 87h, 88h, 89h	; row 4 cont: tile glyphs 30-31 + 86-89
+		db	' !"#$'				; row 5a: ASCII glyphs (tile ids 0x20-0x24)
+		db	'%&', 27h			; row 5a cont: ASCII glyphs 0x25-0x27
+		db	 8Ah, 8Bh, 8Ch, 8Dh, 8Eh, 8Fh	; row 5b: tile glyphs 8A-8F
+		db	 90h, 91h, 92h, 93h, 94h, 95h	; row 6: tile glyphs 90-95
+		db	 96h, 97h, 98h, 99h, 9Ah, 9Bh	; row 6 cont: tile glyphs 96-9B
+		db	 9Ch, 9Dh, 9Eh, 9Fh,0A0h,0A1h	; row 7: tile glyphs 9C-A1
+		db	0A2h,0A3h			; row 7 cont: tile glyphs A2-A3
 
 anim_scroll_step		proc	near
 		test	byte ptr ds:anim_active_flag,0FFh
@@ -760,34 +767,41 @@ locloop_48:
 
 draw_banner_8x5		endp
 
-		db	 00h, 01h, 02h, 03h, 04h, 05h
-		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh
-		db	 0Ch, 0Dh, 0Eh, 0Fh, 10h, 11h
-		db	 12h, 13h, 14h, 15h, 16h, 17h
-		db	 18h, 19h, 1Ah, 1Bh, 1Ch, 1Dh
-		db	 1Eh, 1Fh
-		db	' !"#$'
-		db	'%&', 27h
-		db	 00h, 01h, 02h, 03h, 04h, 05h
-		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh
-		db	 0Ch, 0Dh, 0Eh, 0Fh, 28h, 29h
-		db	 12h, 13h, 14h, 15h, 16h, 17h
-		db	 2Ah, 2Bh, 2Ch, 1Bh, 1Ch, 1Dh
-		db	 1Eh, 1Fh
-		db	' -.#$'
-		db	'%&', 27h
-		db	 00h, 01h, 02h, 03h, 04h, 05h
-		db	 06h, 07h, 08h, 09h, 41h, 42h
-		db	 43h, 44h, 45h, 0Fh, 10h, 11h
-		db	 46h, 4Dh, 4Eh, 49h, 4Ah, 39h
-		db	 18h, 19h, 1Ah
-		db	'OPQL= !"RS>?@'
-		db	 00h, 01h, 54h, 55h, 56h, 05h
-		db	 06h, 07h, 08h, 09h, 57h, 58h
-		db	 59h, 5Ah, 5Bh, 0Fh, 10h, 5Ch
-		db	 5Dh, 5Eh, 5Fh, 60h, 61h, 17h
-		db	 18h, 19h
-		db	'bcdefg !"hi>jk'
+; -- 5 banner-message tile maps (8 wide x 5 tall = 40 glyphs each), used by
+;    draw_banner_8x5.  Banner 0 = "Welcome" (default), banners 1-4 = exchange
+;    rate / deposit / withdraw / balance variants.
+bankp_banner_welcome:
+		db	 00h, 01h, 02h, 03h, 04h, 05h	; banner 0 row 0: 6 tile glyphs
+		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh	; banner 0 row 0 cont
+		db	 0Ch, 0Dh, 0Eh, 0Fh, 10h, 11h	; banner 0 row 1
+		db	 12h, 13h, 14h, 15h, 16h, 17h	; banner 0 row 1 cont
+		db	 18h, 19h, 1Ah, 1Bh, 1Ch, 1Dh	; banner 0 row 2
+		db	 1Eh, 1Fh			; banner 0 row 2 cont
+		db	' !"#$'				; banner 0 row 3 ASCII glyphs
+		db	'%&', 27h			; banner 0 row 3 cont (ASCII 0x25-0x27)
+bankp_banner_exch:
+		db	 00h, 01h, 02h, 03h, 04h, 05h	; banner 1 (exchange) row 0
+		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh	; banner 1 row 0 cont
+		db	 0Ch, 0Dh, 0Eh, 0Fh, 28h, 29h	; banner 1 row 1 (with exchange-specific tiles 28,29)
+		db	 12h, 13h, 14h, 15h, 16h, 17h	; banner 1 row 1 cont
+		db	 2Ah, 2Bh, 2Ch, 1Bh, 1Ch, 1Dh	; banner 1 row 2 (with tiles 2A-2C)
+		db	 1Eh, 1Fh			; banner 1 row 2 cont
+		db	' -.#$'				; banner 1 row 3 ASCII glyphs
+		db	'%&', 27h			; banner 1 row 3 cont
+bankp_banner_deposit:
+		db	 00h, 01h, 02h, 03h, 04h, 05h	; banner 2 (deposit) row 0
+		db	 06h, 07h, 08h, 09h, 41h, 42h	; banner 2 row 0 cont (tiles 41,42)
+		db	 43h, 44h, 45h, 0Fh, 10h, 11h	; banner 2 row 1 (tiles 43-45)
+		db	 46h, 4Dh, 4Eh, 49h, 4Ah, 39h	; banner 2 row 1 cont (tiles 46,4D-4E,49-4A,39)
+		db	 18h, 19h, 1Ah			; banner 2 row 2 partial
+		db	'OPQL= !"RS>?@'			; banner 2 row 2 ASCII glyphs (cont)
+bankp_banner_balance:
+		db	 00h, 01h, 54h, 55h, 56h, 05h	; banner 3 (balance) row 0 (tiles 54-56)
+		db	 06h, 07h, 08h, 09h, 57h, 58h	; banner 3 row 0 cont (tiles 57,58)
+		db	 59h, 5Ah, 5Bh, 0Fh, 10h, 5Ch	; banner 3 row 1 (tiles 59-5C)
+		db	 5Dh, 5Eh, 5Fh, 60h, 61h, 17h	; banner 3 row 1 cont (tiles 5D-61)
+		db	 18h, 19h			; banner 3 row 2 partial
+		db	'bcdefg !"hi>jk'		; banner 3 row 2 ASCII glyphs (cont)
 
 iter_wait_msg_list		proc	near
 		mov	byte ptr ds:[0FF1Ah],0
@@ -808,147 +822,167 @@ loc_49:
 iter_wait_msg_list		endp
 
 			                        ;* No entry point to code
-		inc	bx
-		test	al,6Bh			; 'k'
-		test	al,93h
-		test	al,0BBh
-		test	al,0FFh
-		db	0FFh,0BBh,0A8h, 93h,0A8h, 6Bh
-		db	0A8h, 43h,0A8h,0FFh,0FFh, 00h
-		db	 01h, 02h, 03h, 04h, 05h, 06h
-		db	 07h, 08h, 09h, 0Ah, 0Bh, 0Ch
-		db	 0Dh, 0Eh, 0Fh, 10h, 11h, 12h
-		db	 13h, 14h, 15h, 16h, 17h, 18h
-		db	 19h, 1Ah, 2Fh, 30h, 1Dh, 1Eh
-		db	 1Fh
-		db	' !"#$'
-		db	'%&', 27h
-		db	 00h, 01h, 02h, 03h, 04h, 05h
-		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh
-		db	 0Ch, 0Dh, 0Eh, 0Fh, 10h, 11h
-		db	 12h, 13h, 14h, 15h, 16h, 17h
-		db	 18h, 19h, 1Ah, 2Fh, 30h, 1Dh
-		db	 1Eh, 1Fh
-		db	' !"#123', 27h
-		db	 00h, 01h, 02h, 03h, 04h, 05h
-		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh
-		db	 34h, 35h, 0Eh, 0Fh, 10h, 11h
-		db	 12h, 13h, 36h, 37h, 38h, 39h
-		db	 18h, 19h, 1Ah
-		db	'/:;<= !"#$'
-		db	'>?@'
-		db	 00h, 01h, 02h, 03h, 04h, 05h
-		db	 06h, 07h, 08h, 09h, 41h, 42h
-		db	 43h, 44h, 45h, 0Fh, 10h, 11h
-		db	 46h, 47h, 48h, 49h, 4Ah, 39h
-		db	 18h, 19h, 1Ah
-		db	'/0KL= !"#$'
-		db	'>?@'
-		db	 01h, 16h
-		db	'BANK.GRP'
-		db	 00h, 18h,0AFh, 02h
-		db	8, 'The Bank'
-		db	1, 6, 1, 6, 1, 8
-		db	1, 4, 1, 2, 1, 4
-		db	4, 2, 1, 6, 1
-		db	8
+; -- intro_text_ptr_list (5-entry word table) used by iter_wait_msg_list
+;    to walk through 5 banners + FFFF terminator.  Sourcer mis-decoded
+;    the table words as 'inc bx; test al,..' opcodes; bytes are kept literal.
+		inc	bx			; 0x39 (low byte of A839)
+		test	al,6Bh			; 0xA8 6B = ptr A86B
+		test	al,93h			; 0xA8 93 = ptr A893
+		test	al,0BBh			; 0xA8 BB = ptr A8BB (welcome ptr)
+		test	al,0FFh			; 0xA8 FF
+		db	0FFh,0BBh,0A8h, 93h,0A8h, 6Bh	; ptr table cont: A8BB, A893, A86B
+		db	0A8h, 43h,0A8h,0FFh,0FFh, 00h	; ptrs A843, FFFF terminator + 00 pad
+; -- bankp_banner_alt0: 5-row 8-col banner (variant of welcome)
+		db	 01h, 02h, 03h, 04h, 05h, 06h	; banner alt0 row 0
+		db	 07h, 08h, 09h, 0Ah, 0Bh, 0Ch	; banner alt0 row 0 cont
+		db	 0Dh, 0Eh, 0Fh, 10h, 11h, 12h	; banner alt0 row 1
+		db	 13h, 14h, 15h, 16h, 17h, 18h	; banner alt0 row 1 cont
+		db	 19h, 1Ah, 2Fh, 30h, 1Dh, 1Eh	; banner alt0 row 2 (tiles 2F,30 variant)
+		db	 1Fh				; banner alt0 row 2 cont
+		db	' !"#$'				; banner alt0 row 3 ASCII glyphs
+		db	'%&', 27h			; banner alt0 row 3 cont
+; -- bankp_banner_alt1: 5-row 8-col banner (alt2 variant)
+		db	 00h, 01h, 02h, 03h, 04h, 05h	; banner alt1 row 0
+		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh	; banner alt1 row 0 cont
+		db	 0Ch, 0Dh, 0Eh, 0Fh, 10h, 11h	; banner alt1 row 1
+		db	 12h, 13h, 14h, 15h, 16h, 17h	; banner alt1 row 1 cont
+		db	 18h, 19h, 1Ah, 2Fh, 30h, 1Dh	; banner alt1 row 2 (tiles 2F,30)
+		db	 1Eh, 1Fh			; banner alt1 row 2 cont
+		db	' !"#123', 27h			; banner alt1 row 3 ASCII glyphs
+; -- bankp_banner_alt2: 5-row 8-col banner (alt3 variant)
+		db	 00h, 01h, 02h, 03h, 04h, 05h	; banner alt2 row 0
+		db	 06h, 07h, 08h, 09h, 0Ah, 0Bh	; banner alt2 row 0 cont
+		db	 34h, 35h, 0Eh, 0Fh, 10h, 11h	; banner alt2 row 1 (tiles 34,35)
+		db	 12h, 13h, 36h, 37h, 38h, 39h	; banner alt2 row 1 cont (tiles 36-39)
+		db	 18h, 19h, 1Ah			; banner alt2 row 2 partial
+		db	'/:;<= !"#$'			; banner alt2 row 2 ASCII glyphs
+		db	'>?@'				; banner alt2 row 2 cont
+; -- bankp_banner_alt3: 5-row 8-col banner (deposit-variant)
+		db	 00h, 01h, 02h, 03h, 04h, 05h	; banner alt3 row 0
+		db	 06h, 07h, 08h, 09h, 41h, 42h	; banner alt3 row 0 cont (tiles 41,42)
+		db	 43h, 44h, 45h, 0Fh, 10h, 11h	; banner alt3 row 1 (tiles 43-45)
+		db	 46h, 47h, 48h, 49h, 4Ah, 39h	; banner alt3 row 1 cont (tiles 46-4A,39)
+		db	 18h, 19h, 1Ah			; banner alt3 row 2 partial
+		db	'/0KL= !"#$'			; banner alt3 row 2 ASCII glyphs
+		db	'>?@'				; banner alt3 row 2 cont
+; -- ref_bank_grp: chunk-loader reference record (archive 1, chunk 16h)
+ref_bank_grp:
+		db	 01h, 16h			; archive=1 (zelres2), chunk=16h
+		db	'BANK.GRP'			; filename
+		db	 00h, 18h,0AFh, 02h		; filename terminator + title hdr (pos 18 AF, attr 02)
+		db	8, 'The Bank'			; title length-prefixed (8 chars)
+; -- exchange-rate denomination tables (paired in/out per menu index).
+;    cur_exch_in/out are loaded from these tables[bx] when the player
+;    selects an exchange option.
+exch_rate_pairs:
+		db	1, 6, 1, 6, 1, 8		; pair 0: in=1, pair 1 in=6 out=1, pair 2 out=6 in=1 out=8
+		db	1, 4, 1, 2, 1, 4		; (interleaved in/out columns) -- 6 entries
+		db	4, 2, 1, 6, 1			; (cont.)
+		db	8				; (cont.)
+; -- bankp_menu_items: 5 null-terminated menu strings (Go outside / Exchange / Deposit / Withdraw / Check balance)
+bankp_menu_items:
 		db	'Go outside', 0
 		db	'Exchange almas', 0
 		db	'Deposit money', 0
 		db	'Withdraw money', 0
 		db	'Check balance', 0
-		db	'GOLD CARRIED'
-		db	0, 0, 0
-		db	' DEPOSIT AMT'
-		db	0
-		db	'GOLD IN BANK'
-		db	0, 0, 0
-		db	'WITHDRAW AMT'
-		db	 00h, 0Ch,0FFh, 2Eh,0FFh
+; -- bankp_label_strings: balance/deposit/withdraw text labels
+		db	'GOLD CARRIED'			; deposit screen label A
+		db	0, 0, 0				; padding to align
+		db	' DEPOSIT AMT'			; deposit screen label B
+		db	0				; null terminator/pad
+		db	'GOLD IN BANK'			; balance/withdraw screen label A
+		db	0, 0, 0				; padding to align
+		db	'WITHDRAW AMT'			; withdraw screen label B
+; -- bankp_dialog_scripts: bytecode for all bank dialog branches.
+;    Control codes: 0xFF nn = SCR_END opcode nn; 0x0C = clear/scroll;
+;    0x0D = CR; 0x11 = ANIM-prefix; '&' = numeric placeholder; '/' = pause.
+bankp_dialog_scripts:
+		db	 00h, 0Ch,0FFh, 2Eh,0FFh	; opening seq: 00 + CR + SCR_END + 2E + SCR_END
 		db	'Oh, excuse me. '
-		db	0FFh, 00h
+		db	0FFh, 00h			; SCR_END opcode 00
 		db	'Can I help you?/'
-		db	0FFh, 01h,0FFh,0FFh, 0Ch
+		db	0FFh, 01h,0FFh,0FFh, 0Ch		; SCR_END 01 + SCR_END terminator + CR
 		db	'Sir, you aren\t carryi'
 		db	'ng any almas. '
-		db	0FFh, 01h
-		db	0Ch, 'Our exchange rate is '
-		db	0FFh, 00h
+		db	0FFh, 01h			; SCR_END opcode 01
+		db	0Ch, 'Our exchange rate is '	; CR + text
+		db	0FFh, 00h			; SCR_END 00 (numeric placeholder follows)
 		db	'&almas to '
-		db	0FFh, 00h
+		db	0FFh, 00h			; SCR_END 00 (numeric placeholder)
 		db	'&golds./Will that be all right?'
-		db	0FFh, 0Ch
+		db	0FFh, 0Ch			; SCR_END + CR
 		db	'I\m sorry, you do'
 		db	' not have enough almas.'
-		db	0FFh, 01h
-		db	0Ch, 'I don\'
+		db	0FFh, 01h			; SCR_END opcode 01
+		db	0Ch, 'I don\'			; CR + text
 		db	't'
 		db	' und'
 		db	'erstand'
 		db	'. Please state'
 		db	' your business clearly.'
-		db	0FFh, 01h
-		db	0Ch, 'Will there be anything else'
+		db	0FFh, 01h			; SCR_END opcode 01
+		db	0Ch, 'Will there be anything else'	; CR + text
 		db	'?'
-		db	0FFh, 01h
-		db	0Ch, 'You'
+		db	0FFh, 01h			; SCR_END opcode 01
+		db	0Ch, 'You'			; CR + text
 		db	' aren\t c'
 		db	'arrying any gold, are you?'
-		db	0FFh, 01h
-		db	0Ch, 'How much gold w'
+		db	0FFh, 01h			; SCR_END opcode 01
+		db	0Ch, 'How much gold w'		; CR + text
 		db	'ould you like to deposit?'
-		db	0FFh
-		db	0Dh, 'Your balance is '
-		db	0FFh, 00h, 26h, 67h, 6Fh, 6Ch
-		db	 64h, 73h, 2Eh,0FFh, 01h
-		db	0Ch, 'Thank you. Please come agai'
+		db	0FFh				; SCR_END marker
+		db	0Dh, 'Your balance is '		; CR + text
+		db	0FFh, 00h, 26h, 67h, 6Fh, 6Ch	; SCR_END 00 + '&gol'
+		db	 64h, 73h, 2Eh,0FFh, 01h		; 'ds.' + SCR_END opcode 01
+		db	0Ch, 'Thank you. Please come agai'	; CR + text
 		db	'n.'
-		db	0FFh, 03h,0FFh, 01h
-		db	0Ch, 'I\m afrai'
+		db	0FFh, 03h,0FFh, 01h		; SCR_END opcode 03 + SCR_END opcode 01
+		db	0Ch, 'I\m afrai'			; CR + text
 		db	'd we have a p'
 		db	'roblem here. You '
 		db	'don\'
 		db	't have any gold in your account.'
-		db	0FFh, 01h
-		db	0Ch, 'How mu'
+		db	0FFh, 01h			; SCR_END opcode 01
+		db	0Ch, 'How mu'			; CR + text
 		db	'ch do you wish to withdraw?/'
-		db	0FFh
+		db	0FFh				; SCR_END marker
 		db	'Here you are, sir. '
-		db	0FFh, 00h, 26h, 67h, 6Fh, 6Ch
-		db	 64h, 73h, 2Eh,0FFh
+		db	0FFh, 00h, 26h, 67h, 6Fh, 6Ch	; SCR_END 00 + '&gol'
+		db	 64h, 73h, 2Eh,0FFh		; 'ds.' + SCR_END marker
 		db	'Here you are, sir. One gold.'
-		db	0FFh
-		db	0Dh, 'Your account is empty.'
-		db	0FFh, 01h
-		db	0Ch, 'Your account is empty.'
-		db	0FFh, 01h
-		db	0Ch, 'You have '
-		db	0FFh, 00h
+		db	0FFh				; SCR_END marker
+		db	0Dh, 'Your account is empty.'	; CR + text
+		db	0FFh, 01h			; SCR_END opcode 01
+		db	0Ch, 'Your account is empty.'	; CR + text
+		db	0FFh, 01h			; SCR_END opcode 01
+		db	0Ch, 'You have '			; CR + text
+		db	0FFh, 00h			; SCR_END 00 (numeric placeholder)
 		db	'&golds in your account.'
-		db	0FFh, 01h
-		db	0Ch, 'You '
+		db	0FFh, 01h			; SCR_END opcode 01
+		db	0Ch, 'You '			; CR + text
 		db	'have one gold in your account.'
-		db	0FFh, 01h
-		db	0Ch, 'Unless'
+		db	0FFh, 01h			; SCR_END opcode 01
+		db	0Ch, 'Unless'			; CR + text
 		db	' you h'
 		db	'ave bus'
 		db	'ine'
 		db	'ss, don\t com'
 		db	'e in here. I\m a busy man.'
-		db	0FFh, 02h, 11h,0FFh,0FFh, 0Ch
+		db	0FFh, 02h, 11h,0FFh,0FFh, 0Ch	; SCR_END 02 + ANIM-prefix + SCR_END terminator + CR
 		db	'N'
 		db	'ext '
 		db	'time please depos'
 		db	'it a large sum in savings. '
-		db	0FFh, 02h, 11h,0FFh,0FFh, 0Ch
+		db	0FFh, 02h, 11h,0FFh,0FFh, 0Ch	; SCR_END 02 + ANIM-prefix + terminator + CR
 		db	'Th'
 		db	'ank you. Come again t'
 		db	'o make a deposit'
 		db	' for a large sum in savings. '
-		db	0FFh, 02h, 11h,0FFh,0FFh, 00h
-		db	8 dup (0)
-		db	 30h,0FFh
-		db	15 dup (0)
+		db	0FFh, 02h, 11h,0FFh,0FFh, 00h	; SCR_END 02 + ANIM-prefix + terminator + 00
+		db	8 dup (0)			; padding (script_format_num scratch buffer area)
+		db	 30h,0FFh			; '0' + SCR_END marker (numeric format buffer init bytes)
+		db	15 dup (0)			; final pad to chunk boundary
 
 seg_a		ends
 
