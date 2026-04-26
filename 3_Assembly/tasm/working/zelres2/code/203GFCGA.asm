@@ -806,7 +806,9 @@ loc_73:
 		mov	dx,272h
 		jmp	loc_87
 
-sprite_wide_row_render:
+sprite_blit_dispatch		endp
+
+sprite_wide_row_render		proc	near
 		push	si
 		push	di
 		push	bx
@@ -993,7 +995,9 @@ loc_84:
 		pop	si
 		jmp	loc_21
 
-sprite_pos_pair_iter:
+sprite_wide_row_render		endp
+
+sprite_pos_pair_iter		proc	near
 		call	sprite_pos_blit
 
 sprite_pos_blit:
@@ -1026,7 +1030,9 @@ loc_86:
 		inc	dx
 		retn
 
-sprite_cell_render:
+sprite_pos_pair_iter		endp
+
+sprite_cell_render		proc	near
 
 loc_87:
 		push	es
@@ -1088,7 +1094,7 @@ loc_89:
 		pop	es
 		retn
 
-sprite_blit_dispatch		endp
+sprite_cell_render		endp
 
 cga_sprite_blit_ex		proc	near
 		push	bp
@@ -1105,7 +1111,9 @@ cga_sprite_blit_ex		proc	near
 		pop	bp
 		jmp	short $+2		; delay for I/O
 
-cga_sprite_render_blended:
+cga_sprite_blit_ex		endp
+
+cga_sprite_render_blended		proc	near
 		mov	cx,8
 
 blend_row_loop:
@@ -1122,7 +1130,7 @@ blend_row_loop:
 
 		retn
 
-cga_sprite_blit_ex		endp
+cga_sprite_render_blended		endp
 
 cga_sprite_render_solid		proc	near
 		mov	cx,8
@@ -2233,7 +2241,9 @@ loc_176:
 		pop	es
 		retn
 
-scroll_restore:
+frame_row_driver		endp
+
+scroll_restore		proc	near
 		test	byte ptr ds:restore_pending,0FFh
 		jnz	loc_177			; Jump if not zero
 		retn
@@ -2251,7 +2261,9 @@ loc_177:
 		mov	byte ptr ds:restore_pending,0
 		retn
 
-bg_save:
+scroll_restore		endp
+
+bg_save		proc	near
 		push	ds
 		push	cs
 		pop	es
@@ -2277,7 +2289,9 @@ loc_179:
 		pop	ds
 		retn
 
-bg_restore:
+bg_save		endp
+
+bg_restore		proc	near
 		mov	di,cs:scroll_src_ofs
 		mov	ax,0B800h
 		mov	es,ax
@@ -2299,7 +2313,9 @@ loc_181:
 
 		retn
 
-scroll_pos_load:
+bg_restore		endp
+
+scroll_pos_load		proc	near
 		mov	al,byte ptr ds:[84h]
 		add	al,ds:scroll_delta
 		and	al,3Fh			; '?'
@@ -2430,7 +2446,9 @@ bg_tile_addr_calc:
 		mov	ds:scroll_vga_ofs,di
 		jmp	short bg_tile_blit_3x3
 
-bg_tile_restore_3x3:
+scroll_pos_load		endp
+
+bg_tile_restore_3x3		proc	near
 
 bg_tile_restore_entry:
 		test	byte ptr ds:redraw_lock,0FFh
@@ -2477,7 +2495,7 @@ tile_3x3_col_loop:
 		pop	es
 		retn
 
-frame_row_driver		endp
+bg_tile_restore_3x3		endp
 
 ; sprite_expand_blit -- loads sprite graphics from game_seg, expands each 3-color
 ; bitpair into a 3+1 mask and ORs into CGA framebuffer at [di] with stride 0x2000.
@@ -2628,7 +2646,9 @@ loc_206:
 		pop	ds
 		retn
 
-col_write_inner:
+bg_col_blit_row		endp
+
+col_write_inner		proc	near
 		mov	cx,2
 
 col_write_inner_loop:
@@ -2663,7 +2683,7 @@ loc_208:
 		pop	ds
 		retn
 
-bg_col_blit_row		endp
+col_write_inner		endp
 
 cga_clear_2rows		proc	near
 		mov	al,cs:shift_count

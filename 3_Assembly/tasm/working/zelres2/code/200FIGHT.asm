@@ -626,7 +626,9 @@ set_e7_80:
 		mov	byte ptr ds:[0E7h],80h
 		retn
 
-game_func_7:
+game_check_state		endp
+
+game_func_7		proc	near
 		test	byte ptr ds:gvar_music_flag_a,0FFh
 		jz	check_music_a			; Jump if zero
 		retn
@@ -662,7 +664,9 @@ check_back_dir:
 jmp_loc124:
 		jmp	scroll_pos_inc
 
-game_func_8:
+game_func_7		endp
+
+game_func_8		proc	near
 		test	byte ptr ds:any_entity_active,0FFh
 		jnz	check_loaded			; Jump if not zero
 		retn
@@ -741,7 +745,9 @@ decrement_hp:
 		inc	byte ptr ds:[84h]
 		retn
 
-game_func_9:
+game_func_8		endp
+
+game_func_9		proc	near
 		call	vga_operation7
 		jz	check_combat_ff3d_b			; Jump if zero
 		retn
@@ -788,7 +794,9 @@ check_move_dir2:
 jmp_scroll_adv:
 		jmp	scroll_advance
 
-game_func_10:
+game_func_9		endp
+
+game_func_10		proc	near
 		call	vga_operation7
 		jz	check_invul_b			; Jump if zero
 		retn
@@ -879,7 +887,9 @@ fight_reset_soft:
 		mov	byte ptr ds:gvar_combat_ff3D,7Fh
 		retn
 
-game_func_12:
+game_func_10		endp
+
+game_func_12		proc	near
 		call	vga_operation8
 		inc	si
 		call	game_get_value
@@ -930,7 +940,9 @@ func13_and_state:
 jmp_back_music_loop:
 										jmp	short music_anim_loop
 
-game_func_13:
+game_func_12		endp
+
+game_func_13		proc	near
 
 pos_scroll_up:
 		dec	byte ptr ds:[82h]
@@ -992,7 +1004,9 @@ inc_e7:
 		mov	byte ptr ds:state_byte_9F19,0
 		retn
 
-game_func_15:
+game_func_13		endp
+
+game_func_15		proc	near
 
 scroll_advance:
 		call	vga_operation8
@@ -1134,7 +1148,9 @@ obj_list_next:
 										add	si,10h
 										jmp	short obj_list_scan
 
-game_func_16:
+game_func_15		endp
+
+game_func_16		proc	near
 		cmp	byte ptr ds:area_num,7
 		clc				; Clear carry flag
 		jnz	boundary_check			; Jump if not zero
@@ -1197,7 +1213,9 @@ inc_e7b:
 		mov	byte ptr ds:state_byte_9F19,0
 		retn
 
-game_func_17:
+game_func_16		endp
+
+game_func_17		proc	near
 
 toggle_c2_bit:
 		xor	byte ptr ds:[0C2h],1
@@ -1220,7 +1238,7 @@ check_combat_flags:
 		mov	byte ptr ds:[0E7h],80h
 		retn
 
-game_check_state		endp
+game_func_17		endp
 
 game_process_loop		proc	near
 
@@ -1527,7 +1545,9 @@ check_si_ok_b:
 jmp_scroll_adv_b:
 		jmp	scroll_advance
 
-game_func_21:
+game_func_20		endp
+
+game_func_21		proc	near
 		mov	byte ptr ds:gvar_debug_val,0
 		call	vga_operation8
 		add	si,49h
@@ -1581,7 +1601,9 @@ decrement_midpoint:
 jmp_scroll_adv_d:
 		jmp	scroll_advance
 
-game_func_22:
+game_func_21		endp
+
+game_func_22		proc	near
 		mov	byte ptr ds:state_byte_9F18,0
 		test	byte ptr ds:gvar_debug_val,0FFh
 		jz	check_debug_val_b			; Jump if zero
@@ -1626,7 +1648,9 @@ func13_and_state2:
 jmp_back_adv_loop:
 										jmp	short music_advance_loop
 
-game_func_23:
+game_func_22		endp
+
+game_func_23		proc	near
 
 process_loop_end:
 		inc	byte ptr ds:[82h]
@@ -1662,7 +1686,7 @@ set_music_a_ff:
 		mov	byte ptr ds:gvar_music_flag_a,0FFh
 		retn
 
-game_func_20		endp
+game_func_23		endp
 
 game_func_24		proc	near
 		call	vga_operation8
@@ -2105,7 +2129,9 @@ game_check_state_2		proc	near
 		cmp	al,al
 		retn
 
-game_func_41:
+game_check_state_2		endp
+
+game_func_41		proc	near
 		cmp	al,49h			; 'I'
 		jb	scan_enemy_table			; Jump if below
 		cmp	al,al
@@ -2138,7 +2164,7 @@ set_al_ff:
 		or	al,al			; Zero ?
 		retn
 
-game_check_state_2		endp
+game_func_41		endp
 
 game_func_42		proc	near
 		cmp	al,49h			; 'I'
@@ -2438,7 +2464,9 @@ post_key_check:
 		mov	byte ptr ds:gvar_save_flag_3,0
 		jmp	short set_debug_mode
 
-game_func_46:
+game_check_state_3		endp
+
+game_func_46		proc	near
 
 clear_save_flag4:
 		mov	byte ptr ds:gvar_save_flag_4,0
@@ -2587,7 +2615,9 @@ check_timer_counter:
 		mov	byte ptr ds:combat_active,0
 		retn
 
-game_func_47:
+game_func_46		endp
+
+game_func_47		proc	near
 		test	byte ptr ds:player_scroll_flag,0FFh
 		jz	check_enemy_scroll		; Jump if zero
 		mov	al,0FCh
@@ -2676,7 +2706,9 @@ combat_palette_update:
 		mov	byte ptr ds:player_scroll_flag,0
 		jmp	frame_state_update
 
-game_func_48:
+game_func_47		endp
+
+game_func_48		proc	near
 		mov	es,cs:gvar_game_seg
 		mov	di,world_state_base
 		mov	si,game_fn_vtable
@@ -2768,7 +2800,7 @@ wrap_scroll:
 		mov	byte ptr ds:state_byte_9F1E,0
 		jmp	module_init
 
-game_check_state_3		endp
+game_func_48		endp
 
 fill_buffer		proc	near
 
@@ -3079,7 +3111,9 @@ update_any_active:
 all_slots_empty:
 		retn
 
-game_func_56:
+game_scan_loop_3		endp
+
+game_func_56		proc	near
 		test	byte ptr ds:[0E8h],0FFh
 		jz	check_c2_bit1b			; Jump if zero
 		retn
@@ -3090,7 +3124,9 @@ check_c2_bit1b:
 		jz	combat_check_done			; Jump if zero
 		jmp	short check_93
 
-game_func_57:
+game_func_56		endp
+
+game_func_57		proc	near
 		test	byte ptr ds:[0E8h],0FFh
 		jz	check_c2_bit1c			; Jump if zero
 		retn
@@ -3129,7 +3165,9 @@ combat_check_done:
 		mov	byte ptr ds:gvar_volume_b,9
 		retn
 
-game_func_58:
+game_func_57		endp
+
+game_func_58		proc	near
 		mov	byte ptr ds:[93h],0
 		mov	bx,0C51Ch
 		mov	al,0FFh
@@ -3161,7 +3199,9 @@ tile_down1:
 		and	al,0Fh
 		jmp	short add_tile_type
 
-game_func_59:
+game_func_58		endp
+
+game_func_59		proc	near
 
 tile_down2:
 		add	si,24h
@@ -3190,7 +3230,9 @@ add_tile_type:
 		stc				; Set carry flag
 		retn
 
-game_func_60:
+game_func_59		endp
+
+game_func_60		proc	near
 
 sub_score_and_call:
 		sub	word ptr ds:[90h],ax
@@ -3203,7 +3245,7 @@ push_and_update:
 		pop	si
 		retn
 
-game_scan_loop_3		endp
+game_func_60		endp
 
 game_process_loop_2		proc	near
 		mov	byte ptr ds:escape_flag,0
@@ -6725,7 +6767,9 @@ call_func134_126:
 		call	game_func_126
 		jmp	dec_row
 
-game_func_123:
+game_func_122		endp
+
+game_func_123		proc	near
 
 check_al_zero:
 		mov	al,[si+3]
@@ -6763,7 +6807,9 @@ call_func136_127:
 		call	game_func_127
 		jmp	short dec_row
 
-game_func_124:
+game_func_123		endp
+
+game_func_124		proc	near
 
 check_col_2b:
 		cmp	byte ptr [si+3],2
@@ -6793,7 +6839,9 @@ call_func137_127:
 		call	game_func_127
 		jmp	short inc_row
 
-game_func_125:
+game_func_124		endp
+
+game_func_125		proc	near
 		mov	al,[si+3]
 		or	al,al			; Zero ?
 		stc				; Set carry flag
@@ -6830,7 +6878,9 @@ call_func135_126:
 		call	game_func_126
 		jmp	short inc_row
 
-game_func_126:
+game_func_125		endp
+
+game_func_126		proc	near
 
 inc_map_pos:
 		mov	ax,[si]
@@ -6846,7 +6896,9 @@ map_pos_wrap:
 		clc				; Clear carry flag
 		retn
 
-game_func_127:
+game_func_126		endp
+
+game_func_127		proc	near
 
 dec_map_pos:
 		mov	ax,[si]
@@ -6871,7 +6923,7 @@ dec_row:
 		and	byte ptr [si+2],3Fh	; '?'
 		retn
 
-game_func_122		endp
+game_func_127		endp
 
 game_func_128		proc	near
 		mov	ax,[si+2]

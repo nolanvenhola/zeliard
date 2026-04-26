@@ -815,7 +815,9 @@ loc_77:
 		mov	dx,4264h
 		jmp	loc_91
 
-sprite_wide_row_render:
+sprite_blit_dispatch		endp
+
+sprite_wide_row_render		proc	near
 		push	si
 		push	di
 		push	bx
@@ -1005,7 +1007,9 @@ loc_88:
 		pop	si
 		jmp	row_advance_done
 
-sprite_pos_pair_iter:
+sprite_wide_row_render		endp
+
+sprite_pos_pair_iter		proc	near
 		call	sprite_pos_blit
 
 sprite_pos_blit:
@@ -1037,7 +1041,9 @@ loc_90:
 		add	dx,4
 		retn
 
-sprite_cell_render:
+sprite_pos_pair_iter		endp
+
+sprite_cell_render		proc	near
 
 loc_91:
 		push	es
@@ -1101,7 +1107,7 @@ loc_93:
 		pop	es
 		retn
 
-sprite_blit_dispatch		endp
+sprite_cell_render		endp
 
 tga_sprite_render_blended		proc	near
 		push	bp
@@ -1118,7 +1124,9 @@ tga_sprite_render_blended		proc	near
 		pop	bp
 		jmp	short $+2		; delay for I/O
 
-tile_blend_inner_loop:
+tga_sprite_render_blended		endp
+
+tile_blend_inner_loop		proc	near
 		mov	cx,8
 
 blend_row_loop:
@@ -1143,7 +1151,7 @@ blend_row_loop:
 
 		retn
 
-tga_sprite_render_blended		endp
+tile_blend_inner_loop		endp
 
 tga_sprite_inner_blit		proc	near
 		mov	cx,8
@@ -2314,7 +2322,9 @@ loc_181:
 		pop	es
 		retn
 
-bg_restore:
+frame_row_driver		endp
+
+bg_restore		proc	near
 		test	byte ptr ds:restore_pending,0FFh
 		jnz	loc_182			; Jump if not zero
 		retn
@@ -2332,7 +2342,9 @@ loc_182:
 		mov	byte ptr ds:restore_pending,0
 		retn
 
-bg_save:
+bg_restore		endp
+
+bg_save		proc	near
 		push	ds
 		push	cs
 		pop	es
@@ -2358,7 +2370,9 @@ loc_184:
 		pop	ds
 		retn
 
-bg_restore_impl:
+bg_save		endp
+
+bg_restore_impl		proc	near
 		mov	di,cs:scroll_gfx_ptr
 		mov	ax,0B800h
 		mov	es,ax
@@ -2380,7 +2394,9 @@ loc_186:
 
 		retn
 
-scroll_cache_invalidate:
+bg_restore_impl		endp
+
+scroll_cache_invalidate		proc	near
 		mov	al,byte ptr ds:[84h]
 		add	al,ds:mask_word
 		and	al,3Fh			; '?'
@@ -2508,7 +2524,7 @@ loc_196:
 		pop	es
 		retn
 
-frame_row_driver		endp
+scroll_cache_invalidate		endp
 
 tga_plane_decode		proc	near
 		xor	bp,bp			; Zero register
@@ -2801,7 +2817,9 @@ loc_221:
 		pop	ds
 		retn
 
-tile_blend_row_pair:
+tga_tile_anim_update		endp
+
+tile_blend_row_pair		proc	near
 		mov	cx,2
 
 tile_blend_col_loop:
@@ -2836,7 +2854,7 @@ loc_223:
 		pop	ds
 		retn
 
-tga_tile_anim_update		endp
+tile_blend_row_pair		endp
 
 tga_row_mask_clear		proc	near
 		mov	ax,cs:mask_word

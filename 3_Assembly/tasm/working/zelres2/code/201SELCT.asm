@@ -1138,7 +1138,9 @@ ability_row_skip:
 
 		retn
 
-draw_exp_bar:
+draw_magic_panel		endp
+
+draw_exp_bar		proc	near
 		mov	ax,word ptr ds:char_exp_cap
 		mov	dx,3469h
 		mov	cx,3
@@ -1155,7 +1157,9 @@ draw_exp_bar:
 		mov	ah,4
 		jmp	word ptr cs:drv_render_char
 
-draw_key_count:
+draw_exp_bar		endp
+
+draw_key_count		proc	near
 		test	byte ptr ds:key_count,0FFh
 		jnz	draw_key_count_body			; Jump if not zero
 		retn
@@ -1182,7 +1186,9 @@ draw_key_count_body:
 		mov	ah,1
 		jmp	word ptr cs:drv_render_char
 
-draw_weapon_panel:
+draw_key_count		endp
+
+draw_weapon_panel		proc	near
 		test	byte ptr ds:weapon_count,0FFh
 		jz	weapon_panel_empty			; Jump if zero
 		mov	cl,ds:weapon_count
@@ -1313,7 +1319,9 @@ draw_weapon_list_loop:
 
 		retn
 
-fmt_number:
+draw_weapon_panel		endp
+
+fmt_number		proc	near
 		push	bx
 		push	dx
 		push	cx
@@ -1331,7 +1339,9 @@ fmt_number:
 		xor	bh,bh			; Zero register
 		jmp	word ptr cs:drv_fn_render_bg
 
-draw_portrait_tabs:
+fmt_number		endp
+
+draw_portrait_tabs		proc	near
 		mov	si,portrait_rect_tbl
 		mov	cx,4
 
@@ -1425,7 +1435,9 @@ poll_exit_queued:
 		mov	byte ptr ds:exit_queued,0
 		retn
 
-check_joy_neutral:
+draw_portrait_tabs		endp
+
+check_joy_neutral		proc	near
 
 check_joy_neutral_entry:
 		test	word ptr ds:gvar_timer_counter,1
@@ -1437,7 +1449,7 @@ joy_has_dir:
 		clc				; Clear carry flag
 		retn
 
-draw_magic_panel		endp
+check_joy_neutral		endp
 
 ; ---- String table (module data section, game_seg:SELCT_BASE + file offset) ----
 

@@ -695,7 +695,9 @@ loc_60:
 		mov	dx,533h
 		jmp	loc_77
 
-sprite_wide_row_render:
+sprite_blit_dispatch		endp
+
+sprite_wide_row_render		proc	near
 		push	si
 		push	di
 		push	bx
@@ -900,7 +902,9 @@ loc_74:
 		pop	si
 		jmp	row_advance
 
-sprite_pair_blit:
+sprite_wide_row_render		endp
+
+sprite_pair_blit		proc	near
 		call	sprite_pair_blit_alt
 
 sprite_pair_blit_alt:
@@ -933,7 +937,9 @@ loc_76:
 		inc	dx
 		retn
 
-hgc_sprite_blit:
+sprite_pair_blit		endp
+
+hgc_sprite_blit		proc	near
 
 loc_77:
 		push	es
@@ -995,7 +1001,7 @@ loc_79:
 		pop	es
 		retn
 
-sprite_blit_dispatch		endp
+hgc_sprite_blit		endp
 
 sprite_or_into_cache		proc	near
 		push	bp
@@ -1012,7 +1018,9 @@ sprite_or_into_cache		proc	near
 		pop	bp
 		jmp	short $+2		; delay for I/O
 
-physics_func_11:
+sprite_or_into_cache		endp
+
+physics_func_11		proc	near
 		mov	cx,8
 
 locloop_80:
@@ -1029,7 +1037,7 @@ locloop_80:
 
 		retn
 
-sprite_or_into_cache		endp
+physics_func_11		endp
 
 plane_copy_process		proc	near
 		mov	cx,8
@@ -2189,7 +2197,9 @@ loc_177:
 		pop	es
 		retn
 
-bg_restore_dispatch:
+frame_row_driver		endp
+
+bg_restore_dispatch		proc	near
 		test	byte ptr ds:restore_pending,0FFh
 		jnz	loc_178			; Jump if not zero
 		retn
@@ -2207,7 +2217,9 @@ loc_178:
 		mov	byte ptr ds:restore_pending,0
 		retn
 
-save_bg_rows:
+bg_restore_dispatch		endp
+
+save_bg_rows		proc	near
 		push	ds
 		push	cs
 		pop	es
@@ -2233,7 +2245,9 @@ loc_180:
 		pop	ds
 		retn
 
-restore_bg_rows:
+save_bg_rows		endp
+
+restore_bg_rows		proc	near
 		push	ds
 		push	cs
 		pop	ds
@@ -2268,7 +2282,9 @@ loc_182:
 		pop	ds
 		retn
 
-clear_sprite_cache_block:
+restore_bg_rows		endp
+
+clear_sprite_cache_block		proc	near
 		mov	al,byte ptr ds:[84h]
 		add	al,ds:scroll_delta
 		and	al,3Fh			; '?'
@@ -2396,7 +2412,9 @@ scroll_vga_recompute:
 		mov	ds:scroll_vga_ofs,ax
 		jmp	short loc_196
 
-load_bg_to_cache:
+clear_sprite_cache_block		endp
+
+load_bg_to_cache		proc	near
 
 loc_194:
 		test	byte ptr ds:redraw_lock,0FFh
@@ -2448,7 +2466,7 @@ loc_199:
 		pop	es
 		retn
 
-frame_row_driver		endp
+load_bg_to_cache		endp
 
 ; sprite_dim_blit -- dim/darken variant sprite blit. Reads 8 rows from
 ; sprite source (AL*0x10+0x8030), spreads bits upward (bx = src OR bit-expand)
@@ -2603,7 +2621,9 @@ loc_209:
 		pop	ds
 		retn
 
-hgc_write_row_masked:
+anim_refresh_tile		endp
+
+hgc_write_row_masked		proc	near
 		mov	cx,2
 
 locloop_210:
@@ -2650,7 +2670,7 @@ loc_212:
 		pop	ds
 		retn
 
-anim_refresh_tile		endp
+hgc_write_row_masked		endp
 
 hgc_clear_row_masked		proc	near
 		push	di

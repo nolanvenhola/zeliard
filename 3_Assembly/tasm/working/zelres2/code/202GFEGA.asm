@@ -772,7 +772,9 @@ loc_50:
 		mov	dx,4A2h
 		jmp	sprite_cell_render
 
-sprite_wide_row_render:
+sprite_blit_dispatch		endp
+
+sprite_wide_row_render		proc	near
 		push	si
 		push	di
 		push	bx
@@ -959,7 +961,9 @@ loc_61:
 		pop	si
 		jmp	row_advance
 
-sprite_pos_pair_iter:
+sprite_wide_row_render		endp
+
+sprite_pos_pair_iter		proc	near
 		call	sprite_pos_blit
 
 sprite_pos_blit:
@@ -992,7 +996,9 @@ loc_63:
 		inc	dx
 		retn
 
-sprite_cell_render:
+sprite_pos_pair_iter		endp
+
+sprite_cell_render		proc	near
 		push	es
 		push	ds
 		mov	bl,ds:palette_byte
@@ -1046,7 +1052,7 @@ loc_66:
 		pop	es
 		retn
 
-sprite_blit_dispatch		endp
+sprite_cell_render		endp
 
 ega_sprite_blit_ex		proc	near
 		push	si
@@ -1060,7 +1066,9 @@ ega_sprite_blit_ex		proc	near
 		pop	si
 		jmp	short $+2		; delay for I/O
 
-ega_sprite_render_blended:
+ega_sprite_blit_ex		endp
+
+ega_sprite_render_blended		proc	near
 		mov	dx,3C4h
 		mov	ax,702h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -1143,7 +1151,7 @@ blend_row_loop:
 						;  al = 8, data bit mask
 		retn
 
-ega_sprite_blit_ex		endp
+ega_sprite_render_blended		endp
 
 ega_sprite_render_solid		proc	near
 		mov	dx,3C4h
@@ -2331,7 +2339,9 @@ loc_148:
 		pop	es
 		retn
 
-bg_restore:
+frame_row_driver		endp
+
+bg_restore		proc	near
 		test	byte ptr ds:restore_pending,0FFh
 		jnz	loc_149			; Jump if not zero
 		retn
@@ -2351,7 +2361,9 @@ loc_149:
 		mov	byte ptr ds:restore_pending,0
 		retn
 
-bg_save:
+bg_restore		endp
+
+bg_save		proc	near
 		mov	si,cs:scroll_src_ofs
 		mov	ax,0A000h
 		mov	es,ax
@@ -2384,7 +2396,9 @@ bg_save_row_loop:
 						;  al = 5, mode
 		retn
 
-bg_restore_impl:
+bg_save		endp
+
+bg_restore_impl		proc	near
 		mov	di,cs:scroll_src_ofs
 		mov	ax,0A000h
 		mov	es,ax
@@ -2417,7 +2431,9 @@ bg_restore_row_loop:
 						;  al = 5, mode
 		retn
 
-scroll_cache_invalidate:
+bg_restore_impl		endp
+
+scroll_cache_invalidate		proc	near
 		mov	al,byte ptr ds:[84h]
 		add	al,ds:scroll_delta
 		and	al,3Fh			; '?'
@@ -2624,7 +2640,7 @@ loc_163:
 		pop	es
 		retn
 
-frame_row_driver		endp
+scroll_cache_invalidate		endp
 
 	; Dispatch handler: compute scroll_vga_ofs from packed row/col in BL/BH,
 ; then fall through into tile_blit_3x3 (loc_166) bypassing the redraw_lock check.
@@ -2900,7 +2916,9 @@ loc_175:
 		pop	ds
 		retn
 
-ega_plane_write_2row:
+ega_tile_anim_update		endp
+
+ega_plane_write_2row		proc	near
 		mov	cx,2
 
 plane_write_2row_loop:
@@ -2947,7 +2965,7 @@ loc_177:
 		pop	ds
 		retn
 
-ega_tile_anim_update		endp
+ega_plane_write_2row		endp
 
 ega_clear_pixel_pair		proc	near
 		xor	al,al			; Zero register

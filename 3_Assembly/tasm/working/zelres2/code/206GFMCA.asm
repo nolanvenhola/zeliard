@@ -723,7 +723,9 @@ loc_55:
 		mov	dx,1288h
 		jmp	loc_69
 
-sprite_wide_row_render:
+sprite_blit_dispatch		endp
+
+sprite_wide_row_render		proc	near
 		push	si
 		push	di
 		push	bx
@@ -916,7 +918,9 @@ loc_66:
 		pop	si
 		jmp	loc_23
 
-sprite_pos_pair_iter:
+sprite_wide_row_render		endp
+
+sprite_pos_pair_iter		proc	near
 		call	sprite_pos_blit
 
 sprite_pos_blit:
@@ -948,7 +952,9 @@ loc_68:
 		add	dx,8
 		retn
 
-sprite_cell_render:
+sprite_pos_pair_iter		endp
+
+sprite_cell_render		proc	near
 
 loc_69:
 		push	es
@@ -1008,7 +1014,7 @@ loc_71:
 		pop	es
 		retn
 
-sprite_blit_dispatch		endp
+sprite_cell_render		endp
 
 mca_sprite_blit_ex		proc	near
 		push	bp
@@ -1025,7 +1031,9 @@ mca_sprite_blit_ex		proc	near
 		pop	bp
 		jmp	short $+2		; delay for I/O
 
-mca_plane_3_iter:
+mca_sprite_blit_ex		endp
+
+mca_plane_3_iter		proc	near
 		mov	cx,8
 
 ai_mul_8rows_loop:
@@ -1041,7 +1049,7 @@ ai_mul_8rows_loop:
 
 		retn
 
-mca_sprite_blit_ex		endp
+mca_plane_3_iter		endp
 
 mca_plane_nibble_iter		proc	near
 		mov	cx,4
@@ -2172,7 +2180,9 @@ loc_159:
 		pop	es
 		retn
 
-scroll_restore:
+frame_row_dispatcher		endp
+
+scroll_restore		proc	near
 		test	byte ptr ds:restore_pending,0FFh
 		jnz	loc_160			; Jump if not zero
 		retn
@@ -2190,7 +2200,9 @@ loc_160:
 		mov	byte ptr ds:restore_pending,0
 		retn
 
-scroll_buf_restore:
+scroll_restore		endp
+
+scroll_buf_restore		proc	near
 		push	ds
 		mov	si,cs:scroll_src_ofs
 		mov	ax,0A000h
@@ -2210,7 +2222,9 @@ scroll_buf_restore_loop:
 		pop	ds
 		retn
 
-scroll_buf_save:
+scroll_buf_restore		endp
+
+scroll_buf_save		proc	near
 		push	ds
 		mov	di,cs:scroll_src_ofs
 		mov	ax,0A000h
@@ -2230,7 +2244,9 @@ scroll_buf_save_loop:
 		pop	ds
 		retn
 
-scroll_clear_cache:
+scroll_buf_save		endp
+
+scroll_clear_cache		proc	near
 		mov	al,byte ptr ds:[84h]
 		add	al,ds:scroll_delta
 		and	al,3Fh			; '?'
@@ -2418,7 +2434,9 @@ hero_sprite_col_blit_pos:
 		mov	ds:scroll_vga_ofs,di
 		jmp	short loc_177
 
-hero_sprite_col_blit:
+scroll_clear_cache		endp
+
+hero_sprite_col_blit		proc	near
 
 loc_175:
 		test	byte ptr ds:redraw_lock,0FFh
@@ -2464,7 +2482,7 @@ hero_col_inner_loop:
 		pop	es
 		retn
 
-frame_row_dispatcher		endp
+hero_sprite_col_blit		endp
 
 ; mca_sprite_render_xor -- sprite render with XOR/combine. Called indirectly.
 ; Reads 3 bytes per cell, writes 4 bytes per row, skips zero bytes (preserves
@@ -2637,7 +2655,9 @@ loc_192:
 		pop	ds
 		retn
 
-mca_tile_half_blit_rows:
+mca_tile_half_blit		endp
+
+mca_tile_half_blit_rows		proc	near
 		mov	cx,2
 
 tile_half_blit_loop:
@@ -2694,7 +2714,7 @@ loc_194:
 		pop	ds
 		retn
 
-mca_tile_half_blit		endp
+mca_tile_half_blit_rows		endp
 
 mca_tile_half_clear		proc	near
 		mov	ax,cs:rle_mask
