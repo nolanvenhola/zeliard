@@ -1082,7 +1082,9 @@ credits_tab_indent:
 		and	byte ptr ds:credits_col_byte,0FCh
 		jmp	credits_after_newline
 
-credits_putchar:
+credits_loop_main		endp
+
+credits_putchar		proc	near
 		push	ax
 		mov	al,ds:credits_row_byte
 		mov	cl,0Eh
@@ -1093,6 +1095,8 @@ credits_putchar:
 		mov	bx,ax
 		pop	ax
 		jmp	word ptr cs:gfx_scroll_jmp
+
+credits_putchar		endp
 
 credits_end_page:
 		xor	al,al			; Zero register
@@ -1108,8 +1112,6 @@ credits_scene_next:
 		call	word ptr ds:credit_scene_fn_tbl[bx]	;*
 		inc	byte ptr ds:credits_scene_idx
 		jmp	credits_fetch_byte
-
-credits_loop_main		endp
 
 ; =====================================================================
 ; ending_credits_dispatch - 7 per-scene handler procs called via
@@ -1243,7 +1245,9 @@ rle_blit_pair		proc	near
 		call	rle_decode_plane
 		jmp	short rle_interleave_planes
 
-rle_decode_plane:
+rle_blit_pair		endp
+
+rle_decode_plane		proc	near
 		push	di
 		lodsw				; String [si] to ax
 		mov	cx,ax
@@ -1279,6 +1283,8 @@ rle_word_tail:
 		add	cx,cx
 		pop	di
 		retn
+
+rle_decode_plane		endp
 
 rle_interleave_planes:
 		xor	dh,dh			; Zero register
@@ -1323,8 +1329,6 @@ interleave_plane_loop:
 				loop	interleave_plane_loop		; Loop if cx > 0
 
 		retn
-
-rle_blit_pair		endp
 
 tile_rle_blit:
 						test	byte ptr [si],40h	; '@'

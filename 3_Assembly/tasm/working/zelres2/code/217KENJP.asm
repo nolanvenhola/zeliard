@@ -1039,7 +1039,9 @@ name_in_page_down_wait:
 		pop	di
 		retn
 
-update_name_cursor:
+name_input_loop		endp
+
+update_name_cursor		proc	near
 
 update_name_cursor_entry:
 		push	si
@@ -1088,7 +1090,9 @@ cursor_len_max:
 		pop	si
 		retn
 
-redraw_name_field:
+update_name_cursor		endp
+
+redraw_name_field		proc	near
 		push	si
 		mov	ax,ds:state_name_box_x
 		shr	ax,1			; Shift w/zeros fill
@@ -1104,6 +1108,8 @@ redraw_name_field:
 		call	word ptr cs:drv_fn_draw_str
 		pop	si
 		retn
+
+redraw_name_field		endp
 
 name_in_backspace_impl:
 		push	si
@@ -1136,8 +1142,6 @@ name_backspace_maxlen_dec:
 		call	redraw_name_field
 		pop	si
 		retn
-
-name_input_loop		endp
 
 			                        ;* No entry point to code
 		push	cs

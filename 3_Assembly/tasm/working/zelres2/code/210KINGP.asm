@@ -375,7 +375,7 @@ face_anim_run:
 
 ; -- Entry used by fall-through from gfx refresh path -------------------
 
-face_mode_update:
+face_mode_update		proc	near
 		test	byte ptr ds:face_mode_flag,0FFh
 		jnz	face_phase_inc		; Jump if not zero
 		retn
@@ -416,6 +416,8 @@ face_glyph_loop:
 				loop	face_glyph_loop		; Loop if cx > 0
 
 		retn
+
+face_mode_update		endp
 ; -- face_phase_xlat: 26 bytes at 0x360, maps face_phase_cnt to glyph-set
 ;    index (values 0/1/2). Falls under face_anim_tick so label is reached
 ;    via XLAT (mov bx,face_phase_xlat + xlat).

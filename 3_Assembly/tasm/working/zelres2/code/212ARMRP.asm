@@ -1065,7 +1065,9 @@ anim_toggle_pose:
 		mov	al,1
 		jmp	short render_frame_top
 
-render_shopkeeper_frame:
+shopkeeper_anim_tick		endp
+
+render_shopkeeper_frame		proc	near
 
 render_frame_top:
 		xor	ah,ah			; Zero register
@@ -1116,7 +1118,7 @@ render_frame_glyph_loop:
 
 		retn
 
-shopkeeper_anim_tick		endp
+render_shopkeeper_frame		endp
 
 			                        ;* No entry point to code
 		add	al,[bx+si-56h]

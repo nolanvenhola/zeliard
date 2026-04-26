@@ -443,7 +443,7 @@ mao2_phase_ofs_data	label	byte		; phase substate offset xlat data (xlat tbl base
 		db	 0Ah, 0Bh, 0Bh	; phase substate xlat entry
 mao2_phase_ofs_data_end	db	0Ch		; xlat table terminator/last entry
 
-mao2_pick_target_idx:
+mao2_pick_target_idx		proc	near
 		mov	byte ptr ds:mao2_speech_dx_lo,9
 		call	word ptr cs:mao2_dispatch_ptr
 		shr	al,1			; Shift w/zeros fill
@@ -479,6 +479,8 @@ mao2_target_idx_retry:
 mao2_target_idx_set_b:
 		mov	ds:mao2_npc_target_idx,al
 		retn
+
+mao2_pick_target_idx		endp
 
 mao2_anim_phase_top:
 		inc	byte ptr ds:mao2_phase_c_idx
@@ -670,7 +672,7 @@ mao2_handler_step_data	label	byte	; phase-handler 3-byte step table (step,dx_del
 		db	 00h, 00h, 04h, 00h, 00h, 00h	; handler step (step,dx,sub)
 mao2_handler_step_data_end	db	80h	; step-table terminator (cmp [bx+3],80h)
 
-mao2_target_dec:
+mao2_target_dec		proc	near
 		mov	ax,ds:mao2_npc_target_idx
 		dec	ax
 		mov	bx,0Eh
@@ -684,7 +686,9 @@ mao2_target_dec_set:
 		mov	byte ptr ds:mao2_phase_b_step,0
 		retn
 
-mao2_target_inc:
+mao2_target_dec		endp
+
+mao2_target_inc		proc	near
 		mov	ax,ds:mao2_npc_target_idx
 		inc	ax
 		mov	bx,offset mao2_layout_extended
@@ -696,6 +700,8 @@ mao2_target_inc_set:
 		mov	ds:mao2_npc_target_idx,ax
 		mov	byte ptr ds:mao2_phase_b_step,0
 		retn
+
+mao2_target_inc		endp
 
 mao2_render_emit_top:
 		push	cs

@@ -140,7 +140,7 @@ gnd1_rle_loop:
 ; 88x56 RLE decoder for mountain layer (opcode 6 = 2-byte fill).
 ; Called from main with SI=source, DI=dest (seg1:0 or seg1:1340h).
 
-rle_decode_mountain_88x56:
+rle_decode_mountain_88x56		proc	near
 		xor	cx,cx			; Zero register (CH=col, CL=row)
 
 rle_mntn_loop:
@@ -166,17 +166,21 @@ rle_mntn_more:
 								jnz	rle_mntn_store		; Jump if not zero
 					jmp	short rle_mntn_loop
 
+rle_decode_mountain_88x56		endp
+
 ; --- render_mountains ---
 ; Dispatch by video_mode: jmp [bx + 0x338A] where bx=video_mode*2.
 ; Disp16 0x338A overlaps with the dispatch-table storage ?-- the first two
 ; table WORDs (at 0x338A/0x338C) are the jmp opcode/disp bytes themselves,
 ; so only entries 2..7 (video_mode values 2..7) are real handler pointers.
 
-render_mountains:
+render_mountains		proc	near
 		xor	bx,bx			; Zero register
 		mov	bl,ds:video_mode
 		add	bx,bx
 		jmp	word ptr ds:jpt_mountains_render[bx]	;* jmp [bx+0x338A]
+
+render_mountains		endp
 
 ; --- jpt_mountains_render continuation (6 word entries starting at 0x338E) ---
 ; Bytes here are the handler-pointer words fetched by the jmp above.
@@ -214,7 +218,7 @@ mountains_ega:
 		pop	ds
 		retn
 
-ega_mtn_blit_88_rows:
+ega_mtn_blit_88_rows		proc	near
 		mov	di,46Ch			; EGA starting VGA offset
 		mov	cx,58h			; 88 rows
 
@@ -229,6 +233,8 @@ ega_mtn_row_loop:
 					loop	ega_mtn_row_loop
 
 		retn
+
+ega_mtn_blit_88_rows		endp
 
 ; --- mountains_cga (video_mode 3 or 4): CGA/Tandy 4-color mountain render ---
 

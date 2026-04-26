@@ -276,10 +276,12 @@ loc_17:
 		call	anim_draw_a
 		jmp	short anim_draw_b
 
+anim_scroll_step	endp
+
 ;-- anim_draw_a: external entry into anim_scroll_step -- draws 2 rows x 3
 ;  cols of glyphs from anim_text_ptr_a[phase_b * 6].
 
-anim_draw_a:
+anim_draw_a		proc	near
 		mov	bl,ds:anim_phase_b
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -315,6 +317,8 @@ anim_a_skip:
 				loop	anim_a_row_loop		; Loop if cx > 0
 
 		retn
+
+anim_draw_a		endp
 
 ;-- anim_text_ptr_a table: 2x3 glyph patterns used by anim_draw_a, one
 ;  row per anim_phase_b (0..2).  The decoded mnemonics below are Sourcer
@@ -365,8 +369,6 @@ anim_b_skip:
 				loop	anim_b_row_loop		; Loop if cx > 0
 
 		retn
-
-anim_scroll_step	endp
 
 ;-- anim_text_ptr_b table: 2x2 glyph patterns per anim_phase_b (0..2).
 ;  Also mis-decoded by Sourcer -- keep as data bytes.
