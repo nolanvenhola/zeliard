@@ -138,95 +138,184 @@ tori_state_template:				; 32-byte template
 ;  Each entry = runtime address in game_seg (= 0xA000 + file offset).
 ; -------------------------------------------------------------------------
 
-tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers
+tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers (entries 13,14 alias into tori_frame_00's row 0)
 		db	 4Eh,0A0h, 67h,0A0h, 94h,0A0h	; -> 0xA04E, 0xA067, 0xA094
 		db	0BCh,0A0h,0DAh,0A0h, 02h,0A1h	; -> 0xA0BC, 0xA0DA, 0xA102
 		db	 16h,0A1h, 2Ah,0A1h, 3Eh,0A1h	; -> 0xA116, 0xA12A, 0xA13E
 		db	 52h,0A1h, 57h,0A1h, 70h,0A1h	; -> 0xA152, 0xA157, 0xA170
-		db	 8Eh,0A1h,0ACh,0A1h,0C5h,0A1h	; -> 0xA18E, 0xA1AC, 0xA1C5
+		db	 8Eh,0A1h			; -> 0xA18E (entry 12; entries 13/14 supplied by tori_frame_00 row 0)
 
 ; -------------------------------------------------------------------------
-;  Sprite frame data (file 0x052..0x176).
+;  Sprite frame data (file 0x04E..0x1D7).
 ;  Tile-index rows (variable length, 0x00 row-terminators) indexed by
-;  tori_frame_ptr_tbl_a.  Two single bytes (tori_scan_acc_a, tori_scan_acc_b) are dual-use
-;  loop counters referenced from the main scan code.  The word constant
-;  tori_extern_fn_ptr (= 0x0900) embedded mid-table is invoked via `call cs:tori_extern_fn_ptr`
-;  as a function pointer (the runtime resolves it via game-segment fixup;
-;  static analysis cannot trace it).
+;  tori_frame_ptr_tbl_a.  Frame_00's first 4 bytes alias the tail of
+;  ptr_tbl_a above (same overlap pattern as 309CRAB / 310TAKO frame_00).
+;  Two single bytes (tori_scan_acc_a @0x080, tori_scan_acc_b @0x083) and
+;  a row-terminator label (tori_glyph_tbl @0x08C) are dual-use anchors
+;  inside frame_01.  The word constant tori_extern_fn_ptr (= 0x0900,
+;  bytes 0x11A..0x11B) is embedded across the row 0/1 boundary of
+;  frame_06 and is invoked via `call cs:tori_extern_fn_ptr` as a function
+;  pointer (runtime resolves it via game-segment fixup; static analysis
+;  cannot trace it).
 ; -------------------------------------------------------------------------
 
-tori_frame_00:					; -> 0xA052
-		db	 00h, 01h, 02h, 03h, 04h, 00h
-		db	 9Ch, 02h, 9Dh, 04h, 00h, 29h
-		db	 2Ah, 2Bh, 2Ch, 00h, 6Ah, 6Bh
-		db	 6Ch, 6Dh, 00h, 6Ah, 6Bh, 8Ah
-		db	 6Dh, 00h, 0Eh, 0Fh, 12h, 13h
-		db	 00h, 2Dh, 32h, 2Eh, 2Fh, 00h
-		db	 2Dh, 49h, 2Eh, 50h, 00h, 2Dh
-		db	 00h, 2Eh, 58h, 00h
-tori_scan_acc_a		db	 00h			; dual-use: scan-loop accumulator
-		db	 62h, 66h
-tori_scan_acc_b		db	 67h			; dual-use: scan-loop accumulator
-		db	 00h, 7Dh, 7Eh, 00h, 87h, 00h
-		db	 7Dh, 7Eh
-tori_glyph_tbl		db	 00h			; data table (indexed access)
-		db	 19h, 00h, 00h, 00h, 8Fh, 90h
-		db	 00h, 96h, 97h, 98h, 99h, 00h
-		db	 10h, 11h, 14h, 00h, 00h, 00h
-		db	 3Bh, 38h, 39h, 00h, 4Dh, 4Eh
-		db	 49h, 4Ah, 00h, 00h, 00h, 59h
-		db	 5Ah, 00h, 63h, 64h, 68h, 69h
-		db	 00h, 00h, 72h, 6Eh, 6Fh, 00h
-		db	 91h, 00h, 94h, 95h, 00h, 99h
-		db	 9Ah, 28h, 9Bh, 00h, 00h, 05h
-		db	 06h, 07h, 00h, 39h, 3Ah, 36h
-		db	 37h, 00h, 4Fh, 00h, 4Bh, 4Ch
-		db	 00h, 00h, 5Bh, 00h, 5Fh, 00h
-		db	 65h, 00h,0A4h,0A5h, 00h, 7Ah
-		db	 00h, 76h, 77h, 00h, 15h, 16h
-		db	 17h, 18h, 00h, 35h, 36h, 33h
-		db	 34h, 00h, 50h, 51h, 3Ch, 3Dh
-		db	 00h, 5Ch, 5Dh, 60h, 61h, 00h
-		db	 2Eh,0A6h, 00h, 3Ch, 00h, 7Bh
-		db	 7Ch, 78h, 79h, 00h, 92h, 93h
-		db	0ACh,0ABh, 00h,0AAh, 28h, 27h
-		db	 26h, 00h, 08h, 09h, 19h, 1Ah
-		db	 00h, 08h, 09h, 1Ch, 1Dh, 00h
-		db	 08h, 09h, 19h, 1Fh, 00h
-		db	 08h, 09h, 21h, 22h
-tori_extern_fn_ptr		dw	900h			; embedded fn-ptr (used via call cs:tori_extern_fn_ptr)
-		db	 0Ah, 1Ah, 1Bh, 00h, 09h, 0Ah
-		db	 1Dh, 1Eh, 00h, 09h, 0Ah, 1Fh
-		db	 20h, 00h, 09h, 0Ah, 22h, 23h
-		db	 00h,0AFh,0B0h,0B1h,0B2h, 00h
-		db	 0Bh, 00h, 8Bh,0BAh, 00h, 0Bh
-		db	 00h, 8Bh, 8Ch, 00h, 0Bh,0B5h
-		db	0B3h,0B4h, 00h, 0Bh,0B1h, 0Ch
-		db	 0Dh, 00h, 00h,0ADh,0BBh,0AEh
-		db	 00h, 00h, 00h, 8Dh, 8Eh, 00h
-		db	0B6h,0B7h, 00h,0B8h, 00h,0B1h
-		db	0B2h, 0Dh,0B9h, 00h, 2Fh, 30h
-		db	 3Ch, 3Dh, 00h, 52h, 53h, 3Eh
-		db	 3Fh, 00h, 5Eh, 3Fh, 42h, 43h
-		db	 00h,0A7h,0A8h, 3Dh, 3Eh, 00h
-		db	 73h, 74h, 70h, 71h, 00h, 31h
-		db	 00h, 3Eh, 3Fh, 00h, 40h, 41h
-		db	 00h, 00h, 00h, 9Eh, 9Fh,0A1h
-		db	0A2h, 00h,0A9h, 00h, 3Fh, 00h
-		db	 00h, 75h, 00h, 00h, 82h, 00h
-		db	 75h, 00h, 00h, 00h, 00h, 40h
-		db	 41h, 00h, 44h, 00h, 42h, 43h
-		db	 54h, 46h, 00h,0A0h, 44h,0A3h
-		db	 47h, 00h, 40h, 41h, 00h, 00h
-		db	 00h, 85h, 86h, 83h, 84h, 00h
-		db	 3Dh, 7Fh, 1Ah, 1Bh, 00h, 42h
-		db	 43h, 45h, 46h, 00h, 55h, 00h
-		db	 56h, 57h, 00h, 45h, 46h, 48h
-		db	 00h, 00h, 3Dh, 7Fh, 88h, 89h
-		db	 00h, 3Fh, 00h, 8Bh, 8Ch, 00h
-		db	 44h, 45h, 47h, 48h, 00h, 80h
-		db	 81h, 00h, 00h, 00h, 00h, 00h
-		db	 8Dh, 8Eh
+tori_frame_00:				; offset 0x04E -> ptr 0xA04E (first 4 bytes alias tail of ptr_tbl_a)
+		db	0ACh, 0A1h, 0C5h, 0A1h,  00h	; row 0
+		db	 01h,  02h,  03h,  04h,  00h	; row 1
+		db	9Ch,  02h, 9Dh,  04h,  00h	; row 2
+		db	29h, 2Ah, 2Bh, 2Ch,  00h	; row 3
+		db	6Ah, 6Bh, 6Ch, 6Dh,  00h	; row 4
+
+tori_frame_01:				; offset 0x067 -> ptr 0xA067
+		db	6Ah, 6Bh, 8Ah, 6Dh,  00h	; row 0
+		db	 0Eh,  0Fh, 12h, 13h,  00h	; row 1
+		db	2Dh, 32h, 2Eh, 2Fh,  00h	; row 2
+		db	2Dh, 49h, 2Eh, 50h,  00h	; row 3
+		db	2Dh,  00h	; row 4
+		db	2Eh, 58h,  00h	; row 5
+tori_scan_acc_a	db	 00h			; row 6 (0x080); dual-use scan-loop accumulator
+		db	62h, 66h		; row 7 part 1 (0x081..0x082)
+tori_scan_acc_b	db	67h			; row 7 part 2 (0x083); dual-use scan accumulator
+		db	 00h			; row 7 part 3 (0x084); row terminator
+		db	7Dh, 7Eh,  00h	; row 8
+		db	87h,  00h	; row 9
+		db	7Dh, 7Eh		; row 10 part 1 (0x08A..0x08B)
+tori_glyph_tbl	db	 00h			; row 10 part 2 (0x08C); glyph-table data anchor
+		db	19h,  00h	; row 11
+		db	 00h	; row 12
+		db	 00h	; row 13
+		db	8Fh, 90h,  00h	; row 14
+
+tori_frame_02:				; offset 0x094 -> ptr 0xA094
+		db	96h, 97h, 98h, 99h,  00h	; row 0
+		db	10h, 11h, 14h,  00h	; row 1
+		db	 00h	; row 2
+		db	 00h	; row 3
+		db	3Bh, 38h, 39h,  00h	; row 4
+		db	4Dh, 4Eh, 49h, 4Ah,  00h	; row 5
+		db	 00h	; row 6
+		db	 00h	; row 7
+		db	59h, 5Ah,  00h	; row 8
+		db	63h, 64h, 68h, 69h,  00h	; row 9
+		db	 00h	; row 10
+		db	72h, 6Eh, 6Fh,  00h	; row 11
+		db	91h,  00h	; row 12
+		db	94h, 95h,  00h	; row 13
+
+tori_frame_03:				; offset 0x0BC -> ptr 0xA0BC
+		db	99h, 9Ah, 28h, 9Bh,  00h	; row 0
+		db	 00h	; row 1
+		db	 05h,  06h,  07h,  00h	; row 2
+		db	39h, 3Ah, 36h, 37h,  00h	; row 3
+		db	4Fh,  00h	; row 4
+		db	4Bh, 4Ch,  00h	; row 5
+		db	 00h	; row 6
+		db	5Bh,  00h	; row 7
+		db	5Fh,  00h	; row 8
+		db	65h,  00h	; row 9
+		db	0A4h, 0A5h,  00h	; row 10
+
+tori_frame_04:				; offset 0x0DA -> ptr 0xA0DA
+		db	7Ah,  00h	; row 0
+		db	76h, 77h,  00h	; row 1
+		db	15h, 16h, 17h, 18h,  00h	; row 2
+		db	35h, 36h, 33h, 34h,  00h	; row 3
+		db	50h, 51h, 3Ch, 3Dh,  00h	; row 4
+		db	5Ch, 5Dh, 60h, 61h,  00h	; row 5
+		db	2Eh, 0A6h,  00h	; row 6
+		db	3Ch,  00h	; row 7
+		db	7Bh, 7Ch, 78h, 79h,  00h	; row 8
+		db	92h, 93h, 0ACh, 0ABh,  00h	; row 9
+
+tori_frame_05:				; offset 0x102 -> ptr 0xA102
+		db	0AAh, 28h, 27h, 26h,  00h	; row 0
+		db	 08h,  09h, 19h, 1Ah,  00h	; row 1
+		db	 08h,  09h, 1Ch, 1Dh,  00h	; row 2
+		db	 08h,  09h, 19h, 1Fh,  00h	; row 3
+
+tori_frame_06:				; offset 0x116 -> ptr 0xA116 (embeds tori_extern_fn_ptr (dw 0x0900) across row 0/1 boundary)
+		db	 08h,  09h, 21h, 22h	; row 0 (0x116..0x119)
+tori_extern_fn_ptr	dw	900h			; spans row 0/1 terminator (0x11A..0x11B); fn-ptr called as cs:tori_extern_fn_ptr
+		db	 0Ah, 1Ah, 1Bh,  00h	; row 1 tail (0x11C..0x11F)
+		db	 09h,  0Ah, 1Dh, 1Eh,  00h	; row 2
+		db	 09h,  0Ah, 1Fh, 20h,  00h	; row 3
+
+tori_frame_07:				; offset 0x12A -> ptr 0xA12A
+		db	 09h,  0Ah, 22h, 23h,  00h	; row 0
+		db	0AFh, 0B0h, 0B1h, 0B2h,  00h	; row 1
+		db	 0Bh,  00h	; row 2
+		db	8Bh, 0BAh,  00h	; row 3
+		db	 0Bh,  00h	; row 4
+		db	8Bh, 8Ch,  00h	; row 5
+
+tori_frame_08:				; offset 0x13E -> ptr 0xA13E
+		db	 0Bh, 0B5h, 0B3h, 0B4h,  00h	; row 0
+		db	 0Bh, 0B1h,  0Ch,  0Dh,  00h	; row 1
+		db	 00h	; row 2
+		db	0ADh, 0BBh, 0AEh,  00h	; row 3
+		db	 00h	; row 4
+		db	 00h	; row 5
+		db	8Dh, 8Eh,  00h	; row 6
+
+tori_frame_09:				; offset 0x152 -> ptr 0xA152
+		db	0B6h, 0B7h,  00h	; row 0
+		db	0B8h,  00h	; row 1
+
+tori_frame_10:				; offset 0x157 -> ptr 0xA157
+		db	0B1h, 0B2h,  0Dh, 0B9h,  00h	; row 0
+		db	2Fh, 30h, 3Ch, 3Dh,  00h	; row 1
+		db	52h, 53h, 3Eh, 3Fh,  00h	; row 2
+		db	5Eh, 3Fh, 42h, 43h,  00h	; row 3
+		db	0A7h, 0A8h, 3Dh, 3Eh,  00h	; row 4
+
+tori_frame_11:				; offset 0x170 -> ptr 0xA170
+		db	73h, 74h, 70h, 71h,  00h	; row 0
+		db	31h,  00h	; row 1
+		db	3Eh, 3Fh,  00h	; row 2
+		db	40h, 41h,  00h	; row 3
+		db	 00h	; row 4
+		db	 00h	; row 5
+		db	9Eh, 9Fh, 0A1h, 0A2h,  00h	; row 6
+		db	0A9h,  00h	; row 7
+		db	3Fh,  00h	; row 8
+		db	 00h	; row 9
+		db	75h,  00h	; row 10
+		db	 00h	; row 11
+		db	82h,  00h	; row 12
+
+tori_frame_12:				; offset 0x18E -> ptr 0xA18E
+		db	75h,  00h	; row 0
+		db	 00h	; row 1
+		db	 00h	; row 2
+		db	 00h	; row 3
+		db	40h, 41h,  00h	; row 4
+		db	44h,  00h	; row 5
+		db	42h, 43h, 54h, 46h,  00h	; row 6
+		db	0A0h, 44h, 0A3h, 47h,  00h	; row 7
+		db	40h, 41h,  00h	; row 8
+		db	 00h	; row 9
+		db	 00h	; row 10
+		db	85h, 86h, 83h, 84h,  00h	; row 11
+
+tori_frame_13:				; offset 0x1AC -> ptr 0xA1AC
+		db	3Dh, 7Fh, 1Ah, 1Bh,  00h	; row 0
+		db	42h, 43h, 45h, 46h,  00h	; row 1
+		db	55h,  00h	; row 2
+		db	56h, 57h,  00h	; row 3
+		db	45h, 46h, 48h,  00h	; row 4
+		db	 00h	; row 5
+		db	3Dh, 7Fh, 88h, 89h,  00h	; row 6
+
+tori_frame_14:				; offset 0x1C5 -> ptr 0xA1C5
+		db	3Fh,  00h	; row 0
+		db	8Bh, 8Ch,  00h	; row 1
+		db	44h, 45h, 47h, 48h,  00h	; row 2
+		db	80h, 81h,  00h	; row 3
+		db	 00h	; row 4
+		db	 00h	; row 5
+		db	 00h	; row 6
+		db	 00h	; row 7
+		db	8Dh, 8Eh	; row 8 (0x1D6..0x1D7); falls through into tori_scan_prolog
 
 ; -------------------------------------------------------------------------
 ;  Inline scan-prolog (file 0x1D7..0x1E4) -- decoded x86, NOT data.
@@ -241,37 +330,37 @@ tori_scan_prolog:
 
 scan_slot_loop:					; was loc_1
 ;*		cmp	word ptr [si],0FFFFh
-			db	 83h, 3Ch,0FFh		; cmp word ptr [si], 0FFFFh
-							;  (alt encoding: sign-extended imm8 form;
-							;   TASM emits 4-byte form, so keep as db)
-			jz	scan_done		; was loc_4 -- end of slot list
-			mov	ax,[si]
-			call	word ptr cs:fight_cb_anim_step
-			jc	scan_next_slot		; was loc_3 -- callback consumed slot
-			mov	[si+3],bl
-			mov	ax,[si+2]
-			call	word ptr cs:fight_cb_record_ofs
-			mov	bl,ds:tori_slot_idx
-			xor	bh,bh			; Zero register
-			mov	al,ds:sprite_idx_table[bx]
-			mov	[di],al
-			test	byte ptr [si+5],40h	; '@'  bit6 = active
-			jz	scan_next_slot
-			test	byte ptr ds:tori_cycle_idx,80h
-			jnz	scan_next_slot
-			mov	al,[si+5]
-			and	al,1Fh
-			test	byte ptr [si+4],0FFh
-			jnz	apply_cycle_bits	; was loc_2
-			or	al,80h
+				db	 83h, 3Ch,0FFh		; cmp word ptr [si], 0FFFFh
+								;  (alt encoding: sign-extended imm8 form;
+								;   TASM emits 4-byte form, so keep as db)
+				jz	scan_done		; was loc_4 -- end of slot list
+				mov	ax,[si]
+				call	word ptr cs:fight_cb_anim_step
+				jc	scan_next_slot		; was loc_3 -- callback consumed slot
+				mov	[si+3],bl
+				mov	ax,[si+2]
+				call	word ptr cs:fight_cb_record_ofs
+				mov	bl,ds:tori_slot_idx
+				xor	bh,bh			; Zero register
+				mov	al,ds:sprite_idx_table[bx]
+				mov	[di],al
+				test	byte ptr [si+5],40h	; '@'  bit6 = active
+				jz	scan_next_slot
+				test	byte ptr ds:tori_cycle_idx,80h
+				jnz	scan_next_slot
+				mov	al,[si+5]
+				and	al,1Fh
+				test	byte ptr [si+4],0FFh
+				jnz	apply_cycle_bits	; was loc_2
+				or	al,80h
 
 apply_cycle_bits:				; was loc_2
-			mov	ds:tori_cycle_idx,al
+				mov	ds:tori_cycle_idx,al
 
 scan_next_slot:					; was loc_3
-			inc	byte ptr ds:tori_slot_idx
-			add	si,10h
-			jmp	short scan_slot_loop
+				inc	byte ptr ds:tori_slot_idx
+				add	si,10h
+				jmp	short scan_slot_loop
 
 scan_done:					; was loc_4
 		mov	si,ds:fight_slot_list
@@ -542,69 +631,69 @@ copy_to_slots:					; was loc_34
 		mov	cx,9
 
 emit_outer_loop:				; was locloop_35
-			push	cx
-			push	si
-			push	ax
-			call	word ptr cs:fight_cb_anim_step
-			pop	ax
-			jc	emit_outer_advance	; was loc_39
-			mov	ds:tori_frame_idx,bl
-			xor	cx,cx			; Zero register
+				push	cx
+				push	si
+				push	ax
+				call	word ptr cs:fight_cb_anim_step
+				pop	ax
+				jc	emit_outer_advance	; was loc_39
+				mov	ds:tori_frame_idx,bl
+				xor	cx,cx			; Zero register
 
 emit_inner_loop:				; was loc_36
-				push	cx
-				push	ax
-				cmp	byte ptr [si],0FFh
-				je	emit_inner_skip		; was loc_38
-				mov	[di],ax
-				mov	al,ds:tori_anim_state
-				add	al,cl
-				and	al,3Fh			; '?'
-				mov	[di+2],al
-				mov	al,ds:tori_frame_idx
-				mov	[di+3],al
-				mov	al,[si]
-				mov	ah,al
-				shr	al,1			; Shift w/zeros fill
-				shr	al,1			; Shift w/zeros fill
-				shr	al,1			; Shift w/zeros fill
-				shr	al,1			; Shift w/zeros fill
-				and	al,0Fh
-				mov	[di+4],al
-				mov	[di+6],ah
-				mov	byte ptr [di+5],0
-				test	byte ptr ds:tori_cycle_idx,0FFh
-				jz	emit_no_cycle_bit	; was loc_37
-				or	byte ptr [di+5],20h	; ' '
+						push	cx
+						push	ax
+						cmp	byte ptr [si],0FFh
+						je	emit_inner_skip		; was loc_38
+						mov	[di],ax
+						mov	al,ds:tori_anim_state
+						add	al,cl
+						and	al,3Fh			; '?'
+						mov	[di+2],al
+						mov	al,ds:tori_frame_idx
+						mov	[di+3],al
+						mov	al,[si]
+						mov	ah,al
+						shr	al,1			; Shift w/zeros fill
+						shr	al,1			; Shift w/zeros fill
+						shr	al,1			; Shift w/zeros fill
+						shr	al,1			; Shift w/zeros fill
+						and	al,0Fh
+						mov	[di+4],al
+						mov	[di+6],ah
+						mov	byte ptr [di+5],0
+						test	byte ptr ds:tori_cycle_idx,0FFh
+						jz	emit_no_cycle_bit	; was loc_37
+						or	byte ptr [di+5],20h	; ' '
 
 emit_no_cycle_bit:				; was loc_37
-				mov	ax,[di+2]
-				push	di
-				call	word ptr cs:fight_cb_record_ofs
-				mov	bl,ds:tori_slot_idx
-				xor	bh,bh			; Zero register
-				mov	al,bl
-				or	al,80h
-				xchg	[di],al
-				mov	ds:sprite_idx_table[bx],al
-				pop	di
-				add	di,10h
-				inc	byte ptr ds:tori_slot_idx
+						mov	ax,[di+2]
+						push	di
+						call	word ptr cs:fight_cb_record_ofs
+						mov	bl,ds:tori_slot_idx
+						xor	bh,bh			; Zero register
+						mov	al,bl
+						or	al,80h
+						xchg	[di],al
+						mov	ds:sprite_idx_table[bx],al
+						pop	di
+						add	di,10h
+						inc	byte ptr ds:tori_slot_idx
 
 emit_inner_skip:				; was loc_38
-				inc	si
-				pop	ax
-				pop	cx
-				inc	cx
-				cmp	cx,8
-				jne	emit_inner_loop
+						inc	si
+						pop	ax
+						pop	cx
+						inc	cx
+						cmp	cx,8
+						jne	emit_inner_loop
 
 emit_outer_advance:				; was loc_39
-			inc	ax
-			pop	si
-			add	si,8
-			pop	cx
-			loop	emit_outer_loop		; Loop if cx > 0
+				inc	ax
+				pop	si
+				add	si,8
+				pop	cx
+				loop	emit_outer_loop		; Loop if cx > 0
 
 		mov	word ptr [di],0FFFFh
 		retn
@@ -628,22 +717,22 @@ sub_1		proc	near
 		mov	cx,9
 
 row_outer_loop:					; was locloop_40
-			push	cx
-			mov	cx,8
+				push	cx
+				mov	cx,8
 
 row_inner_loop:					; was locloop_41
-				rol	byte ptr ds:[bp],1	; Rotate
-				jnc	row_inner_skip		; was loc_42
-				lodsb				; String [si] to al
-				mov	[di],al
+						rol	byte ptr ds:[bp],1	; Rotate
+						jnc	row_inner_skip		; was loc_42
+						lodsb				; String [si] to al
+						mov	[di],al
 
 row_inner_skip:					; was loc_42
-				inc	di
-				loop	row_inner_loop
+						inc	di
+						loop	row_inner_loop
 
-			inc	bp
-			pop	cx
-			loop	row_outer_loop
+				inc	bp
+				pop	cx
+				loop	row_outer_loop
 
 		retn
 
@@ -817,26 +906,29 @@ tori_orphan_init:				; was ';* No entry point' marker
 		db	 9Bh,0A6h			; wait / cmpsb sequence
 		db	 0A4h,0A6h			; movsb (cmpsb at 0xA6A4)
 		db	 0ADh,0A6h			; lodsw / cmpsb (lodsw at 0xA6AD)
-		db	 0B7h,0A6h			; ... (further dispatch table refs)
-		db	 0C1h,0A6h
+		db	 0B7h,0A6h			; -> 0xA6B7
+		db	 0C1h,0A6h			; -> 0xA6C1 (last init-tbl entry; following bytes are aliased into tori_orphan_data)
 
-tori_orphan_data:
-		db	 00h, 30h, 01h, 30h, 80h, 70h
-		db	 90h, 71h, 81h, 72h, 82h, 73h
-		db	 83h
-		db	'P`QaRbSc'
-		db	 10h, 40h, 20h, 17h, 46h, 26h
-		db	 18h, 47h, 27h, 02h, 11h,0A0h
-		db	 0C0h, 21h, 41h,0E0h, 31h,0B0h
-		db	 0D0h, 02h, 12h, 22h, 42h,0B1h
-		db	 32h,0A1h,0C1h,0D1h, 02h, 33h
-		db	 0B2h, 13h, 43h,0C2h, 23h,0A2h
-		db	 0D2h, 02h, 14h, 44h,0C3h, 24h
-		db	 0A3h,0C1h,0D1h, 34h,0B3h, 03h
-		db	 25h, 15h, 35h,0A4h,0D3h, 45h
-		db	 0B4h,0E1h,0C4h, 04h, 25h, 16h
-		db	 35h,0A4h,0C5h, 45h,0B5h,0D4h
-		db	 0E2h
+tori_orphan_data:				; offset 0x671
+;  Sub-block A: small byte-pair index records (0x671..0x67A)
+		db	 00h, 30h, 01h, 30h, 80h, 70h	; rec 0..2 (idx,attr pairs)
+		db	 90h, 71h, 81h, 72h, 82h, 73h	; rec 3..5
+		db	 83h				; rec 6 (single byte)
+;  Sub-block B: ASCII tile-row glyphs (0x67B..0x682, 8 bytes 'P`QaRbSc' = column tile pattern)
+		db	'P`QaRbSc'			; rec 7 (8-byte ASCII run)
+;  Sub-block C: column/row tile triplets (0x683..0x6CE)
+		db	 10h, 40h, 20h, 17h, 46h, 26h	; row 0
+		db	 18h, 47h, 27h, 02h, 11h,0A0h	; row 1
+		db	 0C0h, 21h, 41h,0E0h, 31h,0B0h	; row 2
+		db	 0D0h, 02h, 12h, 22h, 42h,0B1h	; row 3
+		db	 32h,0A1h,0C1h,0D1h, 02h, 33h	; row 4
+		db	 0B2h, 13h, 43h,0C2h, 23h,0A2h	; row 5
+		db	 0D2h, 02h, 14h, 44h,0C3h, 24h	; row 6
+		db	 0A3h,0C1h,0D1h, 34h,0B3h, 03h	; row 7
+		db	 25h, 15h, 35h,0A4h,0D3h, 45h	; row 8
+		db	 0B4h,0E1h,0C4h, 04h, 25h, 16h	; row 9
+		db	 35h,0A4h,0C5h, 45h,0B5h,0D4h	; row 10
+		db	 0E2h				; row 11 (single trailing byte)
 
 ; -------------------------------------------------------------------------
 ;  Secondary pointer table (file 0x6CD..0x6EF) -- 17 word ptrs into
@@ -859,32 +951,38 @@ tori_const_ptr_tbl	label	word
 ;  consumed by 200FIGHT during tori init/spawn (per-slot offset records).
 ; -------------------------------------------------------------------------
 
-tori_const_table:					; runtime addr 0xA6F1
-		db	 50h
-		db	12 dup (0)
-		db	 04h, 0Ch
-		db	7 dup (0)
-		db	  4,   0,   4,   0,   0,   0
-		db	  4,   4
-		db	8 dup (0)
-		db	 50h, 00h, 40h, 00h, 00h, 00h
-		db	 00h, 00h, 00h, 50h, 00h, 20h
-		db	 00h, 00h, 00h, 00h, 00h, 00h
-		db	 50h, 20h, 00h, 00h, 00h, 10h
-		db	 00h, 10h, 0Ah,0A1h, 4Ah, 00h
-		db	 00h, 00h, 20h, 00h, 20h, 54h
-		db	 00h, 55h, 00h, 00h, 00h, 10h
-		db	 05h, 10h, 05h, 10h, 05h, 00h
-		db	 00h, 00h, 20h, 00h, 50h, 04h
-		db	 50h, 05h, 50h, 00h, 00h, 04h
-		db	 00h, 14h, 00h, 54h, 00h, 54h
-		db	 00h, 10h, 04h, 00h, 14h, 00h
-		db	 54h, 00h, 54h, 00h, 04h, 00h
-		db	 00h,0A7h, 00h, 32h, 04h, 28h
-		db	 00h, 00h, 00h, 00h, 00h, 00h
-		db	 2Eh, 00h, 12h,0F4h, 01h,0F4h
-		db	 01h, 08h,0FFh, 80h,0A7h,0F4h
-		db	 01h, 12h,0BBh, 00h, 5		; final 5 = Pascal-string len for 'Pollo'
+tori_const_table:					; runtime addr 0xA6F1 (file 0x6F7)
+;  Slot record group 1 (0x6F7..0x70A): 20-byte mini-records padded with zeros
+		db	 50h				; rec 0 marker (single 50h byte)
+		db	12 dup (0)			; rec 0 zero pad (12 bytes)
+		db	 04h, 0Ch			; rec 0 trailing pair
+		db	7 dup (0)			; rec 0 second zero pad (7 bytes)
+;  Slot record group 2 (0x70B..0x712): two 8-byte sequences
+		db	  4,   0,   4,   0,   0,   0	; rec 1 (decimal form for clarity)
+		db	  4,   4			; rec 1 trailer
+;  Slot record group 3 (0x713..0x71A): 8 bytes of zeros
+		db	8 dup (0)			; rec 2 zero block
+;  Slot record group 4 (0x71B..0x738): timing/position bytes (4 x 6-byte rows)
+		db	 50h, 00h, 40h, 00h, 00h, 00h	; row 0
+		db	 00h, 00h, 00h, 50h, 00h, 20h	; row 1
+		db	 00h, 00h, 00h, 00h, 00h, 00h	; row 2
+		db	 50h, 20h, 00h, 00h, 00h, 10h	; row 3
+;  Slot record group 5 (0x739..0x75C): position/offset records (6 x 6-byte rows)
+		db	 00h, 10h, 0Ah,0A1h, 4Ah, 00h	; row 0
+		db	 00h, 00h, 20h, 00h, 20h, 54h	; row 1
+		db	 00h, 55h, 00h, 00h, 00h, 10h	; row 2
+		db	 05h, 10h, 05h, 10h, 05h, 00h	; row 3
+		db	 00h, 00h, 20h, 00h, 50h, 04h	; row 4
+		db	 50h, 05h, 50h, 00h, 00h, 04h	; row 5
+;  Slot record group 6 (0x75D..0x77E): mixed timing rows (6 x 6-byte rows + 5-byte tail)
+		db	 00h, 14h, 00h, 54h, 00h, 54h	; row 0
+		db	 00h, 10h, 04h, 00h, 14h, 00h	; row 1
+		db	 54h, 00h, 54h, 00h, 04h, 00h	; row 2
+		db	 00h,0A7h, 00h, 32h, 04h, 28h	; row 3
+		db	 00h, 00h, 00h, 00h, 00h, 00h	; row 4
+		db	 2Eh, 00h, 12h,0F4h, 01h,0F4h	; row 5
+		db	 01h, 08h,0FFh, 80h,0A7h,0F4h	; row 6
+		db	 01h, 12h,0BBh, 00h, 5		; row 7; final 5 = Pascal-string len for 'Pollo'
 
 ; -------------------------------------------------------------------------
 ;  'Pollo' name tag (file 0x780) -- 5-char Pascal string with length-prefix
