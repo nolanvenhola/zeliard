@@ -1,6 +1,8 @@
 # Zeliard ASM Cleanup Roadmap
 
-Remaining work to make the disassembled source as close to the original TASM/MASM source as the 1989-1990 Game Arts developers would have written it.
+**STATUS: All 11 items complete (2026-04-26).** All 63 .asm files bit-perfect against `bin/` references throughout. See per-item commit history for details.
+
+Original work to make the disassembled source as close to the original TASM/MASM source as the 1989-1990 Game Arts developers would have written it.
 
 **Invariant for every step**: all 63 .asm files must remain bit-perfect against `bin/` references. Verify after each batch with:
 
