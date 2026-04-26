@@ -151,9 +151,44 @@ tako_frame_ptr_tbl_b	label	word		; 3 frame-data pointers (group B)
 ;  ptrs 0xA205, 0xA25F).  Most frames are 16 rows (80 bytes); frame_05 is
 ;  7 rows, frame_b0 is 2 rows, frame_b2 is 6+1 rows ending with 0x02
 ;  terminators (rather than 0x00).
+;
+;  ROLE TABLE (frame index -> dispatch state -> visual role).
+;  Frames 00..05 are referenced by tako_frame_ptr_tbl_a[0..5] (copied by
+;  200FIGHT into sprite_pat_tbl_a @ 0xA57D); frames b0/b1/b2 are referenced
+;  by tako_frame_ptr_tbl_b[0..2] (separate dispatch slot).  The render
+;  index is `tako_phase_a + tako_flag_a` (cycles via emit_setup), with
+;  flag_a stepping in groups of 8 to switch swim direction.
+;
+;    frames 00..05 : swim cycle (6 wave-tentacle poses).  Each call to
+;                    emit_setup picks one via `(phase_a + flag_a) & idx`.
+;                    phase_a (0..7) cycles per frame; flag_a tracks the
+;                    current direction (0/8/0x10).  All 6 frames share
+;                    the same 16-row sprite size (full octopus body with
+;                    different tentacle splays).  Likely correspond to
+;                    the 6-step swim/float animation seen in-game when
+;                    the Tako is patrolling.
+;    frame b0      : 2-row stub pose; ptr_tbl_b[0].  Reached only via
+;                    200FIGHT DS-resident dispatch (no static caller).
+;                    Likely the SHRUNK / hidden / blink-state pose
+;                    (small enough to fit between body cells when the
+;                    octopus retreats / collapses).
+;                    (inferred from size only -- evidence is weak)
+;    frame b1      : full 16-row sprite; ptr_tbl_b[1].  Same dimensions
+;                    as the swim frames but referenced separately.
+;                    Likely the ATTACK windup / DEATH pose held during
+;                    death_phase (timer_a count-up to 0x28).
+;                    (inferred -- could also be a special cinematic pose)
+;    frame b2      : 6+1 rows with 0x02 row-terminators (not 0x00);
+;                    ptr_tbl_b[2].  The unique 0x02 terminator marks this
+;                    as a PROJECTILE/INK sprite plotted via a different
+;                    code path (emit_proj_loop reads tako_proj base at
+;                    0xAA20).  Likely the ink-cloud / tentacle-projectile
+;                    fired by emit_proj_phase when tako_flag_c bit7 set.
 ; -------------------------------------------------------------------------
 
 tako_frame_00:					; offset 0x052 -> ptr 0xA052 (tbl_a[0])
+						; ROLE: swim cycle frame 0/6 (full octopus body, tentacle splay A)
+						; (referenced by ptr_tbl_a[0]; emit_setup picks via phase_a+flag_a)
 		db	 05h,0A2h, 5Fh,0A2h, 00h	; row 0  (overlaps tbl_b tail: ptrs 0xA205,0xA25F)
 		db	 00h, 00h, 01h, 00h, 00h	; row 1
 		db	 02h, 03h, 04h, 05h, 00h	; row 2
@@ -172,6 +207,8 @@ tako_frame_00:					; offset 0x052 -> ptr 0xA052 (tbl_a[0])
 		db	 2Dh, 2Eh, 2Fh, 30h, 00h	; row 15
 
 tako_frame_01:					; offset 0x0A2 -> ptr 0xA0A2 (tbl_a[1])
+						; ROLE: swim cycle frame 1/6 (tentacle splay B)
+						; (referenced by ptr_tbl_a[1]; emit_setup picks via phase_a+flag_a)
 		db	 31h, 32h, 33h, 34h, 00h	; row 0
 		db	 00h, 00h, 00h, 35h, 00h	; row 1
 		db	 36h, 37h, 38h, 39h, 00h	; row 2
@@ -190,6 +227,8 @@ tako_frame_01:					; offset 0x0A2 -> ptr 0xA0A2 (tbl_a[1])
 		db	 53h, 00h, 54h, 55h, 00h	; row 15
 
 tako_frame_02:					; offset 0x0F2 -> ptr 0xA0F2 (tbl_a[2])
+						; ROLE: swim cycle frame 2/6 (tentacle splay C)
+						; (referenced by ptr_tbl_a[2]; emit_setup picks via phase_a+flag_a)
 		db	 00h, 56h, 57h, 58h, 00h	; row 0
 		db	 00h, 00h, 03h, 00h, 00h	; row 1
 		db	 59h, 5Ah, 5Bh, 5Ch, 00h	; row 2
@@ -208,6 +247,8 @@ tako_frame_02:					; offset 0x0F2 -> ptr 0xA0F2 (tbl_a[2])
 		db	 00h, 00h, 00h, 83h, 00h	; row 15
 
 tako_frame_03:					; offset 0x142 -> ptr 0xA142 (tbl_a[3])
+						; ROLE: swim cycle frame 3/6 (tentacle splay D)
+						; (referenced by ptr_tbl_a[3]; emit_setup picks via phase_a+flag_a)
 		db	 00h, 00h, 77h, 78h, 00h	; row 0
 		db	 84h, 85h, 86h, 87h, 00h	; row 1
 		db	 00h, 00h, 00h, 17h, 00h	; row 2
@@ -226,6 +267,8 @@ tako_frame_03:					; offset 0x142 -> ptr 0xA142 (tbl_a[3])
 		db	 0Eh, 0Fh,0AFh, 11h, 00h	; row 15
 
 tako_frame_04:					; offset 0x192 -> ptr 0xA192 (tbl_a[4])
+						; ROLE: swim cycle frame 4/6 (tentacle splay E)
+						; (referenced by ptr_tbl_a[4]; emit_setup picks via phase_a+flag_a)
 		db	 00h, 56h, 00h, 00h, 00h	; row 0
 		db	 59h,0B1h, 00h,0B2h, 00h	; row 1
 		db	 0Eh, 5Dh,0B3h, 5Fh, 00h	; row 2
@@ -244,6 +287,9 @@ tako_frame_04:					; offset 0x192 -> ptr 0xA192 (tbl_a[4])
 		db	 0Eh, 0Fh,0C4h,0C7h, 00h	; row 15
 
 tako_frame_05:					; offset 0x1E2 -> ptr 0xA1E2 (tbl_a[5]; 7 rows)
+						; ROLE: swim cycle frame 5/6 (tentacle splay F -- short variant)
+						; (referenced by ptr_tbl_a[5]; emit_setup picks via phase_a+flag_a;
+						;  shorter than other swim frames -- possibly a "scrunched" pose)
 		db	 17h, 18h,0C8h,0C9h, 00h	; row 0
 		db	0CAh,0CBh, 1Dh, 1Eh, 00h	; row 1
 		db	 0Eh, 5Dh,0C4h,0CDh, 00h	; row 2
@@ -253,6 +299,10 @@ tako_frame_05:					; offset 0x1E2 -> ptr 0xA1E2 (tbl_a[5]; 7 rows)
 		db	 7Fh, 18h,0C8h,0C9h, 00h	; row 6
 
 tako_frame_b1:					; offset 0x205 -> ptr 0xA205 (tbl_b[1])
+						; ROLE: ATTACK windup / DEATH pose (full 16-row body)
+						; (referenced by ptr_tbl_b[1] via 200FIGHT DS-dispatch; reached
+						;  via death_phase / death_alt_swing or special-attack states)
+						; (inferred -- exact dispatch not visible to static analysis)
 		db	 00h, 00h, 08h,0A8h, 00h	; row 0
 		db	 12h, 13h, 14h, 15h, 00h	; row 1
 		db	 60h, 61h, 62h, 15h, 00h	; row 2
@@ -271,10 +321,19 @@ tako_frame_b1:					; offset 0x205 -> ptr 0xA205 (tbl_b[1])
 		db	0C3h, 6Fh, 89h, 15h, 00h	; row 15
 
 tako_frame_b0:					; offset 0x255 -> ptr 0xA255 (tbl_b[0]; 2 rows)
+						; ROLE: shrunken / blink / hidden-state pose (tiny 2-row sprite)
+						; (referenced by ptr_tbl_b[0] via 200FIGHT DS-dispatch; likely the
+						;  retreat/collapse pose or eye-blink overlay)
+						; (inferred from size only -- evidence weak)
 		db	0C5h, 6Fh, 14h, 15h, 00h	; row 0
 		db	0C5h, 13h,0C6h, 15h, 00h	; row 1
 
 tako_frame_b2:					; offset 0x25F -> ptr 0xA25F (tbl_b[2]; rows end in 0x02)
+						; ROLE: PROJECTILE / ink-cloud sprite (alternate row-terminator 0x02)
+						; (referenced by ptr_tbl_b[2]; rendered via emit_proj_phase / emit_proj_loop
+						;  when tako_flag_c bit7 is set -- the ink/tentacle projectile fired
+						;  at the player.  0x02 terminator distinguishes it from body sprites
+						;  in the renderer's tile-walker)
 		db	 00h, 00h,0A7h,0A8h, 02h	; row 0  (terminator 0x02, not 0x00)
 		db	 00h,0D0h, 00h,0D1h, 02h	; row 1
 		db	0D2h,0D3h,0D4h,0D5h, 02h	; row 2

@@ -479,31 +479,64 @@ draw_pose_3x3		endp
 ; bytes after tile_pose_tbl_base; the first 4 entries of pose 0 fall on
 ; draw_pose_3x3's epilogue bytes (59h E2h E2h C3h above) and are never
 ; read because the smallest pose index used at runtime is 1.
+;
+; ROLE TABLE for the 9 cutscene poses (best-guess semantic labels based on
+; cutscene flow in roka_demo_main; not runtime-traced).  Cutscene order:
+;   1. intro_wipe_loop  cycles pose_idx 0..3 during palette wipe-in (13 frames)
+;   2. pose_idx=4 held briefly (5 wait_frames) -- ENTRANCE pose
+;   3. pose_cycle_loop  advances pose_idx 5..8 (one per 2 frames) -- CHARACTER ANIM
+;   4. bres_walk_loop   uses indep tile_draw with idx 2/3 (NOT these poses)
+;   5. outro_pose_loop  reverses 8..5 (one per 2 frames) -- CHARACTER REVERSE
+;   6. outro_wipe_loop  cycles pose_idx 0..3 during palette wipe-out
+;
+;   pose 0..3 : WIPE-FX abstract tiles (palette-wipe animation overlay).
+;               Played BENEATH the ENTRANCE pose during intro and outro
+;               wipe transitions.  Not the Roka character himself; these
+;               are 4 abstract "shimmer" / curtain sprites.
+;   pose 4    : ENTRANCE / standing-still pose (held 5 frames after wipe).
+;               Roka standing in starting position; the held "scene-set"
+;               frame before the character action begins.
+;   pose 5..8 : CHARACTER POSE SEQUENCE (4 keyframes shown 5,6,7,8 then
+;               reverse 8,7,6,5).  The exact action depends on the
+;               gvar_roka_scene index 1..9 (pose_y_tbl_base / pose_vec_tbl_base
+;               select target Y and palette/scene per scene).  Best guess
+;               per dialogue staging: pose 5 = look-around / orient,
+;               pose 6 = gesture / point, pose 7 = action / sit-or-stand,
+;               pose 8 = final pose held before walk-out.
 
 pose_tile_data	label	byte
+; --- pose 0: WIPE-FX abstract tile (intro/outro palette-wipe overlay) ---
 		db	 00h, 02h, 04h			; pose 0 row 0  (4 bytes still in code)
 		db	 01h, 03h, 05h			; pose 0 row 1
+; --- pose 1: WIPE-FX abstract tile (intro/outro palette-wipe overlay) ---
 		db	 00h, 00h, 06h			; pose 1 row 0
 		db	 07h, 09h, 0Bh			; pose 1 row 1
 		db	 08h, 0Ah, 0Ch			; pose 1 row 2
+; --- pose 2: WIPE-FX abstract tile (intro/outro palette-wipe overlay) ---
 		db	 00h, 00h, 00h			; pose 2 row 0  (blank head row)
 		db	 00h, 02h, 0Eh			; pose 2 row 1
 		db	 01h, 0Dh, 0Fh			; pose 2 row 2
+; --- pose 3: WIPE-FX abstract tile (intro/outro palette-wipe overlay) ---
 		db	 00h, 00h, 10h			; pose 3 row 0
 		db	 07h, 09h, 11h			; pose 3 row 1
 		db	 08h, 0Ah, 12h			; pose 3 row 2
+; --- pose 4: ENTRANCE / standing pose (held 5 frames after intro wipe) ---
 		db	 00h, 00h, 00h			; pose 4 row 0  (blank head row)
 		db	 00h, 14h, 16h			; pose 4 row 1
 		db	 13h, 15h, 17h			; pose 4 row 2
+; --- pose 5: CHARACTER pose 1/4 (look-around / orient -- inferred) ---
 		db	 00h, 00h, 18h			; pose 5 row 0
 		db	 19h, 00h, 1Ch			; pose 5 row 1
 		db	 1Ah, 1Bh, 1Dh			; pose 5 row 2
+; --- pose 6: CHARACTER pose 2/4 (gesture / point -- inferred) ---
 		db	 00h, 00h, 1Eh			; pose 6 row 0
 		db	 1Fh, 00h, 23h			; pose 6 row 1
 		db	 20h, 21h, 24h			; pose 6 row 2
+; --- pose 7: CHARACTER pose 3/4 (action / sit-or-stand -- inferred) ---
 		db	 00h, 22h, 25h			; pose 7 row 0
 		db	 1Fh, 00h, 23h			; pose 7 row 1
 		db	 20h, 26h, 28h			; pose 7 row 2
+; --- pose 8: CHARACTER pose 4/4 (final hold before walk-out -- inferred) ---
 		db	 00h, 27h, 29h			; pose 8 row 0
 		db	 1Fh, 00h, 23h			; pose 8 row 1
 		db	 2Ah, 2Ch, 28h			; pose 8 row 2  (last 3 bytes also start unused tail)
