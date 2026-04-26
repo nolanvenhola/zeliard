@@ -106,83 +106,101 @@ start:
 		db	0DFh,0A5h		;  header field (Sourcer left as bytes)
 		db	12 dup (0)		; reserved / padding
 		db	32 dup (1Eh)		; 32-byte 0x1Eh descriptor row
-		db	 3Ah,0A0h, 8Ah,0A0h,0D0h,0A0h
-		db	 16h,0A1h, 66h,0A1h, 00h, 01h
-		db	 02h, 03h, 04h, 00h, 11h, 07h
-		db	 12h, 13h, 00h, 1Eh, 16h, 1Fh
-		db	 20h, 00h, 05h, 06h, 07h, 08h
-		db	 00h, 14h, 15h, 16h, 17h, 00h
-		db	 21h, 22h, 23h, 24h, 00h, 09h
-		db	 0Ah, 0Bh, 0Ch, 00h, 18h, 19h
-		db	 1Ah, 1Bh, 00h, 25h, 26h, 27h
-		db	 1Dh, 00h, 0Dh, 0Eh, 0Fh, 10h
-		db	 00h, 1Ch, 10h, 1Dh, 10h, 00h
-		db	 28h, 10h, 29h, 2Ah, 00h, 18h
-		db	 2Bh, 1Ah, 2Ch, 00h
+; --- pointer/jump-table words (5 entries: A03A, A08A, A0D0, A116, A166) ---
+zel2_ptr_table_a:
+		db	 3Ah,0A0h, 8Ah,0A0h,0D0h,0A0h	; ptrs[0..2]: A03A,A08A,A0D0
+		db	 16h,0A1h, 66h,0A1h, 00h, 01h	; ptrs[3..4]: A116,A166 + 0001
+; --- cell index map A: 6-byte rows (00 = empty cell) ---
+zel2_cell_map_a:
+		db	 02h, 03h, 04h, 00h, 11h, 07h	; row A0
+		db	 12h, 13h, 00h, 1Eh, 16h, 1Fh	; row A1
+		db	 20h, 00h, 05h, 06h, 07h, 08h	; row A2
+		db	 00h, 14h, 15h, 16h, 17h, 00h	; row A3
+		db	 21h, 22h, 23h, 24h, 00h, 09h	; row A4
+		db	 0Ah, 0Bh, 0Ch, 00h, 18h, 19h	; row A5
+		db	 1Ah, 1Bh, 00h, 25h, 26h, 27h	; row A6
+		db	 1Dh, 00h, 0Dh, 0Eh, 0Fh, 10h	; row A7
+		db	 00h, 1Ch, 10h, 1Dh, 10h, 00h	; row A8
+		db	 28h, 10h, 29h, 2Ah, 00h, 18h	; row A9
+		db	 2Bh, 1Ah, 2Ch, 00h		; row A10 (4 bytes; merges with target_base word)
 zel2_scroll_target_base		dw	102Dh
-		db	 2Eh, 10h, 00h, 11h, 07h, 12h
-		db	 2Fh, 00h
-		db	30h
+; --- cell index map A continuation (post-target_base) ---
+zel2_cell_map_a_cont:
+		db	 2Eh, 10h, 00h, 11h, 07h, 12h	; row A11
+		db	 2Fh, 00h			; row A12 head (2 bytes)
+		db	30h				; row A12 byte (merges with data_word)
 zel2_data_word_3115		dw	3115h			; Data table (indexed access)
-		db	 17h, 00h, 32h, 33h, 34h, 35h
-		db	 00h, 41h, 42h, 43h, 44h, 00h
-		db	 1Eh, 50h, 1Fh
-		db	'Q', 0
-		db	'6789', 0
-		db	'EFGH', 0
-		db	'RST$'
-		db	0
-		db	':;<=', 0
-		db	'IJKL', 0
-		db	'UOVW', 0
-		db	'>', 0
-		db	'?@', 0
-		db	'MNO'
-		db	 10h, 00h, 58h, 10h, 59h, 2Ah
-		db	 00h, 49h, 5Ah, 4Bh, 5Bh, 00h
-		db	 5Ch, 4Eh, 5Dh, 5Eh, 00h, 00h
-		db	 32h, 5Fh, 60h, 00h, 6Bh, 6Ch
-		db	 6Dh, 6Eh, 00h, 79h, 7Ah, 7Bh
-		db	 7Ch, 00h, 61h, 62h, 63h, 64h
-		db	 00h, 6Fh, 70h, 71h, 72h, 00h
-		db	 7Dh, 7Eh, 7Fh, 24h, 00h, 65h
-		db	 66h, 67h, 68h, 00h, 73h, 1Dh
-		db	 74h, 75h, 00h, 80h, 4Fh, 81h
-		db	 59h, 00h, 69h, 00h, 6Ah, 00h
-		db	 00h, 76h, 77h, 4Fh, 78h, 00h
-		db	 82h, 10h, 59h, 2Ah, 00h, 73h
-		db	 83h, 74h, 84h, 00h
-		db	 76h, 77h, 4Fh, 78h
+; --- cell index map A tail rows (3 rows × 6) and ASCII tile glyph table ---
+zel2_cell_map_a_tail:
+		db	 17h, 00h, 32h, 33h, 34h, 35h	; row A13
+		db	 00h, 41h, 42h, 43h, 44h, 00h	; row A14
+		db	 1Eh, 50h, 1Fh			; row A15 head (3 bytes)
+zel2_glyph_table:
+		db	'Q', 0				; glyph row [0]
+		db	'6789', 0			; glyph row [1]
+		db	'EFGH', 0			; glyph row [2]
+		db	'RST$'				; glyph row [3]
+		db	0				; (terminator)
+		db	':;<=', 0			; glyph row [4]
+		db	'IJKL', 0			; glyph row [5]
+		db	'UOVW', 0			; glyph row [6]
+		db	'>', 0				; glyph row [7]
+		db	'?@', 0				; glyph row [8]
+		db	'MNO'				; glyph row [9]
+; --- cell index map B: 6-byte rows (00 = empty cell) ---
+zel2_cell_map_b:
+		db	 10h, 00h, 58h, 10h, 59h, 2Ah	; row B0
+		db	 00h, 49h, 5Ah, 4Bh, 5Bh, 00h	; row B1
+		db	 5Ch, 4Eh, 5Dh, 5Eh, 00h, 00h	; row B2
+		db	 32h, 5Fh, 60h, 00h, 6Bh, 6Ch	; row B3
+		db	 6Dh, 6Eh, 00h, 79h, 7Ah, 7Bh	; row B4
+		db	 7Ch, 00h, 61h, 62h, 63h, 64h	; row B5
+		db	 00h, 6Fh, 70h, 71h, 72h, 00h	; row B6
+		db	 7Dh, 7Eh, 7Fh, 24h, 00h, 65h	; row B7
+		db	 66h, 67h, 68h, 00h, 73h, 1Dh	; row B8
+		db	 74h, 75h, 00h, 80h, 4Fh, 81h	; row B9
+		db	 59h, 00h, 69h, 00h, 6Ah, 00h	; row B10
+		db	 00h, 76h, 77h, 4Fh, 78h, 00h	; row B11
+		db	 82h, 10h, 59h, 2Ah, 00h, 73h	; row B12
+		db	 83h, 74h, 84h, 00h		; row B13 (4 bytes)
+		db	 76h, 77h, 4Fh, 78h		; row B14 (4 bytes; precedes rng_fn_ptr)
 zel2_rng_fn_ptr		dw	0
-		db	 85h, 86h, 87h, 00h, 93h, 94h
-		db	 95h, 96h, 00h, 1Eh,0A1h,0A2h
-		db	0A3h, 00h, 88h, 89h, 8Ah, 8Bh
-		db	 00h, 97h, 98h, 99h, 9Ah, 00h
-		db	0A4h,0A5h,0A6h,0A7h, 00h, 8Ch
-		db	 8Dh, 8Eh, 67h, 00h, 9Bh, 9Ch
-		db	 9Dh, 9Eh, 00h, 25h, 26h, 27h
-		db	 1Dh, 00h, 8Fh, 90h, 91h, 92h
-		db	 00h, 1Dh, 9Fh,0A0h, 10h, 00h
-		db	 28h, 10h
-		db	 29h, 2Ah
-		db	11 dup (0)
-		db	 93h,0A8h, 95h,0A9h, 00h,0AAh
-		db	0ABh,0ACh,0ADh, 00h, 00h,0AEh
-		db	 00h,0AFh, 00h,0BBh,0BCh,0BDh
-		db	0BEh, 00h, 1Eh,0CAh,0A2h,0CBh
-		db	 00h,0B0h,0B1h,0B2h,0B3h, 00h
-		db	0BFh,0C0h,0C1h,0C2h, 00h,0CCh
-		db	0CDh,0CEh,0CFh, 00h,0B4h,0B5h
-		db	0B6h,0B7h, 00h,0C3h,0C4h,0C5h
-		db	0C6h, 00h,0D0h,0D1h,0D2h,0D3h
-		db	 00h,0B8h, 00h,0B9h,0BAh, 00h
-		db	0C7h,0C8h, 4Fh,0C9h, 00h,0D4h
-		db	 10h, 1Dh, 2Ah, 00h
-		db	10 dup (0)
-		db	0BBh,0BCh,0BDh,0BEh, 00h,0BFh
-		db	0D5h,0C1h,0D6h, 8Bh, 36h, 10h
-		db	0C0h,0C6h, 06h,0FDh,0A5h, 00h
-		db	0C6h, 06h,0FFh,0A5h, 00h
+; --- cell index map C: 6-byte rows continuing post-rng_fn_ptr ---
+zel2_cell_map_c:
+		db	 85h, 86h, 87h, 00h, 93h, 94h	; row C0
+		db	 95h, 96h, 00h, 1Eh,0A1h,0A2h	; row C1
+		db	0A3h, 00h, 88h, 89h, 8Ah, 8Bh	; row C2
+		db	 00h, 97h, 98h, 99h, 9Ah, 00h	; row C3
+		db	0A4h,0A5h,0A6h,0A7h, 00h, 8Ch	; row C4
+		db	 8Dh, 8Eh, 67h, 00h, 9Bh, 9Ch	; row C5
+		db	 9Dh, 9Eh, 00h, 25h, 26h, 27h	; row C6
+		db	 1Dh, 00h, 8Fh, 90h, 91h, 92h	; row C7
+		db	 00h, 1Dh, 9Fh,0A0h, 10h, 00h	; row C8
+		db	 28h, 10h			; row C9 head (2 bytes)
+		db	 29h, 2Ah			; row C9 tail (2 bytes)
+		db	11 dup (0)			; padding to next descriptor
+; --- cell index map D: 6-byte rows ---
+zel2_cell_map_d:
+		db	 93h,0A8h, 95h,0A9h, 00h,0AAh	; row D0
+		db	0ABh,0ACh,0ADh, 00h, 00h,0AEh	; row D1
+		db	 00h,0AFh, 00h,0BBh,0BCh,0BDh	; row D2
+		db	0BEh, 00h, 1Eh,0CAh,0A2h,0CBh	; row D3
+		db	 00h,0B0h,0B1h,0B2h,0B3h, 00h	; row D4
+		db	0BFh,0C0h,0C1h,0C2h, 00h,0CCh	; row D5
+		db	0CDh,0CEh,0CFh, 00h,0B4h,0B5h	; row D6
+		db	0B6h,0B7h, 00h,0C3h,0C4h,0C5h	; row D7
+		db	0C6h, 00h,0D0h,0D1h,0D2h,0D3h	; row D8
+		db	 00h,0B8h, 00h,0B9h,0BAh, 00h	; row D9
+		db	0C7h,0C8h, 4Fh,0C9h, 00h,0D4h	; row D10
+		db	 10h, 1Dh, 2Ah, 00h		; row D11 (4 bytes)
+		db	10 dup (0)			; padding
+; --- cell index map E + trailing init code stub ---
+zel2_cell_map_e:
+		db	0BBh,0BCh,0BDh,0BEh, 00h,0BFh	; row E0
+		db	0D5h,0C1h,0D6h, 8Bh, 36h, 10h	; row E1 (last 3 bytes = 'mov si,...')
+zel2_init_code_stub:
+		db	0C0h,0C6h, 06h,0FDh,0A5h, 00h	; init stub bytes (mis-decoded)
+		db	0C6h, 06h,0FFh,0A5h, 00h	; init stub bytes (continued)
 
 zel2_npc_scan_loop:
 ;*		cmp	word ptr [si],0FFFFh
@@ -558,8 +576,8 @@ zel2_npc_render_advance:
 ; x86 'add' instructions; preserved as raw data bytes.
 
 zel2_anim_delta_tbl		label	byte
-		db	02h, 01h, 00h, 03h
-		db	04h, 03h, 00h, 01h
+		db	02h, 01h, 00h, 03h		; deltas[0..3]
+		db	04h, 03h, 00h, 01h		; deltas[4..7]
 
 zel2_setup_anim_segment		proc	near
 		mov	al,ds:zel2_phase_step
@@ -613,11 +631,14 @@ zel2_scroll_dec_done:
 
 zel2_scroll_dec_step		endp
 
-		db	 00h, 00h, 05h, 00h, 32h, 04h
-		db	 78h
-		db	8 dup (0)
-		db	 04h, 00h, 32h, 00h, 78h, 00h
-		db	 00h, 00h, 00h, 00h, 00h
+; --- scroll-state init record: 2 parallel 16-byte slots (record A / record B) ---
+zel2_scroll_init_record_a:
+		db	 00h, 00h, 05h, 00h, 32h, 04h	; record A bytes [0..5]
+		db	 78h				; record A byte [6]
+		db	8 dup (0)			; record A padding [7..14]
+zel2_scroll_init_record_b:
+		db	 04h, 00h, 32h, 00h, 78h, 00h	; record B bytes [0..5]
+		db	 00h, 00h, 00h, 00h, 00h	; record B padding [6..10]
 
 zel2_scroll_finalize		proc	near
 		mov	ax,ds:zel2_scroll_x_max
