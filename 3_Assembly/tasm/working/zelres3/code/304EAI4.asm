@@ -60,124 +60,185 @@ seg_a		segment	byte public
 zela_ai_main	proc	far
 
 start:
-		inc	si
-		or	[bx+si],al
-		add	[bx+di-5Eh],ch
-		db	 00h, 00h, 00h, 00h, 4Fh,0A2h
-		db	 0Ah, 0Ah, 00h, 00h, 14h, 00h
-		db	 00h, 00h, 14h, 04h
-		db	 50h, 50h, 50h
-		db	27 dup (0)
-		db	0B0h,0A0h, 5Fh,0A1h, 96h,0A1h
-		db	0A0h,0A1h,0B9h,0A1h, 00h, 00h
-		db	 00h, 00h, 00h, 00h, 50h,0A1h
-		db	 87h,0A1h,0AAh,0A1h,0AAh,0A1h
-		db	0CDh,0A1h, 00h, 00h, 00h, 00h
-		db	 00h, 00h, 2Ch,0A2h, 2Ch,0A2h
-		db	0DCh,0A1h, 13h,0A2h,0EBh,0A1h
-		db	0FFh,0A1h, 27h,0A2h, 00h, 00h
-		db	 45h,0A2h, 4Ah,0A2h, 40h,0A2h
-		db	 00h, 00h
-		db	9 dup (0)
-		db	0A1h, 5Fh,0A1h, 96h,0A1h,0A0h
-		db	0A1h,0B9h,0A1h, 00h, 00h, 00h
-		db	 00h, 00h, 00h, 50h,0A1h, 87h
-		db	0A1h,0AAh,0A1h,0AAh,0A1h,0CDh
-		db	0A1h, 00h, 00h, 00h, 00h
-zela_anim_state_marker		db	0
-		db	 00h, 2Ch,0A2h, 2Ch,0A2h,0DCh
-		db	0A1h, 13h,0A2h,0EBh,0A1h,0FFh
-		db	0A1h, 27h,0A2h, 00h, 00h, 45h
-		db	0A2h, 4Ah,0A2h, 40h,0A2h, 00h
-		db	 00h
-		db	8 dup (0)
-		db	 01h, 00h, 01h, 02h, 03h, 01h
-		db	 00h, 01h, 05h, 06h, 01h, 00h
-		db	 01h, 08h, 09h, 01h, 00h, 01h
-		db	 0Bh, 0Ch, 01h, 00h, 01h, 0Eh
-		db	 0Fh, 01h, 00h, 01h, 11h, 12h
-		db	 01h, 00h, 01h, 14h, 15h, 01h
-		db	 00h, 01h, 17h, 18h, 01h, 00h
-		db	 01h, 32h, 33h, 01h, 00h, 00h
-		db	 34h, 35h, 01h, 00h, 00h, 36h
-		db	 37h, 01h, 00h, 00h, 38h, 39h
-		db	 01h, 00h, 00h,0E2h,0A4h, 01h
-		db	 3Ah, 3Bh, 3Ch, 3Dh, 01h, 3Eh
-		db	 00h, 3Fh, 00h, 01h, 40h, 00h
-		db	 41h, 00h, 01h, 19h, 00h, 1Ah
-		db	 1Bh, 01h, 19h, 00h, 1Dh, 1Eh
-		db	 01h, 19h, 00h, 20h, 21h, 01h
-		db	 19h, 00h, 23h, 24h, 01h, 19h
-zela_rng_fn_ptr		dw	2600h
-		db	 27h, 01h, 19h, 00h, 29h, 2Ah
-		db	 01h, 19h, 00h
-		db	 2Ch, 2Dh
-zela_phase_marker		db	1
-		db	 19h, 00h, 2Fh, 30h, 01h, 19h
-		db	 00h, 43h, 44h, 01h, 00h, 00h
-		db	 45h, 46h, 01h, 00h, 00h, 47h
-		db	 48h, 01h, 00h, 00h, 49h, 4Ah
-		db	 01h, 00h, 00h,0A3h,0A2h, 01h
-		db	 4Bh, 4Ch, 4Dh, 4Eh, 01h, 00h
-		db	 4Fh, 00h, 50h, 01h, 00h, 51h
-		db	 00h, 52h, 01h, 53h, 54h, 55h
-		db	 56h, 01h, 57h, 58h, 59h, 5Ah
-		db	 01h
-		db	 5Bh, 5Ch
-		db	']^', 0
-		db	'_`ab', 0
-		db	'c`ef', 0
-		db	'ghij', 0
-		db	'_lmn', 0
-		db	'o`qr', 0
-		db	'stuv', 0
-		db	'cxyz', 0
-		db	'{l}~', 0
-		db	 7Fh, 80h, 81h, 82h, 00h, 83h
-		db	 84h, 85h, 86h, 00h, 87h, 88h
-		db	 89h, 8Ah, 02h, 8Bh, 8Ch, 8Dh
-		db	 8Eh, 02h, 8Fh, 90h
-zela_anim_phase_idx		db	91h			; Data table (indexed access)
-		db	 92h, 02h, 9Dh, 9Dh, 9Eh, 9Eh
-		db	 02h,0A1h,0A1h, 9Eh, 9Eh, 02h
-		db	 95h, 96h, 98h, 99h, 02h, 99h
-		db	 9Ah, 9Bh, 9Ch, 02h, 00h, 00h
-		db	 9Fh,0A0h, 00h,0A8h,0A9h,0AAh
-		db	0ABh, 00h,0ACh,0ADh,0AEh,0AFh
-		db	 00h,0B0h,0B1h,0B2h,0B3h, 00h
-		db	0B4h,0B5h,0B6h,0B7h, 00h,0B8h
-		db	0B9h,0BAh,0BBh, 00h,0BCh,0BDh
-		db	0BEh,0BFh, 00h,0C0h,0C1h,0C2h
-		db	0C3h, 01h, 04h, 07h, 0Ah, 0Dh
-		db	 01h, 10h, 13h, 16h, 1Ch, 01h
-		db	 1Fh, 22h, 25h, 28h, 00h, 2Bh
-		db	 2Eh, 31h, 42h, 00h, 64h, 6Bh
-		db	 70h, 77h, 00h, 7Ch,0C4h,0C5h
-		db	0C6h, 00h, 64h, 6Bh, 70h, 77h
-		db	 02h, 2Bh, 2Eh, 31h, 42h, 02h
-		db	 64h, 6Bh, 70h, 77h, 02h, 7Ch
-		db	0C4h,0C5h,0C6h, 02h, 64h, 6Bh
-		db	 70h, 77h, 00h,0C7h,0C8h,0C9h
-		db	0CAh, 00h,0C7h,0C8h,0C9h,0CAh
-		db	 00h,0C7h,0C8h,0C9h,0CAh, 00h
-		db	0C7h,0C8h,0C9h,0CAh, 01h,0CBh
-		db	0CCh,0CDh,0CEh, 02h,0D7h,0D7h
-		db	0D7h,0D7h, 02h,0D8h,0D9h,0DAh
-		db	0DBh, 02h,0DCh,0DDh,0DEh,0DFh
-		db	 02h, 00h, 00h,0E0h,0E1h, 00h
-		db	0CFh,0D0h,0D1h,0D2h, 00h,0D3h
-		db	0D4h,0D5h,0D6h, 02h,0D3h,0D4h
-		db	0D5h,0D6h, 59h,0A2h, 5Dh,0A2h
-		db	 61h,0A2h, 61h,0A2h, 65h,0A2h
-		db	 05h, 04h, 04h, 05h, 04h, 04h
-		db	 04h, 04h, 01h, 01h, 01h, 01h
-		db	 05h, 05h, 05h, 04h, 8Ah, 5Ch
-		db	 04h, 80h,0E3h, 0Fh, 32h,0FFh
-		db	 03h,0DBh,0FFh,0A7h, 77h,0A2h
-		db	 81h,0A2h, 66h,0A4h,0B1h,0A6h
-		db	0B1h,0A6h,0F0h,0A6h,0F6h, 44h
-		db	 08h,0FFh, 75h, 04h,0C6h
-		db	 44h, 08h, 08h
+		inc	si			; was 46h    -- file_header byte 0
+		or	[bx+si],al		; was 08 00  -- header bytes 1-2
+		add	[bx+di-5Eh],ch		; was 00 69 A2 -- header bytes 3-5
+
+; -------------------------------------------------------------------------
+;  zela_header_data -- 52-byte preamble at file offset 0x000.
+;  First 6 bytes (mis-decoded as code above): 46 08 00 00 69 A2
+;  Followed by 16 bytes of small init params, then 27 zero pad bytes.
+; -------------------------------------------------------------------------
+		db	 00h, 00h, 00h, 00h, 4Fh,0A2h	; offset 0x06: header tail (ptr 0xA24F)
+		db	 0Ah, 0Ah, 00h, 00h, 14h, 00h	; offset 0x0C: init params row 0
+		db	 00h, 00h, 14h, 04h		; offset 0x12: init params row 1
+		db	 50h, 50h, 50h			; offset 0x16: spacing values
+		db	27 dup (0)			; offset 0x19: 27-byte zero pad
+
+; -------------------------------------------------------------------------
+;  zela_frame_ptr_tbl_a -- 29-entry sprite-frame pointer table (DS-relative).
+;  Each entry is 2 bytes (LE) targeting the ZELA sprite atlas (0xA0xx-0xA2xx).
+;  Zero entries indicate unused/sentinel slots.  Used during east-facing
+;  pose/anim selection by ai_fn_tbl_e.
+; -------------------------------------------------------------------------
+zela_frame_ptr_tbl_a:
+		db	0B0h,0A0h, 5Fh,0A1h, 96h,0A1h	; ptrs 0xA0B0,0xA15F,0xA196 (head poses)
+		db	0A0h,0A1h,0B9h,0A1h, 00h, 00h	; ptrs 0xA1A0,0xA1B9 + sentinel
+		db	 00h, 00h, 00h, 00h, 50h,0A1h	; sentinels + ptr 0xA150
+		db	 87h,0A1h,0AAh,0A1h,0AAh,0A1h	; ptrs 0xA187,0xA1AA(dup)
+		db	0CDh,0A1h, 00h, 00h, 00h, 00h	; ptr 0xA1CD + sentinels
+		db	 00h, 00h, 2Ch,0A2h, 2Ch,0A2h	; sentinel + dup ptr 0xA22C
+		db	0DCh,0A1h, 13h,0A2h,0EBh,0A1h	; ptrs 0xA1DC,0xA213,0xA1EB
+		db	0FFh,0A1h, 27h,0A2h, 00h, 00h	; ptrs 0xA1FF,0xA227 + sentinel
+		db	 45h,0A2h, 4Ah,0A2h, 40h,0A2h	; ptrs 0xA245,0xA24A,0xA240 (tail poses)
+		db	 00h, 00h			; trailing sentinel
+
+; -------------------------------------------------------------------------
+;  zela_frame_ptr_tbl_b -- 29-entry mirror of tbl_a for west-facing path
+;  (zela_tbl_a_alt branch in state_bit3_lookup).  Begins with 9-byte gap
+;  (sentinels for low-index slots), pointer fragments parallel tbl_a.
+; -------------------------------------------------------------------------
+zela_frame_ptr_tbl_b:
+		db	9 dup (0)			; 9-byte zero gap (low-index sentinels)
+		db	0A1h, 5Fh,0A1h, 96h,0A1h,0A0h	; ptr fragments mirroring 0xA15F,0xA196,0xA0??
+		db	0A1h,0B9h,0A1h, 00h, 00h, 00h	; ptr 0xA1B9 + sentinels
+		db	 00h, 00h, 00h, 50h,0A1h, 87h	; sentinels + ptr 0xA150 + frag of 0xA187
+		db	0A1h,0AAh,0A1h,0AAh,0A1h,0CDh	; ptrs 0xA187,0xA1AA(dup) + frag of 0xA1CD
+		db	0A1h, 00h, 00h, 00h, 00h	; ptr 0xA1CD tail + sentinels
+zela_anim_state_marker		db	0	; offset 0xAE: anim-state marker
+		db	 00h, 2Ch,0A2h, 2Ch,0A2h,0DCh	; ptrs 0xA22C(dup) + frag of 0xA1DC
+		db	0A1h, 13h,0A2h,0EBh,0A1h,0FFh	; ptrs 0xA213,0xA1EB,0xA1FF
+		db	0A1h, 27h,0A2h, 00h, 00h, 45h	; ptr 0xA227 + sentinel + frag of 0xA245
+		db	0A2h, 4Ah,0A2h, 40h,0A2h, 00h	; ptrs 0xA245(tail),0xA24A,0xA240 + zero
+		db	 00h				; trailing zero
+		db	8 dup (0)			; 8-byte zero pad
+
+; -------------------------------------------------------------------------
+;  zela_anim_table_a -- pose/state lookup read in 5-tuples by
+;  zela_lookup_state (`mov cx,5`).  6-byte rows = 5 indices + separator.
+;  Values 00..5C = tile-row / sub-state indices into zela_anim_phase_seq.
+; -------------------------------------------------------------------------
+zela_anim_table_a:
+		db	 01h, 00h, 01h, 02h, 03h, 01h	; row 0
+		db	 00h, 01h, 05h, 06h, 01h, 00h	; row 1
+		db	 01h, 08h, 09h, 01h, 00h, 01h	; row 2
+		db	 0Bh, 0Ch, 01h, 00h, 01h, 0Eh	; row 3
+		db	 0Fh, 01h, 00h, 01h, 11h, 12h	; row 4
+		db	 01h, 00h, 01h, 14h, 15h, 01h	; row 5
+		db	 00h, 01h, 17h, 18h, 01h, 00h	; row 6
+		db	 01h, 32h, 33h, 01h, 00h, 00h	; row 7
+		db	 34h, 35h, 01h, 00h, 00h, 36h	; row 8
+		db	 37h, 01h, 00h, 00h, 38h, 39h	; row 9
+		db	 01h, 00h, 00h,0E2h,0A4h, 01h	; row 10 (embeds ptr 0xA4E2)
+		db	 3Ah, 3Bh, 3Ch, 3Dh, 01h, 3Eh	; row 11
+		db	 00h, 3Fh, 00h, 01h, 40h, 00h	; row 12
+		db	 41h, 00h, 01h, 19h, 00h, 1Ah	; row 13
+		db	 1Bh, 01h, 19h, 00h, 1Dh, 1Eh	; row 14
+		db	 01h, 19h, 00h, 20h, 21h, 01h	; row 15
+		db	 19h, 00h, 23h, 24h, 01h, 19h	; row 16
+zela_rng_fn_ptr		dw	2600h			; offset 0x11A: RNG fn ptr (bytes 00 26)
+		db	 27h, 01h, 19h, 00h, 29h, 2Ah	; row 17 + row 18 head
+		db	 01h, 19h, 00h			; row 18 mid
+		db	 2Ch, 2Dh			; row 18 tail (2 bytes)
+zela_phase_marker		db	1		; offset 0x127: phase marker byte
+		db	 19h, 00h, 2Fh, 30h, 01h, 19h	; row 19
+		db	 00h, 43h, 44h, 01h, 00h, 00h	; row 20
+		db	 45h, 46h, 01h, 00h, 00h, 47h	; row 21
+		db	 48h, 01h, 00h, 00h, 49h, 4Ah	; row 22
+		db	 01h, 00h, 00h,0A3h,0A2h, 01h	; row 23 (embeds ptr 0xA2A3)
+		db	 4Bh, 4Ch, 4Dh, 4Eh, 01h, 00h	; row 24
+		db	 4Fh, 00h, 50h, 01h, 00h, 51h	; row 25
+		db	 00h, 52h, 01h, 53h, 54h, 55h	; row 26
+		db	 56h, 01h, 57h, 58h, 59h, 5Ah	; row 27
+		db	 01h				; row 28 head byte
+		db	 5Bh, 5Ch			; row 28 mid
+
+; -------------------------------------------------------------------------
+;  zela_anim_table_b -- 5-byte rows of tile indices.  Sourcer rendered some
+;  rows as ASCII because tile values 0x5D..0x7E are printable, but they are
+;  sprite-tile indices, not text.  Row terminators are 00h or 02h.
+; -------------------------------------------------------------------------
+zela_anim_table_b:
+		db	']^', 0				; row 0: tiles 5D 5E + sep
+		db	'_`ab', 0			; row 1: tiles 5F 60 61 62 + sep
+		db	'c`ef', 0			; row 2: tiles 63 60 65 66 + sep
+		db	'ghij', 0			; row 3: tiles 67 68 69 6A + sep
+		db	'_lmn', 0			; row 4: tiles 5F 6C 6D 6E + sep
+		db	'o`qr', 0			; row 5: tiles 6F 60 71 72 + sep
+		db	'stuv', 0			; row 6: tiles 73 74 75 76 + sep
+		db	'cxyz', 0			; row 7: tiles 63 78 79 7A + sep
+		db	'{l}~', 0			; row 8: tiles 7B 6C 7D 7E + sep
+		db	 7Fh, 80h, 81h, 82h, 00h, 83h	; row 9 + row 10 head
+		db	 84h, 85h, 86h, 00h, 87h, 88h	; row 10 tail + row 11 head
+		db	 89h, 8Ah, 02h, 8Bh, 8Ch, 8Dh	; row 11 tail (sep=02) + row 12 head
+		db	 8Eh, 02h, 8Fh, 90h		; row 12 tail (sep=02) + row 13 partial
+zela_anim_phase_idx		db	91h		; Data table (indexed access) - row 13 byte
+		db	 92h, 02h, 9Dh, 9Dh, 9Eh, 9Eh	; row 13 tail (sep=02) + row 14 head
+		db	 02h,0A1h,0A1h, 9Eh, 9Eh, 02h	; row 14 sep + row 15 + sep
+		db	 95h, 96h, 98h, 99h, 02h, 99h	; row 16 + row 17 head
+		db	 9Ah, 9Bh, 9Ch, 02h, 00h, 00h	; row 17 tail + zero pad
+		db	 9Fh,0A0h, 00h,0A8h,0A9h,0AAh	; row 18 (3-tile) + row 19 head
+		db	0ABh, 00h,0ACh,0ADh,0AEh,0AFh	; row 19 tail + row 20 head
+		db	 00h,0B0h,0B1h,0B2h,0B3h, 00h	; row 20 tail + row 21
+		db	0B4h,0B5h,0B6h,0B7h, 00h,0B8h	; row 22 + row 23 head
+		db	0B9h,0BAh,0BBh, 00h,0BCh,0BDh	; row 23 tail + row 24 head
+		db	0BEh,0BFh, 00h,0C0h,0C1h,0C2h	; row 24 tail + row 25 head
+		db	0C3h, 01h, 04h, 07h, 0Ah, 0Dh	; row 25 tail + row 26
+
+; -------------------------------------------------------------------------
+;  zela_anim_phase_seq -- phase-sequence indices paired with tables above
+;  (5-byte rows of sprite-tile indices, 02h or 00h separators).
+; -------------------------------------------------------------------------
+zela_anim_phase_seq:
+		db	 01h, 10h, 13h, 16h, 1Ch, 01h	; row 0
+		db	 1Fh, 22h, 25h, 28h, 00h, 2Bh	; row 1 + row 2 head
+		db	 2Eh, 31h, 42h, 00h, 64h, 6Bh	; row 2 tail + row 3 head
+		db	 70h, 77h, 00h, 7Ch,0C4h,0C5h	; row 3 tail + row 4 head
+		db	0C6h, 00h, 64h, 6Bh, 70h, 77h	; row 4 tail + row 5
+		db	 02h, 2Bh, 2Eh, 31h, 42h, 02h	; row 6 (sep=02 variant)
+		db	 64h, 6Bh, 70h, 77h, 02h, 7Ch	; row 7
+		db	0C4h,0C5h,0C6h, 02h, 64h, 6Bh	; row 8
+		db	 70h, 77h, 00h,0C7h,0C8h,0C9h	; row 9 + row 10 head
+		db	0CAh, 00h,0C7h,0C8h,0C9h,0CAh	; row 10 tail + row 11 (dup)
+		db	 00h,0C7h,0C8h,0C9h,0CAh, 00h	; row 12 (dup) + sep
+		db	0C7h,0C8h,0C9h,0CAh, 01h,0CBh	; row 13 (dup) + row 14 head
+		db	0CCh,0CDh,0CEh, 02h,0D7h,0D7h	; row 14 tail + row 15 head
+		db	0D7h,0D7h, 02h,0D8h,0D9h,0DAh	; row 15 tail + row 16 head
+		db	0DBh, 02h,0DCh,0DDh,0DEh,0DFh	; row 16 tail + row 17
+		db	 02h, 00h, 00h,0E0h,0E1h, 00h	; row 18 sep + zero gap + row 19
+		db	0CFh,0D0h,0D1h,0D2h, 00h,0D3h	; row 20 + row 21 head
+		db	0D4h,0D5h,0D6h, 02h,0D3h,0D4h	; row 21 tail + row 22 head
+
+; -------------------------------------------------------------------------
+;  zela_pose_ptr_tbl -- pose anchor pointer table (5 LE-word entries).
+;  Targets 0xA259..0xA265 within ZELA atlas; preceded by tail of preceding row.
+; -------------------------------------------------------------------------
+		db	 0D5h, 0D6h			; row 22 tail (2 trailing tile bytes)
+zela_pose_ptr_tbl:
+		db	 59h,0A2h, 5Dh,0A2h		; ptrs 0xA259, 0xA25D
+		db	 61h,0A2h, 61h,0A2h, 65h,0A2h	; ptrs 0xA261(dup), 0xA265
+
+; -------------------------------------------------------------------------
+;  zela_pose_count_tbl -- 16-byte per-pose tile count table.  Values are
+;  frame counts {01,04,05} for each pose anchor in zela_pose_ptr_tbl.
+; -------------------------------------------------------------------------
+zela_pose_count_tbl:
+		db	 05h, 04h, 04h, 05h, 04h, 04h	; counts row 0 (poses 0-5)
+		db	 04h, 04h, 01h, 01h, 01h, 01h	; counts row 1 (poses 6-11)
+		db	 05h, 05h, 05h, 04h		; counts row 2 (poses 12-15)
+
+; -------------------------------------------------------------------------
+;  zela_misc_data -- mixed scalar/mask/pointer block that precedes the
+;  zela_attack_data_tail/zela_attack_state code section.
+; -------------------------------------------------------------------------
+zela_misc_data:
+		db	 8Ah, 5Ch			; scalar params (138, 92)
+		db	 04h, 80h,0E3h, 0Fh, 32h,0FFh	; mask fields (04 80 E3 0F 32 FF)
+		db	 03h,0DBh,0FFh,0A7h, 77h,0A2h	; mask fields + ptr 0xA277 head
+		db	 81h,0A2h, 66h,0A4h,0B1h,0A6h	; ptrs 0xA281, 0xA466, 0xA6B1
+		db	0B1h,0A6h,0F0h,0A6h,0F6h, 44h	; ptr 0xA6B1(dup), 0xA6F0 + opcode "F6 44"
+		db	 08h,0FFh, 75h, 04h,0C6h	; opcode bytes: test [si+8],FF / jnz +4 / mov..
+		db	 44h, 08h, 08h			; ..[si+8],8 -- continues into dispatch_by_state_hi
 
 dispatch_by_state_hi:
 		test	byte ptr [si+5],20h	; ' '
@@ -856,47 +917,47 @@ zela_lookup_state		endp
 ;  Sourcer mis-decoded these bytes as code; they are pure data.
 ; -------------------------------------------------------------------------
 
-zela_pattern_data:
-		db	 06h, 02h, 01h, 07h, 01h, 02h
-		db	 00h, 00h, 00h, 01h, 07h, 03h
-		db	 02h, 06h, 01h, 05h, 03h, 03h
-		db	 06h, 02h, 01h, 07h, 01h, 02h
-		db	 00h, 00h, 00h, 01h, 07h, 03h
-		db	 04h, 04h, 00h, 05h, 03h, 03h
-		db	 06h, 02h, 01h, 07h, 01h, 02h
-		db	 00h, 00h, 00h, 03h, 05h, 02h
-		db	 04h, 04h, 00h, 05h, 03h, 03h
-		db	 06h, 02h, 01h, 07h, 01h, 02h
-		db	 02h, 06h, 01h, 03h, 05h, 02h
-		db	 04h, 04h, 00h, 05h, 03h, 03h
-		db	 06h, 02h, 01h, 01h, 07h, 03h
-		db	 02h, 06h, 01h, 03h, 05h, 02h
-		db	 04h, 04h, 00h, 05h, 03h, 03h
-		db	 00h, 00h, 00h, 01h, 07h, 03h
-		db	 02h, 06h, 01h, 03h, 05h, 02h
-		db	 04h, 04h, 00h, 07h, 01h, 02h
-		db	 00h, 00h, 00h, 01h, 07h, 03h
-		db	 02h, 06h, 01h, 03h, 05h, 02h
-		db	 06h, 06h, 00h, 05h, 07h, 03h
-		db	 04h, 00h, 00h, 03h, 01h, 02h
-		db	 02h, 02h, 00h, 05h, 07h, 02h
-		db	 04h, 00h, 00h, 03h, 01h, 02h
-		db	 02h, 02h, 01h, 01h, 03h, 02h
-		db	 04h, 00h, 01h, 03h, 01h, 02h
-		db	 02h, 02h, 01h, 01h, 03h, 03h
-		db	 00h, 04h, 01h, 03h, 01h, 03h
-		db	 02h, 02h, 01h, 01h, 03h, 03h
-		db	 00h, 04h, 00h, 07h, 05h, 03h
-		db	 02h, 02h, 00h, 01h, 03h, 03h
-		db	 00h, 04h, 00h, 07h, 05h, 02h
-		db	 06h, 06h, 00h, 01h, 03h, 02h
-		db	 00h, 04h, 00h, 07h, 05h, 02h
-		db	 06h, 06h, 01h, 05h, 07h, 02h
-		db	 00h, 04h, 01h, 07h, 05h, 02h
-		db	 06h, 06h, 01h, 05h, 07h, 03h
-		db	 04h, 00h, 01h, 07h, 05h, 03h
-		db	 06h, 06h, 01h, 05h, 07h, 03h
-		db	 04h, 00h, 00h, 03h, 01h, 03h
+zela_pattern_data:				; 16 states x 15 bytes = 240 bytes
+		db	 06h, 02h, 01h, 07h, 01h, 02h	; state 0  triplets 0..1
+		db	 00h, 00h, 00h, 01h, 07h, 03h	; state 0  triplets 2..3
+		db	 02h, 06h, 01h, 05h, 03h, 03h	; state 0  triplet 4 + state 1 triplet 0
+		db	 06h, 02h, 01h, 07h, 01h, 02h	; state 1  triplets 1..2
+		db	 00h, 00h, 00h, 01h, 07h, 03h	; state 1  triplets 3..4
+		db	 04h, 04h, 00h, 05h, 03h, 03h	; state 2  triplets 0..1
+		db	 06h, 02h, 01h, 07h, 01h, 02h	; state 2  triplets 2..3
+		db	 00h, 00h, 00h, 03h, 05h, 02h	; state 2  triplet 4 + state 3 triplet 0
+		db	 04h, 04h, 00h, 05h, 03h, 03h	; state 3  triplets 1..2
+		db	 06h, 02h, 01h, 07h, 01h, 02h	; state 3  triplets 3..4
+		db	 02h, 06h, 01h, 03h, 05h, 02h	; state 4  triplets 0..1
+		db	 04h, 04h, 00h, 05h, 03h, 03h	; state 4  triplets 2..3
+		db	 06h, 02h, 01h, 01h, 07h, 03h	; state 4  triplet 4 + state 5 triplet 0
+		db	 02h, 06h, 01h, 03h, 05h, 02h	; state 5  triplets 1..2
+		db	 04h, 04h, 00h, 05h, 03h, 03h	; state 5  triplets 3..4
+		db	 00h, 00h, 00h, 01h, 07h, 03h	; state 6  triplets 0..1
+		db	 02h, 06h, 01h, 03h, 05h, 02h	; state 6  triplets 2..3
+		db	 04h, 04h, 00h, 07h, 01h, 02h	; state 6  triplet 4 + state 7 triplet 0
+		db	 00h, 00h, 00h, 01h, 07h, 03h	; state 7  triplets 1..2
+		db	 02h, 06h, 01h, 03h, 05h, 02h	; state 7  triplets 3..4
+		db	 06h, 06h, 00h, 05h, 07h, 03h	; state 8  triplets 0..1
+		db	 04h, 00h, 00h, 03h, 01h, 02h	; state 8  triplets 2..3
+		db	 02h, 02h, 00h, 05h, 07h, 02h	; state 8  triplet 4 + state 9 triplet 0
+		db	 04h, 00h, 00h, 03h, 01h, 02h	; state 9  triplets 1..2
+		db	 02h, 02h, 01h, 01h, 03h, 02h	; state 9  triplets 3..4
+		db	 04h, 00h, 01h, 03h, 01h, 02h	; state 10 triplets 0..1
+		db	 02h, 02h, 01h, 01h, 03h, 03h	; state 10 triplets 2..3
+		db	 00h, 04h, 01h, 03h, 01h, 03h	; state 10 triplet 4 + state 11 triplet 0
+		db	 02h, 02h, 01h, 01h, 03h, 03h	; state 11 triplets 1..2
+		db	 00h, 04h, 00h, 07h, 05h, 03h	; state 11 triplets 3..4
+		db	 02h, 02h, 00h, 01h, 03h, 03h	; state 12 triplets 0..1
+		db	 00h, 04h, 00h, 07h, 05h, 02h	; state 12 triplets 2..3
+		db	 06h, 06h, 00h, 01h, 03h, 02h	; state 12 triplet 4 + state 13 triplet 0
+		db	 00h, 04h, 00h, 07h, 05h, 02h	; state 13 triplets 1..2
+		db	 06h, 06h, 01h, 05h, 07h, 02h	; state 13 triplets 3..4
+		db	 00h, 04h, 01h, 07h, 05h, 02h	; state 14 triplets 0..1
+		db	 06h, 06h, 01h, 05h, 07h, 03h	; state 14 triplets 2..3
+		db	 04h, 00h, 01h, 07h, 05h, 03h	; state 14 triplet 4 + state 15 triplet 0
+		db	 06h, 06h, 01h, 05h, 07h, 03h	; state 15 triplets 1..2
+		db	 04h, 00h, 00h, 03h, 01h, 03h	; state 15 triplets 3..4
 
 seg_a		ends
 
