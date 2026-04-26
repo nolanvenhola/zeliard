@@ -30,6 +30,34 @@ PAGE  59,132
 ;    sage_intro_tbl (0AC18h) - per-sage portrait intro addresses (8 entries)
 ;    sage_hint_tbl  (0ACBDh) - per-sage knowledge-hint text addresses
 ;
+;  Connections:
+;    Loads:        KENJA.GRP (zelres2 chunk 1Ah) via cs:[10Ch] SAR loader
+;                  with AL=2 (fill_buffer decode) into game_seg:8000h
+;                  (chunk-ref record at module offset 0CB4h).
+;                  STDPLY.BIN ref also embedded (used indirectly via the
+;                  inline music-init code sequence -- see ref_stdply at
+;                  module offset ~0x4C2).
+;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
+;                  drv_palette_push, drv_anim_step, drv_render_char,
+;                  drv_ds_copy, drv_return_to_caller, drv_fn_palette_a
+;                  (cs:[2006h]), drv_fn_blit_on/off (cs:[2026h/2028h])
+;                    (graphics driver dispatch slots)
+;                  script_step (cs:[6004h]), script_format_num,
+;                  script_display_page, script_take_item, script_give_item
+;                    (script interpreter slots)
+;                  sage_cmd_tbl[bx] (CS-relative dispatch by AL menu cmd)
+;                  sage_init_tbl[bx] (DS-resident, indexed by gvar_sage_id)
+;                  INT 21h functions 3Ch (create), 40h (write), 3Eh (close)
+;                    -- write *.usr save file in cmd_record_experience.
+;    Called by:    106TOWN building dispatch when player visits a Sage
+;                    (loaded as loaded_code_a at game_seg:3000h via SAR
+;                    loader; per-sage selection via gvar_sage_id 1..8).
+;    Reads/writes: gvar_sage_id (DS:0C006h) -- caller-set sage index
+;                  gvar_script_ip (DS:0FF4Ch), gvar_text_x/y, gvar_dlg_pos,
+;                  gvar_timer_byte, gvar_game_seg, state_script_ptr,
+;                  game-state HP word at DS:[8Eh], EXP word at DS:[8Bh],
+;                  player gold at DS:[86h], current sage state at DS:[BB14h].
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

@@ -12,6 +12,23 @@ PAGE  59,132
 ;  player enters the inn building. Plays the rest/heal/save logic and
 ;  chains back to town via gvar_script_ptr.
 ;
+;  Connections:
+;    Loads:        INN.GRP (zelres2 chunk 19h) via cs:[10Ch] SAR loader
+;                  with AL=2 (fill_buffer decode) into game_seg:8000h.
+;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
+;                  drv_frame_commit, drv_palette_push, drv_anim_step,
+;                  drv_draw_glyph, drv_ds_copy, drv_return_to_caller
+;                    (graphics driver dispatch slots, cs:[2000h..30xxh])
+;                  script_step (cs:[6004h]) -- script bytecode advancer
+;                  opcode_dispatch_tbl (DS-resident, A080h) -- script opcode
+;                    handler table populated at runtime by town dispatcher.
+;    Called by:    106TOWN building dispatch when player enters the inn
+;                  (chunk_ref points at 216INNAP via SAR loader; loaded as
+;                  loaded_code_a at game_seg:3000h, entered via far call).
+;    Reads/writes: gvar_script_ptr (DS:0FF4Ch), gvar_init_flag_a/b
+;                  (DS:0FF4Eh/0FF4Fh), gvar_timer_word (DS:0FF50h),
+;                  gvar_game_seg (CS:0FF2Ch).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

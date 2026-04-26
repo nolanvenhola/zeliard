@@ -11,6 +11,33 @@ PAGE  59,132
 ;  along with trade-in pricing, dialog rendering, shopkeeper animation, and
 ;  the mid-game "knight's sword exchange" event (honor-crest check).
 ;
+;  Connections:
+;    Loads:        ARMR.GRP (zelres2 chunk 15h) via cs:[10Ch] SAR loader
+;                  with AL=2 (fill_buffer decode) into chunk_load_buf
+;                  (game_seg:8000h).
+;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
+;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller,
+;                  gfx_set_color_fn (cs:[2004h]), gfx_present_fn (cs:[201Ah]),
+;                  gfx_render_scene_fn (cs:[201Ch]), gfx_draw_hud_fn
+;                  (cs:[2020h])
+;                    (graphics driver dispatch slots)
+;                  script_step (cs:[6004h]), script_format_num,
+;                  script_display_page, script_take_item, script_give_item,
+;                  menu_init_fn (cs:[600Eh]), menu_nav_fn (cs:[6010h]),
+;                  menu_render_fn (cs:[6012h])
+;                    (script interpreter / menu dispatch slots)
+;                  shop_dispatch_a/b/c (CS- and DS-relative jump tables
+;                    for buy-weapon, buy-shield, explain-goods paths).
+;    Called by:    106TOWN building dispatch when player enters the
+;                    weapon/armour shop (loaded as loaded_code_a at
+;                    game_seg:3000h via SAR loader, far call).
+;    Reads/writes: gvar_script_ip (DS:0FF4Ch) -- chained between sub-scripts
+;                  gvar_dlg_pos (DS:0FF54h), gvar_text_x/y, gvar_timer_byte,
+;                  gvar_game_seg (CS:0FF2Ch),
+;                  player gold word at DS:[96h], shop price word at DS:[94h]
+;                    (game-segment financial state),
+;                  honor-crest flag (mid-game "knight's sword" event check).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

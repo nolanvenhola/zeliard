@@ -11,6 +11,32 @@ PAGE  59,132
 ;  Loaded at gvar_game_seg:loaded_code_a (0x3000) by town.bin when
 ;  player enters the bank building.
 ;
+;  Connections:
+;    Loads:        BANK.GRP (zelres2 chunk 16h) via cs:[10Ch] SAR loader
+;                  with AL=2 (fill_buffer decode) into game_seg:8000h.
+;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
+;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller,
+;                  drv_draw_string (cs:[301Ch]), drv_set_text_pos
+;                  (cs:[3022h]), bank_drv_2014 (cs:[2014h])
+;                    (graphics driver dispatch slots)
+;                  script_step (cs:[6004h]), script_format_num (cs:[6006h]),
+;                  script_display_page (cs:[6008h]), script_take_item
+;                  (cs:[600Ah]), script_give_item (cs:[600Ch]),
+;                  show_menu_items (cs:[600Eh])
+;                    (script interpreter / menu dispatch slots)
+;                  opcode_dispatch_tbl (DS-resident, A0B8h) -- script
+;                    opcode handler table (filled by town dispatcher).
+;    Called by:    106TOWN building dispatch when player enters the bank
+;                    (loaded as loaded_code_a at game_seg:3000h via SAR
+;                    loader, entered through far call).
+;    Reads/writes: gvar_script_ptr (DS:0FF4Ch) -- chained between dialog
+;                    sub-scripts (welcome / exchange / deposit / withdraw
+;                    / balance / goodbye paths)
+;                  gvar_init_flag_a/b, gvar_dlg_pos (DS:0FF54h),
+;                  gvar_timer_byte (DS:0FF1Ah), gvar_game_seg (CS:0FF2Ch)
+;                  player gold word at DS:[86h], deposit word at DS:[8Bh]
+;                    (game-segment financial state).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

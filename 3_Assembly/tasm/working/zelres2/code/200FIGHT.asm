@@ -3,7 +3,59 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  MAIN_GAME_LOOP - Code Module
+;  MAIN_GAME_LOOP - Code Module (200FIGHT.BIN, zelres2 chunk 0)
+;
+;  Main fight/gameplay engine. Drives every cavern/labyrinth combat scene:
+;  loads room sprite/tileset/map chunks, runs the per-frame entity update
+;  loop (player, enemies, projectiles, bosses), services scrolling, and
+;  invokes the active graphics-mode driver for actual rendering.
+;
+;  Loaded by zeliad.exe at game start (game.asm dispatch entry) into the
+;  game-code segment; CS-resident dispatch slots wire it to the active
+;  graphics driver chunk (202GFEGA / 203GFCGA / 204GFHGC / 205GFTGA /
+;  206GFMCA, picked by gvar_gfx_mode) and to per-enemy AI chunks loaded
+;  on-demand via the spr_ref_tbl / chr_ref_tbl tables.
+;
+;  Connections:
+;    Loads:        Sprite sets (zelres2)        via LOAD_CHUNK_REF
+;                                                 spr_ref_tbl/chr_ref_tbl
+;                                                 -> sprite_load_dest (4000h)
+;                  Tileset chunk (zelres2)      via sar_ref_tileset
+;                                                 -> enemy_id_table (8000h)
+;                  Map data chunk (zelres2)     via sar_ref_map
+;                                                 -> sprite_load_dest (4000h)
+;                  Music tracks (zelres3 = arch5) via music_ref_tbl
+;                                                 -> 3000h (audio chunk slot)
+;                  Per-enemy code chunks (zelres3): EAI handlers + sprite
+;                    modules (CRAB/TAKO/TORI/etc., chunks 300-319) loaded
+;                    by the enemy-spawn dispatcher into the running game
+;                    segment alongside the active sprite buffer.
+;                  All loads use cs:[10Ch] SAR loader (AL=archive_index).
+;    Calls into:   Graphics-driver dispatch slots (CS-resident, populated
+;                  by the active GFxxx driver):
+;                    cs:[2000h] = drv_fill_rect,
+;                    cs:[2002h..2018h] = init / palette / scroll / commit
+;                                       / anim-step entry points,
+;                    cs:[2044h] = drv_ds_copy,
+;                    gfx_fn_clear, gfx_fn_render_bg, gfx_fn_map_load,
+;                    gfx_fn_map_scroll, gfx_fn_palette, gfx_fn_init,
+;                    gfx_fn_render_tile, gfx_fn_render_col, gfx_fn_memcpy,
+;                    gfx_fn_combat_fx
+;                      (per-driver function pointer table at CS:31xxh).
+;                  Enemy AI dispatch tables in DS (entity_dispatch_tbl,
+;                    entity_fn_tbl_a..f, boss_fn_tbl, hitbox_map_tbl) --
+;                    invoke per-enemy AI handlers loaded from zelres3.
+;                  scroll_dispatch_a/b (DS-resident) -- per-scroll-mode
+;                    handler tables.
+;    Called by:    zeliad.exe game entry (game.asm) on each frame after
+;                    title/intro flow completes.  Returns to game.asm via
+;                    the standard far-return path (cs:[2044h] family).
+;    Reads/writes: world_state_base (DS:0C000h), entity_state_tbl (DS:920Ah),
+;                  entity_attr_tbl (DS:9234h), boss_data_buf, boss_sprite_buf,
+;                  combat_active/flag2 (DS:9EF5h/9EF6h), tile_set_id,
+;                  player_chr_id/spr_id, music_track_id (DS:9EFAh),
+;                  scroll_active/phase/step state (gvars 0FF43h..0FF46h),
+;                  gvar_game_seg (CS:0FF2Ch).
 ;
 ;==========================================================================
 

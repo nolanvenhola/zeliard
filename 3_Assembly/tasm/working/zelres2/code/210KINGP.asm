@@ -19,6 +19,31 @@ PAGE  59,132
 ;
 ;  Module loads at game_seg:0A000h (CS=DS).
 ;
+;  Connections:
+;    Loads:        KING.GRP (zelres2 chunk 13h) via cs:[10Ch] SAR loader
+;                  with AL=2 (fill_buffer decode) into game_seg:8000h
+;                  (chunk-ref record at module offset 0x40Fh).
+;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
+;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller,
+;                  drv_draw_glyph
+;                    (graphics driver dispatch slots, cs:[2000h..30xxh])
+;                  cs:[11Ah]  -- driver fn: check input / next page
+;                  script_step (cs:[6004h]) -- script bytecode advancer
+;                  dispatch_tbl_base (DS-resident, A078h) -- script-cmd
+;                    dispatch table populated by town dispatcher.
+;    Called by:    106TOWN building dispatch when player enters the
+;                    palace throne room (loaded as loaded_code_a at
+;                    game_seg:3000h via SAR loader, far call entry).
+;    Reads/writes: gvar_script_ip (DS:0FF4Ch) -- chained between branch
+;                    scripts (first-visit / second-visit / nag / post-victory)
+;                  gvar_text_x/y (DS:0FF4Eh/0FF4Fh), gvar_game_seg (CS:0FF2Ch),
+;                  player gold low word at DS:[86h]
+;                    (incremented by 1000 on first-visit award),
+;                  dialog_done_flag (DS:[5h]), dialog_done_flag_b (DS:[6h])
+;                    -- per-quest progression flags set by dispatch handlers,
+;                  quest-complete flag (DS:[49h])
+;                    -- read to choose post-victory branch.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

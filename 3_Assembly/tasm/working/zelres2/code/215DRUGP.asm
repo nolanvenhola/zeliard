@@ -15,6 +15,29 @@ PAGE  59,132
 ;
 ;  Module loads at game_seg:0A000h in DS/CS.
 ;
+;  Connections:
+;    Loads:        DRUG.GRP (zelres2 chunk 18h) via cs:[10Ch] SAR loader
+;                  with AL=2 (fill_buffer decode) into game_seg:8000h.
+;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
+;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller
+;                    (graphics driver dispatch slots, cs:[2000h..])
+;                  script_step (cs:[6004h]), script_format_num (cs:[6006h]),
+;                  script_display_page (cs:[6008h]), script_take_item
+;                  (cs:[600Ah]), script_give_item (cs:[600Ch]),
+;                  menu_show_list (cs:[6010h]), menu_init (cs:[6012h])
+;                    (script interpreter / menu dispatch slots)
+;                  shop_cmd_tbl (DS-resident) -- per-menu-option opcode
+;                    dispatch table populated by town dispatcher.
+;    Called by:    106TOWN building dispatch when player enters the
+;                    witchcraft shop (loaded as loaded_code_a at
+;                    game_seg:3000h, entered through far call).
+;    Reads/writes: gvar_script_ip (DS:0FF4Ch) -- chained between sub-scripts
+;                    (welcome / buy / sell / describe / goodbye)
+;                  gvar_dlg_pos (DS:0FF54h), gvar_text_x/y, gvar_timer_word,
+;                  cur_shop_id (DS:0C006h, set by caller from 1..8 selecting
+;                    the witchcraft vendor), inventory_list (DS:0FF58h),
+;                  player gold word at DS:[86h], gvar_game_seg (DS:0FF2Ch).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

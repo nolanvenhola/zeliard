@@ -23,6 +23,29 @@ PAGE  59,132
 ;                           delay, jump into enddemo.
 ;    draw_hut_banner      - blit 16x17 tile banner from banner_tile_grid.
 ;
+;  Connections:
+;    Loads:        OMOYA.GRP   (zelres2 chunk 14h, AL=2 fill_buffer decode)
+;                              via cs:[10Ch] -> game_seg:8000h
+;                  enddemo.bin (zelres2 chunk 33h, AL=3 raw load)
+;                              via cs:[10Ch] -> CS:6000h  (end-demo path)
+;                  per-mode graphics driver (zelres1 chunks 02/03/04/06):
+;                    gdega.bin / gdcga.bin / gdhgc.bin / gdmcga.bin /
+;                    gdtga.bin -- selected by gvar_gfx_mode (0FF14h).
+;    Calls into:   drv_screen_init_a/b, drv_load_msg_header, drv_ds_copy,
+;                  drv_return_to_caller, drv_draw_glyph
+;                    (graphics driver dispatch slots cs:[2000h..30xxh])
+;                  omoyp_script_6016 (cs:[6016h]) -- script step
+;                  cs:[3006h] -- gfx-driver fn after end-demo load
+;                  ds:[6000h] -- jmp into loaded enddemo (after end_demo)
+;    Called by:    106TOWN building dispatch when player enters the Hut
+;                    (loaded as loaded_code_a at game_seg:3000h)
+;                  drv_return_to_caller DS-dispatch slot (end_demo path,
+;                    triggered when game finishes / credits roll begins).
+;    Reads/writes: gvar_gfx_mode (DS:0FF14h)  -- selects gfx driver chunk
+;                  gvar_timer_word (CS:0FF50h) -- 300-tick wait after load
+;                  gvar_game_seg (CS:0FF2Ch)
+;                  CS:0FF77h -- demo-active flag (set 0FFh on transition)
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
