@@ -54,6 +54,21 @@ include  srmacros.inc
 include  zr3com.inc
 
 ; ----------------------------------------------------------------------
+; Local macro: stamp the current NPC index | 80h into the active cell at
+; ES:[DI] (xchg keeps prior tile in AL) and back-store AL into the
+; sprite xlat table indexed by the NPC index. Repeats 3 times in the
+; render attribute / dialog phase paths.
+; ----------------------------------------------------------------------
+mao2_xlat_apply	macro
+		mov	bl,ds:mao2_npc_idx
+		xor	bh,bh			; Zero register
+		mov	al,bl
+		or	al,80h
+		xchg	[di],al
+		mov	ds:mao2_sprite_xlat_tbl[bx],al
+		endm
+
+; ----------------------------------------------------------------------
 ; Section 2: Module-local exports
 ; ----------------------------------------------------------------------
 mao2_drv_anim_cb	equ	2F2Eh			; driver callback (boss anim)
@@ -809,12 +824,7 @@ mao2_render_attr_apply:
 				push	di
 				mov	ax,[si+2]
 				call	word ptr cs:fight_cb_record_ofs
-				mov	bl,ds:mao2_npc_idx
-				xor	bh,bh			; Zero register
-				mov	al,bl
-				or	al,80h
-				xchg	[di],al
-				mov	ds:mao2_sprite_xlat_tbl[bx],al
+				mao2_xlat_apply
 				pop	di
 				add	si,10h
 				inc	byte ptr ds:mao2_npc_idx
@@ -895,12 +905,7 @@ mao2_dlg_a_set_pos:
 		mov	[si+5],al
 		mov	ax,[si+2]
 		call	word ptr cs:fight_cb_record_ofs
-		mov	bl,ds:mao2_npc_idx
-		xor	bh,bh			; Zero register
-		mov	al,bl
-		or	al,80h
-		xchg	[di],al
-		mov	ds:mao2_sprite_xlat_tbl[bx],al
+		mao2_xlat_apply
 		add	si,10h
 		inc	byte ptr ds:mao2_npc_idx
 
@@ -952,12 +957,7 @@ mao2_dlg_b_dx_set:
 		mov	[si+5],al
 		mov	ax,[si+2]
 		call	word ptr cs:fight_cb_record_ofs
-		mov	bl,ds:mao2_npc_idx
-		xor	bh,bh			; Zero register
-		mov	al,bl
-		or	al,80h
-		xchg	[di],al
-		mov	ds:mao2_sprite_xlat_tbl[bx],al
+		mao2_xlat_apply
 		add	si,10h
 		inc	byte ptr ds:mao2_npc_idx
 

@@ -58,6 +58,17 @@ include  srmacros.inc
 include  zr3com.inc
 
 ; ----------------------------------------------------------------------
+; Local macro: walk back along the 5-row vertical tile column and OR
+; the tile-index byte onto the running collision mask in AL. Repeats
+; 8 times in the bilateral collide_check_{left,right} unrolled loops.
+; ----------------------------------------------------------------------
+eai_or_tile	macro
+		sub	si,24h
+		call	word ptr cs:fight_cb_tile_index
+		or	al,[si]
+		endm
+
+; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses
 ; ----------------------------------------------------------------------
 tako_tbl_a	equ	0A4FDh			; swim pattern table 1 hi
@@ -618,18 +629,10 @@ collide_right_continue:
 		sub	si,24h
 		call	word ptr cs:fight_cb_tile_index
 		mov	al,[si]
-		sub	si,24h
-		call	word ptr cs:fight_cb_tile_index
-		or	al,[si]
-		sub	si,24h
-		call	word ptr cs:fight_cb_tile_index
-		or	al,[si]
-		sub	si,24h
-		call	word ptr cs:fight_cb_tile_index
-		or	al,[si]
-		sub	si,24h
-		call	word ptr cs:fight_cb_tile_index
-		or	al,[si]
+		eai_or_tile
+		eai_or_tile
+		eai_or_tile
+		eai_or_tile
 		xchg	si,di
 		add	al,al
 		retn
@@ -689,18 +692,10 @@ collide_left_continue:
 		sub	si,24h
 		call	word ptr cs:fight_cb_tile_index
 		mov	al,[si]
-		sub	si,24h
-		call	word ptr cs:fight_cb_tile_index
-		or	al,[si]
-		sub	si,24h
-		call	word ptr cs:fight_cb_tile_index
-		or	al,[si]
-		sub	si,24h
-		call	word ptr cs:fight_cb_tile_index
-		or	al,[si]
-		sub	si,24h
-		call	word ptr cs:fight_cb_tile_index
-		or	al,[si]
+		eai_or_tile
+		eai_or_tile
+		eai_or_tile
+		eai_or_tile
 		xchg	si,di
 		add	al,al
 		retn

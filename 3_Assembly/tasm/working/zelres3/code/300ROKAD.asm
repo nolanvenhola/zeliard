@@ -60,6 +60,46 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 
 ; ----------------------------------------------------------------------
+; Local macros: blit-position prologue
+;
+; The Roka demo repeatedly sets up AH = bres_pos_y >> 3 (sometimes minus 6),
+; AL = bres_pos_x, CX = 310h or 1110h, DI = 0, then dispatches via the
+; CS-resident gfx_blit_fn(_b) thunk. Two macros cover the two CX values.
+; Each expands to identical bytes as the original sequence.
+; ----------------------------------------------------------------------
+bres_blit_310	macro	fn				; CX=0310h variant (9 sites)
+		mov	ah,ds:bres_pos_y
+		shr	ah,1
+		shr	ah,1
+		shr	ah,1
+		mov	al,ds:bres_pos_x
+		mov	cx,310h
+		xor	di,di
+		call	word ptr cs:fn
+		endm
+
+bres_blit_1110	macro	fn				; CX=1110h variant w/ ah-=6 (4 sites)
+		mov	ah,ds:bres_pos_y
+		shr	ah,1
+		shr	ah,1
+		shr	ah,1
+		sub	ah,6
+		mov	al,ds:bres_pos_x
+		mov	cx,1110h
+		xor	di,di
+		call	word ptr cs:fn
+		endm
+
+; Tile-draw with wait: BL=bres_pos_y(zext), CL=bres_pos_x, AL preset by caller (4 sites)
+bres_tile_wait	macro
+		mov	bl,ds:bres_pos_y
+		xor	bh,bh
+		mov	cl,ds:bres_pos_x
+		call	word ptr cs:gfx_tile_draw
+		call	wait_frame
+		endm
+
+; ----------------------------------------------------------------------
 ; Section 2: Module-local exports
 ; ----------------------------------------------------------------------
 gfx_fillrect_fn	equ	2000h			; fill rectangle (BX=base, CX=size word, AL=color)
@@ -223,43 +263,17 @@ pose_cycle_loop:
 		mov	ds:cur_pose_y,al
 		mov	byte ptr ds:cur_pose_x,2
 		call	bres_setup
-		mov	ah,ds:bres_pos_y
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		mov	al,ds:bres_pos_x
-		mov	cx,310h
-		xor	di,di			; Zero register
-		call	word ptr cs:gfx_blit_fn
+		bres_blit_310	gfx_blit_fn
 		mov	byte ptr ds:draw_phase_aux,0
 
 tile_draw_loop_a:
 				mov	al,ds:draw_phase_aux
-				mov	bl,ds:bres_pos_y
-				xor	bh,bh			; Zero register
-				mov	cl,ds:bres_pos_x
-				call	word ptr cs:gfx_tile_draw
-				call	wait_frame
-				mov	ah,ds:bres_pos_y
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				mov	al,ds:bres_pos_x
-				mov	cx,310h
-				xor	di,di			; Zero register
-				call	word ptr cs:gfx_blit_fn_b
+				bres_tile_wait
+				bres_blit_310	gfx_blit_fn_b
 				inc	byte ptr ds:draw_phase_aux
 				cmp	byte ptr ds:draw_phase_aux,2
 				jb	tile_draw_loop_a			; Jump if below
-		mov	ah,ds:bres_pos_y
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		sub	ah,6
-		mov	al,ds:bres_pos_x
-		mov	cx,1110h
-		xor	di,di			; Zero register
-		call	word ptr cs:gfx_blit_fn
+		bres_blit_1110	gfx_blit_fn
 		mov	byte ptr ds:gvar_volume_b,1Bh
 		mov	byte ptr ds:draw_phase_aux,0
 
@@ -273,15 +287,7 @@ tile_draw_loop_b:
 				call	word ptr cs:gfx_tile_draw
 				call	wait_frame
 				call	wait_frame
-				mov	ah,ds:bres_pos_y
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				sub	ah,6
-				mov	al,ds:bres_pos_x
-				mov	cx,1110h
-				xor	di,di			; Zero register
-				call	word ptr cs:gfx_blit_fn_b
+				bres_blit_1110	gfx_blit_fn_b
 				inc	byte ptr ds:draw_phase_aux
 				cmp	byte ptr ds:draw_phase_aux,2
 				jb	tile_draw_loop_b			; Jump if below
@@ -290,31 +296,13 @@ tile_draw_loop_b:
 		xor	al,al			; Zero register
 		call	word ptr cs:gfx_fillrect_fn
 		call	word ptr cs:gfx_palette_fn
-		mov	ah,ds:bres_pos_y
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		mov	al,ds:bres_pos_x
-		mov	cx,310h
-		xor	di,di			; Zero register
-		call	word ptr cs:gfx_blit_fn
+		bres_blit_310	gfx_blit_fn
 		mov	byte ptr ds:draw_phase_aux,0
 
 tile_draw_loop_c:
 				mov	al,ds:draw_phase_aux
-				mov	bl,ds:bres_pos_y
-				xor	bh,bh			; Zero register
-				mov	cl,ds:bres_pos_x
-				call	word ptr cs:gfx_tile_draw
-				call	wait_frame
-				mov	ah,ds:bres_pos_y
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				mov	al,ds:bres_pos_x
-				mov	cx,310h
-				xor	di,di			; Zero register
-				call	word ptr cs:gfx_blit_fn_b
+				bres_tile_wait
+				bres_blit_310	gfx_blit_fn_b
 				inc	byte ptr ds:draw_phase_aux
 				cmp	byte ptr ds:draw_phase_aux,4
 				jb	tile_draw_loop_c			; Jump if below
@@ -332,51 +320,18 @@ bres_walk_loop:
 				mov	byte ptr ds:gvar_volume_b,1Ch
 
 bres_walk_step:
-				mov	ah,ds:bres_pos_y
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				mov	al,ds:bres_pos_x
-				mov	cx,310h
-				xor	di,di			; Zero register
-				call	word ptr cs:gfx_blit_fn_b
+				bres_blit_310	gfx_blit_fn_b
 				call	bres_step
 				pushf				; Push flags
-				mov	ah,ds:bres_pos_y
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				mov	al,ds:bres_pos_x
-				mov	cx,310h
-				xor	di,di			; Zero register
-				call	word ptr cs:gfx_blit_fn
+				bres_blit_310	gfx_blit_fn
 				mov	al,ds:draw_phase_aux
 				and	al,1
 				add	al,2
-				mov	bl,ds:bres_pos_y
-				xor	bh,bh			; Zero register
-				mov	cl,ds:bres_pos_x
-				call	word ptr cs:gfx_tile_draw
-				call	wait_frame
+				bres_tile_wait
 				popf				; Pop flags
 				jnc	bres_walk_loop			; Jump if carry=0
-		mov	ah,ds:bres_pos_y
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		mov	al,ds:bres_pos_x
-		mov	cx,310h
-		xor	di,di			; Zero register
-		call	word ptr cs:gfx_blit_fn_b
-		mov	ah,ds:bres_pos_y
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		sub	ah,6
-		mov	al,ds:bres_pos_x
-		mov	cx,1110h
-		xor	di,di			; Zero register
-		call	word ptr cs:gfx_blit_fn
+		bres_blit_310	gfx_blit_fn_b
+		bres_blit_1110	gfx_blit_fn
 		mov	byte ptr ds:gvar_volume_b,1Bh
 		mov	byte ptr ds:draw_phase_aux,0
 
@@ -390,15 +345,7 @@ tile_draw_loop_d:
 				call	word ptr cs:gfx_tile_draw
 				call	wait_frame
 				call	wait_frame
-				mov	ah,ds:bres_pos_y
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				sub	ah,6
-				mov	al,ds:bres_pos_x
-				mov	cx,1110h
-				xor	di,di			; Zero register
-				call	word ptr cs:gfx_blit_fn_b
+				bres_blit_1110	gfx_blit_fn_b
 				inc	byte ptr ds:draw_phase_aux
 				cmp	byte ptr ds:draw_phase_aux,2
 				jb	tile_draw_loop_d			; Jump if below
@@ -409,32 +356,14 @@ tile_draw_loop_d:
 		add	bx,bx
 		mov	bx,ds:pose_vec_tbl_base[bx]
 		call	word ptr cs:gfx_scene_fn
-		mov	ah,ds:bres_pos_y
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		shr	ah,1			; Shift w/zeros fill
-		mov	al,ds:bres_pos_x
-		mov	cx,310h
-		xor	di,di			; Zero register
-		call	word ptr cs:gfx_blit_fn
+		bres_blit_310	gfx_blit_fn
 		mov	byte ptr ds:draw_phase_aux,4
 
 tile_draw_loop_e:
 				mov	al,ds:draw_phase_aux
 				dec	al
-				mov	bl,ds:bres_pos_y
-				xor	bh,bh			; Zero register
-				mov	cl,ds:bres_pos_x
-				call	word ptr cs:gfx_tile_draw
-				call	wait_frame
-				mov	ah,ds:bres_pos_y
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				shr	ah,1			; Shift w/zeros fill
-				mov	al,ds:bres_pos_x
-				mov	cx,310h
-				xor	di,di			; Zero register
-				call	word ptr cs:gfx_blit_fn_b
+				bres_tile_wait
+				bres_blit_310	gfx_blit_fn_b
 				dec	byte ptr ds:draw_phase_aux
 				jnz	tile_draw_loop_e			; Jump if not zero
 		push	ds

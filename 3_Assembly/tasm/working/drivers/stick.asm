@@ -49,6 +49,19 @@ include  srmacros.inc
 include  stick.inc
 include  ..\core\zeliard.inc
 
+; Restore the 8 registers pushed by IRQ entry stubs (INT 08h ISR + game
+; state handler). Same 8-pop sequence at 3 ISR exit/dispatch points.
+pop_all_regs	MACRO
+		pop	es
+		pop	ds
+		pop	bp
+		pop	si
+		pop	di
+		pop	dx
+		pop	cx
+		pop	bx
+		ENDM
+
 ; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses
 ; ----------------------------------------------------------------------
@@ -307,14 +320,7 @@ tis_subsample_done:
 		call	word ptr cs:gvar_state_c
 
 tis_no_callback:
-		pop	es
-		pop	ds
-		pop	bp
-		pop	si
-		pop	di
-		pop	dx
-		pop	cx
-		pop	bx
+		pop_all_regs
 		dec	byte ptr cs:chain_int_ctr
 		jz	tis_chain_int08			; Jump if zero
 		mov	al,20h			; ' '
@@ -1918,14 +1924,7 @@ game_state_handler:
 		je	gsh_loader_active			; Jump if equal
 
 gsh_not_loader:
-		pop	es
-		pop	ds
-		pop	bp
-		pop	si
-		pop	di
-		pop	dx
-		pop	cx
-		pop	bx
+		pop_all_regs
 		pop	ax
 		xor	al,al			; Zero register
 		iret				; Interrupt return
@@ -1936,14 +1935,7 @@ gsh_loader_active:
 gsh_loader_wait:
 								cmp	byte ptr cs:frame_ctr8,0F0h
 								jb	gsh_loader_wait			; Jump if below
-		pop	es
-		pop	ds
-		pop	bp
-		pop	si
-		pop	di
-		pop	dx
-		pop	cx
-		pop	bx
+		pop_all_regs
 		pop	ax
 		mov	al,1
 		iret				; Interrupt return

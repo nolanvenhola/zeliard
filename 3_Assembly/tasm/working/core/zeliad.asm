@@ -34,6 +34,17 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  zeliard.inc
 
+; Prologue used by the per-line CFG parsers (parse_graphics_mode, etc.):
+; ES = CS, locate the colon separator in the current line buffer, then
+; reduce CX so it counts the chars BEFORE the colon. 4 sites, all four
+; CFG parsers use this exact preroll.
+setup_parse_line	MACRO
+		push	cs
+		pop	es
+		call	find_colon_in_line
+		dec	cx
+		ENDM
+
 ; ----------------------------------------------------------------------
 ; Section 3: Game-segment globals (gvar_*) not in shared inc
 ; ----------------------------------------------------------------------
@@ -569,10 +580,7 @@ read_config_line endp
 ;==========================================================================
 
 parse_graphics_mode proc near
-		push	cs
-		pop	es
-		call	find_colon_in_line
-		dec	cx
+		setup_parse_line
 		cmp	cx,3
 		je	try_3char_modes
 		cmp	cx,4
@@ -644,10 +652,7 @@ mode_3char_table db	'cga',  01h	; CGA         ?-> mode 1
 
 parse_music_driver proc	near
 		mov	byte ptr cs:music_enabled,0
-		push	cs
-		pop	es
-		call	find_colon_in_line
-		dec	cx
+		setup_parse_line
 		cmp	cx,0Fh
 		jb	music_name_ok
 		mov	cx,0Fh
@@ -677,10 +682,7 @@ str_mscmt_drv	db	'mscmt.drv'
 ;==========================================================================
 
 parse_joystick_name proc near
-		push	cs
-		pop	es
-		call	find_colon_in_line
-		dec	cx
+		setup_parse_line
 		cmp	cx,0Fh
 		jb	joy_name_ok
 		mov	cx,0Fh
@@ -700,10 +702,7 @@ parse_joystick_name endp
 ;==========================================================================
 
 parse_joystick_enable proc near
-		push	cs
-		pop	es
-		call	find_colon_in_line
-		dec	cx
+		setup_parse_line
 		cmp	cx,2
 		je	try_no
 		cmp	cx,3

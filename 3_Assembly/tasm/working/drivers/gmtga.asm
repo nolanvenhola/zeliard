@@ -27,6 +27,17 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  stdply.inc
 
+; Tail of the small-tilemap dispatch fns: SI gets the precomputed source
+; offset (from prior add ax,ds:anim_ptr_N), then call into the small
+; tilemap renderer and restore DS. 4-instr tail at 4 sprite-selector
+; functions.
+tga_call_tile_small	MACRO
+		mov	si,ax
+		call	render_tilemap_small
+		pop	ds
+		retn
+		ENDM
+
 ; ----------------------------------------------------------------------
 ; Section 3: Game-segment globals (gvar_*) not in shared inc
 ; ----------------------------------------------------------------------
@@ -1199,10 +1210,7 @@ fn6_small_anim_2:				; dispatch fn 6 (CS:2771) ?-- render small anim frame: AL=f
 		mov	cx,0C0h
 		mul	cx			; dx:ax = reg * ax
 		add	ax,ds:anim_ptr_2
-		mov	si,ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		tga_call_tile_small
 
 fn7_small_anim_1:				; dispatch fn 7 (CS:278B) ?-- render small anim frame: AL=frame, anim_ptr_1 base, 16 rows
 		push	ds
@@ -1212,10 +1220,7 @@ fn7_small_anim_1:				; dispatch fn 7 (CS:278B) ?-- render small anim frame: AL=f
 		mov	cx,0C0h
 		mul	cx			; dx:ax = reg * ax
 		add	ax,ds:anim_ptr_1
-		mov	si,ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		tga_call_tile_small
 
 fn17_small_anim_4:				; dispatch fn 17 (CS:27A5) ?-- render small anim frame: AL=frame or default (SI=27E7h if AL=0), anim_ptr_4
 		push	ds
@@ -1307,10 +1312,7 @@ fn20_stub:
 		mov	cx,0C0h
 		mul	cx			; dx:ax = al * 0C0h
 		add	ax,ds:anim_ptr_6	; ax = base + anim_ptr_6 offset
-		mov	si,ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		tga_call_tile_small
 ; fn21 stub (dispatch fn 21): render anim_ptr_5 via render_tilemap_small
 
 fn21_stub:
@@ -1320,10 +1322,7 @@ fn21_stub:
 		mov	cx,0C0h
 		mul	cx			; dx:ax = al * 0C0h
 		add	ax,ds:anim_ptr_5	; ax = base + anim_ptr_5 offset
-		mov	si,ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		tga_call_tile_small
 
 render_tilemap_small		proc	near
 		add	bh,bh

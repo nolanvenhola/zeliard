@@ -99,6 +99,19 @@ SET_VGA_ES	MACRO
 		mov	es, ax
 		ENDM
 
+; Compute VGA row*320 byte offset starting from packed BH/AH coords:
+; (bh = row, ah = col-high). After the 6 instructions: AX = row*320,
+; (sp) = col packed (caller pops). Same prologue at 8 of the 9 plot
+; entry points (152 and 364 use slight variants). 9 sites.
+vga_row_offset	MACRO
+		xor	ax,ax			; Zero register
+		mov	al,bh
+		mov	bh,ah
+		push	ax
+		mov	ax,vga_stride
+		mul	bx			; dx:ax = reg * ax
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -559,12 +572,7 @@ fill_vertical_line		endp
 			                        ;* No entry point to code
 		mov	byte ptr cs:tile_color,9
 		mov	byte ptr cs:tile_row_idx,0
-		xor	ax,ax			; Zero register
-		mov	al,bh
-		mov	bh,ah
-		push	ax
-		mov	ax,vga_stride
-		mul	bx			; dx:ax = reg * ax
+		vga_row_offset
 		pop	di
 		add	di,di
 		add	di,di
@@ -935,12 +943,7 @@ decode_bitplane_tile		endp
 		mul	cx			; dx:ax = reg * ax
 		add	ax,ds:anim_ptr_0
 		mov	si,ax
-		xor	ax,ax			; Zero register
-		mov	al,bh
-		mov	bh,ah
-		push	ax
-		mov	ax,vga_stride
-		mul	bx			; dx:ax = reg * ax
+		vga_row_offset
 		pop	bp
 		add	bp,bp
 		add	bp,bp
@@ -1104,12 +1107,7 @@ tile_src_base_lbl:
 		retn
 
 render_tilemap_small		proc	near
-		xor	ax,ax			; Zero register
-		mov	al,bh
-		mov	bh,ah
-		push	ax
-		mov	ax,vga_stride
-		mul	bx			; dx:ax = reg * ax
+		vga_row_offset
 		pop	bp
 		add	bp,bp
 		add	bp,bp
@@ -1240,12 +1238,7 @@ render_text_char_alt		endp
 
 			                        ;* No entry point to code
 		push	ds
-		xor	ax,ax			; Zero register
-		mov	al,bh
-		mov	bh,ah
-		push	ax
-		mov	ax,vga_stride
-		mul	bx			; dx:ax = reg * ax
+		vga_row_offset
 		pop	di
 		add	di,di
 		add	di,di
@@ -1396,24 +1389,14 @@ set_color_cmd:
 			                        ;* No entry point to code
 		push	ds
 		push	dx
-		xor	ax,ax			; Zero register
-		mov	al,bh
-		mov	bh,ah
-		push	ax
-		mov	ax,vga_stride
-		mul	bx			; dx:ax = reg * ax
+		vga_row_offset
 		pop	si
 		add	si,si
 		add	si,si
 		add	si,si
 		add	si,ax
 		pop	bx
-		xor	ax,ax			; Zero register
-		mov	al,bh
-		mov	bh,ah
-		push	ax
-		mov	ax,vga_stride
-		mul	bx			; dx:ax = reg * ax
+		vga_row_offset
 		pop	di
 		add	di,di
 		add	di,di
@@ -1449,12 +1432,7 @@ copy_stride_loop:
 		mov	al,ds:tile_color_tbl[bx]
 		mov	ds:tile_color,al
 		pop	bx
-		xor	ax,ax			; Zero register
-		mov	al,bh
-		mov	bh,ah
-		push	ax
-		mov	ax,vga_stride
-		mul	bx			; dx:ax = reg * ax
+		vga_row_offset
 		pop	di
 		add	di,di
 		add	di,di
@@ -1498,12 +1476,7 @@ fill_rectangle		endp
 		xor	ah,ah			; Zero register
 		add	ax,ax
 		mov	si,ax
-		xor	ax,ax			; Zero register
-		mov	al,bh
-		mov	bh,ah
-		push	ax
-		mov	ax,vga_stride
-		mul	bx			; dx:ax = reg * ax
+		vga_row_offset
 		pop	di
 		add	di,di
 		add	di,di

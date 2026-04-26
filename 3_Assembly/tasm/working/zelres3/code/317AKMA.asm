@@ -49,6 +49,22 @@ include  srmacros.inc
 include  zr3com.inc
 
 ; ----------------------------------------------------------------------
+; Local macro: AKMA_ANIM_STEP
+; Wraps the recurring "push dx/ax, call fight_cb_anim_step, pop ax/dx,
+; stash returned bl into akma_attr_tmp" sequence used in the four phase
+; render paths (akma_phase_b_a, akma_phase_b_b, akma_phase_c_a,
+; akma_phase_c_b). Appears 8x verbatim. Macro produces the same bytes.
+; ----------------------------------------------------------------------
+akma_anim_step	macro
+		push	dx
+		push	ax
+		call	word ptr cs:fight_cb_anim_step
+		pop	ax
+		pop	dx
+		mov	ds:akma_attr_tmp,bl
+		endm
+
+; ----------------------------------------------------------------------
 ; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
 ; ----------------------------------------------------------------------
 gvar_state_ff30	equ	0FF30h		; per-map state byte
@@ -655,12 +671,7 @@ akma_phase_b_a_loop:
 				dec	ax
 				dec	ax
 				inc	dl
-				push	dx
-				push	ax
-				call	word ptr cs:fight_cb_anim_step
-				pop	ax
-				pop	dx
-				mov	ds:akma_attr_tmp,bl
+				akma_anim_step
 				jc	akma_phase_b_a_skip			; Jump if carry Set
 				mov	bx,2603h
 				call	akma_render_emit_cell
@@ -673,12 +684,7 @@ akma_phase_b_a_final:
 		dec	ax
 		dec	ax
 		inc	dl
-		push	dx
-		push	ax
-		call	word ptr cs:fight_cb_anim_step
-		pop	ax
-		pop	dx
-		mov	ds:akma_attr_tmp,bl
+		akma_anim_step
 		jc	akma_phase_b_a_done			; Jump if carry Set
 		mov	bx,2602h
 		call	akma_render_emit_cell
@@ -702,12 +708,7 @@ akma_phase_b_b_loop:
 				inc	ax
 				inc	ax
 				inc	dl
-				push	dx
-				push	ax
-				call	word ptr cs:fight_cb_anim_step
-				pop	ax
-				pop	dx
-				mov	ds:akma_attr_tmp,bl
+				akma_anim_step
 				jc	akma_phase_b_b_skip			; Jump if carry Set
 				mov	bx,2603h
 				call	akma_render_emit_cell
@@ -720,12 +721,7 @@ akma_phase_b_b_final:
 		inc	ax
 		inc	ax
 		inc	dl
-		push	dx
-		push	ax
-		call	word ptr cs:fight_cb_anim_step
-		pop	ax
-		pop	dx
-		mov	ds:akma_attr_tmp,bl
+		akma_anim_step
 		jc	akma_phase_b_b_done			; Jump if carry Set
 		mov	bx,2602h
 		call	akma_render_emit_cell
@@ -752,12 +748,7 @@ akma_phase_c_a_loop:
 				dec	ax
 				inc	dl
 				inc	dl
-				push	dx
-				push	ax
-				call	word ptr cs:fight_cb_anim_step
-				pop	ax
-				pop	dx
-				mov	ds:akma_attr_tmp,bl
+				akma_anim_step
 				jc	akma_phase_c_a_skip			; Jump if carry Set
 				mov	bx,2607h
 				call	akma_render_emit_cell
@@ -771,12 +762,7 @@ akma_phase_c_a_final:
 		dec	ax
 		inc	dl
 		inc	dl
-		push	dx
-		push	ax
-		call	word ptr cs:fight_cb_anim_step
-		pop	ax
-		pop	dx
-		mov	ds:akma_attr_tmp,bl
+		akma_anim_step
 		jc	akma_phase_c_a_done			; Jump if carry Set
 		mov	bx,2606h
 		call	akma_render_emit_cell
@@ -801,12 +787,7 @@ akma_phase_c_b_loop:
 				inc	ax
 				inc	dl
 				inc	dl
-				push	dx
-				push	ax
-				call	word ptr cs:fight_cb_anim_step
-				pop	ax
-				pop	dx
-				mov	ds:akma_attr_tmp,bl
+				akma_anim_step
 				jc	akma_phase_c_b_skip			; Jump if carry Set
 				mov	bx,2607h
 				call	akma_render_emit_cell
@@ -820,12 +801,7 @@ akma_phase_c_b_final:
 		inc	ax
 		inc	dl
 		inc	dl
-		push	dx
-		push	ax
-		call	word ptr cs:fight_cb_anim_step
-		pop	ax
-		pop	dx
-		mov	ds:akma_attr_tmp,bl
+		akma_anim_step
 		jc	akma_phase_c_b_done			; Jump if carry Set
 		mov	bx,2606h
 		call	akma_render_emit_cell

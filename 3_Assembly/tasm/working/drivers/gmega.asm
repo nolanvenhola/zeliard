@@ -79,6 +79,45 @@ SET_EGA_ES	MACRO
 		mov	es, ax
 		ENDM
 
+; EGA sprite blit prologue: ES->A000, seq mask=0F (all planes write enabled),
+; graphics controller mode = 5 (write mode 1, fast block copy). Identical
+; 7-instruction sequence appears 6 times in render_text_char_alt and
+; tile/sprite/font drawing fns.
+EGA_BLIT_PRO	MACRO
+		mov	ax, ega_seg
+		mov	es, ax
+		mov	dx,3C4h
+		mov	ax,702h
+		out	dx,ax			; port 3C4h, EGA sequencr index
+						;  al = 2, map mask register
+		mov	dx,3CEh
+		mov	ax,205h
+		out	dx,ax			; port 3CEh, EGA graphic index
+						;  al = 5, mode
+		ENDM
+
+; EGA blit epilogue: graphics controller mode register reset to 5 (write
+; mode 1) and bitmask register reset to 0xFF (all bits writable). Same
+; 4-instruction sequence appears 5 times at fn return points.
+EGA_BLIT_END	MACRO
+		mov	ax,5
+		out	dx,ax			; port 3CEh, EGA graphic index
+						;  al = 5, mode
+		mov	ax,0FF08h
+		out	dx,ax			; port 3CEh, EGA graphic index
+						;  al = 8, data bit mask
+		ENDM
+
+; Select EGA sequencer map mask register (3C4h index 2), leaving DX = 3C5h
+; ready for the data write. Repeats 6 times in plot_pixel sub-paths.
+EGA_SEL_MASK	MACRO
+		mov	dx,3C4h
+		mov	al,2
+		out	dx,al			; port 3C4h, EGA sequencr index
+						;  al = 2, map mask register
+		inc	dx
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -373,12 +412,7 @@ locloop_14:
 									pop	cx
 									loop	locloop_9		; Loop if cx > 0
 
-		mov	ax,5
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		mov	ax,0FF08h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 8, data bit mask
+		EGA_BLIT_END
 		retn
 
 music_update_trampoline:
@@ -456,11 +490,7 @@ plot_pixel		proc	near
 						;  al = 8, data bit mask
 
 loc_19:
-		mov	dx,3C4h
-		mov	al,2
-		out	dx,al			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		inc	dx
+		EGA_SEL_MASK
 		push	di
 		mov	al,7
 		out	dx,al			; port 3C5h, EGA sequencr func
@@ -501,11 +531,7 @@ loc_21:
 		mov	al,8
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 8, data bit mask
-		mov	dx,3C4h
-		mov	al,2
-		out	dx,al			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		inc	dx
+		EGA_SEL_MASK
 		push	di
 		mov	ch,0Ah
 
@@ -531,11 +557,7 @@ loc_23:
 		mov	al,8
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 8, data bit mask
-		mov	dx,3C4h
-		mov	al,2
-		out	dx,al			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		inc	dx
+		EGA_SEL_MASK
 		mov	al,7
 		out	dx,al			; port 3C5h, EGA sequencr func
 		push	di
@@ -707,15 +729,7 @@ set_tile_color_c:
 		mul	dl			; ax = reg * al
 		add	di,ax
 		mov	bl,cl
-		SET_EGA_ES
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
+		EGA_BLIT_PRO
 
 fn_7:
 
@@ -739,12 +753,7 @@ fn_28:
 									jmp	short loc_36
 
 loc_37:
-		mov	ax,5
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		mov	ax,0FF08h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 8, data bit mask
+		EGA_BLIT_END
 		retn
 
 loc_38:
@@ -761,15 +770,7 @@ loc_38:
 		lodsb				; String [si] to al
 		xor	ch,ch			; Zero register
 		mov	cl,al
-		SET_EGA_ES
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
+		EGA_BLIT_PRO
 
 locloop_39:
 									push	cx
@@ -786,12 +787,7 @@ locloop_39:
 									pop	cx
 									loop	locloop_39		; Loop if cx > 0
 
-		mov	ax,5
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		mov	ax,0FF08h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 8, data bit mask
+		EGA_BLIT_END
 		retn
 
 render_text_char		proc	near
@@ -1033,15 +1029,7 @@ render_tilemap_large		proc	near
 		mul	ah			; ax = reg * al
 		xor	bh,bh			; Zero register
 		add	bx,ax
-		SET_EGA_ES
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
+		EGA_BLIT_PRO
 
 loc_49:
 									mov	al,[di]
@@ -1063,12 +1051,7 @@ loc_49:
 									inc	ch
 									dec	cl
 									jnz	loc_49			; Jump if not zero
-		mov	ax,5
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		mov	ax,0FF08h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 8, data bit mask
+		EGA_BLIT_END
 		retn
 
 render_tilemap_large		endp
@@ -1182,11 +1165,7 @@ render_sprite_anim0:
 		add	bx,bx
 		add	bp,bx
 		SET_EGA_ES
-		mov	dx,3C4h
-		mov	al,2
-		out	dx,al			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		inc	dx
+		EGA_SEL_MASK
 		mov	cx,12h
 
 locloop_56:
@@ -1365,11 +1344,7 @@ render_tilemap_small		proc	near
 		xor	bh,bh			; Zero register
 		add	bp,bx
 		SET_EGA_ES
-		mov	dx,3C4h
-		mov	al,2
-		out	dx,al			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		inc	dx
+		EGA_SEL_MASK
 		mov	cx,10h
 
 loc_59:
@@ -1482,15 +1457,7 @@ render_text_char_alt		proc	near
 		add	ax,bx
 		mov	di,ax
 		pop	si
-		SET_EGA_ES
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
+		EGA_BLIT_PRO
 		mov	al,8
 		out	dx,al			; port 3CEh, EGA graphic index
 						;  al = 8, data bit mask
@@ -1528,12 +1495,7 @@ locloop_65:
 									loop	locloop_65		; Loop if cx > 0
 
 		dec	dx
-		mov	ax,5
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
-		mov	ax,0FF08h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 8, data bit mask
+		EGA_BLIT_END
 		pop	ds
 		retn
 
@@ -1660,11 +1622,7 @@ fn_19:
 		add	ax,3000h
 		mov	ds,ax
 		SET_EGA_ES
-		mov	dx,3C4h
-		mov	al,2
-		out	dx,al			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		inc	dx
+		EGA_SEL_MASK
 		mov	bl,ch
 		xor	bh,bh			; Zero register
 		mov	ch,bh
@@ -1813,15 +1771,7 @@ fn_22:
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
-		SET_EGA_ES
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
+		EGA_BLIT_PRO
 		mov	al,8
 		out	dx,al			; port 3CEh, EGA graphic index
 						;  al = 8, data bit mask
@@ -1886,15 +1836,7 @@ render_font_ext:
 		mov	bl,bh
 		xor	bh,bh			; Zero register
 		add	di,bx
-		SET_EGA_ES
-		mov	dx,3C4h
-		mov	ax,702h
-		out	dx,ax			; port 3C4h, EGA sequencr index
-						;  al = 2, map mask register
-		mov	dx,3CEh
-		mov	ax,205h
-		out	dx,ax			; port 3CEh, EGA graphic index
-						;  al = 5, mode
+		EGA_BLIT_PRO
 		mov	cx,0Dh
 
 loc_77:

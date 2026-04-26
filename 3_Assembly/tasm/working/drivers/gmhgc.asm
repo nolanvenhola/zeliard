@@ -27,6 +27,37 @@ target		EQU   'T2'                      ; Target assembler: TASM-2.X
 include  srmacros.inc
 include  stdply.inc
 
+; Tail of the small-tilemap dispatch fns: SI gets the precomputed source
+; offset (from prior add ax,ds:anim_ptr_N), then call into the small
+; tilemap renderer and restore DS. 4 sites (mixed comma spacing).
+hgc_call_tile_small	MACRO
+		mov	si, ax
+		call	render_tilemap_small
+		pop	ds
+		retn
+		ENDM
+
+; Tail of the large-tilemap dispatch fns: BX = palette_state, dispatch
+; to render_tilemap_large, restore DS, and return. 3 sites.
+hgc_call_tile_large	MACRO
+		mov	bx,palette_state
+		call	render_tilemap_large
+		pop	ds
+		retn
+		ENDM
+
+; Sprite copy block: save di/si, REP MOVSB CX bytes from DS:SI to ES:DI,
+; restore si/di. The HGC framebuffer requires interleaved bank writes
+; so this 5-instr core repeats around the bank-switch trampolines.
+; 4 sites in copy_sprite_row (interleaved-bank fast path).
+hgc_movsb_block	MACRO
+		push	si
+		mov	cx,bx
+		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
+		pop	si
+		pop	di
+		ENDM
+
 ; ----------------------------------------------------------------------
 ; Section 3: Game-segment globals (gvar_*) not in shared inc
 ; ----------------------------------------------------------------------
@@ -829,10 +860,7 @@ render_large_tilemap_a:				; called externally: render large tilemap A (cs:[8Bh]
 		mov	di,2559h
 		mov	cx,105h
 		mov	ax,26BBh
-		mov	bx,palette_state
-		call	render_tilemap_large
-		pop	ds
-		retn
+		hgc_call_tile_large
 
 render_large_tilemap_b:				; called externally: render large tilemap B (cs:[86h]/cs:[85h] anim, di=2558h, cx=106h)
 		push	ds
@@ -844,10 +872,7 @@ render_large_tilemap_b:				; called externally: render large tilemap B (cs:[86h]
 		mov	di,2558h
 		mov	cx,106h
 		mov	ax,13BBh
-		mov	bx,palette_state
-		call	render_tilemap_large
-		pop	ds
-		retn
+		hgc_call_tile_large
 
 fn_9:
 
@@ -867,10 +892,7 @@ fn_10:
 		mov	di,255Bh
 		mov	cx,103h
 		mov	ax,37BBh
-		mov	bx,palette_state
-		call	render_tilemap_large
-		pop	ds
-		retn
+		hgc_call_tile_large
 
 render_sprite_if_active:			; called externally: render sprite at di=255Bh if cs:[93h] != 0
 		test	byte ptr cs:[93h],0FFh
@@ -1188,10 +1210,7 @@ render_small_tiles_ptr2:			; called externally: render small tile frame al (via 
 		mov	cx,0C0h
 		mul	cx			; dx:ax = reg * ax
 		add	ax,ds:anim_ptr_2
-		mov	si,ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		hgc_call_tile_small
 
 render_small_tiles_ptr1:			; called externally: render small tile frame al (via anim_ptr_1) at current position
 		push	ds
@@ -1201,10 +1220,7 @@ render_small_tiles_ptr1:			; called externally: render small tile frame al (via 
 		mov	cx,0C0h
 		mul	cx			; dx:ax = reg * ax
 		add	ax,ds:anim_ptr_1
-		mov	si,ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		hgc_call_tile_small
 
 fn_4_render_anim_tiles_a:			; dispatch fn 4: render small animated tiles (anim_ptr_4 or default si=27D0h)
 		push	ds
@@ -1291,10 +1307,7 @@ fn_27:
 		mov	cx, 0C0h
 		mul	cx			; dx:ax = reg * ax
 		add	ax, ds:[0E208h]		; anim_ptr (not in equate list)
-		mov	si, ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		hgc_call_tile_small
 
 render_small_tiles_b:				; load si=game_seg:anim_ptr[E204h], call render_tilemap_small
 		push	ds
@@ -1303,10 +1316,7 @@ render_small_tiles_b:				; load si=game_seg:anim_ptr[E204h], call render_tilemap
 		mov	cx, 0C0h
 		mul	cx			; dx:ax = reg * ax
 		add	ax, ds:[0E204h]		; anim_ptr (not in equate list)
-		mov	si, ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		hgc_call_tile_small
 
 render_tilemap_small		proc	near
 		call	calc_hgc_address
@@ -1542,20 +1552,12 @@ copy_sprite_bank_ok:
 copy_sprite_row_loop:
 								push	cx
 								push	di
-								push	si
-								mov	cx,bx
-								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-								pop	si
-								pop	di
+								hgc_movsb_block
 								add	di,2000h
 								cmp	di,hgc_bank_size
 								jb	copy_sprite_bank_wrap			; Jump if below
 								push	di
-								push	si
-								mov	cx,bx
-								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-								pop	si
-								pop	di
+								hgc_movsb_block
 								add	di,0A05Ah
 
 copy_sprite_bank_wrap:
@@ -1716,20 +1718,12 @@ blit_region_row_loop:
 fn_21:
 								push	cx
 								push	di
-								push	si
-								mov	cx,bx
-								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-								pop	si
-								pop	di
+								hgc_movsb_block
 								add	di,2000h
 								cmp	di,hgc_bank_size
 								jb	blit_region_bank_ok			; Jump if below
 								push	di
-								push	si
-								mov	cx,bx
-								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-								pop	si
-								pop	di
+								hgc_movsb_block
 								add	di,0A05Ah
 
 blit_region_bank_ok:

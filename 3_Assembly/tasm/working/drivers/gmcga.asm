@@ -96,6 +96,27 @@ SET_CGA_ES	MACRO
 		mov	es, ax
 		ENDM
 
+; Tail of the anim-pointer dispatch fns: SI gets the computed source
+; offset (from prior add ax,ds:anim_ptr_N), then call into the small
+; tilemap renderer and restore DS. Same 4-instr tail at 4 sprite
+; selector functions.
+cga_call_tile_small	MACRO
+		mov	si,ax
+		call	render_tilemap_small
+		pop	ds
+		retn
+		ENDM
+
+; Tail of the large-tilemap dispatch fns: BX = palette_state, dispatch
+; to render_tilemap_large, restore DS, and return. Same 4-instr tail
+; at the title/HUD/text-overlay panels.
+cga_call_tile_large	MACRO
+		mov	bx,palette_state
+		call	render_tilemap_large
+		pop	ds
+		retn
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -779,10 +800,7 @@ fn_9:
 		mov	di,tile_color_tbl
 		mov	cx,105h
 		mov	ax,tilemap_src_a
-		mov	bx,palette_state
-		call	render_tilemap_large
-		pop	ds
-		retn
+		cga_call_tile_large
 			                        ;* No entry point to code
 
 fn_10:
@@ -795,10 +813,7 @@ fn_10:
 		mov	di,text_vga_ofs_a
 		mov	cx,106h
 		mov	ax,tilemap_src_b
-		mov	bx,palette_state
-		call	render_tilemap_large
-		pop	ds
-		retn
+		cga_call_tile_large
 			                        ;* No entry point to code
 
 fn_11:
@@ -838,10 +853,7 @@ sprite_check:
 		mov	ax,tilemap_src_d
 
 fn_13:
-		mov	bx,palette_state
-		call	render_tilemap_large
-		pop	ds
-		retn
+		cga_call_tile_large
 
 init_timestamp		proc	near
 		mov	di,timestamp_buf
@@ -1125,10 +1137,7 @@ large_tile_wrap:
 		mov	cx,0C0h
 		mul	cx			; dx:ax = reg * ax
 		add	ax,ds:anim_ptr_2
-		mov	si,ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		cga_call_tile_small
 			                        ;* No entry point to code
 		push	ds
 		mov	ds,cs:gvar_game_seg
@@ -1137,10 +1146,7 @@ large_tile_wrap:
 		mov	cx,0C0h
 		mul	cx			; dx:ax = reg * ax
 		add	ax,ds:anim_ptr_1
-		mov	si,ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		cga_call_tile_small
 			                        ;* No entry point to code
 		push	ds
 		mov	si,tile_src_base_b
@@ -1227,10 +1233,7 @@ fn_27:
 		mov	cx,0C0h
 		mul	cx
 		add	ax,ds:[0E208h]
-		mov	si,ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		cga_call_tile_small
 ; Sprite source selector B: same but uses base [E204h] and calls render_tilemap_small  (+2)
 		push	ds
 		mov	ds,cs:[gvar_game_seg]	; switch to game data segment
@@ -1238,10 +1241,7 @@ fn_27:
 		mov	cx,0C0h
 		mul	cx
 		add	ax,ds:[0E204h]		; + sprite base B in game segment
-		mov	si,ax
-		call	render_tilemap_small
-		pop	ds
-		retn
+		cga_call_tile_small
 
 render_tilemap_small		proc	near
 		shr	bl,1			; Shift w/zeros fill
