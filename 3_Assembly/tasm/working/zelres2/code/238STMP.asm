@@ -26,11 +26,11 @@ PAGE  59,132
 ;    Loads:        n/a -- this module is data, not code (no SAR loads)
 ;    Calls into:   n/a (no executable code; the exec-pointer table at
 ;                  +0x004 references handler addresses in the town
-;                  program 208SATNO at segment 0xC6xx)
+;                  program 208YMPD at segment 0xC6xx)
 ;    Called by:    stick.bin map_driver_tbl ("STMP.MDT" entry, archive 1
 ;                  chunk 0x27); loaded by 106TOWN's MDT reader when the
 ;                  player enters Satono Town. Paired with town code
-;                  module 208SATNO.
+;                  module 208YMPD.
 ;    Reads/writes: n/a -- referenced as data tables. The town engine reads
 ;                  the header (size 0x0CAC + flag word 0x0200), the
 ;                  exec-segment pointer table (+0x004), tilemap layer
@@ -58,7 +58,7 @@ stmp_start:
 ;   dw  0x0CAC  = data size (file_size - 4)
 ;   dw  0x0200  = section/flag word
 ;   followed by 20 bytes of word pointers into code segment 0xC6xx
-;   (these reference handler addresses in the town program 208SATNO)
+;   (these reference handler addresses in the town program 208YMPD)
 ; --------------------------------------------------------------------------
 
 mdt_header:

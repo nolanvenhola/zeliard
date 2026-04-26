@@ -26,11 +26,11 @@ PAGE  59,132
 ;    Loads:        n/a -- this module is data, not code (no SAR loads)
 ;    Calls into:   n/a (no executable code; the exec-pointer table at
 ;                  +0x004 references handler addresses in the town
-;                  program 209BOSQE at segments 0xC4xx / 0xC5xx / 0xCCxx)
+;                  program 209CKPD at segments 0xC4xx / 0xC5xx / 0xCCxx)
 ;    Called by:    stick.bin map_driver_tbl ("BSMP.MDT" entry, archive 1
 ;                  chunk 0x28); loaded by 106TOWN's MDT reader when the
 ;                  player enters Bosque Village. Paired with town code
-;                  module 209BOSQE.
+;                  module 209CKPD.
 ;    Reads/writes: n/a -- referenced as data tables. The town engine reads
 ;                  the header (size 0x0D56 + flag word 0x0000), the
 ;                  exec-segment pointer table (+0x004), zero padding
@@ -58,7 +58,7 @@ bsmp_start:
 ;   dw  0x0D56  = data size (file_size - 4 = 3414)
 ;   dw  0x0000  = flag/section word
 ;   followed by word pointers into code segment 0xC4xx / 0xC5xx / 0xCCxx
-;   (handler addresses inside the town program 209BOSQE)
+;   (handler addresses inside the town program 209CKPD)
 ; --------------------------------------------------------------------------
 
 mdt_header:
