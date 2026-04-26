@@ -468,19 +468,21 @@ drgn_xlat_use_tbl_a:
 		mov	ds:drgn_phase_dir,al
 		inc	byte ptr ds:drgn_xlat_idx
 		jmp	drgn_render_begin
-; Dead-byte gap (14 bytes, file 0x4B8..0x4C5). Sourcer mis-decoded this
-; as x86 (or/push/add/cmp dh,6); the bytes are not executed -- control
-; reaches drgn_phase_inc_dir at file 0x4C6 only via the absolute jmp
-; from drgn_phase_a_check. Likely leftover from an earlier compile.
+; Inter-proc padding gap (14 bytes, file 0x4B8..0x4C5). Sits between
+; drgn_xlat_advance's terminating `jmp drgn_render_begin` and
+; drgn_phase_inc_dir; no static jump or call lands inside the range.
+; drgn_phase_inc_dir is entered only via the absolute jmp from
+; drgn_phase_a_check (target 0x4C6).  The bytes are unreachable filler,
+; likely leftover from an earlier compile pass.
 
-drgn_orphan_gap:				; 14 dead bytes (file 0x4B8..0x4C5) -- not reached
-		db	0Ah, 09h			; orphan: or cl,[bx+di]
-		db	06h				; orphan: push es
-		db	03h, 02h			; orphan: add ax,[bp+si]
-		db	03h, 82h, 03h, 02h		; orphan: add ax,[bp+si+0203h]
-		db	03h, 02h			; orphan: add ax,[bp+si]
-		db	01h, 03h			; orphan: add [bp+di],ax
-		db	82h				; orphan tail byte (mis-decode prefix)
+drgn_proc_gap_padding:				; 14 unreached padding bytes (file 0x4B8..0x4C5)
+		db	0Ah, 09h			; padding: decodes as or cl,[bx+di]
+		db	06h				; padding: decodes as push es
+		db	03h, 02h			; padding: decodes as add ax,[bp+si]
+		db	03h, 82h, 03h, 02h		; padding: decodes as add ax,[bp+si+0203h]
+		db	03h, 02h			; padding: decodes as add ax,[bp+si]
+		db	01h, 03h			; padding: decodes as add [bp+di],ax
+		db	82h				; padding tail byte (mis-decode prefix)
 
 drgn_phase_inc_dir:				; entry: jmp drgn_phase_a_check->here when phase_a_active
 		inc	byte ptr ds:drgn_phase_a_step	; fe 06 63 aa

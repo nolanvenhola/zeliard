@@ -512,7 +512,7 @@ walk_reset:					; was loc_23
 spawn_subloop:					; was loc_24
 		inc	byte ptr ds:crab_flag_h
 		cmp	byte ptr ds:crab_flag_h,8
-;*		je	spawn_phase_reset	; target = loc_25 (orphan block below)
+;*		je	spawn_phase_reset	; target = loc_25 (Sourcer dropped label, code below)
 		db	 74h, 18h		; je +0x18 -> spawn_phase_reset @ 0x48D
 						;  (Sourcer dropped the label; byte-form jump)
 		mov	bl,ds:crab_flag_h
@@ -540,7 +540,7 @@ crab_row_widths:				; was ';* No entry point' #1
 ;  and arms crab_anim_idx = 0xFF (triggers anim_step_entry next frame).
 ; -------------------------------------------------------------------------
 
-spawn_phase_reset:				; was loc_25 (orphan from je fixup)
+spawn_phase_reset:				; was loc_25 (label restored from byte-form je fixup)
 		mov	ax,crab_const_2600
 		add	ax,0Ch
 		mov	bx,ds:fight_state_max
@@ -568,7 +568,7 @@ anim_step_entry:				; was loc_27
 		cmp	al,0FFh
 		jne	anim_step_do		; was loc_28
 ;*		jmp	anim_step_end		; target = loc_42 (dead-code / data region)
-		db	0E9h,0F1h, 00h		; jmp +0xF1 -> 0x5C4 (inside orphan block
+		db	0E9h,0F1h, 00h		; jmp +0xF1 -> 0x5C4 (lands inside crab_alt_phase_arm
 						;  between emit_sprite_rows tail and idle_dispatch)
 
 anim_step_do:					; was loc_28
@@ -680,25 +680,25 @@ emit_cell_write:				; was loc_41
 		retn
 
 ; -------------------------------------------------------------------------
-;  Orphan bytes between emit_cell_write's retn (0x5B9) and idle_dispatch
-;  (0x5D7).  These 0x1E bytes decode as nominal x86 but are NOT reachable
-;  via any direct call/jump visible in this module - Sourcer attempted to
-;  disassemble them and hit a `loopnz` byte-form (Fixup 4).
-;
-;  The jmp from anim_step_do (E9 F1 00 at 0x4D0) targets 0x5C4 which lands
-;  inside these bytes; treated as a soft-end (falls out of anim_step_entry).
-;  Bytes also likely double as small constants consumed by 200FIGHT
-;  through DS-resident dispatch tables (cannot resolve statically).
+;  crab_alt_phase_arm (file 0x5BA..0x5D6) -- entered via the absolute jmp
+;  E9 F1 00 from anim_step_do at 0x4D0 (target 0x5C4, lands AFTER the
+;  leading 13-byte constants table).  The leading bytes are small data
+;  constants consumed by 200FIGHT through a DS-resident dispatch slot
+;  (Sourcer's `loopnz $-87` mnemonic is a misdecode of the byte-form
+;  alt-encoding E0 A7); the trailing instructions (mov crab_anim_idx,0
+;  / mov crab_idx_e,0 / mov crab_alt_phase,0FFh) are the live entry
+;  point that arms the alt-phase before falling into idle_dispatch.
 ; -------------------------------------------------------------------------
 
-crab_orphan_data_a:				; was ';* No entry point' #2
-		db	 80h, 80h, 80h, 80h, 80h	; 5 bytes
-		db	 81h, 82h, 03h, 04h		; 4 bytes
-		db	 0FFh				; 1 byte (soft jmp-anim_step_end target at 0x5C4)
+crab_alt_phase_consts:				; was crab_orphan_data_a (DS-dispatch consts)
+		db	 80h, 80h, 80h, 80h, 80h	; 5 bytes (200FIGHT DS-dispatch)
+		db	 81h, 82h, 03h, 04h		; 4 bytes (200FIGHT DS-dispatch)
+		db	 0FFh				; jmp target 0x5C4 lands inside next loopne
 		db	 0F6h				; 1 byte
 		db	 16h				; push ss (in aligned decode)
-;*		loopnz	$-87			; target = mid-instruction (orphan)
+;*		loopnz	$-87			; target = mid-instruction (alt-encoding fixup)
 		db	0E0h,0A7h		; loopne -89  (alt-encoding; stays as Fixup)
+crab_alt_phase_arm:				; live entry: jmp from anim_step_do lands here
 		mov	byte ptr ds:crab_anim_idx,0
 		mov	byte ptr ds:crab_idx_e,0
 		mov	byte ptr ds:crab_alt_phase,0FFh	; arm alt-phase -> idle_dispatch

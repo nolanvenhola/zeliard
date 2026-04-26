@@ -22,7 +22,7 @@ PAGE  59,132
 ;    - Helpers: mao2_pick_target_idx, mao2_target_inc/dec,
 ;      mao2_dlg_a_init, mao2_dlg_b_init, mao2_unpack_bp_to_buf,
 ;      mao2_pos_sub, mao2_pos_step (boss scroll/animation logic)
-;    - Trailer orphan blocks (Sourcer-decoded data) + 'ashiin'
+;    - Trailer dialog-data blocks (Sourcer-decoded as data) + 'ashiin'
 ;      speaker-name + zero padding
 ;
 ;==========================================================================
@@ -49,10 +49,10 @@ mao2_cb_emit_attr	equ	6038h			; game-seg callback fn C (emit attribute)
 ; --- Internal phase / dispatch / handler tables (DS, hard offsets) ---
 mao2_phase_ofs_tbl	equ	0A46Fh			; per-phase substate offset xlat table
 mao2_handler_step_tbl	equ	0A666h			; phase-handler 3-byte step table base
-mao2_orphan_data_a	equ	0A8A9h			; orphan label refd from sourcer trailer
+mao2_dlg_state_word_a	equ	0A8A9h			; dialog-state word in trailer data region
 mao2_dialog_di_tbl_a	equ	0A957h			; DI per-dialog phase table (alt set A)
-mao2_orphan_data_b	equ	0A98Ah			; orphan label refd from sourcer trailer
-mao2_orphan_data_c	equ	0A9DBh			; orphan label refd from sourcer trailer
+mao2_dlg_state_word_b	equ	0A98Ah			; dialog-state byte in trailer data region
+mao2_dlg_state_word_c	equ	0A9DBh			; dialog-state byte in trailer data region
 mao2_dialog_bp_tbl_a	equ	0AA71h			; BP per-dialog phase table (alt set A)
 mao2_phase_handler_tbl	equ	0ABF9h			; secondary phase handler ptr table
 
@@ -94,7 +94,7 @@ mao2_clear_buf_p1	equ	0AC41h			; clear-buf+8 patch-target byte
 mao2_clear_buf_p2	equ	0AC4Ah			; clear-buf+11h patch-target byte
 mao2_clear_buf_p3	equ	0AC65h			; clear-buf+2Ch patch-target byte
 mao2_clear_buf_p4	equ	0AC6Eh			; clear-buf+35h patch-target byte
-mao2_alt_state_byte	equ	0AEADh			; alternate state byte (orphan-refd)
+mao2_alt_state_byte	equ	0AEADh			; alternate state byte (in trailer data region)
 
 ; --- Shared game-segment globals ---
 mao2_sprite_attr_max	equ	0C002h			; sprite attribute max-index byte
@@ -1000,27 +1000,27 @@ mao2_unpack_skip:
 mao2_unpack_bp_to_buf		endp
 
 ; ------------------------------------------------------------------
-; mao2_orphan_block_a: Sourcer-decoded mnemonics that sum to data
-; bytes (handler-step / dialog table data referenced via DS at hard
-; offsets 0xA8A9..0xABF9).  No-entry-point: the bytes are read as
-; data via mao2_orphan_data_a/b/c + handler tables, never executed
-; as instructions. Preserved verbatim since they assemble to the
-; same byte stream as raw db hex would.
+; mao2_dlg_data_block_a: handler-step / dialog table data referenced
+; via DS at hard offsets 0xA8A9..0xABF9 (loaded into game DS at
+; runtime; consumed by the dialog handler tables and step records
+; below).  Sourcer rendered these bytes as x86 mnemonics; preserved
+; verbatim since they assemble to the same byte stream as raw db hex
+; would, and the bytes are read as data, not executed.
 ; ------------------------------------------------------------------
 
-mao2_orphan_block_a	label	byte
-;*		jnc	(unreached)		;*Jump if carry=0
+mao2_dlg_data_block_a	label	byte
+;*		jnc	(data-only)		;*Jump if carry=0
 		db	 73h,0A9h		;  Fixup - byte match
-;*		jnp	(unreached)		;*Jump if not parity
+;*		jnp	(data-only)		;*Jump if not parity
 		db	 7Bh,0A9h		;  Fixup - byte match
-;*		sub	byte ptr ds:mao2_orphan_data_b[bx+di],91h
+;*		sub	byte ptr ds:mao2_dlg_state_word_b[bx+di],91h
 		db	 82h,0A9h, 8Ah,0A9h, 91h	;  Fixup - byte match
 		test	ax,0A999h
-		mov	ax,ds:mao2_orphan_data_a
+		mov	ax,ds:mao2_dlg_state_word_a
 		test	ax,0A9B1h
 		mov	dx,0C3A9h
 		test	ax,0A9CAh
-		shr	byte ptr ds:mao2_orphan_data_c[bx+di],cl	; Shift w/zeros fill
+		shr	byte ptr ds:mao2_dlg_state_word_c[bx+di],cl	; Shift w/zeros fill
 		add	al,mao2_hdr_byte_5
 		add	[bp+di],ax
 		add	ax,207h
@@ -1071,17 +1071,17 @@ mao2_orphan_block_a	label	byte
 		sub	dh,[si]
 		xor	al,[bx+si]
 		sub	ds:mao2_drv_misc_cb,bp
-mao2_orphan_trailer_a	label	byte		; orphan: dialog opcode/index byte stream
-		db	 36h, 2Ch, 35h, 32h, 00h, 29h	; orphan: dialog opcode/index byte
-		db	 2Eh, 2Fh, 30h, 00h	; orphan: dialog opcode/index byte
-mao2_orphan_a_ptr_tbl	label	byte		; 0AAxxh word ptr table (12 entries into trailer)
+mao2_dlg_msg_data_a	label	byte		; dialog opcode/index byte stream
+		db	 36h, 2Ch, 35h, 32h, 00h, 29h	; dialog opcode/index byte
+		db	 2Eh, 2Fh, 30h, 00h	; dialog opcode/index byte
+mao2_dlg_msg_ptr_tbl_a	label	byte		; 0AAxxh word ptr table (12 entries into msg-data)
 		db	0AAh, 08h	; 0AAxxh word ptr entry
 		db	0AAh, 0Fh,0AAh, 17h,0AAh, 1Eh	; 0AAxxh word ptr entry
 		db	0AAh, 26h,0AAh, 2Eh,0AAh, 35h	; 0AAxxh word ptr entry
 		db	0AAh, 3Eh,0AAh, 47h,0AAh, 50h	; 0AAxxh word ptr entry
 		db	0AAh, 57h,0AAh, 5Fh,0AAh, 68h	; 0AAxxh word ptr entry
 		db	0AAh	; 0AAxxh word ptr entry
-mao2_orphan_a_xlat_tbl	label	byte		; xlat/dispatch byte table (small dialog-state ints)
+mao2_dlg_state_xlat	label	byte		; xlat/dispatch byte table (small dialog-state ints)
 		db	 05h, 00h, 01h, 03h, 04h	; xlat/dispatch byte
 		db	 06h, 02h, 07h, 0Bh, 00h, 01h	; xlat/dispatch byte
 		db	 08h, 09h, 0Ah, 02h, 0Fh, 00h	; xlat/dispatch byte
@@ -1100,16 +1100,16 @@ mao2_orphan_a_xlat_tbl	label	byte		; xlat/dispatch byte table (small dialog-stat
 		db	 26h, 2Eh, 2Fh, 27h, 33h, 32h	; xlat/dispatch byte
 		db	 30h, 00h	; xlat/dispatch byte
 		db	')./*42+0'
-mao2_orphan_a_xlat_tail	label	byte		; xlat-table tail (final 8 bytes 00h..36h)
+mao2_dlg_state_xlat_tail	label	byte		; xlat-table tail (final 8 bytes 00h..36h)
 		db	 00h, 29h, 2Eh, 2Fh, 2Ch, 35h	; xlat tail byte
 		db	 32h, 36h	; xlat tail byte
-mao2_orphan_a_ptr_tbl_b	label	byte		; 14 word ptrs (0AA8Dh..0AADBh) - dialog handler tbl
+mao2_dlg_handler_tbl_a	label	byte		; 14 word ptrs (0AA8Dh..0AADBh) - dialog handler tbl
 		db	 8Dh,0AAh, 93h,0AAh	; 0AAxxh word ptr entry
 		db	 99h,0AAh, 9Fh,0AAh,0A5h,0AAh	; 0AAxxh word ptr entry
 		db	0ABh,0AAh,0B1h,0AAh,0B7h,0AAh	; 0AAxxh word ptr entry
 		db	0BDh,0AAh,0C3h,0AAh,0C9h,0AAh	; 0AAxxh word ptr entry
 		db	0CFh,0AAh,0D5h,0AAh,0DBh,0AAh	; 0AAxxh word ptr entry
-mao2_orphan_a_step_recs_a	label	byte	; 6-byte handler step records
+mao2_dlg_step_recs_a	label	byte		; 6-byte handler step records
 		db	 00h, 00h, 11h, 04h,0AAh, 01h	; 6-byte handler step record
 		db	 00h, 00h, 10h, 00h,0ABh, 01h	; 6-byte handler step record
 		db	 00h, 00h, 09h, 02h,0AAh, 01h	; 6-byte handler step record
@@ -1124,13 +1124,13 @@ mao2_orphan_a_step_recs_a	label	byte	; 6-byte handler step records
 		db	 00h, 00h, 0Dh, 00h, 2Bh, 01h	; 6-byte handler step record
 		db	 10h, 00h, 15h, 00h, 2Bh, 01h	; 6-byte handler step record
 		db	 00h, 04h, 0Dh, 00h, 2Bh, 01h	; 6-byte handler step record
-mao2_orphan_a_ptr_tbl_c	label	byte	; 14 word ptrs (0AAFDh..0AB4Bh) - alt dialog handlers
+mao2_dlg_handler_tbl_b	label	byte	; 14 word ptrs (0AAFDh..0AB4Bh) - alt dialog handlers
 		db	0FDh,0AAh, 03h,0ABh, 09h,0ABh	; 0ABxxh word ptr entry
 		db	 0Fh,0ABh, 15h,0ABh, 1Bh,0ABh	; 0ABxxh word ptr entry
 		db	 21h,0ABh, 27h,0ABh, 2Dh,0ABh	; 0ABxxh word ptr entry
 		db	 33h,0ABh, 39h,0ABh, 3Fh,0ABh	; 0ABxxh word ptr entry
 		db	 45h,0ABh, 4Bh,0ABh	; 0ABxxh word ptr entry
-mao2_orphan_a_step_recs_b	label	byte	; alt 6-byte handler step records
+mao2_dlg_step_recs_b	label	byte		; alt 6-byte handler step records
 		db	 01h,0AAh	; 6-byte handler step record
 		db	 04h, 11h, 00h, 00h, 01h,0ABh	; 6-byte handler step record
 		db	 00h, 10h, 00h, 00h, 01h,0AAh	; 6-byte handler step record
@@ -1228,13 +1228,14 @@ mao2_skip_anim_done:
 		retn
 
 ; ------------------------------------------------------------------
-; mao2_orphan_block_b: trailer-region data bytes (Sourcer-decoded as
-; mnemonics).  No-entry-point: this block is the alternate-state
-; byte / handler trailer referenced via mao2_alt_state_byte (0xAEAD)
-; and adjacent hard-coded DS offsets.  Preserved verbatim.
+; mao2_alt_state_trailer: trailer-region data bytes loaded into game DS
+; at runtime and read as the alternate-state byte / handler trailer
+; (referenced via mao2_alt_state_byte at 0xAEAD and adjacent hard-coded
+; DS offsets).  Sourcer rendered these bytes as mnemonics; preserved
+; verbatim since they assemble to the same byte stream.
 ; ------------------------------------------------------------------
 
-mao2_orphan_block_b	label	byte
+mao2_alt_state_trailer	label	byte
 		or	[bx+si],cl
 		or	[si],cl
 		or	al,0Ch

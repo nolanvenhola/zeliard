@@ -27,8 +27,8 @@ PAGE  59,132
 ;    0x28F..0x506 : main scan-and-update code (was loc_1..loc_27)
 ;    0x507..0x533 : hp_dec helper (was sub_1)
 ;    0x534..0x580 : timeout/death-phase code (was loc_32..loc_34)
-;    0x581..0x598 : orphan code/data block (no static caller; called via
-;                   200FIGHT DS-resident dispatch slot - sprite-source init)
+;    0x581..0x598 : sprite-source init block, reached via 200FIGHT
+;                   DS-resident dispatch slot (no static caller in this module)
 ;    0x599..0x5C2 : tako_row_data_ptrs -- 21 word ptrs (last entry = 0x0000 end)
 ;    0x5C3..0x766 : tako_row_data_head -- 15 unreferenced 28-byte sub-blocks
 ;    0x767..0x9B2 : tako_row_data_blk_00..blk_19 -- ptr-targeted sub-blocks
@@ -627,7 +627,7 @@ hp_dec_arm_death:				; was loc_30
 		mov	byte ptr ds:tako_timer_a,0
 		mov	byte ptr ds:gvar_death_flag,0FFh
 
-hp_dec_ret:					; shared retn (used by orphan jno below)
+hp_dec_ret:					; shared retn (used by jno in tako_sprite_src_init below)
 		retn
 
 hp_dec		endp
@@ -671,16 +671,17 @@ death_complete:					; was loc_34
 		retn
 
 ; -------------------------------------------------------------------------
-;  Orphan / dispatch-table-only data (file 0x581..0x598).
-;  Sourcer mis-decoded these 24 bytes as `mov bp,sprite_src_base / movsw /
+;  tako_sprite_src_init (file 0x581..0x598) -- sprite-source / pattern
+;  init constants reached via 200FIGHT DS-resident dispatch slot (loaded
+;  into game DS at runtime so static analysis cannot trace the call).
+;  Sourcer decoded these 24 bytes as `mov bp,sprite_src_base / movsw /
 ;  pop es / cmpsb / sub ss:[..],sp / jno hp_dec_ret / xchg bp,ax / ...`,
-;  but no static caller reaches them.  They are sprite-source / pattern
-;  init constants consumed by 200FIGHT through DS-resident dispatch slots
-;  (e.g. mov bp,0xE3A5 = sprite_src_base setup).  Kept as raw bytes since
-;  the consumer logic lives outside this module.
+;  consistent with sprite_src_base (0xE3A5) setup followed by stream-copy
+;  pointers.  Kept as raw bytes since the consumer dispatch logic lives
+;  in 200FIGHT and selects this slot at runtime.
 ; -------------------------------------------------------------------------
 
-tako_orphan_init:				; was ';* No entry point' marker
+tako_sprite_src_init:				; DS-dispatch handler (reached via 200FIGHT)
 		db	 0BDh,0A5h,0E3h			; mov bp, 0E3A5h (sprite_src_base)
 		db	 0A5h				; movsw
 		db	 07h				; pop es

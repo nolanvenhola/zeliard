@@ -177,12 +177,13 @@ mao1_layout_cells_ext	label	byte		; extended tile cell layout rows
 		db	 00h, 7Ah, 00h, 7Eh, 01h, 00h	; tile cell run
 
 ; ------------------------------------------------------------------
-; Sourcer-decoded mnemonics that sum to data bytes (orphaned, not
-; reachable as code).  Preserved verbatim since they assemble to the
-; same byte stream as raw db hex would.
+; Layout-data block consumed as bytes by 200FIGHT/map dispatch through
+; DS-resident handler tables (loaded into game DS at runtime).  Sourcer
+; rendered these bytes as x86 mnemonics; preserved verbatim since they
+; assemble to the same byte stream as raw db hex would.
 ; ------------------------------------------------------------------
 
-mao1_data_orphan_a	label	byte
+mao1_layout_data_a	label	byte
 		test	ax,[bx+si]
 		add	[bx+di],al
 		add	al,0
@@ -219,7 +220,7 @@ mao1_data_orphan_a	label	byte
 		pop	word ptr [bx+si]
 		xchg	bp,ax
 		add	[bx+si],ax
-mao1_layout_cells_tail	label	byte		; trailing tile cell rows (orphan data continuation)
+mao1_layout_cells_tail	label	byte		; trailing tile cell rows (layout-data continuation)
 		db	 9Bh, 00h, 00h, 01h, 00h, 00h	; tile cell run (tail)
 		db	0C4h,0C5h, 01h, 04h,0CAh,0CFh	; tile cell run (tail)
 		db	0D0h, 01h,0ACh,0ADh,0B0h,0B1h	; tile cell run (tail)
@@ -495,11 +496,13 @@ mao1_dialog_handler_tbl	label	word	; 9 word ptrs (A4ABh..A4FFh) into arena handl
 		db	0A4h	; arena handler ptr
 
 ; ------------------------------------------------------------------
-; Trailer orphan: more Sourcer-decoded mnemonics that sum to data
-; bytes.  Preserved verbatim (orphan, not reachable as code).
+; Trailer dialog-data block: more bytes consumed by the dialog handler
+; via the dispatch tables above (mao1_dialog_handler_tbl entries point
+; into this region).  Sourcer rendered the bytes as x86 mnemonics;
+; preserved verbatim since they assemble to the same byte stream.
 ; ------------------------------------------------------------------
 
-mao1_data_orphan_b	label	byte
+mao1_dialog_data_b	label	byte
 		push	cs
 		movsw				; Mov [si] to es:[di]
 		pop	ds

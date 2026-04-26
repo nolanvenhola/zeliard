@@ -25,10 +25,9 @@ PAGE  59,132
 ;                   clear tori_slot_idx, tori_cycle_idx
 ;    0x1E5..0x645 : main scan-and-update code (was tori_main / loc_1..loc_57)
 ;    0x507..0x57F : sub_1..sub_6 (sprite renderer + hp/altitude helpers)
-;    0x648..0x6C7 : orphan code/data block (no static caller; called via
-;                   200FIGHT DS-resident dispatch slot - reached as a
-;                   per-handler init/setup vector)
-;    0x650..0x66E : 16 word ptrs into the orphan block itself
+;    0x648..0x6C7 : per-handler init/setup vector reached via 200FIGHT
+;                   DS-resident dispatch slot (no static caller in this module)
+;    0x650..0x66E : 16 word ptrs into the init block itself
 ;    0x6CE..0x77F : trailing const table (timing/position constants)
 ;    0x780..0x787 : 'Pollo' name tag (length-prefixed Pascal string)
 ;    0x788..0x7E7 : 91 zero bytes of file padding
@@ -883,16 +882,16 @@ death_complete:					; was loc_57
 		retn
 
 ; -------------------------------------------------------------------------
-;  Orphan / dispatch-table-only block (file 0x648..0x6C7).
-;  Reached via a 200FIGHT DS-resident dispatch slot (no static caller in
-;  this module).  Sourcer mis-decoded the leading bytes as a chain of
-;  conditional jumps; the actual runtime role is a small init/setup
-;  routine bundled with a 16-entry word-pointer table that indexes
-;  positions inside this same orphan block.  Kept as raw bytes since
-;  the consumer logic lives in 200FIGHT.
+;  tori_dispatch_init (file 0x648..0x6C7) -- per-handler init/setup vector
+;  reached via 200FIGHT DS-resident dispatch slot (loaded into game DS
+;  at runtime; no static caller in this module).  Leading 32 bytes are a
+;  16-entry word-ptr table (addresses 0xA673..0xA6C1) into the init-data
+;  block immediately following; Sourcer mis-decoded the table as jcc
+;  byte-form fixups.  Kept as raw bytes since the consumer dispatch
+;  logic lives in 200FIGHT.
 ; -------------------------------------------------------------------------
 
-tori_orphan_init:				; was ';* No entry point' marker
+tori_dispatch_init:				; DS-dispatch handler (reached via 200FIGHT)
 		db	 73h,0A6h			; jnc -90  (Sourcer fixup byte)
 		db	 75h,0A6h			; jnz -90  (Sourcer fixup byte)
 		db	 77h,0A6h			; ja  -90  (Sourcer fixup byte)
@@ -907,9 +906,9 @@ tori_orphan_init:				; was ';* No entry point' marker
 		db	 0A4h,0A6h			; movsb (cmpsb at 0xA6A4)
 		db	 0ADh,0A6h			; lodsw / cmpsb (lodsw at 0xA6AD)
 		db	 0B7h,0A6h			; -> 0xA6B7
-		db	 0C1h,0A6h			; -> 0xA6C1 (last init-tbl entry; following bytes are aliased into tori_orphan_data)
+		db	 0C1h,0A6h			; -> 0xA6C1 (last init-tbl entry; following bytes are aliased into tori_dispatch_data)
 
-tori_orphan_data:				; offset 0x671
+tori_dispatch_data:				; offset 0x671 (init-tbl entries point here)
 ;  Sub-block A: small byte-pair index records (0x671..0x67A)
 		db	 00h, 30h, 01h, 30h, 80h, 70h	; rec 0..2 (idx,attr pairs)
 		db	 90h, 71h, 81h, 72h, 82h, 73h	; rec 3..5
