@@ -19,6 +19,24 @@ PAGE  59,132
 ;  Note: "MEDA" is a prior-pass working nickname for this chunk; the
 ;  disassembler-stored proc name _313MAPBT is authoritative.
 ;
+;  Connections:
+;    Loads:        none (loaded as data/code by 200FIGHT alongside MEDA
+;                  arena/map data; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_prep (200Ch), fight_cb_record_ofs (6028h),
+;                  fight_cb_anim_step (6036h), fight_cb_hit_check (6038h),
+;                  fight_cb_despawn (603Ah), fight_cb_shutdown (603Ch).
+;    Called by:    200FIGHT level/arena dispatch (MEDA boss arena;
+;                  paired with AI module 305EAI5.BIN).
+;    Reads/writes: gvar_proj_cnt (0C002h), gvar_death_flag (0FF2Eh),
+;                  gvar_dir_toggle (0FF2Fh), gvar_completion (0FF30h),
+;                  gvar_spawn_fx_flag (0FF75h); enemy slot list at
+;                  fight_slot_list (0C010h); MEDA tile/render tables
+;                  meda_tile_src_a..h (0A5DCh..0A6C7h), cell write fields
+;                  meda_cell_x/phase (0A6E0h/0A6E1h), anim xlat table
+;                  meda_anim_xlat_tbl (0A6EDh), and scroll state
+;                  meda_scroll_x/phase/x_max (0A716h..0A719h).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

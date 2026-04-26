@@ -19,6 +19,23 @@ PAGE  59,132
 ;    - Trailer: 10-word handler jump-table + continuation tile data
 ;      + 'Tarso' town-name string fragment
 ;
+;  Connections:
+;    Loads:        none (loaded as data/code by 200FIGHT alongside LEGA
+;                  arena/map data; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_prep (200Ch), fight_cb_record_ofs (6028h),
+;                  fight_cb_anim_step (6036h), fight_cb_hit_check (6038h).
+;    Called by:    200FIGHT level/arena dispatch (LEGA boss arena;
+;                  paired with AI module 306EAI6.BIN).
+;    Reads/writes: gvar_death_flag (0FF2Eh), gvar_dir_toggle (0FF2Fh),
+;                  gvar_spawn_fx_flag (0FF75h), gvar_unk_ff3c (0FF3Ch);
+;                  enemy slot list at fight_slot_list (0C010h);
+;                  LEGA tables lega_tbl_a41b (0A41Bh), npc state scan
+;                  tables a/b (0A41Fh/0A424h), anim dx/dy tables
+;                  (0A5D8h/0A5D9h), phase xlat a/b (0A69Bh/0A6BCh),
+;                  dispatch table (0A744h), and scroll/NPC state bytes
+;                  lega_scroll_x..lega_phase_dir_b (0A7A0h..0A7BAh).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

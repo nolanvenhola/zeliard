@@ -25,6 +25,22 @@ PAGE  59,132
 ;    - akma_phase_step_cb (phase callback that resets state on success)
 ;    - Trailer: dispatch-table data + 'Alguien' name + zero pad
 ;
+;  Connections:
+;    Loads:        none (loaded as data/code by 200FIGHT alongside AKMA
+;                  arena/map data; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_prep (200Ch), fight_cb_record_ofs (6028h),
+;                  fight_cb_anim_step (6036h), fight_cb_hit_check (6038h).
+;    Called by:    200FIGHT level/arena dispatch (AKMA boss arena,
+;                  Boss 4; paired with AI module 308EAI8.BIN).
+;    Reads/writes: gvar_death_flag (0FF2Eh), gvar_dir_toggle (0FF2Fh),
+;                  gvar_state_ff30 (0FF30h), gvar_spawn_fx_flag (0FF75h);
+;                  enemy slot list at fight_slot_list (0C010h);
+;                  AKMA per-phase tile-source tables akma_phase_si/di_tbl
+;                  (0A7EEh..0A969h), and AKMA state vars akma_scroll_x..
+;                  akma_phase_step (0AA06h..0AA23h) plus render buffer
+;                  at 0AA2Ah.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

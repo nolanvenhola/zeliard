@@ -25,6 +25,26 @@ PAGE  59,132
 ;  Note: "MAO1" stands for "demon lord 1" (Jp. "Mao") - this is the
 ;  pre-Mao boss. MAO2 (319MAO2 / _319MAPA6) is the FINAL boss arena.
 ;
+;  Connections:
+;    Loads:        invokes mao1_drv_load_chunk (cs:[2000h]) to pull in
+;                  arena tile/sprite data via the graphics-driver SAR
+;                  loader; no direct ref_* tables in this module
+;    Calls into:   driver dispatch slots: mao1_drv_load_chunk (2000h),
+;                  mao1_drv_dispatch_a (201Fh), mao1_drv_blit_render
+;                  (202Ah), mao1_drv_text_render (2928h),
+;                  mao1_drv_misc_callback (2F2Eh); 200FIGHT export table
+;                  via cs:[fight_cb_*] dispatch slots: fight_cb_record_ofs
+;                  (6028h), fight_cb_anim_step (6036h).
+;    Called by:    200FIGHT level/arena dispatch (Jashiin pre-final boss
+;                  arena, Boss 5; transitions to MAO2 final arena on
+;                  completion).
+;    Reads/writes: mao1_gvar_state_byte (0FF75h aliased gvar_spawn_fx_flag);
+;                  enemy slot list at fight_slot_list (0C010h);
+;                  external data ptrs mao1_ext_8e77/9893/9a00; MAO1
+;                  phase/dispatch tables mao1_phase_tbl_a39f (0A39Fh),
+;                  mao1_phase_tbl_a3bb (0A3BBh), mao1_dialog_lo_tbl
+;                  (0A442h), mao1_phase_di/bp_tbl (0A495h/0A52Fh).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

@@ -29,6 +29,24 @@ PAGE  59,132
 ;  helper subs do range check, step fwd/back, turn handler, collision
 ;  detection, and wall scan.
 ;
+;  Connections:
+;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_range (6004h), fight_cb_step_neg (6008h),
+;                  fight_cb_map_fwd (600Ch), fight_cb_step_pos (6010h),
+;                  fight_cb_blocked (6014h), fight_cb_record_ofs (6028h),
+;                  fight_cb_mark_adj (602Ah), fight_cb_tile_index (602Ch),
+;                  fight_cb_cmp_tile (602Eh), fight_cb_spawn (6032h),
+;                  fight_cb_fire (6034h), fight_cb_despawn (603Ah).
+;    Called by:    200FIGHT enemy AI dispatch table (LEGA-type enemy slot;
+;                  paired with sprite/arena module 314LEGA.BIN).
+;    Reads/writes: gvar_hero_x (0FF35h aliased gvar_frame_cnt),
+;                  gvar_spawn_fx_flag (0FF75h); enemy slot record fields
+;                  [si+0..si+16h]; spawn-cell tables enemy_spawn_tile_hi
+;                  (0A4DDh), enemy_spawn_col_hi (0A4DEh),
+;                  enemy_spawn_tile_lo (0A4EAh), enemy_spawn_col_lo
+;                  (0A4EBh); direction xlat table dir_xlat_table (0A766h).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

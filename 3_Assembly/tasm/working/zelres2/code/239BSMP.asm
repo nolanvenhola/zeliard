@@ -22,6 +22,24 @@ PAGE  59,132
 ;    [0x53A]  NPC dialog strings (separated by 0xFF terminators)
 ;    [0xCFA]  event trigger script (ends in FF FF)
 ;
+;  Connections:
+;    Loads:        n/a -- this module is data, not code (no SAR loads)
+;    Calls into:   n/a (no executable code; the exec-pointer table at
+;                  +0x004 references handler addresses in the town
+;                  program 209BOSQE at segments 0xC4xx / 0xC5xx / 0xCCxx)
+;    Called by:    stick.bin map_driver_tbl ("BSMP.MDT" entry, archive 1
+;                  chunk 0x28); loaded by 106TOWN's MDT reader when the
+;                  player enters Bosque Village. Paired with town code
+;                  module 209BOSQE.
+;    Reads/writes: n/a -- referenced as data tables. The town engine reads
+;                  the header (size 0x0D56 + flag word 0x0000), the
+;                  exec-segment pointer table (+0x004), zero padding
+;                  (+0x01C), tilemap pages (+0x034), the event/door
+;                  header (+0x4DB), the "Bosque village" name (+0x4E8),
+;                  door/exit + dialog-header bytes (+0x4F6), dialog ptr
+;                  table (+0x51C), NPC dialog strings (+0x53A), and
+;                  event trigger script (+0xCFA).
+;
 ;==========================================================================
 
 target		EQU	'T2'

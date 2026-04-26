@@ -30,6 +30,26 @@ PAGE  59,132
 ;  with bx = 2 * (rotated [si+9] bits 6:5).  Sourcer cannot trace these
 ;  jumps because the dispatch tables live in DS.
 ;
+;  Connections:
+;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_range (6004h), fight_cb_step_neg (6008h),
+;                  fight_cb_step_neg_2 (600Ah), fight_cb_map_fwd (600Ch),
+;                  fight_cb_map_back (600Eh), fight_cb_step_pos (6010h),
+;                  fight_cb_step_pos_2 (6012h), fight_cb_blocked (6014h),
+;                  fight_cb_dist_check (6016h), fight_cb_record_ofs (6028h),
+;                  fight_cb_mark_adj (602Ah), fight_cb_tile_index (602Ch),
+;                  fight_cb_cmp_tile (602Eh), fight_cb_alt (6030h),
+;                  fight_cb_spawn (6032h); plus tako_facing_fn_ptr
+;                  CS-relative pseudo-fn for facing/sign returns.
+;    Called by:    200FIGHT enemy AI dispatch table (TAKO enemy slot;
+;                  paired with sprite module 310TAKO.BIN).
+;    Reads/writes: gvar_proj_cnt (0C002h), gvar_frame_cnt (0FF35h),
+;                  gvar_enemy_cnt (0FF36h); enemy slot record fields
+;                  [si+0..si+16h]; TAKO swim/tentacle pattern tables
+;                  tako_tbl_a..p (0A4FDh..0A956h) and tako_state_dispatch
+;                  at 0A956h (4-entry word-ptr table).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

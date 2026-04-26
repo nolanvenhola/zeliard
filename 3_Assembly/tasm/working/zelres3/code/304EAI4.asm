@@ -20,6 +20,24 @@ PAGE  59,132
 ;    0ED20h = extended enemy data area (body segment/chain tracking).
 ;    0FF35h / 0FF4Ah = global frame / sub-frame counters.
 ;
+;  Connections:
+;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_range (6004h), fight_cb_step_neg (6008h),
+;                  fight_cb_step_pos (6010h), fight_cb_step_pos_2 (6012h),
+;                  fight_cb_blocked (6014h), fight_cb_dist_check (6016h),
+;                  fight_cb_record_ofs (6028h), fight_cb_mark_adj (602Ah),
+;                  fight_cb_tile_index (602Ch), fight_cb_cmp_tile (602Eh),
+;                  fight_cb_spawn (6032h).
+;    Called by:    200FIGHT enemy AI dispatch table (ZELA enemy slot;
+;                  paired with sprite/arena module 312ZELA.BIN).
+;    Reads/writes: gvar_proj_cnt (0C002h), gvar_frame_cnt (0FF35h),
+;                  gvar_sub_frame (0FF4Ah); enemy slot record fields
+;                  [si+0..si+Ah]; ZELA pattern tables zela_tbl_a/_alt
+;                  (0A45Eh / 0A456h) and zela_tbl_b/_alt (0A756h / 0A7CEh);
+;                  enemy slot list at 0C010h and extended enemy_data_ext
+;                  area at 0ED20h (segmented body chain).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

@@ -25,6 +25,27 @@ PAGE  59,132
 ;    - Trailer dialog-data blocks (Sourcer-decoded as data) + 'ashiin'
 ;      speaker-name + zero padding
 ;
+;  Connections:
+;    Loads:        none direct (loaded as data/code by 200FIGHT alongside
+;                  MAO2 final-arena data)
+;    Calls into:   driver dispatch slots: mao2_drv_anim_cb (2F2Eh),
+;                  mao2_drv_misc_cb (302Fh); 200FIGHT export table via
+;                  cs:[fight_cb_*] dispatch slots: fight_cb_prep (200Ch),
+;                  fight_cb_record_ofs (6028h), fight_cb_anim_step
+;                  (6036h), fight_cb_hit_check (6038h).
+;    Called by:    200FIGHT level/arena dispatch (final-boss / Mao-2
+;                  arena, Boss 6); entered from MAO1 (318) on completion
+;                  of the Jashiin pre-boss encounter.
+;    Reads/writes: mao2_gvar_state_a (0FF21h), mao2_gvar_state_b (0FF2Eh),
+;                  mao2_gvar_state_c (0FF2Fh), mao2_gvar_state_d (0FF30h),
+;                  mao2_gvar_phase_byte (0FF75h); enemy slot list at
+;                  fight_slot_list (0C010h); MAO2 phase/handler tables
+;                  mao2_phase_ofs_tbl (0A46Fh), mao2_handler_step_tbl
+;                  (0A666h), mao2_dialog_di/bp_tbl_a (0A957h/0AA71h),
+;                  mao2_phase_handler_tbl (0ABF9h), and per-frame state
+;                  mao2_npc_target_idx..mao2_phase_substate
+;                  (0AC03h..0AC1Bh).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

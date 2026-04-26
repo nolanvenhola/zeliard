@@ -24,6 +24,23 @@ PAGE  59,132
 ;    - drgn_phase_step_cb (phase callback that resets state on success)
 ;    - Trailer: dispatch-table data + 'gon' name fragment + zero pad
 ;
+;  Connections:
+;    Loads:        none (loaded as data/code by 200FIGHT alongside DRGN
+;                  arena/map data; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_prep (200Ch), fight_cb_record_ofs (6028h),
+;                  fight_cb_anim_step (6036h), fight_cb_hit_check (6038h).
+;    Called by:    200FIGHT level/arena dispatch (DRGN boss arena;
+;                  paired with AI module 307EAI7.BIN).
+;    Reads/writes: gvar_death_flag (0FF2Eh), gvar_dir_toggle (0FF2Fh),
+;                  gvar_state_ff30 (0FF30h), gvar_spawn_fx_flag (0FF75h);
+;                  enemy slot list at fight_slot_list (0C010h);
+;                  external tile source at 8000h; DRGN xlat/phase tables
+;                  drgn_xlat_tbl_a4bb (0A4BBh), drgn_phase_si_tbl /
+;                  drgn_phase_bp_tbl families (0A783h..0A985h); state
+;                  vars including drgn_scroll_x (0AA3Ch) and the render
+;                  buffer at 0AA69h.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

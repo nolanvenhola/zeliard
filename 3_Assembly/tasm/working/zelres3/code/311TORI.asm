@@ -39,6 +39,22 @@ PAGE  59,132
 ;  range.  Helpers sub_2..sub_5 manage glide/turn/swoop counters; sub_6
 ;  performs HP-decrement plus death/spawn-FX bookkeeping.
 ;
+;  Connections:
+;    Loads:        none (loaded as data/code by 200FIGHT; no SAR loads)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_prep (200Ch), fight_cb_record_ofs (6028h),
+;                  fight_cb_anim_step (6036h), fight_cb_hit_check (6038h),
+;                  fight_cb_despawn (603Ah), fight_cb_shutdown (603Ch).
+;    Called by:    200FIGHT sprite/code dispatch (TORI enemy slot;
+;                  paired with AI module 303EAI3.BIN).
+;    Reads/writes: gvar_death_flag (0FF2Eh), gvar_dir_toggle (0FF2Fh),
+;                  gvar_completion (0FF30h), gvar_spawn_fx_flag (0FF75h);
+;                  enemy slot list at fight_slot_list (0C010h);
+;                  shared sprite_pat_tbl (0A64Dh), glide tables A/B/C
+;                  (0A682h..0A68Eh), ai_column_tbl (0A6CBh); local TORI
+;                  state at tori_hp (0A773h) plus accumulators
+;                  tori_scan_acc_a/b and tori_extern_fn_ptr.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

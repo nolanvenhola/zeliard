@@ -20,6 +20,26 @@ PAGE  59,132
 ;    0ED20h = extended enemy data area (enemy_data_ext).
 ;    0FF35h / 0FF4Ah = global frame / sub-frame counters.
 ;
+;  Connections:
+;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_step_neg (6008h), fight_cb_step_neg_2 (600Ah),
+;                  fight_cb_map_fwd (600Ch), fight_cb_map_back (600Eh),
+;                  fight_cb_step_pos (6010h), fight_cb_step_pos_2 (6012h),
+;                  fight_cb_blocked (6014h), fight_cb_record_ofs (6028h),
+;                  fight_cb_mark_adj (602Ah), fight_cb_tile_index (602Ch),
+;                  fight_cb_cmp_tile (602Eh), fight_cb_aux_40 (6040h),
+;                  fight_cb_spawn_alt (603Eh) for body-segment / projectile
+;                  spawn; also references battle_ref_a (0A2AEh) and
+;                  battle_ref_b (0B5B4h) into the 200FIGHT binary, and a
+;                  local intro-fn pointer at ai_fn_intro (1312h).
+;    Called by:    200FIGHT enemy AI dispatch table (MEDA enemy slot;
+;                  paired with sprite/arena module 313MEDA.BIN).
+;    Reads/writes: gvar_proj_cnt (0C002h), gvar_frame_cnt (0FF35h),
+;                  gvar_sub_frame (0FF4Ah); enemy slot record fields
+;                  [si+0..si+Ah]; MEDA behaviour tables meda_tbl_a..h
+;                  (0A1E6h..0A429h); extended enemy_data_ext at 0ED20h.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

@@ -45,6 +45,20 @@ PAGE  59,132
 ;  animations via the fight callbacks, handles multi-arm sprite columns,
 ;  and respawns tentacle projectiles on timed phases.
 ;
+;  Connections:
+;    Loads:        none (loaded as data/code by 200FIGHT; no SAR loads)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_prep (200Ch), fight_cb_record_ofs (6028h),
+;                  fight_cb_anim_step (6036h), fight_cb_hit_check (6038h).
+;    Called by:    200FIGHT sprite/code dispatch (TAKO enemy slot;
+;                  paired with AI module 302EAI2.BIN).
+;    Reads/writes: gvar_death_flag (0FF2Eh), gvar_dir_toggle (0FF2Fh),
+;                  gvar_completion (0FF30h), gvar_spawn_fx_flag (0FF75h);
+;                  enemy slot list at fight_slot_list (0C010h);
+;                  shared sprite pattern tables sprite_pat_tbl_a (0A57Dh),
+;                  sprite_pat_tbl_b (0A64Dh); local TAKO state at
+;                  tako_row_pos_base (0xAA80) and tako_hp counter.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

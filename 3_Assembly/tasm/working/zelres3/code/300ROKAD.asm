@@ -31,6 +31,28 @@ PAGE  59,132
 ;    bres_step         - step one pixel along the interpolated line;
 ;                        sets CF=1 when target reached.
 ;
+;  Connections:
+;    Loads:        zelres3 chunk 95 (_MFAN.MSD music) via ref_mfan_msd, and
+;                  zelres3 chunk 54 (6DMAN.GRP sprites) via ref_6dman_grp;
+;                  also calls SAR loader at cs:[10Ch] with AL=5 to load the
+;                  graphics driver chunk into game_seg:0x3000 and AL=2 for
+;                  the sprite chunk into game_seg:0x6000.
+;    Calls into:   gfx_fillrect_fn (2000h), gfx_blit_fn (2026h),
+;                  gfx_blit_fn_b (2028h), gfx_scene_fn (203Eh),
+;                  gfx_sprite_plot (3022h), gfx_palette_fn (3024h),
+;                  gfx_tile_draw (3026h), gfx_decode_fn (3028h)
+;                  -- all CS-relative function pointers populated by the
+;                  graphics driver chunk loaded at +3000h.
+;                  Also INT 60h for fanfare / music dispatch.
+;    Called by:    zeliad.exe / opening loop (200FIGHT resource_name_table
+;                  @ ~7941); entered far at offset +9 (the leading 9 bytes
+;                  are file header + caller-pre-init bytes).
+;    Reads/writes: gvar_roka_scene (000A0h), gvar_pose_idx (000E7h),
+;                  gvar_timer_lo (0FF1Ah), gvar_enable_all (0FF26h),
+;                  gvar_game_seg (0FF2Ch), gvar_anim_speed (0FF33h),
+;                  gvar_volume_b (0FF75h), and local Bresenham state
+;                  bytes at cur_pose_x/y, bres_pos_x/y, bres_dx/dy, etc.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

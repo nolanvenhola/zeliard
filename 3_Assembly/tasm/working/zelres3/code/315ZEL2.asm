@@ -21,6 +21,24 @@ PAGE  59,132
 ;
 ;  Trailer string 'aguro' is the Helada speaker / label name fragment.
 ;
+;  Connections:
+;    Loads:        none (loaded as data/code by 200FIGHT alongside ZEL2
+;                  arena/map data; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_prep (200Ch), fight_cb_record_ofs (6028h),
+;                  fight_cb_anim_step (6036h), fight_cb_hit_check (6038h),
+;                  fight_cb_despawn (603Ah), fight_cb_shutdown (603Ch).
+;    Called by:    200FIGHT level/arena dispatch (ZEL2 boss arena;
+;                  no dedicated EAI handler -- shares EAI handlers with
+;                  earlier ZELA/MEDA bosses).
+;    Reads/writes: gvar_death_flag (0FF2Eh), gvar_dir_toggle (0FF2Fh),
+;                  gvar_spawn_fx_flag (0FF75h); enemy slot list at
+;                  fight_slot_list (0C010h); ZEL2 anim dispatch table
+;                  zel2_anim_dispatch_tbl (0A2F8h), phase xlat
+;                  (0A4DBh), per-segment slots zel2_anim_seg_a (0A543h),
+;                  scroll/phase state zel2_scroll_x..zel2_phase_a_subflag
+;                  (0A5DFh..0A5FAh).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

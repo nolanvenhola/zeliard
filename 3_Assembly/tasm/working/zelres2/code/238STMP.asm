@@ -22,6 +22,24 @@ PAGE  59,132
 ;    [0x72B]  NPC dialog strings (separated by 0xFF)
 ;    [0xC75]  event trigger script (ends in FF FF)
 ;
+;  Connections:
+;    Loads:        n/a -- this module is data, not code (no SAR loads)
+;    Calls into:   n/a (no executable code; the exec-pointer table at
+;                  +0x004 references handler addresses in the town
+;                  program 208SATNO at segment 0xC6xx)
+;    Called by:    stick.bin map_driver_tbl ("STMP.MDT" entry, archive 1
+;                  chunk 0x27); loaded by 106TOWN's MDT reader when the
+;                  player enters Satono Town. Paired with town code
+;                  module 208SATNO.
+;    Reads/writes: n/a -- referenced as data tables. The town engine reads
+;                  the header (size 0x0CAC + flag word 0x0200), the
+;                  exec-segment pointer table (+0x004), tilemap layer
+;                  pages (+0x01C, 8 pages), the event/door header
+;                  (+0x6D4), the "Satono Town" name (+0x6E1),
+;                  door/exit table (+0x6EC), dialog ptr table (+0x710),
+;                  NPC dialog strings (+0x72B), and event trigger
+;                  script (+0xC75).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

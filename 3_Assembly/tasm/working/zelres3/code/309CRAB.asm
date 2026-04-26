@@ -30,6 +30,20 @@ PAGE  59,132
 ;  helpers hp_dec/hp_inc adjust fight_hp; emit_sprite_rows writes crab
 ;  sprite rows into the slot buffer.
 ;
+;  Connections:
+;    Loads:        none (loaded as data/code by 200FIGHT; no SAR loads)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_prep (200Ch), fight_cb_anim_step (6036h),
+;                  fight_cb_hit_check (6038h), fight_cb_record_ofs (6028h).
+;    Called by:    200FIGHT sprite/code dispatch (CRAB enemy slot;
+;                  paired with AI module 301EAI1.BIN).
+;    Reads/writes: gvar_death_flag (0FF2Eh), gvar_dir_toggle (0FF2Fh),
+;                  gvar_completion (0FF30h), gvar_spawn_fx_flag (0FF75h);
+;                  enemy slot list at fight_slot_list (0C010h);
+;                  crab state vars crab_spawn_limit (0A481h),
+;                  crab_anim_tbl_a/b/c, crab_pos_tbl (0A70Ah), fight_hp
+;                  (0A7C3h), and crab phase/state bytes 0A7C5h..0A7E4h.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

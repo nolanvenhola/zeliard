@@ -23,6 +23,23 @@ PAGE  59,132
 ;  Note: The name "ZELA" in the filename is a prior-pass working nickname;
 ;  the disassembler-stored proc identifier _312MAPST is authoritative.
 ;
+;  Connections:
+;    Loads:        none (loaded as data/code by 200FIGHT alongside ZELA
+;                  arena/map data; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_prep (200Ch), fight_cb_record_ofs (6028h),
+;                  fight_cb_anim_step (6036h), fight_cb_hit_check (6038h),
+;                  fight_cb_despawn (603Ah), fight_cb_shutdown (603Ch).
+;    Called by:    200FIGHT level/arena dispatch (ZELA boss arena;
+;                  paired with AI module 304EAI4.BIN).
+;    Reads/writes: gvar_proj_cnt (0C002h), gvar_death_flag (0FF2Eh),
+;                  gvar_dir_toggle (0FF2Fh), gvar_completion (0FF30h),
+;                  gvar_spawn_fx_flag (0FF75h); enemy slot list at
+;                  fight_slot_list (0C010h); ZELA arena state including
+;                  zela_dispatch_tbl (0A307h), zela_xlat_tbl (0A4EAh),
+;                  zela_init_record (0A552h), zela_scroll_x (0A5EEh),
+;                  zela_scroll_phase (0A5F0h).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

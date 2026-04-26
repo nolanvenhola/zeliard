@@ -41,6 +41,39 @@ PAGE  59,132
 ;    ending_credits_dispatch    - 7 per-credit-scene render handlers
 ;                                 (called via ds:credit_scene_fn_tbl[bx])
 ;
+;  Connections:
+;    Loads:        loads multiple zelres2 cinematic chunks via the SAR
+;                  loader at cs:[10Ch] using the resource ref-table
+;                  starting at 813Dh:
+;                    kingprin.grp (king + princess), jashiin.grp,
+;                    gualand2.grp (Duke Garland + land), CGA palette,
+;                    heromirage.grp, heroclose.grp, kingcrown.grp,
+;                    felicia.grp, credits tileset chunks (waku/sei/yuup/
+;                    seip/himp/etc.) at 819Fh..81D6h, and zend.msd
+;                    (ending music) at 81E0h.
+;                  Also calls cs:[10Ch] repeatedly to load each scene
+;                  chunk before rendering.
+;    Calls into:   graphics-driver dispatch slots populated in this
+;                  module's CS at +3000h: gfx_draw_fn (3004h),
+;                  gfx_update_fn (3006h), gfx_palette_fn (3008h),
+;                  gfx_blit_fn (3010h), gfx_scene_fn1/2/3 (3020h..3024h),
+;                  gfx_sprite_fn (3028h), gfx_scroll_jmp (302Eh),
+;                  gfx_putchar_fn (3030h); driver ISR vectors at
+;                  cs:[110h..118h] for per-tick updates; and a
+;                  dynamically-set full_scroll_fn_ptr in CS for the
+;                  credits scroll path.
+;    Called by:    200FIGHT or game.asm at game-over / final-boss
+;                  victory; entered after Jashiin is defeated to play
+;                  the post-boss narrative + credit roll.
+;    Reads/writes: narration / credits state at script_pc (6630h),
+;                  render_x_pos (6632h), text_layout (6634h),
+;                  text_color_fg (6635h), text_color_bg (6636h);
+;                  framebuffers framebuf_a/b (4000h), or_mask_base
+;                  (4CE6h) and plane bases plane_mid_ofs (29E0h),
+;                  plane_top_ofs (53C0h); narration script source
+;                  script_src_a/b (8000h) and resource ref-table at
+;                  813Dh..81E0h.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

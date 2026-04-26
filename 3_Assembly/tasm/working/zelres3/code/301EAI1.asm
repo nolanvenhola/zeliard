@@ -32,6 +32,28 @@ PAGE  59,132
 ;    0A2xxh / 0A7xxh are lookup tables in the shared enemy data area.
 ;    0FF2Eh / 0FF35h / 0FF36h are global frame / timing flags.
 ;
+;  Connections:
+;    Loads:        none (loaded as data by 200FIGHT; no SAR loads of its own)
+;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
+;                  fight_cb_range (6004h), fight_cb_alt_b (6006h),
+;                  fight_cb_step_neg (6008h), fight_cb_step_neg_2 (600Ah),
+;                  fight_cb_map_fwd (600Ch), fight_cb_map_back (600Eh),
+;                  fight_cb_step_pos (6010h), fight_cb_step_pos_2 (6012h),
+;                  fight_cb_blocked (6014h), fight_cb_dist_check (6016h),
+;                  fight_cb_aux_18 (6018h), fight_cb_aux_1a (601Ah),
+;                  fight_cb_record_ofs (6028h), fight_cb_mark_adj (602Ah),
+;                  fight_cb_cmp_tile (602Eh), fight_cb_alt (6030h),
+;                  fight_cb_spawn (6032h); also a local function pointer
+;                  crab_facing_fn_ptr stored in DS.
+;    Called by:    200FIGHT enemy AI dispatch table (CRAB enemy slot;
+;                  paired with sprite module 309CRAB.BIN).
+;    Reads/writes: gvar_rng_state (0FF2Eh aliased gvar_death_flag),
+;                  gvar_frame_cnt (0FF35h), gvar_enemy_cnt (0FF36h);
+;                  enemy slot record fields [si+0..si+Ah] (X pos, tile
+;                  coords, facing, anim phase, attack cooldown, state);
+;                  CRAB lookup tables crab_tbl_a (0A29Dh), crab_tbl_b
+;                  (0A2D0h), crab_rotate_a (0A723h), crab_rotate_b (0A72Fh).
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X

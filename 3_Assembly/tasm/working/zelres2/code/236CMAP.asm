@@ -36,6 +36,22 @@ PAGE  59,132
 ;  Runtime segment base is 0xC000 (used by CMAP.MDT reader in game code).
 ;  Pointers in tables like 0xC3AB resolve to (value - 0xC000) as file offset.
 ;
+;  Connections:
+;    Loads:        n/a -- this module is data, not code (no SAR loads)
+;    Calls into:   n/a (no executable code)
+;    Called by:    stick.bin map_driver_tbl ("CMAP.MDT" entry, archive 1
+;                  chunk 0x25 in stick.asm chunk_ref @ ~line 1972);
+;                  loaded into game segment 0xC000 by 106TOWN's MDT reader
+;                  when the player enters Felishika Castle.
+;    Reads/writes: n/a -- referenced as data tables. The town engine reads
+;                  hdr_ptr_tbl (file +0x00), castle_tile_grid (+0x34),
+;                  npc_and_door_cells (+0xC3), secondary_tile_grid
+;                  (+0x2C3), castle_hdr (+0x3A7), door_coord_tbl (+0x3CA),
+;                  event_record_tbl (+0x3D2), npc_text_ptr_tbl (+0x3F9),
+;                  dialog_strings (+0x40C), and script_trailer (+0x898).
+;                  Pointer values like 0xC3AB resolve to (value - 0xC000)
+;                  as file offset.
+;
 ;==========================================================================
 
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
