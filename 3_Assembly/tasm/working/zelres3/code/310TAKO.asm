@@ -19,15 +19,20 @@ PAGE  59,132
 ;    0x034..0x03F : tako_frame_ptr_tbl_a -- 6 word ptrs (0xA052..0xA1E2)
 ;    0x040..0x04F : 16 zero bytes (reserved)
 ;    0x050..0x055 : tako_frame_ptr_tbl_b -- 3 word ptrs (0xA255,0xA205,0xA25F)
-;    0x056..0x27F : sprite frame data (5-byte tile rows w/ 00 terminators)
-;    0x280..0x28E : scan_prolog (mov si,fight_slot_list / clear frame_idx,state)
+;                   (last 4 bytes 0x52..0x55 alias into tako_frame_00 below)
+;    0x052..0x280 : sprite frame data (5-byte tile rows w/ 00 terminators);
+;                   tako_frame_00 starts at 0x052 (overlapping tail of tbl_b),
+;                   not 0x056 -- see tbl_a[0]=0xA052
+;    0x281..0x28F : tako_scan_prolog (mov si,fight_slot_list / clear state)
 ;    0x28F..0x506 : main scan-and-update code (was loc_1..loc_27)
 ;    0x507..0x533 : hp_dec helper (was sub_1)
 ;    0x534..0x580 : timeout/death-phase code (was loc_32..loc_34)
 ;    0x581..0x598 : orphan code/data block (no static caller; called via
 ;                   200FIGHT DS-resident dispatch slot - sprite-source init)
-;    0x599..0x5C2 : tako_frame_data_ptrs -- 21 word ptrs into 5-byte row data
-;    0x5C3..0x9B2 : tako_row_data -- packed 5-byte row records (4-byte stride)
+;    0x599..0x5C2 : tako_row_data_ptrs -- 21 word ptrs (last entry = 0x0000 end)
+;    0x5C3..0x766 : tako_row_data_head -- 15 unreferenced 28-byte sub-blocks
+;    0x767..0x9B2 : tako_row_data_blk_00..blk_19 -- ptr-targeted sub-blocks
+;                   (sizes 32,36,34,34,28×15,32; 1008 bytes total for row_data)
 ;    0x9B3..0x9EE : tako_pattern_ptr_tbl -- 30 word ptrs into 7-byte patterns
 ;    0x9EF..0xA1F : tako_sprite_patterns -- 7-byte sprite-row patterns
 ;    0xA20..0xA84 : tako_row_template -- 100-byte row template table
@@ -116,11 +121,11 @@ tako_init_src_dst:
 		db	12 dup (0)		; initial per-slot state buffer
 
 tako_state_template:				; 32-byte template (mostly 0Ah)
-		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah
-		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah
-		db	0Ah, 0Ah, '(', 0Ah, 0Ah, 0Ah, 0Ah	; '(' = 0x28 marker at offset 16
-		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah
-		db	0Ah, 0Ah, 0Ah, 0Ah
+		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah	; bytes 0-6   (0x014..0x01A)
+		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah	; bytes 7-13  (0x01B..0x021)
+		db	0Ah, 0Ah, '(', 0Ah, 0Ah, 0Ah, 0Ah	; bytes 14-20 (0x022..0x028); '(' = 0x28 marker at offset 16
+		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah	; bytes 21-27 (0x029..0x02F)
+		db	0Ah, 0Ah, 0Ah, 0Ah			; bytes 28-31 (0x030..0x033)
 
 ; -------------------------------------------------------------------------
 ;  Frame pointer tables (file 0x034..0x055).
@@ -133,125 +138,150 @@ tako_frame_ptr_tbl_a	label	word		; 6 frame-data pointers (group A)
 		db	16 dup (0)			; reserved / padding
 
 tako_frame_ptr_tbl_b	label	word		; 3 frame-data pointers (group B)
-		db	 55h,0A2h, 05h,0A2h, 5Fh,0A2h	; -> 0xA255, 0xA205, 0xA25F
+		db	 55h,0A2h			; -> 0xA255 (tbl_b[0])
+;		First 4 bytes of tako_frame_00 below (`05 A2 5F A2`) double as
+;		the remaining 2 ptr-tbl entries: 0xA205 (tbl_b[1]), 0xA25F (tbl_b[2]).
+;		Same overlap pattern as 309CRAB's crab_frame_00.
 
 ; -------------------------------------------------------------------------
-;  Sprite frame data (file 0x056..0x27F).
-;  Tile-index rows (5 tiles + 0x00 row-terminator), grouped into 9 frames
-;  by tako_frame_ptr_tbl_a/b.  Frame data interleaves with sub-pointer
-;  stubs that re-direct to alternate row sets (see frame_b1_alt_a/b below).
+;  Sprite frame data (file 0x052..0x280).
+;  5-byte tile-row records (4 tile bytes + 0x00 row-terminator), grouped
+;  into 9 frames by tako_frame_ptr_tbl_a/b.  tako_frame_00's leading 4
+;  bytes alias the tail of tako_frame_ptr_tbl_b above (`05 A2 5F A2` =
+;  ptrs 0xA205, 0xA25F).  Most frames are 16 rows (80 bytes); frame_05 is
+;  7 rows, frame_b0 is 2 rows, frame_b2 is 6+1 rows ending with 0x02
+;  terminators (rather than 0x00).
 ; -------------------------------------------------------------------------
 
-tako_frame_00:					; offset 0x056 -> ptr 0xA056
-		db	 00h, 00h, 00h, 01h, 00h, 00h
-		db	 02h, 03h, 04h, 05h, 00h, 00h
-		db	 00h, 06h, 07h, 00h, 00h, 00h
-		db	 08h, 09h, 00h, 0Ah, 0Bh, 0Ch
-		db	 0Dh, 00h, 0Eh, 0Fh, 10h, 11h
-		db	 00h, 00h, 00h, 00h, 16h, 00h
-		db	 17h, 18h, 19h, 1Ah, 00h, 1Bh
-		db	 1Ch, 1Dh, 1Eh, 00h, 00h, 00h
-		db	 1Fh, 20h, 00h, 00h, 00h, 21h
-		db	 22h, 00h, 23h, 24h, 25h, 26h
-		db	 00h, 27h, 28h, 29h, 2Ah, 00h
-		db	 00h, 00h, 2Bh, 2Ch, 00h, 2Dh
-		db	 2Eh, 2Fh, 30h, 00h, 31h, 32h
+tako_frame_00:					; offset 0x052 -> ptr 0xA052 (tbl_a[0])
+		db	 05h,0A2h, 5Fh,0A2h, 00h	; row 0  (overlaps tbl_b tail: ptrs 0xA205,0xA25F)
+		db	 00h, 00h, 01h, 00h, 00h	; row 1
+		db	 02h, 03h, 04h, 05h, 00h	; row 2
+		db	 00h, 00h, 06h, 07h, 00h	; row 3
+		db	 00h, 00h, 08h, 09h, 00h	; row 4
+		db	 0Ah, 0Bh, 0Ch, 0Dh, 00h	; row 5
+		db	 0Eh, 0Fh, 10h, 11h, 00h	; row 6
+		db	 00h, 00h, 00h, 16h, 00h	; row 7
+		db	 17h, 18h, 19h, 1Ah, 00h	; row 8
+		db	 1Bh, 1Ch, 1Dh, 1Eh, 00h	; row 9
+		db	 00h, 00h, 1Fh, 20h, 00h	; row 10
+		db	 00h, 00h, 21h, 22h, 00h	; row 11
+		db	 23h, 24h, 25h, 26h, 00h	; row 12
+		db	 27h, 28h, 29h, 2Ah, 00h	; row 13
+		db	 00h, 00h, 2Bh, 2Ch, 00h	; row 14
+		db	 2Dh, 2Eh, 2Fh, 30h, 00h	; row 15
 
-tako_frame_01:					; offset 0x0A2 -> ptr 0xA0A2
-		db	 33h, 34h, 00h, 00h, 00h, 00h
-		db	 35h, 00h, 36h, 37h, 38h, 39h
-		db	 00h, 3Ah, 3Bh, 3Ch, 3Dh, 00h
-		db	 00h, 00h, 00h, 3Eh, 00h, 3Fh
-		db	 40h, 41h, 42h, 00h, 43h, 44h
-		db	 45h, 1Ah, 00h, 00h, 00h, 46h
-		db	 47h, 00h, 48h, 24h, 25h, 26h
-		db	 00h, 00h, 00h, 49h, 4Ah, 00h
-		db	 4Bh, 4Ch, 4Dh, 4Eh, 00h, 00h
-		db	 00h, 4Fh, 4Ah, 00h, 50h, 4Ch
-		db	 4Dh, 4Eh, 00h, 00h, 00h, 21h
-		db	 51h, 00h, 23h, 52h, 25h, 26h
-		db	 00h, 53h, 00h, 54h, 55h, 00h
+tako_frame_01:					; offset 0x0A2 -> ptr 0xA0A2 (tbl_a[1])
+		db	 31h, 32h, 33h, 34h, 00h	; row 0
+		db	 00h, 00h, 00h, 35h, 00h	; row 1
+		db	 36h, 37h, 38h, 39h, 00h	; row 2
+		db	 3Ah, 3Bh, 3Ch, 3Dh, 00h	; row 3
+		db	 00h, 00h, 00h, 3Eh, 00h	; row 4
+		db	 3Fh, 40h, 41h, 42h, 00h	; row 5
+		db	 43h, 44h, 45h, 1Ah, 00h	; row 6
+		db	 00h, 00h, 46h, 47h, 00h	; row 7
+		db	 48h, 24h, 25h, 26h, 00h	; row 8
+		db	 00h, 00h, 49h, 4Ah, 00h	; row 9
+		db	 4Bh, 4Ch, 4Dh, 4Eh, 00h	; row 10
+		db	 00h, 00h, 4Fh, 4Ah, 00h	; row 11
+		db	 50h, 4Ch, 4Dh, 4Eh, 00h	; row 12
+		db	 00h, 00h, 21h, 51h, 00h	; row 13
+		db	 23h, 52h, 25h, 26h, 00h	; row 14
+		db	 53h, 00h, 54h, 55h, 00h	; row 15
 
-tako_frame_02:					; offset 0x0F2 -> ptr 0xA0F2
-		db	 00h, 56h, 57h, 58h, 00h, 00h
-		db	 00h, 03h, 00h, 00h, 59h, 5Ah
-		db	 5Bh, 5Ch, 00h, 0Eh, 5Dh, 5Eh
-		db	 5Fh, 00h, 00h, 00h, 63h, 00h
-		db	 00h, 64h, 65h, 66h, 67h, 00h
-		db	 68h, 69h, 6Ah, 6Bh, 00h, 0Eh
-		db	 6Ch, 6Dh, 5Fh, 00h, 71h, 44h
-		db	 45h, 1Ah, 00h, 00h, 00h, 72h
-		db	 73h, 00h, 74h, 00h, 75h, 76h
-		db	 00h, 00h, 00h, 77h, 78h, 00h
-		db	 79h, 7Ah, 7Bh, 7Ch, 00h, 7Fh
-		db	 18h, 19h, 1Ah, 00h, 80h, 00h
+tako_frame_02:					; offset 0x0F2 -> ptr 0xA0F2 (tbl_a[2])
+		db	 00h, 56h, 57h, 58h, 00h	; row 0
+		db	 00h, 00h, 03h, 00h, 00h	; row 1
+		db	 59h, 5Ah, 5Bh, 5Ch, 00h	; row 2
+		db	 0Eh, 5Dh, 5Eh, 5Fh, 00h	; row 3
+		db	 00h, 00h, 63h, 00h, 00h	; row 4
+		db	 64h, 65h, 66h, 67h, 00h	; row 5
+		db	 68h, 69h, 6Ah, 6Bh, 00h	; row 6
+		db	 0Eh, 6Ch, 6Dh, 5Fh, 00h	; row 7
+		db	 71h, 44h, 45h, 1Ah, 00h	; row 8
+		db	 00h, 00h, 72h, 73h, 00h	; row 9
+		db	 74h, 00h, 75h, 76h, 00h	; row 10
+		db	 00h, 00h, 77h, 78h, 00h	; row 11
+		db	 79h, 7Ah, 7Bh, 7Ch, 00h	; row 12
+		db	 7Fh, 18h, 19h, 1Ah, 00h	; row 13
+		db	 80h, 00h, 81h, 82h, 00h	; row 14
+		db	 00h, 00h, 00h, 83h, 00h	; row 15
 
-tako_frame_03:					; offset 0x142 -> ptr 0xA142
-		db	 81h, 82h, 00h, 00h, 00h, 00h
-		db	 83h, 00h, 00h, 00h, 77h, 78h
-		db	 00h, 84h, 85h, 86h, 87h, 00h
-		db	 00h, 00h, 00h, 17h, 00h, 8Ah
-		db	 8Bh, 8Ch, 8Dh, 00h, 00h, 00h
-		db	 8Eh, 8Fh, 00h, 90h, 91h, 92h
-		db	 93h, 00h, 00h, 95h, 96h, 97h
-		db	 00h, 66h, 00h, 98h, 99h, 00h
-		db	 9Ah, 00h, 9Bh, 9Ch, 00h, 00h
-		db	 9Dh, 9Eh, 9Fh, 00h,0A2h,0A3h
-		db	 00h,0A4h, 00h, 00h, 00h,0A5h
-		db	0A6h, 00h,0C5h,0CCh,0C6h, 15h
-		db	 00h, 0Ah,0A9h,0AAh, 0Dh, 00h
+tako_frame_03:					; offset 0x142 -> ptr 0xA142 (tbl_a[3])
+		db	 00h, 00h, 77h, 78h, 00h	; row 0
+		db	 84h, 85h, 86h, 87h, 00h	; row 1
+		db	 00h, 00h, 00h, 17h, 00h	; row 2
+		db	 8Ah, 8Bh, 8Ch, 8Dh, 00h	; row 3
+		db	 00h, 00h, 8Eh, 8Fh, 00h	; row 4
+		db	 90h, 91h, 92h, 93h, 00h	; row 5
+		db	 00h, 95h, 96h, 97h, 00h	; row 6
+		db	 66h, 00h, 98h, 99h, 00h	; row 7
+		db	 9Ah, 00h, 9Bh, 9Ch, 00h	; row 8
+		db	 00h, 9Dh, 9Eh, 9Fh, 00h	; row 9
+		db	0A2h,0A3h, 00h,0A4h, 00h	; row 10
+		db	 00h, 00h,0A5h,0A6h, 00h	; row 11
+		db	0C5h,0CCh,0C6h, 15h, 00h	; row 12
+		db	 0Ah,0A9h,0AAh, 0Dh, 00h	; row 13
+		db	 0Ah,0ACh,0ADh,0AEh, 00h	; row 14
+		db	 0Eh, 0Fh,0AFh, 11h, 00h	; row 15
 
-tako_frame_04:					; offset 0x192 -> ptr 0xA192
-		db	 0Ah,0ACh,0ADh,0AEh, 00h, 0Eh
-		db	 0Fh,0AFh, 11h, 00h, 00h, 56h
-		db	 00h, 00h, 00h, 59h,0B1h, 00h
-		db	0B2h, 00h, 0Eh, 5Dh,0B3h, 5Fh
-		db	 00h,0B5h,0B6h, 00h, 67h, 00h
-		db	0B7h,0B8h, 6Ah, 6Bh, 00h, 00h
-		db	 00h, 75h, 76h, 00h, 00h,0BAh
-		db	 7Bh, 7Ch, 00h,0BCh,0BDh, 86h
-		db	 87h, 00h,0CEh,0CFh, 8Ch, 00h
-		db	 00h, 90h,0BFh, 00h,0C0h, 00h
-		db	 00h, 9Dh, 00h,0C2h, 00h, 0Ah
-		db	0ACh,0ADh,0AEh, 00h, 0Eh, 5Dh
-		db	0C4h, 5Fh, 00h, 0Eh, 0Fh,0C4h
+tako_frame_04:					; offset 0x192 -> ptr 0xA192 (tbl_a[4])
+		db	 00h, 56h, 00h, 00h, 00h	; row 0
+		db	 59h,0B1h, 00h,0B2h, 00h	; row 1
+		db	 0Eh, 5Dh,0B3h, 5Fh, 00h	; row 2
+		db	0B5h,0B6h, 00h, 67h, 00h	; row 3
+		db	0B7h,0B8h, 6Ah, 6Bh, 00h	; row 4
+		db	 00h, 00h, 75h, 76h, 00h	; row 5
+		db	 00h,0BAh, 7Bh, 7Ch, 00h	; row 6
+		db	0BCh,0BDh, 86h, 87h, 00h	; row 7
+		db	0CEh,0CFh, 8Ch, 00h, 00h	; row 8
+		db	 90h,0BFh, 00h,0C0h, 00h	; row 9
+		db	 00h, 9Dh, 00h,0C2h, 00h	; row 10
+		db	 0Ah,0ACh,0ADh,0AEh, 00h	; row 11
+		db	 0Eh, 5Dh,0C4h, 5Fh, 00h	; row 12
+		db	 0Eh, 0Fh,0C4h, 11h, 00h	; row 13
+		db	 0Eh, 6Ch,0C4h, 5Fh, 00h	; row 14
+		db	 0Eh, 0Fh,0C4h,0C7h, 00h	; row 15
 
-tako_frame_05:					; offset 0x1E2 -> ptr 0xA1E2
-		db	 11h, 00h, 0Eh, 6Ch,0C4h, 5Fh
-		db	 00h, 0Eh, 0Fh,0C4h,0C7h, 00h
-		db	 17h, 18h,0C8h,0C9h, 00h,0CAh
-		db	0CBh, 1Dh, 1Eh, 00h, 0Eh, 5Dh
-		db	0C4h,0CDh, 00h, 43h, 44h,0C8h
-		db	0C9h, 00h, 0Eh, 6Ch,0C4h,0CDh
-		db	 00h, 71h, 44h,0C8h,0C9h, 00h
-		db	 7Fh, 18h,0C8h,0C9h, 00h, 00h
-		db	 00h, 08h,0A8h, 00h, 12h, 13h
-		db	 14h, 15h, 00h, 60h, 61h, 62h
-		db	 15h, 00h, 6Eh, 6Fh, 70h, 15h
+tako_frame_05:					; offset 0x1E2 -> ptr 0xA1E2 (tbl_a[5]; 7 rows)
+		db	 17h, 18h,0C8h,0C9h, 00h	; row 0
+		db	0CAh,0CBh, 1Dh, 1Eh, 00h	; row 1
+		db	 0Eh, 5Dh,0C4h,0CDh, 00h	; row 2
+		db	 43h, 44h,0C8h,0C9h, 00h	; row 3
+		db	 0Eh, 6Ch,0C4h,0CDh, 00h	; row 4
+		db	 71h, 44h,0C8h,0C9h, 00h	; row 5
+		db	 7Fh, 18h,0C8h,0C9h, 00h	; row 6
 
-tako_frame_b1:					; offset 0x205 -> ptr 0xA205 (tbl_b idx 1)
-		db	 00h, 7Dh, 6Fh, 7Eh, 15h, 00h
-		db	 88h, 6Fh, 89h, 15h, 00h, 94h
-		db	 6Fh, 89h, 15h, 00h,0A0h, 6Fh
-		db	0A1h, 15h, 00h,0ABh, 6Fh, 14h
-		db	 15h, 00h,0B0h, 13h, 14h, 15h
-		db	 00h,0B4h, 61h, 62h, 15h, 00h
-		db	0B9h, 6Fh, 70h, 15h, 00h,0BBh
-		db	 6Fh, 7Eh, 15h, 00h,0BEh, 6Fh
+tako_frame_b1:					; offset 0x205 -> ptr 0xA205 (tbl_b[1])
+		db	 00h, 00h, 08h,0A8h, 00h	; row 0
+		db	 12h, 13h, 14h, 15h, 00h	; row 1
+		db	 60h, 61h, 62h, 15h, 00h	; row 2
+		db	 6Eh, 6Fh, 70h, 15h, 00h	; row 3
+		db	 7Dh, 6Fh, 7Eh, 15h, 00h	; row 4
+		db	 88h, 6Fh, 89h, 15h, 00h	; row 5
+		db	 94h, 6Fh, 89h, 15h, 00h	; row 6
+		db	0A0h, 6Fh,0A1h, 15h, 00h	; row 7
+		db	0ABh, 6Fh, 14h, 15h, 00h	; row 8
+		db	0B0h, 13h, 14h, 15h, 00h	; row 9
+		db	0B4h, 61h, 62h, 15h, 00h	; row 10
+		db	0B9h, 6Fh, 70h, 15h, 00h	; row 11
+		db	0BBh, 6Fh, 7Eh, 15h, 00h	; row 12
+		db	0BEh, 6Fh, 89h, 15h, 00h	; row 13
+		db	0C1h, 6Fh, 89h, 15h, 00h	; row 14
+		db	0C3h, 6Fh, 89h, 15h, 00h	; row 15
 
-tako_frame_b0:					; offset 0x255 -> ptr 0xA255 (tbl_b idx 0)
-		db	 89h, 15h, 00h,0C1h, 6Fh, 89h
-		db	 15h, 00h,0C3h, 6Fh, 89h, 15h
+tako_frame_b0:					; offset 0x255 -> ptr 0xA255 (tbl_b[0]; 2 rows)
+		db	0C5h, 6Fh, 14h, 15h, 00h	; row 0
+		db	0C5h, 13h,0C6h, 15h, 00h	; row 1
 
-tako_frame_b2:					; offset 0x25F -> ptr 0xA25F (tbl_b idx 2)
-		db	 00h,0C5h, 6Fh, 14h, 15h, 00h
-		db	0C5h, 13h,0C6h, 15h, 00h, 00h
-		db	 00h,0A7h,0A8h, 02h, 00h,0D0h
-		db	 00h,0D1h, 02h,0D2h,0D3h,0D4h
-		db	0D5h, 02h, 00h, 00h,0D6h,0D7h
-		db	 02h,0D8h,0D9h,0DAh,0DBh, 02h
-		db	0DCh,0DDh,0DEh,0DFh, 02h,0E0h
-		db	0E1h,0E2h,0E3h			; tail bytes before scan_prolog
+tako_frame_b2:					; offset 0x25F -> ptr 0xA25F (tbl_b[2]; rows end in 0x02)
+		db	 00h, 00h,0A7h,0A8h, 02h	; row 0  (terminator 0x02, not 0x00)
+		db	 00h,0D0h, 00h,0D1h, 02h	; row 1
+		db	0D2h,0D3h,0D4h,0D5h, 02h	; row 2
+		db	 00h, 00h,0D6h,0D7h, 02h	; row 3
+		db	0D8h,0D9h,0DAh,0DBh, 02h	; row 4
+		db	0DCh,0DDh,0DEh,0DFh, 02h	; row 5
+		db	0E0h,0E1h,0E2h,0E3h		; row 6 (4 bytes; no terminator -- followed by code)
 
 ; -------------------------------------------------------------------------
 ;  Small inline scan-prolog (file 0x280..0x28E) -- decoded x86, NOT data.
@@ -682,182 +712,331 @@ tako_row_data_ptrs	label	word
 		db	 77h,0A9h, 93h,0A9h, 00h, 00h	; -> 0xA977, 0xA993, end
 
 ; -------------------------------------------------------------------------
-;  tako_row_data (file 0x5C3..0x9B2, ~1008 bytes).
-;  Densely packed 5-byte tile-row records used by the projectile / arm
-;  emit code via tako_row_data_ptrs.  First record (0xA5C3) is generic
-;  init; subsequent records (each 4-byte stride for header + ~24 byte
-;  data) describe per-frame row tile sequences.
+;  tako_row_data (file 0x5C3..0x9B2, 1008 bytes).
+;  Sub-divided into:
+;    0x5C3..0x766 (420 bytes)  tako_row_data_head
+;       15 unreferenced 28-byte sub-blocks; consumed by 200FIGHT directly
+;       (no entry in tako_row_data_ptrs points here).
+;    0x767..0x9B2 (588 bytes)  tako_row_data_blk_00..tako_row_data_blk_19
+;       20 named sub-blocks targeted by tako_row_data_ptrs[0..19].
+;       Sizes: blk_00=32, blk_01=36, blk_02=34, blk_03=34,
+;              blk_04..blk_18=28 each, blk_19=32.
+;    Each sub-block is laid out as 4-byte rows (`+OO` offset comments)
+;    matching the natural stride observed in the data; common signatures
+;    are `01 04 01 02` and `01 01 01 02` (header) followed by payload.
 ; -------------------------------------------------------------------------
 
-tako_row_data:
-		db	 00h, 01h, 00h, 02h, 00h, 03h
-		db	 00h, 04h, 00h, 05h, 0Fh, 00h
-		db	 00h, 06h, 00h, 07h, 00h, 08h
-		db	 00h, 0Ah, 00h, 0Bh, 00h, 0Ch
-		db	 00h, 0Dh, 00h, 0Eh, 00h, 0Fh
-		db	 01h, 00h, 01h, 01h, 01h, 02h
-		db	 01h, 0Eh, 01h, 0Fh, 02h, 00h
-		db	 02h, 01h, 02h, 02h, 0Fh, 01h
-		db	 00h, 06h, 01h, 05h, 00h, 08h
-		db	 01h, 06h, 01h, 07h, 00h, 0Ch
-		db	 01h, 08h, 01h, 09h, 00h, 0Fh
-		db	 01h, 03h, 01h, 01h, 01h, 02h
-		db	 02h, 03h, 02h, 04h, 02h, 05h
-		db	 02h, 06h, 0Fh, 02h, 00h, 09h
-		db	 02h, 07h, 00h, 08h, 01h, 06h
-		db	 01h, 07h, 00h, 0Ch, 00h, 0Dh
-		db	 00h, 0Eh, 00h, 0Fh, 01h, 03h
-		db	 01h, 04h, 01h, 02h, 02h, 08h
-		db	 02h, 09h, 02h, 0Ah, 02h, 0Bh
-		db	 02h, 06h, 0Fh, 03h, 00h, 09h
-		db	 02h, 0Ch, 00h, 08h, 00h, 0Ah
-		db	 00h, 0Bh, 00h, 0Ch, 01h, 08h
-		db	 01h, 09h, 00h, 0Fh, 01h, 00h
-		db	 01h, 04h, 01h, 02h, 02h, 0Dh
-		db	 02h, 0Eh, 02h, 0Fh, 03h, 00h
-		db	 02h, 06h, 0Fh, 04h, 00h, 06h
-		db	 02h, 0Ch, 00h, 08h, 01h, 0Ch
-		db	 01h, 0Dh, 00h, 0Ch, 01h, 0Ah
-		db	 01h, 0Bh, 00h, 0Fh, 01h, 00h
-		db	 01h, 01h, 01h, 02h, 03h, 01h
-		db	 03h, 02h, 03h, 03h, 03h, 04h
-		db	 02h, 06h, 0Fh, 05h, 00h, 06h
-		db	 02h, 07h, 00h, 08h, 01h, 06h
-		db	 01h, 07h, 00h, 0Ch, 01h, 08h
-		db	 01h, 09h, 00h, 0Fh, 01h, 03h
-		db	 01h, 01h, 01h, 02h, 03h, 05h
-		db	 03h, 06h, 03h, 07h, 03h, 08h
-		db	 02h, 06h, 0Fh, 06h, 00h, 09h
-		db	 02h, 07h, 00h, 08h, 01h, 06h
-		db	 01h, 07h, 00h, 0Ch, 00h, 0Dh
-		db	 00h, 0Eh, 00h, 0Fh, 01h, 03h
-		db	 01h, 04h, 01h, 02h, 03h, 09h
-		db	 03h, 0Ah, 0Eh, 01h, 03h, 0Ch
-		db	 02h, 02h, 0Fh, 07h, 00h, 09h
-		db	 00h, 07h, 00h, 08h, 00h, 0Ah
-		db	 00h, 0Bh, 00h, 0Ch, 01h, 08h
-		db	 01h, 09h, 00h, 0Fh, 01h, 00h
-		db	 01h, 04h, 01h, 02h, 00h, 00h
-		db	 00h, 01h, 05h, 06h, 03h, 0Dh
-		db	 03h, 0Eh, 0Fh, 08h, 00h, 06h
-		db	 00h, 07h, 00h, 08h, 00h, 0Ah
-		db	 00h, 0Bh, 00h, 0Ch, 00h, 0Dh
-		db	 00h, 0Eh, 00h, 0Fh, 01h, 00h
-		db	 01h, 01h, 01h, 02h, 01h, 0Eh
-		db	 03h, 0Fh, 02h, 00h, 04h, 00h
-		db	 04h, 01h, 0Fh, 09h, 00h, 06h
-		db	 01h, 05h, 00h, 08h, 01h, 06h
-		db	 01h, 07h, 00h, 0Ch, 01h, 08h
-		db	 01h, 09h, 00h, 0Fh, 01h, 03h
-		db	 01h, 01h, 01h, 02h, 02h, 03h
-		db	 04h, 02h, 04h, 03h, 02h, 06h
-		db	 0Fh, 0Ah, 00h, 09h, 02h, 07h
-		db	 00h, 08h, 01h, 06h, 01h, 07h
-		db	 00h, 0Ch, 00h, 0Dh, 00h, 0Eh
-		db	 00h, 0Fh, 01h, 03h, 01h, 04h
-		db	 01h, 02h, 04h, 04h, 04h, 05h
-		db	 02h, 06h, 0Fh, 0Bh, 00h, 09h
-		db	 02h, 0Ch, 00h, 08h, 00h, 0Ah
-		db	 00h, 0Bh, 00h, 0Ch, 01h, 08h
-		db	 01h, 09h, 00h, 0Fh, 01h, 00h
-		db	 01h, 04h, 01h, 02h, 02h, 0Eh
-		db	 04h, 06h, 02h, 06h, 0Fh, 0Ch
-		db	 00h, 06h, 02h, 0Ch, 00h, 08h
-		db	 01h, 0Ch, 01h, 0Dh, 00h, 0Ch
-		db	 01h, 0Ah, 01h, 0Bh, 00h, 0Fh
-		db	 01h, 00h, 01h, 01h, 01h, 02h
-		db	 03h, 01h, 04h, 07h, 03h, 03h
-		db	 04h, 08h, 02h, 06h, 0Fh, 0Dh
-		db	 00h, 06h, 02h, 07h, 00h, 08h
-		db	 01h, 06h, 01h, 07h, 00h, 0Ch
-		db	 01h, 08h, 01h, 09h, 00h, 0Fh
-		db	 01h, 03h, 01h, 01h, 01h, 02h
-		db	 03h, 05h, 03h, 07h, 04h, 09h
-		db	 02h, 06h, 0Fh, 0Eh, 00h, 09h
-		db	 02h, 07h, 00h, 08h, 01h, 06h
-		db	 01h, 07h, 00h, 0Ch, 00h, 0Dh
-		db	 00h, 0Eh, 00h, 0Fh, 01h, 03h
-		db	 01h, 04h, 01h, 02h, 03h, 09h
-		db	 0Eh, 01h, 04h, 0Ah, 04h, 0Bh
-		db	 0Fh, 0Fh, 00h, 09h, 00h, 07h
-		db	 00h, 08h, 00h, 0Ah, 00h, 0Bh
-		db	 00h, 0Ch, 01h, 08h, 01h, 09h
-		db	 00h, 0Fh, 01h, 00h, 01h, 04h
-		db	 01h, 02h, 04h, 0Ch, 0Eh, 00h
-		db	 00h, 06h, 00h, 07h, 00h, 08h
-		db	 00h, 0Ah, 00h, 0Bh, 00h, 0Ch
-		db	 00h, 0Dh, 00h, 0Eh, 00h, 0Fh
-		db	 01h, 00h, 01h, 01h, 01h, 02h
-		db	 04h, 0Bh, 0Eh, 00h, 00h, 06h
-		db	 01h, 05h, 00h, 08h, 01h, 06h
-		db	 01h, 07h, 00h, 0Ch, 01h, 08h
-		db	 01h, 09h, 00h, 0Fh, 01h, 03h
-		db	 01h, 01h, 01h, 02h, 04h, 0Dh
-		db	 0Eh, 00h, 00h, 09h, 02h, 07h
-		db	 00h, 08h, 01h, 06h, 01h, 07h
-		db	 00h, 0Ch, 00h, 0Dh, 00h, 0Eh
-		db	 00h, 0Fh, 01h, 03h, 01h, 04h
-		db	 01h, 02h, 04h, 0Dh, 0Eh, 00h
-		db	 00h, 09h, 02h, 0Ch, 00h, 08h
-		db	 00h, 0Ah, 00h, 0Bh, 00h, 0Ch
-		db	 01h, 08h, 01h, 09h, 00h, 0Fh
-		db	 01h, 00h, 01h, 04h, 01h, 02h
-		db	 04h, 0Dh, 0Eh, 00h, 00h, 06h
-		db	 02h, 0Ch, 00h, 08h, 01h, 0Ch
-		db	 01h, 0Dh, 00h, 0Ch, 01h, 0Ah
-		db	 01h, 0Bh, 00h, 0Fh, 01h, 00h
-		db	 01h, 01h, 01h, 02h, 04h, 0Dh
-		db	 0Eh, 00h, 00h, 06h, 02h, 07h
-		db	 00h, 08h, 01h, 06h, 01h, 07h
-		db	 00h, 0Ch, 01h, 08h, 01h, 09h
-		db	 00h, 0Fh, 01h, 03h, 01h, 01h
-		db	 01h, 02h, 04h, 0Dh, 0Eh, 00h
-		db	 00h, 09h, 02h, 07h, 00h, 08h
-		db	 01h, 06h, 01h, 07h, 00h, 0Ch
-		db	 00h, 0Dh, 00h, 0Eh, 00h, 0Fh
-		db	 01h, 03h, 01h, 04h, 01h, 02h
-		db	 04h, 0Bh, 0Eh, 00h, 00h, 09h
-		db	 00h, 07h, 00h, 08h, 00h, 0Ah
-		db	 00h, 0Bh, 00h, 0Ch, 01h, 08h
-		db	 01h, 09h, 00h, 0Fh, 01h, 00h
-		db	 01h, 04h, 01h, 02h, 04h, 0Eh
-		db	 03h, 0Bh, 00h, 06h, 04h, 0Fh
-		db	 05h, 00h, 00h, 0Ah, 00h, 0Bh
-		db	 00h, 0Ch, 00h, 0Dh, 00h, 0Eh
-		db	 00h, 0Fh, 01h, 00h, 01h, 01h
-		db	 01h, 02h, 05h, 01h, 03h, 0Bh
-		db	 00h, 06h, 05h, 02h, 05h, 00h
-		db	 01h, 06h, 01h, 07h, 00h, 0Ch
-		db	 01h, 08h, 01h, 09h, 00h, 0Fh
-		db	 01h, 03h, 01h, 01h, 01h, 02h
-		db	 05h, 03h, 03h, 0Bh, 00h, 09h
-		db	 05h, 04h, 05h, 00h, 01h, 06h
-		db	 01h, 07h, 00h, 0Ch, 00h, 0Dh
-		db	 00h, 0Eh, 00h, 0Fh, 01h, 03h
-		db	 01h, 04h, 01h, 02h, 05h, 03h
-		db	 03h, 0Bh, 00h, 09h, 05h, 05h
-		db	 05h, 00h, 00h, 0Ah, 00h, 0Bh
-		db	 00h, 0Ch, 01h, 08h, 01h, 09h
-		db	 00h, 0Fh, 01h, 00h, 01h, 04h
-		db	 01h, 02h, 05h, 03h, 03h, 0Bh
-		db	 00h, 06h, 05h, 05h, 05h, 00h
-		db	 01h, 0Ch, 01h, 0Dh, 00h, 0Ch
-		db	 01h, 0Ah, 01h, 0Bh, 00h, 0Fh
-		db	 01h, 00h, 01h, 01h, 01h, 02h
-		db	 05h, 03h, 03h, 0Bh, 00h, 06h
-		db	 05h, 04h, 05h, 00h, 01h, 06h
-		db	 01h, 07h, 00h, 0Ch, 01h, 08h
-		db	 01h, 09h, 00h, 0Fh, 01h, 03h
-		db	 01h, 01h, 01h, 02h, 05h, 03h
-		db	 03h, 0Bh, 00h, 09h, 05h, 04h
-		db	 05h, 00h, 01h, 06h, 01h, 07h
-		db	 00h, 0Ch, 00h, 0Dh, 00h, 0Eh
-		db	 00h, 0Fh, 01h, 03h, 01h, 04h
-		db	 01h, 02h, 05h, 01h, 03h, 0Bh
-		db	 00h, 09h, 04h, 0Fh, 05h, 00h
-		db	 00h, 0Ah, 00h, 0Bh, 00h, 0Ch
-		db	 01h, 08h, 01h, 09h, 00h, 0Fh
-		db	 01h, 00h, 01h, 04h, 01h, 02h
+tako_row_data_head:				; 0x5C3..0x766 (420 bytes, 15 unreferenced 28-byte sub-blocks)
+;   No ptr-table entries point here -- consumed by other dispatch logic
+;   in 200FIGHT (sprite-init or row template seed).
+;--- head sub-block 0 (file 0x5C3, 28 bytes) ---
+		db	 00h, 01h, 00h, 02h	; +00
+		db	 00h, 03h, 00h, 04h	; +04
+		db	 00h, 05h, 0Fh, 00h	; +08
+		db	 00h, 06h, 00h, 07h	; +0C
+		db	 00h, 08h, 00h, 0Ah	; +10
+		db	 00h, 0Bh, 00h, 0Ch	; +14
+		db	 00h, 0Dh, 00h, 0Eh	; +18
+;--- head sub-block 1 (file 0x5DF, 28 bytes) ---
+		db	 00h, 0Fh, 01h, 00h	; +00
+		db	 01h, 01h, 01h, 02h	; +04
+		db	 01h, 0Eh, 01h, 0Fh	; +08
+		db	 02h, 00h, 02h, 01h	; +0C
+		db	 02h, 02h, 0Fh, 01h	; +10
+		db	 00h, 06h, 01h, 05h	; +14
+		db	 00h, 08h, 01h, 06h	; +18
+;--- head sub-block 2 (file 0x5FB, 28 bytes) ---
+		db	 01h, 07h, 00h, 0Ch	; +00
+		db	 01h, 08h, 01h, 09h	; +04
+		db	 00h, 0Fh, 01h, 03h	; +08
+		db	 01h, 01h, 01h, 02h	; +0C
+		db	 02h, 03h, 02h, 04h	; +10
+		db	 02h, 05h, 02h, 06h	; +14
+		db	 0Fh, 02h, 00h, 09h	; +18
+;--- head sub-block 3 (file 0x617, 28 bytes) ---
+		db	 02h, 07h, 00h, 08h	; +00
+		db	 01h, 06h, 01h, 07h	; +04
+		db	 00h, 0Ch, 00h, 0Dh	; +08
+		db	 00h, 0Eh, 00h, 0Fh	; +0C
+		db	 01h, 03h, 01h, 04h	; +10
+		db	 01h, 02h, 02h, 08h	; +14
+		db	 02h, 09h, 02h, 0Ah	; +18
+;--- head sub-block 4 (file 0x633, 28 bytes) ---
+		db	 02h, 0Bh, 02h, 06h	; +00
+		db	 0Fh, 03h, 00h, 09h	; +04
+		db	 02h, 0Ch, 00h, 08h	; +08
+		db	 00h, 0Ah, 00h, 0Bh	; +0C
+		db	 00h, 0Ch, 01h, 08h	; +10
+		db	 01h, 09h, 00h, 0Fh	; +14
+		db	 01h, 00h, 01h, 04h	; +18
+;--- head sub-block 5 (file 0x64F, 28 bytes) ---
+		db	 01h, 02h, 02h, 0Dh	; +00
+		db	 02h, 0Eh, 02h, 0Fh	; +04
+		db	 03h, 00h, 02h, 06h	; +08
+		db	 0Fh, 04h, 00h, 06h	; +0C
+		db	 02h, 0Ch, 00h, 08h	; +10
+		db	 01h, 0Ch, 01h, 0Dh	; +14
+		db	 00h, 0Ch, 01h, 0Ah	; +18
+;--- head sub-block 6 (file 0x66B, 28 bytes) ---
+		db	 01h, 0Bh, 00h, 0Fh	; +00
+		db	 01h, 00h, 01h, 01h	; +04
+		db	 01h, 02h, 03h, 01h	; +08
+		db	 03h, 02h, 03h, 03h	; +0C
+		db	 03h, 04h, 02h, 06h	; +10
+		db	 0Fh, 05h, 00h, 06h	; +14
+		db	 02h, 07h, 00h, 08h	; +18
+;--- head sub-block 7 (file 0x687, 28 bytes) ---
+		db	 01h, 06h, 01h, 07h	; +00
+		db	 00h, 0Ch, 01h, 08h	; +04
+		db	 01h, 09h, 00h, 0Fh	; +08
+		db	 01h, 03h, 01h, 01h	; +0C
+		db	 01h, 02h, 03h, 05h	; +10
+		db	 03h, 06h, 03h, 07h	; +14
+		db	 03h, 08h, 02h, 06h	; +18
+;--- head sub-block 8 (file 0x6A3, 28 bytes) ---
+		db	 0Fh, 06h, 00h, 09h	; +00
+		db	 02h, 07h, 00h, 08h	; +04
+		db	 01h, 06h, 01h, 07h	; +08
+		db	 00h, 0Ch, 00h, 0Dh	; +0C
+		db	 00h, 0Eh, 00h, 0Fh	; +10
+		db	 01h, 03h, 01h, 04h	; +14
+		db	 01h, 02h, 03h, 09h	; +18
+;--- head sub-block 9 (file 0x6BF, 28 bytes) ---
+		db	 03h, 0Ah, 0Eh, 01h	; +00
+		db	 03h, 0Ch, 02h, 02h	; +04
+		db	 0Fh, 07h, 00h, 09h	; +08
+		db	 00h, 07h, 00h, 08h	; +0C
+		db	 00h, 0Ah, 00h, 0Bh	; +10
+		db	 00h, 0Ch, 01h, 08h	; +14
+		db	 01h, 09h, 00h, 0Fh	; +18
+;--- head sub-block 10 (file 0x6DB, 28 bytes) ---
+		db	 01h, 00h, 01h, 04h	; +00
+		db	 01h, 02h, 00h, 00h	; +04
+		db	 00h, 01h, 05h, 06h	; +08
+		db	 03h, 0Dh, 03h, 0Eh	; +0C
+		db	 0Fh, 08h, 00h, 06h	; +10
+		db	 00h, 07h, 00h, 08h	; +14
+		db	 00h, 0Ah, 00h, 0Bh	; +18
+;--- head sub-block 11 (file 0x6F7, 28 bytes) ---
+		db	 00h, 0Ch, 00h, 0Dh	; +00
+		db	 00h, 0Eh, 00h, 0Fh	; +04
+		db	 01h, 00h, 01h, 01h	; +08
+		db	 01h, 02h, 01h, 0Eh	; +0C
+		db	 03h, 0Fh, 02h, 00h	; +10
+		db	 04h, 00h, 04h, 01h	; +14
+		db	 0Fh, 09h, 00h, 06h	; +18
+;--- head sub-block 12 (file 0x713, 28 bytes) ---
+		db	 01h, 05h, 00h, 08h	; +00
+		db	 01h, 06h, 01h, 07h	; +04
+		db	 00h, 0Ch, 01h, 08h	; +08
+		db	 01h, 09h, 00h, 0Fh	; +0C
+		db	 01h, 03h, 01h, 01h	; +10
+		db	 01h, 02h, 02h, 03h	; +14
+		db	 04h, 02h, 04h, 03h	; +18
+;--- head sub-block 13 (file 0x72F, 28 bytes) ---
+		db	 02h, 06h, 0Fh, 0Ah	; +00
+		db	 00h, 09h, 02h, 07h	; +04
+		db	 00h, 08h, 01h, 06h	; +08
+		db	 01h, 07h, 00h, 0Ch	; +0C
+		db	 00h, 0Dh, 00h, 0Eh	; +10
+		db	 00h, 0Fh, 01h, 03h	; +14
+		db	 01h, 04h, 01h, 02h	; +18
+;--- head sub-block 14 (file 0x74B, 28 bytes) ---
+		db	 04h, 04h, 04h, 05h	; +00
+		db	 02h, 06h, 0Fh, 0Bh	; +04
+		db	 00h, 09h, 02h, 0Ch	; +08
+		db	 00h, 08h, 00h, 0Ah	; +0C
+		db	 00h, 0Bh, 00h, 0Ch	; +10
+		db	 01h, 08h, 01h, 09h	; +14
+		db	 00h, 0Fh, 01h, 00h	; +18
+
+tako_row_data_blk_00:				; 0x767..0x786 (32 bytes; ptr_tbl[0] -> 0xA767)
+		db	 01h, 04h, 01h, 02h	; +00
+		db	 02h, 0Eh, 04h, 06h	; +04
+		db	 02h, 06h, 0Fh, 0Ch	; +08
+		db	 00h, 06h, 02h, 0Ch	; +0C
+		db	 00h, 08h, 01h, 0Ch	; +10
+		db	 01h, 0Dh, 00h, 0Ch	; +14
+		db	 01h, 0Ah, 01h, 0Bh	; +18
+		db	 00h, 0Fh, 01h, 00h	; +1C
+
+tako_row_data_blk_01:				; 0x787..0x7AA (36 bytes; ptr_tbl[1] -> 0xA787)
+		db	 01h, 01h, 01h, 02h	; +00
+		db	 03h, 01h, 04h, 07h	; +04
+		db	 03h, 03h, 04h, 08h	; +08
+		db	 02h, 06h, 0Fh, 0Dh	; +0C
+		db	 00h, 06h, 02h, 07h	; +10
+		db	 00h, 08h, 01h, 06h	; +14
+		db	 01h, 07h, 00h, 0Ch	; +18
+		db	 01h, 08h, 01h, 09h	; +1C
+		db	 00h, 0Fh, 01h, 03h	; +20
+
+tako_row_data_blk_02:				; 0x7AB..0x7CC (34 bytes; ptr_tbl[2] -> 0xA7AB)
+		db	 01h, 01h, 01h, 02h	; +00
+		db	 03h, 05h, 03h, 07h	; +04
+		db	 04h, 09h, 02h, 06h	; +08
+		db	 0Fh, 0Eh, 00h, 09h	; +0C
+		db	 02h, 07h, 00h, 08h	; +10
+		db	 01h, 06h, 01h, 07h	; +14
+		db	 00h, 0Ch, 00h, 0Dh	; +18
+		db	 00h, 0Eh, 00h, 0Fh	; +1C
+		db	 01h, 03h		; +20  (2-byte tail)
+
+tako_row_data_blk_03:				; 0x7CD..0x7EE (34 bytes; ptr_tbl[3] -> 0xA7CD)
+		db	 01h, 04h, 01h, 02h	; +00
+		db	 03h, 09h, 0Eh, 01h	; +04
+		db	 04h, 0Ah, 04h, 0Bh	; +08
+		db	 0Fh, 0Fh, 00h, 09h	; +0C
+		db	 00h, 07h, 00h, 08h	; +10
+		db	 00h, 0Ah, 00h, 0Bh	; +14
+		db	 00h, 0Ch, 01h, 08h	; +18
+		db	 01h, 09h, 00h, 0Fh	; +1C
+		db	 01h, 00h		; +20  (2-byte tail)
+
+tako_row_data_blk_04:				; 0x7EF..0x80A (28 bytes; ptr_tbl[4] -> 0xA7EF)
+		db	 01h, 04h, 01h, 02h	; +00
+		db	 04h, 0Ch, 0Eh, 00h	; +04
+		db	 00h, 06h, 00h, 07h	; +08
+		db	 00h, 08h, 00h, 0Ah	; +0C
+		db	 00h, 0Bh, 00h, 0Ch	; +10
+		db	 00h, 0Dh, 00h, 0Eh	; +14
+		db	 00h, 0Fh, 01h, 00h	; +18
+
+tako_row_data_blk_05:				; 0x80B..0x826 (28 bytes; ptr_tbl[5] -> 0xA80B)
+		db	 01h, 01h, 01h, 02h	; +00
+		db	 04h, 0Bh, 0Eh, 00h	; +04
+		db	 00h, 06h, 01h, 05h	; +08
+		db	 00h, 08h, 01h, 06h	; +0C
+		db	 01h, 07h, 00h, 0Ch	; +10
+		db	 01h, 08h, 01h, 09h	; +14
+		db	 00h, 0Fh, 01h, 03h	; +18
+
+tako_row_data_blk_06:				; 0x827..0x842 (28 bytes; ptr_tbl[6] -> 0xA827)
+		db	 01h, 01h, 01h, 02h	; +00
+		db	 04h, 0Dh, 0Eh, 00h	; +04
+		db	 00h, 09h, 02h, 07h	; +08
+		db	 00h, 08h, 01h, 06h	; +0C
+		db	 01h, 07h, 00h, 0Ch	; +10
+		db	 00h, 0Dh, 00h, 0Eh	; +14
+		db	 00h, 0Fh, 01h, 03h	; +18
+
+tako_row_data_blk_07:				; 0x843..0x85E (28 bytes; ptr_tbl[7] -> 0xA843)
+		db	 01h, 04h, 01h, 02h	; +00
+		db	 04h, 0Dh, 0Eh, 00h	; +04
+		db	 00h, 09h, 02h, 0Ch	; +08
+		db	 00h, 08h, 00h, 0Ah	; +0C
+		db	 00h, 0Bh, 00h, 0Ch	; +10
+		db	 01h, 08h, 01h, 09h	; +14
+		db	 00h, 0Fh, 01h, 00h	; +18
+
+tako_row_data_blk_08:				; 0x85F..0x87A (28 bytes; ptr_tbl[8] -> 0xA85F)
+		db	 01h, 04h, 01h, 02h	; +00
+		db	 04h, 0Dh, 0Eh, 00h	; +04
+		db	 00h, 06h, 02h, 0Ch	; +08
+		db	 00h, 08h, 01h, 0Ch	; +0C
+		db	 01h, 0Dh, 00h, 0Ch	; +10
+		db	 01h, 0Ah, 01h, 0Bh	; +14
+		db	 00h, 0Fh, 01h, 00h	; +18
+
+tako_row_data_blk_09:				; 0x87B..0x896 (28 bytes; ptr_tbl[9] -> 0xA87B)
+		db	 01h, 01h, 01h, 02h	; +00
+		db	 04h, 0Dh, 0Eh, 00h	; +04
+		db	 00h, 06h, 02h, 07h	; +08
+		db	 00h, 08h, 01h, 06h	; +0C
+		db	 01h, 07h, 00h, 0Ch	; +10
+		db	 01h, 08h, 01h, 09h	; +14
+		db	 00h, 0Fh, 01h, 03h	; +18
+
+tako_row_data_blk_10:				; 0x897..0x8B2 (28 bytes; ptr_tbl[10] -> 0xA897)
+		db	 01h, 01h, 01h, 02h	; +00
+		db	 04h, 0Dh, 0Eh, 00h	; +04
+		db	 00h, 09h, 02h, 07h	; +08
+		db	 00h, 08h, 01h, 06h	; +0C
+		db	 01h, 07h, 00h, 0Ch	; +10
+		db	 00h, 0Dh, 00h, 0Eh	; +14
+		db	 00h, 0Fh, 01h, 03h	; +18
+
+tako_row_data_blk_11:				; 0x8B3..0x8CE (28 bytes; ptr_tbl[11] -> 0xA8B3)
+		db	 01h, 04h, 01h, 02h	; +00
+		db	 04h, 0Bh, 0Eh, 00h	; +04
+		db	 00h, 09h, 00h, 07h	; +08
+		db	 00h, 08h, 00h, 0Ah	; +0C
+		db	 00h, 0Bh, 00h, 0Ch	; +10
+		db	 01h, 08h, 01h, 09h	; +14
+		db	 00h, 0Fh, 01h, 00h	; +18
+
+tako_row_data_blk_12:				; 0x8CF..0x8EA (28 bytes; ptr_tbl[12] -> 0xA8CF)
+		db	 01h, 04h, 01h, 02h	; +00
+		db	 04h, 0Eh, 03h, 0Bh	; +04
+		db	 00h, 06h, 04h, 0Fh	; +08
+		db	 05h, 00h, 00h, 0Ah	; +0C
+		db	 00h, 0Bh, 00h, 0Ch	; +10
+		db	 00h, 0Dh, 00h, 0Eh	; +14
+		db	 00h, 0Fh, 01h, 00h	; +18
+
+tako_row_data_blk_13:				; 0x8EB..0x906 (28 bytes; ptr_tbl[13] -> 0xA8EB)
+		db	 01h, 01h, 01h, 02h	; +00
+		db	 05h, 01h, 03h, 0Bh	; +04
+		db	 00h, 06h, 05h, 02h	; +08
+		db	 05h, 00h, 01h, 06h	; +0C
+		db	 01h, 07h, 00h, 0Ch	; +10
+		db	 01h, 08h, 01h, 09h	; +14
+		db	 00h, 0Fh, 01h, 03h	; +18
+
+tako_row_data_blk_14:				; 0x907..0x922 (28 bytes; ptr_tbl[14] -> 0xA907)
+		db	 01h, 01h, 01h, 02h	; +00
+		db	 05h, 03h, 03h, 0Bh	; +04
+		db	 00h, 09h, 05h, 04h	; +08
+		db	 05h, 00h, 01h, 06h	; +0C
+		db	 01h, 07h, 00h, 0Ch	; +10
+		db	 00h, 0Dh, 00h, 0Eh	; +14
+		db	 00h, 0Fh, 01h, 03h	; +18
+
+tako_row_data_blk_15:				; 0x923..0x93E (28 bytes; ptr_tbl[15] -> 0xA923)
+		db	 01h, 04h, 01h, 02h	; +00
+		db	 05h, 03h, 03h, 0Bh	; +04
+		db	 00h, 09h, 05h, 05h	; +08
+		db	 05h, 00h, 00h, 0Ah	; +0C
+		db	 00h, 0Bh, 00h, 0Ch	; +10
+		db	 01h, 08h, 01h, 09h	; +14
+		db	 00h, 0Fh, 01h, 00h	; +18
+
+tako_row_data_blk_16:				; 0x93F..0x95A (28 bytes; ptr_tbl[16] -> 0xA93F)
+		db	 01h, 04h, 01h, 02h	; +00
+		db	 05h, 03h, 03h, 0Bh	; +04
+		db	 00h, 06h, 05h, 05h	; +08
+		db	 05h, 00h, 01h, 0Ch	; +0C
+		db	 01h, 0Dh, 00h, 0Ch	; +10
+		db	 01h, 0Ah, 01h, 0Bh	; +14
+		db	 00h, 0Fh, 01h, 00h	; +18
+
+tako_row_data_blk_17:				; 0x95B..0x976 (28 bytes; ptr_tbl[17] -> 0xA95B)
+		db	 01h, 01h, 01h, 02h	; +00
+		db	 05h, 03h, 03h, 0Bh	; +04
+		db	 00h, 06h, 05h, 04h	; +08
+		db	 05h, 00h, 01h, 06h	; +0C
+		db	 01h, 07h, 00h, 0Ch	; +10
+		db	 01h, 08h, 01h, 09h	; +14
+		db	 00h, 0Fh, 01h, 03h	; +18
+
+tako_row_data_blk_18:				; 0x977..0x992 (28 bytes; ptr_tbl[18] -> 0xA977)
+		db	 01h, 01h, 01h, 02h	; +00
+		db	 05h, 03h, 03h, 0Bh	; +04
+		db	 00h, 09h, 05h, 04h	; +08
+		db	 05h, 00h, 01h, 06h	; +0C
+		db	 01h, 07h, 00h, 0Ch	; +10
+		db	 00h, 0Dh, 00h, 0Eh	; +14
+		db	 00h, 0Fh, 01h, 03h	; +18
+
+tako_row_data_blk_19:				; 0x993..0x9B2 (32 bytes; ptr_tbl[19] -> 0xA993)
+		db	 01h, 04h, 01h, 02h	; +00
+		db	 05h, 01h, 03h, 0Bh	; +04
+		db	 00h, 09h, 04h, 0Fh	; +08
+		db	 05h, 00h, 00h, 0Ah	; +0C
+		db	 00h, 0Bh, 00h, 0Ch	; +10
+		db	 01h, 08h, 01h, 09h	; +14
+		db	 00h, 0Fh, 01h, 00h	; +18
+		db	 01h, 04h, 01h, 02h	; +1C
 
 ; -------------------------------------------------------------------------
 ;  tako_pattern_ptr_tbl + tako_sprite_patterns (file 0x9B3..0xA1F).
@@ -918,7 +1097,7 @@ tako_sprite_patterns	label	word
 ; -------------------------------------------------------------------------
 
 tako_proj_pattern:				; runtime addr 0xAA20
-		db	 0E0h,0E0h,0E0h,0E0h, 00h, 00h, 00h
+		db	 0E0h,0E0h,0E0h,0E0h, 00h, 00h, 00h	; 7-byte projectile sprite row
 
 ; -------------------------------------------------------------------------
 ;  tako_row_template (file 0xA27..0xA83, 0x5D bytes = 93 bytes).
