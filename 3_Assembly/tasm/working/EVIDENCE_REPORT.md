@@ -28,7 +28,7 @@ strings, code references, hardware/DOS calls) — no LLM judgment.
 - **Strings within ±100 bytes** (1):
   - `kuBLK` @ ++75
 - **Code references in stdply.asm:** 1
-  - L130 *read* — `ply_level	db	80h		; [0C4h] level/area number (init 0x80)`
+  - L133 *read* — `ply_level	db	80h		; [0C4h] level/area number (init 0x80)`
 - **Referencing procs:** `start`
 
 ### `stdply` @ `0x83` — claim: *hero_x_in_viewport*

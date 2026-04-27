@@ -790,7 +790,7 @@ render_text_char		endp
 		jmp	set_plot_mode
 			                        ;* No entry point to code
 		push	ds
-		mov	ax,word ptr cs:[drv_time_param_b]
+		mov	ax,word ptr cs:[hero_almas]
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
@@ -805,8 +805,8 @@ fn_9:
 
 fn_10:
 		push	ds
-		mov	ax,word ptr cs:[drv_time_param_a]
-		mov	dl,byte ptr cs:[drv_timer_flag]
+		mov	ax,word ptr cs:[hero_gold_lo]
+		mov	dl,byte ptr cs:[hero_gold_hi]
 		call	init_timestamp
 		push	cs
 		pop	ds
@@ -819,7 +819,7 @@ fn_10:
 fn_11:
 		push	ds
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:[drv_frame_idx]
+		mov	bl,byte ptr cs:[current_magic_spell]
 		dec	bl
 		mov	al,byte ptr cs:[drv_color_lut][bx]
 		xor	ah,ah			; Zero register
@@ -837,13 +837,13 @@ fn_12:
 		pop	ds
 		retn
 			                        ;* No entry point to code
-		test	byte ptr cs:[drv_sprite_flag],0FFh
+		test	byte ptr cs:[shield_type],0FFh
 		jnz	sprite_check			; Jump if not zero
 		retn
 
 sprite_check:
 		push	ds
-		mov	ax,word ptr cs:[drv_time_param_c]
+		mov	ax,word ptr cs:[shield_HP]
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
