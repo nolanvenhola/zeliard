@@ -3,11 +3,19 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  301EAI1.BIN - Enemy AI Handler: CRAB (zelres3 chunk 2)
+;  301EAI1.BIN - Multi-Enemy AI Handler (zelres3 chunk 2)
 ;
-;  Per-enemy AI controller code for the CRAB enemy (loaded by 200FIGHT
-;  alongside 309CRAB.BIN sprites). Each EAI*.BIN chunk contains the
-;  movement/collision/attack dispatch logic for one specific enemy type.
+;  Per IDA decompilation in 3_Assembly/ida/eai1.asm: this is a SHARED
+;  AI handler used by multiple regular enemies (slug, bat, frog, rat),
+;  not a CRAB-specific handler. The enemy-type discrimination happens
+;  via frame-pointer tables embedded in the chunk header:
+;    slug_walk_right_frames, bat_fly_frames, frog_jump_right_frames,
+;    rat_run_right_frames, bat_dive_frames, slug_idle_frames_set0..3.
+;
+;  CRAB has its own self-contained AI in 309CRAB.BIN (Cangrejo_AI_proc
+;  per IDA crab.asm) and is NOT paired with this module despite the
+;  resource_name_table listing them in alternating order.
+;
 ;  The battle engine calls into these handlers via a state-dispatch
 ;  jump table stored in the enemy slot record (si+9 = state byte).
 ;
@@ -28,11 +36,15 @@ PAGE  59,132
 ;  by Sourcer because static analysis cannot see the tables in DS.
 ;
 ;  Resource table references visible in the header data (addresses 6004h..6034h):
-;    6004-603A are function pointers in the CRAB's behavior dispatch table.
-;    0A2xxh / 0A7xxh are lookup tables in the shared enemy data area.
-;    0FF2Eh / 0FF35h / 0FF36h are global frame / timing flags.
+;    6004-603A are function pointers in the shared fight-engine callback
+;    table (used by every EAI handler).
+;    0A2xxh / 0A7xxh are lookup tables in this chunk's data area.
+;    0FF2Eh / 0FF35h / 0FF36h are shared game-state byte flags.
 ;
-;  State machine (CRAB):
+;  State machine (generic regular-enemy AI, supports slug/bat/frog/rat
+;  per IDA — labels below were originally crab-specific guesses, the
+;  actual enemy-type-specific behavior is selected via frame-table
+;  pointers stored in the chunk header):
 ;
 ;    Primary dispatch by [si+4]&0xF (table at 0xA266):
 ;      idx 2 -> crab_ai_main_entry      (walk/seek main)
@@ -73,8 +85,10 @@ PAGE  59,132
 ;                  fight_cb_cmp_tile (602Eh), fight_cb_alt (6030h),
 ;                  fight_cb_spawn (6032h); also a local function pointer
 ;                  crab_facing_fn_ptr stored in DS.
-;    Called by:    200FIGHT enemy AI dispatch table (CRAB enemy slot;
-;                  paired with sprite module 309CRAB.BIN).
+;    Called by:    200FIGHT enemy AI dispatch table for the regular-enemy
+;                  slots (slug/bat/frog/rat per IDA eai1.asm). Frame data
+;                  for those enemies lives in ENPx.GRP graphics chunks,
+;                  loaded separately by the fight engine.
 ;    Reads/writes: gvar_rng_state (0FF2Eh aliased gvar_death_flag),
 ;                  gvar_frame_cnt (0FF35h), gvar_enemy_cnt (0FF36h);
 ;                  enemy slot record fields [si+0..si+Ah] (X pos, tile

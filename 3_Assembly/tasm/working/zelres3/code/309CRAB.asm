@@ -3,11 +3,18 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  309CRAB.BIN - Crab Enemy Code Module (zelres3 chunk 10, 'Cangrejo')
+;  309CRAB.BIN - Crab Boss Module (zelres3 chunk 10, 'Cangrejo')
 ;
-;  Crab-type enemy sprite/logic module loaded by 200FIGHT.asm alongside
-;  301EAI1 (Crab AI handler).  The Spanish name 'Cangrejo' ('crab')
-;  appears as an 8-char name tag in the module's trailing data.
+;  Per IDA decompilation in 3_Assembly/ida/crab.asm: this is a SELF-
+;  CONTAINED boss module — it has its own AI proc (Cangrejo_AI_proc)
+;  AND its own sprite frame data (frames_body_walk0..5,
+;  frames_body_descent0..2, frames_body_recoil0..2, frames_body_hit,
+;  frames_body_dead). It is NOT paired with 301EAI1; the alternating
+;  EAI1/CRAB/EAI2/TAKO/... ordering in resource_name_table is
+;  alphabetical, not pairing.
+;
+;  The Spanish name 'Cangrejo' ('crab') appears as an 8-char name tag
+;  in the module's trailing data.
 ;
 ;  File layout (loaded at game_seg:0xA000 by 200FIGHT):
 ;    0x000..0x003 : file-size header word + pad (NOT executable code -
@@ -35,8 +42,9 @@ PAGE  59,132
 ;    Calls into:   200FIGHT export table via cs:[fight_cb_*] dispatch slots:
 ;                  fight_cb_prep (200Ch), fight_cb_anim_step (6036h),
 ;                  fight_cb_hit_check (6038h), fight_cb_record_ofs (6028h).
-;    Called by:    200FIGHT sprite/code dispatch (CRAB enemy slot;
-;                  paired with AI module 301EAI1.BIN).
+;    Called by:    200FIGHT boss-fight dispatch when the Crab boss is
+;                  loaded for an encounter. Self-contained (no separate
+;                  AI handler module).
 ;    Reads/writes: gvar_death_flag (0FF2Eh), gvar_dir_toggle (0FF2Fh),
 ;                  gvar_completion (0FF30h), gvar_spawn_fx_flag (0FF75h);
 ;                  enemy slot list at fight_slot_list (0C010h);
