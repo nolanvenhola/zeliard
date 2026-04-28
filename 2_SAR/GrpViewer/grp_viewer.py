@@ -19,6 +19,9 @@ from tkinter import filedialog
 # 7: 8x8 Patterns (mpat.grp/dpat.grp/cpat.grp)
 # 8: 24x24 Hero Sprites (fman.grp)
 # 9: 28x18 tiles 8x8 each, 5 palette modes (roka.grp)
+# 10; 8x8 static dungeon tiles (dchr.grp, mppX.grp)
+# 11: 16x16 NPC Sprites (enpX.grp)
+# 12: boss sprites (crab.grp)
 GRP_DESCRIPTOR = [
     ("itemp.grp", [0, 1, 1, 1, 1, 1, 1]),
     ("font.grp",  [2, 2, 2]),
@@ -58,6 +61,7 @@ GRP_DESCRIPTOR = [
     ("mppb.grp",  10, [[1, 3], [1, 1]]), 
         # 00
     ("enp1.grp",  11),
+    ("crab.grp",  12),
 ]
 
 MODE_CFG = {
@@ -73,6 +77,7 @@ MODE_CFG = {
     9: {"w": 8,  "h": 8,  "stride": 6,  "bytes": 48,  "type": "roka"},
     10:{"w": 8,  "h": 8,  "stride": 6,  "bytes": 48,  "type": "dchr"},
     11:{"w": 16, "h": 8,  "stride": 4,  "bytes": 32,  "type": "enp"},
+    12:{"w": 16, "h": 8,  "stride": 4,  "bytes": 32,  "type": "crab"},
 }
 
 SCALE = 4
@@ -147,7 +152,7 @@ ROKA_MAP = [
 
 # Frame definitions from enp_frames.asm
 # Each frame is a 2x2 grid of 8x8 tiles: [Top-Left, Top-Right, Bottom-Left, Bottom-Right]
-ENP_FRAMES = {
+ENP1_FRAMES = {
     "Bat Fly Left": [
         [0, 0x19, 0x1A, 0x1B, 0x1C], 
         [0, 0x1D, 0x1E, 0x1F, 0x20], 
@@ -265,6 +270,182 @@ ENP_FRAMES = {
         [1, 0xDA, 0xDB, 0xDC, 0xDD], 
         [1, 0x00, 0x00, 0xDE, 0xDF]
     ]
+}
+
+CRAB_FRAMES = {
+    "Left Eye": [
+        [0, 0, 0, 0, 1],
+        [0, 0, 0, 0x26, 0x27],
+        [0, 0, 0, 0, 1],
+        [0, 0, 0, 0x26, 0x27],
+        [0, 0, 0, 0, 1],
+        [0, 0, 0, 0x26, 0x27],
+        [0, 0, 0, 0x26, 0x27],
+        [0, 0, 0, 0x26, 0x27],
+        [0, 0, 0, 0, 0],
+        [0, 1, 2, 0x0A, 0x0B],
+    ],
+
+    "Right Eye": [
+        [0, 0, 0, 2, 0],
+        [0, 0, 0, 0x28, 0x29],
+        [0, 0, 0, 2, 0],
+        [0, 0, 0, 0x28, 0x29],
+        [0, 0, 0, 2, 0],
+        [0, 0, 0, 0x28, 0x29],
+        [0, 0, 0, 0x28, 0x29],
+        [0, 0, 0, 0x28, 0x29],
+        [0, 0, 0, 0, 0],
+    ],
+
+    "Left Tibia": [
+        [0, 3, 4, 0, 5],
+        [0, 0x2A, 0x2B, 0x2C, 0x2D],
+        [0, 3, 4, 0, 0x47],
+        [0, 0x2A, 0x2B, 0x2C, 0x58],
+        [0, 3, 4, 0, 0x69],
+        [0, 0x2A, 0x2B, 0x2C, 0x72],
+        [0, 3, 4, 0, 5],
+        [0, 3, 4, 0, 5],
+        [0, 0x8F, 0x90, 0, 0x91],
+        [0, 0xAD, 0xAE, 0xAF, 0xB0],
+    ],
+
+    "Left Femur": [
+        [0, 6, 7, 8, 9],
+        [0, 6, 0x2F, 0x30, 0x31],
+        [0, 6, 7, 0x48, 0x49],
+        [0, 6, 0x2F, 0x59, 0x5A],
+        [0, 6, 7, 0x59, 0x5A],
+        [0, 6, 0x2F, 0x73, 0x74],
+        [0, 6, 0x2F, 8, 9],
+        [0, 6, 0x2F, 8, 9],
+        [0, 0x92, 0x26, 0x93, 0x94],
+        [0, 0xB1, 7, 0xB2, 0xB3],
+    ],
+
+    "Mouth": [
+        [0, 0x0A, 0x0B, 0x0C, 0x0D],
+        [0, 0x32, 0x33, 0x0C, 0x0D],
+        [0, 0x0A, 0x0B, 0x0C, 0x0D],
+        [0, 0x32, 0x33, 0x0C, 0x0D],
+        [0, 0x0A, 0x0B, 0x0C, 0x0D],
+        [0, 0x32, 0x33, 0x0C, 0x0D],
+        [0, 0x32, 0x33, 0xC5, 0xC6],
+        [0, 0x32, 0x33, 0x0C, 0x0D],
+        [0, 0x27, 0x28, 0x32, 0x33],
+    ],
+
+    "Right Femur": [
+        [0, 0x0E, 0x35, 0x10, 0x11],
+        [0, 0x34, 0x35, 0x36, 0x37],
+        [0, 0x0E, 0x35, 0x4A, 0x4B],
+        [0, 0x34, 0x35, 0x5B, 0x5C],
+        [0, 0x0E, 0x35, 0x5B, 0x5C],
+        [0, 0x34, 0x35, 0x75, 0x76],
+        [0, 0x34, 0x35, 0x84, 0x85],
+        [0, 0x34, 0x35, 0x84, 0x85],
+        [0, 0x29, 0x95, 0x96, 0x97],
+        [0, 0x0E, 0xB4, 0xB5, 0xB6],
+    ],
+
+    "Right Tibia": [
+        [0, 0x12, 0x13, 0x14, 0x15],
+        [0, 0x38, 0x39, 0x3A, 0],
+        [0, 0x12, 0x13, 0x4C, 0x15],
+        [0, 0x38, 0x39, 0x5D, 0],
+        [0, 0x12, 0x13, 0x5D, 0x15],
+        [0, 0x38, 0x39, 0x77, 0],
+        [0, 0x12, 0x13, 0x14, 0x15],
+        [0, 0x12, 0x13, 0x14, 0x15],
+        [0, 0x98, 0x99, 0x9A, 0],
+        [0, 0xB7, 0xB8, 0xB9, 0xBA],
+    ],
+
+    "Left Bottom Legs": [
+        [0, 0, 0x16, 0, 0x17],
+        [0, 0, 0x3B, 0x3C, 0x3D],
+        [0, 0, 0x4D, 0, 0x4E],
+        [0, 0x5E, 0x5F, 0, 0x60],
+        [0, 0x0F, 0x2E, 0x6A, 0x6B],
+        [0, 0x78, 0x79, 0x7A, 0x7B],
+        [0, 0x86, 0x87, 0, 0x88],
+        [0, 0x86, 0x87, 0, 0x88],
+        [0, 0x9B, 0x9C, 0x9D, 0x9E],
+        [0, 0xBB, 0xBF, 0xBC, 0],
+    ],
+
+    "Left Claw": [
+        [0, 0x18, 0x19, 0x1A, 0x1B],
+        [0, 0x40, 0x19, 0x42, 0x43],
+        [0, 0x4F, 0x19, 0x50, 0x51],
+        [0, 0x61, 0x19, 0x62, 0x1B],
+        [0, 0x6C, 0x19, 0x6D, 0x43],
+        [0, 0x7C, 0x19, 0x7D, 0x43],
+        [0, 0x18, 0x19, 0, 0x1B],
+        [0, 0x18, 0x19, 0, 0x1B],
+        [0, 0x9F, 0xA0, 0xA1, 0xA2],
+        [0, 0xBD, 0x19, 0xBF, 0x43],
+    ],
+
+    "Maxilla": [
+        [0, 0x1C, 0x1D, 0x1E, 0],
+        [0, 0x1C, 0x1D, 0, 0x44],
+        [0, 0x1C, 0x1D, 0x1E, 0x44],
+        [0, 0x1C, 0x1D, 0x1E, 0],
+        [0, 0x1C, 0x1D, 0, 0],
+        [0, 0x1C, 0x1D, 0, 0x44],
+        [0, 0x1C, 0x1D, 0x1E, 0],
+        [0, 0x1C, 0x1D, 0x1E, 0],
+        [0, 0x0C, 0x0D, 0xA3, 0xA4],
+    ],
+
+    "Right Claw": [
+        [0, 0x1F, 0x20, 0x21, 0x22],
+        [0, 0x1F, 0x41, 0x45, 0x46],
+        [0, 0x1F, 0x52, 0x53, 0x54],
+        [0, 0x1F, 0x63, 0x21, 0x64],
+        [0, 0x1F, 0x63, 0x21, 0x6E],
+        [0, 0x1F, 0x7E, 0x53, 0x7F],
+        [0, 0x1F, 0x89, 0x21, 0x8A],
+        [0, 0x1F, 0x89, 0x21, 0x8A],
+        [0, 0xA5, 0xA6, 0xA7, 0xA8],
+        [0, 0x1F, 0xBE, 0x21, 0xC0],
+    ],
+
+    "Right Bottom Legs": [
+        [0, 0x23, 0x24, 0x25, 0],
+        [0, 0x3E, 0, 0x3F, 0],
+        [0, 0x55, 0, 0x56, 0x57],
+        [0, 0x65, 0x66, 0x67, 0x68],
+        [0, 0x6F, 0x70, 0x71, 0],
+        [0, 0x80, 0x81, 0x82, 0x83],
+        [0, 0x8B, 0x8C, 0x8D, 0x8E],
+        [0, 0x8B, 0x8C, 0x8D, 0x8E],
+        [0, 0xA9, 0xAA, 0xAB, 0xAC],
+        [0, 0, 0xC1, 0, 0xC2],
+    ],
+
+    "Mouth Acid Frames": [
+        [0, 0xC7, 0xC8, 0x1C, 0x1D],
+        [0, 0xC9, 0xCA, 0x1C, 0x1D],
+        [0, 0xCB, 0xCC, 0xCD, 0xCE],
+        [0, 0xCF, 0xD0, 0xD1, 0xD2],
+        [0, 0xD3, 0xD4, 0xD5, 0xD6],
+        [0, 0xC3, 0xC4, 0x1C, 0x1D],
+        [0, 0xC5, 0xC6, 0x1C, 0x1D],
+        [0, 0x0C, 0x0D, 0x1C, 0x1D],
+        [0, 0x0C, 0x0D, 0x1C, 0x1D],
+        [0, 0x0C, 0x0D, 0x1C, 0x1D],
+    ],
+
+    "Acid Drops": [
+        [0, 0xD7, 0xD8, 0xD9, 0],
+        [0, 0xDA, 0xDB, 0xDC, 0xDD],
+        [0, 0xDE, 0xDF, 0, 0],
+        [0, 0xE0, 0xE1, 0, 0],
+        [0, 0xE2, 0xE3, 0, 0],
+    ],
 }
 
 # ---------------------------------------------------------------------------
@@ -773,6 +954,24 @@ def render_fman_group(data, canvas, y_offset, frame_counts=None):
 
     return current_y - y_offset
 
+def draw_composed_16x16_frame(canvas, frame_data, tiles_raw, x_frame, y_frame, scale):
+    """Draws a 16x16 frame composed of four 8x8 tiles [tl, tr, bl, br]."""
+    TILE_SIZE = 32
+    pal_idx = frame_data[0]
+    tile_indices = frame_data[1:] # [tl, tr, bl, br]
+    lut = PAL_DECODE_TABLES[pal_idx]
+    
+    for i, t_idx in enumerate(tile_indices):
+        if t_idx == 0: continue
+        # Slice the 32-byte raw data for the 8x8 tile
+        tile_data = tiles_raw[t_idx * TILE_SIZE : (t_idx + 1) * TILE_SIZE]
+        pixels = decode_fman_tile(tile_data, lut)
+        
+        # Calculate sub-tile position within the 16x16 block
+        col_offset = (i % 2) * 8 * scale
+        row_offset = (i // 2) * 8 * scale
+        draw_tile_pixels(canvas, pixels, x_frame + col_offset, y_frame + row_offset, scale=scale)
+
 def render_enp_group(data, canvas, y_offset):
     """
     Render enpX.grp sprites using the ENP_FRAMES animation map.
@@ -790,49 +989,79 @@ def render_enp_group(data, canvas, y_offset):
     # for high tile indices (e.g., 0xF8)
     tiles_raw = data + b'\x00' * (256 * TILE_SIZE)
 
-    for anim_name,frames in ENP_FRAMES.items():
+    for anim_name, frames in ENP1_FRAMES.items():
         for f_idx, frame_data in enumerate(frames):
-            # 1. Extract palette index and tile indices
-            # frame_data format: [pal_idx, top_left, top_right, bot_left, bot_right]
-            pal_idx = frame_data[0]
-            tile_indices = frame_data[1:]
-            
-            # 2. Select the LUT (palette) for this specific frame
-            if pal_idx < len(PAL_DECODE_TABLES):
-                lut = PAL_DECODE_TABLES[pal_idx]
-            else:
-                lut = PAL_DECODE_TABLES[0]
-            
             # Calculate base position for the 16x16 sprite
             x_frame = 10 + (f_idx % frames_per_row) * (sprite_px * scale + gap_x)
             y_frame = current_y + (f_idx // frames_per_row) * (sprite_px * scale + gap_y)
-
-            # 3. Draw the 4 tiles in a 2x2 grid
-            for i, t_idx in enumerate(tile_indices):
-                if t_idx == 0:
-                    continue
-                
-                # Decode the 8x8 tile using the frame-specific LUT
-                tile_data = tiles_raw[t_idx * TILE_SIZE : (t_idx + 1) * TILE_SIZE]
-                pixels = decode_fman_tile(tile_data, lut)
-                
-                # Determine sub-tile position (0=TL, 1=TR, 2=BL, 3=BR)
-                col_offset = (i % 2) * 8 * scale
-                row_offset = (i // 2) * 8 * scale
-                
-                draw_tile_pixels(canvas, pixels, x_frame + col_offset, 
-                                 y_frame + row_offset, scale=scale)
-            
-            # Draw a subtle border around the assembled frame
-            canvas.create_rectangle(x_frame - 1, y_frame - 1, 
-                                     x_frame + sprite_px * scale, 
-                                     y_frame + sprite_px * scale, 
-                                     outline="gray")
+            draw_composed_16x16_frame(canvas, frame_data, tiles_raw, x_frame, y_frame, scale)
 
         # Advance Y cursor to the next animation block
         num_rows = (len(frames) + frames_per_row - 1) // frames_per_row
         current_y += num_rows * (sprite_px * scale + gap_y)
 
+    return current_y - y_offset
+
+def render_boss_group(data, canvas, y_offset):
+    TILE_SIZE = 32
+    scale = 3
+    current_y = y_offset
+    gap_x, gap_y = 25, 35
+    
+    # Header size in crab.grp is 0; tiles start immediately after the descriptors
+    tiles_raw = data + b'\x00' * (256 * TILE_SIZE)
+
+    # -----------------------------------------------------------------------
+    # Part 1: Render Composite Crab Body (Phases 0-9)
+    # -----------------------------------------------------------------------
+
+    # Normal layout for phases 0-8: (part_name, grid_x, grid_y)
+    body_layout08 = [
+        ("Left Eye", 24, 0), ("Right Eye", 40, 0),
+        ("Left Tibia", 0, 16), ("Left Femur", 16, 16), ("Mouth", 32, 16), ("Right Femur", 48, 16), ("Right Tibia", 64, 16),
+        ("Left Bottom Legs", 0, 32), ("Left Claw", 16, 32), ("Maxilla", 32, 32), ("Right Claw", 48, 32), ("Right Bottom Legs", 64, 32)
+    ]
+    body_layout9 = [
+        ("Left Eye", 32, 0),
+        ("Left Tibia", 0, 16), ("Left Femur", 16, 8), ("Right Femur", 48, 8), ("Right Tibia", 64, 16),
+        ("Left Bottom Legs", 8, 32), ("Left Claw", 16, 24), ("Right Claw", 48, 24), ("Right Bottom Legs", 56, 32)
+    ]
+
+    frames_per_row = 3
+    for phase in range(10):
+        x_base = 10 + (phase % frames_per_row) * (80 * scale + gap_x)
+        y_base = current_y + (phase // frames_per_row) * (48 * scale + gap_y)
+        
+        canvas.create_rectangle(x_base-1, y_base-1, x_base + 80*scale, y_base + 48*scale, outline="gray")
+
+        if phase < 9:
+            # Standard rendering for phases 0-8
+            for name, gx, gy in body_layout08:
+                draw_composed_16x16_frame(canvas, CRAB_FRAMES[name][phase], tiles_raw, x_base + gx*scale, y_base + gy*scale, scale)
+        else:
+            # Phase 9: Special placement
+            for name, gx, gy in body_layout9:
+                draw_composed_16x16_frame(canvas, CRAB_FRAMES[name][phase], tiles_raw, x_base + gx*scale, y_base + gy*scale, scale)
+
+    # Advance y_cursor past the 2 rows of body phases
+    current_y += 3 * (48 * scale + gap_y) + 36
+    
+    # -----------------------------------------------------------------------
+    # Part 2: Render Remaining 16x16 frames
+    # -----------------------------------------------------------------------
+    for anim_name in ["Mouth Acid Frames", "Acid Drops"]:
+        frames = CRAB_FRAMES[anim_name]
+        f_per_row = 10
+        for f_idx, frame_data in enumerate(frames):
+            x_f = 276 + (f_idx % f_per_row) * (16 * scale + 12)
+            y_f = current_y + (f_idx // f_per_row) * (16 * scale)
+            
+            draw_composed_16x16_frame(canvas, frame_data, tiles_raw, x_f, y_f, scale)
+            canvas.create_rectangle(x_f-1, y_f-1, x_f + 16*scale, y_f + 16*scale, outline="gray")
+        
+        num_rows = (len(frames) + f_per_row - 1) // f_per_row
+        current_y += num_rows * (16 * scale + 12)
+        
     return current_y - y_offset
 
 # ---------------------------------------------------------------------------
@@ -1047,6 +1276,10 @@ class GrpViewer:
                 self.info_label.config(text=f"File: {filename} | Hero in Dungeon Sprites")
             elif modes == 11:
                 consumed = render_enp_group(data, self.canvas, y_cursor)
+                self.canvas.config(scrollregion=(0, 0, 1200, y_cursor + consumed + 40))
+                self.info_label.config(text=f"File: {filename} | Monsters/Items Sprites")
+            elif modes == 12:
+                consumed = render_boss_group(data, self.canvas, y_cursor)
                 self.canvas.config(scrollregion=(0, 0, 1200, y_cursor + consumed + 40))
                 self.info_label.config(text=f"File: {filename} | Monsters/Items Sprites")
             else:  # 5 or 6
