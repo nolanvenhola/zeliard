@@ -1,787 +1,163 @@
-# Zeliard Code Chunks - Complete Overview
+# Zeliard code-chunks overview
 
-**Total Code Chunks**: 46 (from 120 total chunks across 3 archives)
-**Total Code Size**: ~300KB of executable x86 assembly
-**Archives**: ZELRES1.SAR (14 chunks), ZELRES2.SAR (20 chunks), ZELRES3.SAR (12 chunks)
-**Status**: All disassembled, documented with comprehensive walkthroughs in `Documentation/GAME_ENGINE/CHUNKS/`
+What each code chunk in the cleaned tree actually IS.  This file is
+the chunk dictionary — a quick "which chunk should I read for X?" map.
+For control-flow narrative see `ARCHITECTURE.md`; for the master
+investigation checklist see `MECHANICS_TO_UNDERSTAND.md`.
 
-## Architecture Overview
+**Tree**: `3_Assembly/tasm/working/{core,drivers,zelres1,zelres2,zelres3}/code/*.asm`
+**Build**: every chunk compiles to a BIT-PERFECT match against the
+original SAR archive payload via `verify1.py <relpath>` and
+`build_all.py --verify`.
 
-Zeliard's code is split across loadable chunks that are dynamically loaded by game.bin based on game state:
+---
+
+## Boot tier — `core/` + `drivers/`
+
+These are loaded as the EXE itself + driver overlays before any SAR
+chunk is touched.  See ARCHITECTURE.md §1 for the full boot order.
+
+| File | Bin size | Role |
+|---|---:|---|
+| `core/zeliad.asm` | 2,544 B | **The MZ executable.**  Parses RESOURCE.CFG, allocates memory, EXECs MTINIT.COM, saves int 08/09/60/61 vectors, loads stdply/stick/game.bin + the gfx-mode driver, installs ISRs, reprograms the 8253 timer, jumps into game.bin.  Owner of the gvar_* globals at FF00–FF7B. |
+| `core/game.asm` | 1,142 B | **The main-game initialiser.**  Loads font.grp, the gfx-mode chunk, town.bin, fight.bin, select.bin, itemp.grp, magic.grp, sword.grp, the level data, and the music tracks.  Tail-jumps into fight.bin's per-frame loop. |
+| `drivers/stdply.asm` | 233 B | **Player state record at game_seg:0x0000.**  29 canonical EQUs covering the player struct (DS:0x80–0xCF + 0xE6–0xE8): `town_player_col`, `fight_player_col`, `hero_gold_hi/lo`, `hero_bank_hi/lo`, `hero_almas`, `hero_HP`, `shield_HP`, char stats, `gvar_pose_idx`, etc.  No procs, only `db`/`dw` declarations. |
+| `drivers/stick.asm` | 4,150 B | **Input-driver chunk.**  Hosts `isr_timer` (int 08h hook that bumps `gvar_frame_timer`), `isr_keyboard` (int 09h scancode reader), `isr_critical`, `isr_music`, plus the SAR loader stub installed at CS:0x010C.  Joystick polling lives here too. |
+| `drivers/gmega.asm`, `gmcga.asm`, `gmhgc.asm`, `gmtga.asm`, `gmmcga.asm` | 3.5–8 KB each | **Per-mode menu/UI graphics drivers.**  Selected at boot from RESOURCE.CFG via `gvar_gfx_mode`.  Provide the CS:0x2000–0x204E driver-dispatch slots used during opening / title / inventory / shop UI rendering. |
+
+---
+
+## ZELRES1 — opening, title, town, GD/GT graphics drivers (12 code chunks)
+
+| Chunk | File | Bin size | Role |
+|---|---|---:|---|
+| 0 | `100OPDMO.asm` | 13,869 B | **Opening-cinematic / demo / save-loader.**  Slideshow of `nec.grp`/`dmaou.grp`/`hime.grp`/`ttl1-3.grp` with story text from the embedded prose at file offset 0x0FF3.  ENTER skips delays via the check at routine 0x03AF.  When zeliad.exe is re-execed with a savefile, this chunk also handles the LOAD path (game.asm:218). |
+| 1 | `101GDEGA.asm` | 5,508 B | **GD (game-display) driver, EGA mode.**  Tile / sprite / scroll primitives for the cavern-walking phase under EGA. |
+| 2 | `102GDCGA.asm` | 7,708 B | GD driver, CGA mode (interleaved 2-plane B800h framebuffer). |
+| 3 | `103GDHGC.asm` | 8,142 B | GD driver, Hercules mode. |
+| 4 | `104GDTGA.asm` | 8,862 B | GD driver, Tandy mode. |
+| 5 | `105GDMCA.asm` | 8,665 B | GD driver, MCGA mode. |
+| 6 | `106TOWN.asm` | 7,304 B | **Town walking + building dispatch.**  Hosts `frame_update`, `walk_left/right_move`, `walk_left/right_scroll`, `walk_left/right_audio`, the per-tile interactable trigger, and the building-dispatch fan-out to the shop chunks (210-219).  Reads/writes `town_player_col` (DS:0x83), `gvar_skip_input`, `gvar_pose_idx`, `gvar_text_ofs`, plus a long `[FF1A]`-driven anim wait loop. |
+| 7 | `107GTEGA.asm` | 3,920 B | **GT (game-text/inventory) driver, EGA.**  Selected when the inventory or NPC-dialog screen is drawn. |
+| 8 | `108GTCGA.asm` | 4,568 B | GT driver, CGA. |
+| 9 | `109GTHGC.asm` | 4,375 B | GT driver, Hercules. |
+| 10 | `110GTTGA.asm` | 5,407 B | GT driver, Tandy. |
+| 11 | `111GTMCA.asm` | 5,363 B | GT driver, MCGA. |
+
+(Chunks 12-23 in zelres1 are **data**: font.bin, image_*.grp, ttl1-3.grp,
+hime.grp, sprites.bin, animation tables, opening/ending music — not
+listed here.  See `ndisasm/output/` for raw disassembly if needed.)
+
+---
+
+## ZELRES2 — fight engine, character select, GF graphics drivers, shops, ending (21 code chunks)
+
+| Chunk | File | Bin size | Role |
+|---|---|---:|---|
+| 0 | `200FIGHT.asm` | 16,181 B | **THE main combat engine.**  Hosts the entity-list scan, sprite-blit pipeline, hit detection, HP/almas/gold arithmetic, scene-transition dispatch, the 27-slot fight-engine callback table at 0x6000–0x603E, and the 4-direction enemy-movement family.  Most heavily-renamed chunk in the project — see PHASE3 notes in AUDIT_TODO.  Key procs: `is_entity_known_type`, `entity_slot_write_tagged`, `world_x_to_screen_x`, `lookup_move_slot_family`, `enemy_sprite_blit`, `hero_HP_subtract`, `hero_almas_add`, `reset_combat_state`, `entity_move_{east,north,west,south}`, `compute_scroll_pos`. |
+| 1 | `201SELCT.asm` | 3,631 B | **Character-select / inventory screen.**  Hosts `item_qty_count`, `item_effect_val`, `cur_magic_idx`, `key_count` field handling.  The Inventory screen the user opens with [Enter] is rendered from here. |
+| 2 | `202GFEGA.asm` | 8,472 B | **GF (game-fight) driver, EGA.**  Sprite-fill / blit driver for the combat-phase framebuffer.  Macro-folded in 2026-04-30 cleanup. |
+| 3 | `203GFCGA.asm` | 8,897 B | GF driver, CGA.  Most heavily macro-folded (30 inline blocks → macro calls). |
+| 4 | `204GFHGC.asm` | 8,764 B | GF driver, Hercules. |
+| 5 | `205GFTGA.asm` | 9,769 B | GF driver, Tandy. |
+| 6 | `206GFMCA.asm` | 8,931 B | GF driver, MCGA. |
+| 7 | `207MOLE.asm` | 10,538 B | **Level / world-system loader.**  Loaded at game_seg+0x3000 by game.asm:296.  Handles per-area init: tileset selection, map data, music tracks per area, level-state setup. |
+| 8 | `208YMPD.asm` | 9,577 B | **Sub-area / map-handler chunk** (zelres2 ch 8).  Loaded by 207MOLE.  Per-area tile-attribute and physics tables. |
+| 9 | `209CKPD.asm` | 8,105 B | **Boss-state / cavern-end-card chunk.**  Boss-state machine glue (loaded into game segment for boss arenas). |
+| 10 | `210KINGP.asm` | 1,958 B | **King NPC dialog (story progression).**  Tumba-castle King Felishika dialog — gates Holy-Spirit story progression. |
+| 11 | `211OMOYP.asm` | 599 B | **Tiny dialog chunk** (Pope / Bishop / similar — the "give-the-quest" NPC). |
+| 12 | `212ARMRP.asm` | 7,243 B | **Weapons-master shop.**  Sword + shield purchase, shield repair.  Calls `check_gold_sufficient` (probe-tested). |
+| 13 | `213BANKP.asm` | 3,388 B | **Bank shop.**  Deposit/withdraw via `script_take_item` / `script_give_item`.  24-bit `hero_bank_hi/lo` add+adc probe-tested. |
+| 14 | `214CHURP.asm` | 1,002 B | **Church (resurrection NPC).** |
+| 15 | `215DRUGP.asm` | 4,650 B | **Magic-brewer shop.**  8 magic items (Ken'ko Potion, Juu-en Fruit, Elixir of Kashi, Chikara Powder, Magia Stone, Holy Water of Acero, Sabre Oil, Kioku Feather). |
+| 16 | `216INNAP.asm` | 1,300 B | **Inn (rest, HP restore).**  Per-town rate documented in TOWNS_AND_NPCS.md. |
+| 17 | `217KENJP.asm` | 6,977 B | **Sage (level-up + spell grant + save trigger).**  Reads char_exp_cap to gate level-up; writes save state. |
+| 18 | `236CMAP.asm` | 2,241 B | **Map-data chunk** (combat map / arena layout — Sourcer disasm exists). |
+| 19 | `238STMP.asm` | (data) | **Map-data chunk.** |
+| 20 | `239BSMP.asm` | (data) | **Boss-map data.** |
+| 21 | `250ENDMO.asm` | 8,687 B | **Ending cinematic / endmo (end-movie).**  Final cutscene playback after Jashiin defeat. |
+
+---
+
+## ZELRES3 — enemy AI + boss AI (20 code chunks)
+
+These are the per-enemy / per-boss handler chunks loaded into the game
+segment when the player enters a cavern that uses them.  All extend
+the fight-engine via the `fight_cb_*` callback table at 0x6000–0x603E
+(see `zr3com.inc`).
+
+| Chunk | File | Bin size | Role |
+|---|---|---:|---|
+| 0 | `300ROKAD.asm` | 1,452 B | **ROKAD enemy** — basic test enemy; small handler. |
+| 1–8 | `301EAI1.asm`..`308EAI8.asm` | 1.8–2.7 KB each | **Generic enemy-AI handlers EAI1..EAI8.**  Eight reusable AI shapes that 200FIGHT instances against the per-area enemy_id_table.  Each contains ~6 entity-handler entries dispatched via the move-slot family lookup. |
+| 9 | `309CRAB.asm` | 2,034 B | **Boss: Cangrejo** (Crab — Muralla / Malicia boss).  Per-Playthrough §2.3.1. |
+| 10 | `310TAKO.asm` | 2,726 B | **Boss: Pulpo** (Octopus — Satono / Peligro boss; "tako" = octopus). |
+| 11 | `311TORI.asm` | 2,024 B | **Boss: Pollo** (Bird — Bosque / Madera boss; "tori" = bird).  Most heavily-renamed boss chunk.  Procs: `tori_render_sprite_row`, `tori_swoop_tick`, `tori_apply_damage`, `tori_hp_dec_if_ge_D`, etc. |
+| 12 | `312ZELA.asm` | 1,580 B | **Boss: Agar** (Helada / Escarcha boss; "zela" = jelly?). |
+| 13 | `313MEDA.asm` | 2,188 B | **Boss: Vista** (Tumba / Corroer boss — the eyeball boss; "meda" = eyeball/medusa). |
+| 14 | `314LEGA.asm` | 2,077 B | **Boss: Tarso** (Dorado / Tesoro boss; "lega" = leg/tarsal segment).  Has a stack-frame coincidence with FF3C documented in `gvar_unk_ff3c`. |
+| 15 | `315ZEL2.asm` | 1,567 B | **Boss: Paguro** (Hermit Crab — Llama / Caliente; "zel2" = second jelly variant?).  Per-Playthrough this is a non-Tear boss who gives the Elf Crest. |
+| 16 | `316DRGN.asm` | 2,989 B | **Boss: Dragon** (Pureza / Absor; literally `dragon`). |
+| 17 | `317AKMA.asm` | 2,814 B | **Boss: Alguien** (penultimate boss; "akma" = demon/devil — Japanese 悪魔). |
+| 18 | `318MAO1.asm` | 1,441 B | **Final-boss arena part 1: Jashiin** (first phase; "mao" = demon king — Japanese 魔王). |
+| 19 | `319MAO2.asm` | 3,187 B | **Final-boss arena part 2: Jashiin** (second/transformed phase). |
+
+(Chunks 20+ in zelres3 are **data**: per-enemy sprite sheets, the
+ENPx pattern tables, music chunks MUSx, the per-area MPPx maps.)
+
+---
+
+## How chunks are reached at runtime
 
 ```
-zeliad.exe
-    └─> Loads game.bin (main engine)
-        ├─> Loads zelres1 chunks (player systems)
-        ├─> Loads zelres2 chunks (combat/AI systems)
-        └─> Loads zelres3 chunks (level systems)
+                              ┌──────────────────────────────────────┐
+zeliad.exe ─────► game.bin ──►│  Title screen (100OPDMO + ttl1-3)    │
+                              │           │                          │
+                              │           ▼                          │
+                              │   New / Load select                  │
+                              │           │                          │
+                              │   ┌───────┴────────┐                 │
+                              │   ▼                ▼                 │
+                              │ 106TOWN ◄──────► 200FIGHT (cavern)   │
+                              │   │ │             │                  │
+                              │   │ │             ▼                  │
+                              │   │ │           Enemy AI: 30x EAIN   │
+                              │   │ │             │                  │
+                              │   │ │             ▼                  │
+                              │   │ │           Boss arena:          │
+                              │   │ │           309CRAB / 310TAKO /  │
+                              │   │ │           311TORI / 312ZELA /  │
+                              │   │ │           313MEDA / 314LEGA /  │
+                              │   │ │           315ZEL2 / 316DRGN /  │
+                              │   │ │           317AKMA / 318MAO1 /  │
+                              │   │ │           319MAO2              │
+                              │   │ │             │                  │
+                              │   │ │             ▼                  │
+                              │   │ ▼           250ENDMO (after final│
+                              │   │  Shop chunks (Felicia rescue)    │
+                              │   │  210-219                         │
+                              │   ▼                                  │
+                              │ Inventory screen (201SELCT)          │
+                              └──────────────────────────────────────┘
 ```
 
-Each chunk contains:
-- **Executable code** (functions, game logic)
-- **Data tables** (stats, configurations)
-- **Jump tables** (entry points for calling functions)
+Every chunk except 100OPDMO and 250ENDMO is loaded INTO an existing
+game segment via `sar_loader_fn` at CS:0x010C — the loader fixes up
+their internal jump tables and they execute in-place.  See
+ARCHITECTURE.md §3 for loader call ABI.
 
 ---
 
-## Quick Reference Table
-
-### ZELRES1 - Opening Scene & Player Systems (14 chunks)
-
-| Chunk | Size | Priority | Content | Walkthrough |
-|-------|------|----------|---------|-------------|
-| **00** | 14KB | ⭐⭐⭐ | **Opening scene & player core** | zelres1_chunk_00_player_core_walkthrough.md |
-| **01** | 5.5KB | ⭐⭐ | **Image controller** | zelres1_chunk_01_image_controller_walkthrough.md |
-| 02 | 8KB | ⭐ | Equipment/inventory | zelres1_chunk_02_equipment_walkthrough.md |
-| 03 | 8KB | ⭐⭐ | Image decode/rendering | zelres1_chunk_03_walkthrough.md |
-| 04 | 9KB | ⭐ | Stats/attributes | zelres1_chunk_04_stats_walkthrough.md |
-| 05 | 8KB | ⭐⭐ | Palette & graphics | zelres1_chunk_05_walkthrough.md |
-| **06** | 12KB | ⭐⭐⭐ | **Advanced player** | zelres1_chunk_06_player_advanced_walkthrough.md |
-| 07 | 3.9KB | ⭐ | VGA decompressor | zelres1_chunk_07_vga_decompressor_walkthrough.md |
-| 08 | 4.5KB | ⭐ | Image decoder A | zelres1_chunk_08_image_decoder_a_walkthrough.md |
-| 09 | 4.3KB | ⭐ | Image decoder B | zelres1_chunk_09_image_decoder_b_walkthrough.md |
-| 10 | 5.4KB | ⭐ | Large images (48×34) | zelres1_chunk_10_large_image_renderer_walkthrough.md |
-| 11 | 5.3KB | ⭐ | Small images (32×18) | zelres1_chunk_11_small_image_renderer_walkthrough.md |
-| 24 | 4KB | ⭐ | Utilities | zelres1_chunk_24_utilities_walkthrough.md |
-| 30 | 3KB | ⭐ | Small utility | zelres1_chunk_30_utility_walkthrough.md |
-
-### ZELRES2 - Combat & AI Systems (20 chunks)
-
-| Chunk | Size | Priority | Content | Entry Point |
-|-------|------|----------|---------|-------------|
-| **00** | 16KB | ⭐⭐⭐ | **Main game systems, UI** | CS:0x6000 |
-| 01 | 11KB | ⭐⭐ | Combat system core | CS:0x7000 |
-| **02** | 24KB | ⭐⭐⭐ | **Damage calculation** | CS:0x8000 |
-| 03 | 23KB | ⭐⭐ | Physics subsystems | CS:0x9000 |
-| **04** | 20KB | ⭐⭐⭐ | **Physics engine** | CS:0xA000 |
-| **05** | 25KB | ⭐⭐⭐ | **Enemy AI framework** | CS:0xB000 |
-| **06** | 21KB | ⭐⭐⭐ | **Enemy AI behaviors** | CS:0xC000 |
-| 07 | 2KB | ⭐ | Enemy: Slime behavior | CS:0xD000 |
-| 08 | 3KB | ⭐ | Enemy: Bat behavior | CS:0xE000 |
-| 09 | 2KB | ⭐ | Enemy: Spider behavior | CS:0xF000 |
-| 10 | 2KB | ⭐ | Enemy: Skeleton behavior | CS:0x10000 |
-| 12 | 3KB | ⭐ | Enemy: Ghost behavior | CS:0x11000 |
-| 13 | 2KB | ⭐ | Enemy: Goblin behavior | CS:0x12000 |
-| 14 | 2KB | ⭐ | Enemy: Orc behavior | CS:0x13000 |
-| 15 | 2KB | ⭐ | Enemy: Wizard behavior | CS:0x14000 |
-| 16 | 2KB | ⭐ | Boss behavior system | CS:0x15000 |
-| 17 | 1KB | ⭐ | Special enemy type | CS:0x16000 |
-| 38 | 0.4KB | ⭐ | Utility functions | CS:0x17000 |
-| 39 | 0.4KB | ⭐ | Utility functions | CS:0x18000 |
-
-### ZELRES3 - Town, NPC & Boss Systems (12 chunks)
-
-| Chunk | Size | Priority | Content | Entry Point |
-|-------|------|----------|---------|-------------|
-| 00 | 3KB | ⭐ | Level loader/manager | CS:0x6000 |
-| 14 | 7KB | ⭐ | Level renderer | CS:0x7000 |
-| 16 | 0.4KB | ⭐ | Level utility | CS:0x8000 |
-| 31 | 0.4KB | ⭐ | Level utility | CS:0x9000 |
-
----
-
-## Critical Chunks - Detailed Analysis
-
-### 🔴 ZELRES1/Chunk_00 - Player Core Mechanics (14KB)
-
-**Purpose**: Foundation of player control - movement, jumping, input handling
-**Loaded at**: CS:0x6000
-**Entry Point**: game.bin jumps here after initialization
-**Calls**: Graphics driver functions, input manager, collision system
-
-**Key Functions** (analyzed from disassembly):
-
-1. **Player Movement Handler** (CS:0x6000+0x0155):
-   - Reads keyboard/joystick input
-   - Updates player X/Y velocity
-   - Applies friction and acceleration
-   - 8-way directional movement
-   ```assembly
-   ; Check left movement:
-   test byte [cs:0xff16],0x08  ; Left key pressed?
-   jz skip_left
-   sub word [cs:0xff39],-2     ; Move left (velocity)
-   ```
-
-2. **Jump Handler** (CS:0x6000+0x02AF):
-   - Applies initial jump velocity
-   - Checks if on ground (collision)
-   - Handles double-jump mechanic
-   - Jump height based on button hold time
-   ```assembly
-   ; Jump logic:
-   cmp byte [cs:0xff40],0      ; On ground?
-   jnz cant_jump
-   mov word [cs:0xff3c],-8     ; Initial Y velocity
-   ```
-
-3. **Collision Detection** (CS:0x6000+0x0410):
-   - Checks player bounding box against tiles
-   - Handles slopes and platforms
-   - Determines if on ground, ceiling, or wall
-   - Updates player position based on collisions
-
-4. **Animation State Machine** (CS:0x6000+0x0610):
-   - Tracks player state: idle, walking, jumping, falling, attacking
-   - Selects animation frame based on state and timer
-   - Updates sprite index for rendering
-   ```c
-   // Pseudocode:
-   if (on_ground) {
-       if (velocity_x != 0) state = WALKING;
-       else state = IDLE;
-   } else {
-       if (velocity_y < 0) state = JUMPING;
-       else state = FALLING;
-   }
-   ```
-
-5. **Equipment Management** (CS:0x6000+0x0810):
-   - Handles sword equipped/not equipped
-   - Manages shield blocking
-   - Armor defense calculations
-   - Accessory effects (ring, amulet)
-
-**Documented**: See [OPENING_SCENE_ANALYSIS.md](OPENING_SCENE_ANALYSIS.md) for partial analysis
-
----
-
-### 🔴 ZELRES2/Chunk_00 - Main Game Systems (16KB)
-
-**Purpose**: Core game loop, UI rendering, save/load, state management
-**Loaded at**: CS:0x6000
-**Entry Point**: Called by game.bin every frame
-
-**Key Systems**:
-
-1. **Game Loop** (CS:0x6000+0x0000):
-   ```assembly
-   game_loop:
-       call update_timer       ; 18.2 Hz tick counter
-       call read_input         ; Keyboard/joystick
-       call update_player      ; Player chunk_00
-       call update_enemies     ; Enemy AI chunk_05/06
-       call update_physics     ; Physics chunk_04
-       call render_frame       ; Draw everything
-       call check_state        ; Menu/pause/game over?
-       jmp game_loop
-   ```
-
-2. **HUD Rendering** (CS:0x6000+0x0200):
-   - Draws health bar (red/green gradient)
-   - Draws mana bar (blue gradient)
-   - Displays score (6 digits)
-   - Shows lives remaining (icon × count)
-   - Level number display
-
-3. **Save/Load System** (CS:0x6000+0x0400):
-   - Writes save file (.USR format)
-   - Stores player stats, position, inventory
-   - Checkpoint system (save point markers)
-   - Load game from file
-
-4. **State Machine** (CS:0x6000+0x0600):
-   - Title screen → New Game / Load Game
-   - Playing → Pause Menu → Playing
-   - Playing → Game Over → Title
-   - Playing → Level Complete → Next Level
-
----
-
-### 🔴 ZELRES2/Chunk_02 - Damage Calculation (24KB)
-
-**Purpose**: Combat formulas, attack/defense, critical hits, damage types
-**Loaded at**: CS:0x8000
-
-**Key Functions**:
-
-1. **Calculate Damage** (CS:0x8000+0x0000):
-   ```c
-   // Pseudocode reconstruction:
-   int calculate_damage(attacker, defender) {
-       base_damage = attacker.attack_power;
-       defense = defender.defense_value;
-
-       // Formula: damage = (attack² / defense) - defense/4
-       damage = (base_damage * base_damage) / defense;
-       damage -= defense / 4;
-
-       // Critical hit (10% chance):
-       if (random(100) < 10) {
-           damage *= 2;
-           show_critical_effect();
-       }
-
-       // Elemental modifiers:
-       if (attacker.element == defender.weakness) {
-           damage *= 1.5;
-       }
-
-       // Minimum damage:
-       if (damage < 1) damage = 1;
-
-       return damage;
-   }
-   ```
-
-2. **Attack Types**:
-   - **Melee**: Sword swing, arc collision detection
-   - **Projectile**: Arrow/fireball with trajectory
-   - **Magic**: Spell effects with area-of-effect
-   - **Environmental**: Spikes, lava, falling damage
-
-3. **Defense Calculation**:
-   ```assembly
-   ; Reduce damage by armor:
-   mov ax,[player_armor]       ; AX = armor value (0-255)
-   shr ax,2                    ; Divide by 4
-   sub [damage_amount],ax      ; Subtract from damage
-   ```
-
----
-
-### 🔴 ZELRES2/Chunk_04 - Physics Engine (20KB)
-
-**Purpose**: Gravity, collision detection, platform physics
-**Loaded at**: CS:0xA000
-
-**Key Systems**:
-
-1. **Gravity System** (CS:0xA000+0x0000):
-   ```assembly
-   ; Apply gravity every frame:
-   mov ax,[cs:0xff3c]          ; AX = Y velocity
-   add ax,2                    ; Gravity = 2 pixels/frame
-   cmp ax,16                   ; Terminal velocity = 16
-   jle no_cap
-   mov ax,16
-   no_cap:
-   mov [cs:0xff3c],ax          ; Store new velocity
-   ```
-
-2. **Collision Detection** (CS:0xA000+0x0200):
-   ```c
-   // Tile-based collision:
-   bool check_collision(x, y, width, height) {
-       // Convert pixel coords to tile coords:
-       tile_x = x / 16;
-       tile_y = y / 16;
-
-       // Check 4 corners of bounding box:
-       for (corner in [top_left, top_right, bottom_left, bottom_right]) {
-           tile = get_tile_at(corner_x, corner_y);
-           if (tile.solid) return true;
-       }
-       return false;
-   }
-   ```
-
-3. **Platform Types**:
-   - **Solid**: Full block, stops all movement
-   - **One-way**: Can jump through from below
-   - **Slopes**: 45° angles, adjust Y based on X
-   - **Ladders**: Override gravity, allow up/down movement
-
-4. **Velocity Integration** (CS:0xA000+0x0400):
-   ```c
-   void update_position() {
-       // Apply velocity (fixed-point 8.8):
-       player_x += velocity_x;
-       player_y += velocity_y;
-
-       // Check collisions:
-       if (check_collision(player_x, player_y, 16, 24)) {
-           // Resolve collision:
-           player_x -= velocity_x;  // Undo movement
-           velocity_x = 0;           // Stop velocity
-       }
-   }
-   ```
-
----
-
-### 🔴 ZELRES2/Chunk_05 - Enemy AI Framework (25KB)
-
-**Purpose**: State machine for all enemy types, pathfinding, behavior tree
-**Loaded at**: CS:0xB000
-
-**AI Architecture**:
-
-```
-┌─────────────────────────────────┐
-│   AI Framework (Chunk_05)       │
-│                                  │
-│  ┌──────────────────────────┐   │
-│  │  State Machine           │   │
-│  │  - IDLE                  │   │
-│  │  - PATROL                │   │
-│  │  - CHASE                 │   │
-│  │  - ATTACK                │   │
-│  │  - RETREAT               │   │
-│  │  - DEAD                  │   │
-│  └──────────────────────────┘   │
-│                                  │
-│  ┌──────────────────────────┐   │
-│  │  Pathfinding             │   │
-│  │  - A* for complex paths  │   │
-│  │  - Line-of-sight check   │   │
-│  │  - Obstacle avoidance    │   │
-│  └──────────────────────────┘   │
-│                                  │
-│  ┌──────────────────────────┐   │
-│  │  Behavior Functions      │   │
-│  │  - update_state()        │   │
-│  │  - calculate_path()      │   │
-│  │  - select_attack()       │   │
-│  └──────────────────────────┘   │
-└─────────────────────────────────┘
-         │
-         ├─> Chunk_07 (Slime AI)
-         ├─> Chunk_08 (Bat AI)
-         ├─> Chunk_09 (Spider AI)
-         ├─> Chunk_10 (Skeleton AI)
-         └─> ... (other enemy types)
-```
-
-**Key Functions**:
-
-1. **State Update** (CS:0xB000+0x0000):
-   ```c
-   void update_enemy_state(enemy_id) {
-       enemy = get_enemy(enemy_id);
-
-       switch (enemy.state) {
-           case IDLE:
-               if (player_nearby(200)) {
-                   enemy.state = CHASE;
-                   enemy.alert_timer = 30;  // 30 frames alert
-               }
-               break;
-
-           case PATROL:
-               move_along_path();
-               if (player_in_sight()) {
-                   enemy.state = CHASE;
-               }
-               break;
-
-           case CHASE:
-               move_towards_player();
-               if (player_in_attack_range(32)) {
-                   enemy.state = ATTACK;
-                   enemy.attack_timer = 0;
-               }
-               if (distance_to_player() > 400) {
-                   enemy.state = PATROL;  // Give up chase
-               }
-               break;
-
-           case ATTACK:
-               execute_attack();
-               enemy.attack_timer++;
-               if (enemy.attack_timer > attack_duration) {
-                   enemy.state = CHASE;
-               }
-               break;
-
-           case RETREAT:
-               if (enemy.health > enemy.max_health * 0.3) {
-                   enemy.state = CHASE;  // Recovered
-               }
-               break;
-       }
-   }
-   ```
-
-2. **Pathfinding** (CS:0xB000+0x0400):
-   - Simplified A* for tile-based maps
-   - Checks 8 directions (orthogonal + diagonal)
-   - Avoids solid tiles and hazards
-   - Caches path for 60 frames
-
-3. **Line-of-Sight** (CS:0xB000+0x0600):
-   ```assembly
-   ; Check if player visible:
-   mov ax,[enemy_x]
-   mov bx,[player_x]
-   call bresenham_line         ; Trace line
-   test byte [obstruction],0xff
-   jnz no_sight
-   ; Player visible!
-   ```
-
----
-
-### 🔴 ZELRES2/Chunk_06 - Enemy Behaviors (21KB)
-
-**Purpose**: Specific behavior implementations called by AI framework
-**Loaded at**: CS:0xC000
-
-**Behavior Types**:
-
-1. **Ground Patrol** (CS:0xC000+0x0000):
-   - Walk left/right on platforms
-   - Turn around at edges or walls
-   - Jump over small gaps
-
-2. **Flying Pattern** (CS:0xC000+0x0200):
-   - Sine wave flight path
-   - Divebomb attacks
-   - Return to patrol height
-
-3. **Ranged Attacker** (CS:0xC000+0x0400):
-   - Maintain distance from player
-   - Shoot projectiles
-   - Dodge player attacks
-
-4. **Tank Behavior** (CS:0xC000+0x0600):
-   - Slow movement
-   - High health
-   - Charge attacks when near player
-
-5. **Boss Patterns** (CS:0xC000+0x0800):
-   - Multi-phase battles
-   - Pattern changes at 75%, 50%, 25% health
-   - Special attacks at low health
-
----
-
-## Enemy Type Chunks (ZELRES2/Chunks 07-17)
-
-### Common Structure
-
-All enemy type chunks follow this pattern:
-
-```assembly
-; Entry point:
-0x0000  jmp init_enemy          ; Initialize enemy instance
-0x0003  jmp update_enemy        ; Called every frame
-0x0006  jmp on_hit              ; Called when damaged
-0x0009  jmp on_death            ; Called when health = 0
-0x000C  jmp on_player_touch     ; Called on collision with player
-
-; Data section:
-0x0100  dw attack_power         ; Stats
-0x0102  dw defense
-0x0104  dw max_health
-0x0106  dw movement_speed
-0x0108  db sprite_sheet_id
-...
-```
-
-### Individual Enemy Behaviors
-
-**Chunk_07 - Slime** (2KB):
-- Ground-based, slow movement
-- No jump capability
-- Splits into 2 smaller slimes on death
-- Low HP, low damage
-
-**Chunk_08 - Bat** (3KB):
-- Flying enemy
-- Erratic movement pattern (random direction changes)
-- Divebomb attack when player below
-- Low HP, medium damage
-
-**Chunk_09 - Spider** (2KB):
-- Wall-crawling capability
-- Drops from ceiling onto player
-- Web projectile attack (slows player)
-- Medium HP, low damage
-
-**Chunk_10 - Skeleton** (2KB):
-- Ground-based, medium speed
-- Throws bones (projectile)
-- Reassembles after 5 seconds if not hit while down
-- Medium HP, medium damage
-
-**Chunk_12 - Ghost** (3KB):
-- Flying, phases through walls
-- Invisible until player nearby
-- Drains mana on touch
-- Low HP, but hard to hit (phases)
-
-**Chunk_13 - Goblin** (2KB):
-- Ground-based, fast movement
-- Throws daggers
-- Retreats when low health
-- Low HP, high damage
-
-**Chunk_14 - Orc** (2KB):
-- Ground-based, slow but strong
-- Shield blocks frontal attacks
-- Overhead swing attack (high damage)
-- High HP, high defense
-
-**Chunk_15 - Wizard** (2KB):
-- Ground-based, teleports
-- Casts fireballs
-- Summons smaller enemies
-- Low HP, high damage spells
-
-**Chunk_16 - Boss Behaviors** (2KB):
-- Generic boss framework
-- Phase transitions
-- Invincibility periods
-- Special attacks
-
-**Chunk_17 - Special Enemy** (1KB):
-- Unique enemy type (mini-boss?)
-- Specific level encounter
-- Custom behavior not using standard AI
-
----
-
-## Level System Chunks (ZELRES3)
-
-### Chunk_00 - Level Loader (3KB)
-
-**Purpose**: Loads level data, spawns enemies, initializes map
-
-**Functions**:
-1. **Load Level Data**:
-   - Reads tile map from data chunks
-   - Parses enemy spawn points
-   - Sets up item locations
-   - Initializes parallax backgrounds
-
-2. **Spawn Enemies**:
-   ```c
-   void spawn_enemies(level_id) {
-       spawn_table = load_spawn_table(level_id);
-       for (spawn in spawn_table) {
-           enemy = create_enemy(spawn.type);
-           enemy.x = spawn.x;
-           enemy.y = spawn.y;
-           enemy.ai_chunk = spawn.behavior_chunk;
-           add_to_active_enemies(enemy);
-       }
-   }
-   ```
-
-### Chunk_14 - Level Renderer (7KB)
-
-**Purpose**: Renders tilemap, handles parallax, scrolling
-
-**Rendering Pipeline**:
-```
-1. Calculate camera position (center on player)
-2. Render far parallax layer (0.2× scroll speed)
-3. Render mid parallax layer (0.5× scroll speed)
-4. Render tile layer (1× scroll speed)
-5. Render enemies
-6. Render player
-7. Render foreground layer (1.2× scroll speed)
-8. Render effects (particles, explosions)
-```
-
----
-
-## Utility Chunks
-
-### ZELRES1/Chunk_24 (4KB) - Utility Functions
-
-- **String manipulation** (strcpy, strlen, strcat)
-- **Math functions** (multiply 16-bit, divide, sqrt)
-- **Random number generator** (linear congruential)
-- **Memory management** (alloc, free for dynamic objects)
-
-### ZELRES2/Chunk_38 & 39 (0.4KB each) - Utility Functions
-
-- **Bit manipulation** helpers
-- **Fixed-point math** (8.8 format conversions)
-- **Lookup tables** (sin/cos for angles)
-
----
-
-## Loading Strategy
-
-### Dynamic Loading
-
-Game doesn't load all chunks at once - loads based on need:
-
-```
-Title Screen:
-  - zelres1/chunk_00 (player sprites for preview)
-
-Start Game:
-  - zelres1/chunk_00, 02, 04, 06 (full player system)
-  - zelres2/chunk_00 (game loop)
-  - zelres2/chunk_02, 04 (combat, physics)
-  - zelres3/chunk_00, 14 (level system)
-
-Load Level 1:
-  - zelres2/chunk_05, 06 (AI framework)
-  - zelres2/chunk_07, 08, 09 (enemy types for level 1)
-  - zelres3/chunk_01 (level 1 map data)
-
-Boss Battle:
-  - zelres2/chunk_16 (boss behaviors)
-  - Specific boss chunk (varies by level)
-```
-
----
-
-## Memory Map (Typical Configuration)
-
-```
-CS+0x0000: game.bin core code
-CS+0x1000: Active player chunk (zelres1/chunk_00)
-CS+0x2000: Active combat chunk (zelres2/chunk_02)
-CS+0x3000: Active physics chunk (zelres2/chunk_04)
-CS+0x4000: Active AI chunk (zelres2/chunk_05)
-CS+0x5000: Active enemy chunks (zelres2/chunk_07+)
-CS+0x6000: Active level chunk (zelres3/chunk_14)
-CS+0x7000: Buffer for loading next chunk
-```
-
-**Memory Constraints**: DOS real mode = 640KB total
-- Game uses ~256KB for code/data
-- Leaves ~384KB for graphics, sound, stack
-
----
-
-## Function Calling Convention
-
-### Standard Pattern Across All Chunks
-
-```assembly
-; Entry points via jump table:
-chunk_start:
-    jmp function_1      ; +0x00
-    jmp function_2      ; +0x03
-    jmp function_3      ; +0x06
-    ...
-
-; Function implementation:
-function_1:
-    push bp             ; Save caller's base pointer
-    mov bp,sp           ; Set up stack frame
-    sub sp,10           ; Allocate local variables
-
-    ; ... function body ...
-
-    mov sp,bp           ; Restore stack
-    pop bp
-    ret
-```
-
-### Inter-Chunk Communication
-
-```c
-// Call function in another chunk:
-typedef void (*ChunkFunc)(int param);
-
-// Function pointers stored at known offsets:
-ChunkFunc player_update = (ChunkFunc)(zelres1_base + 0x0000);
-ChunkFunc physics_step = (ChunkFunc)(zelres2_base + 0x0400);
-
-// Game loop calls across chunks:
-player_update(delta_time);
-physics_step(delta_time);
-```
-
----
-
-## Documentation Status
-
-### Fully Documented
-- ✅ **ZELRES1/Chunk_00** - See [OPENING_SCENE_ANALYSIS.md](OPENING_SCENE_ANALYSIS.md)
-
-### Detailed Walkthroughs Created
-- ✅ **This document** - High-level overview of all 29 chunks
-
-### Ready for Deep Dive
-All 29 chunks disassembled and available at:
-```
-3_Assembly/tasm/working/
-├── zelres1_chunks/
-│   ├── chunk_00.asm (14KB disassembly)
-│   ├── chunk_02.asm
-│   ├── chunk_04.asm
-│   ├── chunk_06.asm
-│   ├── chunk_24.asm
-│   └── chunk_30.asm
-├── zelres2_chunks/
-│   ├── chunk_00.asm (16KB disassembly)
-│   ├── chunk_01.asm
-│   ├── ... (19 total)
-│   └── chunk_39.asm
-└── zelres3_chunks/
-    ├── chunk_00.asm
-    ├── chunk_14.asm
-    ├── chunk_16.asm
-    └── chunk_31.asm
-```
-
----
-
-## Next Steps for Deep Analysis
-
-### Priority 1: Critical Systems
-1. **ZELRES2/Chunk_00** - Main game loop (create dedicated walkthrough)
-2. **ZELRES2/Chunk_04** - Physics engine (create dedicated walkthrough)
-3. **ZELRES2/Chunk_05** - AI framework (create dedicated walkthrough)
-
-### Priority 2: Combat Systems
-4. **ZELRES2/Chunk_02** - Damage calculation (create dedicated walkthrough)
-5. **ZELRES2/Chunk_06** - Enemy behaviors (create dedicated walkthrough)
-
-### Priority 3: Enemy Types
-6. **ZELRES2/Chunks 07-17** - All enemy implementations (consolidated walkthrough)
-
-### Priority 4: Level Systems
-7. **ZELRES3/Chunks 00 & 14** - Level loading and rendering (consolidated walkthrough)
-
----
-
-## Tools and Commands
-
-### View Disassembly
-```bash
-# View specific chunk:
-cat "3_Assembly/tasm/working/zelres2/code/main_game_loop.asm"
-
-# Search for function:
-grep -n "mov ax" "zelres2/code/main_game_loop.asm"
-
-# Count instructions:
-wc -l "zelres1/code/opening_scene.asm"
-```
-
-### Extract Specific Function
-```bash
-# Get lines 100-200 (specific function):
-sed -n '100,200p' "zelres2/code/animation_system.asm"
-```
-
----
-
-## Summary
-
-Zeliard's modular chunk architecture demonstrates excellent software engineering for 1990:
-
-- ✅ **Dynamic loading** - Only load code when needed (memory efficiency)
-- ✅ **Separation of concerns** - Player/Combat/AI/Level systems isolated
-- ✅ **Reusable framework** - Generic AI framework supports many enemy types
-- ✅ **Maintainable** - Each chunk ~1-25KB, easy to understand individually
-- ✅ **Flexible** - Can add new enemies/levels without touching core code
-
-**Total Executable Code**: ~300KB across 46 chunks
-**All chunks documented**: 41 walkthrough files + 4 data references = 45 total files
-**Documentation size**: 1.4MB
-**Total Game Assets**: ~924KB across 120 total chunks
-**Architecture**: Modular, event-driven, state machine based
-
-This chunk-based design was ahead of its time - modern games use similar "streaming" architectures to load assets on-demand!
-
----
-
-## Related Documentation
-
-- [OPENING_SCENE_ANALYSIS.md](OPENING_SCENE_ANALYSIS.md) - zelres1/chunk_00 detailed analysis
-- [CHUNK_GUIDE.md](../CHUNK_GUIDE.md) - Complete chunk inventory
-- [game_bin_walkthrough.md](game_bin_walkthrough.md) - Main engine loader
-- [EXECUTION_FLOW_MAP.md](../EXECUTION_FLOW_MAP.md) - How chunks interact
-
-For detailed walkthrough of any specific chunk, see individual chunk analysis files or create from disassembly at `3_Assembly/tasm/working/`.
+## Cross-references
+
+- **ARCHITECTURE.md** — full boot trace + per-frame loop + dispatch slots
+- **MECHANICS_TO_UNDERSTAND.md** — what each chunk's mechanics still need investigation
+- **`zr1com.inc` / `zr2com.inc` / `zr3com.inc`** — shared EQUs across each archive's chunks
+- **`stdply.inc`** — canonical player-record field definitions
+- **`functest/INDEX.md`** — runtime-test catalog (which chunks have probe tests)
+
+_Last updated 2026-04-30, after the cleanup pass that removed the
+46 per-chunk walkthrough files (their content was either obsoleted by
+Phase 2-3 renames or now lives directly in the chunks' .asm headers
+as canonical EQU + comment blocks).  The .asm source itself is now
+the single source of truth for chunk semantics._

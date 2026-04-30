@@ -314,8 +314,11 @@ call into these.
 
 ## 7. What this document does NOT cover
 
-- **Pixel-level blit semantics** for any specific gfx mode driver —
-  see `gm{ega,cga,hgc,tga,mcga}_walkthrough.md`.
+- **Pixel-level blit semantics** for any specific gfx-mode driver —
+  read the driver's `.asm` directly (the per-driver walkthrough docs
+  were dropped in the 2026-04-30 cleanup as stale; ARCHITECTURE.md
+  §5 plus the EQU comments in each `gm*.asm` are now the source of
+  truth).
 - **Music tracker mechanics** — int 61h handler chain, note advance,
   PCM playback.  Out of scope until someone reverse-engineers the
   music driver internals.

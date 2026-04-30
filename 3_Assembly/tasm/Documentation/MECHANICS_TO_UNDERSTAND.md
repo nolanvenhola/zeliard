@@ -5,8 +5,10 @@ Curated from:
 - `4_Resources/Documentation/Zeliard_*.pdf` (bosses / enemies / friends / towns / weapons / magic / items)
 - `4_Resources/GameData/*.md` (in-house mechanics summaries)
 - `4_Resources/Playthrough.txt` (Alan Franciškovic's official FAQ — 3,465 lines, 12 sections)
-- `3_Assembly/tasm/Documentation/CHUNKS/*.md` (chunk-walkthroughs — 46 markdown files)
+- `3_Assembly/tasm/Documentation/code_chunks_overview.md` (chunk dictionary)
 - `3_Assembly/tasm/Documentation/ARCHITECTURE.md` (control-flow narrative)
+- The cleaned `.asm` source itself — every chunk's role is now documented in
+  the EQU + comment-block headers of its own .asm (single source of truth)
 
 Status legend:
 - ✓ **fully traced** — assembly identified, behavior understood, runtime tests
@@ -352,7 +354,7 @@ A reasonable order of attack for the not-yet-investigated half: **3 → 1 → 5 
 ## Workflow per item
 
 For each ❌ row promoting to ⚠:
-1. Identify the relevant chunk(s) and source addresses from the chunk walkthroughs + ARCHITECTURE.md
+1. Identify the relevant chunk(s) and source addresses from `code_chunks_overview.md` + ARCHITECTURE.md, then read the chunk's `.asm` directly
 2. Open the chunk in IDE, read the relevant proc body
 3. Stamp a probe via `functest/new.py` if behavior is testable in Unicorn
 4. If runtime-only (DOS/joystick/music coupling): add to `4_Resources/Documentation/INTEGRATION_GAP.md` for DOSBox-side verification
@@ -363,9 +365,10 @@ For each ⚠ row promoting to ✓:
 1. Either add a runtime test that locks in the current understanding, or
 2. Trace into adjacent chunks until the full chain is documented end-to-end
 
-The bar for ✓: a new contributor can read your notes + the chunk
-walkthrough and re-implement the mechanic in any language without
-re-tracing the disassembly.
+The bar for ✓: a new contributor can read your notes + the chunk's
+`.asm` (which carries the canonical EQU + comment-block headers) and
+re-implement the mechanic in any language without re-tracing the
+disassembly from raw Sourcer output.
 
 ---
 
