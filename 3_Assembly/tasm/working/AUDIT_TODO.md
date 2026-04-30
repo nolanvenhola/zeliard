@@ -340,15 +340,23 @@ sequence game phases (title → opening → cavern → fight → boss → ending
 
 | Done | Step | Output | Effort |
 |:---:|---|---|---|
-| [ ] | Trace zeliad.exe entry to first SAR-loaded chunk | flow diagram of boot sequence | 2h |
-| [ ] | Document the per-frame ISR + main-loop dispatcher | sequence diagram for one cavern frame | 3h |
-| [ ] | Map the chunk-load state machine (`sar_loader_fn`, chunk swap logic) | state diagram | 3h |
-| [ ] | Identify cross-chunk callbacks (`fight_cb_*`, gfx-driver dispatch slots in 0x2000–0x204E) | dispatch table reference doc | 3h |
-| [ ] | Per-game-phase walkthrough (how town → fight transition works at the byte level) | narrative doc | 4h |
+| [x] | Trace zeliad.exe entry to first SAR-loaded chunk | §1 boot sequence | 1h |
+| [x] | Document the per-frame ISR + main-loop dispatcher | §4 frame loop + ISR family | 1h |
+| [x] | Map the chunk-load state machine (`sar_loader_fn`, chunk swap logic) | §3 SAR loader mechanics | 0.5h |
+| [x] | Identify cross-chunk callbacks (`fight_cb_*`, gfx-driver dispatch slots in 0x2000–0x204E) | §5 dispatch slot tables | 0.5h |
+| [x] | Per-game-phase walkthrough (how town → fight transition works at the byte level) | §6 phase walkthrough | 1h |
 
 DOD: a `3_Assembly/Documentation/ARCHITECTURE.md` describing the
 control-flow architecture with diagrams, suitable for onboarding a new
 contributor without re-deriving everything from disassembly.
+
+**Result**: `3_Assembly/tasm/Documentation/ARCHITECTURE.md` shipped (7
+sections, ~250 lines).  Covers boot → memory layout → SAR loader →
+frame loop → dispatch slots → phase walkthrough, plus a "what this
+doc does NOT cover" trailer pointing to the per-chunk walkthroughs
+that already exist (game_bin_walkthrough.md, gm*_walkthrough.md, etc.).
+Complementary to `code_chunks_overview.md` (chunk enumeration) — this
+doc is the control-flow narrative.
 
 ### Out of scope (different audit style, listed for completeness)
 
