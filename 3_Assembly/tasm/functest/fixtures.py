@@ -144,3 +144,65 @@ def stub_video_drivers(harness, thunk_offset_start=0x100) -> dict[int, int]:
     return seed_dispatch_table(
         harness, GFX_DRIVER_SLOTS, thunk_offset_start
     )
+
+
+# ---------- regression-test helper -------------------------------------
+def check_regression(
+    harness, func_addr, *,
+    regs=None, stub_calls=None, max_steps=200,
+    expected_diffs=None, expected_flags=None, expected_regs=None,
+    label='',
+):
+    """Run a function and compare its observable effects against a
+    captured golden.  Returns (ok, msg) where `ok` is True iff every
+    `expected_*` field present matched what the function produced.
+
+    Designed for `regression/` tests where the goal is "the function
+    still behaves exactly as it did when we last looked", not "what
+    does the function do".  Pass only the fields you want to assert —
+    e.g. just expected_diffs to lock in memory writes without caring
+    about register state.
+
+    Parameters
+    ----------
+    expected_diffs : list[(offset, before_byte, after_byte)] or None
+        If provided, must match `result['mem_diffs']` exactly.
+    expected_flags : dict[str, bool] or None
+        Subset of {'CF', 'ZF', 'SF', 'OF'} -> bool.  Each named flag
+        must equal the post-call flag value.
+    expected_regs : dict[str, int] or None
+        Subset of {'ax','bx','cx','dx','si','di','bp','sp'} -> int.
+
+    Returns
+    -------
+    (ok, msg) : bool, str
+        On mismatch, msg describes the divergence with concrete bytes.
+    """
+    result = harness.call_function(
+        func_addr,
+        regs=regs or {}, stub_calls=stub_calls or {},
+        max_steps=max_steps,
+    )
+    fails = []
+    if expected_diffs is not None:
+        actual = sorted(result['mem_diffs'])
+        want = sorted(expected_diffs)
+        if actual != want:
+            fails.append(f'  diffs mismatch:\n'
+                         f'    actual:   {actual}\n'
+                         f'    expected: {want}')
+    if expected_flags is not None:
+        actual = result['flags_after']
+        for fname, fval in expected_flags.items():
+            if actual.get(fname) is not fval:
+                fails.append(f'  flag {fname}: actual={actual.get(fname)} '
+                             f'expected={fval}')
+    if expected_regs is not None:
+        actual = result['regs_after']
+        for rname, rval in expected_regs.items():
+            if actual.get(rname) != (rval & 0xFFFF):
+                fails.append(f'  reg {rname}: actual=0x{actual.get(rname, 0):04X} '
+                             f'expected=0x{rval & 0xFFFF:04X}')
+    if not fails:
+        return True, f'{label}: PASS'
+    return False, f'{label}: FAIL\n' + '\n'.join(fails)

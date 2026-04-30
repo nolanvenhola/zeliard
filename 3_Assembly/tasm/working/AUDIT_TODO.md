@@ -284,3 +284,79 @@ Files modified:
 - `zelres2/code/{200FIGHT, 212ARMRP, 213BANKP, 214CHURP, 215DRUGP, 216INNAP, 217KENJP, 250ENDMO}.asm`
 - `zelres3/code/300ROKAD.asm`
 - `zelres1/code/zr1com.inc`, `zelres2/code/zr2com.inc`
+
+---
+
+## Next phases — toward full code understanding
+
+The byte-identity / proc-rename audit is largely closed for 200FIGHT.
+What remains, in suggested order:
+
+### Phase 4 — Regression net (~10 h)
+
+Per `functest/PLAN.md` §5.  Lock in the 50+ renames landed this session
+with golden-output regression tests under `functest/regression/`.
+
+| Done | Batch | Targets | Effort | Result |
+|:---:|---|---|---|---|
+| [x] | 4a — gold/almas/HP arithmetic | hero_HP_subtract, hero_almas_add, hero_gold_add, check_gold_sufficient, hero_bank_add | 1.5h | 14 scenarios PASS in `test_arithmetic_24bit_and_word.py` |
+| [x] | 4b — flag setters/clearers | `reset_combat_state` (one proc clears 11 flags + 4 sentinels) | 1h | `test_reset_combat_state.py` PASS |
+| [x] | 4c — direction movers | inc/dec_map_pos and inc/dec_row primitives (helpers used by entity_move_* family) | 1h | 8 scenarios PASS in `test_movement_helpers.py` |
+| [x] | 4d — entity-list iterators | tick_decrement_enemy_counters, tick_increment_enemy_counters | 0.5h | 5 scenarios PASS in `test_enemy_tick_iterators.py` |
+| [x] | 4e — gate / classifier procs | gate_spell_fx_active, is_non_area7_slot_b_entity, is_unknown_or_area5_slot_{b,c}.  Combat-FSM bytes (FF45/46/47) explicitly deferred — too tightly coupled to int 61h + read_joystick to unit-test cleanly | 1h | 13 scenarios PASS in `test_gate_classifier_procs.py` |
+
+**Result**: 41 regression scenarios in 5 test files; all green via
+`run.py --ci`.  Total functest count: 31 (30 PASS, 1 NO-VERDICT by
+design).  Future refactor that silently changes any of these proc
+semantics fails the relevant scenario loudly.
+
+Tooling addition: `fixtures.check_regression()` — assert harness call
+result against expected `mem_diffs` / `flags_after` / `regs_after`.
+
+### Phase 3 to other chunks (~30 h)
+
+Apply the same `phase3_queue.py` priority-queue + probe-and-rename
+workflow to chunks beyond 200FIGHT.  Coverage.csv lists ~41 more
+`game_func_*` placeholders distributed across:
+
+| Chunk family | Files | Approx procs | Notes |
+|---|---|---:|---|
+| Town | 106TOWN.asm | ? | No LST yet — needs build pass first |
+| Shop chunks | 210-219 (KING, OMOY, ARMR, BANK, CHURP, DRUG, INNAP, INNB, BAR, INNC) | ~30 | Mostly script-style; many `sub_N` (out of scope per PLAN §6) |
+| Enemy AI chunks | 300-319 (ROKAD, EAI1-8, CRAB, MEDA, TORI, ZELA, GALR, LEGA, ZEL2, DRGN, AKMA, MAO1, MAO2) | ~40 | 311TORI's `sub_N` already excluded; rest TBD per chunk |
+| Demo / endmo | 100OPDMO, 250ENDMO | ~10 | Story-script driven, lots of timing |
+
+Pre-work: rebuild stale LSTs (per `coverage.csv` "estimated"-size flag,
+20 chunks need a fresh build to populate `entry_addr` for the priority
+queue to be useful).
+
+### Cross-chunk flow mapping (parallel track, ~15 h)
+
+A different mode of work — produces an **architectural narrative** of
+how the game actually runs, rather than leaf-level semantics.  Goal:
+trace control flow from the executable entry into the SAR-loaded chunks
+and out, document the per-frame loop, identify the state machines that
+sequence game phases (title → opening → cavern → fight → boss → ending).
+
+| Done | Step | Output | Effort |
+|:---:|---|---|---|
+| [ ] | Trace zeliad.exe entry to first SAR-loaded chunk | flow diagram of boot sequence | 2h |
+| [ ] | Document the per-frame ISR + main-loop dispatcher | sequence diagram for one cavern frame | 3h |
+| [ ] | Map the chunk-load state machine (`sar_loader_fn`, chunk swap logic) | state diagram | 3h |
+| [ ] | Identify cross-chunk callbacks (`fight_cb_*`, gfx-driver dispatch slots in 0x2000–0x204E) | dispatch table reference doc | 3h |
+| [ ] | Per-game-phase walkthrough (how town → fight transition works at the byte level) | narrative doc | 4h |
+
+DOD: a `3_Assembly/Documentation/ARCHITECTURE.md` describing the
+control-flow architecture with diagrams, suitable for onboarding a new
+contributor without re-deriving everything from disassembly.
+
+### Out of scope (different audit style, listed for completeness)
+
+- **Sourcer `sub_N` / `loc_N` cleanup** — mechanical decoration that
+  obscures rather than informs.  Best handled by a future
+  `/asm-cleanup` skill that auto-renames or strips them in bulk.
+- **Driver-internal blit/decode helpers** — semantically "bytes at A
+  become pixels at B"; doesn't fit byte-delta probing.  Belongs in a
+  separate pixel-diff integration test regime alongside DOSBox.
+- **Music tracker tick handlers** — too many far calls + state to fit
+  Unicorn-isolation; integration-only.

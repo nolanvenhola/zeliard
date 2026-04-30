@@ -23,8 +23,9 @@ as evidence for follow-up renames.
   derived names by behavioral fingerprint, independent of any label.
 
 - **`regression/`** — fixed-input fixed-output tests for procs whose
-  semantics are already pinned down; guard against future static
-  refactors silently changing behavior.  (Empty for now.)
+  semantics are already pinned down.  Lock in golden byte-deltas /
+  flag values via `fixtures.check_regression()`.  Each file batches
+  multiple scenarios; aggregate VERDICT fails on any divergence.
 
 ---
 
@@ -42,6 +43,11 @@ as evidence for follow-up renames.
 | proc_equivalence | [test_fight_dispatch_slot_6008.py](proc_equivalence/test_fight_dispatch_slot_6008.py) | Fight slot 0x6008 target (0x91E5) reads `[SI+3]`, branches on `<34`, IDA-name `move_monster_E` cross-checked |
 | proc_equivalence | [test_town_dispatch_slot_600A.py](proc_equivalence/test_town_dispatch_slot_600A.py) | Town slot 0x600A target (0x7570) reads gold at DS:0x85+0x86..0x87 — confirms hero_gold_hi/_lo layout |
 | proc_equivalence | [test_town_dispatch_slot_600C.py](proc_equivalence/test_town_dispatch_slot_600C.py) | Town slot 0x600C target adds AX into DS:0x86 word, propagates carry into DS:0x85 byte |
+| regression | [test_arithmetic_24bit_and_word.py](regression/test_arithmetic_24bit_and_word.py) | Phase-4 batch 4a — 14 scenarios across hero_HP_subtract, hero_almas_add, hero_gold_add, check_gold_sufficient, hero_bank_add (24-bit + 16-bit arithmetic with carry/overflow/clamp behaviors) |
+| regression | [test_reset_combat_state.py](regression/test_reset_combat_state.py) | Phase-4 batch 4b — `reset_combat_state` zeroes 11 flags + sets 4 sentinels to 0xFF + writes 0xFFFF word, exactly as captured |
+| regression | [test_movement_helpers.py](regression/test_movement_helpers.py) | Phase-4 batch 4c — 8 scenarios across inc/dec_map_pos and inc/dec_row primitives (column with map-wrap, row with 0x3F mask) |
+| regression | [test_enemy_tick_iterators.py](regression/test_enemy_tick_iterators.py) | Phase-4 batch 4d — 5 scenarios across tick_decrement / tick_increment_enemy_counters (enemy_data_buf scan, zeros skipped, 0xFF terminator) |
+| regression | [test_gate_classifier_procs.py](regression/test_gate_classifier_procs.py) | Phase-4 batch 4e — 13 scenarios across gate_spell_fx_active, is_non_area7_slot_b_entity, is_unknown_or_area5_slot_{b,c} (gate / classifier procs adjacent to combat-FSM bytes) |
 | proc_equivalence | [test_fight_game_func_138.py](proc_equivalence/test_fight_game_func_138.py) | `game_func_138` → **`is_entity_known_type`** — entity-ID classifier; ZF=1 iff AL is in enemy_id_table OR in 0x49..0x7F. 18 callers. |
 | proc_equivalence | [test_fight_game_func_89.py](proc_equivalence/test_fight_game_func_89.py) | `game_func_89` → **`entity_slot_write_tagged`** — bit-7 tagged slot write to [di] direct or `enemy_data_ext[idx]`. 8 callers. |
 | proc_equivalence | [test_fight_game_func_141.py](proc_equivalence/test_fight_game_func_141.py) | `game_func_141` → **`world_x_to_screen_x`** — world-X → screen-X with map-wrap (constant 0x23 = 35-tile width). 6 callers. |
