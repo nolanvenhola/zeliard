@@ -33,7 +33,7 @@ PAGE  59,132
 ;                    sub-scripts (welcome / exchange / deposit / withdraw
 ;                    / balance / goodbye paths)
 ;                  gvar_init_flag_a/b, gvar_dlg_pos (DS:0FF54h),
-;                  gvar_timer_byte (DS:0FF1Ah), gvar_game_seg (CS:0FF2Ch)
+;                  gvar_frame_timer (DS:0FF1Ah), gvar_game_seg (CS:0FF2Ch)
 ;                  player gold word at DS:[86h], deposit word at DS:[8Bh]
 ;                    (game-segment financial state).
 ;
@@ -408,8 +408,8 @@ loc_20:
 		mov	word ptr ds:anim_src_ptr,0A7C3h
 
 loc_21:
-		add	word ptr ds:[89h],ax
-		adc	byte ptr ds:[88h],dl
+		add	word ptr ds:hero_bank_lo,ax
+		adc	byte ptr ds:hero_bank_hi,dl
 		mov	dl,ds:amount_hi
 		mov	ax,ds:amount_lo
 		call	word ptr cs:script_take_item
@@ -420,8 +420,8 @@ loc_21:
 		test	byte ptr ds:anim_active_flag,0FFh
 		jnz	loc_24			; Jump if not zero
 		mov	word ptr ds:gvar_script_ptr,0ABF7h
-		mov	dl,byte ptr ds:[88h]
-		mov	ax,word ptr ds:[89h]
+		mov	dl,byte ptr ds:hero_bank_hi
+		mov	ax,word ptr ds:hero_bank_lo
 		or	dl,ah
 		or	dl,al
 		jnz	loc_22			; Jump if not zero
@@ -429,17 +429,17 @@ loc_21:
 
 loc_22:
 		mov	word ptr ds:gvar_script_ptr,0AC35h
-		test	al,byte ptr ds:[88h]
+		test	al,byte ptr ds:hero_bank_hi
 		jnz	loc_23			; Jump if not zero
-		cmp	word ptr ds:[89h],1
+		cmp	word ptr ds:hero_bank_lo,1
 		jne	loc_23			; Jump if not equal
 		retn
 
 loc_23:
 		mov	word ptr ds:gvar_script_ptr,0AAF4h
 		call	word ptr cs:script_step
-		mov	dl,byte ptr ds:[88h]
-		mov	ax,word ptr ds:[89h]
+		mov	dl,byte ptr ds:hero_bank_hi
+		mov	ax,word ptr ds:hero_bank_lo
 		FORMAT_AND_RUN
 		retn
 
@@ -452,8 +452,8 @@ loc_24:
 		mov	si,welcome_text_ptr
 		call	draw_banner_8x5
 		mov	word ptr ds:gvar_script_ptr,0AB32h
-		mov	ax,word ptr ds:[89h]
-		mov	dl,byte ptr ds:[88h]
+		mov	ax,word ptr ds:hero_bank_lo
+		mov	dl,byte ptr ds:hero_bank_hi
 		or	dl,al
 		or	dl,ah
 		jnz	loc_25			; Jump if not zero
@@ -475,8 +475,8 @@ loc_25:
 		call	word ptr cs:show_menu_items
 		mov	byte ptr ds:amount_hi,0
 		mov	word ptr ds:amount_lo,0
-		mov	dl,byte ptr ds:[88h]
-		mov	ax,word ptr ds:[89h]
+		mov	dl,byte ptr ds:hero_bank_hi
+		mov	ax,word ptr ds:hero_bank_lo
 		mov	ds:amount_max_hi,dl
 		mov	ds:amount_max_lo,ax
 
@@ -485,8 +485,8 @@ loc_26:
 				mov	ax,ds:amount_lo
 				push	dx
 				push	ax
-				mov	cl,byte ptr ds:[88h]
-				mov	bx,word ptr ds:[89h]
+				mov	cl,byte ptr ds:hero_bank_hi
+				mov	bx,word ptr ds:hero_bank_lo
 				sub	bx,ax
 				sbb	cl,dl
 				xchg	bx,ax
@@ -558,28 +558,28 @@ loc_32:
 
 loc_33:
 		call	word ptr cs:script_step
-		mov	dl,byte ptr ds:[88h]
-		mov	ax,word ptr ds:[89h]
+		mov	dl,byte ptr ds:hero_bank_hi
+		mov	ax,word ptr ds:hero_bank_lo
 		sub	ax,ds:amount_lo
 		sbb	dl,ds:amount_hi
-		mov	byte ptr ds:[88h],dl
-		mov	word ptr ds:[89h],ax
+		mov	byte ptr ds:hero_bank_hi,dl
+		mov	word ptr ds:hero_bank_lo,ax
 		mov	word ptr ds:gvar_script_ptr,0ABDEh
 		or	dl,ah
 		or	dl,al
 		jz	loc_35			; Jump if zero
 		mov	word ptr ds:gvar_script_ptr,0AC35h
-		test	al,byte ptr ds:[88h]
+		test	al,byte ptr ds:hero_bank_hi
 		jnz	loc_34			; Jump if not zero
-		cmp	word ptr ds:[89h],1
+		cmp	word ptr ds:hero_bank_lo,1
 		jne	loc_34			; Jump if not equal
 		retn
 
 loc_34:
 		mov	word ptr ds:gvar_script_ptr,0AAF4h
 		call	word ptr cs:script_step
-		mov	dl,byte ptr ds:[88h]
-		mov	ax,word ptr ds:[89h]
+		mov	dl,byte ptr ds:hero_bank_hi
+		mov	ax,word ptr ds:hero_bank_lo
 		FORMAT_AND_RUN
 
 loc_35:
@@ -590,26 +590,26 @@ loc_35:
 			                        ;* No entry point to code
 		call	clear_dialog_area
 		mov	word ptr ds:gvar_script_ptr,0ABF7h
-		mov	al,byte ptr ds:[88h]
+		mov	al,byte ptr ds:hero_bank_hi
 		xor	ah,ah			; Zero register
-		or	ax,word ptr ds:[89h]
+		or	ax,word ptr ds:hero_bank_lo
 		jnz	loc_36			; Jump if not zero
 		retn
 
 loc_36:
 		mov	byte ptr ds:checked_balance_flag,0FFh
 		mov	word ptr ds:gvar_script_ptr,0AC35h
-		test	al,byte ptr ds:[88h]
+		test	al,byte ptr ds:hero_bank_hi
 		jnz	loc_37			; Jump if not zero
-		cmp	word ptr ds:[89h],1
+		cmp	word ptr ds:hero_bank_lo,1
 		jne	loc_37			; Jump if not equal
 		retn
 
 loc_37:
 		mov	word ptr ds:gvar_script_ptr,0AC10h
 		call	word ptr cs:script_step
-		mov	dl,byte ptr ds:[88h]
-		mov	ax,word ptr ds:[89h]
+		mov	dl,byte ptr ds:hero_bank_hi
+		mov	ax,word ptr ds:hero_bank_lo
 		FORMAT_AND_RUN
 		retn
 			                        ;* No entry point to code

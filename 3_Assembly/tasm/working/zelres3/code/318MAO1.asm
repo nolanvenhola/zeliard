@@ -430,7 +430,7 @@ mao1_dispatch_clear_d:
 		retn
 
 mao1_dispatch_set_state:
-		mov	byte ptr ds:mao1_gvar_state_byte,38h	; '8'
+		mov	byte ptr ds:gvar_spawn_fx_flag,38h	; '8'
 		retn
 
 mao1_dispatch_show_dialog:

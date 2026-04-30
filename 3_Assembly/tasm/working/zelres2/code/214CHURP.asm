@@ -32,7 +32,7 @@ PAGE  59,132
 ;                    (loaded as loaded_code_a at game_seg:3000h, entered
 ;                    through far call).
 ;    Reads/writes: gvar_script_ptr (DS:0FF4Ch), gvar_init_flag_a/b
-;                  (DS:0FF4Eh/0FF4Fh), gvar_timer_byte (DS:0FF1Ah),
+;                  (DS:0FF4Eh/0FF4Fh), gvar_frame_timer (DS:0FF1Ah),
 ;                  gvar_timer_word (DS:0FF50h), gvar_game_seg (CS:0FF2Ch).
 ;
 ;==========================================================================
@@ -143,7 +143,7 @@ op_handler_a:					; reached via opcode_dispatch_tbl[bx]
 		mov	word ptr ds:gvar_script_ptr,0A36Ah
 		retn
 
-;-- Handler: "rest loop" -- busy-wait until gvar_timer_byte >= 0xFA,
+;-- Handler: "rest loop" -- busy-wait until gvar_frame_timer >= 0xFA,
 ;  advancing the background animation each frame.  The first 3 bytes
 ;  decode as the start of `mov byte ptr ds:[0FF1Ah],0` but Sourcer
 ;  treated the 0FFh byte as the start of a word constant.
@@ -152,7 +152,7 @@ rest_wait_loop	dw	00FFh			; sentinel word -- also mid-instruction 'FF 00' bytes
 
 loc_3:
 				call	anim_scroll_step
-				cmp	byte ptr ds:gvar_timer_byte,0FAh
+				cmp	byte ptr ds:gvar_frame_timer,0FAh
 				jb	loc_3			; Jump if below
 		retn
 
@@ -165,11 +165,11 @@ loc_4:
 				jae	loc_6			; Jump if above or =
 				mov	word ptr rest_wait_loop,ax
 				call	word ptr cs:drv_palette_push
-				mov	byte ptr ds:gvar_timer_byte,0
+				mov	byte ptr ds:gvar_frame_timer,0
 
 loc_5:
 						call	anim_scroll_step
-						cmp	byte ptr ds:gvar_timer_byte,14h
+						cmp	byte ptr ds:gvar_frame_timer,14h
 						jb	loc_5			; Jump if below
 				jmp	short loc_4
 
@@ -197,7 +197,7 @@ loc_ret_7:
 		mov	byte ptr ds:anim_phase_a,0
 
 loc_8:						; continuation label for outer loop below
-				mov	byte ptr ds:gvar_timer_byte,0
+				mov	byte ptr ds:gvar_frame_timer,0
 				cmp	byte ptr ds:anim_phase_a,5
 				jb	loc_9			; Jump if below
 				retn
@@ -232,7 +232,7 @@ sermon_inner_loop:
 
 loc_13:
 						call	anim_scroll_step
-						cmp	byte ptr ds:gvar_timer_byte,20h	; ' '
+						cmp	byte ptr ds:gvar_frame_timer,20h	; ' '
 						jb	loc_13			; Jump if below
 				inc	byte ptr ds:anim_phase_a
 				jmp	short loc_8

@@ -254,30 +254,30 @@ inn_skip_dispatch_update:
 		jmp	draw_intro_banner		; back to top of loop
 
 ;--------------------------------------------------------------------------
-;  inn_wait_long (0x0163) -- poll timer until gvar_timer_byte reaches 0x96
+;  inn_wait_long (0x0163) -- poll timer until gvar_frame_timer reaches 0x96
 ;--------------------------------------------------------------------------
 
 inn_wait_long	proc	near
-		mov	byte ptr ds:gvar_timer_byte,0
+		mov	byte ptr ds:gvar_frame_timer,0
 
 inn_wait_long_loop:
 					call	inn_anim_scan
-					cmp	byte ptr ds:gvar_timer_byte,96h
+					cmp	byte ptr ds:gvar_frame_timer,96h
 					jb	inn_wait_long_loop		; Jump if below
 		retn
 
 inn_wait_long	endp
 
 ;--------------------------------------------------------------------------
-;  inn_wait_short (0x0173) -- poll timer until gvar_timer_byte reaches 0x32
+;  inn_wait_short (0x0173) -- poll timer until gvar_frame_timer reaches 0x32
 ;--------------------------------------------------------------------------
 
 inn_wait_short	proc	near
-		mov	byte ptr ds:gvar_timer_byte,0
+		mov	byte ptr ds:gvar_frame_timer,0
 
 inn_wait_short_loop:
 					call	inn_anim_scan
-					cmp	byte ptr ds:gvar_timer_byte,32h	; '2'
+					cmp	byte ptr ds:gvar_frame_timer,32h	; '2'
 					jb	inn_wait_short_loop		; Jump if below
 		retn
 

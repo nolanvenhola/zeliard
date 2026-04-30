@@ -24,7 +24,7 @@ PAGE  59,132
 ;                        out-wipe and return to caller.
 ;    draw_pose_3x3     - render 3x3 sprite-tile grid for current pose
 ;                        ([0xE7]); reads 9 tile indices from pose_tile_data.
-;    wait_frame        - tick frame timer (waits for gvar_timer_lo >=
+;    wait_frame        - tick frame timer (waits for gvar_frame_timer >=
 ;                        4*gvar_anim_speed).
 ;    bres_setup        - compute |dx|, |dy|, signs, major axis for line
 ;                        interpolation between current and (94h,50h).
@@ -48,7 +48,7 @@ PAGE  59,132
 ;                  @ ~7941); entered far at offset +9 (the leading 9 bytes
 ;                  are file header + caller-pre-init bytes).
 ;    Reads/writes: gvar_roka_scene (000A0h), gvar_pose_idx (000E7h),
-;                  gvar_timer_lo (0FF1Ah), gvar_enable_all (0FF26h),
+;                  gvar_frame_timer (0FF1Ah), gvar_enable_all (0FF26h),
 ;                  gvar_game_seg (0FF2Ch), gvar_anim_speed (0FF33h),
 ;                  gvar_volume_b (0FF75h), and local Bresenham state
 ;                  bytes at cur_pose_x/y, bres_pos_x/y, bres_dx/dy, etc.
@@ -117,7 +117,7 @@ gfx_decode_fn	equ	3028h			; decode sprite palette/tile buffer (SI=src,BP=dst,CX=
 ; ----------------------------------------------------------------------
 gvar_roka_scene	equ	000A0h			; demo scene counter (1..9), bumped per call
 gvar_pose_idx	equ	000E7h			; live pose index used by draw_pose_3x3
-gvar_timer_lo	equ	0FF1Ah			; frame timer low byte
+gvar_frame_timer	equ	0FF1Ah		; frame timer (canonical)
 gvar_enable_all	equ	0FF26h			; enable-all flag byte
 gvar_game_seg	equ	0FF2Ch			; game segment selector word
 gvar_anim_speed	equ	0FF33h			; animation speed counter byte
@@ -551,9 +551,9 @@ wait_frame		proc	near
 		mul	cl			; ax = reg * al
 
 frame_wait:
-				cmp	ds:gvar_timer_lo,al
+				cmp	ds:gvar_frame_timer,al
 				jb	frame_wait			; Jump if below
-		mov	byte ptr ds:gvar_timer_lo,0
+		mov	byte ptr ds:gvar_frame_timer,0
 		retn
 
 wait_frame		endp

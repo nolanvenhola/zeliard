@@ -32,7 +32,7 @@ PAGE  59,132
 ;                    weapon/armour shop (loaded as loaded_code_a at
 ;                    game_seg:3000h via SAR loader, far call).
 ;    Reads/writes: gvar_script_ip (DS:0FF4Ch) -- chained between sub-scripts
-;                  gvar_dlg_pos (DS:0FF54h), gvar_text_x/y, gvar_timer_byte,
+;                  gvar_dlg_pos (DS:0FF54h), gvar_text_x/y, gvar_frame_timer,
 ;                  gvar_game_seg (CS:0FF2Ch),
 ;                  player gold word at DS:[96h], shop price word at DS:[94h]
 ;                    (game-segment financial state),
@@ -52,7 +52,6 @@ gvar_game_seg		equ	0FF2Ch			;* game segment selector word
 gvar_sel_row		equ	0FF56h			;* current menu row byte
 gvar_sel_flag		equ	0FF57h			;* menu selection flag byte
 gvar_sel_xlat		equ	0FF58h			;* menu selection translate byte
-gvar_ff68		equ	0FF68h			;* (free slot) word
 gvar_dlg_timer		equ	0FF6Ah			;* dialog timer word
 
 ; ----------------------------------------------------------------------
@@ -197,7 +196,7 @@ start:
 		jnz	script_loop			; Jump if not zero
 		cmp	byte ptr ds:town_npc_state,5
 		jne	script_loop			; Jump if not equal
-		test	byte ptr ds:[9Bh],0FFh
+		test	byte ptr ds:trade_marker_flag,0FFh
 		jz	script_loop			; Jump if zero
 		mov	word ptr ds:gvar_script_ip,0B2A2h
 		mov	byte ptr ds:trade_active_flag,0
@@ -911,7 +910,7 @@ reset_after_trade:
 		mov	word ptr ds:gvar_script_ip,0B375h
 		call	word ptr cs:script_step
 		mov	byte ptr ds:[92h],4
-		mov	byte ptr ds:[9Bh],0
+		mov	byte ptr ds:trade_marker_flag,0
 		mov	al,4
 		mov	bx,18ABh
 		call	word ptr cs:gfx_render_scene_fn

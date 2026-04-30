@@ -37,6 +37,9 @@ include  srmacros.inc
 ; ----------------------------------------------------------------------
 ; Section 3: Game-segment globals (gvar_*) not in shared inc
 ; ----------------------------------------------------------------------
+; Player-record fields (DS-relative; canonical home is stdply.inc).
+music_track_count equ	0A0h			; music track count (canonical in stdply.inc)
+gvar_pose_idx	equ	0E7h			; player pose state (canonical in stdply.inc)
 ; Game state variables (0xFF00+ range, shared with zeliad.exe)
 gvar_timer_ticks equ	0FF08h			; Timer tick counter
 gvar_game_phase	equ	0FF14h			; Current game phase / graphics mode
@@ -46,11 +49,20 @@ gvar_music_b	equ	0FF39h			; Music state B
 gvar_music_c	equ	0FF3Ah			; Music state C
 gvar_palette_st	equ	0FF3Ch			; Palette state
 gvar_palette_a	equ	0FF3Dh			; Palette value A
-gvar_palette_b	equ	0FF3Eh			; Palette value B
+gvar_palette_b	equ	0FF3Eh			; alias — see 200FIGHT.asm spell_fx_active (game.asm only zero-clears it)
 gvar_debug_mode	equ	0FF40h			; Debug mode
 gvar_debug_val	equ	0FF42h			; Debug value
 gvar_joystick	equ	0FF43h			; Joystick state
-gvar_joy_data	equ	0FF44h			; Joystick data (7 bytes)
+; The byte at 0FF44h was previously named "gvar_joy_data" (a guess based
+; on its proximity to gvar_joystick/gvar_joy_count) but the real semantics
+; are background-restore-pending: gf*.asm has bg_restore/bg_save procs
+; that unambiguously test/clear/set this flag (set when background needs
+; restoring after a sprite draw, cleared when bg_restore_impl finishes).
+; 21 read/write sites across 202GFEGA, 203GFCGA, 204GFHGC, 205GFTGA,
+; 206GFMCA all use the name `restore_pending`.  game.asm only zeros it
+; during init.  Renaming to restore_pending; old name kept as alias.
+restore_pending	equ	0FF44h			; bg_restore pending flag (gf*.asm)
+gvar_joy_data	equ	0FF44h			; alias — deprecated misnomer
 gvar_joy_count	equ	0FF4Bh			; Joystick count
 gvar_volume_a	equ	0FF74h			; Volume setting A
 gvar_volume_b	equ	0FF77h			; Volume setting B
@@ -171,7 +183,7 @@ start:
 		mov	ds:gvar_music_b,al
 		mov	ds:gvar_music_c,al
 		mov	ds:gvar_joystick,al
-		mov	ds:gvar_joy_data,al
+		mov	ds:restore_pending,al	; was gvar_joy_data — see EQU above
 		mov	ds:gvar_palette_st,al
 		mov	ds:gvar_palette_a,al
 		mov	ds:gvar_music_a,al
@@ -179,7 +191,7 @@ start:
 		mov	ds:gvar_palette_b,al
 		mov	ds:gvar_joy_count,al
 		mov	ds:gvar_timer_ticks,al
-		mov	byte ptr ds:[0E7h],al	; Unknown state var
+		mov	byte ptr ds:gvar_pose_idx,al	; clear gvar_pose_idx (player pose state)
 		mov	ds:gvar_volume_a,al
 		mov	ds:gvar_volume_b,al
 		mov	ds:gvar_debug_mode,al
@@ -447,12 +459,12 @@ game		endp
 ;==========================================================================
 
 load_music_tracks proc	near
-		test	byte ptr ds:[0A0h],0FFh
+		test	byte ptr ds:music_track_count,0FFh
 		jnz	has_tracks
 		retn
 
 has_tracks:
-		mov	cl,byte ptr ds:[0A0h]	; Track count
+		mov	cl,byte ptr ds:music_track_count	; Track count
 		xor	ch,ch
 		xor	bx,bx			; Track index
 

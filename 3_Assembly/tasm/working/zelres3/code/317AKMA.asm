@@ -1051,7 +1051,7 @@ akma_death_phase_done:
 		jmp	akma_render_begin
 
 akma_death_finish:
-		mov	byte ptr ds:gvar_state_ff30,0FFh
+		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 
 ; ------------------------------------------------------------------

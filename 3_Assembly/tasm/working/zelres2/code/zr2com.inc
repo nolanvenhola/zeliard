@@ -10,6 +10,23 @@
 ;==========================================================================
 
 ; ----------------------------------------------------------------------
+; Player-record fields (DS-relative; canonical home is stdply.inc/asm,
+; re-declared here so chunks that don't include stdply.inc can use
+; symbolic names instead of raw hex literals).  Value MUST match
+; stdply.inc's canonical EQU; TASM accepts duplicate equates with the
+; same value.
+; ----------------------------------------------------------------------
+fight_player_col        equ     84h     ; player screen column in fight (canonical in stdply.inc)
+hero_bank_hi            equ     88h     ; banked-gold high byte (canonical in stdply.inc)
+hero_bank_lo            equ     89h     ; banked-gold low word (canonical in stdply.inc)
+trade_marker_flag       equ     09Bh    ; trade-event marker (canonical in stdply.inc)
+boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical in stdply.inc)
+heal_pulse_count        equ     0C6h    ; HP heal-pulse counter, 16-bit (canonical in stdply.inc)
+scene_trans_request     equ     0E6h    ; scene-transition request (canonical in stdply.inc)
+gvar_pose_idx           equ     0E7h    ; player pose state (canonical in stdply.inc)
+init_complete_flag      equ     0E8h    ; post-init steady-state (canonical in stdply.inc)
+
+; ----------------------------------------------------------------------
 ; Driver dispatch slots (CS-relative, far call via [cs:NNNNh])
 ; ----------------------------------------------------------------------
 drv_fill_rect            equ     2000h         ; fn  0: fill rectangle
@@ -19,7 +36,16 @@ drv_load_msg_header      equ     2010h         ; fn  8: load/draw message header
 drv_screen_init_b        equ     2012h         ; fn  9: screen init B
 drv_frame_commit         equ     2016h         ; fn  B: commit/wait refresh
 drv_anim_step            equ     2018h         ; fn  C: advance animation / palette upd
-drv_render_char          equ     2022h         ; fn 11h: render text char / dialog box
+; 0x2022, 0x2026, 0x2028, 0x202A: multi-purpose driver-dispatch slots.
+; The function pointer at each slot changes when a different graphics
+; driver is loaded (gmega/gmcga/gmhgc/gmtga/gmmcga); per-chunk names
+; reflect what THAT chunk calls the slot for, all referring to the same
+; CS:[NNNNh] far-call indirection.  Not synonyms — context-specific
+; labels.  Per-chunk EQUs are kept in their own .asm files so collisions
+; with file-local data labels (e.g. 200FIGHT's `gfx_fn_clear dw ...`
+; data slot) are avoided.  Only the most-shared canonical is exposed
+; here for chunks that don't carry a local name.
+drv_render_char          equ     2022h         ; fn 11h: render text char / dialog box (5+ chunks)
 drv_return_to_caller     equ     2040h         ; fn 20h: exit / far return
 drv_ds_copy              equ     2044h         ; fn 22h: ds copy (cx bytes from si)
 drv_draw_glyph           equ     3016h         ; fn2 B: draw glyph/tile
@@ -37,14 +63,15 @@ script_give_item         equ     600Ch         ; give item / commit transaction
 ; Game state globals (DS:0xFFxx)
 ; ----------------------------------------------------------------------
 gvar_frame_timer         equ     0FF1Ah        ; canonical: frame timer (ISR-incremented)
-frame_timer              equ     0FF1Ah        ; alias
-gvar_timer_byte          equ     0FF1Ah        ; alias
-gvar_timer_lo            equ     0FF1Ah        ; alias
-gvar_timer_ticks         equ     0FF1Ah        ; alias
 game_seg                 equ     0FF2Ch        ; 5 files
 flag_shadow              equ     0FF2Fh        ; 5 files
 sprite_data_ptr          equ     0FF31h        ; 5 files
-anim_speed               equ     0FF33h        ; 5 files
+; 0xFF33: zeliad/zeliard.inc owns this as gvar_save_flag (init=5 by zeliad).
+; gf*.asm reads it as anim_speed because the same byte's value (5) ALSO
+; tunes graphics-driver animation pacing.  Single byte, dual semantics
+; depending on subsystem: save-state-id by core, frames-per-anim by gfx.
+gvar_save_flag           equ     0FF33h        ; canonical (save-state slot id; init 5)
+anim_speed               equ     0FF33h        ; alias — same byte; gfx interprets the value as anim pacing
 flag_equip_b             equ     0FF34h        ; 5 files
 enemy_counter            equ     0FF35h        ; 3 files
 color_sel                equ     0FF36h        ; 5 files
@@ -89,7 +116,19 @@ gvar_dlg_pos             equ     0FF54h        ; canonical: dialog window positi
 gvar_ui_dst_word         equ     0FF54h        ; alias
 gvar_ui_pos              equ     0FF54h        ; alias
 menu_pos_base            equ     0FF54h        ; alias
-gvar_volume              equ     0FF75h        ; 2 files
+; 0xFF68: multi-purpose word — see zr1com.inc for canonical comment.
+; 212ARMRP uses a placeholder name; 215DRUGP uses `menu_col_width`.
+gvar_text_ofs            equ     0FF68h        ; canonical
+menu_col_width           equ     0FF68h        ; alias — menu column width (215DRUGP)
+gvar_ff68                equ     0FF68h        ; alias — placeholder (212ARMRP)
+; 0xFF75: zeliard.inc owns gvar_volume_b as canonical (63 refs across
+; the codebase — audio mix level, written by every subsystem to bump the
+; current mix).  zelres3 enemy chunks use the same byte as
+; `gvar_spawn_fx_flag` (39 refs in zr3com.inc) to trigger spawn effects;
+; functionally the same write — different value triggers different
+; downstream audio behaviour.  zr2com's `gvar_volume` is just an alias.
+gvar_volume_b            equ     0FF75h        ; canonical (audio mix level; zeliard.inc)
+gvar_volume              equ     0FF75h        ; alias (3 zelres2 chunks)
 
 ; ----------------------------------------------------------------------
 ; Game data (DS:0xC000-0xEFFF)

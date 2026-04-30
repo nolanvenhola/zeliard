@@ -50,7 +50,7 @@ PAGE  59,132
 ;                    loader; per-sage selection via gvar_sage_id 1..8).
 ;    Reads/writes: gvar_sage_id (DS:0C006h) -- caller-set sage index
 ;                  gvar_script_ip (DS:0FF4Ch), gvar_text_x/y, gvar_dlg_pos,
-;                  gvar_timer_byte, gvar_game_seg, state_script_ptr,
+;                  gvar_frame_timer, gvar_game_seg, state_script_ptr,
 ;                  game-state HP word at DS:[8Eh], EXP word at DS:[8Bh],
 ;                  player gold at DS:[86h], current sage state at DS:[BB14h].
 ;

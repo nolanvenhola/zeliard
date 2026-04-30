@@ -34,7 +34,6 @@ include  zr1com.inc
 ; ----------------------------------------------------------------------
 gvar_game_seg		equ	0FF2Ch			;*  global: game data segment selector
 gvar_scroll_flag	equ	0FF57h			;*  global: scroll/redraw flag
-gvar_char_y_ofs		equ	0FF68h			;*  global: character Y row offset
 
 ; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses

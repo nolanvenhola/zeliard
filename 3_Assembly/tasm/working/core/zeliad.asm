@@ -86,7 +86,7 @@ gvar_joystick_flag	equ	0FF43h		; Joystick enabled flag
 gvar_save_name_buf	equ	0FF6Ch		; Save file name buffer (8 bytes)
 gvar_volume_a		equ	0FF74h		; Volume/audio setting A
 gvar_volume_b		equ	0FF75h		; Volume/audio setting B
-gvar_unk_FF78		equ	0FF78h		; Unknown state byte (cleared at startup)
+gvar_unk_FF78		equ	0FF78h		; alias for gvar_old_int09_raw (zeliard.inc canonical)
 gvar_old_int09_ofs	equ	0FF79h		; Saved INT 09h offset
 gvar_old_int09_seg	equ	0FF7Bh		; Saved INT 09h segment
 gvar_old_int61_ofs	equ	0FF7Bh		; Saved INT 61h offset
@@ -269,7 +269,7 @@ skip_music_init:
 		mov	byte ptr es:gvar_volume_a,0
 		mov	byte ptr es:gvar_debug_mode,0
 		mov	byte ptr es:gvar_debug_val,0
-		mov	byte ptr es:gvar_unk_FF78,0
+		mov	byte ptr es:gvar_old_int09_raw,0
 		mov	al,cs:joystick_enabled
 		mov	es:gvar_last_key,al
 		mov	al,cs:music_enabled

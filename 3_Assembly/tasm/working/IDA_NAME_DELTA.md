@@ -15,14 +15,14 @@ almost certainly more accurate (derived from runtime IDA debugging).
 | `0x0` | `cga_buf_start`, `zero_offset` | `Cangrejo_Defeated`, `InitTitleScreen_proc`, `magic_grp_sprites` | **rename?** |
 | `0x80` | `ply_walk_speed` | `proximity_map_left_col_x` | **rename?** |
 | `0x83` | `ply_accel` | `hero_x_in_viewport` | **rename?** |
-| `0x85` | `drv_timer_flag` | `hero_gold_hi` | **rename?** |
-| `0x86` | `drv_time_param_a` | `hero_gold_lo` | **rename?** |
-| `0x8B` | `drv_time_param_b` | `hero_almas` | **rename?** |
-| `0x90` | `drv_text_src` | `hero_HP` | **rename?** |
-| `0x92` | `ply_jump_flag` | `sword_type` | **rename?** |
-| `0x93` | `drv_sprite_flag` | `shield_type` | **rename?** |
-| `0x94` | `drv_time_param_c` | `shield_HP` | **rename?** |
-| `0x9D` | `drv_frame_idx` | `current_magic_spell` | **rename?** |
+| `0x85` | `hero_gold_hi` | `hero_gold_hi` | agree |
+| `0x86` | `hero_gold_lo` | `hero_gold_lo` | agree |
+| `0x8B` | `hero_almas` | `hero_almas` | agree |
+| `0x90` | `hero_HP` | `hero_HP` | agree |
+| `0x92` | `sword_type` | `sword_type` | agree |
+| `0x93` | `shield_type` | `shield_type` | agree |
+| `0x94` | `shield_HP` | `shield_HP` | agree |
+| `0x9D` | `current_magic_spell` | `current_magic_spell` | agree |
 | `0xAB` | `drv_color_lut` | `spells_espada` | **rename?** |
 | `0x100` | `ISR_STUBS_BASE`, `isr_keyboard` | `int9_new_proc` | **rename?** |
 | `0x103` | `isr_timer` | `int8_new_proc` | **rename?** |
@@ -155,7 +155,7 @@ almost certainly more accurate (derived from runtime IDA debugging).
 | `0xFF78` | `gvar_old_int09_raw` | `disk_swap_suppressed` | **rename?** |
 | `0xFF79` | `gvar_old_int09_ofs` | `fn_kbd_chain_ptr` | **rename?** |
 
-**Agreements: 2** | **Disagreements: 140**
+**Agreements: 10** | **Disagreements: 132**
 
 ## Disagreement summary (rename candidates)
 
@@ -165,14 +165,6 @@ as primary (as alias) in the relevant shared .inc:
 - `0x0`: `cga_buf_start, zero_offset` → consider IDA name `Cangrejo_Defeated, InitTitleScreen_proc, magic_grp_sprites`
 - `0x80`: `ply_walk_speed` → consider IDA name `proximity_map_left_col_x`
 - `0x83`: `ply_accel` → consider IDA name `hero_x_in_viewport`
-- `0x85`: `drv_timer_flag` → consider IDA name `hero_gold_hi`
-- `0x86`: `drv_time_param_a` → consider IDA name `hero_gold_lo`
-- `0x8B`: `drv_time_param_b` → consider IDA name `hero_almas`
-- `0x90`: `drv_text_src` → consider IDA name `hero_HP`
-- `0x92`: `ply_jump_flag` → consider IDA name `sword_type`
-- `0x93`: `drv_sprite_flag` → consider IDA name `shield_type`
-- `0x94`: `drv_time_param_c` → consider IDA name `shield_HP`
-- `0x9D`: `drv_frame_idx` → consider IDA name `current_magic_spell`
 - `0xAB`: `drv_color_lut` → consider IDA name `spells_espada`
 - `0x100`: `ISR_STUBS_BASE, isr_keyboard` → consider IDA name `int9_new_proc`
 - `0x103`: `isr_timer` → consider IDA name `int8_new_proc`

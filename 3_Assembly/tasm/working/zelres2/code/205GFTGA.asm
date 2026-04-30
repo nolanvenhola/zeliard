@@ -1754,7 +1754,7 @@ tile_3x3_step:
 		mov	ax,cs:color_pair_tbl[bx]
 		mov	cs:cur_color_pair,ax
 		mov	es,cs:game_seg
-		mov	al,byte ptr ds:[0E8h]
+		mov	al,byte ptr ds:init_complete_flag
 		or	al,ds:flag_climbing
 		or	al,ds:flag_riding
 		jz	loc_129			; Jump if zero
@@ -1831,7 +1831,7 @@ loc_135:
 loc_136:
 		test	byte ptr ds:flag_shield,0FFh
 		jnz	loc_139			; Jump if not zero
-		mov	al,byte ptr ds:[0E7h]
+		mov	al,byte ptr ds:gvar_pose_idx
 		cmp	al,80h
 		je	loc_139			; Jump if equal
 		add	al,2
@@ -1869,7 +1869,7 @@ loc_139:
 		mov	si,game_data_base
 
 loc_140:
-		test	byte ptr ds:[0E8h],0FFh
+		test	byte ptr ds:init_complete_flag,0FFh
 		jz	loc_141			; Jump if zero
 		add	si,5Ah
 		jmp	short loc_142
@@ -1892,11 +1892,11 @@ loc_141:
 		cmp	byte ptr ds:equip_byte,7Fh
 		je	loc_143			; Jump if equal
 		mov	ax,24h
-		cmp	byte ptr ds:[0E7h],80h
+		cmp	byte ptr ds:gvar_pose_idx,80h
 		je	loc_143			; Jump if equal
 
 loc_142:
-		mov	al,byte ptr ds:[0E7h]
+		mov	al,byte ptr ds:gvar_pose_idx
 		and	al,3
 		mov	cl,9
 		mul	cl			; ax = reg * al
@@ -1908,7 +1908,7 @@ loc_144:
 		mov	cx,9
 		mov	byte ptr ds:col_idx,0
 		call	tga_sprite_render_solid
-		test	byte ptr ds:[0E8h],0FFh
+		test	byte ptr ds:init_complete_flag,0FFh
 		jz	loc_145			; Jump if zero
 		retn
 
@@ -2001,7 +2001,7 @@ loc_154:
 		mov	ax,1Bh
 		test	byte ptr ds:flag_shield,0FFh
 		jnz	loc_155			; Jump if not zero
-		mov	cl,byte ptr ds:[0E7h]
+		mov	cl,byte ptr ds:gvar_pose_idx
 		cmp	cl,80h
 		je	loc_155			; Jump if equal
 		and	cl,3

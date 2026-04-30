@@ -24,7 +24,7 @@ PAGE  59,132
 ;                  gfx_render_a..d via cs:[110h/112h/116h/118h]
 ;    Called by:    game.bin LOAD_CHUNK chunk_ref_opdemo (loaded_code_b at
 ;                  CS:0x6000 entry); also re-entered for ending sequence
-;    Reads/writes: gvar_timer_lo (FF1A), gvar_skip_input (FF1D),
+;    Reads/writes: gvar_frame_timer (FF1A), gvar_skip_input (FF1D),
 ;                  gvar_enable_all (FF26), gvar_key_state (FF29),
 ;                  gvar_game_seg (FF2C), gvar_volume_b (FF75)
 ;                  - all zeliad-owned globals
@@ -39,7 +39,7 @@ include  zr1com.inc
 ; ----------------------------------------------------------------------
 ; Section 3: Game-segment globals (gvar_*) not in shared inc
 ; ----------------------------------------------------------------------
-gvar_timer_lo	equ	0FF1Ah		; timer counter low word (0xFF1A)
+gvar_frame_timer	equ	0FF1Ah		; frame timer (canonical, ISR-incremented)
 gvar_skip_input	equ	0FF1Dh		; input skip flag (zeliard.inc: gvar_skip_input)
 gvar_enable_all	equ	0FF26h		; enable all flag (zeliard.inc: gvar_enable_all)
 gvar_key_state	equ	0FF29h		; key state (0xFF29)
@@ -197,7 +197,7 @@ SCR_ATTR_RST2	equ	0A2h	; attribute restore (variant)
 ; WAIT_FRAME delay
 ;   Reset the frame timer and wait for 'delay' timer units.
 WAIT_FRAME	MACRO	delay
-		mov	byte ptr ds:gvar_timer_lo, 0
+		mov	byte ptr ds:gvar_frame_timer, 0
 		mov	al, delay
 		call	timer_wait_loop
 		ENDM
@@ -334,7 +334,7 @@ start:
 		mov	si,scene_sprite_c
 
 scene_sprite_loop:
-							mov	byte ptr ds:gvar_timer_lo,0
+							mov	byte ptr ds:gvar_frame_timer,0
 							lodsb				; String [si] to al
 							or	al,al			; Zero ?
 							jz	scene_after_anim			; Jump if zero
@@ -384,7 +384,7 @@ scene_after_anim:
 		call	word ptr cs:gfx_mode_fn
 		mov	ax,4
 		call	word ptr cs:gfx_palette_fn
-		mov	byte ptr ds:gvar_timer_lo,0
+		mov	byte ptr ds:gvar_frame_timer,0
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,gfx_plane_b
@@ -400,7 +400,7 @@ scene_after_anim:
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		call	word ptr cs:gfx_update_fn
-		mov	byte ptr ds:gvar_timer_lo,0
+		mov	byte ptr ds:gvar_frame_timer,0
 		mov	es,cs:gvar_game_seg
 		mov	si,aux_buf_seg
 		mov	di,scene_framebuf
@@ -412,7 +412,7 @@ scene_after_anim:
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		call	word ptr cs:disp_narr_chap3
-		mov	byte ptr ds:gvar_timer_lo,0
+		mov	byte ptr ds:gvar_frame_timer,0
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
@@ -426,7 +426,7 @@ scene_after_anim:
 
 scene_color_rotate_loop:
 							push	cx
-							mov	byte ptr ds:gvar_timer_lo,0
+							mov	byte ptr ds:gvar_frame_timer,0
 							push	ax
 							call	word ptr cs:disp_set_drv_seg
 							pop	ax
@@ -457,7 +457,7 @@ sprite_anim_proc		proc	near
 		mov	byte ptr ds:render_state_b,8Ah
 
 anim_main_loop:
-							mov	byte ptr ds:gvar_timer_lo,0
+							mov	byte ptr ds:gvar_frame_timer,0
 
 anim_read_byte:
 												lodsb				; String [si] to al
@@ -594,9 +594,9 @@ timer_check_input:
 							cmp	byte ptr cs:gvar_key_state,ENTER_KEY
 							je	timer_exit_to_game			; Jump if equal
 							call	interrupt_handler_cascade
-							cmp	cs:gvar_timer_lo,al
+							cmp	cs:gvar_frame_timer,al
 							jb	timer_check_input			; Jump if below
-		mov	byte ptr cs:gvar_timer_lo,0
+		mov	byte ptr cs:gvar_frame_timer,0
 		retn
 
 interrupt_handler_cascade	proc	near
@@ -634,7 +634,7 @@ timer_wait_gfx:
 		mov	di,gfx_plane_b
 		mov	al,5
 		call	word ptr cs:[10Ch]
-		mov	byte ptr ds:gvar_timer_lo,0
+		mov	byte ptr ds:gvar_frame_timer,0
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,gfx_plane_b
@@ -656,9 +656,9 @@ trans_wait_timer:
 							cmp	byte ptr cs:gvar_key_state,ENTER_KEY
 							je	trans_exit			; Jump if equal
 							call	interrupt_handler_cascade
-							cmp	cs:gvar_timer_lo,al
+							cmp	cs:gvar_frame_timer,al
 							jb	trans_wait_timer			; Jump if below
-		mov	byte ptr cs:gvar_timer_lo,0
+		mov	byte ptr cs:gvar_frame_timer,0
 		retn
 
 scene_transition_wait	endp
@@ -796,7 +796,7 @@ begin_gameplay:
 		mov	bx,1728h
 		mov	cx,2230h
 		call	word ptr cs:disp_game_fn
-		mov	byte ptr cs:gvar_timer_lo,0
+		mov	byte ptr cs:gvar_frame_timer,0
 		mov	al,0Fh
 		call	gameplay_timer_loop
 		mov	al,3
@@ -891,7 +891,7 @@ gameplay_timer_loop_start:
 							push	cx
 							push	dx
 							push	bx
-							mov	byte ptr cs:gvar_timer_lo,0
+							mov	byte ptr cs:gvar_frame_timer,0
 							mov	cx,dx
 							call	word ptr cs:disp_load_setup
 							mov	al,0Fh
@@ -924,7 +924,7 @@ gameplay_input_loop:
 							push	cx
 							push	dx
 							push	bx
-							mov	byte ptr cs:gvar_timer_lo,0
+							mov	byte ptr cs:gvar_frame_timer,0
 							mov	cx,dx
 							call	word ptr cs:disp_load_setup
 							mov	al,0Fh
@@ -970,7 +970,7 @@ gameplay_input_loop:
 		mov	si,ext_segment
 		call	xor_mask_render
 		GFX_BLIT 808h, 40C0h, 4000h
-		mov	byte ptr cs:gvar_timer_lo,0
+		mov	byte ptr cs:gvar_frame_timer,0
 		mov	al,0F0h
 		call	gameplay_timer_loop
 		mov	al,0FFh
@@ -998,9 +998,9 @@ gameplay_timer_loop	proc	near
 
 gameplay_wait_elapsed:
 							call	gameplay_input_handler
-							cmp	cs:gvar_timer_lo,al
+							cmp	cs:gvar_frame_timer,al
 							jb	gameplay_wait_elapsed			; Jump if below
-		mov	byte ptr cs:gvar_timer_lo,0
+		mov	byte ptr cs:gvar_frame_timer,0
 		retn
 
 gameplay_timer_loop	endp
@@ -1054,7 +1054,7 @@ timer_wait_loop		endp
 ; ============================================================
 
 script_interpreter		proc	near
-		mov	byte ptr cs:gvar_timer_lo,0
+		mov	byte ptr cs:gvar_frame_timer,0
 
 script_loop:
 		mov	al,10h

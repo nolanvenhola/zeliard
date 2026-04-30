@@ -78,11 +78,21 @@ mao2_drv_misc_cb	equ	302Fh			; driver callback
 ; ----------------------------------------------------------------------
 ; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
 ; ----------------------------------------------------------------------
-mao2_gvar_state_a	equ	0FF21h			; global state byte A
-mao2_gvar_state_b	equ	0FF2Eh			; global state byte B (skip-frame flag)
+; FF21 had been speculatively aliased to gvar_skip_input in an earlier pass,
+; but the canonical gvar_skip_input lives at 0FF1Dh (zeliard.inc / stick.asm
+; / 100OPDMO).  No other chunk reads/writes 0FF21h, so the byte's role here
+; is local-state only — keep the placeholder.
+mao2_gvar_state_a	equ	0FF21h			; module-local state byte A (no shared canonical)
+; mao2_gvar_state_b is a local rename for the same byte that 11 other
+; enemy chunks (309CRAB..318MAO1) call gvar_death_flag — a global entity-
+; dying flag (set by prep_arm_death in 309CRAB and clones; cleared by
+; 200FIGHT's reset sequence).  The "skip-frame flag" description was a
+; misread — the test/jz/set pattern in this file (lines 380, 1215, 1223)
+; matches the death-arming pattern in sibling enemy modules.  Aliased.
+mao2_gvar_state_b	equ	0FF2Eh			; alias for gvar_death_flag
 mao2_gvar_state_c	equ	0FF2Fh			; global state byte C
-mao2_gvar_state_d	equ	0FF30h			; global state byte D
-mao2_gvar_phase_byte	equ	0FF75h			; global state byte (per-map phase)
+mao2_gvar_state_d	equ	0FF30h			; alias for gvar_completion (200FIGHT canonical)
+mao2_gvar_phase_byte	equ	0FF75h			; alias for gvar_spawn_fx_flag (zr3com.inc canonical for FF75 in fight context)
 
 
 ; ----------------------------------------------------------------------
@@ -371,13 +381,13 @@ mao2_npc_scan_done:
 
 mao2_attr_shift_done:
 		call	mao2_pos_sub
-		mov	byte ptr ds:mao2_gvar_phase_byte,39h	; '9'
+		mov	byte ptr ds:gvar_spawn_fx_flag,39h	; '9'
 		cmp	word ptr ds:mao2_pos_word,0C8h
 		jae	mao2_check_skip_frame			; Jump if above or =
 		mov	byte ptr ds:mao2_anim_finished,0FFh
 
 mao2_check_skip_frame:
-		test	byte ptr ds:mao2_gvar_state_b,0FFh
+		test	byte ptr ds:gvar_death_flag,0FFh
 		jz	mao2_check_anim_active			; Jump if zero
 		jmp	mao2_skip_anim_top
 
@@ -428,7 +438,7 @@ mao2_phase_step_advance:
 		jmp	mao2_dlg_a_check
 
 mao2_phase_substate_seed:
-		mov	byte ptr ds:mao2_gvar_phase_byte,3Bh	; ';'
+		mov	byte ptr ds:gvar_spawn_fx_flag,3Bh	; ';'
 		mov	byte ptr ds:mao2_attr_high_nib,60h	; '`'
 		mov	al,ds:mao2_rng_bit
 		mov	cl,0Ah
@@ -471,7 +481,7 @@ mao2_phase_step_high:
 		jmp	mao2_dlg_a_check
 
 mao2_phase_step_high2:
-		mov	byte ptr ds:mao2_gvar_phase_byte,3Bh	; ';'
+		mov	byte ptr ds:gvar_spawn_fx_flag,3Bh	; ';'
 		mov	byte ptr ds:mao2_attr_high_nib,60h	; '`'
 		jmp	mao2_render_emit_top
 
@@ -988,7 +998,7 @@ mao2_dlg_a_init		proc	near
 		add	al,4
 		and	al,3Fh			; '?'
 		mov	ds:mao2_dlg_a_cl,al
-		mov	byte ptr ds:mao2_gvar_phase_byte,3Ah	; ':'
+		mov	byte ptr ds:gvar_spawn_fx_flag,3Ah	; ':'
 		retn
 
 mao2_dlg_a_init		endp
@@ -1006,7 +1016,7 @@ mao2_dlg_b_init		proc	near
 		add	al,4
 		and	al,3Fh			; '?'
 		mov	ds:mao2_dlg_b_cl,al
-		mov	byte ptr ds:mao2_gvar_phase_byte,3Ah	; ':'
+		mov	byte ptr ds:gvar_spawn_fx_flag,3Ah	; ':'
 		retn
 
 mao2_dlg_b_init		endp
@@ -1212,7 +1222,7 @@ mao2_pos_sub_clamp:
 		retn
 
 mao2_pos_sub_check_b:
-		test	byte ptr ds:mao2_gvar_state_b,0FFh
+		test	byte ptr ds:gvar_death_flag,0FFh
 		jz	mao2_pos_sub_set_skip			; Jump if zero
 		retn
 
@@ -1220,7 +1230,7 @@ mao2_pos_sub_set_skip:
 		mov	byte ptr ds:mao2_anim_step,0
 		mov	byte ptr ds:mao2_dlg_a_active,0
 		mov	byte ptr ds:mao2_dlg_b_active,0
-		mov	byte ptr ds:mao2_gvar_state_b,0FFh
+		mov	byte ptr ds:gvar_death_flag,0FFh
 		retn
 
 mao2_pos_sub		endp
@@ -1244,7 +1254,7 @@ mao2_pos_step_advance:
 
 mao2_pos_step_save:
 		mov	ds:mao2_pos_word,bx
-		mov	byte ptr ds:mao2_gvar_phase_byte,3Ch	; '<'
+		mov	byte ptr ds:gvar_spawn_fx_flag,3Ch	; '<'
 		jmp	word ptr cs:fight_cb_prep
 
 mao2_pos_step		endp
@@ -1255,10 +1265,10 @@ mao2_skip_anim_top:
 		jae	mao2_skip_anim_done			; Jump if above or =
 		test	byte ptr ds:mao2_anim_step,7
 		jnz	mao2_skip_anim_step			; Jump if not zero
-		mov	byte ptr ds:mao2_gvar_phase_byte,23h	; '#'
+		mov	byte ptr ds:gvar_spawn_fx_flag,23h	; '#'
 
 mao2_skip_anim_step:
-		mov	byte ptr ds:mao2_gvar_state_c,0FFh
+		mov	byte ptr ds:gvar_dir_toggle,0FFh
 		inc	byte ptr ds:mao2_anim_step
 		cmp	al,14h
 		jb	mao2_skip_anim_xlat			; Jump if below
@@ -1272,7 +1282,7 @@ mao2_skip_anim_xlat:
 		jmp	mao2_render_emit_top
 
 mao2_skip_anim_done:
-		mov	byte ptr ds:mao2_gvar_state_d,0FFh
+		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 
 ; ------------------------------------------------------------------

@@ -14,9 +14,48 @@
 ; All internal game.asm labels are: GAME_CODE_BASE + (offset label)
 GAME_CODE_BASE          equ     0A000h
 
-; SAR chunk loader function pointer in the game segment (installed by font.grp init).
-; game.asm calls the chunk loader via: call word ptr cs:sar_loader_fn
-sar_loader_fn           equ     010Ch
+; stick.bin (game-segment driver, loaded at CS:0x100) installs an 11-slot
+; dispatch table at CS:0x10C..0x121 — function pointers other modules call
+; into.  Slot 0x10C (sar_loader_fn) handles SAR chunk loading.  The
+; remaining 10 slots are heavily called from game.bin and zelres1/2/3
+; chunks but had no symbolic name; the placeholders below give them one
+; canonical address each.  Renaming a placeholder to a semantic name (once
+; functional probes nail down the slot's role) is then a single-file edit.
+;
+; Reference counts (game-segment call sites only, per segment-aware
+; analyzer.  An additional ~10 calls come from per-enemy chunks but those
+; reach a different physical 0x110+ slot since enemies run in their own
+; segment).
+;   sar_loader_fn (10C) ≈ 49     stick_disp_11A     = 28 (heaviest unnamed)
+;   stick_disp_110       = 13    stick_disp_112     = 12
+;   stick_disp_116       = 11    stick_disp_118     = 11
+;   stick_disp_114       =  9    stick_disp_11E     =  3
+;   stick_disp_10E,11C,120 =  1-3 each
+sar_loader_fn           equ     010Ch   ; -> 0x0A84  (SAR chunk loader)
+stick_disp_10E          equ     010Eh   ; -> 0x0F17
+stick_disp_110          equ     0110h   ; -> 0x06AC
+stick_disp_112          equ     0112h   ; -> 0x0723
+stick_disp_114          equ     0114h   ; -> 0x07B6
+stick_disp_116          equ     0116h   ; -> 0x0881
+stick_disp_118          equ     0118h   ; -> 0x08EF
+stick_disp_11A          equ     011Ah   ; -> 0x0918  (most-called unnamed slot, 31 sites)
+stick_disp_11C          equ     011Ch   ; -> 0x09D6
+stick_disp_11E          equ     011Eh   ; -> 0x092D
+stick_disp_120          equ     0120h   ; -> 0x089E
+
+; stick.bin internal scratch / state block at CS:0x05C1..0x05C8.
+; Detected by analyze_stat_layout.py as 8 contiguous unnamed bytes/words
+; with byte_or / byte_xor / byte_test access.  Static pattern analysis
+; (5C1..5C5 = byte flags zeroed at init then OR/XORed with conditions;
+;  5C6 and 5C8 read as words) suggests a small bitfield + two counters.
+; Names are placeholders pending functional probe.
+stick_scratch_5C1       equ     05C1h   ; byte flag (or/xor/zero)
+stick_scratch_5C2       equ     05C2h   ; byte flag
+stick_scratch_5C3       equ     05C3h   ; byte flag
+stick_scratch_5C4       equ     05C4h   ; byte flag
+stick_scratch_5C5       equ     05C5h   ; byte flag (also written as 0FFh)
+stick_scratch_5C6       equ     05C6h   ; word counter (5C6h..5C7h)
+stick_scratch_5C8       equ     05C8h   ; word counter (5C8h..5C9h)
 
 ; zeliad callback function offset (zeliad's own code segment, stored in gvar_chunk_load_fn).
 ; game.asm/SAR loader calls back into zeliad via this far pointer.

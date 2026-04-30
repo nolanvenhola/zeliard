@@ -720,7 +720,7 @@ zel2_idle_phase_reset:
 				jmp	short zel2_idle_phase_xlat_apply
 
 zel2_idle_state_set:
-		mov	byte ptr ds:zel2_state_ff30,0FFh
+		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 
 ; ------------------------------------------------------------------

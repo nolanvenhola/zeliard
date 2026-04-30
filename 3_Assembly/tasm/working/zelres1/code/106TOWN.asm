@@ -259,10 +259,10 @@ init_load_tiles:
 
 main_loop:
 		call	player_func_33
-		mov	byte ptr ds:[0E7h],0
+		mov	byte ptr ds:gvar_pose_idx,0
 		test	byte ptr ds:[49h],0FFh
 		jz	main_clear_flag			; Jump if zero
-		mov	byte ptr ds:[0E8h],0
+		mov	byte ptr ds:init_complete_flag,0
 
 main_clear_flag:
 		call	word ptr cs:gfx_clear_fn
@@ -278,7 +278,7 @@ walk_skip_loop:
 		lodsb				; String [si] to al
 		mov	ds:town_palette_idx,al
 		mov	byte ptr ds:town_load_flag,0
-		test	byte ptr ds:[0E8h],0FFh
+		test	byte ptr ds:init_complete_flag,0FFh
 		jnz	frame_update			; Jump if not zero
 		test	byte ptr ds:town_map_side,1
 		jz	check_load_chunk			; Jump if zero
@@ -367,9 +367,9 @@ walk_skip_loop2:
 		add	ax,0C017h
 		mov	ds:gvar_tile_ptr,ax
 		call	player_func_27
-		test	byte ptr ds:[0E8h],0FFh
+		test	byte ptr ds:init_complete_flag,0FFh
 		jz	portal_check			; Jump if zero
-		mov	byte ptr ds:[0E8h],0
+		mov	byte ptr ds:init_complete_flag,0
 		call	player_load_chunk
 		mov	bx,61FCh
 		push	bx
@@ -450,7 +450,7 @@ dispatch_left:
 		jmp	walk_right_entry
 
 dispatch_right:
-		or	byte ptr ds:[0E7h],1
+		or	byte ptr ds:gvar_pose_idx,1
 		mov	byte ptr ds:town_exit_flag,0FFh
 		retn
 
@@ -463,7 +463,7 @@ player_func_1		proc	near
 
 pf1_do:
 		mov	byte ptr ds:gvar_skip_input,0
-		mov	bl,byte ptr ds:[83h]
+		mov	bl,byte ptr ds:town_player_col
 		add	bl,4
 		xor	bh,bh			; Zero register
 		mov	dx,bx
@@ -541,7 +541,7 @@ pf1_enter_left:
 player_func_1		endp
 
 player_func_2		proc	near
-		mov	bl,byte ptr ds:[83h]
+		mov	bl,byte ptr ds:town_player_col
 		add	bl,4
 		xor	bh,bh			; Zero register
 		mov	dx,bx
@@ -641,7 +641,7 @@ player_func_3		endp
 player_multiply		proc	near
 
 render_set_dirty:
-		or	byte ptr ds:[0E7h],1
+		or	byte ptr ds:gvar_pose_idx,1
 player_multiply		endp
 
 player_func_5		proc	near
@@ -1140,7 +1140,7 @@ math_calc		endp
 
 walk_left_entry:
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr ds:[83h]
+		mov	bl,byte ptr ds:town_player_col
 		add	bl,3
 		add	bx,bx
 		add	bx,bx
@@ -1153,7 +1153,7 @@ walk_left_entry:
 
 walk_left_tile_ok:
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr ds:[83h]
+		mov	bl,byte ptr ds:town_player_col
 		add	bl,4
 		add	bx,word ptr ds:[80h]
 		dec	bx
@@ -1162,18 +1162,18 @@ walk_left_tile_ok:
 		retn
 
 walk_left_move:
-		inc	byte ptr ds:[0E7h]
-		and	byte ptr ds:[0E7h],3
+		inc	byte ptr ds:gvar_pose_idx
+		and	byte ptr ds:gvar_pose_idx,3
 		or	byte ptr ds:[0C2h],1
-		cmp	byte ptr ds:[83h],0Bh
+		cmp	byte ptr ds:town_player_col,0Bh
 		jb	walk_left_col_clamp			; Jump if below
-		dec	byte ptr ds:[83h]
+		dec	byte ptr ds:town_player_col
 		retn
 
 walk_left_col_clamp:
 		test	word ptr ds:[80h],0FFFFh
 		jnz	walk_left_scroll			; Jump if not zero
-		dec	byte ptr ds:[83h]
+		dec	byte ptr ds:town_player_col
 		retn
 
 walk_left_scroll:
@@ -1190,7 +1190,7 @@ walk_left_audio:
 
 walk_right_entry:
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr ds:[83h]
+		mov	bl,byte ptr ds:town_player_col
 		add	bl,6
 		add	bx,bx
 		add	bx,bx
@@ -1203,7 +1203,7 @@ walk_right_entry:
 
 walk_right_tile_ok:
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr ds:[83h]
+		mov	bl,byte ptr ds:town_player_col
 		add	bl,4
 		add	bx,word ptr ds:[80h]
 		inc	bx
@@ -1212,12 +1212,12 @@ walk_right_tile_ok:
 		retn
 
 walk_right_move:
-		inc	byte ptr ds:[0E7h]
-		and	byte ptr ds:[0E7h],3
+		inc	byte ptr ds:gvar_pose_idx
+		and	byte ptr ds:gvar_pose_idx,3
 		and	byte ptr ds:[0C2h],0FEh
-		cmp	byte ptr ds:[83h],10h
+		cmp	byte ptr ds:town_player_col,10h
 		jae	walk_right_edge			; Jump if above or =
-		inc	byte ptr ds:[83h]
+		inc	byte ptr ds:town_player_col
 		retn
 
 walk_right_edge:
@@ -1227,7 +1227,7 @@ walk_right_edge:
 		inc	bx
 		cmp	ax,bx
 		jne	walk_right_scroll			; Jump if not equal
-		inc	byte ptr ds:[83h]
+		inc	byte ptr ds:town_player_col
 		retn
 
 walk_right_scroll:
@@ -1360,7 +1360,7 @@ proc_copy_loop:
 player_process_loop		endp
 
 player_func_17		proc	near
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:town_player_col
 		cmp	al,1Bh
 		jb	anim_player_do			; Jump if below
 		retn
@@ -1391,7 +1391,7 @@ player_func_18		proc	near
 		push	cs
 		pop	es
 		xor	ax,ax			; Zero register
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:town_player_col
 		add	al,4
 		add	ax,ax
 		add	ax,ax
@@ -1408,7 +1408,7 @@ player_func_18		proc	near
 		movsw				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
 		xor	dx,dx			; Zero register
-		mov	dl,byte ptr ds:[83h]
+		mov	dl,byte ptr ds:town_player_col
 		add	dl,4
 		add	dx,word ptr ds:[80h]
 		push	dx
@@ -1479,7 +1479,7 @@ scan_npc2_skip:
 
 walk_dir_select:
 		xor	ax,ax			; Zero register
-		mov	al,byte ptr ds:[0E7h]
+		mov	al,byte ptr ds:gvar_pose_idx
 		add	ax,ax
 		mov	bx,ax
 		add	ax,ax
@@ -1698,7 +1698,7 @@ npc_anim_loop2:
 
 npc_type2_fn:
 		or	byte ptr [si+2],80h
-		mov	bl,byte ptr ds:[83h]
+		mov	bl,byte ptr ds:town_player_col
 		add	bl,4
 		xor	bh,bh			; Zero register
 		add	bx,word ptr ds:[80h]
@@ -1887,7 +1887,7 @@ door_found:
 
 door_execute:
 		call	player_func_31
-		mov	byte ptr ds:[83h],1Ah
+		mov	byte ptr ds:town_player_col,1Ah
 		mov	ax,ds:town_map_width
 		sub	ax,24h
 		mov	word ptr ds:[80h],ax
@@ -1921,7 +1921,7 @@ door_alt_found:
 
 door_alt_execute:
 		call	player_func_31
-		mov	byte ptr ds:[83h],0
+		mov	byte ptr ds:town_player_col,0
 		mov	word ptr ds:[80h],0
 		jmp	frame_update
 
@@ -2023,9 +2023,9 @@ player_func_33		endp
 		db	 2Eh, 47h, 52h, 50h, 00h	; ".GRP" filename suffix + null terminator
 
 door_scan_entry:
-		or	byte ptr ds:[0E7h],1
+		or	byte ptr ds:gvar_pose_idx,1
 		mov	ax,word ptr ds:[80h]
-		mov	bl,byte ptr ds:[83h]
+		mov	bl,byte ptr ds:town_player_col
 		xor	bh,bh			; Zero register
 		add	ax,bx
 		add	ax,4
@@ -2052,7 +2052,7 @@ door_scan_next:
 								jmp	short door_scan_loop
 
 door_action:
-		mov	byte ptr ds:[0E7h],4
+		mov	byte ptr ds:gvar_pose_idx,4
 		push	si
 		call	player_func_28
 		mov	byte ptr ds:gvar_frame_timer,28h	; '('
@@ -2099,7 +2099,7 @@ door_type_shop:
 		call	player_func_14
 		mov	byte ptr ds:gvar_skip_input,0
 		mov	byte ptr ds:gvar_skip_flag2,0
-		mov	byte ptr ds:[0E7h],1
+		mov	byte ptr ds:gvar_pose_idx,1
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,3000h
@@ -2135,7 +2135,7 @@ door_type_shop:
 		db	'INNAPRO.BIN', 0		; 0x0064
 
 door_type_special:
-		mov	byte ptr ds:[0E7h],4
+		mov	byte ptr ds:gvar_pose_idx,4
 		call	player_func_14
 		test	byte ptr ds:[45h],80h
 		jnz	special_door_load			; Jump if not zero
@@ -2167,7 +2167,7 @@ special_door_wait:
 		mov	al,5
 		call	word ptr cs:[10Ch]
 		mov	word ptr ds:[80h],84h
-		mov	byte ptr ds:[83h],0Dh
+		mov	byte ptr ds:town_player_col,0Dh
 		call	word ptr cs:gfx_blit_fn
 ;*		jmp	loc_2			;*
 				db 0E9h, 31h, 0F0h		; jmp near -0xFCF (unaligned target 36h)
@@ -2196,7 +2196,7 @@ pf30_no_scroll:
 		lodsb				; String [si] to al
 		shr	al,1			; Shift w/zeros fill
 		sbb	al,al
-		mov	byte ptr ds:[0C3h],al
+		mov	byte ptr ds:boss_intro_flag,al
 		lodsb				; String [si] to al
 		mov	byte ptr ds:[0C4h],al
 		mov	ah,al

@@ -46,7 +46,13 @@ include  zr3com.inc
 ; ----------------------------------------------------------------------
 ; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
 ; ----------------------------------------------------------------------
-gvar_unk_ff3c		equ	0FF3Ch		; global state byte (used in header decode)
+; 0xFF3C is canonically gvar_palette_flag (set during palette transitions
+; per 200FIGHT; also referred to as gvar_palette_st in game.asm).
+; 314LEGA's single use is `add ss:gvar_palette_flag[bp+di], al` which is a
+; STACK-FRAME local access (ss:[bp+di+offset]) — the offset happens to
+; be 0xFF3C but the access targets a stack slot, not the global.
+; Aliased for compile compatibility.
+gvar_unk_ff3c		equ	0FF3Ch		; alias for gvar_palette_flag (note: 314LEGA's site is a stack ref)
 
 
 ; ----------------------------------------------------------------------

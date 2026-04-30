@@ -1584,7 +1584,7 @@ fade_cell_continue:
 		mov	ax,cs:hero_gfx_tbl[bx]
 		mov	cs:cur_color_pair,ax
 		mov	es,cs:game_seg
-		mov	al,byte ptr ds:[0E8h]
+		mov	al,byte ptr ds:init_complete_flag
 		or	al,ds:flag_climbing
 		or	al,ds:flag_riding
 		jz	loc_116			; Jump if zero
@@ -1661,7 +1661,7 @@ loc_122:
 loc_123:
 		test	byte ptr ds:flag_shield,0FFh
 		jnz	loc_126			; Jump if not zero
-		mov	al,byte ptr ds:[0E7h]
+		mov	al,byte ptr ds:gvar_pose_idx
 		cmp	al,80h
 		je	loc_126			; Jump if equal
 		add	al,2
@@ -1699,7 +1699,7 @@ loc_126:
 		mov	si,game_data_base
 
 loc_127:
-		test	byte ptr ds:[0E8h],0FFh
+		test	byte ptr ds:init_complete_flag,0FFh
 		jz	loc_128			; Jump if zero
 		add	si,5Ah
 		jmp	short loc_129
@@ -1722,11 +1722,11 @@ loc_128:
 		cmp	byte ptr ds:equip_byte,7Fh
 		je	loc_130			; Jump if equal
 		mov	ax,24h
-		cmp	byte ptr ds:[0E7h],80h
+		cmp	byte ptr ds:gvar_pose_idx,80h
 		je	loc_130			; Jump if equal
 
 loc_129:
-		mov	al,byte ptr ds:[0E7h]
+		mov	al,byte ptr ds:gvar_pose_idx
 		and	al,3
 		mov	cl,9
 		mul	cl			; ax = reg * al
@@ -1738,7 +1738,7 @@ loc_131:
 		mov	cx,9
 		mov	byte ptr ds:col_idx,0
 		call	sprite_write_range
-		test	byte ptr ds:[0E8h],0FFh
+		test	byte ptr ds:init_complete_flag,0FFh
 		jz	loc_132			; Jump if zero
 		retn
 
@@ -1831,7 +1831,7 @@ loc_141:
 		mov	ax,1Bh
 		test	byte ptr ds:flag_shield,0FFh
 		jnz	loc_142			; Jump if not zero
-		mov	cl,byte ptr ds:[0E7h]
+		mov	cl,byte ptr ds:gvar_pose_idx
 		cmp	cl,80h
 		je	loc_142			; Jump if equal
 		and	cl,3

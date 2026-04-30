@@ -83,7 +83,7 @@ include  srmacros.inc
 ; ----------------------------------------------------------------------
 ; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
 ; ----------------------------------------------------------------------
-gvar_timer_lo		equ	0FF1Ah		; frame timer low byte (zeliard.inc)
+gvar_frame_timer	equ	0FF1Ah		; frame timer (canonical)
 gvar_skip_input		equ	0FF21h		; input skip flag (zeliard.inc)
 gvar_game_seg		equ	0FF2Ch		; game data segment word (zeliard.inc)
 gvar_credits_pos	equ	0FF50h		; credits scroll/row position word
@@ -277,7 +277,7 @@ main_entry:
 		mov	bx,2D71h
 		mov	cx,1858h
 		call	word ptr cs:gfx_draw_fn
-		mov	byte ptr cs:gvar_timer_lo,0
+		mov	byte ptr cs:gvar_frame_timer,0
 		mov	al,0FFh
 		call	timer_wait_loop
 		mov	cx,59h
@@ -442,9 +442,9 @@ timer_wait_loop		proc	near
 
 timer_wait_poll:
 				call	gfx_driver_tick_full
-				cmp	cs:gvar_timer_lo,al
+				cmp	cs:gvar_frame_timer,al
 				jb	timer_wait_poll			; Jump if below
-		mov	byte ptr cs:gvar_timer_lo,0
+		mov	byte ptr cs:gvar_frame_timer,0
 		retn
 
 timer_wait_loop		endp
@@ -463,7 +463,7 @@ gfx_driver_tick_full		proc	near
 gfx_driver_tick_full		endp
 
 render_narration_page		proc	near
-		mov	byte ptr cs:gvar_timer_lo,0
+		mov	byte ptr cs:gvar_frame_timer,0
 
 narration_tick_top:
 		mov	al,10h
@@ -921,7 +921,7 @@ credits_tick_loop:
 				jmp	short credits_tick_loop
 
 credits_loop_main		proc	near
-		mov	byte ptr ds:gvar_timer_lo,0
+		mov	byte ptr ds:gvar_frame_timer,0
 
 credits_fetch_byte:
 		mov	si,ds:credits_pc
@@ -1200,9 +1200,9 @@ credits_wait_tick		proc	near
 
 credits_wait_poll:
 				call	credits_driver_tick
-				cmp	cs:gvar_timer_lo,al
+				cmp	cs:gvar_frame_timer,al
 				jb	credits_wait_poll			; Jump if below
-		mov	byte ptr cs:gvar_timer_lo,0
+		mov	byte ptr cs:gvar_frame_timer,0
 		retn
 
 credits_wait_tick		endp

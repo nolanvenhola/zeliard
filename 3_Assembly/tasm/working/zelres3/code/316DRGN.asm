@@ -1017,7 +1017,7 @@ drgn_death_phase_done:
 		jmp	drgn_render_begin
 
 drgn_death_finish:
-		mov	byte ptr ds:gvar_state_ff30,0FFh
+		mov	byte ptr ds:gvar_completion,0FFh
 		retn
 
 ; ------------------------------------------------------------------

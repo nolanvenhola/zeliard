@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""
+{TEST_FILENAME}
+
+{ONE_LINE_PURPOSE}
+
+Hypothesis (from IDA / static evidence): {HYPOTHESIS}
+
+Probes
+------
+A. {PROBE_A_DESCRIPTION}
+B. {PROBE_B_DESCRIPTION}
+C. {PROBE_C_DESCRIPTION}
+
+The verdict line at the bottom is what `run.py` scrapes:
+    VERDICT: PASS|FAIL|REFUTED|INCONCLUSIVE: <one-line summary>
+"""
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).parent
+sys.path.insert(0, str(HERE.parent))
+from harness import TasmHarness  # noqa: E402
+from fixtures import BIN_PATHS, make_player_record  # noqa: E402
+
+CHUNK = '{CHUNK_KEY}'              # key into BIN_PATHS, e.g. 'fight'
+FUNC_ADDR = 0x{FUNC_ADDR:04X}      # CPU address of the function under test
+
+
+def main() -> int:
+    flat_path, load_base = BIN_PATHS[CHUNK]
+    if not flat_path.exists():
+        print(f'MISSING: {flat_path}')
+        print('VERDICT: INCONCLUSIVE: flat-file artefact missing')
+        return 1
+
+    h = TasmHarness(flat_path, load_base)
+    # Optional: stub the gfx driver dispatch so the proc can far-call freely.
+    # from fixtures import stub_video_drivers
+    # stub_video_drivers(h)
+
+    # Optional: seed a player record (DS:0x80..0xCF).
+    # make_player_record(h, hero_HP=100, hero_gold_lo=500, player_facing=1)
+
+    # ---- Probe A ----
+    snap = h.snapshot()
+    result = h.call_function(FUNC_ADDR, regs={'ax': 0x0001})
+    print(f'Probe A: ax=0x0001')
+    print('  diffs:', h.format_diffs(result) or '(none)')
+    print(f'  flags: {result["flags_after"]}')
+    print(f'  ax_out=0x{result["regs_after"]["ax"]:04X}')
+    h.restore(snap)
+
+    # ---- Probe B ----
+    result = h.call_function(FUNC_ADDR, regs={'ax': 0x0002})
+    print(f'\nProbe B: ax=0x0002')
+    print('  diffs:', h.format_diffs(result) or '(none)')
+    h.restore(snap)
+
+    # ---- Probe C ----
+    # ...
+
+    # Decide verdict from the probes
+    pass_condition = True   # replace with actual assertion
+    if pass_condition:
+        print('\nVERDICT: PASS: function does X to byte at DS:Y given input Z')
+    else:
+        print('\nVERDICT: REFUTED: hypothesis was {HYPOTHESIS}; observed Z instead')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

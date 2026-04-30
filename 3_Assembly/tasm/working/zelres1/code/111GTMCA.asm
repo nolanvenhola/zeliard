@@ -35,7 +35,6 @@ include  zr1com.inc
 gvar_plystate	equ	0FF2Ah			;* global player state struct pointer
 gvar_game_seg	equ	0FF2Ch			;* global game segment selector
 gvar_flag57	equ	0FF57h			;* global boolean flag at FF57h
-gvar_scroll_idx	equ	0FF68h			;* global scroll index word
 
 ; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses

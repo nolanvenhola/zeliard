@@ -21,7 +21,12 @@ gvar_dir_toggle         equ     0FF2Fh  ; direction toggle / facing flip
 gvar_completion         equ     0FF30h  ; level completion state
 gvar_frame_cnt          equ     0FF35h  ; frame counter (EAI context)
 gvar_enemy_cnt          equ     0FF36h  ; active enemy count
-gvar_sub_frame          equ     0FF4Ah  ; sub-frame counter
+; The byte at 0FF4Ah is the object-scan loop index used by 200FIGHT's
+; entity scans (set + inc inside obj_list_loop, indexed into
+; enemy_data_ext[]).  The "sub-frame counter" name was a guess — the
+; canonical name is `obj_scan_index` (see 200FIGHT.asm line 130 EQU).
+; Kept as alias for the 2 enemy-chunk reads (304EAI4, 305EAI5).
+gvar_sub_frame          equ     0FF4Ah  ; alias for obj_scan_index
 gvar_spawn_fx_flag      equ     0FF75h  ; spawn FX trigger
                                         ; (NOTE: same byte as gvar_volume_b
                                         ;  in zeliad/game context -- repurposed

@@ -50,7 +50,6 @@ include  zr2com.inc
 ; ----------------------------------------------------------------------
 gvar_game_seg		equ	0FF2Ch		;* game data segment selector
 inventory_list		equ	0FF58h		;* live inventory slot buffer (5 bytes)
-menu_col_width		equ	0FF68h		;* menu column width (word)
 menu_row_count		equ	0FF6Ah		;* menu row count (word)
 
 ; ----------------------------------------------------------------------
