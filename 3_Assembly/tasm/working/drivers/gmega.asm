@@ -1059,10 +1059,10 @@ render_tilemap_large		endp
 decode_bitplane_tile		proc	near
 		mov	bx,0FFF0h
 		test	ch,1
-		jz	loc_50			; Jump if zero
+		jz	test_tile_bg_mask			; Jump if zero
 		mov	bx,0FFFh
 
-loc_50:
+test_tile_bg_mask:
 		test	byte ptr ds:tile_bg_mask,0FFh
 		jz	loc_52			; Jump if zero
 		push	di
@@ -1237,7 +1237,7 @@ render_small_tile_anim4:
 		push	ds
 		mov	si,tile_src_base
 		or	al,al			; Zero ?
-		jz	loc_57			; Jump if zero
+		jz	call_render_tilemap_small			; Jump if zero
 		mov	ds,cs:gvar_game_seg
 		dec	al
 		xor	ah,ah			; Zero register
@@ -1246,7 +1246,7 @@ render_small_tile_anim4:
 		add	ax,ds:anim_ptr_4
 		mov	si,ax
 
-loc_57:
+call_render_tilemap_small:
 		call	render_tilemap_small
 		pop	ds
 		retn
@@ -1255,7 +1255,7 @@ render_small_tile_anim3:
 		push	ds
 		mov	si,tile_src_base
 		or	al,al			; Zero ?
-		jz	loc_58			; Jump if zero
+		jz	call_render_tilemap_small_58			; Jump if zero
 		mov	ds,cs:gvar_game_seg
 		dec	al
 		xor	ah,ah			; Zero register
@@ -1264,7 +1264,7 @@ render_small_tile_anim3:
 		add	ax,ds:anim_ptr_3
 		mov	si,ax
 
-loc_58:
+call_render_tilemap_small_58:
 		call	render_tilemap_small
 		pop	ds
 		retn

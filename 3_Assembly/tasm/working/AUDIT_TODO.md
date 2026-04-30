@@ -361,8 +361,18 @@ doc is the control-flow narrative.
 ### Out of scope (different audit style, listed for completeness)
 
 - **Sourcer `sub_N` / `loc_N` cleanup** — mechanical decoration that
-  obscures rather than informs.  Best handled by a future
-  `/asm-cleanup` skill that auto-renames or strips them in bulk.
+  obscures rather than informs.  Partially addressed 2026-04-30:
+  - `sub_N`: all 6 procs in 311TORI renamed semantically
+    (`tori_render_sprite_row`, `tori_swoop_tick`, etc.); zero
+    `sub_N` declarations remain in the cleaned tree
+  - `loc_N`: heuristic auto-renamer at `tasm/rename_loc_labels.py`
+    applied to 13 chunks; ~165 of 1099 labels (15%) renamed to
+    semantic names (`drv_script_step`, `set_gvar_script_ip_AC9D`,
+    `chain_to_drv_return_to_caller`, etc.).  Remaining 934 are
+    almost entirely in the 5 GF driver chunks where the heuristic
+    doesn't fit the repetitive bit-shift-loop patterns.  Per
+    PLAN §6 these are driver-internal and read by humans rarely;
+    deferred to opportunistic per-file cleanup.
 - **Driver-internal blit/decode helpers** — semantically "bytes at A
   become pixels at B"; doesn't fit byte-delta probing.  Belongs in a
   separate pixel-diff integration test regime alongside DOSBox.

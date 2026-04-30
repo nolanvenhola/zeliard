@@ -243,7 +243,7 @@ loc_11:
 		mov	di,0E900h
 		mov	byte ptr ds:row_counter,12h
 
-loc_12:
+call_frame_row_dispatcher:
 				call	frame_row_dispatcher
 				xor	bx,bx			; Zero register
 				add	si,3
@@ -318,7 +318,7 @@ loc_23:
 				call	si_wrap_hi
 				add	word ptr ds:vga_row_ptr,0A00h
 				dec	byte ptr ds:row_counter
-				jnz	loc_12			; Jump if not zero
+				jnz	call_frame_row_dispatcher			; Jump if not zero
 		retn
 
 gfmca_main		endp
@@ -642,10 +642,10 @@ mca_sprite_blit		endp
 
 sprite_slot_remove		proc	near
 		cmp	byte ptr ds:sprite_buf,0FFh
-		jne	loc_50			; Jump if not equal
+		jne	check_sprite_buf_eq_FC			; Jump if not equal
 		retn
 
-loc_50:
+check_sprite_buf_eq_FC:
 		cmp	byte ptr ds:sprite_buf,0FCh
 		jne	loc_51			; Jump if not equal
 		retn
@@ -715,15 +715,15 @@ sprite_slot_init		endp
 
 sprite_blit_dispatch		proc	near
 		cmp	byte ptr ds:sprite_buf_b,0FFh
-		jne	loc_53			; Jump if not equal
+		jne	check_sprite_buf_b_eq_FC			; Jump if not equal
 		retn
 
-loc_53:
+check_sprite_buf_b_eq_FC:
 		cmp	byte ptr ds:sprite_buf_b,0FCh
-		jne	loc_54			; Jump if not equal
+		jne	set_sprite_buf_b_FF			; Jump if not equal
 		retn
 
-loc_54:
+set_sprite_buf_b_FF:
 		mov	byte ptr ds:sprite_buf_b,0FFh
 		mov	cl,[si]
 		add	si,24h
@@ -781,10 +781,10 @@ sprite_wide_row_render		proc	near
 		push	si
 		push	dx
 		or	al,al			; Zero ?
-		jns	loc_56			; Jump if not sign
+		jns	call_sprite_cell_render			; Jump if not sign
 		call	sprite_get_value
 
-loc_56:
+call_sprite_cell_render:
 		call	sprite_cell_render
 		pop	dx
 		pop	si
@@ -804,10 +804,10 @@ loc_57:
 		mov	ah,al
 		mov	al,bh
 		or	al,al			; Zero ?
-		jns	loc_58			; Jump if not sign
+		jns	call_sprite_cell_render_58			; Jump if not sign
 		call	sprite_get_value
 
-loc_58:
+call_sprite_cell_render_58:
 		call	sprite_cell_render
 
 loc_59:
@@ -903,10 +903,10 @@ loc_62:
 		push	si
 		push	dx
 		or	al,al			; Zero ?
-		jns	loc_63			; Jump if not sign
+		jns	call_sprite_cell_render_63			; Jump if not sign
 		call	sprite_get_value
 
-loc_63:
+call_sprite_cell_render_63:
 		call	sprite_cell_render
 		pop	dx
 		pop	si
@@ -926,10 +926,10 @@ loc_64:
 		mov	ah,al
 		mov	al,bh
 		or	al,al			; Zero ?
-		jns	loc_65			; Jump if not sign
+		jns	call_sprite_cell_render_65			; Jump if not sign
 		call	sprite_get_value
 
-loc_65:
+call_sprite_cell_render_65:
 		call	sprite_cell_render
 
 loc_66:
@@ -1613,13 +1613,13 @@ loc_107:
 		mov	cl,0FFh
 		mov	si,6117h
 		test	byte ptr ds:[0C2h],1
-		jz	loc_108			; Jump if zero
+		jz	test_flag_hero_state			; Jump if zero
 		xor	cl,cl			; Zero register
 		mov	si,61B9h
 
-loc_108:
+test_flag_hero_state:
 		test	byte ptr ds:flag_hero_state,0FFh
-		jz	loc_112			; Jump if zero
+		jz	call_shield_state_get			; Jump if zero
 		inc	cl
 		jnz	loc_109			; Jump if not zero
 		mov	al,ds:hero_frame
@@ -1633,7 +1633,7 @@ loc_108:
 		pop	si
 		add	si,ax
 		add	si,62C7h
-		jmp	short loc_115
+		jmp	short test_flag_shield_115
 
 loc_109:
 		mov	al,ds:hero_frame
@@ -1654,16 +1654,16 @@ loc_110:
 
 loc_111:
 		add	si,ax
-		jmp	short loc_115
+		jmp	short test_flag_shield_115
 
-loc_112:
+call_shield_state_get:
 		call	shield_state_get
 		or	al,al			; Zero ?
-		jz	loc_114			; Jump if zero
+		jz	test_flag_shield			; Jump if zero
 		dec	al
 		mov	cl,al
 		test	byte ptr ds:[0C2h],1
-		jnz	loc_114			; Jump if not zero
+		jnz	test_flag_shield			; Jump if not zero
 		mov	ax,6Ch
 		mov	dl,ds:flag_shield
 		and	dl,9
@@ -1675,9 +1675,9 @@ loc_112:
 
 loc_113:
 		add	si,ax
-		jmp	short loc_115
+		jmp	short test_flag_shield_115
 
-loc_114:
+test_flag_shield:
 		test	byte ptr ds:flag_shield,0FFh
 		jnz	loc_117			; Jump if not zero
 		mov	al,byte ptr ds:gvar_pose_idx
@@ -1692,7 +1692,7 @@ loc_114:
 		add	si,ax
 		jmp	short loc_116
 
-loc_115:
+test_flag_shield_115:
 		test	byte ptr ds:flag_shield,0FFh
 		jz	loc_116			; Jump if zero
 		mov	cx,6
@@ -1714,10 +1714,10 @@ loc_117:
 		jnz	loc_120			; Jump if not zero
 		mov	si,6075h
 		test	byte ptr ds:[0C2h],1
-		jnz	loc_118			; Jump if not zero
+		jnz	test_init_complete_flag			; Jump if not zero
 		mov	si,game_data_base
 
-loc_118:
+test_init_complete_flag:
 		test	byte ptr ds:init_complete_flag,0FFh
 		jz	loc_119			; Jump if zero
 		add	si,5Ah
@@ -1772,7 +1772,7 @@ loc_123:
 loc_124:
 		mov	al,ds:flag_climbing
 		or	al,ds:flag_riding
-		jz	loc_126			; Jump if zero
+		jz	test_flag_hero_state_126			; Jump if zero
 		call	shield_state_get
 		or	al,al			; Zero ?
 		jnz	loc_125			; Jump if not zero
@@ -1787,7 +1787,7 @@ loc_125:
 		xor	ah,ah			; Zero register
 		jmp	loc_133
 
-loc_126:
+test_flag_hero_state_126:
 		test	byte ptr ds:flag_hero_state,0FFh
 		jz	loc_130			; Jump if zero
 		inc	cl
@@ -1803,7 +1803,7 @@ loc_126:
 		pop	si
 		add	si,ax
 		add	si,625Bh
-		jmp	short loc_134
+		jmp	short test_flag_shield_134
 
 loc_127:
 		mov	al,ds:hero_frame
@@ -1824,7 +1824,7 @@ loc_128:
 
 loc_129:
 		add	si,ax
-		jmp	short loc_134
+		jmp	short test_flag_shield_134
 
 loc_130:
 		test	byte ptr ds:[0C2h],1
@@ -1844,7 +1844,7 @@ loc_130:
 
 loc_131:
 		add	si,ax
-		jmp	short loc_134
+		jmp	short test_flag_shield_134
 
 loc_132:
 		mov	ax,1Bh
@@ -1860,7 +1860,7 @@ loc_132:
 loc_133:
 		add	si,ax
 
-loc_134:
+test_flag_shield_134:
 		test	byte ptr ds:flag_shield,0FFh
 		jz	loc_135			; Jump if zero
 		mov	cx,6
@@ -1950,7 +1950,7 @@ loc_140:
 		mov	di,ax
 		pop	ax
 		or	al,al			; Zero ?
-		jz	loc_141			; Jump if zero
+		jz	call_mca_sprite_clear_cell			; Jump if zero
 		dec	al
 		mov	cl,30h			; '0'
 		mul	cl			; ax = reg * al
@@ -1962,7 +1962,7 @@ loc_140:
 		pop	ds
 		retn
 
-loc_141:
+call_mca_sprite_clear_cell:
 		call	mca_sprite_clear_cell
 		pop	di
 		pop	si
@@ -2005,7 +2005,7 @@ loc_143:
 		mov	di,ax
 		pop	ax
 		or	al,al			; Zero ?
-		jz	loc_144			; Jump if zero
+		jz	call_mca_plane_copy_16rows			; Jump if zero
 		mov	cl,al
 		call	mca_sprite_blit_ex
 		pop	di
@@ -2013,7 +2013,7 @@ loc_143:
 		pop	ds
 		retn
 
-loc_144:
+call_mca_plane_copy_16rows:
 		call	mca_plane_copy_16rows
 		pop	di
 		pop	si
@@ -2073,7 +2073,7 @@ loc_147:
 loc_148:
 		jnz	loc_149			; Jump if not zero
 		call	scroll_restore
-		jmp	loc_175
+		jmp	test_redraw_lock
 
 loc_149:
 		add	al,0Ah
@@ -2082,7 +2082,7 @@ loc_149:
 		retn
 
 loc_150:
-		jmp	loc_165
+		jmp	test_scroll_active
 
 ; scroll_phase_update -- advance scroll phase, computes scroll_src_ofs and
 ; scroll_gfx_ptr from the current scroll phase. Called indirectly.
@@ -2101,12 +2101,12 @@ loc_151:
 		inc	byte ptr ds:scroll_step
 		mov	al,ds:scroll_phase
 		or	al,al			; Zero ?
-		jz	loc_155			; Jump if zero
+		jz	check_scroll_step_eq_7			; Jump if zero
 		dec	al
-		jz	loc_153			; Jump if zero
+		jz	check_scroll_step_eq_5			; Jump if zero
 		cmp	byte ptr ds:scroll_step,5
 		jb	loc_152			; Jump if below
-		jmp	loc_159
+		jmp	set_scroll_active_0
 
 loc_152:
 		xor	cl,cl			; Zero register
@@ -2120,10 +2120,10 @@ loc_152:
 		mov	dx,0A00h
 		jmp	short loc_157
 
-loc_153:
+check_scroll_step_eq_5:
 		cmp	byte ptr ds:scroll_step,5
 		jb	loc_154			; Jump if below
-		jmp	loc_159
+		jmp	set_scroll_active_0
 
 loc_154:
 		mov	bl,ds:scroll_step
@@ -2139,9 +2139,9 @@ loc_154:
 		mov	si,0B07Eh
 		jmp	short loc_156
 
-loc_155:
+check_scroll_step_eq_7:
 		cmp	byte ptr ds:scroll_step,7
-		jae	loc_159			; Jump if above or =
+		jae	set_scroll_active_0			; Jump if above or =
 		mov	bl,ds:scroll_step
 		dec	bl
 		xor	bh,bh			; Zero register
@@ -2189,9 +2189,9 @@ loc_158:
 		pop	di
 		pop	si
 		pop	es
-		jmp	loc_165
+		jmp	test_scroll_active
 
-loc_159:
+set_scroll_active_0:
 		mov	byte ptr ds:scroll_active,0
 		mov	byte ptr ds:scroll_step,0
 		pop	bx
@@ -2304,12 +2304,12 @@ scroll_cache_inner_loop:
 
 		retn
 
-loc_165:
+test_scroll_active:
 		test	byte ptr ds:scroll_active,0FFh
-		jnz	loc_166			; Jump if not zero
+		jnz	set_restore_pending_FF			; Jump if not zero
 		retn
 
-loc_166:
+set_restore_pending_FF:
 		mov	byte ptr ds:restore_pending,0FFh
 		push	es
 		push	ds
@@ -2458,12 +2458,12 @@ scroll_clear_cache		endp
 
 hero_sprite_col_blit		proc	near
 
-loc_175:
+test_redraw_lock:
 		test	byte ptr ds:redraw_lock,0FFh
-		jz	loc_176			; Jump if zero
+		jz	set_redraw_lock_FF			; Jump if zero
 		retn
 
-loc_176:
+set_redraw_lock_FF:
 		mov	byte ptr ds:redraw_lock,0FFh
 
 loc_177:
@@ -2578,7 +2578,7 @@ anim_refresh_all:
 		mov	es,ax
 		mov	byte ptr ds:anim_phase,8
 
-loc_186:
+set_vga_row_ptr_11B0:
 				mov	word ptr ds:vga_row_ptr,11B0h
 				mov	byte ptr ds:gvar_frame_timer,0
 				mov	si,ds:sprite_data_ptr
@@ -2606,11 +2606,11 @@ anim_refresh_inner_loop:
 						pop	cx
 						loop	anim_refresh_outer_loop		; Loop if cx > 0
 
-loc_189:
+check_gvar_frame_timer_eq_10:
 						cmp	byte ptr ds:gvar_frame_timer,10h
-						jb	loc_189			; Jump if below
+						jb	check_gvar_frame_timer_eq_10			; Jump if below
 				dec	byte ptr ds:anim_phase
-				jnz	loc_186			; Jump if not zero
+				jnz	set_vga_row_ptr_11B0			; Jump if not zero
 		retn
 
 mca_tile_half_blit		proc	near

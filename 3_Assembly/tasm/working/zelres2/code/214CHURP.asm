@@ -105,14 +105,14 @@ start:
 		call	pick_welcome_text
 		mov	ds:gvar_script_ptr,si
 
-loc_1:
+drv_script_step:
 				call	word ptr cs:script_step
 				cmp	al,0FFh
-				je	loc_2			; Jump if equal
+				je	chain_to_drv_return_to_caller			; Jump if equal
 				call	script_opcode_dispatch
-				jmp	short loc_1
+				jmp	short drv_script_step
 
-loc_2:
+chain_to_drv_return_to_caller:
 		jmp	word ptr cs:drv_return_to_caller
 
 church_main	endp
@@ -150,10 +150,10 @@ op_handler_a:					; reached via opcode_dispatch_tbl[bx]
 		db	0C6h, 06h, 1Ah		; mov byte ptr ds:[FF1A],... (alt encoding prefix)
 rest_wait_loop	dw	00FFh			; sentinel word -- also mid-instruction 'FF 00' bytes
 
-loc_3:
+call_anim_scroll_step:
 				call	anim_scroll_step
 				cmp	byte ptr ds:gvar_frame_timer,0FAh
-				jb	loc_3			; Jump if below
+				jb	call_anim_scroll_step			; Jump if below
 		retn
 
 ;-- Handler: bump rest_wait_loop sentinel (+8), fall through after delay.
@@ -167,10 +167,10 @@ loc_4:
 				call	word ptr cs:drv_palette_push
 				mov	byte ptr ds:gvar_frame_timer,0
 
-loc_5:
+call_anim_scroll_step_5:
 						call	anim_scroll_step
 						cmp	byte ptr ds:gvar_frame_timer,14h
-						jb	loc_5			; Jump if below
+						jb	call_anim_scroll_step_5			; Jump if below
 				jmp	short loc_4
 
 loc_6:
@@ -230,10 +230,10 @@ sermon_inner_loop:
 						pop	cx
 						loop	sermon_outer_loop	; Loop if cx > 0
 
-loc_13:
+call_anim_scroll_step_13:
 						call	anim_scroll_step
 						cmp	byte ptr ds:gvar_frame_timer,20h	; ' '
-						jb	loc_13			; Jump if below
+						jb	call_anim_scroll_step_13			; Jump if below
 				inc	byte ptr ds:anim_phase_a
 				jmp	short loc_8
 
@@ -287,17 +287,17 @@ churp_intro_tile_map:
 
 anim_scroll_step	proc	near
 		cmp	word ptr ds:gvar_timer_word,20h	; wait for 32+ ticks
-		jae	loc_16			; Jump if above or =
+		jae	set_gvar_timer_word_0			; Jump if above or =
 		retn
 
-loc_16:
+set_gvar_timer_word_0:
 		mov	word ptr ds:gvar_timer_word,0
 		inc	byte ptr ds:anim_phase_b
 		cmp	byte ptr ds:anim_phase_b,3
-		jne	loc_17			; Jump if not equal
+		jne	call_anim_draw_a			; Jump if not equal
 		mov	byte ptr ds:anim_phase_b,0
 
-loc_17:
+call_anim_draw_a:
 		call	anim_draw_a
 		jmp	short anim_draw_b
 
@@ -358,7 +358,7 @@ anim_draw_a		endp
 		db	 63h, 64h		; phase 2 cont.
 
 ;-- anim_draw_b: second rendering pass -- draws 2x2 block from anim_text_ptr_b.
-;  Entered via `jmp short anim_draw_b` at end of loc_17 above.
+;  Entered via `jmp short anim_draw_b` at end of call_anim_draw_a above.
 
 anim_draw_b:
 		mov	bl,ds:anim_phase_b

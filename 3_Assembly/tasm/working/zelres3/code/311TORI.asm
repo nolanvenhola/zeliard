@@ -24,7 +24,7 @@ PAGE  59,132
 ;    0x1D7..0x1E5 : tori_scan_prolog -- inline mov si,fight_slot_list /
 ;                   clear tori_slot_idx, tori_cycle_idx
 ;    0x1E5..0x645 : main scan-and-update code (was tori_main / loc_1..loc_57)
-;    0x507..0x57F : sub_1..sub_6 (sprite renderer + hp/altitude helpers)
+;    0x507..0x57F : tori_render_sprite_row..tori_apply_damage (sprite renderer + hp/altitude helpers)
 ;    0x648..0x6C7 : per-handler init/setup vector reached via 200FIGHT
 ;                   DS-resident dispatch slot (no static caller in this module)
 ;    0x650..0x66E : 16 word ptrs into the init block itself
@@ -34,9 +34,9 @@ PAGE  59,132
 ;
 ;  Primary entry (via 200FIGHT dispatch): tori_scan_prolog -- iterates
 ;  the enemy slot list (SI = fight_slot_list), drives bird-specific
-;  flight/glide phases, composes multi-plane sprite rows via sub_1
+;  flight/glide phases, composes multi-plane sprite rows via tori_render_sprite_row
 ;  (bit-stream row plotter), and spawns swoop/dive projectiles when in
-;  range.  Helpers sub_2..sub_5 manage glide/turn/swoop counters; sub_6
+;  range.  Helpers tori_swoop_tick..tori_hp_inc_if_below_30 manage glide/turn/swoop counters; tori_apply_damage
 ;  performs HP-decrement plus death/spawn-FX bookkeeping.
 ;
 ;  Connections:
@@ -158,31 +158,31 @@ tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers (entries 13,14 alias i
 ;  pointer (runtime resolves it via game-segment fixup; static analysis
 ;  cannot trace it).
 ;
-;  ROLE TABLE (frame index -> sub_1 dispatch source -> visual role).
+;  ROLE TABLE (frame index -> tori_render_sprite_row dispatch source -> visual role).
 ;  Frames 0..14 correspond to tori_frame_ptr_tbl_a[0..14] which is copied
-;  by 200FIGHT into sprite_pat_tbl @ 0xA64D.  Each `call sub_1 (AL=N)` in
+;  by 200FIGHT into sprite_pat_tbl @ 0xA64D.  Each `call tori_render_sprite_row (AL=N)` in
 ;  emit_setup picks a frame to plot into tori_tmp_buf.  Roles below are
-;  inferred from which dispatch path issues each sub_1(AL=N) call -- they
+;  inferred from which dispatch path issues each tori_render_sprite_row(AL=N) call -- they
 ;  are best-guess semantic labels, not runtime-traced.
 ;
-;    frames 00..01 : flight base poses; sub_1(AL=phase_a) where
+;    frames 00..01 : flight base poses; tori_render_sprite_row(AL=phase_a) where
 ;                    phase_a = 0 (idle wing-pose) or 1 (anim-tick wing-flap).
 ;                    Plotted FIRST in normal_compose so they form the
 ;                    background body silhouette under the directional
 ;                    overlays below.
-;    frames 02..05 : 4-frame turn-cycle overlay; sub_1(AL=turn_flag+2)
+;    frames 02..05 : 4-frame turn-cycle overlay; tori_render_sprite_row(AL=turn_flag+2)
 ;                    with turn_flag cycling 0..3.  Combined with the
-;                    base via sub_1's bit-stream OR plot.  Likely the
+;                    base via tori_render_sprite_row's bit-stream OR plot.  Likely the
 ;                    body-tilt/wing variations that show "banking" through
 ;                    a turn (4 sub-poses per 360 deg of yaw).
-;    frames 06..09 : 4-frame direction overlay; sub_1(AL=dir_state+6)
+;    frames 06..09 : 4-frame direction overlay; tori_render_sprite_row(AL=dir_state+6)
 ;                    with dir_state cycling 0..3 (N/E/S/W heading).
 ;                    Plotted as a directional facing overlay (head/beak
 ;                    pointing in current flight direction).
-;    frames 10..12 : 3-frame swoop animation; sub_1(AL=swoop_ctr+0xA)
+;    frames 10..12 : 3-frame swoop animation; tori_render_sprite_row(AL=swoop_ctr+0xA)
 ;                    with swoop_ctr cycling 0..2.  Played during dive
 ;                    (dive_step_a / dive_step_b paths).
-;    frames 13..14 : glide/fall overlay; sub_1(AL=0xD + sub_phase&3)
+;    frames 13..14 : glide/fall overlay; tori_render_sprite_row(AL=0xD + sub_phase&3)
 ;                    in check_glide_compose, played during tori_glide_flag
 ;                    state (post-dive recovery).  Indices 15/16 of the
 ;                    pattern table are produced by frame_00's row-0 alias
@@ -191,7 +191,7 @@ tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers (entries 13,14 alias i
 ;                    frame_14 here ALSO appear at index 13/14 in the
 ;                    runtime pattern-table -- intentional dual-purpose).
 ;
-;  NOTE: turn_compose calls sub_1 with AL=0x11 + (sub_phase&1) (= 17,18).
+;  NOTE: turn_compose calls tori_render_sprite_row with AL=0x11 + (sub_phase&1) (= 17,18).
 ;  No local frame data exists at those indices; 200FIGHT populates
 ;  pattern-table entries 15..18 from a separate shared sprite chunk
 ;  (turn-attack / hit-flash overlays) at runtime, so they are not
@@ -200,7 +200,7 @@ tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers (entries 13,14 alias i
 
 tori_frame_00:				; offset 0x04E -> ptr 0xA04E (first 4 bytes alias tail of ptr_tbl_a)
 					; ROLE: flight base pose 0 (idle wing position)
-					; (referenced by ptr_tbl_a[0]; sub_1(AL=phase_a==0) in normal_compose;
+					; (referenced by ptr_tbl_a[0]; tori_render_sprite_row(AL=phase_a==0) in normal_compose;
 					;  also alias-supplies ptr_tbl_a[13]=A1AC and ptr_tbl_a[14]=A1C5 via row 0)
 		db	0ACh, 0A1h, 0C5h, 0A1h,  00h	; row 0
 		db	 01h,  02h,  03h,  04h,  00h	; row 1
@@ -210,7 +210,7 @@ tori_frame_00:				; offset 0x04E -> ptr 0xA04E (first 4 bytes alias tail of ptr_
 
 tori_frame_01:				; offset 0x067 -> ptr 0xA067
 					; ROLE: flight base pose 1 (wing-flap mid-stroke)
-					; (referenced by ptr_tbl_a[1]; sub_1(AL=phase_a==1) in normal_compose
+					; (referenced by ptr_tbl_a[1]; tori_render_sprite_row(AL=phase_a==1) in normal_compose
 					;  during anim_timer countdown after a hit/spawn)
 		db	6Ah, 6Bh, 8Ah, 6Dh,  00h	; row 0
 		db	 0Eh,  0Fh, 12h, 13h,  00h	; row 1
@@ -233,7 +233,7 @@ tori_glyph_tbl	db	 00h			; row 10 part 2 (0x08C); glyph-table data anchor
 
 tori_frame_02:				; offset 0x094 -> ptr 0xA094
 					; ROLE: turn-cycle overlay 1/4 (banking pose A)
-					; (referenced by ptr_tbl_a[2]; sub_1(AL=turn_flag+2==2) in normal_compose)
+					; (referenced by ptr_tbl_a[2]; tori_render_sprite_row(AL=turn_flag+2==2) in normal_compose)
 		db	96h, 97h, 98h, 99h,  00h	; row 0
 		db	10h, 11h, 14h,  00h	; row 1
 		db	 00h	; row 2
@@ -251,7 +251,7 @@ tori_frame_02:				; offset 0x094 -> ptr 0xA094
 
 tori_frame_03:				; offset 0x0BC -> ptr 0xA0BC
 					; ROLE: turn-cycle overlay 2/4 (banking pose B)
-					; (referenced by ptr_tbl_a[3]; sub_1(AL=turn_flag+2==3) in normal_compose)
+					; (referenced by ptr_tbl_a[3]; tori_render_sprite_row(AL=turn_flag+2==3) in normal_compose)
 		db	99h, 9Ah, 28h, 9Bh,  00h	; row 0
 		db	 00h	; row 1
 		db	 05h,  06h,  07h,  00h	; row 2
@@ -266,7 +266,7 @@ tori_frame_03:				; offset 0x0BC -> ptr 0xA0BC
 
 tori_frame_04:				; offset 0x0DA -> ptr 0xA0DA
 					; ROLE: turn-cycle overlay 3/4 (banking pose C)
-					; (referenced by ptr_tbl_a[4]; sub_1(AL=turn_flag+2==4) in normal_compose)
+					; (referenced by ptr_tbl_a[4]; tori_render_sprite_row(AL=turn_flag+2==4) in normal_compose)
 		db	7Ah,  00h	; row 0
 		db	76h, 77h,  00h	; row 1
 		db	15h, 16h, 17h, 18h,  00h	; row 2
@@ -280,7 +280,7 @@ tori_frame_04:				; offset 0x0DA -> ptr 0xA0DA
 
 tori_frame_05:				; offset 0x102 -> ptr 0xA102
 					; ROLE: turn-cycle overlay 4/4 (banking pose D)
-					; (referenced by ptr_tbl_a[5]; sub_1(AL=turn_flag+2==5) in normal_compose)
+					; (referenced by ptr_tbl_a[5]; tori_render_sprite_row(AL=turn_flag+2==5) in normal_compose)
 		db	0AAh, 28h, 27h, 26h,  00h	; row 0
 		db	 08h,  09h, 19h, 1Ah,  00h	; row 1
 		db	 08h,  09h, 1Ch, 1Dh,  00h	; row 2
@@ -288,7 +288,7 @@ tori_frame_05:				; offset 0x102 -> ptr 0xA102
 
 tori_frame_06:				; offset 0x116 -> ptr 0xA116 (embeds tori_extern_fn_ptr (dw 0x0900) across row 0/1 boundary)
 					; ROLE: directional facing 1/4 (heading N -- head/beak overlay)
-					; (referenced by ptr_tbl_a[6]; sub_1(AL=dir_state+6==6) in normal_compose)
+					; (referenced by ptr_tbl_a[6]; tori_render_sprite_row(AL=dir_state+6==6) in normal_compose)
 		db	 08h,  09h, 21h, 22h	; row 0 (0x116..0x119)
 tori_extern_fn_ptr	dw	900h			; spans row 0/1 terminator (0x11A..0x11B); fn-ptr called as cs:tori_extern_fn_ptr
 		db	 0Ah, 1Ah, 1Bh,  00h	; row 1 tail (0x11C..0x11F)
@@ -297,7 +297,7 @@ tori_extern_fn_ptr	dw	900h			; spans row 0/1 terminator (0x11A..0x11B); fn-ptr c
 
 tori_frame_07:				; offset 0x12A -> ptr 0xA12A
 					; ROLE: directional facing 2/4 (heading E -- head/beak overlay)
-					; (referenced by ptr_tbl_a[7]; sub_1(AL=dir_state+6==7) in normal_compose)
+					; (referenced by ptr_tbl_a[7]; tori_render_sprite_row(AL=dir_state+6==7) in normal_compose)
 		db	 09h,  0Ah, 22h, 23h,  00h	; row 0
 		db	0AFh, 0B0h, 0B1h, 0B2h,  00h	; row 1
 		db	 0Bh,  00h	; row 2
@@ -307,7 +307,7 @@ tori_frame_07:				; offset 0x12A -> ptr 0xA12A
 
 tori_frame_08:				; offset 0x13E -> ptr 0xA13E
 					; ROLE: directional facing 3/4 (heading S -- head/beak overlay)
-					; (referenced by ptr_tbl_a[8]; sub_1(AL=dir_state+6==8) in normal_compose)
+					; (referenced by ptr_tbl_a[8]; tori_render_sprite_row(AL=dir_state+6==8) in normal_compose)
 		db	 0Bh, 0B5h, 0B3h, 0B4h,  00h	; row 0
 		db	 0Bh, 0B1h,  0Ch,  0Dh,  00h	; row 1
 		db	 00h	; row 2
@@ -318,13 +318,13 @@ tori_frame_08:				; offset 0x13E -> ptr 0xA13E
 
 tori_frame_09:				; offset 0x152 -> ptr 0xA152
 					; ROLE: directional facing 4/4 (heading W -- head/beak overlay)
-					; (referenced by ptr_tbl_a[9]; sub_1(AL=dir_state+6==9) in normal_compose)
+					; (referenced by ptr_tbl_a[9]; tori_render_sprite_row(AL=dir_state+6==9) in normal_compose)
 		db	0B6h, 0B7h,  00h	; row 0
 		db	0B8h,  00h	; row 1
 
 tori_frame_10:				; offset 0x157 -> ptr 0xA157
 					; ROLE: swoop animation 1/3 (dive entry)
-					; (referenced by ptr_tbl_a[10]; sub_1(AL=swoop_ctr+0xA==0xA) in normal_compose
+					; (referenced by ptr_tbl_a[10]; tori_render_sprite_row(AL=swoop_ctr+0xA==0xA) in normal_compose
 					;  during dive_step_a/dive_step_b paths)
 		db	0B1h, 0B2h,  0Dh, 0B9h,  00h	; row 0
 		db	2Fh, 30h, 3Ch, 3Dh,  00h	; row 1
@@ -334,7 +334,7 @@ tori_frame_10:				; offset 0x157 -> ptr 0xA157
 
 tori_frame_11:				; offset 0x170 -> ptr 0xA170
 					; ROLE: swoop animation 2/3 (dive mid)
-					; (referenced by ptr_tbl_a[11]; sub_1(AL=swoop_ctr+0xA==0xB) in normal_compose)
+					; (referenced by ptr_tbl_a[11]; tori_render_sprite_row(AL=swoop_ctr+0xA==0xB) in normal_compose)
 		db	73h, 74h, 70h, 71h,  00h	; row 0
 		db	31h,  00h	; row 1
 		db	3Eh, 3Fh,  00h	; row 2
@@ -351,8 +351,8 @@ tori_frame_11:				; offset 0x170 -> ptr 0xA170
 
 tori_frame_12:				; offset 0x18E -> ptr 0xA18E
 					; ROLE: swoop animation 3/3 (dive recovery)
-					; (referenced by ptr_tbl_a[12]; sub_1(AL=swoop_ctr+0xA==0xC) in normal_compose;
-					;  swoop_ctr wraps at 3 in sub_2)
+					; (referenced by ptr_tbl_a[12]; tori_render_sprite_row(AL=swoop_ctr+0xA==0xC) in normal_compose;
+					;  swoop_ctr wraps at 3 in tori_swoop_tick)
 		db	75h,  00h	; row 0
 		db	 00h	; row 1
 		db	 00h	; row 2
@@ -368,7 +368,7 @@ tori_frame_12:				; offset 0x18E -> ptr 0xA18E
 
 tori_frame_13:				; offset 0x1AC -> ptr 0xA1AC
 					; ROLE: glide overlay 1/2 (post-dive glide pose)
-					; (referenced by ptr_tbl_a[13] aliased via frame_00 row 0; sub_1(AL=0xD)
+					; (referenced by ptr_tbl_a[13] aliased via frame_00 row 0; tori_render_sprite_row(AL=0xD)
 					;  in check_glide_compose when tori_glide_flag is armed)
 		db	3Dh, 7Fh, 1Ah, 1Bh,  00h	; row 0
 		db	42h, 43h, 45h, 46h,  00h	; row 1
@@ -380,7 +380,7 @@ tori_frame_13:				; offset 0x1AC -> ptr 0xA1AC
 
 tori_frame_14:				; offset 0x1C5 -> ptr 0xA1C5
 					; ROLE: glide overlay 2/2 (post-dive glide pose alt)
-					; (referenced by ptr_tbl_a[14] aliased via frame_00 row 0; sub_1(AL=0xE)
+					; (referenced by ptr_tbl_a[14] aliased via frame_00 row 0; tori_render_sprite_row(AL=0xE)
 					;  in check_glide_compose when tori_glide_flag is armed)
 		db	3Fh,  00h	; row 0
 		db	8Bh, 8Ch,  00h	; row 1
@@ -457,7 +457,7 @@ scan_done:
 
 hit_pos_branch:
 		mov	byte ptr ds:gvar_spawn_fx_flag,29h	; ')'
-		call	sub_6
+		call	tori_apply_damage
 		test	byte ptr ds:tori_glide_flag,0FFh
 		jz	hit_check_attack
 		mov	byte ptr ds:tori_glide_flag,0
@@ -466,7 +466,7 @@ hit_pos_branch:
 
 hit_check_attack:
 		jnz	hit_skip_alt_inc
-		call	sub_5
+		call	tori_hp_inc_if_below_30
 
 hit_skip_alt_inc:
 		mov	byte ptr ds:tori_anim_timer,4
@@ -493,7 +493,7 @@ glide_skip_dec_row:
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Bh	; '+'
 
 glide_skip_fx2b:
-		call	sub_4
+		call	tori_hp_dec_if_ge_11
 		jc	glide_force_attack
 		test	byte ptr ds:tori_alt_state,0FFh
 		jz	glide_force_attack
@@ -522,7 +522,7 @@ attack_advance:
 		je	attack_skip
 		inc	byte ptr ds:tori_row_hi
 		mov	byte ptr ds:tori_sub_phase,0
-		call	sub_3
+		call	tori_hp_dec_if_ge_D
 
 attack_skip:
 		jmp	emit_setup
@@ -532,7 +532,7 @@ check_phase_limit:
 		jz	check_altitude
 		inc	byte ptr ds:tori_turn_flag
 		and	byte ptr ds:tori_turn_flag,3
-		call	sub_2
+		call	tori_swoop_tick
 		jnc	dive_step_a
 		jmp	emit_setup
 
@@ -554,7 +554,7 @@ dive_to_glide:
 check_altitude:
 		test	byte ptr ds:tori_altitude,0FFh
 		jz	check_death
-		call	sub_2
+		call	tori_swoop_tick
 		jnc	dive_step_b
 		jmp	emit_setup
 
@@ -623,7 +623,7 @@ walk_skip_swap:
 		jnc	walk_dir_inc
 		dec	byte ptr ds:tori_dir_state
 		and	byte ptr ds:tori_dir_state,3
-		call	sub_5
+		call	tori_hp_inc_if_below_30
 		jnc	emit_setup
 		mov	byte ptr ds:tori_phase_limit,0FFh
 		mov	byte ptr ds:tori_dive_flag,0
@@ -632,7 +632,7 @@ walk_skip_swap:
 walk_dir_inc:
 		inc	byte ptr ds:tori_dir_state
 		and	byte ptr ds:tori_dir_state,3
-		call	sub_3
+		call	tori_hp_dec_if_ge_D
 
 walk_random_arm:
 		call	word ptr cs:tori_extern_fn_ptr
@@ -666,7 +666,7 @@ turn_compose:
 		mov	al,ds:tori_sub_phase
 		and	al,1
 		add	al,11h
-		call	sub_1
+		call	tori_render_sprite_row
 		jmp	short copy_to_slots
 check_glide_compose:
 		test	byte ptr ds:tori_glide_flag,0FFh
@@ -674,7 +674,7 @@ check_glide_compose:
 		mov	al,ds:tori_sub_phase
 		and	al,3
 		add	al,0Dh
-		call	sub_1
+		call	tori_render_sprite_row
 		mov	al,ds:tori_sub_phase
 		shr	al,1			; Shift w/zeros fill
 		adc	byte ptr ds:tori_anim_state,0
@@ -682,16 +682,16 @@ check_glide_compose:
 
 normal_compose:
 		mov	al,ds:tori_phase_a
-		call	sub_1
+		call	tori_render_sprite_row
 		mov	al,ds:tori_dir_state
 		add	al,6
-		call	sub_1
+		call	tori_render_sprite_row
 		mov	al,ds:tori_swoop_ctr
 		add	al,0Ah
-		call	sub_1
+		call	tori_render_sprite_row
 		mov	al,ds:tori_turn_flag
 		add	al,2
-		call	sub_1
+		call	tori_render_sprite_row
 
 copy_to_slots:
 		mov	byte ptr ds:tori_slot_idx,0
@@ -771,13 +771,13 @@ emit_outer_advance:
 tori_main	endp
 
 ; -------------------------------------------------------------------------
-;  sub_1 -- bit-stream sprite row plotter.
+;  tori_render_sprite_row -- bit-stream sprite row plotter.
 ;  AL = pattern index; expands a 2-pattern source via mask bits in
 ;  ai_column_tbl, writing tile bytes into tori_tmp_buf.  9 outer rows x
 ;  8 inner mask bits.
 ; -------------------------------------------------------------------------
 
-sub_1		proc	near
+tori_render_sprite_row		proc	near
 		add	al,al
 		mov	bl,al
 		xor	bh,bh			; Zero register
@@ -806,14 +806,14 @@ row_inner_skip:
 
 		retn
 
-sub_1		endp
+tori_render_sprite_row		endp
 
 ; -------------------------------------------------------------------------
-;  sub_2 -- swoop counter step (mod 3).  Sets CF when wrapping back to
+;  tori_swoop_tick -- swoop counter step (mod 3).  Sets CF when wrapping back to
 ;  0 (i.e. swoop tick complete).
 ; -------------------------------------------------------------------------
 
-sub_2		proc	near
+tori_swoop_tick		proc	near
 		inc	byte ptr ds:tori_swoop_ctr
 		cmp	byte ptr ds:tori_swoop_ctr,3
 		stc				; Set carry flag
@@ -825,13 +825,13 @@ swoop_wrap:
 		clc				; Clear carry flag
 		retn
 
-sub_2		endp
+tori_swoop_tick		endp
 
 ; -------------------------------------------------------------------------
-;  sub_3 -- conditional HP decrement (only if hp >= 0Dh; clears CF).
+;  tori_hp_dec_if_ge_D -- conditional HP decrement (only if hp >= 0Dh; clears CF).
 ; -------------------------------------------------------------------------
 
-sub_3		proc	near
+tori_hp_dec_if_ge_D		proc	near
 		cmp	byte ptr ds:tori_hp,0Dh
 		jae	hp_dec_a
 		retn
@@ -841,13 +841,13 @@ hp_dec_a:
 		clc				; Clear carry flag
 		retn
 
-sub_3		endp
+tori_hp_dec_if_ge_D		endp
 
 ; -------------------------------------------------------------------------
-;  sub_4 -- conditional HP decrement (only if hp >= 11h; clears CF).
+;  tori_hp_dec_if_ge_11 -- conditional HP decrement (only if hp >= 11h; clears CF).
 ; -------------------------------------------------------------------------
 
-sub_4		proc	near
+tori_hp_dec_if_ge_11		proc	near
 		cmp	byte ptr ds:tori_hp,11h
 		jae	hp_dec_b
 		retn
@@ -857,14 +857,14 @@ hp_dec_b:
 		clc				; Clear carry flag
 		retn
 
-sub_4		endp
+tori_hp_dec_if_ge_11		endp
 
 ; -------------------------------------------------------------------------
-;  sub_5 -- conditional HP increment (only if hp < 30h; clears CF).
+;  tori_hp_inc_if_below_30 -- conditional HP increment (only if hp < 30h; clears CF).
 ;  Uses cmc to invert CF after the cmp so the early-exit is sense-flipped.
 ; -------------------------------------------------------------------------
 
-sub_5		proc	near
+tori_hp_inc_if_below_30		proc	near
 		cmp	byte ptr ds:tori_hp,30h	; '0'
 		cmc				; Complement carry
 		jnc	hp_inc_a
@@ -875,16 +875,16 @@ hp_inc_a:
 		clc				; Clear carry flag
 		retn
 
-sub_5		endp
+tori_hp_inc_if_below_30		endp
 
 ; -------------------------------------------------------------------------
-;  sub_6 -- damage-apply / death arming.
+;  tori_apply_damage -- damage-apply / death arming.
 ;  AX = current row word; BX = damage; subtracts and floors at 0; calls
 ;  fight_cb_prep to validate; on first true zero arms gvar_death_flag
 ;  and resets glide/sub_phase state.
 ; -------------------------------------------------------------------------
 
-sub_6		proc	near
+tori_apply_damage		proc	near
 		mov	ax,ds:tori_row_lo
 		sub	ax,bx
 		jnc	sub6_store
@@ -919,7 +919,7 @@ sub6_clear_phase:
 		mov	byte ptr ds:tori_attack_flag,0FFh
 		retn
 
-sub_6		endp
+tori_apply_damage		endp
 
 ; -------------------------------------------------------------------------
 ;  death_phase (was loc_55) -- runs when gvar_death_flag is set.
@@ -937,7 +937,7 @@ death_phase:
 		inc	byte ptr ds:tori_pattern_idx
 		cmp	al,14h
 		jae	death_late_phase
-		call	sub_2
+		call	tori_swoop_tick
 		inc	byte ptr ds:tori_turn_flag
 		and	byte ptr ds:tori_turn_flag,3
 		mov	byte ptr ds:gvar_spawn_fx_flag,2Ch	; ','

@@ -156,24 +156,24 @@ locloop_1:
 			mov	word ptr ds:gvar_script_ptr,0A98Bh
 			call	word ptr cs:script_step
 
-loc_2:
+call_anim_scroll_step:
 				call	anim_scroll_step
 				cmp	byte ptr ds:[0FF1Ah],3Fh	; '?'
-				jb	loc_2			; Jump if below
+				jb	call_anim_scroll_step			; Jump if below
 			pop	cx
 			loop	locloop_1		; Loop if cx > 0
 
 		mov	byte ptr ds:anim_active_flag,0
 		mov	word ptr ds:gvar_script_ptr,0A98Dh
 
-loc_3:
+drv_script_step:
 			call	word ptr cs:script_step
 			cmp	al,0FFh
-			je	loc_4			; Jump if equal
+			je	chain_to_drv_return_to_caller			; Jump if equal
 			call	script_opcode_dispatch
-			jmp	short loc_3
+			jmp	short drv_script_step
 
-loc_4:
+chain_to_drv_return_to_caller:
 		jmp	word ptr cs:drv_return_to_caller
 
 bank_main		endp
@@ -214,13 +214,13 @@ data_7		dw	1016h				; cs:[1016] script-step entry word
 		db	0F6h, 06h, 24h,0ADh,0FFh, 74h	; test byte [AD24],FF; jz +1
 		db	 01h,0C3h			; (rel offset) + retn
 
-loc_5:
+script_AC9D:
 		mov	word ptr ds:gvar_script_ptr,0AC9Dh
 		test	byte ptr ds:checked_balance_flag,0FFh
-		jz	loc_6			; Jump if zero
+		jz	script_AC5A			; Jump if zero
 		retn
 
-loc_6:
+script_AC5A:
 		mov	word ptr ds:gvar_script_ptr,0AC5Ah
 		retn
 			                        ;* No entry point to code
@@ -319,10 +319,10 @@ loc_12:
 		mov	dl,byte ptr ds:[85h]
 		or	dl,al
 		or	dl,ah
-		jnz	loc_13			; Jump if not zero
+		jnz	script_AACA			; Jump if not zero
 		retn
 
-loc_13:
+script_AACA:
 		mov	word ptr ds:gvar_script_ptr,0AACAh
 		call	word ptr cs:script_step
 		mov	bx,2C1Dh
@@ -360,7 +360,7 @@ loc_14:
 				int	61h			; ??INT Non-standard interrupt
 				call	adjust_amount_by_input
 				test	ah,1
-				jnz	loc_18			; Jump if not zero
+				jnz	script_AA48			; Jump if not zero
 				mov	word ptr ds:gvar_script_ptr,0AA48h
 				test	ah,2
 				jz	loc_15			; Jump if zero
@@ -387,7 +387,7 @@ loc_17:
 			mov	byte ptr ds:input_repeat_delay,1
 			jmp	short loc_14
 
-loc_18:
+script_AA48:
 		mov	word ptr ds:gvar_script_ptr,0AA48h
 		mov	ax,ds:amount_lo
 		mov	dl,ds:amount_hi
@@ -399,11 +399,11 @@ loc_18:
 
 loc_19:
 		or	dl,dl			; Zero ?
-		jnz	loc_20			; Jump if not zero
+		jnz	set_anim_active_flag_FF			; Jump if not zero
 		cmp	ax,3E8h
 		jb	loc_21			; Jump if below
 
-loc_20:
+set_anim_active_flag_FF:
 		mov	byte ptr ds:anim_active_flag,0FFh
 		mov	word ptr ds:anim_src_ptr,0A7C3h
 
@@ -418,24 +418,24 @@ loc_21:
 		call	word ptr cs:drv_frame_commit
 		mov	byte ptr ds:checked_balance_flag,0FFh
 		test	byte ptr ds:anim_active_flag,0FFh
-		jnz	loc_24			; Jump if not zero
+		jnz	script_AB10			; Jump if not zero
 		mov	word ptr ds:gvar_script_ptr,0ABF7h
 		mov	dl,byte ptr ds:hero_bank_hi
 		mov	ax,word ptr ds:hero_bank_lo
 		or	dl,ah
 		or	dl,al
-		jnz	loc_22			; Jump if not zero
+		jnz	script_AC35			; Jump if not zero
 		retn
 
-loc_22:
+script_AC35:
 		mov	word ptr ds:gvar_script_ptr,0AC35h
 		test	al,byte ptr ds:hero_bank_hi
-		jnz	loc_23			; Jump if not zero
+		jnz	script_AAF4			; Jump if not zero
 		cmp	word ptr ds:hero_bank_lo,1
-		jne	loc_23			; Jump if not equal
+		jne	script_AAF4			; Jump if not equal
 		retn
 
-loc_23:
+script_AAF4:
 		mov	word ptr ds:gvar_script_ptr,0AAF4h
 		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:hero_bank_hi
@@ -443,7 +443,7 @@ loc_23:
 		FORMAT_AND_RUN
 		retn
 
-loc_24:
+script_AB10:
 		mov	word ptr ds:gvar_script_ptr,0AB10h
 		retn
 			                        ;* No entry point to code
@@ -456,10 +456,10 @@ loc_24:
 		mov	dl,byte ptr ds:hero_bank_hi
 		or	dl,al
 		or	dl,ah
-		jnz	loc_25			; Jump if not zero
+		jnz	script_AB80			; Jump if not zero
 		retn
 
-loc_25:
+script_AB80:
 		mov	word ptr ds:gvar_script_ptr,0AB80h
 		call	word ptr cs:script_step
 		mov	bx,2C1Dh
@@ -502,7 +502,7 @@ loc_26:
 				int	61h			; ??INT Non-standard interrupt
 				call	adjust_amount_by_input
 				test	ah,1
-				jnz	loc_30			; Jump if not zero
+				jnz	script_AA48_30			; Jump if not zero
 				mov	word ptr ds:gvar_script_ptr,0AA48h
 				test	ah,2
 				jz	loc_27			; Jump if zero
@@ -529,34 +529,34 @@ loc_29:
 			mov	byte ptr ds:input_repeat_delay,1
 			jmp	short loc_26
 
-loc_30:
+script_AA48_30:
 		mov	word ptr ds:gvar_script_ptr,0AA48h
 		mov	ax,ds:amount_lo
 		mov	dl,ds:amount_hi
 		mov	cl,dl
 		or	cl,al
 		or	cl,ah
-		jnz	loc_31			; Jump if not zero
+		jnz	set_checked_balance_flag_FF			; Jump if not zero
 		retn
 
-loc_31:
+set_checked_balance_flag_FF:
 		mov	byte ptr ds:checked_balance_flag,0FFh
 		mov	word ptr ds:gvar_script_ptr,0ABC1h
 		mov	dl,ds:amount_hi
 		mov	ax,ds:amount_lo
 		or	dl,dl			; Zero ?
-		jnz	loc_32			; Jump if not zero
+		jnz	script_ABA4			; Jump if not zero
 		cmp	ax,1
-		je	loc_33			; Jump if equal
+		je	drv_script_step_33			; Jump if equal
 
-loc_32:
+script_ABA4:
 		mov	word ptr ds:gvar_script_ptr,0ABA4h
 		call	word ptr cs:script_step
 		mov	dl,ds:amount_hi
 		mov	ax,ds:amount_lo
 		FORMAT_AND_RUN
 
-loc_33:
+drv_script_step_33:
 		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:hero_bank_hi
 		mov	ax,word ptr ds:hero_bank_lo
@@ -570,12 +570,12 @@ loc_33:
 		jz	loc_35			; Jump if zero
 		mov	word ptr ds:gvar_script_ptr,0AC35h
 		test	al,byte ptr ds:hero_bank_hi
-		jnz	loc_34			; Jump if not zero
+		jnz	script_AAF4_34			; Jump if not zero
 		cmp	word ptr ds:hero_bank_lo,1
-		jne	loc_34			; Jump if not equal
+		jne	script_AAF4_34			; Jump if not equal
 		retn
 
-loc_34:
+script_AAF4_34:
 		mov	word ptr ds:gvar_script_ptr,0AAF4h
 		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:hero_bank_hi
@@ -593,19 +593,19 @@ loc_35:
 		mov	al,byte ptr ds:hero_bank_hi
 		xor	ah,ah			; Zero register
 		or	ax,word ptr ds:hero_bank_lo
-		jnz	loc_36			; Jump if not zero
+		jnz	set_checked_balance_flag_FF_36			; Jump if not zero
 		retn
 
-loc_36:
+set_checked_balance_flag_FF_36:
 		mov	byte ptr ds:checked_balance_flag,0FFh
 		mov	word ptr ds:gvar_script_ptr,0AC35h
 		test	al,byte ptr ds:hero_bank_hi
-		jnz	loc_37			; Jump if not zero
+		jnz	script_AC10			; Jump if not zero
 		cmp	word ptr ds:hero_bank_lo,1
-		jne	loc_37			; Jump if not equal
+		jne	script_AC10			; Jump if not equal
 		retn
 
-loc_37:
+script_AC10:
 		mov	word ptr ds:gvar_script_ptr,0AC10h
 		call	word ptr cs:script_step
 		mov	dl,byte ptr ds:hero_bank_hi
@@ -620,10 +620,10 @@ loc_37:
 		mov	word ptr ds:anim_src_ptr,0A773h
 		mov	byte ptr ds:[0FF1Ah],0
 
-loc_38:
+call_anim_scroll_step_38:
 			call	anim_scroll_step
 			cmp	byte ptr ds:[0FF1Ah],64h	; 'd'
-			jb	loc_38			; Jump if below
+			jb	call_anim_scroll_step_38			; Jump if below
 		retn
 			                        ;* No entry point to code
 		mov	byte ptr ds:goodbye_flag,0FFh
@@ -743,15 +743,15 @@ bankp_intro_tile_map:
 
 anim_scroll_step		proc	near
 		test	byte ptr ds:anim_active_flag,0FFh
-		jnz	loc_45			; Jump if not zero
+		jnz	check_gvar_timer_word_eq_1E			; Jump if not zero
 		retn
 
-loc_45:
+check_gvar_timer_word_eq_1E:
 		cmp	word ptr ds:gvar_timer_word,1Eh
-		jae	loc_46			; Jump if above or =
+		jae	set_gvar_timer_word_0			; Jump if above or =
 		retn
 
-loc_46:
+set_gvar_timer_word_0:
 		mov	word ptr ds:gvar_timer_word,0
 		inc	byte ptr ds:anim_frame_counter
 		mov	al,ds:anim_frame_counter

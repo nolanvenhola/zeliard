@@ -144,14 +144,14 @@ start:
 		call	word ptr cs:drv_fill_rect
 		mov	word ptr ds:gvar_script_ip,0A86Bh
 
-loc_2:
+drv_script_step:
 			call	word ptr cs:script_step
 			cmp	al,0FFh
-			je	loc_3			; Jump if equal
+			je	chain_to_drv_return_to_caller			; Jump if equal
 			call	wizard_func_2
-			jmp	short loc_2
+			jmp	short drv_script_step
 
-loc_3:
+chain_to_drv_return_to_caller:
 		jmp	word ptr cs:drv_return_to_caller
 
 zr2_15		endp
@@ -203,24 +203,24 @@ data_4		db	0EBh				; cmd 1 lo (-> 0xA0EB) (also alias for data_4 ptr)
 		db	0A1h, 06h,0A1h,0C6h, 06h, 1Ah	; cmd 7 hi + cmd 8 (A106) + start of 'mov [FF1A],imm' opcode
 		db	0FFh, 00h			; (operand cont. + imm value)
 
-loc_6:
+call_wizard_multiply:
 			call	wizard_multiply
 			cmp	byte ptr ds:gvar_frame_timer,50h	; 'P'
-			jb	loc_6			; Jump if below
+			jb	call_wizard_multiply			; Jump if below
 		mov	si,greet_str_tbl
 		call	wizard_scan_loop
 		retn
 		db	0C6h, 06h, 1Ah,0FFh, 00h	; mov byte [FF1A],00 (gvar_frame_timer reset)
 
-loc_7:
+call_wizard_multiply_7:
 			call	wizard_multiply
 			cmp	byte ptr ds:gvar_frame_timer,50h	; 'P'
-			jb	loc_7			; Jump if below
+			jb	call_wizard_multiply_7			; Jump if below
 		mov	si,0A74Fh
-		jmp	loc_34
+		jmp	set_gvar_frame_timer_0
 			                        ;* No entry point to code
 		mov	si,0A759h
-		jmp	loc_34
+		jmp	set_gvar_frame_timer_0
 ; -- Inline x86 code (orphan handler region 0x202..0x2BC).
 ;    Reached only via DS-resident dispatch + indirect-call patches; Sourcer
 ;    decodes most of it as data.  Keep as raw bytes with running comments.
@@ -316,7 +316,7 @@ loc_9:
 		call	word ptr cs:script_take_item
 		pop	bx
 		mov	word ptr ds:gvar_script_ip,0A928h
-		jc	loc_12			; Jump if carry Set
+		jc	drv_script_step_12			; Jump if carry Set
 		push	dx
 		push	ax
 		mov	si,0A6h
@@ -353,7 +353,7 @@ loc_11:
 		pop	si
 		mov	ds:gvar_script_ip,si
 
-loc_12:
+drv_script_step_12:
 		call	word ptr cs:script_step
 		call	word ptr cs:drv_frame_commit
 		mov	word ptr ds:gvar_script_ip,0A909h
@@ -363,10 +363,10 @@ loc_12:
 		call	wizard_func_4
 		popf				; Pop flags
 		mov	word ptr ds:gvar_script_ip,0A8A8h
-		jc	loc_13			; Jump if carry Set
+		jc	set_gvar_script_ip_A965			; Jump if carry Set
 		retn
 
-loc_13:
+set_gvar_script_ip_A965:
 		mov	word ptr ds:gvar_script_ip,0A965h
 		retn
 			                        ;* No entry point to code
@@ -491,18 +491,18 @@ loc_18:
 		call	wizard_process_loop_2
 		mov	word ptr ds:gvar_script_ip,0A966h
 		test	byte ptr ds:gvar_dlg_rows,0FFh
-		jnz	loc_19			; Jump if not zero
+		jnz	set_gvar_script_ip_AA4B			; Jump if not zero
 		retn
 
-loc_19:
+set_gvar_script_ip_AA4B:
 		mov	word ptr ds:gvar_script_ip,0AA4Bh
 		call	word ptr cs:script_step
 		FILL_DLG_RECT
 		mov	word ptr ds:gvar_script_ip,0A965h
-		jnc	loc_20			; Jump if carry=0
+		jnc	call_wizard_func_4			; Jump if carry=0
 		retn
 
-loc_20:
+call_wizard_func_4:
 		call	wizard_func_4
 		mov	word ptr ds:gvar_script_ip,0A98Dh
 		retn
@@ -607,10 +607,10 @@ loc_25:
 		call	wizard_func_4
 		popf				; Pop flags
 		mov	word ptr ds:gvar_script_ip,0A965h
-		jnc	loc_26			; Jump if carry=0
+		jnc	set_gvar_script_ip_AAA6			; Jump if carry=0
 		retn
 
-loc_26:
+set_gvar_script_ip_AAA6:
 		mov	word ptr ds:gvar_script_ip,0AAA6h
 		call	word ptr cs:script_step
 		jmp	loc_23
@@ -673,17 +673,17 @@ drugp_banner_glyph_tbl:
 
 wizard_multiply		proc	near
 		cmp	word ptr ds:gvar_timer_word,2
-		jae	loc_29			; Jump if above or =
+		jae	set_gvar_timer_word_0			; Jump if above or =
 		retn
 
-loc_29:
+set_gvar_timer_word_0:
 		mov	word ptr ds:gvar_timer_word,0
 		inc	byte ptr ds:item_anim_phase
 		cmp	byte ptr ds:item_anim_phase,14h
-		jae	loc_30			; Jump if above or =
+		jae	set_item_anim_phase_0			; Jump if above or =
 		retn
 
-loc_30:
+set_item_anim_phase_0:
 		mov	byte ptr ds:item_anim_phase,0
 		mov	al,ds:item_anim_set
 		inc	al
@@ -735,7 +735,7 @@ drugp_price_gfx_tbl:
 
 wizard_scan_loop		proc	near
 
-loc_34:
+set_gvar_frame_timer_0:
 			mov	byte ptr ds:gvar_frame_timer,0
 			lodsw				; String [si] to ax
 			cmp	ax,0FFFFh
@@ -767,12 +767,12 @@ locloop_37:
 				pop	cx
 				loop	locloop_36		; Loop if cx > 0
 
-loc_38:
+call_wizard_multiply_38:
 				call	wizard_multiply
 				cmp	byte ptr ds:gvar_frame_timer,28h	; '('
-				jb	loc_38			; Jump if below
+				jb	call_wizard_multiply_38			; Jump if below
 			pop	si
-			jmp	short loc_34
+			jmp	short set_gvar_frame_timer_0
 
 wizard_scan_loop		endp
 
