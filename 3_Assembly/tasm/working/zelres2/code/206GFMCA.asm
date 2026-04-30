@@ -119,6 +119,30 @@ sprite_state_b	equ	5011h			;* sprite slot state byte B
 anim_frame_tbl	equ	3893h			;* animation frame offset table
 anim_phase	equ	4FFFh			;* animation pass counter (0-7, decremented)
 
+
+; ----------------------------------------------------------------------
+; Macros — collapse the unrolled sprite-scan + state-update patterns
+; that Sourcer emitted as 8+ identical loc_N-merging blocks each.
+; Macro expansion produces the same bytes as the original unrolled
+; source (verified BIT-PERFECT after rewrite).
+; ----------------------------------------------------------------------
+SPRITE_SLOT_SCAN_STEP	MACRO	merge
+		test	byte ptr [si],80h
+		jz	merge			; Jump if zero
+		call	sprite_slot_init
+merge:
+		inc	si
+		inc	bx
+		ENDM
+
+SPRITE_STATE_SCAN_STEP	MACRO	merge
+		cmpsb				; Cmp [si] to es:[di]
+		jz	merge			; Jump if zero
+		call	sprite_state_update
+merge:
+		inc	bx
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -183,51 +207,15 @@ loc_2:
 
 init_scan_loop:
 				push	cx
-				test	byte ptr [si],80h
-				jz	loc_4			; Jump if zero
-				call	sprite_slot_init
-
-loc_4:
-				inc	si
-				inc	bx
-				test	byte ptr [si],80h
-				jz	loc_5			; Jump if zero
-				call	sprite_slot_init
-
-loc_5:
-				inc	si
-				inc	bx
-				test	byte ptr [si],80h
-				jz	loc_6			; Jump if zero
-				call	sprite_slot_init
-
-loc_6:
-				inc	si
-				inc	bx
-				test	byte ptr [si],80h
-				jz	loc_7			; Jump if zero
-				call	sprite_slot_init
-
-loc_7:
-				inc	si
-				inc	bx
+				SPRITE_SLOT_SCAN_STEP loc_4
+				SPRITE_SLOT_SCAN_STEP loc_5
+				SPRITE_SLOT_SCAN_STEP loc_6
+				SPRITE_SLOT_SCAN_STEP loc_7
 				pop	cx
 				loop	init_scan_loop		; Loop if cx > 0
 
-		test	byte ptr [si],80h
-		jz	loc_8			; Jump if zero
-		call	sprite_slot_init
-
-loc_8:
-		inc	si
-		inc	bx
-		test	byte ptr [si],80h
-		jz	loc_9			; Jump if zero
-		call	sprite_slot_init
-
-loc_9:
-		inc	si
-		inc	bx
+		SPRITE_SLOT_SCAN_STEP loc_8
+		SPRITE_SLOT_SCAN_STEP loc_9
 		test	byte ptr [si],80h
 		jz	loc_10			; Jump if zero
 		call	sprite_slot_init
@@ -257,51 +245,16 @@ loc_13:
 
 col_scan_loop:
 						push	cx
-						cmpsb				; Cmp [si] to es:[di]
-						jz	loc_15			; Jump if zero
-						call	sprite_state_update
-
-loc_15:
-						inc	bx
-						cmpsb				; Cmp [si] to es:[di]
-						jz	loc_16			; Jump if zero
-						call	sprite_state_update
-
-loc_16:
-						inc	bx
-						cmpsb				; Cmp [si] to es:[di]
-						jz	loc_17			; Jump if zero
-						call	sprite_state_update
-
-loc_17:
-						inc	bx
-						cmpsb				; Cmp [si] to es:[di]
-						jz	loc_18			; Jump if zero
-						call	sprite_state_update
-
-loc_18:
-						inc	bx
+						SPRITE_STATE_SCAN_STEP loc_15
+						SPRITE_STATE_SCAN_STEP loc_16
+						SPRITE_STATE_SCAN_STEP loc_17
+						SPRITE_STATE_SCAN_STEP loc_18
 						pop	cx
 						loop	col_scan_loop		; Loop if cx > 0
 
-				cmpsb				; Cmp [si] to es:[di]
-				jz	loc_19			; Jump if zero
-				call	sprite_state_update
-
-loc_19:
-				inc	bx
-				cmpsb				; Cmp [si] to es:[di]
-				jz	loc_20			; Jump if zero
-				call	sprite_state_update
-
-loc_20:
-				inc	bx
-				cmpsb				; Cmp [si] to es:[di]
-				jz	loc_21			; Jump if zero
-				call	sprite_state_update
-
-loc_21:
-				inc	bx
+				SPRITE_STATE_SCAN_STEP loc_19
+				SPRITE_STATE_SCAN_STEP loc_20
+				SPRITE_STATE_SCAN_STEP loc_21
 				lodsb				; String [si] to al
 				inc	di
 				or	al,al			; Zero ?

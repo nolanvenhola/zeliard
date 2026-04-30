@@ -361,18 +361,26 @@ doc is the control-flow narrative.
 ### Out of scope (different audit style, listed for completeness)
 
 - **Sourcer `sub_N` / `loc_N` cleanup** — mechanical decoration that
-  obscures rather than informs.  Partially addressed 2026-04-30:
+  obscures rather than informs.  Addressed 2026-04-30:
   - `sub_N`: all 6 procs in 311TORI renamed semantically
     (`tori_render_sprite_row`, `tori_swoop_tick`, etc.); zero
     `sub_N` declarations remain in the cleaned tree
-  - `loc_N`: heuristic auto-renamer at `tasm/rename_loc_labels.py`
-    applied to 13 chunks; ~165 of 1099 labels (15%) renamed to
-    semantic names (`drv_script_step`, `set_gvar_script_ip_AC9D`,
-    `chain_to_drv_return_to_caller`, etc.).  Remaining 934 are
-    almost entirely in the 5 GF driver chunks where the heuristic
-    doesn't fit the repetitive bit-shift-loop patterns.  Per
-    PLAN §6 these are driver-internal and read by humans rarely;
-    deferred to opportunistic per-file cleanup.
+  - `loc_N`: tackled via two passes:
+    1. Heuristic auto-renamer at `tasm/rename_loc_labels.py`
+       applied to 13 chunks → 165 labels renamed to semantic
+       names (`drv_script_step`, `set_gvar_script_ip_AC9D`,
+       `chain_to_drv_return_to_caller`, etc.)
+    2. Macro-fold of unrolled-loop patterns via
+       `tasm/fold_unrolled.py` on the 5 GF driver chunks → 81 more
+       labels collapsed.  Three macros added per file:
+       `SPRITE_SLOT_SCAN_STEP`, `SPRITE_STATE_SCAN_STEP`, plus
+       `DI_WRAP_STEP` / `SI_WRAP_STEP` for CGA (interleaved-plane
+       framebuffer wrap).  Macro expansion produces identical
+       bytes — verified BIT-PERFECT.
+    - **Total**: 1099 → 853 (22% reduction, 246 labels cleaned)
+    - The remaining 853 are mostly inside heterogeneous blit /
+      animation-handler code where each loc_N is a unique branch
+      target; per-file manual cleanup gives diminishing returns.
 - **Driver-internal blit/decode helpers** — semantically "bytes at A
   become pixels at B"; doesn't fit byte-delta probing.  Belongs in a
   separate pixel-diff integration test regime alongside DOSBox.

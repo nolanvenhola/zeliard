@@ -98,6 +98,65 @@ sprite_state_b	equ	5093h			;* sprite slot state byte B
 ; ----------------------------------------------------------------------
 anim_frame_tbl	equ	38D1h			;* animation frame offset table
 anim_phase	equ	5080h			;* animation pass counter (decremented)
+
+; ----------------------------------------------------------------------
+; Macros — collapse the unrolled sprite-scan + state-update patterns
+; that Sourcer emitted as 8+ identical loc_N-merging blocks each.
+; Macro expansion produces the same bytes as the original unrolled
+; source (verified BIT-PERFECT after rewrite).
+; ----------------------------------------------------------------------
+;
+; SPRITE_SLOT_SCAN_STEP <merge_label>
+;   One iteration of the sprite-slot init scan.  Tests bit-7 of
+;   [si]; if set, calls sprite_slot_init.  Then advances si and bx.
+;   Used 4× inside `sprite_scan_loop` and 3× immediately after.
+;
+SPRITE_SLOT_SCAN_STEP	MACRO	merge
+		test	byte ptr [si],80h
+		jz	merge			; Jump if zero
+		call	sprite_slot_init
+merge:
+		inc	si
+		inc	bx
+		ENDM
+
+; SPRITE_STATE_SCAN_STEP <merge_label>
+;   One iteration of the column scan.  Compares [si] vs es:[di]
+;   (cmpsb advances si and di); if mismatched, calls sprite_state_update.
+;   Then advances bx.  Used 4× inside `col_scan_loop` and 3× after.
+;
+SPRITE_STATE_SCAN_STEP	MACRO	merge
+		cmpsb				; Cmp [si] to es:[di]
+		jz	merge			; Jump if zero
+		call	sprite_state_update
+merge:
+		inc	bx
+		ENDM
+
+; DI_WRAP_STEP <merge_label>
+;   Advance DI by +0x1FFE; if it crossed 0x4000, add cga_wrap_add to
+;   bring it back into the alternate-plane window.  The CGA framebuffer
+;   is two interleaved 8KB planes at B800:0000 (even) and B800:1FFE
+;   (odd), so an "advance one row" toggles plane and may wrap.
+;
+DI_WRAP_STEP	MACRO	merge
+		add	di,1FFEh
+		cmp	di,4000h
+		jb	merge			; Jump if below
+		add	di,cga_wrap_add
+merge:
+		ENDM
+
+; SI_WRAP_STEP <merge_label>
+;   Same wrap for SI when the source pointer crosses planes.
+;
+SI_WRAP_STEP	MACRO	merge
+		add	si,1FFEh
+		cmp	si,4000h
+		jb	merge			; Jump if below
+		add	si,cga_wrap_add
+merge:
+		ENDM
 cga_col_stride	equ	0A0h			; CGA bytes per interleaved row (160)
 
 seg_a		segment	byte public
@@ -151,52 +210,16 @@ init_scan_next:
 		mov	cx,6
 
 sprite_scan_loop:
-					push	cx
-					test	byte ptr [si],80h
-					jz	loc_2			; Jump if zero
-					call	sprite_slot_init
+		push	cx
+		SPRITE_SLOT_SCAN_STEP loc_2
+		SPRITE_SLOT_SCAN_STEP loc_3
+		SPRITE_SLOT_SCAN_STEP loc_4
+		SPRITE_SLOT_SCAN_STEP loc_5
+		pop	cx
+		loop	sprite_scan_loop	; Loop if cx > 0
 
-loc_2:
-					inc	si
-					inc	bx
-					test	byte ptr [si],80h
-					jz	loc_3			; Jump if zero
-					call	sprite_slot_init
-
-loc_3:
-					inc	si
-					inc	bx
-					test	byte ptr [si],80h
-					jz	loc_4			; Jump if zero
-					call	sprite_slot_init
-
-loc_4:
-					inc	si
-					inc	bx
-					test	byte ptr [si],80h
-					jz	loc_5			; Jump if zero
-					call	sprite_slot_init
-
-loc_5:
-					inc	si
-					inc	bx
-					pop	cx
-					loop	sprite_scan_loop	; Loop if cx > 0
-
-		test	byte ptr [si],80h
-		jz	loc_6			; Jump if zero
-		call	sprite_slot_init
-
-loc_6:
-		inc	si
-		inc	bx
-		test	byte ptr [si],80h
-		jz	loc_7			; Jump if zero
-		call	sprite_slot_init
-
-loc_7:
-		inc	si
-		inc	bx
+		SPRITE_SLOT_SCAN_STEP loc_6
+		SPRITE_SLOT_SCAN_STEP loc_7
 		test	byte ptr [si],80h
 		jz	loc_8			; Jump if zero
 		call	sprite_slot_init
@@ -225,52 +248,17 @@ loc_11:
 					mov	cx,6
 
 col_scan_loop:
-								push	cx
-								cmpsb				; Cmp [si] to es:[di]
-								jz	loc_13			; Jump if zero
-								call	sprite_state_update
+		push	cx
+		SPRITE_STATE_SCAN_STEP loc_13
+		SPRITE_STATE_SCAN_STEP loc_14
+		SPRITE_STATE_SCAN_STEP loc_15
+		SPRITE_STATE_SCAN_STEP loc_16
+		pop	cx
+		loop	col_scan_loop		; Loop if cx > 0
 
-loc_13:
-								inc	bx
-								cmpsb				; Cmp [si] to es:[di]
-								jz	loc_14			; Jump if zero
-								call	sprite_state_update
-
-loc_14:
-								inc	bx
-								cmpsb				; Cmp [si] to es:[di]
-								jz	loc_15			; Jump if zero
-								call	sprite_state_update
-
-loc_15:
-								inc	bx
-								cmpsb				; Cmp [si] to es:[di]
-								jz	loc_16			; Jump if zero
-								call	sprite_state_update
-
-loc_16:
-								inc	bx
-								pop	cx
-								loop	col_scan_loop		; Loop if cx > 0
-
-					cmpsb				; Cmp [si] to es:[di]
-					jz	loc_17			; Jump if zero
-					call	sprite_state_update
-
-loc_17:
-					inc	bx
-					cmpsb				; Cmp [si] to es:[di]
-					jz	loc_18			; Jump if zero
-					call	sprite_state_update
-
-loc_18:
-					inc	bx
-					cmpsb				; Cmp [si] to es:[di]
-					jz	loc_19			; Jump if zero
-					call	sprite_state_update
-
-loc_19:
-					inc	bx
+		SPRITE_STATE_SCAN_STEP loc_17
+		SPRITE_STATE_SCAN_STEP loc_18
+		SPRITE_STATE_SCAN_STEP loc_19
 					lodsb				; String [si] to al
 					inc	di
 					or	al,al			; Zero ?
@@ -528,19 +516,9 @@ loc_41:
 
 blit_copy_loop:
 					movsw				; Mov [si] to es:[di]
-					add	di,1FFEh
-					cmp	di,4000h
-					jb	loc_43			; Jump if below
-					add	di,cga_wrap_add
-
-loc_43:
+					DI_WRAP_STEP loc_43
 					movsw				; Mov [si] to es:[di]
-					add	di,1FFEh
-					cmp	di,4000h
-					jb	loc_44			; Jump if below
-					add	di,cga_wrap_add
-
-loc_44:
+					DI_WRAP_STEP loc_44
 					loop	blit_copy_loop		; Loop if cx > 0
 
 		pop	bx
@@ -556,97 +534,27 @@ loc_45:
 		mov	es,ax
 		mov	ds,ax
 		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_46			; Jump if below
-		add	di,cga_wrap_add
-
-loc_46:
-		add	si,1FFEh
-		cmp	si,4000h
-		jb	loc_47			; Jump if below
-		add	si,cga_wrap_add
-
-loc_47:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_48			; Jump if below
-		add	di,cga_wrap_add
-
-loc_48:
-		add	si,1FFEh
-		cmp	si,4000h
-		jb	loc_49			; Jump if below
-		add	si,cga_wrap_add
-
-loc_49:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_50			; Jump if below
-		add	di,cga_wrap_add
-
-loc_50:
-		add	si,1FFEh
-		cmp	si,4000h
-		jb	loc_51			; Jump if below
-		add	si,cga_wrap_add
-
-loc_51:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_52			; Jump if below
-		add	di,cga_wrap_add
-
-loc_52:
-		add	si,1FFEh
-		cmp	si,4000h
-		jb	loc_53			; Jump if below
-		add	si,cga_wrap_add
-
-loc_53:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_54			; Jump if below
-		add	di,cga_wrap_add
-
-loc_54:
-		add	si,1FFEh
-		cmp	si,4000h
-		jb	loc_55			; Jump if below
-		add	si,cga_wrap_add
-
-loc_55:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_56			; Jump if below
-		add	di,cga_wrap_add
-
-loc_56:
-		add	si,1FFEh
-		cmp	si,4000h
-		jb	loc_57			; Jump if below
-		add	si,cga_wrap_add
-
-loc_57:
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_58			; Jump if below
-		add	di,cga_wrap_add
-
-loc_58:
-		add	si,1FFEh
-		cmp	si,4000h
-		jb	loc_59			; Jump if below
-		add	si,cga_wrap_add
-
-loc_59:
-		movsw				; Mov [si] to es:[di]
+		DI_WRAP_STEP loc_46
+		SI_WRAP_STEP loc_47
+		movsw
+		DI_WRAP_STEP loc_48
+		SI_WRAP_STEP loc_49
+		movsw
+		DI_WRAP_STEP loc_50
+		SI_WRAP_STEP loc_51
+		movsw
+		DI_WRAP_STEP loc_52
+		SI_WRAP_STEP loc_53
+		movsw
+		DI_WRAP_STEP loc_54
+		SI_WRAP_STEP loc_55
+		movsw
+		DI_WRAP_STEP loc_56
+		SI_WRAP_STEP loc_57
+		movsw
+		DI_WRAP_STEP loc_58
+		SI_WRAP_STEP loc_59
+		movsw
 		pop	bx
 		pop	si
 		pop	di
@@ -659,55 +567,20 @@ loc_60:
 		mov	es,ax
 		xor	ax,ax			; Zero register
 		stosw				; Store ax to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_61			; Jump if below
-		add	di,cga_wrap_add
-
-loc_61:
-		stosw				; Store ax to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_62			; Jump if below
-		add	di,cga_wrap_add
-
-loc_62:
-		stosw				; Store ax to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_63			; Jump if below
-		add	di,cga_wrap_add
-
-loc_63:
-		stosw				; Store ax to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_64			; Jump if below
-		add	di,cga_wrap_add
-
-loc_64:
-		stosw				; Store ax to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_65			; Jump if below
-		add	di,cga_wrap_add
-
-loc_65:
-		stosw				; Store ax to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_66			; Jump if below
-		add	di,cga_wrap_add
-
-loc_66:
-		stosw				; Store ax to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_67			; Jump if below
-		add	di,cga_wrap_add
-
-loc_67:
-		stosw				; Store ax to es:[di]
+		DI_WRAP_STEP loc_61
+		stosw
+		DI_WRAP_STEP loc_62
+		stosw
+		DI_WRAP_STEP loc_63
+		stosw
+		DI_WRAP_STEP loc_64
+		stosw
+		DI_WRAP_STEP loc_65
+		stosw
+		DI_WRAP_STEP loc_66
+		stosw
+		DI_WRAP_STEP loc_67
+		stosw
 		pop	bx
 		pop	si
 		pop	di
@@ -1202,54 +1075,19 @@ sprite_bit_extract		endp
 
 cga_blit_2rows_stride		proc	near
 		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_92			; Jump if below
-		add	di,cga_wrap_add
-
-loc_92:
+		DI_WRAP_STEP loc_92
 		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_93			; Jump if below
-		add	di,cga_wrap_add
-
-loc_93:
+		DI_WRAP_STEP loc_93
 		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_94			; Jump if below
-		add	di,cga_wrap_add
-
-loc_94:
+		DI_WRAP_STEP loc_94
 		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_95			; Jump if below
-		add	di,cga_wrap_add
-
-loc_95:
+		DI_WRAP_STEP loc_95
 		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_96			; Jump if below
-		add	di,cga_wrap_add
-
-loc_96:
+		DI_WRAP_STEP loc_96
 		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_97			; Jump if below
-		add	di,cga_wrap_add
-
-loc_97:
+		DI_WRAP_STEP loc_97
 		movsw				; Mov [si] to es:[di]
-		add	di,1FFEh
-		cmp	di,4000h
-		jb	loc_98			; Jump if below
-		add	di,cga_wrap_add
-
-loc_98:
+		DI_WRAP_STEP loc_98
 		movsw				; Mov [si] to es:[di]
 		retn
 

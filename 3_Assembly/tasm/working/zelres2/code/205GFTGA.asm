@@ -92,6 +92,30 @@ anim_frame_tbl	equ	3915h			;*
 anim_phase	equ	5243h			;*
 tga_row_stride	equ	0A0h
 
+
+; ----------------------------------------------------------------------
+; Macros — collapse the unrolled sprite-scan + state-update patterns
+; that Sourcer emitted as 8+ identical loc_N-merging blocks each.
+; Macro expansion produces the same bytes as the original unrolled
+; source (verified BIT-PERFECT after rewrite).
+; ----------------------------------------------------------------------
+SPRITE_SLOT_SCAN_STEP	MACRO	merge
+		test	byte ptr [si],80h
+		jz	merge			; Jump if zero
+		call	sprite_slot_init
+merge:
+		inc	si
+		inc	bx
+		ENDM
+
+SPRITE_STATE_SCAN_STEP	MACRO	merge
+		cmpsb				; Cmp [si] to es:[di]
+		jz	merge			; Jump if zero
+		call	sprite_state_update
+merge:
+		inc	bx
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -164,44 +188,14 @@ loc_5:
 
 loc_6:
 				inc	bx
-				test	byte ptr [si],80h
-				jz	loc_7			; Jump if zero
-				call	sprite_slot_init
-
-loc_7:
-				inc	si
-				inc	bx
-				test	byte ptr [si],80h
-				jz	loc_8			; Jump if zero
-				call	sprite_slot_init
-
-loc_8:
-				inc	si
-				inc	bx
-				test	byte ptr [si],80h
-				jz	loc_9			; Jump if zero
-				call	sprite_slot_init
-
-loc_9:
-				inc	si
-				inc	bx
+				SPRITE_SLOT_SCAN_STEP loc_7
+				SPRITE_SLOT_SCAN_STEP loc_8
+				SPRITE_SLOT_SCAN_STEP loc_9
 				pop	cx
 				loop	sprite_scan_loop		; Loop if cx > 0
 
-		test	byte ptr [si],80h
-		jz	loc_10			; Jump if zero
-		call	sprite_slot_init
-
-loc_10:
-		inc	si
-		inc	bx
-		test	byte ptr [si],80h
-		jz	loc_11			; Jump if zero
-		call	sprite_slot_init
-
-loc_11:
-		inc	si
-		inc	bx
+		SPRITE_SLOT_SCAN_STEP loc_10
+		SPRITE_SLOT_SCAN_STEP loc_11
 		test	byte ptr [si],80h
 		jz	loc_12			; Jump if zero
 		call	sprite_slot_init
@@ -231,51 +225,16 @@ loc_15:
 
 col_scan_loop:
 						push	cx
-						cmpsb				; Cmp [si] to es:[di]
-						jz	loc_17			; Jump if zero
-						call	sprite_state_update
-
-loc_17:
-						inc	bx
-						cmpsb				; Cmp [si] to es:[di]
-						jz	loc_18			; Jump if zero
-						call	sprite_state_update
-
-loc_18:
-						inc	bx
-						cmpsb				; Cmp [si] to es:[di]
-						jz	loc_19			; Jump if zero
-						call	sprite_state_update
-
-loc_19:
-						inc	bx
-						cmpsb				; Cmp [si] to es:[di]
-						jz	loc_20			; Jump if zero
-						call	sprite_state_update
-
-loc_20:
-						inc	bx
+						SPRITE_STATE_SCAN_STEP loc_17
+						SPRITE_STATE_SCAN_STEP loc_18
+						SPRITE_STATE_SCAN_STEP loc_19
+						SPRITE_STATE_SCAN_STEP loc_20
 						pop	cx
 						loop	col_scan_loop		; Loop if cx > 0
 
-				cmpsb				; Cmp [si] to es:[di]
-				jz	loc_21			; Jump if zero
-				call	sprite_state_update
-
-loc_21:
-				inc	bx
-				cmpsb				; Cmp [si] to es:[di]
-				jz	loc_22			; Jump if zero
-				call	sprite_state_update
-
-loc_22:
-				inc	bx
-				cmpsb				; Cmp [si] to es:[di]
-				jz	loc_23			; Jump if zero
-				call	sprite_state_update
-
-loc_23:
-				inc	bx
+				SPRITE_STATE_SCAN_STEP loc_21
+				SPRITE_STATE_SCAN_STEP loc_22
+				SPRITE_STATE_SCAN_STEP loc_23
 				lodsb				; String [si] to al
 				inc	di
 				or	al,al			; Zero ?
