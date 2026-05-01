@@ -76,13 +76,15 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Player facing (left/right) | ⚠ | player_facing at DS:0xC2 (87 byte tests; the hottest byte in stdply) |
 | Player pose-state byte | ⚠ | gvar_pose_idx (0xE7); bit-7 = mode flag, low-7 = index per stdply.inc comment |
 | Hitbox system | ❌ | ply_hitbox at DS:0xD2 named but the box layout TBD |
-| Sprite/tile collision detection | ⚠ | scan_match_flag (9F17), check_north/south_movement procs identified; tile-type lookup via `accumulate_tile_type` |
-| Surface effects: ice (sliding) | ❌ | Tile-type → physics modifier mapping TBD |
-| Surface effects: slime/ooze (slow) | ❌ | Same |
-| Surface effects: lava (damage) | ❌ | Same |
-| Surface effects: water | ❌ | Same |
-| One-way walls (pass through one way) | ❌ | Direction-gated tiles TBD |
+| Sprite/tile collision detection | ✓ | game_func_128 + is_unknown_or_area5_slot_b classifies tiles via is_entity_known_type; bytes >= 0x49 block movement (TILE_PHYSICS.md §"Movement collision") |
+| Surface effects: ice (sliding) | ❌ | Per-area tile-type → physics modifier mapping TBD; would need DOSBox observation in Helada cavern |
+| Surface effects: slime/ooze (slow) | ❌ | Same — likely small damage in tile_type_map + speed modifier |
+| Surface effects: lava (damage) | ✓ | Comes through the tile_type_map → tile_type_sum → shield → HP damage chain (TILE_PHYSICS.md §"Per-frame damage scan") |
+| Surface effects: water | ❌ | TBD — likely a separate flag; not yet identified in tile-byte format |
+| One-way walls (pass through one way) | ❌ | Direction-gated tile flag not yet identified |
 | One-way air-flow walls (push player) | ❌ | TBD |
+| Force-vulnerable tiles (bytes 0x40..0x48) | ✓ | Tile bytes in this range zero `invul_timer` (TILE_PHYSICS.md) |
+| Spike / instant-damage tiles | ✓ | Use the standard tile_type_map mechanism with high damage values |
 | Player movement speed by stat | ⚠ | char_speed (0x98), 9 levels per Sage progression |
 | F9 game-speed adjustment (0-9) | ❌ | speed_level handler TBD |
 | Pause (Esc) | ❌ | Pause routine TBD |
@@ -188,10 +190,10 @@ is started.  Use this as a checklist before saying "we're ready to port".
 |---|:---:|---|
 | Cavern count (16 cavern halves across 8 areas) | ✓ | Playthrough.txt §7 |
 | Cavern entry from town | ❌ | Town → cavern trigger TBD |
-| Cavern map data (.mdt files in 4_Resources/Maps) | ⚠ | Format partially decoded; tile codes TBD |
+| Cavern map data (.mdt files in 4_Resources/Maps) | ✓ | Byte-per-tile format documented in TILE_PHYSICS.md (low nibble = tile-type idx, bit 6 = decoration, bytes 0x40..0x48 = force-vulnerable, bytes >= 0x49 = blocking) |
 | Map scrolling (horizontal + vertical) | ⚠ | gfx_scroll_left/right_fn; map_scroll_col / map_scroll_row at DS:0x80/0x82 |
 | Map width / wrap (map_width at C002) | ✓ | Used by `world_x_to_screen_x` / `compute_scroll_pos` (probe-tested) |
-| Tile types (walkable, wall, lava, ice, water, slime, ooze) | ❌ | tile_type_map at DS-relative addr; tile-id → effect TBD |
+| Tile types (walkable, wall, lava, ice, water, slime, ooze) | ⚠ | Framework fully documented in TILE_PHYSICS.md (tile_type_map[16] per area drives damage via tile_type_sum + shield + HP chain); per-area damage values + ice/slime physics modifiers still TBD |
 | Doors and locks | ❌ | TBD |
 | Loot boxes (visible) | ❌ | TBD |
 | Secret loot (hidden tiles) | ❌ | TBD |
@@ -332,12 +334,16 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 56 |
-| ⚠ partial | 47 |
-| ❌ not investigated | 82 |
+| ✓ fully traced | 62 |
+| ⚠ partial | 46 |
+| ❌ not investigated | 79 |
 
-**Total mechanics enumerated**: 185
-**Coverage so far**: ~30% fully understood, 25% partial, 44% not investigated
+**Total mechanics enumerated**: 187 (+2 rows added in TILE_PHYSICS pass: force-vulnerable + spike tiles)
+**Coverage so far**: ~33% fully understood, 25% partial, 42% not investigated
+
+Items 1, 2, 3, 4 from the not-investigated cluster have been moved
+out (combat FSM, script-bytecode VM, inventory, tile physics — see
+their dedicated docs).  Remaining clusters of unknowns:
 
 The not-investigated half clusters into:
 1. **Dialog/script bytecode interpreter** (the cs:[6004]–[6010] family).  Every NPC/shop runs on this.  Big single payoff — once we crack the opcode set, every shop becomes legible.
