@@ -467,7 +467,7 @@ al_is_one:
         dec  bl
         xor  bh, bh
         mov  al, ds:anim_frame_tbl_a[bx]   ; base damage per sword type
-        mov  bl, byte ptr ds:[8Dh]   ; item_qty_count (Sabre Oil buff?)
+        mov  bl, byte ptr ds:[8Dh]   ; item_qty_count (Sabre Oil duration?)
         shr  bl, 1
         add  al, bl                  ; + buff
         ; ... (carry-clamp, multiply by (key_count+1)) ...
@@ -475,7 +475,7 @@ al_is_one:
 check_flag45:
         mov  ah, al
         cmp  byte ptr ds:gvar_combat_action_state, 2
-        je   double_ah               ; ← attacking? double damage
+        je   double_ah               ; ← Sabre Oil active? double damage
 
 double_ah:
         add  ah, ah
@@ -483,8 +483,31 @@ double_ah:
         retn
 ```
 
-So the in-engine damage calculation has **one** explicit modifier:
-double damage if action_state == 2 at the moment of the hit.
+So the in-engine damage calculation has **one** explicit multiplier:
+the doubling triggered when `gvar_combat_action_state == 2`.
+
+Per user 2026-04-30: this is **most likely the Sabre Oil
+active-buff multiplier**, not an "attack always doubles" rule.
+Reasoning:
+- Damage is only computed and applied during the swing animation
+  anyway, so a "double on attack" check would be redundant.
+- Sabre Oil (item index 4 in INVENTORY_SYSTEM.md) was identified as
+  a sword damage boost; INVENTORY_SYSTEM.md left the exact
+  mechanism TBD.  The doubling here is the most plausible mechanism.
+- The byte at `[8Dh]` (item_qty_count) being added before the
+  doubling is consistent with item_qty_count being a Sabre Oil
+  duration counter that decrements per frame, providing a
+  diminishing-bonus tail after the doubling kicks in.
+
+If this interpretation is correct, the action_state==2 check in
+game_multiply_5 isn't testing the FSM at all — it's testing a
+buff-active flag that happens to share the same byte (FF45) or be
+similarly-named.  Resolving definitively needs:
+1. A DOSBox session: drink Sabre Oil, swing → check FF45 value
+   right before game_multiply_5.  If it's 2, the buff path is
+   confirmed.
+2. A no-Sabre-Oil control swing → check FF45 value should be 0 or 1
+   (the regular FSM state when not buffed).
 
 ### Falling-attack bonus (emergent, not a special multiplier)
 
@@ -534,50 +557,70 @@ the right model.
 
 ### Summary of attack contextual variants
 
-| Player state | Damage | Sword position / hitbox |
+| Trigger | Damage | Sword position / hitbox |
 |---|---|---|
-| Standing + attack | Normal (sword lookup × 2) | Mid-height forward swing |
-| Crouching (Down held) + attack | Normal | **Low swing** — hits short enemies |
-| Jumping (ascending) + attack | Normal | **Overhead swing** — hitbox extends upward |
-| Falling (descending) + attack | **Cumulative** (multi-frame hits) | Mid-height, downward path through enemy column |
+| Default (standing, no enemy above) | Normal (sword lookup × 2) | Mid-height forward swing |
+| Down held (crouch commitment) | Normal | **Low swing** — hits short enemies |
+| Flying enemy in row above (auto-aim) | Normal | **Overhead swing** — hitbox extends upward |
+| Falling through enemy column | **Cumulative** (multi-frame hits) | Default graphic, but multi-hit damage |
 
 All four share the same FSM state (`action_state=2`) and same input
-(button1).  The variation comes from **two mechanisms** working
-together:
+(button1).  The variation comes from **three mechanisms**:
 
-1. **Sprite-frame selection** changes the swing pose (and therefore
-   the hitbox extents).  `select_player_sprite_frame` builds the
-   table index from `(facing<<4) + offset` where the offset depends
-   on `gvar_combat_anim_subindex` and the implicit physics state
-   carried in `gvar_pose_idx`.  Crouching pose vs ascending pose vs
-   descending pose vs grounded pose each produce a different `bx`,
-   indexing a different `entity_ptr_table[bx]` row, rendering a
-   different swing graphic with different hitbox geometry.
-2. **Hit-detection cadence** changes the damage delivery.  A
-   stationary swing produces ONE collision event over the swing's
-   duration.  A moving swing (especially during fall, where the
-   player traverses several tile-rows) produces MULTIPLE collision
-   events as the player's tile position crosses the enemy's.
+1. **Player-commitment selection** (Down key): if the player is
+   crouching at swing time, the crouch pose is already in
+   `gvar_pose_idx` and `select_player_sprite_frame` routes the
+   attack-frame lookup through the low-swing entity_ptr_table row.
+
+2. **Auto-aim selection** (enemy detection): the engine scans tiles
+   in the row directly above the player at swing time looking for
+   entity bytes (>= 0x49).  If a flying enemy is found there, the
+   sprite-frame selector picks the overhead-swing row.  The
+   `game_func_69` routine (200FIGHT:4027) does exactly this scan —
+   it's currently invoked from `state1_entry` (jump path) but the
+   same scan likely runs from the standing-attack path too.  Per
+   user 2026-04-30: **"when there is a flying creature overhead the
+   sword swing will automatically switch to overhead"** — overhead
+   is target-driven, not tied to jumping.
+
+3. **Hit-detection cadence**: a stationary swing produces ONE
+   collision event.  A moving swing (especially falling through
+   tile rows) produces MULTIPLE collision events as the player's
+   tile position crosses the enemy's, delivering cumulative damage.
 
 The damage formula itself has just the one `action_state==2`
-multiplier (`game_multiply_5` at line 8103).  All other
-"flavor" comes from sprite frame and movement-driven multi-hits.
+multiplier (`game_multiply_5` at line 8103).  All other "flavor"
+comes from sprite frame and movement-driven multi-hits.
 
-### The four swing graphics
+### The swing graphics
 
-The cleaned source doesn't yet have explicit names for the four
-swing-frame entries, but they're packed into `entity_ptr_table`
-(in game_seg) at predictable offsets per facing:
+`entity_ptr_table[bx]` (in game_seg) holds rows of frame data, with
+`bx = (facing<<4) + offset` selecting which swing variant to render:
 
-| Facing | Standing | Crouching | Overhead (ascending) | Falling |
-|---|---|---|---|---|
-| Right (0x00..0x0F) | `[0x0A]` | TBD | TBD | TBD |
-| Left  (0x10..0x1F) | `[0x1A]` | TBD | TBD | TBD |
+| Facing | Default (mid forward) | Crouching (low) | Overhead (auto-aim) |
+|---|---|---|---|
+| Right (0x00..0x0F) | `[0x0A]` | TBD | TBD |
+| Left  (0x10..0x1F) | `[0x1A]` | TBD | TBD |
 
 Identifying the exact `[bx]` entries for each variant needs DOSBox
-observation: hold a different physics state (Down / Up / mid-fall),
-press attack, read the value of `bx` at line 2715
-(`mov di, es:entity_ptr_table[bx]`) to see which row was selected.
+observation: enter each trigger condition (hold Down / position a
+flying enemy overhead / fall) and read the value of `bx` at
+line 2715 (`mov di, es:entity_ptr_table[bx]`) to see which row was
+selected for the swing.
+
+### Important: jumping does NOT auto-pick overhead
+
+Earlier versions of this doc claimed "jumping (ascending) + attack =
+overhead swing".  That was wrong: jumping doesn't change the swing
+graphic.  What CAN happen during a jump:
+- The player's altitude changes — an enemy that WAS above the
+  player while grounded may now be at the player's level (so
+  overhead won't auto-trigger anymore).
+- An enemy that WAS at player level might now be in the row above
+  the jumped player → overhead WILL auto-trigger.
+
+So jumping affects whether auto-aim picks overhead or default, but
+only indirectly via the player's new tile-row position.
 
 ---
 

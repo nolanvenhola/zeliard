@@ -95,10 +95,10 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Sword attack — standing (Spacebar) | ✓ | combat_input_handler sets action_state=2 on button1; damage = sword_type lookup × 2 via game_multiply_5 (line 8103); mid-height forward swing |
-| Sword attack — crouch-low (Down held) | ✓ | Sprite-frame variation via crouch pose; hitbox extends lower for short enemies; no damage change (PLAYER_PHYSICS.md §"Summary of attack contextual variants") |
-| Sword attack — jump-overhead (ascending) | ✓ | Sprite-frame variation via ascending pose (gvar_combat_ff3D bit 7 set); hitbox extends upward; no damage change (per user 2026-04-30) |
-| Sword attack — falling-bonus (descending) | ⚠ | Emergent cumulative damage from per-frame hit-detection while player passes through enemy column; no explicit multiplier in game_multiply_5; needs DOSBox call-count confirmation |
+| Sword attack — standing (Spacebar) | ✓ | combat_input_handler sets action_state=2 on button1; mid-height forward swing; base damage = sword_type lookup table |
+| Sword attack — crouch-low (Down held) | ✓ | Sprite-frame variation via crouch pose; hitbox extends lower for short enemies; no damage change |
+| Sword attack — overhead (auto-aim) | ✓ | Auto-triggered when a flying enemy is in the row above the player at swing time (per user 2026-04-30); NOT tied to jumping — it's target-aware aim. game_func_69 (200FIGHT:4027) is the candidate scan |
+| Sword attack — falling-bonus (descending) | ⚠ | Emergent cumulative damage from per-frame hit-detection while player passes through enemy column; needs DOSBox call-count confirmation |
 | Hit detection: sword → enemy | ⚠ | last_hit_entity (9F10) named; full hit-test routine TBD |
 | Hit detection: enemy → player | ⚠ | hero_HP_subtract probe-tested (CPU 0x768A) |
 | Damage formula (sword type × level vs enemy HP) | ⚠ | Static formula in GAME_SYSTEMS.md; runtime computation TBD |
@@ -124,7 +124,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Item-effect-value (8E word) | ✓ | item_effect_val (0x8E word) is the effect-value display in use-confirm box |
 | Magic Stone: time-stop effect | ⚠ | Actually XP grant via item_effect_tbl[equipped_magic-1] per INVENTORY_SYSTEM.md (NOT time-stop as Playthrough hints) — manual likely conflates display mechanic |
 | Holy Water of Acero | ✓ | `inc key_count` (+1 key) per INVENTORY_SYSTEM.md |
-| Sabre Oil (sword temporary boost) | ⚠ | use_sabre_oil handler identified at item index 4; exact buff mechanism (temporal vs permanent) TBD |
+| Sabre Oil (sword temporary boost) | ⚠ | use_sabre_oil at item index 4. Likely mechanism (per user 2026-04-30): the ×2 doubling in game_multiply_5 (200FIGHT:8103) gated on FF45==2 IS the Sabre Oil buff — duration tracked in item_qty_count (DS:0x8D) which decrements per frame. Needs DOSBox confirmation |
 | Kioku Feather (warp/teleport) | ⚠ | use_kioku_feather identified; uses 120-frame timer (timer_wait_feather=0x78); warp/save trigger TBD |
 | Crests: Hero / Glory / Elf | ❌ | char_abilities byte (DS:0x9A..0x9C, 3 bytes) holds bits; per-crest semantic TBD |
 | Shoes: Ruzeria / Pirika / Silkarn / Asbestos cape / Feruza | ❌ | Not in 201SELCT panels (only 3 panels: weapons/magic/items); shoes equipped via different path TBD |
