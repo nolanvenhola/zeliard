@@ -141,17 +141,24 @@ seg_a		segment	byte public
 ;  Game Entry Point
 ;
 ;  Called from zeliad.exe with AX = mode flag:
-;    AX = 0      New game
-;    AX = 0xFFFF Load saved game
+;    AX = 0      New game     (no cmdline arg)
+;    AX = 0xFFFF Load saved   (cmdline arg = savefile name; zeliad.exe
+;                              already loaded the .USR over stdply.bin
+;                              at game_seg:0 before jumping here)
 ;
 ;  Initialization flow:
-;    1. Load SAR chunk loader / jump table
+;    1. Load font.grp + chunk-loader fixup
 ;    2. Clear all game state variables
 ;    3. Load graphics driver for current video mode
-;    4. Branch: new game vs. load save
-;    5. Load all game subsystems (physics, combat, AI, etc.)
-;    6. Initialize palette, music, level data
-;    7. Jump to main game loop
+;    4. Branch on save_mode_flag:
+;       - NEW GAME (0)      -> load opdemo.bin (zelres1 ch1) at CS:6000;
+;                              opdemo plays opening cinematic + title +
+;                              story, then transitions to gameplay
+;       - LOAD SAVED (0xFFFF) -> skip cinematic; load town/fight/select/
+;                                items/magic/sword/mole chunks directly;
+;                                jump to town.bin's main loop
+;    5. (NEW GAME branch happens INSIDE opdemo.bin after the cinematic.)
+;    6. (LOAD branch loads gameplay chunks here in game.bin.)
 ;
 ;==========================================================================
 
@@ -212,16 +219,30 @@ start:
 		call	word ptr cs:loaded_code_a
 
 		; Check: new game or load save?
-		cmp	word ptr cs:save_mode_flag,-1	; new game=0, load save=0xFFFF
-		jz	start_new_game
-
-		; --- LOAD SAVED GAME ---
-		mov	byte ptr cs:gvar_volume_b,0FFh
-		LOAD_CHUNK chunk_ref_opdemo, 6000h, 3	; opening demo (handles save restore)
-		jmp	word ptr ds:loaded_code_b ; Jump to save loader
+		; save_mode_flag value comes from zeliad.exe: cbw(has_savefile) where
+		; has_savefile=0xFF when a savefile name is on the cmdline.  So:
+		;   save_mode_flag = 0      -> NEW GAME (no cmdline arg, full opening flow)
+		;   save_mode_flag = 0xFFFF -> LOAD SAVE (player record was already
+		;                              restored by zeliad.exe at game_seg:0)
+		cmp	word ptr cs:save_mode_flag,-1	; -1 = 0xFFFF = LOAD mode
+		jz	start_load_game
 
 start_new_game:
-		; --- NEW GAME ---
+		; --- NEW GAME (full opening: cinematic + title + intro) ---
+		; Load opdemo (zelres1 ch1) at CS:6000 and jump to its entry.
+		; opdemo plays the slideshow, builds the Zeliard logo, then
+		; loads the gameplay chunks (town.bin etc.) itself before
+		; transitioning to gameplay.
+		mov	byte ptr cs:gvar_volume_b,0FFh
+		LOAD_CHUNK chunk_ref_opdemo, 6000h, 3	; opening cinematic + title sequence
+		jmp	word ptr ds:loaded_code_b ; Jump to opdemo entry (cinematic runner)
+
+start_load_game:
+		; --- LOAD SAVED GAME (skip cinematic, go straight to gameplay) ---
+		; Player record at game_seg:0 was already restored from the .USR
+		; file by zeliad.exe (load_driver_file with the cmdline name).
+		; Now load all the gameplay chunks directly and start at the
+		; saved location.
 		call	set_vga_palette
 
 		; Load main game graphics driver
@@ -393,7 +414,7 @@ ref_magic	db	01h, 1Dh, 'magic.grp', 0	; zelres2 ch29: magic effect graphics
 ref_sword	db	01h, 1Bh, 'sword.grp', 0	; zelres2 ch27: sword sprite
 ref_fight	db	01h, 01h, 'fight.bin', 0	; zelres2 ch1:  main game loop (200FIGHT)
 ref_town	db	00h, 07h, 'town.bin', 0	; zelres1 ch7:  town/overworld code
-ref_opdemo	db	00h, 01h, 'opdemo.bin', 0	; zelres1 ch1:  opening demo / save handler
+ref_opdemo	db	00h, 01h, 'opdemo.bin', 0	; zelres1 ch1:  opening cinematic (new-game path; loads title/story/gameplay chunks)
 ; Game frame graphics (GF* series, zelres2) ?-- loaded into CS+2000h:9000h
 ; archive=1 (zelres2); modes 1 and 2 share the same CGA frame assets
 

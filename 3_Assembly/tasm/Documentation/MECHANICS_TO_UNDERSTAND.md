@@ -312,9 +312,10 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Opening sequence (slideshow, story text) | ⚠ | opdemo (100OPDMO) chunk; slideshow loop at 0x0155, image list at 0x311E |
-| ENTER skip during opening | ✓ | check at delay routine 0x03AF |
-| Title screen (Zeliard logo only — no menu) | ⚠ | ttl1/2/3.grp loaded; logo blit pipeline VERIFIED in CLAUDE.md. Per user 2026-04-30: NO title menu — just the logo. Save loading is via OS-level cmdline arg to zeliad.exe (see SAVE_FORMAT.md), NOT an in-game "Load Game" picker |
+| Boot sequence (zeliad.exe → game.bin → opdemo/town) | ✓ | Full chain VERIFIED in BOOT_FLOW.md; game.asm labels corrected (`start_new_game` was reversed with `start_load_game`); rebuild bit-perfect |
+| Opening sequence (slideshow, story text) | ⚠ | Load site VERIFIED: game.asm:227 → opdemo (zelres1 ch1) at CS:6000 → jmp loaded_code_b. Triggered when save_mode_flag=0 (NEW game). Internal slideshow logic in 100OPDMO not yet fully traced |
+| ENTER skip during opening | ✓ | check at delay routine 0x03AF inside opdemo |
+| Title screen (Zeliard logo only — no menu) | ⚠ | Load chain VERIFIED end-to-end: opdemo → SAR loader → ttl3.grp (zelres1 ch32) for logo, ttl1/2 for glyphs/scene data. Logo blit pipeline VERIFIED in CLAUDE.md |
 | Title menu (New Game / Load Game) | N/A | Does not exist — load game is via DOS command-line arg, not in-game menu |
 | Boss intro animations | ❌ | Per-boss intro TBD |
 | Ending sequence (Felicia restored, credits) | ❌ | end4-7, fin chunks; full ending TBD |
@@ -340,12 +341,12 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 87 |
+| ✓ fully traced | 88 |
 | ⚠ partial | 53 |
 | ❌ not investigated | 51 |
 | N/A (does not exist) | 2 |
 
-**Total mechanics enumerated**: 193
+**Total mechanics enumerated**: 194 (added "Boot sequence" row in cinematics section)
 **Coverage so far**: ~45% fully understood, 27% partial, 27% not investigated
 
 **2026-04-30 honest-state correction**: 6 player-physics rows
