@@ -140,11 +140,14 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Enemy spawn (per-area enemy_id_table at 0x8000) | ⚠ | 24-entry table; per-area selection of which IDs spawn TBD |
 | Enemy spawn FX (gvar_spawn_fx_flag at 0xFF75) | ⚠ | Named; trigger conditions TBD |
 | Enemy death (gvar_death_flag at FF2E) | ⚠ | Named; cleanup chain TBD |
-| Per-enemy AI handler (zelres3 chunks 301-308 EAI1-EAI8, 311TORI, etc.) | ⚠ | Each chunk identified but per-AI state machine TBD |
-| Boss AI (10 bosses across 309CRAB, 310MEDA, 311TORI, 312ZELA, 313GALR, 314LEGA, 315ZEL2, 316DRGN, 317AKMA, 318MAO1, 319MAO2) | ⚠ | TORI fully named; others have placeholder labels |
-| Boss intro flag | ⚠ | boss_intro_flag (DS:0xC3) — bit-6 from boss data |
-| Boss HP / damage / Almas reward | ⚠ | BOSSES_DATABASE.md tabulates; per-boss data block TBD |
-| Enemy-trigger flow (entity_fn_e_4 at 200FIGHT) | ⚠ | Named; full dispatch table TBD |
+| Per-enemy AI handler (zelres3 chunks 301-308 EAI1-EAI8, 311TORI, etc.) | ✓ | Architecture + chunk pairings documented in BOSS_AI.md.  Each EAI is paired with one arena chunk; 16-byte slot record format documented |
+| Boss AI (10 bosses) | ✓ | All 10 bosses + chunk pairings + state-machine pattern documented in BOSS_AI.md (TAKO worked example; per-boss DEEP state graphs TBD per chunk) |
+| Boss intro flag | ✓ | boss_intro_flag (DS:0xC3) — bit-6 from boss data; entity slot record [si+5] bit5=hit, bit6=visible per BOSS_AI.md |
+| Boss HP / damage / Almas reward | ⚠ | Per-boss `_hp` byte at boss-specific addr (e.g., tori_hp 0xA773, fight_hp 0xA7C3 for CRAB); damage chain through fight_cb_prep documented; Almas reward per-boss values in BOSSES_DATABASE.md |
+| Enemy-trigger flow (entity_fn_e_4 at 200FIGHT) | ✓ | Boss-arena entry via 200FIGHT's level/arena dispatch; documented in BOSS_AI.md §"Two-chunk architecture" |
+| Per-boss state machines (per-state graph) | ⚠ | TAKO worked-example documented; other 9 bosses' detailed state graphs are separate per-chunk RE work |
+| Enemy slot record format (16 bytes) | ✓ | Field semantics documented in BOSS_AI.md §"Enemy slot record" |
+| Boss-defeat death sequence | ✓ | Common gvar_death_flag → fight_cb_shutdown → completion chain documented in BOSS_AI.md |
 
 ## 7. Towns
 
@@ -334,12 +337,12 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 62 |
-| ⚠ partial | 46 |
+| ✓ fully traced | 70 |
+| ⚠ partial | 41 |
 | ❌ not investigated | 79 |
 
-**Total mechanics enumerated**: 187 (+2 rows added in TILE_PHYSICS pass: force-vulnerable + spike tiles)
-**Coverage so far**: ~33% fully understood, 25% partial, 42% not investigated
+**Total mechanics enumerated**: 190 (+3 rows added in BOSS_AI pass: per-boss state machines, enemy slot record, boss-defeat sequence)
+**Coverage so far**: ~37% fully understood, 22% partial, 42% not investigated
 
 Items 1, 2, 3, 4 from the not-investigated cluster have been moved
 out (combat FSM, script-bytecode VM, inventory, tile physics — see
