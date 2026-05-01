@@ -808,7 +808,7 @@ clear_skip_state:
 frame_loop:
 		test	byte ptr ds:gvar_music_flag_b,0FFh
 		jnz	music_active_branch			; Jump if not zero
-		call	game_func_43
+		call	combat_input_handler
 		call	combat_step_dispatch
 		call	game_check_state_3
 ;*		call	game_func_107			;*
@@ -2509,7 +2509,42 @@ not_in_table_b:
 
 is_entity_id_lax		endp
 
-game_func_43		proc	near
+; combat_input_handler — per-frame combat input → FSM state writer.
+; Called from frame_loop (line ~811) once per game tick.  Reads the
+; joystick state via INT 61h (driver-installed at boot) and writes
+; the 3-byte combat-action FSM at FF45/FF46/FF47.
+;
+; Inputs:
+;   ds:[92h]              sword_type (gates entire handler if 0)
+;   INT 61h returns        AH=button-mask, AL=joystick direction-bits
+;   ds:gvar_combat_ff3D   combat-active flag (must be set for attack path)
+;   ds:gvar_debug_val     debug bypass (must be 0 for attack path)
+;   ds:gvar_skip_input    "input is muted right now" gate
+;   ds:gvar_joystick_flag, gvar_palette_flag, gvar_save_flag_1
+;
+; Outputs (the FSM):
+;   ds:gvar_combat_action_state (FF45)  =  0 idle / 1 walk / 2 attack
+;   ds:gvar_combat_anim_subindex (FF46) =  0 (idle/walk) / 2 (attack)
+;   ds:gvar_combat_audio_latch  (FF47)  =  0xFF on first attack-tick
+;                                            (also sets volume_b=4 once)
+;                                          0 on every non-attack tick
+;   ds:gvar_volume_b                    =  3 (idle/walk) / 4 (first attack)
+;
+; Three writer paths:
+;   PATH A (state=2 ATTACK): ah&1 + ff3D set + debug clear + al&2 set
+;     -> action_state=2, anim_subindex=2; latch audio + volume_b=4 first time
+;   PATH B (state=1 WALK):   AL bit 0 of joystick -> walking
+;     -> action_state=1, anim_subindex=0; volume_b=3
+;   PATH C (state=0 IDLE):   no input
+;     -> action_state=0, anim_subindex=0; volume_b=3
+;
+; The FSM is consumed by:
+;   - select_player_sprite_frame (line ~2615) — picks player sprite frame
+;   - boss anim selectors (lines ~8013, 8040) — force frame 0 during attack
+;   - game_multiply_5 (line ~8052) — doubles AH on attack (anim/dmg multiplier)
+;   - end-of-frame snapshot (line ~2797) — copies state into FF3F/FF41
+;     (`hero_frame` and `weapon_state`) for the gf*.asm graphics drivers
+combat_input_handler		proc	near
 		test	byte ptr ds:[92h],0FFh
 		jnz	vol_btn_pressed			; Jump if not zero
 		retn
@@ -2610,9 +2645,25 @@ clear_skip_joy:
 		mov	byte ptr ds:gvar_joystick_flag,0FFh
 		retn
 
-game_func_43		endp
+combat_input_handler		endp
 
-game_func_44		proc	near
+; select_player_sprite_frame — reads the combat FSM and player_facing
+; to pick the correct entity_ptr_table[bx] entry for the player sprite.
+;
+; Frame selection (bx is the table index):
+;   bl_base = (player_facing & 1) << 4    ; flip-direction bit shifted to nibble
+;   if action_state == 0 (idle):
+;       bx = (bl_base | anim_subindex) & 0xFE  ; idle frame
+;   if action_state == 1 (walk):
+;       bx = (bl_base + 0x0A) & 0xFE           ; walk-frame offset 0x0A
+;   if action_state == 2 (attack):
+;       bx = (bl_base + 0x06) & 0xFE           ; strike-frame offset 0x06
+;
+; entity_ptr_table[bx] is then dereferenced and the resulting
+; sprite-frame data scanned for non-FF tile codes that are blitted
+; into the visible player slot.  Gated by gvar_joystick_flag,
+; gvar_save_flag_1, and gvar_death_flag — skipped during transitions.
+select_player_sprite_frame		proc	near
 		test	byte ptr ds:gvar_joystick_flag,0FFh
 		jnz	joy_flag_set			; Jump if not zero
 		retn
@@ -2685,7 +2736,7 @@ entity_ptr_check:
 										or	byte ptr [bx+5],1
 										jmp	short entity_ptr_loop
 
-game_func_44		endp
+select_player_sprite_frame		endp
 
 game_check_state_3		proc	near
 
@@ -2854,7 +2905,7 @@ frame_timer_loop:
 		call	game_check_state_5
 		call	process_active_sprites
 		call	game_func_109
-		call	game_func_44
+		call	select_player_sprite_frame
 		call	word ptr cs:gfx_fn_render_col
 		mov	cl,ds:gvar_save_flag
 		mov	al,4

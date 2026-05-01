@@ -104,7 +104,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Hero death: Game Over flow | ⚠ | gameover_inner_tick / gameover_outer_tick named (9F28/9F29) |
 | Invulnerability frames (post-hit) | ⚠ | invul_timer used in game_func_9 (combat_step_dispatch) |
 | Blue-potion invulnerability exploit | ❌ | Documented in GAME_SYSTEMS.md but state-machine TBD |
-| Combat input FSM (FF45/46/47) | ⚠ | Aliased to gvar_combat_action_state/_anim_subindex/_audio_latch; writers in `combat_step_dispatch` |
+| Combat input FSM (FF45/46/47) | ✓ | `combat_input_handler` (line 2512, was game_func_43) called per-frame from frame_loop reads INT 61h and writes the 3-state FSM (0=idle, 1=walk, 2=attack); `select_player_sprite_frame` (was game_func_44) consumes it for sprite-frame selection.  Full doc in 200FIGHT.asm:2512+ comment block. |
 
 ## 5. Magic & items
 
@@ -331,8 +331,8 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 38 |
-| ⚠ partial | 56 |
+| ✓ fully traced | 39 |
+| ⚠ partial | 55 |
 | ❌ not investigated | 91 |
 
 **Total mechanics enumerated**: 185
