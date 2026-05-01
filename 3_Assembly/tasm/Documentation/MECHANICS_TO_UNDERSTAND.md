@@ -288,7 +288,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Esc (pause) | ❌ | TBD |
 | Ctrl-Q (quit) | ❌ | TBD |
 | Ctrl-J/K (joy/keyboard select) | ❌ | TBD |
-| Ctrl-R (restart, demo only) | ❌ | TBD |
+| Ctrl-R (restart) | ❌ | TBD — earlier "demo only" qualifier was wrong (demo mode doesn't exist per user 2026-04-30) |
 | Skip-input flag (gvar_skip_input at FF1D) | ✓ | Multi-context "input is muted right now" gate |
 
 ## 15. System & boot
@@ -314,11 +314,11 @@ is started.  Use this as a checklist before saying "we're ready to port".
 |---|:---:|---|
 | Opening sequence (slideshow, story text) | ⚠ | opdemo (100OPDMO) chunk; slideshow loop at 0x0155, image list at 0x311E |
 | ENTER skip during opening | ✓ | check at delay routine 0x03AF |
-| Title screen (Zeliard logo + menu) | ⚠ | ttl1/2/3.grp loaded; logo blit pipeline VERIFIED in CLAUDE.md |
-| Title menu (New Game / Load Game) | ❌ | Selection mechanism TBD |
+| Title screen (Zeliard logo only — no menu) | ⚠ | ttl1/2/3.grp loaded; logo blit pipeline VERIFIED in CLAUDE.md. Per user 2026-04-30: NO title menu — just the logo. Save loading is via OS-level cmdline arg to zeliad.exe (see SAVE_FORMAT.md), NOT an in-game "Load Game" picker |
+| Title menu (New Game / Load Game) | N/A | Does not exist — load game is via DOS command-line arg, not in-game menu |
 | Boss intro animations | ❌ | Per-boss intro TBD |
 | Ending sequence (Felicia restored, credits) | ❌ | end4-7, fin chunks; full ending TBD |
-| Demo mode auto-play | ❌ | Ctrl-R restart suggests demo loop; loop body TBD |
+| Demo mode auto-play | N/A | Does not exist (per user 2026-04-30); earlier speculation about "Ctrl-R demo loop" was wrong |
 
 ## 17. Misc / quality-of-life
 
@@ -329,7 +329,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | SFX-on/off F2 | ⚠ | Same flag as music toggle (only one mute path traced) |
 | Pause Esc | ❌ | TBD |
 | Quit Ctrl-Q | ❌ | TBD |
-| Restart Ctrl-R (demo) | ❌ | TBD |
+| Restart Ctrl-R | ❌ | TBD — purpose unclear (no demo mode to return to per user 2026-04-30) |
 | Joystick/keyboard switch (Ctrl-J/K) | ❌ | TBD |
 | Critical-error handler (int 24h) | ✓ | isr_critical installed by zeliad.asm |
 | Ctrl-C handler (ignore) | ✓ | zeliad.asm sets int 23h to ignore |
@@ -342,7 +342,8 @@ is started.  Use this as a checklist before saying "we're ready to port".
 |---|---:|
 | ✓ fully traced | 87 |
 | ⚠ partial | 53 |
-| ❌ not investigated | 53 |
+| ❌ not investigated | 51 |
+| N/A (does not exist) | 2 |
 
 **Total mechanics enumerated**: 193
 **Coverage so far**: ~45% fully understood, 27% partial, 27% not investigated
