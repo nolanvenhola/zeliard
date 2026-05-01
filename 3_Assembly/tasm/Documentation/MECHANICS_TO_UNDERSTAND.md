@@ -114,16 +114,16 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Spell casting (Alt key) | ❌ | Cast trigger + spell-effect dispatch TBD |
 | Active spell display | ⚠ | current_magic_spell at DS:0x9D; cur_magic_idx at DS:0xCE |
 | Magic potions list (8 types) | ✓ | ITEMS_DATABASE.md fully documented |
-| Per-potion effect (Ken'ko = HP, Juu-en = magic regen, etc.) | ⚠ | Player-facing effect documented; runtime apply path TBD |
-| Item-quantity tracking | ⚠ | item_qty_count (0x8D) named; per-item slot TBD |
-| Item-effect-value (8E word) | ⚠ | Named; per-effect semantics TBD |
-| Magic Stone: time-stop effect | ❌ | Spell mechanics TBD |
-| Holy Water of Acero | ❌ | TBD |
-| Sabre Oil (sword temporary boost) | ❌ | TBD |
-| Kioku Feather (warp/teleport) | ❌ | TBD |
-| Crests: Hero / Glory / Elf | ❌ | char_abilities byte (DS:0x9A) holds bits; meaning TBD |
-| Shoes: Ruzeria / Pirika / Silkarn / Asbestos cape / Feruza | ❌ | Equip slot + per-shoe effect TBD |
-| Keys: normal vs Lion's Head | ❌ | key_count (DS:0xCF); special-key flag TBD |
+| Per-potion effect | ✓ | All 8 handlers reverse-engineered in INVENTORY_SYSTEM.md (Ken'ko=+80HP cap, Juu-en=fullHP, Elixir=cur-weap-restore, Chikara=all-weap-restore, Sabre Oil, Magia=XP grant, Holy Water=+1 key, Kioku Feather=warp/save) |
+| Item-quantity tracking | ✓ | item_qty_count (0x8D) is the consumption-count display in the use-confirm box |
+| Item-effect-value (8E word) | ✓ | item_effect_val (0x8E word) is the effect-value display in use-confirm box |
+| Magic Stone: time-stop effect | ⚠ | Actually XP grant via item_effect_tbl[equipped_magic-1] per INVENTORY_SYSTEM.md (NOT time-stop as Playthrough hints) — manual likely conflates display mechanic |
+| Holy Water of Acero | ✓ | `inc key_count` (+1 key) per INVENTORY_SYSTEM.md |
+| Sabre Oil (sword temporary boost) | ⚠ | use_sabre_oil handler identified at item index 4; exact buff mechanism (temporal vs permanent) TBD |
+| Kioku Feather (warp/teleport) | ⚠ | use_kioku_feather identified; uses 120-frame timer (timer_wait_feather=0x78); warp/save trigger TBD |
+| Crests: Hero / Glory / Elf | ❌ | char_abilities byte (DS:0x9A..0x9C, 3 bytes) holds bits; per-crest semantic TBD |
+| Shoes: Ruzeria / Pirika / Silkarn / Asbestos cape / Feruza | ❌ | Not in 201SELCT panels (only 3 panels: weapons/magic/items); shoes equipped via different path TBD |
+| Keys: normal vs Lion's Head | ⚠ | `key_count` (DS:0xE4) per INVENTORY_SYSTEM.md.  Lion's Head Key flag TBD |
 
 ## 6. Enemies & AI
 
@@ -210,16 +210,17 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Inventory open trigger (Enter key) | ❌ | TBD |
-| Inventory display (select.bin chunk = 201SELCT) | ⚠ | Chunk identified; menu navigation TBD |
-| Item slot count + categories (weapon, shield, magic, special, key, crest, shoe) | ❌ | Slot layout TBD |
-| Equip / un-equip handler | ❌ | TBD |
-| ARMOR window (shield damage display) | ❌ | TBD |
-| SPELL window (active spell) | ❌ | TBD |
-| Inventory navigation (arrow keys) | ❌ | TBD |
-| Item activate (Space) | ❌ | TBD |
-| Inventory close (Enter) | ❌ | TBD |
-| Inventory item bitmask | ⚠ | inventory_list at DS:0xFF58 (5 bytes per 215DRUGP comment); bit-per-item TBD |
+| Inventory open trigger (Enter key) | ✓ | selct_main entry — see INVENTORY_SYSTEM.md |
+| Inventory display (select.bin chunk = 201SELCT) | ✓ | 3-panel layout (weapons/magic/items) documented in INVENTORY_SYSTEM.md |
+| Item slot count + categories | ✓ | 5 magic + 5 items + 7 weapons = 17 flag bytes at DS:A1/A6/BB, plus equipped indices |
+| Equip / un-equip handler | ✓ | cur_weapon_idx/cur_magic_idx written by per-panel cursor (INVENTORY_SYSTEM.md §"Per-panel input loop") |
+| ARMOR window (shield damage display) | ⚠ | weap_dur_cur table at DS:0xAB..0xB1 identified; per-shield render TBD |
+| SPELL window (active spell) | ⚠ | cur_magic_idx / equipped_magic identified; render path TBD |
+| Inventory navigation (arrow keys) | ✓ | per-panel input loop documented; INT 61h direction bits 0..3 |
+| Item activate (Space) | ✓ | item_use_dispatch_tbl[cursor-1] jump — 8 handlers (INVENTORY_SYSTEM.md) |
+| Inventory close (Enter) | ✓ | poll_input CF=1 → retn back to caller |
+| Inventory item bitmask | ✓ | NOT a bitmask — 3 separate flag-byte arrays at DS:A1 (magic, 5B), DS:A6 (items, 5B), DS:BB (weapons, 7B) |
+| 8 item-use handlers | ✓ | All effects documented (Ken'ko Potion=+80HP, Juu-en=fullHP, Elixir=weapon-restore, Chikara=all-weapons, Sabre Oil, Magia=XP, Holy Water=+1key, Kioku=warp/save) |
 
 ## 11. Economy
 
@@ -331,12 +332,12 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 43 |
-| ⚠ partial | 51 |
-| ❌ not investigated | 91 |
+| ✓ fully traced | 56 |
+| ⚠ partial | 47 |
+| ❌ not investigated | 82 |
 
 **Total mechanics enumerated**: 185
-**Coverage so far**: ~23% fully understood, 28% partial, 49% not investigated
+**Coverage so far**: ~30% fully understood, 25% partial, 44% not investigated
 
 The not-investigated half clusters into:
 1. **Dialog/script bytecode interpreter** (the cs:[6004]–[6010] family).  Every NPC/shop runs on this.  Big single payoff — once we crack the opcode set, every shop becomes legible.
