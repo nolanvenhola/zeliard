@@ -53,16 +53,16 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Music driver selection from RESOURCE.CFG | ✓ | zeliad.asm: parse_music_driver; `EXEC MTINIT.COM` |
-| Music driver chunks: MT-32, AdLib, SoundBlaster, PC Speaker, etc | ❌ | 14 .MSD music tracks in 4_Resources/Music/; driver internals TBD |
-| .MSD file format | ❌ | Format unknown |
-| Music tick handler (int 61h) | ❌ | isr_music identified but tracker mechanics TBD |
-| Music load/start (load_music_tracks proc named) | ⚠ | game.asm:307; track table iterated via cs:[gfx_call_a] |
-| Music stop / pause / resume | ❌ | Trigger paths unknown |
-| Sound-effect generation (sword swing, hit, footstep, etc) | ❌ | Volume_b writes seen, but per-FX trigger mechanism TBD |
-| Volume control bytes (gvar_volume_a/b) | ⚠ | gvar_volume_b at FF77 in some files, FF75 in others; relationship to MIDI vs PCM mix unclear |
-| Music on/off toggle (F1 key) | ❌ | F-key handler unknown |
-| Sound-effects on/off toggle (F2 key) | ❌ | Same |
+| Music driver selection from RESOURCE.CFG | ✓ | zeliad.asm: parse_music_driver; only "mscmt.drv" recognized (MUSIC_SYSTEM.md) |
+| Music driver chunks: MT-32, AdLib, SoundBlaster, PC Speaker, etc | ⚠ | Cleaned source recognizes only mscmt.drv (MT-32); other variants if any TBD |
+| .MSD file format | ⚠ | No .MSD format — tracks are raw SAR chunks parsed by mscmt.drv; .MID source files in 4_Resources/Music/ |
+| Music tick handler (int 61h) | ✓ | INT 61h is REPURPOSED as joystick query (NOT music). Music tick = gvar_input_fn at +0xFF0:0x100 (MUSIC_SYSTEM.md) |
+| Music load/start (load_music_tracks proc named) | ✓ | game.asm:461; 9-entry level_system_ref table; track 8 = bg with AL=1 flag |
+| Music stop / pause / resume | ❌ | Trigger paths unknown — likely calls into mscmt.drv via separate slot |
+| Sound-effect generation (sword swing, hit, footstep, etc) | ✓ | gvar_volume_b mailbox; cue values 1=UI, 8=shielded, 9=raw, 0Eh=item, 10h=boss (MUSIC_SYSTEM.md) |
+| Volume control bytes (gvar_volume_a/b) | ⚠ | Address mismatch (FF74/75 in zeliad.asm vs FF74/77 in game.asm — likely typo); function = audio cue trigger, NOT continuous volume |
+| Music on/off toggle (F1 key) | ✓ | handle_special_keys: gvar_timer_counter=0x2000 → toggles gvar_sound_flag (FF27) via `not` (MUSIC_SYSTEM.md) |
+| Sound-effects on/off toggle (F2 key) | ⚠ | Single toggle (sound flag); manual lists separate F1/F2 but only one mute path traced |
 | Joystick driver init | ✓ | zeliad.asm: parse_joystick_name + parse_joystick_enable |
 
 ## 3. Physics & player mechanics
@@ -278,8 +278,8 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Keyboard ISR (int 09h, isr_keyboard in stick.bin) | ✓ | ARCHITECTURE.md §4 |
 | Keyboard scan-code → game-event mapping | ⚠ | gvar_key_pressed / gvar_key_state / gvar_last_key named; mapping TBD |
 | Joystick polling | ⚠ | parse_joystick_enable in zeliad.asm; runtime poll TBD |
-| F1 (music toggle) | ❌ | TBD |
-| F2 (SFX toggle) | ❌ | TBD |
+| F1 (music toggle) | ✓ | handle_special_keys (stick.asm:252): logical-key 0x2000 → `not gvar_sound_flag` (MUSIC_SYSTEM.md) |
+| F2 (SFX toggle) | ⚠ | Single mute toggle (gvar_sound_flag) covers both; manual lists separate F1/F2 but only one path traced |
 | F7 (restore save) | ❌ | TBD |
 | F9 (game speed) | ❌ | TBD |
 | Esc (pause) | ❌ | TBD |
@@ -322,8 +322,8 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Item | Status | Where |
 |---|:---:|---|
 | Gameplay-speed F9 (0..9) | ❌ | TBD |
-| Music-on/off F1 | ❌ | TBD |
-| SFX-on/off F2 | ❌ | TBD |
+| Music-on/off F1 | ✓ | gvar_sound_flag toggle, see Sound & music section |
+| SFX-on/off F2 | ⚠ | Same flag as music toggle (only one mute path traced) |
 | Pause Esc | ❌ | TBD |
 | Quit Ctrl-Q | ❌ | TBD |
 | Restart Ctrl-R (demo) | ❌ | TBD |
@@ -337,27 +337,30 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 75 |
-| ⚠ partial | 39 |
-| ❌ not investigated | 76 |
+| ✓ fully traced | 82 |
+| ⚠ partial | 44 |
+| ❌ not investigated | 64 |
 
 **Total mechanics enumerated**: 190
-**Coverage so far**: ~39% fully understood, 21% partial, 40% not investigated
+**Coverage so far**: ~43% fully understood, 23% partial, 34% not investigated
 
-Items 1, 2, 3, 4 from the not-investigated cluster have been moved
-out (combat FSM, script-bytecode VM, inventory, tile physics — see
-their dedicated docs).  Remaining clusters of unknowns:
+All 7 priority items have been worked through (see dedicated docs
+in `Documentation/`):
+1. ✓ Combat input FSM — see `200FIGHT.asm` headers (combat_input_handler)
+2. ✓ Script bytecode VM — see `SCRIPT_INTERPRETER.md`
+3. ✓ Inventory UI — see `INVENTORY_SYSTEM.md`
+4. ✓ Tile-type physics — see `TILE_PHYSICS.md`
+5. ✓ Per-boss AI — see `BOSS_AI.md`
+6. ✓ Save-file format — see `SAVE_FORMAT.md`
+7. ✓ Music tracker — see `MUSIC_SYSTEM.md`
 
-The not-investigated half clusters into:
-1. **Dialog/script bytecode interpreter** (the cs:[6004]–[6010] family).  Every NPC/shop runs on this.  Big single payoff — once we crack the opcode set, every shop becomes legible.
-2. **Tile-type → physics mapping** (ice/lava/slime/water + one-way walls).  Cavern movement depends on this.
-3. **Combat input FSM** (deferred from Phase 4 because of int 61h coupling).  Sword swings, jumps, magic cast all converge here.
-4. **Per-boss AI** (10 bosses, each its own chunk).  Each is a small RE project.
-5. **Inventory UI / select.bin internals**.  Equip/unequip + spell-select live here.
-6. **Save-file format**.  Bounded, useful for any port.
-7. **Music tracker** (.MSD format + driver internals).  Gnarliest; also least essential for a working port (placeholder audio is acceptable).
-
-A reasonable order of attack for the not-yet-investigated half: **3 → 1 → 5 → 2 → 4 → 6 → 7**.
+Remaining ❌ clusters (next horizon):
+- **Sprite rendering pipeline** (player/enemy blit fn pixel format)
+- **Tile rendering & scrolling math** (gfx_scroll_*_fn internals)
+- **Per-cavern .mdt map binary structure**
+- **Cinematic / cutscene playback** (opening, ending, boss intros)
+- **Per-spell magic graphics** (magic.grp render path)
+- **Title menu navigation** (New/Load select FSM)
 
 ---
 
