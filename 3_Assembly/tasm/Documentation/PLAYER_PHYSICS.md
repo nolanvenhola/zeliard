@@ -503,7 +503,7 @@ If this interpretation is correct, the action_state==2 check in
 game_multiply_5 isn't testing the FSM at all — it's testing a
 buff-active flag that happens to share the same byte (FF45) or be
 similarly-named.  Resolving definitively needs:
-1. A DOSBox session: drink Sabre Oil, swing → check FF45 value
+1. A DOSBox session: apply Sabre Oil to the sword, swing → check FF45 value
    right before game_multiply_5.  If it's 2, the buff path is
    confirmed.
 2. A no-Sabre-Oil control swing → check FF45 value should be 0 or 1
