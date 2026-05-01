@@ -534,18 +534,50 @@ the right model.
 
 ### Summary of attack contextual variants
 
-| Player state | Damage | Sword position |
+| Player state | Damage | Sword position / hitbox |
 |---|---|---|
-| Standing + attack | Normal (sword lookup × 2) | Mid-height swing |
-| Crouching + attack | Normal | Lower swing (low hitbox) |
-| Falling + attack | Cumulative (multi-frame hits) | Mid-height, downward path |
-| Jumping-up + attack | Normal | Mid-height, upward path |
+| Standing + attack | Normal (sword lookup × 2) | Mid-height forward swing |
+| Crouching (Down held) + attack | Normal | **Low swing** — hits short enemies |
+| Jumping (ascending) + attack | Normal | **Overhead swing** — hitbox extends upward |
+| Falling (descending) + attack | **Cumulative** (multi-frame hits) | Mid-height, downward path through enemy column |
 
-These all share the same FSM state (action_state=2) and same input
-(button1).  The variation is in player physics state at the moment
-of swing, which selects a different sprite-frame and / or generates
-multiple hit-detection events as the player moves through the
-enemy's tile column.
+All four share the same FSM state (`action_state=2`) and same input
+(button1).  The variation comes from **two mechanisms** working
+together:
+
+1. **Sprite-frame selection** changes the swing pose (and therefore
+   the hitbox extents).  `select_player_sprite_frame` builds the
+   table index from `(facing<<4) + offset` where the offset depends
+   on `gvar_combat_anim_subindex` and the implicit physics state
+   carried in `gvar_pose_idx`.  Crouching pose vs ascending pose vs
+   descending pose vs grounded pose each produce a different `bx`,
+   indexing a different `entity_ptr_table[bx]` row, rendering a
+   different swing graphic with different hitbox geometry.
+2. **Hit-detection cadence** changes the damage delivery.  A
+   stationary swing produces ONE collision event over the swing's
+   duration.  A moving swing (especially during fall, where the
+   player traverses several tile-rows) produces MULTIPLE collision
+   events as the player's tile position crosses the enemy's.
+
+The damage formula itself has just the one `action_state==2`
+multiplier (`game_multiply_5` at line 8103).  All other
+"flavor" comes from sprite frame and movement-driven multi-hits.
+
+### The four swing graphics
+
+The cleaned source doesn't yet have explicit names for the four
+swing-frame entries, but they're packed into `entity_ptr_table`
+(in game_seg) at predictable offsets per facing:
+
+| Facing | Standing | Crouching | Overhead (ascending) | Falling |
+|---|---|---|---|---|
+| Right (0x00..0x0F) | `[0x0A]` | TBD | TBD | TBD |
+| Left  (0x10..0x1F) | `[0x1A]` | TBD | TBD | TBD |
+
+Identifying the exact `[bx]` entries for each variant needs DOSBox
+observation: hold a different physics state (Down / Up / mid-fall),
+press attack, read the value of `bx` at line 2715
+(`mov di, es:entity_ptr_table[bx]`) to see which row was selected.
 
 ---
 

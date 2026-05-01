@@ -95,9 +95,10 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Sword attack — straight (Spacebar) | ✓ | combat_input_handler sets action_state=2 on button1 press; damage = sword_type lookup × 2 via game_multiply_5 (line 8103) |
-| Sword crouch-low-swing (Down + Space) | ✓ | Sprite-frame variation: crouching pose routes attack through a different entity_ptr_table entry with lower hitbox; no damage change (PLAYER_PHYSICS.md §"Crouch-low-swing") |
-| Sword falling-attack bonus | ⚠ | Emergent damage bonus: per-frame hit-detection during fall causes cumulative hits as player descends through enemy column; no explicit multiplier in game_multiply_5; needs DOSBox call-count confirmation |
+| Sword attack — standing (Spacebar) | ✓ | combat_input_handler sets action_state=2 on button1; damage = sword_type lookup × 2 via game_multiply_5 (line 8103); mid-height forward swing |
+| Sword attack — crouch-low (Down held) | ✓ | Sprite-frame variation via crouch pose; hitbox extends lower for short enemies; no damage change (PLAYER_PHYSICS.md §"Summary of attack contextual variants") |
+| Sword attack — jump-overhead (ascending) | ✓ | Sprite-frame variation via ascending pose (gvar_combat_ff3D bit 7 set); hitbox extends upward; no damage change (per user 2026-04-30) |
+| Sword attack — falling-bonus (descending) | ⚠ | Emergent cumulative damage from per-frame hit-detection while player passes through enemy column; no explicit multiplier in game_multiply_5; needs DOSBox call-count confirmation |
 | Hit detection: sword → enemy | ⚠ | last_hit_entity (9F10) named; full hit-test routine TBD |
 | Hit detection: enemy → player | ⚠ | hero_HP_subtract probe-tested (CPU 0x768A) |
 | Damage formula (sword type × level vs enemy HP) | ⚠ | Static formula in GAME_SYSTEMS.md; runtime computation TBD |
@@ -339,11 +340,11 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 92 |
+| ✓ fully traced | 93 |
 | ⚠ partial | 48 |
 | ❌ not investigated | 52 |
 
-**Total mechanics enumerated**: 192
+**Total mechanics enumerated**: 193 (added jump-overhead-swing row)
 **Coverage so far**: ~48% fully understood, 25% partial, 27% not investigated
 
 All 7 priority items have been worked through (see dedicated docs
