@@ -4,36 +4,61 @@ Items #3 (Physics & player mechanics) and parts of #4 (Combat) from
 MECHANICS_TO_UNDERSTAND.md.  How the player walks, jumps, falls, and
 swings the sword in the two distinct movement modes: **town** (walk
 + enter-store-on-Up) and **cavern** (Mario-3-style platformer with
-gravity, jumps, ladders, and platform-raise tiles).
+gravity, jumps, ladders, and platform tiles).
 
-> **Revised 2026-04-30 after user correction.**  An earlier version
-> of this doc concluded "no parabolic arc, no gravity" based on a
-> static read.  That was wrong: the cavern is a true Mario-3-style
-> platformer with gravity and parabolic jumps.  The fall logic is in
-> `game_func_8 → decrement_hp` and the jump-arc lives in
-> `state1_entry → game_func_11` driven by the misnamed `hp_*`
-> counters at DS:9F09/9F0C/9F0D.
+> **Doc reliability** (2026-04-30): this file mixes code-verified
+> facts with user-testimony hypotheses.  Each section is tagged:
+> - **VERIFIED** — claim was checked against the actual asm
+>   call-chain and reads/writes
+> - **HYPOTHESIS — code-side TBD** — gathered from user testimony
+>   or static-trace plausibility but not yet confirmed by reading
+>   the relevant asm
+>
+> The mechanics doc workflow (per memory:
+> feedback_mechanics_doc_workflow.md) requires every "✓"
+> promotion to be code-verified.  Sections marked HYPOTHESIS here
+> should NOT promote rows in MECHANICS_TO_UNDERSTAND.md to ✓
+> until the trace is done and any misnamed symbols are corrected
+> in the asm.
 
 ---
 
 ## TL;DR
 
-- **Two movement engines**:
-  - **Town** (106TOWN): horizontal walk only; **Up = enter store** at
-    tiles registered in `town_event_tbl`.
-  - **Cavern** (200FIGHT): Mario-3-style platformer — left/right walk,
-    Up = jump (parabolic arc), gravity is automatic, **Up is
-    context-sensitive**: jump (default), climb (on ladder),
-    raise platform (on platform-raise tile).
-- **No sword variants.**  The combat FSM has one attack state.
-  Holding direction during a swing does not change damage.
-- **The "hp_*" symbols at DS:9F09/9F0C/9F0D are MISNAMED.**  They
-  are jump-arc counters (`jump_phase_ctr`, `jump_apex`, `jump_height`)
-  not HP-related.  The real `hero_HP` is at DS:0x90.
-- **Joystick direction bits** (from `int 61h`):
-  bit 0 = UP, bit 1 = DOWN, bit 2 = LEFT, bit 3 = RIGHT.
-- **Player facing** is bit 0 of `[0xC2]` (DS-relative); the busiest
-  byte in stdply.bin.
+**Code-verified:**
+- **Town walk dispatch** (106TOWN:432): UP → door_scan_entry,
+  LEFT|RIGHT → walk_left/right_entry.  4-step walk loop verified.
+- **Cavern dispatch** (game_check_state at 200FIGHT:870):
+  joystick AL bits 1=UP, 2=DOWN, 4=LEFT, 8=RIGHT branch to state
+  handlers.
+- **Door-entry mechanism** (106TOWN:2025): UP scans `town_event_tbl`
+  for matching world_x ±1 tolerance; door-type byte selects
+  shop-chunk-load / inline-event / special-exit.
+- **`gvar_combat_action_state`** is a 3-state FSM (0/1/2) set by
+  `combat_input_handler` (200FIGHT:2547).  Damage formula
+  (`game_multiply_5` at 8103) doubles output when state == 2.
+- **`use_sabre_oil`** (201SELCT:793) writes NO buff state — it only
+  queues a sprite animation.  Its mechanism is unknown beyond
+  the cosmetic effect.
+- **Misnamed `hp_*` counters** at DS:9F09/9F0C/9F0D are likely
+  jump-arc related per the call patterns in `state1_entry` /
+  `game_func_8 → decrement_hp`, but the rename hasn't been
+  applied to the asm yet (pending verification of the broader
+  jump-arc / fall-loop chain).
+
+**HYPOTHESIS — code-side TBD (from user testimony 2026-04-30):**
+- Cavern is Mario-3-style: gravity is automatic, falling when Up
+  released.  Static trace shows the call chain but doesn't
+  confirm the fall-arc semantics.
+- Up is context-sensitive: jump (default) / climb-up (ladder) /
+  raise-platform.  `state1_entry` calls 3 prelude routines
+  (`game_func_69/80/12`) but their roles aren't pinned down.
+- Down is context-sensitive: crouch / climb-down / lower-platform.
+- Crouch + attack = low swing (sprite-frame variation).
+- Auto-aim overhead swing when flying enemy is in row above.
+- Falling + attack = bonus damage via per-frame multi-hit.
+
+These six items need code traces before any "✓" promotion.
 
 ---
 
@@ -459,7 +484,7 @@ vol_btn_pressed:
 Up+Space or Down+Space combos exist.  But the EFFECT of the swing
 varies based on the player's physics state at the swing moment:
 
-### Damage formula (game_multiply_5 at line 8103)
+### Damage formula (game_multiply_5 at line 8103) — VERIFIED
 
 ```asm
 al_is_one:
@@ -467,15 +492,15 @@ al_is_one:
         dec  bl
         xor  bh, bh
         mov  al, ds:anim_frame_tbl_a[bx]   ; base damage per sword type
-        mov  bl, byte ptr ds:[8Dh]   ; item_qty_count (Sabre Oil duration?)
+        mov  bl, byte ptr ds:[8Dh]   ; item_qty_count (purpose UNKNOWN)
         shr  bl, 1
-        add  al, bl                  ; + buff
+        add  al, bl                  ; + buff (?)
         ; ... (carry-clamp, multiply by (key_count+1)) ...
 
 check_flag45:
         mov  ah, al
         cmp  byte ptr ds:gvar_combat_action_state, 2
-        je   double_ah               ; ← Sabre Oil active? double damage
+        je   double_ah               ; doubles when FSM == ATTACK
 
 double_ah:
         add  ah, ah
@@ -483,31 +508,50 @@ double_ah:
         retn
 ```
 
-So the in-engine damage calculation has **one** explicit multiplier:
-the doubling triggered when `gvar_combat_action_state == 2`.
+**Code-verified facts:**
+- Damage doubles when `gvar_combat_action_state == 2`.
+- Value 2 IS set by `combat_input_handler` (200FIGHT:2562) on
+  button1-press during the swing dispatch — this is the regular
+  FSM ATTACK state.
+- `game_multiply_5` is called from one site only: `boss_fn_4`
+  (200FIGHT:8035) for boss damage application.
+- `item_qty_count` (DS:0x8D) is **written only in 217KENJP** (the
+  Sage chunk's save-flow), confirmed by grep — NOT by `use_sabre_oil`.
+- `use_sabre_oil` (201SELCT:793) writes **no buff state** — it
+  only queues a 4-pass sprite animation (anim_id 0/4/8/12) and
+  sets the audio cue (`gvar_volume_b = 0Eh`) before returning
+  `gvar_item_result = 4`.
 
-Per user 2026-04-30: this is **most likely the Sabre Oil
-active-buff multiplier**, not an "attack always doubles" rule.
-Reasoning:
-- Damage is only computed and applied during the swing animation
-  anyway, so a "double on attack" check would be redundant.
-- Sabre Oil (item index 4 in INVENTORY_SYSTEM.md) was identified as
-  a sword damage boost; INVENTORY_SYSTEM.md left the exact
-  mechanism TBD.  The doubling here is the most plausible mechanism.
-- The byte at `[8Dh]` (item_qty_count) being added before the
-  doubling is consistent with item_qty_count being a Sabre Oil
-  duration counter that decrements per frame, providing a
-  diminishing-bonus tail after the doubling kicks in.
+**Refuted hypotheses (mine, not yours):**
+- ❌ "The ×2 doubling is the Sabre Oil active-buff multiplier."
+  REFUTED: nothing in `use_sabre_oil` activates that flag, and
+  `item_qty_count` isn't Sabre-Oil-related either.  The doubling
+  is just the regular FSM-ATTACK behavior — possibly a per-frame
+  tick where damage accumulates over the multi-frame swing.
+- ❌ "`item_qty_count` is the Sabre Oil duration counter."
+  REFUTED — it's written by 217KENJP, not by item-use code.
 
-If this interpretation is correct, the action_state==2 check in
-game_multiply_5 isn't testing the FSM at all — it's testing a
-buff-active flag that happens to share the same byte (FF45) or be
-similarly-named.  Resolving definitively needs:
-1. A DOSBox session: apply Sabre Oil to the sword, swing → check FF45 value
-   right before game_multiply_5.  If it's 2, the buff path is
-   confirmed.
-2. A no-Sabre-Oil control swing → check FF45 value should be 0 or 1
-   (the regular FSM state when not buffed).
+**Genuinely unknown:**
+- What does `use_sabre_oil` actually buff (if anything)?  Possible
+  outcomes:
+  1. Sabre Oil is **purely cosmetic** in the cleaned source (the
+     animation IS the entire effect).  The manual's claim of "sword
+     damage boost" may be a marketing description not reflected in
+     code.
+  2. The buff is applied in code I haven't traced — `gvar_item_result = 4`
+     is read by some routine outside 201SELCT and 200FIGHT that sets
+     a sword-damage flag.
+  3. The `item_qty_count` add at 200FIGHT:8104 is somehow connected
+     and I'm missing the writer for it.
+- What does `(key_count + 1)` multiplication mean for sword damage?
+  `key_count` (DS:0xE4) being a damage multiplier doesn't make
+  obvious sense.  Possibly `[0xE4]` has a second meaning here
+  (note: SAVE_FORMAT.md flagged `key_count` at TWO addresses 0xCF
+  and 0xE4 — the doubled-naming may be hiding two distinct fields).
+
+**This section is now investigation-state, not finished doc.**
+Marking the Sabre Oil mechanism as **❌ UNKNOWN** in
+MECHANICS_TO_UNDERSTAND.md until traced.
 
 ### Falling-attack bonus (emergent, not a special multiplier)
 

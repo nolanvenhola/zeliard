@@ -69,10 +69,10 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Player walking left/right | ✓ | PLAYER_PHYSICS.md; town: 4-step (test→fine→move→scroll) loop; cavern: AL bits 2/3 = LEFT/RIGHT dispatch in game_check_state |
-| Player jumping (parabolic arc) | ✓ | state1_entry → game_func_11 with arc counters at DS:9F09/9F0C/9F0D (misnamed `hp_*` — actually jump_phase_ctr/jump_apex/jump_height); gvar_combat_ff3D bit 7 = ascending |
-| Player falling | ✓ | game_func_8 → decrement_hp; gated on gvar_combat_ff3D bit 7 clear AND game_func_24 (no tile support); inc fight_player_col + dec hp_countdown per frame |
-| Player kneeling (Down arrow) | ✓ | DOWN → game_func_22 (line 1924) calls game_func_78 to set crouch pose; functional effect: lowers attack hitbox so player can swing under low-flying enemies (per user 2026-04-30) |
+| Player walking left/right | ✓ | PLAYER_PHYSICS.md (VERIFIED); town: 4-step (test→fine→move→scroll) loop; cavern: AL bits 2/3 = LEFT/RIGHT dispatch in game_check_state |
+| Player jumping (parabolic arc) | ⚠ | call chain identified (state1_entry → game_func_11 with counters at DS:9F09/9F0C/9F0D), Mario-3 model from user testimony; arc semantics + counter renames pending verification |
+| Player falling | ⚠ | call chain identified (game_func_8 → decrement_hp gated on gvar_combat_ff3D bit 7 + game_func_24); fall semantics from user testimony, not code-confirmed |
+| Player kneeling (Down arrow) | ⚠ | DOWN → game_func_22 (line 1924) traced; user testimony says crouch lowers attack hitbox + climbs down ladders + lowers platforms; specific dispatchers not yet pinned |
 | Player facing (left/right) | ✓ | bit 0 of [0xC2]; `or [C2],1`=LEFT, `and [C2],0FEh`=RIGHT, `xor [C2],1`=toggle (PLAYER_PHYSICS.md) |
 | Player pose-state byte | ✓ | gvar_pose_idx at DS:0xE7 fully documented (PLAYER_PHYSICS.md §"gvar_pose_idx"); bit 7 = static mode, low 7 = anim frame |
 | Hitbox system | ❌ | ply_hitbox at DS:0xD2 named but the box layout TBD |
@@ -95,10 +95,10 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Sword attack — standing (Spacebar) | ✓ | combat_input_handler sets action_state=2 on button1; mid-height forward swing; base damage = sword_type lookup table |
-| Sword attack — crouch-low (Down held) | ✓ | Sprite-frame variation via crouch pose; hitbox extends lower for short enemies; no damage change |
-| Sword attack — overhead (auto-aim) | ✓ | Auto-triggered when a flying enemy is in the row above the player at swing time (per user 2026-04-30); NOT tied to jumping — it's target-aware aim. game_func_69 (200FIGHT:4027) is the candidate scan |
-| Sword attack — falling-bonus (descending) | ⚠ | Emergent cumulative damage from per-frame hit-detection while player passes through enemy column; needs DOSBox call-count confirmation |
+| Sword attack — standing (Spacebar) | ⚠ | combat_input_handler sets action_state=2 on button1 (VERIFIED); damage = sword_type lookup × multiplier via game_multiply_5 (VERIFIED); ×2 doubling on FSM==ATTACK is real but its purpose unclear — initially-claimed "Sabre Oil" interpretation REFUTED |
+| Sword attack — crouch-low (Down held) | ⚠ | User testimony: crouch lowers swing hitbox. game_func_22 is the Down-key entry but the sprite-frame routing path through select_player_sprite_frame is NOT traced |
+| Sword attack — overhead (auto-aim) | ⚠ | User testimony: flying enemy in row above auto-triggers overhead swing. game_func_69 (200FIGHT:4027) scans the row above for entity bytes — it's a CANDIDATE auto-aim source but its connection to swing-frame selection is NOT verified |
+| Sword attack — falling-bonus (descending) | ⚠ | User testimony: falling+attack does more damage. "Emergent multi-hit during fall traversal" was speculation; hit-detection cadence in boss_fn_4 NOT traced |
 | Hit detection: sword → enemy | ⚠ | last_hit_entity (9F10) named; full hit-test routine TBD |
 | Hit detection: enemy → player | ⚠ | hero_HP_subtract probe-tested (CPU 0x768A) |
 | Damage formula (sword type × level vs enemy HP) | ⚠ | Static formula in GAME_SYSTEMS.md; runtime computation TBD |
@@ -124,7 +124,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Item-effect-value (8E word) | ✓ | item_effect_val (0x8E word) is the effect-value display in use-confirm box |
 | Magic Stone: time-stop effect | ⚠ | Actually XP grant via item_effect_tbl[equipped_magic-1] per INVENTORY_SYSTEM.md (NOT time-stop as Playthrough hints) — manual likely conflates display mechanic |
 | Holy Water of Acero | ✓ | `inc key_count` (+1 key) per INVENTORY_SYSTEM.md |
-| Sabre Oil (sword temporary boost) | ⚠ | use_sabre_oil at item index 4. Likely mechanism (per user 2026-04-30): the ×2 doubling in game_multiply_5 (200FIGHT:8103) gated on FF45==2 IS the Sabre Oil buff — duration tracked in item_qty_count (DS:0x8D) which decrements per frame. Needs DOSBox confirmation |
+| Sabre Oil (sword temporary boost) | ❌ | use_sabre_oil (201SELCT:793) writes NO buff state — only queues a 4-pass sprite animation (anim_id 0/4/8/12) and sets gvar_volume_b=0Eh. The earlier "×2 in game_multiply_5 is Sabre Oil" hypothesis is REFUTED: that doubling is on FSM==ATTACK, not Sabre-Oil-active. item_qty_count (DS:0x8D) writes are in 217KENJP only, not by item-use. Sabre Oil's actual damage-buff mechanism (if any beyond cosmetic) is UNKNOWN. |
 | Kioku Feather (warp/teleport) | ⚠ | use_kioku_feather identified; uses 120-frame timer (timer_wait_feather=0x78); warp/save trigger TBD |
 | Crests: Hero / Glory / Elf | ❌ | char_abilities byte (DS:0x9A..0x9C, 3 bytes) holds bits; per-crest semantic TBD |
 | Shoes: Ruzeria / Pirika / Silkarn / Asbestos cape / Feruza | ❌ | Not in 201SELCT panels (only 3 panels: weapons/magic/items); shoes equipped via different path TBD |
@@ -340,12 +340,20 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 93 |
-| ⚠ partial | 48 |
-| ❌ not investigated | 52 |
+| ✓ fully traced | 87 |
+| ⚠ partial | 53 |
+| ❌ not investigated | 53 |
 
-**Total mechanics enumerated**: 193 (added jump-overhead-swing row)
-**Coverage so far**: ~48% fully understood, 25% partial, 27% not investigated
+**Total mechanics enumerated**: 193
+**Coverage so far**: ~45% fully understood, 27% partial, 27% not investigated
+
+**2026-04-30 honest-state correction**: 6 player-physics rows
+were prematurely promoted to ✓ based on user testimony rather
+than code traces.  Re-downgraded to ⚠ pending real verification.
+The Sabre Oil row was ⚠ on a refuted hypothesis — moved to ❌.
+Per memory:feedback_mechanics_doc_workflow.md, every ✓ promotion
+must be backed by an actual asm trace, AND any misnamed symbols
+exposed during the trace must be renamed in the .asm.
 
 All 7 priority items have been worked through (see dedicated docs
 in `Documentation/`):
