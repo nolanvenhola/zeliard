@@ -161,13 +161,13 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Script-bytecode interpreter (cs:[6004] script_step) | ⚠ | All shop chunks call this; opcode dispatch table per shop |
-| Per-shop opcode dispatch table | ⚠ | 213BANKP has opcode_dispatch_tbl; 14 opcodes? |
-| Dialog box rendering | ⚠ | drv_load_msg_header (CS:0x2010), drv_render_char (0x2022); placement TBD |
-| Multi-page dialog (script_display_page at 0x6008) | ⚠ | Shop chunks call; pagination logic TBD |
-| Dialog text positioning (gvar_dlg_pos at FF54) | ⚠ | Word write but coordinate system TBD |
-| Menu rendering (drv_show_menu_items at 6010) | ⚠ | Item list display; per-shop item table |
-| Menu selection (gvar_menu_sel byte) | ⚠ | Named in 215DRUGP; per-menu navigation TBD |
+| Script-bytecode interpreter (cs:[6004] script_step) | ✓ | Full architecture documented in SCRIPT_INTERPRETER.md.  Each shop runs `loop: call script_step; cmp al,FFh; je exit; call dispatch; jmp loop`; runtime services at CS:[6004..6016] in town.bin |
+| Per-shop opcode dispatch table | ⚠ | Pattern documented (DS-resident `opcode_dispatch_tbl`); per-shop opcode-set decode TBD per chunk |
+| Dialog box rendering | ⚠ | Pipeline known: drv_load_msg_header (0x2010) → drv_render_char (0x2022); placement via gvar_dlg_pos / gvar_dlg_cols / gvar_dlg_rows |
+| Multi-page dialog (script_display_page at 0x6008) | ✓ | Service contract documented in SCRIPT_INTERPRETER.md (returns CF=user-cancel) |
+| Dialog text positioning (gvar_dlg_pos at FF54) | ✓ | Word at FF54; col byte at FF52, row byte at FF53 |
+| Menu rendering (cs:[6010] menu_show_list, [6012] menu_init) | ✓ | Service contracts in SCRIPT_INTERPRETER.md |
+| Menu selection (gvar_menu_sel byte) | ⚠ | Named in 215DRUGP; per-menu navigation depends on per-shop dispatch handlers |
 | **King NPC (story progression triggers)** | ❌ | 210KINGP chunk; dialog tree TBD |
 | **Weapons Master (sword + shield purchase, repair)** | ⚠ | 212ARMRP chunk; price-check uses `check_gold_sufficient` (probe-tested) |
 | **Pope NPC (church / resurrection)** | ❌ | 214CHURP chunk; mechanic TBD |
@@ -331,12 +331,12 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 39 |
-| ⚠ partial | 55 |
+| ✓ fully traced | 43 |
+| ⚠ partial | 51 |
 | ❌ not investigated | 91 |
 
 **Total mechanics enumerated**: 185
-**Coverage so far**: ~21% fully understood, 30% partial, 49% not investigated
+**Coverage so far**: ~23% fully understood, 28% partial, 49% not investigated
 
 The not-investigated half clusters into:
 1. **Dialog/script bytecode interpreter** (the cs:[6004]–[6010] family).  Every NPC/shop runs on this.  Big single payoff — once we crack the opcode set, every shop becomes legible.
