@@ -1,85 +1,98 @@
 # Zeliard player movement & combat physics
 
 Items #3 (Physics & player mechanics) and parts of #4 (Combat) from
-MECHANICS_TO_UNDERSTAND.md.  How the player walks, moves vertically,
-faces, and swings the sword in the two distinct movement modes:
-**town** (horizontal only) and **cavern fight** (4-directional + button).
+MECHANICS_TO_UNDERSTAND.md.  How the player walks, jumps, falls, and
+swings the sword in the two distinct movement modes: **town** (walk
++ enter-store-on-Up) and **cavern** (Mario-3-style platformer with
+gravity, jumps, ladders, and platform-raise tiles).
+
+> **Revised 2026-04-30 after user correction.**  An earlier version
+> of this doc concluded "no parabolic arc, no gravity" based on a
+> static read.  That was wrong: the cavern is a true Mario-3-style
+> platformer with gravity and parabolic jumps.  The fall logic is in
+> `game_func_8 → decrement_hp` and the jump-arc lives in
+> `state1_entry → game_func_11` driven by the misnamed `hp_*`
+> counters at DS:9F09/9F0C/9F0D.
 
 ---
 
 ## TL;DR
 
-- There are **two movement engines**:
-  - `walk_left_move` / `walk_right_move` in **106TOWN** (towns only,
-    horizontal only, hard-bounded screen column 0..0x10)
-  - `combat_input_handler` + `game_check_state` dispatch in **200FIGHT**
-    (caverns, 4-directional, diagonal-sensitive)
-- **No parabolic jump arc.**  The "jump" mentioned in the manual is
-  scroll-relative climbing: the camera scrolls UP when the player
-  holds Up, and the player's *world coordinate* moves accordingly.
-  Letting go does NOT fall — the player stays at altitude.
-- **No gravity.**  The cavern engine is closer to a top-down dungeon
-  crawler than a side-scrolling platformer in that respect.
-- **Player facing** is bit 0 of `[0xC2]` (DS-relative), the hottest
-  byte in stdply.bin (87 byte tests across 200FIGHT).
-- **Pose index** `gvar_pose_idx` (DS:0xE7) is a single byte:
-  - low 7 bits = current sprite-frame within the active animation
-  - bit 7 (= 0x80) = "static / idle" mode flag — drivers branch on it
-- **Combat** has a 3-state action FSM (0=idle, 1=walk, 2=attack), set
-  per-frame from joystick input and consumed by the sprite picker.
+- **Two movement engines**:
+  - **Town** (106TOWN): horizontal walk only; **Up = enter store** at
+    tiles registered in `town_event_tbl`.
+  - **Cavern** (200FIGHT): Mario-3-style platformer — left/right walk,
+    Up = jump (parabolic arc), gravity is automatic, **Up is
+    context-sensitive**: jump (default), climb (on ladder),
+    raise platform (on platform-raise tile).
+- **No sword variants.**  The combat FSM has one attack state.
+  Holding direction during a swing does not change damage.
+- **The "hp_*" symbols at DS:9F09/9F0C/9F0D are MISNAMED.**  They
+  are jump-arc counters (`jump_phase_ctr`, `jump_apex`, `jump_height`)
+  not HP-related.  The real `hero_HP` is at DS:0x90.
+- **Joystick direction bits** (from `int 61h`):
+  bit 0 = UP, bit 1 = DOWN, bit 2 = LEFT, bit 3 = RIGHT.
+- **Player facing** is bit 0 of `[0xC2]` (DS-relative); the busiest
+  byte in stdply.bin.
 
 ---
 
-## Town walking (106TOWN, walk_left_entry / walk_right_entry)
+## Joystick direction bits
 
-The town engine is the simplest movement loop in the game.  Each
-walk-direction handler does the same 4-step sequence:
+After `int 61h` returns AL:
+
+| Bit | Value | Direction |
+|---:|---:|---|
+| 0 | 0x01 | UP |
+| 1 | 0x02 | DOWN |
+| 2 | 0x04 | LEFT |
+| 3 | 0x08 | RIGHT |
+
+Diagonals are bit OR-combinations (e.g., UP+LEFT = 0x05, UP+RIGHT = 0x09).
+
+(My earlier doc had these reversed — corrected after re-reading
+106TOWN's town_main dispatch where `cmp al,1 → door_scan_entry` and
+masked `al & 0x0C` selects walk left vs walk right.)
+
+---
+
+## Town movement (106TOWN, townb_main → dispatch on int 61h)
 
 ```asm
-walk_left_entry:                            ; (line ~1141)
-        xor  bx, bx
-        mov  bl, byte ptr ds:town_player_col
-        add  bl, 3
-        add  bx, bx                          ; ×8 — tile slot stride
-        add  bx, bx
-        add  bx, bx
-        add  bx, ds:gvar_tile_ptr
-        mov  al, [bx+7]                      ; tile byte at slot
-        call player_scan_loop                ; collision test
-        jnz  walk_left_tile_ok
-        retn                                 ; BLOCKED — bail
+exit_flag_skip:                              ; (line ~432)
+        mov  byte ptr ds:town_exit_flag, 0
+        int  61h
+        cmp  al, 1
+        jne  dispatch_exit
+        jmp  door_scan_entry                 ; UP pressed → try to enter door
 
-walk_left_tile_ok:
-        ; ... derive world-X tile for fine collision ...
-        call player_func_12
-        jz   walk_left_move
-        retn                                 ; BLOCKED at fine grain
+dispatch_exit:
+        and  al, 0Ch                         ; mask LEFT|RIGHT bits only
+        cmp  al, 4
+        jne  dispatch_left
+        jmp  walk_left_entry                 ; LEFT alone
 
-walk_left_move:
-        inc  byte ptr ds:gvar_pose_idx
-        and  byte ptr ds:gvar_pose_idx, 3    ; 4-frame walk cycle
-        or   byte ptr ds:[0C2h], 1           ; player_facing = LEFT
-        cmp  byte ptr ds:town_player_col, 0Bh
-        jb   walk_left_col_clamp             ; on-screen, no scroll
-        dec  byte ptr ds:town_player_col     ; walk on-screen left
-        retn
+dispatch_left:
+        cmp  al, 8
+        jne  dispatch_right
+        jmp  walk_right_entry                ; RIGHT alone
 
-walk_left_col_clamp:
-        test word ptr ds:[80h], 0FFFFh       ; world X = 0?
-        jnz  walk_left_scroll                ; can scroll left
-        dec  byte ptr ds:town_player_col     ; map start — walk off
-        retn
-
-walk_left_scroll:
-        dec  word ptr ds:[80h]               ; world X -= 1
-        sub  word ptr ds:gvar_tile_ptr, 8    ; tile pointer back 1
-        call word ptr cs:gfx_scroll_left_fn  ; scroll the camera
-        cmp  byte ptr ds:town_map_side, 1
-        je   walk_left_audio                 ; footstep sound cue
-        retn
+dispatch_right:
+        or   byte ptr ds:gvar_pose_idx, 1
+        mov  byte ptr ds:town_exit_flag, 0FFh
+        retn                                 ; idle pose
 ```
 
-### Town movement state
+So in TOWN: UP triggers door-scan; LEFT/RIGHT walk horizontally.
+DOWN and any other combo leave the player idle.
+
+### walk_left_entry / walk_right_entry — the 4-step walk loop
+
+(Unchanged from the previous doc.  Each handler does:
+test target tile via `player_scan_loop` → fine collision via
+`player_func_12` → `inc/dec gvar_pose_idx mod 4` walk cycle →
+update [0xC2] facing → move on-screen until edge → scroll camera at
+edge.)
 
 | Address | Field | Meaning |
 |---|---|---|
@@ -88,326 +101,382 @@ walk_left_scroll:
 | DS:0xC2 bit 0 | `player_facing` | 0=right, 1=left |
 | DS:0xE7 (low 2 bits) | `gvar_pose_idx` | walk-cycle frame 0..3 |
 | `town_map_side` | sound flag | 1 → emit footstep audio cue |
-| `town_map_width` | per-town const | total map width in tile cols |
 
-### Walk semantics
+### door_scan_entry — entering a store on UP
 
-The screen column **clamps** between 0xB (scroll-trigger) and 0x10
-(right edge). Past those limits:
-- **At col >= 0x10 (right edge)** + world X < (town_map_width - 0x23):
-  scroll right via `gfx_scroll_right_fn`
-- **At col < 0xB (left edge)** + world X > 0: scroll left
-- **At world X = 0**: player keeps walking left, falling off
-  on-screen.  The camera doesn't scroll past world X 0.
+```asm
+door_scan_entry:                             ; (line ~2025)
+        or   byte ptr ds:gvar_pose_idx, 1    ; standing pose
+        mov  ax, word ptr ds:[80h]           ; world X
+        mov  bl, byte ptr ds:town_player_col
+        xor  bh, bh
+        add  ax, bx
+        add  ax, 4                           ; ax = world X + col + 4 = player tile
+        mov  si, ds:town_event_tbl
 
-This gives the same "follow-cam with end stops" feel as classic
-side-scrollers without ever invoking gravity.
+door_scan_loop:
+        cmp  word ptr [si], -1               ; 0xFFFF terminator?
+        jnz  door_scan_next
+        retn                                 ; no door at this position
+
+door_scan_next:
+        cmp  [si], ax
+        je   door_action                     ; exact match
+        inc  ax; cmp [si], ax; je door_action ; +1 tolerance
+        dec  ax; dec  ax; cmp [si], ax; je door_action ; -1 tolerance
+        inc  ax
+        add  si, 3                           ; next 3-byte record
+        jmp  short door_scan_loop
+
+door_action:
+        mov  byte ptr ds:gvar_pose_idx, 4    ; door-entering pose
+        push si
+        call player_func_28                  ; door-enter animation
+        mov  byte ptr ds:gvar_frame_timer, 28h
+        call player_func_14
+        pop  si
+        mov  al, [si+2]                      ; door-type byte
+        cmp  al, 0FFh
+        jne  door_type_sub8
+        jmp  door_type_special               ; FF = special exit (e.g., town leave)
+
+door_type_sub8:
+        sub  al, 8
+        jc   door_type_shop                  ; 0..7 = shop number → load chunk
+        jmp  pf30_exec                       ; 8+ = NPC/event dispatch
+```
+
+`town_event_tbl` is a per-town data table of `{world_x_word,
+unused_byte, door_type_byte}` triples terminated by 0xFFFF.  The
+door-type byte selects what happens:
+
+| Door type | Action |
+|---:|---|
+| 0..7 | Load shop chunk N via `cs:[0x10C]` (sar_loader_fn), enter shop scene |
+| 8+ | Run as inline event handler (NPC dialog, story trigger) |
+| 0xFF | Special exit (e.g., leave town to overworld) |
+
+±1 tolerance on the world-X match means the player can be aligned
+near-exactly with a door — they don't have to be pixel-perfect.
+
+The shop number drives a chunk load: `sub al, 8 → al * 0x0E + 0x6F07`
+gives the chunk-record pointer in town.bin's data area.
 
 ---
 
-## Cavern fight movement (200FIGHT, game_check_state)
+## Cavern movement (200FIGHT, game_check_state)
 
-The cavern engine is invoked per-frame from `frame_loop` (line 808)
-via `combat_step_dispatch` and `game_check_state`.  It dispatches on
-the joystick's direction bits (the AL value returned by `int 61h`):
+This is the **Mario-3-style platformer mode**.  Per-frame dispatch
+on the joystick AL value:
 
 ```asm
-game_check_state proc near                  ; (line 870)
+game_check_state proc near                   ; (line 870)
         mov  byte ptr ds:move_dir, 0
         int  61h                             ; AL = direction bits
+
         cmp  al, 5
         jne  check_state_9
-        jmp  state5_branch                   ; right + up = jump-right
+        jmp  state5_branch                   ; UP+LEFT = jump-left
 
 check_state_9:
         cmp  al, 9
         jne  check_state_1
-        jmp  state9_branch                   ; right + down = duck-right
+        jmp  state9_branch                   ; UP+RIGHT = jump-right
 
 check_state_1:
         cmp  al, 1
         jne  check_combat_mode
-        jmp  state1_entry                    ; right alone = walk right
+        jmp  state1_entry                    ; UP alone = JUMP
 
 check_combat_mode:
-        ; ... combat-state branches; eventually:
-        and  al, 0Ch                         ; mask up|down bits only
+        ; combat-mode mid-action checks ...
+        and  al, 0Ch                         ; mask LEFT|RIGHT bits
         cmp  al, 4
         jne  check_state_8
-        jmp  player_action_taken             ; up alone = climb up
+        jmp  player_action_taken             ; LEFT alone = walk left
 
 check_state_8:
         cmp  al, 8
         jne  call_func10
-        jmp  scroll_retreat                  ; down alone = climb down
+        jmp  scroll_retreat                  ; RIGHT alone = walk right
 ```
 
-### Joystick direction bits (per `int 61h`)
-
-| Bit | Value | Direction |
-|---:|---:|---|
-| 0 | 0x01 | right |
-| 1 | 0x02 | left  |
-| 2 | 0x04 | up    |
-| 3 | 0x08 | down  |
-
-(Diagonals are bit OR-combinations: right+up = 0x05, right+down = 0x09,
-left+up = 0x06, left+down = 0x0A.)
-
-### Cavern dispatch table
+### Cavern dispatch table (corrected)
 
 | AL | Combo | Branch | Effect |
 |---:|---|---|---|
-| 0 | nothing | (default) | idle, no movement |
-| 1 | right | `state1_entry` | walk right (advance frame, move world X) |
-| 2 | left | `input_compare → game_func_22` | walk left (mirror of state1) |
-| 4 | up alone | `player_action_taken` (state5 path) | climb up (camera scrolls up) |
-| 5 | right+up | `state5_branch` | climb-up + face right |
-| 6 | left+up | (combat-mode path) | climb-up + face left |
-| 8 | down alone | `scroll_retreat` | climb down |
-| 9 | right+down | `state9_branch` | climb-down + face right |
-| 10 | left+down | (combat-mode path) | climb-down + face left |
+| 0 | nothing | (default) | idle, gravity ticks if airborne |
+| 1 | UP alone | `state1_entry` | JUMP (or context: climb/raise) |
+| 2 | DOWN alone | `input_compare → game_func_22` | crouch/duck (or sprite-only) |
+| 4 | LEFT alone | `player_action_taken` | walk left |
+| 5 | UP+LEFT | `state5_branch` | jump-left |
+| 8 | RIGHT alone | `scroll_retreat` | walk right |
+| 9 | UP+RIGHT | `state9_branch` | jump-right |
 
-### Vertical movement primitives
+The "scroll_*" / "player_action_taken" labels are dispatch-level
+placeholders — at the top of those routines the FACING bit ([0xC2]
+bit 0) is updated and the walk-frame `gvar_pose_idx` advances.
 
-`pos_scroll_up` (in game_func_13, line 1269):
+---
+
+## Cavern jump arc — state1_entry → game_func_11
+
+### Misnamed counters at DS:9F09/9F0C/9F0D
+
+These three bytes were named `hp_*` by an earlier RE pass that
+guessed they tracked HP.  They don't.  They track the JUMP ARC:
+
+| Address | Old name | Real meaning |
+|---|---|---|
+| DS:9F09 | `hp_countdown` | **jump_phase_ctr** — current frame within jump (counts up during ascent, down during fall) |
+| DS:9F0C | `hp_midpoint` | **jump_apex_threshold** — = jump_height / 2; switch ascent → fall here |
+| DS:9F0D | `hp_max` | **jump_arc_height** — total height of jump in tile rows (e.g., 6 = 6-row max ascent) |
+
+The real player HP is at **DS:0x90** (`hero_HP`, 16-bit) — see
+SAVE_FORMAT.md.
+
+### Jump initiation (UP pressed in cavern)
+
 ```asm
-pos_scroll_up:
-        dec  byte ptr ds:[82h]               ; map_scroll_row -= 1
-        mov  si, ds:gvar_scroll_pos
-        sub  si, 24h                         ; tile-buffer offset -= 36
-        call vga_operation6                  ; redraw row
-        mov  ds:gvar_scroll_pos, si
+state1_entry:                                ; (line 1153)
+        mov  byte ptr ds:hp_regen_tick, 0    ; cancel heal-pulse
+        call game_func_69                    ; ceiling check + entity collision
+        call game_func_80                    ; (context check — ladder? platform-raise?)
+        call game_func_12                    ; (more context checks)
+
+game_func_11:                                ; fall-through, jump-step body
+        inc  byte ptr ds:invul_timer
+        cmp  byte ptr ds:invul_timer, 0Ah
+        jb   invul_clamped
+        mov  byte ptr ds:invul_timer, 0Ah    ; clamp invul to 10
+
+invul_clamped:
+        ; ... gating tests ...
+
+check_music_b4:
+        mov  al, ds:hp_countdown             ; jump_phase_ctr
+        cmp  al, ds:hp_max                   ; jump_arc_height
+        jae  fight_reset_soft                ; reached max → end ascent → fall
+        call vga_operation8
+        sub  si, 23h                         ; tile-buffer offset for row above
+        call vga_operation6
+        mov  al, [si]
+        call game_check_state_2              ; tile blocked above?
+        jnz  check_hp_zero                   ; yes — bonk ceiling
+        mov  byte ptr ds:gvar_pose_idx, 0    ; reset anim to first frame
+        and  byte ptr ds:[0C2h], 0FDh        ; clear action_in_progress
+        mov  byte ptr ds:gvar_combat_ff3D, 0FFh  ; ← MARK: actively jumping (bit 7 set)
+        mov  al, ds:hp_max
+        shr  al, 1
+        mov  ds:hp_midpoint, al              ; jump_apex_threshold = height / 2
+        inc  byte ptr ds:hp_countdown        ; jump_phase_ctr++
+        cmp  byte ptr ds:fight_player_col, 7
+        jae  decrement_84
+        jmp  pos_scroll_up                   ; at screen edge — scroll camera up
+
+decrement_84:
+        dec  byte ptr ds:fight_player_col    ; on-screen — move sprite up one row
+        retn
+
+fight_reset_soft:
+        mov  byte ptr ds:gvar_debug_val, 0
+        mov  byte ptr ds:gvar_combat_ff3D, 7Fh  ; ← clear bit 7: arc complete, fall begins
         retn
 ```
 
-`scroll_advance` (in game_func_15, line 1331) mirrors this for downward
-movement.  The "row stride" of 0x24 (= 36 bytes) reflects the cavern's
-36-column tile-buffer layout (also seen in TILE_PHYSICS.md).
+The two outcomes per jump-step frame:
+1. **Still ascending** (`hp_countdown < hp_max`): move player up one
+   tile row (either by scrolling camera or moving sprite within the
+   8-row screen window).  Bit 7 of `gvar_combat_ff3D` is set =
+   "actively jumping up."
+2. **Apex reached** (`hp_countdown >= hp_max`): clear bit 7 of
+   `gvar_combat_ff3D` (now = 0x7F).  Subsequent frames will fall
+   under gravity.
 
-The on-screen `fight_player_col` (DS:0x84) is bounded 0..7 — when the
-player would fall off the visible 8-column fight column range, the
-world-Y scrolls via `pos_scroll_up` / `scroll_advance` to keep them
-on-screen.
+A ceiling collision (`game_check_state_2` returns nonzero) bonks
+the jump early and sends the player straight to the fall path.
 
-### State-bit semantics in `[0xC2]`
+### Fall (gravity step) — game_func_8 → decrement_hp
 
-Byte `[0xC2]` is **the most-tested byte in stdply.bin** (87 distinct
-references in 200FIGHT alone).  Its bits:
+Every frame, `game_func_8` runs:
+
+```asm
+game_func_8 proc near                        ; (line 993)
+        ; ... preconditions: any entity active, not loading, etc. ...
+
+check_combat_80:
+        test byte ptr ds:gvar_combat_ff3D, 80h
+        jz   check_hp_clamp                  ; bit 7 clear = NOT jumping = can fall
+        retn                                 ; bit 7 set = ascending, no fall yet
+
+check_hp_clamp:
+        call game_func_24                    ; check tiles below — solid support?
+        jnc  check_hp_countdown
+        retn                                 ; supported (carry=1) → no fall
+
+check_hp_countdown:
+        test byte ptr ds:hp_countdown, 0FFh
+        jnz  decrement_hp                    ; still in arc, fall one row
+        jmp  process_loop_end                ; arc done — landed
+
+decrement_hp:
+        dec  byte ptr ds:hp_countdown        ; jump_phase_ctr--
+        inc  byte ptr ds:fight_player_col    ; move sprite down one row
+        retn
+```
+
+Key gating logic:
+- **Bit 7 of gvar_combat_ff3D** must be clear (= 0x7F or 0).
+  When set (= 0xFF), the jump is still ascending — no fall.
+- **`game_func_24`** checks horizontal tiles around the player's
+  feet for support.  Returns CF=0 (no support — falling) or CF=1
+  (supported — grounded).
+- **`hp_countdown != 0`** means there's still arc to consume.  When
+  it reaches 0, the player has landed.
+
+So the gravity loop is:
+- Per frame: if NOT ascending AND no tile support AND arc-counter > 0
+  → fall one row, decrement counter.
+- When counter reaches 0 → player has landed; remain grounded until
+  next jump.
+
+### gvar_combat_ff3D states summary
+
+This single byte at DS:FF3D encodes the jump/combat phase:
+
+| Value | State | Meaning |
+|---|---|---|
+| 0x00 | combat-off | Idle / not in fight mode |
+| 0x7F | combat-on, grounded | All low bits set; can fall, can jump |
+| 0xFF | combat-on, jumping-up | Bit 7 set — actively in ascending arc |
+| 0x80 | (transitional) | Bit 7 only; rare, likely intermediate |
+
+Per-bit semantics:
+- **Bit 7 (0x80)**: actively ascending in jump arc (set in state1_entry,
+  cleared in fight_reset_soft).
+- **Bits 0..6**: combat-active flag (any nonzero = combat mode is
+  alive; 0 = combat done).
+
+(IDA's earlier guess `jump_phase_flags` for this byte was on the
+right track — bit 7 IS the jump-active flag.)
+
+---
+
+## Context-sensitive Up — jump vs ladder vs platform-raise
+
+The user reports that Up has three context-dependent behaviors in
+caverns:
+1. **Default**: jump (parabolic arc as documented above)
+2. **On a ladder**: climb (continuous vertical movement, no arc)
+3. **On a platform-raise tile**: raise the platform
+
+The static trace shows that `state1_entry` calls **three context-check
+routines** before falling through to the jump-arc body:
+
+```asm
+state1_entry:
+        mov  byte ptr ds:hp_regen_tick, 0
+        call game_func_69                    ; (1) ceiling/entity check
+        call game_func_80                    ; (2) ??? (likely ladder/platform context)
+        call game_func_12                    ; (3) ??? (more context)
+        ; fall through to game_func_11 = the jump-arc step
+```
+
+**game_func_69** (line 4027) reads tiles around the player and tests
+for byte 0x4A (= 'J' — likely a "jump-allowed" or "ladder" marker
+tile) and for entity collisions in the row above.  Outcomes branch to
+`scroll_advance`, `map_scan_loop_entry`, or fall through.
+
+**game_func_80** and **game_func_12** are not yet definitively
+identified as the ladder / platform-raise dispatchers.  Candidates
+for runtime DOSBox observation:
+- Detect on a ladder tile → `scroll_advance` (climb up one row, no
+  arc, no gravity bias toward fall).
+- Detect on a platform-raise tile → trigger an entity event that
+  raises the platform.
+
+The full ladder / platform code path is still **TBD**.  The
+infrastructure (state1_entry's 3-call prelude, plus the 'J' tile
+check in game_func_69) is in place; mapping each call to its specific
+context behavior needs:
+1. A DOSBox session standing on a ladder tile, breakpoint on
+   game_func_80, observe the path taken.
+2. Same on a platform-raise tile.
+
+For port purposes, the data-structure to add is per-tile metadata:
+`is_ladder`, `is_platform_raise`, plus per-area lists of platform
+entities and their raise/lower mechanics.
+
+---
+
+## State-bit semantics in `[0xC2]`
+
+(Unchanged from previous doc — verified.)
 
 | Bit | Meaning | Set by | Cleared by |
 |---:|---|---|---|
-| 0 (0x01) | `player_facing` (0=right, 1=left) | `or [0xC2],1` (left walk in town); `xor [0xC2],1` (toggle on action) | `and [0xC2],0FEh` (right walk) |
-| 1 (0x02) | `action_in_progress` | `or [0xC2],2` after a vertical move/attack starts | `and [0xC2],0FDh` at action end |
+| 0 (0x01) | `player_facing` (0=right, 1=left) | `or [C2],1` (left walk in town) | `and [C2],0FEh` (right walk) |
+| 1 (0x02) | `action_in_progress` | `or [C2],2` after vertical move/attack | `and [C2],0FDh` at end |
 
 The classic patterns:
 ```asm
 xor byte ptr ds:[0C2h], 1           ; flip facing
 or  byte ptr ds:[0C2h], 1           ; force LEFT
 and byte ptr ds:[0C2h], 0FEh        ; force RIGHT
-or  byte ptr ds:[0C2h], 2           ; mark "doing something"
-and byte ptr ds:[0C2h], 0FDh        ; mark "done"
-test byte ptr ds:[0C2h], 1          ; is left-facing?
 ```
 
-`select_player_sprite_frame` reads the facing bit to mirror sprites
-(see "Sprite frame selection" below).
+---
+
+## gvar_pose_idx (DS:0xE7) — animation frame state
+
+(Unchanged.  Single byte, low 7 = sprite frame, bit 7 = static-mode
+flag.  Read by all 5 GF driver chunks for sprite render mode switch.)
 
 ---
 
-## gvar_pose_idx (DS:0xE7) — pose state
+## Sword attack — single FSM state, no variants
 
-Single byte with two distinct interpretations:
-
-| Value | Meaning |
-|---|---|
-| 0x00..0x7F | pose index in active animation (low 7 bits) |
-| 0x80 | "static / idle" pose marker (bit 7 set, low 7 = 0) |
-| 0x80..0xFF | bit 7 set + low 7 may carry residual pose data |
-
-### Common write patterns
-
-| Pattern | Site | Meaning |
-|---|---|---|
-| `mov [0xE7], 0` | game_func_11 (line 1181) | reset pose to first frame |
-| `mov [0xE7], 0x7F` | music_end_cleanup (line 865) | force max pose, no mode flag |
-| `mov [0xE7], 0x80` | many sites | enter "idle / static" mode |
-| `inc [0xE7]; and [0xE7], 7Fh` | inc_e7/inc_e7b (1324, 1533) | advance pose, mask bit 7 |
-| `inc [0xE7]; and [0xE7], 3` | walk_left/right_move (town) | 4-frame walk cycle |
-| `or [0xE7], 1` | jmp_back_music_loop | force odd pose (alternate frame) |
-| `dec [0xE7]` | music_anim_loop (line 1249) | reverse pose |
-
-### Read by graphics drivers
-
-All 5 GF driver chunks (gd*/gt*/gm*) `cmp [0xE7], 0x80` at sprite
-render time.  When equal → switch to "static" sprite mode (single
-unanimated frame).  Otherwise the low 7 bits index into the per-pose
-sprite-frame table.
-
----
-
-## Sprite frame selection (200FIGHT, select_player_sprite_frame)
-
-The 3-state action FSM (set by `combat_input_handler`) drives which
-sprite frame is rendered for the player:
+The combat_input_handler at line 2547 reads `int 61h` and writes
+the action FSM:
 
 ```asm
-; bl_base = (player_facing & 1) << 4
-mov  bl, byte ptr ds:[0C2h]
-and  bl, 1
-shl  bl, 4              ; bl_base in {0x00, 0x10}
+combat_input_handler:                        ; (line 2547)
+        test byte ptr ds:[92h], 0FFh         ; sword equipped?
+        jnz  vol_btn_pressed
+        retn
 
-mov  al, ds:gvar_combat_action_state    ; 0/1/2
-or   al, al
-jz   flag45_zero                          ; idle path
-
-cmp  al, 1
-je   flag45_walk                          ; ?? (path picks 0x06)
-                                          ; actually: for any nonzero,
-                                          ;   if dec al == 0  → flag45_zero
-                                          ;   else (al was 2) → bl + 0x0A
-
-mov  al, bl
-add  al, 0Ah                              ; attack frame (action_state=2)
-jmp  short apply_mask
-
-flag45_zero:                              ; idle (action_state=0)
-        mov  al, ds:gvar_combat_anim_subindex
-        or   al, bl                       ; bl_base | sub_index
-        add  al, ah                       ; ah=6 if was action_state=1
-
-apply_mask:
-        and  al, 0FEh
-        mov  bl, al
-        xor  bh, bh
-        mov  es, cs:gvar_game_seg
-        mov  di, es:entity_ptr_table[bx]   ; sprite-frame table lookup
+vol_btn_pressed:
+        int  61h                             ; AL=direction, AH=button
+        test ah, 1                           ; button 1 (attack) pressed?
+        jz   check_state_loop
+        ; ... gating tests ...
+        test al, 2                           ; DOWN held? (was: my old "left" mistake)
+        jz   check_state_loop
+        mov  byte ptr ds:gvar_combat_action_state, 2  ; ATTACK
+        mov  byte ptr ds:gvar_combat_anim_subindex, 2
+        ; ... audio cue ...
 ```
 
-Net result (corrected from header comment):
+**There is one attack state.**  Holding direction during a swing
+does not produce different damage.  The 3 swing flavors mentioned
+in the manual (Spacebar straight / Up+Spacebar upward / Up+Down+Spacebar
+thrust) are likely either:
+- A misreading of the manual / playthrough text (the manual may
+  describe sprite-frame variants only)
+- Cosmetic-only variants selected by sprite frame (no damage
+  difference)
 
-| `action_state` | Frame index `bl` | Meaning |
-|---:|---|---|
-| 0 (idle) | `(facing<<4) \| anim_subindex` | per-tick animation cycle |
-| 1 (walk) | `(facing<<4) \| 0x06` | walk pose |
-| 2 (attack) | `(facing<<4) + 0x0A` | strike pose |
-
-`(facing<<4)` partitions the table: indices `0x00..0x0F` are right-facing,
-`0x10..0x1F` are left-facing.  Same animation, mirrored sprites.
-
-**Attack variants (straight / up / thrust):**
-The cleaned source's `combat_input_handler` only sets
-`action_state=2` for ONE attack flavor (the button + left-direction
-combo at line 2554-2562).  The manual claims 3 swing variants
-(Spacebar = straight, Up+Spacebar = upward, Up+Down+Spacebar = thrust),
-but the on-paper FSM only encodes one.  The most plausible
-interpretations:
-
-1. **The 3 variants share one FSM state**, distinguished by checking
-   the held direction bits at the moment of the swing inside the
-   sprite/damage code (not yet traced).
-2. **Variants are display-only** — the manual describes a single sword
-   action with cosmetic angle differences shown via different sprite
-   frames selected by held direction in `gvar_combat_anim_subindex`.
-
-Resolving this needs DOSBox observation: hold Up + tap Space and check
-whether the damage routine reads a different value from FF46 / FF45 /
-[0xC2] than for plain Space.
+Per user confirmation: **no sword damage variants.**  Drop the
+"upward swing" and "downward thrust" rows from the mechanics
+checklist as features that don't exist.
 
 ---
 
-## What's NOT a parabolic jump
+## Sprite frame selection
 
-The manual (Zeliard_Manual.pdf p.4) describes "jumping," but the
-implementation traced here is **scroll-locked vertical movement**:
-
-- Holding **Up** scrolls the camera up one tile-row per frame
-- Holding **Down** scrolls camera down
-- The player **does NOT fall** when up is released — they stay at
-  altitude.
-- There is **no jump-arc table** (verified by absence of any "arc"
-  / "jump_table" / "trajectory" symbols in the cleaned source).
-
-This makes Zeliard's caverns more **vertical platformer / climber**
-than **side-scroll jumper**.  Visually, the player appears to
-"climb" through cavern shafts using Up/Down direction.  Movement
-feels more like *Spelunker* or *Boulder Dash* than *Mario*.
-
-The "jump" the manual hints at may correspond to one of:
-- **state5_branch** (right+up): a brief frame-burst that LOOKS like a
-  small hop because the camera scrolls one row while the sprite
-  poses with `gvar_pose_idx = 80h`.
-- An untraced one-shot trigger fired by tapping Up + button (rather
-  than holding Up).
-
-Treat the no-gravity finding as **provisional** — runtime DOSBox
-observation in a cavern would either confirm or refute the
-"climbing not jumping" model definitively.
-
----
-
-## Surface effects (ice / slime / lava — see TILE_PHYSICS.md)
-
-The current movement code does NOT apply per-surface modifiers
-beyond what TILE_PHYSICS.md documents (force-vulnerable [0x40..0x48]
-and tile-type-map damage scan).  Surface effects like:
-- **Ice slip** (carry velocity)
-- **Slime slow** (reduced movement-frame advance)
-- **Water no-jump** (disable Up?)
-- **One-way walls / air currents**
-
-...are not yet identified in the per-frame movement path and may live
-either in:
-1. Per-area initialization code (inserts surface-specific overrides
-   into `tile_type_map` or a parallel "physics modifier" table)
-2. The chunk-loaded enemy/area handler (309CRAB.asm etc.) modifying
-   movement constants on entry
-
-Resolving these needs DOSBox observation in Helada (ice cavern)
-specifically.
-
----
-
-## What this gives a port
-
-A port can implement player physics as:
-
-```python
-# Per-frame, in cavern mode:
-input_bits = read_joystick()    # bits: right=1, left=2, up=4, down=8
-button1    = read_button1()
-
-# Action FSM
-if button1:
-    action = ATTACK  # state 2
-elif input_bits & 0x0F:
-    action = WALK    # state 1
-else:
-    action = IDLE    # state 0
-
-# Movement (orthogonal, no gravity)
-if input_bits & 1: player_world_x += 1; facing = RIGHT
-if input_bits & 2: player_world_x -= 1; facing = LEFT
-if input_bits & 4: player_world_y -= 1     # climb up
-if input_bits & 8: player_world_y += 1     # climb down
-
-# Pose
-if action == IDLE:
-    pose_idx = 0x80 | sub_idx
-else:
-    pose_idx = (pose_idx + 1) & 0x7F
-
-# Sprite selection
-frame_index = (facing << 4) | (
-    sub_idx if action == IDLE else
-    0x06    if action == WALK else
-    0x0A    # ATTACK
-)
-sprite = sprite_table[frame_index]
-```
-
-For town mode, drop the vertical inputs and clamp player_screen_col
-to [0xB, 0x10] with scroll-trigger semantics on the bounds.
+(Unchanged — see select_player_sprite_frame at 200FIGHT:2666.
+`(facing<<4) | sub_idx` for idle, `(facing<<4) | 0x06` for walk,
+`(facing<<4) + 0x0A` for attack.)
 
 ---
 
@@ -417,31 +486,80 @@ Promotions:
 
 | Row | Was | Now |
 |---|:---:|:---:|
-| Player walking left/right | ⚠ | ✓ (PLAYER_PHYSICS.md §"Town walking") |
-| Player jumping (parabolic arc) | ❌ | ⚠ (NO parabolic arc; cavern engine is scroll-locked vertical climb — see §"What's NOT a parabolic jump") |
-| Player falling | ❌ | ⚠ (no gravity — player stays at altitude when Up released) |
-| Player kneeling (Down arrow) | ❌ | ⚠ (Down = scroll_retreat = climb down, NOT a kneel pose; manual's "kneel" may be a sprite-only state with no FSM presence) |
-| Player facing (left/right) | ⚠ | ✓ (bit 0 of [0xC2]; 87 byte tests, fully documented) |
-| Player pose-state byte | ⚠ | ✓ (gvar_pose_idx at DS:0xE7, bit-7 mode flag, low-7 pose index) |
-| Sword attack — straight (Spacebar) | ❌ | ⚠ (combat_input_handler sets action_state=2; sprite frame = (facing<<4)+0x0A) |
-| Sword attack — upward (Up + Space) | ❌ | ❌ (variants share one FSM state — variant detection still TBD) |
-| Sword attack — downward thrust | ❌ | ❌ (same — single FSM state covers all swing flavors) |
-| Player movement speed by stat | ⚠ | ⚠ (char_speed at 0x98; how it modulates movement-frame cadence not yet traced) |
+| Player walking left/right | ⚠ | ✓ (PLAYER_PHYSICS.md town §) |
+| Player jumping (parabolic arc) | ⚠ | ✓ (state1_entry → game_func_11; jump-arc counters at DS:9F09/9F0C/9F0D — misnamed `hp_*`) |
+| Player falling | ⚠ | ✓ (game_func_8 → decrement_hp; gated on gvar_combat_ff3D bit 7 + game_func_24 support test) |
+| Player kneeling (Down arrow) | ⚠ | ⚠ (DOWN dispatch goes to input_compare → game_func_22; sprite-only crouch — no FSM presence) |
+| Town building entry on Up | ❌ | ✓ (door_scan_entry scans town_event_tbl for matching world_x ±1 tolerance) |
+| Sword attack — straight | ⚠ | ✓ (single attack state — no damage variants) |
+| Sword attack — upward (Up + Space) | ❌ | DROP (does not exist per user — manual is misleading) |
+| Sword attack — downward thrust | ❌ | DROP (same) |
+| Surface effects: ladder climb | ❌ | ⚠ (game_func_80 / game_func_12 are candidate dispatchers for context-sensitive Up; specific tile-detection TBD) |
+| Surface effects: platform-raise | ❌ | ⚠ (same — context handler exists but specific path TBD) |
 
-Coverage delta: +4 ✓, +5 ⚠, -5 ❌
+Coverage delta: +5 ✓, +3 ⚠, -3 ❌, -2 dropped.
 
 ---
 
-## Open questions for runtime observation
+## What this gives a port
 
-1. **Does releasing Up cause a fall?**  Static reading says no, but
-   a DOSBox session in any cavern would confirm.
-2. **Are there per-area gravity overrides** for Helada (ice) etc.?
-3. **Sword-swing variants**: is there real damage / hitbox difference
-   between Space, Up+Space, and Up+Down+Space, or are all three the
-   same FSM state with different sprite frames?
-4. **Kneel pose**: does Down+Stand produce a distinct sprite (kneeling
-   for arrows / projectiles) or is it just a climb-down animation?
-5. **What does `state5_branch` (right+up) animate**?  If the camera
-   scrolls one row plus a quick pose change, that IS the "jump"
-   the manual describes.
+A port can implement the cavern engine as a Mario-3-style platformer:
+
+```python
+# Per-frame, in cavern mode:
+input_bits = read_joystick()    # bits: up=1, down=2, left=4, right=8
+button1    = read_button1()
+
+# Walk
+if input_bits & 4: x -= walk_speed; facing = LEFT
+if input_bits & 8: x += walk_speed; facing = RIGHT
+
+# Jump trigger (only when grounded)
+if (input_bits & 1) and is_grounded():
+    if on_ladder_tile():        # context 1: ladder
+        y -= 1                  # climb (no arc)
+    elif on_platform_raise():    # context 2: platform
+        platform.raise()
+    else:                        # context 3: jump (default)
+        jump_phase = 0
+        jumping_up = True
+
+# Jump arc
+if jumping_up:
+    if jump_phase < jump_arc_height and not bonked_ceiling():
+        y -= 1                  # ascend
+        jump_phase += 1
+    else:
+        jumping_up = False      # arc done, fall begins
+
+# Gravity
+if not jumping_up and not is_grounded():
+    y += 1                      # fall one row per frame
+
+# Attack
+if button1 and sword_equipped:
+    action_state = ATTACK       # single state, no direction variant
+elif input_bits & 0x0C:         # left or right
+    action_state = WALK
+else:
+    action_state = IDLE
+```
+
+For TOWN mode, drop the vertical handling entirely; on Up, scan the
+`town_event_tbl` for a door at the player's current world-X (±1
+tolerance) and load the corresponding shop chunk.
+
+---
+
+## Open questions (worth a DOSBox session)
+
+1. Is **`game_func_80` the ladder check** and **`game_func_12` the
+   platform-raise check**?  Or are they reversed / different roles?
+2. What's the **exact tile byte for a ladder**?  `game_func_69`
+   tests for byte 0x4A (`'J'`) — that may be the ladder marker.
+3. Is **DOWN-while-falling a "drop through one-way platform"** or
+   purely cosmetic crouch?
+4. **Jump height variation**: is `hp_max` (jump_arc_height) constant
+   across the game, or does it scale with `char_speed`?
+5. **Crouch damage / hitbox**: does crouching reduce the player's
+   hitbox height to dodge under projectiles?

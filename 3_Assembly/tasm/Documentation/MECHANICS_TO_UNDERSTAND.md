@@ -69,10 +69,10 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Player walking left/right | ✓ | PLAYER_PHYSICS.md §"Town walking"; town: 4-step (test→fine→move→scroll) loop; cavern: AL=1/2 dispatch in game_check_state |
-| Player jumping (parabolic arc) | ⚠ | NO parabolic arc — cavern movement is scroll-locked vertical climb (PLAYER_PHYSICS.md §"What's NOT a parabolic jump"); manual's "jump" likely state5_branch one-row hop |
-| Player falling | ⚠ | No gravity in static trace — player stays at altitude when Up released; needs DOSBox confirmation |
-| Player kneeling (Down arrow) | ⚠ | Down = scroll_retreat (climb down); manual's "kneel" likely a sprite-only pose, no FSM presence |
+| Player walking left/right | ✓ | PLAYER_PHYSICS.md; town: 4-step (test→fine→move→scroll) loop; cavern: AL bits 2/3 = LEFT/RIGHT dispatch in game_check_state |
+| Player jumping (parabolic arc) | ✓ | state1_entry → game_func_11 with arc counters at DS:9F09/9F0C/9F0D (misnamed `hp_*` — actually jump_phase_ctr/jump_apex/jump_height); gvar_combat_ff3D bit 7 = ascending |
+| Player falling | ✓ | game_func_8 → decrement_hp; gated on gvar_combat_ff3D bit 7 clear AND game_func_24 (no tile support); inc fight_player_col + dec hp_countdown per frame |
+| Player kneeling (Down arrow) | ⚠ | DOWN dispatch via input_compare → game_func_22; likely sprite-only crouch with no FSM presence; functional impact (hitbox reduce?) TBD |
 | Player facing (left/right) | ✓ | bit 0 of [0xC2]; `or [C2],1`=LEFT, `and [C2],0FEh`=RIGHT, `xor [C2],1`=toggle (PLAYER_PHYSICS.md) |
 | Player pose-state byte | ✓ | gvar_pose_idx at DS:0xE7 fully documented (PLAYER_PHYSICS.md §"gvar_pose_idx"); bit 7 = static mode, low 7 = anim frame |
 | Hitbox system | ❌ | ply_hitbox at DS:0xD2 named but the box layout TBD |
@@ -81,6 +81,8 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Surface effects: slime/ooze (slow) | ❌ | Same — likely small damage in tile_type_map + speed modifier |
 | Surface effects: lava (damage) | ✓ | Comes through the tile_type_map → tile_type_sum → shield → HP damage chain (TILE_PHYSICS.md §"Per-frame damage scan") |
 | Surface effects: water | ❌ | TBD — likely a separate flag; not yet identified in tile-byte format |
+| Ladder climb (Up on ladder tile) | ⚠ | state1_entry calls 3 context-check routines (game_func_69/80/12) before jump-arc body; ladder dispatcher candidate but specific tile-detection TBD (PLAYER_PHYSICS.md §"Context-sensitive Up"). 'J' tile byte (0x4A) tested in game_func_69 |
+| Platform-raise (Up on platform tile) | ⚠ | Same context-check prelude; raise-platform dispatcher candidate among game_func_80/12; needs DOSBox observation |
 | One-way walls (pass through one way) | ❌ | Direction-gated tile flag not yet identified |
 | One-way air-flow walls (push player) | ❌ | TBD |
 | Force-vulnerable tiles (bytes 0x40..0x48) | ✓ | Tile bytes in this range zero `invul_timer` (TILE_PHYSICS.md) |
@@ -93,9 +95,9 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Sword attack — straight (Spacebar) | ⚠ | combat_input_handler sets action_state=2 on (button1 + left direction); sprite frame = (facing<<4)+0x0A (PLAYER_PHYSICS.md §"Sprite frame selection") |
-| Sword attack — upward (Up + Space) | ❌ | Manual claims 3 swing variants but FSM has only one attack state — variant detection TBD (likely shared FSM, distinguished in damage code) |
-| Sword attack — downward thrust (Up+Down+Space) | ❌ | Same — single FSM state covers all swing flavors |
+| Sword attack — straight (Spacebar) | ✓ | combat_input_handler sets action_state=2 on button1 press; sprite frame = (facing<<4)+0x0A; ONE attack only — no variants (per user 2026-04-30) |
+| Sword attack — upward (Up + Space) | N/A | DOES NOT EXIST — manual is misleading; no per-direction sword variants in this game |
+| Sword attack — downward thrust (Up+Down+Space) | N/A | DOES NOT EXIST — same as above |
 | Hit detection: sword → enemy | ⚠ | last_hit_entity (9F10) named; full hit-test routine TBD |
 | Hit detection: enemy → player | ⚠ | hero_HP_subtract probe-tested (CPU 0x768A) |
 | Damage formula (sword type × level vs enemy HP) | ⚠ | Static formula in GAME_SYSTEMS.md; runtime computation TBD |
@@ -159,7 +161,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Town scrolling (left/right, walk_left/right_scroll) | ⚠ | gfx_scroll_left/right_fn at 106TOWN call sites |
 | Town foreground (player + NPCs) layering | ❌ | TBD |
 | Town tile collision (buildings vs walkable) | ❌ | town_map_side and tile-type checks; full table TBD |
-| Building entry (door tile activation) | ❌ | Per-shop dispatch TBD |
+| Building entry (door tile activation) | ✓ | door_scan_entry (106TOWN:2025) on UP press scans `town_event_tbl` for matching world_x ±1; door type byte (0xFF/0..7/8+) selects: special exit / shop chunk load via cs:[10C] / inline event (PLAYER_PHYSICS.md §"door_scan_entry") |
 | Special entry barriers (Esco hidden, Pureza requires X) | ⚠ | TOWNS_AND_NPCS.md describes; flag tests TBD |
 
 ## 8. NPCs & shops
@@ -337,12 +339,13 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 86 |
-| ⚠ partial | 49 |
-| ❌ not investigated | 55 |
+| ✓ fully traced | 90 |
+| ⚠ partial | 48 |
+| ❌ not investigated | 52 |
+| N/A (does not exist) | 2 |
 
-**Total mechanics enumerated**: 190
-**Coverage so far**: ~45% fully understood, 26% partial, 29% not investigated
+**Total mechanics enumerated**: 192 (added ladder + platform-raise rows)
+**Coverage so far**: ~47% fully understood, 25% partial, 27% not investigated
 
 All 7 priority items have been worked through (see dedicated docs
 in `Documentation/`):
