@@ -247,13 +247,13 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Save trigger (Sage) | ❌ | TBD |
-| Save filename (gvar_save_filename / gvar_save_name_buf) | ⚠ | Locations identified; format TBD |
-| .SAV file format | ❌ | Save-write routine in opdemo (zelres3 chunk) |
-| What's persisted (HP, gold, almas, bank, key_count, area, items, spells, …) | ❌ | TBD |
+| Save trigger (Sage) | ✓ | "Record Experience" in 217KENJP triggers DOS 3Ch/40h/3Eh sequence — see SAVE_FORMAT.md |
+| Save filename | ✓ | 8-char player input + ".USR" appended (DOS 8.3); via Sage joystick letter-picker |
+| .SAV file format | ✓ | 256 bytes verbatim of DS:0x0000..0x00FF (player data area) — no header, no validation |
+| What's persisted | ✓ | Full player record (gold, almas, bank, HP, weapons, magic, items, level, area state); full field map in SAVE_FORMAT.md |
 | Load: zeliad.exe re-exec with savefile arg | ✓ | ARCHITECTURE.md §1; cmdline_savefile in zeliad.asm |
 | Save-mode flag (new=0, load=0xFFFF passed in AX) | ✓ | game.asm:161 |
-| Save-state byte at FF33 (init=5 by zeliad) | ⚠ | gvar_save_flag named; semantic TBD |
+| Save-state byte at FF33 (init=5 by zeliad) | ✓ | gvar_save_flag — runtime flag, NOT part of .USR (player record is 0x00..0xFF; gvar at FFxx is separate) |
 
 ## 13. Game state & progression
 
@@ -337,12 +337,12 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 70 |
-| ⚠ partial | 41 |
-| ❌ not investigated | 79 |
+| ✓ fully traced | 75 |
+| ⚠ partial | 39 |
+| ❌ not investigated | 76 |
 
-**Total mechanics enumerated**: 190 (+3 rows added in BOSS_AI pass: per-boss state machines, enemy slot record, boss-defeat sequence)
-**Coverage so far**: ~37% fully understood, 22% partial, 42% not investigated
+**Total mechanics enumerated**: 190
+**Coverage so far**: ~39% fully understood, 21% partial, 40% not investigated
 
 Items 1, 2, 3, 4 from the not-investigated cluster have been moved
 out (combat FSM, script-bytecode VM, inventory, tile physics — see
