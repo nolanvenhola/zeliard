@@ -69,12 +69,12 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Player walking left/right | ⚠ | walk_left_move/walk_right_move in 106TOWN; bounded col 0..0x10 (`town_player_col`) |
-| Player jumping (parabolic arc) | ❌ | Jump physics + arc table not located |
-| Player falling | ❌ | Fall mechanics TBD |
-| Player kneeling (Down arrow) | ❌ | Pose state TBD |
-| Player facing (left/right) | ⚠ | player_facing at DS:0xC2 (87 byte tests; the hottest byte in stdply) |
-| Player pose-state byte | ⚠ | gvar_pose_idx (0xE7); bit-7 = mode flag, low-7 = index per stdply.inc comment |
+| Player walking left/right | ✓ | PLAYER_PHYSICS.md §"Town walking"; town: 4-step (test→fine→move→scroll) loop; cavern: AL=1/2 dispatch in game_check_state |
+| Player jumping (parabolic arc) | ⚠ | NO parabolic arc — cavern movement is scroll-locked vertical climb (PLAYER_PHYSICS.md §"What's NOT a parabolic jump"); manual's "jump" likely state5_branch one-row hop |
+| Player falling | ⚠ | No gravity in static trace — player stays at altitude when Up released; needs DOSBox confirmation |
+| Player kneeling (Down arrow) | ⚠ | Down = scroll_retreat (climb down); manual's "kneel" likely a sprite-only pose, no FSM presence |
+| Player facing (left/right) | ✓ | bit 0 of [0xC2]; `or [C2],1`=LEFT, `and [C2],0FEh`=RIGHT, `xor [C2],1`=toggle (PLAYER_PHYSICS.md) |
+| Player pose-state byte | ✓ | gvar_pose_idx at DS:0xE7 fully documented (PLAYER_PHYSICS.md §"gvar_pose_idx"); bit 7 = static mode, low 7 = anim frame |
 | Hitbox system | ❌ | ply_hitbox at DS:0xD2 named but the box layout TBD |
 | Sprite/tile collision detection | ✓ | game_func_128 + is_unknown_or_area5_slot_b classifies tiles via is_entity_known_type; bytes >= 0x49 block movement (TILE_PHYSICS.md §"Movement collision") |
 | Surface effects: ice (sliding) | ❌ | Per-area tile-type → physics modifier mapping TBD; would need DOSBox observation in Helada cavern |
@@ -93,9 +93,9 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Sword attack — straight (Spacebar) | ❌ | weapon_state (FF41) named but trigger TBD |
-| Sword attack — upward (Up + Space) | ❌ | TBD |
-| Sword attack — downward thrust (Up+Down+Space) | ❌ | TBD |
+| Sword attack — straight (Spacebar) | ⚠ | combat_input_handler sets action_state=2 on (button1 + left direction); sprite frame = (facing<<4)+0x0A (PLAYER_PHYSICS.md §"Sprite frame selection") |
+| Sword attack — upward (Up + Space) | ❌ | Manual claims 3 swing variants but FSM has only one attack state — variant detection TBD (likely shared FSM, distinguished in damage code) |
+| Sword attack — downward thrust (Up+Down+Space) | ❌ | Same — single FSM state covers all swing flavors |
 | Hit detection: sword → enemy | ⚠ | last_hit_entity (9F10) named; full hit-test routine TBD |
 | Hit detection: enemy → player | ⚠ | hero_HP_subtract probe-tested (CPU 0x768A) |
 | Damage formula (sword type × level vs enemy HP) | ⚠ | Static formula in GAME_SYSTEMS.md; runtime computation TBD |
@@ -337,12 +337,12 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 82 |
-| ⚠ partial | 44 |
-| ❌ not investigated | 64 |
+| ✓ fully traced | 86 |
+| ⚠ partial | 49 |
+| ❌ not investigated | 55 |
 
 **Total mechanics enumerated**: 190
-**Coverage so far**: ~43% fully understood, 23% partial, 34% not investigated
+**Coverage so far**: ~45% fully understood, 26% partial, 29% not investigated
 
 All 7 priority items have been worked through (see dedicated docs
 in `Documentation/`):
