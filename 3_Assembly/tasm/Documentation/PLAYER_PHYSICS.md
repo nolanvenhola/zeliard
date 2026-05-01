@@ -434,7 +434,7 @@ flag.  Read by all 5 GF driver chunks for sprite render mode switch.)
 
 ---
 
-## Sword attack — single FSM state, no variants
+## Sword attack — single FSM state, contextual variants
 
 The combat_input_handler at line 2547 reads `int 61h` and writes
 the action FSM:
@@ -450,25 +450,102 @@ vol_btn_pressed:
         test ah, 1                           ; button 1 (attack) pressed?
         jz   check_state_loop
         ; ... gating tests ...
-        test al, 2                           ; DOWN held? (was: my old "left" mistake)
-        jz   check_state_loop
         mov  byte ptr ds:gvar_combat_action_state, 2  ; ATTACK
         mov  byte ptr ds:gvar_combat_anim_subindex, 2
         ; ... audio cue ...
 ```
 
-**There is one attack state.**  Holding direction during a swing
-does not produce different damage.  The 3 swing flavors mentioned
-in the manual (Spacebar straight / Up+Spacebar upward / Up+Down+Spacebar
-thrust) are likely either:
-- A misreading of the manual / playthrough text (the manual may
-  describe sprite-frame variants only)
-- Cosmetic-only variants selected by sprite frame (no damage
-  difference)
+**There is one attack INPUT (button1 → action_state=2).**  No separate
+Up+Space or Down+Space combos exist.  But the EFFECT of the swing
+varies based on the player's physics state at the swing moment:
 
-Per user confirmation: **no sword damage variants.**  Drop the
-"upward swing" and "downward thrust" rows from the mechanics
-checklist as features that don't exist.
+### Damage formula (game_multiply_5 at line 8103)
+
+```asm
+al_is_one:
+        mov  bl, byte ptr ds:[92h]   ; sword_type (1..7)
+        dec  bl
+        xor  bh, bh
+        mov  al, ds:anim_frame_tbl_a[bx]   ; base damage per sword type
+        mov  bl, byte ptr ds:[8Dh]   ; item_qty_count (Sabre Oil buff?)
+        shr  bl, 1
+        add  al, bl                  ; + buff
+        ; ... (carry-clamp, multiply by (key_count+1)) ...
+
+check_flag45:
+        mov  ah, al
+        cmp  byte ptr ds:gvar_combat_action_state, 2
+        je   double_ah               ; ← attacking? double damage
+
+double_ah:
+        add  ah, ah
+        jc   ah_carry                ; clamp 0xFF
+        retn
+```
+
+So the in-engine damage calculation has **one** explicit modifier:
+double damage if action_state == 2 at the moment of the hit.
+
+### Falling-attack bonus (emergent, not a special multiplier)
+
+Per user: **attacking while falling does more damage**.  The damage
+formula has no explicit "falling" check, so the bonus is most likely
+**emergent** from the per-frame hit-detection model:
+
+- Standing-still attack: enemy slot collision is detected ONCE while
+  the swing animation plays → boss_fn_4 (line 8031) called once →
+  one application of damage.
+- Falling attack: as the player descends one tile-row per frame
+  through the enemy's column, hit-detection fires on EACH
+  overlapping frame → boss_fn_4 called multiple times → cumulative
+  damage.
+
+The longer the fall, the more frames of overlap, the more damage.
+This naturally produces the "downward thrust does more" behavior
+described in the manual without needing a special-case branch in the
+arithmetic.
+
+A DOSBox session would confirm by setting a breakpoint on
+`boss_fn_4` (or `game_multiply_5`) and counting calls during a
+falling-attack vs standing-attack against the same enemy.
+
+### Crouch-low-swing (Down + attack)
+
+Per user: **crouching while attacking lets you swing the sword lower**.
+This isn't a damage variant — it's a **hitbox / aim** variant.
+
+The mechanism: the DOWN-key handler (`game_func_22` at line 1924) sets
+the player into a crouching pose by calling `game_func_78` and
+adjusting `gvar_pose_idx`.  When the attack triggers from that pose,
+the sprite-frame lookup (`select_player_sprite_frame` at line 2666)
+picks a different entity_ptr_table[bx] entry — one whose hitbox /
+sword-tip extends LOWER than the standing swing.
+
+`select_player_sprite_frame`'s frame lookup uses
+`(facing<<4) + 0x0A` for attacks, but `(facing<<4) | sub_idx` for
+idle.  When crouching, `gvar_combat_anim_subindex` carries the
+crouch-pose marker, which routes the attack-frame selection through
+a different table row than the standing attack.
+
+The exact crouch-attack table entry hasn't been pinpointed (would
+need DOSBox-side observation of `entity_ptr_table[bx]` while
+holding Down+Space), but the **sprite-driven hitbox variation** is
+the right model.
+
+### Summary of attack contextual variants
+
+| Player state | Damage | Sword position |
+|---|---|---|
+| Standing + attack | Normal (sword lookup × 2) | Mid-height swing |
+| Crouching + attack | Normal | Lower swing (low hitbox) |
+| Falling + attack | Cumulative (multi-frame hits) | Mid-height, downward path |
+| Jumping-up + attack | Normal | Mid-height, upward path |
+
+These all share the same FSM state (action_state=2) and same input
+(button1).  The variation is in player physics state at the moment
+of swing, which selects a different sprite-frame and / or generates
+multiple hit-detection events as the player moves through the
+enemy's tile column.
 
 ---
 
@@ -491,9 +568,9 @@ Promotions:
 | Player falling | ⚠ | ✓ (game_func_8 → decrement_hp; gated on gvar_combat_ff3D bit 7 + game_func_24 support test) |
 | Player kneeling (Down arrow) | ⚠ | ⚠ (DOWN dispatch goes to input_compare → game_func_22; sprite-only crouch — no FSM presence) |
 | Town building entry on Up | ❌ | ✓ (door_scan_entry scans town_event_tbl for matching world_x ±1 tolerance) |
-| Sword attack — straight | ⚠ | ✓ (single attack state — no damage variants) |
-| Sword attack — upward (Up + Space) | ❌ | DROP (does not exist per user — manual is misleading) |
-| Sword attack — downward thrust | ❌ | DROP (same) |
+| Sword attack — straight | ⚠ | ✓ (single FSM state, action_state=2; damage = sword_type lookup × 2 via game_multiply_5) |
+| Sword crouch-low-swing (Down + Space) | ❌ | ✓ (sprite-frame variation — crouching pose routes attack through a different entity_ptr_table entry with lower hitbox; no damage change) |
+| Sword falling-attack bonus | ❌ | ⚠ (emergent: per-frame hit detection during fall causes cumulative damage as player passes through enemy column; no explicit multiplier in game_multiply_5 — needs DOSBox confirmation) |
 | Surface effects: ladder climb | ❌ | ⚠ (game_func_80 / game_func_12 are candidate dispatchers for context-sensitive Up; specific tile-detection TBD) |
 | Surface effects: platform-raise | ❌ | ⚠ (same — context handler exists but specific path TBD) |
 

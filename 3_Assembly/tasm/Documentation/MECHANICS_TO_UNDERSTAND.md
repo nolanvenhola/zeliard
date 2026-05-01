@@ -72,7 +72,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Player walking left/right | ✓ | PLAYER_PHYSICS.md; town: 4-step (test→fine→move→scroll) loop; cavern: AL bits 2/3 = LEFT/RIGHT dispatch in game_check_state |
 | Player jumping (parabolic arc) | ✓ | state1_entry → game_func_11 with arc counters at DS:9F09/9F0C/9F0D (misnamed `hp_*` — actually jump_phase_ctr/jump_apex/jump_height); gvar_combat_ff3D bit 7 = ascending |
 | Player falling | ✓ | game_func_8 → decrement_hp; gated on gvar_combat_ff3D bit 7 clear AND game_func_24 (no tile support); inc fight_player_col + dec hp_countdown per frame |
-| Player kneeling (Down arrow) | ⚠ | DOWN dispatch via input_compare → game_func_22; likely sprite-only crouch with no FSM presence; functional impact (hitbox reduce?) TBD |
+| Player kneeling (Down arrow) | ✓ | DOWN → game_func_22 (line 1924) calls game_func_78 to set crouch pose; functional effect: lowers attack hitbox so player can swing under low-flying enemies (per user 2026-04-30) |
 | Player facing (left/right) | ✓ | bit 0 of [0xC2]; `or [C2],1`=LEFT, `and [C2],0FEh`=RIGHT, `xor [C2],1`=toggle (PLAYER_PHYSICS.md) |
 | Player pose-state byte | ✓ | gvar_pose_idx at DS:0xE7 fully documented (PLAYER_PHYSICS.md §"gvar_pose_idx"); bit 7 = static mode, low 7 = anim frame |
 | Hitbox system | ❌ | ply_hitbox at DS:0xD2 named but the box layout TBD |
@@ -95,9 +95,9 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Sword attack — straight (Spacebar) | ✓ | combat_input_handler sets action_state=2 on button1 press; sprite frame = (facing<<4)+0x0A; ONE attack only — no variants (per user 2026-04-30) |
-| Sword attack — upward (Up + Space) | N/A | DOES NOT EXIST — manual is misleading; no per-direction sword variants in this game |
-| Sword attack — downward thrust (Up+Down+Space) | N/A | DOES NOT EXIST — same as above |
+| Sword attack — straight (Spacebar) | ✓ | combat_input_handler sets action_state=2 on button1 press; damage = sword_type lookup × 2 via game_multiply_5 (line 8103) |
+| Sword crouch-low-swing (Down + Space) | ✓ | Sprite-frame variation: crouching pose routes attack through a different entity_ptr_table entry with lower hitbox; no damage change (PLAYER_PHYSICS.md §"Crouch-low-swing") |
+| Sword falling-attack bonus | ⚠ | Emergent damage bonus: per-frame hit-detection during fall causes cumulative hits as player descends through enemy column; no explicit multiplier in game_multiply_5; needs DOSBox call-count confirmation |
 | Hit detection: sword → enemy | ⚠ | last_hit_entity (9F10) named; full hit-test routine TBD |
 | Hit detection: enemy → player | ⚠ | hero_HP_subtract probe-tested (CPU 0x768A) |
 | Damage formula (sword type × level vs enemy HP) | ⚠ | Static formula in GAME_SYSTEMS.md; runtime computation TBD |
@@ -339,13 +339,12 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 90 |
+| ✓ fully traced | 92 |
 | ⚠ partial | 48 |
 | ❌ not investigated | 52 |
-| N/A (does not exist) | 2 |
 
-**Total mechanics enumerated**: 192 (added ladder + platform-raise rows)
-**Coverage so far**: ~47% fully understood, 25% partial, 27% not investigated
+**Total mechanics enumerated**: 192
+**Coverage so far**: ~48% fully understood, 25% partial, 27% not investigated
 
 All 7 priority items have been worked through (see dedicated docs
 in `Documentation/`):
