@@ -316,6 +316,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Opening sequence (slideshow, story text) | ✓ | OPENING_CINEMATIC.md: opening_scene_main (line 257) orchestrates 4 scene blocks with sprite anim + narration via in-chunk dispatch; script_interpreter VM (line 1056) walks SCR_* opcodes through narration_chapter_2..5; ENTER skip at gvar_skip_input checks |
 | ENTER skip during opening | ✓ | timer_wait_loop:592, scene_transition_wait:654, gameplay_input_handler:1009 — all jump to next phase on gvar_skip_input set |
 | Title screen (Zeliard logo + credits) | ✓ | OPENING_CINEMATIC.md §"Phase 2-3": timer_exit_to_game (line 615) loads ttl3.grp via SAR loader fn AL=5, renders via INT 60h AX=0, palette mode 1; credits_scroll_display (line 677) scrolls GAME ARTS / Sierra copyright text |
+| Opening cinematic transition out | ✓ | transition_out_to_game (100OPDMO:1025) loads maop.grp, sets AX=0xFFFF, indirect jumps via cs:exit_jmp_target_ptr (= 0x26FF) into gfx-driver offset 0x6FF. Verified via Unicorn functest (test_opdemo_exit_jmp.py): jmp lands at 0x26FF, scene_data_b never modified at runtime |
 | Title menu (New Game / Load Game) | N/A | Does not exist — load game is via DOS command-line arg, not in-game menu |
 | Boss intro animations | ❌ | Per-boss intro TBD |
 | Ending sequence (Felicia restored, credits) | ❌ | end4-7, fin chunks; full ending TBD |
@@ -341,12 +342,12 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 90 |
+| ✓ fully traced | 91 |
 | ⚠ partial | 51 |
 | ❌ not investigated | 51 |
 | N/A (does not exist) | 2 |
 
-**Total mechanics enumerated**: 194
+**Total mechanics enumerated**: 195 (added "Opening cinematic transition out" row, ✓ via Unicorn functest)
 **Coverage so far**: ~45% fully understood, 27% partial, 27% not investigated
 
 **2026-04-30 honest-state correction**: 6 player-physics rows

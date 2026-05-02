@@ -71,7 +71,7 @@ sprite_buf_b	equ	0A9C0h		; sprite buffer B
 sprite_buf_c	equ	0AB40h		; sprite buffer C
 ext_segment	equ	0D000h		; extended segment (0xD000)
 scene_data_a	equ	64EAh		; scene initialisation data A
-scene_data_b	equ	6A73h		; scene data B
+exit_jmp_target_ptr	equ	6A73h		; scene data B
 script_pc	equ	6D56h		; script program counter (execution pointer)
 text_color_fg	equ	6D5Bh		; text foreground color
 text_color_bg	equ	6D5Ch		; text background color
@@ -1036,12 +1036,12 @@ transition_out_to_game:
 		mov	al,3
 		call	word ptr cs:[10Ch]
 		mov	ax,0FFFFh
-		jmp	word ptr cs:scene_data_b
+		jmp	word ptr cs:exit_jmp_target_ptr
 
 timer_wait_loop		endp
 
 		; Two padding bytes between timer_wait_loop and script_interpreter.
-		; Unreachable: timer_wait_loop ends with jmp word ptr cs:scene_data_b.
+		; Unreachable: timer_wait_loop ends with jmp word ptr cs:exit_jmp_target_ptr.
 		db	00h			; padding
 		db	SCR_ATTR_RST		; padding (0xA0)
 

@@ -32,7 +32,7 @@ one chunk:
 | **2. Title screen** | `timer_exit_to_game` (line 615) | loads ttl3.grp (Zeliard logo) and renders it via INT 60h, palette mode 1 | calls `credits_scroll_display` |
 | **3. Title credits** | `credits_scroll_display` (line 677) | scrolls "Copyright (C)1987,1990 GAME ARTS / (C)1990 Sierra On-Line" beneath the logo | falls into `trans_exit` then `post_title_story_scenes` |
 | **4. Post-title narrative** | `post_title_story_scenes` (line 725, formerly `begin_gameplay`) | loads scene assets (waku, ame, hou, sei, hime, isi, oui, yuu1-4), runs `script_interpreter` per page of dialog, plays out the story setup | reaches `transition_out_to_game` |
-| **Exit** | `transition_out_to_game` (line 1025, formerly `gameplay_exit_to_menu`) | loads maop.grp, sets AX=0xFFFF, jumps via `cs:scene_data_b` (target TBD — likely a back-jump into game.bin's `start_load_game` to load the gameplay chunks) | → gameplay |
+| **Exit** | `transition_out_to_game` (line 1025, formerly `gameplay_exit_to_menu`) | loads maop.grp, sets AX=0xFFFF, jumps via `cs:exit_jmp_target_ptr` (= word at game_seg:0x6A73 = 0x26FF, confirmed by Unicorn test — lands inside the loaded gfx-mode driver at offset 0x6FF) | → gfx-driver post-cinematic handler |
 
 ENTER skips ahead inside any phase via the `gvar_skip_input` flag
 checked in `timer_wait_loop` (line 589) and `story_scene_input_handler`
@@ -356,32 +356,32 @@ The sequence:
 4. Set **AX = 0xFFFF** (= LOAD-mode marker for game.bin).
 5. Indirect jump through `cs:scene_data_b` (= game_seg:0x6A73).
 
-### What does `cs:scene_data_b` point to?
+### What does `cs:exit_jmp_target_ptr` point to?
 
-**TBD — needs DOSBox runtime observation.**  Static analysis of
-the cleaned-source bytes at file offset 0xA73 (= game_seg:0x6A73)
-shows the bytes overlap with the jmp instruction's own operand,
-producing a self-referential read in static reading.  This means
-either:
-1. The original opdemo chunk has different bytes there at runtime
-   (the cleaned source's compiled output is `0x362D` bytes vs the
-   original chunk's `0x157F` payload — they differ).
-2. Some earlier code in opdemo writes a function pointer to
-   `cs:scene_data_b` before this jump executes.
-3. The `org 0` interpretation is different from what I assumed
-   and the bytes line up differently at runtime.
+**Confirmed via Unicorn functional test 2026-05-02** — see
+[functest/proc_equivalence/test_opdemo_exit_jmp.py](../functest/proc_equivalence/test_opdemo_exit_jmp.py).
 
-The **likely target** (based on the AX=0xFFFF setup, which
-matches game.bin's LOAD-mode entry per BOOT_FLOW.md) is a
-back-jump into game.bin's `start_load_game` path at game_seg:0xA000+.
-That would re-enter game.bin to load town/fight/select/items/magic/
-sword/mole chunks and start the gameplay loop, with the player
-record at game_seg:0 still holding stdply.bin's defaults (since
-this is a NEW game).
+**Result**: the jmp lands at `0x26FF`.  The compile-time bytes
+at the target-pointer location (`FF 26` = LE word `0x26FF`) are
+NOT modified by anything in opdemo's initialization — the test
+ran 20000 instructions of opdemo's start with all dispatch slots
+stubbed and observed zero writes to that address range.
 
-A DOSBox session with a breakpoint at the jmp instruction
-(after the maop.grp load) would read the actual jump target byte
-and confirm.
+In the live game, IP `0x26FF` lands inside the loaded gfx-mode
+driver (gmega/gmcga/gmhgc/gmmcga/gmtga, all of which load at
+game_seg:0x2000 per zeliad.exe's driver record).  `0x26FF - 0x2000
+= 0x6FF` is the gfx-driver offset entered.
+
+So the indirect jump is **NOT a back-jump into game.bin** as I
+earlier hypothesized.  It calls into the gfx-driver at a
+mode-specific entry, which presumably handles the post-cinematic
+graphics-mode transition before the gfx driver itself triggers
+the next-stage load (likely re-invoking game.bin's `start_load_game`
+indirectly).
+
+The `scene_data_b` symbol has been renamed to
+`exit_jmp_target_ptr` (rename verified bit-perfect via
+`verify1.py`).
 
 ---
 
@@ -431,14 +431,17 @@ via `verify1.py zelres1/code/100OPDMO.asm` → `BIT-PERFECT
 | `gameplay_input_handler` | `story_scene_input_handler` | Same |
 | `gameplay_timer_loop_start` | `story_scene_timer_loop_start` | Sub-label inside `animate_scanline_alt`; renamed for consistency |
 
+Additional rename applied 2026-05-02 after Unicorn functest
+confirmed runtime value:
+
+| Old name | New name | Why renamed |
+|---|---|---|
+| `scene_data_b` | `exit_jmp_target_ptr` | Used as the indirect-jump target pointer in `transition_out_to_game`; confirmed by `test_opdemo_exit_jmp.py` to hold compile-time value 0x26FF (jmp lands at gfx-driver+0x6FF) |
+
 Renames still pending (less critical):
 - `credits_scroll_display` — "credits" is fine but ambiguous (modern
   usage = end credits); these are TITLE-screen copyright credits.
   Mild rename only.
-- `scene_data_b` (EQU at line 74) — used as a far-jump-target pointer
-  in `transition_out_to_game`, not a "scene data" table.  Rename
-  needs runtime confirmation of jump target first (see open
-  question 1 below).
 - `narration_stone_scene+0Eh` (used at line 281) — function pointer
   embedded in narration data is unusual; needs runtime decode to
   understand what value lives at that offset.
@@ -453,15 +456,18 @@ Promotions:
 |---|:---:|:---:|
 | Opening sequence (slideshow, story text) | ⚠ | ✓ (full flow traced; `opening_scene_main` orchestrates 4 scene blocks; `script_interpreter` VM at line 1056 documented; opcode set listed; resources mapped) |
 | Title screen (Zeliard logo + credits) | ⚠ | ✓ (`timer_exit_to_game` loads ttl3.grp via AL=5, renders via INT 60h+AX=0, palette mode 1; `credits_scroll_display` scrolls the GAME ARTS / Sierra copyright text) |
-| Opening cinematic transition out | ❌ | ⚠ (call site `transition_out_to_game` traced; jump target `cs:scene_data_b` runtime value still TBD — needs DOSBox observation; AX=0xFFFF setup suggests back-jump into game.bin's start_load_game) |
+| Opening cinematic transition out | ❌ | ✓ (call site `transition_out_to_game`; jump target `cs:exit_jmp_target_ptr = 0x26FF` confirmed via `test_opdemo_exit_jmp.py` — lands in gfx-mode driver at offset 0x6FF for the post-cinematic handler) |
 
 ---
 
 ## Open runtime questions
 
-1. **What's the actual value at `cs:scene_data_b` (game_seg:0x6A73) at runtime?**
-   The static bytes overlap with the jmp instruction's own
-   operand.  DOSBox breakpoint at the jmp resolves this.
+1. ~~**What's the actual value at `cs:scene_data_b` at runtime?**~~
+   **RESOLVED 2026-05-02** by `test_opdemo_exit_jmp.py` (Unicorn
+   functional test): scene_data_b is never written during opdemo
+   init; the compile-time value 0x26FF is what the live jmp uses,
+   landing inside the gfx-mode driver at offset 0x6FF.  Symbol
+   renamed to `exit_jmp_target_ptr`.
 
 2. **What does the SAR loader's `AL=5` mode do?**  Used for the
    ttl3.grp Zeliard logo load at line 636.  Not currently in
@@ -474,11 +480,12 @@ Promotions:
    AX-value-to-function mapping for this ISR isn't fully
    documented.
 
-4. **Is the cleaned source's compile output (`0x362D` bytes) a
-   true reconstruction of the original chunk (`0x157F` payload)?**
-   The size mismatch and the build failure suggest no.  The SAR
-   verifier's "BIT-PERFECT" verdict comes from fallback to
-   original bytes when the build fails.
+4. **What does the gfx-driver's offset 0x6FF do?**  This is where
+   `exit_jmp_target_ptr` lands in the live game.  The bytes at
+   that offset are mode-specific (gmega/gmcga/gmhgc/gmmcga/gmtga
+   all differ), so each gfx mode has its own post-cinematic
+   handler.  Tracing this would require disassembling the gfx
+   driver source files (gmega.asm etc.) at offset 0x6FF.
 
-These are the three biggest runtime questions; the rest of the
-flow is statically clear.
+The first question is now answered; the remaining are localized
+follow-ups, not blockers for the boot-flow understanding.
