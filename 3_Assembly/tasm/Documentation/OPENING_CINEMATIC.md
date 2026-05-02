@@ -460,32 +460,126 @@ Promotions:
 
 ---
 
-## Open runtime questions
+## Open runtime questions — RESOLVED 2026-05-02
 
-1. ~~**What's the actual value at `cs:scene_data_b` at runtime?**~~
-   **RESOLVED 2026-05-02** by `test_opdemo_exit_jmp.py` (Unicorn
-   functional test): scene_data_b is never written during opdemo
-   init; the compile-time value 0x26FF is what the live jmp uses,
-   landing inside the gfx-mode driver at offset 0x6FF.  Symbol
-   renamed to `exit_jmp_target_ptr`.
+1. ~~**What's the actual value at `cs:exit_jmp_target_ptr` at runtime?**~~
+   **RESOLVED** by `test_opdemo_exit_jmp.py` (Unicorn functional test):
+   exit_jmp_target_ptr is never written during opdemo init; the
+   compile-time value 0x26FF is what the live jmp uses.
 
-2. **What does the SAR loader's `AL=5` mode do?**  Used for the
-   ttl3.grp Zeliard logo load at line 636.  Not currently in
-   CLAUDE.md memory (which documents AL=2 for compressed,
-   AL=3 for raw).  Likely a graphics-specific decode mode.
+2. ~~**What does the SAR loader's `AL=5` mode do?**~~
+   **RESOLVED** by static trace of stick.bin's SAR loader dispatch:
 
-3. **What does `INT 60h, AX=0` do specifically?**  Used at line 642
-   to render the loaded logo.  INT 60h is the game-services ISR
-   set up by zeliad.exe (= isr_timer in stick.bin).  The exact
-   AX-value-to-function mapping for this ISR isn't fully
-   documented.
+   The SAR loader at `game_seg:0x0A84` (= stick.bin file offset 0x984)
+   dispatches on AL via a 6-entry word table at `game_seg:0x0ACA`
+   (file offset 0x9CA):
 
-4. **What does the gfx-driver's offset 0x6FF do?**  This is where
-   `exit_jmp_target_ptr` lands in the live game.  The bytes at
-   that offset are mode-specific (gmega/gmcga/gmhgc/gmmcga/gmtga
-   all differ), so each gfx mode has its own post-cinematic
-   handler.  Tracing this would require disassembling the gfx
-   driver source files (gmega.asm etc.) at offset 0x6FF.
+   | AL | Handler @ runtime CS | File offset | Behavior |
+   |---:|---|---:|---|
+   | 0 | direct jmp to 0x0AFE | 0x9FE | early-exit / chained handler |
+   | 1 | 0x0AD6 | 0x9D6 | (TBD) |
+   | 2 | 0x0AFF | 0x9FF | compressed load (fill_buffer) |
+   | 3 | 0x0C2F | 0xB2F | raw load (for code chunks) |
+   | 4 | 0x0B6F | 0xA6F | (TBD) |
+   | **5** | **0x0BAE** | **0xAAE** | **load into +0x3000 segment** |
+   | 6 | 0x0C24 | 0xB24 | (TBD) |
 
-The first question is now answered; the remaining are localized
-follow-ups, not blockers for the boot-flow understanding.
+   The AL=5 handler at file offset 0xAAE does:
+   ```asm
+   les  di, cs:[0x0F60]    ; load saved DI:ES (caller's destination)
+   push di / push es        ; preserve them
+   mov  word ptr cs:[0x0F60], 0          ; new dest offset = 0
+   mov  ax, cs / add ax, 0x3000          ; new dest segment = CS+0x3000
+   mov  es, ax / mov cs:[0x0F62], ax     ; install new dest segment
+   call (the loader)                     ; load chunk into new segment
+   ; ... pop ES/DI to restore caller's saved dest ...
+   ```
+
+   So **AL=5 = "load chunk into a separate 64KB segment at
+   (game_seg+0x3000):0x0000, overriding the caller's ES:DI
+   destination."**  This is for loading large image data (like
+   ttl3.grp Zeliard logo) into its own segment to avoid
+   overlapping with the game's other resident data.  The caller's
+   passed ES:DI is saved on the stack and restored after the
+   load completes — so subsequent loads work correctly — but the
+   data itself goes to the +0x3000 segment.
+
+   (Note: `fill_buffer` decompression methods 0..7 documented in
+   `2_SAR/GrpViewer/grp_viewer.py:455-531` are a SEPARATE concern
+   — those are the COMPRESSION ALGORITHMS encoded in the chunk's
+   first byte, while AL is the SAR-loader function selector.)
+
+3. ~~**What does `INT 60h, AX=0` do specifically?**~~
+   **RESOLVED** by tracing zeliad.asm:387 → isr_timer →
+   timer_isr_entry (stick.asm:293):
+
+   INT 60h vector points to the SAME handler as INT 08h (the
+   hardware timer).  `timer_isr_entry` does:
+   ```asm
+   push all regs
+   call dword ptr cs:gvar_gfx_fn_ofs    ; one frame of gfx work (render)
+   call dword ptr cs:gvar_input_fn_ofs  ; one tick of input/music
+   ; ... subsample-5 work: special keys, pause, joystick ...
+   inc gvar_frame_timer / gvar_frame_count / gvar_anim_timer
+   test cs:gvar_state_c+1, 0FFh
+   jnz  call_state_c    ; optional state-callback if installed
+   pop all regs
+   iret (or chain to old INT 08h)
+   ```
+
+   **AX is NOT dispatched at the ISR level.**  Whatever AX value
+   the caller sets (`xor ax,ax` for AX=0, `mov ax,1`, `mov ax,2`,
+   etc.) is preserved through the ISR but doesn't change which
+   path runs.  All `int 60h` calls run the same per-frame work.
+
+   So `INT 60h, AX=0` (opdemo at line 642) = **"trigger one
+   synchronous timer-tick worth of work right now"** — i.e., run
+   one frame of gfx_fn rendering + input_fn polling.  This is how
+   opdemo forces a render after loading a new image (the
+   `int 60h` blocks until the rendering callback runs).
+
+   The different AX values (0, 1, 2, 3) used by various callers
+   may be interpreted by the optional `gvar_state_c` callback if
+   installed, but at the ISR-dispatch level they're equivalent.
+
+4. **What does the gfx-driver's offset 0x6FF do?**
+
+   **Static analysis result, not a clean resolution.**  Disassembly
+   of all 5 gfx drivers at runtime CS:0x26FF (= driver offset 0x6FF):
+
+   | Driver | Bytes at 0x6FF | First-instruction interpretation |
+   |---|---|---|
+   | gmega | `46 02 26 88 66 03` | `inc si` (1-byte; mid-instruction in source) |
+   | gmcga | `B9 C0 00 F7 E1` | `mov cx, 0xC0` (mid-function entry; source has push ds at 0x6F5) |
+   | gmhgc | `02 26 88 56 03` | `add ah, [0x5688]` (mid-instruction) |
+   | gmmcga | `0A 00 00 00 ...` | data bytes (zeros) |
+   | gmtga | `76 02 26 88 56` | `jbe 0x2703` (mid-instruction) |
+
+   In every driver, offset 0x6FF lands MID-INSTRUCTION inside an
+   existing function — NOT a clean entry point.  Specifically for
+   gmcga, the function body at 0x6F5 starts with `push ds; mov ds,
+   cs:gvar_game_seg; dec al; xor ah,ah` — entering at 0x6FF skips
+   the DS setup, leaving DS in whatever state the caller had it.
+
+   This contradicts the apparent "the cinematic transitions
+   cleanly to gameplay" reality.  Possible explanations:
+   - The static bytes at `exit_jmp_target_ptr` (= 0x26FF in the
+     compile-time chunk) get modified at runtime by code my
+     Unicorn test missed (e.g., a real `gfx_init_fn` write that
+     my stub-only test never executed).
+   - The gfx-mode driver loads at a different runtime address
+     than my model assumes (record-format reading might be off).
+   - The `transition_out_to_game` code is dead in normal play
+     (the cinematic always exits via a different path).
+
+   **Resolving this needs a DOSBox runtime breakpoint at the
+   indirect jmp** (set BP at 0AC6:6A72, watch what's at 0AC6:6A73
+   right before the jmp executes, observe the actual landing IP).
+   The MCP DOSBox infrastructure exists for this but the debugger
+   panel didn't open in my last attempt — would need manual setup
+   on the user's side to confirm.
+
+The first three questions are answered statically.  Q4 (gfx-driver
+offset behavior) remains an open contradiction between static
+analysis and observed game behavior, requiring DOSBox runtime
+observation to resolve.
