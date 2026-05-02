@@ -313,9 +313,9 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Item | Status | Where |
 |---|:---:|---|
 | Boot sequence (zeliad.exe → game.bin → opdemo/town) | ✓ | Full chain VERIFIED in BOOT_FLOW.md; game.asm labels corrected (`start_new_game` was reversed with `start_load_game`); rebuild bit-perfect |
-| Opening sequence (slideshow, story text) | ⚠ | Load site VERIFIED: game.asm:227 → opdemo (zelres1 ch1) at CS:6000 → jmp loaded_code_b. Triggered when save_mode_flag=0 (NEW game). Internal slideshow logic in 100OPDMO not yet fully traced |
-| ENTER skip during opening | ✓ | check at delay routine 0x03AF inside opdemo |
-| Title screen (Zeliard logo only — no menu) | ⚠ | Load chain VERIFIED end-to-end: opdemo → SAR loader → ttl3.grp (zelres1 ch32) for logo, ttl1/2 for glyphs/scene data. Logo blit pipeline VERIFIED in CLAUDE.md |
+| Opening sequence (slideshow, story text) | ✓ | OPENING_CINEMATIC.md: opening_scene_main (line 257) orchestrates 4 scene blocks with sprite anim + narration via in-chunk dispatch; script_interpreter VM (line 1056) walks SCR_* opcodes through narration_chapter_2..5; ENTER skip at gvar_skip_input checks |
+| ENTER skip during opening | ✓ | timer_wait_loop:592, scene_transition_wait:654, gameplay_input_handler:1009 — all jump to next phase on gvar_skip_input set |
+| Title screen (Zeliard logo + credits) | ✓ | OPENING_CINEMATIC.md §"Phase 2-3": timer_exit_to_game (line 615) loads ttl3.grp via SAR loader fn AL=5, renders via INT 60h AX=0, palette mode 1; credits_scroll_display (line 677) scrolls GAME ARTS / Sierra copyright text |
 | Title menu (New Game / Load Game) | N/A | Does not exist — load game is via DOS command-line arg, not in-game menu |
 | Boss intro animations | ❌ | Per-boss intro TBD |
 | Ending sequence (Felicia restored, credits) | ❌ | end4-7, fin chunks; full ending TBD |
@@ -341,12 +341,12 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 88 |
-| ⚠ partial | 53 |
+| ✓ fully traced | 90 |
+| ⚠ partial | 51 |
 | ❌ not investigated | 51 |
 | N/A (does not exist) | 2 |
 
-**Total mechanics enumerated**: 194 (added "Boot sequence" row in cinematics section)
+**Total mechanics enumerated**: 194
 **Coverage so far**: ~45% fully understood, 27% partial, 27% not investigated
 
 **2026-04-30 honest-state correction**: 6 player-physics rows
