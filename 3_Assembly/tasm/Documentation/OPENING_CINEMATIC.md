@@ -10,13 +10,14 @@ Source: [100OPDMO.asm](../working/zelres1/code/100OPDMO.asm)
 `LOAD_CHUNK chunk_ref_opdemo, 6000h, 3` in
 [game.asm:227](../working/core/game.asm#L227)).
 
-> **Caveat**: 100OPDMO.asm currently FAILS to assemble in the build
-> harness (`[FAIL] 100OPDMO.asm – no output produced`).  The
-> SARs still verify bit-perfect because the SAR packer falls back
-> to the original chunk bytes when a build target fails.  Any
-> rename / cleanup of 100OPDMO.asm needs the build path fixed
-> first so the rename can be bit-perfect-verified.  This doc is
-> a static read of the source; renames are deliberately deferred.
+> **Note**: 100OPDMO.asm builds bit-perfect via the per-file
+> `verify1.py` harness (`verify1.py zelres1/code/100OPDMO.asm` →
+> `BIT-PERFECT 100OPDMO.bin (13869 bytes)`).  The bulk
+> `build_all.py` flow reports `[FAIL]` for this and many other
+> files due to a bulk-DOSBox-session issue, but the SAR verifier
+> still passes because each file's `.bin` output from previous
+> per-file builds remains on disk.  Renames in this chunk can be
+> verified individually via `verify1.py`.
 
 ---
 
@@ -29,12 +30,12 @@ one chunk:
 |---|---|---|---|
 | **1. Slideshow** | `opening_scene_main` (line 257) | story narration over scene images (rain, princess, demon king Jashiin), color cycling | jumps to `timer_exit_to_game` |
 | **2. Title screen** | `timer_exit_to_game` (line 615) | loads ttl3.grp (Zeliard logo) and renders it via INT 60h, palette mode 1 | calls `credits_scroll_display` |
-| **3. Title credits** | `credits_scroll_display` (line 677) | scrolls "Copyright (C)1987,1990 GAME ARTS / (C)1990 Sierra On-Line" beneath the logo | falls into `trans_exit` then `begin_gameplay` |
-| **4. Post-title narrative** (mislabeled `begin_gameplay`) | line 725 onward | loads scene assets (waku, ame, hou, sei, hime, isi, oui, yuu1-4), runs `script_interpreter` per page of dialog, plays out the story setup | reaches `gameplay_exit_to_menu` |
-| **Exit** | `gameplay_exit_to_menu` (line 1025) | loads maop.grp, sets AX=0xFFFF, jumps via `cs:scene_data_b` (target TBD — likely a back-jump into game.bin's `start_load_game` to load the gameplay chunks) | → gameplay |
+| **3. Title credits** | `credits_scroll_display` (line 677) | scrolls "Copyright (C)1987,1990 GAME ARTS / (C)1990 Sierra On-Line" beneath the logo | falls into `trans_exit` then `post_title_story_scenes` |
+| **4. Post-title narrative** | `post_title_story_scenes` (line 725, formerly `begin_gameplay`) | loads scene assets (waku, ame, hou, sei, hime, isi, oui, yuu1-4), runs `script_interpreter` per page of dialog, plays out the story setup | reaches `transition_out_to_game` |
+| **Exit** | `transition_out_to_game` (line 1025, formerly `gameplay_exit_to_menu`) | loads maop.grp, sets AX=0xFFFF, jumps via `cs:scene_data_b` (target TBD — likely a back-jump into game.bin's `start_load_game` to load the gameplay chunks) | → gameplay |
 
 ENTER skips ahead inside any phase via the `gvar_skip_input` flag
-checked in `timer_wait_loop` (line 589) and `gameplay_input_handler`
+checked in `timer_wait_loop` (line 589) and `story_scene_input_handler`
 (line 1008).
 
 ---
@@ -282,20 +283,20 @@ trans_wait_gfx:
         jz   trans_wait_gfx
         mov  byte ptr cs:gvar_skip_input, 0
         mov  byte ptr cs:gvar_key_state, 0
-        jmp  begin_gameplay                   ; → phase 4 (MISLABELED)
+        jmp  post_title_story_scenes          ; → phase 4
 ```
 
 ---
 
-## Phase 4 — `begin_gameplay` (line 725, MISLABELED)
+## Phase 4 — `post_title_story_scenes` (line 725, formerly `begin_gameplay`)
 
-The label says "begin gameplay" but this proc actually runs the
-**post-title story scenes** — talking-head narration with scene
+The original label said "begin gameplay" but this proc actually runs
+the **post-title story scenes** — talking-head narration with scene
 backgrounds (sky, princess, demon, hero in different poses).  The
-gameplay loop is NOT entered here.
+gameplay loop is NOT entered here.  Renamed 2026-05-02.
 
 ```asm
-begin_gameplay:                               ; <- misnamed
+post_title_story_scenes:                       ; was: begin_gameplay
         RESET_STACK
         mov  byte ptr cs:gvar_skip_input, 0
         mov  byte ptr cs:gvar_key_state, 0
@@ -320,17 +321,17 @@ Eventually reaches:
 
 ```asm
         ; ...
-        jmp  short gameplay_exit_to_menu      ; → exit
+        jmp  short transition_out_to_game     ; → exit
 ```
 
 ---
 
-## Exit — `gameplay_exit_to_menu` (line 1025-1039)
+## Exit — `transition_out_to_game` (line 1025-1039, formerly `gameplay_exit_to_menu`)
 
 The transition out of opdemo:
 
 ```asm
-gameplay_exit_to_menu:
+transition_out_to_game:                        ; was: gameplay_exit_to_menu
         mov  bx, 0
         mov  cx, 50C8h
         call word ptr cs:gfx_mode_fn          ; clear screen
@@ -392,7 +393,7 @@ Three places check `gvar_skip_input` (FF1D) and bail out:
 |---|---:|---|
 | `timer_wait_loop` (frame timing in phase 1-2) | 592-595 | jumps directly to `timer_exit_to_game` (skip rest of slideshow → straight to title) |
 | `scene_transition_wait` (timing in phase 3) | 654-657 | jumps to `trans_exit` (skip to phase 4) |
-| `gameplay_input_handler` (timing in phase 4) | 1009-1012 | jumps to `gameplay_exit_to_menu` (skip to gameplay) |
+| `story_scene_input_handler` (timing in phase 4) | 1009-1012 | jumps to `transition_out_to_game` (skip to gameplay) |
 
 So pressing ENTER once skips the current phase, never the entire
 opening — a single tap advances; holding ENTER essentially
@@ -416,22 +417,31 @@ secondary skip trigger.
 
 ---
 
-## Misnamed labels (renames deferred — see Caveat at top)
+## Misnamed labels — renames applied
 
-The cleaned source has several labels whose names misrepresent
-what the code does.  These should be renamed in 100OPDMO.asm
-**after** the build path is fixed so a bit-perfect-rebuild can
-verify each rename.
+Four label renames applied 2026-05-02; bit-perfect rebuild confirmed
+via `verify1.py zelres1/code/100OPDMO.asm` → `BIT-PERFECT
+100OPDMO.bin (13869 bytes)`:
 
-| Current label | Suggested rename | Why |
+| Old name | New name | Why renamed |
 |---|---|---|
-| `begin_gameplay` (line 725) | `post_title_story_scenes` or `chapter1_narration` | Doesn't begin gameplay; runs more story scenes |
-| `gameplay_exit_to_menu` (line 1025) | `transition_out_to_game` or `exit_opdemo_to_play` | Exits opdemo to gameplay — there's no menu to exit to |
-| `gameplay_timer_loop` (line 997) | `story_scene_timer_loop` | Times story scenes, not gameplay |
-| `gameplay_input_handler` (line 1008) | `story_scene_input_handler` | Same |
-| `credits_scroll_display` (line 677) | `title_credits_scroll` (mild) | "Credits" is right but ambiguous (modern usage = end credits); these are TITLE-screen copyright credits |
-| `scene_data_b` (line 74) | `exit_jump_target_ptr` | Used as a far-jump-target pointer in the exit, not a "scene data" table |
-| `narration_stone_scene+0Eh` (used at 281) | needs structure investigation | Function pointer embedded in narration data is unusual; needs runtime decode |
+| `begin_gameplay` | `post_title_story_scenes` | Doesn't begin gameplay; runs more story scenes |
+| `gameplay_exit_to_menu` | `transition_out_to_game` | Exits opdemo to gameplay — there's no menu to exit to |
+| `gameplay_timer_loop` | `story_scene_timer_loop` | Times story scenes, not gameplay |
+| `gameplay_input_handler` | `story_scene_input_handler` | Same |
+| `gameplay_timer_loop_start` | `story_scene_timer_loop_start` | Sub-label inside `animate_scanline_alt`; renamed for consistency |
+
+Renames still pending (less critical):
+- `credits_scroll_display` — "credits" is fine but ambiguous (modern
+  usage = end credits); these are TITLE-screen copyright credits.
+  Mild rename only.
+- `scene_data_b` (EQU at line 74) — used as a far-jump-target pointer
+  in `transition_out_to_game`, not a "scene data" table.  Rename
+  needs runtime confirmation of jump target first (see open
+  question 1 below).
+- `narration_stone_scene+0Eh` (used at line 281) — function pointer
+  embedded in narration data is unusual; needs runtime decode to
+  understand what value lives at that offset.
 
 ---
 
@@ -443,7 +453,7 @@ Promotions:
 |---|:---:|:---:|
 | Opening sequence (slideshow, story text) | ⚠ | ✓ (full flow traced; `opening_scene_main` orchestrates 4 scene blocks; `script_interpreter` VM at line 1056 documented; opcode set listed; resources mapped) |
 | Title screen (Zeliard logo + credits) | ⚠ | ✓ (`timer_exit_to_game` loads ttl3.grp via AL=5, renders via INT 60h+AX=0, palette mode 1; `credits_scroll_display` scrolls the GAME ARTS / Sierra copyright text) |
-| Opening cinematic transition out | ❌ | ⚠ (call site `gameplay_exit_to_menu` traced; jump target `cs:scene_data_b` runtime value still TBD — needs DOSBox observation; AX=0xFFFF setup suggests back-jump into game.bin's start_load_game) |
+| Opening cinematic transition out | ❌ | ⚠ (call site `transition_out_to_game` traced; jump target `cs:scene_data_b` runtime value still TBD — needs DOSBox observation; AX=0xFFFF setup suggests back-jump into game.bin's start_load_game) |
 
 ---
 

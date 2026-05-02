@@ -672,7 +672,7 @@ trans_wait_gfx:
 							jz	trans_wait_gfx			; Jump if zero
 		mov	byte ptr cs:gvar_skip_input,0
 		mov	byte ptr cs:gvar_key_state,0
-		jmp	begin_gameplay
+		jmp	post_title_story_scenes
 
 credits_scroll_display	proc	near
 		mov	bx,20h
@@ -720,9 +720,9 @@ credits_scroll_display	endp
 		db	ANIM_87, ' '	; animation code + space (script entry point)
 		db	'   Copyright (C)1987,1990 GAME ARTS    ', CR, '    Copyright (C)1990 Sierra On-Line    '
 		db	SCR_END_SCRIPT		; end of script / copyright page terminator
-		db	3 dup (0)		; padding before begin_gameplay code
+		db	3 dup (0)		; padding before post_title_story_scenes code
 
-begin_gameplay:
+post_title_story_scenes:
 		RESET_STACK
 		mov	byte ptr cs:gvar_skip_input,0
 		mov	byte ptr cs:gvar_key_state,0
@@ -798,7 +798,7 @@ begin_gameplay:
 		call	word ptr cs:disp_game_fn
 		mov	byte ptr cs:gvar_frame_timer,0
 		mov	al,0Fh
-		call	gameplay_timer_loop
+		call	story_scene_timer_loop
 		mov	al,3
 		call	busy_wait_delay
 		SET_ES_2000
@@ -887,7 +887,7 @@ begin_gameplay:
 		mov	dx,315Dh
 		mov	cx,18h
 
-gameplay_timer_loop_start:
+story_scene_timer_loop_start:
 							push	cx
 							push	dx
 							push	bx
@@ -895,13 +895,13 @@ gameplay_timer_loop_start:
 							mov	cx,dx
 							call	word ptr cs:disp_load_setup
 							mov	al,0Fh
-							call	gameplay_timer_loop
+							call	story_scene_timer_loop
 							pop	bx
 							pop	dx
 							inc	bh
 							dec	dh
 							pop	cx
-							loop	gameplay_timer_loop_start		; Loop if cx > 0
+							loop	story_scene_timer_loop_start		; Loop if cx > 0
 
 		mov	bx,2C15h
 		mov	cx,1A5Dh
@@ -928,7 +928,7 @@ gameplay_input_loop:
 							mov	cx,dx
 							call	word ptr cs:disp_load_setup
 							mov	al,0Fh
-							call	gameplay_timer_loop
+							call	story_scene_timer_loop
 							pop	bx
 							pop	dx
 							inc	bh
@@ -972,7 +972,7 @@ gameplay_input_loop:
 		GFX_BLIT 808h, 40C0h, 4000h
 		mov	byte ptr cs:gvar_frame_timer,0
 		mov	al,0F0h
-		call	gameplay_timer_loop
+		call	story_scene_timer_loop
 		mov	al,0FFh
 		mov	bx,808h
 		mov	cx,40C0h
@@ -988,28 +988,28 @@ gameplay_input_loop:
 gameplay_frame_loop:
 							push	cx
 							mov	al,0C8h
-							call	gameplay_timer_loop
+							call	story_scene_timer_loop
 							pop	cx
 							loop	gameplay_frame_loop		; Loop if cx > 0
 
-		jmp	short gameplay_exit_to_menu
+		jmp	short transition_out_to_game
 
-gameplay_timer_loop	proc	near
+story_scene_timer_loop	proc	near
 
 gameplay_wait_elapsed:
-							call	gameplay_input_handler
+							call	story_scene_input_handler
 							cmp	cs:gvar_frame_timer,al
 							jb	gameplay_wait_elapsed			; Jump if below
 		mov	byte ptr cs:gvar_frame_timer,0
 		retn
 
-gameplay_timer_loop	endp
+story_scene_timer_loop	endp
 
-gameplay_input_handler	proc	near
+story_scene_input_handler	proc	near
 		test	byte ptr cs:gvar_skip_input,0FFh
-		jnz	gameplay_exit_to_menu			; Jump if not zero
+		jnz	transition_out_to_game			; Jump if not zero
 		cmp	byte ptr cs:gvar_key_state,ENTER_KEY
-		je	gameplay_exit_to_menu			; Jump if equal
+		je	transition_out_to_game			; Jump if equal
 		push	si
 		push	ax
 		call	word ptr cs:[110h]
@@ -1020,9 +1020,9 @@ gameplay_input_handler	proc	near
 		pop	si
 		retn
 
-gameplay_input_handler	endp
+story_scene_input_handler	endp
 
-gameplay_exit_to_menu:
+transition_out_to_game:
 		mov	bx,0
 		mov	cx,50C8h
 		call	word ptr cs:gfx_mode_fn
@@ -1058,7 +1058,7 @@ script_interpreter		proc	near
 
 script_loop:
 		mov	al,10h
-		call	gameplay_timer_loop
+		call	story_scene_timer_loop
 
 script_refetch:
 		push	cs
@@ -1265,16 +1265,16 @@ script_clear_screen:
 
 script_do_pause:
 		mov	al,0F0h
-		call	gameplay_timer_loop
+		call	story_scene_timer_loop
 		jmp	script_loop
 
 script_do_long_pause:
 		mov	al,0F0h
-		call	gameplay_timer_loop
+		call	story_scene_timer_loop
 		mov	al,0F0h
-		call	gameplay_timer_loop
+		call	story_scene_timer_loop
 		mov	al,0F0h
-		call	gameplay_timer_loop
+		call	story_scene_timer_loop
 		jmp	script_loop
 
 script_portrait_sm:
@@ -1430,7 +1430,7 @@ alt_frame_loop:
 												mov	cx,50A0h
 												call	word ptr cs:anim_fn_draw
 												mov	al,1Ch
-												call	gameplay_timer_loop
+												call	story_scene_timer_loop
 												pop	cx
 												loop	alt_frame_loop		; Loop if cx > 0
 
@@ -1446,7 +1446,7 @@ alt_fade_loop:
 							mov	cx,50A0h
 							call	word ptr cs:anim_fn_draw
 							mov	al,1Ch
-							call	gameplay_timer_loop
+							call	story_scene_timer_loop
 							pop	cx
 							loop	alt_fade_loop		; Loop if cx > 0
 
