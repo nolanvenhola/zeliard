@@ -35,12 +35,30 @@ shield_HP               equ     94h     ; current shield HP, 16-bit (canonical i
 shield_max_HP           equ     96h     ; shield max HP cap, 16-bit (canonical in stdply.inc)
 player_speed            equ     98h     ; character speed stat (canonical in stdply.inc)
 player_power            equ     99h     ; character power stat (canonical in stdply.inc)
+weap_dur_cur            equ     0ABh    ; per-weapon durability table base (7 bytes; canonical in stdply.inc)
+weap_dur_max            equ     0B4h    ; weapon durability max table base (7 bytes; canonical in stdply.inc)
 cur_weapon_idx          equ     9Dh     ; cached selected weapon idx (canonical in stdply.inc)
 cur_magic_idx           equ     9Eh     ; currently selected magic idx (canonical in stdply.inc)
 player_hp_max           equ     0B2h    ; HP ceiling (canonical in stdply.inc; overlays anim_color_lut)
 player_facing           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
 player_level            equ     0C4h    ; level/area number (canonical in stdply.inc)
+stat_XC5                equ     0C5h    ; placeholder — byte field used by 200FIGHT (set 0x80, read as ah)
 player_tileset          equ     0C8h    ; level tileset index (canonical in stdply.inc)
+
+; ----------------------------------------------------------------------
+; stick.bin dispatch slots installed at game_seg:0x010C-0x0120
+; (function pointers populated by stick.bin's driver_init_data block)
+; ----------------------------------------------------------------------
+sar_loader_fn           equ     10Ch    ; SAR chunk loader entry (cs:0x0A84)
+stick_fn_110            equ     110h    ; (TBD — stick.bin proc at cs:0x06AC)
+stick_fn_112            equ     112h    ; (TBD — stick.bin proc at cs:0x0723)
+stick_fn_114            equ     114h    ; (TBD — stick.bin proc at cs:0x07B6)
+stick_fn_116            equ     116h    ; (TBD — stick.bin proc at cs:0x0881)
+stick_fn_118            equ     118h    ; (TBD — stick.bin proc at cs:0x08EF)
+stick_fn_11A            equ     11Ah    ; (TBD — stick.bin proc at cs:0x0918)
+stick_fn_11C            equ     11Ch    ; (TBD — stick.bin proc at cs:0x09D6)
+stick_fn_11E            equ     11Eh    ; (TBD — stick.bin proc at cs:0x092D)
+stick_fn_120            equ     120h    ; (TBD — stick.bin proc at cs:0x089E; used by game.bin chunk init)
 ; 0x9A..0x9C: 3-byte player_abilities table (canonical in stdply.inc).
 ; 201SELCT draw_abilities iterates the 3 bytes.  Each slot's specific
 ; ability is TBD (see AUDIT_TODO.md).
@@ -55,12 +73,16 @@ init_complete_flag      equ     0E8h    ; post-init steady-state (canonical in s
 
 ; ----------------------------------------------------------------------
 ; Driver dispatch slots (CS-relative, far call via [cs:NNNNh])
+; Each slot N (= function index N) is at offset 0x2000 + N*2.
 ; ----------------------------------------------------------------------
 drv_fill_rect            equ     2000h         ; fn  0: fill rectangle
 drv_screen_init_a        equ     2002h         ; fn  1: screen/work-area init A
+drv_fn_2                 equ     2004h         ; fn  2: (TBD — used by 200FIGHT init/dispatch paths)
 drv_palette_push         equ     2008h         ; fn  4: palette push / refresh
+drv_fn_7                 equ     200Eh         ; fn  7: (TBD — used by 200FIGHT entity-dispatch paths)
 drv_load_msg_header      equ     2010h         ; fn  8: load/draw message header
 drv_screen_init_b        equ     2012h         ; fn  9: screen init B
+drv_fn_10                equ     2014h         ; fn  A: (TBD — used by 200FIGHT)
 drv_frame_commit         equ     2016h         ; fn  B: commit/wait refresh
 drv_anim_step            equ     2018h         ; fn  C: advance animation / palette upd
 ; 0x2022, 0x2026, 0x2028, 0x202A: multi-purpose driver-dispatch slots.

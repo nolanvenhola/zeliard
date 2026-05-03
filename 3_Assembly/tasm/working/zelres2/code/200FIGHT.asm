@@ -30,13 +30,13 @@ PAGE  59,132
 ;                    modules (CRAB/TAKO/TORI/etc., chunks 300-319) loaded
 ;                    by the enemy-spawn dispatcher into the running game
 ;                    segment alongside the active sprite buffer.
-;                  All loads use cs:[10Ch] SAR loader (AL=archive_index).
+;                  All loads use cs:sar_loader_fn SAR loader (AL=archive_index).
 ;    Calls into:   Graphics-driver dispatch slots (CS-resident, populated
 ;                  by the active GFxxx driver):
-;                    cs:[2000h] = drv_fill_rect,
+;                    cs:drv_fill_rect = drv_fill_rect,
 ;                    cs:[2002h..2018h] = init / palette / scroll / commit
 ;                                       / anim-step entry points,
-;                    cs:[2044h] = drv_ds_copy,
+;                    cs:drv_ds_copy = drv_ds_copy,
 ;                    gfx_fn_clear, gfx_fn_render_bg, gfx_fn_map_load,
 ;                    gfx_fn_map_scroll, gfx_fn_palette, gfx_fn_init,
 ;                    gfx_fn_render_tile, gfx_fn_render_col, gfx_fn_memcpy,
@@ -49,7 +49,7 @@ PAGE  59,132
 ;                    handler tables.
 ;    Called by:    zeliad.exe game entry (game.asm) on each frame after
 ;                    title/intro flow completes.  Returns to game.asm via
-;                    the standard far-return path (cs:[2044h] family).
+;                    the standard far-return path (cs:drv_ds_copy family).
 ;    Reads/writes: world_state_base (DS:0C000h), boss_data_buf, boss_sprite_buf,
 ;                  combat_active/flag2 (DS:9EF5h/9EF6h), tile_set_id,
 ;                  player_chr_id/spr_id, music_track_id (DS:9EFAh),
@@ -393,7 +393,7 @@ state_byte_9F17	equ	9F17h			; alias — deprecated placeholder
 ; The byte at 0x9F18 is the HP REGENERATION TICK COUNTER.  At line 2729
 ; (check_state18), 200FIGHT increments it each frame; when it wraps at
 ; 16 (cmp ..., 10h), it heals the hero (player_HP += 2 if player_HP <
-; player_hp_max at 0xB2) and triggers the HUD redraw via cs:[2008h]
+; player_hp_max at 0xB2) and triggers the HUD redraw via cs:drv_palette_push
 ; (restore_pending dispatch).  4 reset-to-0 sites at lines 999, 1128,
 ; 1346, 1770 — scene transitions / damage events where the regen
 ; cooldown resets.  Placeholder kept as alias.
@@ -510,7 +510,7 @@ LOAD_CHUNK_ES   MACRO   dest_offset, archive
                 mov     es, cs:gvar_game_seg
                 mov     di, dest_offset
                 mov     al, archive
-                call    word ptr cs:[10Ch]
+                call    word ptr cs:sar_loader_fn
                 ENDM
 
 ; Load a SAR chunk using a reference table.
@@ -661,7 +661,7 @@ frame_wait_loop_a:
 										mov	bx,0C28h
 										mov	cx,3828h
 										xor	al,al			; Zero register
-										call	word ptr cs:[2000h]
+										call	word ptr cs:drv_fill_rect
 										mov	byte ptr ds:gvar_frame_timer,0
 
 frame_wait_loop_b:
@@ -692,7 +692,7 @@ main_loop_entry:
 		lodsb				; String [si] to al
 		mov	ds:loaded_flag,al
 		mov	si,[si]
-		call	word ptr cs:[2010h]
+		call	word ptr cs:drv_load_msg_header
 		mov	si,ds:obj_data_ptr
 		add	si,3
 		mov	bx,[si]
@@ -706,13 +706,13 @@ new_game_init:
 		call	word ptr cs:[2012h]
 		call	game_get_value_2
 		mov	si,ds:bg_data_ptr
-		call	word ptr cs:[2010h]
-		call	word ptr cs:[2016h]
+		call	word ptr cs:drv_load_msg_header
+		call	word ptr cs:drv_frame_commit
 
 main_loop_body:
 		call	word ptr cs:[2006h]
-		call	word ptr cs:[2008h]
-		call	word ptr cs:[2014h]
+		call	word ptr cs:drv_palette_push
+		call	word ptr cs:drv_fn_10
 		test	byte ptr ds:scene_trans_request,0FFh
 		jnz	scene_transition			; Jump if not zero
 		jmp	normal_frame
@@ -737,7 +737,7 @@ scene_exit_wait:
 		mov	byte ptr ds:loading_flag,0
 		mov	ah,1Eh
 		mov	al,1
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		mov	byte ptr ds:gvar_save_flag_1,0FFh
 		mov	byte ptr ds:level_load_flag,0FFh
 		mov	si,ds:map_data_ptr
@@ -748,13 +748,13 @@ scene_exit_wait:
 		mov	ds,cs:gvar_game_seg
 		mov	si,8030h
 		mov	cx,66h
-		call	word ptr cs:[2044h]
+		call	word ptr cs:drv_ds_copy
 		call	word ptr cs:gfx_fn_map_scroll
 		pop	ds
 		push	ds
 		call	word ptr cs:gfx_fn_palette
 		mov	cx,18h
-		call	word ptr cs:[2044h]
+		call	word ptr cs:drv_ds_copy
 		pop	ds
 		mov	word ptr ds:scroll_count,18h
 		mov	byte ptr ds:scroll_dir,0Dh
@@ -2151,9 +2151,9 @@ process_map_seg_updates		endp
 
 game_get_value_2		proc	near
 		mov	si,scroll_init_a
-		call	word ptr cs:[200Eh]
+		call	word ptr cs:drv_fn_7
 		mov	si,scroll_init_b
-		call	word ptr cs:[200Eh]
+		call	word ptr cs:drv_fn_7
 		retn
 
 game_get_value_2		endp
@@ -2175,11 +2175,11 @@ init_arena_visuals		proc	near
 		mov	bx,210h
 		xor	al,al			; Zero register
 		mov	ch,21h			; '!'
-		call	word ptr cs:[2004h]
+		call	word ptr cs:drv_fn_2
 		mov	bx,2310h
 		mov	al,80h
 		mov	ch,67h			; 'g'
-		call	word ptr cs:[2004h]
+		call	word ptr cs:drv_fn_2
 		mov	bx,0AA9h
 		mov	dx,0AB5h
 		mov	cx,0E03h
@@ -2187,9 +2187,9 @@ init_arena_visuals		proc	near
 		mov	bx,21Ch
 		xor	al,al			; Zero register
 		mov	ch,42h			; 'B'
-		call	word ptr cs:[2004h]
+		call	word ptr cs:drv_fn_2
 		mov	si,scroll_init_c
-		jmp	word ptr cs:[200Eh]
+		jmp	word ptr cs:drv_fn_7
 
 init_arena_visuals		endp
 
@@ -2883,7 +2883,7 @@ call_combat_fx:
 
 clamp_scroll_pos:
 		mov	byte ptr ds:gvar_volume_b,13h
-		call	word ptr cs:[2008h]
+		call	word ptr cs:drv_palette_push
 
 call_enemy_scroll:
 		call	word ptr cs:gfx_fn_enemy_scroll
@@ -2913,11 +2913,11 @@ frame_timer_loop:
 
 sound_update_loop:
 										push	ax
-										call	word ptr cs:[110h]
-										call	word ptr cs:[112h]
-										call	word ptr cs:[114h]
-										call	word ptr cs:[116h]
-										call	word ptr cs:[118h]
+										call	word ptr cs:stick_fn_110
+										call	word ptr cs:stick_fn_112
+										call	word ptr cs:stick_fn_114
+										call	word ptr cs:stick_fn_116
+										call	word ptr cs:stick_fn_118
 										call	word ptr cs:[11Eh]
 										jnc	sound_wait_done			; Jump if carry=0
 										call	enter_level_via_ref_a
@@ -2948,7 +2948,7 @@ check_state18:
 		jae	check_state1e			; Jump if above or =
 		add	ax,2
 		mov	word ptr ds:player_HP,ax
-		call	word ptr cs:[2008h]
+		call	word ptr cs:drv_palette_push
 
 check_state1e:
 		test	byte ptr ds:warp_pending,0FFh
@@ -3052,7 +3052,7 @@ check_combat_flags2:
 
 do_combat_round:
 		mov	byte ptr ds:gvar_volume_b,0Bh
-		call	word ptr cs:[2002h]
+		call	word ptr cs:drv_screen_init_a
 		call	swap_world_state_buffers
 		call	word ptr cs:game_fn_vtable
 		call	swap_world_state_buffers
@@ -3061,11 +3061,11 @@ do_combat_round:
 		jmp	next_level_start
 
 combat_palette_update:
-		call	word ptr cs:[2002h]
+		call	word ptr cs:drv_screen_init_a
 		push	ds
 		call	word ptr cs:gfx_fn_palette
 		mov	cx,18h
-		call	word ptr cs:[2044h]
+		call	word ptr cs:drv_ds_copy
 		pop	ds
 		mov	byte ptr ds:combat_active,0FFh
 		call	fill_buffer
@@ -3110,7 +3110,7 @@ load_new_map:
 		pop	es
 		mov	di,game_fn_vtable
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		pop	si
 		lodsb				; String [si] to al
 		mov	ds:prev_spr_id,al
@@ -3157,7 +3157,7 @@ wrap_scroll:
 		mov	bx,21Ch
 		xor	al,al			; Zero register
 		mov	ch,42h			; 'B'
-		call	word ptr cs:[2004h]
+		call	word ptr cs:drv_fn_2
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
 		mov	byte ptr ds:warp_pending,0
@@ -3215,7 +3215,7 @@ entity_scan_skip_push:
 		mov	bx,0E1Eh
 		mov	cx,3410h
 		mov	al,0FFh
-		call	word ptr cs:[2000h]
+		call	word ptr cs:drv_fill_rect
 		mov	byte ptr ds:anim_ctr_x,0
 		mov	byte ptr ds:enemy_scroll_flag,0FFh
 		mov	byte ptr ds:anim_ctr_y,0FFh
@@ -3245,7 +3245,7 @@ draw_combat_hud_layout		proc	near
 		mov	ch,24h			; '$'
 		mov	cl,al
 		mov	al,0FFh
-		call	word ptr cs:[2000h]
+		call	word ptr cs:drv_fill_rect
 		pop	si
 		mov	byte ptr ds:anim_ctr_x,0
 		mov	byte ptr ds:enemy_scroll_flag,0
@@ -3544,11 +3544,11 @@ clear_secondary_pool_and_redraw		proc	near
 		mov	bx,0C51Ch
 		mov	al,0FFh
 		mov	ch,18h
-		call	word ptr cs:[2004h]
+		call	word ptr cs:drv_fn_2
 		mov	bx,3EA3h
 		mov	cx,511h
 		xor	al,al			; Zero register
-		call	word ptr cs:[2000h]
+		call	word ptr cs:drv_fill_rect
 		mov	dx,9AB4h
 		jmp	entity_scan_start
 
@@ -3613,7 +3613,7 @@ sub_score_and_call:
 
 push_and_update:
 		push	si
-		call	word ptr cs:[2008h]
+		call	word ptr cs:drv_palette_push
 		pop	si
 		retn
 
@@ -3996,7 +3996,7 @@ world_x_to_screen_x_w27		endp
 		mov	si,sar_ref_scroll
 		mov	di,6000h
 		mov	al,02h
-		call	word ptr cs:[010Ch]	; chunk loader
+		call	word ptr cs:sar_loader_fn	; chunk loader
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,scroll_tile_src
@@ -4007,14 +4007,14 @@ world_x_to_screen_x_w27		endp
 		mov	si,ds:map_data_ptr
 		lodsb
 		call	copy_buffer		; +0x44D
-		call	word ptr cs:[2002h]
+		call	word ptr cs:drv_screen_init_a
 		mov	si,sar_ref_enemy
 		LOAD_CHUNK_ES enemy_id_table, 02h
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,enemy_id_table
 		mov	cx,80h
-		call	word ptr cs:[2044h]
+		call	word ptr cs:drv_ds_copy
 		pop	ds
 		xor	al,al
 		call	word ptr cs:[301Eh]
@@ -4151,7 +4151,7 @@ boss_link_check:
 boss_side_check:
 		mov	byte ptr ds:player_level,ah
 		mov	al,1
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		test	byte ptr ds:player_level,80h
 		jnz	boss_func27			; Jump if not zero
 		call	process_map_seg_updates
@@ -4168,7 +4168,7 @@ boss_func27:
 		mov	ds,cs:gvar_game_seg
 		mov	si,enemy_id_table
 		mov	cx,80h
-		call	word ptr cs:[2044h]
+		call	word ptr cs:drv_ds_copy
 		pop	ds
 		pop	ax
 		call	word ptr cs:gfx_fn_blit
@@ -4183,7 +4183,7 @@ load_boss_map:
 		mov	ds,cs:gvar_game_seg
 		mov	si,enemy_id_table
 		mov	cx,80h
-		call	word ptr cs:[2044h]
+		call	word ptr cs:drv_ds_copy
 		pop	ds
 		pop	ax
 		call	word ptr cs:gfx_fn_blit
@@ -4202,7 +4202,7 @@ boss_state_init:
 		pop	es
 		mov	di,game_fn_vtable
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		call	word ptr cs:game_fn_vtable
 		mov	byte ptr ds:prev_spr_id,0FFh
 		mov	byte ptr ds:prev_chr_id,0FFh
@@ -4214,7 +4214,7 @@ boss_state_init:
 		mov	si,sar_ref_scroll
 		mov	di,6000h
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,scroll_tile_src
@@ -4245,14 +4245,14 @@ intro_left_loop:
 										push	bx
 										mov	cx,218h
 										xor	al,al			; Zero register
-										call	word ptr cs:[2000h]
+										call	word ptr cs:drv_fill_rect
 										pop	bx
 										pop	cx
 										loop	intro_left_loop		; Loop if cx > 0
 
 		mov	cx,618h
 		xor	al,al			; Zero register
-		call	word ptr cs:[2000h]
+		call	word ptr cs:drv_fill_rect
 		jmp	short check_map_flag
 
 c3_set_loop:
@@ -4275,14 +4275,14 @@ intro_right_loop:
 										add	bh,4
 										mov	cx,218h
 										xor	al,al			; Zero register
-										call	word ptr cs:[2000h]
+										call	word ptr cs:drv_fill_rect
 										pop	bx
 										pop	cx
 										loop	intro_right_loop		; Loop if cx > 0
 
 		mov	cx,618h
 		xor	al,al			; Zero register
-		call	word ptr cs:[2000h]
+		call	word ptr cs:drv_fill_rect
 
 check_map_flag:
 		mov	si,ds:map_data_ptr
@@ -4302,7 +4302,7 @@ check_map_flag:
 		mov	byte ptr ds:scene_trans_request,bl
 		mov	byte ptr ds:gvar_death_flag,0
 		mov	byte ptr ds:gvar_dir_toggle,0
-		call	word ptr cs:[2002h]
+		call	word ptr cs:drv_screen_init_a
 		mov	byte ptr ds:town_player_col,0Ch
 		mov	al,ds:player_y
 		mov	byte ptr ds:fight_player_col,al
@@ -4312,13 +4312,13 @@ check_map_flag:
 		mov	ds,cs:gvar_game_seg
 		mov	si,8030h
 		mov	cx,66h
-		call	word ptr cs:[2044h]
+		call	word ptr cs:drv_ds_copy
 		call	word ptr cs:gfx_fn_map_scroll
 		pop	ds
 		push	ds
 		call	word ptr cs:gfx_fn_palette
 		mov	cx,18h
-		call	word ptr cs:[2044h]
+		call	word ptr cs:drv_ds_copy
 		pop	ds
 		jmp	module_init
 
@@ -4348,7 +4348,7 @@ level_start:
 		LOAD_CHUNK_REF music_ref_tbl, 3000h, 5
 		pop	bx
 		xor	al,al			; Zero register
-		jmp	word ptr cs:[10Ch]
+		jmp	word ptr cs:sar_loader_fn
 
 check_3tile_J_pattern		endp
 
@@ -4418,13 +4418,13 @@ decrement_98:
 		retn
 
 check_99:
-		test	byte ptr ds:[99h],0FFh
+		test	byte ptr ds:player_power,0FFh
 		stc				; Set carry flag
 		jnz	decrement_99			; Jump if not zero
 		retn
 
 decrement_99:
-		dec	byte ptr ds:[99h]
+		dec	byte ptr ds:player_power
 		mov	byte ptr ds:gvar_volume_b,15h
 		or	byte ptr [si+3],80h
 		mov	bx,[si+9]
@@ -4486,7 +4486,7 @@ vga_operation_2		proc	near
 		mov	si,9C13h
 		mov	di,8C00h
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		mov	bl,ds:tile_set_id
 		mov	al,0Bh
 		mul	bl			; ax = reg * al
@@ -4508,7 +4508,7 @@ chr_changed:
 		pop	es
 		mov	di,game_fn_vtable
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 
 spr_check:
 		mov	bl,ds:player_spr_id
@@ -4551,11 +4551,11 @@ wait_anim_cycle		proc	near
 
 frame_render_loop:
 										push	ax
-										call	word ptr cs:[110h]
-										call	word ptr cs:[112h]
-										call	word ptr cs:[114h]
-										call	word ptr cs:[116h]
-										call	word ptr cs:[118h]
+										call	word ptr cs:stick_fn_110
+										call	word ptr cs:stick_fn_112
+										call	word ptr cs:stick_fn_114
+										call	word ptr cs:stick_fn_116
+										call	word ptr cs:stick_fn_118
 										pop	ax
 										cmp	ds:gvar_frame_timer,al
 										jb	frame_render_loop			; Jump if below
@@ -5878,12 +5878,12 @@ check_ab_slot:
 		mov	bl,byte ptr ds:cur_weapon_idx
 		dec	bl
 		xor	bh,bh			; Zero register
-		test	byte ptr ds:[0ABh][bx],0FFh
+		test	byte ptr ds:weap_dur_cur[bx],0FFh
 		jnz	decrement_ab			; Jump if not zero
 		retn
 
 decrement_ab:
-		dec	byte ptr ds:[0ABh][bx]
+		dec	byte ptr ds:weap_dur_cur[bx]
 		call	word ptr cs:[2018h]
 		mov	byte ptr ds:gvar_volume_b,18h
 		mov	si,0EB15h
@@ -5949,7 +5949,7 @@ fire_init_loop:
 
 fire_entry_col:
 										mov	[si],ax
-										call	word ptr cs:[11Ah]
+										call	word ptr cs:stick_fn_11A
 										and	al,3
 										mov	ah,byte ptr ds:map_scroll_row
 										sub	ah,3
@@ -6613,7 +6613,7 @@ anim_dispatch_data:
 		test	byte ptr [si+5],20h
 		jnz	$+3
 		retn
-		mov	byte ptr ds:[0FF75h],12h
+		mov	byte ptr ds:gvar_volume_b,12h
 		and	byte ptr [si+5],90h
 		and	byte ptr [si+4],7Fh
 		or	byte ptr [si+4],60h
@@ -6783,7 +6783,7 @@ entity_fn_e_tbl_data:
 		call	word ptr cs:[201Ch]
 		mov	ah,byte ptr ds:equipped_weapon
 		mov	al,04h
-		call	word ptr cs:[010Ch]	; chunk loader
+		call	word ptr cs:sar_loader_fn	; chunk loader
 		pop	si
 		retn
 		call	entity_move_south		; +0x2A7
@@ -6792,7 +6792,7 @@ entity_fn_e_tbl_data:
 		call	check_entity_in_view	; +0x1D8
 		jnc	$+3
 		retn
-		mov	byte ptr ds:[0FF75h],10h
+		mov	byte ptr ds:gvar_volume_b,10h
 		mov	al,byte ptr [si+4]
 		and	al,0Fh
 		cmp	al,04h
@@ -7031,11 +7031,11 @@ apply_link_bits:
 update_obj_slot_flags		endp
 
 add_score_to_gold:
-			                        ; entity_deactivate_alt body: score update dispatch (via cs:[2016h])
-		add	word ptr ds:[86h],ax
-		adc	byte ptr ds:[85h],0
+			                        ; entity_deactivate_alt body: score update dispatch (via cs:drv_frame_commit)
+		add	word ptr ds:player_gold_lo,ax	; 24-bit gold add: low word
+		adc	byte ptr ds:player_gold_hi,0	;                  high byte
 		push	si
-		call	word ptr cs:[2016h]
+		call	word ptr cs:drv_frame_commit
 		pop	si
 		retn
 
@@ -7046,7 +7046,7 @@ hero_almas_add		proc	near
 
 score_carry_done:
 		push	si
-		call	word ptr cs:[2014h]
+		call	word ptr cs:drv_fn_10
 		pop	si
 		retn
 
@@ -7933,12 +7933,12 @@ play_sound7:
 		retn
 
 item_effect_val_add		proc	near
-		add	word ptr ds:[8Eh],ax
+		add	word ptr ds:item_effect_val,ax
 		jc	clamp_score			; Jump if carry Set
 		retn
 
 clamp_score:
-		mov	word ptr ds:[8Eh],0FFFFh
+		mov	word ptr ds:item_effect_val,0FFFFh
 		retn
 
 item_effect_val_add		endp
@@ -8058,7 +8058,7 @@ select_anim:
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	di,[bx+di]
-		call	word ptr cs:[11Ah]
+		call	word ptr cs:stick_fn_11A
 		mov	bl,al
 		and	bx,3
 		cmp	byte ptr ds:gvar_combat_action_state,2
@@ -8085,7 +8085,7 @@ select_anim_b:
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	di,[bx+di]
-		call	word ptr cs:[11Ah]
+		call	word ptr cs:stick_fn_11A
 		mov	bl,al
 		and	bx,3
 		cmp	byte ptr ds:gvar_combat_action_state,2
@@ -8223,7 +8223,7 @@ game_over_sequence:
 		mov	byte ptr ds:init_complete_flag,0FFh
 		mov	byte ptr ds:gameover_inner_tick,0
 		mov	byte ptr ds:gameover_outer_tick,0
-		call	word ptr cs:[2008h]
+		call	word ptr cs:drv_palette_push
 		mov	byte ptr ds:gvar_pose_idx,0
 		mov	byte ptr ds:gvar_music_flag_b,0
 		mov	byte ptr ds:gvar_save_flag_4,0
@@ -8278,7 +8278,7 @@ fade_step_loop:
 		call	word ptr cs:[2040h]
 		test	byte ptr ds:[49h],0FFh
 		jz	player_not_captured			; Jump if zero
-		mov	byte ptr ds:[0C5h],80h
+		mov	byte ptr ds:stat_XC5,80h
 		jmp	short setup_next_level
 
 player_not_captured:
@@ -8288,8 +8288,8 @@ player_not_captured:
 		add	al,7Fh
 		xor	ah,ah			; Zero register
 		call	item_effect_val_add
-		mov	byte ptr ds:[85h],0
-		mov	word ptr ds:[86h],0
+		mov	byte ptr ds:player_gold_hi,0	; reset gold (24-bit) to 0
+		mov	word ptr ds:player_gold_lo,0
 		shr	word ptr ds:player_almas,1	; Shift w/zeros fill
 
 setup_next_level:
@@ -8299,10 +8299,10 @@ setup_next_level:
 
 next_level_start:
 		mov	byte ptr ds:gvar_timer_ff08,0
-		mov	ah,byte ptr ds:[0C5h]
+		mov	ah,byte ptr ds:stat_XC5
 		mov	byte ptr ds:player_level,ah
 		mov	al,1
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		mov	ax,ds:target_id
 		mov	ds:scroll_count,ax
 		mov	si,ds:map_data_ptr
