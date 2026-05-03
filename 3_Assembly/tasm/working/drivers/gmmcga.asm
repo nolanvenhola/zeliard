@@ -53,7 +53,9 @@ anim_ptr_0		equ	0E200h			;*
 anim_ptr_1		equ	0E202h			;*
 anim_ptr_2		equ	0E206h			;*
 anim_ptr_3		equ	0E20Ah			;*
-anim_ptr_4		equ	0E20Ch			;*
+anim_ptr_4		equ	0E20Ch
+anim_ptr_5		equ	0E204h			; anim_ptr (intermediate slot)
+anim_ptr_6		equ	0E208h			; anim_ptr (intermediate slot)			;*
 text_vga_ofs_a	equ	2434h			;*
 text_vga_ofs_b	equ	2435h			;*
 text_vga_ofs_c	equ	2437h			;*
@@ -459,7 +461,7 @@ plot_pixel		endp
 
 plot_mode_fn:
 		add	byte ptr [bx+text_field_vga_ofs],bh	; opcode patched by set_plot_mode
-		mov	bx,cs:[0B2h]
+		mov	bx,cs:player_hp_max
 		jmp	short draw_text_field_common
 
 draw_text_field_alt:
@@ -678,7 +680,7 @@ render_text_char		endp
 		jmp	set_plot_mode
 			                        ;* No entry point to code
 		push	ds
-		mov	ax,word ptr cs:[8Bh]
+		mov	ax,word ptr cs:player_almas
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
@@ -692,8 +694,8 @@ render_text_char		endp
 		retn
 			                        ;* No entry point to code
 		push	ds
-		mov	ax,word ptr cs:[86h]
-		mov	dl,byte ptr cs:[85h]
+		mov	ax,word ptr cs:player_gold_lo
+		mov	dl,byte ptr cs:player_gold_hi
 		call	init_timestamp
 		push	cs
 		pop	ds
@@ -707,7 +709,7 @@ render_text_char		endp
 			                        ;* No entry point to code
 		push	ds
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:[9Dh]
+		mov	bl,byte ptr cs:cur_weapon_idx
 		dec	bl
 		mov	al,byte ptr cs:[0ABh][bx]
 		xor	ah,ah			; Zero register
@@ -723,13 +725,13 @@ render_text_char		endp
 		pop	ds
 		retn
 			                        ;* No entry point to code
-		test	byte ptr cs:[93h],0FFh
+		test	byte ptr cs:shield_type,0FFh
 		jnz	draw_timer_entry			; Jump if not zero
 		retn
 
 draw_timer_entry:
 		push	ds
-		mov	ax,word ptr cs:[94h]
+		mov	ax,word ptr cs:shield_HP
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
@@ -1089,7 +1091,7 @@ tile_src_base_lbl:
 		xor	ah,ah
 		mov	cx,0C0h
 		mul	cx
-		add	ax,ds:[0E208h]
+		add	ax,ds:anim_ptr_6
 		mov	si,ax
 		call	render_tilemap_small
 		pop	ds
@@ -1100,7 +1102,7 @@ tile_src_base_lbl:
 		xor	ah,ah
 		mov	cx,0C0h
 		mul	cx
-		add	ax,ds:[0E204h]
+		add	ax,ds:anim_ptr_5
 		mov	si,ax
 		call	render_tilemap_small
 		pop	ds

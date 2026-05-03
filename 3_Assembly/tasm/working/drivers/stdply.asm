@@ -156,7 +156,7 @@ player_ability_2 db	0		; [9Bh] ability slot 2 (212ARMRP gates trade dialog when 
 player_ability_3 db	0		; [9Ch] ability slot 3 (set by 200FIGHT entity_fn_e_4 on 9AF3 trigger)
 ;
 ; cur_weapon_idx — cached selected weapon idx (1-based; init 0).  Per
-; 201SELCT 315/320: written by select-screen, read back as `mov bl, ds:[9D]`
+; 201SELCT 315/320: written by select-screen, read back as `mov bl, ds:cur_weapon_idx`
 ; into the weapon dispatch.  Earlier name `current_magic_spell` was a
 ; proximity guess (since 9E is cur_magic_idx, 9D was assumed similar).
 cur_weapon_idx db	0		; [9Dh] cached weapon select idx (init=0)

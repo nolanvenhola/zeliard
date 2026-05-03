@@ -509,7 +509,7 @@ plot_pixel		endp
 
 draw_text_mode_fn:
 		add	byte ptr [bx+792Ah],bh	; 00 BF 2A 79  self-mod: byte 0 = plot_mode=0
-		mov	bx,word ptr cs:[0B2h]	; load char position from CS:0B2h
+		mov	bx,word ptr cs:player_hp_max	; load char position from CS:0B2h
 		jmp	short draw_text_common	; ?-> common setup
 
 draw_text_alt:
@@ -549,7 +549,7 @@ draw_partial_col:
 
 draw_text_mode_fn_b:				; self-mod entry B (CS:22E1) ?-- patches DI=792Ah from CS:[90h], mirrors draw_text_mode_fn
 		mov	di,792Ah
-		mov	bx,word ptr cs:[90h]
+		mov	bx,word ptr cs:player_HP
 		jmp	short draw_entry_b
 
 draw_text_alt_b:
@@ -862,7 +862,7 @@ fn0_sprite_test:				; dispatch fn 0 (CS:24DC) ?-- test sprite entry: BX=0x210, A
 
 fn1_render_time_a:				; dispatch fn 1 (CS:24E6) ?-- render time display A: reads CS:[8Bh] timer, tilemap_src=26BBh
 		push	ds
-		mov	ax,word ptr cs:[8Bh]
+		mov	ax,word ptr cs:player_almas
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
@@ -879,8 +879,8 @@ fn_9:
 
 fn2_render_time_b:				; dispatch fn 2 (CS:2503) ?-- render time display B: reads CS:[86h]/CS:[85h] timer, tilemap_src=13BBh
 		push	ds
-		mov	ax,word ptr cs:[86h]
-		mov	dl,byte ptr cs:[85h]
+		mov	ax,word ptr cs:player_gold_lo
+		mov	dl,byte ptr cs:player_gold_hi
 		call	init_timestamp
 		push	cs
 
@@ -897,7 +897,7 @@ fn_10:
 fn3_render_time_c:				; dispatch fn 3 (CS:2523) ?-- render time display C: indexed by CS:[9Dh] frame, color LUT at CS:[0ABh], tilemap_src=37BBh
 		push	ds
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:[9Dh]
+		mov	bl,byte ptr cs:cur_weapon_idx
 		dec	bl
 
 fn_11:
@@ -918,13 +918,13 @@ fn_11:
 fn_12:
 
 fn4_sprite_check:				; dispatch fn 4 (CS:254C) ?-- sprite visibility check: early-out if CS:[93h]==0, else render time display D (tilemap_src=3EBBh)
-		test	byte ptr cs:[93h],0FFh
+		test	byte ptr cs:shield_type,0FFh
 		jnz	sprite_vis_check			; Jump if not zero
 		retn
 
 sprite_vis_check:
 		push	ds
-		mov	ax,word ptr cs:[94h]
+		mov	ax,word ptr cs:shield_HP
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs

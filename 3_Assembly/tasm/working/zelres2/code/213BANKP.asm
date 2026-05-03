@@ -16,13 +16,13 @@ PAGE  59,132
 ;                  with AL=2 (fill_buffer decode) into game_seg:8000h.
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
 ;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller,
-;                  drv_draw_string (cs:[301Ch]), drv_set_text_pos
-;                  (cs:[3022h]), bank_drv_2014 (cs:drv_fn_10)
+;                  drv_draw_string (cs:drv2_fn_15h), drv_set_text_pos
+;                  (cs:drv2_fn_18h), bank_drv_2014 (cs:drv_fn_10)
 ;                    (graphics driver dispatch slots)
 ;                  script_step (cs:script_step), script_format_num (cs:script_format_num),
 ;                  script_display_page (cs:script_display_page), script_take_item
 ;                  (cs:script_take_item), script_give_item (cs:script_give_item),
-;                  show_menu_items (cs:[600Eh])
+;                  show_menu_items (cs:script_show_menu_items)
 ;                    (script interpreter / menu dispatch slots)
 ;                  opcode_dispatch_tbl (DS-resident, A0B8h) -- script
 ;                    opcode handler table (filled by town dispatcher).

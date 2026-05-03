@@ -42,6 +42,8 @@ anim_ptr_1	equ	0E202h			;*
 anim_ptr_2	equ	0E206h			;*
 anim_ptr_3	equ	0E20Ah			;*
 anim_ptr_4	equ	0E20Ch			;*
+anim_ptr_5	equ	0E204h			; anim_ptr (segment-half of anim_ptr_1)
+anim_ptr_6	equ	0E208h			; anim_ptr (segment-half of anim_ptr_2)
 tile_src_base_b	equ	21C0h			;* hud mask tile source B
 text_vga_ofs_a	equ	256Ah			;* VGA offset for text function A
 text_vga_ofs_b	equ	256Bh			;* VGA offset for text function B
@@ -579,7 +581,7 @@ plot_pixel		endp
 
 plot_mode_fn:
 		add	byte ptr [bx+3305h],bh		; opcode patched by set_plot_mode
-		mov	bx,cs:[0B2h]
+		mov	bx,cs:player_hp_max
 		jmp	short draw_text_field_common
 
 draw_text_field_alt:
@@ -617,7 +619,7 @@ dtfc_trailing_column:
 
 draw_text_field_ega:
 		mov	di,3305h
-		mov	bx,word ptr cs:[90h]
+		mov	bx,word ptr cs:player_HP
 		jmp	short dtf_ega_body
 		mov	di,36C5h			; alt EGA text field offset (entry B)
 		jmp	short dtf_ega_body
@@ -861,7 +863,7 @@ sprite_anim_init:
 
 render_tilemap_row_b:
 		push	ds
-		mov	ax,word ptr cs:[8Bh]
+		mov	ax,word ptr cs:player_almas
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
@@ -876,8 +878,8 @@ render_tilemap_row_b:
 
 render_tilemap_row_a:
 		push	ds
-		mov	ax,word ptr cs:[86h]
-		mov	dl,byte ptr cs:[85h]
+		mov	ax,word ptr cs:player_gold_lo
+		mov	dl,byte ptr cs:player_gold_hi
 		call	init_timestamp
 		push	cs
 		pop	ds
@@ -894,7 +896,7 @@ fn_9:
 render_animated_tile:
 		push	ds
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:[9Dh]
+		mov	bl,byte ptr cs:cur_weapon_idx
 		dec	bl
 
 fn_10:
@@ -915,13 +917,13 @@ fn_10:
 fn_11:
 
 render_if_enabled:
-		test	byte ptr cs:[93h],0FFh
+		test	byte ptr cs:shield_type,0FFh
 		jnz	rie_render			; Jump if not zero
 		retn
 
 rie_render:
 		push	ds
-		mov	ax,word ptr cs:[94h]
+		mov	ax,word ptr cs:shield_HP
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
@@ -1317,7 +1319,7 @@ fn_26:
 		db	32h, 0E4h			; xor ah,ah  (alt encoding)
 		mov	cx,0C0h
 		mul	cx				; ax = row * 0xC0
-		add	ax,word ptr ds:[0E208h]
+		add	ax,word ptr ds:anim_ptr_6
 		mov	si,ax
 		call	render_tilemap_small
 
@@ -1330,7 +1332,7 @@ fn_27:
 		db	32h, 0E4h			; xor ah,ah  (alt encoding)
 		mov	cx,0C0h
 		mul	cx				; ax = row * 0xC0
-		add	ax,word ptr ds:[0E204h]
+		add	ax,word ptr ds:anim_ptr_5
 		mov	si,ax
 		call	render_tilemap_small
 		pop	ds

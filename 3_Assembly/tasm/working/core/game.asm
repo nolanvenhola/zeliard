@@ -39,6 +39,12 @@ include  srmacros.inc
 ; ----------------------------------------------------------------------
 ; Player-record fields (DS-relative; canonical home is stdply.inc).
 music_track_count equ	0A0h			; music track count (canonical in stdply.inc)
+stick_joy_poll_handler equ	120h			; stick.bin slot 120h dispatch (poll_joystick_buttons; canonical zr1com.inc/zr2com.inc)
+equipped_weapon	equ	92h			; equipped weapon idx (canonical in stdply.inc)
+shield_type	equ	93h			; shield tier (canonical in stdply.inc)
+cur_weapon_idx	equ	9Dh			; cached selected weapon idx (canonical in stdply.inc)
+player_level	equ	0C4h			; level/area number (canonical in stdply.inc)
+player_tileset	equ	0C8h			; level tileset index (canonical in stdply.inc)
 gvar_pose_idx	equ	0E7h			; player pose state (canonical in stdply.inc)
 ; Game state variables (0xFF00+ range, shared with zeliad.exe).
 ; Names below are synced to zeliard.inc canonical where one exists; game.asm
@@ -186,8 +192,11 @@ start:
 		add	es:[di+2],di
 		add	es:[di+4],di
 
-		; Call loaded chunk initialization
-		call	word ptr cs:[120h]
+		; Call into stick.bin's slot at cs:[120h] (poll_joystick_buttons via stick_joy_poll_handler).
+		; The semantic at this point in game.bin init is unclear — comment in
+		; original disassembly said "Call loaded chunk initialization" but the
+		; actual call target (per stick.bin driver_init_data) is poll_joystick_buttons.
+		call	word ptr cs:stick_joy_poll_handler
 
 		; Clear all game state variables
 		xor	al,al
@@ -307,7 +316,7 @@ start_load_game:
 		add	es:[di+4],di
 
 		; Load SAR archive (zelres1 opening data)
-		mov	ah,byte ptr ds:[92h]	; Archive number from config
+		mov	ah,byte ptr ds:equipped_weapon	; Archive number from config
 		mov	al,4			; Function 4 = load archive
 		call	word ptr cs:sar_loader_fn
 
@@ -334,30 +343,30 @@ start_load_game:
 		; Initialize graphics driver systems
 		mov	ax,cs
 		mov	ds,ax
-		test	byte ptr ds:[92h],0FFh
+		test	byte ptr ds:equipped_weapon,0FFh
 		jz	gfx_init_after_music
-		mov	al,byte ptr ds:[92h]
+		mov	al,byte ptr ds:equipped_weapon
 		mov	bx,music_player_fn
 		call	word ptr cs:gfx_call_a
 
 gfx_init_after_music:
-		test	byte ptr ds:[93h],0FFh
+		test	byte ptr ds:shield_type,0FFh
 		jz	gfx_init_after_font
-		mov	al,byte ptr ds:[93h]
+		mov	al,byte ptr ds:shield_type
 		mov	bx,font_gfx_base
 		call	word ptr cs:gfx_call_c
 
 gfx_init_after_font:
-		test	byte ptr ds:[9Dh],0FFh
+		test	byte ptr ds:cur_weapon_idx,0FFh
 		jz	gfx_init_after_tile
-		mov	al,byte ptr ds:[9Dh]
+		mov	al,byte ptr ds:cur_weapon_idx
 		mov	bx,tile_gfx_base
 		call	word ptr cs:gfx_call_b
 
 gfx_init_after_tile:
 
 		; Load first level chunks
-		mov	ah,byte ptr cs:[0C4h]	; Level/area number
+		mov	ah,byte ptr cs:player_level	; Level/area number
 		mov	al,1			; Function 1 = load level
 		call	word ptr cs:sar_loader_fn
 
@@ -371,7 +380,7 @@ gfx_init_after_tile:
 		push	si
 		shr	al,1
 		and	al,1Fh
-		mov	byte ptr cs:[0C8h],al	; Store level tileset index
+		mov	byte ptr cs:player_tileset,al	; Store level tileset index
 		mov	cl,0Bh
 		mul	cl			; Calculate chunk ref offset
 		mov	si,ax

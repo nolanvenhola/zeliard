@@ -76,7 +76,9 @@ anim_ptr_0		equ	0E200h			;*
 anim_ptr_1		equ	0E202h			;*
 anim_ptr_2		equ	0E206h			;*
 anim_ptr_3		equ	0E20Ah			;*
-anim_ptr_4		equ	0E20Ch			;*
+anim_ptr_4		equ	0E20Ch
+anim_ptr_5		equ	0E204h			; anim_ptr (intermediate slot)
+anim_ptr_6		equ	0E208h			; anim_ptr (intermediate slot)			;*
 fade_mask_tbl	equ	21D6h			;*
 tile_color_tbl	equ	2600h			;*
 pixel_lut	equ	2994h			;*
@@ -555,7 +557,7 @@ plot_pixel		endp
 plot_mode_fn:					; self-modifying entry: opcode byte patched by set_plot_mode
 		db	 00h			; opcode 00h = add byte ptr [r/m],reg (patched at runtime)
 		db	0BFh, 40h, 56h		; ModRM+disp16: byte ptr [bx+5640h], bh (operand constant)
-		mov	bx, word ptr cs:[0B2h]
+		mov	bx, word ptr cs:player_hp_max
 		jmp	short draw_text_field_common
 
 draw_text_field_alt:				; alternate entry: use row-B DI offset
@@ -594,7 +596,7 @@ draw_partial_entry:
 
 draw_text_line_main:				; alternate text-line entry (row A, di=5640h): called externally ?-- parallel to plot_mode_fn
 		mov	di,5640h
-		mov	bx,word ptr cs:[90h]
+		mov	bx,word ptr cs:player_HP
 		jmp	short draw_text_line
 
 draw_text_field_alt2:				; alternate entry B: use row-B DI offset
@@ -850,9 +852,9 @@ set_plot_fixed:					; called externally: set plot position (bx=210h, al=0, ch=88
 		mov	ch,88h
 		jmp	set_plot_pos
 
-render_large_tilemap_a:				; called externally: render large tilemap A (cs:[8Bh] anim, di=2559h, cx=105h)
+render_large_tilemap_a:				; called externally: render large tilemap A (cs:player_almas anim, di=2559h, cx=105h)
 		push	ds
-		mov	ax,word ptr cs:[8Bh]
+		mov	ax,word ptr cs:player_almas
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
@@ -862,10 +864,10 @@ render_large_tilemap_a:				; called externally: render large tilemap A (cs:[8Bh]
 		mov	ax,26BBh
 		hgc_call_tile_large
 
-render_large_tilemap_b:				; called externally: render large tilemap B (cs:[86h]/cs:[85h] anim, di=2558h, cx=106h)
+render_large_tilemap_b:				; called externally: render large tilemap B (cs:player_gold_lo/cs:player_gold_hi anim, di=2558h, cx=106h)
 		push	ds
-		mov	ax,word ptr cs:[86h]
-		mov	dl,byte ptr cs:[85h]
+		mov	ax,word ptr cs:player_gold_lo
+		mov	dl,byte ptr cs:player_gold_hi
 		call	init_timestamp
 		push	cs
 		pop	ds
@@ -876,10 +878,10 @@ render_large_tilemap_b:				; called externally: render large tilemap B (cs:[86h]
 
 fn_9:
 
-render_large_tilemap_c:				; called externally: render large tilemap C (cs:[9Dh] frame select via anim_lut, di=255Bh, cx=103h)
+render_large_tilemap_c:				; called externally: render large tilemap C (cs:cur_weapon_idx frame select via anim_lut, di=255Bh, cx=103h)
 		push	ds
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:[9Dh]
+		mov	bl,byte ptr cs:cur_weapon_idx
 		dec	bl
 		mov	al,byte ptr cs:[0ABh][bx]
 		xor	ah,ah			; Zero register
@@ -894,8 +896,8 @@ fn_10:
 		mov	ax,37BBh
 		hgc_call_tile_large
 
-render_sprite_if_active:			; called externally: render sprite at di=255Bh if cs:[93h] != 0
-		test	byte ptr cs:[93h],0FFh
+render_sprite_if_active:			; called externally: render sprite at di=255Bh if cs:shield_type != 0
+		test	byte ptr cs:shield_type,0FFh
 		jnz	render_sprite_active			; Jump if not zero
 
 fn_11:
@@ -903,7 +905,7 @@ fn_11:
 
 render_sprite_active:
 		push	ds
-		mov	ax,word ptr cs:[94h]
+		mov	ax,word ptr cs:shield_HP
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs
@@ -1306,7 +1308,7 @@ render_small_tiles_a:				; load si=game_seg:anim_ptr[E208h], call render_tilemap
 fn_27:
 		mov	cx, 0C0h
 		mul	cx			; dx:ax = reg * ax
-		add	ax, ds:[0E208h]		; anim_ptr (not in equate list)
+		add	ax, ds:anim_ptr_6		; anim_ptr (not in equate list)
 		hgc_call_tile_small
 
 render_small_tiles_b:				; load si=game_seg:anim_ptr[E204h], call render_tilemap_small
@@ -1315,7 +1317,7 @@ render_small_tiles_b:				; load si=game_seg:anim_ptr[E204h], call render_tilemap
 		xor	ah, ah			; Zero register
 		mov	cx, 0C0h
 		mul	cx			; dx:ax = reg * ax
-		add	ax, ds:[0E204h]		; anim_ptr (not in equate list)
+		add	ax, ds:anim_ptr_5		; anim_ptr (not in equate list)
 		hgc_call_tile_small
 
 render_tilemap_small		proc	near

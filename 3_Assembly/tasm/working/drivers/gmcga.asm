@@ -41,7 +41,9 @@ anim_ptr_0		equ	0E200h			;*
 anim_ptr_1		equ	0E202h			;*
 anim_ptr_2		equ	0E206h			;*
 anim_ptr_3		equ	0E20Ah			;*
-anim_ptr_4		equ	0E20Ch			;*
+anim_ptr_4		equ	0E20Ch
+anim_ptr_5		equ	0E204h			; anim_ptr (intermediate slot)
+anim_ptr_6		equ	0E208h			; anim_ptr (intermediate slot)			;*
 tile_src_base	equ	217Fh			;*
 text_vga_ofs_a	equ	24E9h			;*
 tile_color_tbl	equ	24EAh			;*
@@ -492,7 +494,7 @@ plot_pixel		endp
 ; Two-entry orphaned text setup function (called via dispatch table)
 ; Entry A: adjusts data[bx+3965h] with BH, loads BX from driver var, then init
 		add	byte ptr [bx+3965h],bh
-		mov	bx,cs:[00B2h]		; load BX from driver variable
+		mov	bx,cs:player_hp_max		; load BX from driver variable
 		jmp	short text_setup_cga	; skip alternate DI load (+5)
 ; Entry B: loads DI with alternate screen position, then falls through
 		mov	di,3B45h
@@ -529,7 +531,7 @@ draw_hline_text:
 		jmp	short vline_plot_loop
 			                        ;* No entry point to code
 		mov	di,3965h
-		mov	bx,word ptr cs:[90h]
+		mov	bx,word ptr cs:player_HP
 		jmp	short text_render_init
 		db	0BFh, 45h, 3Bh,0EBh, 00h
 
@@ -1232,7 +1234,7 @@ fn_27:
 		xor	ah,ah
 		mov	cx,0C0h
 		mul	cx
-		add	ax,ds:[0E208h]
+		add	ax,ds:anim_ptr_6
 		cga_call_tile_small
 ; Sprite source selector B: same but uses base [E204h] and calls render_tilemap_small  (+2)
 		push	ds
@@ -1240,7 +1242,7 @@ fn_27:
 		xor	ah,ah
 		mov	cx,0C0h
 		mul	cx
-		add	ax,ds:[0E204h]		; + sprite base B in game segment
+		add	ax,ds:anim_ptr_5		; + sprite base B in game segment
 		cga_call_tile_small
 
 render_tilemap_small		proc	near
