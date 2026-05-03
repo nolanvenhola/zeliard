@@ -883,7 +883,7 @@ render_large_tilemap_c:				; called externally: render large tilemap C (cs:cur_w
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr cs:cur_weapon_idx
 		dec	bl
-		mov	al,byte ptr cs:[0ABh][bx]
+		mov	al,byte ptr cs:weap_dur_cur[bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
 

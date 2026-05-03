@@ -901,7 +901,7 @@ fn3_render_time_c:				; dispatch fn 3 (CS:2523) ?-- render time display C: index
 		dec	bl
 
 fn_11:
-		mov	al,byte ptr cs:[0ABh][bx]
+		mov	al,byte ptr cs:weap_dur_cur[bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
 		call	init_timestamp

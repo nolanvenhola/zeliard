@@ -900,7 +900,7 @@ render_animated_tile:
 		dec	bl
 
 fn_10:
-		mov	al,byte ptr cs:[0ABh][bx]
+		mov	al,byte ptr cs:weap_dur_cur[bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
 		call	init_timestamp
