@@ -166,7 +166,7 @@ start:
 		dw	2E92h			; fn 34
 ; Dispatch mechanism: AL=fn#, BL=col, BH=row. Computes DI=col*80+row.
 ; fn 0 (AL=0) jumps directly to clear_screen (init only path).
-; fn 1+ PUSHes DI then falls through to border-draw setup at loc_1.
+; fn 1+ PUSHes DI then falls through to border-draw setup at border_draw_setup.
 
 dispatch_call:
 		push	ax
@@ -184,7 +184,7 @@ dispatch_call:
 dispatch_call_do:
 		push	di
 
-loc_1:
+border_draw_setup:
 		sub	cl,4
 		add	di,0A0h
 		call	clear_screen
@@ -233,23 +233,23 @@ fill_horizontal_line		proc	near
 		mov	bh,ch
 		sub	bh,2
 
-loc_3:
+hline_clear_left_loop:
 									xor	al,al			; Zero register
 									xchg	es:[di],al
 									inc	di
 									dec	bh
-									jnz	loc_3			; Jump if not zero
+									jnz	hline_clear_left_loop			; Jump if not zero
 		xchg	es:[di],ah
 		mov	ax,102h
 		out	dx,ax			; port 3C4h, EGA sequencr index
 						;  al = 2, map mask register
 		test	byte ptr cs:gvar_volume_b,0FFh
-		jz	loc_4			; Jump if zero
+		jz	hline_after_volume_check			; Jump if zero
 		mov	ax,0F02h
 		out	dx,ax			; port 3C4h, EGA sequencr index
 						;  al = 2, map mask register
 
-loc_4:
+hline_after_volume_check:
 		mov	dx,3CEh
 		mov	ax,1003h
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -261,12 +261,12 @@ loc_4:
 		mov	bh,ch
 		sub	bh,2
 
-loc_5:
+hline_fill_right_loop:
 									mov	al,0FFh
 									xchg	es:[di],al
 									inc	di
 									dec	bh
-									jnz	loc_5			; Jump if not zero
+									jnz	hline_fill_right_loop			; Jump if not zero
 		mov	al,ah
 		xchg	es:[di],al
 		inc	di
@@ -289,7 +289,7 @@ clear_screen		proc	near
 		xor	bh,bh			; Zero register
 		mov	ah,cl
 
-loc_6:
+clear_row_loop:
 									push	cx
 									mov	cl,ch
 									xor	ch,ch			; Zero register
@@ -298,7 +298,7 @@ loc_6:
 									pop	cx
 									add	di,bx
 									dec	ah
-									jnz	loc_6			; Jump if not zero
+									jnz	clear_row_loop			; Jump if not zero
 		retn
 
 clear_screen		endp
@@ -418,7 +418,7 @@ locloop_14:
 music_update_trampoline:
 		add	[bx+di],dx
 		adc	ax,5755h
-		ja	loc_19			; Jump if above
+		ja	plot_default_path			; Jump if above
 		jmp	dword ptr ds:music_fn_ptr
 
 calc_ega_pixel_pos:
@@ -450,23 +450,23 @@ calc_ega_pixel_pos:
 		shr	cl,1			; Shift w/zeros fill
 		shr	cl,1			; Shift w/zeros fill
 		test	cl,0FFh
-		jz	loc_17			; Jump if zero
+		jz	pixel_line_check_tail			; Jump if zero
 
-loc_16:
+pixel_line_mid_loop:
 									push	cx
 									mov	ax,0FFFFh
 									call	plot_pixel
 									pop	cx
 									inc	di
 									dec	cl
-									jnz	loc_16			; Jump if not zero
+									jnz	pixel_line_mid_loop			; Jump if not zero
 
-loc_17:
+pixel_line_check_tail:
 		and	ch,3
-		jnz	loc_18			; Jump if not zero
+		jnz	pixel_line_tail_pixels			; Jump if not zero
 		retn
 
-loc_18:
+pixel_line_tail_pixels:
 		mov	cl,ch
 		shl	cl,1			; Shift w/zeros fill
 		mov	ah,0FFh
@@ -483,13 +483,13 @@ loc_18:
 plot_pixel		proc	near
 		mov	cx,ax
 		test	byte ptr cs:plot_mode,0FFh
-		jnz	loc_21			; Jump if not zero
+		jnz	plot_modal_path			; Jump if not zero
 		mov	dx,3CEh
 		mov	al,8
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 8, data bit mask
 
-loc_19:
+plot_default_path:
 		EGA_SEL_MASK
 		push	di
 		mov	al,7
@@ -499,7 +499,7 @@ loc_19:
 		add	di,50h
 		mov	ch,8
 
-loc_20:
+plot_default_row_loop:
 									mov	al,7
 									out	dx,al			; port 3C5h, EGA sequencr func
 									xor	al,al			; Zero register
@@ -511,7 +511,7 @@ loc_20:
 									xchg	es:[di],al
 									add	di,50h
 									dec	ch
-									jnz	loc_20			; Jump if not zero
+									jnz	plot_default_row_loop			; Jump if not zero
 		mov	al,7
 		out	dx,al			; port 3C5h, EGA sequencr func
 		xor	al,al			; Zero register
@@ -523,9 +523,9 @@ loc_20:
 		pop	di
 		retn
 
-loc_21:
+plot_modal_path:
 		cmp	byte ptr cs:plot_mode,80h
-		je	loc_23			; Jump if equal
+		je	plot_clear_path			; Jump if equal
 		mov	dx,3CEh
 		mov	ah,cl
 		mov	al,8
@@ -535,7 +535,7 @@ loc_21:
 		push	di
 		mov	ch,0Ah
 
-loc_22:
+plot_and_mode_row_loop:
 									mov	al,7
 									out	dx,al			; port 3C5h, EGA sequencr func
 									xor	al,al			; Zero register
@@ -547,11 +547,11 @@ loc_22:
 									xchg	es:[di],al
 									add	di,50h
 									dec	ch
-									jnz	loc_22			; Jump if not zero
+									jnz	plot_and_mode_row_loop			; Jump if not zero
 		pop	di
 		retn
 
-loc_23:
+plot_clear_path:
 		mov	dx,3CEh
 		mov	ah,cl
 		mov	al,8
@@ -563,12 +563,12 @@ loc_23:
 		push	di
 		mov	ch,0Ah
 
-loc_24:
+plot_clear_row_loop:
 									xor	al,al			; Zero register
 									xchg	es:[di],al
 									add	di,50h
 									dec	ch
-									jnz	loc_24			; Jump if not zero
+									jnz	plot_clear_row_loop			; Jump if not zero
 		pop	di
 		retn
 
@@ -595,34 +595,34 @@ draw_text_field_common:
 		call	calc_text_width
 		push	ax
 
-loc_25:
+dtfc_column_fill_loop:
 									or	bl,bl			; Zero ?
-									jz	loc_26			; Jump if zero
+									jz	dtfc_after_columns			; Jump if zero
 									mov	bh,6
 									mov	al,0FFh
 									call	fill_vertical_line
 									dec	bl
 									add	di,0FE21h
-									jmp	short loc_25
+									jmp	short dtfc_column_fill_loop
 
-loc_26:
+dtfc_after_columns:
 		pop	ax
 		or	al,al			; Zero ?
-		jnz	loc_27			; Jump if not zero
+		jnz	dtfc_trailing_column			; Jump if not zero
 		retn
 
-loc_27:
+dtfc_trailing_column:
 		mov	bh,6
-		jmp	loc_35
+		jmp	fvl_loop
 
 draw_text_field_ega:
 		mov	di,3305h
 		mov	bx,word ptr cs:[90h]
-		jmp	short loc_28
+		jmp	short dtf_ega_body
 		mov	di,36C5h			; alt EGA text field offset (entry B)
-		jmp	short loc_28
+		jmp	short dtf_ega_body
 
-loc_28:
+dtf_ega_body:
 		SET_EGA_ES
 		mov	dx,3C4h
 		mov	ax,102h
@@ -632,52 +632,52 @@ loc_28:
 		push	ax
 		push	bx
 
-loc_29:
+dtf_ega_column_loop:
 									or	bl,bl			; Zero ?
-									jz	loc_30			; Jump if zero
+									jz	dtf_ega_after_columns			; Jump if zero
 									mov	bh,5
 									mov	al,0FFh
 									call	fill_vertical_line
 									dec	bl
 									add	di,ega_col_stride
-									jmp	short loc_29
+									jmp	short dtf_ega_column_loop
 
 fn_4:
 
-loc_30:
+dtf_ega_after_columns:
 		pop	bx
 		pop	ax
 
 fn_6:
 		or	al,al			; Zero ?
-		jz	loc_31			; Jump if zero
+		jz	dtf_ega_check_trailing			; Jump if zero
 		mov	bh,5
 		call	fill_vertical_line
 		add	di,ega_col_stride
 		inc	bl
 
-loc_31:
+dtf_ega_check_trailing:
 		mov	bh,19h
 		sub	bh,bl
-		jnz	loc_32			; Jump if not zero
+		jnz	dtf_ega_back_fill_setup			; Jump if not zero
 		retn
 
-loc_32:
+dtf_ega_back_fill_setup:
 		mov	bl,bh
 
-loc_33:
+dtf_ega_back_fill_loop:
 									mov	bh,5
 									xor	al,al			; Zero register
 									call	fill_vertical_line
 									add	di,0FE71h
 									dec	bl
-									jnz	loc_33			; Jump if not zero
+									jnz	dtf_ega_back_fill_loop			; Jump if not zero
 		retn
 
 calc_text_width		proc	near
 		mov	ax,320h
 		sub	ax,bx
-		jc	loc_34			; Jump if carry Set
+		jc	ctw_overflow			; Jump if carry Set
 		shr	bx,1			; Shift w/zeros fill
 		shr	bx,1			; Shift w/zeros fill
 		mov	cl,bl
@@ -690,7 +690,7 @@ calc_text_width		proc	near
 		not	al
 		retn
 
-loc_34:
+ctw_overflow:
 		mov	bx,19h
 		xor	al,al			; Zero register
 		retn
@@ -699,11 +699,11 @@ calc_text_width		endp
 
 fill_vertical_line		proc	near
 
-loc_35:
+fvl_loop:
 									stosb				; Store al to es:[di]
 									add	di,4Fh
 									dec	bh
-									jnz	loc_35			; Jump if not zero
+									jnz	fvl_loop			; Jump if not zero
 		retn
 
 fill_vertical_line		endp
@@ -711,12 +711,12 @@ fill_vertical_line		endp
 set_tile_color_a:
 		mov	byte ptr cs:tile_fg_mask,3
 		mov	byte ptr cs:tile_bg_mask,2
-		jmp	short loc_38
+		jmp	short set_tile_color_blit_setup
 
 set_tile_color_b:
 		mov	byte ptr cs:tile_fg_mask,1
 		mov	byte ptr cs:tile_bg_mask,5
-		jmp	short loc_38
+		jmp	short set_tile_color_blit_setup
 
 set_tile_color_c:
 		mov	byte ptr cs:tile_fg_mask,1
@@ -733,10 +733,10 @@ set_tile_color_c:
 
 fn_7:
 
-loc_36:
+dtsc_next_char:
 									lodsb				; String [si] to al
 									or	al,al			; Zero ?
-									jz	loc_37			; Jump if zero
+									jz	dtsc_done			; Jump if zero
 									push	bx
 									push	ds
 									push	si
@@ -750,13 +750,13 @@ fn_8:
 fn_28:
 									pop	bx
 									inc	bl
-									jmp	short loc_36
+									jmp	short dtsc_next_char
 
-loc_37:
+dtsc_done:
 		EGA_BLIT_END
 		retn
 
-loc_38:
+set_tile_color_blit_setup:
 		lodsb				; String [si] to al
 		xor	dh,dh			; Zero register
 		mov	dl,al
@@ -809,7 +809,7 @@ render_text_char		proc	near
 		push	di
 		mov	bl,8
 
-loc_40:
+rtc_row_loop:
 									push	bx
 									lodsb				; String [si] to al
 									xor	bl,bl			; Zero register
@@ -838,15 +838,15 @@ loc_40:
 									add	di,50h
 									pop	bx
 									dec	bl
-									jnz	loc_40			; Jump if not zero
+									jnz	rtc_row_loop			; Jump if not zero
 		dec	dx
 		pop	di
 		inc	di
 		cmp	cl,6
-		je	loc_41			; Jump if equal
+		je	rtc_inc_di_for_six			; Jump if equal
 		retn
 
-loc_41:
+rtc_inc_di_for_six:
 		inc	di
 		retn
 
@@ -916,10 +916,10 @@ fn_11:
 
 render_if_enabled:
 		test	byte ptr cs:[93h],0FFh
-		jnz	loc_42			; Jump if not zero
+		jnz	rie_render			; Jump if not zero
 		retn
 
-loc_42:
+rie_render:
 		push	ds
 		mov	ax,word ptr cs:[94h]
 		xor	dx,dx			; Zero register
@@ -943,10 +943,10 @@ init_timestamp		proc	near
 
 locloop_43:
 									test	byte ptr cs:[di],0FFh
-									jz	loc_44			; Jump if zero
+									jz	it_clear_byte			; Jump if zero
 									retn
 
-loc_44:
+it_clear_byte:
 									mov	byte ptr cs:[di],0FFh
 
 fn_13:
@@ -989,23 +989,23 @@ time_to_bcd		endp
 modulo_divide_bcd		proc	near
 		xor	dh,dh			; Zero register
 
-loc_45:
+mdb_iter_loop:
 									sub	dl,cl
-									jc	loc_48			; Jump if carry Set
+									jc	mdb_done			; Jump if carry Set
 									sub	ax,bx
-									jnc	loc_46			; Jump if carry=0
+									jnc	mdb_inc_dh			; Jump if carry=0
 									or	dl,dl			; Zero ?
-									jz	loc_47			; Jump if zero
+									jz	mdb_zero_underflow			; Jump if zero
 									dec	dl
 
-loc_46:
+mdb_inc_dh:
 									inc	dh
-									jmp	short loc_45
+									jmp	short mdb_iter_loop
 
-loc_47:
+mdb_zero_underflow:
 		add	ax,bx
 
-loc_48:
+mdb_done:
 		add	dl,cl
 		retn
 
@@ -1031,7 +1031,7 @@ render_tilemap_large		proc	near
 		add	bx,ax
 		EGA_BLIT_PRO
 
-loc_49:
+rtl_outer_loop:
 									mov	al,[di]
 									inc	di
 									push	bx
@@ -1050,7 +1050,7 @@ loc_49:
 									inc	bx
 									inc	ch
 									dec	cl
-									jnz	loc_49			; Jump if not zero
+									jnz	rtl_outer_loop			; Jump if not zero
 		EGA_BLIT_END
 		retn
 
@@ -1064,7 +1064,7 @@ decode_bitplane_tile		proc	near
 
 test_tile_bg_mask:
 		test	byte ptr ds:tile_bg_mask,0FFh
-		jz	loc_52			; Jump if zero
+		jz	dbt_check_terminator			; Jump if zero
 		push	di
 		push	cx
 		push	ax
@@ -1101,12 +1101,12 @@ locloop_51:
 		pop	cx
 		pop	di
 
-loc_52:
+dbt_check_terminator:
 		inc	al
-		jnz	loc_53			; Jump if not zero
+		jnz	dbt_render_glyph			; Jump if not zero
 		retn
 
-loc_53:
+dbt_render_glyph:
 		dec	al
 		xor	ah,ah			; Zero register
 		shl	ax,1			; Shift w/zeros fill
@@ -1119,17 +1119,17 @@ loc_53:
 		pop	ds
 		mov	cl,7
 
-loc_54:
+dbt_glyph_row_loop:
 									lodsw				; String [si] to ax
 									xchg	ah,al
 									test	ch,1
-									jnz	loc_55			; Jump if not zero
+									jnz	dbt_apply_mask			; Jump if not zero
 									shl	ax,1			; Shift w/zeros fill
 									shl	ax,1			; Shift w/zeros fill
 									shl	ax,1			; Shift w/zeros fill
 									shl	ax,1			; Shift w/zeros fill
 
-loc_55:
+dbt_apply_mask:
 									mov	bl,al
 									mov	al,8
 									out	dx,ax			; port 3CEh, EGA graphic index
@@ -1143,7 +1143,7 @@ loc_55:
 									xchg	es:[di+1],ah
 									add	di,50h
 									dec	cl
-									jnz	loc_54			; Jump if not zero
+									jnz	dbt_glyph_row_loop			; Jump if not zero
 		retn
 
 decode_bitplane_tile		endp
@@ -1347,7 +1347,7 @@ render_tilemap_small		proc	near
 		EGA_SEL_MASK
 		mov	cx,10h
 
-loc_59:
+rts_outer_loop:
 		push	cx
 		mov	al,1
 		out	dx,al			; port 3C5h, EGA sequencr func
@@ -1426,7 +1426,7 @@ locloop_62:
 		jmp	short loc_ret_64
 
 locloop_63:
-		jmp	loc_59
+		jmp	rts_outer_loop
 
 loc_ret_64:
 		retn
@@ -1667,23 +1667,23 @@ render_char_string:
 fn_20:
 		mov	al,1
 		test	byte ptr cs:gvar_volume_b,0FFh
-		jz	loc_69			; Jump if zero
+		jz	rcs_set_fg_mask			; Jump if zero
 		mov	al,7
 
-loc_69:
+rcs_set_fg_mask:
 		mov	cs:tile_fg_mask,al
 
-loc_70:
+rcs_next_char:
 																lodsb				; String [si] to al
 																cmp	al,0FFh
-																jne	loc_71			; Jump if not equal
+																jne	rcs_check_special			; Jump if not equal
 																retn
 
-loc_71:
+rcs_check_special:
 																cmp	al,0Dh
-																je	loc_72			; Jump if equal
+																je	rcs_handle_newline			; Jump if equal
 																or	al,al			; Zero ?
-																js	loc_73			; Jump if sign=1
+																js	rcs_handle_color_code			; Jump if sign=1
 																push	cx
 																push	bx
 																push	si
@@ -1693,18 +1693,18 @@ loc_71:
 																pop	bx
 																pop	cx
 																add	bx,8
-																jmp	short loc_70
+																jmp	short rcs_next_char
 
-loc_72:
+rcs_handle_newline:
 																add	byte ptr cs:char_row_ptr,8
 																mov	cl,cs:char_row_ptr
 																mov	bx,cs:char_col_ptr
-																jmp	short loc_70
+																jmp	short rcs_next_char
 
-loc_73:
+rcs_handle_color_code:
 									and	al,7
 									mov	cs:tile_fg_mask,al
-									jmp	short loc_70
+									jmp	short rcs_next_char
 
 ega_copy_xy_region:
 		push	ds
@@ -1839,7 +1839,7 @@ render_font_ext:
 		EGA_BLIT_PRO
 		mov	cx,0Dh
 
-loc_77:
+render_font_outer_loop:
 		push	cx
 		mov	ax,3
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -1957,12 +1957,12 @@ fn_31:
 		pop	cx
 		loop	locloop_78		; Loop if cx > 0
 
-		jmp	short loc_79
+		jmp	short render_font_cleanup
 
 locloop_78:
-		jmp	loc_77
+		jmp	render_font_outer_loop
 
-loc_79:
+render_font_cleanup:
 		mov	ax,3
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 3, data rotate
@@ -2001,11 +2001,11 @@ sprite_anim_data:
 		db	 00h, 67h,0F3h, 00h, 00h, 78h	; row 18
 		db	 0Fh, 00h, 00h,0FFh		; (4-byte terminator)
 
-loc_80:
+delay_anchor_dead:
 									jg	$+2			; delay for I/O
 									add	[bx+si+0Fh],bh
 									add	[bx+si],al
-									ja	loc_80			; Jump if above
+									ja	delay_anchor_dead			; Jump if above
 		add	[bx+si],al
 ;*		div	word ptr [bx+0]		; ax,dxrem=dx:ax/data
 		db	0F7h, 77h, 00h		;  div word ptr [bx+0]  (F7h /6 with ModRM 77h; alt encoding)
