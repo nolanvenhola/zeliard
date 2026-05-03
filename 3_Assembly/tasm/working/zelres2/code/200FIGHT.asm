@@ -393,7 +393,7 @@ state_byte_9F17	equ	9F17h			; alias — deprecated placeholder
 ; The byte at 0x9F18 is the HP REGENERATION TICK COUNTER.  At line 2729
 ; (check_state18), 200FIGHT increments it each frame; when it wraps at
 ; 16 (cmp ..., 10h), it heals the hero (hero_HP += 2 if hero_HP <
-; char_hp_max at 0xB2) and triggers the HUD redraw via cs:[2008h]
+; player_hp_max at 0xB2) and triggers the HUD redraw via cs:[2008h]
 ; (restore_pending dispatch).  4 reset-to-0 sites at lines 999, 1128,
 ; 1346, 1770 — scene transitions / damage events where the regen
 ; cooldown resets.  Placeholder kept as alias.

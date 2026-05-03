@@ -35,8 +35,8 @@ PAGE  59,132
 ;                  (CS-relative offsets) and by game.bin / fight.bin via
 ;                  the same shared segment.
 ;    Reads/writes: provides initial values for hero_gold_hi/lo, hero_almas,
-;                  hero_HP, sword_type, shield_type, shield_HP,
-;                  current_magic_spell at game_seg:0x0085-0x009D, plus
+;                  hero_HP, equipped_weapon, equipped_magic, player_exp,
+;                  cur_weapon_idx at game_seg:0x0085-0x009D, plus
 ;                  ply_walk_speed/ply_accel and the animation color LUT.
 ;
 ;==========================================================================
@@ -70,7 +70,7 @@ key_map_table	dw	64 dup (0)
 ;  against the game manual (max HP = 80) and IDA's enum constants
 ;  (SWORD_TRAINING = 1).
 ;
-;  Note: drv_frame_idx (formerly named) is now current_magic_spell — the
+;  Note: drv_frame_idx (formerly named) is now cur_weapon_idx — the
 ;  byte at 0x9D init=0 (no spell at start), not an animation frame index.
 ;--------------------------------------------------------------------------
 
@@ -133,24 +133,24 @@ item_effect_val	dw	0		; [8Eh-8Fh] item effect value (16-bit)
 ; The manual's "max HP = 80" reflects gameplay balance; the storage is
 ; 16-bit so designers had headroom for buffs / boss multipliers.
 hero_HP		dw	0050h		; [90h-91h] current HP (16-bit; init=80)
-sword_type	db	1		; [92h] sword type (init 1 = SWORD_TRAINING)
-shield_type	db	0		; [93h] shield type (init 0 = no shield)
+equipped_weapon	db	1		; [92h] sword type (init 1 = SWORD_TRAINING)
+equipped_magic	db	0		; [93h] shield type (init 0 = no shield)
 ;
-; shield_HP — 16-bit per static analysis (word_read/word_write at 0x94).
+; player_exp — 16-bit per static analysis (word_read/word_write at 0x94).
 ; No functional probe yet (shield-damage at fight.bin 0x75D6 is multi-step).
-shield_HP	dw	0		; [94h-95h] shield HP (16-bit; 0 = no shield)
+player_exp	dw	0		; [94h-95h] shield HP (16-bit; 0 = no shield)
 ;
 ; [96h..9Ch]: 201SELCT (character-select chunk) names the leading entries
-; as char_exp_cap (word), char_speed/power/abilities.  Trailing 9Bh/9Ch
+; as player_exp_cap (word), player_speed/power/abilities.  Trailing 9Bh/9Ch
 ; have no canonical name from any chunk — left as placeholders.
-char_exp_cap	dw	0		; [96h-97h] character experience cap (16-bit)
-char_speed	db	0		; [98h] character speed stat
-char_power	db	0		; [99h] character power stat
-char_abilities	db	0		; [9Ah] character abilities flags
+player_exp_cap	dw	0		; [96h-97h] character experience cap (16-bit)
+player_speed	db	0		; [98h] character speed stat
+player_power	db	0		; [99h] character power stat
+player_abilities	db	0		; [9Ah] character abilities flags
 trade_marker_flag db	0	; [9Bh] trade-event marker (set in 200FIGHT, tested by 212ARMRP)
 stat_X9C	db	0		; [9Ch] VESTIGIAL — write-only flag, no reader observed (functest 2026-04-29)
 ;
-current_magic_spell db	0		; [9Dh] magic spell id (init 0 = no spell)
+cur_weapon_idx db	0		; [9Dh] magic spell id (init 0 = no spell)
 ;
 ; [9Eh..0AAh]: 201SELCT names 0x9E as cur_magic_idx (currently selected
 ; magic).  0x9F has no canonical name; 0xA0 has 5 cross-segment competing
@@ -163,7 +163,7 @@ music_track_count db 0		; [music_track_count] music track count (read by load_mu
 ;--------------------------------------------------------------------------
 ;  Animation Color LUT  [CS:0x00AB - CS:0x00C3]  (drv_color_lut base = ABh)
 ;
-;  Indexed as cs:[bx-1] where bx = current_magic_spell + 1 (or similar).
+;  Indexed as cs:[bx-1] where bx = cur_weapon_idx + 1 (or similar).
 ;  Each byte is the palette/color index for that frame.
 ;  17 active entries + 8 reserved zeros.
 ;
@@ -180,10 +180,10 @@ anim_color_lut	db	0Ch		; frame  1: color 12
 		db	04h		; frame  6: color  4
 		db	03h		; frame  7: color  3
 ;
-; OVERLAY: byte at [B2h] doubles as char_hp_max (HP ceiling).  The value
+; OVERLAY: byte at [B2h] doubles as player_hp_max (HP ceiling).  The value
 ; 0x50=80 simultaneously supplies frame 8's color index AND the HP cap
-; per the game manual.  Read by gm*.bin drivers as `mov bx, cs:[char_hp_max]`.
-		db	50h		; [B2h] frame 8: color 80  /  char_hp_max=80 (overlay)
+; per the game manual.  Read by gm*.bin drivers as `mov bx, cs:[player_hp_max]`.
+		db	50h		; [B2h] frame 8: color 80  /  player_hp_max=80 (overlay)
 		db	00h		; [B3h] frame 9: color  0
 ;
 ; OVERLAY: byte at [B4h] doubles as weap_dur_max (weapon durability cap = 12).

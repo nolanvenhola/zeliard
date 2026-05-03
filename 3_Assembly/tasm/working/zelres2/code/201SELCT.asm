@@ -122,13 +122,13 @@ item_flags		equ	0A6h			;* 5-byte table: item possession flags (at DS:0A6h)
 weapon_flags		equ	0BBh			;* 7-byte table: weapon possession flags (1-based, at DS:0BBh)
 equipped_weapon		equ	092h			;* byte: currently equipped weapon index (1-based, 0=none)
 equipped_magic		equ	093h			;* byte: currently equipped magic index (1-based, 0=none)
-char_hp			equ	090h			;* word: current character HP
-char_hp_max		equ	0B2h			;* word: maximum character HP
-char_exp		equ	094h			;* word: current character experience
-char_exp_cap		equ	096h			;* word: experience cap for current level
-char_speed		equ	098h			;* byte: character speed stat
-char_power		equ	099h			;* byte: character power/attack stat
-char_abilities		equ	09Ah			;* 3-byte table: combat ability flags (DS:09Ah..09Ch)
+hero_HP			equ	090h			;* word: current character HP
+player_hp_max		equ	0B2h			;* word: maximum character HP
+player_exp		equ	094h			;* word: current character experience
+player_exp_cap		equ	096h			;* word: experience cap for current level
+player_speed		equ	098h			;* byte: character speed stat
+player_power		equ	099h			;* byte: character power/attack stat
+player_abilities		equ	09Ah			;* 3-byte table: combat ability flags (DS:09Ah..09Ch)
 weap_dur_cur		equ	0ABh			;* 7-byte table: current weapon durability (DS:0ABh..0B1h)
 weap_dur_max		equ	0B4h			;* 7-byte table: maximum weapon durability (DS:0B4h..0BAh)
 key_count		equ	0E4h			;* byte: number of keys held
@@ -713,12 +713,12 @@ find_item_next:
 
 use_hp_potion:				; item 0: restore 80 HP (caps at max)
 		mov	byte ptr ds:gvar_volume_b,0Eh
-		add	word ptr ds:char_hp,50h		; heal +80 HP
-		mov	ax,word ptr ds:char_hp
-		sub	ax,word ptr ds:char_hp_max
+		add	word ptr ds:hero_HP,50h		; heal +80 HP
+		mov	ax,word ptr ds:hero_HP
+		sub	ax,word ptr ds:player_hp_max
 		jc	hp_potion_nocap
-		mov	ax,word ptr ds:char_hp_max
-		mov	word ptr ds:char_hp,ax		; cap at max HP
+		mov	ax,word ptr ds:player_hp_max
+		mov	word ptr ds:hero_HP,ax		; cap at max HP
 
 hp_potion_nocap:
 		call	word ptr cs:drv_palette_push
@@ -726,8 +726,8 @@ hp_potion_nocap:
 
 use_hp_full:				; item 1: restore HP to maximum
 		mov	byte ptr ds:gvar_volume_b,0Eh
-		mov	ax,word ptr ds:char_hp_max
-		mov	word ptr ds:char_hp,ax
+		mov	ax,word ptr ds:player_hp_max
+		mov	word ptr ds:hero_HP,ax
 		call	word ptr cs:drv_palette_push
 		jmp	draw_item_detail_entry+1	;* off-by-one: skips call show_portrait_box
 
@@ -777,12 +777,12 @@ apply_item_exp:
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	ax,ds:item_effect_tbl[bx]
-		add	word ptr ds:char_exp,ax
-		mov	ax,word ptr ds:char_exp
-		sub	ax,word ptr ds:char_exp_cap
+		add	word ptr ds:player_exp,ax
+		mov	ax,word ptr ds:player_exp
+		sub	ax,word ptr ds:player_exp_cap
 		jc	cap_exp			; Jump if carry Set
-		mov	ax,word ptr ds:char_exp_cap
-		mov	word ptr ds:char_exp,ax
+		mov	ax,word ptr ds:player_exp_cap
+		mov	word ptr ds:player_exp,ax
 
 cap_exp:
 		call	word ptr cs:drv_fn_13
@@ -1102,7 +1102,7 @@ draw_stat_93h:
 		call	draw_exp_bar
 
 draw_stat_98h:
-		test	byte ptr ds:char_speed,0FFh
+		test	byte ptr ds:player_speed,0FFh
 		jz	draw_stat_99h			; Jump if zero
 		mov	bx,2E75h
 		xor	al,al			; Zero register
@@ -1112,7 +1112,7 @@ draw_stat_98h:
 		mov	al,5Eh			; '^'
 		mov	ah,1
 		call	word ptr cs:drv_render_char
-		mov	al,byte ptr ds:char_speed
+		mov	al,byte ptr ds:player_speed
 		xor	ah,ah			; Zero register
 		mov	cx,1
 		mov	bl,1
@@ -1120,7 +1120,7 @@ draw_stat_98h:
 		call	fmt_number
 
 draw_stat_99h:
-		test	byte ptr ds:char_power,0FFh
+		test	byte ptr ds:player_power,0FFh
 		jz	draw_abilities			; Jump if zero
 		mov	bx,3A75h
 		mov	al,1
@@ -1130,7 +1130,7 @@ draw_stat_99h:
 		mov	al,5Eh			; '^'
 		mov	ah,1
 		call	word ptr cs:drv_render_char
-		mov	al,byte ptr ds:char_power
+		mov	al,byte ptr ds:player_power
 		xor	ah,ah			; Zero register
 		mov	cx,1
 		mov	bl,1
@@ -1138,7 +1138,7 @@ draw_stat_99h:
 		call	fmt_number
 
 draw_abilities:
-		mov	si,char_abilities
+		mov	si,player_abilities
 		mov	bx,3089h
 		mov	cx,3
 
@@ -1166,7 +1166,7 @@ ability_row_skip:
 draw_magic_panel		endp
 
 draw_exp_bar		proc	near
-		mov	ax,word ptr ds:char_exp_cap
+		mov	ax,word ptr ds:player_exp_cap
 		mov	dx,3469h
 		mov	cx,3
 		mov	bl,4

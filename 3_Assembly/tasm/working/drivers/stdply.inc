@@ -77,23 +77,23 @@ stat_X8E                equ     8Eh     ; alias — deprecated placeholder
 hero_HP                 equ     90h     ; current HP low byte (16-bit field)
 hero_HP_hi              equ     91h     ; current HP high byte
 ;
-sword_type              equ     92h     ; sword type (init 1 = SWORD_TRAINING)
-shield_type             equ     93h     ; shield type (init 0 = no shield)
+equipped_weapon              equ     92h     ; sword type (init 1 = SWORD_TRAINING)
+equipped_magic             equ     93h     ; shield type (init 0 = no shield)
 ;
-; shield_HP (16-bit per static analysis; functional probe pending).
-shield_HP               equ     94h     ; shield HP low byte (16-bit field)
-shield_HP_hi            equ     95h     ; shield HP high byte
+; player_exp (16-bit per static analysis; functional probe pending).
+player_exp               equ     94h     ; shield HP low byte (16-bit field)
+player_exp_hi            equ     95h     ; shield HP high byte
 ;
 ; 0x96..0x9A: character-stat block named by 201SELCT (character-select
 ; chunk).  All stat names below match its read patterns; placeholders
 ; aliased.  static analyzer matches: 0x96 word, 0x98..0x9A all byte/test.
-char_exp_cap            equ     96h     ; character experience cap (16-bit, 96h..97h)
+player_exp_cap            equ     96h     ; character experience cap (16-bit, 96h..97h)
 stat_X96                equ     96h     ; alias — deprecated placeholder
-char_speed              equ     98h     ; character speed stat
+player_speed              equ     98h     ; character speed stat
 stat_X98                equ     98h     ; alias — deprecated placeholder
-char_power              equ     99h     ; character power stat
+player_power              equ     99h     ; character power stat
 stat_X99                equ     99h     ; alias — deprecated placeholder
-char_abilities          equ     9Ah     ; character abilities flags
+player_abilities          equ     9Ah     ; character abilities flags
 stat_X9A                equ     9Ah     ; alias — deprecated placeholder
 ; 0x9B: trade-marker flag.  200FIGHT line 6692 sets [9Bh]=0FFh after a
 ; specific entity_scan match.  212ARMRP (armor shop) line 200 tests it
@@ -107,7 +107,7 @@ stat_X9B                equ     9Bh     ; alias — deprecated placeholder
 ; so the byte position is preserved in the player record, but it is dead
 ; storage from a runtime perspective.
 stat_X9C                equ     9Ch     ; VESTIGIAL — write-only flag, no reader observed
-current_magic_spell     equ     9Dh     ; magic spell id (init 0 = no spell)
+cur_weapon_idx     equ     9Dh     ; magic spell id (init 0 = no spell)
 cur_magic_idx           equ     9Eh     ; currently selected magic index (canonical, from 201SELCT)
 stat_X9E                equ     9Eh     ; alias — deprecated placeholder
 ; 0x9F: VESTIGIAL.  1 write site (106TOWN frame_update prologue zero-
@@ -125,9 +125,9 @@ stat_XA0                equ     0A0h    ; alias — deprecated placeholder
 ; Animation color LUT overlay  [0x00B2, 0x00B4]
 ; Two bytes inside the 17-entry anim_color_lut do double duty as gameplay
 ; stat caps (the byte values are intentionally chosen to satisfy both roles).
-; char_hp_max and weap_dur_max are also defined locally in gm*.inc files —
+; player_hp_max and weap_dur_max are also defined locally in gm*.inc files —
 ; this declaration documents the canonical address.
-char_hp_max             equ     0B2h    ; HP ceiling = 80 (overlays LUT frame 8)
+player_hp_max             equ     0B2h    ; HP ceiling = 80 (overlays LUT frame 8)
 weap_dur_max            equ     0B4h    ; weapon durability cap = 12 (overlays frame 10)
 
 ; Player flags / hitbox section  [0x00C2-0x00E8]
@@ -149,7 +149,7 @@ ply_hitbox              equ     0D2h    ; base of 9-row collision bitmask (match
 ; contains the most-accessed byte (0xE7) plus two flag bytes (0xE6, 0xE8).
 ; 0xC6..0xC7: HP-heal-pulse counter (16-bit).  Used in `call_combat_fx`
 ; (200FIGHT line 2806): while [C6h] != 0 and [E8h] is clear, decrement
-; [C6h] and ADD 8 to hero_HP each tick; clamp to char_hp_max (0xB2);
+; [C6h] and ADD 8 to hero_HP each tick; clamp to player_hp_max (0xB2);
 ; clear [C6h] when HP reaches max.  Set/incremented at line 6774
 ; (`add [C6h], ax` after a healing-event computation).  Drives the
 ; HP-trickle restoration animation when player consumes healing.
