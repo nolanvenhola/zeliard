@@ -78,6 +78,20 @@ herc_video_seg	equ	0B000h			; HGC framebuffer segment (stick-only)
 ; So to address the scan buffer AT file offset F, we need cs:[F + 0x0100].
 ; Using (offset scan_data_lbl) + ISR_STUBS_BASE lets TASM compute this
 ; automatically ?-- if code before the block changes, all three EQUs update.
+; ----------------------------------------------------------------------
+; Input state bytes (CS-relative, used by keyboard ISR + scancode dispatch)
+; ----------------------------------------------------------------------
+input_dir_lo	equ	5C1h	; keyboard/joystick direction state (low byte; bit-set/xor by scancode handler)
+input_dir_hi	equ	5C2h	; direction state high byte (paired with 5C1)
+input_btn_lo	equ	5C3h	; button/secondary state low byte
+input_btn_hi	equ	5C4h	; button state high byte (paired with 5C3)
+ext_key_flag	equ	5C5h	; extended-key prefix flag (set 0xFF on extended scancode)
+joy_cal_x	equ	5C6h	; joystick X-axis calibration value (word; written by calibrate_joystick)
+joy_cal_y	equ	5C8h	; joystick Y-axis calibration value (word)
+exit_dispatch_far_ptr equ 6F7h	; far ptr to exit-to-DOS handler (jmp dword ptr ds:exit_dispatch_far_ptr)
+subsample_accumulator equ 92Bh	; frame-counter accumulator (incremented by update_subsample_accumulator)
+data_175	equ	175h	; (TBD — small data table, indexed access via [175h][bx+si])
+
 scan_buf_ptr	equ	(offset scan_data_lbl) + ISR_STUBS_BASE
 search_path_ptr	equ	(offset scan_data_lbl) + ISR_STUBS_BASE + 4
 dta_buffer	equ	(offset scan_data_lbl) + ISR_STUBS_BASE + 8
@@ -389,10 +403,10 @@ kbd_bad_scancode:
 		and	al,7Fh
 		out	61h,al			; port 61h, 8255 B - spkr, etc
 						;  al = 0, speaker off
-		mov	byte ptr cs:[5C1h],0
-		mov	byte ptr cs:[5C2h],0
-		mov	byte ptr cs:[5C3h],0
-		mov	byte ptr cs:[5C4h],0
+		mov	byte ptr cs:input_dir_lo,0
+		mov	byte ptr cs:input_dir_hi,0
+		mov	byte ptr cs:input_btn_lo,0
+		mov	byte ptr cs:input_btn_hi,0
 		mov	al,20h			; ' '
 		out	20h,al			; port 20h, 8259-1 int command
 						;  al = 20h, end of interrupt
@@ -439,13 +453,13 @@ ps_valid_scan:
 		jne	ps_not_dir			; Jump if not equal
 
 ps_dir_match:
-		or	byte ptr ds:[5C1h],cl
+		or	byte ptr ds:input_dir_lo,cl
 		test	ah,80h
 		jnz	ps_dir_release			; Jump if not zero
 		jmp	ps_merge_input
 
 ps_dir_release:
-		xor	byte ptr ds:[5C1h],cl
+		xor	byte ptr ds:input_dir_lo,cl
 		jmp	ps_merge_input
 
 ps_not_dir:
@@ -463,20 +477,20 @@ ps_not_dir:
 		jne	ps_not_diag			; Jump if not equal
 
 ps_diag_match:
-		or	byte ptr ds:[5C2h],cl
+		or	byte ptr ds:input_dir_hi,cl
 		test	ah,80h
 		jnz	ps_diag_release			; Jump if not zero
 		jmp	ps_merge_input
 
 ps_diag_release:
-		xor	byte ptr ds:[5C2h],cl
+		xor	byte ptr ds:input_dir_hi,cl
 		jmp	ps_merge_input
 
 ps_not_diag:
 		test	byte ptr ds:gvar_input_lock,0FFh
 		jz	ps_kbd_layout			; Jump if zero
-		mov	byte ptr ds:[5C3h],0
-		mov	byte ptr ds:[5C4h],0
+		mov	byte ptr ds:input_btn_lo,0
+		mov	byte ptr ds:input_btn_hi,0
 		jmp	short ps_btn_check
 
 ps_kbd_layout:
@@ -494,10 +508,10 @@ ps_kbd_layout:
 		jne	ps_kdiag_check			; Jump if not equal
 
 ps_kdir_match:
-		or	byte ptr ds:[5C3h],cl
+		or	byte ptr ds:input_btn_lo,cl
 		test	ah,80h
 		jz	ps_extra_keys			; Jump if zero
-		xor	byte ptr ds:[5C3h],cl
+		xor	byte ptr ds:input_btn_lo,cl
 		jmp	short ps_extra_keys
 
 ps_kdiag_check:
@@ -515,10 +529,10 @@ ps_kdiag_check:
 		jne	ps_btn_check			; Jump if not equal
 
 ps_kdiag_match:
-		or	byte ptr ds:[5C4h],cl
+		or	byte ptr ds:input_btn_hi,cl
 		test	ah,80h
 		jz	ps_extra_keys			; Jump if zero
-		xor	byte ptr ds:[5C4h],cl
+		xor	byte ptr ds:input_btn_hi,cl
 		jmp	short ps_extra_keys
 
 ps_btn_check:
@@ -595,21 +609,21 @@ ps_extra_match:
 		xor	ds:gvar_timer_counter,cx
 
 ps_merge_input:
-		mov	al,byte ptr ds:[5C1h]
-		or	al,byte ptr ds:[5C3h]
-		mov	ah,byte ptr ds:[5C2h]
+		mov	al,byte ptr ds:input_dir_lo
+		or	al,byte ptr ds:input_btn_lo
+		mov	ah,byte ptr ds:input_dir_hi
 		and	ah,0Fh
 		or	al,ah
-		mov	ah,byte ptr ds:[5C2h]
+		mov	ah,byte ptr ds:input_dir_hi
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
 		or	al,ah
-		mov	ah,byte ptr ds:[5C4h]
+		mov	ah,byte ptr ds:input_btn_hi
 		and	ah,0Fh
 		or	al,ah
-		mov	ah,byte ptr ds:[5C4h]
+		mov	ah,byte ptr ds:input_btn_hi
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
 		shr	ah,1			; Shift w/zeros fill
@@ -623,12 +637,12 @@ process_scancode		endp
 dispatch_extended_key		proc	near
 		cmp	al,0E0h
 		jb	dek_not_ext			; Jump if below
-		mov	byte ptr cs:[5C5h],0FFh
+		mov	byte ptr cs:ext_key_flag,0FFh
 		retn
 
 dek_not_ext:
-		test	byte ptr cs:[5C5h],0FFh
-		mov	byte ptr cs:[5C5h],0
+		test	byte ptr cs:ext_key_flag,0FFh
+		mov	byte ptr cs:ext_key_flag,0
 		jz	dek_was_ext			; Jump if zero
 		retn
 
@@ -749,7 +763,7 @@ calc_joystick_deadzone		proc	near
 		push	di
 		push	cx
 		call	calibrate_joystick
-		mov	cx,word ptr cs:[5C6h]
+		mov	cx,word ptr cs:joy_cal_x
 		add	cx,8
 		jnc	cdz_x_hi_ok			; Jump if carry=0
 		mov	cx,0FFFFh
@@ -760,7 +774,7 @@ cdz_x_hi_ok:
 		or	byte ptr cs:gvar_joy_cal_x,8
 
 cdz_x_hi_set:
-		mov	cx,word ptr cs:[5C6h]
+		mov	cx,word ptr cs:joy_cal_x
 		shr	cx,1			; Shift w/zeros fill
 		sub	cx,8
 		jnc	cdz_x_lo_ok			; Jump if carry=0
@@ -772,7 +786,7 @@ cdz_x_lo_ok:
 		or	byte ptr cs:gvar_joy_cal_x,4
 
 cdz_x_lo_set:
-		mov	cx,word ptr cs:[5C8h]
+		mov	cx,word ptr cs:joy_cal_y
 		add	cx,8
 		jnc	cdz_y_hi_ok			; Jump if carry=0
 		mov	cx,0FFFFh
@@ -783,7 +797,7 @@ cdz_y_hi_ok:
 		or	byte ptr cs:gvar_joy_cal_x,2
 
 cdz_y_hi_set:
-		mov	cx,word ptr cs:[5C8h]
+		mov	cx,word ptr cs:joy_cal_y
 		shr	cx,1			; Shift w/zeros fill
 		sub	cx,8
 		jnc	cdz_y_lo_ok			; Jump if carry=0
@@ -855,7 +869,7 @@ exit_confirm_wait:
 		db	'Exit to DOS.', 0Dh, ' Sure?(Y/N)'
 		; Exit dialog machine-code body (unreachable via normal flow;
 		; executed via far-call from game engine after the Exit text above)
-		jmp	dword ptr ds:[6F7h]		; far jmp through DS:[0x06F7] pointer (exit dispatch)
+		jmp	dword ptr ds:exit_dispatch_far_ptr		; far jmp through DS:[0x06F7] pointer (exit dispatch)
 		db	 18h,0FFh			; sbb bh,bh (alt-encoding: Fixup byte match)
 		or	byte ptr [bx+si],al		; check timer byte
 		jnz	$+3				; skip retn if nonzero
@@ -914,7 +928,7 @@ draw_screen_element		proc	near
 
 draw_screen_element		endp
 
-			                        ; Called via function pointer (thunk); chains to ds:[6F7h]
+			                        ; Called via function pointer (thunk); chains to ds:exit_dispatch_far_ptr
 
 draw_fn_thunk:
 		push	ax
@@ -922,12 +936,12 @@ draw_fn_thunk:
 		push	bp
 		push	bx
 		inc	bp
-		jmp	dword ptr ds:[6F7h]
+		jmp	dword ptr ds:exit_dispatch_far_ptr
 			                        ; Small helper: clear carry via sbb bh,bh
 
 sbb_bh_helper:
 		db	 18h,0FFh		; sbb bh,bh (alt-encoding: Fixup byte match)
-		add	byte ptr ds:[175h][bx+si],al
+		add	byte ptr ds:data_175[bx+si],al
 		retn
 			                        ; Called via game_state dispatch: speed change handler
 
@@ -1053,8 +1067,8 @@ locloop_joy_fire_wait:
 		jz	joy_fire_wait_done		; Jump if zero
 		or	di,di			; Zero ?
 		jz	joy_fire_wait_done		; Jump if zero
-		mov	word ptr cs:[5C6h],si
-		mov	word ptr cs:[5C8h],di
+		mov	word ptr cs:joy_cal_x,si
+		mov	word ptr cs:joy_cal_y,di
 		mov	byte ptr cs:gvar_music_flag_d,0FFh
 		mov	byte ptr cs:gvar_volume_b,1
 
@@ -1089,8 +1103,8 @@ update_subsample_accumulator:
 		mov	ax,cs:gvar_anim_timer
 		add	al,ah
 		adc	ah,0
-		add	ax,word ptr cs:[92Bh]
-		mov	word ptr cs:[92Bh],ax
+		add	ax,word ptr cs:subsample_accumulator
+		mov	word ptr cs:subsample_accumulator,ax
 		retn
 		; Game-state dispatch handler stub (save/restore menu; accessed via dispatch table)
 		add	byte ptr [bx+si],al		; timer accumulator (first stub byte)

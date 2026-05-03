@@ -67,6 +67,7 @@ intro_tile_map	equ	0A6C8h			;*
 intro_text_ptr_list	equ	0A839h			;*
 welcome_text_ptr	equ	0A8BBh			;*
 bank_grp_ref	equ	0A8E3h			;*
+bank_data_68E	equ	68Eh			; 213BANKP-internal data table (indexed via bx; line 123)
 bank_title_hdr	equ	0A8EEh			;*
 exch_denom_in_tbl	equ	0A8FAh			;*
 exch_denom_out_tbl	equ	0A8FBh			;*
@@ -120,7 +121,7 @@ start:
 		cmp	[di],cl
 		add	[bx+si],al
 		add	al,0A0h
-		sub	byte ptr ds:[68Eh][bx],ah
+		sub	byte ptr ds:bank_data_68E[bx],ah
 		sub	al,0FFh
 		mov	di,8000h
 		mov	si,bank_grp_ref

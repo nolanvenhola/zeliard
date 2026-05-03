@@ -125,6 +125,12 @@ snd_id_534D	equ	534Dh			;*
 npc_walk_left	equ	6A59h			;*
 gseg_chunk_ptr	equ	6AEBh			;*
 icon_data_a	equ	6C93h			;*
+; 106TOWN-internal state bytes (in key_map_table area, repurposed)
+town_ctrl_byte_4	equ	4h			; ctrl-handler state byte (set bit 7 in ctrl_set_bit4)
+town_ctrl_byte_34	equ	34h			; ctrl-handler state byte (set bit 7 in ctrl_83_portrait, bit 6 elsewhere)
+town_door_flag_45	equ	45h			; door-visited flag (set bit 7 on special-door entry)
+; 106TOWN-internal data tables
+npc_dispatch_tbl	equ	6B41h			; NPC type fn-ptr table (indexed by [si+5]*2)
 icon_data_b	equ	6C9Bh			;*
 icon_data_c	equ	6CA4h			;*
 icon_data_d	equ	6CACh			;*
@@ -983,7 +989,7 @@ linecnt_inc:
 player_func_8		endp
 
 ctrl_set_bit4:
-		or	byte ptr ds:[4],80h
+		or	byte ptr ds:town_ctrl_byte_4,80h
 		jmp	evt_walk_entry
 
 ctrl_81_header:
@@ -1008,7 +1014,7 @@ ctrl_81_dir:
 		jmp	render_set_dirty
 
 ctrl_83_portrait:
-		or	byte ptr ds:[34h],80h
+		or	byte ptr ds:town_ctrl_byte_34,80h
 		mov	byte ptr ds:player_ability_1,0FFh
 		call	player_func_25
 		jmp	text_end_seq
@@ -1052,7 +1058,7 @@ ctrl_89_cost_check:
 ctrl_89_deduct:
 		mov	word ptr ds:player_almas,dx
 		call	word ptr cs:gfx_render_c_fn
-		or	byte ptr ds:[34h],40h	; '@'
+		or	byte ptr ds:town_ctrl_byte_34,40h	; '@'
 		mov	si,0A1h
 
 ctrl_89_slot_find:
@@ -1638,7 +1644,7 @@ player_func_26		proc	near
 		mov	bl,[si+5]
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		mov	ax,word ptr ds:[6B41h][bx]
+		mov	ax,word ptr ds:npc_dispatch_tbl[bx]
 		call	ax			;* indirect call via NPC-type dispatch table at 0x6B41
 		mov	[si],dx
 		add	si,8
@@ -2138,14 +2144,14 @@ door_type_shop:
 door_type_special:
 		mov	byte ptr ds:gvar_pose_idx,4
 		call	player_func_14
-		test	byte ptr ds:[45h],80h
+		test	byte ptr ds:town_door_flag_45,80h
 		jnz	special_door_load			; Jump if not zero
 		mov	byte ptr ds:text_done_flag,0FFh
 		mov	ax,918h
 		xor	bl,bl			; Zero register
 		call	player_func_5
 		mov	byte ptr ds:text_done_flag,0
-		or	byte ptr ds:[45h],80h
+		or	byte ptr ds:town_door_flag_45,80h
 
 special_door_load:
 		mov	byte ptr ds:gvar_state_flag,4

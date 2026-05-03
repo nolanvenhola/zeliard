@@ -227,4 +227,7 @@ stat_XE8                equ     0E8h    ; alias — deprecated placeholder
 ; Animation color LUT  [0x00AB-0x00C3]  (NOT YET VALIDATED)
 ; IDA names this 'spells_espada' (Spanish 'espada' = sword/magic spells list).
 ; Init byte = 0x0C; could be a color value or a spell-list start. Inconclusive.
-drv_color_lut           equ     0ABh    ; (purpose inconclusive)
+drv_color_lut           equ     0ABh    ; (purpose inconclusive — IDA "spells_espada")
+weap_dur_cur            equ     0ABh    ; alias — per 201SELCT functional evidence: 7-byte
+                                        ; weapon-durability table (DS:0ABh..0B1h); used by
+                                        ; gm* drivers and 200FIGHT for durability lookups
