@@ -203,7 +203,7 @@ gvar_volume_b	equ	0FF75h			;*
 ; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses
 ; ----------------------------------------------------------------------
-game_func_142		equ	036E8h
+gfx_map_ref_target		equ	036E8h
 enemy_id_table		equ	8000h			;*
 fire1_slot_table		equ	8018h			;*
 fire2_slot_table		equ	801Ch			;*
@@ -338,7 +338,7 @@ scroll_row_cnt	equ	9EF1h			;*
 combat_flag2	equ	9EF6h			;*
 loaded_flag	equ	9F01h			;*
 loading_flag	equ	9F02h			;*
-; 0x9F07: incremented in `game_func_85` (line 4778) right before iterating
+; 0x9F07: incremented in `scan_extra_map_objects` (line 4778) right before iterating
 ; map_extra_ptr; no read in cleaned source.  Likely an entry-tick counter
 ; for the extra-list scan (or a vestigial debug counter).  Single inc only.
 extra_iter_tick	equ	9F07h			; extra-list iteration tick (single-inc; canonical)
@@ -346,7 +346,7 @@ state_byte_9F07	equ	9F07h			; alias — deprecated placeholder
 ; The byte at 0x9F08 is the COMBAT STEP COUNTER, named after the
 ; surrounding labels `step_count_ok:` (line 1645, increment) and
 ; `check_step_count:` (line 1899, threshold compare).  Per-frame
-; flow: after game_func_21 + game_func_24 return CF=0, control reaches
+; flow: after combat_input_poll_step + check_3tile_clearance return CF=0, control reaches
 ; step_count_ok and `inc [9F08]` ticks the counter (line 1646).
 ; On combat exit, when `gvar_combat_ff3D XOR 7Fh == 0`, pop_and_reset
 ; (line 1888) saves the count to DL, clears [9F08]+gvar_combat_ff3D+
@@ -430,7 +430,7 @@ state_byte_9F1D	equ	9F1Dh			; alias — deprecated placeholder
 ; `mov [9F1E], 0FFh`.  Test site (line 2787, `check_state1e`) gates
 ; the normal scroll/state-update path: when set, jumps to check_e8_flag
 ; instead of running scroll-update.  Clear site (line 2996, inside
-; `game_func_48`) follows a full game-state reset (gfx_fn_init, INT 60h
+; `swap_world_state_buffers`) follows a full game-state reset (gfx_fn_init, INT 60h
 ; audio reset, palette reload), then jumps to `module_init` — the
 ; warp's actual reload-and-restart routine.  Placeholder kept as alias.
 warp_pending	equ	9F1Eh			; level-warp transition pending flag (canonical)
@@ -627,7 +627,7 @@ module_init:
 		jmp	new_game_init
 
 save_game_load:
-		call	game_func_29
+		call	init_arena_visuals
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
 		mov	byte ptr ds:loading_flag,0FFh
@@ -761,7 +761,7 @@ scene_exit_wait:
 		mov	byte ptr ds:[83h],0Ch
 		mov	byte ptr ds:room_count,0Ch
 		call	compute_scroll_pos
-		call	game_func_29
+		call	init_arena_visuals
 		jmp	main_loop_entry
 
 normal_frame:
@@ -811,11 +811,11 @@ frame_loop:
 		call	combat_input_handler
 		call	combat_step_dispatch
 		call	update_combat_frame_state
-;*		call	game_func_107			;*
+;*		call	apply_pending_invul7			;*
 		call	sub_27B4
 		db	00Ch			; was: db 0E8h, 001h, 025h
-		call	game_func_7
-		call	game_func_8
+		call	decide_scroll_direction
+		call	process_combat_update_step
 		inc	byte ptr ds:frame_parity
 		cmp	byte ptr ds:frame_parity,2
 		jne	check_joystick			; Jump if not equal
@@ -830,7 +830,7 @@ check_joystick:
 		and	byte ptr ds:[0C2h],0FDh
 
 call_frame_check:
-		call	game_func_20
+		call	combat_step_advance
 		call	combat_input_dispatcher
 		retn
 
@@ -842,7 +842,7 @@ music_active_branch:
 																		call	word ptr cs:gfx_fn_render_tile
 																		mov	byte ptr ds:gvar_joystick_flag,0
 																		call	update_combat_frame_state
-																		call	game_func_8
+																		call	process_combat_update_step
 																		call	combat_input_dispatcher
 																		cmp	byte ptr ds:gvar_music_flag_b,0FFh
 																		jne	music_end_cleanup			; Jump if not equal
@@ -917,7 +917,7 @@ input_compare:
 		cmp	al,ds:input_prev
 		mov	ds:input_prev,al
 		jz	input_changed			; Jump if zero
-		call	game_func_10
+		call	apply_pending_invul
 
 input_changed:
 		pop	ax
@@ -925,7 +925,7 @@ input_changed:
 		push	ax
 		cmp	al,2
 		jne	check_state_2			; Jump if not equal
-		call	game_func_22
+		call	try_advance_with_anim
 
 check_state_2:
 		pop	ax
@@ -940,7 +940,7 @@ check_state_8:
 		jmp	scroll_retreat
 
 call_func10:
-		call	game_func_10
+		call	apply_pending_invul
 		mov	al,ds:gvar_music_flag_b
 		or	al,ds:gvar_music_flag_a
 		jz	set_e7_80			; Jump if zero
@@ -952,7 +952,7 @@ set_e7_80:
 
 combat_input_dispatcher		endp
 
-game_func_7		proc	near
+decide_scroll_direction		proc	near
 		test	byte ptr ds:gvar_music_flag_a,0FFh
 		jz	check_music_a			; Jump if zero
 		retn
@@ -988,9 +988,9 @@ check_back_dir:
 jmp_loc124:
 		jmp	scroll_pos_inc
 
-game_func_7		endp
+decide_scroll_direction		endp
 
-game_func_8		proc	near
+process_combat_update_step		proc	near
 		test	byte ptr ds:any_entity_active,0FFh
 		jnz	check_loaded			; Jump if not zero
 		retn
@@ -1022,8 +1022,8 @@ check_music_b:
 		mov	byte ptr ds:gvar_spacebar_state,0
 
 double_func15:
-		call	game_func_15
-		call	game_func_15
+		call	try_scroll_advance
+		call	try_scroll_advance
 		jmp	short check_combat_end
 
 check_music_b2:
@@ -1055,7 +1055,7 @@ check_combat_80:
 		retn
 
 check_hp_clamp:
-		call	game_func_24
+		call	check_3tile_clearance
 		jnc	check_hp_countdown			; Jump if carry=0
 		retn
 
@@ -1069,7 +1069,7 @@ decrement_hp:
 		inc	byte ptr ds:fight_player_col
 		retn
 
-game_func_8		endp
+process_combat_update_step		endp
 
 combat_step_dispatch		proc	near
 		call	vga_operation7
@@ -1118,7 +1118,7 @@ jmp_scroll_adv:
 
 combat_step_dispatch		endp
 
-game_func_10		proc	near
+apply_pending_invul		proc	near
 		call	vga_operation7
 		jz	check_invul_b			; Jump if zero
 		retn
@@ -1152,11 +1152,11 @@ set_invul:
 
 state1_entry:
 		mov	byte ptr ds:hp_regen_tick,0
-		call	game_func_69
-		call	game_func_80
-		call	game_func_12
+		call	check_3tile_J_pattern
+		call	try_top_combat_step
+		call	try_combat_advance
 
-game_func_11:
+tick_invul_and_hp_state:
 		inc	byte ptr ds:invul_timer
 		cmp	byte ptr ds:invul_timer,0Ah
 		jb	invul_clamped			; Jump if below
@@ -1209,9 +1209,9 @@ fight_reset_soft:
 		mov	byte ptr ds:gvar_combat_ff3D,7Fh
 		retn
 
-game_func_10		endp
+apply_pending_invul		endp
 
-game_func_12		proc	near
+try_combat_advance		proc	near
 		call	vga_operation8
 		inc	si
 		call	game_get_value
@@ -1253,7 +1253,7 @@ music_anim_loop:
 										retn
 
 func13_and_state:
-										call	game_func_13
+										call	scroll_up_and_advance_state
 										call	update_combat_frame_state
 										test	byte ptr ds:gvar_pose_idx,1
 										jz	jmp_back_music_loop			; Jump if zero
@@ -1262,9 +1262,9 @@ func13_and_state:
 jmp_back_music_loop:
 										jmp	short music_anim_loop
 
-game_func_12		endp
+try_combat_advance		endp
 
-game_func_13		proc	near
+scroll_up_and_advance_state		proc	near
 
 pos_scroll_up:
 		dec	byte ptr ds:[82h]
@@ -1276,7 +1276,7 @@ pos_scroll_up:
 
 state5_branch:
 		mov	byte ptr ds:action_pending,0FFh
-		call	game_func_11
+		call	tick_invul_and_hp_state
 		jmp	short player_action_taken
 
 player_action_taken:
@@ -1296,7 +1296,7 @@ check_debug1:
 		jmp	clear_c2_bit
 
 call_func15_check:
-		call	game_func_15
+		call	try_scroll_advance
 		jnc	set_move_dir2			; Jump if carry=0
 		jmp	clear_c2_bit
 
@@ -1326,9 +1326,9 @@ inc_e7:
 		mov	byte ptr ds:hit_snd_played,0
 		retn
 
-game_func_13		endp
+scroll_up_and_advance_state		endp
 
-game_func_15		proc	near
+try_scroll_advance		proc	near
 
 scroll_advance:
 		call	vga_operation8
@@ -1359,7 +1359,7 @@ advance_si:
 		retn
 
 call_func16:
-		call	game_func_16
+		call	check_area_7_boundary
 		jnc	scan_2more			; Jump if carry=0
 		retn
 
@@ -1377,7 +1377,7 @@ scan_2_tiles:
 
 push_call16:
 										push	cx
-										call	game_func_16
+										call	check_area_7_boundary
 										pop	cx
 										jnc	loop_continue			; Jump if carry=0
 										retn
@@ -1470,9 +1470,9 @@ obj_list_next:
 										add	si,10h
 										jmp	short obj_list_scan
 
-game_func_15		endp
+try_scroll_advance		endp
 
-game_func_16		proc	near
+check_area_7_boundary		proc	near
 		cmp	byte ptr ds:area_num,7
 		clc				; Clear carry flag
 		jnz	boundary_check			; Jump if not zero
@@ -1494,7 +1494,7 @@ boundary_false:
 
 state9_branch:
 		mov	byte ptr ds:action_pending,0FFh
-		call	game_func_11
+		call	tick_invul_and_hp_state
 		jmp	short scroll_retreat
 
 scroll_retreat:
@@ -1535,7 +1535,7 @@ inc_e7b:
 		mov	byte ptr ds:hit_snd_played,0
 		retn
 
-game_func_16		endp
+check_area_7_boundary		endp
 
 toggle_c2_bit_pose		proc	near
 
@@ -1720,7 +1720,7 @@ area7_stc:
 
 is_non_area7_slot_b_entity		endp
 
-game_func_20		proc	near
+combat_step_advance		proc	near
 		test	byte ptr ds:escape_flag,0FFh
 		jz	check_escape_flag		; Jump if zero
 		retn
@@ -1732,8 +1732,8 @@ check_escape_flag:
 
 check_combat_ff3d_80:
 		call	bot_path_check
-		call	game_func_21
-		call	game_func_24
+		call	combat_input_poll_step
+		call	check_3tile_clearance
 		jnc	step_count_ok			; Jump if carry=0
 		jmp	check_combat_7f
 
@@ -1749,7 +1749,7 @@ step_count_ok:
 check_hp_cnt:
 		pop	ax
 		jnz	check_c2_bit2			; Jump if not zero
-		call	game_func_23
+		call	scroll_pos_advance
 
 check_c2_bit2:
 		test	byte ptr ds:[0C2h],2
@@ -1863,9 +1863,9 @@ check_si_ok_b:
 jmp_scroll_adv_b:
 		jmp	scroll_advance
 
-game_func_20		endp
+combat_step_advance		endp
 
-game_func_21		proc	near
+combat_input_poll_step		proc	near
 		mov	byte ptr ds:gvar_debug_val,0
 		call	vga_operation8
 		add	si,49h
@@ -1919,16 +1919,16 @@ decrement_midpoint:
 jmp_scroll_adv_d:
 		jmp	scroll_advance
 
-game_func_21		endp
+combat_input_poll_step		endp
 
-game_func_22		proc	near
+try_advance_with_anim		proc	near
 		mov	byte ptr ds:hp_regen_tick,0
 		test	byte ptr ds:gvar_debug_val,0FFh
 		jz	check_debug_val_b			; Jump if zero
 		retn
 
 check_debug_val_b:
-		call	game_func_78
+		call	try_top_scroll_direction
 		VGAOP_8_ADV5_5
 		call	game_get_value
 		jc	music_advance_loop			; Jump if carry Set
@@ -1953,7 +1953,7 @@ music_advance_loop:
 										retn
 
 func13_and_state2:
-										call	game_func_23
+										call	scroll_pos_advance
 										call	update_combat_frame_state
 										test	byte ptr ds:gvar_pose_idx,1
 										jz	jmp_back_adv_loop			; Jump if zero
@@ -1962,15 +1962,15 @@ func13_and_state2:
 jmp_back_adv_loop:
 										jmp	short music_advance_loop
 
-game_func_22		endp
+try_advance_with_anim		endp
 
-; game_func_23: Sourcer-glued multi-fragment cluster.  Real entry point
+; scroll_pos_advance: Sourcer-glued multi-fragment cluster.  Real entry point
 ; is `process_loop_end` (advances map_scroll_row, redraws via
 ; vga_operation5).  Interior labels (check_combat_7f, pop_and_reset,
 ; check_step_count, set_music_a_ff) are jump targets used by other
-; procs — not part of game_func_23's logical body.  Renaming would
+; procs — not part of scroll_pos_advance's logical body.  Renaming would
 ; obscure the Sourcer-decoration nature; kept as placeholder.
-game_func_23		proc	near
+scroll_pos_advance		proc	near
 
 process_loop_end:
 		inc	byte ptr ds:[82h]
@@ -2006,9 +2006,9 @@ set_music_a_ff:
 		mov	byte ptr ds:gvar_music_flag_a,0FFh
 		retn
 
-game_func_23		endp
+scroll_pos_advance		endp
 
-game_func_24		proc	near
+check_3tile_clearance		proc	near
 		VGAOP_8_ADV5_5
 		mov	di,si
 		call	vga_operation9
@@ -2058,7 +2058,7 @@ all_clear:
 		clc				; Clear carry flag
 		retn
 
-game_func_24		endp
+check_3tile_clearance		endp
 
 game_get_value		proc	near
 		mov	al,[si]
@@ -2171,7 +2171,7 @@ scroll_init_data_a:
 		inc	bx
 		inc	bp
 
-game_func_29		proc	near
+init_arena_visuals		proc	near
 		mov	bx,210h
 		xor	al,al			; Zero register
 		mov	ch,21h			; '!'
@@ -2191,7 +2191,7 @@ game_func_29		proc	near
 		mov	si,scroll_init_c
 		jmp	word ptr cs:[200Eh]
 
-game_func_29		endp
+init_arena_visuals		endp
 
 scroll_init_data_b:
 			                        ; Scroll init data block B (dispatch table target or alignment padding)
@@ -2756,12 +2756,12 @@ hp_max_set:
 		cmp	al,byte ptr ds:fight_player_col
 		je	check_e6			; Jump if equal
 		jc	scroll_down_step			; Jump if carry Set
-		call	game_func_13
+		call	scroll_up_and_advance_state
 		inc	byte ptr ds:fight_player_col
 		jmp	short check_e6
 
 scroll_down_step:
-		call	game_func_23
+		call	scroll_pos_advance
 		dec	byte ptr ds:fight_player_col
 
 check_e6:
@@ -2784,7 +2784,7 @@ scroll_right_step:
 		mov	al,byte ptr ds:[83h]
 		cmp	al,0Ch
 		je	update_gvar			; Jump if equal
-		call	game_func_15
+		call	try_scroll_advance
 		inc	byte ptr ds:[83h]
 
 update_gvar:
@@ -2793,19 +2793,19 @@ update_gvar:
 		and	al,3Fh			; '?'
 		mov	ds:gvar_save_flag_2,al
 		call	compute_target_dist
-		call	game_func_85
+		call	scan_extra_map_objects
 		call	scan_top_map_objects
 		call	scan_bot_map_objects
-		call	game_func_66
+		call	render_entity_list_to_hud
 		call	gate_spell_fx_active
 		test	byte ptr ds:gvar_completion,0FFh
 		jnz	skip_func116			; Jump if not zero
-		call	game_func_116
+		call	scan_obj_list_render
 
 skip_func116:
 		mov	byte ptr ds:gvar_save_flag_3,0
 		mov	byte ptr ds:any_entity_active,0
-;*		call	game_func_55			;*
+;*		call	loc_1524h_dead			;* (Sourcer-named game_func_55; mid-instruction target retained as bytes)
 			db	0E8h, 0E3h, 04h			; call near 1524h (mid-instruction target; keep as bytes)
 		call	word ptr cs:gfx_fn_render_tile
 		call	copy_buffer_2
@@ -2827,7 +2827,7 @@ skip_func116:
 		call	init_combat_arena
 
 post_key_check:
-		call	game_func_47
+		call	fill_hud_enemy_area
 		test	byte ptr ds:init_complete_flag,0FFh
 		jz	clear_save_flag4			; Jump if zero
 		mov	byte ptr ds:gvar_save_flag_3,0
@@ -2835,7 +2835,7 @@ post_key_check:
 
 update_combat_frame_state		endp
 
-game_func_46		proc	near
+save_combat_action_state		proc	near
 
 clear_save_flag4:
 		mov	byte ptr ds:gvar_save_flag_4,0
@@ -2904,7 +2904,7 @@ frame_timer_loop:
 		call	word ptr cs:gfx_fn_render_tile
 		call	scan_enemy_data_buf
 		call	process_active_sprites
-		call	game_func_109
+		call	scan_boss_entries_render
 		call	select_player_sprite_frame
 		call	word ptr cs:gfx_fn_render_col
 		mov	cl,ds:gvar_save_flag
@@ -2984,9 +2984,9 @@ check_timer_counter:
 		mov	byte ptr ds:combat_active,0
 		retn
 
-game_func_46		endp
+save_combat_action_state		endp
 
-game_func_47		proc	near
+fill_hud_enemy_area		proc	near
 		test	byte ptr ds:player_scroll_flag,0FFh
 		jz	check_enemy_scroll		; Jump if zero
 		mov	al,0FCh
@@ -3053,9 +3053,9 @@ check_combat_flags2:
 do_combat_round:
 		mov	byte ptr ds:gvar_volume_b,0Bh
 		call	word ptr cs:[2002h]
-		call	game_func_48
+		call	swap_world_state_buffers
 		call	word ptr cs:game_fn_vtable
-		call	game_func_48
+		call	swap_world_state_buffers
 		cmp	byte ptr ds:gvar_item_result,8
 		jne	combat_palette_update			; Jump if not equal
 		jmp	next_level_start
@@ -3075,9 +3075,9 @@ combat_palette_update:
 		mov	byte ptr ds:player_scroll_flag,0
 		jmp	frame_state_update
 
-game_func_47		endp
+fill_hud_enemy_area		endp
 
-game_func_48		proc	near
+swap_world_state_buffers		proc	near
 		mov	es,cs:gvar_game_seg
 		mov	di,world_state_base
 		mov	si,game_fn_vtable
@@ -3150,8 +3150,8 @@ scroll_edge_check:
 wrap_scroll:
 		mov	si,ds:entity_list_ptr
 		mov	[si],ax
-		call	game_func_66
-		call	game_func_47
+		call	render_entity_list_to_hud
+		call	fill_hud_enemy_area
 		call	mark_player_pos_on_hud
 		call	word ptr cs:gfx_fn_init
 		mov	bx,21Ch
@@ -3163,7 +3163,7 @@ wrap_scroll:
 		mov	byte ptr ds:warp_pending,0
 		jmp	module_init
 
-game_func_48		endp
+swap_world_state_buffers		endp
 
 fill_buffer		proc	near
 
@@ -3407,7 +3407,7 @@ push_and_call:
 		sbb	al,al
 		mov	[di],al
 		jz	slot0_result			; Jump if zero
-		call	game_func_56
+		call	apply_passive_damage
 
 slot0_result:
 		pop	si
@@ -3426,7 +3426,7 @@ slot1_carry:
 		sbb	al,al
 		mov	[di],al
 		jz	slot1_result			; Jump if zero
-		call	game_func_56
+		call	apply_passive_damage
 
 slot1_result:
 		pop	si
@@ -3445,7 +3445,7 @@ slot2_carry:
 		sbb	al,al
 		mov	[di],al
 		jz	slot2_result			; Jump if zero
-		call	game_func_57
+		call	apply_combat_damage_with_absorb
 
 slot2_result:
 		pop	si
@@ -3457,7 +3457,7 @@ slot2_result:
 		sbb	al,al
 		mov	[di],al
 		jz	update_any_active			; Jump if zero
-		call	game_func_57
+		call	apply_combat_damage_with_absorb
 
 update_any_active:
 		mov	di,entity_slot_tbl
@@ -3476,7 +3476,7 @@ all_slots_empty:
 
 scan_outer_slot_match		endp
 
-; game_func_56: post-init combat-tile router.  Gates on init_complete_flag
+; apply_passive_damage: post-init combat-tile router.  Gates on init_complete_flag
 ; (early retn if init not done), else loads tile_type_sum into AX and
 ; branches to one of two external sub-paths based on player_facing bit 1:
 ;   bit 1 = 0  -> jmp combat_check_done   (different proc's label)
@@ -3485,7 +3485,7 @@ scan_outer_slot_match		endp
 ; returning path on its active branches (it tail-jumps out).  Kept under
 ; placeholder name for now; runtime probing of cross-proc jumps would
 ; require harness scaffolding beyond what's worth building for 2 callers.
-game_func_56		proc	near
+apply_passive_damage		proc	near
 		test	byte ptr ds:init_complete_flag,0FFh
 		jz	check_c2_bit1b			; Jump if zero
 		retn
@@ -3496,9 +3496,9 @@ check_c2_bit1b:
 		jz	combat_check_done			; Jump if zero
 		jmp	short check_93
 
-game_func_56		endp
+apply_passive_damage		endp
 
-game_func_57		proc	near
+apply_combat_damage_with_absorb		proc	near
 		test	byte ptr ds:init_complete_flag,0FFh
 		jz	check_c2_bit1c			; Jump if zero
 		retn
@@ -3523,7 +3523,7 @@ check_93:
 
 sub_carried:
 		push	ax
-		call	game_func_58
+		call	clear_secondary_pool_and_redraw
 		mov	word ptr ds:[94h],0
 		pop	ax
 
@@ -3537,9 +3537,9 @@ combat_check_done:
 		mov	byte ptr ds:gvar_volume_b,9
 		retn
 
-game_func_57		endp
+apply_combat_damage_with_absorb		endp
 
-game_func_58		proc	near
+clear_secondary_pool_and_redraw		proc	near
 		mov	byte ptr ds:[93h],0
 		mov	bx,0C51Ch
 		mov	al,0FFh
@@ -3571,7 +3571,7 @@ tile_down1:
 		and	al,0Fh
 		jmp	short add_tile_type
 
-game_func_58		endp
+clear_secondary_pool_and_redraw		endp
 
 accumulate_tile_type		proc	near
 
@@ -3671,7 +3671,7 @@ entity_dispatch_fn_2:
 			db	76h, 0E8h			; jna 16C2h (unaligned target)
 		dec	dx
 		out	dx,ax			; port 0FFFFh ??I/O Non-standard
-		call	game_func_13
+		call	scroll_up_and_advance_state
 		mov	byte ptr ds:escape_flag,0FFh
 		mov	byte ptr ds:gvar_combat_ff3D,0
 		mov	byte ptr ds:gvar_pose_idx,80h
@@ -3684,7 +3684,7 @@ entity_dispatch_fn_3:
 
 entity_dispatch_fn_4:
 			                        ; entity_dispatch_tbl target: entity fn 4
-		call	game_func_15
+		call	try_scroll_advance
 		jmp	scroll_advance
 
 lookup_move_slot_family		proc	near
@@ -3837,7 +3837,7 @@ enter_level_via_ref_a		proc	near
 
 enter_level_via_ref_a		endp
 
-game_func_66		proc	near
+render_entity_list_to_hud		proc	near
 		mov	bp,ds:entity_list_ptr
 
 entity_list_loop:
@@ -3924,7 +3924,7 @@ hud_copy_loop:
 
 										jmp	short entity_list_next
 
-game_func_66		endp
+render_entity_list_to_hud		endp
 
 game_get_value_3		proc	near
 		test	byte ptr [di],80h
@@ -4024,7 +4024,7 @@ world_x_to_screen_x_w27		endp
 		call	test_dl			; -0xE84 (backward)
 		jmp	check_c3		; +0x1EB
 
-game_func_69		proc	near
+check_3tile_J_pattern		proc	near
 		call	vga_operation8
 		sub	si,25h
 		call	vga_operation6
@@ -4127,7 +4127,7 @@ boss_link_check:
 		call	fill_buffer
 		call	word ptr cs:gfx_fn_render_tile
 		call	reset_combat_state
-		call	game_func_46
+		call	save_combat_action_state
 		mov	si,ds:object_list_ptr
 		mov	word ptr [si],0FFFFh
 		pop	si
@@ -4350,7 +4350,7 @@ level_start:
 		xor	al,al			; Zero register
 		jmp	word ptr cs:[10Ch]
 
-game_func_69		endp
+check_3tile_J_pattern		endp
 
 compute_scroll_pos		proc	near
 		mov	ax,ds:scroll_count
@@ -4594,7 +4594,7 @@ top_item_next:
 
 scan_top_map_objects		endp
 
-game_func_78		proc	near
+try_top_scroll_direction		proc	near
 		test	byte ptr ds:gvar_music_flag_b,0FFh
 		jz	check_music_b5			; Jump if zero
 		retn
@@ -4635,7 +4635,7 @@ mark_entity_40:
 		and	byte ptr [bx+5],0E0h
 		retn
 
-game_func_78		endp
+try_top_scroll_direction		endp
 
 game_process_loop_3		proc	near
 		push	dx
@@ -4693,7 +4693,7 @@ draw_3_cells:
 
 game_process_loop_3		endp
 
-game_func_80		proc	near
+try_top_combat_step		proc	near
 		test	byte ptr ds:gvar_music_flag_b,0FFh
 		jz	check_music_b6			; Jump if zero
 		retn
@@ -4778,7 +4778,7 @@ draw_3_cells_b:
 		mov	byte ptr ds:gvar_combat_ff3D,0
 		jmp	pos_scroll_up
 
-game_func_80		endp
+try_top_combat_step		endp
 
 ; find_and_blit_map_entry — searches a 3-byte-per-entry map table at
 ; [di] for a match on (col=AX, row=CL) where:
@@ -4895,7 +4895,7 @@ jmp_process_end:
 
 bot_path_check		endp
 
-game_func_85		proc	near
+scan_extra_map_objects		proc	near
 		inc	byte ptr ds:extra_iter_tick
 		mov	si,ds:map_extra_ptr
 
@@ -4982,7 +4982,7 @@ extra_item_next:
 		add	si,7
 		jmp	extra_list_loop
 
-game_func_85		endp
+scan_extra_map_objects		endp
 
 entity_fn_a_0:
 			                        ; entity_fn_tbl_a target: handler fn 0
@@ -5038,7 +5038,7 @@ extra_left_wrap:
 		push	ax
 		call	check_entity_collision_pos
 		jc	extra_scan_done2			; Jump if carry Set
-		call	game_func_15
+		call	try_scroll_advance
 
 extra_scan_done2:
 		pop	ax
@@ -5750,7 +5750,7 @@ sprite_update_loop:
 										sub	si,25h
 										call	vga_operation6
 										xchg	si,di
-										call	game_func_105
+										call	place_3_tile_49_pattern
 
 sprite_wbuf_next:
 										add	si,7
@@ -5761,7 +5761,7 @@ sprite_wbuf_next:
 
 update_sprite_work_buf		endp
 
-game_func_105		proc	near
+place_3_tile_49_pattern		proc	near
 		test	byte ptr ds:gvar_save_flag_1,0FFh
 		jz	check_flags_ok			; Jump if zero
 		test	byte ptr ds:gvar_completion,0FFh
@@ -5779,7 +5779,7 @@ check_flags_ok:
 		call	try_place_tile_id_49
 		inc	di
 
-game_func_105		endp
+place_3_tile_49_pattern		endp
 
 try_place_tile_id_49		proc	near
 		test	byte ptr [si+2],0FFh
@@ -5972,7 +5972,7 @@ fire_entry_col:
 
 fire_init_loop2:
 										push	cx
-;*		call	game_func_108			;*
+;*		call	apply_pending_invul8			;*
 											db	0E8h, 04Dh, 0FFh		; call near 2854h (mid-instruction target; keep as bytes)
 										add	si,10h
 										pop	cx
@@ -6027,7 +6027,7 @@ boss_scroll_done:
 		call	fill_buffer
 		jmp	frame_state_update
 
-game_func_109		proc	near
+scan_boss_entries_render		proc	near
 		mov	si,0EB15h
 		mov	cx,4
 
@@ -6039,7 +6039,7 @@ boss_entry_check:
 
 boss_entry_found:
 		push	cx
-		call	game_func_110
+		call	render_boss_dirty_blits
 		cmp	byte ptr [si+1],0FFh
 		jne	boss_sprite_select			; Jump if not equal
 		mov	word ptr [si],0FFFFh
@@ -6144,9 +6144,9 @@ boss_entry_loop:
 boss_entries_done:
 		retn
 
-game_func_109		endp
+scan_boss_entries_render		endp
 
-game_func_110		proc	near
+render_boss_dirty_blits		proc	near
 		test	word ptr [si+8],8000h
 		jz	boss_blit_a			; Jump if zero
 		and	word ptr [si+8],7FFFh
@@ -6200,7 +6200,7 @@ boss_blit_d:
 		pop	si
 		retn
 
-game_func_110		endp
+render_boss_dirty_blits		endp
 
 gate_spell_fx_active		proc	near
 		test	byte ptr ds:spell_fx_active,0FFh
@@ -6266,7 +6266,7 @@ boss_ctr_0c_handler:
 check_ctr_0c:
 		cmp	byte ptr [si+4],4
 		jae	update_dir5			; Jump if above or =
-		call	game_func_113
+		call	update_entity_pos
 		jmp	short fight_continue
 
 update_dir5:
@@ -6356,7 +6356,7 @@ cycle_dir_and_advance		proc	near
 wrap_dir:
 		mov	[si+5],al
 
-game_func_113:
+update_entity_pos:
 		mov	ax,[si]
 		mov	bl,[si+3]
 		and	bx,1
@@ -6476,7 +6476,7 @@ try_paint_obj_cell		endp
 		db	'uvwxyz{|}~ghijklmnopqrstuvwxyz{|'
 		db	'}~stuvghijklmnopqrstuvwxyz{|}~'
 
-game_func_116		proc	near
+scan_obj_list_render		proc	near
 		mov	si,ds:object_list_ptr
 		mov	al,ds:gvar_save_flag_1
 		or	al,byte ptr ds:scene_trans_request
@@ -6499,7 +6499,7 @@ obj_check_entry:
 										call	world_x_to_screen_x
 										jc	score_update_done			; Jump if carry Set
 										mov	[si+3],bl
-										call	game_func_117
+										call	update_obj_slot_flags
 										cmp	byte ptr [si+1],0FFh
 										je	score_update_done			; Jump if equal
 										mov	ax,[si+2]
@@ -6540,9 +6540,9 @@ obj_list_incr:
 										add	si,10h
 										jmp	short obj_list_loop
 
-game_func_116		endp
+scan_obj_list_render		endp
 
-game_func_117		proc	near
+update_obj_slot_flags		proc	near
 		mov	ax,[si+2]
 		call	vga_operation4
 		mov	al,[si+5]
@@ -6731,7 +6731,7 @@ update_next_anim:
 		retn
 
 anim_fn_dispatch:
-		call	game_func_119
+		call	entity_deactivate_alt
 		mov	bl,[si+6]
 		and	bl,0Fh
 		dec	bl
@@ -6754,21 +6754,21 @@ entity_fn_e_tbl_data:
 		push	ds			; 1Eh
 		db	9Ah,0E8h,99h,0E4h,0B8h	; call far 0B8E4h:99E8h (unaligned)
 		db	32h, 00h		; xor al,[bx+si] / pad
-		jmp	game_func_119_body	; +0x21E
+		jmp	add_score_to_gold	; +0x21E
 		mov	dx,9A32h
 		call	entity_scan_skip_push	; -0x1B73
 		mov	ax,64h
-		jmp	game_func_119_body	; +0x212
+		jmp	add_score_to_gold	; +0x212
 		mov	dx,9ADDh
 		jmp	entity_scan_skip_push	; -0x1B7F
 		mov	dx,9A47h
 		call	entity_scan_skip_push	; -0x1B85
 		mov	ax,1F4h
-		jmp	game_func_119_body	; +0x200
+		jmp	add_score_to_gold	; +0x200
 		mov	dx,9A5Ch
 		call	entity_scan_skip_push	; -0x1B91
 		mov	ax,3E8h
-		jmp	game_func_119_body	; +0x1F4
+		jmp	add_score_to_gold	; +0x1F4
 		mov	dx,9B2Ch
 		call	entity_scan_skip_push	; -0x1B9D
 		mov	byte ptr ds:player_ability_2,0FFh
@@ -6799,7 +6799,7 @@ entity_fn_e_tbl_data:
 		jnz	$+11
 		mov	ax,0001h
 		call	hero_almas_add		; +0x1AD
-		jmp	game_func_119		; +0x17A
+		jmp	entity_deactivate_alt		; +0x17A
 
 score_small:
 		cmp	al,5
@@ -6816,7 +6816,7 @@ score_large:
 entity_fn_e_3:
 			                        ; entity_fn_tbl_e target: handler fn 3 (enemy trigger at 9A72h)
 		mov	dx,9A72h
-		call	game_func_118
+		call	entity_trigger_scan
 		jnc	inc_98			; Jump if carry=0
 		retn
 
@@ -6841,7 +6841,7 @@ gfx_fn_83		dw	680h
 gfx_fn_palette		dw	0C6h
 gfx_fn_clear		dw	0E90Ah
 gfx_fn_blit		dw	offset vga_operation
-gfx_fn_map_ref		dw	offset game_func_142
+gfx_fn_map_ref		dw	offset gfx_map_ref_target
 		db	02h		; hi-byte of preceding jmp near displacement
 		call	check_entity_in_view	; +0x16E
 		db	73h,01h		; jnc $+3
@@ -6854,7 +6854,7 @@ gfx_fn_map_scroll		dw	9A99h
 		shr	ax,1
 		inc	ax
 		add	word ptr ds:heal_pulse_count,ax
-		jmp	game_func_119		; +0x110
+		jmp	entity_deactivate_alt		; +0x110
 		mov	byte ptr [si+0Fh],0
 		test	byte ptr [si+9],01h
 		jnz	$+44
@@ -6890,7 +6890,7 @@ clear_dir_bit:
 entity_fn_e_4:
 			                        ; entity_fn_tbl_e target: handler fn 4 (enemy trigger at 9AF3h)
 		mov	dx,9AF3h
-		call	game_func_118
+		call	entity_trigger_scan
 		jnc	set_9c_ff			; Jump if carry=0
 		retn
 
@@ -6901,7 +6901,7 @@ set_9c_ff:
 entity_fn_e_5:
 			                        ; entity_fn_tbl_e target: handler fn 5 (enemy trigger at 9B63h)
 		mov	dx,9B63h
-		call	game_func_118
+		call	entity_trigger_scan
 		jnc	set_al_1			; Jump if carry=0
 		retn
 
@@ -6920,7 +6920,7 @@ entity_fn_e_6:
 		mov	al,[di]
 		mov	dx,[di+1]
 		push	ax
-		call	game_func_118
+		call	entity_trigger_scan
 		pop	ax
 		jnc	search_free_slot			; Jump if carry=0
 		retn
@@ -6941,13 +6941,13 @@ slot_found:
 		jmp	entity_deactivate
 
 entity_fn_tbl_e_stub:
-			                        ; Stub data between slot_found and game_func_118
+			                        ; Stub data between slot_found and entity_trigger_scan
 		add	al,0Fh
 		fwait				; 9Bh
 		add	al,byte ptr [bx-65h]	; 02 47 9B
 		add	di,word ptr [bx-65h]	; 03 7F 9B
 
-game_func_118:
+entity_trigger_scan:
 		push	dx
 		call	entity_move_south
 		call	check_entity_in_view
@@ -7007,7 +7007,7 @@ check_fn_nibble:
 		and	byte ptr [si+7],0F0h
 		retn
 
-game_func_119:
+entity_deactivate_alt:
 
 entity_deactivate:
 		mov	word ptr [si],0FF00h
@@ -7028,10 +7028,10 @@ apply_link_bits:
 		mov	word ptr [si+0Bh],0FFFFh
 		retn
 
-game_func_117		endp
+update_obj_slot_flags		endp
 
-game_func_119_body:
-			                        ; game_func_119 body: score update dispatch (via cs:[2016h])
+add_score_to_gold:
+			                        ; entity_deactivate_alt body: score update dispatch (via cs:[2016h])
 		add	word ptr ds:[86h],ax
 		adc	byte ptr ds:[85h],0
 		push	si
@@ -7118,7 +7118,7 @@ check_col_22:
 		retn
 
 call_func128:
-		call	game_func_128
+		call	check_above_3rows_clear
 		jnc	jmp_loc620			; Jump if carry=0
 		retn
 
@@ -7191,7 +7191,7 @@ check_col_2b:
 		retn
 
 call_func130:
-		call	game_func_130
+		call	check_below_3rows_clear
 		jnc	jmp_loc622			; Jump if carry=0
 		retn
 
@@ -7299,7 +7299,7 @@ dec_row:
 
 dec_map_pos_helper		endp
 
-game_func_128		proc	near
+check_above_3rows_clear		proc	near
 		mov	ax,[si+2]
 		call	vga_operation4
 		inc	di
@@ -7327,7 +7327,7 @@ check_row_up2:
 		add	al,al
 		retn
 
-game_func_128		endp
+check_above_3rows_clear		endp
 
 is_unknown_or_area5_slot_b		proc	near
 		mov	al,[di]
@@ -7357,7 +7357,7 @@ slot_found_b:
 
 is_unknown_or_area5_slot_b		endp
 
-game_func_130		proc	near
+check_below_3rows_clear		proc	near
 		mov	ax,[si+2]
 		call	vga_operation4
 		dec	di
@@ -7385,7 +7385,7 @@ check_row_down2:
 		add	al,al
 		retn
 
-game_func_130		endp
+check_below_3rows_clear		endp
 
 is_unknown_or_area5_slot_c		proc	near
 		mov	al,[di]
@@ -7639,13 +7639,13 @@ check_third_tile:
 
 check_movement_var_137		endp
 
-; is_entity_known_type — entity-ID classifier (was: game_func_138).
+; is_entity_known_type — entity-ID classifier (was: scroll_up_and_advance_state8).
 ; Input:  AL = entity-ID byte
 ; Output: ZF = 1 iff ID is "known":
 ;           AL <  0x49           : ZF = (AL is in enemy_id_table at 8000h)
 ;           0x49 <= AL < 0x80    : ZF = 1 (mid-range = known via cmp al,al)
 ;           AL >= 0x80 (signed)  : ZF = 0 (high range = unknown)
-; Verified by functest/proc_equivalence/test_fight_game_func_138.py.
+; Verified by functest/proc_equivalence/test_fight_scroll_up_and_advance_state8.py.
 ; 18 callers across 200FIGHT gate further entity processing on the
 ; returned ZF.
 is_entity_known_type		proc	near
@@ -8004,7 +8004,7 @@ dispatch_boss_fn:
 
 boss_fn_0:
 			                        ; boss_fn_tbl target: boss fn 0 (call far, col 22h check)
-;*		call	far ptr game_func_155		;*
+;*		call	far ptr try_scroll_advance5		;*
 			db	9Ah, 97h, 94h, 97h, 8Eh		; call far ptr 8E97h:9497h
 		xchg	di,ax
 		call	entity_move_east
@@ -8230,7 +8230,7 @@ game_over_sequence:
 		call	update_combat_frame_state
 		mov	ax,9929h
 		push	ax
-		call	game_func_20
+		call	combat_step_advance
 		pop	ax
 		mov	byte ptr ds:gvar_save_flag_4,0
 
