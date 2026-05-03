@@ -23,10 +23,41 @@ rebuild of game.bin / zeliad.exe / stick.bin / gmega.bin / etc.,
 - `stick.bin`'s SAR loader entry body at `game_seg:0x0A84` ✓
   (first 16 bytes match: `cmp al,0; jne; jmp early-exit; push regs;
   save SI/DS/DI/ES via mov cs:[F5C..F62]`)
-- `stick.bin`'s SAR-loader dispatch table at `game_seg:0x0ACA` ✓
+- `stick.bin`'s SAR-loader AL=N dispatch table at `game_seg:0x0ACA` ✓
   (6-entry word table for AL=1..6 handlers)
-- `gmega.bin` loads at `game_seg:0x2000` ✓ (matches
-  `1_OriginalGame/gmega.bin` first 16 bytes byte-for-byte)
+- `gmega.bin` loads at `game_seg:0x2000` (EGA mode) ✓
+- `gmmcga.bin` loads at `game_seg:0x2000` (MCGA mode) ✓
+- All 5 gfx-mode drivers (gm{ega,cga,hgc,mcga,tga}) load at the same
+  `game_seg:0x2000` per zeliad's `entry_stick`-record byte-interleave
+  format
+
+**SAR fill_buffer decompression chain (AL=2 path):**
+- fill_buffer entry at `game_seg:0x0DAD` ✓
+  (reads method byte from compressed stream, extracts bits 0-2,
+  jumps via dispatch table)
+- 8-method dispatch table at `game_seg:0x0DBC` ✓:
+
+  | Method | Handler | Algorithm |
+  |---:|---|---|
+  | 0 | 0x0DCC | copy verbatim |
+  | 1 | 0x0DD1 | nibble-table key (high nibble matches) |
+  | 2 | 0x0E13 | marker RLE (high nibble matches marker) |
+  | 3 | 0x0E34 | nibble-table key (low nibble matches) |
+  | 4 | 0x0E73 | marker RLE (low nibble matches marker) |
+  | 5 | 0x0E9C | simple repeat-byte RLE |
+  | 6 | 0x0EBA | 2-byte table RLE (K=2 const) |
+  | 7 | 0x0EF5 | escape-byte RLE (K=3 const) |
+
+  Algorithms match the implementations in
+  [`2_SAR/GrpViewer/grp_viewer.py:455-531`](../../../2_SAR/GrpViewer/grp_viewer.py)
+  byte-for-byte.
+
+**Cinematic VM:**
+- opdemo's `script_interpreter` proc at `game_seg:0x6A75` ✓
+  (entry bytes `2E C6 06 1A FF 00` = `mov byte ptr cs:gvar_frame_timer, 0`)
+  - Called many times per cinematic (each call walks one page of
+    narration text, returns on SCR_END_SCRIPT or SCR_BREAK)
+  - Opcode set documented in OPENING_CINEMATIC.md
 
 **Cinematic-to-gameplay handoff:**
 - `transition_out_to_game` exit jmp at `game_seg:0x6A6E` (in the
