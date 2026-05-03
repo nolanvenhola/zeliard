@@ -77,12 +77,20 @@ stat_X8E                equ     8Eh     ; alias — deprecated placeholder
 hero_HP                 equ     90h     ; current HP low byte (16-bit field)
 hero_HP_hi              equ     91h     ; current HP high byte
 ;
-equipped_weapon              equ     92h     ; sword type (init 1 = SWORD_TRAINING)
-equipped_magic             equ     93h     ; shield type (init 0 = no shield)
+equipped_weapon         equ     92h     ; currently equipped weapon idx (1-based; init 1 = SWORD_TRAINING).
+                                        ; Functional evidence in 201SELCT (test/read as weapon index).
+                                        ; Was misnamed `sword_type` — sword is just one weapon kind.
+equipped_magic          equ     93h     ; currently equipped magic idx (1-based; init 0 = no spell).
+                                        ; Functional evidence in 201SELCT line 770/775
+                                        ; (`test ds:equipped_magic, 0FFh; mov bl, ds:equipped_magic`).
+                                        ; Was misnamed `shield_type` — earlier guess based on "init=0" only.
 ;
-; player_exp (16-bit per static analysis; functional probe pending).
-player_exp               equ     94h     ; shield HP low byte (16-bit field)
-player_exp_hi            equ     95h     ; shield HP high byte
+; player_exp (16-bit) — current character experience.  Functional evidence
+; in 201SELCT line 780: `add word ptr ds:char_exp, ax` (XP gain).
+; Was misnamed `shield_HP` — explicit guess by stdply.asm ("No functional
+; probe yet"); 201SELCT proved it's the experience word.
+player_exp              equ     94h     ; current XP, low byte (16-bit field)
+player_exp_hi           equ     95h     ; current XP, high byte
 ;
 ; 0x96..0x9A: character-stat block named by 201SELCT (character-select
 ; chunk).  All stat names below match its read patterns; placeholders
@@ -107,7 +115,10 @@ stat_X9B                equ     9Bh     ; alias — deprecated placeholder
 ; so the byte position is preserved in the player record, but it is dead
 ; storage from a runtime perspective.
 stat_X9C                equ     9Ch     ; VESTIGIAL — write-only flag, no reader observed
-cur_weapon_idx     equ     9Dh     ; magic spell id (init 0 = no spell)
+cur_weapon_idx          equ     9Dh     ; cached selected weapon idx (1-based; init 0).
+                                        ; Functional evidence in 201SELCT line 315/320
+                                        ; (`mov ds:cur_weapon_idx, al / mov bl, ds:cur_weapon_idx`).
+                                        ; Was misnamed `current_magic_spell` (proximity guess).
 cur_magic_idx           equ     9Eh     ; currently selected magic index (canonical, from 201SELCT)
 stat_X9E                equ     9Eh     ; alias — deprecated placeholder
 ; 0x9F: VESTIGIAL.  1 write site (106TOWN frame_update prologue zero-

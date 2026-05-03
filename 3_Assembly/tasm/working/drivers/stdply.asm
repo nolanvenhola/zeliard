@@ -20,7 +20,7 @@ PAGE  59,132
 ;  Memory layout (all addresses are CS-relative):
 ;    0x0000-0x007F  key_map_table (128 bytes, 64 word entries)
 ;    0x0080-0x0084  Player config (walk_speed, accel — purpose inconclusive)
-;    0x0085-0x009D  Hero stat record (gold, HP, sword/shield, magic spell)
+;    0x0085-0x009D  Hero stat record (gold, HP, equipped weapon/magic, XP, stats)
 ;    0x009E-0x00AA  Reserved
 ;    0x00AB-0x00C3  Animation color LUT (purpose inconclusive)
 ;    0x00C4-0x00E8  Player sprite / hitbox data
@@ -133,24 +133,30 @@ item_effect_val	dw	0		; [8Eh-8Fh] item effect value (16-bit)
 ; The manual's "max HP = 80" reflects gameplay balance; the storage is
 ; 16-bit so designers had headroom for buffs / boss multipliers.
 hero_HP		dw	0050h		; [90h-91h] current HP (16-bit; init=80)
-equipped_weapon	db	1		; [92h] sword type (init 1 = SWORD_TRAINING)
-equipped_magic	db	0		; [93h] shield type (init 0 = no shield)
+equipped_weapon	db	1		; [92h] equipped weapon idx (1-based; init 1 = SWORD_TRAINING)
+equipped_magic	db	0		; [93h] equipped magic idx (1-based; init 0 = no spell)
 ;
-; player_exp — 16-bit per static analysis (word_read/word_write at 0x94).
-; No functional probe yet (shield-damage at fight.bin 0x75D6 is multi-step).
-player_exp	dw	0		; [94h-95h] shield HP (16-bit; 0 = no shield)
+; player_exp (16-bit word) — current character experience.  Per 201SELCT
+; line 780: `add word ptr ds:char_exp, ax` confirms XP-gain semantics.
+; Earlier name `shield_HP` was a guess; 201SELCT functional evidence
+; promotes it to player_exp.
+player_exp	dw	0		; [94h-95h] current XP (16-bit; init=0)
 ;
 ; [96h..9Ch]: 201SELCT (character-select chunk) names the leading entries
 ; as player_exp_cap (word), player_speed/power/abilities.  Trailing 9Bh/9Ch
 ; have no canonical name from any chunk — left as placeholders.
-player_exp_cap	dw	0		; [96h-97h] character experience cap (16-bit)
+player_exp_cap	dw	0		; [96h-97h] XP cap for current level (16-bit)
 player_speed	db	0		; [98h] character speed stat
 player_power	db	0		; [99h] character power stat
 player_abilities	db	0		; [9Ah] character abilities flags
 trade_marker_flag db	0	; [9Bh] trade-event marker (set in 200FIGHT, tested by 212ARMRP)
 stat_X9C	db	0		; [9Ch] VESTIGIAL — write-only flag, no reader observed (functest 2026-04-29)
 ;
-cur_weapon_idx db	0		; [9Dh] magic spell id (init 0 = no spell)
+; cur_weapon_idx — cached selected weapon idx (1-based; init 0).  Per
+; 201SELCT 315/320: written by select-screen, read back as `mov bl, ds:[9D]`
+; into the weapon dispatch.  Earlier name `current_magic_spell` was a
+; proximity guess (since 9E is cur_magic_idx, 9D was assumed similar).
+cur_weapon_idx db	0		; [9Dh] cached weapon select idx (init=0)
 ;
 ; [9Eh..0AAh]: 201SELCT names 0x9E as cur_magic_idx (currently selected
 ; magic).  0x9F has no canonical name; 0xA0 has 5 cross-segment competing
@@ -163,13 +169,14 @@ music_track_count db 0		; [music_track_count] music track count (read by load_mu
 ;--------------------------------------------------------------------------
 ;  Animation Color LUT  [CS:0x00AB - CS:0x00C3]  (drv_color_lut base = ABh)
 ;
-;  Indexed as cs:[bx-1] where bx = cur_weapon_idx + 1 (or similar).
-;  Each byte is the palette/color index for that frame.
-;  17 active entries + 8 reserved zeros.
+;  Each byte is a palette/color index for an animation frame.
+;  17 active entries + 8 reserved zeros.  Bytes at B2 and B4 do double
+;  duty as player_hp_max / weap_dur_max (overlay; their numeric values
+;  satisfy both the LUT-color role and the stat-cap role).
 ;
-;  NOTE: previously labeled as anim_color_lut — IDA names this
-;  spells_espada (Spanish 'espada' = sword/spell). Purpose
-;  remains inconclusive until further evidence.
+;  NOTE: IDA names this `spells_espada` (Spanish 'espada' = sword/spell).
+;  Indexing relationship to cur_weapon_idx / equipped_weapon not yet
+;  pinned down by functional probe; treat as inconclusive.
 ;--------------------------------------------------------------------------
 
 anim_color_lut	db	0Ch		; frame  1: color 12
