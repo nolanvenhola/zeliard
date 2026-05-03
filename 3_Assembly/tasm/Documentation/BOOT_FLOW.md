@@ -1,13 +1,32 @@
 # Zeliard boot flow & startup chain
 
-**Status: VERIFIED end-to-end against the asm and binary.**
+**Status: VERIFIED end-to-end against the asm AND DOSBox runtime.**
 
 How a Zeliard session starts up — from the DOS command line through
 the opening cinematic (or save load) to the first frame of gameplay.
-Every claim in this doc is backed by a code reference; the
-`game.bin` rebuild after the label-correction (commit landing this
-doc) was bit-perfect against the original 1_OriginalGame copy,
-confirming the corrected interpretation.
+Every claim in this doc is backed by a code reference, the bit-perfect
+rebuild of game.bin / zeliad.exe / stick.bin / gmega.bin / etc.,
+**plus runtime confirmation** via DOSBox memory dumps and breakpoints
+(2026-05-02 / 2026-05-03 sessions).
+
+---
+
+## Runtime-verified facts
+
+- `gmega.bin` loads at `game_seg:0x2000` ✓ (DOSBox dump 0BFC:2000
+  matched `1_OriginalGame/gmega.bin` first 16 bytes byte-for-byte)
+- `stick.bin`'s SAR-loader dispatch table at `game_seg:0x0ACA` ✓
+  (DOSBox dump matched the 6-entry word table from
+  `1_OriginalGame/stick.bin` file offset 0x9CA)
+- `transition_out_to_game` exit jmp at `game_seg:0x6A6E` (in the
+  loaded opdemo chunk) → reads `cs:[0x6A73]` → jumps to **0xA000** ✓
+  (DOSBox single-step confirmed IP becomes 0xA000)
+- `0xA000` = `game.bin`'s `start:` label ✓ (game.bin loaded by
+  zeliad.exe at game_seg:0xA000 per `entry_game` record)
+- With `AX=0xFFFF` set by opdemo before the jmp, game.bin's
+  `cmp save_mode_flag,-1; jz start_load_game` takes the LOAD-mode
+  branch ✓ (confirmed by the corrected branch labels in game.asm
+  and matching execution flow)
 
 ---
 
@@ -23,11 +42,14 @@ confirming the corrected interpretation.
    - **NEW GAME** (save_mode_flag = 0) → load **`opdemo.bin`**
      (zelres1 ch1 = 100OPDMO) at CS:0x6000 and jump to it.  Opdemo
      runs the slideshow + Zeliard logo build + story narration,
-     then loads gameplay chunks itself and transitions to play.
+     then `transition_out_to_game` (100OPDMO:1025) re-enters game.bin
+     by setting `AX=0xFFFF` and `jmp word ptr cs:[6A73]` (= 0xA000).
    - **LOAD SAVED** (save_mode_flag = 0xFFFF) → skip the cinematic;
      load town/fight/select/items/magic/sword/mole chunks directly
      in game.bin; jump to town.bin's `loaded_code_b_fn` (CS:0x6002).
-3. Either way ends in `town.bin`'s main loop running at CS:0x6000.
+3. Both cinematic-end and direct LOAD path **converge on game.bin's
+   `start_load_game` branch** (since both have AX=0xFFFF when game.bin
+   re-runs).  Gameplay chunks load, town.bin's main loop starts.
 
 ---
 
