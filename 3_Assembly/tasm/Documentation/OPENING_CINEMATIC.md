@@ -460,18 +460,57 @@ Promotions:
 
 ---
 
-## DOSBox runtime findings 2026-05-02
+## DOSBox runtime findings 2026-05-02 — CORRECTED
 
-Live runtime testing with breakpoints in DOSBox revealed several
-mistakes in the static-trace conclusions:
+Live runtime testing with DOSBox memory dumps confirmed the exit
+mechanism, but exposed a 4-byte offset error in my LST-to-runtime
+address translation that caused most of the bisecting confusion.
 
-1. **`transition_out_to_game` is never reached during normal play.**
-   BPs at `game_seg:6A45` (transition_out_to_game entry) and
-   `game_seg:6A09` (the `jmp short transition_out_to_game` at the
-   natural end of post_title_story_scenes) NEVER fire, even after
-   pressing ENTER/SPACE through the entire cinematic.  Yet the
-   cinematic completes and gameplay starts.  So opdemo exits via
-   a code path NOT through `transition_out_to_game` — still TBD.
+**ACTUAL exit path (verified by runtime memory dump):**
+
+```
+runtime 0x6A41: BB 00 00          mov  bx, 0           ← transition_out_to_game start
+runtime 0x6A44: B9 C8 50           mov  cx, 50C8h
+runtime 0x6A47: 2E FF 16 06 30    call cs:[3006]       ; gfx_mode_fn
+runtime 0x6A4C: 2E C6 06 1D FF 00 mov  byte ptr cs:[FF1D], 0  ; clear gvar_spacebar_state
+runtime 0x6A52: 2E C6 06 29 FF 00 mov  byte ptr cs:[FF29], 0  ; clear gvar_enter_key
+runtime 0x6A58: 8C C8 / 8E C0 / 8E D8     ; mov ax, cs / mov es, ax / mov ds, ax
+runtime 0x6A5E: BE 1E 96           mov  si, 961Eh        ; res_maop_grp
+runtime 0x6A61: BF 00 A0           mov  di, A000h        ; vga_seg
+runtime 0x6A64: B0 03              mov  al, 3            ; raw load
+runtime 0x6A66: 2E FF 16 0C 01    call cs:[10C]         ; sar_loader_fn (loads maop.grp)
+runtime 0x6A6B: B8 FF FF           mov  ax, 0FFFFh       ; ← LOAD-mode marker for game.bin
+runtime 0x6A6E: 2E FF 26 73 6A    jmp word ptr cs:[6A73] ; ← THE INDIRECT JMP
+runtime 0x6A73: 00 A0              ; jmp target = 0xA000  (LE bytes 00 A0)
+```
+
+**The indirect jmp lands at game_seg:0xA000 = game.bin's `start:` label**
+with AX=0xFFFF set, re-entering game.bin in LOAD-mode (per BOOT_FLOW.md).
+game.bin then loads town.bin/fight.bin/select.bin/etc. and jumps to
+town.bin's main loop — gameplay begins.
+
+This is the ACTUAL cinematic-to-gameplay handoff:
+1. opdemo body completes (or ENTER/SPACE skip triggers `transition_out_to_game`)
+2. transition_out_to_game loads maop.grp into VGA segment
+3. Sets AX=0xFFFF to fake LOAD-mode entry
+4. Indirect jmp via cs:[0x6A73] = jmp to 0xA000 (game.bin start)
+5. game.bin's `start_load_game` branch runs (since AX=0xFFFF)
+6. Gameplay chunks load, town.bin's main loop starts
+
+**Why my BPs missed it earlier:** I read the LST file and got source
+offsets that I translated to runtime IPs by adding 0x6000.  But the
+LST offsets and the runtime addresses didn't line up exactly — bytes
+in the actual loaded chunk are shifted ~4 bytes from what the LST
+implied.  I'd been setting BPs at 0x6A45 (per LST) when the real
+function entry was 0x6A41, and at 0x6A72 (per LST) when the real
+indirect jmp was at 0x6A6E.  Once I read the runtime memory dump
+directly and found the actual `2E FF 26 73 6A` byte sequence at
+0x6A6E, the picture clicked into place.
+
+**IDA address-book gotcha:** the MCP server's pre-loaded address book
+uses game_seg=0x0AC6 — that's correct for one specific run but a
+different launch may give 0x0BFC or other values.  Always read CS
+from registers FIRST before computing absolute BP addresses.
 
 2. **`gvar_skip_input` is misnamed.**  It's actually the
    **spacebar/joystick-button-A latch** (only set on those keys'
