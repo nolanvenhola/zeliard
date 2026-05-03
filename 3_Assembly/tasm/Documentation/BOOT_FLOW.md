@@ -11,13 +11,24 @@ rebuild of game.bin / zeliad.exe / stick.bin / gmega.bin / etc.,
 
 ---
 
-## Runtime-verified facts
+## Runtime-verified facts (DOSBox sessions 2026-05-02 / 2026-05-03)
 
-- `gmega.bin` loads at `game_seg:0x2000` ✓ (DOSBox dump 0BFC:2000
-  matched `1_OriginalGame/gmega.bin` first 16 bytes byte-for-byte)
+**Boot/loader chain:**
+- `stick.bin`'s 4-entry ISR jump table at `game_seg:0x0100` ✓
+  - `0x0100: jmp 0x02C5` — kbd_irq_handler (INT 09h)
+  - `0x0103: jmp 0x0250` — timer_isr_entry (INT 08h AND INT 60h)
+  - `0x0106: jmp 0x0F18` — game_state_handler (INT 24h critical-error)
+  - `0x0109: jmp 0x05FD` — query_input_state (INT 61h joystick query)
+- `cs:[0x010C]` = function pointer 0x0A84 ✓ (= sar_loader_fn entry)
+- `stick.bin`'s SAR loader entry body at `game_seg:0x0A84` ✓
+  (first 16 bytes match: `cmp al,0; jne; jmp early-exit; push regs;
+  save SI/DS/DI/ES via mov cs:[F5C..F62]`)
 - `stick.bin`'s SAR-loader dispatch table at `game_seg:0x0ACA` ✓
-  (DOSBox dump matched the 6-entry word table from
-  `1_OriginalGame/stick.bin` file offset 0x9CA)
+  (6-entry word table for AL=1..6 handlers)
+- `gmega.bin` loads at `game_seg:0x2000` ✓ (matches
+  `1_OriginalGame/gmega.bin` first 16 bytes byte-for-byte)
+
+**Cinematic-to-gameplay handoff:**
 - `transition_out_to_game` exit jmp at `game_seg:0x6A6E` (in the
   loaded opdemo chunk) → reads `cs:[0x6A73]` → jumps to **0xA000** ✓
   (DOSBox single-step confirmed IP becomes 0xA000)
@@ -27,6 +38,17 @@ rebuild of game.bin / zeliad.exe / stick.bin / gmega.bin / etc.,
   `cmp save_mode_flag,-1; jz start_load_game` takes the LOAD-mode
   branch ✓ (confirmed by the corrected branch labels in game.asm
   and matching execution flow)
+
+**Naming / structural corrections found via runtime testing:**
+- `gvar_skip_input` → `gvar_spacebar_state` (FF1D is set only by
+  spacebar/joystick-btn-A release, NOT a generic skip flag).
+  Renamed across 9 files; bit-perfect rebuild verified.
+- SAR chunk files have a 4-byte size header (LE uint32 of payload
+  size) that the chunk-loader strips before loading.  DOS-loaded
+  files (zeliad.exe, game.bin, stdply, stick, gm*) have NO header
+  and load verbatim.  Translation:
+  - For SAR chunks: runtime IP = `(file_offset - 4) + LOAD_BASE`
+  - For DOS-loaded: runtime IP = `file_offset + LOAD_BASE`
 
 ---
 
