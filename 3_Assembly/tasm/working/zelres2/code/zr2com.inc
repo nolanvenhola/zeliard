@@ -44,6 +44,7 @@ player_facing           equ     0C2h    ; facing/anim flag bits (canonical in st
 player_level            equ     0C4h    ; level/area number (canonical in stdply.inc)
 stat_XC5                equ     0C5h    ; placeholder — byte field used by 200FIGHT (set 0x80, read as ah)
 player_tileset          equ     0C8h    ; level tileset index (canonical in stdply.inc)
+key_count               equ     0E4h    ; player's collected-key count (canonical in stdply.inc)
 
 ; ----------------------------------------------------------------------
 ; stick.bin dispatch slots installed at game_seg:0x010C-0x0120
@@ -77,14 +78,21 @@ init_complete_flag      equ     0E8h    ; post-init steady-state (canonical in s
 ; ----------------------------------------------------------------------
 drv_fill_rect            equ     2000h         ; fn  0: fill rectangle
 drv_screen_init_a        equ     2002h         ; fn  1: screen/work-area init A
-drv_fn_2                 equ     2004h         ; fn  2: (TBD — used by 200FIGHT init/dispatch paths)
+drv_fn_2                 equ     2004h         ; fn  2: (TBD)
+drv_fn_3                 equ     2006h         ; fn  3: (TBD)
 drv_palette_push         equ     2008h         ; fn  4: palette push / refresh
-drv_fn_7                 equ     200Eh         ; fn  7: (TBD — used by 200FIGHT entity-dispatch paths)
+drv_fn_5                 equ     200Ah         ; fn  5: (TBD)
+drv_fn_6                 equ     200Ch         ; fn  6: (TBD)
+drv_fn_7                 equ     200Eh         ; fn  7: (TBD)
 drv_load_msg_header      equ     2010h         ; fn  8: load/draw message header
 drv_screen_init_b        equ     2012h         ; fn  9: screen init B
-drv_fn_10                equ     2014h         ; fn  A: (TBD — used by 200FIGHT)
+drv_fn_10                equ     2014h         ; fn  A: (TBD)
 drv_frame_commit         equ     2016h         ; fn  B: commit/wait refresh
 drv_anim_step            equ     2018h         ; fn  C: advance animation / palette upd
+drv_fn_13                equ     201Ah         ; fn  D: (TBD)
+drv_fn_14                equ     201Ch         ; fn  E: (TBD)
+drv_fn_21                equ     202Ah         ; fn 15: (TBD)
+drv_fn_22                equ     202Ch         ; fn 16: (TBD)
 ; 0x2022, 0x2026, 0x2028, 0x202A: multi-purpose driver-dispatch slots.
 ; The function pointer at each slot changes when a different graphics
 ; driver is loaded (gmega/gmcga/gmhgc/gmtga/gmmcga); per-chunk names
@@ -97,7 +105,11 @@ drv_anim_step            equ     2018h         ; fn  C: advance animation / pale
 drv_render_char          equ     2022h         ; fn 11h: render text char / dialog box (5+ chunks)
 drv_return_to_caller     equ     2040h         ; fn 20h: exit / far return
 drv_ds_copy              equ     2044h         ; fn 22h: ds copy (cx bytes from si)
+; Second driver dispatch table (3000-30xx range)
+drv2_fn_2                equ     3004h         ; (TBD — second dispatch table fn 2)
 drv_draw_glyph           equ     3016h         ; fn2 B: draw glyph/tile
+drv2_fn_15               equ     301Eh         ; (TBD)
+drv2_fn_20               equ     3028h         ; (TBD)
 
 ; ----------------------------------------------------------------------
 ; Script interpreter dispatch slots

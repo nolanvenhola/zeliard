@@ -212,6 +212,33 @@ move_slot_a_table		equ	8024h			;*
 move_slot_b_table		equ	8028h			;*
 move_slot_c_table		equ	802Ch			;*
 entity_ptr_table		equ	0B002h			;*
+; entity_fn_d_1 dispatch table (6 word entries, indexed by cur_weapon_idx-1)
+entity_fn_tbl_d1_dispatch equ	8AC6h			; jmp word ptr ds:entity_fn_tbl_d1_dispatch[bx]
+; Animation dispatch stub (word table, indexed by bx)
+anim_dispatch_8E14		equ	8E14h			; jmp word ptr ds:anim_dispatch_8E14[bx]
+; Boss-entry table — 4 entries x 12 bytes; -1 sentinel means slot empty.
+; Cleared (0xFFFF) at line 620 init; iterated by scan_boss_entries_render.
+; Distinct from boss_data_buf at 8C79h (boss SPRITE data) — this is the
+; runtime entry-list of active boss instances.
+boss_entry_tbl		equ	0EB15h			; boss-entry table base (game_seg:EB15)
+; State byte at 0x49 (key_map_table offset; gates game-over / player-captured paths)
+captured_flag		equ	49h			; player-captured / game-over gate (lines 786, 8279)
+; State byte at 0x7F (last entry of key_map_table area).  Tested in combat
+; main loop (line 2946) — when non-zero, skips the HP-zero check.  Likely
+; a state-lock flag (menu-active / cutscene / paused) but specific role TBD.
+state_byte_7F		equ	7Fh			; state-lock flag (TBD; tested at line 2946)
+; Three byte flags at 0xEB67/0xEB6E/0xEB75, all set to 0xFF together in
+; the combat-init reset sequence (lines 4002-4004) alongside sprite_work_buf
+; init.  Placement near boss_entry_tbl (0xEB15) but spacing (offsets
+; +0x52/+0x59/+0x60) doesn't align with the 12-byte entry stride — likely
+; 3 separate slot-state markers rather than entry fields.
+boss_flag_EB67		equ	0EB67h			; boss/sprite slot marker (init=FF)
+boss_flag_EB6E		equ	0EB6Eh			; boss/sprite slot marker (init=FF)
+boss_flag_EB75		equ	0EB75h			; boss/sprite slot marker (init=FF)
+; Word at 0x504 used in `add ax, word ptr ds:data_word_504` at line 5837.
+; Surrounding bytes look like a Sourcer-misdisassembled data block;
+; the "instruction" at this position may not be on the live code path.
+data_word_504		equ	504h			; runtime data word (likely misdisasm; TBD)
 world_state_base		equ	0C000h			;*
 sprite_load_dest	equ	4000h			;*
 scroll_dispatch_a	equ	6CFEh			;*
@@ -485,7 +512,7 @@ state_byte_9F2A     equ 9F2Ah	; alias — deprecated placeholder
 ; as alias.
 palette_fade_ctr	equ	9F2Bh			; palette fade step counter (canonical)
 state_byte_9F2B		equ	9F2Bh			; alias — deprecated placeholder
-; 0xC017: read at start_boss_scroll as `add bx, ds:[C017]` — the
+; 0xC017: read at start_boss_scroll as `add bx, ds:world_tile_base` — the
 ; resulting BX = 2*[si+6] + word_at_C017 is then used as a pointer
 ; (`mov si, [bx]`).  The byte/word at C017 is the FIRST WORD of a
 ; tile/world data table; 106TOWN.asm uses 0C017h as an immediate base
@@ -617,7 +644,7 @@ module_init:
 		mov	ax,0FFFFh
 		mov	ds:enemy_data_buf,al
 		mov	ds:enemy_data_buf2,al
-		mov	word ptr ds:[0EB15h],ax
+		mov	word ptr ds:[boss_entry_tbl],ax
 		mov	byte ptr ds:gvar_death_flag,0
 		mov	byte ptr ds:gvar_dir_toggle,0
 		mov	byte ptr ds:gvar_completion,0
@@ -697,20 +724,20 @@ main_loop_entry:
 		add	si,3
 		mov	bx,[si]
 		push	bx
-		call	word ptr cs:[200Ah]
+		call	word ptr cs:drv_fn_5
 		pop	bx
-		call	word ptr cs:[200Ch]
+		call	word ptr cs:drv_fn_6
 		jmp	short main_loop_body
 
 new_game_init:
-		call	word ptr cs:[2012h]
+		call	word ptr cs:drv_screen_init_b
 		call	game_get_value_2
 		mov	si,ds:bg_data_ptr
 		call	word ptr cs:drv_load_msg_header
 		call	word ptr cs:drv_frame_commit
 
 main_loop_body:
-		call	word ptr cs:[2006h]
+		call	word ptr cs:drv_fn_3
 		call	word ptr cs:drv_palette_push
 		call	word ptr cs:drv_fn_10
 		test	byte ptr ds:scene_trans_request,0FFh
@@ -783,7 +810,7 @@ fill_and_clear:
 		call	clear_buffer
 
 check_game_over:
-		test	byte ptr ds:[49h],0FFh
+		test	byte ptr ds:captured_flag,0FFh
 		jz	check_loading			; Jump if zero
 		jmp	game_over_sequence
 
@@ -2183,7 +2210,7 @@ init_arena_visuals		proc	near
 		mov	bx,0AA9h
 		mov	dx,0AB5h
 		mov	cx,0E03h
-		call	word ptr cs:[202Ch]
+		call	word ptr cs:drv_fn_22
 		mov	bx,21Ch
 		xor	al,al			; Zero register
 		mov	ch,42h			; 'B'
@@ -2918,7 +2945,7 @@ sound_update_loop:
 										call	word ptr cs:stick_fn_114
 										call	word ptr cs:stick_fn_116
 										call	word ptr cs:stick_fn_118
-										call	word ptr cs:[11Eh]
+										call	word ptr cs:stick_fn_11E
 										jnc	sound_wait_done			; Jump if carry=0
 										call	enter_level_via_ref_a
 
@@ -2932,7 +2959,7 @@ sound_wait_done:
 		retn
 
 check_7f_90:
-		test	byte ptr ds:[7Fh],0FFh
+		test	byte ptr ds:state_byte_7F,0FFh
 		jnz	check_state18			; Jump if not zero
 		test	word ptr ds:player_HP,0FFFFh
 		jnz	check_state18			; Jump if not zero
@@ -3224,7 +3251,7 @@ entity_scan_skip_push:
 		add	ax,3Ah
 		mov	bx,ax
 		mov	cl,22h			; '"'
-		call	word ptr cs:[202Ah]
+		call	word ptr cs:drv_fn_21
 		pop	si
 		retn
 
@@ -3274,7 +3301,7 @@ hud_draw_sprite:
 																		push	cx
 																		push	bx
 																		push	si
-																		call	word ptr cs:[2022h]
+																		call	word ptr cs:drv_render_char
 																		pop	si
 																		pop	bx
 																		pop	cx
@@ -3469,7 +3496,7 @@ update_any_active:
 		mov	ds:gvar_save_flag_3,al
 		or	al,al			; Zero ?
 		jz	all_slots_empty		; Jump if zero
-		call	word ptr cs:[201Ah]
+		call	word ptr cs:drv_fn_13
 
 all_slots_empty:
 		retn
@@ -3988,10 +4015,10 @@ world_x_to_screen_x_w27		endp
 		call	reset_combat_state		; +0x457
 		mov	al,0FFh
 		mov	byte ptr ds:sprite_work_buf,al
-		mov	byte ptr ds:[0EB67h],al
-		mov	byte ptr ds:[0EB6Eh],al
-		mov	byte ptr ds:[0EB75h],al
-		mov	byte ptr ds:[0FF3Ah],0
+		mov	byte ptr ds:boss_flag_EB67,al
+		mov	byte ptr ds:boss_flag_EB6E,al
+		mov	byte ptr ds:boss_flag_EB75,al
+		mov	byte ptr ds:gvar_music_flag_c,0
 		mov	es,cs:gvar_game_seg
 		mov	si,sar_ref_scroll
 		mov	di,6000h
@@ -4002,7 +4029,7 @@ world_x_to_screen_x_w27		endp
 		mov	si,scroll_tile_src
 		mov	bp,0D000h
 		mov	cx,0E6h
-		call	word ptr cs:[3028h]
+		call	word ptr cs:drv2_fn_20
 		pop	ds
 		mov	si,ds:map_data_ptr
 		lodsb
@@ -4017,7 +4044,7 @@ world_x_to_screen_x_w27		endp
 		call	word ptr cs:drv_ds_copy
 		pop	ds
 		xor	al,al
-		call	word ptr cs:[301Eh]
+		call	word ptr cs:drv2_fn_15
 		mov	al,byte ptr ds:player_level
 		or	al,al
 		js	$+5
@@ -4450,7 +4477,7 @@ reset_combat_state		proc	near
 		mov	ax,0FFFFh
 		mov	ds:enemy_data_buf,al
 		mov	ds:enemy_data_buf2,al
-		mov	word ptr ds:[0EB15h],ax
+		mov	word ptr ds:[boss_entry_tbl],ax
 		mov	ds:gvar_music_flag_c,al
 		mov	ds:combat_active,al
 		jmp	hud_fill
@@ -5823,7 +5850,7 @@ entity_fn_d_data:
 		add	[bx+si],cl
 		add	[bx+si],cx
 		add	al,[bx]
-		add	ax,word ptr ds:[504h]
+		add	ax,word ptr ds:data_word_504
 		add	al,4
 
 sub_27B4:
@@ -5884,9 +5911,9 @@ check_ab_slot:
 
 decrement_ab:
 		dec	byte ptr ds:weap_dur_cur[bx]
-		call	word ptr cs:[2018h]
+		call	word ptr cs:drv_anim_step
 		mov	byte ptr ds:gvar_volume_b,18h
-		mov	si,0EB15h
+		mov	si,boss_entry_tbl
 		mov	byte ptr ds:spell_fx_active,0FFh
 		mov	bl,byte ptr ds:cur_weapon_idx
 		dec	bl
@@ -6028,7 +6055,7 @@ boss_scroll_done:
 		jmp	frame_state_update
 
 scan_boss_entries_render		proc	near
-		mov	si,0EB15h
+		mov	si,boss_entry_tbl
 		mov	cx,4
 
 boss_entry_check:
@@ -6210,16 +6237,16 @@ gate_spell_fx_active		proc	near
 gate_spell_fx_active		endp
 
 entity_fn_d_1:
-			                        ; entity_fn_tbl_d target: handler fn 1 (dispatch via [8AC6h][bx])
-		mov	si,0EB15h
+			                        ; entity_fn_tbl_d target: handler fn 1 (dispatch via entity_fn_tbl_d1_dispatch[bx])
+		mov	si,boss_entry_tbl
 		mov	bl,byte ptr ds:cur_weapon_idx
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
-		jmp	word ptr ds:[8AC6h][bx]	;*
+		jmp	word ptr ds:entity_fn_tbl_d1_dispatch[bx]	;*
 
 entity_fn_d_1_data:
-			                        ; Data: dispatch table for [8AC6h] (6 targets in game seg)
+			                        ; Data: dispatch table for entity_fn_tbl_d1_dispatch (6 targets in game seg)
 ;*		aam	8Ah			; undocumented inst
 				aam 8Ah			; was: db 0D4h,08Ah
 		dw	8AF7h		; dispatch entry 0
@@ -6587,9 +6614,9 @@ obj_special_fn:
 		jmp	anim_half_step
 
 anim_dispatch_stub:
-			                        ; Animation dispatch stub via [8E14h][bx]
+			                        ; Animation dispatch stub via anim_dispatch_8E14[bx]
 		add	bx,bx
-		jmp	word ptr ds:[8E14h][bx]	;*
+		jmp	word ptr ds:anim_dispatch_8E14[bx]	;*
 
 anim_dispatch_data:
 			                        ; Data: animation dispatch table entries (game seg targets)
@@ -6776,11 +6803,11 @@ entity_fn_e_tbl_data:
 		mov	dx,9B9Ch
 		call	entity_scan_skip_push	; -0x1BA9
 		push	si
-		call	word ptr cs:[3004h]
+		call	word ptr cs:drv2_fn_2
 		mov	byte ptr ds:equipped_weapon,06h
 		mov	al,06h
 		mov	bx,18ABh
-		call	word ptr cs:[201Ch]
+		call	word ptr cs:drv_fn_14
 		mov	ah,byte ptr ds:equipped_weapon
 		mov	al,04h
 		call	word ptr cs:sar_loader_fn	; chunk loader
@@ -8142,7 +8169,7 @@ al_is_one:
 		shr	bl,1			; Shift w/zeros fill
 		add	al,bl
 		jc	ah_overflow			; Jump if carry Set
-		mov	cl,byte ptr ds:[0E4h]
+		mov	cl,byte ptr ds:key_count
 		inc	cl
 		mul	cl			; ax = reg * al
 		or	ah,ah			; Zero ?
@@ -8275,8 +8302,8 @@ fade_step_loop:
 
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
-		call	word ptr cs:[2040h]
-		test	byte ptr ds:[49h],0FFh
+		call	word ptr cs:drv_return_to_caller
+		test	byte ptr ds:captured_flag,0FFh
 		jz	player_not_captured			; Jump if zero
 		mov	byte ptr ds:stat_XC5,80h
 		jmp	short setup_next_level
