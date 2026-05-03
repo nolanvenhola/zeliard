@@ -97,8 +97,7 @@ functional probe via `functest/harness.py` or runtime tracing.
 
 | Done | Address | Placeholder | Static signal | Canonical |
 |:---:|---|---|---|---|
-| [x] | `0x9B` | `stat_X9B` | `mov [9Bh], 0FFh` set/clear pattern across town/shop sites | **`trade_marker_flag`** |
-| [x] | `0x9C` | `stat_X9C` | 1 write in `entity_fn_e_4` (sets to 0xFF on game_func_118 success), 0 reads anywhere; runtime probe (functest 2026-04-29) confirms write-only with no reader in writer subtree | **VESTIGIAL — write-only flag** |
+| [x] | `0x9A..0x9C` | `stat_X9A/B/C`, `trade_marker_flag` | 3-byte player_abilities table — 201SELCT line 1141 `draw_abilities` reads all three via `mov si, player_abilities; lodsb x3` and draws an ability icon per non-zero slot.  200FIGHT sets [9B]=0xFF on the 9B2Ch trigger (line 6774) and [9C]=0xFF on the 9AF3h trigger (line 6898 / `entity_fn_e_4`).  The earlier `trade_marker_flag` name for [9B] was a guess from 212ARMRP's narrow trade-dialog gate; underlying byte is just ability slot 2.  The earlier "VESTIGIAL no reader" claim for [9C] was wrong — the lodsb-via-SI read in 201SELCT is an indirect access that the static functest probe missed. | **`player_ability_1/2/3`** (3 named slots; specific ability semantics for each slot still TBD — see "Specific ability identification" below) |
 | [x] | `0x9F` | `stat_X9F` | 1 write in 106TOWN frame_update prologue (cleared every frame), 0 reads anywhere; runtime probe confirms vestigial | **VESTIGIAL — per-frame zero-clear, no reader** |
 | [x] | `0xA0` | `stat_XA0` | track count counter (inc/cmp wrap pattern) | **`music_track_count`** |
 | [x] | `0xC3` | `stat_XC3` | bit-6 carry-in from boss data, gates intro side | **`boss_intro_flag`** |
@@ -117,6 +116,24 @@ should reflect that.  Re-audit when more usage sites become available.
 |:---:|---|---|---|
 | [x] | `0x83/0x84` | `ply_accel db 0Ah, 0Ah` | Runtime probe (functest 2026-04-29): split into two independent screen-column counters. **0x83 → `town_player_col`** (range 0..0x10, walk_left/right inc/dec); **0x84 → `fight_player_col`** (range 0..7 in 200FIGHT). The `ply_accel` declaration is bogus — these bytes are NOT a 16-bit pair |
 | [x] | `0x88..0x8A` | `stat_X88_hi`, `stat_X88_lo` | Runtime probe confirms 24-bit add/adc/carry-propagation pattern identical to hero_gold. Used in **213BANKP.asm** as the bank deposit accumulator. **0x88 → `hero_bank_hi`**, **0x89..0x8A → `hero_bank_lo`** (24-bit banked gold) |
+
+---
+
+## Specific ability identification (3 unknown ability slots)
+
+The 3-byte player_abilities table at 0x9A..0x9C has been identified as
+ability flags (set on scripted triggers, drawn as icons by 201SELCT)
+but each slot's specific gameplay role is unknown.
+
+| Slot | Address | Setter | Tested by | Likely meaning |
+|:---:|---|---|---|---|
+| `player_ability_1` | `0x9A` | (no writer found yet — runtime probe needed) | 201SELCT draw_abilities | TBD |
+| `player_ability_2` | `0x9B` | 200FIGHT line 6774 (`mov [9B], 0FFh` after 9B2Ch trigger via entity_scan_skip_push) | 201SELCT draw_abilities; 212ARMRP line 199 (gates a special trade-dialog branch when `town_npc_state == 5 && [24h]&2 == 0`); cleared by 212ARMRP line 913 in `reset_after_trade` | TBD — possibly relates to a quest-item delivery (the 212ARMRP shopkeeper is the armor/weapon trader) |
+| `player_ability_3` | `0x9C` | 200FIGHT line 6898 (`mov [9C], 0FFh`) inside `entity_fn_e_4` after `game_func_118(DX=9AF3h)` succeeds | 201SELCT draw_abilities | TBD |
+
+**To resolve**: cross-reference the 9AF3h / 9B2Ch trigger addresses
+against the entity-data tables and the game manual's ability list.
+Manual references: jump-skill, magic-cast skill, sword-throw, etc.
 
 ---
 

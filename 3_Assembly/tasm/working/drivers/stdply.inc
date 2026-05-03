@@ -101,20 +101,30 @@ player_speed              equ     98h     ; character speed stat
 stat_X98                equ     98h     ; alias — deprecated placeholder
 player_power              equ     99h     ; character power stat
 stat_X99                equ     99h     ; alias — deprecated placeholder
-player_abilities          equ     9Ah     ; character abilities flags
+; 0x9A..0x9C: 3-byte player abilities table.  201SELCT.asm:1141
+; (`draw_abilities`) iterates `mov si, player_abilities; lodsb x3` —
+; for each non-zero slot it draws an ability icon at a different row.
+; Specific ability semantics (which slot = which gameplay ability) are
+; not yet identified; tracked in AUDIT_TODO.md.
+player_ability_1        equ     9Ah     ; ability slot 1 (specific ability TBD)
+player_abilities        equ     9Ah     ; alias — base of the 3-byte table (used by 201SELCT loop)
 stat_X9A                equ     9Ah     ; alias — deprecated placeholder
-; 0x9B: trade-marker flag.  200FIGHT line 6692 sets [9Bh]=0FFh after a
-; specific entity_scan match.  212ARMRP (armor shop) line 200 tests it
-; alongside `town_npc_state == 5` to gate the script jump to 0B2A2h.
-trade_marker_flag       equ     9Bh     ; trade-event marker flag (canonical)
+; 0x9B (slot 2): set to 0xFF by 200FIGHT line 6774 after the 9B2Ch
+; scripted trigger (parallel pattern to slot 3 at line 6898 with 9AF3).
+; 212ARMRP (armor shop) tests it at line 199 to gate a special trade
+; dialog branch when `town_npc_state == 5 && [24h] bit 1 clear`, then
+; clears it in reset_after_trade (line 913).  The "trade marker" name
+; was a guess based solely on the 212ARMRP usage; the underlying byte
+; is the ability_2 flag and "trade gating" is one specific game-design
+; consequence of that ability being set.
+player_ability_2        equ     9Bh     ; ability slot 2 (set on 9B2Ch trigger; specific ability TBD)
 stat_X9B                equ     9Bh     ; alias — deprecated placeholder
-; 0x9C: VESTIGIAL.  1 write site (200FIGHT entity_fn_e_4 success path
-; sets to 0xFF) and 0 reads anywhere in the cleaned tree, raw Sourcer
-; dump, or drivers.  Runtime probe (functest/.../test_stdply_stat_X9C.py)
-; confirms no reader fires in the writer's call subtree.  Kept declared
-; so the byte position is preserved in the player record, but it is dead
-; storage from a runtime perspective.
-stat_X9C                equ     9Ch     ; VESTIGIAL — write-only flag, no reader observed
+; 0x9C (slot 3): set to 0xFF by 200FIGHT entity_fn_e_4 (line 6898) when
+; the scripted trigger at game_func_118(DX=9AF3h) succeeds.  Read by
+; 201SELCT draw_abilities loop above (the functest_stat_X9C probe missed
+; this read because lodsb-via-SI is indirect).  Specific ability TBD.
+player_ability_3        equ     9Ch     ; ability slot 3 (set on 9AF3 trigger; specific ability TBD)
+stat_X9C                equ     9Ch     ; alias — deprecated placeholder
 cur_weapon_idx          equ     9Dh     ; cached selected weapon idx (1-based; init 0).
                                         ; Functional evidence in 201SELCT line 315/320
                                         ; (`mov ds:cur_weapon_idx, al / mov bl, ds:cur_weapon_idx`).

@@ -6771,7 +6771,7 @@ entity_fn_e_tbl_data:
 		jmp	game_func_119_body	; +0x1F4
 		mov	dx,9B2Ch
 		call	entity_scan_skip_push	; -0x1B9D
-		mov	byte ptr ds:trade_marker_flag,0FFh
+		mov	byte ptr ds:player_ability_2,0FFh
 		retn
 		mov	dx,9B9Ch
 		call	entity_scan_skip_push	; -0x1BA9
@@ -6895,7 +6895,7 @@ entity_fn_e_4:
 		retn
 
 set_9c_ff:
-		mov	byte ptr ds:[9Ch],0FFh
+		mov	byte ptr ds:player_ability_3,0FFh
 		jmp	entity_deactivate
 
 entity_fn_e_5:

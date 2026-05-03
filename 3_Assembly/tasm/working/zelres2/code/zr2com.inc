@@ -19,7 +19,12 @@
 fight_player_col        equ     84h     ; player screen column in fight (canonical in stdply.inc)
 player_bank_hi            equ     88h     ; banked-gold high byte (canonical in stdply.inc)
 player_bank_lo            equ     89h     ; banked-gold low word (canonical in stdply.inc)
-trade_marker_flag       equ     09Bh    ; trade-event marker (canonical in stdply.inc)
+; 0x9A..0x9C: 3-byte player_abilities table (canonical in stdply.inc).
+; 201SELCT draw_abilities iterates the 3 bytes.  Each slot's specific
+; ability is TBD (see AUDIT_TODO.md).
+player_ability_1        equ     09Ah    ; ability slot 1
+player_ability_2        equ     09Bh    ; ability slot 2 (212ARMRP gates trade dialog on this; that's one specific consequence of the ability)
+player_ability_3        equ     09Ch    ; ability slot 3 (set by 200FIGHT entity_fn_e_4 on 9AF3)
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical in stdply.inc)
 heal_pulse_count        equ     0C6h    ; HP heal-pulse counter, 16-bit (canonical in stdply.inc)
 scene_trans_request     equ     0E6h    ; scene-transition request (canonical in stdply.inc)

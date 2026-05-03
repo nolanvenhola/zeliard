@@ -128,7 +128,7 @@ player_exp		equ	094h			;* word: current character experience
 player_exp_cap		equ	096h			;* word: experience cap for current level
 player_speed		equ	098h			;* byte: character speed stat
 player_power		equ	099h			;* byte: character power/attack stat
-player_abilities		equ	09Ah			;* 3-byte table: combat ability flags (DS:09Ah..09Ch)
+player_abilities		equ	09Ah			;* base of 3-byte ability table (slots at 9A/9B/9C; canonical names player_ability_1/2/3 in stdply.inc)
 weap_dur_cur		equ	0ABh			;* 7-byte table: current weapon durability (DS:0ABh..0B1h)
 weap_dur_max		equ	0B4h			;* 7-byte table: maximum weapon durability (DS:0B4h..0BAh)
 key_count		equ	0E4h			;* byte: number of keys held

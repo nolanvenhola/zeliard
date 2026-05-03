@@ -19,7 +19,7 @@
 town_player_col         equ     83h     ; player screen column in town (canonical in stdply.inc)
 player_bank_hi            equ     88h     ; banked-gold high byte (canonical in stdply.inc)
 player_bank_lo            equ     89h     ; banked-gold low word (canonical in stdply.inc)
-trade_marker_flag       equ     09Bh    ; trade-event marker (canonical in stdply.inc)
+player_ability_2        equ     09Bh    ; ability slot 2 (canonical in stdply.inc; was misnamed trade_marker_flag — that was just one game-design use of this ability, gating 212ARMRP trade dialog)
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical in stdply.inc)
 heal_pulse_count        equ     0C6h    ; HP heal-pulse counter, 16-bit (canonical in stdply.inc)
 scene_trans_request     equ     0E6h    ; scene-transition request (canonical in stdply.inc)

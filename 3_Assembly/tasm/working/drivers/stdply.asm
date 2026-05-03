@@ -143,14 +143,16 @@ equipped_magic	db	0		; [93h] equipped magic idx (1-based; init 0 = no spell)
 player_exp	dw	0		; [94h-95h] current XP (16-bit; init=0)
 ;
 ; [96h..9Ch]: 201SELCT (character-select chunk) names the leading entries
-; as player_exp_cap (word), player_speed/power/abilities.  Trailing 9Bh/9Ch
-; have no canonical name from any chunk — left as placeholders.
+; as player_exp_cap (word), player_speed/power.  Bytes 9A..9C form a
+; 3-byte player_abilities table — 201SELCT draw_abilities reads them as
+; a unit (`mov si, player_abilities; lodsb x3`).  Specific ability
+; semantics for each slot are TBD; tracked in AUDIT_TODO.md.
 player_exp_cap	dw	0		; [96h-97h] XP cap for current level (16-bit)
 player_speed	db	0		; [98h] character speed stat
 player_power	db	0		; [99h] character power stat
-player_abilities	db	0		; [9Ah] character abilities flags
-trade_marker_flag db	0	; [9Bh] trade-event marker (set in 200FIGHT, tested by 212ARMRP)
-stat_X9C	db	0		; [9Ch] VESTIGIAL — write-only flag, no reader observed (functest 2026-04-29)
+player_ability_1 db	0		; [9Ah] ability slot 1 (= player_abilities table base)
+player_ability_2 db	0		; [9Bh] ability slot 2 (212ARMRP gates trade dialog when set)
+player_ability_3 db	0		; [9Ch] ability slot 3 (set by 200FIGHT entity_fn_e_4 on 9AF3 trigger)
 ;
 ; cur_weapon_idx — cached selected weapon idx (1-based; init 0).  Per
 ; 201SELCT 315/320: written by select-screen, read back as `mov bl, ds:[9D]`
