@@ -16,7 +16,7 @@ PAGE  59,132
 ;    Called by:    zeliad.exe loader (when RESOURCE.CFG selects EGA mode);
 ;                  game.bin invokes via gfx_call_a/b/c at game_seg:0x201C/E/2020;
 ;                  fight.bin/town.bin call gfx_* dispatch entries
-;    Reads/writes: gvar_game_seg (FF2C) [zeliad-owned], gvar_volume_b (FF77),
+;    Reads/writes: gvar_game_seg (FF2C) [zeliad-owned], gvar_cinematic_active (FF77 — was gvar_volume_b misnomer),
 ;                  anim_ptr_0..4 (E200/E202/E206/E20A/E20C, fight-owned),
 ;                  font_ptr_a/b/c (F500/F502/F504, font.grp-owned)
 ;
@@ -31,7 +31,7 @@ include  stdply.inc
 ; Section 3: Game-segment globals (gvar_*) not in shared inc
 ; ----------------------------------------------------------------------
 gvar_game_seg	equ	0FF2Ch			;*
-gvar_volume_b	equ	0FF77h			;*
+gvar_cinematic_active	equ	0FF77h			;*
 
 ; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses
@@ -243,7 +243,7 @@ hline_clear_left_loop:
 		mov	ax,102h
 		out	dx,ax			; port 3C4h, EGA sequencr index
 						;  al = 2, map mask register
-		test	byte ptr cs:gvar_volume_b,0FFh
+		test	byte ptr cs:gvar_cinematic_active,0FFh
 		jz	hline_after_volume_check			; Jump if zero
 		mov	ax,0F02h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -1666,7 +1666,7 @@ render_char_string:
 
 fn_20:
 		mov	al,1
-		test	byte ptr cs:gvar_volume_b,0FFh
+		test	byte ptr cs:gvar_cinematic_active,0FFh
 		jz	rcs_set_fg_mask			; Jump if zero
 		mov	al,7
 

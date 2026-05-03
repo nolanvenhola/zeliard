@@ -89,7 +89,6 @@ gvar_volume_b		equ	0FF75h		; Volume/audio setting B
 gvar_disk_swap_suppressed equ	0FF78h	; alias matching zeliard.inc canonical
 gvar_old_int09_ofs	equ	0FF79h		; Saved INT 09h offset
 gvar_old_int09_seg	equ	0FF7Bh		; Saved INT 09h segment
-gvar_old_int61_ofs	equ	0FF7Bh		; Saved INT 61h offset
 
 ; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses

@@ -40,26 +40,36 @@ include  srmacros.inc
 ; Player-record fields (DS-relative; canonical home is stdply.inc).
 music_track_count equ	0A0h			; music track count (canonical in stdply.inc)
 gvar_pose_idx	equ	0E7h			; player pose state (canonical in stdply.inc)
-; Game state variables (0xFF00+ range, shared with zeliad.exe)
+; Game state variables (0xFF00+ range, shared with zeliad.exe).
+; Names below are synced to zeliard.inc canonical where one exists; game.asm
+; doesn't include zeliard.inc directly (carries its own EQUs).
 gvar_timer_ticks equ	0FF08h			; Timer tick counter
-gvar_game_phase	equ	0FF14h			; Current game phase / graphics mode
-gvar_music_vol	equ	0FF36h			; Music volume setting
-gvar_music_a	equ	0FF38h			; Music state A
-gvar_music_b	equ	0FF39h			; Music state B
-gvar_music_c	equ	0FF3Ah			; Music state C
-gvar_palette_st	equ	0FF3Ch			; Palette state
-gvar_palette_a	equ	0FF3Dh			; Palette value A
+gvar_gfx_mode	equ	0FF14h			; Graphics/display mode (canonical zeliard.inc)
+gvar_enemy_cnt	equ	0FF36h			; Active enemy count (canonical zr3com.inc).
+						; game.asm only zero-inits this; was misnamed gvar_music_vol.
+gvar_music_flag_a	equ	0FF38h			; Music state A (canonical zeliard.inc)
+gvar_music_flag_b	equ	0FF39h			; Music state B (canonical zeliard.inc)
+gvar_music_flag_c	equ	0FF3Ah			; Music state C (canonical zeliard.inc)
+gvar_palette_flag	equ	0FF3Ch			; Palette state (canonical zeliard.inc)
+equip_byte	equ	0FF3Dh			; Equipment byte (canonical zr2com.inc, 5-file consensus).
+						; game.asm only zero-inits; was misnamed gvar_palette_a.
 gvar_palette_b	equ	0FF3Eh			; alias — see 200FIGHT.asm spell_fx_active (game.asm only zero-clears it)
-gvar_debug_mode	equ	0FF40h			; Debug mode
-gvar_debug_val	equ	0FF42h			; Debug value
-gvar_joystick	equ	0FF43h			; Joystick state
+gvar_debug_mode	equ	0FF40h			; Debug mode (canonical zeliard.inc)
+gvar_debug_val	equ	0FF42h			; Debug value (canonical zeliard.inc)
+gvar_joystick_flag	equ	0FF43h			; Joystick enabled flag (canonical zeliard.inc)
 ; FF44h is the bg_restore pending flag (set by gf*.asm bg_save/bg_restore
 ; procs across 202GFEGA, 203GFCGA, 204GFHGC, 205GFTGA, 206GFMCA — 21
 ; read/write sites).  game.asm only zero-clears it during init.
 restore_pending	equ	0FF44h			; bg_restore pending flag (gf*.asm)
-gvar_joy_count	equ	0FF4Bh			; Joystick count
+gvar_item_result	equ	0FF4Bh			; Selected item / level-completion counter (canonical 201SELCT).
+						; game.asm only zero-inits; was misnamed gvar_joy_count.
 gvar_volume_a	equ	0FF74h			; Volume setting A
-gvar_volume_b	equ	0FF77h			; Volume setting B
+gvar_cinematic_active	equ	0FF77h			; Cinematic/intro-mode flag (set 0xFF at start_new_game
+						; before opdemo loads; cleared in start_load_game's gvar zero-pass).
+						; Tested by gfx drivers to gate rendering paths (full-color cinematic
+						; vs gameplay-mode rendering).  Was misnamed gvar_volume_b — that name
+						; refers to a SEPARATE byte at FF75 (audio cue) used by the rest of
+						; the project; this byte at FF77 has nothing to do with volume.
 
 ; ----------------------------------------------------------------------
 ; Section 4: Shared dispatch slot references (file-local)
@@ -180,20 +190,20 @@ start:
 
 		; Clear all game state variables
 		xor	al,al
-		mov	ds:gvar_music_b,al
-		mov	ds:gvar_music_c,al
-		mov	ds:gvar_joystick,al
+		mov	ds:gvar_music_flag_b,al
+		mov	ds:gvar_music_flag_c,al
+		mov	ds:gvar_joystick_flag,al
 		mov	ds:restore_pending,al
-		mov	ds:gvar_palette_st,al
-		mov	ds:gvar_palette_a,al
-		mov	ds:gvar_music_a,al
-		mov	ds:gvar_music_vol,al
+		mov	ds:gvar_palette_flag,al
+		mov	ds:equip_byte,al
+		mov	ds:gvar_music_flag_a,al
+		mov	ds:gvar_enemy_cnt,al
 		mov	ds:gvar_palette_b,al
-		mov	ds:gvar_joy_count,al
+		mov	ds:gvar_item_result,al
 		mov	ds:gvar_timer_ticks,al
 		mov	byte ptr ds:gvar_pose_idx,al	; clear gvar_pose_idx (player pose state)
 		mov	ds:gvar_volume_a,al
-		mov	ds:gvar_volume_b,al
+		mov	ds:gvar_cinematic_active,al
 		mov	ds:gvar_debug_mode,al
 		mov	ds:gvar_debug_val,al
 
@@ -201,7 +211,7 @@ start:
 		mov	ax,cs
 		mov	es,ax
 		xor	bx,bx
-		mov	bl,ds:gvar_game_phase	; BL = graphics mode index
+		mov	bl,ds:gvar_gfx_mode	; BL = graphics mode index
 		add	bx,bx
 		mov	si,ds:gfx_mode_tbl_all[bx] ; SI = chunk ref for this mode
 		mov	di,3000h		; Load to offset 0x3000
@@ -226,7 +236,7 @@ start_new_game:
 		; opdemo plays the slideshow, builds the Zeliard logo, then
 		; loads the gameplay chunks (town.bin etc.) itself before
 		; transitioning to gameplay.
-		mov	byte ptr cs:gvar_volume_b,0FFh
+		mov	byte ptr cs:gvar_cinematic_active,0FFh
 		LOAD_CHUNK chunk_ref_opdemo, 6000h, 3	; opening cinematic + title sequence
 		jmp	word ptr ds:loaded_code_b ; Jump to opdemo entry (cinematic runner)
 
@@ -242,7 +252,7 @@ start_load_game:
 		mov	ax,cs
 		mov	es,ax
 		xor	bx,bx
-		mov	bl,ds:gvar_game_phase
+		mov	bl,ds:gvar_gfx_mode
 		add	bx,bx
 		mov	si,ds:gfx_mode_tbl_cga[bx]
 		mov	di,3000h
@@ -255,7 +265,7 @@ start_load_game:
 		; Load tile graphics (+0x2000 segment)
 		SET_ES_SEG 2000h
 		xor	bx,bx
-		mov	bl,ds:gvar_game_phase
+		mov	bl,ds:gvar_gfx_mode
 		add	bx,bx
 		LOAD_CHUNK ds:gfx_mode_tbl_ega[bx], 9000h, 3
 
@@ -312,7 +322,7 @@ start_load_game:
 		call	word ptr cs:sar_loader_fn
 
 		; Call game initialization (level setup)
-		mov	al,ds:gvar_game_phase
+		mov	al,ds:gvar_gfx_mode
 		push	ds
 		call	dword ptr ds:game_init_fn
 		pop	ds
@@ -523,13 +533,13 @@ music_track_ref_tbl_lbl	label	word
 ;==========================================================================
 ;  set_vga_palette - Set VGA DAC palette based on graphics mode
 ;
-;  Uses gvar_game_phase as index into mode-specific palette setup.
+;  Uses gvar_gfx_mode as index into mode-specific palette setup.
 ;  For MCGA mode: programs 64 VGA DAC registers (8 base colors x 8 shades)
 ;  using RGB triplets from a base color table + shade offset table.
 ;==========================================================================
 
 set_vga_palette	proc	near
-		mov	bl,ds:gvar_game_phase	; Graphics mode index
+		mov	bl,ds:gvar_gfx_mode	; Graphics mode index
 		xor	bh,bh
 		add	bx,bx
 		jmp	word ptr cs:palette_handler_jmp_tbl[bx] ; Jump to mode handler

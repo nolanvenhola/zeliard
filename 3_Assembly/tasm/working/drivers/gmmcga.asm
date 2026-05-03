@@ -43,7 +43,7 @@ include  stdply.inc
 ; ----------------------------------------------------------------------
 palette_state	equ	0FF01h			;*
 gvar_game_seg	equ	0FF2Ch			;*
-gvar_volume_b	equ	0FF77h			;*
+gvar_cinematic_active	equ	0FF77h			;*
 
 ; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses
@@ -177,7 +177,7 @@ dispatch_call:
 
 volume_param_branch:
 		mov	dx,909h
-		test	byte ptr cs:gvar_volume_b,0FFh
+		test	byte ptr cs:gvar_cinematic_active,0FFh
 		jz	clear_screen_entry			; Jump if zero
 		mov	dx,0FFFFh
 
@@ -1180,7 +1180,7 @@ render_text_char_alt		proc	near
 		xor	bx,bx			; Zero register
 		mov	bl,ah
 		mov	ah,ds:tile_color_tbl[bx]
-		test	byte ptr cs:gvar_volume_b,0FFh
+		test	byte ptr cs:gvar_cinematic_active,0FFh
 		jz	store_render_color			; Jump if zero
 		mov	ah,bl
 		add	ah,ah
@@ -1347,7 +1347,7 @@ copy_to_vga_loop:
 		mov	cs:char_src_ptr,bx
 		mov	cs:char_bit_idx,cl
 		mov	al,1
-		test	byte ptr cs:gvar_volume_b,0FFh
+		test	byte ptr cs:gvar_cinematic_active,0FFh
 		jz	set_char_color			; Jump if zero
 		mov	al,7
 
