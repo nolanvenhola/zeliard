@@ -25,7 +25,7 @@ PAGE  59,132
 ;                  game_seg:0x6000 entry)
 ;    Reads/writes: gvar_fn_tbl (FF00), gvar_joy_state (FF18),
 ;                  gvar_frame_timer (FF1A), gvar_spacebar_state (FF1D),
-;                  gvar_enable_all (FF26), gvar_key_state (FF29),
+;                  gvar_enable_all (FF26), gvar_enter_key (FF29),
 ;                  gvar_tile_ptr (FF2A), gvar_game_seg (FF2C),
 ;                  gvar_anim_frames (FF33), gvar_dialog_ptr (FF4C),
 ;                  gvar_save_name (FF6C), gvar_volume (FF75),
@@ -47,7 +47,8 @@ gvar_frame_timer	equ	0FF1Ah			;*
 gvar_spacebar_state	equ	0FF1Dh			;*
 gvar_skip_flag2	equ	0FF1Eh			;*
 gvar_enable_all	equ	0FF26h			;*
-gvar_key_state	equ	0FF29h			;*
+gvar_enter_key	equ	0FF29h			;* ENTER-key ASCII buffer (canonical zeliard.inc;
+						;  was misnamed gvar_enter_key — FF0B is the real gvar_enter_key)
 gvar_tile_ptr	equ	0FF2Ah			;*
 gvar_game_seg	equ	0FF2Ch			;*
 gvar_anim_frames	equ	0FF33h			;*
@@ -3310,7 +3311,7 @@ player_process_loop_2		endp
 player_copy_buf		proc	near
 		call	player_func_51
 		mov	byte ptr ds:gvar_input_lock,0FFh
-		mov	byte ptr ds:gvar_key_state,0
+		mov	byte ptr ds:gvar_enter_key,0
 		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		mov	byte ptr ds:gvar_sel_row,0
@@ -3413,11 +3414,11 @@ nameinput_copy_done:
 nameinput_key_check:
 		mov	cx,786Fh
 		push	cx
-		test	byte ptr ds:gvar_key_state,0FFh
+		test	byte ptr ds:gvar_enter_key,0FFh
 		jz	nameinput_joy_check			; Jump if zero
 		mov	byte ptr ds:gvar_volume,1
-		mov	al,ds:gvar_key_state
-		mov	byte ptr ds:gvar_key_state,0
+		mov	al,ds:gvar_enter_key
+		mov	byte ptr ds:gvar_enter_key,0
 		cmp	al,0Dh
 		jne	nameinput_not_enter			; Jump if not equal
 		retn
@@ -3456,7 +3457,7 @@ nameinput_joy_wait_u:
 								int	61h			; ??INT Non-standard interrupt
 								test	al,8
 								jnz	nameinput_joy_wait_u			; Jump if not zero
-		mov	byte ptr ds:gvar_key_state,0
+		mov	byte ptr ds:gvar_enter_key,0
 		retn
 
 nameinput_joy_dn:
@@ -3470,7 +3471,7 @@ nameinput_joy_wait_d:
 								int	61h			; ??INT Non-standard interrupt
 								test	al,4
 								jnz	nameinput_joy_wait_d			; Jump if not zero
-		mov	byte ptr ds:gvar_key_state,0
+		mov	byte ptr ds:gvar_enter_key,0
 		retn
 
 nameinput_joy_lr:

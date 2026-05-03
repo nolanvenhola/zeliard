@@ -25,7 +25,7 @@ PAGE  59,132
 ;    Called by:    game.bin LOAD_CHUNK chunk_ref_opdemo (loaded_code_b at
 ;                  CS:0x6000 entry); also re-entered for ending sequence
 ;    Reads/writes: gvar_frame_timer (FF1A), gvar_spacebar_state (FF1D),
-;                  gvar_enable_all (FF26), gvar_key_state (FF29),
+;                  gvar_enable_all (FF26), gvar_enter_key (FF29),
 ;                  gvar_game_seg (FF2C), gvar_volume_b (FF75)
 ;                  - all zeliad-owned globals
 ;
@@ -42,7 +42,9 @@ include  zr1com.inc
 gvar_frame_timer	equ	0FF1Ah		; frame timer (canonical, ISR-incremented)
 gvar_spacebar_state	equ	0FF1Dh		; input skip flag (zeliard.inc: gvar_spacebar_state)
 gvar_enable_all	equ	0FF26h		; enable all flag (zeliard.inc: gvar_enable_all)
-gvar_key_state	equ	0FF29h		; key state (0xFF29)
+gvar_enter_key	equ	0FF29h		; ENTER-key ASCII buffer (canonical zeliard.inc).
+					; Was misnamed gvar_enter_key — that name belongs to FF0B
+					; in zeliard.inc (current key state); FF29 is a different byte.
 gvar_game_seg	equ	0FF2Ch		; game data segment (zeliard.inc: gvar_game_seg)
 gvar_volume_b	equ	0FF75h		; volume B (zeliard.inc: gvar_volume_b)
 
@@ -262,7 +264,7 @@ start:
 		mov	sp,2000h
 		sti				; Enable interrupts
 		mov	byte ptr cs:gvar_spacebar_state,0
-		mov	byte ptr cs:gvar_key_state,0
+		mov	byte ptr cs:gvar_enter_key,0
 		push	cs
 		pop	ds
 		call	word ptr cs:gfx_init_fn
@@ -292,7 +294,7 @@ start:
 		DECOMPRESS_VGA scene_framebuf
 		call	word ptr cs:gfx_init_fn
 		mov	byte ptr cs:gvar_spacebar_state,0
-		mov	byte ptr cs:gvar_key_state,0
+		mov	byte ptr cs:gvar_enter_key,0
 		mov	ax,1
 		call	word ptr cs:gfx_palette_fn
 		mov	al,0FFh
@@ -591,7 +593,7 @@ timer_wait_loop		proc	near
 timer_check_input:
 							test	byte ptr cs:gvar_spacebar_state,0FFh
 							jnz	timer_exit_to_game			; Jump if not zero
-							cmp	byte ptr cs:gvar_key_state,ENTER_KEY
+							cmp	byte ptr cs:gvar_enter_key,ENTER_KEY
 							je	timer_exit_to_game			; Jump if equal
 							call	interrupt_handler_cascade
 							cmp	cs:gvar_frame_timer,al
@@ -623,7 +625,7 @@ timer_wait_gfx:
 							test	byte ptr ds:gvar_enable_all,0FFh
 							jz	timer_wait_gfx			; Jump if zero
 		mov	byte ptr cs:gvar_spacebar_state,0
-		mov	byte ptr cs:gvar_key_state,0
+		mov	byte ptr cs:gvar_enter_key,0
 		jmp	short $+2		; delay for I/O
 		RESET_STACK
 		push	cs
@@ -642,7 +644,7 @@ timer_wait_gfx:
 		int	60h			; ??INT Non-standard interrupt
 		pop	ds
 		mov	byte ptr cs:gvar_spacebar_state,0
-		mov	byte ptr cs:gvar_key_state,0
+		mov	byte ptr cs:gvar_enter_key,0
 		mov	ax,1
 		call	word ptr cs:gfx_palette_fn
 		call	credits_scroll_display
@@ -653,7 +655,7 @@ scene_transition_wait	proc	near
 trans_wait_timer:
 							test	byte ptr cs:gvar_spacebar_state,0FFh
 							jnz	trans_exit			; Jump if not zero
-							cmp	byte ptr cs:gvar_key_state,ENTER_KEY
+							cmp	byte ptr cs:gvar_enter_key,ENTER_KEY
 							je	trans_exit			; Jump if equal
 							call	interrupt_handler_cascade
 							cmp	cs:gvar_frame_timer,al
@@ -671,7 +673,7 @@ trans_wait_gfx:
 							test	byte ptr ds:gvar_enable_all,0FFh
 							jz	trans_wait_gfx			; Jump if zero
 		mov	byte ptr cs:gvar_spacebar_state,0
-		mov	byte ptr cs:gvar_key_state,0
+		mov	byte ptr cs:gvar_enter_key,0
 		jmp	post_title_story_scenes
 
 credits_scroll_display	proc	near
@@ -725,7 +727,7 @@ credits_scroll_display	endp
 post_title_story_scenes:
 		RESET_STACK
 		mov	byte ptr cs:gvar_spacebar_state,0
-		mov	byte ptr cs:gvar_key_state,0
+		mov	byte ptr cs:gvar_enter_key,0
 		mov	word ptr cs:script_pc,79C6h
 		mov	ax,5
 		call	word ptr cs:gfx_palette_fn
@@ -1008,7 +1010,7 @@ story_scene_timer_loop	endp
 story_scene_input_handler	proc	near
 		test	byte ptr cs:gvar_spacebar_state,0FFh
 		jnz	transition_out_to_game			; Jump if not zero
-		cmp	byte ptr cs:gvar_key_state,ENTER_KEY
+		cmp	byte ptr cs:gvar_enter_key,ENTER_KEY
 		je	transition_out_to_game			; Jump if equal
 		push	si
 		push	ax
@@ -1027,7 +1029,7 @@ transition_out_to_game:
 		mov	cx,50C8h
 		call	word ptr cs:gfx_mode_fn
 		mov	byte ptr cs:gvar_spacebar_state,0
-		mov	byte ptr cs:gvar_key_state,0
+		mov	byte ptr cs:gvar_enter_key,0
 		mov	ax,cs
 		mov	es,ax
 		mov	ds,ax

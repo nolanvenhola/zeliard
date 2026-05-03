@@ -84,7 +84,11 @@ include  srmacros.inc
 ; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
 ; ----------------------------------------------------------------------
 gvar_frame_timer	equ	0FF1Ah		; frame timer (canonical)
-gvar_spacebar_state		equ	0FF21h		; input skip flag (zeliard.inc)
+credits_skip_flag	equ	0FF21h		; module-local skip flag tested in credits_wait_skip.
+						; FF21 is NOT the canonical spacebar latch — that's FF1D
+						; (credits_skip_flag in zeliard.inc, set by stick.asm on
+						; SPACE/btn-A release).  FF21 has no documented setter; kept
+						; local to preserve the original 250ENDMO test/clear pattern.
 gvar_game_seg		equ	0FF2Ch		; game data segment word (zeliard.inc)
 gvar_credits_pos	equ	0FF50h		; credits scroll/row position word
 gvar_volume_b		equ	0FF75h		; audio volume B (zeliard.inc)
@@ -1001,9 +1005,9 @@ credits_after_newline:
 
 credits_wait_skip:
 				call	credits_driver_tick
-				test	byte ptr ds:gvar_spacebar_state,0FFh
+				test	byte ptr ds:credits_skip_flag,0FFh
 				jz	credits_wait_skip			; Jump if zero
-		mov	byte ptr ds:gvar_spacebar_state,0
+		mov	byte ptr ds:credits_skip_flag,0
 		mov	word ptr ds:gvar_credits_pos,0
 		jmp	credits_fetch_byte
 
