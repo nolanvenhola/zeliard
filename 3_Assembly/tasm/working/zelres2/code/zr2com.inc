@@ -16,12 +16,31 @@
 ; stdply.inc's canonical EQU; TASM accepts duplicate equates with the
 ; same value.
 ; ----------------------------------------------------------------------
+map_scroll_col          equ     80h     ; cavern X scroll column, 16-bit (canonical in stdply.inc)
+map_scroll_row          equ     82h     ; cavern Y scroll row (canonical in stdply.inc)
+town_player_col         equ     83h     ; player screen column in town (canonical in stdply.inc)
 fight_player_col        equ     84h     ; player screen column in fight (canonical in stdply.inc)
-player_bank_hi            equ     88h     ; banked-gold high byte (canonical in stdply.inc)
-player_bank_lo            equ     89h     ; banked-gold low word (canonical in stdply.inc)
-shield_type               equ     93h     ; shield tier (canonical in stdply.inc; gates apply_combat_damage_with_absorb)
-shield_HP                 equ     94h     ; current shield HP, 16-bit (canonical in stdply.inc)
-shield_max_HP             equ     96h     ; shield max HP cap, 16-bit (canonical in stdply.inc)
+player_gold_hi          equ     85h     ; gold high byte (24-bit) (canonical in stdply.inc)
+player_gold_lo          equ     86h     ; gold low byte (canonical in stdply.inc)
+player_gold_mid         equ     87h     ; gold low word's high byte (canonical in stdply.inc)
+player_bank_hi          equ     88h     ; banked-gold high byte (canonical in stdply.inc)
+player_bank_lo          equ     89h     ; banked-gold low word (canonical in stdply.inc)
+player_almas            equ     8Bh     ; alt currency (16-bit) (canonical in stdply.inc)
+item_qty_count          equ     8Dh     ; item quantity counter (canonical in stdply.inc)
+item_effect_val         equ     8Eh     ; item effect value (16-bit) (canonical in stdply.inc)
+player_HP               equ     90h     ; current HP (16-bit) (canonical in stdply.inc)
+equipped_weapon         equ     92h     ; equipped weapon idx (canonical in stdply.inc)
+shield_type             equ     93h     ; shield tier (canonical in stdply.inc; gates apply_combat_damage_with_absorb)
+shield_HP               equ     94h     ; current shield HP, 16-bit (canonical in stdply.inc)
+shield_max_HP           equ     96h     ; shield max HP cap, 16-bit (canonical in stdply.inc)
+player_speed            equ     98h     ; character speed stat (canonical in stdply.inc)
+player_power            equ     99h     ; character power stat (canonical in stdply.inc)
+cur_weapon_idx          equ     9Dh     ; cached selected weapon idx (canonical in stdply.inc)
+cur_magic_idx           equ     9Eh     ; currently selected magic idx (canonical in stdply.inc)
+player_hp_max           equ     0B2h    ; HP ceiling (canonical in stdply.inc; overlays anim_color_lut)
+player_facing           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
+player_level            equ     0C4h    ; level/area number (canonical in stdply.inc)
+player_tileset          equ     0C8h    ; level tileset index (canonical in stdply.inc)
 ; 0x9A..0x9C: 3-byte player_abilities table (canonical in stdply.inc).
 ; 201SELCT draw_abilities iterates the 3 bytes.  Each slot's specific
 ; ability is TBD (see AUDIT_TODO.md).
