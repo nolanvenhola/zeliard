@@ -408,8 +408,8 @@ set_anim_active_flag_FF:
 		mov	word ptr ds:anim_src_ptr,0A7C3h
 
 loc_21:
-		add	word ptr ds:hero_bank_lo,ax
-		adc	byte ptr ds:hero_bank_hi,dl
+		add	word ptr ds:player_bank_lo,ax
+		adc	byte ptr ds:player_bank_hi,dl
 		mov	dl,ds:amount_hi
 		mov	ax,ds:amount_lo
 		call	word ptr cs:script_take_item
@@ -420,8 +420,8 @@ loc_21:
 		test	byte ptr ds:anim_active_flag,0FFh
 		jnz	script_AB10			; Jump if not zero
 		mov	word ptr ds:gvar_script_ptr,0ABF7h
-		mov	dl,byte ptr ds:hero_bank_hi
-		mov	ax,word ptr ds:hero_bank_lo
+		mov	dl,byte ptr ds:player_bank_hi
+		mov	ax,word ptr ds:player_bank_lo
 		or	dl,ah
 		or	dl,al
 		jnz	script_AC35			; Jump if not zero
@@ -429,17 +429,17 @@ loc_21:
 
 script_AC35:
 		mov	word ptr ds:gvar_script_ptr,0AC35h
-		test	al,byte ptr ds:hero_bank_hi
+		test	al,byte ptr ds:player_bank_hi
 		jnz	script_AAF4			; Jump if not zero
-		cmp	word ptr ds:hero_bank_lo,1
+		cmp	word ptr ds:player_bank_lo,1
 		jne	script_AAF4			; Jump if not equal
 		retn
 
 script_AAF4:
 		mov	word ptr ds:gvar_script_ptr,0AAF4h
 		call	word ptr cs:script_step
-		mov	dl,byte ptr ds:hero_bank_hi
-		mov	ax,word ptr ds:hero_bank_lo
+		mov	dl,byte ptr ds:player_bank_hi
+		mov	ax,word ptr ds:player_bank_lo
 		FORMAT_AND_RUN
 		retn
 
@@ -452,8 +452,8 @@ script_AB10:
 		mov	si,welcome_text_ptr
 		call	draw_banner_8x5
 		mov	word ptr ds:gvar_script_ptr,0AB32h
-		mov	ax,word ptr ds:hero_bank_lo
-		mov	dl,byte ptr ds:hero_bank_hi
+		mov	ax,word ptr ds:player_bank_lo
+		mov	dl,byte ptr ds:player_bank_hi
 		or	dl,al
 		or	dl,ah
 		jnz	script_AB80			; Jump if not zero
@@ -475,8 +475,8 @@ script_AB80:
 		call	word ptr cs:show_menu_items
 		mov	byte ptr ds:amount_hi,0
 		mov	word ptr ds:amount_lo,0
-		mov	dl,byte ptr ds:hero_bank_hi
-		mov	ax,word ptr ds:hero_bank_lo
+		mov	dl,byte ptr ds:player_bank_hi
+		mov	ax,word ptr ds:player_bank_lo
 		mov	ds:amount_max_hi,dl
 		mov	ds:amount_max_lo,ax
 
@@ -485,8 +485,8 @@ loc_26:
 				mov	ax,ds:amount_lo
 				push	dx
 				push	ax
-				mov	cl,byte ptr ds:hero_bank_hi
-				mov	bx,word ptr ds:hero_bank_lo
+				mov	cl,byte ptr ds:player_bank_hi
+				mov	bx,word ptr ds:player_bank_lo
 				sub	bx,ax
 				sbb	cl,dl
 				xchg	bx,ax
@@ -558,28 +558,28 @@ script_ABA4:
 
 drv_script_step_33:
 		call	word ptr cs:script_step
-		mov	dl,byte ptr ds:hero_bank_hi
-		mov	ax,word ptr ds:hero_bank_lo
+		mov	dl,byte ptr ds:player_bank_hi
+		mov	ax,word ptr ds:player_bank_lo
 		sub	ax,ds:amount_lo
 		sbb	dl,ds:amount_hi
-		mov	byte ptr ds:hero_bank_hi,dl
-		mov	word ptr ds:hero_bank_lo,ax
+		mov	byte ptr ds:player_bank_hi,dl
+		mov	word ptr ds:player_bank_lo,ax
 		mov	word ptr ds:gvar_script_ptr,0ABDEh
 		or	dl,ah
 		or	dl,al
 		jz	loc_35			; Jump if zero
 		mov	word ptr ds:gvar_script_ptr,0AC35h
-		test	al,byte ptr ds:hero_bank_hi
+		test	al,byte ptr ds:player_bank_hi
 		jnz	script_AAF4_34			; Jump if not zero
-		cmp	word ptr ds:hero_bank_lo,1
+		cmp	word ptr ds:player_bank_lo,1
 		jne	script_AAF4_34			; Jump if not equal
 		retn
 
 script_AAF4_34:
 		mov	word ptr ds:gvar_script_ptr,0AAF4h
 		call	word ptr cs:script_step
-		mov	dl,byte ptr ds:hero_bank_hi
-		mov	ax,word ptr ds:hero_bank_lo
+		mov	dl,byte ptr ds:player_bank_hi
+		mov	ax,word ptr ds:player_bank_lo
 		FORMAT_AND_RUN
 
 loc_35:
@@ -590,26 +590,26 @@ loc_35:
 			                        ;* No entry point to code
 		call	clear_dialog_area
 		mov	word ptr ds:gvar_script_ptr,0ABF7h
-		mov	al,byte ptr ds:hero_bank_hi
+		mov	al,byte ptr ds:player_bank_hi
 		xor	ah,ah			; Zero register
-		or	ax,word ptr ds:hero_bank_lo
+		or	ax,word ptr ds:player_bank_lo
 		jnz	set_checked_balance_flag_FF_36			; Jump if not zero
 		retn
 
 set_checked_balance_flag_FF_36:
 		mov	byte ptr ds:checked_balance_flag,0FFh
 		mov	word ptr ds:gvar_script_ptr,0AC35h
-		test	al,byte ptr ds:hero_bank_hi
+		test	al,byte ptr ds:player_bank_hi
 		jnz	script_AC10			; Jump if not zero
-		cmp	word ptr ds:hero_bank_lo,1
+		cmp	word ptr ds:player_bank_lo,1
 		jne	script_AC10			; Jump if not equal
 		retn
 
 script_AC10:
 		mov	word ptr ds:gvar_script_ptr,0AC10h
 		call	word ptr cs:script_step
-		mov	dl,byte ptr ds:hero_bank_hi
-		mov	ax,word ptr ds:hero_bank_lo
+		mov	dl,byte ptr ds:player_bank_hi
+		mov	ax,word ptr ds:player_bank_lo
 		FORMAT_AND_RUN
 		retn
 			                        ;* No entry point to code

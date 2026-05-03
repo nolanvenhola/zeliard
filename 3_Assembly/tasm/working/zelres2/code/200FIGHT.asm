@@ -392,7 +392,7 @@ scan_match_flag	equ	9F17h			; per-scan match flag for area-2 slot scan (canonica
 state_byte_9F17	equ	9F17h			; alias — deprecated placeholder
 ; The byte at 0x9F18 is the HP REGENERATION TICK COUNTER.  At line 2729
 ; (check_state18), 200FIGHT increments it each frame; when it wraps at
-; 16 (cmp ..., 10h), it heals the hero (hero_HP += 2 if hero_HP <
+; 16 (cmp ..., 10h), it heals the hero (player_HP += 2 if player_HP <
 ; player_hp_max at 0xB2) and triggers the HUD redraw via cs:[2008h]
 ; (restore_pending dispatch).  4 reset-to-0 sites at lines 999, 1128,
 ; 1346, 1770 — scene transitions / damage events where the regen
@@ -2515,7 +2515,7 @@ is_entity_id_lax		endp
 ; the 3-byte combat-action FSM at FF45/FF46/FF47.
 ;
 ; Inputs:
-;   ds:[92h]              sword_type (gates entire handler if 0)
+;   ds:[92h]              equipped_weapon (gates entire handler if 0)
 ;   INT 61h returns        AH=button-mask, AL=joystick direction-bits
 ;   ds:gvar_combat_ff3D   combat-active flag (must be set for attack path)
 ;   ds:gvar_debug_val     debug bypass (must be 0 for attack path)
@@ -2822,7 +2822,7 @@ skip_func116:
 		mov	byte ptr ds:gvar_save_flag_3,0FFh
 		mov	byte ptr ds:gvar_volume_b,9
 		mov	ax,0Fh
-		call	hero_HP_subtract
+		call	player_HP_subtract
 		mov	dx,entity_snd_tbl
 		call	init_combat_arena
 
@@ -3528,12 +3528,12 @@ sub_carried:
 		pop	ax
 
 call_func60:
-		call	hero_HP_subtract
+		call	player_HP_subtract
 		mov	byte ptr ds:gvar_volume_b,8
 		retn
 
 combat_check_done:
-		call	hero_HP_subtract
+		call	player_HP_subtract
 		mov	byte ptr ds:gvar_volume_b,9
 		retn
 
@@ -3604,7 +3604,7 @@ add_tile_type:
 
 accumulate_tile_type		endp
 
-hero_HP_subtract		proc	near
+player_HP_subtract		proc	near
 
 sub_score_and_call:
 		sub	word ptr ds:[90h],ax
@@ -3617,7 +3617,7 @@ push_and_update:
 		pop	si
 		retn
 
-hero_HP_subtract		endp
+player_HP_subtract		endp
 
 game_process_loop_2		proc	near
 		mov	byte ptr ds:escape_flag,0
@@ -5422,7 +5422,7 @@ entity_process_skip:
 entity_kill:
 										mov	al,[si+6]
 										xor	ah,ah			; Zero register
-										call	hero_HP_subtract
+										call	player_HP_subtract
 										mov	byte ptr ds:gvar_volume_b,9
 										mov	al,0FFh
 										mov	ds:any_entity_active,al

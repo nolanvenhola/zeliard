@@ -122,7 +122,7 @@ item_flags		equ	0A6h			;* 5-byte table: item possession flags (at DS:0A6h)
 weapon_flags		equ	0BBh			;* 7-byte table: weapon possession flags (1-based, at DS:0BBh)
 equipped_weapon		equ	092h			;* byte: currently equipped weapon index (1-based, 0=none)
 equipped_magic		equ	093h			;* byte: currently equipped magic index (1-based, 0=none)
-hero_HP			equ	090h			;* word: current character HP
+player_HP			equ	090h			;* word: current character HP
 player_hp_max		equ	0B2h			;* word: maximum character HP
 player_exp		equ	094h			;* word: current character experience
 player_exp_cap		equ	096h			;* word: experience cap for current level
@@ -713,12 +713,12 @@ find_item_next:
 
 use_hp_potion:				; item 0: restore 80 HP (caps at max)
 		mov	byte ptr ds:gvar_volume_b,0Eh
-		add	word ptr ds:hero_HP,50h		; heal +80 HP
-		mov	ax,word ptr ds:hero_HP
+		add	word ptr ds:player_HP,50h		; heal +80 HP
+		mov	ax,word ptr ds:player_HP
 		sub	ax,word ptr ds:player_hp_max
 		jc	hp_potion_nocap
 		mov	ax,word ptr ds:player_hp_max
-		mov	word ptr ds:hero_HP,ax		; cap at max HP
+		mov	word ptr ds:player_HP,ax		; cap at max HP
 
 hp_potion_nocap:
 		call	word ptr cs:drv_palette_push
@@ -727,7 +727,7 @@ hp_potion_nocap:
 use_hp_full:				; item 1: restore HP to maximum
 		mov	byte ptr ds:gvar_volume_b,0Eh
 		mov	ax,word ptr ds:player_hp_max
-		mov	word ptr ds:hero_HP,ax
+		mov	word ptr ds:player_HP,ax
 		call	word ptr cs:drv_palette_push
 		jmp	draw_item_detail_entry+1	;* off-by-one: skips call show_portrait_box
 

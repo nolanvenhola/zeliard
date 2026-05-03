@@ -489,7 +489,7 @@ vertical_line_loop:
 		retn
 			                        ;* No entry point to code
 		mov	di,text_field_vga_ofs
-		mov	bx,word ptr cs:[hero_HP]
+		mov	bx,word ptr cs:[player_HP]
 		jmp	short calc_width_entry
 		db	0BFh, 14h,0DBh,0EBh, 00h
 

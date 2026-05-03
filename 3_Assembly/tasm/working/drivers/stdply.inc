@@ -1,6 +1,6 @@
 ;==========================================================================
 ;
-;  stdply.inc - Hero stat record + driver state shared with gm*.bin drivers
+;  stdply.inc - Player stat record + driver state shared with gm*.bin drivers
 ;
 ;  stdply.bin loads at game_entry_seg:0000h. All graphics drivers (gm*.bin)
 ;  run in the same segment and access these fields via CS-relative addresses.
@@ -8,7 +8,7 @@
 ;  CORRECTED 2026-04-26 against IDA decompilation evidence:
 ;  the 0x85-0x9D block was previously interpreted as driver state
 ;  (drv_timer_flag, drv_text_src, etc.), but the initial byte values are
-;  consistent with the hero stat record:
+;  consistent with the player stat record:
 ;    0x90 init = 0x50 = 80  -> matches manual's max HP
 ;    0x92 init = 0x01       -> matches SWORD_TRAINING (starting weapon)
 ;    0x85/86 init = 0x00,00 -> consistent with starting gold = 0
@@ -31,36 +31,36 @@ map_scroll_row          equ     82h     ; cavern Y scroll row (8-bit, paired wit
 ;   0x83 — town_player_col: walk_left/right inc/dec, range 0..0x10,
 ;          used in 106TOWN tile-lookup arithmetic (`bl=[83]; bx=(bl+6)*8+tile_ptr`)
 ;   0x84 — fight_player_col: independent counter in 200FIGHT, range 0..7
-; The earlier `ply_accel db 0Ah, 0Ah` declaration was a misread.
+; The earlier `player_accel db 0Ah, 0Ah` declaration was a misread.
 town_player_col         equ     83h     ; player screen column in town (range 0..0x10)
 fight_player_col        equ     84h     ; player screen column in fight (range 0..7)
-ply_accel               equ     83h     ; alias — deprecated placeholder (was bogus 2-byte declaration)
+player_accel               equ     83h     ; alias — deprecated placeholder (was bogus 2-byte declaration)
 
-; Hero stat record  [0x0085-0x00AA]  — layout established by functional
+; Player stat record  [0x0085-0x00AA]  — layout established by functional
 ; harness probes plus static access-pattern analysis (analyze_stat_layout.py).
 ; Field types reflect actual byte/word access from the cleaned source.
 ;
 ; Gold (24-bit):  high byte at 0x85, little-endian low word at 0x86..0x87.
 ; Verified by functest/test_town_dispatch_slot_60{0A,0C}.py.
-hero_gold_hi            equ     85h     ; gold high byte (24-bit)
-hero_gold_lo            equ     86h     ; gold low byte (start of low word)
-hero_gold_mid           equ     87h     ; gold low word's high byte
+player_gold_hi            equ     85h     ; gold high byte (24-bit)
+player_gold_lo            equ     86h     ; gold low byte (start of low word)
+player_gold_mid           equ     87h     ; gold low word's high byte
 ;
-; Hero bank balance (24-bit, mirrors hero_gold layout).  Used by 213BANKP
+; Player bank balance (24-bit, mirrors player_gold layout).  Used by 213BANKP
 ; (the bank shop chunk) — `add [89h], ax; adc [88h], dl` is the deposit
 ; pattern; 213BANKP also reads [88h]:[89h] for balance display.  Verified
 ; by functest/placeholder_id/test_stdply_hero_bank_X88.py (2026-04-29):
 ; carry propagation 0xFFFE+5 → hi=1, lo=0x0003 confirmed.
-hero_bank_hi            equ     88h     ; banked-gold high byte (24-bit)
-hero_bank_lo            equ     89h     ; banked-gold low word (89h..8Ah)
+player_bank_hi            equ     88h     ; banked-gold high byte (24-bit)
+player_bank_lo            equ     89h     ; banked-gold low word (89h..8Ah)
 stat_X88_hi             equ     88h     ; alias — deprecated placeholder
 stat_X88_lo             equ     89h     ; alias — deprecated placeholder
 ;
-; hero_almas (16-bit, NOT 8-bit).  Verified by
+; player_almas (16-bit, NOT 8-bit).  Verified by
 ; functest/test_player_stats_word_layout.py probe AL3 (almas=257, add=1
 ; -> [0x8B]=2, [0x8C]=1; high byte preserved).
-hero_almas              equ     8Bh     ; alt currency low byte (16-bit field)
-hero_almas_hi           equ     8Ch     ; alt currency high byte
+player_almas              equ     8Bh     ; alt currency low byte (16-bit field)
+player_almas_hi           equ     8Ch     ; alt currency high byte
 ;
 ; 0x8D / 0x8E come from 201SELCT.asm (character-select chunk) which reads
 ; them with semantic names: item_qty_count (byte) and item_effect_val
@@ -71,11 +71,11 @@ stat_X8D                equ     8Dh     ; alias — deprecated placeholder
 item_effect_val         equ     8Eh     ; item effect value (16-bit, 8Eh..8Fh; canonical from 201SELCT)
 stat_X8E                equ     8Eh     ; alias — deprecated placeholder
 ;
-; hero_HP (16-bit, NOT 8-bit).  Verified by probe HP3 in
+; player_HP (16-bit, NOT 8-bit).  Verified by probe HP3 in
 ; functest/test_player_stats_word_layout.py.  Manual's max-80 is gameplay
 ; balance; storage is 16-bit.
-hero_HP                 equ     90h     ; current HP low byte (16-bit field)
-hero_HP_hi              equ     91h     ; current HP high byte
+player_HP                 equ     90h     ; current HP low byte (16-bit field)
+player_HP_hi              equ     91h     ; current HP high byte
 ;
 equipped_weapon         equ     92h     ; currently equipped weapon idx (1-based; init 1 = SWORD_TRAINING).
                                         ; Functional evidence in 201SELCT (test/read as weapon index).
@@ -149,10 +149,10 @@ player_facing           equ     0C2h    ; facing/anim flags (87 byte_tests — m
 ; path runs (intro_left_loop vs not).
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical, bit-6 from boss data)
 stat_XC3                equ     0C3h    ; alias — deprecated placeholder
-ply_level               equ     0C4h    ; level/area number (matches stdply.asm label)
+player_level               equ     0C4h    ; level/area number (matches stdply.asm label)
 stat_XC5                equ     0C5h    ; byte field used by 200FIGHT/game.asm
-ply_tileset             equ     0C8h    ; level tileset index (matches stdply.asm label)
-ply_hitbox              equ     0D2h    ; base of 9-row collision bitmask (matches stdply.asm label)
+player_tileset             equ     0C8h    ; level tileset index (matches stdply.asm label)
+player_hitbox              equ     0D2h    ; base of 9-row collision bitmask (matches stdply.asm label)
 
 ; Player state / hitbox tail  [0x00C4-0x00E8]
 ; Refinements found by analyze_stat_layout.py: 0xC6..0xC7 is a 16-bit field
@@ -160,7 +160,7 @@ ply_hitbox              equ     0D2h    ; base of 9-row collision bitmask (match
 ; contains the most-accessed byte (0xE7) plus two flag bytes (0xE6, 0xE8).
 ; 0xC6..0xC7: HP-heal-pulse counter (16-bit).  Used in `call_combat_fx`
 ; (200FIGHT line 2806): while [C6h] != 0 and [E8h] is clear, decrement
-; [C6h] and ADD 8 to hero_HP each tick; clamp to player_hp_max (0xB2);
+; [C6h] and ADD 8 to player_HP each tick; clamp to player_hp_max (0xB2);
 ; clear [C6h] when HP reaches max.  Set/incremented at line 6774
 ; (`add [C6h], ax` after a healing-event computation).  Drives the
 ; HP-trickle restoration animation when player consumes healing.

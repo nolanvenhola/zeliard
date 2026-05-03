@@ -17,8 +17,8 @@
 ; same value.
 ; ----------------------------------------------------------------------
 fight_player_col        equ     84h     ; player screen column in fight (canonical in stdply.inc)
-hero_bank_hi            equ     88h     ; banked-gold high byte (canonical in stdply.inc)
-hero_bank_lo            equ     89h     ; banked-gold low word (canonical in stdply.inc)
+player_bank_hi            equ     88h     ; banked-gold high byte (canonical in stdply.inc)
+player_bank_lo            equ     89h     ; banked-gold low word (canonical in stdply.inc)
 trade_marker_flag       equ     09Bh    ; trade-event marker (canonical in stdply.inc)
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical in stdply.inc)
 heal_pulse_count        equ     0C6h    ; HP heal-pulse counter, 16-bit (canonical in stdply.inc)
