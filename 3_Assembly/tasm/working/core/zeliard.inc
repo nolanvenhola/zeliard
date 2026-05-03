@@ -102,7 +102,12 @@ gvar_debug_mode         equ     0FF40h  ; Debug mode flag
 gvar_debug_val          equ     0FF42h  ; Debug value
 gvar_joystick_flag      equ     0FF43h  ; Joystick enabled flag
 gvar_save_name_buf      equ     0FF6Ch  ; Save file name buffer
-gvar_volume_a           equ     0FF74h  ; Volume A
+gvar_input_lock         equ     0FF74h  ; Input-mode lock flag (0xFF during text-input dialogs).
+                                        ; Tested by stick.asm process_scancode (~line 476) to suppress
+                                        ; joystick-diagonal accumulation and bypass keyboard-layout
+                                        ; decoder so text-input handlers see raw scancodes.
+                                        ; Set/cleared in 106TOWN save-name dialog and 217KENJP shop.
+                                        ; Was misnamed gvar_volume_a (proximity guess to the FF75 audio byte).
 gvar_volume_b           equ     0FF75h  ; Volume B
 gvar_disk_swap_suppressed equ   0FF78h  ; Disk-prompt suppression flag (when non-zero, fail silently on
                                         ; "file not found" instead of showing "Please insert DISK1...".

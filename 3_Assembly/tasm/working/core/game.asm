@@ -63,7 +63,8 @@ gvar_joystick_flag	equ	0FF43h			; Joystick enabled flag (canonical zeliard.inc)
 restore_pending	equ	0FF44h			; bg_restore pending flag (gf*.asm)
 gvar_item_result	equ	0FF4Bh			; Selected item / level-completion counter (canonical 201SELCT).
 						; game.asm only zero-inits; was misnamed gvar_joy_count.
-gvar_volume_a	equ	0FF74h			; Volume setting A
+gvar_input_lock	equ	0FF74h			; Input-mode lock (canonical zeliard.inc).
+						; game.asm only zero-inits; was misnamed gvar_input_lock.
 gvar_cinematic_active	equ	0FF77h			; Cinematic/intro-mode flag (set 0xFF at start_new_game
 						; before opdemo loads; cleared in start_load_game's gvar zero-pass).
 						; Tested by gfx drivers to gate rendering paths (full-color cinematic
@@ -202,7 +203,7 @@ start:
 		mov	ds:gvar_item_result,al
 		mov	ds:gvar_timer_ticks,al
 		mov	byte ptr ds:gvar_pose_idx,al	; clear gvar_pose_idx (player pose state)
-		mov	ds:gvar_volume_a,al
+		mov	ds:gvar_input_lock,al
 		mov	ds:gvar_cinematic_active,al
 		mov	ds:gvar_debug_mode,al
 		mov	ds:gvar_debug_val,al

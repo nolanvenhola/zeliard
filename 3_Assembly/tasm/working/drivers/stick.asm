@@ -473,7 +473,7 @@ ps_diag_release:
 		jmp	ps_merge_input
 
 ps_not_diag:
-		test	byte ptr ds:gvar_volume_a,0FFh
+		test	byte ptr ds:gvar_input_lock,0FFh
 		jz	ps_kbd_layout			; Jump if zero
 		mov	byte ptr ds:[5C3h],0
 		mov	byte ptr ds:[5C4h],0

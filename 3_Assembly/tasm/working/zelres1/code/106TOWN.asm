@@ -62,7 +62,7 @@ gvar_sel_flag	equ	0FF57h			;*
 gvar_sel_xlat	equ	0FF58h			;*
 gvar_dlg_timer	equ	0FF6Ah			;*
 gvar_save_name	equ	0FF6Ch			;*
-gvar_save_ctrl	equ	0FF74h			;*
+gvar_input_lock	equ	0FF74h			;* input-mode lock (canonical zeliard.inc); set during save-name dialog
 gvar_volume	equ	0FF75h			;*
 gvar_load_flag	equ	0FF78h			;*
 gvar_music_idx	equ	0FF14h			;*
@@ -3309,7 +3309,7 @@ player_process_loop_2		endp
 
 player_copy_buf		proc	near
 		call	player_func_51
-		mov	byte ptr ds:gvar_save_ctrl,0FFh
+		mov	byte ptr ds:gvar_input_lock,0FFh
 		mov	byte ptr ds:gvar_key_state,0
 		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
@@ -3357,7 +3357,7 @@ nameinput_blink_wait:
 
 nameinput_done:
 		mov	byte ptr ds:gvar_volume,1Fh
-		mov	byte ptr ds:gvar_save_ctrl,0
+		mov	byte ptr ds:gvar_input_lock,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		retn
 

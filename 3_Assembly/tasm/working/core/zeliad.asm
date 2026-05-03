@@ -84,7 +84,7 @@ gvar_debug_mode		equ	0FF40h		; Debug mode flag
 gvar_debug_val		equ	0FF42h		; Debug value
 gvar_joystick_flag	equ	0FF43h		; Joystick enabled flag
 gvar_save_name_buf	equ	0FF6Ch		; Save file name buffer (8 bytes)
-gvar_volume_a		equ	0FF74h		; Volume/audio setting A
+gvar_input_lock		equ	0FF74h		; Input-mode lock (canonical zeliard.inc); zero-init only here
 gvar_volume_b		equ	0FF75h		; Volume/audio setting B
 gvar_disk_swap_suppressed equ	0FF78h	; alias matching zeliard.inc canonical
 gvar_old_int09_ofs	equ	0FF79h		; Saved INT 09h offset
@@ -265,7 +265,7 @@ skip_music_init:
 		mov	byte ptr es:gvar_joystick_flag,0
 		mov	byte ptr es:gvar_palette_flag,0
 		mov	byte ptr es:gvar_music_flag_d,0
-		mov	byte ptr es:gvar_volume_a,0
+		mov	byte ptr es:gvar_input_lock,0
 		mov	byte ptr es:gvar_debug_mode,0
 		mov	byte ptr es:gvar_debug_val,0
 		mov	byte ptr es:gvar_disk_swap_suppressed,0
