@@ -121,11 +121,11 @@ magic_flags		equ	0A1h			;* 5-byte table: magic spell possession flags (at DS:0A1
 item_flags		equ	0A6h			;* 5-byte table: item possession flags (at DS:0A6h)
 weapon_flags		equ	0BBh			;* 7-byte table: weapon possession flags (1-based, at DS:0BBh)
 equipped_weapon		equ	092h			;* byte: currently equipped weapon index (1-based, 0=none)
-equipped_magic		equ	093h			;* byte: currently equipped magic index (1-based, 0=none)
+shield_type		equ	093h			;* shield tier (1-based, 0=no shield).  Used by use_magia_stone as item_effect_tbl index for shield repair amount
 player_HP			equ	090h			;* word: current character HP
 player_hp_max		equ	0B2h			;* word: maximum character HP
-player_exp		equ	094h			;* word: current character experience
-player_exp_cap		equ	096h			;* word: experience cap for current level
+shield_HP		equ	094h			;* current shield HP (16-bit); use_magia_stone adds repair amount, capped at shield_max_HP
+shield_max_HP		equ	096h			;* shield max HP cap (16-bit); use_magia_stone clamps shield_HP to this
 player_speed		equ	098h			;* byte: character speed stat
 player_power		equ	099h			;* byte: character power/attack stat
 player_abilities		equ	09Ah			;* base of 3-byte ability table (slots at 9A/9B/9C; canonical names player_ability_1/2/3 in stdply.inc)
@@ -767,22 +767,22 @@ use_holy_water:				; item 6: add one key to key_count
 
 use_magia_stone:			; item 5: grant experience based on equipped magic level
 		mov	byte ptr ds:gvar_volume_b,0Eh
-		test	byte ptr ds:equipped_magic,0FFh
+		test	byte ptr ds:shield_type,0FFh
 		jnz	apply_item_exp			; Jump if not zero
 		retn				; no magic equipped -> no-op
 
 apply_item_exp:
-		mov	bl,byte ptr ds:equipped_magic
+		mov	bl,byte ptr ds:shield_type
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	ax,ds:item_effect_tbl[bx]
-		add	word ptr ds:player_exp,ax
-		mov	ax,word ptr ds:player_exp
-		sub	ax,word ptr ds:player_exp_cap
+		add	word ptr ds:shield_HP,ax
+		mov	ax,word ptr ds:shield_HP
+		sub	ax,word ptr ds:shield_max_HP
 		jc	cap_exp			; Jump if carry Set
-		mov	ax,word ptr ds:player_exp_cap
-		mov	word ptr ds:player_exp,ax
+		mov	ax,word ptr ds:shield_max_HP
+		mov	word ptr ds:shield_HP,ax
 
 cap_exp:
 		call	word ptr cs:drv_fn_13
@@ -1083,12 +1083,12 @@ draw_char_stats:
 		call	draw_key_count
 
 draw_stat_93h:
-		test	byte ptr ds:equipped_magic,0FFh
+		test	byte ptr ds:shield_type,0FFh
 		jz	draw_stat_98h			; Jump if zero
 		mov	bx,2E61h
-		mov	al,byte ptr ds:equipped_magic
+		mov	al,byte ptr ds:shield_type
 		call	word ptr cs:drv_fn_16
-		mov	bl,byte ptr ds:equipped_magic
+		mov	bl,byte ptr ds:shield_type
 		xor	bh,bh			; Zero register
 		dec	bl
 		add	bx,bx
@@ -1166,7 +1166,7 @@ ability_row_skip:
 draw_magic_panel		endp
 
 draw_exp_bar		proc	near
-		mov	ax,word ptr ds:player_exp_cap
+		mov	ax,word ptr ds:shield_max_HP
 		mov	dx,3469h
 		mov	cx,3
 		mov	bl,4

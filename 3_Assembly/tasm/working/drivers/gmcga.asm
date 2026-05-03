@@ -837,13 +837,13 @@ fn_12:
 		pop	ds
 		retn
 			                        ;* No entry point to code
-		test	byte ptr cs:[equipped_magic],0FFh
+		test	byte ptr cs:[shield_type],0FFh
 		jnz	sprite_check			; Jump if not zero
 		retn
 
 sprite_check:
 		push	ds
-		mov	ax,word ptr cs:[player_exp]
+		mov	ax,word ptr cs:[shield_HP]
 		xor	dx,dx			; Zero register
 		call	init_timestamp
 		push	cs

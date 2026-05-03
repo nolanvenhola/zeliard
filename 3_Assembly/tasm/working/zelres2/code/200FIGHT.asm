@@ -3480,7 +3480,7 @@ scan_outer_slot_match		endp
 ; (early retn if init not done), else loads tile_type_sum into AX and
 ; branches to one of two external sub-paths based on player_facing bit 1:
 ;   bit 1 = 0  -> jmp combat_check_done   (different proc's label)
-;   bit 1 = 1  -> jmp short check_93      (different proc's label)
+;   bit 1 = 1  -> jmp short apply_shield_absorb      (different proc's label)
 ; The function is a multi-fragment Sourcer-glued router with NO clean
 ; returning path on its active branches (it tail-jumps out).  Kept under
 ; placeholder name for now; runtime probing of cross-proc jumps would
@@ -3494,7 +3494,7 @@ check_c2_bit1b:
 		mov	ax,ds:tile_type_sum
 		test	byte ptr ds:[0C2h],1
 		jz	combat_check_done			; Jump if zero
-		jmp	short check_93
+		jmp	short apply_shield_absorb
 
 apply_passive_damage		endp
 
@@ -3507,24 +3507,24 @@ check_c2_bit1c:
 		mov	ax,ds:tile_type_sum
 		test	byte ptr ds:[0C2h],1
 		jnz	combat_check_done			; Jump if not zero
-		jmp	short check_93
+		jmp	short apply_shield_absorb
 
-check_93:
-		test	byte ptr ds:[93h],0FFh
-		jz	combat_check_done			; Jump if zero
+apply_shield_absorb:
+		test	byte ptr ds:shield_type,0FFh
+		jz	combat_check_done			; Jump if zero (no shield)
 		shr	ax,1			; Shift w/zeros fill
-		mov	cl,byte ptr ds:[93h]
+		mov	cl,byte ptr ds:shield_type
 		inc	cl
 		shr	cl,1			; Shift w/zeros fill
-		shr	ax,cl			; Shift w/zeros fill
-		sub	word ptr ds:[94h],ax
+		shr	ax,cl			; reduce damage by shield tier
+		sub	word ptr ds:shield_HP,ax	; absorb into shield_HP
 		jc	sub_carried			; Jump if carry Set
 		jnz	call_func60			; Jump if not zero
 
 sub_carried:
 		push	ax
 		call	clear_secondary_pool_and_redraw
-		mov	word ptr ds:[94h],0
+		mov	word ptr ds:shield_HP,0	; shield broke — clear shield_HP
 		pop	ax
 
 call_func60:
@@ -3540,7 +3540,7 @@ combat_check_done:
 apply_combat_damage_with_absorb		endp
 
 clear_secondary_pool_and_redraw		proc	near
-		mov	byte ptr ds:[93h],0
+		mov	byte ptr ds:shield_type,0	; shield broke — clear shield slot
 		mov	bx,0C51Ch
 		mov	al,0FFh
 		mov	ch,18h
@@ -5393,8 +5393,8 @@ sprite_col_adjust:
 
 sprite_hit_check:
 		mov	byte ptr [si],0
-		test	byte ptr ds:[93h],0FFh
-		jz	entity_kill			; Jump if zero
+		test	byte ptr ds:shield_type,0FFh
+		jz	entity_kill			; Jump if zero (no shield → kill via direct damage)
 		test	byte ptr ds:gvar_joystick_flag,0FFh
 		jnz	entity_kill			; Jump if not zero
 		test	byte ptr ds:gvar_music_flag_b,0FFh
@@ -5413,11 +5413,11 @@ sprite_hit_check:
 		je	entity_process_skip			; Jump if equal
 		test	byte ptr ds:[0C2h],1
 		jnz	entity_kill			; Jump if not zero
-		jmp	short sprite_check_93
+		jmp	short entity_hit_via_shield
 
 entity_process_skip:
 		test	byte ptr ds:[0C2h],1
-		jnz	sprite_check_93			; Jump if not zero
+		jnz	entity_hit_via_shield			; Jump if not zero
 
 entity_kill:
 										mov	al,[si+6]
@@ -5449,8 +5449,8 @@ entity_hit:
 										mov	ds:last_hit_entity,bx
 										retn
 
-sprite_check_93:
-										cmp	byte ptr ds:[93h],4
+entity_hit_via_shield:
+										cmp	byte ptr ds:shield_type,4
 										jae	set_vol_0a			; Jump if above or =
 										mov	al,byte ptr ds:fight_player_col
 										add	al,byte ptr ds:[82h]

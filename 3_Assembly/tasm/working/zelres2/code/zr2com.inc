@@ -19,6 +19,9 @@
 fight_player_col        equ     84h     ; player screen column in fight (canonical in stdply.inc)
 player_bank_hi            equ     88h     ; banked-gold high byte (canonical in stdply.inc)
 player_bank_lo            equ     89h     ; banked-gold low word (canonical in stdply.inc)
+shield_type               equ     93h     ; shield tier (canonical in stdply.inc; gates apply_combat_damage_with_absorb)
+shield_HP                 equ     94h     ; current shield HP, 16-bit (canonical in stdply.inc)
+shield_max_HP             equ     96h     ; shield max HP cap, 16-bit (canonical in stdply.inc)
 ; 0x9A..0x9C: 3-byte player_abilities table (canonical in stdply.inc).
 ; 201SELCT draw_abilities iterates the 3 bytes.  Each slot's specific
 ; ability is TBD (see AUDIT_TODO.md).

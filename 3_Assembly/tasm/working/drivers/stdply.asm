@@ -35,8 +35,8 @@ PAGE  59,132
 ;                  (CS-relative offsets) and by game.bin / fight.bin via
 ;                  the same shared segment.
 ;    Reads/writes: provides initial values for player_gold_hi/lo, player_almas,
-;                  player_HP, equipped_weapon, equipped_magic, player_exp,
-;                  cur_weapon_idx at game_seg:0x0085-0x009D, plus
+;                  player_HP, equipped_weapon, shield_type, shield_HP,
+;                  shield_max_HP, cur_weapon_idx at game_seg:0x0085-0x009D, plus
 ;                  player_walk_speed/player_accel and the animation color LUT.
 ;
 ;==========================================================================
@@ -134,20 +134,21 @@ item_effect_val	dw	0		; [8Eh-8Fh] item effect value (16-bit)
 ; 16-bit so designers had headroom for buffs / boss multipliers.
 player_HP		dw	0050h		; [90h-91h] current HP (16-bit; init=80)
 equipped_weapon	db	1		; [92h] equipped weapon idx (1-based; init 1 = SWORD_TRAINING)
-equipped_magic	db	0		; [93h] equipped magic idx (1-based; init 0 = no spell)
+shield_type	db	0		; [93h] shield tier (1-based; init 0 = no shield)
 ;
-; player_exp (16-bit word) — current character experience.  Per 201SELCT
-; line 780: `add word ptr ds:char_exp, ax` confirms XP-gain semantics.
-; Earlier name `shield_HP` was a guess; 201SELCT functional evidence
-; promotes it to player_exp.
-player_exp	dw	0		; [94h-95h] current XP (16-bit; init=0)
+; shield_HP (16-bit word) — current shield HP.  200FIGHT
+; apply_combat_damage_with_absorb (line 3501) subtracts damage scaled
+; by shield_type tier from this word; on underflow, clears both [93h]
+; and [94h] = "shield broken".  201SELCT's use_magia_stone adds an
+; effect-tbl[shield_type] amount to this word and clamps to shield_max_HP
+; — consistent with the magia stone being a shield-repair item.
+shield_HP	dw	0		; [94h-95h] current shield HP (16-bit; init=0)
 ;
-; [96h..9Ch]: 201SELCT (character-select chunk) names the leading entries
-; as player_exp_cap (word), player_speed/power.  Bytes 9A..9C form a
-; 3-byte player_abilities table — 201SELCT draw_abilities reads them as
-; a unit (`mov si, player_abilities; lodsb x3`).  Specific ability
-; semantics for each slot are TBD; tracked in AUDIT_TODO.md.
-player_exp_cap	dw	0		; [96h-97h] XP cap for current level (16-bit)
+; [96h..9Ch]: shield_max_HP (16-bit cap), then player_speed/power, then
+; the 3-byte player_abilities table at 9A-9C — 201SELCT draw_abilities
+; reads abilities as a unit (`mov si, player_abilities; lodsb x3`).
+; Specific ability semantics for each slot are TBD; tracked in AUDIT_TODO.md.
+shield_max_HP	dw	0		; [96h-97h] shield max HP cap (16-bit)
 player_speed	db	0		; [98h] character speed stat
 player_power	db	0		; [99h] character power stat
 player_ability_1 db	0		; [9Ah] ability slot 1 (= player_abilities table base)

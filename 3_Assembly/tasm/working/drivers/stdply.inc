@@ -80,22 +80,32 @@ player_HP_hi              equ     91h     ; current HP high byte
 equipped_weapon         equ     92h     ; currently equipped weapon idx (1-based; init 1 = SWORD_TRAINING).
                                         ; Functional evidence in 201SELCT (test/read as weapon index).
                                         ; Was misnamed `sword_type` — sword is just one weapon kind.
-equipped_magic          equ     93h     ; currently equipped magic idx (1-based; init 0 = no spell).
-                                        ; Functional evidence in 201SELCT line 770/775
-                                        ; (`test ds:equipped_magic, 0FFh; mov bl, ds:equipped_magic`).
-                                        ; Was misnamed `shield_type` — earlier guess based on "init=0" only.
+; 0x93..0x96: shield_type + shield_HP (16-bit) + shield_max_HP (16-bit).
+; Strong functional evidence in 200FIGHT.asm `apply_combat_damage_with_absorb`
+; (line 3501): when [93h] is non-zero, damage AX is shifted right by
+; ((shield_type+1)/2 + 1) — classic shield-tier absorption — then subtracted
+; from word [94h] (shield_HP).  On underflow, both [93h] and [94h] are
+; cleared (= "shield broken") and the remainder is dealt to player_HP with
+; sound cue 8; otherwise sound cue 9.
 ;
-; player_exp (16-bit) — current character experience.  Functional evidence
-; in 201SELCT line 780: `add word ptr ds:char_exp, ax` (XP gain).
-; Was misnamed `shield_HP` — explicit guess by stdply.asm ("No functional
-; probe yet"); 201SELCT proved it's the experience word.
-player_exp              equ     94h     ; current XP, low byte (16-bit field)
-player_exp_hi           equ     95h     ; current XP, high byte
+; 201SELCT.asm `use_magia_stone` (line 775+) reads [93h] as a 1-based
+; index into item_effect_tbl, ADDS the looked-up effect to word [94h],
+; and clamps to word [96h].  Consistent with the magia stone being a
+; shield-repair item: repair amount depends on shield tier, capped at
+; shield_max_HP.
+;
+; (Earlier rename to equipped_magic / player_exp / player_exp_cap was based
+;  solely on 201SELCT's icon-draw context, which mistook the shield-repair
+;  handler for an XP-gain handler.  200FIGHT's combat-damage logic is the
+;  decisive evidence.)
+shield_type             equ     93h     ; shield tier (1-based; 0 = no shield equipped)
+shield_HP               equ     94h     ; current shield HP, low byte (16-bit field)
+shield_HP_hi            equ     95h     ; current shield HP, high byte
 ;
 ; 0x96..0x9A: character-stat block named by 201SELCT (character-select
 ; chunk).  All stat names below match its read patterns; placeholders
 ; aliased.  static analyzer matches: 0x96 word, 0x98..0x9A all byte/test.
-player_exp_cap            equ     96h     ; character experience cap (16-bit, 96h..97h)
+shield_max_HP             equ     96h     ; shield max HP cap (16-bit, 96h..97h; used by 201SELCT use_magia_stone clamp)
 stat_X96                equ     96h     ; alias — deprecated placeholder
 player_speed              equ     98h     ; character speed stat
 stat_X98                equ     98h     ; alias — deprecated placeholder
