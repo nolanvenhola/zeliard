@@ -87,7 +87,7 @@ herc_bank_tbl_cs	equ	(offset herc_bank_table) + ISR_STUBS_BASE	; CS:0x0BA0
 ; dcmp_opcode0 label sits at the table start (file offset computed by TASM).
 dcmp_dispatch_tbl	equ	(offset dcmp_opcode0) + ISR_STUBS_BASE		; CS:0x0DBC
 ; map_driver_tbl slot base CS address (+0x0C from map_driver_tbl = first slot field).
-; Used in sav_fn_compute: ax = al*11 + map_driver_slot_base gives CS slot ptr.
+; Used in compute_slot_record_ptr: ax = al*11 + map_driver_slot_base gives CS slot ptr.
 map_driver_slot_base	equ	(offset map_driver_tbl) + ISR_STUBS_BASE + 0Ch	; CS:0x0F68
 ; Save/load file I/O data area CS addresses.
 ; Labels are placed in fio_read_done data region; EQUs compute CS-relative addresses.
@@ -820,7 +820,7 @@ exit_dlg_handler:
 
 exit_dlg_active:
 		push	ds
-		call	handle_pause_key2
+		call	enter_pause_menu_and_draw
 		mov	cl,0FFh
 		mov	ax,3
 		int	60h			; ??INT Non-standard interrupt
@@ -838,7 +838,7 @@ exit_wait_input:
 								jz	exit_wait_input			; Jump if zero
 		test	ax,20h
 		jnz	exit_confirm_wait			; Jump if not zero
-		call	handle_pause_key4
+		call	restore_pause_menu_bg
 		xor	cl,cl			; Zero register
 		mov	ax,3
 		int	60h			; ??INT Non-standard interrupt
@@ -932,7 +932,7 @@ sbb_bh_helper:
 			                        ; Called via game_state dispatch: speed change handler
 
 speed_change_handler:
-		call	handle_pause_key2
+		call	enter_pause_menu_and_draw
 		push	cs
 		pop	ds
 		mov	si,845h
@@ -946,7 +946,7 @@ spd_wait_key:
 		mov	al,ds:gvar_save_filename
 		neg	al
 		add	al,0Ah
-		call	handle_pause_key0
+		call	wait_for_digit_or_esc
 		push	ax
 		add	al,30h			; '0'
 		mov	ah,1
@@ -958,7 +958,7 @@ spd_wait_key:
 		add	al,0Ah
 		mov	ds:gvar_save_filename,al
 		mov	byte ptr cs:gvar_volume_b,1
-		call	handle_pause_key5
+		call	flush_dos_kbd_buffer
 		mov	byte ptr cs:gvar_timer_flag,0
 		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_state_b,0
@@ -975,7 +975,7 @@ spd_poll_input:
 								jz	spd_poll_input			; Jump if zero
 
 spd_done:
-		call	handle_pause_key4
+		call	restore_pause_menu_bg
 		mov	byte ptr cs:gvar_timer_flag,0
 		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_state_b,0
@@ -983,7 +983,7 @@ spd_done:
 		db	'Speed change', 0Dh, 'Select 0-9:'
 		db	0FFh			; String terminator
 
-handle_pause_key0		proc	near
+wait_for_digit_or_esc		proc	near
 		mov	byte ptr ds:gvar_enter_key,0
 
 hpk0_wait_key:
@@ -1003,7 +1003,7 @@ hpk0_check_digit:
 		mov	al,ah
 		retn
 
-handle_pause_key0		endp
+wait_for_digit_or_esc		endp
 
 			                        ; Called via game_state dispatch: skip_input==0x104 ?-> joystick calibrate
 
@@ -1013,7 +1013,7 @@ joy_cal_handler:
 		retn
 
 jcal_active:
-		call	handle_pause_key1
+		call	joy_calibrate_request
 		mov	byte ptr cs:gvar_timer_flag,0
 
 jcal_wait_release:
@@ -1021,7 +1021,7 @@ jcal_wait_release:
 								je	jcal_wait_release			; Jump if equal
 		retn
 
-handle_pause_key1		proc	near
+joy_calibrate_request		proc	near
 		test	byte ptr cs:gvar_music_flag_d,0FFh
 		jz	hpk1_no_joy			; Jump if zero
 		retn
@@ -1043,29 +1043,29 @@ locloop_joy_fire_wait:
 								test	al,ah
 								loopnz	locloop_joy_fire_wait		; Loop if zf=0, cx>0
 
-		jcxz	loc_ret_78		; Jump if cx=0
+		jcxz	joy_fire_wait_done		; Jump if cx=0
 		call	calibrate_joystick
 		db	 83h,0FEh,0FFh		; cmp si,-1 (cmp si,0FFFFh; alt-encoding sign-extend: Fixup byte match)
-		jz	loc_ret_78		; Jump if zero
+		jz	joy_fire_wait_done		; Jump if zero
 		db	 83h,0FFh,0FFh		; cmp di,-1 (cmp di,0FFFFh; alt-encoding sign-extend: Fixup byte match)
-		jz	loc_ret_78		; Jump if zero
+		jz	joy_fire_wait_done		; Jump if zero
 		or	si,si			; Zero ?
-		jz	loc_ret_78		; Jump if zero
+		jz	joy_fire_wait_done		; Jump if zero
 		or	di,di			; Zero ?
-		jz	loc_ret_78		; Jump if zero
+		jz	joy_fire_wait_done		; Jump if zero
 		mov	word ptr cs:[5C6h],si
 		mov	word ptr cs:[5C8h],di
 		mov	byte ptr cs:gvar_music_flag_d,0FFh
 		mov	byte ptr cs:gvar_volume_b,1
 
-loc_ret_78:
+joy_fire_wait_done:
 		retn
 
-handle_pause_key1		endp
+joy_calibrate_request		endp
 
 			                        ; Called via game_state dispatch: skip_input==0x804 ?-> joystick detach
 
-joy_det_handler:
+joy_detect_handler:
 		cmp	word ptr cs:gvar_timer_counter,804h
 		je	jdet_active			; Jump if equal
 		retn
@@ -1085,7 +1085,7 @@ jdet_wait_release:
 		retn
 			                        ; Called via game_state dispatch: accumulate anim_timer for frame sync
 
-frame_sync_update:
+update_subsample_accumulator:
 		mov	ax,cs:gvar_anim_timer
 		add	al,ah
 		adc	ah,0
@@ -1096,12 +1096,12 @@ frame_sync_update:
 		add	byte ptr [bx+si],al		; timer accumulator (first stub byte)
 		cmp	word ptr cs:gvar_timer_counter,4000h
 		clc					; Clear carry flag
-		jz	sav_menu_body			; Jump if timer==4000h
+		jz	restore_game_confirm_dlg			; Jump if timer==4000h
 		retn
 
-sav_menu_body:
+restore_game_confirm_dlg:
 		push	ds
-		call	handle_pause_key2
+		call	enter_pause_menu_and_draw
 		mov	cl,0FFh
 		mov	ax,3
 		int	60h				; ??INT Non-standard interrupt
@@ -1113,13 +1113,13 @@ sav_menu_body:
 		call	word ptr cs:gfx_fn_clear
 		pop	ds
 
-sav_wait_input:
+restore_dlg_wait_input:
 								mov	ax,cs:gvar_timer_counter
 								test	ax,60h
-								jz	sav_wait_input			; Jump if zero
+								jz	restore_dlg_wait_input			; Jump if zero
 		test	ax,20h
 		pushf				; Push flags
-		call	handle_pause_key4
+		call	restore_pause_menu_bg
 		mov	byte ptr cs:gvar_timer_flag,0
 		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_state_b,0
@@ -1128,20 +1128,20 @@ sav_wait_input:
 		int	60h			; ??INT Non-standard interrupt
 		popf				; Pop flags
 		stc				; Set carry flag
-		jz	sav_ok			; Jump if zero
+		jz	restore_dlg_confirmed			; Jump if zero
 		retn
 
-sav_ok:
+restore_dlg_confirmed:
 		clc				; Clear carry flag
 		retn
 		db	'Restore Game', 0Dh, ' Sure?(Y/N)'
 		db	0FFh		; String terminator
 
-handle_pause_key2		proc	near
+enter_pause_menu_and_draw		proc	near
 		mov	byte ptr cs:gvar_volume_b,2
-handle_pause_key2		endp
+enter_pause_menu_and_draw		endp
 
-handle_pause_key3		proc	near
+draw_pause_menu_box		proc	near
 		mov	ax,0C46h
 		mov	cx,1028h
 		mov	di,3C80h
@@ -1151,17 +1151,17 @@ handle_pause_key3		proc	near
 		mov	al,0FFh
 		jmp	word ptr cs:gfx_screen_base
 
-handle_pause_key3		endp
+draw_pause_menu_box		endp
 
-handle_pause_key4		proc	near
+restore_pause_menu_bg		proc	near
 		mov	ax,0C46h
 		mov	cx,1028h
 		mov	di,3C80h
 		jmp	word ptr cs:gfx_fn_restore
 
-handle_pause_key4		endp
+restore_pause_menu_bg		endp
 
-handle_pause_key5		proc	near
+flush_dos_kbd_buffer		proc	near
 		push	dx
 
 hpk5_flush_loop:
@@ -1173,7 +1173,7 @@ hpk5_flush_loop:
 		pop	dx
 		retn
 
-handle_pause_key5		endp
+flush_dos_kbd_buffer		endp
 
 			                        ; Called via game_state dispatch: scan save-file directory into buffer
 
@@ -1256,7 +1256,9 @@ scan_data_lbl	label	word		; anchor for scan_buf_ptr EQU computation
 		; INT 60h sub-function dispatch body (INT 60h handler; accessed via INT 60h vector):
 		cmp	al,0
 		jnz	int60_dispatch_active		; Jump if not zero (sub-fn != 0)
-		jmp	sav_swap_init			; sub-fn 0: swap game data buffers
+		jmp	swap_overlay_blocks		; sub-fn 0: invoke the 0x7000-byte block-swap routine
+						;          (also reached via SAR loader AL=0 path
+						;           from 0BFC:0A88 — see swap_overlay_blocks)
 
 int60_dispatch_active:
 		push	di
@@ -1306,11 +1308,11 @@ sav_slot_select:
 		mov	word ptr cs:file_read_buf_ptr+2,cs	; set buf seg to CS
 		mov	al,ah				; al = sub-slot index
 		or	al,al				; test sign
-		jns	sav_fn_compute			; Jump if not sign (positive index)
+		jns	compute_slot_record_ptr			; Jump if not sign (positive index)
 		and	al,7Fh				; strip sign bit
 		add	al,20h				; bias for negative indices
 
-sav_fn_compute:
+compute_slot_record_ptr:
 		mov	cl,0Bh				; shift amount
 		mul	cl				; ax = al * 11
 		add	ax,map_driver_slot_base		; add base offset (map_driver_tbl+0x0C)
@@ -1328,20 +1330,20 @@ fio_load_game:
 		add	ax,3000h
 		mov	es,ax
 		mov	word ptr cs:file_read_buf_ptr+2,ax
-		call	handle_pause_key6		; open save file
+		call	fio_open_savefile_retry		; open save file
 		mov	bx,ax				; save file handle
 		mov	cx,1
-		call	handle_pause_key7		; read 1 block
+		call	fio_read_write_block		; read 1 block
 		mov	cx,word ptr cs:file_read_count	; get count
 		dec	cx
 		cmp	byte ptr es:[0],0		; check ES:0 terminator
-		jz	save_clear_done			; Jump if zero (no more slots)
+		jz	fio_load_slot_terminator			; Jump if zero (no more slots)
 		mov	word ptr cs:file_read_buf_ptr,0
 		mov	cx,4
-		call	handle_pause_key7		; read 4-byte header
+		call	fio_read_write_block		; read 4-byte header
 		mov	cx,word ptr es:[0]		; get slot count from header
 		cmp	byte ptr cs:gvar_gfx_mode,0	; check graphics mode
-		jz	save_clear_done			; Jump if zero (CGA/text mode)
+		jz	fio_load_slot_terminator			; Jump if zero (CGA/text mode)
 		mov	dx,cx
 		mov	al,1
 ; mov cx, 0  (B9 00 00): low byte + high byte from first byte of inline data below
@@ -1350,11 +1352,11 @@ fio_load_game:
 		db	0CDh, 21h		; INT 21h  (DOS LSEEK)
 		db	26h, 8Bh, 0Eh, 02h, 00h ; ES: MOV CX, [0x0002]  (read from ES DTA)
 
-save_clear_done:
+fio_load_slot_terminator:
 		mov	cs:file_read_buf_ptr,0
-		call	handle_pause_key7
+		call	fio_read_write_block
 		push	ax
-		call	handle_pause_key8
+		call	fio_close_file
 		pop	dx
 		pop	es
 		pop	di
@@ -1400,11 +1402,11 @@ fio_open_buf_init:
 		add	ax,3000h
 		mov	es,ax
 		mov	word ptr cs:file_read_buf_ptr+2,ax
-		call	handle_pause_key6		; open/seek save file
+		call	fio_open_savefile_retry		; open/seek save file
 herc_seg_table		dw	0D88Bh			; Data table (indexed access)
 		; Save/load file I/O body: seek + read/write slot data (accessed via dispatch):
 		mov	cx,4
-		call	handle_pause_key7		; read 4 bytes into file_read_buf_ptr
+		call	fio_read_write_block		; read 4 bytes into file_read_buf_ptr
 		mov	cx,word ptr es:[0]		; get count from ES segment
 		test	byte ptr cs:gvar_game_phase,0FFh
 		jnz	sav_io_after_seek		; Jump if not zero (skip file seek)
@@ -1420,35 +1422,65 @@ sav_io_after_seek:
 		pop	di
 		mov	word ptr cs:file_read_buf_ptr,di
 		mov	word ptr cs:file_read_buf_ptr+2,es
-		call	handle_pause_key7		; read block
+		call	fio_read_write_block		; read block
 		jmp	fio_close			; done
 
-sav_swap_init:
+; ----------------------------------------------------------------------
+; swap_overlay_blocks — Code/data overlay exchange (CS:0x0C01)
+;
+; Exchanges 0x7000 bytes (0x3800 words) between two segment regions:
+;     (CS+0x2000):0x9000-0xFFFF   <->   CS:0x3000-0x9FFF
+;
+; Two callers reach this body:
+;   1. SAR loader AL=0 dispatch (jmp from CS:0x0A88) — used by
+;      106TOWN's player_func_30 with bx=0x6002 to enter a cavern.
+;      Pre-swap layout (per game.asm start_load_game):
+;        CS:3000      = gfx driver       <-> (CS+2000):9000 = gfx tile data
+;        CS:6000      = town.bin code    <-> (CS+2000):C000 = fight.bin code
+;      Post-swap: fight.bin runs from CS:6000, town.bin parked at
+;      (CS+2000):C000 until the player exits the cavern (which calls
+;      the same routine again to swap back).  After the swap the
+;      routine tail-jumps via cs:[bx] = cs:[6002] = fight.bin's
+;      "enter from town" entry pointer (= 0x79DC at start of session).
+;   2. INT 60h sub-fn 0 (jmp from int60_dispatch_active fall-through)
+;      — used by save/load to swap game-state buffers between the
+;      two segments before/after disk I/O.
+;
+; In both cases the caller arranges bx so that cs:[bx] is a valid
+; far jmp target after the swap.
+;
+; Runtime confirmation: BP at 0BFC:0A84 fired with al=0, bx=0x6002
+; on Muralla cavern entry (2026-05-03 DOSBox session).  Memory dumps
+; before/after match the exchange exactly:
+;     0BFC:6000 was town.bin -> after swap = fight.bin (verified)
+;     2BFC:C000 was fight.bin -> after swap = town.bin (verified)
+; ----------------------------------------------------------------------
+swap_overlay_blocks:
 		push	ds
 		push	bx
 		mov	ax,cs
 		add	ax,2000h
-		mov	ds,ax
+		mov	ds,ax			; DS = CS + 0x2000 (high segment)
 		push	cs
-		pop	es
-		mov	si,9000h
-		mov	di,3000h
-		mov	cx,3800h
+		pop	es			; ES = CS         (low segment)
+		mov	si,9000h		; src = (CS+0x2000):9000
+		mov	di,3000h		; dst = CS:3000
+		mov	cx,3800h		; 0x3800 words = 0x7000 bytes
 
 locloop_swap_data:
-								lodsw				; String [si] to ax
-								mov	dx,es:[di]
-								stosw				; Store ax to es:[di]
-								mov	[si-2],dx
+								lodsw				; AX = ds:[si], si+=2
+								mov	dx,es:[di]		; DX = es:[di]
+								stosw				; es:[di] = AX, di+=2
+								mov	[si-2],dx		; ds:[si-2] = DX (exchange)
 								loop	locloop_swap_data		; Loop if cx > 0
 
 		pop	bx
 		pop	ds
-		jmp	word ptr cs:[bx]	;*
+		jmp	word ptr cs:[bx]	; tail-jmp via cs:[bx] (caller-set; e.g. cs:[6002] for cavern entry)
 			                        ; Called via cs:[bx] dispatch table: load game file
 
 fio_load_entry:
-		call	handle_pause_key6
+		call	fio_open_savefile_retry
 		jnc	fio_load_ok			; Jump if carry=0
 		retn
 
@@ -1457,17 +1489,17 @@ fio_load_ok:
 		jmp	fio_close
 
 fio_save_entry:
-		call	handle_pause_key6
+		call	fio_open_savefile_retry
 		jnc	fio_save_ok			; Jump if carry=0
 		retn
 
 fio_save_ok:
 		mov	cx,cs:file_read_count
 		mov	bx,ax
-		call	handle_pause_key7
+		call	fio_read_write_block
 		jmp	fio_close
 
-handle_pause_key6		proc	near
+fio_open_savefile_retry		proc	near
 
 fio_open_loop:
 		mov	cs:file_read_count,0FFFFh
@@ -1498,17 +1530,17 @@ fio_no_dirname:
 		jmp	fio_error
 
 fio_file_notfound:
-		test	byte ptr cs:gvar_old_int09_raw,0FFh
-		jnz	fio_disk_declined			; Jump if not zero
+		test	byte ptr cs:gvar_disk_swap_suppressed,0FFh
+		jnz	fio_disk_declined			; Jump if not zero (skip disk-swap prompt)
 		push	es
-		call	handle_pause_key3
+		call	draw_pause_menu_box
 		push	cs
 		pop	ds
 		mov	si,fio_disk_msg
 		mov	bx,6Ch
 		mov	cl,4Ah			; 'J'
 		call	word ptr cs:gfx_fn_clear
-		call	handle_pause_key5
+		call	flush_dos_kbd_buffer
 		push	dx
 		mov	byte ptr cs:gvar_spacebar_state,0
 
@@ -1523,7 +1555,7 @@ fio_disk_prompt:
 
 fio_disk_accepted:
 		pop	dx
-		call	handle_pause_key4
+		call	restore_pause_menu_bg
 		pop	es
 		push	cs
 		pop	ds
@@ -1626,33 +1658,33 @@ fio_seek_buf_lbl	label	byte		; anchor: 4-byte seek offset buffer (CS:0x0D7A)
 fio_default_name_lbl	label	byte		; anchor: default save filename (CS:0x0D7E)
 		db	'dummy', 0		; Default save filename placeholder
 
-handle_pause_key7	proc	near
+fio_read_write_block	proc	near
 		lds	dx,dword ptr cs:file_read_buf_ptr	; Load seg:offset ptr
 		mov	ah,3Fh
 		int	21h			; DOS Services  ah=function 3Fh
 						;  read file, bx=file handle
 						;   cx=bytes to ds:dx buffer
-		jnc	loc_ret_108		; Jump if carry=0
+		jnc	fio_rw_done		; Jump if carry=0
 		jmp	fio_error
 
-loc_ret_108:
+fio_rw_done:
 		retn
 
-handle_pause_key7	endp
+fio_read_write_block	endp
 
-handle_pause_key8	proc	near
+fio_close_file	proc	near
 
 fio_close:
 		mov	ah,3Eh
 		int	21h			; DOS Services  ah=function 3Eh
 						;  close file, bx=file handle
-		jnc	loc_ret_110		; Jump if carry=0
+		jnc	fio_close_done		; Jump if carry=0
 		jmp	fio_error
 
-loc_ret_110:
+fio_close_done:
 		retn
 
-handle_pause_key8	endp
+fio_close_file	endp
 
 fio_decomp_entry:
 		push	ds
@@ -1660,11 +1692,11 @@ fio_decomp_entry:
 		add	ax,3000h
 		mov	ds,ax
 		mov	si,zero_offset
-		call	handle_pause_key9
+		call	fio_load_decompressed
 		pop	ds
 		retn
 
-handle_pause_key9	proc	near
+fio_load_decompressed	proc	near
 		xor	bx,bx			; Zero register
 		lodsb				; String [si] to al
 		dec	dx
@@ -1673,7 +1705,7 @@ handle_pause_key9	proc	near
 		add	bx,bx
 		jmp	word ptr cs:dcmp_dispatch_tbl[bx]	;*
 
-handle_pause_key9	endp
+fio_load_decompressed	endp
 
 			                        ; Dispatch table (dcmp_dispatch_tbl = dcmp_opcode0 + ISR_STUBS_BASE): opcode 0 = raw/verbatim copy
 
@@ -1696,13 +1728,13 @@ dcmp_opcode0_body:
 
 dcmp_copy_loop:
 								lodsb				; String [si] to al
-								call	poll_joystick_buttons0
+								call	dcmp_loop_anchor_a
 								rep	stosb			; Rep when cx >0 Store al to es:[di]
 								dec	dx
 								jnz	dcmp_copy_loop			; Jump if not zero
 		retn
 
-poll_joystick_buttons0	proc	near
+dcmp_loop_anchor_a	proc	near
 		push	bp
 		mov	ah,al
 		and	ah,0F0h
@@ -1727,7 +1759,7 @@ dcmp_tbl_miss:
 		pop	bp
 		retn
 
-poll_joystick_buttons0	endp
+dcmp_loop_anchor_a	endp
 
 dcmp_skip_loop:
 								lodsb				; String [si] to al
@@ -1764,13 +1796,13 @@ dcmp_rle3_no_match:
 
 dcmp_rle6_loop:
 								lodsb				; String [si] to al
-								call	poll_joystick_buttons1
+								call	dcmp_loop_anchor_b
 								rep	stosb			; Rep when cx >0 Store al to es:[di]
 								dec	dx
 								jnz	dcmp_rle6_loop			; Jump if not zero
 		retn
 
-poll_joystick_buttons1	proc	near
+dcmp_loop_anchor_b	proc	near
 		push	bp
 		mov	ah,al
 		and	ah,0Fh
@@ -1799,7 +1831,7 @@ dcmp_rle6_miss:
 		pop	bp
 		retn
 
-poll_joystick_buttons1	endp
+dcmp_loop_anchor_b	endp
 		db	0ACh, 4Ah, 8Ah,0E0h		; lodsb; dec dx; mov ah,al ?-- load escape marker into AH (dispatch stub)
 
 dcmp_rle4_loop:
@@ -1851,13 +1883,13 @@ dcmp_skip16_loop:
 
 dcmp_rle7_loop:
 								lodsb				; String [si] to al
-								call	poll_joystick_buttons2
+								call	dcmp_loop_anchor_c
 								rep	stosb			; Rep when cx >0 Store al to es:[di]
 								dec	dx
 								jnz	dcmp_rle7_loop			; Jump if not zero
 		retn
 
-poll_joystick_buttons2	proc	near
+dcmp_loop_anchor_c	proc	near
 		push	bp
 		mov	cx,1
 
@@ -1882,7 +1914,7 @@ dcmp_rle2_miss:
 		pop	bp
 		retn
 
-poll_joystick_buttons2	endp
+dcmp_loop_anchor_c	endp
 		db	0ACh, 4Ah, 8Ah,0E0h		; lodsb; dec dx; mov ah,al ?-- load escape marker into AH (dispatch stub)
 
 dcmp_rle1_loop:
@@ -1944,7 +1976,7 @@ fio_error:
 		lds	dx,dword ptr cs:savefile_desc_ptr	; Load seg:offset ptr
 		jmp	dword ptr cs:gvar_chunk_load_fn
 
-handle_pause_key6		endp
+fio_open_savefile_retry		endp
 
 ; Map driver file reference table  [CS:0x115C]
 ; Format: [archive][chunk]['FILENAME.MDT'\0] repeated.

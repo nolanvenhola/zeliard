@@ -82,7 +82,7 @@ semantics from usage) or 4a (canonical name lurking in another file).
 |:---:|---|---|---|---|
 | [x] | `0xFF21` | `mao2_gvar_state_a` | initial alias to `gvar_skip_input` was REVERTED — canonical `gvar_skip_input` is at `0FF1Dh` (zeliard.inc / stick.asm), not FF21; kept as module-local placeholder with explanatory comment | **kept local** (no shared canonical) |
 | [x] | `0xFF30` | `mao2_gvar_state_d` | aliased to gvar_completion (200FIGHT canonical) | **alias of `gvar_completion`** |
-| [x] | `0xFF78` | `gvar_unk_FF78` | aliased to gvar_old_int09_raw (zeliard.inc canonical) | **alias of `gvar_old_int09_raw`** |
+| [x] | `0xFF78` | `gvar_disk_swap_suppressed` | renamed 2026-05-03 (was misnamed gvar_old_int09_raw / gvar_unk_FF78); confirmed at stick.asm:1533 fio_file_notfound branch — controls "Please insert DISK1" prompt suppression | **disk-prompt suppression flag** |
 | [x] | `0xFF3C` | `gvar_unk_ff3c` | 314LEGA's "use" is actually a stack-frame ref `ss:[bp+di+0FF3C]`, NOT the global byte; EQU kept as alias with note; use site reverted to placeholder name | **alias-only** (314LEGA site is a stack ref, not the global) |
 
 ---

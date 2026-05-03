@@ -86,7 +86,7 @@ gvar_joystick_flag	equ	0FF43h		; Joystick enabled flag
 gvar_save_name_buf	equ	0FF6Ch		; Save file name buffer (8 bytes)
 gvar_volume_a		equ	0FF74h		; Volume/audio setting A
 gvar_volume_b		equ	0FF75h		; Volume/audio setting B
-gvar_unk_FF78		equ	0FF78h		; alias for gvar_old_int09_raw (zeliard.inc canonical)
+gvar_disk_swap_suppressed equ	0FF78h	; alias matching zeliard.inc canonical
 gvar_old_int09_ofs	equ	0FF79h		; Saved INT 09h offset
 gvar_old_int09_seg	equ	0FF7Bh		; Saved INT 09h segment
 gvar_old_int61_ofs	equ	0FF7Bh		; Saved INT 61h offset
@@ -146,28 +146,28 @@ dos_version_ok:
 cfg_opened:
 		mov	bx,ax			; BX = file handle
 		call	read_config_line	; Read line 1: graphics mode
-		jnc	cfg_line1_ok
+		jnc	cfg_gfx_line_read
 		jmp	cfg_error
 
-cfg_line1_ok:
+cfg_gfx_line_read:
 		call	parse_graphics_mode
 		call	read_config_line	; Read line 2: music driver
-		jnc	cfg_line2_ok
+		jnc	cfg_music_line_read
 		jmp	cfg_error
 
-cfg_line2_ok:
+cfg_music_line_read:
 		call	parse_music_driver
 		call	read_config_line	; Read line 3: joystick driver
-		jnc	cfg_line3_ok
+		jnc	cfg_joy_line_read
 		jmp	cfg_error
 
-cfg_line3_ok:
+cfg_joy_line_read:
 		call	parse_joystick_name
 		call	read_config_line	; Read line 4: joystick enable
-		jnc	cfg_line4_ok
+		jnc	cfg_joyenable_line_read
 		jmp	cfg_error
 
-cfg_line4_ok:
+cfg_joyenable_line_read:
 		call	parse_joystick_enable	; Does not return on error
 		mov	ah, 3Eh
 		int	21h			; Close RESOURCE.CFG (BX = handle)
@@ -198,7 +198,7 @@ memory_allocated:
 		int	21h			; Display game title/copyright
 
 		; Initialize music system if enabled
-		test	byte ptr cs:music_enabled,0FFh
+		test	byte ptr cs:mt32_enabled,0FFh
 		jz	skip_music_init
 		mov	cs:saved_sp,sp
 		mov	cs:saved_ss,ss
@@ -269,10 +269,10 @@ skip_music_init:
 		mov	byte ptr es:gvar_volume_a,0
 		mov	byte ptr es:gvar_debug_mode,0
 		mov	byte ptr es:gvar_debug_val,0
-		mov	byte ptr es:gvar_old_int09_raw,0
+		mov	byte ptr es:gvar_disk_swap_suppressed,0
 		mov	al,cs:joystick_enabled
 		mov	es:gvar_last_key,al
-		mov	al,cs:music_enabled
+		mov	al,cs:mt32_enabled
 		mov	es:gvar_game_phase,al
 
 		; Copy save filename to game state
@@ -647,17 +647,18 @@ mode_3char_table db	'cga',  01h	; CGA         ?-> mode 1
 
 ;==========================================================================
 ;  parse_music_driver - Parse music driver name from config line
-;  If name matches "mscmt.drv", enables music (music_enabled = 0xFF)
+;  If name matches "mscmt.drv" (the MT-32 driver), sets mt32_enabled=0xFF
+;  to gate MTINIT.COM exec + propagate to gvar_game_phase.
 ;==========================================================================
 
 parse_music_driver proc	near
-		mov	byte ptr cs:music_enabled,0
+		mov	byte ptr cs:mt32_enabled,0
 		setup_parse_line
 		cmp	cx,0Fh
-		jb	music_name_ok
+		jb	music_name_clamped
 		mov	cx,0Fh
 
-music_name_ok:
+music_name_clamped:
 		mov	di,offset music_driver_name
 		rep	movsb
 		xor	al,al
@@ -670,7 +671,7 @@ music_name_ok:
 		retn
 
 music_is_mt32:
-		mov	byte ptr music_enabled,0FFh
+		mov	byte ptr mt32_enabled,0FFh
 		retn
 
 parse_music_driver endp
@@ -684,10 +685,10 @@ str_mscmt_drv	db	'mscmt.drv'
 parse_joystick_name proc near
 		setup_parse_line
 		cmp	cx,0Fh
-		jb	joy_name_ok
+		jb	joy_name_clamped
 		mov	cx,0Fh
 
-joy_name_ok:
+joy_name_clamped:
 		mov	di,offset joystick_driver_name
 		rep	movsb
 		xor	al,al
@@ -704,7 +705,7 @@ parse_joystick_name endp
 parse_joystick_enable proc near
 		setup_parse_line
 		cmp	cx,2
-		je	try_no
+		je	try_match_no
 		cmp	cx,3
 		jne	cfg_error
 		mov	di,offset str_yes
@@ -714,7 +715,7 @@ parse_joystick_enable proc near
 		mov	byte ptr cs:joystick_enabled,0FFh
 		retn
 
-try_no:
+try_match_no:
 		mov	di,offset str_no
 		mov	cx,2
 		repe	cmpsb
@@ -1128,8 +1129,14 @@ exec_fcb1:
 		db	0, ' '			; FCB preamble
 		db	14 dup (0)		; FCB data (blank)
 
-graphics_mode	db	0			; 0=EGA 1=CGA 2=HGC 3=MCGA 4=TGA 5=?
-music_enabled	db	0			; 0xFF = music enabled
+graphics_mode	db	0			; 0=EGA 1=CGA 2=CGA2 3=HGC 4=MCGA 5=TGA
+mt32_enabled	db	0			; 0xFF when configured driver is "mscmt.drv".
+						; Two uses:
+						; (1) gates the MTINIT.COM EXEC at startup (line ~209);
+						; (2) propagates to gvar_game_phase (line 276) so game
+						;     code can branch on MT-32 vs other music backends.
+						; Was misnamed "mt32_enabled" — non-MT-32 drivers still
+						; load and play music; this flag is MT-32-specific.
 joystick_enabled db	0			; 0xFF = joystick enabled
 cfg_line_length	db	0			; Current config line length
 cfg_line_buffer	db	0			; Config line read buffer

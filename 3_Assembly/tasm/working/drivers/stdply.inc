@@ -118,7 +118,7 @@ stat_X9F                equ     9Fh     ; VESTIGIAL — per-frame zero-clear, no
 ;
 ; 0xA0: music track count.  game.asm line 460 (`load_music_tracks` proc)
 ; comment is explicit: "Reads music track count from [ds:0xA0]".  Reads it
-; into CL and iterates through track table at level_system_ref.
+; into CL and iterates through track table at music_track_ref_tbl.
 music_track_count       equ     0A0h    ; music track count (canonical, per game.asm comment)
 stat_XA0                equ     0A0h    ; alias — deprecated placeholder
 

@@ -152,7 +152,7 @@ almost certainly more accurate (derived from runtime IDA debugging).
 | `0xFF6C` | `gvar_save_name_buf` | `save_name` | **rename?** |
 | `0xFF74` | `gvar_volume_a` | `keyboard_alt_mode_flag` | **rename?** |
 | `0xFF75` | `gvar_spawn_fx_flag`, `gvar_volume`, `gvar_volume_b` | `soundFX_request` | **rename?** |
-| `0xFF78` | `gvar_old_int09_raw` | `disk_swap_suppressed` | **rename?** |
+| `0xFF78` | `gvar_disk_swap_suppressed` | `disk_swap_suppressed` | agree (renamed 2026-05-03 from misnamed gvar_old_int09_raw) |
 | `0xFF79` | `gvar_old_int09_ofs` | `fn_kbd_chain_ptr` | **rename?** |
 
 **Agreements: 10** | **Disagreements: 132**
@@ -292,7 +292,7 @@ as primary (as alias) in the relevant shared .inc:
 - `0xFF6C`: `gvar_save_name_buf` → consider IDA name `save_name`
 - `0xFF74`: `gvar_volume_a` → consider IDA name `keyboard_alt_mode_flag`
 - `0xFF75`: `gvar_spawn_fx_flag, gvar_volume, gvar_volume_b` → consider IDA name `soundFX_request`
-- `0xFF78`: `gvar_old_int09_raw` → consider IDA name `disk_swap_suppressed`
+- `0xFF78`: ~~`gvar_old_int09_raw`~~ → renamed `gvar_disk_swap_suppressed` (matches IDA `disk_swap_suppressed`; verified at stick.asm fio_file_notfound branch)
 - `0xFF79`: `gvar_old_int09_ofs` → consider IDA name `fn_kbd_chain_ptr`
 
 ## Symbols only in IDA (potential coverage gaps in our .inc files)

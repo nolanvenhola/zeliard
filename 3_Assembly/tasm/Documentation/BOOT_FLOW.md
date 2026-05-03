@@ -25,6 +25,11 @@ rebuild of game.bin / zeliad.exe / stick.bin / gmega.bin / etc.,
   save SI/DS/DI/ES via mov cs:[F5C..F62]`)
 - `stick.bin`'s SAR-loader AL=N dispatch table at `game_seg:0x0ACA` ✓
   (6-entry word table for AL=1..6 handlers)
+- `AL=0` early-jmp at `game_seg:0x0A88` → `swap_overlay_blocks` at
+  `game_seg:0x0C01` ✓ — the **town↔fight code-overlay swap** (and
+  the save-buffer swap reached via INT 60h sub-fn 0).  Confirmed by
+  BP at 0BFC:0A84 firing with `al=0, bx=0x6002` on Muralla cavern
+  entry (2026-05-03 session).
 - `gmega.bin` loads at `game_seg:0x2000` (EGA mode) ✓
 - `gmmcga.bin` loads at `game_seg:0x2000` (MCGA mode) ✓
 - All 5 gfx-mode drivers (gm{ega,cga,hgc,mcga,tga}) load at the same
@@ -396,12 +401,75 @@ project_zeliard_title_load_flow.md memory note).
 
 ---
 
+## Cavern entry: town↔fight code overlay swap
+
+After `start_load_game` finishes, the game-segment layout is:
+
+| Address | Contents | Loaded by (game.asm) |
+|---|---|---|
+| `CS:0x3000` | gfx-mode driver | line 257 (`mov al,3` to CS:0x3000) |
+| `CS:0x6000` | town.bin code | line 260 (`LOAD_CHUNK chunk_ref_town, 6000h, 3`) |
+| `(CS+0x2000):0x9000` | gfx tile data | line 267 |
+| `(CS+0x2000):0xC000` | fight.bin code | line 270 |
+
+When the player walks onto a cavern entrance tile in town,
+`player_func_30` (106TOWN.asm:2214-2216) issues:
+
+```asm
+mov  bx, 6002h
+xor  al, al                  ; AL = 0
+jmp  word ptr cs:[10Ch]      ; tail-jmp to SAR loader
+```
+
+`AL=0` takes the SAR loader's special early-jmp path at `game_seg:0x0A88`,
+which lands directly on `swap_overlay_blocks` at `game_seg:0x0C01`
+(stick.asm).  The handler exchanges **0x7000 bytes** word-by-word
+between two segment regions:
+
+```
+(CS+0x2000):0x9000-0xFFFF   ←→   CS:0x3000-0x9FFF
+```
+
+After the swap the same four blocks live at swapped addresses:
+
+| Address | Contents (post-swap) |
+|---|---|
+| `CS:0x3000` | gfx tile data |
+| `CS:0x6000` | **fight.bin code** ← active for cavern combat |
+| `(CS+0x2000):0x9000` | gfx-mode driver |
+| `(CS+0x2000):0xC000` | town.bin code (parked until cavern exit) |
+
+The handler then tail-jumps via `cs:[bx]` (= `cs:[0x6002]`).  Word at
+`CS:0x6002` after the swap is fight.bin's "enter from town" entry
+pointer (= `0x79DC` at session start, the cinematic runner that
+plays the "character running across mini cavern" cutscene before
+combat begins).
+
+Cavern → town exits invoke the same routine in reverse: fight.bin's
+exit handler sets up `bx` for a town entry pointer and `xor al,al;
+jmp cs:[10Ch]`, which swaps the blocks back.  Save/load uses the
+same body via INT 60h sub-fn 0 to swap game-state buffers across
+the two segments before/after disk I/O.
+
+**Runtime confirmation (2026-05-03 DOSBox session, Muralla cavern entry):**
+- BP at `0BFC:0A84` fired twice during cavern transition:
+  - hit #1: `al=1, ah=0` → AL=1 dispatch loaded `320MP10.mdt`
+    (zelres3 chunk 0x15 = first cavern's map data) into `0BFC:0xC000`
+  - hit #2: `al=0, bx=0x6002` → swap_overlay_blocks ran, fight.bin's
+    `frame_loop` then ticked at `0BFC:0x629C` (BP confirmed)
+- Memory dumps before/after match the exchange:
+  - `0BFC:0x6000` first 16 bytes = fight.bin signature `42 60 DC 79 ...` ✓
+  - `2BFC:0xC000` first 16 bytes = town.bin signature `26 60 1E 60 ...` ✓
+
+---
+
 ## Status promotions (per MECHANICS_TO_UNDERSTAND.md)
 
 | Row | Was | Now |
 |---|:---:|:---:|
 | Boot sequence (zeliad.exe → game.bin) | ✓ | ✓ (BOOT_FLOW.md §1-2) |
 | Save vs new-game branch | ⚠ | ✓ (BOOT_FLOW.md §3 + label rename in game.asm) |
+| Cavern entry overlay swap (town↔fight) | ⚠ | ✓ (BOOT_FLOW.md §"Cavern entry"; runtime-verified, label `swap_overlay_blocks`) |
 | Opening sequence (slideshow, story text) | ⚠ | ⚠ (load site VERIFIED at game.asm:227 → opdemo entry; internal slideshow logic in 100OPDMO not yet fully traced) |
 | Title screen (Zeliard logo build) | ⚠ | ⚠ (load chain VERIFIED end-to-end: opdemo → ttl3.grp via SAR loader; the logo blit pipeline VERIFIED in CLAUDE.md) |
 | ENTER skip during opening | ✓ | ✓ (unchanged — check at delay routine 0x03AF inside opdemo) |

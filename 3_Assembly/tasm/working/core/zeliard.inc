@@ -104,7 +104,10 @@ gvar_joystick_flag      equ     0FF43h  ; Joystick enabled flag
 gvar_save_name_buf      equ     0FF6Ch  ; Save file name buffer
 gvar_volume_a           equ     0FF74h  ; Volume A
 gvar_volume_b           equ     0FF75h  ; Volume B
-gvar_old_int09_raw      equ     0FF78h  ; Saved INT 09h vector (raw, lo byte)
+gvar_disk_swap_suppressed equ   0FF78h  ; Disk-prompt suppression flag (when non-zero, fail silently on
+                                        ; "file not found" instead of showing "Please insert DISK1...".
+                                        ; Confirmed at stick.asm:1533 fio_file_notfound branch.
+                                        ; Was misnamed gvar_old_int09_raw (FF78 is unrelated to INT 09).
 gvar_old_int09_ofs      equ     0FF79h  ; Saved INT 09h offset
 gvar_old_int09_seg      equ     0FF7Bh  ; Saved INT 09h segment
 

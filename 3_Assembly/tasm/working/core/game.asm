@@ -53,16 +53,10 @@ gvar_palette_b	equ	0FF3Eh			; alias — see 200FIGHT.asm spell_fx_active (game.a
 gvar_debug_mode	equ	0FF40h			; Debug mode
 gvar_debug_val	equ	0FF42h			; Debug value
 gvar_joystick	equ	0FF43h			; Joystick state
-; The byte at 0FF44h was previously named "gvar_joy_data" (a guess based
-; on its proximity to gvar_joystick/gvar_joy_count) but the real semantics
-; are background-restore-pending: gf*.asm has bg_restore/bg_save procs
-; that unambiguously test/clear/set this flag (set when background needs
-; restoring after a sprite draw, cleared when bg_restore_impl finishes).
-; 21 read/write sites across 202GFEGA, 203GFCGA, 204GFHGC, 205GFTGA,
-; 206GFMCA all use the name `restore_pending`.  game.asm only zeros it
-; during init.  Renaming to restore_pending; old name kept as alias.
+; FF44h is the bg_restore pending flag (set by gf*.asm bg_save/bg_restore
+; procs across 202GFEGA, 203GFCGA, 204GFHGC, 205GFTGA, 206GFMCA — 21
+; read/write sites).  game.asm only zero-clears it during init.
 restore_pending	equ	0FF44h			; bg_restore pending flag (gf*.asm)
-gvar_joy_data	equ	0FF44h			; alias — deprecated misnomer
 gvar_joy_count	equ	0FF4Bh			; Joystick count
 gvar_volume_a	equ	0FF74h			; Volume setting A
 gvar_volume_b	equ	0FF77h			; Volume setting B
@@ -93,11 +87,10 @@ GAME_CODE_BASE  equ     0A000h
 gfx_mode_tbl_ega equ	GAME_CODE_BASE + (offset gfx_mode_tbl_ega_lbl)
 gfx_mode_tbl_cga equ	GAME_CODE_BASE + (offset gfx_mode_tbl_cga_lbl)
 gfx_mode_tbl_all equ	GAME_CODE_BASE + (offset gfx_mode_tbl_all_lbl)
-level_system_ref equ	GAME_CODE_BASE + (offset level_system_ref_lbl)
-level_data_ref	equ	GAME_CODE_BASE + (offset level_data_ref_lbl)
+music_track_ref_tbl equ	GAME_CODE_BASE + (offset music_track_ref_tbl_lbl)
+palette_handler_jmp_tbl	equ	GAME_CODE_BASE + (offset palette_handler_jmp_tbl_lbl)
 palette_base_tbl equ	GAME_CODE_BASE + (offset palette_base_tbl_lbl)
 game_init_fn	equ	GAME_CODE_BASE + (offset game_init_fn_lbl)
-level_chunk_ref	equ	GAME_CODE_BASE + (offset save_mode_flag_lbl)
 ; Chunk reference addresses (GAME_CODE_BASE + offset of [archive][chunk] record)
 chunk_ref_font_grp equ	GAME_CODE_BASE + (offset ref_font_grp)
 chunk_ref_mole	equ	GAME_CODE_BASE + (offset ref_mole)
@@ -190,7 +183,7 @@ start:
 		mov	ds:gvar_music_b,al
 		mov	ds:gvar_music_c,al
 		mov	ds:gvar_joystick,al
-		mov	ds:restore_pending,al	; was gvar_joy_data — see EQU above
+		mov	ds:restore_pending,al
 		mov	ds:gvar_palette_st,al
 		mov	ds:gvar_palette_a,al
 		mov	ds:gvar_music_a,al
@@ -331,26 +324,26 @@ start_load_game:
 		mov	ax,cs
 		mov	ds,ax
 		test	byte ptr ds:[92h],0FFh
-		jz	skip_gfx_init_a
+		jz	gfx_init_after_music
 		mov	al,byte ptr ds:[92h]
 		mov	bx,music_player_fn
 		call	word ptr cs:gfx_call_a
 
-skip_gfx_init_a:
+gfx_init_after_music:
 		test	byte ptr ds:[93h],0FFh
-		jz	skip_gfx_init_b
+		jz	gfx_init_after_font
 		mov	al,byte ptr ds:[93h]
 		mov	bx,font_gfx_base
 		call	word ptr cs:gfx_call_c
 
-skip_gfx_init_b:
+gfx_init_after_font:
 		test	byte ptr ds:[9Dh],0FFh
-		jz	skip_gfx_init_c
+		jz	gfx_init_after_tile
 		mov	al,byte ptr ds:[9Dh]
 		mov	bx,tile_gfx_base
 		call	word ptr cs:gfx_call_b
 
-skip_gfx_init_c:
+gfx_init_after_tile:
 
 		; Load first level chunks
 		mov	ah,byte ptr cs:[0C4h]	; Level/area number
@@ -475,7 +468,7 @@ game		endp
 ;  load_music_tracks - Load all configured music tracks
 ;
 ;  Reads music track count from [ds:0xA0], iterates through track table
-;  at level_system_ref, and calls sound driver track-load fn for each.
+;  at music_track_ref_tbl, and calls sound driver track-load fn for each.
 ;  Track 8 gets special flag (AL=1) for background music.
 ;==========================================================================
 
@@ -494,7 +487,7 @@ load_track_loop:
 				push	bx
 				mov	dx,bx
 				add	bx,bx
-				mov	bx,ds:level_system_ref[bx] ; Get track chunk ref
+				mov	bx,ds:music_track_ref_tbl[bx] ; Get track chunk ref
 				xor	al,al
 				cmp	dx,8			; Track 8 = background music
 				jne	not_bg_music
@@ -516,7 +509,7 @@ load_music_tracks endp
 ; where the actual [archive, chunk] record for that track lives.
 ; Track 8 = background music (gets special AL=1 flag in load_music_tracks).
 
-level_system_ref_lbl	label	word
+music_track_ref_tbl_lbl	label	word
 		dw	0F00h		; track 0 chunk ref ptr
 		dw	3D00h		; track 1 chunk ref ptr
 		dw	1500h		; track 2 chunk ref ptr
@@ -539,13 +532,13 @@ set_vga_palette	proc	near
 		mov	bl,ds:gvar_game_phase	; Graphics mode index
 		xor	bh,bh
 		add	bx,bx
-		jmp	word ptr cs:level_data_ref[bx] ; Jump to mode handler
+		jmp	word ptr cs:palette_handler_jmp_tbl[bx] ; Jump to mode handler
 
 set_vga_palette	endp
 
 ; VGA palette initialization jump table ?-- one entry per video mode
 
-level_data_ref_lbl	label	word
+palette_handler_jmp_tbl_lbl	label	word
 		dw	GAME_CODE_BASE + (offset ega_palette_handler)	; mode 0: EGA
 		dw	GAME_CODE_BASE + (offset cga_palette_handler)	; mode 1: CGA
 		dw	GAME_CODE_BASE + (offset cga_palette_handler)	; mode 2: CGA 2-color
