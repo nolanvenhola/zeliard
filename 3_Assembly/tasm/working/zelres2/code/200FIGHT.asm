@@ -2940,12 +2940,12 @@ frame_timer_loop:
 
 sound_update_loop:
 										push	ax
-										call	word ptr cs:stick_fn_110
-										call	word ptr cs:stick_fn_112
-										call	word ptr cs:stick_fn_114
-										call	word ptr cs:stick_fn_116
-										call	word ptr cs:stick_fn_118
-										call	word ptr cs:stick_fn_11E
+										call	word ptr cs:stick_exit_dlg_handler
+										call	word ptr cs:stick_pause_dlg_handler
+										call	word ptr cs:stick_speed_change_handler
+										call	word ptr cs:stick_joy_cal_handler
+										call	word ptr cs:stick_joy_detect_handler
+										call	word ptr cs:stick_restore_dlg_handler
 										jnc	sound_wait_done			; Jump if carry=0
 										call	enter_level_via_ref_a
 
@@ -4578,11 +4578,11 @@ wait_anim_cycle		proc	near
 
 frame_render_loop:
 										push	ax
-										call	word ptr cs:stick_fn_110
-										call	word ptr cs:stick_fn_112
-										call	word ptr cs:stick_fn_114
-										call	word ptr cs:stick_fn_116
-										call	word ptr cs:stick_fn_118
+										call	word ptr cs:stick_exit_dlg_handler
+										call	word ptr cs:stick_pause_dlg_handler
+										call	word ptr cs:stick_speed_change_handler
+										call	word ptr cs:stick_joy_cal_handler
+										call	word ptr cs:stick_joy_detect_handler
 										pop	ax
 										cmp	ds:gvar_frame_timer,al
 										jb	frame_render_loop			; Jump if below
@@ -5976,7 +5976,7 @@ fire_init_loop:
 
 fire_entry_col:
 										mov	[si],ax
-										call	word ptr cs:stick_fn_11A
+										call	word ptr cs:stick_subsample_tick_handler
 										and	al,3
 										mov	ah,byte ptr ds:map_scroll_row
 										sub	ah,3
@@ -8085,7 +8085,7 @@ select_anim:
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	di,[bx+di]
-		call	word ptr cs:stick_fn_11A
+		call	word ptr cs:stick_subsample_tick_handler
 		mov	bl,al
 		and	bx,3
 		cmp	byte ptr ds:gvar_combat_action_state,2
@@ -8112,7 +8112,7 @@ select_anim_b:
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	di,[bx+di]
-		call	word ptr cs:stick_fn_11A
+		call	word ptr cs:stick_subsample_tick_handler
 		mov	bl,al
 		and	bx,3
 		cmp	byte ptr ds:gvar_combat_action_state,2

@@ -12,16 +12,16 @@ PAGE  59,132
 ;  player enters the bank building.
 ;
 ;  Connections:
-;    Loads:        BANK.GRP (zelres2 chunk 16h) via cs:[10Ch] SAR loader
+;    Loads:        BANK.GRP (zelres2 chunk 16h) via cs:sar_loader_fn SAR loader
 ;                  with AL=2 (fill_buffer decode) into game_seg:8000h.
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
 ;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller,
 ;                  drv_draw_string (cs:[301Ch]), drv_set_text_pos
-;                  (cs:[3022h]), bank_drv_2014 (cs:[2014h])
+;                  (cs:[3022h]), bank_drv_2014 (cs:drv_fn_10)
 ;                    (graphics driver dispatch slots)
-;                  script_step (cs:[6004h]), script_format_num (cs:[6006h]),
-;                  script_display_page (cs:[6008h]), script_take_item
-;                  (cs:[600Ah]), script_give_item (cs:[600Ch]),
+;                  script_step (cs:script_step), script_format_num (cs:script_format_num),
+;                  script_display_page (cs:script_display_page), script_take_item
+;                  (cs:script_take_item), script_give_item (cs:script_give_item),
 ;                  show_menu_items (cs:[600Eh])
 ;                    (script interpreter / menu dispatch slots)
 ;                  opcode_dispatch_tbl (DS-resident, A0B8h) -- script
@@ -152,13 +152,13 @@ start:
 
 locloop_1:
 			push	cx
-			mov	byte ptr ds:[0FF1Ah],0
+			mov	byte ptr ds:gvar_frame_timer,0
 			mov	word ptr ds:gvar_script_ptr,0A98Bh
 			call	word ptr cs:script_step
 
 call_anim_scroll_step:
 				call	anim_scroll_step
-				cmp	byte ptr ds:[0FF1Ah],3Fh	; '?'
+				cmp	byte ptr ds:gvar_frame_timer,3Fh	; '?'
 				jb	call_anim_scroll_step			; Jump if below
 			pop	cx
 			loop	locloop_1		; Loop if cx > 0
@@ -228,7 +228,7 @@ script_AC5A:
 		mov	byte ptr ds:anim_active_flag,0
 		mov	si,welcome_text_ptr
 		call	draw_banner_8x5
-		test	word ptr ds:[8Bh],0FFFFh
+		test	word ptr ds:player_almas,0FFFFh
 		mov	word ptr ds:gvar_script_ptr,0A9B2h
 		jnz	loc_7			; Jump if not zero
 		retn
@@ -269,7 +269,7 @@ loc_7:
 		retn
 
 loc_8:
-		mov	ax,word ptr ds:[8Bh]
+		mov	ax,word ptr ds:player_almas
 		mov	dl,ds:cur_exch_in
 		xor	dh,dh			; Zero register
 		sub	ax,dx
@@ -288,14 +288,14 @@ loc_10:
 			xor	cx,cx			; Zero register
 
 loc_11:
-				mov	ax,word ptr ds:[8Bh]
+				mov	ax,word ptr ds:player_almas
 				sub	ax,dx
 				jnc	loc_12			; Jump if carry=0
 				retn
 
 loc_12:
 				push	cx
-				mov	word ptr ds:[8Bh],ax
+				mov	word ptr ds:player_almas,ax
 				push	dx
 				xor	dl,dl			; Zero register
 				mov	al,ds:cur_exch_out
@@ -315,8 +315,8 @@ loc_12:
 		mov	si,welcome_text_ptr
 		call	draw_banner_8x5
 		mov	word ptr ds:gvar_script_ptr,0AAA1h
-		mov	ax,word ptr ds:[86h]
-		mov	dl,byte ptr ds:[85h]
+		mov	ax,word ptr ds:player_gold_lo
+		mov	dl,byte ptr ds:player_gold_hi
 		or	dl,al
 		or	dl,ah
 		jnz	script_AACA			; Jump if not zero
@@ -338,8 +338,8 @@ script_AACA:
 		call	word ptr cs:show_menu_items
 		mov	byte ptr ds:amount_hi,0
 		mov	word ptr ds:amount_lo,0
-		mov	dl,byte ptr ds:[85h]
-		mov	ax,word ptr ds:[86h]
+		mov	dl,byte ptr ds:player_gold_hi
+		mov	ax,word ptr ds:player_gold_lo
 		mov	ds:amount_max_hi,dl
 		mov	ds:amount_max_lo,ax
 
@@ -373,14 +373,14 @@ loc_15:
 				jmp	short loc_14
 
 loc_16:
-				mov	byte ptr ds:[0FF1Ah],0
+				mov	byte ptr ds:gvar_frame_timer,0
 
 loc_17:
 				int	61h			; ??INT Non-standard interrupt
 				or	al,al			; Zero ?
 				jz	loc_14			; Jump if zero
 				mov	al,ds:input_repeat_delay
-				cmp	byte ptr ds:[0FF1Ah],al
+				cmp	byte ptr ds:gvar_frame_timer,al
 				jb	loc_17			; Jump if below
 				sub	byte ptr ds:input_repeat_delay,1
 				jnc	loc_14			; Jump if carry=0
@@ -413,8 +413,8 @@ loc_21:
 		mov	dl,ds:amount_hi
 		mov	ax,ds:amount_lo
 		call	word ptr cs:script_take_item
-		mov	byte ptr ds:[85h],dl
-		mov	word ptr ds:[86h],ax
+		mov	byte ptr ds:player_gold_hi,dl
+		mov	word ptr ds:player_gold_lo,ax
 		call	word ptr cs:drv_frame_commit
 		mov	byte ptr ds:checked_balance_flag,0FFh
 		test	byte ptr ds:anim_active_flag,0FFh
@@ -515,14 +515,14 @@ loc_27:
 				jmp	short loc_26
 
 loc_28:
-				mov	byte ptr ds:[0FF1Ah],0
+				mov	byte ptr ds:gvar_frame_timer,0
 
 loc_29:
 				int	61h			; ??INT Non-standard interrupt
 				or	al,al			; Zero ?
 				jz	loc_26			; Jump if zero
 				mov	al,ds:input_repeat_delay
-				cmp	byte ptr ds:[0FF1Ah],al
+				cmp	byte ptr ds:gvar_frame_timer,al
 				jb	loc_29			; Jump if below
 				sub	byte ptr ds:input_repeat_delay,1
 				jnc	loc_26			; Jump if carry=0
@@ -618,11 +618,11 @@ script_AC10:
 		call	iter_wait_msg_list
 		mov	byte ptr ds:anim_active_flag,0FFh
 		mov	word ptr ds:anim_src_ptr,0A773h
-		mov	byte ptr ds:[0FF1Ah],0
+		mov	byte ptr ds:gvar_frame_timer,0
 
 call_anim_scroll_step_38:
 			call	anim_scroll_step
-			cmp	byte ptr ds:[0FF1Ah],64h	; 'd'
+			cmp	byte ptr ds:gvar_frame_timer,64h	; 'd'
 			jb	call_anim_scroll_step_38			; Jump if below
 		retn
 			                        ;* No entry point to code
@@ -827,7 +827,7 @@ bankp_banner_balance:
 		db	'bcdefg !"hi>jk'		; banner 3 row 2 ASCII glyphs (cont)
 
 iter_wait_msg_list		proc	near
-		mov	byte ptr ds:[0FF1Ah],0
+		mov	byte ptr ds:gvar_frame_timer,0
 		lodsw				; String [si] to ax
 		cmp	ax,0FFFFh
 		jne	loc_49			; Jump if not equal
@@ -837,7 +837,7 @@ loc_49:
 		push	si
 		mov	si,ax
 		call	draw_banner_8x5
-		cmp	byte ptr ds:[0FF1Ah],28h	; '('
+		cmp	byte ptr ds:gvar_frame_timer,28h	; '('
 		jb	$-5			; Jump if below
 		pop	si
 		jmp	short $-1Ah

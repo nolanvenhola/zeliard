@@ -16,15 +16,90 @@
 ; stdply.inc's canonical EQU; TASM accepts duplicate equates with the
 ; same value.
 ; ----------------------------------------------------------------------
+captured_flag           equ     49h     ; player-captured / game-over gate (200FIGHT)
+map_scroll_col          equ     80h     ; cavern X scroll column, 16-bit
+map_scroll_row          equ     82h     ; cavern Y scroll row
 town_player_col         equ     83h     ; player screen column in town (canonical in stdply.inc)
-player_bank_hi            equ     88h     ; banked-gold high byte (canonical in stdply.inc)
-player_bank_lo            equ     89h     ; banked-gold low word (canonical in stdply.inc)
-player_ability_2        equ     09Bh    ; ability slot 2 (canonical in stdply.inc; was misnamed trade_marker_flag — that was just one game-design use of this ability, gating 212ARMRP trade dialog)
+fight_player_col        equ     84h     ; player screen column in fight
+player_gold_hi          equ     85h     ; gold high byte (24-bit field)
+player_gold_lo          equ     86h     ; gold low byte
+player_gold_mid         equ     87h     ; gold low word's high byte
+player_bank_hi          equ     88h     ; banked-gold high byte (canonical in stdply.inc)
+player_bank_lo          equ     89h     ; banked-gold low word (canonical in stdply.inc)
+player_almas            equ     8Bh     ; alt currency (16-bit)
+item_qty_count          equ     8Dh     ; item quantity counter
+item_effect_val         equ     8Eh     ; item effect value (16-bit)
+player_HP               equ     90h     ; current HP (16-bit)
+equipped_weapon         equ     92h     ; equipped weapon idx (1-based; 0 = none)
+shield_type             equ     93h     ; shield tier (1-based; 0 = no shield)
+shield_HP               equ     94h     ; current shield HP (16-bit)
+shield_max_HP           equ     96h     ; shield max HP cap (16-bit)
+player_speed            equ     98h     ; character speed stat
+player_power            equ     99h     ; character power stat
+player_ability_1        equ     09Ah    ; ability slot 1
+player_ability_2        equ     09Bh    ; ability slot 2 (212ARMRP gates trade dialog)
+player_ability_3        equ     09Ch    ; ability slot 3 (set on 9AF3 trigger)
+cur_weapon_idx          equ     9Dh     ; cached selected weapon idx
+cur_magic_idx           equ     9Eh     ; currently selected magic idx
+stat_X9F                equ     9Fh     ; VESTIGIAL placeholder (per-frame zero-clear, no reader observed)
+weap_dur_cur            equ     0ABh    ; per-weapon durability table base (7 bytes)
+player_hp_max           equ     0B2h    ; HP ceiling (overlays anim_color_lut frame 8)
+weap_dur_max            equ     0B4h    ; weapon durability max table base (7 bytes)
+player_facing           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical in stdply.inc)
+player_level            equ     0C4h    ; level/area number
 heal_pulse_count        equ     0C6h    ; HP heal-pulse counter, 16-bit (canonical in stdply.inc)
+player_tileset          equ     0C8h    ; level tileset index
+key_count               equ     0E4h    ; player's collected-key count
 scene_trans_request     equ     0E6h    ; scene-transition request (canonical in stdply.inc)
 gvar_pose_idx           equ     0E7h    ; player pose state (canonical in stdply.inc)
 init_complete_flag      equ     0E8h    ; post-init steady-state (canonical in stdply.inc)
+
+; ----------------------------------------------------------------------
+; stick.bin dispatch slots installed at game_seg:0x010C-0x0120 — function
+; pointers in stick.bin's driver_init_data block.  Each slot points to a
+; proc in stick.asm that fires when gvar_timer_counter (FF18) hits a
+; specific value (these are INT 60h game-state subfunction handlers).
+; ----------------------------------------------------------------------
+sar_loader_fn               equ 10Ch ; SAR chunk loader entry (cs:0x0A84)
+stick_exit_dlg_handler      equ 110h ; -> exit_dlg_handler (stick.asm:816, fires on timer==0x14)
+stick_pause_dlg_handler     equ 112h ; -> pause-menu handler (stick.asm:~863, fires on timer&8)
+stick_speed_change_handler  equ 114h ; -> speed_change_handler (stick.asm:934, fires on timer&0x8000)
+stick_joy_cal_handler       equ 116h ; -> joy_cal_handler (stick.asm:1010, fires on timer==0x104)
+stick_joy_detect_handler    equ 118h ; -> joy_detect_handler (stick.asm:1068, fires on timer==0x804)
+stick_subsample_tick_handler equ 11Ah ; -> update_subsample_accumulator (stick.asm:~1086, per-tick)
+stick_savefile_scan_handler equ 11Ch ; -> scan_savefile_dir (stick.asm:1180)
+stick_restore_dlg_handler   equ 11Eh ; -> restore_game_confirm_dlg (stick.asm:1097, fires on timer==0x4000)
+stick_joy_poll_handler      equ 120h ; -> poll_joystick_buttons (stick.asm:190)
+
+; ----------------------------------------------------------------------
+; Graphics driver dispatch slots (CS-relative, far call via [cs:NNNNh])
+; ----------------------------------------------------------------------
+drv_fill_rect           equ     2000h   ; fn  0: fill rectangle
+drv_screen_init_a       equ     2002h   ; fn  1: screen/work-area init A
+drv_fn_2                equ     2004h   ; fn  2: (TBD)
+drv_fn_3                equ     2006h   ; fn  3: (TBD)
+drv_palette_push        equ     2008h   ; fn  4: palette push / refresh
+drv_fn_5                equ     200Ah   ; fn  5: (TBD)
+drv_fn_6                equ     200Ch   ; fn  6: (TBD)
+drv_fn_7                equ     200Eh   ; fn  7: (TBD)
+drv_load_msg_header     equ     2010h   ; fn  8: load/draw message header
+drv_screen_init_b       equ     2012h   ; fn  9: screen init B
+drv_fn_10               equ     2014h   ; fn  A: (TBD)
+drv_frame_commit        equ     2016h   ; fn  B: commit/wait refresh
+drv_anim_step           equ     2018h   ; fn  C: advance animation
+drv_fn_13               equ     201Ah   ; fn  D: (TBD)
+drv_fn_14               equ     201Ch   ; fn  E: (TBD)
+drv_render_char         equ     2022h   ; fn 11: render text char / dialog box
+drv_fn_21               equ     202Ah   ; fn 15: (TBD)
+drv_fn_22               equ     202Ch   ; fn 16: (TBD)
+drv_return_to_caller    equ     2040h   ; fn 20: exit / far return
+drv_ds_copy             equ     2044h   ; fn 22: ds copy (cx bytes from si)
+
+; ----------------------------------------------------------------------
+; Game state globals (DS:0xFFxx) - canonical in zeliard.inc
+; ----------------------------------------------------------------------
+gvar_frame_timer        equ     0FF1Ah  ; frame timer (canonical, ISR-incremented)
 
 ; ----------------------------------------------------------------------
 ; Hardware segments

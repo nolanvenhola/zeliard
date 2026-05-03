@@ -1443,11 +1443,11 @@ scan_char_draw:
 		db	00Ch			; was: db 0EBh, 0D3h
 
 poll_input:
-		call	word ptr cs:[110h]
-		call	word ptr cs:[112h]
-		call	word ptr cs:[114h]
-		call	word ptr cs:[116h]
-		call	word ptr cs:[118h]
+		call	word ptr cs:stick_exit_dlg_handler
+		call	word ptr cs:stick_pause_dlg_handler
+		call	word ptr cs:stick_speed_change_handler
+		call	word ptr cs:stick_joy_cal_handler
+		call	word ptr cs:stick_joy_detect_handler
 		test	byte ptr ds:exit_queued,0FFh
 		jz	check_joy_neutral_entry			; Jump if zero
 		call	check_joy_neutral

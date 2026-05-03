@@ -50,16 +50,19 @@ key_count               equ     0E4h    ; player's collected-key count (canonica
 ; stick.bin dispatch slots installed at game_seg:0x010C-0x0120
 ; (function pointers populated by stick.bin's driver_init_data block)
 ; ----------------------------------------------------------------------
-sar_loader_fn           equ     10Ch    ; SAR chunk loader entry (cs:0x0A84)
-stick_fn_110            equ     110h    ; (TBD — stick.bin proc at cs:0x06AC)
-stick_fn_112            equ     112h    ; (TBD — stick.bin proc at cs:0x0723)
-stick_fn_114            equ     114h    ; (TBD — stick.bin proc at cs:0x07B6)
-stick_fn_116            equ     116h    ; (TBD — stick.bin proc at cs:0x0881)
-stick_fn_118            equ     118h    ; (TBD — stick.bin proc at cs:0x08EF)
-stick_fn_11A            equ     11Ah    ; (TBD — stick.bin proc at cs:0x0918)
-stick_fn_11C            equ     11Ch    ; (TBD — stick.bin proc at cs:0x09D6)
-stick_fn_11E            equ     11Eh    ; (TBD — stick.bin proc at cs:0x092D)
-stick_fn_120            equ     120h    ; (TBD — stick.bin proc at cs:0x089E; used by game.bin chunk init)
+; stick.bin dispatch slots — function pointers to procs in stick.asm.
+; Each slot fires when gvar_timer_counter (FF18) hits a specific value
+; (these are INT 60h game-state subfunction handlers).
+sar_loader_fn               equ 10Ch ; SAR chunk loader entry (stick.asm cs:0x0A84)
+stick_exit_dlg_handler      equ 110h ; -> exit_dlg_handler (timer==0x14)
+stick_pause_dlg_handler     equ 112h ; -> pause-menu handler (timer&8)
+stick_speed_change_handler  equ 114h ; -> speed_change_handler (timer&0x8000)
+stick_joy_cal_handler       equ 116h ; -> joy_cal_handler (timer==0x104)
+stick_joy_detect_handler    equ 118h ; -> joy_detect_handler (timer==0x804)
+stick_subsample_tick_handler equ 11Ah ; -> update_subsample_accumulator (per-tick)
+stick_savefile_scan_handler equ 11Ch ; -> scan_savefile_dir
+stick_restore_dlg_handler   equ 11Eh ; -> restore_game_confirm_dlg (timer==0x4000)
+stick_joy_poll_handler      equ 120h ; -> poll_joystick_buttons
 ; 0x9A..0x9C: 3-byte player_abilities table (canonical in stdply.inc).
 ; 201SELCT draw_abilities iterates the 3 bytes.  Each slot's specific
 ; ability is TBD (see AUDIT_TODO.md).

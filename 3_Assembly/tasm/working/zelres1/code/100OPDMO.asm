@@ -10,14 +10,14 @@ PAGE  59,132
 ;
 ;  Connections:
 ;    Loads:        zelres1 image chunks via res_*/scene_data_* SAR refs
-;                  (sar_loader_fn at cs:[10Ch]):
+;                  (sar_loader_fn at cs:sar_loader_fn):
 ;                    ame.grp ch14, dmaou.grp ch15, hime.grp ch16,
 ;                    hou.grp ch18, isi.grp ch19, maop.grp ch20,
 ;                    nec.grp ch23, oui.grp ch26, oup.grp ch27,
 ;                    sei.grp ch28, ttl1/2/3.grp ch30/31/32,
 ;                    waku.grp ch33, yuu1/2/3/4.grp ch34-37,
 ;                    yuup.grp ch38, zend.msd ch39, zopn.msd ch40
-;    Calls into:   sar_loader_fn (cs:[10Ch] in stick.bin),
+;    Calls into:   sar_loader_fn (cs:sar_loader_fn in stick.bin),
 ;                  gfx_init_fn (CS:0x2042), gfx_draw_fn (CS:0x3002),
 ;                  gfx_update_fn (CS:0x3004), gfx_mode_fn (CS:0x3006),
 ;                  gfx_palette_fn (CS:0x3008) - graphics driver dispatch,
@@ -204,14 +204,14 @@ WAIT_FRAME	MACRO	delay
 		call	timer_wait_loop
 		ENDM
 ; LOAD_DATA src, dst
-;   Load a data chunk via the chunk loader (call cs:[10Ch], AL=2).
+;   Load a data chunk via the chunk loader (call cs:sar_loader_fn, AL=2).
 LOAD_DATA	MACRO	src, dst
 		push	cs
 		pop	es
 		mov	si, src
 		mov	di, dst
 		mov	al, 2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		ENDM
 ; RESET_STACK
 ;   Atomically reset SP to 2000h (interrupts disabled during the write).
@@ -290,7 +290,7 @@ start:
 		mov	si,palette_data_b
 		mov	di,cga_text_seg
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		DECOMPRESS_VGA scene_framebuf
 		call	word ptr cs:gfx_init_fn
 		mov	byte ptr cs:gvar_spacebar_state,0
@@ -375,12 +375,12 @@ scene_after_anim:
 		mov	si,scene_data_d
 		mov	di,aux_buf_seg
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		mov	si,glyph_small
 		mov	es,cs:gvar_game_seg
 		mov	di,offset jashiin_disappear_text+32h	; (' ')
 		mov	al,5
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		mov	bx,1720h
 		mov	cx,2270h
 		call	word ptr cs:gfx_mode_fn
@@ -604,10 +604,10 @@ timer_check_input:
 interrupt_handler_cascade	proc	near
 		push	si
 		push	ax
-		call	word ptr cs:[110h]
-		call	word ptr cs:[112h]
-		call	word ptr cs:[116h]
-		call	word ptr cs:[118h]
+		call	word ptr cs:stick_exit_dlg_handler
+		call	word ptr cs:stick_pause_dlg_handler
+		call	word ptr cs:stick_joy_cal_handler
+		call	word ptr cs:stick_joy_detect_handler
 		pop	ax
 		pop	si
 		retn
@@ -635,7 +635,7 @@ timer_wait_gfx:
 		mov	es,cs:gvar_game_seg
 		mov	di,gfx_plane_b
 		mov	al,5
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		mov	byte ptr ds:gvar_frame_timer,0
 		push	ds
 		mov	ds,cs:gvar_game_seg
@@ -954,7 +954,7 @@ gameplay_input_loop:
 		mov	si,res_yuu3_grp
 		mov	di,ext_seg_d000
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		DECOMPRESS_VGA scene_framebuf
 		mov	bx,0
 		mov	cx,50C8h
@@ -1014,10 +1014,10 @@ story_scene_input_handler	proc	near
 		je	transition_out_to_game			; Jump if equal
 		push	si
 		push	ax
-		call	word ptr cs:[110h]
-		call	word ptr cs:[112h]
-		call	word ptr cs:[116h]
-		call	word ptr cs:[118h]
+		call	word ptr cs:stick_exit_dlg_handler
+		call	word ptr cs:stick_pause_dlg_handler
+		call	word ptr cs:stick_joy_cal_handler
+		call	word ptr cs:stick_joy_detect_handler
 		pop	ax
 		pop	si
 		retn
@@ -1036,7 +1036,7 @@ transition_out_to_game:
 		mov	si,res_maop_grp
 		mov	di,vga_seg
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		mov	ax,0FFFFh
 		jmp	word ptr cs:exit_jmp_target_ptr
 

@@ -12,11 +12,11 @@ PAGE  59,132
 ;  renderer (107-111 GT*.bin) for drawing.
 ;
 ;  Connections:
-;    Loads:        SAR chunks via sar_loader_fn (cs:[10Ch]) for additional
+;    Loads:        SAR chunks via sar_loader_fn (cs:sar_loader_fn) for additional
 ;                  resources (font.grp ch13, magic.grp/sword.grp/itemp.grp
 ;                  pre-loaded by game.bin); various map/data chunks loaded
 ;                  on town entry
-;    Calls into:   sar_loader_fn (cs:[10Ch] in stick.bin),
+;    Calls into:   sar_loader_fn (cs:sar_loader_fn in stick.bin),
 ;                  gfx_fill/clear/draw/render_*/scroll_*/sel_*/copy/blit_fn
 ;                  (CS:0x2000-0x3026 dispatch slots in gd*/gt* drivers),
 ;                  player_jump_fn (CS:0xA004), town_npc_fn_ptr (CS:0x7C47),
@@ -261,7 +261,7 @@ init_load_tiles:
 main_loop:
 		call	player_func_33
 		mov	byte ptr ds:gvar_pose_idx,0
-		test	byte ptr ds:[49h],0FFh
+		test	byte ptr ds:captured_flag,0FFh
 		jz	main_clear_flag			; Jump if zero
 		mov	byte ptr ds:init_complete_flag,0
 
@@ -291,7 +291,7 @@ check_load_chunk:
 		call	player_load_chunk
 		call	player_func_22
 		call	word ptr cs:gfx_draw_fn
-		test	byte ptr ds:[49h],0FFh
+		test	byte ptr ds:captured_flag,0FFh
 		jnz	frame_update			; Jump if not zero
 		push	ds
 		mov	ds,cs:gvar_game_seg
@@ -310,8 +310,8 @@ frame_update:
 		xor	al,al			; Zero register
 		mov	ds:gvar_spacebar_state,al
 		mov	ds:gvar_skip_flag2,al
-		mov	byte ptr ds:[0E4h],al
-		mov	byte ptr ds:[9Fh],al
+		mov	byte ptr ds:key_count,al
+		mov	byte ptr ds:stat_X9F,al
 		mov	bx,204h
 		xor	al,al			; Zero register
 		mov	ch,21h			; '!'
@@ -330,7 +330,7 @@ frame_update:
 		call	word ptr cs:gfx_render_b_fn
 		call	word ptr cs:gfx_render_c_fn
 		call	word ptr cs:gfx_render_d_fn
-		test	byte ptr ds:[9Dh],0FFh
+		test	byte ptr ds:cur_weapon_idx,0FFh
 		jz	draw_icon_a			; Jump if zero
 		mov	bx,0AA1Ch
 		xor	al,al			; Zero register
@@ -339,7 +339,7 @@ frame_update:
 		call	word ptr cs:gfx_draw_icon_a_fn
 
 draw_icon_a:
-		test	byte ptr ds:[93h],0FFh
+		test	byte ptr ds:shield_type,0FFh
 		jz	draw_icon_b			; Jump if zero
 		mov	bx,0C61Ch
 		xor	al,al			; Zero register
@@ -360,7 +360,7 @@ walk_skip_loop2:
 		mov	ds:town_palette_idx,al
 		mov	si,ds:town_tile_ptr
 		call	word ptr cs:gfx_draw_map_fn
-		mov	al,byte ptr ds:[80h]
+		mov	al,byte ptr ds:map_scroll_col
 		xor	ah,ah			; Zero register
 		shl	ax,1			; Shift w/zeros fill
 		shl	ax,1			; Shift w/zeros fill
@@ -381,7 +381,7 @@ walk_skip_loop2:
 		pop	es
 		mov	di,0A000h
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		call	word ptr cs:gfx_blit_fn
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
@@ -468,13 +468,13 @@ pf1_do:
 		add	bl,4
 		xor	bh,bh			; Zero register
 		mov	dx,bx
-		add	dx,word ptr ds:[80h]
+		add	dx,word ptr ds:map_scroll_col
 		add	bl,bl
 		add	bl,bl
 		add	bl,bl
 		add	bl,5
 		add	bx,ds:gvar_tile_ptr
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:player_facing,1
 		jnz	pf1_left_check			; Jump if not zero
 		inc	dx
 		cmp	byte ptr [bx+8],0FDh
@@ -546,13 +546,13 @@ player_func_2		proc	near
 		add	bl,4
 		xor	bh,bh			; Zero register
 		mov	dx,bx
-		add	dx,word ptr ds:[80h]
+		add	dx,word ptr ds:map_scroll_col
 		add	bl,bl
 		add	bl,bl
 		add	bl,bl
 		add	bl,5
 		add	bx,ds:gvar_tile_ptr
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:player_facing,1
 		jnz	pf2_left_path			; Jump if not zero
 		inc	dx
 		inc	dx
@@ -612,7 +612,7 @@ text_start:
 		call	player_func_14
 		mov	byte ptr ds:gvar_volume,1Eh
 		mov	ax,718h
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:player_facing,1
 		jnz	text_pos_right			; Jump if not zero
 		mov	ax,0B18h
 
@@ -1009,7 +1009,7 @@ ctrl_81_dir:
 
 ctrl_83_portrait:
 		or	byte ptr ds:[34h],80h
-		mov	byte ptr ds:[9Ah],0FFh
+		mov	byte ptr ds:player_ability_1,0FFh
 		call	player_func_25
 		jmp	text_end_seq
 
@@ -1043,14 +1043,14 @@ ctrl_89_dialog:
 		jmp	render_set_dirty
 
 ctrl_89_cost_check:
-		mov	dx,word ptr ds:[8Bh]
+		mov	dx,word ptr ds:player_almas
 		sub	dx,9C4h
 		mov	bl,7
 		jnc	ctrl_89_deduct			; Jump if carry=0
 		jmp	render_set_dirty
 
 ctrl_89_deduct:
-		mov	word ptr ds:[8Bh],dx
+		mov	word ptr ds:player_almas,dx
 		call	word ptr cs:gfx_render_c_fn
 		or	byte ptr ds:[34h],40h	; '@'
 		mov	si,0A1h
@@ -1156,7 +1156,7 @@ walk_left_tile_ok:
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr ds:town_town_player_col
 		add	bl,4
-		add	bx,word ptr ds:[80h]
+		add	bx,word ptr ds:map_scroll_col
 		dec	bx
 		call	player_func_12
 		jz	walk_left_move			; Jump if zero
@@ -1165,20 +1165,20 @@ walk_left_tile_ok:
 walk_left_move:
 		inc	byte ptr ds:gvar_pose_idx
 		and	byte ptr ds:gvar_pose_idx,3
-		or	byte ptr ds:[0C2h],1
+		or	byte ptr ds:player_facing,1
 		cmp	byte ptr ds:town_town_player_col,0Bh
 		jb	walk_left_col_clamp			; Jump if below
 		dec	byte ptr ds:town_town_player_col
 		retn
 
 walk_left_col_clamp:
-		test	word ptr ds:[80h],0FFFFh
+		test	word ptr ds:map_scroll_col,0FFFFh
 		jnz	walk_left_scroll			; Jump if not zero
 		dec	byte ptr ds:town_town_player_col
 		retn
 
 walk_left_scroll:
-		dec	word ptr ds:[80h]
+		dec	word ptr ds:map_scroll_col
 		sub	word ptr ds:gvar_tile_ptr,8
 		call	word ptr cs:gfx_scroll_left_fn
 		cmp	byte ptr ds:town_map_side,1
@@ -1206,7 +1206,7 @@ walk_right_tile_ok:
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr ds:town_town_player_col
 		add	bl,4
-		add	bx,word ptr ds:[80h]
+		add	bx,word ptr ds:map_scroll_col
 		inc	bx
 		call	player_func_12
 		jz	walk_right_move			; Jump if zero
@@ -1215,7 +1215,7 @@ walk_right_tile_ok:
 walk_right_move:
 		inc	byte ptr ds:gvar_pose_idx
 		and	byte ptr ds:gvar_pose_idx,3
-		and	byte ptr ds:[0C2h],0FEh
+		and	byte ptr ds:player_facing,0FEh
 		cmp	byte ptr ds:town_town_player_col,10h
 		jae	walk_right_edge			; Jump if above or =
 		inc	byte ptr ds:town_town_player_col
@@ -1224,7 +1224,7 @@ walk_right_move:
 walk_right_edge:
 		mov	ax,ds:town_map_width
 		sub	ax,23h
-		mov	bx,word ptr ds:[80h]
+		mov	bx,word ptr ds:map_scroll_col
 		inc	bx
 		cmp	ax,bx
 		jne	walk_right_scroll			; Jump if not equal
@@ -1232,7 +1232,7 @@ walk_right_edge:
 		retn
 
 walk_right_scroll:
-		inc	word ptr ds:[80h]
+		inc	word ptr ds:map_scroll_col
 		add	word ptr ds:gvar_tile_ptr,8
 		call	word ptr cs:gfx_scroll_right2_fn
 		cmp	byte ptr ds:town_map_side,1
@@ -1304,12 +1304,12 @@ player_func_14		proc	near
 
 frame_dispatch_loop:
 								push	ax
-								call	word ptr cs:[110h]
-								call	word ptr cs:[112h]
-								call	word ptr cs:[114h]
-								call	word ptr cs:[116h]
-								call	word ptr cs:[118h]
-								call	word ptr cs:[11Eh]
+								call	word ptr cs:stick_exit_dlg_handler
+								call	word ptr cs:stick_pause_dlg_handler
+								call	word ptr cs:stick_speed_change_handler
+								call	word ptr cs:stick_joy_cal_handler
+								call	word ptr cs:stick_joy_detect_handler
+								call	word ptr cs:stick_restore_dlg_handler
 								jnc	frame_no_clear			; Jump if carry=0
 								call	clear_buffer
 
@@ -1411,7 +1411,7 @@ player_func_18		proc	near
 		xor	dx,dx			; Zero register
 		mov	dl,byte ptr ds:town_town_player_col
 		add	dl,4
-		add	dx,word ptr ds:[80h]
+		add	dx,word ptr ds:map_scroll_col
 		push	dx
 		mov	si,npc_anim_buf
 		mov	cx,2
@@ -1474,7 +1474,7 @@ scan_npc2_skip:
 										cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
 								jnz	scan_npc2_loop			; Jump if not zero
 		mov	si,6A3Bh
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:player_facing,1
 		jnz	walk_dir_select			; Jump if not zero
 		mov	si,npc_walk_left
 
@@ -1570,7 +1570,7 @@ player_load_chunk		proc	near
 		mov	es,ax
 		mov	di,3300h
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		retn
 
 player_load_chunk		endp
@@ -1702,7 +1702,7 @@ npc_type2_fn:
 		mov	bl,byte ptr ds:town_town_player_col
 		add	bl,4
 		xor	bh,bh			; Zero register
-		add	bx,word ptr ds:[80h]
+		add	bx,word ptr ds:map_scroll_col
 		cmp	bx,dx
 		jae	npc_set_left_chk			; Jump if above or =
 		retn
@@ -1891,7 +1891,7 @@ door_execute:
 		mov	byte ptr ds:town_town_player_col,1Ah
 		mov	ax,ds:town_map_width
 		sub	ax,24h
-		mov	word ptr ds:[80h],ax
+		mov	word ptr ds:map_scroll_col,ax
 		jmp	frame_update
 
 door_alt_check:
@@ -1923,17 +1923,17 @@ door_alt_found:
 door_alt_execute:
 		call	player_func_31
 		mov	byte ptr ds:town_town_player_col,0
-		mov	word ptr ds:[80h],0
+		mov	word ptr ds:map_scroll_col,0
 		jmp	frame_update
 
 player_func_31		proc	near
 		or	al,80h
-		mov	byte ptr ds:[0C4h],al
+		mov	byte ptr ds:player_level,al
 		lodsw				; String [si] to ax
 		push	ax
-		mov	ah,byte ptr ds:[0C4h]
+		mov	ah,byte ptr ds:player_level
 		mov	al,1
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		pop	ax
 		push	ax
 		mov	cl,0Bh
@@ -1943,7 +1943,7 @@ player_func_31		proc	near
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,town_base_4100
@@ -1977,7 +1977,7 @@ player_func_32		proc	near
 		mov	es,cs:gvar_game_seg
 		mov	di,8000h
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		add	word ptr es:[di],8000h
 		add	word ptr es:[di+2],8000h
 		add	word ptr es:[di+4],8000h
@@ -2003,7 +2003,7 @@ player_func_33		proc	near
 		mov	si,6E1Eh
 		mov	di,6000h
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,6000h
@@ -2025,7 +2025,7 @@ player_func_33		endp
 
 door_scan_entry:
 		or	byte ptr ds:gvar_pose_idx,1
-		mov	ax,word ptr ds:[80h]
+		mov	ax,word ptr ds:map_scroll_col
 		mov	bl,byte ptr ds:town_town_player_col
 		xor	bh,bh			; Zero register
 		add	ax,bx
@@ -2080,7 +2080,7 @@ door_type_shop:
 		pop	es
 		mov	di,0A000h
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		call	word ptr cs:gfx_blit_fn
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
@@ -2150,14 +2150,14 @@ door_type_special:
 special_door_load:
 		mov	byte ptr ds:gvar_state_flag,4
 		mov	ah,86h
-		mov	byte ptr ds:[0C4h],ah
+		mov	byte ptr ds:player_level,ah
 		mov	al,1
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		mov	si,sar_chunk_tbl
 		mov	es,cs:gvar_game_seg
 		mov	di,4000h
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 
 special_door_wait:
 								test	byte ptr ds:gvar_enable_all,0FFh
@@ -2166,8 +2166,8 @@ special_door_wait:
 		mov	es,cs:gvar_game_seg
 		mov	di,3000h
 		mov	al,5
-		call	word ptr cs:[10Ch]
-		mov	word ptr ds:[80h],84h
+		call	word ptr cs:sar_loader_fn
+		mov	word ptr ds:map_scroll_col,84h
 		mov	byte ptr ds:town_town_player_col,0Dh
 		call	word ptr cs:gfx_blit_fn
 ;*		jmp	loc_2			;*
@@ -2193,37 +2193,37 @@ pf30_no_scroll:
 		lodsb				; String [si] to al
 		sub	al,0Ah
 		and	al,3Fh			; '?'
-		mov	byte ptr ds:[82h],al
+		mov	byte ptr ds:map_scroll_row,al
 		lodsb				; String [si] to al
 		shr	al,1			; Shift w/zeros fill
 		sbb	al,al
 		mov	byte ptr ds:boss_intro_flag,al
 		lodsb				; String [si] to al
-		mov	byte ptr ds:[0C4h],al
+		mov	byte ptr ds:player_level,al
 		mov	ah,al
 		mov	al,1
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		pop	ax
 		add	ax,0FFF0h
 		jns	dlg_char_fetch			; Jump if not sign
 		add	ax,ds:town_map_width
 
 dlg_char_fetch:
-		mov	word ptr ds:[80h],ax
+		mov	word ptr ds:map_scroll_col,ax
 		mov	data_5,0FFh
 		call	word ptr cs:gfx_blit_fn
 		mov	bx,6002h
 		xor	al,al			; Zero register
-		jmp	word ptr cs:[10Ch]
+		jmp	word ptr cs:sar_loader_fn
 
 player_func_30		endp
 
 player_func_34		proc	near
 		push	si
 		push	di
-		call	word ptr cs:[110h]
-		call	word ptr cs:[112h]
-		call	word ptr cs:[11Eh]
+		call	word ptr cs:stick_exit_dlg_handler
+		call	word ptr cs:stick_pause_dlg_handler
+		call	word ptr cs:stick_restore_dlg_handler
 		jnc	dlg_char_skip			; Jump if carry=0
 		call	clear_buffer
 
@@ -2985,14 +2985,14 @@ shop_sel_anim_loop:
 			                        ;* No entry point to code  (gold_sub_fn: subtract gold cost, called via dispatch)
 
 gold_sub_fn:
-		mov	bl,byte ptr ds:[85h]
+		mov	bl,byte ptr ds:player_gold_hi
 		sub	bl,dl
 		jnc	coll_sub_ok			; Jump if carry=0
 		retn
 
 coll_sub_ok:
 		mov	dl,bl
-		mov	bx,word ptr ds:[86h]
+		mov	bx,word ptr ds:player_gold_lo
 		xchg	bx,ax
 		sub	ax,bx
 		jc	coll_sub_borrow			; Jump if carry Set
@@ -3004,8 +3004,8 @@ coll_sub_borrow:
 			                        ;* No entry point to code  (gold_add_fn: add to gold, called via dispatch)
 
 gold_add_fn:
-		add	word ptr ds:[86h],ax
-		adc	byte ptr ds:[85h],dl
+		add	word ptr ds:player_gold_lo,ax
+		adc	byte ptr ds:player_gold_hi,dl
 		retn
 
 clear_buffer		proc	near
@@ -3018,7 +3018,7 @@ savegame_entry:
 		pop	es
 		mov	si,7688h
 		mov	al,6
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		mov	byte ptr ds:gvar_sel_flag,0
 		call	copy_buffer
 		push	cs
@@ -3056,13 +3056,13 @@ load_append_ext:
 load_open_file:
 		mov	di,0
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		mov	byte ptr cs:gvar_load_flag,0
 		jc	load_not_found			; Jump if carry Set
 		mov	si,767Bh
 		mov	di,0A000h
 		mov	al,3
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		call	word ptr cs:gfx_refresh_fn
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
@@ -3086,7 +3086,7 @@ load_not_found:
 		mov	byte ptr cs:gvar_spacebar_state,0
 
 load_wait_input:
-								call	word ptr cs:[110h]
+								call	word ptr cs:stick_exit_dlg_handler
 								test	byte ptr cs:gvar_spacebar_state,0FFh
 								jz	load_wait_input			; Jump if zero
 		mov	byte ptr cs:gvar_spacebar_state,0
@@ -3106,7 +3106,7 @@ copy_buffer		proc	near
 		mov	ds,ax
 		mov	di,cursor_buf
 		mov	dx,77A8h
-		call	word ptr cs:[11Ch]
+		call	word ptr cs:stick_savefile_scan_handler
 		mov	di,cursor_buf
 		inc	byte ptr [di]
 		jnz	savescr_setup			; Jump if not zero

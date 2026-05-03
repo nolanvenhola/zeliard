@@ -43,7 +43,7 @@ PAGE  59,132
 ;
 ;  Connections:
 ;    Loads:        loads multiple zelres2 cinematic chunks via the SAR
-;                  loader at cs:[10Ch] using the resource ref-table
+;                  loader at cs:sar_loader_fn using the resource ref-table
 ;                  starting at 813Dh:
 ;                    kingprin.grp (king + princess), jashiin.grp,
 ;                    gualand2.grp (Duke Garland + land), CGA palette,
@@ -51,7 +51,7 @@ PAGE  59,132
 ;                    felicia.grp, credits tileset chunks (waku/sei/yuup/
 ;                    seip/himp/etc.) at 819Fh..81D6h, and zend.msd
 ;                    (ending music) at 81E0h.
-;                  Also calls cs:[10Ch] repeatedly to load each scene
+;                  Also calls cs:sar_loader_fn repeatedly to load each scene
 ;                  chunk before rendering.
 ;    Calls into:   graphics-driver dispatch slots populated in this
 ;                  module's CS at +3000h: gfx_draw_fn (3004h),
@@ -92,6 +92,17 @@ credits_skip_flag	equ	0FF21h		; module-local skip flag tested in credits_wait_sk
 gvar_game_seg		equ	0FF2Ch		; game data segment word (zeliard.inc)
 gvar_credits_pos	equ	0FF50h		; credits scroll/row position word
 gvar_volume_b		equ	0FF75h		; audio volume B (zeliard.inc)
+
+; stick.bin / driver dispatch slots
+sar_loader_fn		equ	10Ch		; SAR chunk loader entry
+stick_exit_dlg_handler		equ	110h		; (TBD)
+stick_pause_dlg_handler		equ	112h		; (TBD)
+stick_joy_cal_handler		equ	116h		; (TBD)
+stick_joy_detect_handler		equ	118h		; (TBD)
+drv2_fn_4		equ	3008h		; second dispatch table fn 4
+drv2_fn_8		equ	3010h		; second dispatch table fn 8
+drv2_fn_21		equ	302Ah		; second dispatch table fn 21
+drv2_fn_22		equ	302Ch		; second dispatch table fn 22
 
 ; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses
@@ -212,13 +223,13 @@ SET_ES_2000	MACRO
 		mov	es, ax
 		ENDM
 ; LOAD_CHUNK_AT src, dst
-;   SI=src, DI=dst, AL=2 (fill_buffer), then call SAR loader at cs:[10Ch].
+;   SI=src, DI=dst, AL=2 (fill_buffer), then call SAR loader at cs:sar_loader_fn.
 ;   src = chunk-ref pointer, dst = destination offset in current segment.
 LOAD_CHUNK_AT	MACRO	src, dst
 		mov	si, src
 		mov	di, dst
 		mov	al, 2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		ENDM
 
 seg_a		segment	byte public
@@ -240,7 +251,7 @@ start:
 ;   sti                                  ; FB
 ;   mov word ptr cs:[6630h], 6AA8h       ; 2E C7 06 30 66 A8 6A
 ;   mov ax,6                             ; B8 06 00
-;   cs: call cs:[3008h] (gfx_palette_fn) ; 2E FF 16 08 30
+;   cs: call cs:drv2_fn_4 (gfx_palette_fn) ; 2E FF 16 08 30
 ;   push cs                              ; 0E
 ;   pop es                               ; 07
 ;   mov si,8152h                         ; BE 52 81
@@ -456,10 +467,10 @@ timer_wait_loop		endp
 gfx_driver_tick_full		proc	near
 		push	si
 		push	ax
-		call	word ptr cs:[110h]
-		call	word ptr cs:[112h]
-		call	word ptr cs:[116h]
-		call	word ptr cs:[118h]
+		call	word ptr cs:stick_exit_dlg_handler
+		call	word ptr cs:stick_pause_dlg_handler
+		call	word ptr cs:stick_joy_cal_handler
+		call	word ptr cs:stick_joy_detect_handler
 		pop	ax
 		pop	si
 		retn
@@ -901,7 +912,7 @@ credits_scene_start:
 		mov	es,cs:gvar_game_seg
 		mov	di,3000h
 		mov	al,5
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:sar_loader_fn
 		SET_ES_2000
 		LOAD_CHUNK_AT 819Fh, 0
 		LOAD_CHUNK_AT 81AAh, 3400h
@@ -1153,7 +1164,7 @@ ending_credits_dispatch:
 		db	0BBh, 14h, 21h,0B9h, 72h, 2Fh	; +0x066
 		db	 2Eh,0FFh, 26h, 04h, 30h	; +0x06C
 ; credit_scene_2_impl @ CS:0895:
-;   dst=4000h src=5E00h, after rle_blit jmps cs:[302Ah]
+;   dst=4000h src=5E00h, after rle_blit jmps cs:drv2_fn_21
 		db	 1Eh	; +0x071
 		db	 8Ch,0C8h, 05h, 00h, 20h, 8Eh	; +0x072
 		db	0D8h, 2Eh, 8Eh, 06h, 2Ch,0FFh	; +0x078
@@ -1162,7 +1173,7 @@ ending_credits_dispatch:
 		db	 06h, 2Ch,0FFh,0BFh, 00h, 40h	; +0x08A
 		db	 2Eh,0FFh, 26h, 2Ah, 30h	; +0x090
 ; credit_scene_3_impl @ CS:08B9:
-;   mov es,cs:gvar_game_seg; mov di,4000h; jmp cs:[302Ch]
+;   mov es,cs:gvar_game_seg; mov di,4000h; jmp cs:drv2_fn_22
 		db	 2Eh	; +0x095
 		db	 8Eh, 06h, 2Ch,0FFh,0BFh, 00h	; +0x096
 		db	 40h, 2Eh,0FFh, 26h, 2Ch, 30h	; +0x09C
@@ -1193,7 +1204,7 @@ ending_credits_dispatch:
 		db	0BDh,0E9h, 20h, 01h	; +0x10E
 ; credit_scene_6_impl @ CS:0936:
 ;   mov es,cs:gvar_game_seg; mov di,4000h; mov bx,0; mov cx,5086h;
-;   jmp cs:[3010h] (=gfx_blit_fn)
+;   jmp cs:drv2_fn_8 (=gfx_blit_fn)
 		db	 2Eh, 8Eh	; +0x112
 		db	 06h, 2Ch,0FFh,0BFh, 00h, 40h	; +0x114
 		db	0BBh, 00h, 00h,0B9h, 86h, 50h	; +0x11A
@@ -1214,8 +1225,8 @@ credits_wait_tick		endp
 credits_driver_tick		proc	near
 		push	si
 		push	ax
-		call	word ptr cs:[110h]
-		call	word ptr cs:[112h]
+		call	word ptr cs:stick_exit_dlg_handler
+		call	word ptr cs:stick_pause_dlg_handler
 		pop	ax
 		pop	si
 		retn
@@ -2172,12 +2183,12 @@ credits_glyph_width_tbl:
 ; Each entry is [archive_index, chunk_index, 'filename.grp', 0]. These
 ; are the per-scene graphics loaded into VGA/aux buffers before the
 ; credit_scene_N_impl handler runs for each credit page.
-; Loaded from offset 819Fh..81DBh range via cs:[10Ch] (chunk loader).
+; Loaded from offset 819Fh..81DBh range via cs:sar_loader_fn (chunk loader).
 ; =====================================================================
 
 credits_chunk_refs:
 ; Each record: [chunk_high, 'filename', 00h, 00h]; filename is the
-; zelres2 chunk name. Loaded via cs:[10Ch] chunk loader at runtime
+; zelres2 chunk name. Loaded via cs:sar_loader_fn chunk loader at runtime
 ; with SI = CS-relative offset of the record.
 ref_waku_grp	db	'!waku.grp'			; waku.grp (corridor frame)
 		db	 00h, 00h	; +0x009
