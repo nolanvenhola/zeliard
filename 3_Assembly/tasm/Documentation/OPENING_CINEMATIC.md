@@ -460,6 +460,33 @@ Promotions:
 
 ---
 
+## DOSBox runtime findings 2026-05-02
+
+Live runtime testing with breakpoints in DOSBox revealed several
+mistakes in the static-trace conclusions:
+
+1. **`transition_out_to_game` is never reached during normal play.**
+   BPs at `game_seg:6A45` (transition_out_to_game entry) and
+   `game_seg:6A09` (the `jmp short transition_out_to_game` at the
+   natural end of post_title_story_scenes) NEVER fire, even after
+   pressing ENTER/SPACE through the entire cinematic.  Yet the
+   cinematic completes and gameplay starts.  So opdemo exits via
+   a code path NOT through `transition_out_to_game` — still TBD.
+
+2. **`gvar_skip_input` is misnamed.**  It's actually the
+   **spacebar/joystick-button-A latch** (only set on those keys'
+   release), NOT a generic skip flag.  Renamed across the
+   codebase to `gvar_spacebar_state` (bit-perfect rebuild verified
+   on 8 affected binaries).  ENTER does NOT set this flag — ENTER
+   sets `gvar_enter_key` at FF29 instead (per the keyboard ISR's
+   scancode→ASCII table at stick.asm:664+).
+
+3. **MCP DOSBox address book has stale segments.**  The pre-loaded
+   `0AC6:*` addresses in the MCP server's address book were
+   correct in the run we tested, but earlier runs gave `0BFC` —
+   different launches give different game_seg allocations.
+   Always read CS first before setting BPs.
+
 ## Open runtime questions — RESOLVED 2026-05-02
 
 1. ~~**What's the actual value at `cs:exit_jmp_target_ptr` at runtime?**~~

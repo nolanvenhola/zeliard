@@ -69,7 +69,7 @@ include  zr2com.inc
 gvar_timer_ff08	equ	0FF08h			;* was gvar_frame_timer
 gvar_timer_counter	equ	0FF18h			;*
 gvar_frame_timer	equ	0FF1Ah			;*
-gvar_skip_input	equ	0FF1Dh			;*
+gvar_spacebar_state	equ	0FF1Dh			;*
 gvar_state_b	equ	0FF1Eh			;*
 gvar_state_FF24	equ	0FF24h			;*
 gvar_game_seg	equ	0FF2Ch			;*
@@ -800,7 +800,7 @@ check_loading:
 
 clear_skip_state:
 		xor	al,al			; Zero register
-		mov	ds:gvar_skip_input,al
+		mov	ds:gvar_spacebar_state,al
 		mov	ds:gvar_state_b,al
 		mov	byte ptr ds:gvar_frame_timer,0
 		mov	byte ptr ds:level_load_flag,0
@@ -858,7 +858,7 @@ music_active_branch:
 music_end_cleanup:
 		and	byte ptr ds:[0C2h],0FDh
 		mov	byte ptr ds:gvar_music_flag_b,0
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_state_b,0
 		mov	byte ptr ds:invul_timer,0
 		mov	byte ptr ds:pending_invul,0
@@ -1019,7 +1019,7 @@ check_music_b:
 		and	byte ptr ds:[0C2h],0FCh
 		or	byte ptr ds:[0C2h],1
 		mov	byte ptr ds:gvar_combat_ff3D,7Fh
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 
 double_func15:
 		call	game_func_15
@@ -1031,7 +1031,7 @@ check_music_b2:
 		jz	double_process			; Jump if zero
 		and	byte ptr ds:[0C2h],0FCh
 		mov	byte ptr ds:gvar_combat_ff3D,7Fh
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 
 double_process:
 		call	game_process_loop
@@ -2519,7 +2519,7 @@ is_entity_id_lax		endp
 ;   INT 61h returns        AH=button-mask, AL=joystick direction-bits
 ;   ds:gvar_combat_ff3D   combat-active flag (must be set for attack path)
 ;   ds:gvar_debug_val     debug bypass (must be 0 for attack path)
-;   ds:gvar_skip_input    "input is muted right now" gate
+;   ds:gvar_spacebar_state    "input is muted right now" gate
 ;   ds:gvar_joystick_flag, gvar_palette_flag, gvar_save_flag_1
 ;
 ; Outputs (the FSM):
@@ -2572,7 +2572,7 @@ set_vol_flag:
 
 check_state_loop:
 		mov	byte ptr ds:gvar_combat_audio_latch,0
-		test	byte ptr ds:gvar_skip_input,0FFh
+		test	byte ptr ds:gvar_spacebar_state,0FFh
 		jnz	check_skip_input			; Jump if not zero
 		retn
 
@@ -2640,7 +2640,7 @@ set_vol3:
 		mov	byte ptr ds:gvar_volume_b,3
 
 clear_skip_joy:
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_state_b,0
 		mov	byte ptr ds:gvar_joystick_flag,0FFh
 		retn
@@ -3069,7 +3069,7 @@ combat_palette_update:
 		pop	ds
 		mov	byte ptr ds:combat_active,0FFh
 		call	fill_buffer
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_state_b,0
 		mov	byte ptr ds:enemy_scroll_flag,0
 		mov	byte ptr ds:player_scroll_flag,0
@@ -5845,7 +5845,7 @@ palette_check:
 		retn
 
 state_b_active:
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_state_b,0
 		test	byte ptr ds:gvar_joystick_flag,0FFh
 		jz	check_flag3e			; Jump if zero

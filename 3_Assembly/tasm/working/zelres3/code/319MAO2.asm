@@ -78,8 +78,8 @@ mao2_drv_misc_cb	equ	302Fh			; driver callback
 ; ----------------------------------------------------------------------
 ; Section 3: Game-segment globals (gvar_* not in zr3com.inc)
 ; ----------------------------------------------------------------------
-; FF21 had been speculatively aliased to gvar_skip_input in an earlier pass,
-; but the canonical gvar_skip_input lives at 0FF1Dh (zeliard.inc / stick.asm
+; FF21 had been speculatively aliased to gvar_spacebar_state in an earlier pass,
+; but the canonical gvar_spacebar_state lives at 0FF1Dh (zeliard.inc / stick.asm
 ; / 100OPDMO).  No other chunk reads/writes 0FF21h, so the byte's role here
 ; is local-state only — keep the placeholder.
 mao2_gvar_state_a	equ	0FF21h			; module-local state byte A (no shared canonical)

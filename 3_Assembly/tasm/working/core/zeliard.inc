@@ -83,7 +83,7 @@ gvar_game_phase         equ     0FF15h  ; Game phase/state
 gvar_skip_flag          equ     0FF16h  ; Skip flag
 gvar_timer_flag         equ     0FF17h  ; Timer flag
 gvar_timer_counter      equ     0FF18h  ; Timer counter
-gvar_skip_input         equ     0FF1Dh  ; Input skip flag
+gvar_spacebar_state         equ     0FF1Dh  ; Input skip flag
 gvar_state_a            equ     0FF1Dh  ; Game state A (alias)
 gvar_state_b            equ     0FF1Eh  ; Game state B
 gvar_state_c            equ     0FF1Fh  ; Game state C

@@ -156,7 +156,7 @@ handle_pause_key		proc	near
 		test	byte ptr cs:gvar_skip_flag,1
 		jz	hpk_pause_done			; Jump if zero
 		mov	byte ptr cs:pause_key_state,0
-		mov	byte ptr cs:gvar_skip_input,0FFh
+		mov	byte ptr cs:gvar_spacebar_state,0FFh
 		jmp	short hpk_pause_done
 
 hpk_pause_was_set:
@@ -212,7 +212,7 @@ decode_joystick_bits	proc	near
 
 pjb_btna_released:
 		mov	byte ptr cs:joy_btna_state,0
-		mov	byte ptr cs:gvar_skip_input,0FFh
+		mov	byte ptr cs:gvar_spacebar_state,0FFh
 		retn
 
 pjb_btna_off:
@@ -843,7 +843,7 @@ exit_wait_input:
 		mov	ax,3
 		int	60h			; ??INT Non-standard interrupt
 		mov	byte ptr cs:gvar_timer_flag,0
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_state_b,0
 		retn
 
@@ -891,7 +891,7 @@ pause_menu_loop:
 								call	draw_screen_element
 
 pause_no_redraw:
-								test	byte ptr cs:gvar_skip_input,0FFh
+								test	byte ptr cs:gvar_spacebar_state,0FFh
 								jnz	pause_done			; Jump if not zero
 								test	byte ptr cs:gvar_state_b,0FFh
 								jnz	pause_done			; Jump if not zero
@@ -899,7 +899,7 @@ pause_no_redraw:
 
 pause_done:
 		call	draw_screen_element
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_state_b,0
 		xor	cl,cl			; Zero register
 		mov	ax,3
@@ -960,7 +960,7 @@ spd_wait_key:
 		mov	byte ptr cs:gvar_volume_b,1
 		call	handle_pause_key5
 		mov	byte ptr cs:gvar_timer_flag,0
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_state_b,0
 
 spd_poll_input:
@@ -970,14 +970,14 @@ spd_poll_input:
 												;  special char i/o, dl=subfunc
 								jnz	spd_done			; Jump if not zero
 								mov	al,cs:gvar_timer_flag
-								or	al,cs:gvar_skip_input
+								or	al,cs:gvar_spacebar_state
 								or	al,cs:gvar_state_b
 								jz	spd_poll_input			; Jump if zero
 
 spd_done:
 		call	handle_pause_key4
 		mov	byte ptr cs:gvar_timer_flag,0
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_state_b,0
 		retn
 		db	'Speed change', 0Dh, 'Select 0-9:'
@@ -1121,7 +1121,7 @@ sav_wait_input:
 		pushf				; Push flags
 		call	handle_pause_key4
 		mov	byte ptr cs:gvar_timer_flag,0
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_state_b,0
 		xor	cl,cl			; Zero register
 		mov	ax,3
@@ -1510,7 +1510,7 @@ fio_file_notfound:
 		call	word ptr cs:gfx_fn_clear
 		call	handle_pause_key5
 		push	dx
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 
 fio_disk_prompt:
 								mov	dl,0FFh
@@ -1518,7 +1518,7 @@ fio_disk_prompt:
 								int	21h			; DOS Services  ah=function 06h
 												;  special char i/o, dl=subfunc
 								jnz	fio_disk_accepted			; Jump if not zero
-								test	byte ptr cs:gvar_skip_input,0FFh
+								test	byte ptr cs:gvar_spacebar_state,0FFh
 								jz	fio_disk_prompt			; Jump if zero
 
 fio_disk_accepted:
@@ -1550,7 +1550,7 @@ fio_disk_declined:
 		retn
 
 fio_file_opened:
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		test	byte ptr cs:fio_slot_flag,0FFh
 		jnz	fio_seek_slot			; Jump if not zero
 		retn

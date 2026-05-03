@@ -65,7 +65,7 @@ gvar_game_phase		equ	0FF15h		; Game phase/state
 gvar_skip_flag		equ	0FF16h		; Skip flag
 gvar_timer_flag		equ	0FF17h		; Timer flag
 gvar_timer_counter	equ	0FF18h		; Timer counter
-gvar_skip_input		equ	0FF1Dh		; Input skip flag
+gvar_spacebar_state		equ	0FF1Dh		; Input skip flag
 gvar_state_a		equ	0FF1Dh		; Game state variable A
 gvar_state_b		equ	0FF1Eh		; Game state variable B
 gvar_state_c		equ	0FF1Fh		; Game state variable C
@@ -248,7 +248,7 @@ skip_music_init:
 		mov	byte ptr es:gvar_skip_flag,0
 		mov	byte ptr es:gvar_timer_flag,0
 		mov	word ptr es:gvar_timer_counter,0
-		mov	byte ptr es:gvar_skip_input,0
+		mov	byte ptr es:gvar_spacebar_state,0
 		mov	byte ptr es:gvar_state_b,0
 		mov	word ptr es:gvar_state_c,0
 		mov	byte ptr es:gvar_enable_all,0FFh

@@ -111,7 +111,7 @@ current_magic_spell     equ     9Dh     ; magic spell id (init 0 = no spell)
 cur_magic_idx           equ     9Eh     ; currently selected magic index (canonical, from 201SELCT)
 stat_X9E                equ     9Eh     ; alias — deprecated placeholder
 ; 0x9F: VESTIGIAL.  1 write site (106TOWN frame_update prologue zero-
-; clears it every frame, alongside gvar_skip_input/skip_flag2/cur_magic_idx)
+; clears it every frame, alongside gvar_spacebar_state/skip_flag2/cur_magic_idx)
 ; and 0 reads anywhere.  Runtime probe (functest/.../test_stdply_stat_X9F.py)
 ; confirms no reader.  Kept declared to preserve byte position.
 stat_X9F                equ     9Fh     ; VESTIGIAL — per-frame zero-clear, no reader observed

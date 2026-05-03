@@ -24,7 +24,7 @@ PAGE  59,132
 ;    Called by:    game.bin LOAD_CHUNK chunk_ref_town (loaded_code_b at
 ;                  game_seg:0x6000 entry)
 ;    Reads/writes: gvar_fn_tbl (FF00), gvar_joy_state (FF18),
-;                  gvar_frame_timer (FF1A), gvar_skip_input (FF1D),
+;                  gvar_frame_timer (FF1A), gvar_spacebar_state (FF1D),
 ;                  gvar_enable_all (FF26), gvar_key_state (FF29),
 ;                  gvar_tile_ptr (FF2A), gvar_game_seg (FF2C),
 ;                  gvar_anim_frames (FF33), gvar_dialog_ptr (FF4C),
@@ -44,7 +44,7 @@ include  zr1com.inc
 gvar_fn_tbl	equ	0FF00h			;*
 gvar_joy_state	equ	0FF18h			;*
 gvar_frame_timer	equ	0FF1Ah			;*
-gvar_skip_input	equ	0FF1Dh			;*
+gvar_spacebar_state	equ	0FF1Dh			;*
 gvar_skip_flag2	equ	0FF1Eh			;*
 gvar_enable_all	equ	0FF26h			;*
 gvar_key_state	equ	0FF29h			;*
@@ -307,7 +307,7 @@ frame_update:
 		pop	ds
 		call	player_func_25
 		xor	al,al			; Zero register
-		mov	ds:gvar_skip_input,al
+		mov	ds:gvar_spacebar_state,al
 		mov	ds:gvar_skip_flag2,al
 		mov	byte ptr ds:[0E4h],al
 		mov	byte ptr ds:[9Fh],al
@@ -457,12 +457,12 @@ dispatch_right:
 townb_main	endp
 
 player_func_1		proc	near
-		test	byte ptr ds:gvar_skip_input,0FFh
+		test	byte ptr ds:gvar_spacebar_state,0FFh
 		jnz	pf1_do			; Jump if not zero
 		retn
 
 pf1_do:
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	bl,byte ptr ds:town_player_col
 		add	bl,4
 		xor	bh,bh			; Zero register
@@ -620,7 +620,7 @@ text_pos_right:
 		xor	di,di			; Zero register
 		mov	cx,1658h
 		call	word ptr cs:gfx_text_layout_a_fn
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		pop	bx
 		mov	ax,ds:town_char_idx
 		call	player_multiply
@@ -629,10 +629,10 @@ text_pos_right:
 		mov	cx,1658h
 		call	word ptr cs:gfx_text_layout_b_fn
 		pop	si
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		fill_cursor_buf
 		mov	byte ptr ds:text_done_flag,0
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		retn
 
@@ -825,7 +825,7 @@ render_page_scroll:
 		push	bx
 		mov	ax,27Ch
 		call	word ptr cs:gfx_draw_char_fn
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		pop	bx
 		pop	cx
@@ -844,7 +844,7 @@ render_page_loop:
 								retn
 
 render_page_done:
-								test	byte ptr ds:gvar_skip_input,0FFh
+								test	byte ptr ds:gvar_spacebar_state,0FFh
 								jz	render_page_loop			; Jump if zero
 		shr	bx,1			; Shift w/zeros fill
 		shr	bx,1			; Shift w/zeros fill
@@ -853,7 +853,7 @@ render_page_done:
 		xor	al,al			; Zero register
 		mov	cx,208h
 		call	word ptr cs:gfx_fill_fn
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:text_row_flag,0
 		mov	byte ptr ds:gvar_volume,1Dh
 		jmp	render_char_loop
@@ -863,13 +863,13 @@ player_func_5		endp
 player_func_6		proc	near
 
 text_end_seq:
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 
 text_end_loop:
 								call	math_calc
 								call	player_multiply_2
-								test	byte ptr ds:gvar_skip_input,0FFh
+								test	byte ptr ds:gvar_spacebar_state,0FFh
 								jz	text_end_wait_a			; Jump if zero
 								retn
 
@@ -885,7 +885,7 @@ text_end_wait_b:
 text_end_loop2:
 								call	math_calc
 								call	player_multiply_2
-								test	byte ptr ds:gvar_skip_input,0FFh
+								test	byte ptr ds:gvar_spacebar_state,0FFh
 								jz	text_end_wait2_a			; Jump if zero
 								retn
 
@@ -1337,7 +1337,7 @@ fillbuf_active:
 		call	word ptr cs:gfx_draw_fn
 		fill_cursor_buf
 		call	player_func_14
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		retn
 
@@ -2097,7 +2097,7 @@ door_type_shop:
 		call	player_func_25
 		mov	byte ptr ds:gvar_frame_timer,28h	; '('
 		call	player_func_14
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		mov	byte ptr ds:gvar_pose_idx,1
 		push	ds
@@ -2441,15 +2441,15 @@ player_func_37		proc	near
 player_func_37		endp
 
 player_func_38		proc	near
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 
 dlg_sel_wait_loop:
 								call	player_func_34
-								mov	al,ds:gvar_skip_input
+								mov	al,ds:gvar_spacebar_state
 								or	al,ds:gvar_skip_flag2
 								jz	dlg_sel_wait_loop			; Jump if zero
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		mov	byte ptr ds:gvar_volume,1Dh
 		retn
@@ -2675,7 +2675,7 @@ player_func_42		proc	near
 player_func_42		endp
 
 player_func_43		proc	near
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		push	bx
 		call	player_multiply_3
@@ -2690,7 +2690,7 @@ player_func_43		proc	near
 		retn
 
 sel_check_skip:
-		test	byte ptr ds:gvar_skip_input,0FFh
+		test	byte ptr ds:gvar_spacebar_state,0FFh
 		jz	sel_poll_joy			; Jump if zero
 		clc				; Clear carry flag
 		mov	byte ptr ds:gvar_volume,1Fh
@@ -3082,13 +3082,13 @@ load_not_found:
 		mov	bx,80h
 		mov	cl,4Ch			; 'L'
 		call	word ptr cs:gfx_draw_str_fn
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 
 load_wait_input:
 								call	word ptr cs:[110h]
-								test	byte ptr cs:gvar_skip_input,0FFh
+								test	byte ptr cs:gvar_spacebar_state,0FFh
 								jz	load_wait_input			; Jump if zero
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		jmp	savegame_entry
 
 clear_buffer		endp
@@ -3311,7 +3311,7 @@ player_copy_buf		proc	near
 		call	player_func_51
 		mov	byte ptr ds:gvar_save_ctrl,0FFh
 		mov	byte ptr ds:gvar_key_state,0
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		mov	byte ptr ds:gvar_sel_row,0
 		mov	byte ptr ds:save_del_flag,0
@@ -3362,7 +3362,7 @@ nameinput_done:
 		retn
 
 nameinput_no_confirm:
-		test	byte ptr ds:gvar_skip_input,0FFh
+		test	byte ptr ds:gvar_spacebar_state,0FFh
 		jz	nameinput_key_check			; Jump if zero
 		mov	byte ptr ds:gvar_volume,1
 		push	si
@@ -3396,7 +3396,7 @@ nameinput_copy_done:
 		mov	ds:save_name_maxlen,al
 		pop	si
 		call	player_func_51
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	ax,ds:save_cursor_x
 		shr	ax,1			; Shift w/zeros fill
 		shr	ax,1			; Shift w/zeros fill

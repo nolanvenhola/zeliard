@@ -24,7 +24,7 @@ PAGE  59,132
 ;                  gfx_render_a..d via cs:[110h/112h/116h/118h]
 ;    Called by:    game.bin LOAD_CHUNK chunk_ref_opdemo (loaded_code_b at
 ;                  CS:0x6000 entry); also re-entered for ending sequence
-;    Reads/writes: gvar_frame_timer (FF1A), gvar_skip_input (FF1D),
+;    Reads/writes: gvar_frame_timer (FF1A), gvar_spacebar_state (FF1D),
 ;                  gvar_enable_all (FF26), gvar_key_state (FF29),
 ;                  gvar_game_seg (FF2C), gvar_volume_b (FF75)
 ;                  - all zeliad-owned globals
@@ -40,7 +40,7 @@ include  zr1com.inc
 ; Section 3: Game-segment globals (gvar_*) not in shared inc
 ; ----------------------------------------------------------------------
 gvar_frame_timer	equ	0FF1Ah		; frame timer (canonical, ISR-incremented)
-gvar_skip_input	equ	0FF1Dh		; input skip flag (zeliard.inc: gvar_skip_input)
+gvar_spacebar_state	equ	0FF1Dh		; input skip flag (zeliard.inc: gvar_spacebar_state)
 gvar_enable_all	equ	0FF26h		; enable all flag (zeliard.inc: gvar_enable_all)
 gvar_key_state	equ	0FF29h		; key state (0xFF29)
 gvar_game_seg	equ	0FF2Ch		; game data segment (zeliard.inc: gvar_game_seg)
@@ -261,7 +261,7 @@ start:
 		add	ah,[bx+si-6]
 		mov	sp,2000h
 		sti				; Enable interrupts
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_key_state,0
 		push	cs
 		pop	ds
@@ -291,7 +291,7 @@ start:
 		call	word ptr cs:[10Ch]
 		DECOMPRESS_VGA scene_framebuf
 		call	word ptr cs:gfx_init_fn
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_key_state,0
 		mov	ax,1
 		call	word ptr cs:gfx_palette_fn
@@ -589,7 +589,7 @@ animate_scanline		endp
 timer_wait_loop		proc	near
 
 timer_check_input:
-							test	byte ptr cs:gvar_skip_input,0FFh
+							test	byte ptr cs:gvar_spacebar_state,0FFh
 							jnz	timer_exit_to_game			; Jump if not zero
 							cmp	byte ptr cs:gvar_key_state,ENTER_KEY
 							je	timer_exit_to_game			; Jump if equal
@@ -622,7 +622,7 @@ timer_exit_to_game:
 timer_wait_gfx:
 							test	byte ptr ds:gvar_enable_all,0FFh
 							jz	timer_wait_gfx			; Jump if zero
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_key_state,0
 		jmp	short $+2		; delay for I/O
 		RESET_STACK
@@ -641,7 +641,7 @@ timer_wait_gfx:
 		xor	ax,ax			; Zero register
 		int	60h			; ??INT Non-standard interrupt
 		pop	ds
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_key_state,0
 		mov	ax,1
 		call	word ptr cs:gfx_palette_fn
@@ -651,7 +651,7 @@ timer_wait_gfx:
 scene_transition_wait	proc	near
 
 trans_wait_timer:
-							test	byte ptr cs:gvar_skip_input,0FFh
+							test	byte ptr cs:gvar_spacebar_state,0FFh
 							jnz	trans_exit			; Jump if not zero
 							cmp	byte ptr cs:gvar_key_state,ENTER_KEY
 							je	trans_exit			; Jump if equal
@@ -670,7 +670,7 @@ trans_exit:
 trans_wait_gfx:
 							test	byte ptr ds:gvar_enable_all,0FFh
 							jz	trans_wait_gfx			; Jump if zero
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_key_state,0
 		jmp	post_title_story_scenes
 
@@ -724,7 +724,7 @@ credits_scroll_display	endp
 
 post_title_story_scenes:
 		RESET_STACK
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_key_state,0
 		mov	word ptr cs:script_pc,79C6h
 		mov	ax,5
@@ -1006,7 +1006,7 @@ gameplay_wait_elapsed:
 story_scene_timer_loop	endp
 
 story_scene_input_handler	proc	near
-		test	byte ptr cs:gvar_skip_input,0FFh
+		test	byte ptr cs:gvar_spacebar_state,0FFh
 		jnz	transition_out_to_game			; Jump if not zero
 		cmp	byte ptr cs:gvar_key_state,ENTER_KEY
 		je	transition_out_to_game			; Jump if equal
@@ -1026,7 +1026,7 @@ transition_out_to_game:
 		mov	bx,0
 		mov	cx,50C8h
 		call	word ptr cs:gfx_mode_fn
-		mov	byte ptr cs:gvar_skip_input,0
+		mov	byte ptr cs:gvar_spacebar_state,0
 		mov	byte ptr cs:gvar_key_state,0
 		mov	ax,cs
 		mov	es,ax

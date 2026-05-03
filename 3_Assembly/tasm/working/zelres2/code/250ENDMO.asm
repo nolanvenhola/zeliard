@@ -84,7 +84,7 @@ include  srmacros.inc
 ; Section 3: Game-segment globals (gvar_*) not in zr2com.inc
 ; ----------------------------------------------------------------------
 gvar_frame_timer	equ	0FF1Ah		; frame timer (canonical)
-gvar_skip_input		equ	0FF21h		; input skip flag (zeliard.inc)
+gvar_spacebar_state		equ	0FF21h		; input skip flag (zeliard.inc)
 gvar_game_seg		equ	0FF2Ch		; game data segment word (zeliard.inc)
 gvar_credits_pos	equ	0FF50h		; credits scroll/row position word
 gvar_volume_b		equ	0FF75h		; audio volume B (zeliard.inc)
@@ -1001,9 +1001,9 @@ credits_after_newline:
 
 credits_wait_skip:
 				call	credits_driver_tick
-				test	byte ptr ds:gvar_skip_input,0FFh
+				test	byte ptr ds:gvar_spacebar_state,0FFh
 				jz	credits_wait_skip			; Jump if zero
-		mov	byte ptr ds:gvar_skip_input,0
+		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	word ptr ds:gvar_credits_pos,0
 		jmp	credits_fetch_byte
 
