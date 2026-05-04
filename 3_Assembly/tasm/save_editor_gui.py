@@ -21,6 +21,126 @@ import save_edit
 
 
 # ---------------------------------------------------------------------------
+# Enumerated value choices — render as comboboxes instead of raw text entries.
+# Sources: playthrough.txt §5.2.1 (swords/shields), §5.3.1 (items),
+#          §6.1 (spells), §2.1 (towns).
+# ---------------------------------------------------------------------------
+
+ENUMS: dict[str, list[tuple[int, str]]] = {
+    'equipped_weapon': [
+        (0, 'none / fist'),
+        (1, "Training Sword (starter)"),
+        (2, "Wise Man's Sword"),
+        (3, 'Spirit Sword'),
+        (4, "Knight's Sword"),
+        (5, 'Illumination Sword'),
+        (6, 'Enchantment Sword'),
+        (7, 'Sword of the Fairy Flame (secret)'),
+    ],
+    'cur_weapon_idx': [
+        (0, 'none / fist'),
+        (1, 'Training'),
+        (2, "Wise Man's"),
+        (3, 'Spirit'),
+        (4, "Knight's"),
+        (5, 'Illumination'),
+        (6, 'Enchantment'),
+        (7, 'Fairy Flame (secret)'),
+    ],
+    'shield_type': [
+        (0, 'none'),
+        (1, 'Clay Shield'),
+        (2, "Wise Man's Shield"),
+        (3, 'Stone Shield'),
+        (4, 'Honor Shield'),
+        (5, 'Light Shield'),
+        (6, 'Titanium Shield'),
+    ],
+    'current_area_id': [
+        (0x00, 'in cavern (high bit clear)'),
+        (0x80, 'sentinel (init value)'),
+        (0x81, '1 — Muralla Town'),
+        (0x82, '2 — Satono Town'),
+        (0x83, '3 — Bosque Village'),
+        (0x84, '4 — Helada Town'),
+        (0x85, '5 — Tumba Town'),
+        (0x86, '6 — Dorado Town'),
+        (0x87, '7 — Llama Town'),
+        (0x88, '8 — Pureza Town'),
+        (0x89, '9 — Esco Village (secret)'),
+    ],
+    'cur_magic_idx': [
+        (0, 'none'),
+        (1, 'spell 1'),
+        (2, 'spell 2'),
+        (3, 'spell 3'),
+        (4, 'spell 4'),
+        (5, 'spell 5'),
+        (6, 'spell 6'),
+        (7, 'spell 7'),
+    ],
+    'player_tileset': [
+        (0, '0 — town'),
+        (1, '1 — generic dungeon'),
+        (2, '2 — forest'),
+        (3, '3 — other'),
+    ],
+}
+
+SPELL_CHOICES = [
+    (0, 'empty'),
+    (1, 'Espada (sword throw)'),
+    (2, 'Saeta (arrows)'),
+    (3, 'Fuego (fire)'),
+    (4, 'Lanzar (flame jet)'),
+    (5, 'Rascar (falling rocks)'),
+    (6, 'Agua (water)'),
+    (7, 'Guerra (lightning ult)'),
+]
+
+ITEM_CHOICES = [
+    (0, 'empty'),
+    (1, "Ken'ko Potion"),
+    (2, 'Juu-en Fruit'),
+    (3, 'Elixir of Kashi'),
+    (4, 'Chikara Powder'),
+    (5, 'Magia Stone'),
+    (6, 'Holy Water of Acero'),
+    (7, 'Sabre Oil'),
+    (8, 'Kioku Feather'),
+]
+
+
+def enum_for(name: str):
+    """Return [(value, label), ...] for a field name, or None if not enum."""
+    if name in ENUMS:
+        return ENUMS[name]
+    if name.startswith('spell_slot_'):
+        return SPELL_CHOICES
+    if name.startswith('item_slot_'):
+        return ITEM_CHOICES
+    return None
+
+
+def enum_label(value: int, choices) -> str:
+    """Format an enum value as 'N — label'.  Falls back if value unknown."""
+    for v, lbl in choices:
+        if v == value:
+            return f"{v} — {lbl}"
+    return f"{value} — (custom)"
+
+
+def enum_parse(s: str) -> int:
+    """Parse the integer prefix from a 'N — label' string."""
+    s = s.strip()
+    if '—' in s:
+        s = s.split('—', 1)[0].strip()
+    elif ' - ' in s:
+        s = s.split(' - ', 1)[0].strip()
+    return save_edit.parse_int(s)
+
+
+# ---------------------------------------------------------------------------
 # Section grouping for the form (purely visual)
 # ---------------------------------------------------------------------------
 
@@ -156,33 +276,59 @@ class SaveEditorApp:
         ttk.Label(section, text="value", foreground='gray').grid(row=0, column=2, sticky=tk.W)
 
         for r, (name, off, typ, desc) in enumerate(fields, start=1):
-            ttk.Label(section, text=f"0x{off:02X}", foreground='gray40').grid(
-                row=r, column=0, sticky=tk.W, padx=(0, 4))
-            ttk.Label(section, text=name).grid(
-                row=r, column=1, sticky=tk.W, padx=(0, 8))
+            off_lbl = ttk.Label(section, text=f"0x{off:02X}", foreground='gray40')
+            off_lbl.grid(row=r, column=0, sticky=tk.W, padx=(0, 4))
+            name_lbl = ttk.Label(section, text=name)
+            name_lbl.grid(row=r, column=1, sticky=tk.W, padx=(0, 8))
 
-            var = tk.StringVar()
+            # Right-click on the offset/name reverts THAT field to disk value.
+            def _revert(_e, n=name):
+                self._revert_field(n)
+            off_lbl.bind('<Button-3>', _revert)
+            name_lbl.bind('<Button-3>', _revert)
+
+            choices = enum_for(name)
+
             if typ == 'bool':
                 bvar = tk.IntVar()
                 cb = ttk.Checkbutton(section, variable=bvar,
-                                     command=lambda n=name, v=bvar: self._on_bool_change(n, v))
+                                     command=lambda n=name: self._on_field_change(n))
                 cb.grid(row=r, column=2, sticky=tk.W)
-                var = bvar
+                self.field_vars[name] = (bvar, typ, None)
+
+            elif choices is not None:
+                # Enumerated value -> dropdown.  Underlying type stays the
+                # original byte/word; we just pre-fill with named options.
+                var = tk.StringVar()
+                values = [enum_label(v, choices) for v, _ in choices]
+                cb = ttk.Combobox(section, textvariable=var, values=values,
+                                  width=30)  # NOT readonly: user can type custom value
+                cb.grid(row=r, column=2, sticky=tk.W)
+                # trace_add fires on every text change -> live hex update
+                var.trace_add('write',
+                              lambda *_a, n=name: self._on_field_change(n, silent=True))
+                self.field_vars[name] = (var, typ, choices)
+
             elif isinstance(typ, tuple) and typ[0] == 'raw':
+                var = tk.StringVar()
                 ent = ttk.Entry(section, textvariable=var,
                                 font=('Consolas', 10), width=40)
                 ent.grid(row=r, column=2, sticky=tk.EW)
-                ent.bind('<FocusOut>', lambda _e, n=name: self._on_text_change(n))
-                ent.bind('<Return>',   lambda _e, n=name: self._on_text_change(n))
+                var.trace_add('write',
+                              lambda *_a, n=name: self._on_field_change(n, silent=True))
+                ent.bind('<Return>',   lambda _e, n=name: self._on_field_change(n))
+                self.field_vars[name] = (var, typ, None)
+
             else:
+                var = tk.StringVar()
                 ent = ttk.Entry(section, textvariable=var, width=20)
                 ent.grid(row=r, column=2, sticky=tk.W)
-                ent.bind('<FocusOut>', lambda _e, n=name: self._on_text_change(n))
-                ent.bind('<Return>',   lambda _e, n=name: self._on_text_change(n))
+                var.trace_add('write',
+                              lambda *_a, n=name: self._on_field_change(n, silent=True))
+                ent.bind('<Return>',   lambda _e, n=name: self._on_field_change(n))
+                self.field_vars[name] = (var, typ, None)
 
-            self.field_vars[name] = (var, typ)
-
-            # Description below in small grey font
+            # Description in small grey font
             ttk.Label(section, text=desc, foreground='gray45',
                       wraplength=520, justify=tk.LEFT).grid(
                 row=r, column=3, sticky=tk.W, padx=(8, 0))
@@ -266,7 +412,7 @@ class SaveEditorApp:
     # ---------------------------------------------------------------- Field plumbing
 
     def _populate_fields(self, data: bytes):
-        for name, (var, typ) in self.field_vars.items():
+        for name, (var, typ, choices) in self.field_vars.items():
             try:
                 _, off, _, _ = save_edit.lookup(name)
                 val = save_edit.decode_field(data, off, typ)
@@ -275,21 +421,28 @@ class SaveEditorApp:
 
             if typ == 'bool':
                 var.set(1 if val else 0)
+            elif choices is not None:
+                # set silently to avoid triggering trace + showing error popup
+                var.set(enum_label(val, choices))
             elif isinstance(typ, tuple) and typ[0] == 'raw':
-                var.set(str(val))
-            elif typ == '24':
-                var.set(str(val))
-            elif typ == 'w':
                 var.set(str(val))
             else:
                 var.set(str(val))
 
     def _compose_bytes(self) -> bytes:
+        if self.original_data is None:
+            raise ValueError('no file loaded')
         out = bytearray(self.original_data)
-        for name, (var, typ) in self.field_vars.items():
+        for name, (var, typ, choices) in self.field_vars.items():
             _, off, _, _ = save_edit.lookup(name)
             if typ == 'bool':
                 encoded = save_edit.encode_field(typ, var.get())
+            elif choices is not None:
+                txt = var.get().strip()
+                if not txt:
+                    continue
+                value = enum_parse(txt)
+                encoded = save_edit.encode_field(typ, value)
             else:
                 txt = var.get().strip()
                 if not txt:
@@ -298,20 +451,30 @@ class SaveEditorApp:
             out[off:off + len(encoded)] = encoded
         return bytes(out)
 
-    def _on_bool_change(self, name, var):
-        self._refresh_hex(self._safe_compose())
-
-    def _on_text_change(self, name):
-        # Validate this one field; reset to old value if invalid.
-        var, typ = self.field_vars[name]
+    def _on_field_change(self, name: str, silent: bool = False):
+        """Refresh hex view; on Enter/blur (silent=False) show errors."""
+        var, typ, choices = self.field_vars[name]
+        # Validate this one field eagerly
         try:
-            save_edit.encode_field(typ, var.get())
+            if typ == 'bool':
+                save_edit.encode_field(typ, var.get())
+            elif choices is not None:
+                txt = var.get().strip()
+                if txt:
+                    save_edit.encode_field(typ, enum_parse(txt))
+            else:
+                txt = var.get().strip()
+                if txt:
+                    save_edit.encode_field(typ, txt)
         except ValueError as e:
-            messagebox.showerror("Invalid value", f"{name}: {e}")
-            # Restore from original
-            _, off, _, _ = save_edit.lookup(name)
-            old = save_edit.decode_field(self.original_data, off, typ)
-            var.set(str(old))
+            if not silent:
+                messagebox.showerror("Invalid value", f"{name}: {e}")
+                _, off, _, _ = save_edit.lookup(name)
+                old = save_edit.decode_field(self.original_data, off, typ)
+                if choices is not None:
+                    var.set(enum_label(old, choices))
+                else:
+                    var.set(str(old))
             return
         self._refresh_hex(self._safe_compose())
 
@@ -320,6 +483,21 @@ class SaveEditorApp:
             return self._compose_bytes()
         except ValueError:
             return self.original_data or b''
+
+    def _revert_field(self, name: str):
+        """Reset one field to its on-disk value."""
+        if not self.original_data:
+            return
+        var, typ, choices = self.field_vars[name]
+        _, off, _, _ = save_edit.lookup(name)
+        old = save_edit.decode_field(self.original_data, off, typ)
+        if typ == 'bool':
+            var.set(1 if old else 0)
+        elif choices is not None:
+            var.set(enum_label(old, choices))
+        else:
+            var.set(str(old))
+        self._refresh_hex(self._safe_compose())
 
     # ---------------------------------------------------------------- Hex view
 

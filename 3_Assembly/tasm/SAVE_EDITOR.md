@@ -19,13 +19,24 @@ python save_editor_gui.py bin/Bosque.usr   # open immediately
 What you get:
 - Scrollable form grouped by section (Boss flags, Crests, Equipment,
   per-cavern bitmaps, etc.) — every named field is editable.
-- Booleans as checkboxes; numbers and hex strings as text entries.
-- Live hex view on the right, with bytes that differ from the on-disk
-  baseline highlighted in red.
-- **Open…** / **Save** (overwrite current) / **Save As…** /
-  **Reload** / **Revert all** in the toolbar.
-- Invalid values are rejected with a popup and reset to the
-  on-disk value.
+- **Booleans as checkboxes**.
+- **Enumerated values as dropdowns** with human-readable labels — weapons
+  (Training/WiseMan/Spirit/Knight/Illumination/Enchantment/Fairy Flame),
+  shields (Clay/WiseMan/Stone/Honor/Light/Titanium), towns (Muralla
+  through Esco), spells (Espada/Saeta/Fuego/Lanzar/Rascar/Agua/Guerra),
+  items (Ken'ko/Juu-en/Elixir/Chikara/Magia/HolyWater/SabreOil/Kioku),
+  spell slots, item slots, current_area_id, etc.  Dropdowns aren't
+  read-only — you can still type any byte value if the enum doesn't
+  cover it.
+- Numbers and hex strings as text entries (decimal, `0x…`, or `…h`).
+- **Live hex view** on the right, with bytes that differ from the on-disk
+  baseline highlighted red.  Updates as you type — no need to press Enter.
+- **Right-click any field's name or offset** to revert that single field
+  to its on-disk value (handy when you want to undo just one tweak).
+- **Open…** / **Save** (overwrite) / **Save As…** / **Reload** /
+  **Revert all** in the toolbar.
+- Invalid entries are rejected only on Enter / blur (not while typing) —
+  so partial values during edits don't pop errors.
 
 ## CLI
 
