@@ -202,3 +202,22 @@ cd ../../1_OriginalGame && ./zeliad.exe TEST.USR  # or via DOSBox
 
 # 5. Iterate: change one field, re-run.
 ```
+
+## Running the game (`bin/zelplay.bat`)
+
+From `bin/`:
+
+```cmd
+zelplay                  Open DOSBox at C:\ with all bin/ saves visible.
+zelplay Bosque.usr       Auto-run zeliad.exe BOSQUE.USR (DOSBox stays open).
+zelplay Bosque.usr EXIT  Close DOSBox automatically when game exits.
+```
+
+What it does:
+- Mounts `1_OriginalGame/` as `C:\` (game files).
+- Mounts `bin/` (this folder) as `D:\` for direct read-back.
+- Copies all `*.usr` from `bin/` to `1_OriginalGame/` so DOSBox's
+  `dir *.usr` shows them.
+- Optionally auto-runs `zeliad.exe NAME.USR`.
+- Stays open after the game exits unless `EXIT` is passed, so you can
+  pick another save and run again.
