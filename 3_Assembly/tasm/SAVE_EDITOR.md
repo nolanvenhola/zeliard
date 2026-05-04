@@ -33,6 +33,12 @@ What you get:
   baseline highlighted red.  Updates as you type — no need to press Enter.
 - **Right-click any field's name or offset** to revert that single field
   to its on-disk value (handy when you want to undo just one tweak).
+- **Per-cavern bitmaps split into byte+bit grids** — each cavern slot is
+  a sub-frame with 8 rows; each row shows a 2-digit hex byte entry
+  followed by 8 bit-checkboxes (bit 7 leftmost, bit 0 rightmost).  Toggle
+  individual loot bits to validate "bit X = item Y" hypotheses.  The
+  hex entry and the 8 checkboxes stay in sync — typing `AB` into the
+  hex updates the checkboxes, and toggling a checkbox updates the hex.
 - **Open…** / **Save** (overwrite) / **Save As…** / **Reload** /
   **Revert all** in the toolbar.
 - Invalid entries are rejected only on Enter / blur (not while typing) —
