@@ -116,7 +116,16 @@ ega_plane_stride         equ     2A80h         ; 2 files
 ; ----------------------------------------------------------------------
 ; Game state globals (DS:0xFFxx)
 ; ----------------------------------------------------------------------
-gvar_state_flag          equ     0FF24h        ; 2 files
+; FF24: scene-mode byte.  Written across 4 chunks with distinct values:
+;   100OPDMO: 8    (opening cinematic → gameplay transition)
+;   106TOWN:  4    (entering shop, door_type_shop)
+;   200FIGHT: 0Ah  (combat init), 8 (fade_out)
+;   201SELCT: 8    (item-select screen, "set before save")
+; No readers in any cleaned chunk — likely consumed by zeliad.exe's save
+; handler to know which scene to restore.  Was misnamed gvar_state_flag /
+; gvar_state_FF24 / gvar_display_mode in earlier passes.
+gvar_scene_mode          equ     0FF24h        ; scene/mode indicator (save-state); written before each scene transition
+gvar_state_flag          equ     0FF24h        ; alias — deprecated placeholder
 gvar_map_ptr             equ     0FF2Ah        ; 4 files
 ; 0xFF57: shared menu/selection state byte used differently per chunk.
 ; 106TOWN and town shops set/clear it during selection ('gvar_sel_flag'

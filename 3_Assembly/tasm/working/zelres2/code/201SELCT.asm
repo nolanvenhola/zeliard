@@ -49,7 +49,8 @@ gvar_timer_counter	equ	0FF18h			;* global: joystick hold timer counter
 gvar_frame_timer	equ	0FF1Ah			;* global: frame timer tick counter
 gvar_item_result	equ	0FF4Bh			;* global: selected item result (written on use)
 gvar_volume_b		equ	0FF75h			;* global: display region / rendering mode byte
-gvar_display_mode	equ	0FF24h			;* global: display mode flag (set before save)
+gvar_scene_mode	equ	0FF24h			; scene/mode indicator (save-state); 201SELCT writes 8 (was gvar_display_mode)
+gvar_display_mode equ	0FF24h			; alias — deprecated misnomer
 
 ; ----------------------------------------------------------------------
 ; Section 4: Shared dispatch slot references (file-local overrides)
@@ -827,7 +828,7 @@ use_kioku_feather:			; item 7: use Kioku Feather (memory feather / save game)
 		call	init_item_panel			; reset item panel display
 		pop	ax				; discard push ax from item_use_action
 		pop	ax				; discard push ax from item_use_action
-		mov	byte ptr ds:gvar_display_mode,8
+		mov	byte ptr ds:gvar_scene_mode,8
 		mov	byte ptr ds:gvar_frame_timer,0		; reset frame timer
 
 wait_timer_done:

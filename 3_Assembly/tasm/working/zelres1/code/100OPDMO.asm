@@ -615,7 +615,7 @@ interrupt_handler_cascade	proc	near
 interrupt_handler_cascade	endp
 
 timer_exit_to_game:
-		mov	byte ptr ds:gvar_state_flag,8
+		mov	byte ptr ds:gvar_scene_mode,8
 		mov	al,0FFh
 		mov	bx,0
 		mov	cx,50C8h
@@ -666,7 +666,7 @@ trans_wait_timer:
 scene_transition_wait	endp
 
 trans_exit:
-		mov	byte ptr ds:gvar_state_flag,8
+		mov	byte ptr ds:gvar_scene_mode,8
 		call	word ptr cs:gfx_init_fn
 
 trans_wait_gfx:

@@ -2076,7 +2076,7 @@ door_type_sub8:
 		jmp	pf30_exec			; was: db 0E9h, 7Ah, 01h
 
 door_type_shop:
-		mov	byte ptr ds:gvar_state_flag,4
+		mov	byte ptr ds:gvar_scene_mode,4
 		mov	bl,[si+2]
 		mov	al,0Eh
 		mul	bl			; ax = reg * al
@@ -2154,7 +2154,7 @@ door_type_special:
 		or	byte ptr ds:town_door_flag_45,80h
 
 special_door_load:
-		mov	byte ptr ds:gvar_state_flag,4
+		mov	byte ptr ds:gvar_scene_mode,4
 		mov	ah,86h
 		mov	byte ptr ds:player_level,ah
 		mov	al,1

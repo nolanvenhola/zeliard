@@ -126,6 +126,11 @@ script_give_item         equ     600Ch         ; give item / commit transaction
 ; ----------------------------------------------------------------------
 ; Game state globals (DS:0xFFxx)
 ; ----------------------------------------------------------------------
+gvar_timer_ticks         equ     0FF08h        ; canonical (zeliard.inc): timer tick counter; redeclared here for zelres2 chunks
+; FF24: scene-mode byte.  Set in 100OPDMO/106TOWN/200FIGHT/201SELCT before
+; each scene transition; no readers in cleaned source — likely read by
+; zeliad.exe's save handler.  See zr1com.inc for full evidence.
+gvar_scene_mode          equ     0FF24h        ; scene/mode indicator (save-state)
 gvar_frame_timer         equ     0FF1Ah        ; canonical: frame timer (ISR-incremented)
 game_seg                 equ     0FF2Ch        ; 5 files
 flag_shadow              equ     0FF2Fh        ; 5 files
