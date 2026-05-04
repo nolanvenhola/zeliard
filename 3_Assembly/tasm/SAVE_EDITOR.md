@@ -1,8 +1,33 @@
-# Zeliard Save Editor (`save_edit.py`)
+# Zeliard Save Editor
 
-A 256-byte .USR save file editor with named-field accessors.  Use it to
-manipulate single state values to validate naming hypotheses against
-actual gameplay.
+Two front-ends sharing the same field map and codec:
+
+- **`save_edit.py`** — CLI (great for batch edits / scripted tests).
+- **`save_editor_gui.py`** — Tkinter GUI (great for free-form exploration).
+
+Both edit a 256-byte .USR save file with named-field accessors.  Use
+them to manipulate single state values and validate naming hypotheses
+against actual gameplay (run the result with `bin/zelplay.bat`).
+
+## GUI
+
+```bash
+python save_editor_gui.py                  # blank, use Open…
+python save_editor_gui.py bin/Bosque.usr   # open immediately
+```
+
+What you get:
+- Scrollable form grouped by section (Boss flags, Crests, Equipment,
+  per-cavern bitmaps, etc.) — every named field is editable.
+- Booleans as checkboxes; numbers and hex strings as text entries.
+- Live hex view on the right, with bytes that differ from the on-disk
+  baseline highlighted in red.
+- **Open…** / **Save** (overwrite current) / **Save As…** /
+  **Reload** / **Revert all** in the toolbar.
+- Invalid values are rejected with a popup and reset to the
+  on-disk value.
+
+## CLI
 
 ## Quick reference
 
