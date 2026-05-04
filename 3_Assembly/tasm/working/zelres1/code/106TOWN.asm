@@ -1015,7 +1015,7 @@ ctrl_81_dir:
 
 ctrl_83_portrait:
 		or	byte ptr ds:town_ctrl_byte_34,80h
-		mov	byte ptr ds:player_ability_1,0FFh
+		mov	byte ptr ds:crest_elf,0FFh
 		call	player_func_25
 		jmp	text_end_seq
 
@@ -1934,10 +1934,10 @@ door_alt_execute:
 
 player_func_31		proc	near
 		or	al,80h
-		mov	byte ptr ds:player_level,al
+		mov	byte ptr ds:current_area_id,al
 		lodsw				; String [si] to ax
 		push	ax
-		mov	ah,byte ptr ds:player_level
+		mov	ah,byte ptr ds:current_area_id
 		mov	al,1
 		call	word ptr cs:sar_loader_fn
 		pop	ax
@@ -2156,7 +2156,7 @@ door_type_special:
 special_door_load:
 		mov	byte ptr ds:gvar_scene_mode,4
 		mov	ah,86h
-		mov	byte ptr ds:player_level,ah
+		mov	byte ptr ds:current_area_id,ah
 		mov	al,1
 		call	word ptr cs:sar_loader_fn
 		mov	si,sar_chunk_tbl
@@ -2205,7 +2205,7 @@ pf30_no_scroll:
 		sbb	al,al
 		mov	byte ptr ds:boss_intro_flag,al
 		lodsb				; String [si] to al
-		mov	byte ptr ds:player_level,al
+		mov	byte ptr ds:current_area_id,al
 		mov	ah,al
 		mov	al,1
 		call	word ptr cs:sar_loader_fn

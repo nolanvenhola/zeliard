@@ -4089,7 +4089,7 @@ world_x_to_screen_x_w27		endp
 		pop	ds
 		xor	al,al
 		call	word ptr cs:drv2_fn_15
-		mov	al,byte ptr ds:player_level
+		mov	al,byte ptr ds:current_area_id
 		or	al,al
 		js	$+5
 		call	test_dl			; -0xE84 (backward)
@@ -4220,10 +4220,10 @@ boss_link_check:
 		or	ah,80h
 
 boss_side_check:
-		mov	byte ptr ds:player_level,ah
+		mov	byte ptr ds:current_area_id,ah
 		mov	al,1
 		call	word ptr cs:sar_loader_fn
-		test	byte ptr ds:player_level,80h
+		test	byte ptr ds:current_area_id,80h
 		jnz	boss_func27			; Jump if not zero
 		call	process_map_seg_updates
 
@@ -6842,7 +6842,7 @@ entity_fn_e_tbl_data:
 		jmp	add_score_to_gold	; +0x1F4
 		mov	dx,9B2Ch
 		call	entity_scan_skip_push	; -0x1B9D
-		mov	byte ptr ds:player_ability_2,0FFh
+		mov	byte ptr ds:crest_glory,0FFh
 		retn
 		mov	dx,9B9Ch
 		call	entity_scan_skip_push	; -0x1BA9
@@ -6966,7 +6966,7 @@ entity_fn_e_4:
 		retn
 
 set_9c_ff:
-		mov	byte ptr ds:player_ability_3,0FFh
+		mov	byte ptr ds:crest_hero,0FFh
 		jmp	entity_deactivate
 
 entity_fn_e_5:
@@ -8371,7 +8371,7 @@ setup_next_level:
 next_level_start:
 		mov	byte ptr ds:gvar_timer_ticks,0
 		mov	ah,byte ptr ds:stat_XC5
-		mov	byte ptr ds:player_level,ah
+		mov	byte ptr ds:current_area_id,ah
 		mov	al,1
 		call	word ptr cs:sar_loader_fn
 		mov	ax,ds:target_id

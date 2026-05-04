@@ -113,27 +113,38 @@ player_power              equ     99h     ; character power stat
 stat_X99                equ     99h     ; alias — earlier name
 ; 0x9A..0x9C: 3-byte player abilities table.  201SELCT.asm:1141
 ; (`draw_abilities`) iterates `mov si, player_abilities; lodsb x3` —
-; for each non-zero slot it draws an ability icon at a different row.
-; Specific ability semantics (which slot = which gameplay ability) are
-; not yet identified; tracked in AUDIT_TODO.md.
-player_ability_1        equ     9Ah     ; ability slot 1 (specific ability TBD)
+; for each non-zero slot it draws a Crest icon at a different row.
+;
+; Validated against playthrough.txt section 6.4 (Crests) + cross-save data:
+; the 3 slots correspond to the 3 Crests in the game.  Each slot is a
+; boolean (00 = don't have; FF = have / used).
+;
+;   0x9A = Elf Crest    — set after defeating Paguro in Llama Town's Hut.
+;          Allows talking to Llama Town villagers (Bosses doc).  Validated:
+;          Llama save (post-Paguro) = 0xFF, PAGURO save (pre-fight) = 0x00.
+;
+;   0x9B = Glory Crest  — found in Cavern of Cementar (cavern 5).  Traded
+;          at Tumba weapon shop for Knight's Sword.  212ARMRP.asm tests
+;          this at line 199 (gates the trade dialog) and clears it in
+;          reset_after_trade (line 913) — i.e. the Crest is consumed at
+;          trade.  KNIGHT save = 0xFF (player has Glory Crest, hasn't
+;          traded yet), all other saves = 0x00 (Crest skipped or already
+;          traded).  Glory Crest is OPTIONAL (Vista beatable without it).
+;
+;   0x9C = Hero's Crest — found in Cavern of Riza (cavern 3, Forest).
+;          REQUIRED to encounter Pollo per playthrough §6.4.1.  Set in
+;          15/17 saves; 0 only in Muralla and Satono (haven't reached
+;          cavern 3 yet).  200FIGHT entity_fn_e_4 (line 6898) sets it
+;          when the player slashes the trunk in Cavern of Riza.
+crest_elf               equ     9Ah     ; Elf Crest from Paguro (cavern slot 7 / Llama Hut)
+player_ability_1        equ     9Ah     ; alias — earlier name
 player_abilities        equ     9Ah     ; alias — base of the 3-byte table (used by 201SELCT loop)
 stat_X9A                equ     9Ah     ; alias — earlier name
-; 0x9B (slot 2): set to 0xFF by 200FIGHT line 6774 after the 9B2Ch
-; scripted trigger (parallel pattern to slot 3 at line 6898 with 9AF3).
-; 212ARMRP (armor shop) tests it at line 199 to gate a special trade
-; dialog branch when `town_npc_state == 5 && [24h] bit 1 clear`, then
-; clears it in reset_after_trade (line 913).  The "trade marker" name
-; was a guess based solely on the 212ARMRP usage; the underlying byte
-; is the ability_2 flag and "trade gating" is one specific game-design
-; consequence of that ability being set.
-player_ability_2        equ     9Bh     ; ability slot 2 (set on 9B2Ch trigger; specific ability TBD)
+crest_glory             equ     9Bh     ; Glory Crest from Cavern of Cementar (cavern 5); traded at Tumba shop
+player_ability_2        equ     9Bh     ; alias — earlier name
 stat_X9B                equ     9Bh     ; alias — earlier name
-; 0x9C (slot 3): set to 0xFF by 200FIGHT entity_fn_e_4 (line 6898) when
-; the scripted trigger at game_func_118(DX=9AF3h) succeeds.  Read by
-; 201SELCT draw_abilities loop above (the functest_stat_X9C probe missed
-; this read because lodsb-via-SI is indirect).  Specific ability TBD.
-player_ability_3        equ     9Ch     ; ability slot 3 (set on 9AF3 trigger; specific ability TBD)
+crest_hero              equ     9Ch     ; Hero's Crest from Cavern of Riza (cavern 3); required to encounter Pollo
+player_ability_3        equ     9Ch     ; alias — earlier name
 stat_X9C                equ     9Ch     ; alias — earlier name
 cur_weapon_idx          equ     9Dh     ; cached selected weapon idx (1-based; init 0).
                                         ; Functional evidence in 201SELCT line 315/320
@@ -184,7 +195,19 @@ player_facing           equ     0C2h    ; facing/anim flags (87 byte_tests — m
 ; path runs (intro_left_loop vs not).
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical, bit-6 from boss data)
 stat_XC3                equ     0C3h    ; alias — earlier name
-player_level               equ     0C4h    ; level/area number (matches stdply.asm label)
+; 0xC4 = current_area_id.  Encoded as `0x80 | town_index` when in a town
+; (1..8 for the 8 main towns, plus high-bit set), or a cavern id when in
+; a cavern.  Validated empirically across all 17 saves: every save in
+; town N has 0xC4 = 0x80 | N (e.g. Muralla=0x81, Pureza=0x88).  Init
+; 0x80 in stdply.asm = "in town 0" sentinel.
+;
+; Also serves as the destination for the Kioku Feather (per Magical
+; Items doc): when the Feather is used, the game reads this byte to
+; teleport the player back to the last sage's town.  Most natural
+; reading is "current town/sage id" — both interpretations coincide
+; since the player saves in town and the last visited sage is the same.
+current_area_id            equ     0C4h    ; current town/area (high bit = in-town; low 7 = town/sage idx 1..8)
+player_level               equ     0C4h    ; alias — earlier name (was misnomer; not character level)
 stat_XC5                equ     0C5h    ; byte field used by 200FIGHT/game.asm
 player_tileset             equ     0C8h    ; level tileset index (matches stdply.asm label)
 player_hitbox              equ     0D2h    ; base of 9-row collision bitmask (matches stdply.asm label)

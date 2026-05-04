@@ -151,9 +151,9 @@ shield_HP	dw	0		; [94h-95h] current shield HP (16-bit; init=0)
 shield_max_HP	dw	0		; [96h-97h] shield max HP cap (16-bit)
 player_speed	db	0		; [98h] character speed stat
 player_power	db	0		; [99h] character power stat
-player_ability_1 db	0		; [9Ah] ability slot 1 (= player_abilities table base)
-player_ability_2 db	0		; [9Bh] ability slot 2 (212ARMRP gates trade dialog when set)
-player_ability_3 db	0		; [9Ch] ability slot 3 (set by 200FIGHT entity_fn_e_4 on 9AF3 trigger)
+crest_elf db	0		; [9Ah] ability slot 1 (= player_abilities table base)
+crest_glory db	0		; [9Bh] ability slot 2 (212ARMRP gates trade dialog when set)
+crest_hero db	0		; [9Ch] ability slot 3 (set by 200FIGHT entity_fn_e_4 on 9AF3 trigger)
 ;
 ; cur_weapon_idx — cached selected weapon idx (1-based; init 0).  Per
 ; 201SELCT 315/320: written by select-screen, read back as `mov bl, ds:cur_weapon_idx`
@@ -233,7 +233,7 @@ boss_intro_flag db 0		; [boss_intro_flag] boss intro-side flag (bit-6 from boss 
 ;  CS:[0D2h-0E3h] = 9-row ?? 2-byte collision bitmask (left half | right half)
 ;--------------------------------------------------------------------------
 
-player_level	db	80h		; [0C4h] level/area number (init 0x80)
+current_area_id	db	80h		; [0C4h] level/area number (init 0x80)
 		db	81h		; [0C5h] unknown player state byte
 ;
 ; [C6h..C7h]: 16-bit field (analyzer: 3 word_reads, 1 word_add).  Currently

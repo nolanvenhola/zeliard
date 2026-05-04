@@ -36,9 +36,13 @@ shield_HP               equ     94h     ; current shield HP (16-bit)
 shield_max_HP           equ     96h     ; shield max HP cap (16-bit)
 player_speed            equ     98h     ; character speed stat
 player_power            equ     99h     ; character power stat
-player_ability_1        equ     09Ah    ; ability slot 1
-player_ability_2        equ     09Bh    ; ability slot 2 (212ARMRP gates trade dialog)
-player_ability_3        equ     09Ch    ; ability slot 3 (set on 9AF3 trigger)
+; Crests (3 boolean possessions, validated against playthrough §6.4 + 17 saves):
+crest_elf               equ     09Ah    ; Elf Crest (set after defeating Paguro)
+player_ability_1        equ     09Ah    ; alias — earlier name
+crest_glory             equ     09Bh    ; Glory Crest (Cementar pickup; consumed by Tumba shop trade for Knight's Sword)
+player_ability_2        equ     09Bh    ; alias — earlier name
+crest_hero              equ     09Ch    ; Hero's Crest (Cavern of Riza pickup; required to encounter Pollo)
+player_ability_3        equ     09Ch    ; alias — earlier name
 cur_weapon_idx          equ     9Dh     ; cached selected weapon idx
 cur_magic_idx           equ     9Eh     ; currently selected magic idx
 stat_X9F                equ     9Fh     ; VESTIGIAL placeholder (per-frame zero-clear, no reader observed)
@@ -47,7 +51,8 @@ player_hp_max           equ     0B2h    ; HP ceiling (overlays anim_color_lut fr
 weap_dur_max            equ     0B4h    ; weapon durability max table base (7 bytes)
 player_facing           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical in stdply.inc)
-player_level            equ     0C4h    ; level/area number
+current_area_id         equ     0C4h    ; current area (high bit=in-town, low 7=town/sage idx 1..8); Kioku Feather destination
+player_level            equ     0C4h    ; alias — earlier name (was misnomer)
 heal_pulse_count        equ     0C6h    ; HP heal-pulse counter, 16-bit (canonical in stdply.inc)
 player_tileset          equ     0C8h    ; level tileset index
 key_count               equ     0E4h    ; player's collected-key count

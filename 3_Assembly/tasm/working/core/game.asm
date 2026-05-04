@@ -43,7 +43,8 @@ stick_joy_poll_handler equ	120h			; stick.bin slot 120h dispatch (poll_joystick_
 equipped_weapon	equ	92h			; equipped weapon idx (canonical in stdply.inc)
 shield_type	equ	93h			; shield tier (canonical in stdply.inc)
 cur_weapon_idx	equ	9Dh			; cached selected weapon idx (canonical in stdply.inc)
-player_level	equ	0C4h			; level/area number (canonical in stdply.inc)
+current_area_id	equ	0C4h			; current area (high bit=in-town, low 7=town/sage idx); Kioku Feather destination
+player_level	equ	0C4h			; alias — earlier name (was misnomer; not character level)
 player_tileset	equ	0C8h			; level tileset index (canonical in stdply.inc)
 gvar_pose_idx	equ	0E7h			; player pose state (canonical in stdply.inc)
 ; Game state variables (0xFF00+ range, shared with zeliad.exe).
@@ -381,7 +382,7 @@ gfx_init_after_font:
 gfx_init_after_tile:
 
 		; Load first level chunks
-		mov	ah,byte ptr cs:player_level	; Level/area number
+		mov	ah,byte ptr cs:current_area_id	; Level/area number
 		mov	al,1			; Function 1 = load level
 		call	word ptr cs:sar_loader_fn
 
