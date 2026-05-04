@@ -146,7 +146,10 @@ def enum_parse(s: str) -> int:
 
 SECTIONS = [
     # More-specific predicates first; section_for() returns the first match.
-    ("Special boss-flag candidates",         lambda f: f[1] in (0x47, 0x48)),
+    # The boss-flag candidates are JUST the named bool fields at 0x47/0x48 —
+    # NOT the cavern_bits_final raw bitmap (which also has base 0x48 and
+    # belongs in the bitmap section so it gets the bit-grid renderer).
+    ("Special boss-flag candidates",         lambda f: f[1] in (0x47, 0x48) and f[2] == 'bool'),
     ("Per-cavern bitmaps (save 0x00..0x4F)", lambda f: f[1] < 0x50 and f[2] != 'bool'),
     ("Crests",                               lambda f: f[0].startswith('crest_')),
     ("Boss-kill flags",                      lambda f: f[0].startswith('boss_kill_')),
