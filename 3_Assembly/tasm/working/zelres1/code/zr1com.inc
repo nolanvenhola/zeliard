@@ -125,7 +125,7 @@ ega_plane_stride         equ     2A80h         ; 2 files
 ; handler to know which scene to restore.  Was misnamed gvar_state_flag /
 ; gvar_state_FF24 / gvar_display_mode in earlier passes.
 gvar_scene_mode          equ     0FF24h        ; scene/mode indicator (save-state); written before each scene transition
-gvar_state_flag          equ     0FF24h        ; alias — deprecated placeholder
+gvar_state_flag          equ     0FF24h        ; alias — earlier name
 gvar_map_ptr             equ     0FF2Ah        ; 4 files
 ; 0xFF57: shared menu/selection state byte used differently per chunk.
 ; 106TOWN and town shops set/clear it during selection ('gvar_sel_flag'

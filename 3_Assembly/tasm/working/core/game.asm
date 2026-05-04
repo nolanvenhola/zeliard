@@ -58,11 +58,11 @@ gvar_enemy_cnt	equ	0FF36h			; Active enemy count (canonical zr3com.inc).
 ; (flag_shield/flag_climbing/flag_riding) — they are PLAYER POSE STATE
 ; flags, not music state.  game.asm only zero-clears them at boot.
 flag_shield	equ	0FF38h			; shield-up render flag (5 gf*.asm)
-gvar_music_flag_a equ	0FF38h			; alias — deprecated misnomer
+gvar_music_flag_a equ	0FF38h			; alias — earlier name
 flag_climbing	equ	0FF39h			; climbing-pose render flag (5 gf*.asm)
-gvar_music_flag_b equ	0FF39h			; alias — deprecated misnomer
+gvar_music_flag_b equ	0FF39h			; alias — earlier name
 flag_riding	equ	0FF3Ah			; riding-pose render flag (5 gf*.asm)
-gvar_music_flag_c equ	0FF3Ah			; alias — deprecated misnomer
+gvar_music_flag_c equ	0FF3Ah			; alias — earlier name
 gvar_palette_flag	equ	0FF3Ch			; Palette state (canonical zeliard.inc)
 equip_byte	equ	0FF3Dh			; Equipment byte (canonical zr2com.inc, 5-file consensus).
 						; game.asm only zero-inits; was misnamed gvar_palette_a.
@@ -71,13 +71,13 @@ gvar_palette_b	equ	0FF3Eh			; alias — see 200FIGHT.asm spell_fx_active (game.a
 ; it as flag_hero_state to gate which sprite-mode to render.  game.asm only
 ; zero-clears it at boot.
 flag_hero_state	equ	0FF40h			; player-state render gate (5 gf*.asm)
-gvar_debug_mode	equ	0FF40h			; alias — deprecated misnomer (NOT debug)
+gvar_debug_mode	equ	0FF40h			; alias — earlier name (NOT debug)
 gvar_debug_val	equ	0FF42h			; Debug value (canonical zeliard.inc)
 ; FF43: misnamed gvar_joystick_flag in earlier sweeps.  All 5 gf*.asm
 ; drivers test it as scroll_active; 200FIGHT also uses it as a scroll/
 ; transition gate.  game.asm only zero-clears at boot.
 scroll_active	equ	0FF43h			; scroll/transition active gate (5 gf*.asm)
-gvar_joystick_flag equ	0FF43h			; alias — deprecated misnomer
+gvar_joystick_flag equ	0FF43h			; alias — earlier name
 ; FF44h is the bg_restore pending flag (set by gf*.asm bg_save/bg_restore
 ; procs across 202GFEGA, 203GFCGA, 204GFHGC, 205GFTGA, 206GFMCA — 21
 ; read/write sites).  game.asm only zero-clears it during init.

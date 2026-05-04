@@ -70,7 +70,7 @@ include  zr2com.inc
 ; Was placeholder gvar_timer_ff08 here; an even earlier sweep had it as
 ; gvar_frame_timer which is wrong (gvar_frame_timer is at FF1Ah).
 gvar_timer_ticks	equ	0FF08h			; ISR timer-tick counter (zeliard.inc)
-gvar_timer_ff08	equ	0FF08h			; alias — deprecated placeholder
+gvar_timer_ff08	equ	0FF08h			; alias — earlier name
 gvar_timer_counter	equ	0FF18h			;*
 gvar_frame_timer	equ	0FF1Ah			;*
 gvar_spacebar_state	equ	0FF1Dh			;*
@@ -80,7 +80,7 @@ gvar_state_b	equ	0FF1Eh			;*
 ; (line 8329).  No readers in cleaned source — likely consumed by
 ; zeliad.exe's save handler.  Was misnamed gvar_state_FF24 here.
 gvar_scene_mode	equ	0FF24h			; scene/mode indicator (save-state)
-gvar_state_FF24	equ	0FF24h			; alias — deprecated placeholder
+gvar_state_FF24	equ	0FF24h			; alias — earlier name
 gvar_game_seg	equ	0FF2Ch			;*
 ; The byte at 0FF2Eh is the entity death/dying flag.  Per-enemy chunks
 ; (309CRAB, 310TAKO, 311TORI, 312ZELA, 313MEDA, 314LEGA, 315ZEL2, 316DRGN,
@@ -93,7 +93,7 @@ gvar_game_seg	equ	0FF2Ch			;*
 ; suppress entity-update actions while a dying enemy completes its death
 ; animation.  Old placeholder name kept as alias.
 gvar_death_flag	equ	0FF2Eh			; entity death/dying flag (canonical)
-gvar_flag_FF2E	equ	0FF2Eh			; alias — deprecated placeholder
+gvar_flag_FF2E	equ	0FF2Eh			; alias — earlier name
 ; The byte at 0FF2Fh is set to 0FFh by every enemy chunk's death-animation
 ; entry (309CRAB:833, 310TAKO:699, 311TORI:934, 312ZELA:740, 313MEDA:677,
 ; 314LEGA:713, 315ZEL2:690, 316DRGN, 317AKMA, 318MAO1, 319MAO2 — 10 sites
@@ -104,7 +104,7 @@ gvar_flag_FF2E	equ	0FF2Eh			; alias — deprecated placeholder
 ; existing guesses for the same byte.  Picking the higher-volume zelres3
 ; name as canonical, all others aliased.
 gvar_dir_toggle	equ	0FF2Fh			; enemy-death visual-effect trigger (canonical)
-gvar_flag_FF2F	equ	0FF2Fh			; alias — deprecated placeholder
+gvar_flag_FF2F	equ	0FF2Fh			; alias — earlier name
 ;
 ; The byte at 0FF30h is set to 0FFh in each enemy chunk's `death_complete`
 ; path (309CRAB:860 etc., 5 sites total).  Marks "this enemy/level segment
@@ -113,7 +113,7 @@ gvar_flag_FF2F	equ	0FF2Fh			; alias — deprecated placeholder
 ; gvar_completion); zr3com.inc's gvar_completion is the most-used and
 ; semantically clearest.  Picking it as canonical.
 gvar_completion	equ	0FF30h			; level/segment completion flag (canonical)
-gvar_flag_FF30	equ	0FF30h			; alias — deprecated placeholder
+gvar_flag_FF30	equ	0FF30h			; alias — earlier name
 gvar_scroll_pos	equ	0FF31h			;*
 gvar_save_flag	equ	0FF33h			;*
 ; FF34..FF3A and FF3D were named gvar_save_flag_1..4 / gvar_music_flag_a..c /
@@ -125,22 +125,22 @@ gvar_save_flag	equ	0FF33h			;*
 ; weight rule (5-driver sprite-render gate beats placeholder hex names).
 ; Old placeholders kept below as alias EQUs.
 flag_equip_b	equ	0FF34h			; equipment-state-B render gate (5 gf*.asm drivers)
-gvar_save_flag_1 equ	0FF34h			; alias — deprecated placeholder
+gvar_save_flag_1 equ	0FF34h			; alias — earlier name
 enemy_counter	equ	0FF35h			; enemy counter (4 gf*.asm reads as render index)
-gvar_save_flag_2 equ	0FF35h			; alias — deprecated placeholder
+gvar_save_flag_2 equ	0FF35h			; alias — earlier name
 color_sel	equ	0FF36h			; color-pair selection index (5 gf*.asm reads)
-gvar_save_flag_3 equ	0FF36h			; alias — deprecated placeholder
+gvar_save_flag_3 equ	0FF36h			; alias — earlier name
 redraw_lock	equ	0FF37h			; tile-redraw lock flag (5 gf*.asm test+set)
-gvar_save_flag_4 equ	0FF37h			; alias — deprecated placeholder
+gvar_save_flag_4 equ	0FF37h			; alias — earlier name
 flag_shield	equ	0FF38h			; shield-up render flag (5 gf*.asm)
-gvar_music_flag_a equ	0FF38h			; alias — deprecated misnomer (NOT a music flag)
+gvar_music_flag_a equ	0FF38h			; alias — earlier name (NOT a music flag)
 flag_climbing	equ	0FF39h			; climbing-pose render flag (5 gf*.asm)
-gvar_music_flag_b equ	0FF39h			; alias — deprecated misnomer
+gvar_music_flag_b equ	0FF39h			; alias — earlier name
 flag_riding	equ	0FF3Ah			; riding-pose render flag (5 gf*.asm)
-gvar_music_flag_c equ	0FF3Ah			; alias — deprecated misnomer
+gvar_music_flag_c equ	0FF3Ah			; alias — earlier name
 gvar_palette_flag	equ	0FF3Ch			;*
 equip_byte	equ	0FF3Dh			; equipped-weapon byte; bit 7 = equipped, 7Fh = transition (5 gf*.asm)
-gvar_combat_ff3D equ	0FF3Dh			; alias — deprecated placeholder
+gvar_combat_ff3D equ	0FF3Dh			; alias — earlier name
 ; The byte at 0xFF3E is the SPELL-EFFECT-ACTIVE flag.  Set in
 ; `decrement_ab` (line 5738) when a magic spell is consumed (the slot
 ; at drv_color_lut[bx] is decremented and gvar_volume_b bumped to 18h);
@@ -153,7 +153,7 @@ gvar_combat_ff3D equ	0FF3Dh			; alias — deprecated placeholder
 ; `gvar_palette_b` name is a misnomer (proximity guess; only zero-init
 ; in clear-all-flags) — both placeholders aliased to canonical.
 spell_fx_active	equ	0FF3Eh			; spell visual+audio effect active (canonical)
-gvar_flag_FF3E	equ	0FF3Eh			; alias — deprecated placeholder
+gvar_flag_FF3E	equ	0FF3Eh			; alias — earlier name
 ; The byte at 0FF3Fh is the player's current animation frame index.
 ; 200FIGHT writes a snapshot (line 2630: FF3F := gvar_combat_anim_subindex
 ; from FF46; line 2638: FF3F := state_byte_9F2B as alternate path) for
@@ -163,13 +163,13 @@ gvar_flag_FF3E	equ	0FF3Eh			; alias — deprecated placeholder
 ; (FF41) which caches gvar_combat_action_state (FF45).  zr2com.inc names
 ; it `hero_frame`; placeholder kept as alias.
 hero_frame	equ	0FF3Fh			; player's current animation frame (canonical)
-gvar_flag_FF3F	equ	0FF3Fh			; alias — deprecated placeholder
+gvar_flag_FF3F	equ	0FF3Fh			; alias — earlier name
 ; FF40 was placeholder gvar_debug_mode (zeliard.inc guess).  All 5 gf*.asm
 ; drivers test it as flag_hero_state to gate which sprite-mode to render
 ; (call_hero_tier_get path); 200FIGHT writes it 0/FFh in 3 sites that look
 ; like a state-toggle, consistent with hero-state rather than debug.
 flag_hero_state	equ	0FF40h			; player-state render gate (5 gf*.asm)
-gvar_debug_mode	equ	0FF40h			; alias — deprecated misnomer (NOT debug)
+gvar_debug_mode	equ	0FF40h			; alias — earlier name (NOT debug)
 ; The byte at 0FF41h is the player's weapon-state cache.  Written by
 ; 200FIGHT (line 2603) as a snapshot of gvar_combat_action_state (FF45)
 ; during a debug/save-state branch.  Read by all 5 gf*.asm graphics
@@ -177,7 +177,7 @@ gvar_debug_mode	equ	0FF40h			; alias — deprecated misnomer (NOT debug)
 ; gates which weapon-frame to draw.  zr2com.inc names it `weapon_state`;
 ; placeholder kept as alias.
 weapon_state	equ	0FF41h			; player weapon-state cache (canonical)
-gvar_flag_FF41	equ	0FF41h			; alias — deprecated placeholder
+gvar_flag_FF41	equ	0FF41h			; alias — earlier name
 ; FF42: ambiguous.  zr2com.inc names it `shield_sel` (read by 5 gf*.asm to
 ; pick sprite offsets 48h/51h via dec cl, jz).  In 200FIGHT, the byte is
 ; written by find_fire_slot_for_id (line ~2123) which sets dl=2 if matched
@@ -193,7 +193,7 @@ gvar_debug_val	equ	0FF42h			; fire-slot-match kind (0=miss, 1=fire2, 2=fire1); s
 ; (204GFHGC comment confirms).  200FIGHT also tests/sets it as a "skip-
 ; this-frame during scroll/transition" gate.  Decisively scroll_active.
 scroll_active	equ	0FF43h			; scroll/transition active gate (5 gf*.asm)
-gvar_joystick_flag equ	0FF43h			; alias — deprecated misnomer (NOT joystick)
+gvar_joystick_flag equ	0FF43h			; alias — earlier name (NOT joystick)
 ; gvar_flag_FF44 was a placeholder — the address is the gf*.asm-owned
 ; bg-restore-pending flag (see game.asm's restore_pending EQU).  Keep
 ; the placeholder as an alias so any unrenamed call site still resolves.
@@ -214,7 +214,7 @@ gvar_combat_anim_subindex   equ     0FF46h  ; was gvar_flag_FF46 (paired with FF
 gvar_combat_audio_latch     equ     0FF47h  ; was gvar_flag_FF47 (volume_b=4 gate)
 ; Keep the placeholder names as aliases for now so any unrenamed call
 ; site still resolves (TASM allows duplicate equ at the same value).
-gvar_flag_FF45              equ     0FF45h  ; alias (deprecated)
+gvar_flag_FF45              equ     0FF45h  ; alias (earlier name)
 gvar_flag_FF46              equ     0FF46h  ; alias
 gvar_flag_FF47              equ     0FF47h  ; alias
 ; The byte at 0FF4Ah is the OBJECT-SCAN LOOP INDEX used by 3 procedures
@@ -233,7 +233,7 @@ gvar_flag_FF47              equ     0FF47h  ; alias
 ; consistent with "did the most recent scan reach my object?" rather than
 ; sub-frame timing.  Keeping both old names as aliases.
 obj_scan_index	equ	0FF4Ah			; object-scan loop index (canonical)
-gvar_flag_FF4A	equ	0FF4Ah			; alias — deprecated placeholder
+gvar_flag_FF4A	equ	0FF4Ah			; alias — earlier name
 ; 0xFF4B: 201SELCT names this `gvar_item_result` (item-select result
 ; byte).  game.asm names it `gvar_joy_count` but only zero-inits it
 ; (diagnostic of nothing).  In 200FIGHT (line 2959): `cmp [FF4B], 8;
@@ -241,7 +241,7 @@ gvar_flag_FF4A	equ	0FF4Ah			; alias — deprecated placeholder
 ; reaches 8, the level transitions to next.  201SELCT's semantic name
 ; matches this "items completed" interpretation.  game.asm name aliased.
 gvar_item_result equ	0FF4Bh			; item-select result / level-completion counter (canonical, from 201SELCT)
-gvar_flag_FF4B	equ	0FF4Bh			; alias — deprecated placeholder
+gvar_flag_FF4B	equ	0FF4Bh			; alias — earlier name
 gvar_volume_b	equ	0FF75h			;*
 
 ; ----------------------------------------------------------------------
@@ -413,7 +413,7 @@ loading_flag	equ	9F02h			;*
 ; map_extra_ptr; no read in cleaned source.  Likely an entry-tick counter
 ; for the extra-list scan (or a vestigial debug counter).  Single inc only.
 extra_iter_tick	equ	9F07h			; extra-list iteration tick (single-inc; canonical)
-state_byte_9F07	equ	9F07h			; alias — deprecated placeholder
+state_byte_9F07	equ	9F07h			; alias — earlier name
 ; The byte at 0x9F08 is the COMBAT STEP COUNTER, named after the
 ; surrounding labels `step_count_ok:` (line 1645, increment) and
 ; `check_step_count:` (line 1899, threshold compare).  Per-frame
@@ -425,13 +425,13 @@ state_byte_9F07	equ	9F07h			; alias — deprecated placeholder
 ; if the player accumulated >=2 successful steps in the combat phase.
 ; Placeholder kept as alias.
 step_counter	equ	9F08h			; combat step counter (canonical, captured at combat exit)
-state_byte_9F08	equ	9F08h			; alias — deprecated placeholder
+state_byte_9F08	equ	9F08h			; alias — earlier name
 ; 0x9F10: stored in `entity_hit` (line 5328) after entity-hit detection:
 ;   mov ds:entity_slot_tbl, cx       ; cx = hit slot
 ;   mov ds:last_hit_entity, bx       ; bx = entity-table data ptr
 ; Single write site; reads via raw [9F10h] elsewhere if any.
 last_hit_entity	equ	9F10h			; last-entity-hit data ptr (16-bit; canonical)
-state_word_9F10	equ	9F10h			; alias — deprecated placeholder
+state_word_9F10	equ	9F10h			; alias — earlier name
 ;
 ; 0x9F12: 16-bit ACCUMULATOR for tile-type sums.  `add_tile_type` (line
 ; 3492) does `add ds:tile_type_sum, ax` where ax = `tile_type_map[bx]`.
@@ -439,13 +439,13 @@ state_word_9F10	equ	9F10h			; alias — deprecated placeholder
 ; (line 3291 sets to 0).  Tracks accumulated tile-type score across a
 ; map-scan pass.
 tile_type_sum	equ	9F12h			; accumulated tile-type sum (16-bit; canonical)
-state_word_9F12	equ	9F12h			; alias — deprecated placeholder
+state_word_9F12	equ	9F12h			; alias — earlier name
 escape_flag	equ	9F15h			;*
 ; 0x9F16: 0..3 cyclical post-increment counter.  In `clear_c2_and_debug`
 ; (line 1834): `mov al, [9F16]; inc [9F16]; and al, 3; jz frame_parity_check`.
 ; Triggers `frame_parity_check` (which calls INT 61h) every 4 ticks.
 quad_frame_tick	equ	9F16h			; quad-frequency frame tick (cycles 0..3; canonical)
-state_byte_9F16	equ	9F16h			; alias — deprecated placeholder
+state_byte_9F16	equ	9F16h			; alias — earlier name
 ; The byte at 0x9F17 is a SCAN-MATCH FLAG used by `scan_outer_slot_match`
 ; (line 3136), the area-2 3x3 slot scan.  At line 3142 it's reset to 0;
 ; inside the inner `slot_inner_loop` (line 3155-3165) each call to
@@ -460,7 +460,7 @@ state_byte_9F16	equ	9F16h			; alias — deprecated placeholder
 ; Single-proc flag (all 4 sites are in this one routine, area-2 only).
 ; Placeholder kept as alias.
 scan_match_flag	equ	9F17h			; per-scan match flag for area-2 slot scan (canonical)
-state_byte_9F17	equ	9F17h			; alias — deprecated placeholder
+state_byte_9F17	equ	9F17h			; alias — earlier name
 ; The byte at 0x9F18 is the HP REGENERATION TICK COUNTER.  At line 2729
 ; (check_state18), 200FIGHT increments it each frame; when it wraps at
 ; 16 (cmp ..., 10h), it heals the hero (player_HP += 2 if player_HP <
@@ -469,7 +469,7 @@ state_byte_9F17	equ	9F17h			; alias — deprecated placeholder
 ; 1346, 1770 — scene transitions / damage events where the regen
 ; cooldown resets.  Placeholder kept as alias.
 hp_regen_tick	equ	9F18h			; HP regen tick counter (canonical, wraps 16)
-state_byte_9F18	equ	9F18h			; alias — deprecated placeholder
+state_byte_9F18	equ	9F18h			; alias — earlier name
 ; The byte at 0x9F19 is the HIT-SOUND DEBOUNCE flag.  Set in the
 ; `trigger_hit_snd` path (line 3955) when an entity hit fires the hit
 ; sound (also bumps gvar_volume_b to 16h and loads hit_snd_ref).  Tested
@@ -480,7 +480,7 @@ state_byte_9F18	equ	9F18h			; alias — deprecated placeholder
 ; gvar_pose_idx (mod 80h) each combat animation tick, so the next tick
 ; allows hit-sound to fire again.  Placeholder kept as alias.
 hit_snd_played	equ	9F19h			; hit-sound debounce flag (canonical, cleared per pose-tick)
-state_byte_9F19	equ	9F19h			; alias — deprecated placeholder
+state_byte_9F19	equ	9F19h			; alias — earlier name
 ; 0x9F1D: tested ONLY at bit 7 in `boss_state_init` (line 4080):
 ;   mov [combat_active], 0FFh
 ;   mov [enemy_data_buf], 0FFh
@@ -489,7 +489,7 @@ state_byte_9F19	equ	9F19h			; alias — deprecated placeholder
 ; Bit 7 means "boss spawn data armed."  Set somewhere (line 4031
 ; writes raw `mov [9F1D], al`).
 boss_init_flag	equ	9F1Dh			; boss-init: bit 7 = "spawn data armed" (canonical)
-state_byte_9F1D	equ	9F1Dh			; alias — deprecated placeholder
+state_byte_9F1D	equ	9F1Dh			; alias — earlier name
 ; The byte at 0x9F1E is the WARP-PENDING flag — set after the player
 ; completes a level segment AND reaches a transition trigger.  Set site
 ; (line 2807) is inside `check_save1_flag30` after a chain of guards:
@@ -505,7 +505,7 @@ state_byte_9F1D	equ	9F1Dh			; alias — deprecated placeholder
 ; audio reset, palette reload), then jumps to `module_init` — the
 ; warp's actual reload-and-restart routine.  Placeholder kept as alias.
 warp_pending	equ	9F1Eh			; level-warp transition pending flag (canonical)
-state_byte_9F1E	equ	9F1Eh			; alias — deprecated placeholder
+state_byte_9F1E	equ	9F1Eh			; alias — earlier name
 ; The byte at 0x9F1F is the ACTIVE SPRITE COUNT in enemy_data_buf.
 ; copy_buffer_2 (line 5080) resets it to 0 and walks the sprite buffer,
 ; incrementing 9F1F for each live entry it encounters (line 5119, after
@@ -517,7 +517,7 @@ state_byte_9F1E	equ	9F1Eh			; alias — deprecated placeholder
 ; count of populated enemy_data_buf entries, capped at 31.  Distinct
 ; from gvar_enemy_cnt (0FF36h) which tracks per-area enemy total.
 sprite_buf_count	equ	9F1Fh			; active count in enemy_data_buf (canonical, max 31)
-state_byte_9F1F		equ	9F1Fh			; alias — deprecated placeholder
+state_byte_9F1F		equ	9F1Fh			; alias — earlier name
 invul_timer	equ	9F20h			;*
 scene_trans_flag	equ	9F26h			;*
 level_load_flag	equ	9F27h			;*
@@ -530,9 +530,9 @@ level_load_flag	equ	9F27h			;*
 ;   inc [9F29]; test [9F29], 0Fh; jz fade_out      ; trigger fade every 16 iters
 ;   test [9F29], 1                                  ; bit-1 toggle gates save_flag_4
 gameover_inner_tick equ 9F28h	; game-over inner-phase tick (advances pose every 8)
-state_byte_9F28     equ 9F28h	; alias — deprecated placeholder
+state_byte_9F28     equ 9F28h	; alias — earlier name
 gameover_outer_tick equ 9F29h	; game-over outer-phase tick (fade triggers every 16)
-state_byte_9F29     equ 9F29h	; alias — deprecated placeholder
+state_byte_9F29     equ 9F29h	; alias — earlier name
 ;
 ; 0x9F2A: per-scan "any object marked" accumulator used by
 ; `draw_entity_3x3_at_pos` (line 6261) — resets to 0 at line 6275, set to 0FFh
@@ -542,7 +542,7 @@ state_byte_9F29     equ 9F29h	; alias — deprecated placeholder
 ; marked, CF=1 if none.  Functionally parallel to `scan_match_flag`
 ; (9F17) but for a different scan loop / different mark semantics.
 obj_mark_flag       equ 9F2Ah	; per-scan object-marked accumulator (canonical)
-state_byte_9F2A     equ 9F2Ah	; alias — deprecated placeholder
+state_byte_9F2A     equ 9F2Ah	; alias — earlier name
 ; The byte at 0x9F2B is the PALETTE FADE STEP COUNTER, driven by the
 ; `palette_step` proc at line 5640.  set_palette_ff (5634) resets it to
 ; 0 alongside gvar_palette_flag := 0FFh; palette_step then runs each
@@ -555,7 +555,7 @@ state_byte_9F2A     equ 9F2Ah	; alias — deprecated placeholder
 ; hero sprite cycles frames in sync with the fade.  Placeholder kept
 ; as alias.
 palette_fade_ctr	equ	9F2Bh			; palette fade step counter (canonical)
-state_byte_9F2B		equ	9F2Bh			; alias — deprecated placeholder
+state_byte_9F2B		equ	9F2Bh			; alias — earlier name
 ; 0xC017: read at start_boss_scroll as `add bx, ds:world_tile_base` — the
 ; resulting BX = 2*[si+6] + word_at_C017 is then used as a pointer
 ; (`mov si, [bx]`).  The byte/word at C017 is the FIRST WORD of a
@@ -564,7 +564,7 @@ state_byte_9F2B		equ	9F2Bh			; alias — deprecated placeholder
 ; + 8*scroll_col`).  Verified by functest/placeholder_id/test_fight_state_byte_C017.py
 ; (2026-04-29): `bx = 2*idx + word_at_C017` predicted exactly.
 world_tile_base	equ	0C017h			; world tile/data table base (16-bit pointer/value at C017)
-state_byte_C017	equ	0C017h			; alias — deprecated placeholder
+state_byte_C017	equ	0C017h			; alias — earlier name
 
 ; ----------------------------------------------------------------------
 ; Section 7: Constants

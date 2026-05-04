@@ -50,7 +50,7 @@ gvar_frame_timer	equ	0FF1Ah			;* global: frame timer tick counter
 gvar_item_result	equ	0FF4Bh			;* global: selected item result (written on use)
 gvar_volume_b		equ	0FF75h			;* global: display region / rendering mode byte
 gvar_scene_mode	equ	0FF24h			; scene/mode indicator (save-state); 201SELCT writes 8 (was gvar_display_mode)
-gvar_display_mode equ	0FF24h			; alias — deprecated misnomer
+gvar_display_mode equ	0FF24h			; alias — earlier name
 
 ; ----------------------------------------------------------------------
 ; Section 4: Shared dispatch slot references (file-local overrides)

@@ -80,11 +80,11 @@ gvar_save_flag		equ	0FF33h		; Save file flag
 ; PLAYER POSE STATE flags, not music state.  zeliad.asm only zero-clears
 ; them at boot.
 flag_shield	equ	0FF38h		; shield-up render flag (5 gf*.asm)
-gvar_music_flag_a	equ	0FF38h		; alias — deprecated misnomer
+gvar_music_flag_a	equ	0FF38h		; alias — earlier name
 flag_climbing	equ	0FF39h		; climbing-pose render flag (5 gf*.asm)
-gvar_music_flag_b	equ	0FF39h		; alias — deprecated misnomer
+gvar_music_flag_b	equ	0FF39h		; alias — earlier name
 flag_riding	equ	0FF3Ah		; riding-pose render flag (5 gf*.asm)
-gvar_music_flag_c	equ	0FF3Ah		; alias — deprecated misnomer
+gvar_music_flag_c	equ	0FF3Ah		; alias — earlier name
 gvar_music_flag_d	equ	0FF3Bh		; Music state D (TBD)
 gvar_palette_flag	equ	0FF3Ch		; Palette state
 gvar_debug_mode		equ	0FF40h		; Debug mode flag (TBD; zeliard.inc canonical, but see 200FIGHT — likely flag_hero_state)
@@ -92,7 +92,7 @@ gvar_debug_val		equ	0FF42h		; Debug value
 ; FF43: misnamed gvar_joystick_flag.  All 5 gf*.asm drivers test it as
 ; scroll_active; zeliad.asm only zero-clears at boot.
 scroll_active	equ	0FF43h		; scroll/transition active gate (5 gf*.asm)
-gvar_joystick_flag equ	0FF43h		; alias — deprecated misnomer
+gvar_joystick_flag equ	0FF43h		; alias — earlier name
 gvar_save_name_buf	equ	0FF6Ch		; Save file name buffer (8 bytes)
 gvar_input_lock		equ	0FF74h		; Input-mode lock (canonical zeliard.inc); zero-init only here
 gvar_volume_b		equ	0FF75h		; Volume/audio setting B

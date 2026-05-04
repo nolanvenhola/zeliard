@@ -34,7 +34,7 @@ map_scroll_row          equ     82h     ; cavern Y scroll row (8-bit, paired wit
 ; The earlier `player_accel db 0Ah, 0Ah` declaration was a misread.
 town_player_col         equ     83h     ; player screen column in town (range 0..0x10)
 fight_player_col        equ     84h     ; player screen column in fight (range 0..7)
-player_accel               equ     83h     ; alias — deprecated placeholder (was bogus 2-byte declaration)
+player_accel               equ     83h     ; alias — earlier name (was bogus 2-byte declaration)
 
 ; Player stat record  [0x0085-0x00AA]  — layout established by functional
 ; harness probes plus static access-pattern analysis (analyze_stat_layout.py).
@@ -53,8 +53,8 @@ player_gold_mid           equ     87h     ; gold low word's high byte
 ; carry propagation 0xFFFE+5 → hi=1, lo=0x0003 confirmed.
 player_bank_hi            equ     88h     ; banked-gold high byte (24-bit)
 player_bank_lo            equ     89h     ; banked-gold low word (89h..8Ah)
-stat_X88_hi             equ     88h     ; alias — deprecated placeholder
-stat_X88_lo             equ     89h     ; alias — deprecated placeholder
+stat_X88_hi             equ     88h     ; alias — earlier name
+stat_X88_lo             equ     89h     ; alias — earlier name
 ;
 ; player_almas (16-bit, NOT 8-bit).  Verified by
 ; functest/test_player_stats_word_layout.py probe AL3 (almas=257, add=1
@@ -67,9 +67,9 @@ player_almas_hi           equ     8Ch     ; alt currency high byte
 ; (word_read at 0x8E).  Static analyzer matches: 0x8D byte-only,
 ; 0x8E word-only.  Adopted as canonical, placeholders kept as aliases.
 item_qty_count          equ     8Dh     ; item quantity counter (canonical, from 201SELCT)
-stat_X8D                equ     8Dh     ; alias — deprecated placeholder
+stat_X8D                equ     8Dh     ; alias — earlier name
 item_effect_val         equ     8Eh     ; item effect value (16-bit, 8Eh..8Fh; canonical from 201SELCT)
-stat_X8E                equ     8Eh     ; alias — deprecated placeholder
+stat_X8E                equ     8Eh     ; alias — earlier name
 ;
 ; player_HP (16-bit, NOT 8-bit).  Verified by probe HP3 in
 ; functest/test_player_stats_word_layout.py.  Manual's max-80 is gameplay
@@ -106,11 +106,11 @@ shield_HP_hi            equ     95h     ; current shield HP, high byte
 ; chunk).  All stat names below match its read patterns; placeholders
 ; aliased.  static analyzer matches: 0x96 word, 0x98..0x9A all byte/test.
 shield_max_HP             equ     96h     ; shield max HP cap (16-bit, 96h..97h; used by 201SELCT use_magia_stone clamp)
-stat_X96                equ     96h     ; alias — deprecated placeholder
+stat_X96                equ     96h     ; alias — earlier name
 player_speed              equ     98h     ; character speed stat
-stat_X98                equ     98h     ; alias — deprecated placeholder
+stat_X98                equ     98h     ; alias — earlier name
 player_power              equ     99h     ; character power stat
-stat_X99                equ     99h     ; alias — deprecated placeholder
+stat_X99                equ     99h     ; alias — earlier name
 ; 0x9A..0x9C: 3-byte player abilities table.  201SELCT.asm:1141
 ; (`draw_abilities`) iterates `mov si, player_abilities; lodsb x3` —
 ; for each non-zero slot it draws an ability icon at a different row.
@@ -118,7 +118,7 @@ stat_X99                equ     99h     ; alias — deprecated placeholder
 ; not yet identified; tracked in AUDIT_TODO.md.
 player_ability_1        equ     9Ah     ; ability slot 1 (specific ability TBD)
 player_abilities        equ     9Ah     ; alias — base of the 3-byte table (used by 201SELCT loop)
-stat_X9A                equ     9Ah     ; alias — deprecated placeholder
+stat_X9A                equ     9Ah     ; alias — earlier name
 ; 0x9B (slot 2): set to 0xFF by 200FIGHT line 6774 after the 9B2Ch
 ; scripted trigger (parallel pattern to slot 3 at line 6898 with 9AF3).
 ; 212ARMRP (armor shop) tests it at line 199 to gate a special trade
@@ -128,19 +128,19 @@ stat_X9A                equ     9Ah     ; alias — deprecated placeholder
 ; is the ability_2 flag and "trade gating" is one specific game-design
 ; consequence of that ability being set.
 player_ability_2        equ     9Bh     ; ability slot 2 (set on 9B2Ch trigger; specific ability TBD)
-stat_X9B                equ     9Bh     ; alias — deprecated placeholder
+stat_X9B                equ     9Bh     ; alias — earlier name
 ; 0x9C (slot 3): set to 0xFF by 200FIGHT entity_fn_e_4 (line 6898) when
 ; the scripted trigger at game_func_118(DX=9AF3h) succeeds.  Read by
 ; 201SELCT draw_abilities loop above (the functest_stat_X9C probe missed
 ; this read because lodsb-via-SI is indirect).  Specific ability TBD.
 player_ability_3        equ     9Ch     ; ability slot 3 (set on 9AF3 trigger; specific ability TBD)
-stat_X9C                equ     9Ch     ; alias — deprecated placeholder
+stat_X9C                equ     9Ch     ; alias — earlier name
 cur_weapon_idx          equ     9Dh     ; cached selected weapon idx (1-based; init 0).
                                         ; Functional evidence in 201SELCT line 315/320
                                         ; (`mov ds:cur_weapon_idx, al / mov bl, ds:cur_weapon_idx`).
                                         ; Was misnamed `current_magic_spell` (proximity guess).
 cur_magic_idx           equ     9Eh     ; currently selected magic index (canonical, from 201SELCT)
-stat_X9E                equ     9Eh     ; alias — deprecated placeholder
+stat_X9E                equ     9Eh     ; alias — earlier name
 ; 0x9F: VESTIGIAL.  1 write site (106TOWN frame_update prologue zero-
 ; clears it every frame, alongside gvar_spacebar_state/skip_flag2/cur_magic_idx)
 ; and 0 reads anywhere.  Runtime probe (functest/.../test_stdply_stat_X9F.py)
@@ -151,7 +151,7 @@ stat_X9F                equ     9Fh     ; VESTIGIAL — per-frame zero-clear, no
 ; comment is explicit: "Reads music track count from [ds:0xA0]".  Reads it
 ; into CL and iterates through track table at music_track_ref_tbl.
 music_track_count       equ     0A0h    ; music track count (canonical, per game.asm comment)
-stat_XA0                equ     0A0h    ; alias — deprecated placeholder
+stat_XA0                equ     0A0h    ; alias — earlier name
 
 ; Animation color LUT overlay  [0x00B2, 0x00B4]
 ; Two bytes inside the 17-entry anim_color_lut do double duty as gameplay
@@ -161,6 +161,21 @@ stat_XA0                equ     0A0h    ; alias — deprecated placeholder
 player_hp_max             equ     0B2h    ; HP ceiling = 80 (overlays LUT frame 8)
 weap_dur_max            equ     0B4h    ; weapon durability cap = 12 (overlays frame 10)
 
+; Per-cavern boss-cleared flags  [0x00BB-0x00C1]  (7 bytes, one per main-cavern boss)
+; Validated empirically against 9 named-town saves (see 3_Assembly/tasm/save_decode.py):
+; each save in town N has exactly (N-1) bytes set to 0FFh in defeat order.  Cleanup
+; reads/writes happen in zeliad.exe's post-boss handler (no use sites in cleaned tasm).
+; Source: 4_Resources/Playthrough.txt section 2.1 boss-progression table.
+; NOTE: byte 0xBB OVERLAYS anim_color_lut frame 17 (init=0x00 = "Cangrejo not yet
+; defeated" matches both roles).
+boss_kill_cangrejo      equ     0BBh    ; cavern 1 boss (Muralla -> Satono)
+boss_kill_pulpo         equ     0BCh    ; cavern 2 boss (Satono -> Bosque)
+boss_kill_pollo         equ     0BDh    ; cavern 3 boss (Bosque -> Helada)
+boss_kill_agar          equ     0BEh    ; cavern 4 boss (Helada -> Tumba)
+boss_kill_vista         equ     0BFh    ; cavern 5 boss (Tumba -> Dorado)
+boss_kill_tarso         equ     0C0h    ; cavern 6 boss (Dorado -> Llama)
+boss_kill_dragon        equ     0C1h    ; cavern 7 boss (Llama -> Pureza)
+
 ; Player flags / hitbox section  [0x00C2-0x00E8]
 player_facing           equ     0C2h    ; facing/anim flags (87 byte_tests — most-tested byte)
 ; 0xC3: boss-intro flag.  200FIGHT line 4068 sets it as `[si+3] & 40h`
@@ -168,7 +183,7 @@ player_facing           equ     0C2h    ; facing/anim flags (87 byte_tests — m
 ; `test [C3h], 0FFh; jnz c3_set_loop` — controls which intro animation
 ; path runs (intro_left_loop vs not).
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical, bit-6 from boss data)
-stat_XC3                equ     0C3h    ; alias — deprecated placeholder
+stat_XC3                equ     0C3h    ; alias — earlier name
 player_level               equ     0C4h    ; level/area number (matches stdply.asm label)
 stat_XC5                equ     0C5h    ; byte field used by 200FIGHT/game.asm
 player_tileset             equ     0C8h    ; level tileset index (matches stdply.asm label)
@@ -185,18 +200,18 @@ player_hitbox              equ     0D2h    ; base of 9-row collision bitmask (ma
 ; (`add [C6h], ax` after a healing-event computation).  Drives the
 ; HP-trickle restoration animation when player consumes healing.
 heal_pulse_count        equ     0C6h    ; HP heal-pulse counter (canonical, 16-bit; +8 HP/tick)
-stat_XC6                equ     0C6h    ; alias — deprecated placeholder
+stat_XC6                equ     0C6h    ; alias — earlier name
 ; 0xE4 is the player's KEY COUNT — 201SELCT names it `key_count` (3 sites:
 ; inc + test + read).  Matches static analyzer's byte-only access pattern.
 key_count               equ     0E4h    ; player's collected-key count (canonical, from 201SELCT)
-stat_XE4                equ     0E4h    ; alias — deprecated placeholder
+stat_XE4                equ     0E4h    ; alias — earlier name
 ; 0xE6: scene-transition request flag.  200FIGHT main_loop_body (line 712)
 ; polls `test [E6h], 0FFh; jnz scene_transition`; on transition,
 ; scene_exit_wait (line 723-726) spin-waits for [E6h] to clear.
 ; Distinct from `scene_trans_flag` (200FIGHT's own state-machine flag);
 ; [E6h] is the EXTERNAL trigger that an event/interrupt can set.
 scene_trans_request     equ     0E6h    ; scene-transition request (canonical)
-stat_XE6                equ     0E6h    ; alias — deprecated placeholder
+stat_XE6                equ     0E6h    ; alias — earlier name
 ; The byte at 0xE7 is the PLAYER POSE STATE — the most-accessed byte in
 ; the entire stdply chunk (64 raw [0E7h] memory refs across 8 files).
 ; Bit 7 (0x80) is a "special-mode" flag; low 7 bits hold the pose index.
@@ -214,7 +229,7 @@ stat_XE6                equ     0E6h    ; alias — deprecated placeholder
 ;     with a semantic name and it's the closest English description.
 ; Adopting `gvar_pose_idx` as canonical; placeholder kept as alias.
 gvar_pose_idx           equ     0E7h    ; player pose state (canonical, bit7=mode flag, low7=index)
-stat_XE7                equ     0E7h    ; alias — deprecated placeholder
+stat_XE7                equ     0E7h    ; alias — earlier name
 ; 0xE8: init-complete flag.  Pattern across 29 sites in 106TOWN +
 ; 200FIGHT: set to 0FFh after first frame's init work; tested at top of
 ; main_loop bodies to skip the heavy init path (`test [E8h]; jnz
@@ -222,7 +237,7 @@ stat_XE7                equ     0E7h    ; alias — deprecated placeholder
 ; "post-init steady-state achieved" gate — engine takes the lighter
 ; per-frame update path while it's set.
 init_complete_flag      equ     0E8h    ; post-init steady-state flag (canonical)
-stat_XE8                equ     0E8h    ; alias — deprecated placeholder
+stat_XE8                equ     0E8h    ; alias — earlier name
 
 ; Animation color LUT  [0x00AB-0x00C3]  (NOT YET VALIDATED)
 ; IDA names this 'spells_espada' (Spanish 'espada' = sword/magic spells list).

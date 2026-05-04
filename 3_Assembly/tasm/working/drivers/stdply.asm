@@ -204,12 +204,24 @@ anim_color_lut	db	0Ch		; frame  1: color 12
 		db	03h		; frame 14: color  3
 		db	04h		; frame 15: color  4
 		db	03h		; frame 16: color  3
-		db	00h		; frame 17: color  0
 ;
-; [BCh..C3h]: 8-byte run originally labelled "reserved", but the static
-; analyzer found 0xC2 is the most-tested byte in the whole stdply chunk
-; (87 byte_tests as `player_facing`).  Split out C2 and C3 explicitly.
-		db	6 dup (0)	; [0BCh-0C1h] reserved (no genuine refs)
+; OVERLAY: byte at [BBh] is anim_color_lut frame 17 (init=0x00) AND the
+; boss_kill_cangrejo flag at runtime.  Set to 0FFh by zeliad.exe's
+; post-boss handler when Cangrejo (Cavern of Malicia, town 1->2) is
+; defeated.  Validated empirically across 9 named-town saves.
+boss_kill_cangrejo db 0	; [BBh] frame 17 color 0 / cavern 1 boss-cleared flag
+;
+; [BCh..C1h]: 6 boss-cleared flags for caverns 2..7 (Pulpo, Pollo, Agar,
+; Vista, Tarso, Dragon).  Each set to 0FFh by zeliad.exe when the boss
+; is defeated, allowing the next cavern's gate to open.  No memory-
+; operand reads/writes in cleaned tasm — the engine handles these in
+; zeliad.exe (post-boss reward dispatcher + savefile I/O).
+boss_kill_pulpo  db 0	; [BCh] cavern 2 (Satono -> Bosque)
+boss_kill_pollo  db 0	; [BDh] cavern 3 (Bosque -> Helada)
+boss_kill_agar   db 0	; [BEh] cavern 4 (Helada -> Tumba)
+boss_kill_vista  db 0	; [BFh] cavern 5 (Tumba -> Dorado)
+boss_kill_tarso  db 0	; [C0h] cavern 6 (Dorado -> Llama)
+boss_kill_dragon db 0	; [C1h] cavern 7 (Llama -> Pureza)
 player_facing	db	0		; [C2h] facing/anim flag bits (87 byte_tests)
 boss_intro_flag db 0		; [boss_intro_flag] boss intro-side flag (bit-6 from boss data; gates intro_left_loop)
 
