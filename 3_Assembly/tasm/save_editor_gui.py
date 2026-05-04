@@ -285,6 +285,13 @@ class SaveEditorApp:
             self._render_one_bitmap(outer, name, base_off, desc)
 
     def _render_one_bitmap(self, parent, name: str, base_off: int, desc: str):
+        """Render a single 8-byte cavern bitmap as 8 rows, each with:
+            offset | hex byte | [b7][b6][b5][b4][b3][b2][b1][b0] | [00] [FF]
+        byte_var is the single source of truth for each byte.  Editing any
+        of (hex entry, bit checkboxes, all/clear buttons) calls
+        _set_byte_value() which then fans the new value out to every other
+        view synchronously.
+        """
         title = f"{name}  (save 0x{base_off:02X}..0x{base_off + 7:02X})"
         frame = ttk.LabelFrame(parent, text=title, padding=(6, 2))
         frame.pack(fill=tk.X, pady=(2, 4), padx=2)
@@ -292,103 +299,126 @@ class SaveEditorApp:
         if desc:
             ttk.Label(frame, text=desc, foreground='gray45',
                       wraplength=900, justify=tk.LEFT).grid(
-                row=0, column=0, columnspan=12, sticky=tk.W, padx=(0, 0), pady=(0, 4))
+                row=0, column=0, columnspan=14, sticky=tk.W, pady=(0, 4))
 
-        # Header row: bit position labels
+        # Header row
         ttk.Label(frame, text='offset', foreground='gray', width=7).grid(row=1, column=0, sticky=tk.W)
         ttk.Label(frame, text='hex',    foreground='gray', width=4).grid(row=1, column=1, sticky=tk.W)
-        for b in range(8):
-            ttk.Label(frame, text=f'b{7 - b}', foreground='gray', width=3).grid(
-                row=1, column=2 + b, sticky=tk.W)
+        for col, b in enumerate(range(7, -1, -1)):
+            ttk.Label(frame, text=f'b{b}', foreground='gray', width=3,
+                      anchor=tk.CENTER).grid(row=1, column=2 + col, sticky=tk.W)
 
         byte_vars = []
-        bit_vars_2d = []  # bit_vars_2d[byte_idx][bit_idx 7..0]
+        bit_vars_2d = []     # bit_vars_2d[byte_idx][bit_idx 0..7] = IntVar
+        string_vars = []     # one StringVar per byte (the hex entry display)
 
         for byte_idx in range(8):
             byte_off = base_off + byte_idx
             row = 2 + byte_idx
 
-            # Offset label (right-click reverts this whole bitmap field)
+            byte_var = tk.IntVar(value=0)
+            string_var = tk.StringVar(value='00')
+            bit_vars_row = [tk.IntVar(value=0) for _ in range(8)]
+
+            byte_vars.append(byte_var)
+            string_vars.append(string_var)
+            bit_vars_2d.append(bit_vars_row)
+
+            # Single propagation function — called by every view's edit handler.
+            def _set_byte(value: int, byte_idx=byte_idx):
+                value &= 0xFF
+                if self._suppress_trace:
+                    return
+                self._suppress_trace = True
+                try:
+                    byte_vars[byte_idx].set(value)
+                    string_vars[byte_idx].set(f'{value:02X}')
+                    for b in range(8):
+                        bit_vars_2d[byte_idx][b].set((value >> b) & 1)
+                finally:
+                    self._suppress_trace = False
+                self._refresh_hex(self._safe_compose())
+
+            # Offset label (right-click reverts the whole bitmap field)
             off_lbl = ttk.Label(frame, text=f'0x{byte_off:02X}', foreground='gray40')
             off_lbl.grid(row=row, column=0, sticky=tk.W, padx=(0, 4))
             off_lbl.bind('<Button-3>', lambda _e, n=name: self._revert_field(n))
 
             # Hex byte entry
-            byte_var = tk.IntVar()
-            byte_vars.append(byte_var)
-
-            ent = ttk.Entry(frame, font=('Consolas', 10), width=4,
-                            justify=tk.CENTER)
+            ent = ttk.Entry(frame, textvariable=string_var, font=('Consolas', 10),
+                            width=4, justify=tk.CENTER)
             ent.grid(row=row, column=1, sticky=tk.W, padx=(0, 4))
-            # Use textvariable proxy: we keep IntVar as truth, sync StringVar for the entry.
-            string_proxy = tk.StringVar()
-            ent.configure(textvariable=string_proxy)
 
-            def _on_byte_string_change(*_a, bv=byte_var, sp=string_proxy, n=name):
+            def _on_string_change(*_a, sv=string_var, _set=_set_byte):
                 if self._suppress_trace:
                     return
-                txt = sp.get().strip()
+                txt = sv.get().strip()
                 if not txt:
                     return
+                # Bitmap byte entry: always parse as hex (so 'AB' -> 0xAB).
+                # Strip an optional 0x or h marker.
+                t = txt
+                if t.lower().startswith('0x'):
+                    t = t[2:]
+                elif t.lower().endswith('h'):
+                    t = t[:-1]
                 try:
-                    val = save_edit.parse_int(txt) & 0xFF
+                    val = int(t, 16) & 0xFF
                 except ValueError:
-                    return  # invalid entry while typing — ignore
-                if val != bv.get():
-                    self._suppress_trace = True
-                    try:
-                        bv.set(val)
-                    finally:
-                        self._suppress_trace = False
-                self._refresh_hex(self._safe_compose())
-            string_proxy.trace_add('write', _on_byte_string_change)
+                    return  # mid-typing partial, ignore silently
+                _set(val)
+            string_var.trace_add('write', _on_string_change)
 
-            # When byte_var changes (e.g. from bit toggle or populate),
-            # update both string_proxy (visible hex) and the 8 bit checkboxes.
-            bit_vars_row = []
-            for bit_idx in range(7, -1, -1):  # bit 7 leftmost
-                bv_chk = tk.IntVar()
-                bit_vars_row.append(bv_chk)
+            # Bit checkboxes (b7 .. b0 left to right)
+            for col, bit_idx in enumerate(range(7, -1, -1)):
+                bv_chk = bit_vars_row[bit_idx]
                 cb = ttk.Checkbutton(frame, variable=bv_chk)
-                cb.grid(row=row, column=2 + (7 - bit_idx), sticky=tk.W, padx=1)
+                cb.grid(row=row, column=2 + col, sticky=tk.W, padx=1)
 
-                def _on_bit_change(*_a, bv=byte_var, sp=string_proxy, chk=bv_chk, b=bit_idx):
+                def _on_bit_change(*_a, b=bit_idx, chk=bv_chk, byte_idx=byte_idx, _set=_set_byte):
                     if self._suppress_trace:
                         return
-                    cur = bv.get()
-                    if chk.get():
-                        new = cur | (1 << b)
-                    else:
-                        new = cur & ~(1 << b)
+                    cur = byte_vars[byte_idx].get()
+                    new = (cur | (1 << b)) if chk.get() else (cur & ~(1 << b))
                     if new != cur:
-                        self._suppress_trace = True
-                        try:
-                            bv.set(new)
-                            sp.set(f'{new:02X}')
-                        finally:
-                            self._suppress_trace = False
-                    self._refresh_hex(self._safe_compose())
+                        _set(new)
                 bv_chk.trace_add('write', _on_bit_change)
-            # bit_vars_row is in [bit7, bit6, ..., bit0] order.  Reorder to bit_idx 0..7
-            bit_vars_2d.append(list(reversed(bit_vars_row)))
 
-            # Trace on byte_var: keep string + bits in sync when set programmatically.
-            def _on_byte_int_change(*_a, bv=byte_var, sp=string_proxy, bits=bit_vars_2d[-1]):
-                if self._suppress_trace:
-                    return
-                v = bv.get() & 0xFF
+            # Per-byte quick-set buttons
+            ttk.Button(frame, text='00', width=3,
+                       command=lambda byte_idx=byte_idx, _set=_set_byte: _set(0x00)
+                       ).grid(row=row, column=10, sticky=tk.W, padx=(8, 1))
+            ttk.Button(frame, text='FF', width=3,
+                       command=lambda byte_idx=byte_idx, _set=_set_byte: _set(0xFF)
+                       ).grid(row=row, column=11, sticky=tk.W, padx=1)
+
+        # Whole-bitmap quick-set buttons (row below the 8 byte rows)
+        actions = ttk.Frame(frame)
+        actions.grid(row=10, column=0, columnspan=14, sticky=tk.W, pady=(4, 0))
+        ttk.Label(actions, text='whole field:', foreground='gray45').pack(side=tk.LEFT, padx=(0, 6))
+
+        def _fill_all(value: int):
+            for i in range(8):
+                # Use _set_byte equivalent inline (each byte has its own closure)
                 self._suppress_trace = True
                 try:
-                    sp.set(f'{v:02X}')
-                    for i in range(8):
-                        bits[i].set((v >> i) & 1)
+                    byte_vars[i].set(value)
+                    string_vars[i].set(f'{value:02X}')
+                    for b in range(8):
+                        bit_vars_2d[i][b].set((value >> b) & 1)
                 finally:
                     self._suppress_trace = False
-                self._refresh_hex(self._safe_compose())
-            byte_var.trace_add('write', _on_byte_int_change)
+            self._refresh_hex(self._safe_compose())
 
-        # Store under field name with a marker type
-        self.field_vars[name] = (byte_vars, ('bitmap8', base_off), bit_vars_2d)
+        ttk.Button(actions, text='clear (all 00)',  command=lambda: _fill_all(0x00)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(actions, text='set (all FF)',    command=lambda: _fill_all(0xFF)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(actions, text='revert this slot', command=lambda n=name: self._revert_field(n)).pack(side=tk.LEFT, padx=2)
+
+        # Store under field name.  byte_vars is the source of truth for the
+        # bytes; string_vars and bit_vars_2d are display-side mirrors that
+        # _populate_fields / _revert_field must also keep in sync.
+        self.field_vars[name] = (byte_vars, ('bitmap8', base_off),
+                                 {'strings': string_vars, 'bits': bit_vars_2d})
 
     def _render_section(self, parent, label, fields):
         section = ttk.LabelFrame(parent, text=label, padding=(8, 4))
@@ -538,29 +568,17 @@ class SaveEditorApp:
 
     def _populate_fields(self, data: bytes):
         for name, (var_or_list, typ, choices) in self.field_vars.items():
-            # Bitmap8: var_or_list is list of 8 IntVars (one per byte);
-            # choices holds the 8x8 bit-checkbox vars.
+            # Bitmap8: var_or_list = byte_vars; choices = {'strings', 'bits'}
             if isinstance(typ, tuple) and typ[0] == 'bitmap8':
                 base = typ[1]
                 self._suppress_trace = True
                 try:
-                    for i, bv in enumerate(var_or_list):
+                    for i, byte_var in enumerate(var_or_list):
                         v = data[base + i]
-                        bv.set(v)
-                        # Manually sync the bit checkboxes since we
-                        # suppressed traces.
+                        byte_var.set(v)
+                        choices['strings'][i].set(f'{v:02X}')
                         for b in range(8):
-                            choices[i][b].set((v >> b) & 1)
-                    # Sync the visible hex StringVar by setting once more
-                    # without suppression so the byte trace fires?  No —
-                    # we already updated bits manually; the hex entry's
-                    # StringVar update is only via the byte_var trace.
-                    # Trigger it now:
-                    self._suppress_trace = False
-                    for bv in var_or_list:
-                        # forced retrigger via set() with same value
-                        cur = bv.get()
-                        bv.set(cur)
+                            choices['bits'][i][b].set((v >> b) & 1)
                 finally:
                     self._suppress_trace = False
                 continue
@@ -652,8 +670,17 @@ class SaveEditorApp:
         var, typ, choices = self.field_vars[name]
         if isinstance(typ, tuple) and typ[0] == 'bitmap8':
             base = typ[1]
-            for i, bv in enumerate(var):
-                bv.set(self.original_data[base + i])  # trace will resync hex+bits
+            self._suppress_trace = True
+            try:
+                for i, byte_var in enumerate(var):
+                    v = self.original_data[base + i]
+                    byte_var.set(v)
+                    choices['strings'][i].set(f'{v:02X}')
+                    for b in range(8):
+                        choices['bits'][i][b].set((v >> b) & 1)
+            finally:
+                self._suppress_trace = False
+            self._refresh_hex(self._safe_compose())
             return
         _, off, _, _ = save_edit.lookup(name)
         old = save_edit.decode_field(self.original_data, off, typ)
