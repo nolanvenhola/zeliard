@@ -69,10 +69,18 @@ FIELDS = [
     ('jashiin_cleared',      0x48, 'bool', 'Hypothesis: post-Jashiin flag (first byte of slot 9). 0xFF only in 4 ALMAS-class saves.'),
 
     # ─── Player record (0x80..0xC1) ──────────────────────────────────────
-    ('map_scroll_col',       0x80, 'w',  'Cavern X scroll column (16-bit)'),
-    ('map_scroll_row',       0x82, 'b',  'Cavern Y scroll row'),
-    ('town_player_col',      0x83, 'b',  'Player screen column in town (range 0..0x10)'),
-    ('fight_player_col',     0x84, 'b',  'Player screen column in fight (range 0..7)'),
+    # 0x80 / 0x81: TCRF says 0x80 is "starting position in town" (1 byte; tile
+    # coord, per-town max table) and 0x81 is "do not edit, any non-00 value
+    # crashes the game".  Asm code in 200FIGHT.asm reads [80h] as a 16-bit
+    # cavern X scroll word (54 word-ptr refs); stdply.inc names it map_scroll_col.
+    # Same byte, two lenses: save-file (TCRF) vs runtime (asm).  We expose them
+    # as separate single-byte fields so the editor matches the save-file view
+    # AND the user can't accidentally write a non-00 value into 0x81.
+    ('start_pos_in_town',    0x80, 'b',  'Starting position in town — TCRF: per-town tile-coord (max table differs per town; 00 is safe).  Asm code (200FIGHT) treats 0x80..0x81 as a 16-bit cavern scroll word; in the save file 0x81 is always 00.'),
+    ('stat_X81',             0x81, 'b',  'DO NOT EDIT — TCRF: any non-00 value crashes the game.  Save-file high byte of the cavern X scroll word at runtime; in saves it is always 00.'),
+    ('stat_X82',             0x82, 'b',  'Unknown — TCRF: observed 00, 39, 3C.  Asm side names this map_scroll_row (cavern Y scroll), but TCRF flags it as unknown for save-file purposes.'),
+    ('town_player_col',      0x83, 'b',  'Player screen column in town (range 0..0x10).  TCRF: physical position on screen, 0D = center; >1A can crash.  Values depend on 0x80.'),
+    ('stat_X84',             0x84, 'b',  'Unknown — TCRF: observed 00, 0A, 12; 00 does not affect game.  Asm side names this fight_player_col (independent counter in 200FIGHT, range 0..7) but TCRF flags it as unknown.'),
     ('player_gold',          0x85, '24', 'Gold on hand (24-bit, hi/lo/mid layout). Spent at shops.'),
     ('player_bank',          0x88, '24', 'Banked gold (24-bit, hi/lo/mid). Stored at bank, withdrawable.'),
     ('player_almas',         0x8B, 'w',  'Almas (16-bit, capped 0xFFFF). Cavern-drop currency, exchanged at bank for gold.'),
@@ -85,11 +93,12 @@ FIELDS = [
     ('shield_max_HP',        0x96, 'w',  'Shield HP cap (16-bit)'),
     ('keys_normal',          0x98, 'b',  'Normal key count.  >9 carryable but only 1 digit shown in HUD (TCRF).'),
     ('keys_lion',            0x99, 'b',  "Lion's Head Key count.  Opens special doors in Cavern of Tesoro and Cavern of Final (TCRF)."),
-    ('crest_elf',            0x9A, 'bool', 'Elf Crest (set after defeating Paguro in Llama Hut)'),
+    ('crest_elf',            0x9A, 'bool', 'Elf Crest (00=No, FF=Yes).  TCRF emphasises this DOES NOT trigger Llama Town NPC dialog — that gate is the Paguro-defeated word at 0x30..0x31.  Set as a side-effect of beating Paguro, but not what the NPCs check.'),
     ('crest_glory',          0x9B, 'bool', 'Glory Crest (Cementar pickup; consumed by 212ARMRP Tumba shop trade for Knight\'s Sword)'),
-    ('crest_hero',           0x9C, 'bool', 'Hero\'s Crest (Cavern of Riza; required to encounter Pollo)'),
+    ('crest_hero',           0x9C, 'bool', "Hero's Crest in inventory (00=No, FF=Yes).  TCRF: this is NOT the gate for the crazy guard in Bosque — that gate is 0x12 bit 3 (\"Hero's Crest collected\" event flag).  This 0x9C byte is just the inventory marker."),
     ('selected_spell',       0x9D, 'b',  'Currently selected spell ID (1=Espada..7=Guerra; only one spell active at a time — user-confirmed at 0x9D, NOT 0x9E).'),
-    ('selected_wearable',    0x9E, 'b',  'Currently selected wearable ID (0=none, 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape).  User-confirmed.'),
+    ('selected_wearable',    0x9E, 'b',  'Currently selected wearable ID (0=none, 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape).  User-confirmed: byte holds the item ID directly.  (TCRF text claims this is a "Row #, NOT item specific" — but Helada save (only A1=04 Ruzeria, 0x9E=04) proves it stores the item ID; TCRF is wrong on this one.)'),
+    ('stat_X9F',             0x9F, 'b',  'Unknown — TCRF speculation: vestigial slot for "selected item" before the design dropped item-equipping (items are used immediately instead).  Always observed as 00 in saves.'),
     ('tears_of_esmesanti_count', 0xA0, 'b',  'Tears of Esmesanti collected (0..9).  Each main cavern hides one Tear; collecting all is the win condition (TCRF).'),
     # 0xA1..0xA5 — list of WEARABLE IDs in acquisition order (4 shoes + 1 cape).
     # Per playthrough §6.3 + user correction.  ID mapping derived from save
@@ -120,13 +129,18 @@ FIELDS = [
     ('charges_guerra',       0xB1, 'b',  'Guerra charges remaining (default 03h)'),
     ('player_hp_max',        0xB2, 'w',  'LIFE max (16-bit; mirrors current HP at 0x90..91 cap)'),
     # 0xB4..0xBA = max spell charges (cap; refilled by sage).
-    ('charges_max_espada',   0xB4, 'b',  'Espada max charges'),
-    ('charges_max_saeta',    0xB5, 'b',  'Saeta max charges'),
-    ('charges_max_fuego',    0xB6, 'b',  'Fuego max charges'),
-    ('charges_max_lanzar',   0xB7, 'b',  'Lanzar max charges'),
-    ('charges_max_rascar',   0xB8, 'b',  'Rascar max charges'),
-    ('charges_max_agua',     0xB9, 'b',  'Agua max charges'),
-    ('charges_max_guerra',   0xBA, 'b',  'Guerra max charges'),
+    # NB: TCRF text labels both 0xAB..B1 and 0xB4..BA as "Spell Count
+    # (Remaining Spells)" with identical defaults — the wiki doesn't
+    # disambiguate.  We split into current vs max because that's what the
+    # in-game refill behaviour requires (you can spend charges down toward
+    # 0; the sage refills back to a saved cap).  Defaults match 0xAB..B1.
+    ('charges_max_espada',   0xB4, 'b',  'Espada max charges (cap; default 0Ch).  TCRF labels this "Remaining Spells" again — same wording as 0xAB..B1; we infer it is the cap.'),
+    ('charges_max_saeta',    0xB5, 'b',  'Saeta max charges (cap; default 06h).'),
+    ('charges_max_fuego',    0xB6, 'b',  'Fuego max charges (cap; default 08h).'),
+    ('charges_max_lanzar',   0xB7, 'b',  'Lanzar max charges (cap; default 04h).'),
+    ('charges_max_rascar',   0xB8, 'b',  'Rascar max charges (cap; default 03h).'),
+    ('charges_max_agua',     0xB9, 'b',  'Agua max charges (cap; default 04h).'),
+    ('charges_max_guerra',   0xBA, 'b',  'Guerra max charges (cap; default 03h).'),
 
     # Spell availability flags (7 spells, taught by Sages — playthrough §6.1).
     # Earlier interpretation as boss_kill_<boss> was wrong: BB-C1 actually
@@ -185,7 +199,14 @@ FIELDS = [
     ('sages_spoken',         0xE5, 'b',  'Sages spoken-with bitmap (+128=Muralla +64=Satono +32=Bosque +16=Helada +8=Tumba +4=Dorado +2=Llama +1=Pureza). TCRF.'),
     ('stat_XE6',             0xE6, 'b',  'Unknown (TCRF).'),
     ('stat_XE7',             0xE7, 'b',  'Unknown; observed 02, 04 (TCRF).'),
-    ('stat_XE8',             0xE8, 'b',  'Unknown (TCRF).'),
+    ('stat_XE8',             0xE8, 'b',  'Unknown (TCRF: "E8-FF Unknown").'),
+    # 0xE9..0xFF: TCRF says "E8-FF Unknown" but observed saves consistently
+    # show non-zero bytes here (e.g. 0xE9=0x90, 0xEF=0x56, 0xFF=0x46 across
+    # most saves; Pureza differs).  This is likely save-format machinery
+    # (icon data, BLK signature, tail x86 code per save_decode.py header
+    # comments) rather than gameplay state.  Exposed as one raw 23-byte
+    # field for inspection; do not edit unless you know what you are doing.
+    ('tail_unknown_E9_FF',   0xE9, ('raw', 23), 'TCRF: "E8-FF Unknown".  Save-format trailer (icon data / BLK signature / tail x86 code per save_decode.py).  Non-zero in all observed saves; do not edit unless you understand the save format.'),
 ]
 
 # ---------------------------------------------------------------------------
