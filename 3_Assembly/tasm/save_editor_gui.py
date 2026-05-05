@@ -363,12 +363,10 @@ EVENT_BITS = {
            (5, "Open final locked door (Jashiin's Lair)"),
            (4, 'Key (Final)')],
     # ── 0x46..0x4F: TCRF "Unknown (All remain at 00 in normal play)" ──────
-    # Saves do show non-zero bytes here in late-game files (the basis for
-    # alguien_cleared / jashiin_cleared hypothesis fields at 0x47/0x48).
     # Render as generic b7..b0 so the user can still inspect them.
     0x46: ('unknown', 'Unknown'),
-    0x47: ('unknown', 'Unknown (hypothesis: alguien_cleared)'),
-    0x48: ('unknown', 'Unknown (hypothesis: jashiin_cleared)'),
+    0x47: ('unknown', 'Unknown'),
+    0x48: ('unknown', 'Unknown'),
     0x49: ('unknown', 'Unknown'),
     0x4A: ('unknown', 'Unknown'),
     0x4B: ('unknown', 'Unknown'),
@@ -449,10 +447,6 @@ def enum_parse(s: str) -> int:
 
 SECTIONS = [
     # More-specific predicates first; section_for() returns the first match.
-    # The boss-flag candidates are JUST the named bool fields at 0x47/0x48 —
-    # NOT the cavern_bits_final raw bitmap (which also has base 0x48 and
-    # belongs in the bitmap section so it gets the bit-grid renderer).
-    ("Special boss-flag candidates",         lambda f: f[1] in (0x47, 0x48) and f[2] == 'bool'),
     ("Per-cavern bitmaps (save 0x00..0x4F)", lambda f: f[1] < 0x50 and f[2] != 'bool'),
     ("Crests",                               lambda f: f[0].startswith('crest_')),
     ("Spells learned (toggle to give/remove a spell)",
@@ -462,8 +456,10 @@ SECTIONS = [
     ("Player record — stats",                lambda f: f[1] in (0x90, 0xB2, 0x98, 0x99,
                                                                   0x8D, 0x8E,
                                                                   0xC2, 0xC3, 0xC5, 0xC6,
+                                                                  0xC7, 0xC8,
                                                                   0xE4, 0xE6, 0xE7, 0xE8,
                                                                   0xE9)),  # 0xE9 = tail_unknown_E9_FF
+    ("Unknown bytes (TCRF undocumented)",    lambda f: f[0] == 'stat_X9F'),
     ("Wearables (4 shoes + cape, in acquisition order)",
                                               lambda f: f[0].startswith('wear_')),
     ("Item inventory (5 slots, magic items 1..8)",

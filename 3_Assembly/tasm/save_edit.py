@@ -52,21 +52,21 @@ from typing import Tuple, Union
 
 # Each entry: (name, offset, type, description)
 FIELDS = [
-    # ─── Per-cavern collected-item bitmaps (10 slots × 8 bytes each) ─────
-    ('cavern_bits_malicia',  0x00, ('raw', 8), 'Cavern of Malicia (cavern 1) collected-items bitmap'),
-    ('cavern_bits_peligro',  0x08, ('raw', 8), 'Cavern of Peligro (cavern 2) collected-items bitmap'),
-    ('cavern_bits_riza',     0x10, ('raw', 8), 'Cavern of Riza (cavern 3) collected-items bitmap'),
-    ('cavern_bits_glacial',  0x18, ('raw', 8), 'Cavern of Glacial (cavern 4) collected-items bitmap'),
-    ('cavern_bits_cementar', 0x20, ('raw', 8), 'Cavern of Cementar (cavern 5) collected-items bitmap'),
-    ('cavern_bits_tesoro',   0x28, ('raw', 8), 'Cavern of Tesoro (cavern 6) collected-items bitmap'),
-    ('cavern_bits_caliente', 0x30, ('raw', 8), 'Cavern of Caliente (cavern 7, Dragon) collected-items bitmap'),
-    ('cavern_bits_slot7',    0x38, ('raw', 8), 'Slot 7 — always zero in observed saves; reserved/unused'),
-    ('cavern_bits_absor',    0x40, ('raw', 8), 'Cavern of Absor (cavern 9, Alguien) collected-items + 0x47 = post-Alguien flag (hypothesis)'),
-    ('cavern_bits_final',    0x48, ('raw', 8), 'Cavern of Final (cavern 10, Jashiin); 0x48=0xFF observed only in post-Jashiin saves (hypothesis)'),
-
-    # Hypothetical special-boss flags (single bytes within slots 8/9):
-    ('alguien_cleared',      0x47, 'bool', 'Hypothesis: post-Alguien flag (last byte of slot 8). 0xFF only in 4 ALMAS-class saves.'),
-    ('jashiin_cleared',      0x48, 'bool', 'Hypothesis: post-Jashiin flag (first byte of slot 9). 0xFF only in 4 ALMAS-class saves.'),
+    # ─── Dungeon and town event handlers (TCRF 0x00..0x4F) ───────────────
+    # Each 8-byte slot is named after the BOSS gating that region (since each
+    # main boss has a 16-bit "defeated" word at the start of the slot).  The
+    # slot covers everything TCRF documents in that range, not just one
+    # cavern — see EVENT_BITS in save_editor_gui.py for the per-byte map.
+    ('cavern_bits_cangrejo',       0x00, ('raw', 8), 'Cangrejo region (TCRF 0x00..0x07): Cangrejo defeated word + Cavern of Malicia bits + Spoke-King + Entered-Caverns first time'),
+    ('cavern_bits_pulpo',          0x08, ('raw', 8), 'Pulpo region (TCRF 0x08..0x0F): Pulpo defeated word + Cavern of Peligro bits (#1, #2)'),
+    ('cavern_bits_pollo',          0x10, ('raw', 8), 'Pollo region (TCRF 0x10..0x17): Pollo defeated word + Cavern of Madera + Cavern of Riza bits'),
+    ('cavern_bits_agar',           0x18, ('raw', 8), 'Agar region (TCRF 0x18..0x1F): Agar defeated word + Cavern of Glacial + Cavern of Escarcha (#1, #2) bits'),
+    ('cavern_bits_vista',          0x20, ('raw', 8), 'Vista region (TCRF 0x20..0x27): Vista defeated word + Cavern of Corroer + Cavern of Cementar (#1, #2) bits'),
+    ('cavern_bits_tarso',          0x28, ('raw', 8), 'Tarso region (TCRF 0x28..0x2F): Tarso defeated word + Cavern of Tesoro + Cavern of Plata (#1, #2, #3) bits — also covers Arrugia secret'),
+    ('cavern_bits_paguro_dragon',  0x30, ('raw', 8), 'Paguro/Dragon region (TCRF 0x30..0x37): Paguro defeated word + Dragon defeated word + Cavern of Caliente (#1, #2, #3) bits'),
+    ('cavern_bits_unknown_38',     0x38, ('raw', 8), 'TCRF 0x38..0x3F: all bytes documented as Unknown (always 00 in normal play).'),
+    ('cavern_bits_alguien',        0x40, ('raw', 8), 'Alguien region (TCRF 0x40..0x47): Cavern of Absor + Cavern of Milagro + Cavern of Desleal + Cavern of Falter/Final bits.  Gates Alguien path.  TCRF documents 0x42..0x45 only; 0x40, 0x41, 0x46, 0x47 listed as Unknown.'),
+    ('cavern_bits_unknown_48',     0x48, ('raw', 8), 'TCRF 0x48..0x4F: all bytes documented as Unknown (always 00 in normal play).'),
 
     # ─── Player record (0x80..0xC1) ──────────────────────────────────────
     # 0x80 / 0x81: TCRF says 0x80 is "starting position in town" (1 byte; tile
