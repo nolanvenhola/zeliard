@@ -149,6 +149,214 @@ def bits_for(name: str):
     return None
 
 
+# ---------------------------------------------------------------------------
+# TCRF per-byte bit names for the dungeon/town event handler region
+# (save offsets 0x00..0x4F).  Each entry: offset -> either a list of
+# (bit_idx, label) tuples (named bitfield byte), or a string (whole byte
+# is a boolean/word — show single label, mostly informational).
+# Source: 4_Resources/Save Game Format/Save-Game-Format.html.
+# ---------------------------------------------------------------------------
+
+EVENT_BITS = {
+    # ── Cavern 1: Cangrejo / Malicia ──────────────────────────────────────
+    0x00: 'Cangrejo defeated (low byte of 16-bit flag)',
+    0x01: 'Cangrejo defeated (high byte)',
+    0x02: [(7, 'Chest, 50 Golds'),    (6, 'Chest, Red Potion'),
+           (5, 'Muralla Key 1'),       (4, 'Wall, Blue Potion'),
+           (3, "Key, Cangrejo's Lair")],
+    0x03: [(7, 'Door to Cangrejo open'), (6, 'Door to Satono open'),
+           (5, 'Tear of Esmesanti')],
+    0x04: 'Unknown',
+    0x05: 'Spoke to the King (00/FF; gates 1000-Gold gift)',
+    0x06: 'Entered caverns first time (00/FF; overrides spoke_king)',
+    0x07: 'Unknown',
+    # ── Cavern 2: Pulpo / Peligro ─────────────────────────────────────────
+    0x08: 'Pulpo defeated (low byte)',
+    0x09: 'Pulpo defeated (high byte)',
+    0x0A: [(7, 'Chest, Blue Potion (One-time Bat)'),
+           (6, 'Key, Under Locked Door'),
+           (5, 'Key, Under Blue Open Door'),
+           (4, 'Wall, Red Potion (Far)'),
+           (3, 'Chest, 50 Gold (Under Satono)'),
+           (2, 'Empty Chest'),
+           (1, 'Wall, 100 almas'),
+           (0, 'Chest, Red Potion')],
+    0x0B: [(7, 'Open 1st Locked Blue Door'),
+           (6, 'Open Locked Red Door'),
+           (5, 'Open Locked Door to 3rd Dungeon'),
+           (4, "Key, Pulpo's Lair"),
+           (3, 'Tear of Esmesanti'),
+           (2, 'Wall, Red Potion (Near Satono)')],
+    0x0C: 'Unknown', 0x0D: 'Unknown', 0x0E: 'Unknown', 0x0F: 'Unknown',
+    # ── Cavern 3: Pollo / Madera + Riza ───────────────────────────────────
+    0x10: 'Pollo defeated (low)',
+    0x11: 'Pollo defeated (high)',
+    0x12: [(7, 'Red Potion (Small tree)'),
+           (6, 'Key'),
+           (5, "Chest, Red Potion (near Hero's Crest)"),
+           (4, 'Wall, Red Potion (Largest Tree)'),
+           (3, "Hero's Crest (gates Pollo encounter)"),
+           (2, '50 Gold (Under Bosque)'),
+           (1, 'Blue Potion (in Riza)'),
+           (0, 'Red Potion (in Riza)')],
+    0x13: [(7, 'Red Potion'),
+           (6, 'Chest, Blue Potion'),
+           (5, 'Empty Chest'),
+           (4, '100 Gold'),
+           (3, 'Open Locked Red Door'),
+           (2, "Key, Pollo's Lair"),
+           (1, 'Tear of Esmesanti'),
+           (0, 'Open Locked Door to 4th Dungeon')],
+    0x14: 'Unknown', 0x15: 'Unknown', 0x16: 'Unknown', 0x17: 'Unknown',
+    # ── Cavern 4: Agar / Glacial + Escarcha ───────────────────────────────
+    0x18: 'Agar defeated (low)',
+    0x19: 'Agar defeated (high)',
+    0x1A: [(7, 'Key'),
+           (6, 'Red Potion (Near locked door)'),
+           (5, 'Red Potion (Near Ruzeria Shoes)'),
+           (4, 'Ruzeria Shoes'),
+           (3, 'Blue Potion (Near Ruzeria Shoes)'),
+           (2, 'Blue Potion (By Boss Door)'),
+           (1, 'Red Potion (Beside 100 Golds)'),
+           (0, '100 Golds')],
+    0x1B: [(7, 'Open 1st Locked Door'),
+           (6, "Open locked door to Agar's Domain"),
+           (5, 'Chest, 50 Golds'),
+           (4, 'Chest, Blue Potion (By Helada Key)'),
+           (3, 'Key (To Helada)'),
+           (2, 'Red Potion (Near Helada)'),
+           (1, 'Blue Potion (Near Boss Key)'),
+           (0, 'Key (To Boss Lair)')],
+    0x1C: [(7, 'Wall, Blue Potion (Beside Purple door)'),
+           (6, 'Wall, Red Potion (Near Boss Key)'),
+           (5, 'Open door to Helada'),
+           (4, 'Tear of Esmesanti')],
+    0x1D: 'Unknown', 0x1E: 'Unknown', 0x1F: 'Unknown',
+    # ── Cavern 5: Vista / Corroer + Cementar ──────────────────────────────
+    0x20: 'Vista defeated (low)',
+    0x21: 'Vista defeated (high)',
+    0x22: [(7, 'Chest, Red Potion'),
+           (6, 'Wall, Red Potion (Near Tumba 1st entrance)'),
+           (5, 'Chest, 500 Golds (Nowhere near Gelroid)'),
+           (4, 'Chest, Blue Potion (On way to boss)'),
+           (3, 'Chest, 500 Golds (On way to boss)'),
+           (2, 'Chest, 50 Golds'),
+           (1, 'Chest, Pirika Shoes'),
+           (0, 'Chest, 100 Golds')],
+    0x23: [(7, 'Open locked door to Cementar'),
+           (6, 'Wall, Blue Potion (right pair)'),
+           (5, 'Chest, 1000 Golds'),
+           (4, 'Key (1st locked door)'),
+           (3, 'Chest, 50 Golds'),
+           (2, "Chest, Blue Potion (Outside Vista's Lair)"),
+           (1, 'Key (To Boss Lair)'),
+           (0, 'Chest, Red Potion')],
+    0x24: [(7, 'Crest of Glory'),
+           (6, 'Wall, 100 Almas (glitched)'),
+           (5, 'Chest, Blue Potion (left pair)'),
+           (4, 'Open locked door to Vista'),
+           (3, "Blue Potion (in Vista's Lair)"),
+           (2, 'Tear of Esmesanti'),
+           (1, "Returned Crest of Glory (-16 to 0xD6, removes Knight's Sword)")],
+    0x25: 'Unknown', 0x26: 'Unknown', 0x27: 'Unknown',
+    # ── Cavern 6: Tarso / Tesoro + Plata + Arrugia secret ────────────────
+    0x28: 'Tarso defeated (low)',
+    0x29: 'Tarso defeated (high)',
+    0x2A: [(7, 'Chest, Red Potion'),
+           (6, 'Empty Chest'),
+           (5, 'Key, Near Silkarn Shoes'),
+           (4, 'Wall, Blue Potion (Near Silkarn Shoes)'),
+           (3, 'Chest, 1000 Golds (Near Silkarn Shoes)'),
+           (2, 'Silkarn Shoes'),
+           (1, 'Chest, Blue Potion (left pair)'),
+           (0, 'Chest, Blue Potion (right pair)')],
+    0x2B: [(7, 'Chest, 1000 Golds (Tesoro, near 2 Blue Potions)'),
+           (6, 'Key (Tesoro, To Dorado Town)'),
+           (5, 'Open locked door to Cavern of Caliente (7th dungeon)'),
+           (4, 'Open locked door to Cavern of Arrugia (lion-key door)'),
+           (3, 'Open locked door to Tarso'),
+           (2, 'Open locked door to Dorado Town'),
+           (1, 'Wall, Blue Potion (On way to boss)'),
+           (0, 'Chest, 500 Golds')],
+    0x2C: [(7, 'Chest, Red Potion'),
+           (6, 'Wall, Blue Potion (near fire pit, leading to Silkarn)'),
+           (5, 'Wall, Blue Potion'),
+           (4, 'Wall, Red Potion (Near Fire pit)'),
+           (3, 'Enchantment Sword (Arrugia)'),
+           (2, 'Feruza Shoes (Arrugia)'),
+           (1, '1000 Golds (Arrugia, 3rd one)'),
+           (0, '1000 Golds (Arrugia, 2nd one)')],
+    0x2D: [(7, '1000 Golds (Arrugia, 1st one)'),
+           (6, 'Blue Potion (Arrugia)'),
+           (5, "Key, Tarso's Lair"),
+           (4, 'Tear of Esmesanti')],
+    0x2E: 'Unknown', 0x2F: 'Unknown',
+    # ── Llama Town: Paguro + Cavern of Caliente / Dragon ─────────────────
+    0x30: 'Paguro defeated (low) — gates Llama Town NPC dialog',
+    0x31: 'Paguro defeated (high)',
+    0x32: 'Dragon defeated (low)',
+    0x33: 'Dragon defeated (high)',
+    0x34: [(7, 'Spoke to the girl after defeating Paguro'),
+           (6, 'Purchased the Asbestos Cape'),
+           (5, 'Open locked door (1st)'),
+           (4, "Open locked door to Dragon's lair"),
+           (3, 'Chest, Blue Potion (Requires platform)'),
+           (2, 'Key (1st)'),
+           (1, 'Chest, Blue Potion (By vertical wind tunnel)'),
+           (0, 'Key (2nd)')],
+    0x35: [(7, "Chest, Blue Potion (Next to Dragon's door)"),
+           (6, 'Chest, 1000 Golds'),
+           (5, 'Open locked door (2nd)'),
+           (4, 'Chest, Blue Potion (Reaccion)'),
+           (3, 'Chest, 500 Golds (Reaccion)'),
+           (2, 'Chest, Blue Potion'),
+           (1, 'Chest, Key (Correr, 3rd)'),
+           (0, 'Chest, 1000 Golds (Correr)')],
+    0x36: [(7, 'Tear of Esmesanti')],
+    0x37: 'Unknown', 0x38: 'Unknown', 0x39: 'Unknown', 0x3A: 'Unknown',
+    0x3B: 'Unknown', 0x3C: 'Unknown', 0x3D: 'Unknown', 0x3E: 'Unknown',
+    0x3F: 'Unknown', 0x40: 'Unknown', 0x41: 'Unknown',
+    # ── Cavern of Absor + Cavern of Final ─────────────────────────────────
+    0x42: [(7, 'Ceiling, Blue Potion (left of below)'),
+           (6, "Ceiling, Blue Potion (Near Dragon's Lair exit)"),
+           (5, 'Ceiling, Blue Potion (Near Glowing Pit)'),
+           (4, 'Chest, 500 Golds (Near Lion Key)'),
+           (3, "Lion's Head Key"),
+           (2, 'Chest, 1000 Golds'),
+           (1, 'Chest, 1000 Golds (On way to Cavern of Falter)'),
+           (0, 'Empty Chest')],
+    0x43: [(7, 'Chest, 500 Golds (Far from Lion Key, Absor)'),
+           (6, 'Open 1st locked door (Absor)'),
+           (5, 'Chest, 1000 Golds'),
+           (4, 'Ceiling, Blue Potion (Above Glowing Pit)'),
+           (3, 'Ceiling, Blue Potion (Near 2nd key)'),
+           (2, 'Key (2nd Door)'),
+           (1, 'Key (Boss Door)'),
+           (0, 'Ceiling, Blue Potion (Near Esco Village)')],
+    0x44: [(7, 'Chest, 1000 Golds (Milagro)'),
+           (6, 'Wall, Blue Potion (Beside Boss Door)'),
+           (5, "Open 3rd locked door (Milagro, Alguien's Boss Door)"),
+           (4, 'Open 2nd locked door (Milagro)'),
+           (3, 'Key'),
+           (2, 'Ceiling, Blue Potion (After Crazy Current)'),
+           (1, 'Ceiling, Blue Potion (Above Air Current)'),
+           (0, 'Ceiling, Blue Potion (Below Air Current)')],
+    0x45: [(7, 'Travel back to Dorado Town (building in back)'),
+           (6, 'Tear of Esmesanti'),
+           (5, "Open final locked door (Jashiin's Lair)"),
+           (4, 'Key (Final)')],
+}
+
+
+def event_bits_for(off: int):
+    """Return the TCRF bit spec for a byte at `off` in 0x00..0x4F.
+    Returns either a list of (bit_idx, label) tuples or a string label
+    (informational, for whole-byte flags / unknowns), or None if off is
+    outside the range.
+    """
+    return EVENT_BITS.get(off)
+
+
 WEARABLE_CHOICES = [
     (0, 'empty'),
     (1, 'Feruza Shoes (secret cavern)'),
@@ -377,12 +585,11 @@ class SaveEditorApp:
                       wraplength=900, justify=tk.LEFT).grid(
                 row=0, column=0, columnspan=14, sticky=tk.W, pady=(0, 4))
 
-        # Header row
+        # Header row (compact since per-byte rows now have inline named bits)
         ttk.Label(frame, text='offset', foreground='gray', width=7).grid(row=1, column=0, sticky=tk.W)
         ttk.Label(frame, text='hex',    foreground='gray', width=4).grid(row=1, column=1, sticky=tk.W)
-        for col, b in enumerate(range(7, -1, -1)):
-            ttk.Label(frame, text=f'b{b}', foreground='gray', width=3,
-                      anchor=tk.CENTER).grid(row=1, column=2 + col, sticky=tk.W)
+        ttk.Label(frame, text='bits / TCRF labels', foreground='gray').grid(
+            row=1, column=2, columnspan=10, sticky=tk.W, padx=(8, 0))
 
         byte_vars = []
         bit_vars_2d = []     # bit_vars_2d[byte_idx][bit_idx 0..7] = IntVar
@@ -445,28 +652,86 @@ class SaveEditorApp:
                 _set(val)
             string_var.trace_add('write', _on_string_change)
 
-            # Bit checkboxes (b7 .. b0 left to right)
-            for col, bit_idx in enumerate(range(7, -1, -1)):
-                bv_chk = bit_vars_row[bit_idx]
-                cb = ttk.Checkbutton(frame, variable=bv_chk)
-                cb.grid(row=row, column=2 + col, sticky=tk.W, padx=1)
+            # TCRF-named bits per byte: look up labels for this offset.
+            # Returns either a list of (bit_idx, label) tuples (named bitfield),
+            # a string label (whole-byte flag / unknown / boss-defeated low/hi),
+            # or None (no info — fall back to b7..b0 generic).
+            tcrf = event_bits_for(byte_off)
+            sub = ttk.Frame(frame)
+            sub.grid(row=row, column=2, columnspan=10, sticky=tk.W, padx=(4, 0))
 
-                def _on_bit_change(*_a, b=bit_idx, chk=bv_chk, byte_idx=byte_idx, _set=_set_byte):
-                    if self._suppress_trace:
-                        return
-                    cur = byte_vars[byte_idx].get()
-                    new = (cur | (1 << b)) if chk.get() else (cur & ~(1 << b))
-                    if new != cur:
-                        _set(new)
-                bv_chk.trace_add('write', _on_bit_change)
+            if isinstance(tcrf, list):
+                # Named bitfield: render labeled checkboxes for documented
+                # bits, in the order TCRF lists them (highest bit first).
+                # Ordering: documented bits first, then unlabeled bits as
+                # tiny "b{N}" boxes for the remaining bit positions.
+                documented = {bit_idx for bit_idx, _ in tcrf}
+                inline_col = 0
+                # Documented bits in TCRF order
+                for bit_idx, label in tcrf:
+                    bv_chk = bit_vars_row[bit_idx]
+                    cb = ttk.Checkbutton(sub, text=label, variable=bv_chk)
+                    cb.grid(row=inline_col // 2, column=inline_col % 2,
+                            sticky=tk.W, padx=(0, 8))
+                    inline_col += 1
+                    def _on_bit_change(*_a, b=bit_idx, chk=bv_chk, byte_idx=byte_idx, _set=_set_byte):
+                        if self._suppress_trace:
+                            return
+                        cur = byte_vars[byte_idx].get()
+                        new = (cur | (1 << b)) if chk.get() else (cur & ~(1 << b))
+                        if new != cur:
+                            _set(new)
+                    bv_chk.trace_add('write', _on_bit_change)
+                # Unlabeled remaining bits — tiny boxes in a trailing row
+                if undoc := [b for b in range(7, -1, -1) if b not in documented]:
+                    tail = ttk.Frame(sub)
+                    tail.grid(row=(inline_col + 1) // 2, column=0, columnspan=2,
+                              sticky=tk.W, pady=(2, 0))
+                    ttk.Label(tail, text='unlabeled bits:', foreground='gray60'
+                              ).pack(side=tk.LEFT, padx=(0, 4))
+                    for b in undoc:
+                        bv_chk = bit_vars_row[b]
+                        cb = ttk.Checkbutton(tail, text=f'b{b}', variable=bv_chk)
+                        cb.pack(side=tk.LEFT, padx=(0, 4))
+                        def _on_bit_change(*_a, bb=b, chk=bv_chk, byte_idx=byte_idx, _set=_set_byte):
+                            if self._suppress_trace:
+                                return
+                            cur = byte_vars[byte_idx].get()
+                            new = (cur | (1 << bb)) if chk.get() else (cur & ~(1 << bb))
+                            if new != cur:
+                                _set(new)
+                        bv_chk.trace_add('write', _on_bit_change)
+            else:
+                # Either a single-string label (whole-byte) or no info.  Show
+                # a single quick toggle (00 vs FF) plus the label, plus 8
+                # generic bit checkboxes (so user can edit individual bits
+                # if needed for boss-defeated low/hi pairs).
+                if isinstance(tcrf, str):
+                    ttk.Label(sub, text=tcrf, foreground='gray45',
+                              wraplength=600).pack(side=tk.LEFT, padx=(0, 8))
+                # 8 generic bit checkboxes (b7..b0)
+                bgrid = ttk.Frame(sub)
+                bgrid.pack(side=tk.LEFT)
+                for col, bit_idx in enumerate(range(7, -1, -1)):
+                    bv_chk = bit_vars_row[bit_idx]
+                    cb = ttk.Checkbutton(bgrid, text=f'b{bit_idx}', variable=bv_chk)
+                    cb.grid(row=0, column=col, sticky=tk.W, padx=1)
+                    def _on_bit_change(*_a, b=bit_idx, chk=bv_chk, byte_idx=byte_idx, _set=_set_byte):
+                        if self._suppress_trace:
+                            return
+                        cur = byte_vars[byte_idx].get()
+                        new = (cur | (1 << b)) if chk.get() else (cur & ~(1 << b))
+                        if new != cur:
+                            _set(new)
+                    bv_chk.trace_add('write', _on_bit_change)
 
-            # Per-byte quick-set buttons
+            # Per-byte quick-set buttons (kept on column 12 to stay aligned)
             ttk.Button(frame, text='00', width=3,
                        command=lambda byte_idx=byte_idx, _set=_set_byte: _set(0x00)
-                       ).grid(row=row, column=10, sticky=tk.W, padx=(8, 1))
+                       ).grid(row=row, column=12, sticky=tk.W, padx=(8, 1))
             ttk.Button(frame, text='FF', width=3,
                        command=lambda byte_idx=byte_idx, _set=_set_byte: _set(0xFF)
-                       ).grid(row=row, column=11, sticky=tk.W, padx=1)
+                       ).grid(row=row, column=13, sticky=tk.W, padx=1)
 
         # Whole-bitmap quick-set buttons (row below the 8 byte rows)
         actions = ttk.Frame(frame)
