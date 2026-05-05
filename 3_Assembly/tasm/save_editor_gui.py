@@ -157,22 +157,26 @@ def bits_for(name: str):
 # Source: 4_Resources/Save Game Format/Save-Game-Format.html.
 # ---------------------------------------------------------------------------
 
+#   list  → named bitfield (TCRF documented bits)
+#   ('word_bool', label)  → 16-bit boss-defeated flag spanning this byte
+#                            and the next one (00 00 = no, FF FF = yes).
+#                            High-byte entry is implicit (skipped in render).
+#   ('bool', label)        → whole-byte 00/FF flag (single checkbox)
+#   ('unknown', label)     → unknown byte, render as 8 generic b7..b0 boxes
 EVENT_BITS = {
     # ── Cavern 1: Cangrejo / Malicia ──────────────────────────────────────
-    0x00: 'Cangrejo defeated (low byte of 16-bit flag)',
-    0x01: 'Cangrejo defeated (high byte)',
+    0x00: ('word_bool', 'Cangrejo defeated'),  # spans 0x00..0x01
     0x02: [(7, 'Chest, 50 Golds'),    (6, 'Chest, Red Potion'),
            (5, 'Muralla Key 1'),       (4, 'Wall, Blue Potion'),
            (3, "Key, Cangrejo's Lair")],
     0x03: [(7, 'Door to Cangrejo open'), (6, 'Door to Satono open'),
            (5, 'Tear of Esmesanti')],
-    0x04: 'Unknown',
-    0x05: 'Spoke to the King (00/FF; gates 1000-Gold gift)',
-    0x06: 'Entered caverns first time (00/FF; overrides spoke_king)',
-    0x07: 'Unknown',
+    0x04: ('unknown', 'Unknown'),
+    0x05: ('bool', 'Spoke to the King (gates 1000-Gold gift)'),
+    0x06: ('bool', 'Entered caverns first time (overrides spoke_king)'),
+    0x07: ('unknown', 'Unknown'),
     # ── Cavern 2: Pulpo / Peligro ─────────────────────────────────────────
-    0x08: 'Pulpo defeated (low byte)',
-    0x09: 'Pulpo defeated (high byte)',
+    0x08: ('word_bool', 'Pulpo defeated'),  # spans 0x08..0x09
     0x0A: [(7, 'Chest, Blue Potion (One-time Bat)'),
            (6, 'Key, Under Locked Door'),
            (5, 'Key, Under Blue Open Door'),
@@ -187,10 +191,12 @@ EVENT_BITS = {
            (4, "Key, Pulpo's Lair"),
            (3, 'Tear of Esmesanti'),
            (2, 'Wall, Red Potion (Near Satono)')],
-    0x0C: 'Unknown', 0x0D: 'Unknown', 0x0E: 'Unknown', 0x0F: 'Unknown',
+    0x0C: ('unknown', 'Unknown'),
+    0x0D: ('unknown', 'Unknown'),
+    0x0E: ('unknown', 'Unknown'),
+    0x0F: ('unknown', 'Unknown'),
     # ── Cavern 3: Pollo / Madera + Riza ───────────────────────────────────
-    0x10: 'Pollo defeated (low)',
-    0x11: 'Pollo defeated (high)',
+    0x10: ('word_bool', 'Pollo defeated'),  # spans 0x10..0x11
     0x12: [(7, 'Red Potion (Small tree)'),
            (6, 'Key'),
            (5, "Chest, Red Potion (near Hero's Crest)"),
@@ -207,10 +213,12 @@ EVENT_BITS = {
            (2, "Key, Pollo's Lair"),
            (1, 'Tear of Esmesanti'),
            (0, 'Open Locked Door to 4th Dungeon')],
-    0x14: 'Unknown', 0x15: 'Unknown', 0x16: 'Unknown', 0x17: 'Unknown',
+    0x14: ('unknown', 'Unknown'),
+    0x15: ('unknown', 'Unknown'),
+    0x16: ('unknown', 'Unknown'),
+    0x17: ('unknown', 'Unknown'),
     # ── Cavern 4: Agar / Glacial + Escarcha ───────────────────────────────
-    0x18: 'Agar defeated (low)',
-    0x19: 'Agar defeated (high)',
+    0x18: ('word_bool', 'Agar defeated'),  # spans 0x18..0x19
     0x1A: [(7, 'Key'),
            (6, 'Red Potion (Near locked door)'),
            (5, 'Red Potion (Near Ruzeria Shoes)'),
@@ -231,10 +239,11 @@ EVENT_BITS = {
            (6, 'Wall, Red Potion (Near Boss Key)'),
            (5, 'Open door to Helada'),
            (4, 'Tear of Esmesanti')],
-    0x1D: 'Unknown', 0x1E: 'Unknown', 0x1F: 'Unknown',
+    0x1D: ('unknown', 'Unknown'),
+    0x1E: ('unknown', 'Unknown'),
+    0x1F: ('unknown', 'Unknown'),
     # ── Cavern 5: Vista / Corroer + Cementar ──────────────────────────────
-    0x20: 'Vista defeated (low)',
-    0x21: 'Vista defeated (high)',
+    0x20: ('word_bool', 'Vista defeated'),  # spans 0x20..0x21
     0x22: [(7, 'Chest, Red Potion'),
            (6, 'Wall, Red Potion (Near Tumba 1st entrance)'),
            (5, 'Chest, 500 Golds (Nowhere near Gelroid)'),
@@ -258,10 +267,11 @@ EVENT_BITS = {
            (3, "Blue Potion (in Vista's Lair)"),
            (2, 'Tear of Esmesanti'),
            (1, "Returned Crest of Glory (-16 to 0xD6, removes Knight's Sword)")],
-    0x25: 'Unknown', 0x26: 'Unknown', 0x27: 'Unknown',
+    0x25: ('unknown', 'Unknown'),
+    0x26: ('unknown', 'Unknown'),
+    0x27: ('unknown', 'Unknown'),
     # ── Cavern 6: Tarso / Tesoro + Plata + Arrugia secret ────────────────
-    0x28: 'Tarso defeated (low)',
-    0x29: 'Tarso defeated (high)',
+    0x28: ('word_bool', 'Tarso defeated'),  # spans 0x28..0x29
     0x2A: [(7, 'Chest, Red Potion'),
            (6, 'Empty Chest'),
            (5, 'Key, Near Silkarn Shoes'),
@@ -290,12 +300,11 @@ EVENT_BITS = {
            (6, 'Blue Potion (Arrugia)'),
            (5, "Key, Tarso's Lair"),
            (4, 'Tear of Esmesanti')],
-    0x2E: 'Unknown', 0x2F: 'Unknown',
+    0x2E: ('unknown', 'Unknown'),
+    0x2F: ('unknown', 'Unknown'),
     # ── Llama Town: Paguro + Cavern of Caliente / Dragon ─────────────────
-    0x30: 'Paguro defeated (low) — gates Llama Town NPC dialog',
-    0x31: 'Paguro defeated (high)',
-    0x32: 'Dragon defeated (low)',
-    0x33: 'Dragon defeated (high)',
+    0x30: ('word_bool', 'Paguro defeated (gates Llama Town NPC dialog)'),  # spans 0x30..0x31
+    0x32: ('word_bool', 'Dragon defeated'),  # spans 0x32..0x33
     0x34: [(7, 'Spoke to the girl after defeating Paguro'),
            (6, 'Purchased the Asbestos Cape'),
            (5, 'Open locked door (1st)'),
@@ -313,9 +322,17 @@ EVENT_BITS = {
            (1, 'Chest, Key (Correr, 3rd)'),
            (0, 'Chest, 1000 Golds (Correr)')],
     0x36: [(7, 'Tear of Esmesanti')],
-    0x37: 'Unknown', 0x38: 'Unknown', 0x39: 'Unknown', 0x3A: 'Unknown',
-    0x3B: 'Unknown', 0x3C: 'Unknown', 0x3D: 'Unknown', 0x3E: 'Unknown',
-    0x3F: 'Unknown', 0x40: 'Unknown', 0x41: 'Unknown',
+    0x37: ('unknown', 'Unknown'),
+    0x38: ('unknown', 'Unknown'),
+    0x39: ('unknown', 'Unknown'),
+    0x3A: ('unknown', 'Unknown'),
+    0x3B: ('unknown', 'Unknown'),
+    0x3C: ('unknown', 'Unknown'),
+    0x3D: ('unknown', 'Unknown'),
+    0x3E: ('unknown', 'Unknown'),
+    0x3F: ('unknown', 'Unknown'),
+    0x40: ('unknown', 'Unknown'),
+    0x41: ('unknown', 'Unknown'),
     # ── Cavern of Absor + Cavern of Final ─────────────────────────────────
     0x42: [(7, 'Ceiling, Blue Potion (left of below)'),
            (6, "Ceiling, Blue Potion (Near Dragon's Lair exit)"),
@@ -350,9 +367,12 @@ EVENT_BITS = {
 
 def event_bits_for(off: int):
     """Return the TCRF bit spec for a byte at `off` in 0x00..0x4F.
-    Returns either a list of (bit_idx, label) tuples or a string label
-    (informational, for whole-byte flags / unknowns), or None if off is
-    outside the range.
+    May be:
+      * a list of (bit_idx, label) tuples — named bitfield byte;
+      * ('word_bool', label) — single 16-bit boss flag spanning off..off+1;
+      * ('bool', label)      — whole-byte 00/FF flag;
+      * ('unknown', label)   — undocumented byte (render as generic b7..b0);
+      * None — off is outside the documented range.
     """
     return EVENT_BITS.get(off)
 
@@ -586,7 +606,7 @@ class SaveEditorApp:
                 row=0, column=0, columnspan=14, sticky=tk.W, pady=(0, 4))
 
         # Header row (compact since per-byte rows now have inline named bits)
-        ttk.Label(frame, text='offset', foreground='gray', width=7).grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(frame, text='offset', foreground='gray', width=11).grid(row=1, column=0, sticky=tk.W)
         ttk.Label(frame, text='hex',    foreground='gray', width=4).grid(row=1, column=1, sticky=tk.W)
         ttk.Label(frame, text='bits / TCRF labels', foreground='gray').grid(
             row=1, column=2, columnspan=10, sticky=tk.W, padx=(8, 0))
@@ -595,94 +615,169 @@ class SaveEditorApp:
         bit_vars_2d = []     # bit_vars_2d[byte_idx][bit_idx 0..7] = IntVar
         string_vars = []     # one StringVar per byte (the hex entry display)
 
+        # Per-byte propagation: writing one of (byte_var, string_var, bit_vars)
+        # fans out to the other two via trace callbacks.  _suppress_trace breaks
+        # recursion.  Defined once over byte_vars/string_vars/bit_vars_2d.
+        def _set_byte(byte_idx: int, value: int):
+            value &= 0xFF
+            if self._suppress_trace:
+                return
+            self._suppress_trace = True
+            try:
+                byte_vars[byte_idx].set(value)
+                string_vars[byte_idx].set(f'{value:02X}')
+                for b in range(8):
+                    bit_vars_2d[byte_idx][b].set((value >> b) & 1)
+            finally:
+                self._suppress_trace = False
+            self._refresh_hex(self._safe_compose())
+
+        # word_bool spans byte_idx and byte_idx+1; both bytes get the same
+        # value (0x00 or 0xFF) atomically.
+        def _set_word_bool(byte_idx: int, checked: bool):
+            if self._suppress_trace:
+                return
+            value = 0xFF if checked else 0x00
+            self._suppress_trace = True
+            try:
+                for i in (byte_idx, byte_idx + 1):
+                    byte_vars[i].set(value)
+                    string_vars[i].set(f'{value:02X}')
+                    for b in range(8):
+                        bit_vars_2d[i][b].set((value >> b) & 1)
+            finally:
+                self._suppress_trace = False
+            self._refresh_hex(self._safe_compose())
+
+        # First pass: create byte_vars/string_vars/bit_vars_2d for ALL 8 bytes
+        # so the lists are correctly indexed regardless of which rows render.
+        for byte_idx in range(8):
+            byte_vars.append(tk.IntVar(value=0))
+            string_vars.append(tk.StringVar(value='00'))
+            bit_vars_2d.append([tk.IntVar(value=0) for _ in range(8)])
+
+        # Second pass: render rows.  Skip the high byte of a word_bool (the
+        # checkbox on the low-byte row controls both bytes).
+        prev_was_word_bool = False
+        display_row = 2
         for byte_idx in range(8):
             byte_off = base_off + byte_idx
-            row = 2 + byte_idx
 
-            byte_var = tk.IntVar(value=0)
-            string_var = tk.StringVar(value='00')
-            bit_vars_row = [tk.IntVar(value=0) for _ in range(8)]
+            if prev_was_word_bool:
+                prev_was_word_bool = False
+                continue
 
-            byte_vars.append(byte_var)
-            string_vars.append(string_var)
-            bit_vars_2d.append(bit_vars_row)
+            tcrf = event_bits_for(byte_off)
+            row = display_row
+            display_row += 1
 
-            # Single propagation function — called by every view's edit handler.
-            def _set_byte(value: int, byte_idx=byte_idx):
-                value &= 0xFF
-                if self._suppress_trace:
-                    return
-                self._suppress_trace = True
-                try:
-                    byte_vars[byte_idx].set(value)
-                    string_vars[byte_idx].set(f'{value:02X}')
-                    for b in range(8):
-                        bit_vars_2d[byte_idx][b].set((value >> b) & 1)
-                finally:
-                    self._suppress_trace = False
-                self._refresh_hex(self._safe_compose())
+            byte_var = byte_vars[byte_idx]
+            string_var = string_vars[byte_idx]
+            bit_vars_row = bit_vars_2d[byte_idx]
 
-            # Offset label (right-click reverts the whole bitmap field)
-            off_lbl = ttk.Label(frame, text=f'0x{byte_off:02X}', foreground='gray40')
+            is_word_bool = isinstance(tcrf, tuple) and tcrf[0] == 'word_bool'
+            is_bool      = isinstance(tcrf, tuple) and tcrf[0] == 'bool'
+            is_unknown   = isinstance(tcrf, tuple) and tcrf[0] == 'unknown'
+
+            # Offset label — right-click reverts the whole bitmap field
+            off_text = (f'0x{byte_off:02X}..0x{byte_off + 1:02X}'
+                        if is_word_bool else f'0x{byte_off:02X}')
+            off_lbl = ttk.Label(frame, text=off_text, foreground='gray40')
             off_lbl.grid(row=row, column=0, sticky=tk.W, padx=(0, 4))
             off_lbl.bind('<Button-3>', lambda _e, n=name: self._revert_field(n))
 
-            # Hex byte entry
-            ent = ttk.Entry(frame, textvariable=string_var, font=('Consolas', 10),
-                            width=4, justify=tk.CENTER)
-            ent.grid(row=row, column=1, sticky=tk.W, padx=(0, 4))
+            # Hex byte entry — suppressed for word_bool (binary toggle only).
+            if not is_word_bool:
+                ent = ttk.Entry(frame, textvariable=string_var, font=('Consolas', 10),
+                                width=4, justify=tk.CENTER)
+                ent.grid(row=row, column=1, sticky=tk.W, padx=(0, 4))
 
-            def _on_string_change(*_a, sv=string_var, _set=_set_byte):
-                if self._suppress_trace:
-                    return
-                txt = sv.get().strip()
-                if not txt:
-                    return
-                # Bitmap byte entry: always parse as hex (so 'AB' -> 0xAB).
-                # Strip an optional 0x or h marker.
-                t = txt
-                if t.lower().startswith('0x'):
-                    t = t[2:]
-                elif t.lower().endswith('h'):
-                    t = t[:-1]
-                try:
-                    val = int(t, 16) & 0xFF
-                except ValueError:
-                    return  # mid-typing partial, ignore silently
-                _set(val)
-            string_var.trace_add('write', _on_string_change)
+                def _on_string_change(*_a, sv=string_var, byte_idx=byte_idx):
+                    if self._suppress_trace:
+                        return
+                    txt = sv.get().strip()
+                    if not txt:
+                        return
+                    # Bitmap byte entry: always parse as hex (so 'AB' -> 0xAB).
+                    t = txt
+                    if t.lower().startswith('0x'):
+                        t = t[2:]
+                    elif t.lower().endswith('h'):
+                        t = t[:-1]
+                    try:
+                        val = int(t, 16) & 0xFF
+                    except ValueError:
+                        return  # mid-typing partial, ignore silently
+                    _set_byte(byte_idx, val)
+                string_var.trace_add('write', _on_string_change)
 
-            # TCRF-named bits per byte: look up labels for this offset.
-            # Returns either a list of (bit_idx, label) tuples (named bitfield),
-            # a string label (whole-byte flag / unknown / boss-defeated low/hi),
-            # or None (no info — fall back to b7..b0 generic).
-            tcrf = event_bits_for(byte_off)
             sub = ttk.Frame(frame)
             sub.grid(row=row, column=2, columnspan=10, sticky=tk.W, padx=(4, 0))
 
-            if isinstance(tcrf, list):
+            if is_word_bool:
+                # 16-bit boss-defeated flag: single checkbox toggling both bytes.
+                # Drive the checkbox from byte_var (0xFF=on, 0x00=off) so it
+                # stays in sync if either byte changes externally.
+                chk_var = tk.IntVar(value=1 if byte_var.get() == 0xFF else 0)
+                cb = ttk.Checkbutton(sub, text=tcrf[1], variable=chk_var)
+                cb.pack(side=tk.LEFT, padx=(0, 8))
+
+                def _on_chk(*_a, cv=chk_var, byte_idx=byte_idx):
+                    _set_word_bool(byte_idx, bool(cv.get()))
+                chk_var.trace_add('write', _on_chk)
+
+                def _on_byte_change(*_a, bv=byte_var, cv=chk_var):
+                    if self._suppress_trace:
+                        return
+                    desired = 1 if bv.get() == 0xFF else 0
+                    if cv.get() != desired:
+                        # Re-entry guarded by chk_var.trace below;
+                        # _set_word_bool is no-op when value already matches.
+                        cv.set(desired)
+                byte_var.trace_add('write', _on_byte_change)
+
+                prev_was_word_bool = True
+
+            elif is_bool:
+                # Whole-byte 00/FF flag: single checkbox.
+                chk_var = tk.IntVar(value=1 if byte_var.get() == 0xFF else 0)
+                cb = ttk.Checkbutton(sub, text=tcrf[1], variable=chk_var)
+                cb.pack(side=tk.LEFT, padx=(0, 8))
+
+                def _on_chk(*_a, cv=chk_var, byte_idx=byte_idx):
+                    if self._suppress_trace:
+                        return
+                    _set_byte(byte_idx, 0xFF if cv.get() else 0x00)
+                chk_var.trace_add('write', _on_chk)
+
+                def _on_byte_change(*_a, bv=byte_var, cv=chk_var):
+                    if self._suppress_trace:
+                        return
+                    desired = 1 if bv.get() == 0xFF else 0
+                    if cv.get() != desired:
+                        cv.set(desired)
+                byte_var.trace_add('write', _on_byte_change)
+
+            elif isinstance(tcrf, list):
                 # Named bitfield: render labeled checkboxes for documented
-                # bits, in the order TCRF lists them (highest bit first).
-                # Ordering: documented bits first, then unlabeled bits as
-                # tiny "b{N}" boxes for the remaining bit positions.
+                # bits in TCRF order; trailing row of "b{N}" boxes for any
+                # undocumented bits.
                 documented = {bit_idx for bit_idx, _ in tcrf}
                 inline_col = 0
-                # Documented bits in TCRF order
                 for bit_idx, label in tcrf:
                     bv_chk = bit_vars_row[bit_idx]
                     cb = ttk.Checkbutton(sub, text=label, variable=bv_chk)
                     cb.grid(row=inline_col // 2, column=inline_col % 2,
                             sticky=tk.W, padx=(0, 8))
                     inline_col += 1
-                    def _on_bit_change(*_a, b=bit_idx, chk=bv_chk, byte_idx=byte_idx, _set=_set_byte):
+                    def _on_bit_change(*_a, b=bit_idx, chk=bv_chk, byte_idx=byte_idx):
                         if self._suppress_trace:
                             return
                         cur = byte_vars[byte_idx].get()
                         new = (cur | (1 << b)) if chk.get() else (cur & ~(1 << b))
                         if new != cur:
-                            _set(new)
+                            _set_byte(byte_idx, new)
                     bv_chk.trace_add('write', _on_bit_change)
-                # Unlabeled remaining bits — tiny boxes in a trailing row
                 if undoc := [b for b in range(7, -1, -1) if b not in documented]:
                     tail = ttk.Frame(sub)
                     tail.grid(row=(inline_col + 1) // 2, column=0, columnspan=2,
@@ -693,49 +788,48 @@ class SaveEditorApp:
                         bv_chk = bit_vars_row[b]
                         cb = ttk.Checkbutton(tail, text=f'b{b}', variable=bv_chk)
                         cb.pack(side=tk.LEFT, padx=(0, 4))
-                        def _on_bit_change(*_a, bb=b, chk=bv_chk, byte_idx=byte_idx, _set=_set_byte):
+                        def _on_bit_change(*_a, bb=b, chk=bv_chk, byte_idx=byte_idx):
                             if self._suppress_trace:
                                 return
                             cur = byte_vars[byte_idx].get()
                             new = (cur | (1 << bb)) if chk.get() else (cur & ~(1 << bb))
                             if new != cur:
-                                _set(new)
+                                _set_byte(byte_idx, new)
                         bv_chk.trace_add('write', _on_bit_change)
+
             else:
-                # Either a single-string label (whole-byte) or no info.  Show
-                # a single quick toggle (00 vs FF) plus the label, plus 8
-                # generic bit checkboxes (so user can edit individual bits
-                # if needed for boss-defeated low/hi pairs).
-                if isinstance(tcrf, str):
-                    ttk.Label(sub, text=tcrf, foreground='gray45',
+                # 'unknown' tuple OR no spec — show optional label + 8 generic
+                # b7..b0 checkboxes for raw bit editing.
+                if is_unknown and tcrf[1]:
+                    ttk.Label(sub, text=tcrf[1], foreground='gray45',
                               wraplength=600).pack(side=tk.LEFT, padx=(0, 8))
-                # 8 generic bit checkboxes (b7..b0)
                 bgrid = ttk.Frame(sub)
                 bgrid.pack(side=tk.LEFT)
                 for col, bit_idx in enumerate(range(7, -1, -1)):
                     bv_chk = bit_vars_row[bit_idx]
                     cb = ttk.Checkbutton(bgrid, text=f'b{bit_idx}', variable=bv_chk)
                     cb.grid(row=0, column=col, sticky=tk.W, padx=1)
-                    def _on_bit_change(*_a, b=bit_idx, chk=bv_chk, byte_idx=byte_idx, _set=_set_byte):
+                    def _on_bit_change(*_a, b=bit_idx, chk=bv_chk, byte_idx=byte_idx):
                         if self._suppress_trace:
                             return
                         cur = byte_vars[byte_idx].get()
                         new = (cur | (1 << b)) if chk.get() else (cur & ~(1 << b))
                         if new != cur:
-                            _set(new)
+                            _set_byte(byte_idx, new)
                     bv_chk.trace_add('write', _on_bit_change)
 
-            # Per-byte quick-set buttons (kept on column 12 to stay aligned)
-            ttk.Button(frame, text='00', width=3,
-                       command=lambda byte_idx=byte_idx, _set=_set_byte: _set(0x00)
-                       ).grid(row=row, column=12, sticky=tk.W, padx=(8, 1))
-            ttk.Button(frame, text='FF', width=3,
-                       command=lambda byte_idx=byte_idx, _set=_set_byte: _set(0xFF)
-                       ).grid(row=row, column=13, sticky=tk.W, padx=1)
+            # Per-byte quick-set buttons (skipped for word_bool — binary toggle).
+            if not is_word_bool:
+                ttk.Button(frame, text='00', width=3,
+                           command=lambda byte_idx=byte_idx: _set_byte(byte_idx, 0x00)
+                           ).grid(row=row, column=12, sticky=tk.W, padx=(8, 1))
+                ttk.Button(frame, text='FF', width=3,
+                           command=lambda byte_idx=byte_idx: _set_byte(byte_idx, 0xFF)
+                           ).grid(row=row, column=13, sticky=tk.W, padx=1)
 
-        # Whole-bitmap quick-set buttons (row below the 8 byte rows)
+        # Whole-bitmap quick-set buttons (row below the byte rows)
         actions = ttk.Frame(frame)
-        actions.grid(row=10, column=0, columnspan=14, sticky=tk.W, pady=(4, 0))
+        actions.grid(row=display_row, column=0, columnspan=14, sticky=tk.W, pady=(4, 0))
         ttk.Label(actions, text='whole field:', foreground='gray45').pack(side=tk.LEFT, padx=(0, 6))
 
         def _fill_all(value: int):
