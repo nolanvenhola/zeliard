@@ -146,19 +146,20 @@ stat_X9B                equ     9Bh     ; alias — earlier name
 crest_hero              equ     9Ch     ; Hero's Crest from Cavern of Riza (cavern 3); required to encounter Pollo
 player_ability_3        equ     9Ch     ; alias — earlier name
 stat_X9C                equ     9Ch     ; alias — earlier name
-; 0x9D = HIGHEST WEAPON ID OWNED, not the equipped weapon.  User-corrected:
-; equipped_weapon (0x92) is the SELECTED weapon; this byte is the cap of
-; weapons unlocked.  Cross-save evidence: KNIGHT save has equipped=1
-; (Training) but weapon_tier_max=4 (Knight's Sword owned via Glory Crest
-; trade).  Earlier name `cur_weapon_idx` was misleading.
-weapon_tier_max         equ     9Dh     ; highest weapon ID owned (cap; 0=none, 7=Fairy Flame)
-cur_weapon_idx          equ     9Dh     ; alias — earlier (misleading) name
+; 0x9D = SELECTED SPELL.  User-corrected: this byte is the currently
+; selected spell ID (0=none, 1=Espada..7=Guerra), NOT a weapon-tier
+; counter.  Earlier guesses cur_weapon_idx and weapon_tier_max were both
+; wrong.  Game has no spell-slot mechanic — just one byte for the
+; selected spell.
+selected_spell          equ     9Dh     ; currently chosen spell ID (0=none, 1..7)
+weapon_tier_max         equ     9Dh     ; alias — earlier (wrong) name
+cur_weapon_idx          equ     9Dh     ; alias — earlier (wrong) name
 ;
-; 0x9E = THE single currently selected spell.  User-corrected: the game
-; allows only one spell active at a time, so this is just an ID byte.
-selected_spell          equ     9Eh     ; currently chosen spell ID (0=none, 1=Espada..7=Guerra)
+; 0x9E = TBD.  Originally cur_magic_idx, briefly mis-labelled
+; selected_spell.  Real semantic unclear; values 0..5 across saves.
+; Could be magic-menu cursor position or last-hovered spell.
+stat_X9E                equ     9Eh     ; TBD; was cur_magic_idx (probably wrong) and selected_spell (definitely wrong — that's at 0x9D)
 cur_magic_idx           equ     9Eh     ; alias — earlier name
-stat_X9E                equ     9Eh     ; alias — earlier name
 ; 0x9F: VESTIGIAL.  Per-frame zero-clear, no reader observed.
 stat_X9F                equ     9Fh     ; VESTIGIAL — per-frame zero-clear, no reader observed
 ;

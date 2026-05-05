@@ -49,9 +49,10 @@ music_track_count equ	0A0h			; alias — earlier name (kept; load_music_tracks r
 stick_joy_poll_handler equ	120h			; stick.bin slot 120h dispatch (poll_joystick_buttons; canonical zr1com.inc/zr2com.inc)
 equipped_weapon	equ	92h			; equipped weapon idx (canonical in stdply.inc)
 shield_type	equ	93h			; shield tier (canonical in stdply.inc)
-; 0x9D = highest weapon ID owned (cap), NOT the selected weapon.
-weapon_tier_max	equ	9Dh			; highest weapon ID owned (canonical in stdply.inc)
-cur_weapon_idx	equ	9Dh			; alias — earlier (misleading) name
+; 0x9D = currently selected spell ID (user-corrected).
+selected_spell	equ	9Dh			; currently chosen spell ID (canonical in stdply.inc)
+weapon_tier_max	equ	9Dh			; alias — earlier (wrong) name
+cur_weapon_idx	equ	9Dh			; alias — earlier (wrong) name
 current_area_id	equ	0C4h			; current area (high bit=in-town, low 7=town/sage idx); Kioku Feather destination
 player_level	equ	0C4h			; alias — earlier name (was misnomer; not character level)
 player_tileset	equ	0C8h			; level tileset index (canonical in stdply.inc)

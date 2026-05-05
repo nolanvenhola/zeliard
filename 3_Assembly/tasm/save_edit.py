@@ -88,8 +88,8 @@ FIELDS = [
     ('crest_elf',            0x9A, 'bool', 'Elf Crest (set after defeating Paguro in Llama Hut)'),
     ('crest_glory',          0x9B, 'bool', 'Glory Crest (Cementar pickup; consumed by 212ARMRP Tumba shop trade for Knight\'s Sword)'),
     ('crest_hero',           0x9C, 'bool', 'Hero\'s Crest (Cavern of Riza; required to encounter Pollo)'),
-    ('weapon_tier_max',      0x9D, 'b',  'Highest weapon ID owned (== weapon-tier cap in inventory; NOT the same as equipped_weapon, which is the SELECTED one).'),
-    ('selected_spell',       0x9E, 'b',  'Currently selected spell ID (1=Espada..7=Guerra; only one spell active at a time — game has no spell-slot mechanic).'),
+    ('selected_spell',       0x9D, 'b',  'Currently selected spell ID (1=Espada..7=Guerra; only one spell active at a time — user-confirmed at 0x9D, NOT 0x9E).'),
+    ('stat_X9E',             0x9E, 'b',  'TBD — was cur_magic_idx then mistakenly selected_spell.  User correction placed selected_spell at 0x9D, so 0x9E is something else.  Values 0..5 across saves; possibly menu-cursor or last-hovered spell index.'),
     ('spells_learned_count', 0xA0, 'b',  'Count of spells learned == popcount(spell_known_* @ 0xBB..0xC1).  Cached counter.'),
     # 0xA1..0xA5 — list of WEARABLE IDs in acquisition order (4 shoes + 1 cape).
     # Per playthrough §6.3 + user correction.  ID mapping derived from save

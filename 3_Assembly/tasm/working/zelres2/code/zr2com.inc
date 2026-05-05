@@ -37,11 +37,12 @@ player_speed            equ     98h     ; character speed stat (canonical in std
 player_power            equ     99h     ; character power stat (canonical in stdply.inc)
 weap_dur_cur            equ     0ABh    ; per-weapon durability table base (7 bytes; canonical in stdply.inc)
 weap_dur_max            equ     0B4h    ; weapon durability max table base (7 bytes; canonical in stdply.inc)
-; 0x9D = highest weapon ID owned (cap); not the selected weapon.
-weapon_tier_max         equ     9Dh     ; highest weapon ID owned (cap)
-cur_weapon_idx          equ     9Dh     ; alias — earlier (misleading) name
-; 0x9E = single currently selected spell.
-selected_spell          equ     9Eh     ; currently selected spell ID
+; 0x9D = currently selected spell ID (user-corrected; not weapon-related).
+selected_spell          equ     9Dh     ; currently chosen spell ID
+weapon_tier_max         equ     9Dh     ; alias — earlier (wrong) name
+cur_weapon_idx          equ     9Dh     ; alias — earlier (wrong) name
+; 0x9E = TBD.
+stat_X9E                equ     9Eh     ; TBD
 cur_magic_idx           equ     9Eh     ; alias — earlier name
 player_hp_max           equ     0B2h    ; HP ceiling (canonical in stdply.inc; overlays anim_color_lut)
 player_facing           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)

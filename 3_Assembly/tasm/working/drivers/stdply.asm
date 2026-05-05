@@ -155,16 +155,16 @@ crest_elf db	0		; [9Ah] ability slot 1 (= player_abilities table base)
 crest_glory db	0		; [9Bh] ability slot 2 (212ARMRP gates trade dialog when set)
 crest_hero db	0		; [9Ch] ability slot 3 (set by 200FIGHT entity_fn_e_4 on 9AF3 trigger)
 ;
-; 0x9D = HIGHEST WEAPON ID OWNED (cap).  User correction: this is NOT
-; the equipped weapon (that's at 0x92).  Cross-save evidence: KNIGHT
-; save has equipped_weapon=1 (Training) but weapon_tier_max=4 (Knight's
-; Sword owned via Glory Crest trade).
-weapon_tier_max db	0		; [9Dh] highest weapon ID owned (0=none, 7=Fairy Flame)
+; 0x9D = SELECTED SPELL.  User correction: this byte holds the ID of
+; the currently selected spell (0=none, 1=Espada..7=Guerra).  No
+; spell-slot mechanic — just one selected spell at a time.  Earlier
+; names cur_weapon_idx / weapon_tier_max were wrong (this is not
+; weapon-related at all).
+selected_spell	db	0		; [9Dh] currently selected spell ID
 ;
-; 0x9E = currently SELECTED spell (single-select; the game has no
-; spell-slot mechanic).  201SELCT writes this when player picks a spell
-; from the menu.
-selected_spell	db	0		; [9Eh] currently selected spell ID (0=none, 1=Espada..7=Guerra)
+; 0x9E = TBD (was cur_magic_idx, briefly mislabelled selected_spell).
+; Values 0..5 across saves — possibly magic-menu cursor position.
+stat_X9E	db	0		; [9Eh] TBD — was cur_magic_idx
 stat_X9F	db	0		; [9Fh] VESTIGIAL — per-frame zero-clear, no reader observed
 ;
 ; 0xA0 = count of spells learned (cached popcount of spell_known_*

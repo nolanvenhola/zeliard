@@ -37,16 +37,6 @@ ENUMS: dict[str, list[tuple[int, str]]] = {
         (6, 'Enchantment Sword'),
         (7, 'Sword of the Fairy Flame (secret)'),
     ],
-    'weapon_tier_max': [
-        (0, 'no weapons (just Training default)'),
-        (1, 'Training'),
-        (2, "Wise Man's"),
-        (3, 'Spirit'),
-        (4, "Knight's"),
-        (5, 'Illumination'),
-        (6, 'Enchantment'),
-        (7, 'Fairy Flame (secret)'),
-    ],
     'selected_spell': [
         (0, 'none'),
         (1, 'Espada'),
