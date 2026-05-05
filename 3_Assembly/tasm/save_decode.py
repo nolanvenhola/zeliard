@@ -41,12 +41,12 @@ PLAYER_RECORD = [
     (0x9A, "player_ability_1","b"),
     (0x9B, "player_ability_2","b"),
     (0x9C, "player_ability_3","b"),
-    (0x9D, "cur_weapon_idx",  "b"),
-    (0x9E, "cur_magic_idx",   "b"),
+    (0x9D, "weapon_tier_max", "b"),    # was: cur_weapon_idx (highest owned, NOT equipped)
+    (0x9E, "selected_spell",  "b"),    # was: cur_magic_idx (only one spell active)
     (0x9F, "stat_X9F",        "b"),
-    (0xA0, "music_track_count", "b"),
-    (0xA1, "magic_flags",     "5b"),  # 5-byte table
-    (0xA6, "item_flags",      "5b"),  # 5-byte table
+    (0xA0, "spells_learned_count", "b"),  # was: music_track_count (== popcount of spell_known_*)
+    (0xA1, "wear_list",       "5b"),   # was: magic_flags — 4 shoes + 1 cape, list of acquired IDs (user-named "wear_*")
+    (0xA6, "consumable_stocks", "5b"), # was: item_flags — fixed-position stocks (Ken'ko/Juuen/Magia/SabreOil/Kioku)
     (0xAB, "weap_dur_cur",    "7b"),  # 7-byte durability table
     (0xB2, "player_hp_max",   "w"),
     (0xB4, "weap_dur_max",    "7b"),  # 7-byte durability max table

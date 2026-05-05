@@ -155,19 +155,42 @@ crest_elf db	0		; [9Ah] ability slot 1 (= player_abilities table base)
 crest_glory db	0		; [9Bh] ability slot 2 (212ARMRP gates trade dialog when set)
 crest_hero db	0		; [9Ch] ability slot 3 (set by 200FIGHT entity_fn_e_4 on 9AF3 trigger)
 ;
-; cur_weapon_idx — cached selected weapon idx (1-based; init 0).  Per
-; 201SELCT 315/320: written by select-screen, read back as `mov bl, ds:cur_weapon_idx`
-; into the weapon dispatch.  Earlier name `current_magic_spell` was a
-; proximity guess (since 9E is cur_magic_idx, 9D was assumed similar).
-cur_weapon_idx db	0		; [9Dh] cached weapon select idx (init=0)
+; 0x9D = HIGHEST WEAPON ID OWNED (cap).  User correction: this is NOT
+; the equipped weapon (that's at 0x92).  Cross-save evidence: KNIGHT
+; save has equipped_weapon=1 (Training) but weapon_tier_max=4 (Knight's
+; Sword owned via Glory Crest trade).
+weapon_tier_max db	0		; [9Dh] highest weapon ID owned (0=none, 7=Fairy Flame)
 ;
-; [9Eh..0AAh]: 201SELCT names 0x9E as cur_magic_idx (currently selected
-; magic).  0x9F has no canonical name; 0xA0 has 5 cross-segment competing
-; names (likely segment-aliasing collision) — left as placeholder.
-cur_magic_idx	db	0		; [9Eh] currently selected magic index (from 201SELCT)
-stat_X9F	db	0		; [9Fh] VESTIGIAL — per-frame zero-clear, no reader observed (functest 2026-04-29)
-music_track_count db 0		; [music_track_count] music track count (read by load_music_tracks in game.asm)
-		db	10 dup (0)	; [A1h-AAh] reserved (no genuine refs found)
+; 0x9E = currently SELECTED spell (single-select; the game has no
+; spell-slot mechanic).  201SELCT writes this when player picks a spell
+; from the menu.
+selected_spell	db	0		; [9Eh] currently selected spell ID (0=none, 1=Espada..7=Guerra)
+stat_X9F	db	0		; [9Fh] VESTIGIAL — per-frame zero-clear, no reader observed
+;
+; 0xA0 = count of spells learned (cached popcount of spell_known_*
+; @ 0xBB..0xC1).  Earlier "music_track_count" was a misnomer.
+spells_learned_count db 0	; [A0h] count of spells learned (== popcount(0xBB..0xC1))
+;
+; 0xA1..0xA5: WEARABLE acquisition list (4 shoes + 1 cape).  Each byte
+; holds the ID of the Nth wearable acquired (0=empty).  ID mapping (user-
+; confirmed): 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=AsbestosCape.
+; Earlier names "magic_flags" / "spell_slot_1..5" were misleading
+; (these track wearables, not spells).
+wear_1		db	0		; [A1h] 1st wearable acquired
+wear_2		db	0		; [A2h] 2nd wearable acquired
+wear_3		db	0		; [A3h] 3rd wearable acquired
+wear_4		db	0		; [A4h] 4th wearable acquired
+wear_5		db	0		; [A5h] 5th wearable acquired
+;
+; 0xA6..0xAA: fixed-position stock counters for the first 5 magic items
+; in playthrough §5.3.1 listing order.  Each byte = stock count (0..8 per
+; §5.3.2 cap).  Earlier "item_flags" / "item_slot_1..5" was misleading
+; (these are independent stock counters, not slots).
+kenko_stock	db	0		; [A6h] Ken'ko Potion stock count
+juuen_stock	db	0		; [A7h] Juu-en Fruit stock count
+magia_stock	db	0		; [A8h] Magia Stone stock count
+sabre_oil_stock	db	0		; [A9h] Sabre Oil stock count
+kioku_stock	db	0		; [AAh] Kioku Feather stock count
 
 ;--------------------------------------------------------------------------
 ;  Animation Color LUT  [CS:0x00AB - CS:0x00C3]  (drv_color_lut base = ABh)

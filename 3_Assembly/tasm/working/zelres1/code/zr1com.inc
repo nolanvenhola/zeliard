@@ -43,8 +43,12 @@ crest_glory             equ     09Bh    ; Glory Crest (Cementar pickup; consumed
 player_ability_2        equ     09Bh    ; alias — earlier name
 crest_hero              equ     09Ch    ; Hero's Crest (Cavern of Riza pickup; required to encounter Pollo)
 player_ability_3        equ     09Ch    ; alias — earlier name
-cur_weapon_idx          equ     9Dh     ; cached selected weapon idx
-cur_magic_idx           equ     9Eh     ; currently selected magic idx
+; 0x9D = highest weapon ID owned (cap), NOT the selected weapon.
+weapon_tier_max         equ     9Dh     ; highest weapon ID owned (cap)
+cur_weapon_idx          equ     9Dh     ; alias — earlier (misleading) name
+; 0x9E = the single currently selected spell (only one active at a time).
+selected_spell          equ     9Eh     ; currently selected spell ID
+cur_magic_idx           equ     9Eh     ; alias — earlier name
 stat_X9F                equ     9Fh     ; VESTIGIAL placeholder (per-frame zero-clear, no reader observed)
 weap_dur_cur            equ     0ABh    ; per-weapon durability table base (7 bytes)
 player_hp_max           equ     0B2h    ; HP ceiling (overlays anim_color_lut frame 8)

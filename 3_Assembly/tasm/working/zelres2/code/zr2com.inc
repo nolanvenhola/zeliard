@@ -37,8 +37,12 @@ player_speed            equ     98h     ; character speed stat (canonical in std
 player_power            equ     99h     ; character power stat (canonical in stdply.inc)
 weap_dur_cur            equ     0ABh    ; per-weapon durability table base (7 bytes; canonical in stdply.inc)
 weap_dur_max            equ     0B4h    ; weapon durability max table base (7 bytes; canonical in stdply.inc)
-cur_weapon_idx          equ     9Dh     ; cached selected weapon idx (canonical in stdply.inc)
-cur_magic_idx           equ     9Eh     ; currently selected magic idx (canonical in stdply.inc)
+; 0x9D = highest weapon ID owned (cap); not the selected weapon.
+weapon_tier_max         equ     9Dh     ; highest weapon ID owned (cap)
+cur_weapon_idx          equ     9Dh     ; alias — earlier (misleading) name
+; 0x9E = single currently selected spell.
+selected_spell          equ     9Eh     ; currently selected spell ID
+cur_magic_idx           equ     9Eh     ; alias — earlier name
 player_hp_max           equ     0B2h    ; HP ceiling (canonical in stdply.inc; overlays anim_color_lut)
 player_facing           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
 current_area_id         equ     0C4h    ; current area (high bit=in-town, low 7=town/sage idx); Kioku Feather destination

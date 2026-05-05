@@ -38,11 +38,20 @@ include  srmacros.inc
 ; Section 3: Game-segment globals (gvar_*) not in shared inc
 ; ----------------------------------------------------------------------
 ; Player-record fields (DS-relative; canonical home is stdply.inc).
-music_track_count equ	0A0h			; music track count (canonical in stdply.inc)
+; 0xA0 was misnamed music_track_count.  Per cross-save data it tracks
+; the count of spells the player has learned (== popcount(spell_known_*)).
+; game.asm's load_music_tracks proc happens to use this same byte as a
+; loop count, but the underlying semantic is spell-learn count (one
+; spell learned per town transition, which is also when a music track
+; might be added).
+spells_learned_count equ 0A0h			; count of spells learned (canonical in stdply.inc)
+music_track_count equ	0A0h			; alias — earlier name (kept; load_music_tracks reads via this)
 stick_joy_poll_handler equ	120h			; stick.bin slot 120h dispatch (poll_joystick_buttons; canonical zr1com.inc/zr2com.inc)
 equipped_weapon	equ	92h			; equipped weapon idx (canonical in stdply.inc)
 shield_type	equ	93h			; shield tier (canonical in stdply.inc)
-cur_weapon_idx	equ	9Dh			; cached selected weapon idx (canonical in stdply.inc)
+; 0x9D = highest weapon ID owned (cap), NOT the selected weapon.
+weapon_tier_max	equ	9Dh			; highest weapon ID owned (canonical in stdply.inc)
+cur_weapon_idx	equ	9Dh			; alias — earlier (misleading) name
 current_area_id	equ	0C4h			; current area (high bit=in-town, low 7=town/sage idx); Kioku Feather destination
 player_level	equ	0C4h			; alias — earlier name (was misnomer; not character level)
 player_tileset	equ	0C8h			; level tileset index (canonical in stdply.inc)

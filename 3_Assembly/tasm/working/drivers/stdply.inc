@@ -146,23 +146,79 @@ stat_X9B                equ     9Bh     ; alias — earlier name
 crest_hero              equ     9Ch     ; Hero's Crest from Cavern of Riza (cavern 3); required to encounter Pollo
 player_ability_3        equ     9Ch     ; alias — earlier name
 stat_X9C                equ     9Ch     ; alias — earlier name
-cur_weapon_idx          equ     9Dh     ; cached selected weapon idx (1-based; init 0).
-                                        ; Functional evidence in 201SELCT line 315/320
-                                        ; (`mov ds:cur_weapon_idx, al / mov bl, ds:cur_weapon_idx`).
-                                        ; Was misnamed `current_magic_spell` (proximity guess).
-cur_magic_idx           equ     9Eh     ; currently selected magic index (canonical, from 201SELCT)
+; 0x9D = HIGHEST WEAPON ID OWNED, not the equipped weapon.  User-corrected:
+; equipped_weapon (0x92) is the SELECTED weapon; this byte is the cap of
+; weapons unlocked.  Cross-save evidence: KNIGHT save has equipped=1
+; (Training) but weapon_tier_max=4 (Knight's Sword owned via Glory Crest
+; trade).  Earlier name `cur_weapon_idx` was misleading.
+weapon_tier_max         equ     9Dh     ; highest weapon ID owned (cap; 0=none, 7=Fairy Flame)
+cur_weapon_idx          equ     9Dh     ; alias — earlier (misleading) name
+;
+; 0x9E = THE single currently selected spell.  User-corrected: the game
+; allows only one spell active at a time, so this is just an ID byte.
+selected_spell          equ     9Eh     ; currently chosen spell ID (0=none, 1=Espada..7=Guerra)
+cur_magic_idx           equ     9Eh     ; alias — earlier name
 stat_X9E                equ     9Eh     ; alias — earlier name
-; 0x9F: VESTIGIAL.  1 write site (106TOWN frame_update prologue zero-
-; clears it every frame, alongside gvar_spacebar_state/skip_flag2/cur_magic_idx)
-; and 0 reads anywhere.  Runtime probe (functest/.../test_stdply_stat_X9F.py)
-; confirms no reader.  Kept declared to preserve byte position.
+; 0x9F: VESTIGIAL.  Per-frame zero-clear, no reader observed.
 stat_X9F                equ     9Fh     ; VESTIGIAL — per-frame zero-clear, no reader observed
 ;
-; 0xA0: music track count.  game.asm line 460 (`load_music_tracks` proc)
-; comment is explicit: "Reads music track count from [ds:0xA0]".  Reads it
-; into CL and iterates through track table at music_track_ref_tbl.
-music_track_count       equ     0A0h    ; music track count (canonical, per game.asm comment)
-stat_XA0                equ     0A0h    ; alias — earlier name
+; 0xA0: spells_learned_count.  Cached counter == popcount(spell_known_*
+; @ 0xBB..0xC1).  Increments by 1 at each town's sage encounter.  User-
+; corrected: previous "music_track_count" was wrong; the byte tracks the
+; number of spells the player has learned, not music tracks.  game.asm's
+; `load_music_tracks` comment that referenced this byte was likely also
+; wrong (or the byte serves dual purpose for indexing the music table by
+; spell-count, which would be coincidence rather than music-tied).
+spells_learned_count    equ     0A0h    ; count of spells learned (== popcount of 0xBB..0xC1)
+music_track_count       equ     0A0h    ; alias — earlier name (incorrect — not music)
+stat_XA0                equ     0A0h    ; alias — earlier placeholder
+
+; 0xA1..0xA5: WEARABLE acquisition list (user correction).  Game has 5
+; wearables (4 shoes + 1 cape) per playthrough §6.3 + §8.3.  Each save
+; byte holds the ID of the Nth wearable the player has acquired (0 = empty).
+;
+; Validated against save data:
+;   Helada save (got Ruzeria in Helada area):    A1=4 → ID 4 = Ruzeria
+;   Tumba save  (got Pirika in Tumba):           A2=2 → ID 2 = Pirika
+;   Dorado save (got Silkarn in Dorado):         A3=3 → ID 3 = Silkarn
+;   Llama save  (bought Asbestos Cape at Llama): A4=5 → ID 5 = Cape
+;   Esco/ALMAS  (got Feruza Shoes secret):       A5=1 → ID 1 = Feruza
+;
+; ID mapping (user-confirmed):
+;   1 = Feruza Shoes  (secret, Cavern of Arrugia)
+;   2 = Pirika Shoes  (Graveyard / Tumba area)
+;   3 = Silkarn Shoes (Gold Caverns / Dorado)
+;   4 = Ruzeria Shoes (Ice Caverns / Helada)
+;   5 = Asbestos Cape (bought at Llama town)
+;
+; Earlier name was `magic_flags` / `spell_slot_1..5` — both misleading
+; (these are wearables, NOT spells).
+wear_1                  equ     0A1h    ; 1st wearable acquired (ID 1..5)
+wear_2                  equ     0A2h    ; 2nd wearable acquired
+wear_3                  equ     0A3h    ; 3rd wearable acquired
+wear_4                  equ     0A4h    ; 4th wearable acquired
+wear_5                  equ     0A5h    ; 5th wearable acquired
+magic_flags             equ     0A1h    ; alias — earlier (misleading) name
+spell_slot_1            equ     0A1h    ; alias — earlier name
+spell_slot_2            equ     0A2h    ; alias
+spell_slot_3            equ     0A3h    ; alias
+spell_slot_4            equ     0A4h    ; alias
+spell_slot_5            equ     0A5h    ; alias
+
+; 0xA6..0xAA: fixed-position stock counters for the first 5 magic items
+; in playthrough §5.3.1 listing order.  Each byte = stock count (0..8 per
+; §5.3.2 cap).  Not slots — each consumable has its own dedicated counter.
+kenko_stock             equ     0A6h    ; Ken'ko Potion stock (0..8)
+juuen_stock             equ     0A7h    ; Juu-en Fruit stock
+magia_stock             equ     0A8h    ; Magia Stone stock
+sabre_oil_stock         equ     0A9h    ; Sabre Oil stock
+kioku_stock             equ     0AAh    ; Kioku Feather stock
+item_flags              equ     0A6h    ; alias — earlier name (misleading; items are independent stocks, not slots)
+item_slot_1             equ     0A6h    ; alias — earlier name
+item_slot_2             equ     0A7h    ; alias
+item_slot_3             equ     0A8h    ; alias
+item_slot_4             equ     0A9h    ; alias
+item_slot_5             equ     0AAh    ; alias
 
 ; Animation color LUT overlay  [0x00B2, 0x00B4]
 ; Two bytes inside the 17-entry anim_color_lut do double duty as gameplay

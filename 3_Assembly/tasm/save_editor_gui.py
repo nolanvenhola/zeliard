@@ -37,8 +37,8 @@ ENUMS: dict[str, list[tuple[int, str]]] = {
         (6, 'Enchantment Sword'),
         (7, 'Sword of the Fairy Flame (secret)'),
     ],
-    'cur_weapon_idx': [
-        (0, 'none / fist'),
+    'weapon_tier_max': [
+        (0, 'no weapons (just Training default)'),
         (1, 'Training'),
         (2, "Wise Man's"),
         (3, 'Spirit'),
@@ -46,6 +46,16 @@ ENUMS: dict[str, list[tuple[int, str]]] = {
         (5, 'Illumination'),
         (6, 'Enchantment'),
         (7, 'Fairy Flame (secret)'),
+    ],
+    'selected_spell': [
+        (0, 'none'),
+        (1, 'Espada'),
+        (2, 'Saeta'),
+        (3, 'Fuego'),
+        (4, 'Lanzar'),
+        (5, 'Rascar'),
+        (6, 'Agua'),
+        (7, 'Guerra'),
     ],
     'shield_type': [
         (0, 'none'),
@@ -69,16 +79,6 @@ ENUMS: dict[str, list[tuple[int, str]]] = {
         (0x88, '8 — Pureza Town'),
         (0x89, '9 — Esco Village (secret)'),
     ],
-    'cur_magic_idx': [
-        (0, 'none'),
-        (1, 'spell 1'),
-        (2, 'spell 2'),
-        (3, 'spell 3'),
-        (4, 'spell 4'),
-        (5, 'spell 5'),
-        (6, 'spell 6'),
-        (7, 'spell 7'),
-    ],
     'player_tileset': [
         (0, '0 — town'),
         (1, '1 — generic dungeon'),
@@ -87,27 +87,13 @@ ENUMS: dict[str, list[tuple[int, str]]] = {
     ],
 }
 
-SPELL_CHOICES = [
+WEARABLE_CHOICES = [
     (0, 'empty'),
-    (1, 'Espada (sword throw)'),
-    (2, 'Saeta (arrows)'),
-    (3, 'Fuego (fire)'),
-    (4, 'Lanzar (flame jet)'),
-    (5, 'Rascar (falling rocks)'),
-    (6, 'Agua (water)'),
-    (7, 'Guerra (lightning ult)'),
-]
-
-ITEM_CHOICES = [
-    (0, 'empty'),
-    (1, "Ken'ko Potion"),
-    (2, 'Juu-en Fruit'),
-    (3, 'Elixir of Kashi'),
-    (4, 'Chikara Powder'),
-    (5, 'Magia Stone'),
-    (6, 'Holy Water of Acero'),
-    (7, 'Sabre Oil'),
-    (8, 'Kioku Feather'),
+    (1, 'Feruza Shoes (secret cavern)'),
+    (2, 'Pirika Shoes (Tumba/Graveyard)'),
+    (3, 'Silkarn Shoes (Dorado/Gold)'),
+    (4, 'Ruzeria Shoes (Helada/Ice)'),
+    (5, 'Asbestos Cape (bought at Llama)'),
 ]
 
 
@@ -115,10 +101,8 @@ def enum_for(name: str):
     """Return [(value, label), ...] for a field name, or None if not enum."""
     if name in ENUMS:
         return ENUMS[name]
-    if name.startswith('spell_slot_'):
-        return SPELL_CHOICES
-    if name.startswith('item_slot_'):
-        return ITEM_CHOICES
+    if name.startswith('wear_'):
+        return WEARABLE_CHOICES
     return None
 
 
@@ -160,7 +144,11 @@ SECTIONS = [
                                                                   0x8D, 0x8E,
                                                                   0xC2, 0xC3, 0xC5, 0xC6,
                                                                   0xE4, 0xE6, 0xE7, 0xE8)),
-    ("Equipment / inventory",                lambda f: 0x92 <= f[1] <= 0xAA),
+    ("Wearables (4 shoes + cape, in acquisition order)",
+                                              lambda f: f[0].startswith('wear_')),
+    ("Magic-item stocks (Ken'ko, Juu-en, Magia, Sabre Oil, Kioku Feather)",
+                                              lambda f: f[0].endswith('_stock')),
+    ("Equipment + selected weapon/spell",     lambda f: 0x92 <= f[1] <= 0xAA),
     ("Weapon durability tables",             lambda f: 0xAB <= f[1] <= 0xBA and f[1] != 0xB2),
     ("Area / scene",                         lambda f: f[0] in ('current_area_id', 'player_tileset')),
 ]
