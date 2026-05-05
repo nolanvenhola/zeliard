@@ -42,7 +42,7 @@ PLAYER_RECORD = [
     (0x9B, "player_ability_2","b"),
     (0x9C, "player_ability_3","b"),
     (0x9D, "selected_spell",  "b"),    # user correction: this is the selected spell, NOT weapon_tier_max
-    (0x9E, "stat_X9E",        "b"),    # TBD — was cur_magic_idx; selected_spell now lives at 0x9D
+    (0x9E, "selected_wearable", "b"),  # currently selected wearable (1..5 per WEARABLE mapping; user-confirmed)
     (0x9F, "stat_X9F",        "b"),
     (0xA0, "spells_learned_count", "b"),  # was: music_track_count (== popcount of spell_known_*)
     (0xA1, "wear_list",       "5b"),   # was: magic_flags — 4 shoes + 1 cape, list of acquired IDs (user-named "wear_*")

@@ -155,11 +155,14 @@ selected_spell          equ     9Dh     ; currently chosen spell ID (0=none, 1..
 weapon_tier_max         equ     9Dh     ; alias — earlier (wrong) name
 cur_weapon_idx          equ     9Dh     ; alias — earlier (wrong) name
 ;
-; 0x9E = TBD.  Originally cur_magic_idx, briefly mis-labelled
-; selected_spell.  Real semantic unclear; values 0..5 across saves.
-; Could be magic-menu cursor position or last-hovered spell.
-stat_X9E                equ     9Eh     ; TBD; was cur_magic_idx (probably wrong) and selected_spell (definitely wrong — that's at 0x9D)
-cur_magic_idx           equ     9Eh     ; alias — earlier name
+; 0x9E = SELECTED WEARABLE (user-confirmed).  ID of the shoe-or-cape
+; the player currently has equipped (0=none, 1=Feruza, 2=Pirika,
+; 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape — same enum as wear_*).
+; Cross-save evidence: Helada save = 4 (Ruzeria, just got it),
+; Tumba = 2 (Pirika), Llama = 5 (Cape).
+selected_wearable       equ     9Eh     ; currently equipped wearable ID
+stat_X9E                equ     9Eh     ; alias — earlier (placeholder) name
+cur_magic_idx           equ     9Eh     ; alias — earlier (wrong) name
 ; 0x9F: VESTIGIAL.  Per-frame zero-clear, no reader observed.
 stat_X9F                equ     9Fh     ; VESTIGIAL — per-frame zero-clear, no reader observed
 ;

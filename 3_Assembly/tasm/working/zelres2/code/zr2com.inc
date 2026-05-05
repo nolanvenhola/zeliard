@@ -41,9 +41,10 @@ weap_dur_max            equ     0B4h    ; weapon durability max table base (7 by
 selected_spell          equ     9Dh     ; currently chosen spell ID
 weapon_tier_max         equ     9Dh     ; alias — earlier (wrong) name
 cur_weapon_idx          equ     9Dh     ; alias — earlier (wrong) name
-; 0x9E = TBD.
-stat_X9E                equ     9Eh     ; TBD
-cur_magic_idx           equ     9Eh     ; alias — earlier name
+; 0x9E = currently equipped wearable ID (0..5 per wear_* enum).
+selected_wearable       equ     9Eh     ; equipped shoe-or-cape ID
+stat_X9E                equ     9Eh     ; alias — earlier placeholder
+cur_magic_idx           equ     9Eh     ; alias — earlier (wrong) name
 player_hp_max           equ     0B2h    ; HP ceiling (canonical in stdply.inc; overlays anim_color_lut)
 player_facing           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
 current_area_id         equ     0C4h    ; current area (high bit=in-town, low 7=town/sage idx); Kioku Feather destination

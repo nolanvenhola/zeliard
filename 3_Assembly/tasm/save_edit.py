@@ -89,7 +89,7 @@ FIELDS = [
     ('crest_glory',          0x9B, 'bool', 'Glory Crest (Cementar pickup; consumed by 212ARMRP Tumba shop trade for Knight\'s Sword)'),
     ('crest_hero',           0x9C, 'bool', 'Hero\'s Crest (Cavern of Riza; required to encounter Pollo)'),
     ('selected_spell',       0x9D, 'b',  'Currently selected spell ID (1=Espada..7=Guerra; only one spell active at a time — user-confirmed at 0x9D, NOT 0x9E).'),
-    ('stat_X9E',             0x9E, 'b',  'TBD — was cur_magic_idx then mistakenly selected_spell.  User correction placed selected_spell at 0x9D, so 0x9E is something else.  Values 0..5 across saves; possibly menu-cursor or last-hovered spell index.'),
+    ('selected_wearable',    0x9E, 'b',  'Currently selected wearable ID (0=none, 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape).  User-confirmed.'),
     ('spells_learned_count', 0xA0, 'b',  'Count of spells learned == popcount(spell_known_* @ 0xBB..0xC1).  Cached counter.'),
     # 0xA1..0xA5 — list of WEARABLE IDs in acquisition order (4 shoes + 1 cape).
     # Per playthrough §6.3 + user correction.  ID mapping derived from save

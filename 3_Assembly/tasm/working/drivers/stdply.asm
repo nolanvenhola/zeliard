@@ -162,9 +162,9 @@ crest_hero db	0		; [9Ch] ability slot 3 (set by 200FIGHT entity_fn_e_4 on 9AF3 t
 ; weapon-related at all).
 selected_spell	db	0		; [9Dh] currently selected spell ID
 ;
-; 0x9E = TBD (was cur_magic_idx, briefly mislabelled selected_spell).
-; Values 0..5 across saves — possibly magic-menu cursor position.
-stat_X9E	db	0		; [9Eh] TBD — was cur_magic_idx
+; 0x9E = SELECTED WEARABLE.  User-confirmed: ID of the shoe-or-cape
+; the player has currently equipped (0=none, 1..5 per wear_* enum).
+selected_wearable db	0		; [9Eh] currently equipped wearable
 stat_X9F	db	0		; [9Fh] VESTIGIAL — per-frame zero-clear, no reader observed
 ;
 ; 0xA0 = count of spells learned (cached popcount of spell_known_*

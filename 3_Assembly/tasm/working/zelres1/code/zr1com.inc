@@ -47,9 +47,10 @@ player_ability_3        equ     09Ch    ; alias — earlier name
 selected_spell          equ     9Dh     ; currently chosen spell ID (0=none, 1..7)
 weapon_tier_max         equ     9Dh     ; alias — earlier (wrong) name
 cur_weapon_idx          equ     9Dh     ; alias — earlier (wrong) name
-; 0x9E = TBD; values 0..5 across saves.
-stat_X9E                equ     9Eh     ; TBD
-cur_magic_idx           equ     9Eh     ; alias — earlier name
+; 0x9E = currently equipped wearable ID (0..5 per wear_* enum).
+selected_wearable       equ     9Eh     ; equipped shoe-or-cape ID
+stat_X9E                equ     9Eh     ; alias — earlier placeholder
+cur_magic_idx           equ     9Eh     ; alias — earlier (wrong) name
 stat_X9F                equ     9Fh     ; VESTIGIAL placeholder (per-frame zero-clear, no reader observed)
 weap_dur_cur            equ     0ABh    ; per-weapon durability table base (7 bytes)
 player_hp_max           equ     0B2h    ; HP ceiling (overlays anim_color_lut frame 8)

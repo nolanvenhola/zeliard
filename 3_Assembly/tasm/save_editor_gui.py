@@ -104,7 +104,7 @@ def enum_for(name: str):
     """Return [(value, label), ...] for a field name, or None if not enum."""
     if name in ENUMS:
         return ENUMS[name]
-    if name.startswith('wear_'):
+    if name.startswith('wear_') or name == 'selected_wearable':
         return WEARABLE_CHOICES
     if name.startswith('item_slot_'):
         return ITEM_CHOICES
