@@ -46,7 +46,7 @@ PLAYER_RECORD = [
     (0x9F, "stat_X9F",        "b"),
     (0xA0, "spells_learned_count", "b"),  # was: music_track_count (== popcount of spell_known_*)
     (0xA1, "wear_list",       "5b"),   # was: magic_flags — 4 shoes + 1 cape, list of acquired IDs (user-named "wear_*")
-    (0xA6, "consumable_stocks", "5b"), # was: item_flags — fixed-position stocks (Ken'ko/Juuen/Magia/SabreOil/Kioku)
+    (0xA6, "item_slots",      "5b"),   # 5 inventory slots; each byte = item ID 0..8 (multiple of same allowed)
     (0xAB, "weap_dur_cur",    "7b"),  # 7-byte durability table
     (0xB2, "player_hp_max",   "w"),
     (0xB4, "weap_dur_max",    "7b"),  # 7-byte durability max table

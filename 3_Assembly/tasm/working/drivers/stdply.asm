@@ -182,15 +182,16 @@ wear_3		db	0		; [A3h] 3rd wearable acquired
 wear_4		db	0		; [A4h] 4th wearable acquired
 wear_5		db	0		; [A5h] 5th wearable acquired
 ;
-; 0xA6..0xAA: fixed-position stock counters for the first 5 magic items
-; in playthrough §5.3.1 listing order.  Each byte = stock count (0..8 per
-; §5.3.2 cap).  Earlier "item_flags" / "item_slot_1..5" was misleading
-; (these are independent stock counters, not slots).
-kenko_stock	db	0		; [A6h] Ken'ko Potion stock count
-juuen_stock	db	0		; [A7h] Juu-en Fruit stock count
-magia_stock	db	0		; [A8h] Magia Stone stock count
-sabre_oil_stock	db	0		; [A9h] Sabre Oil stock count
-kioku_stock	db	0		; [AAh] Kioku Feather stock count
+; 0xA6..0xAA: 5-slot item inventory.  User-confirmed: items DO have a
+; slot mechanic.  Each byte = ID of item in that slot (0=empty; 1..8
+; per §5.3.1: Ken'ko, Juu-en, Elixir, Chikara, Magia, Holy Water,
+; Sabre Oil, Kioku Feather).  Same item can occupy multiple slots
+; (Helada=5,5,5,5,0 → 4 Magia Stones).
+item_slot_1	db	0		; [A6h] inventory slot 1
+item_slot_2	db	0		; [A7h] inventory slot 2
+item_slot_3	db	0		; [A8h] inventory slot 3
+item_slot_4	db	0		; [A9h] inventory slot 4
+item_slot_5	db	0		; [AAh] inventory slot 5
 
 ;--------------------------------------------------------------------------
 ;  Animation Color LUT  [CS:0x00AB - CS:0x00C3]  (drv_color_lut base = ABh)

@@ -100,14 +100,16 @@ FIELDS = [
     ('wear_3',       0xA3, 'b',  '3rd wearable acquired'),
     ('wear_4',       0xA4, 'b',  '4th wearable acquired'),
     ('wear_5',       0xA5, 'b',  '5th wearable acquired'),
-    # 0xA6..0xAA — fixed-position stock counters for the first 5 magic items
-    # in playthrough §5.3.1 listing order.  Each byte = stock count (0..8 per
-    # §5.3.2 cap).  No "slot" mechanic — each consumable has its own counter.
-    ('kenko_stock',          0xA6, 'b',  "Ken'ko Potion stock count (0..8)"),
-    ('juuen_stock',          0xA7, 'b',  'Juu-en Fruit stock count (0..8)'),
-    ('magia_stock',          0xA8, 'b',  'Magia Stone stock count (0..8)'),
-    ('sabre_oil_stock',      0xA9, 'b',  'Sabre Oil stock count (0..8)'),
-    ('kioku_stock',          0xAA, 'b',  'Kioku Feather stock count (0..8)'),
+    # 0xA6..0xAA — 5 ITEM INVENTORY SLOTS.  Each byte holds the ID of the item
+    # placed in that slot (0 = empty; otherwise item ID 1..8 per playthrough
+    # §5.3.1).  Same item ID can appear in multiple slots (Helada save shows
+    # 5,5,5,5,0 = four Magia Stones in four slots).  Items HAVE slots in the
+    # game (unlike spells, which have a single selected_spell).
+    ('item_slot_1',          0xA6, 'b',  'Inventory slot 1 (0=empty; ID: 1=Kenko 2=Juuen 3=Elixir 4=Chikara 5=Magia 6=HolyWater 7=SabreOil 8=Kioku)'),
+    ('item_slot_2',          0xA7, 'b',  'Inventory slot 2 (same ID enum)'),
+    ('item_slot_3',          0xA8, 'b',  'Inventory slot 3'),
+    ('item_slot_4',          0xA9, 'b',  'Inventory slot 4'),
+    ('item_slot_5',          0xAA, 'b',  'Inventory slot 5'),
     ('weap_dur_cur_1',       0xAB, 'b',  'Weapon durability current — slot 1'),
     ('weap_dur_cur_2',       0xAC, 'b',  'Weapon durability current — slot 2'),
     ('weap_dur_cur_3',       0xAD, 'b',  'Weapon durability current — slot 3'),

@@ -205,20 +205,21 @@ spell_slot_3            equ     0A3h    ; alias
 spell_slot_4            equ     0A4h    ; alias
 spell_slot_5            equ     0A5h    ; alias
 
-; 0xA6..0xAA: fixed-position stock counters for the first 5 magic items
-; in playthrough §5.3.1 listing order.  Each byte = stock count (0..8 per
-; §5.3.2 cap).  Not slots — each consumable has its own dedicated counter.
-kenko_stock             equ     0A6h    ; Ken'ko Potion stock (0..8)
-juuen_stock             equ     0A7h    ; Juu-en Fruit stock
-magia_stock             equ     0A8h    ; Magia Stone stock
-sabre_oil_stock         equ     0A9h    ; Sabre Oil stock
-kioku_stock             equ     0AAh    ; Kioku Feather stock
-item_flags              equ     0A6h    ; alias — earlier name (misleading; items are independent stocks, not slots)
-item_slot_1             equ     0A6h    ; alias — earlier name
-item_slot_2             equ     0A7h    ; alias
-item_slot_3             equ     0A8h    ; alias
-item_slot_4             equ     0A9h    ; alias
-item_slot_5             equ     0AAh    ; alias
+; 0xA6..0xAA: 5-slot ITEM INVENTORY.  User-confirmed: items DO have a slot
+; mechanic (unlike spells, which use single selected_spell).  Each byte
+; holds the ID of the item in that slot (0=empty; 1..8 = item type from
+; playthrough §5.3.1).  Same item ID can appear in multiple slots
+; (Helada save = 5,5,5,5,0 → four Magia Stones in four slots, fifth empty).
+item_slot_1             equ     0A6h    ; inventory slot 1 (item ID; 0=empty)
+item_slot_2             equ     0A7h    ; inventory slot 2
+item_slot_3             equ     0A8h    ; inventory slot 3
+item_slot_4             equ     0A9h    ; inventory slot 4
+item_slot_5             equ     0AAh    ; inventory slot 5
+item_flags              equ     0A6h    ; alias — earlier name for the byte block
+; Earlier "kenko_stock"/"juuen_stock"/"magia_stock"/"sabre_oil_stock"/
+; "kioku_stock" naming was wrong: these are not fixed-position stock
+; counters per item type, they are 5 generic inventory slots that can
+; hold any of the 8 item types.
 
 ; Animation color LUT overlay  [0x00B2, 0x00B4]
 ; Two bytes inside the 17-entry anim_color_lut do double duty as gameplay

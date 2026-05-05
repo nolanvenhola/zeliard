@@ -96,6 +96,19 @@ WEARABLE_CHOICES = [
     (5, 'Asbestos Cape (bought at Llama)'),
 ]
 
+# Item inventory IDs (5 slots × 8 possible item types per playthrough §5.3.1).
+ITEM_CHOICES = [
+    (0, 'empty'),
+    (1, "Ken'ko Potion"),
+    (2, 'Juu-en Fruit'),
+    (3, 'Elixir of Kashi'),
+    (4, 'Chikara Powder'),
+    (5, 'Magia Stone'),
+    (6, 'Holy Water of Acero'),
+    (7, 'Sabre Oil'),
+    (8, 'Kioku Feather'),
+]
+
 
 def enum_for(name: str):
     """Return [(value, label), ...] for a field name, or None if not enum."""
@@ -103,6 +116,8 @@ def enum_for(name: str):
         return ENUMS[name]
     if name.startswith('wear_'):
         return WEARABLE_CHOICES
+    if name.startswith('item_slot_'):
+        return ITEM_CHOICES
     return None
 
 
@@ -146,8 +161,8 @@ SECTIONS = [
                                                                   0xE4, 0xE6, 0xE7, 0xE8)),
     ("Wearables (4 shoes + cape, in acquisition order)",
                                               lambda f: f[0].startswith('wear_')),
-    ("Magic-item stocks (Ken'ko, Juu-en, Magia, Sabre Oil, Kioku Feather)",
-                                              lambda f: f[0].endswith('_stock')),
+    ("Item inventory (5 slots, magic items 1..8)",
+                                              lambda f: f[0].startswith('item_slot_')),
     ("Equipment + selected weapon/spell",     lambda f: 0x92 <= f[1] <= 0xAA),
     ("Weapon durability tables",             lambda f: 0xAB <= f[1] <= 0xBA and f[1] != 0xB2),
     ("Area / scene",                         lambda f: f[0] in ('current_area_id', 'player_tileset')),
