@@ -88,6 +88,67 @@ ENUMS: dict[str, list[tuple[int, str]]] = {
     ],
 }
 
+# ---------------------------------------------------------------------------
+# Bitfield-byte definitions: a single byte's bits map to named items.
+# Each entry: (bit_index 0..7, human label).  Unlisted bits are reserved.
+# ---------------------------------------------------------------------------
+
+SHOP_MAGIC_BITS = [
+    (7, "Ken'ko Potion"),
+    (6, "Juu-en Fruit"),
+    (5, "Elixir of Kashi"),
+    (4, "Chikara Powder"),
+    (3, "Magia Stone"),
+    (2, "Holy Water of Acero"),
+    (1, "Sabre Oil"),
+    (0, "Kioku Feather"),
+]
+
+SHOP_SWORD_BITS = [
+    (7, "Training Sword"),
+    (6, "Wise Man's Sword"),
+    (5, "Spirit Sword"),
+    (4, "Knight's Sword"),
+    (3, "Illumination Sword"),
+    (2, "Enchantment Sword"),
+    # bits 1, 0 unused per TCRF
+]
+
+SHOP_SHIELD_BITS = [
+    (7, "Clay Shield"),
+    (6, "Wise Man's Shield"),
+    (5, "Stone Shield"),
+    (4, "Honor Shield"),
+    (3, "Light Shield"),
+    (2, "Titanium Shield"),
+    # bits 1, 0 unused per TCRF
+]
+
+SAGES_SPOKEN_BITS = [
+    (7, "Muralla"),
+    (6, "Satono"),
+    (5, "Bosque"),
+    (4, "Helada"),
+    (3, "Tumba"),
+    (2, "Dorado"),
+    (1, "Llama"),
+    (0, "Pureza"),
+]
+
+
+def bits_for(name: str):
+    """Return [(bit_idx, label), ...] for fields whose byte is a labeled bitfield, else None."""
+    if name.startswith('shop_magic_'):
+        return SHOP_MAGIC_BITS
+    if name.startswith('shop_sword_'):
+        return SHOP_SWORD_BITS
+    if name.startswith('shop_shield_'):
+        return SHOP_SHIELD_BITS
+    if name == 'sages_spoken':
+        return SAGES_SPOKEN_BITS
+    return None
+
+
 WEARABLE_CHOICES = [
     (0, 'empty'),
     (1, 'Feruza Shoes (secret cavern)'),
@@ -435,6 +496,78 @@ class SaveEditorApp:
         self.field_vars[name] = (byte_vars, ('bitmap8', base_off),
                                  {'strings': string_vars, 'bits': bit_vars_2d})
 
+    def _render_bitfield_byte(self, section, name: str, row: int, bits: list):
+        """Render a single byte as: [hex entry] + N named bit checkboxes
+        (4 per row), all sync'd via a _set_byte helper.  Used for the
+        magic/sword/shield shop inventories and sages_spoken bitmap.
+        """
+        sub = ttk.Frame(section)
+        sub.grid(row=row, column=2, columnspan=2, sticky=tk.W)
+
+        byte_var = tk.IntVar(value=0)
+        string_var = tk.StringVar(value='00')
+        bit_vars = {}  # bit_idx -> IntVar
+
+        def _set_byte(value: int):
+            if self._suppress_trace:
+                return
+            value &= 0xFF
+            self._suppress_trace = True
+            try:
+                byte_var.set(value)
+                string_var.set(f'{value:02X}')
+                for bit_idx, _ in bits:
+                    bit_vars[bit_idx].set((value >> bit_idx) & 1)
+            finally:
+                self._suppress_trace = False
+            self._refresh_hex(self._safe_compose())
+
+        # Hex byte entry
+        ent = ttk.Entry(sub, textvariable=string_var, width=4,
+                        font=('Consolas', 10), justify=tk.CENTER)
+        ent.pack(side=tk.LEFT, padx=(0, 12))
+
+        def _on_string_change(*_a, sv=string_var):
+            if self._suppress_trace:
+                return
+            txt = sv.get().strip()
+            if not txt:
+                return
+            t = txt
+            if t.lower().startswith('0x'):
+                t = t[2:]
+            elif t.lower().endswith('h'):
+                t = t[:-1]
+            try:
+                val = int(t, 16) & 0xFF
+            except ValueError:
+                return
+            _set_byte(val)
+        string_var.trace_add('write', _on_string_change)
+
+        # Bit checkboxes — 4 per row, named.
+        bit_grid = ttk.Frame(sub)
+        bit_grid.pack(side=tk.LEFT)
+        for i, (bit_idx, label) in enumerate(bits):
+            bv = tk.IntVar(value=0)
+            bit_vars[bit_idx] = bv
+            cb = ttk.Checkbutton(bit_grid, text=label, variable=bv)
+            cb.grid(row=i // 4, column=i % 4, sticky=tk.W, padx=(0, 6))
+
+            def _on_bit(*_a, b=bit_idx, bv=bv):
+                if self._suppress_trace:
+                    return
+                cur = byte_var.get()
+                new = (cur | (1 << b)) if bv.get() else (cur & ~(1 << b))
+                if new != cur:
+                    _set_byte(new)
+            bv.trace_add('write', _on_bit)
+
+        # Store under field name with marker so populate/compose can find it.
+        self.field_vars[name] = (byte_var, ('bitfield_byte',),
+                                 {'string': string_var, 'bits': bit_vars,
+                                  'bit_specs': bits})
+
     def _render_section(self, parent, label, fields):
         section = ttk.LabelFrame(parent, text=label, padding=(8, 4))
         section.pack(fill=tk.X, pady=(6, 2), padx=2)
@@ -458,6 +591,7 @@ class SaveEditorApp:
             name_lbl.bind('<Button-3>', _revert)
 
             choices = enum_for(name)
+            named_bits = bits_for(name)
 
             if typ == 'bool':
                 bvar = tk.IntVar()
@@ -465,6 +599,10 @@ class SaveEditorApp:
                                      command=lambda n=name: self._on_field_change(n))
                 cb.grid(row=r, column=2, sticky=tk.W)
                 self.field_vars[name] = (bvar, typ, None)
+
+            elif named_bits is not None:
+                # Bitfield byte with NAMED bits → 1 hex entry + N labeled checkboxes
+                self._render_bitfield_byte(section, name, r, named_bits)
 
             elif choices is not None:
                 # Enumerated value -> dropdown.  Underlying type stays the
@@ -598,6 +736,21 @@ class SaveEditorApp:
                     self._suppress_trace = False
                 continue
 
+            # Bitfield byte (named bits): var_or_list = byte_var (single IntVar);
+            # choices = {'string', 'bits' (dict by bit_idx), 'bit_specs'}.
+            if isinstance(typ, tuple) and typ[0] == 'bitfield_byte':
+                _, off, _, _ = save_edit.lookup(name)
+                v = data[off]
+                self._suppress_trace = True
+                try:
+                    var_or_list.set(v)
+                    choices['string'].set(f'{v:02X}')
+                    for bit_idx, _lbl in choices['bit_specs']:
+                        choices['bits'][bit_idx].set((v >> bit_idx) & 1)
+                finally:
+                    self._suppress_trace = False
+                continue
+
             try:
                 _, off, _, _ = save_edit.lookup(name)
                 val = save_edit.decode_field(data, off, typ)
@@ -624,6 +777,11 @@ class SaveEditorApp:
                     out[base + i] = bv.get() & 0xFF
                 continue
 
+            if isinstance(typ, tuple) and typ[0] == 'bitfield_byte':
+                _, off, _, _ = save_edit.lookup(name)
+                out[off] = var_or_list.get() & 0xFF
+                continue
+
             _, off, _, _ = save_edit.lookup(name)
             if typ == 'bool':
                 encoded = save_edit.encode_field(typ, var_or_list.get())
@@ -644,8 +802,8 @@ class SaveEditorApp:
     def _on_field_change(self, name: str, silent: bool = False):
         """Refresh hex view; on Enter/blur (silent=False) show errors."""
         var, typ, choices = self.field_vars[name]
-        # Bitmap fields manage their own traces internally.
-        if isinstance(typ, tuple) and typ[0] == 'bitmap8':
+        # Bitmap / bitfield fields manage their own traces internally.
+        if isinstance(typ, tuple) and typ[0] in ('bitmap8', 'bitfield_byte'):
             self._refresh_hex(self._safe_compose())
             return
         # Validate this one field eagerly
@@ -693,6 +851,20 @@ class SaveEditorApp:
                     choices['strings'][i].set(f'{v:02X}')
                     for b in range(8):
                         choices['bits'][i][b].set((v >> b) & 1)
+            finally:
+                self._suppress_trace = False
+            self._refresh_hex(self._safe_compose())
+            return
+
+        if isinstance(typ, tuple) and typ[0] == 'bitfield_byte':
+            _, off, _, _ = save_edit.lookup(name)
+            v = self.original_data[off]
+            self._suppress_trace = True
+            try:
+                var.set(v)
+                choices['string'].set(f'{v:02X}')
+                for bit_idx, _lbl in choices['bit_specs']:
+                    choices['bits'][bit_idx].set((v >> bit_idx) & 1)
             finally:
                 self._suppress_trace = False
             self._refresh_hex(self._safe_compose())
