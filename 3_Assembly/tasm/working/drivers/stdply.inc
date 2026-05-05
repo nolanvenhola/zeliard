@@ -62,14 +62,16 @@ stat_X88_lo             equ     89h     ; alias — earlier name
 player_almas              equ     8Bh     ; alt currency low byte (16-bit field)
 player_almas_hi           equ     8Ch     ; alt currency high byte
 ;
-; 0x8D / 0x8E come from 201SELCT.asm (character-select chunk) which reads
-; them with semantic names: item_qty_count (byte) and item_effect_val
-; (word_read at 0x8E).  Static analyzer matches: 0x8D byte-only,
-; 0x8E word-only.  Adopted as canonical, placeholders kept as aliases.
-item_qty_count          equ     8Dh     ; item quantity counter (canonical, from 201SELCT)
-stat_X8D                equ     8Dh     ; alias — earlier name
-item_effect_val         equ     8Eh     ; item effect value (16-bit, 8Eh..8Fh; canonical from 201SELCT)
-stat_X8E                equ     8Eh     ; alias — earlier name
+; 0x8D = HERO LEVEL (TCRF authoritative).  Affects bonus damage in DOS
+; version.  Range 0..FF.
+hero_level              equ     8Dh     ; hero level (TCRF: bonus damage tier)
+item_qty_count          equ     8Dh     ; alias — earlier (wrong) name
+stat_X8D                equ     8Dh     ; alias — earlier placeholder
+;
+; 0x8E..0x8F = EXPERIENCE points (16-bit LE; TCRF authoritative).
+experience              equ     8Eh     ; experience (TCRF: 16-bit LE)
+item_effect_val         equ     8Eh     ; alias — earlier (wrong) name
+stat_X8E                equ     8Eh     ; alias — earlier placeholder
 ;
 ; player_HP (16-bit, NOT 8-bit).  Verified by probe HP3 in
 ; functest/test_player_stats_word_layout.py.  Manual's max-80 is gameplay
@@ -107,10 +109,17 @@ shield_HP_hi            equ     95h     ; current shield HP, high byte
 ; aliased.  static analyzer matches: 0x96 word, 0x98..0x9A all byte/test.
 shield_max_HP             equ     96h     ; shield max HP cap (16-bit, 96h..97h; used by 201SELCT use_magia_stone clamp)
 stat_X96                equ     96h     ; alias — earlier name
-player_speed              equ     98h     ; character speed stat
-stat_X98                equ     98h     ; alias — earlier name
-player_power              equ     99h     ; character power stat
-stat_X99                equ     99h     ; alias — earlier name
+; 0x98 = NORMAL KEY count (TCRF authoritative).  >9 carryable but only
+; 1 digit shown in HUD.
+keys_normal               equ     98h     ; normal key count (TCRF)
+player_speed              equ     98h     ; alias — earlier (wrong) name
+stat_X98                  equ     98h     ; alias — earlier placeholder
+;
+; 0x99 = LION'S HEAD KEY count (TCRF authoritative).  Opens special
+; doors in Cavern of Tesoro and Cavern of Final.  Same display caveat.
+keys_lion                 equ     99h     ; Lion's Head Key count (TCRF)
+player_power              equ     99h     ; alias — earlier (wrong) name
+stat_X99                  equ     99h     ; alias — earlier placeholder
 ; 0x9A..0x9C: 3-byte player abilities table.  201SELCT.asm:1141
 ; (`draw_abilities`) iterates `mov si, player_abilities; lodsb x3` —
 ; for each non-zero slot it draws a Crest icon at a different row.
@@ -166,16 +175,16 @@ cur_magic_idx           equ     9Eh     ; alias — earlier (wrong) name
 ; 0x9F: VESTIGIAL.  Per-frame zero-clear, no reader observed.
 stat_X9F                equ     9Fh     ; VESTIGIAL — per-frame zero-clear, no reader observed
 ;
-; 0xA0: spells_learned_count.  Cached counter == popcount(spell_known_*
-; @ 0xBB..0xC1).  Increments by 1 at each town's sage encounter.  User-
-; corrected: previous "music_track_count" was wrong; the byte tracks the
-; number of spells the player has learned, not music tracks.  game.asm's
-; `load_music_tracks` comment that referenced this byte was likely also
-; wrong (or the byte serves dual purpose for indexing the music table by
-; spell-count, which would be coincidence rather than music-tied).
-spells_learned_count    equ     0A0h    ; count of spells learned (== popcount of 0xBB..0xC1)
-music_track_count       equ     0A0h    ; alias — earlier name (incorrect — not music)
-stat_XA0                equ     0A0h    ; alias — earlier placeholder
+; 0xA0 = TEARS OF ESMESANTI count (0..9; TCRF authoritative).  Each main
+; cavern hides one Tear (Holy Crystal) — collecting all is the win
+; condition.  game.asm's load_music_tracks loop reads this same byte
+; and iterates that many entries in a 9-track table, which is why the
+; byte happens to map cleanly to music-track loading too — but the
+; underlying semantic per TCRF is Tears collected.
+tears_of_esmesanti_count equ    0A0h    ; Tears of Esmesanti collected (0..9)
+spells_learned_count     equ    0A0h    ; alias — earlier (wrong) name
+music_track_count        equ    0A0h    ; alias — earlier (wrong) name
+stat_XA0                 equ    0A0h    ; alias — earlier placeholder
 
 ; 0xA1..0xA5: WEARABLE acquisition list (user correction).  Game has 5
 ; wearables (4 shoes + 1 cape) per playthrough §6.3 + §8.3.  Each save
@@ -225,13 +234,34 @@ item_flags              equ     0A6h    ; alias — earlier name for the byte bl
 ; counters per item type, they are 5 generic inventory slots that can
 ; hold any of the 8 item types.
 
+; 0x00AB..0x00B1 = current spell charges (per TCRF authoritative).  Each
+; byte holds remaining casts of one spell, in playthrough §6.1 order.
+; Defaults match TCRF: Espada=0Ch, Saeta=06h, Fuego=08h, Lanzar=04h,
+; Rascar=03h, Agua=04h, Guerra=03h.  Earlier name `weap_dur_cur` was a
+; misnomer — these bytes are spell charges, not weapon durability.
+charges_espada            equ     0ABh    ; Espada current charges
+charges_saeta             equ     0ACh    ; Saeta
+charges_fuego             equ     0ADh    ; Fuego
+charges_lanzar            equ     0AEh    ; Lanzar
+charges_rascar            equ     0AFh    ; Rascar
+charges_agua              equ     0B0h    ; Agua
+charges_guerra            equ     0B1h    ; Guerra
+
 ; Animation color LUT overlay  [0x00B2, 0x00B4]
 ; Two bytes inside the 17-entry anim_color_lut do double duty as gameplay
-; stat caps (the byte values are intentionally chosen to satisfy both roles).
-; player_hp_max and weap_dur_max are also defined locally in gm*.inc files —
-; this declaration documents the canonical address.
-player_hp_max             equ     0B2h    ; HP ceiling = 80 (overlays LUT frame 8)
-weap_dur_max            equ     0B4h    ; weapon durability cap = 12 (overlays frame 10)
+; state values (deliberately chosen overlap).
+player_hp_max             equ     0B2h    ; LIFE max (16-bit; overlays LUT frame 8)
+
+; 0x00B4..0x00BA = max spell charges (TCRF authoritative, same
+; defaults as 0xAB..B1).  Sage refills set [0xAB..B1][i] = [0xB4..BA][i].
+charges_max_espada        equ     0B4h    ; Espada max charges (overlays LUT frame 10)
+charges_max_saeta         equ     0B5h
+charges_max_fuego         equ     0B6h
+charges_max_lanzar        equ     0B7h
+charges_max_rascar        equ     0B8h
+charges_max_agua          equ     0B9h
+charges_max_guerra        equ     0BAh
+weap_dur_max              equ     0B4h    ; alias — earlier (wrong) name
 
 ; Spell availability flags  [0x00BB-0x00C1]  (7 bytes, one per spell)
 ; Each byte = 0xFF when the spell has been LEARNED (the player has been
@@ -286,20 +316,21 @@ player_facing           equ     0C2h    ; facing/anim flags (87 byte_tests — m
 ; path runs (intro_left_loop vs not).
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical, bit-6 from boss data)
 stat_XC3                equ     0C3h    ; alias — earlier name
-; 0xC4 = current_area_id.  Encoded as `0x80 | town_index` when in a town
-; (1..8 for the 8 main towns, plus high-bit set), or a cavern id when in
-; a cavern.  Validated empirically across all 17 saves: every save in
-; town N has 0xC4 = 0x80 | N (e.g. Muralla=0x81, Pureza=0x88).  Init
-; 0x80 in stdply.asm = "in town 0" sentinel.
+; 0xC4 = SAVE SAGE (TCRF authoritative).  Sage where the game was saved.
+; Encoded `0x80 | town_index` (0x80=Castle, 0x81=Muralla..0x89=Esco).
+; HIGH BIT MUST BE SET — game crashes otherwise.  Was renamed from
+; current_area_id; the meaning aligns (player saves at a sage, so the
+; sage's town == the save location), but TCRF gives the precise name.
+save_sage                  equ     0C4h    ; sage where game was saved
+current_area_id            equ     0C4h    ; alias — earlier name
+player_level               equ     0C4h    ; alias — earlier (wrong) name
 ;
-; Also serves as the destination for the Kioku Feather (per Magical
-; Items doc): when the Feather is used, the game reads this byte to
-; teleport the player back to the last sage's town.  Most natural
-; reading is "current town/sage id" — both interpretations coincide
-; since the player saves in town and the last visited sage is the same.
-current_area_id            equ     0C4h    ; current town/area (high bit = in-town; low 7 = town/sage idx 1..8)
-player_level               equ     0C4h    ; alias — earlier name (was misnomer; not character level)
-stat_XC5                equ     0C5h    ; byte field used by 200FIGHT/game.asm
+; 0xC5 = LAST SAGE VISITED (TCRF).  Tracks Kioku Feather destination
+; on death/use.  IMPORTANT: the DOS version DOESN'T update this on save,
+; so saved games always show 0x81 (Muralla), and the Kioku Feather
+; always returns the player to Muralla regardless of progression.
+last_sage_visited          equ     0C5h    ; last sage visited (Kioku Feather dest)
+stat_XC5                   equ     0C5h    ; alias — earlier placeholder
 player_tileset             equ     0C8h    ; level tileset index (matches stdply.asm label)
 player_hitbox              equ     0D2h    ; base of 9-row collision bitmask (matches stdply.asm label)
 

@@ -124,8 +124,10 @@ player_almas	dw	0		; [8Bh-8Ch] alternate currency (16-bit)
 ;
 ; [8Dh..8Fh]: 201SELCT (character-select chunk) names these item_qty_count
 ; (byte) and item_effect_val (word).  Static analyzer matches.
-item_qty_count	db	0		; [8Dh] item quantity counter
-item_effect_val	dw	0		; [8Eh-8Fh] item effect value (16-bit)
+; 0x8D = HERO LEVEL.  TCRF authoritative: bonus damage tier in DOS version.
+hero_level	db	0		; [8Dh] hero level (TCRF: bonus damage tier)
+; 0x8E..0x8F = EXPERIENCE points (16-bit LE).  TCRF.
+experience	dw	0		; [8Eh-8Fh] experience points (TCRF)
 ;
 ; player_HP — 16-bit, NOT 8-bit.  Functional probe (fight.bin 0x7685,
 ; HP-damage): sub AX from word at [90h], clamp to 0 on underflow.  Probe
@@ -149,8 +151,9 @@ shield_HP	dw	0		; [94h-95h] current shield HP (16-bit; init=0)
 ; reads abilities as a unit (`mov si, player_abilities; lodsb x3`).
 ; Specific ability semantics for each slot are TBD; tracked in AUDIT_TODO.md.
 shield_max_HP	dw	0		; [96h-97h] shield max HP cap (16-bit)
-player_speed	db	0		; [98h] character speed stat
-player_power	db	0		; [99h] character power stat
+; 0x98 = NORMAL key count, 0x99 = LION'S HEAD key count.  TCRF authoritative.
+keys_normal	db	0		; [98h] normal key count (TCRF)
+keys_lion	db	0		; [99h] Lion's Head Key count (TCRF; opens Tesoro/Final special doors)
 crest_elf db	0		; [9Ah] ability slot 1 (= player_abilities table base)
 crest_glory db	0		; [9Bh] ability slot 2 (212ARMRP gates trade dialog when set)
 crest_hero db	0		; [9Ch] ability slot 3 (set by 200FIGHT entity_fn_e_4 on 9AF3 trigger)
@@ -167,9 +170,11 @@ selected_spell	db	0		; [9Dh] currently selected spell ID
 selected_wearable db	0		; [9Eh] currently equipped wearable
 stat_X9F	db	0		; [9Fh] VESTIGIAL — per-frame zero-clear, no reader observed
 ;
-; 0xA0 = count of spells learned (cached popcount of spell_known_*
-; @ 0xBB..0xC1).  Earlier "music_track_count" was a misnomer.
-spells_learned_count db 0	; [A0h] count of spells learned (== popcount(0xBB..0xC1))
+; 0xA0 = TEARS OF ESMESANTI count (0..9).  TCRF authoritative.  Each
+; main cavern hides one Tear; collecting all is the win condition.
+; game.asm's load_music_tracks reads this same byte to drive its 9-track
+; loader loop — coincident with Tear count rather than music-specific.
+tears_of_esmesanti_count db 0	; [A0h] Tears collected (0..9)
 ;
 ; 0xA1..0xA5: WEARABLE acquisition list (4 shoes + 1 cape).  Each byte
 ; holds the ID of the Nth wearable acquired (0=empty).  ID mapping (user-
@@ -194,40 +199,39 @@ item_slot_4	db	0		; [A9h] inventory slot 4
 item_slot_5	db	0		; [AAh] inventory slot 5
 
 ;--------------------------------------------------------------------------
-;  Animation Color LUT  [CS:0x00AB - CS:0x00C3]  (drv_color_lut base = ABh)
+;  SPELL CHARGES + LIFE max + spell-charge MAXES  [CS:0x00AB - CS:0x00C3]
 ;
-;  Each byte is a palette/color index for an animation frame.
-;  17 active entries + 8 reserved zeros.  Bytes at B2 and B4 do double
-;  duty as player_hp_max / weap_dur_max (overlay; their numeric values
-;  satisfy both the LUT-color role and the stat-cap role).
-;
-;  NOTE: IDA names this `spells_espada` (Spanish 'espada' = sword/spell).
-;  Indexing relationship to cur_weapon_idx / equipped_weapon not yet
-;  pinned down by functional probe; treat as inconclusive.
+;  Per TCRF authoritative save-format reference: this region holds
+;  spell charges (current at AB-B1, max at B4-BA) plus LIFE max at B2-B3.
+;  IDA's "spells_espada" / "anim_color_lut" naming was wrong — these
+;  bytes ARE the current spell charges.  TCRF's defaults (Espada=0Ch,
+;  Saeta=06h, Fuego=08h, Lanzar=04h, Rascar=03h, Agua=04h, Guerra=03h)
+;  match the historical "anim_color_lut" values exactly because those
+;  values WERE the charge defaults (the LUT interpretation was
+;  speculation that happened to use the same byte values).
 ;--------------------------------------------------------------------------
 
-anim_color_lut	db	0Ch		; frame  1: color 12
-		db	06h		; frame  2: color  6
-		db	08h		; frame  3: color  8
-		db	04h		; frame  4: color  4
-		db	03h		; frame  5: color  3
-		db	04h		; frame  6: color  4
-		db	03h		; frame  7: color  3
+charges_espada	db	0Ch		; [ABh] Espada current charges (default 12)
+charges_saeta	db	06h		; [ACh] Saeta current charges  (default 6)
+charges_fuego	db	08h		; [ADh] Fuego current charges  (default 8)
+charges_lanzar	db	04h		; [AEh] Lanzar current charges (default 4)
+charges_rascar	db	03h		; [AFh] Rascar current charges (default 3)
+charges_agua	db	04h		; [B0h] Agua current charges   (default 4)
+charges_guerra	db	03h		; [B1h] Guerra current charges (default 3)
+
 ;
-; OVERLAY: byte at [B2h] doubles as player_hp_max (HP ceiling).  The value
-; 0x50=80 simultaneously supplies frame 8's color index AND the HP cap
-; per the game manual.  Read by gm*.bin drivers as `mov bx, cs:[player_hp_max]`.
-		db	50h		; [B2h] frame 8: color 80  /  player_hp_max=80 (overlay)
-		db	00h		; [B3h] frame 9: color  0
+; 0xB2..0xB3 = LIFE max (16-bit; init=80).  TCRF.
+		db	50h		; [B2h] LIFE max low byte (80 = manual cap)
+		db	00h		; [B3h] LIFE max high byte
 ;
-; OVERLAY: byte at [B4h] doubles as weap_dur_max (weapon durability cap = 12).
-		db	0Ch		; [B4h] frame 10: color 12 /  weap_dur_max=12 (overlay)
-		db	06h		; frame 11: color  6
-		db	08h		; frame 12: color  8
-		db	04h		; frame 13: color  4
-		db	03h		; frame 14: color  3
-		db	04h		; frame 15: color  4
-		db	03h		; frame 16: color  3
+; 0xB4..0xBA = MAX spell charges (TCRF; matches default current charges).
+charges_max_espada db	0Ch	; [B4h] Espada max charges
+charges_max_saeta  db	06h	; [B5h] Saeta max
+charges_max_fuego  db	08h	; [B6h] Fuego max
+charges_max_lanzar db	04h	; [B7h] Lanzar max
+charges_max_rascar db	03h	; [B8h] Rascar max
+charges_max_agua   db	04h	; [B9h] Agua max
+charges_max_guerra db	03h	; [BAh] Guerra max
 ;
 ; OVERLAY: byte at [BBh] is anim_color_lut frame 17 (init=0x00) AND the
 ; spell_known_espada flag at runtime.  Set to 0FFh by zeliad.exe when
@@ -262,8 +266,10 @@ boss_intro_flag db 0		; [boss_intro_flag] boss intro-side flag (bit-6 from boss 
 ;  CS:[0D2h-0E3h] = 9-row ?? 2-byte collision bitmask (left half | right half)
 ;--------------------------------------------------------------------------
 
-current_area_id	db	80h		; [0C4h] level/area number (init 0x80)
-		db	81h		; [0C5h] unknown player state byte
+; 0xC4 = save_sage (per TCRF: 0x80 | town_index, where game was saved).
+; 0xC5 = last_sage_visited (Kioku Feather destination; DOS doesn't update on save).
+save_sage	db	80h		; [0C4h] save sage (init = Castle / 0x80)
+last_sage_visited db	81h		; [0C5h] last sage visited (init = Muralla)
 ;
 ; [C6h..C7h]: 16-bit field (analyzer: 3 word_reads, 1 word_add).  Currently
 ; labelled "reserved" but actually accessed.  Purpose TBD.
