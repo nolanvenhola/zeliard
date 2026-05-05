@@ -206,22 +206,27 @@ anim_color_lut	db	0Ch		; frame  1: color 12
 		db	03h		; frame 16: color  3
 ;
 ; OVERLAY: byte at [BBh] is anim_color_lut frame 17 (init=0x00) AND the
-; boss_kill_cangrejo flag at runtime.  Set to 0FFh by zeliad.exe's
-; post-boss handler when Cangrejo (Cavern of Malicia, town 1->2) is
-; defeated.  Validated empirically across 9 named-town saves.
-boss_kill_cangrejo db 0	; [BBh] frame 17 color 0 / cavern 1 boss-cleared flag
+; spell_known_espada flag at runtime.  Set to 0FFh by zeliad.exe when
+; the player learns Espada from a Sage.
 ;
-; [BCh..C1h]: 6 boss-cleared flags for caverns 2..7 (Pulpo, Pollo, Agar,
-; Vista, Tarso, Dragon).  Each set to 0FFh by zeliad.exe when the boss
-; is defeated, allowing the next cavern's gate to open.  No memory-
-; operand reads/writes in cleaned tasm — the engine handles these in
-; zeliad.exe (post-boss reward dispatcher + savefile I/O).
-boss_kill_pulpo  db 0	; [BCh] cavern 2 (Satono -> Bosque)
-boss_kill_pollo  db 0	; [BDh] cavern 3 (Bosque -> Helada)
-boss_kill_agar   db 0	; [BEh] cavern 4 (Helada -> Tumba)
-boss_kill_vista  db 0	; [BFh] cavern 5 (Tumba -> Dorado)
-boss_kill_tarso  db 0	; [C0h] cavern 6 (Dorado -> Llama)
-boss_kill_dragon db 0	; [C1h] cavern 7 (Llama -> Pureza)
+; [BBh..C1h]: 7 spell-availability flags, one per spell (Espada, Saeta,
+; Fuego, Lanzar, Rascar, Agua, Guerra — playthrough.txt §6.1).  Each
+; toggles 0->FF when that spell is learned from a Sage.  Distinct from
+; magic_flags at [A1h..A5h] which is the 5-slot current spell inventory.
+;
+; Earlier interpretation as "boss_kill_<name>" was based on the per-
+; town progression pattern matching boss-defeat order; user-corrected
+; (spell-learning and boss-kills both progress at every town transition,
+; so save data alone can't distinguish them).  Mapping below is the
+; playthrough §6.1 spell-list order; in-game validation pending via
+; save_editor_gui.py byte-toggle tests.
+spell_known_espada db 0	; [BBh] spell 1: weak sword throw  (also: anim_color_lut frame 17 = color 0)
+spell_known_saeta  db 0	; [BCh] spell 2: arrow shot
+spell_known_fuego  db 0	; [BDh] spell 3: fire
+spell_known_lanzar db 0	; [BEh] spell 4: flame jet
+spell_known_rascar db 0	; [BFh] spell 5: falling rocks
+spell_known_agua   db 0	; [C0h] spell 6: water
+spell_known_guerra db 0	; [C1h] spell 7: lightning ultimate
 player_facing	db	0		; [C2h] facing/anim flag bits (87 byte_tests)
 boss_intro_flag db 0		; [boss_intro_flag] boss intro-side flag (bit-6 from boss data; gates intro_left_loop)
 

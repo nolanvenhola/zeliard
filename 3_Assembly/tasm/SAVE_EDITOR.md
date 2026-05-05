@@ -75,23 +75,21 @@ Raw fields take a hex string: `--set "cavern_bits_riza=ff ff ff ff 00 00 00 00"`
 Pick a base save, edit ONE field, run the game with the edited save, observe.
 Each experiment confirms or refutes one naming hypothesis.
 
-### 1. Confirm `boss_kill_*` flags really skip boss fights
+### 1. Confirm `spell_known_*` byte-to-spell mapping in-game
 
 ```bash
-# Take Muralla (zero progress) and force all 7 main bosses defeated.
-# Game should treat us as past Dragon (cavern 7).
-python save_edit.py bin/Muralla.usr -o bin/AllBoss.usr \
-    --set boss_kill_cangrejo=1 \
-    --set boss_kill_pulpo=1 \
-    --set boss_kill_pollo=1 \
-    --set boss_kill_agar=1 \
-    --set boss_kill_vista=1 \
-    --set boss_kill_tarso=1 \
-    --set boss_kill_dragon=1 \
-    --set current_area_id=0x88     # in Pureza town
+# Take Muralla (no spells learned) and grant ONLY Espada.
+# Open the in-game spell menu — should show ONLY Espada available.
+# Repeat for each spell to confirm the mapping.
+python save_edit.py bin/Muralla.usr -o bin/EspadaOnly.usr \
+    --set spell_known_espada=1
+python save_edit.py bin/Muralla.usr -o bin/GuerraOnly.usr \
+    --set spell_known_guerra=1
+# ... etc
 
-cd ../1_OriginalGame && ./zeliad.exe ALLBOSS.USR
-# Expected: spawn in Pureza, Dragon-cavern bridges open, doors not blocked.
+cd bin && zelplay EspadaOnly.usr
+# Open the spell list — does Espada appear?  If a different spell
+# appears, the byte-to-spell mapping in stdply.inc needs to swap.
 ```
 
 ### 2. Test the Alguien / Jashiin special-flag hypothesis (offsets 0x47, 0x48)

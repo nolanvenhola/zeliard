@@ -117,14 +117,20 @@ FIELDS = [
     ('weap_dur_max_6',       0xB9, 'b',  'Weapon durability max — slot 6'),
     ('weap_dur_max_7',       0xBA, 'b',  'Weapon durability max — slot 7'),
 
-    # Boss-cleared flags (validated):
-    ('boss_kill_cangrejo',   0xBB, 'bool', 'Cavern 1 boss (Muralla → Satono)'),
-    ('boss_kill_pulpo',      0xBC, 'bool', 'Cavern 2 boss (Satono → Bosque)'),
-    ('boss_kill_pollo',      0xBD, 'bool', 'Cavern 3 boss (Bosque → Helada). Requires crest_hero to encounter.'),
-    ('boss_kill_agar',       0xBE, 'bool', 'Cavern 4 boss (Helada → Tumba)'),
-    ('boss_kill_vista',      0xBF, 'bool', 'Cavern 5 boss (Tumba → Dorado). Easier with Knight\'s Sword.'),
-    ('boss_kill_tarso',      0xC0, 'bool', 'Cavern 6 boss (Dorado → Llama)'),
-    ('boss_kill_dragon',     0xC1, 'bool', 'Cavern 7 boss (Llama → Pureza, Burning Inferno)'),
+    # Spell availability flags (7 spells, taught by Sages — playthrough §6.1).
+    # Earlier interpretation as boss_kill_<boss> was wrong: BB-C1 actually
+    # tracks SPELL knowledge.  The per-town progression matches because both
+    # boss kills and spell learning happen at the same rate (one per town
+    # transition).  Distinct from magic_flags (0xA1..0xA5) which is the
+    # 5-slot current inventory.  Byte-to-spell mapping pending in-game
+    # validation; below uses playthrough §6.1 listing order.
+    ('spell_known_espada',   0xBB, 'bool', 'Spell 1: Espada (weak sword throw). Also overlays anim_color_lut frame 17.'),
+    ('spell_known_saeta',    0xBC, 'bool', 'Spell 2: Saeta (arrow shot, long range). Useful for breaking walls in Gold Caverns.'),
+    ('spell_known_fuego',    0xBD, 'bool', 'Spell 3: Fuego (fire). Useful in Graveyard against red slimes.'),
+    ('spell_known_lanzar',   0xBE, 'bool', 'Spell 4: Lanzar (flame jet). Useful against parrot-man in Burning Inferno.'),
+    ('spell_known_rascar',   0xBF, 'bool', 'Spell 5: Rascar (falling rocks).'),
+    ('spell_known_agua',     0xC0, 'bool', 'Spell 6: Agua (water). Strong vs Burning Inferno enemies.'),
+    ('spell_known_guerra',   0xC1, 'bool', 'Spell 7: Guerra (lightning ultimate, massive damage).'),
 
     # Player flags / hitbox tail:
     ('player_facing',        0xC2, 'b',  'Facing/anim flag bits (87 byte_tests in stdply)'),

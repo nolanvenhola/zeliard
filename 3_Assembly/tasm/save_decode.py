@@ -50,15 +50,17 @@ PLAYER_RECORD = [
     (0xAB, "weap_dur_cur",    "7b"),  # 7-byte durability table
     (0xB2, "player_hp_max",   "w"),
     (0xB4, "weap_dur_max",    "7b"),  # 7-byte durability max table
-    # Per-cavern boss-cleared flags (validated against 9 named-town saves;
-    # see Playthrough.txt section 2.1 for the canonical 7-boss order).
-    (0xBB, "boss_kill_cangrejo", "b"),  # cavern 1
-    (0xBC, "boss_kill_pulpo",    "b"),  # cavern 2
-    (0xBD, "boss_kill_pollo",    "b"),  # cavern 3
-    (0xBE, "boss_kill_agar",     "b"),  # cavern 4
-    (0xBF, "boss_kill_vista",    "b"),  # cavern 5
-    (0xC0, "boss_kill_tarso",    "b"),  # cavern 6
-    (0xC1, "boss_kill_dragon",   "b"),  # cavern 7
+    # Spell availability flags (7 spells, playthrough §6.1).  User-corrected
+    # from earlier boss_kill_<boss> interpretation: BB-C1 tracks spells
+    # taught by sages, not boss kills (both progress at one per town
+    # transition, so the per-save fill pattern was ambiguous).
+    (0xBB, "spell_known_espada", "b"),  # spell 1: weak sword throw
+    (0xBC, "spell_known_saeta",  "b"),  # spell 2: arrow shot
+    (0xBD, "spell_known_fuego",  "b"),  # spell 3: fire
+    (0xBE, "spell_known_lanzar", "b"),  # spell 4: flame jet
+    (0xBF, "spell_known_rascar", "b"),  # spell 5: falling rocks
+    (0xC0, "spell_known_agua",   "b"),  # spell 6: water
+    (0xC1, "spell_known_guerra", "b"),  # spell 7: lightning ult
 ]
 
 

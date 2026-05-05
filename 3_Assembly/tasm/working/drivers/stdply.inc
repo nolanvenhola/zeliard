@@ -172,20 +172,50 @@ stat_XA0                equ     0A0h    ; alias — earlier name
 player_hp_max             equ     0B2h    ; HP ceiling = 80 (overlays LUT frame 8)
 weap_dur_max            equ     0B4h    ; weapon durability cap = 12 (overlays frame 10)
 
-; Per-cavern boss-cleared flags  [0x00BB-0x00C1]  (7 bytes, one per main-cavern boss)
-; Validated empirically against 9 named-town saves (see 3_Assembly/tasm/save_decode.py):
-; each save in town N has exactly (N-1) bytes set to 0FFh in defeat order.  Cleanup
-; reads/writes happen in zeliad.exe's post-boss handler (no use sites in cleaned tasm).
-; Source: 4_Resources/Playthrough.txt section 2.1 boss-progression table.
-; NOTE: byte 0xBB OVERLAYS anim_color_lut frame 17 (init=0x00 = "Cangrejo not yet
-; defeated" matches both roles).
-boss_kill_cangrejo      equ     0BBh    ; cavern 1 boss (Muralla -> Satono)
-boss_kill_pulpo         equ     0BCh    ; cavern 2 boss (Satono -> Bosque)
-boss_kill_pollo         equ     0BDh    ; cavern 3 boss (Bosque -> Helada)
-boss_kill_agar          equ     0BEh    ; cavern 4 boss (Helada -> Tumba)
-boss_kill_vista         equ     0BFh    ; cavern 5 boss (Tumba -> Dorado)
-boss_kill_tarso         equ     0C0h    ; cavern 6 boss (Dorado -> Llama)
-boss_kill_dragon        equ     0C1h    ; cavern 7 boss (Llama -> Pureza)
+; Spell availability flags  [0x00BB-0x00C1]  (7 bytes, one per spell)
+; Each byte = 0xFF when the spell has been LEARNED (the player has been
+; granted access to it ever); otherwise 0.  Spells are taught by Sages —
+; one per town's Sage encounter — so the flags fill across town
+; progression at the same rate as boss kills (which is why the earlier
+; pattern looked like "boss-cleared" — both increment at every town
+; transition, but THIS byte family tracks SPELLS, not bosses).  The 7
+; spells are listed in playthrough.txt section 6.1: Espada, Saeta,
+; Fuego, Lanzar, Rascar, Agua, Guerra.  No memory-operand reads/writes
+; in cleaned tasm — handled by zeliad.exe's sage dialog and savefile I/O.
+;
+; Distinct from `magic_flags` at 0xA1..0xA5 — that's the 5-slot CURRENT
+; SPELL INVENTORY (with stock counts and recently-learned ordering),
+; while these 7 bytes are the persistent "have I ever learned this
+; spell" booleans.
+;
+; NOTE: byte 0xBB OVERLAYS anim_color_lut frame 17 (init=0x00 = "spell
+; not yet learned" matches both roles).
+;
+; The exact byte-to-spell mapping (which byte = which spell) is the
+; playthrough §6.1 ordering applied to learning order.  IN-GAME
+; VALIDATION via save_editor_gui.py is recommended before treating
+; these names as final — toggle one bit, run the game, see which spell
+; appears in the inventory.  See AUDIT_TODO.md.
+spell_known_espada      equ     0BBh    ; spell 1: weak sword throw
+spell_known_saeta       equ     0BCh    ; spell 2: arrow shot, long range
+spell_known_fuego       equ     0BDh    ; spell 3: fire, useful in Graveyard
+spell_known_lanzar      equ     0BEh    ; spell 4: flame jet
+spell_known_rascar      equ     0BFh    ; spell 5: falling rocks
+spell_known_agua        equ     0C0h    ; spell 6: water, kills Burning Inferno enemies
+spell_known_guerra      equ     0C1h    ; spell 7: lightning ultimate
+
+; Earlier rename was boss_kill_<boss> based on the per-town progression
+; pattern matching the 7 main-cavern bosses.  User correction: these
+; track SPELLS taught by sages, not bosses — both progress at the same
+; rate per town transition, so the data alone is ambiguous.  Aliases
+; kept so any older edit script still resolves.
+boss_kill_cangrejo      equ     0BBh    ; alias — earlier name (was: cavern 1 boss flag)
+boss_kill_pulpo         equ     0BCh    ; alias — earlier name
+boss_kill_pollo         equ     0BDh    ; alias — earlier name
+boss_kill_agar          equ     0BEh    ; alias — earlier name
+boss_kill_vista         equ     0BFh    ; alias — earlier name
+boss_kill_tarso         equ     0C0h    ; alias — earlier name
+boss_kill_dragon        equ     0C1h    ; alias — earlier name
 
 ; Player flags / hitbox section  [0x00C2-0x00E8]
 player_facing           equ     0C2h    ; facing/anim flags (87 byte_tests — most-tested byte)
