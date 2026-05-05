@@ -19,48 +19,58 @@ import sys
 SAVE_DIR = Path(__file__).parent / "bin"
 
 
-# Player record fields (offset, name, format) — copied from stdply.inc
+# Player record fields (offset, name, format) — copied from stdply.inc.
+# Names are unified with stdply.inc canonicals + save_edit.py FIELDS so all
+# three sources of truth agree.  TCRF aliases live in stdply.inc.
 # format: 'b' = 1-byte unsigned, 'w' = 2-byte LE word, '24' = 3-byte 24-bit LE
 PLAYER_RECORD = [
-    (0x80, "map_scroll_col",  "w"),
-    (0x82, "map_scroll_row",  "b"),
-    (0x83, "town_player_col", "b"),
-    (0x84, "fight_player_col","b"),
-    (0x85, "player_gold",     "24"),  # 3 bytes
-    (0x88, "player_bank",     "24"),  # 3 bytes (88 hi + 89/8A lo word)
-    (0x8B, "player_almas",    "w"),
-    (0x8D, "item_qty_count",  "b"),
-    (0x8E, "item_effect_val", "w"),
-    (0x90, "player_HP",       "w"),
-    (0x92, "equipped_weapon", "b"),
-    (0x93, "shield_type",     "b"),
-    (0x94, "shield_HP",       "w"),
-    (0x96, "shield_max_HP",   "w"),
-    (0x98, "player_speed",    "b"),
-    (0x99, "player_power",    "b"),
-    (0x9A, "player_ability_1","b"),
-    (0x9B, "player_ability_2","b"),
-    (0x9C, "player_ability_3","b"),
-    (0x9D, "selected_spell",  "b"),    # user correction: this is the selected spell, NOT weapon_tier_max
-    (0x9E, "selected_wearable", "b"),  # currently selected wearable (1..5 per WEARABLE mapping; user-confirmed)
-    (0x9F, "stat_X9F",        "b"),
-    (0xA0, "spells_learned_count", "b"),  # was: music_track_count (== popcount of spell_known_*)
-    (0xA1, "wear_list",       "5b"),   # was: magic_flags — 4 shoes + 1 cape, list of acquired IDs (user-named "wear_*")
-    (0xA6, "item_slots",      "5b"),   # 5 inventory slots; each byte = item ID 0..8 (multiple of same allowed)
-    (0xAB, "weap_dur_cur",    "7b"),  # 7-byte durability table
-    (0xB2, "player_hp_max",   "w"),
-    (0xB4, "weap_dur_max",    "7b"),  # 7-byte durability max table
-    # Spell availability flags (7 spells, playthrough §6.1).  User-corrected
-    # from earlier boss_kill_<boss> interpretation: BB-C1 tracks spells
-    # taught by sages, not boss kills (both progress at one per town
-    # transition, so the per-save fill pattern was ambiguous).
-    (0xBB, "spell_known_espada", "b"),  # spell 1: weak sword throw
-    (0xBC, "spell_known_saeta",  "b"),  # spell 2: arrow shot
-    (0xBD, "spell_known_fuego",  "b"),  # spell 3: fire
-    (0xBE, "spell_known_lanzar", "b"),  # spell 4: flame jet
-    (0xBF, "spell_known_rascar", "b"),  # spell 5: falling rocks
-    (0xC0, "spell_known_agua",   "b"),  # spell 6: water
-    (0xC1, "spell_known_guerra", "b"),  # spell 7: lightning ult
+    (0x80, "map_scroll_col",   "b"),   # 16-bit at runtime; high byte (0x81) always 00 in saves
+    (0x81, "stat_X81",         "b"),   # DO NOT EDIT — non-00 crashes the game (TCRF)
+    (0x82, "map_scroll_row",   "b"),
+    (0x83, "town_player_col",  "b"),
+    (0x84, "fight_player_col", "b"),
+    (0x85, "player_gold",      "24"),  # 3 bytes (hi, lo, mid)
+    (0x88, "player_bank",      "24"),  # 3 bytes (hi, lo, mid)
+    (0x8B, "player_almas",     "w"),
+    (0x8D, "hero_level",       "b"),
+    (0x8E, "experience",       "w"),
+    (0x90, "player_HP",        "w"),
+    (0x92, "equipped_weapon",  "b"),
+    (0x93, "shield_type",      "b"),
+    (0x94, "shield_HP",        "w"),
+    (0x96, "shield_max_HP",    "w"),
+    (0x98, "keys_normal",      "b"),
+    (0x99, "keys_lion",        "b"),
+    (0x9A, "crest_elf",        "b"),
+    (0x9B, "crest_glory",      "b"),
+    (0x9C, "crest_hero",       "b"),
+    (0x9D, "selected_spell",   "b"),
+    (0x9E, "selected_wearable","b"),
+    (0x9F, "stat_X9F",         "b"),
+    (0xA0, "tears_of_esmesanti_count", "b"),
+    (0xA1, "wear_list",        "5b"),  # 5 wearable slots (4 shoes + 1 cape) — IDs in acquisition order
+    (0xA6, "item_slots",       "5b"),  # 5 inventory slots; each byte = item ID 0..8
+    (0xAB, "spell_charges",    "7b"),  # 7-byte current spell-charges table (Espada..Guerra)
+    (0xB2, "player_hp_max",    "w"),
+    (0xB4, "spell_charges_max","7b"),  # 7-byte max spell-charges table (sage refill cap)
+    (0xBB, "spell_known_espada", "b"),
+    (0xBC, "spell_known_saeta",  "b"),
+    (0xBD, "spell_known_fuego",  "b"),
+    (0xBE, "spell_known_lanzar", "b"),
+    (0xBF, "spell_known_rascar", "b"),
+    (0xC0, "spell_known_agua",   "b"),
+    (0xC1, "spell_known_guerra", "b"),
+    (0xC2, "player_facing",      "b"),
+    (0xC3, "boss_intro_flag",    "b"),
+    (0xC4, "save_sage",          "b"),
+    (0xC5, "last_sage_visited",  "b"),
+    (0xC6, "heal_pulse_count",   "w"),
+    (0xC8, "player_tileset",     "b"),
+    (0xE4, "key_count",          "b"),
+    (0xE5, "sages_spoken",       "b"),
+    (0xE6, "scene_trans_request","b"),
+    (0xE7, "gvar_pose_idx",      "b"),
+    (0xE8, "init_complete_flag", "b"),
 ]
 
 

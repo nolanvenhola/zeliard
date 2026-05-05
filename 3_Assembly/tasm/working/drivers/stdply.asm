@@ -277,36 +277,61 @@ heal_pulse_count dw 0		; [0C6h-0C7h] HP heal-pulse counter (16-bit; +8 HP/tick)
 
 player_tileset	db	00h		; [0C8h] tileset index (written at runtime)
 ;
-; [C9h..CFh]: 7 bytes with NO genuine memory references anywhere in the
-; cleaned source — verified by analyze_stat_layout.py + permissive grep
-; across all 3 segment groups (game/enemy/town-npc).  The non-zero values
-; are stable signatures left from original development, possibly read by
-; zeliad.exe's save/load code (outside the cleaned chunks).  Treat as
-; vestigial: do not write, do not assume meaning, but preserve byte image.
-		db	8Ah		; [0C9h] vestigial (no refs found)
-		db	0A6h, 6Bh	; [0CAh-0CBh] vestigial word (no refs)
-		db	75h, 42h	; [0CCh-0CDh] vestigial word (no refs)
-		db	4Ch, 4Bh	; [0CEh-0CFh] vestigial word (no refs)
+;--------------------------------------------------------------------------
+;  Shop inventory bitfields  [0x00C9-0x00E3]  (TCRF authoritative).
+;
+;  These bytes are the per-town shop stock bitfields.  The defaults below
+;  match TCRF Notes:Zeliard exactly.  The previous "9-row collision
+;  bitmask" + "vestigial word" comments were misinterpretations of the
+;  bit pattern; no asm code reads any of these bytes as a hitbox or word.
+;
+;  Each byte = bitfield: bit set => that item is in stock.  Magic-shop
+;  bits per TCRF: +128=Ken'ko +64=Juu-en +32=Elixir +16=Chikara +8=Magia
+;  +4=HolyWater +2=SabreOil +1=Kioku.  Sword/shield bits are 6-item
+;  versions of the same scheme.
+;--------------------------------------------------------------------------
 
-		db	01h, 0FFh	; [0D0h-0D1h] mask header (count=1, fill=FFh)
+; Magic shop stock per town (TCRF defaults).
+shop_magic_muralla	db	8Ah	; [0C9h] Muralla magic shop default
+shop_magic_satono	db	0A6h	; [0CAh] Satono
+shop_magic_bosque	db	6Bh	; [0CBh] Bosque
+shop_magic_helada	db	75h	; [0CCh] Helada
+shop_magic_tumba	db	42h	; [0CDh] Tumba
+shop_magic_dorado	db	4Ch	; [0CEh] Dorado
+shop_magic_llama	db	4Bh	; [0CFh] Llama
+shop_magic_pureza	db	01h	; [0D0h] Pureza
+shop_magic_esco		db	0FFh	; [0D1h] Esco (full stock)
 
-; 9-row collision bitmask  (left-byte | right-byte per row):
-player_hitbox	db	0C0h, 0C0h	; row 0  ##......  ##......
-		db	0E0h, 0E0h	; row 1  ###.....  ###.....
-		db	70h,  38h	; row 2  .###....  ..###...
-		db	38h,  0F8h	; row 3  ..###...  #####...
-		db	0F8h, 0C0h	; row 4  #####...  ##......
-		db	0E0h, 0E0h	; row 5  ###.....  ###.....
-		db	70h,  30h	; row 6  .###....  ..##....
-		db	38h,  1Ch	; row 7  ..###...  ...###..
-		db	1Ch,  0FCh	; row 8  ...###..  ######..
+; Weapon shop sword stock per town (TCRF defaults).
+;   Note: the previous `player_hitbox db 0C0h, 0C0h ...` 9-row
+;   declaration sat at exactly this offset.  Zero readers — see git log.
+shop_sword_muralla	db	0C0h	; [0D2h] Muralla sword shop default
+shop_sword_satono	db	0C0h	; [0D3h] Satono
+shop_sword_bosque	db	0E0h	; [0D4h] Bosque
+shop_sword_helada	db	0E0h	; [0D5h] Helada
+shop_sword_tumba	db	70h	; [0D6h] Tumba (-16 after Glory-Crest trade)
+shop_sword_dorado	db	38h	; [0D7h] Dorado
+shop_sword_llama	db	38h	; [0D8h] Llama
+shop_sword_pureza	db	0F8h	; [0D9h] Pureza (full minus Enchantment)
+shop_sword_esco		db	0F8h	; [0DAh] Esco
+
+; Weapon shop shield stock per town (TCRF defaults).
+shop_shield_muralla	db	0C0h	; [0DBh] Muralla shield shop default
+shop_shield_satono	db	0E0h	; [0DCh] Satono
+shop_shield_bosque	db	0E0h	; [0DDh] Bosque
+shop_shield_helada	db	70h	; [0DEh] Helada
+shop_shield_tumba	db	30h	; [0DFh] Tumba
+shop_shield_dorado	db	38h	; [0E0h] Dorado
+shop_shield_llama	db	1Ch	; [0E1h] Llama
+shop_shield_pureza	db	1Ch	; [0E2h] Pureza
+shop_shield_esco	db	0FCh	; [0E3h] Esco (full)
 
 ; [E4h..E8h]: previously labelled "end padding" but the analyzer found these
 ; bytes are heavily used.  0xE7 is the single most-accessed byte in the whole
 ; stdply chunk (38 reads + 7 inc + 7 cmp + 5 or + 4 and; called "Unknown
 ; state var" in game.asm).  0xE6 and 0xE8 are flag bytes (test FFh).
 key_count	db	0		; [E4h] player's collected-key count (from 201SELCT)
-		db	0		; [E5h] truly unused (no genuine refs)
+sages_spoken	db	0		; [E5h] sages spoken-with bitmap (TCRF: +128=Muralla..+1=Pureza)
 scene_trans_request db 0	; [scene_trans_request] scene-transition request (polled in main_loop_body)
 gvar_pose_idx	db	0		; [E7h] player pose state (bit7=mode flag, low7=pose idx)
 init_complete_flag db 0		; [init_complete_flag] post-init steady-state (cleared on area_load_flag)

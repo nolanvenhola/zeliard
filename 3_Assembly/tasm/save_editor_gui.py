@@ -455,8 +455,7 @@ SECTIONS = [
     ("Player record — economy",              lambda f: f[1] in (0x85, 0x88, 0x8B)),
     ("Player record — stats",                lambda f: f[1] in (0x90, 0xB2, 0x98, 0x99,
                                                                   0x8D, 0x8E,
-                                                                  0xC2, 0xC3, 0xC5, 0xC6,
-                                                                  0xC7, 0xC8,
+                                                                  0xC2, 0xC3, 0xC6, 0xC7, 0xC8,
                                                                   0xE4, 0xE6, 0xE7, 0xE8,
                                                                   0xE9)),  # 0xE9 = tail_unknown_E9_FF
     ("Unknown bytes (TCRF undocumented)",    lambda f: f[0] == 'stat_X9F'),

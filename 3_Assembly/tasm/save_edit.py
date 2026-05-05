@@ -76,11 +76,16 @@ FIELDS = [
     # Same byte, two lenses: save-file (TCRF) vs runtime (asm).  We expose them
     # as separate single-byte fields so the editor matches the save-file view
     # AND the user can't accidentally write a non-00 value into 0x81.
-    ('start_pos_in_town',    0x80, 'b',  'Starting position in town — TCRF: per-town tile-coord (max table differs per town; 00 is safe).  Asm code (200FIGHT) treats 0x80..0x81 as a 16-bit cavern scroll word; in the save file 0x81 is always 00.'),
-    ('stat_X81',             0x81, 'b',  'DO NOT EDIT — TCRF: any non-00 value crashes the game.  Save-file high byte of the cavern X scroll word at runtime; in saves it is always 00.'),
-    ('stat_X82',             0x82, 'b',  'Unknown — TCRF: observed 00, 39, 3C.  Asm side names this map_scroll_row (cavern Y scroll), but TCRF flags it as unknown for save-file purposes.'),
+    # 0x80..0x84: asm-canonical names (matching stdply.inc) since the asm
+    # has stronger evidence (54 word refs at [80h], 19 byte refs at [82h],
+    # functest-validated 0x83/0x84 counters) than TCRF's "unknown"/"start
+    # pos" labels.  TCRF aliases (start_pos_in_town, stat_X81/82/84) live
+    # in stdply.inc for save-format consumers.
+    ('map_scroll_col',       0x80, 'b',  'Cavern X scroll column (asm: 16-bit word at 0x80..0x81; save: only low byte ever non-zero).  TCRF: "starting position in town" (per-town tile-coord max table); the runtime semantic is the cavern-engine scroll register.  Same byte, two lenses.'),
+    ('stat_X81',             0x81, 'b',  'DO NOT EDIT — TCRF: any non-00 value crashes the game.  Asm uses 0x81 as the high byte of the 16-bit cavern X scroll word; in saves it is always 00.'),
+    ('map_scroll_row',       0x82, 'b',  'Cavern Y scroll row (asm: 19 byte refs in 200FIGHT scroll routines).  TCRF labels this byte unknown (observed 00, 39, 3C); the asm name is the canonical source of truth.'),
     ('town_player_col',      0x83, 'b',  'Player screen column in town (range 0..0x10).  TCRF: physical position on screen, 0D = center; >1A can crash.  Values depend on 0x80.'),
-    ('stat_X84',             0x84, 'b',  'Unknown — TCRF: observed 00, 0A, 12; 00 does not affect game.  Asm side names this fight_player_col (independent counter in 200FIGHT, range 0..7) but TCRF flags it as unknown.'),
+    ('fight_player_col',     0x84, 'b',  'Player screen column in fight (independent counter in 200FIGHT, range 0..7; functest-validated).  TCRF labels this byte unknown (observed 00, 0A, 12); the asm name is the canonical source of truth.'),
     ('player_gold',          0x85, '24', 'Gold on hand (24-bit, hi/lo/mid layout). Spent at shops.'),
     ('player_bank',          0x88, '24', 'Banked gold (24-bit, hi/lo/mid). Stored at bank, withdrawable.'),
     ('player_almas',         0x8B, 'w',  'Almas (16-bit, capped 0xFFFF). Cavern-drop currency, exchanged at bank for gold.'),
@@ -157,14 +162,15 @@ FIELDS = [
     ('spell_known_agua',     0xC0, 'bool', 'Spell 6: Agua (water). Strong vs Burning Inferno enemies.'),
     ('spell_known_guerra',   0xC1, 'bool', 'Spell 7: Guerra (lightning ultimate, massive damage).'),
 
-    # Player flags / hitbox tail (TCRF-corrected):
-    ('facing_direction',     0xC2, 'b',  'Direction facing on respawn (00,02 = Right; 01,03 = Left).  TCRF.'),
-    ('stat_XC3',             0xC3, 'b',  'Unknown; observed 01 (TCRF).'),
+    # Player flags / hitbox tail.  Names below match stdply.inc canonical
+    # symbols where the asm has runtime evidence (readers in cleaned source).
+    # TCRF-side context kept in descriptions for save-format users.
+    ('player_facing',        0xC2, 'b',  'Player facing/anim flags (asm: 87 byte_tests — most-tested byte).  TCRF: "Direction facing on respawn (00,02=Right; 01,03=Left)".'),
+    ('boss_intro_flag',      0xC3, 'b',  'Boss intro-side flag (asm: 200FIGHT line 4068 sets it as `[si+3] & 40h` from boss-init data; tested in `check_c3` line 4153).  TCRF labels this byte unknown (observed 01); asm name is canonical.'),
     ('save_sage',            0xC4, 'b',  'Sage where game was saved (0x80=Castle, 0x81=Muralla..0x89=Esco).  HIGH BIT MUST BE SET or game crashes.'),
     ('last_sage_visited',    0xC5, 'b',  "Last sage visited (Kioku Feather destination).  DOS version doesn't update on save, so always Muralla (0x81)."),
-    ('stat_XC6',             0xC6, 'b',  'Unknown (TCRF).'),
-    ('stat_XC7',             0xC7, 'b',  'Unknown (TCRF).'),
-    ('stat_XC8',             0xC8, 'b',  "Unknown (TCRF — seen 00, 08; doesn't affect game)."),
+    ('heal_pulse_count',     0xC6, 'w',  'HP heal-pulse counter (asm: 200FIGHT line 2806; +8 HP/tick while non-zero, clamped to player_hp_max; 16-bit at 0xC6..0xC7).  TCRF labels both bytes unknown.'),
+    ('player_tileset',       0xC8, 'b',  "Level tileset index (asm: 7 readers; written by game.bin at runtime).  TCRF: \"Unknown — seen 00, 08; doesn't affect game\".  Asm name is canonical."),
     # 0xC9..0xD1 — magic shop inventory per town (bitfield).
     ('shop_magic_muralla',   0xC9, 'b',  "Magic shop stock at Muralla (default 8A; bitfield: +128=Ken'ko +64=Juu-en +32=Elixir +16=Chikara +8=Magia +4=HolyWater +2=SabreOil +1=Kioku; FF=full)."),
     ('shop_magic_satono',    0xCA, 'b',  'Magic shop stock at Satono (default A6).'),
@@ -195,11 +201,11 @@ FIELDS = [
     ('shop_shield_llama',    0xE1, 'b',  'Shield stock at Llama (default 1C).'),
     ('shop_shield_pureza',   0xE2, 'b',  'Shield stock at Pureza (default 1C).'),
     ('shop_shield_esco',     0xE3, 'b',  'Shield stock at Esco (default FC).'),
-    ('stat_XE4',             0xE4, 'b',  'Unknown (TCRF).'),
+    ('key_count',            0xE4, 'b',  "Player's collected-key count (asm: 11 readers; 201SELCT inc + test + read).  TCRF labels this byte unknown; asm name is canonical."),
     ('sages_spoken',         0xE5, 'b',  'Sages spoken-with bitmap (+128=Muralla +64=Satono +32=Bosque +16=Helada +8=Tumba +4=Dorado +2=Llama +1=Pureza). TCRF.'),
-    ('stat_XE6',             0xE6, 'b',  'Unknown (TCRF).'),
-    ('stat_XE7',             0xE7, 'b',  'Unknown; observed 02, 04 (TCRF).'),
-    ('stat_XE8',             0xE8, 'b',  'Unknown (TCRF: "E8-FF Unknown").'),
+    ('scene_trans_request',  0xE6, 'b',  'Scene-transition request flag (asm: 200FIGHT main_loop_body line 712 polls `test [E6h], 0FFh; jnz scene_transition`; 6 readers).  TCRF labels this byte unknown; asm name is canonical.'),
+    ('gvar_pose_idx',        0xE7, 'b',  "Player pose state (asm: 85 readers — most-accessed byte in stdply chunk; bit7=mode flag, low7=pose index).  TCRF labels this byte \"Unknown; observed 02, 04\"; asm name is canonical."),
+    ('init_complete_flag',   0xE8, 'b',  'Post-init steady-state flag (asm: 30 readers; set to 0xFF after first frame init; cleared on area_load_flag).  TCRF labels this byte unknown; asm name is canonical.'),
     # 0xE9..0xFF: TCRF says "E8-FF Unknown" but observed saves consistently
     # show non-zero bytes here (e.g. 0xE9=0x90, 0xEF=0x56, 0xFF=0x46 across
     # most saves; Pureza differs).  This is likely save-format machinery

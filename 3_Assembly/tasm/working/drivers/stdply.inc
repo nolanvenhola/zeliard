@@ -22,8 +22,17 @@
 ; Map scroll position  [0x0080-0x0082]  (validated 2026-04-27 by static
 ; cross-reference: 54 word ptr ds:[80h] refs, 19 byte ptr ds:[82h] refs,
 ; all in 200FIGHT.asm scroll routines).
-map_scroll_col          equ     80h     ; cavern X scroll column (16-bit; 80h..81h)
+;
+; Save-format perspective (TCRF Notes:Zeliard): 0x80 stores the player's
+; STARTING TILE COORDINATE in town (per-town max table), and 0x81 must
+; remain 00 or the game crashes.  In saves, 0x81 is always 00 — the asm
+; treats 0x80 as a 16-bit cavern X scroll word at runtime, but the high
+; byte never gets serialized as non-zero.  Two lenses on the same byte.
+map_scroll_col          equ     80h     ; cavern X scroll column (asm: 16-bit; 80h..81h)
+start_pos_in_town       equ     80h     ; alias — TCRF save-format name (single byte)
+stat_X81                equ     81h     ; TCRF: DO NOT EDIT — non-00 value crashes the game
 map_scroll_row          equ     82h     ; cavern Y scroll row (8-bit, paired with gvar_scroll_pos)
+stat_X82                equ     82h     ; alias — TCRF save-format labels this byte unknown
 
 ; Player screen-column counters  [0x0083-0x0084]  — runtime probe
 ; (functest/placeholder_id/test_town_player_col_X83.py, 2026-04-29)
@@ -32,8 +41,13 @@ map_scroll_row          equ     82h     ; cavern Y scroll row (8-bit, paired wit
 ;          used in 106TOWN tile-lookup arithmetic (`bl=[83]; bx=(bl+6)*8+tile_ptr`)
 ;   0x84 — fight_player_col: independent counter in 200FIGHT, range 0..7
 ; The earlier `player_accel db 0Ah, 0Ah` declaration was a misread.
+;
+; TCRF save-format note: 0x83 = "physical position on screen, 0D = center,
+; >1A can crash"; 0x84 = "Unknown (observed 00, 0A, 12)".  The asm names
+; survive (functest-validated) and TCRF-aligned aliases are added.
 town_player_col         equ     83h     ; player screen column in town (range 0..0x10)
 fight_player_col        equ     84h     ; player screen column in fight (range 0..7)
+stat_X84                equ     84h     ; alias — TCRF save-format labels this byte unknown
 player_accel               equ     83h     ; alias — earlier name (was bogus 2-byte declaration)
 
 ; Player stat record  [0x0085-0x00AA]  — layout established by functional
@@ -331,8 +345,66 @@ player_level               equ     0C4h    ; alias — earlier (wrong) name
 ; always returns the player to Muralla regardless of progression.
 last_sage_visited          equ     0C5h    ; last sage visited (Kioku Feather dest)
 stat_XC5                   equ     0C5h    ; alias — earlier placeholder
-player_tileset             equ     0C8h    ; level tileset index (matches stdply.asm label)
-player_hitbox              equ     0D2h    ; base of 9-row collision bitmask (matches stdply.asm label)
+;
+; 0xC8 = level tileset index (asm-canonical, 7 readers).  TCRF labels
+; this byte unknown but the asm code clearly writes/reads it as a tileset
+; index.  Keep canonical; add alias for save-format consumers.
+player_tileset             equ     0C8h    ; level tileset index (asm-canonical, 7 readers)
+stat_XC8                   equ     0C8h    ; alias — TCRF labels this byte unknown
+
+;==========================================================================
+;  Shop inventory bitfields  [0x00C9-0x00E3]  (TCRF authoritative)
+;
+;  Confirmed by exact match between stdply.asm initial bytes and the TCRF
+;  per-town defaults: 8A A6 6B 75 42 4C 4B 01 FF (magic), C0 C0 E0 E0 70
+;  38 38 F8 F8 (sword), C0 E0 E0 70 30 38 1C 1C FC (shield).  Each byte
+;  is a per-town bitfield; the bit order is TCRF item ordering.
+;
+;  WARNING: the previous `player_hitbox db ...` declaration in stdply.asm
+;  sat exactly on 0xD2 (= shop_sword_muralla).  No code reader exists for
+;  that label — it was a misinterpretation of the bit pattern as a
+;  collision bitmask.  The 9-row "##......" ASCII art is coincidental.
+;==========================================================================
+
+; Magic shop inventory per town (TCRF defaults: 8A A6 6B 75 42 4C 4B 01 FF)
+; Bits: +128=Ken'ko +64=Juu-en +32=Elixir +16=Chikara +8=Magia +4=HolyWater
+;       +2=SabreOil +1=Kioku  (FF = full stock)
+shop_magic_muralla         equ     0C9h
+shop_magic_satono          equ     0CAh
+shop_magic_bosque          equ     0CBh
+shop_magic_helada          equ     0CCh
+shop_magic_tumba           equ     0CDh
+shop_magic_dorado          equ     0CEh
+shop_magic_llama           equ     0CFh
+shop_magic_pureza          equ     0D0h
+shop_magic_esco            equ     0D1h
+
+; Weapon shop sword inventory per town (TCRF defaults: C0 C0 E0 E0 70 38 38 F8 F8)
+; Bits: +128=Training +64=WiseMan +32=Spirit +16=Knight +8=Illumination +4=Enchantment
+shop_sword_muralla         equ     0D2h
+shop_sword_satono          equ     0D3h
+shop_sword_bosque          equ     0D4h
+shop_sword_helada          equ     0D5h
+shop_sword_tumba           equ     0D6h    ; -16 after Glory-Crest trade (loses Knight bit)
+shop_sword_dorado          equ     0D7h
+shop_sword_llama           equ     0D8h
+shop_sword_pureza          equ     0D9h
+shop_sword_esco            equ     0DAh
+player_hitbox              equ     0D2h    ; alias — WRONG name (zero readers in cleaned source);
+                                           ; the 9-row collision-bitmask interpretation was a
+                                           ; misread of the shop_sword_* default byte pattern.
+
+; Weapon shop shield inventory per town (TCRF defaults: C0 E0 E0 70 30 38 1C 1C FC)
+; Bits: +128=Clay +64=WiseMan +32=Stone +16=Honor +8=Light +4=Titanium
+shop_shield_muralla        equ     0DBh
+shop_shield_satono         equ     0DCh
+shop_shield_bosque         equ     0DDh
+shop_shield_helada         equ     0DEh
+shop_shield_tumba          equ     0DFh
+shop_shield_dorado         equ     0E0h
+shop_shield_llama          equ     0E1h
+shop_shield_pureza         equ     0E2h
+shop_shield_esco           equ     0E3h
 
 ; Player state / hitbox tail  [0x00C4-0x00E8]
 ; Refinements found by analyze_stat_layout.py: 0xC6..0xC7 is a 16-bit field
@@ -350,6 +422,11 @@ stat_XC6                equ     0C6h    ; alias — earlier name
 ; inc + test + read).  Matches static analyzer's byte-only access pattern.
 key_count               equ     0E4h    ; player's collected-key count (canonical, from 201SELCT)
 stat_XE4                equ     0E4h    ; alias — earlier name
+; 0xE5 = SAGES SPOKEN BITMAP (TCRF authoritative).  Bitfield of which sages
+; have spoken with the player (+128=Muralla +64=Satono +32=Bosque +16=Helada
+; +8=Tumba +4=Dorado +2=Llama +1=Pureza).  stdply.asm initialises this byte
+; to 0 — TCRF says the saved value tracks per-sage dialog progression.
+sages_spoken            equ     0E5h    ; sages spoken-with bitmap (TCRF)
 ; 0xE6: scene-transition request flag.  200FIGHT main_loop_body (line 712)
 ; polls `test [E6h], 0FFh; jnz scene_transition`; on transition,
 ; scene_exit_wait (line 723-726) spin-waits for [E6h] to clear.
