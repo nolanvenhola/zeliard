@@ -34,7 +34,7 @@ PAGE  59,132
 ;                    / balance / goodbye paths)
 ;                  gvar_init_flag_a/b, gvar_dlg_pos (DS:0FF54h),
 ;                  gvar_frame_timer (DS:0FF1Ah), gvar_game_seg (CS:0FF2Ch)
-;                  player gold word at DS:[86h], deposit word at DS:[8Bh]
+;                  player gold word at ds:[player_gold_lo], deposit word at ds:[player_almas]
 ;                    (game-segment financial state).
 ;
 ;==========================================================================

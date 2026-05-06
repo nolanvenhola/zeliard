@@ -1335,7 +1335,7 @@ move_down_loop:
 							or	al,al			; Zero ?
 							jz	move_left_start			; Jump if zero
 							call	imgctl_func_11
-							add	di,0FEC0h
+							add	di,move_up
 							jmp	short move_down_loop
 
 move_left_start:
@@ -1395,7 +1395,7 @@ scroll_down_inner:
 												push	cx
 												mov	al,18h
 												call	imgctl_func_11
-												add	di,0FEC0h
+												add	di,move_up
 												pop	cx
 												loop	scroll_down_inner		; Loop if cx > 0
 

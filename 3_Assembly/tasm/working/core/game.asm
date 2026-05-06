@@ -123,6 +123,18 @@ loaded_code_a	equ	3000h			; Loaded chunk code entry A
 tile_gfx_base	equ	37A4h			; Tile graphics base address
 font_gfx_base	equ	3EA4h			; Font graphics base address
 loaded_code_b	equ	6000h			; Loaded chunk code entry B
+font_grp_dest	equ	0F500h			; FONT.GRP chunk load destination (CS:F500h)
+
+; Chunk reference table — see "Chunk Reference Table" comment block below.
+; Each record is `[archive][chunk]['filename.ext'\0]`.  game.bin's chunk
+; loader receives `mov si, <pointer-into-this-table>` and reads only the
+; first 2 bytes (archive_index, chunk_index_1based).  The named offsets
+; below correspond to specific runtime indexing arithmetic in this file.
+chunk_ref_tbl_base	equ	0A21Dh		; base of chunk-ref records (cs:0A21Dh)
+level_tileset_ref_tbl	equ	0A363h		; chunk_ref_tbl_base + 326
+						; indexed by [current_level_idx]*11 (game.asm:413)
+level_map_ref_tbl	equ	0A38Fh		; chunk_ref_tbl_base + 370
+						; indexed by [current_level_idx]*11 (game.asm:424)
 ; zeliad loads game.bin at this offset in the game segment.
 ; Using GAME_CODE_BASE + (offset label) makes these auto-update
 ; when code is added or removed above each label.
@@ -208,7 +220,7 @@ start:
 		pop	es
 
 		; Load font graphics (zelres1 ch13) ?-- compressed, to CS:F500h
-		mov	di,0F500h
+		mov	di,font_grp_dest
 		mov	si,chunk_ref_font_grp
 		mov	al,2			; AL=2: compressed load
 		call	word ptr cs:sar_loader_fn
@@ -410,7 +422,7 @@ gfx_init_after_tile:
 		mov	cl,0Bh
 		mul	cl			; Calculate chunk ref offset
 		mov	si,ax
-		add	si,0A363h		; Level tileset chunk refs
+		add	si,level_tileset_ref_tbl	; Level tileset chunk refs
 		mov	di,3000h
 		mov	al,5			; Archive 5?
 		call	word ptr cs:sar_loader_fn	; Load tileset
@@ -421,7 +433,7 @@ gfx_init_after_tile:
 		mov	cl,0Bh
 		mul	cl
 		mov	si,ax
-		add	si,0A38Fh		; Level map chunk refs
+		add	si,level_map_ref_tbl	; Level map chunk refs
 		mov	di,4000h
 		mov	al,2			; Archive 2
 		call	word ptr cs:sar_loader_fn	; Load level map

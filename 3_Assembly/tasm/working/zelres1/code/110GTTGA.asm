@@ -237,7 +237,7 @@ limg_scan_loop		proc	near
 		retn
 
 scan_not_last:
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:[town_player_col]
 		cmp	ds:tile_col_idx,al
 		je	scan_col_match			; Jump if equal
 		retn
@@ -247,7 +247,7 @@ scan_col_match:
 		push	es
 		push	si
 		xor	ax,ax			; Zero register
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:[town_player_col]
 		add	ax,ax
 		add	ax,ax
 		mov	di,ax
@@ -654,7 +654,7 @@ draw_anim_tile:
 		mov	dl,cs:tile_col_idx
 		add	dl,4
 		xor	dh,dh			; Zero register
-		add	dx,word ptr cs:[80h]
+		add	dx,word ptr cs:[map_scroll_col]
 		mov	ds:tile_row_ctr,dx
 		call	limg_func_8
 		mov	es:tile_char_a,al
@@ -738,7 +738,7 @@ limg_multiply_2		proc	near
 		mov	di,tile_char_a
 		movsw				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
-		mov	dx,word ptr ds:[80h]
+		mov	dx,word ptr ds:[map_scroll_col]
 		add	dx,3
 		mov	ds:tile_row_ctr,dx
 		cmp	byte ptr ds:tile_char_a,0FDh

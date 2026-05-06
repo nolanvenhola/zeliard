@@ -31,7 +31,7 @@ PAGE  59,132
 ;    sage_hint_tbl  (0ACBDh) - per-sage knowledge-hint text addresses
 ;
 ;  Connections:
-;    Loads:        KENJA.GRP (zelres2 chunk 1Ah) via cs:[10Ch] SAR loader
+;    Loads:        KENJA.GRP (zelres2 chunk 1Ah) via cs:[sar_loader_fn] SAR loader
 ;                  with AL=2 (fill_buffer decode) into game_seg:8000h
 ;                  (chunk-ref record at module offset 0CB4h).
 ;                  STDPLY.BIN ref also embedded (used indirectly via the
@@ -51,8 +51,8 @@ PAGE  59,132
 ;    Reads/writes: gvar_sage_id (DS:0C006h) -- caller-set sage index
 ;                  gvar_script_ip (DS:0FF4Ch), gvar_text_x/y, gvar_dlg_pos,
 ;                  gvar_frame_timer, gvar_game_seg, state_script_ptr,
-;                  game-state HP word at DS:[8Eh], EXP word at DS:[8Bh],
-;                  player gold at DS:[86h], current sage state at DS:[BB14h].
+;                  game-state HP word at ds:[experience], EXP word at ds:[player_almas],
+;                  player gold at ds:[player_gold_lo], current sage state at DS:[BB14h].
 ;
 ;==========================================================================
 
@@ -203,7 +203,7 @@ load_sage_chunk		proc	near
 		mov	di,8000h
 		mov	si,0ACB0h
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:[sar_loader_fn]
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,8000h
@@ -378,7 +378,7 @@ scan_anim_b_delay:
 
 check_hp_exp_tier		proc	near
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr ds:[8Dh]
+		mov	bl,byte ptr ds:[hero_level]
 		cmp	bl,0Fh
 		jb	tier_clamp_a			; Jump if below
 		mov	bl,0Fh
@@ -390,7 +390,7 @@ tier_clamp_a:
 		mov	cx,dx
 		xor	ax,ax			; Zero register
 		shr	cx,1			; Shift w/zeros fill
-		cmp	word ptr ds:[8Eh],cx
+		cmp	word ptr ds:[experience],cx
 		jae	tier_check_low			; Jump if above or =
 		retn
 
@@ -400,13 +400,13 @@ tier_check_low:
 		sub	ax,cx
 		mov	cx,ax
 		mov	ax,1
-		cmp	word ptr ds:[8Eh],cx
+		cmp	word ptr ds:[experience],cx
 		jae	tier_check_high			; Jump if above or =
 		retn
 
 tier_check_high:
 		mov	ax,2
-		cmp	word ptr ds:[8Eh],dx
+		cmp	word ptr ds:[experience],dx
 		jae	tier_final_test			; Jump if above or =
 		retn
 
@@ -416,7 +416,7 @@ tier_final_test:
 		dec	bx
 		add	bx,sage_cmp_thresh
 		mov	ax,3
-		mov	cl,byte ptr ds:[8Dh]
+		mov	cl,byte ptr ds:[hero_level]
 		cmp	cl,[bx]
 		jae	tier_is_max			; Jump if above or =
 		retn
@@ -472,7 +472,7 @@ palette_fade_delay:
 
 		push	cs
 		pop	es
-		mov	al,byte ptr ds:[8Dh]
+		mov	al,byte ptr ds:[hero_level]
 		cmp	al,10h
 		jb	palette_load_row			; Jump if below
 		mov	word ptr ds:state_color_tmp_cs,320h
@@ -502,16 +502,16 @@ palette_load_row:
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 
 palette_apply:
-		mov	al,byte ptr ds:[8Dh]
+		mov	al,byte ptr ds:[hero_level]
 		inc	al
 		jnz	palette_idx_wrap			; Jump if not zero
 		mov	al,0FFh
 
 palette_idx_wrap:
-		mov	byte ptr ds:[8Dh],al
+		mov	byte ptr ds:[hero_level],al
 		mov	ax,ds:state_color_tmp_cs
-		mov	word ptr ds:[0B2h],ax
-		mov	word ptr ds:[90h],ax
+		mov	word ptr ds:[player_hp_max],ax
+		mov	word ptr ds:[player_HP],ax
 		call	word ptr cs:drv_fn_palette_a
 		call	word ptr cs:drv_palette_push
 		push	cs
@@ -524,13 +524,13 @@ palette_idx_wrap:
 		mov	si,state_color_tmp_cs2
 		mov	cx,7
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		test	byte ptr ds:[9Dh],0FFh
+		test	byte ptr ds:[selected_spell],0FFh
 		jz	palette_post_xfer			; Jump if zero
 		call	word ptr cs:drv_anim_step
 
 palette_post_xfer:
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr ds:[8Dh]
+		mov	bl,byte ptr ds:[hero_level]
 		dec	bl
 		cmp	bl,0Fh
 		jb	palette_hp_clamp_a			; Jump if below
@@ -539,9 +539,9 @@ palette_post_xfer:
 palette_hp_clamp_a:
 		add	bx,bx
 		mov	ax,ds:sage_hp_thresh[bx]
-		sub	word ptr ds:[8Eh],ax
+		sub	word ptr ds:[experience],ax
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr ds:[8Dh]
+		mov	bl,byte ptr ds:[hero_level]
 		cmp	bl,0Fh
 		jb	palette_hp_clamp_b			; Jump if below
 		mov	bl,0Fh
@@ -549,10 +549,10 @@ palette_hp_clamp_a:
 palette_hp_clamp_b:
 		add	bx,bx
 		mov	ax,ds:sage_hp_thresh[bx]
-		cmp	word ptr ds:[8Eh],ax
+		cmp	word ptr ds:[experience],ax
 		jb	palette_hp_done		; Jump if below
 		dec	ax
-		mov	word ptr ds:[8Eh],ax
+		mov	word ptr ds:[experience],ax
 
 palette_hp_done:
 		retn
@@ -646,7 +646,7 @@ record_experience_entry		proc	near
 		pop	es
 		mov	si,0A907h
 		mov	al,6
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:[sar_loader_fn]
 		mov	ax,cs
 		mov	es,ax
 		mov	ds,ax

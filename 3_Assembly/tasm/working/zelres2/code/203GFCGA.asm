@@ -21,13 +21,13 @@ PAGE  59,132
 ;                  cs:copy_fn_tbl entries (CGA plane copy variants);
 ;                  internal frame_row_driver / anim_refresh_all /
 ;                  projectile_spawn_check / fade_gradient_loop dispatchers;
-;                  cs:[11Ah] -- driver fn (input/page advance); no
+;                  cs:[stick_subsample_tick_handler] -- driver fn (input/page advance); no
 ;                  cross-chunk calls outside its own driver fn table.
 ;    Called by:    200FIGHT (and 201SELCT) via the graphics-driver dispatch
 ;                    slots at cs:[2000h..303Ch] -- this module IS the CGA
 ;                    driver. Loaded at game_seg:9000h by game.asm when
 ;                    gvar_gfx_mode selects CGA. Standard entry via
-;                    drv_init_stub at cs:[10Ch].
+;                    drv_init_stub at cs:[sar_loader_fn].
 ;    Reads/writes: cga_sprite_src / cga_sprite_mid / cga_plane_alt
 ;                    (DS:0B000h / 0D000h / 0B17Eh), bg_save_buf_a/b
 ;                    (DS:8640h/8690h), color_pair_tbl + cur_color_pair
@@ -368,7 +368,7 @@ loc_29:				; Entry +0: JB path ?-- marks sprite slot active, then checks frame p
 		or	al,al			; Zero ?
 		jnz	loc_31			; Jump if not zero
 		push	ax
-		call	word ptr cs:[11Ah]
+		call	word ptr cs:[stick_subsample_tick_handler]
 		and	al,3
 		pop	ax
 		jz	loc_31			; Jump if zero
@@ -1163,7 +1163,7 @@ projectile_spawn_check		proc	near
 loc_101:
 		push	cs
 		pop	es
-		call	word ptr cs:[11Ah]
+		call	word ptr cs:[stick_subsample_tick_handler]
 		and	al,0Fh
 		cmp	al,0Eh
 		jae	loc_102			; Jump if above or =
@@ -1186,7 +1186,7 @@ loc_104:
 		retn
 
 loc_105:
-					call	word ptr cs:[11Ah]
+					call	word ptr cs:[stick_subsample_tick_handler]
 					and	al,3
 					cmp	al,3
 					je	loc_105			; Jump if equal
@@ -1205,7 +1205,7 @@ loc_107:
 		stosb				; Store al to es:[di]
 
 loc_108:
-					call	word ptr cs:[11Ah]
+					call	word ptr cs:[stick_subsample_tick_handler]
 					and	al,3
 					cmp	al,3
 					je	loc_108			; Jump if equal
@@ -1219,7 +1219,7 @@ loc_109:
 		stosb				; Store al to es:[di]
 		mov	al,3
 		stosb				; Store al to es:[di]
-		call	word ptr cs:[11Ah]
+		call	word ptr cs:[stick_subsample_tick_handler]
 		and	al,3
 		mov	bx,anim_frame_tbl
 		xlat				; al=[al+[bx]] table
@@ -1381,7 +1381,7 @@ pattern_build_row:
 					mul	dl			; ax = reg * al
 					mov	bx,ax
 					add	bx,pattern_base
-					mov	al,byte ptr ds:[83h]
+					mov	al,byte ptr ds:[town_player_col]
 					add	al,3
 					xor	ah,ah			; Zero register
 					add	bx,ax
@@ -1403,11 +1403,11 @@ loc_117:
 					pop	cx
 					loop	pattern_build_row		; Loop if cx > 0
 
-		mov	al,byte ptr ds:[84h]
+		mov	al,byte ptr ds:[fight_player_col]
 		xor	ah,ah			; Zero register
 		mov	cx,140h
 		mul	cx			; dx:ax = reg * ax
-		mov	cl,byte ptr ds:[83h]
+		mov	cl,byte ptr ds:[town_player_col]
 		xor	ch,ch			; Zero register
 		add	cx,cx
 		add	ax,cx
@@ -1510,7 +1510,7 @@ anim_check_continue:
 loc_124:
 		mov	cl,0FFh
 		mov	si,6117h
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jz	test_flag_hero_state			; Jump if zero
 		xor	cl,cl			; Zero register
 		mov	si,61B9h
@@ -1560,7 +1560,7 @@ call_hero_tier_get:
 		jz	test_flag_shield			; Jump if zero
 		dec	al
 		mov	cl,al
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	test_flag_shield			; Jump if not zero
 		mov	ax,6Ch
 		mov	dl,ds:flag_shield
@@ -1611,7 +1611,7 @@ loc_134:
 		test	byte ptr ds:flag_climbing,0FFh
 		jnz	loc_137			; Jump if not zero
 		mov	si,6075h
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	test_init_complete_flag			; Jump if not zero
 		mov	si,game_data_base
 
@@ -1662,7 +1662,7 @@ loc_139:
 loc_140:
 		mov	cl,0FFh
 		mov	si,61B9h
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	loc_141			; Jump if not zero
 		xor	cl,cl			; Zero register
 		mov	si,6117h
@@ -1725,7 +1725,7 @@ loc_146:
 		jmp	short test_flag_shield_151
 
 loc_147:
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jz	loc_149			; Jump if zero
 		call	hero_tier_get
 		or	al,al			; Zero ?
@@ -1813,7 +1813,7 @@ loc_154:
 sprite_col_render_loop		endp
 
 hero_tier_get		proc	near
-		mov	al,byte ptr ds:[93h]
+		mov	al,byte ptr ds:[shield_type]
 		or	al,al			; Zero ?
 		jnz	loc_155			; Jump if not zero
 		retn
@@ -1917,10 +1917,10 @@ call_cga_sprite_render_solid:
 ; of 5 bytes each into sprite_pos (CS-relative) with si wrap.
 
 sprite_row_ptr_fetch:
-		mov	cl,byte ptr ds:[84h]
+		mov	cl,byte ptr ds:[fight_player_col]
 		mov	al,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[83h]
+		mov	cl,byte ptr ds:[town_player_col]
 		add	cl,4
 		xor	ch,ch			; Zero register
 		add	ax,cx
@@ -1948,7 +1948,7 @@ frame_row_driver		proc	near
 		mov	cl,al
 		test	byte ptr ds:scroll_active,0FFh
 		jnz	scroll_step_update			; Jump if not zero
-		mov	al,byte ptr ds:[84h]
+		mov	al,byte ptr ds:[fight_player_col]
 		sub	al,2
 		cmp	al,cl
 		jne	loc_ret_163		; Jump if not equal
@@ -1958,7 +1958,7 @@ loc_ret_163:
 		retn
 
 scroll_step_update:
-		mov	al,byte ptr ds:[84h]
+		mov	al,byte ptr ds:[fight_player_col]
 		sub	al,5
 		cmp	cl,al
 		jae	loc_165			; Jump if above or =
@@ -2007,7 +2007,7 @@ loc_169:
 		mov	si,0B16Eh
 		mov	word ptr ds:scroll_delta,0FF01h
 		mov	dx,13Eh
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	loc_174			; Jump if not zero
 		mov	si,0B0BEh
 		mov	word ptr ds:scroll_delta,1
@@ -2027,7 +2027,7 @@ loc_171:
 		add	bx,bx
 		mov	di,0B19Eh
 		mov	si,0B12Eh
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	loc_173			; Jump if not zero
 		mov	di,0B18Ah
 		mov	si,0B07Eh
@@ -2043,7 +2043,7 @@ check_scroll_step_eq_7:
 		add	bx,bx
 		mov	di,0B192h
 		mov	si,0B0CEh
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	loc_173			; Jump if not zero
 		mov	di,cga_plane_alt
 		mov	si,0B01Eh
@@ -2167,12 +2167,12 @@ loc_181:
 bg_restore		endp
 
 scroll_pos_load		proc	near
-		mov	al,byte ptr ds:[84h]
+		mov	al,byte ptr ds:[fight_player_col]
 		add	al,ds:scroll_delta
 		and	al,3Fh			; '?'
 		mov	cl,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[83h]
+		mov	cl,byte ptr ds:[town_player_col]
 		add	cl,byte ptr ds:scroll_delta+1
 		add	cl,4
 		xor	ch,ch			; Zero register
@@ -2577,11 +2577,11 @@ row_ofs_advance		endp
 ; falls back to hud_clear_entry for final clear.
 
 cga_color_fade_init:
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:[town_player_col]
 		add	al,al			; X * 2
 		add	al,al			; X * 4
 		add	al,al			; X * 8
-		mov	ah,byte ptr ds:[84h]
+		mov	ah,byte ptr ds:[fight_player_col]
 		add	ah,ah			; Y * 2
 		add	ah,ah			; Y * 4
 		add	ah,ah			; Y * 8
@@ -2915,11 +2915,11 @@ frame_wait_loop		proc	near
 
 frame_wait_poll:
 					push	ax
-					call	word ptr cs:[110h]
-					call	word ptr cs:[112h]
-					call	word ptr cs:[114h]
-					call	word ptr cs:[116h]
-					call	word ptr cs:[118h]
+					call	word ptr cs:[stick_exit_dlg_handler]
+					call	word ptr cs:[stick_pause_dlg_handler]
+					call	word ptr cs:[stick_speed_change_handler]
+					call	word ptr cs:[stick_joy_cal_handler]
+					call	word ptr cs:[stick_joy_detect_handler]
 					pop	ax
 					cmp	ds:gvar_frame_timer,al
 					jb	frame_wait_poll			; Jump if below
@@ -2990,10 +2990,10 @@ cga_row_col_addr:
 		retn
 
 ; hero_cache_copy -- copy hero cached sprite data from driver CS+2000h to game_seg:bg_save_buf_b.
-; Tier from ds:[9Dh] (0=skip, 7=skip); else dec?->index into word table at [bx], copy 0x480 bytes.
+; Tier from ds:[selected_spell] (0=skip, 7=skip); else dec?->index into word table at [bx], copy 0x480 bytes.
 
 hero_cache_copy:
-		mov	bl,byte ptr ds:[9Dh]
+		mov	bl,byte ptr ds:[selected_spell]
 		or	bl,bl			; Zero ?
 		jz	loc_248			; Jump if zero
 		cmp	bl,7
@@ -3413,7 +3413,7 @@ loc_271:
 
 hero_sprite_col_blit:
 		push	ds
-		mov	bl,byte ptr ds:[92h]
+		mov	bl,byte ptr ds:[equipped_weapon]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx

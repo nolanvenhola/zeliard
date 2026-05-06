@@ -25,9 +25,9 @@ PAGE  59,132
 ;
 ;  Connections:
 ;    Loads:        OMOYA.GRP   (zelres2 chunk 14h, AL=2 fill_buffer decode)
-;                              via cs:[10Ch] -> game_seg:8000h
+;                              via cs:[sar_loader_fn] -> game_seg:8000h
 ;                  enddemo.bin (zelres2 chunk 33h, AL=3 raw load)
-;                              via cs:[10Ch] -> CS:6000h  (end-demo path)
+;                              via cs:[sar_loader_fn] -> CS:6000h  (end-demo path)
 ;                  per-mode graphics driver (zelres1 chunks 02/03/04/06):
 ;                    gdega.bin / gdcga.bin / gdhgc.bin / gdmcga.bin /
 ;                    gdtga.bin -- selected by gvar_gfx_mode (0FF14h).
@@ -105,7 +105,7 @@ omoya_main:					; entry from town dispatch
 		mov	di,8000h
 		mov	si,ref_omoya_grp_addr		; -> OMOYA.GRP ref record
 		mov	al,2				; type 2 = load via fill_buffer
-		call	word ptr cs:[10Ch]		; chunk loader
+		call	word ptr cs:[sar_loader_fn]		; chunk loader
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,8000h
@@ -143,7 +143,7 @@ end_demo_transition:				; dispatch target (via drv_return_to_caller)
 		mov	si,ref_enddemo_addr		; -> enddemo.bin ref record
 		mov	di,6000h
 		mov	al,3				; type 3 = raw load (code chunk)
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:[sar_loader_fn]
 		mov	ax,cs
 		mov	es,ax
 		xor	bx,bx				; Zero register
@@ -152,7 +152,7 @@ end_demo_transition:				; dispatch target (via drv_return_to_caller)
 		mov	si,ds:gfx_driver_ref_tbl[bx]	; per-mode gfx driver ref
 		mov	di,3000h
 		mov	al,3				; type 3 = raw load
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:[sar_loader_fn]
 		mov	word ptr cs:gvar_timer_word,0
 		cmp	word ptr cs:gvar_timer_word,12Ch
 		jb	$-7				; wait 300 ticks

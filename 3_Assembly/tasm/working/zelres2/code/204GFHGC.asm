@@ -18,14 +18,14 @@ PAGE  59,132
 ;    Calls into:   ds:dispatch_tbl[bx] (game-DS animation handler table);
 ;                  cs:copy_fn_tbl entries (HGC plane copy variants);
 ;                  internal frame_row_driver / anim_refresh_all /
-;                  projectile_spawn_check dispatchers; cs:[11Ah] -- driver
+;                  projectile_spawn_check dispatchers; cs:[stick_subsample_tick_handler] -- driver
 ;                  fn (input/page advance); no cross-chunk calls outside
 ;                  its own driver fn table.
 ;    Called by:    200FIGHT (and 201SELCT) via the graphics-driver dispatch
 ;                    slots at cs:[2000h..303Ch] -- this module IS the HGC
 ;                    driver. Loaded at game_seg:9000h by game.asm when
 ;                    gvar_gfx_mode selects Hercules. Entry via drv_init_stub
-;                    at cs:[10Ch].
+;                    at cs:[sar_loader_fn].
 ;    Reads/writes: hgc_sprite_src / hgc_plane_alt / hgc_extended_src
 ;                    (DS:0B000h / 0B17Eh / 0D000h), hgc_plane_buf_a
 ;                    (DS:8640h, populated from internal_tbl_68), cur_color_pair
@@ -349,7 +349,7 @@ anim_6frame_1D_active:
 		or	al,al			; Zero ?
 		jnz	anim_6frame_1D_step	; Jump if not zero
 		push	ax
-		call	word ptr cs:[11Ah]
+		call	word ptr cs:[stick_subsample_tick_handler]
 		and	al,3
 		pop	ax
 		jz	anim_6frame_1D_step	; Jump if zero
@@ -1157,7 +1157,7 @@ check_spawn_projectile		proc	near
 loc_86:
 		push	cs
 		pop	es
-		call	word ptr cs:[11Ah]
+		call	word ptr cs:[stick_subsample_tick_handler]
 		and	al,0Fh
 		cmp	al,0Eh
 		jae	loc_87			; Jump if above or =
@@ -1180,7 +1180,7 @@ loc_89:
 		retn
 
 loc_90:
-				call	word ptr cs:[11Ah]
+				call	word ptr cs:[stick_subsample_tick_handler]
 				and	al,3
 				cmp	al,3
 				je	loc_90			; Jump if equal
@@ -1199,7 +1199,7 @@ loc_92:
 		stosb				; Store al to es:[di]
 
 loc_93:
-				call	word ptr cs:[11Ah]
+				call	word ptr cs:[stick_subsample_tick_handler]
 				and	al,3
 				cmp	al,3
 				je	loc_93			; Jump if equal
@@ -1213,7 +1213,7 @@ loc_94:
 		stosb				; Store al to es:[di]
 		mov	al,3
 		stosb				; Store al to es:[di]
-		call	word ptr cs:[11Ah]
+		call	word ptr cs:[stick_subsample_tick_handler]
 		and	al,3
 		mov	bx,anim_frame_tbl
 		xlat				; al=[al+[bx]] table
@@ -1385,7 +1385,7 @@ sprite_shape_tbl:
 		db	 0F4h				; 0x094E
 		db	 00h, 0BFh, 0Dh, 50h		; 0x094F
 ; fade_color_init -- inline proc body (HGC variant). Sets up VGA color pair from
-; DS:[83h]/[84h] (game_seg XY coords), calls hgc_xor_fill_region, does 3 fade passes
+; ds:[town_player_col]/[84h] (game_seg XY coords), calls hgc_xor_fill_region, does 3 fade passes
 ; at radii, and falls through into fade_color_init's inner loop.
 
 fade_color_init:
@@ -1419,7 +1419,7 @@ pattern_row_loop:
 				mul	dl			; ax = reg * al
 				mov	bx,ax
 				add	bx,pattern_base
-				mov	al,byte ptr ds:[83h]
+				mov	al,byte ptr ds:[town_player_col]
 				add	al,3
 				xor	ah,ah			; Zero register
 				add	bx,ax
@@ -1442,12 +1442,12 @@ pattern_store:
 				loop	pattern_row_loop	; Loop if cx > 0
 
 fade_color_loop_start:
-		mov	bl,byte ptr ds:[84h]
+		mov	bl,byte ptr ds:[fight_player_col]
 		add	bl,bl
 		add	bl,bl
 		add	bl,bl
 		add	bl,0Eh
-		mov	bh,byte ptr ds:[83h]
+		mov	bh,byte ptr ds:[town_player_col]
 		add	bh,6
 		add	bh,bh
 		call	hgc_pixel_addr_calc
@@ -1546,7 +1546,7 @@ fade_cell_continue:
 loc_116:
 		mov	cl,0FFh
 		mov	si,6117h
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jz	test_flag_hero_state			; Jump if zero
 		xor	cl,cl			; Zero register
 		mov	si,61B9h
@@ -1596,7 +1596,7 @@ call_get_step_direction:
 		jz	test_flag_shield			; Jump if zero
 		dec	al
 		mov	cl,al
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	test_flag_shield			; Jump if not zero
 		mov	ax,6Ch
 		mov	dl,ds:flag_shield
@@ -1647,7 +1647,7 @@ loc_126:
 		test	byte ptr ds:flag_climbing,0FFh
 		jnz	loc_129			; Jump if not zero
 		mov	si,6075h
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	test_init_complete_flag			; Jump if not zero
 		mov	si,game_data_base
 
@@ -1698,7 +1698,7 @@ loc_131:
 loc_132:
 		mov	cl,0FFh
 		mov	si,61B9h
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	loc_133			; Jump if not zero
 		xor	cl,cl			; Zero register
 		mov	si,6117h
@@ -1761,7 +1761,7 @@ loc_138:
 		jmp	short test_flag_shield_143
 
 loc_139:
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jz	loc_141			; Jump if zero
 		call	get_step_direction
 		or	al,al			; Zero ?
@@ -1849,7 +1849,7 @@ loc_146:
 sprite_write_range		endp
 
 get_step_direction		proc	near
-		mov	al,byte ptr ds:[93h]
+		mov	al,byte ptr ds:[shield_type]
 		or	al,al			; Zero ?
 		jnz	loc_147			; Jump if not zero
 		retn
@@ -1951,10 +1951,10 @@ call_plane_copy_process:
 		retn
 
 build_sprite_refs		proc	near
-		mov	cl,byte ptr ds:[84h]
+		mov	cl,byte ptr ds:[fight_player_col]
 		mov	al,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[83h]
+		mov	cl,byte ptr ds:[town_player_col]
 		add	cl,4
 		xor	ch,ch			; Zero register
 		add	ax,cx
@@ -1984,7 +1984,7 @@ frame_row_driver		proc	near
 		mov	cl,al
 		test	byte ptr ds:scroll_active,0FFh
 		jnz	loc_156			; Jump if not zero
-		mov	al,byte ptr ds:[84h]
+		mov	al,byte ptr ds:[fight_player_col]
 		sub	al,2
 		cmp	al,cl
 		jne	loc_ret_155		; Jump if not equal
@@ -1994,7 +1994,7 @@ loc_ret_155:
 		retn
 
 loc_156:
-		mov	al,byte ptr ds:[84h]
+		mov	al,byte ptr ds:[fight_player_col]
 		sub	al,5
 		cmp	cl,al
 		jae	loc_157			; Jump if above or =
@@ -2049,7 +2049,7 @@ loc_161:
 		add	di,0A05Ah
 
 loc_162:
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jz	loc_163			; Jump if zero
 		jmp	test_flag_shield_175
 
@@ -2078,7 +2078,7 @@ loc_166:
 		add	bx,bx
 		mov	di,0B19Eh
 		mov	si,0B12Eh
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	loc_169			; Jump if not zero
 		mov	di,0B18Ah
 		mov	si,0B07Eh
@@ -2097,7 +2097,7 @@ loc_168:
 		add	bx,bx
 		mov	di,0B192h
 		mov	si,0B0CEh
-		test	byte ptr ds:[0C2h],1
+		test	byte ptr ds:[player_facing],1
 		jnz	loc_169			; Jump if not zero
 		mov	di,hgc_plane_alt
 		mov	si,0B01Eh
@@ -2259,12 +2259,12 @@ loc_182:
 restore_bg_rows		endp
 
 clear_sprite_cache_block		proc	near
-		mov	al,byte ptr ds:[84h]
+		mov	al,byte ptr ds:[fight_player_col]
 		add	al,ds:scroll_delta
 		and	al,3Fh			; '?'
 		mov	cl,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[83h]
+		mov	cl,byte ptr ds:[town_player_col]
 		add	cl,byte ptr ds:scroll_delta+1
 		add	cl,4
 		xor	ch,ch			; Zero register
@@ -2688,15 +2688,15 @@ set_pixel_stride_offset		proc	near
 set_pixel_stride_offset		endp
 
 ; color_fade_trigger -- dispatch handler: triggers a 2-pass color fade effect.
-; Builds cur_color_pair from DS:[83h]/[84h] (game XY), clears fill region,
+; Builds cur_color_pair from ds:[town_player_col]/[84h] (game XY), clears fill region,
 ; then does two fade radius passes with anim_phase=0xAA then 0x00.
 
 color_fade_trigger:
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:[town_player_col]
 		add	al,al
 		add	al,al
 		add	al,al
-		mov	ah,byte ptr ds:[84h]
+		mov	ah,byte ptr ds:[fight_player_col]
 		add	ah,ah
 		add	ah,ah
 		add	ah,ah
@@ -3031,11 +3031,11 @@ frame_wait_loop		proc	near
 
 loc_246:
 				push	ax
-				call	word ptr cs:[110h]
-				call	word ptr cs:[112h]
-				call	word ptr cs:[114h]
-				call	word ptr cs:[116h]
-				call	word ptr cs:[118h]
+				call	word ptr cs:[stick_exit_dlg_handler]
+				call	word ptr cs:[stick_pause_dlg_handler]
+				call	word ptr cs:[stick_speed_change_handler]
+				call	word ptr cs:[stick_joy_cal_handler]
+				call	word ptr cs:[stick_joy_detect_handler]
 				pop	ax
 				cmp	ds:gvar_frame_timer,al
 				jb	loc_246			; Jump if below
@@ -3110,7 +3110,7 @@ sprite_vga_pos_calc:
 ; into sprite_src_base. Used to page in background tile graphics.
 
 bg_copy_update:
-		mov	bl,byte ptr ds:[9Dh]
+		mov	bl,byte ptr ds:[selected_spell]
 		or	bl,bl			; Zero ?
 		jz	bg_copy_exit		; Jump if zero
 		cmp	bl,7
@@ -3499,12 +3499,12 @@ loc_273:
 
 		pop	ds
 		retn
-; draw_hero_gfx -- draw hero graphics from phase_offset_tbl[ds:[92h]-1] into
+; draw_hero_gfx -- draw hero graphics from phase_offset_tbl[ds:[equipped_weapon]-1] into
 ; hgc_ui_ofs region. Writes 0x18 rows using OR into HGC framebuffer.
 
 draw_hero_gfx:
 		push	ds
-		mov	bl,byte ptr ds:[92h]
+		mov	bl,byte ptr ds:[equipped_weapon]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx

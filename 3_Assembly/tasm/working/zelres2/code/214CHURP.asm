@@ -18,7 +18,7 @@ PAGE  59,132
 ;  script opcodes until 0xFF, return).
 ;
 ;  Connections:
-;    Loads:        CHURCH.GRP (zelres2 chunk 17h) via cs:[10Ch] SAR loader
+;    Loads:        CHURCH.GRP (zelres2 chunk 17h) via cs:[sar_loader_fn] SAR loader
 ;                  with AL=2 (fill_buffer decode) into sprite_buf_ofs
 ;                  (game_seg:8000h).
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
@@ -84,7 +84,7 @@ start:
 		mov	di,sprite_buf_ofs
 		mov	si,0A299h		; si = ref_church_grp - 4 (loader pattern)
 		mov	al,2
-		call	word ptr cs:[10Ch]	; chunk loader (al=2 -> SAR+fill_buffer)
+		call	word ptr cs:[sar_loader_fn]	; chunk loader (al=2 -> SAR+fill_buffer)
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,sprite_buf_ofs
@@ -161,7 +161,7 @@ call_anim_scroll_step:
 loc_4:
 				mov	ax,word ptr rest_wait_loop
 				add	ax,8
-				cmp	ax,word ptr ds:[0B2h]
+				cmp	ax,word ptr ds:[player_hp_max]
 				jae	loc_6			; Jump if above or =
 				mov	word ptr rest_wait_loop,ax
 				call	word ptr cs:drv_palette_push
@@ -174,7 +174,7 @@ call_anim_scroll_step_5:
 				jmp	short loc_4
 
 loc_6:
-		mov	ax,word ptr ds:[0B2h]
+		mov	ax,word ptr ds:[player_hp_max]
 		mov	word ptr rest_wait_loop,ax
 		call	word ptr cs:drv_palette_push
 		jmp	short $+2		; delay for I/O
@@ -184,7 +184,7 @@ loc_6:
 		mov	di,0ABh
 		mov	cx,7
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
-		test	byte ptr ds:[9Dh],0FFh
+		test	byte ptr ds:[selected_spell],0FFh
 		jz	loc_ret_7		; Jump if zero
 		call	word ptr cs:drv_anim_step
 
@@ -406,7 +406,7 @@ pick_welcome_text	proc	near
 ;    first visit (rest_wait_loop == 0 at runtime)  -> si = 0xA2B4
 ;    repeat visit                                  -> si = 0xA2F2
 		mov	ax,word ptr rest_wait_loop
-		cmp	ax,word ptr ds:[0B2h]
+		cmp	ax,word ptr ds:[player_hp_max]
 		mov	si,0A2B4h		; first-visit text pointer
 		jnz	loc_25			; Jump if not zero
 		retn

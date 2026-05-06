@@ -230,3 +230,21 @@ sprite_lookup_base       equ     625Ch         ; 5 files
 sprite_buf_ofs           equ     8000h         ; 3 files
 bg_copy_dst              equ     9350h         ; 2 files
 
+; --- Canonical player-record EQUs (mirrored from stdply.inc for chunk-side use) ---
+player_almas_hi                equ     08Ch
+hero_level                     equ     08Dh
+experience                     equ     08Eh
+keys_normal                    equ     098h
+keys_lion                      equ     099h
+tears_of_esmesanti_count       equ     0A0h
+wear_1                         equ     0A1h
+wear_2                         equ     0A2h
+wear_3                         equ     0A3h
+wear_4                         equ     0A4h
+wear_5                         equ     0A5h
+item_slot_1                    equ     0A6h
+save_sage                      equ     0C4h
+last_sage_visited              equ     0C5h
+current_level_idx              equ     0C8h
+sages_spoken                   equ     0E5h
+

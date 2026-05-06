@@ -66,6 +66,7 @@ font_ptr_b	equ	0F502h			;*
 font_ptr_c	equ	0F504h			;*
 ega_plot_tbl_f	equ	0F828h			;*
 ega_col_stride	equ	0FE71h			;* EGA text column stride (-399; net +1 after 5-row char)
+ega_row_addend	equ	0FE21h			; EGA scanline-advance addend (-479)
 ega_pixel_ofs	equ	316Ch			;* initial EGA byte offset for pixel plot
 ega_hud_ofs	equ	46Ch			;* HUD area starting offset in EGA framebuffer
 driver_base	equ	2000h			; driver loads at game_seg:2000h
@@ -604,7 +605,7 @@ dtfc_column_fill_loop:
 									mov	al,0FFh
 									call	fill_vertical_line
 									dec	bl
-									add	di,0FE21h
+									add	di,ega_row_addend
 									jmp	short dtfc_column_fill_loop
 
 dtfc_after_columns:
@@ -671,7 +672,7 @@ dtf_ega_back_fill_loop:
 									mov	bh,5
 									xor	al,al			; Zero register
 									call	fill_vertical_line
-									add	di,0FE71h
+									add	di,ega_col_stride
 									dec	bl
 									jnz	dtf_ega_back_fill_loop			; Jump if not zero
 		retn

@@ -35,6 +35,15 @@ palette_state	equ	0FF01h			;*
 gvar_game_seg	equ	0FF2Ch			;*
 
 ; ----------------------------------------------------------------------
+; Section 4: Video-mode row stride constants
+; ----------------------------------------------------------------------
+; CGA row-advance addend used in `add di, NNNNh` to wrap from the end of
+; one scanline to the start of the next (accounting for CGA's odd/even
+; bank interleave at 0xB800).  Decoded value: 0xC050 = ((-0x4000) + 80)
+; = "skip back to top of bank, then 80 forward".
+cga_row_addend	equ	0C050h			; CGA scanline-advance addend (44 sites)
+
+; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses
 ; ----------------------------------------------------------------------
 anim_ptr_0		equ	0E200h			;*
@@ -61,7 +70,7 @@ bitplane_2	equ	2DEBh			;*
 dispatch_mask_tbl	equ	2E22h			;*
 dispatch_tbl	equ	5D21h			;*
 tile_col_tbl	equ	6722h			;*
-cga_wrap	equ	0C050h			;*
+cga_wrap	equ	cga_row_addend			;*
 font_ptr_a	equ	0F500h			;*
 font_ptr_b	equ	0F502h			;*
 font_ptr_c	equ	0F504h			;*
@@ -233,7 +242,7 @@ hline_mid_scan:
 		add	di,2000h
 		cmp	di,4000h
 		jb	loc_ret_4		; Jump if below
-		add	di,0C050h
+		add	di,cga_row_addend
 
 loc_ret_4:
 		retn
@@ -258,7 +267,7 @@ clear_row_loop:
 						add	di,2000h
 						cmp	di,4000h
 						jb	clear_row_wrap			; Jump if below
-						add	di,0C050h
+						add	di,cga_row_addend
 
 clear_row_wrap:
 						dec	ah
@@ -294,7 +303,7 @@ fn_1:
 						add	di,2000h
 						cmp	di,4000h
 						jb	hud_clear_wrap			; Jump if below
-						add	di,0C050h
+						add	di,cga_row_addend
 
 hud_clear_wrap:
 						pop	cx
@@ -481,7 +490,7 @@ plot_and_loop:
 						add	di,2000h
 						cmp	di,4000h
 						jb	plot_and_wrap			; Jump if below
-						add	di,0C050h
+						add	di,cga_row_addend
 
 plot_and_wrap:
 						loop	plot_and_loop		; Loop if cx > 0
@@ -624,7 +633,7 @@ vline_plot_loop:
 						add	di,2000h
 						cmp	di,4000h
 						jb	vline_wrap			; Jump if below
-						add	di,0C050h
+						add	di,cga_row_addend
 
 vline_wrap:
 						dec	bh
@@ -767,7 +776,7 @@ char_nibble_shift:
 						add	di,2000h
 						cmp	di,4000h
 						jb	char_scan_wrap			; Jump if below
-						add	di,0C050h
+						add	di,cga_row_addend
 
 char_scan_wrap:
 						pop	bx
@@ -1053,7 +1062,7 @@ tile_pos_adjust:
 						add	di,2000h
 						cmp	di,4000h
 						jb	tile_font_wrap			; Jump if below
-						add	di,0C050h
+						add	di,cga_row_addend
 
 tile_font_wrap:
 						dec	cl
@@ -1123,7 +1132,7 @@ fn_14:
 						add	bp,2000h
 						cmp	bp,4000h
 						jb	large_tile_wrap			; Jump if below
-						add	bp,0C050h
+						add	bp,cga_row_addend
 
 large_tile_wrap:
 						pop	cx
@@ -1301,7 +1310,7 @@ small_tile_shift:
 						add	bp,2000h
 						cmp	bp,4000h
 						jb	small_tile_wrap			; Jump if below
-						add	bp,0C050h
+						add	bp,cga_row_addend
 
 small_tile_wrap:
 						pop	cx
@@ -1413,7 +1422,7 @@ alt_char_scan_loop:
 						add	di,2000h
 						cmp	di,4000h
 						jb	alt_char_wrap			; Jump if below
-						add	di,0C050h
+						add	di,cga_row_addend
 
 alt_char_wrap:
 						loop	alt_char_scan_loop		; Loop if cx > 0
@@ -1564,7 +1573,7 @@ vram_copy_loop:
 						add	di,2000h
 						cmp	di,4000h
 						jb	vram_copy_wrap			; Jump if below
-						add	di,0C050h
+						add	di,cga_row_addend
 
 vram_copy_wrap:
 						pop	cx
@@ -1661,7 +1670,7 @@ buf_copy_di_wrap:
 						jb	buf_copy_si_wrap			; Jump if below
 
 fn_22:
-						add	si,0C050h
+						add	si,cga_row_addend
 
 buf_copy_si_wrap:
 						pop	cx
@@ -1724,7 +1733,7 @@ fn_23:
 						add	di,2000h
 						cmp	di,4000h
 						jb	rect_fill_wrap			; Jump if below
-						add	di,0C050h
+						add	di,cga_row_addend
 
 rect_fill_wrap:
 						pop	cx
@@ -1885,7 +1894,7 @@ vram_init_inner:
 						add	di,2000h
 						cmp	di,4000h
 						jb	vram_init_wrap			; Jump if below
-						add	di,0C050h
+						add	di,cga_row_addend
 
 vram_init_wrap:
 						pop	cx

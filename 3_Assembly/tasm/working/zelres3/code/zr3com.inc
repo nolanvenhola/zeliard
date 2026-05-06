@@ -15,6 +15,12 @@
 ;
 ;==========================================================================
 
+;-- stick.bin dispatch slots (function pointers in driver_init_data) -------
+;   Canonical home is zr1com.inc / zr2com.inc; mirrored here for zelres3
+;   chunks that call into stick.bin (300ROKAD, 314LEGA, ...).
+sar_loader_fn                equ 10Ch ; SAR chunk loader entry
+stick_subsample_tick_handler equ 11Ah ; per-tick subsample accumulator update
+
 ;-- Game-state globals (DS=game_seg, FFxx zone, owned by zeliad/game) ------
 gvar_death_flag         equ     0FF2Eh  ; enemy/object death flag
 gvar_dir_toggle         equ     0FF2Fh  ; direction toggle / facing flip
@@ -90,3 +96,50 @@ fight_cb_aux_40         equ     6040h   ; aux probe slot (305 only)
 ai_hide_fn              equ     fight_cb_fire        ; AI fn: hide / remove enemy
 ai_attack_fn            equ     fight_cb_despawn     ; AI fn: attack / projectile release
 ai_spawn_fn             equ     fight_cb_spawn_alt   ; AI fn: spawn body segment
+
+; --- Canonical player-record EQUs (mirrored from stdply.inc for chunk-side use) ---
+map_scroll_col                 equ     080h
+map_scroll_row                 equ     082h
+town_player_col                equ     083h
+fight_player_col               equ     084h
+player_gold_hi                 equ     085h
+player_gold_lo                 equ     086h
+player_gold_mid                equ     087h
+player_bank_hi                 equ     088h
+player_bank_lo                 equ     089h
+player_almas                   equ     08Bh
+player_almas_hi                equ     08Ch
+hero_level                     equ     08Dh
+experience                     equ     08Eh
+player_HP                      equ     090h
+equipped_weapon                equ     092h
+shield_type                    equ     093h
+shield_HP                      equ     094h
+shield_max_HP                  equ     096h
+keys_normal                    equ     098h
+keys_lion                      equ     099h
+crest_elf                      equ     09Ah
+crest_glory                    equ     09Bh
+crest_hero                     equ     09Ch
+selected_spell                 equ     09Dh
+selected_wearable              equ     09Eh
+tears_of_esmesanti_count       equ     0A0h
+wear_1                         equ     0A1h
+wear_2                         equ     0A2h
+wear_3                         equ     0A3h
+wear_4                         equ     0A4h
+wear_5                         equ     0A5h
+item_slot_1                    equ     0A6h
+player_hp_max                  equ     0B2h
+player_facing                  equ     0C2h
+boss_intro_flag                equ     0C3h
+save_sage                      equ     0C4h
+last_sage_visited              equ     0C5h
+heal_pulse_count               equ     0C6h
+current_level_idx              equ     0C8h
+key_count                      equ     0E4h
+sages_spoken                   equ     0E5h
+scene_trans_request            equ     0E6h
+gvar_pose_idx                  equ     0E7h
+init_complete_flag             equ     0E8h
+

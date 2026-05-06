@@ -242,7 +242,7 @@ decb_scan_loop		proc	near
 		retn
 
 scan_check_pos:
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:[town_player_col]
 		cmp	ds:tile_row_ctr,al
 		je	scan_do_render			; Jump if equal
 		retn
@@ -251,7 +251,7 @@ scan_do_render:
 		push	di
 		push	es
 		push	si
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:[town_player_col]
 		add	al,al
 		xor	ah,ah			; Zero register
 		mov	di,ax
@@ -569,7 +569,7 @@ handle_door_tile:
 		mov	dl,cs:tile_row_ctr
 		add	dl,4
 		xor	dh,dh			; Zero register
-		add	dx,word ptr cs:[80h]
+		add	dx,word ptr cs:[map_scroll_col]
 		mov	ds:tile_col_ctr,dx
 		call	decb_func_8
 		mov	es:tile_idx_a,al
@@ -664,7 +664,7 @@ decb_multiply		proc	near
 		mov	di,tile_idx_a
 		movsw				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
-		mov	dx,word ptr ds:[80h]
+		mov	dx,word ptr ds:[map_scroll_col]
 		add	dx,3
 		mov	ds:tile_col_ctr,dx
 		cmp	byte ptr ds:tile_idx_a,0FDh

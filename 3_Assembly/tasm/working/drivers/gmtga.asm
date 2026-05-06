@@ -547,7 +547,7 @@ draw_partial_col:
 		mov	bh,6
 		jmp	short fvl_loop
 
-draw_text_mode_fn_b:				; self-mod entry B (CS:22E1) ?-- patches DI=792Ah from CS:[90h], mirrors draw_text_mode_fn
+draw_text_mode_fn_b:				; self-mod entry B (CS:22E1) ?-- patches DI=792Ah from cs:[player_HP], mirrors draw_text_mode_fn
 		mov	di,792Ah
 		mov	bx,word ptr cs:player_HP
 		jmp	short draw_entry_b
@@ -860,7 +860,7 @@ fn0_sprite_test:				; dispatch fn 0 (CS:24DC) ?-- test sprite entry: BX=0x210, A
 		mov	ch,88h
 		jmp	draw_sprite_entry
 
-fn1_render_time_a:				; dispatch fn 1 (CS:24E6) ?-- render time display A: reads CS:[8Bh] timer, tilemap_src=26BBh
+fn1_render_time_a:				; dispatch fn 1 (CS:24E6) ?-- render time display A: reads cs:[player_almas] timer, tilemap_src=26BBh
 		push	ds
 		mov	ax,word ptr cs:player_almas
 		xor	dx,dx			; Zero register
@@ -877,7 +877,7 @@ fn1_render_time_a:				; dispatch fn 1 (CS:24E6) ?-- render time display A: reads
 fn_9:
 		retn
 
-fn2_render_time_b:				; dispatch fn 2 (CS:2503) ?-- render time display B: reads CS:[86h]/CS:[85h] timer, tilemap_src=13BBh
+fn2_render_time_b:				; dispatch fn 2 (CS:2503) ?-- render time display B: reads cs:[player_gold_lo]/cs:[player_gold_hi] timer, tilemap_src=13BBh
 		push	ds
 		mov	ax,word ptr cs:player_gold_lo
 		mov	dl,byte ptr cs:player_gold_hi
@@ -894,7 +894,7 @@ fn_10:
 		pop	ds
 		retn
 
-fn3_render_time_c:				; dispatch fn 3 (CS:2523) ?-- render time display C: indexed by CS:[9Dh] frame, color LUT at CS:[0ABh], tilemap_src=37BBh
+fn3_render_time_c:				; dispatch fn 3 (CS:2523) ?-- render time display C: indexed by cs:[selected_spell] frame, color LUT at CS:[0ABh], tilemap_src=37BBh
 		push	ds
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr cs:cur_weapon_idx
@@ -917,7 +917,7 @@ fn_11:
 
 fn_12:
 
-fn4_sprite_check:				; dispatch fn 4 (CS:254C) ?-- sprite visibility check: early-out if CS:[93h]==0, else render time display D (tilemap_src=3EBBh)
+fn4_sprite_check:				; dispatch fn 4 (CS:254C) ?-- sprite visibility check: early-out if cs:[shield_type]==0, else render time display D (tilemap_src=3EBBh)
 		test	byte ptr cs:shield_type,0FFh
 		jnz	sprite_vis_check			; Jump if not zero
 		retn

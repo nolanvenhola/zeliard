@@ -246,7 +246,7 @@ vga_operation		proc	near
 		retn
 
 vga_op_not_last:
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:[town_player_col]
 		cmp	ds:tile_col_idx,al
 		je	vga_op_do_copy			; Jump if equal
 		retn
@@ -256,7 +256,7 @@ vga_op_do_copy:
 		push	es
 		push	si
 		push	ds
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:[town_player_col]
 		add	al,al
 		add	al,al
 		add	al,al
@@ -630,7 +630,7 @@ handle_scroll_tile:
 		mov	dl,cs:tile_col_idx
 		add	dl,4
 		xor	dh,dh			; Zero register
-		add	dx,word ptr cs:[80h]
+		add	dx,word ptr cs:[map_scroll_col]
 		mov	ds:scroll_col,dx
 		call	simg_func_8
 		mov	es:tile_id_a,al
@@ -713,7 +713,7 @@ simg_multiply_2		proc	near
 		mov	di,tile_id_a
 		movsw				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
-		mov	dx,word ptr ds:[80h]
+		mov	dx,word ptr ds:[map_scroll_col]
 		add	dx,3
 		mov	ds:scroll_col,dx
 		cmp	byte ptr ds:tile_id_a,0FDh

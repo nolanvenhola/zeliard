@@ -68,6 +68,7 @@ gvar_game_seg	equ	0FF2Ch			;*
 ; Section 4: Shared dispatch slot references (file-local)
 ; ----------------------------------------------------------------------
 drv_state_byte	equ	0F92Ah			;*
+hgc_row_addend	equ	0A05Ah			; HGC scanline-advance addend (47 sites)
 
 ; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses
@@ -91,7 +92,7 @@ bitplane_0	equ	2E85h			;*
 bitplane_1	equ	2E87h			;*
 bitplane_2	equ	2E89h			;*
 hgc_bank_size	equ	6000h			;*
-hgc_stride	equ	0A05Ah			;*
+hgc_stride	equ	hgc_row_addend			;*
 hgc_reg_b	equ	0B324h			;*
 hgc_reg_a	equ	0BB23h			;*
 font_ptr_a	equ	0F500h			;*
@@ -250,7 +251,7 @@ fill_hline_bank_wrap:
 		pop	cx
 		pop	ds
 		pop	di
-		add	di,0A05Ah
+		add	di,hgc_row_addend
 		retn
 
 fill_horizontal_line		endp
@@ -268,7 +269,7 @@ clear_screen_row_loop:
 								cmp	di,hgc_bank_size
 								jb	clear_row_bank_ok			; Jump if below
 								call	clear_screen_row
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 clear_row_bank_ok:
 								dec	ah
@@ -311,7 +312,7 @@ clear_cursor_row_loop:
 								xor	al,al			; Zero register
 								rep	stosb			; Rep when cx >0 Store al to es:[di]
 								pop	di
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 clear_cursor_bank_ok:
 								pop	cx
@@ -339,13 +340,13 @@ fade_row_loop_a:
 														cmp	di,6000h
 														jb	fade_row_a_bank_ok			; Jump if below
 														call	fade_screen_row
-														add	di,0A05Ah
+														add	di,hgc_row_addend
 
 fade_row_a_bank_ok:
 														add	di,2000h
 														cmp	di,6000h
 														jb	fade_row_a_bank_ok2			; Jump if below
-														add	di,0A05Ah
+														add	di,hgc_row_addend
 
 fn_1:
 
@@ -360,7 +361,7 @@ fade_row_a_bank_ok2:
 								add	di,2000h
 								cmp	di,6000h
 								jb	fade_iter_bank_ok			; Jump if below
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 fade_iter_bank_ok:
 								mov	cx,48h
@@ -372,7 +373,7 @@ fade_row_loop_b:
 														cmp	di,6000h
 														jb	fade_row_b_bank_ok			; Jump if below
 														call	fade_screen_row
-														add	di,0A05Ah
+														add	di,hgc_row_addend
 
 fade_row_b_bank_ok:
 														add	di,2000h
@@ -544,7 +545,7 @@ plot_xor_col_loop:
 								cmp	di,hgc_bank_size
 								jb	plot_xor_bank_ok			; Jump if below
 								and	es:[di],al
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 plot_xor_bank_ok:
 								loop	plot_xor_col_loop		; Loop if cx > 0
@@ -695,7 +696,7 @@ fill_vline_inner:
 								jb	fill_vline_bank_ok			; Jump if below
 								and	es:[di],ah
 								or	es:[di],al
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 fill_vline_bank_ok:
 								dec	bh
@@ -828,7 +829,7 @@ render_char_bit_loop:
 								sub	bx,2000h
 								mov	ax,es:[bx]
 								mov	es:[di],ax
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 render_char_row_bank_ok:
 								pop	bx
@@ -1117,7 +1118,7 @@ tile_odd_col:
 								cmp	di,hgc_bank_size
 								jb	tile_row_bank_ok			; Jump if below
 								or	es:[di],ax
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 tile_row_bank_ok:
 								dec	cl
@@ -1189,7 +1190,7 @@ sprite_row_loop:
 		mov	es:[bp+4],al
 
 fn_14:
-		add	bp,0A05Ah
+		add	bp,hgc_row_addend
 
 sprite_bank_ok:
 		pop	cx
@@ -1375,7 +1376,7 @@ small_tile_shift_loop:
 		mov	es:[bp+2],dh
 		mov	es:[bp+3],dl
 		mov	es:[bp+4],bl
-		add	bp,0A05Ah
+		add	bp,hgc_row_addend
 
 small_tile_bank_ok:
 		pop	cx
@@ -1504,7 +1505,7 @@ dbl_char_render_loop:
 								and	es:[di+2],cl
 								or	es:[di],dx
 								or	es:[di+2],ch
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 dbl_char_bank_ok:
 								pop	cx
@@ -1560,13 +1561,13 @@ copy_sprite_row_loop:
 								jb	copy_sprite_bank_wrap			; Jump if below
 								push	di
 								hgc_movsb_block
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 copy_sprite_bank_wrap:
 								add	si,2000h
 								cmp	si,6000h
 								jb	copy_sprite_src_bank_ok			; Jump if below
-								add	si,0A05Ah
+								add	si,hgc_row_addend
 
 copy_sprite_src_bank_ok:
 								pop	cx
@@ -1602,7 +1603,7 @@ save_sprite_row_loop:
 								add	si,2000h
 								cmp	si,6000h
 								jb	save_sprite_bank_ok			; Jump if below
-								add	si,0A05Ah
+								add	si,hgc_row_addend
 
 save_sprite_bank_ok:
 								pop	cx
@@ -1647,7 +1648,7 @@ fn_19:
 								rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
 								pop	di
 								pop	si
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 restore_sprite_bank_ok:
 								add	si,bx
@@ -1726,13 +1727,13 @@ fn_21:
 								jb	blit_region_bank_ok			; Jump if below
 								push	di
 								hgc_movsb_block
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 blit_region_bank_ok:
 								add	si,2000h
 								cmp	si,6000h
 								jb	blit_region_src_bank_ok			; Jump if below
-								add	si,0A05Ah
+								add	si,hgc_row_addend
 
 blit_region_src_bank_ok:
 								pop	cx
@@ -1805,7 +1806,7 @@ fn_23:
 								mov	cx,5
 								rep	stosb			; Rep when cx >0 Store al to es:[di]
 								pop	di
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 fill_rect_bank_ok:
 								pop	cx
@@ -1863,7 +1864,7 @@ draw_sprite_row_loop:
 								mov	es:[di],ax
 								mov	ax,es:[bp+2]
 								mov	es:[di+2],ax
-								add	di,0A05Ah
+								add	di,hgc_row_addend
 
 draw_sprite_bank_ok:
 								pop	cx

@@ -375,7 +375,7 @@ lega_phase_check_step6:
 		jnz	lega_phase_dir_apply			; Jump if not zero
 		cmp	byte ptr ds:lega_phase_step,6
 		jne	lega_phase_dir_apply			; Jump if not equal
-		call	word ptr cs:[11Ah]	; was: call word ptr cs:data_6 (fn ptr at offset 11Ah)
+		call	word ptr cs:[stick_subsample_tick_handler]	; was: call word ptr cs:data_6 (fn ptr at offset 11Ah)
 		and	al,1
 		jnz	lega_phase_dir_apply			; Jump if not zero
 		test	byte ptr ds:lega_anim2_active,0FFh

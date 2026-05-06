@@ -250,7 +250,7 @@ cga_check_blit_col		proc	near
 		retn
 
 check_col_pos:
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:[town_player_col]
 		cmp	ds:tile_col_idx,al
 		je	blit_tile_col			; Jump if equal
 		retn
@@ -259,7 +259,7 @@ blit_tile_col:
 		push	di
 		push	es
 		push	si
-		mov	al,byte ptr ds:[83h]
+		mov	al,byte ptr ds:[town_player_col]
 		add	al,al
 		xor	ah,ah			; Zero register
 		mov	di,ax
@@ -631,7 +631,7 @@ handle_fd_tile:
 		mov	dl,cs:tile_col_idx
 		add	dl,4
 		xor	dh,dh			; Zero register
-		add	dx,word ptr cs:[80h]
+		add	dx,word ptr cs:[map_scroll_col]
 		mov	ds:tile_row_ctr,dx
 		call	find_nonfd_entry
 		mov	es:tile_char_a,al
@@ -716,7 +716,7 @@ draw_door_init		proc	near
 		mov	di,tile_char_a
 		movsw				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
-		mov	dx,word ptr ds:[80h]
+		mov	dx,word ptr ds:[map_scroll_col]
 		add	dx,3
 		mov	ds:tile_row_ctr,dx
 		cmp	byte ptr ds:tile_char_a,0FDh

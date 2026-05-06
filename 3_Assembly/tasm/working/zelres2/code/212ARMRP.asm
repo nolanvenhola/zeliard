@@ -12,7 +12,7 @@ PAGE  59,132
 ;  the mid-game "knight's sword exchange" event (honor-crest check).
 ;
 ;  Connections:
-;    Loads:        ARMR.GRP (zelres2 chunk 15h) via cs:[10Ch] SAR loader
+;    Loads:        ARMR.GRP (zelres2 chunk 15h) via cs:[sar_loader_fn] SAR loader
 ;                  with AL=2 (fill_buffer decode) into chunk_load_buf
 ;                  (game_seg:8000h).
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
@@ -34,7 +34,7 @@ PAGE  59,132
 ;    Reads/writes: gvar_script_ip (DS:0FF4Ch) -- chained between sub-scripts
 ;                  gvar_dlg_pos (DS:0FF54h), gvar_text_x/y, gvar_frame_timer,
 ;                  gvar_game_seg (CS:0FF2Ch),
-;                  player gold word at DS:[96h], shop price word at DS:[94h]
+;                  player gold word at ds:[shield_max_HP], shop price word at ds:[shield_HP]
 ;                    (game-segment financial state),
 ;                  honor-crest flag (mid-game "knight's sword" event check).
 ;
@@ -158,7 +158,7 @@ start:
 		mov	di,8000h
 		mov	si,explain_dispatch_a
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:[sar_loader_fn]
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,chunk_load_buf
@@ -334,14 +334,14 @@ save_script_ip:
 		retn
 			                        ;* No entry point to code
 		call	clear_menu_rect
-		test	byte ptr ds:[93h],0FFh
+		test	byte ptr ds:[shield_type],0FFh
 		jnz	check_change_wallet			; Jump if not zero
 		mov	word ptr ds:gvar_script_ip,0AE4Ah
 		retn
 
 check_change_wallet:
-		mov	ax,word ptr ds:[96h]
-		sub	ax,word ptr ds:[94h]
+		mov	ax,word ptr ds:[shield_max_HP]
+		sub	ax,word ptr ds:[shield_HP]
 		jnz	calc_trade_price			; Jump if not zero
 		mov	word ptr ds:gvar_script_ip,0AEB1h
 		retn
@@ -374,8 +374,8 @@ skip_price_fail:
 		retn
 
 commit_trade_weapon:
-		mov	byte ptr ds:[85h],dl
-		mov	word ptr ds:[86h],ax
+		mov	byte ptr ds:[player_gold_hi],dl
+		mov	word ptr ds:[player_gold_lo],ax
 		call	word ptr cs:drv_frame_commit
 		mov	word ptr ds:gvar_script_ip,0AFAFh
 		retn
@@ -480,9 +480,9 @@ weapon_trade_ok:
 		call	word ptr cs:script_step
 		mov	byte ptr ds:trade_gold_tmp,0
 		mov	word ptr ds:trade_gold_tmp+1,0
-		test	byte ptr ds:[92h],0FFh
+		test	byte ptr ds:[equipped_weapon],0FFh
 		jz	skip_weapon_swap			; Jump if zero
-		mov	al,byte ptr ds:[92h]
+		mov	al,byte ptr ds:[equipped_weapon]
 		mov	ds:new_item_idx,al
 		mov	word ptr ds:gvar_script_ip,0B046h
 		call	word ptr cs:script_step
@@ -513,8 +513,8 @@ weapon_commit:
 		mov	word ptr ds:gvar_script_ip,0AE1Ch
 		mov	dl,ds:trade_gold_buf_hi
 		mov	ax,ds:trade_gold_buf_hi2
-		mov	byte ptr ds:[85h],dl
-		mov	word ptr ds:[86h],ax
+		mov	byte ptr ds:[player_gold_hi],dl
+		mov	word ptr ds:[player_gold_lo],ax
 		mov	dl,ds:trade_gold_tmp
 		mov	ax,word ptr ds:trade_gold_tmp+1
 		call	word ptr cs:script_give_item
@@ -532,7 +532,7 @@ weapon_commit:
 
 skip_weapon_slot_fix:
 		mov	al,ds:new_item_flag
-		mov	byte ptr ds:[92h],al
+		mov	byte ptr ds:[equipped_weapon],al
 		cmp	al,6
 		jne	skip_slot_clear			; Jump if not equal
 		mov	bl,ds:town_npc_state
@@ -542,10 +542,10 @@ skip_weapon_slot_fix:
 
 skip_slot_clear:
 		call	build_mouth_bitmap_a
-		mov	ah,byte ptr ds:[92h]
+		mov	ah,byte ptr ds:[equipped_weapon]
 		mov	al,4
-		call	word ptr cs:[10Ch]
-		mov	al,byte ptr ds:[92h]
+		call	word ptr cs:[sar_loader_fn]
+		mov	al,byte ptr ds:[equipped_weapon]
 		mov	bx,18ABh
 		jmp	word ptr cs:gfx_render_scene_fn
 
@@ -660,9 +660,9 @@ shield_trade_ok:
 		call	word ptr cs:script_step
 		mov	byte ptr ds:trade_gold_tmp,0
 		mov	word ptr ds:trade_gold_tmp+1,0
-		test	byte ptr ds:[93h],0FFh
+		test	byte ptr ds:[shield_type],0FFh
 		jz	skip_shield_swap			; Jump if zero
-		mov	al,byte ptr ds:[93h]
+		mov	al,byte ptr ds:[shield_type]
 		mov	ds:new_item_idx,al
 		mov	word ptr ds:gvar_script_ip,0B0A1h
 		call	word ptr cs:script_step
@@ -693,8 +693,8 @@ shield_commit:
 		mov	word ptr ds:gvar_script_ip,0AE1Ch
 		mov	dl,ds:trade_gold_buf_hi
 		mov	ax,ds:trade_gold_buf_hi2
-		mov	byte ptr ds:[85h],dl
-		mov	word ptr ds:[86h],ax
+		mov	byte ptr ds:[player_gold_hi],dl
+		mov	word ptr ds:[player_gold_lo],ax
 		mov	dl,ds:trade_gold_tmp
 		mov	ax,word ptr ds:trade_gold_tmp+1
 		call	word ptr cs:script_give_item
@@ -712,22 +712,22 @@ shield_commit:
 
 skip_shield_slot_fix:
 		mov	al,ds:new_item_flag
-		mov	byte ptr ds:[93h],al
+		mov	byte ptr ds:[shield_type],al
 		call	build_mouth_bitmap_b
-		mov	al,byte ptr ds:[93h]
+		mov	al,byte ptr ds:[shield_type]
 		mov	bx,3EA4h
 		call	word ptr cs:gfx_draw_hud_fn
 		mov	bx,0C61Ch
 		xor	al,al			; Zero register
 		mov	ch,17h
 		call	word ptr cs:gfx_set_color_fn
-		mov	bl,byte ptr ds:[93h]
+		mov	bl,byte ptr ds:[shield_type]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	ax,ds:shield_price_tbl[bx]
-		mov	word ptr ds:[96h],ax
-		mov	word ptr ds:[94h],ax
+		mov	word ptr ds:[shield_max_HP],ax
+		mov	word ptr ds:[shield_HP],ax
 		jmp	word ptr cs:gfx_present_fn
 			                        ;* No entry point to code
 		push	ds
@@ -781,8 +781,8 @@ explain_char_no_pre:
 wait_menu_exit:
 			cmp	word ptr ds:gvar_menu_step,190h
 			jb	wait_menu_exit			; Jump if below
-		mov	ax,word ptr ds:[96h]
-		mov	word ptr ds:[94h],ax
+		mov	ax,word ptr ds:[shield_max_HP]
+		mov	word ptr ds:[shield_HP],ax
 		call	word ptr cs:gfx_present_fn
 		mov	byte ptr ds:anim_state_0,0
 		mov	byte ptr ds:anim_state_1,0
@@ -909,16 +909,16 @@ reset_after_trade:
 		call	render_shopkeeper_frame
 		mov	word ptr ds:gvar_script_ip,0B375h
 		call	word ptr cs:script_step
-		mov	byte ptr ds:[92h],4
+		mov	byte ptr ds:[equipped_weapon],4
 		mov	byte ptr ds:crest_glory,0
 		mov	al,4
 		mov	bx,18ABh
 		call	word ptr cs:gfx_render_scene_fn
 		and	byte ptr ds:[0D6h],0EFh
 		or	byte ptr ds:[24h],2
-		mov	ah,byte ptr ds:[92h]
+		mov	ah,byte ptr ds:[equipped_weapon]
 		mov	al,4
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:[sar_loader_fn]
 		retn
 
 knight_sword_hook_b		proc	near
@@ -1029,7 +1029,7 @@ horiz_glyph_col_loop:
 			loop	horiz_glyph_col_loop		; Loop if cx > 0
 
 anim_after_pose:
-		call	word ptr cs:[11Ah]
+		call	word ptr cs:[stick_subsample_tick_handler]
 		and	al,1
 		jz	anim_skip_toggle			; Jump if zero
 		retn

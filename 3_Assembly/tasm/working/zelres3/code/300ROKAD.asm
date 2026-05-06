@@ -34,7 +34,7 @@ PAGE  59,132
 ;  Connections:
 ;    Loads:        zelres3 chunk 95 (_MFAN.MSD music) via ref_mfan_msd, and
 ;                  zelres3 chunk 54 (6DMAN.GRP sprites) via ref_6dman_grp;
-;                  also calls SAR loader at cs:[10Ch] with AL=5 to load the
+;                  also calls SAR loader at cs:[sar_loader_fn] with AL=5 to load the
 ;                  graphics driver chunk into game_seg:0x3000 and AL=2 for
 ;                  the sprite chunk into game_seg:0x6000.
 ;    Calls into:   gfx_fillrect_fn (2000h), gfx_blit_fn (2026h),
@@ -178,12 +178,12 @@ start:
 		mov	es,cs:gvar_game_seg
 		mov	di,3000h
 		mov	al,5
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:[sar_loader_fn]
 		mov	es,cs:gvar_game_seg
 		mov	si,0A58Fh
 		mov	di,6000h
 		mov	al,2
-		call	word ptr cs:[10Ch]
+		call	word ptr cs:[sar_loader_fn]
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,6000h
@@ -202,7 +202,7 @@ scene_clamp_done:
 		mov	ds:roka_pose_idx,al
 		mov	bx,2552h
 		call	word ptr cs:gfx_scene_fn
-		and	byte ptr ds:[0C2h],0FEh
+		and	byte ptr ds:[player_facing],0FEh
 		mov	bx,0C6Eh
 		mov	cx,0Dh
 
@@ -702,7 +702,7 @@ pose_target_tbl label	word		; = pose_vec_tbl_base + 4 (DS = 0xA576)
 		dw	2600h				; padding word (pose 11, never read)
 
 ; ----------------------------------------------------------------------
-; SAR chunk reference records used by the chunk loader at cs:[10Ch] and
+; SAR chunk reference records used by the chunk loader at cs:[sar_loader_fn] and
 ; by INT 60h music dispatch.  Format (also seen in 200FIGHT's
 ; resource_name_table): [archive_byte][chunk_id_byte][name][NUL] where
 ; chunk_id_byte equals the first character of the filename (so the byte

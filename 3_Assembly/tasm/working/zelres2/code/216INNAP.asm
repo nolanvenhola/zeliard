@@ -13,7 +13,7 @@ PAGE  59,132
 ;  chains back to town via gvar_script_ptr.
 ;
 ;  Connections:
-;    Loads:        INN.GRP (zelres2 chunk 19h) via cs:[10Ch] SAR loader
+;    Loads:        INN.GRP (zelres2 chunk 19h) via cs:[sar_loader_fn] SAR loader
 ;                  with AL=2 (fill_buffer decode) into game_seg:8000h.
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
 ;                  drv_frame_commit, drv_palette_push, drv_anim_step,
@@ -73,7 +73,7 @@ start:
 		mov	di,8000h			; --- real entry point begins here (offs 0x000C) ---
 		mov	si,0A2E1h			; inn.grp chunk reference (archive 01, chunk_A)
 		mov	al,2
-		call	word ptr cs:[10Ch]		; SAR chunk loader (AL=2: fill_buffer decode)
+		call	word ptr cs:[sar_loader_fn]		; SAR chunk loader (AL=2: fill_buffer decode)
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,8000h

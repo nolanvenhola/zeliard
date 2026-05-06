@@ -20,14 +20,14 @@ PAGE  59,132
 ;  Module loads at game_seg:0A000h (CS=DS).
 ;
 ;  Connections:
-;    Loads:        KING.GRP (zelres2 chunk 13h) via cs:[10Ch] SAR loader
+;    Loads:        KING.GRP (zelres2 chunk 13h) via cs:[sar_loader_fn] SAR loader
 ;                  with AL=2 (fill_buffer decode) into game_seg:8000h
 ;                  (chunk-ref record at module offset 0x40Fh).
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
 ;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller,
 ;                  drv_draw_glyph
 ;                    (graphics driver dispatch slots, cs:[2000h..30xxh])
-;                  cs:[11Ah]  -- driver fn: check input / next page
+;                  cs:[stick_subsample_tick_handler]  -- driver fn: check input / next page
 ;                  script_step (cs:[6004h]) -- script bytecode advancer
 ;                  dispatch_tbl_base (DS-resident, A078h) -- script-cmd
 ;                    dispatch table populated by town dispatcher.
@@ -37,7 +37,7 @@ PAGE  59,132
 ;    Reads/writes: gvar_script_ip (DS:0FF4Ch) -- chained between branch
 ;                    scripts (first-visit / second-visit / nag / post-victory)
 ;                  gvar_text_x/y (DS:0FF4Eh/0FF4Fh), gvar_game_seg (CS:0FF2Ch),
-;                  player gold low word at DS:[86h]
+;                  player gold low word at ds:[player_gold_lo]
 ;                    (incremented by 1000 on first-visit award),
 ;                  dialog_done_flag (DS:[5h]), dialog_done_flag_b (DS:[6h])
 ;                    -- per-quest progression flags set by dispatch handlers,
@@ -98,7 +98,7 @@ start:
 		mov	di,8000h
 		mov	si,0A40Fh		; chunk-ref for portrait/background
 		mov	al,2
-		call	word ptr cs:[10Ch]	; SAR chunk loader
+		call	word ptr cs:[sar_loader_fn]	; SAR chunk loader
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,8000h
@@ -192,12 +192,12 @@ gold_award_entry:
 
 gold_add_loop:
 				push	cx
-				mov	ax,word ptr ds:[86h]	; gold low word
-				mov	dl,byte ptr ds:[85h]	; gold high byte
+				mov	ax,word ptr ds:[player_gold_lo]	; gold low word
+				mov	dl,byte ptr ds:[player_gold_hi]	; gold high byte
 				add	ax,64h			; += 100
 				adc	dl,0
-				mov	word ptr ds:[86h],ax
-				mov	byte ptr ds:[85h],dl
+				mov	word ptr ds:[player_gold_lo],ax
+				mov	byte ptr ds:[player_gold_hi],dl
 				call	word ptr cs:drv_frame_commit
 				mov	byte ptr ds:gvar_volume,13h
 				mov	byte ptr ds:gvar_frame_timer,0
@@ -406,7 +406,7 @@ face_phase_inc:
 		inc	byte ptr ds:face_phase_cnt
 		cmp	byte ptr ds:face_phase_cnt,1Ah	; 26-frame cycle
 		jb	face_phase_apply	; Jump if below
-		call	word ptr cs:[11Ah]	; driver fn: check input / next page
+		call	word ptr cs:[stick_subsample_tick_handler]	; driver fn: check input / next page
 		or	al,al			; Zero ?
 		jz	face_phase_reset	; Jump if zero
 		retn
