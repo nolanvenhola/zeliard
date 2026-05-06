@@ -83,16 +83,18 @@ FIELDS = [
     # pos" labels.  TCRF aliases (start_pos_in_town, stat_X81/82/84) live
     # in stdply.inc for save-format consumers.
     ('map_scroll_col',       0x80, 'b',  'Cavern X scroll column (asm: 16-bit word at 0x80..0x81; save: only low byte ever non-zero).  TCRF: "starting position in town" (per-town tile-coord max table); the runtime semantic is the cavern-engine scroll register.  Same byte, two lenses.'),
-    ('stat_X81',             0x81, 'b',  'DO NOT EDIT — TCRF: any non-00 value crashes the game.  Asm uses 0x81 as the high byte of the 16-bit cavern X scroll word; in saves it is always 00.'),
-    ('map_scroll_row',       0x82, 'b',  'Cavern Y scroll row (asm: 19 byte refs in 200FIGHT scroll routines).  TCRF labels this byte unknown (observed 00, 39, 3C); the asm name is the canonical source of truth.'),
-    ('town_player_col',      0x83, 'b',  'Player screen column in town (range 0..0x10).  TCRF: physical position on screen, 0D = center; >1A can crash.  Values depend on 0x80.'),
-    ('fight_player_col',     0x84, 'b',  'Player screen column in fight (independent counter in 200FIGHT, range 0..7; functest-validated).  TCRF labels this byte unknown (observed 00, 0A, 12); the asm name is the canonical source of truth.'),
+    # 0x81: high byte of the 16-bit cavern X scroll word; always 00 in saves.
+    # TCRF warns any non-00 value crashes the game.  Not exposed in the
+    # editor — preserved verbatim through compose_bytes.
+    ('map_scroll_row',       0x82, 'b',  'Cavern Y scroll row (asm: 19 byte refs in 200FIGHT scroll routines).'),
+    ('town_player_col',      0x83, 'b',  'Player screen column in town (range 0..0x10; 0x0D = center, >0x1A can crash).  Values depend on 0x80.'),
+    ('fight_player_col',     0x84, 'b',  'Player screen column in fight (independent counter in 200FIGHT, range 0..7; functest-validated).'),
     ('player_gold',          0x85, '24', 'Gold on hand (24-bit, hi/lo/mid layout). Spent at shops.'),
     ('player_bank',          0x88, '24', 'Banked gold (24-bit, hi/lo/mid). Stored at bank, withdrawable.'),
     ('player_almas',         0x8B, 'w',  'Almas (16-bit, capped 0xFFFF). Cavern-drop currency, exchanged at bank for gold.'),
     ('hero_level',           0x8D, 'b',  'Hero level 0..FF — affects bonus damage in DOS version (TCRF).'),
     ('experience',           0x8E, 'w',  'Experience points (16-bit LE; TCRF).'),
-    ('player_HP',            0x90, 'w',  'Current HP (16-bit). Game caps at 80 by default; storage allows higher.'),
+    ('player_HP',            0x90, 'w',  'Current HP (16-bit).  Decreases on damage, increases on healing.  Capped by player_hp_max at 0xB2.  Initial 80 at game start; cap grows when the player crosses XP milestones at sages (217KENJP.asm:512-514 sets [B2h]=new max and [90h]=new max in one shot — full heal at the blessing).'),
     ('equipped_weapon',      0x92, 'b',  'Equipped weapon idx (1=Training, 2=WiseMan, 3=Spirit, 4=Knight, 5=Illumination, 6=Enchantment, 7=secret)'),
     ('shield_type',          0x93, 'b',  'Equipped shield tier (1..6: Clay/WiseMan/Stone/Honor/Light/Titanium)'),
     ('shield_HP',            0x94, 'w',  'Current shield HP (16-bit)'),
@@ -103,8 +105,7 @@ FIELDS = [
     ('crest_glory',          0x9B, 'bool', 'Glory Crest (Cementar pickup; consumed by 212ARMRP Tumba shop trade for Knight\'s Sword)'),
     ('crest_hero',           0x9C, 'bool', "Hero's Crest in inventory (00=No, FF=Yes).  TCRF: this is NOT the gate for the crazy guard in Bosque — that gate is 0x12 bit 3 (\"Hero's Crest collected\" event flag).  This 0x9C byte is just the inventory marker."),
     ('selected_spell',       0x9D, 'b',  'Currently selected spell ID (1=Espada..7=Guerra; only one spell active at a time — user-confirmed at 0x9D, NOT 0x9E).'),
-    ('selected_wearable',    0x9E, 'b',  'Currently selected wearable ID (0=none, 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape).  User-confirmed: byte holds the item ID directly.  (TCRF text claims this is a "Row #, NOT item specific" — but Helada save (only A1=04 Ruzeria, 0x9E=04) proves it stores the item ID; TCRF is wrong on this one.)'),
-    ('stat_X9F',             0x9F, 'b',  'Unknown — TCRF speculation: vestigial slot for "selected item" before the design dropped item-equipping (items are used immediately instead).  Always observed as 00 in saves.'),
+    ('selected_wearable',    0x9E, 'b',  'Currently selected wearable ID (0=none, 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape).  User-confirmed: byte holds the item ID directly.'),
     ('tears_of_esmesanti_count', 0xA0, 'b',  'Tears of Esmesanti collected (0..9).  Each main cavern hides one Tear; collecting all is the win condition (TCRF).'),
     # 0xA1..0xA5 — list of WEARABLE IDs in acquisition order (4 shoes + 1 cape).
     # Per playthrough §6.3 + user correction.  ID mapping derived from save
@@ -133,7 +134,7 @@ FIELDS = [
     ('charges_rascar',       0xAF, 'b',  'Rascar charges remaining (default 03h)'),
     ('charges_agua',         0xB0, 'b',  'Agua charges remaining (default 04h)'),
     ('charges_guerra',       0xB1, 'b',  'Guerra charges remaining (default 03h)'),
-    ('player_hp_max',        0xB2, 'w',  'LIFE max (16-bit; mirrors current HP at 0x90..91 cap)'),
+    ('player_hp_max',        0xB2, 'w',  'Max HP / LIFE cap (16-bit).  Initial 80 (per manual).  Grows when sages grant a blessing at XP milestones — see 217KENJP.asm:505-514 (also increments hero_level at 0x8D and refills spell charges at 0xAB-0xB1, and heals current HP at 0x90 to the new cap).  Cross-save: Muralla 200, Helada 460, Pureza 680, Esco 800 — cap roughly doubles per major story step.'),
     # 0xB4..0xBA = max spell charges (cap; refilled by sage).
     # NB: TCRF text labels both 0xAB..B1 and 0xB4..BA as "Spell Count
     # (Remaining Spells)" with identical defaults — the wiki doesn't
@@ -166,12 +167,12 @@ FIELDS = [
     # Player flags / hitbox tail.  Names below match stdply.inc canonical
     # symbols where the asm has runtime evidence (readers in cleaned source).
     # TCRF-side context kept in descriptions for save-format users.
-    ('player_facing',        0xC2, 'b',  'Player facing/anim flags (asm: 87 byte_tests — most-tested byte).  TCRF: "Direction facing on respawn (00,02=Right; 01,03=Left)".'),
-    ('boss_intro_flag',      0xC3, 'b',  'Boss intro-side flag (asm: 200FIGHT line 4068 sets it as `[si+3] & 40h` from boss-init data; tested in `check_c3` line 4153).  TCRF labels this byte unknown (observed 01); asm name is canonical.'),
+    ('player_facing',        0xC2, 'b',  'Player facing/anim flags (asm: 87 byte_tests — most-tested byte).  Direction on respawn: 00,02=Right; 01,03=Left.'),
+    ('boss_intro_flag',      0xC3, 'b',  'Boss intro-side flag (asm: 200FIGHT line 4068 sets it as `[si+3] & 40h` from boss-init data; tested in `check_c3` line 4153).'),
     ('save_sage',            0xC4, 'b',  'Sage where game was saved (0x80=Castle, 0x81=Muralla..0x89=Esco).  HIGH BIT MUST BE SET or game crashes.'),
     ('last_sage_visited',    0xC5, 'b',  "Last sage visited (Kioku Feather destination).  DOS version doesn't update on save, so always Muralla (0x81)."),
-    ('heal_pulse_count',     0xC6, 'w',  'HP heal-pulse counter (asm: 200FIGHT line 2806; +8 HP/tick while non-zero, clamped to player_hp_max; 16-bit at 0xC6..0xC7).  TCRF labels both bytes unknown.'),
-    ('player_tileset',       0xC8, 'b',  "Level tileset index (asm: 7 readers; written by game.bin at runtime).  TCRF: \"Unknown — seen 00, 08; doesn't affect game\".  Asm name is canonical."),
+    ('heal_pulse_count',     0xC6, 'w',  'HP heal-pulse counter (asm: 200FIGHT line 2806; +8 HP/tick while non-zero, clamped to player_hp_max; 16-bit at 0xC6..0xC7).'),
+    ('current_level_idx',    0xC8, 'b',  "Current level/cavern chunk index (0..31).  Drives bg + music + sprite + tileset + map chunk loading via an 11-byte-per-entry chunk-ref table.  game.asm:407-409 derives this from save_data_base via `(byte >> 1) & 0x1F`; 200FIGHT.asm:4281 uses the same byte AS the music_track_id directly.  Distinct from save_sage at 0xC4 (which tracks sage-town for Kioku Feather)."),
     # 0xC9..0xD1 — magic shop inventory per town (bitfield).
     ('shop_magic_muralla',   0xC9, 'b',  "Magic shop stock at Muralla (default 8A; bitfield: +128=Ken'ko +64=Juu-en +32=Elixir +16=Chikara +8=Magia +4=HolyWater +2=SabreOil +1=Kioku; FF=full)."),
     ('shop_magic_satono',    0xCA, 'b',  'Magic shop stock at Satono (default A6).'),
@@ -202,22 +203,18 @@ FIELDS = [
     ('shop_shield_llama',    0xE1, 'b',  'Shield stock at Llama (default 1C).'),
     ('shop_shield_pureza',   0xE2, 'b',  'Shield stock at Pureza (default 1C).'),
     ('shop_shield_esco',     0xE3, 'b',  'Shield stock at Esco (default FC).'),
-    ('key_count',            0xE4, 'b',  "Player's collected-key count (asm: 11 readers; 201SELCT inc + test + read).  TCRF labels this byte unknown; asm name is canonical."),
-    ('sages_spoken',         0xE5, 'b',  'Sages spoken-with bitmap (+128=Muralla +64=Satono +32=Bosque +16=Helada +8=Tumba +4=Dorado +2=Llama +1=Pureza). TCRF.'),
-    ('scene_trans_request',  0xE6, 'b',  'Scene-transition request flag (asm: 200FIGHT main_loop_body line 712 polls `test [E6h], 0FFh; jnz scene_transition`; 6 readers).  TCRF labels this byte unknown; asm name is canonical.'),
-    ('gvar_pose_idx',        0xE7, 'b',  "Player pose state (asm: 85 readers — most-accessed byte in stdply chunk; bit7=mode flag, low7=pose index).  TCRF labels this byte \"Unknown; observed 02, 04\"; asm name is canonical."),
-    ('init_complete_flag',   0xE8, 'b',  'Post-init steady-state flag (asm: 30 readers; set to 0xFF after first frame init; cleared on area_load_flag).  TCRF labels this byte unknown; asm name is canonical.'),
-    # 0xE9..0xFF: 23-byte uninitialized memory gap between stdply.bin (233
-    # bytes ending at 0xE8) and stick.bin (loaded at game_seg:0x0100).  The
-    # save routine at 217KENJP.asm:1181 writes 256 bytes from game_seg:0,
-    # so this gap captures whatever transient stack/heap content was at
-    # game_seg:[E9..FF] at save time.  Both observed values across the 17
-    # sample saves disassemble as valid x86 — they're leftover code/state,
-    # not save-format machinery (despite save_decode.py's older header).
-    # Two clusters across the saves correspond to two distinct prior game
-    # sessions.  Editing this region has no gameplay effect (overwritten
-    # the next time stick.bin / game.bin loads).
-    ('tail_unknown_E9_FF',   0xE9, ('raw', 23), '23-byte uninitialized gap between stdply.bin (ends at 0xE8) and stick.bin (loads at game_seg:0x0100).  Save routine (217KENJP.asm:1181) writes 256 bytes from game_seg:0 verbatim, capturing whatever transient memory was here.  Disassembles as valid x86 (leftover code / stack frames).  No gameplay meaning; harmless to edit.'),
+    ('key_count',            0xE4, 'b',  "Player's collected-key count (asm: 11 readers; 201SELCT inc + test + read)."),
+    ('sages_spoken',         0xE5, 'b',  'Sages spoken-with bitmap (+128=Muralla +64=Satono +32=Bosque +16=Helada +8=Tumba +4=Dorado +2=Llama +1=Pureza).'),
+    ('scene_trans_request',  0xE6, 'b',  'Scene-transition request flag (asm: 200FIGHT main_loop_body line 712 polls `test [E6h], 0FFh; jnz scene_transition`; 6 readers).'),
+    ('gvar_pose_idx',        0xE7, 'b',  'Player pose state (asm: 85 readers — most-accessed byte in stdply chunk; bit7=mode flag, low7=pose index).'),
+    ('init_complete_flag',   0xE8, 'b',  'Post-init steady-state flag (asm: 30 readers; set to 0xFF after first frame init; cleared on area_load_flag).'),
+    # 0xE9..0xFF (23 bytes): uninitialized memory gap between stdply.bin
+    # (233 bytes, ends at 0xE8) and stick.bin (loads at game_seg:0x0100).
+    # The save routine (217KENJP.asm:1181) writes 256 bytes from game_seg:0
+    # verbatim, so the gap is captured but has no gameplay meaning.  Not
+    # exposed in the editor — bytes are still preserved through compose_bytes
+    # because the editor starts from a bytearray copy of the original_data
+    # and only overwrites mapped fields.
 ]
 
 # ---------------------------------------------------------------------------

@@ -151,18 +151,20 @@ def bits_for(name: str):
 
 # ---------------------------------------------------------------------------
 # TCRF per-byte bit names for the dungeon/town event handler region
-# (save offsets 0x00..0x4F).  Each entry: offset -> either a list of
-# (bit_idx, label) tuples (named bitfield byte), or a string (whole byte
-# is a boolean/word — show single label, mostly informational).
-# Source: 4_Resources/Save Game Format/Save-Game-Format.html.
-# ---------------------------------------------------------------------------
-
-#   list  → named bitfield (TCRF documented bits)
+# (save offsets 0x00..0x4F).  Source:
+#   4_Resources/Save Game Format/Save-Game-Format.html
+#
+# Entry shapes:
+#   list                  → named bitfield (TCRF documented bits, rendered
+#                            as labeled checkboxes)
 #   ('word_bool', label)  → 16-bit boss-defeated flag spanning this byte
-#                            and the next one (00 00 = no, FF FF = yes).
-#                            High-byte entry is implicit (skipped in render).
+#                            and the next (00 00 = no, FF FF = yes); high
+#                            byte is implicit and skipped in render
 #   ('bool', label)        → whole-byte 00/FF flag (single checkbox)
-#   ('unknown', label)     → unknown byte, render as 8 generic b7..b0 boxes
+#
+# Bytes without an entry are reserved per TCRF (confirmed all-zero across
+# all 17 sample saves) — the renderer skips them.
+# ---------------------------------------------------------------------------
 EVENT_BITS = {
     # ── Cavern 1: Cangrejo / Malicia ──────────────────────────────────────
     0x00: ('word_bool', 'Cangrejo defeated'),  # spans 0x00..0x01
@@ -171,10 +173,8 @@ EVENT_BITS = {
            (3, "Key, Cangrejo's Lair")],
     0x03: [(7, 'Door to Cangrejo open'), (6, 'Door to Satono open'),
            (5, 'Tear of Esmesanti')],
-    0x04: ('unknown', 'Unknown'),
     0x05: ('bool', 'Spoke to the King (gates 1000-Gold gift)'),
     0x06: ('bool', 'Entered caverns first time (overrides spoke_king)'),
-    0x07: ('unknown', 'Unknown'),
     # ── Cavern 2: Pulpo / Peligro ─────────────────────────────────────────
     0x08: ('word_bool', 'Pulpo defeated'),  # spans 0x08..0x09
     0x0A: [(7, 'Chest, Blue Potion (One-time Bat)'),
@@ -191,10 +191,6 @@ EVENT_BITS = {
            (4, "Key, Pulpo's Lair"),
            (3, 'Tear of Esmesanti'),
            (2, 'Wall, Red Potion (Near Satono)')],
-    0x0C: ('unknown', 'Unknown'),
-    0x0D: ('unknown', 'Unknown'),
-    0x0E: ('unknown', 'Unknown'),
-    0x0F: ('unknown', 'Unknown'),
     # ── Cavern 3: Pollo / Madera + Riza ───────────────────────────────────
     0x10: ('word_bool', 'Pollo defeated'),  # spans 0x10..0x11
     0x12: [(7, 'Red Potion (Small tree)'),
@@ -213,10 +209,6 @@ EVENT_BITS = {
            (2, "Key, Pollo's Lair"),
            (1, 'Tear of Esmesanti'),
            (0, 'Open Locked Door to 4th Dungeon')],
-    0x14: ('unknown', 'Unknown'),
-    0x15: ('unknown', 'Unknown'),
-    0x16: ('unknown', 'Unknown'),
-    0x17: ('unknown', 'Unknown'),
     # ── Cavern 4: Agar / Glacial + Escarcha ───────────────────────────────
     0x18: ('word_bool', 'Agar defeated'),  # spans 0x18..0x19
     0x1A: [(7, 'Key'),
@@ -239,9 +231,6 @@ EVENT_BITS = {
            (6, 'Wall, Red Potion (Near Boss Key)'),
            (5, 'Open door to Helada'),
            (4, 'Tear of Esmesanti')],
-    0x1D: ('unknown', 'Unknown'),
-    0x1E: ('unknown', 'Unknown'),
-    0x1F: ('unknown', 'Unknown'),
     # ── Cavern 5: Vista / Corroer + Cementar ──────────────────────────────
     0x20: ('word_bool', 'Vista defeated'),  # spans 0x20..0x21
     0x22: [(7, 'Chest, Red Potion'),
@@ -267,9 +256,6 @@ EVENT_BITS = {
            (3, "Blue Potion (in Vista's Lair)"),
            (2, 'Tear of Esmesanti'),
            (1, "Returned Crest of Glory (-16 to 0xD6, removes Knight's Sword)")],
-    0x25: ('unknown', 'Unknown'),
-    0x26: ('unknown', 'Unknown'),
-    0x27: ('unknown', 'Unknown'),
     # ── Cavern 6: Tarso / Tesoro + Plata + Arrugia secret ────────────────
     0x28: ('word_bool', 'Tarso defeated'),  # spans 0x28..0x29
     0x2A: [(7, 'Chest, Red Potion'),
@@ -300,8 +286,6 @@ EVENT_BITS = {
            (6, 'Blue Potion (Arrugia)'),
            (5, "Key, Tarso's Lair"),
            (4, 'Tear of Esmesanti')],
-    0x2E: ('unknown', 'Unknown'),
-    0x2F: ('unknown', 'Unknown'),
     # ── Llama Town: Paguro + Cavern of Caliente / Dragon ─────────────────
     0x30: ('word_bool', 'Paguro defeated (gates Llama Town NPC dialog)'),  # spans 0x30..0x31
     0x32: ('word_bool', 'Dragon defeated'),  # spans 0x32..0x33
@@ -322,17 +306,6 @@ EVENT_BITS = {
            (1, 'Chest, Key (Correr, 3rd)'),
            (0, 'Chest, 1000 Golds (Correr)')],
     0x36: [(7, 'Tear of Esmesanti')],
-    0x37: ('unknown', 'Unknown'),
-    0x38: ('unknown', 'Unknown'),
-    0x39: ('unknown', 'Unknown'),
-    0x3A: ('unknown', 'Unknown'),
-    0x3B: ('unknown', 'Unknown'),
-    0x3C: ('unknown', 'Unknown'),
-    0x3D: ('unknown', 'Unknown'),
-    0x3E: ('unknown', 'Unknown'),
-    0x3F: ('unknown', 'Unknown'),
-    0x40: ('unknown', 'Unknown'),
-    0x41: ('unknown', 'Unknown'),
     # ── Cavern of Absor + Cavern of Final ─────────────────────────────────
     0x42: [(7, 'Ceiling, Blue Potion (left of below)'),
            (6, "Ceiling, Blue Potion (Near Dragon's Lair exit)"),
@@ -362,13 +335,9 @@ EVENT_BITS = {
            (6, 'Tear of Esmesanti'),
            (5, "Open final locked door (Jashiin's Lair)"),
            (4, 'Key (Final)')],
-    # 0x46..0x47: TCRF "Unknown" within cavern_bits_alguien slot (0x40..0x47).
-    # Confirmed all-zero across all 17 saves except 0x47=FF in 4 user-edited
-    # test saves (ALMAS / Gold / IZE / RED) — no asm readers, not real flags.
-    0x46: ('unknown', 'Unknown'),
-    0x47: ('unknown', 'Unknown'),
-    # 0x48..0x4F: dropped from FIELDS — TCRF "Unknown all 00 in normal play",
-    # confirmed all-zero across all 17 saves.  Bytes preserved verbatim.
+    # 0x46..0x4F: reserved per TCRF; cavern_bits_alguien (0x40..0x47) covers
+    # 0x46/0x47 but they have no documented semantic.  cavern_bits_unknown_*
+    # slots dropped from FIELDS entirely.  Bytes preserved verbatim.
 }
 
 
@@ -378,8 +347,7 @@ def event_bits_for(off: int):
       * a list of (bit_idx, label) tuples — named bitfield byte;
       * ('word_bool', label) — single 16-bit boss flag spanning off..off+1;
       * ('bool', label)      — whole-byte 00/FF flag;
-      * ('unknown', label)   — undocumented byte (render as generic b7..b0);
-      * None — off is outside the documented range.
+      * None — reserved / undocumented byte; renderer skips the row.
     """
     return EVENT_BITS.get(off)
 
@@ -446,15 +414,12 @@ SECTIONS = [
     ("Crests",                               lambda f: f[0].startswith('crest_')),
     ("Spells learned (toggle to give/remove a spell)",
                                               lambda f: f[0].startswith('spell_known_')),
-    ("Player record — position / state",     lambda f: f[1] in (0x80, 0x81, 0x82, 0x83, 0x84)),
+    ("Player record — position / state",     lambda f: f[1] in (0x80, 0x82, 0x83, 0x84)),
     ("Player record — economy",              lambda f: f[1] in (0x85, 0x88, 0x8B)),
     ("Player record — stats",                lambda f: f[1] in (0x90, 0xB2, 0x98, 0x99,
                                                                   0x8D, 0x8E,
                                                                   0xC2, 0xC3, 0xC6, 0xC7, 0xC8,
                                                                   0xE4, 0xE6, 0xE7, 0xE8)),
-    ("Unknown bytes (TCRF undocumented)",    lambda f: f[0] == 'stat_X9F'),
-    ("Save trailer — uninitialized memory gap (no gameplay effect)",
-                                              lambda f: f[0] == 'tail_unknown_E9_FF'),
     ("Wearables (4 shoes + cape, in acquisition order)",
                                               lambda f: f[0].startswith('wear_')),
     ("Item inventory (5 slots, magic items 1..8)",
@@ -662,8 +627,13 @@ class SaveEditorApp:
             string_vars.append(tk.StringVar(value='00'))
             bit_vars_2d.append([tk.IntVar(value=0) for _ in range(8)])
 
-        # Second pass: render rows.  Skip the high byte of a word_bool (the
-        # checkbox on the low-byte row controls both bytes).
+        # Second pass: render rows.  Skip:
+        #   - the high byte of a word_bool (the checkbox on the low-byte row
+        #     controls both bytes), and
+        #   - bytes with no documented TCRF semantic (unknown / reserved
+        #     bytes are confirmed all-zero across all 17 sample saves; no
+        #     reason to give them UI).  Bytes still preserved verbatim
+        #     through compose_bytes.
         prev_was_word_bool = False
         display_row = 2
         for byte_idx in range(8):
@@ -674,6 +644,11 @@ class SaveEditorApp:
                 continue
 
             tcrf = event_bits_for(byte_off)
+
+            # Skip undocumented bytes entirely.
+            if tcrf is None:
+                continue
+
             row = display_row
             display_row += 1
 
@@ -683,7 +658,6 @@ class SaveEditorApp:
 
             is_word_bool = isinstance(tcrf, tuple) and tcrf[0] == 'word_bool'
             is_bool      = isinstance(tcrf, tuple) and tcrf[0] == 'bool'
-            is_unknown   = isinstance(tcrf, tuple) and tcrf[0] == 'unknown'
 
             # Offset label — right-click reverts the whole bitmap field
             off_text = (f'0x{byte_off:02X}..0x{byte_off + 1:02X}'
@@ -803,36 +777,13 @@ class SaveEditorApp:
                                 _set_byte(byte_idx, new)
                         bv_chk.trace_add('write', _on_bit_change)
 
-            elif is_unknown:
-                # TCRF-documented "unknown" byte — confirmed all-zero across
-                # all 17 sample saves.  Render as a compact reserved-label
-                # only (no bit checkboxes, no quick-set buttons).  Bytes are
-                # still preserved verbatim through compose_bytes.
-                ttk.Label(sub, text='reserved (always 00 per TCRF; confirmed across saves)',
-                          foreground='gray60', font=('TkDefaultFont', 9, 'italic')
-                          ).pack(side=tk.LEFT, padx=(0, 8))
-
-            else:
-                # No tcrf spec at all — fallback to 8 generic b7..b0
-                # checkboxes for raw bit editing.
-                bgrid = ttk.Frame(sub)
-                bgrid.pack(side=tk.LEFT)
-                for col, bit_idx in enumerate(range(7, -1, -1)):
-                    bv_chk = bit_vars_row[bit_idx]
-                    cb = ttk.Checkbutton(bgrid, text=f'b{bit_idx}', variable=bv_chk)
-                    cb.grid(row=0, column=col, sticky=tk.W, padx=1)
-                    def _on_bit_change(*_a, b=bit_idx, chk=bv_chk, byte_idx=byte_idx):
-                        if self._suppress_trace:
-                            return
-                        cur = byte_vars[byte_idx].get()
-                        new = (cur | (1 << b)) if chk.get() else (cur & ~(1 << b))
-                        if new != cur:
-                            _set_byte(byte_idx, new)
-                    bv_chk.trace_add('write', _on_bit_change)
+            # (Bytes with tcrf is None are skipped earlier — no fallback
+            # branch is needed here.  Only word_bool / bool / list reach
+            # this point.)
 
             # Per-byte quick-set buttons (skipped for word_bool — binary
-            # toggle — and for unknown — nothing to set).
-            if not is_word_bool and not is_unknown:
+            # toggle).
+            if not is_word_bool:
                 ttk.Button(frame, text='00', width=3,
                            command=lambda byte_idx=byte_idx: _set_byte(byte_idx, 0x00)
                            ).grid(row=row, column=12, sticky=tk.W, padx=(8, 1))

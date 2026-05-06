@@ -346,11 +346,17 @@ player_level               equ     0C4h    ; alias — earlier (wrong) name
 last_sage_visited          equ     0C5h    ; last sage visited (Kioku Feather dest)
 stat_XC5                   equ     0C5h    ; alias — earlier placeholder
 ;
-; 0xC8 = level tileset index (asm-canonical, 7 readers).  TCRF labels
-; this byte unknown but the asm code clearly writes/reads it as a tileset
-; index.  Keep canonical; add alias for save-format consumers.
-player_tileset             equ     0C8h    ; level tileset index (asm-canonical, 7 readers)
-stat_XC8                   equ     0C8h    ; alias — TCRF labels this byte unknown
+; 0xC8 = current level/cavern chunk index (0..31).  Drives bg + music +
+; sprite + tileset + map chunk loading via an 11-byte-per-entry chunk-ref
+; table at game seg + 0xA363.  game.asm:407-409 derives this from
+; save_data_base via `(byte >> 1) & 0x1F`; 200FIGHT.asm:4281 uses the same
+; byte AS the music_track_id directly (not just an index — equals the
+; track number).  The earlier name `player_tileset` was a misnomer: it
+; selects multiple per-level resources, not just the tileset, and it's
+; per-LEVEL, not a player attribute.
+current_level_idx          equ     0C8h    ; current level/cavern chunk index (0..31)
+player_tileset             equ     0C8h    ; alias — earlier (misleading) name
+stat_XC8                   equ     0C8h    ; alias — earlier placeholder
 
 ;==========================================================================
 ;  Shop inventory bitfields  [0x00C9-0x00E3]  (TCRF authoritative)

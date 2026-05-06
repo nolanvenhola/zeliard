@@ -66,7 +66,7 @@ PLAYER_RECORD = [
     (0xC4, "save_sage",          "b"),
     (0xC5, "last_sage_visited",  "b"),
     (0xC6, "heal_pulse_count",   "w"),
-    (0xC8, "player_tileset",     "b"),
+    (0xC8, "current_level_idx",  "b"),
     (0xE4, "key_count",          "b"),
     (0xE5, "sages_spoken",       "b"),
     (0xE6, "scene_trans_request","b"),

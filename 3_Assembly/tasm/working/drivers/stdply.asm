@@ -275,7 +275,7 @@ last_sage_visited db	81h		; [0C5h] last sage visited (init = Muralla)
 ; labelled "reserved" but actually accessed.  Purpose TBD.
 heal_pulse_count dw 0		; [0C6h-0C7h] HP heal-pulse counter (16-bit; +8 HP/tick)
 
-player_tileset	db	00h		; [0C8h] tileset index (written at runtime)
+current_level_idx	db	00h		; [0C8h] current level/cavern chunk index (0..31; drives bg+music+sprite+tileset+map loading via 11B/entry chunk-ref table)
 ;
 ;--------------------------------------------------------------------------
 ;  Shop inventory bitfields  [0x00C9-0x00E3]  (TCRF authoritative).
