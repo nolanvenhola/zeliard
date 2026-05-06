@@ -64,9 +64,10 @@ FIELDS = [
     ('cavern_bits_vista',          0x20, ('raw', 8), 'Vista region (TCRF 0x20..0x27): Vista defeated word + Cavern of Corroer + Cavern of Cementar (#1, #2) bits'),
     ('cavern_bits_tarso',          0x28, ('raw', 8), 'Tarso region (TCRF 0x28..0x2F): Tarso defeated word + Cavern of Tesoro + Cavern of Plata (#1, #2, #3) bits — also covers Arrugia secret'),
     ('cavern_bits_paguro_dragon',  0x30, ('raw', 8), 'Paguro/Dragon region (TCRF 0x30..0x37): Paguro defeated word + Dragon defeated word + Cavern of Caliente (#1, #2, #3) bits'),
-    ('cavern_bits_unknown_38',     0x38, ('raw', 8), 'TCRF 0x38..0x3F: all bytes documented as Unknown (always 00 in normal play).'),
+    # 0x38..0x3F and 0x48..0x4F: TCRF says "Unknown (all 00 in normal play)";
+    # confirmed all-zero across all 17 sample saves.  No UI field — bytes are
+    # preserved verbatim through compose_bytes (untouched memory).
     ('cavern_bits_alguien',        0x40, ('raw', 8), 'Alguien region (TCRF 0x40..0x47): Cavern of Absor + Cavern of Milagro + Cavern of Desleal + Cavern of Falter/Final bits.  Gates Alguien path.  TCRF documents 0x42..0x45 only; 0x40, 0x41, 0x46, 0x47 listed as Unknown.'),
-    ('cavern_bits_unknown_48',     0x48, ('raw', 8), 'TCRF 0x48..0x4F: all bytes documented as Unknown (always 00 in normal play).'),
 
     # ─── Player record (0x80..0xC1) ──────────────────────────────────────
     # 0x80 / 0x81: TCRF says 0x80 is "starting position in town" (1 byte; tile
