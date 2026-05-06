@@ -206,13 +206,17 @@ FIELDS = [
     ('scene_trans_request',  0xE6, 'b',  'Scene-transition request flag (asm: 200FIGHT main_loop_body line 712 polls `test [E6h], 0FFh; jnz scene_transition`; 6 readers).  TCRF labels this byte unknown; asm name is canonical.'),
     ('gvar_pose_idx',        0xE7, 'b',  "Player pose state (asm: 85 readers — most-accessed byte in stdply chunk; bit7=mode flag, low7=pose index).  TCRF labels this byte \"Unknown; observed 02, 04\"; asm name is canonical."),
     ('init_complete_flag',   0xE8, 'b',  'Post-init steady-state flag (asm: 30 readers; set to 0xFF after first frame init; cleared on area_load_flag).  TCRF labels this byte unknown; asm name is canonical.'),
-    # 0xE9..0xFF: TCRF says "E8-FF Unknown" but observed saves consistently
-    # show non-zero bytes here (e.g. 0xE9=0x90, 0xEF=0x56, 0xFF=0x46 across
-    # most saves; Pureza differs).  This is likely save-format machinery
-    # (icon data, BLK signature, tail x86 code per save_decode.py header
-    # comments) rather than gameplay state.  Exposed as one raw 23-byte
-    # field for inspection; do not edit unless you know what you are doing.
-    ('tail_unknown_E9_FF',   0xE9, ('raw', 23), 'TCRF: "E8-FF Unknown".  Save-format trailer (icon data / BLK signature / tail x86 code per save_decode.py).  Non-zero in all observed saves; do not edit unless you understand the save format.'),
+    # 0xE9..0xFF: 23-byte uninitialized memory gap between stdply.bin (233
+    # bytes ending at 0xE8) and stick.bin (loaded at game_seg:0x0100).  The
+    # save routine at 217KENJP.asm:1181 writes 256 bytes from game_seg:0,
+    # so this gap captures whatever transient stack/heap content was at
+    # game_seg:[E9..FF] at save time.  Both observed values across the 17
+    # sample saves disassemble as valid x86 — they're leftover code/state,
+    # not save-format machinery (despite save_decode.py's older header).
+    # Two clusters across the saves correspond to two distinct prior game
+    # sessions.  Editing this region has no gameplay effect (overwritten
+    # the next time stick.bin / game.bin loads).
+    ('tail_unknown_E9_FF',   0xE9, ('raw', 23), '23-byte uninitialized gap between stdply.bin (ends at 0xE8) and stick.bin (loads at game_seg:0x0100).  Save routine (217KENJP.asm:1181) writes 256 bytes from game_seg:0 verbatim, capturing whatever transient memory was here.  Disassembles as valid x86 (leftover code / stack frames).  No gameplay meaning; harmless to edit.'),
 ]
 
 # ---------------------------------------------------------------------------

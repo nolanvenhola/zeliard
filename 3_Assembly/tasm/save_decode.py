@@ -2,13 +2,14 @@
 """
 save_decode.py — decode .USR save files using the player-record EQU map.
 
-Save file layout (empirically determined from 17 saves):
-  0x00..0x4F   mystery flag header (per-cavern/per-area progression bitmaps?)
-  0x50..0x7F   zero padding
-  0x80..0xC1   PLAYER RECORD (matches stdply.inc EQUs at the same offsets)
-  0xC2..0xCF   trailer + 'BLK' signature
-  0xD0..0xE3   constant sprite/icon data
-  0xE4..0xFF   tail x86 code (save-format machinery)
+Save file layout (TCRF authoritative + 217KENJP.asm save-write routine):
+  0x00..0x4F   per-cavern/per-area progression bitmaps (event handlers)
+  0x50..0x7F   zero padding (truly all 00 across all 17 saves)
+  0x80..0xE8   PLAYER RECORD (matches stdply.inc, ends at init_complete_flag)
+  0xE9..0xFF   uninitialized 23-byte gap between stdply.bin (233 bytes)
+               and stick.bin (loads at game_seg:0x0100); captured verbatim
+               by the save-write routine (217KENJP.asm:1181) but has no
+               gameplay meaning — leftover stack/heap state at save time.
 
 This tool prints a per-save table with named fields for the player record,
 plus a separate report for the mystery flag header.

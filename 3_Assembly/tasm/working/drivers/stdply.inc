@@ -461,6 +461,25 @@ stat_XE7                equ     0E7h    ; alias — earlier name
 init_complete_flag      equ     0E8h    ; post-init steady-state flag (canonical)
 stat_XE8                equ     0E8h    ; alias — earlier name
 
+;==========================================================================
+;  END OF STDPLY DATA  [0x00E9 onward is OUTSIDE the player record]
+;
+;  stdply.bin is exactly 233 bytes (offsets 0x00..0xE8).  Memory at
+;  game_seg:[0xE9..0xFF] is a 23-byte UNINITIALIZED GAP between the end
+;  of stdply.bin and the start of stick.bin (loaded at game_seg:0x0100
+;  per zeliad.asm:1073 entry_stick).
+;
+;  The save routine (217KENJP.asm:1181, "Record Experience") writes 256
+;  bytes verbatim from game_seg:0 to *.usr, so this gap is captured in
+;  every save file.  Across the 17 sample saves the gap shows two
+;  distinct values, both disassembling as valid 16-bit x86 — leftover
+;  stack frames / freed-allocator remnants, NOT a stdply field.
+;
+;  Do not add EQUs in this range; do not treat 0xE9..0xFF as player
+;  record state.  Editor exposes it as a raw passthrough field
+;  (tail_unknown_E9_FF in save_edit.py).
+;==========================================================================
+
 ; Animation color LUT  [0x00AB-0x00C3]  (NOT YET VALIDATED)
 ; IDA names this 'spells_espada' (Spanish 'espada' = sword/magic spells list).
 ; Init byte = 0x0C; could be a color value or a spell-list start. Inconclusive.
