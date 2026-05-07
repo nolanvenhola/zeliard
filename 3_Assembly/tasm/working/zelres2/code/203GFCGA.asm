@@ -3354,31 +3354,38 @@ anim_seq_tbl:					; data at CS:17C2h
 		db	'mno)&!"*%!"'			; row 35: ASCII frame indices (11 bytes)
 		db	 15h, 16h, 15h, 16h, 1Ch			; row 36: 5-byte partial
 		db	 35h, 44h, 48h, 4Ch			; row 37: 4-byte partial
-		; Character encoding / font lookup table
-		db	'CGKO', 0		; 0x0000
-		db	'mno)&!"*%!"', 0		; 0x000B
-		db	016h, 015h, 016h, 01Ch		; 0x0017
-		db	'5DHL', 0		; 0x001B
-		db	'iqst', 0		; 0x0028
-		db	' ,\'', 0		; 0x002D
-		db	' ', 0		; 0x0031
-		db	018h		; 0x0033
-		db	'8:?BE', 0		; 0x0034
-		db	'muwyo+&)&', 0		; 0x0045
-		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 0: (1,2) x3
-		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 1: (1,2) x3
-		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 2: (1,2) x3
-		; Character encoding table (continued)
-		db	'49;@A', 0		; 0x0000
-		db	'vxz{12', 0		; 0x0013
-		; Character encoding table (continued)
-		db	'/-367<', 0		; 0x0000
-		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 0: (3,4) x3
-		db	 03h, 04h, 05h, 06h, 05h, 06h			; tile pair lookup row 1: (3,4)+(5,6) x2
-		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 2: (5,6) x3
-		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 3: (5,6) x3
-		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 4: (5,6) x3
-		db	 06h, 05h, 05h, 06h, 05h, 06h			; tile pair lookup row 5: swapped + (5,6) x2
+;--------------------------------------------------------------------------
+; Sprite/animation lookup tables (chunk_03 file offsets 0x18AB..0x1995;
+; 235 bytes).  Earlier "Character encoding / font lookup table" + "tile
+; pair lookup" interleaved blocks here were Sourcer-mis-decoded from data
+; — they emitted ~105 bytes of bogus output instead of the original 235.
+; Restored verbatim from chunk_03.bin extracted bytes.
+;--------------------------------------------------------------------------
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 069h, 071h, 073h	; 0x18AB
+		db	074h, 01Fh, 020h, 02Ch, 027h, 01Fh, 020h, 017h, 018h, 038h, 03Ah, 03Fh	; 0x18B7
+		db	042h, 045h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x18C3
+		db	000h, 000h, 06Dh, 075h, 077h, 079h, 06Fh, 02Bh, 026h, 029h, 026h, 01Ah	; 0x18CF
+		db	034h, 039h, 03Bh, 040h, 041h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x18DB
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 076h, 078h, 07Ah, 07Bh, 031h	; 0x18E7
+		db	032h, 02Fh, 02Dh, 033h, 036h, 037h, 03Ch, 000h, 000h, 000h, 000h, 000h	; 0x18F3
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x18FF
+		db	000h, 000h, 06Dh, 071h, 070h, 072h, 070h, 000h, 000h, 000h, 000h, 000h	; 0x190B
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1917
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1923
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x192F
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x193B
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1947
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1953
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 001h, 002h, 001h, 002h, 001h	; 0x195F
+		db	002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h	; 0x196B
+		db	002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 003h	; 0x1977
+		db	004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h	; 0x1983
+		db	004h, 003h, 004h, 003h, 004h, 003h, 004h	; 0x198F
+; Tile pair entries 5/6 (continuation of pair table; chunk_03 0x1996..0x19B9)
+		db	003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 005h, 006h, 005h, 006h	; 0x1996
+		db	005h, 006h, 005h, 006h, 005h, 006h, 005h, 006h, 005h, 006h, 005h, 006h	; 0x19A2
+		db	005h, 006h, 005h, 006h, 005h, 006h, 006h, 005h, 005h, 006h, 005h, 006h	; 0x19AE
+
 ; --- trailing CGA blit code stub disassembled as data (Sourcer mis-decoded) ---
 		db	 1Eh, 50h,0D0h,0EBh, 1Bh,0FFh			; code: push ds; push ax; shr bl,1; ...
 		db	 81h,0E7h, 00h, 20h,0B0h, 50h			; code: and di,2000h; mov al,50h

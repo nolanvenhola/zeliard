@@ -3454,30 +3454,39 @@ anim_seq_tbl:
 		db	'mno)&!"*%!"'			; row 30: ASCII frame indices (11 bytes)
 		db	 15h, 16h, 15h, 16h, 1Ch			; row 31: 5-byte partial
 		db	 35h, 44h, 48h, 4Ch			; row 32: 4-byte partial
-		; Character encoding / font lookup table
-		db	'CGKO', 0		; 0x0000
-		db	'mno)&!"*%!"', 0		; 0x000B
-		db	016h, 015h, 016h, 01Ch		; 0x0017
-		db	'5DHL', 0		; 0x001B
-		db	'iqst', 0		; 0x0028
-		db	' ,\'', 0		; 0x002D
-		db	' ', 0		; 0x0031
-		db	018h		; 0x0033
-		db	'8:?BE', 0		; 0x0034
-		db	'muwyo+&)&', 0		; 0x0045
-		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 0: (1,2) x3
-		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 1: (1,2) x3
-		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 2: (1,2) x3
-		db	 01h, 02h, 01h, 02h, 03h, 04h			; tile pair lookup row 3: (1,2) x2 + (3,4)
-		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 4: (3,4) x3
-		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 5: (3,4) x3
-		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 6: (3,4) x3
-		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 7: (3,4) x3
-		db	 03h, 04h, 05h, 06h, 05h, 06h			; tile pair lookup row 8: (3,4) + (5,6) x2
-		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 9: (5,6) x3
-		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 10: (5,6) x3
-		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 11: (5,6) x3
-		db	 06h, 05h, 05h, 06h, 05h, 06h			; tile pair lookup row 12: swapped + (5,6) x2
+;--------------------------------------------------------------------------
+; Sprite/animation lookup tables (chunk_04 file offsets 0x1804..0x18C4;
+; 193 bytes).  Earlier "Character encoding / font lookup table" + "tile
+; pair lookup" interleaved blocks here were Sourcer-mis-decoded from data
+; — they emitted ~67 bytes of bogus output instead of the original 193.
+; Restored verbatim from chunk_04.bin extracted bytes.
+;--------------------------------------------------------------------------
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 069h, 071h, 073h	; 0x1804
+		db	074h, 01Fh, 020h, 02Ch, 027h, 01Fh, 020h, 017h, 018h, 038h, 03Ah, 03Fh	; 0x1810
+		db	042h, 045h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x181C
+		db	000h, 000h, 06Dh, 075h, 077h, 079h, 06Fh, 02Bh, 026h, 029h, 026h, 01Ah	; 0x1828
+		db	034h, 039h, 03Bh, 040h, 041h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1834
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 076h, 078h, 07Ah, 07Bh, 031h	; 0x1840
+		db	032h, 02Fh, 02Dh, 033h, 036h, 037h, 03Ch, 000h, 000h, 000h, 000h, 000h	; 0x184C
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1858
+		db	000h, 000h, 06Dh, 071h, 070h, 072h, 070h, 000h, 000h, 000h, 000h, 000h	; 0x1864
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1870
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x187C
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1888
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1894
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x18A0
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x18AC
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 001h, 002h, 001h, 002h, 001h	; 0x18B8
+		db	002h	; 0x18C4
+; Tile pair entries continuation (chunk_04 0x18C5..0x1912)
+		db	001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h	; 0x18C5
+		db	001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 003h, 004h	; 0x18D1
+		db	003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h	; 0x18DD
+		db	003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h	; 0x18E9
+		db	003h, 004h, 005h, 006h, 005h, 006h, 005h, 006h, 005h, 006h, 005h, 006h	; 0x18F5
+		db	005h, 006h, 005h, 006h, 005h, 006h, 005h, 006h, 005h, 006h, 005h, 006h	; 0x1901
+		db	006h, 005h, 005h, 006h, 005h, 006h	; 0x190D
+
 ; --- trailing HGC blit code stub (Sourcer mis-decoded) ---
 		db	 1Eh, 50h,0E8h, 32h, 05h, 8Bh			; code: push ds; push ax; call ...; mov ...
 		db	0F8h, 58h,0B1h, 10h,0F6h,0E1h			; code: mov di,ax; pop ax; mov cl,10h; mul cl

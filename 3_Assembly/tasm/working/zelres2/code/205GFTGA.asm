@@ -3654,31 +3654,39 @@ anim_seq_tbl:					; 70 bytes of frame index data ?-- Sourcer mis-decoded as code
 		db	'mno)&!"*%!"'			; row 30: ASCII frame indices (11 bytes)
 		db	 15h, 16h, 15h, 16h, 1Ch			; row 31: 5-byte partial
 		db	 35h, 44h, 48h, 4Ch			; row 32: 4-byte partial
-		; Character encoding / font lookup table
-		db	'CGKO', 0		; 0x0000
-		db	'mno)&!"*%!"', 0		; 0x000B
-		db	016h, 015h, 016h, 01Ch		; 0x0017
-		db	'5DHL', 0		; 0x001B
-		db	'iqst', 0		; 0x0028
-		db	' ,\'', 0		; 0x002D
-		db	' ', 0		; 0x0031
-		db	018h		; 0x0033
-		db	'8:?BE', 0		; 0x0034
-		db	'muwyo+&)&', 0		; 0x0045
-		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 0: (1,2) x3
-		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 1: (1,2) x3
-		db	 01h, 02h, 01h, 02h, 01h, 02h			; tile pair lookup row 2: (1,2) x3
-		; Character encoding table (continued)
-		db	'49;@A', 0		; 0x0000
-		db	'vxz{12', 0		; 0x0013
-		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 3: (3,4) x3
-		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 4: (3,4) x3
-		db	 03h, 04h, 03h, 04h, 03h, 04h			; tile pair lookup row 5: (3,4) x3
-		db	 03h, 04h, 05h, 06h, 05h, 06h			; tile pair lookup row 6: (3,4) + (5,6) x2
-		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 7: (5,6) x3
-		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 8: (5,6) x3
-		db	 05h, 06h, 05h, 06h, 05h, 06h			; tile pair lookup row 9: (5,6) x3
-		db	 06h, 05h, 05h, 06h, 05h, 06h			; tile pair lookup row 10: swapped + (5,6) x2
+;--------------------------------------------------------------------------
+; Sprite/animation lookup tables (chunk_05 file offsets 0x1A42..0x1AFB;
+; 186 bytes).  Earlier "Character encoding / font lookup table" + "tile
+; pair lookup" interleaved blocks here were Sourcer-mis-decoded from data
+; — they emitted ~66 bytes of bogus output instead of the original 186.
+; Restored verbatim from chunk_05.bin extracted bytes.
+;--------------------------------------------------------------------------
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 069h, 071h, 073h	; 0x1A42
+		db	074h, 01Fh, 020h, 02Ch, 027h, 01Fh, 020h, 017h, 018h, 038h, 03Ah, 03Fh	; 0x1A4E
+		db	042h, 045h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A5A
+		db	000h, 000h, 06Dh, 075h, 077h, 079h, 06Fh, 02Bh, 026h, 029h, 026h, 01Ah	; 0x1A66
+		db	034h, 039h, 03Bh, 040h, 041h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A72
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 076h, 078h, 07Ah, 07Bh, 031h	; 0x1A7E
+		db	032h, 02Fh, 02Dh, 033h, 036h, 037h, 03Ch, 000h, 000h, 000h, 000h, 000h	; 0x1A8A
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A96
+		db	000h, 000h, 06Dh, 071h, 070h, 072h, 070h, 000h, 000h, 000h, 000h, 000h	; 0x1AA2
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1AAE
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1ABA
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1AC6
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1AD2
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1ADE
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1AEA
+		db	000h, 000h, 000h, 000h, 000h, 000h	; 0x1AF6
+; Tile pair entries continuation (chunk_05 0x1AFC..0x1B50)
+		db	000h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h	; 0x1AFC
+		db	002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h	; 0x1B08
+		db	002h, 001h, 002h, 001h, 002h, 003h, 004h, 003h, 004h, 003h, 004h, 003h	; 0x1B14
+		db	004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h	; 0x1B20
+		db	004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 005h, 006h, 005h	; 0x1B2C
+		db	006h, 005h, 006h, 005h, 006h, 005h, 006h, 005h, 006h, 005h, 006h, 005h	; 0x1B38
+		db	006h, 005h, 006h, 005h, 006h, 005h, 006h, 006h, 005h, 005h, 006h, 005h	; 0x1B44
+		db	006h	; 0x1B50
+
 ; --- trailing TGA blit code stub (Sourcer mis-decoded as data) ---
 		db	 1Eh, 50h, 02h,0FFh,0E8h, 60h			; code: push ds; push ax; add bh,bh; call
 		db	 06h, 8Bh,0F8h, 2Eh,0C7h, 06h			; code: push es; mov di,ax; cs prefix; mov word

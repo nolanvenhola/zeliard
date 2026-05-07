@@ -142,7 +142,8 @@ script_opcode_dispatch	endp
 op_handler_a:					; reached via opcode_dispatch_tbl[bx]
 		in	ax,0A0h			; port 0A0h ??I/O Non-standard
 ;*	and	byte ptr ds:data_25e[bx+si],99h
-		and	byte ptr [bx+si-5F77h],99h	;  was: db 082h,0A0h,089h,0A0h,099h
+		db	082h, 0A0h, 089h, 0A0h, 099h	; and byte ptr [bx+si-5F77h],99h
+						; (alt 0x82 encoding; TASM emits 0x80 from the mnemonic)
 		mov	al,ds:sermon_data_b	; reads sermon_data_b = A0CBh
 		mov	word ptr ds:gvar_script_ptr,0A36Ah
 		retn

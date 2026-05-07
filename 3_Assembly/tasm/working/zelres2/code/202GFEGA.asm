@@ -3774,32 +3774,40 @@ anim_seq_tbl:					; 70 bytes of frame index data ?-- Sourcer mis-decoded as code
 		db	'mno)&!"*%!"'				;  (cont.)
 		db	 15h, 16h, 15h, 16h, 1Ch		;  (cont.)
 		db	 35h, 44h, 48h, 4Ch			;  (cont. anim_seq_tbl end)
-		; Character encoding / font lookup table
-		db	'CGKO', 0		; 0x0000
-		db	'mno)&!"*%!"', 0		; 0x000B
-		db	016h, 015h, 016h, 01Ch		; 0x0017
-		db	'5DHL', 0		; 0x001B
-		db	'iqst', 0		; 0x0028
-		db	' ,\'', 0		; 0x002D
-		db	' ', 0		; 0x0031
-		db	018h		; 0x0033
-		db	'8:?BE', 0		; 0x0034
-		db	'muwyo+&)&', 0		; 0x0045
-; EGA animation plane pair table -- pairs of (plane_A, plane_B) frame indices for animation.
-; Values 0x01/0x02, 0x03/0x04, 0x05/0x06 = EGA plane bitmask pair indices for each cycle.
-		db	 01h, 02h, 01h, 02h, 01h, 02h	; plane pair entries (pair 0: planes 1/2)
-		db	 01h, 02h, 01h, 02h, 01h, 02h	;  (cont.)
-		db	 01h, 02h, 01h, 02h, 01h, 02h	;  (cont.)
-		db	 01h, 02h, 01h, 02h, 03h, 04h	;  (cont. + pair 1: planes 3/4)
-		db	 03h, 04h, 03h, 04h, 03h, 04h	;  (cont.)
-		db	 03h, 04h, 03h, 04h, 03h, 04h	;  (cont.)
-		; Character encoding table (continued)
-		db	'/-367<', 0		; 0x0000
-		db	 03h, 04h, 05h, 06h, 05h, 06h	; plane pair entries (pair 2: planes 5/6)
-		db	 05h, 06h, 05h, 06h, 05h, 06h	;  (cont.)
-		db	 05h, 06h, 05h, 06h, 05h, 06h	;  (cont.)
-		db	 05h, 06h, 05h, 06h, 05h, 06h	;  (cont.)
-		db	 06h, 05h, 05h, 06h, 05h, 06h	;  (cont. last entries)
+;--------------------------------------------------------------------------
+; Sprite/animation lookup tables (chunk_02 file offsets 0x19D2..0x1AC2;
+; 241 bytes).  Earlier "Character encoding / font lookup table" + "EGA
+; animation plane pair table" interleaved blocks here were Sourcer-mis-
+; decoded from data � they emitted ~140 bytes of bogus output instead of
+; the original 241.  Restored verbatim from chunk_02.bin extracted bytes.
+;--------------------------------------------------------------------------
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 069h, 071h, 073h	; 0x19D2
+		db	074h, 01Fh, 020h, 02Ch, 027h, 01Fh, 020h, 017h, 018h, 038h, 03Ah, 03Fh	; 0x19DE
+		db	042h, 045h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x19EA
+		db	000h, 000h, 06Dh, 075h, 077h, 079h, 06Fh, 02Bh, 026h, 029h, 026h, 01Ah	; 0x19F6
+		db	034h, 039h, 03Bh, 040h, 041h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A02
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 076h, 078h, 07Ah, 07Bh, 031h	; 0x1A0E
+		db	032h, 02Fh, 02Dh, 033h, 036h, 037h, 03Ch, 000h, 000h, 000h, 000h, 000h	; 0x1A1A
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A26
+		db	000h, 000h, 06Dh, 071h, 070h, 072h, 070h, 000h, 000h, 000h, 000h, 000h	; 0x1A32
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A3E
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A4A
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A56
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A62
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A6E
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h	; 0x1A7A
+		db	000h, 000h, 000h, 000h, 000h, 000h, 000h, 001h, 002h, 001h, 002h, 001h	; 0x1A86
+		db	002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h	; 0x1A92
+		db	002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 001h, 002h, 003h	; 0x1A9E
+		db	004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h	; 0x1AAA
+		db	004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h, 004h, 003h	; 0x1AB6
+		db	004h	; 0x1AC2
+; Plane pair entries 5/6 (continuation of pair table; chunk_02 0x1AC3..0x1AE0)
+		db	003h, 004h, 005h, 006h, 005h, 006h	; 0x1AC3 pair 2: planes 5/6
+		db	005h, 006h, 005h, 006h, 005h, 006h	; 0x1AC9
+		db	005h, 006h, 005h, 006h, 005h, 006h	; 0x1ACF
+		db	005h, 006h, 005h, 006h, 005h, 006h	; 0x1AD5
+		db	006h, 005h, 005h, 006h, 005h, 006h	; 0x1ADB last entries
 
 ; plane_blit_init -- setup for plane_1_2_blit_loop.
 ; Computes sprite source SI from AL (sprite index) * 0x20 + 0x6000 (game_seg sprite base),
