@@ -84,6 +84,12 @@ game_phase_var	equ	499h			; [byte] stored game_phase / mode index (set on entry)
 dispatch_flag_1	equ	497h			; [byte] control flag A (written by init: 0x10, then 0x50)
 dispatch_flag_2	equ	498h			; [byte] control flag B (written by init: 0xFF)
 
+; Pixel-format conversion LUTs (CS-relative; indexed by [bx])
+lut_4bpp_to_cga2bpp	equ	1AAh		; CGA: nibble -> 2bpp pair (16 entries)
+lut_vga_pixel_unpack	equ	2AEh		; VGA: 16-entry color LUT
+lut_mcga_pixel_unpack	equ	33Eh		; MCGA: nibble unpack table
+lut_4bpp_to_4pixels	equ	444h		; common: high/low nibble -> 4 pixels each
+
 ; ----------------------------------------------------------------------
 ; Section 7: Constants
 ; ----------------------------------------------------------------------
@@ -363,7 +369,7 @@ cga_bit_unpack_loop:
 								xor	bh,bh			; Zero register
 								add	dl,dl
 								add	dl,dl
-								or	dl,byte ptr ds:[1AAh][bx]   ; LUT at 0x01AA: 4bpp->CGA 2bpp
+								or	dl,byte ptr ds:[lut_4bpp_to_cga2bpp][bx]   ; LUT at 0x01AA: 4bpp->CGA 2bpp
 								loop	cga_bit_unpack_loop		; Loop if cx > 0
 
 								mov	al,dl
@@ -385,7 +391,7 @@ cga_row_continue:
 		pop	es
 		retn
 ; --- LUT at 0x01AA: 4-bit nibble -> 2-bit CGA/HGC pair unpacker ---
-; Used by cga_bit_unpack_loop and hgc_bit_unpack_loop via "ds:[1AAh][bx]".
+; Used by cga_bit_unpack_loop and hgc_bit_unpack_loop via "ds:[lut_4bpp_to_cga2bpp][bx]".
 ; 16 entries mapping 4bpp planar nibble to CGA-style color pair.
 
 nibble_to_2bpp_lut	label	byte
@@ -446,7 +452,7 @@ hgc_bit_unpack_loop:
 								xor	bh,bh			; Zero register
 								add	dl,dl
 								add	dl,dl
-								or	dl,byte ptr ds:[1AAh][bx]    ; LUT: nibble -> 2bpp
+								or	dl,byte ptr ds:[lut_4bpp_to_cga2bpp][bx]    ; LUT: nibble -> 2bpp
 								loop	hgc_bit_unpack_loop		; Loop if cx > 0
 
 								mov	al,dl
@@ -485,7 +491,7 @@ hgc_row_continue:
 		retn
 ; --- vga_blit: dispatch target for mode 4 (VGA/MCGA 320x200 linear) at 0x024B ---
 ; Writes 4 bytes per input nibble to VGA A000h with 140h stride (320 bytes/row).
-; Uses vga_pixel_unpack (below) with ds:[2AEh][bx] = 16-entry VGA color LUT.
+; Uses vga_pixel_unpack (below) with ds:[lut_vga_pixel_unpack][bx] = 16-entry VGA color LUT.
 
 vga_blit:
 		push	es
@@ -544,13 +550,13 @@ vga_pixel_unpack		proc	near
 		adc	bl,bl
 		and	bl,0Fh
 		xor	bh,bh			; Zero register
-		mov	al,byte ptr ds:[2AEh][bx]
+		mov	al,byte ptr ds:[lut_vga_pixel_unpack][bx]
 		retn
 
 vga_pixel_unpack		endp
 
 ; --- LUT at 0x02AE: 4-bit nibble -> VGA pixel pair (16 entries) ---
-; Used by vga_pixel_unpack via "ds:[2AEh][bx]".
+; Used by vga_pixel_unpack via "ds:[lut_vga_pixel_unpack][bx]".
 
 nibble_to_vga_lut	label	byte
 		db	 00h, 01h, 05h, 03h, 08h, 09h	; +0x000
@@ -631,7 +637,7 @@ mcga_nibble_loop:
 					add	al,al
 					add	al,al
 					add	al,al
-					or	al,byte ptr ds:[33Eh][bx]
+					or	al,byte ptr ds:[lut_mcga_pixel_unpack][bx]
 					loop	mcga_nibble_loop		; Loop if cx > 0
 
 		retn
@@ -639,7 +645,7 @@ mcga_nibble_loop:
 mcga_pixel_unpack		endp
 
 ; --- LUT at 0x033E: 4-bit -> MCGA pixel pair (16 entries) ---
-; Used by mcga_pixel_unpack via "ds:[33Eh][bx]".
+; Used by mcga_pixel_unpack via "ds:[lut_mcga_pixel_unpack][bx]".
 
 nibble_to_mcga_lut	label	byte
 		db	 00h, 07h, 01h, 02h, 07h, 0Fh	; +0x000
@@ -817,14 +823,14 @@ extract_do_merge:
 		shr	bl,1			; Shift w/zeros fill
 		xor	bh,bh			; Zero register
 		mov	si,bx
-		mov	al,byte ptr cs:[444h][bx]	; LUT: high nibble -> 4 pixels
+		mov	al,byte ptr cs:[lut_4bpp_to_4pixels][bx]	; LUT: high nibble -> 4 pixels
 		add	al,al
 		add	al,al
 		add	al,al
 		add	al,al
 		mov	bl,ah
 		and	bl,0Fh
-		or	al,byte ptr cs:[444h][bx]	; LUT: low nibble -> 4 pixels
+		or	al,byte ptr cs:[lut_4bpp_to_4pixels][bx]	; LUT: low nibble -> 4 pixels
 		or	si,si			; Zero ?
 		jz	extract_check_dh		; Jump if zero
 		retn
@@ -842,7 +848,7 @@ extract_first_write:
 extract_bits		endp
 
 ; --- LUT at 0x0444: 4-bit nibble -> 4-pixel bitmap byte (16 entries) ---
-; Used by extract_bits via "cs:[444h][bx]".
+; Used by extract_bits via "cs:[lut_4bpp_to_4pixels][bx]".
 
 nibble_to_4px_lut	label	byte
 		db	 00h, 04h, 05h, 05h, 04h, 05h	; +0x000

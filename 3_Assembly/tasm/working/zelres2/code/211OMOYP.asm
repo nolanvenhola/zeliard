@@ -35,7 +35,7 @@ PAGE  59,132
 ;                  drv_return_to_caller, drv_draw_glyph
 ;                    (graphics driver dispatch slots cs:[2000h..30xxh])
 ;                  omoyp_script_6016 (cs:[6016h]) -- script step
-;                  cs:[3006h] -- gfx-driver fn after end-demo load
+;                  cs:[loaded_gfx_dispatch_fn] -- gfx-driver fn after end-demo load
 ;                  ds:[game_data_base] -- jmp into loaded enddemo (after end_demo)
 ;    Called by:    106TOWN building dispatch when player enters the Hut
 ;                    (loaded as loaded_code_a at game_seg:3000h)
@@ -64,6 +64,7 @@ gvar_game_seg		equ	0FF2Ch			;* game data segment selector word
 ; Section 5: File-internal data table addresses
 ; ----------------------------------------------------------------------
 omoyp_script_6016		equ	6016h			;* script step / read next byte -> al
+loaded_gfx_dispatch_fn	equ	3006h			; CS-resident fn ptr — set by enddemo load (multi-purpose 0x3006 dispatch slot)
 shop_entry_probe	equ	0A004h			;* init probe byte (file +0x08)
 ref_enddemo_addr	equ	0A0ADh			;* ref_enddemo record (file +0xB1)
 gfx_driver_ref_tbl	equ	0A0BBh			;* gfx-driver ref-ptr table (file +0xBF)
@@ -158,7 +159,7 @@ end_demo_transition:				; dispatch target (via drv_return_to_caller)
 		jb	$-7				; wait 300 ticks
 		mov	bx,0
 		mov	cx,50C8h
-		call	word ptr cs:[3006h]		; loaded gfx driver fn
+		call	word ptr cs:[loaded_gfx_dispatch_fn]		; loaded gfx driver fn
 		mov	byte ptr cs:[gvar_cinematic_active],0FFh	; set demo-active flag
 		jmp	word ptr ds:[game_data_base]		; jump into loaded enddemo
 
