@@ -1843,30 +1843,30 @@ player_func_29		proc	near
 
 player_func_29		endp
 
-			                        ;* No entry point to code  (data: NPC/town data block, reached via indirect ptr)
-		push	cs
-		mov	word ptr ds:[400h],ax
-		dec	sp
-		dec	cx
-		inc	si
-		inc	bp
-		push	ds
-		mov	bx,503h
-		inc	cx
-		dec	sp
-		dec	bp
-		inc	cx
-		push	bx
-		or	ax,1BBh
-		add	al,47h			; 'G'
-		dec	di
-		dec	sp
-		inc	sp
-		or	ax,1AFh
-		add	ax,4C50h
-		inc	cx
-		inc	bx
-		inc	bp
+;--------------------------------------------------------------------------
+; town_hud_labels — HUD/status text labels (data block, mis-decoded as
+; instructions by Sourcer).  34 bytes, 4 records of the form
+;   <3 header bytes> <length byte> <text>
+;
+;   0Eh 0A3h 00h  04   'LIFE'    — LIFE label
+;   1Eh 0BBh 03h  05   'ALMAS'   — ALMAS label
+;   0Dh 0BBh 01h  04   'GOLD'    — GOLD label
+;   0Dh 0AFh 01h  05   'PLACE'   — PLACE label
+;
+; First header byte appears to be a control code (0Eh/1Eh/0Dh = SO/RS/CR
+; in ASCII); next two bytes likely encode display column/row or colour;
+; fourth byte is the text length.  Block referenced by indirect pointer
+; from town's HUD-render path; exact format TBD pending caller analysis.
+;--------------------------------------------------------------------------
+town_hud_labels:
+		db	0Eh, 0A3h, 00h, 04h
+		db	'LIFE'
+		db	1Eh, 0BBh, 03h, 05h
+		db	'ALMAS'
+		db	0Dh, 0BBh, 01h, 04h
+		db	'GOLD'
+		db	0Dh, 0AFh, 01h, 05h
+		db	'PLACE'
 
 player_func_30		proc	near
 		mov	al,ds:town_player_col

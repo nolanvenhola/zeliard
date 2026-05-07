@@ -124,30 +124,19 @@ seg_a		segment	byte public
 gftga_main		proc	far
 
 start:
-		mov	byte ptr ds:[26h],al
-		add	[si],ch
-		xor	ds:tga_offs_723b,al
-		inc	ax
-		db	 7Fh, 3Fh		; (proc-header bytes; Sourcer decoded as 'jg' but no real target)
-		mov	cx,9E42h
-		inc	si
-		sub	[bx+di+6Eh],ax
-		xor	bl,[di]
-		cmp	[bx+di],cx
-		inc	bx
-		db	 7Ah, 42h		; (proc-header bytes; Sourcer decoded as 'jp' but no real target)
-                           lock	cmp	al,[bx+di+44h]
-		mov	bx,546h
-		inc	di
-		std				; Set direction flag
-		inc	di
-		jo	loc_6			; Jump if overflow=1
-		dec	bp
-		dec	bx
-		nop
-		dec	bx
-		daa				; Decimal adjust
-		dec	bp
+;--------------------------------------------------------------------------
+; Chunk header / proc-prologue data (44 bytes).  Sourcer disassembled
+; these bytes as instructions but they are data — exact format owned by
+; the SAR loader / driver-init protocol, not used as code.  Real code
+; begins at the `call init_dispatch` below.
+;--------------------------------------------------------------------------
+		db	0A2h, 26h, 00h, 00h, 2Ch, 30h, 06h, 3Bh
+		db	72h, 40h, 7Fh, 3Fh, 0B9h, 42h, 9Eh, 46h
+		db	29h, 41h, 6Eh, 32h, 1Dh, 39h, 09h, 43h
+		db	7Ah, 42h, 0F0h, 3Ah, 41h, 44h, 0BBh, 46h
+		db	05h, 47h, 0FDh, 47h, 70h, 42h, 4Dh, 4Bh
+		db	90h, 4Bh, 27h, 4Dh
+
 		call	$+2E53h
 		push	dx
 		push	cs

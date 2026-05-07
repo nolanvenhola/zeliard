@@ -162,11 +162,13 @@ script_cmd_dispatch	endp
 ;
 ; Layout: 0x83-0x8C form the fall-through mouth-off helper, 0x92 is the
 ; actual dispatch[5] target (jmp-only).
-		mov	al,ds:[0A084h]		; 0x83: reads dispatch table word (self-ref garbage)
-		mov	ah,data_portrait_tail[bx+si]	; 0x86: 8A A0 C5 06  (bogus decode of table)
-		popf				; 0x8A: 9D  (table byte)
-		cmpsw				; 0x8B: A7  (table byte)
-		db	0FFh, 0C3h		; 0x8C: inc bx (alt encoding: FF /0 not 43 short form)
+		;* dispatch-table tail bytes 0x83-0x8D (Sourcer decoded as
+		;  instructions but they are continuation of the dispatch
+		;  word table from 0x7C; data, not code).
+		db	0A0h, 84h, 0A0h			; 0x83-85: bogus "mov al,ds:[0A084h]"
+		db	8Ah, 0A0h			; 0x86-87: bogus "mov ah,..." opcode bytes
+		dw	data_portrait_tail		; 0x88-89: ptr to portrait tail (= 0x06C6 LE)
+		db	9Dh, 0A7h, 0FFh, 0C3h		; 0x8A-8D: 9D=popf, A7=cmpsw, FF C3=inc bx
 
 mouth_anim_disable:				; fall-through entry: clears mouth anim flag
 		xor	al,al			; Zero register
@@ -500,20 +502,18 @@ mouth_glyph_loop:
 face_anim_tick	endp
 
 ; -- Tail bytes of mouth_anim_tbl (starts at 0x3D4 inside the code above).
-;    The 20-byte mouth table occupies 0x3D4-0x3E7. Bytes 0x3D7-0x3EB are
-;    Sourcer-decoded instructions that are actually mouth glyph data.
-		;* Mouth glyph data tail (Sourcer decoded as instructions)
-		mov	ds:[0A4A3h],al		; 0x3D7: A2 A3 A4 = mouth glyph bytes
-		movsw				; 0x3DA: A5 = mouth glyph 0xA5
-		cmpsb				; 0x3DB: A6 = mouth glyph 0xA6
-		pop	ss			; 0x3DC: 17 = separator 0x17
-		cmpsw				; 0x3DD: A7 = mouth glyph 0xA7
-		test	al,0A9h			; 0x3DE: A8 A9 = mouth glyphs
-		sub	ax,0B0AFh		; 0x3E0: 2D AF B0 = 0x2D separator + mouth 0xAF,0xB0
-		mov	cl,0B2h			; 0x3E3: B1 B2 = mouth glyphs 0xB1,0xB2
-		mov	bl,17h			; 0x3E5: B3 17 = mouth 0xB3 + separator 0x17
-		mov	ah,0B5h			; 0x3E7: B4 B5 = mouth glyphs 0xB4,0xB5
-		mov	dh,2Dh			; 0x3E9: B6 2D = mouth 0xB6 + separator 0x2D
+;    The 20-byte mouth table occupies 0x3D4-0x3EA.  Bytes 0x3D7-0x3EA are
+;    mouth glyph data (Sourcer mis-decoded them as instructions).  Glyph
+;    bytes 0xA2..0xB6 are interleaved with separator bytes (0x17, 0x2D).
+mouth_anim_tbl_tail:
+		db	0A2h, 0A3h, 0A4h, 0A5h, 0A6h	; 0x3D7-3DB: glyphs A2..A6
+		db	17h				; 0x3DC: separator
+		db	0A7h, 0A8h, 0A9h		; 0x3DD-3DF: glyphs A7..A9
+		db	2Dh				; 0x3E0: separator
+		db	0AFh, 0B0h, 0B1h, 0B2h, 0B3h	; 0x3E1-3E5: glyphs AF..B3
+		db	17h				; 0x3E6: separator
+		db	0B4h, 0B5h, 0B6h		; 0x3E7-3E9: glyphs B4..B6
+		db	2Dh				; 0x3EA: separator
 
 ; -- Select dialog script address based on current quest state ------------
 ; Flags tested (game-segment DS):

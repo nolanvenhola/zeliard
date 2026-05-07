@@ -53,6 +53,7 @@ include  zr3com.inc
 zela_ext_word_a	equ	8802h			; external data word (mis-decoded Fixup target)
 zela_ext_byte_b	equ	8E8Dh			; external data byte
 zela_ext_byte_c	equ	9302h			; external data byte (via xchg at start)
+zela_ext_word_b	equ	28Bh			; external data word (mis-decoded as `mov ss:[zela_ext_word_b][bp+si],cx`)
 
 
 ; ----------------------------------------------------------------------
@@ -192,7 +193,7 @@ main_entry:
 		xchg	si,ax
 		add	bl,byte ptr ds:[zela_ext_far_d]
 		mov	word ptr ds:[zela_ext_word_a],ax
-		mov	word ptr ss:[28Bh][bp+si],cx
+		mov	word ptr ss:[zela_ext_word_b][bp+si],cx
 		xchg	di,ax
 		cbw				; Convrt byte to word
 		cwd				; Word to double word

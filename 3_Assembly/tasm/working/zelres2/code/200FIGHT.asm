@@ -6664,8 +6664,10 @@ anim_dispatch_stub:
 
 anim_dispatch_data:
 			                        ; Data: animation dispatch table entries (game seg targets)
-		xor	cl,byte ptr ss:[8E8Dh][bp]
-		jmp	$-96Fh
+		;* 7 byte header preceding the dw entries (Sourcer mis-decoded
+		;  as "xor cl,[bp+8E8Dh]; jmp $-96Fh"; really data; BP-relative
+		;  defaults to SS so no override prefix needed).
+		db	32h, 8Eh, 8Dh, 8Eh, 0E9h, 8Eh, 0F6h
 		dw	0AB8Eh		; anim dispatch entry 0
 		dw	0AB8Fh		; anim dispatch entry 1
 		dw	0E88Fh		; anim dispatch entry 2
@@ -8240,16 +8242,17 @@ ah_carry:
 compute_action_anim_idx		endp
 
 boss_fn_tbl_data:
-			                        ; Data block after compute_action_anim_idx (table alignment bytes)
-		add	[bp+si],ax
-		add	al,8
-		and	[bx+2],bh
-		add	al,8
-		adc	[bx+si],ah
-		inc	ax
-		push	word ptr [bp+si]
-		ror	byte ptr ss:[103Eh][bp+di],cl	; Rotate
-		db	0C0h			; trailing pad byte ending boss_fn_tbl_data
+			                        ; Data block after compute_action_anim_idx (table alignment bytes
+			                        ; mis-decoded by Sourcer as instructions; really data padding).
+		db	01h, 02h			; "add [bp+si],ax"
+		db	04h, 08h			; "add al,8"
+		db	20h, 7Fh, 02h			; "and [bx+2],bh"
+		db	04h, 08h			; "add al,8"
+		db	10h, 20h			; "adc [bx+si],ah"
+		db	40h				; "inc ax"
+		db	0FFh, 32h			; "push word ptr [bp+si]"
+		db	0D2h, 8Bh, 3Eh, 10h		; "ror byte ptr [bp+di+103Eh],cl"
+		db	0C0h				; trailing pad byte ending boss_fn_tbl_data
 
 obj_link_scan:
 ;*		cmp	word ptr [di],0FFFFh

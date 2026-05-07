@@ -61,15 +61,20 @@ seg_a		segment	byte public
 inn_main	proc	far
 
 start:
-		; Bytes 0x0000..0x000B are the SAR chunk header + init-table fragment
-		; (chunk_size_lo, chunk_size_hi, flag, reserved, ...). Sourcer
-		; decoded them as x86; the real module entry is at 0x000C below.
-		adc	[di],al				;  10 05           -- chunk_size low word (1296 = file_size-4)
-		add	[bx+si],al			;  00 00           -- chunk_size high word
-		add	al,0A0h				;  04 A0           -- init byte pair
-		das					;  2F              -- init flag
-		mov	ds:[68Eh],al			;  A2 8E 06        -- init table entry (runtime: mov ds:data,al)
-		sub	al,0FFh				;  2C FF           -- init table entry
+;--------------------------------------------------------------------------
+; SAR chunk header + init-table fragment (12 bytes, offsets 0x0000-0x000B).
+; The first 4 bytes are the SAR chunk-size word + flag bytes; the next 8
+; bytes are the chunk-init stub patched at load time.  Real module entry
+; begins at 0x000C below.
+;--------------------------------------------------------------------------
+chunk_header_and_init_stub:
+		db	10h, 05h			; chunk_size lo word (1296 = file_size-4)
+		db	00h, 00h			; chunk_size hi word
+		db	04h, 0A0h			; init byte pair
+		db	2Fh				; init flag
+		db	0A2h, 8Eh, 06h			; init-stub: "mov ds:[068Eh],al"
+		db	2Ch, 0FFh			; init-stub: "sub al,0FFh"
+
 		mov	di,8000h			; --- real entry point begins here (offs 0x000C) ---
 		mov	si,0A2E1h			; inn.grp chunk reference (archive 01, chunk_A)
 		mov	al,2

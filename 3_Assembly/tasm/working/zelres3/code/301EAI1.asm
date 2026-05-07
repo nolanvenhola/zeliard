@@ -112,6 +112,7 @@ gvar_rng_state	equ	0FF2Eh			; random/LFSR state word
 ; ----------------------------------------------------------------------
 ; Section 5: File-internal data table addresses
 ; ----------------------------------------------------------------------
+crab_dispatch_tbl_base	equ	0A262h		; JMP base for `[0A262h][bx]` — first valid entry at +4 (idx 0/1 garbage)
 crab_tbl_a	equ	0A29Dh			; crab movement/direction lookup table
 crab_tbl_b	equ	0A2D0h			; crab secondary lookup table
 crab_rotate_a	equ	0A723h			; crab rotation/swap pattern table
@@ -337,17 +338,23 @@ crab_frame_13:					; offset 0x22C -> ptr 0xA22C (group B[0,1]) -- death/explode 
 ; -------------------------------------------------------------------------
 
 crab_data_block_2:				; offset 0x247 (= jcxz target)
-		mov	byte ptr ds:[0A248h],al	; bytes A2 48 A2 (data tail of frame ptrs)
-		add	ax,0			; bytes 05 00 00
-		add	[di],al			; bytes 00 05
-		add	al,4			; bytes 04 04
-		add	[si],al			; bytes 00 04
-		add	[si],al			; bytes 00 04
-		add	byte ptr ss:[45Ch][bp+si],cl	; bytes 00 8A 5C 04 (overlaps real 'mov bl,[si+4]')
-		and	bl,0Fh			; bytes 80 E3 0F (mask state nibble)
-		xor	bh,bh			; bytes 32 FF
-		add	bx,bx			; bytes 03 DB (scale to word index)
-		jmp	word ptr ds:[0A262h][bx]	; bytes FF A7 62 A2 -- dispatch table at 0xA262
+		;* 15-byte tail of the frame-pointer data block (Sourcer
+		;  decoded as instructions; really data).  Real code resumes
+		;  at the `mov bl,[si+4]` below, whose first byte (8Ah)
+		;  follows immediately after the 0 separator at 0x255.
+		db	0A2h, 48h, 0A2h			; 0x247-249
+		db	05h, 00h, 00h			; 0x24A-24C
+		db	00h, 05h			; 0x24D-24E
+		db	04h, 04h			; 0x24F-250
+		db	00h, 04h			; 0x251-252
+		db	00h, 04h			; 0x253-254
+		db	00h				; 0x255: separator (last data byte)
+
+		mov	bl,[si+4]		; 0x256: 8A 5C 04 — real start of dispatch
+		and	bl,0Fh			; 0x259: 80 E3 0F (mask state nibble)
+		xor	bh,bh			; 0x25C: 32 FF
+		add	bx,bx			; 0x25E: 03 DB (scale to word index)
+		jmp	word ptr ds:[crab_dispatch_tbl_base][bx]	; 0x260: FF A7 62 A2
 
 ; CRAB AI primary dispatch table (4 valid handlers; first 2 entries overlap
 ; the JMP instruction's bytes so they're unreachable). Indexed by [si+4]&0xF.

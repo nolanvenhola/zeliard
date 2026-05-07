@@ -1294,22 +1294,26 @@ mao2_skip_anim_done:
 ; ------------------------------------------------------------------
 
 mao2_alt_state_trailer	label	byte
-		or	[bx+si],cl
-		or	[si],cl
-		or	al,0Ch
-		or	ax,0B0Dh
-		or	si,[bx+si]
-		add	[bx+di],cl
-		and	[bp+di],al
-		adc	[bx],ah
-		or	al,0
-;*		adc	byte ptr ds:[0][si],ch
-		db	 10h,0ACh, 00h, 00h	;  Fixup - byte match
-		adc	word ptr ss:[702h][bp+di],di
-		dec	dx
-; 'ashiin' - tail of 'Jashiin' speaker-name (first 'J' is preceding byte)
+;--------------------------------------------------------------------------
+; Trailer data block — Sourcer mis-decoded as instructions but these are
+; data bytes leading up to the 'Jashiin' speaker-name string.  29 bytes
+; before the 'J' (encoded as the `dec dx` byte 4Ah at the end of the
+; sequence below + 'ashiin' literal).
+;--------------------------------------------------------------------------
+		db	08h, 08h			; "or [bx+si],cl"
+		db	08h, 0Ch			; "or [si],cl"
+		db	0Ch, 0Ch			; "or al,0Ch"
+		db	0Dh, 0Dh, 0Bh			; "or ax,0B0Dh"
+		db	0Bh, 30h			; "or si,[bx+si]"
+		db	00h, 09h			; "add [bx+di],cl"
+		db	20h, 03h			; "and [bp+di],al"
+		db	10h, 27h			; "adc [bx],ah"
+		db	0Ch, 00h			; "or al,0"
+		db	10h, 0ACh, 00h, 00h		; (Sourcer Fixup byte-match)
+		db	11h, 0BBh, 02h, 07h		; "adc word ptr [bp+di+702h],di"
+		db	4Ah				; 'J' of 'Jashiin' (encoded as dec dx)
 		db	'ashiin'
-		db	84 dup (0)		; pad to module end
+		db	84 dup (0)			; pad to module end
 
 seg_a		ends
 

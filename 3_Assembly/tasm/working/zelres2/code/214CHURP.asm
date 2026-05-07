@@ -71,16 +71,20 @@ seg_a		segment	byte public
 church_main	proc	far
 
 start:
-	;; Offsets 0x0000-0x0009 are mis-decoded by Sourcer as `out/add/xlat` --
-	;; they are actually the prelude for the 'mov ax,...; sub al,0FFh' sequence
-	;; that stores the init-code pointer.  Keep as byte-perfect original bytes
-	;; using the mnemonics Sourcer produced:
-		out	3,al			; port 3, DMA-1 bas&cnt ch 1 (0E6h,03h)
-		add	[bx+si],al		; 00h,00h
-		add	al,0A0h			; 04h,0A0h  -- these bytes are the literal opcode stream
-		xlat				; 0D7h       -- before sub-al runs
-		mov	ax,ds:[068Eh]		; A1 8E 06 -- garbled by Sourcer; kept as raw word read
-		sub	al,0FFh			; 2Ch,0FFh
+;--------------------------------------------------------------------------
+; Offsets 0x0000-0x000B are mis-decoded by Sourcer.  The chunk-init
+; protocol uses these 12 bytes as a fixed init-code stub that the SAR
+; loader rewrites into a `mov ax, <chunk-ref>; sub al, 0FFh` sequence
+; storing the chunk-init pointer.  The byte values below are data, not
+; instructions, despite their plausible disassembly.
+;--------------------------------------------------------------------------
+chunk_init_stub:
+		db	0E6h, 03h			; "out 3,al" — pre-patch
+		db	00h, 00h			; "add [bx+si],al" — pre-patch
+		db	04h, 0A0h			; "add al,0A0h" — pre-patch
+		db	0D7h				; "xlat" — pre-patch
+		db	0A1h, 8Eh, 06h			; "mov ax,ds:[068Eh]" — pre-patch
+		db	2Ch, 0FFh			; "sub al,0FFh" — pre-patch
 		mov	di,sprite_buf_ofs
 		mov	si,0A299h		; si = ref_church_grp - 4 (loader pattern)
 		mov	al,2

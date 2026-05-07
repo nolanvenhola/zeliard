@@ -1525,34 +1525,18 @@ sprite_bitmask_tbl:
 		db	 2Fh,0F4h, 00h, 00h, 2Fh,0F4h	;  (cont.)
 		db	 00h, 01h			;  (cont. last bytes)
 
-loc_83:
-								jg	loc_83			; Jump if >
-		add	byte ptr [bx],0D0h
-		or	sp,ax
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
-		add	[bx+si],al
-                           lock	cmp	al,0
-		add	[si],bh
-		js	$+2			; delay for I/O
-		add	byte ptr ds:[70h],bl
-		add	byte ptr ds:[0F0h],cl
-		add	[bx],cl
-                           lock	add	[bx+si],al
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
-		jo	$+2			; delay for I/O
-		add	byte ptr ds:[78h],cl
-		add	byte ptr drv_init_stub,bl
-		add	[si],bh
-;*		pop	cs			; Dangerous-8088 only
-		db	0Fh			;  Fixup - byte match
-		add	[bx+si],al
-                           lock	pop	es
-		ror	byte ptr [bp+di],1	; Rotate
-;*		loopnz	locloop_85		;*Loop if zf=0, cx>0
-
-		db	0E0h, 01h		;  Fixup - byte match
+loc_83:						; sprite shape: solid circle (52-byte frame)
+		;* Sprite-frame bitmap data (52 bytes); Sourcer mis-decoded
+		;  these as a chain of `jg/add/or/lock/...` instructions but
+		;  they're really continuation of the diamond/circle shape
+		;  bitmap series above (starting at line 1500).
+		db	7Fh, 0FEh, 80h, 07h, 0D0h, 0Bh, 0E0h, 0Fh
+		db	00h, 00h, 0F0h, 3Ch, 00h, 00h, 3Ch, 78h
+		db	00h, 00h, 1Eh, 70h, 00h, 00h, 0Eh, 0F0h
+		db	00h, 00h, 0Fh, 0F0h, 00h, 00h, 0Fh, 70h
+		db	00h, 00h, 0Eh, 78h, 00h, 00h, 1Eh, 3Ch
+		db	00h, 00h, 3Ch, 0Fh, 00h, 00h, 0F0h, 07h
+		db	0D0h, 0Bh, 0E0h, 01h
 
 loc_84:
 								jg	loc_84			; Jump if >
