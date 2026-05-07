@@ -58,6 +58,7 @@ PAGE  59,132
 target		EQU   'T2'                      ; Target assembler: TASM-2.X
 
 include  srmacros.inc
+include  zr3com.inc
 
 ; ----------------------------------------------------------------------
 ; Local macros: blit-position prologue

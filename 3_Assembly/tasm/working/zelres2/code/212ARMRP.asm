@@ -95,7 +95,7 @@ mouth_anim_B		equ	0BC41h			;* mouth anim packed bits B (6 bytes)
 ; ----------------------------------------------------------------------
 ; Section 6: File-internal state variables
 ; ----------------------------------------------------------------------
-cur_weapon_idx		equ	0BBFDh			;* selected weapon slot index byte
+armrp_cur_weapon_idx		equ	0BBFDh			;* selected weapon slot index byte
 cur_weapon_flag		equ	0BBFEh			;* selected weapon flag byte
 cur_shield_idx		equ	0BC0Fh			;* selected shield slot index byte
 cur_shield_flag		equ	0BC10h			;* selected shield flag byte
@@ -181,7 +181,7 @@ start:
 		add	bl,bl
 		xor	bh,bh			; Zero register
 		mov	si,ds:weapon_dlg_tbl[bx]
-		mov	di,cur_weapon_idx
+		mov	di,armrp_cur_weapon_idx
 		mov	cx,12h
 		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
 		xor	al,al			; Zero register
@@ -455,7 +455,7 @@ menu_weapon_sel_ok:
 		mov	bx,ax
 		add	ax,ax
 		add	ax,bx
-		mov	si,cur_weapon_idx
+		mov	si,armrp_cur_weapon_idx
 		add	si,ax
 		mov	dl,[si]
 		mov	ax,[si+1]
@@ -492,7 +492,7 @@ weapon_trade_ok:
 		mov	bx,ax
 		add	ax,ax
 		add	bx,ax
-		mov	dl,ds:cur_weapon_idx[bx]
+		mov	dl,ds:armrp_cur_weapon_idx[bx]
 		mov	ax,ds:cur_weapon_flag[bx]
 		shr	dl,1			; Shift w/zeros fill
 		rcr	ax,1			; Rotate thru carry
