@@ -328,7 +328,6 @@ draw_weapon_cursor		proc	near
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
-		db	00Ch			; was: db 0E8h, 0C7h, 008h
 		mov	al,byte ptr ds:cur_weapon_idx
 		mov	bx,37A4h
 		call	word ptr cs:drv_fn_15
@@ -441,13 +440,11 @@ draw_magic_cursor		proc	near
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
-		db	00Ch			; was: db 0E8h, 0D6h, 007h
 		mov	bx,5Ch
 		mov	cl,4Bh			; 'K'
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
-		db	00Ch			; was: db 0E8h, 0CCh, 007h
 
 wait_joy_clear_magic:
 						int	61h			; ??INT Non-standard interrupt
@@ -582,13 +579,11 @@ draw_item_cursor		proc	near
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
-		db	00Ch			; was: db 0E8h, 0C2h, 006h
 		mov	bx,54h
 		mov	cl,78h			; 'x'
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
-		db	00Ch			; was: db 0E8h, 0B8h, 006h
 
 wait_joy_clear_item:
 						int	61h			; ??INT Non-standard interrupt
@@ -645,7 +640,6 @@ item_use_entry:
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
-		db	00Ch			; was: db 0E8h, 04Dh, 006h
 		mov	al,byte ptr ds:item_qty_count
 		xor	ah,ah			; Zero register
 		inc	ax
@@ -659,7 +653,6 @@ item_use_entry:
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
-		db	00Ch			; was: db 0E8h, 02Fh, 006h
 		mov	ax,word ptr ds:item_effect_val
 		mov	cx,5
 		mov	bl,6
@@ -871,7 +864,6 @@ draw_item_detail_entry:
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
-		db	00Ch			; was: db 0E8h, 034h, 004h
 		mov	bl,ds:item_cursor
 		dec	bl
 		xor	bh,bh			; Zero register
@@ -885,7 +877,6 @@ draw_item_detail_entry:
 draw_item_detail		endp
 
 		jmp	scan_draw_string
-		db	00Ch			; was: db 0E9h, 01Ch, 004h
 
 show_portrait_box		proc	near
 		test	byte ptr ds:portrait_vis,0FFh
@@ -985,7 +976,6 @@ item_panel_has_items:
 		mov	ah,1
 ;*		jmp	init_panels6			;*
 		jmp	scan_draw_string
-		db	00Ch			; was: db 0E9h, 067h, 003h
 
 item_panel_empty:
 		mov	bx,54h
@@ -997,7 +987,6 @@ item_panel_empty:
 draw_item_panel		endp
 
 		jmp	scan_draw_string
-		db	00Ch			; was: db 0E9h, 05Ah, 003h
 
 draw_magic_panel		proc	near
 		test	byte ptr ds:magic_count,0FFh
@@ -1047,13 +1036,11 @@ draw_magic_panel_loop:
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
-		db	00Ch			; was: db 0E8h, 0F0h, 002h
 		mov	bx,5Ch
 		mov	cl,4Bh			; 'K'
 		mov	ah,1
 ;*		jmp	init_panels6			;*
 		jmp	scan_draw_string
-		db	00Ch			; was: db 0E9h, 0E6h, 002h
 
 magic_panel_empty:
 		mov	bx,5Ch
@@ -1062,7 +1049,6 @@ magic_panel_empty:
 		mov	ah,1
 ;*		jmp	init_panels6			;*
 		jmp	scan_draw_string
-		db	00Ch			; was: db 0E9h, 0D9h, 002h
 
 draw_char_stats:
 		test	byte ptr ds:equipped_weapon,0FFh
@@ -1263,7 +1249,6 @@ draw_weapon_panel_loop:
 		mov	ah,1
 ;*		jmp	init_panels6			;*
 		jmp	scan_draw_string
-		db	00Ch			; was: db 0E9h, 00Fh, 001h
 
 weapon_panel_empty:
 		mov	bx,9Eh
@@ -1272,7 +1257,6 @@ weapon_panel_empty:
 		mov	ah,1
 ;*		jmp	init_panels6			;*
 		jmp	scan_draw_string
-		db	00Ch			; was: db 0E9h, 002h, 001h
 
 draw_weapon_list:
 		mov	dx,0E2Eh
@@ -1389,7 +1373,6 @@ draw_tabs_loop:
 tab_not_active:
 ;*		call	draw_portrait_tabs_fn21			;*
 						call	scan_draw_string
-						db	00Ch			; was: db 0E8h, 033h, 000h
 						pop	cx
 						loop	draw_tabs_loop		; Loop if cx > 0
 
@@ -1441,7 +1424,6 @@ scan_char_draw:
 						add	bx,8
 ;*		jmp	short init_panels6		;*
 						jmp	short scan_draw_string
-		db	00Ch			; was: db 0EBh, 0D3h
 
 poll_input:
 		call	word ptr cs:stick_exit_dlg_handler
