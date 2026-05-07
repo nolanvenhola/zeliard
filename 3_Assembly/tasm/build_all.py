@@ -231,14 +231,20 @@ def copy_data_files():
 
 # ── Pack SARs ─────────────────────────────────────────────────────────────────
 def pack_sars():
+    """Pack via the tasm-only SAR packer (pack_tasm_sar.py).
+    Reads ONLY from bin/zelresN/<X##NAME.{bin,mdt}> + working/zelresN/data/.
+    Refuses legacy chunk_NN.bin fallbacks (those silently masked
+    regressions for months under the old pack_sar.py)."""
     r = subprocess.run(
-        [sys.executable, str(SAR_TOOL),
-         '--sar-dir', str(SAR_ORIG),
+        [sys.executable, str(ROOT / 'pack_tasm_sar.py'),
          '--out-dir', str(BIN)],
         capture_output=True, text=True
     )
     for line in r.stdout.strip().splitlines():
         print(f'  {line}')
+    if r.returncode != 0:
+        for line in r.stderr.strip().splitlines():
+            print(f'  {line}')
     return r.returncode == 0
 
 # ── Verify SARs ───────────────────────────────────────────────────────────────
@@ -302,7 +308,9 @@ def main():
 
     # ── Stage 4: pack SARs ──
     print('\n=== Stage 3: Packing SAR archives ===')
-    pack_sars()
+    if not pack_sars():
+        print('\nABORTING: SAR packing failed.  See error above.')
+        sys.exit(1)
 
     # ── Stage 5: verify (optional) ──
     if args.verify:
