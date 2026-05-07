@@ -884,7 +884,6 @@ frame_loop:
 		call	update_combat_frame_state
 ;*		call	apply_pending_invul7			;*
 		call	sub_27B4
-		db	00Ch			; was: db 0E8h, 001h, 025h
 		call	decide_scroll_direction
 		call	process_combat_update_step
 		inc	byte ptr ds:frame_parity
@@ -5579,10 +5578,7 @@ entity_fn_b_3:
 																		inc	al
 																		and	al,3Fh			; '?'
 ;*		jmp	short loc_469		;*
-																		jmp	short entity_fn_return
-																		jmp	short entity_fn_return
-										jmp	short entity_fn_return
-		db	0EBh			; was: db 0ECh, 00Ch
+		jmp	short entity_fn_return
 
 entity_step_dispatch_c		proc	near
 		test	byte ptr [si+5],40h	; '@'
