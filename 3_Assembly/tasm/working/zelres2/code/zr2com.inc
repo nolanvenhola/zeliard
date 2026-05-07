@@ -248,3 +248,37 @@ last_sage_visited              equ     0C5h
 current_level_idx              equ     0C8h
 sages_spoken                   equ     0E5h
 
+
+; --- Phase-2 magic-number sweep: cross-chunk addresses with existing local EQUs ---
+sprite_record_size             equ     24h           ; sprite attribute record size (36 bytes; canonical in 202GFEGA.asm)
+area_load_flag                 equ     49h           ; level/area load flag (canonical in 106TOWN.asm)
+
+; --- Shop inventory EQUs (canonical in stdply.inc) ---
+shop_magic_muralla             equ     0C9h
+shop_magic_satono              equ     0CAh
+shop_magic_bosque              equ     0CBh
+shop_magic_helada              equ     0CCh
+shop_magic_tumba               equ     0CDh
+shop_magic_dorado              equ     0CEh
+shop_magic_llama               equ     0CFh
+shop_magic_pureza              equ     0D0h
+shop_magic_esco                equ     0D1h
+shop_sword_muralla             equ     0D2h
+shop_sword_satono              equ     0D3h
+shop_sword_bosque              equ     0D4h
+shop_sword_helada              equ     0D5h
+shop_sword_tumba               equ     0D6h
+shop_sword_dorado              equ     0D7h
+shop_sword_llama               equ     0D8h
+shop_sword_pureza              equ     0D9h
+shop_sword_esco                equ     0DAh
+shop_shield_muralla            equ     0DBh
+shop_shield_satono             equ     0DCh
+shop_shield_bosque             equ     0DDh
+shop_shield_helada             equ     0DEh
+shop_shield_tumba              equ     0DFh
+shop_shield_dorado             equ     0E0h
+shop_shield_llama              equ     0E1h
+shop_shield_pureza             equ     0E2h
+shop_shield_esco               equ     0E3h
+gvar_cinematic_active          equ     0FF77h        ; Cinematic/intro-mode flag (canonical in core/game.asm)

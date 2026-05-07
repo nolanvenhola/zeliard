@@ -395,7 +395,7 @@ lega_phase_dir_apply:
 		mov	al,ds:lega_phase_substep
 		mov	bx,lega_tbl_a41b
 		xlat				; al=[al+[bx]] table
-		mov	byte ptr ds:[0A7BAh],al
+		mov	byte ptr ds:[lega_phase_dir_b],al
 		jmp	$+9Ah
 
 lega_phase_active_handler:
@@ -484,7 +484,7 @@ lega_render_inner_advance:
 				pop	cx
 				loop	lega_render_outer_loop		; Loop if cx > 0
 
-		mov	al,byte ptr ds:[0A7BAh]
+		mov	al,byte ptr ds:[lega_phase_dir_b]
 		add	al,al
 		mov	di,lega_extra_attr
 		cmp	byte ptr ds:lega_phase_step,6
@@ -743,7 +743,7 @@ lega_idle_late_phase:
 		mov	al,ah
 		mov	bx,lega_phase_xlat_b
 		xlat				; al=[al+[bx]] table
-		mov	byte ptr ds:[0A7BAh],al
+		mov	byte ptr ds:[lega_phase_dir_b],al
 		jmp	$-26Dh
 
 ; ------------------------------------------------------------------

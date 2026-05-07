@@ -192,7 +192,7 @@ start:
 		mov	al,0FFh
 		call	word ptr cs:drv_fill_rect
 		mov	word ptr ds:gvar_script_ip,0ADD3h
-		test	byte ptr ds:[24h],2
+		test	byte ptr ds:[sprite_record_size],2
 		jnz	script_loop			; Jump if not zero
 		cmp	byte ptr ds:town_npc_state,5
 		jne	script_loop			; Jump if not equal
@@ -528,7 +528,7 @@ weapon_commit:
 		mov	bl,ds:town_npc_state
 		dec	bl
 		xor	bh,bh			; Zero register
-		or	byte ptr ds:[0D2h][bx],al
+		or	byte ptr ds:[shop_sword_muralla][bx],al
 
 skip_weapon_slot_fix:
 		mov	al,ds:new_item_flag
@@ -538,7 +538,7 @@ skip_weapon_slot_fix:
 		mov	bl,ds:town_npc_state
 		dec	bl
 		xor	bh,bh			; Zero register
-		and	byte ptr ds:[0D2h][bx],0FBh
+		and	byte ptr ds:[shop_sword_muralla][bx],0FBh
 
 skip_slot_clear:
 		call	build_mouth_bitmap_a
@@ -555,7 +555,7 @@ knight_sword_hook_a		proc	near
 		retn
 
 knight_hook_a_pass1:
-		test	byte ptr ds:[24h],2
+		test	byte ptr ds:[sprite_record_size],2
 		jz	knight_hook_a_pass2			; Jump if zero
 		retn
 
@@ -708,7 +708,7 @@ shield_commit:
 		mov	bl,ds:town_npc_state
 		dec	bl
 		xor	bh,bh			; Zero register
-		or	byte ptr ds:[0DBh][bx],al
+		or	byte ptr ds:[shop_shield_muralla][bx],al
 
 skip_shield_slot_fix:
 		mov	al,ds:new_item_flag
@@ -914,8 +914,8 @@ reset_after_trade:
 		mov	al,4
 		mov	bx,18ABh
 		call	word ptr cs:gfx_render_scene_fn
-		and	byte ptr ds:[0D6h],0EFh
-		or	byte ptr ds:[24h],2
+		and	byte ptr ds:[shop_sword_tumba],0EFh
+		or	byte ptr ds:[sprite_record_size],2
 		mov	ah,byte ptr ds:[equipped_weapon]
 		mov	al,4
 		call	word ptr cs:[sar_loader_fn]
@@ -927,7 +927,7 @@ knight_sword_hook_b		proc	near
 		retn
 
 knight_hook_b_pass1:
-		test	byte ptr ds:[24h],2
+		test	byte ptr ds:[sprite_record_size],2
 		jz	knight_hook_b_pass2			; Jump if zero
 		retn
 

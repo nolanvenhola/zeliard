@@ -41,7 +41,7 @@ PAGE  59,132
 ;                    (incremented by 1000 on first-visit award),
 ;                  dialog_done_flag (DS:[5h]), dialog_done_flag_b (DS:[6h])
 ;                    -- per-quest progression flags set by dispatch handlers,
-;                  quest-complete flag (DS:[49h])
+;                  quest-complete flag (DS:[area_load_flag])
 ;                    -- read to choose post-victory branch.
 ;
 ;==========================================================================
@@ -282,7 +282,7 @@ portrait_col_loop:
 				pop	cx
 				loop	portrait_row_loop	; Loop if cx > 0
 
-		test	byte ptr ds:[49h],0FFh	; quest-complete flag?
+		test	byte ptr ds:[area_load_flag],0FFh	; quest-complete flag?
 		jnz	render_portrait_alt	; Jump if not zero
 		retn
 
@@ -537,7 +537,7 @@ branch_chk_flag_b:
 
 branch_chk_quest_done:
 		mov	si,0A5D2h		; third visit: "please hurry" nag
-		test	byte ptr ds:[49h],0FFh	; quest-complete flag
+		test	byte ptr ds:[area_load_flag],0FFh	; quest-complete flag
 		jnz	branch_post_victory	; Jump if not zero
 		retn
 

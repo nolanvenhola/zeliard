@@ -1581,7 +1581,7 @@ shift_blit_setup_entry:
 		jmp	short ui_tile_postloop	; jumps past the loops to 0B46
 		db	0E8h, 0Eh, 04h		; call +40Eh (preserves bytes; orphan in dead path)
 		mov	di,sprite_row_buf
-		mov	dl,byte ptr ds:[0FF35h]	; enemy_counter
+		mov	dl,byte ptr ds:[enemy_counter]	; enemy_counter
 		dec	dl
 		mov	cx,4
 

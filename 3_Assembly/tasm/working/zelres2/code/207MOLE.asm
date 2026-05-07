@@ -867,7 +867,7 @@ unpack_nibble_stream:
 unpack_dispatch:
 					mov	ah,al
 					and	ah,0F0h
-					cmp	ah,byte ptr ds:[497h]	; dispatch_flag_1
+					cmp	ah,byte ptr ds:[dispatch_flag_1]	; dispatch_flag_1
 					jne	unpack_check_40		; Jump if not equal
 					and	al,0Fh
 					mov	ah,al
@@ -883,7 +883,7 @@ unpack_check_40:
 					jmp	short unpack_emit_run
 
 unpack_check_D0:
-					test	byte ptr ds:[498h],0FFh	; dispatch_flag_2 set?
+					test	byte ptr ds:[dispatch_flag_2],0FFh	; dispatch_flag_2 set?
 					jz	unpack_single		; Jump if zero
 					cmp	ah,0D0h
 					jne	unpack_single		; Jump if not equal

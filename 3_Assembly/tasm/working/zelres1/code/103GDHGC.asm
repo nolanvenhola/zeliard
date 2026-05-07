@@ -1830,23 +1830,23 @@ plane_merge_entry:
 
 plane_merge_loop:
 								mov	al,es:[di]
-								and	al,byte ptr es:[1028h][di]
+								and	al,byte ptr es:[sprite_backbuf_plane_sz][di]
 								mov	ah,es:hgc_plane2_buf[di]
 								not	ah
 								and	al,ah
 								not	al
 								and	es:[di],al
-								and	byte ptr es:[1028h][di],al
+								and	byte ptr es:[sprite_backbuf_plane_sz][di],al
 								and	es:hgc_plane2_buf[di],al
 								mov	al,es:hgc_plane2_buf[di]
 								mov	ah,es:[di]
 								not	ah
 								and	al,ah
-								mov	ah,byte ptr es:[1028h][di]
+								mov	ah,byte ptr es:[sprite_backbuf_plane_sz][di]
 								not	ah
 								and	al,ah
 								or	es:[di],al
-								or	byte ptr es:[1028h][di],al
+								or	byte ptr es:[sprite_backbuf_plane_sz][di],al
 								not	al
 								and	es:hgc_plane2_buf[di],al
 								inc	di

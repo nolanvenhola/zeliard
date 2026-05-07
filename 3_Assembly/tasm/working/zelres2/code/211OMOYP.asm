@@ -36,7 +36,7 @@ PAGE  59,132
 ;                    (graphics driver dispatch slots cs:[2000h..30xxh])
 ;                  omoyp_script_6016 (cs:[6016h]) -- script step
 ;                  cs:[3006h] -- gfx-driver fn after end-demo load
-;                  ds:[6000h] -- jmp into loaded enddemo (after end_demo)
+;                  ds:[game_data_base] -- jmp into loaded enddemo (after end_demo)
 ;    Called by:    106TOWN building dispatch when player enters the Hut
 ;                    (loaded as loaded_code_a at game_seg:3000h)
 ;                  drv_return_to_caller DS-dispatch slot (end_demo path,
@@ -117,7 +117,7 @@ omoya_main:					; entry from town dispatch
 		mov	si,banner_msg_addr		; -> "In the Hut" banner header
 		call	word ptr cs:drv_load_msg_header
 		call	draw_hut_banner
-		test	byte ptr ds:[49h],0FFh
+		test	byte ptr ds:[area_load_flag],0FFh
 		jnz	short end_demo_transition	; skip dialog loop -> end demo
 		mov	byte ptr ds:gvar_script_skip,0
 
@@ -159,8 +159,8 @@ end_demo_transition:				; dispatch target (via drv_return_to_caller)
 		mov	bx,0
 		mov	cx,50C8h
 		call	word ptr cs:[3006h]		; loaded gfx driver fn
-		mov	byte ptr cs:[0FF77h],0FFh	; set demo-active flag
-		jmp	word ptr ds:[6000h]		; jump into loaded enddemo
+		mov	byte ptr cs:[gvar_cinematic_active],0FFh	; set demo-active flag
+		jmp	word ptr ds:[game_data_base]		; jump into loaded enddemo
 
 ;--------------------------------------------------------------------------
 ; Data tables: enddemo + graphics-driver file references.

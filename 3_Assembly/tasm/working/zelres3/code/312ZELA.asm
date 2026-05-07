@@ -186,12 +186,12 @@ zela_rng_fn_ptr		dw	2			; CS-relative RNG fn ptr (call thru cs:zela_rng_fn_ptr)
 		db	85h				; trailing descriptor byte before main_entry
 
 main_entry:
-		xchg	byte ptr ds:[9302h][bx],al
+		xchg	byte ptr ds:[zela_ext_byte_c][bx],al
 		xchg	sp,ax
 		xchg	bp,ax
 		xchg	si,ax
-		add	bl,byte ptr ds:[0A2A1h]
-		mov	word ptr ds:[8802h],ax
+		add	bl,byte ptr ds:[zela_ext_far_d]
+		mov	word ptr ds:[zela_ext_word_a],ax
 		mov	word ptr ss:[28Bh][bp+si],cx
 		xchg	di,ax
 		cbw				; Convrt byte to word
@@ -200,7 +200,7 @@ main_entry:
 		db	9Ah					; opcode prefix (Sourcer Fixup)
 		dw	0A402h, 0A6A5h			; Fixup - byte match
 		cmpsw					; Cmp [si] to es:[di]
-		add	cl,byte ptr ds:[8E8Dh][si]	; final mis-decoded insn before cell-records continuation
+		add	cl,byte ptr ds:[zela_ext_byte_b][si]	; final mis-decoded insn before cell-records continuation
 
 ; ---- continuation of cell-descriptor table (cell_records_b) ----
 ; Same 5-byte-row layout as zela_cell_records_a above (02h marker + 4 cells).

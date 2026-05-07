@@ -214,3 +214,7 @@ last_sage_visited              equ     0C5h
 current_level_idx              equ     0C8h
 sages_spoken                   equ     0E5h
 
+
+; --- Phase-2 magic-number sweep: cross-chunk addresses with existing local EQUs ---
+sprite_backbuf_plane_sz        equ     1028h         ; bytes per plane in sprite back-buffer (canonical in 101GDEGA.asm)
+area_load_flag                 equ     49h           ; level/area load flag (canonical in 106TOWN.asm; 210KINGP reads as quest-complete)
