@@ -117,7 +117,7 @@ item_sel_idx		equ	0AE00h			;* byte: item select confirm index
 ; ----------------------------------------------------------------------
 ; Section 7: Constants
 ; ----------------------------------------------------------------------
-SELCT_BASE		equ	9FEEh			; game-segment load address of this module
+SELCT_BASE		equ	9FFCh			; game-segment load address of this module
 magic_flags		equ	0A1h			;* 5-byte table: magic spell possession flags (at DS:0A1h)
 item_flags		equ	0A6h			;* 5-byte table: item possession flags (at DS:0A6h)
 weapon_flags		equ	0BBh			;* 7-byte table: weapon possession flags (1-based, at DS:0BBh)
@@ -716,14 +716,14 @@ use_hp_potion:				; item 0: restore 80 HP (caps at max)
 
 hp_potion_nocap:
 		call	word ptr cs:drv_palette_push
-		jmp	draw_item_detail_entry+1	;* off-by-one: skips call show_portrait_box
+		jmp	draw_item_detail_entry
 
 use_hp_full:				; item 1: restore HP to maximum
 		mov	byte ptr ds:gvar_volume_b,0Eh
 		mov	ax,word ptr ds:player_hp_max
 		mov	word ptr ds:player_HP,ax
 		call	word ptr cs:drv_palette_push
-		jmp	draw_item_detail_entry+1	;* off-by-one: skips call show_portrait_box
+		jmp	draw_item_detail_entry
 
 use_weapon_restore:			; item 2: restore equipped weapon durability
 		mov	byte ptr ds:gvar_volume_b,0Eh
@@ -781,8 +781,9 @@ apply_item_exp:
 cap_exp:
 		call	word ptr cs:drv_fn_13
 		jmp	draw_item_detail_entry
-; Padding between use_magia_stone and use_sabre_oil (dead bytes).
-		db	50h, 00h, 1Ah, 64h, 00h, 6Eh, 00h, 73h, 00h, 78h, 00h
+; Word offset table between use_magia_stone and use_sabre_oil
+; (Sourcer mis-decoded the high byte of the second entry).
+		db	50h, 00h, 5Ah, 00h, 64h, 00h, 6Eh, 00h, 73h, 00h, 78h, 00h
 
 use_sabre_oil:				; item 4: animate Sabre Oil effect (4 sprite passes)
 		push	cs
@@ -1377,19 +1378,20 @@ tab_not_active:
 						loop	draw_tabs_loop		; Loop if cx > 0
 
 		retn
-			                        ;* No entry point to code
-		xor	al,0
-		adc	dl,[bp+di+45h]
-		; Menu shortcut table prefix entries
-		db	'4', 0		; 0x0000
-		db	012h		; 0x0002
-		db	'SELT-MAGIC:', 0		; 0x0003
-		db	'4', 0		; 0x000F
-		db	'4', 0			; 0x0A2A: shortcut key '4'
-		db	071h, 'USE:', 0		; 0x0A2C: 0x71 key -> USE
-		db	0B8h, 0			; 0x0A32: (non-printable key)
-		db	'CINVENTORY', 0		; 0x0A34: 'C' key -> INVENTORY
-		db	00h				; 0x0A3E: null terminator
+		; Menu shortcut table.  Lines 1381-1382 above (`xor al,0; adc dl,
+		; [bp+di+45h]`) were Sourcer mis-decodes of the table's first
+		; 5 bytes (34 00 12 53 45) — deleted.  Line "SELT-MAGIC" was
+		; missing its EC bytes; restored.  Missing 'CWEAR:' shortcut entry
+		; restored between the two '4' entries.  Trailing `db 00h` removed.
+		db	'4', 0			; 0x0A02: shortcut key '4'
+		db	012h			; 0x0A04: 0x12 marker
+		db	'SELECT-MAGIC:', 0	; 0x0A05: select-magic submenu label
+		db	'4', 0			; 0x0A13: shortcut key '4'
+		db	'CWEAR:', 0		; 0x0A15: 'C' key -> WEAR submenu
+		db	'4', 0			; 0x0A1C: shortcut key '4'
+		db	071h, 'USE:', 0		; 0x0A1E: 0x71 key -> USE
+		db	0B8h, 0			; 0x0A24: (non-printable key)
+		db	'CINVENTORY', 0		; 0x0A26: 'C' key -> INVENTORY
 
 scan_draw_string:					; string-scan function entry point
 						lodsb				; load byte from [DS:SI], advance SI

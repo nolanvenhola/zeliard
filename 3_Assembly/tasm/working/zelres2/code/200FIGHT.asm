@@ -3278,10 +3278,9 @@ find_atk_slot_for_id		endp
 init_combat_arena		proc	near
 
 entity_scan_start:
+entity_scan_skip_push:				; alias — same address as entity_scan_start
 		push	si
 		push	dx
-
-entity_scan_skip_push:
 		mov	bx,0E1Eh
 		mov	cx,3410h
 		mov	al,0FFh
@@ -4042,15 +4041,29 @@ entity_right_wrap:
 		retn
 
 world_x_to_screen_x_w27		endp
-		; ASCII sequence / lookup table
-		db	'\'', 0		; 0x0000
-		db	'+', 0		; 0x0002
-		db	0C3h		; 0x0004
-		db	'IJaKLMOPQN_RST`_UVW`IJaKLMX', 0		; 0x0005
-		db	'YN_Z', 0		; 0x0021
-		db	'[`_\\]^`', 0		; 0x0026
-; orphaned scroll/load sequence (dead code, unaligned calls)
-		mov	sp,0AAF3h		; BC F3 AA ?-- stack setup
+		; Sprite/animation index tables (chunk_00 0x19A8..0x19DF; 56 bytes).
+		; Earlier 4046-4048 lines (`db '\'',0 / db '+',0 / db 0C3h`) were
+		; bogus Sourcer artefacts inserted into the ASCII run; deleted.
+		db	'IJaKLMOPQN_RST`_UVW`IJaKLMX', 0	; 0x19A8 .. 0x19C4
+		db	'YN_Z', 0				; 0x19C5 .. 0x19C9
+		db	'[`_', 5Ch, ']^`'			; 0x19CA .. 0x19D0  (one backslash, no terminator)
+
+; combat_state_init -- clears 64 bytes of combat state RAM (9EED..9F2D),
+; then falls through to the FFh-flag setters below.  Earlier
+; "mov sp,0AAF3h" line was a Sourcer mis-decode of the BC 00 20 (mov sp,
+; 2000h) opcode merged with the F3 AA bytes from a later rep stosb.
+		cli					; FA
+		mov	sp,2000h			; BC 00 20  -- stack reset
+		sti					; FB
+		mov	ax,cs				; 8C C8
+		mov	ds,ax				; 8E D8
+		mov	es,ax				; 8E C0
+		mov	di,9EEDh			; BF ED 9E  -- clear start
+		mov	cx,9F2Eh			; B9 2E 9F
+		sub	cx,9EEDh			; 81 E9 ED 9E
+		dec	cx				; 49        -- cx = 40h bytes
+		xor	al,al				; 32 C0
+		rep	stosb				; F3 AA     -- clear 64 bytes
 		not	al			; F6 D0
 		mov	byte ptr ds:combat_active,al	; A2 F5 9E
 		mov	byte ptr ds:prev_chr_id,al	; A2 FE 9E
@@ -4091,7 +4104,7 @@ world_x_to_screen_x_w27		endp
 		mov	al,byte ptr ds:current_area_id
 		or	al,al
 		js	$+5
-		call	test_dl			; -0xE84 (backward)
+		call	process_map_seg_updates	; -0xE84 (Sourcer mis-named this as test_dl; real target is the proc start)
 		jmp	check_c3		; +0x1EB
 
 check_3tile_J_pattern		proc	near
@@ -5554,12 +5567,15 @@ entity_fn_b_0:
 		test	bx,ds:hitbox_map_tbl[bx+di]
 		test	bx,ds:collision_map_tbl[bx+di]
 		test	bx,ds:entity_extra_tbl[bx]
-		test	bx,gfx_fn_hitbox_data[bx]
-
+		; Splits the 4-byte `test bx, gfx_fn_hitbox_data[bx]` (85 9F 85 3A)
+		; so entity_fn_return lands on the 4th byte (cmp al,[si+1]
+		; entry point used by mid-instruction backward jumps).
+		db	85h, 9Fh, 85h			; first 3 bytes of test bx, gfx_fn_hitbox_data[bx]
 entity_fn_return:
-																		inc	sp
-																		add	[di+1],si
-																		retn
+		db	3Ah				; 4th byte = first byte of `cmp al,[si+1]` mid-instruction entry
+		inc	sp
+		add	[di+1],si
+		retn
 
 entity_fn_b_1:
 																			                        ; entity_fn_tbl_b target: handler fn 1 (stc; retn)
@@ -5893,16 +5909,15 @@ entity_fn_d_data:
 		add	ax,word ptr ds:data_word_504
 		add	al,4
 
-sub_27B4:
-		add	al,3
-		add	ax,[bp+si]
-		add	dh,dh
-		push	es
-		popf				; Pop flags
-;*		add	bh,bh
-			db	00h, 0FFh			; add bh, bh (alt form: ADD r/m8, r8)
-		jnz	palette_check			; Jump if not zero
-		retn
+		; entity_fn_d_data tail (5 bytes) — Sourcer mis-decoded these as
+		; the prefix of sub_27B4; restored as data so sub_27B4's address
+		; matches its canonical name.
+		db	04h, 03h, 03h, 02h, 02h	; 0x27AF..0x27B3
+
+sub_27B4:				; "if a spell is selected, fall into palette_check; else retn"
+		test	byte ptr ds:selected_spell,0FFh	; F6 06 9D 00 FF
+		jnz	palette_check			; 75 01
+		retn					; C3
 
 palette_check:
 		test	byte ptr ds:gvar_palette_flag,0FFh

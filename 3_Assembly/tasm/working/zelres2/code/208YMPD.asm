@@ -1824,16 +1824,16 @@ loc_53:
 					ja	loc_53
 		test	al,0AAh
 		stosw				; Store ax to es:[di]
-		add	ah,bh			; TASM alt-encodes to 02 E7
+		db	000h, 0FCh		; add ah,bh (original alt encoding; TASM emits 02 E7)
 		db	 0Fh			; pop cs (8088-only opcode byte 0Fh)
 		retn
 		aas
 		sti
 		scasb
-		sub	byte ptr [bp+di+3C30h],0CFh	; alt-encoded form
+		db	082h, 0ABh, 30h, 3Ch, 0CFh ; sub byte ptr [bp+di+3C30h],0CFh (original 0x82 form)
 		out	dx,al
-		sub	byte ptr [bp+si],0h
-		add	al,dh			; TASM alt-encodes
+		db	082h, 2Ah, 00h		; sub byte ptr [bp+si],0 (original 0x82 form)
+		db	000h, 0F0h		; add al,dh (original 00 F0 form; TASM emits 02 C6)
 		db	0FFh,0FFh,0FFh,0FCh,0CFh,0C3h	; +0x001
 		db	 33h,0CFh,0CFh,0FFh,0C0h, 00h	; +0x007
 		db	0F3h,0FFh,0AAh,0BAh,0D7h,0FFh	; +0x00D
