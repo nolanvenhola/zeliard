@@ -4041,17 +4041,36 @@ entity_right_wrap:
 		retn
 
 world_x_to_screen_x_w27		endp
-		; Sprite/animation index tables (chunk_00 0x19A8..0x19DF; 56 bytes).
-		; Earlier 4046-4048 lines (`db '\'',0 / db '+',0 / db 0C3h`) were
-		; bogus Sourcer artefacts inserted into the ASCII run; deleted.
-		db	'IJaKLMOPQN_RST`_UVW`IJaKLMX', 0	; 0x19A8 .. 0x19C4
-		db	'YN_Z', 0				; 0x19C5 .. 0x19C9
-		db	'[`_', 5Ch, ']^`'			; 0x19CA .. 0x19D0  (one backslash, no terminator)
 
-; combat_state_init -- clears 64 bytes of combat state RAM (9EED..9F2D),
-; then falls through to the FFh-flag setters below.  Earlier
-; "mov sp,0AAF3h" line was a Sourcer mis-decode of the BC 00 20 (mov sp,
-; 2000h) opcode merged with the F3 AA bytes from a later rep stosb.
+; --------------------------------------------------------------------------
+; Sprite/animation frame-index table (chunk_00 0x19B8..0x19DF; 40 bytes).
+; ASCII bytes are sprite frame indices into the active GFxxx driver's
+; sprite atlas.  Three null-terminated sub-runs (28 / 5 / 7 bytes); the
+; trailing 7-byte run has no terminator (consumed inline by the caller).
+; Pre-cleanup 4046-4048 had `db '\'',0 / db '+',0 / db 0C3h` bogus
+; Sourcer artefacts; those were deleted.
+; --------------------------------------------------------------------------
+sprite_anim_idx_tbl:
+		db	'IJaKLMOPQN_RST`_UVW`IJaKLMX', 0	; 0x19B8 .. 0x19D3 (28 bytes)
+		db	'YN_Z', 0				; 0x19D4 .. 0x19D8 (5 bytes)
+		db	'[`_', 5Ch, ']^`'			; 0x19D9 .. 0x19DF (7 bytes — no terminator)
+
+; --------------------------------------------------------------------------
+; combat_screen_entry -- cold entry point for a fresh combat scene.
+; Resets SP, sets DS=ES=CS, clears 64 bytes of combat state RAM
+; (9EED..9F2D), forces all boss/state flags to 0FFh (via reset_combat_state
+; and the inline writes), loads the scroll/tile chunks (sar_ref_scroll +
+; scroll_tile_src), loads the enemy chunk (sar_ref_enemy -> enemy_id_table),
+; then either calls process_map_seg_updates (cavern area) or skips it
+; (negative current_area_id => boss area), and falls into check_c3 for the
+; boss-intro animation check.
+;
+; Earlier this function was unlabeled and its first instruction was
+; encoded as a single bogus `mov sp,0AAF3h` -- a Sourcer mis-decode that
+; merged the BC 00 20 (mov sp,2000h) opcode with F3 AA from the later
+; rep stosb.  Restored verbatim from the original byte stream.
+; --------------------------------------------------------------------------
+combat_screen_entry		proc	near
 		cli					; FA
 		mov	sp,2000h			; BC 00 20  -- stack reset
 		sti					; FB
@@ -4064,11 +4083,11 @@ world_x_to_screen_x_w27		endp
 		dec	cx				; 49        -- cx = 40h bytes
 		xor	al,al				; 32 C0
 		rep	stosb				; F3 AA     -- clear 64 bytes
-		not	al			; F6 D0
-		mov	byte ptr ds:combat_active,al	; A2 F5 9E
-		mov	byte ptr ds:prev_chr_id,al	; A2 FE 9E
-		mov	byte ptr ds:prev_spr_id,al	; A2 FF 9E
-		call	reset_combat_state		; +0x457
+		not	al				; F6 D0     -- al = FFh
+		mov	byte ptr ds:combat_active,al
+		mov	byte ptr ds:prev_chr_id,al
+		mov	byte ptr ds:prev_spr_id,al
+		call	reset_combat_state
 		mov	al,0FFh
 		mov	byte ptr ds:sprite_work_buf,al
 		mov	byte ptr ds:boss_flag_EB67,al
@@ -4079,7 +4098,7 @@ world_x_to_screen_x_w27		endp
 		mov	si,sar_ref_scroll
 		mov	di,6000h
 		mov	al,02h
-		call	word ptr cs:sar_loader_fn	; chunk loader
+		call	word ptr cs:sar_loader_fn	; chunk loader (AL=2 compressed)
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,scroll_tile_src
@@ -4089,7 +4108,7 @@ world_x_to_screen_x_w27		endp
 		pop	ds
 		mov	si,ds:map_data_ptr
 		lodsb
-		call	copy_buffer		; +0x44D
+		call	copy_buffer
 		call	word ptr cs:drv_screen_init_a
 		mov	si,sar_ref_enemy
 		LOAD_CHUNK_ES enemy_id_table, 02h
@@ -4103,9 +4122,10 @@ world_x_to_screen_x_w27		endp
 		call	word ptr cs:drv2_fn_15
 		mov	al,byte ptr ds:current_area_id
 		or	al,al
-		js	$+5
-		call	process_map_seg_updates	; -0xE84 (Sourcer mis-named this as test_dl; real target is the proc start)
-		jmp	check_c3		; +0x1EB
+		js	$+5				; skip if boss area (sign bit set)
+		call	process_map_seg_updates
+		jmp	check_c3			; fall into boss-intro animation
+combat_screen_entry		endp
 
 check_3tile_J_pattern		proc	near
 		call	vga_operation8

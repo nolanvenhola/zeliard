@@ -123,12 +123,12 @@ start:
 		xor	di,[bx+di+33h]
 		push	word ptr [bp+di]
 ;*		jg	loc_1			;*Jump if >
-		jg	init_data_block
-; Render function dispatch table: count byte + word offsets
-; 12 entries for render sub-functions, indexed by render_fn_ptr
+		jg	init_data_block		; 7F 34 (jg +0x34 to init_data_block at 0x4C)
+; Render function dispatch table: 15 word offsets for render sub-functions,
+; indexed by render_fn_ptr.  Earlier `db 00Ch ; was: db 07Fh, 034h (count=12)`
+; line was a Sourcer mis-decode that doubled the jg displacement byte; deleted.
 
 render_fn_disp_tbl:
-		db	00Ch			; was: db 07Fh, 034h (count=12)
 		db	 60h, 36h,0B4h, 36h, 08h, 37h	; dispatch words: 3660h, 36B4h, 3708h
 		db	0ECh, 30h, 47h, 37h,0C9h, 37h	; dispatch words: 30ECh, 3747h, 37C9h
 		db	0C3h, 38h, 01h, 3Ch, 4Bh, 3Dh	; dispatch words: 38C3h, 3C01h, 3D4Bh

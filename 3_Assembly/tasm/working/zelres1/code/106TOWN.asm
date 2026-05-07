@@ -1582,13 +1582,16 @@ player_load_chunk		proc	near
 player_load_chunk		endp
 
 			                        ;* No entry point to code  (data: SAR chunk ref table, reachable via sar_chunk_tbl ptr)
-		add	[bx+di],cx
-		pop	cx
-		; SAR chunk references: YMPD.BIN, CKPD.BIN
-		db	'YMPD.BIN', 0		; 0x0000
-		db	001h, 00Ah		; 0x0009
-		db	'CKPD.BIN', 0		; 0x000B
-		db	'3', 0		; 0x0015
+		; SAR chunk references: YMPD.BIN, CKPD.BIN.  Earlier the leading
+		; bytes (01 09) and the stray pop cx (59) were Sourcer mis-decodes;
+		; restored as plain data.
+		db	001h, 009h			; SAR ref (1, 09h): YMPD.BIN
+		db	'YMPD.BIN', 0
+		db	001h, 00Ah			; SAR ref (1, 0Ah): CKPD.BIN
+		db	'CKPD.BIN', 0
+		db	0				; table separator
+		db	'3', 0
+		db	030h				; trailing pad
 
 player_func_25		proc	near
 
@@ -1969,11 +1972,13 @@ pf31_done:
 
 player_func_31		endp
 			                        ;* No entry point to code  (data: sprite file reference table, reachable via sar_chunk_tbl)
-		add	ds:snd_id_4D4D,bx
-		; Sprite file references: MMAN.GRP, CMAN.GRP
-		db	'MMAN.GRP', 0		; 0x0000
-		db	001h, 01Fh		; 0x0009
-		db	'CMAN.GRP', 0		; 0x000B
+		; Sprite file references: MMAN.GRP, CMAN.GRP.  Earlier `add ds:
+		; snd_id_4D4D, bx` was a Sourcer mis-decode of the leading 01 1E
+		; SAR-ref bytes merged with the first two bytes of MMAN; restored.
+		db	001h, 01Eh			; SAR ref (1, 1Eh): MMAN.GRP
+		db	'MMAN.GRP', 0
+		db	001h, 01Fh			; SAR ref (1, 1Fh): CMAN.GRP
+		db	'CMAN.GRP', 0
 
 player_func_32		proc	near
 		mov	al,0Bh
@@ -1991,18 +1996,18 @@ player_func_32		proc	near
 
 player_func_32		endp
 			                        ;* No entry point to code  (data: pattern/sprite file reference table)
-		add	[bp+si],sp
-		inc	bx
-		push	ax
-		; Pattern/sprite file references: MPAT.GRP, DPAT.GRP
-		db	080h		; 0x0001
-		db	'.', 0		; 0x0002
-		db	'&$0', 0		; 0x0004
-		db	'"CPAT.GRP', 0		; 0x0008
-		db	001h		; 0x0012
-		db	'#MPAT.GRP', 0		; 0x0013
-		db	001h		; 0x001D
-		db	'$DPAT.GRP', 0		; 0x001E
+		; Pattern/sprite file references: CPAT.GRP, MPAT.GRP, DPAT.GRP.
+		; Earlier 7 lines of mis-decoded instructions and split db
+		; entries (`add [bp+si],sp; inc bx; push ax; db 080h; db '.',0;
+		; db '&$0',0; db '"CPAT.GRP',0`) were Sourcer artefacts that
+		; emitted 10 extra bytes; restored as 3 clean SAR ref + filename
+		; pairs.
+		db	001h, 022h			; SAR ref (1, 22h): CPAT.GRP
+		db	'CPAT.GRP', 0
+		db	001h, 023h			; SAR ref (1, 23h): MPAT.GRP
+		db	'MPAT.GRP', 0
+		db	001h, 024h			; SAR ref (1, 24h): DPAT.GRP
+		db	'DPAT.GRP', 0
 
 player_func_33		proc	near
 		mov	es,cs:gvar_game_seg
@@ -2115,15 +2120,12 @@ door_type_shop:
 		pop	ds
 		retn
 			                        ;* No entry point to code  (data: building/shop program file reference table)
-		add	[bp+di],cx
-		dec	bx
-		dec	cx
-		dec	si
-		inc	di
-		push	ax
-		push	dx
-		dec	di
-		; Building program file references (OMOYPRO, KENJPRO, ARMRPRO...)
+		; Building program file references (KINGPRO, OMOYPRO, KENJPRO,
+		; ARMRPRO, DRUGPRO, CHURPRO, BANKPRO, INNAPRO).  Earlier 8 lines
+		; of mis-decoded instructions (`add [bp+di],cx; dec bx; dec cx;
+		; dec si; inc di; push ax; push dx; dec di`) were Sourcer
+		; artefacts emitting `01 0B 4B 49 4E 47 50 52 4F` (= a duplicate
+		; SAR-ref + 'KINGPRO'); deleted.
 		db	001h, 00Bh		; 0x0000
 		db	'KINGPRO.BIN', 0		; 0x0002
 		db	001h, 00Ch		; 0x000E
@@ -2178,21 +2180,22 @@ special_door_wait:
 		call	word ptr cs:gfx_blit_fn
 ;*		jmp	loc_2			;*
 				db 0E9h, 31h, 0F0h		; jmp near -0xFCF (unaligned target 36h)
-			                        ;* No entry point to code  (data: padding before pf30_exec)
+			                        ;* No entry point to code  (data: UGM2.MSD music filename + pf30_exec)
 		add	[bp+si],si
+		; UGM2.MSD music filename data prefix to pf30_exec.  Earlier the
+		; 9 bytes 55 47 4D 32 2E 4D 53 44 00 were Sourcer mis-decoded as
+		; `push bp; inc di; dec bp; xor ch,ds:snd_id_534D; inc sp`
+		; plus the leading 00 of an `add ss:font_disp_data[bp+di], dh`
+		; instruction.  pf30_no_scroll was a fictional jcxz target
+		; emitted by mis-decoding the F6 E3 (mul bl) bytes of pf30_exec
+		; as `jcxz pf30_no_scroll`.  Restored as the original filename
+		; data + clean function entry.
+		db	'UGM2.MSD', 0
 
 pf30_exec:
-		push	bp
-		inc	di
-		dec	bp
-		xor	ch,ds:snd_id_534D
-		inc	sp
-		add	ss:font_disp_data[bp+di],dh
-		jcxz	pf30_no_scroll			; Jump if cx=0
-		push	es
-		or	ax,ax			; Zero ?
-
-pf30_no_scroll:
+		mov	bl,5
+		mul	bl
+		add	ax,word ptr ds:[0C00Bh]
 		mov	si,ax
 		lodsw				; String [si] to ax
 		push	ax
@@ -3099,12 +3102,16 @@ load_wait_input:
 		jmp	savegame_entry
 
 clear_buffer		endp
-		; Game loader reference: GAME.BIN
-		db	0FFh		; 0x0000
-		db	'User File', 0		; 0x0001
-		db	'Not Found', 0		; 0x000B
-		db	'GAME.BI', 0		; 0x0017
-		db	0			; final string-terminator pad
+		; Game loader reference strings + filenames.  Earlier this block
+		; had a spurious leading `db 0FFh` (the jmp savegame_entry above
+		; already emits its 0FFh disp-high byte at this offset), missing
+		; trailing 'STDPLY.BIN' entry, truncated 'GAME.BI' (no 'N'), and
+		; used 00h separators where the originals used 0Dh / 0FFh.
+		db	'User File', 0Dh
+		db	'Not Found', 0FFh, 0, 0
+		db	'GAME.BIN', 0, 0
+		db	0A0h, 0, 0
+		db	'STDPLY.BIN', 0
 
 copy_buffer		proc	near
 		mov	ax,cs
@@ -3241,12 +3248,13 @@ savescr_no_saves:
 		jmp	dword ptr cs:gvar_fn_tbl
 
 copy_buffer		endp
-		; Input/user string data
-		db	'.', 0		; 0x0000
-		db	0FFh		; 0x0002
-		db	'*.usr', 0		; 0x0003
-		db	'Input name:', 0		; 0x0009
-		db	'Re-Start', 0		; 0x0015
+		; Input/user string data.  Earlier `db '.',0 / db 0FFh` lines
+		; (3 bytes 2E 00 FF) were Sourcer mis-decodes of the jmp-tail
+		; bytes at 0x17AB; deleted.  'Input name:' uses 0FFh as a
+		; separator, not 00h.
+		db	'*.usr', 0
+		db	'Input name:', 0FFh
+		db	'Re-Start', 0
 player_func_51		proc	near
 		mov	byte ptr cs:save_new_flag,0
 		push	cs
