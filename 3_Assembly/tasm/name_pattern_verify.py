@@ -371,6 +371,102 @@ NAME_PATTERNS = [
           r'\bmov\b', r'\bbcd\b', r'\baad\b', r'\baam\b'],
      ],
      'timestamp/time: time read or BCD conversion'),
+
+    # Combat / fight procs: branches and state ops
+    (re.compile(r'^combat_|_combat_|_combat$|^fight_|_fight_|_fight$'),
+     [[r'\bcmp\b', r'\btest\b', r'\bcall\b', r'\bmov\b']],
+     'combat/fight: state ops + branches'),
+
+    # Entity/sprite procs
+    (re.compile(r'^entity_|_entity$|_entity_|^sprite_|_sprite$'),
+     [[r'\bsi\b', r'\bdi\b'],
+      [r'\bcmp\b', r'\bcall\b', r'\bmov\b']],
+     'entity/sprite: SI/DI ptr operations'),
+
+    (re.compile(r'^init_|^setup_|_init$|_setup$'),
+     [[r'\bmov\b']],
+     'init/setup: writes initial state'),
+
+    (re.compile(r'^mark_|_mark$|_mark_'),
+     [[r'\bmov\s+(?:byte|word)\b', r'\bor\b',
+       r'\band\b', r'\bxor\b', r'\bstos[bw]\b']],
+     'mark: writes a flag/state byte'),
+
+    (re.compile(r'^swap_|_swap$|_swap_|^xchg_|_xchg$'),
+     [[r'\bxchg\b', r'\bmov\b']],
+     'swap/xchg: xchg or mov-pair'),
+
+    (re.compile(r'^enter_|^exit_|_enter$|_exit$|_entry$|_exit_'),
+     [[r'\bmov\b', r'\bcall\b', r'\bjmp\b']],
+     'enter/exit/entry: state transition'),
+
+    (re.compile(r'^lookup_|_lookup$|^select_|_select$'),
+     [[r'\bxlat\b', r'\bmov\s+\w+\s*,\s*(?:cs:|ds:)?\[',
+       r'\bcmp\b']],
+     'lookup/select: table lookup or compare'),
+
+    (re.compile(r'^toggle_|_toggle$'),
+     [[r'\bxor\b', r'\bnot\b', r'\btest\b']],
+     'toggle: xor/not/test bit ops'),
+
+    (re.compile(r'_blit$|^blit_|_blit_'),
+     [[r'\bes:\[', r'\bstos[bw]\b', r'\bmovs[bw]\b',
+       r'\bmov\s+(?:byte|word)\s+ptr\s+es:\[']],
+     'blit: writes to ES:DI'),
+
+    (re.compile(r'_next$|^next_|_prev$|^prev_|_iter$|^iter_'),
+     [[r'\bsi\b', r'\binc\b', r'\bdec\b', r'\badd\b']],
+     'iter/next/prev: SI advance'),
+
+    (re.compile(r'^validate_|_validate$|^verify_|_verify$|_check$'),
+     [[r'\bcmp\b', r'\btest\b'],
+      [r'\bjz\b', r'\bjnz\b', r'\bret(?:n|f)?\b']],
+     'validate/verify/check: cmp + branch/return'),
+
+    (re.compile(r'^anim_'),
+     [[r'\bcmp\b', r'\binc\b', r'\bcall\b', r'\bmov\b']],
+     'anim_: counter/state + dispatch'),
+
+    (re.compile(r'^game_'),
+     [[r'\bmov\b', r'\bcmp\b', r'\bcall\b']],
+     'game_: state ops + dispatch'),
+
+    (re.compile(r'^(vga|cga|ega|hgc|mca|tga)_(?!operation\d|operation$)'),
+     [[r'\bes:\[', r'\bdx\s*,\s*0?3', r'\bcall\b',
+       r'\bstos[bw]\b', r'\bmov\b']],
+     'video mode op: video memory or port I/O'),
+
+    (re.compile(r'^parse_'),
+     [[r'\blods[bw]\b', r'\bcmp\b', r'\bmov\b', r'\bcall\b']],
+     'parse_: text/byte stream processing'),
+
+    (re.compile(r'^poll_|_poll$'),
+     [[r'\bin\s+(?:al|ax)\b', r'\bint\b',
+       r'\bmov\s+\w+\s*,\s*(?:cs:|ds:)?\[',
+       r'\btest\b']],
+     'poll_: input read or state check'),
+
+    (re.compile(r'^flush_|_flush$'),
+     [[r'\bint\b', r'\bin\s+al\b', r'\bxor\b',
+       r'\bmov\s+(?:byte|word)\s+ptr\b']],
+     'flush_: clear/drain buffer'),
+
+    (re.compile(r'^rle_|_rle$|_rle_'),
+     [[r'\blods[bw]\b', r'\brep\s+stos[bw]\b',
+       r'\bstos[bw]\b', r'\bcmp\b']],
+     'rle: run-length encode/decode'),
+
+    (re.compile(r'^nibble_|_nibble$|_nibble_'),
+     [[r'\bshr\b', r'\bshl\b', r'\band\b', r'\bor\b']],
+     'nibble_: 4-bit operations'),
+
+    (re.compile(r'^zr[1-3]_'),
+     [[r'\bret(?:n|f)?\b']],
+     'zr*_: chunk-local helper (sanity: must return)'),
+
+    (re.compile(r'^bres_'),
+     [[r'\binc\b', r'\bdec\b', r'\badd\b', r'\bsub\b', r'\bcmp\b']],
+     'bres_: Bresenham line setup/step'),
 ]
 
 
