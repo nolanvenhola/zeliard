@@ -225,6 +225,152 @@ NAME_PATTERNS = [
          [r'\bcmp\b', r'\btest\b', r'\bmov\b'],
      ],
      'boss/enemy: state read/write/branch'),
+
+    (re.compile(r'^fill_'),
+     [
+         # Fill ops: rep stos OR loop with mov writes
+         [r'\brep\s+stos[bw]\b', r'\bstos[bw]\b',
+          r'\bmov\s+(?:byte|word)\b', r'\bes:\['],
+     ],
+     'fill_*: rep stos or memory write'),
+
+    (re.compile(r'^copy_'),
+     [
+         # Copy ops: rep movs OR mov-load-mov-store loop
+         [r'\brep\s+movs[bw]\b', r'\bmovs[bw]\b',
+          r'\blods[bw]\b', r'\bstos[bw]\b'],
+     ],
+     'copy_*: rep movs or load/store sequence'),
+
+    (re.compile(r'^(get|fetch|read)_|_get$|_fetch$|_read$'),
+     [
+         # Get/fetch/read: must load from memory
+         [r'\bmov\s+\w+\s*,\s*(?:cs:|ds:|es:|ss:)?\[',
+          r'\blods[bw]\b', r'\bxlat\b',
+          r'\bin\s+(?:al|ax)\s+'],
+     ],
+     'get/fetch/read: memory load'),
+
+    (re.compile(r'^(put|store|write)_|_put$|_store$|_write$'),
+     [
+         # Put/store/write: must write to memory
+         [r'\bmov\s+(?:cs:|ds:|es:|ss:)?\[',
+          r'\bstos[bw]\b', r'\brep\s+stos[bw]\b',
+          r'\bout\s+dx\b'],
+     ],
+     'put/store/write: memory write'),
+
+    (re.compile(r'^(decode|dec)b_|^decb_|^vgadec_|^imgdec_'),
+     [
+         # decoder procs: bit ops + memory writes
+         [r'\bshr\b', r'\bshl\b', r'\band\b', r'\bor\b',
+          r'\bes:\[', r'\bstos[bw]\b'],
+     ],
+     'decoder: bit ops + memory writes'),
+
+    (re.compile(r'^(limg|simg|imgctl)_'),
+     [
+         # image-control procs: must touch video memory or call gfx
+         [r'\bes:\[', r'\bstos[bw]\b', r'\bmovs[bw]\b',
+          r'\bcall\b', r'\bint\s+10h\b'],
+     ],
+     'image control: video memory or gfx call'),
+
+    (re.compile(r'^scroll_|_scroll$|_scroll_'),
+     [
+         # scroll: typically rep movs (move pixels) OR call to gfx
+         [r'\brep\s+movs[bw]\b', r'\bmovs[bw]\b',
+          r'\bcall\b', r'\bes:\['],
+     ],
+     'scroll: rep movs or gfx call'),
+
+    (re.compile(r'^(extract|decode)_|_extract$|_decode$'),
+     [
+         # Extract/decode: bit operations
+         [r'\bshr\b', r'\bshl\b', r'\band\b', r'\bor\b',
+          r'\bxor\b', r'\bxlat\b', r'\bcall\b'],
+     ],
+     'extract/decode: bit/byte manipulation'),
+
+    (re.compile(r'^(player|hero|stat|equip|stats)_|_player$|_hero$|_equip$'),
+     [
+         # Player/stat ops: read/write player record bytes
+         [r'\bds:\[', r'\bds:\w+\b',
+          r'\bcmp\b', r'\bmov\b'],
+     ],
+     'player/stat ops: DS-relative read/write'),
+
+    (re.compile(r'_pixel$|_pixels$|^pixel_|^pixels_'),
+     [
+         # Pixel ops: write to ES:DI (video memory)
+         [r'\bes:\[', r'\bstos[bw]\b', r'\bmov\s+es:\['],
+     ],
+     'pixel/pixels: video memory write'),
+
+    (re.compile(r'_line$|^line_|_row$|^row_'),
+     [
+         # Line/row: loop with memory writes
+         [r'\bes:\[', r'\bstos[bw]\b', r'\bmovs[bw]\b',
+          r'\bmov\s+(?:byte|word)\b'],
+         [r'\bloop\b', r'\bdec\s+\w+\b', r'\brep\b',
+          r'\bjnz\b', r'\bret(?:n|f)?\b'],
+     ],
+     'line/row: row write + loop tail'),
+
+    (re.compile(r'_rectangle$|^rectangle_|_rect$|^rect_'),
+     [
+         [r'\bes:\[', r'\bstos[bw]\b', r'\brep\s+stos'],
+         [r'\bloop\b', r'\bdec\s+\w+\b'],
+     ],
+     'rectangle: 2D fill with row loop'),
+
+    (re.compile(r'_loop$|^loop_'),
+     [
+         # Loop: must have a backward branch or rep
+         [r'\bloop\b', r'\bjnz\b', r'\bjne\b', r'\bjmp\s+(?:short\s+)?\w+\b',
+          r'\brep\b'],
+     ],
+     'loop: backward branch or rep'),
+
+    (re.compile(r'_multiply$|^multiply_|_mul$|^mul_'),
+     [
+         [r'\bmul\b', r'\bimul\b', r'\bshl\b'],
+     ],
+     'multiply: mul/imul/shl'),
+
+    (re.compile(r'_advance$|^advance_'),
+     [
+         [r'\binc\b', r'\badd\b', r'\bcall\b'],
+     ],
+     'advance: inc/add to advance state'),
+
+    (re.compile(r'_value$|^value_'),
+     [
+         [r'\bmov\b', r'\bxlat\b'],
+     ],
+     'value: memory load (often via xlat)'),
+
+    (re.compile(r'_bits$|^bits_|_bitmap$|^bitmap_'),
+     [
+         [r'\bshr\b', r'\bshl\b', r'\band\b', r'\bor\b',
+          r'\bxor\b', r'\btest\b'],
+     ],
+     'bits/bitmap: bit operations'),
+
+    (re.compile(r'^scan_|_scan$'),
+     [
+         [r'\bcmp\b', r'\bscas[bw]\b'],
+         [r'\bloop\b', r'\bjnz\b', r'\bjne\b', r'\bjmp\b'],
+     ],
+     'scan: compare + loop'),
+
+    (re.compile(r'_timestamp$|^timestamp_|^time_|_time$'),
+     [
+         # Timestamp/time: BCD or arithmetic + memory ops
+         [r'\bin\s+al\s*,', r'\bint\s+1Ah\b',
+          r'\bmov\b', r'\bbcd\b', r'\baad\b', r'\baam\b'],
+     ],
+     'timestamp/time: time read or BCD conversion'),
 ]
 
 
