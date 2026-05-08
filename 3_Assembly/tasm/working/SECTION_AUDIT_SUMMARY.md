@@ -20,18 +20,18 @@ Strength ladder (strongest first):
 
 | Verdict | Count |
 |---|---:|
-| SUPPORTED | 1121 |
+| SUPPORTED | 1228 |
 | INC_CONSISTENT | 6 |
 | CONTRADICTED | 0 |
 | INCONCLUSIVE | 8 |
-| PENDING | 284 |
+| PENDING | 177 |
 
 ## Evidence sources (rows with verdict)
 
 | Source | Count |
 |---|---:|
 | name-pattern | 629 |
-| data-pattern | 267 |
+| data-pattern | 374 |
 | placeholder | 178 |
 | driver-sig | 149 |
 | TCRF | 84 |
@@ -50,11 +50,11 @@ Strength ladder (strongest first):
 | `working/drivers/gmtga.asm` | 19 | 0 | 1 | 20 |
 | `working/drivers/stdply.asm` | 91 | 0 | 0 | 91 |
 | `working/drivers/stick.asm` | 33 | 0 | 4 | 37 |
-| `working/zelres1/code/100OPDMO.asm` | 26 | 0 | 18 | 44 |
+| `working/zelres1/code/100OPDMO.asm` | 37 | 0 | 7 | 44 |
 | `working/zelres1/code/101GDEGA.asm` | 13 | 0 | 1 | 14 |
-| `working/zelres1/code/102GDCGA.asm` | 14 | 0 | 2 | 16 |
+| `working/zelres1/code/102GDCGA.asm` | 16 | 0 | 0 | 16 |
 | `working/zelres1/code/103GDHGC.asm` | 17 | 0 | 0 | 17 |
-| `working/zelres1/code/104GDTGA.asm` | 17 | 0 | 3 | 20 |
+| `working/zelres1/code/104GDTGA.asm` | 19 | 0 | 1 | 20 |
 | `working/zelres1/code/105GDMCA.asm` | 12 | 0 | 3 | 15 |
 | `working/zelres1/code/106TOWN.asm` | 17 | 0 | 2 | 19 |
 | `working/zelres1/code/107GTEGA.asm` | 4 | 0 | 2 | 6 |
@@ -69,7 +69,7 @@ Strength ladder (strongest first):
 | `working/zelres2/code/204GFHGC.asm` | 39 | 0 | 5 | 44 |
 | `working/zelres2/code/205GFTGA.asm` | 41 | 0 | 6 | 47 |
 | `working/zelres2/code/206GFMCA.asm` | 48 | 0 | 7 | 55 |
-| `working/zelres2/code/207MOLE.asm` | 69 | 0 | 6 | 75 |
+| `working/zelres2/code/207MOLE.asm` | 72 | 0 | 3 | 75 |
 | `working/zelres2/code/208YMPD.asm` | 5 | 0 | 5 | 10 |
 | `working/zelres2/code/209CKPD.asm` | 18 | 0 | 4 | 22 |
 | `working/zelres2/code/210KINGP.asm` | 5 | 0 | 4 | 9 |
@@ -82,25 +82,25 @@ Strength ladder (strongest first):
 | `working/zelres2/code/217KENJP.asm` | 21 | 0 | 2 | 23 |
 | `working/zelres2/code/250ENDMO.asm` | 12 | 0 | 5 | 17 |
 | `working/zelres3/code/300ROKAD.asm` | 6 | 0 | 4 | 10 |
-| `working/zelres3/code/301EAI1.asm` | 10 | 0 | 1 | 11 |
-| `working/zelres3/code/302EAI2.asm` | 17 | 0 | 11 | 28 |
+| `working/zelres3/code/301EAI1.asm` | 11 | 0 | 0 | 11 |
+| `working/zelres3/code/302EAI2.asm` | 28 | 0 | 0 | 28 |
 | `working/zelres3/code/303EAI3.asm` | 9 | 0 | 0 | 9 |
-| `working/zelres3/code/304EAI4.asm` | 4 | 0 | 3 | 7 |
-| `working/zelres3/code/305EAI5.asm` | 10 | 0 | 3 | 13 |
-| `working/zelres3/code/306EAI6.asm` | 12 | 0 | 2 | 14 |
-| `working/zelres3/code/307EAI7.asm` | 11 | 0 | 1 | 12 |
+| `working/zelres3/code/304EAI4.asm` | 7 | 0 | 0 | 7 |
+| `working/zelres3/code/305EAI5.asm` | 13 | 0 | 0 | 13 |
+| `working/zelres3/code/306EAI6.asm` | 14 | 0 | 0 | 14 |
+| `working/zelres3/code/307EAI7.asm` | 12 | 0 | 0 | 12 |
 | `working/zelres3/code/308EAI8.asm` | 7 | 0 | 1 | 8 |
-| `working/zelres3/code/309CRAB.asm` | 5 | 0 | 4 | 9 |
-| `working/zelres3/code/310TAKO.asm` | 5 | 0 | 2 | 7 |
-| `working/zelres3/code/311TORI.asm` | 10 | 0 | 3 | 13 |
-| `working/zelres3/code/312ZELA.asm` | 6 | 0 | 2 | 8 |
+| `working/zelres3/code/309CRAB.asm` | 7 | 0 | 2 | 9 |
+| `working/zelres3/code/310TAKO.asm` | 7 | 0 | 0 | 7 |
+| `working/zelres3/code/311TORI.asm` | 12 | 0 | 1 | 13 |
+| `working/zelres3/code/312ZELA.asm` | 7 | 0 | 1 | 8 |
 | `working/zelres3/code/313MEDA.asm` | 9 | 0 | 4 | 13 |
-| `working/zelres3/code/314LEGA.asm` | 5 | 0 | 10 | 15 |
-| `working/zelres3/code/315ZEL2.asm` | 6 | 0 | 5 | 11 |
-| `working/zelres3/code/316DRGN.asm` | 3 | 0 | 9 | 12 |
-| `working/zelres3/code/317AKMA.asm` | 2 | 0 | 9 | 11 |
-| `working/zelres3/code/318MAO1.asm` | 8 | 0 | 18 | 26 |
-| `working/zelres3/code/319MAO2.asm` | 16 | 0 | 24 | 40 |
+| `working/zelres3/code/314LEGA.asm` | 12 | 0 | 3 | 15 |
+| `working/zelres3/code/315ZEL2.asm` | 9 | 0 | 2 | 11 |
+| `working/zelres3/code/316DRGN.asm` | 9 | 0 | 3 | 12 |
+| `working/zelres3/code/317AKMA.asm` | 7 | 0 | 4 | 11 |
+| `working/zelres3/code/318MAO1.asm` | 26 | 0 | 0 | 26 |
+| `working/zelres3/code/319MAO2.asm` | 38 | 0 | 2 | 40 |
 
 ## Files with zero Group-1 resolution (1)
 

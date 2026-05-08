@@ -370,18 +370,18 @@
 - [x] L2503  `anim_fn_fade`  *(data)*
 - [x] L2504  `anim_fn_draw`  *(data)*
 - [x] L2515  `disp_game_fn`  *(data)*
-- [ ] L2516  `disp_data_6F59`  *(data)*
-- [ ] L2517  `disp_narr_chap2`  *(data)*
-- [ ] L2518  `disp_chap2_call`  *(data)*
-- [ ] L2519  `disp_drv_seg_3`  *(data)*
-- [ ] L2520  `disp_narr_chap3`  *(data)*
-- [ ] L2521  `disp_narr_open`  *(data)*
+- [x] L2516  `disp_data_6F59`  *(data)*
+- [x] L2517  `disp_narr_chap2`  *(data)*
+- [x] L2518  `disp_chap2_call`  *(data)*
+- [x] L2519  `disp_drv_seg_3`  *(data)*
+- [x] L2520  `disp_narr_chap3`  *(data)*
+- [x] L2521  `disp_narr_open`  *(data)*
 - [ ] L2522  `disp_set_drv_seg`  *(data)*
-- [ ] L2523  `disp_font_inv`  *(data)*
-- [ ] L2524  `disp_data_7420`  *(data)*
-- [ ] L2525  `disp_load_setup`  *(data)*
-- [ ] L2526  `disp_script_area`  *(data)*
-- [ ] L2528  `disp_narr_chap4`  *(data)*
+- [x] L2523  `disp_font_inv`  *(data)*
+- [x] L2524  `disp_data_7420`  *(data)*
+- [x] L2525  `disp_load_setup`  *(data)*
+- [x] L2526  `disp_script_area`  *(data)*
+- [x] L2528  `disp_narr_chap4`  *(data)*
 
 ## working/zelres1/code/101GDEGA.asm  (24 sections)
 
@@ -418,7 +418,7 @@
 - [x] L871   `copy_buffer`  *(proc)*
 - [x] L897   `copy_buffer_2`  *(proc)*
 - [x] L923   `equip_multiply`  *(proc)*
-- [ ] L976   `plane_mix_word`  *(data)*
+- [x] L976   `plane_mix_word`  *(data)*
 - [x] L1056  `equip_multiply_2`  *(proc)*
 - [ ] L1333  `equip_func_7`  *(proc)*
 - [x] L1519  `extract_bits`  *(proc)*
@@ -430,7 +430,7 @@
 - [ ] L1857  `equip_process_loop_4`  *(proc)*
 - [x] L1913  `fill_buffer_2`  *(proc)*
 - [x] L1956  `extract_bits_2`  *(proc)*
-- [ ] L2028  `disp_frame_render3`  *(data)*
+- [x] L2028  `disp_frame_render3`  *(data)*
 - [x] L2057  `extract_bits_3`  *(proc)*
 - [x] L2280  `frame_plane_b_tbl`  *(data)*
 - [ ] L2500  `equip_process_loop_5`  *(proc)*
@@ -470,8 +470,8 @@
 - [x] L893   `copy_buffer`  *(proc)*
 - [x] L917   `copy_buffer_2`  *(proc)*
 - [x] L941   `stats_multiply`  *(proc)*
-- [ ] L996   `xor3_plane2_off`  *(data)*
-- [ ] L1028  `face_panel2_anchor`  *(data)*
+- [x] L996   `xor3_plane2_off`  *(data)*
+- [x] L1028  `face_panel2_anchor`  *(data)*
 - [x] L1117  `stats_multiply_2`  *(proc)*
 - [ ] L1430  `stats_func_7`  *(proc)*
 - [x] L1482  `extract_bits`  *(proc)*
@@ -1197,8 +1197,8 @@
 - [x] L778   `mono_scan_loop`  *(proc)*
 - [x] L812   `extract_bits`  *(proc)*
 - [x] L853   `nibble_to_4px_lut`  *(label byte)*
-- [ ] L914   `sprite_data_start`  *(label byte)*
-- [ ] L935   `sprite_data_row_0`  *(label byte)*
+- [x] L914   `sprite_data_start`  *(label byte)*
+- [x] L935   `sprite_data_row_0`  *(label byte)*
 - [x] L982   `data_20`  *(data)*
 - [x] L1071  `data_21`  *(data)*
 - [x] L1077  `data_22`  *(data)*
@@ -1237,7 +1237,7 @@
 - [x] L1570  `data_60`  *(data)*
 - [x] L1795  `data_61`  *(data)*
 - [ ] L1946  `misdec_port_stub`  *(proc)*
-- [ ] L1962  `sprite_data_row_2`  *(label byte)*
+- [x] L1962  `sprite_data_row_2`  *(label byte)*
 - [x] L2170  `data_62`  *(data)*
 - [x] L2171  `data_63`  *(data)*
 - [x] L2178  `data_64`  *(data)*
@@ -1473,7 +1473,7 @@
 - [x] L182   `crab_frame_ptr_tbl_d`  *(label word)*
 - [x] L187   `crab_frame_ptr_tbl_e`  *(label word)*
 - [x] L236   `crab_facing_fn_ptr`  *(data)*
-- [ ] L305   `crab_anim_phase_marker`  *(data)*
+- [x] L305   `crab_anim_phase_marker`  *(data)*
 - [x] L562   `phase_advance_helper`  *(proc)*
 - [x] L706   `distance_check_8`  *(proc)*
 - [x] L971   `distance_check_6`  *(proc)*
@@ -1487,19 +1487,19 @@
 - [x] L186   `tako_frame_ptr_tbl_d`  *(label word)*
 - [x] L191   `tako_frame_ptr_tbl_e_marker`  *(label byte)*
 - [x] L192   `data_3`  *(data)*
-- [ ] L216   `tako_frame_A0D8`  *(label byte)*
-- [ ] L225   `tako_frame_A100`  *(label byte)*
-- [ ] L240   `tako_helper_anchor`  *(label byte)*
+- [x] L216   `tako_frame_A0D8`  *(label byte)*
+- [x] L225   `tako_frame_A100`  *(label byte)*
+- [x] L240   `tako_helper_anchor`  *(label byte)*
 - [x] L241   `data_6`  *(data)*
-- [ ] L274   `tako_frame_A1B9`  *(label byte)*
-- [ ] L283   `tako_frame_A1E1`  *(label byte)*
-- [ ] L300   `tako_frame_A23B`  *(label byte)*
-- [ ] L322   `tako_frame_A2B3`  *(label byte)*
-- [ ] L329   `tako_frame_A2D1`  *(label byte)*
-- [ ] L341   `tako_frame_A30D`  *(label byte)*
+- [x] L274   `tako_frame_A1B9`  *(label byte)*
+- [x] L283   `tako_frame_A1E1`  *(label byte)*
+- [x] L300   `tako_frame_A23B`  *(label byte)*
+- [x] L322   `tako_frame_A2B3`  *(label byte)*
+- [x] L329   `tako_frame_A2D1`  *(label byte)*
+- [x] L341   `tako_frame_A30D`  *(label byte)*
 - [x] L362   `tako_aux_ptr_tbl`  *(label word)*
-- [ ] L600   `tako_tentacle_mask_a`  *(data)*
-- [ ] L601   `tako_tentacle_mask_b`  *(data)*
+- [x] L600   `tako_tentacle_mask_a`  *(data)*
+- [x] L601   `tako_tentacle_mask_b`  *(data)*
 - [x] L607   `step_pos_x`  *(proc)*
 - [x] L636   `collide_check_right`  *(proc)*
 - [x] L671   `step_neg_x`  *(proc)*
@@ -1524,21 +1524,21 @@
 ## working/zelres3/code/304EAI4.asm  (7 sections)
 
 - [x] L96    `zela_ai_main`  *(proc)*
-- [ ] L146   `zela_anim_state_marker`  *(data)*
+- [x] L146   `zela_anim_state_marker`  *(data)*
 - [x] L178   `zela_rng_fn_ptr`  *(data)*
-- [ ] L182   `zela_phase_marker`  *(data)*
-- [ ] L215   `zela_anim_phase_idx`  *(data)*
+- [x] L182   `zela_phase_marker`  *(data)*
+- [x] L215   `zela_anim_phase_idx`  *(data)*
 - [x] L814   `collide_check_dist`  *(proc)*
 - [x] L917   `zela_lookup_state`  *(proc)*
 
 ## working/zelres3/code/305EAI5.asm  (13 sections)
 
 - [x] L122   `meda_ai_main`  *(proc)*
-- [ ] L195   `meda_collide_marker`  *(data)*
+- [x] L195   `meda_collide_marker`  *(data)*
 - [x] L197   `meda_anim_state_ref`  *(data)*
 - [x] L237   `meda_rng_fn_ptr`  *(data)*
-- [ ] L263   `meda_anim_idx_a`  *(data)*
-- [ ] L266   `meda_anim_idx_b`  *(data)*
+- [x] L263   `meda_anim_idx_a`  *(data)*
+- [x] L266   `meda_anim_idx_b`  *(data)*
 - [x] L607   `phase_step_fwd`  *(proc)*
 - [x] L636   `collide_check_fwd`  *(proc)*
 - [x] L671   `phase_step_back`  *(proc)*
@@ -1550,8 +1550,8 @@
 ## working/zelres3/code/306EAI6.asm  (14 sections)
 
 - [x] L120   `eai6_main`  *(proc)*
-- [ ] L145   `eai6_anim_phase`  *(data)*
-- [ ] L149   `eai6_collide_marker`  *(data)*
+- [x] L145   `eai6_anim_phase`  *(data)*
+- [x] L149   `eai6_collide_marker`  *(data)*
 - [x] L174   `eai6_rng_fn_ptr`  *(data)*
 - [x] L433   `distance_check_4`  *(proc)*
 - [x] L471   `phase_step_fwd`  *(proc)*
@@ -1567,7 +1567,7 @@
 ## working/zelres3/code/307EAI7.asm  (12 sections)
 
 - [x] L142   `eai7_main`  *(proc)*
-- [ ] L179   `eai7_collide_marker`  *(data)*
+- [x] L179   `eai7_collide_marker`  *(data)*
 - [x] L208   `eai7_rng_fn_ptr`  *(data)*
 - [x] L227   `eai7_anim_state_ref`  *(data)*
 - [x] L500   `phase_step_fwd`  *(proc)*
@@ -1595,8 +1595,8 @@
 - [x] L102   `crab_main`  *(proc)*
 - [x] L131   `crab_frame_ptr_tbl_a`  *(label word)*
 - [x] L137   `crab_frame_ptr_tbl_b`  *(label word)*
-- [ ] L192   `crab_const_2600`  *(data)*
-- [ ] L232   `crab_const_2692`  *(data)*
+- [x] L192   `crab_const_2600`  *(data)*
+- [x] L232   `crab_const_2692`  *(data)*
 - [x] L549   `hp_dec`  *(proc)*
 - [x] L567   `hp_inc`  *(proc)*
 - [ ] L874   `emit_sprite_rows_proc`  *(proc)*
@@ -1608,16 +1608,16 @@
 - [x] L135   `tako_frame_ptr_tbl_a`  *(label word)*
 - [x] L140   `tako_frame_ptr_tbl_b`  *(label word)*
 - [x] L659   `hp_dec`  *(proc)*
-- [ ] L759   `tako_row_data_ptrs`  *(label word)*
+- [x] L759   `tako_row_data_ptrs`  *(label word)*
 - [x] L1121  `tako_pattern_ptr_tbl`  *(label word)*
-- [ ] L1138  `tako_sprite_patterns`  *(label word)*
+- [x] L1138  `tako_sprite_patterns`  *(label word)*
 
 ## working/zelres3/code/311TORI.asm  (13 sections)
 
 - [x] L110   `tori_main`  *(proc)*
 - [x] L141   `tori_frame_ptr_tbl_a`  *(label word)*
-- [ ] L221   `tori_scan_acc_a`  *(data)*
-- [ ] L223   `tori_scan_acc_b`  *(data)*
+- [x] L221   `tori_scan_acc_a`  *(data)*
+- [x] L223   `tori_scan_acc_b`  *(data)*
 - [x] L228   `tori_glyph_tbl`  *(data)*
 - [x] L293   `tori_extern_fn_ptr`  *(data)*
 - [ ] L780   `tori_render_sprite_row`  *(proc)*
@@ -1631,7 +1631,7 @@
 ## working/zelres3/code/312ZELA.asm  (8 sections)
 
 - [x] L106   `_312MAPST`  *(proc)*
-- [ ] L153   `zela_const_word_8`  *(data)*
+- [x] L153   `zela_const_word_8`  *(data)*
 - [x] L186   `zela_rng_fn_ptr`  *(data)*
 - [ ] L409   `scroll_phase_dec`  *(proc)*
 - [x] L645   `init_tile_slots`  *(proc)*
@@ -1658,13 +1658,13 @@
 ## working/zelres3/code/314LEGA.asm  (15 sections)
 
 - [x] L107   `lega_main`  *(proc)*
-- [ ] L122   `lega_hdr_fill_a`  *(data)*
-- [ ] L123   `lega_hdr_const_50`  *(data)*
-- [ ] L124   `lega_hdr_const_0a_pair`  *(data)*
-- [ ] L126   `lega_tile_data_block_a`  *(data)*
-- [ ] L131   `lega_ptr_table_a`  *(data)*
-- [ ] L153   `lega_tile_data_block_b`  *(data)*
-- [ ] L155   `lega_tile_data_block_c`  *(data)*
+- [x] L122   `lega_hdr_fill_a`  *(data)*
+- [x] L123   `lega_hdr_const_50`  *(data)*
+- [x] L124   `lega_hdr_const_0a_pair`  *(data)*
+- [x] L126   `lega_tile_data_block_a`  *(data)*
+- [x] L131   `lega_ptr_table_a`  *(data)*
+- [x] L153   `lega_tile_data_block_b`  *(data)*
+- [x] L155   `lega_tile_data_block_c`  *(data)*
 - [x] L423   `lega_phase_step_tbl_a`  *(data)*
 - [x] L425   `lega_phase_step_tbl_b`  *(data)*
 - [ ] L430   `lega_scroll_dec_step`  *(proc)*
@@ -1676,8 +1676,8 @@
 ## working/zelres3/code/315ZEL2.asm  (11 sections)
 
 - [x] L102   `_315MAPHT`  *(proc)*
-- [ ] L136   `zel2_scroll_target_base`  *(data)*
-- [ ] L143   `zel2_data_word_3115`  *(data)*
+- [x] L136   `zel2_scroll_target_base`  *(data)*
+- [x] L143   `zel2_data_word_3115`  *(data)*
 - [x] L181   `zel2_rng_fn_ptr`  *(data)*
 - [x] L374   `zel2_phase_step_dec`  *(proc)*
 - [x] L596   `zel2_anim_delta_tbl`  *(label byte)*
@@ -1685,106 +1685,106 @@
 - [ ] L626   `zel2_scroll_inc_step`  *(proc)*
 - [ ] L639   `zel2_scroll_dec_step`  *(proc)*
 - [x] L663   `zel2_scroll_finalize`  *(proc)*
-- [ ] L748   `zel2_trailer_word`  *(data)*
+- [x] L748   `zel2_trailer_word`  *(data)*
 
 ## working/zelres3/code/316DRGN.asm  (12 sections)
 
 - [x] L119   `drgn_main`  *(proc)*
-- [ ] L156   `drgn_tile_data_a`  *(data)*
-- [ ] L159   `drgn_tile_data_b`  *(data)*
-- [ ] L166   `drgn_tile_data_c`  *(data)*
-- [ ] L175   `drgn_tile_data_d`  *(data)*
-- [ ] L204   `drgn_tile_dispatch_word`  *(data)*
+- [x] L156   `drgn_tile_data_a`  *(data)*
+- [x] L159   `drgn_tile_data_b`  *(data)*
+- [x] L166   `drgn_tile_data_c`  *(data)*
+- [x] L175   `drgn_tile_data_d`  *(data)*
+- [x] L204   `drgn_tile_dispatch_word`  *(data)*
 - [ ] L541   `drgn_scroll_dec`  *(proc)*
 - [ ] L556   `drgn_scroll_inc`  *(proc)*
 - [ ] L812   `drgn_render_col_pack`  *(proc)*
-- [ ] L852   `drgn_data_trailer`  *(label byte)*
+- [x] L852   `drgn_data_trailer`  *(label byte)*
 - [x] L965   `drgn_phase_step_cb`  *(proc)*
 - [x] L1030  `drgn_trailer_data`  *(label byte)*
 
 ## working/zelres3/code/317AKMA.asm  (11 sections)
 
 - [x] L114   `_317MAPA4`  *(proc)*
-- [ ] L143   `akma_data_word_a`  *(data)*
-- [ ] L145   `akma_data_byte_b`  *(data)*
-- [ ] L153   `akma_data_byte_c`  *(data)*
+- [x] L143   `akma_data_word_a`  *(data)*
+- [x] L145   `akma_data_byte_b`  *(data)*
+- [x] L153   `akma_data_byte_c`  *(data)*
 - [ ] L472   `akma_scroll_dec`  *(proc)*
 - [ ] L488   `akma_scroll_inc`  *(proc)*
 - [ ] L813   `akma_render_emit_cell`  *(proc)*
 - [ ] L842   `akma_render_col_pack`  *(proc)*
-- [ ] L885   `akma_data_trailer`  *(label byte)*
+- [x] L885   `akma_data_trailer`  *(label byte)*
 - [x] L994   `akma_phase_step_cb`  *(proc)*
-- [ ] L1066  `akma_module_trailer`  *(label byte)*
+- [x] L1066  `akma_module_trailer`  *(label byte)*
 
 ## working/zelres3/code/318MAO1.asm  (26 sections)
 
 - [x] L106   `_318MAPA5`  *(proc)*
 - [x] L125   `mao1_layout_data`  *(label byte)*
 - [x] L127   `mao1_layout_ptr_tbl`  *(label word)*
-- [ ] L132   `mao1_layout_cells`  *(label byte)*
-- [ ] L149   `mao1_data_word_a`  *(data)*
-- [ ] L153   `mao1_data_word_b`  *(data)*
-- [ ] L157   `mao1_data_word_c`  *(data)*
-- [ ] L167   `mao1_data_byte_d`  *(data)*
-- [ ] L173   `mao1_data_byte_e`  *(data)*
-- [ ] L175   `mao1_layout_cells_ext`  *(label byte)*
-- [ ] L210   `mao1_layout_data_a`  *(label byte)*
-- [ ] L248   `mao1_layout_cells_tail`  *(label byte)*
-- [ ] L264   `mao1_layout_cells_tail_end`  *(label byte)*
+- [x] L132   `mao1_layout_cells`  *(label byte)*
+- [x] L149   `mao1_data_word_a`  *(data)*
+- [x] L153   `mao1_data_word_b`  *(data)*
+- [x] L157   `mao1_data_word_c`  *(data)*
+- [x] L167   `mao1_data_byte_d`  *(data)*
+- [x] L173   `mao1_data_byte_e`  *(data)*
+- [x] L175   `mao1_layout_cells_ext`  *(label byte)*
+- [x] L210   `mao1_layout_data_a`  *(label byte)*
+- [x] L248   `mao1_layout_cells_tail`  *(label byte)*
+- [x] L264   `mao1_layout_cells_tail_end`  *(label byte)*
 - [x] L481   `mao1_trailer_data`  *(label byte)*
-- [ ] L486   `mao1_xlat_row_c0_a`  *(label byte)*
-- [ ] L492   `mao1_xlat_row_c0_b`  *(label byte)*
-- [ ] L497   `mao1_xlat_row_c0_c`  *(label byte)*
+- [x] L486   `mao1_xlat_row_c0_a`  *(label byte)*
+- [x] L492   `mao1_xlat_row_c0_b`  *(label byte)*
+- [x] L497   `mao1_xlat_row_c0_c`  *(label byte)*
 - [x] L502   `mao1_dialog_lo_tbl_data`  *(label byte)*
-- [ ] L506   `mao1_dialog_lead_in`  *(label byte)*
-- [ ] L512   `mao1_dialog_jashiin`  *(label byte)*
+- [x] L506   `mao1_dialog_lead_in`  *(label byte)*
+- [x] L512   `mao1_dialog_jashiin`  *(label byte)*
 - [x] L523   `mao1_dialog_handler_tbl`  *(label word)*
-- [ ] L536   `mao1_dialog_data_b`  *(label byte)*
+- [x] L536   `mao1_dialog_data_b`  *(label byte)*
 - [x] L608   `mao1_arena_ptr_tbl`  *(label byte)*
-- [ ] L614   `mao1_glyph_atlas`  *(label byte)*
+- [x] L614   `mao1_glyph_atlas`  *(label byte)*
 - [x] L626   `mao1_arena_init_params`  *(label byte)*
-- [ ] L633   `mao1_speaker_jashiin`  *(label byte)*
+- [x] L633   `mao1_speaker_jashiin`  *(label byte)*
 
 ## working/zelres3/code/319MAO2.asm  (40 sections)
 
 - [x] L162   `_319MAPA6`  *(proc)*
-- [ ] L173   `mao2_hdr_byte_5`  *(data)*
-- [ ] L179   `mao2_layout_extended`  *(data)*
+- [x] L173   `mao2_hdr_byte_5`  *(data)*
+- [x] L179   `mao2_layout_extended`  *(data)*
 - [x] L181   `mao2_layout_ptr_tbl_a`  *(label byte)*
 - [x] L186   `mao2_layout_ptr_tbl_b`  *(label byte)*
-- [ ] L189   `mao2_layout_count_a`  *(data)*
-- [ ] L191   `mao2_layout_count_b`  *(data)*
-- [ ] L193   `mao2_layout_cells_a`  *(label byte)*
-- [ ] L219   `mao2_layout_cells_a_tail`  *(data)*
+- [x] L189   `mao2_layout_count_a`  *(data)*
+- [x] L191   `mao2_layout_count_b`  *(data)*
+- [x] L193   `mao2_layout_cells_a`  *(label byte)*
+- [x] L219   `mao2_layout_cells_a_tail`  *(data)*
 - [x] L220   `mao2_dispatch_ptr`  *(data)*
-- [ ] L222   `mao2_layout_cells_b`  *(label byte)*
+- [x] L222   `mao2_layout_cells_b`  *(label byte)*
 - [x] L242   `mao2_main_dispatch`  *(proc)*
-- [ ] L255   `mao2_layout_cells_c`  *(label byte)*
-- [ ] L261   `mao2_layout_data_b`  *(data)*
-- [ ] L263   `mao2_layout_cells_d`  *(label byte)*
-- [ ] L299   `mao2_layout_cells_e`  *(label byte)*
-- [ ] L315   `mao2_layout_cells_f`  *(label byte)*
-- [ ] L324   `mao2_npc_scan_init`  *(label byte)*
+- [x] L255   `mao2_layout_cells_c`  *(label byte)*
+- [x] L261   `mao2_layout_data_b`  *(data)*
+- [x] L263   `mao2_layout_cells_d`  *(label byte)*
+- [x] L299   `mao2_layout_cells_e`  *(label byte)*
+- [x] L315   `mao2_layout_cells_f`  *(label byte)*
+- [x] L324   `mao2_npc_scan_init`  *(label byte)*
 - [x] L492   `mao2_phase_ofs_data`  *(label byte)*
-- [ ] L495   `mao2_phase_ofs_data_end`  *(data)*
+- [x] L495   `mao2_phase_ofs_data_end`  *(data)*
 - [x] L497   `mao2_pick_target_idx`  *(proc)*
 - [x] L716   `mao2_handler_step_data`  *(label byte)*
-- [ ] L724   `mao2_handler_step_data_end`  *(data)*
+- [x] L724   `mao2_handler_step_data_end`  *(data)*
 - [x] L726   `mao2_target_dec`  *(proc)*
 - [x] L742   `mao2_target_inc`  *(proc)*
 - [ ] L989   `mao2_dlg_a_init`  *(proc)*
 - [ ] L1006  `mao2_dlg_b_init`  *(proc)*
 - [x] L1024  `mao2_unpack_bp_to_buf`  *(proc)*
-- [ ] L1061  `mao2_dlg_data_block_a`  *(label byte)*
-- [ ] L1125  `mao2_dlg_msg_data_a`  *(label byte)*
+- [x] L1061  `mao2_dlg_data_block_a`  *(label byte)*
+- [x] L1125  `mao2_dlg_msg_data_a`  *(label byte)*
 - [x] L1129  `mao2_dlg_msg_ptr_tbl_a`  *(label byte)*
-- [ ] L1137  `mao2_dlg_state_xlat`  *(label byte)*
-- [ ] L1157  `mao2_dlg_state_xlat_tail`  *(label byte)*
+- [x] L1137  `mao2_dlg_state_xlat`  *(label byte)*
+- [x] L1157  `mao2_dlg_state_xlat_tail`  *(label byte)*
 - [x] L1161  `mao2_dlg_handler_tbl_a`  *(label byte)*
-- [ ] L1168  `mao2_dlg_step_recs_a`  *(label byte)*
+- [x] L1168  `mao2_dlg_step_recs_a`  *(label byte)*
 - [x] L1184  `mao2_dlg_handler_tbl_b`  *(label byte)*
-- [ ] L1191  `mao2_dlg_step_recs_b`  *(label byte)*
+- [x] L1191  `mao2_dlg_step_recs_b`  *(label byte)*
 - [x] L1208  `mao2_pos_sub`  *(proc)*
 - [x] L1238  `mao2_pos_step`  *(proc)*
-- [ ] L1296  `mao2_alt_state_trailer`  *(label byte)*
+- [x] L1296  `mao2_alt_state_trailer`  *(label byte)*
 

@@ -36,7 +36,7 @@ working/core/zeliad.asm,779,load_driver_file,proc,1,,,0,SUPPORTED,load_driver_fi
 working/core/zeliad.asm,819,display_file_error,proc,1,,,0,SUPPORTED,display_file_error,name-pattern: display/disp: dispatch or screen op,name-pattern
 working/core/zeliad.asm,882,set_video_mode,proc,1,,,0,SUPPORTED,set_video_mode,name-pattern: set/clear: writes register/memory,name-pattern
 working/core/zeliad.asm,888,video_mode_table,data,1,,,0,SUPPORTED,video_mode_table,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/core/zeliad.asm,958,hgc_crt_params,data,0,,,0,SUPPORTED,hgc_crt_params,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
+working/core/zeliad.asm,958,hgc_crt_params,data,1,,,0,SUPPORTED,hgc_crt_params,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/core/zeliad.asm,965,ctrl_c_handler,proc,1,,,0,SUPPORTED,ctrl_c_handler,name-pattern: handler/isr: must end with return (sanity),name-pattern
 working/core/zeliad.asm,975,parse_command_line,proc,1,,,0,SUPPORTED,parse_command_line,name-pattern: line/row: row write + loop tail,name-pattern
 working/core/zeliad.asm,1029,str_game_title,data,1,,,0,SUPPORTED,str_game_title,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
@@ -51,28 +51,28 @@ working/core/zeliad.asm,1044,str_file_not_found,data,1,,,0,SUPPORTED,str_file_no
 working/core/zeliad.asm,1045,str_disk_error,data,1,,,0,SUPPORTED,str_disk_error,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
 working/core/zeliad.asm,1046,str_user_file_error,data,1,,,0,SUPPORTED,str_user_file_error,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
 working/core/zeliad.asm,1047,str_cfg_error,data,1,,,0,SUPPORTED,str_cfg_error,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
-working/core/zeliad.asm,1054,hex_digits_hi,data,0,,,0,SUPPORTED,hex_digits_hi,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
+working/core/zeliad.asm,1054,hex_digits_hi,data,1,,,0,SUPPORTED,hex_digits_hi,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/core/zeliad.asm,1055,hex_digits_lo,data,0,,,0,PENDING,,,
 working/core/zeliad.asm,1057,cfg_filename,data,1,,,0,SUPPORTED,cfg_filename,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
 working/core/zeliad.asm,1058,mtinit_filename,data,1,,,0,SUPPORTED,mtinit_filename,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
 working/core/zeliad.asm,1061,driver_offset_table,data,1,,,0,SUPPORTED,driver_offset_table,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/core/zeliad.asm,1101,cmdline_savefile,data,0,,,0,SUPPORTED,cmdline_savefile,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
-working/core/zeliad.asm,1104,music_driver_name,data,0,,,0,SUPPORTED,music_driver_name,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
-working/core/zeliad.asm,1107,joystick_driver_name,data,0,,,0,SUPPORTED,joystick_driver_name,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
+working/core/zeliad.asm,1101,cmdline_savefile,data,1,,,0,SUPPORTED,cmdline_savefile,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
+working/core/zeliad.asm,1104,music_driver_name,data,1,,,0,SUPPORTED,music_driver_name,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
+working/core/zeliad.asm,1107,joystick_driver_name,data,1,,,0,SUPPORTED,joystick_driver_name,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
 working/core/zeliad.asm,1110,game_entry_ofs,data,1,,,0,SUPPORTED,game_entry_ofs,data-pattern: pointer/offset/address: dw or dd,data-pattern
-working/core/zeliad.asm,1111,game_entry_seg,data,0,,,0,SUPPORTED,game_entry_seg,data-pattern: segment/offset: single dw,data-pattern
+working/core/zeliad.asm,1111,game_entry_seg,data,1,,,0,SUPPORTED,game_entry_seg,data-pattern: segment/offset: single dw,data-pattern
 working/core/zeliad.asm,1113,saved_int08_ofs,data,1,,,0,SUPPORTED,saved_int08_ofs,data-pattern: pointer/offset/address: dw or dd,data-pattern
 working/core/zeliad.asm,1114,saved_int09_ofs,data,1,,,0,SUPPORTED,saved_int09_ofs,data-pattern: pointer/offset/address: dw or dd,data-pattern
 working/core/zeliad.asm,1115,saved_int60_ofs,data,1,,,0,SUPPORTED,saved_int60_ofs,data-pattern: pointer/offset/address: dw or dd,data-pattern
 working/core/zeliad.asm,1116,saved_int61_ofs,data,1,,,0,SUPPORTED,saved_int61_ofs,data-pattern: pointer/offset/address: dw or dd,data-pattern
-working/core/zeliad.asm,1117,saved_int61_seg,data,0,,,0,SUPPORTED,saved_int61_seg,data-pattern: saved register: zero placeholder,data-pattern
-working/core/zeliad.asm,1119,has_savefile,data,0,,,0,SUPPORTED,has_savefile,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
-working/core/zeliad.asm,1120,saved_sp,data,0,,,0,SUPPORTED,saved_sp,data-pattern: saved register: zero placeholder,data-pattern
-working/core/zeliad.asm,1121,saved_ss,data,0,,,0,SUPPORTED,saved_ss,data-pattern: saved register: zero placeholder,data-pattern
-working/core/zeliad.asm,1141,graphics_mode,data,0,,,0,SUPPORTED,graphics_mode,data-pattern: mode/length: single db value,data-pattern
-working/core/zeliad.asm,1142,mt32_enabled,data,0,,,0,SUPPORTED,mt32_enabled,data-pattern: flag/state byte: db 0 / 0FFh / single byte,data-pattern
-working/core/zeliad.asm,1149,joystick_enabled,data,0,,,0,SUPPORTED,joystick_enabled,data-pattern: flag/state byte: db 0 / 0FFh / single byte,data-pattern
-working/core/zeliad.asm,1150,cfg_line_length,data,0,,,0,SUPPORTED,cfg_line_length,data-pattern: mode/length: single db value,data-pattern
+working/core/zeliad.asm,1117,saved_int61_seg,data,1,,,0,SUPPORTED,saved_int61_seg,data-pattern: saved register: zero placeholder,data-pattern
+working/core/zeliad.asm,1119,has_savefile,data,1,,,0,SUPPORTED,has_savefile,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
+working/core/zeliad.asm,1120,saved_sp,data,1,,,0,SUPPORTED,saved_sp,data-pattern: saved register: zero placeholder,data-pattern
+working/core/zeliad.asm,1121,saved_ss,data,1,,,0,SUPPORTED,saved_ss,data-pattern: saved register: zero placeholder,data-pattern
+working/core/zeliad.asm,1141,graphics_mode,data,1,,,0,SUPPORTED,graphics_mode,data-pattern: mode/length: single db value,data-pattern
+working/core/zeliad.asm,1142,mt32_enabled,data,1,,,0,SUPPORTED,mt32_enabled,data-pattern: flag/state byte: db 0 / 0FFh / single byte,data-pattern
+working/core/zeliad.asm,1149,joystick_enabled,data,1,,,0,SUPPORTED,joystick_enabled,data-pattern: flag/state byte: db 0 / 0FFh / single byte,data-pattern
+working/core/zeliad.asm,1150,cfg_line_length,data,1,,,0,SUPPORTED,cfg_line_length,data-pattern: mode/length: single db value,data-pattern
 working/core/zeliad.asm,1151,cfg_line_buffer,data,1,,,0,SUPPORTED,cfg_line_buffer,data-pattern: buffer: db/dw N dup(0) or zero placeholder or label marker,data-pattern
 working/drivers/gmcga.asm,136,gmcga,proc,1,,,0,SUPPORTED,gmcga,name-pattern: driver/exec main entry: dispatch table or returning proc,name-pattern
 working/drivers/gmcga.asm,228,fill_horizontal_line,proc,1,,,0,SUPPORTED,fill_horizontal_line,name-pattern: fill_*: rep stos or memory write,name-pattern
@@ -288,8 +288,8 @@ working/drivers/stick.asm,1154,enter_pause_menu_and_draw,proc,0,,,0,PENDING,,,
 working/drivers/stick.asm,1158,draw_pause_menu_box,proc,1,,,0,SUPPORTED,draw_pause_menu_box,"name-pattern: render/blit/draw: writes to ES:DI, gfx call, ES macro, or BLIT/CHUNK macro",name-pattern
 working/drivers/stick.asm,1170,restore_pause_menu_bg,proc,0,,,0,PENDING,,,
 working/drivers/stick.asm,1178,flush_dos_kbd_buffer,proc,1,,,0,SUPPORTED,flush_dos_kbd_buffer,name-pattern: flush_: clear/drain buffer,name-pattern
-working/drivers/stick.asm,1268,scan_data_lbl,label word,1,,,0,SUPPORTED,scan_data_lbl,data-pattern: label_lbl: label byte/word or bare label,data-pattern
-working/drivers/stick.asm,1420,herc_seg_table,data,0,,,0,SUPPORTED,herc_seg_table,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
+working/drivers/stick.asm,1268,scan_data_lbl,label word,1,,,0,SUPPORTED,scan_data_lbl,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/drivers/stick.asm,1420,herc_seg_table,data,1,,,0,SUPPORTED,herc_seg_table,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/drivers/stick.asm,1516,fio_open_savefile_retry,proc,1,,,0,SUPPORTED,fio_open_savefile_retry,"name-pattern: file I/O: DOS INT 21h, call, or dispatch jmp",name-pattern
 working/drivers/stick.asm,1657,fio_filename_lbl,label byte,1,,,0,SUPPORTED,fio_filename_lbl,data-pattern: label_lbl: label byte/word or bare label,data-pattern
 working/drivers/stick.asm,1660,fio_disk_msg_lbl,label byte,1,,,0,SUPPORTED,fio_disk_msg_lbl,data-pattern: label_lbl: label byte/word or bare label,data-pattern
@@ -332,24 +332,24 @@ working/zelres1/code/100OPDMO.asm,1720,palette_blend,proc,1,,C,0,SUPPORTED,palet
 working/zelres1/code/100OPDMO.asm,1771,xor_mask_render,proc,1,,C,0,SUPPORTED,xor_mask_render,"name-pattern: render/blit/draw: writes to ES:DI, gfx call, ES macro, or BLIT/CHUNK macro",name-pattern
 working/zelres1/code/100OPDMO.asm,1817,merge_gfx_planes,proc,0,,C,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,2012,jashiin_speech_2,data,1,,,0,SUPPORTED,jashiin_speech_2,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
-working/zelres1/code/100OPDMO.asm,2021,narration_stone_scene,data,0,,,0,SUPPORTED,narration_stone_scene,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
+working/zelres1/code/100OPDMO.asm,2021,narration_stone_scene,data,1,,,0,SUPPORTED,narration_stone_scene,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
 working/zelres1/code/100OPDMO.asm,2500,jashiin_disappear_text,data,1,,,0,SUPPORTED,jashiin_disappear_text,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
-working/zelres1/code/100OPDMO.asm,2502,anim_fn_wipe,data,0,,,0,SUPPORTED,anim_fn_wipe,data-pattern: function pointer/compound: dw or composite db,data-pattern
-working/zelres1/code/100OPDMO.asm,2503,anim_fn_fade,data,0,,,0,SUPPORTED,anim_fn_fade,data-pattern: function pointer/compound: dw or composite db,data-pattern
-working/zelres1/code/100OPDMO.asm,2504,anim_fn_draw,data,0,,,0,SUPPORTED,anim_fn_draw,data-pattern: function pointer/compound: dw or composite db,data-pattern
-working/zelres1/code/100OPDMO.asm,2515,disp_game_fn,data,0,,,0,SUPPORTED,disp_game_fn,data-pattern: function pointer/compound: dw or composite db,data-pattern
-working/zelres1/code/100OPDMO.asm,2516,disp_data_6F59,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2517,disp_narr_chap2,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2518,disp_chap2_call,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2519,disp_drv_seg_3,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2520,disp_narr_chap3,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2521,disp_narr_open,data,0,,,0,PENDING,,,
+working/zelres1/code/100OPDMO.asm,2502,anim_fn_wipe,data,1,,,0,SUPPORTED,anim_fn_wipe,data-pattern: function pointer/compound: dw or composite db,data-pattern
+working/zelres1/code/100OPDMO.asm,2503,anim_fn_fade,data,1,,,0,SUPPORTED,anim_fn_fade,data-pattern: function pointer/compound: dw or composite db,data-pattern
+working/zelres1/code/100OPDMO.asm,2504,anim_fn_draw,data,1,,,0,SUPPORTED,anim_fn_draw,data-pattern: function pointer/compound: dw or composite db,data-pattern
+working/zelres1/code/100OPDMO.asm,2515,disp_game_fn,data,1,,,0,SUPPORTED,disp_game_fn,data-pattern: function pointer/compound: dw or composite db,data-pattern
+working/zelres1/code/100OPDMO.asm,2516,disp_data_6F59,data,0,,,0,SUPPORTED,disp_data_6F59,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres1/code/100OPDMO.asm,2517,disp_narr_chap2,data,0,,,0,SUPPORTED,disp_narr_chap2,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres1/code/100OPDMO.asm,2518,disp_chap2_call,data,0,,,0,SUPPORTED,disp_chap2_call,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres1/code/100OPDMO.asm,2519,disp_drv_seg_3,data,0,,,0,SUPPORTED,disp_drv_seg_3,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres1/code/100OPDMO.asm,2520,disp_narr_chap3,data,0,,,0,SUPPORTED,disp_narr_chap3,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres1/code/100OPDMO.asm,2521,disp_narr_open,data,0,,,0,SUPPORTED,disp_narr_open,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres1/code/100OPDMO.asm,2522,disp_set_drv_seg,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2523,disp_font_inv,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2524,disp_data_7420,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2525,disp_load_setup,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2526,disp_script_area,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2528,disp_narr_chap4,data,0,,,0,PENDING,,,
+working/zelres1/code/100OPDMO.asm,2523,disp_font_inv,data,0,,,0,SUPPORTED,disp_font_inv,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres1/code/100OPDMO.asm,2524,disp_data_7420,data,0,,,0,SUPPORTED,disp_data_7420,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres1/code/100OPDMO.asm,2525,disp_load_setup,data,0,,,0,SUPPORTED,disp_load_setup,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres1/code/100OPDMO.asm,2526,disp_script_area,data,0,,,0,SUPPORTED,disp_script_area,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres1/code/100OPDMO.asm,2528,disp_narr_chap4,data,0,,,0,SUPPORTED,disp_narr_chap4,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres1/code/101GDEGA.asm,96,imgctl_module,proc,1,,D,0,SUPPORTED,imgctl_module,"name-pattern: image control: video, macro, or setup",name-pattern
 working/zelres1/code/101GDEGA.asm,327,imgctl_multiply,proc,1,,A,0,SUPPORTED,imgctl_multiply,"name-pattern: image control: video, macro, or setup",name-pattern
 working/zelres1/code/101GDEGA.asm,357,vga_operation,proc,0,,C,0,PENDING,,,
@@ -380,7 +380,7 @@ working/zelres1/code/102GDCGA.asm,527,equip_process_loop,proc,1,,A,0,SUPPORTED,e
 working/zelres1/code/102GDCGA.asm,871,copy_buffer,proc,1,,A,0,SUPPORTED,copy_buffer,driver-signature: copies buffer (DS:SI -> ES:DI) via rep movs,driver-sig
 working/zelres1/code/102GDCGA.asm,897,copy_buffer_2,proc,1,,A,0,SUPPORTED,copy_buffer_2,driver-signature: copies buffer (variant) via rep movs,driver-sig
 working/zelres1/code/102GDCGA.asm,923,equip_multiply,proc,1,,C,0,SUPPORTED,equip_multiply,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/102GDCGA.asm,976,plane_mix_word,data,0,,,0,PENDING,,,
+working/zelres1/code/102GDCGA.asm,976,plane_mix_word,data,0,,,0,SUPPORTED,plane_mix_word,data-pattern: plane/mask/xor data: db/dw,data-pattern
 working/zelres1/code/102GDCGA.asm,1056,equip_multiply_2,proc,1,,C,0,SUPPORTED,equip_multiply_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/102GDCGA.asm,1333,equip_func_7,proc,0,,C,0,PLACEHOLDER_NAME,equip_func_7,numbered placeholder -- needs Tier-3 functest probe to determine role,placeholder
 working/zelres1/code/102GDCGA.asm,1519,extract_bits,proc,1,,C,0,SUPPORTED,extract_bits,driver-signature: extracts bits from src_word_* / cur_row_ctr state,driver-sig
@@ -392,7 +392,7 @@ working/zelres1/code/102GDCGA.asm,1806,equip_process_loop_3,proc,0,,C,0,PLACEHOL
 working/zelres1/code/102GDCGA.asm,1857,equip_process_loop_4,proc,0,,C,0,PLACEHOLDER_NAME,equip_process_loop_4,numbered placeholder -- needs Tier-3 functest probe to determine role,placeholder
 working/zelres1/code/102GDCGA.asm,1913,fill_buffer_2,proc,1,,A,0,SUPPORTED,fill_buffer_2,driver-signature: fills buffer with 0xFF via rep stosb (variant),driver-sig
 working/zelres1/code/102GDCGA.asm,1956,extract_bits_2,proc,1,,C,0,SUPPORTED,extract_bits_2,name-pattern: extract/decode: bit/byte manipulation or bit testing,name-pattern
-working/zelres1/code/102GDCGA.asm,2028,disp_frame_render3,data,0,,,0,PENDING,,,
+working/zelres1/code/102GDCGA.asm,2028,disp_frame_render3,data,0,,,0,SUPPORTED,disp_frame_render3,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres1/code/102GDCGA.asm,2057,extract_bits_3,proc,1,,C,0,SUPPORTED,extract_bits_3,name-pattern: extract/decode: bit/byte manipulation or bit testing,name-pattern
 working/zelres1/code/102GDCGA.asm,2280,frame_plane_b_tbl,data,1,,,0,SUPPORTED,frame_plane_b_tbl,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres1/code/102GDCGA.asm,2500,equip_process_loop_5,proc,0,,C,0,PLACEHOLDER_NAME,equip_process_loop_5,numbered placeholder -- needs Tier-3 functest probe to determine role,placeholder
@@ -426,8 +426,8 @@ working/zelres1/code/104GDTGA.asm,566,stats_func_2,proc,0,,A,0,PLACEHOLDER_NAME,
 working/zelres1/code/104GDTGA.asm,893,copy_buffer,proc,1,,A,0,SUPPORTED,copy_buffer,driver-signature: copies buffer (DS:SI -> ES:DI) via rep movs,driver-sig
 working/zelres1/code/104GDTGA.asm,917,copy_buffer_2,proc,1,,A,0,SUPPORTED,copy_buffer_2,driver-signature: copies buffer (variant) via rep movs,driver-sig
 working/zelres1/code/104GDTGA.asm,941,stats_multiply,proc,1,,C,0,SUPPORTED,stats_multiply,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/104GDTGA.asm,996,xor3_plane2_off,data,0,,,0,PENDING,,,
-working/zelres1/code/104GDTGA.asm,1028,face_panel2_anchor,data,0,,,0,PENDING,,,
+working/zelres1/code/104GDTGA.asm,996,xor3_plane2_off,data,0,,,0,SUPPORTED,xor3_plane2_off,data-pattern: plane/mask/xor data: db/dw,data-pattern
+working/zelres1/code/104GDTGA.asm,1028,face_panel2_anchor,data,0,,,0,SUPPORTED,face_panel2_anchor,data-pattern: marker/trailer: any db/dw/dd or label,data-pattern
 working/zelres1/code/104GDTGA.asm,1117,stats_multiply_2,proc,1,,C,0,SUPPORTED,stats_multiply_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/104GDTGA.asm,1430,stats_func_7,proc,0,,D,0,PLACEHOLDER_NAME,stats_func_7,numbered placeholder -- needs Tier-3 functest probe to determine role,placeholder
 working/zelres1/code/104GDTGA.asm,1482,extract_bits,proc,1,,A,0,SUPPORTED,extract_bits,driver-signature: extracts bits from src_word_* / cur_row_ctr state,driver-sig
@@ -441,7 +441,7 @@ working/zelres1/code/104GDTGA.asm,1993,stats_process_loop_3,proc,0,,C,0,PLACEHOL
 working/zelres1/code/104GDTGA.asm,2049,fill_buffer_2,proc,1,,A,0,SUPPORTED,fill_buffer_2,driver-signature: fills buffer with 0xFF via rep stosb (variant),driver-sig
 working/zelres1/code/104GDTGA.asm,2092,stats_multiply_4,proc,1,,C,0,SUPPORTED,stats_multiply_4,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/104GDTGA.asm,2196,stats_fill_buf,proc,1,,C,0,SUPPORTED,stats_fill_buf,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/104GDTGA.asm,2383,face_color_lut,data,0,,,0,SUPPORTED,face_color_lut,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
+working/zelres1/code/104GDTGA.asm,2383,face_color_lut,data,1,,,0,SUPPORTED,face_color_lut,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres1/code/104GDTGA.asm,2602,stats_process_loop_4,proc,0,,C,0,PLACEHOLDER_NAME,stats_process_loop_4,numbered placeholder -- needs Tier-3 functest probe to determine role,placeholder
 working/zelres1/code/104GDTGA.asm,2640,stats_func_20,proc,0,,C,0,PLACEHOLDER_NAME,stats_func_20,numbered placeholder -- needs Tier-3 functest probe to determine role,placeholder
 working/zelres1/code/104GDTGA.asm,2714,extract_bits_2,proc,1,,A,0,SUPPORTED,extract_bits_2,name-pattern: extract/decode: bit/byte manipulation or bit testing,name-pattern
@@ -847,8 +847,8 @@ working/zelres2/code/201SELCT.asm,1217,draw_weapon_panel,proc,1,,D,0,SUPPORTED,d
 working/zelres2/code/201SELCT.asm,1350,fmt_number,proc,0,,A,0,PENDING,,,
 working/zelres2/code/201SELCT.asm,1370,draw_portrait_tabs,proc,1,,D,0,SUPPORTED,draw_portrait_tabs,"name-pattern: render/blit/draw: writes to ES:DI, gfx call, ES macro, or BLIT/CHUNK macro",name-pattern
 working/zelres2/code/201SELCT.asm,1466,check_joy_neutral,proc,1,,A,0,SUPPORTED,check_joy_neutral,name-pattern: check/test: cmp/test followed by branch,name-pattern
-working/zelres2/code/201SELCT.asm,1482,str_empty_lbl,label word,0,,,0,SUPPORTED,str_empty_lbl,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
-working/zelres2/code/201SELCT.asm,1485,str_no_use_notice_lbl,label word,0,,,0,SUPPORTED,str_no_use_notice_lbl,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
+working/zelres2/code/201SELCT.asm,1482,str_empty_lbl,label word,1,,,0,SUPPORTED,str_empty_lbl,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
+working/zelres2/code/201SELCT.asm,1485,str_no_use_notice_lbl,label word,1,,,0,SUPPORTED,str_no_use_notice_lbl,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
 working/zelres2/code/201SELCT.asm,1489,str_item_used_count_lbl,label word,0,,,0,PENDING,,,
 working/zelres2/code/201SELCT.asm,1492,str_item_used_total_lbl,label word,0,,,0,PENDING,,,
 working/zelres2/code/201SELCT.asm,1495,str_item_detail_hdr_lbl,label word,1,,,0,SUPPORTED,str_item_detail_hdr_lbl,data-pattern: string/cmdline buffer: db quoted/zero-buf/multi-el,data-pattern
@@ -1095,11 +1095,11 @@ working/zelres2/code/206GFMCA.asm,3869,mca_pixel_lookup_tbls,label byte,0,,,0,PE
 working/zelres2/code/207MOLE.asm,109,module_init,proc,1,,D,0,SUPPORTED,module_init,name-pattern: init/setup: writes initial state,name-pattern
 working/zelres2/code/207MOLE.asm,248,dispatch_decode_a,proc,1,,A,0,SUPPORTED,dispatch_decode_a,name-pattern: dispatcher: indirect call/jmp or cmp-cascade discriminator,name-pattern
 working/zelres2/code/207MOLE.asm,263,jmp_tbl_decode_a,label word,1,,,0,SUPPORTED,jmp_tbl_decode_a,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres2/code/207MOLE.asm,397,nibble_to_2bpp_lut,label byte,0,,,0,SUPPORTED,nibble_to_2bpp_lut,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
+working/zelres2/code/207MOLE.asm,397,nibble_to_2bpp_lut,label byte,1,,,0,SUPPORTED,nibble_to_2bpp_lut,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,542,vga_pixel_unpack,proc,1,,A,0,SUPPORTED,vga_pixel_unpack,name-pattern: video mode op: video memory or port I/O,name-pattern
-working/zelres2/code/207MOLE.asm,561,nibble_to_vga_lut,label byte,0,,,0,SUPPORTED,nibble_to_vga_lut,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
+working/zelres2/code/207MOLE.asm,561,nibble_to_vga_lut,label byte,1,,,0,SUPPORTED,nibble_to_vga_lut,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,621,mcga_pixel_unpack,proc,0,,A,0,PENDING,,,
-working/zelres2/code/207MOLE.asm,650,nibble_to_mcga_lut,label byte,0,,,0,SUPPORTED,nibble_to_mcga_lut,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
+working/zelres2/code/207MOLE.asm,650,nibble_to_mcga_lut,label byte,1,,,0,SUPPORTED,nibble_to_mcga_lut,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,655,dispatch_decode_b,proc,1,,A,0,SUPPORTED,dispatch_decode_b,name-pattern: dispatcher: indirect call/jmp or cmp-cascade discriminator,name-pattern
 working/zelres2/code/207MOLE.asm,674,jmp_tbl_decode_b,label word,1,,,0,SUPPORTED,jmp_tbl_decode_b,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,695,data_15,data,1,,,0,SUPPORTED,data_15,data-pattern: data: db/dw/dd or label marker,data-pattern
@@ -1107,9 +1107,9 @@ working/zelres2/code/207MOLE.asm,726,decode_5col_blit_loop,proc,0,,A,0,PENDING,,
 working/zelres2/code/207MOLE.asm,745,decode_4bit_unpack,proc,1,,A,0,SUPPORTED,decode_4bit_unpack,name-pattern: extract/decode: bit/byte manipulation or bit testing,name-pattern
 working/zelres2/code/207MOLE.asm,778,mono_scan_loop,proc,1,,A,0,SUPPORTED,mono_scan_loop,name-pattern: loop: backward branch or rep,name-pattern
 working/zelres2/code/207MOLE.asm,812,extract_bits,proc,1,,C,0,SUPPORTED,extract_bits,name-pattern: extract/decode: bit/byte manipulation or bit testing,name-pattern
-working/zelres2/code/207MOLE.asm,853,nibble_to_4px_lut,label byte,0,,,0,SUPPORTED,nibble_to_4px_lut,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres2/code/207MOLE.asm,914,sprite_data_start,label byte,0,,,0,PENDING,,,
-working/zelres2/code/207MOLE.asm,935,sprite_data_row_0,label byte,0,,,0,PENDING,,,
+working/zelres2/code/207MOLE.asm,853,nibble_to_4px_lut,label byte,1,,,0,SUPPORTED,nibble_to_4px_lut,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
+working/zelres2/code/207MOLE.asm,914,sprite_data_start,label byte,0,,,0,SUPPORTED,sprite_data_start,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres2/code/207MOLE.asm,935,sprite_data_row_0,label byte,0,,,0,SUPPORTED,sprite_data_row_0,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,982,data_20,data,1,,,0,SUPPORTED,data_20,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,1071,data_21,data,1,,,0,SUPPORTED,data_21,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,1077,data_22,data,1,,,0,SUPPORTED,data_22,data-pattern: data: db/dw/dd or label marker,data-pattern
@@ -1148,7 +1148,7 @@ working/zelres2/code/207MOLE.asm,1546,data_59,data,1,,,0,SUPPORTED,data_59,data-
 working/zelres2/code/207MOLE.asm,1570,data_60,data,1,,,0,SUPPORTED,data_60,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,1795,data_61,data,1,,,0,SUPPORTED,data_61,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,1946,misdec_port_stub,proc,0,,D,0,PENDING,,,
-working/zelres2/code/207MOLE.asm,1962,sprite_data_row_2,label byte,0,,,0,PENDING,,,
+working/zelres2/code/207MOLE.asm,1962,sprite_data_row_2,label byte,0,,,0,SUPPORTED,sprite_data_row_2,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,2170,data_62,data,1,,,0,SUPPORTED,data_62,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,2171,data_63,data,1,,,0,SUPPORTED,data_63,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,2178,data_64,data,1,,,0,SUPPORTED,data_64,data-pattern: data: db/dw/dd or label marker,data-pattern
@@ -1336,7 +1336,7 @@ working/zelres3/code/301EAI1.asm,177,crab_frame_ptr_tbl_c,label word,1,,,0,SUPPO
 working/zelres3/code/301EAI1.asm,182,crab_frame_ptr_tbl_d,label word,1,,,0,SUPPORTED,crab_frame_ptr_tbl_d,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/301EAI1.asm,187,crab_frame_ptr_tbl_e,label word,1,,,0,SUPPORTED,crab_frame_ptr_tbl_e,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/301EAI1.asm,236,crab_facing_fn_ptr,data,1,,,0,SUPPORTED,crab_facing_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
-working/zelres3/code/301EAI1.asm,305,crab_anim_phase_marker,data,0,,,0,PENDING,,,
+working/zelres3/code/301EAI1.asm,305,crab_anim_phase_marker,data,0,,,0,SUPPORTED,crab_anim_phase_marker,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/301EAI1.asm,562,phase_advance_helper,proc,1,,A,0,SUPPORTED,phase_advance_helper,driver-signature: phase counter advance helper,driver-sig
 working/zelres3/code/301EAI1.asm,706,distance_check_8,proc,1,,C,0,SUPPORTED,distance_check_8,driver-signature: distance threshold check (8-pixel range),driver-sig
 working/zelres3/code/301EAI1.asm,971,distance_check_6,proc,1,,C,0,SUPPORTED,distance_check_6,name-pattern: distance_*: position diff + threshold,name-pattern
@@ -1347,19 +1347,19 @@ working/zelres3/code/302EAI2.asm,181,tako_frame_ptr_tbl_c,label word,1,,,0,SUPPO
 working/zelres3/code/302EAI2.asm,186,tako_frame_ptr_tbl_d,label word,1,,,0,SUPPORTED,tako_frame_ptr_tbl_d,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/302EAI2.asm,191,tako_frame_ptr_tbl_e_marker,label byte,1,,,0,SUPPORTED,tako_frame_ptr_tbl_e_marker,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/302EAI2.asm,192,data_3,data,1,,,0,SUPPORTED,data_3,data-pattern: data: db/dw/dd or label marker,data-pattern
-working/zelres3/code/302EAI2.asm,216,tako_frame_A0D8,label byte,0,,,0,PENDING,,,
-working/zelres3/code/302EAI2.asm,225,tako_frame_A100,label byte,0,,,0,PENDING,,,
-working/zelres3/code/302EAI2.asm,240,tako_helper_anchor,label byte,0,,,0,PENDING,,,
+working/zelres3/code/302EAI2.asm,216,tako_frame_A0D8,label byte,0,,,0,SUPPORTED,tako_frame_A0D8,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/302EAI2.asm,225,tako_frame_A100,label byte,0,,,0,SUPPORTED,tako_frame_A100,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/302EAI2.asm,240,tako_helper_anchor,label byte,0,,,0,SUPPORTED,tako_helper_anchor,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/302EAI2.asm,241,data_6,data,1,,,0,SUPPORTED,data_6,data-pattern: data: db/dw/dd or label marker,data-pattern
-working/zelres3/code/302EAI2.asm,274,tako_frame_A1B9,label byte,0,,,0,PENDING,,,
-working/zelres3/code/302EAI2.asm,283,tako_frame_A1E1,label byte,0,,,0,PENDING,,,
-working/zelres3/code/302EAI2.asm,300,tako_frame_A23B,label byte,0,,,0,PENDING,,,
-working/zelres3/code/302EAI2.asm,322,tako_frame_A2B3,label byte,0,,,0,PENDING,,,
-working/zelres3/code/302EAI2.asm,329,tako_frame_A2D1,label byte,0,,,0,PENDING,,,
-working/zelres3/code/302EAI2.asm,341,tako_frame_A30D,label byte,0,,,0,PENDING,,,
+working/zelres3/code/302EAI2.asm,274,tako_frame_A1B9,label byte,0,,,0,SUPPORTED,tako_frame_A1B9,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/302EAI2.asm,283,tako_frame_A1E1,label byte,0,,,0,SUPPORTED,tako_frame_A1E1,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/302EAI2.asm,300,tako_frame_A23B,label byte,0,,,0,SUPPORTED,tako_frame_A23B,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/302EAI2.asm,322,tako_frame_A2B3,label byte,0,,,0,SUPPORTED,tako_frame_A2B3,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/302EAI2.asm,329,tako_frame_A2D1,label byte,0,,,0,SUPPORTED,tako_frame_A2D1,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/302EAI2.asm,341,tako_frame_A30D,label byte,0,,,0,SUPPORTED,tako_frame_A30D,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/302EAI2.asm,362,tako_aux_ptr_tbl,label word,1,,,0,SUPPORTED,tako_aux_ptr_tbl,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/302EAI2.asm,600,tako_tentacle_mask_a,data,0,,,0,PENDING,,,
-working/zelres3/code/302EAI2.asm,601,tako_tentacle_mask_b,data,0,,,0,PENDING,,,
+working/zelres3/code/302EAI2.asm,600,tako_tentacle_mask_a,data,0,,,0,SUPPORTED,tako_tentacle_mask_a,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/302EAI2.asm,601,tako_tentacle_mask_b,data,0,,,0,SUPPORTED,tako_tentacle_mask_b,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/302EAI2.asm,607,step_pos_x,proc,1,,C,0,SUPPORTED,step_pos_x,name-pattern: process/update/advance: state-update operations,name-pattern
 working/zelres3/code/302EAI2.asm,636,collide_check_right,proc,1,,D,0,SUPPORTED,collide_check_right,name-pattern: collide_*: position compare + branch,name-pattern
 working/zelres3/code/302EAI2.asm,671,step_neg_x,proc,1,,A,0,SUPPORTED,step_neg_x,name-pattern: process/update/advance: state-update operations,name-pattern
@@ -1378,18 +1378,18 @@ working/zelres3/code/303EAI3.asm,292,tori_aux_ptr_tbl,label word,1,,,0,SUPPORTED
 working/zelres3/code/303EAI3.asm,809,tori_dist_check_5,proc,1,,C,0,SUPPORTED,tori_dist_check_5,name-pattern: distance_*: position diff + threshold,name-pattern
 working/zelres3/code/303EAI3.asm,942,tori_dist_check_6,proc,1,,C,0,SUPPORTED,tori_dist_check_6,name-pattern: distance_*: position diff + threshold,name-pattern
 working/zelres3/code/304EAI4.asm,96,zela_ai_main,proc,1,,D,0,SUPPORTED,zela_ai_main,name-pattern: main entry: calls subroutines + returns/exits,name-pattern
-working/zelres3/code/304EAI4.asm,146,zela_anim_state_marker,data,0,,,0,PENDING,,,
+working/zelres3/code/304EAI4.asm,146,zela_anim_state_marker,data,0,,,0,SUPPORTED,zela_anim_state_marker,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/304EAI4.asm,178,zela_rng_fn_ptr,data,1,,,0,SUPPORTED,zela_rng_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
-working/zelres3/code/304EAI4.asm,182,zela_phase_marker,data,0,,,0,PENDING,,,
-working/zelres3/code/304EAI4.asm,215,zela_anim_phase_idx,data,0,,,0,PENDING,,,
+working/zelres3/code/304EAI4.asm,182,zela_phase_marker,data,0,,,0,SUPPORTED,zela_phase_marker,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/304EAI4.asm,215,zela_anim_phase_idx,data,0,,,0,SUPPORTED,zela_anim_phase_idx,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/304EAI4.asm,814,collide_check_dist,proc,1,,D,0,SUPPORTED,collide_check_dist,name-pattern: collide_*: position compare + branch,name-pattern
 working/zelres3/code/304EAI4.asm,917,zela_lookup_state,proc,1,,C,0,SUPPORTED,zela_lookup_state,name-pattern: enemy/boss proc: must return (sanity),name-pattern
 working/zelres3/code/305EAI5.asm,122,meda_ai_main,proc,1,,D,0,SUPPORTED,meda_ai_main,name-pattern: main entry: calls subroutines + returns/exits,name-pattern
-working/zelres3/code/305EAI5.asm,195,meda_collide_marker,data,0,,,0,PENDING,,,
+working/zelres3/code/305EAI5.asm,195,meda_collide_marker,data,0,,,0,SUPPORTED,meda_collide_marker,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/305EAI5.asm,197,meda_anim_state_ref,data,1,,,0,SUPPORTED,meda_anim_state_ref,data-pattern: resource reference: db/dw (1-3 bytes),data-pattern
 working/zelres3/code/305EAI5.asm,237,meda_rng_fn_ptr,data,1,,,0,SUPPORTED,meda_rng_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
-working/zelres3/code/305EAI5.asm,263,meda_anim_idx_a,data,0,,,0,PENDING,,,
-working/zelres3/code/305EAI5.asm,266,meda_anim_idx_b,data,0,,,0,PENDING,,,
+working/zelres3/code/305EAI5.asm,263,meda_anim_idx_a,data,0,,,0,SUPPORTED,meda_anim_idx_a,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/305EAI5.asm,266,meda_anim_idx_b,data,0,,,0,SUPPORTED,meda_anim_idx_b,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/305EAI5.asm,607,phase_step_fwd,proc,1,,C,0,SUPPORTED,phase_step_fwd,driver-signature: phase step forward,driver-sig
 working/zelres3/code/305EAI5.asm,636,collide_check_fwd,proc,1,,D,0,SUPPORTED,collide_check_fwd,driver-signature: collision check (forward direction),driver-sig
 working/zelres3/code/305EAI5.asm,671,phase_step_back,proc,1,,A,0,SUPPORTED,phase_step_back,driver-signature: phase step backward,driver-sig
@@ -1398,8 +1398,8 @@ working/zelres3/code/305EAI5.asm,734,sub01_collide_outer,proc,1,,A,0,SUPPORTED,s
 working/zelres3/code/305EAI5.asm,761,sub01_collide_inner,proc,1,,D,0,SUPPORTED,sub01_collide_inner,driver-signature: collision sub-routine (inner branch),driver-sig
 working/zelres3/code/305EAI5.asm,790,distance_check_4,proc,1,,C,0,SUPPORTED,distance_check_4,name-pattern: distance_*: position diff + threshold,name-pattern
 working/zelres3/code/306EAI6.asm,120,eai6_main,proc,1,,C,0,SUPPORTED,eai6_main,name-pattern: main entry: calls subroutines + returns/exits,name-pattern
-working/zelres3/code/306EAI6.asm,145,eai6_anim_phase,data,0,,,0,PENDING,,,
-working/zelres3/code/306EAI6.asm,149,eai6_collide_marker,data,0,,,0,PENDING,,,
+working/zelres3/code/306EAI6.asm,145,eai6_anim_phase,data,0,,,0,SUPPORTED,eai6_anim_phase,data-pattern: step/init/clear marker: any db/dw/dd or label,data-pattern
+working/zelres3/code/306EAI6.asm,149,eai6_collide_marker,data,0,,,0,SUPPORTED,eai6_collide_marker,data-pattern: marker/trailer: any db/dw/dd or label,data-pattern
 working/zelres3/code/306EAI6.asm,174,eai6_rng_fn_ptr,data,1,,,0,SUPPORTED,eai6_rng_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
 working/zelres3/code/306EAI6.asm,433,distance_check_4,proc,1,,C,0,SUPPORTED,distance_check_4,name-pattern: distance_*: position diff + threshold,name-pattern
 working/zelres3/code/306EAI6.asm,471,phase_step_fwd,proc,1,,C,0,SUPPORTED,phase_step_fwd,driver-signature: phase step forward,driver-sig
@@ -1412,7 +1412,7 @@ working/zelres3/code/306EAI6.asm,841,distance_check_8,proc,1,,C,0,SUPPORTED,dist
 working/zelres3/code/306EAI6.asm,987,sub02_flip_to_state2,proc,1,,A,0,SUPPORTED,sub02_flip_to_state2,name-pattern: sub-proc: must return (sanity),name-pattern
 working/zelres3/code/306EAI6.asm,1008,sub02_block_or_advance,proc,1,,A,0,SUPPORTED,sub02_block_or_advance,name-pattern: advance: inc/add to advance state,name-pattern
 working/zelres3/code/307EAI7.asm,142,eai7_main,proc,1,,D,0,SUPPORTED,eai7_main,name-pattern: main entry: calls subroutines + returns/exits,name-pattern
-working/zelres3/code/307EAI7.asm,179,eai7_collide_marker,data,0,,,0,PENDING,,,
+working/zelres3/code/307EAI7.asm,179,eai7_collide_marker,data,0,,,0,SUPPORTED,eai7_collide_marker,data-pattern: marker/trailer: any db/dw/dd or label,data-pattern
 working/zelres3/code/307EAI7.asm,208,eai7_rng_fn_ptr,data,1,,,0,SUPPORTED,eai7_rng_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
 working/zelres3/code/307EAI7.asm,227,eai7_anim_state_ref,data,1,,,0,SUPPORTED,eai7_anim_state_ref,data-pattern: resource reference: db/dw (1-3 bytes),data-pattern
 working/zelres3/code/307EAI7.asm,500,phase_step_fwd,proc,1,,C,0,SUPPORTED,phase_step_fwd,driver-signature: phase step forward,driver-sig
@@ -1434,8 +1434,8 @@ working/zelres3/code/308EAI8.asm,910,distance_check_5,proc,1,,C,0,SUPPORTED,dist
 working/zelres3/code/309CRAB.asm,102,crab_main,proc,1,,D,0,SUPPORTED,crab_main,name-pattern: main entry: calls subroutines + returns/exits,name-pattern
 working/zelres3/code/309CRAB.asm,131,crab_frame_ptr_tbl_a,label word,1,,,0,SUPPORTED,crab_frame_ptr_tbl_a,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/309CRAB.asm,137,crab_frame_ptr_tbl_b,label word,1,,,0,SUPPORTED,crab_frame_ptr_tbl_b,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/309CRAB.asm,192,crab_const_2600,data,0,,,0,PENDING,,,
-working/zelres3/code/309CRAB.asm,232,crab_const_2692,data,0,,,0,PENDING,,,
+working/zelres3/code/309CRAB.asm,192,crab_const_2600,data,0,,,0,SUPPORTED,crab_const_2600,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/309CRAB.asm,232,crab_const_2692,data,0,,,0,SUPPORTED,crab_const_2692,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/309CRAB.asm,549,hp_dec,proc,1,,A,0,SUPPORTED,hp_dec,name-pattern: hp_*: HP byte read/write/compare,name-pattern
 working/zelres3/code/309CRAB.asm,567,hp_inc,proc,1,,A,0,SUPPORTED,hp_inc,name-pattern: hp_*: HP byte read/write/compare,name-pattern
 working/zelres3/code/309CRAB.asm,874,emit_sprite_rows_proc,proc,0,,C,0,PENDING,,,
@@ -1444,13 +1444,13 @@ working/zelres3/code/310TAKO.asm,102,tako_main,proc,1,,D,0,SUPPORTED,tako_main,n
 working/zelres3/code/310TAKO.asm,135,tako_frame_ptr_tbl_a,label word,1,,,0,SUPPORTED,tako_frame_ptr_tbl_a,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/310TAKO.asm,140,tako_frame_ptr_tbl_b,label word,1,,,0,SUPPORTED,tako_frame_ptr_tbl_b,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/310TAKO.asm,659,hp_dec,proc,1,,A,0,SUPPORTED,hp_dec,name-pattern: hp_*: HP byte read/write/compare,name-pattern
-working/zelres3/code/310TAKO.asm,759,tako_row_data_ptrs,label word,0,,,0,PENDING,,,
+working/zelres3/code/310TAKO.asm,759,tako_row_data_ptrs,label word,0,,,0,SUPPORTED,tako_row_data_ptrs,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/310TAKO.asm,1121,tako_pattern_ptr_tbl,label word,1,,,0,SUPPORTED,tako_pattern_ptr_tbl,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/310TAKO.asm,1138,tako_sprite_patterns,label word,0,,,0,PENDING,,,
+working/zelres3/code/310TAKO.asm,1138,tako_sprite_patterns,label word,0,,,0,SUPPORTED,tako_sprite_patterns,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/311TORI.asm,110,tori_main,proc,1,,D,0,SUPPORTED,tori_main,name-pattern: main entry: calls subroutines + returns/exits,name-pattern
 working/zelres3/code/311TORI.asm,141,tori_frame_ptr_tbl_a,label word,1,,,0,SUPPORTED,tori_frame_ptr_tbl_a,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/311TORI.asm,221,tori_scan_acc_a,data,0,,,0,PENDING,,,
-working/zelres3/code/311TORI.asm,223,tori_scan_acc_b,data,0,,,0,PENDING,,,
+working/zelres3/code/311TORI.asm,221,tori_scan_acc_a,data,0,,,0,SUPPORTED,tori_scan_acc_a,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/311TORI.asm,223,tori_scan_acc_b,data,0,,,0,SUPPORTED,tori_scan_acc_b,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/311TORI.asm,228,tori_glyph_tbl,data,1,,,0,SUPPORTED,tori_glyph_tbl,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/311TORI.asm,293,tori_extern_fn_ptr,data,1,,,0,SUPPORTED,tori_extern_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
 working/zelres3/code/311TORI.asm,780,tori_render_sprite_row,proc,0,,,0,PENDING,,,
@@ -1461,7 +1461,7 @@ working/zelres3/code/311TORI.asm,867,tori_hp_inc_if_below_30,proc,1,,,0,SUPPORTE
 working/zelres3/code/311TORI.asm,887,tori_apply_damage,proc,1,,,0,SUPPORTED,tori_apply_damage,name-pattern: enemy/boss proc: must return (sanity),name-pattern
 working/zelres3/code/311TORI.asm,1010,tori_const_ptr_tbl,label word,1,,,0,SUPPORTED,tori_const_ptr_tbl,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/312ZELA.asm,106,_312MAPST,proc,1,,D,0,SUPPORTED,_312MAPST,name-pattern: chunk MAP entry (data label or proc returning to caller),name-pattern
-working/zelres3/code/312ZELA.asm,153,zela_const_word_8,data,0,,,0,PENDING,,,
+working/zelres3/code/312ZELA.asm,153,zela_const_word_8,data,0,,,0,SUPPORTED,zela_const_word_8,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/312ZELA.asm,186,zela_rng_fn_ptr,data,1,,,0,SUPPORTED,zela_rng_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
 working/zelres3/code/312ZELA.asm,409,scroll_phase_dec,proc,0,,A,0,PENDING,,,
 working/zelres3/code/312ZELA.asm,645,init_tile_slots,proc,1,,D,0,SUPPORTED,init_tile_slots,name-pattern: tile_*: tile data manipulation,name-pattern
@@ -1482,13 +1482,13 @@ working/zelres3/code/313MEDA.asm,493,render_tiles_main,proc,1,,C,0,SUPPORTED,ren
 working/zelres3/code/313MEDA.asm,603,render_tile_row,proc,1,,C,0,SUPPORTED,render_tile_row,"name-pattern: render/blit/draw: writes to ES:DI, gfx call, ES macro, or BLIT/CHUNK macro",name-pattern
 working/zelres3/code/313MEDA.asm,646,scroll_step_finalize,proc,1,,A,0,SUPPORTED,scroll_step_finalize,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres3/code/314LEGA.asm,107,lega_main,proc,1,,D,0,SUPPORTED,lega_main,name-pattern: main entry: calls subroutines + returns/exits,name-pattern
-working/zelres3/code/314LEGA.asm,122,lega_hdr_fill_a,data,0,,,0,PENDING,,,
-working/zelres3/code/314LEGA.asm,123,lega_hdr_const_50,data,0,,,0,PENDING,,,
-working/zelres3/code/314LEGA.asm,124,lega_hdr_const_0a_pair,data,0,,,0,PENDING,,,
-working/zelres3/code/314LEGA.asm,126,lega_tile_data_block_a,data,0,,,0,PENDING,,,
-working/zelres3/code/314LEGA.asm,131,lega_ptr_table_a,data,0,,,0,PENDING,,,
-working/zelres3/code/314LEGA.asm,153,lega_tile_data_block_b,data,0,,,0,PENDING,,,
-working/zelres3/code/314LEGA.asm,155,lega_tile_data_block_c,data,0,,,0,PENDING,,,
+working/zelres3/code/314LEGA.asm,122,lega_hdr_fill_a,data,0,,,0,SUPPORTED,lega_hdr_fill_a,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/314LEGA.asm,123,lega_hdr_const_50,data,0,,,0,SUPPORTED,lega_hdr_const_50,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/314LEGA.asm,124,lega_hdr_const_0a_pair,data,0,,,0,SUPPORTED,lega_hdr_const_0a_pair,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/314LEGA.asm,126,lega_tile_data_block_a,data,0,,,0,SUPPORTED,lega_tile_data_block_a,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/314LEGA.asm,131,lega_ptr_table_a,data,0,,,0,SUPPORTED,lega_ptr_table_a,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/314LEGA.asm,153,lega_tile_data_block_b,data,0,,,0,SUPPORTED,lega_tile_data_block_b,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/314LEGA.asm,155,lega_tile_data_block_c,data,0,,,0,SUPPORTED,lega_tile_data_block_c,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/314LEGA.asm,423,lega_phase_step_tbl_a,data,1,,,0,SUPPORTED,lega_phase_step_tbl_a,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/314LEGA.asm,425,lega_phase_step_tbl_b,data,1,,,0,SUPPORTED,lega_phase_step_tbl_b,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/314LEGA.asm,430,lega_scroll_dec_step,proc,0,,A,0,PENDING,,,
@@ -1497,8 +1497,8 @@ working/zelres3/code/314LEGA.asm,656,lega_render_anim2_cell,proc,0,,C,0,PENDING,
 working/zelres3/code/314LEGA.asm,691,lega_scroll_finalize,proc,1,,A,0,SUPPORTED,lega_scroll_finalize,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres3/code/314LEGA.asm,735,lega_idle_xlat_tbl,data,1,,,0,SUPPORTED,lega_idle_xlat_tbl,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/315ZEL2.asm,102,_315MAPHT,proc,1,,D,0,SUPPORTED,_315MAPHT,name-pattern: chunk MAP entry (data label or proc returning to caller),name-pattern
-working/zelres3/code/315ZEL2.asm,136,zel2_scroll_target_base,data,0,,,0,PENDING,,,
-working/zelres3/code/315ZEL2.asm,143,zel2_data_word_3115,data,0,,,0,PENDING,,,
+working/zelres3/code/315ZEL2.asm,136,zel2_scroll_target_base,data,0,,,0,SUPPORTED,zel2_scroll_target_base,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/315ZEL2.asm,143,zel2_data_word_3115,data,0,,,0,SUPPORTED,zel2_data_word_3115,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/315ZEL2.asm,181,zel2_rng_fn_ptr,data,1,,,0,SUPPORTED,zel2_rng_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
 working/zelres3/code/315ZEL2.asm,374,zel2_phase_step_dec,proc,1,,A,0,SUPPORTED,zel2_phase_step_dec,name-pattern: enemy/boss proc: must return (sanity),name-pattern
 working/zelres3/code/315ZEL2.asm,596,zel2_anim_delta_tbl,label byte,1,,,0,SUPPORTED,zel2_anim_delta_tbl,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
@@ -1506,93 +1506,93 @@ working/zelres3/code/315ZEL2.asm,600,zel2_setup_anim_segment,proc,1,,D,0,SUPPORT
 working/zelres3/code/315ZEL2.asm,626,zel2_scroll_inc_step,proc,0,,A,0,PENDING,,,
 working/zelres3/code/315ZEL2.asm,639,zel2_scroll_dec_step,proc,0,,A,0,PENDING,,,
 working/zelres3/code/315ZEL2.asm,663,zel2_scroll_finalize,proc,1,,A,0,SUPPORTED,zel2_scroll_finalize,name-pattern: scroll: rep movs or gfx call,name-pattern
-working/zelres3/code/315ZEL2.asm,748,zel2_trailer_word,data,0,,,0,PENDING,,,
+working/zelres3/code/315ZEL2.asm,748,zel2_trailer_word,data,0,,,0,SUPPORTED,zel2_trailer_word,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/316DRGN.asm,119,drgn_main,proc,1,,D,0,SUPPORTED,drgn_main,name-pattern: main entry: calls subroutines + returns/exits,name-pattern
-working/zelres3/code/316DRGN.asm,156,drgn_tile_data_a,data,0,,,0,PENDING,,,
-working/zelres3/code/316DRGN.asm,159,drgn_tile_data_b,data,0,,,0,PENDING,,,
-working/zelres3/code/316DRGN.asm,166,drgn_tile_data_c,data,0,,,0,PENDING,,,
-working/zelres3/code/316DRGN.asm,175,drgn_tile_data_d,data,0,,,0,PENDING,,,
-working/zelres3/code/316DRGN.asm,204,drgn_tile_dispatch_word,data,0,,,0,PENDING,,,
+working/zelres3/code/316DRGN.asm,156,drgn_tile_data_a,data,0,,,0,SUPPORTED,drgn_tile_data_a,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/316DRGN.asm,159,drgn_tile_data_b,data,0,,,0,SUPPORTED,drgn_tile_data_b,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/316DRGN.asm,166,drgn_tile_data_c,data,0,,,0,SUPPORTED,drgn_tile_data_c,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/316DRGN.asm,175,drgn_tile_data_d,data,0,,,0,SUPPORTED,drgn_tile_data_d,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/316DRGN.asm,204,drgn_tile_dispatch_word,data,0,,,0,SUPPORTED,drgn_tile_dispatch_word,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/316DRGN.asm,541,drgn_scroll_dec,proc,0,,A,0,PENDING,,,
 working/zelres3/code/316DRGN.asm,556,drgn_scroll_inc,proc,0,,A,0,PENDING,,,
 working/zelres3/code/316DRGN.asm,812,drgn_render_col_pack,proc,0,,C,0,PENDING,,,
-working/zelres3/code/316DRGN.asm,852,drgn_data_trailer,label byte,0,,,0,PENDING,,,
+working/zelres3/code/316DRGN.asm,852,drgn_data_trailer,label byte,0,,,0,SUPPORTED,drgn_data_trailer,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/316DRGN.asm,965,drgn_phase_step_cb,proc,1,,C,0,SUPPORTED,drgn_phase_step_cb,name-pattern: enemy/boss proc: must return (sanity),name-pattern
 working/zelres3/code/316DRGN.asm,1030,drgn_trailer_data,label byte,1,,,0,SUPPORTED,drgn_trailer_data,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/317AKMA.asm,114,_317MAPA4,proc,1,,D,0,SUPPORTED,_317MAPA4,name-pattern: chunk MAP entry (data label or proc returning to caller),name-pattern
-working/zelres3/code/317AKMA.asm,143,akma_data_word_a,data,0,,,0,PENDING,,,
-working/zelres3/code/317AKMA.asm,145,akma_data_byte_b,data,0,,,0,PENDING,,,
-working/zelres3/code/317AKMA.asm,153,akma_data_byte_c,data,0,,,0,PENDING,,,
+working/zelres3/code/317AKMA.asm,143,akma_data_word_a,data,0,,,0,SUPPORTED,akma_data_word_a,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/317AKMA.asm,145,akma_data_byte_b,data,0,,,0,SUPPORTED,akma_data_byte_b,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/317AKMA.asm,153,akma_data_byte_c,data,0,,,0,SUPPORTED,akma_data_byte_c,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/317AKMA.asm,472,akma_scroll_dec,proc,0,,A,0,PENDING,,,
 working/zelres3/code/317AKMA.asm,488,akma_scroll_inc,proc,0,,A,0,PENDING,,,
 working/zelres3/code/317AKMA.asm,813,akma_render_emit_cell,proc,0,,C,0,PENDING,,,
 working/zelres3/code/317AKMA.asm,842,akma_render_col_pack,proc,0,,C,0,PENDING,,,
-working/zelres3/code/317AKMA.asm,885,akma_data_trailer,label byte,0,,,0,PENDING,,,
+working/zelres3/code/317AKMA.asm,885,akma_data_trailer,label byte,0,,,0,SUPPORTED,akma_data_trailer,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/317AKMA.asm,994,akma_phase_step_cb,proc,1,,C,0,SUPPORTED,akma_phase_step_cb,name-pattern: enemy/boss proc: must return (sanity),name-pattern
-working/zelres3/code/317AKMA.asm,1066,akma_module_trailer,label byte,0,,,0,PENDING,,,
+working/zelres3/code/317AKMA.asm,1066,akma_module_trailer,label byte,0,,,0,SUPPORTED,akma_module_trailer,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/318MAO1.asm,106,_318MAPA5,proc,1,,D,0,SUPPORTED,_318MAPA5,name-pattern: chunk MAP entry (data label or proc returning to caller),name-pattern
 working/zelres3/code/318MAO1.asm,125,mao1_layout_data,label byte,1,,,0,SUPPORTED,mao1_layout_data,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/318MAO1.asm,127,mao1_layout_ptr_tbl,label word,1,,,0,SUPPORTED,mao1_layout_ptr_tbl,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/318MAO1.asm,132,mao1_layout_cells,label byte,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,149,mao1_data_word_a,data,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,153,mao1_data_word_b,data,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,157,mao1_data_word_c,data,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,167,mao1_data_byte_d,data,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,173,mao1_data_byte_e,data,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,175,mao1_layout_cells_ext,label byte,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,210,mao1_layout_data_a,label byte,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,248,mao1_layout_cells_tail,label byte,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,264,mao1_layout_cells_tail_end,label byte,0,,,0,PENDING,,,
+working/zelres3/code/318MAO1.asm,132,mao1_layout_cells,label byte,0,,,0,SUPPORTED,mao1_layout_cells,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,149,mao1_data_word_a,data,0,,,0,SUPPORTED,mao1_data_word_a,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,153,mao1_data_word_b,data,0,,,0,SUPPORTED,mao1_data_word_b,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,157,mao1_data_word_c,data,0,,,0,SUPPORTED,mao1_data_word_c,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,167,mao1_data_byte_d,data,0,,,0,SUPPORTED,mao1_data_byte_d,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,173,mao1_data_byte_e,data,0,,,0,SUPPORTED,mao1_data_byte_e,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,175,mao1_layout_cells_ext,label byte,0,,,0,SUPPORTED,mao1_layout_cells_ext,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,210,mao1_layout_data_a,label byte,0,,,0,SUPPORTED,mao1_layout_data_a,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,248,mao1_layout_cells_tail,label byte,0,,,0,SUPPORTED,mao1_layout_cells_tail,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,264,mao1_layout_cells_tail_end,label byte,0,,,0,SUPPORTED,mao1_layout_cells_tail_end,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/318MAO1.asm,481,mao1_trailer_data,label byte,1,,,0,SUPPORTED,mao1_trailer_data,data-pattern: data: db/dw/dd or label marker,data-pattern
-working/zelres3/code/318MAO1.asm,486,mao1_xlat_row_c0_a,label byte,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,492,mao1_xlat_row_c0_b,label byte,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,497,mao1_xlat_row_c0_c,label byte,0,,,0,PENDING,,,
+working/zelres3/code/318MAO1.asm,486,mao1_xlat_row_c0_a,label byte,0,,,0,SUPPORTED,mao1_xlat_row_c0_a,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,492,mao1_xlat_row_c0_b,label byte,0,,,0,SUPPORTED,mao1_xlat_row_c0_b,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,497,mao1_xlat_row_c0_c,label byte,0,,,0,SUPPORTED,mao1_xlat_row_c0_c,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/318MAO1.asm,502,mao1_dialog_lo_tbl_data,label byte,1,,,0,SUPPORTED,mao1_dialog_lo_tbl_data,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/318MAO1.asm,506,mao1_dialog_lead_in,label byte,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,512,mao1_dialog_jashiin,label byte,0,,,0,PENDING,,,
+working/zelres3/code/318MAO1.asm,506,mao1_dialog_lead_in,label byte,0,,,0,SUPPORTED,mao1_dialog_lead_in,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,512,mao1_dialog_jashiin,label byte,0,,,0,SUPPORTED,mao1_dialog_jashiin,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/318MAO1.asm,523,mao1_dialog_handler_tbl,label word,1,,,0,SUPPORTED,mao1_dialog_handler_tbl,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/318MAO1.asm,536,mao1_dialog_data_b,label byte,0,,,0,PENDING,,,
+working/zelres3/code/318MAO1.asm,536,mao1_dialog_data_b,label byte,0,,,0,SUPPORTED,mao1_dialog_data_b,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/318MAO1.asm,608,mao1_arena_ptr_tbl,label byte,1,,,0,SUPPORTED,mao1_arena_ptr_tbl,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/318MAO1.asm,614,mao1_glyph_atlas,label byte,0,,,0,PENDING,,,
-working/zelres3/code/318MAO1.asm,626,mao1_arena_init_params,label byte,0,,,0,SUPPORTED,mao1_arena_init_params,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/318MAO1.asm,633,mao1_speaker_jashiin,label byte,0,,,0,PENDING,,,
+working/zelres3/code/318MAO1.asm,614,mao1_glyph_atlas,label byte,0,,,0,SUPPORTED,mao1_glyph_atlas,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,626,mao1_arena_init_params,label byte,1,,,0,SUPPORTED,mao1_arena_init_params,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
+working/zelres3/code/318MAO1.asm,633,mao1_speaker_jashiin,label byte,0,,,0,SUPPORTED,mao1_speaker_jashiin,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,162,_319MAPA6,proc,1,,C,0,SUPPORTED,_319MAPA6,name-pattern: chunk MAP entry (data label or proc returning to caller),name-pattern
-working/zelres3/code/319MAO2.asm,173,mao2_hdr_byte_5,data,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,179,mao2_layout_extended,data,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,173,mao2_hdr_byte_5,data,0,,,0,SUPPORTED,mao2_hdr_byte_5,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,179,mao2_layout_extended,data,0,,,0,SUPPORTED,mao2_layout_extended,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,181,mao2_layout_ptr_tbl_a,label byte,1,,,0,SUPPORTED,mao2_layout_ptr_tbl_a,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,186,mao2_layout_ptr_tbl_b,label byte,1,,,0,SUPPORTED,mao2_layout_ptr_tbl_b,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/319MAO2.asm,189,mao2_layout_count_a,data,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,191,mao2_layout_count_b,data,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,193,mao2_layout_cells_a,label byte,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,219,mao2_layout_cells_a_tail,data,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,189,mao2_layout_count_a,data,0,,,0,SUPPORTED,mao2_layout_count_a,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,191,mao2_layout_count_b,data,0,,,0,SUPPORTED,mao2_layout_count_b,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,193,mao2_layout_cells_a,label byte,0,,,0,SUPPORTED,mao2_layout_cells_a,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,219,mao2_layout_cells_a_tail,data,0,,,0,SUPPORTED,mao2_layout_cells_a_tail,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,220,mao2_dispatch_ptr,data,1,,,0,SUPPORTED,mao2_dispatch_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
-working/zelres3/code/319MAO2.asm,222,mao2_layout_cells_b,label byte,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,222,mao2_layout_cells_b,label byte,0,,,0,SUPPORTED,mao2_layout_cells_b,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,242,mao2_main_dispatch,proc,1,,D,0,SUPPORTED,mao2_main_dispatch,name-pattern: dispatcher: indirect call/jmp or cmp-cascade discriminator,name-pattern
-working/zelres3/code/319MAO2.asm,255,mao2_layout_cells_c,label byte,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,261,mao2_layout_data_b,data,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,263,mao2_layout_cells_d,label byte,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,299,mao2_layout_cells_e,label byte,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,315,mao2_layout_cells_f,label byte,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,324,mao2_npc_scan_init,label byte,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,255,mao2_layout_cells_c,label byte,0,,,0,SUPPORTED,mao2_layout_cells_c,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,261,mao2_layout_data_b,data,0,,,0,SUPPORTED,mao2_layout_data_b,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,263,mao2_layout_cells_d,label byte,0,,,0,SUPPORTED,mao2_layout_cells_d,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,299,mao2_layout_cells_e,label byte,0,,,0,SUPPORTED,mao2_layout_cells_e,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,315,mao2_layout_cells_f,label byte,0,,,0,SUPPORTED,mao2_layout_cells_f,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,324,mao2_npc_scan_init,label byte,0,,,0,SUPPORTED,mao2_npc_scan_init,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,492,mao2_phase_ofs_data,label byte,1,,,0,SUPPORTED,mao2_phase_ofs_data,data-pattern: data: db/dw/dd or label marker,data-pattern
-working/zelres3/code/319MAO2.asm,495,mao2_phase_ofs_data_end,data,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,495,mao2_phase_ofs_data_end,data,0,,,0,SUPPORTED,mao2_phase_ofs_data_end,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,497,mao2_pick_target_idx,proc,1,,,0,SUPPORTED,mao2_pick_target_idx,name-pattern: enemy/boss proc: must return (sanity),name-pattern
 working/zelres3/code/319MAO2.asm,716,mao2_handler_step_data,label byte,1,,,0,SUPPORTED,mao2_handler_step_data,data-pattern: data: db/dw/dd or label marker,data-pattern
-working/zelres3/code/319MAO2.asm,724,mao2_handler_step_data_end,data,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,724,mao2_handler_step_data_end,data,0,,,0,SUPPORTED,mao2_handler_step_data_end,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,726,mao2_target_dec,proc,1,,,0,SUPPORTED,mao2_target_dec,name-pattern: enemy/boss proc: must return (sanity),name-pattern
 working/zelres3/code/319MAO2.asm,742,mao2_target_inc,proc,1,,,0,SUPPORTED,mao2_target_inc,name-pattern: enemy/boss proc: must return (sanity),name-pattern
 working/zelres3/code/319MAO2.asm,989,mao2_dlg_a_init,proc,0,,A,0,PENDING,,,
 working/zelres3/code/319MAO2.asm,1006,mao2_dlg_b_init,proc,0,,A,0,PENDING,,,
 working/zelres3/code/319MAO2.asm,1024,mao2_unpack_bp_to_buf,proc,1,,A,0,SUPPORTED,mao2_unpack_bp_to_buf,name-pattern: enemy/boss proc: must return (sanity),name-pattern
-working/zelres3/code/319MAO2.asm,1061,mao2_dlg_data_block_a,label byte,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,1125,mao2_dlg_msg_data_a,label byte,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,1061,mao2_dlg_data_block_a,label byte,0,,,0,SUPPORTED,mao2_dlg_data_block_a,data-pattern: data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,1125,mao2_dlg_msg_data_a,label byte,0,,,0,SUPPORTED,mao2_dlg_msg_data_a,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,1129,mao2_dlg_msg_ptr_tbl_a,label byte,1,,,0,SUPPORTED,mao2_dlg_msg_ptr_tbl_a,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/319MAO2.asm,1137,mao2_dlg_state_xlat,label byte,0,,,0,PENDING,,,
-working/zelres3/code/319MAO2.asm,1157,mao2_dlg_state_xlat_tail,label byte,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,1137,mao2_dlg_state_xlat,label byte,0,,,0,SUPPORTED,mao2_dlg_state_xlat,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
+working/zelres3/code/319MAO2.asm,1157,mao2_dlg_state_xlat_tail,label byte,0,,,0,SUPPORTED,mao2_dlg_state_xlat_tail,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,1161,mao2_dlg_handler_tbl_a,label byte,1,,,0,SUPPORTED,mao2_dlg_handler_tbl_a,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/319MAO2.asm,1168,mao2_dlg_step_recs_a,label byte,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,1168,mao2_dlg_step_recs_a,label byte,0,,,0,SUPPORTED,mao2_dlg_step_recs_a,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,1184,mao2_dlg_handler_tbl_b,label byte,1,,,0,SUPPORTED,mao2_dlg_handler_tbl_b,data-pattern: table/params/LUT: multi-element db/dw or label marker,data-pattern
-working/zelres3/code/319MAO2.asm,1191,mao2_dlg_step_recs_b,label byte,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,1191,mao2_dlg_step_recs_b,label byte,0,,,0,SUPPORTED,mao2_dlg_step_recs_b,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern
 working/zelres3/code/319MAO2.asm,1208,mao2_pos_sub,proc,1,,C,0,SUPPORTED,mao2_pos_sub,name-pattern: enemy/boss proc: must return (sanity),name-pattern
 working/zelres3/code/319MAO2.asm,1238,mao2_pos_step,proc,1,,A,0,SUPPORTED,mao2_pos_step,name-pattern: enemy/boss proc: must return (sanity),name-pattern
-working/zelres3/code/319MAO2.asm,1296,mao2_alt_state_trailer,label byte,0,,,0,PENDING,,,
+working/zelres3/code/319MAO2.asm,1296,mao2_alt_state_trailer,label byte,0,,,0,SUPPORTED,mao2_alt_state_trailer,data-pattern: enemy/boss/inn data: db/dw/dd or label marker,data-pattern

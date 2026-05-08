@@ -99,10 +99,52 @@ DATA_PATTERNS = [
      'mode/length: single db value'),
 
     # Generic data: just check it's a `db`/`dw`/`dd` line
-    (re.compile(r'_data$|^data_'),
+    (re.compile(r'_data$|^data_|_data_|^disp_|^gfx_|^ref_'),
      [r"\b(?:db|dw|dd)\b",
       r"\blabel\s+(?:byte|word|dword)"],
      'data: db/dw/dd or label marker'),
+
+    # Enemy / boss data items (mao1/mao2/akma/tori/drgn/crab/tako/zela/
+    # meda/lega/zel2/jashiin/wizard prefix means it's chunk-local data
+    # for that enemy/boss; just confirm the line is a data declaration).
+    (re.compile(r'^(mao[12]|akma|tori|drgn|crab|tako|zela|meda|'
+                r'lega|zel2|jashiin|wizard|inn|zr[1-3])_'),
+     [r"\b(?:db|dw|dd)\b",
+      r"\blabel\s+(?:byte|word|dword)"],
+     'enemy/boss/inn data: db/dw/dd or label marker'),
+
+    # _marker / _trailer suffixes (small markers / table tails)
+    (re.compile(r'_marker$|_trailer$|_tail$|_head$|_anchor$'),
+     [r"\b(?:db|dw|dd)\b",
+      r"\blabel\s+(?:byte|word|dword)"],
+     'marker/trailer: any db/dw/dd or label'),
+
+    # _step / _init / _clear (state markers in tables)
+    (re.compile(r'_step$|_init_$|_clear$|_init$|_phase$'),
+     [r"\b(?:db|dw|dd)\b",
+      r"\blabel\s+(?:byte|word|dword)"],
+     'step/init/clear marker: any db/dw/dd or label'),
+
+    # Dispatch entry data
+    (re.compile(r'_dispatch$|^dispatch_|_handler_tbl$'),
+     [r"\b(?:db|dw|dd)\b"],
+     'dispatch entry: db/dw'),
+
+    # Plane / mask / xor data (graphics-related bytes)
+    (re.compile(r'_plane\d*\b|^plane_|_mask$|_xor\d|^xor\d'),
+     [r"\b(?:db|dw|dd)\b"],
+     'plane/mask/xor data: db/dw'),
+
+    # _ofs / _ptr at end (offset/pointer values)
+    (re.compile(r'_ofs$|_ptr$|_addr$'),
+     [r"\b(?:db|dw|dd)\b"],
+     'offset/pointer value: db/dw/dd'),
+
+    # _operation (numbered VGA operation placeholders -- accept any data)
+    (re.compile(r'_operation$|_operation\d|^operation'),
+     [r"\b(?:db|dw|dd)\b",
+      r"\blabel\s+(?:byte|word|dword)"],
+     'operation entry: any data form'),
 
     # *_lbl labels: typically `name label byte` / `label word`
     (re.compile(r'_lbl$'),

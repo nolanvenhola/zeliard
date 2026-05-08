@@ -13,12 +13,12 @@ Total data/label rows scanned: **520**
 
 | Bucket | Count |
 |---|---:|
-| SUPPORTED | 267 |
-| no_pattern | 210 |
-| INCONCLUSIVE | 34 |
+| SUPPORTED | 374 |
+| no_pattern | 102 |
+| INCONCLUSIVE | 35 |
 | line_not_found | 9 |
 
-## SUPPORTED rows (267)
+## SUPPORTED rows (374)
 
 | File | Line | Name | Kind | Pattern | Source line |
 |---|---:|---|---|---|---|
@@ -89,7 +89,7 @@ Total data/label rows scanned: **520**
 | `working/drivers/stick.asm` | 351 | `subsample_ctr_lbl` | label byte | label_lbl: label byte/word or bare label | `subsample_ctr_lbl	label	byte		; anchor: subsample counter (CS:0x02BC)` |
 | `working/drivers/stick.asm` | 354 | `chain_int_ctr_lbl` | label byte | label_lbl: label byte/word or bare label | `chain_int_ctr_lbl	label	byte		; anchor: chain-INT-08 counter (CS:0x02BD)` |
 | `working/drivers/stick.asm` | 357 | `pause_key_state_lbl` | label byte | label_lbl: label byte/word or bare label | `pause_key_state_lbl	label	byte		; anchor: state flags block (CS:0x02BE..0x02C4)` |
-| `working/drivers/stick.asm` | 1268 | `scan_data_lbl` | label word | label_lbl: label byte/word or bare label | `scan_data_lbl	label	word		; anchor for scan_buf_ptr EQU computation` |
+| `working/drivers/stick.asm` | 1268 | `scan_data_lbl` | label word | data: db/dw/dd or label marker | `scan_data_lbl	label	word		; anchor for scan_buf_ptr EQU computation` |
 | `working/drivers/stick.asm` | 1420 | `herc_seg_table` | data | table/params/LUT: multi-element db/dw or label marker | `herc_seg_table		dw	0D88Bh			; Data table (indexed access)` |
 | `working/drivers/stick.asm` | 1657 | `fio_filename_lbl` | label byte | label_lbl: label byte/word or bare label | `fio_filename_lbl	label	byte		; anchor: save-file name (CS:0x0D3B); byte[6]='1' patched with slot num` |
 | `working/drivers/stick.asm` | 1660 | `fio_disk_msg_lbl` | label byte | label_lbl: label byte/word or bare label | `fio_disk_msg_lbl	label	byte		; anchor: disk-insert prompt (CS:0x0D47); byte[0x17]='1' patched with d` |
@@ -106,10 +106,25 @@ Total data/label rows scanned: **520**
 | `working/zelres1/code/100OPDMO.asm` | 2503 | `anim_fn_fade` | data | function pointer/compound: dw or composite db | `anim_fn_fade		dw	0FEFDh		; runtime fn ptr (placeholder = SCR_BREAK,SCR_SCROLL)` |
 | `working/zelres1/code/100OPDMO.asm` | 2504 | `anim_fn_draw` | data | function pointer/compound: dw or composite db | `anim_fn_draw		dw	0F3EFh		; runtime fn ptr (placeholder = SCR_SPK_UNK,SCR_PARA)` |
 | `working/zelres1/code/100OPDMO.asm` | 2515 | `disp_game_fn` | data | function pointer/compound: dw or composite db | `disp_game_fn		db	SCR_BOLD, '"'		; start bold quoted speech` |
+| `working/zelres1/code/100OPDMO.asm` | 2516 | `disp_data_6F59` | data | data: db/dw/dd or label marker | `disp_data_6F59		db	'Y', 'o'` |
+| `working/zelres1/code/100OPDMO.asm` | 2517 | `disp_narr_chap2` | data | data: db/dw/dd or label marker | `disp_narr_chap2		dw	offset narration_chapter_2	; 'u ', encoded as chapter offset` |
+| `working/zelres1/code/100OPDMO.asm` | 2518 | `disp_chap2_call` | data | data: db/dw/dd or label marker | `disp_chap2_call		db	'h', 'a'` |
+| `working/zelres1/code/100OPDMO.asm` | 2519 | `disp_drv_seg_3` | data | data: db/dw/dd or label marker | `disp_drv_seg_3		db	'v', 'e'` |
+| `working/zelres1/code/100OPDMO.asm` | 2520 | `disp_narr_chap3` | data | data: db/dw/dd or label marker | `disp_narr_chap3		dw	offset narration_chapter_3	; "n'", encoded as chapter offset` |
+| `working/zelres1/code/100OPDMO.asm` | 2521 | `disp_narr_open` | data | data: db/dw/dd or label marker | `disp_narr_open		dw	offset opening_narration	; 't ', encoded as narration offset` |
+| `working/zelres1/code/100OPDMO.asm` | 2523 | `disp_font_inv` | data | data: db/dw/dd or label marker | `disp_font_inv		db	'e', 'n'` |
+| `working/zelres1/code/100OPDMO.asm` | 2524 | `disp_data_7420` | data | data: db/dw/dd or label marker | `disp_data_7420		db	' ', 't'` |
+| `working/zelres1/code/100OPDMO.asm` | 2525 | `disp_load_setup` | data | data: db/dw/dd or label marker | `disp_load_setup		db	'h', 'e'` |
+| `working/zelres1/code/100OPDMO.asm` | 2526 | `disp_script_area` | data | data: db/dw/dd or label marker | `disp_script_area		db	' ', 'l'` |
+| `working/zelres1/code/100OPDMO.asm` | 2528 | `disp_narr_chap4` | data | data: db/dw/dd or label marker | `disp_narr_chap4	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset` |
 | `working/zelres1/code/101GDEGA.asm` | 2435 | `hscroll_plane4_buf` | data | buffer: db/dw N dup(0) or zero placeholder or label marker | `hscroll_plane4_buf		db	0` |
+| `working/zelres1/code/102GDCGA.asm` | 976 | `plane_mix_word` | data | plane/mask/xor data: db/dw | `plane_mix_word		dw	0E2F7h			; word read by plane_mix_loop via [plane_mix_word+si]` |
+| `working/zelres1/code/102GDCGA.asm` | 2028 | `disp_frame_render3` | data | data: db/dw/dd or label marker | `disp_frame_render3		db	1Eh			; push ds` |
 | `working/zelres1/code/102GDCGA.asm` | 2280 | `frame_plane_b_tbl` | data | table/params/LUT: multi-element db/dw or label marker | `frame_plane_b_tbl		dw	303h			; 2-bit color data for frame plane B (used by extract_bits_2/3)` |
 | `working/zelres1/code/103GDHGC.asm` | 1026 | `data_3` | data | data: db/dw/dd or label marker | `data_3		dw	8004h			; Data table (indexed access)` |
 | `working/zelres1/code/103GDHGC.asm` | 2452 | `data_40` | data | data: db/dw/dd or label marker | `data_40		dw	0			; Data table (indexed access)` |
+| `working/zelres1/code/104GDTGA.asm` | 996 | `xor3_plane2_off` | data | plane/mask/xor data: db/dw | `xor3_plane2_off	dw	9840h			; Plane B base offset for XOR 3-plane render` |
+| `working/zelres1/code/104GDTGA.asm` | 1028 | `face_panel2_anchor` | data | marker/trailer: any db/dw/dd or label | `face_panel2_anchor	db	0BAh` |
 | `working/zelres1/code/104GDTGA.asm` | 2383 | `face_color_lut` | data | table/params/LUT: multi-element db/dw or label marker | `face_color_lut	dw	706h			; Face render 3-plane color lookup table` |
 | `working/zelres1/code/104GDTGA.asm` | 2737 | `plane3_merge_buf` | data | buffer: db/dw N dup(0) or zero placeholder or label marker | `plane3_merge_buf		db	0			; Data table (indexed access)` |
 | `working/zelres1/code/105GDMCA.asm` | 2455 | `pixel_plane_c_buf` | data | buffer: db/dw N dup(0) or zero placeholder or label marker | `pixel_plane_c_buf	db	0			; Third pixel plane buffer (used in disp_pixel_sort as ES:pixel_plane_c_buf` |
@@ -131,6 +146,8 @@ Total data/label rows scanned: **520**
 | `working/zelres2/code/207MOLE.asm` | 674 | `jmp_tbl_decode_b` | label word | table/params/LUT: multi-element db/dw or label marker | `jmp_tbl_decode_b	label	word` |
 | `working/zelres2/code/207MOLE.asm` | 695 | `data_15` | data | data: db/dw/dd or label marker | `data_15		dw	0BF00h			; rel16 high byte (00) \| next instr opcode (BF)` |
 | `working/zelres2/code/207MOLE.asm` | 853 | `nibble_to_4px_lut` | label byte | table/params/LUT: multi-element db/dw or label marker | `nibble_to_4px_lut	label	byte` |
+| `working/zelres2/code/207MOLE.asm` | 914 | `sprite_data_start` | label byte | data: db/dw/dd or label marker | `sprite_data_start	label	byte` |
+| `working/zelres2/code/207MOLE.asm` | 935 | `sprite_data_row_0` | label byte | data: db/dw/dd or label marker | `sprite_data_row_0	label	byte` |
 | `working/zelres2/code/207MOLE.asm` | 982 | `data_20` | data | data: db/dw/dd or label marker | `data_20		db	0ECh			; Data table (indexed access)` |
 | `working/zelres2/code/207MOLE.asm` | 1071 | `data_21` | data | data: db/dw/dd or label marker | `data_21		db	0Bh			; Data table (indexed access)` |
 | `working/zelres2/code/207MOLE.asm` | 1077 | `data_22` | data | data: db/dw/dd or label marker | `data_22		db	8			; Data table (indexed access)` |
@@ -168,6 +185,7 @@ Total data/label rows scanned: **520**
 | `working/zelres2/code/207MOLE.asm` | 1546 | `data_59` | data | data: db/dw/dd or label marker | `data_59		db	11h` |
 | `working/zelres2/code/207MOLE.asm` | 1570 | `data_60` | data | data: db/dw/dd or label marker | `data_60		dw	0A41h			; Data table (indexed access)` |
 | `working/zelres2/code/207MOLE.asm` | 1795 | `data_61` | data | data: db/dw/dd or label marker | `data_61		db	88h			; Data table (indexed access)` |
+| `working/zelres2/code/207MOLE.asm` | 1962 | `sprite_data_row_2` | label byte | data: db/dw/dd or label marker | `sprite_data_row_2	label	byte` |
 | `working/zelres2/code/207MOLE.asm` | 2170 | `data_62` | data | data: db/dw/dd or label marker | `data_62		dw	882Ah			; Data table (indexed access)` |
 | `working/zelres2/code/207MOLE.asm` | 2171 | `data_63` | data | data: db/dw/dd or label marker | `data_63		dw	8808h			; Data table (indexed access)` |
 | `working/zelres2/code/207MOLE.asm` | 2178 | `data_64` | data | data: db/dw/dd or label marker | `data_64		dw	883Ah			; Data table (indexed access)` |
@@ -236,61 +254,150 @@ Total data/label rows scanned: **520**
 | `working/zelres3/code/301EAI1.asm` | 182 | `crab_frame_ptr_tbl_d` | label word | table/params/LUT: multi-element db/dw or label marker | `crab_frame_ptr_tbl_d	label	word		; offset 0x07C -- group D pointers (mirrors A tail)` |
 | `working/zelres3/code/301EAI1.asm` | 187 | `crab_frame_ptr_tbl_e` | label word | table/params/LUT: multi-element db/dw or label marker | `crab_frame_ptr_tbl_e	label	word		; offset 0x08C -- group E pointers (mirrors B)` |
 | `working/zelres3/code/301EAI1.asm` | 236 | `crab_facing_fn_ptr` | data | pointer/offset/address: dw or dd | `crab_facing_fn_ptr		dw	5C62h	; word at 0x11A: facing/dir helper fn ptr (overlaps tile bytes 62 5C)` |
+| `working/zelres3/code/301EAI1.asm` | 305 | `crab_anim_phase_marker` | data | enemy/boss/inn data: db/dw/dd or label marker | `crab_anim_phase_marker		db	2	; byte at 0x203: anim phase initializer (also a tile byte for frame 0e ` |
 | `working/zelres3/code/302EAI2.asm` | 163 | `tako_frame_ptr_tbl_a` | label word | table/params/LUT: multi-element db/dw or label marker | `tako_frame_ptr_tbl_a	label	word		; offset 0x034 -- group A pointers` |
 | `working/zelres3/code/302EAI2.asm` | 171 | `tako_frame_ptr_tbl_b` | label word | table/params/LUT: multi-element db/dw or label marker | `tako_frame_ptr_tbl_b	label	word		; offset 0x054 -- group B pointers` |
 | `working/zelres3/code/302EAI2.asm` | 181 | `tako_frame_ptr_tbl_c` | label word | table/params/LUT: multi-element db/dw or label marker | `tako_frame_ptr_tbl_c	label	word		; offset 0x07A -- group C pointers` |
 | `working/zelres3/code/302EAI2.asm` | 186 | `tako_frame_ptr_tbl_d` | label word | table/params/LUT: multi-element db/dw or label marker | `tako_frame_ptr_tbl_d	label	word		; offset 0x08C -- group D pointers` |
 | `working/zelres3/code/302EAI2.asm` | 191 | `tako_frame_ptr_tbl_e_marker` | label byte | table/params/LUT: multi-element db/dw or label marker | `tako_frame_ptr_tbl_e_marker	label	byte	; offset 0x097 -- group E start marker` |
 | `working/zelres3/code/302EAI2.asm` | 192 | `data_3` | data | data: db/dw/dd or label marker | `data_3		db	0			; (Sourcer's data_3) referenced as `add si,offset data_3`` |
+| `working/zelres3/code/302EAI2.asm` | 216 | `tako_frame_A0D8` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `tako_frame_A0D8	label	byte			; 0xA0D8 -- C[0] pose (group C[0] body alt)` |
+| `working/zelres3/code/302EAI2.asm` | 225 | `tako_frame_A100` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `tako_frame_A100	label	byte			; 0xA100 -- A[6]/D[0] -- start of mid-pose group (line cont. inside)` |
+| `working/zelres3/code/302EAI2.asm` | 240 | `tako_helper_anchor` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `tako_helper_anchor	label	byte		; helper xlat anchor (used as `cs:data_6+4`)` |
 | `working/zelres3/code/302EAI2.asm` | 241 | `data_6` | data | data: db/dw/dd or label marker | `data_6		db	'BC', 0			; (Sourcer's data_6) -- referenced as `cs:data_6+4`` |
+| `working/zelres3/code/302EAI2.asm` | 274 | `tako_frame_A1B9` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `tako_frame_A1B9	label	byte			; 0xA1B9 -- A[3] (frame start mid-row at offset 0x1B9)` |
+| `working/zelres3/code/302EAI2.asm` | 283 | `tako_frame_A1E1` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `tako_frame_A1E1	label	byte			; 0xA1E1 -- C[3] (frame ptr lands cleanly at line start below)` |
+| `working/zelres3/code/302EAI2.asm` | 300 | `tako_frame_A23B` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `tako_frame_A23B	label	byte			; 0xA23B -- C[4] (frame ptr lands cleanly at line start below)` |
+| `working/zelres3/code/302EAI2.asm` | 322 | `tako_frame_A2B3` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `tako_frame_A2B3	label	byte			; 0xA2B3 -- A[11]/D[5] (frame ptr lands cleanly at line start below)` |
+| `working/zelres3/code/302EAI2.asm` | 329 | `tako_frame_A2D1` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `tako_frame_A2D1	label	byte			; 0xA2D1 -- B[4] (frame ptr lands cleanly at line start below)` |
+| `working/zelres3/code/302EAI2.asm` | 341 | `tako_frame_A30D` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `tako_frame_A30D	label	byte			; 0xA30D -- B[3] (frame ptr lands cleanly at line start below)` |
 | `working/zelres3/code/302EAI2.asm` | 362 | `tako_aux_ptr_tbl` | label word | table/params/LUT: multi-element db/dw or label marker | `tako_aux_ptr_tbl	label	word		; offset 0x34D` |
+| `working/zelres3/code/302EAI2.asm` | 600 | `tako_tentacle_mask_a` | data | enemy/boss/inn data: db/dw/dd or label marker | `tako_tentacle_mask_a	db	 00h, 00h, 01h, 01h, 01h, 00h, 00h	; per-frame mask A (offset 0x575)` |
+| `working/zelres3/code/302EAI2.asm` | 601 | `tako_tentacle_mask_b` | data | enemy/boss/inn data: db/dw/dd or label marker | `tako_tentacle_mask_b	db	 07h, 07h, 07h, 07h, 07h, 07h, 0FFh	; per-frame mask B (offset 0x57C)` |
 | `working/zelres3/code/303EAI3.asm` | 115 | `tori_frame_ptr_tbl_a` | label word | table/params/LUT: multi-element db/dw or label marker | `tori_frame_ptr_tbl_a	label	word		; offset 0x034 -- group A pointers` |
 | `working/zelres3/code/303EAI3.asm` | 122 | `tori_frame_ptr_tbl_b` | label word | table/params/LUT: multi-element db/dw or label marker | `tori_frame_ptr_tbl_b	label	word		; offset 0x054 -- group B pointers` |
 | `working/zelres3/code/303EAI3.asm` | 129 | `tori_frame_ptr_tbl_c` | label word | table/params/LUT: multi-element db/dw or label marker | `tori_frame_ptr_tbl_c	label	word		; offset 0x070 -- group C pointers` |
 | `working/zelres3/code/303EAI3.asm` | 134 | `tori_frame_ptr_tbl_d` | label word | table/params/LUT: multi-element db/dw or label marker | `tori_frame_ptr_tbl_d	label	word		; offset 0x084 -- group D pointers (mirrors A tail)` |
 | `working/zelres3/code/303EAI3.asm` | 139 | `tori_frame_ptr_tbl_e` | label word | table/params/LUT: multi-element db/dw or label marker | `tori_frame_ptr_tbl_e	label	word		; offset 0x094 -- group E pointers (mirrors B)` |
 | `working/zelres3/code/303EAI3.asm` | 292 | `tori_aux_ptr_tbl` | label word | table/params/LUT: multi-element db/dw or label marker | `tori_aux_ptr_tbl	label	word		; offset 0x29C -- aux ptr table (4 entries)` |
+| `working/zelres3/code/304EAI4.asm` | 146 | `zela_anim_state_marker` | data | enemy/boss/inn data: db/dw/dd or label marker | `zela_anim_state_marker		db	0	; offset 0xAE: anim-state marker` |
 | `working/zelres3/code/304EAI4.asm` | 178 | `zela_rng_fn_ptr` | data | pointer/offset/address: dw or dd | `zela_rng_fn_ptr		dw	2600h			; offset 0x11A: RNG fn ptr (bytes 00 26)` |
+| `working/zelres3/code/304EAI4.asm` | 182 | `zela_phase_marker` | data | enemy/boss/inn data: db/dw/dd or label marker | `zela_phase_marker		db	1		; offset 0x127: phase marker byte` |
+| `working/zelres3/code/304EAI4.asm` | 215 | `zela_anim_phase_idx` | data | enemy/boss/inn data: db/dw/dd or label marker | `zela_anim_phase_idx		db	91h		; Data table (indexed access) - row 13 byte` |
+| `working/zelres3/code/305EAI5.asm` | 195 | `meda_collide_marker` | data | enemy/boss/inn data: db/dw/dd or label marker | `meda_collide_marker		db	0	; offset 0x96: collide marker scalar` |
 | `working/zelres3/code/305EAI5.asm` | 197 | `meda_anim_state_ref` | data | resource reference: db/dw (1-3 bytes) | `meda_anim_state_ref		db	0	; offset 0x98: anim-state ref scalar` |
 | `working/zelres3/code/305EAI5.asm` | 237 | `meda_rng_fn_ptr` | data | pointer/offset/address: dw or dd | `meda_rng_fn_ptr		dw	0B1CFh			; offset 0x11A: RNG fn ptr (CF B1)` |
+| `working/zelres3/code/305EAI5.asm` | 263 | `meda_anim_idx_a` | data | enemy/boss/inn data: db/dw/dd or label marker | `meda_anim_idx_a		db	0A3h		; Data table (indexed access) -- row 13 head` |
+| `working/zelres3/code/305EAI5.asm` | 266 | `meda_anim_idx_b` | data | enemy/boss/inn data: db/dw/dd or label marker | `meda_anim_idx_b		db	0B6h		; Data table (indexed access) -- row 14 tail` |
+| `working/zelres3/code/306EAI6.asm` | 145 | `eai6_anim_phase` | data | step/init/clear marker: any db/dw/dd or label | `eai6_anim_phase		db	0` |
+| `working/zelres3/code/306EAI6.asm` | 149 | `eai6_collide_marker` | data | marker/trailer: any db/dw/dd or label | `eai6_collide_marker		db	0` |
 | `working/zelres3/code/306EAI6.asm` | 174 | `eai6_rng_fn_ptr` | data | pointer/offset/address: dw or dd | `eai6_rng_fn_ptr		dw	0B0Ah` |
+| `working/zelres3/code/307EAI7.asm` | 179 | `eai7_collide_marker` | data | marker/trailer: any db/dw/dd or label | `eai7_collide_marker		db	0` |
 | `working/zelres3/code/307EAI7.asm` | 208 | `eai7_rng_fn_ptr` | data | pointer/offset/address: dw or dd | `eai7_rng_fn_ptr		dw	0BEBDh` |
 | `working/zelres3/code/307EAI7.asm` | 227 | `eai7_anim_state_ref` | data | resource reference: db/dw (1-3 bytes) | `eai7_anim_state_ref		dw	6Dh			; Data table (indexed access)` |
 | `working/zelres3/code/308EAI8.asm` | 212 | `eai8_rng_fn_ptr` | data | pointer/offset/address: dw or dd | `eai8_rng_fn_ptr		dw	1E1Dh` |
 | `working/zelres3/code/309CRAB.asm` | 131 | `crab_frame_ptr_tbl_a` | label word | table/params/LUT: multi-element db/dw or label marker | `crab_frame_ptr_tbl_a	label	word		; indexed frame pointers (group A)` |
 | `working/zelres3/code/309CRAB.asm` | 137 | `crab_frame_ptr_tbl_b` | label word | table/params/LUT: multi-element db/dw or label marker | `crab_frame_ptr_tbl_b	label	word		; indexed frame pointers (group B)` |
+| `working/zelres3/code/309CRAB.asm` | 192 | `crab_const_2600` | data | enemy/boss/inn data: db/dw/dd or label marker | `crab_const_2600	dw	2600h           ; shared word constant (used via `mov ax`)` |
+| `working/zelres3/code/309CRAB.asm` | 232 | `crab_const_2692` | data | enemy/boss/inn data: db/dw/dd or label marker | `crab_const_2692	dw	2692h           ; shared word constant (also used via `call word ptr cs:`)` |
 | `working/zelres3/code/310TAKO.asm` | 135 | `tako_frame_ptr_tbl_a` | label word | table/params/LUT: multi-element db/dw or label marker | `tako_frame_ptr_tbl_a	label	word		; 6 frame-data pointers (group A)` |
 | `working/zelres3/code/310TAKO.asm` | 140 | `tako_frame_ptr_tbl_b` | label word | table/params/LUT: multi-element db/dw or label marker | `tako_frame_ptr_tbl_b	label	word		; 3 frame-data pointers (group B)` |
+| `working/zelres3/code/310TAKO.asm` | 759 | `tako_row_data_ptrs` | label word | data: db/dw/dd or label marker | `tako_row_data_ptrs	label	word` |
 | `working/zelres3/code/310TAKO.asm` | 1121 | `tako_pattern_ptr_tbl` | label word | table/params/LUT: multi-element db/dw or label marker | `tako_pattern_ptr_tbl	label	word` |
+| `working/zelres3/code/310TAKO.asm` | 1138 | `tako_sprite_patterns` | label word | enemy/boss/inn data: db/dw/dd or label marker | `tako_sprite_patterns	label	word` |
 | `working/zelres3/code/311TORI.asm` | 141 | `tori_frame_ptr_tbl_a` | label word | table/params/LUT: multi-element db/dw or label marker | `tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers (entries 13,14 alias into tori_frame_00's ` |
+| `working/zelres3/code/311TORI.asm` | 221 | `tori_scan_acc_a` | data | enemy/boss/inn data: db/dw/dd or label marker | `tori_scan_acc_a	db	 00h			; row 6 (0x080); dual-use scan-loop accumulator` |
+| `working/zelres3/code/311TORI.asm` | 223 | `tori_scan_acc_b` | data | enemy/boss/inn data: db/dw/dd or label marker | `tori_scan_acc_b	db	67h			; row 7 part 2 (0x083); dual-use scan accumulator` |
 | `working/zelres3/code/311TORI.asm` | 228 | `tori_glyph_tbl` | data | table/params/LUT: multi-element db/dw or label marker | `tori_glyph_tbl	db	 00h			; row 10 part 2 (0x08C); glyph-table data anchor` |
 | `working/zelres3/code/311TORI.asm` | 293 | `tori_extern_fn_ptr` | data | pointer/offset/address: dw or dd | `tori_extern_fn_ptr	dw	900h			; spans row 0/1 terminator (0x11A..0x11B); fn-ptr called as cs:tori_ext` |
 | `working/zelres3/code/311TORI.asm` | 1010 | `tori_const_ptr_tbl` | label word | table/params/LUT: multi-element db/dw or label marker | `tori_const_ptr_tbl	label	word` |
+| `working/zelres3/code/312ZELA.asm` | 153 | `zela_const_word_8` | data | enemy/boss/inn data: db/dw/dd or label marker | `zela_const_word_8		dw	102Dh		; embedded constant word inside cell-records` |
 | `working/zelres3/code/312ZELA.asm` | 186 | `zela_rng_fn_ptr` | data | pointer/offset/address: dw or dd | `zela_rng_fn_ptr		dw	2			; CS-relative RNG fn ptr (call thru cs:zela_rng_fn_ptr)` |
 | `working/zelres3/code/313MEDA.asm` | 129 | `header_text_table` | data | string/cmdline buffer: db quoted/zero-buf/multi-el | `header_text_table		db	' ', 0` |
+| `working/zelres3/code/314LEGA.asm` | 122 | `lega_hdr_fill_a` | data | enemy/boss/inn data: db/dw/dd or label marker | `lega_hdr_fill_a		db	0A0h,0A0h,0A0h,0A0h,0A0h,0A0h	; A0h palette/colour fill descriptor` |
+| `working/zelres3/code/314LEGA.asm` | 123 | `lega_hdr_const_50` | data | enemy/boss/inn data: db/dw/dd or label marker | `lega_hdr_const_50	db	 50h			; header constant byte` |
+| `working/zelres3/code/314LEGA.asm` | 124 | `lega_hdr_const_0a_pair` | data | enemy/boss/inn data: db/dw/dd or label marker | `lega_hdr_const_0a_pair	db	 0Ah, 0Ah		; header constant pair` |
+| `working/zelres3/code/314LEGA.asm` | 126 | `lega_tile_data_block_a` | data | data: db/dw/dd or label marker | `lega_tile_data_block_a		db	0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah, 0Ah	; Data table (indexed access)` |
+| `working/zelres3/code/314LEGA.asm` | 131 | `lega_ptr_table_a` | data | enemy/boss/inn data: db/dw/dd or label marker | `lega_ptr_table_a	db	0A0h, 8Eh,0A0h,0DEh,0A0h, 2Eh	; ptrs[0..2]: A08E,A0DE,A12E` |
+| `working/zelres3/code/314LEGA.asm` | 153 | `lega_tile_data_block_b` | data | data: db/dw/dd or label marker | `lega_tile_data_block_b		db	0			; Data table (indexed access)` |
+| `working/zelres3/code/314LEGA.asm` | 155 | `lega_tile_data_block_c` | data | data: db/dw/dd or label marker | `lega_tile_data_block_c		dw	1615h			; Data table (indexed access)` |
 | `working/zelres3/code/314LEGA.asm` | 423 | `lega_phase_step_tbl_a` | data | table/params/LUT: multi-element db/dw or label marker | `lega_phase_step_tbl_a	db	 00h, 01h, 02h, 01h, 02h, 05h	; phase_a entries [0..5]` |
 | `working/zelres3/code/314LEGA.asm` | 425 | `lega_phase_step_tbl_b` | data | table/params/LUT: multi-element db/dw or label marker | `lega_phase_step_tbl_b	db	 03h, 06h			; phase_b entries [0..1]` |
 | `working/zelres3/code/314LEGA.asm` | 735 | `lega_idle_xlat_tbl` | data | table/params/LUT: multi-element db/dw or label marker | `lega_idle_xlat_tbl	db	0, 1, 2, 3, 6, 7		; entries [0..5]` |
+| `working/zelres3/code/315ZEL2.asm` | 136 | `zel2_scroll_target_base` | data | enemy/boss/inn data: db/dw/dd or label marker | `zel2_scroll_target_base		dw	102Dh` |
+| `working/zelres3/code/315ZEL2.asm` | 143 | `zel2_data_word_3115` | data | data: db/dw/dd or label marker | `zel2_data_word_3115		dw	3115h			; Data table (indexed access)` |
 | `working/zelres3/code/315ZEL2.asm` | 181 | `zel2_rng_fn_ptr` | data | pointer/offset/address: dw or dd | `zel2_rng_fn_ptr		dw	0` |
 | `working/zelres3/code/315ZEL2.asm` | 596 | `zel2_anim_delta_tbl` | label byte | table/params/LUT: multi-element db/dw or label marker | `zel2_anim_delta_tbl		label	byte` |
+| `working/zelres3/code/315ZEL2.asm` | 748 | `zel2_trailer_word` | data | enemy/boss/inn data: db/dw/dd or label marker | `zel2_trailer_word		dw	0			; record terminator word` |
+| `working/zelres3/code/316DRGN.asm` | 156 | `drgn_tile_data_a` | data | data: db/dw/dd or label marker | `drgn_tile_data_a		db	0			; Data table (indexed access)` |
+| `working/zelres3/code/316DRGN.asm` | 159 | `drgn_tile_data_b` | data | data: db/dw/dd or label marker | `drgn_tile_data_b		db	77h` |
+| `working/zelres3/code/316DRGN.asm` | 166 | `drgn_tile_data_c` | data | data: db/dw/dd or label marker | `drgn_tile_data_c		db	71h			; Data table (indexed access)` |
+| `working/zelres3/code/316DRGN.asm` | 175 | `drgn_tile_data_d` | data | data: db/dw/dd or label marker | `drgn_tile_data_d		db	87h			; Data table (indexed access)` |
+| `working/zelres3/code/316DRGN.asm` | 204 | `drgn_tile_dispatch_word` | data | enemy/boss/inn data: db/dw/dd or label marker | `drgn_tile_dispatch_word		dw	0E300h` |
+| `working/zelres3/code/316DRGN.asm` | 852 | `drgn_data_trailer` | label byte | data: db/dw/dd or label marker | `drgn_data_trailer	label	byte` |
 | `working/zelres3/code/316DRGN.asm` | 1030 | `drgn_trailer_data` | label byte | data: db/dw/dd or label marker | `drgn_trailer_data	label	byte` |
+| `working/zelres3/code/317AKMA.asm` | 143 | `akma_data_word_a` | data | data: db/dw/dd or label marker | `akma_data_word_a		dw	0A2EFh` |
+| `working/zelres3/code/317AKMA.asm` | 145 | `akma_data_byte_b` | data | data: db/dw/dd or label marker | `akma_data_byte_b		db	0` |
+| `working/zelres3/code/317AKMA.asm` | 153 | `akma_data_byte_c` | data | data: db/dw/dd or label marker | `akma_data_byte_c		db	0BBh` |
+| `working/zelres3/code/317AKMA.asm` | 885 | `akma_data_trailer` | label byte | data: db/dw/dd or label marker | `akma_data_trailer	label	byte` |
+| `working/zelres3/code/317AKMA.asm` | 1066 | `akma_module_trailer` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `akma_module_trailer	label	byte` |
 | `working/zelres3/code/318MAO1.asm` | 125 | `mao1_layout_data` | label byte | data: db/dw/dd or label marker | `mao1_layout_data	label	byte` |
 | `working/zelres3/code/318MAO1.asm` | 127 | `mao1_layout_ptr_tbl` | label word | table/params/LUT: multi-element db/dw or label marker | `mao1_layout_ptr_tbl	label	word` |
+| `working/zelres3/code/318MAO1.asm` | 132 | `mao1_layout_cells` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_layout_cells	label	byte		; per-row tile cell layout` |
+| `working/zelres3/code/318MAO1.asm` | 149 | `mao1_data_word_a` | data | data: db/dw/dd or label marker | `mao1_data_word_a	dw	201h			; data table (indexed access)` |
+| `working/zelres3/code/318MAO1.asm` | 153 | `mao1_data_word_b` | data | data: db/dw/dd or label marker | `mao1_data_word_b	dw	2C2Bh			; data table (indexed access)` |
+| `working/zelres3/code/318MAO1.asm` | 157 | `mao1_data_word_c` | data | data: db/dw/dd or label marker | `mao1_data_word_c	dw	2A29h			; data table (indexed access)` |
+| `working/zelres3/code/318MAO1.asm` | 167 | `mao1_data_byte_d` | data | data: db/dw/dd or label marker | `mao1_data_byte_d	db	40h			; data byte (indexed access)` |
+| `working/zelres3/code/318MAO1.asm` | 173 | `mao1_data_byte_e` | data | data: db/dw/dd or label marker | `mao1_data_byte_e	db	1			; data byte (indexed access)` |
+| `working/zelres3/code/318MAO1.asm` | 175 | `mao1_layout_cells_ext` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_layout_cells_ext	label	byte		; extended tile cell layout rows` |
+| `working/zelres3/code/318MAO1.asm` | 210 | `mao1_layout_data_a` | label byte | data: db/dw/dd or label marker | `mao1_layout_data_a	label	byte` |
+| `working/zelres3/code/318MAO1.asm` | 248 | `mao1_layout_cells_tail` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_layout_cells_tail	label	byte		; trailing tile cell rows (layout-data continuation)` |
+| `working/zelres3/code/318MAO1.asm` | 264 | `mao1_layout_cells_tail_end` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_layout_cells_tail_end	label	byte` |
 | `working/zelres3/code/318MAO1.asm` | 481 | `mao1_trailer_data` | label byte | data: db/dw/dd or label marker | `mao1_trailer_data	label	byte` |
+| `working/zelres3/code/318MAO1.asm` | 486 | `mao1_xlat_row_c0_a` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_xlat_row_c0_a	label	byte		; xlat row: C0h=text fill opcode + level-1 tiles` |
+| `working/zelres3/code/318MAO1.asm` | 492 | `mao1_xlat_row_c0_b` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_xlat_row_c0_b	label	byte		; xlat row: more level tiles + slot-2 dialog` |
+| `working/zelres3/code/318MAO1.asm` | 497 | `mao1_xlat_row_c0_c` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_xlat_row_c0_c	label	byte		; xlat row: trailing levels + state-set + terminator` |
 | `working/zelres3/code/318MAO1.asm` | 502 | `mao1_dialog_lo_tbl_data` | label byte | table/params/LUT: multi-element db/dw or label marker | `mao1_dialog_lo_tbl_data	label	byte	; dialog handler lo-byte ptrs (A448/A463/A47A)` |
+| `working/zelres3/code/318MAO1.asm` | 506 | `mao1_dialog_lead_in` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_dialog_lead_in	label	byte		; speaker / anim code prefix bytes` |
+| `working/zelres3/code/318MAO1.asm` | 512 | `mao1_dialog_jashiin` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_dialog_jashiin	label	byte` |
 | `working/zelres3/code/318MAO1.asm` | 523 | `mao1_dialog_handler_tbl` | label word | table/params/LUT: multi-element db/dw or label marker | `mao1_dialog_handler_tbl	label	word	; 9 word ptrs (A4ABh..A4FFh) into arena handlers` |
+| `working/zelres3/code/318MAO1.asm` | 536 | `mao1_dialog_data_b` | label byte | data: db/dw/dd or label marker | `mao1_dialog_data_b	label	byte` |
 | `working/zelres3/code/318MAO1.asm` | 608 | `mao1_arena_ptr_tbl` | label byte | table/params/LUT: multi-element db/dw or label marker | `mao1_arena_ptr_tbl	label	byte		; 11 word ptrs (A545h..A57Bh) into arena segment` |
+| `working/zelres3/code/318MAO1.asm` | 614 | `mao1_glyph_atlas` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_glyph_atlas	label	byte		; small 3-bpp glyph atlas (6-byte rows)` |
 | `working/zelres3/code/318MAO1.asm` | 626 | `mao1_arena_init_params` | label byte | table/params/LUT: multi-element db/dw or label marker | `mao1_arena_init_params	label	byte	; arena init parameters (timer/coords/state seeds)` |
+| `working/zelres3/code/318MAO1.asm` | 633 | `mao1_speaker_jashiin` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao1_speaker_jashiin	label	byte` |
+| `working/zelres3/code/319MAO2.asm` | 173 | `mao2_hdr_byte_5` | data | enemy/boss/inn data: db/dw/dd or label marker | `mao2_hdr_byte_5		db	0F2h			; header field byte` |
+| `working/zelres3/code/319MAO2.asm` | 179 | `mao2_layout_extended` | data | enemy/boss/inn data: db/dw/dd or label marker | `mao2_layout_extended		db	0A0h` |
 | `working/zelres3/code/319MAO2.asm` | 181 | `mao2_layout_ptr_tbl_a` | label byte | table/params/LUT: multi-element db/dw or label marker | `mao2_layout_ptr_tbl_a	label	byte		; word ptrs into A0xx layout pages` |
 | `working/zelres3/code/319MAO2.asm` | 186 | `mao2_layout_ptr_tbl_b` | label byte | table/params/LUT: multi-element db/dw or label marker | `mao2_layout_ptr_tbl_b	label	byte		; word ptrs into A1/A2xx layout pages` |
+| `working/zelres3/code/319MAO2.asm` | 189 | `mao2_layout_count_a` | data | enemy/boss/inn data: db/dw/dd or label marker | `mao2_layout_count_a		db	1` |
+| `working/zelres3/code/319MAO2.asm` | 191 | `mao2_layout_count_b` | data | enemy/boss/inn data: db/dw/dd or label marker | `mao2_layout_count_b		db	3` |
+| `working/zelres3/code/319MAO2.asm` | 193 | `mao2_layout_cells_a` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_layout_cells_a	label	byte		; per-row tile cell layout (5-byte rows w/01h sep)` |
+| `working/zelres3/code/319MAO2.asm` | 219 | `mao2_layout_cells_a_tail` | data | enemy/boss/inn data: db/dw/dd or label marker | `mao2_layout_cells_a_tail	db	7Ch		; final row byte before dispatch ptr` |
 | `working/zelres3/code/319MAO2.asm` | 220 | `mao2_dispatch_ptr` | data | pointer/offset/address: dw or dd | `mao2_dispatch_ptr		dw	offset mao2_main_dispatch` |
+| `working/zelres3/code/319MAO2.asm` | 222 | `mao2_layout_cells_b` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_layout_cells_b	label	byte		; cell layout continued (post dispatch_ptr)` |
+| `working/zelres3/code/319MAO2.asm` | 255 | `mao2_layout_cells_c` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_layout_cells_c	label	byte		; cell layout continued (mid-block)` |
+| `working/zelres3/code/319MAO2.asm` | 261 | `mao2_layout_data_b` | data | data: db/dw/dd or label marker | `mao2_layout_data_b		db	0DCh			; Data table (indexed access)` |
+| `working/zelres3/code/319MAO2.asm` | 263 | `mao2_layout_cells_d` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_layout_cells_d	label	byte		; cell layout continued (3Xh tile range)` |
+| `working/zelres3/code/319MAO2.asm` | 299 | `mao2_layout_cells_e` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_layout_cells_e	label	byte		; cell layout continued (9Dh-Cxh tile range)` |
+| `working/zelres3/code/319MAO2.asm` | 315 | `mao2_layout_cells_f` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_layout_cells_f	label	byte		; cell layout final (C7h-F2h tile range)` |
+| `working/zelres3/code/319MAO2.asm` | 324 | `mao2_npc_scan_init` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_npc_scan_init	label	byte		; mov si,word ptr ds:[10C0h] - NPC scan loop init` |
 | `working/zelres3/code/319MAO2.asm` | 492 | `mao2_phase_ofs_data` | label byte | data: db/dw/dd or label marker | `mao2_phase_ofs_data	label	byte		; phase substate offset xlat data (xlat tbl base)` |
+| `working/zelres3/code/319MAO2.asm` | 495 | `mao2_phase_ofs_data_end` | data | data: db/dw/dd or label marker | `mao2_phase_ofs_data_end	db	0Ch		; xlat table terminator/last entry` |
 | `working/zelres3/code/319MAO2.asm` | 716 | `mao2_handler_step_data` | label byte | data: db/dw/dd or label marker | `mao2_handler_step_data	label	byte	; phase-handler 3-byte step table (step,dx_delta,substate)` |
+| `working/zelres3/code/319MAO2.asm` | 724 | `mao2_handler_step_data_end` | data | data: db/dw/dd or label marker | `mao2_handler_step_data_end	db	80h	; step-table terminator (cmp [bx+3],80h)` |
+| `working/zelres3/code/319MAO2.asm` | 1061 | `mao2_dlg_data_block_a` | label byte | data: db/dw/dd or label marker | `mao2_dlg_data_block_a	label	byte` |
+| `working/zelres3/code/319MAO2.asm` | 1125 | `mao2_dlg_msg_data_a` | label byte | data: db/dw/dd or label marker | `mao2_dlg_msg_data_a	label	byte		; dialog opcode/index byte stream` |
 | `working/zelres3/code/319MAO2.asm` | 1129 | `mao2_dlg_msg_ptr_tbl_a` | label byte | table/params/LUT: multi-element db/dw or label marker | `mao2_dlg_msg_ptr_tbl_a	label	byte		; 0AAxxh word ptr table (12 entries into msg-data)` |
+| `working/zelres3/code/319MAO2.asm` | 1137 | `mao2_dlg_state_xlat` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_dlg_state_xlat	label	byte		; xlat/dispatch byte table (small dialog-state ints)` |
+| `working/zelres3/code/319MAO2.asm` | 1157 | `mao2_dlg_state_xlat_tail` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_dlg_state_xlat_tail	label	byte		; xlat-table tail (final 8 bytes 00h..36h)` |
 | `working/zelres3/code/319MAO2.asm` | 1161 | `mao2_dlg_handler_tbl_a` | label byte | table/params/LUT: multi-element db/dw or label marker | `mao2_dlg_handler_tbl_a	label	byte		; 14 word ptrs (0AA8Dh..0AADBh) - dialog handler tbl` |
+| `working/zelres3/code/319MAO2.asm` | 1168 | `mao2_dlg_step_recs_a` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_dlg_step_recs_a	label	byte		; 6-byte handler step records` |
 | `working/zelres3/code/319MAO2.asm` | 1184 | `mao2_dlg_handler_tbl_b` | label byte | table/params/LUT: multi-element db/dw or label marker | `mao2_dlg_handler_tbl_b	label	byte	; 14 word ptrs (0AAFDh..0AB4Bh) - alt dialog handlers` |
+| `working/zelres3/code/319MAO2.asm` | 1191 | `mao2_dlg_step_recs_b` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_dlg_step_recs_b	label	byte		; alt 6-byte handler step records` |
+| `working/zelres3/code/319MAO2.asm` | 1296 | `mao2_alt_state_trailer` | label byte | enemy/boss/inn data: db/dw/dd or label marker | `mao2_alt_state_trailer	label	byte` |
 
-## INCONCLUSIVE rows (34)
+## INCONCLUSIVE rows (35)
 
 Name pattern matched but source line did not have the expected shape.
 
@@ -323,6 +430,7 @@ Name pattern matched but source line did not have the expected shape.
 | `working/zelres2/code/204GFHGC.asm` | 177 | `hgc_row_ofs` | data | pointer/offset/address: dw or dd | `hgc_row_ofs	db	0F0h, 14h			; displacement (patch target); initially calls 1540h` |
 | `working/zelres2/code/205GFTGA.asm` | 159 | `tga_row_ofs` | data | pointer/offset/address: dw or dd | `tga_row_ofs	db	0ADh,16h			; displacement (patch target); initially calls 16FDh (si_wrap_lo)` |
 | `working/zelres2/code/206GFMCA.asm` | 198 | `mca_row_ofs` | data | pointer/offset/address: dw or dd | `mca_row_ofs	db	0C0h, 14h			; displacement (patch target); initially calls 1510h` |
+| `working/zelres2/code/206GFMCA.asm` | 3563 | `shift_blit_data_a` | label byte | data: db/dw/dd or label marker | `add	di,140h` |
 | `working/zelres2/code/211OMOYP.asm` | 199 | `ref_gdega_lbl` | label byte | resource reference: db/dw (1-3 bytes) | `ref_gdega_lbl	label	byte			; @ 0A0C7h (file +0xCB)` |
 | `working/zelres2/code/211OMOYP.asm` | 204 | `ref_gdcga_lbl` | label byte | resource reference: db/dw (1-3 bytes) | `ref_gdcga_lbl	label	byte			; @ 0A0D3h (file +0xD7)` |
 | `working/zelres2/code/211OMOYP.asm` | 209 | `ref_gdhgc_lbl` | label byte | resource reference: db/dw (1-3 bytes) | `ref_gdhgc_lbl	label	byte			; @ 0A0DFh (file +0xE3)` |
