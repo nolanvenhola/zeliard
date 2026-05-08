@@ -252,6 +252,34 @@ def parse_coverage_csv(path: Path) -> dict:
     return out
 
 
+def parse_data_pattern_verify(path: Path) -> dict:
+    """Parse working/DATA_PATTERN_VERIFY.md.
+
+    Returns {(file, name): (verdict, evidence_summary)}.
+    """
+    if not path.exists():
+        return {}
+    out = {}
+    text = path.read_text(encoding='utf-8', errors='replace')
+    # Rows like: | `file` | line | `name` | kind | pattern | source_line |
+    row_re = re.compile(
+        r'^\|\s*`(?P<file>[^`]+)`\s*\|\s*\d+\s*\|\s*`(?P<name>[^`]+)`\s*\|\s*'
+        r'[^|]*\s*\|\s*(?P<desc>[^|]*?)\s*\|',
+        re.MULTILINE,
+    )
+    # Only parse rows under SUPPORTED section (before INCONCLUSIVE)
+    if '## INCONCLUSIVE' in text:
+        text_supported = text.split('## INCONCLUSIVE')[0]
+    else:
+        text_supported = text
+    for m in row_re.finditer(text_supported):
+        out[(m.group('file'), m.group('name'))] = (
+            'SUPPORTED',
+            f'data-pattern: {m.group("desc")}',
+        )
+    return out
+
+
 def parse_name_pattern_verify(path: Path) -> dict:
     """Parse working/NAME_PATTERN_VERIFY.md.
 
@@ -369,6 +397,9 @@ def build_ledger() -> list[dict]:
     name_patterns = parse_name_pattern_verify(
         WORKING / 'NAME_PATTERN_VERIFY.md'
     )
+    data_patterns = parse_data_pattern_verify(
+        WORKING / 'DATA_PATTERN_VERIFY.md'
+    )
 
     # The .inc files are canonical homes for EQU names.  Any name that
     # appears as an EQU in the include file scoped to its source file is
@@ -479,6 +510,19 @@ def build_ledger() -> list[dict]:
                 canonical = inv['name']
                 evidence = np_evidence
                 source = 'name-pattern'
+
+        # Source 0c: data-pattern shape match.  For data/label items
+        # whose name implies a shape (string / table / pointer / buffer),
+        # the source line at the inventory's recorded line shows that shape.
+        if verdict == 'PENDING' and (inv['kind'] == 'data' or
+                                     inv['kind'].startswith('label')):
+            dp = data_patterns.get((file_rel, inv['name']))
+            if dp:
+                dp_verdict, dp_evidence = dp
+                verdict = dp_verdict
+                canonical = inv['name']
+                evidence = dp_evidence
+                source = 'data-pattern'
 
         # Source 1a: TCRF authoritative table for stdply 0x80..0xFF
         if verdict == 'PENDING' and is_stdply_file(file_rel) and address_hex:

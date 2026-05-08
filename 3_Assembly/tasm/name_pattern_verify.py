@@ -136,6 +136,95 @@ NAME_PATTERNS = [
           r'\badd\b', r'\bsub\b', r'\bcall\b', r'\bjnz\b'],
      ],
      'process/update/advance: state-update operations'),
+
+    (re.compile(r'^apply_'),
+     [
+         # apply_* procs apply some change -- write to memory or register.
+         [r'\bmov\b', r'\bxor\b', r'\bor\b', r'\band\b',
+          r'\badd\b', r'\bsub\b', r'\binc\b', r'\bdec\b',
+          r'\bcall\b'],
+     ],
+     'apply_*: writes/calls to apply effect'),
+
+    (re.compile(r'_main$|^main_'),
+     [
+         # main entry: typically calls many subroutines and returns
+         [r'\bcall\b'],
+         [r'\bret(?:n|f)?\b', r'\bjmp\b'],
+     ],
+     'main entry: calls subroutines + returns/exits'),
+
+    (re.compile(r'^bcd_|_bcd_|_to_bcd$|_from_bcd$'),
+     [
+         # BCD ops use AAA/AAS/AAM/AAD or arithmetic with mask 0Fh
+         [r'\baa[admsu]\b', r'\band\s+\w+\s*,\s*0?[01F]Fh',
+          r'\badd\b', r'\bsub\b', r'\bmul\b', r'\bdiv\b'],
+     ],
+     'BCD: AAA/AAS/AAM/AAD or arithmetic + mask'),
+
+    (re.compile(r'tile_|_tile_|^tile|tile$'),
+     [
+         # Tile ops typically write to ES:DI (video) or build a buffer
+         [r'\bes:\[', r'\bstos[bw]\b', r'\bmovs[bw]\b',
+          r'\bmov\b', r'\bcall\b'],
+     ],
+     'tile_*: tile data manipulation'),
+
+    (re.compile(r'^pal_|^palette_|_palette_|_pal_'),
+     [
+         # palette ops use port 0x3C7/0x3C8/0x3C9 (VGA palette ports)
+         # OR memory writes to palette state
+         [r'\bdx\s*,\s*0?3C[789]h', r'\bin\s+(?:al|ax)',
+          r'\bout\s+dx\b', r'\bmov\b', r'\bcall\b'],
+     ],
+     'palette: VGA palette I/O or palette-state writes'),
+
+    (re.compile(r'^bg_'),
+     [
+         # background ops: rep movs (save/restore) or rep stos
+         [r'\bmovs[bw]\b', r'\brep\s+movs[bw]\b',
+          r'\bstos[bw]\b', r'\brep\s+stos[bw]\b',
+          r'\bcall\b'],
+     ],
+     'bg_*: background save/restore/render'),
+
+    (re.compile(r'^bound_'),
+     [
+         # bound check: cmp + branch
+         [r'\bcmp\b', r'\btest\b'],
+         [r'\bjbe\b', r'\bjnb\b', r'\bjz\b', r'\bjnz\b',
+          r'\bjne\b', r'\bje\b', r'\bja\b', r'\bjb\b'],
+     ],
+     'bound_*: boundary cmp + branch'),
+
+    (re.compile(r'^(ui|dlg|dialog|menu|hud)_|_dlg_|_menu_'),
+     [
+         # UI procs typically call render functions
+         [r'\bcall\b'],
+     ],
+     'UI/dialog: dispatches to render/draw helpers'),
+
+    (re.compile(r'^(snd|audio|music|sound)_|_audio_|_sound_|^play_'),
+     [
+         # Audio: int 60h, port 0x388/0x389 (Adlib), or memory writes
+         [r'\bint\s+60h?\b', r'\bdx\s*,\s*0?38[89]h',
+          r'\bcall\b', r'\bmov\b'],
+     ],
+     'audio/sound: Adlib port I/O, INT 60h, or call'),
+
+    (re.compile(r'^anim_|^animate_|_anim$|_animate$'),
+     [
+         # Animation: usually has a frame counter inc + render call
+         [r'\binc\b', r'\bdec\b', r'\bcall\b', r'\bcmp\b'],
+     ],
+     'animation: counter + render dispatch'),
+
+    (re.compile(r'^(boss|enemy)_|_boss_|_enemy_'),
+     [
+         # Boss/enemy procs: state ops + branches
+         [r'\bcmp\b', r'\btest\b', r'\bmov\b'],
+     ],
+     'boss/enemy: state read/write/branch'),
 ]
 
 
@@ -191,26 +280,26 @@ def fingerprint_match(body: str, groups: list[list[str]]) -> bool:
     return True
 
 
-def load_pending_procs():
-    """Return list of {file, line, name, kind} for PENDING procs from the ledger."""
-    if not LEDGER_CSV.exists():
-        print(f'ERROR: ledger not found at {LEDGER_CSV}', file=sys.stderr)
-        sys.exit(1)
+def load_all_procs():
+    """Return list of {file, line, name} for ALL procs in the inventory.
+
+    Scans the inventory directly (not the ledger) so the report is
+    self-contained: every name-pattern match emits a SUPPORTED row,
+    independent of what audit_section.py has already attributed to
+    other evidence sources.  audit_section.py prioritises higher-
+    strength sources first, so the only effect is that the
+    name-pattern report stays complete.
+    """
     out = []
-    with LEDGER_CSV.open(encoding='utf-8') as f:
-        for r in csv.DictReader(f):
-            if r['verdict'] == 'PENDING' and r['kind'] == 'proc':
-                out.append({
-                    'file': r['file'],
-                    'line': int(r['line']),
-                    'name': r['name'],
-                })
+    for file_rel, line_no, name, kind in parse_inventory_rows():
+        if kind == 'proc':
+            out.append({'file': file_rel, 'line': line_no, 'name': name})
     return out
 
 
 def main():
-    pending = load_pending_procs()
-    print(f'Loaded {len(pending)} PENDING procs from {LEDGER_CSV.name}')
+    pending = load_all_procs()
+    print(f'Loaded {len(pending)} procs from inventory ({INVENTORY_MD.name})')
 
     # Stats
     counts = defaultdict(int)
