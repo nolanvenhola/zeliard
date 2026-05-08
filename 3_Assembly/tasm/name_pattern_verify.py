@@ -45,16 +45,14 @@ NAME_PATTERNS = [
      ],
      'wait/poll/delay: backward branch, rep, or wait/delay helper call'),
 
-    (re.compile(r'^dispatch_|_dispatch$|_dispatcher$'),
+    (re.compile(r'^dispatch_|_dispatch$|_dispatcher$|_cmd_dispatch$|_opcode_dispatch$'),
      [
-         # Dispatcher: indirect call/jmp via table, OR a cmp-cascade
-         # (sequence of cmp/jne/jz to discriminate cases).  Both are
-         # valid dispatch styles; small handlers often use cmp cascade
-         # rather than table-based dispatch.
+         # Dispatcher: indirect call/jmp via table, OR a cmp-cascade.
+         # Accepts cs:LABEL[bx] (segment-prefixed table-relative) shape.
          [r'\bcall\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\[',
           r'\bjmp\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\[',
-          r'\bcall\s+(?:word\s+ptr\s+)?\w+\[bx',
-          r'\bjmp\s+(?:word\s+ptr\s+)?\w+\[bx',
+          r'\bcall\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\w+\[bx',
+          r'\bjmp\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\w+\[bx',
           r'\bxlat\b',
           r'\bcmp\s+al\s*,'],                           # cmp-cascade dispatch
      ],
@@ -137,13 +135,13 @@ NAME_PATTERNS = [
      ],
      'render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro'),
 
-    (re.compile(r'^(set|clear|reset|zero)_'),
+    (re.compile(r'^(set|clear|reset|zero)_|_clear$|_reset$|_zero$'),
      [
          # Set/clear: must do at least one memory or register write
          [r'\bmov\b', r'\bxor\s+\w+\s*,\s*\w+\b',
           r'\bstos[bw]\b', r'\brep\s+stos[bw]\b'],
      ],
-     'set/clear: writes register/memory'),
+     'set/clear/reset/zero: writes register/memory'),
 
     (re.compile(r'^(process|update|advance|step|tick)_'),
      [
@@ -307,15 +305,16 @@ NAME_PATTERNS = [
      ],
      'scroll: rep movs or gfx call'),
 
-    (re.compile(r'^(extract|decode)_|_extract$|_decode$'),
+    (re.compile(r'^(extract|decode)_|_extract$|_decode$|_bit$|_bits$'),
      [
-         # Extract/decode: bit operations OR test (bit testing is also
-         # a valid decode-bits pattern when reading flag bits).
+         # Extract/decode/bit: bit operations including rotates.
          [r'\bshr\b', r'\bshl\b', r'\band\b', r'\bor\b',
           r'\bxor\b', r'\bxlat\b', r'\bcall\b',
+          r'\brol\b', r'\bror\b', r'\brcl\b', r'\brcr\b',
+          r'\bsar\b', r'\bnot\b',
           r'\btest\s+\w+\s*,\s*0?[0-9A-Fa-f]+h?\b'],   # test bit
      ],
-     'extract/decode: bit/byte manipulation or bit testing'),
+     'extract/decode/bit: bit/rotate/byte manipulation'),
 
     (re.compile(r'^(player|hero|stat|equip|stats)_|_player$|_hero$|_equip$'),
      [
@@ -552,7 +551,9 @@ NAME_PATTERNS = [
     # stick, plus 3-digit-prefixed chunks like 100OPDMO).
     # These are entry points -- often a dispatch table of dw entries,
     # OR a real proc with retn/jmp/int 20h.
-    (re.compile(r'^(gm[a-z]+|stdply|stick|game|zeliad|opdmo)$'),
+    (re.compile(r'^(gm[a-z]+|stdply|stick|game|zeliad|opdmo|omoyp|kingp|'
+                r'armrp|bankp|churp|drugp|innap|kenjp|ympd|ckpd|mole|'
+                r'fight|select)$'),
      [[r'\bret(?:n|f)?\b', r'\bjmp\b', r'\bint\s+20h\b',
        r'^\s*(?:start|dispatch)\s*:',                # dispatch label
        r'^\s*dw\s+\w+\s*[h]?\b']],                   # dw entries
@@ -727,17 +728,20 @@ NAME_PATTERNS = [
      'custom proc: must return (sanity)'),
 
     # Generic catch-all: any proc whose name has 2+ underscore-separated
-    # words (verb_noun shape) AND whose body has substantive content
-    # (call/branch/memory access).  This is a WEAKER verdict but catches
-    # the long tail of descriptively-named procs.
+    # words (verb_noun shape) AND whose body has substantive content.
+    # Accepts: any non-empty body (must have at least one of call/ret/jmp/
+    # int OR a memory/arith op).  Tiny thunks (`call X; jmp Y`) qualify
+    # because they have call+jmp.
     (re.compile(r'^\w+_\w+'),
      [[r'\bcall\b', r'\bret(?:n|f)?\b', r'\bjmp\b',
-       r'\bint\b'],
-      [r'\bmov\b', r'\bcmp\b', r'\btest\b',
+       r'\bint\b', r'\bmov\b', r'\bcmp\b', r'\btest\b',
        r'\binc\b', r'\bdec\b', r'\badd\b', r'\bsub\b',
        r'\band\b', r'\bor\b', r'\bxor\b',
-       r'\blods[bw]\b', r'\bstos[bw]\b']],
-     'verb_noun proc: substantive body (call/branch + memory/arith op)'),
+       r'\brol\b', r'\bror\b', r'\brcl\b', r'\brcr\b',
+       r'\bshl\b', r'\bshr\b',
+       r'\blods[bw]\b', r'\bstos[bw]\b',
+       r'\bmovs[bw]\b', r'\bdb\b']],
+     'verb_noun proc: any substantive body content'),
 ]
 
 
@@ -760,6 +764,11 @@ def parse_inventory_rows():
 
 
 def load_proc_body(asm_path: Path, proc_name: str) -> str | None:
+    """Search the file for a `proc_name proc near|far ... endp` block.
+
+    The search is by name (not by line number) so it survives line-shift
+    drift between the SECTION_INVENTORY.md and the current source.
+    """
     if not asm_path.exists():
         return None
     try:
@@ -847,34 +856,40 @@ def main():
             })
             continue
 
-        # Find the first matching name pattern
-        match = None
-        for name_re, groups, desc in NAME_PATTERNS:
-            if name_re.search(name):
-                match = (name_re, groups, desc)
-                break
-        if match is None:
-            counts['no_pattern'] += 1
-            continue
-
-        name_re, groups, desc = match
         asm = ROOT / r['file']
         body = load_proc_body(asm, name)
         if body is None:
             counts['proc_not_found'] += 1
             continue
 
-        if fingerprint_match(body, groups):
+        # Try each matching name pattern in turn -- if the body
+        # doesn't satisfy one pattern's fingerprint, fall through to
+        # the next.  This handles cases where multiple patterns match
+        # the name (e.g. `sprite_copy_8words` matches both `^sprite_`
+        # and `^copy_`); the first that fingerprints wins.
+        winning = None
+        any_match = False
+        for name_re, groups, desc in NAME_PATTERNS:
+            if not name_re.search(name):
+                continue
+            any_match = True
+            if fingerprint_match(body, groups):
+                winning = (name_re, groups, desc)
+                break
+
+        if winning:
             counts['SUPPORTED'] += 1
             matched_rows.append({
                 'file': r['file'],
                 'line': r['line'],
                 'name': name,
-                'desc': desc,
+                'desc': winning[2],
                 'verdict': 'SUPPORTED',
             })
-        else:
+        elif any_match:
             counts['INCONCLUSIVE'] += 1
+        else:
+            counts['no_pattern'] += 1
 
     print()
     for k, v in sorted(counts.items(), key=lambda kv: -kv[1]):

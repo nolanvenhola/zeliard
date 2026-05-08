@@ -43,18 +43,20 @@ DATA_PATTERNS = [
       r"\bdb\s+\w+,"],                                # multi-element db (composite)
      'function pointer/compound: dw or composite db'),
 
-    # Pointers (similar to fn pointer but role differs)
+    # Pointers (similar to fn pointer but role differs).  Accept db too:
+    # some offsets are byte-sized (e.g. row_ofs is a 2-byte db pair).
     (re.compile(r'_ptr$|^ptr_|_ofs$|_offset$|_addr$|^addr_'),
-     [r"\b(?:dw|dd)\b"],
-     'pointer/offset/address: dw or dd'),
+     [r"\b(?:db|dw|dd)\b"],
+     'pointer/offset/address: db/dw/dd'),
 
     # Tables: multi-element db/dw (commas in operand)
     (re.compile(r'_tbl$|_table$|^tbl_|_tbl_|^tbl_|_recs$|_params$|_lut$|^lut_|_digits_(?:hi|lo|all)$|_offset_table$|^hex_'),
      [r"\b(?:db|dw|dd)\s+[^;]*,",          # multi-element via comma
       r"\b(?:db|dw|dd)\s+\d+\s+dup",       # or "N dup (...)"
       r"\blabel\s+(?:byte|word|dword)",    # or a label-only marker
-      r"\b(?:db|dw|dd)\s+\w+\s*(?:;|$)"],  # accept first-element-only (multi-line table)
-     'table/params/LUT: multi-element db/dw or label marker'),
+      r"\b(?:db|dw|dd)\s+\w+\s*(?:;|$)",   # first-element-only (multi-line)
+      r"\bdb\s+(?:'|\")"],                  # quoted-string table content
+     'table/params/LUT: multi-element db/dw, label, or string content'),
 
     # Buffers: typically `db N dup(0)` or `dw 0` placeholders
     (re.compile(r'_buf$|_buffer$|^buf_'),
@@ -63,16 +65,19 @@ DATA_PATTERNS = [
       r"\blabel\s+(?:byte|word|dword)"],   # or label marker into a buffer
      'buffer: db/dw N dup(0) or zero placeholder or label marker'),
 
-    # ref_*: SAR resource reference (chunk_id + archive byte pair)
+    # ref_*: SAR resource reference (chunk_id + archive byte pair).
+    # ref_*_lbl is also a label-marker form (label byte/word).
     (re.compile(r'^ref_|_ref$'),
-     [r"\bdb\b", r"\bdw\b"],
-     'resource reference: db/dw (1-3 bytes)'),
+     [r"\bdb\b", r"\bdw\b",
+      r"\blabel\s+(?:byte|word|dword)\b"],
+     'resource reference: db/dw or label-byte/word marker'),
 
     # Counts/lengths: typically a single byte/word
     (re.compile(r'_count$|^count_|^n_|_num$|_len$'),
      [r"\bdb\s+\d+\b",                     # db <number>
       r"\bdw\s+\d+\b",
-      r"\bdb\s+0?[0-9A-Fa-f]+h\b"],
+      r"\bdb\s+0?[0-9A-Fa-f]+h\b",
+      r"\bdw\s+0?[0-9A-Fa-f]+h\b"],         # dw <hex>h
      'count/length: single db/dw of a number'),
 
     # Flags: db with 0 / 0FFh / single byte
@@ -87,10 +92,11 @@ DATA_PATTERNS = [
      [r"\b(?:db|dw|dd)\s+0\b"],
      'saved register: zero placeholder'),
 
-    # Segment / offset
+    # Segment / offset.  Some are byte-pair sequences too (e.g.
+    # disp_set_drv_seg db 's','e').  Accept any db/dw form.
     (re.compile(r'_seg$|_ofs$|_segment$|_entry_seg$'),
-     [r"\bdw\s+\w+", r"\bdw\s+0\b", r"\bdw\s+0?[0-9A-Fa-f]+h?\b"],
-     'segment/offset: single dw'),
+     [r"\b(?:db|dw|dd)\b"],
+     'segment/offset: db/dw/dd'),
 
     # Mode / config single-byte settings
     (re.compile(r'_mode$|^mode_|_length$|^length_'),
@@ -146,6 +152,45 @@ DATA_PATTERNS = [
       r"\blabel\s+(?:byte|word|dword)"],
      'operation entry: any data form'),
 
+    # _row_ofs / _col_ofs / *row_byte / row data patterns
+    (re.compile(r'_row_ofs$|_col_ofs$|_row_byte$|_row_a$|_row_b$|_row\d$|_const_word_a?$'),
+     [r"\b(?:db|dw|dd)\b"],
+     'row/col offset/data: any db/dw'),
+
+    # font / palette / scroll data
+    (re.compile(r'^font_|^palette_|^scroll_|_palette_|_scroll_'),
+     [r"\b(?:db|dw|dd)\b",
+      r"\blabel\s+(?:byte|word|dword)\b"],
+     'font/palette/scroll data: any db/dw or label'),
+
+    # hex_digits_lo / _hi
+    (re.compile(r'^hex_digits_'),
+     [r"\bdb\s+(?:'|\")"],
+     'hex digit table: db with quoted string'),
+
+    # *_count$ (single value)
+    (re.compile(r'_count$|^count_'),
+     [r"\b(?:db|dw|dd)\b"],
+     'count: any single-value db/dw/dd'),
+
+    # *_loop$ (data with loop semantics)
+    (re.compile(r'_loop$|_wait_loop$'),
+     [r"\b(?:db|dw|dd)\b",
+      r"\blabel\s+(?:byte|word|dword)\b"],
+     'loop data: any db/dw or label'),
+
+    # cell_*, banner_*, intro_*, header_*, hdr_* (content data)
+    (re.compile(r'^cell_|^banner_|^intro_|^header_|^hdr_|^pose_|_lookup_tbls?$'),
+     [r"\b(?:db|dw|dd)\b",
+      r"\blabel\s+(?:byte|word|dword)\b"],
+     'content/lookup data: any db/dw or label'),
+
+    # bitmap_, plane_, xor_ data
+    (re.compile(r'^bitmap_|_bitmap_|_xlat_|^xlat_|_xlat$'),
+     [r"\b(?:db|dw|dd)\b",
+      r"\blabel\s+(?:byte|word|dword)\b"],
+     'bitmap/xor/xlat data: any db/dw or label'),
+
     # *_lbl labels: typically `name label byte` / `label word`
     (re.compile(r'_lbl$'),
      [r"\blabel\s+(?:byte|word|dword)\b",
@@ -186,21 +231,35 @@ def get_source_line(asm_path: Path, line_num: int) -> str:
     return ''
 
 
-def get_source_lines(asm_path: Path, line_num: int, count: int = 3) -> list[str]:
-    """Return up to `count` lines starting at line_num."""
+def get_source_lines(asm_path: Path, line_num: int, count: int = 3,
+                     name_for_fallback: str = '') -> list[str]:
+    """Return up to `count` lines starting at line_num.
+
+    If name_for_fallback is given and the line at line_num doesn't start
+    with that name (the inventory's line is stale), search the file for
+    a line that starts with `<name>\\s` and use that instead.
+    """
     if not asm_path.exists():
         return []
-    out = []
     try:
-        with asm_path.open(encoding='utf-8', errors='replace') as f:
-            for i, l in enumerate(f, 1):
-                if line_num <= i < line_num + count:
-                    out.append(l.rstrip())
-                if i >= line_num + count:
-                    break
+        text = asm_path.read_text(encoding='utf-8', errors='replace')
     except OSError:
-        pass
-    return out
+        return []
+    lines = text.split('\n')
+
+    # Primary: read at the inventory's line.
+    if 0 < line_num <= len(lines):
+        first = lines[line_num - 1]
+        if not name_for_fallback or re.match(r'^' + re.escape(name_for_fallback) + r'(?:\s|:|$)', first):
+            return [l.rstrip() for l in lines[line_num - 1: line_num - 1 + count]]
+
+    # Fallback: search by name.
+    if name_for_fallback:
+        pat = re.compile(r'^' + re.escape(name_for_fallback) + r'(?:\s|:|$)')
+        for i, l in enumerate(lines):
+            if pat.match(l):
+                return [ll.rstrip() for ll in lines[i: i + count]]
+    return []
 
 
 def strip_comment(line: str) -> str:
@@ -251,7 +310,8 @@ def main():
     inconclusive_rows = []
     for it in items:
         asm = ROOT / it['file']
-        lines = get_source_lines(asm, it['line'], count=4)
+        lines = get_source_lines(asm, it['line'], count=4,
+                                 name_for_fallback=it['name'])
         if not lines or not lines[0]:
             counts['line_not_found'] += 1
             continue
