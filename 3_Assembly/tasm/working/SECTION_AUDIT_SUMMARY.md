@@ -20,19 +20,19 @@ Strength ladder (strongest first):
 
 | Verdict | Count |
 |---|---:|
-| SUPPORTED | 904 |
+| SUPPORTED | 938 |
 | INC_CONSISTENT | 6 |
 | CONTRADICTED | 0 |
-| INCONCLUSIVE | 36 |
-| PENDING | 651 |
+| INCONCLUSIVE | 31 |
+| PENDING | 622 |
 
 ## Evidence sources (rows with verdict)
 
 | Source | Count |
 |---|---:|
-| name-pattern | 497 |
-| data-pattern | 231 |
-| driver-sig | 128 |
+| name-pattern | 474 |
+| data-pattern | 239 |
+| driver-sig | 172 |
 | TCRF | 84 |
 | stdply.inc | 6 |
 
@@ -41,17 +41,17 @@ Strength ladder (strongest first):
 | File | Supported | Contradicted | Pending | Total |
 |---|---:|---:|---:|---:|
 | `working/core/game.asm` | 19 | 0 | 1 | 20 |
-| `working/core/zeliad.asm` | 28 | 0 | 27 | 55 |
-| `working/drivers/gmcga.asm` | 14 | 0 | 5 | 19 |
-| `working/drivers/gmega.asm` | 11 | 0 | 5 | 16 |
-| `working/drivers/gmhgc.asm` | 17 | 0 | 5 | 22 |
-| `working/drivers/gmmcga.asm` | 13 | 0 | 8 | 21 |
-| `working/drivers/gmtga.asm` | 14 | 0 | 6 | 20 |
+| `working/core/zeliad.asm` | 32 | 0 | 23 | 55 |
+| `working/drivers/gmcga.asm` | 16 | 0 | 1 | 17 |
+| `working/drivers/gmega.asm` | 13 | 0 | 1 | 14 |
+| `working/drivers/gmhgc.asm` | 19 | 0 | 1 | 20 |
+| `working/drivers/gmmcga.asm` | 15 | 0 | 3 | 18 |
+| `working/drivers/gmtga.asm` | 16 | 0 | 2 | 18 |
 | `working/drivers/stdply.asm` | 90 | 0 | 1 | 91 |
 | `working/drivers/stick.asm` | 18 | 0 | 19 | 37 |
-| `working/zelres1/code/100OPDMO.asm` | 12 | 0 | 32 | 44 |
+| `working/zelres1/code/100OPDMO.asm` | 14 | 0 | 30 | 44 |
 | `working/zelres1/code/101GDEGA.asm` | 19 | 0 | 5 | 24 |
-| `working/zelres1/code/102GDCGA.asm` | 18 | 0 | 4 | 22 |
+| `working/zelres1/code/102GDCGA.asm` | 19 | 0 | 3 | 22 |
 | `working/zelres1/code/103GDHGC.asm` | 21 | 0 | 3 | 24 |
 | `working/zelres1/code/104GDTGA.asm` | 20 | 0 | 7 | 27 |
 | `working/zelres1/code/105GDMCA.asm` | 13 | 0 | 12 | 25 |
@@ -63,11 +63,11 @@ Strength ladder (strongest first):
 | `working/zelres1/code/111GTMCA.asm` | 10 | 0 | 19 | 29 |
 | `working/zelres2/code/200FIGHT.asm` | 77 | 0 | 74 | 151 |
 | `working/zelres2/code/201SELCT.asm` | 12 | 0 | 19 | 31 |
-| `working/zelres2/code/202GFEGA.asm` | 21 | 0 | 11 | 32 |
-| `working/zelres2/code/203GFCGA.asm` | 20 | 0 | 16 | 36 |
-| `working/zelres2/code/204GFHGC.asm` | 23 | 0 | 19 | 42 |
-| `working/zelres2/code/205GFTGA.asm` | 24 | 0 | 16 | 40 |
-| `working/zelres2/code/206GFMCA.asm` | 30 | 0 | 18 | 48 |
+| `working/zelres2/code/202GFEGA.asm` | 25 | 0 | 11 | 36 |
+| `working/zelres2/code/203GFCGA.asm` | 23 | 0 | 16 | 39 |
+| `working/zelres2/code/204GFHGC.asm` | 24 | 0 | 19 | 43 |
+| `working/zelres2/code/205GFTGA.asm` | 28 | 0 | 16 | 44 |
+| `working/zelres2/code/206GFMCA.asm` | 34 | 0 | 18 | 52 |
 | `working/zelres2/code/207MOLE.asm` | 63 | 0 | 12 | 75 |
 | `working/zelres2/code/208YMPD.asm` | 2 | 0 | 8 | 10 |
 | `working/zelres2/code/209CKPD.asm` | 14 | 0 | 8 | 22 |
@@ -91,7 +91,7 @@ Strength ladder (strongest first):
 | `working/zelres3/code/308EAI8.asm` | 6 | 0 | 2 | 8 |
 | `working/zelres3/code/309CRAB.asm` | 2 | 0 | 7 | 9 |
 | `working/zelres3/code/310TAKO.asm` | 3 | 0 | 4 | 7 |
-| `working/zelres3/code/311TORI.asm` | 3 | 0 | 10 | 13 |
+| `working/zelres3/code/311TORI.asm` | 4 | 0 | 9 | 13 |
 | `working/zelres3/code/312ZELA.asm` | 5 | 0 | 3 | 8 |
 | `working/zelres3/code/313MEDA.asm` | 4 | 0 | 9 | 13 |
 | `working/zelres3/code/314LEGA.asm` | 4 | 0 | 11 | 15 |

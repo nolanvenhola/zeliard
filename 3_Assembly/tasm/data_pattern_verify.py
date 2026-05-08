@@ -29,7 +29,7 @@ INVENTORY_MD = WORKING / 'SECTION_INVENTORY.md'
 # (after stripping comments).  ANY of the regexes matching counts as a hit.
 DATA_PATTERNS = [
     # Strings: db with quoted text
-    (re.compile(r'^str_|^msg_|_str$|_msg$|^txt_|_txt$'),
+    (re.compile(r'^str_|^msg_|_str$|_msg$|^txt_|_txt$|_filename$|_name$|_speech|_text|_narration|_disappear'),
      [r"\bdb\s+(?:'[^']*'|\"[^\"]*\")",
       r"\bdb\s+\d+\s+dup\s*\(\s*['\"]"],   # also `db N dup ('?')`
      'string: db with quoted text'),
@@ -124,19 +124,53 @@ def get_source_line(asm_path: Path, line_num: int) -> str:
     return ''
 
 
+def get_source_lines(asm_path: Path, line_num: int, count: int = 3) -> list[str]:
+    """Return up to `count` lines starting at line_num."""
+    if not asm_path.exists():
+        return []
+    out = []
+    try:
+        with asm_path.open(encoding='utf-8', errors='replace') as f:
+            for i, l in enumerate(f, 1):
+                if line_num <= i < line_num + count:
+                    out.append(l.rstrip())
+                if i >= line_num + count:
+                    break
+    except OSError:
+        pass
+    return out
+
+
 def strip_comment(line: str) -> str:
     return re.sub(r';.*', '', line).rstrip()
 
 
-def classify(name: str, source_line: str) -> tuple[str, str, str] | None:
-    """Returns (verdict, description, matched_regex) or None if no name pattern."""
-    cleaned = strip_comment(source_line)
+def classify(name: str, source_lines: list[str]) -> tuple[str, str, str] | None:
+    """Returns (verdict, description, matched_regex) or None if no name pattern.
+
+    Checks the first source line by default.  For table patterns, also
+    checks the next 1-2 lines (multi-line tables have only one element on
+    the first line but more on subsequent lines).
+    """
+    if not source_lines:
+        return None
+    cleaned = strip_comment(source_lines[0])
     for name_re, shape_regexes, desc in DATA_PATTERNS:
         if not name_re.search(name):
             continue
+        # Check first line against all shape regexes
         for shape in shape_regexes:
             if re.search(shape, cleaned, re.IGNORECASE):
                 return ('SUPPORTED', desc, shape)
+        # For table-like names, also check subsequent lines for db/dw
+        # (multi-line tables span several lines).
+        if name_re.search(name) and ('table' in desc or 'pointer' in desc
+                                     or 'data' in desc or 'buffer' in desc):
+            for next_line in source_lines[1:]:
+                next_clean = strip_comment(next_line)
+                if re.match(r'\s*\b(?:db|dw|dd)\b', next_clean, re.IGNORECASE):
+                    # Multi-line table/data block confirmed
+                    return ('SUPPORTED', desc, 'multi-line db/dw block')
         return ('INCONCLUSIVE', desc, '')
     return None  # name pattern doesn't apply
 
@@ -155,11 +189,11 @@ def main():
     inconclusive_rows = []
     for it in items:
         asm = ROOT / it['file']
-        line = get_source_line(asm, it['line'])
-        if not line:
+        lines = get_source_lines(asm, it['line'], count=4)
+        if not lines or not lines[0]:
             counts['line_not_found'] += 1
             continue
-        result = classify(it['name'], line)
+        result = classify(it['name'], lines)
         if result is None:
             counts['no_pattern'] += 1
             continue
@@ -172,7 +206,7 @@ def main():
             'kind': it['kind'],
             'desc': desc,
             'verdict': verdict,
-            'source_line': line.strip()[:100],
+            'source_line': lines[0].strip()[:100],
         }
         if verdict == 'SUPPORTED':
             matched_rows.append(row)

@@ -489,15 +489,19 @@ def build_ledger() -> list[dict]:
         # Source 0: driver-signature verification.  For procs in graphics
         # drivers, the role-fingerprint match across all 5 parallel
         # implementations is deterministic byte/opcode evidence.
+        # Note: only SUPPORTED + CONTRADICTED verdicts are claimed here.
+        # INCONCLUSIVE from driver-sig falls through to name-pattern so
+        # the proc still has a chance at SUPPORTED via a different track.
         if inv['kind'] == 'proc':
             chunk = chunk_stem_from_file(file_rel)
             sig = driver_sigs.get((chunk, inv['name']))
             if sig:
                 sig_verdict, sig_evidence = sig
-                verdict = sig_verdict
-                canonical = inv['name']
-                evidence = sig_evidence
-                source = 'driver-sig'
+                if sig_verdict in ('SUPPORTED', 'CONTRADICTED'):
+                    verdict = sig_verdict
+                    canonical = inv['name']
+                    evidence = sig_evidence
+                    source = 'driver-sig'
 
         # Source 0b: name-pattern fingerprint match.  For procs whose
         # name implies a role (e.g. wait_*, dispatch_*), the body's
@@ -510,6 +514,17 @@ def build_ledger() -> list[dict]:
                 canonical = inv['name']
                 evidence = np_evidence
                 source = 'name-pattern'
+
+        # If still PENDING and driver-sig had an INCONCLUSIVE result,
+        # surface it as the verdict (better than pure PENDING).
+        if verdict == 'PENDING' and inv['kind'] == 'proc':
+            chunk = chunk_stem_from_file(file_rel)
+            sig = driver_sigs.get((chunk, inv['name']))
+            if sig and sig[0] == 'INCONCLUSIVE':
+                verdict = 'INCONCLUSIVE'
+                canonical = inv['name']
+                evidence = sig[1]
+                source = 'driver-sig'
 
         # Source 0c: data-pattern shape match.  For data/label items
         # whose name implies a shape (string / table / pointer / buffer),

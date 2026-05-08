@@ -35,10 +35,10 @@ working/core/zeliad.asm,754,find_colon_in_line,proc,1,,,0,SUPPORTED,find_colon_i
 working/core/zeliad.asm,779,load_driver_file,proc,1,,,0,SUPPORTED,load_driver_file,name-pattern: load/save/read/write: at least one memory op or loader call,name-pattern
 working/core/zeliad.asm,819,display_file_error,proc,0,,,0,PENDING,,,
 working/core/zeliad.asm,882,set_video_mode,proc,1,,,0,SUPPORTED,set_video_mode,name-pattern: set/clear: writes register/memory,name-pattern
-working/core/zeliad.asm,888,video_mode_table,data,0,,,0,PENDING,,,
+working/core/zeliad.asm,888,video_mode_table,data,0,,,0,SUPPORTED,video_mode_table,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
 working/core/zeliad.asm,958,hgc_crt_params,data,0,,,0,PENDING,,,
 working/core/zeliad.asm,965,ctrl_c_handler,proc,0,,,0,PENDING,,,
-working/core/zeliad.asm,975,parse_command_line,proc,0,,,0,SUPPORTED,parse_command_line,name-pattern: line/row: row write + loop tail,name-pattern
+working/core/zeliad.asm,975,parse_command_line,proc,1,,,0,SUPPORTED,parse_command_line,name-pattern: line/row: row write + loop tail,name-pattern
 working/core/zeliad.asm,1029,str_game_title,data,1,,,0,SUPPORTED,str_game_title,data-pattern: string: db with quoted text,data-pattern
 working/core/zeliad.asm,1035,str_not_supported,data,1,,,0,SUPPORTED,str_not_supported,data-pattern: string: db with quoted text,data-pattern
 working/core/zeliad.asm,1036,str_special_mode,data,1,,,0,SUPPORTED,str_special_mode,data-pattern: string: db with quoted text,data-pattern
@@ -53,9 +53,9 @@ working/core/zeliad.asm,1046,str_user_file_error,data,1,,,0,SUPPORTED,str_user_f
 working/core/zeliad.asm,1047,str_cfg_error,data,1,,,0,SUPPORTED,str_cfg_error,data-pattern: string: db with quoted text,data-pattern
 working/core/zeliad.asm,1054,hex_digits_hi,data,0,,,0,PENDING,,,
 working/core/zeliad.asm,1055,hex_digits_lo,data,0,,,0,PENDING,,,
-working/core/zeliad.asm,1057,cfg_filename,data,0,,,0,PENDING,,,
-working/core/zeliad.asm,1058,mtinit_filename,data,0,,,0,PENDING,,,
-working/core/zeliad.asm,1061,driver_offset_table,data,0,,,0,PENDING,,,
+working/core/zeliad.asm,1057,cfg_filename,data,0,,,0,SUPPORTED,cfg_filename,data-pattern: string: db with quoted text,data-pattern
+working/core/zeliad.asm,1058,mtinit_filename,data,0,,,0,SUPPORTED,mtinit_filename,data-pattern: string: db with quoted text,data-pattern
+working/core/zeliad.asm,1061,driver_offset_table,data,0,,,0,SUPPORTED,driver_offset_table,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
 working/core/zeliad.asm,1101,cmdline_savefile,data,0,,,0,PENDING,,,
 working/core/zeliad.asm,1104,music_driver_name,data,0,,,0,PENDING,,,
 working/core/zeliad.asm,1107,joystick_driver_name,data,0,,,0,PENDING,,,
@@ -75,102 +75,102 @@ working/core/zeliad.asm,1149,joystick_enabled,data,0,,,0,PENDING,,,
 working/core/zeliad.asm,1150,cfg_line_length,data,0,,,0,PENDING,,,
 working/core/zeliad.asm,1151,cfg_line_buffer,data,1,,,0,SUPPORTED,cfg_line_buffer,data-pattern: buffer: db/dw N dup(0) or zero placeholder or label marker,data-pattern
 working/drivers/gmcga.asm,136,gmcga,proc,0,,,0,PENDING,,,
-working/drivers/gmcga.asm,228,fill_horizontal_line,proc,0,,,0,SUPPORTED,fill_horizontal_line,name-pattern: fill_*: rep stos or memory write,name-pattern
-working/drivers/gmcga.asm,252,clear_screen,proc,1,,,0,SUPPORTED,clear_screen,name-pattern: set/clear: writes register/memory,name-pattern
-working/drivers/gmcga.asm,438,plot_pixel,proc,0,,,0,SUPPORTED,plot_pixel,name-pattern: pixel/pixels: video memory write,name-pattern
+working/drivers/gmcga.asm,228,fill_horizontal_line,proc,1,,,0,SUPPORTED,fill_horizontal_line,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/drivers/gmcga.asm,252,clear_screen,proc,1,,,0,SUPPORTED,clear_screen,driver-signature: video framebuffer clear: rep stos with zero,driver-sig
+working/drivers/gmcga.asm,438,plot_pixel,proc,1,,,0,SUPPORTED,plot_pixel,driver-signature: single-pixel write to video memory,driver-sig
 working/drivers/gmcga.asm,605,calc_text_width,proc,1,,,0,SUPPORTED,calc_text_width,name-pattern: compute/calc: arithmetic or bitwise op,name-pattern
-working/drivers/gmcga.asm,628,fill_vertical_line,proc,0,,,0,SUPPORTED,fill_vertical_line,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/drivers/gmcga.asm,628,fill_vertical_line,proc,1,,,0,SUPPORTED,fill_vertical_line,driver-signature: vertical line fill: ES:DI write + row loop,driver-sig
 working/drivers/gmcga.asm,729,render_text_char,proc,1,,,0,SUPPORTED,render_text_char,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmcga.asm,869,init_timestamp,proc,0,,,0,SUPPORTED,init_timestamp,name-pattern: timestamp/time: time read or BCD conversion,name-pattern
-working/drivers/gmcga.asm,890,time_to_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmcga.asm,917,modulo_divide_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmcga.asm,942,int_divide_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmcga.asm,952,render_tilemap_large,proc,0,,,0,PENDING,,,
-working/drivers/gmcga.asm,993,decode_bitplane_tile,proc,1,,,0,SUPPORTED,decode_bitplane_tile,name-pattern: tile_*: tile data manipulation,name-pattern
-working/drivers/gmcga.asm,1257,render_tilemap_small,proc,1,,,0,SUPPORTED,render_tilemap_small,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmcga.asm,1323,extract_bitplane_pixels,proc,0,,,0,SUPPORTED,extract_bitplane_pixels,name-pattern: extract/decode: bit/byte manipulation,name-pattern
-working/drivers/gmcga.asm,1363,render_text_char_alt,proc,1,,,0,SUPPORTED,render_text_char_alt,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmcga.asm,1435,expand_font_bits,proc,0,,,0,SUPPORTED,expand_font_bits,name-pattern: bits/bitmap: bit operations,name-pattern
-working/drivers/gmcga.asm,1721,fill_rectangle,proc,0,,,0,SUPPORTED,fill_rectangle,name-pattern: fill_*: rep stos or memory write,name-pattern
-working/drivers/gmcga.asm,1933,process_sprite_row,proc,1,,,0,SUPPORTED,process_sprite_row,name-pattern: process/update/advance: state-update operations,name-pattern
+working/drivers/gmcga.asm,869,init_timestamp,proc,1,,,0,SUPPORTED,init_timestamp,name-pattern: timestamp/time: time read or BCD conversion,name-pattern
+working/drivers/gmcga.asm,890,time_to_bcd,proc,1,,,0,SUPPORTED,time_to_bcd,driver-signature: time-to-BCD conversion: AAD/AAM/DIV,driver-sig
+working/drivers/gmcga.asm,917,modulo_divide_bcd,proc,0,,,0,INCONCLUSIVE,modulo_divide_bcd,driver-signature: BCD modulo divide,driver-sig
+working/drivers/gmcga.asm,942,int_divide_bcd,proc,1,,,0,SUPPORTED,int_divide_bcd,driver-signature: BCD integer divide,driver-sig
+working/drivers/gmcga.asm,952,render_tilemap_large,proc,0,,,0,INCONCLUSIVE,render_tilemap_large,driver-signature: large tilemap render: video write + dispatch,driver-sig
+working/drivers/gmcga.asm,993,decode_bitplane_tile,proc,1,,,0,SUPPORTED,decode_bitplane_tile,driver-signature: decode bitplane tile: bit ops + video write,driver-sig
+working/drivers/gmcga.asm,1257,render_tilemap_small,proc,1,,,0,SUPPORTED,render_tilemap_small,driver-signature: small tilemap render: video write + dispatch,driver-sig
+working/drivers/gmcga.asm,1323,extract_bitplane_pixels,proc,1,,,0,SUPPORTED,extract_bitplane_pixels,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/drivers/gmcga.asm,1363,render_text_char_alt,proc,1,,,0,SUPPORTED,render_text_char_alt,driver-signature: alternate text glyph render,driver-sig
+working/drivers/gmcga.asm,1435,expand_font_bits,proc,1,,,0,SUPPORTED,expand_font_bits,name-pattern: bits/bitmap: bit operations,name-pattern
+working/drivers/gmcga.asm,1721,fill_rectangle,proc,1,,,0,SUPPORTED,fill_rectangle,driver-signature: 2D rectangle fill: rep stos in row-loop,driver-sig
+working/drivers/gmcga.asm,1933,process_sprite_row,proc,1,,,0,SUPPORTED,process_sprite_row,driver-signature: sprite row processing: write + loop,driver-sig
 working/drivers/gmega.asm,129,gmega,proc,0,,,0,PENDING,,,
-working/drivers/gmega.asm,220,fill_horizontal_line,proc,0,,,0,SUPPORTED,fill_horizontal_line,name-pattern: fill_*: rep stos or memory write,name-pattern
-working/drivers/gmega.asm,284,clear_screen,proc,1,,,0,SUPPORTED,clear_screen,name-pattern: set/clear: writes register/memory,name-pattern
-working/drivers/gmega.asm,486,plot_pixel,proc,0,,,0,SUPPORTED,plot_pixel,name-pattern: pixel/pixels: video memory write,name-pattern
+working/drivers/gmega.asm,220,fill_horizontal_line,proc,1,,,0,SUPPORTED,fill_horizontal_line,driver-signature: horizontal line fill: rep stos to ES:DI,driver-sig
+working/drivers/gmega.asm,284,clear_screen,proc,1,,,0,SUPPORTED,clear_screen,driver-signature: video framebuffer clear: rep stos with zero,driver-sig
+working/drivers/gmega.asm,486,plot_pixel,proc,1,,,0,SUPPORTED,plot_pixel,driver-signature: single-pixel write to video memory,driver-sig
 working/drivers/gmega.asm,680,calc_text_width,proc,1,,,0,SUPPORTED,calc_text_width,name-pattern: compute/calc: arithmetic or bitwise op,name-pattern
-working/drivers/gmega.asm,703,fill_vertical_line,proc,0,,,0,SUPPORTED,fill_vertical_line,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/drivers/gmega.asm,703,fill_vertical_line,proc,1,,,0,SUPPORTED,fill_vertical_line,driver-signature: vertical line fill: ES:DI write + row loop,driver-sig
 working/drivers/gmega.asm,796,render_text_char,proc,1,,,0,SUPPORTED,render_text_char,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmega.asm,942,init_timestamp,proc,0,,,0,SUPPORTED,init_timestamp,name-pattern: timestamp/time: time read or BCD conversion,name-pattern
-working/drivers/gmega.asm,965,time_to_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmega.asm,992,modulo_divide_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmega.asm,1017,int_divide_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmega.asm,1027,render_tilemap_large,proc,0,,,0,PENDING,,,
-working/drivers/gmega.asm,1062,decode_bitplane_tile,proc,1,,,0,SUPPORTED,decode_bitplane_tile,name-pattern: tile_*: tile data manipulation,name-pattern
-working/drivers/gmega.asm,1342,render_tilemap_small,proc,1,,,0,SUPPORTED,render_tilemap_small,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
+working/drivers/gmega.asm,942,init_timestamp,proc,1,,,0,SUPPORTED,init_timestamp,name-pattern: timestamp/time: time read or BCD conversion,name-pattern
+working/drivers/gmega.asm,965,time_to_bcd,proc,1,,,0,SUPPORTED,time_to_bcd,driver-signature: time-to-BCD conversion: AAD/AAM/DIV,driver-sig
+working/drivers/gmega.asm,992,modulo_divide_bcd,proc,0,,,0,INCONCLUSIVE,modulo_divide_bcd,driver-signature: BCD modulo divide,driver-sig
+working/drivers/gmega.asm,1017,int_divide_bcd,proc,1,,,0,SUPPORTED,int_divide_bcd,driver-signature: BCD integer divide,driver-sig
+working/drivers/gmega.asm,1027,render_tilemap_large,proc,0,,,0,INCONCLUSIVE,render_tilemap_large,driver-signature: large tilemap render: video write + dispatch,driver-sig
+working/drivers/gmega.asm,1062,decode_bitplane_tile,proc,1,,,0,SUPPORTED,decode_bitplane_tile,driver-signature: decode bitplane tile: bit ops + video write,driver-sig
+working/drivers/gmega.asm,1342,render_tilemap_small,proc,1,,,0,SUPPORTED,render_tilemap_small,driver-signature: small tilemap render: video write + dispatch,driver-sig
 working/drivers/gmega.asm,1439,render_text_char_alt,proc,1,,,0,SUPPORTED,render_text_char_alt,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmega.asm,1809,fill_rectangle,proc,0,,,0,SUPPORTED,fill_rectangle,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/drivers/gmega.asm,1809,fill_rectangle,proc,1,,,0,SUPPORTED,fill_rectangle,driver-signature: 2D rectangle fill: rep stos in row-loop,driver-sig
 working/drivers/gmhgc.asm,127,gmhgc,proc,0,,,0,PENDING,,,
-working/drivers/gmhgc.asm,221,fill_horizontal_line,proc,0,,,0,SUPPORTED,fill_horizontal_line,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/drivers/gmhgc.asm,221,fill_horizontal_line,proc,1,,,0,SUPPORTED,fill_horizontal_line,name-pattern: fill_*: rep stos or memory write,name-pattern
 working/drivers/gmhgc.asm,259,clear_screen,proc,1,,,0,SUPPORTED,clear_screen,name-pattern: set/clear: writes register/memory,name-pattern
 working/drivers/gmhgc.asm,281,clear_screen_row,proc,1,,,0,SUPPORTED,clear_screen_row,name-pattern: set/clear: writes register/memory,name-pattern
-working/drivers/gmhgc.asm,403,fade_screen_row,proc,0,,,0,SUPPORTED,fade_screen_row,name-pattern: line/row: row write + loop tail,name-pattern
-working/drivers/gmhgc.asm,489,plot_pixel,proc,0,,,0,SUPPORTED,plot_pixel,name-pattern: pixel/pixels: video memory write,name-pattern
+working/drivers/gmhgc.asm,403,fade_screen_row,proc,1,,,0,SUPPORTED,fade_screen_row,name-pattern: line/row: row write + loop tail,name-pattern
+working/drivers/gmhgc.asm,489,plot_pixel,proc,1,,,0,SUPPORTED,plot_pixel,driver-signature: single-pixel write to video memory,driver-sig
 working/drivers/gmhgc.asm,666,calc_text_width,proc,1,,,0,SUPPORTED,calc_text_width,name-pattern: compute/calc: arithmetic or bitwise op,name-pattern
-working/drivers/gmhgc.asm,689,fill_vertical_line,proc,0,,,0,SUPPORTED,fill_vertical_line,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/drivers/gmhgc.asm,689,fill_vertical_line,proc,1,,,0,SUPPORTED,fill_vertical_line,driver-signature: vertical line fill: ES:DI write + row loop,driver-sig
 working/drivers/gmhgc.asm,778,render_text_char,proc,1,,,0,SUPPORTED,render_text_char,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmhgc.asm,924,init_timestamp,proc,0,,,0,SUPPORTED,init_timestamp,name-pattern: timestamp/time: time read or BCD conversion,name-pattern
-working/drivers/gmhgc.asm,946,time_to_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmhgc.asm,973,modulo_divide_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmhgc.asm,998,int_divide_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmhgc.asm,1008,render_tilemap_large,proc,0,,,0,PENDING,,,
-working/drivers/gmhgc.asm,1047,decode_bitplane_tile,proc,1,,,0,SUPPORTED,decode_bitplane_tile,name-pattern: tile_*: tile data manipulation,name-pattern
-working/drivers/gmhgc.asm,1324,render_tilemap_small,proc,1,,,0,SUPPORTED,render_tilemap_small,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmhgc.asm,1395,extract_bitplane_pixels,proc,0,,,0,SUPPORTED,extract_bitplane_pixels,name-pattern: extract/decode: bit/byte manipulation,name-pattern
-working/drivers/gmhgc.asm,1433,render_text_char_alt,proc,1,,,0,SUPPORTED,render_text_char_alt,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmhgc.asm,1519,double_char_bits,proc,0,,,0,SUPPORTED,double_char_bits,name-pattern: bits/bitmap: bit operations,name-pattern
-working/drivers/gmhgc.asm,1789,fill_rectangle,proc,0,,,0,SUPPORTED,fill_rectangle,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/drivers/gmhgc.asm,924,init_timestamp,proc,1,,,0,SUPPORTED,init_timestamp,name-pattern: timestamp/time: time read or BCD conversion,name-pattern
+working/drivers/gmhgc.asm,946,time_to_bcd,proc,1,,,0,SUPPORTED,time_to_bcd,driver-signature: time-to-BCD conversion: AAD/AAM/DIV,driver-sig
+working/drivers/gmhgc.asm,973,modulo_divide_bcd,proc,0,,,0,INCONCLUSIVE,modulo_divide_bcd,driver-signature: BCD modulo divide,driver-sig
+working/drivers/gmhgc.asm,998,int_divide_bcd,proc,1,,,0,SUPPORTED,int_divide_bcd,driver-signature: BCD integer divide,driver-sig
+working/drivers/gmhgc.asm,1008,render_tilemap_large,proc,0,,,0,INCONCLUSIVE,render_tilemap_large,driver-signature: large tilemap render: video write + dispatch,driver-sig
+working/drivers/gmhgc.asm,1047,decode_bitplane_tile,proc,1,,,0,SUPPORTED,decode_bitplane_tile,driver-signature: decode bitplane tile: bit ops + video write,driver-sig
+working/drivers/gmhgc.asm,1324,render_tilemap_small,proc,1,,,0,SUPPORTED,render_tilemap_small,driver-signature: small tilemap render: video write + dispatch,driver-sig
+working/drivers/gmhgc.asm,1395,extract_bitplane_pixels,proc,1,,,0,SUPPORTED,extract_bitplane_pixels,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/drivers/gmhgc.asm,1433,render_text_char_alt,proc,1,,,0,SUPPORTED,render_text_char_alt,driver-signature: alternate text glyph render,driver-sig
+working/drivers/gmhgc.asm,1519,double_char_bits,proc,1,,,0,SUPPORTED,double_char_bits,name-pattern: bits/bitmap: bit operations,name-pattern
+working/drivers/gmhgc.asm,1789,fill_rectangle,proc,1,,,0,SUPPORTED,fill_rectangle,driver-signature: 2D rectangle fill: rep stos in row-loop,driver-sig
 working/drivers/gmhgc.asm,1933,calc_hgc_address,proc,1,,,0,SUPPORTED,calc_hgc_address,name-pattern: compute/calc: arithmetic or bitwise op,name-pattern
-working/drivers/gmhgc.asm,1984,process_sprite_row,proc,1,,,0,SUPPORTED,process_sprite_row,name-pattern: process/update/advance: state-update operations,name-pattern
+working/drivers/gmhgc.asm,1984,process_sprite_row,proc,1,,,0,SUPPORTED,process_sprite_row,driver-signature: sprite row processing: write + loop,driver-sig
 working/drivers/gmmcga.asm,122,gmmcga,proc,0,,,0,PENDING,,,
-working/drivers/gmmcga.asm,223,fill_horizontal_line,proc,0,,,0,SUPPORTED,fill_horizontal_line,name-pattern: fill_*: rep stos or memory write,name-pattern
-working/drivers/gmmcga.asm,252,clear_screen,proc,1,,,0,SUPPORTED,clear_screen,name-pattern: set/clear: writes register/memory,name-pattern
+working/drivers/gmmcga.asm,223,fill_horizontal_line,proc,1,,,0,SUPPORTED,fill_horizontal_line,driver-signature: horizontal line fill: rep stos to ES:DI,driver-sig
+working/drivers/gmmcga.asm,252,clear_screen,proc,1,,,0,SUPPORTED,clear_screen,driver-signature: video framebuffer clear: rep stos with zero,driver-sig
 working/drivers/gmmcga.asm,303,font_render_code,data,0,,,0,PENDING,,,
-working/drivers/gmmcga.asm,407,plot_pixel,proc,0,,,0,SUPPORTED,plot_pixel,name-pattern: pixel/pixels: video memory write,name-pattern
+working/drivers/gmmcga.asm,407,plot_pixel,proc,1,,,0,SUPPORTED,plot_pixel,driver-signature: single-pixel write to video memory,driver-sig
 working/drivers/gmmcga.asm,539,calc_text_width,proc,1,,,0,SUPPORTED,calc_text_width,name-pattern: compute/calc: arithmetic or bitwise op,name-pattern
-working/drivers/gmmcga.asm,554,fill_vertical_line,proc,0,,,0,SUPPORTED,fill_vertical_line,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/drivers/gmmcga.asm,554,fill_vertical_line,proc,1,,,0,SUPPORTED,fill_vertical_line,driver-signature: vertical line fill: ES:DI write + row loop,driver-sig
 working/drivers/gmmcga.asm,635,render_text_char,proc,1,,,0,SUPPORTED,render_text_char,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmmcga.asm,747,init_timestamp,proc,0,,,0,SUPPORTED,init_timestamp,name-pattern: timestamp/time: time read or BCD conversion,name-pattern
-working/drivers/gmmcga.asm,768,time_to_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmmcga.asm,795,modulo_divide_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmmcga.asm,820,int_divide_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmmcga.asm,830,render_tilemap_large,proc,0,,,0,PENDING,,,
-working/drivers/gmmcga.asm,878,decode_bitplane_tile,proc,1,,,0,SUPPORTED,decode_bitplane_tile,name-pattern: tile_*: tile data manipulation,name-pattern
-working/drivers/gmmcga.asm,1111,render_tilemap_small,proc,0,,,0,PENDING,,,
-working/drivers/gmmcga.asm,1152,extract_bitplane_pixels,proc,0,,,0,SUPPORTED,extract_bitplane_pixels,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/drivers/gmmcga.asm,747,init_timestamp,proc,1,,,0,SUPPORTED,init_timestamp,name-pattern: timestamp/time: time read or BCD conversion,name-pattern
+working/drivers/gmmcga.asm,768,time_to_bcd,proc,1,,,0,SUPPORTED,time_to_bcd,driver-signature: time-to-BCD conversion: AAD/AAM/DIV,driver-sig
+working/drivers/gmmcga.asm,795,modulo_divide_bcd,proc,0,,,0,INCONCLUSIVE,modulo_divide_bcd,driver-signature: BCD modulo divide,driver-sig
+working/drivers/gmmcga.asm,820,int_divide_bcd,proc,1,,,0,SUPPORTED,int_divide_bcd,driver-signature: BCD integer divide,driver-sig
+working/drivers/gmmcga.asm,830,render_tilemap_large,proc,0,,,0,INCONCLUSIVE,render_tilemap_large,driver-signature: large tilemap render: video write + dispatch,driver-sig
+working/drivers/gmmcga.asm,878,decode_bitplane_tile,proc,1,,,0,SUPPORTED,decode_bitplane_tile,driver-signature: decode bitplane tile: bit ops + video write,driver-sig
+working/drivers/gmmcga.asm,1111,render_tilemap_small,proc,0,,,0,INCONCLUSIVE,render_tilemap_small,driver-signature: small tilemap render: video write + dispatch,driver-sig
+working/drivers/gmmcga.asm,1152,extract_bitplane_pixels,proc,1,,,0,SUPPORTED,extract_bitplane_pixels,name-pattern: extract/decode: bit/byte manipulation,name-pattern
 working/drivers/gmmcga.asm,1177,render_text_char_alt,proc,1,,,0,SUPPORTED,render_text_char_alt,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmmcga.asm,1455,fill_rectangle,proc,0,,,0,SUPPORTED,fill_rectangle,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/drivers/gmmcga.asm,1455,fill_rectangle,proc,1,,,0,SUPPORTED,fill_rectangle,driver-signature: 2D rectangle fill: rep stos in row-loop,driver-sig
 working/drivers/gmmcga.asm,1649,process_sprite_row,proc,1,,,0,SUPPORTED,process_sprite_row,name-pattern: process/update/advance: state-update operations,name-pattern
-working/drivers/gmmcga.asm,1671,bitplane_to_pixels,proc,0,,,0,SUPPORTED,bitplane_to_pixels,name-pattern: pixel/pixels: video memory write,name-pattern
+working/drivers/gmmcga.asm,1671,bitplane_to_pixels,proc,1,,,0,SUPPORTED,bitplane_to_pixels,name-pattern: pixel/pixels: video memory write,name-pattern
 working/drivers/gmmcga.asm,1696,extract_bitplane_bit,proc,0,,,0,PENDING,,,
 working/drivers/gmtga.asm,95,gmtga,proc,0,,,0,PENDING,,,
-working/drivers/gmtga.asm,187,fill_horizontal_line,proc,0,,,0,SUPPORTED,fill_horizontal_line,name-pattern: fill_*: rep stos or memory write,name-pattern
-working/drivers/gmtga.asm,211,clear_screen,proc,1,,,0,SUPPORTED,clear_screen,name-pattern: set/clear: writes register/memory,name-pattern
-working/drivers/gmtga.asm,437,plot_pixel,proc,0,,,0,SUPPORTED,plot_pixel,name-pattern: pixel/pixels: video memory write,name-pattern
-working/drivers/gmtga.asm,618,calc_text_width,proc,1,,,0,SUPPORTED,calc_text_width,name-pattern: compute/calc: arithmetic or bitwise op,name-pattern
-working/drivers/gmtga.asm,641,fill_vertical_line,proc,0,,,0,SUPPORTED,fill_vertical_line,name-pattern: fill_*: rep stos or memory write,name-pattern
-working/drivers/gmtga.asm,742,render_text_char,proc,1,,,0,SUPPORTED,render_text_char,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmtga.asm,838,extract_bitplane_bit,proc,0,,,0,SUPPORTED,extract_bitplane_bit,name-pattern: extract/decode: bit/byte manipulation,name-pattern
-working/drivers/gmtga.asm,942,init_timestamp,proc,0,,,0,SUPPORTED,init_timestamp,name-pattern: timestamp/time: time read or BCD conversion,name-pattern
-working/drivers/gmtga.asm,963,time_to_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmtga.asm,990,modulo_divide_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmtga.asm,1015,int_divide_bcd,proc,0,,,0,PENDING,,,
-working/drivers/gmtga.asm,1025,render_tilemap_large,proc,0,,,0,PENDING,,,
-working/drivers/gmtga.asm,1065,decode_bitplane_tile,proc,1,,,0,SUPPORTED,decode_bitplane_tile,name-pattern: tile_*: tile data manipulation,name-pattern
-working/drivers/gmtga.asm,1327,render_tilemap_small,proc,1,,,0,SUPPORTED,render_tilemap_small,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmtga.asm,1384,extract_bitplane_pixels,proc,0,,,0,SUPPORTED,extract_bitplane_pixels,name-pattern: extract/decode: bit/byte manipulation,name-pattern
-working/drivers/gmtga.asm,1430,render_text_char_alt,proc,1,,,0,SUPPORTED,render_text_char_alt,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/drivers/gmtga.asm,1773,fill_rectangle,proc,0,,,0,SUPPORTED,fill_rectangle,name-pattern: fill_*: rep stos or memory write,name-pattern
-working/drivers/gmtga.asm,1973,process_sprite_row,proc,1,,,0,SUPPORTED,process_sprite_row,name-pattern: process/update/advance: state-update operations,name-pattern
+working/drivers/gmtga.asm,187,fill_horizontal_line,proc,1,,,0,SUPPORTED,fill_horizontal_line,driver-signature: horizontal line fill: rep stos to ES:DI,driver-sig
+working/drivers/gmtga.asm,211,clear_screen,proc,1,,,0,SUPPORTED,clear_screen,driver-signature: video framebuffer clear: rep stos with zero,driver-sig
+working/drivers/gmtga.asm,437,plot_pixel,proc,1,,,0,SUPPORTED,plot_pixel,driver-signature: single-pixel write to video memory,driver-sig
+working/drivers/gmtga.asm,618,calc_text_width,proc,1,,,0,SUPPORTED,calc_text_width,driver-signature: text width calc: font-table lookup + sum,driver-sig
+working/drivers/gmtga.asm,641,fill_vertical_line,proc,1,,,0,SUPPORTED,fill_vertical_line,driver-signature: vertical line fill: ES:DI write + row loop,driver-sig
+working/drivers/gmtga.asm,742,render_text_char,proc,1,,,0,SUPPORTED,render_text_char,driver-signature: render text glyph: video write + font lookup,driver-sig
+working/drivers/gmtga.asm,838,extract_bitplane_bit,proc,1,,,0,SUPPORTED,extract_bitplane_bit,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/drivers/gmtga.asm,942,init_timestamp,proc,1,,,0,SUPPORTED,init_timestamp,name-pattern: timestamp/time: time read or BCD conversion,name-pattern
+working/drivers/gmtga.asm,963,time_to_bcd,proc,1,,,0,SUPPORTED,time_to_bcd,driver-signature: time-to-BCD conversion: AAD/AAM/DIV,driver-sig
+working/drivers/gmtga.asm,990,modulo_divide_bcd,proc,0,,,0,INCONCLUSIVE,modulo_divide_bcd,driver-signature: BCD modulo divide,driver-sig
+working/drivers/gmtga.asm,1015,int_divide_bcd,proc,1,,,0,SUPPORTED,int_divide_bcd,driver-signature: BCD integer divide,driver-sig
+working/drivers/gmtga.asm,1025,render_tilemap_large,proc,0,,,0,INCONCLUSIVE,render_tilemap_large,driver-signature: large tilemap render: video write + dispatch,driver-sig
+working/drivers/gmtga.asm,1065,decode_bitplane_tile,proc,1,,,0,SUPPORTED,decode_bitplane_tile,driver-signature: decode bitplane tile: bit ops + video write,driver-sig
+working/drivers/gmtga.asm,1327,render_tilemap_small,proc,1,,,0,SUPPORTED,render_tilemap_small,driver-signature: small tilemap render: video write + dispatch,driver-sig
+working/drivers/gmtga.asm,1384,extract_bitplane_pixels,proc,1,,,0,SUPPORTED,extract_bitplane_pixels,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/drivers/gmtga.asm,1430,render_text_char_alt,proc,1,,,0,SUPPORTED,render_text_char_alt,driver-signature: alternate text glyph render,driver-sig
+working/drivers/gmtga.asm,1773,fill_rectangle,proc,1,,,0,SUPPORTED,fill_rectangle,driver-signature: 2D rectangle fill: rep stos in row-loop,driver-sig
+working/drivers/gmtga.asm,1973,process_sprite_row,proc,1,,,0,SUPPORTED,process_sprite_row,driver-signature: sprite row processing: write + loop,driver-sig
 working/drivers/gmtga.asm,2002,bitplane_to_pixels,proc,0,,,0,PENDING,,,
 working/drivers/stdply.asm,53,stdply,proc,0,,,0,PENDING,,,
 working/drivers/stdply.asm,64,key_map_table,data,1,,,0,SUPPORTED,key_map_table,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
@@ -313,7 +313,7 @@ working/zelres1/code/100OPDMO.asm,543,animate_scanline,proc,1,,D,0,SUPPORTED,ani
 working/zelres1/code/100OPDMO.asm,591,timer_wait_loop,proc,1,,D,0,SUPPORTED,timer_wait_loop,name-pattern: wait/poll loop: read state in a backward branch,name-pattern
 working/zelres1/code/100OPDMO.asm,604,interrupt_handler_cascade,proc,0,,,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,653,scene_transition_wait,proc,1,,,0,SUPPORTED,scene_transition_wait,name-pattern: wait/poll loop: read state in a backward branch,name-pattern
-working/zelres1/code/100OPDMO.asm,679,credits_scroll_display,proc,0,,,0,SUPPORTED,credits_scroll_display,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres1/code/100OPDMO.asm,679,credits_scroll_display,proc,1,,,0,SUPPORTED,credits_scroll_display,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres1/code/100OPDMO.asm,999,story_scene_timer_loop,proc,0,,,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,1010,story_scene_input_handler,proc,1,,,0,SUPPORTED,story_scene_input_handler,name-pattern: handler/isr: must end with return (sanity),name-pattern
 working/zelres1/code/100OPDMO.asm,1058,script_interpreter,proc,0,,D,0,PENDING,,,
@@ -321,19 +321,19 @@ working/zelres1/code/100OPDMO.asm,1357,calc_text_width,proc,1,,C,0,SUPPORTED,cal
 working/zelres1/code/100OPDMO.asm,1414,animate_scanline_alt,proc,1,,D,0,SUPPORTED,animate_scanline_alt,name-pattern: animation: counter + render dispatch,name-pattern
 working/zelres1/code/100OPDMO.asm,1471,decompress_image,proc,0,,C,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,1475,rle_unpack_core,proc,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,1564,fill_buffer,proc,0,,A,0,SUPPORTED,fill_buffer,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/zelres1/code/100OPDMO.asm,1564,fill_buffer,proc,1,,A,0,SUPPORTED,fill_buffer,name-pattern: fill_*: rep stos or memory write,name-pattern
 working/zelres1/code/100OPDMO.asm,1600,palette_lookup,proc,1,,C,0,SUPPORTED,palette_lookup,name-pattern: palette: VGA palette I/O or palette-state writes,name-pattern
 working/zelres1/code/100OPDMO.asm,1626,render_font_row_double,proc,0,,A,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,1638,render_font_row_inverse,proc,0,,A,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,1650,copy_buffer,proc,0,,A,0,SUPPORTED,copy_buffer,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/100OPDMO.asm,1650,copy_buffer,proc,1,,A,0,SUPPORTED,copy_buffer,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
 working/zelres1/code/100OPDMO.asm,1677,busy_wait_delay,proc,0,,A,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,1693,color_rotation,proc,0,,A,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,1720,palette_blend,proc,1,,C,0,SUPPORTED,palette_blend,name-pattern: palette: VGA palette I/O or palette-state writes,name-pattern
 working/zelres1/code/100OPDMO.asm,1771,xor_mask_render,proc,1,,C,0,SUPPORTED,xor_mask_render,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres1/code/100OPDMO.asm,1817,merge_gfx_planes,proc,0,,C,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2012,jashiin_speech_2,data,0,,,0,PENDING,,,
+working/zelres1/code/100OPDMO.asm,2012,jashiin_speech_2,data,0,,,0,SUPPORTED,jashiin_speech_2,data-pattern: string: db with quoted text,data-pattern
 working/zelres1/code/100OPDMO.asm,2021,narration_stone_scene,data,0,,,0,PENDING,,,
-working/zelres1/code/100OPDMO.asm,2500,jashiin_disappear_text,data,0,,,0,PENDING,,,
+working/zelres1/code/100OPDMO.asm,2500,jashiin_disappear_text,data,0,,,0,SUPPORTED,jashiin_disappear_text,data-pattern: string: db with quoted text,data-pattern
 working/zelres1/code/100OPDMO.asm,2502,anim_fn_wipe,data,0,,,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,2503,anim_fn_fade,data,0,,,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,2504,anim_fn_draw,data,0,,,0,PENDING,,,
@@ -351,100 +351,100 @@ working/zelres1/code/100OPDMO.asm,2525,disp_load_setup,data,0,,,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,2526,disp_script_area,data,0,,,0,PENDING,,,
 working/zelres1/code/100OPDMO.asm,2528,disp_narr_chap4,data,0,,,0,PENDING,,,
 working/zelres1/code/101GDEGA.asm,96,imgctl_module,proc,0,,D,0,PENDING,,,
-working/zelres1/code/101GDEGA.asm,327,imgctl_multiply,proc,0,,A,0,SUPPORTED,imgctl_multiply,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,327,imgctl_multiply,proc,1,,A,0,SUPPORTED,imgctl_multiply,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/101GDEGA.asm,357,vga_operation,proc,0,,C,0,PENDING,,,
-working/zelres1/code/101GDEGA.asm,410,imgctl_process_loop,proc,0,,D,0,SUPPORTED,imgctl_process_loop,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/101GDEGA.asm,438,imgctl_process_loop_2,proc,0,,D,0,SUPPORTED,imgctl_process_loop_2,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/101GDEGA.asm,581,copy_vga_buffer,proc,0,,D,0,SUPPORTED,copy_vga_buffer,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/101GDEGA.asm,410,imgctl_process_loop,proc,1,,D,0,SUPPORTED,imgctl_process_loop,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,438,imgctl_process_loop_2,proc,1,,D,0,SUPPORTED,imgctl_process_loop_2,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,581,copy_vga_buffer,proc,1,,D,0,SUPPORTED,copy_vga_buffer,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
 working/zelres1/code/101GDEGA.asm,865,copy_buffer,proc,1,,A,0,SUPPORTED,copy_buffer,driver-signature: copies buffer (DS:SI -> ES:DI) via rep movs,driver-sig
 working/zelres1/code/101GDEGA.asm,886,copy_buffer_2,proc,1,,A,0,SUPPORTED,copy_buffer_2,driver-signature: copies buffer (variant) via rep movs,driver-sig
-working/zelres1/code/101GDEGA.asm,907,imgctl_process_loop_3,proc,0,,A,0,SUPPORTED,imgctl_process_loop_3,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/101GDEGA.asm,1003,copy_buffer_3,proc,0,,A,0,SUPPORTED,copy_buffer_3,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres1/code/101GDEGA.asm,1077,imgctl_multiply_2,proc,0,,C,0,SUPPORTED,imgctl_multiply_2,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/101GDEGA.asm,1436,imgctl_func_11,proc,0,,D,0,SUPPORTED,imgctl_func_11,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/101GDEGA.asm,1623,imgctl_multiply_3,proc,0,,D,0,SUPPORTED,imgctl_multiply_3,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/101GDEGA.asm,1788,imgctl_process_loop_4,proc,0,,D,0,SUPPORTED,imgctl_process_loop_4,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/101GDEGA.asm,1814,imgctl_process_loop_5,proc,0,,D,0,SUPPORTED,imgctl_process_loop_5,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/101GDEGA.asm,1858,imgctl_func_15,proc,0,,D,0,SUPPORTED,imgctl_func_15,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/101GDEGA.asm,1989,copy_buffer_4,proc,0,,D,0,SUPPORTED,copy_buffer_4,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres1/code/101GDEGA.asm,2016,copy_buffer_5,proc,0,,D,0,SUPPORTED,copy_buffer_5,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres1/code/101GDEGA.asm,2067,imgctl_process_loop_6,proc,0,,C,0,SUPPORTED,imgctl_process_loop_6,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,907,imgctl_process_loop_3,proc,1,,A,0,SUPPORTED,imgctl_process_loop_3,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,1003,copy_buffer_3,proc,1,,A,0,SUPPORTED,copy_buffer_3,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/101GDEGA.asm,1077,imgctl_multiply_2,proc,1,,C,0,SUPPORTED,imgctl_multiply_2,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,1436,imgctl_func_11,proc,1,,D,0,SUPPORTED,imgctl_func_11,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,1623,imgctl_multiply_3,proc,1,,D,0,SUPPORTED,imgctl_multiply_3,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,1788,imgctl_process_loop_4,proc,1,,D,0,SUPPORTED,imgctl_process_loop_4,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,1814,imgctl_process_loop_5,proc,1,,D,0,SUPPORTED,imgctl_process_loop_5,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,1858,imgctl_func_15,proc,1,,D,0,SUPPORTED,imgctl_func_15,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/101GDEGA.asm,1989,copy_buffer_4,proc,1,,D,0,SUPPORTED,copy_buffer_4,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/101GDEGA.asm,2016,copy_buffer_5,proc,1,,D,0,SUPPORTED,copy_buffer_5,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/101GDEGA.asm,2067,imgctl_process_loop_6,proc,1,,C,0,SUPPORTED,imgctl_process_loop_6,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/101GDEGA.asm,2123,fill_buffer,proc,1,,A,0,SUPPORTED,fill_buffer,driver-signature: fills buffer with 0xFF via rep stosb,driver-sig
 working/zelres1/code/101GDEGA.asm,2166,vga_operation0,proc,0,,D,0,PENDING,,,
 working/zelres1/code/101GDEGA.asm,2284,vga_operation2,proc,0,,D,0,PENDING,,,
 working/zelres1/code/101GDEGA.asm,2360,vga_operation4,proc,0,,D,0,PENDING,,,
 working/zelres1/code/101GDEGA.asm,2435,hscroll_plane4_buf,data,1,,,0,SUPPORTED,hscroll_plane4_buf,data-pattern: buffer: db/dw N dup(0) or zero placeholder or label marker,data-pattern
 working/zelres1/code/102GDCGA.asm,114,cga_imgctl_module,proc,0,,D,0,PENDING,,,
-working/zelres1/code/102GDCGA.asm,305,equip_func_1,proc,0,,C,0,SUPPORTED,equip_func_1,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/102GDCGA.asm,527,equip_process_loop,proc,0,,A,0,SUPPORTED,equip_process_loop,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/102GDCGA.asm,305,equip_func_1,proc,1,,C,0,SUPPORTED,equip_func_1,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/102GDCGA.asm,527,equip_process_loop,proc,1,,A,0,SUPPORTED,equip_process_loop,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/102GDCGA.asm,871,copy_buffer,proc,1,,A,0,SUPPORTED,copy_buffer,driver-signature: copies buffer (DS:SI -> ES:DI) via rep movs,driver-sig
 working/zelres1/code/102GDCGA.asm,897,copy_buffer_2,proc,1,,A,0,SUPPORTED,copy_buffer_2,driver-signature: copies buffer (variant) via rep movs,driver-sig
-working/zelres1/code/102GDCGA.asm,923,equip_multiply,proc,0,,C,0,SUPPORTED,equip_multiply,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/102GDCGA.asm,923,equip_multiply,proc,1,,C,0,SUPPORTED,equip_multiply,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/102GDCGA.asm,976,plane_mix_word,data,0,,,0,PENDING,,,
-working/zelres1/code/102GDCGA.asm,1056,equip_multiply_2,proc,0,,C,0,SUPPORTED,equip_multiply_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/102GDCGA.asm,1333,equip_func_7,proc,0,,C,0,SUPPORTED,equip_func_7,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/102GDCGA.asm,1056,equip_multiply_2,proc,1,,C,0,SUPPORTED,equip_multiply_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/102GDCGA.asm,1333,equip_func_7,proc,1,,C,0,SUPPORTED,equip_func_7,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/102GDCGA.asm,1519,extract_bits,proc,1,,C,0,SUPPORTED,extract_bits,driver-signature: extracts bits from src_word_* / cur_row_ctr state,driver-sig
 working/zelres1/code/102GDCGA.asm,1617,fill_buffer,proc,1,,A,0,SUPPORTED,fill_buffer,driver-signature: fills buffer with 0xFF via rep stosb,driver-sig
 working/zelres1/code/102GDCGA.asm,1630,clear_buffer,proc,1,,A,0,SUPPORTED,clear_buffer,driver-signature: clears buffer with zero via rep stos,driver-sig
-working/zelres1/code/102GDCGA.asm,1660,equip_get_value,proc,0,,A,0,SUPPORTED,equip_get_value,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/102GDCGA.asm,1787,equip_process_loop_2,proc,0,,A,0,SUPPORTED,equip_process_loop_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/102GDCGA.asm,1806,equip_process_loop_3,proc,0,,C,0,SUPPORTED,equip_process_loop_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/102GDCGA.asm,1857,equip_process_loop_4,proc,0,,C,0,SUPPORTED,equip_process_loop_4,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/102GDCGA.asm,1660,equip_get_value,proc,1,,A,0,SUPPORTED,equip_get_value,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/102GDCGA.asm,1787,equip_process_loop_2,proc,1,,A,0,SUPPORTED,equip_process_loop_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/102GDCGA.asm,1806,equip_process_loop_3,proc,1,,C,0,SUPPORTED,equip_process_loop_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/102GDCGA.asm,1857,equip_process_loop_4,proc,1,,C,0,SUPPORTED,equip_process_loop_4,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/102GDCGA.asm,1913,fill_buffer_2,proc,1,,A,0,SUPPORTED,fill_buffer_2,driver-signature: fills buffer with 0xFF via rep stosb (variant),driver-sig
-working/zelres1/code/102GDCGA.asm,1956,extract_bits_2,proc,0,,C,0,SUPPORTED,extract_bits_2,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/zelres1/code/102GDCGA.asm,1956,extract_bits_2,proc,1,,C,0,SUPPORTED,extract_bits_2,name-pattern: extract/decode: bit/byte manipulation,name-pattern
 working/zelres1/code/102GDCGA.asm,2028,disp_frame_render3,data,0,,,0,PENDING,,,
-working/zelres1/code/102GDCGA.asm,2057,extract_bits_3,proc,0,,C,0,SUPPORTED,extract_bits_3,name-pattern: extract/decode: bit/byte manipulation,name-pattern
-working/zelres1/code/102GDCGA.asm,2280,frame_plane_b_tbl,data,0,,,0,PENDING,,,
-working/zelres1/code/102GDCGA.asm,2500,equip_process_loop_5,proc,0,,C,0,SUPPORTED,equip_process_loop_5,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/102GDCGA.asm,2057,extract_bits_3,proc,1,,C,0,SUPPORTED,extract_bits_3,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/zelres1/code/102GDCGA.asm,2280,frame_plane_b_tbl,data,0,,,0,SUPPORTED,frame_plane_b_tbl,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
+working/zelres1/code/102GDCGA.asm,2500,equip_process_loop_5,proc,1,,C,0,SUPPORTED,equip_process_loop_5,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/103GDHGC.asm,147,hgc_gfx_driver,proc,0,,D,0,PENDING,,,
-working/zelres1/code/103GDHGC.asm,313,imgdec_func_1,proc,0,,D,0,SUPPORTED,imgdec_func_1,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/103GDHGC.asm,552,imgdec_process_loop,proc,0,,A,0,SUPPORTED,imgdec_process_loop,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/103GDHGC.asm,638,imgdec_process_loop_2,proc,0,,A,0,SUPPORTED,imgdec_process_loop_2,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,313,imgdec_func_1,proc,1,,D,0,SUPPORTED,imgdec_func_1,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,552,imgdec_process_loop,proc,1,,A,0,SUPPORTED,imgdec_process_loop,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,638,imgdec_process_loop_2,proc,1,,A,0,SUPPORTED,imgdec_process_loop_2,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/103GDHGC.asm,911,copy_buffer,proc,1,,A,0,SUPPORTED,copy_buffer,driver-signature: copies buffer (DS:SI -> ES:DI) via rep movs,driver-sig
 working/zelres1/code/103GDHGC.asm,935,copy_buffer_2,proc,1,,A,0,SUPPORTED,copy_buffer_2,driver-signature: copies buffer (variant) via rep movs,driver-sig
 working/zelres1/code/103GDHGC.asm,969,imgdec_multiply,proc,0,,A,0,PENDING,,,
-working/zelres1/code/103GDHGC.asm,996,imgdec_process_loop_3,proc,0,,A,0,SUPPORTED,imgdec_process_loop_3,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,996,imgdec_process_loop_3,proc,1,,A,0,SUPPORTED,imgdec_process_loop_3,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/103GDHGC.asm,1026,data_3,data,1,,,0,SUPPORTED,data_3,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres1/code/103GDHGC.asm,1108,imgdec_multiply_2,proc,0,,C,0,PENDING,,,
-working/zelres1/code/103GDHGC.asm,1463,imgdec_func_9,proc,0,,C,0,SUPPORTED,imgdec_func_9,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/103GDHGC.asm,1633,imgdec_multiply_3,proc,0,,C,0,SUPPORTED,imgdec_multiply_3,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,1463,imgdec_func_9,proc,1,,C,0,SUPPORTED,imgdec_func_9,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,1633,imgdec_multiply_3,proc,1,,C,0,SUPPORTED,imgdec_multiply_3,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/103GDHGC.asm,1752,fill_buffer,proc,1,,A,0,SUPPORTED,fill_buffer,driver-signature: fills buffer with 0xFF via rep stosb,driver-sig
 working/zelres1/code/103GDHGC.asm,1779,clear_buffer,proc,1,,C,0,SUPPORTED,clear_buffer,driver-signature: clears buffer with zero via rep stos,driver-sig
-working/zelres1/code/103GDHGC.asm,1819,imgdec_get_value,proc,0,,A,0,SUPPORTED,imgdec_get_value,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/103GDHGC.asm,1941,imgdec_scan_loop,proc,0,,A,0,SUPPORTED,imgdec_scan_loop,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/103GDHGC.asm,1968,imgdec_scan_loop_2,proc,0,,C,0,SUPPORTED,imgdec_scan_loop_2,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/103GDHGC.asm,2043,imgdec_process_loop_4,proc,0,,C,0,SUPPORTED,imgdec_process_loop_4,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,1819,imgdec_get_value,proc,1,,A,0,SUPPORTED,imgdec_get_value,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,1941,imgdec_scan_loop,proc,1,,A,0,SUPPORTED,imgdec_scan_loop,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,1968,imgdec_scan_loop_2,proc,1,,C,0,SUPPORTED,imgdec_scan_loop_2,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,2043,imgdec_process_loop_4,proc,1,,C,0,SUPPORTED,imgdec_process_loop_4,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/103GDHGC.asm,2099,fill_buffer_2,proc,1,,A,0,SUPPORTED,fill_buffer_2,driver-signature: fills buffer with 0xFF via rep stosb (variant),driver-sig
-working/zelres1/code/103GDHGC.asm,2142,imgdec_multiply_4,proc,0,,C,0,SUPPORTED,imgdec_multiply_4,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/103GDHGC.asm,2270,imgdec_multiply_5,proc,0,,C,0,SUPPORTED,imgdec_multiply_5,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,2142,imgdec_multiply_4,proc,1,,C,0,SUPPORTED,imgdec_multiply_4,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,2270,imgdec_multiply_5,proc,1,,C,0,SUPPORTED,imgdec_multiply_5,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/103GDHGC.asm,2452,data_40,data,1,,,0,SUPPORTED,data_40,data-pattern: data: db/dw/dd or label marker,data-pattern
-working/zelres1/code/103GDHGC.asm,2728,imgdec_process_loop_5,proc,0,,C,0,SUPPORTED,imgdec_process_loop_5,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/103GDHGC.asm,2728,imgdec_process_loop_5,proc,1,,C,0,SUPPORTED,imgdec_process_loop_5,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/103GDHGC.asm,2806,math_calc,proc,1,,A,0,SUPPORTED,math_calc,driver-signature: math helper (mul/div/add/sub),driver-sig
 working/zelres1/code/104GDTGA.asm,109,zr1_04,proc,0,,D,0,PENDING,,,
-working/zelres1/code/104GDTGA.asm,316,stats_func_1,proc,0,,C,0,SUPPORTED,stats_func_1,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,316,stats_func_1,proc,1,,C,0,SUPPORTED,stats_func_1,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/104GDTGA.asm,566,stats_func_2,proc,0,,A,0,PENDING,,,
 working/zelres1/code/104GDTGA.asm,893,copy_buffer,proc,1,,A,0,SUPPORTED,copy_buffer,driver-signature: copies buffer (DS:SI -> ES:DI) via rep movs,driver-sig
 working/zelres1/code/104GDTGA.asm,917,copy_buffer_2,proc,1,,A,0,SUPPORTED,copy_buffer_2,driver-signature: copies buffer (variant) via rep movs,driver-sig
-working/zelres1/code/104GDTGA.asm,941,stats_multiply,proc,0,,C,0,SUPPORTED,stats_multiply,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,941,stats_multiply,proc,1,,C,0,SUPPORTED,stats_multiply,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/104GDTGA.asm,996,xor3_plane2_off,data,0,,,0,PENDING,,,
 working/zelres1/code/104GDTGA.asm,1028,face_panel2_anchor,data,0,,,0,PENDING,,,
-working/zelres1/code/104GDTGA.asm,1117,stats_multiply_2,proc,0,,C,0,SUPPORTED,stats_multiply_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/104GDTGA.asm,1430,stats_func_7,proc,0,,D,0,SUPPORTED,stats_func_7,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,1117,stats_multiply_2,proc,1,,C,0,SUPPORTED,stats_multiply_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,1430,stats_func_7,proc,1,,D,0,SUPPORTED,stats_func_7,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/104GDTGA.asm,1482,extract_bits,proc,1,,A,0,SUPPORTED,extract_bits,driver-signature: extracts bits from src_word_* / cur_row_ctr state,driver-sig
-working/zelres1/code/104GDTGA.asm,1652,stats_multiply_3,proc,0,,C,0,SUPPORTED,stats_multiply_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,1652,stats_multiply_3,proc,1,,C,0,SUPPORTED,stats_multiply_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/104GDTGA.asm,1751,fill_buffer,proc,1,,A,0,SUPPORTED,fill_buffer,driver-signature: fills buffer with 0xFF via rep stosb,driver-sig
 working/zelres1/code/104GDTGA.asm,1763,clear_buffer,proc,1,,A,0,SUPPORTED,clear_buffer,driver-signature: clears buffer with zero via rep stos,driver-sig
-working/zelres1/code/104GDTGA.asm,1790,stats_get_value,proc,0,,A,0,SUPPORTED,stats_get_value,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/104GDTGA.asm,1913,stats_process_loop,proc,0,,A,0,SUPPORTED,stats_process_loop,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/104GDTGA.asm,1937,stats_process_loop_2,proc,0,,C,0,SUPPORTED,stats_process_loop_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/104GDTGA.asm,1993,stats_process_loop_3,proc,0,,C,0,SUPPORTED,stats_process_loop_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,1790,stats_get_value,proc,1,,A,0,SUPPORTED,stats_get_value,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,1913,stats_process_loop,proc,1,,A,0,SUPPORTED,stats_process_loop,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,1937,stats_process_loop_2,proc,1,,C,0,SUPPORTED,stats_process_loop_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,1993,stats_process_loop_3,proc,1,,C,0,SUPPORTED,stats_process_loop_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/104GDTGA.asm,2049,fill_buffer_2,proc,1,,A,0,SUPPORTED,fill_buffer_2,driver-signature: fills buffer with 0xFF via rep stosb (variant),driver-sig
-working/zelres1/code/104GDTGA.asm,2092,stats_multiply_4,proc,0,,C,0,SUPPORTED,stats_multiply_4,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/104GDTGA.asm,2196,stats_fill_buf,proc,0,,C,0,SUPPORTED,stats_fill_buf,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,2092,stats_multiply_4,proc,1,,C,0,SUPPORTED,stats_multiply_4,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,2196,stats_fill_buf,proc,1,,C,0,SUPPORTED,stats_fill_buf,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/104GDTGA.asm,2383,face_color_lut,data,0,,,0,PENDING,,,
-working/zelres1/code/104GDTGA.asm,2602,stats_process_loop_4,proc,0,,C,0,SUPPORTED,stats_process_loop_4,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/104GDTGA.asm,2602,stats_process_loop_4,proc,1,,C,0,SUPPORTED,stats_process_loop_4,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/104GDTGA.asm,2640,stats_func_20,proc,0,,C,0,PENDING,,,
-working/zelres1/code/104GDTGA.asm,2714,extract_bits_2,proc,0,,A,0,SUPPORTED,extract_bits_2,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/zelres1/code/104GDTGA.asm,2714,extract_bits_2,proc,1,,A,0,SUPPORTED,extract_bits_2,name-pattern: extract/decode: bit/byte manipulation,name-pattern
 working/zelres1/code/104GDTGA.asm,2735,palette_xlat_jmp,data,0,,,0,PENDING,,,
 working/zelres1/code/104GDTGA.asm,2737,plane3_merge_buf,data,1,,,0,SUPPORTED,plane3_merge_buf,data-pattern: buffer: db/dw N dup(0) or zero placeholder or label marker,data-pattern
 working/zelres1/code/105GDMCA.asm,113,mcga_imgctl_module,proc,0,,D,0,PENDING,,,
@@ -474,71 +474,71 @@ working/zelres1/code/105GDMCA.asm,2439,pal_multiply_4,proc,1,,A,0,SUPPORTED,pal_
 working/zelres1/code/105GDMCA.asm,2455,pixel_plane_c_buf,data,1,,,0,SUPPORTED,pixel_plane_c_buf,data-pattern: buffer: db/dw N dup(0) or zero placeholder or label marker,data-pattern
 working/zelres1/code/106TOWN.asm,232,townb_main,proc,0,,D,0,PENDING,,,
 working/zelres1/code/106TOWN.asm,240,data_5,data,1,,,0,SUPPORTED,data_5,data-pattern: data: db/dw/dd or label marker,data-pattern
-working/zelres1/code/106TOWN.asm,466,player_func_1,proc,0,,C,0,SUPPORTED,player_func_1,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,550,player_func_2,proc,0,,C,0,SUPPORTED,player_func_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,610,player_func_3,proc,0,,C,0,SUPPORTED,player_func_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,648,player_multiply,proc,0,,A,0,SUPPORTED,player_multiply,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,654,player_func_5,proc,0,,D,0,SUPPORTED,player_func_5,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,870,player_func_6,proc,0,,C,0,SUPPORTED,player_func_6,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,911,player_func_7,proc,0,,C,0,SUPPORTED,player_func_7,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,941,player_func_8,proc,0,,C,0,SUPPORTED,player_func_8,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1077,player_func_9,proc,0,,A,0,SUPPORTED,player_func_9,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,466,player_func_1,proc,1,,C,0,SUPPORTED,player_func_1,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,550,player_func_2,proc,1,,C,0,SUPPORTED,player_func_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,610,player_func_3,proc,1,,C,0,SUPPORTED,player_func_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,648,player_multiply,proc,1,,A,0,SUPPORTED,player_multiply,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,654,player_func_5,proc,1,,D,0,SUPPORTED,player_func_5,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,870,player_func_6,proc,1,,C,0,SUPPORTED,player_func_6,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,911,player_func_7,proc,1,,C,0,SUPPORTED,player_func_7,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,941,player_func_8,proc,1,,C,0,SUPPORTED,player_func_8,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1077,player_func_9,proc,1,,A,0,SUPPORTED,player_func_9,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/106TOWN.asm,1103,math_calc,proc,0,,C,0,PENDING,,,
-working/zelres1/code/106TOWN.asm,1252,player_scan_loop,proc,0,,A,0,SUPPORTED,player_scan_loop,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1277,player_func_12,proc,0,,A,0,SUPPORTED,player_func_12,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1252,player_scan_loop,proc,1,,A,0,SUPPORTED,player_scan_loop,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1277,player_func_12,proc,1,,A,0,SUPPORTED,player_func_12,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/106TOWN.asm,1299,player_multiply_2,proc,0,,A,0,PENDING,,,
-working/zelres1/code/106TOWN.asm,1303,player_func_14,proc,0,,D,0,SUPPORTED,player_func_14,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1331,fill_buffer,proc,0,,D,0,SUPPORTED,fill_buffer,name-pattern: fill_*: rep stos or memory write,name-pattern
-working/zelres1/code/106TOWN.asm,1353,player_process_loop,proc,0,,A,0,SUPPORTED,player_process_loop,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1369,player_func_17,proc,0,,C,0,SUPPORTED,player_func_17,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1397,player_func_18,proc,0,,D,0,SUPPORTED,player_func_18,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1513,player_scan_loop_2,proc,0,,A,0,SUPPORTED,player_scan_loop_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1536,player_func_20,proc,0,,A,0,SUPPORTED,player_func_20,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1540,player_func_21,proc,0,,A,0,SUPPORTED,player_func_21,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1303,player_func_14,proc,1,,D,0,SUPPORTED,player_func_14,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1331,fill_buffer,proc,1,,D,0,SUPPORTED,fill_buffer,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/zelres1/code/106TOWN.asm,1353,player_process_loop,proc,1,,A,0,SUPPORTED,player_process_loop,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1369,player_func_17,proc,1,,C,0,SUPPORTED,player_func_17,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1397,player_func_18,proc,1,,D,0,SUPPORTED,player_func_18,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1513,player_scan_loop_2,proc,1,,A,0,SUPPORTED,player_scan_loop_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1536,player_func_20,proc,1,,A,0,SUPPORTED,player_func_20,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1540,player_func_21,proc,1,,A,0,SUPPORTED,player_func_21,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/106TOWN.asm,1553,player_func_22,proc,0,,A,0,PENDING,,,
-working/zelres1/code/106TOWN.asm,1557,player_func_23,proc,0,,A,0,SUPPORTED,player_func_23,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1566,player_load_chunk,proc,0,,A,0,SUPPORTED,player_load_chunk,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1593,player_func_25,proc,0,,C,0,SUPPORTED,player_func_25,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1635,player_func_26,proc,0,,C,0,SUPPORTED,player_func_26,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1783,player_func_27,proc,0,,A,0,SUPPORTED,player_func_27,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1807,player_func_28,proc,0,,A,0,SUPPORTED,player_func_28,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1833,player_func_29,proc,0,,D,0,SUPPORTED,player_func_29,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1871,player_func_30,proc,0,,D,0,SUPPORTED,player_func_30,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1935,player_func_31,proc,0,,,0,SUPPORTED,player_func_31,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,1978,player_func_32,proc,0,,,0,SUPPORTED,player_func_32,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2007,player_func_33,proc,0,,,0,SUPPORTED,player_func_33,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2227,player_func_34,proc,0,,D,0,SUPPORTED,player_func_34,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2384,player_scan_loop_3,proc,0,,C,0,SUPPORTED,player_scan_loop_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2403,player_func_36,proc,0,,A,0,SUPPORTED,player_func_36,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2435,player_func_37,proc,0,,A,0,SUPPORTED,player_func_37,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2450,player_func_38,proc,0,,A,0,SUPPORTED,player_func_38,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2476,player_check_state,proc,0,,C,0,SUPPORTED,player_check_state,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2522,player_check_state_2,proc,0,,C,0,SUPPORTED,player_check_state_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2641,player_func_41,proc,0,,A,0,SUPPORTED,player_func_41,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2670,player_func_42,proc,0,,A,0,SUPPORTED,player_func_42,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2684,player_func_43,proc,0,,D,0,SUPPORTED,player_func_43,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2837,player_multiply_3,proc,0,,A,0,SUPPORTED,player_multiply_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2847,player_multiply_4,proc,0,,A,0,SUPPORTED,player_multiply_4,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2874,player_multiply_5,proc,0,,A,0,SUPPORTED,player_multiply_5,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2901,player_func_47,proc,0,,C,0,SUPPORTED,player_func_47,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,2938,player_multiply_6,proc,0,,A,0,SUPPORTED,player_multiply_6,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1557,player_func_23,proc,1,,A,0,SUPPORTED,player_func_23,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1566,player_load_chunk,proc,1,,A,0,SUPPORTED,player_load_chunk,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1593,player_func_25,proc,1,,C,0,SUPPORTED,player_func_25,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1635,player_func_26,proc,1,,C,0,SUPPORTED,player_func_26,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1783,player_func_27,proc,1,,A,0,SUPPORTED,player_func_27,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1807,player_func_28,proc,1,,A,0,SUPPORTED,player_func_28,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1833,player_func_29,proc,1,,D,0,SUPPORTED,player_func_29,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1871,player_func_30,proc,1,,D,0,SUPPORTED,player_func_30,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1935,player_func_31,proc,1,,,0,SUPPORTED,player_func_31,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,1978,player_func_32,proc,1,,,0,SUPPORTED,player_func_32,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2007,player_func_33,proc,1,,,0,SUPPORTED,player_func_33,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2227,player_func_34,proc,1,,D,0,SUPPORTED,player_func_34,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2384,player_scan_loop_3,proc,1,,C,0,SUPPORTED,player_scan_loop_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2403,player_func_36,proc,1,,A,0,SUPPORTED,player_func_36,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2435,player_func_37,proc,1,,A,0,SUPPORTED,player_func_37,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2450,player_func_38,proc,1,,A,0,SUPPORTED,player_func_38,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2476,player_check_state,proc,1,,C,0,SUPPORTED,player_check_state,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2522,player_check_state_2,proc,1,,C,0,SUPPORTED,player_check_state_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2641,player_func_41,proc,1,,A,0,SUPPORTED,player_func_41,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2670,player_func_42,proc,1,,A,0,SUPPORTED,player_func_42,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2684,player_func_43,proc,1,,D,0,SUPPORTED,player_func_43,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2837,player_multiply_3,proc,1,,A,0,SUPPORTED,player_multiply_3,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2847,player_multiply_4,proc,1,,A,0,SUPPORTED,player_multiply_4,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2874,player_multiply_5,proc,1,,A,0,SUPPORTED,player_multiply_5,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2901,player_func_47,proc,1,,C,0,SUPPORTED,player_func_47,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,2938,player_multiply_6,proc,1,,A,0,SUPPORTED,player_multiply_6,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/106TOWN.asm,3017,clear_buffer,proc,1,,D,0,SUPPORTED,clear_buffer,name-pattern: set/clear: writes register/memory,name-pattern
-working/zelres1/code/106TOWN.asm,3109,copy_buffer,proc,0,,D,0,SUPPORTED,copy_buffer,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres1/code/106TOWN.asm,3250,player_func_51,proc,0,,A,0,SUPPORTED,player_func_51,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,3268,fill_buffer_2,proc,0,,A,0,SUPPORTED,fill_buffer_2,name-pattern: fill_*: rep stos or memory write,name-pattern
-working/zelres1/code/106TOWN.asm,3286,player_process_loop_2,proc,0,,C,0,SUPPORTED,player_process_loop_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,3317,player_copy_buf,proc,0,,D,0,SUPPORTED,player_copy_buf,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,3602,player_func_55,proc,0,,,0,SUPPORTED,player_func_55,name-pattern: player/stat ops: DS-relative read/write,name-pattern
-working/zelres1/code/106TOWN.asm,3653,player_func_56,proc,0,,,0,SUPPORTED,player_func_56,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,3109,copy_buffer,proc,1,,D,0,SUPPORTED,copy_buffer,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/106TOWN.asm,3250,player_func_51,proc,1,,A,0,SUPPORTED,player_func_51,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,3268,fill_buffer_2,proc,1,,A,0,SUPPORTED,fill_buffer_2,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/zelres1/code/106TOWN.asm,3286,player_process_loop_2,proc,1,,C,0,SUPPORTED,player_process_loop_2,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,3317,player_copy_buf,proc,1,,D,0,SUPPORTED,player_copy_buf,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,3602,player_func_55,proc,1,,,0,SUPPORTED,player_func_55,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres1/code/106TOWN.asm,3653,player_func_56,proc,1,,,0,SUPPORTED,player_func_56,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres1/code/107GTEGA.asm,105,zr1_07,proc,0,,D,0,PENDING,,,
 working/zelres1/code/107GTEGA.asm,251,vga_operation,proc,0,,D,0,PENDING,,,
 working/zelres1/code/107GTEGA.asm,296,vgadec_multiply,proc,0,,C,0,PENDING,,,
-working/zelres1/code/107GTEGA.asm,303,vgadec_func_3,proc,0,,D,0,SUPPORTED,vgadec_func_3,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/107GTEGA.asm,433,vgadec_func_4,proc,0,,D,0,SUPPORTED,vgadec_func_4,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/107GTEGA.asm,303,vgadec_func_3,proc,1,,D,0,SUPPORTED,vgadec_func_3,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/107GTEGA.asm,433,vgadec_func_4,proc,1,,D,0,SUPPORTED,vgadec_func_4,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/107GTEGA.asm,688,tile_col6_render,proc,0,,A,0,PENDING,,,
 working/zelres1/code/107GTEGA.asm,692,vgadec_func_5,proc,0,,A,0,PENDING,,,
-working/zelres1/code/107GTEGA.asm,696,vgadec_func_6,proc,0,,D,0,SUPPORTED,vgadec_func_6,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/107GTEGA.asm,835,vgadec_multiply_2,proc,0,,D,0,SUPPORTED,vgadec_multiply_2,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/107GTEGA.asm,696,vgadec_func_6,proc,1,,D,0,SUPPORTED,vgadec_func_6,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/107GTEGA.asm,835,vgadec_multiply_2,proc,1,,D,0,SUPPORTED,vgadec_multiply_2,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/107GTEGA.asm,903,vgadec_func_8,proc,0,,A,0,PENDING,,,
 working/zelres1/code/107GTEGA.asm,920,vgadec_func_9,proc,0,,A,0,PENDING,,,
 working/zelres1/code/107GTEGA.asm,924,vga_operation0,proc,0,,A,0,PENDING,,,
@@ -551,10 +551,10 @@ working/zelres1/code/107GTEGA.asm,1135,vga_operation6,proc,0,,D,0,PENDING,,,
 working/zelres1/code/107GTEGA.asm,1549,vga_operation7,proc,0,,A,0,PENDING,,,
 working/zelres1/code/107GTEGA.asm,1575,vga_operation8,proc,0,,A,0,PENDING,,,
 working/zelres1/code/107GTEGA.asm,1636,vga_operation9,proc,0,,A,0,PENDING,,,
-working/zelres1/code/107GTEGA.asm,1668,vgadec_process_loop,proc,0,,A,0,SUPPORTED,vgadec_process_loop,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/107GTEGA.asm,1668,vgadec_process_loop,proc,1,,A,0,SUPPORTED,vgadec_process_loop,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/107GTEGA.asm,1704,vgadec_process_loop_2,proc,0,,A,0,PENDING,,,
 working/zelres1/code/107GTEGA.asm,1725,vgadec_func_22,proc,0,,C,0,PENDING,,,
-working/zelres1/code/107GTEGA.asm,1752,vgadec_func_23,proc,0,,A,0,SUPPORTED,vgadec_func_23,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/107GTEGA.asm,1752,vgadec_func_23,proc,1,,A,0,SUPPORTED,vgadec_func_23,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/107GTEGA.asm,1777,vgadec_func_24,proc,0,,A,0,PENDING,,,
 working/zelres1/code/108GTCGA.asm,116,zr1_08,proc,0,,D,0,PENDING,,,
 working/zelres1/code/108GTCGA.asm,247,cga_check_blit_col,proc,1,,C,0,SUPPORTED,cga_check_blit_col,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
@@ -586,77 +586,77 @@ working/zelres1/code/108GTCGA.asm,2036,encode_mask_cga,proc,0,,A,0,PENDING,,,
 working/zelres1/code/109GTHGC.asm,107,zr1_09,proc,0,,D,0,PENDING,,,
 working/zelres1/code/109GTHGC.asm,239,decb_scan_loop,proc,0,,A,0,PENDING,,,
 working/zelres1/code/109GTHGC.asm,281,decb_func_2,proc,0,,C,0,PENDING,,,
-working/zelres1/code/109GTHGC.asm,288,decb_func_3,proc,0,,C,0,SUPPORTED,decb_func_3,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/109GTHGC.asm,388,decb_func_4,proc,0,,C,0,SUPPORTED,decb_func_4,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,288,decb_func_3,proc,1,,C,0,SUPPORTED,decb_func_3,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,388,decb_func_4,proc,1,,C,0,SUPPORTED,decb_func_4,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/109GTHGC.asm,524,decb_func_5,proc,0,,A,0,PENDING,,,
 working/zelres1/code/109GTHGC.asm,528,decb_func_6,proc,0,,C,0,PENDING,,,
-working/zelres1/code/109GTHGC.asm,659,decb_multiply,proc,0,,C,0,SUPPORTED,decb_multiply,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,659,decb_multiply,proc,1,,C,0,SUPPORTED,decb_multiply,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/109GTHGC.asm,723,decb_func_8,proc,0,,A,0,PENDING,,,
 working/zelres1/code/109GTHGC.asm,740,decb_func_9,proc,0,,A,0,PENDING,,,
 working/zelres1/code/109GTHGC.asm,744,decb_func_10,proc,0,,A,0,PENDING,,,
-working/zelres1/code/109GTHGC.asm,757,decb_scan_loop_2,proc,0,,A,0,SUPPORTED,decb_scan_loop_2,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,757,decb_scan_loop_2,proc,1,,A,0,SUPPORTED,decb_scan_loop_2,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/109GTHGC.asm,776,decb_get_value,proc,0,,A,0,PENDING,,,
-working/zelres1/code/109GTHGC.asm,803,decb_multiply_2,proc,0,,A,0,SUPPORTED,decb_multiply_2,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,803,decb_multiply_2,proc,1,,A,0,SUPPORTED,decb_multiply_2,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/109GTHGC.asm,827,decb_scan_loop_3,proc,0,,A,0,PENDING,,,
-working/zelres1/code/109GTHGC.asm,881,decb_multiply_3,proc,0,,A,0,SUPPORTED,decb_multiply_3,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/109GTHGC.asm,952,decb_process_loop,proc,0,,A,0,SUPPORTED,decb_process_loop,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/109GTHGC.asm,1020,copy_buffer,proc,0,,A,0,SUPPORTED,copy_buffer,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres1/code/109GTHGC.asm,1035,copy_buffer_2,proc,0,,A,0,SUPPORTED,copy_buffer_2,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres1/code/109GTHGC.asm,1075,copy_buffer_3,proc,0,,A,0,SUPPORTED,copy_buffer_3,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres1/code/109GTHGC.asm,1124,copy_buffer_4,proc,0,,A,0,SUPPORTED,copy_buffer_4,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres1/code/109GTHGC.asm,1139,copy_buffer_5,proc,0,,A,0,SUPPORTED,copy_buffer_5,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres1/code/109GTHGC.asm,1177,copy_buffer_6,proc,0,,A,0,SUPPORTED,copy_buffer_6,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres1/code/109GTHGC.asm,1342,decb_func_23,proc,0,,A,0,SUPPORTED,decb_func_23,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/109GTHGC.asm,1368,decb_func_24,proc,0,,C,0,SUPPORTED,decb_func_24,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/109GTHGC.asm,1438,decb_process_loop_2,proc,0,,A,0,SUPPORTED,decb_process_loop_2,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/109GTHGC.asm,1470,decb_process_loop_3,proc,0,,C,0,SUPPORTED,decb_process_loop_3,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,881,decb_multiply_3,proc,1,,A,0,SUPPORTED,decb_multiply_3,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,952,decb_process_loop,proc,1,,A,0,SUPPORTED,decb_process_loop,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,1020,copy_buffer,proc,1,,A,0,SUPPORTED,copy_buffer,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/109GTHGC.asm,1035,copy_buffer_2,proc,1,,A,0,SUPPORTED,copy_buffer_2,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/109GTHGC.asm,1075,copy_buffer_3,proc,1,,A,0,SUPPORTED,copy_buffer_3,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/109GTHGC.asm,1124,copy_buffer_4,proc,1,,A,0,SUPPORTED,copy_buffer_4,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/109GTHGC.asm,1139,copy_buffer_5,proc,1,,A,0,SUPPORTED,copy_buffer_5,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/109GTHGC.asm,1177,copy_buffer_6,proc,1,,A,0,SUPPORTED,copy_buffer_6,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres1/code/109GTHGC.asm,1342,decb_func_23,proc,1,,A,0,SUPPORTED,decb_func_23,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,1368,decb_func_24,proc,1,,C,0,SUPPORTED,decb_func_24,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,1438,decb_process_loop_2,proc,1,,A,0,SUPPORTED,decb_process_loop_2,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,1470,decb_process_loop_3,proc,1,,C,0,SUPPORTED,decb_process_loop_3,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/109GTHGC.asm,1515,decb_process_loop_4,proc,0,,A,0,PENDING,,,
 working/zelres1/code/109GTHGC.asm,1536,decb_func_28,proc,0,,C,0,PENDING,,,
-working/zelres1/code/109GTHGC.asm,1563,decb_func_29,proc,0,,A,0,SUPPORTED,decb_func_29,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,1563,decb_func_29,proc,1,,A,0,SUPPORTED,decb_func_29,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/109GTHGC.asm,1588,decb_func_30,proc,0,,A,0,PENDING,,,
-working/zelres1/code/109GTHGC.asm,1992,decb_process_loop_5,proc,0,,A,0,SUPPORTED,decb_process_loop_5,name-pattern: decoder: bit ops + memory writes,name-pattern
-working/zelres1/code/109GTHGC.asm,2034,decb_scan_loop_4,proc,0,,A,0,SUPPORTED,decb_scan_loop_4,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,1992,decb_process_loop_5,proc,1,,A,0,SUPPORTED,decb_process_loop_5,name-pattern: decoder: bit ops + memory writes,name-pattern
+working/zelres1/code/109GTHGC.asm,2034,decb_scan_loop_4,proc,1,,A,0,SUPPORTED,decb_scan_loop_4,name-pattern: decoder: bit ops + memory writes,name-pattern
 working/zelres1/code/109GTHGC.asm,2057,math_calc,proc,0,,A,0,PENDING,,,
 working/zelres1/code/110GTTGA.asm,96,tga_module_entry,proc,0,,D,0,PENDING,,,
-working/zelres1/code/110GTTGA.asm,234,limg_scan_loop,proc,0,,A,0,SUPPORTED,limg_scan_loop,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,234,limg_scan_loop,proc,1,,A,0,SUPPORTED,limg_scan_loop,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/110GTTGA.asm,276,limg_multiply,proc,0,,C,0,PENDING,,,
-working/zelres1/code/110GTTGA.asm,283,limg_func_3,proc,0,,C,0,SUPPORTED,limg_func_3,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/110GTTGA.asm,455,limg_func_4,proc,0,,C,0,SUPPORTED,limg_func_4,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,283,limg_func_3,proc,1,,C,0,SUPPORTED,limg_func_3,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,455,limg_func_4,proc,1,,C,0,SUPPORTED,limg_func_4,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/110GTTGA.asm,615,limg_func_5,proc,0,,A,0,PENDING,,,
-working/zelres1/code/110GTTGA.asm,619,limg_func_6,proc,0,,A,0,SUPPORTED,limg_func_6,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/110GTTGA.asm,733,limg_multiply_2,proc,0,,C,0,SUPPORTED,limg_multiply_2,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/110GTTGA.asm,797,limg_func_8,proc,0,,A,0,SUPPORTED,limg_func_8,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,619,limg_func_6,proc,1,,A,0,SUPPORTED,limg_func_6,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,733,limg_multiply_2,proc,1,,C,0,SUPPORTED,limg_multiply_2,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,797,limg_func_8,proc,1,,A,0,SUPPORTED,limg_func_8,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/110GTTGA.asm,814,limg_func_9,proc,0,,A,0,PENDING,,,
 working/zelres1/code/110GTTGA.asm,818,limg_func_10,proc,0,,A,0,PENDING,,,
-working/zelres1/code/110GTTGA.asm,831,limg_check_state,proc,0,,C,0,SUPPORTED,limg_check_state,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/110GTTGA.asm,911,limg_get_value,proc,0,,A,0,SUPPORTED,limg_get_value,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,831,limg_check_state,proc,1,,C,0,SUPPORTED,limg_check_state,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,911,limg_get_value,proc,1,,A,0,SUPPORTED,limg_get_value,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/110GTTGA.asm,932,limg_multiply_3,proc,0,,A,0,PENDING,,,
 working/zelres1/code/110GTTGA.asm,956,limg_scan_loop_2,proc,0,,A,0,PENDING,,,
-working/zelres1/code/110GTTGA.asm,1009,limg_multiply_4,proc,0,,C,0,SUPPORTED,limg_multiply_4,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/110GTTGA.asm,1084,limg_process_loop,proc,0,,A,0,SUPPORTED,limg_process_loop,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/110GTTGA.asm,1423,limg_func_17,proc,0,,A,0,SUPPORTED,limg_func_17,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/110GTTGA.asm,1449,limg_func_18,proc,0,,C,0,SUPPORTED,limg_func_18,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,1009,limg_multiply_4,proc,1,,C,0,SUPPORTED,limg_multiply_4,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,1084,limg_process_loop,proc,1,,A,0,SUPPORTED,limg_process_loop,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,1423,limg_func_17,proc,1,,A,0,SUPPORTED,limg_func_17,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,1449,limg_func_18,proc,1,,C,0,SUPPORTED,limg_func_18,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/110GTTGA.asm,1500,limg_func_19,proc,0,,A,0,PENDING,,,
-working/zelres1/code/110GTTGA.asm,1540,limg_process_loop_2,proc,0,,A,0,SUPPORTED,limg_process_loop_2,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/110GTTGA.asm,1568,limg_process_loop_3,proc,0,,C,0,SUPPORTED,limg_process_loop_3,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/110GTTGA.asm,1600,limg_process_loop_4,proc,0,,A,0,SUPPORTED,limg_process_loop_4,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/110GTTGA.asm,1624,limg_func_23,proc,0,,C,0,SUPPORTED,limg_func_23,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,1540,limg_process_loop_2,proc,1,,A,0,SUPPORTED,limg_process_loop_2,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,1568,limg_process_loop_3,proc,1,,C,0,SUPPORTED,limg_process_loop_3,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,1600,limg_process_loop_4,proc,1,,A,0,SUPPORTED,limg_process_loop_4,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/110GTTGA.asm,1624,limg_func_23,proc,1,,C,0,SUPPORTED,limg_func_23,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/110GTTGA.asm,1651,limg_func_24,proc,0,,A,0,PENDING,,,
 working/zelres1/code/110GTTGA.asm,1676,limg_func_25,proc,0,,A,0,PENDING,,,
 working/zelres1/code/110GTTGA.asm,2107,limg_process_loop_5,proc,0,,A,0,PENDING,,,
 working/zelres1/code/110GTTGA.asm,2150,limg_scan_loop_3,proc,0,,A,0,PENDING,,,
-working/zelres1/code/110GTTGA.asm,2173,extract_bits,proc,0,,A,0,SUPPORTED,extract_bits,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/zelres1/code/110GTTGA.asm,2173,extract_bits,proc,1,,A,0,SUPPORTED,extract_bits,name-pattern: extract/decode: bit/byte manipulation,name-pattern
 working/zelres1/code/110GTTGA.asm,2191,limg_process_loop_6,proc,0,,A,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,115,zr1_11,proc,0,,D,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,243,vga_operation,proc,0,,C,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,287,simg_multiply,proc,0,,C,0,PENDING,,,
-working/zelres1/code/111GTMCA.asm,294,simg_func_3,proc,0,,C,0,SUPPORTED,simg_func_3,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/111GTMCA.asm,397,simg_func_4,proc,0,,C,0,SUPPORTED,simg_func_4,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/111GTMCA.asm,294,simg_func_3,proc,1,,C,0,SUPPORTED,simg_func_3,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/111GTMCA.asm,397,simg_func_4,proc,1,,C,0,SUPPORTED,simg_func_4,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/111GTMCA.asm,566,simg_func_5_alt,proc,0,,A,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,570,simg_func_5,proc,0,,A,0,PENDING,,,
-working/zelres1/code/111GTMCA.asm,574,simg_func_6,proc,0,,C,0,SUPPORTED,simg_func_6,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/111GTMCA.asm,708,simg_multiply_2,proc,0,,C,0,SUPPORTED,simg_multiply_2,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/111GTMCA.asm,771,simg_func_8,proc,0,,A,0,SUPPORTED,simg_func_8,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/111GTMCA.asm,574,simg_func_6,proc,1,,C,0,SUPPORTED,simg_func_6,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/111GTMCA.asm,708,simg_multiply_2,proc,1,,C,0,SUPPORTED,simg_multiply_2,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/111GTMCA.asm,771,simg_func_8,proc,1,,A,0,SUPPORTED,simg_func_8,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/111GTMCA.asm,788,simg_func_9,proc,0,,A,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,792,vga_operation0,proc,0,,A,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,805,vga_operation1,proc,0,,A,0,PENDING,,,
@@ -666,36 +666,36 @@ working/zelres1/code/111GTMCA.asm,870,vga_operation4,proc,0,,A,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,920,vga_operation_2,proc,0,,C,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,999,vga_operation6,proc,0,,C,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,1356,vga_operation7,proc,0,,A,0,PENDING,,,
-working/zelres1/code/111GTMCA.asm,1378,extract_bits,proc,0,,A,0,SUPPORTED,extract_bits,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/zelres1/code/111GTMCA.asm,1378,extract_bits,proc,1,,A,0,SUPPORTED,extract_bits,name-pattern: extract/decode: bit/byte manipulation,name-pattern
 working/zelres1/code/111GTMCA.asm,1438,vga_operation9,proc,0,,A,0,PENDING,,,
-working/zelres1/code/111GTMCA.asm,1466,simg_process_loop,proc,0,,A,0,SUPPORTED,simg_process_loop,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/111GTMCA.asm,1502,simg_process_loop_2,proc,0,,A,0,SUPPORTED,simg_process_loop_2,name-pattern: image control: video memory or gfx call,name-pattern
-working/zelres1/code/111GTMCA.asm,1523,simg_func_22,proc,0,,C,0,SUPPORTED,simg_func_22,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/111GTMCA.asm,1466,simg_process_loop,proc,1,,A,0,SUPPORTED,simg_process_loop,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/111GTMCA.asm,1502,simg_process_loop_2,proc,1,,A,0,SUPPORTED,simg_process_loop_2,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/111GTMCA.asm,1523,simg_func_22,proc,1,,C,0,SUPPORTED,simg_func_22,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/111GTMCA.asm,1550,simg_func_23,proc,0,,A,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,1575,simg_func_24,proc,0,,A,0,PENDING,,,
-working/zelres1/code/111GTMCA.asm,1957,simg_process_loop_3,proc,0,,C,0,SUPPORTED,simg_process_loop_3,name-pattern: image control: video memory or gfx call,name-pattern
+working/zelres1/code/111GTMCA.asm,1957,simg_process_loop_3,proc,1,,C,0,SUPPORTED,simg_process_loop_3,name-pattern: image control: video memory or gfx call,name-pattern
 working/zelres1/code/111GTMCA.asm,1982,simg_func_26,proc,0,,A,0,PENDING,,,
 working/zelres1/code/111GTMCA.asm,1993,simg_scan_loop,proc,0,,A,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,631,zr2_00,proc,0,,D,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,756,vga_operation,proc,0,,D,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,941,combat_input_dispatcher,proc,0,,,0,PENDING,,,
-working/zelres2/code/200FIGHT.asm,1026,decide_scroll_direction,proc,0,,,0,SUPPORTED,decide_scroll_direction,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/200FIGHT.asm,1026,decide_scroll_direction,proc,1,,,0,SUPPORTED,decide_scroll_direction,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres2/code/200FIGHT.asm,1064,process_combat_update_step,proc,1,,,0,SUPPORTED,process_combat_update_step,name-pattern: process/update/advance: state-update operations,name-pattern
 working/zelres2/code/200FIGHT.asm,1145,combat_step_dispatch,proc,0,,C,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,1192,apply_pending_invul,proc,1,,,0,SUPPORTED,apply_pending_invul,name-pattern: apply_*: writes/calls to apply effect,name-pattern
 working/zelres2/code/200FIGHT.asm,1285,try_combat_advance,proc,1,,,0,SUPPORTED,try_combat_advance,name-pattern: try_*: condition check + branch,name-pattern
-working/zelres2/code/200FIGHT.asm,1338,scroll_up_and_advance_state,proc,0,,,0,SUPPORTED,scroll_up_and_advance_state,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/200FIGHT.asm,1338,scroll_up_and_advance_state,proc,1,,,0,SUPPORTED,scroll_up_and_advance_state,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres2/code/200FIGHT.asm,1402,try_scroll_advance,proc,1,,,0,SUPPORTED,try_scroll_advance,name-pattern: try_*: condition check + branch,name-pattern
 working/zelres2/code/200FIGHT.asm,1546,check_area_7_boundary,proc,1,,,0,SUPPORTED,check_area_7_boundary,name-pattern: check/test: cmp/test followed by branch,name-pattern
 working/zelres2/code/200FIGHT.asm,1611,toggle_c2_bit_pose,proc,0,,A,0,PENDING,,,
-working/zelres2/code/200FIGHT.asm,1636,game_process_loop,proc,0,,D,0,SUPPORTED,game_process_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/200FIGHT.asm,1636,game_process_loop,proc,1,,D,0,SUPPORTED,game_process_loop,name-pattern: loop: backward branch or rep,name-pattern
 working/zelres2/code/200FIGHT.asm,1772,is_non_area7_slot_b_entity,proc,1,,A,0,SUPPORTED,is_non_area7_slot_b_entity,name-pattern: check/test: cmp/test followed by branch,name-pattern
-working/zelres2/code/200FIGHT.asm,1794,combat_step_advance,proc,0,,,0,SUPPORTED,combat_step_advance,name-pattern: advance: inc/add to advance state,name-pattern
+working/zelres2/code/200FIGHT.asm,1794,combat_step_advance,proc,1,,,0,SUPPORTED,combat_step_advance,name-pattern: advance: inc/add to advance state,name-pattern
 working/zelres2/code/200FIGHT.asm,1939,combat_input_poll_step,proc,0,,,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,1995,try_advance_with_anim,proc,1,,,0,SUPPORTED,try_advance_with_anim,name-pattern: try_*: condition check + branch,name-pattern
-working/zelres2/code/200FIGHT.asm,2044,scroll_pos_advance,proc,0,,,0,SUPPORTED,scroll_pos_advance,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/200FIGHT.asm,2044,scroll_pos_advance,proc,1,,,0,SUPPORTED,scroll_pos_advance,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres2/code/200FIGHT.asm,2082,check_3tile_clearance,proc,1,,,0,SUPPORTED,check_3tile_clearance,name-pattern: check/test: cmp/test followed by branch,name-pattern
-working/zelres2/code/200FIGHT.asm,2134,game_get_value,proc,0,,A,0,SUPPORTED,game_get_value,name-pattern: value: memory load (often via xlat),name-pattern
+working/zelres2/code/200FIGHT.asm,2134,game_get_value,proc,1,,A,0,SUPPORTED,game_get_value,name-pattern: value: memory load (often via xlat),name-pattern
 working/zelres2/code/200FIGHT.asm,2142,find_fire_slot_for_id,proc,1,,,0,SUPPORTED,find_fire_slot_for_id,name-pattern: find/scan: scasb/cmp/loop,name-pattern
 working/zelres2/code/200FIGHT.asm,2182,process_map_seg_updates,proc,1,,C,0,SUPPORTED,process_map_seg_updates,name-pattern: process/update/advance: state-update operations,name-pattern
 working/zelres2/code/200FIGHT.asm,2223,game_get_value_2,proc,0,,A,0,PENDING,,,
@@ -719,7 +719,7 @@ working/zelres2/code/200FIGHT.asm,2812,update_combat_frame_state,proc,1,,,0,SUPP
 working/zelres2/code/200FIGHT.asm,2909,save_combat_action_state,proc,1,,,0,SUPPORTED,save_combat_action_state,name-pattern: load/save/read/write: at least one memory op or loader call,name-pattern
 working/zelres2/code/200FIGHT.asm,3060,fill_hud_enemy_area,proc,1,,,0,SUPPORTED,fill_hud_enemy_area,name-pattern: boss/enemy: state read/write/branch,name-pattern
 working/zelres2/code/200FIGHT.asm,3151,swap_world_state_buffers,proc,0,,,0,PENDING,,,
-working/zelres2/code/200FIGHT.asm,3239,fill_buffer,proc,0,,A,0,SUPPORTED,fill_buffer,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/zelres2/code/200FIGHT.asm,3239,fill_buffer,proc,1,,A,0,SUPPORTED,fill_buffer,name-pattern: fill_*: rep stos or memory write,name-pattern
 working/zelres2/code/200FIGHT.asm,3252,find_atk_slot_for_id,proc,1,,,0,SUPPORTED,find_atk_slot_for_id,name-pattern: find/scan: scasb/cmp/loop,name-pattern
 working/zelres2/code/200FIGHT.asm,3279,init_combat_arena,proc,0,,A,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,3304,draw_combat_hud_layout,proc,1,,,0,SUPPORTED,draw_combat_hud_layout,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
@@ -729,7 +729,7 @@ working/zelres2/code/200FIGHT.asm,3559,apply_passive_damage,proc,1,,,0,SUPPORTED
 working/zelres2/code/200FIGHT.asm,3572,apply_combat_damage_with_absorb,proc,1,,,0,SUPPORTED,apply_combat_damage_with_absorb,name-pattern: apply_*: writes/calls to apply effect,name-pattern
 working/zelres2/code/200FIGHT.asm,3613,clear_secondary_pool_and_redraw,proc,1,,,0,SUPPORTED,clear_secondary_pool_and_redraw,name-pattern: set/clear: writes register/memory,name-pattern
 working/zelres2/code/200FIGHT.asm,3647,accumulate_tile_type,proc,1,,C,0,SUPPORTED,accumulate_tile_type,name-pattern: tile_*: tile data manipulation,name-pattern
-working/zelres2/code/200FIGHT.asm,3678,player_HP_subtract,proc,0,,,0,SUPPORTED,player_HP_subtract,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres2/code/200FIGHT.asm,3678,player_HP_subtract,proc,1,,,0,SUPPORTED,player_HP_subtract,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres2/code/200FIGHT.asm,3693,game_process_loop_2,proc,0,,C,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,3717,tail_dispatch_by_slot_family,proc,0,,A,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,3761,lookup_move_slot_family,proc,0,,C,0,PENDING,,,
@@ -743,7 +743,7 @@ working/zelres2/code/200FIGHT.asm,4426,compute_scroll_pos,proc,1,,A,0,SUPPORTED,
 working/zelres2/code/200FIGHT.asm,4444,compute_scroll_offset_b,proc,1,,C,0,SUPPORTED,compute_scroll_offset_b,name-pattern: compute/calc: arithmetic or bitwise op,name-pattern
 working/zelres2/code/200FIGHT.asm,4473,decrement_speed_or_power,proc,1,,C,0,SUPPORTED,decrement_speed_or_power,name-pattern: increment/decrement: inc/dec/add/sub op present,name-pattern
 working/zelres2/code/200FIGHT.asm,4508,reset_combat_state,proc,1,,C,0,SUPPORTED,reset_combat_state,name-pattern: set/clear: writes register/memory,name-pattern
-working/zelres2/code/200FIGHT.asm,4531,copy_buffer,proc,0,,A,0,SUPPORTED,copy_buffer,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres2/code/200FIGHT.asm,4531,copy_buffer,proc,1,,A,0,SUPPORTED,copy_buffer,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
 working/zelres2/code/200FIGHT.asm,4555,vga_operation_2,proc,0,,D,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,4618,wait_anim_cycle,proc,0,,,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,4638,scan_top_map_objects,proc,1,,,0,SUPPORTED,scan_top_map_objects,name-pattern: find/scan: scasb/cmp/loop,name-pattern
@@ -763,7 +763,7 @@ working/zelres2/code/200FIGHT.asm,5254,scan_enemy_data_buf,proc,1,,,0,SUPPORTED,
 working/zelres2/code/200FIGHT.asm,5315,process_dirty_enemies,proc,1,,A,0,SUPPORTED,process_dirty_enemies,name-pattern: process/update/advance: state-update operations,name-pattern
 working/zelres2/code/200FIGHT.asm,5333,prep_dirty_blit,proc,0,,A,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,5346,enemy_sprite_blit,proc,0,,A,0,PENDING,,,
-working/zelres2/code/200FIGHT.asm,5364,copy_buffer_2,proc,0,,C,0,SUPPORTED,copy_buffer_2,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres2/code/200FIGHT.asm,5364,copy_buffer_2,proc,1,,C,0,SUPPORTED,copy_buffer_2,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
 working/zelres2/code/200FIGHT.asm,5411,process_sprite_step,proc,1,,,0,SUPPORTED,process_sprite_step,name-pattern: process/update/advance: state-update operations,name-pattern
 working/zelres2/code/200FIGHT.asm,5543,entity_fn_dispatch_b,proc,0,,A,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,5587,entity_step_dispatch_c,proc,0,,A,0,PENDING,,,
@@ -779,7 +779,7 @@ working/zelres2/code/200FIGHT.asm,5855,try_place_tile_id_49,proc,1,,C,0,SUPPORTE
 working/zelres2/code/200FIGHT.asm,6101,scan_boss_entries_render,proc,1,,,0,SUPPORTED,scan_boss_entries_render,name-pattern: find/scan: scasb/cmp/loop,name-pattern
 working/zelres2/code/200FIGHT.asm,6220,render_boss_dirty_blits,proc,1,,,0,SUPPORTED,render_boss_dirty_blits,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/200FIGHT.asm,6276,gate_spell_fx_active,proc,0,,A,0,PENDING,,,
-working/zelres2/code/200FIGHT.asm,6420,cycle_dir_and_advance,proc,0,,C,0,SUPPORTED,cycle_dir_and_advance,name-pattern: advance: inc/add to advance state,name-pattern
+working/zelres2/code/200FIGHT.asm,6420,cycle_dir_and_advance,proc,1,,C,0,SUPPORTED,cycle_dir_and_advance,name-pattern: advance: inc/add to advance state,name-pattern
 working/zelres2/code/200FIGHT.asm,6455,draw_entity_3x3_at_pos,proc,1,,,0,SUPPORTED,draw_entity_3x3_at_pos,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/200FIGHT.asm,6513,try_paint_obj_cell,proc,1,,A,0,SUPPORTED,try_paint_obj_cell,name-pattern: try_*: condition check + branch,name-pattern
 working/zelres2/code/200FIGHT.asm,6550,scan_obj_list_render,proc,1,,,0,SUPPORTED,scan_obj_list_render,name-pattern: find/scan: scasb/cmp/loop,name-pattern
@@ -802,7 +802,7 @@ working/zelres2/code/200FIGHT.asm,6916,gfx_fn_blit,data,0,,,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,6917,gfx_fn_map_ref,data,0,,,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,6921,gfx_fn_memcpy,data,0,,,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,6922,gfx_fn_map_scroll,data,0,,,0,PENDING,,,
-working/zelres2/code/200FIGHT.asm,7115,hero_almas_add,proc,0,,A,0,SUPPORTED,hero_almas_add,name-pattern: player/stat ops: DS-relative read/write,name-pattern
+working/zelres2/code/200FIGHT.asm,7115,hero_almas_add,proc,1,,A,0,SUPPORTED,hero_almas_add,name-pattern: player/stat ops: DS-relative read/write,name-pattern
 working/zelres2/code/200FIGHT.asm,7128,check_entity_in_view,proc,1,,,0,SUPPORTED,check_entity_in_view,name-pattern: check/test: cmp/test followed by branch,name-pattern
 working/zelres2/code/200FIGHT.asm,7185,entity_move_east,proc,0,,C,0,PENDING,,,
 working/zelres2/code/200FIGHT.asm,7219,entity_move_north,proc,0,,C,0,PENDING,,,
@@ -864,9 +864,9 @@ working/zelres2/code/202GFEGA.asm,280,sprite_state_update,proc,1,,C,0,SUPPORTED,
 working/zelres2/code/202GFEGA.asm,490,ega_sprite_blit,proc,1,,D,0,SUPPORTED,ega_sprite_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/202GFEGA.asm,685,sprite_slot_init,proc,1,,C,0,SUPPORTED,sprite_slot_init,driver-signature: initialises sprite slot via xchg/mov 0FFh into sprite_state_a,driver-sig
 working/zelres2/code/202GFEGA.asm,719,sprite_blit_dispatch,proc,0,,C,0,INCONCLUSIVE,sprite_blit_dispatch,driver-signature: reads DS table + indirect call/jmp -- dispatch shape,driver-sig
-working/zelres2/code/202GFEGA.asm,751,sprite_wide_row_render,proc,0,,D,0,INCONCLUSIVE,sprite_wide_row_render,driver-signature: renders a wide sprite row -- writes ES:[DI] across cols,driver-sig
+working/zelres2/code/202GFEGA.asm,751,sprite_wide_row_render,proc,1,,D,0,SUPPORTED,sprite_wide_row_render,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/202GFEGA.asm,940,sprite_pos_pair_iter,proc,0,,C,0,INCONCLUSIVE,sprite_pos_pair_iter,driver-signature: iterates a position-pair list (SI walk + loop tail),driver-sig
-working/zelres2/code/202GFEGA.asm,975,sprite_cell_render,proc,0,,C,0,INCONCLUSIVE,sprite_cell_render,driver-signature: renders one sprite cell -- writes ES:[DI] in a loop,driver-sig
+working/zelres2/code/202GFEGA.asm,975,sprite_cell_render,proc,1,,C,0,SUPPORTED,sprite_cell_render,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/202GFEGA.asm,1031,ega_sprite_blit_ex,proc,0,,C,0,PENDING,,,
 working/zelres2/code/202GFEGA.asm,1045,ega_sprite_render_blended,proc,1,,D,0,SUPPORTED,ega_sprite_render_blended,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/202GFEGA.asm,1124,ega_sprite_render_solid,proc,1,,D,0,SUPPORTED,ega_sprite_render_solid,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
@@ -875,21 +875,21 @@ working/zelres2/code/202GFEGA.asm,1220,ega_3plane_copy,proc,0,,D,0,PENDING,,,
 working/zelres2/code/202GFEGA.asm,1247,ega_clear_16bytes,proc,0,,D,0,PENDING,,,
 working/zelres2/code/202GFEGA.asm,1265,sprite_get_value,proc,1,,A,0,SUPPORTED,sprite_get_value,driver-signature: reads value from a lookup table (xlat or mem load),driver-sig
 working/zelres2/code/202GFEGA.asm,1273,sprite_src_setup,proc,1,,C,0,SUPPORTED,sprite_src_setup,driver-signature: computes sprite source ptr via char_lookup + sprite_attr_base + mul stride,driver-sig
-working/zelres2/code/202GFEGA.asm,1312,projectile_spawn_check,proc,0,,D,0,INCONCLUSIVE,projectile_spawn_check,driver-signature: tests projectile/spawn state and branches,driver-sig
-working/zelres2/code/202GFEGA.asm,1965,hero_sprite_col_blit,proc,0,,A,0,INCONCLUSIVE,hero_sprite_col_blit,driver-signature: blits one column of hero sprite to ES:[DI],driver-sig
+working/zelres2/code/202GFEGA.asm,1312,projectile_spawn_check,proc,1,,D,0,SUPPORTED,projectile_spawn_check,name-pattern: tile_*: tile data manipulation,name-pattern
+working/zelres2/code/202GFEGA.asm,1965,hero_sprite_col_blit,proc,1,,A,0,SUPPORTED,hero_sprite_col_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/202GFEGA.asm,2005,hero_tier_get,proc,1,,A,0,SUPPORTED,hero_tier_get,driver-signature: reads ds:[shield] and returns tier 0/1/2 by threshold cmp 4,driver-sig
-working/zelres2/code/202GFEGA.asm,2104,scroll_pos_load,proc,0,,A,0,SUPPORTED,scroll_pos_load,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/202GFEGA.asm,2104,scroll_pos_load,proc,1,,A,0,SUPPORTED,scroll_pos_load,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres2/code/202GFEGA.asm,2131,frame_row_driver,proc,0,,C,0,INCONCLUSIVE,frame_row_driver,driver-signature: drives one frame row through the rendering pipeline,driver-sig
 working/zelres2/code/202GFEGA.asm,2284,bg_restore,proc,1,,A,0,SUPPORTED,bg_restore,driver-signature: restores a saved bg region (rep movs or impl wrapper),driver-sig
 working/zelres2/code/202GFEGA.asm,2306,bg_save,proc,1,,D,0,SUPPORTED,bg_save,driver-signature: saves a region of bg to a save buffer via rep movs,driver-sig
 working/zelres2/code/202GFEGA.asm,2341,bg_restore_impl,proc,1,,D,0,SUPPORTED,bg_restore_impl,name-pattern: bg_*: background save/restore/render,name-pattern
-working/zelres2/code/202GFEGA.asm,2376,scroll_cache_invalidate,proc,0,,D,0,SUPPORTED,scroll_cache_invalidate,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/202GFEGA.asm,2376,scroll_cache_invalidate,proc,1,,D,0,SUPPORTED,scroll_cache_invalidate,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres2/code/202GFEGA.asm,2594,tile_blit_3x3,proc,1,,A,0,SUPPORTED,tile_blit_3x3,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/202GFEGA.asm,2783,ega_tile_anim_update,proc,1,,D,0,SUPPORTED,ega_tile_anim_update,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres2/code/202GFEGA.asm,2849,ega_plane_write_2row,proc,0,,D,0,PENDING,,,
 working/zelres2/code/202GFEGA.asm,2898,ega_clear_pixel_pair,proc,0,,A,0,PENDING,,,
-working/zelres2/code/202GFEGA.asm,2908,phase_ptr_advance,proc,0,,A,0,SUPPORTED,phase_ptr_advance,name-pattern: advance: inc/add to advance state,name-pattern
-working/zelres2/code/202GFEGA.asm,3000,fade_gradient_loop,proc,0,,A,0,SUPPORTED,fade_gradient_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/202GFEGA.asm,2908,phase_ptr_advance,proc,1,,A,0,SUPPORTED,phase_ptr_advance,name-pattern: advance: inc/add to advance state,name-pattern
+working/zelres2/code/202GFEGA.asm,3000,fade_gradient_loop,proc,1,,A,0,SUPPORTED,fade_gradient_loop,name-pattern: loop: backward branch or rep,name-pattern
 working/zelres2/code/202GFEGA.asm,3042,ega_fade_blit,proc,0,,D,0,PENDING,,,
 working/zelres2/code/202GFEGA.asm,3080,ega_fill_bit_range,proc,0,,D,0,PENDING,,,
 working/zelres2/code/202GFEGA.asm,3154,ega_fill_bit_range_wide,proc,0,,D,0,PENDING,,,
@@ -897,33 +897,33 @@ working/zelres2/code/202GFEGA.asm,3282,ega_row_addr_calc,proc,0,,A,0,PENDING,,,
 working/zelres2/code/202GFEGA.asm,3291,frame_wait_loop,proc,0,,D,0,INCONCLUSIVE,frame_wait_loop,driver-signature: waits in a loop on gvar_frame_timer,driver-sig
 working/zelres2/code/202GFEGA.asm,3417,si_wrap_hi,proc,1,,A,0,SUPPORTED,si_wrap_hi,driver-signature: SI-wrap helper: bound check + offset adjust,driver-sig
 working/zelres2/code/202GFEGA.asm,3577,ega_bg_tile_blit,proc,1,,D,0,SUPPORTED,ega_bg_tile_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/zelres2/code/202GFEGA.asm,3717,ega_col_write_loop,proc,0,,D,0,SUPPORTED,ega_col_write_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/202GFEGA.asm,3717,ega_col_write_loop,proc,1,,D,0,SUPPORTED,ega_col_write_loop,name-pattern: loop: backward branch or rep,name-pattern
 working/zelres2/code/203GFCGA.asm,167,gfcga_main,proc,0,,D,0,PENDING,,,
 working/zelres2/code/203GFCGA.asm,201,cga_row_ofs,data,0,,,0,PENDING,,,
 working/zelres2/code/203GFCGA.asm,283,sprite_state_update,proc,1,,C,0,SUPPORTED,sprite_state_update,driver-signature: updates per-sprite state byte at ES:[DI-1] from prior [SI-1],driver-sig
 working/zelres2/code/203GFCGA.asm,489,cga_sprite_blit,proc,1,,C,0,SUPPORTED,cga_sprite_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/203GFCGA.asm,631,sprite_slot_init,proc,1,,C,0,SUPPORTED,sprite_slot_init,driver-signature: initialises sprite slot via xchg/mov 0FFh into sprite_state_a,driver-sig
 working/zelres2/code/203GFCGA.asm,665,sprite_blit_dispatch,proc,0,,C,0,INCONCLUSIVE,sprite_blit_dispatch,driver-signature: reads DS table + indirect call/jmp -- dispatch shape,driver-sig
-working/zelres2/code/203GFCGA.asm,697,sprite_wide_row_render,proc,0,,D,0,INCONCLUSIVE,sprite_wide_row_render,driver-signature: renders a wide sprite row -- writes ES:[DI] across cols,driver-sig
+working/zelres2/code/203GFCGA.asm,697,sprite_wide_row_render,proc,1,,D,0,SUPPORTED,sprite_wide_row_render,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/203GFCGA.asm,886,sprite_pos_pair_iter,proc,0,,C,0,INCONCLUSIVE,sprite_pos_pair_iter,driver-signature: iterates a position-pair list (SI walk + loop tail),driver-sig
-working/zelres2/code/203GFCGA.asm,921,sprite_cell_render,proc,0,,C,0,INCONCLUSIVE,sprite_cell_render,driver-signature: renders one sprite cell -- writes ES:[DI] in a loop,driver-sig
+working/zelres2/code/203GFCGA.asm,921,sprite_cell_render,proc,1,,C,0,SUPPORTED,sprite_cell_render,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/203GFCGA.asm,985,cga_sprite_blit_ex,proc,0,,A,0,PENDING,,,
 working/zelres2/code/203GFCGA.asm,1002,cga_sprite_render_blended,proc,1,,A,0,SUPPORTED,cga_sprite_render_blended,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/203GFCGA.asm,1021,cga_sprite_render_solid,proc,1,,A,0,SUPPORTED,cga_sprite_render_solid,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/zelres2/code/203GFCGA.asm,1034,sprite_bit_extract,proc,0,,C,0,SUPPORTED,sprite_bit_extract,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/zelres2/code/203GFCGA.asm,1034,sprite_bit_extract,proc,1,,C,0,SUPPORTED,sprite_bit_extract,name-pattern: extract/decode: bit/byte manipulation,name-pattern
 working/zelres2/code/203GFCGA.asm,1076,cga_blit_2rows_stride,proc,1,,C,0,SUPPORTED,cga_blit_2rows_stride,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/203GFCGA.asm,1096,sprite_copy_8words,proc,0,,A,0,PENDING,,,
 working/zelres2/code/203GFCGA.asm,1103,sprite_clear_8words,proc,0,,A,0,PENDING,,,
 working/zelres2/code/203GFCGA.asm,1111,sprite_get_value,proc,1,,A,0,SUPPORTED,sprite_get_value,driver-signature: reads value from a lookup table (xlat or mem load),driver-sig
 working/zelres2/code/203GFCGA.asm,1119,sprite_src_setup,proc,1,,C,0,SUPPORTED,sprite_src_setup,driver-signature: computes sprite source ptr via char_lookup + sprite_attr_base + mul stride,driver-sig
-working/zelres2/code/203GFCGA.asm,1158,projectile_spawn_check,proc,0,,D,0,INCONCLUSIVE,projectile_spawn_check,driver-signature: tests projectile/spawn state and branches,driver-sig
+working/zelres2/code/203GFCGA.asm,1158,projectile_spawn_check,proc,1,,D,0,SUPPORTED,projectile_spawn_check,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres2/code/203GFCGA.asm,1773,sprite_col_render_loop,proc,1,,C,0,SUPPORTED,sprite_col_render_loop,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/203GFCGA.asm,1815,hero_tier_get,proc,1,,A,0,SUPPORTED,hero_tier_get,driver-signature: reads ds:[shield] and returns tier 0/1/2 by threshold cmp 4,driver-sig
 working/zelres2/code/203GFCGA.asm,1944,frame_row_driver,proc,0,,C,0,INCONCLUSIVE,frame_row_driver,driver-signature: drives one frame row through the rendering pipeline,driver-sig
-working/zelres2/code/203GFCGA.asm,2097,scroll_restore,proc,0,,A,0,SUPPORTED,scroll_restore,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/203GFCGA.asm,2097,scroll_restore,proc,1,,A,0,SUPPORTED,scroll_restore,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres2/code/203GFCGA.asm,2117,bg_save,proc,1,,A,0,SUPPORTED,bg_save,driver-signature: saves a region of bg to a save buffer via rep movs,driver-sig
 working/zelres2/code/203GFCGA.asm,2145,bg_restore,proc,1,,A,0,SUPPORTED,bg_restore,driver-signature: restores a saved bg region (rep movs or impl wrapper),driver-sig
-working/zelres2/code/203GFCGA.asm,2169,scroll_pos_load,proc,0,,C,0,SUPPORTED,scroll_pos_load,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/203GFCGA.asm,2169,scroll_pos_load,proc,1,,C,0,SUPPORTED,scroll_pos_load,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres2/code/203GFCGA.asm,2302,bg_tile_restore_3x3,proc,1,,C,0,SUPPORTED,bg_tile_restore_3x3,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres2/code/203GFCGA.asm,2443,bg_col_blit_row,proc,0,,C,0,PENDING,,,
 working/zelres2/code/203GFCGA.asm,2502,col_write_inner,proc,0,,C,0,PENDING,,,
@@ -939,7 +939,7 @@ working/zelres2/code/203GFCGA.asm,3018,si_wrap_hi,proc,1,,A,0,SUPPORTED,si_wrap_
 working/zelres2/code/203GFCGA.asm,3135,cga_plane_mask_2bit,proc,0,,A,0,PENDING,,,
 working/zelres2/code/203GFCGA.asm,3188,bg_tile_blit_inner,proc,1,,A,0,SUPPORTED,bg_tile_blit_inner,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/203GFCGA.asm,3219,cga_plane_mask_combine,proc,0,,A,0,PENDING,,,
-working/zelres2/code/203GFCGA.asm,3703,cga_nibble_mask_advance,proc,0,,A,0,SUPPORTED,cga_nibble_mask_advance,name-pattern: advance: inc/add to advance state,name-pattern
+working/zelres2/code/203GFCGA.asm,3703,cga_nibble_mask_advance,proc,1,,A,0,SUPPORTED,cga_nibble_mask_advance,name-pattern: advance: inc/add to advance state,name-pattern
 working/zelres2/code/203GFCGA.asm,3732,cga_nibble_mask_alt,proc,0,,A,0,PENDING,,,
 working/zelres2/code/204GFHGC.asm,138,gfhgc_main,proc,0,,D,0,PENDING,,,
 working/zelres2/code/204GFHGC.asm,177,hgc_row_ofs,data,0,,,0,PENDING,,,
@@ -948,7 +948,7 @@ working/zelres2/code/204GFHGC.asm,469,hgc_plane_or_blit,proc,1,,C,0,SUPPORTED,hg
 working/zelres2/code/204GFHGC.asm,571,sprite_slot_remove,proc,0,,C,0,INCONCLUSIVE,sprite_slot_remove,driver-signature: clears sprite slot state (sprite_state_a/sprite_buf) to zero,driver-sig
 working/zelres2/code/204GFHGC.asm,608,sprite_slot_init,proc,1,,C,0,SUPPORTED,sprite_slot_init,driver-signature: initialises sprite slot via xchg/mov 0FFh into sprite_state_a,driver-sig
 working/zelres2/code/204GFHGC.asm,642,sprite_blit_dispatch,proc,0,,C,0,INCONCLUSIVE,sprite_blit_dispatch,driver-signature: reads DS table + indirect call/jmp -- dispatch shape,driver-sig
-working/zelres2/code/204GFHGC.asm,674,sprite_wide_row_render,proc,0,,D,0,INCONCLUSIVE,sprite_wide_row_render,driver-signature: renders a wide sprite row -- writes ES:[DI] across cols,driver-sig
+working/zelres2/code/204GFHGC.asm,674,sprite_wide_row_render,proc,1,,D,0,SUPPORTED,sprite_wide_row_render,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/204GFHGC.asm,881,sprite_pair_blit,proc,1,,C,0,SUPPORTED,sprite_pair_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/204GFHGC.asm,916,hgc_sprite_blit,proc,1,,C,0,SUPPORTED,hgc_sprite_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/204GFHGC.asm,980,sprite_or_into_cache,proc,0,,A,0,PENDING,,,
@@ -956,7 +956,7 @@ working/zelres2/code/204GFHGC.asm,997,physics_func_11,proc,0,,A,0,PENDING,,,
 working/zelres2/code/204GFHGC.asm,1016,plane_copy_process,proc,0,,A,0,PENDING,,,
 working/zelres2/code/204GFHGC.asm,1029,hgc_extract_4bits,proc,0,,C,0,PENDING,,,
 working/zelres2/code/204GFHGC.asm,1071,plane_scan_blit,proc,1,,A,0,SUPPORTED,plane_scan_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/zelres2/code/204GFHGC.asm,1090,copy_8words,proc,0,,A,0,SUPPORTED,copy_8words,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres2/code/204GFHGC.asm,1090,copy_8words,proc,1,,A,0,SUPPORTED,copy_8words,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
 working/zelres2/code/204GFHGC.asm,1097,zero_8words,proc,1,,A,0,SUPPORTED,zero_8words,name-pattern: set/clear: writes register/memory,name-pattern
 working/zelres2/code/204GFHGC.asm,1105,translate_char,proc,0,,A,0,PENDING,,,
 working/zelres2/code/204GFHGC.asm,1113,sprite_src_setup,proc,1,,C,0,SUPPORTED,sprite_src_setup,driver-signature: computes sprite source ptr via char_lookup + sprite_attr_base + mul stride,driver-sig
@@ -974,7 +974,7 @@ working/zelres2/code/204GFHGC.asm,2540,anim_refresh_tile,proc,1,,C,0,SUPPORTED,a
 working/zelres2/code/204GFHGC.asm,2600,hgc_write_row_masked,proc,0,,C,0,PENDING,,,
 working/zelres2/code/204GFHGC.asm,2649,hgc_clear_row_masked,proc,0,,A,0,PENDING,,,
 working/zelres2/code/204GFHGC.asm,2680,set_pixel_stride_offset,proc,1,,A,0,SUPPORTED,set_pixel_stride_offset,name-pattern: set/clear: writes register/memory,name-pattern
-working/zelres2/code/204GFHGC.asm,2712,fade_radius_loop,proc,0,,C,0,SUPPORTED,fade_radius_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/204GFHGC.asm,2712,fade_radius_loop,proc,1,,C,0,SUPPORTED,fade_radius_loop,name-pattern: loop: backward branch or rep,name-pattern
 working/zelres2/code/204GFHGC.asm,2788,hgc_fade_blit,proc,1,,C,0,SUPPORTED,hgc_fade_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/204GFHGC.asm,2891,hgc_fill_bit_range_wide,proc,0,,C,0,PENDING,,,
 working/zelres2/code/204GFHGC.asm,3014,hgc_row_addr_calc,proc,0,,A,0,PENDING,,,
@@ -983,10 +983,10 @@ working/zelres2/code/204GFHGC.asm,3047,hgc_xor_fill_region,proc,0,,A,0,PENDING,,
 working/zelres2/code/204GFHGC.asm,3135,si_wrap_hi,proc,1,,A,0,SUPPORTED,si_wrap_hi,driver-signature: SI-wrap helper: bound check + offset adjust,driver-sig
 working/zelres2/code/204GFHGC.asm,3146,si_wrap_lo,proc,1,,A,0,SUPPORTED,si_wrap_lo,driver-signature: SI-wrap helper (low boundary): bound check + offset adjust,driver-sig
 working/zelres2/code/204GFHGC.asm,3281,hgc_fade_blit_entry,proc,1,,A,0,SUPPORTED,hgc_fade_blit_entry,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/zelres2/code/204GFHGC.asm,3313,rol_extract_loop,proc,0,,A,0,SUPPORTED,rol_extract_loop,name-pattern: loop: backward branch or rep,name-pattern
-working/zelres2/code/204GFHGC.asm,3634,shift_extract_loop,proc,0,,A,0,SUPPORTED,shift_extract_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/204GFHGC.asm,3313,rol_extract_loop,proc,1,,A,0,SUPPORTED,rol_extract_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/204GFHGC.asm,3634,shift_extract_loop,proc,1,,A,0,SUPPORTED,shift_extract_loop,name-pattern: loop: backward branch or rep,name-pattern
 working/zelres2/code/204GFHGC.asm,3761,hgc_pixel_addr_calc,proc,0,,A,0,PENDING,,,
-working/zelres2/code/204GFHGC.asm,3846,plane_pair_rol_loop,proc,0,,A,0,SUPPORTED,plane_pair_rol_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/204GFHGC.asm,3846,plane_pair_rol_loop,proc,1,,A,0,SUPPORTED,plane_pair_rol_loop,name-pattern: loop: backward branch or rep,name-pattern
 working/zelres2/code/204GFHGC.asm,3875,dispatch_shape_fill,proc,0,,A,0,PENDING,,,
 working/zelres2/code/205GFTGA.asm,124,gftga_main,proc,0,,D,0,PENDING,,,
 working/zelres2/code/205GFTGA.asm,159,tga_row_ofs,data,0,,,0,PENDING,,,
@@ -995,28 +995,28 @@ working/zelres2/code/205GFTGA.asm,458,tga_sprite_blit,proc,1,,C,0,SUPPORTED,tga_
 working/zelres2/code/205GFTGA.asm,695,sprite_slot_remove,proc,0,,C,0,INCONCLUSIVE,sprite_slot_remove,driver-signature: clears sprite slot state (sprite_state_a/sprite_buf) to zero,driver-sig
 working/zelres2/code/205GFTGA.asm,732,sprite_slot_init,proc,1,,C,0,SUPPORTED,sprite_slot_init,driver-signature: initialises sprite slot via xchg/mov 0FFh into sprite_state_a,driver-sig
 working/zelres2/code/205GFTGA.asm,767,sprite_blit_dispatch,proc,0,,C,0,INCONCLUSIVE,sprite_blit_dispatch,driver-signature: reads DS table + indirect call/jmp -- dispatch shape,driver-sig
-working/zelres2/code/205GFTGA.asm,799,sprite_wide_row_render,proc,0,,D,0,INCONCLUSIVE,sprite_wide_row_render,driver-signature: renders a wide sprite row -- writes ES:[DI] across cols,driver-sig
+working/zelres2/code/205GFTGA.asm,799,sprite_wide_row_render,proc,1,,D,0,SUPPORTED,sprite_wide_row_render,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/205GFTGA.asm,991,sprite_pos_pair_iter,proc,0,,C,0,INCONCLUSIVE,sprite_pos_pair_iter,driver-signature: iterates a position-pair list (SI walk + loop tail),driver-sig
-working/zelres2/code/205GFTGA.asm,1025,sprite_cell_render,proc,0,,C,0,INCONCLUSIVE,sprite_cell_render,driver-signature: renders one sprite cell -- writes ES:[DI] in a loop,driver-sig
+working/zelres2/code/205GFTGA.asm,1025,sprite_cell_render,proc,1,,C,0,SUPPORTED,sprite_cell_render,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/205GFTGA.asm,1091,tga_sprite_render_blended,proc,0,,C,0,PENDING,,,
 working/zelres2/code/205GFTGA.asm,1108,tile_blend_inner_loop,proc,1,,C,0,SUPPORTED,tile_blend_inner_loop,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres2/code/205GFTGA.asm,1135,tga_sprite_inner_blit,proc,1,,A,0,SUPPORTED,tga_sprite_inner_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/205GFTGA.asm,1151,color_nibble_expand,proc,0,,C,0,PENDING,,,
 working/zelres2/code/205GFTGA.asm,1193,tga_blit_2bytes_8rows,proc,1,,C,0,SUPPORTED,tga_blit_2bytes_8rows,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/zelres2/code/205GFTGA.asm,1256,copy_16words,proc,0,,A,0,SUPPORTED,copy_16words,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
-working/zelres2/code/205GFTGA.asm,1263,fill_16words_zero,proc,0,,A,0,SUPPORTED,fill_16words_zero,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/zelres2/code/205GFTGA.asm,1256,copy_16words,proc,1,,A,0,SUPPORTED,copy_16words,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres2/code/205GFTGA.asm,1263,fill_16words_zero,proc,1,,A,0,SUPPORTED,fill_16words_zero,name-pattern: fill_*: rep stos or memory write,name-pattern
 working/zelres2/code/205GFTGA.asm,1271,sprite_get_value,proc,1,,A,0,SUPPORTED,sprite_get_value,driver-signature: reads value from a lookup table (xlat or mem load),driver-sig
 working/zelres2/code/205GFTGA.asm,1279,sprite_src_setup,proc,1,,C,0,SUPPORTED,sprite_src_setup,driver-signature: computes sprite source ptr via char_lookup + sprite_attr_base + mul stride,driver-sig
-working/zelres2/code/205GFTGA.asm,1318,projectile_spawn_check,proc,0,,D,0,INCONCLUSIVE,projectile_spawn_check,driver-signature: tests projectile/spawn state and branches,driver-sig
+working/zelres2/code/205GFTGA.asm,1318,projectile_spawn_check,proc,1,,D,0,SUPPORTED,projectile_spawn_check,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres2/code/205GFTGA.asm,1974,tga_sprite_render_solid,proc,1,,C,0,SUPPORTED,tga_sprite_render_solid,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/205GFTGA.asm,2018,hero_tier_get,proc,1,,A,0,SUPPORTED,hero_tier_get,driver-signature: reads ds:[shield] and returns tier 0/1/2 by threshold cmp 4,driver-sig
 working/zelres2/code/205GFTGA.asm,2152,frame_row_driver,proc,0,,C,0,INCONCLUSIVE,frame_row_driver,driver-signature: drives one frame row through the rendering pipeline,driver-sig
 working/zelres2/code/205GFTGA.asm,2306,bg_restore,proc,1,,A,0,SUPPORTED,bg_restore,driver-signature: restores a saved bg region (rep movs or impl wrapper),driver-sig
 working/zelres2/code/205GFTGA.asm,2326,bg_save,proc,1,,A,0,SUPPORTED,bg_save,driver-signature: saves a region of bg to a save buffer via rep movs,driver-sig
 working/zelres2/code/205GFTGA.asm,2354,bg_restore_impl,proc,1,,A,0,SUPPORTED,bg_restore_impl,name-pattern: bg_*: background save/restore/render,name-pattern
-working/zelres2/code/205GFTGA.asm,2378,scroll_cache_invalidate,proc,0,,C,0,SUPPORTED,scroll_cache_invalidate,name-pattern: scroll: rep movs or gfx call,name-pattern
-working/zelres2/code/205GFTGA.asm,2508,tga_plane_decode,proc,0,,C,0,SUPPORTED,tga_plane_decode,name-pattern: extract/decode: bit/byte manipulation,name-pattern
-working/zelres2/code/205GFTGA.asm,2594,hero_sprite_col_blit,proc,0,,A,0,INCONCLUSIVE,hero_sprite_col_blit,driver-signature: blits one column of hero sprite to ES:[DI],driver-sig
+working/zelres2/code/205GFTGA.asm,2378,scroll_cache_invalidate,proc,1,,C,0,SUPPORTED,scroll_cache_invalidate,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/205GFTGA.asm,2508,tga_plane_decode,proc,1,,C,0,SUPPORTED,tga_plane_decode,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/zelres2/code/205GFTGA.asm,2594,hero_sprite_col_blit,proc,1,,A,0,SUPPORTED,hero_sprite_col_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/205GFTGA.asm,2741,tga_tile_anim_update,proc,1,,C,0,SUPPORTED,tga_tile_anim_update,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres2/code/205GFTGA.asm,2801,tile_blend_row_pair,proc,1,,C,0,SUPPORTED,tile_blend_row_pair,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres2/code/205GFTGA.asm,2838,tga_row_mask_clear,proc,0,,A,0,PENDING,,,
@@ -1024,7 +1024,7 @@ working/zelres2/code/205GFTGA.asm,2848,tga_vram_advance_az,proc,0,,A,0,PENDING,,
 working/zelres2/code/205GFTGA.asm,2896,fade_concentric,proc,0,,C,0,PENDING,,,
 working/zelres2/code/205GFTGA.asm,2972,fade_h_range,proc,0,,C,0,PENDING,,,
 working/zelres2/code/205GFTGA.asm,3061,fade_pixel_range,proc,0,,C,0,PENDING,,,
-working/zelres2/code/205GFTGA.asm,3160,phase_ptr_advance,proc,0,,A,0,SUPPORTED,phase_ptr_advance,name-pattern: advance: inc/add to advance state,name-pattern
+working/zelres2/code/205GFTGA.asm,3160,phase_ptr_advance,proc,1,,A,0,SUPPORTED,phase_ptr_advance,name-pattern: advance: inc/add to advance state,name-pattern
 working/zelres2/code/205GFTGA.asm,3180,fade_gradient_loop,proc,0,,D,0,PENDING,,,
 working/zelres2/code/205GFTGA.asm,3202,anim_refresh_all,proc,1,,A,0,SUPPORTED,anim_refresh_all,name-pattern: animation: counter + render dispatch,name-pattern
 working/zelres2/code/205GFTGA.asm,3292,si_wrap_hi,proc,1,,A,0,SUPPORTED,si_wrap_hi,driver-signature: SI-wrap helper: bound check + offset adjust,driver-sig
@@ -1045,9 +1045,9 @@ working/zelres2/code/206GFMCA.asm,485,mca_sprite_blit,proc,1,,C,0,SUPPORTED,mca_
 working/zelres2/code/206GFMCA.asm,596,sprite_slot_remove,proc,0,,C,0,INCONCLUSIVE,sprite_slot_remove,driver-signature: clears sprite slot state (sprite_state_a/sprite_buf) to zero,driver-sig
 working/zelres2/code/206GFMCA.asm,633,sprite_slot_init,proc,1,,C,0,SUPPORTED,sprite_slot_init,driver-signature: initialises sprite slot via xchg/mov 0FFh into sprite_state_a,driver-sig
 working/zelres2/code/206GFMCA.asm,669,sprite_blit_dispatch,proc,0,,C,0,INCONCLUSIVE,sprite_blit_dispatch,driver-signature: reads DS table + indirect call/jmp -- dispatch shape,driver-sig
-working/zelres2/code/206GFMCA.asm,701,sprite_wide_row_render,proc,0,,D,0,INCONCLUSIVE,sprite_wide_row_render,driver-signature: renders a wide sprite row -- writes ES:[DI] across cols,driver-sig
+working/zelres2/code/206GFMCA.asm,701,sprite_wide_row_render,proc,1,,D,0,SUPPORTED,sprite_wide_row_render,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/206GFMCA.asm,896,sprite_pos_pair_iter,proc,0,,C,0,INCONCLUSIVE,sprite_pos_pair_iter,driver-signature: iterates a position-pair list (SI walk + loop tail),driver-sig
-working/zelres2/code/206GFMCA.asm,930,sprite_cell_render,proc,0,,C,0,INCONCLUSIVE,sprite_cell_render,driver-signature: renders one sprite cell -- writes ES:[DI] in a loop,driver-sig
+working/zelres2/code/206GFMCA.asm,930,sprite_cell_render,proc,1,,C,0,SUPPORTED,sprite_cell_render,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/206GFMCA.asm,992,mca_sprite_blit_ex,proc,1,,A,0,SUPPORTED,mca_sprite_blit_ex,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/206GFMCA.asm,1009,mca_plane_3_iter,proc,0,,A,0,PENDING,,,
 working/zelres2/code/206GFMCA.asm,1027,mca_plane_nibble_iter,proc,0,,A,0,PENDING,,,
@@ -1059,24 +1059,24 @@ working/zelres2/code/206GFMCA.asm,1104,mca_sprite_render_solid,proc,1,,A,0,SUPPO
 working/zelres2/code/206GFMCA.asm,1132,mca_sprite_clear_cell,proc,0,,A,0,PENDING,,,
 working/zelres2/code/206GFMCA.asm,1140,sprite_get_value,proc,1,,A,0,SUPPORTED,sprite_get_value,driver-signature: reads value from a lookup table (xlat or mem load),driver-sig
 working/zelres2/code/206GFMCA.asm,1148,sprite_src_setup,proc,1,,C,0,SUPPORTED,sprite_src_setup,driver-signature: computes sprite source ptr via char_lookup + sprite_attr_base + mul stride,driver-sig
-working/zelres2/code/206GFMCA.asm,1187,projectile_spawn_check,proc,0,,D,0,INCONCLUSIVE,projectile_spawn_check,driver-signature: tests projectile/spawn state and branches,driver-sig
+working/zelres2/code/206GFMCA.asm,1187,projectile_spawn_check,proc,1,,D,0,SUPPORTED,projectile_spawn_check,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres2/code/206GFMCA.asm,1380,sprite_shape_tbl,label byte,1,,,0,SUPPORTED,sprite_shape_tbl,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
 working/zelres2/code/206GFMCA.asm,1828,frame_row_driver,proc,0,,C,0,INCONCLUSIVE,frame_row_driver,driver-signature: drives one frame row through the rendering pipeline,driver-sig
 working/zelres2/code/206GFMCA.asm,1872,shield_state_get,proc,0,,A,0,PENDING,,,
 working/zelres2/code/206GFMCA.asm,1976,load_sprite_pos,proc,1,,A,0,SUPPORTED,load_sprite_pos,name-pattern: load/save/read/write: at least one memory op or loader call,name-pattern
 working/zelres2/code/206GFMCA.asm,2003,frame_row_dispatcher,proc,0,,C,0,PENDING,,,
-working/zelres2/code/206GFMCA.asm,2158,scroll_restore,proc,0,,A,0,SUPPORTED,scroll_restore,name-pattern: scroll: rep movs or gfx call,name-pattern
-working/zelres2/code/206GFMCA.asm,2178,scroll_buf_restore,proc,0,,A,0,SUPPORTED,scroll_buf_restore,name-pattern: scroll: rep movs or gfx call,name-pattern
-working/zelres2/code/206GFMCA.asm,2200,scroll_buf_save,proc,0,,A,0,SUPPORTED,scroll_buf_save,name-pattern: scroll: rep movs or gfx call,name-pattern
-working/zelres2/code/206GFMCA.asm,2222,scroll_clear_cache,proc,0,,D,0,SUPPORTED,scroll_clear_cache,name-pattern: scroll: rep movs or gfx call,name-pattern
-working/zelres2/code/206GFMCA.asm,2412,hero_sprite_col_blit,proc,0,,C,0,INCONCLUSIVE,hero_sprite_col_blit,driver-signature: blits one column of hero sprite to ES:[DI],driver-sig
+working/zelres2/code/206GFMCA.asm,2158,scroll_restore,proc,1,,A,0,SUPPORTED,scroll_restore,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/206GFMCA.asm,2178,scroll_buf_restore,proc,1,,A,0,SUPPORTED,scroll_buf_restore,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/206GFMCA.asm,2200,scroll_buf_save,proc,1,,A,0,SUPPORTED,scroll_buf_save,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/206GFMCA.asm,2222,scroll_clear_cache,proc,1,,D,0,SUPPORTED,scroll_clear_cache,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres2/code/206GFMCA.asm,2412,hero_sprite_col_blit,proc,1,,C,0,SUPPORTED,hero_sprite_col_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/206GFMCA.asm,2569,mca_tile_half_blit,proc,1,,C,0,SUPPORTED,mca_tile_half_blit,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/206GFMCA.asm,2633,mca_tile_half_blit_rows,proc,1,,C,0,SUPPORTED,mca_tile_half_blit_rows,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/206GFMCA.asm,2692,mca_tile_half_clear,proc,1,,A,0,SUPPORTED,mca_tile_half_clear,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres2/code/206GFMCA.asm,2704,mca_tile_addr_calc,proc,1,,A,0,SUPPORTED,mca_tile_addr_calc,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres2/code/206GFMCA.asm,2742,fade_gradient_rect,proc,0,,C,0,PENDING,,,
-working/zelres2/code/206GFMCA.asm,2818,fade_gradient_line,proc,0,,C,0,SUPPORTED,fade_gradient_line,name-pattern: line/row: row write + loop tail,name-pattern
-working/zelres2/code/206GFMCA.asm,2889,fade_horizontal_line,proc,0,,A,0,SUPPORTED,fade_horizontal_line,name-pattern: line/row: row write + loop tail,name-pattern
+working/zelres2/code/206GFMCA.asm,2818,fade_gradient_line,proc,1,,C,0,SUPPORTED,fade_gradient_line,name-pattern: line/row: row write + loop tail,name-pattern
+working/zelres2/code/206GFMCA.asm,2889,fade_horizontal_line,proc,1,,A,0,SUPPORTED,fade_horizontal_line,name-pattern: line/row: row write + loop tail,name-pattern
 working/zelres2/code/206GFMCA.asm,2930,mca_vga_row_calc,proc,0,,A,0,PENDING,,,
 working/zelres2/code/206GFMCA.asm,2942,anim_frame_wait,proc,0,,D,0,PENDING,,,
 working/zelres2/code/206GFMCA.asm,2964,fade_xor_block,proc,0,,A,0,PENDING,,,
@@ -1090,7 +1090,7 @@ working/zelres2/code/206GFMCA.asm,3381,anim_seq_tbl,label byte,1,,,0,SUPPORTED,a
 working/zelres2/code/206GFMCA.asm,3480,mca_plane_4bit_scan,proc,0,,A,0,PENDING,,,
 working/zelres2/code/206GFMCA.asm,3563,shift_blit_data_a,label byte,0,,,0,PENDING,,,
 working/zelres2/code/206GFMCA.asm,3823,mca_word_shift_4,proc,0,,A,0,PENDING,,,
-working/zelres2/code/206GFMCA.asm,3841,mca_bit_pair_scan,proc,0,,A,0,SUPPORTED,mca_bit_pair_scan,name-pattern: scan: compare + loop,name-pattern
+working/zelres2/code/206GFMCA.asm,3841,mca_bit_pair_scan,proc,1,,A,0,SUPPORTED,mca_bit_pair_scan,name-pattern: scan: compare + loop,name-pattern
 working/zelres2/code/206GFMCA.asm,3869,mca_pixel_lookup_tbls,label byte,0,,,0,PENDING,,,
 working/zelres2/code/207MOLE.asm,109,module_init,proc,0,,D,0,PENDING,,,
 working/zelres2/code/207MOLE.asm,248,dispatch_decode_a,proc,1,,A,0,SUPPORTED,dispatch_decode_a,name-pattern: dispatcher: indirect call/jmp via table,name-pattern
@@ -1104,9 +1104,9 @@ working/zelres2/code/207MOLE.asm,655,dispatch_decode_b,proc,1,,A,0,SUPPORTED,dis
 working/zelres2/code/207MOLE.asm,674,jmp_tbl_decode_b,label word,1,,,0,SUPPORTED,jmp_tbl_decode_b,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
 working/zelres2/code/207MOLE.asm,695,data_15,data,1,,,0,SUPPORTED,data_15,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/207MOLE.asm,726,decode_5col_blit_loop,proc,0,,A,0,PENDING,,,
-working/zelres2/code/207MOLE.asm,745,decode_4bit_unpack,proc,0,,A,0,SUPPORTED,decode_4bit_unpack,name-pattern: extract/decode: bit/byte manipulation,name-pattern
-working/zelres2/code/207MOLE.asm,778,mono_scan_loop,proc,0,,A,0,SUPPORTED,mono_scan_loop,name-pattern: loop: backward branch or rep,name-pattern
-working/zelres2/code/207MOLE.asm,812,extract_bits,proc,0,,C,0,SUPPORTED,extract_bits,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/zelres2/code/207MOLE.asm,745,decode_4bit_unpack,proc,1,,A,0,SUPPORTED,decode_4bit_unpack,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/zelres2/code/207MOLE.asm,778,mono_scan_loop,proc,1,,A,0,SUPPORTED,mono_scan_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/207MOLE.asm,812,extract_bits,proc,1,,C,0,SUPPORTED,extract_bits,name-pattern: extract/decode: bit/byte manipulation,name-pattern
 working/zelres2/code/207MOLE.asm,853,nibble_to_4px_lut,label byte,0,,,0,PENDING,,,
 working/zelres2/code/207MOLE.asm,914,sprite_data_start,label byte,0,,,0,PENDING,,,
 working/zelres2/code/207MOLE.asm,935,sprite_data_row_0,label byte,0,,,0,PENDING,,,
@@ -1175,14 +1175,14 @@ working/zelres2/code/208YMPD.asm,442,pixel_expand_mcga,proc,0,,A,0,PENDING,,,
 working/zelres2/code/208YMPD.asm,500,pixel_expand_cga,proc,0,,A,0,PENDING,,,
 working/zelres2/code/208YMPD.asm,538,rle_decode_ground_28,proc,0,,A,0,PENDING,,,
 working/zelres2/code/208YMPD.asm,568,render_ground,proc,0,,A,0,PENDING,,,
-working/zelres2/code/208YMPD.asm,649,copy_28b_ega,proc,0,,A,0,SUPPORTED,copy_28b_ega,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
+working/zelres2/code/208YMPD.asm,649,copy_28b_ega,proc,1,,A,0,SUPPORTED,copy_28b_ega,name-pattern: copy_*: rep movs or load/store sequence,name-pattern
 working/zelres2/code/208YMPD.asm,1021,pixel_expand_cgaalt,proc,0,,A,0,PENDING,,,
 working/zelres2/code/209CKPD.asm,159,bos_render_main,proc,0,,C,0,PENDING,,,
 working/zelres2/code/209CKPD.asm,222,bos_frame_dispatch,proc,0,,A,0,PENDING,,,
 working/zelres2/code/209CKPD.asm,484,vga_row_copy,proc,0,,A,0,PENDING,,,
 working/zelres2/code/209CKPD.asm,551,nibble_expand_8,proc,0,,A,0,PENDING,,,
 working/zelres2/code/209CKPD.asm,630,nibble_decode_inner,proc,0,,A,0,PENDING,,,
-working/zelres2/code/209CKPD.asm,660,sprite_rle_decode,proc,0,,C,0,SUPPORTED,sprite_rle_decode,name-pattern: extract/decode: bit/byte manipulation,name-pattern
+working/zelres2/code/209CKPD.asm,660,sprite_rle_decode,proc,1,,C,0,SUPPORTED,sprite_rle_decode,name-pattern: extract/decode: bit/byte manipulation,name-pattern
 working/zelres2/code/209CKPD.asm,700,render_dispatch_2,proc,0,,A,0,PENDING,,,
 working/zelres2/code/209CKPD.asm,952,nibble_expand_8_b,proc,0,,A,0,PENDING,,,
 working/zelres2/code/209CKPD.asm,1022,nibble_decode_inner_2,proc,0,,A,0,PENDING,,,
@@ -1247,15 +1247,15 @@ working/zelres2/code/214CHURP.asm,292,anim_scroll_step,proc,1,,C,0,SUPPORTED,ani
 working/zelres2/code/214CHURP.asm,313,anim_draw_a,proc,1,,C,0,SUPPORTED,anim_draw_a,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/214CHURP.asm,408,pick_welcome_text,proc,0,,A,0,PENDING,,,
 working/zelres2/code/215DRUGP.asm,105,zr2_15,proc,0,,D,0,PENDING,,,
-working/zelres2/code/215DRUGP.asm,159,wizard_process_loop,proc,0,,A,0,SUPPORTED,wizard_process_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/215DRUGP.asm,159,wizard_process_loop,proc,1,,A,0,SUPPORTED,wizard_process_loop,name-pattern: loop: backward branch or rep,name-pattern
 working/zelres2/code/215DRUGP.asm,189,wizard_func_2,proc,0,,A,0,PENDING,,,
 working/zelres2/code/215DRUGP.asm,200,data_4,data,1,,,0,SUPPORTED,data_4,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/215DRUGP.asm,229,data_5,data,1,,,0,SUPPORTED,data_5,data-pattern: data: db/dw/dd or label marker,data-pattern
 working/zelres2/code/215DRUGP.asm,514,wizard_process_loop_2,proc,0,,A,0,PENDING,,,
 working/zelres2/code/215DRUGP.asm,618,wizard_func_4,proc,0,,A,0,PENDING,,,
 working/zelres2/code/215DRUGP.asm,626,wizard_process_loop_3,proc,0,,A,0,PENDING,,,
-working/zelres2/code/215DRUGP.asm,674,wizard_multiply,proc,0,,C,0,SUPPORTED,wizard_multiply,name-pattern: multiply: mul/imul/shl,name-pattern
-working/zelres2/code/215DRUGP.asm,736,wizard_scan_loop,proc,0,,A,0,SUPPORTED,wizard_scan_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/215DRUGP.asm,674,wizard_multiply,proc,1,,C,0,SUPPORTED,wizard_multiply,name-pattern: multiply: mul/imul/shl,name-pattern
+working/zelres2/code/215DRUGP.asm,736,wizard_scan_loop,proc,1,,A,0,SUPPORTED,wizard_scan_loop,name-pattern: loop: backward branch or rep,name-pattern
 working/zelres2/code/216INNAP.asm,61,inn_main,proc,0,,D,0,PENDING,,,
 working/zelres2/code/216INNAP.asm,114,draw_intro_banner,proc,1,,A,0,SUPPORTED,draw_intro_banner,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/216INNAP.asm,130,inn_opcode_dispatch,proc,0,,A,0,PENDING,,,
@@ -1273,7 +1273,7 @@ working/zelres2/code/216INNAP.asm,296,inn_anim_step,proc,0,,A,0,PENDING,,,
 working/zelres2/code/216INNAP.asm,332,draw_intro_tile_map,proc,1,,A,0,SUPPORTED,draw_intro_tile_map,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/216INNAP.asm,366,intro_glyph_row_a,label byte,0,,,0,PENDING,,,
 working/zelres2/code/216INNAP.asm,376,intro_glyph_row_b,label byte,0,,,0,PENDING,,,
-working/zelres2/code/216INNAP.asm,386,inn_anim_scan,proc,0,,C,0,SUPPORTED,inn_anim_scan,name-pattern: scan: compare + loop,name-pattern
+working/zelres2/code/216INNAP.asm,386,inn_anim_scan,proc,1,,C,0,SUPPORTED,inn_anim_scan,name-pattern: scan: compare + loop,name-pattern
 working/zelres2/code/216INNAP.asm,458,inn_delay_tbl,label word,1,,,0,SUPPORTED,inn_delay_tbl,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
 working/zelres2/code/216INNAP.asm,474,ref_inn_grp,data,1,,,0,SUPPORTED,ref_inn_grp,data-pattern: resource reference: db/dw (1-3 bytes),data-pattern
 working/zelres2/code/217KENJP.asm,166,kenja_main,proc,0,,C,0,PENDING,,,
@@ -1288,7 +1288,7 @@ working/zelres2/code/217KENJP.asm,379,check_hp_exp_tier,proc,1,,C,0,SUPPORTED,ch
 working/zelres2/code/217KENJP.asm,629,wait_frames_140,proc,0,,A,0,PENDING,,,
 working/zelres2/code/217KENJP.asm,644,record_experience_entry,proc,0,,D,0,PENDING,,,
 working/zelres2/code/217KENJP.asm,762,draw_char_row,proc,1,,A,0,SUPPORTED,draw_char_row,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/zelres2/code/217KENJP.asm,793,name_input_loop,proc,0,,D,0,SUPPORTED,name_input_loop,name-pattern: loop: backward branch or rep,name-pattern
+working/zelres2/code/217KENJP.asm,793,name_input_loop,proc,1,,D,0,SUPPORTED,name_input_loop,name-pattern: loop: backward branch or rep,name-pattern
 working/zelres2/code/217KENJP.asm,1052,update_name_cursor,proc,1,,C,0,SUPPORTED,update_name_cursor,name-pattern: process/update/advance: state-update operations,name-pattern
 working/zelres2/code/217KENJP.asm,1103,redraw_name_field,proc,1,,A,0,SUPPORTED,redraw_name_field,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres2/code/217KENJP.asm,1249,clear_sage_region,proc,1,,A,0,SUPPORTED,clear_sage_region,name-pattern: set/clear: writes register/memory,name-pattern
@@ -1313,7 +1313,7 @@ working/zelres2/code/250ENDMO.asm,1214,credits_wait_tick,proc,0,,A,0,PENDING,,,
 working/zelres2/code/250ENDMO.asm,1225,credits_driver_tick,proc,0,,A,0,PENDING,,,
 working/zelres2/code/250ENDMO.asm,1238,rle_blit_pair,proc,0,,C,0,PENDING,,,
 working/zelres2/code/250ENDMO.asm,1244,rle_decode_plane,proc,0,,C,0,PENDING,,,
-working/zelres2/code/250ENDMO.asm,1359,fill_credits_triplane,proc,0,,A,0,SUPPORTED,fill_credits_triplane,name-pattern: fill_*: rep stos or memory write,name-pattern
+working/zelres2/code/250ENDMO.asm,1359,fill_credits_triplane,proc,1,,A,0,SUPPORTED,fill_credits_triplane,name-pattern: fill_*: rep stos or memory write,name-pattern
 working/zelres2/code/250ENDMO.asm,1862,bitmap_row_byte,data,0,,,0,PENDING,,,
 working/zelres2/code/250ENDMO.asm,2121,full_scroll_fn_ptr,data,1,,,0,SUPPORTED,full_scroll_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
 working/zelres2/code/250ENDMO.asm,2193,ref_waku_grp,data,1,,,0,SUPPORTED,ref_waku_grp,data-pattern: resource reference: db/dw (1-3 bytes),data-pattern
@@ -1410,7 +1410,7 @@ working/zelres3/code/306EAI6.asm,598,sub01_collide_outer,proc,1,,A,0,SUPPORTED,s
 working/zelres3/code/306EAI6.asm,625,sub01_collide_inner,proc,1,,D,0,SUPPORTED,sub01_collide_inner,driver-signature: collision sub-routine (inner branch),driver-sig
 working/zelres3/code/306EAI6.asm,841,distance_check_8,proc,1,,C,0,SUPPORTED,distance_check_8,driver-signature: distance threshold check (8-pixel range),driver-sig
 working/zelres3/code/306EAI6.asm,987,sub02_flip_to_state2,proc,0,,A,0,PENDING,,,
-working/zelres3/code/306EAI6.asm,1008,sub02_block_or_advance,proc,0,,A,0,SUPPORTED,sub02_block_or_advance,name-pattern: advance: inc/add to advance state,name-pattern
+working/zelres3/code/306EAI6.asm,1008,sub02_block_or_advance,proc,1,,A,0,SUPPORTED,sub02_block_or_advance,name-pattern: advance: inc/add to advance state,name-pattern
 working/zelres3/code/307EAI7.asm,142,eai7_main,proc,0,,D,0,PENDING,,,
 working/zelres3/code/307EAI7.asm,179,eai7_collide_marker,data,0,,,0,PENDING,,,
 working/zelres3/code/307EAI7.asm,208,eai7_rng_fn_ptr,data,1,,,0,SUPPORTED,eai7_rng_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
@@ -1451,7 +1451,7 @@ working/zelres3/code/311TORI.asm,110,tori_main,proc,0,,D,0,PENDING,,,
 working/zelres3/code/311TORI.asm,141,tori_frame_ptr_tbl_a,label word,1,,,0,SUPPORTED,tori_frame_ptr_tbl_a,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
 working/zelres3/code/311TORI.asm,221,tori_scan_acc_a,data,0,,,0,PENDING,,,
 working/zelres3/code/311TORI.asm,223,tori_scan_acc_b,data,0,,,0,PENDING,,,
-working/zelres3/code/311TORI.asm,228,tori_glyph_tbl,data,0,,,0,PENDING,,,
+working/zelres3/code/311TORI.asm,228,tori_glyph_tbl,data,0,,,0,SUPPORTED,tori_glyph_tbl,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
 working/zelres3/code/311TORI.asm,293,tori_extern_fn_ptr,data,1,,,0,SUPPORTED,tori_extern_fn_ptr,data-pattern: pointer/offset/address: dw or dd,data-pattern
 working/zelres3/code/311TORI.asm,780,tori_render_sprite_row,proc,0,,,0,PENDING,,,
 working/zelres3/code/311TORI.asm,816,tori_swoop_tick,proc,0,,,0,PENDING,,,
@@ -1467,11 +1467,11 @@ working/zelres3/code/312ZELA.asm,409,scroll_phase_dec,proc,0,,A,0,PENDING,,,
 working/zelres3/code/312ZELA.asm,645,init_tile_slots,proc,1,,D,0,SUPPORTED,init_tile_slots,name-pattern: tile_*: tile data manipulation,name-pattern
 working/zelres3/code/312ZELA.asm,671,bound_xpos_inc,proc,1,,A,0,SUPPORTED,bound_xpos_inc,name-pattern: bound_*: boundary cmp + branch,name-pattern
 working/zelres3/code/312ZELA.asm,684,bound_xpos_dec,proc,1,,A,0,SUPPORTED,bound_xpos_dec,name-pattern: bound_*: boundary cmp + branch,name-pattern
-working/zelres3/code/312ZELA.asm,714,scroll_apply,proc,0,,A,0,SUPPORTED,scroll_apply,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres3/code/312ZELA.asm,714,scroll_apply,proc,1,,A,0,SUPPORTED,scroll_apply,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres3/code/313MEDA.asm,89,_313MAPBT,proc,0,,D,0,PENDING,,,
 working/zelres3/code/313MEDA.asm,116,header_tile_row_a,data,0,,,0,PENDING,,,
 working/zelres3/code/313MEDA.asm,127,header_const_word_a,data,0,,,0,PENDING,,,
-working/zelres3/code/313MEDA.asm,129,header_text_table,data,1,,,0,SUPPORTED,header_text_table,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
+working/zelres3/code/313MEDA.asm,129,header_text_table,data,1,,,0,SUPPORTED,header_text_table,data-pattern: string: db with quoted text,data-pattern
 working/zelres3/code/313MEDA.asm,368,phase_dir_compute,proc,0,,C,0,PENDING,,,
 working/zelres3/code/313MEDA.asm,424,phase_clear_cells,proc,0,,D,0,PENDING,,,
 working/zelres3/code/313MEDA.asm,455,phase_dec_clamped,proc,0,,A,0,PENDING,,,
@@ -1480,7 +1480,7 @@ working/zelres3/code/313MEDA.asm,470,bound_xpos_inc,proc,0,,A,0,PENDING,,,
 working/zelres3/code/313MEDA.asm,482,bound_xpos_dec,proc,0,,A,0,PENDING,,,
 working/zelres3/code/313MEDA.asm,493,render_tiles_main,proc,1,,C,0,SUPPORTED,render_tiles_main,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
 working/zelres3/code/313MEDA.asm,603,render_tile_row,proc,1,,C,0,SUPPORTED,render_tile_row,name-pattern: render/blit/draw: writes to ES:DI or calls gfx routine,name-pattern
-working/zelres3/code/313MEDA.asm,646,scroll_step_finalize,proc,0,,A,0,SUPPORTED,scroll_step_finalize,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres3/code/313MEDA.asm,646,scroll_step_finalize,proc,1,,A,0,SUPPORTED,scroll_step_finalize,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres3/code/314LEGA.asm,107,lega_main,proc,0,,D,0,PENDING,,,
 working/zelres3/code/314LEGA.asm,122,lega_hdr_fill_a,data,0,,,0,PENDING,,,
 working/zelres3/code/314LEGA.asm,123,lega_hdr_const_50,data,0,,,0,PENDING,,,
@@ -1494,7 +1494,7 @@ working/zelres3/code/314LEGA.asm,425,lega_phase_step_tbl_b,data,1,,,0,SUPPORTED,
 working/zelres3/code/314LEGA.asm,430,lega_scroll_dec_step,proc,0,,A,0,PENDING,,,
 working/zelres3/code/314LEGA.asm,444,lega_scroll_inc_step,proc,0,,A,0,PENDING,,,
 working/zelres3/code/314LEGA.asm,656,lega_render_anim2_cell,proc,0,,C,0,PENDING,,,
-working/zelres3/code/314LEGA.asm,691,lega_scroll_finalize,proc,0,,A,0,SUPPORTED,lega_scroll_finalize,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres3/code/314LEGA.asm,691,lega_scroll_finalize,proc,1,,A,0,SUPPORTED,lega_scroll_finalize,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres3/code/314LEGA.asm,735,lega_idle_xlat_tbl,data,1,,,0,SUPPORTED,lega_idle_xlat_tbl,data-pattern: table: multi-element db/dw or label-byte/word marker,data-pattern
 working/zelres3/code/315ZEL2.asm,102,_315MAPHT,proc,0,,D,0,PENDING,,,
 working/zelres3/code/315ZEL2.asm,136,zel2_scroll_target_base,data,0,,,0,PENDING,,,
@@ -1505,7 +1505,7 @@ working/zelres3/code/315ZEL2.asm,596,zel2_anim_delta_tbl,label byte,1,,,0,SUPPOR
 working/zelres3/code/315ZEL2.asm,600,zel2_setup_anim_segment,proc,0,,D,0,PENDING,,,
 working/zelres3/code/315ZEL2.asm,626,zel2_scroll_inc_step,proc,0,,A,0,PENDING,,,
 working/zelres3/code/315ZEL2.asm,639,zel2_scroll_dec_step,proc,0,,A,0,PENDING,,,
-working/zelres3/code/315ZEL2.asm,663,zel2_scroll_finalize,proc,0,,A,0,SUPPORTED,zel2_scroll_finalize,name-pattern: scroll: rep movs or gfx call,name-pattern
+working/zelres3/code/315ZEL2.asm,663,zel2_scroll_finalize,proc,1,,A,0,SUPPORTED,zel2_scroll_finalize,name-pattern: scroll: rep movs or gfx call,name-pattern
 working/zelres3/code/315ZEL2.asm,748,zel2_trailer_word,data,0,,,0,PENDING,,,
 working/zelres3/code/316DRGN.asm,119,drgn_main,proc,0,,D,0,PENDING,,,
 working/zelres3/code/316DRGN.asm,156,drgn_tile_data_a,data,0,,,0,PENDING,,,

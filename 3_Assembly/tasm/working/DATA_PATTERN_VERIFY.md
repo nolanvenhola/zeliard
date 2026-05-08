@@ -13,12 +13,12 @@ Total data/label rows scanned: **520**
 
 | Bucket | Count |
 |---|---:|
-| no_pattern | 240 |
-| SUPPORTED | 231 |
-| INCONCLUSIVE | 40 |
+| SUPPORTED | 239 |
+| no_pattern | 234 |
+| INCONCLUSIVE | 38 |
 | line_not_found | 9 |
 
-## SUPPORTED rows (231)
+## SUPPORTED rows (239)
 
 | File | Line | Name | Kind | Pattern | Source line |
 |---|---:|---|---|---|---|
@@ -44,6 +44,7 @@ Total data/label rows scanned: **520**
 | `working/core/zeliad.asm` | 688 | `str_mscmt_drv` | data | string: db with quoted text | `str_mscmt_drv	db	'mscmt.drv'` |
 | `working/core/zeliad.asm` | 737 | `str_yes` | data | string: db with quoted text | `str_yes		db	'yes'` |
 | `working/core/zeliad.asm` | 738 | `str_no` | data | string: db with quoted text | `str_no		db	'no'` |
+| `working/core/zeliad.asm` | 888 | `video_mode_table` | data | table: multi-element db/dw or label-byte/word marker | `video_mode_table dw	offset set_mode_ega` |
 | `working/core/zeliad.asm` | 1029 | `str_game_title` | data | string: db with quoted text | `str_game_title	db	'The Fantasy Action Game ZELIARD '` |
 | `working/core/zeliad.asm` | 1035 | `str_not_supported` | data | string: db with quoted text | `str_not_supported	db	'Not supported command !', 0Dh, 0Ah, '$'` |
 | `working/core/zeliad.asm` | 1036 | `str_special_mode` | data | string: db with quoted text | `str_special_mode	db	'Special mode !!', 0Dh, 0Ah, '$'` |
@@ -56,6 +57,9 @@ Total data/label rows scanned: **520**
 | `working/core/zeliad.asm` | 1045 | `str_disk_error` | data | string: db with quoted text | `str_disk_error	db	'DISK read Error!!$'` |
 | `working/core/zeliad.asm` | 1046 | `str_user_file_error` | data | string: db with quoted text | `str_user_file_error db	'USER file nothing.$'` |
 | `working/core/zeliad.asm` | 1047 | `str_cfg_error` | data | string: db with quoted text | `str_cfg_error	db	'Error in RESOURCE.CFG', 0Dh, 0Ah` |
+| `working/core/zeliad.asm` | 1057 | `cfg_filename` | data | string: db with quoted text | `cfg_filename	db	'RESOURCE.CFG', 0` |
+| `working/core/zeliad.asm` | 1058 | `mtinit_filename` | data | string: db with quoted text | `mtinit_filename	db	'MTINIT.COM', 0` |
+| `working/core/zeliad.asm` | 1061 | `driver_offset_table` | data | table: multi-element db/dw or label-byte/word marker | `driver_offset_table dw	0812h		; mode 0: EGA  (gmega.bin)` |
 | `working/core/zeliad.asm` | 1110 | `game_entry_ofs` | data | pointer/offset/address: dw or dd | `game_entry_ofs	dw	0A000h			; Game entry point offset` |
 | `working/core/zeliad.asm` | 1113 | `saved_int08_ofs` | data | pointer/offset/address: dw or dd | `saved_int08_ofs	dw	0, 0			; Original INT 08h vector` |
 | `working/core/zeliad.asm` | 1114 | `saved_int09_ofs` | data | pointer/offset/address: dw or dd | `saved_int09_ofs	dw	0, 0			; Original INT 09h vector` |
@@ -80,7 +84,10 @@ Total data/label rows scanned: **520**
 | `working/drivers/stick.asm` | 2033 | `savefile_desc_ptr` | data | pointer/offset/address: dw or dd | `savefile_desc_ptr dw	504Dh, 4437h	; 'MP7D' (static: first 4 bytes of MP7D.MDT)` |
 | `working/drivers/stick.asm` | 2034 | `file_read_buf_ptr` | data | pointer/offset/address: dw or dd | `file_read_buf_ptr dw	4D2Eh, 5444h	; '.MDT' (static: last 4 bytes of MP7D.MDT)` |
 | `working/drivers/stick.asm` | 2036 | `file_sector_ptr` | data | pointer/offset/address: dw or dd | `file_sector_ptr	dw	4D2Ch		; chunk=0x2C + 'M' (start of MP80.MDT filename)` |
+| `working/zelres1/code/100OPDMO.asm` | 2012 | `jashiin_speech_2` | data | string: db with quoted text | `jashiin_speech_2		db	'"Beautiful Princess Felicia, you'` |
+| `working/zelres1/code/100OPDMO.asm` | 2500 | `jashiin_disappear_text` | data | string: db with quoted text | `jashiin_disappear_text		db	'Jashiin disappeared leaving echo'` |
 | `working/zelres1/code/101GDEGA.asm` | 2435 | `hscroll_plane4_buf` | data | buffer: db/dw N dup(0) or zero placeholder or label marker | `hscroll_plane4_buf		db	0` |
+| `working/zelres1/code/102GDCGA.asm` | 2280 | `frame_plane_b_tbl` | data | table: multi-element db/dw or label-byte/word marker | `frame_plane_b_tbl		dw	303h			; 2-bit color data for frame plane B (used by extract_bits_2/3)` |
 | `working/zelres1/code/103GDHGC.asm` | 1026 | `data_3` | data | data: db/dw/dd or label marker | `data_3		dw	8004h			; Data table (indexed access)` |
 | `working/zelres1/code/103GDHGC.asm` | 2452 | `data_40` | data | data: db/dw/dd or label marker | `data_40		dw	0			; Data table (indexed access)` |
 | `working/zelres1/code/104GDTGA.asm` | 2737 | `plane3_merge_buf` | data | buffer: db/dw N dup(0) or zero placeholder or label marker | `plane3_merge_buf		db	0			; Data table (indexed access)` |
@@ -229,10 +236,11 @@ Total data/label rows scanned: **520**
 | `working/zelres3/code/310TAKO.asm` | 140 | `tako_frame_ptr_tbl_b` | label word | table: multi-element db/dw or label-byte/word marker | `tako_frame_ptr_tbl_b	label	word		; 3 frame-data pointers (group B)` |
 | `working/zelres3/code/310TAKO.asm` | 1121 | `tako_pattern_ptr_tbl` | label word | table: multi-element db/dw or label-byte/word marker | `tako_pattern_ptr_tbl	label	word` |
 | `working/zelres3/code/311TORI.asm` | 141 | `tori_frame_ptr_tbl_a` | label word | table: multi-element db/dw or label-byte/word marker | `tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers (entries 13,14 alias into tori_frame_00's ` |
+| `working/zelres3/code/311TORI.asm` | 228 | `tori_glyph_tbl` | data | table: multi-element db/dw or label-byte/word marker | `tori_glyph_tbl	db	 00h			; row 10 part 2 (0x08C); glyph-table data anchor` |
 | `working/zelres3/code/311TORI.asm` | 293 | `tori_extern_fn_ptr` | data | pointer/offset/address: dw or dd | `tori_extern_fn_ptr	dw	900h			; spans row 0/1 terminator (0x11A..0x11B); fn-ptr called as cs:tori_ext` |
 | `working/zelres3/code/311TORI.asm` | 1010 | `tori_const_ptr_tbl` | label word | table: multi-element db/dw or label-byte/word marker | `tori_const_ptr_tbl	label	word` |
 | `working/zelres3/code/312ZELA.asm` | 186 | `zela_rng_fn_ptr` | data | pointer/offset/address: dw or dd | `zela_rng_fn_ptr		dw	2			; CS-relative RNG fn ptr (call thru cs:zela_rng_fn_ptr)` |
-| `working/zelres3/code/313MEDA.asm` | 129 | `header_text_table` | data | table: multi-element db/dw or label-byte/word marker | `header_text_table		db	' ', 0` |
+| `working/zelres3/code/313MEDA.asm` | 129 | `header_text_table` | data | string: db with quoted text | `header_text_table		db	' ', 0` |
 | `working/zelres3/code/314LEGA.asm` | 423 | `lega_phase_step_tbl_a` | data | table: multi-element db/dw or label-byte/word marker | `lega_phase_step_tbl_a	db	 00h, 01h, 02h, 01h, 02h, 05h	; phase_a entries [0..5]` |
 | `working/zelres3/code/314LEGA.asm` | 425 | `lega_phase_step_tbl_b` | data | table: multi-element db/dw or label-byte/word marker | `lega_phase_step_tbl_b	db	 03h, 06h			; phase_b entries [0..1]` |
 | `working/zelres3/code/314LEGA.asm` | 735 | `lega_idle_xlat_tbl` | data | table: multi-element db/dw or label-byte/word marker | `lega_idle_xlat_tbl	db	0, 1, 2, 3, 6, 7		; entries [0..5]` |
@@ -254,18 +262,17 @@ Total data/label rows scanned: **520**
 | `working/zelres3/code/319MAO2.asm` | 1161 | `mao2_dlg_handler_tbl_a` | label byte | table: multi-element db/dw or label-byte/word marker | `mao2_dlg_handler_tbl_a	label	byte		; 14 word ptrs (0AA8Dh..0AADBh) - dialog handler tbl` |
 | `working/zelres3/code/319MAO2.asm` | 1184 | `mao2_dlg_handler_tbl_b` | label byte | table: multi-element db/dw or label-byte/word marker | `mao2_dlg_handler_tbl_b	label	byte	; 14 word ptrs (0AAFDh..0AB4Bh) - alt dialog handlers` |
 
-## INCONCLUSIVE rows (40)
+## INCONCLUSIVE rows (38)
 
 Name pattern matched but source line did not have the expected shape.
 
 | File | Line | Name | Kind | Expected | Source line |
 |---|---:|---|---|---|---|
-| `working/core/zeliad.asm` | 888 | `video_mode_table` | data | table: multi-element db/dw or label-byte/word marker | `video_mode_table dw	offset set_mode_ega` |
-| `working/core/zeliad.asm` | 1061 | `driver_offset_table` | data | table: multi-element db/dw or label-byte/word marker | `driver_offset_table dw	0812h		; mode 0: EGA  (gmega.bin)` |
+| `working/core/zeliad.asm` | 1104 | `music_driver_name` | data | string: db with quoted text | `music_driver_name db	0			; Music driver filename` |
+| `working/core/zeliad.asm` | 1107 | `joystick_driver_name` | data | string: db with quoted text | `joystick_driver_name db	0			; Joystick driver filename` |
 | `working/drivers/stick.asm` | 1420 | `herc_seg_table` | data | table: multi-element db/dw or label-byte/word marker | `herc_seg_table		dw	0D88Bh			; Data table (indexed access)` |
 | `working/drivers/stick.asm` | 2035 | `file_read_count` | data | count/length: single db/dw of a number | `file_read_count	dw	200h		; 0x0000 + archive=2 (null of MP7D + MP80 header)` |
 | `working/zelres1/code/100OPDMO.asm` | 2515 | `disp_game_fn` | data | function pointer: single dw of address | `disp_game_fn		db	SCR_BOLD, '"'		; start bold quoted speech` |
-| `working/zelres1/code/102GDCGA.asm` | 2280 | `frame_plane_b_tbl` | data | table: multi-element db/dw or label-byte/word marker | `frame_plane_b_tbl		dw	303h			; 2-bit color data for frame plane B (used by extract_bits_2/3)` |
 | `working/zelres2/code/200FIGHT.asm` | 6901 | `gfx_fn_enemy_scroll` | data | function pointer: single dw of address | `and	al,0Fh` |
 | `working/zelres2/code/200FIGHT.asm` | 6902 | `gfx_fn_combat_fx` | data | function pointer: single dw of address | `cmp	al,04h` |
 | `working/zelres2/code/200FIGHT.asm` | 6903 | `gfx_fn_render_tile` | data | function pointer: single dw of address | `jnz	$+11` |
@@ -299,4 +306,3 @@ Name pattern matched but source line did not have the expected shape.
 | `working/zelres2/code/211OMOYP.asm` | 219 | `ref_gdtga_lbl` | label byte | resource reference: db/dw (1-3 bytes) | `ref_gdtga_lbl	label	byte			; @ 0A0F8h (file +0xFC)` |
 | `working/zelres3/code/300ROKAD.asm` | 713 | `ref_mfan_msd` | label byte | resource reference: db/dw (1-3 bytes) | `ref_mfan_msd	label	byte			; DS = 0xA588` |
 | `working/zelres3/code/300ROKAD.asm` | 718 | `ref_6dman_grp` | label byte | resource reference: db/dw (1-3 bytes) | `ref_6dman_grp	label	byte			; DS = 0xA593` |
-| `working/zelres3/code/311TORI.asm` | 228 | `tori_glyph_tbl` | data | table: multi-element db/dw or label-byte/word marker | `tori_glyph_tbl	db	 00h			; row 10 part 2 (0x08C); glyph-table data anchor` |

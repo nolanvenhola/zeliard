@@ -42,6 +42,9 @@ FAMILIES = [
      ['301EAI1', '302EAI2', '303EAI3', '304EAI4',
       '305EAI5', '306EAI6', '307EAI7', '308EAI8'],
      'zelres3/code'),
+    ('GM',  # Standalone graphics-mode drivers (gmcga/gmega/gmhgc/gmmcga/gmtga)
+     ['gmcga', 'gmega', 'gmhgc', 'gmmcga', 'gmtga'],
+     'drivers'),
 ]
 
 
@@ -315,6 +318,133 @@ ROLE_FINGERPRINTS = {
         ],
         'math helper (mul/div/add/sub)',
     ),
+
+    # ---- GM family: standalone graphics-mode drivers ----
+    'fill_horizontal_line': (
+        [
+            [r'\bes:\[', r'\bstos[bw]\b', r'\brep\s+stos[bw]\b'],
+            [r'\bmov\s+(?:al|ax)\s*,'],               # color setup
+        ],
+        'horizontal line fill: rep stos to ES:DI',
+    ),
+    'fill_vertical_line': (
+        [
+            [r'\bes:\[', r'\bstos[bw]\b',
+             r'\bmov\s+(?:byte|word)\s+ptr\s+es:\['],
+            [r'\bloop\b', r'\bjnz\b', r'\bdec\s+\w+\b'],
+        ],
+        'vertical line fill: ES:DI write + row loop',
+    ),
+    'fill_rectangle': (
+        [
+            [r'\bes:\[', r'\bstos[bw]\b', r'\brep\s+stos[bw]\b'],
+            [r'\bloop\b', r'\bjnz\b', r'\bdec\s+\w+\b'],
+        ],
+        '2D rectangle fill: rep stos in row-loop',
+    ),
+    'plot_pixel': (
+        [
+            [r'\bes:\[', r'\bmov\s+(?:byte|word)\s+ptr\s+es:\[',
+             r'\bor\s+byte\s+ptr\s+es:\[',
+             r'\band\s+byte\s+ptr\s+es:\['],
+        ],
+        'single-pixel write to video memory',
+    ),
+    'clear_screen': (
+        [
+            [r'\bes:\[', r'\brep\s+stos[bw]\b', r'\bstos[bw]\b'],
+            [r'\bxor\s+(?:al|ax)\s*,\s*(?:al|ax)\b',
+             r'\bmov\s+(?:al|ax)\s*,\s*0\b',
+             r'\bmov\s+cx\s*,'],                       # clear setup
+        ],
+        'video framebuffer clear: rep stos with zero',
+    ),
+    'render_text_char': (
+        [
+            [r'\bes:\['],                             # writes glyph to video
+            [r'\bcall\b', r'\bxlat\b',
+             r'\bmov\s+\w+\s*,\s*(?:cs:|ds:)?\['],   # font lookup
+        ],
+        'render text glyph: video write + font lookup',
+    ),
+    'render_text_char_alt': (
+        [
+            [r'\bes:\['],
+            [r'\bcall\b', r'\bxlat\b',
+             r'\bmov\s+\w+\s*,\s*(?:cs:|ds:)?\['],
+        ],
+        'alternate text glyph render',
+    ),
+    'render_tilemap_large': (
+        [
+            [r'\bes:\['],                             # writes tile to video
+            [r'\bcall\b', r'\bloop\b'],               # tile pipeline
+        ],
+        'large tilemap render: video write + dispatch',
+    ),
+    'render_tilemap_small': (
+        [
+            [r'\bes:\['],
+            [r'\bcall\b', r'\bloop\b'],
+        ],
+        'small tilemap render: video write + dispatch',
+    ),
+    'decode_bitplane_tile': (
+        [
+            [r'\bshr\b', r'\bshl\b', r'\band\b', r'\bor\b',
+             r'\bxor\b'],                             # bit ops
+            [r'\bes:\[', r'\bstos[bw]\b'],            # write decoded
+        ],
+        'decode bitplane tile: bit ops + video write',
+    ),
+    'extract_bitplane_pixels': (
+        [
+            [r'\bshr\b', r'\bshl\b', r'\band\b'],     # bit extract
+        ],
+        'extract bitplane pixels: bit shifts',
+    ),
+    'process_sprite_row': (
+        [
+            [r'\bes:\[', r'\bstos[bw]\b'],
+            [r'\bloop\b', r'\bjnz\b'],
+        ],
+        'sprite row processing: write + loop',
+    ),
+    'calc_text_width': (
+        [
+            [r'\bxlat\b', r'\badd\b',
+             r'\bmov\s+\w+\s*,\s*(?:cs:|ds:)?\['],   # font width lookup
+            [r'\bret(?:n|f)?\b'],                     # returns width
+        ],
+        'text width calc: font-table lookup + sum',
+    ),
+    'init_timestamp': (
+        [
+            [r'\bint\s+1Ah\b',                        # BIOS time-of-day
+             r'\bxor\s+(?:ah|ax)\s*,\s*(?:ah|ax)\b',
+             r'\bmov\s+(?:ah|ax)\s*,\s*0\b'],
+        ],
+        'init timestamp: INT 1Ah BIOS time read',
+    ),
+    'time_to_bcd': (
+        [
+            [r'\baad\b', r'\baam\b',                  # BCD ops
+             r'\bdiv\b', r'\bmod\b'],
+        ],
+        'time-to-BCD conversion: AAD/AAM/DIV',
+    ),
+    'modulo_divide_bcd': (
+        [
+            [r'\bdiv\b', r'\baad\b', r'\baam\b'],
+        ],
+        'BCD modulo divide',
+    ),
+    'int_divide_bcd': (
+        [
+            [r'\bdiv\b', r'\baad\b', r'\baam\b'],
+        ],
+        'BCD integer divide',
+    ),
 }
 
 
@@ -339,6 +469,11 @@ IDENTICAL_BODY_VERIFY = {
     'sprite_slot_remove',     # 3x61B
     'frame_wait_loop',        # 3x51B
     'sprite_slot_init',       # 5x68-72B
+    # GM identicals (BCD math/timestamp ops are likely identical across hw)
+    'time_to_bcd',
+    'modulo_divide_bcd',
+    'int_divide_bcd',
+    'init_timestamp',
 }
 
 

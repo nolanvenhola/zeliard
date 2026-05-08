@@ -310,4 +310,174 @@ Each match is deterministic byte/opcode evidence -- no LLM.
 | `306EAI6` | **SUPPORTED** | `\bsi\b`<br>`\bjnz\b` |
 | `307EAI7` | **SUPPORTED** | `\bsi\b`<br>`\bjnz\b` |
 
-**Totals**: 92 SUPPORTED, 36 INCONCLUSIVE, 0 CONTRADICTED
+## Family: GM
+
+### `calc_text_width` -- text width calc: font-table lookup + sum
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **INCONCLUSIVE** | (none) |
+| `gmega` | **INCONCLUSIVE** | (none) |
+| `gmhgc` | **INCONCLUSIVE** | (none) |
+| `gmmcga` | **INCONCLUSIVE** | (none) |
+| `gmtga` | **SUPPORTED** | `\badd\b`<br>`\bret(?:n|f)?\b` |
+
+### `clear_screen` -- video framebuffer clear: rep stos with zero
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **SUPPORTED** | `\brep\s+stos[bw]\b`<br>`\bxor\s+(?:al|ax)\s*,\s*(?:al|ax)\b` |
+| `gmega` | **SUPPORTED** | `\brep\s+stos[bw]\b`<br>`\bxor\s+(?:al|ax)\s*,\s*(?:al|ax)\b` |
+| `gmhgc` | **INCONCLUSIVE** | (none) |
+| `gmmcga` | **SUPPORTED** | `\brep\s+stos[bw]\b`<br>`\bxor\s+(?:al|ax)\s*,\s*(?:al|ax)\b` |
+| `gmtga` | **SUPPORTED** | `\brep\s+stos[bw]\b`<br>`\bxor\s+(?:al|ax)\s*,\s*(?:al|ax)\b` |
+
+### `decode_bitplane_tile` -- decode bitplane tile: bit ops + video write
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **SUPPORTED** | `\bshr\b`<br>`\bes:\[` |
+| `gmega` | **SUPPORTED** | `\bshl\b`<br>`\bes:\[` |
+| `gmhgc` | **SUPPORTED** | `\bshr\b`<br>`\bes:\[` |
+| `gmmcga` | **SUPPORTED** | `\bxor\b`<br>`\bes:\[` |
+| `gmtga` | **SUPPORTED** | `\band\b`<br>`\bes:\[` |
+
+### `extract_bitplane_pixels` -- extract bitplane pixels: bit shifts
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **INCONCLUSIVE** | (none) |
+| `gmhgc` | **INCONCLUSIVE** | (none) |
+| `gmmcga` | **INCONCLUSIVE** | (none) |
+| `gmtga` | **INCONCLUSIVE** | (none) |
+
+### `fill_horizontal_line` -- horizontal line fill: rep stos to ES:DI
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **INCONCLUSIVE** | `\bes:\[` |
+| `gmega` | **SUPPORTED** | `\bes:\[`<br>`\bmov\s+(?:al|ax)\s*,` |
+| `gmhgc` | **INCONCLUSIVE** | `\bes:\[` |
+| `gmmcga` | **SUPPORTED** | `\bes:\[`<br>`\bmov\s+(?:al|ax)\s*,` |
+| `gmtga` | **SUPPORTED** | `\bes:\[`<br>`\bmov\s+(?:al|ax)\s*,` |
+
+### `fill_rectangle` -- 2D rectangle fill: rep stos in row-loop
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **SUPPORTED** | `\bstos[bw]\b`<br>`\bloop\b` |
+| `gmega` | **SUPPORTED** | `\bstos[bw]\b`<br>`\bloop\b` |
+| `gmhgc` | **SUPPORTED** | `\bstos[bw]\b`<br>`\bloop\b` |
+| `gmmcga` | **SUPPORTED** | `\bstos[bw]\b`<br>`\bloop\b` |
+| `gmtga` | **SUPPORTED** | `\bstos[bw]\b`<br>`\bloop\b` |
+
+### `fill_vertical_line` -- vertical line fill: ES:DI write + row loop
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **SUPPORTED** | `\bes:\[`<br>`\bjnz\b` |
+| `gmega` | **SUPPORTED** | `\bstos[bw]\b`<br>`\bjnz\b` |
+| `gmhgc` | **SUPPORTED** | `\bes:\[`<br>`\bjnz\b` |
+| `gmmcga` | **SUPPORTED** | `\bes:\[`<br>`\bjnz\b` |
+| `gmtga` | **SUPPORTED** | `\bes:\[`<br>`\bjnz\b` |
+
+### `init_timestamp` -- init timestamp: INT 1Ah BIOS time read
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **INCONCLUSIVE** | (none) |
+| `gmega` | **INCONCLUSIVE** | (none) |
+| `gmhgc` | **INCONCLUSIVE** | (none) |
+| `gmmcga` | **INCONCLUSIVE** | (none) |
+| `gmtga` | **INCONCLUSIVE** | (none) |
+
+### `int_divide_bcd` -- BCD integer divide
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **SUPPORTED** | `\bdiv\b`<br>`IDENTICAL body in 5 drivers` |
+| `gmega` | **SUPPORTED** | `\bdiv\b`<br>`IDENTICAL body in 5 drivers` |
+| `gmhgc` | **SUPPORTED** | `\bdiv\b`<br>`IDENTICAL body in 5 drivers` |
+| `gmmcga` | **SUPPORTED** | `\bdiv\b`<br>`IDENTICAL body in 5 drivers` |
+| `gmtga` | **SUPPORTED** | `\bdiv\b`<br>`IDENTICAL body in 5 drivers` |
+
+### `modulo_divide_bcd` -- BCD modulo divide
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **INCONCLUSIVE** | (none) |
+| `gmega` | **INCONCLUSIVE** | (none) |
+| `gmhgc` | **INCONCLUSIVE** | (none) |
+| `gmmcga` | **INCONCLUSIVE** | (none) |
+| `gmtga` | **INCONCLUSIVE** | (none) |
+
+### `plot_pixel` -- single-pixel write to video memory
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **SUPPORTED** | `\bes:\[` |
+| `gmega` | **SUPPORTED** | `\bes:\[` |
+| `gmhgc` | **SUPPORTED** | `\bes:\[` |
+| `gmmcga` | **SUPPORTED** | `\bes:\[` |
+| `gmtga` | **SUPPORTED** | `\bes:\[` |
+
+### `process_sprite_row` -- sprite row processing: write + loop
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **SUPPORTED** | `\bstos[bw]\b`<br>`\bloop\b` |
+| `gmhgc` | **SUPPORTED** | `\bstos[bw]\b`<br>`\bloop\b` |
+| `gmmcga` | **INCONCLUSIVE** | (none) |
+| `gmtga` | **SUPPORTED** | `\bstos[bw]\b`<br>`\bloop\b` |
+
+### `render_text_char` -- render text glyph: video write + font lookup
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **INCONCLUSIVE** | `\bes:\[` |
+| `gmega` | **INCONCLUSIVE** | `\bes:\[` |
+| `gmhgc` | **INCONCLUSIVE** | `\bes:\[` |
+| `gmmcga` | **INCONCLUSIVE** | `\bes:\[` |
+| `gmtga` | **SUPPORTED** | `\bes:\[`<br>`\bcall\b` |
+
+### `render_text_char_alt` -- alternate text glyph render
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **SUPPORTED** | `\bes:\[`<br>`\bcall\b` |
+| `gmega` | **INCONCLUSIVE** | `\bes:\[` |
+| `gmhgc` | **SUPPORTED** | `\bes:\[`<br>`\bcall\b` |
+| `gmmcga` | **INCONCLUSIVE** | `\bes:\[` |
+| `gmtga` | **SUPPORTED** | `\bes:\[`<br>`\bcall\b` |
+
+### `render_tilemap_large` -- large tilemap render: video write + dispatch
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **INCONCLUSIVE** | (none) |
+| `gmega` | **INCONCLUSIVE** | (none) |
+| `gmhgc` | **INCONCLUSIVE** | (none) |
+| `gmmcga` | **INCONCLUSIVE** | (none) |
+| `gmtga` | **INCONCLUSIVE** | (none) |
+
+### `render_tilemap_small` -- small tilemap render: video write + dispatch
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **SUPPORTED** | `\bes:\[`<br>`\bcall\b` |
+| `gmega` | **SUPPORTED** | `\bes:\[`<br>`\bloop\b` |
+| `gmhgc` | **SUPPORTED** | `\bes:\[`<br>`\bcall\b` |
+| `gmmcga` | **INCONCLUSIVE** | (none) |
+| `gmtga` | **SUPPORTED** | `\bes:\[`<br>`\bcall\b` |
+
+### `time_to_bcd` -- time-to-BCD conversion: AAD/AAM/DIV
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `gmcga` | **SUPPORTED** | `IDENTICAL body in 5 drivers` |
+| `gmega` | **SUPPORTED** | `IDENTICAL body in 5 drivers` |
+| `gmhgc` | **SUPPORTED** | `IDENTICAL body in 5 drivers` |
+| `gmmcga` | **SUPPORTED** | `IDENTICAL body in 5 drivers` |
+| `gmtga` | **SUPPORTED** | `IDENTICAL body in 5 drivers` |
+
+**Totals**: 141 SUPPORTED, 70 INCONCLUSIVE, 0 CONTRADICTED
