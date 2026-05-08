@@ -546,10 +546,13 @@ NAME_PATTERNS = [
 
     # CHUNK/file-basename main entries (gmcga, stdply, game, zeliad,
     # stick, plus 3-digit-prefixed chunks like 100OPDMO).
-    # These are entry points -- structurally just sanity check (return).
+    # These are entry points -- often a dispatch table of dw entries,
+    # OR a real proc with retn/jmp/int 20h.
     (re.compile(r'^(gm[a-z]+|stdply|stick|game|zeliad|opdmo)$'),
-     [[r'\bret(?:n|f)?\b', r'\bjmp\b', r'\bint\s+20h\b']],
-     'driver/exec main entry'),
+     [[r'\bret(?:n|f)?\b', r'\bjmp\b', r'\bint\s+20h\b',
+       r'^\s*(?:start|dispatch)\s*:',                # dispatch label
+       r'^\s*dw\s+\w+\s*[h]?\b']],                   # dw entries
+     'driver/exec main entry: dispatch table or returning proc'),
 
     # Numbered chunk main entries: 100OPDMO -> opening_scene_main, etc.
     # Pattern: ^[a-z]+_(?:scene|module|chunk)_main$
@@ -719,7 +722,7 @@ def load_proc_body(asm_path: Path, proc_name: str) -> str | None:
     except OSError:
         return None
     pattern = re.compile(
-        r'^' + re.escape(proc_name) + r'\s+proc\s+near\s*\n'
+        r'^' + re.escape(proc_name) + r'\s+proc\s+(?:near|far)\s*\n'
         r'(?P<body>.*?)'
         r'^' + re.escape(proc_name) + r'\s+endp',
         re.MULTILINE | re.DOTALL,

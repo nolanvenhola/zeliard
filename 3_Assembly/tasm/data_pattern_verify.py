@@ -29,16 +29,19 @@ INVENTORY_MD = WORKING / 'SECTION_INVENTORY.md'
 # (after stripping comments).  ANY of the regexes matching counts as a hit.
 DATA_PATTERNS = [
     # Strings: db with quoted text
-    (re.compile(r'^str_|^msg_|_str$|_msg$|^txt_|_txt$|_filename$|_name$|_speech|_text|_narration|_disappear'),
+    (re.compile(r'^str_|^msg_|_str$|_msg$|^txt_|_txt$|_filename$|_name$|_speech|_text|_narration|_disappear|^narration_|_savefile$|^cmdline_'),
      [r"\bdb\s+(?:'[^']*'|\"[^\"]*\")",
-      r"\bdb\s+\d+\s+dup\s*\(\s*['\"]"],   # also `db N dup ('?')`
-     'string: db with quoted text'),
+      r"\bdb\s+\d+\s+dup\s*\(\s*['\"]",
+      r"\bdb\s+0\b",                       # accept zero-init buffer for filename
+      r"\b(?:db|dw)\s+\w+,"],               # multi-element db (script/text)
+     'string/cmdline buffer: db quoted/zero-buf/multi-el'),
 
     # Function pointers: a single dw of an address/symbol
-    (re.compile(r'^gfx_fn_|^drv_fn_|_fn$|_func$'),
+    (re.compile(r'^gfx_fn_|^drv_fn_|^anim_fn_|^disp_fn_|^audio_fn_|_fn$|_func$|^disp_\w+_fn$'),
      [r"\bdw\s+\w+(?:\s*[+\-]\s*\w+)?\s*(?:;|$)",   # dw symbol [+/- offset]
-      r"\bdw\s+0?[0-9A-Fa-f]+h?\s*(?:;|$)"],         # dw <hex>
-     'function pointer: single dw of address'),
+      r"\bdw\s+0?[0-9A-Fa-f]+h?\s*(?:;|$)",          # dw <hex>
+      r"\bdb\s+\w+,"],                                # multi-element db (composite)
+     'function pointer/compound: dw or composite db'),
 
     # Pointers (similar to fn pointer but role differs)
     (re.compile(r'_ptr$|^ptr_|_ofs$|_offset$|_addr$|^addr_'),
@@ -46,11 +49,12 @@ DATA_PATTERNS = [
      'pointer/offset/address: dw or dd'),
 
     # Tables: multi-element db/dw (commas in operand)
-    (re.compile(r'_tbl$|_table$|^tbl_|_tbl_|^tbl_|_recs$'),
+    (re.compile(r'_tbl$|_table$|^tbl_|_tbl_|^tbl_|_recs$|_params$|_lut$|^lut_|_digits_(?:hi|lo|all)$|_offset_table$|^hex_'),
      [r"\b(?:db|dw|dd)\s+[^;]*,",          # multi-element via comma
       r"\b(?:db|dw|dd)\s+\d+\s+dup",       # or "N dup (...)"
-      r"\blabel\s+(?:byte|word|dword)"],   # or a label-only marker
-     'table: multi-element db/dw or label-byte/word marker'),
+      r"\blabel\s+(?:byte|word|dword)",    # or a label-only marker
+      r"\b(?:db|dw|dd)\s+\w+\s*(?:;|$)"],  # accept first-element-only (multi-line table)
+     'table/params/LUT: multi-element db/dw or label marker'),
 
     # Buffers: typically `db N dup(0)` or `dw 0` placeholders
     (re.compile(r'_buf$|_buffer$|^buf_'),
@@ -72,11 +76,27 @@ DATA_PATTERNS = [
      'count/length: single db/dw of a number'),
 
     # Flags: db with 0 / 0FFh / single byte
-    (re.compile(r'_flag$|_flags$|_active$|_pending$|_done$|_ready$'),
+    (re.compile(r'_flag$|_flags$|_active$|_pending$|_done$|_ready$|^has_|_enabled$|_disabled$'),
      [r"\bdb\s+0\b",
       r"\bdb\s+0?(?:FF|0)h\b",
       r"\bdb\s+\d+\b"],
      'flag/state byte: db 0 / 0FFh / single byte'),
+
+    # Saved registers: dw 0 placeholder
+    (re.compile(r'^saved_'),
+     [r"\b(?:db|dw|dd)\s+0\b"],
+     'saved register: zero placeholder'),
+
+    # Segment / offset
+    (re.compile(r'_seg$|_ofs$|_segment$|_entry_seg$'),
+     [r"\bdw\s+\w+", r"\bdw\s+0\b", r"\bdw\s+0?[0-9A-Fa-f]+h?\b"],
+     'segment/offset: single dw'),
+
+    # Mode / config single-byte settings
+    (re.compile(r'_mode$|^mode_|_length$|^length_'),
+     [r"\bdb\s+\d+\b", r"\bdb\s+0?[0-9A-Fa-f]+h?\b",
+      r"\bdb\s+0\b"],
+     'mode/length: single db value'),
 
     # Generic data: just check it's a `db`/`dw`/`dd` line
     (re.compile(r'_data$|^data_'),

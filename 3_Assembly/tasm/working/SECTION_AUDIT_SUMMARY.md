@@ -20,19 +20,20 @@ Strength ladder (strongest first):
 
 | Verdict | Count |
 |---|---:|
-| SUPPORTED | 1140 |
+| SUPPORTED | 1121 |
 | INC_CONSISTENT | 6 |
 | CONTRADICTED | 0 |
-| INCONCLUSIVE | 0 |
-| PENDING | 451 |
+| INCONCLUSIVE | 8 |
+| PENDING | 284 |
 
 ## Evidence sources (rows with verdict)
 
 | Source | Count |
 |---|---:|
-| name-pattern | 676 |
-| data-pattern | 239 |
-| driver-sig | 141 |
+| name-pattern | 629 |
+| data-pattern | 267 |
+| placeholder | 178 |
+| driver-sig | 149 |
 | TCRF | 84 |
 | stdply.inc | 6 |
 
@@ -40,66 +41,66 @@ Strength ladder (strongest first):
 
 | File | Supported | Contradicted | Pending | Total |
 |---|---:|---:|---:|---:|
-| `working/core/game.asm` | 19 | 0 | 1 | 20 |
-| `working/core/zeliad.asm` | 38 | 0 | 17 | 55 |
-| `working/drivers/gmcga.asm` | 18 | 0 | 1 | 19 |
-| `working/drivers/gmega.asm` | 15 | 0 | 1 | 16 |
-| `working/drivers/gmhgc.asm` | 21 | 0 | 1 | 22 |
+| `working/core/game.asm` | 20 | 0 | 0 | 20 |
+| `working/core/zeliad.asm` | 54 | 0 | 1 | 55 |
+| `working/drivers/gmcga.asm` | 19 | 0 | 0 | 19 |
+| `working/drivers/gmega.asm` | 16 | 0 | 0 | 16 |
+| `working/drivers/gmhgc.asm` | 22 | 0 | 0 | 22 |
 | `working/drivers/gmmcga.asm` | 19 | 0 | 2 | 21 |
 | `working/drivers/gmtga.asm` | 19 | 0 | 1 | 20 |
-| `working/drivers/stdply.asm` | 90 | 0 | 1 | 91 |
-| `working/drivers/stick.asm` | 34 | 0 | 3 | 37 |
-| `working/zelres1/code/100OPDMO.asm` | 24 | 0 | 20 | 44 |
-| `working/zelres1/code/101GDEGA.asm` | 12 | 0 | 12 | 24 |
-| `working/zelres1/code/102GDCGA.asm` | 13 | 0 | 9 | 22 |
-| `working/zelres1/code/103GDHGC.asm` | 16 | 0 | 8 | 24 |
-| `working/zelres1/code/104GDTGA.asm` | 17 | 0 | 10 | 27 |
-| `working/zelres1/code/105GDMCA.asm` | 14 | 0 | 11 | 25 |
-| `working/zelres1/code/106TOWN.asm` | 18 | 0 | 40 | 58 |
-| `working/zelres1/code/107GTEGA.asm` | 4 | 0 | 22 | 26 |
-| `working/zelres1/code/108GTCGA.asm` | 26 | 0 | 1 | 27 |
-| `working/zelres1/code/109GTHGC.asm` | 12 | 0 | 22 | 34 |
-| `working/zelres1/code/110GTTGA.asm` | 11 | 0 | 19 | 30 |
-| `working/zelres1/code/111GTMCA.asm` | 8 | 0 | 21 | 29 |
-| `working/zelres2/code/200FIGHT.asm` | 113 | 0 | 38 | 151 |
-| `working/zelres2/code/201SELCT.asm` | 18 | 0 | 13 | 31 |
-| `working/zelres2/code/202GFEGA.asm` | 38 | 0 | 2 | 40 |
-| `working/zelres2/code/203GFCGA.asm` | 41 | 0 | 2 | 43 |
-| `working/zelres2/code/204GFHGC.asm` | 43 | 0 | 4 | 47 |
-| `working/zelres2/code/205GFTGA.asm` | 45 | 0 | 3 | 48 |
-| `working/zelres2/code/206GFMCA.asm` | 52 | 0 | 4 | 56 |
-| `working/zelres2/code/207MOLE.asm` | 65 | 0 | 10 | 75 |
-| `working/zelres2/code/208YMPD.asm` | 9 | 0 | 1 | 10 |
-| `working/zelres2/code/209CKPD.asm` | 21 | 0 | 1 | 22 |
-| `working/zelres2/code/210KINGP.asm` | 6 | 0 | 3 | 9 |
+| `working/drivers/stdply.asm` | 91 | 0 | 0 | 91 |
+| `working/drivers/stick.asm` | 33 | 0 | 4 | 37 |
+| `working/zelres1/code/100OPDMO.asm` | 26 | 0 | 18 | 44 |
+| `working/zelres1/code/101GDEGA.asm` | 13 | 0 | 1 | 14 |
+| `working/zelres1/code/102GDCGA.asm` | 14 | 0 | 2 | 16 |
+| `working/zelres1/code/103GDHGC.asm` | 17 | 0 | 0 | 17 |
+| `working/zelres1/code/104GDTGA.asm` | 17 | 0 | 3 | 20 |
+| `working/zelres1/code/105GDMCA.asm` | 12 | 0 | 3 | 15 |
+| `working/zelres1/code/106TOWN.asm` | 17 | 0 | 2 | 19 |
+| `working/zelres1/code/107GTEGA.asm` | 4 | 0 | 2 | 6 |
+| `working/zelres1/code/108GTCGA.asm` | 24 | 0 | 3 | 27 |
+| `working/zelres1/code/109GTHGC.asm` | 13 | 0 | 1 | 14 |
+| `working/zelres1/code/110GTTGA.asm` | 9 | 0 | 1 | 10 |
+| `working/zelres1/code/111GTMCA.asm` | 6 | 0 | 2 | 8 |
+| `working/zelres2/code/200FIGHT.asm` | 104 | 0 | 34 | 138 |
+| `working/zelres2/code/201SELCT.asm` | 20 | 0 | 11 | 31 |
+| `working/zelres2/code/202GFEGA.asm` | 36 | 0 | 2 | 38 |
+| `working/zelres2/code/203GFCGA.asm` | 35 | 0 | 6 | 41 |
+| `working/zelres2/code/204GFHGC.asm` | 39 | 0 | 5 | 44 |
+| `working/zelres2/code/205GFTGA.asm` | 41 | 0 | 6 | 47 |
+| `working/zelres2/code/206GFMCA.asm` | 48 | 0 | 7 | 55 |
+| `working/zelres2/code/207MOLE.asm` | 69 | 0 | 6 | 75 |
+| `working/zelres2/code/208YMPD.asm` | 5 | 0 | 5 | 10 |
+| `working/zelres2/code/209CKPD.asm` | 18 | 0 | 4 | 22 |
+| `working/zelres2/code/210KINGP.asm` | 5 | 0 | 4 | 9 |
 | `working/zelres2/code/211OMOYP.asm` | 5 | 0 | 7 | 12 |
 | `working/zelres2/code/212ARMRP.asm` | 6 | 0 | 4 | 10 |
 | `working/zelres2/code/213BANKP.asm` | 8 | 0 | 1 | 9 |
 | `working/zelres2/code/214CHURP.asm` | 4 | 0 | 3 | 7 |
-| `working/zelres2/code/215DRUGP.asm` | 7 | 0 | 3 | 10 |
-| `working/zelres2/code/216INNAP.asm` | 16 | 0 | 4 | 20 |
-| `working/zelres2/code/217KENJP.asm` | 22 | 0 | 1 | 23 |
-| `working/zelres2/code/250ENDMO.asm` | 13 | 0 | 4 | 17 |
+| `working/zelres2/code/215DRUGP.asm` | 5 | 0 | 1 | 6 |
+| `working/zelres2/code/216INNAP.asm` | 14 | 0 | 6 | 20 |
+| `working/zelres2/code/217KENJP.asm` | 21 | 0 | 2 | 23 |
+| `working/zelres2/code/250ENDMO.asm` | 12 | 0 | 5 | 17 |
 | `working/zelres3/code/300ROKAD.asm` | 6 | 0 | 4 | 10 |
-| `working/zelres3/code/301EAI1.asm` | 9 | 0 | 2 | 11 |
-| `working/zelres3/code/302EAI2.asm` | 16 | 0 | 12 | 28 |
-| `working/zelres3/code/303EAI3.asm` | 8 | 0 | 1 | 9 |
-| `working/zelres3/code/304EAI4.asm` | 3 | 0 | 4 | 7 |
-| `working/zelres3/code/305EAI5.asm` | 9 | 0 | 4 | 13 |
-| `working/zelres3/code/306EAI6.asm` | 11 | 0 | 3 | 14 |
-| `working/zelres3/code/307EAI7.asm` | 10 | 0 | 2 | 12 |
-| `working/zelres3/code/308EAI8.asm` | 6 | 0 | 2 | 8 |
+| `working/zelres3/code/301EAI1.asm` | 10 | 0 | 1 | 11 |
+| `working/zelres3/code/302EAI2.asm` | 17 | 0 | 11 | 28 |
+| `working/zelres3/code/303EAI3.asm` | 9 | 0 | 0 | 9 |
+| `working/zelres3/code/304EAI4.asm` | 4 | 0 | 3 | 7 |
+| `working/zelres3/code/305EAI5.asm` | 10 | 0 | 3 | 13 |
+| `working/zelres3/code/306EAI6.asm` | 12 | 0 | 2 | 14 |
+| `working/zelres3/code/307EAI7.asm` | 11 | 0 | 1 | 12 |
+| `working/zelres3/code/308EAI8.asm` | 7 | 0 | 1 | 8 |
 | `working/zelres3/code/309CRAB.asm` | 5 | 0 | 4 | 9 |
-| `working/zelres3/code/310TAKO.asm` | 4 | 0 | 3 | 7 |
+| `working/zelres3/code/310TAKO.asm` | 5 | 0 | 2 | 7 |
 | `working/zelres3/code/311TORI.asm` | 10 | 0 | 3 | 13 |
 | `working/zelres3/code/312ZELA.asm` | 6 | 0 | 2 | 8 |
-| `working/zelres3/code/313MEDA.asm` | 10 | 0 | 3 | 13 |
-| `working/zelres3/code/314LEGA.asm` | 7 | 0 | 8 | 15 |
-| `working/zelres3/code/315ZEL2.asm` | 7 | 0 | 4 | 11 |
-| `working/zelres3/code/316DRGN.asm` | 5 | 0 | 7 | 12 |
-| `working/zelres3/code/317AKMA.asm` | 5 | 0 | 6 | 11 |
-| `working/zelres3/code/318MAO1.asm` | 6 | 0 | 20 | 26 |
-| `working/zelres3/code/319MAO2.asm` | 17 | 0 | 23 | 40 |
+| `working/zelres3/code/313MEDA.asm` | 9 | 0 | 4 | 13 |
+| `working/zelres3/code/314LEGA.asm` | 5 | 0 | 10 | 15 |
+| `working/zelres3/code/315ZEL2.asm` | 6 | 0 | 5 | 11 |
+| `working/zelres3/code/316DRGN.asm` | 3 | 0 | 9 | 12 |
+| `working/zelres3/code/317AKMA.asm` | 2 | 0 | 9 | 11 |
+| `working/zelres3/code/318MAO1.asm` | 8 | 0 | 18 | 26 |
+| `working/zelres3/code/319MAO2.asm` | 16 | 0 | 24 | 40 |
 
 ## Files with zero Group-1 resolution (1)
 

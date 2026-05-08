@@ -505,7 +505,7 @@ def load_proc_body(asm_path: Path, proc_name: str) -> str | None:
     except OSError:
         return None
     pattern = re.compile(
-        r'^' + re.escape(proc_name) + r'\s+proc\s+near\s*\n'
+        r'^' + re.escape(proc_name) + r'\s+proc\s+(?:near|far)\s*\n'
         r'(?P<body>.*?)'
         r'^' + re.escape(proc_name) + r'\s+endp',
         re.MULTILINE | re.DOTALL,

@@ -283,24 +283,45 @@ def parse_data_pattern_verify(path: Path) -> dict:
 def parse_name_pattern_verify(path: Path) -> dict:
     """Parse working/NAME_PATTERN_VERIFY.md.
 
-    Returns {(file, name): (verdict, evidence_summary)}.
-    Verdict is always SUPPORTED in this file (only matched rows are listed).
+    Returns {(file, name): (verdict, evidence_summary)} for SUPPORTED
+    rows only.  Other sections (INCONCLUSIVE) are written for human
+    debugging but not consumed by the ledger.
     """
     if not path.exists():
         return {}
     out = {}
     text = path.read_text(encoding='utf-8', errors='replace')
-    # Rows like: | `file` | line | `name` | role description |
+    # Only parse rows under the SUPPORTED section
+    if '## INCONCLUSIVE' in text:
+        text_supported = text.split('## INCONCLUSIVE')[0]
+    else:
+        text_supported = text
     row_re = re.compile(
         r'^\|\s*`(?P<file>[^`]+)`\s*\|\s*\d+\s*\|\s*`(?P<name>[^`]+)`\s*\|\s*'
         r'(?P<desc>[^|]*?)\s*\|',
         re.MULTILINE,
     )
-    for m in row_re.finditer(text):
+    for m in row_re.finditer(text_supported):
         out[(m.group('file'), m.group('name'))] = (
             'SUPPORTED',
             f'name-pattern: {m.group("desc")}',
         )
+    return out
+
+
+def detect_placeholder_names(rows_iter) -> set:
+    """Return set of (file, name) for rows whose name is a numbered placeholder.
+
+    These names don't claim a specific role -- their semantics need
+    Tier-3 functest probe work, not pattern matching.
+    """
+    out = set()
+    pat = (re.compile(r'_(?:func|sub|fn|proc|loop|operation)_\d+\b'),
+           re.compile(r'_(?:func|sub|fn|proc|operation)\d+$'))
+    for r in rows_iter:
+        name = r.get('name', '')
+        if any(p.search(name) for p in pat):
+            out.add((r['file'], name))
     return out
 
 
@@ -525,6 +546,22 @@ def build_ledger() -> list[dict]:
                 canonical = inv['name']
                 evidence = sig[1]
                 source = 'driver-sig'
+
+        # Source 0b2: numbered placeholder detection.  Names like
+        # `vga_operation3` or `player_func_22` don't claim a specific
+        # role -- they're Sourcer leftover placeholders.  Mark them
+        # with a distinct verdict so they're clearly distinguished
+        # from PENDING-but-name-makes-a-claim items.
+        if verdict == 'PENDING' and inv['kind'] == 'proc':
+            ph_pat1 = r'_(?:func|sub|fn|proc|loop|operation)_\d+\b'
+            ph_pat2 = r'_(?:func|sub|fn|proc|operation)\d+$'
+            if (re.search(ph_pat1, inv['name'])
+                    or re.search(ph_pat2, inv['name'])):
+                verdict = 'PLACEHOLDER_NAME'
+                canonical = inv['name']
+                evidence = ('numbered placeholder -- needs Tier-3 functest '
+                            'probe to determine role')
+                source = 'placeholder'
 
         # Source 0c: data-pattern shape match.  For data/label items
         # whose name implies a shape (string / table / pointer / buffer),
