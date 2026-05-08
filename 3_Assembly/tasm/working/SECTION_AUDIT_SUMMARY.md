@@ -20,17 +20,18 @@ Strength ladder (strongest first):
 
 | Verdict | Count |
 |---|---:|
-| SUPPORTED | 85 |
+| SUPPORTED | 117 |
 | INC_CONSISTENT | 10 |
 | CONTRADICTED | 0 |
 | INCONCLUSIVE | 0 |
-| PENDING | 1502 |
+| PENDING | 1470 |
 
 ## Evidence sources (rows with verdict)
 
 | Source | Count |
 |---|---:|
 | TCRF | 85 |
+| driver-sig | 32 |
 | stdply.inc | 10 |
 
 ## Per-file resolution status
@@ -38,8 +39,18 @@ Strength ladder (strongest first):
 | File | Supported | Contradicted | Pending | Total |
 |---|---:|---:|---:|---:|
 | `working/drivers/stdply.asm` | 85 | 0 | 2 | 87 |
+| `working/zelres1/code/101GDEGA.asm` | 3 | 0 | 21 | 24 |
+| `working/zelres1/code/102GDCGA.asm` | 5 | 0 | 17 | 22 |
+| `working/zelres1/code/103GDHGC.asm` | 5 | 0 | 19 | 24 |
+| `working/zelres1/code/104GDTGA.asm` | 5 | 0 | 22 | 27 |
+| `working/zelres1/code/105GDMCA.asm` | 5 | 0 | 20 | 25 |
+| `working/zelres2/code/202GFEGA.asm` | 2 | 0 | 38 | 40 |
+| `working/zelres2/code/203GFCGA.asm` | 2 | 0 | 41 | 43 |
+| `working/zelres2/code/204GFHGC.asm` | 1 | 0 | 46 | 47 |
+| `working/zelres2/code/205GFTGA.asm` | 2 | 0 | 46 | 48 |
+| `working/zelres2/code/206GFMCA.asm` | 2 | 0 | 54 | 56 |
 
-## Files with zero Group-1 resolution (60)
+## Files with zero Group-1 resolution (50)
 
 These files have no items resolved by deterministic Group-1
 sources (.inc EQU lookups + TCRF table).  All sections in
@@ -55,11 +66,6 @@ Tier-3 (functest probe) work.
 - `working/drivers/gmtga.asm` -- 20 pending
 - `working/drivers/stick.asm` -- 37 pending
 - `working/zelres1/code/100OPDMO.asm` -- 44 pending
-- `working/zelres1/code/101GDEGA.asm` -- 24 pending
-- `working/zelres1/code/102GDCGA.asm` -- 22 pending
-- `working/zelres1/code/103GDHGC.asm` -- 24 pending
-- `working/zelres1/code/104GDTGA.asm` -- 27 pending
-- `working/zelres1/code/105GDMCA.asm` -- 25 pending
 - `working/zelres1/code/106TOWN.asm` -- 58 pending
 - `working/zelres1/code/107GTEGA.asm` -- 26 pending
 - `working/zelres1/code/108GTCGA.asm` -- 27 pending
@@ -68,11 +74,6 @@ Tier-3 (functest probe) work.
 - `working/zelres1/code/111GTMCA.asm` -- 29 pending
 - `working/zelres2/code/200FIGHT.asm` -- 151 pending
 - `working/zelres2/code/201SELCT.asm` -- 31 pending
-- `working/zelres2/code/202GFEGA.asm` -- 40 pending
-- `working/zelres2/code/203GFCGA.asm` -- 43 pending
-- `working/zelres2/code/204GFHGC.asm` -- 47 pending
-- `working/zelres2/code/205GFTGA.asm` -- 48 pending
-- `working/zelres2/code/206GFMCA.asm` -- 56 pending
 - `working/zelres2/code/207MOLE.asm` -- 75 pending
 - `working/zelres2/code/208YMPD.asm` -- 10 pending
 - `working/zelres2/code/209CKPD.asm` -- 22 pending

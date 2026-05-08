@@ -252,6 +252,38 @@ def parse_coverage_csv(path: Path) -> dict:
     return out
 
 
+def parse_driver_signature_verify(path: Path) -> dict:
+    """Parse working/DRIVER_SIGNATURE_VERIFY.md.
+
+    Returns {(chunk, proc_name): (verdict, evidence_summary)}.
+    """
+    if not path.exists():
+        return {}
+    out = {}
+    text = path.read_text(encoding='utf-8', errors='replace')
+    # The file has H3 sections with proc name + description, followed by a
+    # markdown table of (chunk, verdict, patterns).
+    proc_re = re.compile(r'^### `(?P<name>\w+)` -- (?P<desc>.*)$', re.MULTILINE)
+    row_re = re.compile(
+        r'^\| `(?P<chunk>\w+)` \| \*\*(?P<verdict>SUPPORTED|CONTRADICTED|INCONCLUSIVE)\*\* \|',
+        re.MULTILINE,
+    )
+    # Walk the file: for each H3 block, capture the (chunk, verdict) rows
+    sections = list(proc_re.finditer(text))
+    for i, m in enumerate(sections):
+        name = m.group('name')
+        desc = m.group('desc')
+        block_start = m.end()
+        block_end = sections[i + 1].start() if i + 1 < len(sections) else len(text)
+        block = text[block_start:block_end]
+        for row in row_re.finditer(block):
+            chunk = row.group('chunk')
+            verdict = row.group('verdict')
+            evidence = f'driver-signature: {desc}'
+            out[(chunk, name)] = (verdict, evidence)
+    return out
+
+
 def parse_inc_equs(inc_path: Path) -> dict:
     """Return {address_lower_hex: [list_of_names]} from a .inc file.
 
@@ -307,6 +339,9 @@ def build_ledger() -> list[dict]:
     inventory = parse_inventory(INVENTORY_MD)
     coverage = parse_coverage_csv(COVERAGE_CSV)
     audit_todo = parse_audit_todo(WORKING / 'AUDIT_TODO.md')
+    driver_sigs = parse_driver_signature_verify(
+        WORKING / 'DRIVER_SIGNATURE_VERIFY.md'
+    )
 
     # The .inc files are canonical homes for EQU names.  Any name that
     # appears as an EQU in the include file scoped to its source file is
@@ -393,8 +428,21 @@ def build_ledger() -> list[dict]:
         #       source and the canonical include AGREE; it does NOT prove
         #       the name is correct on its own.  Weaker evidence than TCRF.
         #
+        # Source 0: driver-signature verification.  For procs in graphics
+        # drivers, the role-fingerprint match across all 5 parallel
+        # implementations is deterministic byte/opcode evidence.
+        if inv['kind'] == 'proc':
+            chunk = chunk_stem_from_file(file_rel)
+            sig = driver_sigs.get((chunk, inv['name']))
+            if sig:
+                sig_verdict, sig_evidence = sig
+                verdict = sig_verdict
+                canonical = inv['name']
+                evidence = sig_evidence
+                source = 'driver-sig'
+
         # Source 1a: TCRF authoritative table for stdply 0x80..0xFF
-        if is_stdply_file(file_rel) and address_hex:
+        if verdict == 'PENDING' and is_stdply_file(file_rel) and address_hex:
             try:
                 addr_int = int(address_hex, 16)
             except ValueError:

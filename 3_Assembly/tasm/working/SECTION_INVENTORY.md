@@ -391,8 +391,8 @@
 - [ ] L410   `imgctl_process_loop`  *(proc)*
 - [ ] L438   `imgctl_process_loop_2`  *(proc)*
 - [ ] L581   `copy_vga_buffer`  *(proc)*
-- [ ] L865   `copy_buffer`  *(proc)*
-- [ ] L886   `copy_buffer_2`  *(proc)*
+- [x] L865   `copy_buffer`  *(proc)*
+- [x] L886   `copy_buffer_2`  *(proc)*
 - [ ] L907   `imgctl_process_loop_3`  *(proc)*
 - [ ] L1003  `copy_buffer_3`  *(proc)*
 - [ ] L1077  `imgctl_multiply_2`  *(proc)*
@@ -404,7 +404,7 @@
 - [ ] L1989  `copy_buffer_4`  *(proc)*
 - [ ] L2016  `copy_buffer_5`  *(proc)*
 - [ ] L2067  `imgctl_process_loop_6`  *(proc)*
-- [ ] L2123  `fill_buffer`  *(proc)*
+- [x] L2123  `fill_buffer`  *(proc)*
 - [ ] L2166  `vga_operation0`  *(proc)*
 - [ ] L2284  `vga_operation2`  *(proc)*
 - [ ] L2360  `vga_operation4`  *(proc)*
@@ -415,20 +415,20 @@
 - [ ] L114   `cga_imgctl_module`  *(proc)*
 - [ ] L305   `equip_func_1`  *(proc)*
 - [ ] L527   `equip_process_loop`  *(proc)*
-- [ ] L871   `copy_buffer`  *(proc)*
-- [ ] L897   `copy_buffer_2`  *(proc)*
+- [x] L871   `copy_buffer`  *(proc)*
+- [x] L897   `copy_buffer_2`  *(proc)*
 - [ ] L923   `equip_multiply`  *(proc)*
 - [ ] L976   `plane_mix_word`  *(data)*
 - [ ] L1056  `equip_multiply_2`  *(proc)*
 - [ ] L1333  `equip_func_7`  *(proc)*
 - [ ] L1519  `extract_bits`  *(proc)*
-- [ ] L1617  `fill_buffer`  *(proc)*
-- [ ] L1630  `clear_buffer`  *(proc)*
+- [x] L1617  `fill_buffer`  *(proc)*
+- [x] L1630  `clear_buffer`  *(proc)*
 - [ ] L1660  `equip_get_value`  *(proc)*
 - [ ] L1787  `equip_process_loop_2`  *(proc)*
 - [ ] L1806  `equip_process_loop_3`  *(proc)*
 - [ ] L1857  `equip_process_loop_4`  *(proc)*
-- [ ] L1913  `fill_buffer_2`  *(proc)*
+- [x] L1913  `fill_buffer_2`  *(proc)*
 - [ ] L1956  `extract_bits_2`  *(proc)*
 - [ ] L2028  `disp_frame_render3`  *(data)*
 - [ ] L2057  `extract_bits_3`  *(proc)*
@@ -441,21 +441,21 @@
 - [ ] L313   `imgdec_func_1`  *(proc)*
 - [ ] L552   `imgdec_process_loop`  *(proc)*
 - [ ] L638   `imgdec_process_loop_2`  *(proc)*
-- [ ] L911   `copy_buffer`  *(proc)*
-- [ ] L935   `copy_buffer_2`  *(proc)*
+- [x] L911   `copy_buffer`  *(proc)*
+- [x] L935   `copy_buffer_2`  *(proc)*
 - [ ] L969   `imgdec_multiply`  *(proc)*
 - [ ] L996   `imgdec_process_loop_3`  *(proc)*
 - [ ] L1026  `data_3`  *(data)*
 - [ ] L1108  `imgdec_multiply_2`  *(proc)*
 - [ ] L1463  `imgdec_func_9`  *(proc)*
 - [ ] L1633  `imgdec_multiply_3`  *(proc)*
-- [ ] L1752  `fill_buffer`  *(proc)*
-- [ ] L1779  `clear_buffer`  *(proc)*
+- [x] L1752  `fill_buffer`  *(proc)*
+- [x] L1779  `clear_buffer`  *(proc)*
 - [ ] L1819  `imgdec_get_value`  *(proc)*
 - [ ] L1941  `imgdec_scan_loop`  *(proc)*
 - [ ] L1968  `imgdec_scan_loop_2`  *(proc)*
 - [ ] L2043  `imgdec_process_loop_4`  *(proc)*
-- [ ] L2099  `fill_buffer_2`  *(proc)*
+- [x] L2099  `fill_buffer_2`  *(proc)*
 - [ ] L2142  `imgdec_multiply_4`  *(proc)*
 - [ ] L2270  `imgdec_multiply_5`  *(proc)*
 - [ ] L2452  `data_40`  *(data)*
@@ -467,8 +467,8 @@
 - [ ] L109   `zr1_04`  *(proc)*
 - [ ] L316   `stats_func_1`  *(proc)*
 - [ ] L566   `stats_func_2`  *(proc)*
-- [ ] L893   `copy_buffer`  *(proc)*
-- [ ] L917   `copy_buffer_2`  *(proc)*
+- [x] L893   `copy_buffer`  *(proc)*
+- [x] L917   `copy_buffer_2`  *(proc)*
 - [ ] L941   `stats_multiply`  *(proc)*
 - [ ] L996   `xor3_plane2_off`  *(data)*
 - [ ] L1028  `face_panel2_anchor`  *(data)*
@@ -476,13 +476,13 @@
 - [ ] L1430  `stats_func_7`  *(proc)*
 - [ ] L1482  `extract_bits`  *(proc)*
 - [ ] L1652  `stats_multiply_3`  *(proc)*
-- [ ] L1751  `fill_buffer`  *(proc)*
-- [ ] L1763  `clear_buffer`  *(proc)*
+- [x] L1751  `fill_buffer`  *(proc)*
+- [x] L1763  `clear_buffer`  *(proc)*
 - [ ] L1790  `stats_get_value`  *(proc)*
 - [ ] L1913  `stats_process_loop`  *(proc)*
 - [ ] L1937  `stats_process_loop_2`  *(proc)*
 - [ ] L1993  `stats_process_loop_3`  *(proc)*
-- [ ] L2049  `fill_buffer_2`  *(proc)*
+- [x] L2049  `fill_buffer_2`  *(proc)*
 - [ ] L2092  `stats_multiply_4`  *(proc)*
 - [ ] L2196  `stats_fill_buf`  *(proc)*
 - [ ] L2383  `face_color_lut`  *(data)*
@@ -497,21 +497,21 @@
 - [ ] L113   `mcga_imgctl_module`  *(proc)*
 - [ ] L319   `vga_operation`  *(proc)*
 - [ ] L522   `pal_func_2`  *(proc)*
-- [ ] L860   `copy_buffer`  *(proc)*
-- [ ] L879   `copy_buffer_2`  *(proc)*
+- [x] L860   `copy_buffer`  *(proc)*
+- [x] L879   `copy_buffer_2`  *(proc)*
 - [ ] L898   `pal_multiply`  *(proc)*
 - [ ] L956   `scroll_a_plane_b`  *(data)*
 - [ ] L1078  `pal_multiply_2`  *(proc)*
 - [ ] L1401  `pal_func_7`  *(proc)*
 - [ ] L1446  `extract_bits`  *(proc)*
 - [ ] L1620  `pal_multiply_3`  *(proc)*
-- [ ] L1715  `fill_buffer`  *(proc)*
-- [ ] L1725  `clear_buffer`  *(proc)*
+- [x] L1715  `fill_buffer`  *(proc)*
+- [x] L1725  `clear_buffer`  *(proc)*
 - [ ] L1748  `vga_operation2`  *(proc)*
 - [ ] L1873  `vga_operation3`  *(proc)*
 - [ ] L1901  `vga_operation4`  *(proc)*
 - [ ] L1965  `vga_operation5`  *(proc)*
-- [ ] L2021  `fill_buffer_2`  *(proc)*
+- [x] L2021  `fill_buffer_2`  *(proc)*
 - [ ] L2064  `vga_operation7`  *(proc)*
 - [ ] L2172  `vga_operation8`  *(proc)*
 - [ ] L2241  `vga_operation9`  *(proc)*
@@ -947,7 +947,7 @@
 - [ ] L1181  `ega_blit_2bytes_8rows`  *(proc)*
 - [ ] L1220  `ega_3plane_copy`  *(proc)*
 - [ ] L1247  `ega_clear_16bytes`  *(proc)*
-- [ ] L1265  `sprite_get_value`  *(proc)*
+- [x] L1265  `sprite_get_value`  *(proc)*
 - [ ] L1273  `sprite_src_setup`  *(proc)*
 - [ ] L1312  `projectile_spawn_check`  *(proc)*
 - [ ] L1965  `hero_sprite_col_blit`  *(proc)*
@@ -969,7 +969,7 @@
 - [ ] L3154  `ega_fill_bit_range_wide`  *(proc)*
 - [ ] L3282  `ega_row_addr_calc`  *(proc)*
 - [ ] L3291  `frame_wait_loop`  *(proc)*
-- [ ] L3417  `si_wrap_hi`  *(proc)*
+- [x] L3417  `si_wrap_hi`  *(proc)*
 - [ ] L3577  `ega_bg_tile_blit`  *(proc)*
 - [ ] L3717  `ega_col_write_loop`  *(proc)*
 
@@ -991,7 +991,7 @@
 - [ ] L1076  `cga_blit_2rows_stride`  *(proc)*
 - [ ] L1096  `sprite_copy_8words`  *(proc)*
 - [ ] L1103  `sprite_clear_8words`  *(proc)*
-- [ ] L1111  `sprite_get_value`  *(proc)*
+- [x] L1111  `sprite_get_value`  *(proc)*
 - [ ] L1119  `sprite_src_setup`  *(proc)*
 - [ ] L1158  `projectile_spawn_check`  *(proc)*
 - [ ] L1773  `sprite_col_render_loop`  *(proc)*
@@ -1012,7 +1012,7 @@
 - [ ] L2897  `cga_row_addr_calc`  *(proc)*
 - [ ] L2909  `frame_wait_loop`  *(proc)*
 - [ ] L2931  `hud_clear`  *(proc)*
-- [ ] L3018  `si_wrap_hi`  *(proc)*
+- [x] L3018  `si_wrap_hi`  *(proc)*
 - [ ] L3135  `cga_plane_mask_2bit`  *(proc)*
 - [ ] L3188  `bg_tile_blit_inner`  *(proc)*
 - [ ] L3219  `cga_plane_mask_combine`  *(proc)*
@@ -1060,7 +1060,7 @@
 - [ ] L3014  `hgc_row_addr_calc`  *(proc)*
 - [ ] L3025  `frame_wait_loop`  *(proc)*
 - [ ] L3047  `hgc_xor_fill_region`  *(proc)*
-- [ ] L3135  `si_wrap_hi`  *(proc)*
+- [x] L3135  `si_wrap_hi`  *(proc)*
 - [ ] L3146  `si_wrap_lo`  *(proc)*
 - [ ] L3281  `hgc_fade_blit_entry`  *(proc)*
 - [ ] L3313  `rol_extract_loop`  *(proc)*
@@ -1088,7 +1088,7 @@
 - [ ] L1193  `tga_blit_2bytes_8rows`  *(proc)*
 - [ ] L1256  `copy_16words`  *(proc)*
 - [ ] L1263  `fill_16words_zero`  *(proc)*
-- [ ] L1271  `sprite_get_value`  *(proc)*
+- [x] L1271  `sprite_get_value`  *(proc)*
 - [ ] L1279  `sprite_src_setup`  *(proc)*
 - [ ] L1318  `projectile_spawn_check`  *(proc)*
 - [ ] L1974  `tga_sprite_render_solid`  *(proc)*
@@ -1110,7 +1110,7 @@
 - [ ] L3160  `phase_ptr_advance`  *(proc)*
 - [ ] L3180  `fade_gradient_loop`  *(proc)*
 - [ ] L3202  `anim_refresh_all`  *(proc)*
-- [ ] L3292  `si_wrap_hi`  *(proc)*
+- [x] L3292  `si_wrap_hi`  *(proc)*
 - [ ] L3303  `si_wrap_lo`  *(proc)*
 - [ ] L3432  `bg_tile_blit_init`  *(proc)*
 - [ ] L3466  `plane_word_expand`  *(proc)*
@@ -1143,7 +1143,7 @@
 - [ ] L1089  `mca_blit_2bytes_8rows`  *(proc)*
 - [ ] L1104  `mca_sprite_render_solid`  *(proc)*
 - [ ] L1132  `mca_sprite_clear_cell`  *(proc)*
-- [ ] L1140  `sprite_get_value`  *(proc)*
+- [x] L1140  `sprite_get_value`  *(proc)*
 - [ ] L1148  `sprite_src_setup`  *(proc)*
 - [ ] L1187  `projectile_spawn_check`  *(proc)*
 - [ ] L1380  `sprite_shape_tbl`  *(label byte)*
@@ -1166,7 +1166,7 @@
 - [ ] L2930  `mca_vga_row_calc`  *(proc)*
 - [ ] L2942  `anim_frame_wait`  *(proc)*
 - [ ] L2964  `fade_xor_block`  *(proc)*
-- [ ] L3049  `si_wrap_hi`  *(proc)*
+- [x] L3049  `si_wrap_hi`  *(proc)*
 - [ ] L3060  `si_wrap_lo`  *(proc)*
 - [ ] L3140  `ui_tile_index_tbl`  *(label byte)*
 - [ ] L3199  `bg_tile_blit`  *(proc)*
