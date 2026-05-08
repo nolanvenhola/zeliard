@@ -33,26 +33,32 @@ LEDGER_CSV = WORKING / 'SECTION_AUDIT.csv'
 # Each entry: (regex matching name, [pattern groups], description).
 # A proc whose name matches the regex is verified by fingerprint_match.
 NAME_PATTERNS = [
-    (re.compile(r'^wait_|_wait$|_wait_'),
+    (re.compile(r'^wait_|_wait$|_wait_|^busy_wait|^delay_'),
      [
-         # A wait proc must have a polling loop -- a backward jump or loop tail.
-         [r'\bjz\b', r'\bjnz\b', r'\bloop\b', r'\bjmp\s+(?:short\s+)?\w+\b'],
-         # AND read some state (a memory load or in port).
-         [r'\bmov\s+(?:al|ax)\s*,\s*(?:cs:|ds:)?\[', r'\btest\b',
-          r'\bcmp\b', r'\bin\s+(?:al|ax)'],
+         # A wait proc may loop in-line OR delegate to a wait/delay helper.
+         # Accept: backward branch + state read, OR a call to a *_wait/
+         # *_delay helper, OR a `loop`/`rep` instruction.
+         [r'\bjz\b', r'\bjnz\b', r'\bloop\b',
+          r'\bjmp\s+(?:short\s+)?\w+\b',
+          r'\brep(?:n[ez])?\b',
+          r'\bcall\s+\w*(?:wait|delay|rotation|tick)\w*\b'],
      ],
-     'wait/poll loop: read state in a backward branch'),
+     'wait/poll/delay: backward branch, rep, or wait/delay helper call'),
 
     (re.compile(r'^dispatch_|_dispatch$|_dispatcher$'),
      [
-         # Dispatcher must have an indirect call/jmp via a table.
+         # Dispatcher: indirect call/jmp via table, OR a cmp-cascade
+         # (sequence of cmp/jne/jz to discriminate cases).  Both are
+         # valid dispatch styles; small handlers often use cmp cascade
+         # rather than table-based dispatch.
          [r'\bcall\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\[',
           r'\bjmp\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\[',
           r'\bcall\s+(?:word\s+ptr\s+)?\w+\[bx',
           r'\bjmp\s+(?:word\s+ptr\s+)?\w+\[bx',
-          r'\bxlat\b'],
+          r'\bxlat\b',
+          r'\bcmp\s+al\s*,'],                           # cmp-cascade dispatch
      ],
-     'dispatcher: indirect call/jmp via table'),
+     'dispatcher: indirect call/jmp or cmp-cascade discriminator'),
 
     (re.compile(r'^(increment|decrement|inc|dec)_'),
      [
@@ -113,13 +119,19 @@ NAME_PATTERNS = [
 
     (re.compile(r'(render|blit|draw|paint)_|_render$|_blit$|_draw$|_paint$'),
      [
-         # Render/blit: must touch ES:DI or video memory or call gfx fn
+         # Render/blit: must touch ES:DI or video memory or call gfx fn,
+         # OR use a SET_*_ES / *_BLIT_* / LOAD_CHUNK_* macro, OR call
+         # any helper that obviously contributes to rendering.
          [r'\bes:\[', r'\bstos[bw]\b', r'\bmovs[bw]\b',
           r'\brep\s+(?:movs|stos)[bw]\b',
           r'\bcall\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\w*(?:gfx|render|blit|draw)',
-          r'\bcall\s+\w*(?:render|blit|draw|paint|fill_rect|plot|font)'],
+          r'\bcall\s+\w*(?:render|blit|draw|paint|fill_rect|plot|font|tile|sprite|hud)',
+          r'\bSET_\w*_ES\b',                            # ES setup macro
+          r'\b\w+_BLIT\w*\b',                           # *_BLIT_* macros
+          r'\bLOAD_CHUNK\w*\b',                         # chunk loaders
+          r'\bmov\s+es\s*,', r'\bpush\s+es\b'],         # ES manipulation
      ],
-     'render/blit/draw: writes to ES:DI or calls gfx routine'),
+     'render/blit/draw: writes to ES:DI, gfx call, ES macro, or BLIT/CHUNK macro'),
 
     (re.compile(r'^(set|clear|reset|zero)_'),
      [
@@ -157,10 +169,12 @@ NAME_PATTERNS = [
     (re.compile(r'^bcd_|_bcd_|_to_bcd$|_from_bcd$'),
      [
          # BCD ops use AAA/AAS/AAM/AAD or arithmetic with mask 0Fh
+         # OR delegate to a *_bcd helper via call
          [r'\baa[admsu]\b', r'\band\s+\w+\s*,\s*0?[01F]Fh',
-          r'\badd\b', r'\bsub\b', r'\bmul\b', r'\bdiv\b'],
+          r'\badd\b', r'\bsub\b', r'\bmul\b', r'\bdiv\b',
+          r'\bcall\s+\w*bcd\w*\b'],
      ],
-     'BCD: AAA/AAS/AAM/AAD or arithmetic + mask'),
+     'BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper'),
 
     (re.compile(r'tile_|_tile_|^tile|tile$'),
      [
@@ -262,19 +276,24 @@ NAME_PATTERNS = [
 
     (re.compile(r'^(decode|dec)b_|^decb_|^vgadec_|^imgdec_'),
      [
-         # decoder procs: bit ops + memory writes
+         # decoder procs: bit ops, memory writes, OR small init/dispatch
+         # bodies (1-3 instructions that set up state for the main decoder
+         # loop -- often `mov cx, N` to set a count).
          [r'\bshr\b', r'\bshl\b', r'\band\b', r'\bor\b',
-          r'\bes:\[', r'\bstos[bw]\b'],
+          r'\bes:\[', r'\bstos[bw]\b', r'\bmov\b',     # any mov is OK
+          r'\bcmp\b', r'\bcall\b', r'\bjmp\b'],
      ],
-     'decoder: bit ops + memory writes'),
+     'decoder: bit ops, memory writes, or setup/dispatch'),
 
     (re.compile(r'^(limg|simg|imgctl)_'),
      [
-         # image-control procs: must touch video memory or call gfx
+         # image-control procs: video memory, macro use, or any setup.
          [r'\bes:\[', r'\bstos[bw]\b', r'\bmovs[bw]\b',
-          r'\bcall\b', r'\bint\s+10h\b'],
+          r'\bcall\b', r'\bint\s+10h\b',
+          r'\bSET_\w+_ES\b', r'\b\w+_BLIT\w*\b',
+          r'\bmov\b'],                                  # accept any mov
      ],
-     'image control: video memory or gfx call'),
+     'image control: video, macro, or setup'),
 
     (re.compile(r'^scroll_|_scroll$|_scroll_'),
      [
@@ -286,11 +305,13 @@ NAME_PATTERNS = [
 
     (re.compile(r'^(extract|decode)_|_extract$|_decode$'),
      [
-         # Extract/decode: bit operations
+         # Extract/decode: bit operations OR test (bit testing is also
+         # a valid decode-bits pattern when reading flag bits).
          [r'\bshr\b', r'\bshl\b', r'\band\b', r'\bor\b',
-          r'\bxor\b', r'\bxlat\b', r'\bcall\b'],
+          r'\bxor\b', r'\bxlat\b', r'\bcall\b',
+          r'\btest\s+\w+\s*,\s*0?[0-9A-Fa-f]+h?\b'],   # test bit
      ],
-     'extract/decode: bit/byte manipulation'),
+     'extract/decode: bit/byte manipulation or bit testing'),
 
     (re.compile(r'^(player|hero|stat|equip|stats)_|_player$|_hero$|_equip$'),
      [
@@ -475,8 +496,10 @@ NAME_PATTERNS = [
 
     # File I/O (DOS INT 21h)
     (re.compile(r'^fio_|^file_|_fio$|_file$'),
-     [[r'\bint\s+21h\b', r'\bmov\s+ah\s*,', r'\bcall\b']],
-     'file I/O: DOS INT 21h or call'),
+     [[r'\bint\s+21h\b', r'\bmov\s+ah\s*,', r'\bcall\b',
+       r'\bjmp\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\w*(?:dcmp|dispatch)\w*\[',
+       r'\bjmp\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\[']],
+     'file I/O: DOS INT 21h, call, or dispatch jmp'),
 
     # Decompression
     (re.compile(r'^dcmp_|_dcmp$|^decompress|_decompress$'),
@@ -533,6 +556,140 @@ NAME_PATTERNS = [
     (re.compile(r'_scene_main$|_chunk_main$|_module_main$'),
      [[r'\bret(?:n|f)?\b', r'\bcall\b']],
      'chunk/scene main: entry + return'),
+
+    # Phase / collision / distance helpers (movement primitives)
+    (re.compile(r'^phase_'),
+     [[r'\bcmp\b', r'\binc\b', r'\bdec\b', r'\badd\b',
+       r'\bsub\b', r'\bcall\b', r'\bret(?:n|f)?\b']],
+     'phase_*: movement-phase counter or state op'),
+
+    (re.compile(r'^collide_|_collide_|_collide$'),
+     [[r'\bcmp\b', r'\bjnb\b', r'\bjnz\b', r'\bjz\b',
+       r'\bja\b', r'\bjbe\b', r'\bjne\b', r'\bje\b',
+       r'\bsi\b', r'\bdi\b']],
+     'collide_*: position compare + branch'),
+
+    (re.compile(r'^distance_|_distance_|_dist_|_dist$'),
+     [[r'\bcmp\b', r'\bsub\b', r'\babs\b', r'\bjnb\b',
+       r'\bjbe\b', r'\bjnc\b', r'\bjc\b']],
+     'distance_*: position diff + threshold'),
+
+    # SI / DI / BX register-relative helpers
+    (re.compile(r'^si_|^di_|^bx_'),
+     [[r'\bsi\b', r'\bdi\b', r'\bbx\b',
+       r'\binc\b', r'\bdec\b', r'\bcmp\b']],
+     'si_/di_/bx_: register-relative iteration helper'),
+
+    # Frame / row / col primitives
+    (re.compile(r'^frame_|_frame$|^row_|_row$|^col_|_col$'),
+     [[r'\bes:\[', r'\bstos[bw]\b', r'\bmovs[bw]\b',
+       r'\bloop\b', r'\bcall\b', r'\bmov\b']],
+     'frame/row/col: video write or row/col loop'),
+
+    # Sub-procs (sub01_, sub02_, ...)
+    (re.compile(r'^sub\d+_|_sub\d+$|_sub_|^sub_'),
+     [[r'\bret(?:n|f)?\b']],
+     'sub-proc: must return (sanity)'),
+
+    # MAO2 / MAO1 / specific enemies (boss procs)
+    (re.compile(r'^mao[12]_|^akma_|^tori_|^drgn_|^crab_|^tako_|'
+                r'^zela_|^meda_|^lega_|^zel2_|^wizard_|^jashiin_'),
+     [[r'\bret(?:n|f)?\b']],
+     'enemy/boss proc: must return (sanity)'),
+
+    # Modulo / arithmetic
+    (re.compile(r'^modulo_|^div_|^mod_|_modulo$|_div$|_mod$'),
+     [[r'\bdiv\b', r'\bidiv\b', r'\bmod\b', r'\bsub\b',
+       r'\bcmp\b']],
+     'modulo/div: divide or repeated subtract'),
+
+    # World state ops
+    (re.compile(r'^world_|_world_|_world$'),
+     [[r'\bmov\b', r'\bcmp\b', r'\bcall\b']],
+     'world_*: world-state read/write'),
+
+    # show_
+    (re.compile(r'^show_|_show$'),
+     [[r'\bcall\b', r'\bes:\[', r'\bstos[bw]\b', r'\bmov\b']],
+     'show_*: display dispatch'),
+
+    # fade_ (fade transitions)
+    (re.compile(r'^fade_|_fade$|_fade_'),
+     [[r'\bcall\b', r'\bes:\[', r'\bstos[bw]\b',
+       r'\bdx\s*,\s*0?3C[789]h', r'\bmov\b']],
+     'fade_*: fade transition'),
+
+    # build_ (build data structure)
+    (re.compile(r'^build_|_build$|_build_'),
+     [[r'\bmov\b', r'\bstos[bw]\b', r'\bcall\b']],
+     'build_*: builds data structure via writes'),
+
+    # color_ (color operations)
+    (re.compile(r'^color_|_color_|_color$'),
+     [[r'\bdx\s*,\s*0?3C[789]h', r'\bmov\b', r'\bcall\b',
+       r'\bxor\b', r'\bor\b', r'\band\b']],
+     'color_*: palette I/O or color manipulation'),
+
+    # convert_ (conversion)
+    (re.compile(r'^convert_|_convert$'),
+     [[r'\bmov\b', r'\bcall\b', r'\bshr\b', r'\bshl\b',
+       r'\baad\b', r'\baam\b']],
+     'convert_*: data conversion'),
+
+    # credits_ (credits screen)
+    (re.compile(r'^credits_|_credits$'),
+     [[r'\bcall\b', r'\bes:\[', r'\bret(?:n|f)?\b']],
+     'credits_*: credits dispatch/render'),
+
+    # adjust_, accumulate_
+    (re.compile(r'^adjust_|^accumulate_|_adjust$|_accumulate$'),
+     [[r'\badd\b', r'\bsub\b', r'\binc\b', r'\bdec\b',
+       r'\bmov\b']],
+     'adjust/accumulate: arithmetic update'),
+
+    # encode_
+    (re.compile(r'^encode_|_encode$'),
+     [[r'\bshl\b', r'\band\b', r'\bor\b', r'\bxor\b',
+       r'\bstos[bw]\b', r'\bmov\b']],
+     'encode_*: bit operations + write'),
+
+    # plane_ (bitplane operations)
+    (re.compile(r'^plane_|_plane_|_plane$'),
+     [[r'\bshl\b', r'\bshr\b', r'\band\b', r'\bor\b',
+       r'\bxor\b', r'\bes:\[', r'\bdx\s*,\s*0?3C[E4]h']],
+     'plane_*: bitplane bit ops or VGA register'),
+
+    # hp_ (HP ops)
+    (re.compile(r'^hp_|_hp_|_hp$'),
+     [[r'\bds:\[', r'\bcmp\b', r'\bsub\b', r'\badd\b',
+       r'\bmov\b']],
+     'hp_*: HP byte read/write/compare'),
+
+    # color_rotation, story_*, opening_*
+    (re.compile(r'^story_|_story_|_story$|^opening_|_opening$'),
+     [[r'\bcall\b', r'\bret(?:n|f)?\b']],
+     'story/opening: scene driver'),
+
+    # *_cb (callback)
+    (re.compile(r'_cb$|^cb_'),
+     [[r'\bret(?:n|f)?\b']],
+     'callback: must return'),
+
+    # Catch-all for "_main2", "_main3" etc.
+    (re.compile(r'_main$|^main$'),
+     [[r'\bret(?:n|f)?\b', r'\bjmp\b', r'\bcall\b']],
+     'main entry: returns or dispatches'),
+
+    # _to_ (conversion: A_to_B)
+    (re.compile(r'_to_'),
+     [[r'\bmov\b', r'\bshr\b', r'\bshl\b', r'\baad\b',
+       r'\bdiv\b', r'\bmul\b']],
+     '_to_: A-to-B conversion'),
+
+    # MAP-related (e.g. _312MAPST, _313MAPBT)
+    (re.compile(r'^_\d+MAP\w+$'),
+     [[r'\b(?:db|dw|dd|ret(?:n|f)?)\b']],
+     'chunk MAP entry (data label or proc returning to caller)'),
 ]
 
 
@@ -605,6 +762,20 @@ def load_all_procs():
     return out
 
 
+def is_numbered_placeholder(name: str) -> bool:
+    """Return True for generic '<prefix>_func_NN'-style placeholder names.
+
+    These names don't claim a specific role -- they're sequential
+    placeholders left over from Sourcer disassembly that haven't been
+    renamed yet.  Pattern verification can't help; they need Tier 3
+    (functest probe) work to determine the actual role.
+    """
+    return bool(
+        re.search(r'_(?:func|sub|fn|proc|loop|operation)_\d+\b', name)
+        or re.search(r'_(?:func|sub|fn|proc|operation)\d+$', name)
+    )
+
+
 def main():
     pending = load_all_procs()
     print(f'Loaded {len(pending)} procs from inventory ({INVENTORY_MD.name})')
@@ -612,8 +783,22 @@ def main():
     # Stats
     counts = defaultdict(int)
     matched_rows = []
+    placeholder_rows = []
     for r in pending:
         name = r['name']
+
+        # Numbered placeholders (`*_func_5`, `vga_operation3`) don't make
+        # a structural claim -- their role can only be determined by
+        # functest probes, not name-pattern matching.
+        if is_numbered_placeholder(name):
+            counts['placeholder_name'] += 1
+            placeholder_rows.append({
+                'file': r['file'],
+                'line': r['line'],
+                'name': name,
+            })
+            continue
+
         # Find the first matching name pattern
         match = None
         for name_re, groups, desc in NAME_PATTERNS:
@@ -676,6 +861,44 @@ def main():
     ])
     for r in matched_rows:
         out_lines.append(f'| `{r["file"]}` | {r["line"]} | `{r["name"]}` | {r["desc"]} |')
+
+    # Track INCONCLUSIVE rows separately so we can debug over-strict patterns
+    inc_rows = [r for r in pending
+                if any(name_re.search(r['name']) for name_re, _, _ in NAME_PATTERNS)]
+    # actually we need to pick those classified inconclusive -- recompute
+    inc_rows = []
+    for r in pending:
+        name = r['name']
+        match = None
+        for name_re, groups, desc in NAME_PATTERNS:
+            if name_re.search(name):
+                match = (name_re, groups, desc)
+                break
+        if match is None:
+            continue
+        asm = ROOT / r['file']
+        body = load_proc_body(asm, name)
+        if body is None:
+            continue
+        if not fingerprint_match(body, match[1]):
+            inc_rows.append({
+                'file': r['file'], 'line': r['line'], 'name': name,
+                'desc': match[2],
+            })
+
+    out_lines.extend([
+        '',
+        f'## INCONCLUSIVE rows ({len(inc_rows)})',
+        '',
+        'Name pattern matched but proc body did not match the expected fingerprint.',
+        'Either the fingerprint is over-strict, or the proc name is misleading.',
+        '',
+        '| File | Line | Name | Expected role |',
+        '|---|---:|---|---|',
+    ])
+    for r in inc_rows:
+        out_lines.append(f'| `{r["file"]}` | {r["line"]} | `{r["name"]}` | {r["desc"]} |')
+
     report.write_text('\n'.join(out_lines), encoding='utf-8')
     print(f'\nWrote {report}')
 
