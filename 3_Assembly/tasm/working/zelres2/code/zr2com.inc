@@ -16,21 +16,21 @@
 ; stdply.inc's canonical EQU; TASM accepts duplicate equates with the
 ; same value.
 ; ----------------------------------------------------------------------
-map_scroll_col          equ     80h     ; cavern X scroll column, 16-bit (canonical in stdply.inc)
+starting_position_in_town          equ     80h     ; cavern X scroll column, 16-bit (canonical in stdply.inc)
 map_scroll_row          equ     82h     ; cavern Y scroll row (canonical in stdply.inc)
-town_player_col         equ     83h     ; player screen column in town (canonical in stdply.inc)
+screen_position         equ     83h     ; player screen column in town (canonical in stdply.inc)
 fight_player_col        equ     84h     ; player screen column in fight (canonical in stdply.inc)
-player_gold_hi          equ     85h     ; gold high byte (24-bit) (canonical in stdply.inc)
-player_gold_lo          equ     86h     ; gold low byte (canonical in stdply.inc)
-player_gold_mid         equ     87h     ; gold low word's high byte (canonical in stdply.inc)
-player_bank_hi          equ     88h     ; banked-gold high byte (canonical in stdply.inc)
-player_bank_lo          equ     89h     ; banked-gold low word (canonical in stdply.inc)
+gold_carried_x65536          equ     85h     ; gold high byte (24-bit) (canonical in stdply.inc)
+gold_carried_x1          equ     86h     ; gold low byte (canonical in stdply.inc)
+gold_carried_x256         equ     87h     ; gold low word's high byte (canonical in stdply.inc)
+gold_in_bank_x65536          equ     88h     ; banked-gold high byte (canonical in stdply.inc)
+gold_in_bank_x1          equ     89h     ; banked-gold low word (canonical in stdply.inc)
 player_almas            equ     8Bh     ; alt currency (16-bit) (canonical in stdply.inc)
 item_qty_count          equ     8Dh     ; item quantity counter (canonical in stdply.inc)
 item_effect_val         equ     8Eh     ; item effect value (16-bit) (canonical in stdply.inc)
 player_HP               equ     90h     ; current HP (16-bit) (canonical in stdply.inc)
-equipped_weapon         equ     92h     ; equipped weapon idx (canonical in stdply.inc)
-shield_type             equ     93h     ; shield tier (canonical in stdply.inc; gates apply_combat_damage_with_absorb)
+sword         equ     92h     ; equipped weapon idx (canonical in stdply.inc)
+shield             equ     93h     ; shield tier (canonical in stdply.inc; gates apply_combat_damage_with_absorb)
 shield_HP               equ     94h     ; current shield HP, 16-bit (canonical in stdply.inc)
 shield_max_HP           equ     96h     ; shield max HP cap, 16-bit (canonical in stdply.inc)
 player_speed            equ     98h     ; character speed stat (canonical in stdply.inc)
@@ -42,11 +42,11 @@ selected_spell          equ     9Dh     ; currently chosen spell ID
 weapon_tier_max         equ     9Dh     ; alias — earlier (wrong) name
 cur_weapon_idx          equ     9Dh     ; alias — earlier (wrong) name
 ; 0x9E = currently equipped wearable ID (0..5 per wear_* enum).
-selected_wearable       equ     9Eh     ; equipped shoe-or-cape ID
+selected_accessory       equ     9Eh     ; equipped shoe-or-cape ID
 stat_X9E                equ     9Eh     ; alias — earlier placeholder
 cur_magic_idx           equ     9Eh     ; alias — earlier (wrong) name
 player_hp_max           equ     0B2h    ; HP ceiling (canonical in stdply.inc; overlays anim_color_lut)
-player_facing           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
+facing_direction           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
 current_area_id         equ     0C4h    ; current area (high bit=in-town, low 7=town/sage idx); Kioku Feather destination
 player_level            equ     0C4h    ; alias — earlier name (was misnomer; not character level)
 stat_XC5                equ     0C5h    ; placeholder — byte field used by 200FIGHT (set 0x80, read as ah)
@@ -237,16 +237,16 @@ experience                     equ     08Eh
 keys_normal                    equ     098h
 keys_lion                      equ     099h
 tears_of_esmesanti_count       equ     0A0h
-wear_1                         equ     0A1h
-wear_2                         equ     0A2h
-wear_3                         equ     0A3h
-wear_4                         equ     0A4h
-wear_5                         equ     0A5h
+accessory_slot_1                         equ     0A1h
+accessory_slot_2                         equ     0A2h
+accessory_slot_3                         equ     0A3h
+accessory_slot_4                         equ     0A4h
+accessory_slot_5                         equ     0A5h
 item_slot_1                    equ     0A6h
 save_sage                      equ     0C4h
 last_sage_visited              equ     0C5h
 current_level_idx              equ     0C8h
-sages_spoken                   equ     0E5h
+sages_spoken_bitmap                   equ     0E5h
 
 
 ; --- Phase-2 magic-number sweep: cross-chunk addresses with existing local EQUs ---
@@ -254,31 +254,31 @@ sprite_record_size             equ     24h           ; sprite attribute record s
 area_load_flag                 equ     49h           ; level/area load flag (canonical in 106TOWN.asm)
 
 ; --- Shop inventory EQUs (canonical in stdply.inc) ---
-shop_magic_muralla             equ     0C9h
-shop_magic_satono              equ     0CAh
-shop_magic_bosque              equ     0CBh
-shop_magic_helada              equ     0CCh
-shop_magic_tumba               equ     0CDh
-shop_magic_dorado              equ     0CEh
-shop_magic_llama               equ     0CFh
-shop_magic_pureza              equ     0D0h
-shop_magic_esco                equ     0D1h
-shop_sword_muralla             equ     0D2h
-shop_sword_satono              equ     0D3h
-shop_sword_bosque              equ     0D4h
-shop_sword_helada              equ     0D5h
-shop_sword_tumba               equ     0D6h
-shop_sword_dorado              equ     0D7h
-shop_sword_llama               equ     0D8h
-shop_sword_pureza              equ     0D9h
-shop_sword_esco                equ     0DAh
-shop_shield_muralla            equ     0DBh
-shop_shield_satono             equ     0DCh
-shop_shield_bosque             equ     0DDh
-shop_shield_helada             equ     0DEh
-shop_shield_tumba              equ     0DFh
-shop_shield_dorado             equ     0E0h
-shop_shield_llama              equ     0E1h
-shop_shield_pureza             equ     0E2h
-shop_shield_esco               equ     0E3h
+magic_shop_inventory_muralla             equ     0C9h
+magic_shop_inventory_satono              equ     0CAh
+magic_shop_inventory_bosque              equ     0CBh
+magic_shop_inventory_helada              equ     0CCh
+magic_shop_inventory_tumba               equ     0CDh
+magic_shop_inventory_dorado              equ     0CEh
+magic_shop_inventory_llama               equ     0CFh
+magic_shop_inventory_pureza              equ     0D0h
+magic_shop_inventory_esco                equ     0D1h
+weapon_shop_swords_muralla             equ     0D2h
+weapon_shop_swords_satono              equ     0D3h
+weapon_shop_swords_bosque              equ     0D4h
+weapon_shop_swords_helada              equ     0D5h
+weapon_shop_swords_tumba               equ     0D6h
+weapon_shop_swords_dorado              equ     0D7h
+weapon_shop_swords_llama               equ     0D8h
+weapon_shop_swords_pureza              equ     0D9h
+weapon_shop_swords_esco                equ     0DAh
+weapon_shop_shields_muralla            equ     0DBh
+weapon_shop_shields_satono             equ     0DCh
+weapon_shop_shields_bosque             equ     0DDh
+weapon_shop_shields_helada             equ     0DEh
+weapon_shop_shields_tumba              equ     0DFh
+weapon_shop_shields_dorado             equ     0E0h
+weapon_shop_shields_llama              equ     0E1h
+weapon_shop_shields_pureza             equ     0E2h
+weapon_shop_shields_esco               equ     0E3h
 gvar_cinematic_active          equ     0FF77h        ; Cinematic/intro-mode flag (canonical in core/game.asm)

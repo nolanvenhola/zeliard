@@ -52,7 +52,7 @@ BIN_PATHS: dict[str, tuple[Path, int]] = {
 # When stdply.inc adds a new field, mirror it here.
 PLAYER_FIELDS = {
     # offset       size  kind   description
-    'map_scroll_col':       (0x80, 2, 'word'),
+    'starting_position_in_town':       (0x80, 2, 'word'),
     'map_scroll_row':       (0x82, 2, 'word'),
     'ply_accel':            (0x83, 2, 'word'),  # 2 bytes, semantics TBD
     'hero_gold_hi':         (0x85, 1, 'byte'),
@@ -70,7 +70,7 @@ PLAYER_FIELDS = {
     'char_abilities':       (0x9A, 1, 'byte'),
     'trade_marker_flag':    (0x9B, 1, 'byte'),
     'music_track_count':    (0xA0, 1, 'byte'),
-    'player_facing':        (0xC2, 1, 'byte'),
+    'facing_direction':        (0xC2, 1, 'byte'),
     'boss_intro_flag':      (0xC3, 1, 'byte'),
     'ply_level':            (0xC4, 1, 'byte'),
     'heal_pulse_count':     (0xC6, 2, 'word'),
@@ -91,7 +91,7 @@ def make_player_record(harness, **fields) -> None:
 
     Example:
         make_player_record(h, hero_HP=150, hero_gold_hi=0,
-                           hero_gold_lo=1234, player_facing=1)
+                           hero_gold_lo=1234, facing_direction=1)
     """
     for fname, value in fields.items():
         if fname not in PLAYER_FIELDS:

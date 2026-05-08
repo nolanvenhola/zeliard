@@ -121,8 +121,8 @@ SELCT_BASE		equ	9FFCh			; game-segment load address of this module
 magic_flags		equ	0A1h			;* 5-byte table: magic spell possession flags (at DS:0A1h)
 item_flags		equ	0A6h			;* 5-byte table: item possession flags (at DS:0A6h)
 weapon_flags		equ	0BBh			;* 7-byte table: weapon possession flags (1-based, at DS:0BBh)
-equipped_weapon		equ	092h			;* byte: currently equipped weapon index (1-based, 0=none)
-shield_type		equ	093h			;* shield tier (1-based, 0=no shield).  Used by use_magia_stone as item_effect_tbl index for shield repair amount
+sword		equ	092h			;* byte: currently equipped weapon index (1-based, 0=none)
+shield		equ	093h			;* shield tier (1-based, 0=no shield).  Used by use_magia_stone as item_effect_tbl index for shield repair amount
 player_HP			equ	090h			;* word: current character HP
 player_hp_max		equ	0B2h			;* word: maximum character HP
 shield_HP		equ	094h			;* current shield HP (16-bit); use_magia_stone adds repair amount, capped at shield_max_HP
@@ -761,12 +761,12 @@ use_holy_water:				; item 6: add one key to key_count
 
 use_magia_stone:			; item 5: grant experience based on equipped magic level
 		mov	byte ptr ds:gvar_volume_b,0Eh
-		test	byte ptr ds:shield_type,0FFh
+		test	byte ptr ds:shield,0FFh
 		jnz	apply_item_exp			; Jump if not zero
 		retn				; no magic equipped -> no-op
 
 apply_item_exp:
-		mov	bl,byte ptr ds:shield_type
+		mov	bl,byte ptr ds:shield
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -1052,12 +1052,12 @@ magic_panel_empty:
 		jmp	scan_draw_string
 
 draw_char_stats:
-		test	byte ptr ds:equipped_weapon,0FFh
+		test	byte ptr ds:sword,0FFh
 		jz	draw_stat_93h			; Jump if zero
 		mov	bx,174Dh
-		mov	al,byte ptr ds:equipped_weapon
+		mov	al,byte ptr ds:sword
 		call	word ptr cs:drv_fn_14
-		mov	bl,byte ptr ds:equipped_weapon
+		mov	bl,byte ptr ds:sword
 		xor	bh,bh			; Zero register
 		dec	bl
 		add	bx,bx
@@ -1071,12 +1071,12 @@ draw_char_stats:
 		call	draw_key_count
 
 draw_stat_93h:
-		test	byte ptr ds:shield_type,0FFh
+		test	byte ptr ds:shield,0FFh
 		jz	draw_stat_98h			; Jump if zero
 		mov	bx,2E61h
-		mov	al,byte ptr ds:shield_type
+		mov	al,byte ptr ds:shield
 		call	word ptr cs:drv_fn_16
-		mov	bl,byte ptr ds:shield_type
+		mov	bl,byte ptr ds:shield
 		xor	bh,bh			; Zero register
 		dec	bl
 		add	bx,bx

@@ -865,10 +865,10 @@ render_large_tilemap_a:				; called externally: render large tilemap A (cs:playe
 		mov	ax,26BBh
 		hgc_call_tile_large
 
-render_large_tilemap_b:				; called externally: render large tilemap B (cs:player_gold_lo/cs:player_gold_hi anim, di=2558h, cx=106h)
+render_large_tilemap_b:				; called externally: render large tilemap B (cs:gold_carried_x1/cs:gold_carried_x65536 anim, di=2558h, cx=106h)
 		push	ds
-		mov	ax,word ptr cs:player_gold_lo
-		mov	dl,byte ptr cs:player_gold_hi
+		mov	ax,word ptr cs:gold_carried_x1
+		mov	dl,byte ptr cs:gold_carried_x65536
 		call	init_timestamp
 		push	cs
 		pop	ds
@@ -897,8 +897,8 @@ fn_10:
 		mov	ax,37BBh
 		hgc_call_tile_large
 
-render_sprite_if_active:			; called externally: render sprite at di=255Bh if cs:shield_type != 0
-		test	byte ptr cs:shield_type,0FFh
+render_sprite_if_active:			; called externally: render sprite at di=255Bh if cs:shield != 0
+		test	byte ptr cs:shield,0FFh
 		jnz	render_sprite_active			; Jump if not zero
 
 fn_11:

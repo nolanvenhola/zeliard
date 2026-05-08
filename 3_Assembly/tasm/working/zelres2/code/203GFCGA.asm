@@ -1381,7 +1381,7 @@ pattern_build_row:
 					mul	dl			; ax = reg * al
 					mov	bx,ax
 					add	bx,pattern_base
-					mov	al,byte ptr ds:[town_player_col]
+					mov	al,byte ptr ds:[screen_position]
 					add	al,3
 					xor	ah,ah			; Zero register
 					add	bx,ax
@@ -1407,7 +1407,7 @@ loc_117:
 		xor	ah,ah			; Zero register
 		mov	cx,140h
 		mul	cx			; dx:ax = reg * ax
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		xor	ch,ch			; Zero register
 		add	cx,cx
 		add	ax,cx
@@ -1510,7 +1510,7 @@ anim_check_continue:
 loc_124:
 		mov	cl,0FFh
 		mov	si,6117h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	test_flag_hero_state			; Jump if zero
 		xor	cl,cl			; Zero register
 		mov	si,61B9h
@@ -1560,7 +1560,7 @@ call_hero_tier_get:
 		jz	test_flag_shield			; Jump if zero
 		dec	al
 		mov	cl,al
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	test_flag_shield			; Jump if not zero
 		mov	ax,6Ch
 		mov	dl,ds:flag_shield
@@ -1611,7 +1611,7 @@ loc_134:
 		test	byte ptr ds:flag_climbing,0FFh
 		jnz	loc_137			; Jump if not zero
 		mov	si,6075h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	test_init_complete_flag			; Jump if not zero
 		mov	si,game_data_base
 
@@ -1662,7 +1662,7 @@ loc_139:
 loc_140:
 		mov	cl,0FFh
 		mov	si,61B9h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_141			; Jump if not zero
 		xor	cl,cl			; Zero register
 		mov	si,6117h
@@ -1725,7 +1725,7 @@ loc_146:
 		jmp	short test_flag_shield_151
 
 loc_147:
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	loc_149			; Jump if zero
 		call	hero_tier_get
 		or	al,al			; Zero ?
@@ -1813,7 +1813,7 @@ loc_154:
 sprite_col_render_loop		endp
 
 hero_tier_get		proc	near
-		mov	al,byte ptr ds:[shield_type]
+		mov	al,byte ptr ds:[shield]
 		or	al,al			; Zero ?
 		jnz	loc_155			; Jump if not zero
 		retn
@@ -1920,7 +1920,7 @@ sprite_row_ptr_fetch:
 		mov	cl,byte ptr ds:[fight_player_col]
 		mov	al,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		add	cl,4
 		xor	ch,ch			; Zero register
 		add	ax,cx
@@ -2007,7 +2007,7 @@ loc_169:
 		mov	si,0B16Eh
 		mov	word ptr ds:scroll_delta,0FF01h
 		mov	dx,13Eh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_174			; Jump if not zero
 		mov	si,0B0BEh
 		mov	word ptr ds:scroll_delta,1
@@ -2027,7 +2027,7 @@ loc_171:
 		add	bx,bx
 		mov	di,0B19Eh
 		mov	si,0B12Eh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_173			; Jump if not zero
 		mov	di,0B18Ah
 		mov	si,0B07Eh
@@ -2043,7 +2043,7 @@ check_scroll_step_eq_7:
 		add	bx,bx
 		mov	di,0B192h
 		mov	si,0B0CEh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_173			; Jump if not zero
 		mov	di,cga_plane_alt
 		mov	si,0B01Eh
@@ -2172,7 +2172,7 @@ scroll_pos_load		proc	near
 		and	al,3Fh			; '?'
 		mov	cl,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		add	cl,byte ptr ds:scroll_delta+1
 		add	cl,4
 		xor	ch,ch			; Zero register
@@ -2577,7 +2577,7 @@ row_ofs_advance		endp
 ; falls back to hud_clear_entry for final clear.
 
 cga_color_fade_init:
-		mov	al,byte ptr ds:[town_player_col]
+		mov	al,byte ptr ds:[screen_position]
 		add	al,al			; X * 2
 		add	al,al			; X * 4
 		add	al,al			; X * 8
@@ -3420,7 +3420,7 @@ loc_271:
 
 hero_sprite_col_blit:
 		push	ds
-		mov	bl,byte ptr ds:[equipped_weapon]
+		mov	bl,byte ptr ds:[sword]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx

@@ -200,8 +200,8 @@ save_new_flag	equ	7C64h			;*
 ; Section 7: Constants
 ; ----------------------------------------------------------------------
 area_load_flag	equ	49h			;*
-town_town_player_col	equ	83h			;* player screen column in town (canonical stdply.inc; was town_player_col)
-player_facing	equ	0C2h			;*
+town_town_player_col	equ	83h			;* player screen column in town (canonical stdply.inc; was screen_position)
+facing_direction	equ	0C2h			;*
 
 ;-----------------------------------------------------------------------------
 ; Local macros
@@ -345,7 +345,7 @@ frame_update:
 		call	word ptr cs:gfx_draw_icon_a_fn
 
 draw_icon_a:
-		test	byte ptr ds:shield_type,0FFh
+		test	byte ptr ds:shield,0FFh
 		jz	draw_icon_b			; Jump if zero
 		mov	bx,0C61Ch
 		xor	al,al			; Zero register
@@ -366,7 +366,7 @@ walk_skip_loop2:
 		mov	ds:town_palette_idx,al
 		mov	si,ds:town_tile_ptr
 		call	word ptr cs:gfx_draw_map_fn
-		mov	al,byte ptr ds:map_scroll_col
+		mov	al,byte ptr ds:starting_position_in_town
 		xor	ah,ah			; Zero register
 		shl	ax,1			; Shift w/zeros fill
 		shl	ax,1			; Shift w/zeros fill
@@ -400,7 +400,7 @@ portal_check:
 		test	byte ptr ds:town_load_flag,0FFh
 		jz	npc_col_clear			; Jump if zero
 		mov	word ptr ds:town_npc_fn_ptr,6781h
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	npc_fn_adjust			; Jump if not zero
 		mov	word ptr ds:town_npc_fn_ptr,67F4h
 
@@ -474,13 +474,13 @@ pf1_do:
 		add	bl,4
 		xor	bh,bh			; Zero register
 		mov	dx,bx
-		add	dx,word ptr ds:map_scroll_col
+		add	dx,word ptr ds:starting_position_in_town
 		add	bl,bl
 		add	bl,bl
 		add	bl,bl
 		add	bl,5
 		add	bx,ds:gvar_tile_ptr
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	pf1_left_check			; Jump if not zero
 		inc	dx
 		cmp	byte ptr [bx+8],0FDh
@@ -552,13 +552,13 @@ player_func_2		proc	near
 		add	bl,4
 		xor	bh,bh			; Zero register
 		mov	dx,bx
-		add	dx,word ptr ds:map_scroll_col
+		add	dx,word ptr ds:starting_position_in_town
 		add	bl,bl
 		add	bl,bl
 		add	bl,bl
 		add	bl,5
 		add	bx,ds:gvar_tile_ptr
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	pf2_left_path			; Jump if not zero
 		inc	dx
 		inc	dx
@@ -618,7 +618,7 @@ text_start:
 		call	player_func_14
 		mov	byte ptr ds:gvar_volume,1Eh
 		mov	ax,718h
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	text_pos_right			; Jump if not zero
 		mov	ax,0B18h
 
@@ -1162,7 +1162,7 @@ walk_left_tile_ok:
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr ds:town_town_player_col
 		add	bl,4
-		add	bx,word ptr ds:map_scroll_col
+		add	bx,word ptr ds:starting_position_in_town
 		dec	bx
 		call	player_func_12
 		jz	walk_left_move			; Jump if zero
@@ -1171,20 +1171,20 @@ walk_left_tile_ok:
 walk_left_move:
 		inc	byte ptr ds:gvar_pose_idx
 		and	byte ptr ds:gvar_pose_idx,3
-		or	byte ptr ds:player_facing,1
+		or	byte ptr ds:facing_direction,1
 		cmp	byte ptr ds:town_town_player_col,0Bh
 		jb	walk_left_col_clamp			; Jump if below
 		dec	byte ptr ds:town_town_player_col
 		retn
 
 walk_left_col_clamp:
-		test	word ptr ds:map_scroll_col,0FFFFh
+		test	word ptr ds:starting_position_in_town,0FFFFh
 		jnz	walk_left_scroll			; Jump if not zero
 		dec	byte ptr ds:town_town_player_col
 		retn
 
 walk_left_scroll:
-		dec	word ptr ds:map_scroll_col
+		dec	word ptr ds:starting_position_in_town
 		sub	word ptr ds:gvar_tile_ptr,8
 		call	word ptr cs:gfx_scroll_left_fn
 		cmp	byte ptr ds:town_map_side,1
@@ -1212,7 +1212,7 @@ walk_right_tile_ok:
 		xor	bx,bx			; Zero register
 		mov	bl,byte ptr ds:town_town_player_col
 		add	bl,4
-		add	bx,word ptr ds:map_scroll_col
+		add	bx,word ptr ds:starting_position_in_town
 		inc	bx
 		call	player_func_12
 		jz	walk_right_move			; Jump if zero
@@ -1221,7 +1221,7 @@ walk_right_tile_ok:
 walk_right_move:
 		inc	byte ptr ds:gvar_pose_idx
 		and	byte ptr ds:gvar_pose_idx,3
-		and	byte ptr ds:player_facing,0FEh
+		and	byte ptr ds:facing_direction,0FEh
 		cmp	byte ptr ds:town_town_player_col,10h
 		jae	walk_right_edge			; Jump if above or =
 		inc	byte ptr ds:town_town_player_col
@@ -1230,7 +1230,7 @@ walk_right_move:
 walk_right_edge:
 		mov	ax,ds:town_map_width
 		sub	ax,23h
-		mov	bx,word ptr ds:map_scroll_col
+		mov	bx,word ptr ds:starting_position_in_town
 		inc	bx
 		cmp	ax,bx
 		jne	walk_right_scroll			; Jump if not equal
@@ -1238,7 +1238,7 @@ walk_right_edge:
 		retn
 
 walk_right_scroll:
-		inc	word ptr ds:map_scroll_col
+		inc	word ptr ds:starting_position_in_town
 		add	word ptr ds:gvar_tile_ptr,8
 		call	word ptr cs:gfx_scroll_right2_fn
 		cmp	byte ptr ds:town_map_side,1
@@ -1417,7 +1417,7 @@ player_func_18		proc	near
 		xor	dx,dx			; Zero register
 		mov	dl,byte ptr ds:town_town_player_col
 		add	dl,4
-		add	dx,word ptr ds:map_scroll_col
+		add	dx,word ptr ds:starting_position_in_town
 		push	dx
 		mov	si,npc_anim_buf
 		mov	cx,2
@@ -1480,7 +1480,7 @@ scan_npc2_skip:
 										cmp word ptr [si],-1			; was: db 083h,03Ch,0FFh
 								jnz	scan_npc2_loop			; Jump if not zero
 		mov	si,6A3Bh
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	walk_dir_select			; Jump if not zero
 		mov	si,npc_walk_left
 
@@ -1711,7 +1711,7 @@ npc_type2_fn:
 		mov	bl,byte ptr ds:town_town_player_col
 		add	bl,4
 		xor	bh,bh			; Zero register
-		add	bx,word ptr ds:map_scroll_col
+		add	bx,word ptr ds:starting_position_in_town
 		cmp	bx,dx
 		jae	npc_set_left_chk			; Jump if above or =
 		retn
@@ -1872,7 +1872,7 @@ town_hud_labels:
 		db	'PLACE'
 
 player_func_30		proc	near
-		mov	al,ds:town_player_col
+		mov	al,ds:screen_position
 		inc	al
 		jnz	door_alt_check			; Jump if not zero
 		call	player_func_28
@@ -1900,7 +1900,7 @@ door_execute:
 		mov	byte ptr ds:town_town_player_col,1Ah
 		mov	ax,ds:town_map_width
 		sub	ax,24h
-		mov	word ptr ds:map_scroll_col,ax
+		mov	word ptr ds:starting_position_in_town,ax
 		jmp	frame_update
 
 door_alt_check:
@@ -1932,7 +1932,7 @@ door_alt_found:
 door_alt_execute:
 		call	player_func_31
 		mov	byte ptr ds:town_town_player_col,0
-		mov	word ptr ds:map_scroll_col,0
+		mov	word ptr ds:starting_position_in_town,0
 		jmp	frame_update
 
 player_func_31		proc	near
@@ -2036,7 +2036,7 @@ player_func_33		endp
 
 door_scan_entry:
 		or	byte ptr ds:gvar_pose_idx,1
-		mov	ax,word ptr ds:map_scroll_col
+		mov	ax,word ptr ds:starting_position_in_town
 		mov	bl,byte ptr ds:town_town_player_col
 		xor	bh,bh			; Zero register
 		add	ax,bx
@@ -2175,7 +2175,7 @@ special_door_wait:
 		mov	di,3000h
 		mov	al,5
 		call	word ptr cs:sar_loader_fn
-		mov	word ptr ds:map_scroll_col,84h
+		mov	word ptr ds:starting_position_in_town,84h
 		mov	byte ptr ds:town_town_player_col,0Dh
 		call	word ptr cs:gfx_blit_fn
 ;*		jmp	loc_2			;*
@@ -2218,7 +2218,7 @@ pf30_exec:
 		add	ax,ds:town_map_width
 
 dlg_char_fetch:
-		mov	word ptr ds:map_scroll_col,ax
+		mov	word ptr ds:starting_position_in_town,ax
 		mov	data_5,0FFh
 		call	word ptr cs:gfx_blit_fn
 		mov	bx,6002h
@@ -2994,14 +2994,14 @@ shop_sel_anim_loop:
 			                        ;* No entry point to code  (gold_sub_fn: subtract gold cost, called via dispatch)
 
 gold_sub_fn:
-		mov	bl,byte ptr ds:player_gold_hi
+		mov	bl,byte ptr ds:gold_carried_x65536
 		sub	bl,dl
 		jnc	coll_sub_ok			; Jump if carry=0
 		retn
 
 coll_sub_ok:
 		mov	dl,bl
-		mov	bx,word ptr ds:player_gold_lo
+		mov	bx,word ptr ds:gold_carried_x1
 		xchg	bx,ax
 		sub	ax,bx
 		jc	coll_sub_borrow			; Jump if carry Set
@@ -3013,8 +3013,8 @@ coll_sub_borrow:
 			                        ;* No entry point to code  (gold_add_fn: add to gold, called via dispatch)
 
 gold_add_fn:
-		add	word ptr ds:player_gold_lo,ax
-		adc	byte ptr ds:player_gold_hi,dl
+		add	word ptr ds:gold_carried_x1,ax
+		adc	byte ptr ds:gold_carried_x65536,dl
 		retn
 
 clear_buffer		proc	near

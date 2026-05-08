@@ -174,21 +174,21 @@ working/drivers/gmtga.asm,1973,process_sprite_row,proc,0,,,0,PENDING,,,
 working/drivers/gmtga.asm,2002,bitplane_to_pixels,proc,0,,,0,PENDING,,,
 working/drivers/stdply.asm,53,stdply,proc,0,,,0,PENDING,,,
 working/drivers/stdply.asm,64,key_map_table,data,0,,,0,PENDING,,,
-working/drivers/stdply.asm,87,map_scroll_col,data,1,80,,0,INC_CONSISTENT,map_scroll_col,"stdply.inc: 0x80 has 2 name(s); current is one of them; others (aliases): start_pos_in_town -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,88,map_scroll_row,data,1,82,,0,INC_CONSISTENT,map_scroll_row,"stdply.inc: 0x82 has 2 name(s); current is one of them; others (aliases): stat_X82 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,103,town_player_col,data,1,83,,0,INC_CONSISTENT,town_player_col,"stdply.inc: 0x83 has 2 name(s); current is one of them; others (aliases): player_accel -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,104,fight_player_col,data,1,84,,0,INC_CONSISTENT,fight_player_col,"stdply.inc: 0x84 has 2 name(s); current is one of them; others (aliases): stat_X84 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,109,player_gold_hi,data,1,85,,0,INC_CONSISTENT,player_gold_hi,"stdply.inc: 0x85 = player_gold_hi (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,110,player_gold_lo,data,1,86,,0,INC_CONSISTENT,player_gold_lo,"stdply.inc: 0x86 = player_gold_lo (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,111,player_gold_mid,data,1,87,,0,INC_CONSISTENT,player_gold_mid,"stdply.inc: 0x87 = player_gold_mid (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,117,player_bank_hi,data,1,88,,0,INC_CONSISTENT,player_bank_hi,"stdply.inc: 0x88 has 2 name(s); current is one of them; others (aliases): stat_X88_hi -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,118,player_bank_lo,data,1,89,,0,INC_CONSISTENT,player_bank_lo,"stdply.inc: 0x89 has 2 name(s); current is one of them; others (aliases): stat_X88_lo -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,87,starting_position_in_town,data,0,80,,0,SUPPORTED,starting_position_in_town,TCRF stdply: 0x80 = starting_position_in_town,TCRF
+working/drivers/stdply.asm,88,map_scroll_row,data,0,82,,0,INC_CONSISTENT,map_scroll_row,"stdply.inc: 0x82 has 2 name(s); current is one of them; others (aliases): stat_X82 -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,103,screen_position,data,0,83,,0,SUPPORTED,screen_position,TCRF stdply: 0x83 = screen_position,TCRF
+working/drivers/stdply.asm,104,fight_player_col,data,0,84,,0,INC_CONSISTENT,fight_player_col,"stdply.inc: 0x84 has 2 name(s); current is one of them; others (aliases): stat_X84 -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,109,gold_carried_x65536,data,0,85,,0,SUPPORTED,gold_carried_x65536,TCRF stdply: 0x85 = gold_carried_x65536,TCRF
+working/drivers/stdply.asm,110,gold_carried_x1,data,0,86,,0,SUPPORTED,gold_carried_x1,TCRF stdply: 0x86 = gold_carried_x1,TCRF
+working/drivers/stdply.asm,111,gold_carried_x256,data,0,87,,0,SUPPORTED,gold_carried_x256,TCRF stdply: 0x87 = gold_carried_x256,TCRF
+working/drivers/stdply.asm,117,gold_in_bank_x65536,data,0,88,,0,SUPPORTED,gold_in_bank_x65536,TCRF stdply: 0x88 = gold_in_bank_x65536,TCRF
+working/drivers/stdply.asm,118,gold_in_bank_x1,data,0,89,,0,SUPPORTED,gold_in_bank_x1,TCRF stdply: 0x89 = gold_in_bank_x1,TCRF
 working/drivers/stdply.asm,123,player_almas,data,1,8b,,0,SUPPORTED,player_almas,TCRF stdply: 0x8B = almas_carried_lo (byte-level); 16-bit container name player_almas accepted,TCRF
 working/drivers/stdply.asm,128,hero_level,data,1,8d,,0,SUPPORTED,hero_level,TCRF stdply: 0x8D = hero_level,TCRF
 working/drivers/stdply.asm,130,experience,data,1,8e,,0,SUPPORTED,experience,TCRF stdply: 0x8E = experience_lo (byte-level); 16-bit container name experience accepted,TCRF
 working/drivers/stdply.asm,137,player_HP,data,1,90,,0,SUPPORTED,player_HP,TCRF stdply: 0x90 = life_current_lo (byte-level); 16-bit container name player_HP accepted,TCRF
-working/drivers/stdply.asm,138,equipped_weapon,data,1,92,,0,INC_CONSISTENT,equipped_weapon,"stdply.inc: 0x92 = equipped_weapon (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,139,shield_type,data,1,93,,0,INC_CONSISTENT,shield_type,"stdply.inc: 0x93 = shield_type (consistency only, not external proof).",stdply.inc
+working/drivers/stdply.asm,138,sword,data,0,92,,0,SUPPORTED,sword,TCRF stdply: 0x92 = sword,TCRF
+working/drivers/stdply.asm,139,shield,data,0,93,,0,SUPPORTED,shield,TCRF stdply: 0x93 = shield,TCRF
 working/drivers/stdply.asm,147,shield_HP,data,1,94,,0,SUPPORTED,shield_HP,TCRF stdply: 0x94 = shield_HP_current_lo (byte-level); 16-bit container name shield_HP accepted,TCRF
 working/drivers/stdply.asm,153,shield_max_HP,data,1,96,,0,SUPPORTED,shield_max_HP,TCRF stdply: 0x96 = shield_HP_max_lo (byte-level); 16-bit container name shield_max_HP accepted,TCRF
 working/drivers/stdply.asm,155,keys_normal,data,1,98,,0,SUPPORTED,keys_normal,TCRF stdply: 0x98 = keys_normal,TCRF
@@ -197,33 +197,33 @@ working/drivers/stdply.asm,157,crest_elf,data,1,9a,,0,SUPPORTED,crest_elf,TCRF s
 working/drivers/stdply.asm,158,crest_glory,data,1,9b,,0,SUPPORTED,crest_glory,TCRF stdply: 0x9B = crest_glory,TCRF
 working/drivers/stdply.asm,159,crest_hero,data,1,9c,,0,SUPPORTED,crest_hero,TCRF stdply: 0x9C = crest_hero,TCRF
 working/drivers/stdply.asm,166,selected_spell,data,1,9d,,0,SUPPORTED,selected_spell,TCRF stdply: 0x9D = selected_spell,TCRF
-working/drivers/stdply.asm,170,selected_wearable,data,1,9e,,0,INC_CONSISTENT,selected_wearable,"stdply.inc: 0x9e has 3 name(s); current is one of them; others (aliases): stat_X9E, cur_magic_idx -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,171,stat_X9F,data,1,9f,,0,INC_CONSISTENT,stat_X9F,"stdply.inc: 0x9f = stat_X9F (consistency only, not external proof).",stdply.inc
+working/drivers/stdply.asm,170,selected_accessory,data,0,9e,,0,SUPPORTED,selected_accessory,TCRF stdply: 0x9E = selected_accessory,TCRF
+working/drivers/stdply.asm,171,stat_X9F,data,0,9f,,0,INC_CONSISTENT,stat_X9F,"stdply.inc: 0x9f = stat_X9F (consistency only, not external proof).",stdply.inc
 working/drivers/stdply.asm,177,tears_of_esmesanti_count,data,1,a0,,0,SUPPORTED,tears_of_esmesanti_count,TCRF stdply: 0xA0 = tears_of_esmesanti_count,TCRF
-working/drivers/stdply.asm,184,wear_1,data,1,a1,,0,INC_CONSISTENT,wear_1,"stdply.inc: 0xa1 has 3 name(s); current is one of them; others (aliases): magic_flags, spell_slot_1 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,185,wear_2,data,1,a2,,0,INC_CONSISTENT,wear_2,"stdply.inc: 0xa2 has 2 name(s); current is one of them; others (aliases): spell_slot_2 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,186,wear_3,data,1,a3,,0,INC_CONSISTENT,wear_3,"stdply.inc: 0xa3 has 2 name(s); current is one of them; others (aliases): spell_slot_3 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,187,wear_4,data,1,a4,,0,INC_CONSISTENT,wear_4,"stdply.inc: 0xa4 has 2 name(s); current is one of them; others (aliases): spell_slot_4 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,188,wear_5,data,1,a5,,0,INC_CONSISTENT,wear_5,"stdply.inc: 0xa5 has 2 name(s); current is one of them; others (aliases): spell_slot_5 -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,184,accessory_slot_1,data,0,a1,,0,SUPPORTED,accessory_slot_1,TCRF stdply: 0xA1 = accessory_slot_1,TCRF
+working/drivers/stdply.asm,185,accessory_slot_2,data,0,a2,,0,SUPPORTED,accessory_slot_2,TCRF stdply: 0xA2 = accessory_slot_2,TCRF
+working/drivers/stdply.asm,186,accessory_slot_3,data,0,a3,,0,SUPPORTED,accessory_slot_3,TCRF stdply: 0xA3 = accessory_slot_3,TCRF
+working/drivers/stdply.asm,187,accessory_slot_4,data,0,a4,,0,SUPPORTED,accessory_slot_4,TCRF stdply: 0xA4 = accessory_slot_4,TCRF
+working/drivers/stdply.asm,188,accessory_slot_5,data,0,a5,,0,SUPPORTED,accessory_slot_5,TCRF stdply: 0xA5 = accessory_slot_5,TCRF
 working/drivers/stdply.asm,195,item_slot_1,data,1,a6,,0,SUPPORTED,item_slot_1,TCRF stdply: 0xA6 = item_slot_1,TCRF
 working/drivers/stdply.asm,196,item_slot_2,data,1,a7,,0,SUPPORTED,item_slot_2,TCRF stdply: 0xA7 = item_slot_2,TCRF
 working/drivers/stdply.asm,197,item_slot_3,data,1,a8,,0,SUPPORTED,item_slot_3,TCRF stdply: 0xA8 = item_slot_3,TCRF
 working/drivers/stdply.asm,198,item_slot_4,data,1,a9,,0,SUPPORTED,item_slot_4,TCRF stdply: 0xA9 = item_slot_4,TCRF
 working/drivers/stdply.asm,199,item_slot_5,data,1,aa,,0,SUPPORTED,item_slot_5,TCRF stdply: 0xAA = item_slot_5,TCRF
-working/drivers/stdply.asm,214,charges_espada,data,1,ab,,0,INC_CONSISTENT,charges_espada,"stdply.inc: 0xab has 3 name(s); current is one of them; others (aliases): drv_color_lut, weap_dur_cur -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,215,charges_saeta,data,1,ac,,0,INC_CONSISTENT,charges_saeta,"stdply.inc: 0xac = charges_saeta (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,216,charges_fuego,data,1,ad,,0,INC_CONSISTENT,charges_fuego,"stdply.inc: 0xad = charges_fuego (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,217,charges_lanzar,data,1,ae,,0,INC_CONSISTENT,charges_lanzar,"stdply.inc: 0xae = charges_lanzar (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,218,charges_rascar,data,1,af,,0,INC_CONSISTENT,charges_rascar,"stdply.inc: 0xaf = charges_rascar (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,219,charges_agua,data,1,b0,,0,INC_CONSISTENT,charges_agua,"stdply.inc: 0xb0 = charges_agua (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,220,charges_guerra,data,1,b1,,0,INC_CONSISTENT,charges_guerra,"stdply.inc: 0xb1 = charges_guerra (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,228,charges_max_espada,data,1,b4,,0,INC_CONSISTENT,charges_max_espada,"stdply.inc: 0xb4 has 2 name(s); current is one of them; others (aliases): weap_dur_max -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,229,charges_max_saeta,data,1,b5,,0,INC_CONSISTENT,charges_max_saeta,"stdply.inc: 0xb5 = charges_max_saeta (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,230,charges_max_fuego,data,1,b6,,0,INC_CONSISTENT,charges_max_fuego,"stdply.inc: 0xb6 = charges_max_fuego (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,231,charges_max_lanzar,data,1,b7,,0,INC_CONSISTENT,charges_max_lanzar,"stdply.inc: 0xb7 = charges_max_lanzar (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,232,charges_max_rascar,data,1,b8,,0,INC_CONSISTENT,charges_max_rascar,"stdply.inc: 0xb8 = charges_max_rascar (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,233,charges_max_agua,data,1,b9,,0,INC_CONSISTENT,charges_max_agua,"stdply.inc: 0xb9 = charges_max_agua (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,234,charges_max_guerra,data,1,ba,,0,INC_CONSISTENT,charges_max_guerra,"stdply.inc: 0xba = charges_max_guerra (consistency only, not external proof).",stdply.inc
+working/drivers/stdply.asm,214,spell_charge_espada,data,0,ab,,0,SUPPORTED,spell_charge_espada,TCRF stdply: 0xAB = spell_charge_espada,TCRF
+working/drivers/stdply.asm,215,spell_charge_saeta,data,0,ac,,0,SUPPORTED,spell_charge_saeta,TCRF stdply: 0xAC = spell_charge_saeta,TCRF
+working/drivers/stdply.asm,216,spell_charge_fuego,data,0,ad,,0,SUPPORTED,spell_charge_fuego,TCRF stdply: 0xAD = spell_charge_fuego,TCRF
+working/drivers/stdply.asm,217,spell_charge_lanzar,data,0,ae,,0,SUPPORTED,spell_charge_lanzar,TCRF stdply: 0xAE = spell_charge_lanzar,TCRF
+working/drivers/stdply.asm,218,spell_charge_rascar,data,0,af,,0,SUPPORTED,spell_charge_rascar,TCRF stdply: 0xAF = spell_charge_rascar,TCRF
+working/drivers/stdply.asm,219,spell_charge_agua,data,0,b0,,0,SUPPORTED,spell_charge_agua,TCRF stdply: 0xB0 = spell_charge_agua,TCRF
+working/drivers/stdply.asm,220,spell_charge_guerra,data,0,b1,,0,SUPPORTED,spell_charge_guerra,TCRF stdply: 0xB1 = spell_charge_guerra,TCRF
+working/drivers/stdply.asm,228,spell_charge_max_espada,data,0,b4,,0,SUPPORTED,spell_charge_max_espada,TCRF stdply: 0xB4 = spell_charge_max_espada,TCRF
+working/drivers/stdply.asm,229,spell_charge_max_saeta,data,0,b5,,0,SUPPORTED,spell_charge_max_saeta,TCRF stdply: 0xB5 = spell_charge_max_saeta,TCRF
+working/drivers/stdply.asm,230,spell_charge_max_fuego,data,0,b6,,0,SUPPORTED,spell_charge_max_fuego,TCRF stdply: 0xB6 = spell_charge_max_fuego,TCRF
+working/drivers/stdply.asm,231,spell_charge_max_lanzar,data,0,b7,,0,SUPPORTED,spell_charge_max_lanzar,TCRF stdply: 0xB7 = spell_charge_max_lanzar,TCRF
+working/drivers/stdply.asm,232,spell_charge_max_rascar,data,0,b8,,0,SUPPORTED,spell_charge_max_rascar,TCRF stdply: 0xB8 = spell_charge_max_rascar,TCRF
+working/drivers/stdply.asm,233,spell_charge_max_agua,data,0,b9,,0,SUPPORTED,spell_charge_max_agua,TCRF stdply: 0xB9 = spell_charge_max_agua,TCRF
+working/drivers/stdply.asm,234,spell_charge_max_guerra,data,0,ba,,0,SUPPORTED,spell_charge_max_guerra,TCRF stdply: 0xBA = spell_charge_max_guerra,TCRF
 working/drivers/stdply.asm,251,spell_known_espada,data,1,bb,,0,SUPPORTED,spell_known_espada,TCRF stdply: 0xBB = spell_known_espada,TCRF
 working/drivers/stdply.asm,252,spell_known_saeta,data,1,bc,,0,SUPPORTED,spell_known_saeta,TCRF stdply: 0xBC = spell_known_saeta,TCRF
 working/drivers/stdply.asm,253,spell_known_fuego,data,1,bd,,0,SUPPORTED,spell_known_fuego,TCRF stdply: 0xBD = spell_known_fuego,TCRF
@@ -231,44 +231,44 @@ working/drivers/stdply.asm,254,spell_known_lanzar,data,1,be,,0,SUPPORTED,spell_k
 working/drivers/stdply.asm,255,spell_known_rascar,data,1,bf,,0,SUPPORTED,spell_known_rascar,TCRF stdply: 0xBF = spell_known_rascar,TCRF
 working/drivers/stdply.asm,256,spell_known_agua,data,1,c0,,0,SUPPORTED,spell_known_agua,TCRF stdply: 0xC0 = spell_known_agua,TCRF
 working/drivers/stdply.asm,257,spell_known_guerra,data,1,c1,,0,SUPPORTED,spell_known_guerra,TCRF stdply: 0xC1 = spell_known_guerra,TCRF
-working/drivers/stdply.asm,258,player_facing,data,1,c2,,0,INC_CONSISTENT,player_facing,"stdply.inc: 0xc2 = player_facing (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,259,boss_intro_flag,data,1,c3,,0,INC_CONSISTENT,boss_intro_flag,"stdply.inc: 0xc3 has 2 name(s); current is one of them; others (aliases): stat_XC3 -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,258,facing_direction,data,0,c2,,0,SUPPORTED,facing_direction,TCRF stdply: 0xC2 = facing_direction,TCRF
+working/drivers/stdply.asm,259,boss_intro_flag,data,0,c3,,0,INC_CONSISTENT,boss_intro_flag,"stdply.inc: 0xc3 has 2 name(s); current is one of them; others (aliases): stat_XC3 -- consistency only, not external proof.",stdply.inc
 working/drivers/stdply.asm,271,save_sage,data,1,c4,,0,SUPPORTED,save_sage,TCRF stdply: 0xC4 = save_sage,TCRF
 working/drivers/stdply.asm,272,last_sage_visited,data,1,c5,,0,SUPPORTED,last_sage_visited,TCRF stdply: 0xC5 = last_sage_visited,TCRF
-working/drivers/stdply.asm,276,heal_pulse_count,data,1,c6,,0,INC_CONSISTENT,heal_pulse_count,"stdply.inc: 0xc6 has 2 name(s); current is one of them; others (aliases): stat_XC6 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,278,current_level_idx,data,1,c8,,0,INC_CONSISTENT,current_level_idx,"stdply.inc: 0xc8 has 3 name(s); current is one of them; others (aliases): player_tileset, stat_XC8 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,295,shop_magic_muralla,data,1,c9,,0,INC_CONSISTENT,shop_magic_muralla,"stdply.inc: 0xc9 = shop_magic_muralla (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,296,shop_magic_satono,data,1,ca,,0,INC_CONSISTENT,shop_magic_satono,"stdply.inc: 0xca = shop_magic_satono (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,297,shop_magic_bosque,data,1,cb,,0,INC_CONSISTENT,shop_magic_bosque,"stdply.inc: 0xcb = shop_magic_bosque (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,298,shop_magic_helada,data,1,cc,,0,INC_CONSISTENT,shop_magic_helada,"stdply.inc: 0xcc = shop_magic_helada (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,299,shop_magic_tumba,data,1,cd,,0,INC_CONSISTENT,shop_magic_tumba,"stdply.inc: 0xcd = shop_magic_tumba (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,300,shop_magic_dorado,data,1,ce,,0,INC_CONSISTENT,shop_magic_dorado,"stdply.inc: 0xce = shop_magic_dorado (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,301,shop_magic_llama,data,1,cf,,0,INC_CONSISTENT,shop_magic_llama,"stdply.inc: 0xcf = shop_magic_llama (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,302,shop_magic_pureza,data,1,d0,,0,INC_CONSISTENT,shop_magic_pureza,"stdply.inc: 0xd0 = shop_magic_pureza (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,303,shop_magic_esco,data,1,d1,,0,INC_CONSISTENT,shop_magic_esco,"stdply.inc: 0xd1 = shop_magic_esco (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,308,shop_sword_muralla,data,1,d2,,0,INC_CONSISTENT,shop_sword_muralla,"stdply.inc: 0xd2 has 2 name(s); current is one of them; others (aliases): player_hitbox -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,309,shop_sword_satono,data,1,d3,,0,INC_CONSISTENT,shop_sword_satono,"stdply.inc: 0xd3 = shop_sword_satono (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,310,shop_sword_bosque,data,1,d4,,0,INC_CONSISTENT,shop_sword_bosque,"stdply.inc: 0xd4 = shop_sword_bosque (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,311,shop_sword_helada,data,1,d5,,0,INC_CONSISTENT,shop_sword_helada,"stdply.inc: 0xd5 = shop_sword_helada (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,312,shop_sword_tumba,data,1,d6,,0,INC_CONSISTENT,shop_sword_tumba,"stdply.inc: 0xd6 = shop_sword_tumba (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,313,shop_sword_dorado,data,1,d7,,0,INC_CONSISTENT,shop_sword_dorado,"stdply.inc: 0xd7 = shop_sword_dorado (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,314,shop_sword_llama,data,1,d8,,0,INC_CONSISTENT,shop_sword_llama,"stdply.inc: 0xd8 = shop_sword_llama (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,315,shop_sword_pureza,data,1,d9,,0,INC_CONSISTENT,shop_sword_pureza,"stdply.inc: 0xd9 = shop_sword_pureza (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,316,shop_sword_esco,data,1,da,,0,INC_CONSISTENT,shop_sword_esco,"stdply.inc: 0xda = shop_sword_esco (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,319,shop_shield_muralla,data,1,db,,0,INC_CONSISTENT,shop_shield_muralla,"stdply.inc: 0xdb = shop_shield_muralla (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,320,shop_shield_satono,data,1,dc,,0,INC_CONSISTENT,shop_shield_satono,"stdply.inc: 0xdc = shop_shield_satono (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,321,shop_shield_bosque,data,1,dd,,0,INC_CONSISTENT,shop_shield_bosque,"stdply.inc: 0xdd = shop_shield_bosque (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,322,shop_shield_helada,data,1,de,,0,INC_CONSISTENT,shop_shield_helada,"stdply.inc: 0xde = shop_shield_helada (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,323,shop_shield_tumba,data,1,df,,0,INC_CONSISTENT,shop_shield_tumba,"stdply.inc: 0xdf = shop_shield_tumba (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,324,shop_shield_dorado,data,1,e0,,0,INC_CONSISTENT,shop_shield_dorado,"stdply.inc: 0xe0 = shop_shield_dorado (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,325,shop_shield_llama,data,1,e1,,0,INC_CONSISTENT,shop_shield_llama,"stdply.inc: 0xe1 = shop_shield_llama (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,326,shop_shield_pureza,data,1,e2,,0,INC_CONSISTENT,shop_shield_pureza,"stdply.inc: 0xe2 = shop_shield_pureza (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,327,shop_shield_esco,data,1,e3,,0,INC_CONSISTENT,shop_shield_esco,"stdply.inc: 0xe3 = shop_shield_esco (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,333,key_count,data,1,e4,,0,INC_CONSISTENT,key_count,"stdply.inc: 0xe4 has 2 name(s); current is one of them; others (aliases): stat_XE4 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,334,sages_spoken,data,1,e5,,0,INC_CONSISTENT,sages_spoken,"stdply.inc: 0xe5 = sages_spoken (consistency only, not external proof).",stdply.inc
-working/drivers/stdply.asm,335,scene_trans_request,data,1,e6,,0,INC_CONSISTENT,scene_trans_request,"stdply.inc: 0xe6 has 2 name(s); current is one of them; others (aliases): stat_XE6 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,336,gvar_pose_idx,data,1,e7,,0,INC_CONSISTENT,gvar_pose_idx,"stdply.inc: 0xe7 has 2 name(s); current is one of them; others (aliases): stat_XE7 -- consistency only, not external proof.",stdply.inc
-working/drivers/stdply.asm,337,init_complete_flag,data,1,e8,,0,INC_CONSISTENT,init_complete_flag,"stdply.inc: 0xe8 has 2 name(s); current is one of them; others (aliases): stat_XE8 -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,276,heal_pulse_count,data,0,c6,,0,INC_CONSISTENT,heal_pulse_count,"stdply.inc: 0xc6 has 2 name(s); current is one of them; others (aliases): stat_XC6 -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,278,current_level_idx,data,0,c8,,0,INC_CONSISTENT,current_level_idx,"stdply.inc: 0xc8 has 3 name(s); current is one of them; others (aliases): player_tileset, stat_XC8 -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,295,magic_shop_inventory_muralla,data,0,c9,,0,SUPPORTED,magic_shop_inventory_muralla,TCRF stdply: 0xC9 = magic_shop_inventory_muralla,TCRF
+working/drivers/stdply.asm,296,magic_shop_inventory_satono,data,0,ca,,0,SUPPORTED,magic_shop_inventory_satono,TCRF stdply: 0xCA = magic_shop_inventory_satono,TCRF
+working/drivers/stdply.asm,297,magic_shop_inventory_bosque,data,0,cb,,0,SUPPORTED,magic_shop_inventory_bosque,TCRF stdply: 0xCB = magic_shop_inventory_bosque,TCRF
+working/drivers/stdply.asm,298,magic_shop_inventory_helada,data,0,cc,,0,SUPPORTED,magic_shop_inventory_helada,TCRF stdply: 0xCC = magic_shop_inventory_helada,TCRF
+working/drivers/stdply.asm,299,magic_shop_inventory_tumba,data,0,cd,,0,SUPPORTED,magic_shop_inventory_tumba,TCRF stdply: 0xCD = magic_shop_inventory_tumba,TCRF
+working/drivers/stdply.asm,300,magic_shop_inventory_dorado,data,0,ce,,0,SUPPORTED,magic_shop_inventory_dorado,TCRF stdply: 0xCE = magic_shop_inventory_dorado,TCRF
+working/drivers/stdply.asm,301,magic_shop_inventory_llama,data,0,cf,,0,SUPPORTED,magic_shop_inventory_llama,TCRF stdply: 0xCF = magic_shop_inventory_llama,TCRF
+working/drivers/stdply.asm,302,magic_shop_inventory_pureza,data,0,d0,,0,SUPPORTED,magic_shop_inventory_pureza,TCRF stdply: 0xD0 = magic_shop_inventory_pureza,TCRF
+working/drivers/stdply.asm,303,magic_shop_inventory_esco,data,0,d1,,0,SUPPORTED,magic_shop_inventory_esco,TCRF stdply: 0xD1 = magic_shop_inventory_esco,TCRF
+working/drivers/stdply.asm,308,weapon_shop_swords_muralla,data,0,d2,,0,SUPPORTED,weapon_shop_swords_muralla,TCRF stdply: 0xD2 = weapon_shop_swords_muralla,TCRF
+working/drivers/stdply.asm,309,weapon_shop_swords_satono,data,0,d3,,0,SUPPORTED,weapon_shop_swords_satono,TCRF stdply: 0xD3 = weapon_shop_swords_satono,TCRF
+working/drivers/stdply.asm,310,weapon_shop_swords_bosque,data,0,d4,,0,SUPPORTED,weapon_shop_swords_bosque,TCRF stdply: 0xD4 = weapon_shop_swords_bosque,TCRF
+working/drivers/stdply.asm,311,weapon_shop_swords_helada,data,0,d5,,0,SUPPORTED,weapon_shop_swords_helada,TCRF stdply: 0xD5 = weapon_shop_swords_helada,TCRF
+working/drivers/stdply.asm,312,weapon_shop_swords_tumba,data,0,d6,,0,SUPPORTED,weapon_shop_swords_tumba,TCRF stdply: 0xD6 = weapon_shop_swords_tumba,TCRF
+working/drivers/stdply.asm,313,weapon_shop_swords_dorado,data,0,d7,,0,SUPPORTED,weapon_shop_swords_dorado,TCRF stdply: 0xD7 = weapon_shop_swords_dorado,TCRF
+working/drivers/stdply.asm,314,weapon_shop_swords_llama,data,0,d8,,0,SUPPORTED,weapon_shop_swords_llama,TCRF stdply: 0xD8 = weapon_shop_swords_llama,TCRF
+working/drivers/stdply.asm,315,weapon_shop_swords_pureza,data,0,d9,,0,SUPPORTED,weapon_shop_swords_pureza,TCRF stdply: 0xD9 = weapon_shop_swords_pureza,TCRF
+working/drivers/stdply.asm,316,weapon_shop_swords_esco,data,0,da,,0,SUPPORTED,weapon_shop_swords_esco,TCRF stdply: 0xDA = weapon_shop_swords_esco,TCRF
+working/drivers/stdply.asm,319,weapon_shop_shields_muralla,data,0,db,,0,SUPPORTED,weapon_shop_shields_muralla,TCRF stdply: 0xDB = weapon_shop_shields_muralla,TCRF
+working/drivers/stdply.asm,320,weapon_shop_shields_satono,data,0,dc,,0,SUPPORTED,weapon_shop_shields_satono,TCRF stdply: 0xDC = weapon_shop_shields_satono,TCRF
+working/drivers/stdply.asm,321,weapon_shop_shields_bosque,data,0,dd,,0,SUPPORTED,weapon_shop_shields_bosque,TCRF stdply: 0xDD = weapon_shop_shields_bosque,TCRF
+working/drivers/stdply.asm,322,weapon_shop_shields_helada,data,0,de,,0,SUPPORTED,weapon_shop_shields_helada,TCRF stdply: 0xDE = weapon_shop_shields_helada,TCRF
+working/drivers/stdply.asm,323,weapon_shop_shields_tumba,data,0,df,,0,SUPPORTED,weapon_shop_shields_tumba,TCRF stdply: 0xDF = weapon_shop_shields_tumba,TCRF
+working/drivers/stdply.asm,324,weapon_shop_shields_dorado,data,0,e0,,0,SUPPORTED,weapon_shop_shields_dorado,TCRF stdply: 0xE0 = weapon_shop_shields_dorado,TCRF
+working/drivers/stdply.asm,325,weapon_shop_shields_llama,data,0,e1,,0,SUPPORTED,weapon_shop_shields_llama,TCRF stdply: 0xE1 = weapon_shop_shields_llama,TCRF
+working/drivers/stdply.asm,326,weapon_shop_shields_pureza,data,0,e2,,0,SUPPORTED,weapon_shop_shields_pureza,TCRF stdply: 0xE2 = weapon_shop_shields_pureza,TCRF
+working/drivers/stdply.asm,327,weapon_shop_shields_esco,data,0,e3,,0,SUPPORTED,weapon_shop_shields_esco,TCRF stdply: 0xE3 = weapon_shop_shields_esco,TCRF
+working/drivers/stdply.asm,333,key_count,data,0,e4,,0,INC_CONSISTENT,key_count,"stdply.inc: 0xe4 has 2 name(s); current is one of them; others (aliases): stat_XE4 -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,334,sages_spoken_bitmap,data,0,e5,,0,SUPPORTED,sages_spoken_bitmap,TCRF stdply: 0xE5 = sages_spoken_bitmap,TCRF
+working/drivers/stdply.asm,335,scene_trans_request,data,0,e6,,0,INC_CONSISTENT,scene_trans_request,"stdply.inc: 0xe6 has 2 name(s); current is one of them; others (aliases): stat_XE6 -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,336,gvar_pose_idx,data,0,e7,,0,INC_CONSISTENT,gvar_pose_idx,"stdply.inc: 0xe7 has 2 name(s); current is one of them; others (aliases): stat_XE7 -- consistency only, not external proof.",stdply.inc
+working/drivers/stdply.asm,337,init_complete_flag,data,0,e8,,0,INC_CONSISTENT,init_complete_flag,"stdply.inc: 0xe8 has 2 name(s); current is one of them; others (aliases): stat_XE8 -- consistency only, not external proof.",stdply.inc
 working/drivers/stick.asm,142,stick,proc,0,,,0,PENDING,,,
 working/drivers/stick.asm,167,handle_pause_key,proc,0,,,0,PENDING,,,
 working/drivers/stick.asm,204,poll_joystick_buttons,proc,0,,,0,PENDING,,,

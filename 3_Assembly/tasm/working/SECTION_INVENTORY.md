@@ -200,21 +200,21 @@
 
 - [ ] L53    `stdply`  *(proc)*
 - [ ] L64    `key_map_table`  *(data)*
-- [ ] L87    `map_scroll_col`  *(data)*
+- [x] L87    `starting_position_in_town`  *(data)*
 - [ ] L88    `map_scroll_row`  *(data)*
-- [ ] L103   `town_player_col`  *(data)*
+- [x] L103   `screen_position`  *(data)*
 - [ ] L104   `fight_player_col`  *(data)*
-- [ ] L109   `player_gold_hi`  *(data)*
-- [ ] L110   `player_gold_lo`  *(data)*
-- [ ] L111   `player_gold_mid`  *(data)*
-- [ ] L117   `player_bank_hi`  *(data)*
-- [ ] L118   `player_bank_lo`  *(data)*
+- [x] L109   `gold_carried_x65536`  *(data)*
+- [x] L110   `gold_carried_x1`  *(data)*
+- [x] L111   `gold_carried_x256`  *(data)*
+- [x] L117   `gold_in_bank_x65536`  *(data)*
+- [x] L118   `gold_in_bank_x1`  *(data)*
 - [x] L123   `player_almas`  *(data)*
 - [x] L128   `hero_level`  *(data)*
 - [x] L130   `experience`  *(data)*
 - [x] L137   `player_HP`  *(data)*
-- [ ] L138   `equipped_weapon`  *(data)*
-- [ ] L139   `shield_type`  *(data)*
+- [x] L138   `sword`  *(data)*
+- [x] L139   `shield`  *(data)*
 - [x] L147   `shield_HP`  *(data)*
 - [x] L153   `shield_max_HP`  *(data)*
 - [x] L155   `keys_normal`  *(data)*
@@ -223,33 +223,33 @@
 - [x] L158   `crest_glory`  *(data)*
 - [x] L159   `crest_hero`  *(data)*
 - [x] L166   `selected_spell`  *(data)*
-- [ ] L170   `selected_wearable`  *(data)*
+- [x] L170   `selected_accessory`  *(data)*
 - [ ] L171   `stat_X9F`  *(data)*
 - [x] L177   `tears_of_esmesanti_count`  *(data)*
-- [ ] L184   `wear_1`  *(data)*
-- [ ] L185   `wear_2`  *(data)*
-- [ ] L186   `wear_3`  *(data)*
-- [ ] L187   `wear_4`  *(data)*
-- [ ] L188   `wear_5`  *(data)*
+- [x] L184   `accessory_slot_1`  *(data)*
+- [x] L185   `accessory_slot_2`  *(data)*
+- [x] L186   `accessory_slot_3`  *(data)*
+- [x] L187   `accessory_slot_4`  *(data)*
+- [x] L188   `accessory_slot_5`  *(data)*
 - [x] L195   `item_slot_1`  *(data)*
 - [x] L196   `item_slot_2`  *(data)*
 - [x] L197   `item_slot_3`  *(data)*
 - [x] L198   `item_slot_4`  *(data)*
 - [x] L199   `item_slot_5`  *(data)*
-- [ ] L214   `charges_espada`  *(data)*
-- [ ] L215   `charges_saeta`  *(data)*
-- [ ] L216   `charges_fuego`  *(data)*
-- [ ] L217   `charges_lanzar`  *(data)*
-- [ ] L218   `charges_rascar`  *(data)*
-- [ ] L219   `charges_agua`  *(data)*
-- [ ] L220   `charges_guerra`  *(data)*
-- [ ] L228   `charges_max_espada`  *(data)*
-- [ ] L229   `charges_max_saeta`  *(data)*
-- [ ] L230   `charges_max_fuego`  *(data)*
-- [ ] L231   `charges_max_lanzar`  *(data)*
-- [ ] L232   `charges_max_rascar`  *(data)*
-- [ ] L233   `charges_max_agua`  *(data)*
-- [ ] L234   `charges_max_guerra`  *(data)*
+- [x] L214   `spell_charge_espada`  *(data)*
+- [x] L215   `spell_charge_saeta`  *(data)*
+- [x] L216   `spell_charge_fuego`  *(data)*
+- [x] L217   `spell_charge_lanzar`  *(data)*
+- [x] L218   `spell_charge_rascar`  *(data)*
+- [x] L219   `spell_charge_agua`  *(data)*
+- [x] L220   `spell_charge_guerra`  *(data)*
+- [x] L228   `spell_charge_max_espada`  *(data)*
+- [x] L229   `spell_charge_max_saeta`  *(data)*
+- [x] L230   `spell_charge_max_fuego`  *(data)*
+- [x] L231   `spell_charge_max_lanzar`  *(data)*
+- [x] L232   `spell_charge_max_rascar`  *(data)*
+- [x] L233   `spell_charge_max_agua`  *(data)*
+- [x] L234   `spell_charge_max_guerra`  *(data)*
 - [x] L251   `spell_known_espada`  *(data)*
 - [x] L252   `spell_known_saeta`  *(data)*
 - [x] L253   `spell_known_fuego`  *(data)*
@@ -257,41 +257,41 @@
 - [x] L255   `spell_known_rascar`  *(data)*
 - [x] L256   `spell_known_agua`  *(data)*
 - [x] L257   `spell_known_guerra`  *(data)*
-- [ ] L258   `player_facing`  *(data)*
+- [x] L258   `facing_direction`  *(data)*
 - [ ] L259   `boss_intro_flag`  *(data)*
 - [x] L271   `save_sage`  *(data)*
 - [x] L272   `last_sage_visited`  *(data)*
 - [ ] L276   `heal_pulse_count`  *(data)*
 - [ ] L278   `current_level_idx`  *(data)*
-- [ ] L295   `shop_magic_muralla`  *(data)*
-- [ ] L296   `shop_magic_satono`  *(data)*
-- [ ] L297   `shop_magic_bosque`  *(data)*
-- [ ] L298   `shop_magic_helada`  *(data)*
-- [ ] L299   `shop_magic_tumba`  *(data)*
-- [ ] L300   `shop_magic_dorado`  *(data)*
-- [ ] L301   `shop_magic_llama`  *(data)*
-- [ ] L302   `shop_magic_pureza`  *(data)*
-- [ ] L303   `shop_magic_esco`  *(data)*
-- [ ] L308   `shop_sword_muralla`  *(data)*
-- [ ] L309   `shop_sword_satono`  *(data)*
-- [ ] L310   `shop_sword_bosque`  *(data)*
-- [ ] L311   `shop_sword_helada`  *(data)*
-- [ ] L312   `shop_sword_tumba`  *(data)*
-- [ ] L313   `shop_sword_dorado`  *(data)*
-- [ ] L314   `shop_sword_llama`  *(data)*
-- [ ] L315   `shop_sword_pureza`  *(data)*
-- [ ] L316   `shop_sword_esco`  *(data)*
-- [ ] L319   `shop_shield_muralla`  *(data)*
-- [ ] L320   `shop_shield_satono`  *(data)*
-- [ ] L321   `shop_shield_bosque`  *(data)*
-- [ ] L322   `shop_shield_helada`  *(data)*
-- [ ] L323   `shop_shield_tumba`  *(data)*
-- [ ] L324   `shop_shield_dorado`  *(data)*
-- [ ] L325   `shop_shield_llama`  *(data)*
-- [ ] L326   `shop_shield_pureza`  *(data)*
-- [ ] L327   `shop_shield_esco`  *(data)*
+- [x] L295   `magic_shop_inventory_muralla`  *(data)*
+- [x] L296   `magic_shop_inventory_satono`  *(data)*
+- [x] L297   `magic_shop_inventory_bosque`  *(data)*
+- [x] L298   `magic_shop_inventory_helada`  *(data)*
+- [x] L299   `magic_shop_inventory_tumba`  *(data)*
+- [x] L300   `magic_shop_inventory_dorado`  *(data)*
+- [x] L301   `magic_shop_inventory_llama`  *(data)*
+- [x] L302   `magic_shop_inventory_pureza`  *(data)*
+- [x] L303   `magic_shop_inventory_esco`  *(data)*
+- [x] L308   `weapon_shop_swords_muralla`  *(data)*
+- [x] L309   `weapon_shop_swords_satono`  *(data)*
+- [x] L310   `weapon_shop_swords_bosque`  *(data)*
+- [x] L311   `weapon_shop_swords_helada`  *(data)*
+- [x] L312   `weapon_shop_swords_tumba`  *(data)*
+- [x] L313   `weapon_shop_swords_dorado`  *(data)*
+- [x] L314   `weapon_shop_swords_llama`  *(data)*
+- [x] L315   `weapon_shop_swords_pureza`  *(data)*
+- [x] L316   `weapon_shop_swords_esco`  *(data)*
+- [x] L319   `weapon_shop_shields_muralla`  *(data)*
+- [x] L320   `weapon_shop_shields_satono`  *(data)*
+- [x] L321   `weapon_shop_shields_bosque`  *(data)*
+- [x] L322   `weapon_shop_shields_helada`  *(data)*
+- [x] L323   `weapon_shop_shields_tumba`  *(data)*
+- [x] L324   `weapon_shop_shields_dorado`  *(data)*
+- [x] L325   `weapon_shop_shields_llama`  *(data)*
+- [x] L326   `weapon_shop_shields_pureza`  *(data)*
+- [x] L327   `weapon_shop_shields_esco`  *(data)*
 - [ ] L333   `key_count`  *(data)*
-- [ ] L334   `sages_spoken`  *(data)*
+- [x] L334   `sages_spoken_bitmap`  *(data)*
 - [ ] L335   `scene_trans_request`  *(data)*
 - [ ] L336   `gvar_pose_idx`  *(data)*
 - [ ] L337   `init_complete_flag`  *(data)*

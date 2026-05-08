@@ -20,8 +20,8 @@ Strength ladder (strongest first):
 
 | Verdict | Count |
 |---|---:|
-| SUPPORTED | 27 |
-| INC_CONSISTENT | 68 |
+| SUPPORTED | 85 |
+| INC_CONSISTENT | 10 |
 | CONTRADICTED | 0 |
 | INCONCLUSIVE | 0 |
 | PENDING | 1502 |
@@ -30,14 +30,14 @@ Strength ladder (strongest first):
 
 | Source | Count |
 |---|---:|
-| stdply.inc | 68 |
-| TCRF | 27 |
+| TCRF | 85 |
+| stdply.inc | 10 |
 
 ## Per-file resolution status
 
 | File | Supported | Contradicted | Pending | Total |
 |---|---:|---:|---:|---:|
-| `working/drivers/stdply.asm` | 27 | 0 | 2 | 29 |
+| `working/drivers/stdply.asm` | 85 | 0 | 2 | 87 |
 
 ## Files with zero Group-1 resolution (60)
 

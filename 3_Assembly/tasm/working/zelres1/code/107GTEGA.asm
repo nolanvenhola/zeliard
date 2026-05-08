@@ -254,7 +254,7 @@ vga_operation		proc	near
 		retn
 
 check_not_last_row:
-		mov	al,byte ptr ds:[town_player_col]
+		mov	al,byte ptr ds:[screen_position]
 		cmp	ds:tile_row_ctr,al
 		je	do_tile_blit			; Jump if equal
 		retn
@@ -264,7 +264,7 @@ do_tile_blit:
 		push	es
 		push	si
 		push	ds
-		mov	al,byte ptr ds:[town_player_col]
+		mov	al,byte ptr ds:[screen_position]
 		add	al,al
 		xor	ah,ah			; Zero register
 		mov	di,ax
@@ -751,7 +751,7 @@ door_tile_handler:
 		mov	dl,cs:tile_row_ctr
 		add	dl,4
 		xor	dh,dh			; Zero register
-		add	dx,word ptr cs:[map_scroll_col]
+		add	dx,word ptr cs:[starting_position_in_town]
 		mov	ds:tile_col_ctr,dx
 		call	vgadec_func_8
 		mov	es:tile_idx_a,al
@@ -840,7 +840,7 @@ vgadec_multiply_2		proc	near
 		mov	di,tile_idx_a
 		movsw				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
-		mov	dx,word ptr ds:[map_scroll_col]
+		mov	dx,word ptr ds:[starting_position_in_town]
 		add	dx,3
 		mov	ds:tile_col_ctr,dx
 		cmp	byte ptr ds:tile_idx_a,0FDh

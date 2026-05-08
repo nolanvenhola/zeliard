@@ -52,7 +52,7 @@ PAGE  59,132
 ;                  gvar_script_ip (DS:0FF4Ch), gvar_text_x/y, gvar_dlg_pos,
 ;                  gvar_frame_timer, gvar_game_seg, state_script_ptr,
 ;                  game-state HP word at ds:[experience], EXP word at ds:[player_almas],
-;                  player gold at ds:[player_gold_lo], current sage state at DS:[BB14h].
+;                  player gold at ds:[gold_carried_x1], current sage state at DS:[BB14h].
 ;
 ;==========================================================================
 

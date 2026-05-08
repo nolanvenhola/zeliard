@@ -1581,7 +1581,7 @@ ui_tile_row_loop:
 				mul	dl			; ax = reg * al
 				mov	bx,ax
 				add	bx,pattern_base
-				mov	al,byte ptr ds:[town_player_col]
+				mov	al,byte ptr ds:[screen_position]
 				add	al,3
 				xor	ah,ah			; Zero register
 				add	bx,ax
@@ -1608,7 +1608,7 @@ ui_tile_postloop:
 		xor	ah,ah			; Zero register
 		mov	cx,140h
 		mul	cx			; dx:ax = reg * ax
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		xor	ch,ch			; Zero register
 		add	cx,cx
 		add	cx,cx
@@ -1711,7 +1711,7 @@ tile_3x3_step:
 loc_129:
 		mov	cl,0FFh
 		mov	si,6117h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	test_flag_hero_state			; Jump if zero
 		xor	cl,cl			; Zero register
 		mov	si,61B9h
@@ -1761,7 +1761,7 @@ call_hero_tier_get:
 		jz	test_flag_shield			; Jump if zero
 		dec	al
 		mov	cl,al
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	test_flag_shield			; Jump if not zero
 		mov	ax,6Ch
 		mov	dl,ds:flag_shield
@@ -1812,7 +1812,7 @@ loc_139:
 		test	byte ptr ds:flag_climbing,0FFh
 		jnz	loc_142			; Jump if not zero
 		mov	si,6075h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	test_init_complete_flag			; Jump if not zero
 		mov	si,game_data_base
 
@@ -1863,7 +1863,7 @@ loc_144:
 loc_145:
 		mov	cl,0FFh
 		mov	si,61B9h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_146			; Jump if not zero
 		xor	cl,cl			; Zero register
 		mov	si,6117h
@@ -1926,7 +1926,7 @@ loc_151:
 		jmp	short test_flag_shield_156
 
 loc_152:
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	loc_154			; Jump if zero
 		call	hero_tier_get
 		or	al,al			; Zero ?
@@ -2016,7 +2016,7 @@ loc_159:
 tga_sprite_render_solid		endp
 
 hero_tier_get		proc	near
-		mov	al,byte ptr ds:[shield_type]
+		mov	al,byte ptr ds:[shield]
 		or	al,al			; Zero ?
 		jnz	loc_160			; Jump if not zero
 		retn
@@ -2128,7 +2128,7 @@ load_sprite_pos_triplet:
 		mov	cl,byte ptr ds:[fight_player_col]
 		mov	al,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		add	cl,4
 		xor	ch,ch			; Zero register
 		add	ax,cx
@@ -2215,7 +2215,7 @@ loc_174:
 		mov	si,0B16Eh
 		mov	word ptr ds:mask_word,0FF01h
 		mov	dx,13Ch
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_179			; Jump if not zero
 		mov	si,0B0BEh
 		mov	word ptr ds:mask_word,1
@@ -2235,7 +2235,7 @@ loc_176:
 		add	bx,bx
 		mov	di,0B19Eh
 		mov	si,0B12Eh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_178			; Jump if not zero
 		mov	di,0B18Ah
 		mov	si,0B07Eh
@@ -2251,7 +2251,7 @@ check_scroll_step_eq_7:
 		add	bx,bx
 		mov	di,0B192h
 		mov	si,0B0CEh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_178			; Jump if not zero
 		mov	di,plane_alt_b17e
 		mov	si,0B01Eh
@@ -2381,7 +2381,7 @@ scroll_cache_invalidate		proc	near
 		and	al,3Fh			; '?'
 		mov	cl,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		add	cl,byte ptr ds:mask_word+1
 		add	cl,4
 		xor	ch,ch			; Zero register
@@ -2428,7 +2428,7 @@ set_restore_pending_FF:
 		call	scroll_cache_invalidate
 		call	bg_save
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:[equipped_weapon]
+		mov	bl,byte ptr cs:[sword]
 		dec	bl
 		add	bx,bx
 		mov	ax,cs:color_map_tbl[bx]
@@ -2872,11 +2872,11 @@ tga_vram_advance_az		endp
 
 ; fade_effect_init: entry for the 9-pass concentric fade gradient effect
 ; (parallel to ega_color_fade_init). Computes center color pair from
-; col_idx/row_idx (bytes at ds:[town_player_col]/[84h]), runs two concentric passes
+; col_idx/row_idx (bytes at ds:[screen_position]/[84h]), runs two concentric passes
 ; with different anim_phase values, then falls through to anim_refresh_all.
 
 fade_effect_init:
-		mov	al,byte ptr ds:[town_player_col]
+		mov	al,byte ptr ds:[screen_position]
 		add	al,al
 		add	al,al
 		add	al,al
@@ -3721,7 +3721,7 @@ loc_276:
 draw_hero_gfx:
 		push	ds
 		mov	word ptr cs:bitmask_word,0FF77h
-		mov	bl,byte ptr ds:[equipped_weapon]
+		mov	bl,byte ptr ds:[sword]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx

@@ -203,7 +203,7 @@ scene_clamp_done:
 		mov	ds:roka_pose_idx,al
 		mov	bx,2552h
 		call	word ptr cs:gfx_scene_fn
-		and	byte ptr ds:[player_facing],0FEh
+		and	byte ptr ds:[facing_direction],0FEh
 		mov	bx,0C6Eh
 		mov	cx,0Dh
 

@@ -17,21 +17,21 @@
 ; same value.
 ; ----------------------------------------------------------------------
 captured_flag           equ     49h     ; player-captured / game-over gate (200FIGHT)
-map_scroll_col          equ     80h     ; cavern X scroll column, 16-bit
+starting_position_in_town          equ     80h     ; cavern X scroll column, 16-bit
 map_scroll_row          equ     82h     ; cavern Y scroll row
-town_player_col         equ     83h     ; player screen column in town (canonical in stdply.inc)
+screen_position         equ     83h     ; player screen column in town (canonical in stdply.inc)
 fight_player_col        equ     84h     ; player screen column in fight
-player_gold_hi          equ     85h     ; gold high byte (24-bit field)
-player_gold_lo          equ     86h     ; gold low byte
-player_gold_mid         equ     87h     ; gold low word's high byte
-player_bank_hi          equ     88h     ; banked-gold high byte (canonical in stdply.inc)
-player_bank_lo          equ     89h     ; banked-gold low word (canonical in stdply.inc)
+gold_carried_x65536          equ     85h     ; gold high byte (24-bit field)
+gold_carried_x1          equ     86h     ; gold low byte
+gold_carried_x256         equ     87h     ; gold low word's high byte
+gold_in_bank_x65536          equ     88h     ; banked-gold high byte (canonical in stdply.inc)
+gold_in_bank_x1          equ     89h     ; banked-gold low word (canonical in stdply.inc)
 player_almas            equ     8Bh     ; alt currency (16-bit)
 item_qty_count          equ     8Dh     ; item quantity counter
 item_effect_val         equ     8Eh     ; item effect value (16-bit)
 player_HP               equ     90h     ; current HP (16-bit)
-equipped_weapon         equ     92h     ; equipped weapon idx (1-based; 0 = none)
-shield_type             equ     93h     ; shield tier (1-based; 0 = no shield)
+sword         equ     92h     ; equipped weapon idx (1-based; 0 = none)
+shield             equ     93h     ; shield tier (1-based; 0 = no shield)
 shield_HP               equ     94h     ; current shield HP (16-bit)
 shield_max_HP           equ     96h     ; shield max HP cap (16-bit)
 player_speed            equ     98h     ; character speed stat
@@ -48,14 +48,14 @@ selected_spell          equ     9Dh     ; currently chosen spell ID (0=none, 1..
 weapon_tier_max         equ     9Dh     ; alias — earlier (wrong) name
 cur_weapon_idx          equ     9Dh     ; alias — earlier (wrong) name
 ; 0x9E = currently equipped wearable ID (0..5 per wear_* enum).
-selected_wearable       equ     9Eh     ; equipped shoe-or-cape ID
+selected_accessory       equ     9Eh     ; equipped shoe-or-cape ID
 stat_X9E                equ     9Eh     ; alias — earlier placeholder
 cur_magic_idx           equ     9Eh     ; alias — earlier (wrong) name
 stat_X9F                equ     9Fh     ; VESTIGIAL placeholder (per-frame zero-clear, no reader observed)
 weap_dur_cur            equ     0ABh    ; per-weapon durability table base (7 bytes)
 player_hp_max           equ     0B2h    ; HP ceiling (overlays anim_color_lut frame 8)
 weap_dur_max            equ     0B4h    ; weapon durability max table base (7 bytes)
-player_facing           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
+facing_direction           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical in stdply.inc)
 current_area_id         equ     0C4h    ; current area (high bit=in-town, low 7=town/sage idx 1..8); Kioku Feather destination
 player_level            equ     0C4h    ; alias — earlier name (was misnomer)
@@ -203,16 +203,16 @@ experience                     equ     08Eh
 keys_normal                    equ     098h
 keys_lion                      equ     099h
 tears_of_esmesanti_count       equ     0A0h
-wear_1                         equ     0A1h
-wear_2                         equ     0A2h
-wear_3                         equ     0A3h
-wear_4                         equ     0A4h
-wear_5                         equ     0A5h
+accessory_slot_1                         equ     0A1h
+accessory_slot_2                         equ     0A2h
+accessory_slot_3                         equ     0A3h
+accessory_slot_4                         equ     0A4h
+accessory_slot_5                         equ     0A5h
 item_slot_1                    equ     0A6h
 save_sage                      equ     0C4h
 last_sage_visited              equ     0C5h
 current_level_idx              equ     0C8h
-sages_spoken                   equ     0E5h
+sages_spoken_bitmap                   equ     0E5h
 
 
 ; --- Phase-2 magic-number sweep: cross-chunk addresses with existing local EQUs ---

@@ -386,7 +386,7 @@ VERDICT_FNS = {
     'hero_gold_lo':      verdict_supports_gold,
     'hero_almas':        verdict_supports_gold,
     'sword_type':        verdict_supports_sword_type,
-    'shield_type':       verdict_supports_shield,
+    'shield':       verdict_supports_shield,
     'current_magic_spell': verdict_supports_shield,
 }
 
@@ -724,7 +724,7 @@ CONTESTED = [
     ('stdply', 0x8B, 'hero_almas'),
     ('stdply', 0x90, 'hero_HP'),
     ('stdply', 0x92, 'sword_type'),
-    ('stdply', 0x93, 'shield_type'),
+    ('stdply', 0x93, 'shield'),
     ('stdply', 0x94, 'shield_HP'),
     ('stdply', 0x9D, 'current_magic_spell'),
     ('stdply', 0xAB, 'spells_espada'),

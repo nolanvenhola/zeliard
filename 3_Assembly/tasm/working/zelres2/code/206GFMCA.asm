@@ -1435,7 +1435,7 @@ bg_tile_fetch_outer_loop:
 				mul	dl			; ax = reg * al
 				mov	bx,ax
 				add	bx,pattern_base
-				mov	al,byte ptr ds:[town_player_col]
+				mov	al,byte ptr ds:[screen_position]
 				add	al,3
 				xor	ah,ah			; Zero register
 				add	bx,ax
@@ -1462,7 +1462,7 @@ loc_100:
 		xor	ah,ah			; Zero register
 		mov	cx,0A00h
 		mul	cx			; dx:ax = reg * ax
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		xor	ch,ch			; Zero register
 		add	cx,cx
 		add	cx,cx
@@ -1565,7 +1565,7 @@ cell_iter_next:
 loc_107:
 		mov	cl,0FFh
 		mov	si,6117h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	test_flag_hero_state			; Jump if zero
 		xor	cl,cl			; Zero register
 		mov	si,61B9h
@@ -1615,7 +1615,7 @@ call_shield_state_get:
 		jz	test_flag_shield			; Jump if zero
 		dec	al
 		mov	cl,al
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	test_flag_shield			; Jump if not zero
 		mov	ax,6Ch
 		mov	dl,ds:flag_shield
@@ -1666,7 +1666,7 @@ loc_117:
 		test	byte ptr ds:flag_climbing,0FFh
 		jnz	loc_120			; Jump if not zero
 		mov	si,6075h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	test_init_complete_flag			; Jump if not zero
 		mov	si,game_data_base
 
@@ -1717,7 +1717,7 @@ loc_122:
 loc_123:
 		mov	cl,0FFh
 		mov	si,61B9h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_124			; Jump if not zero
 		xor	cl,cl			; Zero register
 		mov	si,6117h
@@ -1780,7 +1780,7 @@ loc_129:
 		jmp	short test_flag_shield_134
 
 loc_130:
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	loc_132			; Jump if zero
 		call	shield_state_get
 		or	al,al			; Zero ?
@@ -1870,7 +1870,7 @@ loc_137:
 frame_row_driver		endp
 
 shield_state_get		proc	near
-		mov	al,byte ptr ds:[shield_type]
+		mov	al,byte ptr ds:[shield]
 		or	al,al			; Zero ?
 		jnz	loc_138			; Jump if not zero
 		retn
@@ -1977,7 +1977,7 @@ load_sprite_pos		proc	near
 		mov	cl,byte ptr ds:[fight_player_col]
 		mov	al,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		add	cl,4
 		xor	ch,ch			; Zero register
 		add	ax,cx
@@ -2066,7 +2066,7 @@ loc_152:
 		mov	si,0B16Eh
 		mov	word ptr ds:scroll_delta,0FF01h
 		mov	dx,9F8h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_157			; Jump if not zero
 		mov	si,0B0BEh
 		mov	word ptr ds:scroll_delta,1
@@ -2086,7 +2086,7 @@ loc_154:
 		add	bx,bx
 		mov	di,0B19Eh
 		mov	si,0B12Eh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_156			; Jump if not zero
 		mov	di,0B18Ah
 		mov	si,0B07Eh
@@ -2102,7 +2102,7 @@ check_scroll_step_eq_7:
 		add	bx,bx
 		mov	di,0B192h
 		mov	si,0B0CEh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_156			; Jump if not zero
 		mov	di,mca_plane_alt
 		mov	si,0B01Eh
@@ -2225,7 +2225,7 @@ scroll_clear_cache		proc	near
 		and	al,3Fh			; '?'
 		mov	cl,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		add	cl,byte ptr ds:scroll_delta+1
 		add	cl,4
 		xor	ch,ch			; Zero register
@@ -2272,7 +2272,7 @@ set_restore_pending_FF:
 		call	scroll_clear_cache
 		call	scroll_buf_restore
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:[equipped_weapon]
+		mov	bl,byte ptr cs:[sword]
 		dec	bl
 		add	bx,bx
 		mov	ax,cs:color_map_tbl[bx]
@@ -2722,7 +2722,7 @@ mca_tile_addr_calc		endp
 ; calls fade_xor_block and fade_gradient_rect twice at different phases.
 
 mca_color_fade_init:
-		mov	al,byte ptr ds:[town_player_col]	; X coord (game_seg global)
+		mov	al,byte ptr ds:[screen_position]	; X coord (game_seg global)
 		add	al,al			; X * 2
 		add	al,al			; X * 4
 		add	al,al			; X * 8 -> MCGA palette X offset
@@ -3513,7 +3513,7 @@ mca_plane_4bit_scan		endp
 hero_sprite_col_blit_alt:
 		push	ds
 		mov	word ptr cs:rle_tmp_b,908h
-		mov	bl,byte ptr ds:[equipped_weapon]
+		mov	bl,byte ptr ds:[sword]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx

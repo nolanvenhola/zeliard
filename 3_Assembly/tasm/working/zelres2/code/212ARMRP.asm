@@ -334,7 +334,7 @@ save_script_ip:
 		retn
 			                        ;* No entry point to code
 		call	clear_menu_rect
-		test	byte ptr ds:[shield_type],0FFh
+		test	byte ptr ds:[shield],0FFh
 		jnz	check_change_wallet			; Jump if not zero
 		mov	word ptr ds:gvar_script_ip,0AE4Ah
 		retn
@@ -374,8 +374,8 @@ skip_price_fail:
 		retn
 
 commit_trade_weapon:
-		mov	byte ptr ds:[player_gold_hi],dl
-		mov	word ptr ds:[player_gold_lo],ax
+		mov	byte ptr ds:[gold_carried_x65536],dl
+		mov	word ptr ds:[gold_carried_x1],ax
 		call	word ptr cs:drv_frame_commit
 		mov	word ptr ds:gvar_script_ip,0AFAFh
 		retn
@@ -480,9 +480,9 @@ weapon_trade_ok:
 		call	word ptr cs:script_step
 		mov	byte ptr ds:trade_gold_tmp,0
 		mov	word ptr ds:trade_gold_tmp+1,0
-		test	byte ptr ds:[equipped_weapon],0FFh
+		test	byte ptr ds:[sword],0FFh
 		jz	skip_weapon_swap			; Jump if zero
-		mov	al,byte ptr ds:[equipped_weapon]
+		mov	al,byte ptr ds:[sword]
 		mov	ds:new_item_idx,al
 		mov	word ptr ds:gvar_script_ip,0B046h
 		call	word ptr cs:script_step
@@ -513,8 +513,8 @@ weapon_commit:
 		mov	word ptr ds:gvar_script_ip,0AE1Ch
 		mov	dl,ds:trade_gold_buf_hi
 		mov	ax,ds:trade_gold_buf_hi2
-		mov	byte ptr ds:[player_gold_hi],dl
-		mov	word ptr ds:[player_gold_lo],ax
+		mov	byte ptr ds:[gold_carried_x65536],dl
+		mov	word ptr ds:[gold_carried_x1],ax
 		mov	dl,ds:trade_gold_tmp
 		mov	ax,word ptr ds:trade_gold_tmp+1
 		call	word ptr cs:script_give_item
@@ -528,24 +528,24 @@ weapon_commit:
 		mov	bl,ds:town_npc_state
 		dec	bl
 		xor	bh,bh			; Zero register
-		or	byte ptr ds:[shop_sword_muralla][bx],al
+		or	byte ptr ds:[weapon_shop_swords_muralla][bx],al
 
 skip_weapon_slot_fix:
 		mov	al,ds:new_item_flag
-		mov	byte ptr ds:[equipped_weapon],al
+		mov	byte ptr ds:[sword],al
 		cmp	al,6
 		jne	skip_slot_clear			; Jump if not equal
 		mov	bl,ds:town_npc_state
 		dec	bl
 		xor	bh,bh			; Zero register
-		and	byte ptr ds:[shop_sword_muralla][bx],0FBh
+		and	byte ptr ds:[weapon_shop_swords_muralla][bx],0FBh
 
 skip_slot_clear:
 		call	build_mouth_bitmap_a
-		mov	ah,byte ptr ds:[equipped_weapon]
+		mov	ah,byte ptr ds:[sword]
 		mov	al,4
 		call	word ptr cs:[sar_loader_fn]
-		mov	al,byte ptr ds:[equipped_weapon]
+		mov	al,byte ptr ds:[sword]
 		mov	bx,18ABh
 		jmp	word ptr cs:gfx_render_scene_fn
 
@@ -660,9 +660,9 @@ shield_trade_ok:
 		call	word ptr cs:script_step
 		mov	byte ptr ds:trade_gold_tmp,0
 		mov	word ptr ds:trade_gold_tmp+1,0
-		test	byte ptr ds:[shield_type],0FFh
+		test	byte ptr ds:[shield],0FFh
 		jz	skip_shield_swap			; Jump if zero
-		mov	al,byte ptr ds:[shield_type]
+		mov	al,byte ptr ds:[shield]
 		mov	ds:new_item_idx,al
 		mov	word ptr ds:gvar_script_ip,0B0A1h
 		call	word ptr cs:script_step
@@ -693,8 +693,8 @@ shield_commit:
 		mov	word ptr ds:gvar_script_ip,0AE1Ch
 		mov	dl,ds:trade_gold_buf_hi
 		mov	ax,ds:trade_gold_buf_hi2
-		mov	byte ptr ds:[player_gold_hi],dl
-		mov	word ptr ds:[player_gold_lo],ax
+		mov	byte ptr ds:[gold_carried_x65536],dl
+		mov	word ptr ds:[gold_carried_x1],ax
 		mov	dl,ds:trade_gold_tmp
 		mov	ax,word ptr ds:trade_gold_tmp+1
 		call	word ptr cs:script_give_item
@@ -708,20 +708,20 @@ shield_commit:
 		mov	bl,ds:town_npc_state
 		dec	bl
 		xor	bh,bh			; Zero register
-		or	byte ptr ds:[shop_shield_muralla][bx],al
+		or	byte ptr ds:[weapon_shop_shields_muralla][bx],al
 
 skip_shield_slot_fix:
 		mov	al,ds:new_item_flag
-		mov	byte ptr ds:[shield_type],al
+		mov	byte ptr ds:[shield],al
 		call	build_mouth_bitmap_b
-		mov	al,byte ptr ds:[shield_type]
+		mov	al,byte ptr ds:[shield]
 		mov	bx,3EA4h
 		call	word ptr cs:gfx_draw_hud_fn
 		mov	bx,0C61Ch
 		xor	al,al			; Zero register
 		mov	ch,17h
 		call	word ptr cs:gfx_set_color_fn
-		mov	bl,byte ptr ds:[shield_type]
+		mov	bl,byte ptr ds:[shield]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -909,14 +909,14 @@ reset_after_trade:
 		call	render_shopkeeper_frame
 		mov	word ptr ds:gvar_script_ip,0B375h
 		call	word ptr cs:script_step
-		mov	byte ptr ds:[equipped_weapon],4
+		mov	byte ptr ds:[sword],4
 		mov	byte ptr ds:crest_glory,0
 		mov	al,4
 		mov	bx,18ABh
 		call	word ptr cs:gfx_render_scene_fn
-		and	byte ptr ds:[shop_sword_tumba],0EFh
+		and	byte ptr ds:[weapon_shop_swords_tumba],0EFh
 		or	byte ptr ds:[sprite_record_size],2
-		mov	ah,byte ptr ds:[equipped_weapon]
+		mov	ah,byte ptr ds:[sword]
 		mov	al,4
 		call	word ptr cs:[sar_loader_fn]
 		retn

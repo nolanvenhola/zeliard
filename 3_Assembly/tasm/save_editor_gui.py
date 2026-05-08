@@ -27,7 +27,7 @@ import save_edit
 # ---------------------------------------------------------------------------
 
 ENUMS: dict[str, list[tuple[int, str]]] = {
-    'equipped_weapon': [
+    'sword': [
         (0, 'none / fist'),
         (1, "Training Sword (starter)"),
         (2, "Wise Man's Sword"),
@@ -47,7 +47,7 @@ ENUMS: dict[str, list[tuple[int, str]]] = {
         (6, 'Agua'),
         (7, 'Guerra'),
     ],
-    'shield_type': [
+    'shield': [
         (0, 'none'),
         (1, 'Clay Shield'),
         (2, "Wise Man's Shield"),
@@ -144,7 +144,7 @@ def bits_for(name: str):
         return SHOP_SWORD_BITS
     if name.startswith('shop_shield_'):
         return SHOP_SHIELD_BITS
-    if name == 'sages_spoken':
+    if name == 'sages_spoken_bitmap':
         return SAGES_SPOKEN_BITS
     return None
 
@@ -379,7 +379,7 @@ def enum_for(name: str):
     """Return [(value, label), ...] for a field name, or None if not enum."""
     if name in ENUMS:
         return ENUMS[name]
-    if name.startswith('wear_') or name == 'selected_wearable':
+    if name.startswith('wear_') or name == 'selected_accessory':
         return WEARABLE_CHOICES
     if name.startswith('item_slot_'):
         return ITEM_CHOICES
@@ -427,7 +427,7 @@ SECTIONS = [
     ("Equipment + selected weapon/spell",     lambda f: 0x92 <= f[1] <= 0xAA),
     ("Spell charges (current and max, per spell)",
                                               lambda f: f[0].startswith('charges_')),
-    ("Sages",                                 lambda f: f[0] in ('save_sage', 'last_sage_visited', 'sages_spoken')),
+    ("Sages",                                 lambda f: f[0] in ('save_sage', 'last_sage_visited', 'sages_spoken_bitmap')),
     ("Magic shop inventory (per town, bitfield)",
                                               lambda f: f[0].startswith('shop_magic_')),
     ("Weapon shop — swords (per town, bitfield)",
@@ -822,7 +822,7 @@ class SaveEditorApp:
     def _render_bitfield_byte(self, section, name: str, row: int, bits: list):
         """Render a single byte as: [hex entry] + N named bit checkboxes
         (4 per row), all sync'd via a _set_byte helper.  Used for the
-        magic/sword/shield shop inventories and sages_spoken bitmap.
+        magic/sword/shield shop inventories and sages_spoken_bitmap bitmap.
         """
         sub = ttk.Frame(section)
         sub.grid(row=row, column=2, columnspan=2, sticky=tk.W)

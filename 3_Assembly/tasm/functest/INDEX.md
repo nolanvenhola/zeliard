@@ -37,7 +37,7 @@ as evidence for follow-up renames.
 | placeholder_id | [test_stdply_stat_X9C.py](placeholder_id/test_stdply_stat_X9C.py) | DS:0x9C is **VESTIGIAL** — `entity_fn_e_4` writes 0xFF, no reader observed in writer subtree |
 | placeholder_id | [test_stdply_stat_X9F.py](placeholder_id/test_stdply_stat_X9F.py) | DS:0x9F is **VESTIGIAL** — town frame_update zero-clears it every frame, no reader |
 | placeholder_id | [test_fight_state_byte_C017.py](placeholder_id/test_fight_state_byte_C017.py) | DS:0xC017 is a **data-table base word** (`bx = 2*idx + word_at_C017` in start_boss_scroll); rename → `world_tile_base` |
-| placeholder_id | [test_town_player_col_X83.py](placeholder_id/test_town_player_col_X83.py) | DS:0x83 is **`town_player_col`** (screen column counter, walk_right_move increments by 1); the `ply_accel db 0Ah,0Ah` declaration was bogus |
+| placeholder_id | [test_town_player_col_X83.py](placeholder_id/test_town_player_col_X83.py) | DS:0x83 is **`screen_position`** (screen column counter, walk_right_move increments by 1); the `ply_accel db 0Ah,0Ah` declaration was bogus |
 | placeholder_id | [test_stdply_hero_bank_X88.py](placeholder_id/test_stdply_hero_bank_X88.py) | DS:0x88..0x8A is **`hero_bank_hi/lo`** — 24-bit banked gold accumulator (add+adc+carry confirmed in BANKPRO.BIN) |
 | proc_equivalence | [test_fight_dispatch_8slots_fingerprint.py](proc_equivalence/test_fight_dispatch_8slots_fingerprint.py) | All 8 fight-bin move-monster slots (0x6008..0x6016) grouped into N/S/E/W families by mutation fingerprint |
 | proc_equivalence | [test_fight_dispatch_slot_6008.py](proc_equivalence/test_fight_dispatch_slot_6008.py) | Fight slot 0x6008 target (0x91E5) reads `[SI+3]`, branches on `<34`, IDA-name `move_monster_E` cross-checked |
@@ -61,7 +61,7 @@ as evidence for follow-up renames.
 | proc_equivalence | [test_fight_game_func_82.py](proc_equivalence/test_fight_game_func_82.py) | `game_func_82` → **`match_dl_within_3`** — match [si] against {DL, DL+1, DL+2}; DH = (1, 0, -1). 3 callers. |
 | proc_equivalence | [test_fight_game_func_92.py](proc_equivalence/test_fight_game_func_92.py) | `game_func_92` → **`prep_dirty_blit`** — gates on bit-15 of [si+7]; clears flag + falls through to enemy_sprite_blit. 2 callers. |
 | proc_equivalence | [test_fight_game_func_106.py](proc_equivalence/test_fight_game_func_106.py) | `game_func_106` → **`try_place_tile_id_49`** — 4-gate tile placement (counter + vga_op9 + 2 bit-5 flags). 3 callers. |
-| proc_equivalence | [test_fight_game_func_70.py](proc_equivalence/test_fight_game_func_70.py) | `game_func_70` → **`compute_scroll_pos`** — derive map_scroll_col/row from scroll_count, scroll_dir, player_y. 2 callers. |
+| proc_equivalence | [test_fight_game_func_70.py](proc_equivalence/test_fight_game_func_70.py) | `game_func_70` → **`compute_scroll_pos`** — derive starting_position_in_town/row from scroll_count, scroll_dir, player_y. 2 callers. |
 | proc_equivalence | [test_fight_game_func_129.py](proc_equivalence/test_fight_game_func_129.py) | `game_func_129` → **`is_unknown_or_area5_slot_b`** — CF=1 iff entity unknown OR (area==5 AND in slot_b). 2 callers. |
 | proc_equivalence | [test_fight_game_func_131.py](proc_equivalence/test_fight_game_func_131.py) | `game_func_131` → **`is_unknown_or_area5_slot_c`** — twin of 129 but slot_c family. 2 callers. |
 

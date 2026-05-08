@@ -25,10 +25,10 @@ SAVE_DIR = Path(__file__).parent / "bin"
 # three sources of truth agree.  TCRF aliases live in stdply.inc.
 # format: 'b' = 1-byte unsigned, 'w' = 2-byte LE word, '24' = 3-byte 24-bit LE
 PLAYER_RECORD = [
-    (0x80, "map_scroll_col",   "b"),   # 16-bit at runtime; high byte (0x81) always 00 in saves
+    (0x80, "starting_position_in_town",   "b"),   # 16-bit at runtime; high byte (0x81) always 00 in saves
     (0x81, "stat_X81",         "b"),   # DO NOT EDIT — non-00 crashes the game (TCRF)
     (0x82, "map_scroll_row",   "b"),
-    (0x83, "town_player_col",  "b"),
+    (0x83, "screen_position",  "b"),
     (0x84, "fight_player_col", "b"),
     (0x85, "player_gold",      "24"),  # 3 bytes (hi, lo, mid)
     (0x88, "player_bank",      "24"),  # 3 bytes (hi, lo, mid)
@@ -36,8 +36,8 @@ PLAYER_RECORD = [
     (0x8D, "hero_level",       "b"),
     (0x8E, "experience",       "w"),
     (0x90, "player_HP",        "w"),
-    (0x92, "equipped_weapon",  "b"),
-    (0x93, "shield_type",      "b"),
+    (0x92, "sword",  "b"),
+    (0x93, "shield",      "b"),
     (0x94, "shield_HP",        "w"),
     (0x96, "shield_max_HP",    "w"),
     (0x98, "keys_normal",      "b"),
@@ -46,7 +46,7 @@ PLAYER_RECORD = [
     (0x9B, "crest_glory",      "b"),
     (0x9C, "crest_hero",       "b"),
     (0x9D, "selected_spell",   "b"),
-    (0x9E, "selected_wearable","b"),
+    (0x9E, "selected_accessory","b"),
     (0x9F, "stat_X9F",         "b"),
     (0xA0, "tears_of_esmesanti_count", "b"),
     (0xA1, "wear_list",        "5b"),  # 5 wearable slots (4 shoes + 1 cape) — IDs in acquisition order
@@ -61,14 +61,14 @@ PLAYER_RECORD = [
     (0xBF, "spell_known_rascar", "b"),
     (0xC0, "spell_known_agua",   "b"),
     (0xC1, "spell_known_guerra", "b"),
-    (0xC2, "player_facing",      "b"),
+    (0xC2, "facing_direction",      "b"),
     (0xC3, "boss_intro_flag",    "b"),
     (0xC4, "save_sage",          "b"),
     (0xC5, "last_sage_visited",  "b"),
     (0xC6, "heal_pulse_count",   "w"),
     (0xC8, "current_level_idx",  "b"),
     (0xE4, "key_count",          "b"),
-    (0xE5, "sages_spoken",       "b"),
+    (0xE5, "sages_spoken_bitmap",       "b"),
     (0xE6, "scene_trans_request","b"),
     (0xE7, "gvar_pose_idx",      "b"),
     (0xE8, "init_complete_flag", "b"),

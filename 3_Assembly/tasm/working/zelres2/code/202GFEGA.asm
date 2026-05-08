@@ -1573,7 +1573,7 @@ enemy_row_scan_loop:
 								mul	dl			; ax = reg * al
 								mov	bx,ax
 								add	bx,pattern_base
-								mov	al,byte ptr ds:[town_player_col]
+								mov	al,byte ptr ds:[screen_position]
 								add	al,3
 								xor	ah,ah			; Zero register
 								add	bx,ax
@@ -1600,7 +1600,7 @@ loc_89:
 		xor	ah,ah			; Zero register
 		mov	cx,280h
 		mul	cx			; dx:ax = reg * ax
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		xor	ch,ch			; Zero register
 		add	cx,cx
 		add	ax,cx
@@ -1702,7 +1702,7 @@ loc_col_advance:
 loc_96:
 		mov	cl,0FFh
 		mov	si,6117h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	test_flag_hero_state			; Jump if zero
 		xor	cl,cl			; Zero register
 		mov	si,61B9h
@@ -1752,7 +1752,7 @@ call_hero_tier_get:
 		jz	test_flag_shield			; Jump if zero
 		dec	al
 		mov	cl,al
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	test_flag_shield			; Jump if not zero
 		mov	ax,6Ch
 		mov	dl,ds:flag_shield
@@ -1803,7 +1803,7 @@ loc_106:
 		test	byte ptr ds:flag_climbing,0FFh
 		jnz	loc_109			; Jump if not zero
 		mov	si,6075h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	test_init_complete_flag			; Jump if not zero
 		mov	si,game_data_base
 
@@ -1854,7 +1854,7 @@ loc_111:
 loc_112:
 		mov	cl,0FFh
 		mov	si,61B9h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_113			; Jump if not zero
 		xor	cl,cl			; Zero register
 		mov	si,6117h
@@ -1917,7 +1917,7 @@ loc_118:
 		jmp	short test_flag_shield_123
 
 loc_119:
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	loc_121			; Jump if zero
 		call	hero_tier_get
 		or	al,al			; Zero ?
@@ -2003,7 +2003,7 @@ loc_126:
 hero_sprite_col_blit		endp
 
 hero_tier_get		proc	near
-		mov	al,byte ptr ds:[shield_type]
+		mov	al,byte ptr ds:[shield]
 		or	al,al			; Zero ?
 		jnz	loc_127			; Jump if not zero
 		retn
@@ -2105,7 +2105,7 @@ scroll_pos_load		proc	near
 		mov	cl,byte ptr ds:[fight_player_col]
 		mov	al,sprite_record_size
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		add	cl,4
 		xor	ch,ch			; Zero register
 		add	ax,cx
@@ -2194,7 +2194,7 @@ loc_141:
 		mov	si,0B16Eh
 		mov	word ptr ds:scroll_delta,0FF01h
 		mov	dx,27Eh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_146			; Jump if not zero
 		mov	si,0B0BEh
 		mov	word ptr ds:scroll_delta,1
@@ -2214,7 +2214,7 @@ loc_143:
 		add	bx,bx
 		mov	di,0B19Eh
 		mov	si,0B12Eh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_145			; Jump if not zero
 		mov	di,0B18Ah
 		mov	si,0B07Eh
@@ -2230,7 +2230,7 @@ check_scroll_step_eq_7:
 		add	bx,bx
 		mov	di,0B192h
 		mov	si,0B0CEh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_145			; Jump if not zero
 		mov	di,ega_plane_alt
 		mov	si,0B01Eh
@@ -2379,7 +2379,7 @@ scroll_cache_invalidate		proc	near
 		and	al,3Fh			; '?'
 		mov	cl,sprite_record_size
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		add	cl,byte ptr ds:scroll_delta+1
 		add	cl,4
 		xor	ch,ch			; Zero register
@@ -2425,7 +2425,7 @@ set_restore_pending_FF:
 		push	bx
 		call	scroll_cache_invalidate
 		call	bg_save
-		mov	bl,byte ptr cs:[equipped_weapon]
+		mov	bl,byte ptr cs:[sword]
 		dec	bl
 		xor	bh,bh			; Zero register
 		mov	al,cs:color_map_tbl[bx]
@@ -2945,7 +2945,7 @@ ega_color_fade_init:
 		push	ax
 		or	al,0A0h
 		adc	dh,al
-		mov	al,ds:[town_player_col]		; X coord (game_seg global)
+		mov	al,ds:[screen_position]		; X coord (game_seg global)
 		add	al,al			; X * 2
 		add	al,al			; X * 4
 		add	al,al			; X * 8 -> EGA palette X offset
@@ -3860,12 +3860,12 @@ plane_1_2_blit_loop:
 		pop	ds
 		retn
 
-; Dispatch handler: draw hero graphics from hero_gfx_tbl[ds:[equipped_weapon]-1] into vga_buf_ofs.
+; Dispatch handler: draw hero graphics from hero_gfx_tbl[ds:[sword]-1] into vga_buf_ofs.
 ; Writes 0x18 rows ?? 4 bytes using EGA bit-mask register with plane 1.
 
 draw_hero_gfx:
 		push	ds
-		mov	bl,byte ptr ds:[equipped_weapon]
+		mov	bl,byte ptr ds:[sword]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx

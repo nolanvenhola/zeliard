@@ -37,7 +37,7 @@ PAGE  59,132
 ;    Reads/writes: gvar_script_ip (DS:0FF4Ch) -- chained between branch
 ;                    scripts (first-visit / second-visit / nag / post-victory)
 ;                  gvar_text_x/y (DS:0FF4Eh/0FF4Fh), gvar_game_seg (CS:0FF2Ch),
-;                  player gold low word at ds:[player_gold_lo]
+;                  player gold low word at ds:[gold_carried_x1]
 ;                    (incremented by 1000 on first-visit award),
 ;                  dialog_done_flag (DS:[5h]), dialog_done_flag_b (DS:[6h])
 ;                    -- per-quest progression flags set by dispatch handlers,
@@ -194,12 +194,12 @@ gold_award_entry:
 
 gold_add_loop:
 				push	cx
-				mov	ax,word ptr ds:[player_gold_lo]	; gold low word
-				mov	dl,byte ptr ds:[player_gold_hi]	; gold high byte
+				mov	ax,word ptr ds:[gold_carried_x1]	; gold low word
+				mov	dl,byte ptr ds:[gold_carried_x65536]	; gold high byte
 				add	ax,64h			; += 100
 				adc	dl,0
-				mov	word ptr ds:[player_gold_lo],ax
-				mov	byte ptr ds:[player_gold_hi],dl
+				mov	word ptr ds:[gold_carried_x1],ax
+				mov	byte ptr ds:[gold_carried_x65536],dl
 				call	word ptr cs:drv_frame_commit
 				mov	byte ptr ds:gvar_volume,13h
 				mov	byte ptr ds:gvar_frame_timer,0

@@ -1385,7 +1385,7 @@ sprite_shape_tbl:
 		db	 0F4h				; 0x094E
 		db	 00h, 0BFh, 0Dh, 50h		; 0x094F
 ; fade_color_init -- inline proc body (HGC variant). Sets up VGA color pair from
-; ds:[town_player_col]/[84h] (game_seg XY coords), calls hgc_xor_fill_region, does 3 fade passes
+; ds:[screen_position]/[84h] (game_seg XY coords), calls hgc_xor_fill_region, does 3 fade passes
 ; at radii, and falls through into fade_color_init's inner loop.
 
 fade_color_init:
@@ -1419,7 +1419,7 @@ pattern_row_loop:
 				mul	dl			; ax = reg * al
 				mov	bx,ax
 				add	bx,pattern_base
-				mov	al,byte ptr ds:[town_player_col]
+				mov	al,byte ptr ds:[screen_position]
 				add	al,3
 				xor	ah,ah			; Zero register
 				add	bx,ax
@@ -1447,7 +1447,7 @@ fade_color_loop_start:
 		add	bl,bl
 		add	bl,bl
 		add	bl,0Eh
-		mov	bh,byte ptr ds:[town_player_col]
+		mov	bh,byte ptr ds:[screen_position]
 		add	bh,6
 		add	bh,bh
 		call	hgc_pixel_addr_calc
@@ -1546,7 +1546,7 @@ fade_cell_continue:
 loc_116:
 		mov	cl,0FFh
 		mov	si,6117h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	test_flag_hero_state			; Jump if zero
 		xor	cl,cl			; Zero register
 		mov	si,61B9h
@@ -1596,7 +1596,7 @@ call_get_step_direction:
 		jz	test_flag_shield			; Jump if zero
 		dec	al
 		mov	cl,al
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	test_flag_shield			; Jump if not zero
 		mov	ax,6Ch
 		mov	dl,ds:flag_shield
@@ -1647,7 +1647,7 @@ loc_126:
 		test	byte ptr ds:flag_climbing,0FFh
 		jnz	loc_129			; Jump if not zero
 		mov	si,6075h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	test_init_complete_flag			; Jump if not zero
 		mov	si,game_data_base
 
@@ -1698,7 +1698,7 @@ loc_131:
 loc_132:
 		mov	cl,0FFh
 		mov	si,61B9h
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_133			; Jump if not zero
 		xor	cl,cl			; Zero register
 		mov	si,6117h
@@ -1761,7 +1761,7 @@ loc_138:
 		jmp	short test_flag_shield_143
 
 loc_139:
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	loc_141			; Jump if zero
 		call	get_step_direction
 		or	al,al			; Zero ?
@@ -1849,7 +1849,7 @@ loc_146:
 sprite_write_range		endp
 
 get_step_direction		proc	near
-		mov	al,byte ptr ds:[shield_type]
+		mov	al,byte ptr ds:[shield]
 		or	al,al			; Zero ?
 		jnz	loc_147			; Jump if not zero
 		retn
@@ -1954,7 +1954,7 @@ build_sprite_refs		proc	near
 		mov	cl,byte ptr ds:[fight_player_col]
 		mov	al,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		add	cl,4
 		xor	ch,ch			; Zero register
 		add	ax,cx
@@ -2049,7 +2049,7 @@ loc_161:
 		add	di,0A05Ah
 
 loc_162:
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jz	loc_163			; Jump if zero
 		jmp	test_flag_shield_175
 
@@ -2078,7 +2078,7 @@ loc_166:
 		add	bx,bx
 		mov	di,0B19Eh
 		mov	si,0B12Eh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_169			; Jump if not zero
 		mov	di,0B18Ah
 		mov	si,0B07Eh
@@ -2097,7 +2097,7 @@ loc_168:
 		add	bx,bx
 		mov	di,0B192h
 		mov	si,0B0CEh
-		test	byte ptr ds:[player_facing],1
+		test	byte ptr ds:[facing_direction],1
 		jnz	loc_169			; Jump if not zero
 		mov	di,hgc_plane_alt
 		mov	si,0B01Eh
@@ -2264,7 +2264,7 @@ clear_sprite_cache_block		proc	near
 		and	al,3Fh			; '?'
 		mov	cl,24h			; '$'
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:[town_player_col]
+		mov	cl,byte ptr ds:[screen_position]
 		add	cl,byte ptr ds:scroll_delta+1
 		add	cl,4
 		xor	ch,ch			; Zero register
@@ -2688,11 +2688,11 @@ set_pixel_stride_offset		proc	near
 set_pixel_stride_offset		endp
 
 ; color_fade_trigger -- dispatch handler: triggers a 2-pass color fade effect.
-; Builds cur_color_pair from ds:[town_player_col]/[84h] (game XY), clears fill region,
+; Builds cur_color_pair from ds:[screen_position]/[84h] (game XY), clears fill region,
 ; then does two fade radius passes with anim_phase=0xAA then 0x00.
 
 color_fade_trigger:
-		mov	al,byte ptr ds:[town_player_col]
+		mov	al,byte ptr ds:[screen_position]
 		add	al,al
 		add	al,al
 		add	al,al
@@ -3508,12 +3508,12 @@ loc_273:
 
 		pop	ds
 		retn
-; draw_hero_gfx -- draw hero graphics from phase_offset_tbl[ds:[equipped_weapon]-1] into
+; draw_hero_gfx -- draw hero graphics from phase_offset_tbl[ds:[sword]-1] into
 ; hgc_ui_ofs region. Writes 0x18 rows using OR into HGC framebuffer.
 
 draw_hero_gfx:
 		push	ds
-		mov	bl,byte ptr ds:[equipped_weapon]
+		mov	bl,byte ptr ds:[sword]
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx

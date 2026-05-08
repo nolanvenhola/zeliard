@@ -2413,7 +2413,7 @@ Regenerate: `python 3_Assembly/tasm/generate_symbol_index.py`
 | `equip_process_loop_4` | proc | [zelres1/code/102GDCGA.asm:1890](zelres1/code/102GDCGA.asm#L1890) | 3 |
 | `equip_process_loop_5` | proc | [zelres1/code/102GDCGA.asm:2548](zelres1/code/102GDCGA.asm#L2548) | 19 |
 | `equipped_magic` | equ | [zelres2/code/201SELCT.asm:124](zelres2/code/201SELCT.asm#L124) | 5 |
-| `equipped_weapon` | equ | [zelres2/code/201SELCT.asm:123](zelres2/code/201SELCT.asm#L123) | 3 |
+| `sword` | equ | [zelres2/code/201SELCT.asm:123](zelres2/code/201SELCT.asm#L123) | 3 |
 | `escape_flag` | equ | [zelres2/code/200FIGHT.asm:241](zelres2/code/200FIGHT.asm#L241) | 4 |
 | `evt_inner_write` | label | [zelres1/code/106TOWN.asm:1607](zelres1/code/106TOWN.asm#L1607) | 2 |
 | `evt_outer_active` | label | [zelres1/code/106TOWN.asm:1594](zelres1/code/106TOWN.asm#L1594) | 1 |
@@ -5069,7 +5069,7 @@ Regenerate: `python 3_Assembly/tasm/generate_symbol_index.py`
 | `player_col` | equ | [zelres1/code/106TOWN.asm:196](zelres1/code/106TOWN.asm#L196) | 1 |
 | `player_copy_buf` | proc | [zelres1/code/106TOWN.asm:3309](zelres1/code/106TOWN.asm#L3309) | 2 |
 | `player_draw_fn` | equ | [zelres1/code/106TOWN.asm:153](zelres1/code/106TOWN.asm#L153) | 2 |
-| `player_facing` | equ | [zelres1/code/106TOWN.asm:197](zelres1/code/106TOWN.asm#L197) | 1 |
+| `facing_direction` | equ | [zelres1/code/106TOWN.asm:197](zelres1/code/106TOWN.asm#L197) | 1 |
 | `player_func_1` | proc | [zelres1/code/106TOWN.asm:454](zelres1/code/106TOWN.asm#L454) | 2 |
 | `player_func_12` | proc | [zelres1/code/106TOWN.asm:1265](zelres1/code/106TOWN.asm#L1265) | 3 |
 | `player_func_14` | proc | [zelres1/code/106TOWN.asm:1291](zelres1/code/106TOWN.asm#L1291) | 8 |

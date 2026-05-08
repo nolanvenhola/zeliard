@@ -47,8 +47,8 @@ include  srmacros.inc
 spells_learned_count equ 0A0h			; count of spells learned (canonical in stdply.inc)
 music_track_count equ	0A0h			; alias — earlier name (kept; load_music_tracks reads via this)
 stick_joy_poll_handler equ	120h			; stick.bin slot 120h dispatch (poll_joystick_buttons; canonical zr1com.inc/zr2com.inc)
-equipped_weapon	equ	92h			; equipped weapon idx (canonical in stdply.inc)
-shield_type	equ	93h			; shield tier (canonical in stdply.inc)
+sword	equ	92h			; equipped weapon idx (canonical in stdply.inc)
+shield	equ	93h			; shield tier (canonical in stdply.inc)
 ; 0x9D = currently selected spell ID (user-corrected).
 selected_spell	equ	9Dh			; currently chosen spell ID (canonical in stdply.inc)
 weapon_tier_max	equ	9Dh			; alias — earlier (wrong) name
@@ -354,7 +354,7 @@ start_load_game:
 		add	es:[di+4],di
 
 		; Load SAR archive (zelres1 opening data)
-		mov	ah,byte ptr ds:equipped_weapon	; Archive number from config
+		mov	ah,byte ptr ds:sword	; Archive number from config
 		mov	al,4			; Function 4 = load archive
 		call	word ptr cs:sar_loader_fn
 
@@ -381,16 +381,16 @@ start_load_game:
 		; Initialize graphics driver systems
 		mov	ax,cs
 		mov	ds,ax
-		test	byte ptr ds:equipped_weapon,0FFh
+		test	byte ptr ds:sword,0FFh
 		jz	gfx_init_after_music
-		mov	al,byte ptr ds:equipped_weapon
+		mov	al,byte ptr ds:sword
 		mov	bx,music_player_fn
 		call	word ptr cs:gfx_call_a
 
 gfx_init_after_music:
-		test	byte ptr ds:shield_type,0FFh
+		test	byte ptr ds:shield,0FFh
 		jz	gfx_init_after_font
-		mov	al,byte ptr ds:shield_type
+		mov	al,byte ptr ds:shield
 		mov	bx,font_gfx_base
 		call	word ptr cs:gfx_call_c
 

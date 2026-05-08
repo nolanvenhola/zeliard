@@ -52,15 +52,15 @@ consistent.
 
 | Address | EQU name(s) | Raw-hex sites | Sample |
 |---|---|---|---|
-| `0x00C2` | `player_facing` | 87 | `300ROKAD.asm:205` — `and	byte ptr ds:[0C2h],0FEh` |
+| `0x00C2` | `facing_direction` | 87 | `300ROKAD.asm:205` — `and	byte ptr ds:[0C2h],0FEh` |
 | `0x0083` | `ANIM_83`, `player_col`, `ply_accel` | 76 | `200FIGHT.asm:488` — `mov	byte ptr ds:[83h],5` |
 | `0x00E7` | `gvar_pose_idx`, `stat_XE7` | 64 | `game.asm:182` — `mov	byte ptr ds:[0E7h],al	; Unknown state var` |
 | `0x0080` | `ANIM_80`, `PSP_cmd_size`, `half_stride`, `ply_walk_speed` | 54 | `200FIGHT.asm:487` — `mov	word ptr ds:[80h],29h` |
 | `0x010C` | `sar_loader_fn` | 49 | `300ROKAD.asm:181` — `call	word ptr cs:[10Ch]` |
 | `0x0084` | `ANIM_84` | 49 | `200FIGHT.asm:834` — `inc	byte ptr ds:[84h]` |
 | `0x00E8` | `stat_XE8` | 28 | `200FIGHT.asm:1539` — `test	byte ptr ds:[0E8h],0FFh` |
-| `0x0093` | `ANIM_93`, `equipped_magic`, `shield_type` | 23 | `game.asm:307` — `test	byte ptr ds:[93h],0FFh` |
-| `0x0092` | `ANIM_92`, `equipped_weapon`, `sword_type` | 22 | `game.asm:273` — `mov	ah,byte ptr ds:[92h]	; Archive number from config` |
+| `0x0093` | `ANIM_93`, `equipped_magic`, `shield` | 23 | `game.asm:307` — `test	byte ptr ds:[93h],0FFh` |
+| `0x0092` | `ANIM_92`, `sword`, `sword_type` | 22 | `game.asm:273` — `mov	ah,byte ptr ds:[92h]	; Archive number from config` |
 | `0x009D` | `ANIM_9D`, `cur_weapon_idx`, `current_magic_spell` | 19 | `game.asm:314` — `test	byte ptr ds:[9Dh],0FFh` |
 | `0x0082` | `ANIM_82` | 19 | `200FIGHT.asm:1035` — `dec	byte ptr ds:[82h]` |
 | `0x0086` | `ANIM_86`, `hero_gold_lo` | 17 | `gmega.asm:879` — `mov	ax,word ptr cs:[86h]` |

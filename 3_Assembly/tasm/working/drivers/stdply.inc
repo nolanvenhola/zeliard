@@ -28,7 +28,7 @@
 ; remain 00 or the game crashes.  In saves, 0x81 is always 00 — the asm
 ; treats 0x80 as a 16-bit cavern X scroll word at runtime, but the high
 ; byte never gets serialized as non-zero.  Two lenses on the same byte.
-map_scroll_col          equ     80h     ; cavern X scroll column (asm: 16-bit; 80h..81h)
+starting_position_in_town          equ     80h     ; cavern X scroll column (asm: 16-bit; 80h..81h)
 start_pos_in_town       equ     80h     ; alias — TCRF save-format name (single byte)
 stat_X81                equ     81h     ; TCRF: DO NOT EDIT — non-00 value crashes the game
 map_scroll_row          equ     82h     ; cavern Y scroll row (8-bit, paired with gvar_scroll_pos)
@@ -37,7 +37,7 @@ stat_X82                equ     82h     ; alias — TCRF save-format labels this
 ; Player screen-column counters  [0x0083-0x0084]  — runtime probe
 ; (functest/placeholder_id/test_town_player_col_X83.py, 2026-04-29)
 ; confirmed these are TWO INDEPENDENT counters, not a 16-bit pair:
-;   0x83 — town_player_col: walk_left/right inc/dec, range 0..0x10,
+;   0x83 — screen_position: walk_left/right inc/dec, range 0..0x10,
 ;          used in 106TOWN tile-lookup arithmetic (`bl=[83]; bx=(bl+6)*8+tile_ptr`)
 ;   0x84 — fight_player_col: independent counter in 200FIGHT, range 0..7
 ; The earlier `player_accel db 0Ah, 0Ah` declaration was a misread.
@@ -45,7 +45,7 @@ stat_X82                equ     82h     ; alias — TCRF save-format labels this
 ; TCRF save-format note: 0x83 = "physical position on screen, 0D = center,
 ; >1A can crash"; 0x84 = "Unknown (observed 00, 0A, 12)".  The asm names
 ; survive (functest-validated) and TCRF-aligned aliases are added.
-town_player_col         equ     83h     ; player screen column in town (range 0..0x10)
+screen_position         equ     83h     ; player screen column in town (range 0..0x10)
 fight_player_col        equ     84h     ; player screen column in fight (range 0..7)
 stat_X84                equ     84h     ; alias — TCRF save-format labels this byte unknown
 player_accel               equ     83h     ; alias — earlier name (was bogus 2-byte declaration)
@@ -56,17 +56,17 @@ player_accel               equ     83h     ; alias — earlier name (was bogus 2
 ;
 ; Gold (24-bit):  high byte at 0x85, little-endian low word at 0x86..0x87.
 ; Verified by functest/test_town_dispatch_slot_60{0A,0C}.py.
-player_gold_hi            equ     85h     ; gold high byte (24-bit)
-player_gold_lo            equ     86h     ; gold low byte (start of low word)
-player_gold_mid           equ     87h     ; gold low word's high byte
+gold_carried_x65536            equ     85h     ; gold high byte (24-bit)
+gold_carried_x1            equ     86h     ; gold low byte (start of low word)
+gold_carried_x256           equ     87h     ; gold low word's high byte
 ;
 ; Player bank balance (24-bit, mirrors player_gold layout).  Used by 213BANKP
 ; (the bank shop chunk) — `add [89h], ax; adc [88h], dl` is the deposit
 ; pattern; 213BANKP also reads [88h]:[89h] for balance display.  Verified
 ; by functest/placeholder_id/test_stdply_hero_bank_X88.py (2026-04-29):
 ; carry propagation 0xFFFE+5 → hi=1, lo=0x0003 confirmed.
-player_bank_hi            equ     88h     ; banked-gold high byte (24-bit)
-player_bank_lo            equ     89h     ; banked-gold low word (89h..8Ah)
+gold_in_bank_x65536            equ     88h     ; banked-gold high byte (24-bit)
+gold_in_bank_x1            equ     89h     ; banked-gold low word (89h..8Ah)
 stat_X88_hi             equ     88h     ; alias — earlier name
 stat_X88_lo             equ     89h     ; alias — earlier name
 ;
@@ -93,13 +93,13 @@ stat_X8E                equ     8Eh     ; alias — earlier placeholder
 player_HP                 equ     90h     ; current HP low byte (16-bit field)
 player_HP_hi              equ     91h     ; current HP high byte
 ;
-equipped_weapon         equ     92h     ; currently equipped weapon idx (1-based; init 1 = SWORD_TRAINING).
+sword         equ     92h     ; currently equipped weapon idx (1-based; init 1 = SWORD_TRAINING).
                                         ; Functional evidence in 201SELCT (test/read as weapon index).
                                         ; Was misnamed `sword_type` — sword is just one weapon kind.
-; 0x93..0x96: shield_type + shield_HP (16-bit) + shield_max_HP (16-bit).
+; 0x93..0x96: shield + shield_HP (16-bit) + shield_max_HP (16-bit).
 ; Strong functional evidence in 200FIGHT.asm `apply_combat_damage_with_absorb`
 ; (line 3501): when [93h] is non-zero, damage AX is shifted right by
-; ((shield_type+1)/2 + 1) — classic shield-tier absorption — then subtracted
+; ((shield+1)/2 + 1) — classic shield-tier absorption — then subtracted
 ; from word [94h] (shield_HP).  On underflow, both [93h] and [94h] are
 ; cleared (= "shield broken") and the remainder is dealt to player_HP with
 ; sound cue 8; otherwise sound cue 9.
@@ -114,7 +114,7 @@ equipped_weapon         equ     92h     ; currently equipped weapon idx (1-based
 ;  solely on 201SELCT's icon-draw context, which mistook the shield-repair
 ;  handler for an XP-gain handler.  200FIGHT's combat-damage logic is the
 ;  decisive evidence.)
-shield_type             equ     93h     ; shield tier (1-based; 0 = no shield equipped)
+shield             equ     93h     ; shield tier (1-based; 0 = no shield equipped)
 shield_HP               equ     94h     ; current shield HP, low byte (16-bit field)
 shield_HP_hi            equ     95h     ; current shield HP, high byte
 ;
@@ -183,7 +183,7 @@ cur_weapon_idx          equ     9Dh     ; alias — earlier (wrong) name
 ; 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape — same enum as wear_*).
 ; Cross-save evidence: Helada save = 4 (Ruzeria, just got it),
 ; Tumba = 2 (Pirika), Llama = 5 (Cape).
-selected_wearable       equ     9Eh     ; currently equipped wearable ID
+selected_accessory       equ     9Eh     ; currently equipped wearable ID
 stat_X9E                equ     9Eh     ; alias — earlier (placeholder) name
 cur_magic_idx           equ     9Eh     ; alias — earlier (wrong) name
 ; 0x9F: VESTIGIAL.  Per-frame zero-clear, no reader observed.
@@ -220,11 +220,11 @@ stat_XA0                 equ    0A0h    ; alias — earlier placeholder
 ;
 ; Earlier name was `magic_flags` / `spell_slot_1..5` — both misleading
 ; (these are wearables, NOT spells).
-wear_1                  equ     0A1h    ; 1st wearable acquired (ID 1..5)
-wear_2                  equ     0A2h    ; 2nd wearable acquired
-wear_3                  equ     0A3h    ; 3rd wearable acquired
-wear_4                  equ     0A4h    ; 4th wearable acquired
-wear_5                  equ     0A5h    ; 5th wearable acquired
+accessory_slot_1                  equ     0A1h    ; 1st wearable acquired (ID 1..5)
+accessory_slot_2                  equ     0A2h    ; 2nd wearable acquired
+accessory_slot_3                  equ     0A3h    ; 3rd wearable acquired
+accessory_slot_4                  equ     0A4h    ; 4th wearable acquired
+accessory_slot_5                  equ     0A5h    ; 5th wearable acquired
 magic_flags             equ     0A1h    ; alias — earlier (misleading) name
 spell_slot_1            equ     0A1h    ; alias — earlier name
 spell_slot_2            equ     0A2h    ; alias
@@ -253,13 +253,13 @@ item_flags              equ     0A6h    ; alias — earlier name for the byte bl
 ; Defaults match TCRF: Espada=0Ch, Saeta=06h, Fuego=08h, Lanzar=04h,
 ; Rascar=03h, Agua=04h, Guerra=03h.  Earlier name `weap_dur_cur` was a
 ; misnomer — these bytes are spell charges, not weapon durability.
-charges_espada            equ     0ABh    ; Espada current charges
-charges_saeta             equ     0ACh    ; Saeta
-charges_fuego             equ     0ADh    ; Fuego
-charges_lanzar            equ     0AEh    ; Lanzar
-charges_rascar            equ     0AFh    ; Rascar
-charges_agua              equ     0B0h    ; Agua
-charges_guerra            equ     0B1h    ; Guerra
+spell_charge_espada            equ     0ABh    ; Espada current charges
+spell_charge_saeta             equ     0ACh    ; Saeta
+spell_charge_fuego             equ     0ADh    ; Fuego
+spell_charge_lanzar            equ     0AEh    ; Lanzar
+spell_charge_rascar            equ     0AFh    ; Rascar
+spell_charge_agua              equ     0B0h    ; Agua
+spell_charge_guerra            equ     0B1h    ; Guerra
 
 ; Animation color LUT overlay  [0x00B2, 0x00B4]
 ; Two bytes inside the 17-entry anim_color_lut do double duty as gameplay
@@ -268,13 +268,13 @@ player_hp_max             equ     0B2h    ; LIFE max (16-bit; overlays LUT frame
 
 ; 0x00B4..0x00BA = max spell charges (TCRF authoritative, same
 ; defaults as 0xAB..B1).  Sage refills set [0xAB..B1][i] = [0xB4..BA][i].
-charges_max_espada        equ     0B4h    ; Espada max charges (overlays LUT frame 10)
-charges_max_saeta         equ     0B5h
-charges_max_fuego         equ     0B6h
-charges_max_lanzar        equ     0B7h
-charges_max_rascar        equ     0B8h
-charges_max_agua          equ     0B9h
-charges_max_guerra        equ     0BAh
+spell_charge_max_espada        equ     0B4h    ; Espada max charges (overlays LUT frame 10)
+spell_charge_max_saeta         equ     0B5h
+spell_charge_max_fuego         equ     0B6h
+spell_charge_max_lanzar        equ     0B7h
+spell_charge_max_rascar        equ     0B8h
+spell_charge_max_agua          equ     0B9h
+spell_charge_max_guerra        equ     0BAh
 weap_dur_max              equ     0B4h    ; alias — earlier (wrong) name
 
 ; Spell availability flags  [0x00BB-0x00C1]  (7 bytes, one per spell)
@@ -323,7 +323,7 @@ boss_kill_tarso         equ     0C0h    ; alias — earlier name
 boss_kill_dragon        equ     0C1h    ; alias — earlier name
 
 ; Player flags / hitbox section  [0x00C2-0x00E8]
-player_facing           equ     0C2h    ; facing/anim flags (87 byte_tests — most-tested byte)
+facing_direction           equ     0C2h    ; facing/anim flags (87 byte_tests — most-tested byte)
 ; 0xC3: boss-intro flag.  200FIGHT line 4068 sets it as `[si+3] & 40h`
 ; (bit 6 from boss-init data).  Tested in `check_c3` (line 4153):
 ; `test [C3h], 0FFh; jnz c3_set_loop` — controls which intro animation
@@ -367,7 +367,7 @@ stat_XC8                   equ     0C8h    ; alias — earlier placeholder
 ;  is a per-town bitfield; the bit order is TCRF item ordering.
 ;
 ;  WARNING: the previous `player_hitbox db ...` declaration in stdply.asm
-;  sat exactly on 0xD2 (= shop_sword_muralla).  No code reader exists for
+;  sat exactly on 0xD2 (= weapon_shop_swords_muralla).  No code reader exists for
 ;  that label — it was a misinterpretation of the bit pattern as a
 ;  collision bitmask.  The 9-row "##......" ASCII art is coincidental.
 ;==========================================================================
@@ -375,42 +375,42 @@ stat_XC8                   equ     0C8h    ; alias — earlier placeholder
 ; Magic shop inventory per town (TCRF defaults: 8A A6 6B 75 42 4C 4B 01 FF)
 ; Bits: +128=Ken'ko +64=Juu-en +32=Elixir +16=Chikara +8=Magia +4=HolyWater
 ;       +2=SabreOil +1=Kioku  (FF = full stock)
-shop_magic_muralla         equ     0C9h
-shop_magic_satono          equ     0CAh
-shop_magic_bosque          equ     0CBh
-shop_magic_helada          equ     0CCh
-shop_magic_tumba           equ     0CDh
-shop_magic_dorado          equ     0CEh
-shop_magic_llama           equ     0CFh
-shop_magic_pureza          equ     0D0h
-shop_magic_esco            equ     0D1h
+magic_shop_inventory_muralla         equ     0C9h
+magic_shop_inventory_satono          equ     0CAh
+magic_shop_inventory_bosque          equ     0CBh
+magic_shop_inventory_helada          equ     0CCh
+magic_shop_inventory_tumba           equ     0CDh
+magic_shop_inventory_dorado          equ     0CEh
+magic_shop_inventory_llama           equ     0CFh
+magic_shop_inventory_pureza          equ     0D0h
+magic_shop_inventory_esco            equ     0D1h
 
 ; Weapon shop sword inventory per town (TCRF defaults: C0 C0 E0 E0 70 38 38 F8 F8)
 ; Bits: +128=Training +64=WiseMan +32=Spirit +16=Knight +8=Illumination +4=Enchantment
-shop_sword_muralla         equ     0D2h
-shop_sword_satono          equ     0D3h
-shop_sword_bosque          equ     0D4h
-shop_sword_helada          equ     0D5h
-shop_sword_tumba           equ     0D6h    ; -16 after Glory-Crest trade (loses Knight bit)
-shop_sword_dorado          equ     0D7h
-shop_sword_llama           equ     0D8h
-shop_sword_pureza          equ     0D9h
-shop_sword_esco            equ     0DAh
+weapon_shop_swords_muralla         equ     0D2h
+weapon_shop_swords_satono          equ     0D3h
+weapon_shop_swords_bosque          equ     0D4h
+weapon_shop_swords_helada          equ     0D5h
+weapon_shop_swords_tumba           equ     0D6h    ; -16 after Glory-Crest trade (loses Knight bit)
+weapon_shop_swords_dorado          equ     0D7h
+weapon_shop_swords_llama           equ     0D8h
+weapon_shop_swords_pureza          equ     0D9h
+weapon_shop_swords_esco            equ     0DAh
 player_hitbox              equ     0D2h    ; alias — WRONG name (zero readers in cleaned source);
                                            ; the 9-row collision-bitmask interpretation was a
                                            ; misread of the shop_sword_* default byte pattern.
 
 ; Weapon shop shield inventory per town (TCRF defaults: C0 E0 E0 70 30 38 1C 1C FC)
 ; Bits: +128=Clay +64=WiseMan +32=Stone +16=Honor +8=Light +4=Titanium
-shop_shield_muralla        equ     0DBh
-shop_shield_satono         equ     0DCh
-shop_shield_bosque         equ     0DDh
-shop_shield_helada         equ     0DEh
-shop_shield_tumba          equ     0DFh
-shop_shield_dorado         equ     0E0h
-shop_shield_llama          equ     0E1h
-shop_shield_pureza         equ     0E2h
-shop_shield_esco           equ     0E3h
+weapon_shop_shields_muralla        equ     0DBh
+weapon_shop_shields_satono         equ     0DCh
+weapon_shop_shields_bosque         equ     0DDh
+weapon_shop_shields_helada         equ     0DEh
+weapon_shop_shields_tumba          equ     0DFh
+weapon_shop_shields_dorado         equ     0E0h
+weapon_shop_shields_llama          equ     0E1h
+weapon_shop_shields_pureza         equ     0E2h
+weapon_shop_shields_esco           equ     0E3h
 
 ; Player state / hitbox tail  [0x00C4-0x00E8]
 ; Refinements found by analyze_stat_layout.py: 0xC6..0xC7 is a 16-bit field
@@ -432,7 +432,7 @@ stat_XE4                equ     0E4h    ; alias — earlier name
 ; have spoken with the player (+128=Muralla +64=Satono +32=Bosque +16=Helada
 ; +8=Tumba +4=Dorado +2=Llama +1=Pureza).  stdply.asm initialises this byte
 ; to 0 — TCRF says the saved value tracks per-sage dialog progression.
-sages_spoken            equ     0E5h    ; sages spoken-with bitmap (TCRF)
+sages_spoken_bitmap            equ     0E5h    ; sages spoken-with bitmap (TCRF)
 ; 0xE6: scene-transition request flag.  200FIGHT main_loop_body (line 712)
 ; polls `test [E6h], 0FFh; jnz scene_transition`; on transition,
 ; scene_exit_wait (line 723-726) spin-waits for [E6h] to clear.

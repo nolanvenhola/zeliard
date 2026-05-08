@@ -36,7 +36,7 @@ PAGE  59,132
 ;                  gvar_dlg_pos (DS:0FF54h), gvar_text_x/y, gvar_timer_word,
 ;                  cur_shop_id (DS:0C006h, set by caller from 1..8 selecting
 ;                    the witchcraft vendor), inventory_list (DS:0FF58h),
-;                  player gold word at ds:[player_gold_lo], gvar_game_seg (DS:0FF2Ch).
+;                  player gold word at ds:[gold_carried_x1], gvar_game_seg (DS:0FF2Ch).
 ;
 ;==========================================================================
 
@@ -336,8 +336,8 @@ locloop_10:
 loc_11:
 		pop	ax
 		pop	dx
-		mov	byte ptr ds:[player_gold_hi],dl
-		mov	word ptr ds:[player_gold_lo],ax
+		mov	byte ptr ds:[gold_carried_x65536],dl
+		mov	word ptr ds:[gold_carried_x1],ax
 		inc	bl
 		mov	[si],bl
 		mov	word ptr ds:gvar_script_ip,0A8F2h

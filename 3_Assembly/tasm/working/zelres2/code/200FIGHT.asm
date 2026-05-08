@@ -790,8 +790,8 @@ main_loop_body:
 
 scene_transition:
 		mov	byte ptr ds:scene_trans_flag,0FFh
-		mov	word ptr ds:map_scroll_col,29h
-		mov	byte ptr ds:town_player_col,5
+		mov	word ptr ds:starting_position_in_town,29h
+		mov	byte ptr ds:screen_position,5
 		call	vga_operation0
 		call	fill_buffer
 
@@ -829,7 +829,7 @@ scene_exit_wait:
 		pop	ds
 		mov	word ptr ds:scroll_count,18h
 		mov	byte ptr ds:scroll_dir,0Dh
-		mov	byte ptr ds:town_player_col,0Ch
+		mov	byte ptr ds:screen_position,0Ch
 		mov	byte ptr ds:room_count,0Ch
 		call	compute_scroll_pos
 		call	init_arena_visuals
@@ -897,7 +897,7 @@ check_joystick:
 		int	61h			; ??INT Non-standard interrupt
 		test	al,2
 		jz	call_frame_check			; Jump if zero
-		and	byte ptr ds:player_facing,0FDh
+		and	byte ptr ds:facing_direction,0FDh
 
 call_frame_check:
 		call	combat_step_advance
@@ -926,7 +926,7 @@ music_active_branch:
 										jc	music_active_branch			; Jump if carry Set
 
 music_end_cleanup:
-		and	byte ptr ds:player_facing,0FDh
+		and	byte ptr ds:facing_direction,0FDh
 		mov	byte ptr ds:flag_climbing,0
 		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_state_b,0
@@ -966,14 +966,14 @@ check_combat_mode:
 
 action_pending_check:
 		mov	byte ptr ds:action_pending,0
-		test	byte ptr ds:player_facing,2
+		test	byte ptr ds:facing_direction,2
 		jnz	check_player_side			; Jump if not zero
 		jmp	fight_reset_soft
 
 check_player_side:
 		mov	dx,joy_port_b
 		push	dx
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	dispatch_advance			; Jump if not zero
 		jmp	scroll_retreat
 
@@ -982,7 +982,7 @@ dispatch_advance:
 
 input_compare:
 		push	ax
-		mov	al,byte ptr ds:player_facing
+		mov	al,byte ptr ds:facing_direction
 		and	al,1
 		cmp	al,ds:input_prev
 		mov	ds:input_prev,al
@@ -1075,7 +1075,7 @@ check_loaded:
 		or	ah,[si+3]
 		test	al,ah
 		jz	check_any_slot			; Jump if zero
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	check_music_b			; Jump if not zero
 		jmp	short check_music_b2
 
@@ -1086,8 +1086,8 @@ check_any_slot:
 check_music_b:
 		test	byte ptr ds:flag_climbing,0FFh
 		jz	double_func15			; Jump if zero
-		and	byte ptr ds:player_facing,0FCh
-		or	byte ptr ds:player_facing,1
+		and	byte ptr ds:facing_direction,0FCh
+		or	byte ptr ds:facing_direction,1
 		mov	byte ptr ds:equip_byte,7Fh
 		mov	byte ptr ds:gvar_spacebar_state,0
 
@@ -1099,7 +1099,7 @@ double_func15:
 check_music_b2:
 		test	byte ptr ds:flag_climbing,0FFh
 		jz	double_process			; Jump if zero
-		and	byte ptr ds:player_facing,0FCh
+		and	byte ptr ds:facing_direction,0FCh
 		mov	byte ptr ds:equip_byte,7Fh
 		mov	byte ptr ds:gvar_spacebar_state,0
 
@@ -1249,7 +1249,7 @@ check_music_b4:
 		call	entity_type_quick_check
 		jnz	check_hp_zero			; Jump if not zero
 		mov	byte ptr ds:gvar_pose_idx,0
-		and	byte ptr ds:player_facing,0FDh
+		and	byte ptr ds:facing_direction,0FDh
 		mov	byte ptr ds:equip_byte,0FFh
 		mov	al,ds:hp_max
 		shr	al,1			; Shift w/zeros fill
@@ -1289,7 +1289,7 @@ try_combat_advance		proc	near
 		dec	si
 		call	game_get_value
 		jnc	check_si_plus2			; Jump if carry=0
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	player_action_taken			; Jump if not zero
 		retn
 
@@ -1301,7 +1301,7 @@ check_si_plus2:
 		retn
 
 check_player_side2:
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	retain_retreat		; Jump if not zero
 		jmp	scroll_retreat
 
@@ -1351,7 +1351,7 @@ state5_branch:
 
 player_action_taken:
 		mov	byte ptr ds:hp_regen_tick,0
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	check_music_a2			; Jump if not zero
 		jmp	toggle_c2_bit
 
@@ -1385,7 +1385,7 @@ check_vga7:
 		inc	byte ptr ds:pending_invul
 
 set_c2_bit2:
-		or	byte ptr ds:player_facing,2
+		or	byte ptr ds:facing_direction,2
 		test	byte ptr ds:equip_byte,0FFh
 		jz	inc_e7			; Jump if zero
 		retn
@@ -1456,13 +1456,13 @@ loop_continue:
 										loop	scan_2_tiles		; Loop if cx > 0
 
 scroll_pos_dec:
-		dec	word ptr ds:map_scroll_col
-;*		cmp	word ptr ds:map_scroll_col,0FFFFh
-			db	83h, 3Eh, 80h, 00h, 0FFh		; cmp word ptr map_scroll_col, -1 (sign-extended)
+		dec	word ptr ds:starting_position_in_town
+;*		cmp	word ptr ds:starting_position_in_town,0FFFFh
+			db	83h, 3Eh, 80h, 00h, 0FFh		; cmp word ptr starting_position_in_town, -1 (sign-extended)
 		jnz	scroll_wrap_check			; Jump if not zero
 		mov	ax,ds:map_width
 		dec	ax
-		mov	word ptr ds:map_scroll_col,ax
+		mov	word ptr ds:starting_position_in_town,ax
 		mov	si,ds:scroll_end_ptr
 		mov	ds:map_cur_ptr,si
 
@@ -1496,7 +1496,7 @@ fill_cell_loop:
 		mov	ds:map_cur_ptr,si
 		mov	si,ds:scroll_end_ptr
 		dec	si
-		mov	ax,word ptr ds:map_scroll_col
+		mov	ax,word ptr ds:starting_position_in_town
 		add	ax,24h
 		cmp	ax,ds:map_width
 		je	scroll_cur_update			; Jump if equal
@@ -1513,7 +1513,7 @@ scroll_col_loop:
 scroll_cur_update:
 		mov	ds:scroll_cur_ptr,si
 		call	tick_increment_enemy_counters
-		mov	bx,word ptr ds:map_scroll_col
+		mov	bx,word ptr ds:starting_position_in_town
 		mov	byte ptr ds:obj_scan_index,0
 		mov	si,ds:object_list_ptr
 
@@ -1569,7 +1569,7 @@ state9_branch:
 
 scroll_retreat:
 		mov	byte ptr ds:hp_regen_tick,0
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	toggle_c2_bit			; Jump if not zero
 		test	byte ptr ds:flag_shield,0FFh
 		jz	check_debug2			; Jump if zero
@@ -1594,7 +1594,7 @@ check_vga7b:
 		inc	byte ptr ds:pending_invul
 
 set_c2_bit2b:
-		or	byte ptr ds:player_facing,2
+		or	byte ptr ds:facing_direction,2
 		test	byte ptr ds:equip_byte,0FFh
 		jz	inc_e7b			; Jump if zero
 		retn
@@ -1610,7 +1610,7 @@ check_area_7_boundary		endp
 toggle_c2_bit_pose		proc	near
 
 toggle_c2_bit:
-		xor	byte ptr ds:player_facing,1
+		xor	byte ptr ds:facing_direction,1
 		test	byte ptr ds:flag_climbing,0FFh
 		jz	set_e7_80c			; Jump if zero
 		retn
@@ -1620,7 +1620,7 @@ set_e7_80c:
 		retn
 
 clear_c2_bit:
-		and	byte ptr ds:player_facing,0FDh
+		and	byte ptr ds:facing_direction,0FDh
 		mov	al,ds:flag_climbing
 		or	al,ds:equip_byte
 		jz	check_combat_flags			; Jump if zero
@@ -1691,8 +1691,8 @@ loop_continue_b:
 										loop	scan_2_tiles_b		; Loop if cx > 0
 
 scroll_pos_inc:
-		inc	word ptr ds:map_scroll_col
-		mov	ax,word ptr ds:map_scroll_col
+		inc	word ptr ds:starting_position_in_town
+		mov	ax,word ptr ds:starting_position_in_town
 		add	ax,23h
 		cmp	ax,ds:map_width
 		jne	scroll_wrap_right			; Jump if not equal
@@ -1711,10 +1711,10 @@ scroll_wrap_right:
 		call	vga_operation3
 		dec	si
 		mov	ds:scroll_cur_ptr,si
-		mov	ax,word ptr ds:map_scroll_col
+		mov	ax,word ptr ds:starting_position_in_town
 		cmp	ax,ds:map_width
 		jne	scroll_to_right			; Jump if not equal
-		mov	word ptr ds:map_scroll_col,0
+		mov	word ptr ds:starting_position_in_town,0
 		mov	si,map_col_ptr
 		jmp	short set_col_ptr
 
@@ -1733,7 +1733,7 @@ set_col_ptr:
 		mov	ds:map_cur_ptr,si
 		call	tick_decrement_enemy_counters
 		mov	byte ptr ds:obj_scan_index,0
-		mov	bx,word ptr ds:map_scroll_col
+		mov	bx,word ptr ds:starting_position_in_town
 		add	bx,23h
 		mov	ax,bx
 		sub	ax,ds:map_width
@@ -1822,7 +1822,7 @@ check_hp_cnt:
 		call	scroll_pos_advance
 
 check_c2_bit2:
-		test	byte ptr ds:player_facing,2
+		test	byte ptr ds:facing_direction,2
 		jnz	e7_80_and_reset			; Jump if not zero
 		call	vga_operation8
 		add	si,49h
@@ -1850,7 +1850,7 @@ check_e8:
 		jnz	combat_mode_active			; Jump if not zero
 		mov	ax,joy_port_c
 		push	ax
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jz	dispatch_player_side			; Jump if zero
 		jmp	player_action_taken
 
@@ -1859,7 +1859,7 @@ dispatch_player_side:
 
 c2_clear_bit1:
 			                        ; Dead code -- confirmed unreachable (after jmp scroll_retreat)
-		and	byte ptr ds:player_facing,0FDh
+		and	byte ptr ds:facing_direction,0FDh
 		retn
 
 combat_mode_active:
@@ -1871,7 +1871,7 @@ combat_mode_active:
 		je	left_no_c2b1			; Jump if equal
 
 check_c2_bit2b:
-																		test	byte ptr ds:player_facing,2
+																		test	byte ptr ds:facing_direction,2
 																		jnz	check_c2_bit1			; Jump if not zero
 																		cmp	al,4
 																		je	check_vga8_d			; Jump if equal
@@ -1880,7 +1880,7 @@ check_c2_bit2b:
 																		retn
 
 check_c2_bit1:
-																		test	byte ptr ds:player_facing,1
+																		test	byte ptr ds:facing_direction,1
 																		jz	jmp_retreat			; Jump if zero
 																		jmp	player_action_taken
 
@@ -1888,9 +1888,9 @@ jmp_retreat:
 																		jmp	scroll_retreat
 
 right_no_c2b1:
-																		test	byte ptr ds:player_facing,1
+																		test	byte ptr ds:facing_direction,1
 																		jnz	check_c2_bit2b			; Jump if not zero
-										and	byte ptr ds:player_facing,0FDh
+										and	byte ptr ds:facing_direction,0FDh
 										call	toggle_c2_bit_pose
 
 check_vga8_c:
@@ -1911,9 +1911,9 @@ jmp_map_scan_b:
 										jmp	map_scan_loop_entry
 
 left_no_c2b1:
-										test	byte ptr ds:player_facing,1
+										test	byte ptr ds:facing_direction,1
 										jz	check_c2_bit2b			; Jump if zero
-		and	byte ptr ds:player_facing,0FDh
+		and	byte ptr ds:facing_direction,0FDh
 		call	toggle_c2_bit_pose
 
 check_vga8_d:
@@ -1945,7 +1945,7 @@ combat_input_poll_step		proc	near
 		retn
 
 clear_c2_and_debug:
-		and	byte ptr ds:player_facing,0FDh
+		and	byte ptr ds:facing_direction,0FDh
 		mov	ds:gvar_debug_val,dl
 		test	byte ptr ds:hp_midpoint,0FFh
 		jnz	check_9E_eq3			; Jump if not zero
@@ -2273,7 +2273,7 @@ scroll_init_data_b:
 
 vga_operation0		proc	near
 		mov	si,map_col_ptr
-		mov	cx,word ptr ds:map_scroll_col
+		mov	cx,word ptr ds:starting_position_in_town
 		or	cx,cx			; Zero ?
 		jz	map_col_done			; Jump if zero
 
@@ -2291,7 +2291,7 @@ map_col_inner:
 map_col_done:
 		mov	ds:map_cur_ptr,si
 		mov	di,scroll_buf
-		mov	ax,word ptr ds:map_scroll_col
+		mov	ax,word ptr ds:starting_position_in_town
 		mov	cx,24h
 
 map_init_loop:
@@ -2482,7 +2482,7 @@ vga_operation8		proc	near
 										mov	al,byte ptr ds:fight_player_col
 										mov	cl,24h			; '$'
 										mul	cl			; ax = reg * al
-										mov	cl,byte ptr ds:town_player_col
+										mov	cl,byte ptr ds:screen_position
 										add	cl,4
 										xor	ch,ch			; Zero register
 										add	ax,cx
@@ -2585,7 +2585,7 @@ is_entity_id_lax		endp
 ; the 3-byte combat-action FSM at FF45/FF46/FF47.
 ;
 ; Inputs:
-;   ds:equipped_weapon              equipped_weapon (gates entire handler if 0)
+;   ds:sword              sword (gates entire handler if 0)
 ;   INT 61h returns        AH=button-mask, AL=joystick direction-bits
 ;   ds:equip_byte   combat-active flag (must be set for attack path)
 ;   ds:gvar_debug_val     debug bypass (must be 0 for attack path)
@@ -2615,7 +2615,7 @@ is_entity_id_lax		endp
 ;   - end-of-frame snapshot (line ~2797) — copies state into FF3F/FF41
 ;     (`hero_frame` and `weapon_state`) for the gf*.asm graphics drivers
 combat_input_handler		proc	near
-		test	byte ptr ds:equipped_weapon,0FFh
+		test	byte ptr ds:sword,0FFh
 		jnz	vol_btn_pressed			; Jump if not zero
 		retn
 
@@ -2717,11 +2717,11 @@ clear_skip_joy:
 
 combat_input_handler		endp
 
-; select_player_sprite_frame — reads the combat FSM and player_facing
+; select_player_sprite_frame — reads the combat FSM and facing_direction
 ; to pick the correct entity_ptr_table[bx] entry for the player sprite.
 ;
 ; Frame selection (bx is the table index):
-;   bl_base = (player_facing & 1) << 4    ; flip-direction bit shifted to nibble
+;   bl_base = (facing_direction & 1) << 4    ; flip-direction bit shifted to nibble
 ;   if action_state == 0 (idle):
 ;       bx = (bl_base | anim_subindex) & 0xFE  ; idle frame
 ;   if action_state == 1 (walk):
@@ -2755,7 +2755,7 @@ check_flag2e:
 pick_offset:
 		sub	si,bx
 		call	vga_operation6
-		mov	bl,byte ptr ds:player_facing
+		mov	bl,byte ptr ds:facing_direction
 		and	bl,1
 		add	bl,bl
 		add	bl,bl
@@ -2844,18 +2844,18 @@ obj_row_sync:
 		mov	si,ds:obj_data_ptr
 		add	si,7
 		mov	al,[si]
-		cmp	byte ptr ds:town_player_col,al
+		cmp	byte ptr ds:screen_position,al
 		je	update_gvar			; Jump if equal
 		call	game_process_loop
-		dec	byte ptr ds:town_player_col
+		dec	byte ptr ds:screen_position
 		jmp	short update_gvar
 
 scroll_right_step:
-		mov	al,byte ptr ds:town_player_col
+		mov	al,byte ptr ds:screen_position
 		cmp	al,0Ch
 		je	update_gvar			; Jump if equal
 		call	try_scroll_advance
-		inc	byte ptr ds:town_player_col
+		inc	byte ptr ds:screen_position
 
 update_gvar:
 		mov	al,byte ptr ds:fight_player_col
@@ -3203,8 +3203,8 @@ patch_table_loop:
 
 patch_done:
 		call	vga_operation8
-		mov	ax,word ptr ds:map_scroll_col
-		mov	bl,byte ptr ds:town_player_col
+		mov	ax,word ptr ds:starting_position_in_town
+		mov	bl,byte ptr ds:screen_position
 		xor	bh,bh			; Zero register
 		add	ax,bx
 		test	byte ptr [si-5],0FFh
@@ -3362,7 +3362,7 @@ mark_player_pos_on_hud		proc	near
 		mov	al,byte ptr ds:fight_player_col
 		mov	cl,1Ch
 		mul	cl			; ax = reg * al
-		mov	cl,byte ptr ds:town_player_col
+		mov	cl,byte ptr ds:screen_position
 		xor	ch,ch			; Zero register
 		add	ax,cx
 		add	ax,hud_buf
@@ -3547,7 +3547,7 @@ scan_outer_slot_match		endp
 
 ; apply_passive_damage: post-init combat-tile router.  Gates on init_complete_flag
 ; (early retn if init not done), else loads tile_type_sum into AX and
-; branches to one of two external sub-paths based on player_facing bit 1:
+; branches to one of two external sub-paths based on facing_direction bit 1:
 ;   bit 1 = 0  -> jmp combat_check_done   (different proc's label)
 ;   bit 1 = 1  -> jmp short apply_shield_absorb      (different proc's label)
 ; The function is a multi-fragment Sourcer-glued router with NO clean
@@ -3561,7 +3561,7 @@ apply_passive_damage		proc	near
 
 check_c2_bit1b:
 		mov	ax,ds:tile_type_sum
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jz	combat_check_done			; Jump if zero
 		jmp	short apply_shield_absorb
 
@@ -3574,15 +3574,15 @@ apply_combat_damage_with_absorb		proc	near
 
 check_c2_bit1c:
 		mov	ax,ds:tile_type_sum
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	combat_check_done			; Jump if not zero
 		jmp	short apply_shield_absorb
 
 apply_shield_absorb:
-		test	byte ptr ds:shield_type,0FFh
+		test	byte ptr ds:shield,0FFh
 		jz	combat_check_done			; Jump if zero (no shield)
 		shr	ax,1			; Shift w/zeros fill
-		mov	cl,byte ptr ds:shield_type
+		mov	cl,byte ptr ds:shield
 		inc	cl
 		shr	cl,1			; Shift w/zeros fill
 		shr	ax,cl			; reduce damage by shield tier
@@ -3609,7 +3609,7 @@ combat_check_done:
 apply_combat_damage_with_absorb		endp
 
 clear_secondary_pool_and_redraw		proc	near
-		mov	byte ptr ds:shield_type,0	; shield broke — clear shield slot
+		mov	byte ptr ds:shield,0	; shield broke — clear shield slot
 		mov	bx,0C51Ch
 		mov	al,0FFh
 		mov	ch,18h
@@ -3827,7 +3827,7 @@ compute_target_dist		proc	near
 		je	target_check_done			; Jump if equal
 		call	world_x_to_screen_x
 		jc	target_check_done			; Jump if carry Set
-		mov	al,byte ptr ds:town_player_col
+		mov	al,byte ptr ds:screen_position
 		add	al,4
 		mov	ah,al
 		sub	al,bl
@@ -4017,7 +4017,7 @@ world_x_to_screen_x_w27		proc	near
 
 entity_wrap_check:
 		push	ax
-		sub	ax,word ptr ds:map_scroll_col
+		sub	ax,word ptr ds:starting_position_in_town
 		pop	bx
 		jc	entity_left_check			; Jump if carry Set
 		xchg	bx,ax
@@ -4033,7 +4033,7 @@ entity_left_check:
 
 entity_right_wrap:
 		mov	ax,ds:map_width
-		sub	ax,word ptr ds:map_scroll_col
+		sub	ax,word ptr ds:starting_position_in_town
 		add	ax,bx
 		xchg	bx,ax
 		mov	ax,27h
@@ -4142,7 +4142,7 @@ check_3tile_J_pattern		proc	near
 		retn
 
 center_no_player:
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jz	jmp_map_scan_d			; Jump if zero
 		retn
 
@@ -4151,7 +4151,7 @@ jmp_map_scan_d:
 		jmp	map_scan_loop_entry
 
 left_side_check:
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	jmp_scroll_adv_e			; Jump if not zero
 		retn
 
@@ -4160,8 +4160,8 @@ jmp_scroll_adv_e:
 		jmp	scroll_advance
 
 center_calc_dist:
-		mov	ax,word ptr ds:map_scroll_col
-		mov	bl,byte ptr ds:town_player_col
+		mov	ax,word ptr ds:starting_position_in_town
+		mov	bl,byte ptr ds:screen_position
 		add	bl,4
 		xor	bh,bh			; Zero register
 		add	ax,bx
@@ -4330,7 +4330,7 @@ boss_state_init:
 check_c3:
 		test	byte ptr ds:boss_intro_flag,0FFh
 		jnz	c3_set_loop			; Jump if not zero
-		and	byte ptr ds:player_facing,0FEh
+		and	byte ptr ds:facing_direction,0FEh
 		mov	bx,0A6Eh
 		mov	cx,1Ah
 
@@ -4359,7 +4359,7 @@ intro_left_loop:
 		jmp	short check_map_flag
 
 c3_set_loop:
-		or	byte ptr ds:player_facing,1
+		or	byte ptr ds:facing_direction,1
 		mov	bx,406Eh
 		mov	cx,1Ah
 
@@ -4406,7 +4406,7 @@ check_map_flag:
 		mov	byte ptr ds:gvar_death_flag,0
 		mov	byte ptr ds:gvar_dir_toggle,0
 		call	word ptr cs:drv_screen_init_a
-		mov	byte ptr ds:town_player_col,0Ch
+		mov	byte ptr ds:screen_position,0Ch
 		mov	al,ds:player_y
 		mov	byte ptr ds:fight_player_col,al
 		mov	ds:room_count,al
@@ -4439,8 +4439,8 @@ level_start:
 		int	60h			; ??INT Non-standard interrupt
 		push	bx
 		call	compute_scroll_offset_b
-		mov	word ptr ds:map_scroll_col,ax
-		mov	byte ptr ds:town_player_col,bl
+		mov	word ptr ds:starting_position_in_town,ax
+		mov	byte ptr ds:screen_position,bl
 		mov	si,ds:map_data_ptr
 		lodsb				; String [si] to al
 		shr	al,1			; Shift w/zeros fill
@@ -4463,7 +4463,7 @@ compute_scroll_pos		proc	near
 		add	ax,ds:map_width
 
 scroll_pos_ok:
-		mov	word ptr ds:map_scroll_col,ax
+		mov	word ptr ds:starting_position_in_town,ax
 		mov	al,ds:scroll_dir
 		inc	al
 		sub	al,ds:player_y
@@ -4885,17 +4885,17 @@ try_top_combat_step		endp
 
 ; find_and_blit_map_entry — searches a 3-byte-per-entry map table at
 ; [di] for a match on (col=AX, row=CL) where:
-;     col = (town_player_col+4+DH + map_scroll_colmap_scroll_col) mod map_width
+;     col = (screen_position+4+DH + map_scroll_colmap_scroll_col) mod map_width
 ;     row = (map_scroll_row + fight_player_col + 3) & 0x3F
 ; On match: world_x_to_inner_screen_x → vga_operation4 (blit at the
 ; matched entry's coordinates).  Loop has no terminator — assumes the
 ; caller seeded a sentinel or [di] table is well-formed.  2 callers.
 find_and_blit_map_entry		proc	near
-		mov	al,byte ptr ds:town_player_col
+		mov	al,byte ptr ds:screen_position
 		add	al,4
 		add	al,dh
 		xor	ah,ah			; Zero register
-		add	ax,word ptr ds:map_scroll_col
+		add	ax,word ptr ds:starting_position_in_town
 		cmp	ax,ds:map_width
 		jb	map_col_calc			; Jump if below
 		sub	ax,ds:map_width
@@ -5190,7 +5190,7 @@ check_col_match:
 		retn
 
 check_col_range:
-		mov	dl,byte ptr ds:town_player_col
+		mov	dl,byte ptr ds:screen_position
 		add	dl,4
 		mov	cx,3
 
@@ -5211,7 +5211,7 @@ check_entity_collision_pos		endp
 
 world_x_to_inner_screen_x		proc	near
 		mov	bx,ax
-		sub	ax,word ptr ds:map_scroll_col
+		sub	ax,word ptr ds:starting_position_in_town
 		jc	screen_left_check			; Jump if carry Set
 		xchg	bx,ax
 		mov	ax,21h
@@ -5226,7 +5226,7 @@ screen_left_check:
 
 screen_wrap_right:
 		mov	ax,ds:map_width
-		sub	ax,word ptr ds:map_scroll_col
+		sub	ax,word ptr ds:starting_position_in_town
 		add	ax,bx
 		xchg	bx,ax
 		mov	ax,21h
@@ -5244,7 +5244,7 @@ world_x_to_screen_x_w25		proc	near
 
 screen_left2:
 		mov	bx,ax
-		sub	ax,word ptr ds:map_scroll_col
+		sub	ax,word ptr ds:starting_position_in_town
 		jc	screen_wrap_left			; Jump if carry Set
 		xchg	bx,ax
 		mov	ax,25h
@@ -5259,7 +5259,7 @@ screen_wrap_left:
 
 screen_right_wrap:
 		mov	ax,ds:map_width
-		sub	ax,word ptr ds:map_scroll_col
+		sub	ax,word ptr ds:starting_position_in_town
 		add	ax,bx
 		xchg	bx,ax
 		mov	ax,25h
@@ -5480,9 +5480,9 @@ row_scan_loop:
 		retn
 
 sprite_row_match:
-		mov	al,byte ptr ds:town_player_col
+		mov	al,byte ptr ds:screen_position
 		add	al,4
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jz	sprite_col_adjust			; Jump if zero
 		inc	al
 
@@ -5496,7 +5496,7 @@ sprite_col_adjust:
 
 sprite_hit_check:
 		mov	byte ptr [si],0
-		test	byte ptr ds:shield_type,0FFh
+		test	byte ptr ds:shield,0FFh
 		jz	entity_kill			; Jump if zero (no shield → kill via direct damage)
 		test	byte ptr ds:scroll_active,0FFh
 		jnz	entity_kill			; Jump if not zero
@@ -5514,12 +5514,12 @@ sprite_hit_check:
 		je	entity_process_skip			; Jump if equal
 		cmp	al,7
 		je	entity_process_skip			; Jump if equal
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	entity_kill			; Jump if not zero
 		jmp	short entity_hit_via_shield
 
 entity_process_skip:
-		test	byte ptr ds:player_facing,1
+		test	byte ptr ds:facing_direction,1
 		jnz	entity_hit_via_shield			; Jump if not zero
 
 entity_kill:
@@ -5553,7 +5553,7 @@ entity_hit:
 										retn
 
 entity_hit_via_shield:
-										cmp	byte ptr ds:shield_type,4
+										cmp	byte ptr ds:shield,4
 										jae	set_vol_0a			; Jump if above or =
 										mov	al,byte ptr ds:fight_player_col
 										add	al,byte ptr ds:map_scroll_row
@@ -5668,7 +5668,7 @@ update_entity_dir_from_path		proc	near
 		mov	al,[bx+di]
 		cmp	al,0FFh
 		jne	update_dir_bits			; Jump if not equal
-		mov	byte ptr ds:map_scroll_col[si],0
+		mov	byte ptr ds:starting_position_in_town[si],0
 		stc				; Set carry flag
 		retn
 
@@ -5782,7 +5782,7 @@ sprite_entry_ok:
 										xor	bh,bh			; Zero register
 										add	bx,bx
 										add	bx,entity_data_base
-										mov	ah,byte ptr ds:town_player_col
+										mov	ah,byte ptr ds:screen_position
 										add	ah,[bx]
 										mov	[si+5],ah
 										mov	al,byte ptr ds:fight_player_col
@@ -5843,7 +5843,7 @@ sprite_update_loop:
 										xor	bh,bh			; Zero register
 										add	bx,bx
 										add	bx,entity_data_base
-										mov	ah,byte ptr ds:town_player_col
+										mov	ah,byte ptr ds:screen_position
 										add	ah,[bx]
 										mov	al,byte ptr ds:fight_player_col
 										add	al,[bx+1]
@@ -6005,7 +6005,7 @@ entity_fn_d_0:
 		test	al,88h
 		clc				; Clear carry flag
 		mov	[bx+si],bl
-		mov	word ptr ds:player_facing[bx+si],sp
+		mov	word ptr ds:facing_direction[bx+si],sp
 		not	al
 		and	al,1
 		mov	[si+3],al
@@ -6015,14 +6015,14 @@ entity_fn_d_0:
 		add	al,byte ptr ds:map_scroll_row
 		and	al,3Fh			; '?'
 		mov	[si+2],al
-		mov	al,byte ptr ds:town_player_col
+		mov	al,byte ptr ds:screen_position
 		add	al,4
 		mov	ah,[si+3]
 		not	ah
 		and	ah,1
 		add	al,ah
 		xor	ah,ah			; Zero register
-		add	ax,word ptr ds:map_scroll_col
+		add	ax,word ptr ds:starting_position_in_town
 		cmp	ax,ds:map_width
 		jb	init_fire_entry			; Jump if below
 		sub	ax,ds:map_width
@@ -6044,7 +6044,7 @@ fire_init_loop:
 										mov	al,6
 										mul	cl			; ax = reg * al
 										add	ax,2
-										add	ax,word ptr ds:map_scroll_col
+										add	ax,word ptr ds:starting_position_in_town
 										cmp	ax,ds:map_width
 										jb	fire_entry_col			; Jump if below
 										sub	ax,ds:map_width
@@ -6764,9 +6764,9 @@ entity_fn_e_0:
 		retn
 
 check_col_match_b:
-		mov	al,byte ptr ds:town_player_col
+		mov	al,byte ptr ds:screen_position
 		add	al,3
-		mov	ah,byte ptr ds:player_facing
+		mov	ah,byte ptr ds:facing_direction
 		and	ah,1
 		add	ah,ah
 		add	al,ah
@@ -6881,11 +6881,11 @@ entity_fn_e_tbl_data:
 		call	entity_scan_skip_push	; -0x1BA9
 		push	si
 		call	word ptr cs:drv2_fn_2
-		mov	byte ptr ds:equipped_weapon,06h
+		mov	byte ptr ds:sword,06h
 		mov	al,06h
 		mov	bx,18ABh
 		call	word ptr cs:drv_fn_14
-		mov	ah,byte ptr ds:equipped_weapon
+		mov	ah,byte ptr ds:sword
 		mov	al,04h
 		call	word ptr cs:sar_loader_fn	; chunk loader
 		pop	si
@@ -7136,8 +7136,8 @@ update_obj_slot_flags		endp
 
 add_score_to_gold:
 			                        ; entity_deactivate_alt body: score update dispatch (via cs:drv_frame_commit)
-		add	word ptr ds:player_gold_lo,ax	; 24-bit gold add: low word
-		adc	byte ptr ds:player_gold_hi,0	;                  high byte
+		add	word ptr ds:gold_carried_x1,ax	; 24-bit gold add: low word
+		adc	byte ptr ds:gold_carried_x65536,0	;                  high byte
 		push	si
 		call	word ptr cs:drv_frame_commit
 		pop	si
@@ -7179,7 +7179,7 @@ row_range_scan:
 		retn
 
 check_col_range_b:
-		mov	al,byte ptr ds:town_player_col
+		mov	al,byte ptr ds:screen_position
 		add	al,4
 		mov	ah,[si+3]
 		sub	ah,3
@@ -7978,7 +7978,7 @@ clear_buffer		endp
 
 world_x_to_screen_x		proc	near
 		mov	bx,ax
-		sub	ax,word ptr ds:map_scroll_col
+		sub	ax,word ptr ds:starting_position_in_town
 		jnc	pos_to_screen			; Jump if carry=0
 		mov	ax,23h
 		sub	ax,bx
@@ -7987,7 +7987,7 @@ world_x_to_screen_x		proc	near
 
 check_left_bound:
 		mov	ax,ds:map_width
-		sub	ax,word ptr ds:map_scroll_col
+		sub	ax,word ptr ds:starting_position_in_town
 		add	ax,bx
 
 pos_to_screen:
@@ -8238,7 +8238,7 @@ anim_idx_calc:
 		retn
 
 al_is_one:
-		mov	bl,byte ptr ds:equipped_weapon
+		mov	bl,byte ptr ds:sword
 		dec	bl
 		xor	bh,bh			; Zero register
 		mov	al,ds:anim_frame_tbl_a[bx]
@@ -8393,8 +8393,8 @@ player_not_captured:
 		add	al,7Fh
 		xor	ah,ah			; Zero register
 		call	item_effect_val_add
-		mov	byte ptr ds:player_gold_hi,0	; reset gold (24-bit) to 0
-		mov	word ptr ds:player_gold_lo,0
+		mov	byte ptr ds:gold_carried_x65536,0	; reset gold (24-bit) to 0
+		mov	word ptr ds:gold_carried_x1,0
 		shr	word ptr ds:player_almas,1	; Shift w/zeros fill
 
 setup_next_level:

@@ -694,8 +694,8 @@ render_text_char		endp
 		retn
 			                        ;* No entry point to code
 		push	ds
-		mov	ax,word ptr cs:player_gold_lo
-		mov	dl,byte ptr cs:player_gold_hi
+		mov	ax,word ptr cs:gold_carried_x1
+		mov	dl,byte ptr cs:gold_carried_x65536
 		call	init_timestamp
 		push	cs
 		pop	ds
@@ -725,7 +725,7 @@ render_text_char		endp
 		pop	ds
 		retn
 			                        ;* No entry point to code
-		test	byte ptr cs:shield_type,0FFh
+		test	byte ptr cs:shield,0FFh
 		jnz	draw_timer_entry			; Jump if not zero
 		retn
 

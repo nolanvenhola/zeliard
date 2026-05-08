@@ -73,7 +73,7 @@ FIELDS = [
     # 0x80 / 0x81: TCRF says 0x80 is "starting position in town" (1 byte; tile
     # coord, per-town max table) and 0x81 is "do not edit, any non-00 value
     # crashes the game".  Asm code in 200FIGHT.asm reads [80h] as a 16-bit
-    # cavern X scroll word (54 word-ptr refs); stdply.inc names it map_scroll_col.
+    # cavern X scroll word (54 word-ptr refs); stdply.inc names it starting_position_in_town.
     # Same byte, two lenses: save-file (TCRF) vs runtime (asm).  We expose them
     # as separate single-byte fields so the editor matches the save-file view
     # AND the user can't accidentally write a non-00 value into 0x81.
@@ -82,12 +82,12 @@ FIELDS = [
     # functest-validated 0x83/0x84 counters) than TCRF's "unknown"/"start
     # pos" labels.  TCRF aliases (start_pos_in_town, stat_X81/82/84) live
     # in stdply.inc for save-format consumers.
-    ('map_scroll_col',       0x80, 'b',  'Cavern X scroll column (asm: 16-bit word at 0x80..0x81; save: only low byte ever non-zero).  TCRF: "starting position in town" (per-town tile-coord max table); the runtime semantic is the cavern-engine scroll register.  Same byte, two lenses.'),
+    ('starting_position_in_town',       0x80, 'b',  'Cavern X scroll column (asm: 16-bit word at 0x80..0x81; save: only low byte ever non-zero).  TCRF: "starting position in town" (per-town tile-coord max table); the runtime semantic is the cavern-engine scroll register.  Same byte, two lenses.'),
     # 0x81: high byte of the 16-bit cavern X scroll word; always 00 in saves.
     # TCRF warns any non-00 value crashes the game.  Not exposed in the
     # editor — preserved verbatim through compose_bytes.
     ('map_scroll_row',       0x82, 'b',  'Cavern Y scroll row (asm: 19 byte refs in 200FIGHT scroll routines).'),
-    ('town_player_col',      0x83, 'b',  'Player screen column in town (range 0..0x10; 0x0D = center, >0x1A can crash).  Values depend on 0x80.'),
+    ('screen_position',      0x83, 'b',  'Player screen column in town (range 0..0x10; 0x0D = center, >0x1A can crash).  Values depend on 0x80.'),
     ('fight_player_col',     0x84, 'b',  'Player screen column in fight (independent counter in 200FIGHT, range 0..7; functest-validated).'),
     ('player_gold',          0x85, '24', 'Gold on hand (24-bit, hi/lo/mid layout). Spent at shops.'),
     ('player_bank',          0x88, '24', 'Banked gold (24-bit, hi/lo/mid). Stored at bank, withdrawable.'),
@@ -95,8 +95,8 @@ FIELDS = [
     ('hero_level',           0x8D, 'b',  'Hero level 0..FF — affects bonus damage in DOS version (TCRF).'),
     ('experience',           0x8E, 'w',  'Experience points (16-bit LE; TCRF).'),
     ('player_HP',            0x90, 'w',  'Current HP (16-bit).  Decreases on damage, increases on healing.  Capped by player_hp_max at 0xB2.  Initial 80 at game start; cap grows when the player crosses XP milestones at sages (217KENJP.asm:512-514 sets [B2h]=new max and [90h]=new max in one shot — full heal at the blessing).'),
-    ('equipped_weapon',      0x92, 'b',  'Equipped weapon idx (1=Training, 2=WiseMan, 3=Spirit, 4=Knight, 5=Illumination, 6=Enchantment, 7=secret)'),
-    ('shield_type',          0x93, 'b',  'Equipped shield tier (1..6: Clay/WiseMan/Stone/Honor/Light/Titanium)'),
+    ('sword',      0x92, 'b',  'Equipped weapon idx (1=Training, 2=WiseMan, 3=Spirit, 4=Knight, 5=Illumination, 6=Enchantment, 7=secret)'),
+    ('shield',          0x93, 'b',  'Equipped shield tier (1..6: Clay/WiseMan/Stone/Honor/Light/Titanium)'),
     ('shield_HP',            0x94, 'w',  'Current shield HP (16-bit)'),
     ('shield_max_HP',        0x96, 'w',  'Shield HP cap (16-bit)'),
     ('keys_normal',          0x98, 'b',  'Normal key count.  >9 carryable but only 1 digit shown in HUD (TCRF).'),
@@ -105,17 +105,17 @@ FIELDS = [
     ('crest_glory',          0x9B, 'bool', 'Glory Crest (Cementar pickup; consumed by 212ARMRP Tumba shop trade for Knight\'s Sword)'),
     ('crest_hero',           0x9C, 'bool', "Hero's Crest in inventory (00=No, FF=Yes).  TCRF: this is NOT the gate for the crazy guard in Bosque — that gate is 0x12 bit 3 (\"Hero's Crest collected\" event flag).  This 0x9C byte is just the inventory marker."),
     ('selected_spell',       0x9D, 'b',  'Currently selected spell ID (1=Espada..7=Guerra; only one spell active at a time — user-confirmed at 0x9D, NOT 0x9E).'),
-    ('selected_wearable',    0x9E, 'b',  'Currently selected wearable ID (0=none, 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape).  User-confirmed: byte holds the item ID directly.'),
+    ('selected_accessory',    0x9E, 'b',  'Currently selected wearable ID (0=none, 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape).  User-confirmed: byte holds the item ID directly.'),
     ('tears_of_esmesanti_count', 0xA0, 'b',  'Tears of Esmesanti collected (0..9).  Each main cavern hides one Tear; collecting all is the win condition (TCRF).'),
     # 0xA1..0xA5 — list of WEARABLE IDs in acquisition order (4 shoes + 1 cape).
     # Per playthrough §6.3 + user correction.  ID mapping derived from save
     # data (which wearable is added in which town): 1=Feruza, 2=Pirika,
     # 3=Silkarn, 4=Ruzeria, 5=AsbestosCape; 0=empty.
-    ('wear_1',       0xA1, 'b',  '1st wearable acquired (ID: 1=Feruza Shoes, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape; 0=empty)'),
-    ('wear_2',       0xA2, 'b',  '2nd wearable acquired'),
-    ('wear_3',       0xA3, 'b',  '3rd wearable acquired'),
-    ('wear_4',       0xA4, 'b',  '4th wearable acquired'),
-    ('wear_5',       0xA5, 'b',  '5th wearable acquired'),
+    ('accessory_slot_1',       0xA1, 'b',  '1st wearable acquired (ID: 1=Feruza Shoes, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape; 0=empty)'),
+    ('accessory_slot_2',       0xA2, 'b',  '2nd wearable acquired'),
+    ('accessory_slot_3',       0xA3, 'b',  '3rd wearable acquired'),
+    ('accessory_slot_4',       0xA4, 'b',  '4th wearable acquired'),
+    ('accessory_slot_5',       0xA5, 'b',  '5th wearable acquired'),
     # 0xA6..0xAA — 5 ITEM INVENTORY SLOTS.  Each byte holds the ID of the item
     # placed in that slot (0 = empty; otherwise item ID 1..8 per playthrough
     # §5.3.1).  Same item ID can appear in multiple slots (Helada save shows
@@ -127,13 +127,13 @@ FIELDS = [
     ('item_slot_4',          0xA9, 'b',  'Inventory slot 4'),
     ('item_slot_5',          0xAA, 'b',  'Inventory slot 5'),
     # 0xAB..0xB1 = current spell charges (one byte per spell, in §6.1 order).
-    ('charges_espada',       0xAB, 'b',  'Espada charges remaining (default 0Ch = 12)'),
-    ('charges_saeta',        0xAC, 'b',  'Saeta charges remaining (default 06h)'),
-    ('charges_fuego',        0xAD, 'b',  'Fuego charges remaining (default 08h)'),
-    ('charges_lanzar',       0xAE, 'b',  'Lanzar charges remaining (default 04h)'),
-    ('charges_rascar',       0xAF, 'b',  'Rascar charges remaining (default 03h)'),
-    ('charges_agua',         0xB0, 'b',  'Agua charges remaining (default 04h)'),
-    ('charges_guerra',       0xB1, 'b',  'Guerra charges remaining (default 03h)'),
+    ('spell_charge_espada',       0xAB, 'b',  'Espada charges remaining (default 0Ch = 12)'),
+    ('spell_charge_saeta',        0xAC, 'b',  'Saeta charges remaining (default 06h)'),
+    ('spell_charge_fuego',        0xAD, 'b',  'Fuego charges remaining (default 08h)'),
+    ('spell_charge_lanzar',       0xAE, 'b',  'Lanzar charges remaining (default 04h)'),
+    ('spell_charge_rascar',       0xAF, 'b',  'Rascar charges remaining (default 03h)'),
+    ('spell_charge_agua',         0xB0, 'b',  'Agua charges remaining (default 04h)'),
+    ('spell_charge_guerra',       0xB1, 'b',  'Guerra charges remaining (default 03h)'),
     ('player_hp_max',        0xB2, 'w',  'Max HP / LIFE cap (16-bit).  Initial 80 (per manual).  Grows when sages grant a blessing at XP milestones — see 217KENJP.asm:505-514 (also increments hero_level at 0x8D and refills spell charges at 0xAB-0xB1, and heals current HP at 0x90 to the new cap).  Cross-save: Muralla 200, Helada 460, Pureza 680, Esco 800 — cap roughly doubles per major story step.'),
     # 0xB4..0xBA = max spell charges (cap; refilled by sage).
     # NB: TCRF text labels both 0xAB..B1 and 0xB4..BA as "Spell Count
@@ -141,13 +141,13 @@ FIELDS = [
     # disambiguate.  We split into current vs max because that's what the
     # in-game refill behaviour requires (you can spend charges down toward
     # 0; the sage refills back to a saved cap).  Defaults match 0xAB..B1.
-    ('charges_max_espada',   0xB4, 'b',  'Espada max charges (cap; default 0Ch).  TCRF labels this "Remaining Spells" again — same wording as 0xAB..B1; we infer it is the cap.'),
-    ('charges_max_saeta',    0xB5, 'b',  'Saeta max charges (cap; default 06h).'),
-    ('charges_max_fuego',    0xB6, 'b',  'Fuego max charges (cap; default 08h).'),
-    ('charges_max_lanzar',   0xB7, 'b',  'Lanzar max charges (cap; default 04h).'),
-    ('charges_max_rascar',   0xB8, 'b',  'Rascar max charges (cap; default 03h).'),
-    ('charges_max_agua',     0xB9, 'b',  'Agua max charges (cap; default 04h).'),
-    ('charges_max_guerra',   0xBA, 'b',  'Guerra max charges (cap; default 03h).'),
+    ('spell_charge_max_espada',   0xB4, 'b',  'Espada max charges (cap; default 0Ch).  TCRF labels this "Remaining Spells" again — same wording as 0xAB..B1; we infer it is the cap.'),
+    ('spell_charge_max_saeta',    0xB5, 'b',  'Saeta max charges (cap; default 06h).'),
+    ('spell_charge_max_fuego',    0xB6, 'b',  'Fuego max charges (cap; default 08h).'),
+    ('spell_charge_max_lanzar',   0xB7, 'b',  'Lanzar max charges (cap; default 04h).'),
+    ('spell_charge_max_rascar',   0xB8, 'b',  'Rascar max charges (cap; default 03h).'),
+    ('spell_charge_max_agua',     0xB9, 'b',  'Agua max charges (cap; default 04h).'),
+    ('spell_charge_max_guerra',   0xBA, 'b',  'Guerra max charges (cap; default 03h).'),
 
     # Spell availability flags (7 spells, taught by Sages — playthrough §6.1).
     # Earlier interpretation as boss_kill_<boss> was wrong: BB-C1 actually
@@ -167,44 +167,44 @@ FIELDS = [
     # Player flags / hitbox tail.  Names below match stdply.inc canonical
     # symbols where the asm has runtime evidence (readers in cleaned source).
     # TCRF-side context kept in descriptions for save-format users.
-    ('player_facing',        0xC2, 'b',  'Player facing/anim flags (asm: 87 byte_tests — most-tested byte).  Direction on respawn: 00,02=Right; 01,03=Left.'),
+    ('facing_direction',        0xC2, 'b',  'Player facing/anim flags (asm: 87 byte_tests — most-tested byte).  Direction on respawn: 00,02=Right; 01,03=Left.'),
     ('boss_intro_flag',      0xC3, 'b',  'Boss intro-side flag (asm: 200FIGHT line 4068 sets it as `[si+3] & 40h` from boss-init data; tested in `check_c3` line 4153).'),
     ('save_sage',            0xC4, 'b',  'Sage where game was saved (0x80=Castle, 0x81=Muralla..0x89=Esco).  HIGH BIT MUST BE SET or game crashes.'),
     ('last_sage_visited',    0xC5, 'b',  "Last sage visited (Kioku Feather destination).  DOS version doesn't update on save, so always Muralla (0x81)."),
     ('heal_pulse_count',     0xC6, 'w',  'HP heal-pulse counter (asm: 200FIGHT line 2806; +8 HP/tick while non-zero, clamped to player_hp_max; 16-bit at 0xC6..0xC7).'),
     ('current_level_idx',    0xC8, 'b',  "Current level/cavern chunk index (0..31).  Drives bg + music + sprite + tileset + map chunk loading via an 11-byte-per-entry chunk-ref table.  game.asm:407-409 derives this from save_data_base via `(byte >> 1) & 0x1F`; 200FIGHT.asm:4281 uses the same byte AS the music_track_id directly.  Distinct from save_sage at 0xC4 (which tracks sage-town for Kioku Feather)."),
     # 0xC9..0xD1 — magic shop inventory per town (bitfield).
-    ('shop_magic_muralla',   0xC9, 'b',  "Magic shop stock at Muralla (default 8A; bitfield: +128=Ken'ko +64=Juu-en +32=Elixir +16=Chikara +8=Magia +4=HolyWater +2=SabreOil +1=Kioku; FF=full)."),
-    ('shop_magic_satono',    0xCA, 'b',  'Magic shop stock at Satono (default A6).'),
-    ('shop_magic_bosque',    0xCB, 'b',  'Magic shop stock at Bosque (default 6B).'),
-    ('shop_magic_helada',    0xCC, 'b',  'Magic shop stock at Helada (default 75).'),
-    ('shop_magic_tumba',     0xCD, 'b',  'Magic shop stock at Tumba (default 42).'),
-    ('shop_magic_dorado',    0xCE, 'b',  'Magic shop stock at Dorado (default 4C).'),
-    ('shop_magic_llama',     0xCF, 'b',  'Magic shop stock at Llama (default 4B).'),
-    ('shop_magic_pureza',    0xD0, 'b',  'Magic shop stock at Pureza (default 01).'),
-    ('shop_magic_esco',      0xD1, 'b',  'Magic shop stock at Esco (default FF).'),
+    ('magic_shop_inventory_muralla',   0xC9, 'b',  "Magic shop stock at Muralla (default 8A; bitfield: +128=Ken'ko +64=Juu-en +32=Elixir +16=Chikara +8=Magia +4=HolyWater +2=SabreOil +1=Kioku; FF=full)."),
+    ('magic_shop_inventory_satono',    0xCA, 'b',  'Magic shop stock at Satono (default A6).'),
+    ('magic_shop_inventory_bosque',    0xCB, 'b',  'Magic shop stock at Bosque (default 6B).'),
+    ('magic_shop_inventory_helada',    0xCC, 'b',  'Magic shop stock at Helada (default 75).'),
+    ('magic_shop_inventory_tumba',     0xCD, 'b',  'Magic shop stock at Tumba (default 42).'),
+    ('magic_shop_inventory_dorado',    0xCE, 'b',  'Magic shop stock at Dorado (default 4C).'),
+    ('magic_shop_inventory_llama',     0xCF, 'b',  'Magic shop stock at Llama (default 4B).'),
+    ('magic_shop_inventory_pureza',    0xD0, 'b',  'Magic shop stock at Pureza (default 01).'),
+    ('magic_shop_inventory_esco',      0xD1, 'b',  'Magic shop stock at Esco (default FF).'),
     # 0xD2..0xDA — weapon shop sword inventory per town.
-    ('shop_sword_muralla',   0xD2, 'b',  'Sword stock at Muralla (default C0; bitfield: +128=Training +64=WiseMan +32=Spirit +16=Knight +8=Illumination +4=Enchantment).'),
-    ('shop_sword_satono',    0xD3, 'b',  'Sword stock at Satono (default C0).'),
-    ('shop_sword_bosque',    0xD4, 'b',  'Sword stock at Bosque (default E0).'),
-    ('shop_sword_helada',    0xD5, 'b',  'Sword stock at Helada (default E0).'),
-    ('shop_sword_tumba',     0xD6, 'b',  "Sword stock at Tumba (default 70).  Glory Crest trade reduces by 16 (gives Knight's Sword)."),
-    ('shop_sword_dorado',    0xD7, 'b',  'Sword stock at Dorado (default 38).'),
-    ('shop_sword_llama',     0xD8, 'b',  'Sword stock at Llama (default 38).'),
-    ('shop_sword_pureza',    0xD9, 'b',  'Sword stock at Pureza (default F8).'),
-    ('shop_sword_esco',      0xDA, 'b',  'Sword stock at Esco (default F8; FC includes Enchantment).'),
+    ('weapon_shop_swords_muralla',   0xD2, 'b',  'Sword stock at Muralla (default C0; bitfield: +128=Training +64=WiseMan +32=Spirit +16=Knight +8=Illumination +4=Enchantment).'),
+    ('weapon_shop_swords_satono',    0xD3, 'b',  'Sword stock at Satono (default C0).'),
+    ('weapon_shop_swords_bosque',    0xD4, 'b',  'Sword stock at Bosque (default E0).'),
+    ('weapon_shop_swords_helada',    0xD5, 'b',  'Sword stock at Helada (default E0).'),
+    ('weapon_shop_swords_tumba',     0xD6, 'b',  "Sword stock at Tumba (default 70).  Glory Crest trade reduces by 16 (gives Knight's Sword)."),
+    ('weapon_shop_swords_dorado',    0xD7, 'b',  'Sword stock at Dorado (default 38).'),
+    ('weapon_shop_swords_llama',     0xD8, 'b',  'Sword stock at Llama (default 38).'),
+    ('weapon_shop_swords_pureza',    0xD9, 'b',  'Sword stock at Pureza (default F8).'),
+    ('weapon_shop_swords_esco',      0xDA, 'b',  'Sword stock at Esco (default F8; FC includes Enchantment).'),
     # 0xDB..0xE3 — weapon shop shield inventory per town.
-    ('shop_shield_muralla',  0xDB, 'b',  'Shield stock at Muralla (default C0; bitfield: +128=Clay +64=WiseMan +32=Stone +16=Honor +8=Light +4=Titanium).'),
-    ('shop_shield_satono',   0xDC, 'b',  'Shield stock at Satono (default E0).'),
-    ('shop_shield_bosque',   0xDD, 'b',  'Shield stock at Bosque (default E0).'),
-    ('shop_shield_helada',   0xDE, 'b',  'Shield stock at Helada (default 70).'),
-    ('shop_shield_tumba',    0xDF, 'b',  'Shield stock at Tumba (default 30).'),
-    ('shop_shield_dorado',   0xE0, 'b',  'Shield stock at Dorado (default 38).'),
-    ('shop_shield_llama',    0xE1, 'b',  'Shield stock at Llama (default 1C).'),
-    ('shop_shield_pureza',   0xE2, 'b',  'Shield stock at Pureza (default 1C).'),
-    ('shop_shield_esco',     0xE3, 'b',  'Shield stock at Esco (default FC).'),
+    ('weapon_shop_shields_muralla',  0xDB, 'b',  'Shield stock at Muralla (default C0; bitfield: +128=Clay +64=WiseMan +32=Stone +16=Honor +8=Light +4=Titanium).'),
+    ('weapon_shop_shields_satono',   0xDC, 'b',  'Shield stock at Satono (default E0).'),
+    ('weapon_shop_shields_bosque',   0xDD, 'b',  'Shield stock at Bosque (default E0).'),
+    ('weapon_shop_shields_helada',   0xDE, 'b',  'Shield stock at Helada (default 70).'),
+    ('weapon_shop_shields_tumba',    0xDF, 'b',  'Shield stock at Tumba (default 30).'),
+    ('weapon_shop_shields_dorado',   0xE0, 'b',  'Shield stock at Dorado (default 38).'),
+    ('weapon_shop_shields_llama',    0xE1, 'b',  'Shield stock at Llama (default 1C).'),
+    ('weapon_shop_shields_pureza',   0xE2, 'b',  'Shield stock at Pureza (default 1C).'),
+    ('weapon_shop_shields_esco',     0xE3, 'b',  'Shield stock at Esco (default FC).'),
     ('key_count',            0xE4, 'b',  "Player's collected-key count (asm: 11 readers; 201SELCT inc + test + read)."),
-    ('sages_spoken',         0xE5, 'b',  'Sages spoken-with bitmap (+128=Muralla +64=Satono +32=Bosque +16=Helada +8=Tumba +4=Dorado +2=Llama +1=Pureza).'),
+    ('sages_spoken_bitmap',         0xE5, 'b',  'Sages spoken-with bitmap (+128=Muralla +64=Satono +32=Bosque +16=Helada +8=Tumba +4=Dorado +2=Llama +1=Pureza).'),
     ('scene_trans_request',  0xE6, 'b',  'Scene-transition request flag (asm: 200FIGHT main_loop_body line 712 polls `test [E6h], 0FFh; jnz scene_transition`; 6 readers).'),
     ('gvar_pose_idx',        0xE7, 'b',  'Player pose state (asm: 85 readers — most-accessed byte in stdply chunk; bit7=mode flag, low7=pose index).'),
     ('init_complete_flag',   0xE8, 'b',  'Post-init steady-state flag (asm: 30 readers; set to 0xFF after first frame init; cleared on area_load_flag).'),

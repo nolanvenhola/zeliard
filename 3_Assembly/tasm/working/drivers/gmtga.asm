@@ -877,10 +877,10 @@ fn1_render_time_a:				; dispatch fn 1 (CS:24E6) ?-- render time display A: reads
 fn_9:
 		retn
 
-fn2_render_time_b:				; dispatch fn 2 (CS:2503) ?-- render time display B: reads cs:[player_gold_lo]/cs:[player_gold_hi] timer, tilemap_src=13BBh
+fn2_render_time_b:				; dispatch fn 2 (CS:2503) ?-- render time display B: reads cs:[gold_carried_x1]/cs:[gold_carried_x65536] timer, tilemap_src=13BBh
 		push	ds
-		mov	ax,word ptr cs:player_gold_lo
-		mov	dl,byte ptr cs:player_gold_hi
+		mov	ax,word ptr cs:gold_carried_x1
+		mov	dl,byte ptr cs:gold_carried_x65536
 		call	init_timestamp
 		push	cs
 
@@ -917,8 +917,8 @@ fn_11:
 
 fn_12:
 
-fn4_sprite_check:				; dispatch fn 4 (CS:254C) ?-- sprite visibility check: early-out if cs:[shield_type]==0, else render time display D (tilemap_src=3EBBh)
-		test	byte ptr cs:shield_type,0FFh
+fn4_sprite_check:				; dispatch fn 4 (CS:254C) ?-- sprite visibility check: early-out if cs:[shield]==0, else render time display D (tilemap_src=3EBBh)
+		test	byte ptr cs:shield,0FFh
 		jnz	sprite_vis_check			; Jump if not zero
 		retn
 

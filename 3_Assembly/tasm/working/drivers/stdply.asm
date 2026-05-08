@@ -34,8 +34,8 @@ PAGE  59,132
 ;                  same load address. Read by gm*.bin graphics drivers
 ;                  (CS-relative offsets) and by game.bin / fight.bin via
 ;                  the same shared segment.
-;    Reads/writes: provides initial values for player_gold_hi/lo, player_almas,
-;                  player_HP, equipped_weapon, shield_type, shield_HP,
+;    Reads/writes: provides initial values for gold_carried_x65536/lo, player_almas,
+;                  player_HP, sword, shield, shield_HP,
 ;                  shield_max_HP, cur_weapon_idx at game_seg:0x0085-0x009D, plus
 ;                  player_walk_speed/player_accel and the animation color LUT.
 ;
@@ -84,7 +84,7 @@ key_map_table	dw	64 dup (0)
 ; to [81h]), 19 byte refs to [82h], all in scroll routines
 ; (scroll_pos_dec at 0x6D31, scroll_pos_inc at 0x77AC, pos_scroll_up at
 ; 0x67B5, process_loop_end at 0x7BC8).  See analyze_stat_layout.py.
-map_scroll_col	dw	001Eh		; [80h-81h] cavern X scroll column (16-bit; init col 30)
+starting_position_in_town	dw	001Eh		; [80h-81h] cavern X scroll column (16-bit; init col 30)
 map_scroll_row	db	0		; [82h]     cavern Y scroll row (paired with gvar_scroll_pos)
 ; [83h-84h]: static analysis shows BOTH are byte-only fields (no word
 ; access), used together in vga_operation8 to compute a tile-grid offset:
@@ -100,22 +100,22 @@ map_scroll_row	db	0		; [82h]     cavern Y scroll row (paired with gvar_scroll_po
 ; confirms walk_right_move increments [83h] by exactly 1 within bounds.
 ; The earlier `player_accel db 0Ah, 0Ah` declaration was a misread —
 ; init values are independent, not paired.
-town_player_col	db	0Ah		; [83h] player screen column in town (range 0..0x10)
+screen_position	db	0Ah		; [83h] player screen column in town (range 0..0x10)
 fight_player_col db	0Ah		; [84h] player screen column in fight (range 0..7)
 ; Gold is a 24-bit field at [85h..87h]: high byte at 0x85 + little-endian
 ; low word at 0x86..0x87.  Verified functionally by the harness probe of
 ; town.bin's add_gold_to_hero (slot 0x600C) and check_gold_sufficient
 ; (slot 0x600A).  See functest/test_town_dispatch_slot_60{0A,0C}.py.
-player_gold_hi	db	0		; [85h] gold high byte (24-bit field)
-player_gold_lo	db	0		; [86h] gold low byte (start of low word)
-player_gold_mid	db	0		; [87h] gold low word's high byte
+gold_carried_x65536	db	0		; [85h] gold high byte (24-bit field)
+gold_carried_x1	db	0		; [86h] gold low byte (start of low word)
+gold_carried_x256	db	0		; [87h] gold low word's high byte
 ;
 ; [88h..8Ah]: 24-bit player_bank balance, mirrors player_gold layout.  Used
 ; by 213BANKP (the bank shop chunk) — `add [89h], ax; adc [88h], dl` is
 ; the deposit pattern.  Runtime probe (functest/.../test_stdply_hero_bank_X88.py)
 ; confirmed carry propagation 0xFFFE+5 → hi=1, lo=0x0003.
-player_bank_hi	db	0		; [88h] banked-gold high byte (24-bit)
-player_bank_lo	dw	0		; [89h-8Ah] banked-gold low word
+gold_in_bank_x65536	db	0		; [88h] banked-gold high byte (24-bit)
+gold_in_bank_x1	dw	0		; [89h-8Ah] banked-gold low word
 ;
 ; player_almas — 16-bit, NOT 8-bit.  Functional probe (fight.bin 0x917C,
 ; "almas-add"): add AX to word at [8Bh], cap at 0xFFFFh on carry.  See
@@ -135,14 +135,14 @@ experience	dw	0		; [8Eh-8Fh] experience points (TCRF)
 ; The manual's "max HP = 80" reflects gameplay balance; the storage is
 ; 16-bit so designers had headroom for buffs / boss multipliers.
 player_HP		dw	0050h		; [90h-91h] current HP (16-bit; init=80)
-equipped_weapon	db	1		; [92h] equipped weapon idx (1-based; init 1 = SWORD_TRAINING)
-shield_type	db	0		; [93h] shield tier (1-based; init 0 = no shield)
+sword	db	1		; [92h] equipped weapon idx (1-based; init 1 = SWORD_TRAINING)
+shield	db	0		; [93h] shield tier (1-based; init 0 = no shield)
 ;
 ; shield_HP (16-bit word) — current shield HP.  200FIGHT
 ; apply_combat_damage_with_absorb (line 3501) subtracts damage scaled
-; by shield_type tier from this word; on underflow, clears both [93h]
+; by shield tier from this word; on underflow, clears both [93h]
 ; and [94h] = "shield broken".  201SELCT's use_magia_stone adds an
-; effect-tbl[shield_type] amount to this word and clamps to shield_max_HP
+; effect-tbl[shield] amount to this word and clamps to shield_max_HP
 ; — consistent with the magia stone being a shield-repair item.
 shield_HP	dw	0		; [94h-95h] current shield HP (16-bit; init=0)
 ;
@@ -167,7 +167,7 @@ selected_spell	db	0		; [9Dh] currently selected spell ID
 ;
 ; 0x9E = SELECTED WEARABLE.  User-confirmed: ID of the shoe-or-cape
 ; the player has currently equipped (0=none, 1..5 per wear_* enum).
-selected_wearable db	0		; [9Eh] currently equipped wearable
+selected_accessory db	0		; [9Eh] currently equipped wearable
 stat_X9F	db	0		; [9Fh] VESTIGIAL — per-frame zero-clear, no reader observed
 ;
 ; 0xA0 = TEARS OF ESMESANTI count (0..9).  TCRF authoritative.  Each
@@ -181,11 +181,11 @@ tears_of_esmesanti_count db 0	; [A0h] Tears collected (0..9)
 ; confirmed): 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=AsbestosCape.
 ; Earlier names "magic_flags" / "spell_slot_1..5" were misleading
 ; (these track wearables, not spells).
-wear_1		db	0		; [A1h] 1st wearable acquired
-wear_2		db	0		; [A2h] 2nd wearable acquired
-wear_3		db	0		; [A3h] 3rd wearable acquired
-wear_4		db	0		; [A4h] 4th wearable acquired
-wear_5		db	0		; [A5h] 5th wearable acquired
+accessory_slot_1		db	0		; [A1h] 1st wearable acquired
+accessory_slot_2		db	0		; [A2h] 2nd wearable acquired
+accessory_slot_3		db	0		; [A3h] 3rd wearable acquired
+accessory_slot_4		db	0		; [A4h] 4th wearable acquired
+accessory_slot_5		db	0		; [A5h] 5th wearable acquired
 ;
 ; 0xA6..0xAA: 5-slot item inventory.  User-confirmed: items DO have a
 ; slot mechanic.  Each byte = ID of item in that slot (0=empty; 1..8
@@ -211,13 +211,13 @@ item_slot_5	db	0		; [AAh] inventory slot 5
 ;  speculation that happened to use the same byte values).
 ;--------------------------------------------------------------------------
 
-charges_espada	db	0Ch		; [ABh] Espada current charges (default 12)
-charges_saeta	db	06h		; [ACh] Saeta current charges  (default 6)
-charges_fuego	db	08h		; [ADh] Fuego current charges  (default 8)
-charges_lanzar	db	04h		; [AEh] Lanzar current charges (default 4)
-charges_rascar	db	03h		; [AFh] Rascar current charges (default 3)
-charges_agua	db	04h		; [B0h] Agua current charges   (default 4)
-charges_guerra	db	03h		; [B1h] Guerra current charges (default 3)
+spell_charge_espada	db	0Ch		; [ABh] Espada current charges (default 12)
+spell_charge_saeta	db	06h		; [ACh] Saeta current charges  (default 6)
+spell_charge_fuego	db	08h		; [ADh] Fuego current charges  (default 8)
+spell_charge_lanzar	db	04h		; [AEh] Lanzar current charges (default 4)
+spell_charge_rascar	db	03h		; [AFh] Rascar current charges (default 3)
+spell_charge_agua	db	04h		; [B0h] Agua current charges   (default 4)
+spell_charge_guerra	db	03h		; [B1h] Guerra current charges (default 3)
 
 ;
 ; 0xB2..0xB3 = LIFE max (16-bit; init=80).  TCRF.
@@ -225,13 +225,13 @@ charges_guerra	db	03h		; [B1h] Guerra current charges (default 3)
 		db	00h		; [B3h] LIFE max high byte
 ;
 ; 0xB4..0xBA = MAX spell charges (TCRF; matches default current charges).
-charges_max_espada db	0Ch	; [B4h] Espada max charges
-charges_max_saeta  db	06h	; [B5h] Saeta max
-charges_max_fuego  db	08h	; [B6h] Fuego max
-charges_max_lanzar db	04h	; [B7h] Lanzar max
-charges_max_rascar db	03h	; [B8h] Rascar max
-charges_max_agua   db	04h	; [B9h] Agua max
-charges_max_guerra db	03h	; [BAh] Guerra max
+spell_charge_max_espada db	0Ch	; [B4h] Espada max charges
+spell_charge_max_saeta  db	06h	; [B5h] Saeta max
+spell_charge_max_fuego  db	08h	; [B6h] Fuego max
+spell_charge_max_lanzar db	04h	; [B7h] Lanzar max
+spell_charge_max_rascar db	03h	; [B8h] Rascar max
+spell_charge_max_agua   db	04h	; [B9h] Agua max
+spell_charge_max_guerra db	03h	; [BAh] Guerra max
 ;
 ; OVERLAY: byte at [BBh] is anim_color_lut frame 17 (init=0x00) AND the
 ; spell_known_espada flag at runtime.  Set to 0FFh by zeliad.exe when
@@ -255,7 +255,7 @@ spell_known_lanzar db 0	; [BEh] spell 4: flame jet
 spell_known_rascar db 0	; [BFh] spell 5: falling rocks
 spell_known_agua   db 0	; [C0h] spell 6: water
 spell_known_guerra db 0	; [C1h] spell 7: lightning ultimate
-player_facing	db	0		; [C2h] facing/anim flag bits (87 byte_tests)
+facing_direction	db	0		; [C2h] facing/anim flag bits (87 byte_tests)
 boss_intro_flag db 0		; [boss_intro_flag] boss intro-side flag (bit-6 from boss data; gates intro_left_loop)
 
 ;--------------------------------------------------------------------------
@@ -292,46 +292,46 @@ current_level_idx	db	00h		; [0C8h] current level/cavern chunk index (0..31; driv
 ;--------------------------------------------------------------------------
 
 ; Magic shop stock per town (TCRF defaults).
-shop_magic_muralla	db	8Ah	; [0C9h] Muralla magic shop default
-shop_magic_satono	db	0A6h	; [0CAh] Satono
-shop_magic_bosque	db	6Bh	; [0CBh] Bosque
-shop_magic_helada	db	75h	; [0CCh] Helada
-shop_magic_tumba	db	42h	; [0CDh] Tumba
-shop_magic_dorado	db	4Ch	; [0CEh] Dorado
-shop_magic_llama	db	4Bh	; [0CFh] Llama
-shop_magic_pureza	db	01h	; [0D0h] Pureza
-shop_magic_esco		db	0FFh	; [0D1h] Esco (full stock)
+magic_shop_inventory_muralla	db	8Ah	; [0C9h] Muralla magic shop default
+magic_shop_inventory_satono	db	0A6h	; [0CAh] Satono
+magic_shop_inventory_bosque	db	6Bh	; [0CBh] Bosque
+magic_shop_inventory_helada	db	75h	; [0CCh] Helada
+magic_shop_inventory_tumba	db	42h	; [0CDh] Tumba
+magic_shop_inventory_dorado	db	4Ch	; [0CEh] Dorado
+magic_shop_inventory_llama	db	4Bh	; [0CFh] Llama
+magic_shop_inventory_pureza	db	01h	; [0D0h] Pureza
+magic_shop_inventory_esco		db	0FFh	; [0D1h] Esco (full stock)
 
 ; Weapon shop sword stock per town (TCRF defaults).
 ;   Note: the previous `player_hitbox db 0C0h, 0C0h ...` 9-row
 ;   declaration sat at exactly this offset.  Zero readers — see git log.
-shop_sword_muralla	db	0C0h	; [0D2h] Muralla sword shop default
-shop_sword_satono	db	0C0h	; [0D3h] Satono
-shop_sword_bosque	db	0E0h	; [0D4h] Bosque
-shop_sword_helada	db	0E0h	; [0D5h] Helada
-shop_sword_tumba	db	70h	; [0D6h] Tumba (-16 after Glory-Crest trade)
-shop_sword_dorado	db	38h	; [0D7h] Dorado
-shop_sword_llama	db	38h	; [0D8h] Llama
-shop_sword_pureza	db	0F8h	; [0D9h] Pureza (full minus Enchantment)
-shop_sword_esco		db	0F8h	; [0DAh] Esco
+weapon_shop_swords_muralla	db	0C0h	; [0D2h] Muralla sword shop default
+weapon_shop_swords_satono	db	0C0h	; [0D3h] Satono
+weapon_shop_swords_bosque	db	0E0h	; [0D4h] Bosque
+weapon_shop_swords_helada	db	0E0h	; [0D5h] Helada
+weapon_shop_swords_tumba	db	70h	; [0D6h] Tumba (-16 after Glory-Crest trade)
+weapon_shop_swords_dorado	db	38h	; [0D7h] Dorado
+weapon_shop_swords_llama	db	38h	; [0D8h] Llama
+weapon_shop_swords_pureza	db	0F8h	; [0D9h] Pureza (full minus Enchantment)
+weapon_shop_swords_esco		db	0F8h	; [0DAh] Esco
 
 ; Weapon shop shield stock per town (TCRF defaults).
-shop_shield_muralla	db	0C0h	; [0DBh] Muralla shield shop default
-shop_shield_satono	db	0E0h	; [0DCh] Satono
-shop_shield_bosque	db	0E0h	; [0DDh] Bosque
-shop_shield_helada	db	70h	; [0DEh] Helada
-shop_shield_tumba	db	30h	; [0DFh] Tumba
-shop_shield_dorado	db	38h	; [0E0h] Dorado
-shop_shield_llama	db	1Ch	; [0E1h] Llama
-shop_shield_pureza	db	1Ch	; [0E2h] Pureza
-shop_shield_esco	db	0FCh	; [0E3h] Esco (full)
+weapon_shop_shields_muralla	db	0C0h	; [0DBh] Muralla shield shop default
+weapon_shop_shields_satono	db	0E0h	; [0DCh] Satono
+weapon_shop_shields_bosque	db	0E0h	; [0DDh] Bosque
+weapon_shop_shields_helada	db	70h	; [0DEh] Helada
+weapon_shop_shields_tumba	db	30h	; [0DFh] Tumba
+weapon_shop_shields_dorado	db	38h	; [0E0h] Dorado
+weapon_shop_shields_llama	db	1Ch	; [0E1h] Llama
+weapon_shop_shields_pureza	db	1Ch	; [0E2h] Pureza
+weapon_shop_shields_esco	db	0FCh	; [0E3h] Esco (full)
 
 ; [E4h..E8h]: previously labelled "end padding" but the analyzer found these
 ; bytes are heavily used.  0xE7 is the single most-accessed byte in the whole
 ; stdply chunk (38 reads + 7 inc + 7 cmp + 5 or + 4 and; called "Unknown
 ; state var" in game.asm).  0xE6 and 0xE8 are flag bytes (test FFh).
 key_count	db	0		; [E4h] player's collected-key count (from 201SELCT)
-sages_spoken	db	0		; [E5h] sages spoken-with bitmap (TCRF: +128=Muralla..+1=Pureza)
+sages_spoken_bitmap	db	0		; [E5h] sages spoken-with bitmap (TCRF: +128=Muralla..+1=Pureza)
 scene_trans_request db 0	; [scene_trans_request] scene-transition request (polled in main_loop_body)
 gvar_pose_idx	db	0		; [E7h] player pose state (bit7=mode flag, low7=pose idx)
 init_complete_flag db 0		; [init_complete_flag] post-init steady-state (cleared on area_load_flag)
