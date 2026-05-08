@@ -62,6 +62,7 @@ GRP_DESCRIPTOR = [
         # 00
     ("enp1.grp",  11),
     ("crab.grp",  12),
+    ("dman.grp",  13), # rokademo
 ]
 
 MODE_CFG = {
@@ -78,6 +79,7 @@ MODE_CFG = {
     10:{"w": 8,  "h": 8,  "stride": 6,  "bytes": 48,  "type": "dchr"},
     11:{"w": 16, "h": 8,  "stride": 4,  "bytes": 32,  "type": "enp"},
     12:{"w": 16, "h": 8,  "stride": 4,  "bytes": 32,  "type": "crab"},
+    13:{"w": 16, "h": 8,  "stride": 4,  "bytes": 32,  "type": "dman"},
 }
 
 SCALE = 4
@@ -149,6 +151,21 @@ ROKA_MAP = [
     0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04, 0x03, 0x04,
     0x05, 0x06, 0x05, 0x06, 0x05, 0x06, 0x05, 0x06, 0x05, 0x06, 0x05, 0x06, 0x05, 0x06, 0x05, 0x06, 0x05, 0x06, 0x05, 0x06, 0x05, 0x06, 0x06, 0x05, 0x05, 0x06, 0x05, 0x06,
 ]
+
+DMAN_FRAMES = {
+    "rowMajor": [
+        [0, 2, 4, 1, 3, 5, 0, 0, 6],
+        [7, 9, 11, 8, 10, 12, 0, 0, 0],
+        [0, 2, 14, 1, 13, 15, 0, 0, 16],
+        [7, 9, 17, 8, 10, 18, 0, 0, 0],
+        [0, 20, 22, 19, 21, 23, 0, 0, 24],
+        [25, 0, 28, 26, 27, 29, 0, 0, 30],
+        [31, 0, 35, 32, 33, 36, 0, 34, 37],
+        [31, 0, 35, 32, 38, 40, 0, 39, 41],
+        [31, 0, 35, 42, 44, 40, 43, 45, 41],
+        [46, 49, 35, 47, 50, 52, 48, 51, 53]
+    ]
+}
 
 # Frame definitions from enp_frames.asm
 # Each frame is a 2x2 grid of 8x8 tiles: [Top-Left, Top-Right, Bottom-Left, Bottom-Right]
@@ -972,6 +989,59 @@ def draw_composed_16x16_frame(canvas, frame_data, tiles_raw, x_frame, y_frame, s
         row_offset = (i // 2) * 8 * scale
         draw_tile_pixels(canvas, pixels, x_frame + col_offset, y_frame + row_offset, scale=scale)
 
+def draw_composed_24x24_frame(canvas, frame_data, tiles_raw, x_frame, y_frame, scale):
+    """Draws a 24x24 frame composed of nine 8x8 tiles [by columns]."""
+    TILE_SIZE = 32
+    tile_indices = frame_data # [tl, tr, bl, br]
+    lut = PAL_DECODE_TABLES[0]
+    
+    for i, t_idx in enumerate(tile_indices):
+        if t_idx == 0: continue
+        # Slice the 32-byte raw data for the 8x8 tile
+        tile_data = tiles_raw[t_idx * TILE_SIZE : (t_idx + 1) * TILE_SIZE]
+        pixels = decode_fman_tile(tile_data, lut)
+        
+        # Calculate sub-tile position within the 27x27 block
+        col_offset = (i // 3) * 8 * scale
+        row_offset = (i % 3) * 8 * scale
+        draw_tile_pixels(canvas, pixels, x_frame + col_offset, y_frame + row_offset, scale=scale)
+
+def render_dman_group(data, canvas, y_offset):
+    """
+    Render dman.grp sprites.
+    The first byte of each frame chooses the palette (lut).
+    """
+    TILE_SIZE = 32
+    scale = 3
+    current_y = y_offset
+    gap_x = 16
+    gap_y = 24
+    sprite_px = 24  # Total width/height of the 3x3 tile assembly
+    frames_per_row = 10
+
+    # Ensure the data buffer is padded to prevent index-out-of-range errors 
+    # for high tile indices (e.g., 0xF8)
+    tiles_raw = data + b'\x00' * (256 * TILE_SIZE)
+
+    for anim_name, frames in DMAN_FRAMES.items():
+        for f_idx, frame_data in enumerate(frames):
+            # Calculate base position for the 24x24 sprite
+            x_frame = 10 + (f_idx % frames_per_row) * (sprite_px * scale + gap_x)
+            y_frame = current_y + (f_idx // frames_per_row) * (sprite_px * scale + gap_y)
+
+            # Draw frame border
+            canvas.create_rectangle(x_frame-1, y_frame-1, x_frame + sprite_px*scale, 
+                                     y_frame + sprite_px*scale, outline="gray")
+
+            draw_composed_24x24_frame(canvas, frame_data, tiles_raw, x_frame, y_frame, scale)
+
+        # Advance Y cursor to the next animation block
+        num_rows = (len(frames) + frames_per_row - 1) // frames_per_row
+        current_y += num_rows * (sprite_px * scale + gap_y)
+
+    return current_y - y_offset
+
+
 def render_enp_group(data, canvas, y_offset):
     """
     Render enpX.grp sprites using the ENP_FRAMES animation map.
@@ -1282,6 +1352,10 @@ class GrpViewer:
                 consumed = render_boss_group(data, self.canvas, y_cursor)
                 self.canvas.config(scrollregion=(0, 0, 1200, y_cursor + consumed + 40))
                 self.info_label.config(text=f"File: {filename} | Monsters/Items Sprites")
+            elif modes == 13:
+                consumed = render_dman_group(data, self.canvas, y_cursor)
+                self.canvas.config(scrollregion=(0, 0, 1200, y_cursor + consumed + 40))
+                self.info_label.config(text=f"File: {filename} | RokaDemo Sprites")
             else:  # 5 or 6
                 consumed = render_npc_group(data, self.canvas, y_cursor, is_hero=(modes == 6))
                 self.canvas.config(scrollregion=(0, 0, 1200, y_cursor + consumed + 40))
