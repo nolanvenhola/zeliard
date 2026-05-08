@@ -17,11 +17,15 @@ Sources joined into the ledger:
   6. `working/EVIDENCE_REPORT.md` — already-rendered evidence verdicts
      for contested addresses.
 
-Verdict values:
-  - SUPPORTED   — deterministic evidence aligns with the current name.
-  - CONTRADICTED — deterministic evidence rules out the current name.
-  - INCONCLUSIVE — not enough deterministic evidence to judge.
-  - PENDING      — row exists but has not been examined yet.
+Verdict values (strongest to weakest evidence):
+  - SUPPORTED      external evidence aligns with the current name (TCRF,
+                    runtime trace, byte-signature match, functest probe).
+  - INC_CONSISTENT name matches a scoped `.inc` EQU but no external
+                    evidence is on file -- proves consistency between the
+                    source and the canonical include, NOT correctness.
+  - CONTRADICTED   external evidence rules out the current name.
+  - INCONCLUSIVE   examined but not enough deterministic evidence to judge.
+  - PENDING        row exists but has not been examined yet.
 
 Usage:
     python audit_section.py                # build/refresh ledger CSV
@@ -377,34 +381,20 @@ def build_ledger() -> list[dict]:
         evidence = ''
         source = ''
 
-        # Source 1a: scoped .inc file canonical EQU tables.  Each .inc
-        # file declares the canonical EQU names for its scope (drivers,
-        # zelres1/2/3 chunks, core executables).  Names defined there
-        # include both runtime-semantic forms and alias EQUs (e.g. TCRF
-        # save-format aliases).  If the source's name matches any EQU
-        # at the row's address in any of its scoped includes, that's an
-        # accepted canonical -- SUPPORTED.
-        if address_hex:
-            for inc_label, inc_equs in includes_for(file_rel):
-                inc_names = inc_equs.get(address_hex, [])
-                if inv['name'] in inc_names:
-                    verdict = 'SUPPORTED'
-                    canonical = inv['name']
-                    aliases = [n for n in inc_names if n != inv['name']]
-                    if aliases:
-                        evidence = (
-                            f'{inc_label}: 0x{address_hex} has '
-                            f'{len(inc_names)} name(s); current is canonical, '
-                            f'others are aliases: {", ".join(aliases[:5])}'
-                            + (' ...' if len(aliases) > 5 else '')
-                        )
-                    else:
-                        evidence = f'{inc_label}: 0x{address_hex} = {inv["name"]}'
-                    source = inc_label
-                    break
-
-        # Source 1b: TCRF authoritative table for stdply 0x80..0xFF
-        if verdict == 'PENDING' and is_stdply_file(file_rel) and address_hex:
+        # Evidence priority (strongest first):
+        #
+        #   (1) TCRF -- external, runtime-validated savefile reverse-engineering
+        #       (memory/reference_zeliard_save_format_tcrf.md).  Names in this
+        #       table were confirmed by editing save bytes and observing
+        #       in-game behaviour.  Strongest evidence available.
+        #
+        #   (2) .inc consistency -- the source's name appears as an EQU at
+        #       the same address in a scoped .inc file.  This proves the
+        #       source and the canonical include AGREE; it does NOT prove
+        #       the name is correct on its own.  Weaker evidence than TCRF.
+        #
+        # Source 1a: TCRF authoritative table for stdply 0x80..0xFF
+        if is_stdply_file(file_rel) and address_hex:
             try:
                 addr_int = int(address_hex, 16)
             except ValueError:
@@ -433,17 +423,34 @@ def build_ledger() -> list[dict]:
                         f'(byte-level); 16-bit container name {inv["name"]} accepted'
                     )
                     source = 'TCRF'
-                else:
-                    # Permissive aliases that the inventory uses but TCRF
-                    # canonicalises differently.  Mark CONTRADICTED -- the
-                    # current name disagrees with TCRF.
-                    verdict = 'CONTRADICTED'
-                    canonical = tcrf_name
-                    evidence = (
-                        f'TCRF stdply: 0x{addr_int:02X} = {tcrf_name}; '
-                        f'current = {inv["name"]}'
-                    )
-                    source = 'TCRF'
+
+        # Source 1b: scoped .inc file canonical EQU tables.  This is a
+        # CONSISTENCY check, not external proof: it confirms the source
+        # name matches what the canonical include declares.  Useful for
+        # excluding genuine mismatches but does not validate the name
+        # against game semantics.
+        if verdict == 'PENDING' and address_hex:
+            for inc_label, inc_equs in includes_for(file_rel):
+                inc_names = inc_equs.get(address_hex, [])
+                if inv['name'] in inc_names:
+                    verdict = 'INC_CONSISTENT'
+                    canonical = inv['name']
+                    aliases = [n for n in inc_names if n != inv['name']]
+                    if aliases:
+                        evidence = (
+                            f'{inc_label}: 0x{address_hex} has '
+                            f'{len(inc_names)} name(s); current is one of them; '
+                            f'others (aliases): {", ".join(aliases[:5])}'
+                            + (' ...' if len(aliases) > 5 else '')
+                            + ' -- consistency only, not external proof.'
+                        )
+                    else:
+                        evidence = (
+                            f'{inc_label}: 0x{address_hex} = {inv["name"]} '
+                            f'(consistency only, not external proof).'
+                        )
+                    source = inc_label
+                    break
 
         # Source 2: AUDIT_TODO.md already-resolved addresses
         if verdict == 'PENDING' and address_hex in audit_todo:
@@ -536,8 +543,8 @@ def report_counts(rows: list[dict]) -> None:
 def update_inventory_checkboxes(rows: list[dict], inventory_path: Path) -> int:
     """Mark each row's checkbox in SECTION_INVENTORY.md based on verdict.
 
-    SUPPORTED rows -> [x] (auto-verified).
-    All other rows -> [ ] (pending further evidence).
+    Only SUPPORTED rows (external evidence) get [x].  INC_CONSISTENT
+    rows stay [ ] because consistency is not proof of correctness.
 
     Returns the number of checkbox transitions written.
     """
@@ -605,9 +612,20 @@ def write_audit_summary_md(rows: list[dict], path: Path) -> None:
     out.append('')
     out.append('## Verdict counts')
     out.append('')
+    out.append('Strength ladder (strongest first):')
+    out.append('')
+    out.append('- **SUPPORTED** -- external evidence (TCRF table, runtime trace,')
+    out.append('  byte-signature match, functest probe) confirms the name.')
+    out.append('- **INC_CONSISTENT** -- name matches a scoped `.inc` EQU but no')
+    out.append('  external evidence is on file.  Proves the source agrees with')
+    out.append('  the canonical include, NOT that the name is correct.')
+    out.append('- **CONTRADICTED** -- external evidence rules out the name.')
+    out.append('- **INCONCLUSIVE** -- examined but evidence insufficient.')
+    out.append('- **PENDING** -- not yet examined.')
+    out.append('')
     out.append('| Verdict | Count |')
     out.append('|---|---:|')
-    for v in ['SUPPORTED', 'CONTRADICTED', 'INCONCLUSIVE', 'PENDING']:
+    for v in ['SUPPORTED', 'INC_CONSISTENT', 'CONTRADICTED', 'INCONCLUSIVE', 'PENDING']:
         out.append(f'| {v} | {verdict_counts.get(v, 0)} |')
     out.append('')
     if src_counts:

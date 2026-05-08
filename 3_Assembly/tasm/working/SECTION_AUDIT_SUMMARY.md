@@ -7,9 +7,21 @@ Total rows: **1597**
 
 ## Verdict counts
 
+Strength ladder (strongest first):
+
+- **SUPPORTED** -- external evidence (TCRF table, runtime trace,
+  byte-signature match, functest probe) confirms the name.
+- **INC_CONSISTENT** -- name matches a scoped `.inc` EQU but no
+  external evidence is on file.  Proves the source agrees with
+  the canonical include, NOT that the name is correct.
+- **CONTRADICTED** -- external evidence rules out the name.
+- **INCONCLUSIVE** -- examined but evidence insufficient.
+- **PENDING** -- not yet examined.
+
 | Verdict | Count |
 |---|---:|
-| SUPPORTED | 95 |
+| SUPPORTED | 27 |
+| INC_CONSISTENT | 68 |
 | CONTRADICTED | 0 |
 | INCONCLUSIVE | 0 |
 | PENDING | 1502 |
@@ -18,13 +30,14 @@ Total rows: **1597**
 
 | Source | Count |
 |---|---:|
-| stdply.inc | 95 |
+| stdply.inc | 68 |
+| TCRF | 27 |
 
 ## Per-file resolution status
 
 | File | Supported | Contradicted | Pending | Total |
 |---|---:|---:|---:|---:|
-| `working/drivers/stdply.asm` | 95 | 0 | 2 | 97 |
+| `working/drivers/stdply.asm` | 27 | 0 | 2 | 29 |
 
 ## Files with zero Group-1 resolution (60)
 
