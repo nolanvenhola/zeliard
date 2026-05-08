@@ -1,4 +1,4 @@
-# Master section inventory — all .asm files
+# Master section inventory ï¿½ all .asm files
 
 63 files. Each section listed once. Use `[ ]` checkboxes to track which need their true name/nature determined.
 
@@ -200,101 +200,101 @@
 
 - [ ] L53    `stdply`  *(proc)*
 - [ ] L64    `key_map_table`  *(data)*
-- [ ] L87    `map_scroll_col`  *(data)*
-- [ ] L88    `map_scroll_row`  *(data)*
-- [ ] L103   `town_player_col`  *(data)*
-- [ ] L104   `fight_player_col`  *(data)*
-- [ ] L109   `player_gold_hi`  *(data)*
-- [ ] L110   `player_gold_lo`  *(data)*
-- [ ] L111   `player_gold_mid`  *(data)*
-- [ ] L117   `player_bank_hi`  *(data)*
-- [ ] L118   `player_bank_lo`  *(data)*
-- [ ] L123   `player_almas`  *(data)*
-- [ ] L128   `hero_level`  *(data)*
-- [ ] L130   `experience`  *(data)*
-- [ ] L137   `player_HP`  *(data)*
-- [ ] L138   `equipped_weapon`  *(data)*
-- [ ] L139   `shield_type`  *(data)*
-- [ ] L147   `shield_HP`  *(data)*
-- [ ] L153   `shield_max_HP`  *(data)*
-- [ ] L155   `keys_normal`  *(data)*
-- [ ] L156   `keys_lion`  *(data)*
-- [ ] L157   `crest_elf`  *(data)*
-- [ ] L158   `crest_glory`  *(data)*
-- [ ] L159   `crest_hero`  *(data)*
-- [ ] L166   `selected_spell`  *(data)*
-- [ ] L170   `selected_wearable`  *(data)*
-- [ ] L171   `stat_X9F`  *(data)*
-- [ ] L177   `tears_of_esmesanti_count`  *(data)*
-- [ ] L184   `wear_1`  *(data)*
-- [ ] L185   `wear_2`  *(data)*
-- [ ] L186   `wear_3`  *(data)*
-- [ ] L187   `wear_4`  *(data)*
-- [ ] L188   `wear_5`  *(data)*
-- [ ] L195   `item_slot_1`  *(data)*
-- [ ] L196   `item_slot_2`  *(data)*
-- [ ] L197   `item_slot_3`  *(data)*
-- [ ] L198   `item_slot_4`  *(data)*
-- [ ] L199   `item_slot_5`  *(data)*
-- [ ] L214   `charges_espada`  *(data)*
-- [ ] L215   `charges_saeta`  *(data)*
-- [ ] L216   `charges_fuego`  *(data)*
-- [ ] L217   `charges_lanzar`  *(data)*
-- [ ] L218   `charges_rascar`  *(data)*
-- [ ] L219   `charges_agua`  *(data)*
-- [ ] L220   `charges_guerra`  *(data)*
-- [ ] L228   `charges_max_espada`  *(data)*
-- [ ] L229   `charges_max_saeta`  *(data)*
-- [ ] L230   `charges_max_fuego`  *(data)*
-- [ ] L231   `charges_max_lanzar`  *(data)*
-- [ ] L232   `charges_max_rascar`  *(data)*
-- [ ] L233   `charges_max_agua`  *(data)*
-- [ ] L234   `charges_max_guerra`  *(data)*
-- [ ] L251   `spell_known_espada`  *(data)*
-- [ ] L252   `spell_known_saeta`  *(data)*
-- [ ] L253   `spell_known_fuego`  *(data)*
-- [ ] L254   `spell_known_lanzar`  *(data)*
-- [ ] L255   `spell_known_rascar`  *(data)*
-- [ ] L256   `spell_known_agua`  *(data)*
-- [ ] L257   `spell_known_guerra`  *(data)*
-- [ ] L258   `player_facing`  *(data)*
-- [ ] L259   `boss_intro_flag`  *(data)*
-- [ ] L271   `save_sage`  *(data)*
-- [ ] L272   `last_sage_visited`  *(data)*
-- [ ] L276   `heal_pulse_count`  *(data)*
-- [ ] L278   `current_level_idx`  *(data)*
-- [ ] L295   `shop_magic_muralla`  *(data)*
-- [ ] L296   `shop_magic_satono`  *(data)*
-- [ ] L297   `shop_magic_bosque`  *(data)*
-- [ ] L298   `shop_magic_helada`  *(data)*
-- [ ] L299   `shop_magic_tumba`  *(data)*
-- [ ] L300   `shop_magic_dorado`  *(data)*
-- [ ] L301   `shop_magic_llama`  *(data)*
-- [ ] L302   `shop_magic_pureza`  *(data)*
-- [ ] L303   `shop_magic_esco`  *(data)*
-- [ ] L308   `shop_sword_muralla`  *(data)*
-- [ ] L309   `shop_sword_satono`  *(data)*
-- [ ] L310   `shop_sword_bosque`  *(data)*
-- [ ] L311   `shop_sword_helada`  *(data)*
-- [ ] L312   `shop_sword_tumba`  *(data)*
-- [ ] L313   `shop_sword_dorado`  *(data)*
-- [ ] L314   `shop_sword_llama`  *(data)*
-- [ ] L315   `shop_sword_pureza`  *(data)*
-- [ ] L316   `shop_sword_esco`  *(data)*
-- [ ] L319   `shop_shield_muralla`  *(data)*
-- [ ] L320   `shop_shield_satono`  *(data)*
-- [ ] L321   `shop_shield_bosque`  *(data)*
-- [ ] L322   `shop_shield_helada`  *(data)*
-- [ ] L323   `shop_shield_tumba`  *(data)*
-- [ ] L324   `shop_shield_dorado`  *(data)*
-- [ ] L325   `shop_shield_llama`  *(data)*
-- [ ] L326   `shop_shield_pureza`  *(data)*
-- [ ] L327   `shop_shield_esco`  *(data)*
-- [ ] L333   `key_count`  *(data)*
-- [ ] L334   `sages_spoken`  *(data)*
-- [ ] L335   `scene_trans_request`  *(data)*
-- [ ] L336   `gvar_pose_idx`  *(data)*
-- [ ] L337   `init_complete_flag`  *(data)*
+- [x] L87    `map_scroll_col`  *(data)*
+- [x] L88    `map_scroll_row`  *(data)*
+- [x] L103   `town_player_col`  *(data)*
+- [x] L104   `fight_player_col`  *(data)*
+- [x] L109   `player_gold_hi`  *(data)*
+- [x] L110   `player_gold_lo`  *(data)*
+- [x] L111   `player_gold_mid`  *(data)*
+- [x] L117   `player_bank_hi`  *(data)*
+- [x] L118   `player_bank_lo`  *(data)*
+- [x] L123   `player_almas`  *(data)*
+- [x] L128   `hero_level`  *(data)*
+- [x] L130   `experience`  *(data)*
+- [x] L137   `player_HP`  *(data)*
+- [x] L138   `equipped_weapon`  *(data)*
+- [x] L139   `shield_type`  *(data)*
+- [x] L147   `shield_HP`  *(data)*
+- [x] L153   `shield_max_HP`  *(data)*
+- [x] L155   `keys_normal`  *(data)*
+- [x] L156   `keys_lion`  *(data)*
+- [x] L157   `crest_elf`  *(data)*
+- [x] L158   `crest_glory`  *(data)*
+- [x] L159   `crest_hero`  *(data)*
+- [x] L166   `selected_spell`  *(data)*
+- [x] L170   `selected_wearable`  *(data)*
+- [x] L171   `stat_X9F`  *(data)*
+- [x] L177   `tears_of_esmesanti_count`  *(data)*
+- [x] L184   `wear_1`  *(data)*
+- [x] L185   `wear_2`  *(data)*
+- [x] L186   `wear_3`  *(data)*
+- [x] L187   `wear_4`  *(data)*
+- [x] L188   `wear_5`  *(data)*
+- [x] L195   `item_slot_1`  *(data)*
+- [x] L196   `item_slot_2`  *(data)*
+- [x] L197   `item_slot_3`  *(data)*
+- [x] L198   `item_slot_4`  *(data)*
+- [x] L199   `item_slot_5`  *(data)*
+- [x] L214   `charges_espada`  *(data)*
+- [x] L215   `charges_saeta`  *(data)*
+- [x] L216   `charges_fuego`  *(data)*
+- [x] L217   `charges_lanzar`  *(data)*
+- [x] L218   `charges_rascar`  *(data)*
+- [x] L219   `charges_agua`  *(data)*
+- [x] L220   `charges_guerra`  *(data)*
+- [x] L228   `charges_max_espada`  *(data)*
+- [x] L229   `charges_max_saeta`  *(data)*
+- [x] L230   `charges_max_fuego`  *(data)*
+- [x] L231   `charges_max_lanzar`  *(data)*
+- [x] L232   `charges_max_rascar`  *(data)*
+- [x] L233   `charges_max_agua`  *(data)*
+- [x] L234   `charges_max_guerra`  *(data)*
+- [x] L251   `spell_known_espada`  *(data)*
+- [x] L252   `spell_known_saeta`  *(data)*
+- [x] L253   `spell_known_fuego`  *(data)*
+- [x] L254   `spell_known_lanzar`  *(data)*
+- [x] L255   `spell_known_rascar`  *(data)*
+- [x] L256   `spell_known_agua`  *(data)*
+- [x] L257   `spell_known_guerra`  *(data)*
+- [x] L258   `player_facing`  *(data)*
+- [x] L259   `boss_intro_flag`  *(data)*
+- [x] L271   `save_sage`  *(data)*
+- [x] L272   `last_sage_visited`  *(data)*
+- [x] L276   `heal_pulse_count`  *(data)*
+- [x] L278   `current_level_idx`  *(data)*
+- [x] L295   `shop_magic_muralla`  *(data)*
+- [x] L296   `shop_magic_satono`  *(data)*
+- [x] L297   `shop_magic_bosque`  *(data)*
+- [x] L298   `shop_magic_helada`  *(data)*
+- [x] L299   `shop_magic_tumba`  *(data)*
+- [x] L300   `shop_magic_dorado`  *(data)*
+- [x] L301   `shop_magic_llama`  *(data)*
+- [x] L302   `shop_magic_pureza`  *(data)*
+- [x] L303   `shop_magic_esco`  *(data)*
+- [x] L308   `shop_sword_muralla`  *(data)*
+- [x] L309   `shop_sword_satono`  *(data)*
+- [x] L310   `shop_sword_bosque`  *(data)*
+- [x] L311   `shop_sword_helada`  *(data)*
+- [x] L312   `shop_sword_tumba`  *(data)*
+- [x] L313   `shop_sword_dorado`  *(data)*
+- [x] L314   `shop_sword_llama`  *(data)*
+- [x] L315   `shop_sword_pureza`  *(data)*
+- [x] L316   `shop_sword_esco`  *(data)*
+- [x] L319   `shop_shield_muralla`  *(data)*
+- [x] L320   `shop_shield_satono`  *(data)*
+- [x] L321   `shop_shield_bosque`  *(data)*
+- [x] L322   `shop_shield_helada`  *(data)*
+- [x] L323   `shop_shield_tumba`  *(data)*
+- [x] L324   `shop_shield_dorado`  *(data)*
+- [x] L325   `shop_shield_llama`  *(data)*
+- [x] L326   `shop_shield_pureza`  *(data)*
+- [x] L327   `shop_shield_esco`  *(data)*
+- [x] L333   `key_count`  *(data)*
+- [x] L334   `sages_spoken`  *(data)*
+- [x] L335   `scene_trans_request`  *(data)*
+- [x] L336   `gvar_pose_idx`  *(data)*
+- [x] L337   `init_complete_flag`  *(data)*
 
 ## working/drivers/stick.asm  (37 sections)
 

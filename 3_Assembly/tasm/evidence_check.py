@@ -2,9 +2,10 @@
 """
 evidence_check.py - Gather deterministic evidence for contested symbol names.
 
-Both Claude's cleanup work and the friend's IDA-based work use LLM
-interpretation. To validate names without trusting either LLM, this tool
-gathers evidence from the BINARY itself:
+Speculative names from any source (including reverse-engineering tools
+like IDA) are LLM-guessed and unreliable.  To validate names without
+trusting any external LLM source, this tool gathers evidence from the
+BINARY itself:
 
   E1. Initial byte value at the address (from the .bin chunk).
   E2. Strings within ±100 bytes in the same chunk.
@@ -34,7 +35,9 @@ from collections import defaultdict
 ROOT = Path(__file__).parent.resolve()
 WORKING = ROOT / 'working'
 BIN = ROOT / 'bin'
-IDA = ROOT.parent / 'ida'
+# Research artefacts (flat-file binary dumps, common.inc enums) live alongside
+# the tasm tree.  These are RAW BYTE / NUMERIC data, not name guesses.
+RESEARCH = ROOT.parent / 'ida'
 FLAT = ROOT / 'research' / 'flatfiles'
 
 # Map common chunk-prefix → location of the binary
@@ -50,8 +53,9 @@ CHUNK_BIN_HINTS = {
     'gmtga': BIN / 'gmtga.bin',
 }
 
-# Flat file locations (IDA-native, no SAR header) and their CPU load base.
-# IDA's "org N" line determines load_base; file_offset N maps to CPU (load_base + N).
+# Flat-file binary dumps (research artefacts, no SAR header) and their CPU
+# load base.  Each binary is the raw byte image at runtime; load_base is
+# the segment offset where the chunk lives in DOS memory once loaded.
 FLAT_BIN_HINTS = {
     'fight':   (FLAT / 'ZELRES2' / 'fight.bin',   0x6000),
     'town':    (FLAT / 'ZELRES1' / 'town.bin',    0x6000),
@@ -67,7 +71,7 @@ FLAT_BIN_HINTS = {
     'ympd':    (FLAT / 'ZELRES2' / 'YMPD.BIN',    0x0100),
 }
 
-# Enum constants from IDA common.inc (deterministic — they're literal numeric
+# Enum constants from research/common.inc (deterministic — they're literal numeric
 # values defined in the code) — anything matching these provides evidence.
 COMMON_ENUMS = {
     'SWORD_TRAINING':     1,
@@ -402,12 +406,12 @@ VERDICT_FNS = {
 #
 # In addition to per-name signature match, we test the STRUCTURAL claim:
 #   the 8 move_monster_* slots split into 3 byte-pattern groups (east,
-#   west, vertical) that match the 3 directional groupings IDA's labels
+#   west, vertical) that match the 3 directional groupings the names
 #   imply. Group consistency is far stronger evidence than any single
 #   signature match because it survives an LLM mis-labeling any one slot.
 # ----------------------------------------------------------------------
 
-# Byte signatures keyed by IDA's claimed function name.
+# Byte signatures keyed by the speculative function name.
 #
 # Format:  [(file_offset, expected_byte), ...]  — sparse constraints; only
 # the listed offsets must match (others are wildcards). This handles the
@@ -712,7 +716,7 @@ def check_directional_grouping(file_stem, slot_addr_by_name):
 
 # Contested addresses to validate. Each tuple: (file_stem, addr, ida_claim).
 CONTESTED = [
-    # Stdply data fields — IDA says hero stat record, we said driver state
+    # Stdply data fields — speculative claim was hero stat record, we said driver state
     ('stdply', 0x80, 'proximity_map_left_col_x'),
     ('stdply', 0x83, 'hero_x_in_viewport'),
     ('stdply', 0x85, 'hero_gold_hi'),
@@ -729,8 +733,8 @@ CONTESTED = [
 # Code-pointer dispatch slots to validate.
 # Tuple: (file_stem, slot_addr, claimed_target_name).
 # Slot addresses are the CPU addresses of the dispatch words inside the binary.
-# fight.bin's first dispatch word is at addr 0x6000 (per IDA's `org 6000h`).
-# Per IDA's fight.asm header (lines 17-30):
+# fight.bin's first dispatch word is at addr 0x6000 (per the chunk's load
+# base of 0x6000h).  Per the fight chunk dispatch table layout:
 #   0x6000 -> Cavern_Game_Init
 #   0x6002 -> prepare_dungeon
 #   0x6004 -> monster_move_in_direction
@@ -751,7 +755,7 @@ CODE_POINTER_CLAIMS = [
     ('fight', 0x6014, 'move_monster_S'),
     ('fight', 0x6016, 'move_monster_SE'),
     # ---- fight.bin collision-checks (0x6018..0x6026) ----
-    # Per IDA's fight.asm dispatch, slots 0x6018..0x6026 hold the 8 collision
+    # Per the fight chunk dispatch, slots 0x6018..0x6026 hold the 8 collision
     # checks in order: E2, W2, N2, S2, NE2, SE2, NW2, SW2.
     ('fight', 0x6018, 'check_collision_E2'),
     ('fight', 0x601A, 'check_collision_W2'),
@@ -762,7 +766,7 @@ CODE_POINTER_CLAIMS = [
     ('fight', 0x6024, 'check_collision_NW2'),
     ('fight', 0x6026, 'check_collision_SW2'),
     # ---- town.bin: 5 high-confidence dispatch slots ----
-    # Per IDA's town.asm `start:` table at org 6000h:
+    # Per the town chunk's `start:` table at load base 6000h:
     #   0x6000 town_entry_normal     (writes disable_edge_scroll=0)
     #   0x6002 town_entry_init       (writes disable_edge_scroll=FFh + jmp)
     #   0x600A check_gold_sufficient (reads ds:[85] hero_gold_hi)
@@ -794,7 +798,7 @@ def main():
     out_lines.append('checked against deterministic evidence (initial byte values, nearby')
     out_lines.append('strings, code references, hardware/DOS calls) — no LLM judgment.')
     out_lines.append('')
-    out_lines.append('| File | Address | IDA claim | Init byte | Verdict | Evidence |')
+    out_lines.append('| File | Address | Name claim | Init byte | Verdict | Evidence |')
     out_lines.append('|---|---|---|---|---|---|')
 
     supported = 0
@@ -826,10 +830,10 @@ def main():
     out_lines.append('## Phase 2 — Code-Pointer Dispatch Slots')
     out_lines.append('')
     out_lines.append('Validates that each dispatch slot in a binary holds the address')
-    out_lines.append('of the procedure IDA labels for it. Match is by byte signature')
+    out_lines.append('of the procedure its claimed name implies. Match is by byte signature')
     out_lines.append('(deterministic) — no LLM judgment.')
     out_lines.append('')
-    out_lines.append('| File | Slot addr | IDA claim | Slot value | Verdict | Evidence |')
+    out_lines.append('| File | Slot addr | Name claim | Slot value | Verdict | Evidence |')
     out_lines.append('|---|---|---|---|---|---|')
 
     code_supported = 0
@@ -860,7 +864,7 @@ def main():
     out_lines.append('## Phase 3 — Structural Directional Grouping')
     out_lines.append('')
     out_lines.append('Cross-claim consistency check: do the 8 dispatch targets cluster')
-    out_lines.append('into the directional families IDA\'s labels imply? If all 3 east')
+    out_lines.append('into the directional families their labels imply? If all 3 east')
     out_lines.append('targets share one byte prefix, all 3 west targets share another,')
     out_lines.append('and both vertical targets share a third, the labels are validated')
     out_lines.append('STRUCTURALLY (independent of any single signature definition).')

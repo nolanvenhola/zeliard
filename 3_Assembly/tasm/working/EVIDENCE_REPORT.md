@@ -4,7 +4,7 @@ Evidence-supported verdicts on contested name claims. Each claim is
 checked against deterministic evidence (initial byte values, nearby
 strings, code references, hardware/DOS calls) — no LLM judgment.
 
-| File | Address | IDA claim | Init byte | Verdict | Evidence |
+| File | Address | Name claim | Init byte | Verdict | Evidence |
 |---|---|---|---|---|---|
 | stdply | `0x80` | `proximity_map_left_col_x` | 0x1E | **INCONCLUSIVE** | no verdict heuristic for this claim |
 | stdply | `0x83` | `hero_x_in_viewport` | 0x0A | **INCONCLUSIVE** | no verdict heuristic for this claim |
@@ -23,10 +23,10 @@ strings, code references, hardware/DOS calls) — no LLM judgment.
 ## Phase 2 — Code-Pointer Dispatch Slots
 
 Validates that each dispatch slot in a binary holds the address
-of the procedure IDA labels for it. Match is by byte signature
+of the procedure its claimed name implies. Match is by byte signature
 (deterministic) — no LLM judgment.
 
-| File | Slot addr | IDA claim | Slot value | Verdict | Evidence |
+| File | Slot addr | Name claim | Slot value | Verdict | Evidence |
 |---|---|---|---|---|---|
 | fight | `0x6008` | `move_monster_E` | 0x91E5 | **SUPPORTED** | slot 0x6008 -> 0x91E5; bytes match `80 7C 03 22 F5 73 01 C3` (cmp [si+3],22h / cmc / jnb +1 / ret) |
 | fight | `0x600A` | `move_monster_NE` | 0x91F6 | **SUPPORTED** | slot 0x600A -> 0x91F6; bytes match `80 7C 03 22 F5 73 01 C3` (cmp [si+3],22h / cmc / jnb +1 / ret) |
@@ -55,7 +55,7 @@ of the procedure IDA labels for it. Match is by byte signature
 ## Phase 3 — Structural Directional Grouping
 
 Cross-claim consistency check: do the 8 dispatch targets cluster
-into the directional families IDA's labels imply? If all 3 east
+into the directional families their labels imply? If all 3 east
 targets share one byte prefix, all 3 west targets share another,
 and both vertical targets share a third, the labels are validated
 STRUCTURALLY (independent of any single signature definition).

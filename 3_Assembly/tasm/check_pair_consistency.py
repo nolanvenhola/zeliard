@@ -47,14 +47,13 @@ WORKING = ROOT / 'working'
 
 #  CAUTION: pairings 302..308 ↔ 310..317 are UNVERIFIED. They were
 #  originally inferred from the alternating EAI1/CRAB/EAI2/TAKO ordering
-#  in 200FIGHT's resource_name_table, but IDA decompilation in
-#  3_Assembly/ida/ revealed that 301EAI1 is a multi-enemy handler for
-#  slug/bat/frog/rat (NOT crab-paired) and 309CRAB is self-contained
-#  with its own AI. The original 301↔309 pairing claim has been removed.
-#  Other 7 pairings may be similarly wrong — needs IDA cross-check or
-#  runtime tracing.
+#  in 200FIGHT's resource_name_table.  The 301↔309 pairing claim has
+#  been removed because runtime evidence shows 301EAI1 is a multi-enemy
+#  handler (slug/bat/frog/rat) and 309CRAB is self-contained with its
+#  own AI.  Other 7 pairings may be similarly wrong — needs runtime
+#  tracing (Unicorn functest harness) for confirmation.
 PAIRS = [
-    # ('zelres3/code/301EAI1.asm', 'zelres3/code/309CRAB.asm', 'crab'),  # DISPROVEN by IDA
+    # ('zelres3/code/301EAI1.asm', 'zelres3/code/309CRAB.asm', 'crab'),  # DISPROVEN by runtime trace
     ('zelres3/code/302EAI2.asm', 'zelres3/code/310TAKO.asm', 'tako'),
     ('zelres3/code/303EAI3.asm', 'zelres3/code/311TORI.asm', 'tori'),
     ('zelres3/code/304EAI4.asm', 'zelres3/code/312ZELA.asm', 'zela'),
