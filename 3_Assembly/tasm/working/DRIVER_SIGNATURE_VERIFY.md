@@ -37,6 +37,14 @@ Each match is deterministic byte/opcode evidence -- no LLM.
 | `104GDTGA` | **SUPPORTED** | `\brep\s+movs[bw]\b` |
 | `105GDMCA` | **SUPPORTED** | `\brep\s+movs[bw]\b` |
 
+### `extract_bits` -- extracts bits from src_word_* / cur_row_ctr state
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `102GDCGA` | **SUPPORTED** | `\bcs:cur_row_ctr\b`<br>`\bshr\b` |
+| `104GDTGA` | **SUPPORTED** | `\bsrc_word_[abcd]\b`<br>`\bshr\b` |
+| `105GDMCA` | **SUPPORTED** | `\bsrc_word_[abcd]\b`<br>`\bshr\b` |
+
 ### `fill_buffer` -- fills buffer with 0xFF via rep stosb
 
 | Chunk | Verdict | Matched patterns |
@@ -56,17 +64,109 @@ Each match is deterministic byte/opcode evidence -- no LLM.
 | `104GDTGA` | **SUPPORTED** | `\bmov\s+al\s*,\s*0?FFh\b`<br>`\brep\s+stosb\b` |
 | `105GDMCA` | **SUPPORTED** | `\bmov\s+al\s*,\s*0?FFh\b`<br>`\brep\s+stosb\b` |
 
-## Family: GF
-
-### `si_wrap_hi` -- small SI-wrap helper (small proc, name accepted by size)
+### `math_calc` -- math helper (mul/div/add/sub)
 
 | Chunk | Verdict | Matched patterns |
 |---|---|---|
-| `202GFEGA` | **SUPPORTED** | `\bsi\b` |
-| `203GFCGA` | **SUPPORTED** | `\bsi\b` |
-| `204GFHGC` | **SUPPORTED** | `\bsi\b` |
-| `205GFTGA` | **SUPPORTED** | `\bsi\b` |
-| `206GFMCA` | **SUPPORTED** | `\bsi\b` |
+| `103GDHGC` | **SUPPORTED** | `\bmul\b` |
+
+## Family: GF
+
+### `bg_restore` -- restores a saved bg region (rep movs or impl wrapper)
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **SUPPORTED** | `\bcall\s+bg_restore_impl\b` |
+| `203GFCGA` | **SUPPORTED** | `\bmovs[bw]\b` |
+| `205GFTGA` | **SUPPORTED** | `\bcall\s+bg_restore_impl\b` |
+
+### `bg_save` -- saves a region of bg to a save buffer via rep movs
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **SUPPORTED** | `\bmovs[bw]\b`<br>`\bmov\s+(?:di|si)\s*,` |
+| `203GFCGA` | **SUPPORTED** | `\bmovs[bw]\b`<br>`\bmov\s+(?:di|si)\s*,` |
+| `205GFTGA` | **SUPPORTED** | `\bmovs[bw]\b`<br>`\bmov\s+(?:di|si)\s*,` |
+
+### `frame_row_driver` -- drives one frame row through the rendering pipeline
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **INCONCLUSIVE** | (none) |
+| `203GFCGA` | **INCONCLUSIVE** | (none) |
+| `204GFHGC` | **INCONCLUSIVE** | (none) |
+| `205GFTGA` | **INCONCLUSIVE** | (none) |
+| `206GFMCA` | **INCONCLUSIVE** | (none) |
+
+### `frame_wait_loop` -- waits in a loop on gvar_frame_timer
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **INCONCLUSIVE** | (none) |
+| `203GFCGA` | **INCONCLUSIVE** | (none) |
+| `204GFHGC` | **INCONCLUSIVE** | (none) |
+
+### `hero_sprite_col_blit` -- blits one column of hero sprite to ES:[DI]
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **INCONCLUSIVE** | (none) |
+| `205GFTGA` | **INCONCLUSIVE** | (none) |
+| `206GFMCA` | **INCONCLUSIVE** | (none) |
+
+### `hero_tier_get` -- reads ds:[shield] and returns tier 0/1/2 by threshold cmp 4
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **SUPPORTED** | `IDENTICAL body in 3 drivers` |
+| `203GFCGA` | **SUPPORTED** | `IDENTICAL body in 3 drivers` |
+| `205GFTGA` | **SUPPORTED** | `IDENTICAL body in 3 drivers` |
+
+### `projectile_spawn_check` -- tests projectile/spawn state and branches
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **INCONCLUSIVE** | (none) |
+| `203GFCGA` | **INCONCLUSIVE** | (none) |
+| `205GFTGA` | **INCONCLUSIVE** | (none) |
+| `206GFMCA` | **INCONCLUSIVE** | (none) |
+
+### `si_wrap_hi` -- SI-wrap helper: bound check + offset adjust
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **SUPPORTED** | `\bcmp\s+si\s*,\s*0?[0-9A-Fa-f]+h\b`<br>`\bsub\s+si\s*,`<br>`IDENTICAL body in 5 drivers` |
+| `203GFCGA` | **SUPPORTED** | `\bcmp\s+si\s*,\s*0?[0-9A-Fa-f]+h\b`<br>`\bsub\s+si\s*,`<br>`IDENTICAL body in 5 drivers` |
+| `204GFHGC` | **SUPPORTED** | `\bcmp\s+si\s*,\s*0?[0-9A-Fa-f]+h\b`<br>`\bsub\s+si\s*,`<br>`IDENTICAL body in 5 drivers` |
+| `205GFTGA` | **SUPPORTED** | `\bcmp\s+si\s*,\s*0?[0-9A-Fa-f]+h\b`<br>`\bsub\s+si\s*,`<br>`IDENTICAL body in 5 drivers` |
+| `206GFMCA` | **SUPPORTED** | `\bcmp\s+si\s*,\s*0?[0-9A-Fa-f]+h\b`<br>`\bsub\s+si\s*,`<br>`IDENTICAL body in 5 drivers` |
+
+### `si_wrap_lo` -- SI-wrap helper (low boundary): bound check + offset adjust
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `204GFHGC` | **SUPPORTED** | `\bcmp\s+si\s*,\s*0?[0-9A-Fa-f]+h\b`<br>`\badd\s+si\s*,`<br>`IDENTICAL body in 3 drivers` |
+| `205GFTGA` | **SUPPORTED** | `\bcmp\s+si\s*,\s*0?[0-9A-Fa-f]+h\b`<br>`\badd\s+si\s*,`<br>`IDENTICAL body in 3 drivers` |
+| `206GFMCA` | **SUPPORTED** | `\bcmp\s+si\s*,\s*0?[0-9A-Fa-f]+h\b`<br>`\badd\s+si\s*,`<br>`IDENTICAL body in 3 drivers` |
+
+### `sprite_blit_dispatch` -- reads DS table + indirect call/jmp -- dispatch shape
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **INCONCLUSIVE** | (none) |
+| `203GFCGA` | **INCONCLUSIVE** | (none) |
+| `204GFHGC` | **INCONCLUSIVE** | (none) |
+| `205GFTGA` | **INCONCLUSIVE** | (none) |
+| `206GFMCA` | **INCONCLUSIVE** | (none) |
+
+### `sprite_cell_render` -- renders one sprite cell -- writes ES:[DI] in a loop
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **INCONCLUSIVE** | (none) |
+| `203GFCGA` | **INCONCLUSIVE** | (none) |
+| `205GFTGA` | **INCONCLUSIVE** | (none) |
+| `206GFMCA` | **INCONCLUSIVE** | (none) |
 
 ### `sprite_get_value` -- reads value from a lookup table (xlat or mem load)
 
@@ -77,4 +177,137 @@ Each match is deterministic byte/opcode evidence -- no LLM.
 | `205GFTGA` | **SUPPORTED** | `\bxlat\b` |
 | `206GFMCA` | **SUPPORTED** | `\bxlat\b` |
 
-**Totals**: 32 SUPPORTED, 0 CONTRADICTED.
+### `sprite_pos_pair_iter` -- iterates a position-pair list (SI walk + loop tail)
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **INCONCLUSIVE** | `\bsi\b` |
+| `203GFCGA` | **INCONCLUSIVE** | `\bsi\b` |
+| `205GFTGA` | **INCONCLUSIVE** | `\bsi\b` |
+| `206GFMCA` | **INCONCLUSIVE** | `\bsi\b` |
+
+### `sprite_slot_init` -- initialises sprite slot via xchg/mov 0FFh into sprite_state_a
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **SUPPORTED** | `\bsprite_state_a\b`<br>`\bxchg\s+\[di\]\s*,\s*al` |
+| `203GFCGA` | **SUPPORTED** | `\bsprite_state_a\b`<br>`\bxchg\s+\[di\]\s*,\s*al` |
+| `204GFHGC` | **SUPPORTED** | `\bsprite_state_a\b`<br>`\bxchg\s+\[di\]\s*,\s*al` |
+| `205GFTGA` | **SUPPORTED** | `\bsprite_state_a\b`<br>`\bxchg\s+\[di\]\s*,\s*al` |
+| `206GFMCA` | **SUPPORTED** | `\bsprite_state_a\b`<br>`\bxchg\s+\[di\]\s*,\s*al` |
+
+### `sprite_slot_remove` -- clears sprite slot state (sprite_state_a/sprite_buf) to zero
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `204GFHGC` | **INCONCLUSIVE** | `\bsprite_buf\b` |
+| `205GFTGA` | **INCONCLUSIVE** | `\bsprite_buf\b` |
+| `206GFMCA` | **INCONCLUSIVE** | `\bsprite_buf\b` |
+
+### `sprite_src_setup` -- computes sprite source ptr via char_lookup + sprite_attr_base + mul stride
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **SUPPORTED** | `\bchar_lookup\b`<br>`\bsprite_attr_base\b`<br>`\bmul\b`<br>`IDENTICAL body in 3 drivers` |
+| `203GFCGA` | **SUPPORTED** | `\bchar_lookup\b`<br>`\bsprite_attr_base\b`<br>`\bmul\b` |
+| `204GFHGC` | **SUPPORTED** | `\bchar_lookup\b`<br>`\bsprite_attr_base\b`<br>`\bmul\b`<br>`IDENTICAL body in 3 drivers` |
+| `205GFTGA` | **SUPPORTED** | `\bchar_lookup\b`<br>`\bsprite_attr_base\b`<br>`\bmul\b`<br>`IDENTICAL body in 3 drivers` |
+| `206GFMCA` | **SUPPORTED** | `\bchar_lookup\b`<br>`\bsprite_attr_base\b`<br>`\bmul\b` |
+
+### `sprite_state_update` -- updates per-sprite state byte at ES:[DI-1] from prior [SI-1]
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **SUPPORTED** | `\bmov\s+al\s*,\s*\[si-1\]`<br>`\bcmp\s+byte\s+ptr\s+es:\[di-1\]`<br>`\bmov\s+byte\s+ptr\s+es:\[di-1\]` |
+| `203GFCGA` | **SUPPORTED** | `\bmov\s+al\s*,\s*\[si-1\]`<br>`\bcmp\s+byte\s+ptr\s+es:\[di-1\]`<br>`\bmov\s+byte\s+ptr\s+es:\[di-1\]` |
+| `204GFHGC` | **SUPPORTED** | `\bmov\s+al\s*,\s*\[si-1\]`<br>`\bcmp\s+byte\s+ptr\s+es:\[di-1\]`<br>`\bmov\s+byte\s+ptr\s+es:\[di-1\]` |
+| `205GFTGA` | **SUPPORTED** | `\bmov\s+al\s*,\s*\[si-1\]`<br>`\bcmp\s+byte\s+ptr\s+es:\[di-1\]`<br>`\bmov\s+byte\s+ptr\s+es:\[di-1\]` |
+| `206GFMCA` | **SUPPORTED** | `\bmov\s+al\s*,\s*\[si-1\]`<br>`\bcmp\s+byte\s+ptr\s+es:\[di-1\]`<br>`\bmov\s+byte\s+ptr\s+es:\[di-1\]` |
+
+### `sprite_wide_row_render` -- renders a wide sprite row -- writes ES:[DI] across cols
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `202GFEGA` | **INCONCLUSIVE** | (none) |
+| `203GFCGA` | **INCONCLUSIVE** | (none) |
+| `204GFHGC` | **INCONCLUSIVE** | (none) |
+| `205GFTGA` | **INCONCLUSIVE** | (none) |
+| `206GFMCA` | **INCONCLUSIVE** | (none) |
+
+## Family: EAI
+
+### `collide_check_back` -- collision check (backward direction)
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `305EAI5` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b`<br>`IDENTICAL body in 4 drivers` |
+| `306EAI6` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b`<br>`IDENTICAL body in 4 drivers` |
+| `307EAI7` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b`<br>`IDENTICAL body in 4 drivers` |
+| `308EAI8` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b`<br>`IDENTICAL body in 4 drivers` |
+
+### `collide_check_fwd` -- collision check (forward direction)
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `305EAI5` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b`<br>`IDENTICAL body in 4 drivers` |
+| `306EAI6` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b`<br>`IDENTICAL body in 4 drivers` |
+| `307EAI7` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b`<br>`IDENTICAL body in 4 drivers` |
+| `308EAI8` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b`<br>`IDENTICAL body in 4 drivers` |
+
+### `distance_check_5` -- distance threshold check (5-pixel range)
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `302EAI2` | **SUPPORTED** | `\bcmp\b`<br>`\bjz\b` |
+| `307EAI7` | **SUPPORTED** | `\bcmp\b`<br>`\bjz\b` |
+| `308EAI8` | **SUPPORTED** | `\bcmp\b`<br>`\bjz\b` |
+
+### `distance_check_8` -- distance threshold check (8-pixel range)
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `301EAI1` | **SUPPORTED** | `\bcmp\b`<br>`\bjz\b` |
+| `306EAI6` | **SUPPORTED** | `\bcmp\b`<br>`\bjz\b` |
+| `308EAI8` | **SUPPORTED** | `\bcmp\b`<br>`\bjz\b` |
+
+### `phase_advance_helper` -- phase counter advance helper
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `301EAI1` | **SUPPORTED** | `\binc\b` |
+| `302EAI2` | **SUPPORTED** | `\binc\b` |
+| `308EAI8` | **SUPPORTED** | `\binc\b` |
+
+### `phase_step_back` -- phase step backward
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `305EAI5` | **SUPPORTED** | `\bsi\b`<br>`\bdec\b` |
+| `306EAI6` | **SUPPORTED** | `\bsi\b`<br>`\bdec\b` |
+| `307EAI7` | **SUPPORTED** | `\bsi\b`<br>`\bdec\b` |
+
+### `phase_step_fwd` -- phase step forward
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `305EAI5` | **SUPPORTED** | `\bsi\b`<br>`\binc\b` |
+| `306EAI6` | **SUPPORTED** | `\bsi\b`<br>`\binc\b` |
+| `307EAI7` | **SUPPORTED** | `\bsi\b`<br>`\binc\b` |
+
+### `sub01_collide_inner` -- collision sub-routine (inner branch)
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `305EAI5` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b` |
+| `306EAI6` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b` |
+| `307EAI7` | **SUPPORTED** | `\bsi\b`<br>`\bjz\b` |
+
+### `sub01_collide_outer` -- collision sub-routine (outer branch)
+
+| Chunk | Verdict | Matched patterns |
+|---|---|---|
+| `305EAI5` | **SUPPORTED** | `\bsi\b`<br>`\bjnz\b` |
+| `306EAI6` | **SUPPORTED** | `\bsi\b`<br>`\bjnz\b` |
+| `307EAI7` | **SUPPORTED** | `\bsi\b`<br>`\bjnz\b` |
+
+**Totals**: 92 SUPPORTED, 36 INCONCLUSIVE, 0 CONTRADICTED

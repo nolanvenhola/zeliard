@@ -17,9 +17,9 @@
 - [ ] L472   `gfx_mode_tbl_ega_lbl`  *(label word)*
 - [ ] L488   `gfx_mode_tbl_cga_lbl`  *(label word)*
 - [ ] L504   `gfx_mode_tbl_all_lbl`  *(label word)*
-- [ ] L533   `load_music_tracks`  *(proc)*
+- [x] L533   `load_music_tracks`  *(proc)*
 - [ ] L570   `music_track_ref_tbl_lbl`  *(label word)*
-- [ ] L589   `set_vga_palette`  *(proc)*
+- [x] L589   `set_vga_palette`  *(proc)*
 - [ ] L599   `palette_handler_jmp_tbl_lbl`  *(label word)*
 - [ ] L685   `palette_base_tbl_lbl`  *(label byte)*
 - [ ] L703   `game_init_fn_lbl`  *(label dword)*
@@ -29,7 +29,7 @@
 
 - [ ] L133   `zeliad`  *(proc)*
 - [ ] L523   `flush_keyboard`  *(proc)*
-- [ ] L543   `read_config_line`  *(proc)*
+- [x] L543   `read_config_line`  *(proc)*
 - [ ] L591   `parse_graphics_mode`  *(proc)*
 - [ ] L650   `mode_4char_table`  *(data)*
 - [ ] L652   `mode_3char_table`  *(data)*
@@ -39,10 +39,10 @@
 - [ ] L714   `parse_joystick_enable`  *(proc)*
 - [ ] L737   `str_yes`  *(data)*
 - [ ] L738   `str_no`  *(data)*
-- [ ] L754   `find_colon_in_line`  *(proc)*
-- [ ] L779   `load_driver_file`  *(proc)*
+- [x] L754   `find_colon_in_line`  *(proc)*
+- [x] L779   `load_driver_file`  *(proc)*
 - [ ] L819   `display_file_error`  *(proc)*
-- [ ] L882   `set_video_mode`  *(proc)*
+- [x] L882   `set_video_mode`  *(proc)*
 - [ ] L888   `video_mode_table`  *(data)*
 - [ ] L958   `hgc_crt_params`  *(data)*
 - [ ] L965   `ctrl_c_handler`  *(proc)*
@@ -87,78 +87,78 @@
 
 - [ ] L136   `gmcga`  *(proc)*
 - [ ] L228   `fill_horizontal_line`  *(proc)*
-- [ ] L252   `clear_screen`  *(proc)*
+- [x] L252   `clear_screen`  *(proc)*
 - [ ] L438   `plot_pixel`  *(proc)*
-- [ ] L605   `calc_text_width`  *(proc)*
+- [x] L605   `calc_text_width`  *(proc)*
 - [ ] L628   `fill_vertical_line`  *(proc)*
-- [ ] L729   `render_text_char`  *(proc)*
+- [x] L729   `render_text_char`  *(proc)*
 - [ ] L869   `init_timestamp`  *(proc)*
 - [ ] L890   `time_to_bcd`  *(proc)*
 - [ ] L917   `modulo_divide_bcd`  *(proc)*
 - [ ] L942   `int_divide_bcd`  *(proc)*
 - [ ] L952   `render_tilemap_large`  *(proc)*
 - [ ] L993   `decode_bitplane_tile`  *(proc)*
-- [ ] L1257  `render_tilemap_small`  *(proc)*
+- [x] L1257  `render_tilemap_small`  *(proc)*
 - [ ] L1323  `extract_bitplane_pixels`  *(proc)*
-- [ ] L1363  `render_text_char_alt`  *(proc)*
+- [x] L1363  `render_text_char_alt`  *(proc)*
 - [ ] L1435  `expand_font_bits`  *(proc)*
 - [ ] L1721  `fill_rectangle`  *(proc)*
-- [ ] L1933  `process_sprite_row`  *(proc)*
+- [x] L1933  `process_sprite_row`  *(proc)*
 
 ## working/drivers/gmega.asm  (16 sections)
 
 - [ ] L129   `gmega`  *(proc)*
 - [ ] L220   `fill_horizontal_line`  *(proc)*
-- [ ] L284   `clear_screen`  *(proc)*
+- [x] L284   `clear_screen`  *(proc)*
 - [ ] L486   `plot_pixel`  *(proc)*
-- [ ] L680   `calc_text_width`  *(proc)*
+- [x] L680   `calc_text_width`  *(proc)*
 - [ ] L703   `fill_vertical_line`  *(proc)*
-- [ ] L796   `render_text_char`  *(proc)*
+- [x] L796   `render_text_char`  *(proc)*
 - [ ] L942   `init_timestamp`  *(proc)*
 - [ ] L965   `time_to_bcd`  *(proc)*
 - [ ] L992   `modulo_divide_bcd`  *(proc)*
 - [ ] L1017  `int_divide_bcd`  *(proc)*
 - [ ] L1027  `render_tilemap_large`  *(proc)*
 - [ ] L1062  `decode_bitplane_tile`  *(proc)*
-- [ ] L1342  `render_tilemap_small`  *(proc)*
-- [ ] L1439  `render_text_char_alt`  *(proc)*
+- [x] L1342  `render_tilemap_small`  *(proc)*
+- [x] L1439  `render_text_char_alt`  *(proc)*
 - [ ] L1809  `fill_rectangle`  *(proc)*
 
 ## working/drivers/gmhgc.asm  (22 sections)
 
 - [ ] L127   `gmhgc`  *(proc)*
 - [ ] L221   `fill_horizontal_line`  *(proc)*
-- [ ] L259   `clear_screen`  *(proc)*
-- [ ] L281   `clear_screen_row`  *(proc)*
+- [x] L259   `clear_screen`  *(proc)*
+- [x] L281   `clear_screen_row`  *(proc)*
 - [ ] L403   `fade_screen_row`  *(proc)*
 - [ ] L489   `plot_pixel`  *(proc)*
-- [ ] L666   `calc_text_width`  *(proc)*
+- [x] L666   `calc_text_width`  *(proc)*
 - [ ] L689   `fill_vertical_line`  *(proc)*
-- [ ] L778   `render_text_char`  *(proc)*
+- [x] L778   `render_text_char`  *(proc)*
 - [ ] L924   `init_timestamp`  *(proc)*
 - [ ] L946   `time_to_bcd`  *(proc)*
 - [ ] L973   `modulo_divide_bcd`  *(proc)*
 - [ ] L998   `int_divide_bcd`  *(proc)*
 - [ ] L1008  `render_tilemap_large`  *(proc)*
 - [ ] L1047  `decode_bitplane_tile`  *(proc)*
-- [ ] L1324  `render_tilemap_small`  *(proc)*
+- [x] L1324  `render_tilemap_small`  *(proc)*
 - [ ] L1395  `extract_bitplane_pixels`  *(proc)*
-- [ ] L1433  `render_text_char_alt`  *(proc)*
+- [x] L1433  `render_text_char_alt`  *(proc)*
 - [ ] L1519  `double_char_bits`  *(proc)*
 - [ ] L1789  `fill_rectangle`  *(proc)*
-- [ ] L1933  `calc_hgc_address`  *(proc)*
-- [ ] L1984  `process_sprite_row`  *(proc)*
+- [x] L1933  `calc_hgc_address`  *(proc)*
+- [x] L1984  `process_sprite_row`  *(proc)*
 
 ## working/drivers/gmmcga.asm  (21 sections)
 
 - [ ] L122   `gmmcga`  *(proc)*
 - [ ] L223   `fill_horizontal_line`  *(proc)*
-- [ ] L252   `clear_screen`  *(proc)*
+- [x] L252   `clear_screen`  *(proc)*
 - [ ] L303   `font_render_code`  *(data)*
 - [ ] L407   `plot_pixel`  *(proc)*
-- [ ] L539   `calc_text_width`  *(proc)*
+- [x] L539   `calc_text_width`  *(proc)*
 - [ ] L554   `fill_vertical_line`  *(proc)*
-- [ ] L635   `render_text_char`  *(proc)*
+- [x] L635   `render_text_char`  *(proc)*
 - [ ] L747   `init_timestamp`  *(proc)*
 - [ ] L768   `time_to_bcd`  *(proc)*
 - [ ] L795   `modulo_divide_bcd`  *(proc)*
@@ -167,9 +167,9 @@
 - [ ] L878   `decode_bitplane_tile`  *(proc)*
 - [ ] L1111  `render_tilemap_small`  *(proc)*
 - [ ] L1152  `extract_bitplane_pixels`  *(proc)*
-- [ ] L1177  `render_text_char_alt`  *(proc)*
+- [x] L1177  `render_text_char_alt`  *(proc)*
 - [ ] L1455  `fill_rectangle`  *(proc)*
-- [ ] L1649  `process_sprite_row`  *(proc)*
+- [x] L1649  `process_sprite_row`  *(proc)*
 - [ ] L1671  `bitplane_to_pixels`  *(proc)*
 - [ ] L1696  `extract_bitplane_bit`  *(proc)*
 
@@ -177,11 +177,11 @@
 
 - [ ] L95    `gmtga`  *(proc)*
 - [ ] L187   `fill_horizontal_line`  *(proc)*
-- [ ] L211   `clear_screen`  *(proc)*
+- [x] L211   `clear_screen`  *(proc)*
 - [ ] L437   `plot_pixel`  *(proc)*
-- [ ] L618   `calc_text_width`  *(proc)*
+- [x] L618   `calc_text_width`  *(proc)*
 - [ ] L641   `fill_vertical_line`  *(proc)*
-- [ ] L742   `render_text_char`  *(proc)*
+- [x] L742   `render_text_char`  *(proc)*
 - [ ] L838   `extract_bitplane_bit`  *(proc)*
 - [ ] L942   `init_timestamp`  *(proc)*
 - [ ] L963   `time_to_bcd`  *(proc)*
@@ -189,11 +189,11 @@
 - [ ] L1015  `int_divide_bcd`  *(proc)*
 - [ ] L1025  `render_tilemap_large`  *(proc)*
 - [ ] L1065  `decode_bitplane_tile`  *(proc)*
-- [ ] L1327  `render_tilemap_small`  *(proc)*
+- [x] L1327  `render_tilemap_small`  *(proc)*
 - [ ] L1384  `extract_bitplane_pixels`  *(proc)*
-- [ ] L1430  `render_text_char_alt`  *(proc)*
+- [x] L1430  `render_text_char_alt`  *(proc)*
 - [ ] L1773  `fill_rectangle`  *(proc)*
-- [ ] L1973  `process_sprite_row`  *(proc)*
+- [x] L1973  `process_sprite_row`  *(proc)*
 - [ ] L2002  `bitplane_to_pixels`  *(proc)*
 
 ## working/drivers/stdply.asm  (97 sections)
@@ -299,22 +299,22 @@
 ## working/drivers/stick.asm  (37 sections)
 
 - [ ] L142   `stick`  *(proc)*
-- [ ] L167   `handle_pause_key`  *(proc)*
+- [x] L167   `handle_pause_key`  *(proc)*
 - [ ] L204   `poll_joystick_buttons`  *(proc)*
 - [ ] L220   `decode_joystick_bits`  *(proc)*
-- [ ] L266   `handle_special_keys`  *(proc)*
+- [x] L266   `handle_special_keys`  *(proc)*
 - [ ] L351   `subsample_ctr_lbl`  *(label byte)*
 - [ ] L354   `chain_int_ctr_lbl`  *(label byte)*
 - [ ] L357   `pause_key_state_lbl`  *(label byte)*
-- [ ] L423   `process_scancode`  *(proc)*
+- [x] L423   `process_scancode`  *(proc)*
 - [ ] L637   `dispatch_extended_key`  *(proc)*
 - [ ] L704   `calibrate_joystick`  *(proc)*
-- [ ] L761   `calc_joystick_deadzone`  *(proc)*
+- [x] L761   `calc_joystick_deadzone`  *(proc)*
 - [ ] L923   `draw_screen_element`  *(proc)*
-- [ ] L1000  `wait_for_digit_or_esc`  *(proc)*
+- [x] L1000  `wait_for_digit_or_esc`  *(proc)*
 - [ ] L1038  `joy_calibrate_request`  *(proc)*
 - [ ] L1154  `enter_pause_menu_and_draw`  *(proc)*
-- [ ] L1158  `draw_pause_menu_box`  *(proc)*
+- [x] L1158  `draw_pause_menu_box`  *(proc)*
 - [ ] L1170  `restore_pause_menu_bg`  *(proc)*
 - [ ] L1178  `flush_dos_kbd_buffer`  *(proc)*
 - [ ] L1268  `scan_data_lbl`  *(label word)*
@@ -342,14 +342,14 @@
 - [ ] L458   `sprite_anim_proc`  *(proc)*
 - [ ] L488   `char_render_proc`  *(proc)*
 - [ ] L543   `animate_scanline`  *(proc)*
-- [ ] L591   `timer_wait_loop`  *(proc)*
+- [x] L591   `timer_wait_loop`  *(proc)*
 - [ ] L604   `interrupt_handler_cascade`  *(proc)*
-- [ ] L653   `scene_transition_wait`  *(proc)*
+- [x] L653   `scene_transition_wait`  *(proc)*
 - [ ] L679   `credits_scroll_display`  *(proc)*
 - [ ] L999   `story_scene_timer_loop`  *(proc)*
-- [ ] L1010  `story_scene_input_handler`  *(proc)*
+- [x] L1010  `story_scene_input_handler`  *(proc)*
 - [ ] L1058  `script_interpreter`  *(proc)*
-- [ ] L1357  `calc_text_width`  *(proc)*
+- [x] L1357  `calc_text_width`  *(proc)*
 - [ ] L1414  `animate_scanline_alt`  *(proc)*
 - [ ] L1471  `decompress_image`  *(proc)*
 - [ ] L1475  `rle_unpack_core`  *(proc)*
@@ -361,7 +361,7 @@
 - [ ] L1677  `busy_wait_delay`  *(proc)*
 - [ ] L1693  `color_rotation`  *(proc)*
 - [ ] L1720  `palette_blend`  *(proc)*
-- [ ] L1771  `xor_mask_render`  *(proc)*
+- [x] L1771  `xor_mask_render`  *(proc)*
 - [ ] L1817  `merge_gfx_planes`  *(proc)*
 - [ ] L2012  `jashiin_speech_2`  *(data)*
 - [ ] L2021  `narration_stone_scene`  *(data)*
@@ -421,7 +421,7 @@
 - [ ] L976   `plane_mix_word`  *(data)*
 - [ ] L1056  `equip_multiply_2`  *(proc)*
 - [ ] L1333  `equip_func_7`  *(proc)*
-- [ ] L1519  `extract_bits`  *(proc)*
+- [x] L1519  `extract_bits`  *(proc)*
 - [x] L1617  `fill_buffer`  *(proc)*
 - [x] L1630  `clear_buffer`  *(proc)*
 - [ ] L1660  `equip_get_value`  *(proc)*
@@ -460,7 +460,7 @@
 - [ ] L2270  `imgdec_multiply_5`  *(proc)*
 - [ ] L2452  `data_40`  *(data)*
 - [ ] L2728  `imgdec_process_loop_5`  *(proc)*
-- [ ] L2806  `math_calc`  *(proc)*
+- [x] L2806  `math_calc`  *(proc)*
 
 ## working/zelres1/code/104GDTGA.asm  (27 sections)
 
@@ -474,7 +474,7 @@
 - [ ] L1028  `face_panel2_anchor`  *(data)*
 - [ ] L1117  `stats_multiply_2`  *(proc)*
 - [ ] L1430  `stats_func_7`  *(proc)*
-- [ ] L1482  `extract_bits`  *(proc)*
+- [x] L1482  `extract_bits`  *(proc)*
 - [ ] L1652  `stats_multiply_3`  *(proc)*
 - [x] L1751  `fill_buffer`  *(proc)*
 - [x] L1763  `clear_buffer`  *(proc)*
@@ -503,7 +503,7 @@
 - [ ] L956   `scroll_a_plane_b`  *(data)*
 - [ ] L1078  `pal_multiply_2`  *(proc)*
 - [ ] L1401  `pal_func_7`  *(proc)*
-- [ ] L1446  `extract_bits`  *(proc)*
+- [x] L1446  `extract_bits`  *(proc)*
 - [ ] L1620  `pal_multiply_3`  *(proc)*
 - [x] L1715  `fill_buffer`  *(proc)*
 - [x] L1725  `clear_buffer`  *(proc)*
@@ -572,7 +572,7 @@
 - [ ] L2874  `player_multiply_5`  *(proc)*
 - [ ] L2901  `player_func_47`  *(proc)*
 - [ ] L2938  `player_multiply_6`  *(proc)*
-- [ ] L3017  `clear_buffer`  *(proc)*
+- [x] L3017  `clear_buffer`  *(proc)*
 - [ ] L3109  `copy_buffer`  *(proc)*
 - [ ] L3250  `player_func_51`  *(proc)*
 - [ ] L3268  `fill_buffer_2`  *(proc)*
@@ -613,26 +613,26 @@
 ## working/zelres1/code/108GTCGA.asm  (27 sections)
 
 - [ ] L116   `zr1_08`  *(proc)*
-- [ ] L247   `cga_check_blit_col`  *(proc)*
+- [x] L247   `cga_check_blit_col`  *(proc)*
 - [ ] L289   `draw_door_tile`  *(proc)*
-- [ ] L296   `draw_opaque_tile`  *(proc)*
-- [ ] L467   `draw_masked_tile`  *(proc)*
-- [ ] L592   `load_6tiles_to_buf`  *(proc)*
-- [ ] L596   `load_tiles_to_buf`  *(proc)*
-- [ ] L711   `draw_door_init`  *(proc)*
-- [ ] L775   `find_nonfd_entry`  *(proc)*
+- [x] L296   `draw_opaque_tile`  *(proc)*
+- [x] L467   `draw_masked_tile`  *(proc)*
+- [x] L592   `load_6tiles_to_buf`  *(proc)*
+- [x] L596   `load_tiles_to_buf`  *(proc)*
+- [x] L711   `draw_door_init`  *(proc)*
+- [x] L775   `find_nonfd_entry`  *(proc)*
 - [ ] L792   `scan_entity_tbl`  *(proc)*
-- [ ] L796   `scan_entity_next`  *(proc)*
-- [ ] L809   `blit_3rows_to_cga`  *(proc)*
+- [x] L796   `scan_entity_next`  *(proc)*
+- [x] L809   `blit_3rows_to_cga`  *(proc)*
 - [ ] L875   `dispatch_draw_value`  *(proc)*
-- [ ] L897   `calc_tile_cga_ofs`  *(proc)*
-- [ ] L923   `find_entity_at_row`  *(proc)*
-- [ ] L964   `load_tiles_3_from_b`  *(proc)*
+- [x] L897   `calc_tile_cga_ofs`  *(proc)*
+- [x] L923   `find_entity_at_row`  *(proc)*
+- [x] L964   `load_tiles_3_from_b`  *(proc)*
 - [ ] L1033  `blend_tile_planes`  *(proc)*
-- [ ] L1364  `render_string`  *(proc)*
-- [ ] L1390  `render_char_glyph`  *(proc)*
-- [ ] L1460  `render_char_set`  *(proc)*
-- [ ] L1492  `render_char_row`  *(proc)*
+- [x] L1364  `render_string`  *(proc)*
+- [x] L1390  `render_char_glyph`  *(proc)*
+- [x] L1460  `render_char_set`  *(proc)*
+- [x] L1492  `render_char_row`  *(proc)*
 - [ ] L1537  `init_status_buf`  *(proc)*
 - [ ] L1558  `convert_time_bcd`  *(proc)*
 - [ ] L1585  `bcd_extract_sub`  *(proc)*
@@ -748,24 +748,24 @@
 - [ ] L756   `vga_operation`  *(proc)*
 - [ ] L941   `combat_input_dispatcher`  *(proc)*
 - [ ] L1026  `decide_scroll_direction`  *(proc)*
-- [ ] L1064  `process_combat_update_step`  *(proc)*
+- [x] L1064  `process_combat_update_step`  *(proc)*
 - [ ] L1145  `combat_step_dispatch`  *(proc)*
 - [ ] L1192  `apply_pending_invul`  *(proc)*
-- [ ] L1285  `try_combat_advance`  *(proc)*
+- [x] L1285  `try_combat_advance`  *(proc)*
 - [ ] L1338  `scroll_up_and_advance_state`  *(proc)*
-- [ ] L1402  `try_scroll_advance`  *(proc)*
-- [ ] L1546  `check_area_7_boundary`  *(proc)*
+- [x] L1402  `try_scroll_advance`  *(proc)*
+- [x] L1546  `check_area_7_boundary`  *(proc)*
 - [ ] L1611  `toggle_c2_bit_pose`  *(proc)*
 - [ ] L1636  `game_process_loop`  *(proc)*
-- [ ] L1772  `is_non_area7_slot_b_entity`  *(proc)*
+- [x] L1772  `is_non_area7_slot_b_entity`  *(proc)*
 - [ ] L1794  `combat_step_advance`  *(proc)*
 - [ ] L1939  `combat_input_poll_step`  *(proc)*
-- [ ] L1995  `try_advance_with_anim`  *(proc)*
+- [x] L1995  `try_advance_with_anim`  *(proc)*
 - [ ] L2044  `scroll_pos_advance`  *(proc)*
-- [ ] L2082  `check_3tile_clearance`  *(proc)*
+- [x] L2082  `check_3tile_clearance`  *(proc)*
 - [ ] L2134  `game_get_value`  *(proc)*
-- [ ] L2142  `find_fire_slot_for_id`  *(proc)*
-- [ ] L2182  `process_map_seg_updates`  *(proc)*
+- [x] L2142  `find_fire_slot_for_id`  *(proc)*
+- [x] L2182  `process_map_seg_updates`  *(proc)*
 - [ ] L2223  `game_get_value_2`  *(proc)*
 - [ ] L2245  `init_arena_visuals`  *(proc)*
 - [ ] L2275  `vga_operation0`  *(proc)*
@@ -779,79 +779,79 @@
 - [ ] L2482  `vga_operation8`  *(proc)*
 - [ ] L2496  `vga_operation9`  *(proc)*
 - [ ] L2515  `entity_type_quick_check`  *(proc)*
-- [ ] L2523  `is_entity_known_type_alt`  *(proc)*
-- [ ] L2558  `is_entity_id_lax`  *(proc)*
-- [ ] L2618  `combat_input_handler`  *(proc)*
+- [x] L2523  `is_entity_known_type_alt`  *(proc)*
+- [x] L2558  `is_entity_id_lax`  *(proc)*
+- [x] L2618  `combat_input_handler`  *(proc)*
 - [ ] L2737  `select_player_sprite_frame`  *(proc)*
-- [ ] L2812  `update_combat_frame_state`  *(proc)*
-- [ ] L2909  `save_combat_action_state`  *(proc)*
+- [x] L2812  `update_combat_frame_state`  *(proc)*
+- [x] L2909  `save_combat_action_state`  *(proc)*
 - [ ] L3060  `fill_hud_enemy_area`  *(proc)*
 - [ ] L3151  `swap_world_state_buffers`  *(proc)*
 - [ ] L3239  `fill_buffer`  *(proc)*
-- [ ] L3252  `find_atk_slot_for_id`  *(proc)*
+- [x] L3252  `find_atk_slot_for_id`  *(proc)*
 - [ ] L3279  `init_combat_arena`  *(proc)*
-- [ ] L3304  `draw_combat_hud_layout`  *(proc)*
+- [x] L3304  `draw_combat_hud_layout`  *(proc)*
 - [ ] L3363  `mark_player_pos_on_hud`  *(proc)*
-- [ ] L3388  `scan_outer_slot_match`  *(proc)*
+- [x] L3388  `scan_outer_slot_match`  *(proc)*
 - [ ] L3559  `apply_passive_damage`  *(proc)*
 - [ ] L3572  `apply_combat_damage_with_absorb`  *(proc)*
-- [ ] L3613  `clear_secondary_pool_and_redraw`  *(proc)*
+- [x] L3613  `clear_secondary_pool_and_redraw`  *(proc)*
 - [ ] L3647  `accumulate_tile_type`  *(proc)*
 - [ ] L3678  `player_HP_subtract`  *(proc)*
 - [ ] L3693  `game_process_loop_2`  *(proc)*
 - [ ] L3717  `tail_dispatch_by_slot_family`  *(proc)*
 - [ ] L3761  `lookup_move_slot_family`  *(proc)*
-- [ ] L3826  `compute_target_dist`  *(proc)*
+- [x] L3826  `compute_target_dist`  *(proc)*
 - [ ] L3905  `enter_level_via_ref_a`  *(proc)*
 - [ ] L3911  `render_entity_list_to_hud`  *(proc)*
 - [ ] L4000  `game_get_value_3`  *(proc)*
 - [ ] L4012  `world_x_to_screen_x_w27`  *(proc)*
-- [ ] L4098  `check_3tile_J_pattern`  *(proc)*
-- [ ] L4426  `compute_scroll_pos`  *(proc)*
-- [ ] L4444  `compute_scroll_offset_b`  *(proc)*
-- [ ] L4473  `decrement_speed_or_power`  *(proc)*
-- [ ] L4508  `reset_combat_state`  *(proc)*
+- [x] L4098  `check_3tile_J_pattern`  *(proc)*
+- [x] L4426  `compute_scroll_pos`  *(proc)*
+- [x] L4444  `compute_scroll_offset_b`  *(proc)*
+- [x] L4473  `decrement_speed_or_power`  *(proc)*
+- [x] L4508  `reset_combat_state`  *(proc)*
 - [ ] L4531  `copy_buffer`  *(proc)*
 - [ ] L4555  `vga_operation_2`  *(proc)*
 - [ ] L4618  `wait_anim_cycle`  *(proc)*
-- [ ] L4638  `scan_top_map_objects`  *(proc)*
-- [ ] L4668  `try_top_scroll_direction`  *(proc)*
+- [x] L4638  `scan_top_map_objects`  *(proc)*
+- [x] L4668  `try_top_scroll_direction`  *(proc)*
 - [ ] L4711  `game_process_loop_3`  *(proc)*
-- [ ] L4767  `try_top_combat_step`  *(proc)*
-- [ ] L4861  `find_and_blit_map_entry`  *(proc)*
+- [x] L4767  `try_top_combat_step`  *(proc)*
+- [x] L4861  `find_and_blit_map_entry`  *(proc)*
 - [ ] L4899  `match_dl_within_3`  *(proc)*
-- [ ] L4920  `scan_bot_map_objects`  *(proc)*
+- [x] L4920  `scan_bot_map_objects`  *(proc)*
 - [ ] L4950  `bot_path_check`  *(proc)*
-- [ ] L4969  `scan_extra_map_objects`  *(proc)*
-- [ ] L5134  `check_entity_collision_pos`  *(proc)*
+- [x] L4969  `scan_extra_map_objects`  *(proc)*
+- [x] L5134  `check_entity_collision_pos`  *(proc)*
 - [ ] L5180  `world_x_to_inner_screen_x`  *(proc)*
 - [ ] L5206  `world_x_to_screen_x_w25`  *(proc)*
 - [ ] L5239  `entity_slot_write_tagged`  *(proc)*
-- [ ] L5254  `scan_enemy_data_buf`  *(proc)*
-- [ ] L5315  `process_dirty_enemies`  *(proc)*
+- [x] L5254  `scan_enemy_data_buf`  *(proc)*
+- [x] L5315  `process_dirty_enemies`  *(proc)*
 - [ ] L5333  `prep_dirty_blit`  *(proc)*
 - [ ] L5346  `enemy_sprite_blit`  *(proc)*
 - [ ] L5364  `copy_buffer_2`  *(proc)*
-- [ ] L5411  `process_sprite_step`  *(proc)*
+- [x] L5411  `process_sprite_step`  *(proc)*
 - [ ] L5543  `entity_fn_dispatch_b`  *(proc)*
 - [ ] L5587  `entity_step_dispatch_c`  *(proc)*
-- [ ] L5632  `update_entity_dir_from_path`  *(proc)*
-- [ ] L5679  `tick_decrement_enemy_counters`  *(proc)*
-- [ ] L5699  `tick_increment_enemy_counters`  *(proc)*
-- [ ] L5719  `calc_hud_buf_offset`  *(proc)*
-- [ ] L5733  `process_active_sprites`  *(proc)*
+- [x] L5632  `update_entity_dir_from_path`  *(proc)*
+- [x] L5679  `tick_decrement_enemy_counters`  *(proc)*
+- [x] L5699  `tick_increment_enemy_counters`  *(proc)*
+- [x] L5719  `calc_hud_buf_offset`  *(proc)*
+- [x] L5733  `process_active_sprites`  *(proc)*
 - [ ] L5785  `prep_boss_dirty_blit`  *(proc)*
-- [ ] L5799  `update_sprite_work_buf`  *(proc)*
+- [x] L5799  `update_sprite_work_buf`  *(proc)*
 - [ ] L5835  `place_3_tile_49_pattern`  *(proc)*
-- [ ] L5855  `try_place_tile_id_49`  *(proc)*
-- [ ] L6101  `scan_boss_entries_render`  *(proc)*
-- [ ] L6220  `render_boss_dirty_blits`  *(proc)*
+- [x] L5855  `try_place_tile_id_49`  *(proc)*
+- [x] L6101  `scan_boss_entries_render`  *(proc)*
+- [x] L6220  `render_boss_dirty_blits`  *(proc)*
 - [ ] L6276  `gate_spell_fx_active`  *(proc)*
 - [ ] L6420  `cycle_dir_and_advance`  *(proc)*
-- [ ] L6455  `draw_entity_3x3_at_pos`  *(proc)*
-- [ ] L6513  `try_paint_obj_cell`  *(proc)*
-- [ ] L6550  `scan_obj_list_render`  *(proc)*
-- [ ] L6616  `update_obj_slot_flags`  *(proc)*
+- [x] L6455  `draw_entity_3x3_at_pos`  *(proc)*
+- [x] L6513  `try_paint_obj_cell`  *(proc)*
+- [x] L6550  `scan_obj_list_render`  *(proc)*
+- [x] L6616  `update_obj_slot_flags`  *(proc)*
 - [ ] L6901  `gfx_fn_enemy_scroll`  *(data)*
 - [ ] L6902  `gfx_fn_combat_fx`  *(data)*
 - [ ] L6903  `gfx_fn_render_tile`  *(data)*
@@ -871,53 +871,53 @@
 - [ ] L6921  `gfx_fn_memcpy`  *(data)*
 - [ ] L6922  `gfx_fn_map_scroll`  *(data)*
 - [ ] L7115  `hero_almas_add`  *(proc)*
-- [ ] L7128  `check_entity_in_view`  *(proc)*
+- [x] L7128  `check_entity_in_view`  *(proc)*
 - [ ] L7185  `entity_move_east`  *(proc)*
 - [ ] L7219  `entity_move_north`  *(proc)*
 - [ ] L7259  `entity_move_west`  *(proc)*
 - [ ] L7291  `entity_move_south`  *(proc)*
-- [ ] L7330  `inc_map_pos_helper`  *(proc)*
-- [ ] L7348  `dec_map_pos_helper`  *(proc)*
+- [x] L7330  `inc_map_pos_helper`  *(proc)*
+- [x] L7348  `dec_map_pos_helper`  *(proc)*
 - [ ] L7375  `check_above_3rows_clear`  *(proc)*
-- [ ] L7405  `is_unknown_or_area5_slot_b`  *(proc)*
+- [x] L7405  `is_unknown_or_area5_slot_b`  *(proc)*
 - [ ] L7433  `check_below_3rows_clear`  *(proc)*
-- [ ] L7463  `is_unknown_or_area5_slot_c`  *(proc)*
+- [x] L7463  `is_unknown_or_area5_slot_c`  *(proc)*
 - [ ] L7492  `check_north_movement`  *(proc)*
 - [ ] L7525  `check_south_movement`  *(proc)*
-- [ ] L7550  `check_movement_var_134`  *(proc)*
-- [ ] L7594  `check_movement_var_135`  *(proc)*
+- [x] L7550  `check_movement_var_134`  *(proc)*
+- [x] L7594  `check_movement_var_135`  *(proc)*
 - [ ] L7632  `check_movement_var_136`  *(proc)*
-- [ ] L7676  `check_movement_var_137`  *(proc)*
-- [ ] L7724  `is_entity_known_type`  *(proc)*
-- [ ] L7748  `check_entity_slot_validity`  *(proc)*
-- [ ] L7910  `clear_buffer`  *(proc)*
+- [x] L7676  `check_movement_var_137`  *(proc)*
+- [x] L7724  `is_entity_known_type`  *(proc)*
+- [x] L7748  `check_entity_slot_validity`  *(proc)*
+- [x] L7910  `clear_buffer`  *(proc)*
 - [ ] L7948  `world_x_to_screen_x`  *(proc)*
 - [ ] L8008  `item_effect_val_add`  *(proc)*
-- [ ] L8176  `compute_action_anim_idx`  *(proc)*
+- [x] L8176  `compute_action_anim_idx`  *(proc)*
 - [ ] L8406  `gfx_fn_hitbox_data`  *(label word)*
 
 ## working/zelres2/code/201SELCT.asm  (31 sections)
 
 - [ ] L149   `selct_main`  *(proc)*
-- [ ] L312   `draw_weapon_cursor`  *(proc)*
+- [x] L312   `draw_weapon_cursor`  *(proc)*
 - [ ] L345   `show_weapon_portrait`  *(proc)*
-- [ ] L426   `draw_magic_cursor`  *(proc)*
+- [x] L426   `draw_magic_cursor`  *(proc)*
 - [ ] L460   `show_magic_portrait`  *(proc)*
-- [ ] L567   `draw_item_cursor`  *(proc)*
+- [x] L567   `draw_item_cursor`  *(proc)*
 - [ ] L601   `show_item_portrait`  *(proc)*
 - [ ] L842   `init_item_panel`  *(proc)*
-- [ ] L860   `draw_item_detail`  *(proc)*
+- [x] L860   `draw_item_detail`  *(proc)*
 - [ ] L890   `show_portrait_box`  *(proc)*
 - [ ] L904   `hide_portrait_box`  *(proc)*
 - [ ] L918   `rebuild_item_idx`  *(proc)*
 - [ ] L948   `draw_item_panel`  *(proc)*
-- [ ] L1002  `draw_magic_panel`  *(proc)*
-- [ ] L1169  `draw_exp_bar`  *(proc)*
-- [ ] L1188  `draw_key_count`  *(proc)*
-- [ ] L1217  `draw_weapon_panel`  *(proc)*
+- [x] L1002  `draw_magic_panel`  *(proc)*
+- [x] L1169  `draw_exp_bar`  *(proc)*
+- [x] L1188  `draw_key_count`  *(proc)*
+- [x] L1217  `draw_weapon_panel`  *(proc)*
 - [ ] L1350  `fmt_number`  *(proc)*
-- [ ] L1370  `draw_portrait_tabs`  *(proc)*
-- [ ] L1466  `check_joy_neutral`  *(proc)*
+- [x] L1370  `draw_portrait_tabs`  *(proc)*
+- [x] L1466  `check_joy_neutral`  *(proc)*
 - [ ] L1482  `str_empty_lbl`  *(label word)*
 - [ ] L1485  `str_no_use_notice_lbl`  *(label word)*
 - [ ] L1489  `str_item_used_count_lbl`  *(label word)*
@@ -934,31 +934,31 @@
 
 - [ ] L158   `gfega_main`  *(proc)*
 - [ ] L198   `ega_row_ofs`  *(data)*
-- [ ] L280   `sprite_state_update`  *(proc)*
-- [ ] L490   `ega_sprite_blit`  *(proc)*
-- [ ] L685   `sprite_slot_init`  *(proc)*
+- [x] L280   `sprite_state_update`  *(proc)*
+- [x] L490   `ega_sprite_blit`  *(proc)*
+- [x] L685   `sprite_slot_init`  *(proc)*
 - [ ] L719   `sprite_blit_dispatch`  *(proc)*
 - [ ] L751   `sprite_wide_row_render`  *(proc)*
 - [ ] L940   `sprite_pos_pair_iter`  *(proc)*
 - [ ] L975   `sprite_cell_render`  *(proc)*
 - [ ] L1031  `ega_sprite_blit_ex`  *(proc)*
-- [ ] L1045  `ega_sprite_render_blended`  *(proc)*
-- [ ] L1124  `ega_sprite_render_solid`  *(proc)*
-- [ ] L1181  `ega_blit_2bytes_8rows`  *(proc)*
+- [x] L1045  `ega_sprite_render_blended`  *(proc)*
+- [x] L1124  `ega_sprite_render_solid`  *(proc)*
+- [x] L1181  `ega_blit_2bytes_8rows`  *(proc)*
 - [ ] L1220  `ega_3plane_copy`  *(proc)*
 - [ ] L1247  `ega_clear_16bytes`  *(proc)*
 - [x] L1265  `sprite_get_value`  *(proc)*
-- [ ] L1273  `sprite_src_setup`  *(proc)*
+- [x] L1273  `sprite_src_setup`  *(proc)*
 - [ ] L1312  `projectile_spawn_check`  *(proc)*
 - [ ] L1965  `hero_sprite_col_blit`  *(proc)*
-- [ ] L2005  `hero_tier_get`  *(proc)*
+- [x] L2005  `hero_tier_get`  *(proc)*
 - [ ] L2104  `scroll_pos_load`  *(proc)*
 - [ ] L2131  `frame_row_driver`  *(proc)*
-- [ ] L2284  `bg_restore`  *(proc)*
-- [ ] L2306  `bg_save`  *(proc)*
+- [x] L2284  `bg_restore`  *(proc)*
+- [x] L2306  `bg_save`  *(proc)*
 - [ ] L2341  `bg_restore_impl`  *(proc)*
 - [ ] L2376  `scroll_cache_invalidate`  *(proc)*
-- [ ] L2594  `tile_blit_3x3`  *(proc)*
+- [x] L2594  `tile_blit_3x3`  *(proc)*
 - [ ] L2783  `ega_tile_anim_update`  *(proc)*
 - [ ] L2849  `ega_plane_write_2row`  *(proc)*
 - [ ] L2898  `ega_clear_pixel_pair`  *(proc)*
@@ -970,36 +970,36 @@
 - [ ] L3282  `ega_row_addr_calc`  *(proc)*
 - [ ] L3291  `frame_wait_loop`  *(proc)*
 - [x] L3417  `si_wrap_hi`  *(proc)*
-- [ ] L3577  `ega_bg_tile_blit`  *(proc)*
+- [x] L3577  `ega_bg_tile_blit`  *(proc)*
 - [ ] L3717  `ega_col_write_loop`  *(proc)*
 
 ## working/zelres2/code/203GFCGA.asm  (43 sections)
 
 - [ ] L167   `gfcga_main`  *(proc)*
 - [ ] L201   `cga_row_ofs`  *(data)*
-- [ ] L283   `sprite_state_update`  *(proc)*
-- [ ] L489   `cga_sprite_blit`  *(proc)*
-- [ ] L631   `sprite_slot_init`  *(proc)*
+- [x] L283   `sprite_state_update`  *(proc)*
+- [x] L489   `cga_sprite_blit`  *(proc)*
+- [x] L631   `sprite_slot_init`  *(proc)*
 - [ ] L665   `sprite_blit_dispatch`  *(proc)*
 - [ ] L697   `sprite_wide_row_render`  *(proc)*
 - [ ] L886   `sprite_pos_pair_iter`  *(proc)*
 - [ ] L921   `sprite_cell_render`  *(proc)*
 - [ ] L985   `cga_sprite_blit_ex`  *(proc)*
-- [ ] L1002  `cga_sprite_render_blended`  *(proc)*
-- [ ] L1021  `cga_sprite_render_solid`  *(proc)*
+- [x] L1002  `cga_sprite_render_blended`  *(proc)*
+- [x] L1021  `cga_sprite_render_solid`  *(proc)*
 - [ ] L1034  `sprite_bit_extract`  *(proc)*
-- [ ] L1076  `cga_blit_2rows_stride`  *(proc)*
+- [x] L1076  `cga_blit_2rows_stride`  *(proc)*
 - [ ] L1096  `sprite_copy_8words`  *(proc)*
 - [ ] L1103  `sprite_clear_8words`  *(proc)*
 - [x] L1111  `sprite_get_value`  *(proc)*
-- [ ] L1119  `sprite_src_setup`  *(proc)*
+- [x] L1119  `sprite_src_setup`  *(proc)*
 - [ ] L1158  `projectile_spawn_check`  *(proc)*
-- [ ] L1773  `sprite_col_render_loop`  *(proc)*
-- [ ] L1815  `hero_tier_get`  *(proc)*
+- [x] L1773  `sprite_col_render_loop`  *(proc)*
+- [x] L1815  `hero_tier_get`  *(proc)*
 - [ ] L1944  `frame_row_driver`  *(proc)*
 - [ ] L2097  `scroll_restore`  *(proc)*
-- [ ] L2117  `bg_save`  *(proc)*
-- [ ] L2145  `bg_restore`  *(proc)*
+- [x] L2117  `bg_save`  *(proc)*
+- [x] L2145  `bg_restore`  *(proc)*
 - [ ] L2169  `scroll_pos_load`  *(proc)*
 - [ ] L2302  `bg_tile_restore_3x3`  *(proc)*
 - [ ] L2443  `bg_col_blit_row`  *(proc)*
@@ -1007,14 +1007,14 @@
 - [ ] L2539  `cga_clear_2rows`  *(proc)*
 - [ ] L2549  `row_ofs_advance`  *(proc)*
 - [ ] L2597  `cga_inner_fade`  *(proc)*
-- [ ] L2673  `cga_fade_blit`  *(proc)*
+- [x] L2673  `cga_fade_blit`  *(proc)*
 - [ ] L2774  `cga_fill_bit_range_wide`  *(proc)*
 - [ ] L2897  `cga_row_addr_calc`  *(proc)*
 - [ ] L2909  `frame_wait_loop`  *(proc)*
 - [ ] L2931  `hud_clear`  *(proc)*
 - [x] L3018  `si_wrap_hi`  *(proc)*
 - [ ] L3135  `cga_plane_mask_2bit`  *(proc)*
-- [ ] L3188  `bg_tile_blit_inner`  *(proc)*
+- [x] L3188  `bg_tile_blit_inner`  *(proc)*
 - [ ] L3219  `cga_plane_mask_combine`  *(proc)*
 - [ ] L3703  `cga_nibble_mask_advance`  *(proc)*
 - [ ] L3732  `cga_nibble_mask_alt`  *(proc)*
@@ -1023,46 +1023,46 @@
 
 - [ ] L138   `gfhgc_main`  *(proc)*
 - [ ] L177   `hgc_row_ofs`  *(data)*
-- [ ] L264   `sprite_state_update`  *(proc)*
-- [ ] L469   `hgc_plane_or_blit`  *(proc)*
+- [x] L264   `sprite_state_update`  *(proc)*
+- [x] L469   `hgc_plane_or_blit`  *(proc)*
 - [ ] L571   `sprite_slot_remove`  *(proc)*
-- [ ] L608   `sprite_slot_init`  *(proc)*
+- [x] L608   `sprite_slot_init`  *(proc)*
 - [ ] L642   `sprite_blit_dispatch`  *(proc)*
 - [ ] L674   `sprite_wide_row_render`  *(proc)*
-- [ ] L881   `sprite_pair_blit`  *(proc)*
-- [ ] L916   `hgc_sprite_blit`  *(proc)*
+- [x] L881   `sprite_pair_blit`  *(proc)*
+- [x] L916   `hgc_sprite_blit`  *(proc)*
 - [ ] L980   `sprite_or_into_cache`  *(proc)*
 - [ ] L997   `physics_func_11`  *(proc)*
 - [ ] L1016  `plane_copy_process`  *(proc)*
 - [ ] L1029  `hgc_extract_4bits`  *(proc)*
-- [ ] L1071  `plane_scan_blit`  *(proc)*
+- [x] L1071  `plane_scan_blit`  *(proc)*
 - [ ] L1090  `copy_8words`  *(proc)*
-- [ ] L1097  `zero_8words`  *(proc)*
+- [x] L1097  `zero_8words`  *(proc)*
 - [ ] L1105  `translate_char`  *(proc)*
-- [ ] L1113  `sprite_src_setup`  *(proc)*
-- [ ] L1152  `check_spawn_projectile`  *(proc)*
+- [x] L1113  `sprite_src_setup`  *(proc)*
+- [x] L1152  `check_spawn_projectile`  *(proc)*
 - [ ] L1809  `sprite_write_range`  *(proc)*
 - [ ] L1851  `get_step_direction`  *(proc)*
 - [ ] L1953  `build_sprite_refs`  *(proc)*
 - [ ] L1980  `frame_row_driver`  *(proc)*
 - [ ] L2176  `bg_restore_dispatch`  *(proc)*
-- [ ] L2196  `save_bg_rows`  *(proc)*
+- [x] L2196  `save_bg_rows`  *(proc)*
 - [ ] L2224  `restore_bg_rows`  *(proc)*
-- [ ] L2261  `clear_sprite_cache_block`  *(proc)*
-- [ ] L2391  `load_bg_to_cache`  *(proc)*
+- [x] L2261  `clear_sprite_cache_block`  *(proc)*
+- [x] L2391  `load_bg_to_cache`  *(proc)*
 - [ ] L2540  `anim_refresh_tile`  *(proc)*
 - [ ] L2600  `hgc_write_row_masked`  *(proc)*
 - [ ] L2649  `hgc_clear_row_masked`  *(proc)*
-- [ ] L2680  `set_pixel_stride_offset`  *(proc)*
+- [x] L2680  `set_pixel_stride_offset`  *(proc)*
 - [ ] L2712  `fade_radius_loop`  *(proc)*
-- [ ] L2788  `hgc_fade_blit`  *(proc)*
+- [x] L2788  `hgc_fade_blit`  *(proc)*
 - [ ] L2891  `hgc_fill_bit_range_wide`  *(proc)*
 - [ ] L3014  `hgc_row_addr_calc`  *(proc)*
 - [ ] L3025  `frame_wait_loop`  *(proc)*
 - [ ] L3047  `hgc_xor_fill_region`  *(proc)*
 - [x] L3135  `si_wrap_hi`  *(proc)*
-- [ ] L3146  `si_wrap_lo`  *(proc)*
-- [ ] L3281  `hgc_fade_blit_entry`  *(proc)*
+- [x] L3146  `si_wrap_lo`  *(proc)*
+- [x] L3281  `hgc_fade_blit_entry`  *(proc)*
 - [ ] L3313  `rol_extract_loop`  *(proc)*
 - [ ] L3634  `shift_extract_loop`  *(proc)*
 - [ ] L3761  `hgc_pixel_addr_calc`  *(proc)*
@@ -1073,29 +1073,29 @@
 
 - [ ] L124   `gftga_main`  *(proc)*
 - [ ] L159   `tga_row_ofs`  *(data)*
-- [ ] L248   `sprite_state_update`  *(proc)*
-- [ ] L458   `tga_sprite_blit`  *(proc)*
+- [x] L248   `sprite_state_update`  *(proc)*
+- [x] L458   `tga_sprite_blit`  *(proc)*
 - [ ] L695   `sprite_slot_remove`  *(proc)*
-- [ ] L732   `sprite_slot_init`  *(proc)*
+- [x] L732   `sprite_slot_init`  *(proc)*
 - [ ] L767   `sprite_blit_dispatch`  *(proc)*
 - [ ] L799   `sprite_wide_row_render`  *(proc)*
 - [ ] L991   `sprite_pos_pair_iter`  *(proc)*
 - [ ] L1025  `sprite_cell_render`  *(proc)*
 - [ ] L1091  `tga_sprite_render_blended`  *(proc)*
 - [ ] L1108  `tile_blend_inner_loop`  *(proc)*
-- [ ] L1135  `tga_sprite_inner_blit`  *(proc)*
+- [x] L1135  `tga_sprite_inner_blit`  *(proc)*
 - [ ] L1151  `color_nibble_expand`  *(proc)*
-- [ ] L1193  `tga_blit_2bytes_8rows`  *(proc)*
+- [x] L1193  `tga_blit_2bytes_8rows`  *(proc)*
 - [ ] L1256  `copy_16words`  *(proc)*
 - [ ] L1263  `fill_16words_zero`  *(proc)*
 - [x] L1271  `sprite_get_value`  *(proc)*
-- [ ] L1279  `sprite_src_setup`  *(proc)*
+- [x] L1279  `sprite_src_setup`  *(proc)*
 - [ ] L1318  `projectile_spawn_check`  *(proc)*
-- [ ] L1974  `tga_sprite_render_solid`  *(proc)*
-- [ ] L2018  `hero_tier_get`  *(proc)*
+- [x] L1974  `tga_sprite_render_solid`  *(proc)*
+- [x] L2018  `hero_tier_get`  *(proc)*
 - [ ] L2152  `frame_row_driver`  *(proc)*
-- [ ] L2306  `bg_restore`  *(proc)*
-- [ ] L2326  `bg_save`  *(proc)*
+- [x] L2306  `bg_restore`  *(proc)*
+- [x] L2326  `bg_save`  *(proc)*
 - [ ] L2354  `bg_restore_impl`  *(proc)*
 - [ ] L2378  `scroll_cache_invalidate`  *(proc)*
 - [ ] L2508  `tga_plane_decode`  *(proc)*
@@ -1111,8 +1111,8 @@
 - [ ] L3180  `fade_gradient_loop`  *(proc)*
 - [ ] L3202  `anim_refresh_all`  *(proc)*
 - [x] L3292  `si_wrap_hi`  *(proc)*
-- [ ] L3303  `si_wrap_lo`  *(proc)*
-- [ ] L3432  `bg_tile_blit_init`  *(proc)*
+- [x] L3303  `si_wrap_lo`  *(proc)*
+- [x] L3432  `bg_tile_blit_init`  *(proc)*
 - [ ] L3466  `plane_word_expand`  *(proc)*
 - [ ] L3874  `ega_fill_bit_range_wide`  *(proc)*
 - [ ] L4057  `plane_pair_rol`  *(proc)*
@@ -1126,38 +1126,38 @@
 - [ ] L181   `data_8`  *(data)*
 - [ ] L187   `data_9`  *(data)*
 - [ ] L198   `mca_row_ofs`  *(data)*
-- [ ] L279   `sprite_state_update`  *(proc)*
-- [ ] L485   `mca_sprite_blit`  *(proc)*
+- [x] L279   `sprite_state_update`  *(proc)*
+- [x] L485   `mca_sprite_blit`  *(proc)*
 - [ ] L596   `sprite_slot_remove`  *(proc)*
-- [ ] L633   `sprite_slot_init`  *(proc)*
+- [x] L633   `sprite_slot_init`  *(proc)*
 - [ ] L669   `sprite_blit_dispatch`  *(proc)*
 - [ ] L701   `sprite_wide_row_render`  *(proc)*
 - [ ] L896   `sprite_pos_pair_iter`  *(proc)*
 - [ ] L930   `sprite_cell_render`  *(proc)*
-- [ ] L992   `mca_sprite_blit_ex`  *(proc)*
+- [x] L992   `mca_sprite_blit_ex`  *(proc)*
 - [ ] L1009  `mca_plane_3_iter`  *(proc)*
 - [ ] L1027  `mca_plane_nibble_iter`  *(proc)*
 - [ ] L1044  `mca_plane_copy_16rows`  *(proc)*
 - [ ] L1060  `mca_plane_copy_4px`  *(proc)*
 - [ ] L1073  `mca_fetch_color_lut`  *(proc)*
-- [ ] L1089  `mca_blit_2bytes_8rows`  *(proc)*
-- [ ] L1104  `mca_sprite_render_solid`  *(proc)*
+- [x] L1089  `mca_blit_2bytes_8rows`  *(proc)*
+- [x] L1104  `mca_sprite_render_solid`  *(proc)*
 - [ ] L1132  `mca_sprite_clear_cell`  *(proc)*
 - [x] L1140  `sprite_get_value`  *(proc)*
-- [ ] L1148  `sprite_src_setup`  *(proc)*
+- [x] L1148  `sprite_src_setup`  *(proc)*
 - [ ] L1187  `projectile_spawn_check`  *(proc)*
 - [ ] L1380  `sprite_shape_tbl`  *(label byte)*
 - [ ] L1828  `frame_row_driver`  *(proc)*
 - [ ] L1872  `shield_state_get`  *(proc)*
-- [ ] L1976  `load_sprite_pos`  *(proc)*
+- [x] L1976  `load_sprite_pos`  *(proc)*
 - [ ] L2003  `frame_row_dispatcher`  *(proc)*
 - [ ] L2158  `scroll_restore`  *(proc)*
 - [ ] L2178  `scroll_buf_restore`  *(proc)*
 - [ ] L2200  `scroll_buf_save`  *(proc)*
 - [ ] L2222  `scroll_clear_cache`  *(proc)*
 - [ ] L2412  `hero_sprite_col_blit`  *(proc)*
-- [ ] L2569  `mca_tile_half_blit`  *(proc)*
-- [ ] L2633  `mca_tile_half_blit_rows`  *(proc)*
+- [x] L2569  `mca_tile_half_blit`  *(proc)*
+- [x] L2633  `mca_tile_half_blit_rows`  *(proc)*
 - [ ] L2692  `mca_tile_half_clear`  *(proc)*
 - [ ] L2704  `mca_tile_addr_calc`  *(proc)*
 - [ ] L2742  `fade_gradient_rect`  *(proc)*
@@ -1167,10 +1167,10 @@
 - [ ] L2942  `anim_frame_wait`  *(proc)*
 - [ ] L2964  `fade_xor_block`  *(proc)*
 - [x] L3049  `si_wrap_hi`  *(proc)*
-- [ ] L3060  `si_wrap_lo`  *(proc)*
+- [x] L3060  `si_wrap_lo`  *(proc)*
 - [ ] L3140  `ui_tile_index_tbl`  *(label byte)*
-- [ ] L3199  `bg_tile_blit`  *(proc)*
-- [ ] L3223  `mca_sprite_2block_render`  *(proc)*
+- [x] L3199  `bg_tile_blit`  *(proc)*
+- [x] L3223  `mca_sprite_2block_render`  *(proc)*
 - [ ] L3284  `ah_xform_dispatch_tbl`  *(label word)*
 - [ ] L3381  `anim_seq_tbl`  *(label byte)*
 - [ ] L3480  `mca_plane_4bit_scan`  *(proc)*
@@ -1182,14 +1182,14 @@
 ## working/zelres2/code/207MOLE.asm  (75 sections)
 
 - [ ] L109   `module_init`  *(proc)*
-- [ ] L248   `dispatch_decode_a`  *(proc)*
+- [x] L248   `dispatch_decode_a`  *(proc)*
 - [ ] L263   `jmp_tbl_decode_a`  *(label word)*
 - [ ] L397   `nibble_to_2bpp_lut`  *(label byte)*
 - [ ] L542   `vga_pixel_unpack`  *(proc)*
 - [ ] L561   `nibble_to_vga_lut`  *(label byte)*
 - [ ] L621   `mcga_pixel_unpack`  *(proc)*
 - [ ] L650   `nibble_to_mcga_lut`  *(label byte)*
-- [ ] L655   `dispatch_decode_b`  *(proc)*
+- [x] L655   `dispatch_decode_b`  *(proc)*
 - [ ] L674   `jmp_tbl_decode_b`  *(label word)*
 - [ ] L695   `data_15`  *(data)*
 - [ ] L726   `decode_5col_blit_loop`  *(proc)*
@@ -1262,7 +1262,7 @@
 - [ ] L124   `satono_bg_main`  *(proc)*
 - [ ] L175   `rle_decode_mountain_88x56`  *(proc)*
 - [ ] L209   `render_mountains`  *(proc)*
-- [ ] L251   `ega_mtn_blit_88_rows`  *(proc)*
+- [x] L251   `ega_mtn_blit_88_rows`  *(proc)*
 - [ ] L442   `pixel_expand_mcga`  *(proc)*
 - [ ] L500   `pixel_expand_cga`  *(proc)*
 - [ ] L538   `rle_decode_ground_28`  *(proc)*
@@ -1300,8 +1300,8 @@
 - [ ] L91    `kingp_main`  *(proc)*
 - [ ] L134   `script_cmd_dispatch`  *(proc)*
 - [ ] L252   `short_wait`  *(proc)*
-- [ ] L263   `render_portrait`  *(proc)*
-- [ ] L297   `render_portrait_variant`  *(proc)*
+- [x] L263   `render_portrait`  *(proc)*
+- [x] L297   `render_portrait_variant`  *(proc)*
 - [ ] L390   `face_anim_tick`  *(proc)*
 - [ ] L402   `face_mode_update`  *(proc)*
 - [ ] L525   `select_script_branch`  *(proc)*
@@ -1317,7 +1317,7 @@
 - [ ] L209   `ref_gdhgc_lbl`  *(label byte)*
 - [ ] L214   `ref_gdmcga_lbl`  *(label byte)*
 - [ ] L219   `ref_gdtga_lbl`  *(label byte)*
-- [ ] L235   `draw_hut_banner`  *(proc)*
+- [x] L235   `draw_hut_banner`  *(proc)*
 - [ ] L271   `banner_tile_grid_lbl`  *(label byte)*
 - [ ] L316   `ref_omoya_grp`  *(data)*
 - [ ] L320   `banner_msg_header`  *(label byte)*
@@ -1331,30 +1331,30 @@
 - [ ] L552   `knight_sword_hook_a`  *(proc)*
 - [ ] L889   `frame_delay`  *(proc)*
 - [ ] L924   `knight_sword_hook_b`  *(proc)*
-- [ ] L948   `clear_menu_rect`  *(proc)*
+- [x] L948   `clear_menu_rect`  *(proc)*
 - [ ] L956   `shopkeeper_anim_tick`  *(proc)*
-- [ ] L1054  `render_shopkeeper_frame`  *(proc)*
+- [x] L1054  `render_shopkeeper_frame`  *(proc)*
 
 ## working/zelres2/code/213BANKP.asm  (9 sections)
 
 - [ ] L118   `bank_main`  *(proc)*
 - [ ] L182   `script_opcode_dispatch`  *(proc)*
 - [ ] L208   `data_7`  *(data)*
-- [ ] L633   `clear_dialog_area`  *(proc)*
+- [x] L633   `clear_dialog_area`  *(proc)*
 - [ ] L641   `adjust_amount_by_input`  *(proc)*
-- [ ] L697   `draw_intro_12x8`  *(proc)*
+- [x] L697   `draw_intro_12x8`  *(proc)*
 - [ ] L745   `anim_scroll_step`  *(proc)*
-- [ ] L767   `draw_banner_8x5`  *(proc)*
-- [ ] L830   `iter_wait_msg_list`  *(proc)*
+- [x] L767   `draw_banner_8x5`  *(proc)*
+- [x] L830   `iter_wait_msg_list`  *(proc)*
 
 ## working/zelres2/code/214CHURP.asm  (7 sections)
 
 - [ ] L71    `church_main`  *(proc)*
 - [ ] L124   `script_opcode_dispatch`  *(proc)*
 - [ ] L155   `rest_wait_loop`  *(data)*
-- [ ] L249   `draw_intro_12x8`  *(proc)*
+- [x] L249   `draw_intro_12x8`  *(proc)*
 - [ ] L292   `anim_scroll_step`  *(proc)*
-- [ ] L313   `anim_draw_a`  *(proc)*
+- [x] L313   `anim_draw_a`  *(proc)*
 - [ ] L408   `pick_welcome_text`  *(proc)*
 
 ## working/zelres2/code/215DRUGP.asm  (10 sections)
@@ -1373,7 +1373,7 @@
 ## working/zelres2/code/216INNAP.asm  (20 sections)
 
 - [ ] L61    `inn_main`  *(proc)*
-- [ ] L114   `draw_intro_banner`  *(proc)*
+- [x] L114   `draw_intro_banner`  *(proc)*
 - [ ] L130   `inn_opcode_dispatch`  *(proc)*
 - [ ] L155   `data_1`  *(data)*
 - [ ] L156   `data_2`  *(data)*
@@ -1386,7 +1386,7 @@
 - [ ] L265   `inn_wait_long`  *(proc)*
 - [ ] L280   `inn_wait_short`  *(proc)*
 - [ ] L296   `inn_anim_step`  *(proc)*
-- [ ] L332   `draw_intro_tile_map`  *(proc)*
+- [x] L332   `draw_intro_tile_map`  *(proc)*
 - [ ] L366   `intro_glyph_row_a`  *(label byte)*
 - [ ] L376   `intro_glyph_row_b`  *(label byte)*
 - [ ] L386   `inn_anim_scan`  *(proc)*
@@ -1396,23 +1396,23 @@
 ## working/zelres2/code/217KENJP.asm  (23 sections)
 
 - [ ] L166   `kenja_main`  *(proc)*
-- [ ] L201   `load_sage_chunk`  *(proc)*
+- [x] L201   `load_sage_chunk`  *(proc)*
 - [ ] L226   `kenja_cmd_dispatch`  *(proc)*
 - [ ] L238   `data_9`  *(data)*
 - [ ] L240   `data_10`  *(data)*
 - [ ] L249   `data_11`  *(data)*
 - [ ] L266   `data_13`  *(data)*
-- [ ] L329   `scan_blessing_attrs`  *(proc)*
-- [ ] L379   `check_hp_exp_tier`  *(proc)*
+- [x] L329   `scan_blessing_attrs`  *(proc)*
+- [x] L379   `check_hp_exp_tier`  *(proc)*
 - [ ] L629   `wait_frames_140`  *(proc)*
 - [ ] L644   `record_experience_entry`  *(proc)*
-- [ ] L762   `draw_char_row`  *(proc)*
+- [x] L762   `draw_char_row`  *(proc)*
 - [ ] L793   `name_input_loop`  *(proc)*
-- [ ] L1052  `update_name_cursor`  *(proc)*
-- [ ] L1103  `redraw_name_field`  *(proc)*
-- [ ] L1249  `clear_sage_region`  *(proc)*
-- [ ] L1257  `draw_sage_tile_grid`  *(proc)*
-- [ ] L1299  `render_glyph_32`  *(proc)*
+- [x] L1052  `update_name_cursor`  *(proc)*
+- [x] L1103  `redraw_name_field`  *(proc)*
+- [x] L1249  `clear_sage_region`  *(proc)*
+- [x] L1257  `draw_sage_tile_grid`  *(proc)*
+- [x] L1299  `render_glyph_32`  *(proc)*
 - [ ] L1386  `anim_tick`  *(proc)*
 - [ ] L1460  `data_17`  *(data)*
 - [ ] L1464  `sage_intro_dispatch`  *(proc)*
@@ -1436,7 +1436,7 @@
 - [ ] L240   `ending_scene_main`  *(proc)*
 - [ ] L456   `timer_wait_loop`  *(proc)*
 - [ ] L467   `gfx_driver_tick_full`  *(proc)*
-- [ ] L480   `render_narration_page`  *(proc)*
+- [x] L480   `render_narration_page`  *(proc)*
 - [ ] L841   `measure_script_word_width`  *(proc)*
 - [ ] L938   `credits_loop_main`  *(proc)*
 - [ ] L1081  `credits_putchar`  *(proc)*
@@ -1454,7 +1454,7 @@
 ## working/zelres3/code/300ROKAD.asm  (10 sections)
 
 - [ ] L160   `roka_demo_main`  *(proc)*
-- [ ] L445   `draw_pose_3x3`  *(proc)*
+- [x] L445   `draw_pose_3x3`  *(proc)*
 - [ ] L508   `pose_tile_data`  *(label byte)*
 - [ ] L549   `wait_frame`  *(proc)*
 - [ ] L562   `bres_setup`  *(proc)*
@@ -1474,8 +1474,8 @@
 - [ ] L187   `crab_frame_ptr_tbl_e`  *(label word)*
 - [ ] L236   `crab_facing_fn_ptr`  *(data)*
 - [ ] L305   `crab_anim_phase_marker`  *(data)*
-- [ ] L562   `phase_advance_helper`  *(proc)*
-- [ ] L706   `distance_check_8`  *(proc)*
+- [x] L562   `phase_advance_helper`  *(proc)*
+- [x] L706   `distance_check_8`  *(proc)*
 - [ ] L971   `distance_check_6`  *(proc)*
 
 ## working/zelres3/code/302EAI2.asm  (28 sections)
@@ -1500,14 +1500,14 @@
 - [ ] L362   `tako_aux_ptr_tbl`  *(label word)*
 - [ ] L600   `tako_tentacle_mask_a`  *(data)*
 - [ ] L601   `tako_tentacle_mask_b`  *(data)*
-- [ ] L607   `step_pos_x`  *(proc)*
+- [x] L607   `step_pos_x`  *(proc)*
 - [ ] L636   `collide_check_right`  *(proc)*
-- [ ] L671   `step_neg_x`  *(proc)*
+- [x] L671   `step_neg_x`  *(proc)*
 - [ ] L699   `collide_check_left`  *(proc)*
-- [ ] L734   `step_swim_y`  *(proc)*
+- [x] L734   `step_swim_y`  *(proc)*
 - [ ] L761   `collide_check_y`  *(proc)*
-- [ ] L1061  `distance_check_5`  *(proc)*
-- [ ] L1303  `phase_advance_helper`  *(proc)*
+- [x] L1061  `distance_check_5`  *(proc)*
+- [x] L1303  `phase_advance_helper`  *(proc)*
 
 ## working/zelres3/code/303EAI3.asm  (9 sections)
 
@@ -1539,12 +1539,12 @@
 - [ ] L237   `meda_rng_fn_ptr`  *(data)*
 - [ ] L263   `meda_anim_idx_a`  *(data)*
 - [ ] L266   `meda_anim_idx_b`  *(data)*
-- [ ] L607   `phase_step_fwd`  *(proc)*
-- [ ] L636   `collide_check_fwd`  *(proc)*
-- [ ] L671   `phase_step_back`  *(proc)*
-- [ ] L699   `collide_check_back`  *(proc)*
-- [ ] L734   `sub01_collide_outer`  *(proc)*
-- [ ] L761   `sub01_collide_inner`  *(proc)*
+- [x] L607   `phase_step_fwd`  *(proc)*
+- [x] L636   `collide_check_fwd`  *(proc)*
+- [x] L671   `phase_step_back`  *(proc)*
+- [x] L699   `collide_check_back`  *(proc)*
+- [x] L734   `sub01_collide_outer`  *(proc)*
+- [x] L761   `sub01_collide_inner`  *(proc)*
 - [ ] L790   `distance_check_4`  *(proc)*
 
 ## working/zelres3/code/306EAI6.asm  (14 sections)
@@ -1554,13 +1554,13 @@
 - [ ] L149   `eai6_collide_marker`  *(data)*
 - [ ] L174   `eai6_rng_fn_ptr`  *(data)*
 - [ ] L433   `distance_check_4`  *(proc)*
-- [ ] L471   `phase_step_fwd`  *(proc)*
-- [ ] L500   `collide_check_fwd`  *(proc)*
-- [ ] L535   `phase_step_back`  *(proc)*
-- [ ] L563   `collide_check_back`  *(proc)*
-- [ ] L598   `sub01_collide_outer`  *(proc)*
-- [ ] L625   `sub01_collide_inner`  *(proc)*
-- [ ] L841   `distance_check_8`  *(proc)*
+- [x] L471   `phase_step_fwd`  *(proc)*
+- [x] L500   `collide_check_fwd`  *(proc)*
+- [x] L535   `phase_step_back`  *(proc)*
+- [x] L563   `collide_check_back`  *(proc)*
+- [x] L598   `sub01_collide_outer`  *(proc)*
+- [x] L625   `sub01_collide_inner`  *(proc)*
+- [x] L841   `distance_check_8`  *(proc)*
 - [ ] L987   `sub02_flip_to_state2`  *(proc)*
 - [ ] L1008  `sub02_block_or_advance`  *(proc)*
 
@@ -1570,25 +1570,25 @@
 - [ ] L179   `eai7_collide_marker`  *(data)*
 - [ ] L208   `eai7_rng_fn_ptr`  *(data)*
 - [ ] L227   `eai7_anim_state_ref`  *(data)*
-- [ ] L500   `phase_step_fwd`  *(proc)*
-- [ ] L529   `collide_check_fwd`  *(proc)*
-- [ ] L564   `phase_step_back`  *(proc)*
-- [ ] L592   `collide_check_back`  *(proc)*
-- [ ] L627   `sub01_collide_outer`  *(proc)*
-- [ ] L654   `sub01_collide_inner`  *(proc)*
-- [ ] L692   `distance_check_5`  *(proc)*
+- [x] L500   `phase_step_fwd`  *(proc)*
+- [x] L529   `collide_check_fwd`  *(proc)*
+- [x] L564   `phase_step_back`  *(proc)*
+- [x] L592   `collide_check_back`  *(proc)*
+- [x] L627   `sub01_collide_outer`  *(proc)*
+- [x] L654   `sub01_collide_inner`  *(proc)*
+- [x] L692   `distance_check_5`  *(proc)*
 - [ ] L1032  `distance_check_6`  *(proc)*
 
 ## working/zelres3/code/308EAI8.asm  (8 sections)
 
 - [ ] L133   `eai8_main`  *(proc)*
 - [ ] L212   `eai8_rng_fn_ptr`  *(data)*
-- [ ] L415   `collide_check_fwd`  *(proc)*
-- [ ] L482   `collide_check_back`  *(proc)*
+- [x] L415   `collide_check_fwd`  *(proc)*
+- [x] L482   `collide_check_back`  *(proc)*
 - [ ] L709   `rng_pick_facing`  *(proc)*
-- [ ] L771   `phase_advance_helper`  *(proc)*
-- [ ] L870   `distance_check_8`  *(proc)*
-- [ ] L910   `distance_check_5`  *(proc)*
+- [x] L771   `phase_advance_helper`  *(proc)*
+- [x] L870   `distance_check_8`  *(proc)*
+- [x] L910   `distance_check_5`  *(proc)*
 
 ## working/zelres3/code/309CRAB.asm  (9 sections)
 
@@ -1651,8 +1651,8 @@
 - [ ] L462   `phase_inc_clamped`  *(proc)*
 - [ ] L470   `bound_xpos_inc`  *(proc)*
 - [ ] L482   `bound_xpos_dec`  *(proc)*
-- [ ] L493   `render_tiles_main`  *(proc)*
-- [ ] L603   `render_tile_row`  *(proc)*
+- [x] L493   `render_tiles_main`  *(proc)*
+- [x] L603   `render_tile_row`  *(proc)*
 - [ ] L646   `scroll_step_finalize`  *(proc)*
 
 ## working/zelres3/code/314LEGA.asm  (15 sections)
@@ -1758,7 +1758,7 @@
 - [ ] L219   `mao2_layout_cells_a_tail`  *(data)*
 - [ ] L220   `mao2_dispatch_ptr`  *(data)*
 - [ ] L222   `mao2_layout_cells_b`  *(label byte)*
-- [ ] L242   `mao2_main_dispatch`  *(proc)*
+- [x] L242   `mao2_main_dispatch`  *(proc)*
 - [ ] L255   `mao2_layout_cells_c`  *(label byte)*
 - [ ] L261   `mao2_layout_data_b`  *(data)*
 - [ ] L263   `mao2_layout_cells_d`  *(label byte)*

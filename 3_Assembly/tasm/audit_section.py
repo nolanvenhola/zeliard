@@ -252,6 +252,30 @@ def parse_coverage_csv(path: Path) -> dict:
     return out
 
 
+def parse_name_pattern_verify(path: Path) -> dict:
+    """Parse working/NAME_PATTERN_VERIFY.md.
+
+    Returns {(file, name): (verdict, evidence_summary)}.
+    Verdict is always SUPPORTED in this file (only matched rows are listed).
+    """
+    if not path.exists():
+        return {}
+    out = {}
+    text = path.read_text(encoding='utf-8', errors='replace')
+    # Rows like: | `file` | line | `name` | role description |
+    row_re = re.compile(
+        r'^\|\s*`(?P<file>[^`]+)`\s*\|\s*\d+\s*\|\s*`(?P<name>[^`]+)`\s*\|\s*'
+        r'(?P<desc>[^|]*?)\s*\|',
+        re.MULTILINE,
+    )
+    for m in row_re.finditer(text):
+        out[(m.group('file'), m.group('name'))] = (
+            'SUPPORTED',
+            f'name-pattern: {m.group("desc")}',
+        )
+    return out
+
+
 def parse_driver_signature_verify(path: Path) -> dict:
     """Parse working/DRIVER_SIGNATURE_VERIFY.md.
 
@@ -341,6 +365,9 @@ def build_ledger() -> list[dict]:
     audit_todo = parse_audit_todo(WORKING / 'AUDIT_TODO.md')
     driver_sigs = parse_driver_signature_verify(
         WORKING / 'DRIVER_SIGNATURE_VERIFY.md'
+    )
+    name_patterns = parse_name_pattern_verify(
+        WORKING / 'NAME_PATTERN_VERIFY.md'
     )
 
     # The .inc files are canonical homes for EQU names.  Any name that
@@ -440,6 +467,18 @@ def build_ledger() -> list[dict]:
                 canonical = inv['name']
                 evidence = sig_evidence
                 source = 'driver-sig'
+
+        # Source 0b: name-pattern fingerprint match.  For procs whose
+        # name implies a role (e.g. wait_*, dispatch_*), the body's
+        # opcode fingerprint matches the role.
+        if verdict == 'PENDING' and inv['kind'] == 'proc':
+            np = name_patterns.get((file_rel, inv['name']))
+            if np:
+                np_verdict, np_evidence = np
+                verdict = np_verdict
+                canonical = inv['name']
+                evidence = np_evidence
+                source = 'name-pattern'
 
         # Source 1a: TCRF authoritative table for stdply 0x80..0xFF
         if verdict == 'PENDING' and is_stdply_file(file_rel) and address_hex:

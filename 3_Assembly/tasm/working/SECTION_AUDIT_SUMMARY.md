@@ -20,90 +20,91 @@ Strength ladder (strongest first):
 
 | Verdict | Count |
 |---|---:|
-| SUPPORTED | 117 |
+| SUPPORTED | 382 |
 | INC_CONSISTENT | 10 |
 | CONTRADICTED | 0 |
-| INCONCLUSIVE | 0 |
-| PENDING | 1470 |
+| INCONCLUSIVE | 36 |
+| PENDING | 1169 |
 
 ## Evidence sources (rows with verdict)
 
 | Source | Count |
 |---|---:|
+| name-pattern | 205 |
+| driver-sig | 128 |
 | TCRF | 85 |
-| driver-sig | 32 |
 | stdply.inc | 10 |
 
 ## Per-file resolution status
 
 | File | Supported | Contradicted | Pending | Total |
 |---|---:|---:|---:|---:|
+| `working/core/game.asm` | 2 | 0 | 18 | 20 |
+| `working/core/zeliad.asm` | 4 | 0 | 51 | 55 |
+| `working/drivers/gmcga.asm` | 6 | 0 | 13 | 19 |
+| `working/drivers/gmega.asm` | 5 | 0 | 11 | 16 |
+| `working/drivers/gmhgc.asm` | 8 | 0 | 14 | 22 |
+| `working/drivers/gmmcga.asm` | 5 | 0 | 16 | 21 |
+| `working/drivers/gmtga.asm` | 6 | 0 | 14 | 20 |
 | `working/drivers/stdply.asm` | 85 | 0 | 2 | 87 |
+| `working/drivers/stick.asm` | 6 | 0 | 31 | 37 |
+| `working/zelres1/code/100OPDMO.asm` | 5 | 0 | 39 | 44 |
 | `working/zelres1/code/101GDEGA.asm` | 3 | 0 | 21 | 24 |
-| `working/zelres1/code/102GDCGA.asm` | 5 | 0 | 17 | 22 |
-| `working/zelres1/code/103GDHGC.asm` | 5 | 0 | 19 | 24 |
-| `working/zelres1/code/104GDTGA.asm` | 5 | 0 | 22 | 27 |
-| `working/zelres1/code/105GDMCA.asm` | 5 | 0 | 20 | 25 |
-| `working/zelres2/code/202GFEGA.asm` | 2 | 0 | 38 | 40 |
-| `working/zelres2/code/203GFCGA.asm` | 2 | 0 | 41 | 43 |
-| `working/zelres2/code/204GFHGC.asm` | 1 | 0 | 46 | 47 |
-| `working/zelres2/code/205GFTGA.asm` | 2 | 0 | 46 | 48 |
-| `working/zelres2/code/206GFMCA.asm` | 2 | 0 | 54 | 56 |
+| `working/zelres1/code/102GDCGA.asm` | 6 | 0 | 16 | 22 |
+| `working/zelres1/code/103GDHGC.asm` | 6 | 0 | 18 | 24 |
+| `working/zelres1/code/104GDTGA.asm` | 6 | 0 | 21 | 27 |
+| `working/zelres1/code/105GDMCA.asm` | 6 | 0 | 19 | 25 |
+| `working/zelres1/code/106TOWN.asm` | 1 | 0 | 57 | 58 |
+| `working/zelres1/code/108GTCGA.asm` | 16 | 0 | 11 | 27 |
+| `working/zelres2/code/200FIGHT.asm` | 59 | 0 | 92 | 151 |
+| `working/zelres2/code/201SELCT.asm` | 10 | 0 | 21 | 31 |
+| `working/zelres2/code/202GFEGA.asm` | 14 | 0 | 18 | 32 |
+| `working/zelres2/code/203GFCGA.asm` | 15 | 0 | 21 | 36 |
+| `working/zelres2/code/204GFHGC.asm` | 17 | 0 | 25 | 42 |
+| `working/zelres2/code/205GFTGA.asm` | 14 | 0 | 26 | 40 |
+| `working/zelres2/code/206GFMCA.asm` | 15 | 0 | 33 | 48 |
+| `working/zelres2/code/207MOLE.asm` | 2 | 0 | 73 | 75 |
+| `working/zelres2/code/208YMPD.asm` | 1 | 0 | 9 | 10 |
+| `working/zelres2/code/210KINGP.asm` | 2 | 0 | 7 | 9 |
+| `working/zelres2/code/211OMOYP.asm` | 1 | 0 | 11 | 12 |
+| `working/zelres2/code/212ARMRP.asm` | 2 | 0 | 8 | 10 |
+| `working/zelres2/code/213BANKP.asm` | 4 | 0 | 5 | 9 |
+| `working/zelres2/code/214CHURP.asm` | 2 | 0 | 5 | 7 |
+| `working/zelres2/code/216INNAP.asm` | 2 | 0 | 18 | 20 |
+| `working/zelres2/code/217KENJP.asm` | 9 | 0 | 14 | 23 |
+| `working/zelres2/code/250ENDMO.asm` | 1 | 0 | 16 | 17 |
+| `working/zelres3/code/300ROKAD.asm` | 1 | 0 | 9 | 10 |
+| `working/zelres3/code/301EAI1.asm` | 2 | 0 | 9 | 11 |
+| `working/zelres3/code/302EAI2.asm` | 5 | 0 | 23 | 28 |
+| `working/zelres3/code/305EAI5.asm` | 6 | 0 | 7 | 13 |
+| `working/zelres3/code/306EAI6.asm` | 7 | 0 | 7 | 14 |
+| `working/zelres3/code/307EAI7.asm` | 7 | 0 | 5 | 12 |
+| `working/zelres3/code/308EAI8.asm` | 5 | 0 | 3 | 8 |
+| `working/zelres3/code/313MEDA.asm` | 2 | 0 | 11 | 13 |
+| `working/zelres3/code/319MAO2.asm` | 1 | 0 | 39 | 40 |
 
-## Files with zero Group-1 resolution (50)
+## Files with zero Group-1 resolution (18)
 
 These files have no items resolved by deterministic Group-1
 sources (.inc EQU lookups + TCRF table).  All sections in
 these files are PENDING and need Tier-2 (cross-file sweep) or
 Tier-3 (functest probe) work.
 
-- `working/core/game.asm` -- 20 pending
-- `working/core/zeliad.asm` -- 55 pending
-- `working/drivers/gmcga.asm` -- 19 pending
-- `working/drivers/gmega.asm` -- 16 pending
-- `working/drivers/gmhgc.asm` -- 22 pending
-- `working/drivers/gmmcga.asm` -- 21 pending
-- `working/drivers/gmtga.asm` -- 20 pending
-- `working/drivers/stick.asm` -- 37 pending
-- `working/zelres1/code/100OPDMO.asm` -- 44 pending
-- `working/zelres1/code/106TOWN.asm` -- 58 pending
 - `working/zelres1/code/107GTEGA.asm` -- 26 pending
-- `working/zelres1/code/108GTCGA.asm` -- 27 pending
 - `working/zelres1/code/109GTHGC.asm` -- 34 pending
 - `working/zelres1/code/110GTTGA.asm` -- 30 pending
 - `working/zelres1/code/111GTMCA.asm` -- 29 pending
-- `working/zelres2/code/200FIGHT.asm` -- 151 pending
-- `working/zelres2/code/201SELCT.asm` -- 31 pending
-- `working/zelres2/code/207MOLE.asm` -- 75 pending
-- `working/zelres2/code/208YMPD.asm` -- 10 pending
 - `working/zelres2/code/209CKPD.asm` -- 22 pending
-- `working/zelres2/code/210KINGP.asm` -- 9 pending
-- `working/zelres2/code/211OMOYP.asm` -- 12 pending
-- `working/zelres2/code/212ARMRP.asm` -- 10 pending
-- `working/zelres2/code/213BANKP.asm` -- 9 pending
-- `working/zelres2/code/214CHURP.asm` -- 7 pending
 - `working/zelres2/code/215DRUGP.asm` -- 10 pending
-- `working/zelres2/code/216INNAP.asm` -- 20 pending
-- `working/zelres2/code/217KENJP.asm` -- 23 pending
 - `working/zelres2/code/236CMAP.asm` -- 3 pending
-- `working/zelres2/code/250ENDMO.asm` -- 17 pending
-- `working/zelres3/code/300ROKAD.asm` -- 10 pending
-- `working/zelres3/code/301EAI1.asm` -- 11 pending
-- `working/zelres3/code/302EAI2.asm` -- 28 pending
 - `working/zelres3/code/303EAI3.asm` -- 9 pending
 - `working/zelres3/code/304EAI4.asm` -- 7 pending
-- `working/zelres3/code/305EAI5.asm` -- 13 pending
-- `working/zelres3/code/306EAI6.asm` -- 14 pending
-- `working/zelres3/code/307EAI7.asm` -- 12 pending
-- `working/zelres3/code/308EAI8.asm` -- 8 pending
 - `working/zelres3/code/309CRAB.asm` -- 9 pending
 - `working/zelres3/code/310TAKO.asm` -- 7 pending
 - `working/zelres3/code/311TORI.asm` -- 13 pending
 - `working/zelres3/code/312ZELA.asm` -- 8 pending
-- `working/zelres3/code/313MEDA.asm` -- 13 pending
 - `working/zelres3/code/314LEGA.asm` -- 15 pending
 - `working/zelres3/code/315ZEL2.asm` -- 11 pending
 - `working/zelres3/code/316DRGN.asm` -- 12 pending
 - `working/zelres3/code/317AKMA.asm` -- 11 pending
 - `working/zelres3/code/318MAO1.asm` -- 26 pending
-- `working/zelres3/code/319MAO2.asm` -- 40 pending
