@@ -12,12 +12,12 @@ Total PENDING procs scanned: **1077**
 
 | Bucket | Count |
 |---|---:|
-| SUPPORTED | 651 |
-| no_pattern | 218 |
-| INCONCLUSIVE | 163 |
-| proc_not_found | 45 |
+| SUPPORTED | 668 |
+| no_pattern | 190 |
+| INCONCLUSIVE | 165 |
+| proc_not_found | 54 |
 
-## SUPPORTED rows (651)
+## SUPPORTED rows (668)
 
 | File | Line | Name | Role pattern |
 |---|---:|---|---|
@@ -31,6 +31,7 @@ Total PENDING procs scanned: **1077**
 | `working/core/zeliad.asm` | 714 | `parse_joystick_enable` | parse_: text/byte stream processing |
 | `working/core/zeliad.asm` | 754 | `find_colon_in_line` | find/scan: scasb/cmp/loop |
 | `working/core/zeliad.asm` | 779 | `load_driver_file` | load/save/read/write: at least one memory op or loader call |
+| `working/core/zeliad.asm` | 819 | `display_file_error` | display/disp: dispatch or screen op |
 | `working/core/zeliad.asm` | 882 | `set_video_mode` | set/clear: writes register/memory |
 | `working/core/zeliad.asm` | 975 | `parse_command_line` | line/row: row write + loop tail |
 | `working/drivers/gmcga.asm` | 228 | `fill_horizontal_line` | fill_*: rep stos or memory write |
@@ -40,6 +41,7 @@ Total PENDING procs scanned: **1077**
 | `working/drivers/gmcga.asm` | 628 | `fill_vertical_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmcga.asm` | 729 | `render_text_char` | render/blit/draw: writes to ES:DI or calls gfx routine |
 | `working/drivers/gmcga.asm` | 869 | `init_timestamp` | timestamp/time: time read or BCD conversion |
+| `working/drivers/gmcga.asm` | 942 | `int_divide_bcd` | ISR/handler: must end with iret/retn |
 | `working/drivers/gmcga.asm` | 993 | `decode_bitplane_tile` | tile_*: tile data manipulation |
 | `working/drivers/gmcga.asm` | 1257 | `render_tilemap_small` | render/blit/draw: writes to ES:DI or calls gfx routine |
 | `working/drivers/gmcga.asm` | 1323 | `extract_bitplane_pixels` | extract/decode: bit/byte manipulation |
@@ -54,6 +56,7 @@ Total PENDING procs scanned: **1077**
 | `working/drivers/gmega.asm` | 703 | `fill_vertical_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmega.asm` | 796 | `render_text_char` | render/blit/draw: writes to ES:DI or calls gfx routine |
 | `working/drivers/gmega.asm` | 942 | `init_timestamp` | timestamp/time: time read or BCD conversion |
+| `working/drivers/gmega.asm` | 1017 | `int_divide_bcd` | ISR/handler: must end with iret/retn |
 | `working/drivers/gmega.asm` | 1062 | `decode_bitplane_tile` | tile_*: tile data manipulation |
 | `working/drivers/gmega.asm` | 1342 | `render_tilemap_small` | render/blit/draw: writes to ES:DI or calls gfx routine |
 | `working/drivers/gmega.asm` | 1439 | `render_text_char_alt` | render/blit/draw: writes to ES:DI or calls gfx routine |
@@ -67,6 +70,7 @@ Total PENDING procs scanned: **1077**
 | `working/drivers/gmhgc.asm` | 689 | `fill_vertical_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmhgc.asm` | 778 | `render_text_char` | render/blit/draw: writes to ES:DI or calls gfx routine |
 | `working/drivers/gmhgc.asm` | 924 | `init_timestamp` | timestamp/time: time read or BCD conversion |
+| `working/drivers/gmhgc.asm` | 998 | `int_divide_bcd` | ISR/handler: must end with iret/retn |
 | `working/drivers/gmhgc.asm` | 1047 | `decode_bitplane_tile` | tile_*: tile data manipulation |
 | `working/drivers/gmhgc.asm` | 1324 | `render_tilemap_small` | render/blit/draw: writes to ES:DI or calls gfx routine |
 | `working/drivers/gmhgc.asm` | 1395 | `extract_bitplane_pixels` | extract/decode: bit/byte manipulation |
@@ -82,6 +86,7 @@ Total PENDING procs scanned: **1077**
 | `working/drivers/gmmcga.asm` | 554 | `fill_vertical_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmmcga.asm` | 635 | `render_text_char` | render/blit/draw: writes to ES:DI or calls gfx routine |
 | `working/drivers/gmmcga.asm` | 747 | `init_timestamp` | timestamp/time: time read or BCD conversion |
+| `working/drivers/gmmcga.asm` | 820 | `int_divide_bcd` | ISR/handler: must end with iret/retn |
 | `working/drivers/gmmcga.asm` | 878 | `decode_bitplane_tile` | tile_*: tile data manipulation |
 | `working/drivers/gmmcga.asm` | 1152 | `extract_bitplane_pixels` | extract/decode: bit/byte manipulation |
 | `working/drivers/gmmcga.asm` | 1177 | `render_text_char_alt` | render/blit/draw: writes to ES:DI or calls gfx routine |
@@ -96,6 +101,7 @@ Total PENDING procs scanned: **1077**
 | `working/drivers/gmtga.asm` | 742 | `render_text_char` | render/blit/draw: writes to ES:DI or calls gfx routine |
 | `working/drivers/gmtga.asm` | 838 | `extract_bitplane_bit` | extract/decode: bit/byte manipulation |
 | `working/drivers/gmtga.asm` | 942 | `init_timestamp` | timestamp/time: time read or BCD conversion |
+| `working/drivers/gmtga.asm` | 1015 | `int_divide_bcd` | ISR/handler: must end with iret/retn |
 | `working/drivers/gmtga.asm` | 1065 | `decode_bitplane_tile` | tile_*: tile data manipulation |
 | `working/drivers/gmtga.asm` | 1327 | `render_tilemap_small` | render/blit/draw: writes to ES:DI or calls gfx routine |
 | `working/drivers/gmtga.asm` | 1384 | `extract_bitplane_pixels` | extract/decode: bit/byte manipulation |
@@ -106,18 +112,28 @@ Total PENDING procs scanned: **1077**
 | `working/drivers/stick.asm` | 204 | `poll_joystick_buttons` | poll_: input read or state check |
 | `working/drivers/stick.asm` | 266 | `handle_special_keys` | handler/isr: must end with return (sanity) |
 | `working/drivers/stick.asm` | 423 | `process_scancode` | process/update/advance: state-update operations |
+| `working/drivers/stick.asm` | 704 | `calibrate_joystick` | joystick: port read or BIOS call |
 | `working/drivers/stick.asm` | 761 | `calc_joystick_deadzone` | compute/calc: arithmetic or bitwise op |
 | `working/drivers/stick.asm` | 1000 | `wait_for_digit_or_esc` | wait/poll loop: read state in a backward branch |
+| `working/drivers/stick.asm` | 1038 | `joy_calibrate_request` | joystick: port read or BIOS call |
 | `working/drivers/stick.asm` | 1158 | `draw_pause_menu_box` | render/blit/draw: writes to ES:DI or calls gfx routine |
 | `working/drivers/stick.asm` | 1178 | `flush_dos_kbd_buffer` | flush_: clear/drain buffer |
+| `working/drivers/stick.asm` | 1516 | `fio_open_savefile_retry` | file I/O: DOS INT 21h or call |
+| `working/drivers/stick.asm` | 1675 | `fio_read_write_block` | file I/O: DOS INT 21h or call |
+| `working/drivers/stick.asm` | 1689 | `fio_close_file` | file I/O: DOS INT 21h or call |
+| `working/drivers/stick.asm` | 1751 | `dcmp_loop_anchor_a` | decompression: byte stream + bit ops |
+| `working/drivers/stick.asm` | 1819 | `dcmp_loop_anchor_b` | decompression: byte stream + bit ops |
+| `working/drivers/stick.asm` | 1906 | `dcmp_loop_anchor_c` | decompression: byte stream + bit ops |
 | `working/zelres1/code/100OPDMO.asm` | 458 | `sprite_anim_proc` | entity/sprite: SI/DI ptr operations |
 | `working/zelres1/code/100OPDMO.asm` | 543 | `animate_scanline` | animation: counter + render dispatch |
 | `working/zelres1/code/100OPDMO.asm` | 591 | `timer_wait_loop` | wait/poll loop: read state in a backward branch |
+| `working/zelres1/code/100OPDMO.asm` | 604 | `interrupt_handler_cascade` | ISR/handler: must end with iret/retn |
 | `working/zelres1/code/100OPDMO.asm` | 653 | `scene_transition_wait` | wait/poll loop: read state in a backward branch |
 | `working/zelres1/code/100OPDMO.asm` | 679 | `credits_scroll_display` | scroll: rep movs or gfx call |
 | `working/zelres1/code/100OPDMO.asm` | 1010 | `story_scene_input_handler` | handler/isr: must end with return (sanity) |
 | `working/zelres1/code/100OPDMO.asm` | 1357 | `calc_text_width` | compute/calc: arithmetic or bitwise op |
 | `working/zelres1/code/100OPDMO.asm` | 1414 | `animate_scanline_alt` | animation: counter + render dispatch |
+| `working/zelres1/code/100OPDMO.asm` | 1471 | `decompress_image` | decompression: byte stream + bit ops |
 | `working/zelres1/code/100OPDMO.asm` | 1475 | `rle_unpack_core` | rle: run-length encode/decode |
 | `working/zelres1/code/100OPDMO.asm` | 1564 | `fill_buffer` | fill_*: rep stos or memory write |
 | `working/zelres1/code/100OPDMO.asm` | 1600 | `palette_lookup` | palette: VGA palette I/O or palette-state writes |
@@ -522,6 +538,7 @@ Total PENDING procs scanned: **1077**
 | `working/zelres2/code/204GFHGC.asm` | 1152 | `check_spawn_projectile` | check/test: cmp/test followed by branch |
 | `working/zelres2/code/204GFHGC.asm` | 1809 | `sprite_write_range` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/204GFHGC.asm` | 2196 | `save_bg_rows` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres2/code/204GFHGC.asm` | 2224 | `restore_bg_rows` | restore_*: restore via copy or memory write |
 | `working/zelres2/code/204GFHGC.asm` | 2261 | `clear_sprite_cache_block` | set/clear: writes register/memory |
 | `working/zelres2/code/204GFHGC.asm` | 2391 | `load_bg_to_cache` | load/save/read/write: at least one memory op or loader call |
 | `working/zelres2/code/204GFHGC.asm` | 2540 | `anim_refresh_tile` | tile_*: tile data manipulation |

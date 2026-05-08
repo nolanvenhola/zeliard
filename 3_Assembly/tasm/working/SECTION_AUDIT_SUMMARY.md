@@ -20,17 +20,17 @@ Strength ladder (strongest first):
 
 | Verdict | Count |
 |---|---:|
-| SUPPORTED | 1025 |
+| SUPPORTED | 1037 |
 | INC_CONSISTENT | 6 |
 | CONTRADICTED | 0 |
 | INCONCLUSIVE | 24 |
-| PENDING | 542 |
+| PENDING | 530 |
 
 ## Evidence sources (rows with verdict)
 
 | Source | Count |
 |---|---:|
-| name-pattern | 561 |
+| name-pattern | 573 |
 | data-pattern | 239 |
 | driver-sig | 165 |
 | TCRF | 84 |
@@ -41,15 +41,15 @@ Strength ladder (strongest first):
 | File | Supported | Contradicted | Pending | Total |
 |---|---:|---:|---:|---:|
 | `working/core/game.asm` | 19 | 0 | 1 | 20 |
-| `working/core/zeliad.asm` | 37 | 0 | 18 | 55 |
+| `working/core/zeliad.asm` | 38 | 0 | 17 | 55 |
 | `working/drivers/gmcga.asm` | 16 | 0 | 1 | 17 |
 | `working/drivers/gmega.asm` | 13 | 0 | 1 | 14 |
 | `working/drivers/gmhgc.asm` | 19 | 0 | 1 | 20 |
 | `working/drivers/gmmcga.asm` | 15 | 0 | 3 | 18 |
 | `working/drivers/gmtga.asm` | 16 | 0 | 2 | 18 |
 | `working/drivers/stdply.asm` | 90 | 0 | 1 | 91 |
-| `working/drivers/stick.asm` | 20 | 0 | 17 | 37 |
-| `working/zelres1/code/100OPDMO.asm` | 16 | 0 | 28 | 44 |
+| `working/drivers/stick.asm` | 28 | 0 | 9 | 37 |
+| `working/zelres1/code/100OPDMO.asm` | 18 | 0 | 26 | 44 |
 | `working/zelres1/code/101GDEGA.asm` | 19 | 0 | 5 | 24 |
 | `working/zelres1/code/102GDCGA.asm` | 19 | 0 | 3 | 22 |
 | `working/zelres1/code/103GDHGC.asm` | 21 | 0 | 3 | 24 |
@@ -65,7 +65,7 @@ Strength ladder (strongest first):
 | `working/zelres2/code/201SELCT.asm` | 13 | 0 | 18 | 31 |
 | `working/zelres2/code/202GFEGA.asm` | 33 | 0 | 4 | 37 |
 | `working/zelres2/code/203GFCGA.asm` | 31 | 0 | 9 | 40 |
-| `working/zelres2/code/204GFHGC.asm` | 34 | 0 | 10 | 44 |
+| `working/zelres2/code/204GFHGC.asm` | 35 | 0 | 9 | 44 |
 | `working/zelres2/code/205GFTGA.asm` | 35 | 0 | 11 | 46 |
 | `working/zelres2/code/206GFMCA.asm` | 44 | 0 | 10 | 54 |
 | `working/zelres2/code/207MOLE.asm` | 64 | 0 | 11 | 75 |

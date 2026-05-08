@@ -467,6 +467,72 @@ NAME_PATTERNS = [
     (re.compile(r'^bres_'),
      [[r'\binc\b', r'\bdec\b', r'\badd\b', r'\bsub\b', r'\bcmp\b']],
      'bres_: Bresenham line setup/step'),
+
+    # Display / dispatch
+    (re.compile(r'^disp_|^display_|_display$'),
+     [[r'\bcmp\b', r'\bcall\b', r'\bjmp\b', r'\bmov\b']],
+     'display/disp: dispatch or screen op'),
+
+    # File I/O (DOS INT 21h)
+    (re.compile(r'^fio_|^file_|_fio$|_file$'),
+     [[r'\bint\s+21h\b', r'\bmov\s+ah\s*,', r'\bcall\b']],
+     'file I/O: DOS INT 21h or call'),
+
+    # Decompression
+    (re.compile(r'^dcmp_|_dcmp$|^decompress|_decompress$'),
+     [[r'\blods[bw]\b', r'\bstos[bw]\b', r'\brep\s+(?:movs|stos)[bw]\b',
+       r'\bshr\b', r'\band\b', r'\bcmp\b']],
+     'decompression: byte stream + bit ops'),
+
+    # Joystick
+    (re.compile(r'^joy_|^joystick_|_joy$|_joystick$'),
+     [[r'\bin\s+al\b', r'\bint\s+15h\b', r'\bcmp\b',
+       r'\bmov\b']],
+     'joystick: port read or BIOS call'),
+
+    # ISR / interrupt handler
+    (re.compile(r'^int_|_int_|_isr$|^isr_|^interrupt_|_interrupt$|_handler$'),
+     [[r'\biret\b', r'\bret(?:n|f)?\b']],
+     'ISR/handler: must end with iret/retn'),
+
+    # bitplane / bitmap conversion
+    (re.compile(r'^bitplane_|_bitplane$|_bitmap$|^bitmap_|_to_pixels$|_to_bitmap$'),
+     [[r'\bshr\b', r'\bshl\b', r'\band\b', r'\bor\b', r'\bxor\b']],
+     'bitplane/bitmap: bit-shift conversions'),
+
+    # restore_ procs
+    (re.compile(r'^restore_|_restore$'),
+     [[r'\brep\s+movs[bw]\b', r'\bmovs[bw]\b',
+       r'\bmov\b', r'\bcall\b']],
+     'restore_*: restore via copy or memory write'),
+
+    # narration / chapter / scene (display content)
+    (re.compile(r'^(narr|narration|chap|scene)_|_narr$|_chap$|_scene$'),
+     [[r'\bcall\b', r'\bmov\b']],
+     'narration/scene: dispatch + state setup'),
+
+    # ctrl_ control
+    (re.compile(r'^ctrl_|_ctrl$'),
+     [[r'\bint\b', r'\biret\b', r'\bret(?:n|f)?\b']],
+     'ctrl handler: interrupt or return'),
+
+    # Generic *_proc and *_main2/3
+    (re.compile(r'_proc$|_main\d+$|_main_\w+$'),
+     [[r'\bret(?:n|f)?\b']],
+     'sub-proc/main variant: must return'),
+
+    # CHUNK/file-basename main entries (gmcga, stdply, game, zeliad,
+    # stick, plus 3-digit-prefixed chunks like 100OPDMO).
+    # These are entry points -- structurally just sanity check (return).
+    (re.compile(r'^(gm[a-z]+|stdply|stick|game|zeliad|opdmo)$'),
+     [[r'\bret(?:n|f)?\b', r'\bjmp\b', r'\bint\s+20h\b']],
+     'driver/exec main entry'),
+
+    # Numbered chunk main entries: 100OPDMO -> opening_scene_main, etc.
+    # Pattern: ^[a-z]+_(?:scene|module|chunk)_main$
+    (re.compile(r'_scene_main$|_chunk_main$|_module_main$'),
+     [[r'\bret(?:n|f)?\b', r'\bcall\b']],
+     'chunk/scene main: entry + return'),
 ]
 
 

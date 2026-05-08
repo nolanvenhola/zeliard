@@ -41,7 +41,7 @@
 - [x] L738   `str_no`  *(data)*
 - [x] L754   `find_colon_in_line`  *(proc)*
 - [x] L779   `load_driver_file`  *(proc)*
-- [ ] L819   `display_file_error`  *(proc)*
+- [x] L819   `display_file_error`  *(proc)*
 - [x] L882   `set_video_mode`  *(proc)*
 - [x] L888   `video_mode_table`  *(data)*
 - [ ] L958   `hgc_crt_params`  *(data)*
@@ -308,29 +308,29 @@
 - [x] L357   `pause_key_state_lbl`  *(label byte)*
 - [x] L423   `process_scancode`  *(proc)*
 - [ ] L637   `dispatch_extended_key`  *(proc)*
-- [ ] L704   `calibrate_joystick`  *(proc)*
+- [x] L704   `calibrate_joystick`  *(proc)*
 - [x] L761   `calc_joystick_deadzone`  *(proc)*
 - [ ] L923   `draw_screen_element`  *(proc)*
 - [x] L1000  `wait_for_digit_or_esc`  *(proc)*
-- [ ] L1038  `joy_calibrate_request`  *(proc)*
+- [x] L1038  `joy_calibrate_request`  *(proc)*
 - [ ] L1154  `enter_pause_menu_and_draw`  *(proc)*
 - [x] L1158  `draw_pause_menu_box`  *(proc)*
 - [ ] L1170  `restore_pause_menu_bg`  *(proc)*
 - [x] L1178  `flush_dos_kbd_buffer`  *(proc)*
 - [x] L1268  `scan_data_lbl`  *(label word)*
 - [ ] L1420  `herc_seg_table`  *(data)*
-- [ ] L1516  `fio_open_savefile_retry`  *(proc)*
+- [x] L1516  `fio_open_savefile_retry`  *(proc)*
 - [x] L1657  `fio_filename_lbl`  *(label byte)*
 - [x] L1660  `fio_disk_msg_lbl`  *(label byte)*
 - [x] L1666  `fio_slot_flag_lbl`  *(label byte)*
 - [x] L1669  `fio_seek_buf_lbl`  *(label byte)*
 - [x] L1672  `fio_default_name_lbl`  *(label byte)*
-- [ ] L1675  `fio_read_write_block`  *(proc)*
-- [ ] L1689  `fio_close_file`  *(proc)*
+- [x] L1675  `fio_read_write_block`  *(proc)*
+- [x] L1689  `fio_close_file`  *(proc)*
 - [ ] L1713  `fio_load_decompressed`  *(proc)*
-- [ ] L1751  `dcmp_loop_anchor_a`  *(proc)*
-- [ ] L1819  `dcmp_loop_anchor_b`  *(proc)*
-- [ ] L1906  `dcmp_loop_anchor_c`  *(proc)*
+- [x] L1751  `dcmp_loop_anchor_a`  *(proc)*
+- [x] L1819  `dcmp_loop_anchor_b`  *(proc)*
+- [x] L1906  `dcmp_loop_anchor_c`  *(proc)*
 - [x] L2033  `savefile_desc_ptr`  *(data)*
 - [x] L2034  `file_read_buf_ptr`  *(data)*
 - [ ] L2035  `file_read_count`  *(data)*
@@ -343,7 +343,7 @@
 - [ ] L488   `char_render_proc`  *(proc)*
 - [x] L543   `animate_scanline`  *(proc)*
 - [x] L591   `timer_wait_loop`  *(proc)*
-- [ ] L604   `interrupt_handler_cascade`  *(proc)*
+- [x] L604   `interrupt_handler_cascade`  *(proc)*
 - [x] L653   `scene_transition_wait`  *(proc)*
 - [x] L679   `credits_scroll_display`  *(proc)*
 - [ ] L999   `story_scene_timer_loop`  *(proc)*
@@ -351,7 +351,7 @@
 - [ ] L1058  `script_interpreter`  *(proc)*
 - [x] L1357  `calc_text_width`  *(proc)*
 - [x] L1414  `animate_scanline_alt`  *(proc)*
-- [ ] L1471  `decompress_image`  *(proc)*
+- [x] L1471  `decompress_image`  *(proc)*
 - [x] L1475  `rle_unpack_core`  *(proc)*
 - [x] L1564  `fill_buffer`  *(proc)*
 - [x] L1600  `palette_lookup`  *(proc)*
@@ -1047,7 +1047,7 @@
 - [ ] L1980  `frame_row_driver`  *(proc)*
 - [ ] L2176  `bg_restore_dispatch`  *(proc)*
 - [x] L2196  `save_bg_rows`  *(proc)*
-- [ ] L2224  `restore_bg_rows`  *(proc)*
+- [x] L2224  `restore_bg_rows`  *(proc)*
 - [x] L2261  `clear_sprite_cache_block`  *(proc)*
 - [x] L2391  `load_bg_to_cache`  *(proc)*
 - [x] L2540  `anim_refresh_tile`  *(proc)*
