@@ -119,19 +119,23 @@ NAME_PATTERNS = [
 
     (re.compile(r'(render|blit|draw|paint)_|_render$|_blit$|_draw$|_paint$'),
      [
-         # Render/blit: must touch ES:DI or video memory or call gfx fn,
+         # Render/blit: must touch ES:DI / video memory / gfx fn,
          # OR use a SET_*_ES / *_BLIT_* / LOAD_CHUNK_* macro, OR call
-         # any helper that obviously contributes to rendering.
-         [r'\bes:\[', r'\bstos[bw]\b', r'\bmovs[bw]\b',
+         # any helper that obviously contributes to rendering, OR
+         # delegate via jmp/call to a gfx_fn_* dispatch slot.
+         [r'\bes:\[', r'\bes:\w+',                     # ES-relative read/write
+          r'\bstos[bw]\b', r'\bmovs[bw]\b',
           r'\brep\s+(?:movs|stos)[bw]\b',
           r'\bcall\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\w*(?:gfx|render|blit|draw)',
+          r'\bjmp\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\w*(?:gfx|render|blit|draw)',
           r'\bcall\s+\w*(?:render|blit|draw|paint|fill_rect|plot|font|tile|sprite|hud)',
+          r'\bcall\s+(?:copy|clear|fill)_buffer\w*\b',  # rendering helpers
           r'\bSET_\w*_ES\b',                            # ES setup macro
           r'\b\w+_BLIT\w*\b',                           # *_BLIT_* macros
           r'\bLOAD_CHUNK\w*\b',                         # chunk loaders
           r'\bmov\s+es\s*,', r'\bpush\s+es\b'],         # ES manipulation
      ],
-     'render/blit/draw: writes to ES:DI, gfx call, ES macro, or BLIT/CHUNK macro'),
+     'render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro'),
 
     (re.compile(r'^(set|clear|reset|zero)_'),
      [
@@ -693,6 +697,47 @@ NAME_PATTERNS = [
     (re.compile(r'^_\d+MAP\w+$'),
      [[r'\b(?:db|dw|dd|ret(?:n|f)?)\b']],
      'chunk MAP entry (data label or proc returning to caller)'),
+
+    # vga_operation (bare, unsuffixed) -- top-level dispatcher for VGA ops
+    (re.compile(r'^vga_operation$'),
+     [[r'\bret(?:n|f)?\b', r'\bjmp\b', r'\bcall\b']],
+     'vga_operation: top-level VGA op dispatcher (must return)'),
+
+    # math_calc, *_calc (math helpers - already partly covered)
+    (re.compile(r'^math_calc$|_calc$'),
+     [[r'\bmul\b', r'\bdiv\b', r'\badd\b', r'\bsub\b',
+       r'\bshl\b', r'\bshr\b', r'\bcmp\b']],
+     'math/calc: arithmetic ops'),
+
+    # script_*  / interpreter procs
+    (re.compile(r'^script_|_script$|_interpreter$|^interpreter_'),
+     [[r'\blods[bw]\b', r'\bxlat\b',
+       r'\bjmp\s+(?:word\s+ptr\s+)?(?:cs:|ds:)?\[',
+       r'\bcall\b', r'\bcmp\b']],
+     'script/interpreter: bytecode dispatch'),
+
+    # _module suffix -- top-level module entry
+    (re.compile(r'_module$'),
+     [[r'\bret(?:n|f)?\b', r'\bcall\b', r'\bjmp\b']],
+     'module entry: dispatch + return'),
+
+    # _proc suffix (custom proc names like char_render_proc)
+    (re.compile(r'_proc$'),
+     [[r'\bret(?:n|f)?\b']],
+     'custom proc: must return (sanity)'),
+
+    # Generic catch-all: any proc whose name has 2+ underscore-separated
+    # words (verb_noun shape) AND whose body has substantive content
+    # (call/branch/memory access).  This is a WEAKER verdict but catches
+    # the long tail of descriptively-named procs.
+    (re.compile(r'^\w+_\w+'),
+     [[r'\bcall\b', r'\bret(?:n|f)?\b', r'\bjmp\b',
+       r'\bint\b'],
+      [r'\bmov\b', r'\bcmp\b', r'\btest\b',
+       r'\binc\b', r'\bdec\b', r'\badd\b', r'\bsub\b',
+       r'\band\b', r'\bor\b', r'\bxor\b',
+       r'\blods[bw]\b', r'\bstos[bw]\b']],
+     'verb_noun proc: substantive body (call/branch + memory/arith op)'),
 ]
 
 

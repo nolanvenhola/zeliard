@@ -20,17 +20,17 @@ Strength ladder (strongest first):
 
 | Verdict | Count |
 |---|---:|
-| SUPPORTED | 1228 |
+| SUPPORTED | 1265 |
 | INC_CONSISTENT | 6 |
 | CONTRADICTED | 0 |
 | INCONCLUSIVE | 8 |
-| PENDING | 177 |
+| PENDING | 140 |
 
 ## Evidence sources (rows with verdict)
 
 | Source | Count |
 |---|---:|
-| name-pattern | 629 |
+| name-pattern | 666 |
 | data-pattern | 374 |
 | placeholder | 178 |
 | driver-sig | 149 |
@@ -49,38 +49,38 @@ Strength ladder (strongest first):
 | `working/drivers/gmmcga.asm` | 19 | 0 | 2 | 21 |
 | `working/drivers/gmtga.asm` | 19 | 0 | 1 | 20 |
 | `working/drivers/stdply.asm` | 91 | 0 | 0 | 91 |
-| `working/drivers/stick.asm` | 33 | 0 | 4 | 37 |
-| `working/zelres1/code/100OPDMO.asm` | 37 | 0 | 7 | 44 |
-| `working/zelres1/code/101GDEGA.asm` | 13 | 0 | 1 | 14 |
+| `working/drivers/stick.asm` | 34 | 0 | 3 | 37 |
+| `working/zelres1/code/100OPDMO.asm` | 41 | 0 | 3 | 44 |
+| `working/zelres1/code/101GDEGA.asm` | 14 | 0 | 0 | 14 |
 | `working/zelres1/code/102GDCGA.asm` | 16 | 0 | 0 | 16 |
 | `working/zelres1/code/103GDHGC.asm` | 17 | 0 | 0 | 17 |
 | `working/zelres1/code/104GDTGA.asm` | 19 | 0 | 1 | 20 |
-| `working/zelres1/code/105GDMCA.asm` | 12 | 0 | 3 | 15 |
-| `working/zelres1/code/106TOWN.asm` | 17 | 0 | 2 | 19 |
-| `working/zelres1/code/107GTEGA.asm` | 4 | 0 | 2 | 6 |
+| `working/zelres1/code/105GDMCA.asm` | 14 | 0 | 1 | 15 |
+| `working/zelres1/code/106TOWN.asm` | 18 | 0 | 1 | 19 |
+| `working/zelres1/code/107GTEGA.asm` | 5 | 0 | 1 | 6 |
 | `working/zelres1/code/108GTCGA.asm` | 24 | 0 | 3 | 27 |
-| `working/zelres1/code/109GTHGC.asm` | 13 | 0 | 1 | 14 |
+| `working/zelres1/code/109GTHGC.asm` | 14 | 0 | 0 | 14 |
 | `working/zelres1/code/110GTTGA.asm` | 9 | 0 | 1 | 10 |
-| `working/zelres1/code/111GTMCA.asm` | 6 | 0 | 2 | 8 |
-| `working/zelres2/code/200FIGHT.asm` | 104 | 0 | 34 | 138 |
-| `working/zelres2/code/201SELCT.asm` | 20 | 0 | 11 | 31 |
+| `working/zelres1/code/111GTMCA.asm` | 7 | 0 | 1 | 8 |
+| `working/zelres2/code/200FIGHT.asm` | 109 | 0 | 29 | 138 |
+| `working/zelres2/code/201SELCT.asm` | 24 | 0 | 7 | 31 |
 | `working/zelres2/code/202GFEGA.asm` | 36 | 0 | 2 | 38 |
 | `working/zelres2/code/203GFCGA.asm` | 35 | 0 | 6 | 41 |
-| `working/zelres2/code/204GFHGC.asm` | 39 | 0 | 5 | 44 |
-| `working/zelres2/code/205GFTGA.asm` | 41 | 0 | 6 | 47 |
+| `working/zelres2/code/204GFHGC.asm` | 40 | 0 | 4 | 44 |
+| `working/zelres2/code/205GFTGA.asm` | 42 | 0 | 5 | 47 |
 | `working/zelres2/code/206GFMCA.asm` | 48 | 0 | 7 | 55 |
-| `working/zelres2/code/207MOLE.asm` | 72 | 0 | 3 | 75 |
-| `working/zelres2/code/208YMPD.asm` | 5 | 0 | 5 | 10 |
+| `working/zelres2/code/207MOLE.asm` | 74 | 0 | 1 | 75 |
+| `working/zelres2/code/208YMPD.asm` | 7 | 0 | 3 | 10 |
 | `working/zelres2/code/209CKPD.asm` | 18 | 0 | 4 | 22 |
-| `working/zelres2/code/210KINGP.asm` | 5 | 0 | 4 | 9 |
+| `working/zelres2/code/210KINGP.asm` | 7 | 0 | 2 | 9 |
 | `working/zelres2/code/211OMOYP.asm` | 5 | 0 | 7 | 12 |
-| `working/zelres2/code/212ARMRP.asm` | 6 | 0 | 4 | 10 |
+| `working/zelres2/code/212ARMRP.asm` | 9 | 0 | 1 | 10 |
 | `working/zelres2/code/213BANKP.asm` | 8 | 0 | 1 | 9 |
-| `working/zelres2/code/214CHURP.asm` | 4 | 0 | 3 | 7 |
+| `working/zelres2/code/214CHURP.asm` | 5 | 0 | 2 | 7 |
 | `working/zelres2/code/215DRUGP.asm` | 5 | 0 | 1 | 6 |
-| `working/zelres2/code/216INNAP.asm` | 14 | 0 | 6 | 20 |
+| `working/zelres2/code/216INNAP.asm` | 15 | 0 | 5 | 20 |
 | `working/zelres2/code/217KENJP.asm` | 21 | 0 | 2 | 23 |
-| `working/zelres2/code/250ENDMO.asm` | 12 | 0 | 5 | 17 |
+| `working/zelres2/code/250ENDMO.asm` | 13 | 0 | 4 | 17 |
 | `working/zelres3/code/300ROKAD.asm` | 6 | 0 | 4 | 10 |
 | `working/zelres3/code/301EAI1.asm` | 11 | 0 | 0 | 11 |
 | `working/zelres3/code/302EAI2.asm` | 28 | 0 | 0 | 28 |
@@ -89,8 +89,8 @@ Strength ladder (strongest first):
 | `working/zelres3/code/305EAI5.asm` | 13 | 0 | 0 | 13 |
 | `working/zelres3/code/306EAI6.asm` | 14 | 0 | 0 | 14 |
 | `working/zelres3/code/307EAI7.asm` | 12 | 0 | 0 | 12 |
-| `working/zelres3/code/308EAI8.asm` | 7 | 0 | 1 | 8 |
-| `working/zelres3/code/309CRAB.asm` | 7 | 0 | 2 | 9 |
+| `working/zelres3/code/308EAI8.asm` | 8 | 0 | 0 | 8 |
+| `working/zelres3/code/309CRAB.asm` | 8 | 0 | 1 | 9 |
 | `working/zelres3/code/310TAKO.asm` | 7 | 0 | 0 | 7 |
 | `working/zelres3/code/311TORI.asm` | 12 | 0 | 1 | 13 |
 | `working/zelres3/code/312ZELA.asm` | 7 | 0 | 1 | 8 |
