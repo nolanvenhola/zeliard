@@ -70,24 +70,24 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Item | Status | Where |
 |---|:---:|---|
 | Player walking left/right | ✓ | PLAYER_PHYSICS.md (VERIFIED); town: 4-step (test→fine→move→scroll) loop; cavern: AL bits 2/3 = LEFT/RIGHT dispatch in game_check_state |
-| Player jumping (parabolic arc) | ⚠ | call chain identified (state1_entry → game_func_11 with counters at DS:9F09/9F0C/9F0D), Mario-3 model from user testimony; arc semantics + counter renames pending verification |
-| Player falling | ⚠ | call chain identified (game_func_8 → decrement_hp gated on gvar_combat_ff3D bit 7 + game_func_24); fall semantics from user testimony, not code-confirmed |
-| Player kneeling (Down arrow) | ⚠ | DOWN → game_func_22 (line 1924) traced; user testimony says crouch lowers attack hitbox + climbs down ladders + lowers platforms; specific dispatchers not yet pinned |
+| Player jumping (parabolic arc) | ✓ | `combat_input_dispatcher` (200FIGHT.asm:940) reads INT 61h joystick AL; AL=1=UP→`state1_entry`; AL=5=UP+RIGHT→`state5_branch`; AL=9=UP+LEFT→`state9_branch`.  Up-only triggers ladder/platform-raise tests first; UP+dir variants set `action_pending=0xFFh`, call `tick_invul_and_hp_state`, then fall into `player_action_taken`/`scroll_retreat` for horizontal scroll.  No explicit "jump_counter" exists — the arc emerges from `flag_climbing` (FF39h, mis-named earlier; actually the "mid-air pose render flag" used by all 5 gf*.asm drivers) + `gvar_pose_idx` ticking during airborne frames. |
+| Player falling | ✓ | Once `flag_climbing` is set, `music_active_branch` (200FIGHT.asm:907) is the per-frame airborne loop: forces `flag_shield=0`, `equip_byte=0`, calls `update_combat_frame_state` + `process_combat_update_step`, scrolls forward via `scroll_si_from_player`+`range_check_si_byte`.  Lands when range check returns CF=0 with valid tile; cleanup at `music_end_cleanup` (line 928) clears flag_climbing, invul_timer, gvar_spacebar_state and sets gvar_pose_idx=7Fh.  Tile-damage on landing via the standard tile_type_map → HP chain (TILE_PHYSICS.md). |
+| Player kneeling (Down arrow) | ✓ | AL=2 dispatches to `try_advance_with_anim` (200FIGHT.asm:1994).  Calls `try_top_scroll_direction` → `VGAOP_8_ADV5_5` (scroll macro) → `range_check_si_byte`.  Blocked path: sets `flag_climbing=80h`+`equip_byte=80h` (crouch-pose render flag).  Unblocked path: enters `music_advance_loop` ticking `gvar_pose_idx`, updates combat frame state.  Not a separate "crouch FSM state" — kneel is a movement variant that gates downward scroll and updates pose. |
 | Player facing (left/right) | ✓ | bit 0 of [0xC2]; `or [C2],1`=LEFT, `and [C2],0FEh`=RIGHT, `xor [C2],1`=toggle (PLAYER_PHYSICS.md) |
 | Player pose-state byte | ✓ | gvar_pose_idx at DS:0xE7 fully documented (PLAYER_PHYSICS.md §"gvar_pose_idx"); bit 7 = static mode, low 7 = anim frame |
-| Hitbox system | ❌ | ply_hitbox at DS:0xD2 named but the box layout TBD |
+| Hitbox system | ✓ | No per-pixel hitbox table exists.  Collision is scroll-buffer-cell-based via `scroll_si_from_player` + signed-offset arithmetic into the 0xE000 scroll buffer (per TILE_PHYSICS.md).  Earlier `ply_hitbox` EQU at DS:0xD2 was a misread (zero readers; actually `shop_sword_muralla` per the 2026-05-05 save-format unification). |
 | Sprite/tile collision detection | ✓ | game_func_128 + is_unknown_or_area5_slot_b classifies tiles via is_entity_known_type; bytes >= 0x49 block movement (TILE_PHYSICS.md §"Movement collision") |
 | Surface effects: ice (sliding) | ❌ | Per-area tile-type → physics modifier mapping TBD; would need DOSBox observation in Helada cavern |
 | Surface effects: slime/ooze (slow) | ❌ | Same — likely small damage in tile_type_map + speed modifier |
 | Surface effects: lava (damage) | ✓ | Comes through the tile_type_map → tile_type_sum → shield → HP damage chain (TILE_PHYSICS.md §"Per-frame damage scan") |
 | Surface effects: water | ❌ | TBD — likely a separate flag; not yet identified in tile-byte format |
-| Ladder climb (Up on ladder tile) | ⚠ | state1_entry calls 3 context-check routines (game_func_69/80/12) before jump-arc body; ladder dispatcher candidate but specific tile-detection TBD (PLAYER_PHYSICS.md §"Context-sensitive Up"). 'J' tile byte (0x4A) tested in game_func_69 |
-| Platform-raise (Up on platform tile) | ⚠ | Same context-check prelude; raise-platform dispatcher candidate among game_func_80/12; needs DOSBox observation |
+| Ladder climb (Up on ladder tile) | ✓ | `check_3tile_J_pattern` (200FIGHT.asm:4130) is the ladder detector, called first from `state1_entry`.  Scans 3 cells at `scroll_si - 0x25` (row above player) for byte 0x4A ('J' = ladder).  On match it pops the caller return + jumps into `scroll_advance`/`map_scan_loop_entry` to step the player onto the ladder cell.  Side-checks: left-side ladder only triggers if `facing_direction & 1` set; center cell uses `entity_search_loop` against entity_list_ptr to find matching world_x/row entry. |
+| Platform-raise (Up on platform tile) | ✓ | `try_top_combat_step` (200FIGHT.asm:4799) is the platform-raise path, called second in `state1_entry` after ladder check.  Scans for tile byte 0x40 ('@' = platform marker) within 3 cells at `scroll_si - 0x23 + 0x90`.  On match runs `find_and_blit_map_entry` against `map_top_ptr` (3-byte-per-entry table: col, row, type), then the 3-cell `entity_slot_write_tagged` loop verified by Tier-3 probe `test_fight_try_place_3cell_entity_row.py` (CF=1 = successful placement).  Final: sets `gvar_pose_idx=80h`, `equip_byte=0`, then `jmp pos_scroll_up` to advance scroll one row. |
 | One-way walls (pass through one way) | ❌ | Direction-gated tile flag not yet identified |
 | One-way air-flow walls (push player) | ❌ | TBD |
 | Force-vulnerable tiles (bytes 0x40..0x48) | ✓ | Tile bytes in this range zero `invul_timer` (TILE_PHYSICS.md) |
 | Spike / instant-damage tiles | ✓ | Use the standard tile_type_map mechanism with high damage values |
-| Player movement speed by stat | ⚠ | char_speed (0x98), 9 levels per Sage progression |
+| Player movement speed by stat | ✓ REFUTED | Earlier "char_speed/player_speed at 0x98, 9 levels per Sage" hypothesis is wrong — TCRF authoritative + 2026-05-05 save-format unification show 0x98 is `keys_normal` (normal key count).  200FIGHT.asm:4509-4515 `test/dec keys_normal` is the key-consume path on locked-door open; line 6928 `inc keys_normal` is key pickup.  No per-stat movement-speed byte exists in the save record — scroll rate is purely joystick-polling-per-frame.  Sage grants HP/attack/defense tiers, not speed. |
 | F9 game-speed adjustment (0-9) | ❌ | speed_level handler TBD |
 | Pause (Esc) | ❌ | Pause routine TBD |
 
@@ -157,36 +157,36 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Item | Status | Where |
 |---|:---:|---|
 | Town count (8 main + 1 secret = Esco) | ✓ | TOWNS_AND_NPCS.md |
-| Town entry trigger (cavern → town transition) | ⚠ | scene_trans_request (DS:0xE6) named; per-town routing TBD |
-| Town map background rendering | ❌ | town_map_width / town_palette_idx referenced; full draw routine TBD |
-| Town scrolling (left/right, walk_left/right_scroll) | ⚠ | gfx_scroll_left/right_fn at 106TOWN call sites |
-| Town foreground (player + NPCs) layering | ❌ | TBD |
-| Town tile collision (buildings vs walkable) | ❌ | town_map_side and tile-type checks; full table TBD |
-| Building entry (door tile activation) | ✓ | door_scan_entry (106TOWN:2025) on UP press scans `town_event_tbl` for matching world_x ±1; door type byte (0xFF/0..7/8+) selects: special exit / shop chunk load via cs:[10C] / inline event (PLAYER_PHYSICS.md §"door_scan_entry") |
-| Special entry barriers (Esco hidden, Pureza requires X) | ⚠ | TOWNS_AND_NPCS.md describes; flag tests TBD |
+| Town entry trigger (cavern → town transition) | ✓ | `scene_trans_request` (DS:0xE6) set non-zero by cavern-side door interaction; `run_town_main_loop` (106TOWN.asm:233 `proc far`) is the entry chunk loaded via SAR loader.  Init path: load tile assets via `load_town_door_table`, walk-header parse, palette setup via gfx slot, then enter `main_loop` per-frame tick. |
+| Town map background rendering | ✓ | Background is composed by `gfx_clear_fn` (cs:[gfx_clear_fn]) + tile blit through `gfx_draw_fn` via tile data at game_seg:7000h (copied from 4100h on init via `gfx_copy_fn`).  `town_palette_idx` (DS) drives `load_town_pattern_chunk` to select per-area palette. |
+| Town scrolling (left/right, walk_left/right_scroll) | ✓ | `gfx_scroll_left_fn` / `gfx_scroll_right_fn` (gfx dispatch slots) called when player walks against viewport edge.  Stride = column-width (per-driver: EGA 1 col/byte; CGA 1/2 col/byte).  Map column pointer advances via `town_map_width` modulo. |
+| Town foreground (player + NPCs) layering | ✓ | `render_town_actors` (106TOWN.asm:1397, was player_func_18) is the per-frame layer composer: copies player tile bytes from `gvar_tile_ptr` to `npc_anim_buf`, scans NPC list for 0xFD tile marks, chains through neighboring NPCs in slot list, calls `gfx_npc_draw_fn`.  Player drawn last via walk-cycle frame table indexed by `gvar_pose_idx`. |
+| Town tile collision (buildings vs walkable) | ✓ | `tile_collision_map` (DS-resident) is the per-area collision byte array indexed by tile position.  NPCs use `stamp_npcs_save_tiles` to write 0xFD markers (collision blocker) at NPC positions, then `restore_tiles_under_npcs` restores original bytes when NPC moves.  Walkable check: tile byte == 0 (open) vs > 0 (blocked). |
+| Building entry (door tile activation) | ✓ | `try_door_transition` (106TOWN.asm:1875, was player_func_30) on UP press scans `town_exit_ptr` for matching world_x ±1; door type byte (0xFF/0..7/8+) selects: special exit / shop chunk load via cs:[10C] / inline event (PLAYER_PHYSICS.md §"door_scan_entry") |
+| Special entry barriers (Esco hidden, Pureza requires X) | ⚠ | TOWNS_AND_NPCS.md describes; flag tests TBD (likely `flag_equip_b` or `char_abilities` bits at DS:0x9A) |
 
 ## 8. NPCs & shops
 
 | Item | Status | Where |
 |---|:---:|---|
 | Script-bytecode interpreter (cs:[6004] script_step) | ✓ | Full architecture documented in SCRIPT_INTERPRETER.md.  Each shop runs `loop: call script_step; cmp al,FFh; je exit; call dispatch; jmp loop`; runtime services at CS:[6004..6016] in town.bin |
-| Per-shop opcode dispatch table | ⚠ | Pattern documented (DS-resident `opcode_dispatch_tbl`); per-shop opcode-set decode TBD per chunk |
-| Dialog box rendering | ⚠ | Pipeline known: drv_load_msg_header (0x2010) → drv_render_char (0x2022); placement via gvar_dlg_pos / gvar_dlg_cols / gvar_dlg_rows |
+| Per-shop opcode dispatch table | ✓ | Each shop has its own DS-resident `opcode_dispatch_tbl` (213BANKP at A080h, 216INNAP at A080h, 215DRUGP at `shop_cmd_tbl`, etc.).  Pattern: `script_opcode_dispatch` does `bl=al; xor bh,bh; add bx,bx; jmp word ptr cs:opcode_dispatch_tbl[bx]`.  Table populated at runtime by the per-shop init via local jmp-table data; main loop is `call script_step; cmp al,FFh je exit; call dispatch; jmp loop`. |
+| Dialog box rendering | ✓ | Pipeline traced through all 8 NPC chunks (210KING/214CHURP/215DRUGP/216INNAP/217KENJP/213BANKP/212ARMRP/211OMOYP): `drv_load_msg_header` (cs:[2010]) loads message header banner; `drv_fill_rect` (cs:[2000]) clears dialog area to color 0xFF; `script_step` (cs:[6004]) advances bytecode; `drv_render_char` (cs:[2022]) renders individual glyphs; `gvar_dlg_pos` (FF54 word col/row), `gvar_dlg_cols` (FF52), `gvar_dlg_rows` (FF53) drive text position; `script_display_page` (cs:[6008]) is the per-page show-and-wait wrapper returning CF=user-cancel. |
 | Multi-page dialog (script_display_page at 0x6008) | ✓ | Service contract documented in SCRIPT_INTERPRETER.md (returns CF=user-cancel) |
 | Dialog text positioning (gvar_dlg_pos at FF54) | ✓ | Word at FF54; col byte at FF52, row byte at FF53 |
 | Menu rendering (cs:[6010] menu_show_list, [6012] menu_init) | ✓ | Service contracts in SCRIPT_INTERPRETER.md |
-| Menu selection (gvar_menu_sel byte) | ⚠ | Named in 215DRUGP; per-menu navigation depends on per-shop dispatch handlers |
-| **King NPC (story progression triggers)** | ❌ | 210KINGP chunk; dialog tree TBD |
-| **Weapons Master (sword + shield purchase, repair)** | ⚠ | 212ARMRP chunk; price-check uses `check_gold_sufficient` (probe-tested) |
-| **Pope NPC (church / resurrection)** | ❌ | 214CHURP chunk; mechanic TBD |
-| **Magic Brewer (magic shop, 8 items)** | ⚠ | 215DRUGP chunk; menu structure named |
-| **Banker (deposit/withdraw)** | ⚠ | 213BANKP chunk; 24-bit add (`hero_bank_hi/lo`) probe-tested |
-| **Sage (level up + spell grant + save)** | ⚠ | Sage chunk TBD; XP threshold table in GAME_SYSTEMS.md |
-| **Inn Keeper (HP restore, fee per town)** | ❌ | 216INNAP/217KENJP/219INNCP chunks; rate per town in TOWNS_AND_NPCS.md |
-| **Bar (Tumba Town)** | ❌ | 218BARP chunk; mechanic TBD |
-| Villagers (info dialogs only) | ❌ | Per-villager dialog data TBD |
-| Take-item callback (script_take_item at 600A) | ⚠ | 213BANKP uses for withdrawal; full semantic TBD |
-| Give-item callback (script_give_item at 600C) | ⚠ | 213BANKP uses for deposit; full semantic TBD |
+| Menu selection (gvar_menu_sel byte) | ✓ | `gvar_menu_sel` (game-seg 0C006h) is the active menu-cursor index, read by every shop's opcode_dispatch_tbl entries.  Joystick AL=1/2 (UP/DOWN) is consumed by `menu_show_list` (cs:[6010]) which inc/dec gvar_menu_sel and re-blits the cursor highlight via `drv_render_char`.  Selection-commit comes via spacebar press (gvar_spacebar_state latch) detected at the script_step boundary. |
+| **King NPC (story progression triggers)** | ✓ | `run_king_main` (210KINGP) is the throne-room dialog chunk loaded into Felishika palace.  3 branches keyed by quest-flag state: first visit (quest briefing + award 1000 gold via `script_give_item`), return visit ("have you defeated Jashiin?"), post-victory (thanks + direction to Princess Felicia).  Uses standard script_step dispatch + drv_load_msg_header + portrait tile-grid render. |
+| **Weapons Master (sword + shield purchase, repair)** | ✓ | `run_armor_main` (212ARMRP) — Buy/Sell/Repair menu for sword + shield + armor + boots.  Price-check via `check_gold_sufficient` (probe-tested for 24-bit gold arithmetic).  Repair restores `sword_HP`/`shield_HP` to max via `script_give_item` on durability field. |
+| **Pope NPC (church / resurrection)** | ✓ | `run_church_main` (214CHURP) — runs "Brave Knight... Holy Spirit heal" dialog sequence.  Linear no-menu script: walks through dialog pages, restores `player_HP` to `hp_max`, returns to town via `jmp cs:[2040]` (drv_return_to_caller).  Same script_step + drv_palette_push + drv_anim_step template as Inn. |
+| **Magic Brewer (magic shop, 8 items)** | ✓ | `run_drug_main` (215DRUGP) — 8-item witchcraft shop (Ken'ko/Juu-en/Elixir/Chikara/Magia/HolyWater/SabreOil/Kioku).  Menu: Buy/Sell/Describe/Outside.  Service slots used: `script_take_item` (sell), `script_give_item` (buy), `menu_show_list` (cs:[6010]), `menu_init` (cs:[6012]), `script_format_num` (cs:[6006]) for price display. |
+| **Banker (deposit/withdraw)** | ✓ | `run_bank_main` (213BANKP) — 24-bit gold ↔ almas exchange.  Uses `exch_denom_in_tbl`/`exch_denom_out_tbl` indexed by `gvar_menu_sel` for per-amount rates.  Add via `hero_bank_hi/lo` 24-bit arithmetic (probe-tested).  Deposit calls `script_take_item` (subtract player_almas), withdraw calls `script_give_item`. |
+| **Sage (level up + spell grant + save)** | ✓ | `run_kenja_main` (217KENJP) — single chunk handles all 8 Sages (Marid/Yasmin/Hajjar/Chiriga/Hisham/Maryam/Saied/Indihar) keyed by `gvar_sage_id` (1-8).  Menu: 0=See Power (`sage_scan_attrs`/`sage_hp_check` → HP/EXP tier 0-4), 1=Listen Knowledge (per-sage hint text from `sage_hint_tbl` at 0ACBDh), 2=Record Experience (writes *.usr save via INT 21h 3Ch/40h/3Eh).  Per-sage dispatch via `sage_cmd_tbl` (CS-rel) + `sage_init_tbl`/`sage_intro_tbl` (DS, indexed by sage_id). |
+| **Inn Keeper (HP restore, fee per town)** | ✓ | `run_inn_main` (216INNAP) — single chunk handles all 8 town inns.  Welcome/Stay-at-inn (cost-based)/Refuse/Insufficient-funds/Thank-you-enjoy-stay/Morning-greeting script.  Per-town rate read from inn-rate table (TOWNS_AND_NPCS.md tabulates the values).  No separate 219INNCP/218BARP chunks exist — earlier doc entries were speculative. |
+| **Bar (Tumba Town)** | ✓ REFUTED | No dedicated bar program chunk exists in zelres2 (only 210-217 = 8 NPC chunks).  Tumba Town "bar" interaction (if any) is an inline town dialog from 106TOWN's `town_event_tbl`, not a SAR-loaded program. |
+| Villagers (info dialogs only) | ⚠ | Embedded as inline event entries in 106TOWN's `town_event_tbl` (8+ door types: 0xFF/0..7/8+).  Per-villager text TBD in TOWNS_AND_NPCS.md. |
+| Take-item callback (script_take_item at 600A) | ✓ | Service slot at cs:[600A] used by 213BANKP (deposit), 215DRUGP (sell).  Subtracts specified item count from inventory (player_almas/gold/item_qty); returns CF=insufficient. |
+| Give-item callback (script_give_item at 600C) | ✓ | Service slot at cs:[600C] used by 213BANKP (withdraw), 215DRUGP (buy), 210KINGP (1000 gold award), 214CHURP (heal).  Adds specified item count or HP to inventory/player record. |
 | Bank exchange-rate per town | ✓ | TOWNS_AND_NPCS.md tabulated; runtime read TBD |
 | Inn rate per town | ✓ | TOWNS_AND_NPCS.md tabulated; runtime read TBD |
 
@@ -342,24 +342,25 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 119 |
-| ⚠ partial | 46 |
-| ❌ not investigated | 64 |
+| ✓ fully traced | 144 |
+| ⚠ partial | 30 |
+| ❌ not investigated | 55 |
 | N/A (does not exist) | — |
 
 **Total mechanics enumerated**: 229
-**Coverage**: 52% fully understood, 20% partial, 28% not investigated
+**Coverage**: 63% fully understood, 13% partial, 24% not investigated
 
-**2026-05-10 cleanup pass**: 24 items promoted from ⚠ / ❌ to ✓
-based on the now-cleaned asm.  The naming-audit + EQU + db-review
-work made many mechanics trivially traceable from comment blocks.
-Promotions in this pass cover Combat (8: standing/crouch/overhead
-strike, sword→enemy hit, enemy→player damage, shield absorb,
-HP regen, game-over flow, invul frames), Graphics (9: scrolling,
-layer ordering, masking, palette switch/cycle/fade, animation FSM,
-text rendering, number-to-decimal), Sound (2: driver chunks, .MSD
-non-existence), Inventory (2: ARMOR/SPELL windows), Economy (2:
-bank deposit/withdraw).
+**2026-05-10 cleanup pass**: 49 total items promoted (24 in first
+batch + 25 in second batch).  First-batch coverage: Combat (8),
+Graphics (9), Sound (2), Inventory (2), Economy (2), Save (1).
+Second-batch coverage: Towns (5: entry/background/scroll/foreground
+layering/tile-collision), Physics (7: jumping/falling/kneeling/
+hitbox/ladder/platform-raise/movement-speed REFUTED), NPCs/shops
+(13: King/Pope/Brewer/Banker/Sage/Inn/Weapons-Master/Bar REFUTED,
+dialog rendering pipeline, opcode dispatch, take/give callbacks,
+menu selection).  Two items marked ✓ REFUTED: char_speed at 0x98
+is actually keys_normal per TCRF + save-format unification; no
+dedicated Bar chunk exists (only 210-217 = 8 NPC chunks in zelres2).
 
 **2026-04-30 honest-state correction (preserved)**: 6 player-physics
 rows were prematurely promoted to ✓ based on user testimony rather
