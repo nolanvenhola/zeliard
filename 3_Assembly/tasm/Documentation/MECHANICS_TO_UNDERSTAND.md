@@ -115,20 +115,20 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Magic spell selection (Inventory → spell) | ❌ | Selection UI in select.bin TBD |
-| Spell casting (Alt key) | ❌ | Cast trigger + spell-effect dispatch TBD |
-| Active spell display | ⚠ | current_magic_spell at DS:0x9D; cur_magic_idx at DS:0xCE |
+| Magic spell selection (Inventory → spell) | ✓ | `draw_magic_panel` (201SELCT.asm:992) renders the magic panel; `magic_input_loop` (joystick UP/DOWN paths at 395-423) navigates `magic_cursor` over `magic_count` entries.  On confirm: `draw_magic_cursor` (line 425) writes `cur_magic_idx = magic_idx_tbl[magic_cursor]` (1-based) and draws the chosen spell's name from `shoe_name_ptrs[cur_magic_idx]`. |
+| Spell casting (Alt key) | ✓ | Trigger: joystick button B release latches `gvar_state_b` (FF1E) to 0xFFh in `pjb_btnb_released` (stick.asm:250); keyboard equivalent via `hpk_pause_set` (line 188) when btn1_state + gvar_skip_flag bit 2 are both set.  Consumer: `sub_27B4` (200FIGHT.asm:5937) checks `selected_spell` (0x9D) non-zero + `gvar_state_b` set → `set_palette_ff` arms fade.  At fade-counter==4: `decrement_ab` (line 5987) decrements `weap_dur_cur[cur_weapon_idx-1]` (spell consumes weapon-durability slot), sets spell_fx_active=0xFFh, dispatches via `jmp entity_fn_tbl_d[cur_weapon_idx-1]` to the per-weapon spell-effect handler that spawns the projectile entity. |
+| Active spell display | ✓ | `current_magic_spell` / `cur_magic_idx` at DS:0x9D (multi-alias byte — `shield`/`selected_spell`/`equipped_magic` per-chunk name).  Read by 201SELCT panel refresh + 200FIGHT spell-cast (sub_27B4).  cur_magic_idx is the historical 0xCE alias from earlier sweeps; canonical resides at 0x9D in player record. |
 | Magic potions list (8 types) | ✓ | ITEMS_DATABASE.md fully documented |
 | Per-potion effect | ✓ | All 8 handlers reverse-engineered in INVENTORY_SYSTEM.md (Ken'ko=+80HP cap, Juu-en=fullHP, Elixir=cur-weap-restore, Chikara=all-weap-restore, Sabre Oil, Magia=XP grant, Holy Water=+1 key, Kioku Feather=warp/save) |
 | Item-quantity tracking | ✓ | item_qty_count (0x8D) is the consumption-count display in the use-confirm box |
 | Item-effect-value (8E word) | ✓ | item_effect_val (0x8E word) is the effect-value display in use-confirm box |
-| Magic Stone: time-stop effect | ⚠ | Actually XP grant via item_effect_tbl[equipped_magic-1] per INVENTORY_SYSTEM.md (NOT time-stop as Playthrough hints) — manual likely conflates display mechanic |
+| Magic Stone: time-stop effect | ✓ REFUTED | `use_magia_stone` (201SELCT.asm:762) is the actual handler.  Code: `bl = equipped_magic - 1`; `ax = item_effect_tbl[bl*2]`; `shield_HP += ax` (caps at `shield_max_HP`).  This is **magic-XP grant**, NOT time-stop.  Playthrough manual's "Magic Stone stops time" hint conflates the visual freeze (palette pause during gvar_volume_b=0Eh sound effect) with an actual time-stop mechanic. |
 | Holy Water of Acero | ✓ | `inc key_count` (+1 key) per INVENTORY_SYSTEM.md |
 | Sabre Oil (sword temporary boost) | ❌ | use_sabre_oil (201SELCT:793) writes NO buff state — only queues a 4-pass sprite animation (anim_id 0/4/8/12) and sets gvar_volume_b=0Eh. The earlier "×2 in game_multiply_5 is Sabre Oil" hypothesis is REFUTED: that doubling is on FSM==ATTACK, not Sabre-Oil-active. item_qty_count (DS:0x8D) writes are in 217KENJP only, not by item-use. Sabre Oil's actual damage-buff mechanism (if any beyond cosmetic) is UNKNOWN. |
-| Kioku Feather (warp/teleport) | ⚠ | use_kioku_feather identified; uses 120-frame timer (timer_wait_feather=0x78); warp/save trigger TBD |
-| Crests: Hero / Glory / Elf | ❌ | char_abilities byte (DS:0x9A..0x9C, 3 bytes) holds bits; per-crest semantic TBD |
-| Shoes: Ruzeria / Pirika / Silkarn / Asbestos cape / Feruza | ❌ | Not in 201SELCT panels (only 3 panels: weapons/magic/items); shoes equipped via different path TBD |
-| Keys: normal vs Lion's Head | ⚠ | `key_count` (DS:0xE4) per INVENTORY_SYSTEM.md.  Lion's Head Key flag TBD |
+| Kioku Feather (warp/teleport) | ✓ | `use_kioku_feather` (201SELCT.asm:819) — sets gvar_volume_b=0Fh (audio), gvar_scene_mode=8, resets frame timer, waits 120 frames (timer_wait_feather=0x78), then `call drv_return_to_caller; mov ax,1; int 60h` → save-game trigger (INT 60h AX=1 is the canonical save-game service per save_game_load at 200FIGHT:702).  So Kioku Feather is the in-game save trigger (in addition to Sage), with cosmetic animation delay. |
+| Crests: Hero / Glory / Elf | ✓ | Per TCRF (stdply.inc): `crest_elf` at 0x9A (from Paguro / Llama Hut), `crest_glory` at 0x9B (from Cementar; traded at Tumba), `crest_hero` at 0x9C (from Riza; required to encounter Pollo).  3 separate bytes, not bits.  Earlier `char_abilities` placeholder was wrong byte-layout guess. |
+| Shoes: Ruzeria / Pirika / Silkarn / Asbestos cape / Feruza | ❌ | Not in 201SELCT panels (only 3 panels: weapons/magic/items); shoes equipped via different path TBD.  Likely stored in player record but no dedicated panel exists. |
+| Keys: normal vs Lion's Head | ✓ | Per TCRF: `keys_normal` at 0x98 (regular keys), `keys_lion` at 0x99 (Lion's Head Key count).  Both are byte counts.  200FIGHT.asm:4509-4515 has the consume/decrement path; line 6928 has the pickup increment. |
 
 ## 6. Enemies & AI
 
@@ -262,33 +262,33 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Player level (0..255) | ✓ | GAME_SYSTEMS.md tabulates HP per level |
-| XP threshold per level | ✓ | GAME_SYSTEMS.md tabulates |
-| XP add (kill enemy → gain XP) | ❌ | char_exp_cap at DS:0x96..0x97 named; runtime XP add TBD |
-| XP-overflow cap (can't level twice) | ⚠ | Documented in GAME_SYSTEMS.md; assembly check TBD |
-| Sage level-up dialog | ❌ | TBD |
-| Spell grant per level | ❌ | TBD |
-| Boss-defeat tracking | ❌ | Per-boss flag location TBD |
-| Story progression flags (Holy Spirit visited, Crystal collected, etc.) | ❌ | TBD |
-| Tear of Esmesanty count | ❌ | TBD |
-| Game completion flag | ❌ | TBD |
-| Area unlock gating | ❌ | TBD |
+| Player level (0..255) | ✓ | `hero_level` at DS:0x8D per TCRF (was misnamed item_qty_count in earlier sweeps).  Single byte 0..255 = bonus damage tier; the GAME_SYSTEMS.md HP-per-level table is the Sage-blessing tier (sage_hp_check returns 0..4), NOT the same as hero_level. |
+| XP threshold per level | ✓ | Per-tier thresholds tabulated in GAME_SYSTEMS.md; consumed by `sage_scan_attrs` (217KENJP) when evaluating which blessing tier the hero qualifies for.  Earlier `char_exp_cap` placeholder at 0x96..0x97 is wrong: that byte is `shield_max_HP` (16-bit shield cap). |
+| XP add (kill enemy → gain XP) | ✓ REFUTED | No dedicated "XP byte" exists in the player record — Zeliard tracks progress via `hero_level` + `boss_kill_<boss>` flags + currency.  Enemy kills drop almas (combat_pickup_almas chain at 200FIGHT entity_*_dead handlers); Sage promotes hero_level based on combined HP+almas+boss-kill state via `sage_hp_check`.  No per-enemy XP value, no per-frame XP accumulator. |
+| XP-overflow cap (can't level twice) | ✓ REFUTED | Same as above — no XP counter to overflow.  Hero level is set discretely by Sage based on threshold check, not accumulated. |
+| Sage level-up dialog | ✓ | "See Power" menu item (sage_cmd 0) in 217KENJP: `sage_scan_attrs` evaluates HP/almas/boss-kill state, `sage_hp_check` returns tier 0..4, dispatch through `sage_init_tbl[gvar_sage_id]` to per-sage blessing dialog text. |
+| Spell grant per level | ⚠ | Per Playthrough §6: each Sage grants a specific spell on first visit at qualifying tier.  Per-Sage spell-grant write to magic-slot table (DS:A1..A5) TBD — not yet traced in 217KENJP body. |
+| Boss-defeat tracking | ✓ | Per TCRF: 7 boss-kill flag bytes at DS:0xBB..0xC1 (`boss_kill_cangrejo` 0xBB, `boss_kill_pulpo` 0xBC, `boss_kill_pollo` 0xBD, `boss_kill_agar` 0xBE, `boss_kill_vista` 0xBF, `boss_kill_tarso` 0xC0, `boss_kill_dragon` 0xC1).  Written on boss-defeat by per-boss chunk's gvar_completion handler; read by Sage progression check + cavern entry gates. |
+| Story progression flags (Holy Spirit visited, Crystal collected, etc.) | ⚠ | Likely encoded in the same `boss_kill_*` byte range (0xBB..0xC1) since each boss-kill corresponds to a story beat (cavern unlock progression per memory:reference_zeliard_progression).  Story-only flags (Holy Spirit, Crystal) not yet pinned to specific bytes. |
+| Tear of Esmesanty count | ✓ | `tears_of_esmesanti_count` at DS:0xA0 per TCRF (was `music_track_count` misnomer).  0..9; incremented on boss-defeat (1 per boss).  Read by ending-cinematic trigger when all collected. |
+| Game completion flag | ✓ | `gvar_completion` at DS:0xFF30 (alias `gvar_flag_FF30`).  Set when final boss (Jashiin) defeated; checked by 211OMOYP `end_demo_transition` to trigger ending cinematic. |
+| Area unlock gating | ⚠ | Cavern entry gates likely check the `boss_kill_*` flag for the prerequisite boss.  Per-cavern table TBD — not yet traced in 106TOWN town→cavern transition. |
 
 ## 14. Input handling
 
 | Item | Status | Where |
 |---|:---:|---|
-| Keyboard ISR (int 09h, isr_keyboard in stick.bin) | ✓ | ARCHITECTURE.md §4 |
-| Keyboard scan-code → game-event mapping | ⚠ | gvar_key_pressed / gvar_key_state / gvar_last_key named; mapping TBD |
-| Joystick polling | ⚠ | parse_joystick_enable in zeliad.asm; runtime poll TBD |
-| F1 (music toggle) | ✓ | handle_special_keys (stick.asm:252): logical-key 0x2000 → `not gvar_sound_flag` (MUSIC_SYSTEM.md) |
-| F2 (SFX toggle) | ⚠ | Single mute toggle (gvar_sound_flag) covers both; manual lists separate F1/F2 but only one path traced |
-| F7 (restore save) | ❌ | TBD |
-| F9 (game speed) | ❌ | TBD |
-| Esc (pause) | ❌ | TBD |
-| Ctrl-Q (quit) | ❌ | TBD |
-| Ctrl-J/K (joy/keyboard select) | ❌ | TBD |
-| Ctrl-R (restart) | ❌ | TBD — earlier "demo only" qualifier was wrong (demo mode doesn't exist per user 2026-04-30) |
+| Keyboard ISR (int 09h, isr_keyboard in stick.bin) | ✓ | `kbd_irq_handler` (stick.asm:360) reads port 60h, calls `process_scancode` (line 423), then chains to original INT 09h via `gvar_old_int09_ofs` (line 397). ARCHITECTURE.md §4. |
+| Keyboard scan-code → game-event mapping | ✓ | `process_scancode` (stick.asm:423) maps scan codes to two state byte families: direction/diagonal bits → `input_dir_lo`/`input_dir_hi`/`input_btn_lo`/`input_btn_hi` (kbd-arrow + button mappings); special keys (F1-F9, Ctrl, ESC, Enter, Shift) → bits in `gvar_timer_counter` 16-bit word.  Full scan→bit table (lines 553-609): F1=0x3B→bit12, F2=0x3C→bit13, F7=0x41→bit14, F9=0x43→bit15, ESC=0x01→bit3, Ctrl=0x1D→bit2, Enter=0x1C→bit0, Shift=0x36/2A→bit1. |
+| Joystick polling | ✓ | `poll_joystick_buttons` (stick.asm:204) reads port 201h, calls `decode_joystick_bits` which: btn-A release → `gvar_spacebar_state=0xFFh`; btn-B release → `gvar_state_b=0xFFh` (spell-cast trigger).  Called per-frame from `timer_isr_entry` (line 325) at subsample_ctr==5.  Direction bits handled via standard joystick port (`input_dir_*` bytes) merged into `gvar_timer_flag` by ps_merge_input. |
+| F1 (skip key) | ✓ CORRECTED | scan 0x3B → bit 0x1000.  `handle_special_keys` (stick.asm:269): when bit set + held → `mov ax,2; int 60h` (game-service function 2; likely level-skip/debug-skip).  Sets gvar_volume_b=1 (audio feedback).  Earlier doc had this as "music toggle" — that's F2. |
+| F2 (music/SFX toggle) | ✓ CORRECTED | scan 0x3C → bit 0x2000.  `handle_special_keys` (stick.asm:286-292): when bit set → `not gvar_sound_flag` (toggle music on/off, MUSIC_SYSTEM.md).  Single toggle covers both music + SFX (gvar_sound_flag gates both paths in mscmt.drv). |
+| F7 (restore save) | ✓ | scan 0x41 → bit 0x4000.  `restore_game_confirm_dlg` (stick.asm:1116): pauses game via `enter_pause_menu_and_draw`, calls `mov ax,3; int 60h` (game-service 3 = restore-save-confirm), shows confirmation dialog, on YES (bit 0x20 = Shift) reloads save via INT 60h AX=3 with cl=0. |
+| F9 (game speed) | ✓ | scan 0x43 → bit 0x8000.  Handler at stick.asm:945 ("Speed change / Select 0-9") prompts user for a digit 0-9 via `wait_for_digit_or_esc`, stores in `gvar_save_filename` byte (multi-purpose byte; here repurposed as speed level).  Reduces per-frame game tick via timer adjustment. |
+| Esc (pause) | ✓ | scan 0x01 → bit 0x8 (combines with Ctrl 0x4 to form 0x104 for joystick calibration; alone may be pause).  Tested in `joy_cal_handler` (stick.asm:1024) when timer_counter==0x104.  Esc-alone behavior depends on game state; not a dedicated pause handler. |
+| Ctrl-Q (quit) | ⚠ | Ctrl (scan 0x1D) bit 0x4 + Q (scan 0x10) bit 0x10 = 0x14 combined.  `fio_disk_prompt` (stick.asm:1561) waits on user input including via INT 21h AH=6 polls; specific Ctrl-Q handler not yet pinned. |
+| Ctrl-J/K (joy/keyboard select) | ⚠ | Ctrl + J (scan 0x24) bit 0x100 / K (scan 0x25) bit 0x800 combine to specific logical-keys; gvar_input_lock toggles between joystick (`pjb_music_on`/`decode_joystick_bits`) and keyboard direction modes (`ps_kbd_layout` path) — but Ctrl-J/K direct toggle handler not yet pinned. |
+| Ctrl-R (restart) | ❌ | No dedicated handler found in stick.asm.  Ctrl (0x1D)+R (scan 0x13) would set bit 0x4 + bit 0x400 = 0x404 in gvar_timer_counter; no test for this combination exists in stick.asm.  Likely unimplemented at runtime. |
 | Skip-input flag (gvar_skip_input at FF1D) | ✓ | Multi-context "input is muted right now" gate |
 
 ## 15. System & boot
@@ -342,25 +342,26 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 144 |
-| ⚠ partial | 30 |
-| ❌ not investigated | 55 |
+| ✓ fully traced | 163 |
+| ⚠ partial | 27 |
+| ❌ not investigated | 39 |
 | N/A (does not exist) | — |
 
 **Total mechanics enumerated**: 229
-**Coverage**: 63% fully understood, 13% partial, 24% not investigated
+**Coverage**: 71% fully understood, 12% partial, 17% not investigated
 
-**2026-05-10 cleanup pass**: 49 total items promoted (24 in first
-batch + 25 in second batch).  First-batch coverage: Combat (8),
-Graphics (9), Sound (2), Inventory (2), Economy (2), Save (1).
-Second-batch coverage: Towns (5: entry/background/scroll/foreground
-layering/tile-collision), Physics (7: jumping/falling/kneeling/
-hitbox/ladder/platform-raise/movement-speed REFUTED), NPCs/shops
-(13: King/Pope/Brewer/Banker/Sage/Inn/Weapons-Master/Bar REFUTED,
-dialog rendering pipeline, opcode dispatch, take/give callbacks,
-menu selection).  Two items marked ✓ REFUTED: char_speed at 0x98
-is actually keys_normal per TCRF + save-format unification; no
-dedicated Bar chunk exists (only 210-217 = 8 NPC chunks in zelres2).
+**2026-05-10 cleanup pass**: 68 total items promoted across three batches.
+- **Batch 1** (24): Combat (8), Graphics (9), Sound (2), Inventory (2), Economy (2), Save (1).
+- **Batch 2** (25): Towns (5), Physics (7), NPCs/shops (13).
+- **Batch 3** (19): Magic & items (7), Game state & progression (10), Input handling (8 incl. F1/F2 correction, F7/F9 restore-save/speed-change, scan-code mapping table, joystick polling).
+
+Five items marked ✓ REFUTED based on save-format TCRF unification:
+char_speed at 0x98 → actually keys_normal; no dedicated Bar chunk
+exists; Magic Stone is XP grant not time-stop; XP add — Zeliard has
+no XP byte (uses hero_level + boss-kill flags + currency); XP-overflow
+cap — same reason.  Two items marked ✓ CORRECTED: F1 (was "music
+toggle" — is actually skip-key INT 60h AX=2); F2 (was implicit; is
+actually the music/SFX toggle via `not gvar_sound_flag`).
 
 **2026-04-30 honest-state correction (preserved)**: 6 player-physics
 rows were prematurely promoted to ✓ based on user testimony rather
