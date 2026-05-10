@@ -119,3 +119,114 @@ can land in `TILE_PHYSICS.md` as a separate runtime-observation pass.
 
 Each phase ends with a commit that updates MECHANICS_TO_UNDERSTAND.md
 and bumps the coverage summary.
+
+---
+
+# Phases 1-5 outcome (2026-05-10) + post-Sabre-Oil retrospective
+
+All 5 original phases executed.  Result: 23 → 0 ❌; 198 ✓ / 31 ⚠.
+
+**Two user corrections during execution** exposed methodology gaps:
+
+1. **Ice sliding (Ruzeria shoes)** — claimed REFUTED based on "no
+   horizontal-drift code", but ice slide exists via per-area gate
+   procs (`gate_area4_no_accessory4` + `move_axis`).  Lesson:
+   per-area mechanisms are gate-proc-driven, not table-driven.
+
+2. **Sabre Oil (sword aura)** — claimed REFUTED based on "no buff
+   state byte", but Sabre Oil creates a damage-tile aura via the
+   shared buffer at 0xEB60 (`anim_spr_tbl` in 201SELCT ==
+   `sprite_work_buf` in 200FIGHT).  Lesson: same DS address can
+   have different EQU names per chunk; grep by literal hex
+   address, not local symbol.
+
+Both lessons saved to `memory:feedback_per_area_gate_procs.md` and
+`memory:feedback_shared_buffer_aliases.md`.
+
+---
+
+# Phase 6 — Cross-chunk shared-buffer audit (preventive)
+
+Goal: catch the next Sabre-Oil-style mistake **before** the user has
+to correct me.  Build a script that finds DS addresses with multiple
+different EQU names across chunks — those are the prime suspects for
+"write-here-consume-there" semantics that local symbol grep misses.
+
+Steps:
+1. Extract every `<symbol> equ <hex>` from every `.asm` and `.inc`
+   in `working/`.
+2. Group by hex address; flag addresses with ≥ 2 distinct symbol
+   names.
+3. For each flagged address, list:
+   - Which chunks define which name
+   - Which chunks have read/write sites
+4. Output a report at `working/SHARED_BUFFER_AUDIT.md`.
+5. Manually inspect the top-N most-distinct-named addresses and
+   document the canonical "what is this buffer actually for" for
+   each.
+
+Expected to surface 5-15 multi-aliased buffers.  Each one is a
+potential mechanic I might have under-traced because the consumer
+chunk's local name differed from the writer chunk's local name.
+
+**Phase 6 deliverable**: `working/SHARED_BUFFER_AUDIT.md` +
+re-examined mechanic claims where shared buffers are involved.
+
+---
+
+# Phase 7 — Re-investigate `⚠` items via the corrected methodology
+
+Many ⚠ items have notes like "...likely a per-area gate proc..." or
+"...possibly emergent...".  Apply the two new methodology lessons:
+
+| ⚠ item | Re-investigation approach |
+|---|---|
+| Surface effects: slime/ooze | Search for `gate_area*_no_accessory*` procs for areas other than 4 + 7; candidate accessory: Pirika (cur_magic_idx==2) in Tumba.  Look for `cmp area_num, X` + `cmp cur_magic_idx, 2` patterns. |
+| Surface effects: water | Same — likely Silkarn Shoes (3) in Dorado (per stdply.inc).  Search `cmp cur_magic_idx, 3`. |
+| Sword falling-bonus | Re-check `entity_ptr_loop` in `select_player_sprite_frame` for whether SI advancement during fall multiplies hit-tests.  Also cross-check 0xEB60-style aliased buffers used by combat. |
+| Damage formula (per-enemy AX computation) | Find the per-enemy attack callbacks that compute the damage AX before `subtract_from_player_HP`.  These live in zelres3 EAI/boss chunks. |
+| Special entry barriers (Esco hidden, Pureza requires X) | Search 106TOWN's `door_type_special` for flag checks (likely `boss_kill_*` byte tests).  Esco's "hidden" entry is probably a check against a story flag set by a specific NPC dialog. |
+| Tear of Esmesanti pickup | Search zelres3 boss chunks (309-319) for `inc byte ptr ds:[0A0h]` or `inc tears_of_esmesanti_count`.  Likely fires in the per-boss death cleanup. |
+| Spell grant per level | Trace 217KENJP's `sage_cmd_dispatch` for paths that write to magic-slot bytes (DS:A1..A5 spell_slot_*).  Per-sage spell grant likely uses `sage_intro_tbl[sage_id]` dispatch. |
+| Story progression flags | Cross-reference `boss_kill_*` byte writes across all chunks — find non-boss-defeat writers (those are story-flag setters that happen to overload the same byte range). |
+| Area unlock gating | Search 106TOWN's `try_door_transition` for `test boss_kill_<N>, FFh` patterns gating cavern entry. |
+
+**Phase 7 deliverable**: ~5-8 ⚠ → ✓ promotions, with code citations.
+
+---
+
+# Phase 8 — Per-chunk RE for the remaining ⚠ items
+
+Items that genuinely need per-chunk deep RE (not just cross-chunk
+search):
+
+| ⚠ item | Approach |
+|---|---|
+| Per-boss state machines (9 remaining bosses) | Already TAKO documented as worked-example in BOSS_AI.md.  Replicate for the other 9 in 309-319 chunks.  ~30 min per boss = 4-5 hours total.  Could be a follow-up "per-boss deep-dive" doc series. |
+| Tile graphics: per-tile semantics | Match tileset chunks (zelres3 per-area sprites) against gfx-driver tile-render fns.  Requires matching each tile_byte value to its visual interpretation per cavern. |
+| Sprite graphics: per-entity sprite tables (blit fn) | Trace `prep_dirty_blit` + `enemy_sprite_blit` to identify the actual sprite-byte format and how each `sprite_obj_tbl` 6-byte entry maps to screen pixels. |
+| Player sprite rendering pipeline | Already partially traced via `select_player_sprite_frame`; remaining gap is the per-frame blit fn that consumes the chosen entity_ptr_table[bx] entry. |
+| HUD rendering layout | Per-element offset map within hud_buf — needs documentation pass listing each HUD widget's byte range. |
+| Volume control bytes (FF74/75 vs FF74/77) | Resolve address discrepancy; verify whether they're truly "audio cue trigger" bytes or something else. |
+| Map scrolling (h+v internals) | Trace gfx_scroll_left/right_fn slot targets per gfx driver (CGA/EGA/HGC/TGA/MCGA). |
+| Ctrl-Q / Ctrl-J / Ctrl-K | Specific Ctrl+letter handlers in stick.asm or zeliad.asm; require finding the bit-pattern test (e.g. `test gvar_timer_counter, 0x14` for Ctrl+Q). |
+
+**Phase 8 deliverable**: most ⚠ items closed; final state targets
+220+ ✓ / <10 ⚠ / 0 ❌.  Items that remain ⚠ after Phase 8 are
+genuinely DOSBox-observation-bound (e.g. per-area exact slime damage
+value, exact ice slide distance).
+
+---
+
+# Order of execution (Phases 6-8)
+
+1. **Phase 6** first (~30 min, automated) — the cross-chunk shared-
+   buffer audit catches mistakes systematically + may resolve several
+   ⚠ items as side effect.
+2. **Phase 7** (~1.5 hr, search-driven) — re-investigate the ⚠
+   items most likely to have hidden mechanisms (surface effects,
+   spell grant, story flags).
+3. **Phase 8** (~3-4 hr, per-chunk deep RE) — closing pass for the
+   remaining ⚠ items that need targeted source reading.
+
+Each phase ends with a commit + push.
