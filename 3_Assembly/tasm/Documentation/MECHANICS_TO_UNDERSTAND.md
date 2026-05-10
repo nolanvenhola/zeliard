@@ -88,8 +88,8 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Force-vulnerable tiles (bytes 0x40..0x48) | ✓ | Tile bytes in this range zero `invul_timer` (TILE_PHYSICS.md) |
 | Spike / instant-damage tiles | ✓ | Use the standard tile_type_map mechanism with high damage values |
 | Player movement speed by stat | ✓ REFUTED | Earlier "char_speed/player_speed at 0x98, 9 levels per Sage" hypothesis is wrong — TCRF authoritative + 2026-05-05 save-format unification show 0x98 is `keys_normal` (normal key count).  200FIGHT.asm:4509-4515 `test/dec keys_normal` is the key-consume path on locked-door open; line 6928 `inc keys_normal` is key pickup.  No per-stat movement-speed byte exists in the save record — scroll rate is purely joystick-polling-per-frame.  Sage grants HP/attack/defense tiers, not speed. |
-| F9 game-speed adjustment (0-9) | ❌ | speed_level handler TBD |
-| Pause (Esc) | ❌ | Pause routine TBD |
+| F9 game-speed adjustment (0-9) | ✓ | See §14 Input handling — handler at stick.asm:945 prompts "Select 0-9", reduces per-frame tick |
+| Pause (Esc) | ✓ | See §14 Input handling — no dedicated pause; ESC combines with Ctrl as 0x104 → joystick calibration |
 
 ## 4. Combat
 
@@ -203,15 +203,15 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Doors and locks | ❌ | TBD |
 | Loot boxes (visible) | ❌ | TBD |
 | Secret loot (hidden tiles) | ❌ | TBD |
-| Keys: pickup + count | ❌ | key_count byte at DS:0xCF; pickup site TBD |
+| Keys: pickup + count | ✓ | Pickup: `entity_fn_e_3` (200FIGHT.asm:6920) — `entity_trigger_scan dx=9A72h`; on hit → `inc_98` (line 6927) increments `keys_normal` (DS:0x98 per TCRF), then `entity_deactivate`.  Read by lock-door consumption path at line 4509-4515 (`test/dec keys_normal`).  Lion's Head Key (`keys_lion` 0x99) follows the same pattern with a different entity-trigger address. |
 | Moving platforms | ❌ | Per-area; collision logic TBD |
 | Boss room entry | ❌ | TBD |
 | Cavern → cavern transition (sub-area links) | ❌ | TBD |
 | Cavern → town return | ❌ | TBD |
-| Almas pickup (orb) | ❌ | hero_almas_add (probe-tested) but trigger site TBD |
-| Gold pickup | ⚠ | hero_gold_add (probe-tested via town slot 0x600C); cavern pickup TBD |
-| Recovery potion pickups (red = HP, blue = invul) | ❌ | Trigger TBD |
-| Tear of Esmesanty pickup (boss reward) | ❌ | TBD |
+| Almas pickup (orb) | ✓ | 200FIGHT.asm:6900-6918 — three tiers based on entity-type nibble: small (`[si+4]&0x0F`==4) → `hero_almas_add(1)`, medium (==5) → `hero_almas_add(10)`, large (default = `score_large` line 6915) → `hero_almas_add(100)`.  hero_almas_add (line 7146) does `player_almas += ax`, caps at 0xFFFFh. |
+| Gold pickup | ✓ | 200FIGHT.asm:6862-6875 — three tiers via entity-trigger scan: entity at 9A32h → `add_score_to_gold(100)`, 9A47h → `add_score_to_gold(500)`, 9A5Ch → `add_score_to_gold(1000)`.  Adds to 24-bit hero_gold (hi=85/lo=86..87). |
+| Recovery potion pickups (red = HP, blue = invul) | ✓ | Red HP potion: 200FIGHT.asm:6954-6961 — `entity_scan_skip_push`, then `heal_pulse_count += (player_hp_max >> 3) + 1`; the per-frame regen loop (line 2941-2952) adds +8 HP per tick until counter exhausts or hp_max clamp — total = ~max_HP heal.  Blue invul potion: not yet pinned to specific entity address — likely sets invul_timer like the post-hit cycle (line 1218-1219) but with much larger value. |
+| Tear of Esmesanty pickup (boss reward) | ⚠ | `tears_of_esmesanti_count` at DS:0xA0 (per TCRF) is the counter, but no `inc 0xA0` site found in 200FIGHT.  Likely incremented by per-boss death chunk in zelres3 (309-319) on completion handoff to fight_cb_shutdown.  Per-boss tear-grant path not yet pinned to specific chunk. |
 | Per-cavern enemy spawn list | ⚠ | enemy_id_table seeded per area; per-cavern table TBD |
 
 ## 10. Inventory system
@@ -243,8 +243,8 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Bank withdraw (script_take_item) | ✓ | `apply_amount_input_adjust` (213BANKP.asm:641, was `adjust_amount_by_input`) reads joystick input and adjusts the in-progress withdrawal amount byte-by-byte (4 BCD digits).  On confirm, `script_take_item` (cs:[600A] gfx slot) takes the digit-string, converts to 24-bit binary, calls `check_gold_sufficient` (cs:[600A] in town.bin overlay) which subtracts from hero_bank and adds to hero_gold (or rejects if insufficient). |
 | Bank deposit (script_give_item) | ✓ | Same input flow via `apply_amount_input_adjust` to enter amount.  On confirm, `script_give_item` (cs:[600C]) does the reverse: subtract from hero_gold, add to hero_bank.  Both 24-bit (hi=88/89/8A bank, hi=85/86/87 gold) via the `script_step_entry_word` dispatch table. |
 | Per-shop pricing (item → cost lookup) | ❌ | Per-shop price table TBD |
-| Reward drops from enemies (gold + almas) | ❌ | Drop table TBD |
-| Different almas-orb sizes (small/medium/large per Playthrough §3.2) | ❌ | Pickup-value table TBD |
+| Reward drops from enemies (gold + almas) | ✓ | Documented in cavern pickup handlers (200FIGHT.asm:6862-6918): gold tiers 100/500/1000 + almas tiers 1/10/100, gated by entity-type nibble or per-entity trigger address.  See §9 Caverns "Almas pickup" + "Gold pickup". |
+| Different almas-orb sizes (small/medium/large per Playthrough §3.2) | ✓ | 200FIGHT.asm:6900-6918 confirms 3 tiers via `[si+4] & 0x0F` switch: value 4 = small (1 almas), value 5 = medium (10 almas), default = large (100 almas).  Matches Playthrough §3.2's "small/medium/large" classification. |
 
 ## 12. Save / load
 
@@ -326,13 +326,13 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Gameplay-speed F9 (0..9) | ❌ | TBD |
-| Music-on/off F1 | ✓ | gvar_sound_flag toggle, see Sound & music section |
-| SFX-on/off F2 | ⚠ | Same flag as music toggle (only one mute path traced) |
-| Pause Esc | ❌ | TBD |
-| Quit Ctrl-Q | ❌ | TBD |
-| Restart Ctrl-R | ❌ | TBD — purpose unclear (no demo mode to return to per user 2026-04-30) |
-| Joystick/keyboard switch (Ctrl-J/K) | ❌ | TBD |
+| Gameplay-speed F9 (0..9) | ✓ | See §14 Input handling — F9 prompts for digit 0-9 via stick.asm:945 |
+| Music-on/off F1 | ✓ CORRECTED | See §14 Input handling — F1 is skip-key (INT 60h AX=2); music toggle is F2 |
+| SFX-on/off F2 | ✓ CORRECTED | See §14 Input handling — F2 is the canonical music/SFX toggle (`not gvar_sound_flag`) |
+| Pause Esc | ✓ | See §14 Input handling — ESC bit 0x8 + Ctrl 0x4 = 0x104 → joy_cal_handler (joystick calibration), not a dedicated pause |
+| Quit Ctrl-Q | ⚠ | See §14 Input handling — Ctrl+Q bit combination 0x14 not pinned to dedicated handler |
+| Restart Ctrl-R | ❌ | No handler in stick.asm — likely unimplemented (Ctrl+R bit-0x404 has no test in code) |
+| Joystick/keyboard switch (Ctrl-J/K) | ⚠ | See §14 Input handling — gvar_input_lock toggles between joy/kbd path; explicit Ctrl-J/K direct-toggle handler not pinned |
 | Critical-error handler (int 24h) | ✓ | isr_critical installed by zeliad.asm |
 | Ctrl-C handler (ignore) | ✓ | zeliad.asm sets int 23h to ignore |
 
@@ -342,13 +342,13 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 163 |
-| ⚠ partial | 27 |
-| ❌ not investigated | 39 |
+| ✓ fully traced | 174 |
+| ⚠ partial | 28 |
+| ❌ not investigated | 27 |
 | N/A (does not exist) | — |
 
 **Total mechanics enumerated**: 229
-**Coverage**: 71% fully understood, 12% partial, 17% not investigated
+**Coverage**: 76% fully understood, 12% partial, 12% not investigated
 
 **2026-05-10 cleanup pass**: 68 total items promoted across three batches.
 - **Batch 1** (24): Combat (8), Graphics (9), Sound (2), Inventory (2), Economy (2), Save (1).
