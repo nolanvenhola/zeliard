@@ -8,7 +8,7 @@ Worked through with the `/label-audit` skill — see
 
 | Done | File | Line | Name | Notes |
 |:---:|---|---|---|---|
-| [ ] | `200FIGHT.asm` | 4711 | `game_process_loop_3` | ~50-line proc; tests cell at SI+0x23 then writes 3 entity slots in adjacent row.  CF-return semantics are reversed from what the body's `clc` placement suggests — needs careful Tier-3 probe with planted cell data to disambiguate "CF=1 means failed-to-place" vs "CF=1 means cell-occupied". Caller `try_top_scroll_direction` treats CF=1 as "abort". |
+| [x] | `200FIGHT.asm` | 4743 | `try_place_3cell_entity_row` (was `game_process_loop_3`) | **Resolved by `test_fight_try_place_3cell_entity_row.py`** (4 probes PASS).  Body's `clc` placement is NOT reversed: every early-retn path returns CF=0; only the all-clear path falls through to `stc; retn`.  CF=1 = SUCCESSFUL placement (3 cells were empty, `entity_slot_write_tagged` called 6 times); CF=0 = NO placement (cell at SI+0x23 has bit 7 set, OR one of next 3 cells is non-zero).  Caller `try_top_scroll_direction` treats CF=1 as "abort frame loop because new entity was placed." |
 
 
 Format: each row is a single audit. Mark `[x]` when complete, with the
