@@ -61,6 +61,7 @@ include  zr2com.inc
 ; Section 5: File-internal data table addresses
 ; ----------------------------------------------------------------------
 dispatch_tbl             equ     3170h
+proj_blit_bias_byte      equ     607h     ;* byte at 0x607 added to AL on projectile_blit entry
 ega_sprite_src	equ	0B000h			;* EGA sprite source data base
 ega_plane_alt	equ	0B17Eh			;* EGA alternate plane offset
 pattern_ptr_tbl	equ	3929h			;* pattern pointer table
@@ -1388,7 +1389,7 @@ projectile_spawn_check		endp
 ; Marks projectile slot as 0xFE and blits pattern to EGA from pattern_ptr_tbl.
 
 projectile_blit:
-		add	al,byte ptr ds:[607h]
+		add	al,byte ptr ds:proj_blit_bias_byte
 		push	cs
 		pop	es
 		mov	di,projectile_list
@@ -1530,13 +1531,13 @@ loc_83:						; sprite shape: solid circle (52-byte frame)
 		;  these as a chain of `jg/add/or/lock/...` instructions but
 		;  they're really continuation of the diamond/circle shape
 		;  bitmap series above (starting at line 1500).
-		db	7Fh, 0FEh, 80h, 07h, 0D0h, 0Bh, 0E0h, 0Fh
-		db	00h, 00h, 0F0h, 3Ch, 00h, 00h, 3Ch, 78h
-		db	00h, 00h, 1Eh, 70h, 00h, 00h, 0Eh, 0F0h
-		db	00h, 00h, 0Fh, 0F0h, 00h, 00h, 0Fh, 70h
-		db	00h, 00h, 0Eh, 78h, 00h, 00h, 1Eh, 3Ch
-		db	00h, 00h, 3Ch, 0Fh, 00h, 00h, 0F0h, 07h
-		db	0D0h, 0Bh, 0E0h, 01h
+		db	7Fh, 0FEh, 80h, 07h, 0D0h, 0Bh, 0E0h, 0Fh	; circle frame row 0-7
+		db	00h, 00h, 0F0h, 3Ch, 00h, 00h, 3Ch, 78h	; circle frame row 8-15
+		db	00h, 00h, 1Eh, 70h, 00h, 00h, 0Eh, 0F0h	; circle frame row 16-23
+		db	00h, 00h, 0Fh, 0F0h, 00h, 00h, 0Fh, 70h	; circle frame row 24-31
+		db	00h, 00h, 0Eh, 78h, 00h, 00h, 1Eh, 3Ch	; circle frame row 32-39
+		db	00h, 00h, 3Ch, 0Fh, 00h, 00h, 0F0h, 07h	; circle frame row 40-47
+		db	0D0h, 0Bh, 0E0h, 01h			; circle frame row 48-51
 
 loc_84:
 								jg	loc_84			; Jump if >

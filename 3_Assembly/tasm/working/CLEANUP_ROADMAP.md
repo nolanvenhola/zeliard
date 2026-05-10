@@ -1,6 +1,6 @@
 # Zeliard ASM Cleanup Roadmap
 
-**STATUS: All 11 items complete (2026-04-26).** All 63 .asm files bit-perfect against `bin/` references throughout. See per-item commit history for details.
+**STATUS: All 11 items complete (2026-05-10 final pass).** All 65 .asm files bit-perfect against `bin/` references throughout. Final `awk` db-line check returns 0 across every chunk. Missing-EQU audit also clean: every raw-hex memory operand has a corresponding `equ` definition (2 final stragglers, `0xC00B` in 106TOWN and `0x607` in 202GFEGA, named on this pass).
 
 Original work to make the disassembled source as close to the original TASM/MASM source as the 1989-1990 Game Arts developers would have written it.
 
@@ -22,7 +22,12 @@ done
 
 ### Item 1 — Apply db-review pass to zelres1 + zelres2
 
-**Status:** done for zelres3 (20 files). zelres1 (12 files) and zelres2 (15 files) still in baseline state with hundreds of bare `db` lines.
+**Status (2026-05-10):** ✅ DONE.  All chunks zero out the bare-db check.
+`zelres1/code`: 0 bare db lines.  `zelres2/code`: 0 bare db lines.
+`zelres3/code`: 0 bare db lines.  Final pass annotated the last 25
+lines across 106TOWN (HUD label header records), 200FIGHT (anim
+dispatch prefix), 201SELCT (item/shield detail trailers), 202GFEGA
+(circle-frame sprite rows), 205GFTGA (44-byte chunk header).
 
 **Goal:** every `db` line must be either an alt-encoding with comment, sprite/bitmap data inside a labeled block with `; row N` comments, a labeled lookup table, a string/dup, or explicitly annotated as unexplainable.
 

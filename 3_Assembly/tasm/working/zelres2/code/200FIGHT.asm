@@ -6698,7 +6698,7 @@ anim_dispatch_data:
 		;* 7 byte header preceding the dw entries (Sourcer mis-decoded
 		;  as "xor cl,[bp+8E8Dh]; jmp $-96Fh"; really data; BP-relative
 		;  defaults to SS so no override prefix needed).
-		db	32h, 8Eh, 8Dh, 8Eh, 0E9h, 8Eh, 0F6h
+		db	32h, 8Eh, 8Dh, 8Eh, 0E9h, 8Eh, 0F6h	; 7-byte mis-decoded prefix bytes (see comment above)
 		dw	0AB8Eh		; anim dispatch entry 0
 		dw	0AB8Fh		; anim dispatch entry 1
 		dw	0E88Fh		; anim dispatch entry 2

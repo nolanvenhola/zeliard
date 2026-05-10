@@ -164,6 +164,7 @@ town_map_width	equ	0C002h			;*
 town_tile_ptr	equ	0C004h			;*
 town_exit_ptr	equ	0C007h			;*
 town_event_tbl	equ	0C009h			;*
+town_door_records_ptr	equ	0C00Bh		;* 5-byte-stride door record base ptr (read in pf30_exec)
 town_item_tbl	equ	0C00Dh			;*
 npc_obj_list	equ	0C00Fh			;*
 town_map_xlim	equ	0C011h			;*
@@ -1862,13 +1863,13 @@ load_town_hud_icons		endp
 ; from town's HUD-render path; exact format TBD pending caller analysis.
 ;--------------------------------------------------------------------------
 town_hud_labels:
-		db	0Eh, 0A3h, 00h, 04h
+		db	0Eh, 0A3h, 00h, 04h	; LIFE: ctrl=0Eh col=A3h row=00h len=4
 		db	'LIFE'
-		db	1Eh, 0BBh, 03h, 05h
+		db	1Eh, 0BBh, 03h, 05h	; ALMAS: ctrl=1Eh col=BBh row=03h len=5
 		db	'ALMAS'
-		db	0Dh, 0BBh, 01h, 04h
+		db	0Dh, 0BBh, 01h, 04h	; GOLD: ctrl=0Dh col=BBh row=01h len=4
 		db	'GOLD'
-		db	0Dh, 0AFh, 01h, 05h
+		db	0Dh, 0AFh, 01h, 05h	; PLACE: ctrl=0Dh col=AFh row=01h len=5
 		db	'PLACE'
 
 try_door_transition		proc	near
@@ -2195,7 +2196,7 @@ special_door_wait:
 pf30_exec:
 		mov	bl,5
 		mul	bl
-		add	ax,word ptr ds:[0C00Bh]
+		add	ax,word ptr ds:town_door_records_ptr
 		mov	si,ax
 		lodsw				; String [si] to ax
 		push	ax
@@ -3110,7 +3111,7 @@ enter_savegame_dialog		endp
 		db	'User File', 0Dh
 		db	'Not Found', 0FFh, 0, 0
 		db	'GAME.BIN', 0, 0
-		db	0A0h, 0, 0
+		db	0A0h, 0, 0			; separator byte 0A0h + 2 padding zeros
 		db	'STDPLY.BIN', 0
 
 prepare_save_name_screen		proc	near

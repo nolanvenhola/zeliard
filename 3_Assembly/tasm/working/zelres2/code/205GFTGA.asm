@@ -130,12 +130,12 @@ start:
 ; the SAR loader / driver-init protocol, not used as code.  Real code
 ; begins at the `call init_dispatch` below.
 ;--------------------------------------------------------------------------
-		db	0A2h, 26h, 00h, 00h, 2Ch, 30h, 06h, 3Bh
-		db	72h, 40h, 7Fh, 3Fh, 0B9h, 42h, 9Eh, 46h
-		db	29h, 41h, 6Eh, 32h, 1Dh, 39h, 09h, 43h
-		db	7Ah, 42h, 0F0h, 3Ah, 41h, 44h, 0BBh, 46h
-		db	05h, 47h, 0FDh, 47h, 70h, 42h, 4Dh, 4Bh
-		db	90h, 4Bh, 27h, 4Dh
+		db	0A2h, 26h, 00h, 00h, 2Ch, 30h, 06h, 3Bh	; chunk hdr bytes 0-7
+		db	72h, 40h, 7Fh, 3Fh, 0B9h, 42h, 9Eh, 46h	; chunk hdr bytes 8-15
+		db	29h, 41h, 6Eh, 32h, 1Dh, 39h, 09h, 43h	; chunk hdr bytes 16-23
+		db	7Ah, 42h, 0F0h, 3Ah, 41h, 44h, 0BBh, 46h	; chunk hdr bytes 24-31
+		db	05h, 47h, 0FDh, 47h, 70h, 42h, 4Dh, 4Bh	; chunk hdr bytes 32-39
+		db	90h, 4Bh, 27h, 4Dh			; chunk hdr bytes 40-43
 
 		call	$+2E53h
 		push	dx

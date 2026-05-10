@@ -154,7 +154,7 @@ start:
 		mov	al,ds:gvar_selct_state
 		mov	byte ptr ds:has_items_flag,0
 		jmp	short init_continue
-		db	0C6h, 06h,0F8h,0ADh,0FFh
+		db	0C6h, 06h,0F8h,0ADh,0FFh	; mis-decoded `mov byte ptr [0ADF8h],0FFh` opcode bytes (5 bytes, dead path)
 
 init_continue:
 		mov	byte ptr ds:portrait_vis,0
@@ -783,7 +783,7 @@ cap_exp:
 		jmp	draw_item_detail_entry
 ; Word offset table between use_magia_stone and use_sabre_oil
 ; (Sourcer mis-decoded the high byte of the second entry).
-		db	50h, 00h, 5Ah, 00h, 64h, 00h, 6Eh, 00h, 73h, 00h, 78h, 00h
+		db	50h, 00h, 5Ah, 00h, 64h, 00h, 6Eh, 00h, 73h, 00h, 78h, 00h	; word offset tbl: 50h, 5Ah, 64h, 6Eh, 73h, 78h
 
 use_sabre_oil:				; item 4: animate Sabre Oil effect (4 sprite passes)
 		push	cs
@@ -814,7 +814,7 @@ use_sabre_oil:				; item 4: animate Sabre Oil effect (4 sprite passes)
 		rep	movsb
 		jmp	short draw_item_detail_entry
 ; Padding between use_sabre_oil and use_kioku_feather (dead bytes).
-		db	00h, 00h, 50h, 00h, 00h, 00h, 00h
+		db	00h, 00h, 50h, 00h, 00h, 00h, 00h	; padding bytes (7 dead bytes)
 
 use_kioku_feather:			; item 7: use Kioku Feather (memory feather / save game)
 		mov	byte ptr ds:gvar_volume_b,0Fh
@@ -1575,7 +1575,7 @@ item_str_chikara:	db	'Chikara', 0
 			db	'      Powder', 0
 
 item_str_magia:		db	'Magia Stone'
-			db	0, 0
+			db	0, 0	; null terminator + padding
 
 item_str_holywater:	db	'Holy Water', 0
 			db	'    of Acero', 0
@@ -1637,10 +1637,10 @@ shield_det_str_light:		db	'Light', 0
 
 shield_det_str_titanium:	db	'Titanium', 0
 				db	'      Shield', 0
-		db	0Eh
+		db	0Eh		; trailing control/format byte for shield detail block
 		db	0Ch, '38?', 0Ch, '0"m', 0Ch, '0"?'
 		db	'-^'
-		db	17h
+		db	17h		; trailing terminator/padding byte
 		db	37 dup (0)
 
 seg_a		ends
