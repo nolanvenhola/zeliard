@@ -124,7 +124,7 @@ seg_a		segment	byte public
 
 		org	0
 
-gmhgc		proc	far
+run_gmhgc_main		proc	far
 
 start:
 		; Function dispatch table (35 CS-relative word pointers, driver loads at game_seg:2000h).
@@ -216,7 +216,7 @@ border_loop_bank_ok:
 		call	fill_horizontal_line
 		mov	ax,0F00Fh
 
-gmhgc		endp
+run_gmhgc_main		endp
 
 fill_horizontal_line		proc	near
 		push	di
@@ -923,7 +923,7 @@ fn_12:
 
 init_timestamp		proc	near
 		mov	di,2557h
-		call	time_to_bcd
+		call	convert_time_to_bcd
 		mov	cx,6
 
 timestamp_fill_loop:
@@ -943,7 +943,7 @@ init_timestamp		endp
 
 		db	7 dup (0)
 
-time_to_bcd		proc	near
+convert_time_to_bcd		proc	near
 		mov	cl,0Fh
 		mov	bx,4240h
 		call	modulo_divide_bcd
@@ -968,7 +968,7 @@ time_to_bcd		proc	near
 		mov	cs:[di+6],al
 		retn
 
-time_to_bcd		endp
+convert_time_to_bcd		endp
 
 modulo_divide_bcd		proc	near
 		xor	dh,dh			; Zero register
@@ -1477,7 +1477,7 @@ render_text_char_alt		proc	near
 dbl_char_render_loop:
 								push	cx
 								lodsb				; String [si] to al
-								call	double_char_bits
+								call	expand_char_bits_2x
 								mov	cl,cs:tile_bg_mask
 								mov	ah,dl
 								xor	dl,dl			; Zero register
@@ -1516,7 +1516,7 @@ dbl_char_bank_ok:
 
 render_text_char_alt		endp
 
-double_char_bits		proc	near
+expand_char_bits_2x		proc	near
 		mov	cx,8
 
 double_bits_loop:
@@ -1530,7 +1530,7 @@ double_bits_loop:
 		or	dx,bx
 		retn
 
-double_char_bits		endp
+expand_char_bits_2x		endp
 
 hgc_copy_region:
 		push	ds

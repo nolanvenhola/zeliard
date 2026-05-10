@@ -111,7 +111,7 @@ seg_a		segment	byte public
 
 		org	0
 
-cga_imgctl_module		proc	far
+run_imgctl_main_cga		proc	far
 
 start:
 		sbb	byte ptr ds:[0],bl
@@ -157,7 +157,7 @@ render_plane_a_loop:
 								mov	cs:src_word_d,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosw				; Store ax to es:[di]
 								loop	render_plane_a_loop		; Loop if cx > 0
 
@@ -194,7 +194,7 @@ render_plane_ab_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosw				; Store ax to es:[di]
 								loop	render_plane_ab_loop		; Loop if cx > 0
 
@@ -218,7 +218,7 @@ disp_render_a_rev:
 		pop	ds
 		pop	ax
 		mov	word ptr cs:render_fn_ptr,cga_blit_fn_c
-		call	equip_func_1
+		call	run_render_passes_cga
 		pop	ds
 		retn
 
@@ -244,7 +244,7 @@ render_plane_ba_loop:
 								mov	cs:src_word_c,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_b,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosw				; Store ax to es:[di]
 								loop	render_plane_ba_loop		; Loop if cx > 0
 
@@ -268,11 +268,11 @@ render_plane_ba_loop:
 		mov	byte ptr cs:render_mode_flag,0
 		or	al,al			; Zero ?
 		jnz	render_blit_skip			; Jump if not zero
-		call	equip_func_1
+		call	run_render_passes_cga
 
 render_blit_skip:
 		mov	byte ptr cs:render_mode_flag,0FFh
-		call	equip_func_1
+		call	run_render_passes_cga
 		pop	ds
 		retn
 
@@ -292,17 +292,17 @@ render_blit_entry:
 		mov	byte ptr cs:render_mode_flag,0
 		or	al,al			; Zero ?
 		jnz	render_blit_skip2			; Jump if not zero
-		call	equip_func_1
+		call	run_render_passes_cga
 
 render_blit_skip2:
 		mov	byte ptr cs:render_mode_flag,0FFh
-		call	equip_func_1
+		call	run_render_passes_cga
 		pop	ds
 		retn
 
-cga_imgctl_module		endp
+run_imgctl_main_cga		endp
 
-equip_func_1		proc	near
+run_render_passes_cga		proc	near
 		mov	byte ptr cs:cur_row_ctr,0
 		mov	ax,0B800h
 		mov	es,ax
@@ -368,7 +368,7 @@ col_render_timer_wait:
 col_render_ret:
 		retn
 
-equip_func_1		endp
+run_render_passes_cga		endp
 
 disp_blit_masked:
 		test	byte ptr cs:render_mode_flag,0FFh
@@ -511,7 +511,7 @@ text_char_render:
 text_glyph_row_loop:
 														push	cx
 														lodsb				; String [si] to al
-														call	equip_process_loop
+														call	build_pixel_pair_cga
 														mov	es:[di],dx
 														add	di,50h
 														pop	cx
@@ -524,7 +524,7 @@ text_advance:
 								add	di,2
 								jmp	short text_char_loop
 
-equip_process_loop		proc	near
+build_pixel_pair_cga		proc	near
 		mov	cx,8
 
 build_pixel_pair_loop:
@@ -539,7 +539,7 @@ build_pixel_pair_loop:
 		xchg	dh,dl
 		retn
 
-equip_process_loop		endp
+build_pixel_pair_cga		endp
 
 disp_scroll_copy:
 		push	ds
@@ -649,7 +649,7 @@ sprite_render_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosw				; Store ax to es:[di]
 								loop	sprite_render_loop		; Loop if cx > 0
 
@@ -775,7 +775,7 @@ sprite_update_frame:
 		SET_ES_3000
 		mov	si,di
 		mov	di,bp
-		call	copy_buffer
+		call	copy_pixel_row_cga
 		pop	si
 		pop	ds
 
@@ -818,7 +818,7 @@ sprite_blit_all_loop:
 								mov	es,ax
 								mov	ds,cs:gvar_game_seg
 								mov	si,bp
-								call	equip_multiply
+								call	blit_sprite_cga
 								pop	si
 								pop	ds
 
@@ -847,7 +847,7 @@ sprite_restore_loop:
 								add	ax,3000h
 								mov	ds,ax
 								mov	si,bp
-								call	copy_buffer_2
+								call	copy_to_di_cga
 								pop	si
 								pop	ds
 								pop	cx
@@ -868,7 +868,7 @@ sprite_active_check_next:
 
 		retn
 
-copy_buffer		proc	near
+copy_pixel_row_cga		proc	near
 		push	si
 		push	cx
 
@@ -892,9 +892,9 @@ copy_buf_row_wrap:
 		pop	si
 		retn
 
-copy_buffer		endp
+copy_pixel_row_cga		endp
 
-copy_buffer_2		proc	near
+copy_to_di_cga		proc	near
 		push	di
 		push	cx
 
@@ -918,9 +918,9 @@ copy_buf2_row_wrap:
 		pop	di
 		retn
 
-copy_buffer_2		endp
+copy_to_di_cga		endp
 
-equip_multiply		proc	near
+blit_sprite_cga		proc	near
 		push	di
 		push	cx
 		mov	al,ch
@@ -942,7 +942,7 @@ multiply_pixel_loop:
 														lodsb				; String [si] to al
 														mov	cs:src_word_a,ax
 														push	bx
-														call	equip_process_loop_5
+														call	copy_status_loop_cga
 														pop	bx
 														or	es:[di],al
 														inc	di
@@ -962,7 +962,7 @@ multiply_row_wrap:
 		pop	di
 		retn
 
-equip_multiply		endp
+blit_sprite_cga		endp
 
 		; inline data / dead-zone bytes before plane_mix_loop entry
 		db	 00h, 90h, 20h, 06h, 80h, 91h	; CRTC seq: (00h,90h),(20h,06h),(80h,91h)
@@ -987,7 +987,7 @@ plane_mix_loop:
 								mov	cs:src_word_a,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_b,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosw				; Store ax to es:[di]
 								loop	plane_mix_loop		; Loop if cx > 0
 
@@ -1017,7 +1017,7 @@ sprite_plane_mix_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosw				; Store ax to es:[di]
 								loop	sprite_plane_mix_loop		; Loop if cx > 0
 
@@ -1038,7 +1038,7 @@ char_expand_col_loop:
 														push	bx
 														push	ds
 														push	si
-														call	equip_multiply_2
+														call	compute_tile_vram_offset_cga
 														pop	si
 														pop	ds
 														pop	bx
@@ -1053,7 +1053,7 @@ char_expand_col_loop:
 
 		retn
 
-equip_multiply_2		proc	near
+compute_tile_vram_offset_cga		proc	near
 		mov	ds,cs:gvar_game_seg
 		mov	dx,cs
 		add	dx,2000h
@@ -1110,7 +1110,7 @@ char_copy_pixel_loop:
 
 		retn
 
-equip_multiply_2		endp
+compute_tile_vram_offset_cga		endp
 
 disp_char_expand:
 		mov	word ptr cs:src_word_d,0
@@ -1166,7 +1166,7 @@ hud_blend_row_loop:
 								mov	ax,ds:sprite_mask_off[si]
 								mov	cs:src_word_c,ax
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								or	es:[di],ax
 								inc	di
 								inc	di
@@ -1187,7 +1187,7 @@ hud_blend_row2_loop:
 								xchg	ah,al
 								mov	cs:src_word_c,ax
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								or	es:[di],ax
 								dec	di
 								dec	di
@@ -1209,7 +1209,7 @@ draw_top_seg_loop:
 								lodsb				; String [si] to al
 								or	al,al			; Zero ?
 								jz	draw_right_seg_start			; Jump if zero
-								call	equip_func_7
+								call	blit_sprite_clipped_cga
 								add	di,0A0h
 								jmp	short draw_top_seg_loop
 
@@ -1220,7 +1220,7 @@ draw_right_seg_loop:
 								lodsb				; String [si] to al
 								or	al,al			; Zero ?
 								jz	draw_left_seg_start			; Jump if zero
-								call	equip_func_7
+								call	blit_sprite_clipped_cga
 								inc	di
 								jmp	short draw_right_seg_loop
 
@@ -1231,7 +1231,7 @@ draw_left_seg_loop:
 								lodsb				; String [si] to al
 								or	al,al			; Zero ?
 								jz	draw_bot_right_start			; Jump if zero
-								call	equip_func_7
+								call	blit_sprite_clipped_cga
 								add	di,0FF60h
 								jmp	short draw_left_seg_loop
 
@@ -1242,7 +1242,7 @@ draw_bot_right_loop:
 								lodsb				; String [si] to al
 								or	al,al			; Zero ?
 								jz	draw_bot_left_start			; Jump if zero
-								call	equip_func_7
+								call	blit_sprite_clipped_cga
 								dec	di
 								jmp	short draw_bot_right_loop
 
@@ -1264,7 +1264,7 @@ draw_segment_count_a:
 draw_vert_loop_a:
 														push	cx
 														mov	al,18h
-														call	equip_func_7
+														call	blit_sprite_clipped_cga
 														add	di,0A0h
 														pop	cx
 														loop	draw_vert_loop_a		; Loop if cx > 0
@@ -1282,7 +1282,7 @@ draw_segment_count_b:
 draw_horiz_loop_a:
 														push	cx
 														mov	al,18h
-														call	equip_func_7
+														call	blit_sprite_clipped_cga
 														inc	di
 														pop	cx
 														loop	draw_horiz_loop_a		; Loop if cx > 0
@@ -1300,7 +1300,7 @@ draw_segment_count_c:
 draw_vert_loop_b:
 														push	cx
 														mov	al,18h
-														call	equip_func_7
+														call	blit_sprite_clipped_cga
 														add	di,0FF60h
 														pop	cx
 														loop	draw_vert_loop_b		; Loop if cx > 0
@@ -1318,7 +1318,7 @@ draw_segment_count_d:
 draw_vert_loop_c:
 														push	cx
 														mov	al,18h
-														call	equip_func_7
+														call	blit_sprite_clipped_cga
 														dec	di
 														pop	cx
 														loop	draw_vert_loop_c		; Loop if cx > 0
@@ -1330,7 +1330,7 @@ draw_segment_timer_wait:
 														jb	draw_segment_timer_wait			; Jump if below
 								jmp	short draw_segment_top
 
-equip_func_7		proc	near
+blit_sprite_clipped_cga		proc	near
 		push	si
 		push	di
 		dec	al
@@ -1378,9 +1378,9 @@ cell_write_row3_wrap:
 		pop	si
 		retn
 
-equip_func_7		endp
+blit_sprite_clipped_cga		endp
 
-		; CGA cell color pattern table (8 bytes per cell, used by equip_func_7 / cga_scroll_mask_off)
+		; CGA cell color pattern table (8 bytes per cell, used by blit_sprite_clipped_cga / cga_scroll_mask_off)
 		; followed by color index map and entry code bytes for extract_src_planes_loop
 		db	 00h, 00h, 00h, 03h, 80h, 80h	; cell row  0
 		db	 8Ah, 88h, 03h, 03h, 03h, 03h	; cell row  1
@@ -1466,7 +1466,7 @@ extract_plane_b_skip:
 								mov	cs:src_word_c,ax
 
 extract_plane_c_skip:
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosw				; Store ax to es:[di]
 								pop	si
 								inc	si
@@ -1498,7 +1498,7 @@ extract_col_loop:
 														push	cx
 														push	bx
 														push	si
-														call	extract_bits
+														call	extract_pixel_bits_cga
 														pop	si
 														pop	bx
 														pop	cx
@@ -1516,7 +1516,7 @@ extract_timer_wait:
 		pop	ds
 		retn
 
-extract_bits		proc	near
+extract_pixel_bits_cga		proc	near
 		mov	al,cs:cur_row_ctr
 		add	al,10h
 		shr	al,1			; Shift w/zeros fill
@@ -1565,7 +1565,7 @@ extract_clear_block:
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
 		retn
 
-extract_bits		endp
+extract_pixel_bits_cga		endp
 
 disp_draw_status:
 		mov	cs:cur_row_ctr,bl
@@ -1581,7 +1581,7 @@ disp_draw_status:
 		sub	cx,5
 		push	cx
 		push	di
-		call	fill_buffer
+		call	init_status_buf_cga
 		pop	di
 		inc	byte ptr cs:cur_row_ctr
 		add	di,2000h
@@ -1591,12 +1591,12 @@ disp_draw_status:
 
 fill_bank_wrap:
 		mov	cx,2
-		call	clear_buffer
+		call	clear_status_buf_rows_cga
 		pop	cx
 
 fill_pixel_loop:
 								push	cx
-								call	equip_get_value
+								call	write_status_pattern_0_cga
 								or	byte ptr es:[di],30h	; '0'
 								and	byte ptr es:[di],0F0h
 								or	byte ptr es:[bx+di-1],0Ch
@@ -1612,10 +1612,10 @@ fill_pixel_wrap:
 								loop	fill_pixel_loop		; Loop if cx > 0
 
 		mov	cx,1
-		call	clear_buffer
+		call	clear_status_buf_rows_cga
 
-fill_buffer		proc	near
-		call	equip_get_value
+init_status_buf_cga		proc	near
+		call	write_status_pattern_0_cga
 		or	byte ptr es:[di],3Fh	; '?'
 		inc	di
 		mov	cx,bx
@@ -1625,14 +1625,14 @@ fill_buffer		proc	near
 		or	byte ptr es:[di],0FCh
 		retn
 
-fill_buffer		endp
+init_status_buf_cga		endp
 
-clear_buffer		proc	near
+clear_status_buf_rows_cga		proc	near
 
 clear_row_loop:
 								push	cx
 								push	di
-								call	equip_get_value
+								call	write_status_pattern_0_cga
 								or	byte ptr es:[di],30h	; '0'
 								and	byte ptr es:[di],0F0h
 								inc	di
@@ -1655,13 +1655,13 @@ clear_row_wrap:
 
 		retn
 
-clear_buffer		endp
+clear_status_buf_rows_cga		endp
 
-equip_get_value		proc	near
+write_status_pattern_0_cga		proc	near
 		mov	word ptr es:[di-1],0
 		retn
 
-equip_get_value		endp
+write_status_pattern_0_cga		endp
 
 disp_fill_col:
 		push	bx
@@ -1708,10 +1708,10 @@ disp_3plane_merge:
 		mov	ds:saved_es,es
 		mov	di,69Ah
 		add	di,ds:saved_di
-		call	equip_process_loop_4
+		call	seed_status_pattern_cga
 		mov	di,6BCh
 		add	di,ds:saved_di
-		call	equip_process_loop_4
+		call	seed_status_pattern_cga
 		mov	ax,0B800h
 		mov	es,ax
 		mov	ds,cs:saved_es
@@ -1737,11 +1737,11 @@ frame_render_row_top:
 		jb	frame_render_use_bg			; Jump if below
 		cmp	ax,71h
 		jae	frame_render_use_bg			; Jump if above or =
-		call	equip_process_loop_3
+		call	init_status_row_11_cga
 		jmp	short frame_render_row_bot
 
 frame_render_use_bg:
-		call	equip_process_loop_2
+		call	init_status_row_28_cga
 
 frame_render_row_bot:
 		pop	cx
@@ -1763,11 +1763,11 @@ frame_render_row_bot:
 		jb	frame_render_use_bg_b			; Jump if below
 		cmp	ax,71h
 		jae	frame_render_use_bg_b			; Jump if above or =
-		call	equip_process_loop_3
+		call	init_status_row_11_cga
 		jmp	short frame_render_timer_wait
 
 frame_render_use_bg_b:
-		call	equip_process_loop_2
+		call	init_status_row_28_cga
 
 frame_render_timer_wait:
 								cmp	byte ptr cs:gvar_frame_timer,4
@@ -1784,7 +1784,7 @@ frame_render_done:
 		pop	ds
 		retn
 
-equip_process_loop_2		proc	near
+init_status_row_28_cga		proc	near
 		mov	cx,28h
 		mov	word ptr cs:src_word_d,0
 
@@ -1795,15 +1795,15 @@ process2_word_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosw				; Store ax to es:[di]
 								loop	process2_word_loop		; Loop if cx > 0
 
 		retn
 
-equip_process_loop_2		endp
+init_status_row_28_cga		endp
 
-equip_process_loop_3		proc	near
+init_status_row_11_cga		proc	near
 		mov	cx,0Bh
 		mov	word ptr cs:src_word_d,0
 
@@ -1815,7 +1815,7 @@ process3_byte_top_loop:
 								mov	cs:src_word_b,ax
 								lodsb				; String [si] to al
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosb				; Store al to es:[di]
 								loop	process3_byte_top_loop		; Loop if cx > 0
 
@@ -1830,7 +1830,7 @@ process3_word_mid_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosw				; Store ax to es:[di]
 								loop	process3_word_mid_loop		; Loop if cx > 0
 
@@ -1846,18 +1846,18 @@ process3_byte_bot_loop:
 								mov	cs:src_word_b,ax
 								lodsb				; String [si] to al
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosb				; Store al to es:[di]
 								loop	process3_byte_bot_loop		; Loop if cx > 0
 
 		retn
 
-equip_process_loop_3		endp
+init_status_row_11_cga		endp
 
-equip_process_loop_4		proc	near
+seed_status_pattern_cga		proc	near
 		push	di
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_cga
 		add	di,36h
 		mov	cx,5Bh
 
@@ -1868,12 +1868,12 @@ draw_left_border_loop:
 								loop	draw_left_border_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_cga
 		pop	di
 		add	di,cga_plane_stride
 		push	di
 		mov	ax,0FD7Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_cga
 		add	di,36h
 		mov	cx,2Dh
 
@@ -1890,11 +1890,11 @@ draw_mid_border_loop:
 		mov	byte ptr es:[di+19h],0Eh
 		add	di,50h
 		mov	ax,0FD7Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_cga
 		pop	di
 		add	di,cga_plane_stride
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_cga
 		add	di,36h
 		mov	cx,5Bh
 
@@ -1905,12 +1905,12 @@ draw_right_border_loop:
 								loop	draw_right_border_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_cga
 		retn
 
-equip_process_loop_4		endp
+seed_status_pattern_cga		endp
 
-fill_buffer_2		proc	near
+fill_status_byte_24x_cga		proc	near
 		stosb				; Store al to es:[di]
 		mov	al,0FFh
 		mov	cx,18h
@@ -1919,7 +1919,7 @@ fill_buffer_2		proc	near
 		stosb				; Store al to es:[di]
 		retn
 
-fill_buffer_2		endp
+fill_status_byte_24x_cga		endp
 
 disp_frame_render:
 		push	ds
@@ -1937,12 +1937,12 @@ extract2_row_loop:
 								neg	ax
 								add	ax,39h
 								add	ax,ax
-								call	extract_bits_2
+								call	extract_pixel_pair_cga
 								pop	ax
 								push	ax
 								add	ax,ax
 								dec	ax
-								call	extract_bits_2
+								call	extract_pixel_pair_cga
 
 extract2_timer_wait:
 														cmp	byte ptr cs:gvar_frame_timer,4
@@ -1953,7 +1953,7 @@ extract2_timer_wait:
 		pop	ds
 		retn
 
-extract_bits_2		proc	near
+extract_pixel_pair_cga		proc	near
 		push	ax
 		mov	bl,al
 		mov	al,2Fh			; '/'
@@ -1986,7 +1986,7 @@ extract2_byte_loop:
 								mov	cs:src_word_b,ax
 								lodsb				; String [si] to al
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosb				; Store al to es:[di]
 								loop	extract2_byte_loop		; Loop if cx > 0
 
@@ -2004,7 +2004,7 @@ extract2_partial_loop:
 								mov	cs:src_word_b,ax
 								lodsb				; String [si] to al
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosb				; Store al to es:[di]
 								loop	extract2_partial_loop		; Loop if cx > 0
 
@@ -2015,13 +2015,13 @@ extract2_partial_loop:
 		mov	cs:src_word_b,ax
 		lodsb				; String [si] to al
 		mov	cs:src_word_a,ax
-		call	equip_process_loop_5
+		call	copy_status_loop_cga
 		and	al,0FCh
 		and	byte ptr es:[di],3
 		or	es:[di],al
 		retn
 
-extract_bits_2		endp
+extract_pixel_pair_cga		endp
 
 		; entry code for disp_frame_render3 (push ds; mov saved_di,di; mov saved_es,es;
 		;   mov es,0B800h; mov ds,[saved_es]; mov cx,39h) -- jumps into extract3_row_loop
@@ -2038,12 +2038,12 @@ extract3_row_loop:
 								neg	ax
 								add	ax,39h
 								add	ax,ax
-								call	extract_bits_3
+								call	extract_pixel_pair_alt_cga
 								pop	ax
 								push	ax
 								add	ax,ax
 								dec	ax
-								call	extract_bits_3
+								call	extract_pixel_pair_alt_cga
 
 extract3_timer_wait:
 														cmp	byte ptr cs:gvar_frame_timer,4
@@ -2054,7 +2054,7 @@ extract3_timer_wait:
 		pop	ds
 		retn
 
-extract_bits_3		proc	near
+extract_pixel_pair_alt_cga		proc	near
 		push	ax
 		mov	bl,al
 		mov	al,2Fh			; '/'
@@ -2079,7 +2079,7 @@ extract3_word_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	equip_process_loop_5
+								call	copy_status_loop_cga
 								stosw				; Store ax to es:[di]
 								loop	extract3_word_loop		; Loop if cx > 0
 
@@ -2090,7 +2090,7 @@ extract3_clear_tail:
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
 		retn
 
-extract_bits_3		endp
+extract_pixel_pair_alt_cga		endp
 
 disp_frame_render2:
 		push	ax
@@ -2123,7 +2123,7 @@ disp_hfill_row:
 		add	ax,40FDh
 		mov	cs:cga_color_lut,ax
 		retn
-		; 2-bit color data for frame plane A (used by extract_bits_2/3 alongside frame_plane_b_tbl)
+		; 2-bit color data for frame plane A (used by extract_pixel_pair_cga/3 alongside frame_plane_b_tbl)
 
 frame_plane_a_tbl:
 		db	17 dup (0)
@@ -2277,7 +2277,7 @@ frame_plane_a_tbl:
 		db	1, 3, 3, 2, 1, 2                                   ; plane_a offset 0x3DD (6 bytes)
 		db	2, 3, 3, 3, 3, 2                                   ; plane_a offset 0x3E3 (6 bytes)
 		db	1, 2, 2, 3                                         ; plane_a offset 0x3E9 (4 bytes)
-frame_plane_b_tbl		dw	303h			; 2-bit color data for frame plane B (used by extract_bits_2/3)
+frame_plane_b_tbl		dw	303h			; 2-bit color data for frame plane B (used by extract_pixel_pair_cga/3)
 		db	3, 3, 1                                            ; plane_b offset 0x000 (3 bytes)
 		db	7 dup (3)
 		db	1, 3, 2, 3, 3, 3                                   ; plane_b offset 0x00A (6 bytes)
@@ -2497,7 +2497,7 @@ frame_plane_b_tbl		dw	303h			; 2-bit color data for frame plane B (used by extra
 		db	3, 1, 3, 2, 3, 3                                   ; plane_b offset 0x509 (6 bytes)
 		db	3, 3                                               ; plane_b offset 0x50F (2 bytes)
 
-equip_process_loop_5		proc	near
+copy_status_loop_cga		proc	near
 		push	cx
 		push	si
 		mov	si,cs:cga_color_lut
@@ -2530,7 +2530,7 @@ color_mix_bit_loop:
 		pop	cx
 		retn
 
-equip_process_loop_5		endp
+copy_status_loop_cga		endp
 
 disp_screen_capture:
 		push	ds

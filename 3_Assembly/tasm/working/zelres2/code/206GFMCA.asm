@@ -13,13 +13,13 @@ PAGE  59,132
 ;  sprite-scan loop).
 ;
 ;  Key subsystems:
-;    gfmca_main             - main per-frame entry: scan sprite slots, render rows
+;    run_gfmca_main             - main per-frame entry: scan sprite slots, render rows
 ;    mca_sprite_blit        - sprite blit with plane-select cache
 ;    sprite_src_setup       - resolve sprite source address + palette_byte
 ;    mca_sprite_blit_ex     - expanded sprite blit
 ;    mca_sprite_render_solid- solid sprite render (no blend)
 ;    mca_blit_2bytes_8rows  - 8-row straight copy
-;    frame_row_driver       - per-frame row dispatcher
+;    render_frame_rows       - per-frame row dispatcher
 ;    draw_ui_tiles          - draw 5x28 UI tile grid from phase_offset_tbl
 ;    bg_tile_blit           - blit single background tile
 ;    hero_sprite_col_blit   - hero sprite columns from game_seg
@@ -40,7 +40,7 @@ PAGE  59,132
 ;                  mca_sprite_src_b at 0B000h, mca_pattern_base at 0D000h).
 ;    Calls into:   ds:dispatch_tbl[bx] (game-DS animation handler table);
 ;                  cs:copy_fn_tbl entries (MCGA chunky-pixel copy variants);
-;                  internal frame_row_driver / anim_refresh_all /
+;                  internal render_frame_rows / anim_refresh_all /
 ;                  projectile_spawn_check / projectile_render_list /
 ;                  fade_gradient_rect dispatchers; cs:[stick_subsample_tick_handler] -- driver fn
 ;                  (input/page advance); no cross-chunk calls outside its
@@ -148,10 +148,10 @@ seg_a		segment	byte public
 
 		org	0
 
-gfmca_main		proc	far
+run_gfmca_main		proc	far
 
 start:
-; gfmca_main inline init block (0x0000-0x0045):
+; run_gfmca_main inline init block (0x0000-0x0045):
 ; The bytes in 0x0000-0x002F are a Sourcer mis-decode of an init-time data table
 ; (same pattern as EGA variant); they are not executed as the instructions shown.
 ; The real init code begins at 0x0030 with `push cs / pop es / ...`.
@@ -177,14 +177,14 @@ start:
 		pop	es				; 07
 		mov	di,sprite_cache_tbl		; BF 1D 50
 		xor	ax,ax				; 33 C0
-		db	0B9h				; mov cx, imm16 opcode -- data_8 dw is the immediate
-data_8		dw	80h				; word immediate for `mov cx, 80h`
+		db	0B9h				; mov cx, imm16 opcode -- mov_cx_80h_imm dw is the immediate
+mov_cx_80h_imm		dw	80h				; word immediate for `mov cx, 80h`
 		rep	stosw				; F3 AB -- zero sprite_cache_tbl (0x80 words)
 ; [0x003C] drv_init_stub: opcode byte (FEh) is a patch target ?-- callers may
 ; overwrite it to skip or alter init behavior.
 
 drv_init_stub:
-data_9		db	0FEh				; FE -- `inc byte ptr ...` opcode (patch target)
+inc_byte_opcode_patch		db	0FEh				; FE -- `inc byte ptr ...` opcode (patch target)
 		db	06h, 0FFh, 4Fh			; 06 FF 4F -- operand: ds:[anim_phase]
 		mov	word ptr ds:vga_row_ptr,mca_vga_base_ofs	; C7 06 EB 4F B0 11
 
@@ -193,7 +193,7 @@ loc_1:
 		sub	si,21h
 ; [0x004D-0x004F] call with mid-instruction label: mca_row_ofs labels the
 ; displacement bytes. Callers patch the displacement to redirect this call
-; at runtime. Current target: 0x0050 + 0x14C0 = 0x1510 (si_wrap_lo).
+; at runtime. Current target: 0x0050 + 0x14C0 = 0x1510 (wrap_scroll_si_high).
 		db	0E8h				; call near opcode
 mca_row_ofs	db	0C0h, 14h			; displacement (patch target); initially calls 1510h
 		xor	bx,bx			; Zero register
@@ -268,13 +268,13 @@ loc_22:
 
 loc_23:
 				add	si,4
-				call	si_wrap_hi
+				call	wrap_scroll_si_low
 				add	word ptr ds:vga_row_ptr,0A00h
 				dec	byte ptr ds:row_counter
 				jnz	call_frame_row_dispatcher			; Jump if not zero
 		retn
 
-gfmca_main		endp
+run_gfmca_main		endp
 
 sprite_state_update		proc	near
 		mov	al,[si-1]
@@ -609,7 +609,7 @@ loc_51:
 		mov	byte ptr ds:sprite_buf,0FFh
 		mov	cl,[si]
 		add	si,25h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	al,[si]
 		or	al,al			; Zero ?
 		jns	loc_52			; Jump if not sign
@@ -649,7 +649,7 @@ sprite_slot_init		proc	near
 		add	dx,11B0h
 		mov	cl,[si]
 		add	si,24h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	bx,sprite_pos
 		lodsw				; String [si] to ax
 		mov	[bx],ax
@@ -659,7 +659,7 @@ sprite_slot_init		proc	near
 		inc	si
 		mov	di,sprite_pos
 		mov	bp,sprite_state_a
-		call	sprite_pos_pair_iter
+		call	step_sprite_pos_pair
 		pop	bx
 		pop	si
 		retn
@@ -680,7 +680,7 @@ set_sprite_buf_b_FF:
 		mov	byte ptr ds:sprite_buf_b,0FFh
 		mov	cl,[si]
 		add	si,24h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	al,[si]
 		or	al,al			; Zero ?
 		jns	loc_55			; Jump if not sign
@@ -713,7 +713,7 @@ sprite_wide_row_render		proc	near
 		mov	cl,[si-1]
 		mov	dl,[si]
 		add	si,24h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	dh,[si]
 		mov	al,cl
 		call	sprite_src_setup
@@ -786,7 +786,7 @@ loc_60:
 		mov	al,[si]
 		mov	[bx+1],al
 		add	si,24h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	ax,[si-1]
 		mov	[bx+2],ax
 		pop	dx
@@ -804,11 +804,11 @@ loc_60:
 		mov	di,sprite_pos
 		mov	[di],al
 		mov	bp,sprite_state_a
-		call	sprite_pos_pair_iter
+		call	step_sprite_pos_pair
 		cmp	byte ptr ds:row_counter,1
 		je	loc_61			; Jump if equal
 		add	dx,9F0h
-		call	sprite_pos_pair_iter
+		call	step_sprite_pos_pair
 		test	byte ptr ds:flag_equip_b,0FFh
 		jz	loc_61			; Jump if zero
 		test	byte ptr ds:flag_shadow,0FFh
@@ -835,7 +835,7 @@ loc_62:
 		mov	[bx+1],al
 		mov	cl,[si-1]
 		add	si,24h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	dl,[si-1]
 		mov	al,cl
 		call	sprite_src_setup
@@ -893,7 +893,7 @@ loc_66:
 
 sprite_wide_row_render		endp
 
-sprite_pos_pair_iter		proc	near
+step_sprite_pos_pair		proc	near
 		call	sprite_pos_blit
 
 sprite_pos_blit:
@@ -925,7 +925,7 @@ loc_68:
 		add	dx,8
 		retn
 
-sprite_pos_pair_iter		endp
+step_sprite_pos_pair		endp
 
 sprite_cell_render		proc	near
 
@@ -1006,25 +1006,25 @@ mca_sprite_blit_ex		proc	near
 
 mca_sprite_blit_ex		endp
 
-mca_plane_3_iter		proc	near
+step_mca_plane_3		proc	near
 		mov	cx,8
 
 ai_mul_8rows_loop:
 				push	cx
 				mov	dl,ds:[bp]
 				lodsw				; String [si] to ax
-				call	mca_plane_nibble_iter
+				call	step_mca_plane_nibble
 				lodsw				; String [si] to ax
-				call	mca_plane_nibble_iter
+				call	step_mca_plane_nibble
 				inc	bp
 				pop	cx
 				loop	ai_mul_8rows_loop		; Loop if cx > 0
 
 		retn
 
-mca_plane_3_iter		endp
+step_mca_plane_3		endp
 
-mca_plane_nibble_iter		proc	near
+step_mca_plane_nibble		proc	near
 		mov	cx,4
 
 nibble_4px_loop:
@@ -1039,7 +1039,7 @@ nibble_4px_loop:
 
 		retn
 
-mca_plane_nibble_iter		endp
+step_mca_plane_nibble		endp
 
 mca_plane_copy_16rows		proc	near
 		mov	cx,8
@@ -1650,13 +1650,13 @@ test_flag_shield_115:
 		jz	loc_116			; Jump if zero
 		mov	cx,6
 		mov	byte ptr ds:col_idx,3
-		call	frame_row_driver
+		call	render_frame_rows
 		jmp	short loc_117
 
 loc_116:
 		mov	cx,9
 		mov	byte ptr ds:col_idx,0
-		call	frame_row_driver
+		call	render_frame_rows
 
 loc_117:
 		mov	si,610Eh
@@ -1709,7 +1709,7 @@ loc_121:
 loc_122:
 		mov	cx,9
 		mov	byte ptr ds:col_idx,0
-		call	frame_row_driver
+		call	render_frame_rows
 		test	byte ptr ds:init_complete_flag,0FFh
 		jz	loc_123			; Jump if zero
 		retn
@@ -1825,7 +1825,7 @@ loc_135:
 		mov	byte ptr ds:col_idx,0
 		jmp	short fade_dispatch_loop
 
-frame_row_driver		proc	near
+render_frame_rows		proc	near
 
 fade_dispatch_loop:
 				push	cx
@@ -1853,7 +1853,7 @@ fade_dispatch_loop:
 				mul	cl			; ax = reg * al
 				add	ax,511Dh
 				mov	di,ax
-				call	mca_plane_3_iter
+				call	step_mca_plane_3
 				pop	di
 				pop	si
 				pop	ds
@@ -1867,7 +1867,7 @@ loc_137:
 
 		retn
 
-frame_row_driver		endp
+render_frame_rows		endp
 
 shield_state_get		proc	near
 		mov	al,byte ptr ds:[shield]
@@ -1983,7 +1983,7 @@ load_sprite_pos		proc	near
 		add	ax,cx
 		add	ax,ds:sprite_data_ptr
 		mov	si,ax
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	di,sprite_pos
 		push	cs
 		pop	es
@@ -1993,7 +1993,7 @@ sprite_pos_copy_loop:
 				movsw				; Mov [si] to es:[di]
 				movsb				; Mov [si] to es:[di]
 				add	si,21h
-				call	si_wrap_hi
+				call	wrap_scroll_si_low
 				loop	sprite_pos_copy_loop		; Loop if cx > 0
 
 		retn
@@ -2025,7 +2025,7 @@ loc_147:
 
 loc_148:
 		jnz	loc_149			; Jump if not zero
-		call	scroll_restore
+		call	restore_scroll_pixels
 		jmp	test_redraw_lock
 
 loc_149:
@@ -2155,7 +2155,7 @@ set_scroll_active_0:
 
 frame_row_dispatcher		endp
 
-scroll_restore		proc	near
+restore_scroll_pixels		proc	near
 		test	byte ptr ds:restore_pending,0FFh
 		jnz	loc_160			; Jump if not zero
 		retn
@@ -2173,7 +2173,7 @@ loc_160:
 		mov	byte ptr ds:restore_pending,0
 		retn
 
-scroll_restore		endp
+restore_scroll_pixels		endp
 
 scroll_buf_restore		proc	near
 		push	ds
@@ -2232,7 +2232,7 @@ scroll_clear_cache		proc	near
 		add	ax,cx
 		mov	si,ax
 		add	si,ds:sprite_data_ptr
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	cx,4
 
 scroll_cache_outer_loop:
@@ -2251,7 +2251,7 @@ scroll_cache_inner_loop:
 						loop	scroll_cache_inner_loop		; Loop if cx > 0
 
 				add	si,20h
-				call	si_wrap_hi
+				call	wrap_scroll_si_low
 				pop	cx
 				loop	scroll_cache_outer_loop		; Loop if cx > 0
 
@@ -2554,7 +2554,7 @@ anim_refresh_inner_loop:
 						loop	anim_refresh_inner_loop		; Loop if cx > 0
 
 						add	si,4
-						call	si_wrap_hi
+						call	wrap_scroll_si_low
 						add	word ptr ds:vga_row_ptr,0A00h
 						pop	cx
 						loop	anim_refresh_outer_loop		; Loop if cx > 0
@@ -3046,7 +3046,7 @@ loc_216:
 		mov	si,9350h
 		retn
 
-si_wrap_hi		proc	near
+wrap_scroll_si_low		proc	near
 		cmp	si,0E900h
 		jae	loc_217			; Jump if above or =
 		retn
@@ -3055,9 +3055,9 @@ loc_217:
 		sub	si,900h
 		retn
 
-si_wrap_hi		endp
+wrap_scroll_si_low		endp
 
-si_wrap_lo		proc	near
+wrap_scroll_si_high		proc	near
 		cmp	si,0E000h
 		jb	loc_218			; Jump if below
 		retn
@@ -3066,7 +3066,7 @@ loc_218:
 		add	si,900h
 		retn
 
-si_wrap_lo		endp
+wrap_scroll_si_high		endp
 
 ; draw_ui_tiles -- draw 5 rows x 28 columns of UI tiles at top of screen
 ; (parallels EGA draw_ui_tiles). Reads tile indices from phase_offset_tbl,

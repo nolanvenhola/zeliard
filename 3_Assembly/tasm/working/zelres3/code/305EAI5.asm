@@ -119,7 +119,7 @@ seg_a		segment	byte public
 
 		org	0
 
-meda_ai_main	proc	far
+run_meda_ai_main	proc	far
 
 start:
 ; -------------------------------------------------------------------------
@@ -483,7 +483,7 @@ meda_phase_count_tbl:
 
 sub01_main:
 		and	byte ptr [si+15h],0BFh
-		call	sub01_collide_outer
+		call	check_collide_outer_eai5
 		jc	sub01_state0_path			; Jump if carry Set
 		retn
 
@@ -602,7 +602,7 @@ sub01_finalize:
 		mov	[si+15h],al
 		retn
 
-meda_ai_main	endp
+run_meda_ai_main	endp
 
 phase_step_fwd		proc	near
 		cmp	byte ptr [si+3],22h	; '"'
@@ -731,7 +731,7 @@ collide_back_iter:
 
 collide_check_back		endp
 
-sub01_collide_outer		proc	near
+check_collide_outer_eai5		proc	near
 		test	byte ptr [si+3],0FFh
 		stc				; Set carry flag
 		jnz	sub01_collide_test1			; Jump if not zero
@@ -744,7 +744,7 @@ sub01_collide_test1:
 		retn
 
 sub01_collide_test2:
-		call	sub01_collide_inner
+		call	check_collide_inner_eai5
 		jnc	sub01_collide_apply			; Jump if carry=0
 		retn
 
@@ -756,9 +756,9 @@ sub01_collide_apply:
 		clc				; Clear carry flag
 		retn
 
-sub01_collide_outer		endp
+check_collide_outer_eai5		endp
 
-sub01_collide_inner		proc	near
+check_collide_inner_eai5		proc	near
 		mov	ax,[si+2]
 		call	word ptr cs:fight_cb_record_ofs
 		xchg	si,di
@@ -785,7 +785,7 @@ sub01_collide_step:
 		add	al,al
 		retn
 
-sub01_collide_inner		endp
+check_collide_inner_eai5		endp
 
 distance_check_4		proc	near
 		mov	al,ds:gvar_frame_cnt
@@ -827,7 +827,7 @@ distance_check_4		endp
 
 ; ----------------------------------------------------------------
 ; sub02_handler  -- AI sub-state 2 dispatch entry (DS-table 0xA34D -> 0xA5F1)
-; Reached via 'jmp word ptr ds:[bx+0xA345]' in meda_ai_main where
+; Reached via 'jmp word ptr ds:[bx+0xA345]' in run_meda_ai_main where
 ; bx = ([si+4] & 0xF) * 2 selects the sub-state. Entry preroll:
 ;   test [si+8], FFh ; jnz +4 ; mov [si+8], 10h  (seed cooldown)
 ; falling through into sub02_main.

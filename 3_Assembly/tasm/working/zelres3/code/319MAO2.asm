@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  319MAO2 / _319MAPA6 - Final Boss Arena Map Program (zelres3 chunk)
+;  319MAO2 / run_mapa6_main - Final Boss Arena Map Program (zelres3 chunk)
 ;
 ;  Map-program code module for the final boss (Boss 6 / Mao-2) arena.
 ;  Loaded together with the arena data file map_boss6_arena.bin
@@ -21,7 +21,7 @@ PAGE  59,132
 ;    - mao2_main_dispatch: main NPC scan + phase dispatch (was sub_1)
 ;    - Helpers: mao2_pick_target_idx, mao2_target_inc/dec,
 ;      mao2_dlg_a_init, mao2_dlg_b_init, mao2_unpack_bp_to_buf,
-;      mao2_pos_sub, mao2_pos_step (boss scroll/animation logic)
+;      compute_mao2_pos, mao2_pos_step (boss scroll/animation logic)
 ;    - Trailer dialog-data blocks (Sourcer-decoded as data) + 'ashiin'
 ;      speaker-name + zero padding
 ;
@@ -159,7 +159,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_319MAPA6	proc	far
+run_mapa6_main	proc	far
 
 ; ------------------------------------------------------------------
 ; start: header + embedded tile/cell layout data.
@@ -237,7 +237,7 @@ mao2_layout_cells_b	label	byte		; cell layout continued (post dispatch_ptr)
 		db	 01h,0B2h, 00h,0B5h,0B6h, 01h	; tile cell run
 		db	 00h, 07h,0ADh,0AEh, 01h	; tile cell run
 
-_319MAPA6	endp
+run_mapa6_main	endp
 
 mao2_main_dispatch		proc	near
 		scasw				; Scan es:[di] for ax
@@ -380,7 +380,7 @@ mao2_npc_scan_done:
 		shr	bx,1			; Shift w/zeros fill
 
 mao2_attr_shift_done:
-		call	mao2_pos_sub
+		call	compute_mao2_pos
 		mov	byte ptr ds:gvar_spawn_fx_flag,39h	; '9'
 		cmp	word ptr ds:mao2_pos_word,0C8h
 		jae	mao2_check_skip_frame			; Jump if above or =
@@ -1205,7 +1205,7 @@ mao2_dlg_step_recs_b	label	byte		; alt 6-byte handler step records
 		db	 00h, 15h, 00h, 10h, 01h, 2Bh	; 6-byte handler step record
 		db	 00h, 0Dh, 04h, 00h	; 6-byte handler step record
 
-mao2_pos_sub		proc	near
+compute_mao2_pos		proc	near
 		mov	ax,ds:mao2_pos_word
 		sub	ax,bx
 		jnc	mao2_pos_sub_clamp			; Jump if carry=0
@@ -1233,7 +1233,7 @@ mao2_pos_sub_set_skip:
 		mov	byte ptr ds:gvar_death_flag,0FFh
 		retn
 
-mao2_pos_sub		endp
+compute_mao2_pos		endp
 
 mao2_pos_step		proc	near
 		cmp	word ptr ds:mao2_pos_word,320h

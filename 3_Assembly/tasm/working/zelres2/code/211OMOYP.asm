@@ -77,7 +77,7 @@ seg_a		segment	byte public
 
 		org	0
 
-omoyp		proc	far
+run_omoyp_main		proc	far
 
 ;--------------------------------------------------------------------------
 ; Module header (9 bytes). The first 5 bytes are module metadata bytes
@@ -221,7 +221,7 @@ ref_gdtga_lbl	label	byte			; @ 0A0F8h (file +0xFC)
 		db	'gdtga.bin'
 		db	 00h				; filename terminator
 
-omoyp		endp
+run_omoyp_main		endp
 
 ;==========================================================================
 ;

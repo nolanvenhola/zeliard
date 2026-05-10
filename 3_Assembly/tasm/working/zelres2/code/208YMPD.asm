@@ -26,7 +26,7 @@ PAGE  59,132
 ;    7. Dispatch render_ground via jpt_ground_render[video_mode*2]
 ;
 ;  Key subsystems:
-;    satono_bg_main            - main entry (far), decompresses + renders both layers
+;    run_satono_bg_main            - main entry (far), decompresses + renders both layers
 ;    rle_decode_mountain_88x56 - 88x56 RLE decoder (opcode 06h = 2-byte fill)
 ;    rle_decode_ground_28      - 28-byte-per-row RLE (high-nibble 6 = zero-run)
 ;    render_mountains          - dispatch by video_mode -> mountains_*
@@ -83,8 +83,8 @@ cga_color_lut_alt_mount	equ	357Dh			; db[16] : CGA alt 4-plane LUT (mountains)
 jpt_ground_render	equ	35BBh			; dw table [6] : ground render per mode
 cga_color_lut_ground	equ	36B6h			; db[16] : CGA 4-plane -> 2bpp LUT (ground)
 ground1_src_ofs		equ	56F1h			; ground1 RLE-source offset (CS:56F1) loaded into SI
-data_15e		equ	3C30h			;* inside mountains1 data (mis-decoded ';*' fake instruction)
-data_19e		equ	0FD57h			;* inside ground1 data    (mis-decoded ';*' fake instruction)
+mountains1_data_15e		equ	3C30h			;* inside mountains1 data (mis-decoded ';*' fake instruction)
+ground1_data_19e		equ	0FD57h			;* inside ground1 data    (mis-decoded ';*' fake instruction)
 seg1_mountains1_buf	equ	1340h			; seg1:1340 - mountains1 decode destination
 seg1_ground1_buf	equ	01C0h			; seg1:01C0 - ground1 decode destination (not referenced by name - 448 byte offset)
 ega_ground_dst_0	equ	2C6Ch			; EGA ground render base (A000:2C6C)
@@ -121,7 +121,7 @@ seg_a		segment	byte public
 
 		org	0
 
-satono_bg_main	proc	far
+run_satono_bg_main	proc	far
 
 start:
 		db	 65h, 25h, 00h, 00h	; 'gs: and ax,0' (4-byte 286+ GS-override nop;
@@ -437,7 +437,7 @@ mcga_mtn_col_loop:
 		pop	ds
 		retn
 
-satono_bg_main	endp
+run_satono_bg_main	endp
 
 pixel_expand_mcga		proc	near
 		xor	al,al			; Zero register
@@ -1820,7 +1820,7 @@ mountains1:
 ; TASM's alt-encoded forms so we keep them here for bit-preservation.
 
 loc_53:
-					or	ch,ss:data_19e[bp+si]	; real bytes are ground bitmap
+					or	ch,ss:ground1_data_19e[bp+si]	; real bytes are ground bitmap
 					ja	loc_53
 		test	al,0AAh
 		stosw				; Store ax to es:[di]

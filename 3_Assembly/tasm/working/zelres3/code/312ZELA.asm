@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  312ZELA / _312MAPST - Satono Town Map Program (zelres3 chunk)
+;  312ZELA / run_mapst_main - Satono Town Map Program (zelres3 chunk)
 ;
 ;  Map-program code module for Satono Town (the first major town-area
 ;  overworld map in zelres3). Loaded together with the town data file
@@ -17,11 +17,11 @@ PAGE  59,132
 ;  Main responsibilities:
 ;    - Per-frame tile scan / NPC-cell update loop (npc_scan_loop..npc_scan_done)
 ;    - Dispatch table at zela_dispatch_tbl (in game DS) invoking scripted handlers
-;    - Map-limit and scroll step helpers (scroll_phase_dec..scroll_apply)
+;    - Map-limit and scroll step helpers (scroll_phase_dec..apply_scroll_offset)
 ;    - Contains 'gar' string fragment near end (town-name substring)
 ;
 ;  Note: The name "ZELA" in the filename is a prior-pass working nickname;
-;  the disassembler-stored proc identifier _312MAPST is authoritative.
+;  the disassembler-stored proc identifier run_mapst_main is authoritative.
 ;
 ;  Connections:
 ;    Loads:        none (loaded as data/code by 200FIGHT alongside ZELA
@@ -103,7 +103,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_312MAPST	proc	far
+run_mapst_main	proc	far
 
 ; ------------------------------------------------------------------
 ; start: - entry header + embedded tile/cell layout data
@@ -291,7 +291,7 @@ npc_anim_other:
 		mov	byte ptr ds:gvar_spawn_fx_flag,25h	; '%'
 
 npc_anim_apply_scroll:
-		call	scroll_apply
+		call	apply_scroll_offset
 		mov	ax,zela_const_word_8
 		add	ax,0Fh
 		mov	bx,ax
@@ -400,7 +400,7 @@ zela_unk_handler_1:				; entered via zela_dispatch_tbl
 		db	80h, 26h, 0F0h, 0A5h, 3Fh	; and byte ptr [A5F0h],3Fh  (zela_scroll_phase &= 63)
 		db	0C3h				; retn
 
-_312MAPST	endp
+run_mapst_main	endp
 
 ;==========================================================================
 ; scroll_phase_dec - decrement counter byte (zela_scroll_phase) modulo 64
@@ -711,7 +711,7 @@ zela_xpos_bounds_tbl:
 		db	 50h, 00h			; word 0050h
 		db	 00h, 00h, 00h, 00h, 00h	; trailing zero pad
 
-scroll_apply		proc	near
+apply_scroll_offset		proc	near
 		mov	ax,ds:zela_scroll_y
 		sub	ax,bx
 		jnc	scroll_y_clamped			; Jump if carry=0
@@ -733,7 +733,7 @@ scroll_apply_done:
 		mov	byte ptr ds:zela_walk_state,0
 		jmp	word ptr cs:fight_cb_shutdown
 
-scroll_apply		endp
+apply_scroll_offset		endp
 
 death_handler:
 		cmp	byte ptr ds:zela_death_timer,28h	; '('

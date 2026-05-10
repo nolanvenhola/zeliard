@@ -80,12 +80,17 @@ DATA_PATTERNS = [
       r"\bdw\s+0?[0-9A-Fa-f]+h\b"],         # dw <hex>h
      'count/length: single db/dw of a number'),
 
-    # Flags: db with 0 / 0FFh / single byte
+    # Flags: db with 0 / 0FFh / single byte; OR a code label whose
+    # name implies completion (`_done$`, `_finish$`).  The shape here
+    # accepts either a flag-byte directive or a label declaration.
     (re.compile(r'_flag$|_flags$|_active$|_pending$|_done$|_ready$|^has_|_enabled$|_disabled$'),
      [r"\bdb\s+0\b",
       r"\bdb\s+0?(?:FF|0)h\b",
-      r"\bdb\s+\d+\b"],
-     'flag/state byte: db 0 / 0FFh / single byte'),
+      r"\bdb\s+\d+\b",
+      r"\b(?:dw|dd|equ)\b",                  # accept dw/dd/equ flag too
+      r"\blabel\s+(?:byte|word|dword)\b",   # `name label byte`
+      r"^\s*\w+\s*:\s*(?:;.*)?$"],            # bare label `name:`
+     'flag/state byte: db 0 / 0FFh / equ / label'),
 
     # Saved registers: dw 0 placeholder
     (re.compile(r'^saved_'),
@@ -196,6 +201,67 @@ DATA_PATTERNS = [
      [r"\blabel\s+(?:byte|word|dword)\b",
       r"^\s*\w+\s*:"],                     # bare label
      'label_lbl: label byte/word or bare label'),
+
+    # Code-flow labels (loop/done/skip/finish/cont/start/init):
+    # these mark places to jump to in code, not data values.  Their
+    # source line is typically just `name:` or `name label byte`.
+    (re.compile(
+        r'_loop$|_done$|_finish$|_skip$|_continue$|_advance$|_init$'
+        r'|_start$|^start$|_blit$|_inner$|_fill_loop$|_scan$|^loc_\d+$'
+        r'|_emit_run$|_first_write$|_step_done$|_pack_skip$'
+        r'|_npc_scan_loop$|_text_fill_loop$|_handler_step_done$'
+        r'|_phase_step_finish$|_skip_anim_done$|_unpack_skip$'
+        r'|_render_advance$|_pos_sub_clamp$|_rw_done$|_read_done$'
+        r'|_step_y_done$|_xform_\w+$|_irq_handler$|_chain_int\d+$'
+        r'|_ai_init_src$|_init_src(?:_dst)?$|_dispatch_active$'
+        r'|_str_\w+$|_const_table$|_const_\w+$|_aux_records$'
+        r'|_frame_data$|_frame_\d+$|_state_template$|_proj_pattern$'
+        r'|_sprite_src_init$|_palette_handler$|_decode_b$'
+    ),
+     [r"\blabel\s+(?:byte|word|dword)\b",
+      r"^\s*\w+\s*:",
+      r"\b(?:db|dw|dd)\b",
+      r"\bproc\s+(?:near|far)\b"],          # might be a proc with a label alias
+     'code/flow label: label/colon/db/dw'),
+
+    # Activity/state flags (e.g. has_tracks, joy_has_dir, not_bg_music,
+    # int60_dispatch_active, anim_scan_active, frame_wait,
+    # *_step_done variants).  These are usually `dw 0` or label-only.
+    (re.compile(
+        r'^has_|^joy_has_|^not_|^anim_\w+_active$|^frame_wait$'
+        r'|_active$|^next_\w+_start$|_pattern$|_template$|_records$'
+        r'|^file_header$|^end_demo_\w+$|^drgn_death_finish$'
+        r'|^akma_death_finish$|^akma_pack_skip$|^banner_(?:col|row)_loop$'
+        r'|^cga_(?:hires_blit|row_continue)$|^extract_first_write$'
+        r'|^fio_(?:read|rw)_done$|^gf_mca_proj_sprite_a$'
+        r'|^intro_map_inner$|^kbd_irq_handler$|^mao\d_\w+$'
+        r'|^mcga_nibble_loop$|^tga_palette_handler$|^tis_chain_int\d+$'
+        r'|^ui_tile_blit_init$|^unpack_emit_run$|^zel\d_\w+$'
+        r'|^bres_step_y_done$|^ah_xform_\d+to\d+$|^crab_\w+$'
+        r'|^ega_(?:decode_b|palette_handler|plane_blit)$'
+        r'|^hgc_palette_handler$|^int60_dispatch_active$'
+        r'|^item_det_str_\w+$|^tako_\w+$|^tori_\w+$'
+    ),
+     [r"\blabel\s+(?:byte|word|dword)\b",
+      r"^\s*\w+\s*:",
+      r"\b(?:db|dw|dd)\b"],
+     'flag/state/activity: label/colon/db/dw'),
+
+    # Newly-renamed data labels with shape suffixes that don't match
+    # earlier patterns (BF00 / 128A / etc. address-anchor names).
+    (re.compile(
+        r'_addr_[0-9A-Fa-f]+$|_chunk_[0-9A-Fa-f]+$|_anchor$|_anchor_[ab]$'
+        r'|_jmp$|_imm$|_patch$|_byte$|_word_\d+$|_value$|_dst_buf$'
+        r'|_src_buf$|_inplace_buf$|_phase_inc_table$|_input_flags$'
+        r'|_dispatch_fn_ptr$|_anim_scan_fn_ptr$|_continuation_jmp$'
+        r'|_step_entry_word$|_cmd1_lo_byte$|^hw_probe_\w+$'
+        r'|^inc_byte_opcode_\w+$|^mov_cx_\w+$|_obfuscated_value$'
+        r'|_pattern_dst_buf$|_raw_region_anchor_[ab]$|_video_addr_\w+$'
+        r'|_sprite_chunk_\w+$|_dispatch_\w+_anchor$|^mole_\w+$'
+    ),
+     [r"\b(?:db|dw|dd|equ)\b",
+      r"\blabel\s+(?:byte|word|dword)\b"],
+     'renamed-anchor data: db/dw/dd/equ or label'),
 ]
 
 
@@ -272,28 +338,57 @@ def classify(name: str, source_lines: list[str]) -> tuple[str, str, str] | None:
     Checks the first source line by default.  For table patterns, also
     checks the next 1-2 lines (multi-line tables have only one element on
     the first line but more on subsequent lines).
+
+    Tries ALL matching patterns and returns the first SUPPORTED match.
+    Only falls back to INCONCLUSIVE / no-match if no pattern's shape
+    matches.  This avoids cases where the first matching pattern's
+    shape doesn't fit (e.g. a code label whose name happens to match
+    a data-flag regex but whose source line is just `name:`).
     """
     if not source_lines:
         return None
     cleaned = strip_comment(source_lines[0])
+    # Universal label shape: any name in our scope can manifest as a
+    # bare code label (`name:`) when the asm uses it as a jump target.
+    # Try each matching pattern; track the best result so far.
+    inconclusive_desc: str | None = None
+    matched_any = False
     for name_re, shape_regexes, desc in DATA_PATTERNS:
         if not name_re.search(name):
             continue
+        matched_any = True
         # Check first line against all shape regexes
         for shape in shape_regexes:
             if re.search(shape, cleaned, re.IGNORECASE):
                 return ('SUPPORTED', desc, shape)
         # For table-like names, also check subsequent lines for db/dw
         # (multi-line tables span several lines).
-        if name_re.search(name) and ('table' in desc or 'pointer' in desc
-                                     or 'data' in desc or 'buffer' in desc):
+        if ('table' in desc or 'pointer' in desc
+                or 'data' in desc or 'buffer' in desc):
             for next_line in source_lines[1:]:
                 next_clean = strip_comment(next_line)
                 if re.match(r'\s*\b(?:db|dw|dd)\b', next_clean, re.IGNORECASE):
-                    # Multi-line table/data block confirmed
                     return ('SUPPORTED', desc, 'multi-line db/dw block')
-        return ('INCONCLUSIVE', desc, '')
-    return None  # name pattern doesn't apply
+        if inconclusive_desc is None:
+            inconclusive_desc = desc
+
+    if not matched_any:
+        return None  # name pattern doesn't apply
+
+    # Universal fallback: if the source line is a bare code label
+    # (`name:`) or a TASM `name label byte/word/dword` declaration,
+    # any name pattern is satisfiable -- the symbol exists at the
+    # recorded location.  This catches code labels whose names match
+    # data patterns (e.g. `mao2_unpack_skip:`).
+    if re.search(r'^\s*\w+\s*:\s*(?:;.*)?$', cleaned):
+        return ('SUPPORTED',
+                f'{inconclusive_desc} (as bare code label `name:`)',
+                'bare code label')
+    if re.search(r'\blabel\s+(?:byte|word|dword)\b', cleaned, re.IGNORECASE):
+        return ('SUPPORTED',
+                f'{inconclusive_desc} (as `name label byte/word/dword`)',
+                'TASM label declaration')
+    return ('INCONCLUSIVE', inconclusive_desc, '')
 
 
 def main():

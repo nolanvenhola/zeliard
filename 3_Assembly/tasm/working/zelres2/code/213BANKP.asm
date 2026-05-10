@@ -115,7 +115,7 @@ seg_a		segment	byte public
 
 		org	0
 
-bank_main		proc	far
+run_bank_main		proc	far
 
 start:
 		cmp	[di],cl
@@ -126,7 +126,7 @@ start:
 		mov	di,8000h
 		mov	si,bank_grp_ref
 		mov	al,2
-		call	word ptr cs:data_7
+		call	word ptr cs:script_step_entry_word
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,sprite_buf_ofs
@@ -177,7 +177,7 @@ drv_script_step:
 chain_to_drv_return_to_caller:
 		jmp	word ptr cs:drv_return_to_caller
 
-bank_main		endp
+run_bank_main		endp
 
 script_opcode_dispatch		proc	near
 		mov	bl,al
@@ -204,8 +204,8 @@ bankp_dispatch_handlers:
 		db	 00h,0BEh, 0Ch,0A9h, 2Eh,0FFh	; (cx hi) + mov si,A90C; call cs:..
 		db	 16h, 0Eh, 60h,0C6h, 06h, 56h	; ...[600E] (show_menu_items); mov...
 		db	0FFh, 00h, 8Ah, 1Eh, 1Eh,0ADh	; ...[FF56],00; mov bl,[AD1E]
-		db	 2Eh,0FFh			; call cs:.. (data_7 below = 1016h)
-data_7		dw	1016h				; cs:[1016] script-step entry word
+		db	 2Eh,0FFh			; call cs:.. (script_step_entry_word below = 1016h)
+script_step_entry_word		dw	1016h				; cs:[1016] script-step entry word
 		db	 60h, 73h, 02h, 32h,0DBh, 88h	; pushf/jnc/xor/mov sequence
 		db	 1Eh, 1Eh,0ADh, 32h,0FFh, 03h	; mov [AD1E],bl; xor bh,bh; add..
 		db	0DBh,0FFh,0A7h, 1Bh,0A1h, 25h	; bx,bx; jmp cs:[bx+A11B] (jmp tbl)
@@ -359,7 +359,7 @@ loc_14:
 				mov	bx,3148h
 				call	word ptr cs:drv_draw_string
 				int	61h			; ??INT Non-standard interrupt
-				call	adjust_amount_by_input
+				call	apply_amount_input_adjust
 				test	ah,1
 				jnz	script_AA48			; Jump if not zero
 				mov	word ptr ds:gvar_script_ptr,0AA48h
@@ -501,7 +501,7 @@ loc_26:
 				mov	bx,3148h
 				call	word ptr cs:drv_draw_string
 				int	61h			; ??INT Non-standard interrupt
-				call	adjust_amount_by_input
+				call	apply_amount_input_adjust
 				test	ah,1
 				jnz	script_AA48_30			; Jump if not zero
 				mov	word ptr ds:gvar_script_ptr,0AA48h
@@ -638,7 +638,7 @@ clear_dialog_area		proc	near
 
 clear_dialog_area		endp
 
-adjust_amount_by_input		proc	near
+apply_amount_input_adjust		proc	near
 		mov	dl,ds:amount_hi
 		mov	bx,ds:amount_lo
 		test	al,8
@@ -692,7 +692,7 @@ loc_42:
 		mov	ds:amount_lo,bx
 		retn
 
-adjust_amount_by_input		endp
+apply_amount_input_adjust		endp
 
 draw_intro_12x8		proc	near
 		mov	si,intro_tile_map

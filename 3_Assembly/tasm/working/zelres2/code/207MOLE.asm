@@ -23,8 +23,8 @@ PAGE  59,132
 ;                          copies sprite data, invokes decoders, returns far
 ;    ega_init            - offset 0xAF: program EGA Graphics Controller regs
 ;                          (Set/Reset, Enable, Color Compare, Mode, BitMask)
-;    dispatch_decode_a   - offset 0xD4: indexed jmp through jmp_tbl_decode_a
-;    dispatch_decode_b   - offset 0x352: indexed jmp through jmp_tbl_decode_b
+;    dispatch_decode_table_a   - offset 0xD4: indexed jmp through jmp_tbl_decode_a
+;    dispatch_decode_table_b   - offset 0x352: indexed jmp through jmp_tbl_decode_b
 ;    ega_plane_blit      - 0x0EA: mode-0 handler; EGA 4-plane via 3C4h/3C5h
 ;    cga_shift_blit      - 0x140: mode 1/2 handler; CGA B800h 2-field
 ;    hgc_blit            - 0x1BA: mode 3 handler; Hercules B000h
@@ -139,7 +139,7 @@ start:
 ;   27: mov  bp, 0960h              {BD 60 09}
 ;   2A: mov  bx, 0C00h              {BB 00 0C}        ; y=12, x=0
 ;   2D: mov  cx, 380Dh              {B9 0D 38}        ; 56 rows of 13 bytes (0x38/0x0D)
-;   30: call 00D4h                  {E8 A1 00}        ; -> dispatch_decode_a
+;   30: call 00D4h                  {E8 A1 00}        ; -> dispatch_decode_table_a
 ;   33: mov  byte ptr [0497h], 10h  {C6 06 97 04 10}  ; dispatch_flag_1 = 10h
 ;   38: mov  si, 08CDh              {BE CD 08}        ; src block 3
 ;   3B: mov  di, 2926h              {BF 26 29}        ; dst A
@@ -151,7 +151,7 @@ start:
 ;   4D: mov  bp, 0960h              {BD 60 09}
 ;   50: mov  bx, 0000h              {BB 00 00}        ; y=0, x=0
 ;   53: mov  cx, 0CC8h              {B9 C8 0C}        ; 12 rows x 200 bytes
-;   56: call 00D4h                  {E8 7B 00}        ; -> dispatch_decode_a
+;   56: call 00D4h                  {E8 7B 00}        ; -> dispatch_decode_table_a
 ;   59: mov  si, 1861h              {BE 61 18}        ; src block 5
 ;   5C: mov  di, 2926h              {BF 26 29}
 ;   5F: call 0458h                  {E8 F6 03}        ; -> unpack_nibble_stream
@@ -162,7 +162,7 @@ start:
 ;   6E: mov  bp, 0960h              {BD 60 09}
 ;   71: mov  bx, 4400h              {BB 00 44}        ; y=68, x=0
 ;   74: mov  cx, 0CC8h              {B9 C8 0C}
-;   77: call 00D4h                  {E8 5A 00}        ; -> dispatch_decode_a
+;   77: call 00D4h                  {E8 5A 00}        ; -> dispatch_decode_table_a
 ;   7A: mov  byte ptr [0498h], FFh  {C6 06 98 04 FF}  ; dispatch_flag_2 = FFh
 ;   7F: mov  byte ptr [0497h], 50h  {C6 06 97 04 50}  ; dispatch_flag_1 = 50h
 ;   84: mov  si, 2799h              {BE 99 27}        ; src block 7 (last)
@@ -175,8 +175,8 @@ start:
 ;   97: mov  bp, 0960h              {BD 60 09}
 ;   9A: mov  bx, 0C9Eh              {BB 9E 0C}        ; y=12, x=0x9E
 ;   9D: mov  cx, 382Ah              {B9 2A 38}        ; 56 rows x 42 bytes
-;   A0: call 00D4h                  {E8 31 00}        ; -> dispatch_decode_a
-;   A3: call 0352h                  {E8 AC 02}        ; -> dispatch_decode_b
+;   A0: call 00D4h                  {E8 31 00}        ; -> dispatch_decode_table_a
+;   A3: call 0352h                  {E8 AC 02}        ; -> dispatch_decode_table_b
 ;   A6: retf                        {CB}              ; far return to game.asm
 ;
 ; 00A7: test byte ptr [0499h], FFh  {F6 06 99 04 FF}  ; is game_phase set?
@@ -245,7 +245,7 @@ ega_init:
 
 module_init		endp
 
-dispatch_decode_a		proc	near
+dispatch_decode_table_a		proc	near
 		xor	ax,ax			; Zero register
 		mov	al,ds:game_phase_var
 		add	ax,ax
@@ -253,7 +253,7 @@ dispatch_decode_a		proc	near
 		mov	di,ax
 		jmp	word ptr [di]		;*
 
-dispatch_decode_a		endp
+dispatch_decode_table_a		endp
 
 ; --- jmp_tbl_decode_a: 6-entry dispatch table, indexed by game_phase*2 ---
 ; This 5-byte encoding resembles "jmp far ptr 4001h:4000h" but is actually
@@ -266,14 +266,14 @@ jmp_tbl_decode_a	label	word
 ; --- ega_plane_blit: dispatch target for mode 0 (EGA) at offset 0x00EA ---
 ; Reads sprite data via DS:[BP+SI] / DS:[SI], writes to EGA framebuffer A000h
 ; using Map Mask register (3C4h/3C5h) to select planes 1, 2, 4 per byte.
-; Called via dispatch_decode_a when game_phase=2 (EGA). Stack on entry: ES saved.
+; Called via dispatch_decode_table_a when game_phase=2 (EGA). Stack on entry: ES saved.
 ; The "add ss:... / add bh,..." instructions decode the final 7 bytes of
 ; jmp_tbl_decode_a (dispatch entries at +6, +8, +10) as a fake side-effect
 ; prologue; execution resumes with "mov ax,50h" at offset 0x00F0.
 
 ega_plane_blit:
 		add	ss:misdec_4B01[bp+si],di	; {BA 4B01 BD}  dispatch entry 3 (1BAh) misaligned
-		add	bh,ss:data_20[bp]		; {02 BE 0602}   dispatch entry 4 (24Bh) misaligned
+		add	bh,ss:mole_dispatch_24B_anchor[bp]		; {02 BE 0602}   dispatch entry 4 (24Bh) misaligned
 		mov	ax,50h
 		mul	bl			; ax = reg * al
 		mov	bl,bh
@@ -327,7 +327,7 @@ ega_plane_byte_loop:
 ; --- cga_shift_blit: dispatch target for modes 1/2 (CGA) at offset 0x0140 ---
 ; Writes to CGA framebuffer B800h (with interleaved-line layout, 2000h stride).
 ; Wraps to B800h+4000h+C050h boundary for second field.
-; Entered via dispatch_decode_a for modes 1/2 (or called directly at 0x0140).
+; Entered via dispatch_decode_table_a for modes 1/2 (or called directly at 0x0140).
 
 cga_shift_blit:
 		push	es
@@ -652,7 +652,7 @@ nibble_to_mcga_lut	label	byte
 		db	 03h, 0Ah, 01h, 03h, 09h, 0Bh	; +0x006
 		db	 02h, 0Ah, 0Bh, 0Eh	; +0x00C
 
-dispatch_decode_b		proc	near
+dispatch_decode_table_b		proc	near
 		xor	ax,ax			; Zero register
 		mov	al,ds:game_phase_var
 		add	ax,ax
@@ -660,7 +660,7 @@ dispatch_decode_b		proc	near
 		mov	di,ax
 		jmp	word ptr [di]		;*
 
-dispatch_decode_b		endp
+dispatch_decode_table_b		endp
 
 ; --- jmp_tbl_decode_b: 6-entry dispatch table at 0x0360 ---
 ; Targets for game_phase 0..5:
@@ -690,9 +690,9 @@ ega_decode_b:					; logical mode-0 entry = 0x036C
 		mov	di,0EB2h		; BF B2 0E
 		; The call+mov di below share overlapping bytes. The high byte
 		; of the call rel16 (at 0x0380) doubles as the low byte of a word
-		; "data_15 = 0BF00h" that is read elsewhere via "sub bp,data_15[bx]".
+		; "mole_video_addr_BF00 = 0BF00h" that is read elsewhere via "sub bp,mole_video_addr_BF00[bx]".
 		db	0E8h, 03h		; call rel16 opcode + low byte (rel = 3)
-data_15		dw	0BF00h			; rel16 high byte (00) | next instr opcode (BF)
+mole_video_addr_BF00		dw	0BF00h			; rel16 high byte (00) | next instr opcode (BF)
 		db	0FCh, 0Eh		; remainder of "mov di,0EFCh"
 
 ; --- copy_5_rows_2bytes: inline subroutine at 0x0384 ---
@@ -979,7 +979,7 @@ sprite_data_row_0	label	byte
 		db	 3Bh, 2Ah, 80h,0C8h,0ECh, 2Ah	; +0x101
 		db	0E0h, 0Ah, 91h,0C8h,0ECh, 0Ah	; +0x107
 		db	 91h,0AEh,0A0h,0C8h	; +0x10D
-data_20		db	0ECh			; Data table (indexed access)
+mole_dispatch_24B_anchor		db	0ECh			; Data table (indexed access)
 		db	 2Bh,0A0h, 0Ah,0EAh,0C8h,0ECh	; +0x112
 		db	 0Ah,0EAh,0FBh, 2Ah,0A8h, 92h	; +0x118
 		db	 0Ah,0CAh,0ACh, 3Ah, 0Ah,0A0h	; +0x11E
@@ -1068,21 +1068,21 @@ data_20		db	0ECh			; Data table (indexed access)
 		db	 28h, 08h, 80h, 08h, 43h, 38h	; +0x315
 		db	 46h, 02h, 41h, 80h	; +0x31B
 		db	43h	; +0x31F
-data_21		db	0Bh			; Data table (indexed access)
+db	0Bh			; Data table (indexed access)
 		db	 02h, 08h, 42h, 2Ah, 03h, 44h	; +0x321
 		db	 80h, 38h, 42h, 20h, 42h, 0Eh	; +0x327
 		db	 44h, 02h, 44h, 02h, 41h, 02h	; +0x32D
 		db	 43h, 20h, 02h	; +0x333
 		db	20h	; +0x336
-data_22		db	8			; Data table (indexed access)
+db	8			; Data table (indexed access)
 		db	0C2h, 80h, 28h, 42h, 08h, 46h	; +0x338
 		db	 02h, 45h,0B0h, 41h, 0Ah, 43h	; +0x33E
 		db	 0Eh, 44h,0A0h, 0Ah, 42h, 20h	; +0x344
 		db	 41h, 2Ah, 02h	; +0x34A
 		db	 48h, 20h, 20h	; +0x34D
-data_23		dw	2844h			; Data table (indexed access)
+dw	2844h			; Data table (indexed access)
 		db	2	; +0x352
-data_25		db	83h			; Data table (indexed access)
+db	83h			; Data table (indexed access)
 		db	 20h, 20h,0A0h, 0Ah, 43h, 08h	; +0x354
 		db	 45h, 0Eh, 45h, 0Ah, 28h, 41h	; +0x35A
 		db	0EAh, 42h, 02h,0EAh, 02h, 42h	; +0x360
@@ -1093,7 +1093,7 @@ data_25		db	83h			; Data table (indexed access)
 		db	 0Ah, 88h, 42h, 08h, 41h, 0Ch	; +0x37E
 		db	 45h, 0Ah, 80h, 02h,0A0h, 0Ah	; +0x384
 		db	 80h, 43h, 20h, 41h, 91h	; +0x38A
-data_26		db	42h			; Data table (indexed access)
+db	42h			; Data table (indexed access)
 		db	 08h, 20h, 8Bh, 80h, 42h, 2Eh	; +0x390
 		db	 08h, 0Bh,0A0h, 42h, 2Ah, 08h	; +0x396
 		db	0B8h, 41h, 08h, 0Ah, 20h, 20h	; +0x39C
@@ -1101,7 +1101,7 @@ data_26		db	42h			; Data table (indexed access)
 		db	 20h, 02h, 43h, 08h, 41h, 08h	; +0x3A8
 		db	 45h, 2Ah,0A8h	; +0x3AE
 		db	0Ah	; +0x3B1
-data_27		db	0A8h			; Data table (indexed access)
+db	0A8h			; Data table (indexed access)
 		db	2	; +0x3B3
 		db	8, 'C A(C "C', 8, 'A'
 		db	 02h,0C0h, 42h, 08h, 08h,0A0h	; +0x3BF
@@ -1162,23 +1162,23 @@ data_27		db	0A8h			; Data table (indexed access)
 		db	 2Ah,0A2h,0A8h, 11h, 8Bh, 22h	; +0x509
 		db	 8Ah,0A8h, 11h,0A8h, 33h, 41h	; +0x50F
 		db	0E2h,0A2h	; +0x515
-data_28		db	13h
+db	13h
 		db	 8Ah, 11h,0A8h, 11h,0A2h, 2Fh	; +0x518
 		db	 41h, 8Ah	; +0x51E
-data_29		dw	128Ah			; Data table (indexed access)
+mole_sprite_chunk_128A		dw	128Ah			; Data table (indexed access)
 		db	0A8h	; +0x522
-data_31		dw	138Ah			; Data table (indexed access)
+dw	138Ah			; Data table (indexed access)
 		db	0A2h, 2Fh, 41h, 13h,0A2h, 28h	; +0x525
 		db	 13h, 20h, 82h	; +0x52B
 		db	33h	; +0x52E
-data_32		db	41h			; Data table (indexed access)
+db	41h			; Data table (indexed access)
 		db	 2Ah, 13h,0A8h, 88h, 88h, 88h	; +0x530
 		db	 88h, 08h, 0Bh, 41h, 2Ah, 20h	; +0x536
 		db	 20h,0A2h,0A2h, 22h, 20h, 02h	; +0x53C
 		db	 41h, 08h,0CBh, 41h, 0Ah, 80h	; +0x542
 		db	 08h, 46h, 32h, 11h, 41h, 02h	; +0x548
 		db	 11h,0BBh	; +0x54E
-data_33		dw	0A8FBh			; Data table (indexed access)
+dw	0A8FBh			; Data table (indexed access)
 		db	0AEh,0FAh,0ABh,0ABh,0C2h,0CBh	; +0x552
 		db	 42h, 2Ah, 11h,0EBh, 11h,0BAh	; +0x558
 		db	 13h, 0Bh,0A3h, 41h, 02h,0A8h	; +0x55E
@@ -1190,19 +1190,19 @@ data_33		dw	0A8FBh			; Data table (indexed access)
 		db	0BBh, 41h, 28h,0BAh,0ABh, 2Ah	; +0x582
 		db	 88h,0E8h,0EAh, 88h,0A2h, 22h	; +0x588
 		db	0CAh, 41h,0E2h	; +0x58E
-data_34		db	0FAh
+db	0FAh
 		db	0A2h, 2Eh, 80h,0EAh, 0Eh	; +0x592
-data_35		db	88h			; Data table (indexed access)
+db	88h			; Data table (indexed access)
 		db	 11h, 83h,0A2h, 41h,0E2h,0A2h	; +0x598
 		db	 22h, 11h, 83h	; +0x59E
-data_36		db	11h			; Data table (indexed access)
+db	11h			; Data table (indexed access)
 		db	0A3h,0A8h, 11h, 23h,0A3h, 41h	; +0x5A2
 		db	0EAh,0B8h,0A2h,0ACh, 83h, 11h	; +0x5A8
 		db	0A3h	; +0x5AE
-data_37		db	0A8h			; Data table (indexed access)
+db	0A8h			; Data table (indexed access)
 		db	 11h,0A2h,0CBh, 41h, 0Ah, 22h	; +0x5B0
 		db	 11h	; +0x5B6
-data_38		dw	83A8h			; Data table (indexed access)
+dw	83A8h			; Data table (indexed access)
 		db	 11h,0E0h, 3Ah, 11h, 22h,0ABh	; +0x5B9
 		db	 41h, 03h, 12h,0A8h,0A3h, 11h	; +0x5BF
 		db	0A3h, 8Eh,0EAh, 82h,0CBh, 41h	; +0x5C5
@@ -1219,7 +1219,7 @@ data_38		dw	83A8h			; Data table (indexed access)
 		db	 12h,0A8h,0A3h,0A2h, 41h,0EAh	; +0x607
 		db	0AFh, 80h,0EAh, 23h,0BAh, 2Ah	; +0x60D
 		db	 12h, 03h,0A3h, 03h, 11h,0AFh	; +0x613
-data_39		db	0E2h			; Data table (indexed access)
+db	0E2h			; Data table (indexed access)
 		db	0A8h, 82h, 12h,0A2h,0A8h, 22h	; +0x61A
 		db	0CBh, 03h,0ABh,0FAh, 8Eh,0A8h	; +0x620
 		db	 23h, 8Ah, 11h,0A2h, 8Ah, 22h	; +0x626
@@ -1229,7 +1229,7 @@ data_39		db	0E2h			; Data table (indexed access)
 		db	 11h, 2Ah, 2Ah, 11h, 23h,0A2h	; +0x63E
 		db	 0Eh, 11h, 3Ah, 2Ah, 11h, 83h	; +0x644
 		db	 8Ah, 11h, 8Ah, 2Ah, 83h,0A3h	; +0x64A
-data_40		db	0Eh
+db	0Eh
 		db	0A0h,0E8h, 11h,0A8h,0A3h, 12h	; +0x651
 		db	0A2h, 11h, 02h,0CAh, 3Ah, 83h	; +0x657
 		db	0C8h, 11h,0BAh, 83h, 8Ah,0A8h	; +0x65D
@@ -1390,9 +1390,9 @@ data_40		db	0Eh
 		db	 0Bh, 03h, 12h, 0Eh, 12h, 8Eh	; +0x9FF
 		db	 12h, 8Eh, 11h,0A2h, 03h, 12h	; +0xA05
 		db	 8Eh, 12h, 0Eh, 12h	; +0xA0B
-data_41		db	0Eh			; Data table (indexed access)
+db	0Eh			; Data table (indexed access)
 		db	11h	; +0xA10
-data_42		db	0A2h
+db	0A2h
 		db	 03h, 12h, 8Eh, 12h, 0Eh, 12h	; +0xA12
 		db	 8Eh, 11h, 83h, 03h, 12h, 0Eh	; +0xA18
 		db	 12h, 8Eh, 12h, 0Eh, 11h,0A3h	; +0xA1E
@@ -1479,22 +1479,22 @@ data_42		db	0A2h
 		db	0ACh, 12h,0A2h,0A8h, 11h,0A2h	; +0xC04
 		db	0A8h,0E8h,0E0h, 2Eh,0A0h, 11h	; +0xC0A
 		db	0A8h	; +0xC10
-data_43		db	2Ah			; Data table (indexed access)
-data_44		dw	3820h			; Data table (indexed access)
+db	2Ah			; Data table (indexed access)
+dw	3820h			; Data table (indexed access)
 		db	 0Ah, 0Eh, 8Ah,0A8h,0A0h	; +0xC14
-data_45		db	0Ah
+db	0Ah
 		db	0A0h,0A0h, 20h, 22h, 41h, 38h	; +0xC1A
 		db	 0Eh, 08h, 83h,0A0h,0E2h, 22h	; +0xC20
 		db	 20h,0A0h, 20h, 22h, 20h, 0Ch	; +0xC26
 		db	 0Ah, 0Ch,0C2h, 80h, 82h	; +0xC2C
-data_46		db	28h			; Data table (indexed access)
+db	28h			; Data table (indexed access)
 		db	0A0h,0A8h, 80h, 20h,0A0h, 41h	; +0xC32
 		db	 30h, 08h,0C0h, 41h, 82h, 30h	; +0xC38
 		db	 80h,0A8h,0E0h, 20h,0A0h, 41h	; +0xC3E
 		db	 20h, 41h,0C0h, 02h, 08h, 20h	; +0xC44
 		db	 80h,0A8h, 0Ch, 20h, 28h, 03h	; +0xC4A
-data_47		dw	4120h
-data_49		db	80h			; Data table (indexed access)
+dw	4120h
+db	80h			; Data table (indexed access)
 		db	 02h, 08h,0C0h, 80h,0A8h, 28h	; +0xC53
 		db	 03h, 08h, 0Eh, 80h, 41h, 80h	; +0xC59
 		db	 20h, 08h, 88h, 80h, 11h, 22h	; +0xC5F
@@ -1507,24 +1507,24 @@ data_49		db	80h			; Data table (indexed access)
 		db	 20h, 20h, 20h, 43h, 11h, 80h	; +0xC89
 		db	 43h, 80h	; +0xC8F
 		db	41h	; +0xC91
-data_50		dw	4280h			; Data table (indexed access)
+dw	4280h			; Data table (indexed access)
 		db	 08h, 41h, 11h, 80h, 44h	; +0xC94
-data_51		dw	820h			; Data table (indexed access)
+dw	820h			; Data table (indexed access)
 		db	 08h, 41h	; +0xC9B
-data_53		dw	4180h			; Data table (indexed access)
+dw	4180h			; Data table (indexed access)
 		db	 11h, 80h, 42h, 08h, 20h, 41h	; +0xC9F
 		db	 20h, 20h, 02h, 41h, 30h, 11h	; +0xCA5
 		db	 80h	; +0xCAB
 		db	 42h, 08h, 42h	; +0xCAC
-data_55		db	80h
+db	80h
 		db	20h	; +0xCB0
-data_56		dw	4103h			; Data table (indexed access)
+dw	4103h			; Data table (indexed access)
 		db	0C8h, 11h,0A0h, 43h	; +0xCB3
-data_57		db	20h			; Data table (indexed access)
+db	20h			; Data table (indexed access)
 		db	 41h, 20h, 41h, 02h, 41h, 02h	; +0xCB8
 		db	 11h,0A0h, 43h, 80h, 41h, 80h	; +0xCBE
 		db	 08h, 80h, 41h, 30h, 11h	; +0xCC4
-data_58		dw	42A0h			; Data table (indexed access)
+dw	42A0h			; Data table (indexed access)
 		db	 03h, 20h, 02h, 41h, 23h, 0Ah	; +0xCCB
 		db	 41h, 20h, 11h,0A0h, 42h, 08h	; +0xCD1
 		db	 41h, 28h, 41h, 8Ah, 42h,0ACh	; +0xCD7
@@ -1543,7 +1543,7 @@ data_58		dw	42A0h			; Data table (indexed access)
 		db	 80h, 46h, 08h, 43h, 11h, 80h	; +0xD25
 		db	 4Ah, 11h,0A0h	; +0xD2B
 		db	4Ah	; +0xD2E
-data_59		db	11h
+db	11h
 		db	0A8h, 42h, 38h,0A8h,0AEh,0FAh	; +0xD30
 		db	0ABh,0A3h, 41h, 08h, 13h, 8Ah	; +0xD36
 		db	0EBh, 11h,0BAh, 13h, 42h, 12h	; +0xD3C
@@ -1567,7 +1567,7 @@ data_59		db	11h
 		db	 02h, 08h, 11h, 82h, 42h, 80h	; +0xDA8
 		db	 80h, 03h, 80h, 41h,0A0h, 42h	; +0xDAE
 		db	 11h,0A0h, 88h, 42h, 80h, 03h	; +0xDB4
-data_60		dw	0A41h			; Data table (indexed access)
+dw	0A41h			; Data table (indexed access)
 		db	0A8h, 41h, 20h, 11h,0A8h, 02h	; +0xDBC
 		db	 41h, 80h, 41h, 02h, 41h, 0Ah	; +0xDC2
 		db	 88h, 41h, 08h, 11h,0A8h,0A0h	; +0xDC8
@@ -1792,7 +1792,7 @@ data_60		dw	0A41h			; Data table (indexed access)
 		db	 02h, 80h, 0Ah, 80h, 41h, 80h	; +0x12E8
 		db	 3Ah, 41h, 22h, 41h,0A0h, 08h	; +0x12EE
 		db	 8Bh, 80h, 0Bh, 82h, 80h	; +0x12F4
-data_61		db	88h			; Data table (indexed access)
+db	88h			; Data table (indexed access)
 		db	 3Ah, 82h, 88h, 41h,0A0h, 38h	; +0x12FA
 		db	 0Bh, 80h, 0Eh, 0Ah,0EEh, 0Ah	; +0x1300
 		db	0E2h, 02h, 22h, 41h,0A0h, 28h	; +0x1306
@@ -1937,16 +1937,16 @@ data_61		db	88h			; Data table (indexed access)
 		db	0BAh, 11h, 2Ah, 12h, 82h,0A0h	; +0x1648
 		db	41h	; +0x164E
 
-; --- misdec_port_stub: NOT CALLED; Sourcer-fabricated fake proc at 0x1B40 ---
+; --- write_dma_port_then_pad: NOT CALLED; Sourcer-fabricated fake proc at 0x1B40 ---
 ; Dead code. Sourcer decoded the byte 0xEE (part of sprite data) as "out dx,al"
 ; and created a synthetic "proc". Verified: no call sites in the whole module.
 ; Kept as mnemonics because TASM re-encodes them to the same bytes via the
-; misdec_* and data_29 EQUs. This section is truly sprite pixel data.
+; misdec_* and mole_sprite_chunk_128A EQUs. This section is truly sprite pixel data.
 
-misdec_port_stub		proc	near
+write_dma_port_then_pad		proc	near
 		out	dx,al			; port 1, DMA-1 bas&cnt ch 0
 		db	82h, 0A0h, 0A8h, 3Ah, 0A8h	; and byte ptr [bx+si+3AA8h],0A8h (alt encoding: 82/4 not 80/4)
-		sub	ch,byte ptr data_29
+		sub	ch,byte ptr mole_sprite_chunk_128A
 		test	al,41h			; 'A'
 		lodsb				; String [si] to al
 		adc	ds:misdec_BAA0[bx+si],cx
@@ -1954,7 +1954,7 @@ misdec_port_stub		proc	near
 		adc	ss:misdec_41A2[bp+si],cx
 		jmp	short $+0Ch
 
-misdec_port_stub		endp
+write_dma_port_then_pad		endp
 
 ; --- Sprite data continues at 0x1B5A (Sourcer decoded it as fake mnemonics) ---
 ;* No entry point to code -- data block (pixel runs)
@@ -2167,19 +2167,19 @@ sprite_data_row_2	label	byte
 		db	0AEh, 2Ah,0ABh, 8Ah, 8Ah, 88h	; +0x4AA
 		db	0EAh, 2Ah, 20h, 41h,0FAh,0E2h	; +0x4B0
 		db	0AEh, 2Ah,0AEh, 0Ah,0EEh	; +0x4B6
-data_62		dw	882Ah			; Data table (indexed access)
-data_63		dw	8808h			; Data table (indexed access)
+dw	882Ah			; Data table (indexed access)
+dw	8808h			; Data table (indexed access)
 		db	 41h,0FAh, 22h,0EAh, 0Ah,0A8h	; +0x4BF
 		db	 8Bh,0A2h,0A8h, 11h, 41h, 20h	; +0x4C5
 		db	 41h,0FAh,0E2h, 11h, 88h, 3Ah	; +0x4CB
 		db	 03h, 88h,0BAh, 88h, 80h, 88h	; +0x4D1
 		db	 41h,0FAh, 22h,0EAh	; +0x4D7
 		db	8	; +0x4DB
-data_64		dw	883Ah			; Data table (indexed access)
-data_65		dw	0CAA0h			; Data table (indexed access)
-data_66		db	0Ah			; Data table (indexed access)
+dw	883Ah			; Data table (indexed access)
+dw	0CAA0h			; Data table (indexed access)
+db	0Ah			; Data table (indexed access)
 		db	 20h, 42h,0BAh	; +0x4E1
-data_67		dw	0ACB2h			; Data table (indexed access)
+dw	0ACB2h			; Data table (indexed access)
 		db	0A0h, 11h, 0Ah, 28h,0E2h, 0Ah	; +0x4E6
 		db	 20h, 88h, 41h,0BAh,0A0h,0AEh	; +0x4EC
 		db	 20h,0E8h, 82h, 82h,0CAh, 28h	; +0x4F2
@@ -2189,17 +2189,17 @@ data_67		dw	0ACB2h			; Data table (indexed access)
 		db	0A8h,0A3h, 08h, 82h, 20h, 22h	; +0x50A
 		db	 42h,0BAh, 11h, 88h, 88h, 22h	; +0x510
 		db	 02h, 02h, 22h, 80h, 88h	; +0x516
-data_68		db	42h			; Data table (indexed access)
+db	42h			; Data table (indexed access)
 		db	0F8h, 22h, 20h, 28h, 82h, 20h	; +0x51C
 		db	 02h, 08h, 20h, 43h, 00h, 1Ch	; +0x522
 		db	 0Ah, 13h,0BAh,0EBh,0EEh, 15h	; +0x528
 		db	 0Ah, 12h,0ABh, 13h,0AEh, 14h	; +0x52E
 		db	 0Ah, 11h,0EAh,0AEh,0A8h, 8Ah	; +0x534
 		db	0EAh,0A8h,0AFh	; +0x53A
-data_69		db	13h			; Data table (indexed access)
+db	13h			; Data table (indexed access)
 		db	 0Ah,0AEh, 11h, 3Eh, 20h, 88h	; +0x53E
 		db	0A8h, 41h, 3Ah,0A2h, 12h	; +0x544
-data_70		db	0Ah
+db	0Ah
 		db	0BAh, 28h, 3Ah, 80h, 80h, 20h	; +0x54A
 		db	 20h, 3Ah,0BAh, 2Ah, 11h, 0Ah	; +0x550
 		db	0EAh,0A2h, 3Ah, 42h, 20h, 20h	; +0x556
@@ -2262,16 +2262,16 @@ data_70		db	0Ah
 		db	 44h, 11h, 03h, 82h, 41h, 8Ah	; +0x6AC
 		db	 43h, 08h, 42h, 02h, 11h, 03h	; +0x6B2
 		db	0C2h, 41h, 80h	; +0x6B8
-data_71		dw	241h			; Data table (indexed access)
+dw	241h			; Data table (indexed access)
 		db	 44h, 02h, 11h, 03h, 44h, 0Ah	; +0x6BD
 		db	 80h, 43h, 02h, 11h, 43h, 0Ah	; +0x6C3
 		db	 41h, 02h, 02h, 42h, 38h, 0Ah	; +0x6C9
 		db	 11h, 45h, 80h	; +0x6CF
 		db	3Ah	; +0x6D2
-data_72		db	42h
+db	42h
 		db	 3Ah, 0Ah, 11h, 45h, 2Ch,0E8h	; +0x6D4
 		db	 41h, 03h	; +0x6DA
-data_73		dw	0AEFh			; Data table (indexed access)
+dw	0AEFh			; Data table (indexed access)
 		db	 11h, 45h, 0Ah,0A0h, 41h, 02h	; +0x6DE
 		db	0BFh, 0Ah, 11h, 08h, 41h, 08h	; +0x6E4
 		db	 41h,0A0h, 44h, 0Fh, 02h, 11h	; +0x6EA
@@ -2283,10 +2283,10 @@ data_73		dw	0AEFh			; Data table (indexed access)
 		db	 2Ah, 43h, 8Ah, 47h, 0Ah, 42h	; +0x70E
 		db	 0Ah, 08h, 42h, 08h, 02h	; +0x714
 		db	 43h, 0Ah	; +0x719
-data_74		db	42h			; Data table (indexed access)
+db	42h			; Data table (indexed access)
 		db	 08h, 20h, 43h,0E0h, 08h, 42h	; +0x71C
 		db	 02h, 47h,0A0h	; +0x722
-data_75		dw	4208h			; Data table (indexed access)
+dw	4208h			; Data table (indexed access)
 		db	 82h, 02h, 49h, 02h, 41h, 08h	; +0x727
 		db	 80h, 44h, 08h, 02h, 42h, 28h	; +0x72D
 		db	 80h, 02h, 49h, 88h, 02h, 41h	; +0x733
@@ -2531,9 +2531,9 @@ data_75		dw	4208h			; Data table (indexed access)
 		db	0F2h,0AFh, 45h,0F2h,0AFh, 45h	; +0xCCA
 		db	0F2h, 59h,0DFh,0DAh,0C2h,0AFh	; +0xCD0
 		db	 45h,0F2h,0AFh, 45h,0F2h,0AFh	; +0xCD6
-data_77		db	45h			; Data table (indexed access)
+db	45h			; Data table (indexed access)
 		db	0F2h	; +0xCDD
-data_78		dw	5F5Fh			; Data table (indexed access)
+dw	5F5Fh			; Data table (indexed access)
 		db	 55h,0AFh, 45h,0F2h,0AFh, 45h	; +0xCE0
 		db	0F2h,0AFh, 45h,0F2h, 5Fh, 5Fh	; +0xCE6
 		db	 55h,0AFh, 45h,0F2h,0AFh, 45h	; +0xCEC
@@ -2552,7 +2552,7 @@ data_78		dw	5F5Fh			; Data table (indexed access)
 		db	0F2h,0AFh, 45h,0F2h, 5Fh, 5Fh	; +0xD3A
 		db	 55h,0AFh	; +0xD40
 		db	45h	; +0xD42
-data_79		dw	0AFF2h			; Data table (indexed access)
+dw	0AFF2h			; Data table (indexed access)
 		db	 45h,0F2h,0AFh, 45h,0F2h, 5Fh	; +0xD45
 		db	 5Fh, 55h,0AFh, 45h,0F2h,0AFh	; +0xD4B
 		db	0D5h,0F2h,0AFh,0D5h,0F2h, 5Fh	; +0xD51
@@ -2565,7 +2565,7 @@ data_79		dw	0AFF2h			; Data table (indexed access)
 		db	 5Fh, 5Fh, 5Fh, 54h,0AFh, 45h	; +0xD7B
 		db	0F2h	; +0xD81
 		db	5Fh	; +0xD82
-data_80		dw	5F5Fh, 0AF54h		; Data table (indexed access)
+dw	5F5Fh, 0AF54h		; Data table (indexed access)
 		db	 45h,0F2h, 5Fh, 5Fh, 5Fh, 54h	; +0xD87
 		db	0AFh, 45h,0F2h, 5Fh, 5Fh, 5Fh	; +0xD8D
 		db	 54h,0AFh,0D5h,0F2h, 5Fh, 5Fh	; +0xD93

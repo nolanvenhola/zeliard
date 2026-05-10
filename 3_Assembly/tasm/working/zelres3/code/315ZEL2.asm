@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  315ZEL2 / _315MAPHT - Helada Town Map Program (zelres3 chunk)
+;  315ZEL2 / run_mapht_main - Helada Town Map Program (zelres3 chunk)
 ;
 ;  Map-program code module for Helada Town. Loaded together with the town
 ;  data file map_helada_town.bin (315MAPHT.bin). Helada is one of the
@@ -99,7 +99,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_315MAPHT	proc	far
+run_mapht_main	proc	far
 
 ; ------------------------------------------------------------------
 ; start: header + embedded tile/cell layout data.
@@ -369,7 +369,7 @@ zel2_anim_h_set_phase_max:
 		and	byte ptr ds:zel2_phase_step,3Fh	; '?'
 		retn
 
-_315MAPHT	endp
+run_mapht_main	endp
 
 zel2_phase_step_dec		proc	near
 		dec	byte ptr ds:zel2_phase_step

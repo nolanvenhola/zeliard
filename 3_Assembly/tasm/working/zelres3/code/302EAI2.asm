@@ -116,7 +116,7 @@ tako_tbl_m	equ	0A8DFh			; tentacle pattern B
 tako_tbl_n	equ	0A8E0h			; tentacle pattern B lo
 tako_tbl_o	equ	0A8F0h			; tentacle xlat table (default west)
 tako_tbl_p	equ	0A956h			; tako_state_dispatch (4 word-ptr)
-tako_facing_fn_ptr	equ	(offset data_6) + 4	; CS-relative: pseudo-fn used by
+tako_facing_fn_ptr	equ	(offset eai2_bc_string_anchor) + 4	; CS-relative: pseudo-fn used by
 							; `call word ptr cs:[...]` -- returns
 							; AL with sign-bit set as facing/dir
 
@@ -126,7 +126,7 @@ seg_a		segment	byte public
 
 		org	0
 
-tako_ai_main	proc	far
+run_tako_ai_main	proc	far
 
 ; -------------------------------------------------------------------------
 ;  Module header (file offsets 0x000-0x033) -- loaded as data by 200FIGHT.
@@ -189,7 +189,7 @@ tako_frame_ptr_tbl_d	label	word		; offset 0x08C -- group D pointers
 		db	0B3h,0A2h			; -> 0xA2B3
 
 tako_frame_ptr_tbl_e_marker	label	byte	; offset 0x097 -- group E start marker
-data_3		db	0			; (Sourcer's data_3) referenced as `add si,offset data_3`
+eai2_offset_anchor		db	0			; (Sourcer's eai2_offset_anchor) referenced as `add si,offset eai2_offset_anchor`
 		db	 00h, 00h, 00h			; reserved (3 bytes)
 		db	 26h,0A3h, 26h,0A3h		; -> 0xA326, 0xA326
 		db	0C2h,0A2h, 0Dh,0A3h, 0D1h,0A2h	; -> 0xA2C2, 0xA30D, 0xA2D1
@@ -237,8 +237,8 @@ tako_frame_A100	label	byte			; 0xA100 -- A[6]/D[0] -- start of mid-pose group (l
 		db	0, 0, 0, 0, 0, 0		; offset 0x108-0x10D: zero pad (5 bytes also serve as row terms for A1@0xA10F frame head)
 		db	 40h, 41h			; offset 0x10E-0x10F: tiles 40-41 (last 2 bytes feed A1 frame at 0xA10F)
 
-tako_helper_anchor	label	byte		; helper xlat anchor (used as `cs:data_6+4`)
-data_6		db	'BC', 0			; (Sourcer's data_6) -- referenced as `cs:data_6+4`
+tako_helper_anchor	label	byte		; helper xlat anchor (used as `cs:eai2_bc_string_anchor+4`)
+eai2_bc_string_anchor		db	'BC', 0			; (Sourcer's eai2_bc_string_anchor) -- referenced as `cs:eai2_bc_string_anchor+4`
 		db	'DEFG', 0
 		db	'HIJK', 0
 		db	'DELM', 0
@@ -256,7 +256,7 @@ data_6		db	'BC', 0			; (Sourcer's data_6) -- referenced as `cs:data_6+4`
 		db	'S`]V', 0
 		db	'bcde', 0
 		db	'fghi', 0
-		db	'jklm'				; 0x165: tiles 6A-6D (data_6 last entry head, no term)
+		db	'jklm'				; 0x165: tiles 6A-6D (eai2_bc_string_anchor last entry head, no term)
 		db	 02h, 00h, 00h, 7Dh, 7Eh, 02h	; 0x169: row 0 (B-table content begins; tiles 7D-7E)
 		db	 00h, 00h, 7Fh, 80h, 02h, 00h	; 0x16F: row 1 (tiles 7F-80)
 		db	 00h, 83h, 84h, 02h, 85h, 86h	; 0x175: row 2 (tiles 83-86) -- A2/C2 frame at 0xA16E starts mid-row
@@ -508,12 +508,12 @@ west_far_step_pos:
 		jmp	common_writeback
 
 set_swim_targets:
-		call	word ptr cs:tako_facing_fn_ptr	; (data_6+4 -- inline pseudo-fn, returns AL with sign for facing)
+		call	word ptr cs:tako_facing_fn_ptr	; (eai2_bc_string_anchor+4 -- inline pseudo-fn, returns AL with sign for facing)
 		and	al,3
 		dec	al
 		add	al,8
 		mov	ds:tako_tbl_i,al
-		call	word ptr cs:tako_facing_fn_ptr	; (data_6+4 -- inline pseudo-fn, returns AL with sign for facing)
+		call	word ptr cs:tako_facing_fn_ptr	; (eai2_bc_string_anchor+4 -- inline pseudo-fn, returns AL with sign for facing)
 		and	al,3
 		sub	al,2
 		add	al,9
@@ -528,7 +528,7 @@ enter_swim_state:
 		jmp	common_writeback
 
 random_attack_test:
-		call	word ptr cs:tako_facing_fn_ptr	; (data_6+4 -- inline pseudo-fn, returns AL with sign for facing)
+		call	word ptr cs:tako_facing_fn_ptr	; (eai2_bc_string_anchor+4 -- inline pseudo-fn, returns AL with sign for facing)
 		and	al,1
 		jz	enter_attack_state			; Jump if zero
 		retn
@@ -602,7 +602,7 @@ tako_tentacle_mask_b	db	 07h, 07h, 07h, 07h, 07h, 07h, 0FFh	; per-frame mask B (
 		db	 03h, 03h, 03h, 04h, 04h, 05h, 05h		; per-frame mask C
 		db	 05h, 05h, 05h, 05h, 0FFh			;   end marker
 
-tako_ai_main	endp
+run_tako_ai_main	endp
 
 step_pos_x		proc	near
 		cmp	byte ptr [si+3],22h	; '"'
@@ -762,7 +762,7 @@ collide_check_y		proc	near
 		mov	ax,[si+2]
 		call	word ptr cs:fight_cb_record_ofs
 		xchg	si,di
-		add	si,offset data_3
+		add	si,offset eai2_offset_anchor
 		call	word ptr cs:fight_cb_mark_adj
 		xchg	si,di
 		mov	cx,2
@@ -856,7 +856,7 @@ alt_a_state1_active:
 
 alt_a_state2_pick:
 		or	byte ptr [si+9],2
-		call	word ptr cs:tako_facing_fn_ptr	; (data_6+4 -- inline pseudo-fn, returns AL with sign for facing)
+		call	word ptr cs:tako_facing_fn_ptr	; (eai2_bc_string_anchor+4 -- inline pseudo-fn, returns AL with sign for facing)
 		or	al,al			; Zero ?
 		js	alt_a_pat_b_branch			; Jump if sign=1
 		mov	ax,[si+2]
@@ -959,7 +959,7 @@ alt_b_phase_zero_pick:
 		retn
 
 alt_b_set_state8:
-		call	word ptr cs:tako_facing_fn_ptr	; (data_6+4 -- inline pseudo-fn, returns AL with sign for facing)
+		call	word ptr cs:tako_facing_fn_ptr	; (eai2_bc_string_anchor+4 -- inline pseudo-fn, returns AL with sign for facing)
 		and	al,1
 		jnz	alt_b_phase_to_2			; Jump if not zero
 		or	byte ptr [si+9],4

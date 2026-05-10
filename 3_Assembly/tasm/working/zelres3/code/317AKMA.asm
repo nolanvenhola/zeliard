@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  317AKMA / _317MAPA4 - Boss 4 Arena Map Program (zelres3 chunk 17, 0-idx)
+;  317AKMA / run_mapa4_main - Boss 4 Arena Map Program (zelres3 chunk 17, 0-idx)
 ;
 ;  Map-program code module for the Boss 4 arena. Same structural template
 ;  as the 312-319 sibling map-program family (312ZELA Satono, 313MEDA
@@ -111,7 +111,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_317MAPA4	proc	far
+run_mapa4_main	proc	far
 
 ; ------------------------------------------------------------------
 ; start: header + embedded tile/cell layout data.
@@ -467,7 +467,7 @@ akma_phase_b_dec:
 		mov	byte ptr ds:akma_phase_b_step,0
 		jmp	short akma_render_begin
 
-_317MAPA4	endp
+run_mapa4_main	endp
 
 akma_scroll_dec		proc	near
 		mov	ax,ds:akma_scroll_x

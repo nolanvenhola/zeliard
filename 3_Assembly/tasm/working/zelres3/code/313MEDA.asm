@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  313MEDA / _313MAPBT - Bosque Town Map Program (zelres3 chunk)
+;  313MEDA / run_mapbt_main - Bosque Town Map Program (zelres3 chunk)
 ;
 ;  Map-program code module for Bosque Town (the "Vista" sub-area). Loaded
 ;  together with the town data file map_bosque_town.bin. Pairs with the
@@ -17,7 +17,7 @@ PAGE  59,132
 ;    - Trailer string 'Vista' is the in-game town sub-location name
 ;
 ;  Note: "MEDA" is a prior-pass working nickname for this chunk; the
-;  disassembler-stored proc name _313MAPBT is authoritative.
+;  disassembler-stored proc name run_mapbt_main is authoritative.
 ;
 ;  Connections:
 ;    Loads:        none (loaded as data/code by 200FIGHT alongside MEDA
@@ -86,7 +86,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_313MAPBT	proc	far
+run_mapbt_main	proc	far
 
 ; ------------------------------------------------------------------
 ; start: header + embedded tile/cell layout data.
@@ -363,7 +363,7 @@ phase_check_step4:
 phase_step_done:
 		jmp	render_tiles_entry
 
-_313MAPBT	endp
+run_mapbt_main	endp
 
 phase_dir_compute		proc	near
 		mov	ax,header_const_word_a

@@ -3,7 +3,7 @@ PAGE  59,132
 
 ;==========================================================================
 ;
-;  318MAO1 / _318MAPA5 - Boss 5 Arena Map Program - Jashiin Dialog
+;  318MAO1 / run_mapa5_main - Boss 5 Arena Map Program - Jashiin Dialog
 ;
 ;  Map-program code module for the Boss 5 arena (zelres3 chunk 18, 0-idx).
 ;  Loaded together with the arena data file map_boss5_arena.bin.
@@ -103,7 +103,7 @@ seg_a		segment	byte public
 
 		org	0
 
-_318MAPA5	proc	far
+run_mapa5_main	proc	far
 
 ; ------------------------------------------------------------------
 ; start: header + embedded tile/cell layout data.
@@ -633,7 +633,7 @@ mao1_arena_init_params	label	byte	; arena init parameters (timer/coords/state se
 mao1_speaker_jashiin	label	byte
 		db	'Jashiin', 0, 0, 0, 0
 
-_318MAPA5	endp
+run_mapa5_main	endp
 
 seg_a		ends
 

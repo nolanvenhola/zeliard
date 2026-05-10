@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-test_fight_game_func_106.py — game_func_106 at CPU 0x876C, 43 bytes, 3 callers.
+test_fight_game_func_106.py — try_place_tile_id_49 (was game_func_106).
 
 Body: 4-gate placement function.  All gates must open for the action to
 fire:
@@ -20,10 +20,19 @@ from pathlib import Path
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE.parent))
 from harness import TasmHarness  # noqa: E402
-from fixtures import BIN_PATHS, stub_video_drivers  # noqa: E402
+from fixtures import BIN_PATHS, stub_video_drivers, resolve_proc  # noqa: E402
 
-GAME_FUNC_106 = 0x876C
-VGA_OPERATION9 = 0x6DD0
+# Address resolver: pick up the current CPU offset, regardless of
+# rename history or source-line drift.
+GAME_FUNC_106 = (
+    BIN_PATHS['fight'][1]                    # load base = 0x6000
+    + resolve_proc('fight', 'try_place_tile_id_49',
+                   fallback_names=('game_func_106',))
+)
+VGA_OPERATION9 = (
+    BIN_PATHS['fight'][1]
+    + resolve_proc('fight', 'vga_operation9')
+)
 
 
 def setup_open_gates(h, *, charges=3, bx_4=0, bx_5=0):

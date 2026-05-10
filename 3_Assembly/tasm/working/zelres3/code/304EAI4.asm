@@ -93,7 +93,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zela_ai_main	proc	far
+run_zela_ai_main	proc	far
 
 start:
 		inc	si			; was 46h    -- file_header byte 0
@@ -809,7 +809,7 @@ attack_secondary_set_active:
 		or	byte ptr [di+9],1
 		retn
 
-zela_ai_main	endp
+run_zela_ai_main	endp
 
 collide_check_dist		proc	near
 		push	si

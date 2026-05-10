@@ -13,12 +13,12 @@ PAGE  59,132
 ;    bos_render_main         - far entry: zero work RAM, RLE-unpack boss
 ;                              gfx from bos_gfx_hdr / bos_gfx_src_b / ...
 ;                              into a +1000h segment, then call
-;                              render_dispatch_2 and bos_frame_dispatch.
+;                              render_dispatch_layer2 and bos_frame_dispatch.
 ;
 ;  Dispatchers:
 ;    bos_frame_dispatch      - jmp ds:[bos_anim_tbl + 2*bos_mode]
 ;                              (table in game DS, selects frame_handler_a..e)
-;    render_dispatch_2       - jmp cs:[36A5h + 2*bos_mode]
+;    render_dispatch_layer2       - jmp cs:[36A5h + 2*bos_mode]
 ;                              (selects mode_handler_f..i)
 ;
 ;  Frame handlers (game-DS dispatch):
@@ -31,7 +31,7 @@ PAGE  59,132
 ;    frame_handler_d         - VGA (0xA000) block copy then 4x column
 ;                              decode via nibble_expand_8.
 ;    frame_handler_e         - CGA (0xB800) block copy then 2x column
-;                              decode via nibble_decode_inner.
+;                              decode via decode_nibble_pair.
 ;
 ;  Mode handlers (CS dispatch):
 ;    mode_handler_f          - EGA Write Mode 1 blit (ports 3C4h/3C5h).
@@ -44,14 +44,14 @@ PAGE  59,132
 ;    sprite_rle_decode       - 2-byte RLE: 0x1n = run-of-zero count n,
 ;                              0x4n = run-of-AA count n, else single literal.
 ;    nibble_expand_8 / _b    - 2-byte nibble-pair to 8-bit color index.
-;    nibble_decode_inner / _2 - inner 4/2-iteration nibble-pair decode loop.
+;    decode_nibble_pair / _2 - inner 4/2-iteration nibble-pair decode loop.
 ;
 ;  The second half of the file (from file offset ~0x5D4 to end) is packed
 ;  sprite bitmap pixel data, color LUTs (referenced by bos_color_lut_a..d
 ;  at CS 3497h/3654h/3753h/38D0h = file+1497h/1654h/1753h/18D0h) and the
 ;  CS-relative dispatch table at 36A5h (file+16A5h). Sourcer misidentifies
 ;  many bytes as x86 code because the pixel bytes form valid instruction
-;  patterns; the entire region is kept as raw db with data_10..data_22
+;  patterns; the entire region is kept as raw db with ckpd_raw_region_anchor_a..ckpd_raw_region_anchor_b
 ;  labels preserved for the few cross-references from the real code above.
 ;
 ;  Connections:
@@ -62,9 +62,9 @@ PAGE  59,132
 ;    Calls into:   none cross-chunk. Internal: bos_frame_dispatch ->
 ;                    ds:[bos_anim_tbl + 2*bos_mode] (5 frame_handler_a..e
 ;                    in game DS, populated by the boss-arena entry code);
-;                    render_dispatch_2 -> cs:[36A5h + 2*bos_mode]
+;                    render_dispatch_layer2 -> cs:[36A5h + 2*bos_mode]
 ;                    (mode_handler_f..i CS-resident); sprite_rle_decode
-;                    + nibble_expand_8 / nibble_decode_inner helpers.
+;                    + nibble_expand_8 / decode_nibble_pair helpers.
 ;    Called by:    106TOWN dispatch (boss-arena entry path) -- loaded
 ;                    raw into the game segment via SAR loader and
 ;                    invoked by far call with bos_mode preset by the
@@ -180,7 +180,7 @@ init_clear_buf:
 		mov	di,0
 		mov	si,bos_gfx_hdr
 		call	sprite_rle_decode
-		mov	di,offset data_14
+		mov	di,offset ckpd_pattern_dst_buf
 		mov	si,bos_gfx_src_b
 		call	sprite_rle_decode
 		push	ds
@@ -191,7 +191,7 @@ init_clear_buf:
 		mov	bp,0FC0h
 		mov	bx,0C1Eh
 		mov	cx,3848h
-		call	render_dispatch_2
+		call	render_dispatch_layer2
 		pop	ds
 		mov	byte ptr ds:bos_var_34e,1Ch
 		mov	dx,cs
@@ -211,7 +211,7 @@ init_clear_buf:
 		mov	bp,1C0h
 		mov	bx,0C0Eh
 		mov	cx,1C10h
-		call	render_dispatch_2
+		call	render_dispatch_layer2
 		pop	ds
 		call	bos_frame_dispatch
 		retf				; Return far
@@ -229,11 +229,11 @@ bos_frame_dispatch		endp
 
 ; --- Frame handler A: EGA render with Map Mask + Bit Mask sequence ---
 ; Dispatched via ds:bos_anim_tbl (game-DS resident table). First 5 bytes
-; ('mov ax,data_21 / xor al,12h / xor al,0A7h / xor al,48h / xor ax,35C2h')
+; ('mov ax,ckpd_obfuscated_value / xor al,12h / xor al,0A7h / xor al,48h / xor ax,35C2h')
 ; are a decoy/NOP-equivalent pattern that sets AX=0 for the subsequent setup.
 
 frame_handler_a:
-		mov	ax,data_21
+		mov	ax,ckpd_obfuscated_value
 		xor	al,12h
 		xor	al,0A7h
 		xor	al,48h			; 'H'
@@ -566,7 +566,7 @@ nibble_expand_8		endp
 
 ; --- Frame handler E: CGA (0B800h) block copy then nibble-pair render ---
 ; Dispatched via bos_anim_tbl. Copies 28-word rows from vga_dst_41f8 (16 rows),
-; then decodes 16x28 into CGA at 0x55F8 through nibble_decode_inner + bos_color_lut_b.
+; then decodes 16x28 into CGA at 0x55F8 through decode_nibble_pair + bos_color_lut_b.
 
 frame_handler_e:
 		push	ds
@@ -605,10 +605,10 @@ cga_mode_c_col_loop:
 								push	cx
 								mov	dh,ds:bos_src_g[si]
 								mov	dl,ds:bos_src_f[si]
-								call	nibble_decode_inner
+								call	decode_nibble_pair
 								mov	es:[di+38h],al
 								stosb				; Store al to es:[di]
-								call	nibble_decode_inner
+								call	decode_nibble_pair
 								mov	es:[di+38h],al
 								stosb				; Store al to es:[di]
 								inc	si
@@ -627,7 +627,7 @@ cga_mode_c_branch:
 
 		retn
 
-nibble_decode_inner		proc	near
+decode_nibble_pair		proc	near
 		xor	al,al			; Zero register
 		mov	cx,2
 
@@ -651,7 +651,7 @@ nibble_decode_step:
 
 		retn
 
-nibble_decode_inner		endp
+decode_nibble_pair		endp
 
 		db	 00h, 04h, 03h, 02h, 04h, 0Ch	; +0x000
 		db	 05h, 06h, 03h, 05h, 0Bh, 0Ah	; +0x006
@@ -697,7 +697,7 @@ sprite_rle_decode		endp
 
 		db	38h	; +0x000
 
-render_dispatch_2		proc	near
+render_dispatch_layer2		proc	near
 		xor	ax,ax			; Zero register
 		mov	al,cs:bos_mode
 		add	ax,ax
@@ -705,10 +705,10 @@ render_dispatch_2		proc	near
 		mov	di,ax
 		jmp	word ptr cs:[di]	;*
 
-render_dispatch_2		endp
+render_dispatch_layer2		endp
 
 ; --- Mode handler F: dispatch stub and prologue bytes ---
-; These bytes are reached via render_dispatch_2's 'jmp [cs:36A5h + 2*bos_mode]'.
+; These bytes are reached via render_dispatch_layer2's 'jmp [cs:36A5h + 2*bos_mode]'.
 ; The 6 bytes 'B1 36 EA 36 EA 36 63' (mov cl,36h / jmp far 0036:EA36h) form a
 ; dispatch stub that Sourcer could not disassemble cleanly. The remaining bytes
 ; set up EGA Data Rotate (port 3CEh/3CFh), Map Mask on port 3C4h/3C5h, a source
@@ -968,7 +968,7 @@ nibble_expand_8_b		endp
 ; --- Mode handler I: CGA (0B800h) 4-bank interlaced render ---
 ; Dispatched via cs:[36A5h + 2*bos_mode]. Row mapped to one of 4 CGA interlace
 ; banks (2000h apart); column BL*A0 + BH*2 forms the destination offset.
-; Uses nibble_decode_inner_2 with cs:bos_color_lut_d.
+; Uses decode_nibble_pair_alt with cs:bos_color_lut_d.
 
 mode_handler_i:
 		mov	dh,bl
@@ -998,9 +998,9 @@ cga_mode_f_col_loop:
 								push	bx
 								mov	dh,ds:[bp+si]
 								mov	dl,[si]
-								call	nibble_decode_inner_2
+								call	decode_nibble_pair_alt
 								stosb				; Store al to es:[di]
-								call	nibble_decode_inner_2
+								call	decode_nibble_pair_alt
 								stosb				; Store al to es:[di]
 								inc	si
 								pop	bx
@@ -1019,7 +1019,7 @@ cga_mode_f_skip:
 					jnz	cga_mode_f_outer			; Jump if not zero
 		retn
 
-nibble_decode_inner_2		proc	near
+decode_nibble_pair_alt		proc	near
 		xor	al,al			; Zero register
 		mov	cx,2
 
@@ -1043,7 +1043,7 @@ nibble_decode_step_2:
 
 		retn
 
-nibble_decode_inner_2		endp
+decode_nibble_pair_alt		endp
 
 		db	 00h, 07h, 09h, 01h, 07h, 0Fh	; +0x000
 		db	 0Bh, 07h, 09h, 0Bh, 0Bh, 03h	; +0x006
@@ -1085,7 +1085,7 @@ nibble_decode_inner_2		endp
 ; --- Sprite bitmap + embedded dispatch table data ---
 ; This region contains packed sprite bitmap pixel data for the boss,
 ; plus the CS-relative animation dispatch table at offset 36A5h
-; (file+16A5h) referenced by render_dispatch_2 above, plus color LUTs
+; (file+16A5h) referenced by render_dispatch_layer2 above, plus color LUTs
 ; at offsets matching bos_color_lut_a..d (3497h, 3654h, 3753h, 38D0h).
 ; Sourcer misidentifies many bytes as x86 code because the data bytes
 ; happen to form valid instruction patterns. All kept as raw db.
@@ -1156,7 +1156,7 @@ sprite_bitmap_data:
 		db	 2Ah,0EEh, 44h,0A0h, 41h, 80h	; +0x174
 		db	 44h,0BFh,0C0h, 2Ah, 82h, 41h	; +0x17A
 		db	 20h,0ABh,0A2h, 22h,0A2h	; +0x180
-data_10		db	0A8h			; data table (indexed access)
+ckpd_raw_region_anchor_a		db	0A8h			; data table (indexed access)
 		db	 0Fh, 20h, 20h, 22h,0A2h, 22h	; +0x186
 		db	0EAh,0ABh, 22h, 22h,0FEh, 28h	; +0x18C
 		db	 2Ah, 42h,0A8h, 2Ah,0A0h, 02h	; +0x192
@@ -1177,7 +1177,7 @@ data_10		db	0A8h			; data table (indexed access)
 		db	 08h, 20h, 2Ah,0A2h, 41h, 2Ah	; +0x1EC
 		db	0A8h, 2Fh, 02h, 22h, 0Ah, 82h	; +0x1F2
 		db	0ABh,0E2h, 2Eh	; +0x1F8
-data_11		dw	0BAA2h			; data table (indexed access)
+dw	0BAA2h			; data table (indexed access)
 		db	 22h, 2Ah,0A2h,0FEh, 41h,0BAh	; +0x1FD
 		db	 41h,0A0h, 20h, 2Ah,0A2h, 41h	; +0x203
 		db	 22h, 2Ah,0A2h, 3Ah, 2Eh, 2Fh	; +0x209
@@ -1240,7 +1240,7 @@ data_11		dw	0BAA2h			; data table (indexed access)
 		db	0E2h, 2Ah, 20h,0A2h, 22h, 41h	; +0x35F
 		db	 22h, 22h, 88h, 88h,0EBh,0A0h	; +0x365
 		db	 08h	; +0x36B
-data_12		dw	12FCh			; data table (indexed access)
+dw	12FCh			; data table (indexed access)
 		db	 88h, 08h,0A8h,0FBh,0A8h, 88h	; +0x36E
 		db	0AFh, 8Bh, 13h, 02h, 2Ah, 41h	; +0x374
 		db	 20h, 11h, 88h, 8Fh,0CBh,0C8h	; +0x37A
@@ -1409,7 +1409,7 @@ data_12		dw	12FCh			; data table (indexed access)
 		db	0F0h, 13h, 02h, 28h, 11h, 02h	; +0x74C
 		db	 28h,0A0h, 16h, 2Ah, 8Ah,0B0h	; +0x752
 		db	 12h, 03h, 02h, 17h, 03h	; +0x758
-data_13		dw	0C030h			; data table (indexed access)
+dw	0C030h			; data table (indexed access)
 		db	 1Ah, 08h, 80h, 80h, 16h, 2Ch	; +0x75F
 		db	 11h, 0Ah, 2Bh,0A0h, 14h, 88h	; +0x765
 		db	 11h, 02h, 2Ah,0A0h, 16h, 2Ah	; +0x76B
@@ -1484,7 +1484,7 @@ data_13		dw	0C030h			; data table (indexed access)
 		db	0EAh, 42h,0AFh,0C0h, 0Fh,0FBh	; +0x909
 		db	0FAh, 43h,0ABh,0FEh, 43h,0ABh	; +0x90F
 		db	0EAh, 41h,0EAh, 43h,0AFh,0F0h	; +0x915
-data_14		db	 11h			; data table (indexed access)
+ckpd_pattern_dst_buf		db	 11h			; data table (indexed access)
 		db	 22h, 0Fh,0EEh,0BAh,0AFh,0C0h	; +0x91C
 		db	 3Eh, 41h,0FBh,0EAh,0BEh, 42h	; +0x922
 		db	 38h, 11h, 0Fh,0AFh,0BAh,0AFh	; +0x928
@@ -1540,9 +1540,9 @@ data_14		db	 11h			; data table (indexed access)
 		db	 3Fh,0EAh,0E8h, 80h, 11h, 2Fh	; +0xA54
 		db	 11h, 82h, 08h, 22h, 8Ah,0A0h	; +0xA5A
 		db	 11h,0F2h, 82h	; +0xA60
-data_15		db	 41h			; data table (indexed access)
+db	 41h			; data table (indexed access)
 		db	 2Ah, 20h, 2Ah	; +0xA64
-data_16		dw	08A8h			; data table (indexed access)
+dw	08A8h			; data table (indexed access)
 		db	 22h, 8Ah, 41h, 2Ch, 02h, 41h	; +0xA69
 		db	0F8h,0BAh,0B0h, 8Ah,0B8h,0ABh	; +0xA6F
 		db	0C0h,0FBh, 11h, 0Ah, 28h, 8Bh	; +0xA75
@@ -1564,7 +1564,7 @@ data_16		dw	08A8h			; data table (indexed access)
 		db	 22h, 22h,0B0h, 02h, 22h, 11h	; +0xAD5
 		db	 3Ah, 0Ah, 41h,0FAh, 8Eh,0CBh	; +0xADB
 		db	0FCh, 28h	; +0xAE1
-data_17		dw	0A820h			; data table (indexed access)
+dw	0A820h			; data table (indexed access)
 		db	 41h,0FAh, 41h,0EAh, 41h,0A8h	; +0xAE5
 		db	 3Eh,0EFh, 41h,0A8h,0BAh,0CAh	; +0xAEB
 		db	 8Fh,0C0h, 13h,0FAh, 88h, 03h	; +0xAF1
@@ -1576,7 +1576,7 @@ data_17		dw	0A820h			; data table (indexed access)
 		db	 08h, 20h, 3Eh,0F2h,0ABh, 22h	; +0xB15
 		db	 22h, 20h, 3Fh,0BAh,0EAh,0ABh	; +0xB1B
 		db	0BBh, 0Ah, 3Ah,0C0h	; +0xB21
-data_18		db	 02h			; data table (indexed access)
+db	 02h			; data table (indexed access)
 		db	 22h, 23h,0F2h, 22h, 11h,0E2h	; +0xB26
 		db	 22h,0EAh, 22h, 22h, 22h, 0Ah	; +0xB2C
 		db	 02h, 3Fh, 22h, 2Bh, 22h, 22h	; +0xB32
@@ -1584,7 +1584,7 @@ data_18		db	 02h			; data table (indexed access)
 		db	 22h, 22h, 3Fh, 0Ah, 02h, 22h	; +0xB3E
 		db	 80h,0FBh, 42h,0EAh,0BBh, 0Bh	; +0xB44
 		db	0B8h	; +0xB4A
-data_19		dw	8020h			; data table (indexed access)
+dw	8020h			; data table (indexed access)
 		db	 22h,0BEh,0FAh,0AFh, 42h,0ABh	; +0xB4D
 		db	0EEh,0FEh,0BAh,0EAh, 3Bh, 2Ah	; +0xB53
 		db	0EFh, 11h, 0Ah, 42h, 2Ah, 41h	; +0xB59
@@ -1594,10 +1594,10 @@ data_19		dw	8020h			; data table (indexed access)
 		db	 82h, 41h, 20h,0ECh,0A2h, 22h	; +0xB71
 		db	0E2h,0ECh, 0Fh, 20h, 20h, 22h	; +0xB77
 		db	0A2h, 32h,0FAh,0BFh, 22h, 22h	; +0xB7D
-data_20		db	0FEh			; data table (indexed access)
+db	0FEh			; data table (indexed access)
 		db	 2Bh,0EAh,0BAh,0EAh,0ECh, 2Ah	; +0xB84
 		db	0ECh, 02h, 20h, 11h	; +0xB8A
-data_21		dw	2222h			; data table (indexed access)
+ckpd_obfuscated_value		dw	2222h			; data table (indexed access)
 		db	 22h, 20h, 33h, 23h,0EBh,0E2h	; +0xB90
 		db	 32h, 02h, 11h, 23h,0EEh, 22h	; +0xB96
 		db	 2Ah,0A3h, 22h, 3Eh, 22h, 02h	; +0xB9C
@@ -1723,7 +1723,7 @@ data_21		dw	2222h			; data table (indexed access)
 		db	 88h, 80h, 80h, 11h, 0Ch, 11h	; +0xE6C
 		db	 88h, 22h, 20h, 32h,0C2h, 2Fh	; +0xE72
 		db	 20h, 3Eh, 03h, 22h,0FCh, 02h	; +0xE78
-data_22		db	 22h			; data table (indexed access)
+ckpd_raw_region_anchor_b		db	 22h			; data table (indexed access)
 		db	0FEh, 20h, 0Eh,0C2h, 02h, 20h	; +0xE7F
 		db	 02h, 22h,0C8h,0EFh,0AEh, 22h	; +0xE85
 		db	 22h, 11h,0BEh, 30h, 22h, 20h	; +0xE8B

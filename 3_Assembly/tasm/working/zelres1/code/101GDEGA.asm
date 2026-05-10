@@ -93,7 +93,7 @@ seg_a		segment	byte public
 
 		org	0
 
-imgctl_module		proc	far
+run_imgctl_main_ega		proc	far
 
 start:
 		adc	byte ptr [di],0
@@ -157,12 +157,12 @@ ega_render_two_planes:
 		pop	ax
 		push	si
 		mov	bh,1
-		call	imgctl_process_loop_2
+		call	mask_write_loop_ega
 		pop	si
 		push	si
 		add	si,cs:img_stride
 		mov	bh,8
-		call	imgctl_process_loop_2
+		call	mask_write_loop_ega
 		pop	si
 		retn
 
@@ -172,7 +172,7 @@ ega_setup_mode1:
 						;  al = 5, mode
 		mov	word ptr cs:render_fn_ptr,30C5h	; CS:30C5h = mode1 inner row renderer
 		pop	ax
-		call	imgctl_multiply
+		call	blit_2plane_sprite_ega
 		mov	ax,3
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 3, data rotate
@@ -192,7 +192,7 @@ ega_render_three_planes:
 		out	dx,ax			; port 0, DMA-1 bas&add ch 0
 		pop	ax
 		xor	bh,bh			; Zero register
-		call	imgctl_process_loop
+		call	fill_plane_via_dma_ega
 
 skip_plane0_render:
 		push	ax
@@ -201,17 +201,17 @@ skip_plane0_render:
 		pop	ax
 		push	si
 		mov	bh,1
-		call	imgctl_process_loop_2
+		call	mask_write_loop_ega
 		pop	si
 		push	si
 		add	si,cs:img_stride
 		push	si
 		mov	bh,2
-		call	imgctl_process_loop_2
+		call	mask_write_loop_ega
 		pop	si
 		add	si,cs:img_stride
 		mov	bh,4
-		call	imgctl_process_loop_2
+		call	mask_write_loop_ega
 		pop	si
 		retn
 
@@ -220,7 +220,7 @@ ega_setup_mode2:
 						;  al = 5, mode
 		mov	word ptr cs:render_fn_ptr,3121h	; CS:3121h = mode2 inner row renderer
 		mov	al,0FFh
-		call	imgctl_multiply
+		call	blit_2plane_sprite_ega
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
@@ -238,7 +238,7 @@ ega_setup_mode3:
 						;  al = 5, mode
 		mov	word ptr cs:render_fn_ptr,314Dh	; CS:314Dh = mode3 inner row renderer
 		xor	al,al			; Zero register
-		call	imgctl_multiply
+		call	blit_2plane_sprite_ega
 		mov	ax,3
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 3, data rotate
@@ -322,9 +322,9 @@ skip_bg_plane:
 		pop	cx
 		retn
 
-imgctl_module		endp
+run_imgctl_main_ega		endp
 
-imgctl_multiply		proc	near
+blit_2plane_sprite_ega		proc	near
 		push	ds
 		push	ax
 		push	es
@@ -344,17 +344,17 @@ imgctl_multiply		proc	near
 		mov	byte ptr cs:plane_enable_flags,0
 		or	al,al			; Zero ?
 		jnz	do_fg_vga_op			; Jump if not zero
-		call	vga_operation
+		call	run_render_passes_ega
 
 do_fg_vga_op:
 		mov	byte ptr cs:plane_enable_flags,0FFh
-		call	vga_operation
+		call	run_render_passes_ega
 		pop	ds
 		retn
 
-imgctl_multiply		endp
+blit_2plane_sprite_ega		endp
 
-vga_operation		proc	near
+run_render_passes_ega		proc	near
 		mov	byte ptr cs:cur_color,0
 		mov	ax,vga_seg
 		mov	es,ax
@@ -405,9 +405,9 @@ wait_frame_timer:
 							jnz	vga_op_pass_loop			; Jump if not zero
 		retn
 
-vga_operation		endp
+run_render_passes_ega		endp
 
-imgctl_process_loop		proc	near
+fill_plane_via_dma_ega		proc	near
 
 fill_plane_entry:
 		push	di
@@ -433,9 +433,9 @@ fill_plane_loop:
 		pop	di
 		retn
 
-imgctl_process_loop		endp
+fill_plane_via_dma_ega		endp
 
-imgctl_process_loop_2		proc	near
+mask_write_loop_ega		proc	near
 		push	di
 		push	cx
 		push	ax
@@ -460,7 +460,7 @@ mask_write_loop:
 		pop	di
 		retn
 
-imgctl_process_loop_2		endp
+mask_write_loop_ega		endp
 
 imgctl_render_text:
 		and	byte ptr [bx+si],8
@@ -574,11 +574,11 @@ sprite_copy_entry:
 		mov	cs:img_stride,ax
 		pop	si
 		pop	ds
-		call	copy_vga_buffer
+		call	copy_buf_with_plane_select_ega
 		pop	ds
 		retn
 
-copy_vga_buffer		proc	near
+copy_buf_with_plane_select_ega		proc	near
 		mov	ax,vga_seg
 		mov	es,ax
 		mov	dx,3C4h
@@ -626,7 +626,7 @@ copy_vga_planes_loop:
 
 		retn
 
-copy_vga_buffer		endp
+copy_buf_with_plane_select_ega		endp
 
 imgctl_init_sprites:
 		push	cs
@@ -722,13 +722,13 @@ skip_alt_frame:
 		mov	di,bp
 		mov	al,0
 		out	dx,al			; port 3CFh, EGA graphic func
-		call	copy_buffer
+		call	copy_si_to_es_di_ega
 		mov	al,1
 		out	dx,al			; port 3CFh, EGA graphic func
-		call	copy_buffer
+		call	copy_si_to_es_di_ega
 		mov	al,2
 		out	dx,al			; port 3CFh, EGA graphic func
-		call	copy_buffer
+		call	copy_si_to_es_di_ega
 		pop	si
 		pop	ds
 
@@ -756,7 +756,7 @@ sprite_blit_loop:
 							mov	ds:ega_palette_buf,al
 							inc	byte ptr ds:cur_col_ctr
 							xor	ax,ax			; Zero register
-							call	vga_operation4
+							call	decode_scroll_byte_ega
 							pop	si
 							test	byte ptr cs:[si],0FFh
 							jz	skip_sprite_blit			; Jump if zero
@@ -789,7 +789,7 @@ sprite_blit_loop:
 							mov	ax,4
 							out	dx,ax			; port 3CEh, EGA graphic index
 											;  al = 4, read map select
-							call	imgctl_process_loop_3
+							call	blit_via_di_ega
 							mov	dx,3C4h
 							mov	ax,202h
 							out	dx,ax			; port 3C4h, EGA sequencr index
@@ -798,7 +798,7 @@ sprite_blit_loop:
 							mov	ax,104h
 							out	dx,ax			; port 3CEh, EGA graphic index
 											;  al = 4, read map select
-							call	imgctl_process_loop_3
+							call	blit_via_di_ega
 							pop	si
 							pop	ds
 
@@ -834,13 +834,13 @@ sprite_backbuf_loop:
 							inc	dx
 							mov	al,1
 							out	dx,al			; port 3C5h, EGA sequencr func
-							call	copy_buffer_2
+							call	copy_to_di_ega
 							mov	al,2
 							out	dx,al			; port 3C5h, EGA sequencr func
-							call	copy_buffer_2
+							call	copy_to_di_ega
 							mov	al,4
 							out	dx,al			; port 3C5h, EGA sequencr func
-							call	copy_buffer_2
+							call	copy_to_di_ega
 							pop	si
 							pop	ds
 							pop	cx
@@ -862,7 +862,7 @@ all_sprites_done:
 		mov	ax,2
 		jmp	load_palette_entry
 
-copy_buffer		proc	near
+copy_si_to_es_di_ega		proc	near
 		push	si
 		push	cx
 
@@ -881,9 +881,9 @@ copy_buf_row_loop:
 		pop	si
 		retn
 
-copy_buffer		endp
+copy_si_to_es_di_ega		endp
 
-copy_buffer_2		proc	near
+copy_to_di_ega		proc	near
 		push	di
 		push	cx
 
@@ -902,9 +902,9 @@ copy_buf2_row_loop:
 		pop	di
 		retn
 
-copy_buffer_2		endp
+copy_to_di_ega		endp
 
-imgctl_process_loop_3		proc	near
+blit_via_di_ega		proc	near
 		push	di
 		push	cx
 
@@ -929,7 +929,7 @@ or_pixels_loop:
 		pop	di
 		retn
 
-imgctl_process_loop_3		endp
+blit_via_di_ega		endp
 
 ; EGA sequencer/CRTC register table: pairs of (count_byte, EGA_reg, row_height)
 
@@ -993,14 +993,14 @@ imgctl_clear_checkerboard:
 		inc	dx
 		mov	al,1
 		out	dx,al			; port 3C5h, EGA sequencr func
-		call	copy_buffer_3
+		call	copy_32_words_ega
 		mov	al,2
 		out	dx,al			; port 3C5h, EGA sequencr func
-		call	copy_buffer_3
+		call	copy_32_words_ega
 		pop	ds
 		retn
 
-copy_buffer_3		proc	near
+copy_32_words_ega		proc	near
 		push	di
 		mov	cx,20h
 
@@ -1017,7 +1017,7 @@ copy_buf3_row_loop:
 		pop	di
 		retn
 
-copy_buffer_3		endp
+copy_32_words_ega		endp
 
 imgctl_render_sprite_cols:
 		mov	ax,vga_seg
@@ -1059,7 +1059,7 @@ sprite_palette_inner:
 												push	bx
 												push	ds
 												push	si
-												call	imgctl_multiply_2
+												call	compute_tile_vram_offset_ega
 												pop	si
 												pop	ds
 												pop	bx
@@ -1074,7 +1074,7 @@ sprite_palette_inner:
 
 		retn
 
-imgctl_multiply_2		proc	near
+compute_tile_vram_offset_ega		proc	near
 		mov	ds,cs:gvar_game_seg
 		mov	dx,cs
 		add	dx,2000h
@@ -1131,7 +1131,7 @@ eight_row_copy_loop:
 
 		retn
 
-imgctl_multiply_2		endp
+compute_tile_vram_offset_ega		endp
 
 imgctl_copy_to_buf:
 		push	ds
@@ -1312,7 +1312,7 @@ move_up_loop:
 							lodsb				; String [si] to al
 							or	al,al			; Zero ?
 							jz	move_horiz_start			; Jump if zero
-							call	imgctl_func_11
+							call	lookup_palette_entry_ega
 							add	di,140h
 							jmp	short move_up_loop
 
@@ -1323,7 +1323,7 @@ move_horiz_loop:
 							lodsb				; String [si] to al
 							or	al,al			; Zero ?
 							jz	move_down_start			; Jump if zero
-							call	imgctl_func_11
+							call	lookup_palette_entry_ega
 							inc	di
 							jmp	short move_horiz_loop
 
@@ -1334,7 +1334,7 @@ move_down_loop:
 							lodsb				; String [si] to al
 							or	al,al			; Zero ?
 							jz	move_left_start			; Jump if zero
-							call	imgctl_func_11
+							call	lookup_palette_entry_ega
 							add	di,move_up
 							jmp	short move_down_loop
 
@@ -1345,7 +1345,7 @@ move_left_loop:
 							lodsb				; String [si] to al
 							or	al,al			; Zero ?
 							jz	move_seq_done			; Jump if zero
-							call	imgctl_func_11
+							call	lookup_palette_entry_ega
 							dec	di
 							jmp	short move_left_loop
 
@@ -1364,7 +1364,7 @@ scroll_step_loop:
 scroll_up_inner:
 												push	cx
 												mov	al,18h
-												call	imgctl_func_11
+												call	lookup_palette_entry_ega
 												add	di,140h
 												pop	cx
 												loop	scroll_up_inner		; Loop if cx > 0
@@ -1379,7 +1379,7 @@ scroll_up_inner:
 scroll_right_inner:
 												push	cx
 												mov	al,18h
-												call	imgctl_func_11
+												call	lookup_palette_entry_ega
 												inc	di
 												pop	cx
 												loop	scroll_right_inner		; Loop if cx > 0
@@ -1394,7 +1394,7 @@ scroll_right_inner:
 scroll_down_inner:
 												push	cx
 												mov	al,18h
-												call	imgctl_func_11
+												call	lookup_palette_entry_ega
 												add	di,move_up
 												pop	cx
 												loop	scroll_down_inner		; Loop if cx > 0
@@ -1409,7 +1409,7 @@ scroll_down_inner:
 scroll_left_inner:
 												push	cx
 												mov	al,18h
-												call	imgctl_func_11
+												call	lookup_palette_entry_ega
 												dec	di
 												pop	cx
 												loop	scroll_left_inner		; Loop if cx > 0
@@ -1433,7 +1433,7 @@ scroll_cleanup_ega:
 						;  al = 8, data bit mask
 		retn
 
-imgctl_func_11		proc	near
+lookup_palette_entry_ega		proc	near
 		push	si
 		dec	al
 		xor	ah,ah			; Zero register
@@ -1520,7 +1520,7 @@ imgctl_func_11		proc	near
 		pop	si
 		retn
 
-imgctl_func_11		endp
+lookup_palette_entry_ega		endp
 
 ; EGA bit-mask data for scroll animation (8 entries ?? 8 bytes = pixel-column masks, 2 planes)
 
@@ -1602,7 +1602,7 @@ color_fade_col_loop:
 												push	cx
 												push	bx
 												push	si
-												call	imgctl_multiply_3
+												call	program_seq_map_mask_ega
 												pop	si
 												pop	bx
 												pop	cx
@@ -1620,7 +1620,7 @@ wait_fade_timer:
 		pop	ds
 		retn
 
-imgctl_multiply_3		proc	near
+program_seq_map_mask_ega		proc	near
 		mov	dx,3C4h
 		mov	al,2
 		out	dx,al			; port 3C4h, EGA sequencr index
@@ -1705,7 +1705,7 @@ sprite_clear_row:
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
 		retn
 
-imgctl_multiply_3		endp
+program_seq_map_mask_ega		endp
 
 imgctl_draw_border_box:
 		mov	ax,50h
@@ -1738,17 +1738,17 @@ imgctl_draw_border_box:
 		out	dx,al			; port 3CEh, EGA graphic index
 						;  al = 8, data bit mask
 		inc	dx
-		call	imgctl_process_loop_4
+		call	fill_with_pattern_3F_ega
 		pop	di
 		inc	byte ptr cs:cur_color
 		add	di,50h
 		mov	cx,2
-		call	imgctl_process_loop_5
+		call	draw_border_top_bottom_ega
 		pop	cx
 
 draw_border_mid_loop:
 							push	cx
-							call	imgctl_func_15
+							call	program_grfx_FF_then_zero_ega
 							mov	al,30h			; '0'
 							out	dx,al			; port 3CFh, EGA graphic func
 							mov	al,7
@@ -1771,8 +1771,8 @@ draw_border_mid_loop:
 							loop	draw_border_mid_loop		; Loop if cx > 0
 
 		mov	cx,1
-		call	imgctl_process_loop_5
-		call	imgctl_process_loop_4
+		call	draw_border_top_bottom_ega
+		call	fill_with_pattern_3F_ega
 		dec	dx
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
@@ -1785,8 +1785,8 @@ draw_border_mid_loop:
 						;  al = 8, data bit mask
 		retn
 
-imgctl_process_loop_4		proc	near
-		call	imgctl_func_15
+fill_with_pattern_3F_ega		proc	near
+		call	program_grfx_FF_then_zero_ega
 		mov	al,3Fh			; '?'
 		out	dx,al			; port 3CFh, EGA graphic func
 		mov	al,7
@@ -1809,14 +1809,14 @@ draw_border_fill_loop:
 		xchg	es:[di],al
 		retn
 
-imgctl_process_loop_4		endp
+fill_with_pattern_3F_ega		endp
 
-imgctl_process_loop_5		proc	near
+draw_border_top_bottom_ega		proc	near
 
 draw_border_tb_loop:
 							push	cx
 							push	di
-							call	imgctl_func_15
+							call	program_grfx_FF_then_zero_ega
 							mov	al,30h			; '0'
 							out	dx,al			; port 3CFh, EGA graphic func
 							mov	al,7
@@ -1853,9 +1853,9 @@ clear_interior_loop:
 
 		retn
 
-imgctl_process_loop_5		endp
+draw_border_top_bottom_ega		endp
 
-imgctl_func_15		proc	near
+program_grfx_FF_then_zero_ega		proc	near
 		mov	al,0FFh
 		out	dx,al			; port 3CFh, EGA graphic func
 		xor	al,al			; Zero register
@@ -1873,7 +1873,7 @@ imgctl_func_15		proc	near
 		xchg	es:[di],al
 		retn
 
-imgctl_func_15		endp
+program_grfx_FF_then_zero_ega		endp
 
 imgctl_rotate_planes:
 		push	bx
@@ -1917,10 +1917,10 @@ imgctl_vscroll_interleave:
 		mov	ds:saved_es,es
 		mov	di,69Ah
 		add	di,ds:saved_di
-		call	imgctl_process_loop_6
+		call	seed_status_pattern_ega
 		mov	di,6BCh
 		add	di,ds:saved_di
-		call	imgctl_process_loop_6
+		call	seed_status_pattern_ega
 		mov	ax,vga_seg
 		mov	es,ax
 		mov	ds,cs:saved_es
@@ -1948,11 +1948,11 @@ scroll_rows_loop:
 							jb	skip_partial_row			; Jump if below
 							cmp	ax,71h
 							jae	skip_partial_row			; Jump if above or =
-							call	copy_buffer_5
+							call	copy_with_plane_1_alt_ega
 							jmp	short after_row_copy
 
 skip_partial_row:
-							call	copy_buffer_4
+							call	copy_with_plane_1_ega
 
 after_row_copy:
 							pop	cx
@@ -1971,11 +1971,11 @@ after_row_copy:
 							jb	skip_partial_row_b			; Jump if below
 							cmp	ax,71h
 							jae	skip_partial_row_b			; Jump if above or =
-							call	copy_buffer_5
+							call	copy_with_plane_1_alt_ega
 							jmp	short wait_scroll_delay
 
 skip_partial_row_b:
-							call	copy_buffer_4
+							call	copy_with_plane_1_ega
 
 wait_scroll_delay:
 												cmp	byte ptr cs:gvar_frame_timer,4
@@ -1986,7 +1986,7 @@ wait_scroll_delay:
 		pop	ds
 		retn
 
-copy_buffer_4		proc	near
+copy_with_plane_1_ega		proc	near
 		push	si
 		push	di
 		mov	al,1
@@ -2011,9 +2011,9 @@ copy_buffer_4		proc	near
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 		retn
 
-copy_buffer_4		endp
+copy_with_plane_1_ega		endp
 
-copy_buffer_5		proc	near
+copy_with_plane_1_alt_ega		proc	near
 		push	si
 		push	di
 		mov	al,1
@@ -2062,12 +2062,12 @@ copy_buffer_5		proc	near
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 		retn
 
-copy_buffer_5		endp
+copy_with_plane_1_alt_ega		endp
 
-imgctl_process_loop_6		proc	near
+seed_status_pattern_ega		proc	near
 		push	di
 		mov	ax,0FC3Fh
-		call	fill_buffer
+		call	fill_status_byte_24x_ega
 		add	di,36h
 		mov	cx,5Bh
 
@@ -2078,12 +2078,12 @@ draw_border_top_loop:
 							loop	draw_border_top_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
-		call	fill_buffer
+		call	fill_status_byte_24x_ega
 		pop	di
 		add	di,ega_plane_stride
 		push	di
 		mov	ax,0FD7Fh
-		call	fill_buffer
+		call	fill_status_byte_24x_ega
 		add	di,36h
 		mov	cx,2Dh
 
@@ -2100,11 +2100,11 @@ draw_border_mid_rows_loop:
 		mov	byte ptr es:[di+19h],0Eh
 		add	di,50h
 		mov	ax,0FD7Fh
-		call	fill_buffer
+		call	fill_status_byte_24x_ega
 		pop	di
 		add	di,ega_plane_stride
 		mov	ax,0FC3Fh
-		call	fill_buffer
+		call	fill_status_byte_24x_ega
 		add	di,36h
 		mov	cx,5Bh
 
@@ -2115,12 +2115,12 @@ draw_border_bot_loop:
 							loop	draw_border_bot_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
-		call	fill_buffer
+		call	fill_status_byte_24x_ega
 		retn
 
-imgctl_process_loop_6		endp
+seed_status_pattern_ega		endp
 
-fill_buffer		proc	near
+fill_status_byte_24x_ega		proc	near
 		stosb				; Store al to es:[di]
 		mov	al,0FFh
 		mov	cx,18h
@@ -2129,7 +2129,7 @@ fill_buffer		proc	near
 		stosb				; Store al to es:[di]
 		retn
 
-fill_buffer		endp
+fill_status_byte_24x_ega		endp
 
 imgctl_hscroll_interleave:
 		push	ds
@@ -2147,12 +2147,12 @@ scroll_interleave_loop:
 							neg	ax
 							add	ax,39h
 							add	ax,ax
-							call	vga_operation0
+							call	blit_3plane_scroll_ega
 							pop	ax
 							push	ax
 							add	ax,ax
 							dec	ax
-							call	vga_operation0
+							call	blit_3plane_scroll_ega
 
 wait_interleave_timer:
 												cmp	byte ptr cs:gvar_frame_timer,4
@@ -2163,7 +2163,7 @@ wait_interleave_timer:
 		pop	ds
 		retn
 
-vga_operation0		proc	near
+blit_3plane_scroll_ega		proc	near
 		push	ax
 		mov	bl,al
 		mov	al,2Fh			; '/'
@@ -2185,7 +2185,7 @@ vga_operation0		proc	near
 		push	ax
 		push	di
 		push	si
-		call	vga_operation1
+		call	run_render_passes_ega1
 		pop	si
 		pop	di
 		add	si,scroll_plane2_off
@@ -2201,7 +2201,7 @@ vga_operation0		proc	near
 		push	ax
 		push	di
 		push	si
-		call	vga_operation1
+		call	run_render_passes_ega1
 		pop	si
 		pop	di
 		add	si,offset hscroll_plane4_buf
@@ -2215,7 +2215,7 @@ vga_operation0		proc	near
 						;  al = 4, read map select
 		pop	ax
 
-vga_operation1:
+run_render_passes_ega1:
 		cmp	ax,14h
 		jae	row_ge_14			; Jump if above or =
 		mov	cx,2Fh
@@ -2242,7 +2242,7 @@ partial_row_merge:
 		or	es:[di],al
 		retn
 
-vga_operation0		endp
+blit_3plane_scroll_ega		endp
 
 imgctl_hscroll_interleave2:
 		push	ds
@@ -2265,12 +2265,12 @@ scroll_interleave2_loop:
 							neg	ax
 							add	ax,39h
 							add	ax,ax
-							call	vga_operation2
+							call	blit_2plane_scroll_ega
 							pop	ax
 							push	ax
 							add	ax,ax
 							dec	ax
-							call	vga_operation2
+							call	blit_2plane_scroll_ega
 
 wait_interleave2_timer:
 												cmp	byte ptr cs:gvar_frame_timer,4
@@ -2281,7 +2281,7 @@ wait_interleave2_timer:
 		pop	ds
 		retn
 
-vga_operation2		proc	near
+blit_2plane_scroll_ega		proc	near
 		push	ax
 		mov	bl,al
 		mov	al,2Fh			; '/'
@@ -2299,7 +2299,7 @@ vga_operation2		proc	near
 		push	ax
 		push	di
 		push	si
-		call	vga_operation3
+		call	run_render_passes_ega3
 		pop	si
 		pop	di
 		add	si,scroll_plane2_off
@@ -2309,7 +2309,7 @@ vga_operation2		proc	near
 		push	ax
 		push	di
 		push	si
-		call	vga_operation3
+		call	run_render_passes_ega3
 		pop	si
 		pop	di
 		add	si,offset hscroll_plane4_buf
@@ -2317,7 +2317,7 @@ vga_operation2		proc	near
 		out	dx,al			; port 3C5h, EGA sequencr func
 		pop	ax
 
-vga_operation3:
+run_render_passes_ega3:
 		cmp	ax,5Eh
 		mov	cx,2Fh
 		jnc	skip_partial_row_c			; Jump if carry=0
@@ -2330,7 +2330,7 @@ skip_partial_row_c:
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
 		retn
 
-vga_operation2		endp
+blit_2plane_scroll_ega		endp
 
 imgctl_fill_2px_color:
 		push	ax
@@ -2357,7 +2357,7 @@ color_write_loop:
 
 		retn
 
-vga_operation4		proc	near
+decode_scroll_byte_ega		proc	near
 
 load_palette_entry:
 		pushf				; Push flags
@@ -2392,10 +2392,10 @@ palette_reg_write_loop:
 		popf				; Pop flags
 		retn
 
-vga_operation4		endp
+decode_scroll_byte_ega		endp
 
 ; EGA palette table: 9 sets ?? 16 attribute register values (6-bit VGA DAC values)
-; Used by vga_operation4 via ega_palette_buf index ?? 0x10
+; Used by decode_scroll_byte_ega via ega_palette_buf index ?? 0x10
 
 ega_palette_data:
 		db	 00h, 03h, 09h, 3Fh, 00h, 1Bh	; palette set 0: regs 0..5

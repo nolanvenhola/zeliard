@@ -117,7 +117,7 @@ seg_a		segment	byte public
 
 		org	0
 
-eai6_main	proc	far
+run_eai6_main	proc	far
 
 start:
 		ror	byte ptr [bx+di],cl	; Rotate
@@ -319,7 +319,7 @@ sub01_main:
 
 sub01_main_clear_render:
 		and	byte ptr [si+15h],0BFh
-		call	sub01_collide_outer
+		call	check_collide_outer_eai6
 		jc	sub01_state0_path			; Jump if carry Set
 		retn
 
@@ -428,7 +428,7 @@ sub01_finalize:
 		or	[si+15h],al
 		retn
 
-eai6_main	endp
+run_eai6_main	endp
 
 distance_check_4		proc	near
 		mov	al,ds:gvar_hero_x
@@ -595,7 +595,7 @@ collide_back_iter:
 
 collide_check_back		endp
 
-sub01_collide_outer		proc	near
+check_collide_outer_eai6		proc	near
 		test	byte ptr [si+3],0FFh
 		stc				; Set carry flag
 		jnz	sco_test1			; Jump if not zero
@@ -608,7 +608,7 @@ sco_test1:
 		retn
 
 sco_test2:
-		call	sub01_collide_inner
+		call	check_collide_inner_eai6
 		jnc	sco_apply			; Jump if carry=0
 		retn
 
@@ -620,9 +620,9 @@ sco_apply:
 		clc				; Clear carry flag
 		retn
 
-sub01_collide_outer		endp
+check_collide_outer_eai6		endp
 
-sub01_collide_inner		proc	near
+check_collide_inner_eai6		proc	near
 		mov	ax,[si+2]
 		call	word ptr cs:fight_cb_record_ofs
 		xchg	si,di
@@ -649,11 +649,11 @@ collide_inner_step:
 		add	al,al
 		retn
 
-sub01_collide_inner		endp
+check_collide_inner_eai6		endp
 
 ; ----------------------------------------------------------------
 ; sub02_handler  -- AI sub-state 2 dispatch entry (DS-table -> +0xB8 from base)
-; Reached via dispatch JMP in eai6_main when ([si+4]&0xF) selects this slot.
+; Reached via dispatch JMP in run_eai6_main when ([si+4]&0xF) selects this slot.
 ; Cooldown-seed prologue, then visibility check, then dispatch by state bits
 ; into one of: phase-2 retreat (sub_phase2), phase-1 swerve (sub_phase1),
 ; phase-4 hide reset (sub_phase4), or default attack/aim path.

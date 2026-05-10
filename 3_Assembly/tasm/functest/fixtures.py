@@ -47,6 +47,144 @@ BIN_PATHS: dict[str, tuple[Path, int]] = {
 }
 
 
+# ---------- proc-name -> CPU address resolver -------------------------
+# After many renames + structural edits, the absolute CPU offsets of
+# named procs shift over time.  Hardcoded addresses in tests
+# break.  This resolver reads the LST file (Turbo Assembler listing)
+# for a given chunk and extracts {proc_name: cpu_address}, so tests
+# can do `addr = resolve_proc('200FIGHT', 'try_place_tile_id_49')`
+# instead of hard-coding 0x876C.
+
+_LST_CACHE: dict[str, dict[str, int]] = {}
+
+
+def _regen_lst_if_stale(lst_path: Path, asm_path: Path) -> bool:
+    """If the LST is older than the asm or missing, regenerate it via
+    TasmRunner.  Returns True if regeneration happened.
+    """
+    import subprocess
+    import tempfile
+    import shutil
+    if lst_path.exists() and asm_path.exists():
+        if lst_path.stat().st_mtime >= asm_path.stat().st_mtime:
+            return False
+    runner = TASM_ROOT / 'TasmRunner' / 'bin' / 'Debug' / 'net8.0' / 'TasmRunner.exe'
+    if not runner.exists():
+        return False
+    with tempfile.TemporaryDirectory(prefix='lstgen_') as tmp:
+        try:
+            subprocess.run(
+                [str(runner), str(asm_path), '--bin', '--lst', '--output', tmp],
+                capture_output=True, timeout=120,
+            )
+        except Exception:
+            return False
+        new_lst = Path(tmp) / asm_path.with_suffix('.LST').name
+        if not new_lst.exists():
+            new_lst = Path(tmp) / asm_path.with_suffix('.lst').name
+        if new_lst.exists():
+            shutil.copy(new_lst, lst_path)
+            return True
+    return False
+
+
+def _lst_path_for(chunk_label: str) -> Path:
+    """Map a chunk label (e.g. 'fight', '200FIGHT') to its .LST file."""
+    # Map shorthand chunk labels -> canonical chunk filename stem.
+    chunk_map = {
+        'fight':  '200FIGHT',
+        'select': '201SELCT',
+        'bank':   '213BANKP',
+        'town':   '106TOWN',
+        'mole':   '207MOLE',
+        'crab':   '309CRAB',
+        'eai1':   '301EAI1',
+        'gmmcga': 'gmmcga',
+        'gmega':  'gmega',
+        'gmcga':  'gmcga',
+        'gmhgc':  'gmhgc',
+        'gmtga':  'gmtga',
+        'stdply': 'stdply',
+        'stick':  'stick',
+        'opdmo':  '100OPDMO',
+        'opdemo': '100OPDMO',
+    }
+    stem = chunk_map.get(chunk_label, chunk_label)
+
+    # Find the .LST under working/.
+    for sub in ('drivers', 'core', 'zelres1/code', 'zelres2/code',
+                'zelres3/code'):
+        candidate = TASM_ROOT / 'working' / sub / f'{stem}.LST'
+        if candidate.exists():
+            return candidate
+        candidate = TASM_ROOT / 'working' / sub / f'{stem}.lst'
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(
+        f'No LST found for chunk {chunk_label!r} (stem {stem!r}). '
+        f'Run TasmRunner with --lst to generate one.'
+    )
+
+
+def _parse_lst_proc_addresses(lst_path: Path) -> dict[str, int]:
+    """Parse a TASM .LST file and return {proc_name: hex_offset}.
+
+    LST line format (TASM 2.01):
+        <linenum> <offset>  <opcode-bytes>+  <source>
+    proc declarations look like:
+        1234	5678  ...  proc_name proc near
+    """
+    import re
+    out: dict[str, int] = {}
+    text = lst_path.read_text(encoding='cp437', errors='replace')
+    # Match `<offset>  ...  <name> proc (near|far)`
+    proc_re = re.compile(
+        r'^\s*\d+\s+([0-9A-Fa-f]+)\s.*?\b(\w+)\s+proc\s+(?:near|far)\b',
+        re.IGNORECASE,
+    )
+    for line in text.splitlines():
+        m = proc_re.match(line)
+        if m:
+            offset = int(m.group(1), 16)
+            name = m.group(2)
+            out[name] = offset
+    return out
+
+
+def resolve_proc(chunk_label: str, proc_name: str,
+                 fallback_names: tuple[str, ...] = ()) -> int:
+    """Return the current CPU offset of `proc_name` in the chunk's LST.
+
+    The chunk_label is a short tag (e.g. 'fight') or full stem
+    ('200FIGHT').  The fallback_names tuple lets callers handle the
+    common case where a proc has been renamed since the test was
+    written:
+
+        # Test was originally for game_func_106; renamed to try_place_tile_id_49
+        addr = resolve_proc('fight', 'try_place_tile_id_49',
+                            fallback_names=('game_func_106',))
+
+    Raises KeyError if neither the primary name nor any fallback is
+    found in the chunk's LST.
+    """
+    if chunk_label not in _LST_CACHE:
+        lst_path = _lst_path_for(chunk_label)
+        # Regen if stale relative to .asm
+        asm_path = lst_path.with_suffix('.asm')
+        if not asm_path.exists():
+            asm_path = lst_path.with_suffix('.ASM')
+        _regen_lst_if_stale(lst_path, asm_path)
+        _LST_CACHE[chunk_label] = _parse_lst_proc_addresses(lst_path)
+    table = _LST_CACHE[chunk_label]
+    for candidate in (proc_name,) + fallback_names:
+        if candidate in table:
+            return table[candidate]
+    raise KeyError(
+        f'No proc named {proc_name!r} (or any fallback) in {chunk_label}.LST. '
+        f'Available procs: {sorted(table.keys())[:10]}...'
+    )
+
+
 # ---------- player record (DS:0x80..0xCF) -----------------------------
 # Field offsets per working/drivers/stdply.inc canonical EQUs.
 # When stdply.inc adds a new field, mirror it here.

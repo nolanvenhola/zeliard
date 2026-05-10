@@ -133,7 +133,7 @@ seg_a		segment	byte public
 
 		org	0
 
-gmcga		proc	far
+run_gmcga_main		proc	far
 
 start:
 		; Function dispatch table (35 CS-relative word pointers, driver loads at game_seg:2000h).
@@ -223,7 +223,7 @@ cga_scanline_wrap:
 		call	fill_horizontal_line
 		mov	ax,0F00Fh
 
-gmcga		endp
+run_gmcga_main		endp
 
 fill_horizontal_line		proc	near
 		push	di
@@ -868,7 +868,7 @@ fn_13:
 
 init_timestamp		proc	near
 		mov	di,timestamp_buf
-		call	time_to_bcd
+		call	convert_time_to_bcd
 		mov	cx,6
 
 timestamp_check_loop:
@@ -887,7 +887,7 @@ init_timestamp		endp
 
 		db	7 dup (0)
 
-time_to_bcd		proc	near
+convert_time_to_bcd		proc	near
 		mov	cl,0Fh
 		mov	bx,4240h
 		call	modulo_divide_bcd
@@ -912,7 +912,7 @@ time_to_bcd		proc	near
 		mov	cs:[di+6],al
 		retn
 
-time_to_bcd		endp
+convert_time_to_bcd		endp
 
 modulo_divide_bcd		proc	near
 		xor	dh,dh			; Zero register

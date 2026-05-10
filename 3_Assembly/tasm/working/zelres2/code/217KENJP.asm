@@ -15,7 +15,7 @@ PAGE  59,132
 ;    2 "Record Experience" - write save file (*.usr) via INT 21h (3Ch/40h/3Eh)
 ;
 ;  Key subsystems:
-;    kenja_main              - far entry; load chunk, draw UI, dispatch loop
+;    run_kenja_main              - far entry; load chunk, draw UI, dispatch loop
 ;    kenja_cmd_dispatch      - jump to handler based on AL (menu selection)
 ;    sage_scan_attrs         - scan HP/EXP thresholds for blessing tier
 ;    sage_hp_check           - return AX = tier (0..4) based on HP vs threshold
@@ -163,7 +163,7 @@ seg_a		segment	byte public
 
 		org	0
 
-kenja_main		proc	far
+run_kenja_main		proc	far
 
 start:
 		cmp	ax,1Bh
@@ -173,7 +173,7 @@ start:
 		mov	al,ds:drv_init_val
 		db	00h, 0C7h		; add bh,al (alt encoding: 00 r/m8,r8 not 02 r8,r/m8)
 		push	es
-		adc	bh,byte ptr ss:data_21+0Ah[bp+di]	; ('ll upon the Spirits and ')
+		adc	bh,byte ptr ss:kenj_str_spirits_anchor+0Ah[bp+di]	; ('ll upon the Spirits and ')
 		call	draw_sage_tile_grid
 		BANNER_FILL_RECT
 		mov	word ptr ds:gvar_script_ip,0BA67h
@@ -196,7 +196,7 @@ script_run_loop:
 kenja_exit:
 		jmp	word ptr cs:drv_return_to_caller
 
-kenja_main		endp
+run_kenja_main		endp
 
 load_sage_chunk		proc	near
 		mov	es,ds:gvar_game_seg
@@ -235,9 +235,9 @@ kenja_cmd_dispatch		endp
 ; -- sage_cmd_tbl word table (8 entries for 4 cmds + jump targets), referenced
 ;    via DS:[bx]; Sourcer can't follow.  Bytes are kept literal.
 		retf				; first byte CB (table sentinel; far-ret used as marker)
-data_9		db	0A0h			; cmd entry low byte
+kenj_inplace_buf		db	0A0h			; cmd entry low byte
 		db	 8Eh,0A1h, 14h,0A9h, 62h,0A8h	; cmd ptrs A18E, A914, A862
-data_10		db	10h			; cmd-result lookup table (indexed by state)
+db	10h			; cmd-result lookup table (indexed by state)
 		db	0A4h,0B4h,0A2h, 20h,0A4h, 3Bh	; entries A410, A2B4, A420, A93B (split byte)
 		db	0A9h, 3Fh,0A9h, 43h,0A9h, 47h	; ptrs A93F, A943, A947
 		db	0A9h, 4Bh,0A9h, 4Fh,0A9h, 53h	; ptrs A94B, A94F, A953
@@ -246,7 +246,7 @@ data_10		db	10h			; cmd-result lookup table (indexed by state)
 		db	 2Eh,0FFh, 16h, 00h, 20h,0C7h	; call cs:[2000] (drv_fill_rect); mov word..
 		db	 06h, 54h,0FFh			; ..[FF54],..
 		db	 25h, 27h			; ..,2725 (gvar_dlg_pos)
-data_11		db	0C6h				; mov byte... (start of next opcode)
+kenj_input_flags		db	0C6h				; mov byte... (start of next opcode)
 		db	 06h, 52h,0FFh, 04h,0C6h, 06h	; mov [FF52],04 (gvar_dlg_cols); mov..
 		db	 53h,0FFh, 04h,0B9h, 04h, 00h	; ..[FF53],04 (gvar_dlg_rows); mov cx,4
 		db	0BEh, 65h,0ADh, 2Eh,0FFh, 16h	; mov si,AD65; call cs:..
@@ -263,7 +263,7 @@ sage_state_jump:
 ; -- sage_init_tbl partial entries + inline orphan x86 code.  Reached only via
 ;    DS dispatch; Sourcer can't follow statically.
 		db	 1Ch,0A1h, 26h,0A1h		; sage_init_tbl entries: A11C, A126
-data_13		dw	0A157h				; sage_init_tbl entry: A157
+kenj_dispatch_fn_ptr		dw	0A157h				; sage_init_tbl entry: A157
 		db	 78h,0A1h,0E8h, 64h, 08h,0C7h	; entry A178; call rel; mov word..
 		db	 06h, 4Ch,0FFh,0EBh,0ADh,0C3h	; ..[FF4C],ADEB; retn
 		db	0E8h, 5Ah, 08h,0F6h, 06h, 15h	; call rel; test byte [BB15]
@@ -295,7 +295,7 @@ set_ptr_AE42:
 
 cmd_record_entry:
 		call	clear_sage_region
-		call	record_experience_entry
+		call	log_experience_entry
 		mov	word ptr ds:gvar_script_ip,0ADBFh
 		jnc	cmd_record_cancel			; Jump if carry=0
 		retn
@@ -477,7 +477,7 @@ palette_fade_delay:
 		jb	palette_load_row			; Jump if below
 		mov	word ptr ds:state_color_tmp_cs,320h
 		mov	cx,7
-		mov	si,offset data_9
+		mov	si,offset kenj_inplace_buf
 		mov	di,state_color_tmp_cs2
 
 palette_brighten_loop:
@@ -516,7 +516,7 @@ palette_idx_wrap:
 		call	word ptr cs:drv_palette_push
 		push	cs
 		pop	es
-		mov	di,offset data_9
+		mov	di,offset kenj_inplace_buf
 		mov	si,state_color_tmp_cs2
 		mov	cx,7
 		rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
@@ -561,7 +561,7 @@ palette_hp_done:
 		or	al,6
 		or	[bx+si],cl
 		add	ax,[si]
-		add	sp,data_17[bx+si]
+		add	sp,kenj_phase_inc_table[bx+si]
 		push	es
 		or	[bx+si],cl
 		add	ax,[si]
@@ -641,7 +641,7 @@ wait_frames_140		endp
 		mov	word ptr ds:gvar_script_ip,0ADBFh
 		retn
 
-record_experience_entry		proc	near
+log_experience_entry		proc	near
 		push	cs
 		pop	es
 		mov	si,0A907h
@@ -652,12 +652,12 @@ record_experience_entry		proc	near
 		mov	ds,ax
 		mov	di,0E000h
 		mov	dx,0A516h
-		call	word ptr cs:data_13
-		mov	bx,offset data_18+7	; ('e IndiharGo outside')
+		call	word ptr cs:kenj_dispatch_fn_ptr
+		mov	bx,offset kenj_str_outside_at_7+7	; ('e IndiharGo outside')
 		mov	cx,3637h
 		mov	al,0FFh
 		call	word ptr cs:drv_fill_rect
-		mov	bx,offset data_18+7	; ('e IndiharGo outside')
+		mov	bx,offset kenj_str_outside_at_7+7	; ('e IndiharGo outside')
 		mov	cx,2637h
 		mov	al,0FFh
 		call	word ptr cs:drv_fill_rect
@@ -711,7 +711,7 @@ name_input_entry:
 		mov	al,ds:gvar_save_buf
 		mov	ds:gvar_dlg_rows,al
 		mov	byte ptr ds:gvar_dlg_cols,5
-		call	name_input_loop
+		call	wait_name_input
 		pushf				; Push flags
 		BANNER_FILL_RECT
 		popf				; Pop flags
@@ -751,7 +751,7 @@ name_copy_store:
 			stosb				; Store al to es:[di]
 			jmp	short name_copy_loop
 
-record_experience_entry		endp
+log_experience_entry		endp
 
 ; -- Save filename mask + input prompt strings.
 kenjp_save_file_mask:
@@ -790,7 +790,7 @@ draw_char_row_loop:
 
 draw_char_row		endp
 
-name_input_loop		proc	near
+wait_name_input		proc	near
 		mov	byte ptr ds:gvar_input_lock,0FFh
 		mov	byte ptr ds:gvar_key_code,0
 		mov	byte ptr ds:gvar_key_code,0
@@ -804,7 +804,7 @@ name_input_loop		proc	near
 		call	word ptr cs:script_fn_menu_init
 
 name_in_init_ok:
-		call	redraw_name_field
+		call	render_name_field
 		xor	al,al			; Zero register
 		call	update_name_cursor
 
@@ -865,7 +865,7 @@ name_in_load_preset_done:
 		mov	cx,1010h
 		xor	al,al			; Zero register
 		call	word ptr cs:drv_fill_rect
-		call	redraw_name_field
+		call	render_name_field
 		xor	al,al			; Zero register
 		call	update_name_cursor
 		jmp	name_in_poll_loop
@@ -895,7 +895,7 @@ name_in_append_char:
 
 name_in_append_len_ok:
 		mov	ds:state_name_buf[bx],al
-		call	redraw_name_field
+		call	render_name_field
 		mov	al,1
 		jmp	update_name_cursor_entry
 
@@ -1047,7 +1047,7 @@ name_in_page_down_wait:
 		pop	di
 		retn
 
-name_input_loop		endp
+wait_name_input		endp
 
 update_name_cursor		proc	near
 
@@ -1100,7 +1100,7 @@ cursor_len_max:
 
 update_name_cursor		endp
 
-redraw_name_field		proc	near
+render_name_field		proc	near
 		push	si
 		mov	ax,ds:state_name_box_x
 		shr	ax,1			; Shift w/zeros fill
@@ -1117,7 +1117,7 @@ redraw_name_field		proc	near
 		pop	si
 		retn
 
-redraw_name_field		endp
+render_name_field		endp
 
 name_in_backspace_impl:
 		push	si
@@ -1147,7 +1147,7 @@ name_backspace_maxlen_dec:
 		mov	byte ptr ds:state_name_term,60h	; '`'
 		mov	al,0FFh
 		call	update_name_cursor
-		call	redraw_name_field
+		call	render_name_field
 		pop	si
 		retn
 
@@ -1455,9 +1455,9 @@ anim_record_use_blink_b:
 anim_tick		endp
 
 ; -- sage_anim_a/_b 9-byte phase table (used by anim_tick).
-;    First word forms data_17; trailing 9 bytes are the phase increments.
-		db	29h				; first byte of data_17 word (low)
-data_17		dw	672Ah			; data table sentinel word (672A)
+;    First word forms kenj_phase_inc_table; trailing 9 bytes are the phase increments.
+		db	29h				; first byte of kenj_phase_inc_table word (low)
+kenj_phase_inc_table		dw	672Ah			; data table sentinel word (672A)
 		db	 68h, 05h, 06h, 07h, 06h, 05h	; phase incs 0-5
 		db	 04h, 03h, 04h			; phase incs 6-8
 
@@ -1488,61 +1488,61 @@ sage_intro_dispatch		endp
 
 hint_yasmin_set:
 		mov	si,0B22Dh
-		or	data_11,40h		; '@'
+		or	kenj_input_flags,40h		; '@'
 		retn
 			                        ;* No entry point to code
-		test	data_11,20h		; ' '
+		test	kenj_input_flags,20h		; ' '
 		jz	hint_climb_set			; Jump if zero
 		retn
 
 hint_climb_set:
 		mov	si,0B29Fh
-		or	data_11,20h		; ' '
+		or	kenj_input_flags,20h		; ' '
 		retn
 			                        ;* No entry point to code
-		test	data_11,10h
+		test	kenj_input_flags,10h
 		jz	hint_exit_set			; Jump if zero
 		retn
 
 hint_exit_set:
 		mov	si,0B317h
-		or	data_11,10h
+		or	kenj_input_flags,10h
 		retn
 			                        ;* No entry point to code
-		test	data_11,8
+		test	kenj_input_flags,8
 		jz	hint_spirits_set			; Jump if zero
 		retn
 
 hint_spirits_set:
 		mov	si,0B38Ch
-		or	data_11,8
+		or	kenj_input_flags,8
 		retn
 			                        ;* No entry point to code
-		test	data_11,4
+		test	kenj_input_flags,4
 		jz	hint_demons_set			; Jump if zero
 		retn
 
 hint_demons_set:
 		mov	si,0B400h
-		or	data_11,4
+		or	kenj_input_flags,4
 		retn
 			                        ;* No entry point to code
-		test	data_11,2
+		test	kenj_input_flags,2
 		jz	hint_silkarn_set			; Jump if zero
 		retn
 
 hint_silkarn_set:
 		mov	si,0B488h
-		or	data_11,2
+		or	kenj_input_flags,2
 		retn
 			                        ;* No entry point to code
-		test	data_11,1
+		test	kenj_input_flags,1
 		jz	hint_indihar_set			; Jump if zero
 		retn
 
 hint_indihar_set:
 		mov	si,sage_indihar_hint
-		or	data_11,1
+		or	kenj_input_flags,1
 		retn
 			                        ;* No entry point to code
 		add	[bp+si],bx
@@ -1573,7 +1573,7 @@ hint_indihar_set:
 		db	 15h,0AFh, 00h, 0Eh		; banner hdr: len 14 ('The Sage Saied')
 		db	'The Sage Saied'
 		db	 14h,0AFh, 00h, 10h		; banner hdr: pos AF14, attr 00, len 16 ('The Sage Indihar')
-data_18		db	'The Sage IndiharGo outside', 0
+kenj_str_outside_at_7		db	'The Sage IndiharGo outside', 0
 		db	'See Power', 0
 		db	'Listen Knowledge', 0
 		db	'Record Experience', 0
@@ -1585,7 +1585,7 @@ data_18		db	'The Sage IndiharGo outside', 0
 		db	0FFh, 00h			; SCR_END opcode 00
 		db	0Ch, 'The Spirits are with you.'	; CR + text (See Power success)
 		db	 11h,0FFh,0FFh, 0Ch		; ANIM-prefix + SCR_END terminator + CR
-data_21		db	'I shall call upon the Spirits an'
+kenj_str_spirits_anchor		db	'I shall call upon the Spirits an'
 		db	'd their po'
 		db	'wers..... /'
 		db	0FFh, 04h,0FFh, 01h		; SCR_END opcode 04 + 01

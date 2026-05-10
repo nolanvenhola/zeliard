@@ -102,7 +102,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zr1_07		proc	far
+run_gtega_main		proc	far
 
 ; Module init block: word-pair dispatch table + EGA setup prologue.
 ; Called by the loader to register entry points and initialize EGA planes.
@@ -112,7 +112,7 @@ zr1_07		proc	far
 ;     [3]=plane_mix_a_entry  [4]=plane_mix_b_entry  [5]=plane_mix_c_entry
 ;     [6]=plane_clear_entry  [7]=tile_col6_render    [8]=tile_disp_entry
 ;     [9]=render_tile_flip_entry  [A]=render_tile_wide_entry
-;     [B]=vga_operation9  [C]=status_render_entry  [D]=vga_operation3
+;     [B]=render_via_proc_loop2_ega  [C]=status_render_entry  [D]=decode_entity_slot_byte_ega
 ;     [E]=scroll_right_entry  [F]=scroll_right_entry (same)
 ;   Inline EGA init: push ds; mov si,186Ch; mov di,0A000h; push cs; pop es;
 ;                   mov ax,0A000h; mov ds,ax; mov dx,3CEh; mov al,4; out dx,al;
@@ -179,7 +179,7 @@ render_tile_row:
 		mov	si,ds:gvar_map_ptr
 		cmp	byte ptr [si+1Dh],0FDh
 		jne	skip_double_tile			; Jump if not equal
-		call	vgadec_multiply_2
+		call	save_state_then_blit_ega
 
 skip_double_tile:
 		mov	word ptr ds:tile_vga_ofs,186Ch
@@ -191,53 +191,53 @@ skip_double_tile:
 		mov	byte ptr ds:tile_row_ctr,0
 
 tile_row_loop:
-						call	vga_operation
+						call	run_render_passes_gtega
 						xor	bl,bl			; Zero register
 						cmpsb				; Cmp [si] to es:[di]
 						jz	tile_col0_ok			; Jump if zero
-						call	vgadec_func_4
+						call	mark_tile_FE_ega
 
 tile_col0_ok:
 						inc	bl
 						cmpsb				; Cmp [si] to es:[di]
 						jz	tile_col1_ok			; Jump if zero
-						call	vgadec_func_4
+						call	mark_tile_FE_ega
 
 tile_col1_ok:
 						inc	bl
 						cmpsb				; Cmp [si] to es:[di]
 						jz	tile_col2_ok			; Jump if zero
-						call	vgadec_func_4
+						call	mark_tile_FE_ega
 
 tile_col2_ok:
 						inc	bl
 						cmpsb				; Cmp [si] to es:[di]
 						jz	tile_col3_ok			; Jump if zero
-						call	vgadec_func_3
+						call	render_tile_entry_ega
 
 tile_col3_ok:
 						inc	bl
 						cmpsb				; Cmp [si] to es:[di]
 						jz	tile_col4_ok			; Jump if zero
-						call	vgadec_func_3
+						call	render_tile_entry_ega
 
 tile_col4_ok:
 						inc	bl
 						cmpsb				; Cmp [si] to es:[di]
 						jz	tile_col5_ok			; Jump if zero
-						call	vgadec_multiply
+						call	render_tile_if_marked_ega
 
 tile_col5_ok:
 						inc	bl
 						cmpsb				; Cmp [si] to es:[di]
 						jz	tile_col6_ok			; Jump if zero
-						call	vgadec_func_3
+						call	render_tile_entry_ega
 
 tile_col6_ok:
 						inc	bl
 						cmpsb				; Cmp [si] to es:[di]
 						jz	tile_col7_ok			; Jump if zero
-						call	vgadec_func_3
+						call	render_tile_entry_ega
 
 tile_col7_ok:
 						add	word ptr ds:tile_vga_ofs,2
@@ -246,9 +246,9 @@ tile_col7_ok:
 						jne	tile_row_loop			; Jump if not equal
 		retn
 
-zr1_07		endp
+run_gtega_main		endp
 
-vga_operation		proc	near
+run_render_passes_gtega		proc	near
 		cmp	byte ptr ds:tile_row_ctr,1Bh
 		jne	check_not_last_row			; Jump if not equal
 		retn
@@ -277,7 +277,7 @@ do_tile_blit:
 
 blit_pass_loop:
 						push	cx
-						call	vga_operation1
+						call	init_4E_loop_ega
 						add	di,0F882h
 						pop	cx
 						loop	blit_pass_loop		; Loop if cx > 0
@@ -291,16 +291,16 @@ blit_pass_loop:
 		pop	di
 		retn
 
-vga_operation		endp
+run_render_passes_gtega		endp
 
-vgadec_multiply		proc	near
+render_tile_if_marked_ega		proc	near
 		cmp	byte ptr [si-1],0FDh
 		jne	tile_render_entry			; Jump if not equal
 		jmp	door_tile_handler
 
-vgadec_multiply		endp
+render_tile_if_marked_ega		endp
 
-vgadec_func_3		proc	near
+render_tile_entry_ega		proc	near
 
 tile_render_entry:
 		mov	al,[di-1]
@@ -428,9 +428,9 @@ tile_cached:
 		pop	es
 		retn
 
-vgadec_func_3		endp
+render_tile_entry_ega		endp
 
-vgadec_func_4		proc	near
+mark_tile_FE_ega		proc	near
 		mov	al,[di-1]
 		mov	byte ptr [di-1],0FEh
 		inc	al
@@ -681,7 +681,7 @@ plane_clear_loop:
 		pop	ds
 		retn
 
-vgadec_func_4		endp
+mark_tile_FE_ega		endp
 
 ; tile_col6_render: called with di=tile_buf_a, cx=6, renders 6 tile columns to EGA
 
@@ -689,11 +689,11 @@ tile_col6_render	proc	near
 		db	0BFh, 80h, 3Eh			; mov di,tile_buf_a (3E80h)
 tile_col6_render	endp
 
-vgadec_func_5		proc	near
+set_cx_6_ega		proc	near
 		mov	cx,6
-vgadec_func_5		endp
+set_cx_6_ega		endp
 
-vgadec_func_6		proc	near
+set_es_to_vga_ega		proc	near
 		mov	ax,0A000h
 		mov	es,ax
 
@@ -736,7 +736,7 @@ tile_plane_loop:
 
 		retn
 
-vgadec_func_6		endp
+set_es_to_vga_ega		endp
 
 door_tile_handler:
 		push	ds
@@ -753,31 +753,31 @@ door_tile_handler:
 		xor	dh,dh			; Zero register
 		add	dx,word ptr cs:[starting_position_in_town]
 		mov	ds:tile_col_ctr,dx
-		call	vgadec_func_8
+		call	load_tile_list_then_use_ega
 		mov	es:tile_idx_a,al
 		cmp	byte ptr es:tile_idx_b,0FDh
 		jne	door_check_idx_b			; Jump if not equal
 		inc	dx
-		call	vgadec_func_8
+		call	load_tile_list_then_use_ega
 		mov	es:tile_idx_b,al
 
 door_check_idx_b:
 		mov	si,3BB4h
 		mov	di,3EE0h
-		call	vgadec_func_5
+		call	set_cx_6_ega
 		mov	si,cs:tile_list_ptr
 
 door_list_loop:
-						call	vga_operation4
+						call	render_2_col_iter_ega
 						or	bl,bl			; Zero ?
 						jz	door_list_next			; Jump if zero
 						push	si
 						push	bx
-						call	vga_operation3
+						call	decode_entity_slot_byte_ega
 						pop	bx
 						mov	es,cs:gvar_game_seg
 						mov	si,tile_idx_a
-						call	vga_operation2
+						call	compute_col_decrement_ega
 						pop	si
 
 door_list_next:
@@ -801,7 +801,7 @@ door_list_next:
 						;  al = 5, mode
 		inc	ch
 		jz	door_skip_top			; Jump if zero
-		call	vga_operation1
+		call	init_4E_loop_ega
 
 door_skip_top:
 		pop	di
@@ -813,7 +813,7 @@ door_skip_top:
 		inc	di
 		inc	cl
 		jz	door_blit_done			; Jump if zero
-		call	vga_operation1
+		call	init_4E_loop_ega
 
 door_blit_done:
 		mov	ax,5
@@ -832,7 +832,7 @@ door_blit_done:
 		pop	ds
 		retn
 
-vgadec_multiply_2		proc	near
+save_state_then_blit_ega		proc	near
 		push	es
 		push	ds
 		mov	si,ds:gvar_map_ptr
@@ -846,18 +846,18 @@ vgadec_multiply_2		proc	near
 		cmp	byte ptr ds:tile_idx_a,0FDh
 		jne	skip_door_remap			; Jump if not equal
 		inc	dx
-		call	vgadec_func_8
+		call	load_tile_list_then_use_ega
 		mov	ds:tile_idx_a,al
 
 skip_door_remap:
 		mov	si,tile_idx_a
 		mov	di,3EE0h
 		mov	cx,3
-		call	vgadec_func_6
+		call	set_es_to_vga_ega
 		mov	si,cs:tile_list_ptr
 
 door_list_loop_2:
-						call	vga_operation4
+						call	render_2_col_iter_ega
 						or	bl,bl			; Zero ?
 						jz	door_list_next_2			; Jump if zero
 						push	si
@@ -865,14 +865,14 @@ door_list_loop_2:
 						mov	al,3
 						mul	bl			; ax = reg * al
 						push	ax
-						call	vga_operation3
+						call	decode_entity_slot_byte_ega
 						pop	ax
 						add	di,ax
 						mov	bp,di
 						mov	es,cs:gvar_game_seg
 						mov	si,tile_idx_a
 						mov	di,3EE0h
-						call	vga_operation_2
+						call	render_3_tile_cols_ega
 						pop	si
 
 door_list_next_2:
@@ -885,7 +885,7 @@ door_list_next_2:
 		SET_ES_DS_VGA
 		EGA_SETUP_702_105
 						;  al = 5, mode
-		call	vga_operation1
+		call	init_4E_loop_ega
 		mov	ax,5
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
@@ -898,10 +898,10 @@ door_list_next_2:
 		stosb				; Store al to es:[di]
 		retn
 
-vgadec_multiply_2		endp
+save_state_then_blit_ega		endp
 
-vgadec_func_8		proc	near
-		call	vgadec_func_9
+load_tile_list_then_use_ega		proc	near
+		call	load_tile_list_ptr_ega
 		mov	al,[si+3]
 		cmp	al,0FDh
 		je	door_chain_next			; Jump if equal
@@ -909,19 +909,19 @@ vgadec_func_8		proc	near
 
 door_chain_next:
 						add	si,8
-						call	vga_operation0
+						call	match_tile_by_dx_ega
 						mov	al,[si+3]
 						cmp	al,0FDh
 						je	door_chain_next			; Jump if equal
 		retn
 
-vgadec_func_8		endp
+load_tile_list_then_use_ega		endp
 
-vgadec_func_9		proc	near
+load_tile_list_ptr_ega		proc	near
 		mov	si,ds:tile_list_ptr
-vgadec_func_9		endp
+load_tile_list_ptr_ega		endp
 
-vga_operation0		proc	near
+match_tile_by_dx_ega		proc	near
 
 tile_match_check:
 						cmp	dx,[si]
@@ -932,9 +932,9 @@ tile_match_next:
 						add	si,8
 						jmp	short tile_match_check
 
-vga_operation0		endp
+match_tile_by_dx_ega		endp
 
-vga_operation1		proc	near
+init_4E_loop_ega		proc	near
 		mov	bx,4Eh
 		mov	cx,3
 
@@ -967,9 +967,9 @@ tile_row_blit_loop:
 
 		retn
 
-vga_operation1		endp
+init_4E_loop_ega		endp
 
-vga_operation2		proc	near
+compute_col_decrement_ega		proc	near
 		mov	bp,di
 		dec	bl
 		xor	bh,bh			; Zero register
@@ -977,9 +977,9 @@ vga_operation2		proc	near
 		call	word ptr cs:render_fn_tbl_a[bx]	;*
 		retn
 
-vga_operation2		endp
+compute_col_decrement_ega		endp
 
-; Orphan code stubs (no entry point known; all target tile_render_cols / vga_operation_2).
+; Orphan code stubs (no entry point known; all target tile_render_cols / render_3_tile_cols_ega).
 ; Preserved verbatim; byte offsets 5C2h-5D5h in segment.
 			                        ;* No entry point to code
 		retf	0C235h			; retf 0C235h  (alt encoding: far return adj SP -- unreachable)
@@ -991,7 +991,7 @@ vga_operation2		endp
 		db	0BFh, 10h, 3Fh		; mov di,tile_buf_d  (3F10h, alt encoding)
 		db	0EBh, 66h		; jmp tile_render_cols  (alt encoding)
 
-vga_operation3		proc	near
+decode_entity_slot_byte_ega		proc	near
 		mov	al,[si+2]
 		mov	ch,al
 		and	al,7Fh
@@ -1013,9 +1013,9 @@ set_dl_4:
 		add	di,ax
 		retn
 
-vga_operation3		endp
+decode_entity_slot_byte_ega		endp
 
-vga_operation4		proc	near
+render_2_col_iter_ega		proc	near
 		mov	cx,2
 		mov	dx,ds:tile_col_ctr
 
@@ -1032,7 +1032,7 @@ col_no_match:
 		mov	bl,cl
 		retn
 
-vga_operation4		endp
+render_2_col_iter_ega		endp
 
 ; tile_disp_entry: dispatch via render_fn_tbl_b[bl-1], set bp=di as dest
 			                        ;* No entry point to code
@@ -1054,12 +1054,12 @@ render_tile_flip_entry:
 		add	di,ds:tile_disp_tbl[bx]
 		jmp	short tile_render_cols
 
-; render_fn_tbl_b[1]: wide tile - render from tile_buf_a via vga_operation_2
+; render_fn_tbl_b[1]: wide tile - render from tile_buf_a via render_3_tile_cols_ega
 			                        ;* No entry point to code
 
 render_tile_wide_entry:
 		mov	di,3E80h
-		call	vga_operation_2
+		call	render_3_tile_cols_ega
 		jmp	short tile_render_cols
 
 ; render_fn_tbl_b[2]: alt column tile - advance si by 3, use tile_buf_b
@@ -1070,7 +1070,7 @@ render_tile_alt_entry:
 		add	si,3
 		jmp	short tile_render_cols
 
-vga_operation_2		proc	near
+render_3_tile_cols_ega		proc	near
 
 tile_render_cols:
 		mov	cx,3
@@ -1093,7 +1093,7 @@ col_render_loop:
 						mov	ds,cs:gvar_game_seg
 						mov	ax,0A000h
 						mov	es,ax
-						call	vga_operation6
+						call	set_seq_map_mask_7_ega
 						pop	bp
 						pop	es
 						pop	si
@@ -1103,7 +1103,7 @@ col_render_loop:
 
 		retn
 
-vga_operation_2		endp
+render_3_tile_cols_ega		endp
 
 ; tile_rerender_entry: re-render 6 tile columns into EGA from tile_buf_a
 			                        ;* No entry point to code
@@ -1124,7 +1124,7 @@ tile_rerender_loop:
 						mov	ds,cs:gvar_game_seg
 						mov	ax,0A000h
 						mov	es,ax
-						call	vga_operation6
+						call	set_seq_map_mask_7_ega
 						pop	si
 						pop	ds
 						pop	cx
@@ -1132,7 +1132,7 @@ tile_rerender_loop:
 
 		retn
 
-vga_operation6		proc	near
+set_seq_map_mask_7_ega		proc	near
 		mov	dx,3C4h
 		mov	ax,702h
 		out	dx,ax			; port 3C4h, EGA sequencr index
@@ -1227,7 +1227,7 @@ glyph_row_loop:
 						;  al = 8, data bit mask
 		retn
 
-vga_operation6		endp
+set_seq_map_mask_7_ega		endp
 
 ; scroll_left_entry: scroll EGA viewport one pixel left
 		                        ;* No entry point to code
@@ -1528,7 +1528,7 @@ char_render_entry:
 		add	ax,ax
 		add	si,ax
 		mov	si,[si]
-		call	vga_operation7
+		call	init_text_render_buf_ega
 		pop	ax
 		pop	di
 		test	byte ptr ds:gvar_item_flag,0FFh
@@ -1539,14 +1539,14 @@ char_render_entry:
 		add	di,ax
 		mov	dl,[di]
 		mov	ax,[di+1]
-		call	vga_operation9
+		call	render_via_proc_loop2_ega
 
 no_item_render:
 		pop	di
 		pop	si
 		retn
 
-vga_operation7		proc	near
+init_text_render_buf_ega		proc	near
 		push	cs
 		pop	es
 		mov	di,text_render_buf
@@ -1563,16 +1563,16 @@ char_not_done:
 						push	ds
 						push	si
 						and	bl,3
-						call	vga_operation8
+						call	compute_glyph_index_ega
 						pop	si
 						pop	ds
 						pop	bx
 						inc	bl
 						jmp	short char_next_loop
 
-vga_operation7		endp
+init_text_render_buf_ega		endp
 
-vga_operation8		proc	near
+compute_glyph_index_ega		proc	near
 		sub	al,20h			; ' '
 		xor	ah,ah			; Zero register
 		shl	ax,1			; Shift w/zeros fill
@@ -1609,7 +1609,7 @@ char_second_byte:
 		inc	di
 		retn
 
-vga_operation8		endp
+compute_glyph_index_ega		endp
 
 ; status_render_entry: render all status icons (clears char_render_buf, renders 7 slots)
 			                        ;* No entry point to code
@@ -1625,7 +1625,7 @@ status_render_entry:
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
 		pop	ax
 		pop	dx
-		call	vgadec_process_loop_2
+		call	step_text_char_loop2_ega
 		mov	di,3BE4h
 		mov	si,3A31h
 		mov	cx,7
@@ -1633,8 +1633,8 @@ status_render_entry:
 		mov	word ptr ds:gvar_copy_width,0Bh
 		jmp	short icon_slot_loop
 
-vga_operation9		proc	near
-		call	vgadec_process_loop_2
+render_via_proc_loop2_ega		proc	near
+		call	step_text_char_loop2_ega
 		push	cs
 		pop	es
 		mov	di,text_render_buf
@@ -1649,7 +1649,7 @@ icon_slot_loop:
 						push	di
 						lodsb				; String [si] to al
 						push	si
-						call	vgadec_process_loop
+						call	step_text_char_loop_ega
 						pop	si
 						pop	di
 						pop	bx
@@ -1663,9 +1663,9 @@ icon_slot_loop:
 
 		retn
 
-vga_operation9		endp
+render_via_proc_loop2_ega		endp
 
-vgadec_process_loop		proc	near
+step_text_char_loop_ega		proc	near
 		inc	al
 		jnz	char_not_null			; Jump if not zero
 		retn
@@ -1699,11 +1699,11 @@ char_no_shift:
 
 		retn
 
-vgadec_process_loop		endp
+step_text_char_loop_ega		endp
 
-vgadec_process_loop_2		proc	near
+step_text_char_loop2_ega		proc	near
 		mov	di,3A31h
-		call	vgadec_func_22
+		call	div_24bit_emit_digit_ega
 		mov	cx,6
 
 marker_scan_loop:
@@ -1718,38 +1718,38 @@ marker_slot_empty:
 
 		retn
 
-vgadec_process_loop_2		endp
+step_text_char_loop2_ega		endp
 
 		db	7 dup (0)
 
-vgadec_func_22		proc	near
+div_24bit_emit_digit_ega		proc	near
 		mov	cl,0Fh
 		mov	bx,4240h
-		call	vgadec_func_23
+		call	div_16bit_emit_digit_ega
 		mov	cs:[di],dh
 		mov	cl,1
 		mov	bx,86A0h
-		call	vgadec_func_23
+		call	div_16bit_emit_digit_ega
 		mov	cs:[di+1],dh
 		xor	cl,cl			; Zero register
 		mov	bx,2710h
-		call	vgadec_func_23
+		call	div_16bit_emit_digit_ega
 		mov	cs:[di+2],dh
 		mov	bx,3E8h
-		call	vgadec_func_24
+		call	div_16bit_emit_digit_alt_ega
 		mov	cs:[di+3],dh
 		mov	bx,64h
-		call	vgadec_func_24
+		call	div_16bit_emit_digit_alt_ega
 		mov	cs:[di+4],dh
 		mov	bx,0Ah
-		call	vgadec_func_24
+		call	div_16bit_emit_digit_alt_ega
 		mov	cs:[di+5],dh
 		mov	cs:[di+6],al
 		retn
 
-vgadec_func_22		endp
+div_24bit_emit_digit_ega		endp
 
-vgadec_func_23		proc	near
+div_16bit_emit_digit_ega		proc	near
 		xor	dh,dh			; Zero register
 
 div_subtract_loop:
@@ -1772,9 +1772,9 @@ div_done:
 		add	dl,cl
 		retn
 
-vgadec_func_23		endp
+div_16bit_emit_digit_ega		endp
 
-vgadec_func_24		proc	near
+div_16bit_emit_digit_alt_ega		proc	near
 		xor	dh,dh			; Zero register
 		div	bx			; ax,dx rem=dx:ax/reg
 		xchg	dx,ax
@@ -1782,7 +1782,7 @@ vgadec_func_24		proc	near
 		xor	dl,dl			; Zero register
 		retn
 
-vgadec_func_24		endp
+div_16bit_emit_digit_alt_ega		endp
 
 ; scroll_region_up_entry: scroll a rectangular region of EGA up by one row
 			                        ;* No entry point to code

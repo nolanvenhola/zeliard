@@ -86,7 +86,7 @@ seg_a		segment	byte public
 
 		org	0
 
-tori_ai_main	proc	far
+run_tori_ai_main	proc	far
 
 ; -------------------------------------------------------------------------
 ;  Module header (file offsets 0x000-0x033) -- loaded as data by 200FIGHT.
@@ -804,7 +804,7 @@ tori_decel_reset:
 		mov	byte ptr [si+0Ah],0
 		retn
 
-tori_ai_main	endp
+run_tori_ai_main	endp
 
 tori_dist_check_5		proc	near
 		mov	al,ds:gvar_frame_cnt

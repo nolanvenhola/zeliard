@@ -104,7 +104,7 @@ seg_a		segment	byte public
 
 		org	0
 
-lega_main		proc	far
+run_lega_main		proc	far
 
 ; ------------------------------------------------------------------
 ; start: header + embedded tile/cell layout data.
@@ -425,7 +425,7 @@ lega_phase_step_tbl_a	db	 00h, 01h, 02h, 01h, 02h, 05h	; phase_a entries [0..5]
 lega_phase_step_tbl_b	db	 03h, 06h			; phase_b entries [0..1]
 			db	 07h, 07h			; phase_b entries [2..3]
 
-lega_main		endp
+run_lega_main		endp
 
 lega_scroll_dec_step		proc	near
 		mov	ax,ds:lega_scroll_x

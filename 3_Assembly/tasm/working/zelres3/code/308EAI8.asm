@@ -130,7 +130,7 @@ seg_a		segment	byte public
 
 		org	0
 
-eai8_main	proc	far
+run_eai8_main	proc	far
 
 start:
 		xchg	bx,ax
@@ -410,7 +410,7 @@ psf_wrap:
 		clc				; Clear carry flag
 		retn
 
-eai8_main	endp
+run_eai8_main	endp
 
 collide_check_fwd		proc	near
 		mov	ax,[si+2]

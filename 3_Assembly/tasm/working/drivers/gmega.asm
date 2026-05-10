@@ -126,7 +126,7 @@ seg_a		segment	byte public
 
 		org	0
 
-gmega		proc	far
+run_gmega_main		proc	far
 
 start:
 ; Function dispatch table (35 word entries) followed by dispatch mechanism code.
@@ -215,7 +215,7 @@ locloop_2:
 		call	fill_horizontal_line
 		mov	ax,0F00Fh
 
-gmega		endp
+run_gmega_main		endp
 
 fill_horizontal_line		proc	near
 		push	ax
@@ -941,7 +941,7 @@ fn_12:
 
 init_timestamp		proc	near
 		mov	di,2569h
-		call	time_to_bcd
+		call	convert_time_to_bcd
 		mov	cx,6
 
 locloop_43:
@@ -962,7 +962,7 @@ init_timestamp		endp
 
 		db	7 dup (0)
 
-time_to_bcd		proc	near
+convert_time_to_bcd		proc	near
 		mov	cl,0Fh
 		mov	bx,4240h
 		call	modulo_divide_bcd
@@ -987,7 +987,7 @@ time_to_bcd		proc	near
 		mov	cs:[di+6],al
 		retn
 
-time_to_bcd		endp
+convert_time_to_bcd		endp
 
 modulo_divide_bcd		proc	near
 		xor	dh,dh			; Zero register

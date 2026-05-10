@@ -34,7 +34,7 @@ PAGE  59,132
 ;  Primary code entry: scan_slot_loop (at 0x0302) -- iterates the enemy
 ;  slot list (SI = fight_slot_list), updates each live slot via fight-
 ;  engine callbacks, then drives crab spawn/animation phases.  The
-;  helpers hp_dec/hp_inc adjust fight_hp; emit_sprite_rows writes crab
+;  helpers subtract_hp_amount/add_hp_amount adjust fight_hp; emit_sprite_rows writes crab
 ;  sprite rows into the slot buffer.
 ;
 ;  Connections:
@@ -99,7 +99,7 @@ seg_a		segment	byte public
 
 		org	0
 
-crab_main	proc	far
+run_crab_main	proc	far
 
 ; -------------------------------------------------------------------------
 ;  Module header (file offsets 0x000-0x033) -- loaded as data by 200FIGHT.
@@ -147,7 +147,7 @@ crab_frame_ptr_tbl_b	label	word		; indexed frame pointers (group B)
 ;
 ;  ROLE TABLE (frame_idx -> dispatch state -> visual role).
 ;  Frames are selected via `crab_frame_idx` (0xA7DE) which is set by the
-;  dispatch chain in crab_main and consumed by emit_sprite_rows
+;  dispatch chain in run_crab_main and consumed by emit_sprite_rows
 ;  (`mov di, ds:crab_pos_tbl[bx]`).  Roles below are inferred from which
 ;  dispatch path writes each frame_idx value -- they are best-guess
 ;  semantic labels, not runtime-traced.
@@ -457,13 +457,13 @@ hp_target_clamped:
 		add	ax,5
 		cmp	ax,bx
 		jae	hp_inc_two
-		call	hp_dec
-		call	hp_dec
+		call	subtract_hp_amount
+		call	subtract_hp_amount
 		jmp	short dispatch_phase
 
 hp_inc_two:
-		call	hp_inc
-		call	hp_inc
+		call	add_hp_amount
+		call	add_hp_amount
 
 ; -------------------------------------------------------------------------
 ;  Per-frame phase dispatch chain (loc_8..loc_12).
@@ -504,7 +504,7 @@ walk_active:
 		jz	walk_dir0_step
 		jmp	emit_sprite_rows
 walk_dir0_step:
-		call	hp_dec
+		call	subtract_hp_amount
 		jnc	walk_dir0_advance
 		mov	byte ptr ds:crab_dir_flag,0FFh
 
@@ -525,7 +525,7 @@ walk_dir1:
 		jmp	emit_sprite_rows
 
 walk_dir1_step:
-		call	hp_inc
+		call	add_hp_amount
 		jnc	walk_dir1_advance
 		mov	byte ptr ds:crab_dir_flag,0
 
@@ -539,14 +539,14 @@ walk_dir1_wrap:
 		mov	byte ptr ds:crab_frame_idx,5
 		jmp	emit_sprite_rows
 
-crab_main	endp
+run_crab_main	endp
 
 ; -------------------------------------------------------------------------
-;  hp_dec -- decrement fight_hp by 1, floor at 0x10.  Sets CF if clamped.
+;  subtract_hp_amount -- decrement fight_hp by 1, floor at 0x10.  Sets CF if clamped.
 ;  (was sub_1)
 ; -------------------------------------------------------------------------
 
-hp_dec		proc	near
+subtract_hp_amount		proc	near
 		cmp	byte ptr ds:fight_hp,10h
 		stc				; Set carry flag
 		jnz	hp_dec_do
@@ -557,14 +557,14 @@ hp_dec_do:
 		clc				; Clear carry flag
 		retn
 
-hp_dec		endp
+subtract_hp_amount		endp
 
 ; -------------------------------------------------------------------------
-;  hp_inc -- increment fight_hp by 1, ceiling 0x31.  Sets CF if clamped.
+;  add_hp_amount -- increment fight_hp by 1, ceiling 0x31.  Sets CF if clamped.
 ;  (was sub_2)
 ; -------------------------------------------------------------------------
 
-hp_inc		proc	near
+add_hp_amount		proc	near
 		cmp	byte ptr ds:fight_hp,31h	; '1'
 		stc				; Set carry flag
 		jnz	hp_inc_do
@@ -575,7 +575,7 @@ hp_inc_do:
 		clc				; Clear carry flag
 		retn
 
-hp_inc		endp
+add_hp_amount		endp
 
 ; -------------------------------------------------------------------------
 ;  walk_reset (loc_23) -- clear flag_h, set flag_g to drive spawn_subloop.
@@ -664,11 +664,11 @@ anim_step_no_phase:
 		jz	anim_step_emit
 		test	byte ptr ds:crab_dir_flag,0FFh
 		jnz	anim_step_inc
-		call	hp_dec
+		call	subtract_hp_amount
 		jmp	short anim_step_emit
 
 anim_step_inc:
-		call	hp_inc
+		call	add_hp_amount
 
 anim_step_emit:
 		call	emit_sprite_rows_proc

@@ -88,7 +88,7 @@ seg_a		segment	byte public
 
 		org	0
 
-kingp_main	proc	far
+run_kingp_main	proc	far
 
 start:
 		mov	byte ptr ds:[7],al
@@ -129,7 +129,7 @@ script_loop:
 script_exit:
 		jmp	word ptr cs:drv_return_to_caller
 
-kingp_main	endp
+run_kingp_main	endp
 
 script_cmd_dispatch	proc	near
 		mov	bl,al

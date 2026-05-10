@@ -24,7 +24,7 @@ PAGE  59,132
 ;  Dispatch via DS word-pointer table at file offset 0xFF.  The init prologue
 ;  (mov bl,[si+4]; and bl,0Fh; xor bh,bh; add bx,bx; jmp ds:[bx+0xA2FF])
 ;  selects sub-state by ([si+4]&0xF):
-;    idx 4 -> sub01_handler  (in eai7_main proc body)
+;    idx 4 -> sub01_handler  (in run_eai7_main proc body)
 ;    idx 5 -> sub01_alt_entry (just retn)
 ;    idx 6 -> sub02_handler
 ;    idx 7 -> sub02_handler alt entry (offset -1)
@@ -139,7 +139,7 @@ seg_a		segment	byte public
 
 		org	0
 
-eai7_main	proc	far
+run_eai7_main	proc	far
 
 start:
 		iret				; Interrupt return
@@ -327,7 +327,7 @@ sub01_visible:
 		jmp	sub01_hide_branch
 
 sub01_collide_chk:
-		call	sub01_collide_outer
+		call	check_collide_outer_eai7
 		jc	sub01_state_dispatch			; Jump if carry Set
 		retn
 
@@ -493,9 +493,9 @@ sub01_finalize:
 		or	al,ah
 		mov	[si+15h],al
 		retn
-		db	8, 8				; trailing pad after eai7_main retn
+		db	8, 8				; trailing pad after run_eai7_main retn
 
-eai7_main	endp
+run_eai7_main	endp
 
 phase_step_fwd		proc	near
 		cmp	byte ptr [si+3],22h	; '"'
@@ -624,7 +624,7 @@ collide_back_iter:
 
 collide_check_back		endp
 
-sub01_collide_outer		proc	near
+check_collide_outer_eai7		proc	near
 		test	byte ptr [si+3],0FFh
 		stc				; Set carry flag
 		jnz	sco_test1			; Jump if not zero
@@ -637,7 +637,7 @@ sco_test1:
 		retn
 
 sco_test2:
-		call	sub01_collide_inner
+		call	check_collide_inner_eai7
 		jnc	sco_apply			; Jump if carry=0
 		retn
 
@@ -649,9 +649,9 @@ sco_apply:
 		clc				; Clear carry flag
 		retn
 
-sub01_collide_outer		endp
+check_collide_outer_eai7		endp
 
-sub01_collide_inner		proc	near
+check_collide_inner_eai7		proc	near
 		mov	ax,[si+2]
 		call	word ptr cs:fight_cb_record_ofs
 		xchg	si,di
@@ -678,7 +678,7 @@ collide_inner_step:
 		add	al,al
 		retn
 
-sub01_collide_inner		endp
+check_collide_inner_eai7		endp
 
 sub01_hide_branch:
 		mov	al,[si+15h]
@@ -754,7 +754,7 @@ sub02_main:
 
 sub02_visible:
 		and	byte ptr [si+15h],0BFh
-		call	sub01_collide_outer
+		call	check_collide_outer_eai7
 		jc	sub02_collide_chk			; Jump if carry Set
 		retn
 

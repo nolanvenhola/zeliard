@@ -25,7 +25,7 @@ PAGE  59,132
 ;                   not 0x056 -- see tbl_a[0]=0xA052
 ;    0x281..0x28F : tako_scan_prolog (mov si,fight_slot_list / clear state)
 ;    0x28F..0x506 : main scan-and-update code (was loc_1..loc_27)
-;    0x507..0x533 : hp_dec helper (was sub_1)
+;    0x507..0x533 : subtract_hp_amount helper (was sub_1)
 ;    0x534..0x580 : timeout/death-phase code (was loc_32..loc_34)
 ;    0x581..0x598 : sprite-source init block, reached via 200FIGHT
 ;                   DS-resident dispatch slot (no static caller in this module)
@@ -99,7 +99,7 @@ seg_a		segment	byte public
 
 		org	0
 
-tako_main	proc	far
+run_tako_main	proc	far
 
 ; -------------------------------------------------------------------------
 ;  Module header (file offsets 0x000-0x033) -- loaded as data by 200FIGHT.
@@ -409,7 +409,7 @@ hit_pos_branch:
 		mov	byte ptr ds:gvar_spawn_fx_flag,25h	; '%'
 
 hit_apply:
-		call	hp_dec
+		call	subtract_hp_amount
 		test	byte ptr ds:tako_flag_b,10h
 		jnz	prep_phase_check
 		mov	bx,tako_flag_a
@@ -648,15 +648,15 @@ emit_done:
 		mov	word ptr [si],0FFFFh
 		retn
 
-tako_main	endp
+run_tako_main	endp
 
 ; -------------------------------------------------------------------------
-;  hp_dec -- decrement tako_hp by bx, floor at 0; calls fight_cb_prep to
+;  subtract_hp_amount -- decrement tako_hp by bx, floor at 0; calls fight_cb_prep to
 ;  validate; sets gvar_death_flag and clears tako_timer_a on first kill.
 ;  (was sub_1)
 ; -------------------------------------------------------------------------
 
-hp_dec		proc	near
+subtract_hp_amount		proc	near
 		mov	ax,ds:tako_hp
 		sub	ax,bx
 		jnc	hp_dec_store
@@ -684,7 +684,7 @@ hp_dec_arm_death:
 hp_dec_ret:					; shared retn (used by jno in tako_sprite_src_init below)
 		retn
 
-hp_dec		endp
+subtract_hp_amount		endp
 
 ; -------------------------------------------------------------------------
 ;  death_phase (was loc_32) -- runs when gvar_death_flag is set.

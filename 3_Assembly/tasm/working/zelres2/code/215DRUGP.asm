@@ -59,7 +59,7 @@ menu_show_list		equ	6010h		;* show menu (bl=idx) -> CF if cancel
 menu_init		equ	6012h		;* init menu (bx=pos, di=buffer, cl=n, al=start)
 cur_shop_id		equ	0C006h		;* current shop index (1-based)
 shop_cmd_tbl		equ	0A0C3h		;* command dispatch table (word array @ 0xC3)
-shop_inv_bitmasks	equ	0A0C9h		;* inventory bitmasks @ data_4 (0xC9)
+shop_inv_bitmasks	equ	0A0C9h		;* inventory bitmasks @ shop_cmd1_lo_byte (0xC9)
 shop_subtitle_tbl	equ	0A494h		;* item subtitle/text lookup @ 0x494
 banner_glyph_tbl	equ	0A5E4h		;* shop banner glyph-code table @ 0x5E4
 shop_entry_init		equ	0A644h		;* shop entry-byte (module header byte) @ 0x644
@@ -102,7 +102,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zr2_15		proc	far
+run_drugstore_main		proc	far
 
 start:
 		adc	al,es:[bx+si]
@@ -112,7 +112,7 @@ start:
 		mov	di,8000h
 		mov	si,0A811h
 		mov	al,2
-		call	word ptr cs:data_5
+		call	word ptr cs:drugp_continuation_jmp
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,8000h
@@ -137,7 +137,7 @@ start:
 		mov	di,shop_inv_state
 		mov	cx,0Ch
 		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
-		call	wizard_process_loop_3
+		call	draw_shop_banner
 		mov	bx,0D60h
 		mov	cx,3637h
 		mov	al,0FFh
@@ -148,16 +148,16 @@ drv_script_step:
 			call	word ptr cs:script_step
 			cmp	al,0FFh
 			je	chain_to_drv_return_to_caller			; Jump if equal
-			call	wizard_func_2
+			call	dispatch_shop_cmd
 			jmp	short drv_script_step
 
 chain_to_drv_return_to_caller:
 		jmp	word ptr cs:drv_return_to_caller
 
-zr2_15		endp
+run_drugstore_main		endp
 
 wizard_process_loop		proc	near
-		mov	si,offset data_4
+		mov	si,offset shop_cmd1_lo_byte
 		mov	al,ds:cur_shop_id
 		dec	al
 		xor	ah,ah			; Zero register
@@ -186,25 +186,25 @@ loc_5:
 
 wizard_process_loop		endp
 
-wizard_func_2		proc	near
+dispatch_shop_cmd		proc	near
 		mov	bl,al
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		jmp	word ptr cs:shop_cmd_tbl[bx]	;*
 
-wizard_func_2		endp
+dispatch_shop_cmd		endp
 
 ; -- shop_cmd_tbl: word array (8 entries) of cmd-handler offsets, indexed by
-;    next script byte * 2.  Sourcer mis-decoded entries 1-2 as data_4 + raw db.
+;    next script byte * 2.  Sourcer mis-decoded entries 1-2 as shop_cmd1_lo_byte + raw db.
 		db	0D5h,0A0h			; cmd 0 -> 0xA0D5 (entry sentinel/nop)
-data_4		db	0EBh				; cmd 1 lo (-> 0xA0EB) (also alias for data_4 ptr)
+shop_cmd1_lo_byte		db	0EBh				; cmd 1 lo (-> 0xA0EB) (also alias for shop_cmd1_lo_byte ptr)
 		db	0A0h, 0Ch,0A1h, 8Dh,0A1h,0AAh	; cmd 1 hi + cmd 2/3 (A10C, A18D) + cmd 4 lo (AA)
 		db	0A1h, 00h,0A3h,0BAh,0A4h, 00h	; cmd 4 hi (A1AA) + cmd 5 (A300) + cmd 6 (A4BA) + cmd 7 lo
 		db	0A1h, 06h,0A1h,0C6h, 06h, 1Ah	; cmd 7 hi + cmd 8 (A106) + start of 'mov [FF1A],imm' opcode
 		db	0FFh, 00h			; (operand cont. + imm value)
 
 call_wizard_multiply:
-			call	wizard_multiply
+			call	animate_wizard_glyphs
 			cmp	byte ptr ds:gvar_frame_timer,50h	; 'P'
 			jb	call_wizard_multiply			; Jump if below
 		mov	si,greet_str_tbl
@@ -213,7 +213,7 @@ call_wizard_multiply:
 		db	0C6h, 06h, 1Ah,0FFh, 00h	; mov byte [FF1A],00 (gvar_frame_timer reset)
 
 call_wizard_multiply_7:
-			call	wizard_multiply
+			call	animate_wizard_glyphs
 			cmp	byte ptr ds:gvar_frame_timer,50h	; 'P'
 			jb	call_wizard_multiply_7			; Jump if below
 		mov	si,0A74Fh
@@ -225,8 +225,8 @@ call_wizard_multiply_7:
 ;    Reached only via DS-resident dispatch + indirect-call patches; Sourcer
 ;    decodes most of it as data.  Keep as raw bytes with running comments.
 drugp_orphan_handlers:
-		db	0BEh, 61h			; mov si,xxxx (operand split across data_5 below)
-data_5		dw	0E9A7h				; (continuation: si=A961 + jmp far via cs:[10C])
+		db	0BEh, 61h			; mov si,xxxx (operand split across drugp_continuation_jmp below)
+drugp_continuation_jmp		dw	0E9A7h				; (continuation: si=A961 + jmp far via cs:[10C])
 		db	0FCh, 05h,0E8h,0A3h, 04h,0BBh	; cld; .. ; call rel; mov bx,..
 		db	 22h, 27h,0B9h, 2Dh, 1Ch,0B0h	; bx=2722; mov cx,1C2D; mov al,..
 		db	0FFh, 2Eh,0FFh, 16h, 00h, 20h	; FF; call cs:[2000] (drv_fill_rect)
@@ -360,7 +360,7 @@ drv_script_step_12:
 		call	word ptr cs:script_step
 		FILL_DLG_RECT
 		pushf				; Push flags
-		call	wizard_func_4
+		call	clear_shop_inner_box
 		popf				; Pop flags
 		mov	word ptr ds:gvar_script_ip,0A8A8h
 		jc	set_gvar_script_ip_A965			; Jump if carry Set
@@ -370,7 +370,7 @@ set_gvar_script_ip_A965:
 		mov	word ptr ds:gvar_script_ip,0A965h
 		retn
 			                        ;* No entry point to code
-		call	wizard_process_loop_2
+		call	pack_shop_inv_for_dialog
 		mov	byte ptr ds:menu_start_idx,0
 		mov	al,ds:gvar_dlg_rows
 		cmp	al,2
@@ -480,7 +480,7 @@ loc_18:
 		push	ax
 		mov	al,ds:cur_shop_id
 		dec	al
-		mov	si,offset data_4
+		mov	si,offset shop_cmd1_lo_byte
 		add	si,ax
 		pop	ax
 		mov	di,shop_subtitle_tbl
@@ -488,7 +488,7 @@ loc_18:
 		mov	al,[di]
 		or	[si],al
 		call	word ptr cs:drv_frame_commit
-		call	wizard_process_loop_2
+		call	pack_shop_inv_for_dialog
 		mov	word ptr ds:gvar_script_ip,0A966h
 		test	byte ptr ds:gvar_dlg_rows,0FFh
 		jnz	set_gvar_script_ip_AA4B			; Jump if not zero
@@ -499,11 +499,11 @@ set_gvar_script_ip_AA4B:
 		call	word ptr cs:script_step
 		FILL_DLG_RECT
 		mov	word ptr ds:gvar_script_ip,0A965h
-		jnc	call_wizard_func_4			; Jump if carry=0
+		jnc	call_clear_shop_inner_box			; Jump if carry=0
 		retn
 
-call_wizard_func_4:
-		call	wizard_func_4
+call_clear_shop_inner_box:
+		call	clear_shop_inner_box
 		mov	word ptr ds:gvar_script_ip,0A98Dh
 		retn
 			                        ;* No entry point to code
@@ -511,7 +511,7 @@ call_wizard_func_4:
 		or	[si],al
 		add	al,[bx+di]
 
-wizard_process_loop_2		proc	near
+pack_shop_inv_for_dialog		proc	near
 		push	cs
 		pop	es
 		mov	si,0A6h
@@ -533,7 +533,7 @@ loc_22:
 		mov	ds:gvar_dlg_rows,dl
 		retn
 
-wizard_process_loop_2		endp
+pack_shop_inv_for_dialog		endp
 
 			                        ;* No entry point to code
 		mov	byte ptr ds:sel_item_idx,0
@@ -604,7 +604,7 @@ loc_25:
 		call	word ptr cs:script_step
 		FILL_DLG_RECT
 		pushf				; Push flags
-		call	wizard_func_4
+		call	clear_shop_inner_box
 		popf				; Pop flags
 		mov	word ptr ds:gvar_script_ip,0A965h
 		jnc	set_gvar_script_ip_AAA6			; Jump if carry=0
@@ -615,15 +615,15 @@ set_gvar_script_ip_AAA6:
 		call	word ptr cs:script_step
 		jmp	loc_23
 
-wizard_func_4		proc	near
+clear_shop_inner_box		proc	near
 		mov	bx,2717h
 		mov	cx,1D41h
 		xor	al,al			; Zero register
 		jmp	word ptr cs:drv_fill_rect
 
-wizard_func_4		endp
+clear_shop_inner_box		endp
 
-wizard_process_loop_3		proc	near
+draw_shop_banner		proc	near
 		mov	si,banner_glyph_tbl
 		mov	bx,717h
 		mov	cx,8
@@ -649,7 +649,7 @@ locloop_28:
 
 		retn
 
-wizard_process_loop_3		endp
+draw_shop_banner		endp
 
 ; -- banner_glyph_tbl: 12-wide x 8-tall tile-glyph map for the wizard shop banner.
 drugp_banner_glyph_tbl:
@@ -671,7 +671,7 @@ drugp_banner_glyph_tbl:
 		db	 16h, 17h, 18h, 19h, 1Ah	; row 7 cols 6-10
 		db	1Bh				; row 7 col 11 (last glyph)
 
-wizard_multiply		proc	near
+animate_wizard_glyphs		proc	near
 		cmp	word ptr ds:gvar_timer_word,2
 		jae	set_gvar_timer_word_0			; Jump if above or =
 		retn
@@ -721,10 +721,10 @@ locloop_33:
 
 		retn
 
-wizard_multiply		endp
+animate_wizard_glyphs		endp
 
 ; -- price_gfx_tbl: 6-wide x 6-tall x 3-set animated price banner glyphs (108 bytes).
-;    Cycled by wizard_multiply (item_anim_set 0..2) to draw the price area.
+;    Cycled by animate_wizard_glyphs (item_anim_set 0..2) to draw the price area.
 drugp_price_gfx_tbl:
 		db	 1Ch, 1Dh, 1Eh, 1Fh		; price banner set 0 row 0a (4 tiles)
 		db	' !"#$'				; price banner set 0 row 0 cont (ASCII 0x20-0x24)
@@ -768,7 +768,7 @@ locloop_37:
 				loop	locloop_36		; Loop if cx > 0
 
 call_wizard_multiply_38:
-				call	wizard_multiply
+				call	animate_wizard_glyphs
 				cmp	byte ptr ds:gvar_frame_timer,28h	; '('
 				jb	call_wizard_multiply_38			; Jump if below
 			pop	si

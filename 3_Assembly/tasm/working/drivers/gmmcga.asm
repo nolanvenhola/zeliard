@@ -119,7 +119,7 @@ seg_a		segment	byte public
 
 		org	0
 
-gmmcga		proc	far
+run_gmmcga_main		proc	far
 
 start:
 		; Function dispatch table (36 CS-relative word pointers, driver loads at game_seg:2000h).
@@ -218,7 +218,7 @@ draw_border_loop:
 		xor	ax,ax			; Zero register
 		xor	bx,bx			; Zero register
 
-gmmcga		endp
+run_gmmcga_main		endp
 
 fill_horizontal_line		proc	near
 		push	di
@@ -746,7 +746,7 @@ draw_timer_entry:
 
 init_timestamp		proc	near
 		mov	di,2433h
-		call	time_to_bcd
+		call	convert_time_to_bcd
 		mov	cx,6
 
 check_filled_loop:
@@ -765,7 +765,7 @@ init_timestamp		endp
 
 		db	7 dup (0)
 
-time_to_bcd		proc	near
+convert_time_to_bcd		proc	near
 		mov	cl,0Fh
 		mov	bx,4240h
 		call	modulo_divide_bcd
@@ -790,7 +790,7 @@ time_to_bcd		proc	near
 		mov	cs:[di+6],al
 		retn
 
-time_to_bcd		endp
+convert_time_to_bcd		endp
 
 modulo_divide_bcd		proc	near
 		xor	dh,dh			; Zero register
@@ -1660,7 +1660,7 @@ sprite_row_loop:
 								lodsw				; String [si] to ax
 								xchg	ah,al
 								mov	cs:bitplane_2,ax
-								call	bitplane_to_pixels
+								call	decode_bitplane_to_pixels
 								pop	cx
 								loop	sprite_row_loop		; Loop if cx > 0
 
@@ -1668,7 +1668,7 @@ sprite_row_loop:
 
 process_sprite_row		endp
 
-bitplane_to_pixels		proc	near
+decode_bitplane_to_pixels		proc	near
 		mov	cx,2
 
 bitplane_pixels_loop:
@@ -1691,7 +1691,7 @@ bitplane_pixels_loop:
 
 		retn
 
-bitplane_to_pixels		endp
+decode_bitplane_to_pixels		endp
 
 extract_bitplane_bit		proc	near
 		rol	word ptr cs:bitplane_2,1	; Rotate

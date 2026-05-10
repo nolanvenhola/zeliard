@@ -100,7 +100,7 @@ portrait_vis		equ	0AE02h			;* byte: portrait box visible flag (0=hidden, FFh=sho
 weapon_idx_tbl		equ	0AE03h			;* 7-byte table: available weapon indices (1-based)
 magic_idx_tbl		equ	0AE0Ah			;* 6-byte table: available magic indices (1-based)
 item_idx_tbl		equ	0AE10h			;* 5-byte table: available item indices (1-based)
-num_fmt_buf		equ	0AE16h			;* 7-byte scratch buffer for fmt_number output
+num_fmt_buf		equ	0AE16h			;* 7-byte scratch buffer for format_number output
 weap_spr_base		equ	0E1Ah			;* weapon portrait sprite table base (8 bytes/entry)
 magic_spr_base		equ	0E53h			;* magic portrait sprite table base (5 bytes/entry)
 item_spr_base		equ	0E81h			;* item portrait sprite table base (5 bytes/entry)
@@ -146,7 +146,7 @@ seg_a		segment	byte public
 
 		org	0
 
-selct_main		proc	far
+run_selct_main		proc	far
 
 start:
 		sbb	ax,0Eh
@@ -307,7 +307,7 @@ weapon_joy_up:
 						call	draw_weapon_cursor
 						jmp	short weapon_input_loop
 
-selct_main		endp
+run_selct_main		endp
 
 draw_weapon_cursor		proc	near
 		mov	bx,weapon_idx_tbl
@@ -646,7 +646,7 @@ item_use_entry:
 		mov	cx,2
 		mov	bl,6
 		mov	dx,2C4Ch
-		call	fmt_number
+		call	format_number
 		mov	si,str_item_used_total
 		mov	bx,80h
 		mov	cl,56h			; 'V'
@@ -657,7 +657,7 @@ item_use_entry:
 		mov	cx,5
 		mov	bl,6
 		mov	dx,2856h
-		call	fmt_number
+		call	format_number
 		jmp	item_input_loop
 
 item_button_select:
@@ -1105,7 +1105,7 @@ draw_stat_98h:
 		mov	cx,1
 		mov	bl,1
 		mov	dx,347Eh
-		call	fmt_number
+		call	format_number
 
 draw_stat_99h:
 		test	byte ptr ds:player_power,0FFh
@@ -1123,7 +1123,7 @@ draw_stat_99h:
 		mov	cx,1
 		mov	bl,1
 		mov	dx,407Eh
-		call	fmt_number
+		call	format_number
 
 draw_abilities:
 		mov	si,player_abilities
@@ -1158,7 +1158,7 @@ draw_exp_bar		proc	near
 		mov	dx,3469h
 		mov	cx,3
 		mov	bl,4
-		call	fmt_number
+		call	format_number
 		mov	bx,0CAh
 		mov	cl,69h			; 'i'
 		mov	al,28h			; '('
@@ -1192,7 +1192,7 @@ draw_key_count_body:
 		mov	dx,3457h
 		mov	bl,1
 		mov	cx,1
-		call	fmt_number
+		call	format_number
 		mov	bx,0D4h
 		mov	cl,57h			; 'W'
 		mov	al,29h			; ')'
@@ -1288,7 +1288,7 @@ draw_weapon_list_loop:
 						xor	ah,ah			; Zero register
 						mov	bl,1
 						mov	cx,3
-						call	fmt_number
+						call	format_number
 						pop	dx
 						add	dx,9
 						push	dx
@@ -1310,7 +1310,7 @@ draw_weapon_list_loop:
 						xor	ah,ah			; Zero register
 						mov	bl,4
 						mov	cx,3
-						call	fmt_number
+						call	format_number
 						pop	dx
 						add	dx,400h
 						mov	cl,dl
@@ -1332,7 +1332,7 @@ draw_weapon_list_loop:
 
 draw_weapon_panel		endp
 
-fmt_number		proc	near
+format_number		proc	near
 		push	bx
 		push	dx
 		push	cx
@@ -1350,7 +1350,7 @@ fmt_number		proc	near
 		xor	bh,bh			; Zero register
 		jmp	word ptr cs:drv_fn_render_bg
 
-fmt_number		endp
+format_number		endp
 
 draw_portrait_tabs		proc	near
 		mov	si,portrait_rect_tbl

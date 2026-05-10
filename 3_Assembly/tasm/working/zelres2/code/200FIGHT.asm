@@ -507,7 +507,7 @@ state_byte_9F1D	equ	9F1Dh			; alias — earlier name
 warp_pending	equ	9F1Eh			; level-warp transition pending flag (canonical)
 state_byte_9F1E	equ	9F1Eh			; alias — earlier name
 ; The byte at 0x9F1F is the ACTIVE SPRITE COUNT in enemy_data_buf.
-; copy_buffer_2 (line 5080) resets it to 0 and walks the sprite buffer,
+; step_active_sprite_buffers (line 5080) resets it to 0 and walks the sprite buffer,
 ; incrementing 9F1F for each live entry it encounters (line 5119, after
 ; copying the slot to its new compacted position).  After the scan,
 ; 9F1F holds the count of active sprites.  Then entity_fn_c_1 (line
@@ -602,12 +602,12 @@ SWAP_CALL       MACRO   ofs, fn
                 xchg    si, di
                 ENDM
 
-; Render-pair: vga_operation8 followed by vga_operation5 with SI advance.
+; Render-pair: scroll_si_from_player followed by scroll_si_wrap_high with SI advance.
 ;   Used 8 times in the per-frame entity update chain.
 VGAOP_8_ADV5_5  MACRO
-                call    vga_operation8
+                call    scroll_si_from_player
                 add     si, 6Dh
-                call    vga_operation5
+                call    scroll_si_wrap_high
                 ENDM
 
 ; SAR-load-then-memcpy boilerplate.
@@ -628,7 +628,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zr2_00		proc	far
+run_fight_main_loop		proc	far
 
 start:
 ; Module init header: word-pair table of internal function addresses
@@ -751,9 +751,9 @@ frame_wait_loop_b:
 		add	ax,spr_ref_tbl
 		mov	si,ax
 
-zr2_00		endp
+run_fight_main_loop		endp
 
-vga_operation		proc	near
+render_vga_pass_loop		proc	near
 		LOAD_CHUNK_ES sprite_load_dest, 2
 		SAR_COPY_100H
 
@@ -775,7 +775,7 @@ main_loop_entry:
 
 new_game_init:
 		call	word ptr cs:drv_screen_init_b
-		call	game_get_value_2
+		call	init_scroll_system
 		mov	si,ds:bg_data_ptr
 		call	word ptr cs:drv_load_msg_header
 		call	word ptr cs:drv_frame_commit
@@ -792,8 +792,8 @@ scene_transition:
 		mov	byte ptr ds:scene_trans_flag,0FFh
 		mov	word ptr ds:starting_position_in_town,29h
 		mov	byte ptr ds:screen_position,5
-		call	vga_operation0
-		call	fill_buffer
+		call	rebuild_scroll_buf
+		call	fill_hud_buf_with_FD
 
 scene_exit_wait:
 										call	update_combat_frame_state
@@ -813,8 +813,8 @@ scene_exit_wait:
 		mov	byte ptr ds:level_load_flag,0FFh
 		mov	si,ds:map_data_ptr
 		lodsb				; String [si] to al
-		call	copy_buffer
-		call	vga_operation_2
+		call	copy_combat_flags_and_tileset
+		call	refresh_scene_assets
 		push	ds
 		mov	ds,cs:gvar_game_seg
 		mov	si,8030h
@@ -836,10 +836,10 @@ scene_exit_wait:
 		jmp	main_loop_entry
 
 normal_frame:
-		call	vga_operation0
+		call	rebuild_scroll_buf
 		test	byte ptr ds:level_load_flag,0FFh
 		jz	check_new_game			; Jump if zero
-		call	fill_buffer
+		call	fill_hud_buf_with_FD
 		call	update_combat_frame_state
 		mov	byte ptr ds:scene_trans_flag,0
 		jmp	short check_game_over
@@ -850,8 +850,8 @@ check_new_game:
 		call	word ptr cs:gfx_fn_init
 
 fill_and_clear:
-		call	fill_buffer
-		call	clear_buffer
+		call	fill_hud_buf_with_FD
+		call	reset_enemy_data_ext_and_objs
 
 check_game_over:
 		test	byte ptr ds:captured_flag,0FFh
@@ -916,13 +916,13 @@ music_active_branch:
 																		call	combat_input_dispatcher
 																		cmp	byte ptr ds:flag_climbing,0FFh
 																		jne	music_end_cleanup			; Jump if not equal
-																		call	vga_operation8
+																		call	scroll_si_from_player
 																		inc	si
-																		call	game_get_value
+																		call	range_check_si_byte
 																		jc	music_active_branch			; Jump if carry Set
 										add	si,24h
-										call	vga_operation5
-										call	game_get_value
+										call	scroll_si_wrap_high
+										call	range_check_si_byte
 										jc	music_active_branch			; Jump if carry Set
 
 music_end_cleanup:
@@ -935,7 +935,7 @@ music_end_cleanup:
 		mov	byte ptr ds:gvar_pose_idx,7Fh
 		jmp	frame_loop
 
-vga_operation		endp
+render_vga_pass_loop		endp
 
 combat_input_dispatcher		proc	near
 		mov	byte ptr ds:move_dir,0
@@ -1033,7 +1033,7 @@ check_music_a:
 		retn
 
 check_combat_ff3d:
-		call	vga_operation8
+		call	scroll_si_from_player
 		mov	al,[si]
 		call	entity_type_quick_check
 		jnz	check_forward_dir			; Jump if not zero
@@ -1049,7 +1049,7 @@ check_forward_dir:
 
 check_back_dir:
 		add	si,24h
-		call	vga_operation5
+		call	scroll_si_wrap_high
 		mov	al,[si]
 		call	entity_type_quick_check
 		jz	jmp_loc124			; Jump if zero
@@ -1092,8 +1092,8 @@ check_music_b:
 		mov	byte ptr ds:gvar_spacebar_state,0
 
 double_func15:
-		call	try_scroll_advance
-		call	try_scroll_advance
+		call	scan_obj_tiles_advancing
+		call	scan_obj_tiles_advancing
 		jmp	short check_combat_end
 
 check_music_b2:
@@ -1104,8 +1104,8 @@ check_music_b2:
 		mov	byte ptr ds:gvar_spacebar_state,0
 
 double_process:
-		call	game_process_loop
-		call	game_process_loop
+		call	scan_obj_tiles_4ahead
+		call	scan_obj_tiles_4ahead
 		jmp	short check_combat_end
 
 check_combat_end:
@@ -1142,7 +1142,7 @@ decrement_hp:
 process_combat_update_step		endp
 
 combat_step_dispatch		proc	near
-		call	vga_operation7
+		call	gate_area4_no_accessory4
 		jz	check_combat_ff3d_b			; Jump if zero
 		retn
 
@@ -1189,7 +1189,7 @@ jmp_scroll_adv:
 combat_step_dispatch		endp
 
 apply_pending_invul		proc	near
-		call	vga_operation7
+		call	gate_area4_no_accessory4
 		jz	check_invul_b			; Jump if zero
 		retn
 
@@ -1242,9 +1242,9 @@ check_music_b4:
 		mov	al,ds:hp_countdown
 		cmp	al,ds:hp_max
 		jae	fight_reset_soft			; Jump if above or =
-		call	vga_operation8
+		call	scroll_si_from_player
 		sub	si,23h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		mov	al,[si]
 		call	entity_type_quick_check
 		jnz	check_hp_zero			; Jump if not zero
@@ -1282,12 +1282,12 @@ fight_reset_soft:
 apply_pending_invul		endp
 
 try_combat_advance		proc	near
-		call	vga_operation8
+		call	scroll_si_from_player
 		inc	si
-		call	game_get_value
+		call	range_check_si_byte
 		jc	set_music_loop			; Jump if carry Set
 		dec	si
-		call	game_get_value
+		call	range_check_si_byte
 		jnc	check_si_plus2			; Jump if carry=0
 		test	byte ptr ds:facing_direction,1
 		jnz	player_action_taken			; Jump if not zero
@@ -1296,7 +1296,7 @@ try_combat_advance		proc	near
 check_si_plus2:
 		inc	si
 		inc	si
-		call	game_get_value
+		call	range_check_si_byte
 		jc	check_player_side2			; Jump if carry Set
 		retn
 
@@ -1313,11 +1313,11 @@ set_music_loop:
 		mov	byte ptr ds:flag_shield,0
 
 music_anim_loop:
-										call	vga_operation8
+										call	scroll_si_from_player
 										sub	si,23h
-										call	vga_operation6
+										call	scroll_si_wrap_low
 										dec	byte ptr ds:gvar_pose_idx
-										call	game_get_value
+										call	range_check_si_byte
 										jc	func13_and_state			; Jump if carry Set
 										or	byte ptr ds:gvar_pose_idx,1
 										retn
@@ -1340,7 +1340,7 @@ pos_scroll_up:
 		dec	byte ptr ds:map_scroll_row
 		mov	si,ds:gvar_scroll_pos
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		mov	ds:gvar_scroll_pos,si
 		retn
 
@@ -1366,7 +1366,7 @@ check_debug1:
 		jmp	clear_c2_bit
 
 call_func15_check:
-		call	try_scroll_advance
+		call	scan_obj_tiles_advancing
 		jnc	set_move_dir2			; Jump if carry=0
 		jmp	clear_c2_bit
 
@@ -1377,7 +1377,7 @@ set_move_dir2:
 		retn
 
 check_vga7:
-		call	vga_operation7
+		call	gate_area4_no_accessory4
 		jnz	set_c2_bit2			; Jump if not zero
 		test	byte ptr ds:invul_timer,0FFh
 		jnz	set_c2_bit2			; Jump if not zero
@@ -1398,25 +1398,25 @@ inc_e7:
 
 scroll_up_and_advance_state		endp
 
-try_scroll_advance		proc	near
+scan_obj_tiles_advancing		proc	near
 
 scroll_advance:
-		call	vga_operation8
+		call	scroll_si_from_player
 		mov	di,si
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		dec	si
 		mov	cx,4
 
 tile_scan_4:
-										call	vga_operation9
+										call	get_object_state_at_si
 										add	al,al
 										jnc	advance_si			; Jump if carry=0
 										retn
 
 advance_si:
 										add	si,24h
-										call	vga_operation5
+										call	scroll_si_wrap_high
 										loop	tile_scan_4		; Loop if cx > 0
 
 		xchg	di,si
@@ -1438,7 +1438,7 @@ scan_2more:
 
 scan_2_tiles:
 										add	si,24h
-										call	vga_operation5
+										call	scroll_si_wrap_high
 										mov	al,[si]
 										call	is_entity_id_lax
 										stc				; Set carry flag
@@ -1481,7 +1481,7 @@ scroll_wrap_check:
 		xor	dl,dl			; Zero register
 
 fill_column_loop:
-										call	vga_operation2
+										call	scroll_byte_dispatch_b
 										dec	si
 										add	dl,bh
 
@@ -1504,7 +1504,7 @@ fill_cell_loop:
 		xor	dh,dh			; Zero register
 
 scroll_col_loop:
-										call	vga_operation2
+										call	scroll_byte_dispatch_b
 										dec	si
 										add	dh,bh
 										cmp	dh,40h			; '@'
@@ -1530,7 +1530,7 @@ obj_check_match:
 										jne	obj_list_next			; Jump if not equal
 										xor	ah,ah			; Zero register
 										mov	al,[si+2]
-										call	vga_operation4
+										call	scroll_buf_offset
 										mov	al,ds:obj_scan_index
 										or	al,80h
 										mov	[di],al
@@ -1540,7 +1540,7 @@ obj_list_next:
 										add	si,10h
 										jmp	short obj_list_scan
 
-try_scroll_advance		endp
+scan_obj_tiles_advancing		endp
 
 check_area_7_boundary		proc	near
 		cmp	byte ptr ds:area_num,7
@@ -1578,7 +1578,7 @@ scroll_retreat:
 check_debug2:
 		cmp	byte ptr ds:gvar_debug_val,2
 		je	clear_c2_bit			; Jump if equal
-		call	game_process_loop
+		call	scan_obj_tiles_4ahead
 		jc	clear_c2_bit			; Jump if carry Set
 		mov	byte ptr ds:move_dir,1
 		test	byte ptr ds:flag_climbing,0FFh
@@ -1586,7 +1586,7 @@ check_debug2:
 		retn
 
 check_vga7b:
-		call	vga_operation7
+		call	gate_area4_no_accessory4
 		jnz	set_c2_bit2b			; Jump if not zero
 		test	byte ptr ds:invul_timer,0FFh
 		jnz	set_c2_bit2b			; Jump if not zero
@@ -1632,26 +1632,26 @@ check_combat_flags:
 
 toggle_c2_bit_pose		endp
 
-game_process_loop		proc	near
+scan_obj_tiles_4ahead		proc	near
 
 map_scan_loop_entry:
-		call	vga_operation8
+		call	scroll_si_from_player
 		inc	si
 		inc	si
 		mov	di,si
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		mov	cx,4
 
 tile_scan_4b:
-										call	vga_operation9
+										call	get_object_state_at_si
 										add	al,al
 										jnc	scan_tile_advance			; Jump if carry=0
 										retn
 
 scan_tile_advance:
 										add	si,24h
-										call	vga_operation5
+										call	scroll_si_wrap_high
 										loop	tile_scan_4b		; Loop if cx > 0
 
 		xchg	di,si
@@ -1673,7 +1673,7 @@ scan_2more_b:
 
 scan_2_tiles_b:
 										add	si,24h
-										call	vga_operation5
+										call	scroll_si_wrap_high
 										mov	al,[si]
 										call	is_entity_id_lax
 										stc				; Set carry flag
@@ -1708,7 +1708,7 @@ scroll_wrap_right:
 		mov	si,ds:scroll_cur_ptr
 		inc	si
 		mov	di,0E023h
-		call	vga_operation3
+		call	fill_scroll_column
 		dec	si
 		mov	ds:scroll_cur_ptr,si
 		mov	ax,word ptr ds:starting_position_in_town
@@ -1723,7 +1723,7 @@ scroll_to_right:
 		xor	dh,dh			; Zero register
 
 fill_right_col:
-										call	vga_operation1
+										call	scroll_byte_dispatch_a
 										inc	si
 										add	dh,bh
 										cmp	dh,40h			; '@'
@@ -1756,7 +1756,7 @@ obj_check_match_b:
 										jne	obj_list_next_b			; Jump if not equal
 										mov	ah,23h			; '#'
 										mov	al,[si+2]
-										call	vga_operation4
+										call	scroll_buf_offset
 										mov	al,ds:obj_scan_index
 										or	al,80h
 										mov	[di],al
@@ -1766,7 +1766,7 @@ obj_list_next_b:
 										add	si,10h
 										jmp	short obj_list_scan_b
 
-game_process_loop		endp
+scan_obj_tiles_4ahead		endp
 
 is_non_area7_slot_b_entity		proc	near
 		cmp	byte ptr ds:area_num,7
@@ -1824,10 +1824,10 @@ check_hp_cnt:
 check_c2_bit2:
 		test	byte ptr ds:facing_direction,2
 		jnz	e7_80_and_reset			; Jump if not zero
-		call	vga_operation8
+		call	scroll_si_from_player
 		add	si,49h
-		call	vga_operation5
-		call	game_get_value
+		call	scroll_si_wrap_high
+		call	range_check_si_byte
 		jnc	e7_80_and_reset			; Jump if carry=0
 		mov	byte ptr ds:flag_climbing,0FFh
 		retn
@@ -1937,9 +1937,9 @@ combat_step_advance		endp
 
 combat_input_poll_step		proc	near
 		mov	byte ptr ds:gvar_debug_val,0
-		call	vga_operation8
+		call	scroll_si_from_player
 		add	si,49h
-		call	vga_operation5
+		call	scroll_si_wrap_high
 		call	find_fire_slot_for_id
 		jz	clear_c2_and_debug			; Jump if zero
 		retn
@@ -2000,7 +2000,7 @@ try_advance_with_anim		proc	near
 check_debug_val_b:
 		call	try_top_scroll_direction
 		VGAOP_8_ADV5_5
-		call	game_get_value
+		call	range_check_si_byte
 		jc	music_advance_loop			; Jump if carry Set
 		test	byte ptr ds:flag_climbing,0FFh
 		jz	set_music_a_flag			; Jump if zero
@@ -2036,7 +2036,7 @@ try_advance_with_anim		endp
 
 ; scroll_pos_advance: Sourcer-glued multi-fragment cluster.  Real entry point
 ; is `process_loop_end` (advances map_scroll_row, redraws via
-; vga_operation5).  Interior labels (check_combat_7f, pop_and_reset,
+; scroll_si_wrap_high).  Interior labels (check_combat_7f, pop_and_reset,
 ; check_step_count, set_music_a_ff) are jump targets used by other
 ; procs — not part of scroll_pos_advance's logical body.  Renaming would
 ; obscure the Sourcer-decoration nature; kept as placeholder.
@@ -2046,7 +2046,7 @@ process_loop_end:
 		inc	byte ptr ds:map_scroll_row
 		mov	si,ds:gvar_scroll_pos
 		add	si,24h
-		call	vga_operation5
+		call	scroll_si_wrap_high
 		mov	ds:gvar_scroll_pos,si
 		retn
 
@@ -2081,14 +2081,14 @@ scroll_pos_advance		endp
 check_3tile_clearance		proc	near
 		VGAOP_8_ADV5_5
 		mov	di,si
-		call	vga_operation9
+		call	get_object_state_at_si
 		add	al,al
 		jnc	check_tile_right			; Jump if carry=0
 		retn
 
 check_tile_right:
 		dec	si
-		call	vga_operation9
+		call	get_object_state_at_si
 		add	al,al
 		jnc	check_tile_center			; Jump if carry=0
 		retn
@@ -2130,13 +2130,13 @@ all_clear:
 
 check_3tile_clearance		endp
 
-game_get_value		proc	near
+range_check_si_byte		proc	near
 		mov	al,[si]
 		dec	al
 		cmp	al,2
 		retn
 
-game_get_value		endp
+range_check_si_byte		endp
 
 find_fire_slot_for_id		proc	near
 		mov	es,cs:gvar_game_seg
@@ -2219,14 +2219,14 @@ seg_next:
 
 process_map_seg_updates		endp
 
-game_get_value_2		proc	near
+init_scroll_system		proc	near
 		mov	si,scroll_init_a
 		call	word ptr cs:drv_fn_7
 		mov	si,scroll_init_b
 		call	word ptr cs:drv_fn_7
 		retn
 
-game_get_value_2		endp
+init_scroll_system		endp
 
 scroll_init_data_a:
 			                        ; Scroll init data block A (dispatch table target or alignment padding)
@@ -2271,7 +2271,7 @@ scroll_init_data_b:
 		dec	bp
 		pop	cx
 
-vga_operation0		proc	near
+rebuild_scroll_buf		proc	near
 		mov	si,map_col_ptr
 		mov	cx,word ptr ds:starting_position_in_town
 		or	cx,cx			; Zero ?
@@ -2281,7 +2281,7 @@ map_col_scan:
 										xor	dh,dh			; Zero register
 
 map_col_inner:
-																		call	vga_operation1
+																		call	scroll_byte_dispatch_a
 																		inc	si
 																		add	dh,bh
 																		cmp	dh,40h			; '@'
@@ -2296,7 +2296,7 @@ map_col_done:
 
 map_init_loop:
 										push	di
-										call	vga_operation3
+										call	fill_scroll_column
 										pop	di
 										inc	di
 										inc	ax
@@ -2317,13 +2317,13 @@ set_scroll_ptr:
 		mov	ds:scroll_cur_ptr,si
 		mov	al,byte ptr ds:map_scroll_row
 		xor	ah,ah			; Zero register
-		call	vga_operation4
+		call	scroll_buf_offset
 		mov	ds:gvar_scroll_pos,di
 		retn
 
-vga_operation0		endp
+rebuild_scroll_buf		endp
 
-vga_operation1		proc	near
+scroll_byte_dispatch_a		proc	near
 		mov	bl,[si]
 		and	bl,0C0h
 		rol	bl,1			; Rotate
@@ -2332,7 +2332,7 @@ vga_operation1		proc	near
 		add	bx,bx
 		jmp	word ptr ds:scroll_dispatch_a[bx]	;*
 
-vga_operation1		endp
+scroll_byte_dispatch_a		endp
 
 scroll_op_a_0:
 			                        ; scroll_dispatch_a target: entry 0 (indirect via scroll_dispatch_a table)
@@ -2345,7 +2345,7 @@ scroll_op_a_0:
 		dec	di
 		db	6Dh			; insw
 
-vga_operation2		proc	near
+scroll_byte_dispatch_b		proc	near
 		mov	bl,[si]
 		and	bl,0C0h
 		rol	bl,1			; Rotate
@@ -2354,7 +2354,7 @@ vga_operation2		proc	near
 		add	bx,bx
 		jmp	word ptr ds:scroll_dispatch_b[bx]	;*
 
-vga_operation2		endp
+scroll_byte_dispatch_b		endp
 
 scroll_op_b_0:
 			                        ; scroll_dispatch_b target: entry 0 (indirect via scroll_dispatch_b table)
@@ -2402,11 +2402,11 @@ scroll_op_b_0:
 		mov	bh,01h
 		retn
 
-vga_operation3		proc	near
+fill_scroll_column		proc	near
 		xor	dl,dl			; Zero register
 
 col_fill_loop:
-										call	vga_operation1
+										call	scroll_byte_dispatch_a
 										inc	si
 										add	dl,bh
 
@@ -2419,9 +2419,9 @@ cell_fill_loop:
 										jb	col_fill_loop			; Jump if below
 		retn
 
-vga_operation3		endp
+fill_scroll_column		endp
 
-vga_operation4		proc	near
+scroll_buf_offset		proc	near
 		push	bx
 		and	al,3Fh			; '?'
 		mov	bl,ah
@@ -2434,9 +2434,9 @@ vga_operation4		proc	near
 		pop	bx
 		retn
 
-vga_operation4		endp
+scroll_buf_offset		endp
 
-vga_operation5		proc	near
+scroll_si_wrap_high		proc	near
 
 clamp_si_high:
 										cmp	si,hud_buf
@@ -2447,9 +2447,9 @@ wrap_si_down:
 										sub	si,900h
 										retn
 
-vga_operation5		endp
+scroll_si_wrap_high		endp
 
-vga_operation6		proc	near
+scroll_si_wrap_low		proc	near
 										cmp	si,scroll_buf
 										jb	wrap_si_up			; Jump if below
 										retn
@@ -2458,9 +2458,9 @@ wrap_si_up:
 										add	si,900h
 										retn
 
-vga_operation6		endp
+scroll_si_wrap_low		endp
 
-vga_operation7		proc	near
+gate_area4_no_accessory4		proc	near
 										cmp	byte ptr ds:area_num,4
 										je	area4_check			; Jump if equal
 										retn
@@ -2476,9 +2476,9 @@ area4_not4:
 										xor	al,al			; Zero register
 										retn
 
-vga_operation7		endp
+gate_area4_no_accessory4		endp
 
-vga_operation8		proc	near
+scroll_si_from_player		proc	near
 										mov	al,byte ptr ds:fight_player_col
 										mov	cl,24h			; '$'
 										mul	cl			; ax = reg * al
@@ -2490,9 +2490,9 @@ vga_operation8		proc	near
 										add	si,ds:gvar_scroll_pos
 										jmp	short clamp_si_high
 
-vga_operation8		endp
+scroll_si_from_player		endp
 
-vga_operation9		proc	near
+get_object_state_at_si		proc	near
 		mov	al,[si]
 		test	al,80h
 		stc				; Set carry flag
@@ -2509,7 +2509,7 @@ obj_slot_check:
 		or	al,al			; Zero ?
 		retn
 
-vga_operation9		endp
+get_object_state_at_si		endp
 
 entity_type_quick_check		proc	near
 		cmp	al,40h			; '@'
@@ -2659,9 +2659,9 @@ check_joy_flag:
 check_palette_flag:
 		test	byte ptr ds:flag_equip_b,0FFh
 		jnz	read_joystick			; Jump if not zero
-		call	vga_operation8
+		call	scroll_si_from_player
 		sub	si,93h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		xor	dl,dl			; Zero register
 		mov	cx,4
 
@@ -2671,7 +2671,7 @@ outer_slot_scan:
 
 inner_slot_scan:
 																		push	cx
-																		call	vga_operation9
+																		call	get_object_state_at_si
 																		jc	slot_inner_next			; Jump if carry Set
 																		test	al,60h			; '`'
 																		jnz	slot_inner_next			; Jump if not zero
@@ -2685,7 +2685,7 @@ slot_inner_next:
 																		loop	inner_slot_scan		; Loop if cx > 0
 
 										add	si,1Ch
-										call	vga_operation5
+										call	scroll_si_wrap_high
 										pop	cx
 										loop	outer_slot_scan		; Loop if cx > 0
 
@@ -2746,7 +2746,7 @@ joy_flag_set:
 		retn
 
 check_flag2e:
-		call	vga_operation8
+		call	scroll_si_from_player
 		mov	bx,90h
 		test	byte ptr ds:flag_shield,0FFh
 		jz	pick_offset			; Jump if zero
@@ -2754,7 +2754,7 @@ check_flag2e:
 
 pick_offset:
 		sub	si,bx
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		mov	bl,byte ptr ds:facing_direction
 		and	bl,1
 		add	bl,bl
@@ -2794,8 +2794,8 @@ entity_ptr_loop:
 entity_ptr_check:
 																		xor	ah,ah			; Zero register
 																		add	si,ax
-																		call	vga_operation5
-																		call	vga_operation9
+																		call	scroll_si_wrap_high
+																		call	get_object_state_at_si
 																		jc	entity_ptr_loop			; Jump if carry Set
 																		test	al,20h			; ' '
 																		jnz	entity_ptr_loop			; Jump if not zero
@@ -2818,7 +2818,7 @@ frame_state_update:
 
 hp_max_set:
 		mov	ds:hp_max,al
-		call	game_process_loop_2
+		call	tick_right_col_entities
 		test	byte ptr ds:equip_byte,0FFh
 		jnz	check_e6			; Jump if not zero
 		mov	byte ptr ds:hp_countdown,0
@@ -2846,7 +2846,7 @@ obj_row_sync:
 		mov	al,[si]
 		cmp	byte ptr ds:screen_position,al
 		je	update_gvar			; Jump if equal
-		call	game_process_loop
+		call	scan_obj_tiles_4ahead
 		dec	byte ptr ds:screen_position
 		jmp	short update_gvar
 
@@ -2854,7 +2854,7 @@ scroll_right_step:
 		mov	al,byte ptr ds:screen_position
 		cmp	al,0Ch
 		je	update_gvar			; Jump if equal
-		call	try_scroll_advance
+		call	scan_obj_tiles_advancing
 		inc	byte ptr ds:screen_position
 
 update_gvar:
@@ -2878,7 +2878,7 @@ skip_func116:
 ;*		call	loc_1524h_dead			;* (Sourcer-named game_func_55; mid-instruction target retained as bytes)
 			db	0E8h, 0E3h, 04h			; call near 1524h (mid-instruction target; keep as bytes)
 		call	word ptr cs:gfx_fn_render_tile
-		call	copy_buffer_2
+		call	step_active_sprite_buffers
 		call	update_sprite_work_buf
 		call	word ptr cs:gfx_fn_render_col
 		call	scan_outer_slot_match
@@ -2892,7 +2892,7 @@ skip_func116:
 		mov	byte ptr ds:color_sel,0FFh
 		mov	byte ptr ds:gvar_volume_b,9
 		mov	ax,0Fh
-		call	player_HP_subtract
+		call	subtract_from_player_HP
 		mov	dx,entity_snd_tbl
 		call	init_combat_arena
 
@@ -3138,7 +3138,7 @@ combat_palette_update:
 		call	word ptr cs:drv_ds_copy
 		pop	ds
 		mov	byte ptr ds:combat_active,0FFh
-		call	fill_buffer
+		call	fill_hud_buf_with_FD
 		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_state_b,0
 		mov	byte ptr ds:enemy_scroll_flag,0
@@ -3202,7 +3202,7 @@ patch_table_loop:
 										jmp	short patch_table_loop
 
 patch_done:
-		call	vga_operation8
+		call	scroll_si_from_player
 		mov	ax,word ptr ds:starting_position_in_town
 		mov	bl,byte ptr ds:screen_position
 		xor	bh,bh			; Zero register
@@ -3235,7 +3235,7 @@ wrap_scroll:
 
 swap_world_state_buffers		endp
 
-fill_buffer		proc	near
+fill_hud_buf_with_FD		proc	near
 
 hud_fill:
 		push	cs
@@ -3246,7 +3246,7 @@ hud_fill:
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
 		retn
 
-fill_buffer		endp
+fill_hud_buf_with_FD		endp
 
 find_atk_slot_for_id		proc	near
 
@@ -3390,12 +3390,12 @@ scan_outer_slot_match		proc	near
 
 area2_skip:
 		mov	byte ptr ds:scan_match_flag,0
-		call	vga_operation8
+		call	scroll_si_from_player
 		mov	cx,3
 		test	byte ptr ds:flag_shield,0FFh
 		jz	slot_outer_loop		; Jump if zero
 		add	si,24h
-		call	vga_operation5
+		call	scroll_si_wrap_high
 		dec	cx
 
 slot_outer_loop:
@@ -3415,7 +3415,7 @@ slot_occupied:
 																		loop	slot_inner_loop		; Loop if cx > 0
 
 										add	si,21h
-										call	vga_operation5
+										call	scroll_si_wrap_high
 										pop	cx
 										loop	slot_outer_loop		; Loop if cx > 0
 
@@ -3458,7 +3458,7 @@ entity_dispatch_fn_0:
 
 check_flag2e_b:
 		mov	word ptr ds:tile_type_sum,0
-		call	vga_operation8
+		call	scroll_si_from_player
 		dec	si
 		mov	di,entity_slot_tbl
 		mov	bx,entity_fn_a
@@ -3466,7 +3466,7 @@ check_flag2e_b:
 		jnz	push_and_call			; Jump if not zero
 		mov	bx,entity_fn_b
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 
 push_and_call:
 		push	bx
@@ -3597,12 +3597,12 @@ sub_carried:
 		pop	ax
 
 call_func60:
-		call	player_HP_subtract
+		call	subtract_from_player_HP
 		mov	byte ptr ds:gvar_volume_b,8
 		retn
 
 combat_check_done:
-		call	player_HP_subtract
+		call	subtract_from_player_HP
 		mov	byte ptr ds:gvar_volume_b,9
 		retn
 
@@ -3623,7 +3623,7 @@ clear_secondary_pool_and_redraw		proc	near
 
 entity_dispatch_fn_1:
 			                        ; entity_dispatch_tbl target: entity fn 1
-		call	vga_operation9
+		call	get_object_state_at_si
 		jc	tile_down1			; Jump if carry Set
 		test	al,40h			; '@'
 		jnz	tile_down1			; Jump if not zero
@@ -3632,8 +3632,8 @@ entity_dispatch_fn_1:
 
 tile_down1:
 		add	si,24h
-		call	vga_operation5
-		call	vga_operation9
+		call	scroll_si_wrap_high
+		call	get_object_state_at_si
 		jc	tile_down2			; Jump if carry Set
 		test	al,40h			; '@'
 		jnz	tile_down2			; Jump if not zero
@@ -3646,8 +3646,8 @@ accumulate_tile_type		proc	near
 
 tile_down2:
 		add	si,24h
-		call	vga_operation5
-		call	vga_operation9
+		call	scroll_si_wrap_high
+		call	get_object_state_at_si
 		cmc				; Complement carry
 		jc	check_bit40			; Jump if carry Set
 		retn
@@ -3673,7 +3673,7 @@ add_tile_type:
 
 accumulate_tile_type		endp
 
-player_HP_subtract		proc	near
+subtract_from_player_HP		proc	near
 
 sub_score_and_call:
 		sub	word ptr ds:player_HP,ax
@@ -3686,26 +3686,26 @@ push_and_update:
 		pop	si
 		retn
 
-player_HP_subtract		endp
+subtract_from_player_HP		endp
 
-game_process_loop_2		proc	near
+tick_right_col_entities		proc	near
 		mov	byte ptr ds:escape_flag,0
-		call	vga_operation8
+		call	scroll_si_from_player
 		add	si,49h
-		call	vga_operation5
+		call	scroll_si_wrap_high
 		mov	cx,3
 
 process_loop_3:
 										push	cx
 										call	tail_dispatch_by_slot_family
 										sub	si,24h
-										call	vga_operation6
+										call	scroll_si_wrap_low
 										pop	cx
 										loop	process_loop_3		; Loop if cx > 0
 
 		retn
 
-game_process_loop_2		endp
+tick_right_col_entities		endp
 
 ; tail_dispatch_by_slot_family: if entity at [si] is in a known move-
 ; slot family (CL = 0/1/2 from lookup_move_slot_family), pop 2 stack
@@ -3748,12 +3748,12 @@ entity_dispatch_fn_2:
 
 entity_dispatch_fn_3:
 			                        ; entity_dispatch_tbl target: entity fn 3
-		call	game_process_loop
+		call	scan_obj_tiles_4ahead
 		jmp	map_scan_loop_entry
 
 entity_dispatch_fn_4:
 			                        ; entity_dispatch_tbl target: entity fn 4
-		call	try_scroll_advance
+		call	scan_obj_tiles_advancing
 		jmp	scroll_advance
 
 lookup_move_slot_family		proc	near
@@ -3825,7 +3825,7 @@ compute_target_dist		proc	near
 		mov	ax,ds:target_id
 		cmp	ax,0FFFFh
 		je	target_check_done			; Jump if equal
-		call	world_x_to_screen_x
+		call	convert_world_x_to_screen_x
 		jc	target_check_done			; Jump if carry Set
 		mov	al,byte ptr ds:screen_position
 		add	al,4
@@ -3916,7 +3916,7 @@ entity_list_loop:
 										retn
 
 entity_found:
-										call	world_x_to_screen_x_w27
+										call	convert_convert_world_x_to_screen_x_w27
 										jc	entity_list_next			; Jump if carry Set
 										mov	al,ds:[bp+3]
 										and	al,7
@@ -3925,7 +3925,7 @@ entity_found:
 										mov	ds:combat_byte_b,al
 										mov	al,ds:[bp+2]
 										xor	ah,ah			; Zero register
-										call	vga_operation4
+										call	scroll_buf_offset
 										cmp	bl,4
 										jb	entity_hud_normal			; Jump if below
 										mov	cx,bx
@@ -3975,7 +3975,7 @@ entity_render_rows:
 																		push	si
 
 hud_copy_loop:
-																		call	game_get_value_3
+																		call	copy_si_to_di_if_unmarked
 																		inc	di
 																		inc	si
 																		dec	al
@@ -3985,7 +3985,7 @@ hud_copy_loop:
 																		xchg	si,di
 																		pop	si
 																		add	si,24h
-																		call	vga_operation5
+																		call	scroll_si_wrap_high
 																		xchg	di,si
 																		pop	ax
 																		pop	cx
@@ -3995,7 +3995,7 @@ hud_copy_loop:
 
 render_entity_list_to_hud		endp
 
-game_get_value_3		proc	near
+copy_si_to_di_if_unmarked		proc	near
 		test	byte ptr [di],80h
 		jz	copy_to_hud			; Jump if zero
 		retn
@@ -4005,9 +4005,9 @@ copy_to_hud:
 		mov	[di],dl
 		retn
 
-game_get_value_3		endp
+copy_si_to_di_if_unmarked		endp
 
-world_x_to_screen_x_w27		proc	near
+convert_convert_world_x_to_screen_x_w27		proc	near
 		add	ax,3
 		push	ax
 		sub	ax,ds:map_width
@@ -4040,7 +4040,7 @@ entity_right_wrap:
 		sub	ax,bx
 		retn
 
-world_x_to_screen_x_w27		endp
+convert_convert_world_x_to_screen_x_w27		endp
 
 ; --------------------------------------------------------------------------
 ; Sprite/animation frame-index table (chunk_00 0x19B8..0x19DF; 40 bytes).
@@ -4056,7 +4056,7 @@ sprite_anim_idx_tbl:
 		db	'[`_', 5Ch, ']^`'			; 0x19D9 .. 0x19DF (7 bytes — no terminator)
 
 ; --------------------------------------------------------------------------
-; combat_screen_entry -- cold entry point for a fresh combat scene.
+; enter_combat_screen -- cold entry point for a fresh combat scene.
 ; Resets SP, sets DS=ES=CS, clears 64 bytes of combat state RAM
 ; (9EED..9F2D), forces all boss/state flags to 0FFh (via reset_combat_state
 ; and the inline writes), loads the scroll/tile chunks (sar_ref_scroll +
@@ -4070,7 +4070,7 @@ sprite_anim_idx_tbl:
 ; merged the BC 00 20 (mov sp,2000h) opcode with F3 AA from the later
 ; rep stosb.  Restored verbatim from the original byte stream.
 ; --------------------------------------------------------------------------
-combat_screen_entry		proc	near
+enter_combat_screen		proc	near
 		cli					; FA
 		mov	sp,2000h			; BC 00 20  -- stack reset
 		sti					; FB
@@ -4108,7 +4108,7 @@ combat_screen_entry		proc	near
 		pop	ds
 		mov	si,ds:map_data_ptr
 		lodsb
-		call	copy_buffer
+		call	copy_combat_flags_and_tileset
 		call	word ptr cs:drv_screen_init_a
 		mov	si,sar_ref_enemy
 		LOAD_CHUNK_ES enemy_id_table, 02h
@@ -4125,12 +4125,12 @@ combat_screen_entry		proc	near
 		js	$+5				; skip if boss area (sign bit set)
 		call	process_map_seg_updates
 		jmp	check_c3			; fall into boss-intro animation
-combat_screen_entry		endp
+enter_combat_screen		endp
 
 check_3tile_J_pattern		proc	near
-		call	vga_operation8
+		call	scroll_si_from_player
 		sub	si,25h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		cmp	byte ptr [si],4Ah	; 'J'
 		je	left_side_check			; Jump if equal
 		inc	si
@@ -4227,7 +4227,7 @@ boss_check:
 boss_link_check:
 		push	si
 		call	process_dirty_enemies
-		call	fill_buffer
+		call	fill_hud_buf_with_FD
 		call	word ptr cs:gfx_fn_render_tile
 		call	reset_combat_state
 		call	save_combat_action_state
@@ -4292,7 +4292,7 @@ load_boss_map:
 		call	word ptr cs:gfx_fn_blit
 		mov	si,ds:map_data_ptr
 		lodsb				; String [si] to al
-		call	copy_buffer
+		call	copy_combat_flags_and_tileset
 
 boss_state_init:
 		mov	byte ptr ds:flag_riding,0
@@ -4312,7 +4312,7 @@ boss_state_init:
 		mov	al,byte ptr ds:player_tileset
 		mov	ds:music_track_id,al
 		mov	byte ptr ds:loading_flag,0FFh
-		call	vga_operation_2
+		call	refresh_scene_assets
 		mov	es,cs:gvar_game_seg
 		mov	si,sar_ref_scroll
 		mov	di,6000h
@@ -4393,7 +4393,7 @@ check_map_flag:
 		mov	ah,al
 		and	al,1
 		jz	load_map_data			; Jump if zero
-		call	vga_operation_2
+		call	refresh_scene_assets
 		mov	si,ds:map_data_ptr
 		lodsb				; String [si] to al
 		mov	ah,al
@@ -4560,7 +4560,7 @@ reset_combat_state		proc	near
 
 reset_combat_state		endp
 
-copy_buffer		proc	near
+copy_combat_flags_and_tileset		proc	near
 		push	cs
 		pop	es
 		mov	di,combat_flag2
@@ -4582,9 +4582,9 @@ same_chr:
 		stosb				; Store al to es:[di]
 		retn
 
-copy_buffer		endp
+copy_combat_flags_and_tileset		endp
 
-vga_operation_2		proc	near
+refresh_scene_assets		proc	near
 		mov	es,cs:gvar_game_seg
 		mov	si,9C13h
 		mov	di,8C00h
@@ -4645,7 +4645,7 @@ load_music:
 		LOAD_CHUNK_REF music_ref_tbl, 3000h, 5
 		retn
 
-vga_operation_2		endp
+refresh_scene_assets		endp
 
 wait_anim_cycle		proc	near
 		mov	cl,ds:gvar_save_flag
@@ -4677,11 +4677,11 @@ top_list_loop:
 										retn
 
 top_item_found:
-										call	world_x_to_inner_screen_x
+										call	convert_world_x_to_inner_screen_x
 										jc	top_item_next			; Jump if carry Set
 										mov	ah,bl
 										mov	al,[si+2]
-										call	vga_operation4
+										call	scroll_buf_offset
 										mov	cx,3
 										mov	dl,40h			; '@'
 
@@ -4712,14 +4712,14 @@ check_music_b5:
 top_find_entry:
 		mov	di,ds:map_top_ptr
 		mov	dl,40h			; '@'
-		call	game_process_loop_3
+		call	try_place_3cell_entity_row
 		jnc	check_vga9			; Jump if carry=0
 		pop	ax
 		mov	byte ptr ds:gvar_pose_idx,80h
 		jmp	process_loop_end
 
 check_vga9:
-		call	vga_operation9
+		call	get_object_state_at_si
 		jnc	check_bits60			; Jump if carry=0
 		retn
 
@@ -4740,13 +4740,13 @@ mark_entity_40:
 
 try_top_scroll_direction		endp
 
-game_process_loop_3		proc	near
+try_place_3cell_entity_row		proc	near
 		push	dx
 		call	find_and_blit_map_entry
 		pop	dx
 		mov	bx,si
 		add	si,23h
-		call	vga_operation5
+		call	scroll_si_wrap_high
 		test	byte ptr [si],80h
 		clc				; Clear carry flag
 		jz	check_3slots			; Jump if zero
@@ -4766,7 +4766,7 @@ slot_empty_ok:
 
 		mov	si,bx
 		add	si,24h
-		call	vga_operation5
+		call	scroll_si_wrap_high
 		push	di
 		mov	di,si
 		mov	cx,3
@@ -4794,7 +4794,7 @@ draw_3_cells:
 		stc				; Set carry flag
 		retn
 
-game_process_loop_3		endp
+try_place_3cell_entity_row		endp
 
 try_top_combat_step		proc	near
 		test	byte ptr ds:flag_climbing,0FFh
@@ -4802,9 +4802,9 @@ try_top_combat_step		proc	near
 		retn
 
 check_music_b6:
-		call	vga_operation8
+		call	scroll_si_from_player
 		sub	si,23h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		mov	al,[si]
 		call	entity_type_quick_check
 		jz	check_tile_valid			; Jump if zero
@@ -4812,7 +4812,7 @@ check_music_b6:
 
 check_tile_valid:
 		add	si,90h
-		call	vga_operation5
+		call	scroll_si_wrap_high
 		mov	dl,40h			; '@'
 		call	match_dl_within_3
 		jz	find_bottom_entry			; Jump if zero
@@ -4826,10 +4826,10 @@ find_bottom_entry:
 		pop	dx
 		mov	ax,si
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		mov	bx,si
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		mov	cx,3
 
 check_bot_wall:
@@ -4850,7 +4850,7 @@ check_bx_empty:
 		mov	bx,ax
 		mov	si,bx
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		push	di
 		mov	di,si
 		mov	cx,3
@@ -4887,7 +4887,7 @@ try_top_combat_step		endp
 ; [di] for a match on (col=AX, row=CL) where:
 ;     col = (screen_position+4+DH + map_scroll_colmap_scroll_col) mod map_width
 ;     row = (map_scroll_row + fight_player_col + 3) & 0x3F
-; On match: world_x_to_inner_screen_x → vga_operation4 (blit at the
+; On match: convert_world_x_to_inner_screen_x → scroll_buf_offset (blit at the
 ; matched entry's coordinates).  Loop has no terminator — assumes the
 ; caller seeded a sentinel or [di] table is well-formed.  2 callers.
 find_and_blit_map_entry		proc	near
@@ -4917,11 +4917,11 @@ map_entry_next:
 										jmp	short map_entry_search
 
 map_entry_found:
-		call	world_x_to_inner_screen_x
+		call	convert_world_x_to_inner_screen_x
 		mov	al,[di+2]
 		mov	ah,bl
 		push	di
-		call	vga_operation4
+		call	scroll_buf_offset
 		mov	si,di
 		pop	di
 		retn
@@ -4959,11 +4959,11 @@ bot_list_loop:
 										retn
 
 bot_item_found:
-										call	world_x_to_inner_screen_x
+										call	convert_world_x_to_inner_screen_x
 										jc	bot_item_next			; Jump if carry Set
 										mov	ah,bl
 										mov	al,[si+2]
-										call	vga_operation4
+										call	scroll_buf_offset
 										mov	cx,3
 										mov	dl,43h			; 'C'
 
@@ -4989,7 +4989,7 @@ bot_path_check		proc	near
 bot_find_entry:
 		mov	di,ds:map_bot_ptr
 		mov	dl,43h			; 'C'
-		call	game_process_loop_3
+		call	try_place_3cell_entity_row
 		jc	jmp_process_end			; Jump if carry Set
 		retn
 
@@ -5010,7 +5010,7 @@ extra_list_loop:
 
 extra_item_found:
 		and	ax,3FFFh
-		call	world_x_to_screen_x_w25
+		call	convert_convert_world_x_to_screen_x_w25
 		jc	extra_fn_check			; Jump if carry Set
 		mov	cl,bl
 		dec	bx
@@ -5020,7 +5020,7 @@ extra_item_found:
 		inc	cl
 		mov	al,[si+2]
 		xor	ah,ah			; Zero register
-		call	vga_operation4
+		call	scroll_buf_offset
 		jmp	short extra_draw_cells
 
 extra_offset_ok:
@@ -5030,7 +5030,7 @@ extra_offset_ok:
 		push	ax
 		mov	al,[si+2]
 		mov	ah,22h			; '"'
-		call	vga_operation4
+		call	scroll_buf_offset
 		pop	ax
 		add	di,ax
 		mov	cl,al
@@ -5041,7 +5041,7 @@ extra_offset_ok:
 extra_offset_small:
 		mov	ah,bl
 		mov	al,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		mov	cl,3
 
 extra_draw_cells:
@@ -5067,11 +5067,11 @@ extra_fn_check:
 		call	word ptr ds:entity_fn_tbl_a[bx]	;*
 
 extra_draw_normal:
-		call	world_x_to_inner_screen_x
+		call	convert_world_x_to_inner_screen_x
 		jc	extra_item_next			; Jump if carry Set
 		mov	ah,bl
 		mov	al,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		mov	cx,3
 		mov	dl,46h			; 'F'
 
@@ -5121,7 +5121,7 @@ extra_wrap_check:
 		push	ax
 		call	check_entity_collision_pos
 		jc	extra_scan_done			; Jump if carry Set
-		call	game_process_loop
+		call	scan_obj_tiles_4ahead
 
 extra_scan_done:
 		pop	ax
@@ -5141,7 +5141,7 @@ extra_left_wrap:
 		push	ax
 		call	check_entity_collision_pos
 		jc	extra_scan_done2			; Jump if carry Set
-		call	try_scroll_advance
+		call	scan_obj_tiles_advancing
 
 extra_scan_done2:
 		pop	ax
@@ -5185,7 +5185,7 @@ check_row_match:
 check_col_match:
 		mov	ax,[si]
 		and	ax,3FFFh
-		call	world_x_to_inner_screen_x
+		call	convert_world_x_to_inner_screen_x
 		jnc	check_col_range			; Jump if carry=0
 		retn
 
@@ -5209,7 +5209,7 @@ col_range_next:
 
 check_entity_collision_pos		endp
 
-world_x_to_inner_screen_x		proc	near
+convert_world_x_to_inner_screen_x		proc	near
 		mov	bx,ax
 		sub	ax,word ptr ds:starting_position_in_town
 		jc	screen_left_check			; Jump if carry Set
@@ -5233,9 +5233,9 @@ screen_wrap_right:
 		sub	ax,bx
 		retn
 
-world_x_to_inner_screen_x		endp
+convert_world_x_to_inner_screen_x		endp
 
-world_x_to_screen_x_w25		proc	near
+convert_convert_world_x_to_screen_x_w25		proc	near
 		add	ax,2
 		mov	bx,ax
 		sub	ax,ds:map_width
@@ -5266,7 +5266,7 @@ screen_right_wrap:
 		sub	ax,bx
 		retn
 
-world_x_to_screen_x_w25		endp
+convert_convert_world_x_to_screen_x_w25		endp
 
 entity_slot_write_tagged		proc	near
 		test	byte ptr [di],80h
@@ -5387,13 +5387,13 @@ enemy_blit_loop:
 
 enemy_do_blit:
 		add	al,byte ptr ds:map_scroll_row
-		call	vga_operation4
+		call	scroll_buf_offset
 		mov	al,[di]
 		jmp	word ptr cs:gfx_fn_78
 
 enemy_sprite_blit		endp
 
-copy_buffer_2		proc	near
+step_active_sprite_buffers		proc	near
 		mov	si,enemy_data_buf
 		mov	di,enemy_data_buf
 		push	cs
@@ -5438,7 +5438,7 @@ sprite_buf_next:
 										add	si,0Dh
 										jmp	short sprite_buf_scan
 
-copy_buffer_2		endp
+step_active_sprite_buffers		endp
 
 process_sprite_step		proc	near
 		call	entity_step_dispatch_c
@@ -5451,7 +5451,7 @@ process_sprite_step		proc	near
 
 sprite_check_col:
 		mov	al,[si+1]
-		call	vga_operation4
+		call	scroll_buf_offset
 		mov	al,[di]
 		call	is_entity_known_type_alt
 		jz	sprite_check_row			; Jump if zero
@@ -5525,7 +5525,7 @@ entity_process_skip:
 entity_kill:
 										mov	al,[si+6]
 										xor	ah,ah			; Zero register
-										call	player_HP_subtract
+										call	subtract_from_player_HP
 										mov	byte ptr ds:gvar_volume_b,9
 										mov	al,0FFh
 										mov	ds:any_entity_active,al
@@ -5848,10 +5848,10 @@ sprite_update_loop:
 										mov	al,byte ptr ds:fight_player_col
 										add	al,[bx+1]
 										add	al,byte ptr ds:map_scroll_row
-										call	vga_operation4
+										call	scroll_buf_offset
 										xchg	si,di
 										sub	si,25h
-										call	vga_operation6
+										call	scroll_si_wrap_low
 										xchg	si,di
 										call	place_3_tile_49_pattern
 
@@ -5877,7 +5877,7 @@ check_flags_ok:
 		call	try_place_tile_id_49
 		xchg	si,di
 		add	si,23h
-		call	vga_operation5
+		call	scroll_si_wrap_high
 		xchg	si,di
 		call	try_place_tile_id_49
 		inc	di
@@ -5891,7 +5891,7 @@ try_place_tile_id_49		proc	near
 
 check_vga9_b:
 		xchg	si,di
-		call	vga_operation9
+		call	get_object_state_at_si
 		xchg	si,di
 		jnc	check_bit20_b			; Jump if carry=0
 		retn
@@ -6099,7 +6099,7 @@ boss_scroll_init:
 boss_scroll_scan:
 		mov	si,ds:gvar_scroll_pos
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		mov	cx,13h
 
 boss_scroll_outer:
@@ -6117,7 +6117,7 @@ scan_for_obj:
 																		pop	cx
 																		loop	boss_scroll_inner		; Loop if cx > 0
 
-										call	vga_operation5
+										call	scroll_si_wrap_high
 										pop	cx
 										loop	boss_scroll_outer		; Loop if cx > 0
 
@@ -6126,7 +6126,7 @@ boss_scroll_done:
 		mov	byte ptr ds:gvar_volume_b,19h
 		call	word ptr cs:gfx_fn_83
 		mov	byte ptr ds:gvar_state_b,0
-		call	fill_buffer
+		call	fill_hud_buf_with_FD
 		jmp	frame_state_update
 
 scan_boss_entries_render		proc	near
@@ -6166,7 +6166,7 @@ boss_sprite_ptr:
 		mov	di,[di]
 		add	di,bx
 		mov	ax,[si]
-		call	world_x_to_screen_x
+		call	convert_world_x_to_screen_x
 		jc	boss_entry_next			; Jump if carry Set
 		mov	[si+6],bl
 		mov	al,[si+2]
@@ -6377,14 +6377,14 @@ update_dir5:
 		cmp	byte ptr [si+4],3
 		je	fight_continue			; Jump if equal
 		mov	ax,[si]
-		call	world_x_to_screen_x
+		call	convert_world_x_to_screen_x
 		jc	fight_continue			; Jump if carry Set
 		cmp	bl,21h			; '!'
 		jae	fight_continue			; Jump if above or =
 		mov	ah,bl
 		mov	al,[si+2]
-		call	vga_operation4
-		SWAP_CALL 48h, vga_operation5
+		call	scroll_buf_offset
+		SWAP_CALL 48h, scroll_si_wrap_high
 		mov	al,[di]
 		call	entity_type_quick_check
 		jnz	fight_continue			; Jump if not zero
@@ -6495,7 +6495,7 @@ check_flags_scan:
 
 check_pos_on_screen:
 		mov	ax,[si]
-		call	world_x_to_screen_x
+		call	convert_world_x_to_screen_x
 		jnc	adjust_col			; Jump if carry=0
 		retn
 
@@ -6509,11 +6509,11 @@ adjust_col:
 
 draw_3x3_cells:
 		mov	al,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		push	si
 		xchg	di,si
 		sub	si,25h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		mov	byte ptr ds:obj_mark_flag,0
 		mov	cx,3
 
@@ -6529,7 +6529,7 @@ draw_3x3_inner:
 																		loop	draw_3x3_inner		; Loop if cx > 0
 
 										add	si,21h
-										call	vga_operation5
+										call	scroll_si_wrap_high
 										pop	cx
 										loop	draw_3x3_outer		; Loop if cx > 0
 
@@ -6542,7 +6542,7 @@ draw_3x3_inner:
 draw_entity_3x3_at_pos		endp
 
 try_paint_obj_cell		proc	near
-		call	vga_operation9
+		call	get_object_state_at_si
 		jnc	check_bit20_d			; Jump if carry=0
 		retn
 
@@ -6598,14 +6598,14 @@ obj_check_entry:
 										mov	byte ptr [si+3],0FFh
 										cmp	ah,0FFh
 										je	score_update_done			; Jump if equal
-										call	world_x_to_screen_x
+										call	convert_world_x_to_screen_x
 										jc	score_update_done			; Jump if carry Set
 										mov	[si+3],bl
 										call	update_obj_slot_flags
 										cmp	byte ptr [si+1],0FFh
 										je	score_update_done			; Jump if equal
 										mov	ax,[si+2]
-										call	vga_operation4
+										call	scroll_buf_offset
 										mov	bl,ds:obj_scan_index
 										xor	bh,bh			; Zero register
 										mov	al,bl
@@ -6616,7 +6616,7 @@ obj_check_entry:
 										jnz	score_update_done			; Jump if not zero
 										test	byte ptr [si+7],10h
 										jz	score_update_done			; Jump if zero
-										SWAP_CALL 48h, vga_operation5
+										SWAP_CALL 48h, scroll_si_wrap_high
 										mov	bl,ds:obj_scan_index
 										inc	bl
 										xor	bh,bh			; Zero register
@@ -6646,7 +6646,7 @@ scan_obj_list_render		endp
 
 update_obj_slot_flags		proc	near
 		mov	ax,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		mov	al,[si+5]
 		and	al,0DFh
 		test	al,40h			; '@'
@@ -6668,7 +6668,7 @@ update_obj_slot:
 		jnz	check_obj_flags			; Jump if not zero
 		test	byte ptr [si+7],10h
 		jz	check_obj_flags			; Jump if zero
-		SWAP_CALL 48h, vga_operation5
+		SWAP_CALL 48h, scroll_si_wrap_high
 		mov	al,ds:obj_scan_index
 		inc	al
 		xlat				; al=[al+[bx]] table
@@ -6944,7 +6944,7 @@ gfx_fn_render_bg		dw	0E3CCh
 gfx_fn_83		dw	680h
 gfx_fn_palette		dw	0C6h
 gfx_fn_clear		dw	0E90Ah
-gfx_fn_blit		dw	offset vga_operation
+gfx_fn_blit		dw	offset render_vga_pass_loop
 gfx_fn_map_ref		dw	offset gfx_map_ref_target
 		db	02h		; hi-byte of preceding jmp near displacement
 		call	check_entity_in_view	; +0x16E
@@ -7237,7 +7237,7 @@ entity_move_east_b:
 		retn
 
 check_col_22b:
-		call	check_movement_var_134
+		call	check_tiles_upper_right_quad
 		jnc	call_func134_126			; Jump if carry=0
 		retn
 
@@ -7277,7 +7277,7 @@ entity_move_north_b:
 		retn
 
 check_col_2:
-		call	check_movement_var_136
+		call	check_tiles_upper_left_quad
 		jnc	call_func136_127			; Jump if carry=0
 		retn
 
@@ -7309,7 +7309,7 @@ entity_move_west_b:
 		retn
 
 check_col_2c:
-		call	check_movement_var_137
+		call	check_tiles_lower_left_quad
 		jnc	call_func137_127			; Jump if carry=0
 		retn
 
@@ -7348,7 +7348,7 @@ entity_move_south_b:
 		retn
 
 check_col_22c:
-		call	check_movement_var_135
+		call	check_tiles_lower_right_quad
 		jnc	call_func135_126			; Jump if carry=0
 		retn
 
@@ -7405,7 +7405,7 @@ dec_map_pos_helper		endp
 
 check_above_3rows_clear		proc	near
 		mov	ax,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		inc	di
 		inc	di
 		call	is_unknown_or_area5_slot_b
@@ -7413,7 +7413,7 @@ check_above_3rows_clear		proc	near
 		retn
 
 check_row_up:
-		SWAP_CALL 24h, vga_operation5
+		SWAP_CALL 24h, scroll_si_wrap_high
 		call	is_unknown_or_area5_slot_b
 		jnc	check_row_up2			; Jump if carry=0
 		retn
@@ -7422,10 +7422,10 @@ check_row_up2:
 		xchg	si,di
 		mov	al,[si]
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		or	al,[si]
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		or	al,[si]
 		xchg	si,di
 		add	al,al
@@ -7463,14 +7463,14 @@ is_unknown_or_area5_slot_b		endp
 
 check_below_3rows_clear		proc	near
 		mov	ax,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		dec	di
 		call	is_unknown_or_area5_slot_c
 		jnc	check_row_down			; Jump if carry=0
 		retn
 
 check_row_down:
-		SWAP_CALL 24h, vga_operation5
+		SWAP_CALL 24h, scroll_si_wrap_high
 		call	is_unknown_or_area5_slot_c
 		jnc	check_row_down2			; Jump if carry=0
 		retn
@@ -7480,10 +7480,10 @@ check_row_down2:
 		xchg	si,di
 		mov	al,[si]
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		or	al,[si]
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		or	al,[si]
 		xchg	si,di
 		add	al,al
@@ -7522,10 +7522,10 @@ is_unknown_or_area5_slot_c		endp
 
 check_north_movement		proc	near
 		mov	ax,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		xchg	si,di
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		xchg	si,di
 		mov	al,[di]
 		call	is_entity_known_type
@@ -7543,7 +7543,7 @@ check_tile_ok:
 check_above_row:
 		xchg	si,di
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		xchg	si,di
 		mov	al,[di+1]
 		or	al,[di]
@@ -7555,8 +7555,8 @@ check_north_movement		endp
 
 check_south_movement		proc	near
 		mov	ax,[si+2]
-		call	vga_operation4
-		SWAP_CALL 48h, vga_operation5
+		call	scroll_buf_offset
+		SWAP_CALL 48h, scroll_si_wrap_high
 		mov	al,[di]
 		call	is_entity_known_type
 		stc				; Set carry flag
@@ -7578,9 +7578,9 @@ check_above_row_b:
 
 check_south_movement		endp
 
-check_movement_var_134		proc	near
+check_tiles_upper_right_quad		proc	near
 		mov	ax,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		inc	di
 		inc	di
 		mov	al,[di]
@@ -7593,7 +7593,7 @@ check_main_tile:
 		mov	cl,al
 		xchg	si,di
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		xchg	si,di
 		mov	al,[di]
 		call	is_entity_known_type
@@ -7612,7 +7612,7 @@ check_sub_tile:
 check_2rows:
 		xchg	si,di
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		xchg	si,di
 		or	cl,[di]
 		or	cl,[di-1]
@@ -7620,15 +7620,15 @@ check_2rows:
 		add	cl,cl
 		retn
 
-check_movement_var_134		endp
+check_tiles_upper_right_quad		endp
 
-check_movement_var_135		proc	near
+check_tiles_lower_right_quad		proc	near
 		mov	ax,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		inc	di
 		inc	di
 		mov	cl,[di]
-		SWAP_CALL 24h, vga_operation5
+		SWAP_CALL 24h, scroll_si_wrap_high
 		mov	al,[di]
 		call	is_entity_known_type
 		stc				; Set carry flag
@@ -7637,7 +7637,7 @@ check_movement_var_135		proc	near
 
 check_main_tile_b:
 		or	cl,al
-		SWAP_CALL 24h, vga_operation5
+		SWAP_CALL 24h, scroll_si_wrap_high
 		mov	al,[di]
 		call	is_entity_known_type
 		stc				; Set carry flag
@@ -7658,11 +7658,11 @@ check_more_tiles:
 		add	cl,cl
 		retn
 
-check_movement_var_135		endp
+check_tiles_lower_right_quad		endp
 
-check_movement_var_136		proc	near
+check_tiles_upper_left_quad		proc	near
 		mov	ax,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		dec	di
 		mov	al,[di]
 		call	is_entity_known_type
@@ -7675,7 +7675,7 @@ check_left_tile:
 		mov	cl,[di]
 		xchg	si,di
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		xchg	si,di
 		or	cl,[di]
 		mov	al,[di+1]
@@ -7694,7 +7694,7 @@ check_left2:
 check_left_rows:
 		xchg	si,di
 		sub	si,24h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		xchg	si,di
 		or	cl,[di+2]
 		or	cl,[di+1]
@@ -7702,15 +7702,15 @@ check_left_rows:
 		add	cl,cl
 		retn
 
-check_movement_var_136		endp
+check_tiles_upper_left_quad		endp
 
-check_movement_var_137		proc	near
+check_tiles_lower_left_quad		proc	near
 		mov	ax,[si+2]
-		call	vga_operation4
+		call	scroll_buf_offset
 		dec	di
 		dec	di
 		mov	cl,[di]
-		SWAP_CALL 24h, vga_operation5
+		SWAP_CALL 24h, scroll_si_wrap_high
 		or	cl,[di]
 		inc	di
 		mov	al,[di]
@@ -7720,7 +7720,7 @@ check_movement_var_137		proc	near
 		retn
 
 check_first_tile:
-		SWAP_CALL 24h, vga_operation5
+		SWAP_CALL 24h, scroll_si_wrap_high
 		mov	al,[di]
 		call	is_entity_known_type
 		stc				; Set carry flag
@@ -7741,7 +7741,7 @@ check_third_tile:
 		add	cl,cl
 		retn
 
-check_movement_var_137		endp
+check_tiles_lower_left_quad		endp
 
 ; is_entity_known_type — entity-ID classifier (was: scroll_up_and_advance_state8).
 ; Input:  AL = entity-ID byte
@@ -7795,7 +7795,7 @@ check_bit10:
 		retn
 
 check_link_valid:
-		call	world_x_to_screen_x
+		call	convert_world_x_to_screen_x
 		jnc	check_bl_zero			; Jump if carry=0
 		retn
 
@@ -7830,11 +7830,11 @@ boss_check_next:
 		mov	[si+3],bl
 		mov	al,[si+0Dh]
 		mov	ah,bl
-		call	vga_operation4
+		call	scroll_buf_offset
 		push	di
 		xchg	si,di
 		sub	si,25h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		xor	al,al			; Zero register
 		mov	cx,3
 
@@ -7843,7 +7843,7 @@ check_3rows:
 										or	al,[si+1]
 										or	al,[si+2]
 										add	si,24h
-										call	vga_operation5
+										call	scroll_si_wrap_high
 										loop	check_3rows		; Loop if cx > 0
 
 		xchg	si,di
@@ -7881,11 +7881,11 @@ setup_double_entity:
 		mov	[si+13h],bl
 		mov	al,[si+0Dh]
 		mov	ah,bl
-		call	vga_operation4
+		call	scroll_buf_offset
 		push	di
 		xchg	si,di
 		sub	si,25h
-		call	vga_operation6
+		call	scroll_si_wrap_low
 		xor	al,al			; Zero register
 		mov	cx,5
 
@@ -7894,7 +7894,7 @@ check_5rows:
 										or	al,[si+1]
 										or	al,[si+2]
 										add	si,24h
-										call	vga_operation5
+										call	scroll_si_wrap_high
 										loop	check_5rows		; Loop if cx > 0
 
 		xchg	si,di
@@ -7907,7 +7907,7 @@ place_double:
 		mov	al,ds:obj_scan_index
 		or	al,80h
 		mov	[di],al
-		SWAP_CALL 48h, vga_operation5
+		SWAP_CALL 48h, scroll_si_wrap_high
 		inc	al
 		mov	[di],al
 		mov	ax,[si+0Bh]
@@ -7938,7 +7938,7 @@ place_double:
 
 check_entity_slot_validity		endp
 
-clear_buffer		proc	near
+reset_enemy_data_ext_and_objs		proc	near
 		push	cs
 		pop	es
 		mov	di,enemy_data_ext
@@ -7959,12 +7959,12 @@ obj_clear_found:
 										cmp	ah,0FFh
 										je	obj_clear_next			; Jump if equal
 										mov	byte ptr [si+3],0FFh
-										call	world_x_to_screen_x
+										call	convert_world_x_to_screen_x
 										jc	obj_clear_next			; Jump if carry Set
 										mov	[si+3],bl
 										mov	al,[si+2]
 										mov	ah,bl
-										call	vga_operation4
+										call	scroll_buf_offset
 										mov	al,ds:obj_scan_index
 										or	al,80h
 										mov	[di],al
@@ -7974,9 +7974,9 @@ obj_clear_next:
 										add	si,10h
 										jmp	short obj_clear_scan
 
-clear_buffer		endp
+reset_enemy_data_ext_and_objs		endp
 
-world_x_to_screen_x		proc	near
+convert_world_x_to_screen_x		proc	near
 		mov	bx,ax
 		sub	ax,word ptr ds:starting_position_in_town
 		jnc	pos_to_screen			; Jump if carry=0
@@ -7996,7 +7996,7 @@ pos_to_screen:
 		sub	ax,bx
 		retn
 
-world_x_to_screen_x		endp
+convert_world_x_to_screen_x		endp
 
 boss_action_done:
 		mov	al,[si+4]
@@ -8108,7 +8108,7 @@ dispatch_boss_fn:
 
 boss_fn_0:
 			                        ; boss_fn_tbl target: boss fn 0 (call far, col 22h check)
-;*		call	far ptr try_scroll_advance5		;*
+;*		call	far ptr scan_obj_tiles_advancing5		;*
 			db	9Ah, 97h, 94h, 97h, 8Eh		; call far ptr 8E97h:9497h
 		xchg	di,ax
 		call	entity_move_east
@@ -8127,8 +8127,8 @@ boss_fn_2:
 boss_fn_3:
 			                        ; boss_fn_tbl target: boss fn 3 (position lookup, atk_slot_check)
 		mov	ax,[si+2]
-		call	vga_operation4
-		SWAP_CALL 48h, vga_operation5
+		call	scroll_buf_offset
+		SWAP_CALL 48h, scroll_si_wrap_high
 		mov	al,[di]
 		jmp	atk_slot_check
 
@@ -8300,7 +8300,7 @@ obj_link_found:
 										je	check_slot_ff			; Jump if equal
 										mov	ax,[di]
 										push	dx
-										call	world_x_to_screen_x
+										call	convert_world_x_to_screen_x
 										pop	dx
 										jnc	obj_link_next			; Jump if carry=0
 										test	byte ptr [di+4],10h

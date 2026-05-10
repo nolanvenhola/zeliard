@@ -12,17 +12,16 @@ Total PENDING procs scanned: **1076**
 
 | Bucket | Count |
 |---|---:|
-| SUPPORTED | 898 |
-| placeholder_name | 178 |
+| SUPPORTED | 1076 |
 
-## SUPPORTED rows (898)
+## SUPPORTED rows (1076)
 
 | File | Line | Name | Role pattern |
 |---|---:|---|---|
-| `working/core/game.asm` | 213 | `game` | driver/exec main entry: dispatch table or returning proc |
+| `working/core/game.asm` | 213 | `run_game_main` | main entry: calls subroutines + returns/exits |
 | `working/core/game.asm` | 533 | `load_music_tracks` | load/save/read/write: at least one memory op or loader call |
 | `working/core/game.asm` | 589 | `set_vga_palette` | set/clear/reset/zero: writes register/memory |
-| `working/core/zeliad.asm` | 133 | `zeliad` | driver/exec main entry: dispatch table or returning proc |
+| `working/core/zeliad.asm` | 133 | `run_zeliad_main` | main entry: calls subroutines + returns/exits |
 | `working/core/zeliad.asm` | 523 | `flush_keyboard` | flush_: clear/drain buffer |
 | `working/core/zeliad.asm` | 543 | `read_config_line` | load/save/read/write: at least one memory op or loader call |
 | `working/core/zeliad.asm` | 591 | `parse_graphics_mode` | parse_: text/byte stream processing |
@@ -35,7 +34,7 @@ Total PENDING procs scanned: **1076**
 | `working/core/zeliad.asm` | 882 | `set_video_mode` | set/clear/reset/zero: writes register/memory |
 | `working/core/zeliad.asm` | 965 | `ctrl_c_handler` | handler/isr: must end with return (sanity) |
 | `working/core/zeliad.asm` | 975 | `parse_command_line` | line/row: row write + loop tail |
-| `working/drivers/gmcga.asm` | 136 | `gmcga` | driver/exec main entry: dispatch table or returning proc |
+| `working/drivers/gmcga.asm` | 136 | `run_gmcga_main` | main entry: returns or dispatches |
 | `working/drivers/gmcga.asm` | 228 | `fill_horizontal_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmcga.asm` | 252 | `clear_screen` | set/clear/reset/zero: writes register/memory |
 | `working/drivers/gmcga.asm` | 438 | `plot_pixel` | pixel/pixels: video memory write |
@@ -43,7 +42,7 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/gmcga.asm` | 628 | `fill_vertical_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmcga.asm` | 729 | `render_text_char` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/gmcga.asm` | 869 | `init_timestamp` | timestamp/time: time read or BCD conversion |
-| `working/drivers/gmcga.asm` | 890 | `time_to_bcd` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
+| `working/drivers/gmcga.asm` | 890 | `convert_time_to_bcd` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
 | `working/drivers/gmcga.asm` | 917 | `modulo_divide_bcd` | modulo/div: divide or repeated subtract |
 | `working/drivers/gmcga.asm` | 942 | `int_divide_bcd` | ISR/handler: must end with iret/retn |
 | `working/drivers/gmcga.asm` | 952 | `render_tilemap_large` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -54,7 +53,7 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/gmcga.asm` | 1435 | `expand_font_bits` | extract/decode/bit: bit/rotate/byte manipulation |
 | `working/drivers/gmcga.asm` | 1721 | `fill_rectangle` | fill_*: rep stos or memory write |
 | `working/drivers/gmcga.asm` | 1933 | `process_sprite_row` | process/update/advance: state-update operations |
-| `working/drivers/gmega.asm` | 129 | `gmega` | driver/exec main entry: dispatch table or returning proc |
+| `working/drivers/gmega.asm` | 129 | `run_gmega_main` | main entry: calls subroutines + returns/exits |
 | `working/drivers/gmega.asm` | 220 | `fill_horizontal_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmega.asm` | 284 | `clear_screen` | set/clear/reset/zero: writes register/memory |
 | `working/drivers/gmega.asm` | 486 | `plot_pixel` | pixel/pixels: video memory write |
@@ -62,7 +61,7 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/gmega.asm` | 703 | `fill_vertical_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmega.asm` | 796 | `render_text_char` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/gmega.asm` | 942 | `init_timestamp` | timestamp/time: time read or BCD conversion |
-| `working/drivers/gmega.asm` | 965 | `time_to_bcd` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
+| `working/drivers/gmega.asm` | 965 | `convert_time_to_bcd` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
 | `working/drivers/gmega.asm` | 992 | `modulo_divide_bcd` | modulo/div: divide or repeated subtract |
 | `working/drivers/gmega.asm` | 1017 | `int_divide_bcd` | ISR/handler: must end with iret/retn |
 | `working/drivers/gmega.asm` | 1027 | `render_tilemap_large` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -70,7 +69,7 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/gmega.asm` | 1342 | `render_tilemap_small` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/gmega.asm` | 1439 | `render_text_char_alt` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/gmega.asm` | 1809 | `fill_rectangle` | fill_*: rep stos or memory write |
-| `working/drivers/gmhgc.asm` | 127 | `gmhgc` | driver/exec main entry: dispatch table or returning proc |
+| `working/drivers/gmhgc.asm` | 127 | `run_gmhgc_main` | main entry: calls subroutines + returns/exits |
 | `working/drivers/gmhgc.asm` | 221 | `fill_horizontal_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmhgc.asm` | 259 | `clear_screen` | set/clear/reset/zero: writes register/memory |
 | `working/drivers/gmhgc.asm` | 281 | `clear_screen_row` | set/clear/reset/zero: writes register/memory |
@@ -80,7 +79,7 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/gmhgc.asm` | 689 | `fill_vertical_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmhgc.asm` | 778 | `render_text_char` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/gmhgc.asm` | 924 | `init_timestamp` | timestamp/time: time read or BCD conversion |
-| `working/drivers/gmhgc.asm` | 946 | `time_to_bcd` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
+| `working/drivers/gmhgc.asm` | 946 | `convert_time_to_bcd` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
 | `working/drivers/gmhgc.asm` | 973 | `modulo_divide_bcd` | modulo/div: divide or repeated subtract |
 | `working/drivers/gmhgc.asm` | 998 | `int_divide_bcd` | ISR/handler: must end with iret/retn |
 | `working/drivers/gmhgc.asm` | 1008 | `render_tilemap_large` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -88,11 +87,11 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/gmhgc.asm` | 1324 | `render_tilemap_small` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/gmhgc.asm` | 1395 | `extract_bitplane_pixels` | extract/decode/bit: bit/rotate/byte manipulation |
 | `working/drivers/gmhgc.asm` | 1433 | `render_text_char_alt` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/drivers/gmhgc.asm` | 1519 | `double_char_bits` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/drivers/gmhgc.asm` | 1519 | `expand_char_bits_2x` | verb_noun proc: any substantive body content |
 | `working/drivers/gmhgc.asm` | 1789 | `fill_rectangle` | fill_*: rep stos or memory write |
 | `working/drivers/gmhgc.asm` | 1933 | `calc_hgc_address` | compute/calc: arithmetic or bitwise op |
 | `working/drivers/gmhgc.asm` | 1984 | `process_sprite_row` | process/update/advance: state-update operations |
-| `working/drivers/gmmcga.asm` | 122 | `gmmcga` | driver/exec main entry: dispatch table or returning proc |
+| `working/drivers/gmmcga.asm` | 122 | `run_gmmcga_main` | main entry: calls subroutines + returns/exits |
 | `working/drivers/gmmcga.asm` | 223 | `fill_horizontal_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmmcga.asm` | 252 | `clear_screen` | set/clear/reset/zero: writes register/memory |
 | `working/drivers/gmmcga.asm` | 407 | `plot_pixel` | pixel/pixels: video memory write |
@@ -100,7 +99,7 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/gmmcga.asm` | 554 | `fill_vertical_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmmcga.asm` | 635 | `render_text_char` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/gmmcga.asm` | 747 | `init_timestamp` | timestamp/time: time read or BCD conversion |
-| `working/drivers/gmmcga.asm` | 768 | `time_to_bcd` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
+| `working/drivers/gmmcga.asm` | 768 | `convert_time_to_bcd` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
 | `working/drivers/gmmcga.asm` | 795 | `modulo_divide_bcd` | modulo/div: divide or repeated subtract |
 | `working/drivers/gmmcga.asm` | 820 | `int_divide_bcd` | ISR/handler: must end with iret/retn |
 | `working/drivers/gmmcga.asm` | 830 | `render_tilemap_large` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -110,9 +109,9 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/gmmcga.asm` | 1177 | `render_text_char_alt` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/gmmcga.asm` | 1455 | `fill_rectangle` | fill_*: rep stos or memory write |
 | `working/drivers/gmmcga.asm` | 1649 | `process_sprite_row` | process/update/advance: state-update operations |
-| `working/drivers/gmmcga.asm` | 1671 | `bitplane_to_pixels` | pixel/pixels: video memory write |
+| `working/drivers/gmmcga.asm` | 1671 | `decode_bitplane_to_pixels` | extract/decode/bit: bit/rotate/byte manipulation |
 | `working/drivers/gmmcga.asm` | 1696 | `extract_bitplane_bit` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/drivers/gmtga.asm` | 95 | `gmtga` | driver/exec main entry: dispatch table or returning proc |
+| `working/drivers/gmtga.asm` | 95 | `run_gmtga_main` | main entry: returns or dispatches |
 | `working/drivers/gmtga.asm` | 187 | `fill_horizontal_line` | fill_*: rep stos or memory write |
 | `working/drivers/gmtga.asm` | 211 | `clear_screen` | set/clear/reset/zero: writes register/memory |
 | `working/drivers/gmtga.asm` | 437 | `plot_pixel` | pixel/pixels: video memory write |
@@ -121,7 +120,7 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/gmtga.asm` | 742 | `render_text_char` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/gmtga.asm` | 838 | `extract_bitplane_bit` | extract/decode/bit: bit/rotate/byte manipulation |
 | `working/drivers/gmtga.asm` | 942 | `init_timestamp` | timestamp/time: time read or BCD conversion |
-| `working/drivers/gmtga.asm` | 963 | `time_to_bcd` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
+| `working/drivers/gmtga.asm` | 963 | `convert_time_to_bcd` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
 | `working/drivers/gmtga.asm` | 990 | `modulo_divide_bcd` | modulo/div: divide or repeated subtract |
 | `working/drivers/gmtga.asm` | 1015 | `int_divide_bcd` | ISR/handler: must end with iret/retn |
 | `working/drivers/gmtga.asm` | 1025 | `render_tilemap_large` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -131,9 +130,9 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/gmtga.asm` | 1430 | `render_text_char_alt` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/gmtga.asm` | 1773 | `fill_rectangle` | fill_*: rep stos or memory write |
 | `working/drivers/gmtga.asm` | 1973 | `process_sprite_row` | process/update/advance: state-update operations |
-| `working/drivers/gmtga.asm` | 2002 | `bitplane_to_pixels` | bitplane/bitmap: bit-shift conversions |
-| `working/drivers/stdply.asm` | 53 | `stdply` | driver/exec main entry: dispatch table or returning proc |
-| `working/drivers/stick.asm` | 142 | `stick` | driver/exec main entry: dispatch table or returning proc |
+| `working/drivers/gmtga.asm` | 2002 | `decode_bitplane_to_pixels` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/drivers/stdply.asm` | 53 | `run_stdply_main` | verb_noun proc: any substantive body content |
+| `working/drivers/stick.asm` | 142 | `run_stick_main` | main entry: returns or dispatches |
 | `working/drivers/stick.asm` | 167 | `handle_pause_key` | handler/isr: must end with return (sanity) |
 | `working/drivers/stick.asm` | 204 | `poll_joystick_buttons` | poll_: input read or state check |
 | `working/drivers/stick.asm` | 220 | `decode_joystick_bits` | extract/decode/bit: bit/rotate/byte manipulation |
@@ -153,128 +152,227 @@ Total PENDING procs scanned: **1076**
 | `working/drivers/stick.asm` | 1675 | `fio_read_write_block` | file I/O: DOS INT 21h, call, or dispatch jmp |
 | `working/drivers/stick.asm` | 1689 | `fio_close_file` | file I/O: DOS INT 21h, call, or dispatch jmp |
 | `working/drivers/stick.asm` | 1713 | `fio_load_decompressed` | file I/O: DOS INT 21h, call, or dispatch jmp |
-| `working/drivers/stick.asm` | 1751 | `dcmp_loop_anchor_a` | decompression: byte stream + bit ops |
-| `working/drivers/stick.asm` | 1819 | `dcmp_loop_anchor_b` | decompression: byte stream + bit ops |
-| `working/drivers/stick.asm` | 1906 | `dcmp_loop_anchor_c` | decompression: byte stream + bit ops |
-| `working/zelres1/code/100OPDMO.asm` | 259 | `opening_scene_main` | main entry: calls subroutines + returns/exits |
-| `working/zelres1/code/100OPDMO.asm` | 458 | `sprite_anim_proc` | entity/sprite: SI/DI ptr operations |
+| `working/drivers/stick.asm` | 1751 | `decompress_anchor_loop_a` | decompression: byte stream + bit ops |
+| `working/drivers/stick.asm` | 1819 | `decompress_anchor_loop_b` | decompression: byte stream + bit ops |
+| `working/drivers/stick.asm` | 1906 | `decompress_anchor_loop_c` | decompression: byte stream + bit ops |
+| `working/zelres1/code/100OPDMO.asm` | 259 | `run_opening_demo_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres1/code/100OPDMO.asm` | 458 | `play_sprite_anim_script` | audio/sound: Adlib port I/O, INT 60h, or call |
 | `working/zelres1/code/100OPDMO.asm` | 488 | `char_render_proc` | sub-proc/main variant: must return |
 | `working/zelres1/code/100OPDMO.asm` | 543 | `animate_scanline` | animation: counter + render dispatch |
 | `working/zelres1/code/100OPDMO.asm` | 591 | `timer_wait_loop` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
 | `working/zelres1/code/100OPDMO.asm` | 604 | `interrupt_handler_cascade` | ISR/handler: must end with iret/retn |
 | `working/zelres1/code/100OPDMO.asm` | 653 | `scene_transition_wait` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
 | `working/zelres1/code/100OPDMO.asm` | 679 | `credits_scroll_display` | scroll: rep movs or gfx call |
-| `working/zelres1/code/100OPDMO.asm` | 999 | `story_scene_timer_loop` | story/opening: scene driver |
+| `working/zelres1/code/100OPDMO.asm` | 999 | `wait_story_scene_timer` | story/opening: scene driver |
 | `working/zelres1/code/100OPDMO.asm` | 1010 | `story_scene_input_handler` | handler/isr: must end with return (sanity) |
-| `working/zelres1/code/100OPDMO.asm` | 1058 | `script_interpreter` | script/interpreter: bytecode dispatch |
+| `working/zelres1/code/100OPDMO.asm` | 1058 | `run_script_interpreter` | script/interpreter: bytecode dispatch |
 | `working/zelres1/code/100OPDMO.asm` | 1357 | `calc_text_width` | compute/calc: arithmetic or bitwise op |
 | `working/zelres1/code/100OPDMO.asm` | 1414 | `animate_scanline_alt` | animation: counter + render dispatch |
 | `working/zelres1/code/100OPDMO.asm` | 1471 | `decompress_image` | decompression: byte stream + bit ops |
-| `working/zelres1/code/100OPDMO.asm` | 1475 | `rle_unpack_core` | rle: run-length encode/decode |
-| `working/zelres1/code/100OPDMO.asm` | 1564 | `fill_buffer` | fill_*: rep stos or memory write |
+| `working/zelres1/code/100OPDMO.asm` | 1475 | `decode_rle_stream` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/100OPDMO.asm` | 1564 | `decode_rle_to_es_di` | extract/decode/bit: bit/rotate/byte manipulation |
 | `working/zelres1/code/100OPDMO.asm` | 1600 | `palette_lookup` | palette: VGA palette I/O or palette-state writes |
 | `working/zelres1/code/100OPDMO.asm` | 1626 | `render_font_row_double` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres1/code/100OPDMO.asm` | 1638 | `render_font_row_inverse` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres1/code/100OPDMO.asm` | 1650 | `copy_buffer` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/100OPDMO.asm` | 1677 | `busy_wait_delay` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
-| `working/zelres1/code/100OPDMO.asm` | 1693 | `color_rotation` | color_*: palette I/O or color manipulation |
-| `working/zelres1/code/100OPDMO.asm` | 1720 | `palette_blend` | palette: VGA palette I/O or palette-state writes |
+| `working/zelres1/code/100OPDMO.asm` | 1650 | `blit_rect_to_sprite_cache` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/100OPDMO.asm` | 1677 | `busy_wait_delay` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/100OPDMO.asm` | 1693 | `cycle_palette_colors` | palette: VGA palette I/O or palette-state writes |
+| `working/zelres1/code/100OPDMO.asm` | 1720 | `apply_palette_blend` | apply_*: writes/calls to apply effect |
 | `working/zelres1/code/100OPDMO.asm` | 1771 | `xor_mask_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres1/code/100OPDMO.asm` | 1817 | `merge_gfx_planes` | verb_noun proc: any substantive body content |
-| `working/zelres1/code/101GDEGA.asm` | 96 | `imgctl_module` | image control: video, macro, or setup |
-| `working/zelres1/code/101GDEGA.asm` | 327 | `imgctl_multiply` | image control: video, macro, or setup |
-| `working/zelres1/code/101GDEGA.asm` | 357 | `vga_operation` | vga_operation: top-level VGA op dispatcher (must return) |
-| `working/zelres1/code/101GDEGA.asm` | 410 | `imgctl_process_loop` | image control: video, macro, or setup |
-| `working/zelres1/code/101GDEGA.asm` | 581 | `copy_vga_buffer` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/101GDEGA.asm` | 865 | `copy_buffer` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/101GDEGA.asm` | 886 | `copy_buffer_2` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/101GDEGA.asm` | 1003 | `copy_buffer_3` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/101GDEGA.asm` | 1077 | `imgctl_multiply_2` | image control: video, macro, or setup |
-| `working/zelres1/code/101GDEGA.asm` | 1623 | `imgctl_multiply_3` | image control: video, macro, or setup |
-| `working/zelres1/code/101GDEGA.asm` | 1989 | `copy_buffer_4` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/101GDEGA.asm` | 2016 | `copy_buffer_5` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/101GDEGA.asm` | 2123 | `fill_buffer` | fill_*: rep stos or memory write |
-| `working/zelres1/code/102GDCGA.asm` | 114 | `cga_imgctl_module` | video mode op: video memory or port I/O |
-| `working/zelres1/code/102GDCGA.asm` | 527 | `equip_process_loop` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/102GDCGA.asm` | 871 | `copy_buffer` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/102GDCGA.asm` | 897 | `copy_buffer_2` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/102GDCGA.asm` | 923 | `equip_multiply` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/102GDCGA.asm` | 1056 | `equip_multiply_2` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/102GDCGA.asm` | 1519 | `extract_bits` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/zelres1/code/102GDCGA.asm` | 1617 | `fill_buffer` | fill_*: rep stos or memory write |
-| `working/zelres1/code/102GDCGA.asm` | 1630 | `clear_buffer` | set/clear/reset/zero: writes register/memory |
-| `working/zelres1/code/102GDCGA.asm` | 1660 | `equip_get_value` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/102GDCGA.asm` | 1913 | `fill_buffer_2` | fill_*: rep stos or memory write |
-| `working/zelres1/code/102GDCGA.asm` | 1956 | `extract_bits_2` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/zelres1/code/102GDCGA.asm` | 2057 | `extract_bits_3` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/zelres1/code/103GDHGC.asm` | 147 | `hgc_gfx_driver` | video mode op: video memory or port I/O |
-| `working/zelres1/code/103GDHGC.asm` | 552 | `imgdec_process_loop` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/103GDHGC.asm` | 911 | `copy_buffer` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/103GDHGC.asm` | 935 | `copy_buffer_2` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/103GDHGC.asm` | 969 | `imgdec_multiply` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/103GDHGC.asm` | 1108 | `imgdec_multiply_2` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/103GDHGC.asm` | 1633 | `imgdec_multiply_3` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/103GDHGC.asm` | 1752 | `fill_buffer` | fill_*: rep stos or memory write |
-| `working/zelres1/code/103GDHGC.asm` | 1779 | `clear_buffer` | set/clear/reset/zero: writes register/memory |
-| `working/zelres1/code/103GDHGC.asm` | 1819 | `imgdec_get_value` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/103GDHGC.asm` | 1941 | `imgdec_scan_loop` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/103GDHGC.asm` | 2099 | `fill_buffer_2` | fill_*: rep stos or memory write |
-| `working/zelres1/code/103GDHGC.asm` | 2142 | `imgdec_multiply_4` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/103GDHGC.asm` | 2270 | `imgdec_multiply_5` | decoder: bit ops, memory writes, or setup/dispatch |
+| `working/zelres1/code/101GDEGA.asm` | 96 | `run_imgctl_main_ega` | sub-proc/main variant: must return |
+| `working/zelres1/code/101GDEGA.asm` | 327 | `blit_2plane_sprite_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/101GDEGA.asm` | 357 | `run_render_passes_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/101GDEGA.asm` | 410 | `fill_plane_via_dma_ega` | fill_*: rep stos or memory write |
+| `working/zelres1/code/101GDEGA.asm` | 438 | `mask_write_loop_ega` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/101GDEGA.asm` | 581 | `copy_buf_with_plane_select_ega` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/101GDEGA.asm` | 865 | `copy_si_to_es_di_ega` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/101GDEGA.asm` | 886 | `copy_to_di_ega` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/101GDEGA.asm` | 907 | `blit_via_di_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/101GDEGA.asm` | 1003 | `copy_32_words_ega` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/101GDEGA.asm` | 1077 | `compute_tile_vram_offset_ega` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/101GDEGA.asm` | 1436 | `lookup_palette_entry_ega` | palette: VGA palette I/O or palette-state writes |
+| `working/zelres1/code/101GDEGA.asm` | 1623 | `program_seq_map_mask_ega` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/101GDEGA.asm` | 1788 | `fill_with_pattern_3F_ega` | fill_*: rep stos or memory write |
+| `working/zelres1/code/101GDEGA.asm` | 1814 | `draw_border_top_bottom_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/101GDEGA.asm` | 1858 | `program_grfx_FF_then_zero_ega` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/101GDEGA.asm` | 1989 | `copy_with_plane_1_ega` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/101GDEGA.asm` | 2016 | `copy_with_plane_1_alt_ega` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/101GDEGA.asm` | 2067 | `seed_status_pattern_ega` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/101GDEGA.asm` | 2123 | `fill_status_byte_24x_ega` | fill_*: rep stos or memory write |
+| `working/zelres1/code/101GDEGA.asm` | 2166 | `blit_3plane_scroll_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/101GDEGA.asm` | 2284 | `blit_2plane_scroll_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/101GDEGA.asm` | 2360 | `decode_scroll_byte_ega` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/102GDCGA.asm` | 114 | `run_imgctl_main_cga` | sub-proc/main variant: must return |
+| `working/zelres1/code/102GDCGA.asm` | 305 | `run_render_passes_cga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/102GDCGA.asm` | 527 | `build_pixel_pair_cga` | build_*: builds data structure via writes |
+| `working/zelres1/code/102GDCGA.asm` | 871 | `copy_pixel_row_cga` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/102GDCGA.asm` | 897 | `copy_to_di_cga` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/102GDCGA.asm` | 923 | `blit_sprite_cga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/102GDCGA.asm` | 1056 | `compute_tile_vram_offset_cga` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/102GDCGA.asm` | 1333 | `blit_sprite_clipped_cga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/102GDCGA.asm` | 1519 | `extract_pixel_bits_cga` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/102GDCGA.asm` | 1617 | `init_status_buf_cga` | init/setup: writes initial state |
+| `working/zelres1/code/102GDCGA.asm` | 1630 | `clear_status_buf_rows_cga` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/102GDCGA.asm` | 1660 | `write_status_pattern_0_cga` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/102GDCGA.asm` | 1787 | `init_status_row_28_cga` | init/setup: writes initial state |
+| `working/zelres1/code/102GDCGA.asm` | 1806 | `init_status_row_11_cga` | init/setup: writes initial state |
+| `working/zelres1/code/102GDCGA.asm` | 1857 | `seed_status_pattern_cga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/102GDCGA.asm` | 1913 | `fill_status_byte_24x_cga` | fill_*: rep stos or memory write |
+| `working/zelres1/code/102GDCGA.asm` | 1956 | `extract_pixel_pair_cga` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/102GDCGA.asm` | 2057 | `extract_pixel_pair_alt_cga` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/102GDCGA.asm` | 2500 | `copy_status_loop_cga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/103GDHGC.asm` | 147 | `run_hgc_gfx_driver_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres1/code/103GDHGC.asm` | 313 | `run_render_passes_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/103GDHGC.asm` | 552 | `build_pixel_pair_hgc` | build_*: builds data structure via writes |
+| `working/zelres1/code/103GDHGC.asm` | 638 | `mask_write_loop_hgc` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/103GDHGC.asm` | 911 | `copy_pixel_row_hgc` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/103GDHGC.asm` | 935 | `copy_to_di_hgc` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/103GDHGC.asm` | 969 | `blit_sprite_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/103GDHGC.asm` | 996 | `blit_via_di_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/103GDHGC.asm` | 1108 | `compute_tile_vram_offset_hgc` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/103GDHGC.asm` | 1463 | `blit_clipped_alt_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/103GDHGC.asm` | 1633 | `blit_sprite_clipped_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/103GDHGC.asm` | 1752 | `init_status_buf_hgc` | init/setup: writes initial state |
+| `working/zelres1/code/103GDHGC.asm` | 1779 | `clear_status_buf_rows_hgc` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/103GDHGC.asm` | 1819 | `write_status_pattern_0_hgc` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/103GDHGC.asm` | 1941 | `init_status_row_28_hgc` | init/setup: writes initial state |
+| `working/zelres1/code/103GDHGC.asm` | 1968 | `init_status_row_11_hgc` | init/setup: writes initial state |
+| `working/zelres1/code/103GDHGC.asm` | 2043 | `seed_status_pattern_hgc` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/103GDHGC.asm` | 2099 | `fill_status_byte_24x_hgc` | fill_*: rep stos or memory write |
+| `working/zelres1/code/103GDHGC.asm` | 2142 | `extract_pixel_pair_hgc` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/103GDHGC.asm` | 2270 | `extract_pixel_pair_alt_hgc` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/103GDHGC.asm` | 2728 | `copy_status_loop_hgc` | verb_noun proc: any substantive body content |
 | `working/zelres1/code/103GDHGC.asm` | 2806 | `math_calc` | math/calc: arithmetic ops |
-| `working/zelres1/code/104GDTGA.asm` | 109 | `zr1_04` | zr*_: chunk-local helper (sanity: must return) |
-| `working/zelres1/code/104GDTGA.asm` | 893 | `copy_buffer` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/104GDTGA.asm` | 917 | `copy_buffer_2` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/104GDTGA.asm` | 941 | `stats_multiply` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/104GDTGA.asm` | 1117 | `stats_multiply_2` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/104GDTGA.asm` | 1482 | `extract_bits` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/zelres1/code/104GDTGA.asm` | 1652 | `stats_multiply_3` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/104GDTGA.asm` | 1751 | `fill_buffer` | fill_*: rep stos or memory write |
-| `working/zelres1/code/104GDTGA.asm` | 1763 | `clear_buffer` | set/clear/reset/zero: writes register/memory |
-| `working/zelres1/code/104GDTGA.asm` | 1790 | `stats_get_value` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/104GDTGA.asm` | 1913 | `stats_process_loop` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/104GDTGA.asm` | 2049 | `fill_buffer_2` | fill_*: rep stos or memory write |
-| `working/zelres1/code/104GDTGA.asm` | 2092 | `stats_multiply_4` | player/stat ops: DS-relative read/write |
+| `working/zelres1/code/104GDTGA.asm` | 109 | `run_gdtga_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres1/code/104GDTGA.asm` | 316 | `run_render_passes_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/104GDTGA.asm` | 566 | `build_pixel_pair_tga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/104GDTGA.asm` | 893 | `copy_pixel_row_tga` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/104GDTGA.asm` | 917 | `copy_to_di_tga` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/104GDTGA.asm` | 941 | `blit_sprite_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/104GDTGA.asm` | 1117 | `compute_tile_vram_offset_tga` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/104GDTGA.asm` | 1430 | `lookup_palette_entry_tga` | palette: VGA palette I/O or palette-state writes |
+| `working/zelres1/code/104GDTGA.asm` | 1482 | `extract_pixel_bits_tga` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/104GDTGA.asm` | 1652 | `blit_sprite_clipped_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/104GDTGA.asm` | 1751 | `init_status_buf_tga` | init/setup: writes initial state |
+| `working/zelres1/code/104GDTGA.asm` | 1763 | `clear_status_buf_rows_tga` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/104GDTGA.asm` | 1790 | `write_status_pattern_4444_tga` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/104GDTGA.asm` | 1913 | `init_status_row_28_tga` | init/setup: writes initial state |
+| `working/zelres1/code/104GDTGA.asm` | 1937 | `init_status_row_11_tga` | init/setup: writes initial state |
+| `working/zelres1/code/104GDTGA.asm` | 1993 | `seed_status_pattern_tga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/104GDTGA.asm` | 2049 | `fill_status_byte_24x_tga` | fill_*: rep stos or memory write |
+| `working/zelres1/code/104GDTGA.asm` | 2092 | `compute_vram_xy_offset_tga` | compute/calc: arithmetic or bitwise op |
 | `working/zelres1/code/104GDTGA.asm` | 2196 | `stats_fill_buf` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/104GDTGA.asm` | 2714 | `extract_bits_2` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/zelres1/code/105GDMCA.asm` | 113 | `mcga_imgctl_module` | module entry: dispatch + return |
-| `working/zelres1/code/105GDMCA.asm` | 319 | `vga_operation` | vga_operation: top-level VGA op dispatcher (must return) |
-| `working/zelres1/code/105GDMCA.asm` | 860 | `copy_buffer` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/105GDMCA.asm` | 879 | `copy_buffer_2` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/105GDMCA.asm` | 898 | `pal_multiply` | palette: VGA palette I/O or palette-state writes |
-| `working/zelres1/code/105GDMCA.asm` | 1078 | `pal_multiply_2` | palette: VGA palette I/O or palette-state writes |
-| `working/zelres1/code/105GDMCA.asm` | 1446 | `extract_bits` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/zelres1/code/105GDMCA.asm` | 1620 | `pal_multiply_3` | palette: VGA palette I/O or palette-state writes |
-| `working/zelres1/code/105GDMCA.asm` | 1715 | `fill_buffer` | fill_*: rep stos or memory write |
-| `working/zelres1/code/105GDMCA.asm` | 1725 | `clear_buffer` | set/clear/reset/zero: writes register/memory |
-| `working/zelres1/code/105GDMCA.asm` | 2021 | `fill_buffer_2` | fill_*: rep stos or memory write |
+| `working/zelres1/code/104GDTGA.asm` | 2602 | `copy_status_loop_tga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/104GDTGA.asm` | 2640 | `rotate_mask_word_tga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/104GDTGA.asm` | 2714 | `compute_tga_framebuf_offset` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/105GDMCA.asm` | 113 | `run_mcga_imgctl_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres1/code/105GDMCA.asm` | 319 | `run_render_passes_mcga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/105GDMCA.asm` | 522 | `build_pixel_pair_mcga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/105GDMCA.asm` | 860 | `copy_pixel_row_mcga` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/105GDMCA.asm` | 879 | `copy_to_di_mcga` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/105GDMCA.asm` | 898 | `blit_sprite_mcga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/105GDMCA.asm` | 1078 | `compute_tile_vram_offset_mcga` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/105GDMCA.asm` | 1401 | `lookup_palette_entry_mcga` | palette: VGA palette I/O or palette-state writes |
+| `working/zelres1/code/105GDMCA.asm` | 1446 | `extract_pixel_bits_mcga` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/105GDMCA.asm` | 1620 | `blit_sprite_clipped_mcga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/105GDMCA.asm` | 1715 | `init_status_buf_mcga` | init/setup: writes initial state |
+| `working/zelres1/code/105GDMCA.asm` | 1725 | `clear_status_buf_rows_mcga` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/105GDMCA.asm` | 1748 | `write_status_pattern_202_mcga` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/105GDMCA.asm` | 1873 | `init_status_row_28_mcga` | init/setup: writes initial state |
+| `working/zelres1/code/105GDMCA.asm` | 1901 | `init_status_row_11_mcga` | init/setup: writes initial state |
+| `working/zelres1/code/105GDMCA.asm` | 1965 | `seed_status_pattern_mcga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/105GDMCA.asm` | 2021 | `fill_status_byte_24x_mcga` | fill_*: rep stos or memory write |
+| `working/zelres1/code/105GDMCA.asm` | 2064 | `index_status_row_47_mcga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/105GDMCA.asm` | 2172 | `index_status_row_47_alt_mcga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/105GDMCA.asm` | 2241 | `write_palette_byte_mcga` | load/save/read/write: at least one memory op or loader call |
 | `working/zelres1/code/105GDMCA.asm` | 2384 | `pal_process_loop` | palette: VGA palette I/O or palette-state writes |
-| `working/zelres1/code/105GDMCA.asm` | 2439 | `pal_multiply_4` | palette: VGA palette I/O or palette-state writes |
-| `working/zelres1/code/106TOWN.asm` | 232 | `townb_main` | main entry: calls subroutines + returns/exits |
-| `working/zelres1/code/106TOWN.asm` | 648 | `player_multiply` | player/stat ops: DS-relative read/write |
+| `working/zelres1/code/105GDMCA.asm` | 2413 | `rotate_mask_word_mcga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/105GDMCA.asm` | 2439 | `compute_vram_xy_offset_mcga` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/106TOWN.asm` | 232 | `run_town_main_loop` | loop: backward branch or rep |
+| `working/zelres1/code/106TOWN.asm` | 466 | `try_take_facing_item` | try_*: condition check + branch |
+| `working/zelres1/code/106TOWN.asm` | 550 | `try_talk_to_facing_npc` | try_*: condition check + branch |
+| `working/zelres1/code/106TOWN.asm` | 610 | `render_dialog_text` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/106TOWN.asm` | 648 | `set_pose_dirty` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 654 | `draw_dialog_typewriter` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/106TOWN.asm` | 870 | `wait_for_text_continue` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
+| `working/zelres1/code/106TOWN.asm` | 911 | `measure_word_width` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 941 | `count_wrapped_lines` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 1077 | `prompt_take_no_take` | verb_noun proc: any substantive body content |
 | `working/zelres1/code/106TOWN.asm` | 1103 | `math_calc` | math/calc: arithmetic ops |
 | `working/zelres1/code/106TOWN.asm` | 1252 | `player_scan_loop` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/106TOWN.asm` | 1299 | `player_multiply_2` | verb_noun proc: any substantive body content |
-| `working/zelres1/code/106TOWN.asm` | 1331 | `fill_buffer` | fill_*: rep stos or memory write |
+| `working/zelres1/code/106TOWN.asm` | 1277 | `find_npc_at_bx_with_flag40` | find/scan: scasb/cmp/loop |
+| `working/zelres1/code/106TOWN.asm` | 1299 | `tick_npcs_then_pump` | process/update/advance: state-update operations |
+| `working/zelres1/code/106TOWN.asm` | 1303 | `draw_and_pump_input` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/106TOWN.asm` | 1331 | `run_town_input_frame` | frame/row/col: video write or row/col loop |
 | `working/zelres1/code/106TOWN.asm` | 1353 | `player_process_loop` | player/stat ops: DS-relative read/write |
+| `working/zelres1/code/106TOWN.asm` | 1369 | `mark_player_col_in_cursor_buf` | mark: writes a flag/state byte |
+| `working/zelres1/code/106TOWN.asm` | 1397 | `render_town_actors` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/106TOWN.asm` | 1513 | `find_npc_col_slot` | find/scan: scasb/cmp/loop |
+| `working/zelres1/code/106TOWN.asm` | 1536 | `find_npc_dx` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 1540 | `find_npc_dx_inner` | find/scan: scasb/cmp/loop |
+| `working/zelres1/code/106TOWN.asm` | 1553 | `load_pattern_then_play_music` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 1557 | `play_current_music` | audio/sound: Adlib port I/O, INT 60h, or call |
 | `working/zelres1/code/106TOWN.asm` | 1566 | `player_load_chunk` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/106TOWN.asm` | 2476 | `player_check_state` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/106TOWN.asm` | 2522 | `player_check_state_2` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/106TOWN.asm` | 2837 | `player_multiply_3` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/106TOWN.asm` | 2847 | `player_multiply_4` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/106TOWN.asm` | 2874 | `player_multiply_5` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/106TOWN.asm` | 2938 | `player_multiply_6` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/106TOWN.asm` | 3017 | `clear_buffer` | set/clear/reset/zero: writes register/memory |
-| `working/zelres1/code/106TOWN.asm` | 3109 | `copy_buffer` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/106TOWN.asm` | 3268 | `fill_buffer_2` | fill_*: rep stos or memory write |
-| `working/zelres1/code/106TOWN.asm` | 3317 | `player_copy_buf` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/107GTEGA.asm` | 105 | `zr1_07` | zr*_: chunk-local helper (sanity: must return) |
-| `working/zelres1/code/107GTEGA.asm` | 251 | `vga_operation` | vga_operation: top-level VGA op dispatcher (must return) |
-| `working/zelres1/code/107GTEGA.asm` | 296 | `vgadec_multiply` | decoder: bit ops, memory writes, or setup/dispatch |
+| `working/zelres1/code/106TOWN.asm` | 1596 | `process_town_event_table` | process/update/advance: state-update operations |
+| `working/zelres1/code/106TOWN.asm` | 1638 | `tick_npcs_dispatch` | process/update/advance: state-update operations |
+| `working/zelres1/code/106TOWN.asm` | 1786 | `stamp_npcs_save_tiles` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 1810 | `restore_tiles_under_npcs` | restore_*: restore via copy or memory write |
+| `working/zelres1/code/106TOWN.asm` | 1836 | `load_town_hud_icons` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/106TOWN.asm` | 1874 | `try_door_transition` | try_*: condition check + branch |
+| `working/zelres1/code/106TOWN.asm` | 1938 | `load_area_assets` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/106TOWN.asm` | 1983 | `load_town_pattern_chunk` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/106TOWN.asm` | 2012 | `load_town_door_table` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/106TOWN.asm` | 2230 | `tick_town_frame` | process/update/advance: state-update operations |
+| `working/zelres1/code/106TOWN.asm` | 2387 | `advance_dialog_line` | process/update/advance: state-update operations |
+| `working/zelres1/code/106TOWN.asm` | 2406 | `scroll_dlg_text_up` | UI/dialog: dispatches to render/draw helpers |
+| `working/zelres1/code/106TOWN.asm` | 2438 | `dlg_draw_prompt_then_clear` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/106TOWN.asm` | 2453 | `wait_for_spacebar_or_skip` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
+| `working/zelres1/code/106TOWN.asm` | 2479 | `measure_dialog_word_width` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 2525 | `count_dialog_wrapped_lines` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 2644 | `div_24bit_emit_digit` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/106TOWN.asm` | 2673 | `div_16bit_emit_digit` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/106TOWN.asm` | 2687 | `poll_menu_input` | UI/dialog: dispatches to render/draw helpers |
+| `working/zelres1/code/106TOWN.asm` | 2840 | `draw_cursor_at_dlg_row` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/106TOWN.asm` | 2850 | `animate_cursor_left_10cols` | animation: counter + render dispatch |
+| `working/zelres1/code/106TOWN.asm` | 2877 | `animate_cursor_right_10cols` | animation: counter + render dispatch |
+| `working/zelres1/code/106TOWN.asm` | 2904 | `prompt_yes_no` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 2941 | `clear_n_dialog_rows` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/106TOWN.asm` | 3020 | `enter_savegame_dialog` | enter/exit/entry: state transition |
+| `working/zelres1/code/106TOWN.asm` | 3116 | `prepare_save_name_screen` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 3258 | `check_save_name_is_new` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/106TOWN.asm` | 3276 | `clear_save_name_if_new` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/106TOWN.asm` | 3294 | `draw_menu_items_column` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/106TOWN.asm` | 3325 | `player_copy_buf` | player/stat ops: DS-relative read/write |
+| `working/zelres1/code/106TOWN.asm` | 3610 | `update_save_name_cursor` | process/update/advance: state-update operations |
+| `working/zelres1/code/106TOWN.asm` | 3661 | `redraw_save_name_at_cursor` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/107GTEGA.asm` | 105 | `run_gtega_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres1/code/107GTEGA.asm` | 251 | `run_render_passes_gtega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/107GTEGA.asm` | 296 | `render_tile_if_marked_ega` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/107GTEGA.asm` | 303 | `render_tile_entry_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/107GTEGA.asm` | 433 | `mark_tile_FE_ega` | tile_*: tile data manipulation |
 | `working/zelres1/code/107GTEGA.asm` | 688 | `tile_col6_render` | verb_noun proc: any substantive body content |
-| `working/zelres1/code/107GTEGA.asm` | 835 | `vgadec_multiply_2` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/107GTEGA.asm` | 1668 | `vgadec_process_loop` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/108GTCGA.asm` | 116 | `zr1_08` | zr*_: chunk-local helper (sanity: must return) |
+| `working/zelres1/code/107GTEGA.asm` | 692 | `set_cx_6_ega` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/107GTEGA.asm` | 696 | `set_es_to_vga_ega` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/107GTEGA.asm` | 835 | `save_state_then_blit_ega` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/107GTEGA.asm` | 903 | `load_tile_list_then_use_ega` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/107GTEGA.asm` | 920 | `load_tile_list_ptr_ega` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/107GTEGA.asm` | 924 | `match_tile_by_dx_ega` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/107GTEGA.asm` | 937 | `init_4E_loop_ega` | init/setup: writes initial state |
+| `working/zelres1/code/107GTEGA.asm` | 972 | `compute_col_decrement_ega` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/107GTEGA.asm` | 994 | `decode_entity_slot_byte_ega` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/107GTEGA.asm` | 1018 | `render_2_col_iter_ega` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/107GTEGA.asm` | 1073 | `render_3_tile_cols_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/107GTEGA.asm` | 1135 | `set_seq_map_mask_7_ega` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/107GTEGA.asm` | 1549 | `init_text_render_buf_ega` | init/setup: writes initial state |
+| `working/zelres1/code/107GTEGA.asm` | 1575 | `compute_glyph_index_ega` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/107GTEGA.asm` | 1636 | `render_via_proc_loop2_ega` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/107GTEGA.asm` | 1668 | `step_text_char_loop_ega` | process/update/advance: state-update operations |
+| `working/zelres1/code/107GTEGA.asm` | 1704 | `step_text_char_loop2_ega` | process/update/advance: state-update operations |
+| `working/zelres1/code/107GTEGA.asm` | 1725 | `div_24bit_emit_digit_ega` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/107GTEGA.asm` | 1752 | `div_16bit_emit_digit_ega` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/107GTEGA.asm` | 1777 | `div_16bit_emit_digit_alt_ega` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/108GTCGA.asm` | 116 | `run_gtcga_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres1/code/108GTCGA.asm` | 247 | `cga_check_blit_col` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres1/code/108GTCGA.asm` | 289 | `draw_door_tile` | verb_noun proc: any substantive body content |
 | `working/zelres1/code/108GTCGA.asm` | 296 | `draw_opaque_tile` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -286,7 +384,7 @@ Total PENDING procs scanned: **1076**
 | `working/zelres1/code/108GTCGA.asm` | 792 | `scan_entity_tbl` | entity/sprite: SI/DI ptr operations |
 | `working/zelres1/code/108GTCGA.asm` | 796 | `scan_entity_next` | find/scan: scasb/cmp/loop |
 | `working/zelres1/code/108GTCGA.asm` | 809 | `blit_3rows_to_cga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres1/code/108GTCGA.asm` | 875 | `dispatch_draw_value` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
+| `working/zelres1/code/108GTCGA.asm` | 875 | `dispatch_via_tbl_a_cga` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres1/code/108GTCGA.asm` | 897 | `calc_tile_cga_ofs` | compute/calc: arithmetic or bitwise op |
 | `working/zelres1/code/108GTCGA.asm` | 923 | `find_entity_at_row` | find/scan: scasb/cmp/loop |
 | `working/zelres1/code/108GTCGA.asm` | 964 | `load_tiles_3_from_b` | load/save/read/write: at least one memory op or loader call |
@@ -301,184 +399,258 @@ Total PENDING procs scanned: **1076**
 | `working/zelres1/code/108GTCGA.asm` | 1610 | `bcd_extract_div` | BCD: AAA/AAS/AAM/AAD or arithmetic + mask, or call bcd helper |
 | `working/zelres1/code/108GTCGA.asm` | 1996 | `encode_bitplanes_cga` | encode_*: bit operations + write |
 | `working/zelres1/code/108GTCGA.asm` | 2036 | `encode_mask_cga` | encode_*: bit operations + write |
-| `working/zelres1/code/109GTHGC.asm` | 107 | `zr1_09` | zr*_: chunk-local helper (sanity: must return) |
-| `working/zelres1/code/109GTHGC.asm` | 239 | `decb_scan_loop` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/109GTHGC.asm` | 659 | `decb_multiply` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/109GTHGC.asm` | 776 | `decb_get_value` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/109GTHGC.asm` | 803 | `decb_multiply_2` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/109GTHGC.asm` | 881 | `decb_multiply_3` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/109GTHGC.asm` | 952 | `decb_process_loop` | decoder: bit ops, memory writes, or setup/dispatch |
-| `working/zelres1/code/109GTHGC.asm` | 1020 | `copy_buffer` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/109GTHGC.asm` | 1035 | `copy_buffer_2` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/109GTHGC.asm` | 1075 | `copy_buffer_3` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/109GTHGC.asm` | 1124 | `copy_buffer_4` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/109GTHGC.asm` | 1139 | `copy_buffer_5` | copy_*: rep movs or load/store sequence |
-| `working/zelres1/code/109GTHGC.asm` | 1177 | `copy_buffer_6` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/109GTHGC.asm` | 107 | `run_gthgc_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres1/code/109GTHGC.asm` | 239 | `match_tile_by_dx_hgc` | tile_*: tile data manipulation |
+| `working/zelres1/code/109GTHGC.asm` | 281 | `render_tile_if_marked_hgc` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/109GTHGC.asm` | 288 | `render_tile_entry_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/109GTHGC.asm` | 388 | `mark_tile_FE_hgc` | tile_*: tile data manipulation |
+| `working/zelres1/code/109GTHGC.asm` | 524 | `set_cx_6_hgc` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/109GTHGC.asm` | 528 | `save_cs_then_op_hgc` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/109GTHGC.asm` | 659 | `blit_sprite_alt_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/109GTHGC.asm` | 723 | `load_tile_list_then_use_hgc` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/109GTHGC.asm` | 740 | `load_tile_list_ptr_hgc` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/109GTHGC.asm` | 744 | `noop_helper_hgc` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/109GTHGC.asm` | 757 | `init_status_row_24_hgc` | init/setup: writes initial state |
+| `working/zelres1/code/109GTHGC.asm` | 776 | `save_di_via_bp_hgc` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/109GTHGC.asm` | 803 | `decode_entity_slot_byte_hgc` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/109GTHGC.asm` | 827 | `render_2_col_iter_hgc` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/109GTHGC.asm` | 881 | `render_via_multiply3_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/109GTHGC.asm` | 952 | `save_ds_then_process_hgc` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/109GTHGC.asm` | 1020 | `copy_pixel_row_v1_hgc` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/109GTHGC.asm` | 1035 | `copy_pixel_row_v2_hgc` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/109GTHGC.asm` | 1075 | `copy_pixel_row_v3_hgc` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/109GTHGC.asm` | 1124 | `copy_pixel_row_v4_hgc` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/109GTHGC.asm` | 1139 | `copy_pixel_row_v5_hgc` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/109GTHGC.asm` | 1177 | `copy_pixel_row_v6_hgc` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/109GTHGC.asm` | 1342 | `init_text_render_buf_hgc` | init/setup: writes initial state |
+| `working/zelres1/code/109GTHGC.asm` | 1368 | `compute_glyph_index_hgc` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/109GTHGC.asm` | 1438 | `render_via_text_decimal_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/109GTHGC.asm` | 1470 | `step_render_alt_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/109GTHGC.asm` | 1515 | `render_text_decimal_hgc` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/109GTHGC.asm` | 1536 | `div_24bit_emit_digit_hgc` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/109GTHGC.asm` | 1563 | `div_16bit_emit_digit_hgc` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/109GTHGC.asm` | 1588 | `div_16bit_emit_digit_alt_hgc` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/109GTHGC.asm` | 1992 | `init_8_byte_loop_hgc` | init/setup: writes initial state |
+| `working/zelres1/code/109GTHGC.asm` | 2034 | `step_scan_alt_hgc` | process/update/advance: state-update operations |
 | `working/zelres1/code/109GTHGC.asm` | 2057 | `math_calc` | math/calc: arithmetic ops |
-| `working/zelres1/code/110GTTGA.asm` | 96 | `tga_module_entry` | enter/exit/entry: state transition |
-| `working/zelres1/code/110GTTGA.asm` | 234 | `limg_scan_loop` | image control: video, macro, or setup |
-| `working/zelres1/code/110GTTGA.asm` | 276 | `limg_multiply` | verb_noun proc: any substantive body content |
-| `working/zelres1/code/110GTTGA.asm` | 733 | `limg_multiply_2` | image control: video, macro, or setup |
-| `working/zelres1/code/110GTTGA.asm` | 831 | `limg_check_state` | image control: video, macro, or setup |
-| `working/zelres1/code/110GTTGA.asm` | 911 | `limg_get_value` | image control: video, macro, or setup |
-| `working/zelres1/code/110GTTGA.asm` | 932 | `limg_multiply_3` | image control: video, macro, or setup |
-| `working/zelres1/code/110GTTGA.asm` | 1009 | `limg_multiply_4` | image control: video, macro, or setup |
-| `working/zelres1/code/110GTTGA.asm` | 1084 | `limg_process_loop` | image control: video, macro, or setup |
+| `working/zelres1/code/110GTTGA.asm` | 96 | `run_gttga_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres1/code/110GTTGA.asm` | 234 | `match_tile_by_dx_tga` | tile_*: tile data manipulation |
+| `working/zelres1/code/110GTTGA.asm` | 276 | `render_tile_if_marked_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/110GTTGA.asm` | 283 | `render_tile_entry_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/110GTTGA.asm` | 455 | `mark_tile_FE_tga` | tile_*: tile data manipulation |
+| `working/zelres1/code/110GTTGA.asm` | 615 | `set_cx_6_tga` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/110GTTGA.asm` | 619 | `save_cs_then_op_tga` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/110GTTGA.asm` | 733 | `save_state_then_blit_tga` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/110GTTGA.asm` | 797 | `load_tile_list_then_use_tga` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/110GTTGA.asm` | 814 | `load_tile_list_ptr_tga` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/110GTTGA.asm` | 818 | `noop_helper_tga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/110GTTGA.asm` | 831 | `check_tile_state_tga` | check/test: cmp/test followed by branch |
+| `working/zelres1/code/110GTTGA.asm` | 911 | `save_di_via_bp_tga` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/110GTTGA.asm` | 932 | `render_via_multiply3_tga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/110GTTGA.asm` | 956 | `init_status_row_alt_tga` | init/setup: writes initial state |
+| `working/zelres1/code/110GTTGA.asm` | 1009 | `render_via_multiply4_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/110GTTGA.asm` | 1084 | `save_ds_then_process_tga` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/110GTTGA.asm` | 1423 | `init_text_render_buf_tga` | init/setup: writes initial state |
+| `working/zelres1/code/110GTTGA.asm` | 1449 | `compute_glyph_index_tga` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/110GTTGA.asm` | 1500 | `init_2_iter_loop_tga` | init/setup: writes initial state |
+| `working/zelres1/code/110GTTGA.asm` | 1540 | `render_via_text_decimal_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/110GTTGA.asm` | 1568 | `step_render_alt_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/110GTTGA.asm` | 1600 | `render_text_decimal_tga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/110GTTGA.asm` | 1624 | `div_24bit_emit_digit_tga` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/110GTTGA.asm` | 1651 | `div_16bit_emit_digit_tga` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/110GTTGA.asm` | 1676 | `div_16bit_emit_digit_alt_tga` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/110GTTGA.asm` | 2107 | `init_4_byte_loop_tga` | init/setup: writes initial state |
+| `working/zelres1/code/110GTTGA.asm` | 2150 | `step_scan_alt_tga` | process/update/advance: state-update operations |
 | `working/zelres1/code/110GTTGA.asm` | 2173 | `extract_bits` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/zelres1/code/111GTMCA.asm` | 115 | `zr1_11` | zr*_: chunk-local helper (sanity: must return) |
-| `working/zelres1/code/111GTMCA.asm` | 243 | `vga_operation` | vga_operation: top-level VGA op dispatcher (must return) |
-| `working/zelres1/code/111GTMCA.asm` | 287 | `simg_multiply` | verb_noun proc: any substantive body content |
-| `working/zelres1/code/111GTMCA.asm` | 566 | `simg_func_5_alt` | image control: video, macro, or setup |
-| `working/zelres1/code/111GTMCA.asm` | 708 | `simg_multiply_2` | image control: video, macro, or setup |
+| `working/zelres1/code/110GTTGA.asm` | 2191 | `init_4_byte_loop_alt_tga` | init/setup: writes initial state |
+| `working/zelres1/code/111GTMCA.asm` | 115 | `run_gtmca_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres1/code/111GTMCA.asm` | 243 | `run_render_passes_gtmca` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/111GTMCA.asm` | 287 | `render_tile_if_marked_mca` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/111GTMCA.asm` | 294 | `render_tile_entry_mca` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/111GTMCA.asm` | 397 | `mark_tile_FE_mca` | tile_*: tile data manipulation |
+| `working/zelres1/code/111GTMCA.asm` | 566 | `set_cx_alt_mca` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/111GTMCA.asm` | 570 | `set_cx_6_mca` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/111GTMCA.asm` | 574 | `save_cs_then_op_mca` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/111GTMCA.asm` | 708 | `save_state_then_blit_mca` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/111GTMCA.asm` | 771 | `load_tile_list_then_use_mca` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/111GTMCA.asm` | 788 | `load_tile_list_ptr_mca` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/111GTMCA.asm` | 792 | `match_tile_by_dx_mca` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/111GTMCA.asm` | 805 | `init_4E_loop_mca` | init/setup: writes initial state |
+| `working/zelres1/code/111GTMCA.asm` | 820 | `compute_col_decrement_mca` | compute/calc: arithmetic or bitwise op |
+| `working/zelres1/code/111GTMCA.asm` | 846 | `decode_entity_slot_byte_mca` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres1/code/111GTMCA.asm` | 870 | `render_2_col_iter_mca` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/111GTMCA.asm` | 920 | `render_3_tile_cols_mca` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/111GTMCA.asm` | 999 | `init_alt_setup_mca` | init/setup: writes initial state |
+| `working/zelres1/code/111GTMCA.asm` | 1356 | `init_text_render_buf_mca` | init/setup: writes initial state |
 | `working/zelres1/code/111GTMCA.asm` | 1378 | `extract_bits` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/zelres1/code/111GTMCA.asm` | 1466 | `simg_process_loop` | image control: video, macro, or setup |
+| `working/zelres1/code/111GTMCA.asm` | 1438 | `render_via_proc_loop2_mca` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/111GTMCA.asm` | 1466 | `step_text_char_loop_mca` | process/update/advance: state-update operations |
+| `working/zelres1/code/111GTMCA.asm` | 1502 | `step_text_char_loop2_mca` | process/update/advance: state-update operations |
+| `working/zelres1/code/111GTMCA.asm` | 1523 | `div_24bit_emit_digit_mca` | verb_noun proc: any substantive body content |
+| `working/zelres1/code/111GTMCA.asm` | 1550 | `div_16bit_emit_digit_mca` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/111GTMCA.asm` | 1575 | `div_16bit_emit_digit_alt_mca` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/111GTMCA.asm` | 1957 | `step_text_char_loop3_mca` | process/update/advance: state-update operations |
+| `working/zelres1/code/111GTMCA.asm` | 1982 | `pack_2plane_pixel_mca` | verb_noun proc: any substantive body content |
 | `working/zelres1/code/111GTMCA.asm` | 1993 | `simg_scan_loop` | image control: video, macro, or setup |
-| `working/zelres2/code/200FIGHT.asm` | 631 | `zr2_00` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/200FIGHT.asm` | 756 | `vga_operation` | vga_operation: top-level VGA op dispatcher (must return) |
-| `working/zelres2/code/200FIGHT.asm` | 941 | `combat_input_dispatcher` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
-| `working/zelres2/code/200FIGHT.asm` | 1026 | `decide_scroll_direction` | scroll: rep movs or gfx call |
-| `working/zelres2/code/200FIGHT.asm` | 1064 | `process_combat_update_step` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 1145 | `combat_step_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
-| `working/zelres2/code/200FIGHT.asm` | 1192 | `apply_pending_invul` | apply_*: writes/calls to apply effect |
-| `working/zelres2/code/200FIGHT.asm` | 1285 | `try_combat_advance` | try_*: condition check + branch |
-| `working/zelres2/code/200FIGHT.asm` | 1338 | `scroll_up_and_advance_state` | scroll: rep movs or gfx call |
-| `working/zelres2/code/200FIGHT.asm` | 1402 | `try_scroll_advance` | try_*: condition check + branch |
-| `working/zelres2/code/200FIGHT.asm` | 1546 | `check_area_7_boundary` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 1611 | `toggle_c2_bit_pose` | toggle: xor/not/test bit ops |
-| `working/zelres2/code/200FIGHT.asm` | 1636 | `game_process_loop` | loop: backward branch or rep |
-| `working/zelres2/code/200FIGHT.asm` | 1772 | `is_non_area7_slot_b_entity` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 1794 | `combat_step_advance` | advance: inc/add to advance state |
-| `working/zelres2/code/200FIGHT.asm` | 1939 | `combat_input_poll_step` | combat/fight: state ops + branches |
-| `working/zelres2/code/200FIGHT.asm` | 1995 | `try_advance_with_anim` | try_*: condition check + branch |
-| `working/zelres2/code/200FIGHT.asm` | 2044 | `scroll_pos_advance` | scroll: rep movs or gfx call |
-| `working/zelres2/code/200FIGHT.asm` | 2082 | `check_3tile_clearance` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 2134 | `game_get_value` | value: memory load (often via xlat) |
-| `working/zelres2/code/200FIGHT.asm` | 2142 | `find_fire_slot_for_id` | find/scan: scasb/cmp/loop |
-| `working/zelres2/code/200FIGHT.asm` | 2182 | `process_map_seg_updates` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 2223 | `game_get_value_2` | game_: state ops + dispatch |
-| `working/zelres2/code/200FIGHT.asm` | 2245 | `init_arena_visuals` | init/setup: writes initial state |
-| `working/zelres2/code/200FIGHT.asm` | 2515 | `entity_type_quick_check` | validate/verify/check: cmp + branch/return |
-| `working/zelres2/code/200FIGHT.asm` | 2523 | `is_entity_known_type_alt` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 2558 | `is_entity_id_lax` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 2618 | `combat_input_handler` | handler/isr: must end with return (sanity) |
-| `working/zelres2/code/200FIGHT.asm` | 2737 | `select_player_sprite_frame` | lookup/select: table lookup or compare |
-| `working/zelres2/code/200FIGHT.asm` | 2812 | `update_combat_frame_state` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 2909 | `save_combat_action_state` | load/save/read/write: at least one memory op or loader call |
-| `working/zelres2/code/200FIGHT.asm` | 3060 | `fill_hud_enemy_area` | boss/enemy: state read/write/branch |
-| `working/zelres2/code/200FIGHT.asm` | 3151 | `swap_world_state_buffers` | swap/xchg: xchg or mov-pair |
-| `working/zelres2/code/200FIGHT.asm` | 3239 | `fill_buffer` | fill_*: rep stos or memory write |
-| `working/zelres2/code/200FIGHT.asm` | 3252 | `find_atk_slot_for_id` | find/scan: scasb/cmp/loop |
-| `working/zelres2/code/200FIGHT.asm` | 3279 | `init_combat_arena` | combat/fight: state ops + branches |
-| `working/zelres2/code/200FIGHT.asm` | 3304 | `draw_combat_hud_layout` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/200FIGHT.asm` | 3363 | `mark_player_pos_on_hud` | mark: writes a flag/state byte |
-| `working/zelres2/code/200FIGHT.asm` | 3388 | `scan_outer_slot_match` | find/scan: scasb/cmp/loop |
-| `working/zelres2/code/200FIGHT.asm` | 3559 | `apply_passive_damage` | apply_*: writes/calls to apply effect |
-| `working/zelres2/code/200FIGHT.asm` | 3572 | `apply_combat_damage_with_absorb` | apply_*: writes/calls to apply effect |
-| `working/zelres2/code/200FIGHT.asm` | 3613 | `clear_secondary_pool_and_redraw` | set/clear/reset/zero: writes register/memory |
-| `working/zelres2/code/200FIGHT.asm` | 3647 | `accumulate_tile_type` | tile_*: tile data manipulation |
-| `working/zelres2/code/200FIGHT.asm` | 3678 | `player_HP_subtract` | player/stat ops: DS-relative read/write |
-| `working/zelres2/code/200FIGHT.asm` | 3717 | `tail_dispatch_by_slot_family` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/200FIGHT.asm` | 3761 | `lookup_move_slot_family` | lookup/select: table lookup or compare |
-| `working/zelres2/code/200FIGHT.asm` | 3826 | `compute_target_dist` | compute/calc: arithmetic or bitwise op |
-| `working/zelres2/code/200FIGHT.asm` | 3905 | `enter_level_via_ref_a` | enter/exit/entry: state transition |
-| `working/zelres2/code/200FIGHT.asm` | 3911 | `render_entity_list_to_hud` | entity/sprite: SI/DI ptr operations |
-| `working/zelres2/code/200FIGHT.asm` | 4000 | `game_get_value_3` | game_: state ops + dispatch |
-| `working/zelres2/code/200FIGHT.asm` | 4012 | `world_x_to_screen_x_w27` | world_*: world-state read/write |
-| `working/zelres2/code/200FIGHT.asm` | 4098 | `check_3tile_J_pattern` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 4426 | `compute_scroll_pos` | compute/calc: arithmetic or bitwise op |
-| `working/zelres2/code/200FIGHT.asm` | 4444 | `compute_scroll_offset_b` | compute/calc: arithmetic or bitwise op |
-| `working/zelres2/code/200FIGHT.asm` | 4473 | `decrement_speed_or_power` | increment/decrement: inc/dec/add/sub op present |
-| `working/zelres2/code/200FIGHT.asm` | 4508 | `reset_combat_state` | set/clear/reset/zero: writes register/memory |
-| `working/zelres2/code/200FIGHT.asm` | 4531 | `copy_buffer` | copy_*: rep movs or load/store sequence |
-| `working/zelres2/code/200FIGHT.asm` | 4618 | `wait_anim_cycle` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/200FIGHT.asm` | 4638 | `scan_top_map_objects` | find/scan: scasb/cmp/loop |
-| `working/zelres2/code/200FIGHT.asm` | 4668 | `try_top_scroll_direction` | try_*: condition check + branch |
-| `working/zelres2/code/200FIGHT.asm` | 4767 | `try_top_combat_step` | try_*: condition check + branch |
-| `working/zelres2/code/200FIGHT.asm` | 4861 | `find_and_blit_map_entry` | find/scan: scasb/cmp/loop |
-| `working/zelres2/code/200FIGHT.asm` | 4899 | `match_dl_within_3` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/200FIGHT.asm` | 4920 | `scan_bot_map_objects` | find/scan: scasb/cmp/loop |
-| `working/zelres2/code/200FIGHT.asm` | 4950 | `bot_path_check` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/200FIGHT.asm` | 4969 | `scan_extra_map_objects` | find/scan: scasb/cmp/loop |
-| `working/zelres2/code/200FIGHT.asm` | 5134 | `check_entity_collision_pos` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 5180 | `world_x_to_inner_screen_x` | world_*: world-state read/write |
-| `working/zelres2/code/200FIGHT.asm` | 5206 | `world_x_to_screen_x_w25` | world_*: world-state read/write |
-| `working/zelres2/code/200FIGHT.asm` | 5239 | `entity_slot_write_tagged` | entity/sprite: SI/DI ptr operations |
-| `working/zelres2/code/200FIGHT.asm` | 5254 | `scan_enemy_data_buf` | find/scan: scasb/cmp/loop |
-| `working/zelres2/code/200FIGHT.asm` | 5315 | `process_dirty_enemies` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 5333 | `prep_dirty_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/200FIGHT.asm` | 5346 | `enemy_sprite_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/200FIGHT.asm` | 5364 | `copy_buffer_2` | copy_*: rep movs or load/store sequence |
-| `working/zelres2/code/200FIGHT.asm` | 5411 | `process_sprite_step` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 5543 | `entity_fn_dispatch_b` | entity/sprite: SI/DI ptr operations |
-| `working/zelres2/code/200FIGHT.asm` | 5587 | `entity_step_dispatch_c` | entity/sprite: SI/DI ptr operations |
-| `working/zelres2/code/200FIGHT.asm` | 5632 | `update_entity_dir_from_path` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 5679 | `tick_decrement_enemy_counters` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 5699 | `tick_increment_enemy_counters` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 5719 | `calc_hud_buf_offset` | compute/calc: arithmetic or bitwise op |
-| `working/zelres2/code/200FIGHT.asm` | 5733 | `process_active_sprites` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 5785 | `prep_boss_dirty_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/200FIGHT.asm` | 5799 | `update_sprite_work_buf` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 5835 | `place_3_tile_49_pattern` | tile_*: tile data manipulation |
-| `working/zelres2/code/200FIGHT.asm` | 5855 | `try_place_tile_id_49` | try_*: condition check + branch |
-| `working/zelres2/code/200FIGHT.asm` | 6101 | `scan_boss_entries_render` | find/scan: scasb/cmp/loop |
-| `working/zelres2/code/200FIGHT.asm` | 6220 | `render_boss_dirty_blits` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/200FIGHT.asm` | 6276 | `gate_spell_fx_active` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/200FIGHT.asm` | 6420 | `cycle_dir_and_advance` | advance: inc/add to advance state |
-| `working/zelres2/code/200FIGHT.asm` | 6455 | `draw_entity_3x3_at_pos` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/200FIGHT.asm` | 6513 | `try_paint_obj_cell` | try_*: condition check + branch |
-| `working/zelres2/code/200FIGHT.asm` | 6550 | `scan_obj_list_render` | find/scan: scasb/cmp/loop |
-| `working/zelres2/code/200FIGHT.asm` | 6616 | `update_obj_slot_flags` | process/update/advance: state-update operations |
-| `working/zelres2/code/200FIGHT.asm` | 7115 | `hero_almas_add` | player/stat ops: DS-relative read/write |
-| `working/zelres2/code/200FIGHT.asm` | 7128 | `check_entity_in_view` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7185 | `entity_move_east` | entity/sprite: SI/DI ptr operations |
-| `working/zelres2/code/200FIGHT.asm` | 7219 | `entity_move_north` | entity/sprite: SI/DI ptr operations |
-| `working/zelres2/code/200FIGHT.asm` | 7259 | `entity_move_west` | entity/sprite: SI/DI ptr operations |
-| `working/zelres2/code/200FIGHT.asm` | 7291 | `entity_move_south` | entity/sprite: SI/DI ptr operations |
-| `working/zelres2/code/200FIGHT.asm` | 7330 | `inc_map_pos_helper` | increment/decrement: inc/dec/add/sub op present |
-| `working/zelres2/code/200FIGHT.asm` | 7348 | `dec_map_pos_helper` | increment/decrement: inc/dec/add/sub op present |
-| `working/zelres2/code/200FIGHT.asm` | 7375 | `check_above_3rows_clear` | set/clear/reset/zero: writes register/memory |
-| `working/zelres2/code/200FIGHT.asm` | 7405 | `is_unknown_or_area5_slot_b` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7433 | `check_below_3rows_clear` | set/clear/reset/zero: writes register/memory |
-| `working/zelres2/code/200FIGHT.asm` | 7463 | `is_unknown_or_area5_slot_c` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7492 | `check_north_movement` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/200FIGHT.asm` | 7525 | `check_south_movement` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/200FIGHT.asm` | 7550 | `check_movement_var_134` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7594 | `check_movement_var_135` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7632 | `check_movement_var_136` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/200FIGHT.asm` | 7676 | `check_movement_var_137` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7724 | `is_entity_known_type` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7748 | `check_entity_slot_validity` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7910 | `clear_buffer` | set/clear/reset/zero: writes register/memory |
-| `working/zelres2/code/200FIGHT.asm` | 7948 | `world_x_to_screen_x` | world_*: world-state read/write |
-| `working/zelres2/code/200FIGHT.asm` | 8008 | `item_effect_val_add` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/200FIGHT.asm` | 8176 | `compute_action_anim_idx` | compute/calc: arithmetic or bitwise op |
-| `working/zelres2/code/201SELCT.asm` | 149 | `selct_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/200FIGHT.asm` | 631 | `run_fight_main_loop` | loop: backward branch or rep |
+| `working/zelres2/code/200FIGHT.asm` | 756 | `render_vga_pass_loop` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/200FIGHT.asm` | 940 | `combat_input_dispatcher` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
+| `working/zelres2/code/200FIGHT.asm` | 1025 | `decide_scroll_direction` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 1063 | `process_combat_update_step` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 1144 | `combat_step_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
+| `working/zelres2/code/200FIGHT.asm` | 1191 | `apply_pending_invul` | apply_*: writes/calls to apply effect |
+| `working/zelres2/code/200FIGHT.asm` | 1284 | `try_combat_advance` | try_*: condition check + branch |
+| `working/zelres2/code/200FIGHT.asm` | 1337 | `scroll_up_and_advance_state` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 1401 | `scan_obj_tiles_advancing` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 1545 | `check_area_7_boundary` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 1610 | `toggle_c2_bit_pose` | toggle: xor/not/test bit ops |
+| `working/zelres2/code/200FIGHT.asm` | 1635 | `scan_obj_tiles_4ahead` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 1771 | `is_non_area7_slot_b_entity` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 1793 | `combat_step_advance` | advance: inc/add to advance state |
+| `working/zelres2/code/200FIGHT.asm` | 1938 | `combat_input_poll_step` | combat/fight: state ops + branches |
+| `working/zelres2/code/200FIGHT.asm` | 1994 | `try_advance_with_anim` | try_*: condition check + branch |
+| `working/zelres2/code/200FIGHT.asm` | 2043 | `scroll_pos_advance` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 2081 | `check_3tile_clearance` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 2133 | `range_check_si_byte` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 2141 | `find_fire_slot_for_id` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 2181 | `process_map_seg_updates` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 2222 | `init_scroll_system` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 2244 | `init_arena_visuals` | init/setup: writes initial state |
+| `working/zelres2/code/200FIGHT.asm` | 2274 | `rebuild_scroll_buf` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 2326 | `scroll_byte_dispatch_a` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 2348 | `scroll_byte_dispatch_b` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 2405 | `fill_scroll_column` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 2424 | `scroll_buf_offset` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 2439 | `scroll_si_wrap_high` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 2452 | `scroll_si_wrap_low` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 2463 | `gate_area4_no_accessory4` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 2481 | `scroll_si_from_player` | player/stat ops: DS-relative read/write |
+| `working/zelres2/code/200FIGHT.asm` | 2495 | `get_object_state_at_si` | get/fetch/read: memory load |
+| `working/zelres2/code/200FIGHT.asm` | 2514 | `entity_type_quick_check` | validate/verify/check: cmp + branch/return |
+| `working/zelres2/code/200FIGHT.asm` | 2522 | `is_entity_known_type_alt` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 2557 | `is_entity_id_lax` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 2617 | `combat_input_handler` | handler/isr: must end with return (sanity) |
+| `working/zelres2/code/200FIGHT.asm` | 2736 | `select_player_sprite_frame` | lookup/select: table lookup or compare |
+| `working/zelres2/code/200FIGHT.asm` | 2811 | `update_combat_frame_state` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 2908 | `save_combat_action_state` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres2/code/200FIGHT.asm` | 3059 | `fill_hud_enemy_area` | boss/enemy: state read/write/branch |
+| `working/zelres2/code/200FIGHT.asm` | 3150 | `swap_world_state_buffers` | swap/xchg: xchg or mov-pair |
+| `working/zelres2/code/200FIGHT.asm` | 3238 | `fill_hud_buf_with_FD` | fill_*: rep stos or memory write |
+| `working/zelres2/code/200FIGHT.asm` | 3251 | `find_atk_slot_for_id` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 3278 | `init_combat_arena` | combat/fight: state ops + branches |
+| `working/zelres2/code/200FIGHT.asm` | 3302 | `draw_combat_hud_layout` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/200FIGHT.asm` | 3361 | `mark_player_pos_on_hud` | mark: writes a flag/state byte |
+| `working/zelres2/code/200FIGHT.asm` | 3386 | `scan_outer_slot_match` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 3557 | `apply_passive_damage` | apply_*: writes/calls to apply effect |
+| `working/zelres2/code/200FIGHT.asm` | 3570 | `apply_combat_damage_with_absorb` | apply_*: writes/calls to apply effect |
+| `working/zelres2/code/200FIGHT.asm` | 3611 | `clear_secondary_pool_and_redraw` | set/clear/reset/zero: writes register/memory |
+| `working/zelres2/code/200FIGHT.asm` | 3645 | `accumulate_tile_type` | tile_*: tile data manipulation |
+| `working/zelres2/code/200FIGHT.asm` | 3676 | `subtract_from_player_HP` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 3691 | `tick_right_col_entities` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 3715 | `tail_dispatch_by_slot_family` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 3759 | `lookup_move_slot_family` | lookup/select: table lookup or compare |
+| `working/zelres2/code/200FIGHT.asm` | 3824 | `compute_target_dist` | compute/calc: arithmetic or bitwise op |
+| `working/zelres2/code/200FIGHT.asm` | 3903 | `enter_level_via_ref_a` | enter/exit/entry: state transition |
+| `working/zelres2/code/200FIGHT.asm` | 3909 | `render_entity_list_to_hud` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/200FIGHT.asm` | 3998 | `copy_si_to_di_if_unmarked` | _to_: A-to-B conversion |
+| `working/zelres2/code/200FIGHT.asm` | 4010 | `convert_convert_world_x_to_screen_x_w27` | world_*: world-state read/write |
+| `working/zelres2/code/200FIGHT.asm` | 4130 | `check_3tile_J_pattern` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 4458 | `compute_scroll_pos` | compute/calc: arithmetic or bitwise op |
+| `working/zelres2/code/200FIGHT.asm` | 4476 | `compute_scroll_offset_b` | compute/calc: arithmetic or bitwise op |
+| `working/zelres2/code/200FIGHT.asm` | 4505 | `decrement_speed_or_power` | increment/decrement: inc/dec/add/sub op present |
+| `working/zelres2/code/200FIGHT.asm` | 4540 | `reset_combat_state` | set/clear/reset/zero: writes register/memory |
+| `working/zelres2/code/200FIGHT.asm` | 4540 | `reset_combat_state` | set/clear/reset/zero: writes register/memory |
+| `working/zelres2/code/200FIGHT.asm` | 4587 | `refresh_scene_assets` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 4650 | `wait_anim_cycle` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 4670 | `scan_top_map_objects` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 4700 | `try_top_scroll_direction` | try_*: condition check + branch |
+| `working/zelres2/code/200FIGHT.asm` | 4700 | `try_top_scroll_direction` | try_*: condition check + branch |
+| `working/zelres2/code/200FIGHT.asm` | 4799 | `try_top_combat_step` | try_*: condition check + branch |
+| `working/zelres2/code/200FIGHT.asm` | 4893 | `find_and_blit_map_entry` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 4931 | `match_dl_within_3` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 4952 | `scan_bot_map_objects` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 4982 | `bot_path_check` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 5001 | `scan_extra_map_objects` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 5166 | `check_entity_collision_pos` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 5166 | `check_entity_collision_pos` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 5212 | `convert_world_x_to_inner_screen_x` | world_*: world-state read/write |
+| `working/zelres2/code/200FIGHT.asm` | 5271 | `entity_slot_write_tagged` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/200FIGHT.asm` | 5286 | `scan_enemy_data_buf` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 5347 | `process_dirty_enemies` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 5365 | `prep_dirty_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/200FIGHT.asm` | 5378 | `enemy_sprite_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/200FIGHT.asm` | 5365 | `prep_dirty_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/200FIGHT.asm` | 5443 | `process_sprite_step` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 5575 | `entity_fn_dispatch_b` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/200FIGHT.asm` | 5619 | `entity_step_dispatch_c` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/200FIGHT.asm` | 5664 | `update_entity_dir_from_path` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 5711 | `tick_decrement_enemy_counters` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 5731 | `tick_increment_enemy_counters` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 5751 | `calc_hud_buf_offset` | compute/calc: arithmetic or bitwise op |
+| `working/zelres2/code/200FIGHT.asm` | 5765 | `process_active_sprites` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 5817 | `prep_boss_dirty_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/200FIGHT.asm` | 5831 | `update_sprite_work_buf` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 5867 | `place_3_tile_49_pattern` | tile_*: tile data manipulation |
+| `working/zelres2/code/200FIGHT.asm` | 5887 | `try_place_tile_id_49` | try_*: condition check + branch |
+| `working/zelres2/code/200FIGHT.asm` | 6132 | `scan_boss_entries_render` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 6251 | `render_boss_dirty_blits` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/200FIGHT.asm` | 6307 | `gate_spell_fx_active` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 6451 | `cycle_dir_and_advance` | advance: inc/add to advance state |
+| `working/zelres2/code/200FIGHT.asm` | 6486 | `draw_entity_3x3_at_pos` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/200FIGHT.asm` | 6544 | `try_paint_obj_cell` | try_*: condition check + branch |
+| `working/zelres2/code/200FIGHT.asm` | 6581 | `scan_obj_list_render` | find/scan: scasb/cmp/loop |
+| `working/zelres2/code/200FIGHT.asm` | 6647 | `update_obj_slot_flags` | process/update/advance: state-update operations |
+| `working/zelres2/code/200FIGHT.asm` | 7146 | `hero_almas_add` | player/stat ops: DS-relative read/write |
+| `working/zelres2/code/200FIGHT.asm` | 7159 | `check_entity_in_view` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7216 | `entity_move_east` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/200FIGHT.asm` | 7250 | `entity_move_north` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/200FIGHT.asm` | 7290 | `entity_move_west` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/200FIGHT.asm` | 7322 | `entity_move_south` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/200FIGHT.asm` | 7361 | `inc_map_pos_helper` | increment/decrement: inc/dec/add/sub op present |
+| `working/zelres2/code/200FIGHT.asm` | 7379 | `dec_map_pos_helper` | increment/decrement: inc/dec/add/sub op present |
+| `working/zelres2/code/200FIGHT.asm` | 7406 | `check_above_3rows_clear` | set/clear/reset/zero: writes register/memory |
+| `working/zelres2/code/200FIGHT.asm` | 7436 | `is_unknown_or_area5_slot_b` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7464 | `check_below_3rows_clear` | set/clear/reset/zero: writes register/memory |
+| `working/zelres2/code/200FIGHT.asm` | 7494 | `is_unknown_or_area5_slot_c` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7523 | `check_north_movement` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 7556 | `check_south_movement` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 7556 | `check_south_movement` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 7581 | `check_tiles_upper_right_quad` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7625 | `check_tiles_lower_right_quad` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7663 | `check_tiles_upper_left_quad` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 7755 | `is_entity_known_type` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7779 | `check_entity_slot_validity` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7941 | `reset_enemy_data_ext_and_objs` | set/clear/reset/zero: writes register/memory |
+| `working/zelres2/code/200FIGHT.asm` | 7941 | `reset_enemy_data_ext_and_objs` | set/clear/reset/zero: writes register/memory |
+| `working/zelres2/code/200FIGHT.asm` | 8039 | `item_effect_val_add` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/200FIGHT.asm` | 8207 | `compute_action_anim_idx` | compute/calc: arithmetic or bitwise op |
+| `working/zelres2/code/201SELCT.asm` | 149 | `run_selct_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/201SELCT.asm` | 312 | `draw_weapon_cursor` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/201SELCT.asm` | 345 | `show_weapon_portrait` | show_*: display dispatch |
-| `working/zelres2/code/201SELCT.asm` | 426 | `draw_magic_cursor` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/201SELCT.asm` | 460 | `show_magic_portrait` | show_*: display dispatch |
-| `working/zelres2/code/201SELCT.asm` | 567 | `draw_item_cursor` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/201SELCT.asm` | 601 | `show_item_portrait` | show_*: display dispatch |
-| `working/zelres2/code/201SELCT.asm` | 842 | `init_item_panel` | init/setup: writes initial state |
-| `working/zelres2/code/201SELCT.asm` | 860 | `draw_item_detail` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/201SELCT.asm` | 890 | `show_portrait_box` | show_*: display dispatch |
-| `working/zelres2/code/201SELCT.asm` | 904 | `hide_portrait_box` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/201SELCT.asm` | 918 | `rebuild_item_idx` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/201SELCT.asm` | 948 | `draw_item_panel` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/201SELCT.asm` | 1002 | `draw_magic_panel` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/201SELCT.asm` | 1169 | `draw_exp_bar` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/201SELCT.asm` | 1188 | `draw_key_count` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/201SELCT.asm` | 1217 | `draw_weapon_panel` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/201SELCT.asm` | 1350 | `fmt_number` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/201SELCT.asm` | 1370 | `draw_portrait_tabs` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/201SELCT.asm` | 1466 | `check_joy_neutral` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/202GFEGA.asm` | 158 | `gfega_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/201SELCT.asm` | 344 | `show_weapon_portrait` | show_*: display dispatch |
+| `working/zelres2/code/201SELCT.asm` | 425 | `draw_magic_cursor` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/201SELCT.asm` | 457 | `show_magic_portrait` | show_*: display dispatch |
+| `working/zelres2/code/201SELCT.asm` | 564 | `draw_item_cursor` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/201SELCT.asm` | 596 | `show_item_portrait` | show_*: display dispatch |
+| `working/zelres2/code/201SELCT.asm` | 836 | `init_item_panel` | init/setup: writes initial state |
+| `working/zelres2/code/201SELCT.asm` | 854 | `draw_item_detail` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/201SELCT.asm` | 882 | `show_portrait_box` | show_*: display dispatch |
+| `working/zelres2/code/201SELCT.asm` | 896 | `hide_portrait_box` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/201SELCT.asm` | 910 | `rebuild_item_idx` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/201SELCT.asm` | 940 | `draw_item_panel` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/201SELCT.asm` | 992 | `draw_magic_panel` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/201SELCT.asm` | 1156 | `draw_exp_bar` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/201SELCT.asm` | 1175 | `draw_key_count` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/201SELCT.asm` | 1204 | `draw_weapon_panel` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/201SELCT.asm` | 1355 | `draw_portrait_tabs` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/201SELCT.asm` | 1355 | `draw_portrait_tabs` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/201SELCT.asm` | 1450 | `check_joy_neutral` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/202GFEGA.asm` | 158 | `run_gfega_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/202GFEGA.asm` | 280 | `sprite_state_update` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/202GFEGA.asm` | 490 | `ega_sprite_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/202GFEGA.asm` | 685 | `sprite_slot_init` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/202GFEGA.asm` | 719 | `sprite_blit_dispatch` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/202GFEGA.asm` | 751 | `sprite_wide_row_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/202GFEGA.asm` | 940 | `sprite_pos_pair_iter` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/202GFEGA.asm` | 940 | `step_sprite_pos_pair` | process/update/advance: state-update operations |
 | `working/zelres2/code/202GFEGA.asm` | 975 | `sprite_cell_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/202GFEGA.asm` | 1031 | `ega_sprite_blit_ex` | video mode op: video memory or port I/O |
 | `working/zelres2/code/202GFEGA.asm` | 1045 | `ega_sprite_render_blended` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -492,10 +664,10 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/202GFEGA.asm` | 1965 | `hero_sprite_col_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/202GFEGA.asm` | 2005 | `hero_tier_get` | player/stat ops: DS-relative read/write |
 | `working/zelres2/code/202GFEGA.asm` | 2104 | `scroll_pos_load` | scroll: rep movs or gfx call |
-| `working/zelres2/code/202GFEGA.asm` | 2131 | `frame_row_driver` | frame/row/col: video write or row/col loop |
-| `working/zelres2/code/202GFEGA.asm` | 2284 | `bg_restore` | bg_*: background save/restore/render |
-| `working/zelres2/code/202GFEGA.asm` | 2306 | `bg_save` | bg_*: background save/restore/render |
-| `working/zelres2/code/202GFEGA.asm` | 2341 | `bg_restore_impl` | bg_*: background save/restore/render |
+| `working/zelres2/code/202GFEGA.asm` | 2131 | `render_frame_rows` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/202GFEGA.asm` | 2284 | `restore_background_pixels` | restore_*: restore via copy or memory write |
+| `working/zelres2/code/202GFEGA.asm` | 2306 | `save_background_pixels` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres2/code/202GFEGA.asm` | 2341 | `restore_background_pixels_impl` | restore_*: restore via copy or memory write |
 | `working/zelres2/code/202GFEGA.asm` | 2376 | `scroll_cache_invalidate` | scroll: rep movs or gfx call |
 | `working/zelres2/code/202GFEGA.asm` | 2594 | `tile_blit_3x3` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/202GFEGA.asm` | 2783 | `ega_tile_anim_update` | tile_*: tile data manipulation |
@@ -508,16 +680,16 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/202GFEGA.asm` | 3154 | `ega_fill_bit_range_wide` | video mode op: video memory or port I/O |
 | `working/zelres2/code/202GFEGA.asm` | 3282 | `ega_row_addr_calc` | video mode op: video memory or port I/O |
 | `working/zelres2/code/202GFEGA.asm` | 3291 | `frame_wait_loop` | frame/row/col: video write or row/col loop |
-| `working/zelres2/code/202GFEGA.asm` | 3417 | `si_wrap_hi` | si_/di_/bx_: register-relative iteration helper |
+| `working/zelres2/code/202GFEGA.asm` | 3417 | `wrap_scroll_si_low` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/202GFEGA.asm` | 3577 | `ega_bg_tile_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/202GFEGA.asm` | 3717 | `ega_col_write_loop` | loop: backward branch or rep |
-| `working/zelres2/code/203GFCGA.asm` | 167 | `gfcga_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/203GFCGA.asm` | 167 | `run_gfcga_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/203GFCGA.asm` | 283 | `sprite_state_update` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/203GFCGA.asm` | 489 | `cga_sprite_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/203GFCGA.asm` | 631 | `sprite_slot_init` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/203GFCGA.asm` | 665 | `sprite_blit_dispatch` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/203GFCGA.asm` | 697 | `sprite_wide_row_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/203GFCGA.asm` | 886 | `sprite_pos_pair_iter` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/203GFCGA.asm` | 886 | `step_sprite_pos_pair` | process/update/advance: state-update operations |
 | `working/zelres2/code/203GFCGA.asm` | 921 | `sprite_cell_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/203GFCGA.asm` | 985 | `cga_sprite_blit_ex` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/203GFCGA.asm` | 1002 | `cga_sprite_render_blended` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -531,10 +703,10 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/203GFCGA.asm` | 1158 | `projectile_spawn_check` | tile_*: tile data manipulation |
 | `working/zelres2/code/203GFCGA.asm` | 1773 | `sprite_col_render_loop` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/203GFCGA.asm` | 1815 | `hero_tier_get` | player/stat ops: DS-relative read/write |
-| `working/zelres2/code/203GFCGA.asm` | 1944 | `frame_row_driver` | frame/row/col: video write or row/col loop |
-| `working/zelres2/code/203GFCGA.asm` | 2097 | `scroll_restore` | scroll: rep movs or gfx call |
-| `working/zelres2/code/203GFCGA.asm` | 2117 | `bg_save` | bg_*: background save/restore/render |
-| `working/zelres2/code/203GFCGA.asm` | 2145 | `bg_restore` | bg_*: background save/restore/render |
+| `working/zelres2/code/203GFCGA.asm` | 1944 | `render_frame_rows` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/203GFCGA.asm` | 2097 | `restore_scroll_pixels` | scroll: rep movs or gfx call |
+| `working/zelres2/code/203GFCGA.asm` | 2117 | `save_background_pixels` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres2/code/203GFCGA.asm` | 2145 | `restore_background_pixels` | restore_*: restore via copy or memory write |
 | `working/zelres2/code/203GFCGA.asm` | 2169 | `scroll_pos_load` | scroll: rep movs or gfx call |
 | `working/zelres2/code/203GFCGA.asm` | 2302 | `bg_tile_restore_3x3` | tile_*: tile data manipulation |
 | `working/zelres2/code/203GFCGA.asm` | 2443 | `bg_col_blit_row` | bg_*: background save/restore/render |
@@ -547,13 +719,13 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/203GFCGA.asm` | 2897 | `cga_row_addr_calc` | video mode op: video memory or port I/O |
 | `working/zelres2/code/203GFCGA.asm` | 2909 | `frame_wait_loop` | frame/row/col: video write or row/col loop |
 | `working/zelres2/code/203GFCGA.asm` | 2931 | `hud_clear` | set/clear/reset/zero: writes register/memory |
-| `working/zelres2/code/203GFCGA.asm` | 3018 | `si_wrap_hi` | si_/di_/bx_: register-relative iteration helper |
+| `working/zelres2/code/203GFCGA.asm` | 3018 | `wrap_scroll_si_low` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/203GFCGA.asm` | 3135 | `cga_plane_mask_2bit` | video mode op: video memory or port I/O |
 | `working/zelres2/code/203GFCGA.asm` | 3188 | `bg_tile_blit_inner` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/203GFCGA.asm` | 3219 | `cga_plane_mask_combine` | video mode op: video memory or port I/O |
-| `working/zelres2/code/203GFCGA.asm` | 3703 | `cga_nibble_mask_advance` | advance: inc/add to advance state |
-| `working/zelres2/code/203GFCGA.asm` | 3732 | `cga_nibble_mask_alt` | video mode op: video memory or port I/O |
-| `working/zelres2/code/204GFHGC.asm` | 138 | `gfhgc_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/203GFCGA.asm` | 3710 | `cga_nibble_mask_advance` | advance: inc/add to advance state |
+| `working/zelres2/code/203GFCGA.asm` | 3739 | `cga_nibble_mask_alt` | video mode op: video memory or port I/O |
+| `working/zelres2/code/204GFHGC.asm` | 138 | `run_gfhgc_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/204GFHGC.asm` | 264 | `sprite_state_update` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/204GFHGC.asm` | 469 | `hgc_plane_or_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/204GFHGC.asm` | 571 | `sprite_slot_remove` | entity/sprite: SI/DI ptr operations |
@@ -562,20 +734,21 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/204GFHGC.asm` | 674 | `sprite_wide_row_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/204GFHGC.asm` | 881 | `sprite_pair_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/204GFHGC.asm` | 916 | `hgc_sprite_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/204GFHGC.asm` | 980 | `sprite_or_into_cache` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/204GFHGC.asm` | 980 | `merge_sprite_into_cache` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/204GFHGC.asm` | 997 | `mask_blit_into_sprite_cache` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/204GFHGC.asm` | 1016 | `plane_copy_process` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/204GFHGC.asm` | 1029 | `hgc_extract_4bits` | video mode op: video memory or port I/O |
 | `working/zelres2/code/204GFHGC.asm` | 1071 | `plane_scan_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/204GFHGC.asm` | 1090 | `copy_8words` | copy_*: rep movs or load/store sequence |
-| `working/zelres2/code/204GFHGC.asm` | 1097 | `zero_8words` | set/clear/reset/zero: writes register/memory |
-| `working/zelres2/code/204GFHGC.asm` | 1105 | `translate_char` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/204GFHGC.asm` | 1097 | `clear_8words` | set/clear/reset/zero: writes register/memory |
+| `working/zelres2/code/204GFHGC.asm` | 1105 | `decode_char_glyph` | extract/decode/bit: bit/rotate/byte manipulation |
 | `working/zelres2/code/204GFHGC.asm` | 1113 | `sprite_src_setup` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/204GFHGC.asm` | 1152 | `check_spawn_projectile` | check/test: cmp/test followed by branch |
 | `working/zelres2/code/204GFHGC.asm` | 1809 | `sprite_write_range` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/204GFHGC.asm` | 1851 | `get_step_direction` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/204GFHGC.asm` | 1953 | `build_sprite_refs` | build_*: builds data structure via writes |
-| `working/zelres2/code/204GFHGC.asm` | 1980 | `frame_row_driver` | frame/row/col: video write or row/col loop |
-| `working/zelres2/code/204GFHGC.asm` | 2176 | `bg_restore_dispatch` | bg_*: background save/restore/render |
+| `working/zelres2/code/204GFHGC.asm` | 1980 | `render_frame_rows` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/204GFHGC.asm` | 2176 | `dispatch_background_restore` | restore_*: restore via copy or memory write |
 | `working/zelres2/code/204GFHGC.asm` | 2196 | `save_bg_rows` | load/save/read/write: at least one memory op or loader call |
 | `working/zelres2/code/204GFHGC.asm` | 2224 | `restore_bg_rows` | restore_*: restore via copy or memory write |
 | `working/zelres2/code/204GFHGC.asm` | 2261 | `clear_sprite_cache_block` | set/clear/reset/zero: writes register/memory |
@@ -590,22 +763,22 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/204GFHGC.asm` | 3014 | `hgc_row_addr_calc` | video mode op: video memory or port I/O |
 | `working/zelres2/code/204GFHGC.asm` | 3025 | `frame_wait_loop` | frame/row/col: video write or row/col loop |
 | `working/zelres2/code/204GFHGC.asm` | 3047 | `hgc_xor_fill_region` | video mode op: video memory or port I/O |
-| `working/zelres2/code/204GFHGC.asm` | 3135 | `si_wrap_hi` | si_/di_/bx_: register-relative iteration helper |
-| `working/zelres2/code/204GFHGC.asm` | 3146 | `si_wrap_lo` | si_/di_/bx_: register-relative iteration helper |
+| `working/zelres2/code/204GFHGC.asm` | 3135 | `wrap_scroll_si_low` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/204GFHGC.asm` | 3146 | `wrap_scroll_si_high` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/204GFHGC.asm` | 3281 | `hgc_fade_blit_entry` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/204GFHGC.asm` | 3313 | `rol_extract_loop` | loop: backward branch or rep |
-| `working/zelres2/code/204GFHGC.asm` | 3634 | `shift_extract_loop` | loop: backward branch or rep |
-| `working/zelres2/code/204GFHGC.asm` | 3761 | `hgc_pixel_addr_calc` | video mode op: video memory or port I/O |
-| `working/zelres2/code/204GFHGC.asm` | 3846 | `plane_pair_rol_loop` | loop: backward branch or rep |
-| `working/zelres2/code/204GFHGC.asm` | 3875 | `dispatch_shape_fill` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
-| `working/zelres2/code/205GFTGA.asm` | 124 | `gftga_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/204GFHGC.asm` | 3643 | `shift_extract_loop` | loop: backward branch or rep |
+| `working/zelres2/code/204GFHGC.asm` | 3770 | `hgc_pixel_addr_calc` | video mode op: video memory or port I/O |
+| `working/zelres2/code/204GFHGC.asm` | 3855 | `rotate_plane_pair_loop` | loop: backward branch or rep |
+| `working/zelres2/code/204GFHGC.asm` | 3884 | `dispatch_shape_fill` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
+| `working/zelres2/code/205GFTGA.asm` | 124 | `run_gftga_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/205GFTGA.asm` | 248 | `sprite_state_update` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/205GFTGA.asm` | 458 | `tga_sprite_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/205GFTGA.asm` | 695 | `sprite_slot_remove` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/205GFTGA.asm` | 732 | `sprite_slot_init` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/205GFTGA.asm` | 767 | `sprite_blit_dispatch` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/205GFTGA.asm` | 799 | `sprite_wide_row_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/205GFTGA.asm` | 991 | `sprite_pos_pair_iter` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/205GFTGA.asm` | 991 | `step_sprite_pos_pair` | process/update/advance: state-update operations |
 | `working/zelres2/code/205GFTGA.asm` | 1025 | `sprite_cell_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/205GFTGA.asm` | 1091 | `tga_sprite_render_blended` | video mode op: video memory or port I/O |
 | `working/zelres2/code/205GFTGA.asm` | 1108 | `tile_blend_inner_loop` | tile_*: tile data manipulation |
@@ -619,10 +792,10 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/205GFTGA.asm` | 1318 | `projectile_spawn_check` | tile_*: tile data manipulation |
 | `working/zelres2/code/205GFTGA.asm` | 1974 | `tga_sprite_render_solid` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/205GFTGA.asm` | 2018 | `hero_tier_get` | player/stat ops: DS-relative read/write |
-| `working/zelres2/code/205GFTGA.asm` | 2152 | `frame_row_driver` | frame/row/col: video write or row/col loop |
-| `working/zelres2/code/205GFTGA.asm` | 2306 | `bg_restore` | bg_*: background save/restore/render |
-| `working/zelres2/code/205GFTGA.asm` | 2326 | `bg_save` | bg_*: background save/restore/render |
-| `working/zelres2/code/205GFTGA.asm` | 2354 | `bg_restore_impl` | bg_*: background save/restore/render |
+| `working/zelres2/code/205GFTGA.asm` | 2152 | `render_frame_rows` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/205GFTGA.asm` | 2306 | `restore_background_pixels` | restore_*: restore via copy or memory write |
+| `working/zelres2/code/205GFTGA.asm` | 2326 | `save_background_pixels` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres2/code/205GFTGA.asm` | 2354 | `restore_background_pixels_impl` | restore_*: restore via copy or memory write |
 | `working/zelres2/code/205GFTGA.asm` | 2378 | `scroll_cache_invalidate` | scroll: rep movs or gfx call |
 | `working/zelres2/code/205GFTGA.asm` | 2508 | `tga_plane_decode` | extract/decode/bit: bit/rotate/byte manipulation |
 | `working/zelres2/code/205GFTGA.asm` | 2594 | `hero_sprite_col_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -636,27 +809,27 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/205GFTGA.asm` | 3160 | `phase_ptr_advance` | advance: inc/add to advance state |
 | `working/zelres2/code/205GFTGA.asm` | 3180 | `fade_gradient_loop` | fade_*: fade transition |
 | `working/zelres2/code/205GFTGA.asm` | 3202 | `anim_refresh_all` | animation: counter + render dispatch |
-| `working/zelres2/code/205GFTGA.asm` | 3292 | `si_wrap_hi` | si_/di_/bx_: register-relative iteration helper |
-| `working/zelres2/code/205GFTGA.asm` | 3303 | `si_wrap_lo` | si_/di_/bx_: register-relative iteration helper |
+| `working/zelres2/code/205GFTGA.asm` | 3292 | `wrap_scroll_si_low` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/205GFTGA.asm` | 3303 | `wrap_scroll_si_high` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/205GFTGA.asm` | 3432 | `bg_tile_blit_init` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/205GFTGA.asm` | 3466 | `plane_word_expand` | plane_*: bitplane bit ops or VGA register |
-| `working/zelres2/code/205GFTGA.asm` | 3874 | `ega_fill_bit_range_wide` | video mode op: video memory or port I/O |
-| `working/zelres2/code/205GFTGA.asm` | 4057 | `plane_pair_rol` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/205GFTGA.asm` | 4075 | `dither_bit_expand` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/205GFTGA.asm` | 4098 | `nibble_pack_ax` | nibble_: 4-bit operations |
-| `working/zelres2/code/205GFTGA.asm` | 4117 | `ega_row_addr_calc` | video mode op: video memory or port I/O |
-| `working/zelres2/code/206GFMCA.asm` | 151 | `gfmca_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/205GFTGA.asm` | 3882 | `ega_fill_bit_range_wide` | video mode op: video memory or port I/O |
+| `working/zelres2/code/205GFTGA.asm` | 4065 | `rotate_plane_pair_tga` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/205GFTGA.asm` | 4083 | `dither_bit_expand` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/205GFTGA.asm` | 4106 | `nibble_pack_ax` | nibble_: 4-bit operations |
+| `working/zelres2/code/205GFTGA.asm` | 4125 | `ega_row_addr_calc` | video mode op: video memory or port I/O |
+| `working/zelres2/code/206GFMCA.asm` | 151 | `run_gfmca_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/206GFMCA.asm` | 279 | `sprite_state_update` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/206GFMCA.asm` | 485 | `mca_sprite_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/206GFMCA.asm` | 596 | `sprite_slot_remove` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/206GFMCA.asm` | 633 | `sprite_slot_init` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/206GFMCA.asm` | 669 | `sprite_blit_dispatch` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/206GFMCA.asm` | 701 | `sprite_wide_row_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/206GFMCA.asm` | 896 | `sprite_pos_pair_iter` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/206GFMCA.asm` | 896 | `step_sprite_pos_pair` | process/update/advance: state-update operations |
 | `working/zelres2/code/206GFMCA.asm` | 930 | `sprite_cell_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/206GFMCA.asm` | 992 | `mca_sprite_blit_ex` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/206GFMCA.asm` | 1009 | `mca_plane_3_iter` | iter/next/prev: SI advance |
-| `working/zelres2/code/206GFMCA.asm` | 1027 | `mca_plane_nibble_iter` | iter/next/prev: SI advance |
+| `working/zelres2/code/206GFMCA.asm` | 1009 | `step_mca_plane_3` | process/update/advance: state-update operations |
+| `working/zelres2/code/206GFMCA.asm` | 1027 | `step_mca_plane_nibble` | process/update/advance: state-update operations |
 | `working/zelres2/code/206GFMCA.asm` | 1044 | `mca_plane_copy_16rows` | video mode op: video memory or port I/O |
 | `working/zelres2/code/206GFMCA.asm` | 1060 | `mca_plane_copy_4px` | video mode op: video memory or port I/O |
 | `working/zelres2/code/206GFMCA.asm` | 1073 | `mca_fetch_color_lut` | video mode op: video memory or port I/O |
@@ -666,11 +839,11 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/206GFMCA.asm` | 1140 | `sprite_get_value` | value: memory load (often via xlat) |
 | `working/zelres2/code/206GFMCA.asm` | 1148 | `sprite_src_setup` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/206GFMCA.asm` | 1187 | `projectile_spawn_check` | tile_*: tile data manipulation |
-| `working/zelres2/code/206GFMCA.asm` | 1828 | `frame_row_driver` | frame/row/col: video write or row/col loop |
+| `working/zelres2/code/206GFMCA.asm` | 1828 | `render_frame_rows` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/206GFMCA.asm` | 1872 | `shield_state_get` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/206GFMCA.asm` | 1976 | `load_sprite_pos` | load/save/read/write: at least one memory op or loader call |
 | `working/zelres2/code/206GFMCA.asm` | 2003 | `frame_row_dispatcher` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
-| `working/zelres2/code/206GFMCA.asm` | 2158 | `scroll_restore` | scroll: rep movs or gfx call |
+| `working/zelres2/code/206GFMCA.asm` | 2158 | `restore_scroll_pixels` | scroll: rep movs or gfx call |
 | `working/zelres2/code/206GFMCA.asm` | 2178 | `scroll_buf_restore` | scroll: rep movs or gfx call |
 | `working/zelres2/code/206GFMCA.asm` | 2200 | `scroll_buf_save` | scroll: rep movs or gfx call |
 | `working/zelres2/code/206GFMCA.asm` | 2222 | `scroll_clear_cache` | scroll: rep movs or gfx call |
@@ -685,24 +858,24 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/206GFMCA.asm` | 2930 | `mca_vga_row_calc` | video mode op: video memory or port I/O |
 | `working/zelres2/code/206GFMCA.asm` | 2942 | `anim_frame_wait` | animation: counter + render dispatch |
 | `working/zelres2/code/206GFMCA.asm` | 2964 | `fade_xor_block` | fade_*: fade transition |
-| `working/zelres2/code/206GFMCA.asm` | 3049 | `si_wrap_hi` | si_/di_/bx_: register-relative iteration helper |
-| `working/zelres2/code/206GFMCA.asm` | 3060 | `si_wrap_lo` | si_/di_/bx_: register-relative iteration helper |
+| `working/zelres2/code/206GFMCA.asm` | 3049 | `wrap_scroll_si_low` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/206GFMCA.asm` | 3060 | `wrap_scroll_si_high` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/206GFMCA.asm` | 3199 | `bg_tile_blit` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/206GFMCA.asm` | 3223 | `mca_sprite_2block_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/206GFMCA.asm` | 3480 | `mca_plane_4bit_scan` | video mode op: video memory or port I/O |
-| `working/zelres2/code/206GFMCA.asm` | 3823 | `mca_word_shift_4` | video mode op: video memory or port I/O |
-| `working/zelres2/code/206GFMCA.asm` | 3841 | `mca_bit_pair_scan` | scan: compare + loop |
+| `working/zelres2/code/206GFMCA.asm` | 3489 | `mca_plane_4bit_scan` | video mode op: video memory or port I/O |
+| `working/zelres2/code/206GFMCA.asm` | 3832 | `mca_word_shift_4` | video mode op: video memory or port I/O |
+| `working/zelres2/code/206GFMCA.asm` | 3850 | `mca_bit_pair_scan` | scan: compare + loop |
 | `working/zelres2/code/207MOLE.asm` | 109 | `module_init` | init/setup: writes initial state |
-| `working/zelres2/code/207MOLE.asm` | 248 | `dispatch_decode_a` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
+| `working/zelres2/code/207MOLE.asm` | 248 | `dispatch_decode_table_a` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/207MOLE.asm` | 542 | `vga_pixel_unpack` | video mode op: video memory or port I/O |
 | `working/zelres2/code/207MOLE.asm` | 621 | `mcga_pixel_unpack` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/207MOLE.asm` | 655 | `dispatch_decode_b` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
+| `working/zelres2/code/207MOLE.asm` | 655 | `dispatch_decode_table_b` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/207MOLE.asm` | 726 | `decode_5col_blit_loop` | extract/decode/bit: bit/rotate/byte manipulation |
 | `working/zelres2/code/207MOLE.asm` | 745 | `decode_4bit_unpack` | extract/decode/bit: bit/rotate/byte manipulation |
 | `working/zelres2/code/207MOLE.asm` | 778 | `mono_scan_loop` | loop: backward branch or rep |
 | `working/zelres2/code/207MOLE.asm` | 812 | `extract_bits` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/zelres2/code/207MOLE.asm` | 1946 | `misdec_port_stub` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/208YMPD.asm` | 124 | `satono_bg_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/207MOLE.asm` | 1946 | `write_dma_port_then_pad` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres2/code/208YMPD.asm` | 124 | `run_satono_bg_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/208YMPD.asm` | 175 | `rle_decode_mountain_88x56` | rle: run-length encode/decode |
 | `working/zelres2/code/208YMPD.asm` | 209 | `render_mountains` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/208YMPD.asm` | 251 | `ega_mtn_blit_88_rows` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -716,12 +889,12 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/209CKPD.asm` | 222 | `bos_frame_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/209CKPD.asm` | 484 | `vga_row_copy` | video mode op: video memory or port I/O |
 | `working/zelres2/code/209CKPD.asm` | 551 | `nibble_expand_8` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/209CKPD.asm` | 630 | `nibble_decode_inner` | nibble_: 4-bit operations |
+| `working/zelres2/code/209CKPD.asm` | 630 | `decode_nibble_pair` | extract/decode/bit: bit/rotate/byte manipulation |
 | `working/zelres2/code/209CKPD.asm` | 660 | `sprite_rle_decode` | extract/decode/bit: bit/rotate/byte manipulation |
-| `working/zelres2/code/209CKPD.asm` | 700 | `render_dispatch_2` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/209CKPD.asm` | 700 | `render_dispatch_layer2` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/209CKPD.asm` | 952 | `nibble_expand_8_b` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/209CKPD.asm` | 1022 | `nibble_decode_inner_2` | nibble_: 4-bit operations |
-| `working/zelres2/code/210KINGP.asm` | 91 | `kingp_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/209CKPD.asm` | 1022 | `decode_nibble_pair_alt` | extract/decode/bit: bit/rotate/byte manipulation |
+| `working/zelres2/code/210KINGP.asm` | 91 | `run_kingp_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/210KINGP.asm` | 134 | `script_cmd_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/210KINGP.asm` | 252 | `short_wait` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
 | `working/zelres2/code/210KINGP.asm` | 263 | `render_portrait` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
@@ -729,37 +902,41 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/210KINGP.asm` | 390 | `face_anim_tick` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/210KINGP.asm` | 402 | `face_mode_update` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/210KINGP.asm` | 525 | `select_script_branch` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/211OMOYP.asm` | 80 | `omoyp` | driver/exec main entry: dispatch table or returning proc |
+| `working/zelres2/code/211OMOYP.asm` | 80 | `run_omoyp_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/211OMOYP.asm` | 235 | `draw_hut_banner` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/212ARMRP.asm` | 150 | `armrp_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/212ARMRP.asm` | 150 | `run_armrp_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/212ARMRP.asm` | 216 | `build_mouth_bitmap_a` | build_*: builds data structure via writes |
 | `working/zelres2/code/212ARMRP.asm` | 246 | `build_mouth_bitmap_b` | build_*: builds data structure via writes |
 | `working/zelres2/code/212ARMRP.asm` | 276 | `shop_menu_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
-| `working/zelres2/code/212ARMRP.asm` | 552 | `knight_sword_hook_a` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/212ARMRP.asm` | 889 | `frame_delay` | frame/row/col: video write or row/col loop |
-| `working/zelres2/code/212ARMRP.asm` | 924 | `knight_sword_hook_b` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/212ARMRP.asm` | 552 | `install_knight_sword_hook_a` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/212ARMRP.asm` | 889 | `wait_frame_delay` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
+| `working/zelres2/code/212ARMRP.asm` | 924 | `install_knight_sword_hook_b` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/212ARMRP.asm` | 948 | `clear_menu_rect` | set/clear/reset/zero: writes register/memory |
 | `working/zelres2/code/212ARMRP.asm` | 956 | `shopkeeper_anim_tick` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/212ARMRP.asm` | 1054 | `render_shopkeeper_frame` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/213BANKP.asm` | 118 | `bank_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/213BANKP.asm` | 118 | `run_bank_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/213BANKP.asm` | 182 | `script_opcode_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/213BANKP.asm` | 633 | `clear_dialog_area` | set/clear/reset/zero: writes register/memory |
-| `working/zelres2/code/213BANKP.asm` | 641 | `adjust_amount_by_input` | adjust/accumulate: arithmetic update |
+| `working/zelres2/code/213BANKP.asm` | 641 | `apply_amount_input_adjust` | apply_*: writes/calls to apply effect |
 | `working/zelres2/code/213BANKP.asm` | 697 | `draw_intro_12x8` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/213BANKP.asm` | 745 | `anim_scroll_step` | animation: counter + render dispatch |
 | `working/zelres2/code/213BANKP.asm` | 767 | `draw_banner_8x5` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/213BANKP.asm` | 830 | `iter_wait_msg_list` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
-| `working/zelres2/code/214CHURP.asm` | 71 | `church_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/214CHURP.asm` | 71 | `run_church_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/214CHURP.asm` | 124 | `script_opcode_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
-| `working/zelres2/code/214CHURP.asm` | 249 | `draw_intro_12x8` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/214CHURP.asm` | 292 | `anim_scroll_step` | animation: counter + render dispatch |
-| `working/zelres2/code/214CHURP.asm` | 313 | `anim_draw_a` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/214CHURP.asm` | 408 | `pick_welcome_text` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/215DRUGP.asm` | 105 | `zr2_15` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/214CHURP.asm` | 250 | `draw_intro_12x8` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/214CHURP.asm` | 293 | `anim_scroll_step` | animation: counter + render dispatch |
+| `working/zelres2/code/214CHURP.asm` | 314 | `anim_draw_a` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/214CHURP.asm` | 409 | `pick_welcome_text` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/215DRUGP.asm` | 105 | `run_drugstore_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/215DRUGP.asm` | 159 | `wizard_process_loop` | loop: backward branch or rep |
-| `working/zelres2/code/215DRUGP.asm` | 674 | `wizard_multiply` | multiply: mul/imul/shl |
+| `working/zelres2/code/215DRUGP.asm` | 189 | `dispatch_shop_cmd` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
+| `working/zelres2/code/215DRUGP.asm` | 514 | `pack_shop_inv_for_dialog` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/215DRUGP.asm` | 618 | `clear_shop_inner_box` | set/clear/reset/zero: writes register/memory |
+| `working/zelres2/code/215DRUGP.asm` | 626 | `draw_shop_banner` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/215DRUGP.asm` | 674 | `animate_wizard_glyphs` | animation: counter + render dispatch |
 | `working/zelres2/code/215DRUGP.asm` | 736 | `wizard_scan_loop` | loop: backward branch or rep |
-| `working/zelres2/code/216INNAP.asm` | 61 | `inn_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/216INNAP.asm` | 61 | `run_inn_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/216INNAP.asm` | 114 | `draw_intro_banner` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/216INNAP.asm` | 130 | `inn_opcode_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/216INNAP.asm` | 265 | `inn_wait_long` | verb_noun proc: any substantive body content |
@@ -767,44 +944,44 @@ Total PENDING procs scanned: **1076**
 | `working/zelres2/code/216INNAP.asm` | 296 | `inn_anim_step` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/216INNAP.asm` | 332 | `draw_intro_tile_map` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/216INNAP.asm` | 386 | `inn_anim_scan` | scan: compare + loop |
-| `working/zelres2/code/217KENJP.asm` | 166 | `kenja_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/217KENJP.asm` | 166 | `run_kenja_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/217KENJP.asm` | 201 | `load_sage_chunk` | load/save/read/write: at least one memory op or loader call |
 | `working/zelres2/code/217KENJP.asm` | 226 | `kenja_cmd_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/217KENJP.asm` | 329 | `scan_blessing_attrs` | find/scan: scasb/cmp/loop |
 | `working/zelres2/code/217KENJP.asm` | 379 | `check_hp_exp_tier` | check/test: cmp/test followed by branch |
 | `working/zelres2/code/217KENJP.asm` | 629 | `wait_frames_140` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
-| `working/zelres2/code/217KENJP.asm` | 644 | `record_experience_entry` | enter/exit/entry: state transition |
+| `working/zelres2/code/217KENJP.asm` | 644 | `log_experience_entry` | enter/exit/entry: state transition |
 | `working/zelres2/code/217KENJP.asm` | 762 | `draw_char_row` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/217KENJP.asm` | 793 | `name_input_loop` | loop: backward branch or rep |
+| `working/zelres2/code/217KENJP.asm` | 793 | `wait_name_input` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
 | `working/zelres2/code/217KENJP.asm` | 1052 | `update_name_cursor` | process/update/advance: state-update operations |
-| `working/zelres2/code/217KENJP.asm` | 1103 | `redraw_name_field` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/217KENJP.asm` | 1103 | `render_name_field` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/217KENJP.asm` | 1249 | `clear_sage_region` | set/clear/reset/zero: writes register/memory |
 | `working/zelres2/code/217KENJP.asm` | 1257 | `draw_sage_tile_grid` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/217KENJP.asm` | 1299 | `render_glyph_32` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/217KENJP.asm` | 1386 | `anim_tick` | animation: counter + render dispatch |
 | `working/zelres2/code/217KENJP.asm` | 1464 | `sage_intro_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
-| `working/zelres2/code/250ENDMO.asm` | 240 | `ending_scene_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/250ENDMO.asm` | 240 | `run_ending_scene_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres2/code/250ENDMO.asm` | 456 | `timer_wait_loop` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
 | `working/zelres2/code/250ENDMO.asm` | 467 | `gfx_driver_tick_full` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/250ENDMO.asm` | 480 | `render_narration_page` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/250ENDMO.asm` | 841 | `measure_script_word_width` | verb_noun proc: any substantive body content |
-| `working/zelres2/code/250ENDMO.asm` | 938 | `credits_loop_main` | main entry: calls subroutines + returns/exits |
-| `working/zelres2/code/250ENDMO.asm` | 1081 | `credits_putchar` | verb_noun proc: any substantive body content |
+| `working/zelres2/code/250ENDMO.asm` | 938 | `run_credits_loop_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres2/code/250ENDMO.asm` | 1081 | `put_credits_char` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/250ENDMO.asm` | 1214 | `credits_wait_tick` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
 | `working/zelres2/code/250ENDMO.asm` | 1225 | `credits_driver_tick` | credits_*: credits dispatch/render |
 | `working/zelres2/code/250ENDMO.asm` | 1238 | `rle_blit_pair` | verb_noun proc: any substantive body content |
 | `working/zelres2/code/250ENDMO.asm` | 1244 | `rle_decode_plane` | rle: run-length encode/decode |
 | `working/zelres2/code/250ENDMO.asm` | 1359 | `fill_credits_triplane` | fill_*: rep stos or memory write |
-| `working/zelres3/code/300ROKAD.asm` | 160 | `roka_demo_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/300ROKAD.asm` | 160 | `run_roka_demo_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/300ROKAD.asm` | 445 | `draw_pose_3x3` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres3/code/300ROKAD.asm` | 549 | `wait_frame` | frame/row/col: video write or row/col loop |
 | `working/zelres3/code/300ROKAD.asm` | 562 | `bres_setup` | init/setup: writes initial state |
 | `working/zelres3/code/300ROKAD.asm` | 613 | `bres_step` | bres_: Bresenham line setup/step |
-| `working/zelres3/code/301EAI1.asm` | 127 | `crab_ai_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/301EAI1.asm` | 127 | `run_crab_ai_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/301EAI1.asm` | 562 | `phase_advance_helper` | phase_*: movement-phase counter or state op |
 | `working/zelres3/code/301EAI1.asm` | 706 | `distance_check_8` | distance_*: position diff + threshold |
 | `working/zelres3/code/301EAI1.asm` | 971 | `distance_check_6` | distance_*: position diff + threshold |
-| `working/zelres3/code/302EAI2.asm` | 129 | `tako_ai_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/302EAI2.asm` | 129 | `run_tako_ai_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/302EAI2.asm` | 607 | `step_pos_x` | process/update/advance: state-update operations |
 | `working/zelres3/code/302EAI2.asm` | 636 | `collide_check_right` | collide_*: position compare + branch |
 | `working/zelres3/code/302EAI2.asm` | 671 | `step_neg_x` | process/update/advance: state-update operations |
@@ -813,68 +990,68 @@ Total PENDING procs scanned: **1076**
 | `working/zelres3/code/302EAI2.asm` | 761 | `collide_check_y` | collide_*: position compare + branch |
 | `working/zelres3/code/302EAI2.asm` | 1061 | `distance_check_5` | distance_*: position diff + threshold |
 | `working/zelres3/code/302EAI2.asm` | 1303 | `phase_advance_helper` | phase_*: movement-phase counter or state op |
-| `working/zelres3/code/303EAI3.asm` | 89 | `tori_ai_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/303EAI3.asm` | 89 | `run_tori_ai_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/303EAI3.asm` | 809 | `tori_dist_check_5` | distance_*: position diff + threshold |
 | `working/zelres3/code/303EAI3.asm` | 942 | `tori_dist_check_6` | distance_*: position diff + threshold |
-| `working/zelres3/code/304EAI4.asm` | 96 | `zela_ai_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/304EAI4.asm` | 96 | `run_zela_ai_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/304EAI4.asm` | 814 | `collide_check_dist` | collide_*: position compare + branch |
 | `working/zelres3/code/304EAI4.asm` | 917 | `zela_lookup_state` | enemy/boss proc: must return (sanity) |
-| `working/zelres3/code/305EAI5.asm` | 122 | `meda_ai_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/305EAI5.asm` | 122 | `run_meda_ai_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/305EAI5.asm` | 607 | `phase_step_fwd` | phase_*: movement-phase counter or state op |
 | `working/zelres3/code/305EAI5.asm` | 636 | `collide_check_fwd` | collide_*: position compare + branch |
 | `working/zelres3/code/305EAI5.asm` | 671 | `phase_step_back` | phase_*: movement-phase counter or state op |
 | `working/zelres3/code/305EAI5.asm` | 699 | `collide_check_back` | collide_*: position compare + branch |
-| `working/zelres3/code/305EAI5.asm` | 734 | `sub01_collide_outer` | collide_*: position compare + branch |
-| `working/zelres3/code/305EAI5.asm` | 761 | `sub01_collide_inner` | collide_*: position compare + branch |
+| `working/zelres3/code/305EAI5.asm` | 734 | `check_collide_outer_eai5` | check/test: cmp/test followed by branch |
+| `working/zelres3/code/305EAI5.asm` | 761 | `check_collide_inner_eai5` | collide_*: position compare + branch |
 | `working/zelres3/code/305EAI5.asm` | 790 | `distance_check_4` | distance_*: position diff + threshold |
-| `working/zelres3/code/306EAI6.asm` | 120 | `eai6_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/306EAI6.asm` | 120 | `run_eai6_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/306EAI6.asm` | 433 | `distance_check_4` | distance_*: position diff + threshold |
 | `working/zelres3/code/306EAI6.asm` | 471 | `phase_step_fwd` | phase_*: movement-phase counter or state op |
 | `working/zelres3/code/306EAI6.asm` | 500 | `collide_check_fwd` | collide_*: position compare + branch |
 | `working/zelres3/code/306EAI6.asm` | 535 | `phase_step_back` | phase_*: movement-phase counter or state op |
 | `working/zelres3/code/306EAI6.asm` | 563 | `collide_check_back` | collide_*: position compare + branch |
-| `working/zelres3/code/306EAI6.asm` | 598 | `sub01_collide_outer` | collide_*: position compare + branch |
-| `working/zelres3/code/306EAI6.asm` | 625 | `sub01_collide_inner` | collide_*: position compare + branch |
+| `working/zelres3/code/306EAI6.asm` | 598 | `check_collide_outer_eai6` | check/test: cmp/test followed by branch |
+| `working/zelres3/code/306EAI6.asm` | 625 | `check_collide_inner_eai6` | collide_*: position compare + branch |
 | `working/zelres3/code/306EAI6.asm` | 841 | `distance_check_8` | distance_*: position diff + threshold |
 | `working/zelres3/code/306EAI6.asm` | 987 | `sub02_flip_to_state2` | sub-proc: must return (sanity) |
 | `working/zelres3/code/306EAI6.asm` | 1008 | `sub02_block_or_advance` | advance: inc/add to advance state |
-| `working/zelres3/code/307EAI7.asm` | 142 | `eai7_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/307EAI7.asm` | 142 | `run_eai7_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/307EAI7.asm` | 500 | `phase_step_fwd` | phase_*: movement-phase counter or state op |
 | `working/zelres3/code/307EAI7.asm` | 529 | `collide_check_fwd` | collide_*: position compare + branch |
 | `working/zelres3/code/307EAI7.asm` | 564 | `phase_step_back` | phase_*: movement-phase counter or state op |
 | `working/zelres3/code/307EAI7.asm` | 592 | `collide_check_back` | collide_*: position compare + branch |
-| `working/zelres3/code/307EAI7.asm` | 627 | `sub01_collide_outer` | collide_*: position compare + branch |
-| `working/zelres3/code/307EAI7.asm` | 654 | `sub01_collide_inner` | collide_*: position compare + branch |
+| `working/zelres3/code/307EAI7.asm` | 627 | `check_collide_outer_eai7` | check/test: cmp/test followed by branch |
+| `working/zelres3/code/307EAI7.asm` | 654 | `check_collide_inner_eai7` | collide_*: position compare + branch |
 | `working/zelres3/code/307EAI7.asm` | 692 | `distance_check_5` | distance_*: position diff + threshold |
 | `working/zelres3/code/307EAI7.asm` | 1032 | `distance_check_6` | distance_*: position diff + threshold |
-| `working/zelres3/code/308EAI8.asm` | 133 | `eai8_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/308EAI8.asm` | 133 | `run_eai8_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/308EAI8.asm` | 415 | `collide_check_fwd` | collide_*: position compare + branch |
 | `working/zelres3/code/308EAI8.asm` | 482 | `collide_check_back` | collide_*: position compare + branch |
 | `working/zelres3/code/308EAI8.asm` | 709 | `rng_pick_facing` | verb_noun proc: any substantive body content |
 | `working/zelres3/code/308EAI8.asm` | 771 | `phase_advance_helper` | phase_*: movement-phase counter or state op |
 | `working/zelres3/code/308EAI8.asm` | 870 | `distance_check_8` | distance_*: position diff + threshold |
 | `working/zelres3/code/308EAI8.asm` | 910 | `distance_check_5` | distance_*: position diff + threshold |
-| `working/zelres3/code/309CRAB.asm` | 102 | `crab_main` | main entry: calls subroutines + returns/exits |
-| `working/zelres3/code/309CRAB.asm` | 549 | `hp_dec` | hp_*: HP byte read/write/compare |
-| `working/zelres3/code/309CRAB.asm` | 567 | `hp_inc` | hp_*: HP byte read/write/compare |
+| `working/zelres3/code/309CRAB.asm` | 102 | `run_crab_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/309CRAB.asm` | 549 | `subtract_hp_amount` | hp_*: HP byte read/write/compare |
+| `working/zelres3/code/309CRAB.asm` | 567 | `add_hp_amount` | hp_*: HP byte read/write/compare |
 | `working/zelres3/code/309CRAB.asm` | 874 | `emit_sprite_rows_proc` | verb_noun proc: any substantive body content |
 | `working/zelres3/code/309CRAB.asm` | 998 | `prep_phase` | verb_noun proc: any substantive body content |
-| `working/zelres3/code/310TAKO.asm` | 102 | `tako_main` | main entry: calls subroutines + returns/exits |
-| `working/zelres3/code/310TAKO.asm` | 659 | `hp_dec` | hp_*: HP byte read/write/compare |
-| `working/zelres3/code/311TORI.asm` | 110 | `tori_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/310TAKO.asm` | 102 | `run_tako_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/310TAKO.asm` | 659 | `subtract_hp_amount` | hp_*: HP byte read/write/compare |
+| `working/zelres3/code/311TORI.asm` | 110 | `run_tori_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/311TORI.asm` | 780 | `tori_render_sprite_row` | frame/row/col: video write or row/col loop |
 | `working/zelres3/code/311TORI.asm` | 816 | `tori_swoop_tick` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/311TORI.asm` | 834 | `tori_hp_dec_if_ge_D` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/311TORI.asm` | 850 | `tori_hp_dec_if_ge_11` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/311TORI.asm` | 867 | `tori_hp_inc_if_below_30` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/311TORI.asm` | 887 | `tori_apply_damage` | enemy/boss proc: must return (sanity) |
-| `working/zelres3/code/312ZELA.asm` | 106 | `_312MAPST` | chunk MAP entry (data label or proc returning to caller) |
+| `working/zelres3/code/312ZELA.asm` | 106 | `run_mapst_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/312ZELA.asm` | 409 | `scroll_phase_dec` | verb_noun proc: any substantive body content |
 | `working/zelres3/code/312ZELA.asm` | 645 | `init_tile_slots` | tile_*: tile data manipulation |
 | `working/zelres3/code/312ZELA.asm` | 671 | `bound_xpos_inc` | bound_*: boundary cmp + branch |
 | `working/zelres3/code/312ZELA.asm` | 684 | `bound_xpos_dec` | bound_*: boundary cmp + branch |
-| `working/zelres3/code/312ZELA.asm` | 714 | `scroll_apply` | scroll: rep movs or gfx call |
-| `working/zelres3/code/313MEDA.asm` | 89 | `_313MAPBT` | chunk MAP entry (data label or proc returning to caller) |
+| `working/zelres3/code/312ZELA.asm` | 714 | `apply_scroll_offset` | apply_*: writes/calls to apply effect |
+| `working/zelres3/code/313MEDA.asm` | 89 | `run_mapbt_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/313MEDA.asm` | 368 | `phase_dir_compute` | phase_*: movement-phase counter or state op |
 | `working/zelres3/code/313MEDA.asm` | 424 | `phase_clear_cells` | phase_*: movement-phase counter or state op |
 | `working/zelres3/code/313MEDA.asm` | 455 | `phase_dec_clamped` | phase_*: movement-phase counter or state op |
@@ -884,30 +1061,30 @@ Total PENDING procs scanned: **1076**
 | `working/zelres3/code/313MEDA.asm` | 493 | `render_tiles_main` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres3/code/313MEDA.asm` | 603 | `render_tile_row` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres3/code/313MEDA.asm` | 646 | `scroll_step_finalize` | scroll: rep movs or gfx call |
-| `working/zelres3/code/314LEGA.asm` | 107 | `lega_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/314LEGA.asm` | 107 | `run_lega_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/314LEGA.asm` | 430 | `lega_scroll_dec_step` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/314LEGA.asm` | 444 | `lega_scroll_inc_step` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/314LEGA.asm` | 656 | `lega_render_anim2_cell` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/314LEGA.asm` | 691 | `lega_scroll_finalize` | scroll: rep movs or gfx call |
-| `working/zelres3/code/315ZEL2.asm` | 102 | `_315MAPHT` | chunk MAP entry (data label or proc returning to caller) |
+| `working/zelres3/code/315ZEL2.asm` | 102 | `run_mapht_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/315ZEL2.asm` | 374 | `zel2_phase_step_dec` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/315ZEL2.asm` | 600 | `zel2_setup_anim_segment` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/315ZEL2.asm` | 626 | `zel2_scroll_inc_step` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/315ZEL2.asm` | 639 | `zel2_scroll_dec_step` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/315ZEL2.asm` | 663 | `zel2_scroll_finalize` | scroll: rep movs or gfx call |
-| `working/zelres3/code/316DRGN.asm` | 119 | `drgn_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/316DRGN.asm` | 119 | `run_drgn_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/316DRGN.asm` | 541 | `drgn_scroll_dec` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/316DRGN.asm` | 556 | `drgn_scroll_inc` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/316DRGN.asm` | 812 | `drgn_render_col_pack` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/316DRGN.asm` | 965 | `drgn_phase_step_cb` | enemy/boss proc: must return (sanity) |
-| `working/zelres3/code/317AKMA.asm` | 114 | `_317MAPA4` | chunk MAP entry (data label or proc returning to caller) |
+| `working/zelres3/code/317AKMA.asm` | 114 | `run_mapa4_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/317AKMA.asm` | 472 | `akma_scroll_dec` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/317AKMA.asm` | 488 | `akma_scroll_inc` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/317AKMA.asm` | 813 | `akma_render_emit_cell` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/317AKMA.asm` | 842 | `akma_render_col_pack` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/317AKMA.asm` | 994 | `akma_phase_step_cb` | enemy/boss proc: must return (sanity) |
-| `working/zelres3/code/318MAO1.asm` | 106 | `_318MAPA5` | chunk MAP entry (data label or proc returning to caller) |
-| `working/zelres3/code/319MAO2.asm` | 162 | `_319MAPA6` | chunk MAP entry (data label or proc returning to caller) |
+| `working/zelres3/code/318MAO1.asm` | 106 | `run_mapa5_main` | main entry: calls subroutines + returns/exits |
+| `working/zelres3/code/319MAO2.asm` | 162 | `run_mapa6_main` | verb_noun proc: any substantive body content |
 | `working/zelres3/code/319MAO2.asm` | 242 | `mao2_main_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres3/code/319MAO2.asm` | 497 | `mao2_pick_target_idx` | enemy/boss proc: must return (sanity) |
 | `working/zelres3/code/319MAO2.asm` | 726 | `mao2_target_dec` | enemy/boss proc: must return (sanity) |
@@ -915,89 +1092,132 @@ Total PENDING procs scanned: **1076**
 | `working/zelres3/code/319MAO2.asm` | 989 | `mao2_dlg_a_init` | init/setup: writes initial state |
 | `working/zelres3/code/319MAO2.asm` | 1006 | `mao2_dlg_b_init` | init/setup: writes initial state |
 | `working/zelres3/code/319MAO2.asm` | 1024 | `mao2_unpack_bp_to_buf` | enemy/boss proc: must return (sanity) |
-| `working/zelres3/code/319MAO2.asm` | 1208 | `mao2_pos_sub` | enemy/boss proc: must return (sanity) |
+| `working/zelres3/code/319MAO2.asm` | 1208 | `compute_mao2_pos` | compute/calc: arithmetic or bitwise op |
 | `working/zelres3/code/319MAO2.asm` | 1238 | `mao2_pos_step` | enemy/boss proc: must return (sanity) |
 
-## INCONCLUSIVE rows (92)
+## INCONCLUSIVE rows (136)
 
 Name pattern matched but proc body did not match the expected fingerprint.
 Either the fingerprint is over-strict, or the proc name is misleading.
 
 | File | Line | Name | Expected role |
 |---|---:|---|---|
-| `working/drivers/gmtga.asm` | 2002 | `bitplane_to_pixels` | pixel/pixels: video memory write |
+| `working/drivers/gmcga.asm` | 136 | `run_gmcga_main` | main entry: calls subroutines + returns/exits |
+| `working/drivers/gmtga.asm` | 95 | `run_gmtga_main` | main entry: calls subroutines + returns/exits |
+| `working/drivers/stdply.asm` | 53 | `run_stdply_main` | main entry: calls subroutines + returns/exits |
+| `working/drivers/stick.asm` | 142 | `run_stick_main` | main entry: calls subroutines + returns/exits |
 | `working/drivers/stick.asm` | 1154 | `enter_pause_menu_and_draw` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/drivers/stick.asm` | 1170 | `restore_pause_menu_bg` | UI/dialog: dispatches to render/draw helpers |
 | `working/zelres1/code/100OPDMO.asm` | 488 | `char_render_proc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres1/code/100OPDMO.asm` | 999 | `story_scene_timer_loop` | loop: backward branch or rep |
-| `working/zelres1/code/104GDTGA.asm` | 566 | `stats_func_2` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/104GDTGA.asm` | 2640 | `stats_func_20` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/105GDMCA.asm` | 522 | `pal_func_2` | palette: VGA palette I/O or palette-state writes |
-| `working/zelres1/code/105GDMCA.asm` | 2413 | `pal_func_21` | palette: VGA palette I/O or palette-state writes |
-| `working/zelres1/code/106TOWN.asm` | 1299 | `player_multiply_2` | player/stat ops: DS-relative read/write |
-| `working/zelres1/code/106TOWN.asm` | 1553 | `player_func_22` | player/stat ops: DS-relative read/write |
+| `working/zelres1/code/100OPDMO.asm` | 999 | `wait_story_scene_timer` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
+| `working/zelres1/code/100OPDMO.asm` | 1677 | `busy_wait_delay` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
+| `working/zelres1/code/101GDEGA.asm` | 2360 | `decode_scroll_byte_ega` | scroll: rep movs or gfx call |
+| `working/zelres1/code/102GDCGA.asm` | 2500 | `copy_status_loop_cga` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/103GDHGC.asm` | 2728 | `copy_status_loop_hgc` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/104GDTGA.asm` | 566 | `build_pixel_pair_tga` | build_*: builds data structure via writes |
+| `working/zelres1/code/104GDTGA.asm` | 2602 | `copy_status_loop_tga` | copy_*: rep movs or load/store sequence |
+| `working/zelres1/code/105GDMCA.asm` | 522 | `build_pixel_pair_mcga` | build_*: builds data structure via writes |
+| `working/zelres1/code/106TOWN.asm` | 648 | `set_pose_dirty` | set/clear/reset/zero: writes register/memory |
+| `working/zelres1/code/106TOWN.asm` | 1536 | `find_npc_dx` | find/scan: scasb/cmp/loop |
+| `working/zelres1/code/106TOWN.asm` | 1553 | `load_pattern_then_play_music` | load/save/read/write: at least one memory op or loader call |
+| `working/zelres1/code/106TOWN.asm` | 1638 | `tick_npcs_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
+| `working/zelres1/code/106TOWN.asm` | 3258 | `check_save_name_is_new` | check/test: cmp/test followed by branch |
+| `working/zelres1/code/107GTEGA.asm` | 296 | `render_tile_if_marked_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres1/code/107GTEGA.asm` | 688 | `tile_col6_render` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/107GTEGA.asm` | 924 | `match_tile_by_dx_ega` | tile_*: tile data manipulation |
+| `working/zelres1/code/107GTEGA.asm` | 1018 | `render_2_col_iter_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/107GTEGA.asm` | 1549 | `init_text_render_buf_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/107GTEGA.asm` | 1636 | `render_via_proc_loop2_ega` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/107GTEGA.asm` | 1725 | `div_24bit_emit_digit_ega` | modulo/div: divide or repeated subtract |
 | `working/zelres1/code/108GTCGA.asm` | 289 | `draw_door_tile` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres1/code/108GTCGA.asm` | 792 | `scan_entity_tbl` | find/scan: scasb/cmp/loop |
-| `working/zelres1/code/110GTTGA.asm` | 276 | `limg_multiply` | image control: video, macro, or setup |
-| `working/zelres1/code/110GTTGA.asm` | 818 | `limg_func_10` | image control: video, macro, or setup |
-| `working/zelres1/code/110GTTGA.asm` | 1651 | `limg_func_24` | image control: video, macro, or setup |
-| `working/zelres1/code/111GTMCA.asm` | 287 | `simg_multiply` | image control: video, macro, or setup |
-| `working/zelres1/code/111GTMCA.asm` | 1550 | `simg_func_23` | image control: video, macro, or setup |
-| `working/zelres1/code/111GTMCA.asm` | 1982 | `simg_func_26` | image control: video, macro, or setup |
-| `working/zelres2/code/200FIGHT.asm` | 631 | `zr2_00` | zr*_: chunk-local helper (sanity: must return) |
-| `working/zelres2/code/200FIGHT.asm` | 2515 | `entity_type_quick_check` | entity/sprite: SI/DI ptr operations |
-| `working/zelres2/code/200FIGHT.asm` | 3911 | `render_entity_list_to_hud` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
-| `working/zelres2/code/200FIGHT.asm` | 4618 | `wait_anim_cycle` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
-| `working/zelres2/code/200FIGHT.asm` | 4950 | `bot_path_check` | validate/verify/check: cmp + branch/return |
-| `working/zelres2/code/200FIGHT.asm` | 7375 | `check_above_3rows_clear` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7433 | `check_below_3rows_clear` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7492 | `check_north_movement` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7525 | `check_south_movement` | check/test: cmp/test followed by branch |
-| `working/zelres2/code/200FIGHT.asm` | 7632 | `check_movement_var_136` | check/test: cmp/test followed by branch |
+| `working/zelres1/code/109GTHGC.asm` | 281 | `render_tile_if_marked_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/109GTHGC.asm` | 827 | `render_2_col_iter_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/109GTHGC.asm` | 1342 | `init_text_render_buf_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/109GTHGC.asm` | 1515 | `render_text_decimal_hgc` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/109GTHGC.asm` | 1536 | `div_24bit_emit_digit_hgc` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/110GTTGA.asm` | 932 | `render_via_multiply3_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/110GTTGA.asm` | 1423 | `init_text_render_buf_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/110GTTGA.asm` | 1600 | `render_text_decimal_tga` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/110GTTGA.asm` | 1624 | `div_24bit_emit_digit_tga` | modulo/div: divide or repeated subtract |
+| `working/zelres1/code/111GTMCA.asm` | 287 | `render_tile_if_marked_mca` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/111GTMCA.asm` | 792 | `match_tile_by_dx_mca` | tile_*: tile data manipulation |
+| `working/zelres1/code/111GTMCA.asm` | 870 | `render_2_col_iter_mca` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/111GTMCA.asm` | 1356 | `init_text_render_buf_mca` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/111GTMCA.asm` | 1438 | `render_via_proc_loop2_mca` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres1/code/111GTMCA.asm` | 1523 | `div_24bit_emit_digit_mca` | modulo/div: divide or repeated subtract |
+| `working/zelres2/code/200FIGHT.asm` | 2326 | `scroll_byte_dispatch_a` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 2348 | `scroll_byte_dispatch_b` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 2405 | `fill_scroll_column` | fill_*: rep stos or memory write |
+| `working/zelres2/code/200FIGHT.asm` | 2424 | `scroll_buf_offset` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 2439 | `scroll_si_wrap_high` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 2452 | `scroll_si_wrap_low` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 2481 | `scroll_si_from_player` | scroll: rep movs or gfx call |
+| `working/zelres2/code/200FIGHT.asm` | 2514 | `entity_type_quick_check` | entity/sprite: SI/DI ptr operations |
+| `working/zelres2/code/200FIGHT.asm` | 3909 | `render_entity_list_to_hud` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/200FIGHT.asm` | 3998 | `copy_si_to_di_if_unmarked` | copy_*: rep movs or load/store sequence |
+| `working/zelres2/code/200FIGHT.asm` | 4650 | `wait_anim_cycle` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
+| `working/zelres2/code/200FIGHT.asm` | 4982 | `bot_path_check` | validate/verify/check: cmp + branch/return |
+| `working/zelres2/code/200FIGHT.asm` | 7406 | `check_above_3rows_clear` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7464 | `check_below_3rows_clear` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7523 | `check_north_movement` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7556 | `check_south_movement` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7556 | `check_south_movement` | check/test: cmp/test followed by branch |
+| `working/zelres2/code/200FIGHT.asm` | 7663 | `check_tiles_upper_left_quad` | check/test: cmp/test followed by branch |
 | `working/zelres2/code/202GFEGA.asm` | 719 | `sprite_blit_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/202GFEGA.asm` | 1031 | `ega_sprite_blit_ex` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/202GFEGA.asm` | 2005 | `hero_tier_get` | get/fetch/read: memory load |
+| `working/zelres2/code/202GFEGA.asm` | 2284 | `restore_background_pixels` | pixel/pixels: video memory write |
 | `working/zelres2/code/202GFEGA.asm` | 3291 | `frame_wait_loop` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
+| `working/zelres2/code/202GFEGA.asm` | 3417 | `wrap_scroll_si_low` | scroll: rep movs or gfx call |
 | `working/zelres2/code/203GFCGA.asm` | 665 | `sprite_blit_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/203GFCGA.asm` | 1096 | `sprite_copy_8words` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/203GFCGA.asm` | 1103 | `sprite_clear_8words` | entity/sprite: SI/DI ptr operations |
 | `working/zelres2/code/203GFCGA.asm` | 1815 | `hero_tier_get` | get/fetch/read: memory load |
+| `working/zelres2/code/203GFCGA.asm` | 2145 | `restore_background_pixels` | pixel/pixels: video memory write |
 | `working/zelres2/code/203GFCGA.asm` | 2443 | `bg_col_blit_row` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/203GFCGA.asm` | 2549 | `row_ofs_advance` | line/row: row write + loop tail |
 | `working/zelres2/code/203GFCGA.asm` | 2909 | `frame_wait_loop` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
+| `working/zelres2/code/203GFCGA.asm` | 3018 | `wrap_scroll_si_low` | scroll: rep movs or gfx call |
 | `working/zelres2/code/204GFHGC.asm` | 642 | `sprite_blit_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/204GFHGC.asm` | 1016 | `plane_copy_process` | plane_*: bitplane bit ops or VGA register |
 | `working/zelres2/code/204GFHGC.asm` | 1851 | `get_step_direction` | get/fetch/read: memory load |
-| `working/zelres2/code/204GFHGC.asm` | 2176 | `bg_restore_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
+| `working/zelres2/code/204GFHGC.asm` | 2176 | `dispatch_background_restore` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/204GFHGC.asm` | 3025 | `frame_wait_loop` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
+| `working/zelres2/code/204GFHGC.asm` | 3135 | `wrap_scroll_si_low` | scroll: rep movs or gfx call |
+| `working/zelres2/code/204GFHGC.asm` | 3146 | `wrap_scroll_si_high` | scroll: rep movs or gfx call |
 | `working/zelres2/code/205GFTGA.asm` | 767 | `sprite_blit_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/205GFTGA.asm` | 1091 | `tga_sprite_render_blended` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/205GFTGA.asm` | 2018 | `hero_tier_get` | get/fetch/read: memory load |
+| `working/zelres2/code/205GFTGA.asm` | 2306 | `restore_background_pixels` | pixel/pixels: video memory write |
 | `working/zelres2/code/205GFTGA.asm` | 2848 | `tga_vram_advance_az` | video mode op: video memory or port I/O |
 | `working/zelres2/code/205GFTGA.asm` | 3180 | `fade_gradient_loop` | loop: backward branch or rep |
-| `working/zelres2/code/205GFTGA.asm` | 4057 | `plane_pair_rol` | plane_*: bitplane bit ops or VGA register |
+| `working/zelres2/code/205GFTGA.asm` | 3292 | `wrap_scroll_si_low` | scroll: rep movs or gfx call |
+| `working/zelres2/code/205GFTGA.asm` | 3303 | `wrap_scroll_si_high` | scroll: rep movs or gfx call |
+| `working/zelres2/code/205GFTGA.asm` | 4065 | `rotate_plane_pair_tga` | plane_*: bitplane bit ops or VGA register |
 | `working/zelres2/code/206GFMCA.asm` | 669 | `sprite_blit_dispatch` | dispatcher: indirect call/jmp or cmp-cascade discriminator |
 | `working/zelres2/code/206GFMCA.asm` | 1872 | `shield_state_get` | get/fetch/read: memory load |
 | `working/zelres2/code/206GFMCA.asm` | 2742 | `fade_gradient_rect` | rectangle: 2D fill with row loop |
 | `working/zelres2/code/206GFMCA.asm` | 2942 | `anim_frame_wait` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
-| `working/zelres2/code/206GFMCA.asm` | 3480 | `mca_plane_4bit_scan` | scan: compare + loop |
+| `working/zelres2/code/206GFMCA.asm` | 3049 | `wrap_scroll_si_low` | scroll: rep movs or gfx call |
+| `working/zelres2/code/206GFMCA.asm` | 3060 | `wrap_scroll_si_high` | scroll: rep movs or gfx call |
+| `working/zelres2/code/206GFMCA.asm` | 3489 | `mca_plane_4bit_scan` | scan: compare + loop |
 | `working/zelres2/code/207MOLE.asm` | 726 | `decode_5col_blit_loop` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/208YMPD.asm` | 442 | `pixel_expand_mcga` | pixel/pixels: video memory write |
 | `working/zelres2/code/208YMPD.asm` | 500 | `pixel_expand_cga` | pixel/pixels: video memory write |
 | `working/zelres2/code/208YMPD.asm` | 1021 | `pixel_expand_cgaalt` | pixel/pixels: video memory write |
 | `working/zelres2/code/209CKPD.asm` | 551 | `nibble_expand_8` | nibble_: 4-bit operations |
-| `working/zelres2/code/209CKPD.asm` | 700 | `render_dispatch_2` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres2/code/209CKPD.asm` | 700 | `render_dispatch_layer2` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres2/code/209CKPD.asm` | 952 | `nibble_expand_8_b` | nibble_: 4-bit operations |
 | `working/zelres2/code/210KINGP.asm` | 525 | `select_script_branch` | lookup/select: table lookup or compare |
-| `working/zelres2/code/215DRUGP.asm` | 105 | `zr2_15` | zr*_: chunk-local helper (sanity: must return) |
-| `working/zelres2/code/215DRUGP.asm` | 189 | `wizard_func_2` | enemy/boss proc: must return (sanity) |
-| `working/zelres2/code/215DRUGP.asm` | 618 | `wizard_func_4` | enemy/boss proc: must return (sanity) |
 | `working/zelres2/code/216INNAP.asm` | 265 | `inn_wait_long` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
 | `working/zelres2/code/216INNAP.asm` | 280 | `inn_wait_short` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
-| `working/zelres2/code/250ENDMO.asm` | 1081 | `credits_putchar` | credits_*: credits dispatch/render |
+| `working/zelres2/code/250ENDMO.asm` | 1081 | `put_credits_char` | put/store/write: memory write |
 | `working/zelres2/code/250ENDMO.asm` | 1238 | `rle_blit_pair` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres3/code/300ROKAD.asm` | 549 | `wait_frame` | wait/poll/delay: backward branch, rep, or wait/delay helper call |
+| `working/zelres3/code/305EAI5.asm` | 761 | `check_collide_inner_eai5` | check/test: cmp/test followed by branch |
+| `working/zelres3/code/306EAI6.asm` | 625 | `check_collide_inner_eai6` | check/test: cmp/test followed by branch |
+| `working/zelres3/code/307EAI7.asm` | 654 | `check_collide_inner_eai7` | check/test: cmp/test followed by branch |
 | `working/zelres3/code/309CRAB.asm` | 874 | `emit_sprite_rows_proc` | sub-proc/main variant: must return |
 | `working/zelres3/code/311TORI.asm` | 780 | `tori_render_sprite_row` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres3/code/312ZELA.asm` | 409 | `scroll_phase_dec` | scroll: rep movs or gfx call |
@@ -1015,5 +1235,6 @@ Either the fingerprint is over-strict, or the proc name is misleading.
 | `working/zelres3/code/317AKMA.asm` | 488 | `akma_scroll_inc` | scroll: rep movs or gfx call |
 | `working/zelres3/code/317AKMA.asm` | 813 | `akma_render_emit_cell` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
 | `working/zelres3/code/317AKMA.asm` | 842 | `akma_render_col_pack` | render/blit/draw: writes/reads ES, gfx call/jmp, helper call, or ES macro |
+| `working/zelres3/code/319MAO2.asm` | 162 | `run_mapa6_main` | main entry: calls subroutines + returns/exits |
 | `working/zelres3/code/319MAO2.asm` | 989 | `mao2_dlg_a_init` | UI/dialog: dispatches to render/draw helpers |
 | `working/zelres3/code/319MAO2.asm` | 1006 | `mao2_dlg_b_init` | UI/dialog: dispatches to render/draw helpers |

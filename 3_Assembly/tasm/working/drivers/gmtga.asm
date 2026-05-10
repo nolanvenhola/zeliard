@@ -92,7 +92,7 @@ seg_a		segment	byte public
 
 		org	0
 
-gmtga		proc	far
+run_gmtga_main		proc	far
 
 start:
 		; Function dispatch table (36 CS-relative word pointers, driver loads at game_seg:2000h).
@@ -138,7 +138,7 @@ fn_0:
 
 dispatch_call:
 		db	0FFh			; alt encoding (FF = table sentinel / dispatch prefix)
-		call	bitplane_to_pixels	; compute pixel address from BH/BL ?-> AX
+		call	decode_bitplane_to_pixels	; compute pixel address from BH/BL ?-> AX
 		mov	di,ax			; DI = pixel address
 		pop	ax			; AL = function number (pushed by caller)
 		or	al,al			; test fn=0?
@@ -182,7 +182,7 @@ border_row_wrap:
 		call	fill_horizontal_line
 		mov	ax,0
 
-gmtga		endp
+run_gmtga_main		endp
 
 fill_horizontal_line		proc	near
 		push	di
@@ -671,7 +671,7 @@ fn19_text_render:				; dispatch fn 19 (CS:2394) ?-- text render: fg=0FFh, bg=00h
 		add	bh,bh
 
 fn_7:
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		mov	di,ax
 		mov	bl,cl
 		shr	bx,1			; Shift w/zeros fill
@@ -709,7 +709,7 @@ text_entry_xy:
 		add	bh,bh
 		lodsb				; String [si] to al
 		mov	bl,al
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		mov	di,ax
 		lodsb				; String [si] to al
 		mov	bl,al
@@ -941,7 +941,7 @@ fn_13:
 
 init_timestamp		proc	near
 		mov	di,258Ah
-		call	time_to_bcd
+		call	convert_time_to_bcd
 		mov	cx,6
 
 timestamp_init_loop:
@@ -960,7 +960,7 @@ init_timestamp		endp
 
 		db	7 dup (0)
 
-time_to_bcd		proc	near
+convert_time_to_bcd		proc	near
 		mov	cl,0Fh
 		mov	bx,4240h
 		call	modulo_divide_bcd
@@ -985,7 +985,7 @@ time_to_bcd		proc	near
 		mov	cs:[di+6],al
 		retn
 
-time_to_bcd		endp
+convert_time_to_bcd		endp
 
 modulo_divide_bcd		proc	near
 		xor	dh,dh			; Zero register
@@ -1031,7 +1031,7 @@ render_tilemap_large		proc	near
 		mov	bx,ax
 		shr	ch,1			; Shift w/zeros fill
 		adc	bh,bh
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		mov	di,ax
 		xor	ch,ch			; Zero register
 		mov	ax,0B800h
@@ -1135,7 +1135,7 @@ fn5_sprite_large:				; dispatch fn 5 (CS:26B0) ?-- render large sprite: AL=frame
 		mov	si,ax
 		add	bh,bh
 		add	bh,bh
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		mov	bp,ax
 		mov	ax,0B800h
 		mov	es,ax
@@ -1326,7 +1326,7 @@ fn21_stub:
 
 render_tilemap_small		proc	near
 		add	bh,bh
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		inc	ax
 		mov	bp,ax
 		mov	ax,0B800h
@@ -1450,7 +1450,7 @@ render_text_char_alt		proc	near
 		shr	bx,1			; Shift w/zeros fill
 		mov	bh,bl
 		mov	bl,cl
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		mov	di,ax
 		pop	si
 		mov	ax,0B800h
@@ -1506,7 +1506,7 @@ fn9_sprite_copy:				; dispatch fn 9 (CS:2A68) ?-- TGA?->TGA sprite copy: BH/BL c
 		push	ds
 		add	bh,bh
 		add	bh,bh
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		mov	di,ax
 		mov	si,di
 		add	si,2000h
@@ -1694,12 +1694,12 @@ tga_blit_bitplanes:
 		push	dx
 		add	bh,bh
 		add	bh,bh
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		mov	si,ax
 		pop	bx
 		add	bh,bh
 		add	bh,bh
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		mov	di,ax
 		mov	ax,0B800h
 		mov	es,ax
@@ -1746,7 +1746,7 @@ tga_fill_rect:
 		mov	ds:tile_fg_mask,al
 		pop	bx
 		add	bh,bh
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		mov	di,ax
 		mov	ax,0B800h
 		mov	es,ax
@@ -1803,7 +1803,7 @@ render_font_ext:
 		add	ax,ax
 		mov	si,ax
 		add	bh,bh
-		call	bitplane_to_pixels
+		call	decode_bitplane_to_pixels
 		mov	di,ax
 		mov	ax,0B800h
 		mov	es,ax
@@ -1999,7 +1999,7 @@ sprite_decode_row_loop:
 
 process_sprite_row		endp
 
-bitplane_to_pixels		proc	near
+decode_bitplane_to_pixels		proc	near
 		mov	dh,bl
 		ror	dh,1			; Rotate
 		ror	dh,1			; Rotate
@@ -2015,7 +2015,7 @@ bitplane_to_pixels		proc	near
 		add	ax,bx
 		retn
 
-bitplane_to_pixels		endp
+decode_bitplane_to_pixels		endp
 
 		db	12 dup (0)
 

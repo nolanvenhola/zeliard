@@ -26,12 +26,12 @@ PAGE  59,132
 ;    4. Final epilogue bitmap composed from a 6-plane OR/AND tile renderer.
 ;
 ;  Key subsystems:
-;    ending_scene_main          - main entry: orchestrates scenes 1..7
+;    run_ending_scene_main          - main entry: orchestrates scenes 1..7
 ;    wait_ticks                 - reset cs:frame_timer and spin N ticks
 ;    gfx_driver_tick            - call driver ISRs at cs:[110h..118h]
 ;    render_narration_page      - script-byte narration interpreter (page)
 ;    measure_script_word_width  - compute pixel width of next script word
-;    credits_loop_main          - credits page state machine
+;    run_credits_loop_main          - credits page state machine
 ;    credits_worker_tick        - per-tick driver tick for credits
 ;    rle_blit_pair              - decompress 2-plane RLE image into ES:DI
 ;    rle_interleave_planes      - merge decompressed planes into 4bpp form
@@ -237,7 +237,7 @@ seg_a		segment	byte public
 
 		org	0
 
-ending_scene_main	proc	far
+run_ending_scene_main	proc	far
 
 start:
 		jmp	short main_entry
@@ -451,7 +451,7 @@ gradient_fill_loop:
 		call	word ptr cs:gfx_update_fn
 		jmp	credits_scene_start
 
-ending_scene_main	endp
+run_ending_scene_main	endp
 
 timer_wait_loop		proc	near
 
@@ -929,13 +929,13 @@ credits_scene_start:
 		int	60h			; ??INT Non-standard interrupt
 		pop	ds
 		mov	word ptr ds:credits_pc,787Eh
-		call	credits_loop_main
+		call	run_credits_loop_main
 
 credits_tick_loop:
 				call	credits_driver_tick
 				jmp	short credits_tick_loop
 
-credits_loop_main		proc	near
+run_credits_loop_main		proc	near
 		mov	byte ptr ds:gvar_frame_timer,0
 
 credits_fetch_byte:
@@ -991,7 +991,7 @@ credits_not_FF:
 credits_render_char:
 		push	ax
 		xor	al,al			; Zero register
-		call	credits_putchar
+		call	put_credits_char
 		mov	al,ds:credits_row_byte
 		mov	cl,0Eh
 		mul	cl			; ax = reg * al
@@ -1009,7 +1009,7 @@ credits_render_char:
 
 credits_after_newline:
 		mov	al,0FFh
-		call	credits_putchar
+		call	put_credits_char
 		mov	al,ds:credits_tick_delay
 		call	credits_wait_tick
 		jmp	credits_fetch_byte
@@ -1030,7 +1030,7 @@ credits_set_pause:
 
 credits_delay_page:
 		xor	al,al			; Zero register
-		call	credits_putchar
+		call	put_credits_char
 
 credits_delay_poll:
 				call	credits_driver_tick
@@ -1064,21 +1064,21 @@ credits_clear_screen:
 
 credits_new_line:
 		xor	al,al			; Zero register
-		call	credits_putchar
+		call	put_credits_char
 		mov	byte ptr ds:credits_col_byte,0
 		inc	byte ptr ds:credits_row_byte
 		jmp	credits_fetch_byte
 
 credits_tab_indent:
 		xor	al,al			; Zero register
-		call	credits_putchar
+		call	put_credits_char
 		add	byte ptr ds:credits_col_byte,4
 		and	byte ptr ds:credits_col_byte,0FCh
 		jmp	credits_after_newline
 
-credits_loop_main		endp
+run_credits_loop_main		endp
 
-credits_putchar		proc	near
+put_credits_char		proc	near
 		push	ax
 		mov	al,ds:credits_row_byte
 		mov	cl,0Eh
@@ -1090,16 +1090,16 @@ credits_putchar		proc	near
 		pop	ax
 		jmp	word ptr cs:gfx_scroll_jmp
 
-credits_putchar		endp
+put_credits_char		endp
 
 credits_end_page:
 		xor	al,al			; Zero register
-		call	credits_putchar
+		call	put_credits_char
 		retn
 
 credits_scene_next:
 		xor	al,al			; Zero register
-		call	credits_putchar
+		call	put_credits_char
 		mov	bl,ds:credits_scene_idx
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -1928,7 +1928,7 @@ bitmap_row_byte		db	77h
 		db	 04h,0FEh,0FCh	; +0x44B
 
 ; =====================================================================
-; credits_script - Script interpreted by credits_loop_main. Uses the
+; credits_script - Script interpreted by run_credits_loop_main. Uses the
 ; same SCR_* control codes as the narration scripts plus a few extra
 ; credit-specific codes (F8=set-pause, FC=clear-screen). Tab byte (09h)
 ; triggers credits_tab_indent. Runs through each credit scene, calling
@@ -2141,7 +2141,7 @@ full_scroll_fn_ptr		dw	8584h
 
 ; =====================================================================
 ; credits_glyph_width_tbl - Width delta table per glyph index; consumed
-; by credits_putchar to advance the credits-column cursor.
+; by put_credits_char to advance the credits-column cursor.
 ; =====================================================================
 
 credits_glyph_width_tbl:

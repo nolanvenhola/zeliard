@@ -110,7 +110,7 @@ seg_a		segment	byte public
 
 		org	0
 
-mcga_imgctl_module		proc	far
+run_mcga_imgctl_main		proc	far
 
 start:
 ;*		aad	21h			; '!' undocumented inst
@@ -213,13 +213,13 @@ disp_render_a_rev:
 		push	ax
 		push	es
 		push	di
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		pop	si
 		pop	ds
 		pop	ax
 		mov	word ptr cs:render_fn_ptr,329Dh	; CS:329Dh = disp_blit_expand (write nonzero pixels only)
-		call	vga_operation
+		call	run_render_passes_mcga
 		pop	ds
 		retn
 
@@ -275,7 +275,7 @@ render_plane_abc_loop:
 		push	ax
 		push	es
 		push	di
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		pop	si
 		pop	ds
@@ -284,11 +284,11 @@ render_plane_abc_loop:
 		mov	byte ptr cs:render_mode_flag,0
 		or	al,al			; Zero ?
 		jnz	render_blit_skip			; Jump if not zero
-		call	vga_operation
+		call	run_render_passes_mcga
 
 render_blit_skip:
 		mov	byte ptr cs:render_mode_flag,0FFh
-		call	vga_operation
+		call	run_render_passes_mcga
 		pop	ds
 		retn
 
@@ -297,7 +297,7 @@ render_blit_entry:
 		push	ax
 		push	es
 		push	di
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		pop	si
 		pop	ds
@@ -306,17 +306,17 @@ render_blit_entry:
 		mov	byte ptr cs:render_mode_flag,0
 		or	al,al			; Zero ?
 		jnz	render_blit_skip2			; Jump if not zero
-		call	vga_operation
+		call	run_render_passes_mcga
 
 render_blit_skip2:
 		mov	byte ptr cs:render_mode_flag,0FFh
-		call	vga_operation
+		call	run_render_passes_mcga
 		pop	ds
 		retn
 
-mcga_imgctl_module		endp
+run_mcga_imgctl_main		endp
 
-vga_operation		proc	near
+run_render_passes_mcga		proc	near
 		mov	byte ptr cs:cur_row_ctr,0
 		mov	ax,vga_seg
 		mov	es,ax
@@ -371,7 +371,7 @@ vga_frame_wait:
 							jnz	vga_blit_row_start			; Jump if not zero
 		retn
 
-vga_operation		endp
+run_render_passes_mcga		endp
 
 disp_blit_masked:
 		test	byte ptr cs:render_mode_flag,0FFh
@@ -500,13 +500,13 @@ font_char_nonempty:
 font_row_loop:
 												push	cx
 												lodsb				; String [si] to al
-												call	pal_func_2
+												call	build_pixel_pair_mcga
 												mov	es:[di],dx
-												call	pal_func_2
+												call	build_pixel_pair_mcga
 												mov	es:[di+2],dx
-												call	pal_func_2
+												call	build_pixel_pair_mcga
 												mov	es:[di+4],dx
-												call	pal_func_2
+												call	build_pixel_pair_mcga
 												mov	es:[di+6],dx
 												add	di,140h
 												pop	cx
@@ -519,14 +519,14 @@ font_char_space:
 							add	di,8
 							jmp	short font_char_loop
 
-pal_func_2		proc	near
+build_pixel_pair_mcga		proc	near
 		add	al,al
 		sbb	dl,dl
 		add	al,al
 		sbb	dh,dh
 		retn
 
-pal_func_2		endp
+build_pixel_pair_mcga		endp
 
 disp_scroll_copy:
 		push	ds
@@ -561,7 +561,7 @@ disp_scroll_copy:
 		rep	movsw			; Rep when cx >0 Mov [si] to es:[di]
 		pop	bx
 		push	bx
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		pop	bx
 		mov	al,0A0h
@@ -655,7 +655,7 @@ render_plane_ab_2_loop:
 
 blit_vga_entry:
 		push	ds
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		mov	si,sprite_buf_start
 		push	es
@@ -741,7 +741,7 @@ sprite_anim_advance:
 							add	al,[si+9]
 							mov	[si+3],al
 							mov	bl,al
-							call	pal_multiply_4
+							call	compute_vram_xy_offset_mcga
 							mov	[si+5],ax
 							mov	di,ax
 							mov	bp,[si+1]
@@ -752,7 +752,7 @@ sprite_anim_advance:
 							SET_ES_3000
 							mov	si,di
 							mov	di,bp
-							call	copy_buffer
+							call	copy_pixel_row_mcga
 							pop	si
 							pop	ds
 
@@ -781,7 +781,7 @@ sprite_pal_update_loop:
 							mov	ds:pal_b_reg,al
 							inc	byte ptr ds:cur_col_ctr
 							xor	ax,ax			; Zero register
-							call	vga_operation9
+							call	write_palette_byte_mcga
 							pop	si
 							test	byte ptr cs:[si],0FFh
 							jz	sprite_pal_skip			; Jump if zero
@@ -806,7 +806,7 @@ sprite_pal_update_loop:
 							mov	es,ax
 							mov	ds,cs:gvar_game_seg
 							mov	si,bp
-							call	pal_multiply
+							call	blit_sprite_mcga
 							pop	si
 							pop	ds
 
@@ -835,7 +835,7 @@ sprite_restore_loop:
 							add	ax,3000h
 							mov	ds,ax
 							mov	si,bp
-							call	copy_buffer_2
+							call	copy_to_di_mcga
 							pop	si
 							pop	ds
 							pop	cx
@@ -857,7 +857,7 @@ sprite_slot_empty:
 		mov	ax,2
 		jmp	palette_write_entry
 
-copy_buffer		proc	near
+copy_pixel_row_mcga		proc	near
 		push	si
 		push	cx
 
@@ -874,9 +874,9 @@ copy_buf_row_loop:
 		pop	si
 		retn
 
-copy_buffer		endp
+copy_pixel_row_mcga		endp
 
-copy_buffer_2		proc	near
+copy_to_di_mcga		proc	near
 		push	di
 		push	cx
 
@@ -893,9 +893,9 @@ copy_buf2_row_loop:
 		pop	di
 		retn
 
-copy_buffer_2		endp
+copy_to_di_mcga		endp
 
-pal_multiply		proc	near
+blit_sprite_mcga		proc	near
 		push	di
 		push	cx
 		mov	al,ch
@@ -937,7 +937,7 @@ pal_mul_pixel_loop:
 		pop	di
 		retn
 
-pal_multiply		endp
+blit_sprite_mcga		endp
 
 disp_scroll_a:					;* Dispatcher entry: scroll function A
 		db	 00h, 90h, 20h, 06h, 80h, 91h	; CRTC seq: (00h,90h),(20h,06h),(80h,91h)
@@ -1060,7 +1060,7 @@ tilemap_col_loop:
 												push	bx
 												push	ds
 												push	si
-												call	pal_multiply_2
+												call	compute_tile_vram_offset_mcga
 												pop	si
 												pop	ds
 												pop	bx
@@ -1075,7 +1075,7 @@ tilemap_col_loop:
 
 		retn
 
-pal_multiply_2		proc	near
+compute_tile_vram_offset_mcga		proc	near
 		mov	ds,cs:gvar_game_seg
 		mov	dx,cs
 		add	dx,2000h
@@ -1132,7 +1132,7 @@ tile_row_loop:
 
 		retn
 
-pal_multiply_2		endp
+compute_tile_vram_offset_mcga		endp
 
 disp_tile_render:
 		push	ds
@@ -1172,7 +1172,7 @@ bitrev_bit_loop:
 		pop	ax
 		mov	bl,al
 		xor	bh,bh			; Zero register
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		mov	ax,vga_seg
 		mov	es,ax
@@ -1195,19 +1195,19 @@ sprite_render_loop_a:
 							or	ax,bx
 							not	ax
 							mov	cs:mask_word,ax
-							call	pal_func_21
+							call	rotate_mask_word_mcga
 							and	es:[di],ax
 							call	pal_process_loop
 							or	es:[di],ax
-							call	pal_func_21
+							call	rotate_mask_word_mcga
 							and	es:[di+2],ax
 							call	pal_process_loop
 							or	es:[di+2],ax
-							call	pal_func_21
+							call	rotate_mask_word_mcga
 							and	es:[di+4],ax
 							call	pal_process_loop
 							or	es:[di+4],ax
-							call	pal_func_21
+							call	rotate_mask_word_mcga
 							and	es:[di+6],ax
 							call	pal_process_loop
 							or	es:[di+6],ax
@@ -1238,19 +1238,19 @@ sprite_render_loop_b:
 							or	ax,bx
 							not	ax
 							mov	cs:mask_word,ax
-							call	pal_func_21
+							call	rotate_mask_word_mcga
 							and	es:[di+4],ax
 							call	pal_process_loop
 							or	es:[di+4],ax
-							call	pal_func_21
+							call	rotate_mask_word_mcga
 							and	es:[di+6],ax
 							call	pal_process_loop
 							or	es:[di+6],ax
-							call	pal_func_21
+							call	rotate_mask_word_mcga
 							and	es:[di],ax
 							call	pal_process_loop
 							or	es:[di],ax
-							call	pal_func_21
+							call	rotate_mask_word_mcga
 							and	es:[di+2],ax
 							call	pal_process_loop
 							or	es:[di+2],ax
@@ -1277,7 +1277,7 @@ scroll_up_loop:
 							lodsb				; String [si] to al
 							or	al,al			; Zero ?
 							jz	scroll_up_done			; Jump if zero
-							call	pal_func_7
+							call	lookup_palette_entry_mcga
 							add	di,500h
 							jmp	short scroll_up_loop
 
@@ -1288,7 +1288,7 @@ scroll_right_loop:
 							lodsb				; String [si] to al
 							or	al,al			; Zero ?
 							jz	scroll_right_done			; Jump if zero
-							call	pal_func_7
+							call	lookup_palette_entry_mcga
 							add	di,4
 							jmp	short scroll_right_loop
 
@@ -1299,7 +1299,7 @@ scroll_down_loop:
 							lodsb				; String [si] to al
 							or	al,al			; Zero ?
 							jz	scroll_down_done			; Jump if zero
-							call	pal_func_7
+							call	lookup_palette_entry_mcga
 							add	di,0FB00h
 							jmp	short scroll_down_loop
 
@@ -1310,7 +1310,7 @@ scroll_left_loop:
 							lodsb				; String [si] to al
 							or	al,al			; Zero ?
 							jz	scroll_left_done			; Jump if zero
-							call	pal_func_7
+							call	lookup_palette_entry_mcga
 							sub	di,4
 							jmp	short scroll_left_loop
 
@@ -1332,7 +1332,7 @@ scroll_ring_run:
 scroll_up_seg_loop:
 												push	cx
 												mov	al,18h
-												call	pal_func_7
+												call	lookup_palette_entry_mcga
 												add	di,500h
 												pop	cx
 												loop	scroll_up_seg_loop		; Loop if cx > 0
@@ -1350,7 +1350,7 @@ scroll_horiz_run:
 scroll_right_seg_loop:
 												push	cx
 												mov	al,18h
-												call	pal_func_7
+												call	lookup_palette_entry_mcga
 												add	di,4
 												pop	cx
 												loop	scroll_right_seg_loop		; Loop if cx > 0
@@ -1368,7 +1368,7 @@ scroll_down_run:
 scroll_down_seg_loop:
 												push	cx
 												mov	al,18h
-												call	pal_func_7
+												call	lookup_palette_entry_mcga
 												add	di,0FB00h
 												pop	cx
 												loop	scroll_down_seg_loop		; Loop if cx > 0
@@ -1386,7 +1386,7 @@ scroll_left_run:
 scroll_left_seg_loop:
 												push	cx
 												mov	al,18h
-												call	pal_func_7
+												call	lookup_palette_entry_mcga
 												sub	di,4
 												pop	cx
 												loop	scroll_left_seg_loop		; Loop if cx > 0
@@ -1398,7 +1398,7 @@ scroll_frame_wait:
 												jb	scroll_frame_wait			; Jump if below
 							jmp	short scroll_ring_top
 
-pal_func_7		proc	near
+lookup_palette_entry_mcga		proc	near
 		push	si
 		dec	al
 		xor	ah,ah			; Zero register
@@ -1409,7 +1409,7 @@ pal_func_7		proc	near
 		mov	si,ax
 		push	di
 		mov	bh,cs:cur_col_ctr
-		call	extract_bits
+		call	extract_pixel_bits_mcga
 		call	pal_process_loop
 		stosw				; Store ax to es:[di]
 		call	pal_process_loop
@@ -1417,14 +1417,14 @@ pal_func_7		proc	near
 		add	di,13Ch
 		mov	bh,cs:cur_col_ctr
 		ror	bh,1			; Rotate
-		call	extract_bits
+		call	extract_pixel_bits_mcga
 		call	pal_process_loop
 		stosw				; Store ax to es:[di]
 		call	pal_process_loop
 		stosw				; Store ax to es:[di]
 		add	di,13Ch
 		mov	bh,cs:cur_col_ctr
-		call	extract_bits
+		call	extract_pixel_bits_mcga
 		call	pal_process_loop
 		stosw				; Store ax to es:[di]
 		call	pal_process_loop
@@ -1432,7 +1432,7 @@ pal_func_7		proc	near
 		add	di,13Ch
 		mov	bh,cs:cur_col_ctr
 		ror	bh,1			; Rotate
-		call	extract_bits
+		call	extract_pixel_bits_mcga
 		call	pal_process_loop
 		stosw				; Store ax to es:[di]
 		call	pal_process_loop
@@ -1441,9 +1441,9 @@ pal_func_7		proc	near
 		pop	si
 		retn
 
-pal_func_7		endp
+lookup_palette_entry_mcga		endp
 
-extract_bits		proc	near
+extract_pixel_bits_mcga		proc	near
 		mov	word ptr ds:src_word_a,0
 		mov	word ptr ds:src_word_d,0
 		mov	ah,[si+4]
@@ -1471,7 +1471,7 @@ extract_bit2:
 		or	ds:src_word_c,ax
 		retn
 
-extract_bits		endp
+extract_pixel_bits_mcga		endp
 
 pal_plane_sel_tbl:
 		db	 00h, 00h, 00h, 03h, 80h, 80h	; sel row  0
@@ -1599,7 +1599,7 @@ render_col_loop:
 												push	cx
 												push	bx
 												push	si
-												call	pal_multiply_3
+												call	blit_sprite_clipped_mcga
 												pop	si
 												pop	bx
 												pop	cx
@@ -1617,12 +1617,12 @@ render_frame_wait:
 		pop	ds
 		retn
 
-pal_multiply_3		proc	near
+blit_sprite_clipped_mcga		proc	near
 		push	bx
 		mov	bl,cs:cur_row_ctr
 		add	bl,10h
 		mov	bh,4
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		pop	bx
 		cmp	cs:cur_row_ctr,bl
@@ -1668,11 +1668,11 @@ sprite_clip_clear:
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
 		retn
 
-pal_multiply_3		endp
+blit_sprite_clipped_mcga		endp
 
 disp_scroll_bar:
 		mov	cs:cur_row_ctr,bl
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		mov	ax,vga_seg
 		mov	es,ax
@@ -1685,17 +1685,17 @@ disp_scroll_bar:
 		sub	cx,5
 		push	cx
 		push	di
-		call	fill_buffer
+		call	init_status_buf_mcga
 		pop	di
 		inc	byte ptr cs:cur_row_ctr
 		add	di,140h
 		mov	cx,2
-		call	clear_buffer
+		call	clear_status_buf_rows_mcga
 		pop	cx
 
 scroll_bar_loop:
 							push	cx
-							call	vga_operation2
+							call	write_status_pattern_202_mcga
 							mov	byte ptr es:[di],0FFh
 							mov	byte ptr es:[di+1],0
 							mov	byte ptr es:[di+2],0
@@ -1710,24 +1710,24 @@ scroll_bar_loop:
 							loop	scroll_bar_loop		; Loop if cx > 0
 
 		mov	cx,1
-		call	clear_buffer
+		call	clear_status_buf_rows_mcga
 
-fill_buffer		proc	near
-		call	vga_operation2
+init_status_buf_mcga		proc	near
+		call	write_status_pattern_202_mcga
 		mov	cx,bx
 		add	cx,4
 		mov	al,0FFh
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
 		retn
 
-fill_buffer		endp
+init_status_buf_mcga		endp
 
-clear_buffer		proc	near
+clear_status_buf_rows_mcga		proc	near
 
 clear_buf_row_loop:
 							push	cx
 							push	di
-							call	vga_operation2
+							call	write_status_pattern_202_mcga
 							mov	byte ptr es:[di],0FFh
 							inc	di
 							mov	cx,bx
@@ -1743,16 +1743,16 @@ clear_buf_row_loop:
 
 		retn
 
-clear_buffer		endp
+clear_status_buf_rows_mcga		endp
 
-vga_operation2		proc	near
+write_status_pattern_202_mcga		proc	near
 		mov	word ptr es:[di-7],202h
 		mov	word ptr es:[di-5],202h
 		mov	word ptr es:[di-3],202h
 		mov	word ptr es:[di-1],202h
 		retn
 
-vga_operation2		endp
+write_status_pattern_202_mcga		endp
 
 disp_pixel_sort:
 		push	bx
@@ -1796,10 +1796,10 @@ disp_wipe_a:
 		mov	ds:saved_es,es
 		mov	di,69Ah
 		add	di,ds:saved_di
-		call	vga_operation5
+		call	seed_status_pattern_mcga
 		mov	di,6BCh
 		add	di,ds:saved_di
-		call	vga_operation5
+		call	seed_status_pattern_mcga
 		mov	ax,vga_seg
 		mov	es,ax
 		mov	ds,cs:saved_es
@@ -1817,7 +1817,7 @@ wipe_row_loop:
 							mul	bl			; ax = reg * al
 							push	ax
 							mov	bh,0
-							call	pal_multiply_4
+							call	compute_vram_xy_offset_mcga
 							mov	di,ax
 							pop	ax
 							add	ax,cs:saved_di
@@ -1827,11 +1827,11 @@ wipe_row_loop:
 							jb	wipe_edge_call			; Jump if below
 							cmp	ax,71h
 							jae	wipe_edge_call			; Jump if above or =
-							call	vga_operation4
+							call	init_status_row_11_mcga
 							jmp	short wipe_row_frame_wait
 
 wipe_edge_call:
-							call	vga_operation3
+							call	init_status_row_28_mcga
 
 wipe_row_frame_wait:
 							pop	cx
@@ -1845,7 +1845,7 @@ wipe_row_frame_wait:
 							mul	bl			; ax = reg * al
 							push	ax
 							mov	bh,0
-							call	pal_multiply_4
+							call	compute_vram_xy_offset_mcga
 							mov	di,ax
 							pop	ax
 							add	ax,cs:saved_di
@@ -1855,11 +1855,11 @@ wipe_row_frame_wait:
 							jb	wipe_edge2_call			; Jump if below
 							cmp	ax,71h
 							jae	wipe_edge2_call			; Jump if above or =
-							call	vga_operation4
+							call	init_status_row_11_mcga
 							jmp	short wipe_frame_wait
 
 wipe_edge2_call:
-							call	vga_operation3
+							call	init_status_row_28_mcga
 
 wipe_frame_wait:
 												cmp	byte ptr cs:gvar_frame_timer,4
@@ -1870,7 +1870,7 @@ wipe_frame_wait:
 		pop	ds
 		retn
 
-vga_operation3		proc	near
+init_status_row_28_mcga		proc	near
 		mov	cx,28h
 		mov	word ptr cs:src_word_d,0
 
@@ -1896,9 +1896,9 @@ wipe3_col_loop:
 
 		retn
 
-vga_operation3		endp
+init_status_row_28_mcga		endp
 
-vga_operation4		proc	near
+init_status_row_11_mcga		proc	near
 		mov	cx,0Bh
 		mov	word ptr cs:src_word_d,0
 
@@ -1960,12 +1960,12 @@ wipe4_bot_loop:
 
 		retn
 
-vga_operation4		endp
+init_status_row_11_mcga		endp
 
-vga_operation5		proc	near
+seed_status_pattern_mcga		proc	near
 		push	di
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_mcga
 		add	di,36h
 		mov	cx,5Bh
 
@@ -1976,12 +1976,12 @@ border_top_loop:
 							loop	border_top_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_mcga
 		pop	di
 		add	di,ega_plane_stride
 		push	di
 		mov	ax,0FD7Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_mcga
 		add	di,36h
 		mov	cx,2Dh
 
@@ -1998,11 +1998,11 @@ border_mid_loop:
 		mov	byte ptr es:[di+19h],0Eh
 		add	di,50h
 		mov	ax,0FD7Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_mcga
 		pop	di
 		add	di,ega_plane_stride
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_mcga
 		add	di,36h
 		mov	cx,5Bh
 
@@ -2013,12 +2013,12 @@ border_bot_loop:
 							loop	border_bot_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_mcga
 		retn
 
-vga_operation5		endp
+seed_status_pattern_mcga		endp
 
-fill_buffer_2		proc	near
+fill_status_byte_24x_mcga		proc	near
 		stosb				; Store al to es:[di]
 		mov	al,0FFh
 		mov	cx,18h
@@ -2027,7 +2027,7 @@ fill_buffer_2		proc	near
 		stosb				; Store al to es:[di]
 		retn
 
-fill_buffer_2		endp
+fill_status_byte_24x_mcga		endp
 
 disp_wipe_b:
 		push	ds
@@ -2045,12 +2045,12 @@ wipe5_row_loop:
 							neg	ax
 							add	ax,39h
 							add	ax,ax
-							call	vga_operation7
+							call	index_status_row_47_mcga
 							pop	ax
 							push	ax
 							add	ax,ax
 							dec	ax
-							call	vga_operation7
+							call	index_status_row_47_mcga
 
 wipe5_frame_wait:
 												cmp	byte ptr cs:gvar_frame_timer,4
@@ -2061,7 +2061,7 @@ wipe5_frame_wait:
 		pop	ds
 		retn
 
-vga_operation7		proc	near
+index_status_row_47_mcga		proc	near
 		push	ax
 		mov	bl,al
 		mov	al,2Fh			; '/'
@@ -2069,7 +2069,7 @@ vga_operation7		proc	near
 		add	ax,cs:saved_di
 		mov	si,ax
 		xor	bh,bh			; Zero register
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		pop	ax
 		cmp	ax,14h
@@ -2135,7 +2135,7 @@ wipe8_extra_loop:
 		stosb				; Store al to es:[di]
 		retn
 
-vga_operation7		endp
+index_status_row_47_mcga		endp
 
 disp_wipe_c:
 		push	ds
@@ -2153,12 +2153,12 @@ wipe9_row_loop:
 							neg	ax
 							add	ax,39h
 							add	ax,ax
-							call	vga_operation8
+							call	index_status_row_47_alt_mcga
 							pop	ax
 							push	ax
 							add	ax,ax
 							dec	ax
-							call	vga_operation8
+							call	index_status_row_47_alt_mcga
 
 wipe9_frame_wait:
 												cmp	byte ptr cs:gvar_frame_timer,4
@@ -2169,7 +2169,7 @@ wipe9_frame_wait:
 		pop	ds
 		retn
 
-vga_operation8		proc	near
+index_status_row_47_alt_mcga		proc	near
 		push	ax
 		mov	bl,al
 		mov	al,2Fh			; '/'
@@ -2179,7 +2179,7 @@ vga_operation8		proc	near
 		mov	si,ax
 		add	bl,14h
 		mov	bh,21h			; '!'
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		pop	ax
 		cmp	ax,5Eh
@@ -2216,11 +2216,11 @@ wipe9_clear_row:
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
 		retn
 
-vga_operation8		endp
+index_status_row_47_alt_mcga		endp
 
 disp_fill_row:
 		push	ax
-		call	pal_multiply_4
+		call	compute_vram_xy_offset_mcga
 		mov	di,ax
 		mov	ax,vga_seg
 		mov	es,ax
@@ -2238,7 +2238,7 @@ fill_row_loop:
 
 		retn
 
-vga_operation9		proc	near
+write_palette_byte_mcga		proc	near
 
 palette_write_entry:
 		mov	dx,30h
@@ -2300,9 +2300,9 @@ pal_dac_write_loop:
 		popf				; Pop flags
 		retn
 
-vga_operation9		endp
+write_palette_byte_mcga		endp
 
-pal_step_data:					; Palette step data table (addr 3A5Fh, ref by pal_func_7)
+pal_step_data:					; Palette step data table (addr 3A5Fh, ref by lookup_palette_entry_mcga)
 		db	 00h, 00h, 00h, 00h, 0Fh, 0Fh	; step  0  (6B/row, RGB tris)
 		db	 00h, 00h, 1Fh, 1Fh, 1Fh, 1Fh	; step  1
 		db	 00h, 00h, 00h, 00h, 1Fh, 1Fh	; step  2
@@ -2410,7 +2410,7 @@ pal_process_inner:
 
 pal_process_loop		endp
 
-pal_func_21		proc	near
+rotate_mask_word_mcga		proc	near
 		rol	word ptr cs:mask_word,1	; Rotate
 		sbb	al,al
 		rol	word ptr cs:mask_word,1	; Rotate
@@ -2423,7 +2423,7 @@ pal_func_21		proc	near
 		or	ah,dl
 		retn
 
-pal_func_21		endp
+rotate_mask_word_mcga		endp
 
 disp_clear_render_buf:
 		mov	ax,cs
@@ -2436,7 +2436,7 @@ disp_clear_render_buf:
 		retn
 		db	 2Eh,0FFh, 26h, 22h, 20h	; jmp word ptr cs:[2022h] (dispatch)
 
-pal_multiply_4		proc	near
+compute_vram_xy_offset_mcga		proc	near
 		mov	dl,bl
 		mov	bl,bh
 		xor	bh,bh			; Zero register
@@ -2448,7 +2448,7 @@ pal_multiply_4		proc	near
 		add	ax,bx
 		retn
 
-pal_multiply_4		endp
+compute_vram_xy_offset_mcga		endp
 
 		db	0C3h					; retn (end of dispatch stub)
 		db	2900 dup (0)

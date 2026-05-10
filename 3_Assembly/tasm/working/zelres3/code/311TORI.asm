@@ -23,7 +23,7 @@ PAGE  59,132
 ;    0x177..0x1D7 : tail of frame data
 ;    0x1D7..0x1E5 : tori_scan_prolog -- inline mov si,fight_slot_list /
 ;                   clear tori_slot_idx, tori_cycle_idx
-;    0x1E5..0x645 : main scan-and-update code (was tori_main / loc_1..loc_57)
+;    0x1E5..0x645 : main scan-and-update code (was run_tori_main / loc_1..loc_57)
 ;    0x507..0x57F : tori_render_sprite_row..tori_apply_damage (sprite renderer + hp/altitude helpers)
 ;    0x648..0x6C7 : per-handler init/setup vector reached via 200FIGHT
 ;                   DS-resident dispatch slot (no static caller in this module)
@@ -107,7 +107,7 @@ seg_a		segment	byte public
 
 		org	0
 
-tori_main	proc	far
+run_tori_main	proc	far
 
 ; -------------------------------------------------------------------------
 ;  Module header (file 0x000..0x033) -- loaded as data by 200FIGHT.
@@ -768,7 +768,7 @@ emit_outer_advance:
 		mov	word ptr [di],0FFFFh
 		retn
 
-tori_main	endp
+run_tori_main	endp
 
 ; -------------------------------------------------------------------------
 ;  tori_render_sprite_row -- bit-stream sprite row plotter.

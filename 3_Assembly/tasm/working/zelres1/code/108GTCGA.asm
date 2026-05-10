@@ -113,7 +113,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zr1_08		proc	far
+run_gtcga_main		proc	far
 
 start:
 ;*		aam	11h			; undocumented inst
@@ -242,7 +242,7 @@ next_col:
 					jne	draw_col_loop			; Jump if not equal
 		retn
 
-zr1_08		endp
+run_gtcga_main		endp
 
 cga_check_blit_col		proc	near
 		cmp	byte ptr ds:tile_col_idx,1Bh
@@ -657,7 +657,7 @@ scan_entity_loop:
 					pop	bx
 					mov	es,cs:gvar_game_seg
 					mov	si,tile_char_a
-					call	dispatch_draw_value
+					call	dispatch_via_tbl_a_cga
 					pop	si
 
 next_entity:
@@ -872,7 +872,7 @@ skip_wrap_r7:
 
 blit_3rows_to_cga		endp
 
-dispatch_draw_value		proc	near
+dispatch_via_tbl_a_cga		proc	near
 		mov	bp,di
 		dec	bl
 		xor	bh,bh			; Zero register
@@ -880,7 +880,7 @@ dispatch_draw_value		proc	near
 		call	word ptr cs:dispatch_tbl_a[bx]	;*
 		retn
 
-dispatch_draw_value		endp
+dispatch_via_tbl_a_cga		endp
 
 ; Dispatch handler A: call dispatch_tbl_a entry, followed by dispatch jump table words
 

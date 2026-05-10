@@ -130,7 +130,7 @@ seg_a		segment	byte public
 ;
 ;==========================================================================
 
-zeliad		proc	far
+run_zeliad_main		proc	far
 
 start:
 		cld
@@ -514,7 +514,7 @@ exit_program:
 		mov	ax,4C00h
 		int	21h			; Exit to DOS
 
-zeliad		endp
+run_zeliad_main		endp
 
 ;==========================================================================
 ;  flush_keyboard - Drain all pending keystrokes from keyboard buffer

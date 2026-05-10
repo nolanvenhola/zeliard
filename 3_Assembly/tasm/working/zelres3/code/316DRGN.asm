@@ -17,7 +17,7 @@ PAGE  59,132
 ;
 ;  Structure:
 ;    - Header + embedded tile/cell layout data block (~file 0x00..0x270)
-;    - Main per-frame update proc (drgn_main: NPC scan, phase machine,
+;    - Main per-frame update proc (run_drgn_main: NPC scan, phase machine,
 ;      death handler, render-row build)
 ;    - drgn_scroll_dec / drgn_scroll_inc helpers
 ;    - drgn_render_col_pack helper (mul-by-10 row addressing)
@@ -116,7 +116,7 @@ seg_a		segment	byte public
 
 		org	0
 
-drgn_main		proc	far
+run_drgn_main		proc	far
 
 ; ------------------------------------------------------------------
 ; start: header + embedded tile/cell layout data.
@@ -536,7 +536,7 @@ drgn_phase_b_idx_set:
 		mov	byte ptr ds:drgn_phase_b_active,0
 		jmp	short drgn_render_begin
 
-drgn_main		endp
+run_drgn_main		endp
 
 drgn_scroll_dec		proc	near
 		mov	ax,ds:drgn_scroll_x

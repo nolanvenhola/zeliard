@@ -147,7 +147,7 @@ seg_a		segment	byte public
 
 		org	0
 
-armrp_main		proc	far
+run_armrp_main		proc	far
 
 start:
 		inc	di
@@ -211,7 +211,7 @@ script_loop:
 shop_exit:
 		jmp	word ptr cs:drv_return_to_caller
 
-armrp_main		endp
+run_armrp_main		endp
 
 build_mouth_bitmap_a		proc	near
 		mov	si,0D2h
@@ -432,7 +432,7 @@ menu_weapon_sel_ok:
 		add	al,ds:gvar_sel_row
 		mov	bx,gvar_sel_xlat
 		xlat				; al=[al+[bx]] table
-		call	knight_sword_hook_a
+		call	install_knight_sword_hook_a
 		push	ax
 		mov	word ptr ds:gvar_script_ip,0B0DCh
 		call	word ptr cs:script_step
@@ -549,7 +549,7 @@ skip_slot_clear:
 		mov	bx,18ABh
 		jmp	word ptr cs:gfx_render_scene_fn
 
-knight_sword_hook_a		proc	near
+install_knight_sword_hook_a		proc	near
 		cmp	al,3
 		je	knight_hook_a_pass1			; Jump if equal
 		retn
@@ -569,7 +569,7 @@ knight_hook_a_pass3:
 		mov	word ptr ds:gvar_script_ip,0B24Ch
 		retn
 
-knight_sword_hook_a		endp
+install_knight_sword_hook_a		endp
 
 			                        ;* No entry point to code
 		mov	byte ptr ds:trade_weapon_flag,0FFh
@@ -757,7 +757,7 @@ explain_char_do:
 explain_char_no_pre:
 			and	al,7
 			call	render_shopkeeper_frame
-			call	frame_delay
+			call	wait_frame_delay
 			pop	si
 			jmp	short explain_char_next
 			                        ;* No entry point to code
@@ -850,7 +850,7 @@ menu_explain_sel_ok:
 		add	al,ds:gvar_sel_row
 		mov	bx,gvar_sel_xlat
 		xlat				; al=[al+[bx]] table
-		call	knight_sword_hook_b
+		call	install_knight_sword_hook_b
 		push	ax
 		push	ax
 		mov	word ptr ds:gvar_script_ip,0B0DDh
@@ -886,7 +886,7 @@ explain_continue:
 		call	word ptr cs:script_step
 		jmp	explain_menu_top
 
-frame_delay		proc	near
+wait_frame_delay		proc	near
 		mov	byte ptr ds:gvar_frame_timer,0
 
 frame_delay_loop:
@@ -895,7 +895,7 @@ frame_delay_loop:
 			jb	frame_delay_loop			; Jump if below
 		retn
 
-frame_delay		endp
+wait_frame_delay		endp
 		FILL_DLG_RECT
 		pushf				; Push flags
 		call	clear_menu_rect
@@ -921,7 +921,7 @@ reset_after_trade:
 		call	word ptr cs:[sar_loader_fn]
 		retn
 
-knight_sword_hook_b		proc	near
+install_knight_sword_hook_b		proc	near
 		cmp	al,3
 		je	knight_hook_b_pass1			; Jump if equal
 		retn
@@ -941,7 +941,7 @@ knight_hook_b_pass3:
 		mov	word ptr ds:gvar_script_ip,0B240h
 		retn
 
-knight_sword_hook_b		endp
+install_knight_sword_hook_b		endp
 
 		db	0B0h, 03h,0E9h,0CDh, 00h	; mov al,03; jmp far +00CD (orphan dispatch tail)
 

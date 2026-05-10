@@ -112,7 +112,7 @@ seg_a		segment	byte public
 
 		org	0
 
-zr1_11		proc	far
+run_gtmca_main		proc	far
 
 start:
 ; Init block: 11 bytes prefix + 34 bytes dispatch table + 16 bytes VGA setup
@@ -171,7 +171,7 @@ init_and_render_col:			;* No entry point to code
 		mov	si,ds:gvar_plystate
 		cmp	byte ptr [si+1Dh],0FDh
 		jne	check_scroll_tile			; Jump if not equal
-		call	simg_multiply_2
+		call	save_state_then_blit_mca
 
 check_scroll_tile:
 		mov	word ptr ds:tile_vga_ofs,61B0h
@@ -183,53 +183,53 @@ check_scroll_tile:
 		mov	byte ptr ds:tile_col_idx,0
 
 render_col_loop:
-					call	vga_operation
+					call	run_render_passes_gtmca
 					xor	bl,bl			; Zero register
 					cmpsb				; Cmp [si] to es:[di]
 					jz	tile_skip_0			; Jump if zero
-					call	simg_func_4
+					call	mark_tile_FE_mca
 
 tile_skip_0:
 					inc	bl
 					cmpsb				; Cmp [si] to es:[di]
 					jz	tile_skip_1			; Jump if zero
-					call	simg_func_4
+					call	mark_tile_FE_mca
 
 tile_skip_1:
 					inc	bl
 					cmpsb				; Cmp [si] to es:[di]
 					jz	tile_skip_2			; Jump if zero
-					call	simg_func_4
+					call	mark_tile_FE_mca
 
 tile_skip_2:
 					inc	bl
 					cmpsb				; Cmp [si] to es:[di]
 					jz	tile_skip_3			; Jump if zero
-					call	simg_func_3
+					call	render_tile_entry_mca
 
 tile_skip_3:
 					inc	bl
 					cmpsb				; Cmp [si] to es:[di]
 					jz	tile_skip_4			; Jump if zero
-					call	simg_func_3
+					call	render_tile_entry_mca
 
 tile_skip_4:
 					inc	bl
 					cmpsb				; Cmp [si] to es:[di]
 					jz	tile_skip_5			; Jump if zero
-					call	simg_multiply
+					call	render_tile_if_marked_mca
 
 tile_skip_5:
 					inc	bl
 					cmpsb				; Cmp [si] to es:[di]
 					jz	tile_skip_6			; Jump if zero
-					call	simg_func_3
+					call	render_tile_entry_mca
 
 tile_skip_6:
 					inc	bl
 					cmpsb				; Cmp [si] to es:[di]
 					jz	tile_skip_7			; Jump if zero
-					call	simg_func_3
+					call	render_tile_entry_mca
 
 tile_skip_7:
 					add	word ptr ds:tile_vga_ofs,8
@@ -238,9 +238,9 @@ tile_skip_7:
 					jne	render_col_loop			; Jump if not equal
 		retn
 
-zr1_11		endp
+run_gtmca_main		endp
 
-vga_operation		proc	near
+run_render_passes_gtmca		proc	near
 		cmp	byte ptr ds:tile_col_idx,1Bh
 		jne	vga_op_not_last			; Jump if not equal
 		retn
@@ -270,7 +270,7 @@ vga_op_do_copy:
 blit_pair_loop:
 					push	cx
 					push	di
-					call	vga_operation1
+					call	init_4E_loop_mca
 					pop	di
 					add	di,8
 					pop	cx
@@ -282,16 +282,16 @@ blit_pair_loop:
 		pop	di
 		retn
 
-vga_operation		endp
+run_render_passes_gtmca		endp
 
-simg_multiply		proc	near
+render_tile_if_marked_mca		proc	near
 		cmp	byte ptr [si-1],0FDh
 		jne	render_tile			; Jump if not equal
 		jmp	handle_scroll_tile
 
-simg_multiply		endp
+render_tile_if_marked_mca		endp
 
-simg_func_3		proc	near
+render_tile_entry_mca		proc	near
 
 render_tile:
 		mov	al,[di-1]
@@ -392,9 +392,9 @@ blit_cached_loop:
 		pop	es
 		retn
 
-simg_func_3		endp
+render_tile_entry_mca		endp
 
-simg_func_4		proc	near
+mark_tile_FE_mca		proc	near
 		mov	al,[di-1]
 		mov	byte ptr [di-1],0FEh
 		inc	al
@@ -560,18 +560,18 @@ anim_done:
 		pop	di
 		retn
 
-simg_func_4		endp
-; Dispatch entry: set DI=tile_offscr_a then fall through to simg_func_6
+mark_tile_FE_mca		endp
+; Dispatch entry: set DI=tile_offscr_a then fall through to save_cs_then_op_mca
 
-simg_func_5_alt	proc	near
+set_cx_alt_mca	proc	near
 		mov	di,tile_offscr_a	; = 0FA00h
-simg_func_5_alt	endp
+set_cx_alt_mca	endp
 
-simg_func_5		proc	near
+set_cx_6_mca		proc	near
 		mov	cx,6
-simg_func_5		endp
+set_cx_6_mca		endp
 
-simg_func_6		proc	near
+save_cs_then_op_mca		proc	near
 		mov	ax,0A000h
 		mov	es,ax
 
@@ -615,7 +615,7 @@ blit_tile_3planes:
 
 		retn
 
-simg_func_6		endp
+save_cs_then_op_mca		endp
 
 handle_scroll_tile:
 		push	ds
@@ -632,31 +632,31 @@ handle_scroll_tile:
 		xor	dh,dh			; Zero register
 		add	dx,word ptr cs:[starting_position_in_town]
 		mov	ds:scroll_col,dx
-		call	simg_func_8
+		call	load_tile_list_then_use_mca
 		mov	es:tile_id_a,al
 		cmp	byte ptr es:tile_id_b,0FDh
 		jne	scroll_no_second			; Jump if not equal
 		inc	dx
-		call	simg_func_8
+		call	load_tile_list_then_use_mca
 		mov	es:tile_id_b,al
 
 scroll_no_second:
 		mov	si,3C9Bh
 		mov	di,0FB80h
-		call	simg_func_5
+		call	set_cx_6_mca
 		mov	si,cs:scroll_entry_ptr
 
 scroll_entry_loop:
-					call	vga_operation4
+					call	render_2_col_iter_mca
 					or	bl,bl			; Zero ?
 					jz	scroll_next_entry			; Jump if zero
 					push	si
 					push	bx
-					call	vga_operation3
+					call	decode_entity_slot_byte_mca
 					pop	bx
 					mov	es,cs:gvar_game_seg
 					mov	si,tile_id_a
-					call	vga_operation2
+					call	compute_col_decrement_mca
 					pop	si
 
 scroll_next_entry:
@@ -678,7 +678,7 @@ scroll_next_entry:
 		SET_ES_DS_VGA
 		inc	ch
 		jz	blit_top_skip			; Jump if zero
-		call	vga_operation1
+		call	init_4E_loop_mca
 
 blit_top_skip:
 		pop	di
@@ -689,7 +689,7 @@ blit_top_skip:
 		add	di,8
 		inc	cl
 		jz	blit_bot_done			; Jump if zero
-		call	vga_operation1
+		call	init_4E_loop_mca
 
 blit_bot_done:
 		pop	di
@@ -705,7 +705,7 @@ blit_bot_done:
 		pop	ds
 		retn
 
-simg_multiply_2		proc	near
+save_state_then_blit_mca		proc	near
 		push	es
 		push	ds
 		mov	si,ds:gvar_plystate
@@ -719,18 +719,18 @@ simg_multiply_2		proc	near
 		cmp	byte ptr ds:tile_id_a,0FDh
 		jne	no_scroll2			; Jump if not equal
 		inc	dx
-		call	simg_func_8
+		call	load_tile_list_then_use_mca
 		mov	ds:tile_id_a,al
 
 no_scroll2:
 		mov	si,3C9Bh
 		mov	di,0FB80h
 		mov	cx,3
-		call	simg_func_6
+		call	save_cs_then_op_mca
 		mov	si,cs:scroll_entry_ptr
 
 scroll2_entry_loop:
-					call	vga_operation4
+					call	render_2_col_iter_mca
 					or	bl,bl			; Zero ?
 					jz	scroll2_next_entry			; Jump if zero
 					push	si
@@ -738,14 +738,14 @@ scroll2_entry_loop:
 					mov	al,3
 					mul	bl			; ax = reg * al
 					push	ax
-					call	vga_operation3
+					call	decode_entity_slot_byte_mca
 					pop	ax
 					add	di,ax
 					mov	bp,di
 					mov	es,cs:gvar_game_seg
 					mov	si,3C9Bh
 					mov	di,0FB80h
-					call	vga_operation_2
+					call	render_3_tile_cols_mca
 					pop	si
 
 scroll2_next_entry:
@@ -756,7 +756,7 @@ scroll2_next_entry:
 		mov	di,vga_tile_left
 		mov	si,tile_offscr_c
 		SET_ES_DS_VGA
-		call	vga_operation1
+		call	init_4E_loop_mca
 		pop	ds
 		pop	es
 		mov	di,npc_flag_ptr
@@ -766,10 +766,10 @@ scroll2_next_entry:
 		stosb				; Store al to es:[di]
 		retn
 
-simg_multiply_2		endp
+save_state_then_blit_mca		endp
 
-simg_func_8		proc	near
-		call	simg_func_9
+load_tile_list_then_use_mca		proc	near
+		call	load_tile_list_ptr_mca
 		mov	al,[si+3]
 		cmp	al,0FDh
 		je	find_scroll_again			; Jump if equal
@@ -777,19 +777,19 @@ simg_func_8		proc	near
 
 find_scroll_again:
 					add	si,8
-					call	vga_operation0
+					call	match_tile_by_dx_mca
 					mov	al,[si+3]
 					cmp	al,0FDh
 					je	find_scroll_again			; Jump if equal
 		retn
 
-simg_func_8		endp
+load_tile_list_then_use_mca		endp
 
-simg_func_9		proc	near
+load_tile_list_ptr_mca		proc	near
 		mov	si,ds:scroll_entry_ptr
-simg_func_9		endp
+load_tile_list_ptr_mca		endp
 
-vga_operation0		proc	near
+match_tile_by_dx_mca		proc	near
 
 scan_col_match:
 					cmp	dx,[si]
@@ -800,9 +800,9 @@ col_next:
 					add	si,8
 					jmp	short scan_col_match
 
-vga_operation0		endp
+match_tile_by_dx_mca		endp
 
-vga_operation1		proc	near
+init_4E_loop_mca		proc	near
 		mov	cx,18h
 
 blit_8x8_loop:
@@ -815,9 +815,9 @@ blit_8x8_loop:
 
 		retn
 
-vga_operation1		endp
+init_4E_loop_mca		endp
 
-vga_operation2		proc	near
+compute_col_decrement_mca		proc	near
 		mov	bp,di
 		dec	bl
 		xor	bh,bh			; Zero register
@@ -825,17 +825,17 @@ vga_operation2		proc	near
 		call	word ptr cs:dispatch_tbl_a[bx]	;*
 		retn
 
-vga_operation2		endp
+compute_col_decrement_mca		endp
 
 ; Dispatch entries for dispatch_tbl_a: scroll-mode tile blitters to off-screen buffers C and D
-; scroll_blit_c: IN AL,34h; ESC,[SI] (preamble); MOV DI,tile_offscr_c; CALL vga_operation_2; JMP render_3cells
+; scroll_blit_c: IN AL,34h; ESC,[SI] (preamble); MOV DI,tile_offscr_c; CALL render_3_tile_cols_mca; JMP render_3cells
 ; scroll_blit_d: ADD SI,3; MOV DI,tile_offscr_d; JMP render_3cells
 
 scroll_blit_c:				;* No entry point to code
 		in	al,34h			; read custom port 34h (preamble before tile_offscr_c blit)
 		db	0DCh, 34h		; ESC 6,[SI] -- x87 no-op / align
 		mov	di,tile_offscr_c	; = 0FB80h
-		call	vga_operation_2		; blit 3 cells to tile_offscr_c
+		call	render_3_tile_cols_mca		; blit 3 cells to tile_offscr_c
 		jmp	short render_3cells	; done
 
 scroll_blit_d:
@@ -843,7 +843,7 @@ scroll_blit_d:
 		mov	di,tile_offscr_d	; = 0FC40h
 		jmp	short render_3cells
 
-vga_operation3		proc	near
+decode_entity_slot_byte_mca		proc	near
 		mov	al,[si+2]
 		mov	ch,al
 		and	al,7Fh
@@ -865,9 +865,9 @@ overlay_right:
 		add	di,ax
 		retn
 
-vga_operation3		endp
+decode_entity_slot_byte_mca		endp
 
-vga_operation4		proc	near
+render_2_col_iter_mca		proc	near
 		mov	cx,2
 		mov	dx,ds:scroll_col
 
@@ -884,7 +884,7 @@ entry_not_match:
 		mov	bl,cl
 		retn
 
-vga_operation4		endp
+render_2_col_iter_mca		endp
 
 	; Called via dispatch_tbl_a: dispatch to scroll-mode sub-handler via dispatch_tbl_b
 
@@ -904,11 +904,11 @@ scroll_blit_a:				;* No entry point to code
 		add	bp,3
 		mov	di,0FA00h
 		jmp	short render_3cells
-; Scroll blit entry: blit from scroll_entry to tile_offscr_a via vga_operation_2
+; Scroll blit entry: blit from scroll_entry to tile_offscr_a via render_3_tile_cols_mca
 
 scroll_blit_a2:				;* No entry point to code
 		mov	di,0FA00h
-		call	vga_operation_2
+		call	render_3_tile_cols_mca
 		jmp	short render_3cells
 ; Scroll blit entry B: advance SI by 3, blit to tile_offscr_b
 
@@ -917,7 +917,7 @@ scroll_blit_b:				;* No entry point to code
 		add	si,3
 		jmp	short render_3cells
 
-vga_operation_2		proc	near
+render_3_tile_cols_mca		proc	near
 
 render_3cells:
 		mov	cx,3
@@ -949,7 +949,7 @@ render_cell_loop:
 					mov	ds,cs:gvar_game_seg
 					mov	ax,0A000h
 					mov	es,ax
-					call	vga_operation6
+					call	init_alt_setup_mca
 					pop	bp
 					pop	es
 					pop	si
@@ -959,7 +959,7 @@ render_cell_loop:
 
 		retn
 
-vga_operation_2		endp
+render_3_tile_cols_mca		endp
 
 	; Called via dispatch_tbl_a: initialize 6 tile glyphs from chunk0 into off-screen buffer
 
@@ -988,7 +988,7 @@ init_6tiles_loop:
 					mov	ds,cs:gvar_game_seg
 					mov	ax,0A000h
 					mov	es,ax
-					call	vga_operation6
+					call	init_alt_setup_mca
 					pop	si
 					pop	ds
 					pop	cx
@@ -996,7 +996,7 @@ init_6tiles_loop:
 
 		retn
 
-vga_operation6		proc	near
+init_alt_setup_mca		proc	near
 		push	ds
 		push	si
 		push	di
@@ -1046,7 +1046,7 @@ blit_glyph_planes:
 
 		retn
 
-vga_operation6		endp
+init_alt_setup_mca		endp
 
 	; Called via dispatch_tbl_c (tile type 0): scroll VGA viewport left by 8 pixels
 
@@ -1335,7 +1335,7 @@ render_hud_element:			;* No entry point to code
 		add	ax,ax
 		add	si,ax
 		mov	si,[si]
-		call	vga_operation7
+		call	init_text_render_buf_mca
 		pop	ax
 		pop	di
 		test	byte ptr ds:gvar_flag57,0FFh
@@ -1346,14 +1346,14 @@ render_hud_element:			;* No entry point to code
 		add	di,ax
 		mov	dl,[di]
 		mov	ax,[di+1]
-		call	vga_operation9
+		call	render_via_proc_loop2_mca
 
 has_overlay_data:
 		pop	di
 		pop	si
 		retn
 
-vga_operation7		proc	near
+init_text_render_buf_mca		proc	near
 		push	cs
 		pop	es
 		mov	di,glyph_outbuf
@@ -1373,7 +1373,7 @@ glyph_nonzero:
 					pop	ds
 					jmp	short glyph_char_loop
 
-vga_operation7		endp
+init_text_render_buf_mca		endp
 
 extract_bits		proc	near
 		sub	al,20h			; ' '
@@ -1427,7 +1427,7 @@ render_border_glyph:			;* No entry point to code
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
 		pop	ax
 		pop	dx
-		call	simg_process_loop_2
+		call	step_text_char_loop2_mca
 		mov	di,3DEFh
 		mov	si,3929h
 		mov	cx,7
@@ -1435,8 +1435,8 @@ render_border_glyph:			;* No entry point to code
 		mov	word ptr ds:gvar_tile_width,0Bh
 		jmp	short draw_border_loop
 
-vga_operation9		proc	near
-		call	simg_process_loop_2
+render_via_proc_loop2_mca		proc	near
+		call	step_text_char_loop2_mca
 		push	cs
 		pop	es
 		mov	di,glyph_rowbuf
@@ -1452,7 +1452,7 @@ draw_border_loop:
 					push	di
 					lodsb				; String [si] to al
 					push	si
-					call	simg_process_loop
+					call	step_text_char_loop_mca
 					pop	si
 					pop	di
 					add	di,6
@@ -1461,9 +1461,9 @@ draw_border_loop:
 
 		retn
 
-vga_operation9		endp
+render_via_proc_loop2_mca		endp
 
-simg_process_loop		proc	near
+step_text_char_loop_mca		proc	near
 		inc	al
 		jnz	glyph_valid			; Jump if not zero
 		retn
@@ -1497,11 +1497,11 @@ glyph_6bits:
 
 		retn
 
-simg_process_loop		endp
+step_text_char_loop_mca		endp
 
-simg_process_loop_2		proc	near
+step_text_char_loop2_mca		proc	near
 		mov	di,3929h
-		call	simg_func_22
+		call	div_24bit_emit_digit_mca
 		mov	cx,6
 
 check_slot_loop:
@@ -1516,38 +1516,38 @@ slot_mark:
 
 		retn
 
-simg_process_loop_2		endp
+step_text_char_loop2_mca		endp
 
 		db	7 dup (0)			; 7-byte alignment padding
 
-simg_func_22		proc	near
+div_24bit_emit_digit_mca		proc	near
 		mov	cl,0Fh
 		mov	bx,4240h
-		call	simg_func_23
+		call	div_16bit_emit_digit_mca
 		mov	cs:[di],dh
 		mov	cl,1
 		mov	bx,86A0h
-		call	simg_func_23
+		call	div_16bit_emit_digit_mca
 		mov	cs:[di+1],dh
 		xor	cl,cl			; Zero register
 		mov	bx,2710h
-		call	simg_func_23
+		call	div_16bit_emit_digit_mca
 		mov	cs:[di+2],dh
 		mov	bx,3E8h
-		call	simg_func_24
+		call	div_16bit_emit_digit_alt_mca
 		mov	cs:[di+3],dh
 		mov	bx,64h
-		call	simg_func_24
+		call	div_16bit_emit_digit_alt_mca
 		mov	cs:[di+4],dh
 		mov	bx,0Ah
-		call	simg_func_24
+		call	div_16bit_emit_digit_alt_mca
 		mov	cs:[di+5],dh
 		mov	cs:[di+6],al
 		retn
 
-simg_func_22		endp
+div_24bit_emit_digit_mca		endp
 
-simg_func_23		proc	near
+div_16bit_emit_digit_mca		proc	near
 		xor	dh,dh			; Zero register
 
 div_sub_loop:
@@ -1570,9 +1570,9 @@ div_done:
 		add	dl,cl
 		retn
 
-simg_func_23		endp
+div_16bit_emit_digit_mca		endp
 
-simg_func_24		proc	near
+div_16bit_emit_digit_alt_mca		proc	near
 		xor	dh,dh			; Zero register
 		div	bx			; ax,dx rem=dx:ax/reg
 		xchg	dx,ax
@@ -1580,7 +1580,7 @@ simg_func_24		proc	near
 		xor	dl,dl			; Zero register
 		retn
 
-simg_func_24		endp
+div_16bit_emit_digit_alt_mca		endp
 
 	; Called via dispatch_tbl_a: copy tile rows upward (scroll up helper)
 
@@ -1770,7 +1770,7 @@ encode_tiles_inner:
 								xchg	ah,al
 								not	ax
 								mov	cs:bitplane_3,ax
-								call	simg_process_loop_3
+								call	step_text_char_loop3_mca
 								push	es
 								push	di
 								les	di,dword ptr cs:glyph_far_ptr	; Load seg:offset ptr
@@ -1852,7 +1852,7 @@ encode_row_a:
 					lodsw				; String [si] to ax
 					xchg	ah,al
 					mov	cs:bitplane_2,ax
-					call	simg_process_loop_3
+					call	step_text_char_loop3_mca
 					mov	byte ptr es:[bp],0
 					inc	bp
 					pop	cx
@@ -1875,7 +1875,7 @@ encode_row_b:
 					lodsw				; String [si] to ax
 					xchg	ah,al
 					mov	cs:bitplane_3,ax
-					call	simg_process_loop_3
+					call	step_text_char_loop3_mca
 					call	simg_scan_loop
 					mov	es:[bp],dl
 					inc	bp
@@ -1899,7 +1899,7 @@ encode_row_c:
 					lodsw				; String [si] to ax
 					xchg	ah,al
 					mov	cs:bitplane_2,ax
-					call	simg_process_loop_3
+					call	step_text_char_loop3_mca
 					call	simg_scan_loop
 					mov	es:[bp],dl
 					inc	bp
@@ -1923,7 +1923,7 @@ encode_row_d:
 					lodsw				; String [si] to ax
 					xchg	al,ah
 					mov	cs:bitplane_2,ax
-					call	simg_process_loop_3
+					call	step_text_char_loop3_mca
 					call	simg_scan_loop
 					mov	es:[bp],dl
 					inc	bp
@@ -1946,7 +1946,7 @@ encode_row_e:
 					lodsw				; String [si] to ax
 					xchg	ah,al
 					mov	cs:bitplane_2,ax
-					call	simg_process_loop_3
+					call	step_text_char_loop3_mca
 					mov	byte ptr es:[bp],0FFh
 					inc	bp
 					pop	cx
@@ -1954,15 +1954,15 @@ encode_row_e:
 
 		retn
 
-simg_process_loop_3		proc	near
+step_text_char_loop3_mca		proc	near
 		mov	cx,2
 
 pack_planes_loop:
-					call	simg_func_26
-					call	simg_func_26
-					call	simg_func_26
-					call	simg_func_26
-					call	simg_func_26
+					call	pack_2plane_pixel_mca
+					call	pack_2plane_pixel_mca
+					call	pack_2plane_pixel_mca
+					call	pack_2plane_pixel_mca
+					call	pack_2plane_pixel_mca
 					rol	word ptr cs:bitplane_2,1	; Rotate
 					adc	ax,ax
 					stosw				; Store ax to es:[di]
@@ -1970,16 +1970,16 @@ pack_planes_loop:
 					adc	ax,ax
 					rol	word ptr cs:bitplane_0,1	; Rotate
 					adc	ax,ax
-					call	simg_func_26
-					call	simg_func_26
+					call	pack_2plane_pixel_mca
+					call	pack_2plane_pixel_mca
 					stosb				; Store al to es:[di]
 					loop	pack_planes_loop		; Loop if cx > 0
 
 		retn
 
-simg_process_loop_3		endp
+step_text_char_loop3_mca		endp
 
-simg_func_26		proc	near
+pack_2plane_pixel_mca		proc	near
 		rol	word ptr cs:bitplane_2,1	; Rotate
 		adc	ax,ax
 		rol	word ptr cs:bitplane_1,1	; Rotate
@@ -1988,7 +1988,7 @@ simg_func_26		proc	near
 		adc	ax,ax
 		retn
 
-simg_func_26		endp
+pack_2plane_pixel_mca		endp
 
 simg_scan_loop		proc	near
 		mov	cx,8

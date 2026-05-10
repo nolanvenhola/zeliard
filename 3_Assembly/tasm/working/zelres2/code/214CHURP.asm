@@ -68,7 +68,7 @@ seg_a		segment	byte public
 
 		org	0
 
-church_main	proc	far
+run_church_main	proc	far
 
 start:
 ;--------------------------------------------------------------------------
@@ -119,7 +119,7 @@ drv_script_step:
 chain_to_drv_return_to_caller:
 		jmp	word ptr cs:drv_return_to_caller
 
-church_main	endp
+run_church_main	endp
 
 script_opcode_dispatch	proc	near
 		mov	bl,al
@@ -427,7 +427,7 @@ pick_welcome_text	endp
 ;  (chunk_ref format) then the filename string.
 
 ;-- ref_church_grp: chunk-loader reference record (archive 1, chunk 17h,
-;  filename "CHURCH.GRP",0) -- loaded by church_main at start.
+;  filename "CHURCH.GRP",0) -- loaded by run_church_main at start.
 
 ref_church_grp:
 		db	 01h, 17h		; archive 1, chunk 17h

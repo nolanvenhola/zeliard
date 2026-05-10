@@ -93,7 +93,7 @@ seg_a		segment	byte public
 
 		org	0
 
-tga_module_entry	proc	far
+run_gttga_main	proc	far
 
 ; Module initialization block (Sourcer byte-match fixups):
 ; The loader reads this header and patches the driver dispatch table before
@@ -162,7 +162,7 @@ fn_draw_tiles:
 		mov	si,ds:gvar_map_ptr
 		cmp	byte ptr [si+1Dh],0FDh
 		jne	draw_init_start			; Jump if not equal
-		call	limg_multiply_2
+		call	save_state_then_blit_tga
 
 draw_init_start:
 		mov	word ptr ds:tile_col_x,4BF8h
@@ -174,53 +174,53 @@ draw_init_start:
 		mov	byte ptr ds:tile_col_idx,0
 
 draw_col_loop:
-									call	limg_scan_loop
+									call	match_tile_by_dx_tga
 									xor	bl,bl			; Zero register
 									cmpsb				; Cmp [si] to es:[di]
 									jz	skip_func4_a			; Jump if zero
-									call	limg_func_4
+									call	mark_tile_FE_tga
 
 skip_func4_a:
 									inc	bl
 									cmpsb				; Cmp [si] to es:[di]
 									jz	skip_func4_b			; Jump if zero
-									call	limg_func_4
+									call	mark_tile_FE_tga
 
 skip_func4_b:
 									inc	bl
 									cmpsb				; Cmp [si] to es:[di]
 									jz	skip_func4_c			; Jump if zero
-									call	limg_func_4
+									call	mark_tile_FE_tga
 
 skip_func4_c:
 									inc	bl
 									cmpsb				; Cmp [si] to es:[di]
 									jz	skip_func3_a			; Jump if zero
-									call	limg_func_3
+									call	render_tile_entry_tga
 
 skip_func3_a:
 									inc	bl
 									cmpsb				; Cmp [si] to es:[di]
 									jz	skip_func3_b			; Jump if zero
-									call	limg_func_3
+									call	render_tile_entry_tga
 
 skip_func3_b:
 									inc	bl
 									cmpsb				; Cmp [si] to es:[di]
 									jz	skip_multiply			; Jump if zero
-									call	limg_multiply
+									call	render_tile_if_marked_tga
 
 skip_multiply:
 									inc	bl
 									cmpsb				; Cmp [si] to es:[di]
 									jz	skip_func3_c			; Jump if zero
-									call	limg_func_3
+									call	render_tile_entry_tga
 
 skip_func3_c:
 									inc	bl
 									cmpsb				; Cmp [si] to es:[di]
 									jz	draw_col_next			; Jump if zero
-									call	limg_func_3
+									call	render_tile_entry_tga
 
 draw_col_next:
 									add	word ptr ds:tile_col_x,4
@@ -229,9 +229,9 @@ draw_col_next:
 									jne	draw_col_loop			; Jump if not equal
 		retn
 
-tga_module_entry	endp
+run_gttga_main	endp
 
-limg_scan_loop		proc	near
+match_tile_by_dx_tga		proc	near
 		cmp	byte ptr ds:tile_col_idx,1Bh
 		jne	scan_not_last			; Jump if not equal
 		retn
@@ -260,7 +260,7 @@ scan_col_match:
 scan_state_loop:
 									push	cx
 									push	di
-									call	limg_check_state
+									call	check_tile_state_tga
 									pop	di
 									add	di,4
 									pop	cx
@@ -271,16 +271,16 @@ scan_state_loop:
 		pop	di
 		retn
 
-limg_scan_loop		endp
+match_tile_by_dx_tga		endp
 
-limg_multiply		proc	near
+render_tile_if_marked_tga		proc	near
 		cmp	byte ptr [si-1],0FDh
 		jne	draw_cell_start			; Jump if not equal
 		jmp	draw_anim_tile
 
-limg_multiply		endp
+render_tile_if_marked_tga		endp
 
-limg_func_3		proc	near
+render_tile_entry_tga		proc	near
 
 draw_cell_start:
 		mov	al,[di-1]
@@ -450,9 +450,9 @@ cached_r7_si_ok:
 		pop	es
 		retn
 
-limg_func_3		endp
+render_tile_entry_tga		endp
 
-limg_func_4		proc	near
+mark_tile_FE_tga		proc	near
 		mov	al,[di-1]
 		mov	byte ptr [di-1],0FEh
 		inc	al
@@ -517,14 +517,14 @@ draw_fg_masked:
 draw_fg_row_loop:
 									push	cx
 									mov	al,ds:[bp]
-									call	limg_process_loop_6
+									call	init_4_byte_loop_alt_tga
 									mov	cl,al
 									mov	ax,cs:[bx]
 									and	ax,dx
 									or	ax,[si]
 									stosw				; Store ax to es:[di]
 									mov	al,cl
-									call	limg_process_loop_6
+									call	init_4_byte_loop_alt_tga
 									mov	ax,cs:[bx+2]
 									and	ax,dx
 									or	ax,[si+2]
@@ -609,14 +609,14 @@ subst_done:
 		pop	di
 		retn
 
-limg_func_4		endp
-		db	0BFh, 9Bh, 41h		; mov di,419Bh  (dispatch entry: set di=tga_row_buf_a then fall to limg_func_5)
+mark_tile_FE_tga		endp
+		db	0BFh, 9Bh, 41h		; mov di,419Bh  (dispatch entry: set di=tga_row_buf_a then fall to set_cx_6_tga)
 
-limg_func_5		proc	near
+set_cx_6_tga		proc	near
 		mov	cx,6
-limg_func_5		endp
+set_cx_6_tga		endp
 
-limg_func_6		proc	near
+save_cs_then_op_tga		proc	near
 		push	cs
 		pop	es
 
@@ -639,7 +639,7 @@ copy_tile_loop:
 
 		retn
 
-limg_func_6		endp
+save_cs_then_op_tga		endp
 
 draw_anim_tile:
 		push	ds
@@ -656,31 +656,31 @@ draw_anim_tile:
 		xor	dh,dh			; Zero register
 		add	dx,word ptr cs:[starting_position_in_town]
 		mov	ds:tile_row_ctr,dx
-		call	limg_func_8
+		call	load_tile_list_then_use_tga
 		mov	es:tile_char_a,al
 		cmp	byte ptr es:tile_char_b,0FDh
 		jne	draw_anim_no_b			; Jump if not equal
 		inc	dx
-		call	limg_func_8
+		call	load_tile_list_then_use_tga
 		mov	es:tile_char_b,al
 
 draw_anim_no_b:
 		mov	si,tile_char_a
 		mov	di,tga_row_buf_b
-		call	limg_func_5
+		call	set_cx_6_tga
 		mov	si,cs:tile_list_ptr
 
 draw_anim_scan_loop:
-									call	limg_scan_loop_2
+									call	init_status_row_alt_tga
 									or	bl,bl			; Zero ?
 									jz	draw_anim_skip			; Jump if zero
 									push	si
 									push	bx
-									call	limg_multiply_3
+									call	render_via_multiply3_tga
 									pop	bx
 									mov	es,cs:gvar_game_seg
 									mov	si,tile_char_a
-									call	limg_get_value
+									call	save_di_via_bp_tga
 									pop	si
 
 draw_anim_skip:
@@ -703,7 +703,7 @@ draw_anim_skip:
 		mov	es,ax
 		inc	ch
 		jz	draw_anim_no_above			; Jump if zero
-		call	limg_check_state
+		call	check_tile_state_tga
 
 draw_anim_no_above:
 		pop	di
@@ -714,7 +714,7 @@ draw_anim_no_above:
 		add	di,4
 		inc	cl
 		jz	draw_anim_done			; Jump if zero
-		call	limg_check_state
+		call	check_tile_state_tga
 
 draw_anim_done:
 		pop	di
@@ -730,7 +730,7 @@ draw_anim_done:
 		pop	ds
 		retn
 
-limg_multiply_2		proc	near
+save_state_then_blit_tga		proc	near
 		push	es
 		push	ds
 		mov	si,ds:gvar_map_ptr
@@ -744,18 +744,18 @@ limg_multiply_2		proc	near
 		cmp	byte ptr ds:tile_char_a,0FDh
 		jne	anim2_no_fd			; Jump if not equal
 		inc	dx
-		call	limg_func_8
+		call	load_tile_list_then_use_tga
 		mov	ds:tile_char_a,al
 
 anim2_no_fd:
 		mov	si,tile_char_a
 		mov	di,tga_row_buf_b
 		mov	cx,3
-		call	limg_func_6
+		call	save_cs_then_op_tga
 		mov	si,cs:tile_list_ptr
 
 anim2_scan_loop:
-									call	limg_scan_loop_2
+									call	init_status_row_alt_tga
 									or	bl,bl			; Zero ?
 									jz	anim2_skip			; Jump if zero
 									push	si
@@ -763,14 +763,14 @@ anim2_scan_loop:
 									mov	al,3
 									mul	bl			; ax = reg * al
 									push	ax
-									call	limg_multiply_3
+									call	render_via_multiply3_tga
 									pop	ax
 									add	di,ax
 									mov	bp,di
 									mov	es,cs:gvar_game_seg
 									mov	si,tile_char_a
 									mov	di,tga_row_buf_b
-									call	limg_multiply_4
+									call	render_via_multiply4_tga
 									pop	si
 
 anim2_skip:
@@ -782,7 +782,7 @@ anim2_skip:
 		mov	si,tga_row_buf_b
 		mov	ax,0B800h
 		mov	es,ax
-		call	limg_check_state
+		call	check_tile_state_tga
 		pop	ds
 		pop	es
 		mov	di,marker_buf
@@ -792,10 +792,10 @@ anim2_skip:
 		stosb				; Store al to es:[di]
 		retn
 
-limg_multiply_2		endp
+save_state_then_blit_tga		endp
 
-limg_func_8		proc	near
-		call	limg_func_9
+load_tile_list_then_use_tga		proc	near
+		call	load_tile_list_ptr_tga
 		mov	al,[si+3]
 		cmp	al,0FDh
 		je	func8_next_entry			; Jump if equal
@@ -803,19 +803,19 @@ limg_func_8		proc	near
 
 func8_next_entry:
 									add	si,8
-									call	limg_func_10
+									call	noop_helper_tga
 									mov	al,[si+3]
 									cmp	al,0FDh
 									je	func8_next_entry			; Jump if equal
 		retn
 
-limg_func_8		endp
+load_tile_list_then_use_tga		endp
 
-limg_func_9		proc	near
+load_tile_list_ptr_tga		proc	near
 		mov	si,ds:tile_list_ptr
-limg_func_9		endp
+load_tile_list_ptr_tga		endp
 
-limg_func_10		proc	near
+noop_helper_tga		proc	near
 
 scan_entry_loop:
 									cmp	dx,[si]
@@ -826,9 +826,9 @@ scan_entry_next:
 									add	si,8
 									jmp	short scan_entry_loop
 
-limg_func_10		endp
+noop_helper_tga		endp
 
-limg_check_state		proc	near
+check_tile_state_tga		proc	near
 		mov	cx,3
 
 check_row_top:
@@ -906,9 +906,9 @@ check_row_loop:
 check_state_ret:
 		retn
 
-limg_check_state		endp
+check_tile_state_tga		endp
 
-limg_get_value		proc	near
+save_di_via_bp_tga		proc	near
 		mov	bp,di
 		dec	bl
 		xor	bh,bh			; Zero register
@@ -916,7 +916,7 @@ limg_get_value		proc	near
 		call	word ptr cs:dispatch_tbl_a[bx]	;*
 		retn
 
-limg_get_value		endp
+save_di_via_bp_tga		endp
 
 ; dispatch_tbl_a entries (Sourcer byte-match fixups):
 ;   db  C6h              -- padding byte
@@ -929,7 +929,7 @@ limg_get_value		endp
 		db	0EBh					; jmp short ...
 		db	66h					; ...rel offset (continues into mul4_start)
 
-limg_multiply_3		proc	near
+render_via_multiply3_tga		proc	near
 		mov	al,[si+2]
 		mov	ch,al
 		and	al,7Fh
@@ -951,9 +951,9 @@ mul3_is_back:
 		add	di,ax
 		retn
 
-limg_multiply_3		endp
+render_via_multiply3_tga		endp
 
-limg_scan_loop_2		proc	near
+init_status_row_alt_tga		proc	near
 		mov	cx,2
 		mov	dx,ds:tile_row_ctr
 
@@ -970,7 +970,7 @@ scan2_no_match:
 		mov	bl,cl
 		retn
 
-limg_scan_loop_2		endp
+init_status_row_alt_tga		endp
 
 	; fn_get_val_b: dispatch-tbl_b trampoline -- saves bp=di, calls dispatch_tbl_b[bl-1]
 
@@ -992,11 +992,11 @@ fn_draw_type0:
 		mov	di,tga_row_buf_a
 		jmp	short mul4_start
 
-; fn_draw_type1: dispatch_tbl_b entry 1 -- call limg_multiply_4 then jump to mul4_start
+; fn_draw_type1: dispatch_tbl_b entry 1 -- call render_via_multiply4_tga then jump to mul4_start
 
 fn_draw_type1:
 		mov	di,tga_row_buf_a
-		call	limg_multiply_4
+		call	render_via_multiply4_tga
 		jmp	short mul4_start
 
 ; fn_draw_type2: dispatch_tbl_b entry 2 -- advance si by 3, jump to mul4_start
@@ -1006,7 +1006,7 @@ fn_draw_type2:
 		add	si,3
 		jmp	short mul4_start
 
-limg_multiply_4		proc	near
+render_via_multiply4_tga		proc	near
 
 mul4_start:
 		mov	cx,3
@@ -1036,7 +1036,7 @@ mul4_loop:
 									mov	ds,cs:gvar_game_seg
 									push	cs
 									pop	es
-									call	limg_process_loop
+									call	save_ds_then_process_tga
 									pop	bp
 									pop	es
 									pop	si
@@ -1046,7 +1046,7 @@ mul4_loop:
 
 		retn
 
-limg_multiply_4		endp
+render_via_multiply4_tga		endp
 
 ; fn_load_tiles_a: load 6 tiles from tile_src_a (bank A at 6000h) into render buffer
 
@@ -1073,7 +1073,7 @@ tile_load_loop:
 									add	ax,2000h
 									mov	word ptr cs:far_ptr_tmp+2,ax
 									mov	ds,cs:gvar_game_seg
-									call	limg_process_loop
+									call	save_ds_then_process_tga
 									pop	si
 									pop	ds
 									pop	cx
@@ -1081,7 +1081,7 @@ tile_load_loop:
 
 		retn
 
-limg_process_loop		proc	near
+save_ds_then_process_tga		proc	near
 		push	ds
 		push	si
 		push	di
@@ -1091,9 +1091,9 @@ limg_process_loop		proc	near
 proc_mask_loop:
 									push	cx
 									lodsb				; String [si] to al
-									call	limg_process_loop_6
+									call	init_4_byte_loop_alt_tga
 									and	es:[di],dx
-									call	limg_process_loop_6
+									call	init_4_byte_loop_alt_tga
 									and	es:[di+2],dx
 									add	di,4
 									pop	cx
@@ -1114,7 +1114,7 @@ proc_or_loop:
 
 		retn
 
-limg_process_loop		endp
+save_ds_then_process_tga		endp
 
 ; fn_scroll_left: scroll-left 16-wide then 8-wide rows in TGA B800 segment
 
@@ -1402,7 +1402,7 @@ fn_draw_char:
 		add	ax,ax
 		add	si,ax
 		mov	si,[si]
-		call	limg_func_17
+		call	init_text_render_buf_tga
 		pop	ax
 		pop	di
 		test	byte ptr ds:gvar_item_flag,0FFh
@@ -1413,14 +1413,14 @@ fn_draw_char:
 		add	di,ax
 		mov	dl,[di]
 		mov	ax,[di+1]
-		call	limg_process_loop_2
+		call	render_via_text_decimal_tga
 
 ploop2_no_item:
 		pop	di
 		pop	si
 		retn
 
-limg_func_17		proc	near
+init_text_render_buf_tga		proc	near
 		push	cs
 		pop	es
 		mov	di,glyph_render_ofs
@@ -1437,16 +1437,16 @@ func17_nonzero:
 									push	ds
 									push	si
 									and	bl,1
-									call	limg_func_18
+									call	compute_glyph_index_tga
 									pop	si
 									pop	ds
 									pop	bx
 									inc	bl
 									jmp	short func17_loop
 
-limg_func_17		endp
+init_text_render_buf_tga		endp
 
-limg_func_18		proc	near
+compute_glyph_index_tga		proc	near
 		sub	al,20h			; ' '
 		xor	ah,ah			; Zero register
 		shl	ax,1			; Shift w/zeros fill
@@ -1465,9 +1465,9 @@ limg_func_18		proc	near
 func18_bit_loop:
 									push	bx
 									lodsb				; String [si] to al
-									call	limg_func_19
+									call	init_2_iter_loop_tga
 									push	ax
-									call	limg_func_19
+									call	init_2_iter_loop_tga
 									pop	bx
 									mov	bl,ah
 									mov	dh,bl
@@ -1495,9 +1495,9 @@ func18_wide:
 		inc	di
 		retn
 
-limg_func_18		endp
+compute_glyph_index_tga		endp
 
-limg_func_19		proc	near
+init_2_iter_loop_tga		proc	near
 		xor	ah,ah			; Zero register
 		mov	dl,2
 
@@ -1514,9 +1514,9 @@ func19_bit_loop:
 									jnz	func19_bit_loop			; Jump if not zero
 		retn
 
-limg_func_19		endp
+init_2_iter_loop_tga		endp
 
-; fn_draw_char_alt: alternate draw-char entry (dx:ax args), uses limg_process_loop_2
+; fn_draw_char_alt: alternate draw-char entry (dx:ax args), uses render_via_text_decimal_tga
 
 fn_draw_char_alt:
 		push	dx
@@ -1529,7 +1529,7 @@ fn_draw_char_alt:
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
 		pop	ax
 		pop	dx
-		call	limg_process_loop_4
+		call	render_text_decimal_tga
 		mov	di,glyph_render_ofs
 		mov	si,bcd_time_buf
 		mov	cx,7
@@ -1537,8 +1537,8 @@ fn_draw_char_alt:
 		mov	word ptr ds:gvar_copy_width,0Bh
 		jmp	short proc2_col_loop
 
-limg_process_loop_2		proc	near
-		call	limg_process_loop_4
+render_via_text_decimal_tga		proc	near
+		call	render_text_decimal_tga
 		push	cs
 		pop	es
 		mov	di,glyph_render_ofs
@@ -1554,7 +1554,7 @@ proc2_col_loop:
 									push	di
 									lodsb				; String [si] to al
 									push	si
-									call	limg_process_loop_3
+									call	step_render_alt_tga
 									pop	si
 									pop	di
 									add	di,3
@@ -1563,9 +1563,9 @@ proc2_col_loop:
 
 		retn
 
-limg_process_loop_2		endp
+render_via_text_decimal_tga		endp
 
-limg_process_loop_3		proc	near
+step_render_alt_tga		proc	near
 		inc	al
 		jnz	proc3_nonzero			; Jump if not zero
 		retn
@@ -1584,22 +1584,22 @@ proc3_row_loop:
 									lodsb				; String [si] to al
 									add	al,al
 									add	al,al
-									call	limg_func_19
+									call	init_2_iter_loop_tga
 									or	es:[di],ah
-									call	limg_func_19
+									call	init_2_iter_loop_tga
 									or	es:[di+1],ah
-									call	limg_func_19
+									call	init_2_iter_loop_tga
 									or	es:[di+2],ah
 									add	di,50h
 									loop	proc3_row_loop		; Loop if cx > 0
 
 		retn
 
-limg_process_loop_3		endp
+step_render_alt_tga		endp
 
-limg_process_loop_4		proc	near
+render_text_decimal_tga		proc	near
 		mov	di,bcd_time_buf
-		call	limg_func_23
+		call	div_24bit_emit_digit_tga
 		mov	cx,6
 
 proc4_check_loop:
@@ -1614,41 +1614,41 @@ proc4_write_ff:
 
 		retn
 
-limg_process_loop_4		endp
+render_text_decimal_tga		endp
 
-; bcd_time_buf: 7-byte BCD time buffer at CS:3A1Fh (written by limg_func_23)
+; bcd_time_buf: 7-byte BCD time buffer at CS:3A1Fh (written by div_24bit_emit_digit_tga)
 ; Fields: [0]=tens-of-hours [1]=hours [2]=tens-of-minutes [3]=minutes
 ;         [4]=tens-of-seconds [5]=seconds [6]=frames
 		db	7 dup (0)
 
-limg_func_23		proc	near
+div_24bit_emit_digit_tga		proc	near
 		mov	cl,0Fh
 		mov	bx,4240h
-		call	limg_func_24
+		call	div_16bit_emit_digit_tga
 		mov	cs:[di],dh
 		mov	cl,1
 		mov	bx,86A0h
-		call	limg_func_24
+		call	div_16bit_emit_digit_tga
 		mov	cs:[di+1],dh
 		xor	cl,cl			; Zero register
 		mov	bx,2710h
-		call	limg_func_24
+		call	div_16bit_emit_digit_tga
 		mov	cs:[di+2],dh
 		mov	bx,3E8h
-		call	limg_func_25
+		call	div_16bit_emit_digit_alt_tga
 		mov	cs:[di+3],dh
 		mov	bx,64h
-		call	limg_func_25
+		call	div_16bit_emit_digit_alt_tga
 		mov	cs:[di+4],dh
 		mov	bx,0Ah
-		call	limg_func_25
+		call	div_16bit_emit_digit_alt_tga
 		mov	cs:[di+5],dh
 		mov	cs:[di+6],al
 		retn
 
-limg_func_23		endp
+div_24bit_emit_digit_tga		endp
 
-limg_func_24		proc	near
+div_16bit_emit_digit_tga		proc	near
 		xor	dh,dh			; Zero register
 
 func24_div_loop:
@@ -1671,9 +1671,9 @@ func24_done:
 		add	dl,cl
 		retn
 
-limg_func_24		endp
+div_16bit_emit_digit_tga		endp
 
-limg_func_25		proc	near
+div_16bit_emit_digit_alt_tga		proc	near
 		xor	dh,dh			; Zero register
 		div	bx			; ax,dx rem=dx:ax/reg
 		xchg	dx,ax
@@ -1681,7 +1681,7 @@ limg_func_25		proc	near
 		xor	dl,dl			; Zero register
 		retn
 
-limg_func_25		endp
+div_16bit_emit_digit_alt_tga		endp
 
 ; fn_scroll_back: scroll one tile column backward in TGA B800 (bh/bl coords, ch=width)
 
@@ -1885,18 +1885,18 @@ encode_tile_loop:
 																xchg	ah,al
 																not	ax
 																mov	cs:bitplane_3,ax
-																call	limg_process_loop_5
+																call	init_4_byte_loop_tga
 																mov	ax,dx
 																xchg	ah,al
 																stosw				; Store ax to es:[di]
-																call	limg_process_loop_5
+																call	init_4_byte_loop_tga
 																mov	ax,dx
 																xchg	ah,al
 																stosw				; Store ax to es:[di]
 																push	es
 																push	di
 																les	di,dword ptr cs:far_ptr_tmp	; Load seg:offset ptr
-																call	limg_scan_loop_3
+																call	step_scan_alt_tga
 																mov	al,dl
 																stosb				; Store al to es:[di]
 																mov	cs:far_ptr_tmp,di
@@ -1972,11 +1972,11 @@ encode_mode0_loop:
 									lodsw				; String [si] to ax
 									xchg	ah,al
 									mov	cs:bitplane_2,ax
-									call	limg_process_loop_5
+									call	init_4_byte_loop_tga
 									mov	ax,dx
 									xchg	ah,al
 									stosw				; Store ax to es:[di]
-									call	limg_process_loop_5
+									call	init_4_byte_loop_tga
 									mov	ax,dx
 									xchg	ah,al
 									stosw				; Store ax to es:[di]
@@ -2003,15 +2003,15 @@ encode_mode1_loop:
 									lodsw				; String [si] to ax
 									xchg	al,ah
 									mov	cs:bitplane_3,ax
-									call	limg_process_loop_5
+									call	init_4_byte_loop_tga
 									mov	ax,dx
 									xchg	ah,al
 									stosw				; Store ax to es:[di]
-									call	limg_process_loop_5
+									call	init_4_byte_loop_tga
 									mov	ax,dx
 									xchg	ah,al
 									stosw				; Store ax to es:[di]
-									call	limg_scan_loop_3
+									call	step_scan_alt_tga
 									mov	es:[bp],dl
 									inc	bp
 									pop	cx
@@ -2032,15 +2032,15 @@ encode_mode2_loop:
 									lodsw				; String [si] to ax
 									xchg	al,ah
 									mov	cs:bitplane_2,ax
-									call	limg_process_loop_5
+									call	init_4_byte_loop_tga
 									mov	ax,dx
 									xchg	ah,al
 									stosw				; Store ax to es:[di]
-									call	limg_process_loop_5
+									call	init_4_byte_loop_tga
 									mov	ax,dx
 									xchg	ah,al
 									stosw				; Store ax to es:[di]
-									call	limg_scan_loop_3
+									call	step_scan_alt_tga
 									mov	es:[bp],dl
 									inc	bp
 									pop	cx
@@ -2061,15 +2061,15 @@ encode_mode3_loop:
 									lodsw				; String [si] to ax
 									xchg	ah,al
 									mov	cs:bitplane_2,ax
-									call	limg_process_loop_5
+									call	init_4_byte_loop_tga
 									mov	ax,dx
 									xchg	ah,al
 									stosw				; Store ax to es:[di]
-									call	limg_process_loop_5
+									call	init_4_byte_loop_tga
 									mov	ax,dx
 									xchg	ah,al
 									stosw				; Store ax to es:[di]
-									call	limg_scan_loop_3
+									call	step_scan_alt_tga
 									mov	es:[bp],dl
 									inc	bp
 									pop	cx
@@ -2089,11 +2089,11 @@ encode_mode4_loop:
 									lodsw				; String [si] to ax
 									xchg	ah,al
 									mov	cs:bitplane_2,ax
-									call	limg_process_loop_5
+									call	init_4_byte_loop_tga
 									mov	ax,dx
 									xchg	ah,al
 									stosw				; Store ax to es:[di]
-									call	limg_process_loop_5
+									call	init_4_byte_loop_tga
 									mov	ax,dx
 									xchg	ah,al
 									stosw				; Store ax to es:[di]
@@ -2104,7 +2104,7 @@ encode_mode4_loop:
 
 		retn
 
-limg_process_loop_5		proc	near
+init_4_byte_loop_tga		proc	near
 		mov	cx,4
 
 proc5_nibble_loop:
@@ -2130,7 +2130,7 @@ proc5_nibble_loop:
 
 		retn
 
-limg_process_loop_5		endp
+init_4_byte_loop_tga		endp
 
 ; color_lut_data: 62-entry bitplane-index to TGA 4-bit color lookup table (color_lut equ 3DCBh)
 ; Indexed by 6-bit bitplane combination [bp2:bp1:bp0] x 2 passes; maps to TGA nibble color.
@@ -2147,7 +2147,7 @@ limg_process_loop_5		endp
 		db	 09h, 05h			; color_lut[60..61]
 		db	 0Ch, 0Dh			; color_lut[62..63] (continued)
 
-limg_scan_loop_3		proc	near
+step_scan_alt_tga		proc	near
 		mov	cx,8
 
 scan3_bit_loop:
@@ -2168,7 +2168,7 @@ scan3_is_3:
 
 		retn
 
-limg_scan_loop_3		endp
+step_scan_alt_tga		endp
 
 extract_bits		proc	near
 		mov	dh,bl
@@ -2188,7 +2188,7 @@ extract_bits		proc	near
 
 extract_bits		endp
 
-limg_process_loop_6		proc	near
+init_4_byte_loop_alt_tga		proc	near
 		mov	cx,4
 
 proc6_bit_loop:
@@ -2205,7 +2205,7 @@ proc6_bit_loop:
 		xchg	dh,dl
 		retn
 
-limg_process_loop_6		endp
+init_4_byte_loop_alt_tga		endp
 
 		db	1719 dup (0)
 

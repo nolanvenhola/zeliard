@@ -18,7 +18,7 @@ PAGE  59,132
 ;    [0xA593] ref_6dman_grp  = 02h '6DMAN.GRP' 00 (zelres3, chunk 54)
 ;
 ;  Public structure:
-;    roka_demo_main    - far entry @ +9; loads driver+sprite chunks,
+;    run_roka_demo_main    - far entry @ +9; loads driver+sprite chunks,
 ;                        runs intro-wipe, 9-pose pose loop, line-interp
 ;                        movement to target pose, fanfare INT 60h, then
 ;                        out-wipe and return to caller.
@@ -157,7 +157,7 @@ seg_a		segment	byte public
 
 		org	0
 
-roka_demo_main	proc	far
+run_roka_demo_main	proc	far
 
 ; ----------------------------------------------------------------------
 ; File header (bytes 0x000..0x008 of the loaded image; never executed).
@@ -440,7 +440,7 @@ outro_wipe_skip_erase:
 		xor	al,al			; Zero register
 		jmp	word ptr cs:gfx_fillrect_fn
 
-roka_demo_main	endp
+run_roka_demo_main	endp
 
 draw_pose_3x3		proc	near
 		mov	al,byte ptr ds:gvar_pose_idx
@@ -482,7 +482,7 @@ draw_pose_3x3		endp
 ; read because the smallest pose index used at runtime is 1.
 ;
 ; ROLE TABLE for the 9 cutscene poses (best-guess semantic labels based on
-; cutscene flow in roka_demo_main; not runtime-traced).  Cutscene order:
+; cutscene flow in run_roka_demo_main; not runtime-traced).  Cutscene order:
 ;   1. intro_wipe_loop  cycles pose_idx 0..3 during palette wipe-in (13 frames)
 ;   2. pose_idx=4 held briefly (5 wait_frames) -- ENTRANCE pose
 ;   3. pose_cycle_loop  advances pose_idx 5..8 (one per 2 frames) -- CHARACTER ANIM

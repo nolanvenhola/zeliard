@@ -256,7 +256,7 @@ seg_a		segment	byte public
 ; Main entry point for the opening demo sequence
 ; ============================================================
 
-opening_scene_main		proc	far
+run_opening_demo_main		proc	far
 
 start:
 		sub	word ptr ds:[0],si
@@ -274,7 +274,7 @@ start:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	fill_buffer
+		call	decode_rle_to_es_di
 		mov	ax,4
 		call	word ptr cs:gfx_palette_fn
 		xor	bx,bx			; Zero register
@@ -352,7 +352,7 @@ scene_sprite_loop:
 scene_after_anim:
 		WAIT_FRAME 0F0h
 		mov	si,scene_sprite_b
-		call	sprite_anim_proc
+		call	play_sprite_anim_script
 		WAIT_FRAME 0F0h
 		mov	al,2
 		mov	bx,1720h
@@ -370,7 +370,7 @@ scene_after_anim:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	fill_buffer
+		call	decode_rle_to_es_di
 		LOAD_DATA glyph_large, vga_seg
 		mov	si,scene_data_d
 		mov	di,aux_buf_seg
@@ -406,7 +406,7 @@ scene_after_anim:
 		mov	es,cs:gvar_game_seg
 		mov	si,aux_buf_seg
 		mov	di,scene_framebuf
-		call	fill_buffer
+		call	decode_rle_to_es_di
 		mov	al,0F0h
 		call	timer_wait_loop
 		mov	bx,70Fh
@@ -418,7 +418,7 @@ scene_after_anim:
 		mov	es,cs:gvar_game_seg
 		mov	si,vga_seg
 		mov	di,scene_framebuf
-		call	fill_buffer
+		call	decode_rle_to_es_di
 		mov	si,scene_sprite_d
 		call	word ptr cs:disp_narr_open
 		mov	al,0F0h
@@ -449,13 +449,13 @@ scene_wait_gfx_enabled:
 							jz	scene_wait_gfx_enabled			; Jump if zero
 		jmp	timer_exit_to_game
 
-opening_scene_main		endp
+run_opening_demo_main		endp
 
 ; ============================================================
 ; SPRITE & CHARACTER RENDERING
 ; ============================================================
 
-sprite_anim_proc		proc	near
+play_sprite_anim_script		proc	near
 		mov	byte ptr ds:render_state_b,8Ah
 
 anim_main_loop:
@@ -483,7 +483,7 @@ anim_char_render:
 							call	timer_wait_loop
 							jmp	short anim_main_loop
 
-sprite_anim_proc		endp
+play_sprite_anim_script		endp
 
 char_render_proc		proc	near
 		cmp	al,0FFh
@@ -748,7 +748,7 @@ post_title_story_scenes:
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		call	word ptr cs:disp_game_fn
-		call	script_interpreter
+		call	run_script_interpreter
 		mov	ax,9
 		call	word ptr cs:gfx_palette_fn
 		mov	bx,410h
@@ -758,7 +758,7 @@ post_title_story_scenes:
 		call	word ptr cs:disp_game_fn
 		LOAD_DATA res_ame_grp, vga_seg
 		DECOMPRESS_VGA scene_framebuf
-		call	script_interpreter
+		call	run_script_interpreter
 		xor	ax,ax			; Zero register
 		call	word ptr cs:disp_font_inv
 		mov	ax,6
@@ -770,27 +770,27 @@ post_title_story_scenes:
 		call	word ptr cs:disp_game_fn
 		LOAD_DATA scene_data_c, vga_seg
 		DECOMPRESS_VGA scene_data_i
-		call	script_interpreter
+		call	run_script_interpreter
 		mov	al,4
 		call	busy_wait_delay
 		SET_ES_2000
 		mov	di,0
-		call	palette_blend
+		call	apply_palette_blend
 		mov	bx,410h
 		mov	cx,4868h
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		call	word ptr cs:disp_game_fn
-		call	script_interpreter
-		call	script_interpreter
+		call	run_script_interpreter
+		call	run_script_interpreter
 		SET_ES_2000
 		mov	di,0
 		mov	bx,1728h
 		mov	cx,2230h
 		mov	al,7
 		call	word ptr cs:disp_data_7420
-		call	script_interpreter
-		call	script_interpreter
+		call	run_script_interpreter
+		call	run_script_interpreter
 		mov	al,2
 		call	busy_wait_delay
 		SET_ES_2000
@@ -800,7 +800,7 @@ post_title_story_scenes:
 		call	word ptr cs:disp_game_fn
 		mov	byte ptr cs:gvar_frame_timer,0
 		mov	al,0Fh
-		call	story_scene_timer_loop
+		call	wait_story_scene_timer
 		mov	al,3
 		call	busy_wait_delay
 		SET_ES_2000
@@ -813,11 +813,11 @@ post_title_story_scenes:
 		mov	bx,410h
 		mov	cx,4868h
 		call	word ptr cs:gfx_mode_fn
-		call	script_interpreter
+		call	run_script_interpreter
 		mov	ax,7
 		call	word ptr cs:gfx_palette_fn
 		GFX_BLIT 410h, 4868h, 4000h
-		call	script_interpreter
+		call	run_script_interpreter
 		LOAD_DATA res_isi_grp, vga_seg
 		DECOMPRESS_VGA scene_framebuf
 		xor	al,al			; Zero register
@@ -826,8 +826,8 @@ post_title_story_scenes:
 		mov	es,cs:gvar_game_seg
 		mov	di,scene_framebuf
 		call	word ptr cs:gfx_update_fn
-		call	script_interpreter
-		call	script_interpreter
+		call	run_script_interpreter
+		call	run_script_interpreter
 		LOAD_DATA res_oui_grp, vga_seg
 		DECOMPRESS_VGA scene_framebuf
 		mov	di,scene_framebuf
@@ -835,10 +835,10 @@ post_title_story_scenes:
 		mov	cx,2468h
 		mov	al,5
 		call	word ptr cs:disp_data_7420
-		call	script_interpreter
+		call	run_script_interpreter
 		xor	ax,ax			; Zero register
 		call	word ptr cs:disp_font_inv
-		call	script_interpreter
+		call	run_script_interpreter
 		LOAD_DATA res_sei_grp, vga_seg
 		DECOMPRESS_VGA scene_framebuf
 		GFX_BLIT 410h, 4868h, scene_framebuf
@@ -846,8 +846,8 @@ post_title_story_scenes:
 		DECOMPRESS_VGA scene_framebuf
 		LOAD_DATA scene_data_h, vga_seg
 		DECOMPRESS_VGA screen_buf_1
-		call	script_interpreter
-		call	script_interpreter
+		call	run_script_interpreter
+		call	run_script_interpreter
 		xor	ax,ax			; Zero register
 		call	word ptr cs:disp_font_inv
 		mov	ax,6
@@ -868,8 +868,8 @@ post_title_story_scenes:
 		mov	bx,2D18h
 		mov	cx,1858h
 		call	word ptr cs:disp_game_fn
-		call	script_interpreter
-		call	script_interpreter
+		call	run_script_interpreter
+		call	run_script_interpreter
 		LOAD_DATA res_oup_grp, vga_seg
 		DECOMPRESS_VGA screen_buf_1
 		xor	ax,ax			; Zero register
@@ -883,13 +883,13 @@ post_title_story_scenes:
 		mov	di,screen_buf_1
 		mov	bx,1618h
 		call	word ptr cs:disp_script_area
-		call	script_interpreter
-		call	script_interpreter
+		call	run_script_interpreter
+		call	run_script_interpreter
 		mov	bx,1515h
 		mov	dx,315Dh
 		mov	cx,18h
 
-story_scene_timer_loop_start:
+wait_story_scene_timer_start:
 							push	cx
 							push	dx
 							push	bx
@@ -897,13 +897,13 @@ story_scene_timer_loop_start:
 							mov	cx,dx
 							call	word ptr cs:disp_load_setup
 							mov	al,0Fh
-							call	story_scene_timer_loop
+							call	wait_story_scene_timer
 							pop	bx
 							pop	dx
 							inc	bh
 							dec	dh
 							pop	cx
-							loop	story_scene_timer_loop_start		; Loop if cx > 0
+							loop	wait_story_scene_timer_start		; Loop if cx > 0
 
 		mov	bx,2C15h
 		mov	cx,1A5Dh
@@ -916,8 +916,8 @@ story_scene_timer_loop_start:
 		mov	bx,0B18h
 		mov	cx,1858h
 		call	word ptr cs:disp_game_fn
-		call	script_interpreter
-		call	script_interpreter
+		call	run_script_interpreter
+		call	run_script_interpreter
 		mov	bx,2C15h
 		mov	dx,1A5Dh
 		mov	cx,18h
@@ -930,7 +930,7 @@ gameplay_input_loop:
 							mov	cx,dx
 							call	word ptr cs:disp_load_setup
 							mov	al,0Fh
-							call	story_scene_timer_loop
+							call	wait_story_scene_timer
 							pop	bx
 							pop	dx
 							inc	bh
@@ -949,7 +949,7 @@ gameplay_input_loop:
 		mov	bx,1010h
 		mov	cx,3160h
 		call	word ptr cs:disp_game_fn
-		call	script_interpreter
+		call	run_script_interpreter
 		LOAD_DATA res_yuu2_grp, vga_seg
 		mov	si,res_yuu3_grp
 		mov	di,ext_seg_d000
@@ -974,7 +974,7 @@ gameplay_input_loop:
 		GFX_BLIT 808h, 40C0h, 4000h
 		mov	byte ptr cs:gvar_frame_timer,0
 		mov	al,0F0h
-		call	story_scene_timer_loop
+		call	wait_story_scene_timer
 		mov	al,0FFh
 		mov	bx,808h
 		mov	cx,40C0h
@@ -990,13 +990,13 @@ gameplay_input_loop:
 gameplay_frame_loop:
 							push	cx
 							mov	al,0C8h
-							call	story_scene_timer_loop
+							call	wait_story_scene_timer
 							pop	cx
 							loop	gameplay_frame_loop		; Loop if cx > 0
 
 		jmp	short transition_out_to_game
 
-story_scene_timer_loop	proc	near
+wait_story_scene_timer	proc	near
 
 gameplay_wait_elapsed:
 							call	story_scene_input_handler
@@ -1005,7 +1005,7 @@ gameplay_wait_elapsed:
 		mov	byte ptr cs:gvar_frame_timer,0
 		retn
 
-story_scene_timer_loop	endp
+wait_story_scene_timer	endp
 
 story_scene_input_handler	proc	near
 		test	byte ptr cs:gvar_spacebar_state,0FFh
@@ -1042,7 +1042,7 @@ transition_out_to_game:
 
 timer_wait_loop		endp
 
-		; Two padding bytes between timer_wait_loop and script_interpreter.
+		; Two padding bytes between timer_wait_loop and run_script_interpreter.
 		; Unreachable: timer_wait_loop ends with jmp word ptr cs:exit_jmp_target_ptr.
 		db	00h			; padding
 		db	SCR_ATTR_RST		; padding (0xA0)
@@ -1055,12 +1055,12 @@ timer_wait_loop		endp
 ; Control codes 0xEB-0xEF: speaker / text attribute codes
 ; ============================================================
 
-script_interpreter		proc	near
+run_script_interpreter		proc	near
 		mov	byte ptr cs:gvar_frame_timer,0
 
 script_loop:
 		mov	al,10h
-		call	story_scene_timer_loop
+		call	wait_story_scene_timer
 
 script_refetch:
 		push	cs
@@ -1267,16 +1267,16 @@ script_clear_screen:
 
 script_do_pause:
 		mov	al,0F0h
-		call	story_scene_timer_loop
+		call	wait_story_scene_timer
 		jmp	script_loop
 
 script_do_long_pause:
 		mov	al,0F0h
-		call	story_scene_timer_loop
+		call	wait_story_scene_timer
 		mov	al,0F0h
-		call	story_scene_timer_loop
+		call	wait_story_scene_timer
 		mov	al,0F0h
-		call	story_scene_timer_loop
+		call	wait_story_scene_timer
 		jmp	script_loop
 
 script_portrait_sm:
@@ -1348,7 +1348,7 @@ script_portrait_lg_large:
 		call	word ptr cs:disp_game_fn
 		jmp	script_refetch
 
-script_interpreter		endp
+run_script_interpreter		endp
 
 ; ============================================================
 ; TEXT RENDERING UTILITIES
@@ -1432,7 +1432,7 @@ alt_frame_loop:
 												mov	cx,50A0h
 												call	word ptr cs:anim_fn_draw
 												mov	al,1Ch
-												call	story_scene_timer_loop
+												call	wait_story_scene_timer
 												pop	cx
 												loop	alt_frame_loop		; Loop if cx > 0
 
@@ -1448,7 +1448,7 @@ alt_fade_loop:
 							mov	cx,50A0h
 							call	word ptr cs:anim_fn_draw
 							mov	al,1Ch
-							call	story_scene_timer_loop
+							call	wait_story_scene_timer
 							pop	cx
 							loop	alt_fade_loop		; Loop if cx > 0
 
@@ -1469,10 +1469,10 @@ animate_scanline_alt		endp
 ; ============================================================
 
 decompress_image		proc	near
-		call	rle_unpack_core
+		call	decode_rle_stream
 		jmp	short decomp_palette_transform
 
-rle_unpack_core		proc	near
+decode_rle_stream		proc	near
 		push	di
 		lodsw				; String [si] to ax
 		mov	cx,ax
@@ -1509,7 +1509,7 @@ decomp_next_bit:
 		pop	di
 		retn
 
-rle_unpack_core		endp
+decode_rle_stream		endp
 
 decomp_palette_transform:
 		xor	dh,dh			; Zero register
@@ -1561,7 +1561,7 @@ decompress_image		endp
 ; UTILITY ROUTINES
 ; ============================================================
 
-fill_buffer		proc	near
+decode_rle_to_es_di		proc	near
 
 fill_loop:
 												test	byte ptr [si],40h	; '@'
@@ -1595,7 +1595,7 @@ fill_raw_byte:
 												jz	fill_copy_bytes			; Jump if zero
 							jmp	short fill_repeat_byte
 
-fill_buffer		endp
+decode_rle_to_es_di		endp
 
 palette_lookup		proc	near
 		push	ds
@@ -1626,10 +1626,10 @@ palette_lookup		endp
 render_font_row_double		proc	near
 		push	di
 		add	di,font_row_ofs
-		call	copy_buffer
+		call	blit_rect_to_sprite_cache
 		pop	di
 		push	di
-		call	copy_buffer
+		call	blit_rect_to_sprite_cache
 		pop	di
 		retn
 
@@ -1637,17 +1637,17 @@ render_font_row_double		endp
 
 render_font_row_inverse		proc	near
 		push	di
-		call	copy_buffer
+		call	blit_rect_to_sprite_cache
 		pop	di
 		push	di
 		add	di,font_row_ofs
-		call	copy_buffer
+		call	blit_rect_to_sprite_cache
 		pop	di
 		retn
 
 render_font_row_inverse		endp
 
-copy_buffer		proc	near
+blit_rect_to_sprite_cache		proc	near
 		push	bx
 		push	cx
 		mov	al,22h			; '"'
@@ -1672,7 +1672,7 @@ copy_line_loop:
 		pop	bx
 		retn
 
-copy_buffer		endp
+blit_rect_to_sprite_cache		endp
 
 busy_wait_delay		proc	near
 		push	ds
@@ -1684,13 +1684,13 @@ busy_wait_delay		proc	near
 		mov	si,ax
 		SET_ES_2000
 		mov	di,null_ofs
-		call	color_rotation
+		call	cycle_palette_colors
 		pop	ds
 		retn
 
 busy_wait_delay		endp
 
-color_rotation		proc	near
+cycle_palette_colors		proc	near
 		mov	cx,30h
 
 rotate_row_loop:
@@ -1715,9 +1715,9 @@ rotate_byte_loop:
 
 		retn
 
-color_rotation		endp
+cycle_palette_colors		endp
 
-palette_blend		proc	near
+apply_palette_blend		proc	near
 		push	ds
 		push	es
 		pop	ds
@@ -1766,7 +1766,7 @@ blend_word_loop:
 		pop	ds
 		retn
 
-palette_blend		endp
+apply_palette_blend		endp
 
 xor_mask_render		proc	near
 		add	di,font_scanline_ofs
@@ -2532,7 +2532,7 @@ disp_narr_chap4	dw	offset narration_chapter_4	; 'e,', encoded as chapter offset
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
 		db	SCR_WAIT				; pause
-		db	SCR_END_SCRIPT				; end of script (page break; caller re-invokes script_interpreter from here)
+		db	SCR_END_SCRIPT				; end of script (page break; caller re-invokes run_script_interpreter from here)
 		; Script continuation (0x00-0x1F = custom font glyphs / animation codes; 0xFC = no-op)
 		db	'X', '%', SCR_RESET
 		db	0, 0, ANIM_03, 'h', '!'

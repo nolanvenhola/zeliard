@@ -17,7 +17,7 @@ PAGE  59,132
 ;                  hgc_extended_src, hgc_plane_buf_a).
 ;    Calls into:   ds:dispatch_tbl[bx] (game-DS animation handler table);
 ;                  cs:copy_fn_tbl entries (HGC plane copy variants);
-;                  internal frame_row_driver / anim_refresh_all /
+;                  internal render_frame_rows / anim_refresh_all /
 ;                  projectile_spawn_check dispatchers; cs:[stick_subsample_tick_handler] -- driver
 ;                  fn (input/page advance); no cross-chunk calls outside
 ;                  its own driver fn table.
@@ -135,10 +135,10 @@ seg_a		segment	byte public
 
 		org	0
 
-gfhgc_main		proc	far
+run_gfhgc_main		proc	far
 
 start:
-; gfhgc_main inline init block (0x0000-0x005A):
+; run_gfhgc_main inline init block (0x0000-0x005A):
 ; -- The first bytes are decoded by Sourcer as bogus mnemonics because a HGC-only
 ;    dispatch table at 0x0006-0x0035 lives before the real code begins.
 ;    Keeping those bytes as db with decode notes.
@@ -172,7 +172,7 @@ drv_init_stub:
 		sub	si,21h
 ; [0x004D-0x004F] call with mid-instruction label: hgc_row_ofs labels the displacement bytes.
 ; Callers patch the displacement (hgc_row_ofs) to redirect this call at runtime.
-; Current target: 0050h + 14F0h = 1540h (si_wrap_lo).
+; Current target: 0050h + 14F0h = 1540h (wrap_scroll_si_high).
 		db	0E8h				; call near opcode
 hgc_row_ofs	db	0F0h, 14h			; displacement (patch target); initially calls 1540h
 ; [0x0050] resumes as normal code:
@@ -212,7 +212,7 @@ row_scan_done:
 		mov	byte ptr ds:row_counter,12h
 
 row_render_loop:
-				call	frame_row_driver
+				call	render_frame_rows
 				xor	bx,bx			; Zero register
 				add	si,3
 				lodsb				; String [si] to al
@@ -248,7 +248,7 @@ col_compare:
 
 row_advance:
 				add	si,4
-				call	si_wrap_hi
+				call	wrap_scroll_si_low
 				add	word ptr ds:vga_row_ptr,40B4h
 				cmp	word ptr ds:vga_row_ptr,6000h
 				jb	row_wrap_done		; Jump if below
@@ -259,7 +259,7 @@ row_wrap_done:
 				jnz	row_render_loop		; Jump if not zero
 		retn
 
-gfhgc_main		endp
+run_gfhgc_main		endp
 
 sprite_state_update		proc	near
 		mov	al,[si-1]
@@ -584,11 +584,11 @@ loc_56:
 		mov	byte ptr ds:sprite_buf,0FFh
 		mov	cl,[si]
 		add	si,25h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	al,[si]
 		or	al,al			; Zero ?
 		jns	loc_57			; Jump if not sign
-		call	translate_char
+		call	decode_char_glyph
 
 loc_57:
 		push	ax
@@ -622,7 +622,7 @@ sprite_slot_init		proc	near
 		add	dx,4FDh
 		mov	cl,[si]
 		add	si,24h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	bx,sprite_pos
 		lodsw				; String [si] to ax
 		mov	[bx],ax
@@ -653,11 +653,11 @@ set_sprite_buf_b_FF:
 		mov	byte ptr ds:sprite_buf_b,0FFh
 		mov	cl,[si]
 		add	si,24h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	al,[si]
 		or	al,al			; Zero ?
 		jns	loc_60			; Jump if not sign
-		call	translate_char
+		call	decode_char_glyph
 
 loc_60:
 		push	ax
@@ -686,7 +686,7 @@ sprite_wide_row_render		proc	near
 		mov	cl,[si-1]
 		mov	dl,[si]
 		add	si,24h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	dh,[si]
 		mov	al,cl
 		call	sprite_src_setup
@@ -706,7 +706,7 @@ sprite_wide_row_render		proc	near
 		push	dx
 		or	al,al			; Zero ?
 		jns	call_hgc_sprite_blit			; Jump if not sign
-		call	translate_char
+		call	decode_char_glyph
 
 call_hgc_sprite_blit:
 		call	hgc_sprite_blit
@@ -734,7 +734,7 @@ check_row_counter_eq_1:
 		mov	al,bh
 		or	al,al			; Zero ?
 		jns	call_hgc_sprite_blit_64			; Jump if not sign
-		call	translate_char
+		call	decode_char_glyph
 
 call_hgc_sprite_blit_64:
 		call	hgc_sprite_blit
@@ -762,7 +762,7 @@ loc_66:
 		mov	al,[si]
 		mov	[bx+1],al
 		add	si,24h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	ax,[si-1]
 		mov	[bx+2],ax
 		pop	dx
@@ -799,9 +799,9 @@ loc_68:
 		pop	di
 		pop	si
 		retn
-; Alternate entry: sprite has negative palette byte ?-- use translate_char to fetch
+; Alternate entry: sprite has negative palette byte ?-- use decode_char_glyph to fetch
 ; actual palette value, then blit via hgc_sprite_blit twice (left + right cells).
-; Reached via `jns` skip in gfhgc_main's col_compare path.
+; Reached via `jns` skip in run_gfhgc_main's col_compare path.
 
 sprite_neg_handler:
 		push	si
@@ -817,7 +817,7 @@ sprite_neg_handler:
 		mov	[bx+1],al
 		mov	cl,[si-1]
 		add	si,24h
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	dl,[si-1]
 		mov	al,cl
 		call	sprite_src_setup
@@ -837,7 +837,7 @@ sprite_neg_handler:
 		push	dx
 		or	al,al			; Zero ?
 		jns	call_hgc_sprite_blit_70			; Jump if not sign
-		call	translate_char
+		call	decode_char_glyph
 
 call_hgc_sprite_blit_70:
 		call	hgc_sprite_blit
@@ -865,7 +865,7 @@ check_row_counter_eq_1_72:
 		mov	al,bh
 		or	al,al			; Zero ?
 		jns	call_hgc_sprite_blit_73			; Jump if not sign
-		call	translate_char
+		call	decode_char_glyph
 
 call_hgc_sprite_blit_73:
 		call	hgc_sprite_blit
@@ -890,7 +890,7 @@ sprite_pair_blit_alt:
 		mov	al,[di]
 		or	al,al			; Zero ?
 		jns	loc_75			; Jump if not sign
-		call	translate_char
+		call	decode_char_glyph
 
 loc_75:
 		push	bp
@@ -963,7 +963,7 @@ loc_78:
 loc_79:
 		push	di
 		mov	di,pattern_buf
-		call	sprite_or_into_cache
+		call	merge_sprite_into_cache
 		pop	di
 		mov	si,pattern_buf
 		push	cs
@@ -977,7 +977,7 @@ loc_79:
 
 hgc_sprite_blit		endp
 
-sprite_or_into_cache		proc	near
+merge_sprite_into_cache		proc	near
 		push	bp
 		push	si
 		push	di
@@ -992,9 +992,9 @@ sprite_or_into_cache		proc	near
 		pop	bp
 		jmp	short $+2		; delay for I/O
 
-sprite_or_into_cache		endp
+merge_sprite_into_cache		endp
 
-physics_func_11		proc	near
+mask_blit_into_sprite_cache		proc	near
 		mov	cx,8
 
 locloop_80:
@@ -1011,7 +1011,7 @@ locloop_80:
 
 		retn
 
-physics_func_11		endp
+mask_blit_into_sprite_cache		endp
 
 plane_copy_process		proc	near
 		mov	cx,8
@@ -1094,21 +1094,21 @@ copy_8words		proc	near
 
 copy_8words		endp
 
-zero_8words		proc	near
+clear_8words		proc	near
 		xor	ax,ax			; Zero register
 		mov	cx,8
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
 		retn
 
-zero_8words		endp
+clear_8words		endp
 
-translate_char		proc	near
+decode_char_glyph		proc	near
 		and	al,7Fh
 		mov	bx,char_lookup
 		xlat				; al=[al+[bx]] table
 		retn
 
-translate_char		endp
+decode_char_glyph		endp
 
 sprite_src_setup		proc	near
 		and	al,7Fh
@@ -1832,7 +1832,7 @@ locloop_145:
 				mul	cl			; ax = reg * al
 				add	ax,5216h
 				mov	di,ax
-				call	physics_func_11
+				call	mask_blit_into_sprite_cache
 				pop	di
 				pop	si
 				pop	ds
@@ -1882,7 +1882,7 @@ loc_149:
 		mov	di,ax
 		pop	ax
 		or	al,al			; Zero ?
-		jz	call_zero_8words			; Jump if zero
+		jz	call_clear_8words			; Jump if zero
 		dec	al
 		mov	cl,10h
 		mul	cl			; ax = reg * al
@@ -1894,8 +1894,8 @@ loc_149:
 		pop	ds
 		retn
 
-call_zero_8words:
-		call	zero_8words
+call_clear_8words:
+		call	clear_8words
 		pop	di
 		pop	si
 		pop	ds
@@ -1909,7 +1909,7 @@ loc_151:
 		mov	al,[si]
 		or	al,al			; Zero ?
 		jns	loc_152			; Jump if not sign
-		call	translate_char
+		call	decode_char_glyph
 
 loc_152:
 		push	ax
@@ -1937,7 +1937,7 @@ loc_152:
 		or	al,al			; Zero ?
 		jz	call_plane_copy_process			; Jump if zero
 		mov	cl,al
-		call	sprite_or_into_cache
+		call	merge_sprite_into_cache
 		pop	di
 		pop	si
 		pop	ds
@@ -1960,7 +1960,7 @@ build_sprite_refs		proc	near
 		add	ax,cx
 		add	ax,ds:sprite_data_ptr
 		mov	si,ax
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	di,sprite_pos
 		push	cs
 		pop	es
@@ -1970,14 +1970,14 @@ locloop_154:
 				movsw				; Mov [si] to es:[di]
 				movsb				; Mov [si] to es:[di]
 				add	si,21h
-				call	si_wrap_hi
+				call	wrap_scroll_si_low
 				loop	locloop_154		; Loop if cx > 0
 
 		retn
 
 build_sprite_refs		endp
 
-frame_row_driver		proc	near
+render_frame_rows		proc	near
 		mov	al,ds:row_counter
 		neg	al
 		add	al,12h
@@ -2002,7 +2002,7 @@ loc_156:
 
 loc_157:
 		jnz	loc_158			; Jump if not zero
-		call	bg_restore_dispatch
+		call	dispatch_background_restore
 		jmp	test_redraw_lock
 
 loc_158:
@@ -2014,7 +2014,7 @@ loc_158:
 loc_159:
 		jmp	test_scroll_active
 
-; scroll_update_check -- alternate entry point into frame_row_driver scroll logic.
+; scroll_update_check -- alternate entry point into render_frame_rows scroll logic.
 ; Tests scroll_active flag; if active, runs the scroll-state update path.
 
 scroll_update_check:
@@ -2171,9 +2171,9 @@ set_scroll_active_0:
 		pop	es
 		retn
 
-frame_row_driver		endp
+render_frame_rows		endp
 
-bg_restore_dispatch		proc	near
+dispatch_background_restore		proc	near
 		test	byte ptr ds:restore_pending,0FFh
 		jnz	loc_178			; Jump if not zero
 		retn
@@ -2191,7 +2191,7 @@ loc_178:
 		mov	byte ptr ds:restore_pending,0
 		retn
 
-bg_restore_dispatch		endp
+dispatch_background_restore		endp
 
 save_bg_rows		proc	near
 		push	ds
@@ -2271,7 +2271,7 @@ clear_sprite_cache_block		proc	near
 		add	ax,cx
 		mov	si,ax
 		add	si,ds:sprite_data_ptr
-		call	si_wrap_hi
+		call	wrap_scroll_si_low
 		mov	cx,4
 
 locloop_183:
@@ -2290,7 +2290,7 @@ locloop_184:
 						loop	locloop_184		; Loop if cx > 0
 
 				add	si,20h
-				call	si_wrap_hi
+				call	wrap_scroll_si_low
 				pop	cx
 				loop	locloop_183		; Loop if cx > 0
 
@@ -2525,7 +2525,7 @@ locloop_206:
 						loop	locloop_206		; Loop if cx > 0
 
 						add	si,4
-						call	si_wrap_hi
+						call	wrap_scroll_si_low
 						add	word ptr ds:vga_row_ptr,8
 						pop	cx
 						loop	locloop_205		; Loop if cx > 0
@@ -3132,7 +3132,7 @@ bg_copy_exit:
 		mov	si,8690h
 		retn
 
-si_wrap_hi		proc	near
+wrap_scroll_si_low		proc	near
 		cmp	si,0E900h
 		jae	loc_253			; Jump if above or =
 		retn
@@ -3141,9 +3141,9 @@ loc_253:
 		sub	si,900h
 		retn
 
-si_wrap_hi		endp
+wrap_scroll_si_low		endp
 
-si_wrap_lo		proc	near
+wrap_scroll_si_high		proc	near
 		cmp	si,0E000h
 		jb	loc_254			; Jump if below
 		retn
@@ -3152,7 +3152,7 @@ loc_254:
 		add	si,900h
 		retn
 
-si_wrap_lo		endp
+wrap_scroll_si_high		endp
 
 ; draw_ui_tiles -- draw 5 rows x 28 cols UI tile grid from sprite_tmp_buf
 ; into hgc_draw_ofs region (HGC equivalent of EGA's draw_ui_tiles).
@@ -3791,7 +3791,7 @@ hgc_pixel_addr_calc		endp
 
 ; tile_decompress -- dispatch handler: copy CX*0x20 bytes from DS:SI into
 ; CS+0x3000h segment offset 0, then re-interpret those bytes as (dx,cx) word pairs
-; and run through plane_pair_rol_loop + dispatch_shape_fill to produce blend values.
+; and run through rotate_plane_pair_loop + dispatch_shape_fill to produce blend values.
 ; Used for loading complex tile graphics with dithering.
 
 tile_decompress:
@@ -3837,7 +3837,7 @@ locloop_281:
 						xchg	al,ah
 						not	ax
 						mov	cs:shift_count,ax
-						call	plane_pair_rol_loop
+						call	rotate_plane_pair_loop
 						mov	ax,dx
 						stosw				; Store ax to es:[di]
 						call	dispatch_shape_fill
@@ -3852,7 +3852,7 @@ locloop_281:
 
 		retn
 
-plane_pair_rol_loop		proc	near
+rotate_plane_pair_loop		proc	near
 		mov	cx,8
 
 locloop_282:
@@ -3872,10 +3872,10 @@ locloop_282:
 
 		retn
 
-plane_pair_rol_loop		endp
+rotate_plane_pair_loop		endp
 
 ; copy_fn_tbl: 16-entry HGC color/copy lookup (4-bit BX index → 2-bit color via OR DL)
-; Referenced by plane_pair_rol_loop `or dl,cs:copy_fn_tbl[bx]`
+; Referenced by rotate_plane_pair_loop `or dl,cs:copy_fn_tbl[bx]`
 copy_fn_tbl_local:
 		db	0, 1, 2, 1, 1, 3			; entries 0..5
 		db	3, 1, 2, 3, 2, 2			; entries 6..11

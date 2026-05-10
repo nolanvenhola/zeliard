@@ -90,7 +90,7 @@ joy_cal_x	equ	5C6h	; joystick X-axis calibration value (word; written by calibra
 joy_cal_y	equ	5C8h	; joystick Y-axis calibration value (word)
 exit_dispatch_far_ptr equ 6F7h	; far ptr to exit-to-DOS handler (jmp dword ptr ds:exit_dispatch_far_ptr)
 subsample_accumulator equ 92Bh	; frame-counter accumulator (incremented by update_subsample_accumulator)
-data_175	equ	175h	; (TBD — small data table, indexed access via [175h][bx+si])
+joy_indirect_state_175	equ	175h	; (TBD — small data table, indexed access via [175h][bx+si])
 
 scan_buf_ptr	equ	(offset scan_data_lbl) + ISR_STUBS_BASE
 search_path_ptr	equ	(offset scan_data_lbl) + ISR_STUBS_BASE + 4
@@ -139,7 +139,7 @@ seg_a		segment	byte public
 
 		org	0
 
-stick		proc	far
+run_stick_main		proc	far
 
 start:
 		jmp	kbd_irq_handler
@@ -162,7 +162,7 @@ driver_init_data:
 		dw	092Dh			; CS-relative fn ptr (cs: cmp gvar_timer_counter,...)
 		dw	089Eh			; CS-relative fn ptr (cs: test gvar_music_flag_d,...)
 
-stick		endp
+run_stick_main		endp
 
 handle_pause_key		proc	near
 		test	byte ptr cs:pause_key_state,0FFh
@@ -941,7 +941,7 @@ draw_fn_thunk:
 
 sbb_bh_helper:
 		db	 18h,0FFh		; sbb bh,bh (alt-encoding: Fixup byte match)
-		add	byte ptr ds:data_175[bx+si],al
+		add	byte ptr ds:joy_indirect_state_175[bx+si],al
 		retn
 			                        ; Called via game_state dispatch: speed change handler
 
@@ -1742,13 +1742,13 @@ dcmp_opcode0_body:
 
 dcmp_copy_loop:
 								lodsb				; String [si] to al
-								call	dcmp_loop_anchor_a
+								call	decompress_anchor_loop_a
 								rep	stosb			; Rep when cx >0 Store al to es:[di]
 								dec	dx
 								jnz	dcmp_copy_loop			; Jump if not zero
 		retn
 
-dcmp_loop_anchor_a	proc	near
+decompress_anchor_loop_a	proc	near
 		push	bp
 		mov	ah,al
 		and	ah,0F0h
@@ -1773,7 +1773,7 @@ dcmp_tbl_miss:
 		pop	bp
 		retn
 
-dcmp_loop_anchor_a	endp
+decompress_anchor_loop_a	endp
 
 dcmp_skip_loop:
 								lodsb				; String [si] to al
@@ -1810,13 +1810,13 @@ dcmp_rle3_no_match:
 
 dcmp_rle6_loop:
 								lodsb				; String [si] to al
-								call	dcmp_loop_anchor_b
+								call	decompress_anchor_loop_b
 								rep	stosb			; Rep when cx >0 Store al to es:[di]
 								dec	dx
 								jnz	dcmp_rle6_loop			; Jump if not zero
 		retn
 
-dcmp_loop_anchor_b	proc	near
+decompress_anchor_loop_b	proc	near
 		push	bp
 		mov	ah,al
 		and	ah,0Fh
@@ -1845,7 +1845,7 @@ dcmp_rle6_miss:
 		pop	bp
 		retn
 
-dcmp_loop_anchor_b	endp
+decompress_anchor_loop_b	endp
 		db	0ACh, 4Ah, 8Ah,0E0h		; lodsb; dec dx; mov ah,al ?-- load escape marker into AH (dispatch stub)
 
 dcmp_rle4_loop:
@@ -1897,13 +1897,13 @@ dcmp_skip16_loop:
 
 dcmp_rle7_loop:
 								lodsb				; String [si] to al
-								call	dcmp_loop_anchor_c
+								call	decompress_anchor_loop_c
 								rep	stosb			; Rep when cx >0 Store al to es:[di]
 								dec	dx
 								jnz	dcmp_rle7_loop			; Jump if not zero
 		retn
 
-dcmp_loop_anchor_c	proc	near
+decompress_anchor_loop_c	proc	near
 		push	bp
 		mov	cx,1
 
@@ -1928,7 +1928,7 @@ dcmp_rle2_miss:
 		pop	bp
 		retn
 
-dcmp_loop_anchor_c	endp
+decompress_anchor_loop_c	endp
 		db	0ACh, 4Ah, 8Ah,0E0h		; lodsb; dec dx; mov ah,al ?-- load escape marker into AH (dispatch stub)
 
 dcmp_rle1_loop:

@@ -804,11 +804,14 @@ def write_audit_summary_md(rows: list[dict], path: Path) -> None:
     out.append('  the canonical include, NOT that the name is correct.')
     out.append('- **CONTRADICTED** -- external evidence rules out the name.')
     out.append('- **INCONCLUSIVE** -- examined but evidence insufficient.')
+    out.append('- **PLACEHOLDER_NAME** -- numbered placeholder; needs Tier-3')
+    out.append('  functest probe to determine role.')
     out.append('- **PENDING** -- not yet examined.')
     out.append('')
     out.append('| Verdict | Count |')
     out.append('|---|---:|')
-    for v in ['SUPPORTED', 'INC_CONSISTENT', 'CONTRADICTED', 'INCONCLUSIVE', 'PENDING']:
+    for v in ['SUPPORTED', 'INC_CONSISTENT', 'CONTRADICTED', 'INCONCLUSIVE',
+              'PLACEHOLDER_NAME', 'PENDING']:
         out.append(f'| {v} | {verdict_counts.get(v, 0)} |')
     out.append('')
     if src_counts:

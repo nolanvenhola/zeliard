@@ -229,7 +229,7 @@ seg_a		segment	byte public
 
 		org	0
 
-townb_main	proc	far
+run_town_main_loop	proc	far
 
 start:
 		; Hardware capability probe header (CPU/hardware detection)
@@ -237,7 +237,7 @@ start:
 		jge	init_entry			; Jump if > or =  (normal execution path)
 		add	[bx+si],al			; probe: test word write
 		db	 26h, 60h			; ES: prefix + PUSHA (80286 opcode probe)
-data_5		db	1Eh				; PUSH DS (hardware probe byte)
+hw_probe_pushds_byte		db	1Eh				; PUSH DS (hardware probe byte)
 		db	 60h, 6Ch, 70h,0C7h, 72h,0D3h	; probe continuation bytes
 		db	 74h, 70h, 75h, 89h, 75h, 1Ah	; probe continuation bytes
 		db	'uDs9uitBp{t'			; probe data / version key bytes
@@ -265,7 +265,7 @@ init_load_tiles:
 		pop	ds
 
 main_loop:
-		call	player_func_33
+		call	load_town_door_table
 		mov	byte ptr ds:gvar_pose_idx,0
 		test	byte ptr ds:captured_flag,0FFh
 		jz	main_clear_flag			; Jump if zero
@@ -295,7 +295,7 @@ walk_skip_loop:
 
 check_load_chunk:
 		call	player_load_chunk
-		call	player_func_22
+		call	load_pattern_then_play_music
 		call	word ptr cs:gfx_draw_fn
 		test	byte ptr ds:captured_flag,0FFh
 		jnz	frame_update			; Jump if not zero
@@ -312,7 +312,7 @@ frame_update:
 		sti				; Enable interrupts
 		push	cs
 		pop	ds
-		call	player_func_25
+		call	process_town_event_table
 		xor	al,al			; Zero register
 		mov	ds:gvar_spacebar_state,al
 		mov	ds:gvar_skip_flag2,al
@@ -331,7 +331,7 @@ frame_update:
 		mov	ch,42h			; 'B'
 		call	word ptr cs:gfx_draw_tile_fn
 		call	word ptr cs:gfx_draw_player_fn
-		call	player_func_29
+		call	load_town_hud_icons
 		call	word ptr cs:gfx_render_a_fn
 		call	word ptr cs:gfx_render_b_fn
 		call	word ptr cs:gfx_render_c_fn
@@ -373,7 +373,7 @@ walk_skip_loop2:
 		shl	ax,1			; Shift w/zeros fill
 		add	ax,0C017h
 		mov	ds:gvar_tile_ptr,ax
-		call	player_func_27
+		call	stamp_npcs_save_tiles
 		test	byte ptr ds:init_complete_flag,0FFh
 		jz	portal_check			; Jump if zero
 		mov	byte ptr ds:init_complete_flag,0
@@ -396,7 +396,7 @@ walk_skip_loop2:
 
 portal_check:
 		fill_cursor_buf
-		call	player_multiply_2
+		call	tick_npcs_then_pump
 		test	byte ptr ds:town_load_flag,0FFh
 		jz	npc_col_clear			; Jump if zero
 		mov	word ptr ds:town_npc_fn_ptr,6781h
@@ -410,7 +410,7 @@ npc_fn_adjust:
 npc_update_loop:
 								push	cx
 								call	word ptr cs:town_npc_fn_ptr
-								call	player_multiply_2
+								call	tick_npcs_then_pump
 								pop	cx
 								loop	npc_update_loop		; Loop if cx > 0
 
@@ -428,13 +428,13 @@ npc_col_clear:
 		pop	ds
 
 scroll_check:
-		call	player_multiply_2
-		call	fill_buffer
-		call	player_func_30
-		call	player_func_1
+		call	tick_npcs_then_pump
+		call	run_town_input_frame
+		call	try_door_transition
+		call	try_take_facing_item
 		test	byte ptr ds:town_exit_flag,0FFh
 		jnz	exit_flag_skip			; Jump if not zero
-		call	player_func_2
+		call	try_talk_to_facing_npc
 
 exit_flag_skip:
 		mov	byte ptr ds:town_exit_flag,0
@@ -461,9 +461,9 @@ dispatch_right:
 		mov	byte ptr ds:town_exit_flag,0FFh
 		retn
 
-townb_main	endp
+run_town_main_loop	endp
 
-player_func_1		proc	near
+try_take_facing_item		proc	near
 		test	byte ptr ds:gvar_spacebar_state,0FFh
 		jnz	pf1_do			; Jump if not zero
 		retn
@@ -494,7 +494,7 @@ pf1_do:
 		retn
 
 pf1_found_tile:
-		call	player_func_20
+		call	find_npc_dx
 		mov	al,[si+6]
 		and	al,0C0h
 		jz	pf1_enter_right			; Jump if zero
@@ -507,7 +507,7 @@ pf1_enter_right:
 		mov	byte ptr [si+5],7
 		or	byte ptr [si+2],80h
 		or	byte ptr [si+4],1
-		call	player_func_3
+		call	render_dialog_text
 		pop	ax
 		mov	[si+5],ah
 		mov	[si+2],al
@@ -526,7 +526,7 @@ pf1_left_check:
 		retn
 
 pf1_found_tile_l:
-		call	player_func_20
+		call	find_npc_dx
 		mov	al,[si+6]
 		and	al,0C0h
 		jz	pf1_enter_left			; Jump if zero
@@ -539,15 +539,15 @@ pf1_enter_left:
 		mov	byte ptr [si+5],7
 		and	byte ptr [si+2],7Fh
 		or	byte ptr [si+4],1
-		call	player_func_3
+		call	render_dialog_text
 		pop	ax
 		mov	[si+5],ah
 		mov	[si+2],al
 		retn
 
-player_func_1		endp
+try_take_facing_item		endp
 
-player_func_2		proc	near
+try_talk_to_facing_npc		proc	near
 		mov	bl,byte ptr ds:town_town_player_col
 		add	bl,4
 		xor	bh,bh			; Zero register
@@ -567,7 +567,7 @@ player_func_2		proc	near
 		retn
 
 pf2_found_center:
-		call	player_func_20
+		call	find_npc_dx
 		test	byte ptr [si+2],80h
 		jnz	pf2_facing_right			; Jump if not zero
 		retn
@@ -590,7 +590,7 @@ pf2_left_path:
 		retn
 
 pf2_found_center_l:
-		call	player_func_20
+		call	find_npc_dx
 		test	byte ptr [si+2],80h
 		jz	pf2_facing_left			; Jump if zero
 		retn
@@ -605,9 +605,9 @@ pf2_set_done_l:
 		mov	byte ptr ds:text_done_flag,0FFh
 		jmp	short text_start
 
-player_func_2		endp
+try_talk_to_facing_npc		endp
 
-player_func_3		proc	near
+render_dialog_text		proc	near
 
 text_start:
 		and	byte ptr [si+6],7Fh
@@ -615,7 +615,7 @@ text_start:
 		push	si
 		push	ax
 		mov	byte ptr ds:gvar_frame_timer,28h	; '('
-		call	player_func_14
+		call	draw_and_pump_input
 		mov	byte ptr ds:gvar_volume,1Eh
 		mov	ax,718h
 		test	byte ptr ds:facing_direction,1
@@ -630,7 +630,7 @@ text_pos_right:
 		mov	byte ptr ds:gvar_spacebar_state,0
 		pop	bx
 		mov	ax,ds:town_char_idx
-		call	player_multiply
+		call	set_pose_dirty
 		mov	ax,ds:town_char_idx
 		xor	di,di			; Zero register
 		mov	cx,1658h
@@ -643,15 +643,15 @@ text_pos_right:
 		mov	byte ptr ds:gvar_skip_flag2,0
 		retn
 
-player_func_3		endp
+render_dialog_text		endp
 
-player_multiply		proc	near
+set_pose_dirty		proc	near
 
 render_set_dirty:
 		or	byte ptr ds:gvar_pose_idx,1
-player_multiply		endp
+set_pose_dirty		endp
 
-player_func_5		proc	near
+draw_dialog_typewriter		proc	near
 		mov	ds:text_draw_x2,ax
 		mov	ds:text_draw_x,ax
 		xor	bh,bh			; Zero register
@@ -663,7 +663,7 @@ player_func_5		proc	near
 		mov	byte ptr ds:text_box_flag,0
 		mov	byte ptr ds:text_row_flag,0
 		mov	ds:text_str_ptr,si
-		call	player_func_8
+		call	count_wrapped_lines
 		mov	al,cl
 		mov	ds:text_anim_step,al
 		cmp	al,8
@@ -780,7 +780,7 @@ render_not_FF:
 
 render_space_check:
 		mov	si,ds:text_str_ptr
-		call	player_func_7
+		call	measure_word_width
 		mov	dl,ds:text_col_pos
 		xor	dh,dh			; Zero register
 		add	dx,cx
@@ -841,7 +841,7 @@ render_page_loop:
 								push	cx
 								push	bx
 								call	math_calc
-								call	player_multiply_2
+								call	tick_npcs_then_pump
 								pop	bx
 								pop	cx
 								test	byte ptr ds:text_done_flag,0FFh
@@ -865,9 +865,9 @@ render_page_done:
 		mov	byte ptr ds:gvar_volume,1Dh
 		jmp	render_char_loop
 
-player_func_5		endp
+draw_dialog_typewriter		endp
 
-player_func_6		proc	near
+wait_for_text_continue		proc	near
 
 text_end_seq:
 		mov	byte ptr ds:gvar_spacebar_state,0
@@ -875,7 +875,7 @@ text_end_seq:
 
 text_end_loop:
 								call	math_calc
-								call	player_multiply_2
+								call	tick_npcs_then_pump
 								test	byte ptr ds:gvar_spacebar_state,0FFh
 								jz	text_end_wait_a			; Jump if zero
 								retn
@@ -891,7 +891,7 @@ text_end_wait_b:
 
 text_end_loop2:
 								call	math_calc
-								call	player_multiply_2
+								call	tick_npcs_then_pump
 								test	byte ptr ds:gvar_spacebar_state,0FFh
 								jz	text_end_wait2_a			; Jump if zero
 								retn
@@ -906,9 +906,9 @@ text_end_wait2_b:
 								jz	text_end_loop2			; Jump if zero
 		retn
 
-player_func_6		endp
+wait_for_text_continue		endp
 
-player_func_7		proc	near
+measure_word_width		proc	near
 		xor	cx,cx			; Zero register
 
 wwidth_loop:
@@ -936,9 +936,9 @@ wwidth_not_slash:
 								adc	ch,bh
 								jmp	short wwidth_loop
 
-player_func_7		endp
+measure_word_width		endp
 
-player_func_8		proc	near
+count_wrapped_lines		proc	near
 		xor	cx,cx			; Zero register
 		xor	dx,dx			; Zero register
 
@@ -966,7 +966,7 @@ linecnt_char:
 														push	cx
 														push	si
 														push	dx
-														call	player_func_7
+														call	measure_word_width
 														add	dx,cx
 														cmp	dx,0A8h
 														pop	dx
@@ -986,7 +986,7 @@ linecnt_inc:
 		inc	cx
 		retn
 
-player_func_8		endp
+count_wrapped_lines		endp
 
 ctrl_set_bit4:
 		or	byte ptr ds:town_ctrl_byte_4,80h
@@ -1003,7 +1003,7 @@ ctrl_81_header:
 		pop	bx
 		add	bx,103h
 		mov	ds:gvar_dlg_pos,bx
-		call	player_func_47
+		call	prompt_yes_no
 		mov	ax,ds:town_char_idx
 		mov	bl,0Dh
 		jnc	ctrl_81_dir			; Jump if carry=0
@@ -1016,7 +1016,7 @@ ctrl_81_dir:
 ctrl_83_portrait:
 		or	byte ptr ds:town_ctrl_byte_34,80h
 		mov	byte ptr ds:crest_elf,0FFh
-		call	player_func_25
+		call	process_town_event_table
 		jmp	text_end_seq
 
 ctrl_85_set_done:
@@ -1026,7 +1026,7 @@ ctrl_85_set_done:
 		jmp	render_set_dirty
 
 ctrl_87_call_func6:
-		call	player_func_6
+		call	wait_for_text_continue
 		mov	bl,5
 		mov	ax,word ptr ds:text_draw_x2
 		jmp	render_set_dirty
@@ -1042,7 +1042,7 @@ ctrl_89_dialog:
 		pop	bx
 		add	bx,203h
 		mov	ds:gvar_dlg_pos,bx
-		call	player_func_9
+		call	prompt_take_no_take
 		mov	ax,ds:town_char_idx
 		mov	bl,6
 		jnc	ctrl_89_cost_check			; Jump if carry=0
@@ -1069,20 +1069,20 @@ ctrl_89_slot_find:
 
 ctrl_89_slot_set:
 		mov	byte ptr [si],5
-		call	player_func_25
+		call	process_town_event_table
 		mov	ax,ds:town_char_idx
 		mov	bl,8
 		jmp	render_set_dirty
 
-player_func_9		proc	near
+prompt_take_no_take		proc	near
 		mov	byte ptr ds:gvar_dlg_cols,2
 		mov	byte ptr ds:gvar_dlg_rows,2
 		mov	cx,2
 		mov	si,6736h
-		call	player_multiply_6
+		call	clear_n_dialog_rows
 		mov	byte ptr ds:gvar_sel_row,0
 		xor	bl,bl			; Zero register
-		call	player_func_43
+		call	poll_menu_input
 		jnc	shop_no_take			; Jump if carry=0
 		mov	bl,1
 
@@ -1095,7 +1095,7 @@ shop_take:
 		stc				; Set carry flag
 		retn
 
-player_func_9		endp
+prompt_take_no_take		endp
 		; UI strings: Take/No Take prompt
 		db	'Take', 0		; 0x0000
 		db	'No Take', 0		; 0x0005
@@ -1164,7 +1164,7 @@ walk_left_tile_ok:
 		add	bl,4
 		add	bx,word ptr ds:starting_position_in_town
 		dec	bx
-		call	player_func_12
+		call	find_npc_at_bx_with_flag40
 		jz	walk_left_move			; Jump if zero
 		retn
 
@@ -1214,7 +1214,7 @@ walk_right_tile_ok:
 		add	bl,4
 		add	bx,word ptr ds:starting_position_in_town
 		inc	bx
-		call	player_func_12
+		call	find_npc_at_bx_with_flag40
 		jz	walk_right_move			; Jump if zero
 		retn
 
@@ -1274,7 +1274,7 @@ scan_not_found:
 
 player_scan_loop		endp
 
-player_func_12		proc	near
+find_npc_at_bx_with_flag40		proc	near
 		mov	si,ds:npc_obj_list
 
 npc_find_loop:
@@ -1294,15 +1294,15 @@ npc_next_entry:
 								add	si,8
 								jmp	short npc_find_loop
 
-player_func_12		endp
+find_npc_at_bx_with_flag40		endp
 
-player_multiply_2		proc	near
-		call	player_func_26
-player_multiply_2		endp
+tick_npcs_then_pump		proc	near
+		call	tick_npcs_dispatch
+tick_npcs_then_pump		endp
 
-player_func_14		proc	near
-		call	player_func_18
-		call	player_func_17
+draw_and_pump_input		proc	near
+		call	render_town_actors
+		call	mark_player_col_in_cursor_buf
 		call	word ptr cs:gfx_update_fn
 		mov	cl,ds:gvar_anim_frames
 		mov	al,4
@@ -1317,7 +1317,7 @@ frame_dispatch_loop:
 								call	word ptr cs:stick_joy_detect_handler
 								call	word ptr cs:stick_restore_dlg_handler
 								jnc	frame_no_clear			; Jump if carry=0
-								call	clear_buffer
+								call	enter_savegame_dialog
 
 frame_no_clear:
 								pop	ax
@@ -1326,9 +1326,9 @@ frame_no_clear:
 		mov	byte ptr ds:gvar_frame_timer,0
 		retn
 
-player_func_14		endp
+draw_and_pump_input		endp
 
-fill_buffer		proc	near
+run_town_input_frame		proc	near
 		test	word ptr ds:gvar_joy_state,1
 		jnz	fillbuf_active			; Jump if not zero
 		retn
@@ -1340,15 +1340,15 @@ fillbuf_active:
 		call	word ptr cs:player_draw_fn
 		call	player_process_loop
 		call	word ptr cs:gfx_clear_fn
-		call	player_func_23
+		call	play_current_music
 		call	word ptr cs:gfx_draw_fn
 		fill_cursor_buf
-		call	player_func_14
+		call	draw_and_pump_input
 		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		retn
 
-fill_buffer		endp
+run_town_input_frame		endp
 
 player_process_loop		proc	near
 		mov	es,cs:gvar_game_seg
@@ -1366,7 +1366,7 @@ proc_copy_loop:
 
 player_process_loop		endp
 
-player_func_17		proc	near
+mark_player_col_in_cursor_buf		proc	near
 		mov	al,byte ptr ds:town_town_player_col
 		cmp	al,1Bh
 		jb	anim_player_do			; Jump if below
@@ -1392,9 +1392,9 @@ anim_player_do:
 		stosb				; Store al to es:[di]
 		retn
 
-player_func_17		endp
+mark_player_col_in_cursor_buf		endp
 
-player_func_18		proc	near
+render_town_actors		proc	near
 		push	cs
 		pop	es
 		xor	ax,ax			; Zero register
@@ -1427,14 +1427,14 @@ npc_draw_setup_loop:
 								mov	al,[si]
 								cmp	al,0FDh
 								jne	npc_write_slot			; Jump if not equal
-								call	player_func_20
+								call	find_npc_dx
 
 npc_chain_check:
 														mov	al,[si+3]
 														cmp	al,0FDh
 														jne	npc_write_slot			; Jump if not equal
 														add	si,8
-														call	player_func_21
+														call	find_npc_dx_inner
 														jmp	short npc_chain_check
 
 npc_write_slot:
@@ -1462,7 +1462,7 @@ npc_write_slot:
 		mov	si,ds:npc_obj_list
 
 scan_npc2_loop:
-								call	player_scan_loop_2
+								call	find_npc_col_slot
 								or	al,al			; Zero ?
 								jz	scan_npc2_skip			; Jump if zero
 								push	ax
@@ -1495,7 +1495,7 @@ walk_dir_select:
 		call	word ptr cs:gfx_fn_3012
 		retn
 
-player_func_18		endp
+render_town_actors		endp
 
 		; NPC animation frame permutation table (48 entries)
 		; Maps NPC walk-cycle step to sprite frame index
@@ -1510,7 +1510,7 @@ player_func_18		endp
 		db	'&(', 1Bh, 27h, ') *,!+-'	; step 43-47 (mixed text/control codes as frame ids)
 		db	 14h, 16h, 18h, 15h, 17h, 19h	; step 48-53 (tail / wrap-around)
 
-player_scan_loop_2		proc	near
+find_npc_col_slot		proc	near
 		mov	cx,3
 		mov	dx,ds:town_npc_col
 		mov	di,npc_col_buf
@@ -1531,13 +1531,13 @@ npc_col_next:
 		xor	al,al			; Zero register
 		retn
 
-player_scan_loop_2		endp
+find_npc_col_slot		endp
 
-player_func_20		proc	near
+find_npc_dx		proc	near
 		mov	si,ds:npc_obj_list
-player_func_20		endp
+find_npc_dx		endp
 
-player_func_21		proc	near
+find_npc_dx_inner		proc	near
 
 npc_dx_loop:
 								cmp	dx,[si]
@@ -1548,20 +1548,20 @@ npc_dx_next:
 								add	si,8
 								jmp	short npc_dx_loop
 
-player_func_21		endp
+find_npc_dx_inner		endp
 
-player_func_22		proc	near
-		call	player_func_32
-player_func_22		endp
+load_pattern_then_play_music		proc	near
+		call	load_town_pattern_chunk
+load_pattern_then_play_music		endp
 
-player_func_23		proc	near
+play_current_music		proc	near
 		mov	al,ds:gvar_music_idx
 		push	ds
 		call	dword ptr ds:music_fn_ptr
 		pop	ds
 		retn
 
-player_func_23		endp
+play_current_music		endp
 
 player_load_chunk		proc	near
 		mov	al,ds:town_map_side
@@ -1593,7 +1593,7 @@ player_load_chunk		endp
 		db	'3', 0
 		db	030h				; trailing pad
 
-player_func_25		proc	near
+process_town_event_table		proc	near
 
 evt_walk_entry:
 		mov	si,ds:town_key_event
@@ -1633,17 +1633,17 @@ evt_inner_write:
 evt_outer_end:
 								jmp	short evt_outer_loop
 
-player_func_25		endp
+process_town_event_table		endp
 
-player_func_26		proc	near
-		call	player_func_28
+tick_npcs_dispatch		proc	near
+		call	restore_tiles_under_npcs
 		mov	si,ds:npc_obj_list
 		mov	dx,[si]
 ;*		cmp	dx,0FFFFh
 				cmp dx,-1			; was: db 083h,0FAh,0FFh
 		jnz	$+5			; Jump if not zero
 		jmp	npc_restore_entry
-			                        ;* No entry point to code  (npc_dispatch_loop: called via player_func_26 dispatch)
+			                        ;* No entry point to code  (npc_dispatch_loop: called via tick_npcs_dispatch dispatch)
 		mov	bl,[si+5]
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -1779,11 +1779,11 @@ npc_type5_fn:
 
 npc_anim_loop5:
 								jmp	short npc_anim_cycle
-		db	0C3h				; retn (tail of npc_type5_fn / padding before player_func_27)
+		db	0C3h				; retn (tail of npc_type5_fn / padding before stamp_npcs_save_tiles)
 
-player_func_26		endp
+tick_npcs_dispatch		endp
 
-player_func_27		proc	near
+stamp_npcs_save_tiles		proc	near
 
 npc_restore_entry:
 		mov	si,ds:npc_obj_list
@@ -1805,9 +1805,9 @@ npc_restore_next:
 								add	si,8
 								jmp	short npc_restore_loop
 
-player_func_27		endp
+stamp_npcs_save_tiles		endp
 
-player_func_28		proc	near
+restore_tiles_under_npcs		proc	near
 		mov	si,ds:npc_obj_list
 
 npc_save_loop:
@@ -1831,9 +1831,9 @@ npc_save_next:
 								add	si,8
 								jmp	short npc_save_loop
 
-player_func_28		endp
+restore_tiles_under_npcs		endp
 
-player_func_29		proc	near
+load_town_hud_icons		proc	near
 		mov	si,icon_data_a
 		call	word ptr cs:gfx_load_img_fn
 		mov	si,icon_data_b
@@ -1844,7 +1844,7 @@ player_func_29		proc	near
 		call	word ptr cs:gfx_load_img_fn
 		retn
 
-player_func_29		endp
+load_town_hud_icons		endp
 
 ;--------------------------------------------------------------------------
 ; town_hud_labels — HUD/status text labels (data block, mis-decoded as
@@ -1871,13 +1871,13 @@ town_hud_labels:
 		db	0Dh, 0AFh, 01h, 05h
 		db	'PLACE'
 
-player_func_30		proc	near
+try_door_transition		proc	near
 		mov	al,ds:screen_position
 		inc	al
 		jnz	door_alt_check			; Jump if not zero
-		call	player_func_28
+		call	restore_tiles_under_npcs
 		mov	byte ptr ds:gvar_frame_timer,28h	; '('
-		call	player_func_14
+		call	draw_and_pump_input
 		mov	si,ds:town_exit_ptr
 
 door_seek_loop:
@@ -1896,7 +1896,7 @@ door_found:
 				db 0E9h, 17h, 03h		; jmp near +0x317 (unaligned target 0FFBh)
 
 door_execute:
-		call	player_func_31
+		call	load_area_assets
 		mov	byte ptr ds:town_town_player_col,1Ah
 		mov	ax,ds:town_map_width
 		sub	ax,24h
@@ -1909,9 +1909,9 @@ door_alt_check:
 		retn
 
 door_alt_seek:
-		call	player_func_28
+		call	restore_tiles_under_npcs
 		mov	byte ptr ds:gvar_frame_timer,28h	; '('
-		call	player_func_14
+		call	draw_and_pump_input
 		mov	si,ds:town_exit_ptr
 
 door_alt_loop:
@@ -1930,12 +1930,12 @@ door_alt_found:
 				db 0E9h, 0D9h, 02h		; jmp near +0x2D9 (unaligned target 0FFBh)
 
 door_alt_execute:
-		call	player_func_31
+		call	load_area_assets
 		mov	byte ptr ds:town_town_player_col,0
 		mov	word ptr ds:starting_position_in_town,0
 		jmp	frame_update
 
-player_func_31		proc	near
+load_area_assets		proc	near
 		or	al,80h
 		mov	byte ptr ds:current_area_id,al
 		lodsw				; String [si] to ax
@@ -1965,12 +1965,12 @@ player_func_31		proc	near
 		cmp	ah,ds:town_palette_idx
 		je	pf31_done		; Jump if equal
 		mov	ds:town_palette_idx,ah
-		call	player_func_32
+		call	load_town_pattern_chunk
 
 pf31_done:
 		retn
 
-player_func_31		endp
+load_area_assets		endp
 			                        ;* No entry point to code  (data: sprite file reference table, reachable via sar_chunk_tbl)
 		; Sprite file references: MMAN.GRP, CMAN.GRP.  Earlier `add ds:
 		; snd_id_4D4D, bx` was a Sourcer mis-decode of the leading 01 1E
@@ -1980,7 +1980,7 @@ player_func_31		endp
 		db	001h, 01Fh			; SAR ref (1, 1Fh): CMAN.GRP
 		db	'CMAN.GRP', 0
 
-player_func_32		proc	near
+load_town_pattern_chunk		proc	near
 		mov	al,0Bh
 		mul	byte ptr ds:town_palette_idx	; ax = data * al
 		add	ax,6DCEh
@@ -1994,7 +1994,7 @@ player_func_32		proc	near
 		add	word ptr es:[di+4],8000h
 		jmp	word ptr cs:gfx_ret_fn
 
-player_func_32		endp
+load_town_pattern_chunk		endp
 			                        ;* No entry point to code  (data: pattern/sprite file reference table)
 		; Pattern/sprite file references: CPAT.GRP, MPAT.GRP, DPAT.GRP.
 		; Earlier 7 lines of mis-decoded instructions and split db
@@ -2009,7 +2009,7 @@ player_func_32		endp
 		db	001h, 024h			; SAR ref (1, 24h): DPAT.GRP
 		db	'DPAT.GRP', 0
 
-player_func_33		proc	near
+load_town_door_table		proc	near
 		mov	es,cs:gvar_game_seg
 		mov	si,6E1Eh
 		mov	di,6000h
@@ -2025,7 +2025,7 @@ player_func_33		proc	near
 		pop	ds
 		retn
 
-player_func_33		endp
+load_town_door_table		endp
 			                        ;* No entry point to code  (data: .GRP file reference stub before door table)
 		add	[bx+si],sp
 		push	sp
@@ -2066,9 +2066,9 @@ door_scan_next:
 door_action:
 		mov	byte ptr ds:gvar_pose_idx,4
 		push	si
-		call	player_func_28
+		call	restore_tiles_under_npcs
 		mov	byte ptr ds:gvar_frame_timer,28h	; '('
-		call	player_func_14
+		call	draw_and_pump_input
 		pop	si
 		mov	al,[si+2]
 		cmp	al,0FFh
@@ -2100,15 +2100,15 @@ door_type_shop:
 		call	word ptr cs:gfx_clear_fn
 		mov	byte ptr ds:town_scene_flag,0
 		call	word ptr cs:gfx_draw_player_fn
-		call	player_func_29
+		call	load_town_hud_icons
 		mov	si,ds:town_tile_ptr
 		call	word ptr cs:gfx_draw_map_fn
-		call	player_func_22
+		call	load_pattern_then_play_music
 		call	word ptr cs:gfx_draw_fn
 		fill_cursor_buf
-		call	player_func_25
+		call	process_town_event_table
 		mov	byte ptr ds:gvar_frame_timer,28h	; '('
-		call	player_func_14
+		call	draw_and_pump_input
 		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		mov	byte ptr ds:gvar_pose_idx,1
@@ -2145,13 +2145,13 @@ door_type_shop:
 
 door_type_special:
 		mov	byte ptr ds:gvar_pose_idx,4
-		call	player_func_14
+		call	draw_and_pump_input
 		test	byte ptr ds:town_door_flag_45,80h
 		jnz	special_door_load			; Jump if not zero
 		mov	byte ptr ds:text_done_flag,0FFh
 		mov	ax,918h
 		xor	bl,bl			; Zero register
-		call	player_func_5
+		call	draw_dialog_typewriter
 		mov	byte ptr ds:text_done_flag,0
 		or	byte ptr ds:town_door_flag_45,80h
 
@@ -2219,22 +2219,22 @@ pf30_exec:
 
 dlg_char_fetch:
 		mov	word ptr ds:starting_position_in_town,ax
-		mov	data_5,0FFh
+		mov	hw_probe_pushds_byte,0FFh
 		call	word ptr cs:gfx_blit_fn
 		mov	bx,6002h
 		xor	al,al			; Zero register
 		jmp	word ptr cs:sar_loader_fn
 
-player_func_30		endp
+try_door_transition		endp
 
-player_func_34		proc	near
+tick_town_frame		proc	near
 		push	si
 		push	di
 		call	word ptr cs:stick_exit_dlg_handler
 		call	word ptr cs:stick_pause_dlg_handler
 		call	word ptr cs:stick_restore_dlg_handler
 		jnc	dlg_char_skip			; Jump if carry=0
-		call	clear_buffer
+		call	enter_savegame_dialog
 
 dlg_char_skip:
 		pop	di
@@ -2251,25 +2251,25 @@ dlg_char_idle:
 		pop	si
 		retn
 
-player_func_34		endp
+tick_town_frame		endp
 
 			                        ;* No entry point to code  (dlg_setup: dialog outer entry, called indirectly via event handler)
 
 dlg_setup:
 		mov	si,ds:gvar_dialog_ptr
-		call	player_check_state
+		call	measure_dialog_word_width
 		mov	dl,ds:gvar_text_x
 		xor	dh,dh			; Zero register
 		add	dx,cx
 		cmp	dx,0D0h
 		jb	dlg_main_loop			; Jump if below
-		call	player_scan_loop_3
+		call	advance_dialog_line
 
 dlg_main_loop:
 														mov	byte ptr ds:gvar_frame_timer,0
 
 dlg_frame_wait:
-														call	player_func_34
+														call	tick_town_frame
 														cmp	byte ptr ds:gvar_frame_timer,6
 														jb	dlg_frame_wait			; Jump if below
 														mov	si,ds:gvar_dialog_ptr
@@ -2327,7 +2327,7 @@ dlg_put_char:
 		push	ax
 		cmp	byte ptr ds:gvar_text_x,0D0h
 		jb	dlg_put_char2			; Jump if below
-		call	player_scan_loop_3
+		call	advance_dialog_line
 
 dlg_put_char2:
 		mov	bl,byte ptr ds:gvar_text_x
@@ -2369,41 +2369,41 @@ dlg_put_char2:
 
 dlg_check_overflow:
 		mov	si,ds:gvar_dialog_ptr
-		call	player_check_state
+		call	measure_dialog_word_width
 		mov	dl,byte ptr ds:gvar_text_x
 		xor	dh,dh			; Zero register
 		add	dx,cx
 		cmp	dx,0D0h
 		jb	dlg_cont			; Jump if below
-		call	player_scan_loop_3
+		call	advance_dialog_line
 
 dlg_cont:
 		jmp	dlg_main_loop
 
 dlg_newline:
-		call	player_scan_loop_3
+		call	advance_dialog_line
 		jmp	dlg_main_loop
 
-player_scan_loop_3		proc	near
+advance_dialog_line		proc	near
 		mov	byte ptr ds:gvar_text_x,0
 		inc	byte ptr ds:text_line_ctr
 		inc	byte ptr ds:gvar_text_y
 		cmp	byte ptr ds:text_line_ctr,4
 		jb	dlg_indent_check			; Jump if below
-		call	player_check_state_2
+		call	count_dialog_wrapped_lines
 		push	cx
-		call	player_func_36
+		call	scroll_dlg_text_up
 		pop	cx
 		cmp	cx,2
 		jb	dlg_skip_scroll		; Jump if below (cx<2: only 1 page, skip scroll)
-		call	player_func_37
+		call	dlg_draw_prompt_then_clear
 
 dlg_skip_scroll:
 		retn
 
-player_scan_loop_3		endp
+advance_dialog_line		endp
 
-player_func_36		proc	near
+scroll_dlg_text_up		proc	near
 
 dlg_indent_check:
 		cmp	byte ptr ds:gvar_text_y,5
@@ -2416,7 +2416,7 @@ dlg_do_indent:
 
 dlg_indent_loop:
 								push	cx
-								call	player_func_34
+								call	tick_town_frame
 								mov	bx,762h
 								mov	cx,1A32h
 								call	word ptr cs:gfx_scroll_row_fn
@@ -2425,22 +2425,22 @@ dlg_indent_loop:
 
 		retn
 
-player_func_36		endp
+scroll_dlg_text_up		endp
 
 dlg_ctrl_0F:
-		call	player_func_37
+		call	dlg_draw_prompt_then_clear
 		jmp	dlg_main_loop
 
 dlg_ctrl_11:
-		call	player_func_38
+		call	wait_for_spacebar_or_skip
 		jmp	dlg_main_loop
 
-player_func_37		proc	near
+dlg_draw_prompt_then_clear		proc	near
 		mov	bx,9Ch
 		mov	cl,8Bh
 		mov	ax,27Ch
 		call	word ptr cs:gfx_draw_char_fn
-		call	player_func_38
+		call	wait_for_spacebar_or_skip
 		mov	bx,ui_str_tbl
 		mov	cx,20Ah
 		xor	al,al			; Zero register
@@ -2448,14 +2448,14 @@ player_func_37		proc	near
 		mov	byte ptr ds:text_line_ctr,0
 		retn
 
-player_func_37		endp
+dlg_draw_prompt_then_clear		endp
 
-player_func_38		proc	near
+wait_for_spacebar_or_skip		proc	near
 		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 
 dlg_sel_wait_loop:
-								call	player_func_34
+								call	tick_town_frame
 								mov	al,ds:gvar_spacebar_state
 								or	al,ds:gvar_skip_flag2
 								jz	dlg_sel_wait_loop			; Jump if zero
@@ -2464,7 +2464,7 @@ dlg_sel_wait_loop:
 		mov	byte ptr ds:gvar_volume,1Dh
 		retn
 
-player_func_38		endp
+wait_for_spacebar_or_skip		endp
 
 dlg_ctrl_0C:
 		mov	byte ptr ds:gvar_text_x,0
@@ -2476,7 +2476,7 @@ dlg_ctrl_0C:
 		call	word ptr cs:gfx_fill_fn
 		jmp	dlg_main_loop
 
-player_check_state		proc	near
+measure_dialog_word_width		proc	near
 		xor	cx,cx			; Zero register
 		xor	dx,dx			; Zero register
 
@@ -2520,9 +2520,9 @@ chkstate_punct:
 		xor	cx,cx			; Zero register
 		retn
 
-player_check_state		endp
+measure_dialog_word_width		endp
 
-player_check_state_2		proc	near
+count_dialog_wrapped_lines		proc	near
 		mov	si,ds:gvar_dialog_ptr
 		xor	cx,cx			; Zero register
 		xor	dx,dx			; Zero register
@@ -2566,7 +2566,7 @@ chkstate2_0D:
 														push	si
 														push	dx
 														push	dx
-														call	player_check_state
+														call	measure_dialog_word_width
 														pop	dx
 														add	dx,cx
 														cmp	dx,0D0h
@@ -2587,7 +2587,7 @@ chkstate2_inc:
 		inc	cx
 		retn
 
-player_check_state_2		endp
+count_dialog_wrapped_lines		endp
 
 			                        ;* No entry point to code  (num_to_str: convert AX to decimal string, called via event handler)
 
@@ -2597,19 +2597,19 @@ num_to_str:
 		push	di
 		mov	bl,0Fh
 		mov	cx,4240h
-		call	player_func_41
+		call	div_24bit_emit_digit
 		mov	bl,1
 		mov	cx,86A0h
-		call	player_func_41
+		call	div_24bit_emit_digit
 		xor	bl,bl			; Zero register
 		mov	cx,2710h
-		call	player_func_41
+		call	div_24bit_emit_digit
 		mov	cx,3E8h
-		call	player_func_42
+		call	div_16bit_emit_digit
 		mov	cx,64h
-		call	player_func_42
+		call	div_16bit_emit_digit
 		mov	cx,0Ah
-		call	player_func_42
+		call	div_16bit_emit_digit
 		stosb				; Store al to es:[di]
 		mov	al,0FFh
 		stosb				; Store al to es:[di]
@@ -2641,7 +2641,7 @@ numfmt_done:
 		stosb				; Store al to es:[di]
 		retn
 
-player_func_41		proc	near
+div_24bit_emit_digit		proc	near
 		xor	dh,dh			; Zero register
 
 div_loop:
@@ -2668,9 +2668,9 @@ div_done:
 		pop	ax
 		retn
 
-player_func_41		endp
+div_24bit_emit_digit		endp
 
-player_func_42		proc	near
+div_16bit_emit_digit		proc	near
 		xor	dh,dh			; Zero register
 		div	cx			; ax,dx rem=dx:ax/reg
 		xchg	dx,ax
@@ -2682,16 +2682,16 @@ player_func_42		proc	near
 		pop	ax
 		retn
 
-player_func_42		endp
+div_16bit_emit_digit		endp
 
-player_func_43		proc	near
+poll_menu_input		proc	near
 		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	byte ptr ds:gvar_skip_flag2,0
 		push	bx
-		call	player_multiply_3
+		call	draw_cursor_at_dlg_row
 		pop	bx
 		push	bx
-		call	player_func_34
+		call	tick_town_frame
 		pop	bx
 		mov	byte ptr ds:gvar_frame_timer,0
 		test	byte ptr ds:gvar_skip_flag2,0FFh
@@ -2716,7 +2716,7 @@ sel_poll_joy:
 		or	bl,bl			; Zero ?
 		jz	sel_no_cursor			; Jump if zero
 		push	bx
-		call	player_multiply_4
+		call	animate_cursor_left_10cols
 		pop	bx
 		dec	bl
 		retn
@@ -2755,7 +2755,7 @@ sel_scroll_up_anim:
 								call	word ptr cs:gfx_sel_scroll_up_fn
 
 sel_anim_wait_u:
-														call	player_func_34
+														call	tick_town_frame
 														cmp	byte ptr ds:gvar_frame_timer,4
 														jb	sel_anim_wait_u			; Jump if below
 								mov	byte ptr ds:gvar_frame_timer,0
@@ -2778,7 +2778,7 @@ sel_down_check:
 		cmp	bl,al
 		jae	sel_bottom_check			; Jump if above or =
 		push	bx
-		call	player_multiply_5
+		call	animate_cursor_right_10cols
 		pop	bx
 		inc	bl
 		retn
@@ -2823,7 +2823,7 @@ sel_scroll_dn_anim:
 								call	word ptr cs:gfx_sel_scroll_dn_fn
 
 sel_anim_wait_d:
-														call	player_func_34
+														call	tick_town_frame
 														cmp	byte ptr ds:gvar_frame_timer,4
 														jb	sel_anim_wait_d			; Jump if below
 								mov	byte ptr ds:gvar_frame_timer,0
@@ -2835,9 +2835,9 @@ sel_anim_wait_d:
 		pop	di
 		retn
 
-player_func_43		endp
+poll_menu_input		endp
 
-player_multiply_3		proc	near
+draw_cursor_at_dlg_row		proc	near
 		mov	al,0Ah
 		mul	bl			; ax = reg * al
 		add	ax,ds:gvar_dlg_pos
@@ -2845,9 +2845,9 @@ player_multiply_3		proc	near
 		mov	bx,ax
 		jmp	word ptr cs:gfx_cursor_fn
 
-player_multiply_3		endp
+draw_cursor_at_dlg_row		endp
 
-player_multiply_4		proc	near
+animate_cursor_left_10cols		proc	near
 		mov	al,0Ah
 		mul	bl			; ax = reg * al
 		add	ax,ds:gvar_dlg_pos
@@ -2863,7 +2863,7 @@ del_anim_loop:
 								call	word ptr cs:gfx_cursor_fn
 
 del_anim_wait:
-														call	player_func_34
+														call	tick_town_frame
 														cmp	byte ptr ds:gvar_frame_timer,4
 														jb	del_anim_wait			; Jump if below
 								pop	bx
@@ -2872,9 +2872,9 @@ del_anim_wait:
 
 		retn
 
-player_multiply_4		endp
+animate_cursor_left_10cols		endp
 
-player_multiply_5		proc	near
+animate_cursor_right_10cols		proc	near
 		mov	al,0Ah
 		mul	bl			; ax = reg * al
 		add	ax,ds:gvar_dlg_pos
@@ -2890,7 +2890,7 @@ ins_anim_loop:
 								call	word ptr cs:gfx_cursor_fn
 
 ins_anim_wait:
-														call	player_func_34
+														call	tick_town_frame
 														cmp	byte ptr ds:gvar_frame_timer,4
 														jb	ins_anim_wait			; Jump if below
 								pop	bx
@@ -2899,9 +2899,9 @@ ins_anim_wait:
 
 		retn
 
-player_multiply_5		endp
+animate_cursor_right_10cols		endp
 
-player_func_47		proc	near
+prompt_yes_no		proc	near
 		mov	al,ds:gvar_dlg_cols
 		mov	ah,ds:gvar_dlg_rows
 		push	ax
@@ -2911,10 +2911,10 @@ player_func_47		proc	near
 		mov	byte ptr ds:gvar_dlg_rows,2
 		mov	cx,2
 		mov	si,7513h
-		call	player_multiply_6
+		call	clear_n_dialog_rows
 		mov	byte ptr ds:gvar_sel_row,0
 		xor	bl,bl			; Zero register
-		call	player_func_43
+		call	poll_menu_input
 		jnc	shop_sel_no			; Jump if carry=0
 		mov	bl,1
 
@@ -2932,13 +2932,13 @@ shop_sel_yes:
 		stc				; Set carry flag
 		retn
 
-player_func_47		endp
+prompt_yes_no		endp
 
 		; Shop Yes/No prompt strings
 		db	'Yes', 0		; 0x0000 - "Yes" response
 		db	'No',  0		; 0x0004 - "No" response
 
-player_multiply_6		proc	near
+clear_n_dialog_rows		proc	near
 		xor	dl,dl			; Zero register
 
 shop_draw_loop:
@@ -2958,7 +2958,7 @@ shop_draw_loop:
 
 		retn
 
-player_multiply_6		endp
+clear_n_dialog_rows		endp
 
 		db	 32h,0E4h		; xor ah,ah (entry prologue for shop_sel_anim_loop, reached via indirect call)
 
@@ -3017,7 +3017,7 @@ gold_add_fn:
 		adc	byte ptr ds:gold_carried_x65536,dl
 		retn
 
-clear_buffer		proc	near
+enter_savegame_dialog		proc	near
 
 savegame_entry:
 		mov	cl,0FFh
@@ -3029,7 +3029,7 @@ savegame_entry:
 		mov	al,6
 		call	word ptr cs:sar_loader_fn
 		mov	byte ptr ds:gvar_sel_flag,0
-		call	copy_buffer
+		call	prepare_save_name_screen
 		push	cs
 		pop	es
 		test	byte ptr cs:save_new_flag,0FFh
@@ -3101,7 +3101,7 @@ load_wait_input:
 		mov	byte ptr cs:gvar_spacebar_state,0
 		jmp	savegame_entry
 
-clear_buffer		endp
+enter_savegame_dialog		endp
 		; Game loader reference strings + filenames.  Earlier this block
 		; had a spurious leading `db 0FFh` (the jmp savegame_entry above
 		; already emits its 0FFh disp-high byte at this offset), missing
@@ -3113,7 +3113,7 @@ clear_buffer		endp
 		db	0A0h, 0, 0
 		db	'STDPLY.BIN', 0
 
-copy_buffer		proc	near
+prepare_save_name_screen		proc	near
 		mov	ax,cs
 		mov	es,ax
 		mov	ds,ax
@@ -3203,7 +3203,7 @@ savescr_count_clamp:
 		xor	al,al			; Zero register
 		mov	si,cursor_buf_cnt
 		jcxz	savescr_load_prev			; Jump if cx=0
-		call	player_process_loop_2
+		call	draw_menu_items_column
 
 savescr_load_prev:
 		mov	si,cursor_buf_cnt
@@ -3247,7 +3247,7 @@ savescr_no_saves:
 		mov	ax,0FFFFh
 		jmp	dword ptr cs:gvar_fn_tbl
 
-copy_buffer		endp
+prepare_save_name_screen		endp
 		; Input/user string data.  Earlier `db '.',0 / db 0FFh` lines
 		; (3 bytes 2E 00 FF) were Sourcer mis-decodes of the jmp-tail
 		; bytes at 0x17AB; deleted.  'Input name:' uses 0FFh as a
@@ -3255,7 +3255,7 @@ copy_buffer		endp
 		db	'*.usr', 0
 		db	'Input name:', 0FFh
 		db	'Re-Start', 0
-player_func_51		proc	near
+check_save_name_is_new		proc	near
 		mov	byte ptr cs:save_new_flag,0
 		push	cs
 		pop	es
@@ -3271,9 +3271,9 @@ newgame_found:
 		mov	byte ptr cs:save_name_len,0
 		retn
 
-player_func_51		endp
+check_save_name_is_new		endp
 
-fill_buffer_2		proc	near
+clear_save_name_if_new		proc	near
 		test	byte ptr cs:save_new_flag,0FFh
 		jnz	clearbuf_active			; Jump if not zero
 		retn
@@ -3289,9 +3289,9 @@ clearbuf_active:
 		mov	byte ptr cs:save_name_maxlen,0
 		retn
 
-fill_buffer_2		endp
+clear_save_name_if_new		endp
 
-player_process_loop_2		proc	near
+draw_menu_items_column		proc	near
 		xor	ah,ah			; Zero register
 
 sel_item_loop:
@@ -3320,10 +3320,10 @@ sel_item_loop:
 
 		retn
 
-player_process_loop_2		endp
+draw_menu_items_column		endp
 
 player_copy_buf		proc	near
-		call	player_func_51
+		call	check_save_name_is_new
 		mov	byte ptr ds:gvar_input_lock,0FFh
 		mov	byte ptr ds:gvar_enter_key,0
 		mov	byte ptr ds:gvar_spacebar_state,0
@@ -3336,9 +3336,9 @@ player_copy_buf		proc	near
 		call	word ptr cs:save_draw_fn
 
 nameinput_draw:
-		call	player_func_56
+		call	redraw_save_name_at_cursor
 		xor	al,al			; Zero register
-		call	player_func_55
+		call	update_save_name_cursor
 
 nameinput_main_loop:
 								mov	byte ptr ds:gvar_frame_timer,0
@@ -3361,8 +3361,8 @@ nameinput_blank_scan:
 								mov	cx,8
 								rep	movsb			; Rep when cx >0 Mov [si] to es:[di]
 								pop	si
-								call	player_func_51
-								call	player_func_56
+								call	check_save_name_is_new
+								call	redraw_save_name_at_cursor
 								mov	byte ptr ds:gvar_volume,1
 
 nameinput_blink_wait:
@@ -3410,7 +3410,7 @@ nameinput_copy_done:
 		mov	al,ds:save_name_len
 		mov	ds:save_name_maxlen,al
 		pop	si
-		call	player_func_51
+		call	check_save_name_is_new
 		mov	byte ptr ds:gvar_spacebar_state,0
 		mov	ax,ds:save_cursor_x
 		shr	ax,1			; Shift w/zeros fill
@@ -3420,9 +3420,9 @@ nameinput_copy_done:
 		mov	cx,1010h
 		xor	al,al			; Zero register
 		call	word ptr cs:gfx_fill_fn
-		call	player_func_56
+		call	redraw_save_name_at_cursor
 		xor	al,al			; Zero register
-		call	player_func_55
+		call	update_save_name_cursor
 		jmp	nameinput_main_loop
 
 nameinput_key_check:
@@ -3444,7 +3444,7 @@ nameinput_not_enter:
 
 nameinput_not_bs:
 		push	ax
-		call	fill_buffer_2
+		call	clear_save_name_if_new
 		pop	ax
 		xor	bx,bx			; Zero register
 		mov	bl,ds:save_name_len
@@ -3454,7 +3454,7 @@ nameinput_not_bs:
 
 nameinput_append:
 		mov	ds:save_name_buf[bx],al
-		call	player_func_56
+		call	redraw_save_name_at_cursor
 		mov	byte ptr ds:gvar_volume,1
 		mov	al,1
 		jmp	cursor_draw
@@ -3465,7 +3465,7 @@ nameinput_joy_check:
 		jz	nameinput_joy_dn			; Jump if zero
 		mov	byte ptr ds:gvar_volume,1
 		mov	al,1
-		call	player_func_55
+		call	update_save_name_cursor
 
 nameinput_joy_wait_u:
 								int	61h			; ??INT Non-standard interrupt
@@ -3479,7 +3479,7 @@ nameinput_joy_dn:
 		jz	nameinput_joy_lr			; Jump if zero
 		mov	byte ptr ds:gvar_volume,1
 		mov	al,0FFh
-		call	player_func_55
+		call	update_save_name_cursor
 
 nameinput_joy_wait_d:
 								int	61h			; ??INT Non-standard interrupt
@@ -3607,7 +3607,7 @@ nameinput_dn_wait:
 		pop	di
 		retn
 
-player_func_55		proc	near
+update_save_name_cursor		proc	near
 
 cursor_draw:
 		push	si
@@ -3656,9 +3656,9 @@ cursor_place:
 		pop	si
 		retn
 
-player_func_55		endp
+update_save_name_cursor		endp
 
-player_func_56		proc	near
+redraw_save_name_at_cursor		proc	near
 		push	si
 		mov	ax,ds:save_cursor_x
 		shr	ax,1			; Shift w/zeros fill
@@ -3675,10 +3675,10 @@ player_func_56		proc	near
 		pop	si
 		retn
 
-player_func_56		endp
+redraw_save_name_at_cursor		endp
 
 backspace_exec:
-		call	fill_buffer_2
+		call	clear_save_name_if_new
 		push	si
 		mov	bl,ds:save_name_len
 		or	bl,bl			; Zero ?
@@ -3705,8 +3705,8 @@ backspace_nonempty:
 backspace_done:
 		mov	byte ptr ds:save_name_end,60h	; '`'
 		mov	al,0FFh
-		call	player_func_55
-		call	player_func_56
+		call	update_save_name_cursor
+		call	redraw_save_name_at_cursor
 		pop	si
 		retn
 

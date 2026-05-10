@@ -50,7 +50,7 @@ seg_a		segment	byte public
 
 		org	0
 
-stdply		proc	far
+run_stdply_main		proc	far
 
 start:
 
@@ -336,7 +336,7 @@ scene_trans_request db 0	; [scene_trans_request] scene-transition request (polle
 gvar_pose_idx	db	0		; [E7h] player pose state (bit7=mode flag, low7=pose idx)
 init_complete_flag db 0		; [init_complete_flag] post-init steady-state (cleared on area_load_flag)
 
-stdply		endp
+run_stdply_main		endp
 
 seg_a		ends
 

@@ -58,7 +58,7 @@ seg_a		segment	byte public
 
 		org	0
 
-inn_main	proc	far
+run_inn_main	proc	far
 
 start:
 ;--------------------------------------------------------------------------
@@ -104,11 +104,11 @@ inn_main_loop:
 inn_main_exit:
 		jmp	word ptr cs:drv_return_to_caller
 
-inn_main	endp
+run_inn_main	endp
 
 ;--------------------------------------------------------------------------
 ;  draw_intro_banner -- draw title banner + fill dialog area, then mark
-;  anim_active_flag. Called once from inn_main before the script loop.
+;  anim_active_flag. Called once from run_inn_main before the script loop.
 ;--------------------------------------------------------------------------
 
 draw_intro_banner	proc	near
@@ -149,27 +149,27 @@ inn_opcode_dispatch	endp
 
 ; -- 5-word pointer table (0x0084..0x008D) referenced by handler A --
 ;    Points to text strings in the game data segment (A08A, A0BE, A114, A12A, A15F).
-;    data_1/data_2 are patch targets used by inn_script_patch_ptr to substitute
+;    inn_patch_slot_1/inn_patch_slot_2 are patch targets used by inn_script_patch_ptr to substitute
 ;    dl/ax into the first two ptr bytes.
 		db	 8Ah				; 0084: ptr 0 low byte (= A08A low)
-data_1		db	0A0h				; 0085: ptr 0 high byte (patched)
-data_2		dw	0A0BEh				; 0086: ptr 1 word (patched)
+inn_patch_slot_1		db	0A0h				; 0085: ptr 0 high byte (patched)
+inn_patch_slot_2		dw	0A0BEh				; 0086: ptr 1 word (patched)
 		db	 14h,0A1h, 2Ah,0A1h, 5Fh,0A1h	; 0088..008D: ptr 2..4 (A114, A12A, A15F)
 
 ; -- Handler A (0x008E): menu amount-selection handler --
-;    Dense inline x86 code; data_3..data_7 are patch points within this code.
+;    Dense inline x86 code; inn_patch_slot_3..inn_handler_src_buf are patch points within this code.
 		db	 8Ah, 1Eh			; 008E: mov bl, [mem]
-data_3		dw	0C006h				; 0090: = gvar_menu_sel (operand of above mov)
+inn_patch_slot_3		dw	0C006h				; 0090: = gvar_menu_sel (operand of above mov)
 		db	0FEh,0CBh, 32h,0FFh, 03h,0DBh	; 0092: dec bl; xor bh,bh; add bx,bx
 		db	 8Bh, 97h,0D1h,0A2h, 89h	; 0098: mov dx,[bx+A2D1]; + partial mov
-data_4		db	 16h				; 009D: (bit-tested by inn_cleanup_and_return)
+inn_patch_flag		db	 16h				; 009D: (bit-tested by inn_cleanup_and_return)
 		db	 06h,0A5h, 8Bh,0C2h, 32h,0D2h	; 009E: [ds:A506]; mov ax,dx; xor dl,dl
 		db	 0BFh, 08h,0A5h, 2Eh,0FFh, 16h	; 00A4: mov di,A508; call cs:[...
 		db	 06h				; 00AA: ...6006] (fmt_num_to_str)
-data_5		db	 60h				; 00AB: rep-movsb dst byte (patched to copy handler-B header)
+inn_handler_dst_buf		db	 60h				; 00AB: rep-movsb dst byte (patched to copy handler-B header)
 		db	 8Bh, 36h, 4Ch,0FFh, 56h,0C7h	; 00AC: mov si,[FF4C]; push si; mov...
-data_6		dw	4C06h				; 00B2: FF4C literal (captured by inn_cleanup_and_return)
-data_7		db	 0FFh				; 00B4: rep-movsb src (copied to data_5)
+inn_patch_word_6		dw	4C06h				; 00B2: FF4C literal (captured by inn_cleanup_and_return)
+inn_handler_src_buf		db	 0FFh				; 00B4: rep-movsb src (copied to inn_handler_dst_buf)
 		db	 08h,0A5h, 2Eh,0FFh, 16h, 04h	; 00B5: ...A508; call cs:[6004]
 		db	 60h, 5Eh, 89h, 36h, 4Ch,0FFh	; 00BB: pop si; mov [FF4C],si
 ; -- Handler B (0x00C1..): retn; then call-fill + menu branch --
@@ -195,8 +195,8 @@ data_7		db	 0FFh				; 00B4: rep-movsb src (copied to data_5)
 ;--------------------------------------------------------------------------
 
 inn_script_patch_ptr:
-		mov	data_1,dl
-		mov	data_2,ax
+		mov	inn_patch_slot_1,dl
+		mov	inn_patch_slot_2,ax
 		call	word ptr cs:drv_frame_commit
 		mov	word ptr ds:gvar_script_ptr,0A483h
 		retn
@@ -206,12 +206,12 @@ inn_script_patch_ptr:
 		; (preceding retn at 0x0119 prevents fall-through). Fragment:
 		;   mov byte ptr [A505], 0    ; 0C6h 06h A5h 05h 00h
 		;   xor al, al                ; 32h 0C0h
-		; Labelled via data_8 because inn_anim_scan does a
-		; "call word ptr cs:data_8" using these bytes as a
+		; Labelled via inn_anim_scan_fn_ptr because inn_anim_scan does a
+		; "call word ptr cs:inn_anim_scan_fn_ptr" using these bytes as a
 		; patched function pointer.
 		db	 0C6h, 06h			;  mov byte ptr [mem],imm prefix
-data_8		dw	0A505h				;  = anim_active_flag address (also doubles
-						        ;  as fn-ptr target of cs:data_8 call)
+inn_anim_scan_fn_ptr		dw	0A505h				;  = anim_active_flag address (also doubles
+						        ;  as fn-ptr target of cs:inn_anim_scan_fn_ptr call)
 		db	 00h				;  imm value for mov above
 		db	 32h,0C0h			;  xor al,al
 
@@ -233,7 +233,7 @@ rest_loop:
 ;--------------------------------------------------------------------------
 ;  inn_cleanup_and_return (0x012E) -- reached via dispatch table (not by
 ;  fall-through; the preceding retn ends the previous function). Restores
-;  state, copies handler_bodies bytes from data_7 to data_5, then loops
+;  state, copies handler_bodies bytes from inn_handler_src_buf to inn_handler_dst_buf, then loops
 ;  back to draw_intro_tile_map.
 ;--------------------------------------------------------------------------
 
@@ -242,16 +242,16 @@ inn_cleanup_and_return:					;* dispatch table target (reachable via DS opcode_di
 		call	word ptr cs:drv_return_to_caller
 		call	inn_wait_long
 		call	inn_wait_long
-		mov	ax,data_6
-		mov	data_3,ax
+		mov	ax,inn_patch_word_6
+		mov	inn_patch_slot_3,ax
 		call	word ptr cs:drv_palette_push
 		push	cs
 		pop	es
-		mov	si,offset data_7
-		mov	di,offset data_5
+		mov	si,offset inn_handler_src_buf
+		mov	di,offset inn_handler_dst_buf
 		mov	cx,7
 		rep	movsb				; Rep when cx >0 Mov [si] to es:[di]
-		test	data_4,0FFh
+		test	inn_patch_flag,0FFh
 		jz	inn_skip_dispatch_update	; Jump if zero
 		call	word ptr cs:drv_anim_step
 
@@ -380,7 +380,7 @@ intro_glyph_row_b	label	byte		; printable ASCII 0x28..0x5D
 ;--------------------------------------------------------------------------
 ;  inn_anim_scan (0x0233) -- core per-frame scanner. Early-exits unless
 ;  anim_active_flag is set AND gvar_timer_word >= 0x28, then runs a
-;  2x2 glyph-blit using data_8 as the 'coin-flip' random source.
+;  2x2 glyph-blit using inn_anim_scan_fn_ptr as the 'coin-flip' random source.
 ;--------------------------------------------------------------------------
 
 inn_anim_scan	proc	near
@@ -395,7 +395,7 @@ anim_scan_active:
 
 anim_scan_ready:
 		mov	word ptr ds:gvar_timer_word,0
-		call	word ptr cs:data_8
+		call	word ptr cs:inn_anim_scan_fn_ptr
 		and	al,1
 		add	al,al
 		add	al,al

@@ -4,6 +4,13 @@ Running list of placeholder labels still in the cleaned tasm source.
 Worked through with the `/label-audit` skill — see
 `.claude/skills/label-audit/SKILL.md` for the workflow.
 
+## Deferred procs needing deeper Tier-3 analysis
+
+| Done | File | Line | Name | Notes |
+|:---:|---|---|---|---|
+| [ ] | `200FIGHT.asm` | 4711 | `game_process_loop_3` | ~50-line proc; tests cell at SI+0x23 then writes 3 entity slots in adjacent row.  CF-return semantics are reversed from what the body's `clc` placement suggests — needs careful Tier-3 probe with planted cell data to disambiguate "CF=1 means failed-to-place" vs "CF=1 means cell-occupied". Caller `try_top_scroll_direction` treats CF=1 as "abort". |
+
+
 Format: each row is a single audit. Mark `[x]` when complete, with the
 canonical name in the rightmost column.  Multi-row blocks (e.g. paired
 bytes) can be done in one audit pass.

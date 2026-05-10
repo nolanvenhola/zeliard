@@ -124,7 +124,7 @@ seg_a		segment	byte public
 
 		org	0
 
-crab_ai_main	proc	far
+run_crab_ai_main	proc	far
 
 ; -------------------------------------------------------------------------
 ;  Module header (file offsets 0x000-0x033) -- loaded as data by 200FIGHT.
@@ -557,7 +557,7 @@ sub03_reset_phase:
 		mov	byte ptr [si+9],0
 		retn
 
-crab_ai_main	endp
+run_crab_ai_main	endp
 
 phase_advance_helper		proc	near
 		inc	byte ptr [si+6]

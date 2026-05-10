@@ -144,7 +144,7 @@ seg_a		segment	byte public
 
 		org	0
 
-hgc_gfx_driver	proc	far
+run_hgc_gfx_driver_main	proc	far
 
 start:
 		retf	1Fh			; Return far - dispatch table entry 0 (module init/reset)
@@ -171,7 +171,7 @@ blit_plane_a_loop:
 								mov	cs:src_word_d,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosw				; Store ax to es:[di]
 								loop	blit_plane_a_loop		; Loop if cx > 0
 
@@ -208,7 +208,7 @@ blit_plane_ab_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosw				; Store ax to es:[di]
 								loop	blit_plane_ab_loop		; Loop if cx > 0
 
@@ -230,7 +230,7 @@ render_plane_a_blit_entry:
 		pop	ds
 		pop	ax
 		mov	word ptr cs:render_fn_ptr,32A6h
-		call	imgdec_func_1
+		call	run_render_passes_hgc
 		pop	ds
 		retn
 
@@ -256,7 +256,7 @@ blit_plane_c_loop:
 								mov	cs:src_word_c,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_b,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosw				; Store ax to es:[di]
 								loop	blit_plane_c_loop		; Loop if cx > 0
 
@@ -278,11 +278,11 @@ blit_plane_c_loop:
 		mov	byte ptr cs:render_mode_flag,0
 		or	al,al			; Zero ?
 		jnz	blit_c_second_pass			; Jump if not zero
-		call	imgdec_func_1
+		call	run_render_passes_hgc
 
 blit_c_second_pass:
 		mov	byte ptr cs:render_mode_flag,0FFh
-		call	imgdec_func_1
+		call	run_render_passes_hgc
 		pop	ds
 		retn
 
@@ -300,17 +300,17 @@ blit_dispatch_done:
 		mov	byte ptr cs:render_mode_flag,0
 		or	al,al			; Zero ?
 		jnz	blit_dispatch_second			; Jump if not zero
-		call	imgdec_func_1
+		call	run_render_passes_hgc
 
 blit_dispatch_second:
 		mov	byte ptr cs:render_mode_flag,0FFh
-		call	imgdec_func_1
+		call	run_render_passes_hgc
 		pop	ds
 		retn
 
-hgc_gfx_driver	endp
+run_hgc_gfx_driver_main	endp
 
-imgdec_func_1		proc	near
+run_render_passes_hgc		proc	near
 		mov	byte ptr cs:cur_row_ctr,0
 		mov	ax,hgc_seg
 		mov	es,ax
@@ -378,7 +378,7 @@ render_wait_timer:
 render_func_done:
 		retn
 
-imgdec_func_1		endp
+run_render_passes_hgc		endp
 
 render_mask_blend_entry:
 		test	byte ptr cs:render_mode_flag,0FFh
@@ -536,7 +536,7 @@ text_char_render:
 text_char_row_loop:
 														push	cx
 														lodsb				; String [si] to al
-														call	imgdec_process_loop
+														call	build_pixel_pair_hgc
 														mov	es:[di],dx
 														add	di,50h
 														pop	cx
@@ -549,7 +549,7 @@ text_char_advance:
 								add	di,2
 								jmp	short text_char_loop
 
-imgdec_process_loop		proc	near
+build_pixel_pair_hgc		proc	near
 		mov	cx,8
 
 pixel_expand_bits:
@@ -564,7 +564,7 @@ pixel_expand_bits:
 		xchg	dh,dl
 		retn
 
-imgdec_process_loop		endp
+build_pixel_pair_hgc		endp
 
 scroll_row_entry:
 		push	ds
@@ -621,9 +621,9 @@ scroll_row_entry:
 
 scroll_row_loop:
 								push	cx
-								call	imgdec_process_loop_2
+								call	mask_write_loop_hgc
 								hgc_advance_di	scroll_row_wrap			; Jump if below
-								call	imgdec_process_loop_2
+								call	mask_write_loop_hgc
 								add	di,hgc_bank2_wrap_b
 
 scroll_row_wrap:
@@ -635,7 +635,7 @@ scroll_row_wrap:
 		pop	ds
 		retn
 
-imgdec_process_loop_2		proc	near
+mask_write_loop_hgc		proc	near
 		push	di
 		push	si
 		push	bp
@@ -655,7 +655,7 @@ copy_or_words_loop:
 		pop	di
 		retn
 
-imgdec_process_loop_2		endp
+mask_write_loop_hgc		endp
 
 render_plane_ab_entry:
 		push	ds
@@ -683,7 +683,7 @@ render_ab_inner_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosw				; Store ax to es:[di]
 								loop	render_ab_inner_loop		; Loop if cx > 0
 
@@ -815,7 +815,7 @@ sprite_update_frame:
 		SET_ES_3000
 		mov	si,di
 		mov	di,bp
-		call	copy_buffer
+		call	copy_pixel_row_hgc
 		pop	si
 		pop	ds
 
@@ -858,7 +858,7 @@ sprite_draw_loop:
 								mov	es,ax
 								mov	ds,cs:gvar_game_seg
 								mov	si,bp
-								call	imgdec_multiply
+								call	blit_sprite_hgc
 								pop	si
 								pop	ds
 
@@ -887,7 +887,7 @@ sprite_restore_loop:
 								add	ax,3000h
 								mov	ds,ax
 								mov	si,bp
-								call	copy_buffer_2
+								call	copy_to_di_hgc
 								pop	si
 								pop	ds
 								pop	cx
@@ -908,7 +908,7 @@ sprite_all_done:
 
 		retn
 
-copy_buffer		proc	near
+copy_pixel_row_hgc		proc	near
 		push	si
 		push	cx
 
@@ -930,9 +930,9 @@ copy_buf_row_next:
 		pop	si
 		retn
 
-copy_buffer		endp
+copy_pixel_row_hgc		endp
 
-copy_buffer_2		proc	near
+copy_to_di_hgc		proc	near
 		push	di
 		push	cx
 
@@ -964,9 +964,9 @@ copy_buf2_row_next:
 		pop	di
 		retn
 
-copy_buffer_2		endp
+copy_to_di_hgc		endp
 
-imgdec_multiply		proc	near
+blit_sprite_hgc		proc	near
 		push	di
 		push	cx
 		mov	al,ch
@@ -977,9 +977,9 @@ imgdec_multiply		proc	near
 
 multiply_row_loop:
 								EXPAND_CH_BYTE
-								call	imgdec_process_loop_3
+								call	blit_via_di_hgc
 								hgc_advance_di	multiply_row_wrap			; Jump if below
-								call	imgdec_process_loop_3
+								call	blit_via_di_hgc
 								add	di,hgc_bank2_wrap
 
 multiply_row_wrap:
@@ -991,9 +991,9 @@ multiply_row_wrap:
 		pop	di
 		retn
 
-imgdec_multiply		endp
+blit_sprite_hgc		endp
 
-imgdec_process_loop_3		proc	near
+blit_via_di_hgc		proc	near
 		push	di
 		push	si
 		push	cx
@@ -1005,7 +1005,7 @@ process3_pixel_loop:
 								lodsb				; String [si] to al
 								mov	cs:src_word_a,ax
 								push	bx
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								pop	bx
 								or	es:[di],al
 								inc	di
@@ -1016,14 +1016,14 @@ process3_pixel_loop:
 		pop	di
 		retn
 
-imgdec_process_loop_3		endp
+blit_via_di_hgc		endp
 
-		; Inline dispatch entry + data_3 block (machine code + render plane source table)
+		; Inline dispatch entry + hgc_lookup_data_3 block (machine code + render plane source table)
 		db	 00h, 90h, 20h, 06h, 80h, 91h	; CRTC pairs: (00,90) (20,06) (80,91)
 		db	 20h, 06h, 00h, 93h, 20h, 06h	; CRTC pairs: (20,06) (00,93) (20,06)
 		db	 80h, 94h, 20h, 06h, 00h, 96h	; CRTC pairs: (80,94) (20,06) (00,96)
 		db	 18h, 04h,0C0h, 96h, 18h	; CRTC pairs: (18,04) (C0,96) + half (18..)
-data_3		dw	8004h			; Data table (indexed access)
+hgc_lookup_data_3		dw	8004h			; Data table (indexed access)
 		db	 97h, 18h, 04h, 40h, 98h, 18h	; CRTC pairs: (..97) (18,04) (40,98) (18..)
 		db	 04h, 1Eh, 53h, 32h,0E4h,0BAh	; CRTC tail + push ds; push bx; xor ah; mov dx
 		db	0C0h, 0Ch,0F7h,0E2h, 05h, 40h	; ...,0CC0h; mul dx; add ax,4000h
@@ -1035,11 +1035,11 @@ data_3		dw	8004h			; Data table (indexed access)
 		db	 00h, 00h,0B9h, 30h, 03h	; ...0; mov cx,330h -> render_words_loop
 
 render_words_loop:
-								mov	ax,data_3[si]
+								mov	ax,hgc_lookup_data_3[si]
 								mov	cs:src_word_a,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_b,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosw				; Store ax to es:[di]
 								loop	render_words_loop		; Loop if cx > 0
 
@@ -1069,7 +1069,7 @@ sprite_img_decode_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosw				; Store ax to es:[di]
 								loop	sprite_img_decode_loop		; Loop if cx > 0
 
@@ -1090,7 +1090,7 @@ map_tile_col_loop:
 														push	bx
 														push	ds
 														push	si
-														call	imgdec_multiply_2
+														call	compute_tile_vram_offset_hgc
 														pop	si
 														pop	ds
 														pop	bx
@@ -1105,7 +1105,7 @@ map_tile_col_loop:
 
 		retn
 
-imgdec_multiply_2		proc	near
+compute_tile_vram_offset_hgc		proc	near
 		mov	ds,cs:gvar_game_seg
 		mov	dx,cs
 		add	dx,2000h
@@ -1162,7 +1162,7 @@ tile_row_copy_loop:
 
 		retn
 
-imgdec_multiply_2		endp
+compute_tile_vram_offset_hgc		endp
 
 char_row_render_entry:
 		mov	word ptr cs:src_word_d,0
@@ -1218,7 +1218,7 @@ sprite_row_fwd_loop:
 								mov	ax,ds:sprite_mask_off[si]
 								mov	cs:src_word_c,ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								or	es:[di],ax
 								inc	di
 								inc	di
@@ -1235,7 +1235,7 @@ sprite_row_fwd_wrap:
 								mov	ax,ds:sprite_mask_off[si]
 								mov	cs:src_word_c,ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								or	es:[di],ax
 								inc	di
 								inc	di
@@ -1258,7 +1258,7 @@ sprite_row_rev_loop:
 								xchg	ah,al
 								mov	cs:src_word_c,ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								or	es:[di],ax
 								dec	di
 								dec	di
@@ -1277,7 +1277,7 @@ sprite_row_rev_wrap:
 								xchg	ah,al
 								mov	cs:src_word_c,ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								or	es:[di],ax
 								dec	di
 								dec	di
@@ -1300,7 +1300,7 @@ trail_horiz_loop:
 								lodsb				; String [si] to al
 								or	al,al			; Zero ?
 								jz	trail_vert_start			; Jump if zero
-								call	imgdec_func_9
+								call	blit_clipped_alt_hgc
 								add	di,205Ah
 								cmp	di,hgc_bank1_end
 								jb	trail_horiz_next			; Jump if below
@@ -1318,7 +1318,7 @@ trail_vert_loop:
 								lodsb				; String [si] to al
 								or	al,al			; Zero ?
 								jz	trail_horiz_back_start			; Jump if zero
-								call	imgdec_func_9
+								call	blit_clipped_alt_hgc
 								inc	di
 								jmp	short trail_vert_loop
 
@@ -1331,7 +1331,7 @@ trail_horiz_back_loop:
 								lodsb				; String [si] to al
 								or	al,al			; Zero ?
 								jz	trail_vert_back_start			; Jump if zero
-								call	imgdec_func_9
+								call	blit_clipped_alt_hgc
 								sub	di,205Ah
 								jnc	trail_horiz_back_next			; Jump if carry=0
 								add	di,hgc_bank1_end_m1
@@ -1349,7 +1349,7 @@ trail_vert_back_loop:
 								lodsb				; String [si] to al
 								or	al,al			; Zero ?
 								jz	trail_vert_back_next			; Jump if zero
-								call	imgdec_func_9
+								call	blit_clipped_alt_hgc
 								dec	di
 								jmp	short trail_vert_back_loop
 
@@ -1376,7 +1376,7 @@ trail_down_start:
 trail_down_loop:
 								push	cx
 								mov	al,18h
-								call	imgdec_func_9
+								call	blit_clipped_alt_hgc
 								add	di,205Ah
 								cmp	di,hgc_bank1_end
 								jb	trail_down_next			; Jump if below
@@ -1403,7 +1403,7 @@ trail_right_top:
 trail_right_loop:
 								push	cx
 								mov	al,18h
-								call	imgdec_func_9
+								call	blit_clipped_alt_hgc
 								inc	di
 								pop	cx
 								loop	trail_right_loop		; Loop if cx > 0
@@ -1421,7 +1421,7 @@ trail_up_top:
 trail_up_loop:
 								push	cx
 								mov	al,18h
-								call	imgdec_func_9
+								call	blit_clipped_alt_hgc
 								sub	di,205Ah
 								jnc	trail_up_next			; Jump if carry=0
 								add	di,hgc_bank1_end_m1
@@ -1448,7 +1448,7 @@ trail_left_top2:
 trail_left_loop:
 								push	cx
 								mov	al,18h
-								call	imgdec_func_9
+								call	blit_clipped_alt_hgc
 								dec	di
 								pop	cx
 								loop	trail_left_loop		; Loop if cx > 0
@@ -1460,7 +1460,7 @@ trail_wait_timer:
 								jb	trail_wait_timer			; Jump if below
 		jmp	trail_draw_top
 
-imgdec_func_9		proc	near
+blit_clipped_alt_hgc		proc	near
 		push	si
 		push	di
 		dec	al
@@ -1493,7 +1493,7 @@ func9_done:
 		pop	si
 		retn
 
-imgdec_func_9		endp
+blit_clipped_alt_hgc		endp
 
 		; HGC 2bpp grayscale pattern table for sprite rendering (4-shade: 00h/03h/AAh/C0h/FFh columns)
 		db	 00h, 00h, 00h, 03h, 80h, 80h	; pattern row  0
@@ -1580,7 +1580,7 @@ render_src_c_check:
 								mov	cs:src_word_c,ax
 
 render_src_call:
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosw				; Store ax to es:[di]
 								pop	si
 								inc	si
@@ -1612,7 +1612,7 @@ render_col_inner_loop:
 														push	cx
 														push	bx
 														push	si
-														call	imgdec_multiply_3
+														call	blit_sprite_clipped_hgc
 														pop	si
 														pop	bx
 														pop	cx
@@ -1630,7 +1630,7 @@ render_pass_wait_timer:
 		pop	ds
 		retn
 
-imgdec_multiply_3		proc	near
+blit_sprite_clipped_hgc		proc	near
 		push	bx
 		mov	bl,cs:cur_row_ctr
 		add	bl,10h
@@ -1700,7 +1700,7 @@ multiply3_clear_wrap:
 		rep	stosw			; Rep when cx >0 Store ax to es:[di]
 		retn
 
-imgdec_multiply_3		endp
+blit_sprite_clipped_hgc		endp
 
 line_fill_entry:
 		mov	cs:cur_row_ctr,bl
@@ -1714,7 +1714,7 @@ line_fill_entry:
 		sub	cx,5
 		push	cx
 		push	di
-		call	fill_buffer
+		call	init_status_buf_hgc
 		pop	di
 		inc	byte ptr cs:cur_row_ctr
 		hgc_advance_di	fill_buf_second_pass			; Jump if below
@@ -1722,19 +1722,19 @@ line_fill_entry:
 
 fill_buf_second_pass:
 		mov	cx,2
-		call	clear_buffer
+		call	clear_status_buf_rows_hgc
 		pop	cx
 
 fill_rows_loop:
 								push	cx
-								call	imgdec_get_value
+								call	write_status_pattern_0_hgc
 								or	byte ptr es:[di],30h	; '0'
 								and	byte ptr es:[di],0F0h
 								or	byte ptr es:[bx+di-1],0Ch
 								and	byte ptr es:[bx+di-1],0Fh
 								inc	byte ptr cs:cur_row_ctr
 								hgc_advance_di	fill_rows_next			; Jump if below
-								call	imgdec_get_value
+								call	write_status_pattern_0_hgc
 								or	byte ptr es:[di],30h	; '0'
 								and	byte ptr es:[di],0F0h
 								or	byte ptr es:[bx+di-1],0Ch
@@ -1747,11 +1747,11 @@ fill_rows_next:
 								loop	fill_rows_loop		; Loop if cx > 0
 
 		mov	cx,1
-		call	clear_buffer
+		call	clear_status_buf_rows_hgc
 
-fill_buffer		proc	near
+init_status_buf_hgc		proc	near
 		push	di
-		call	imgdec_get_value
+		call	write_status_pattern_0_hgc
 		or	byte ptr es:[di],3Fh	; '?'
 		inc	di
 		mov	cx,bx
@@ -1764,7 +1764,7 @@ fill_buffer		proc	near
 		retn
 
 fill_buf_wrap:
-		call	imgdec_get_value
+		call	write_status_pattern_0_hgc
 		or	byte ptr es:[di],3Fh	; '?'
 		inc	di
 		mov	cx,bx
@@ -1774,14 +1774,14 @@ fill_buf_wrap:
 		or	byte ptr es:[di],0FCh
 		retn
 
-fill_buffer		endp
+init_status_buf_hgc		endp
 
-clear_buffer		proc	near
+clear_status_buf_rows_hgc		proc	near
 
 clear_buf_row_loop:
 								push	cx
 								push	di
-								call	imgdec_get_value
+								call	write_status_pattern_0_hgc
 								or	byte ptr es:[di],30h	; '0'
 								and	byte ptr es:[di],0F0h
 								inc	di
@@ -1795,7 +1795,7 @@ clear_buf_row_loop:
 								inc	byte ptr cs:cur_row_ctr
 								hgc_advance_di	clear_buf_row_wrap			; Jump if below
 								push	di
-								call	imgdec_get_value
+								call	write_status_pattern_0_hgc
 								or	byte ptr es:[di],30h	; '0'
 								and	byte ptr es:[di],0F0h
 								inc	di
@@ -1814,13 +1814,13 @@ clear_buf_row_wrap:
 
 		retn
 
-clear_buffer		endp
+clear_status_buf_rows_hgc		endp
 
-imgdec_get_value		proc	near
+write_status_pattern_0_hgc		proc	near
 		mov	word ptr es:[di-1],0
 		retn
 
-imgdec_get_value		endp
+write_status_pattern_0_hgc		endp
 
 plane_merge_entry:
 		push	bx
@@ -1864,10 +1864,10 @@ border_draw_entry:
 		mov	ds:saved_es,es
 		mov	di,69Ah
 		add	di,ds:saved_di
-		call	imgdec_process_loop_4
+		call	seed_status_pattern_hgc
 		mov	di,6BCh
 		add	di,ds:saved_di
-		call	imgdec_process_loop_4
+		call	seed_status_pattern_hgc
 		mov	ax,hgc_seg
 		mov	es,ax
 		mov	ds,cs:saved_es
@@ -1895,11 +1895,11 @@ scan_outer_loop:
 								jb	scan_row_even_else			; Jump if below
 								cmp	ax,71h
 								jae	scan_row_even_else			; Jump if above or =
-								call	imgdec_scan_loop_2
+								call	init_status_row_11_hgc
 								jmp	short scan_row_even_done
 
 scan_row_even_else:
-								call	imgdec_scan_loop
+								call	init_status_row_28_hgc
 
 scan_row_even_done:
 								pop	cx
@@ -1923,11 +1923,11 @@ scan_row_even_done:
 								jb	scan_row_odd_else			; Jump if below
 								cmp	ax,71h
 								jae	scan_row_odd_else			; Jump if above or =
-								call	imgdec_scan_loop_2
+								call	init_status_row_11_hgc
 								jmp	short scan_row_wait_timer
 
 scan_row_odd_else:
-								call	imgdec_scan_loop
+								call	init_status_row_28_hgc
 
 scan_row_wait_timer:
 														cmp	byte ptr cs:gvar_frame_timer,4
@@ -1938,7 +1938,7 @@ scan_row_wait_timer:
 		pop	ds
 		retn
 
-imgdec_scan_loop		proc	near
+init_status_row_28_hgc		proc	near
 		mov	cx,28h
 		mov	word ptr cs:src_word_d,0
 
@@ -1949,7 +1949,7 @@ scan_words_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosw				; Store ax to es:[di]
 								push	di
 								add	di,1FFEh
@@ -1963,9 +1963,9 @@ scan_words_wrap:
 
 		retn
 
-imgdec_scan_loop		endp
+init_status_row_28_hgc		endp
 
-imgdec_scan_loop_2		proc	near
+init_status_row_11_hgc		proc	near
 		mov	cx,0Bh
 		mov	word ptr cs:src_word_d,0
 
@@ -1977,7 +1977,7 @@ scan2_top_loop:
 								mov	cs:src_word_b,ax
 								lodsb				; String [si] to al
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosb				; Store al to es:[di]
 								push	di
 								add	di,1FFFh
@@ -2000,7 +2000,7 @@ scan2_mid_loop:
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosw				; Store ax to es:[di]
 								push	di
 								add	di,1FFEh
@@ -2024,7 +2024,7 @@ scan2_bot_loop:
 								mov	cs:src_word_b,ax
 								lodsb				; String [si] to al
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosb				; Store al to es:[di]
 								push	di
 								add	di,1FFFh
@@ -2038,12 +2038,12 @@ scan2_bot_wrap:
 
 		retn
 
-imgdec_scan_loop_2		endp
+init_status_row_11_hgc		endp
 
-imgdec_process_loop_4		proc	near
+seed_status_pattern_hgc		proc	near
 		push	di
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_hgc
 		add	di,36h
 		mov	cx,5Bh
 
@@ -2054,12 +2054,12 @@ border_top_loop:
 								loop	border_top_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_hgc
 		pop	di
 		add	di,hgc_plane_stride
 		push	di
 		mov	ax,0FD7Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_hgc
 		add	di,36h
 		mov	cx,2Dh
 
@@ -2076,11 +2076,11 @@ border_sides_loop:
 		mov	byte ptr es:[di+19h],0Eh
 		add	di,50h
 		mov	ax,0FD7Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_hgc
 		pop	di
 		add	di,hgc_plane_stride
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_hgc
 		add	di,36h
 		mov	cx,5Bh
 
@@ -2091,12 +2091,12 @@ border_bot_loop:
 								loop	border_bot_loop		; Loop if cx > 0
 
 		mov	ax,0FC3Fh
-		call	fill_buffer_2
+		call	fill_status_byte_24x_hgc
 		retn
 
-imgdec_process_loop_4		endp
+seed_status_pattern_hgc		endp
 
-fill_buffer_2		proc	near
+fill_status_byte_24x_hgc		proc	near
 		stosb				; Store al to es:[di]
 		mov	al,0FFh
 		mov	cx,18h
@@ -2105,9 +2105,9 @@ fill_buffer_2		proc	near
 		stosb				; Store al to es:[di]
 		retn
 
-fill_buffer_2		endp
+fill_status_byte_24x_hgc		endp
 
-imgdec_multiply_4_entry:
+extract_pixel_pair_hgc_entry:
 		push	ds
 		mov	ds:saved_di,di
 		mov	ds:saved_es,es
@@ -2123,12 +2123,12 @@ multiply4_outer_loop:
 								neg	ax
 								add	ax,39h
 								add	ax,ax
-								call	imgdec_multiply_4
+								call	extract_pixel_pair_hgc
 								pop	ax
 								push	ax
 								add	ax,ax
 								dec	ax
-								call	imgdec_multiply_4
+								call	extract_pixel_pair_hgc
 
 multiply4_wait_timer:
 														cmp	byte ptr cs:gvar_frame_timer,4
@@ -2139,7 +2139,7 @@ multiply4_wait_timer:
 		pop	ds
 		retn
 
-imgdec_multiply_4		proc	near
+extract_pixel_pair_hgc		proc	near
 		push	ax
 		mov	bl,al
 		mov	al,2Fh			; '/'
@@ -2170,11 +2170,11 @@ multiply4_draw_loop:
 								xor	ah,ah			; Zero register
 								mov	al,ds:hgc_plane3_buf[si]
 								mov	cs:src_word_c,ax
-								mov	al,byte ptr data_40[si]
+								mov	al,byte ptr hgc_lookup_data_40[si]
 								mov	cs:src_word_b,ax
 								lodsb				; String [si] to al
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosb				; Store al to es:[di]
 								push	di
 								add	di,1FFFh
@@ -2196,11 +2196,11 @@ multiply4_partial_loop:
 								xor	ah,ah			; Zero register
 								mov	al,ds:hgc_plane3_buf[si]
 								mov	cs:src_word_c,ax
-								mov	al,byte ptr data_40[si]
+								mov	al,byte ptr hgc_lookup_data_40[si]
 								mov	cs:src_word_b,ax
 								lodsb				; String [si] to al
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosb				; Store al to es:[di]
 								push	di
 								add	di,1FFFh
@@ -2215,11 +2215,11 @@ multiply4_partial_wrap:
 		xor	ah,ah			; Zero register
 		mov	al,ds:hgc_plane3_buf[si]
 		mov	cs:src_word_c,ax
-		mov	al,byte ptr data_40[si]
+		mov	al,byte ptr hgc_lookup_data_40[si]
 		mov	cs:src_word_b,ax
 		lodsb				; String [si] to al
 		mov	cs:src_word_a,ax
-		call	imgdec_process_loop_5
+		call	copy_status_loop_hgc
 		and	al,0FCh
 		and	byte ptr es:[di],3
 		or	es:[di],al
@@ -2233,9 +2233,9 @@ multiply4_edge_wrap:
 		or	es:[di],al
 		retn
 
-imgdec_multiply_4		endp
+extract_pixel_pair_hgc		endp
 
-imgdec_multiply_5_entry:
+extract_pixel_pair_alt_hgc_entry:
 		push	ds
 		mov	ds:saved_di,di
 		mov	ds:saved_es,es
@@ -2251,12 +2251,12 @@ multiply5_outer_loop:
 								neg	ax
 								add	ax,39h
 								add	ax,ax
-								call	imgdec_multiply_5
+								call	extract_pixel_pair_alt_hgc
 								pop	ax
 								push	ax
 								add	ax,ax
 								dec	ax
-								call	imgdec_multiply_5
+								call	extract_pixel_pair_alt_hgc
 
 multiply5_wait_timer:
 														cmp	byte ptr cs:gvar_frame_timer,4
@@ -2267,7 +2267,7 @@ multiply5_wait_timer:
 		pop	ds
 		retn
 
-imgdec_multiply_5		proc	near
+extract_pixel_pair_alt_hgc		proc	near
 		push	ax
 		mov	bl,al
 		mov	al,2Fh			; '/'
@@ -2290,11 +2290,11 @@ imgdec_multiply_5		proc	near
 multiply5_words_loop:
 								mov	ax,ds:hgc_plane3_buf[si]
 								mov	cs:src_word_c,ax
-								mov	ax,data_40[si]
+								mov	ax,hgc_lookup_data_40[si]
 								mov	cs:src_word_b,ax
 								lodsw				; String [si] to ax
 								mov	cs:src_word_a,ax
-								call	imgdec_process_loop_5
+								call	copy_status_loop_hgc
 								stosw				; Store ax to es:[di]
 								push	di
 								add	di,1FFEh
@@ -2322,7 +2322,7 @@ multiply5_clear_wrap:
 		rep	stosb			; Rep when cx >0 Store al to es:[di]
 		retn
 
-imgdec_multiply_5		endp
+extract_pixel_pair_alt_hgc		endp
 
 write_pixel_entry:
 		push	ax
@@ -2449,7 +2449,7 @@ set_render_lut_entry:
 		db	1, 2, 3, 3, 3, 3                                   ; sprite_data offset 0x250 (6 bytes)
 		db	0, 3                                               ; sprite_data offset 0x256 (2 bytes)
 		db	10 dup (0)
-data_40		dw	0			; Data table (indexed access)
+hgc_lookup_data_40		dw	0			; Data table (indexed access)
 		db	0, 0, 0, 1, 0                                      ; sprite_data offset 0x262 (5 bytes)
 		db	7 dup (0)
 		db	1, 2, 3, 3, 3, 3                                   ; sprite_data offset 0x26E (6 bytes)
@@ -2725,7 +2725,7 @@ data_40		dw	0			; Data table (indexed access)
 		db	3, 1, 3, 2, 3, 3                                   ; sprite_data offset 0x8F6 (6 bytes)
 		db	3, 3                                               ; sprite_data offset 0x8FC (2 bytes)
 
-imgdec_process_loop_5		proc	near
+copy_status_loop_hgc		proc	near
 		push	cx
 		push	si
 		mov	si,cs:render_lut_ptr
@@ -2758,7 +2758,7 @@ process5_bit_loop:
 		pop	cx
 		retn
 
-imgdec_process_loop_5		endp
+copy_status_loop_hgc		endp
 
 hgc_capture_entry:
 		push	ds

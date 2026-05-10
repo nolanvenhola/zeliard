@@ -210,7 +210,7 @@ seg_a		segment	byte public
 ;
 ;==========================================================================
 
-game		proc	far
+run_game_main		proc	far
 
 start:
 		mov	cs:save_mode_flag,ax	; Save new/load flag
@@ -520,7 +520,7 @@ gfx_mode_tbl_all_lbl	label	word
 		db	01h, 1Eh, 'MMAN.GRP', 0	; zelres2 ch30: manual graphics (mono)
 		db	01h, 1Fh, 'CMAN.GRP', 0	; zelres2 ch31: manual graphics (color)
 
-game		endp
+run_game_main		endp
 
 ;==========================================================================
 ;  load_music_tracks - Load all configured music tracks
