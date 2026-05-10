@@ -1,6 +1,6 @@
 # Missing-EQU Report
 
-Scanned 2 raw-hex memory operands across the cleaned source.
+Scanned 0 raw-hex memory operands across the cleaned source.
 Range: 0x0000..0xFFFF.  Min refs to flag MISSING: 2.
 
 - **MISSING (no EQU exists)**: 0 addresses

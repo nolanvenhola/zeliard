@@ -585,7 +585,7 @@ palette_hp_done:
 		or	[bx+si],cl
 		add	ax,[si]
 		add	di,[si+1]
-		sbb	byte ptr ds:[808h],al
+		db	18h, 06h, 08h, 08h	; mis-decoded as `sbb [808h],al`; bytes are raw data
 		add	ax,[si]
 		add	cx,sp
 		add	[si],bx
@@ -616,7 +616,7 @@ palette_hp_done:
 		add	dh,[si]
 		xor	[si],ah
 		xor	[bx+di],cl
-		or	byte ptr ds:[30Ch],al
+		db	08h, 06h, 0Ch, 03h	; mis-decoded as `or [30Ch],al`; bytes are raw data
 		cmp	ds:drv_ident_val,dh
 ;*		pop	cs			; Dangerous-8088 only
 		db	0Fh			;  Fixup - byte match
