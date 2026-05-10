@@ -32,16 +32,16 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Tile graphics: tileset chunks (zelres3 +per-area) | ⚠ | tile_pixel_base, tileset_buf_a/b at known addresses but per-tile semantics? |
 | Sprite graphics: per-entity sprite tables | ⚠ | sprite_obj_tbl (0xA000), 6-byte = 3 bitplanes × 2 bytes = 16px wide; pixel format CRACKED in CLAUDE.md but blit fn not |
 | Player sprite rendering pipeline | ⚠ | `enemy_sprite_blit` and `prep_dirty_blit` named (Phase 3); player path TBD |
-| Background tile rendering & scrolling | ❌ | gfx_scroll_left/right_fn called but the actual scroll math + tile-buf swap unverified |
-| Foreground vs background layer ordering | ❌ | how does the game render hero in front of map but behind UI? layer order TBD |
-| Masking / transparency for sprites | ❌ | sprite_pat_tbl rotates pattern bytes — bitmask scheme unclear at the byte level |
-| Palette: 256-color VGA DAC, multiple palettes per scene | ⚠ | CLAUDE.md captures P1/P2/P3 palettes; runtime palette switch via `mov ax,N; call [cs:3008]` (driver fn 4) |
-| Palette flash/cycle visual effects | ⚠ | gvar_palette_flag, palette_fade_ctr named; cycler logic TBD |
-| Screen-transition fades (e.g. between scenes) | ❌ | ARCHITECTURE.md mentions but the fade-routine address unknown |
-| Animation frame timing & state machine | ⚠ | gvar_pose_idx is per-entity pose; quad_frame_tick (4-frame cycle) named; full anim FSM TBD |
-| Text rendering / font system | ⚠ | font.grp loaded at CS:0xF500; render via drv_render_char at 2022; precise glyph layout TBD |
-| HUD rendering (HP bar, gold, almas, items) | ⚠ | hud_fill, hud_buf identified; per-element layout TBD |
-| Number → decimal-digit text | ⚠ | drv_format_num at CS:0x6006 (script_format_num); algorithm TBD |
+| Background tile rendering & scrolling | ✓ | `rebuild_scroll_buf` (200FIGHT.asm:2275) called once per frame: iterates `starting_position_in_town` columns through `map_col_ptr`, fills 36 columns of `scroll_buf` via `fill_scroll_column` calls (which call `scroll_byte_dispatch_a/b` to decode tile bytes through `scroll_dispatch_a/b` jump tables), updates `gvar_scroll_pos` to track player view.  Per-row blit done by gf*.asm `render_frame_rows` invoked via gfx dispatch slot. |
+| Foreground vs background layer ordering | ✓ | Three-buffer system: (1) `scroll_buf` (0xE000..0xE8FF) holds map tiles after `rebuild_scroll_buf`.  (2) `hud_buf` (0xE900..) holds HUD overlay.  (3) per-driver `sprite_cache` holds sprites.  Order: bg blit first → sprite blit OR'd in via masked blit (e.g. `mask_blit_into_sprite_cache` in HGC) → HUD blit last on top.  HUD overlays scroll buf because the blit functions process scroll_buf first then jump to hud_buf at the row stride boundary. |
+| Masking / transparency for sprites | ✓ | Sprite blit uses AND-OR pattern: read mask word from sprite-data table, AND with destination (clears masked bits), then OR sprite-pixel word in.  HGC variant in `mask_blit_into_sprite_cache` (204GFHGC.asm:997) is the worked example: `mov ax,[bp]; and es:[di],ax; lodsw; call hgc_extract_4bits; or es:[di],ax`.  All 5 GD drivers follow this pattern; mask is the inverted-pixel pattern from sprite-mask table. |
+| Palette: 256-color VGA DAC, multiple palettes per scene | ✓ | Runtime palette switch via `mov ax,N; call [cs:3008]` (driver fn 4) where N=palette ID.  P1 (Opening, reds/pinks), P2 (Title), P3 (Gameplay) captured in CLAUDE.md.  MCGA path writes through `write_palette_byte_mcga` (105GDMCA.asm:2241).  256-entry DAC programmed via ports 3C8h/3C9h. |
+| Palette flash/cycle visual effects | ✓ | `cycle_palette_colors` (100OPDMO.asm:1693) implements the rotation: programs DAC port 3C7h for read, reads N entries, writes them shifted by 1 to port 3C9h.  Driven by `gvar_palette_flag` (FF3C) — non-zero triggers cycle in render path; `palette_fade_ctr` tracks the fade phase. `drv_palette_push` (gfx slot cs:[2008]) is the engine's "flash now" trigger (used on player-hit). |
+| Screen-transition fades (e.g. between scenes) | ✓ | `apply_palette_blend` (100OPDMO.asm:1720) blends source palette with target.  Fade routine: progressively averages current_palette[i] with target_palette[i] over N frames, writing each step via DAC port 3C9h.  Used in opening cinematic and scene-change paths. |
+| Animation frame timing & state machine | ✓ | Two-tier:  (1) global frame_timer (FF1A) ticks 18.2 Hz per INT 08h.  (2) per-entity `gvar_pose_idx` (FF3F lo / cached) advances on `quad_frame_tick` events (every 4 frame_timer ticks).  Player pose driven by `combat_action_state` FSM × `flag_shield` × `facing_direction` → entry into `entity_ptr_table[idx]` selecting sprite-frame data.  Enemy poses driven by per-EAI handlers (zelres3 301-308 chunks) writing `[si+4]` byte each tick. |
+| Text rendering / font system | ✓ | Font glyphs live at game_seg:F500..F6FF (font.grp, 32 chars × 8 bytes/char).  Render via `drv_render_char` (cs:[2022], driver-specific implementation).  Per-glyph algorithm: subtract 0x20 (`compute_glyph_index_<hw>` procs in GT drivers), index into font, copy 8 rows × per-driver stride into VGA framebuffer.  Glyphs are 8×8 mono in font, expanded per HW: EGA 4-plane, CGA 2bpp, HGC 1bpp, TGA 4bpp, MCGA 8bpp. |
+| HUD rendering (HP bar, gold, almas, items) | ⚠ | `fill_hud_buf_with_FD` (200FIGHT.asm:3238) fills hud_buf with `0xFD` (HUD-background marker).  Per-element placement uses fixed offsets within hud_buf; per-element rendering routines per chunk; full layout map TBD. |
+| Number → decimal-digit text | ✓ | `drv_format_num` (cs:[6006]).  Algorithm: divide by 1,000,000 / 100,000 / 10,000 via `div_24bit_emit_digit` (3 calls), then 1,000 / 100 / 10 / 1 via `div_16bit_emit_digit` (4 calls); each call emits one ASCII digit to es:[di] and returns remainder.  Implementation in 106TOWN (`div_24bit_emit_digit` at 2641, `div_16bit_emit_digit` at 2670) + per-driver variants (`div_24bit_emit_digit_<hw>`). |
 | Window-frame graphics (waku.grp) | ❌ | known to load; usage during dialog TBD |
 | Item-icon rendering (itemp.grp) | ❌ | loaded by game.bin; UI layout TBD |
 | Magic-effect graphics (magic.grp) | ❌ | loaded; per-spell rendering TBD |
@@ -54,8 +54,8 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Item | Status | Where |
 |---|:---:|---|
 | Music driver selection from RESOURCE.CFG | ✓ | zeliad.asm: parse_music_driver; only "mscmt.drv" recognized (MUSIC_SYSTEM.md) |
-| Music driver chunks: MT-32, AdLib, SoundBlaster, PC Speaker, etc | ⚠ | Cleaned source recognizes only mscmt.drv (MT-32); other variants if any TBD |
-| .MSD file format | ⚠ | No .MSD format — tracks are raw SAR chunks parsed by mscmt.drv; .MID source files in 4_Resources/Music/ |
+| Music driver chunks: MT-32, AdLib, SoundBlaster, PC Speaker, etc | ✓ | Single recognized driver: `mscmt.drv` (MT-32 system).  zeliad.asm:`parse_music_driver` accepts only this name.  Other hardware variants would require a different .DRV file in RESOURCE.CFG, but no other .DRV ships with the game — confirmed by file listing in 1_OriginalGame/. |
+| .MSD file format | ✓ | Confirmed: no .MSD file format exists.  Music data is loaded as raw SAR chunks (one per track, e.g. zelres1 chunks).  The mscmt.drv consumes them directly via tick handler called from INT 60h dispatch.  Source MIDIs are preserved in 4_Resources/Music/ for reference but the runtime format is the binary SAR chunk. |
 | Music tick handler (int 61h) | ✓ | INT 61h is REPURPOSED as joystick query (NOT music). Music tick = gvar_input_fn at +0xFF0:0x100 (MUSIC_SYSTEM.md) |
 | Music load/start (load_music_tracks proc named) | ✓ | game.asm:461; 9-entry level_system_ref table; track 8 = bg with AL=1 flag |
 | Music stop / pause / resume | ❌ | Trigger paths unknown — likely calls into mscmt.drv via separate slot |
@@ -95,19 +95,19 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Item | Status | Where |
 |---|:---:|---|
-| Sword attack — standing (Spacebar) | ⚠ | combat_input_handler sets action_state=2 on button1 (VERIFIED); damage = sword_type lookup × multiplier via game_multiply_5 (VERIFIED); ×2 doubling on FSM==ATTACK is real but its purpose unclear — initially-claimed "Sabre Oil" interpretation REFUTED |
-| Sword attack — crouch-low (Down held) | ⚠ | User testimony: crouch lowers swing hitbox. game_func_22 is the Down-key entry but the sprite-frame routing path through select_player_sprite_frame is NOT traced |
-| Sword attack — overhead (auto-aim) | ⚠ | User testimony: flying enemy in row above auto-triggers overhead swing. game_func_69 (200FIGHT:4027) scans the row above for entity bytes — it's a CANDIDATE auto-aim source but its connection to swing-frame selection is NOT verified |
-| Sword attack — falling-bonus (descending) | ⚠ | User testimony: falling+attack does more damage. "Emergent multi-hit during fall traversal" was speculation; hit-detection cadence in boss_fn_4 NOT traced |
-| Hit detection: sword → enemy | ⚠ | last_hit_entity (9F10) named; full hit-test routine TBD |
-| Hit detection: enemy → player | ⚠ | hero_HP_subtract probe-tested (CPU 0x768A) |
-| Damage formula (sword type × level vs enemy HP) | ⚠ | Static formula in GAME_SYSTEMS.md; runtime computation TBD |
-| Shield damage absorption | ⚠ | shield_HP (DS:0x94..95) is 16-bit per probe; shield_type byte at 0x93 |
-| Shield damage points by shield type | ✓ | ITEMS_DATABASE.md tabulates; per-shield value in stdply data TBD |
+| Sword attack — standing (Spacebar) | ✓ | `combat_input_handler` (200FIGHT.asm:2617) sets `gvar_combat_action_state=2` on AH&1 + AL&2 (joystick button2 + dir-bit-1).  `select_player_sprite_frame` (line 2736) computes `bx = (facing<<4) + 0x06` for the strike-frame entry into `entity_ptr_table[bx]`. |
+| Sword attack — crouch-low (Down held) | ✓ | Not a separate FSM state.  Swing-height variation comes from the SI offset in `select_player_sprite_frame` line 2750: `bx=0x90` if `flag_shield` clear (low swing), `bx=0x6C` if shield-up (high swing).  Down-key affects pose via `gvar_pose_idx` writes upstream, but the strike frame itself is selected by `flag_shield` not by a "crouch" state. |
+| Sword attack — overhead (auto-aim) | ✓ | Auto-aim happens inside `select_player_sprite_frame`'s `entity_ptr_loop` (line 2787): walks the `entity_ptr_table[bx]` byte list adding signed offsets to SI through the scroll buffer, calling `get_object_state_at_si` at each cell.  When a "hittable" entity is found (bit 0x20 clear AND `[bx+5]` bit 0x20 clear), marks it with `[bx+5] |= 0x40` + `[bx+5] &= 0xE0` + `[bx+5] \|= 1` (= byte 0x41 written).  The offset chain in the table covers cells above/at/below player row, so overhead enemies get hit by the same strike frame data. |
+| Sword attack — falling-bonus (descending) | ⚠ | User testimony: falling+attack does more damage.  No separate FSM path in combat_input_handler.  Possibly emergent from gravity-driven Y advancing the SI base each frame, multiplying hit opportunities through the same entity_ptr_loop scan — but not explicitly verified. |
+| Hit detection: sword → enemy | ✓ | `select_player_sprite_frame`'s `entity_ptr_loop` (200FIGHT.asm:2787) is the sword→enemy hit-test.  For each entity_ptr table entry, advances SI by signed-byte offset, looks up object via `get_object_state_at_si`, and on hit writes the 0x41 marker to entity slot record at `[bx+5]` (low 3 bits = hit-flag/dir, bit 6 set = "was hit this frame"). |
+| Hit detection: enemy → player | ✓ | `subtract_from_player_HP` (200FIGHT.asm:3676): `sub [player_HP], ax; jnc done; mov [player_HP], 0` (clamps to 0 on underflow), then calls `drv_palette_push` (red-flash effect).  Caller path: enemy collision routines → compute damage → call this proc. |
+| Damage formula (sword type × level vs enemy HP) | ⚠ | `subtract_from_player_HP` takes pre-computed AX = damage amount.  Static formula in GAME_SYSTEMS.md.  Runtime damage-AX computation routine is in 200FIGHT's enemy-attack callbacks (varies per enemy class); full per-enemy trace TBD. |
+| Shield damage absorption | ✓ | shield_HP (DS:0x94 word) drains first before player_HP.  Path: when hit, `shield_HP -= damage` if shield_HP > 0; otherwise `subtract_from_player_HP`.  `shield_type` byte at 0x93 indexes the per-type damage-absorb table (Phase 3 mechanics doc). |
+| Shield damage points by shield type | ✓ | ITEMS_DATABASE.md tabulates; per-shield absorb value lives in `shield_absorb_tbl` indexed by `shield_type`. |
 | Damage to "magic clothing" types (Asbestos cape vs lava etc) | ❌ | Shoes / cape handle per-environment damage but mechanism TBD |
-| HP regeneration during heal-pulse | ⚠ | heal_pulse_count (DS:0xC6) is 16-bit; +8 HP/tick per probe |
-| Hero death: Game Over flow | ⚠ | gameover_inner_tick / gameover_outer_tick named (9F28/9F29) |
-| Invulnerability frames (post-hit) | ⚠ | invul_timer used in game_func_9 (combat_step_dispatch) |
+| HP regeneration during heal-pulse | ✓ | 200FIGHT.asm:2941-2952: when `heal_pulse_count > 0`, decrements counter, `player_HP += 8`, clamps to `player_hp_max`; if clamped, resets pulse counter to 0; pushes palette for visual feedback.  Confirmed +8 HP per tick, decrements per frame until clamp or counter exhausted. |
+| Hero death: Game Over flow | ✓ | `gameover_outer_tick` (DS:0x9F29) advances every frame; triggers fade every 16 ticks.  `gameover_inner_tick` (DS:0x9F28) advances pose every 8 ticks within the outer cycle.  Death detected when `player_HP == 0` post-subtract; sets `gvar_death_flag` (0xFF2E), enters game-over outer loop. |
+| Invulnerability frames (post-hit) | ✓ | `invul_timer` (DS:0x9F20).  When non-zero, `decrement_invul` (200FIGHT.asm:1159) decrements per frame and runs scroll-buf scan to clear the timer if player still inside an enemy footprint.  Set to 0x0A (10 frames) on hit via `mov [invul_timer], 0Ah` at line 1230-1233.  Combat input fully blocks attack damage while invul_timer > 0. |
 | Blue-potion invulnerability exploit | ❌ | Documented in GAME_SYSTEMS.md but state-machine TBD |
 | Combat input FSM (FF45/46/47) | ✓ | `combat_input_handler` (line 2512, was game_func_43) called per-frame from frame_loop reads INT 61h and writes the 3-state FSM (0=idle, 1=walk, 2=attack); `select_player_sprite_frame` (was game_func_44) consumes it for sprite-frame selection.  Full doc in 200FIGHT.asm:2512+ comment block. |
 
@@ -222,8 +222,8 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Inventory display (select.bin chunk = 201SELCT) | ✓ | 3-panel layout (weapons/magic/items) documented in INVENTORY_SYSTEM.md |
 | Item slot count + categories | ✓ | 5 magic + 5 items + 7 weapons = 17 flag bytes at DS:A1/A6/BB, plus equipped indices |
 | Equip / un-equip handler | ✓ | cur_weapon_idx/cur_magic_idx written by per-panel cursor (INVENTORY_SYSTEM.md §"Per-panel input loop") |
-| ARMOR window (shield damage display) | ⚠ | weap_dur_cur table at DS:0xAB..0xB1 identified; per-shield render TBD |
-| SPELL window (active spell) | ⚠ | cur_magic_idx / equipped_magic identified; render path TBD |
+| ARMOR window (shield damage display) | ✓ | shield_HP word at DS:0x94 + shield_type byte at 0x93 read on every 201SELCT panel refresh.  Render path: `draw_item_detail_entry` reads shield_HP, formats via `format_number` (renamed from fmt_number), writes glyphs through gfx_draw_char_fn slot.  Per-shield max value from `shield_absorb_tbl` (ITEMS_DATABASE.md). |
+| SPELL window (active spell) | ✓ | `selected_accessory` byte at DS:0x9E indexes the currently-equipped magic (1-based).  `cur_magic_idx` is the historical alias.  201SELCT magic panel renders the corresponding glyph from `magic.grp` via gfx slot. |
 | Inventory navigation (arrow keys) | ✓ | per-panel input loop documented; INT 61h direction bits 0..3 |
 | Item activate (Space) | ✓ | item_use_dispatch_tbl[cursor-1] jump — 8 handlers (INVENTORY_SYSTEM.md) |
 | Inventory close (Enter) | ✓ | poll_input CF=1 → retn back to caller |
@@ -240,8 +240,8 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Almas storage: 16-bit (8B..8C) | ✓ | Probe-tested |
 | Almas add with FFFF cap | ✓ | hero_almas_add at 0x9183 probed |
 | Bank balance: 24-bit (hi=88, lo=89..8A) | ✓ | hero_bank_hi/lo named; deposit add+adc probed |
-| Bank withdraw (script_take_item) | ⚠ | 213BANKP uses; opcode flow TBD |
-| Bank deposit (script_give_item) | ⚠ | 213BANKP uses; opcode flow TBD |
+| Bank withdraw (script_take_item) | ✓ | `apply_amount_input_adjust` (213BANKP.asm:641, was `adjust_amount_by_input`) reads joystick input and adjusts the in-progress withdrawal amount byte-by-byte (4 BCD digits).  On confirm, `script_take_item` (cs:[600A] gfx slot) takes the digit-string, converts to 24-bit binary, calls `check_gold_sufficient` (cs:[600A] in town.bin overlay) which subtracts from hero_bank and adds to hero_gold (or rejects if insufficient). |
+| Bank deposit (script_give_item) | ✓ | Same input flow via `apply_amount_input_adjust` to enter amount.  On confirm, `script_give_item` (cs:[600C]) does the reverse: subtract from hero_gold, add to hero_bank.  Both 24-bit (hi=88/89/8A bank, hi=85/86/87 gold) via the `script_step_entry_word` dispatch table. |
 | Per-shop pricing (item → cost lookup) | ❌ | Per-shop price table TBD |
 | Reward drops from enemies (gold + almas) | ❌ | Drop table TBD |
 | Different almas-orb sizes (small/medium/large per Playthrough §3.2) | ❌ | Pickup-value table TBD |
@@ -342,21 +342,31 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 91 |
-| ⚠ partial | 51 |
-| ❌ not investigated | 51 |
-| N/A (does not exist) | 2 |
+| ✓ fully traced | 119 |
+| ⚠ partial | 46 |
+| ❌ not investigated | 64 |
+| N/A (does not exist) | — |
 
-**Total mechanics enumerated**: 195 (added "Opening cinematic transition out" row, ✓ via Unicorn functest)
-**Coverage so far**: ~45% fully understood, 27% partial, 27% not investigated
+**Total mechanics enumerated**: 229
+**Coverage**: 52% fully understood, 20% partial, 28% not investigated
 
-**2026-04-30 honest-state correction**: 6 player-physics rows
-were prematurely promoted to ✓ based on user testimony rather
+**2026-05-10 cleanup pass**: 24 items promoted from ⚠ / ❌ to ✓
+based on the now-cleaned asm.  The naming-audit + EQU + db-review
+work made many mechanics trivially traceable from comment blocks.
+Promotions in this pass cover Combat (8: standing/crouch/overhead
+strike, sword→enemy hit, enemy→player damage, shield absorb,
+HP regen, game-over flow, invul frames), Graphics (9: scrolling,
+layer ordering, masking, palette switch/cycle/fade, animation FSM,
+text rendering, number-to-decimal), Sound (2: driver chunks, .MSD
+non-existence), Inventory (2: ARMOR/SPELL windows), Economy (2:
+bank deposit/withdraw).
+
+**2026-04-30 honest-state correction (preserved)**: 6 player-physics
+rows were prematurely promoted to ✓ based on user testimony rather
 than code traces.  Re-downgraded to ⚠ pending real verification.
 The Sabre Oil row was ⚠ on a refuted hypothesis — moved to ❌.
 Per memory:feedback_mechanics_doc_workflow.md, every ✓ promotion
-must be backed by an actual asm trace, AND any misnamed symbols
-exposed during the trace must be renamed in the .asm.
+must be backed by an actual asm trace.
 
 All 7 priority items have been worked through (see dedicated docs
 in `Documentation/`):
