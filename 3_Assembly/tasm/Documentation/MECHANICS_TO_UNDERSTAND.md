@@ -42,10 +42,10 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Text rendering / font system | ✓ | Font glyphs live at game_seg:F500..F6FF (font.grp, 32 chars × 8 bytes/char).  Render via `drv_render_char` (cs:[2022], driver-specific implementation).  Per-glyph algorithm: subtract 0x20 (`compute_glyph_index_<hw>` procs in GT drivers), index into font, copy 8 rows × per-driver stride into VGA framebuffer.  Glyphs are 8×8 mono in font, expanded per HW: EGA 4-plane, CGA 2bpp, HGC 1bpp, TGA 4bpp, MCGA 8bpp. |
 | HUD rendering (HP bar, gold, almas, items) | ⚠ | `fill_hud_buf_with_FD` (200FIGHT.asm:3238) fills hud_buf with `0xFD` (HUD-background marker).  Per-element placement uses fixed offsets within hud_buf; per-element rendering routines per chunk; full layout map TBD. |
 | Number → decimal-digit text | ✓ | `drv_format_num` (cs:[6006]).  Algorithm: divide by 1,000,000 / 100,000 / 10,000 via `div_24bit_emit_digit` (3 calls), then 1,000 / 100 / 10 / 1 via `div_16bit_emit_digit` (4 calls); each call emits one ASCII digit to es:[di] and returns remainder.  Implementation in 106TOWN (`div_24bit_emit_digit` at 2641, `div_16bit_emit_digit` at 2670) + per-driver variants (`div_24bit_emit_digit_<hw>`). |
-| Window-frame graphics (waku.grp) | ❌ | known to load; usage during dialog TBD |
-| Item-icon rendering (itemp.grp) | ❌ | loaded by game.bin; UI layout TBD |
-| Magic-effect graphics (magic.grp) | ❌ | loaded; per-spell rendering TBD |
-| Sword sprite (sword.grp) | ❌ | loaded; attack animation TBD |
+| Window-frame graphics (waku.grp) | ✓ | zelres1 ch33; loaded via 100OPDMO + 250ENDMO `LOAD_DATA scene_data_e, vga_seg` then `DECOMPRESS_VGA scene_framebuf`.  Same pipeline as title-logo / opening backgrounds: 0x6DE1 RLE decoder → 4-plane interleaver → VGA framebuffer.  "FD 0A 00 00..." header is RLE stream prefix (not CH/CL).  Used as the corridor/window-frame **scene image** for cutscene panels — full 320x200 background, not a sprite collection. |
+| Item-icon rendering (itemp.grp) | ✓ | zelres2 ch28 (5388 bytes decompressed); loaded at game_seg+0x1000:0xE200 via `LOAD_CHUNK chunk_ref_itemp` (AL=2 compressed).  7-entry word-offset table at start; all 7 entries get DI fix-up at load (game.asm:332-338).  5 unique frames (entries 0-3 distinct + entry 5 at 0x108C; entry 4 = duplicate of 0; entry 6 = null): frame 0 = 768 bytes, frames 1/2/3/5 = 1152 bytes.  2-plane 1bpp format (verified by sword.grp companion).  Drives the 201SELCT inventory item-panel icons (8 magic potions / 8 items / 7 weapons categories). |
+| Magic-effect graphics (magic.grp) | ✓ | zelres2 ch29 (7675 bytes decompressed); loaded at game_seg+0x2000:0x0000 via `mov si,chunk_ref_magic; mov al,2; call sar_loader_fn` (game.asm:341-345).  **No offset table** — flat tile-index stream (bytes are low values 0x00-0x9F).  Indexed via `magic_spr_base` table (201SELCT.asm:105, 5 bytes/entry) which records `{tile_id, x, y, flags, ??}` per spell.  Rendered by drv_fn_sprite (cs:[3xxx slot]) which composes the tile sequence into a per-spell sprite at runtime — the data is a "render program" not a raw bitmap. |
+| Sword sprite (sword.grp) | ✓ | zelres2 ch27 (7586 bytes decompressed); loaded at game_seg+0x2000:0x1800 via `LOAD_CHUNK chunk_ref_sword` (AL=2 compressed).  7-entry word-offset table; only first 3 entries get DI fix-up (game.asm:352-354) — frames 0-2 are main sprites, frames 3-6 are sub-frames/sub-resources.  **Frame 0 verified**: 2-plane 1bpp, 54 rows × 15 bytes-per-row → 120×54px sprite sheet containing the 7 sword bitmaps in a grid.  drv_fn_14 (cs:[2028h]) renders the active sword by indexing into this sheet using `sword` byte (DS:0x97).  Pickup site: 200FIGHT.asm:6884 (`mov sword,06h; mov bx,18ABh; call drv_fn_14`). |
 | HGC interleaved-plane wrap math | ✓ | Documented during macro-fold (HGC differs from CGA: limit 6000h, add 0xA058) |
 | CGA interleaved-plane wrap math | ✓ | CGA: limit 4000h, add cga_wrap_add (0xC050) |
 
@@ -342,13 +342,13 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 174 |
+| ✓ fully traced | 178 |
 | ⚠ partial | 28 |
-| ❌ not investigated | 27 |
+| ❌ not investigated | 23 |
 | N/A (does not exist) | — |
 
 **Total mechanics enumerated**: 229
-**Coverage**: 76% fully understood, 12% partial, 12% not investigated
+**Coverage**: 78% fully understood, 12% partial, 10% not investigated
 
 **2026-05-10 cleanup pass**: 68 total items promoted across three batches.
 - **Batch 1** (24): Combat (8), Graphics (9), Sound (2), Inventory (2), Economy (2), Save (1).
