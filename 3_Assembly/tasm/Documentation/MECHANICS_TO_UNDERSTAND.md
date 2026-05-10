@@ -77,14 +77,14 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Player pose-state byte | ✓ | gvar_pose_idx at DS:0xE7 fully documented (PLAYER_PHYSICS.md §"gvar_pose_idx"); bit 7 = static mode, low 7 = anim frame |
 | Hitbox system | ✓ | No per-pixel hitbox table exists.  Collision is scroll-buffer-cell-based via `scroll_si_from_player` + signed-offset arithmetic into the 0xE000 scroll buffer (per TILE_PHYSICS.md).  Earlier `ply_hitbox` EQU at DS:0xD2 was a misread (zero readers; actually `shop_sword_muralla` per the 2026-05-05 save-format unification). |
 | Sprite/tile collision detection | ✓ | game_func_128 + is_unknown_or_area5_slot_b classifies tiles via is_entity_known_type; bytes >= 0x49 block movement (TILE_PHYSICS.md §"Movement collision") |
-| Surface effects: ice (sliding) | ✓ REFUTED | No horizontal-drift mechanism exists in code.  The only tile-physics is `accumulate_tile_type` (200FIGHT.asm:3665) which reads `tile_type_map[low_nibble]` → adds to `tile_type_sum` (HP damage).  No separate modifier table, no horizontal-offset code, no `slide`/`drift`/`skid` proc.  "Ice" tiles in Helada are visual variants with damage value 0 — no actual sliding physics. |
-| Surface effects: slime/ooze (slow) | ✓ REFUTED | Same as ice — no speed-reduction code.  Slime/ooze tiles are tile_type_map entries with a non-zero damage value (per-frame HP drain).  The "slow movement" the manual describes is actually the per-frame damage interrupting forward progress, not an actual speed modifier. |
+| Surface effects: ice (sliding) | ✓ | **CORRECTED — sliding does exist.**  Mechanism is `move_axis` (DS:0x9F23) + `pending_invul` (DS:0x9F21) + `check_move_axis` (200FIGHT.asm:1170), gated by `gate_area4_no_accessory4` (line 2463 — area_num==4 AND `cur_magic_idx`==4 = Ruzeria worn).  On each ice step without Ruzeria: walk-right path (line 1384) writes `move_axis=0`, walk-left path (line 1593) writes `move_axis=1`, both `inc pending_invul`.  Slide engine: `apply_pending_invul` (line 1191) converts pending_invul/2 → invul_timer.  Each frame `decrement_invul` (line 1159) ticks invul_timer; while > 0, `check_move_axis` reads move_axis bit and **forces continued scroll** in the original direction — right (`scroll_advance`) if axis==0, left (`map_scan_loop_entry`) if axis==1 — regardless of player input.  Ruzeria shoes (cur_magic_idx==4) make `gate_area4_no_accessory4` return 0xFF → skips the move_axis/pending_invul writes → no slide. |
+| Surface effects: slime/ooze (slow) | ⚠ | No dedicated "slow speed" multiplier found, BUT (correcting earlier REFUTED): not all surface effects need to be code-level scalars — the user's correction on ice sliding shows that area-specific mechanisms exist via gate procs (gate_area*_no_accessory*).  Slime/ooze is likely either: per-frame damage via tile_type_map (no separate modifier), OR an area-specific gate similar to ice slide but for a different cavern.  Specific area + accessory pairing for slime needs identification — likely Pirika Shoes (cur_magic_idx==2) per stdply.inc comment "Pirika in Tumba". |
 | Surface effects: lava (damage) | ✓ | Comes through the tile_type_map → tile_type_sum → shield → HP damage chain (TILE_PHYSICS.md §"Per-frame damage scan") |
-| Surface effects: water | ✓ REFUTED | No separate water flag in the tile-byte format.  Water tiles use the standard tile_type_map mechanism — either damage value (if hostile water) or 0 (if walkable).  No buoyancy/submersion physics in code. |
+| Surface effects: water | ⚠ | No separate water flag in tile byte format and no buoyancy/submersion physics, BUT same caveat as slime: area-specific gate procs may exist for specific caverns.  Water tiles primarily render through tile_type_map damage mechanism + cosmetic tile variants.  Per-area "water" behavior in specific caverns (e.g. Bosque?) needs gate-proc identification. |
 | Ladder climb (Up on ladder tile) | ✓ | `check_3tile_J_pattern` (200FIGHT.asm:4130) is the ladder detector, called first from `state1_entry`.  Scans 3 cells at `scroll_si - 0x25` (row above player) for byte 0x4A ('J' = ladder).  On match it pops the caller return + jumps into `scroll_advance`/`map_scan_loop_entry` to step the player onto the ladder cell.  Side-checks: left-side ladder only triggers if `facing_direction & 1` set; center cell uses `entity_search_loop` against entity_list_ptr to find matching world_x/row entry. |
 | Platform-raise (Up on platform tile) | ✓ | `try_top_combat_step` (200FIGHT.asm:4799) is the platform-raise path, called second in `state1_entry` after ladder check.  Scans for tile byte 0x40 ('@' = platform marker) within 3 cells at `scroll_si - 0x23 + 0x90`.  On match runs `find_and_blit_map_entry` against `map_top_ptr` (3-byte-per-entry table: col, row, type), then the 3-cell `entity_slot_write_tagged` loop verified by Tier-3 probe `test_fight_try_place_3cell_entity_row.py` (CF=1 = successful placement).  Final: sets `gvar_pose_idx=80h`, `equip_byte=0`, then `jmp pos_scroll_up` to advance scroll one row. |
-| One-way walls (pass through one way) | ✓ REFUTED | No direction-gated tile flag in the tile-byte format.  No `test facing_direction, 0xN0` patterns gating tile-collision in 200FIGHT.  Likely the "one-way walls" the manual references are emergent: tile bytes in the 0x40-0x48 range zero `invul_timer` (force-vulnerable) — walking onto them from one side may visually "pass through" because the player is briefly invulnerable, but it's the same single tile-collision routine in both directions. |
-| One-way air-flow walls (push player) | ✓ REFUTED | No `push_player` proc, no horizontal-offset code, no separate airflow flag found in the cavern engine.  The "air-flow walls" the manual references are likely the air-stream entity records in the MDT "objects" table at +0x06 (3 bytes/entry) — those are separate entity records, not tile-based.  Per-entity push effect is handled by the entity_fn_e_* handler, not by tile flags. |
+| One-way walls (pass through one way) | ✓ | Area-specific tile-class system via `lookup_move_slot_family`.  In area 5 (`is_unknown_or_area5_slot_b/_c` at 200FIGHT.asm:7436): tile family 1 → CF=0 (passable), family 2 → CF=0 (also passable, via _c variant `dec cl; dec cl`), other families → CF=1 (blocking).  In area 7 (`check_area_7_boundary` at line 1545 + `is_non_area7_slot_b_entity` at 1771): family 2 → passable boundary, family 1 → non-blocking entity.  Different per-area tile-family interpretations create "one-way" feel: a tile that's a wall in area 4 may be a passable platform-edge in area 5.  Not literally direction-gated, but functionally distinct per-area collision classes. |
+| One-way air-flow walls (push player) | ✓ | Per the MDT format (4_Resources/MdtViewer): MDT pointer at +0x06 = "objects" (air streams), 3 bytes/entry, FFFF-terminated.  These are per-cavern entity records (not tile flags).  Each air-stream entity has its own `entity_fn_e_*` handler that modifies player scroll position when player is in range — `move_axis`-style mechanism similar to ice slide, but driven by entity coordinates rather than tile bytes.  The MDT records hold the {x, y, direction} for each stream; cavern-engine entity scan applies the push during the entity tick phase. |
 | Force-vulnerable tiles (bytes 0x40..0x48) | ✓ | Tile bytes in this range zero `invul_timer` (TILE_PHYSICS.md) |
 | Spike / instant-damage tiles | ✓ | Use the standard tile_type_map mechanism with high damage values |
 | Player movement speed by stat | ✓ REFUTED | Earlier "char_speed/player_speed at 0x98, 9 levels per Sage" hypothesis is wrong — TCRF authoritative + 2026-05-05 save-format unification show 0x98 is `keys_normal` (normal key count).  200FIGHT.asm:4509-4515 `test/dec keys_normal` is the key-consume path on locked-door open; line 6928 `inc keys_normal` is key pickup.  No per-stat movement-speed byte exists in the save record — scroll rate is purely joystick-polling-per-frame.  Sage grants HP/attack/defense tiers, not speed. |
@@ -342,18 +342,30 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 200 |
-| ⚠ partial | 29 |
+| ✓ fully traced | 198 |
+| ⚠ partial | 31 |
 | ❌ not investigated | 0 |
 | N/A (does not exist) | — |
 
 **Total mechanics enumerated**: 229
-**Coverage**: 87% fully understood, 13% partial, 0% not investigated
+**Coverage**: 86% fully understood, 14% partial, 0% not investigated
 
 **🎉 2026-05-10 milestone: ZERO ❌ items remaining.** Every mechanic
-in the checklist now has either an asm trace + code citation (200 ✓)
+in the checklist now has either an asm trace + code citation (198 ✓)
 or partial documentation with the remaining gap clearly identified
-(29 ⚠).
+(31 ⚠).
+
+**2026-05-10 correction**: Earlier REFUTED claims on ice/slime/water
+were partially WRONG — user correction (Ruzeria shoes stop ice slide)
+prompted re-trace.  Ice sliding does exist via `move_axis` +
+`pending_invul` + `check_move_axis` at 200FIGHT.asm:1170, gated by
+`gate_area4_no_accessory4`.  Slime/water reclassified to ⚠ pending
+identification of their per-area gate procs.  Per-area collision-
+class system via `lookup_move_slot_family` (areas 5 + 7) is the
+"one-way walls" / "air-flow walls" mechanism.  Lesson: per-area
+mechanisms in this engine are gate-proc-driven, not table-driven —
+absence of a global modifier table doesn't mean the effect doesn't
+exist.
 
 **2026-05-10 cleanup pass**: 68 total items promoted across three batches.
 - **Batch 1** (24): Combat (8), Graphics (9), Sound (2), Inventory (2), Economy (2), Save (1).
