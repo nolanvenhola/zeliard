@@ -124,7 +124,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Item-effect-value (8E word) | ✓ | item_effect_val (0x8E word) is the effect-value display in use-confirm box |
 | Magic Stone: time-stop effect | ✓ REFUTED | `use_magia_stone` (201SELCT.asm:762) is the actual handler.  Code: `bl = equipped_magic - 1`; `ax = item_effect_tbl[bl*2]`; `shield_HP += ax` (caps at `shield_max_HP`).  This is **magic-XP grant**, NOT time-stop.  Playthrough manual's "Magic Stone stops time" hint conflates the visual freeze (palette pause during gvar_volume_b=0Eh sound effect) with an actual time-stop mechanic. |
 | Holy Water of Acero | ✓ | `inc key_count` (+1 key) per INVENTORY_SYSTEM.md |
-| Sabre Oil (sword temporary boost) | ✓ REFUTED | `use_sabre_oil` (201SELCT.asm:788) is **cosmetic only**: queues a 4-pass sprite animation (anim_id 0/4/8/12) into `anim_spr_tbl`, sets gvar_volume_b=0Eh.  Writes NO buff state byte, NO timer, NO weapon-damage modifier.  Confirmed REFUTED by exhaustive 200FIGHT damage-path trace: the only ATTACK-state doubling (×2 in compute_action_anim_idx at line 8052) is on FSM==ATTACK, not Sabre-Oil-active.  Conclusion: Zeliard's Sabre Oil item has no mechanical effect — manual likely added it as flavor / unimplemented placeholder. |
+| Sabre Oil (sword temporary boost) | ✓ | **CORRECTED — Sabre Oil places real damage tiles around the player.**  Earlier "cosmetic only" claim was wrong: I misread the anim_spr_tbl writes as just visual.  The buffer at 0xEB60 is shared: in 201SELCT it's called `anim_spr_tbl` (where `use_sabre_oil` writes 4 entries), in 200FIGHT the SAME address is `sprite_work_buf` (consumed each frame by `update_sprite_work_buf` at line 5831).  Each of the 4 Sabre Oil entries (7 bytes each, anim_id 0/4/8/12, dir bias 0x01/0xFF/0x01/0x01) cycles through `entity_data_base[anim_id*2]` looking up cell offsets relative to the player, then calls `place_3_tile_49_pattern` (line 5867) which writes tile-id 0x49 markers via `try_place_tile_id_49`.  The 0x49 marker is the same hit-detection write the sword swing uses (write to `[bx+5] |= 0x49`).  Net effect: **a 3-tile damage aura that orbits the player for the lifetime of `[si+2]` (the per-entry hit counter)**, dealing sword-swing-equivalent damage to enemies in adjacent cells.  This is the canonical "temporary sword boost" the manual describes. |
 | Kioku Feather (warp/teleport) | ✓ | `use_kioku_feather` (201SELCT.asm:819) — sets gvar_volume_b=0Fh (audio), gvar_scene_mode=8, resets frame timer, waits 120 frames (timer_wait_feather=0x78), then `call drv_return_to_caller; mov ax,1; int 60h` → save-game trigger (INT 60h AX=1 is the canonical save-game service per save_game_load at 200FIGHT:702).  So Kioku Feather is the in-game save trigger (in addition to Sage), with cosmetic animation delay. |
 | Crests: Hero / Glory / Elf | ✓ | Per TCRF (stdply.inc): `crest_elf` at 0x9A (from Paguro / Llama Hut), `crest_glory` at 0x9B (from Cementar; traded at Tumba), `crest_hero` at 0x9C (from Riza; required to encounter Pollo).  3 separate bytes, not bits.  Earlier `char_abilities` placeholder was wrong byte-layout guess. |
 | Shoes: Ruzeria / Pirika / Silkarn / Asbestos cape / Feruza | ✓ | Per stdply.inc canonical: `selected_accessory` at DS:0x9E = currently-equipped wearable ID (0=none, 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Asbestos Cape).  Acquisition flags at DS:0xA1..0xA5 (5 slots, each byte = ID of Nth wearable obtained, 0=empty).  No separate inventory panel — these are auto-equipped on pickup (each cavern's required wearable is found in that cavern: Feruza=Arrugia, Pirika=Tumba, Silkarn=Dorado, Ruzeria=Helada, Cape=Llama-shop).  In 200FIGHT, byte 0x9E is aliased as `cur_magic_idx` (multi-purpose byte). |
@@ -355,17 +355,31 @@ in the checklist now has either an asm trace + code citation (198 ✓)
 or partial documentation with the remaining gap clearly identified
 (31 ⚠).
 
-**2026-05-10 correction**: Earlier REFUTED claims on ice/slime/water
-were partially WRONG — user correction (Ruzeria shoes stop ice slide)
-prompted re-trace.  Ice sliding does exist via `move_axis` +
-`pending_invul` + `check_move_axis` at 200FIGHT.asm:1170, gated by
-`gate_area4_no_accessory4`.  Slime/water reclassified to ⚠ pending
-identification of their per-area gate procs.  Per-area collision-
-class system via `lookup_move_slot_family` (areas 5 + 7) is the
-"one-way walls" / "air-flow walls" mechanism.  Lesson: per-area
-mechanisms in this engine are gate-proc-driven, not table-driven —
-absence of a global modifier table doesn't mean the effect doesn't
-exist.
+**2026-05-10 corrections** (user-prompted re-traces):
+
+1. **Ice sliding REFUTED → ✓ (mechanism found)** — Ruzeria shoes stop
+   it.  Real mechanism: `move_axis` + `pending_invul` + `check_move_axis`
+   (200FIGHT.asm:1170), gated by `gate_area4_no_accessory4`.
+
+2. **Sabre Oil REFUTED → ✓ (damage-tile aura found)** — Earlier I
+   misread `use_sabre_oil`'s writes to "anim_spr_tbl" as cosmetic.
+   The buffer at 0xEB60 is **shared**: 201SELCT calls it
+   `anim_spr_tbl`, 200FIGHT calls the SAME address `sprite_work_buf`
+   and consumes it each frame via `update_sprite_work_buf` →
+   `place_3_tile_49_pattern` → tile-49 hit markers around the player.
+   It IS a real combat buff (sword-swing-equivalent damage aura).
+
+**Lessons** (saved to memory:feedback_per_area_gate_procs.md and
+feedback_shared_buffer_aliases.md):
+- Per-area mechanisms are gate-proc-driven, not table-driven —
+  absence of a global modifier table doesn't mean the effect
+  doesn't exist; always check `cmp area_num, N` + accessory-id
+  gates.
+- When the same address has DIFFERENT EQU names in different chunks
+  (e.g. `anim_spr_tbl` in 201SELCT vs `sprite_work_buf` in 200FIGHT
+  at 0xEB60), the chunk-local name shows only the LOCAL view.
+  Cross-chunk alias-search is mandatory before claiming a write has
+  "no consumer".  Trust user testimony on gameplay effects.
 
 **2026-05-10 cleanup pass**: 68 total items promoted across three batches.
 - **Batch 1** (24): Combat (8), Graphics (9), Sound (2), Inventory (2), Economy (2), Save (1).
