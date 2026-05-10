@@ -542,7 +542,7 @@ draw_hline_text:
 		mov	di,3965h
 		mov	bx,word ptr cs:player_HP
 		jmp	short text_render_init
-		db	0BFh, 45h, 3Bh,0EBh, 00h
+		db	0BFh, 45h, 3Bh,0EBh, 00h	; row 0
 
 fn_4:
 
@@ -987,8 +987,8 @@ tile_render_loop:
 
 render_tilemap_large		endp
 
-		db	 00h,0FFh,0AAh,0FFh, 55h, 00h
-		db	0FFh,0AAh
+		db	 00h,0FFh,0AAh,0FFh, 55h, 00h	; row 0
+		db	0FFh,0AAh	; row 1
 
 decode_bitplane_tile		proc	near
 		mov	bx,0Fh
@@ -1822,49 +1822,49 @@ sprite_anim_frames:
 ; Sprite bitplane bitmaps (52 bytes each, 2-plane CGA format)
 
 sprite_frame_a:				; anim frame 0  (driver_base + offset = 2C96h)
-		db	0FFh,0F0h, 0Ch,0FFh
-		db	0FFh,0C0h, 00h,0FFh,0FFh, 00h
-		db	 00h,0FFh,0FFh, 00h, 00h,0FFh
-		db	0FFh, 00h, 00h,0FFh,0FFh, 00h
-		db	 00h,0FFh,0FFh, 00h, 00h,0FFh
-		db	0FFh,0C0h, 00h,0FFh,0FFh,0C0h
-		db	 00h,0FFh,0FFh,0C0h, 00h,0FFh
-		db	0FFh,0CCh, 0Ch,0FFh
+		db	0FFh,0F0h, 0Ch,0FFh	; row 0
+		db	0FFh,0C0h, 00h,0FFh,0FFh, 00h	; row 1
+		db	 00h,0FFh,0FFh, 00h, 00h,0FFh	; row 2
+		db	0FFh, 00h, 00h,0FFh,0FFh, 00h	; row 3
+		db	 00h,0FFh,0FFh, 00h, 00h,0FFh	; row 4
+		db	0FFh,0C0h, 00h,0FFh,0FFh,0C0h	; row 5
+		db	 00h,0FFh,0FFh,0C0h, 00h,0FFh	; row 6
+		db	0FFh,0CCh, 0Ch,0FFh	; row 7
 		db	8 dup (0FFh)			; frame_a tail
 
 sprite_frame_b:				; anim frame 2  (driver_base + offset = 2CCAh)
-		db	0FFh
-		db	 00h, 00h,0FFh,0FCh, 00h, 00h
-		db	 3Fh,0F0h, 00h, 00h, 0Fh,0F0h
-		db	 00h, 00h, 0Fh,0C0h, 00h, 00h
-		db	 03h,0C0h, 00h, 00h, 03h,0C0h
-		db	 00h, 00h, 03h,0C0h, 00h, 00h
-		db	 03h,0F0h, 00h, 00h, 0Fh,0F0h
-		db	 00h, 00h, 0Fh,0FCh, 00h, 00h
-		db	 3Fh,0FFh, 00h, 00h,0FFh,0FFh
+		db	0FFh	; row 0
+		db	 00h, 00h,0FFh,0FCh, 00h, 00h	; row 1
+		db	 3Fh,0F0h, 00h, 00h, 0Fh,0F0h	; row 2
+		db	 00h, 00h, 0Fh,0C0h, 00h, 00h	; row 3
+		db	 03h,0C0h, 00h, 00h, 03h,0C0h	; row 4
+		db	 00h, 00h, 03h,0C0h, 00h, 00h	; row 5
+		db	 03h,0F0h, 00h, 00h, 0Fh,0F0h	; row 6
+		db	 00h, 00h, 0Fh,0FCh, 00h, 00h	; row 7
+		db	 3Fh,0FFh, 00h, 00h,0FFh,0FFh	; row 8
 		db	0C0h, 03h, 0FFh			; frame_b tail
 
 sprite_frame_c:				; anim frame 1  (driver_base + offset = 2CFEh)
-		db	 00h, 00h, 00h
-		db	 00h, 00h, 0Ah,0A0h, 00h, 00h
-		db	 3Bh,0F8h, 00h, 00h, 2Fh,0D6h
-		db	 00h, 00h,0E7h,0D6h, 00h, 00h
-		db	0E5h, 56h, 00h, 00h,0A5h, 56h
-		db	 00h, 00h, 25h, 56h, 00h, 00h
-		db	 29h, 58h, 00h, 00h, 0Ah,0A0h
-		db	 00h, 00h
+		db	 00h, 00h, 00h	; row 0
+		db	 00h, 00h, 0Ah,0A0h, 00h, 00h	; row 1
+		db	 3Bh,0F8h, 00h, 00h, 2Fh,0D6h	; row 2
+		db	 00h, 00h,0E7h,0D6h, 00h, 00h	; row 3
+		db	0E5h, 56h, 00h, 00h,0A5h, 56h	; row 4
+		db	 00h, 00h, 25h, 56h, 00h, 00h	; row 5
+		db	 29h, 58h, 00h, 00h, 0Ah,0A0h	; row 6
+		db	 00h, 00h	; row 7
 		db	11 dup (0)			; frame_c tail
 
 sprite_frame_d:				; anim frame 3  (driver_base + offset = 2D32h)
-		db	0
-		db	 3Fh,0D4h, 00h, 00h,0F0h, 05h
-		db	 00h, 03h,0CFh,0C1h, 40h, 0Fh
-		db	 3Fh, 0Ch, 50h, 0Fh,0FCh, 03h
-		db	 50h, 0Ch,0F0h,0A0h, 10h, 0Ch
-		db	0C2h,0AAh, 90h, 0Dh,0EAh,0AAh
-		db	0D0h, 0Dh,0BAh,0AAh,0F0h, 01h
-		db	 6Bh,0ABh,0C0h, 00h, 58h,0AFh
-		db	 00h, 00h, 1Dh, 54h, 00h, 00h
+		db	0	; row 0
+		db	 3Fh,0D4h, 00h, 00h,0F0h, 05h	; row 1
+		db	 00h, 03h,0CFh,0C1h, 40h, 0Fh	; row 2
+		db	 3Fh, 0Ch, 50h, 0Fh,0FCh, 03h	; row 3
+		db	 50h, 0Ch,0F0h,0A0h, 10h, 0Ch	; row 4
+		db	0C2h,0AAh, 90h, 0Dh,0EAh,0AAh	; row 5
+		db	0D0h, 0Dh,0BAh,0AAh,0F0h, 01h	; row 6
+		db	 6Bh,0ABh,0C0h, 00h, 58h,0AFh	; row 7
+		db	 00h, 00h, 1Dh, 54h, 00h, 00h	; row 8
 		db	00h, 00h, 00h	; sprite data tail padding
 ; CGA VRAM clear: called via dispatch table entry [0x042].
 ; Initializes ES=B800h, DI=0, CX=8, then falls into vram_init_outer.

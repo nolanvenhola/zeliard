@@ -365,8 +365,8 @@ delay_loop:
 
 tile_mask_data:
 		db	0FCh			; tile_src_base[0]  AX hi: cld opcode / mask 0FCh
-		db	0FFh,0FCh,0FCh,0CCh,0FCh,0CCh
-		db	0CCh,0C0h,0CCh,0C0h,0C0h, 00h
+		db	0FFh,0FCh,0FCh,0CCh,0FCh,0CCh	; row 0
+		db	0CCh,0C0h,0CCh,0C0h,0C0h, 00h	; row 1
 		db	0C0h, 00h, 00h		; tile_src_base[15]: mask 00h (full black)
 
 draw_sprite_entry:
@@ -1864,49 +1864,49 @@ tga_sprite_row_start:
 		db	0F0h, 0Fh		; nibble pixel-mask pair (hi=0xF0, lo=0x0F)
 		db	0F0h, 0Fh		; nibble pixel-mask pair (hi=0xF0, lo=0x0F)
 		db	0F0h, 0Fh		; nibble pixel-mask pair (hi=0xF0, lo=0x0F)
-		db	0F2h, 2Fh,0FFh,0FFh,0FFh,0FFh
-		db	0F0h, 0Fh,0E0h, 07h,0C0h, 03h
-		db	0C0h, 03h, 80h, 01h, 80h, 01h
-		db	 80h, 01h, 80h, 01h,0C0h, 03h
-		db	0C0h, 03h,0E0h, 07h,0F0h, 0Fh
-		db	0F8h, 1Fh
+		db	0F2h, 2Fh,0FFh,0FFh,0FFh,0FFh	; row 0
+		db	0F0h, 0Fh,0E0h, 07h,0C0h, 03h	; row 1
+		db	0C0h, 03h, 80h, 01h, 80h, 01h	; row 2
+		db	 80h, 01h, 80h, 01h,0C0h, 03h	; row 3
+		db	0C0h, 03h,0E0h, 07h,0F0h, 0Fh	; row 4
+		db	0F8h, 1Fh	; row 5
 		db	11 dup (0)
-		db	0DDh,0DCh, 00h, 00h, 00h, 00h
-		db	 00h, 07h,0DFh,0F7h,0C0h, 00h
-		db	 00h, 00h, 00h, 0Dh,0FFh,0F1h
-		db	 54h, 00h, 00h, 00h, 00h, 75h
-		db	 7Fh, 31h, 14h, 00h, 00h, 00h
-		db	 00h, 74h, 11h, 91h, 1Ch, 00h
-		db	 00h, 00h, 00h, 45h, 11h, 11h
-		db	 1Ch, 00h, 00h, 00h, 00h, 0Ch
-		db	 19h, 91h, 54h, 00h, 00h, 00h
-		db	 00h, 04h, 49h, 91h,0C0h, 00h
-		db	 00h, 00h, 00h, 00h, 4Ch,0CCh
+		db	0DDh,0DCh, 00h, 00h, 00h, 00h	; row 6
+		db	 00h, 07h,0DFh,0F7h,0C0h, 00h	; row 7
+		db	 00h, 00h, 00h, 0Dh,0FFh,0F1h	; row 8
+		db	 54h, 00h, 00h, 00h, 00h, 75h	; row 9
+		db	 7Fh, 31h, 14h, 00h, 00h, 00h	; row 10
+		db	 00h, 74h, 11h, 91h, 1Ch, 00h	; row 11
+		db	 00h, 00h, 00h, 45h, 11h, 11h	; row 12
+		db	 1Ch, 00h, 00h, 00h, 00h, 0Ch	; row 13
+		db	 19h, 91h, 54h, 00h, 00h, 00h	; row 14
+		db	 00h, 04h, 49h, 91h,0C0h, 00h	; row 15
+		db	 00h, 00h, 00h, 00h, 4Ch,0CCh	; row 16
 		db	29 dup (0)
-		db	 07h,0FFh,0FAh, 20h, 00h, 00h
-		db	 00h, 00h,0FFh, 00h, 00h, 2Ah
-		db	 00h, 00h, 00h, 0Fh, 70h, 7Fh
-		db	 70h, 02h, 20h, 00h, 00h, 7Fh
-		db	 0Fh,0F7h, 00h, 70h, 22h, 00h
-		db	 00h,0F7h, 7Fh,0F0h, 00h, 07h
-		db	 22h, 00h, 00h,0F0h,0F7h, 00h
-		db	 44h, 00h, 0Ah, 00h, 00h,0F0h
-		db	 70h, 04h, 44h, 44h, 4Ah, 00h
+		db	 07h,0FFh,0FAh, 20h, 00h, 00h	; row 17
+		db	 00h, 00h,0FFh, 00h, 00h, 2Ah	; row 18
+		db	 00h, 00h, 00h, 0Fh, 70h, 7Fh	; row 19
+		db	 70h, 02h, 20h, 00h, 00h, 7Fh	; row 20
+		db	 0Fh,0F7h, 00h, 70h, 22h, 00h	; row 21
+		db	 00h,0F7h, 7Fh,0F0h, 00h, 07h	; row 22
+		db	 22h, 00h, 00h,0F0h,0F7h, 00h	; row 23
+		db	 44h, 00h, 0Ah, 00h, 00h,0F0h	; row 24
+		db	 70h, 04h, 44h, 44h, 4Ah, 00h	; row 25
 
 clear_area_entry:
 		db	 00h,0F2h		; add dl, dh  (alt encoding: ADD r/m8,r8)
 		jz	clear_area_row_done			; Jump if zero
 		int	3			; Debug breakpoint
 		db	0C4h, 7Ah, 00h		; les di, [bp+si+0]  (LES with disp8=0, alt encoding)
-		db	 00h, 7Ah, 47h, 4Ch,0CCh,0C4h
-		db	0F7h, 00h, 00h, 0Ah, 24h,0D7h
-		db	0CCh,0C7h,0F0h, 00h, 00h, 00h
-		db	0A2h, 40h, 44h, 7Fh, 00h, 00h
-		db	 00h, 00h, 02h, 72h, 27h, 20h
-		db	 00h
+		db	 00h, 7Ah, 47h, 4Ch,0CCh,0C4h	; row 0
+		db	0F7h, 00h, 00h, 0Ah, 24h,0D7h	; row 1
+		db	0CCh,0C7h,0F0h, 00h, 00h, 00h	; row 2
+		db	0A2h, 40h, 44h, 7Fh, 00h, 00h	; row 3
+		db	 00h, 00h, 02h, 72h, 27h, 20h	; row 4
+		db	 00h	; row 5
 		db	9 dup (0)
-		db	0B8h, 00h,0B8h, 8Eh,0C0h, 33h
-		db	0FFh,0B9h, 08h, 00h
+		db	0B8h, 00h,0B8h, 8Eh,0C0h, 33h	; row 6
+		db	0FFh,0B9h, 08h, 00h	; row 7
 
 clear_area_pass_loop:
 									push	cx

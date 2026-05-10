@@ -301,8 +301,8 @@ clear_block_inner_loop:
 
 		retn
 font_render_code		db	0B8h
-		db	 00h,0A0h, 8Eh,0C0h
-		db	0BEh, 8Dh, 21h,0B9h, 08h, 00h
+		db	 00h,0A0h, 8Eh,0C0h	; row 0
+		db	0BEh, 8Dh, 21h,0B9h, 08h, 00h	; row 1
 
 font_render_loop:
 								push	cx
@@ -371,7 +371,7 @@ delay_loop:
 		db	0Fh			;  Fixup - byte match
 		pop	ds
 		aas				; Ascii adjust
-		db	 7Fh,0FFh
+		db	 7Fh,0FFh	; row 0
 
 set_plot_mode:
 		mov	cs:plot_mode,al
@@ -493,7 +493,7 @@ vertical_line_loop:
 		mov	di,text_field_vga_ofs
 		mov	bx,word ptr cs:[player_HP]
 		jmp	short calc_width_entry
-		db	0BFh, 14h,0DBh,0EBh, 00h
+		db	0BFh, 14h,0DBh,0EBh, 00h	; row 0
 
 calc_width_entry:
 		SET_VGA_ES
@@ -872,8 +872,8 @@ render_tilemap_large		endp
 ; Indexed by column number to get byte offset within a tile row
 
 tile_col_offsets:
-		db	 00h, 09h, 12h
-		db	 1Bh, 24h, 2Dh, 36h, 3Fh
+		db	 00h, 09h, 12h	; row 0
+		db	 1Bh, 24h, 2Dh, 36h, 3Fh	; row 1
 
 decode_bitplane_tile		proc	near
 		test	byte ptr ds:tile_row_idx,0FFh

@@ -415,8 +415,8 @@ fade_row_inner:
 fade_screen_row		endp
 
 fade_step_tbl:					; 8-entry fade step table: bit-mask values decreasing FEh?->00h (fade-out steps)
-		db	0FEh,0EEh,0EAh,0AAh,0A8h, 88h
-		db	 80h, 00h
+		db	0FEh,0EEh,0EAh,0AAh,0A8h, 88h	; row 0
+		db	 80h, 00h	; row 1
 
 set_plot_pos:
 		mov	cs:plot_mode,al
@@ -1041,8 +1041,8 @@ render_tilemap_tile_loop:
 render_tilemap_large		endp
 
 pixel_pattern_tbl:				; 8-entry pixel mask table: alternating HGC fill values (00,FF,AA,FF,55,00,FF,AA)
-		db	 00h,0FFh,0AAh,0FFh, 55h, 00h
-		db	0FFh,0AAh
+		db	 00h,0FFh,0AAh,0FFh, 55h, 00h	; row 0
+		db	0FFh,0AAh	; row 1
 
 decode_bitplane_tile		proc	near
 		mov	bx,0Fh
@@ -1418,17 +1418,17 @@ extract_pixel_loop:
 
 extract_bitplane_pixels		endp
 
-		db	0, 1, 2, 1, 1, 0
-		db	3, 2, 1, 3, 3, 3
-		db	1, 3, 3, 2, 2, 3
-		db	2, 1, 1, 2, 2, 2
-		db	1, 3, 1, 3, 1, 1
-		db	2, 2, 1, 1, 1, 1
-		db	1, 1, 3, 2, 0, 3
-		db	2, 1, 1, 1, 3, 2
-		db	3, 3, 2, 2, 3, 3
-		db	3, 2, 1, 2, 2, 2
-		db	2, 2, 2, 2
+		db	0, 1, 2, 1, 1, 0	; row 0
+		db	3, 2, 1, 3, 3, 3	; row 1
+		db	1, 3, 3, 2, 2, 3	; row 2
+		db	2, 1, 1, 2, 2, 2	; row 3
+		db	1, 3, 1, 3, 1, 1	; row 4
+		db	2, 2, 1, 1, 1, 1	; row 5
+		db	1, 1, 3, 2, 0, 3	; row 6
+		db	2, 1, 1, 1, 3, 2	; row 7
+		db	3, 3, 2, 2, 3, 3	; row 8
+		db	3, 2, 1, 2, 2, 2	; row 9
+		db	2, 2, 2, 2	; row 10
 
 render_text_char_alt		proc	near
 		push	ds
@@ -1817,8 +1817,8 @@ fill_rect_bank_ok:
 fill_rectangle		endp
 
 ; tile_color_tbl_b (equ 2CA7h): 8-entry tile color table B: HGC pixel pattern values
-		db	 00h,0FFh,0AAh,0FFh, 55h,0FFh
-		db	0FFh,0AAh
+		db	 00h,0FFh,0AAh,0FFh, 55h,0FFh	; row 0
+		db	0FFh,0AAh	; row 1
 
 draw_sprite_entry:				; set DS=CS, compute sprite ptr+screen addr, fall into draw_sprite_row_loop
 		push	ds

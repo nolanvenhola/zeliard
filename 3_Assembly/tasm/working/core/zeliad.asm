@@ -1074,13 +1074,13 @@ entry_stick:
 		db	'stick.bin'
 		db	0, 0		; null + gmega load_ofs low (0x00)
 		db	' gmega.bin'	; ' '=load_ofs high (0x20 ?-> 0x2000)
-		db	0, 0
+		db	0, 0	; row 0
 		db	' gmcga.bin'
-		db	0, 0
+		db	0, 0	; row 1
 		db	' gmhgc.bin'
-		db	0, 0
+		db	0, 0	; row 2
 		db	' gmmcga.bin'
-		db	0, 0
+		db	0, 0	; row 3
 		db	' gmtga.bin'
 		db	0		; gmtga null
 
@@ -1100,10 +1100,10 @@ entry_stdply_nosave:
 
 cmdline_savefile db	0			; Command-line save file name
 		db	32 dup (0)
-		db	1
+		db	1	; row 0
 music_driver_name db	0			; Music driver filename
 		db	16 dup (0)
-		db	11h
+		db	11h	; row 0
 joystick_driver_name db	0			; Joystick driver filename
 		db	15 dup (0)
 
