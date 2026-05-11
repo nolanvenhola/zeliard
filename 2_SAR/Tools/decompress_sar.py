@@ -1,6 +1,7 @@
 """
 SAR Chunk Decompressor for Zeliard (PC-98/VGA version)
-Reverse engineered from Spice86 CPU trace of zeliad.exe
+Reverse engineered from Spice86 CPU trace of zeliad.exe + cross-
+referenced against the brox repo (zeliard-brox/tools/MDTViewer/decoder.py).
 
 SAR Chunk Format:
   [0-3]: LE uint32 = chunk_data_size (= total_file_size - 4)
@@ -10,11 +11,15 @@ SAR Chunk Format:
                fill_buffer input = chunk_data[9 + skip_count : 9 + skip_count + read_count]
 
 fill_buffer Dispatch (041F:0DAD in game segment):
-  First byte bits [2:0] = opcode:
+  First byte bits [2:0] = opcode (8 methods, all decoded):
     0  -> copy all remaining bytes verbatim
-    3  -> format 5 (nibble-table RLE, count+2)
-    6  -> format 6 (2-byte table RLE, count+2)  [KEY: K=2]
-    7  -> format 7 (escape-byte RLE, count+3)   [KEY: K=3]
+    1  -> lo-nibble-keyed table RLE (table terminator 0xFF)
+    2  -> marker-byte RLE (hi-nibble match, count+3)
+    3  -> hi-nibble-keyed table RLE (table terminator 0xFF)
+    4  -> marker-byte alt RLE (lo-nibble match, count+3)
+    5  -> byte-by-byte same-byte-pair RLE (count+2)
+    6  -> 2-byte table RLE (terminator 0xFFFF, count+2)
+    7  -> escape-byte RLE (escape+value+count → value × (count+3))
 
 Chunk Loader Call:
   call [CS:0x010C] with:
@@ -95,31 +100,110 @@ def _fill_buffer(buf: bytes) -> bytearray:
         # Copy all remaining bytes verbatim
         return bytearray(buf[si:])
 
-    elif opcode == 3:
-        # Format 5: nibble-based table RLE (K=2)
-        # Table: [lo_nibble_key, val_byte] pairs until 0xFF terminator
+    elif opcode == 1:
+        # Method 1: lo-nibble-keyed table RLE (table terminator = 0xFF).
+        # Walk to 0xFF, then for each byte: lo nibble = key, hi = count-2.
+        # Cross-referenced from brox/MDTViewer/decoder.py.
         bp = si
-        while si < len(buf):
-            b = buf[si]; si += 1
-            if b == 0xFF:
-                break
-            si += 1  # skip value byte
+        while si < len(buf) and buf[si] != 0xFF:
+            si += 1
+        if si < len(buf): si += 1  # skip the 0xFF
         out = bytearray()
         while si < len(buf):
-            b = buf[si]; si += 1
-            lo = b & 0x0F  # low nibble = table key
+            al = buf[si]; si += 1
+            ah = al & 0xF0
             cx = 1
-            tp = bp
-            while tp < len(buf):
-                te = buf[tp]
-                if te & 0xF0:  # high nibble set -> end of table
+            tbp = bp
+            while tbp < len(buf):
+                entry_key = buf[tbp]
+                if (entry_key & 0x0F) != 0:
                     break
-                if (te & 0x0F) == lo:
-                    cx = ((b >> 4) & 0x0F) + 2  # high nibble = count, +2
-                    b = buf[tp + 1]              # value from table
+                if ah == entry_key:
+                    cx = (al & 0x0F) + 2
+                    al = buf[tbp + 1]
                     break
-                tp += 2
-            out.extend([b] * cx)
+                tbp += 2
+            out.extend([al] * cx)
+        return out
+
+    elif opcode == 2:
+        # Method 2: marker-byte simple RLE.  First byte = marker;
+        # then bytes where (byte & 0xF0) == marker high-nibble are
+        # run-length triggers (lo-nibble = count-3, next byte = value).
+        if si >= len(buf):
+            return bytearray()
+        marker = buf[si]; si += 1
+        ah = marker
+        out = bytearray()
+        while si < len(buf):
+            al = buf[si]; si += 1
+            cx = 1
+            if (al & 0xF0) == ah:
+                if si >= len(buf): break
+                cx = (al & 0x0F) + 3
+                al = buf[si]; si += 1
+            out.extend([al] * cx)
+        return out
+
+    elif opcode == 3:
+        # Method 3: hi-nibble-keyed table RLE (mirror of method 1).
+        # Table terminator = 0xFF; lo nibble of stream byte = table key,
+        # hi nibble = count-2.
+        bp = si
+        while si < len(buf) and buf[si] != 0xFF:
+            si += 1
+        if si < len(buf): si += 1
+        out = bytearray()
+        while si < len(buf):
+            al = buf[si]; si += 1
+            ah = al & 0x0F
+            cx = 1
+            tbp = bp
+            while tbp < len(buf):
+                entry_key = buf[tbp]
+                if (entry_key & 0xF0) != 0:
+                    break
+                if ah == entry_key:
+                    cx = (al >> 4) + 2
+                    al = buf[tbp + 1]
+                    break
+                tbp += 2
+            out.extend([al] * cx)
+        return out
+
+    elif opcode == 4:
+        # Method 4: marker-byte alt — like method 2 but using low-nibble
+        # marker check (al & 0x0F == ah).
+        if si >= len(buf):
+            return bytearray()
+        marker = buf[si]; si += 1
+        ah = marker
+        out = bytearray()
+        while si < len(buf):
+            al = buf[si]; si += 1
+            cx = 1
+            if (al & 0x0F) == ah:
+                if si >= len(buf): break
+                cx = (al >> 4) + 3
+                al = buf[si]; si += 1
+            out.extend([al] * cx)
+        return out
+
+    elif opcode == 5:
+        # Method 5: byte-by-byte with same-byte-followed-by-count RLE.
+        # If next byte equals current, treat as run: (next_next + 2) copies.
+        out = bytearray()
+        while si < len(buf):
+            al = buf[si]
+            cx = 1
+            if si + 1 < len(buf) and buf[si + 1] == al:
+                if si + 2 < len(buf):
+                    cx = buf[si + 2] + 2
+                    si += 2
+                else:
+                    si += 1
+            si += 1
+            out.extend([al] * cx)
         return out
 
     elif opcode == 6:

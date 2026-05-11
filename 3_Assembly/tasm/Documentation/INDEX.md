@@ -16,6 +16,7 @@ below provide the deep walkthroughs for each subsystem.
 | `ARCHITECTURE.md` | Boot order, segment layout, SAR loader, INT 60h services, chunk dispatch, main-loop structure |
 | `BOOT_FLOW.md` | Runtime-verified `zeliad.exe` → `game.bin` → `fight.bin` handoff, with DOSBox-confirmed register/memory state at each step |
 | `code_chunks_overview.md` | "Which chunk should I read for X?" — chunk dictionary across core/drivers/zelres1/2/3 |
+| `SAR_DIRECTORY.md` | Canonical file_id → filename map for all 3 SARs (cross-referenced from `c:\projects\zeliard-brox\tools\MDTViewer\sar_reader.py`); map-id lookup tables for dungeon + town doors |
 
 ## Player + cavern mechanics
 
@@ -94,6 +95,21 @@ below provide the deep walkthroughs for each subsystem.
 | `4_Resources/GameData/GAME_DATA_REFERENCE.md` | Game-data tables (sword names, item effects, enemy stats, etc.) |
 | `4_Resources/Documentation/` | Original game manual + playthrough notes (PDF) |
 | `4_Resources/MdtViewer/` | Python+Avalonia tool to inspect .mdt cavern/town maps |
+
+## Sibling-repo cross-references (zeliard-brox)
+
+The `c:\projects\zeliard-brox` repo (web-port project) has tools we've
+cross-referenced to validate / extend our docs:
+
+| Brox path | What it provides | Our doc |
+|---|---|---|
+| `tools/MDTViewer/decoder.py` | Full `unpack()` for all 8 fill_buffer methods; map-id tables | ported into `2_SAR/Tools/decompress_sar.py` |
+| `tools/MDTViewer/sar_reader.py` | Authoritative `file_id → filename` map for all 3 SARs | `SAR_DIRECTORY.md` |
+| `tools/MDTViewer/constants.py` | MCGA palette (64 entries) + dungeon/town map-id lookups | `GFX_PIPELINE.md` §8 + `SAR_DIRECTORY.md` |
+| `tools/MDTViewer/tile_graphics.py` | Pattern-tile decoder + transparency conventions | `GFX_PIPELINE.md` §5b |
+| `tools/GrpViewer/grp_viewer.py` | 13-mode GRP-file descriptor + per-cavern mppN.grp layouts + sword color tiers | `GFX_PIPELINE.md` §5b |
+| `tools/SFXRipper/` | OPL/AdLib sound-effect ripper | (not yet integrated; MUSIC_SYSTEM.md TBD extension) |
+| `tools/SpriteEditor/` | Sprite-edit tool (similar to MdtViewer) | n/a |
 
 ---
 

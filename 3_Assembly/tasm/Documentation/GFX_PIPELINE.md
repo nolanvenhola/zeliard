@@ -212,6 +212,67 @@ For port purposes: rendering is layered:
 
 ---
 
+## 5b. GRP file format catalog (cross-referenced from brox)
+
+The `c:\projects\zeliard-brox\tools\GrpViewer\grp_viewer.py` enumerates
+13 distinct GRP modes used across the game.  Each mode has specific
+pixel encoding + tile dimensions.  Reproduced here for port reference:
+
+| Mode | Dim (W×H) | Stride | Bytes | Type | Used by |
+|---:|---:|---:|---:|---|---|
+| 0 | 20×18 | 15 | 270 | sprite (3-plane MCGA) | itemp.grp first frame |
+| 1 | 16×16 | 12 | 192 | sprite (3-plane MCGA) | itemp.grp frames 1..6, font.grp |
+| 2 | 8×8 | 1 | 8 | font glyph (1bpp) | font.grp |
+| 3 | 16×16 | 8 | 192 | magic sprite (3-plane, 48-B block reassembly) | magic.grp |
+| 4 | 32×32 | (variable) | (variable) | sword macro-tile (2bpp bit-plane assembly) | sword.grp |
+| 5 | 16×24 | — | — | NPC sprite | mman.grp, cman.grp |
+| 6 | 16×24 | — | — | hero-in-town sprite | tman.grp |
+| 7 | 8×8 | 6 | 48 | pattern tile (3-plane) | mpat/dpat/cpat.grp |
+| 8 | 16×8 | 4 | 32 | hero-in-dungeon sprite | fman.grp |
+| 9 | 8×8 | 6 | 48 | roka background tile | roka.grp |
+| 10 | 8×8 | 6 | 48 | static dungeon tile | dchr.grp, mppN.grp |
+| 11 | 16×8 | 4 | 32 | per-world enemy sprite | enpN.grp |
+| 12 | 16×8 | 4 | 32 | boss sprite tile | crab.grp + 9 other boss .grp files |
+| 13 | 16×8 | 4 | 32 | rokademo sprite | dman.grp |
+
+### Per-cavern tile patterns (mppN.grp)
+
+Each cavern has its own pattern bank (mode 10).  brox's grp_viewer
+documents the per-cavern tile arrangement:
+
+| File | Tile layout (groups + counts) |
+|---|---|
+| `mpp1.grp` (Muralla) | `[[1,1,1], [1,1,1,1,1,1,1,1], [1,1], [1,1,1,5,5]]` |
+| `mpp2.grp` (Satono) | `[[1,1,1], [4,9], [1,1], [1,1,1,5], [1,1,1,1,1,1,1,1,1]]` |
+| `mpp3.grp` (Bosque) | `[[1,1], [9], [16], [1,1], [1,1,1,1,1], [5], [1,1,1,1,1]]` |
+| `mpp4.grp` (Helada) | `[[1,1,1], [10], [1,1], [5], [1,1]]` |
+| `mpp5.grp` (Tumba) | `[[1,1,1], [10], [13], [4,3], [1,1], [4], [2], [4], [3], [1,1,1,1,1]]` |
+| `mpp6.grp` (Dorado) | `[[1,1,1], [3], [1], [2], [5], [9], [1], [1,1], [3], [6], [1,1]]` |
+| `mpp7.grp` (Llama) | `[[1,1,1], [27], [1], [4], [1], [4,3], [1,1,1], [1], [1,1], [2], [11]]` |
+| `mpp8.grp` (Pureza) | `[[1,1,1], [10], [2], [1,1,3], [1,1,1,1,1,1,1,1,1], [5], [3], [1,1,1,1,1,1,1]]` |
+| `mpp9.grp` (Esco) | `[[1,8], [5,3,2], [20]]` |
+| `mppa.grp` (final) | `[[1,2,2,4], [6], [1,1], [3]]` |
+| `mppb.grp` (Jashiin) | `[[1,3], [1,1]]` |
+
+Each numeric list is a "group" of tile cells; brox's viewer renders
+them in nested groupings for visual inspection.
+
+### Sword color tiers (sword.grp mode 4)
+
+Per brox: 3 mega-groups of swords with explicit `(high_color, low_color)`
+VGA-palette index pairs:
+
+| Group | Swords | (Hi, Lo) tiers |
+|---:|---|---|
+| 0 | Training, Wise Man's, Spirit | `(0x09, 0x01)`, `(0x24, 0x04)`, `(0x1B, 0x03)` |
+| 1 | Knight's, Illumination | `(0x09, 0x01)`, `(0x24, 0x04)` |
+| 2 | Enchantment | `(0x36, 0x06)` |
+
+So the 6 swords in our `sword.grp` frame 0 (at 120×54 pixel render —
+see GFX_PIPELINE §3a worked example) are colored by these tier pairs.
+
+---
+
 ## 6. Per-frame pipeline (200FIGHT main_loop)
 
 ```
@@ -277,6 +338,37 @@ glyph colors set at boot.
 
 See MEMORY.md "Palette System (CRITICAL)" + captured P1/P2/P3
 palette files in `3_Assembly/dumps/`.
+
+### 64-entry sprite palette (brox-confirmed)
+
+Per `brox/MDTViewer/tile_graphics.py`, the **first 64 entries** of
+the VGA DAC palette (used for sprite/tile pixel values 0x00..0x3F)
+are hardcoded as `(r, g, b)` triples scaled ×4 to 0-255.  Pattern:
+8 rows × 8 columns, each row a hue family with varying saturation
+and brightness:
+
+```
+Row 0 (0x00..07):  (0,0,0) (31,31,31) (31,0,0) (0,31,0) (0,31,31) (0,0,31) (31,31,0) (31,0,31)
+Row 1 (0x08..0F):  (31,31,31) (62,62,62) (62,31,31) (31,62,31) (31,62,62) (31,31,62) (62,62,31) (62,31,62)
+Row 2 (0x10..17):  (31,0,0) (62,31,31) (62,0,0) (31,31,0) (31,31,31) (31,0,31) (62,31,0) (62,0,31)
+Row 3 (0x18..1F):  (0,31,0) (31,62,31) (31,31,0) (0,62,0) (0,62,31) (0,31,31) (31,62,0) (31,31,31)
+Row 4 (0x20..27):  (0,31,31) (31,62,62) (31,31,31) (0,62,31) (0,62,62) (0,31,62) (31,62,31) (31,31,62)
+Row 5 (0x28..2F):  (0,0,31) (31,31,62) (31,0,31) (0,31,31) (0,31,62) (0,0,62) (31,31,31) (31,0,62)
+Row 6 (0x30..37):  (31,31,0) (62,62,31) (62,31,0) (31,62,0) (31,62,31) (31,31,31) (62,62,0) (62,31,31)
+Row 7 (0x38..3F):  (31,0,31) (62,31,62) (62,0,31) (31,31,31) (31,31,62) (31,0,62) (62,31,31) (62,0,62)
+```
+
+(Values are 6-bit DAC × 4 = 0-248 8-bit RGB.)
+
+**Index 5 (0x05) = `(0, 0, 31)` = dark blue** is the canonical
+"background / transparent" pixel color in brox's render — used as
+fill for nibble value 0 / unmasked sprite pixels.
+
+This 64-entry palette is **constant** across the game; the
+RPAL6/EPAL6/ACPAL/CSPAL row blocks captured in
+`3_Assembly/dumps/palette_rows.json` are the FULL 256-entry palette
+that includes scene-specific overrides (e.g. opening-cinematic
+reds/pinks) in the upper 192 entries.
 
 ---
 
