@@ -140,33 +140,33 @@ verbatim if you want bit-exact compat.
 | 0x88 | 1 | `hero_bank_hi` | 24-bit banked-gold high byte |
 | 0x89 | 2 | `hero_bank_lo` | 24-bit banked-gold low word |
 | 0x8B | 2 | `hero_almas` | 16-bit (cap 0xFFFF) |
-| 0x8D | 1 | `item_qty_count` | item-use quantity display cache |
+| 0x8D | 1 | `hero_level` | hero level / bonus damage tier (was `item_qty_count`) |
 | 0x8E | 2 | `item_effect_val` | item-effect-value display cache |
-| 0x90 | 2 | `hero_HP` | current HP (16-bit; init 0x50=80) |
+| 0x90 | 2 | `player_HP` | current HP (16-bit; init 0x50=80) |
 | 0x92 | 1 | `sword_type` | equipped sword (1=Training, 6=Enchantment) |
-| 0x93 | 1 | `shield_type` | equipped shield (0=none) |
-| 0x94 | 2 | `shield_HP` | current shield durability |
-| 0x96 | 2 | `char_exp_cap` | XP threshold for current level |
-| 0x98 | 1 | `char_speed` | speed stat (Sage-upgraded) |
-| 0x99 | 1 | `char_power` | power stat (Sage-upgraded) |
-| 0x9A | 1 | `char_abilities` | combat flags (crests?) |
-| 0x9B | 1 | `trade_marker_flag` | trade-event marker |
-| 0x9C | 1 | `stat_X9C` | VESTIGIAL — saved but unused |
-| 0x9D | 1 | `current_magic_spell` | magic spell id |
-| 0x9E | 1 | `cur_magic_idx` | currently-selected magic |
+| 0x93 | 1 | `shield_type` | equipped shield (drives damage absorb in 200FIGHT) |
+| 0x94 | 2 | `shield_HP` | current shield durability (also: magic-XP, magia_stone reads) |
+| 0x96 | 2 | `shield_max_HP` | shield max HP cap (was `char_exp_cap`) |
+| 0x98 | 1 | `keys_normal` | normal key count (was `char_speed`/`player_speed` — both WRONG; F9 game-speed is at DS:0xFF33 `gvar_anim_speed`, not in player record) |
+| 0x99 | 1 | `keys_lion` | Lion's Head Key count (was `char_power`) |
+| 0x9A | 1 | `crest_elf` | Elf Crest (was part of `char_abilities`) |
+| 0x9B | 1 | `crest_glory` | Glory Crest (was part of `char_abilities`) |
+| 0x9C | 1 | `crest_hero` | Hero's Crest (was part of `char_abilities`) |
+| 0x9D | 1 | `selected_spell` | currently chosen spell ID 0..7 (was `current_magic_spell`/`cur_weapon_idx`) |
+| 0x9E | 1 | `selected_accessory` | equipped wearable (0=none, 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Cape; was `cur_magic_idx`) |
 | 0x9F | 1 | `stat_X9F` | VESTIGIAL — per-frame zero-clear |
 
-### 0xA0..0xC1 — inventory + per-weapon state
+### 0xA0..0xC1 — inventory + per-spell state
 
 | Offset | Size | Field | Notes |
 |---|---:|---|---|
-| 0xA0 | 1 | `music_track_count` | tracks loaded for area |
-| 0xA1 | 5 | `magic_flags` | one byte per spell (0=lack, FF=have) |
-| 0xA6 | 5 | `item_flags` | one byte per consumable |
-| 0xAB | 7 | `weap_dur_cur` | per-weapon current durability |
-| 0xB2 | 2 | `char_hp_max` | max HP for current level |
-| 0xB4 | 7 | `weap_dur_max` | per-weapon max durability |
-| 0xBB | 7 | `weapon_flags` | one byte per weapon (0=lack, FF=have) |
+| 0xA0 | 1 | `tears_of_esmesanti_count` | tears collected (0..9; was `music_track_count`/`spells_learned_count`) |
+| 0xA1..A5 | 5 | `accessory_slot_1..5` | wearable acquisition slots (each = ID 1..5 of Nth wearable obtained, 0=empty; was `magic_flags`) |
+| 0xA6..AA | 5 | `item_slot_1..5` | per-slot item ID 1..8 (0=empty; was `item_flags`) |
+| 0xAB..B1 | 7 | `spell_charge_*` | per-spell current charges: espada/saeta/fuego/lanzar/rascar/agua/guerra (was `weap_dur_cur`) |
+| 0xB2..B3 | 2 | `player_hp_max` | max HP for current level (was `char_hp_max`) |
+| 0xB4..BA | 7 | `spell_charge_max_*` | per-spell max charges (was `weap_dur_max`) |
+| 0xBB..C1 | 7 | `spell_known_*` | per-spell learned flag, set 0→FF by Sage (was `weapon_flags` / `boss_kill_*` — both wrong; boss-defeat is tracked via tears count + per-area state, not per-spell bytes) |
 
 ### 0xC2..0xCF — combat / progression state
 

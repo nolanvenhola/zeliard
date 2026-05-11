@@ -146,25 +146,30 @@ LOW NIBBLE driving the damage lookup.
 
 ---
 
-## What's NOT yet pinned down
+## What's pinned down (2026-05-10 update)
 
 | Aspect | Status | Notes |
 |---|:---:|---|
-| Per-area tile_type_map[16] values | ❌ | Need to find the area-init code that copies these into DS:0xA010 |
-| Ice physics (sliding) | ❌ | Likely a separate flag — maybe via `char_speed` modifier or a per-tile-type "drag" value beyond damage.  Needs runtime DOSBox observation in Helada cavern |
-| Slime / ooze physics (slow-down) | ❌ | Same — probably layered on top of damage in the same low-nibble lookup |
-| Water tiles | ❌ | Treated as decoration? as damage? Unknown |
-| One-way walls (block from one side) | ❌ | Likely a different tile-byte bit not yet identified |
-| One-way air currents (push player) | ❌ | TBD — possibly layered onto the entity_move_* family |
-| Lava (continuous damage) | ✓ | Comes through tile_type_map mechanism above |
-| Spike / instant-damage tiles | ✓ | Same mechanism; high tile_type_map values |
-| Force-vulnerable tiles (0x40..0x48) | ✓ | invul_timer reset — documented above |
-| Wall blocking | ✓ | is_entity_known_type classifier |
+| Per-area tile_type_map[16] values | ⚠ | Per-area init copies into DS:0xA010 from each cavern's data section.  Specific values per cavern still need enumeration but the FRAMEWORK is fully decoded.  Use `4_Resources/MdtViewer/` GUI to inspect per-cavern tile bytes. |
+| **Ice sliding (Helada)** | ✓ | `gate_area4_no_accessory4` (200FIGHT.asm:2463) returns AL=0xFF if `area_num==4` AND `cur_magic_idx==4` (Ruzeria equipped), else AL=0.  Walk paths write `move_axis` (DS:0x9F23) + `pending_invul` (DS:0x9F21); `check_move_axis` (line 1170) forces continued scroll per the recorded axis bit — that's the slide.  Ruzeria bypasses the gate.  See PLAYER_PHYSICS.md §"Resolved post-2026-05-10" #4. |
+| **Slime / ooze (time-based HP drain)** | ✓ | Standard `tile_type_sum` chain — `accumulate_tile_type` (200FIGHT.asm:3645) reads `tile_type_map[low_nibble]` and adds to `tile_type_sum`; `apply_combat_damage_with_absorb` (line 3570) drains via shield then HP.  Slime tiles have a per-area damage value; player takes continuous damage while on hazard.  Manual's "slow movement" is actually per-frame damage interrupting forward progress, NOT a speed modifier. |
+| **Water (time-based HP drain)** | ✓ | Same as slime — `tile_type_sum` chain.  No buoyancy/submersion physics; no separate water flag bit. |
+| **Acid pools (Pureza, requires Cape)** | ✓ | Per-area `cmp area_num,7` + `cmp cur_magic_idx,5` (Asbestos Cape) gate at 200FIGHT.asm:2885-2895.  When wearing Cape → skip damage; otherwise every 64 frames `subtract_from_player_HP(15)` + red flash + sound. |
+| **One-way walls / direction-class collision** | ✓ | Area-specific via `lookup_move_slot_family` (returns tile-family code per area).  `is_unknown_or_area5_slot_b/_c` (line 7436+) for area 5 treats family 1+2 as passable; `check_area_7_boundary` (line 1545) for area 7 treats family 2 as passable.  Different per-area tile-family interpretations create "one-way" feel. |
+| **Air-flow walls (push player)** | ✓ | Air-stream entity records in MDT "objects" pointer at +0x06 (3 bytes/entry).  Per-stream `entity_fn_e_*` handler modifies player scroll position when in range — same `move_axis`-style write as ice slide. |
+| Lava (continuous damage) | ✓ | tile_type_map mechanism above |
+| Spike / instant-damage tiles | ✓ | tile_type_map (high values) |
+| Force-vulnerable tiles (0x40..0x48) | ✓ | `invul_timer` reset on contact |
+| Wall blocking | ✓ | `is_entity_known_type` classifier (tile_byte >= 0x49) |
 
-The framework is mostly understood.  The unknowns are
-**per-area variations** that vary by cavern, plus **secondary physics
-modifiers** (slide / push) that may live in the high nibble or a
-parallel lookup table.
+The framework + the per-area gate mechanisms are now fully decoded.
+What remains is per-cavern enumeration of exact tile_type_map values
+(needs DOSBox observation OR per-area data-chunk decode).
+
+**Methodology lesson** (see memory:feedback_per_area_gate_procs.md):
+absence of a global modifier table doesn't mean an effect doesn't
+exist.  Zeliard uses per-area gate procs (`gate_area{N}_no_accessory{M}`)
+for cavern-specific effects beyond the standard tile-damage chain.
 
 ---
 

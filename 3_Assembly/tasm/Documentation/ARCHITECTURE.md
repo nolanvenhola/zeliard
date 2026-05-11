@@ -217,7 +217,8 @@ The frame loop is implicit in fight.bin's `loaded_code_b_fn` (offset
 9. Commit frame (CS:0x2016 = drv_frame_commit)
 10. Loop
 
-Step (3) is gated by `gvar_skip_input` (FF1D); if set, the entity
+Step (3) is gated by `gvar_spacebar_state` (FF1D — was misleadingly
+named `gvar_skip_input` in earlier sweeps); if set, the entity
 update is skipped and the scene-change code at the bottom of the
 loop runs (loading the next chunk via `sar_loader_fn`).
 
@@ -284,7 +285,7 @@ call into these.
   ├─ Per-frame: town.bin's frame_update reads input, scrolls map,
   │             draws character, polls for interactable tiles
   ├─ Trigger: player walks into a fight-spawn tile or scripted event
-  ├─ Town scrolls in `gvar_skip_input` (FF1D) = 0xFF (skip-flag)
+  ├─ Town scrolls in `gvar_spacebar_state` (FF1D) = 0xFF (spacebar/btn-A latch)
   ├─ Town calls scene_trans_request (FFE6) write
   └─ Returns to its outer dispatcher
 

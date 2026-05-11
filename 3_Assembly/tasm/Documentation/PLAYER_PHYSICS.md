@@ -747,15 +747,44 @@ tolerance) and load the corresponding shop chunk.
 
 ---
 
-## Open questions (worth a DOSBox session)
+## Resolved post-2026-05-10 (was: Open questions)
 
-1. Is **`game_func_80` the ladder check** and **`game_func_12` the
-   platform-raise check**?  Or are they reversed / different roles?
-2. What's the **exact tile byte for a ladder**?  `game_func_69`
-   tests for byte 0x4A (`'J'`) — that may be the ladder marker.
-3. Is **DOWN-while-falling a "drop through one-way platform"** or
-   purely cosmetic crouch?
-4. **Jump height variation**: is `hp_max` (jump_arc_height) constant
-   across the game, or does it scale with `char_speed`?
-5. **Crouch damage / hitbox**: does crouching reduce the player's
-   hitbox height to dodge under projectiles?
+1. ✓ **Ladder check**: `check_3tile_J_pattern` (200FIGHT.asm:4130) —
+   scans 3 cells at scroll_si-0x25 for byte 0x4A ('J' = ladder).
+   Was speculative `game_func_69`.
+2. ✓ **Platform-raise**: `try_top_combat_step` (200FIGHT.asm:4799) —
+   scans for byte 0x40 ('@' = platform marker) at scroll_si-0x23+0x90;
+   on match runs the 3-cell entity_slot_write_tagged loop.  Was
+   speculative `game_func_12`.
+3. ✓ **Ladder tile byte**: confirmed 0x4A ('J') by code trace.
+4. **Ice slide** (Helada): per-area gate proc `gate_area4_no_accessory4`
+   (200FIGHT.asm:2463) — returns AL=0xFF if `area_num==4` AND
+   `cur_magic_idx==4` (Ruzeria Shoes equipped), else AL=0.  When AL=0
+   (player on ice WITHOUT Ruzeria), walk paths write `move_axis` +
+   `pending_invul`; the per-frame `check_move_axis` (line 1170) then
+   forces continued scroll in the original direction even after the
+   player stops pressing the dir key — that's the slide.  See
+   `MECHANICS_TO_UNDERSTAND.md` row "Surface effects: ice (sliding)".
+5. **Game-speed (0-9)**: `gvar_anim_speed` at DS:0xFF33 (set by F9 via
+   `speed_change_handler` in stick.asm:945), NOT a per-character stat.
+   `char_speed` at 0x98 was a wrong rename — that byte is actually
+   `keys_normal` (Lion's Key separate at 0x99 = `keys_lion`).  Per
+   TCRF + 2026-05-05 save-format unification.  Jump-arc height is
+   tied to `flag_climbing` mid-air state (FF39), not to game-speed
+   or a per-char stat.
+6. **Crouch hitbox**: no per-pixel hitbox table exists — collision
+   uses scroll-buffer cell-index arithmetic only (`scroll_si_from_player`
+   + signed offsets).  Crouch (DOWN key) → `try_advance_with_anim`
+   (200FIGHT.asm:1994) — variant of step-down with pose advancement,
+   not a separate FSM state.  Doesn't change collision cells.
+
+## Cross-references
+
+- **Ice slide / per-area gates**: `MECHANICS_TO_UNDERSTAND.md` rows
+  "Surface effects: *" + memory:feedback_per_area_gate_procs.md
+- **Shared-buffer alias hazards** (move_axis is fine but Sabre Oil's
+  aura buffer at 0xEB60 is multi-aliased): see
+  `working/SHARED_BUFFER_AUDIT.md`
+- **Damage formula** (sword-strike): see `compute_action_anim_idx`
+  (200FIGHT.asm:8207) — `base = anim_frame_tbl_a[sword-1]; +=
+  hero_level/2; *= (key_count+1); *= 2 if ATTACK FSM state`

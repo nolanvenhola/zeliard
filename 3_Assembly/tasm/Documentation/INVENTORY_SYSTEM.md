@@ -4,35 +4,60 @@ Item #3 from MECHANICS_TO_UNDERSTAND.md.  Documents 201SELCT (the
 "select.bin" chunk) — the screen that opens when the player presses
 ENTER to view/equip weapons / cast magic / use items.
 
+> **⚠ Naming note (2026-05-05 TCRF unification):** The byte map below
+> uses some **earlier (wrong) names** retained for narrative continuity.
+> The authoritative names live in `working/drivers/stdply.inc`.  Major
+> corrections: `0x9D` = `selected_spell` (not weapon idx), `0x9E` =
+> `selected_accessory` (shoe/cape), `0xA1..A5` = `accessory_slot_*`
+> (wearables, NOT magic), `0xAB..B1` = `spell_charge_*` (7 spell
+> charges, NOT weapon durability), `0xB4..BA` = `spell_charge_max_*`,
+> `0xBB..C1` = `spell_known_*` (NOT weapon flags), `0x98` =
+> `keys_normal`, `0x99` = `keys_lion`, `0x9A..9C` = `crest_elf/glory/hero`.
+> See `SAVE_FORMAT.md` for the canonical TCRF byte map.
+
 ---
 
 ## Storage layout (player record at DS:0x80–0xC1)
 
-The persistent inventory is stored as **3 separate per-category byte
-arrays + scalar equipped indices**, NOT as a single bitmask:
+The persistent inventory is stored as **byte arrays of per-category
+state + scalar equipped indices** in the 256-byte player record:
 
-| Address | Size | Field | Contents |
-|---|---:|---|---|
-| `0x92` | 1 byte | `equipped_weapon` | currently-equipped weapon idx (1-based, 0=none) |
-| `0x93` | 1 byte | `equipped_magic` | currently-equipped magic idx (1-based, 0=none) |
-| `0x90` | 2 bytes | `char_hp` | current HP (16-bit) |
-| `0xB2` | 2 bytes | `char_hp_max` | max HP for current level (16-bit) |
-| `0x94` | 2 bytes | `char_exp` | current experience (16-bit) |
-| `0x96` | 2 bytes | `char_exp_cap` | XP cap for current level (16-bit) |
-| `0x98` | 1 byte | `char_speed` | speed stat |
-| `0x99` | 1 byte | `char_power` | power/attack stat |
-| `0x9A..0x9C` | 3 bytes | `char_abilities` | combat ability flags |
-| `0x9D` | 1 byte | `cur_weapon_idx` | cached selected weapon (1-based) |
-| `0x9E` | 1 byte | `cur_magic_idx` | cached selected magic (1-based) |
-| **`0xA1..0xA5`** | 5 bytes | **`magic_flags`** | one byte per magic spell: 0=don't have, FFh=have |
-| **`0xA6..0xAA`** | 5 bytes | **`item_flags`** | one byte per consumable item: 0=don't have, FFh=have |
-| `0xAB..0xB1` | 7 bytes | `weap_dur_cur` | current weapon durability (per weapon type) |
-| `0xB4..0xBA` | 7 bytes | `weap_dur_max` | max weapon durability (per weapon type) |
-| **`0xBB..0xC1`** | 7 bytes | **`weapon_flags`** | one byte per weapon: 0=don't have, FFh=have |
-| `0xE4` | 1 byte | `key_count` | number of keys held |
+| Address | Size | TCRF canonical | Earlier (wrong) name | Contents |
+|---|---:|---|---|---|
+| `0x80` | 1 | `world_x_lo` | `town_player_col` | world X (lo byte) |
+| `0x85..87` | 3 | `hero_gold_hi/lo/mid` | — | 24-bit gold |
+| `0x88..8A` | 3 | `hero_bank_hi/lo/mid` | — | 24-bit bank balance |
+| `0x8B..8C` | 2 | `hero_almas` | — | almas (16-bit, cap 0xFFFF) |
+| `0x8D` | 1 | `hero_level` | `item_qty_count` | hero level (0..255) |
+| `0x90..91` | 2 | `player_HP` | `char_hp` | current HP (16-bit) |
+| `0x92` | 1 | `equipped_weapon` | — | weapon idx (1-based, 0=none) |
+| `0x93` | 1 | `shield_type` | `equipped_magic` | shield type (drives damage absorb) |
+| `0x94..95` | 2 | `shield_HP` | `char_exp` | shield current HP (16-bit) |
+| `0x96..97` | 2 | `shield_max_HP` | `char_exp_cap` | shield max HP (16-bit cap) |
+| `0x98` | 1 | `keys_normal` | `char_speed` | normal key count |
+| `0x99` | 1 | `keys_lion` | `char_power` | Lion's Head Key count |
+| `0x9A` | 1 | `crest_elf` | (part of) `char_abilities` | Elf Crest (0xFF=have) |
+| `0x9B` | 1 | `crest_glory` | (part of) `char_abilities` | Glory Crest (0xFF=have) |
+| `0x9C` | 1 | `crest_hero` | (part of) `char_abilities` | Hero's Crest (0xFF=have) |
+| `0x9D` | 1 | `selected_spell` | `cur_weapon_idx` | currently chosen spell ID (0=none, 1..7) |
+| `0x9E` | 1 | `selected_accessory` | `cur_magic_idx` | equipped wearable ID (0=none, 1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Cape) |
+| `0xA0` | 1 | `tears_of_esmesanti_count` | `music_track_count` | tears collected (0..9) |
+| `0xA1..A5` | 5 | `accessory_slot_1..5` | `magic_flags` | wearable-acquisition slots (each holds ID 0..5 of Nth wearable obtained) |
+| `0xA6..AA` | 5 | `item_slot_1..5` | `item_flags` | inventory slot N (item ID 1..8; 0=empty) |
+| `0xAB..B1` | 7 | `spell_charge_*` | `weap_dur_cur` | per-spell current charges (espada/saeta/fuego/lanzar/rascar/agua/guerra) |
+| `0xB2..B3` | 2 | `player_hp_max` | `char_hp_max` | max HP for current level (16-bit) |
+| `0xB4..BA` | 7 | `spell_charge_max_*` | `weap_dur_max` | per-spell max charges |
+| `0xBB..C1` | 7 | `spell_known_*` | `weapon_flags` / `boss_kill_*` | per-spell learned flag (0=not yet, FFh=learned from Sage) |
+| `0xC2` | 1 | `facing_direction` | — | facing/anim flag bits |
+| `0xC4` | 1 | `save_sage` | `current_area_id` | which sage saved this game |
+| `0xC8` | 1 | `current_level_idx` | `player_tileset` | current cavern (0..31) |
+| `0xE4` | 1 | (`key_count` per old INVENTORY_SYSTEM) | — | TCRF says `last_sage_visited` at 0xC5; per-context check needed |
 
-**Inventory total: 17 flag bytes** (5 magic + 5 items + 7 weapons) plus
-the equipped-idx scalars and the per-weapon durability tables.
+**Inventory total** (TCRF authoritative): 5 accessory slots + 5 item
+slots + 7 spell-known flags = 17 "have" indicators, plus equipped-idx
+scalars and per-spell charge tables.  The earlier "5 magic + 5 items +
+7 weapons" classification was a mis-mapping (slots A1..A5 are
+WEARABLES, not magic spells).
 
 The 5-byte buffer at DS:0xFF58 (referenced as `inventory_list` in
 some shop chunks) is **transient** — used during shop-menu builds, not
