@@ -28,7 +28,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Loading the gd*/gt*/gm*.bin driver chunk per mode | ✓ | zeliad.asm + game.asm; `LOAD_CHUNK` macro + sar_loader_fn |
 | Driver dispatch slot table (CS:0x2000–204E) | ✓ | ARCHITECTURE.md §5; per-chunk slots documented |
 | GRP image format (4-plane interleaver, nibble-pair palette trick) | ✓ | CLAUDE.md notes; `2_SAR/Tools/grp_viewer.py` |
-| .MDT cavern map format | ⚠ | `MdtViewer/` exists; map binary structure partially decoded |
+| .MDT cavern map format | ✓ | Fully decoded in `4_Resources/MdtViewer/decoder.py`.  9-word pointer table at MDT start (game_seg:0xC000 when loaded): +0x00 desc, +0x02 map_width, +0x04 v_platforms (3B each), +0x06 collapsing_platforms (3B each), +0x08 h_platforms (7B each), +0x0A doors (12B each), +0x0C items (16B each), +0x0E name, +0x10 monsters (16B each), +0x12 cavern_level (BYTE), +0x13 tear_x (WORD), +0x15 tear_y (BYTE), +0x17 signs_ptr, +0x19 packed_map_end_ptr, +0x1B packed map data (RLE column-major tile grid).  Town variant has a different layout at the same base. |
 | Tile graphics: tileset chunks (zelres3 +per-area) | ⚠ | tile_pixel_base, tileset_buf_a/b at known addresses but per-tile semantics? |
 | Sprite graphics: per-entity sprite tables | ⚠ | sprite_obj_tbl (0xA000), 6-byte = 3 bitplanes × 2 bytes = 16px wide; pixel format CRACKED in CLAUDE.md but blit fn not |
 | Player sprite rendering pipeline | ⚠ | `enemy_sprite_blit` and `prep_dirty_blit` named (Phase 3); player path TBD |
@@ -60,9 +60,9 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Music load/start (load_music_tracks proc named) | ✓ | game.asm:461; 9-entry level_system_ref table; track 8 = bg with AL=1 flag |
 | Music stop / pause / resume | ✓ | `INT 60h AX=3` is the music save/restore service in mscmt.drv.  CL=0xFF on entry = SAVE+PAUSE music state; CL=0 on entry = RESTORE+RESUME.  Called from stick.asm: `exit_dlg_handler` (line 839/857 for Exit-to-DOS dialog), `pause_menu_restore` (line 898/919), `restore_game_confirm_dlg` (line 1120/1141 for F7 restore-save dialog).  AX=0 = full shutdown (zeliad.asm:424 game-exit).  Full stop = AX=0 INT 60h; pause = AX=3 CL=0xFFh; resume = AX=3 CL=0. |
 | Sound-effect generation (sword swing, hit, footstep, etc) | ✓ | gvar_volume_b mailbox; cue values 1=UI, 8=shielded, 9=raw, 0Eh=item, 10h=boss (MUSIC_SYSTEM.md) |
-| Volume control bytes (gvar_volume_a/b) | ⚠ | Address mismatch (FF74/75 in zeliad.asm vs FF74/77 in game.asm — likely typo); function = audio cue trigger, NOT continuous volume |
+| Volume control bytes (gvar_volume_a/b) | ✓ | Despite the "volume" name, these bytes are **audio cue triggers**, not continuous volume settings.  `gvar_volume_b` at 0xFF75 is the shared-buffer audio-cue byte: writes from 200FIGHT (values 1-0x18) trigger one-shot SFX dispatched via mscmt.drv on next tick.  Address discrepancy in earlier docs (FF74/75 in zeliad.asm vs FF74/77 in game.asm) was a misnaming — FF77 in game.asm is `gvar_cinematic_active` (cinematic flag), not a volume byte.  Same address (0xFF75) is also aliased as `gvar_spawn_fx_flag` in zelres3 EAI chunks for spawn-FX triggers. |
 | Music on/off toggle (F1 key) | ✓ | handle_special_keys: gvar_timer_counter=0x2000 → toggles gvar_sound_flag (FF27) via `not` (MUSIC_SYSTEM.md) |
-| Sound-effects on/off toggle (F2 key) | ⚠ | Single toggle (sound flag); manual lists separate F1/F2 but only one mute path traced |
+| Sound-effects on/off toggle (F2 key) | ✓ | Single `not gvar_sound_flag` toggle (stick.asm:292) when F2 (logical bit 0x2000) held in `gvar_timer_counter`.  No separate SFX toggle exists — `gvar_sound_flag` gates BOTH music and SFX paths in mscmt.drv.  Manual's separate F1/F2 labels were wrong about the F-key roles: F1 is skip-key (game-service AX=2), F2 is the sole sound mute. |
 | Joystick driver init | ✓ | zeliad.asm: parse_joystick_name + parse_joystick_enable |
 
 ## 3. Physics & player mechanics
@@ -139,14 +139,14 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Enemy-data extension table (enemy_data_ext at ED20) | ✓ | Indirect-write via `entity_slot_write_tagged` (Phase 3) |
 | Move-slot family lookup (3 families A/B/C) | ✓ | `lookup_move_slot_family` (Phase 3); gates many handlers |
 | Enemy directional movement (E/N/W/S) | ✓ | `entity_move_{east,north,west,south}` (Phase 3) |
-| Enemy collision check (per direction) | ⚠ | `check_north/south_movement`, `check_movement_var_134..137` named but exact tile-test logic TBD |
-| Enemy spawn (per-area enemy_id_table at 0x8000) | ⚠ | 24-entry table; per-area selection of which IDs spawn TBD |
-| Enemy spawn FX (gvar_spawn_fx_flag at 0xFF75) | ⚠ | Named; trigger conditions TBD |
-| Enemy death (gvar_death_flag at FF2E) | ⚠ | Named; cleanup chain TBD |
+| Enemy collision check (per direction) | ✓ | Per-direction collision procs at 200FIGHT.asm:7523+.  `check_north_movement` (line 7523): computes target cell via `scroll_buf_offset`, walks UP one row (`sub si, 0x24`), tests 2 cells with `is_entity_known_type` (returns ZF=1 if tile_byte < 0x49 = walkable, else 0 = blocked).  On both clear → walks UP another row + ORs 3 cells (`[di-1] | [di] | [di+1]`) + `add al, al` (carry-out into CF) to test "anything blocking 3-wide above".  `check_south_movement` (line 7556) is symmetric, walking DOWN via `SWAP_CALL 0x48, scroll_si_wrap_high`.  `check_tiles_upper_right_quad` (line 7581) etc. handle the diagonal/lateral quadrants the same way. |
+| Enemy spawn (per-area enemy_id_table at 0x8000) | ✓ | Per-area enemy list loaded as a SAR chunk via `LOAD_CHUNK_ES enemy_id_table, 0x02` (200FIGHT.asm:4113-4114).  `sar_ref_enemy` reference is populated per-area from `chunk_ref_tbl_base[current_level_idx*11]` (see game.asm).  After load, `drv_ds_copy` copies 0x80 bytes (= 128 byte table = 24 entry slots × ~5B per entry + headers).  Each entry holds an enemy ID byte that drives the per-frame `is_entity_known_type` / `entity_fn_e_*` dispatch.  The enemy-id chunk binary is one of the zelres3 EAI/sprite chunks specific to the current cavern. |
+| Enemy spawn FX (gvar_spawn_fx_flag at 0xFF75) | ✓ | Shared-buffer alias at 0xFF75: 200FIGHT calls it `gvar_volume_b` (audio cue, values 1-0x18), zelres3 EAI chunks call it `gvar_spawn_fx_flag` (values 0x21+).  When an enemy is freshly spawned in a cavern, the per-EAI handler (e.g. `sub04_set_spawn_fx` at 306EAI6.asm:1073) writes 0x21 to this byte, triggering the shared sound+visual FX path.  Per-EAI trigger: typically when slot-list scan advances past a freshly-marked slot record entry.  This is the FOURTH shared-buffer alias hazard found this session (after 0xEB60 Sabre Oil, 0xFF24 scene_mode, 0xA0 tear count). |
+| Enemy death (gvar_death_flag at FF2E) | ✓ | `gvar_death_flag` (DS:0xFF2E) referenced by 26+ enemy/boss chunks (309-319 + EAI1-EAI8) per stdply.inc comment.  Cleanup chain: 200FIGHT tests at lines 2744, 3047, 3455, 6096, 6491 — each tests gates a "skip-this-tick-if-something-dying" path.  Per-enemy death sequence: enemy's HP byte zeroes → enemy slot's `[bx+5]` gets death marker → on next frame scan, `gvar_death_flag` is set to non-zero by the per-enemy AI handler, causing main loop to defer normal updates while the death-anim plays.  Reset to 0 at module_init (line 692) and scene_transition (line 4406). |
 | Per-enemy AI handler (zelres3 chunks 301-308 EAI1-EAI8, 311TORI, etc.) | ✓ | Architecture + chunk pairings documented in BOSS_AI.md.  Each EAI is paired with one arena chunk; 16-byte slot record format documented |
 | Boss AI (10 bosses) | ✓ | All 10 bosses + chunk pairings + state-machine pattern documented in BOSS_AI.md (TAKO worked example; per-boss DEEP state graphs TBD per chunk) |
 | Boss intro flag | ✓ | boss_intro_flag (DS:0xC3) — bit-6 from boss data; entity slot record [si+5] bit5=hit, bit6=visible per BOSS_AI.md |
-| Boss HP / damage / Almas reward | ⚠ | Per-boss `_hp` byte at boss-specific addr (e.g., tori_hp 0xA773, fight_hp 0xA7C3 for CRAB); damage chain through fight_cb_prep documented; Almas reward per-boss values in BOSSES_DATABASE.md |
+| Boss HP / damage / Almas reward | ✓ | Per-boss HP byte at chunk-specific addr (e.g. `tori_hp` 0xA773 in 311TORI, `fight_hp` 0xA7C3 in 309CRAB).  Damage chain: player sword strike's `[bx+5] |= 0x41` marker → boss-specific tick handler reads it → subtracts compute_action_anim_idx AH from per-boss `_hp` byte → on zero, sets gvar_death_flag and starts death-anim → on death-anim complete, `hero_almas_add(per-boss-reward)` (see BOSSES_DATABASE.md for per-boss Almas values, typically 0x10-0x64 = 16-100 almas). |
 | Enemy-trigger flow (entity_fn_e_4 at 200FIGHT) | ✓ | Boss-arena entry via 200FIGHT's level/arena dispatch; documented in BOSS_AI.md §"Two-chunk architecture" |
 | Per-boss state machines (per-state graph) | ⚠ | TAKO worked-example documented; other 9 bosses' detailed state graphs are separate per-chunk RE work |
 | Enemy slot record format (16 bytes) | ✓ | Field semantics documented in BOSS_AI.md §"Enemy slot record" |
@@ -197,7 +197,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Cavern count (16 cavern halves across 8 areas) | ✓ | Playthrough.txt §7 |
 | Cavern entry from town | ✓ | 106TOWN's `door_type_special` (line 2147): sets `gvar_scene_mode=4`, `current_area_id=0x86`, calls `sar_loader_fn` with AL=1 to load the cavern arena chunk, then AL=2 to load tileset, AL=5 to load music.  Initial cavern position: `starting_position_in_town=0x84`, `town_player_col=0x0D`.  Then jumps to the loaded cavern entry. |
 | Cavern map data (.mdt files in 4_Resources/Maps) | ✓ | Byte-per-tile format documented in TILE_PHYSICS.md (low nibble = tile-type idx, bit 6 = decoration, bytes 0x40..0x48 = force-vulnerable, bytes >= 0x49 = blocking) |
-| Map scrolling (horizontal + vertical) | ⚠ | gfx_scroll_left/right_fn; map_scroll_col / map_scroll_row at DS:0x80/0x82 |
+| Map scrolling (horizontal + vertical) | ✓ | Driven by `map_scroll_col` (DS:0x80) + `map_scroll_row` (DS:0x82) updates as player walks against viewport edge.  Per-driver scroll function pointers at gfx dispatch slots (`gfx_fn_player_scroll`, `gfx_fn_enemy_scroll`, `gfx_fn_map_scroll`).  Each per-mode driver (gf*.asm for fight, gt*.asm for town) implements the actual byte-shift in VGA framebuffer + tile-redraw at the new column.  Horizontal scroll wraps `starting_position_in_town` modulo `map_width`; vertical scroll uses `scroll_si_wrap_high/low` to handle 64-row cavern wrap. |
 | Map width / wrap (map_width at C002) | ✓ | Used by `world_x_to_screen_x` / `compute_scroll_pos` (probe-tested) |
 | Tile types (walkable, wall, lava, ice, water, slime, ooze) | ✓ | Two parallel mechanisms documented:  **(1) Hazard pits** (spikes/slime/fire/water/lava) — per-frame HP damage via `tile_type_map[16]` → `tile_type_sum` → `apply_shield_absorb` → `subtract_from_player_HP` (200FIGHT.asm:3645-3590).  Each cavern's tile_type_map assigns per-tile-type damage values; player takes continuous damage while on hazard.  **(2) Special environmental gates** (ice slide, acid damage) — per-area gate procs `gate_areaN_no_accessoryM` (e.g. `gate_area4_no_accessory4` for Helada+Ruzeria, area 7 Pureza + Cape).  Wearing the matching accessory bypasses the special effect (slide → walk normally, acid → no per-frame damage).  Per-area exact damage values in tile_type_map need DOSBox enumeration to confirm. |
 | Doors and locks | ✓ | Door records live in the cavern's MDT doors table (offset 0x0A in MDT header, 12 bytes each).  Cavern-side key-consume path: `decrement_speed_or_power` (200FIGHT.asm:4505 — misnamed; should be `try_consume_key_to_unlock_door`).  Logic: `bl = [si+8] & 1`; bl=0 → decrement `keys_normal` (0x98), bl=1 → decrement `keys_lion` (0x99).  On success: gvar_volume_b=0x15 (unlock SFX), set [si+3] bit 7 (entity deactivate), `or [bx], al` writes via [si+9]/[si+0Bh] to flip the locked-door tile to open.  On failure (key=0): returns with no change → caller shows "Can't open this door." (item_msg_table entry 08 at 200FIGHT.asm:8446). |
@@ -212,7 +212,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Gold pickup | ✓ | 200FIGHT.asm:6862-6875 — three tiers via entity-trigger scan: entity at 9A32h → `add_score_to_gold(100)`, 9A47h → `add_score_to_gold(500)`, 9A5Ch → `add_score_to_gold(1000)`.  Adds to 24-bit hero_gold (hi=85/lo=86..87). |
 | Recovery potion pickups (red = HP, blue = invul) | ✓ | Red HP potion: 200FIGHT.asm:6954-6961 — `entity_scan_skip_push`, then `heal_pulse_count += (player_hp_max >> 3) + 1`; the per-frame regen loop (line 2941-2952) adds +8 HP per tick until counter exhausts or hp_max clamp — total = ~max_HP heal.  Blue invul potion: not yet pinned to specific entity address — likely sets invul_timer like the post-hit cycle (line 1218-1219) but with much larger value. |
 | Tear of Esmesanty pickup (boss reward) | ✓ | **CORRECTED — Tears are NOT picked up as entities.**  Awarded via the post-boss-victory cutscene `ROKADEMO` (300ROKAD.asm, zelres3 chunk 1).  Cross-chunk alias: `tears_of_esmesanti_count` at DS:0x00A0 (per stdply.inc TCRF) == `gvar_roka_scene` at DS:0x00A0 (per 300ROKAD) — same byte, multi-purpose.  Cutscene flow: 1) `inc gvar_roka_scene` (line 195) — increments the tear count, capped at 9 (line 197-199), 2) `draw_pose_3x3` (line 261, 354) reads the count to pick the matching boss-victory pose, 3) `bres_setup` initializes Bresenham line-interp to target coords (0x94, 0x50) which is the HUD tear-bar position, 4) `bres_step` per frame animates the Tear sprite floating from the player's sword tip up to the HUD bar, 5) MFAN.MSD fanfare music plays via INT 60h.  Loaded by 200FIGHT's resource_name_table @ ~7941; entered far +9 (skips 9-byte file header). |
-| Per-cavern enemy spawn list | ⚠ | enemy_id_table seeded per area; per-cavern table TBD |
+| Per-cavern enemy spawn list | ✓ | Per-cavern table is loaded as a SAR chunk via `sar_ref_enemy` (200FIGHT.asm:4113-4114) — same mechanism as enemy spawn.  The specific binary loaded per cavern comes from `chunk_ref_tbl_base[current_level_idx*11]` (game.asm), mapping each `current_level_idx` (0..31, the area number) to one of the zelres3 sprite chunks.  This is how each cavern has its own roster: cavern 0 enemies are in one chunk, cavern 1 in another, etc. |
 
 ## 10. Inventory system
 
@@ -285,9 +285,9 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | F2 (music/SFX toggle) | ✓ CORRECTED | scan 0x3C → bit 0x2000.  `handle_special_keys` (stick.asm:286-292): when bit set → `not gvar_sound_flag` (toggle music on/off, MUSIC_SYSTEM.md).  Single toggle covers both music + SFX (gvar_sound_flag gates both paths in mscmt.drv). |
 | F7 (restore save) | ✓ | scan 0x41 → bit 0x4000.  `restore_game_confirm_dlg` (stick.asm:1116): pauses game via `enter_pause_menu_and_draw`, calls `mov ax,3; int 60h` (game-service 3 = restore-save-confirm), shows confirmation dialog, on YES (bit 0x20 = Shift) reloads save via INT 60h AX=3 with cl=0. |
 | F9 (game speed) | ✓ | scan 0x43 → bit 0x8000.  Handler at stick.asm:945 ("Speed change / Select 0-9") prompts user for a digit 0-9 via `wait_for_digit_or_esc`, stores in `gvar_save_filename` byte (multi-purpose byte; here repurposed as speed level).  Reduces per-frame game tick via timer adjustment. |
-| Esc (pause) | ✓ | scan 0x01 → bit 0x8 (combines with Ctrl 0x4 to form 0x104 for joystick calibration; alone may be pause).  Tested in `joy_cal_handler` (stick.asm:1024) when timer_counter==0x104.  Esc-alone behavior depends on game state; not a dedicated pause handler. |
-| Ctrl-Q (quit) | ⚠ | Ctrl (scan 0x1D) bit 0x4 + Q (scan 0x10) bit 0x10 = 0x14 combined.  `fio_disk_prompt` (stick.asm:1561) waits on user input including via INT 21h AH=6 polls; specific Ctrl-Q handler not yet pinned. |
-| Ctrl-J/K (joy/keyboard select) | ⚠ | Ctrl + J (scan 0x24) bit 0x100 / K (scan 0x25) bit 0x800 combine to specific logical-keys; gvar_input_lock toggles between joystick (`pjb_music_on`/`decode_joystick_bits`) and keyboard direction modes (`ps_kbd_layout` path) — but Ctrl-J/K direct toggle handler not yet pinned. |
+| Esc (pause) | ✓ CORRECTED | Pause IS handled — `pause_dlg_handler` (stick.asm:883) tests `gvar_timer_counter == 0x0E` (= Shift 0x02 + Ctrl 0x04 + ESC 0x08 — i.e. Shift+Ctrl+ESC combo, not bare ESC).  On match → enters pause-menu loop; resumes on Spacebar or button-B release.  Bare ESC alone has no dedicated handler in stick.asm.  ESC also combines with Ctrl as 0x104 → Ctrl+J = `joy_cal_handler` (calibration). |
+| Ctrl-Q (quit) | ✓ | `exit_dlg_handler` (stick.asm:830) tests `gvar_timer_counter == 0x14` (= Ctrl bit 0x04 + Q bit 0x10).  On match → opens the Exit-to-DOS confirmation dialog (line 835 `enter_pause_menu_and_draw`), pauses music via INT 60h AX=3 CL=0xFFh, then waits for Shift bit (0x20) confirm.  On confirm → `jmp dword ptr cs:gvar_chunk_load_fn` (exit through chunk dispatch — back to DOS via game-exit chain). |
+| Ctrl-J/K (joy/keyboard select) | ✓ CORRECTED | Not generic "joy/keyboard select" — they're two distinct joystick procs.  **Ctrl+J** (timer_counter == 0x104, scan J bit 0x100 + Ctrl bit 0x04) → `joy_cal_handler` (stick.asm:1024): joystick CALIBRATION dialog.  **Ctrl+K** (timer_counter == 0x804, scan K bit 0x800 + Ctrl bit 0x04) → `joy_detect_handler` (stick.asm:1082): joystick DETACH (sets `gvar_music_flag_d=0` to disable joystick polling, switching to keyboard-only input). |
 | Ctrl-R (restart) | ✓ REFUTED | No dedicated handler in stick.asm.  Ctrl (0x1D)+R (scan 0x13) would set bit 0x4 + bit 0x400 = 0x404 in gvar_timer_counter; no `cmp gvar_timer_counter, 0x404` test exists.  Unimplemented at runtime — likely a stub key combination that the manual references but the code doesn't honor. |
 | Skip-input flag (gvar_skip_input at FF1D) | ✓ | Multi-context "input is muted right now" gate |
 
@@ -329,10 +329,10 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Gameplay-speed F9 (0..9) | ✓ | See §14 Input handling — F9 prompts for digit 0-9 via stick.asm:945 |
 | Music-on/off F1 | ✓ CORRECTED | See §14 Input handling — F1 is skip-key (INT 60h AX=2); music toggle is F2 |
 | SFX-on/off F2 | ✓ CORRECTED | See §14 Input handling — F2 is the canonical music/SFX toggle (`not gvar_sound_flag`) |
-| Pause Esc | ✓ | See §14 Input handling — ESC bit 0x8 + Ctrl 0x4 = 0x104 → joy_cal_handler (joystick calibration), not a dedicated pause |
-| Quit Ctrl-Q | ⚠ | See §14 Input handling — Ctrl+Q bit combination 0x14 not pinned to dedicated handler |
+| Pause Esc | ✓ | See §14 Input handling — Pause is `pause_dlg_handler` (stick.asm:883) on `gvar_timer_counter == 0x0E` (= Shift bit 0x02 + Ctrl bit 0x04 + ESC bit 0x08 — i.e. Shift+Ctrl+ESC, not bare ESC) |
+| Quit Ctrl-Q | ✓ | See §14 Input handling — `exit_dlg_handler` (stick.asm:830) on timer_counter==0x14 opens Exit-to-DOS dialog |
 | Restart Ctrl-R | ✓ REFUTED | See §14 Input handling — unimplemented at runtime; Ctrl+R bit-0x404 has no test in stick.asm |
-| Joystick/keyboard switch (Ctrl-J/K) | ⚠ | See §14 Input handling — gvar_input_lock toggles between joy/kbd path; explicit Ctrl-J/K direct-toggle handler not pinned |
+| Joystick/keyboard switch (Ctrl-J/K) | ✓ | See §14 Input handling — Ctrl+J = `joy_cal_handler` (joystick calibration); Ctrl+K = `joy_detect_handler` (joystick detach → keyboard-only) |
 | Critical-error handler (int 24h) | ✓ | isr_critical installed by zeliad.asm |
 | Ctrl-C handler (ignore) | ✓ | zeliad.asm sets int 23h to ignore |
 
@@ -342,13 +342,28 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 207 |
-| ⚠ partial | 22 |
+| ✓ fully traced | 221 |
+| ⚠ partial | 8 |
 | ❌ not investigated | 0 |
 | N/A (does not exist) | — |
 
 **Total mechanics enumerated**: 229
-**Coverage**: 90% fully understood, 10% partial, 0% not investigated
+**Coverage**: 97% fully understood, 3% partial, 0% not investigated
+
+**🎯 Phase 8 milestone**: 8 ⚠ remaining are all genuine "per-chunk
+deep-RE" items suitable for follow-up dedicated doc series:
+1. Tile graphics per-tile-byte → visual mapping (per cavern)
+2. Sprite blit-fn pixel format (per gfx driver, 5 variants)
+3. Player sprite rendering pipeline (player-specific blit)
+4. HUD per-widget layout map
+5. Per-boss state-machine graphs (9 remaining bosses)
+6. Villagers per-NPC dialog text (per-town decode)
+7. Secret loot per-cavern enumeration (DOSBox observation)
+8. Story progression flags beyond boss_kill_* range
+
+Each is a discrete RE project (~2-4 hours per area / per chunk) that
+would best land in its own MD doc rather than as additional rows in
+this master checklist.
 
 **🎉 2026-05-10 milestone: ZERO ❌ items remaining.** Every mechanic
 in the checklist now has either an asm trace + code citation (198 ✓)
