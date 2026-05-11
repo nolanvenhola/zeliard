@@ -29,9 +29,9 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Driver dispatch slot table (CS:0x2000–204E) | ✓ | ARCHITECTURE.md §5; per-chunk slots documented |
 | GRP image format (4-plane interleaver, nibble-pair palette trick) | ✓ | CLAUDE.md notes; `2_SAR/Tools/grp_viewer.py` |
 | .MDT cavern map format | ✓ | Fully decoded in `4_Resources/MdtViewer/decoder.py`.  9-word pointer table at MDT start (game_seg:0xC000 when loaded): +0x00 desc, +0x02 map_width, +0x04 v_platforms (3B each), +0x06 collapsing_platforms (3B each), +0x08 h_platforms (7B each), +0x0A doors (12B each), +0x0C items (16B each), +0x0E name, +0x10 monsters (16B each), +0x12 cavern_level (BYTE), +0x13 tear_x (WORD), +0x15 tear_y (BYTE), +0x17 signs_ptr, +0x19 packed_map_end_ptr, +0x1B packed map data (RLE column-major tile grid).  Town variant has a different layout at the same base. |
-| Tile graphics: tileset chunks (zelres3 +per-area) | ⚠ | tile_pixel_base, tileset_buf_a/b at known addresses but per-tile semantics? |
-| Sprite graphics: per-entity sprite tables | ⚠ | sprite_obj_tbl (0xA000), 6-byte = 3 bitplanes × 2 bytes = 16px wide; pixel format CRACKED in CLAUDE.md but blit fn not |
-| Player sprite rendering pipeline | ⚠ | `enemy_sprite_blit` and `prep_dirty_blit` named (Phase 3); player path TBD |
+| Tile graphics: tileset chunks (zelres3 +per-area) | ✓ | Per GFX_PIPELINE.md §4: 8×8 tiles at 4 bpp (1 nibble per pixel), 16 bytes/tile, stored at `game_seg:0x4000` (`tile_pixel_base`).  Loaded per-area via `copy_combat_flags_and_tileset` on cavern entry.  Rendered by `draw_ui_tiles` (206GFMCA.asm:3075) which walks 5×28 = 140 indices in `ui_tile_index_tbl` and unpacks each nibble via `mca_expand_nibble` → VGA byte (chunky 1bpp). |
+| Sprite graphics: per-entity sprite tables | ✓ | Per GFX_PIPELINE.md §3c: 16-byte records at `sprite_attr_base` (game_seg:0xC010), resolved by `sprite_src_setup` (206GFMCA.asm:1148).  Fields: [+4] palette/variant (low 5 bits), [+5] flags (bit 7 = source select, bit 5 = palette offset), [+6] anim-frame index.  `char_lookup` (= `enemy_data_ext` at 0xED20, alias) is the cross-chunk sprite-id remap; bosses overlay it with their `sprite_xlat_tbl`. |
+| Player sprite rendering pipeline | ✓ | Per GFX_PIPELINE.md §3b: player = 3×3 grid of 8×8 cells = 24×24 pixels.  Rendered by `hero_sprite_col_blit` (206GFMCA.asm:2412): source = pre-decoded `sprite_tmp_buf`, dest = `scroll_vga_ofs`; outer 3 cells × inner 3 cells × `mca_blit_2bytes_8rows` (64 bytes / cell).  Inner advances DI+8, outer advances DI+0x9E8 (next cell-row).  Enemy path: `prep_dirty_blit` extracts coords from 16-byte slot record → `enemy_sprite_blit` → `gfx_fn_78` dispatch → `mca_sprite_blit` (8×8 sprite, 48 B source, 6-bit packed pixels via shift+mask decode). |
 | Background tile rendering & scrolling | ✓ | `rebuild_scroll_buf` (200FIGHT.asm:2275) called once per frame: iterates `starting_position_in_town` columns through `map_col_ptr`, fills 36 columns of `scroll_buf` via `fill_scroll_column` calls (which call `scroll_byte_dispatch_a/b` to decode tile bytes through `scroll_dispatch_a/b` jump tables), updates `gvar_scroll_pos` to track player view.  Per-row blit done by gf*.asm `render_frame_rows` invoked via gfx dispatch slot. |
 | Foreground vs background layer ordering | ✓ | Three-buffer system: (1) `scroll_buf` (0xE000..0xE8FF) holds map tiles after `rebuild_scroll_buf`.  (2) `hud_buf` (0xE900..) holds HUD overlay.  (3) per-driver `sprite_cache` holds sprites.  Order: bg blit first → sprite blit OR'd in via masked blit (e.g. `mask_blit_into_sprite_cache` in HGC) → HUD blit last on top.  HUD overlays scroll buf because the blit functions process scroll_buf first then jump to hud_buf at the row stride boundary. |
 | Masking / transparency for sprites | ✓ | Sprite blit uses AND-OR pattern: read mask word from sprite-data table, AND with destination (clears masked bits), then OR sprite-pixel word in.  HGC variant in `mask_blit_into_sprite_cache` (204GFHGC.asm:997) is the worked example: `mov ax,[bp]; and es:[di],ax; lodsw; call hgc_extract_4bits; or es:[di],ax`.  All 5 GD drivers follow this pattern; mask is the inverted-pixel pattern from sprite-mask table. |
@@ -40,7 +40,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Screen-transition fades (e.g. between scenes) | ✓ | `apply_palette_blend` (100OPDMO.asm:1720) blends source palette with target.  Fade routine: progressively averages current_palette[i] with target_palette[i] over N frames, writing each step via DAC port 3C9h.  Used in opening cinematic and scene-change paths. |
 | Animation frame timing & state machine | ✓ | Two-tier:  (1) global frame_timer (FF1A) ticks 18.2 Hz per INT 08h.  (2) per-entity `gvar_pose_idx` (FF3F lo / cached) advances on `quad_frame_tick` events (every 4 frame_timer ticks).  Player pose driven by `combat_action_state` FSM × `flag_shield` × `facing_direction` → entry into `entity_ptr_table[idx]` selecting sprite-frame data.  Enemy poses driven by per-EAI handlers (zelres3 301-308 chunks) writing `[si+4]` byte each tick. |
 | Text rendering / font system | ✓ | Font glyphs live at game_seg:F500..F6FF (font.grp, 32 chars × 8 bytes/char).  Render via `drv_render_char` (cs:[2022], driver-specific implementation).  Per-glyph algorithm: subtract 0x20 (`compute_glyph_index_<hw>` procs in GT drivers), index into font, copy 8 rows × per-driver stride into VGA framebuffer.  Glyphs are 8×8 mono in font, expanded per HW: EGA 4-plane, CGA 2bpp, HGC 1bpp, TGA 4bpp, MCGA 8bpp. |
-| HUD rendering (HP bar, gold, almas, items) | ⚠ | `fill_hud_buf_with_FD` (200FIGHT.asm:3238) fills hud_buf with `0xFD` (HUD-background marker).  Per-element placement uses fixed offsets within hud_buf; per-element rendering routines per chunk; full layout map TBD. |
+| HUD rendering (HP bar, gold, almas, items) | ✓ | Per GFX_PIPELINE.md §5: hud_buf at CS:0xE900, 0x214 bytes = 28 cols × 19 rows, byte-per-cell mini-map.  Sub-regions: hud_enemy_area (0xE921, 18 B × scroll_row_cnt), hud_player_area (0xE939, 26 B × 2 rows).  Cell markers: 0xFD=empty, 0xFE/FC=anim, 0xFF=player (3×3 block via mark_player_pos_on_hud), 0x01..0xFB=enemy/item id.  Row stride = 28 bytes; `calc_hud_buf_offset` (200FIGHT.asm:5751): `offset = (col & 0x3F)*28 + (row-4)`.  Driver scans hud_buf each frame and renders each non-FD cell as an 8×8 tile via `gfx_fn_hud_draw` → `draw_ui_tiles`. |
 | Number → decimal-digit text | ✓ | `drv_format_num` (cs:[6006]).  Algorithm: divide by 1,000,000 / 100,000 / 10,000 via `div_24bit_emit_digit` (3 calls), then 1,000 / 100 / 10 / 1 via `div_16bit_emit_digit` (4 calls); each call emits one ASCII digit to es:[di] and returns remainder.  Implementation in 106TOWN (`div_24bit_emit_digit` at 2641, `div_16bit_emit_digit` at 2670) + per-driver variants (`div_24bit_emit_digit_<hw>`). |
 | Window-frame graphics (waku.grp) | ✓ | zelres1 ch33; loaded via 100OPDMO + 250ENDMO `LOAD_DATA scene_data_e, vga_seg` then `DECOMPRESS_VGA scene_framebuf`.  Same pipeline as title-logo / opening backgrounds: 0x6DE1 RLE decoder → 4-plane interleaver → VGA framebuffer.  "FD 0A 00 00..." header is RLE stream prefix (not CH/CL).  Used as the corridor/window-frame **scene image** for cutscene panels — full 320x200 background, not a sprite collection. |
 | Item-icon rendering (itemp.grp) | ✓ | zelres2 ch28 (5388 bytes decompressed); loaded at game_seg+0x1000:0xE200 via `LOAD_CHUNK chunk_ref_itemp` (AL=2 compressed).  7-entry word-offset table at start; all 7 entries get DI fix-up at load (game.asm:332-338).  5 unique frames (entries 0-3 distinct + entry 5 at 0x108C; entry 4 = duplicate of 0; entry 6 = null): frame 0 = 768 bytes, frames 1/2/3/5 = 1152 bytes.  2-plane 1bpp format (verified by sword.grp companion).  Drives the 201SELCT inventory item-panel icons (8 magic potions / 8 items / 7 weapons categories). |
@@ -342,28 +342,26 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 221 |
-| ⚠ partial | 8 |
+| ✓ fully traced | 225 |
+| ⚠ partial | 4 |
 | ❌ not investigated | 0 |
 | N/A (does not exist) | — |
 
 **Total mechanics enumerated**: 229
-**Coverage**: 97% fully understood, 3% partial, 0% not investigated
+**Coverage**: 98% fully understood, 2% partial, 0% not investigated
 
-**🎯 Phase 8 milestone**: 8 ⚠ remaining are all genuine "per-chunk
-deep-RE" items suitable for follow-up dedicated doc series:
-1. Tile graphics per-tile-byte → visual mapping (per cavern)
-2. Sprite blit-fn pixel format (per gfx driver, 5 variants)
-3. Player sprite rendering pipeline (player-specific blit)
-4. HUD per-widget layout map
-5. Per-boss state-machine graphs (9 remaining bosses)
-6. Villagers per-NPC dialog text (per-town decode)
-7. Secret loot per-cavern enumeration (DOSBox observation)
-8. Story progression flags beyond boss_kill_* range
+**🎯 Phase 9 milestone**: Graphics pipeline closed via dedicated
+`GFX_PIPELINE.md` (MCGA reference: sprite pixel format, hero
+multi-cell blit, tile 4-bpp 8×8 format, HUD 28×19 mini-map layout).
 
-Each is a discrete RE project (~2-4 hours per area / per chunk) that
-would best land in its own MD doc rather than as additional rows in
-this master checklist.
+**4 ⚠ remaining** are all per-chunk-content RE that don't fit the
+master tracker:
+1. Per-boss state-machine graphs (9 remaining bosses)
+2. Villagers per-NPC dialog text (per-town decode)
+3. Secret loot per-cavern enumeration (needs DOSBox)
+4. Story progression flags beyond boss_kill_* range
+
+Each is a discrete follow-up doc rather than additional rows here.
 
 **🎉 2026-05-10 milestone: ZERO ❌ items remaining.** Every mechanic
 in the checklist now has either an asm trace + code citation (198 ✓)
