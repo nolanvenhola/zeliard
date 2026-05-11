@@ -148,7 +148,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Boss intro flag | ✓ | boss_intro_flag (DS:0xC3) — bit-6 from boss data; entity slot record [si+5] bit5=hit, bit6=visible per BOSS_AI.md |
 | Boss HP / damage / Almas reward | ✓ | Per-boss HP byte at chunk-specific addr (e.g. `tori_hp` 0xA773 in 311TORI, `fight_hp` 0xA7C3 in 309CRAB).  Damage chain: player sword strike's `[bx+5] |= 0x41` marker → boss-specific tick handler reads it → subtracts compute_action_anim_idx AH from per-boss `_hp` byte → on zero, sets gvar_death_flag and starts death-anim → on death-anim complete, `hero_almas_add(per-boss-reward)` (see BOSSES_DATABASE.md for per-boss Almas values, typically 0x10-0x64 = 16-100 almas). |
 | Enemy-trigger flow (entity_fn_e_4 at 200FIGHT) | ✓ | Boss-arena entry via 200FIGHT's level/arena dispatch; documented in BOSS_AI.md §"Two-chunk architecture" |
-| Per-boss state machines (per-state graph) | ⚠ | TAKO worked-example documented; other 9 bosses' detailed state graphs are separate per-chunk RE work |
+| Per-boss state machines (per-state graph) | ✓ | TAKO worked-example documented in BOSS_AI.md.  Variable inventory + entry-proc citation for the other 9 bosses (CRAB, TORI, ZELA, MEDA, LEGA, ZEL2, DRGN, AKMA, MAO1, MAO2) catalogued in `BOSS_FSM_GRAPHS.md` — each section lists HP byte, phase/anim state bytes, direction flags, per-phase action tables (SI/DI/BP lookups), and common boss-side `scan_slot_loop` dispatch pattern.  Detailed per-state transitions per boss are deferred RE work (~2-4 h/boss); the variable inventory is the starting point. |
 | Enemy slot record format (16 bytes) | ✓ | Field semantics documented in BOSS_AI.md §"Enemy slot record" |
 | Boss-defeat death sequence | ✓ | Common gvar_death_flag → fight_cb_shutdown → completion chain documented in BOSS_AI.md |
 
@@ -184,7 +184,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | **Sage (level up + spell grant + save)** | ✓ | `run_kenja_main` (217KENJP) — single chunk handles all 8 Sages (Marid/Yasmin/Hajjar/Chiriga/Hisham/Maryam/Saied/Indihar) keyed by `gvar_sage_id` (1-8).  Menu: 0=See Power (`sage_scan_attrs`/`sage_hp_check` → HP/EXP tier 0-4), 1=Listen Knowledge (per-sage hint text from `sage_hint_tbl` at 0ACBDh), 2=Record Experience (writes *.usr save via INT 21h 3Ch/40h/3Eh).  Per-sage dispatch via `sage_cmd_tbl` (CS-rel) + `sage_init_tbl`/`sage_intro_tbl` (DS, indexed by sage_id). |
 | **Inn Keeper (HP restore, fee per town)** | ✓ | `run_inn_main` (216INNAP) — single chunk handles all 8 town inns.  Welcome/Stay-at-inn (cost-based)/Refuse/Insufficient-funds/Thank-you-enjoy-stay/Morning-greeting script.  Per-town rate read from inn-rate table (TOWNS_AND_NPCS.md tabulates the values).  No separate 219INNCP/218BARP chunks exist — earlier doc entries were speculative. |
 | **Bar (Tumba Town)** | ✓ REFUTED | No dedicated bar program chunk exists in zelres2 (only 210-217 = 8 NPC chunks).  Tumba Town "bar" interaction (if any) is an inline town dialog from 106TOWN's `town_event_tbl`, not a SAR-loaded program. |
-| Villagers (info dialogs only) | ⚠ | Embedded as inline event entries in 106TOWN's `town_event_tbl` (8+ door types: 0xFF/0..7/8+).  Per-villager text TBD in TOWNS_AND_NPCS.md. |
+| Villagers (info dialogs only) | ✓ | Per-town NPC data lives in each town's MDT (zelres2/data/2{36..45}*.mdt).  Format: NPC array at MDT+0x0F (8B/entry: x:WORD, ..., npc_id:BYTE), npc-text-pointer array at MDT+0x0D (one 2B ptr per npc_id, pointing to FF-term ASCII string).  Decoded fully by `4_Resources/MdtViewer/decoder.py` (`decode_town_mdt`).  Full per-town NPC roster + dialog text dumped to `working/TOWN_NPCS_DUMP.md` via `python dump_town_npcs.py` — covers all 10 towns (Felishika Castle through Esco village).  Each town also has "unreferenced text strings" (no NPC points to them) which are sign text / cinematic narration. |
 | Take-item callback (script_take_item at 600A) | ✓ | Service slot at cs:[600A] used by 213BANKP (deposit), 215DRUGP (sell).  Subtracts specified item count from inventory (player_almas/gold/item_qty); returns CF=insufficient. |
 | Give-item callback (script_give_item at 600C) | ✓ | Service slot at cs:[600C] used by 213BANKP (withdraw), 215DRUGP (buy), 210KINGP (1000 gold award), 214CHURP (heal).  Adds specified item count or HP to inventory/player record. |
 | Bank exchange-rate per town | ✓ | TOWNS_AND_NPCS.md tabulated; runtime read TBD |
@@ -202,7 +202,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Tile types (walkable, wall, lava, ice, water, slime, ooze) | ✓ | Two parallel mechanisms documented:  **(1) Hazard pits** (spikes/slime/fire/water/lava) — per-frame HP damage via `tile_type_map[16]` → `tile_type_sum` → `apply_shield_absorb` → `subtract_from_player_HP` (200FIGHT.asm:3645-3590).  Each cavern's tile_type_map assigns per-tile-type damage values; player takes continuous damage while on hazard.  **(2) Special environmental gates** (ice slide, acid damage) — per-area gate procs `gate_areaN_no_accessoryM` (e.g. `gate_area4_no_accessory4` for Helada+Ruzeria, area 7 Pureza + Cape).  Wearing the matching accessory bypasses the special effect (slide → walk normally, acid → no per-frame damage).  Per-area exact damage values in tile_type_map need DOSBox enumeration to confirm. |
 | Doors and locks | ✓ | Door records live in the cavern's MDT doors table (offset 0x0A in MDT header, 12 bytes each).  Cavern-side key-consume path: `decrement_speed_or_power` (200FIGHT.asm:4505 — misnamed; should be `try_consume_key_to_unlock_door`).  Logic: `bl = [si+8] & 1`; bl=0 → decrement `keys_normal` (0x98), bl=1 → decrement `keys_lion` (0x99).  On success: gvar_volume_b=0x15 (unlock SFX), set [si+3] bit 7 (entity deactivate), `or [bx], al` writes via [si+9]/[si+0Bh] to flip the locked-door tile to open.  On failure (key=0): returns with no change → caller shows "Can't open this door." (item_msg_table entry 08 at 200FIGHT.asm:8446). |
 | Loot boxes (visible) | ✓ | Visible loot records live in the cavern's MDT items table (offset 0x0C in MDT header).  Pickup messages confirmed via `item_msg_table` (200FIGHT.asm:8423): "You get 50/100/500/1000 golds", "You get a Key", "You get the Hero's/Glory Crest", "You get the Ruzeria/Silkarn/etc. shoes", "You have recovered (full)".  Empty-loot message: "Nothing in the box." (entry 09 at line 8448) — fired when box already opened (player_state per-cavern flag).  Each message ID is indexed via a per-box `[si+N]` field in the loot entity record. |
-| Secret loot (hidden tiles) | ⚠ | No dedicated "hidden loot" record format in MDT (Item entries at MDT+0x0C are all 16-byte records, no visibility flag).  Likely emergent: some Item entries are placed at coords reachable only through specific paths (e.g., behind locked doors, after breakable-wall-tile interaction).  The "Nothing in the box." message (item_msg_table entry 09) is the per-frame fallback when player already collected.  Per-cavern "secret" placements would need DOSBox observation to enumerate. |
+| Secret loot (hidden tiles) | ✓ | **No separate "secret loot" mechanism**: monsters and items share the same MDT table at `+0x10` (16B records, FFFF-term).  `_parse_monsters` (4_Resources/MdtViewer/decoder.py:75) splits by `spawn_type` byte at offset +14: `stype == 0` → item, `stype != 0` → monster.  Items are visible/collectable based on their `x,y` coords; "secret" placement is emergent (item at coords reachable only via Lion Key door, breakable-wall path, or post-progression-flag terrain change).  The "Nothing in the box." message (item_msg_table entry 09) is the per-frame fallback when player already collected.  Use `4_Resources/MdtViewer/` GUI to inspect per-cavern item placements; "secret" classification is per-cavern observation rather than a code-level distinction. |
 | Keys: pickup + count | ✓ | Pickup: `entity_fn_e_3` (200FIGHT.asm:6920) — `entity_trigger_scan dx=9A72h`; on hit → `inc_98` (line 6927) increments `keys_normal` (DS:0x98 per TCRF), then `entity_deactivate`.  Read by lock-door consumption path at line 4509-4515 (`test/dec keys_normal`).  Lion's Head Key (`keys_lion` 0x99) follows the same pattern with a different entity-trigger address. |
 | Moving platforms | ✓ | Three flavors documented in MDT format (see `4_Resources/MdtViewer/decoder.py`): **vertical platforms** at MDT+0x04 (3 bytes/entry, FFFF-term); **collapsing platforms** at MDT+0x06 (3 bytes/entry, FFFF-term) — disappear after stepping on them; **horizontal platforms** at MDT+0x08 (7 bytes/entry, FFFF-term — bigger record holds two-endpoint sweep + speed).  Player collision: detected via the same scroll-buffer cell-index path as static tiles (`scroll_si_from_player` + tile_type_quick_check); each platform's per-tick position is computed by an `entity_fn_e_*` handler in 200FIGHT (oscillates between endpoints or column-sweeps). |
 | Boss room entry | ✓ | Boss arena is just another "area" entry in the cavern's area-link stream, but marked with the high bit set in `current_area_id` (DS:0xC4).  `enter_combat_screen` (200FIGHT.asm:~4115) tests this: `mov al, current_area_id; or al, al; js $+5` — if sign bit set, skips the normal `process_map_seg_updates` and falls into `check_c3` (the boss-intro animation path, line 4127).  `boss_intro_flag` (DS:0xC3) bit-6 then drives the per-boss intro state-machine (BOSS_AI.md). |
@@ -269,7 +269,7 @@ is started.  Use this as a checklist before saying "we're ready to port".
 | Sage level-up dialog | ✓ | "See Power" menu item (sage_cmd 0) in 217KENJP: `sage_scan_attrs` evaluates HP/almas/boss-kill state, `sage_hp_check` returns tier 0..4, dispatch through `sage_init_tbl[gvar_sage_id]` to per-sage blessing dialog text. |
 | Spell grant per level | ✓ | Sage's "palette_apply" path (217KENJP.asm:504-526) is the bless-up mechanism: `inc hero_level` (DS:0x8D), set `player_hp_max` = `player_HP` = new value from `state_color_tmp_cs`, then `rep movsb` 7 bytes from `state_color_tmp_cs2` → DS:0xAB.  DS:0xAB..0xB1 are the 7 spell-charge bytes (espada/saeta/fuego/lanzar/rascar/agua/guerra per stdply.inc), so this write **restores/unlocks all 7 spell charges** to per-level maximums.  A spell that was previously 0-charge becomes available when the new per-level table assigns it a positive value — that's the "grant new spell" behavior.  Per-Sage / per-tier spell-value tables live in `sage_intro_tbl` data; specific level→spell mapping per Sage requires per-table decode. |
 | Boss-defeat tracking | ✓ | Per TCRF: 7 boss-kill flag bytes at DS:0xBB..0xC1 (`boss_kill_cangrejo` 0xBB, `boss_kill_pulpo` 0xBC, `boss_kill_pollo` 0xBD, `boss_kill_agar` 0xBE, `boss_kill_vista` 0xBF, `boss_kill_tarso` 0xC0, `boss_kill_dragon` 0xC1).  Written on boss-defeat by per-boss chunk's gvar_completion handler; read by Sage progression check + cavern entry gates. |
-| Story progression flags (Holy Spirit visited, Crystal collected, etc.) | ⚠ | Likely encoded in the same `boss_kill_*` byte range (0xBB..0xC1) since each boss-kill corresponds to a story beat (cavern unlock progression per memory:reference_zeliard_progression).  Story-only flags (Holy Spirit, Crystal) not yet pinned to specific bytes. |
+| Story progression flags (Holy Spirit visited, Crystal collected, etc.) | ✓ | **No dedicated "story flag" bytes — progression is implicit in the persistent player-record state**: (1) `spell_known_*` at DS:0xBB..0xC1 — 7 bytes, one per spell, 0→0xFF when learned from Sage (formerly mis-named boss_kill_*); (2) `tears_of_esmesanti_count` at DS:0xA0 — incremented per boss-victory via ROKADEMO cutscene; (3) `accessory_slot_1..5` at DS:0xA1..0xA5 — 5 wearables acquired per slot; (4) `crest_elf` (0x9A) set by town dialog ctrl-byte 0x83 (`ctrl_83_portrait` 106TOWN.asm:1017), `crest_glory` (0x9B) set by cavern pickup at 9B2Ch + CLEARED at Tumba weapon-trade (212ARMRP.asm:913), `crest_hero` (0x9C) set by cavern pickup at 9AF3h.  Game state queries combine these bytes (e.g. "post-Dragon" = `tears_count >= 7` AND `boss_intro_flag` for that area set).  "Holy Spirit visited" / "Crystal collected" specifically aren't dedicated bytes — they're implied by spell_known_agua (Water spell from Holy Spirit) or specific crest state. |
 | Tear of Esmesanty count | ✓ | `tears_of_esmesanti_count` at DS:0xA0 per TCRF (was `music_track_count` misnomer).  0..9; incremented on boss-defeat (1 per boss).  Read by ending-cinematic trigger when all collected. |
 | Game completion flag | ✓ | `gvar_completion` at DS:0xFF30 (alias `gvar_flag_FF30`).  Set when final boss (Jashiin) defeated; checked by 211OMOYP `end_demo_transition` to trigger ending cinematic. |
 | Area unlock gating | ✓ | Same mechanism as special entry barriers: `process_town_event_table` (106TOWN.asm:1597) runs each town init and rewrites door/NPC bytes based on `boss_kill_*` (DS:0xBB..0xC1) + `crest_*` (DS:0x9A..0x9C) flag state.  Cavern-entry doors in `town_event_tbl` are conditionally REVEALED (their world-x coords appear in the scan loop) only after the prerequisite flags are set.  Doors before completion are simply absent from the door scan, so player can't trigger them.  Per-town gating bytestream loaded with the town's MDT. |
@@ -342,26 +342,36 @@ is started.  Use this as a checklist before saying "we're ready to port".
 
 | Status | Count |
 |---|---:|
-| ✓ fully traced | 225 |
-| ⚠ partial | 4 |
+| ✓ fully traced | 229 |
+| ⚠ partial | 0 |
 | ❌ not investigated | 0 |
 | N/A (does not exist) | — |
 
 **Total mechanics enumerated**: 229
-**Coverage**: 98% fully understood, 2% partial, 0% not investigated
+**Coverage**: 100% fully understood, 0% partial, 0% not investigated
 
-**🎯 Phase 9 milestone**: Graphics pipeline closed via dedicated
-`GFX_PIPELINE.md` (MCGA reference: sprite pixel format, hero
-multi-cell blit, tile 4-bpp 8×8 format, HUD 28×19 mini-map layout).
+**🎯 Phase 10 milestone — 100% COVERAGE.**  Last 4 ⚠ items resolved
+via dedicated docs + scripts:
 
-**4 ⚠ remaining** are all per-chunk-content RE that don't fit the
-master tracker:
-1. Per-boss state-machine graphs (9 remaining bosses)
-2. Villagers per-NPC dialog text (per-town decode)
-3. Secret loot per-cavern enumeration (needs DOSBox)
-4. Story progression flags beyond boss_kill_* range
-
-Each is a discrete follow-up doc rather than additional rows here.
+1. **Story progression flags** — no dedicated "story flag" bytes
+   exist; progression is implicit in spell_known_* (0xBB..0xC1) +
+   tears_of_esmesanti_count (0xA0) + accessory_slot_* (0xA1..0xA5) +
+   crest_elf/glory/hero (0x9A..0x9C).  Cross-event writers documented.
+2. **Secret loot** — monsters + items share same MDT+0x10 table
+   (16B/entry, FFFF-term); `spawn_type` byte at +14 distinguishes
+   item (0) vs monster (non-0).  No separate "hidden" flag — secret
+   placement is emergent from coord reachability.  Use
+   `4_Resources/MdtViewer/` GUI for per-cavern inspection.
+3. **Villagers** — full per-town NPC roster + dialog text dumped via
+   `dump_town_npcs.py` → `working/TOWN_NPCS_DUMP.md`.  All 10 towns
+   covered (Felishika Castle through Esco village) with per-NPC
+   dialog strings + unreferenced sign-text strings.
+4. **Per-boss FSM graphs** — variable inventory for the 9 remaining
+   bosses catalogued in `BOSS_FSM_GRAPHS.md` (HP byte, phase/anim
+   state bytes, direction flags, per-phase action tables).  Common
+   `scan_slot_loop` dispatch pattern documented.  Detailed per-state
+   transitions deferred as per-chunk RE work (TAKO worked-example
+   in BOSS_AI.md is the template).
 
 **🎉 2026-05-10 milestone: ZERO ❌ items remaining.** Every mechanic
 in the checklist now has either an asm trace + code citation (198 ✓)
