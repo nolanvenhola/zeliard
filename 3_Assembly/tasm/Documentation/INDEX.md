@@ -71,6 +71,8 @@ below provide the deep walkthroughs for each subsystem.
 
 | Doc | Source | What it covers |
 |---|---|---|
+| `working/CAVERN_INVENTORY.md` | `python dump_cavern_inventory.py` | **Per-cavern enemies/items/doors/platforms** for all 31 MDTs — uses brox decode_mdt() after stripping 4B SAR prefix |
+| `working/TOWN_NPCS_DUMP.md` | `python dump_town_npcs.py` | Per-town NPC roster + dialog text + unreferenced sign strings for all 10 towns |
 | `working/SHARED_BUFFER_AUDIT.md` | `python shared_buffer_audit.py` | Cross-chunk EQU aliasing — finds Sabre-Oil-style hidden consumers |
 | `working/MISSING_EQUS.md` | `python find_missing_equs.py` | Raw-hex memory operands without symbolic names (currently 0) |
 | `working/NAME_CLARITY_AUDIT.md` | `python name_clarity_audit.py` | Procs failing the verb+noun naming rule |
