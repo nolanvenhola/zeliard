@@ -337,7 +337,7 @@ frame_update:
 		call	word ptr cs:gfx_render_b_fn
 		call	word ptr cs:gfx_render_c_fn
 		call	word ptr cs:gfx_render_d_fn
-		test	byte ptr ds:cur_weapon_idx,0FFh
+		test	byte ptr ds:selected_spell,0FFh
 		jz	draw_icon_a			; Jump if zero
 		mov	bx,0AA1Ch
 		xor	al,al			; Zero register

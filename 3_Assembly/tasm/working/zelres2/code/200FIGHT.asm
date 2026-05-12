@@ -1975,7 +1975,7 @@ jmp_map_scan_c:
 		jmp	map_scan_loop_entry
 
 check_9E_eq3:
-		mov	al,byte ptr ds:cur_magic_idx
+		mov	al,byte ptr ds:selected_accessory
 		cmp	al,3
 		jne	decrement_midpoint			; Jump if not equal
 		retn
@@ -2466,7 +2466,7 @@ gate_area4_no_accessory4		proc	near
 										retn
 
 area4_check:
-										cmp	byte ptr ds:cur_magic_idx,4
+										cmp	byte ptr ds:selected_accessory,4
 										jne	area4_not4			; Jump if not equal
 										mov	al,0FFh
 										or	al,al			; Zero ?
@@ -2812,7 +2812,7 @@ update_combat_frame_state		proc	near
 
 frame_state_update:
 		mov	al,2
-		cmp	byte ptr ds:cur_magic_idx,1
+		cmp	byte ptr ds:selected_accessory,1
 		jne	hp_max_set			; Jump if not equal
 		mov	al,4
 
@@ -2884,7 +2884,7 @@ skip_func116:
 		call	scan_outer_slot_match
 		cmp	byte ptr ds:area_num,7
 		jne	post_key_check			; Jump if not equal
-		cmp	byte ptr ds:cur_magic_idx,5
+		cmp	byte ptr ds:selected_accessory,5
 		je	post_key_check			; Jump if equal
 		inc	byte ptr ds:frame_ctr
 		test	byte ptr ds:frame_ctr,3Fh	; '?'
@@ -3384,7 +3384,7 @@ hud_col_fill:
 mark_player_pos_on_hud		endp
 
 scan_outer_slot_match		proc	near
-		cmp	byte ptr ds:cur_magic_idx,2
+		cmp	byte ptr ds:selected_accessory,2
 		jne	area2_skip			; Jump if not equal
 		retn
 
@@ -4199,7 +4199,7 @@ entity_match_found:
 		pop	ax
 		test	byte ptr [si+3],80h
 		jnz	boss_check			; Jump if not zero
-		call	decrement_speed_or_power
+		call	try_consume_key_to_unlock_door
 		jc	entity_hit_setup			; Jump if carry Set
 		retn
 
@@ -4502,17 +4502,17 @@ scroll_at_start:
 
 compute_scroll_offset_b		endp
 
-decrement_speed_or_power		proc	near
+try_consume_key_to_unlock_door		proc	near
 		mov	bl,[si+8]
 		and	bl,1
 		jnz	check_99			; Jump if not zero
-		test	byte ptr ds:player_speed,0FFh
+		test	byte ptr ds:keys_normal,0FFh
 		stc				; Set carry flag
-		jnz	decrement_98			; Jump if not zero
+		jnz	consume_normal_key			; Jump if not zero
 		retn
 
-decrement_98:
-		dec	byte ptr ds:player_speed
+consume_normal_key:
+		dec	byte ptr ds:keys_normal
 		mov	byte ptr ds:gvar_volume_b,15h
 		or	byte ptr [si+3],80h
 		mov	bx,[si+9]
@@ -4523,10 +4523,10 @@ decrement_98:
 check_99:
 		test	byte ptr ds:player_power,0FFh
 		stc				; Set carry flag
-		jnz	decrement_99			; Jump if not zero
+		jnz	consume_lion_key			; Jump if not zero
 		retn
 
-decrement_99:
+consume_lion_key:
 		dec	byte ptr ds:player_power
 		mov	byte ptr ds:gvar_volume_b,15h
 		or	byte ptr [si+3],80h
@@ -4535,7 +4535,7 @@ decrement_99:
 		or	[bx],al
 		retn
 
-decrement_speed_or_power		endp
+try_consume_key_to_unlock_door		endp
 
 reset_combat_state		proc	near
 		xor	al,al			; Zero register
@@ -5977,20 +5977,20 @@ palette_end:
 		retn
 
 check_ab_slot:
-		mov	bl,byte ptr ds:cur_weapon_idx
+		mov	bl,byte ptr ds:selected_spell
 		dec	bl
 		xor	bh,bh			; Zero register
-		test	byte ptr ds:weap_dur_cur[bx],0FFh
+		test	byte ptr ds:spell_charge[bx],0FFh
 		jnz	decrement_ab			; Jump if not zero
 		retn
 
 decrement_ab:
-		dec	byte ptr ds:weap_dur_cur[bx]
+		dec	byte ptr ds:spell_charge[bx]
 		call	word ptr cs:drv_anim_step
 		mov	byte ptr ds:gvar_volume_b,18h
 		mov	si,boss_entry_tbl
 		mov	byte ptr ds:spell_fx_active,0FFh
-		mov	bl,byte ptr ds:cur_weapon_idx
+		mov	bl,byte ptr ds:selected_spell
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -6152,7 +6152,7 @@ boss_sprite_select:
 		add	bl,bl
 		add	bl,bl
 		xor	bh,bh			; Zero register
-		mov	al,byte ptr ds:cur_weapon_idx
+		mov	al,byte ptr ds:selected_spell
 		dec	al
 		add	al,al
 		xor	ah,ah			; Zero register
@@ -6314,7 +6314,7 @@ gate_spell_fx_active		endp
 entity_fn_d_1:
 			                        ; entity_fn_tbl_d target: handler fn 1 (dispatch via entity_fn_tbl_d1_dispatch[bx])
 		mov	si,boss_entry_tbl
-		mov	bl,byte ptr ds:cur_weapon_idx
+		mov	bl,byte ptr ds:selected_spell
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -6560,7 +6560,7 @@ mark_obj_slot:
 		mov	al,[bx+5]
 		or	al,40h			; '@'
 		and	al,0E0h
-		mov	ah,byte ptr ds:cur_weapon_idx
+		mov	ah,byte ptr ds:selected_spell
 		inc	ah
 		or	al,ah
 		mov	[bx+5],al
@@ -6925,7 +6925,7 @@ entity_fn_e_3:
 		retn
 
 inc_98:
-		inc	byte ptr ds:player_speed
+		inc	byte ptr ds:keys_normal
 		jmp	entity_deactivate
 		mov	dx,enemy_ai_data		; BA CB 9B
 		db	0E8h			; call opcode (displacement = gfx_fn_enemy_scroll)

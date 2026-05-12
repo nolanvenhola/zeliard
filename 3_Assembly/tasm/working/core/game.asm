@@ -395,9 +395,9 @@ gfx_init_after_music:
 		call	word ptr cs:gfx_call_c
 
 gfx_init_after_font:
-		test	byte ptr ds:cur_weapon_idx,0FFh
+		test	byte ptr ds:selected_spell,0FFh
 		jz	gfx_init_after_tile
-		mov	al,byte ptr ds:cur_weapon_idx
+		mov	al,byte ptr ds:selected_spell
 		mov	bx,tile_gfx_base
 		call	word ptr cs:gfx_call_b
 

@@ -830,7 +830,7 @@ fn_10:
 fn_11:
 		push	ds
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:[cur_weapon_idx]
+		mov	bl,byte ptr cs:[selected_spell]
 		dec	bl
 		mov	al,byte ptr cs:[drv_color_lut][bx]
 		xor	ah,ah			; Zero register

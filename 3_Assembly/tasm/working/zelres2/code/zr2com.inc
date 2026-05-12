@@ -33,10 +33,19 @@ sword         equ     92h     ; equipped weapon idx (canonical in stdply.inc)
 shield             equ     93h     ; shield tier (canonical in stdply.inc; gates apply_combat_damage_with_absorb)
 shield_HP               equ     94h     ; current shield HP, 16-bit (canonical in stdply.inc)
 shield_max_HP           equ     96h     ; shield max HP cap, 16-bit (canonical in stdply.inc)
-player_speed            equ     98h     ; character speed stat (canonical in stdply.inc)
-player_power            equ     99h     ; character power stat (canonical in stdply.inc)
-weap_dur_cur            equ     0ABh    ; per-weapon durability table base (7 bytes; canonical in stdply.inc)
-weap_dur_max            equ     0B4h    ; weapon durability max table base (7 bytes; canonical in stdply.inc)
+; 0x98 = keys_normal (TCRF authoritative).  Earlier "player_speed" /
+; "char_speed" was a misread — F9 game-speed is at FF33 gvar_anim_speed.
+keys_normal             equ     98h     ; normal key count (TCRF; canonical in stdply.inc)
+keys_lion               equ     99h     ; Lion's Head Key count
+player_speed            equ     98h     ; alias — earlier (wrong) name
+player_power            equ     99h     ; alias — earlier (wrong) name
+; 0xAB..0xB1: 7 spell-charge bytes (espada/saeta/fuego/lanzar/
+; rascar/agua/guerra).  Earlier "weap_dur_cur" was a misread —
+; weapons in Zeliard don't have durability; these are spell charges.
+spell_charge            equ     0ABh    ; per-spell current charges (7 bytes; canonical in stdply.inc)
+spell_charge_max        equ     0B4h    ; per-spell max charges (7 bytes)
+weap_dur_cur            equ     0ABh    ; alias — earlier (wrong) name
+weap_dur_max            equ     0B4h    ; alias — earlier (wrong) name
 ; 0x9D = currently selected spell ID (user-corrected; not weapon-related).
 selected_spell          equ     9Dh     ; currently chosen spell ID
 weapon_tier_max         equ     9Dh     ; alias — earlier (wrong) name

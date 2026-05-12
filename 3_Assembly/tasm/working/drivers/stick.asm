@@ -125,8 +125,16 @@ pause_key_state	equ	(offset pause_key_state_lbl) + ISR_STUBS_BASE	; CS:0x02BE pa
 btn1_state	equ	pause_key_state + 1				; CS:0x02BF button-1 state
 joy_btna_state	equ	pause_key_state + 2				; CS:0x02C0 joystick button A
 joy_btnb_state	equ	pause_key_state + 3				; CS:0x02C1 joystick button B
-skip_key_state	equ	pause_key_state + 4				; CS:0x02C2 skip key hold
-sound_key_state	equ	pause_key_state + 5				; CS:0x02C3 sound key hold
+; CS:0x02C2: gates F1 music-toggle press detection.  Per FAQ §11, F1 is
+; the music toggle (calls INT 60h AX=2 = mscmt.drv toggle service).
+; Earlier "skip_key_state" name was wrong — it's not a level-skip flag.
+music_key_state	equ	pause_key_state + 4				; CS:0x02C2 F1 music-toggle press latch
+skip_key_state	equ	pause_key_state + 4				; alias — earlier (wrong) name
+; CS:0x02C3: gates F2 SFX-toggle press detection.  Per FAQ §11, F2
+; is the SFX toggle (`not gvar_sound_flag`).  Renamed from earlier
+; sound_key_state for symmetry with music_key_state.
+sfx_key_state	equ	pause_key_state + 5				; CS:0x02C3 F2 SFX-toggle press latch
+sound_key_state	equ	pause_key_state + 5				; alias — earlier name
 frame_ctr8	equ	pause_key_state + 6				; CS:0x02C4 8-bit frame counter
 
 ; ----------------------------------------------------------------------
@@ -264,12 +272,12 @@ pjb_btnb_set:
 poll_joystick_buttons		endp
 
 handle_special_keys		proc	near
-		test	byte ptr cs:skip_key_state,0FFh
+		test	byte ptr cs:music_key_state,0FFh
 		jz	hsk_skip_off			; Jump if zero
 		cmp	word ptr cs:gvar_timer_counter,1000h
 		jne	hsk_chk_sound			; Jump if not equal
 		mov	byte ptr cs:gvar_volume_b,1
-		mov	byte ptr cs:skip_key_state,0
+		mov	byte ptr cs:music_key_state,0
 		mov	cl,cs:gvar_key_pressed
 		mov	ax,2
 		int	60h			; ??INT Non-standard interrupt
@@ -278,17 +286,17 @@ handle_special_keys		proc	near
 hsk_skip_off:
 		cmp	word ptr cs:gvar_timer_counter,1000h
 		je	hsk_chk_sound			; Jump if equal
-		mov	byte ptr cs:skip_key_state,0FFh
+		mov	byte ptr cs:music_key_state,0FFh
 
 hsk_chk_sound:
-		test	byte ptr cs:sound_key_state,0FFh
+		test	byte ptr cs:sfx_key_state,0FFh
 		jz	hsk_sound_off			; Jump if zero
 		cmp	word ptr cs:gvar_timer_counter,2000h
 		je	hsk_toggle_sound			; Jump if equal
 		retn
 
 hsk_toggle_sound:
-		mov	byte ptr cs:sound_key_state,0
+		mov	byte ptr cs:sfx_key_state,0
 		not	byte ptr cs:gvar_sound_flag
 		mov	byte ptr cs:gvar_volume_b,1
 		retn
@@ -299,7 +307,7 @@ hsk_sound_off:
 		retn
 
 hsk_sound_set:
-		mov	byte ptr cs:sound_key_state,0FFh
+		mov	byte ptr cs:sfx_key_state,0FFh
 		retn
 
 handle_special_keys		endp
@@ -957,7 +965,7 @@ speed_change_handler:
 spd_wait_key:
 								test	word ptr cs:gvar_timer_counter,8000h
 								jnz	spd_wait_key			; Jump if not zero
-		mov	al,ds:gvar_save_filename
+		mov	al,ds:gvar_anim_speed
 		neg	al
 		add	al,0Ah
 		call	wait_for_digit_or_esc
@@ -970,7 +978,7 @@ spd_wait_key:
 		pop	ax
 		neg	al
 		add	al,0Ah
-		mov	ds:gvar_save_filename,al
+		mov	ds:gvar_anim_speed,al
 		mov	byte ptr cs:gvar_volume_b,1
 		call	flush_dos_kbd_buffer
 		mov	byte ptr cs:gvar_timer_flag,0

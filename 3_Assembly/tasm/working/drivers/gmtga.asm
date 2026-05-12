@@ -897,11 +897,11 @@ fn_10:
 fn3_render_time_c:				; dispatch fn 3 (CS:2523) ?-- render time display C: indexed by cs:[selected_spell] frame, color LUT at CS:[0ABh], tilemap_src=37BBh
 		push	ds
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:cur_weapon_idx
+		mov	bl,byte ptr cs:selected_spell
 		dec	bl
 
 fn_11:
-		mov	al,byte ptr cs:weap_dur_cur[bx]
+		mov	al,byte ptr cs:spell_charge[bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
 		call	init_timestamp

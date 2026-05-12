@@ -260,6 +260,9 @@ spell_charge_lanzar            equ     0AEh    ; Lanzar
 spell_charge_rascar            equ     0AFh    ; Rascar
 spell_charge_agua              equ     0B0h    ; Agua
 spell_charge_guerra            equ     0B1h    ; Guerra
+; Base alias for array indexing (used by drivers as cs:spell_charge[bx]).
+spell_charge                   equ     0ABh    ; base of 7-byte spell-charge array
+weap_dur_cur                   equ     0ABh    ; alias — earlier (wrong) name
 
 ; Animation color LUT overlay  [0x00B2, 0x00B4]
 ; Two bytes inside the 17-entry anim_color_lut do double duty as gameplay

@@ -879,12 +879,12 @@ render_large_tilemap_b:				; called externally: render large tilemap B (cs:gold_
 
 fn_9:
 
-render_large_tilemap_c:				; called externally: render large tilemap C (cs:cur_weapon_idx frame select via anim_lut, di=255Bh, cx=103h)
+render_large_tilemap_c:				; called externally: render large tilemap C (cs:selected_spell frame select via anim_lut, di=255Bh, cx=103h)
 		push	ds
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:cur_weapon_idx
+		mov	bl,byte ptr cs:selected_spell
 		dec	bl
-		mov	al,byte ptr cs:weap_dur_cur[bx]
+		mov	al,byte ptr cs:spell_charge[bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
 

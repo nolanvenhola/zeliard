@@ -73,7 +73,13 @@ gvar_enable_all		equ	0FF26h		; Enable all flag (0xFF=enabled)
 gvar_sound_flag		equ	0FF27h		; Sound enabled flag
 gvar_key_pressed	equ	0FF28h		; Key pressed scancode
 gvar_game_seg		equ	0FF2Ch		; Game data segment
-gvar_save_filename	equ	0FF33h		; Save file name (8 bytes)
+; FF33 = F9 game-speed setting (0-9 displayed; stored as 0xA-displayed).
+; Set by speed_change_handler in stick.asm:945+.  Earlier name
+; "gvar_save_filename" was a misread — it's not the save filename.
+; Also called gvar_anim_speed (300ROKAD), gvar_anim_frames (106TOWN),
+; gvar_save_flag (200FIGHT) — multi-aliased shared-buffer byte.
+gvar_anim_speed		equ	0FF33h		; F9 game-speed value (canonical)
+gvar_save_filename	equ	0FF33h		; alias — earlier (wrong) name
 gvar_save_flag		equ	0FF33h		; Save file flag
 ; FF38..FF3A: misnamed gvar_music_flag_a/b/c in earlier sweeps.  All 5
 ; gf*.asm graphics drivers gate sprite rendering on these bytes; they are

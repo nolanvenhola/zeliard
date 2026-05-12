@@ -34,8 +34,12 @@ sword         equ     92h     ; equipped weapon idx (1-based; 0 = none)
 shield             equ     93h     ; shield tier (1-based; 0 = no shield)
 shield_HP               equ     94h     ; current shield HP (16-bit)
 shield_max_HP           equ     96h     ; shield max HP cap (16-bit)
-player_speed            equ     98h     ; character speed stat
-player_power            equ     99h     ; character power stat
+; 0x98 = keys_normal (TCRF authoritative).  Earlier "player_speed" /
+; "char_speed" was a misread — F9 game-speed is at FF33 gvar_anim_speed.
+keys_normal             equ     98h     ; normal key count (TCRF; canonical in stdply.inc)
+keys_lion               equ     99h     ; Lion's Head Key count
+player_speed            equ     98h     ; alias — earlier (wrong) name
+player_power            equ     99h     ; alias — earlier (wrong) name
 ; Crests (3 boolean possessions, validated against playthrough §6.4 + 17 saves):
 crest_elf               equ     09Ah    ; Elf Crest (set after defeating Paguro)
 player_ability_1        equ     09Ah    ; alias — earlier name
@@ -52,9 +56,15 @@ selected_accessory       equ     9Eh     ; equipped shoe-or-cape ID
 stat_X9E                equ     9Eh     ; alias — earlier placeholder
 cur_magic_idx           equ     9Eh     ; alias — earlier (wrong) name
 stat_X9F                equ     9Fh     ; VESTIGIAL placeholder (per-frame zero-clear, no reader observed)
-weap_dur_cur            equ     0ABh    ; per-weapon durability table base (7 bytes)
+; 0xAB..B1: 7 spell-charge bytes (TCRF: spell_charge_*).
+; 0xB4..BA: 7 spell-charge-max bytes (TCRF: spell_charge_max_*).
+; Earlier "weap_dur_*" was a misread — weapons in Zeliard don't have
+; durability; these track spell charges.
+spell_charge            equ     0ABh    ; per-spell current charges (7 bytes)
+weap_dur_cur            equ     0ABh    ; alias — earlier (wrong) name
 player_hp_max           equ     0B2h    ; HP ceiling (overlays anim_color_lut frame 8)
-weap_dur_max            equ     0B4h    ; weapon durability max table base (7 bytes)
+spell_charge_max        equ     0B4h    ; per-spell max charges (7 bytes)
+weap_dur_max            equ     0B4h    ; alias — earlier (wrong) name
 facing_direction           equ     0C2h    ; facing/anim flag bits (canonical in stdply.inc; 80+ uses)
 boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical in stdply.inc)
 current_area_id         equ     0C4h    ; current area (high bit=in-town, low 7=town/sage idx 1..8); Kioku Feather destination

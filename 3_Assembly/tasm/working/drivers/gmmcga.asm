@@ -709,9 +709,9 @@ render_text_char		endp
 			                        ;* No entry point to code
 		push	ds
 		xor	bx,bx			; Zero register
-		mov	bl,byte ptr cs:cur_weapon_idx
+		mov	bl,byte ptr cs:selected_spell
 		dec	bl
-		mov	al,byte ptr cs:weap_dur_cur[bx]
+		mov	al,byte ptr cs:spell_charge[bx]
 		xor	ah,ah			; Zero register
 		xor	dx,dx			; Zero register
 		call	init_timestamp

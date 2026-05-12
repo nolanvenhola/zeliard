@@ -118,23 +118,47 @@ item_sel_idx		equ	0AE00h			;* byte: item select confirm index
 ; Section 7: Constants
 ; ----------------------------------------------------------------------
 SELCT_BASE		equ	9FFCh			; game-segment load address of this module
-magic_flags		equ	0A1h			;* 5-byte table: magic spell possession flags (at DS:0A1h)
-item_flags		equ	0A6h			;* 5-byte table: item possession flags (at DS:0A6h)
-weapon_flags		equ	0BBh			;* 7-byte table: weapon possession flags (1-based, at DS:0BBh)
+; 0xA1..0xA5: 5-byte WEARABLE-acquisition slot array (TCRF authoritative;
+; earlier "accessory_slot" was a misnomer — these are shoes/cape, NOT magic).
+; 0xA6..0xAA: 5-byte item inventory slots (TCRF: item_slot_1..5).
+; 0xBB..0xC1: 7 per-spell "learned" flags (TCRF: spell_known_*).
+accessory_slot		equ	0A1h			; 5-byte wearable acquisition slots (0xA1..0xA5)
+item_slot		equ	0A6h			; 5-byte item inventory slots (0xA6..0xAA)
+spell_known		equ	0BBh			; 7-byte spell-learned flag array (0xBB..0xC1)
+magic_flags		equ	0A1h			; alias — earlier (wrong) name
+item_flags		equ	0A6h			; alias — generic-enough that this name still works
+weapon_flags		equ	0BBh			; alias — earlier (wrong) name
 sword		equ	092h			;* byte: currently equipped weapon index (1-based, 0=none)
 shield		equ	093h			;* shield tier (1-based, 0=no shield).  Used by use_magia_stone as item_effect_tbl index for shield repair amount
 player_HP			equ	090h			;* word: current character HP
 player_hp_max		equ	0B2h			;* word: maximum character HP
 shield_HP		equ	094h			;* current shield HP (16-bit); use_magia_stone adds repair amount, capped at shield_max_HP
 shield_max_HP		equ	096h			;* shield max HP cap (16-bit); use_magia_stone clamps shield_HP to this
-player_speed		equ	098h			;* byte: character speed stat
+keys_normal		equ	098h			; normal key count (TCRF authoritative; was misnamed "player_speed" / "char_speed")
+player_speed		equ	098h			; alias — earlier (wrong) name
 player_power		equ	099h			;* byte: character power/attack stat
 player_abilities		equ	09Ah			;* base of 3-byte ability table (slots at 9A/9B/9C; canonical names player_ability_1/2/3 in stdply.inc)
-weap_dur_cur		equ	0ABh			;* 7-byte table: current weapon durability (DS:0ABh..0B1h)
-weap_dur_max		equ	0B4h			;* 7-byte table: maximum weapon durability (DS:0B4h..0BAh)
+; 0xAB..0xB1: 7 spell-charge bytes (TCRF: spell_charge_espada..guerra).
+; 0xB4..0xBA: 7 spell-charge-max bytes.  Earlier "weap_dur_*" was a
+; misnomer — these are SPELL charges, not weapon durability.
+spell_charge		equ	0ABh			; base of 7-byte spell-charge array (current)
+spell_charge_max	equ	0B4h			; base of 7-byte spell-charge-max array
+weap_dur_cur		equ	0ABh			; alias — earlier (wrong) name
+weap_dur_max		equ	0B4h			; alias — earlier (wrong) name
 key_count		equ	0E4h			;* byte: number of keys held
-cur_weapon_idx		equ	09Dh			;* byte: cached selected weapon type index (1-based)
-cur_magic_idx		equ	09Eh			;* byte: cached selected magic type index (1-based)
+; 0x9D in this chunk is the SELECTED SPELL (TCRF: selected_spell).  Earlier
+; "cur_weapon_idx" name was a misread — 0x9D drives spell-cast dispatch
+; (entity_fn_tbl_d) + indexes spell_charge_* array; it has nothing to do
+; with the equipped sword (equipped_weapon is at 0x92).  Kept as alias.
+selected_spell		equ	09Dh			; currently chosen spell ID (0=none, 1..7)
+cur_weapon_idx		equ	09Dh			; alias — earlier (wrong) name
+; 0x9E in this chunk is the SELECTED WEARABLE (TCRF: selected_accessory).
+; Earlier "cur_magic_idx" name was a misread — 0x9E is the equipped
+; shoe/cape ID (1=Feruza, 2=Pirika, 3=Silkarn, 4=Ruzeria, 5=Cape).
+; Drives per-area damage immunity gates in 200FIGHT (Ruzeria stops ice
+; slide, Cape stops Pureza acid, etc.).
+selected_accessory	equ	09Eh			; currently equipped wearable ID (0..5)
+cur_magic_idx		equ	09Eh			; alias — earlier (wrong) name
 item_qty_count		equ	08Dh			;* byte: item count value shown in use-confirm box
 item_effect_val		equ	08Eh			;* word: item effect value shown in use-confirm box
 anim_param_buf		equ	0A584h			;* 2-byte animation parameter staging buffer
@@ -177,12 +201,12 @@ draw_portraits_loop:
 		call	draw_portrait_tabs
 		push	cs
 		pop	es
-		mov	si,weapon_flags
+		mov	si,spell_known
 		mov	di,weapon_idx_tbl
 		xor	cl,cl			; Zero register
 		mov	ch,1
 
-scan_weapon_flags:
+scan_spell_known:
 						lodsb				; String [si] to al
 						or	al,al			; Zero ?
 						jz	scan_weapon_next			; Jump if zero
@@ -193,9 +217,9 @@ scan_weapon_flags:
 scan_weapon_next:
 						inc	ch
 						cmp	ch,8
-						jne	scan_weapon_flags			; Jump if not equal
+						jne	scan_spell_known			; Jump if not equal
 		mov	ds:weapon_count,cl
-		mov	si,magic_flags
+		mov	si,accessory_slot
 		mov	di,magic_idx_tbl
 		xor	al,al			; Zero register
 		stosb				; Store al to es:[di]
@@ -313,12 +337,12 @@ draw_weapon_cursor		proc	near
 		mov	bx,weapon_idx_tbl
 		mov	al,ds:weapon_cursor
 		xlat				; al=[al+[bx]] table
-		mov	byte ptr ds:cur_weapon_idx,al
+		mov	byte ptr ds:selected_spell,al
 		mov	bx,2711h
 		mov	cx,1009h
 		xor	al,al			; Zero register
 		call	word ptr cs:drv_fill_rect
-		mov	bl,byte ptr ds:cur_weapon_idx
+		mov	bl,byte ptr ds:selected_spell
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -328,7 +352,7 @@ draw_weapon_cursor		proc	near
 		mov	ah,1
 ;*		call	draw_portrait_tabs_fn21			;*
 		call	scan_draw_string
-		mov	al,byte ptr ds:cur_weapon_idx
+		mov	al,byte ptr ds:selected_spell
 		mov	bx,37A4h
 		call	word ptr cs:drv_fn_15
 		call	word ptr cs:drv_anim_step
@@ -426,12 +450,12 @@ draw_magic_cursor		proc	near
 		mov	bx,magic_idx_tbl
 		mov	al,ds:magic_cursor
 		xlat				; al=[al+[bx]] table
-		mov	byte ptr ds:cur_magic_idx,al
+		mov	byte ptr ds:selected_accessory,al
 		mov	bx,1742h
 		mov	cx,1611h
 		xor	al,al			; Zero register
 		call	word ptr cs:drv_fill_rect
-		mov	bl,byte ptr ds:cur_magic_idx
+		mov	bl,byte ptr ds:selected_accessory
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	si,ds:shoe_name_ptrs[bx]
@@ -727,16 +751,16 @@ use_hp_full:				; item 1: restore HP to maximum
 
 use_weapon_restore:			; item 2: restore equipped weapon durability
 		mov	byte ptr ds:gvar_volume_b,0Eh
-		test	byte ptr ds:cur_weapon_idx,0FFh
+		test	byte ptr ds:selected_spell,0FFh
 		jnz	use_item_apply
 		retn				; no weapon equipped -> no-op
 
 use_item_apply:
-		mov	bl,byte ptr ds:cur_weapon_idx
+		mov	bl,byte ptr ds:selected_spell
 		dec	bl
 		xor	bh,bh			; Zero register
-		mov	al,byte ptr ds:weap_dur_max[bx]
-		mov	byte ptr ds:weap_dur_cur[bx],al
+		mov	al,byte ptr ds:spell_charge_max[bx]
+		mov	byte ptr ds:spell_charge[bx],al
 		call	word ptr cs:drv_anim_step
 		call	draw_weapon_list
 		jmp	draw_item_detail_entry
@@ -745,8 +769,8 @@ use_all_weapons_restore:		; item 3: restore all 7 weapon durabilities
 		mov	byte ptr ds:gvar_volume_b,0Eh
 		push	cs
 		pop	es
-		mov	si,weap_dur_max
-		mov	di,weap_dur_cur
+		mov	si,spell_charge_max
+		mov	di,spell_charge
 		mov	cx,7
 		rep	movsb			; copy all 7 max values -> cur values
 		call	word ptr cs:drv_anim_step
@@ -1012,7 +1036,7 @@ draw_magic_panel_loop:
 		push	cs
 		pop	es
 		mov	di,magic_idx_tbl
-		mov	al,byte ptr ds:cur_magic_idx
+		mov	al,byte ptr ds:selected_accessory
 		mov	cx,6
 		repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
 		neg	cx
@@ -1028,7 +1052,7 @@ draw_magic_panel_loop:
 		mov	bx,cx
 		mov	al,5
 		call	word ptr cs:drv_fn_sprite
-		mov	bl,byte ptr ds:cur_magic_idx
+		mov	bl,byte ptr ds:selected_accessory
 		xor	bh,bh			; Zero register
 		add	bx,bx
 		mov	si,ds:shoe_name_ptrs[bx]
@@ -1090,7 +1114,7 @@ draw_stat_93h:
 		call	draw_exp_bar
 
 draw_stat_98h:
-		test	byte ptr ds:player_speed,0FFh
+		test	byte ptr ds:keys_normal,0FFh
 		jz	draw_stat_99h			; Jump if zero
 		mov	bx,2E75h
 		xor	al,al			; Zero register
@@ -1100,7 +1124,7 @@ draw_stat_98h:
 		mov	al,5Eh			; '^'
 		mov	ah,1
 		call	word ptr cs:drv_render_char
-		mov	al,byte ptr ds:player_speed
+		mov	al,byte ptr ds:keys_normal
 		xor	ah,ah			; Zero register
 		mov	cx,1
 		mov	bl,1
@@ -1225,7 +1249,7 @@ draw_weapon_panel_loop:
 		push	cs
 		pop	es
 		mov	di,weapon_idx_tbl
-		mov	al,byte ptr ds:cur_weapon_idx
+		mov	al,byte ptr ds:selected_spell
 		mov	cx,7
 		repne	scasb			; Rep zf=0+cx >0 Scan es:[di] for al
 		neg	cx
@@ -1240,7 +1264,7 @@ draw_weapon_panel_loop:
 		mov	bx,cx
 		mov	al,5
 		call	word ptr cs:drv_fn_sprite
-		mov	bl,byte ptr ds:cur_weapon_idx
+		mov	bl,byte ptr ds:selected_spell
 		dec	bl
 		xor	bh,bh			; Zero register
 		add	bx,bx
@@ -1273,8 +1297,8 @@ draw_weapon_list_loop:
 						dec	al
 						mov	bl,al
 						xor	bh,bh			; Zero register
-						mov	al,byte ptr ds:weap_dur_cur[bx]
-						mov	ah,byte ptr ds:weap_dur_max[bx]
+						mov	al,byte ptr ds:spell_charge[bx]
+						mov	ah,byte ptr ds:spell_charge_max[bx]
 						push	ax
 						push	dx
 						push	ax
