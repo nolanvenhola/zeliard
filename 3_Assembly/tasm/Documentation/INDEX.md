@@ -32,6 +32,7 @@ below provide the deep walkthroughs for each subsystem.
 |---|---|
 | `BOSS_AI.md` | Boss-arena architecture, 16-byte enemy slot record, 200FIGHT ↔ boss-chunk dispatch slot pattern, TAKO worked example |
 | `BOSS_FSM_GRAPHS.md` | Per-boss state-variable inventory for CRAB/TORI/ZELA/MEDA/LEGA/ZEL2/DRGN/AKMA/MAO1/MAO2 (9 bosses) + common scan_slot_loop pattern |
+| `MONSTER_TYPES.md` | Type-byte → enemy-name mapping per cavern level (tentative, slot-index based); chart of which type bytes appear in which MDT level |
 | `GFX_PIPELINE.md` §3 | Sprite pixel format + `mca_sprite_blit` shift-mask decode (8×8 sprites, 48 B each, 6-bit packed) |
 
 ## Graphics / rendering

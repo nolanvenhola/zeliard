@@ -58,12 +58,49 @@ CAVERN_ROLES = {
     'MPA0': '8-2. Esco final approach',
 }
 
-# Brox MDTViewer has only 2 monster type names; we'll dump raw type
-# bytes and let the reader cross-reference with per-area EAI chunks.
-MONSTER_TYPE_HINT = {
-    0x01: 'Snail/Slug',
-    0x02: 'Frog',
+# Per-level monster type-byte → tentative name (see MONSTER_TYPES.md).
+# Type bytes 0x01..0x04 are PER-AREA SLOT INDICES; the same byte names
+# a different monster in each chapter.  Mapping is best-effort based
+# on the order in 4_Resources/GameData/ENEMIES_DATABASE.md.
+MONSTER_NAMES_BY_LEVEL = {
+    0x01: {  # The Caverns (prologue / Felishika)
+        0x01: 'Snail/Slug', 0x02: 'Frog', 0x03: 'Rat/Bat',
+    },
+    0x02: {  # Deeper Caverns (Muralla, ch 1)
+        0x01: 'Blue Slime', 0x02: 'Toad', 0x03: 'Danger Bat',
+        0x04: 'Alligator Man',
+    },
+    0x03: {  # Forest (Satono, ch 2)
+        0x01: 'Fox', 0x02: 'Mouse', 0x03: 'Earthworm/Bush Creature',
+        0x73: 'special-73', 0x7C: 'special-7C', 0xD0: 'special-D0',
+    },
+    0x04: {  # Ice Caverns (Bosque, ch 3)
+        0x01: 'Tortoise', 0x02: 'Green Slime', 0x03: 'Arrow trap',
+        0x04: 'Ice variant',
+    },
+    0x05: {  # Graveyard (Helada, ch 4)
+        0x01: 'Eyeball Monster', 0x02: 'Spider', 0x03: 'Zombie',
+        0x04: 'Red Slime (unkillable)',
+    },
+    0x06: {  # Gold Caverns (Tumba, ch 5)
+        0x01: 'Bird of Prey (armor-piercing)', 0x02: 'Flying Octopus',
+        0x03: 'Femme Fatale', 0x04: 'Gold variant',
+    },
+    0x07: {  # Burning Inferno (Dorado, ch 6)
+        0x01: 'Wolf', 0x02: 'Parrot Man', 0x03: 'Fire Creature',
+        0x04: 'Inferno variant',
+    },
+    0x08: {  # Fruit Gardens (Llama, ch 7)
+        0x01: 'Slime Monster', 0x02: 'Lobster',
+        0x03: 'Blue Flying Creature', 0x04: 'Grell (Flying Jellyfish)',
+        0xD0: 'special-D0',
+    },
 }
+
+
+def lookup_monster_name(level: int, type_byte: int) -> str:
+    """Return tentative monster name for (level, type_byte) — see MONSTER_TYPES.md."""
+    return MONSTER_NAMES_BY_LEVEL.get(level, {}).get(type_byte, f'?type 0x{type_byte:02X}')
 
 
 def main():
@@ -132,12 +169,12 @@ def main():
 
         if m.monsters:
             out.append('### Monsters')
-            out.append('| # | x | y | type | act | spwn (x,y,type) |')
-            out.append('|---|---:|---:|---|---:|---|')
+            out.append('| # | x | y | type | name (tentative) | act | spwn (x,y,type) |')
+            out.append('|---|---:|---:|---:|---|---:|---|')
             for mo in m.monsters:
                 ttype = mo.type
-                type_name = MONSTER_TYPE_HINT.get(ttype, f'?type 0x{ttype:02X}')
-                out.append(f'| {mo.label} | {mo.x} | {mo.y} | 0x{ttype:02X} ({type_name}) | 0x{mo.act:02X} | ({mo.spwn_x}, {mo.spwn_y}, 0x{mo.spwn_type:02X}) |')
+                name = lookup_monster_name(m.level, ttype)
+                out.append(f'| {mo.label} | {mo.x} | {mo.y} | 0x{ttype:02X} | {name} | 0x{mo.act:02X} | ({mo.spwn_x}, {mo.spwn_y}, 0x{mo.spwn_type:02X}) |')
             out.append('')
 
         if m.items:
