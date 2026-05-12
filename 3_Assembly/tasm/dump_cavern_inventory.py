@@ -58,48 +58,50 @@ CAVERN_ROLES = {
     'MPA0': '8-2. Esco final approach',
 }
 
-# Per-level monster type-byte → tentative name (see MONSTER_TYPES.md).
-# Type bytes 0x01..0x04 are PER-AREA SLOT INDICES; the same byte names
-# a different monster in each chapter.  Mapping is best-effort based
-# on the order in 4_Resources/GameData/ENEMIES_DATABASE.md.
+# Per-level monster type-byte → name (verified from 4_Resources/FAQ.html
+# section 4.1 "Description of underlings" by Alan Franciškovic).
+#
+# The FAQ groups enemies by TOWN (= chapter).  Each cavern has 3-4
+# regular enemies.  Slot 0x01..0x04 indexing into the 4 enemies is
+# tentative (order in FAQ list assumed); per-EAI chunk inspection would
+# verify each slot's frame-table assignment.
 MONSTER_NAMES_BY_LEVEL = {
-    0x01: {  # The Caverns (prologue / Felishika)
-        0x01: 'Snail/Slug', 0x02: 'Frog', 0x03: 'Rat/Bat',
+    0x01: {  # Prologue / Felishika start area — uses Muralla enemies (subset, no Rat)
+        0x01: 'Toad', 0x02: 'Slug', 0x03: 'Bat',
     },
-    0x02: {  # Deeper Caverns (Muralla, ch 1)
-        0x01: 'Blue Slime', 0x02: 'Toad', 0x03: 'Danger Bat',
-        0x04: 'Alligator Man',
+    0x02: {  # Muralla — "Cavern of Malicia"
+        0x01: 'Toad', 0x02: 'Slug', 0x03: 'Bat', 0x04: 'Rat',
     },
-    0x03: {  # Forest (Satono, ch 2)
-        0x01: 'Fox', 0x02: 'Mouse', 0x03: 'Earthworm/Bush Creature',
+    0x03: {  # Satono — "Cavern of Peligro"
+        0x01: 'Blue Slime', 0x02: 'Bat', 0x03: 'Red Toad', 0x04: 'Troll',
         0x73: 'special-73', 0x7C: 'special-7C', 0xD0: 'special-D0',
     },
-    0x04: {  # Ice Caverns (Bosque, ch 3)
-        0x01: 'Tortoise', 0x02: 'Green Slime', 0x03: 'Arrow trap',
-        0x04: 'Ice variant',
+    0x04: {  # Bosque — "Cavern of Madera/Riza"
+        0x01: 'Earthworm', 0x02: 'Bug', 0x03: 'Crab', 0x04: 'Clay Ball',
     },
-    0x05: {  # Graveyard (Helada, ch 4)
-        0x01: 'Eyeball Monster', 0x02: 'Spider', 0x03: 'Zombie',
-        0x04: 'Red Slime (unkillable)',
+    0x05: {  # Helada — "Cavern of Escarcha/Glacial"
+        0x01: 'Turtle', 0x02: 'Green Slime', 0x03: 'Arrow', 0x04: '(4th enemy)',
     },
-    0x06: {  # Gold Caverns (Tumba, ch 5)
-        0x01: 'Bird of Prey (armor-piercing)', 0x02: 'Flying Octopus',
-        0x03: 'Femme Fatale', 0x04: 'Gold variant',
+    0x06: {  # Tumba — "Cavern of Corroer/Cementar" (Gelroid blue fluid area)
+        0x01: 'Red Slime', 0x02: 'Eyeball', 0x03: 'Bluish Person (Evil Woman)',
+        0x04: 'Bat',
     },
-    0x07: {  # Burning Inferno (Dorado, ch 6)
-        0x01: 'Wolf', 0x02: 'Parrot Man', 0x03: 'Fire Creature',
-        0x04: 'Inferno variant',
+    0x07: {  # Dorado — "Cavern of Tesoro/Plata/Arrugia"
+        0x01: 'Red Ghost', 0x02: 'Kondor', 0x03: 'Evil Woman', 0x04: '(4th enemy)',
     },
-    0x08: {  # Fruit Gardens (Llama, ch 7)
-        0x01: 'Slime Monster', 0x02: 'Lobster',
-        0x03: 'Blue Flying Creature', 0x04: 'Grell (Flying Jellyfish)',
+    0x08: {  # Llama — "Cavern of Caliente/Reaccion/Corroer"
+        0x01: 'Fire Creature', 0x02: 'Troll', 0x03: 'Rat', 0x04: '(4th enemy)',
         0xD0: 'special-D0',
+    },
+    0x09: {  # Pureza — "Cavern of Absor/Millagro/Desleal/Faltar/Final"
+        0x01: 'Lava Slime', 0x02: 'Bug', 0x03: 'Medusa', 0x04: 'Blue Ghost',
+        # FAQ also mentions Octopus in Pureza's Almas summary
     },
 }
 
 
 def lookup_monster_name(level: int, type_byte: int) -> str:
-    """Return tentative monster name for (level, type_byte) — see MONSTER_TYPES.md."""
+    """Return monster name per FAQ chapter mapping (see MONSTER_TYPES.md)."""
     return MONSTER_NAMES_BY_LEVEL.get(level, {}).get(type_byte, f'?type 0x{type_byte:02X}')
 
 
