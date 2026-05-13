@@ -3,4 +3,5 @@ engine/assets/
 shell/node_modules/
 shell/dist/
 shell/public/assets/
+shell/public/engine/
 *.log

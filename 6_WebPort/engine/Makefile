@@ -44,6 +44,13 @@ check-assets:
 build/zeliard.js: $(WASM_DEPS)
 	@mkdir -p build
 	$(EMCC) $(EMCC_FLAGS) $(WEB_SRC)
+	@# Mirror build artefacts into shell/public/engine/ so the Vite dev
+	@# server can serve them at /engine/<name> alongside the page.  The
+	@# Emscripten loader fetches zeliard.data + zeliard.wasm relative to
+	@# the JS file's URL, so they must live in the same directory.
+	@mkdir -p ../shell/public/engine
+	@cp build/zeliard.js build/zeliard.wasm build/zeliard.data ../shell/public/engine/
+	@echo "  -> mirrored to shell/public/engine/"
 
 native: build/zeliard-native
 
