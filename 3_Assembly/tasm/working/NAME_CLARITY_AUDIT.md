@@ -12,54 +12,13 @@ Class meanings:
 - `missing_object` -- verb but no concrete noun (`multiply`, `player_multiply`, `pal_multiply`)
 - `weak_object` -- verb + only generic-container noun (`copy_buffer`, `fill_data`)
 
-Total ambiguous procs: **21**
+Total ambiguous procs: **0**
 
 | Class | Count |
 |---|---:|
-| `numbered_duplicate` | 21 |
+| `numbered_duplicate` | 0 |
 | `missing_verb` | 0 |
 | `missing_object` | 0 |
 | `weak_object` | 0 |
 
 ---
-
-## working/zelres2/code/207MOLE.asm  (3 ambiguous)
-
-| Done | Line | Kind | Current name | Class | Reason | Proposed name |
-|:---:|---:|---|---|---|---|---|
-| [ ] | 695 | `dw` | `data_15` | `numbered_duplicate` | family `data` has 2 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 982 | `db` | `data_20` | `numbered_duplicate` | family `data` has 2 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 1168 | `dw` | `data_29` | `numbered_duplicate` | family `data` has 2 siblings -- base is generic, number is the only distinguisher | |
-
-## working/zelres2/code/209CKPD.asm  (4 ambiguous)
-
-| Done | Line | Kind | Current name | Class | Reason | Proposed name |
-|:---:|---:|---|---|---|---|---|
-| [ ] | 1159 | `db` | `data_10` | `numbered_duplicate` | family `data` has 3 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 1487 | `db` | `data_14` | `numbered_duplicate` | family `data` has 3 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 1600 | `dw` | `data_21` | `numbered_duplicate` | family `data` has 3 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 1726 | `db` | `data_22` | `numbered_duplicate` | family `data` has 3 siblings -- base is generic, number is the only distinguisher | |
-
-## working/zelres2/code/216INNAP.asm  (8 ambiguous)
-
-| Done | Line | Kind | Current name | Class | Reason | Proposed name |
-|:---:|---:|---|---|---|---|---|
-| [ ] | 155 | `db` | `data_1` | `numbered_duplicate` | family `data` has 7 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 156 | `dw` | `data_2` | `numbered_duplicate` | family `data` has 7 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 162 | `dw` | `data_3` | `numbered_duplicate` | family `data` has 7 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 165 | `db` | `data_4` | `numbered_duplicate` | family `data` has 7 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 169 | `db` | `data_5` | `numbered_duplicate` | family `data` has 7 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 171 | `dw` | `data_6` | `numbered_duplicate` | family `data` has 7 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 172 | `db` | `data_7` | `numbered_duplicate` | family `data` has 7 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 213 | `dw` | `data_8` | `numbered_duplicate` | family `data` has 7 siblings -- base is generic, number is the only distinguisher | |
-
-## working/zelres2/code/217KENJP.asm  (6 ambiguous)
-
-| Done | Line | Kind | Current name | Class | Reason | Proposed name |
-|:---:|---:|---|---|---|---|---|
-| [ ] | 238 | `db` | `data_9` | `numbered_duplicate` | family `data` has 5 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 249 | `db` | `data_11` | `numbered_duplicate` | family `data` has 5 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 266 | `dw` | `data_13` | `numbered_duplicate` | family `data` has 5 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 1460 | `dw` | `data_17` | `numbered_duplicate` | family `data` has 5 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 1576 | `db` | `data_18` | `numbered_duplicate` | family `data` has 5 siblings -- base is generic, number is the only distinguisher | |
-| [ ] | 1588 | `db` | `data_21` | `numbered_duplicate` | family `data` has 5 siblings -- base is generic, number is the only distinguisher | |
