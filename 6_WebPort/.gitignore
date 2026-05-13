@@ -1,0 +1,6 @@
+engine/build/
+engine/assets/
+shell/node_modules/
+shell/dist/
+shell/public/assets/
+*.log

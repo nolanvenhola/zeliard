@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zeliard</title>
+    <style>
+        :root { color-scheme: dark; }
+        html, body {
+            margin: 0; padding: 0; height: 100%;
+            background: #000; color: #ccc;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            overflow: hidden;
+        }
+        #stage {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100vh; gap: 1em;
+        }
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            width: 960px;          /* 320 * 3 — matches the MonoGame port window */
+            height: 600px;
+            background: #000;
+            border: 1px solid #333;
+        }
+        #status { font-size: 12px; opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <div id="stage">
+        <canvas id="screen" width="320" height="200"></canvas>
+        <div id="status">loading engine&hellip;</div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
