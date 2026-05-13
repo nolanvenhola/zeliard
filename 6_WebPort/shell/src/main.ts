@@ -9,13 +9,15 @@
 // @ts-expect-error — emcc-generated module has no type declarations.
 import createZeliardModule from '../../engine/build/zeliard.js';
 
+/* Emscripten exports C functions with a leading underscore (it preserves
+ * the C ABI name).  Hence _zeliard_init, _zeliard_tick, etc. */
 type EngineExports = {
-    zeliard_init(): void;
-    zeliard_tick(dt_ms: number): void;
-    zeliard_framebuf(): number;     // pointer (offset into HEAPU8)
-    zeliard_palette(): number;      // pointer to 256 RGB triples
-    zeliard_width(): number;
-    zeliard_height(): number;
+    _zeliard_init(): void;
+    _zeliard_tick(dt_ms: number): void;
+    _zeliard_framebuf(): number;     // pointer (offset into HEAPU8)
+    _zeliard_palette(): number;      // pointer to 256 RGB triples
+    _zeliard_width(): number;
+    _zeliard_height(): number;
 };
 
 type ZeliardModule = EngineExports & {
@@ -33,12 +35,12 @@ function setStatus(msg: string) {
 async function boot() {
     setStatus('instantiating engine…');
     const Module = (await createZeliardModule()) as ZeliardModule;
-    Module.zeliard_init();
+    Module._zeliard_init();
 
-    const w = Module.zeliard_width();
-    const h = Module.zeliard_height();
-    const fbPtr = Module.zeliard_framebuf();
-    const palPtr = Module.zeliard_palette();
+    const w = Module._zeliard_width();
+    const h = Module._zeliard_height();
+    const fbPtr = Module._zeliard_framebuf();
+    const palPtr = Module._zeliard_palette();
     setStatus(`engine ready — framebuffer ${w}x${h} @ HEAPU8[${fbPtr}], palette @ HEAPU8[${palPtr}]`);
 
     const imageData = ctx.createImageData(w, h);
@@ -47,7 +49,7 @@ async function boot() {
     function frame(now: number) {
         const dt = now - last;
         last = now;
-        Module.zeliard_tick(dt | 0);
+        Module._zeliard_tick(dt | 0);
 
         // Snapshot the engine's paletted framebuffer + palette via views into
         // the WASM heap.  HEAPU8 may be detached if memory grows, so refetch
