@@ -88,6 +88,34 @@ SET_ES_DS_TGA	MACRO
 		mov	ds, ax
 		ENDM
 
+; TGA_DI_WRAP_STEP <merge_label>
+;   Two-word movsw burst followed by DI advance + wrap check.  TGA framebuffer
+;   has 32KB visible at B000:0000 with the next 32KB at C000:0000; +0x1FFC per
+;   pair-of-words may cross the 0x8000 boundary, in which case tga_wrap2
+;   (0x80A0) re-aligns.
+;
+TGA_DI_WRAP_STEP	MACRO	merge
+		movsw				; Mov [si] to es:[di]
+		movsw				; Mov [si] to es:[di]
+		add	di,1FFCh
+		cmp	di,8000h
+		jb	merge			; Jump if below
+		add	di,tga_wrap2
+merge:
+		ENDM
+
+; TGA_SI_WRAP_STEP <merge_label>
+;   Same +0x1FFC / wrap check applied to SI when source pointer crosses
+;   the plane boundary.
+;
+TGA_SI_WRAP_STEP	MACRO	merge
+		add	si,1FFCh
+		cmp	si,8000h
+		jb	merge			; Jump if below
+		add	si,tga_wrap2
+merge:
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -343,104 +371,20 @@ draw_tile_wrap_ok:
 draw_tile_cached:
 		mov	si,ds:tile_cache_tbl[bx]
 		SET_ES_DS_TGA
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	cached_r1_di_ok			; Jump if below
-		add	di,tga_wrap2
-
-cached_r1_di_ok:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	cached_r1_si_ok			; Jump if below
-		add	si,tga_wrap2
-
-cached_r1_si_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	cached_r2_di_ok			; Jump if below
-		add	di,tga_wrap2
-
-cached_r2_di_ok:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	cached_r2_si_ok			; Jump if below
-		add	si,tga_wrap2
-
-cached_r2_si_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	cached_r3_di_ok			; Jump if below
-		add	di,tga_wrap2
-
-cached_r3_di_ok:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	cached_r3_si_ok			; Jump if below
-		add	si,tga_wrap2
-
-cached_r3_si_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	cached_r4_di_ok			; Jump if below
-		add	di,tga_wrap2
-
-cached_r4_di_ok:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	cached_r4_si_ok			; Jump if below
-		add	si,tga_wrap2
-
-cached_r4_si_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	cached_r5_di_ok			; Jump if below
-		add	di,tga_wrap2
-
-cached_r5_di_ok:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	cached_r5_si_ok			; Jump if below
-		add	si,tga_wrap2
-
-cached_r5_si_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	cached_r6_di_ok			; Jump if below
-		add	di,tga_wrap2
-
-cached_r6_di_ok:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	cached_r6_si_ok			; Jump if below
-		add	si,tga_wrap2
-
-cached_r6_si_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	cached_r7_di_ok			; Jump if below
-		add	di,tga_wrap2
-
-cached_r7_di_ok:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	cached_r7_si_ok			; Jump if below
-		add	si,tga_wrap2
-
-cached_r7_si_ok:
+		TGA_DI_WRAP_STEP cached_r1_di_ok
+		TGA_SI_WRAP_STEP cached_r1_si_ok
+		TGA_DI_WRAP_STEP cached_r2_di_ok
+		TGA_SI_WRAP_STEP cached_r2_si_ok
+		TGA_DI_WRAP_STEP cached_r3_di_ok
+		TGA_SI_WRAP_STEP cached_r3_si_ok
+		TGA_DI_WRAP_STEP cached_r4_di_ok
+		TGA_SI_WRAP_STEP cached_r4_si_ok
+		TGA_DI_WRAP_STEP cached_r5_di_ok
+		TGA_SI_WRAP_STEP cached_r5_si_ok
+		TGA_DI_WRAP_STEP cached_r6_di_ok
+		TGA_SI_WRAP_STEP cached_r6_si_ok
+		TGA_DI_WRAP_STEP cached_r7_di_ok
+		TGA_SI_WRAP_STEP cached_r7_si_ok
 		movsw				; Mov [si] to es:[di]
 		movsw				; Mov [si] to es:[di]
 		pop	bx
@@ -832,62 +776,13 @@ check_tile_state_tga		proc	near
 		mov	cx,3
 
 check_row_top:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	check_r1_ok			; Jump if below
-		add	di,tga_wrap2
-
-check_r1_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	check_r2_ok			; Jump if below
-		add	di,tga_wrap2
-
-check_r2_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	check_r3_ok			; Jump if below
-		add	di,tga_wrap2
-
-check_r3_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	check_r4_ok			; Jump if below
-		add	di,tga_wrap2
-
-check_r4_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	check_r5_ok			; Jump if below
-		add	di,tga_wrap2
-
-check_r5_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	check_r6_ok			; Jump if below
-		add	di,tga_wrap2
-
-check_r6_ok:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	check_r7_ok			; Jump if below
-		add	di,tga_wrap2
-
-check_r7_ok:
+		TGA_DI_WRAP_STEP check_r1_ok
+		TGA_DI_WRAP_STEP check_r2_ok
+		TGA_DI_WRAP_STEP check_r3_ok
+		TGA_DI_WRAP_STEP check_r4_ok
+		TGA_DI_WRAP_STEP check_r5_ok
+		TGA_DI_WRAP_STEP check_r6_ok
+		TGA_DI_WRAP_STEP check_r7_ok
 		movsw				; Mov [si] to es:[di]
 		movsw				; Mov [si] to es:[di]
 		add	di,1FFCh

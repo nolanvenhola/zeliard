@@ -116,6 +116,34 @@ merge:
 		inc	bx
 		ENDM
 
+; TGA_DI_WRAP_STEP <merge_label>
+;   Two-word movsw burst followed by DI advance + wrap check.  TGA framebuffer
+;   has 32KB visible at B000:0000 with the next 32KB at C000:0000; +0x1FFC per
+;   pair-of-words may cross the 0x8000 boundary, in which case tga_vram_wrap_c
+;   (0x80A0) re-aligns.
+;
+TGA_DI_WRAP_STEP	MACRO	merge
+		movsw				; Mov [si] to es:[di]
+		movsw				; Mov [si] to es:[di]
+		add	di,1FFCh
+		cmp	di,8000h
+		jb	merge			; Jump if below
+		add	di,tga_vram_wrap_c
+merge:
+		ENDM
+
+; TGA_SI_WRAP_STEP <merge_label>
+;   Same +0x1FFC / wrap check applied to SI when source pointer crosses
+;   the plane boundary.  No movsw burst — used in interleaved DI/SI patterns.
+;
+TGA_SI_WRAP_STEP	MACRO	merge
+		add	si,1FFCh
+		cmp	si,8000h
+		jb	merge			; Jump if below
+		add	si,tga_vram_wrap_c
+merge:
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -514,104 +542,20 @@ loc_49:
 		mov	ax,0B800h
 		mov	es,ax
 		mov	ds,ax
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	loc_50			; Jump if below
-		add	di,tga_vram_wrap_c
-
-loc_50:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	loc_51			; Jump if below
-		add	si,tga_vram_wrap_c
-
-loc_51:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	loc_52			; Jump if below
-		add	di,tga_vram_wrap_c
-
-loc_52:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	loc_53			; Jump if below
-		add	si,tga_vram_wrap_c
-
-loc_53:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	loc_54			; Jump if below
-		add	di,tga_vram_wrap_c
-
-loc_54:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	loc_55			; Jump if below
-		add	si,tga_vram_wrap_c
-
-loc_55:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	loc_56			; Jump if below
-		add	di,tga_vram_wrap_c
-
-loc_56:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	loc_57			; Jump if below
-		add	si,tga_vram_wrap_c
-
-loc_57:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	loc_58			; Jump if below
-		add	di,tga_vram_wrap_c
-
-loc_58:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	loc_59			; Jump if below
-		add	si,tga_vram_wrap_c
-
-loc_59:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	loc_60			; Jump if below
-		add	di,tga_vram_wrap_c
-
-loc_60:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	loc_61			; Jump if below
-		add	si,tga_vram_wrap_c
-
-loc_61:
-		movsw				; Mov [si] to es:[di]
-		movsw				; Mov [si] to es:[di]
-		add	di,1FFCh
-		cmp	di,8000h
-		jb	loc_62			; Jump if below
-		add	di,tga_vram_wrap_c
-
-loc_62:
-		add	si,1FFCh
-		cmp	si,8000h
-		jb	loc_63			; Jump if below
-		add	si,tga_vram_wrap_c
-
-loc_63:
+		TGA_DI_WRAP_STEP loc_50
+		TGA_SI_WRAP_STEP loc_51
+		TGA_DI_WRAP_STEP loc_52
+		TGA_SI_WRAP_STEP loc_53
+		TGA_DI_WRAP_STEP loc_54
+		TGA_SI_WRAP_STEP loc_55
+		TGA_DI_WRAP_STEP loc_56
+		TGA_SI_WRAP_STEP loc_57
+		TGA_DI_WRAP_STEP loc_58
+		TGA_SI_WRAP_STEP loc_59
+		TGA_DI_WRAP_STEP loc_60
+		TGA_SI_WRAP_STEP loc_61
+		TGA_DI_WRAP_STEP loc_62
+		TGA_SI_WRAP_STEP loc_63
 		movsw				; Mov [si] to es:[di]
 		movsw				; Mov [si] to es:[di]
 		pop	bx
