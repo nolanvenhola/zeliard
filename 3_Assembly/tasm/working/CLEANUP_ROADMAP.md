@@ -1,6 +1,13 @@
 # Zeliard ASM Cleanup Roadmap
 
-**STATUS: All 11 items complete (2026-05-10 final pass).** All 65 .asm files bit-perfect against `bin/` references throughout. Final `awk` db-line check returns 0 across every chunk. Missing-EQU audit also clean: every raw-hex memory operand has a corresponding `equ` definition (2 final stragglers, `0xC00B` in 106TOWN and `0x607` in 202GFEGA, named on this pass).
+**STATUS: All 11 items complete (2026-05-12 polish pass).** All 65 .asm files bit-perfect against `bin/` references throughout. Final `awk` db-line check returns 0 across every chunk. Missing-EQU audit clean: every raw-hex memory operand has a corresponding `equ` definition.
+
+**2026-05-12 polish batch:**
+- Item 8 (macro factoring) — second pass: REPT-folded 23 unrolled inner-loop bodies in 105GDMCA / 107GTEGA / 109GTHGC / 202GFEGA. Added TGA_DI/SI_WRAP_STEP macros to 110GTTGA and 205GFTGA (mirroring CGA pattern from 203GFCGA), folded 21 unrolled wrap-guard blocks. Factored BLIT_SCENE_FRAME macro into 100OPDMO (4 use sites). Net: 184 line removals, 50 added across 7 files. All BIT-PERFECT.
+- Item 9 (sprite frame semantic naming) — renamed 35 generic `crab_frame_NN` / `tako_frame_NN` / `tori_frame_NN` labels to role-tagged names (walk/swim/turn/dir/swoop/glide/idle/hit/death/spawn/blink/ink/flight_base) per the ROLE TABLE comments already in each chunk header.
+- Item 5 (breadcrumb cleanup) — stripped final 6 `; was loc_N` comments from 309CRAB / 310TAKO / 311TORI.
+
+Remaining macro candidates exist but offer diminishing returns: each has either per-iteration label divergence (e.g. CGA `DI_WRAP_STEP loc_N`) or only 2-rep reps where REPT 2 doesn't save lines.
 
 Original work to make the disassembled source as close to the original TASM/MASM source as the 1989-1990 Game Arts developers would have written it.
 
