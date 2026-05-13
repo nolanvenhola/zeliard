@@ -246,6 +246,19 @@ DECOMPRESS_VGA	MACRO	dst
 		call	decompress_image
 		ENDM
 
+; BLIT_SCENE_FRAME
+;   Standard opening-cinematic redraw — set BX=0x410 (width hint),
+;   CX=0x4868 (height hint), ES:DI = scene_framebuf, then call the
+;   gfx-mode-bound disp_game_fn dispatch slot.
+;
+BLIT_SCENE_FRAME	MACRO
+		mov	bx,410h
+		mov	cx,4868h
+		mov	es,cs:gvar_game_seg
+		mov	di,scene_framebuf
+		call	word ptr cs:disp_game_fn
+		ENDM
+
 seg_a		segment	byte public
 		assume	cs:seg_a, ds:seg_a
 
@@ -743,19 +756,11 @@ post_title_story_scenes:
 		SET_ES_2000
 		mov	di,0
 		call	word ptr cs:disp_game_fn
-		mov	bx,410h
-		mov	cx,4868h
-		mov	es,cs:gvar_game_seg
-		mov	di,scene_framebuf
-		call	word ptr cs:disp_game_fn
+		BLIT_SCENE_FRAME
 		call	run_script_interpreter
 		mov	ax,9
 		call	word ptr cs:gfx_palette_fn
-		mov	bx,410h
-		mov	cx,4868h
-		mov	es,cs:gvar_game_seg
-		mov	di,scene_framebuf
-		call	word ptr cs:disp_game_fn
+		BLIT_SCENE_FRAME
 		LOAD_DATA res_ame_grp, vga_seg
 		DECOMPRESS_VGA scene_framebuf
 		call	run_script_interpreter
@@ -763,11 +768,7 @@ post_title_story_scenes:
 		call	word ptr cs:disp_font_inv
 		mov	ax,6
 		call	word ptr cs:gfx_palette_fn
-		mov	bx,410h
-		mov	cx,4868h
-		mov	es,cs:gvar_game_seg
-		mov	di,scene_framebuf
-		call	word ptr cs:disp_game_fn
+		BLIT_SCENE_FRAME
 		LOAD_DATA scene_data_c, vga_seg
 		DECOMPRESS_VGA scene_data_i
 		call	run_script_interpreter
@@ -776,11 +777,7 @@ post_title_story_scenes:
 		SET_ES_2000
 		mov	di,0
 		call	apply_palette_blend
-		mov	bx,410h
-		mov	cx,4868h
-		mov	es,cs:gvar_game_seg
-		mov	di,scene_framebuf
-		call	word ptr cs:disp_game_fn
+		BLIT_SCENE_FRAME
 		call	run_script_interpreter
 		call	run_script_interpreter
 		SET_ES_2000
