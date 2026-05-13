@@ -145,14 +145,10 @@ render_plane_a_loop:
 							lodsw				; String [si] to ax
 							xchg	ah,al
 							mov	cs:src_word_a,ax
+							REPT 4
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	render_plane_a_loop		; Loop if cx > 0
 
 		pop	ds
@@ -191,14 +187,10 @@ render_plane_ab_loop:
 							lodsw				; String [si] to ax
 							xchg	al,ah
 							mov	cs:src_word_a,ax
+							REPT 4
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	render_plane_ab_loop		; Loop if cx > 0
 
 		pop	ds
@@ -255,14 +247,10 @@ render_plane_abc_loop:
 							mov	cs:src_word_c,bx
 							mov	cs:src_word_b,ax
 							mov	cs:src_word_d,cx
+							REPT 4
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							pop	cx
 							loop	render_plane_abc_loop		; Loop if cx > 0
 
@@ -638,14 +626,10 @@ render_plane_ab_2_loop:
 							lodsw				; String [si] to ax
 							xchg	ah,al
 							mov	cs:src_word_a,ax
+							REPT 4
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	render_plane_ab_2_loop		; Loop if cx > 0
 
 		pop	cx
@@ -968,14 +952,10 @@ render_ab_buf_loop:
 							lodsw				; String [si] to ax
 							xchg	ah,al
 							mov	cs:src_word_b,ax
+							REPT 4
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	render_ab_buf_loop		; Loop if cx > 0
 
 		pop	bx
@@ -1006,14 +986,10 @@ render_ab_gseg_loop:
 							lodsw				; String [si] to ax
 							xchg	ah,al
 							mov	cs:src_word_a,ax
+							REPT 4
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	render_ab_gseg_loop		; Loop if cx > 0
 
 		pop	bx
@@ -1410,33 +1386,33 @@ lookup_palette_entry_mcga		proc	near
 		push	di
 		mov	bh,cs:cur_col_ctr
 		call	extract_pixel_bits_mcga
+		REPT 2
 		call	pal_process_loop
 		stosw				; Store ax to es:[di]
-		call	pal_process_loop
-		stosw				; Store ax to es:[di]
+		ENDM
 		add	di,13Ch
 		mov	bh,cs:cur_col_ctr
 		ror	bh,1			; Rotate
 		call	extract_pixel_bits_mcga
+		REPT 2
 		call	pal_process_loop
 		stosw				; Store ax to es:[di]
-		call	pal_process_loop
-		stosw				; Store ax to es:[di]
+		ENDM
 		add	di,13Ch
 		mov	bh,cs:cur_col_ctr
 		call	extract_pixel_bits_mcga
+		REPT 2
 		call	pal_process_loop
 		stosw				; Store ax to es:[di]
-		call	pal_process_loop
-		stosw				; Store ax to es:[di]
+		ENDM
 		add	di,13Ch
 		mov	bh,cs:cur_col_ctr
 		ror	bh,1			; Rotate
 		call	extract_pixel_bits_mcga
+		REPT 2
 		call	pal_process_loop
 		stosw				; Store ax to es:[di]
-		call	pal_process_loop
-		stosw				; Store ax to es:[di]
+		ENDM
 		pop	di
 		pop	si
 		retn
@@ -1561,14 +1537,10 @@ plane2_skip:
 							mov	cs:src_word_c,ax
 
 plane3_skip:
+							REPT 4
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							pop	si
 							inc	si
 							inc	si
@@ -1884,14 +1856,10 @@ wipe3_col_loop:
 							lodsw				; String [si] to ax
 							xchg	ah,al
 							mov	cs:src_word_a,ax
+							REPT 4
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	wipe3_col_loop		; Loop if cx > 0
 
 		retn
@@ -1910,10 +1878,10 @@ wipe4_top_loop:
 							lodsb				; String [si] to al
 							xchg	ah,al
 							mov	cs:src_word_a,ax
+							REPT 2
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	wipe4_top_loop		; Loop if cx > 0
 
 		add	si,18h
@@ -1930,14 +1898,10 @@ wipe4_mid_loop:
 							lodsw				; String [si] to ax
 							xchg	ah,al
 							mov	cs:src_word_a,ax
+							REPT 4
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	wipe4_mid_loop		; Loop if cx > 0
 
 		add	si,18h
@@ -1952,10 +1916,10 @@ wipe4_bot_loop:
 							lodsb				; String [si] to al
 							xchg	ah,al
 							mov	cs:src_word_a,ax
+							REPT 2
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	wipe4_bot_loop		; Loop if cx > 0
 
 		retn
@@ -2096,10 +2060,10 @@ wipe8_narrow_loop:
 							lodsb				; String [si] to al
 							xchg	ah,al
 							mov	cs:src_word_a,ax
+							REPT 2
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	wipe8_narrow_loop		; Loop if cx > 0
 
 		retn
@@ -2116,10 +2080,10 @@ wipe8_extra_loop:
 							lodsb				; String [si] to al
 							xchg	ah,al
 							mov	cs:src_word_a,ax
+							REPT 2
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	wipe8_extra_loop		; Loop if cx > 0
 
 		mov	ah,ds:ega_plane3_buf[si]
@@ -2198,14 +2162,10 @@ wipe9_wide_loop:
 							lodsw				; String [si] to ax
 							xchg	ah,al
 							mov	cs:src_word_a,ax
+							REPT 4
 							call	pal_process_loop
 							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
-							call	pal_process_loop
-							stosw				; Store ax to es:[di]
+							ENDM
 							loop	wipe9_wide_loop		; Loop if cx > 0
 
 		mov	cx,21h

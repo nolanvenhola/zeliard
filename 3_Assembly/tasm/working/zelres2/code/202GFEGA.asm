@@ -571,34 +571,12 @@ loc_43:
 		mov	es,ax
 		mov	ds,ax
 		mov	bx,ega_plane_stride
+		REPT 7
 		movsb				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
 		add	di,bx
 		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
+		ENDM
 		movsb				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
 		mov	ax,5
@@ -1188,27 +1166,11 @@ ega_blit_2bytes_8rows		proc	near
 		mov	ax,105h
 		out	dx,ax			; port 3CEh, EGA graphic index
 						;  al = 5, mode
+		REPT 7
 		movsb				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
 		add	di,ega_plane_stride
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,ega_plane_stride
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,ega_plane_stride
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,ega_plane_stride
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,ega_plane_stride
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,ega_plane_stride
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,ega_plane_stride
+		ENDM
 		movsb				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
 		mov	ax,5
@@ -2321,14 +2283,9 @@ save_background_pixels		proc	near
 		mov	cx,20h
 
 save_background_pixels_row_loop:
+								REPT 8
 								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
+								ENDM
 								add	si,48h
 								loop	save_background_pixels_row_loop		; Loop if cx > 0
 
@@ -2356,14 +2313,9 @@ restore_background_pixels_impl		proc	near
 		mov	cx,20h
 
 restore_background_pixels_row_loop:
+								REPT 8
 								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
-								movsb				; Mov [si] to es:[di]
+								ENDM
 								add	di,48h
 								loop	restore_background_pixels_row_loop		; Loop if cx > 0
 

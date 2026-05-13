@@ -388,34 +388,12 @@ tile_cached:
 		EGA_SETUP_702_105
 		SET_ES_DS_VGA
 		mov	bx,ega_row_stride
+		REPT 7
 		movsb				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
 		add	di,bx
 		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
-		movsb				; Mov [si] to es:[di]
-		movsb				; Mov [si] to es:[di]
-		add	di,bx
-		add	si,bx
+		ENDM
 		movsb				; Mov [si] to es:[di]
 		movsb				; Mov [si] to es:[di]
 		mov	ax,5
@@ -939,30 +917,11 @@ init_4E_loop_ega		proc	near
 		mov	cx,3
 
 tile_row_blit_loop:
+						REPT 8
 						movsb				; Mov [si] to es:[di]
 						movsb				; Mov [si] to es:[di]
 						add	di,bx
-						movsb				; Mov [si] to es:[di]
-						movsb				; Mov [si] to es:[di]
-						add	di,bx
-						movsb				; Mov [si] to es:[di]
-						movsb				; Mov [si] to es:[di]
-						add	di,bx
-						movsb				; Mov [si] to es:[di]
-						movsb				; Mov [si] to es:[di]
-						add	di,bx
-						movsb				; Mov [si] to es:[di]
-						movsb				; Mov [si] to es:[di]
-						add	di,bx
-						movsb				; Mov [si] to es:[di]
-						movsb				; Mov [si] to es:[di]
-						add	di,bx
-						movsb				; Mov [si] to es:[di]
-						movsb				; Mov [si] to es:[di]
-						add	di,bx
-						movsb				; Mov [si] to es:[di]
-						movsb				; Mov [si] to es:[di]
-						add	di,bx
+						ENDM
 						loop	tile_row_blit_loop		; Loop if cx > 0
 
 		retn

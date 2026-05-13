@@ -539,14 +539,9 @@ copy_tile_pixels_loop:
 							mov	si,ax
 							add	si,tile_pixel_base
 							mov	ds,cs:gvar_game_seg
+							REPT 8
 							movsw				; Mov [si] to es:[di]
-							movsw				; Mov [si] to es:[di]
-							movsw				; Mov [si] to es:[di]
-							movsw				; Mov [si] to es:[di]
-							movsw				; Mov [si] to es:[di]
-							movsw				; Mov [si] to es:[di]
-							movsw				; Mov [si] to es:[di]
-							movsw				; Mov [si] to es:[di]
+							ENDM
 							pop	si
 							pop	ds
 							pop	cx
