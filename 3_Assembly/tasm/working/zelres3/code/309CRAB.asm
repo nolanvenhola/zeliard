@@ -180,7 +180,7 @@ crab_frame_ptr_tbl_b	label	word		; indexed frame pointers (group B)
 ;                    idle loop played when no other state is active.
 ; -------------------------------------------------------------------------
 
-crab_frame_00:					; offset 0x05C -> ptr 0xA05C (first 4 bytes alias into ptr_tbl_b tail: A5 A2 D7 A2)
+crab_walk_frame_0:					; offset 0x05C -> ptr 0xA05C (first 4 bytes alias into ptr_tbl_b tail: A5 A2 D7 A2)
 						; ROLE: walk cycle frame 0/6 (start pose)
 						; (referenced by ptr_tbl_a[0]; used in walk_dir0/walk_dir1 phases)
 		db	 00h, 00h, 00h, 00h, 01h, 00h   ; row 0
@@ -193,7 +193,7 @@ crab_const_2600	dw	2600h           ; shared word constant (used via `mov ax`)
 		db	 27h, 00h, 00h, 00h, 26h, 27h   ; row 6
 		db	 00h, 00h, 00h, 00h, 00h, 00h   ; row 7
 
-crab_frame_01:					; offset 0x08E -> ptr 0xA08E
+crab_walk_frame_1:					; offset 0x08E -> ptr 0xA08E
 						; ROLE: walk cycle frame 1/6 (forward step a)
 						; (referenced by ptr_tbl_a[1]; used in walk_dir0/walk_dir1 phases)
 		db	 01h, 02h, 0Ah, 0Bh, 00h, 00h   ; row 0
@@ -205,7 +205,7 @@ crab_frame_01:					; offset 0x08E -> ptr 0xA08E
 		db	 00h, 28h, 29h, 00h, 00h, 00h   ; row 6
 		db	 28h, 29h, 00h                  ; row 7
 
-crab_frame_02:					; offset 0x0BB -> ptr 0xA0BB
+crab_walk_frame_2:					; offset 0x0BB -> ptr 0xA0BB
 						; ROLE: walk cycle frame 2/6 (forward step b)
 						; (referenced by ptr_tbl_a[2]; used in walk_dir0/walk_dir1 phases)
 		db	 00h, 00h, 00h, 00h, 00h, 03h   ; row 0
@@ -218,7 +218,7 @@ crab_frame_02:					; offset 0x0BB -> ptr 0xA0BB
 		db	 00h, 05h, 00h, 8Fh, 90h, 00h   ; row 7
 		db	 91h, 00h                       ; row 8
 
-crab_frame_03:					; offset 0x0ED -> ptr 0xA0ED
+crab_walk_frame_3:					; offset 0x0ED -> ptr 0xA0ED
 						; ROLE: walk cycle frame 3/6 (mid stride)
 						; (referenced by ptr_tbl_a[3]; used in walk_dir0/walk_dir1 phases)
 		db	0ADh,0AEh,0AFh,0B0h, 00h, 06h   ; row 0
@@ -232,7 +232,7 @@ crab_frame_03:					; offset 0x0ED -> ptr 0xA0ED
 crab_const_2692	dw	2692h           ; shared word constant (also used via `call word ptr cs:`)
 		db	 93h, 94h, 00h                  ; row 8
 
-crab_frame_04:					; offset 0x11F -> ptr 0xA11F
+crab_walk_frame_4:					; offset 0x11F -> ptr 0xA11F
 						; ROLE: walk cycle frame 4/6 (back step a)
 						; (referenced by ptr_tbl_a[4]; used in walk_dir0/walk_dir1 phases)
 		db	0B1h, 07h,0B2h,0B3h, 00h, 0Ah   ; row 0
@@ -244,7 +244,7 @@ crab_frame_04:					; offset 0x11F -> ptr 0xA11F
 		db	 33h,0C5h,0C6h, 00h, 32h, 33h   ; row 6
 		db	 0Ch, 0Dh, 00h                  ; row 7
 
-crab_frame_05:					; offset 0x14C -> ptr 0xA14C
+crab_walk_frame_5:					; offset 0x14C -> ptr 0xA14C
 						; ROLE: walk cycle frame 5/6 (back step b; wrap pose for dir1)
 						; (referenced by ptr_tbl_a[5]; used in walk_dir0/walk_dir1 phases)
 		db	 27h, 28h, 32h, 33h, 00h, 0Eh   ; row 0
@@ -257,7 +257,7 @@ crab_frame_05:					; offset 0x14C -> ptr 0xA14C
 		db	 84h, 85h, 00h, 29h, 95h, 96h   ; row 7
 		db	 97h, 00h                       ; row 8
 
-crab_frame_06:					; offset 0x17E -> ptr 0xA17E
+crab_walk_frame_6:					; offset 0x17E -> ptr 0xA17E
 						; ROLE: spawn-formation pose / extra walk pose
 						; (referenced by ptr_tbl_a[6]; reached via spawn_subloop's
 						;  crab_spawn_limit[bx] index and as walk_dir0_advance pre-wrap)
@@ -272,7 +272,7 @@ crab_frame_06:					; offset 0x17E -> ptr 0xA17E
 		db	 14h, 15h, 00h, 98h, 99h, 9Ah   ; row 7
 		db	 00h, 00h                       ; row 8
 
-crab_frame_07:					; offset 0x1B0 -> ptr 0xA1B0
+crab_hit_pose:					; offset 0x1B0 -> ptr 0xA1B0
 						; ROLE: hit/stagger pose (one-shot; spawn arrival)
 						; (referenced by ptr_tbl_a[7]; only reached via spawn_subloop's
 						;  crab_spawn_limit[bx] formation index)
@@ -287,7 +287,7 @@ crab_frame_07:					; offset 0x1B0 -> ptr 0xA1B0
 		db	 00h, 88h, 00h, 9Bh, 9Ch, 9Dh   ; row 7
 		db	 9Eh, 00h                       ; row 8
 
-crab_frame_08:					; offset 0x1E2 -> ptr 0xA1E2
+crab_death_pose:					; offset 0x1E2 -> ptr 0xA1E2
 						; ROLE: DEATH pose (corpse / final death sprite)
 						; (referenced by ptr_tbl_a[8]; explicitly set by death_frame8
 						;  when crab_timer_b >= 0x14 -- held until gvar_completion at 0x28)
@@ -301,7 +301,7 @@ crab_frame_08:					; offset 0x1E2 -> ptr 0xA1E2
 		db	 8Dh, 8Eh, 00h,0A9h,0AAh,0ABh   ; row 7
 		db	0ACh, 00h                       ; row 8
 
-crab_frame_09:					; offset 0x214 -> ptr 0xA214
+crab_spawn_pose:					; offset 0x214 -> ptr 0xA214
 						; ROLE: SPAWN/ARM pose (animation-start frame)
 						; (referenced by ptr_tbl_b[1]; explicitly set by anim_step_entry
 						;  when crab_anim_idx is armed -- first frame after spawn arrives)
@@ -315,7 +315,7 @@ crab_frame_09:					; offset 0x214 -> ptr 0xA214
 		db	 00h, 1Bh, 00h, 9Fh,0A0h,0A1h   ; row 7
 		db	0A2h, 00h                       ; row 8
 
-crab_frame_10:					; offset 0x246 -> ptr 0xA246
+crab_idle_frame_0:					; offset 0x246 -> ptr 0xA246
 						; ROLE: idle animation frame 1/4 (pincer-snap / breathing loop)
 						; (referenced by ptr_tbl_b[2]; selected via crab_anim_tbl_b[idx_e]
 						;  when crab_alt_phase is armed -- idle_dispatch path)
@@ -328,7 +328,7 @@ crab_frame_10:					; offset 0x246 -> ptr 0xA246
 		db	 1Dh, 1Eh, 00h, 00h, 1Ch, 1Dh   ; row 6
 		db	 1Eh, 00h, 00h                  ; row 7
 
-crab_frame_11:					; offset 0x273 -> ptr 0xA273
+crab_idle_frame_1:					; offset 0x273 -> ptr 0xA273
 						; ROLE: idle animation frame 2/4 (pincer-snap / breathing loop)
 						; (referenced by ptr_tbl_b[3]; selected via crab_anim_tbl_b[idx_e]
 						;  when crab_alt_phase is armed -- idle_dispatch path)
@@ -342,7 +342,7 @@ crab_frame_11:					; offset 0x273 -> ptr 0xA273
 		db	 21h, 8Ah, 00h,0A5h,0A6h,0A7h   ; row 7
 		db	0A8h, 00h                       ; row 8
 
-crab_frame_12:					; offset 0x2A5 -> ptr 0xA2A5
+crab_idle_frame_2:					; offset 0x2A5 -> ptr 0xA2A5
 						; ROLE: idle animation frame 3/4 (pincer-snap / breathing loop)
 						; (referenced by ptr_tbl_b[4]; selected via crab_anim_tbl_b[idx_e]
 						;  when crab_alt_phase is armed -- idle_dispatch path)
@@ -356,7 +356,7 @@ crab_frame_12:					; offset 0x2A5 -> ptr 0xA2A5
 		db	 1Ch, 1Dh, 00h, 0Ch, 0Dh, 1Ch   ; row 7
 		db	 1Dh, 00h                       ; row 8
 
-crab_frame_13:					; offset 0x2D7 -> ptr 0xA2D7
+crab_idle_frame_3:					; offset 0x2D7 -> ptr 0xA2D7
 						; ROLE: idle animation frame 4/4 (pincer-snap / breathing loop)
 						; (referenced by ptr_tbl_b[5]; selected via crab_anim_tbl_b[idx_e]
 						;  when crab_alt_phase is armed -- idle_dispatch wraps idx_e at 4)

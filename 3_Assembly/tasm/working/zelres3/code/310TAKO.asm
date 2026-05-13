@@ -19,9 +19,9 @@ PAGE  59,132
 ;    0x034..0x03F : tako_frame_ptr_tbl_a -- 6 word ptrs (0xA052..0xA1E2)
 ;    0x040..0x04F : 16 zero bytes (reserved)
 ;    0x050..0x055 : tako_frame_ptr_tbl_b -- 3 word ptrs (0xA255,0xA205,0xA25F)
-;                   (last 4 bytes 0x52..0x55 alias into tako_frame_00 below)
+;                   (last 4 bytes 0x52..0x55 alias into tako_swim_frame_0 below)
 ;    0x052..0x280 : sprite frame data (5-byte tile rows w/ 00 terminators);
-;                   tako_frame_00 starts at 0x052 (overlapping tail of tbl_b),
+;                   tako_swim_frame_0 starts at 0x052 (overlapping tail of tbl_b),
 ;                   not 0x056 -- see tbl_a[0]=0xA052
 ;    0x281..0x28F : tako_scan_prolog (mov si,fight_slot_list / clear state)
 ;    0x28F..0x506 : main scan-and-update code (was loc_1..loc_27)
@@ -139,14 +139,14 @@ tako_frame_ptr_tbl_a	label	word		; 6 frame-data pointers (group A)
 
 tako_frame_ptr_tbl_b	label	word		; 3 frame-data pointers (group B)
 		db	 55h,0A2h			; -> 0xA255 (tbl_b[0])
-;		First 4 bytes of tako_frame_00 below (`05 A2 5F A2`) double as
+;		First 4 bytes of tako_swim_frame_0 below (`05 A2 5F A2`) double as
 ;		the remaining 2 ptr-tbl entries: 0xA205 (tbl_b[1]), 0xA25F (tbl_b[2]).
 ;		Same overlap pattern as 309CRAB's crab_frame_00.
 
 ; -------------------------------------------------------------------------
 ;  Sprite frame data (file 0x052..0x280).
 ;  5-byte tile-row records (4 tile bytes + 0x00 row-terminator), grouped
-;  into 9 frames by tako_frame_ptr_tbl_a/b.  tako_frame_00's leading 4
+;  into 9 frames by tako_frame_ptr_tbl_a/b.  tako_swim_frame_0's leading 4
 ;  bytes alias the tail of tako_frame_ptr_tbl_b above (`05 A2 5F A2` =
 ;  ptrs 0xA205, 0xA25F).  Most frames are 16 rows (80 bytes); frame_05 is
 ;  7 rows, frame_b0 is 2 rows, frame_b2 is 6+1 rows ending with 0x02
@@ -186,7 +186,7 @@ tako_frame_ptr_tbl_b	label	word		; 3 frame-data pointers (group B)
 ;                    fired by emit_proj_phase when tako_flag_c bit7 set.
 ; -------------------------------------------------------------------------
 
-tako_frame_00:					; offset 0x052 -> ptr 0xA052 (tbl_a[0])
+tako_swim_frame_0:					; offset 0x052 -> ptr 0xA052 (tbl_a[0])
 						; ROLE: swim cycle frame 0/6 (full octopus body, tentacle splay A)
 						; (referenced by ptr_tbl_a[0]; emit_setup picks via phase_a+flag_a)
 		db	 05h,0A2h, 5Fh,0A2h, 00h	; row 0  (overlaps tbl_b tail: ptrs 0xA205,0xA25F)
@@ -206,7 +206,7 @@ tako_frame_00:					; offset 0x052 -> ptr 0xA052 (tbl_a[0])
 		db	 00h, 00h, 2Bh, 2Ch, 00h	; row 14
 		db	 2Dh, 2Eh, 2Fh, 30h, 00h	; row 15
 
-tako_frame_01:					; offset 0x0A2 -> ptr 0xA0A2 (tbl_a[1])
+tako_swim_frame_1:					; offset 0x0A2 -> ptr 0xA0A2 (tbl_a[1])
 						; ROLE: swim cycle frame 1/6 (tentacle splay B)
 						; (referenced by ptr_tbl_a[1]; emit_setup picks via phase_a+flag_a)
 		db	 31h, 32h, 33h, 34h, 00h	; row 0
@@ -226,7 +226,7 @@ tako_frame_01:					; offset 0x0A2 -> ptr 0xA0A2 (tbl_a[1])
 		db	 23h, 52h, 25h, 26h, 00h	; row 14
 		db	 53h, 00h, 54h, 55h, 00h	; row 15
 
-tako_frame_02:					; offset 0x0F2 -> ptr 0xA0F2 (tbl_a[2])
+tako_swim_frame_2:					; offset 0x0F2 -> ptr 0xA0F2 (tbl_a[2])
 						; ROLE: swim cycle frame 2/6 (tentacle splay C)
 						; (referenced by ptr_tbl_a[2]; emit_setup picks via phase_a+flag_a)
 		db	 00h, 56h, 57h, 58h, 00h	; row 0
@@ -246,7 +246,7 @@ tako_frame_02:					; offset 0x0F2 -> ptr 0xA0F2 (tbl_a[2])
 		db	 80h, 00h, 81h, 82h, 00h	; row 14
 		db	 00h, 00h, 00h, 83h, 00h	; row 15
 
-tako_frame_03:					; offset 0x142 -> ptr 0xA142 (tbl_a[3])
+tako_swim_frame_3:					; offset 0x142 -> ptr 0xA142 (tbl_a[3])
 						; ROLE: swim cycle frame 3/6 (tentacle splay D)
 						; (referenced by ptr_tbl_a[3]; emit_setup picks via phase_a+flag_a)
 		db	 00h, 00h, 77h, 78h, 00h	; row 0
@@ -266,7 +266,7 @@ tako_frame_03:					; offset 0x142 -> ptr 0xA142 (tbl_a[3])
 		db	 0Ah,0ACh,0ADh,0AEh, 00h	; row 14
 		db	 0Eh, 0Fh,0AFh, 11h, 00h	; row 15
 
-tako_frame_04:					; offset 0x192 -> ptr 0xA192 (tbl_a[4])
+tako_swim_frame_4:					; offset 0x192 -> ptr 0xA192 (tbl_a[4])
 						; ROLE: swim cycle frame 4/6 (tentacle splay E)
 						; (referenced by ptr_tbl_a[4]; emit_setup picks via phase_a+flag_a)
 		db	 00h, 56h, 00h, 00h, 00h	; row 0
@@ -286,7 +286,7 @@ tako_frame_04:					; offset 0x192 -> ptr 0xA192 (tbl_a[4])
 		db	 0Eh, 6Ch,0C4h, 5Fh, 00h	; row 14
 		db	 0Eh, 0Fh,0C4h,0C7h, 00h	; row 15
 
-tako_frame_05:					; offset 0x1E2 -> ptr 0xA1E2 (tbl_a[5]; 7 rows)
+tako_swim_frame_5:					; offset 0x1E2 -> ptr 0xA1E2 (tbl_a[5]; 7 rows)
 						; ROLE: swim cycle frame 5/6 (tentacle splay F -- short variant)
 						; (referenced by ptr_tbl_a[5]; emit_setup picks via phase_a+flag_a;
 						;  shorter than other swim frames -- possibly a "scrunched" pose)
@@ -298,7 +298,7 @@ tako_frame_05:					; offset 0x1E2 -> ptr 0xA1E2 (tbl_a[5]; 7 rows)
 		db	 71h, 44h,0C8h,0C9h, 00h	; row 5
 		db	 7Fh, 18h,0C8h,0C9h, 00h	; row 6
 
-tako_frame_b1:					; offset 0x205 -> ptr 0xA205 (tbl_b[1])
+tako_death_pose:					; offset 0x205 -> ptr 0xA205 (tbl_b[1])
 						; ROLE: ATTACK windup / DEATH pose (full 16-row body)
 						; (referenced by ptr_tbl_b[1] via 200FIGHT DS-dispatch; reached
 						;  via death_phase / death_alt_swing or special-attack states)
@@ -320,7 +320,7 @@ tako_frame_b1:					; offset 0x205 -> ptr 0xA205 (tbl_b[1])
 		db	0C1h, 6Fh, 89h, 15h, 00h	; row 14
 		db	0C3h, 6Fh, 89h, 15h, 00h	; row 15
 
-tako_frame_b0:					; offset 0x255 -> ptr 0xA255 (tbl_b[0]; 2 rows)
+tako_blink_pose:					; offset 0x255 -> ptr 0xA255 (tbl_b[0]; 2 rows)
 						; ROLE: shrunken / blink / hidden-state pose (tiny 2-row sprite)
 						; (referenced by ptr_tbl_b[0] via 200FIGHT DS-dispatch; likely the
 						;  retreat/collapse pose or eye-blink overlay)
@@ -328,7 +328,7 @@ tako_frame_b0:					; offset 0x255 -> ptr 0xA255 (tbl_b[0]; 2 rows)
 		db	0C5h, 6Fh, 14h, 15h, 00h	; row 0
 		db	0C5h, 13h,0C6h, 15h, 00h	; row 1
 
-tako_frame_b2:					; offset 0x25F -> ptr 0xA25F (tbl_b[2]; rows end in 0x02)
+tako_ink_pose:					; offset 0x25F -> ptr 0xA25F (tbl_b[2]; rows end in 0x02)
 						; ROLE: PROJECTILE / ink-cloud sprite (alternate row-terminator 0x02)
 						; (referenced by ptr_tbl_b[2]; rendered via emit_proj_phase / emit_proj_loop
 						;  when tako_flag_c bit7 is set -- the ink/tentacle projectile fired

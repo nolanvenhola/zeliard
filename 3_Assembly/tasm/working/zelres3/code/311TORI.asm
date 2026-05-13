@@ -138,12 +138,12 @@ tori_state_template:				; 32-byte template
 ;  Each entry = runtime address in game_seg (= 0xA000 + file offset).
 ; -------------------------------------------------------------------------
 
-tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers (entries 13,14 alias into tori_frame_00's row 0)
+tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers (entries 13,14 alias into tori_flight_base_0's row 0)
 		db	 4Eh,0A0h, 67h,0A0h, 94h,0A0h	; -> 0xA04E, 0xA067, 0xA094
 		db	0BCh,0A0h,0DAh,0A0h, 02h,0A1h	; -> 0xA0BC, 0xA0DA, 0xA102
 		db	 16h,0A1h, 2Ah,0A1h, 3Eh,0A1h	; -> 0xA116, 0xA12A, 0xA13E
 		db	 52h,0A1h, 57h,0A1h, 70h,0A1h	; -> 0xA152, 0xA157, 0xA170
-		db	 8Eh,0A1h			; -> 0xA18E (entry 12; entries 13/14 supplied by tori_frame_00 row 0)
+		db	 8Eh,0A1h			; -> 0xA18E (entry 12; entries 13/14 supplied by tori_flight_base_0 row 0)
 
 ; -------------------------------------------------------------------------
 ;  Sprite frame data (file 0x04E..0x1D7).
@@ -198,7 +198,7 @@ tori_frame_ptr_tbl_a	label	word		; 15 frame-data pointers (entries 13,14 alias i
 ;  represented as labelled frames in this module.
 ; -------------------------------------------------------------------------
 
-tori_frame_00:				; offset 0x04E -> ptr 0xA04E (first 4 bytes alias tail of ptr_tbl_a)
+tori_flight_base_0:				; offset 0x04E -> ptr 0xA04E (first 4 bytes alias tail of ptr_tbl_a)
 					; ROLE: flight base pose 0 (idle wing position)
 					; (referenced by ptr_tbl_a[0]; tori_render_sprite_row(AL=phase_a==0) in normal_compose;
 					;  also alias-supplies ptr_tbl_a[13]=A1AC and ptr_tbl_a[14]=A1C5 via row 0)
@@ -208,7 +208,7 @@ tori_frame_00:				; offset 0x04E -> ptr 0xA04E (first 4 bytes alias tail of ptr_
 		db	29h, 2Ah, 2Bh, 2Ch,  00h	; row 3
 		db	6Ah, 6Bh, 6Ch, 6Dh,  00h	; row 4
 
-tori_frame_01:				; offset 0x067 -> ptr 0xA067
+tori_flight_base_1:				; offset 0x067 -> ptr 0xA067
 					; ROLE: flight base pose 1 (wing-flap mid-stroke)
 					; (referenced by ptr_tbl_a[1]; tori_render_sprite_row(AL=phase_a==1) in normal_compose
 					;  during anim_timer countdown after a hit/spawn)
@@ -231,7 +231,7 @@ tori_glyph_tbl	db	 00h			; row 10 part 2 (0x08C); glyph-table data anchor
 		db	 00h	; row 13
 		db	8Fh, 90h,  00h	; row 14
 
-tori_frame_02:				; offset 0x094 -> ptr 0xA094
+tori_turn_frame_0:				; offset 0x094 -> ptr 0xA094
 					; ROLE: turn-cycle overlay 1/4 (banking pose A)
 					; (referenced by ptr_tbl_a[2]; tori_render_sprite_row(AL=turn_flag+2==2) in normal_compose)
 		db	96h, 97h, 98h, 99h,  00h	; row 0
@@ -249,7 +249,7 @@ tori_frame_02:				; offset 0x094 -> ptr 0xA094
 		db	91h,  00h	; row 12
 		db	94h, 95h,  00h	; row 13
 
-tori_frame_03:				; offset 0x0BC -> ptr 0xA0BC
+tori_turn_frame_1:				; offset 0x0BC -> ptr 0xA0BC
 					; ROLE: turn-cycle overlay 2/4 (banking pose B)
 					; (referenced by ptr_tbl_a[3]; tori_render_sprite_row(AL=turn_flag+2==3) in normal_compose)
 		db	99h, 9Ah, 28h, 9Bh,  00h	; row 0
@@ -264,7 +264,7 @@ tori_frame_03:				; offset 0x0BC -> ptr 0xA0BC
 		db	65h,  00h	; row 9
 		db	0A4h, 0A5h,  00h	; row 10
 
-tori_frame_04:				; offset 0x0DA -> ptr 0xA0DA
+tori_turn_frame_2:				; offset 0x0DA -> ptr 0xA0DA
 					; ROLE: turn-cycle overlay 3/4 (banking pose C)
 					; (referenced by ptr_tbl_a[4]; tori_render_sprite_row(AL=turn_flag+2==4) in normal_compose)
 		db	7Ah,  00h	; row 0
@@ -278,7 +278,7 @@ tori_frame_04:				; offset 0x0DA -> ptr 0xA0DA
 		db	7Bh, 7Ch, 78h, 79h,  00h	; row 8
 		db	92h, 93h, 0ACh, 0ABh,  00h	; row 9
 
-tori_frame_05:				; offset 0x102 -> ptr 0xA102
+tori_turn_frame_3:				; offset 0x102 -> ptr 0xA102
 					; ROLE: turn-cycle overlay 4/4 (banking pose D)
 					; (referenced by ptr_tbl_a[5]; tori_render_sprite_row(AL=turn_flag+2==5) in normal_compose)
 		db	0AAh, 28h, 27h, 26h,  00h	; row 0
@@ -286,7 +286,7 @@ tori_frame_05:				; offset 0x102 -> ptr 0xA102
 		db	 08h,  09h, 1Ch, 1Dh,  00h	; row 2
 		db	 08h,  09h, 19h, 1Fh,  00h	; row 3
 
-tori_frame_06:				; offset 0x116 -> ptr 0xA116 (embeds tori_extern_fn_ptr (dw 0x0900) across row 0/1 boundary)
+tori_dir_frame_0:				; offset 0x116 -> ptr 0xA116 (embeds tori_extern_fn_ptr (dw 0x0900) across row 0/1 boundary)
 					; ROLE: directional facing 1/4 (heading N -- head/beak overlay)
 					; (referenced by ptr_tbl_a[6]; tori_render_sprite_row(AL=dir_state+6==6) in normal_compose)
 		db	 08h,  09h, 21h, 22h	; row 0 (0x116..0x119)
@@ -295,7 +295,7 @@ tori_extern_fn_ptr	dw	900h			; spans row 0/1 terminator (0x11A..0x11B); fn-ptr c
 		db	 09h,  0Ah, 1Dh, 1Eh,  00h	; row 2
 		db	 09h,  0Ah, 1Fh, 20h,  00h	; row 3
 
-tori_frame_07:				; offset 0x12A -> ptr 0xA12A
+tori_dir_frame_1:				; offset 0x12A -> ptr 0xA12A
 					; ROLE: directional facing 2/4 (heading E -- head/beak overlay)
 					; (referenced by ptr_tbl_a[7]; tori_render_sprite_row(AL=dir_state+6==7) in normal_compose)
 		db	 09h,  0Ah, 22h, 23h,  00h	; row 0
@@ -305,7 +305,7 @@ tori_frame_07:				; offset 0x12A -> ptr 0xA12A
 		db	 0Bh,  00h	; row 4
 		db	8Bh, 8Ch,  00h	; row 5
 
-tori_frame_08:				; offset 0x13E -> ptr 0xA13E
+tori_dir_frame_2:				; offset 0x13E -> ptr 0xA13E
 					; ROLE: directional facing 3/4 (heading S -- head/beak overlay)
 					; (referenced by ptr_tbl_a[8]; tori_render_sprite_row(AL=dir_state+6==8) in normal_compose)
 		db	 0Bh, 0B5h, 0B3h, 0B4h,  00h	; row 0
@@ -316,13 +316,13 @@ tori_frame_08:				; offset 0x13E -> ptr 0xA13E
 		db	 00h	; row 5
 		db	8Dh, 8Eh,  00h	; row 6
 
-tori_frame_09:				; offset 0x152 -> ptr 0xA152
+tori_dir_frame_3:				; offset 0x152 -> ptr 0xA152
 					; ROLE: directional facing 4/4 (heading W -- head/beak overlay)
 					; (referenced by ptr_tbl_a[9]; tori_render_sprite_row(AL=dir_state+6==9) in normal_compose)
 		db	0B6h, 0B7h,  00h	; row 0
 		db	0B8h,  00h	; row 1
 
-tori_frame_10:				; offset 0x157 -> ptr 0xA157
+tori_swoop_frame_0:				; offset 0x157 -> ptr 0xA157
 					; ROLE: swoop animation 1/3 (dive entry)
 					; (referenced by ptr_tbl_a[10]; tori_render_sprite_row(AL=swoop_ctr+0xA==0xA) in normal_compose
 					;  during dive_step_a/dive_step_b paths)
@@ -332,7 +332,7 @@ tori_frame_10:				; offset 0x157 -> ptr 0xA157
 		db	5Eh, 3Fh, 42h, 43h,  00h	; row 3
 		db	0A7h, 0A8h, 3Dh, 3Eh,  00h	; row 4
 
-tori_frame_11:				; offset 0x170 -> ptr 0xA170
+tori_swoop_frame_1:				; offset 0x170 -> ptr 0xA170
 					; ROLE: swoop animation 2/3 (dive mid)
 					; (referenced by ptr_tbl_a[11]; tori_render_sprite_row(AL=swoop_ctr+0xA==0xB) in normal_compose)
 		db	73h, 74h, 70h, 71h,  00h	; row 0
@@ -349,7 +349,7 @@ tori_frame_11:				; offset 0x170 -> ptr 0xA170
 		db	 00h	; row 11
 		db	82h,  00h	; row 12
 
-tori_frame_12:				; offset 0x18E -> ptr 0xA18E
+tori_swoop_frame_2:				; offset 0x18E -> ptr 0xA18E
 					; ROLE: swoop animation 3/3 (dive recovery)
 					; (referenced by ptr_tbl_a[12]; tori_render_sprite_row(AL=swoop_ctr+0xA==0xC) in normal_compose;
 					;  swoop_ctr wraps at 3 in tori_swoop_tick)
@@ -366,7 +366,7 @@ tori_frame_12:				; offset 0x18E -> ptr 0xA18E
 		db	 00h	; row 10
 		db	85h, 86h, 83h, 84h,  00h	; row 11
 
-tori_frame_13:				; offset 0x1AC -> ptr 0xA1AC
+tori_glide_frame_0:				; offset 0x1AC -> ptr 0xA1AC
 					; ROLE: glide overlay 1/2 (post-dive glide pose)
 					; (referenced by ptr_tbl_a[13] aliased via frame_00 row 0; tori_render_sprite_row(AL=0xD)
 					;  in check_glide_compose when tori_glide_flag is armed)
@@ -378,7 +378,7 @@ tori_frame_13:				; offset 0x1AC -> ptr 0xA1AC
 		db	 00h	; row 5
 		db	3Dh, 7Fh, 88h, 89h,  00h	; row 6
 
-tori_frame_14:				; offset 0x1C5 -> ptr 0xA1C5
+tori_glide_frame_1:				; offset 0x1C5 -> ptr 0xA1C5
 					; ROLE: glide overlay 2/2 (post-dive glide pose alt)
 					; (referenced by ptr_tbl_a[14] aliased via frame_00 row 0; tori_render_sprite_row(AL=0xE)
 					;  in check_glide_compose when tori_glide_flag is armed)
