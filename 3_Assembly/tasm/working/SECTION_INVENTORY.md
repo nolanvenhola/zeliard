@@ -200,7 +200,7 @@
 - [x] L87    `starting_position_in_town`  *(data)*
 - [x] L88    `map_scroll_row`  *(data)*
 - [x] L103   `screen_position`  *(data)*
-- [ ] L104   `fight_player_col`  *(data)*
+- [x] L104   `fight_player_col`  *(data)*
 - [x] L109   `gold_carried_x65536`  *(data)*
 - [x] L110   `gold_carried_x1`  *(data)*
 - [x] L111   `gold_carried_x256`  *(data)*
@@ -221,7 +221,7 @@
 - [x] L159   `crest_hero`  *(data)*
 - [x] L166   `selected_spell`  *(data)*
 - [x] L170   `selected_accessory`  *(data)*
-- [ ] L171   `stat_X9F`  *(data)*
+- [x] L171   `stat_X9F`  *(data)*
 - [x] L177   `tears_of_esmesanti_count`  *(data)*
 - [x] L184   `accessory_slot_1`  *(data)*
 - [x] L185   `accessory_slot_2`  *(data)*
@@ -259,7 +259,7 @@
 - [x] L271   `save_sage`  *(data)*
 - [x] L272   `last_sage_visited`  *(data)*
 - [x] L276   `heal_pulse_count`  *(data)*
-- [ ] L278   `current_level_idx`  *(data)*
+- [x] L278   `current_level_idx`  *(data)*
 - [x] L295   `magic_shop_inventory_muralla`  *(data)*
 - [x] L296   `magic_shop_inventory_satono`  *(data)*
 - [x] L297   `magic_shop_inventory_bosque`  *(data)*
@@ -289,8 +289,8 @@
 - [x] L327   `weapon_shop_shields_esco`  *(data)*
 - [x] L333   `key_count`  *(data)*
 - [x] L334   `sages_spoken_bitmap`  *(data)*
-- [ ] L335   `scene_trans_request`  *(data)*
-- [ ] L336   `gvar_pose_idx`  *(data)*
+- [x] L335   `scene_trans_request`  *(data)*
+- [x] L336   `gvar_pose_idx`  *(data)*
 - [x] L337   `init_complete_flag`  *(data)*
 
 ## working/drivers/stick.asm  (33 sections)
