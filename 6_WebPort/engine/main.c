@@ -70,7 +70,7 @@ static void blit_title_image(void) {
 }
 
 EXPORT void zeliard_init(void) {
-    palette_set_default();
+    palette_set_scene(PALETTE_TITLE);
     framebuf_clear(0);
     load_title_image();
     platform_log("zeliard_init: ready (framebuffer %dx%d)", ZELIARD_WIDTH, ZELIARD_HEIGHT);

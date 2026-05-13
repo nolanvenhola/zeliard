@@ -3,16 +3,25 @@
 
 #include "../core/types.h"
 
-/* The active 256-entry VGA DAC palette.  Each entry is RGB in 0-255 range
- * (converted from the original 6-bit DAC values by left-shifting 2).
+/* 256-entry VGA DAC palette.  Each entry is RGB in 0-255 range (the
+ * source DAC values are 6-bit; the capture tooling already scaled to
+ * 8-bit, so no conversion needed here).
  *
- * The original game switches palettes per scene (P1=Opening, P2=Title,
- * P3=Gameplay) via the gfx-driver function 4 dispatch slot.  See
- * CLAUDE.md "Captured Palettes" section for the source captures.
+ * The original game switches palettes per scene via the gfx-driver
+ * function-4 dispatch slot (see write_palette_byte_mcga in
+ * 3_Assembly/tasm/working/zelres1/code/105GDMCA.asm:2201).  We mirror
+ * that behaviour via palette_set_scene(); the three captured palettes
+ * are embedded as static data in palettes_extracted.h.
  */
 typedef struct { u8 r, g, b; } palette_color_t;
 extern palette_color_t g_palette[256];
 
-void palette_set_default(void);  /* Title palette (P2) as a starting point. */
+typedef enum {
+    PALETTE_OPENING  = 1,  /* P1 — opening cinematic */
+    PALETTE_TITLE    = 2,  /* P2 — title screen */
+    PALETTE_GAMEPLAY = 3,  /* P3 — in-game */
+} palette_scene_t;
+
+void palette_set_scene(palette_scene_t scene);
 
 #endif
