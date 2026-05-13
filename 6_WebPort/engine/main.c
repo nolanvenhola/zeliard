@@ -1,20 +1,17 @@
 /* Zeliard web-port engine entry point.
  *
- * M1 scope: prove the WASM <-> JS pipeline works end-to-end.
- *   zeliard_init()      -- one-time setup; initialises framebuffer + palette
- *   zeliard_tick(dt)    -- per-frame update; for M1 just animates a test
- *                          pattern so we can see the framebuffer is live
- *   zeliard_framebuf()  -- returns pointer to the 320x200 paletted buffer
- *   zeliard_palette()   -- returns pointer to the 256-entry palette
- *
- * Once the pipeline lights up we'll swap the test pattern for real GRP
- * rendering (M1.5: title-logo render of 131TTL3G.grp).
+ * M1.5 scope: render the title-logo GRP (131TTL3G.grp / "ttl3.grp") into
+ * the framebuffer at its canonical VGA position (col 28, row 15) so we
+ * can visually verify the decode pipeline matches the original.
  */
 
 #include "core/types.h"
 #include "core/framebuf.h"
 #include "render/palette.h"
+#include "load/grp.h"
 #include "platform/platform.h"
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef __EMSCRIPTEN__
 #  include <emscripten.h>
@@ -23,56 +20,76 @@
 #  define EXPORT
 #endif
 
-static u32 g_tick_count = 0;
+/* TTL3G geometry from CLAUDE.md "VERIFIED: Zeliard Title Logo" trace:
+ *   source: rows=65, cl=112 → image 896x65 in 1bpp 2-plane form
+ *   output: call_size=260 (=rows*4), blit_calls=112 (=cl) → 260x112 image
+ *   blit position: VGA byte offset 4828 → row 15, col 28 */
+static const int  TTL3_ROWS    = 65;
+static const int  TTL3_CL      = 112;
+static const int  TTL3_VGA_X   = 28;
+static const int  TTL3_VGA_Y   = 15;
+static const char TTL3_ASSET[] = "ttl3.grp";
+
+/* Decoded image cached at init.  M1.5 just blits the same frame each tick;
+ * later milestones will animate the full opening cinematic. */
+static u8 *g_title_image    = NULL;
+static int g_title_image_w  = 0;
+static int g_title_image_h  = 0;
+
+static void load_title_image(void) {
+    size_t file_size = 0;
+    u8 *file_data = platform_load_asset(TTL3_ASSET, &file_size);
+    if (!file_data) {
+        platform_log("load_title_image: asset load failed: %s", TTL3_ASSET);
+        return;
+    }
+    g_title_image = grp_decode(file_data, file_size, TTL3_ROWS, TTL3_CL,
+                                &g_title_image_w, &g_title_image_h);
+    free(file_data);
+    if (!g_title_image) {
+        platform_log("load_title_image: decode failed");
+    } else {
+        platform_log("load_title_image: %s %dx%d ready", TTL3_ASSET,
+                     g_title_image_w, g_title_image_h);
+    }
+}
+
+static void blit_title_image(void) {
+    if (!g_title_image) return;
+    for (int y = 0; y < g_title_image_h; y++) {
+        int dy = y + TTL3_VGA_Y;
+        if (dy >= ZELIARD_HEIGHT) break;
+        for (int x = 0; x < g_title_image_w; x++) {
+            int dx = x + TTL3_VGA_X;
+            if (dx >= ZELIARD_WIDTH) break;
+            u8 v = g_title_image[y * g_title_image_w + x];
+            if (v == 0) continue;  /* black is the background — leave it */
+            g_framebuf[dy * ZELIARD_WIDTH + dx] = v;
+        }
+    }
+}
 
 EXPORT void zeliard_init(void) {
     palette_set_default();
     framebuf_clear(0);
-    platform_log("zeliard_init: framebuffer %dx%d ready", ZELIARD_WIDTH, ZELIARD_HEIGHT);
-}
-
-/* Draws a moving test pattern so we can confirm the framebuffer is live and
- * the JS side is presenting frames at the correct rate.  Replaced by real
- * scene rendering once GRP decoding lands. */
-static void draw_test_pattern(u32 t) {
-    /* Diagonal gradient bands that scroll with the tick counter. */
-    for (int y = 0; y < ZELIARD_HEIGHT; y++) {
-        for (int x = 0; x < ZELIARD_WIDTH; x++) {
-            u8 v = (u8)((x + y + t) & 0xFF);
-            g_framebuf[y * ZELIARD_WIDTH + x] = v;
-        }
-    }
-    /* Plant the title-logo palette indices in known corners so we can verify
-     * the palette table is being read correctly. */
-    for (int y = 0; y < 16; y++) {
-        for (int x = 0; x < 16; x++) {
-            g_framebuf[y * ZELIARD_WIDTH + x] = 0xAA;  /* yellow */
-            g_framebuf[y * ZELIARD_WIDTH + (ZELIARD_WIDTH - 16 + x)] = 0xCC;  /* blue */
-            g_framebuf[(ZELIARD_HEIGHT - 16 + y) * ZELIARD_WIDTH + x] = 0x88;  /* dark blue */
-            g_framebuf[(ZELIARD_HEIGHT - 16 + y) * ZELIARD_WIDTH + (ZELIARD_WIDTH - 16 + x)] = 0x00;  /* black */
-        }
-    }
+    load_title_image();
+    platform_log("zeliard_init: ready (framebuffer %dx%d)", ZELIARD_WIDTH, ZELIARD_HEIGHT);
 }
 
 EXPORT void zeliard_tick(u32 dt_ms) {
     (void)dt_ms;
-    g_tick_count++;
-    draw_test_pattern(g_tick_count);
+    /* For M1.5 the title scene is static — just re-blit each frame so the
+     * framebuffer stays correct even if other code clears it. */
+    framebuf_clear(0);
+    blit_title_image();
 }
 
-EXPORT u8* zeliard_framebuf(void) {
-    return g_framebuf;
-}
-
-EXPORT palette_color_t* zeliard_palette(void) {
-    return g_palette;
-}
-
+EXPORT u8* zeliard_framebuf(void) { return g_framebuf; }
+EXPORT palette_color_t* zeliard_palette(void) { return g_palette; }
 EXPORT int zeliard_width(void)  { return ZELIARD_WIDTH; }
 EXPORT int zeliard_height(void) { return ZELIARD_HEIGHT; }
 
 #ifndef __EMSCRIPTEN__
-/* Native entry point for the parity-test harness. */
 #include <stdio.h>
 int main(int argc, char **argv) {
     zeliard_init();

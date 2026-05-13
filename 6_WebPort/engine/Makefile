@@ -7,7 +7,8 @@
 ENGINE_SRC := \
 	main.c \
 	core/framebuf.c \
-	render/palette.c
+	render/palette.c \
+	load/grp.c
 
 WEB_SRC    := $(ENGINE_SRC) platform/platform_web.c
 NATIVE_SRC := $(ENGINE_SRC) platform/platform_sdl.c
