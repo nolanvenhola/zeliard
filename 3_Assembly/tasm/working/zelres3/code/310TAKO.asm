@@ -353,15 +353,15 @@ tako_scan_prolog:
 		mov	byte ptr ds:tako_frame_idx,0	; was: C6 06 9A AA 00
 		mov	byte ptr ds:tako_state,0	; was: C6 06 9B AA 00
 
-scan_slot_loop:					; was loc_1 (file 0x28F)
+scan_slot_loop:
 ;*		cmp	word ptr [si],0FFFFh
 				db	 83h, 3Ch,0FFh		; cmp word ptr [si],0FFFFh
 								;  (alt encoding: sign-extended imm8 form;
 								;   TASM emits 4-byte form, so keep as db)
-				jz	scan_done		; was loc_4 -- end of slot list
+				jz	scan_done		; end of slot list
 				mov	ax,[si]
 				call	word ptr cs:fight_cb_anim_step
-				jc	scan_next_slot		; was loc_3 -- callback consumed slot
+				jc	scan_next_slot		; callback consumed slot
 				mov	[si+3],bl
 				mov	ax,[si+2]
 				call	word ptr cs:fight_cb_record_ofs

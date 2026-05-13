@@ -616,7 +616,7 @@ crab_row_widths:				; was ';* No entry point' #1
 ;  and arms crab_anim_idx = 0xFF (triggers anim_step_entry next frame).
 ; -------------------------------------------------------------------------
 
-spawn_phase_reset:				; was loc_25 (label restored from byte-form je fixup)
+spawn_phase_reset:
 		mov	ax,crab_const_2600
 		add	ax,0Ch
 		mov	bx,ds:fight_state_max
