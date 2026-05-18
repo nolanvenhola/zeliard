@@ -44,11 +44,13 @@ NEW_NAME_RE = re.compile(r'^([123])(\d{2})\w{1,5}$')
 LEGACY_RE   = re.compile(r'^chunk_(\d+)$')
 
 
+_BIN_OVERRIDE = None   # set by main() when --bin-dir is passed
+
 def _scan_bin(name):
     """Scan bin/<name>/.  Return {chunk_idx: (filename, full_path)}.
     Refuses legacy chunk_NN.bin files."""
     archive_digit = name[-1]      # zelres1 -> '1'
-    bin_dir       = BIN / name
+    bin_dir       = (_BIN_OVERRIDE if _BIN_OVERRIDE else BIN) / name
 
     out = {}
     if not bin_dir.exists():
@@ -95,8 +97,16 @@ def _gather_archive(name):
     out = []
     for idx in sorted(chunks):
         fname, path = chunks[idx]
-        with open(path, 'rb') as f:
-            out.append((idx, fname, f.read()))
+        data = bytearray(path.read_bytes())
+        # The first 4 bytes of every SAR chunk are a LE uint32 size field
+        # (chunk_data_size = total_chunk_size - 4).  For the release build
+        # this is already correct because the original binary was extracted
+        # from the SAR.  For debug builds the chunk is larger but the size
+        # field still holds the original value — patch it to match.
+        correct_size = len(data) - 4
+        if struct.unpack_from('<I', data, 0)[0] != correct_size:
+            struct.pack_into('<I', data, 0, correct_size)
+        out.append((idx, fname, bytes(data)))
     return out
 
 
@@ -164,7 +174,13 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--out-dir', default=str(BIN),
                    help=f'Output directory for .sar files (default: {BIN})')
+    p.add_argument('--bin-dir', default=None,
+                   help='Source directory containing zelresN/ chunk folders (default: bin/)')
     args = p.parse_args()
+
+    global _BIN_OVERRIDE
+    if args.bin_dir:
+        _BIN_OVERRIDE = Path(args.bin_dir)
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

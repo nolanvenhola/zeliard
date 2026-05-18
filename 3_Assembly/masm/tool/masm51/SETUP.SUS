@@ -1,0 +1,266 @@
+cls :a 30 "Microsoft(R) MASM 5.10 Setup"
+echo "Warning:"
+echo
+echo "  Before installing the assembler files, you should make backup"
+echo "  copies of the new distribution disks. Because of system variations,"
+echo "  backing up is not included as part of setup."
+echo
+echo "  If you have files with the same file names as files copied during"
+echo "  installation, the old versions will be overwritten; for example,"
+echo "  a previous version of MASM.EXE would be lost."
+echo
+echo "  If you have not backed up the distribution disks or if you do"
+echo "  not have copies of old versions, you should make backup copies now."
+echo
+echo "  To accept the proposed responses, just press ÄÙ (Enter)."
+echo "  Use the ÄÄ (Backspace) key to change the proposed response."
+echo "  When asked if you want to do something, respond by typing Y or N."
+echo
+set yes=1
+dialog yesNo,yes,"Press Enter to continue: "
+if (yes == 0) then exit 1
+cls
+
+echo "Select Operating-System Configuration"
+echo
+echo "  dos -  for all versions of MS-DOS(R) 2.x & 3.x"
+echo "  os2 -  for protected-mode-only support of OS/2"
+echo "  both - for protected and real mode of OS/2"
+echo
+echo "Note: You must have a high-density drive to install OS/2 programs."
+echo
+
+set os="dos"
+if (dosVersion >= 1000) then set os="os2"
+
+:selectOS
+dialog simple,os,"Enter dos, os2 or both: "
+if (os == "dos") then goto ok1
+if (os == "os2") then goto ok1
+if (os != "both") then goto selectOS
+:ok1
+
+cls
+echo "Next, enter the name of the directory where setup will install the"
+echo "MASM files.  When prompted for a path, enter the drive and directory names."
+echo "For example: C:\, c:\masm."
+echo
+
+set fEditor=1
+set asmDir="C:\masm"
+set initPath=1
+
+:getPaths
+dialog simplePath,asmDir,"Enter path for MASM files: "
+
+if (os != "os2")
+    if (initPath == 1)
+      set exeDir=asmDir:d
+      set exeDir=exeDir&"\bin"
+    endif
+    dialog simplePath,exeDir,"Enter path for DOS executable programs: "
+else
+    set exeDir=asmDir
+endif
+
+if (os != "dos")
+    if (initPath == 1)
+      set exeDirb=exeDir:d
+      set exeDirb=exeDirb&"\binb"
+      set exeDirp=exeDir:d
+      set exeDirp=exeDirp&"\binp"
+    endif
+    dialog simplePath,exeDirb,"Enter path for dual-mode executable programs: "
+    dialog simplePath,exeDirp,"Enter path for protected-mode executable programs: "
+
+    if (os == "both")
+      set fsNeeded=200
+    else
+      set fsNeeded=155
+    endif
+else
+    set fsNeeded=118
+    set exeDirp=exeDir
+    set exeDirb=exeDir
+endif
+
+set toDrive=asmDir:d
+
+if (initPath == 1)
+  set incDir=asmDir:d
+  set incDir=incDir&"\include"
+endif
+dialog simplePath,incDir,"Enter path for include files: "
+
+echo
+dialog yesNo,fEditor,"Do you want to install the Microsoft(R) Editor? "
+if (fEditor == 0) then goto noEditor
+
+set iniDir=exeDir
+if (os == "os2") then set iniDir=exeDirp
+
+if (initPath == 1) then set keys="quick"
+
+dialog simplePath,iniDir,"Enter path for Editor tools.ini file: "
+
+echo
+echo "What configuration do you want the Microsoft Editor keys to have on startup?"
+echo
+echo "       QUICK - languages / Wordstar"
+echo "       BRIEF"
+echo "       EPSILON"
+echo
+
+:selectKeys
+dialog simple,keys,"Type quick, brief or epsilon: "
+
+if (keys == "quick") then goto okb
+if (keys == "brief") then goto okb
+if (keys != "epsilon") then goto selectKeys
+:okb
+
+:noEditor
+
+set freeSpace=toDrive:f
+set yes=0
+
+if (freeSpace < fsNeeded)
+    echo
+    echo "Assuming all your files are going on " toDrive " disk, you will"
+    echo "need " fsNeeded "0K bytes free space and you only have " freeSpace "0K available."
+    echo "If you continue, you should change your drive selection."
+    echo
+
+    dialog yesNo,yes,"Do you want to continue anyway? "
+    if (yes == 0) then exit(1)
+
+endif
+
+echo
+dialog yesNo,yes,"Would you like to change your selections? "
+if (yes == 1)
+   cls
+   set initPath=0
+   goto getPaths
+endif
+
+set volId="MASM"
+copy "packing.lst readme.doc" asmDir
+
+copy  "mixed\mixed.inc" incDir
+set mixDir=incDir&"\mixed"
+copy "mixed\*.asm mixed\*.pas mixed\*.c mixed\*.for mixed\*.bas mixed\*.doc" mixDir
+
+copy "show.exe cref.exe" exeDirb
+if (os == "dos") then copy "masm.exe" exeDir
+
+set volId="Utilities"
+
+copy "exehdr.exe lib.exe make.exe cvpack.exe" exeDirb
+if (os != "os2") then copy "errout.exe exemod.exe exepack.exe setenv.exe" exeDir
+if (os == "dos") then copy "mouse.com link.exe" exeDir
+
+set volId="CodeView"
+
+copy "macro.doc" asmDir
+if (os != "os2")
+    copy "bios.inc dos.inc" incDir
+    copy "cv.*" exeDir
+    copy "showr.asm pagerr.asm" asmDir
+endif
+
+if (os != "dos")
+    set volId="OS2 Program"
+
+    copy "bind.exe ilink.exe implib.exe masm.exe link.exe" exeDirb
+    if (os != "os2") then copy "exec.exe" exeDir
+    if (fEditor == 1) then copy "mep.exe" exeDirp
+    copy "cvp.*" exeDirp
+    copy "*.inc doscalls.lib api.lib apilmr.obj" incDir
+    copy "pagerp.asm showp.asm show os2.doc makeshow.*" asmDir
+
+endif
+if (fEditor == 1)
+
+ set volId="Editor"
+
+ if (not exist iniDir) then md iniDir
+ if (os != "os2") then copy "m.exe" exeDir
+
+ copy "rm.exe undel.exe megrep.exe calltree.exe ech.exe exp.exe" exeDirb
+
+ set toKeys=drive:d
+ set toKeys=toKeys&"ini\"
+ set toKeys=toKeys&keys
+ set keys=toKeys&".ini"
+ set toKeys=iniDir&"\tools.ini"
+
+ if (exist toKeys)
+  exec COMSPEC "/c copy " toKeys " + " keys " " toKeys
+ else
+  copyto keys toKeys
+ endif
+endif
+
+cls "MASM 5.10 Setup"
+echo "Other recommended setup options include:"
+echo
+echo "In CONFIG.SYS:"
+if (os == "dos")
+ echo
+ echo "   FILES=20                       (or higher)"
+ echo "   BUFFERS=10                     (or higher)"
+ echo "   SHELL COMMAND.COM /E:256 /P    (set environment to 256 or more bytes)"
+else
+ echo "   IOPL=YES                       (allow CVP to run)"
+endif
+ echo
+if (os == "dos")
+ echo "In AUTOEXEC.BAT:"
+else
+ echo "In STARTUP.CMD:"
+endif
+echo
+if (os == "dos") then echo "   MOUSE                 (load mouse driver if you have a mouse)"
+echo "   SET PATH="exeDir"...    (directory containing MASM and utilities)"
+echo "   SET INCLUDE="incDir"... (directory containing include files)"
+echo "   SET LIB="incDir"....    (directory containing library and object files)"
+echo "   SET MASM=options      (standard assembly options)"
+echo "   SET LINK=options      (standard link options)"
+echo "   SET TMP=tempDir       (LINK work directory - use RAM disk if available)"
+echo
+if (dosVersion <= 320)
+ echo "Increase the environment size to 256 bytes (or higher) with the"
+ echo "following command line:"
+ echo
+ echo "   SETENV COMMAND.COM 256  (make sure you have a backup first)"
+endif
+
+set mdrive=asmDir:d
+cd mdrive
+cd asmDir
+
+set yes=0
+dialog yesNo,yes,"Would you like to run the CodeView(R) demo program? "
+if (yes == 1)
+
+   set volId="CodeView"
+   copy "*.cv showr.exe" asmDir
+   call "a:\setup"
+   exec COMSPEC "/c del *.cv"
+   exec COMSPEC "/c del showr.exe"
+   cls
+endif
+
+set yes=1
+set show=exeDirb&"\"
+set show=show&"show"
+dialog yesNo,yes,"Would you like to view the packing list? "
+if (yes == 1)
+ exec show "packing.lst"
+ cls
+endif
+
+set yes=1
+dialog yesNo,yes,"Would you like to view the documentation notes? "
+if (yes == 1) then exec show "readme.doc"

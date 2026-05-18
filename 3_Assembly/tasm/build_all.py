@@ -3,18 +3,17 @@
 build_all.py - Zeliard full build, parallelised across N TasmRunner.exe
                instances (one per .asm file).  Each invocation runs in
                its own DOSBox-X session, so there are no session-limit
-               failures like the old single-DOSBox approach (which
-               silently dropped 50+ files past some unknown threshold
-               while still letting SAR verify pass against stale .bin).
+               failures like the old single-DOSBox approach.
 
 Usage:
-    python build_all.py [--verify] [--clean] [--workers N]
+    python build_all.py [--verify] [--clean] [--workers N] [--debug]
 
 Options:
     --verify       Compare rebuilt SARs against originals in 1_OriginalGame/
-    --clean        Delete compiled outputs in bin/ before building
+    --clean        Delete compiled outputs before building
     --workers N    Parallel workers (default: 8)
     --serial       Force --workers 1 (use when a parallel run masks an error)
+    --debug        Build with DEBUG_BUILD=1; output to bin_debug/ (no verify)
 """
 
 import subprocess, struct, shutil, re, sys, tempfile, argparse, os, time
@@ -22,78 +21,80 @@ import concurrent.futures
 from pathlib import Path
 
 # ── Paths ────────────────────────────────────────────────────────────────────
-ROOT     = Path(__file__).parent.resolve()
-WORKING  = ROOT / 'working'
-BIN      = ROOT / 'bin'
-SAR_ORIG = ROOT / '../../1_OriginalGame'
-SAR_TOOL = ROOT / '../../2_SAR/Tools/pack_sar.py'
+ROOT      = Path(__file__).parent.resolve()
+WORKING   = ROOT / 'working'
+BIN       = ROOT / 'bin'
+BIN_DEBUG = ROOT / 'bin_debug'
+SAR_ORIG  = ROOT / '../../1_OriginalGame'
 
-# TasmRunner.exe — same C# wrapper that verify1.py uses.  Spawns its own
-# DOSBox-X per call (TASM/TLINK bundled).  Per-call isolation = no
-# session-limit issues.
+# TasmRunner.exe — same C# wrapper that verify1.py uses.
 RUNNER   = ROOT / 'TasmRunner/bin/Debug/net8.0/TasmRunner.exe'
 
-DEFAULT_WORKERS = 8
-PER_FILE_TIMEOUT = 180   # seconds — generous; most files compile in <5s
+DEFAULT_WORKERS  = 8
+PER_FILE_TIMEOUT = 180
 
 # ── Output extension mapping ──────────────────────────────────────────────────
 def output_ext(stem):
-    """Return the correct file extension for a compiled chunk."""
     s = stem.upper()
-    if re.match(r'^[123]\d{2}MP', s):            return '.mdt'   # dungeon map
-    if re.match(r'^[123]\d{2}\w{2}MP$', s):      return '.mdt'   # town map (xxMP)
+    if re.match(r'^[123]\d{2}MP', s):        return '.mdt'
+    if re.match(r'^[123]\d{2}\w{2}MP$', s):  return '.mdt'
     return '.bin'
 
-# zeliad.asm is the only file that stays as .exe
 def keep_as_exe(stem):
     return stem.lower() == 'zeliad'
 
+# ── Debug-build source patching ───────────────────────────────────────────────
+def patch_debug_sources():
+    """Replace DEBUG_BUILD EQU 0 with EQU 1 in every ASM that opts in.
+    Returns list of (path, original_bytes) for restore_debug_sources().
+    Uses binary I/O to avoid encoding/line-ending corruption."""
+    patches = [
+        (b'DEBUG_BUILD\tEQU\t0', b'DEBUG_BUILD\tEQU\t1'),
+        (b'SIZE_TEST\tEQU\t0',   b'SIZE_TEST\tEQU\t1'),
+    ]
+    patched = []
+    for asm in WORKING.rglob('*.asm'):
+        data = asm.read_bytes()
+        new_data = data
+        for needle, replace in patches:
+            new_data = new_data.replace(needle, replace, 1)
+        if new_data != data:
+            patched.append((asm, data))
+            asm.write_bytes(new_data)
+    return patched
+
+def restore_debug_sources(patched):
+    for asm, original_bytes in patched:
+        asm.write_bytes(original_bytes)
+
 # ── Gather all ASM files to compile ──────────────────────────────────────────
-def gather_jobs():
-    """Return list of (asm_path, dest_dir) for every file to compile."""
+def gather_jobs(out_bin):
     jobs = []
-    # Core
     for asm in sorted((WORKING / 'core').glob('*.asm')):
-        jobs.append((asm, BIN))
-    # Drivers
+        jobs.append((asm, out_bin))
     for asm in sorted((WORKING / 'drivers').glob('*.asm')):
-        jobs.append((asm, BIN))
-    # SAR code chunks
+        jobs.append((asm, out_bin))
     for n in [1, 2, 3]:
-        dest = BIN / f'zelres{n}'
+        dest = out_bin / f'zelres{n}'
         for asm in sorted((WORKING / f'zelres{n}/code').glob('*.asm')):
             jobs.append((asm, dest))
     return jobs
 
-# ── MZ stripping (for non-zeliad .exe outputs) ───────────────────────────────
+# ── MZ stripping ─────────────────────────────────────────────────────────────
 def strip_mz_header(exe_data):
     hdr_paras = struct.unpack_from('<H', exe_data, 8)[0]
     return exe_data[hdr_paras * 16:]
 
 # ── Patch TLINK 2.01 zeliad.exe back to original linker output ───────────────
 def patch_zeliad_exe(exe_data):
-    """
-    Convert TLINK 2.01 zeliad.exe to original linker format (byte-perfect).
-
-    TLINK 2.01 differences vs the original linker:
-      - Inserts a 32-byte extended header before the reloc table (0x1E -> 0x3E)
-      - Omits relocation entry at offset 0x08C6
-      - Adds 6 trailing zero padding bytes to code section
-      - Different checksum value
-
-    Target: 3050 bytes, reloc table at 0x1E, 6 entries, code = 2538 bytes.
-    """
     HDR_SIZE  = 0x200
     CODE_SIZE = 2538
     TOTAL     = HDR_SIZE + CODE_SIZE
-
-    if len(exe_data) < HDR_SIZE + CODE_SIZE:
+    if len(exe_data) < TOTAL:
         return exe_data
-
     result = bytearray(TOTAL)
     result[HDR_SIZE:HDR_SIZE + CODE_SIZE] = exe_data[HDR_SIZE:HDR_SIZE + CODE_SIZE]
     result[:HDR_SIZE] = exe_data[:HDR_SIZE]
-
     struct.pack_into('<H', result, 0x02, 490)
     struct.pack_into('<H', result, 0x04, 6)
     struct.pack_into('<H', result, 0x06, 6)
@@ -103,55 +104,35 @@ def patch_zeliad_exe(exe_data):
     struct.pack_into('<H', result, 0x18, 0x001E)
     result[0x1A] = 0; result[0x1B] = 0
     result[0x1C] = 1; result[0x1D] = 0
-
     relocs = [(0x000C, 0), (0x036B, 0), (0x08C6, 0),
               (0x08CA, 0), (0x08CE, 0), (0x08D2, 0)]
     for i, (off, seg) in enumerate(relocs):
         struct.pack_into('<HH', result, 0x1E + i * 4, off, seg)
-
-    reloc_end = 0x1E + len(relocs) * 4
-    for i in range(reloc_end, HDR_SIZE):
+    for i in range(0x1E + len(relocs) * 4, HDR_SIZE):
         result[i] = 0
-
     return bytes(result)
 
 # ── Compile a single .asm file via TasmRunner.exe ────────────────────────────
 def compile_one(asm, dest_dir):
-    """
-    Compile one file.  Returns (asm_path, ok, msg, output_dest).
-
-    Each call spawns its own DOSBox-X session in a fresh tempdir, so
-    parallel callers don't share state.  We hunt for the produced output
-    using the same case-variations verify1.py tries (TasmRunner is
-    inconsistent about uppercasing the stem).
-    """
-    stem = asm.stem
+    stem   = asm.stem
     is_exe = keep_as_exe(stem)
     out_ext = output_ext(stem)
 
     with tempfile.TemporaryDirectory(prefix='z_build_') as tmp:
-        # Per-job logdir so parallel workers don't collide on TasmRunner's
-        # shared `./logs/tasm_<timestamp>.log` filename.  (Two workers
-        # picking the same timestamp triggers a "file in use by another
-        # process" error on the loser.)
         log_dir = Path(tmp) / 'logs'
         log_dir.mkdir(exist_ok=True)
         args = [str(RUNNER), str(asm), '--output', tmp, '--logdir', str(log_dir)]
         if not is_exe:
             args.append('--bin')
         try:
-            result = subprocess.run(
-                args, capture_output=True, text=True,
-                timeout=PER_FILE_TIMEOUT,
-            )
+            result = subprocess.run(args, capture_output=True, text=True,
+                                    timeout=PER_FILE_TIMEOUT)
         except subprocess.TimeoutExpired:
             return (asm, False, f'TIMEOUT after {PER_FILE_TIMEOUT}s', None)
         except Exception as e:
             return (asm, False, f'spawn error: {e}', None)
 
         tmp_path = Path(tmp)
-
-        # Hunt for the output file (TasmRunner case-inconsistent)
         candidates = [
             tmp_path / (stem.upper() + out_ext.upper()),
             tmp_path / (stem + out_ext),
@@ -159,26 +140,26 @@ def compile_one(asm, dest_dir):
             tmp_path / (stem.upper() + '.BIN'),
         ]
         if is_exe:
-            candidates = [
-                tmp_path / (stem.upper() + '.EXE'),
-                tmp_path / (stem + '.exe'),
-            ]
-        produced = None
-        for c in candidates:
-            if c.exists():
-                produced = c
-                break
+            candidates = [tmp_path / (stem.upper() + '.EXE'),
+                          tmp_path / (stem + '.exe')]
+        produced = next((c for c in candidates if c.exists()), None)
+
+        if not produced:
+            # Try stripping MZ from .exe
+            out_exe = tmp_path / (stem.upper() + '.EXE')
+            if out_exe.exists():
+                raw = strip_mz_header(out_exe.read_bytes())
+                produced = tmp_path / (stem + out_ext)
+                produced.write_bytes(raw)
 
         if not produced:
             tail = result.stderr[-300:] if result.stderr else result.stdout[-300:]
             return (asm, False, f'no output (rc={result.returncode}) {tail}'.strip(), None)
 
-        # Copy output into final dest
         dest_dir.mkdir(parents=True, exist_ok=True)
         data = produced.read_bytes()
-        if is_exe:
-            if stem.lower() == 'zeliad':
-                data = patch_zeliad_exe(data)
+        if is_exe and stem.lower() == 'zeliad':
+            data = patch_zeliad_exe(data)
             dest = dest_dir / f'{stem}.exe'
         else:
             dest = dest_dir / (stem + out_ext)
@@ -187,42 +168,49 @@ def compile_one(asm, dest_dir):
 
 # ── Run the parallel compile across all jobs ─────────────────────────────────
 def compile_all(jobs, workers):
-    """
-    Returns (results, ok_count, fail_count) where results is the list of
-    (asm, ok, msg, dest) tuples in completion order.
-    """
     print(f'Compiling {len(jobs)} files with {workers} parallel workers '
           f'(timeout: {PER_FILE_TIMEOUT}s/file)...\n')
-
     t0 = time.time()
-    results = []
-    completed = 0
+    results, completed = [], 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
-        future_to_asm = {
-            ex.submit(compile_one, asm, dest): asm
-            for asm, dest in jobs
-        }
+        future_to_asm = {ex.submit(compile_one, asm, dest): asm
+                         for asm, dest in jobs}
         for fut in concurrent.futures.as_completed(future_to_asm):
             asm, ok, msg, dest = fut.result()
             completed += 1
-            tag = '[OK  ]' if ok else '[FAIL]'
-            rel = dest.relative_to(ROOT) if dest else ''
+            tag   = '[OK  ]' if ok else '[FAIL]'
+            rel   = dest.relative_to(ROOT) if dest else ''
             extra = f'-> {rel}' if dest else ''
-            err = f'  ! {msg}' if not ok else ''
+            err   = f'  ! {msg}' if not ok else ''
             print(f'  ({completed:2d}/{len(jobs)}) {tag} {asm.name:<20} {extra}{err}')
             results.append((asm, ok, msg, dest))
-
-    elapsed = time.time() - t0
-    ok_count = sum(1 for r in results if r[1])
+    elapsed   = time.time() - t0
+    ok_count  = sum(1 for r in results if r[1])
     fail_count = len(results) - ok_count
     print(f'\n  OK: {ok_count}   Failed: {fail_count}   ({elapsed:.1f}s wall)')
     return results, ok_count, fail_count
 
+# ── Copy static runtime files from 1_OriginalGame ────────────────────────────
+STATIC_EXTS = {'.drv', '.com', '.cfg', '.usr'}
+
+def copy_static_files(out_bin):
+    orig = SAR_ORIG.resolve()
+    if not orig.exists():
+        return 0
+    copied = 0
+    for f in sorted(orig.iterdir()):
+        if f.suffix.lower() in STATIC_EXTS:
+            dest = out_bin / f.name
+            if not dest.exists() or f.stat().st_mtime > dest.stat().st_mtime:
+                shutil.copy2(f, dest)
+                copied += 1
+    return copied
+
 # ── Copy data files ───────────────────────────────────────────────────────────
-def copy_data_files():
+def copy_data_files(out_bin):
     copied = 0
     for n in [1, 2, 3]:
-        dest = BIN / f'zelres{n}'
+        dest = out_bin / f'zelres{n}'
         dest.mkdir(parents=True, exist_ok=True)
         for f in sorted((WORKING / f'zelres{n}/data').iterdir()):
             shutil.copy2(f, dest / f.name)
@@ -230,14 +218,10 @@ def copy_data_files():
     return copied
 
 # ── Pack SARs ─────────────────────────────────────────────────────────────────
-def pack_sars():
-    """Pack via the tasm-only SAR packer (pack_tasm_sar.py).
-    Reads ONLY from bin/zelresN/<X##NAME.{bin,mdt}> + working/zelresN/data/.
-    Refuses legacy chunk_NN.bin fallbacks (those silently masked
-    regressions for months under the old pack_sar.py)."""
+def pack_sars(out_bin):
     r = subprocess.run(
         [sys.executable, str(ROOT / 'pack_tasm_sar.py'),
-         '--out-dir', str(BIN)],
+         '--bin-dir', str(out_bin), '--out-dir', str(out_bin)],
         capture_output=True, text=True
     )
     for line in r.stdout.strip().splitlines():
@@ -266,11 +250,13 @@ def verify_sars():
 def main():
     parser = argparse.ArgumentParser(description='Build all Zeliard ASM sources and pack SARs')
     parser.add_argument('--verify',  action='store_true', help='Verify SARs against originals')
-    parser.add_argument('--clean',   action='store_true', help='Clean bin/ before build')
+    parser.add_argument('--clean',   action='store_true', help='Clean output dir before build')
     parser.add_argument('--workers', type=int, default=DEFAULT_WORKERS,
                         help=f'Parallel TasmRunner workers (default: {DEFAULT_WORKERS})')
     parser.add_argument('--serial',  action='store_true',
                         help='Force --workers 1 (when a parallel run masks an error)')
+    parser.add_argument('--debug',   action='store_true',
+                        help='Build with DEBUG_BUILD=1; output to bin_debug/ (no verify)')
     args = parser.parse_args()
 
     if not RUNNER.exists():
@@ -278,19 +264,36 @@ def main():
         print('Build it via: dotnet build TasmRunner/TasmRunner.csproj')
         sys.exit(2)
 
+    out_bin = BIN_DEBUG if args.debug else BIN
+
+    if args.debug:
+        print(f'DEBUG BUILD — output to {out_bin.name}/')
+        print('  (DEBUG_BUILD EQU 1 patched into source files; restored after build)\n')
+
     if args.clean:
-        print('Cleaning bin/ ...')
-        for f in BIN.rglob('*'):
+        print(f'Cleaning {out_bin.name}/ ...')
+        for f in out_bin.rglob('*'):
             if f.is_file() and f.suffix.lower() in ('.bin','.mdt','.msd','.grp','.exe','.sar'):
                 f.unlink()
 
     workers = 1 if args.serial else max(1, args.workers)
-    jobs = gather_jobs()
+    jobs = gather_jobs(out_bin)
     print(f'Found {len(jobs)} ASM files to compile.\n')
 
-    # ── Stage 1+2: parallel per-file compile ──
-    print('=== Stage 1: Parallel compile via TasmRunner.exe ===')
-    results, ok, fail = compile_all(jobs, workers)
+    patched = []
+    try:
+        if args.debug:
+            patched = patch_debug_sources()
+            names = [p.name for p, _ in patched]
+            print(f'  Patched DEBUG_BUILD=1 in: {", ".join(names)}\n')
+
+        print('=== Stage 1: Parallel compile via TasmRunner.exe ===')
+        results, ok, fail = compile_all(jobs, workers)
+
+    finally:
+        if patched:
+            restore_debug_sources(patched)
+            print(f'  Restored {len(patched)} source file(s).')
 
     if fail > 0:
         print(f'\nFAILED files ({fail}):')
@@ -301,27 +304,27 @@ def main():
         print('Re-run with --serial after fixing to confirm a clean build.')
         sys.exit(1)
 
-    # ── Stage 3: copy data files ──
-    print('\n=== Stage 2: Copying data files ===')
-    n = copy_data_files()
-    print(f'  Copied {n} data files.')
+    print('\n=== Stage 2: Copying data and static files ===')
+    print(f'  {copy_data_files(out_bin)} SAR data files.')
+    print(f'  {copy_static_files(out_bin)} static runtime files.')
 
-    # ── Stage 4: pack SARs ──
     print('\n=== Stage 3: Packing SAR archives ===')
-    if not pack_sars():
+    if not pack_sars(out_bin):
         print('\nABORTING: SAR packing failed.  See error above.')
         sys.exit(1)
 
-    # ── Stage 5: verify (optional) ──
     if args.verify:
-        print('\n=== Stage 4: Verifying SARs ===')
-        if verify_sars():
-            print('\n  All SARs bit-perfect.')
+        if args.debug:
+            print('\n(--verify skipped for debug build)')
         else:
-            print('\n  WARNING: SAR mismatch.')
-            sys.exit(1)
+            print('\n=== Stage 4: Verifying SARs ===')
+            if verify_sars():
+                print('\n  All SARs bit-perfect.')
+            else:
+                print('\n  WARNING: SAR mismatch.')
+                sys.exit(1)
 
-    print('\nBuild complete.')
+    print(f'\nBuild complete ({out_bin.name}/).')
 
 if __name__ == '__main__':
     main()

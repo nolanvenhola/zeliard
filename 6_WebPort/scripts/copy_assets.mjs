@@ -23,12 +23,33 @@ const DEST_SHELL  = join(REPO_ROOT, '6_WebPort', 'shell', 'public', 'assets');
  * as new assets are wired up.  The number prefix on disk is the chunk
  * index; the short name matches the asm-level resource_name_table. */
 const ASSET_MAP = [
-    /* zelres1 — opening + title + UI */
+    /* zelres1 — opening cinematic images (resource_name_table at 100OPDMO.asm:2912) */
     ['zelres1/data/112FONTG.grp', 'font.grp'],
+    ['zelres1/data/113AMEGP.grp', 'ame.grp'],
+    ['zelres1/data/114DMAOU.grp', 'dmaou.grp'],
+    ['zelres1/data/115HIMEG.grp', 'hime.grp'],
+    ['zelres1/data/116HIMPG.grp', 'himp.grp'],
+    ['zelres1/data/117HOUGP.grp', 'hou.grp'],
+    ['zelres1/data/118ISIGP.grp', 'isi.grp'],
+    ['zelres1/data/119MAOPG.grp', 'maop.grp'],
+    ['zelres1/data/120NE80G.grp', 'ne80.grp'],
+    ['zelres1/data/121NE81G.grp', 'ne81.grp'],
     ['zelres1/data/122NECGP.grp', 'nec.grp'],
+    ['zelres1/data/123NEW1G.grp', 'new1.grp'],
+    ['zelres1/data/124NEW2G.grp', 'new2.grp'],
+    ['zelres1/data/125OUIGP.grp', 'oui.grp'],
+    ['zelres1/data/126OUPGP.grp', 'oup.grp'],
+    ['zelres1/data/127SEIGP.grp', 'sei.grp'],
+    ['zelres1/data/128SEIPG.grp', 'seip.grp'],
     ['zelres1/data/129TTL1G.grp', 'ttl1.grp'],
     ['zelres1/data/130TTL2G.grp', 'ttl2.grp'],
     ['zelres1/data/131TTL3G.grp', 'ttl3.grp'],
+    ['zelres1/data/132WAKUG.grp', 'waku.grp'],
+    ['zelres1/data/133YUU1G.grp', 'yuu1.grp'],
+    ['zelres1/data/134YUU2G.grp', 'yuu2.grp'],
+    ['zelres1/data/135YUU3G.grp', 'yuu3.grp'],
+    ['zelres1/data/136YUU4G.grp', 'yuu4.grp'],
+    ['zelres1/data/137YUUPG.grp', 'yuup.grp'],
 ];
 
 function ensureDir(p) { mkdirSync(p, { recursive: true }); }

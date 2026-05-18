@@ -21,13 +21,26 @@
  *      └─ paste into framebuffer at (28, 15)    → 260x112 image
  */
 
-/* Decode a complete GRP into a freshly-malloc'd 260x112-style image.
- * Returns malloc'd buffer of `*out_w * *out_h` paletted bytes, or NULL.
- * Caller frees with free().  `rows` and `cl` are the source plane
- * geometry (rows=CH=number of source rows, cl=CL=bytes per row at 1bpp).
- */
+/* Decode a complete GRP file into a paletted image.
+ * Strips the SAR header + fill_buffer opcode, runs 6DE1 RLE,
+ * then interleave_4plane + 8-pass mask blit.
+ * Returns malloc'd buffer; caller frees.  NULL on failure. */
 u8* grp_decode(const u8 *file_data, size_t file_size,
                int rows, int cl,
                int *out_w, int *out_h);
+
+/* Same pipeline but starting from already-decompressed 2-plane 1bpp data.
+ * Uses the render_plane_abc_loop interleave (planes = {A|B, B&~AB, A&~AB, 0}).
+ * Returns malloc'd buffer; caller frees.  NULL on failure. */
+u8* grp_decode_planes(const u8 *planes, size_t planes_size,
+                      int rows, int cl, int *out_w, int *out_h);
+
+/* Same pipeline using the render_plane_a_loop interleave
+ * (planes = {B, 0, 0, A}, produces nibble values 0/1/8/9 instead of 0/A/C/8).
+ * Used by gfx_draw_fn scenes (100OPDMO.asm:318 — nec.grp, dmaou.grp, etc.)
+ * via decompress_image → grp_decode_planes_gfx_draw.
+ * Returns malloc'd buffer; caller frees.  NULL on failure. */
+u8* grp_decode_planes_gfx_draw(const u8 *planes, size_t planes_size,
+                                int rows, int cl, int *out_w, int *out_h);
 
 #endif

@@ -8,48 +8,35 @@
  *      Identical dispatch: bit 6 = 2-byte mode, bit 7/15 = fill, 0xFFFF
  *      = end-of-stream.  Direct asm-to-C transliteration of the body.
  *
- *  - interleave_4plane():  ports the per-driver 4-plane→nibble-pair
- *      pipeline that turns the 2-plane 1bpp RLE output into the
- *      paletted byte stream consumed by the mode-13h blit.  The
- *      canonical asm implementations live in the gfx-mode drivers
- *      (gmmcga.asm, gmcga.asm, gmega.asm, gmhgc.asm, gmtga.asm) inside
- *      the per-driver tilemap renderers; each driver has heavily-
- *      unrolled variants that emit the same byte stream.  This C
- *      implementation matches the Python reference at
- *      2_SAR/Tools/grp_view2.py:interleave_4plane and is gated by
- *      output-parity against 3_Assembly/dumps/zeliard_title_image.BIN.
- *      TODO: cite the specific gfx-driver proc once line-traced.
+ *  - interleave_4plane():  ports the 2-plane → nibble-packed-4-plane
+ *      pipeline.  Canonical asm: `render_plane_abc_loop` at
+ *      3_Assembly/tasm/working/zelres1/code/105GDMCA.asm:234-255.
+ *      That loop loads a word from plane A (lodsw+xchg) and plane B
+ *      (ds:[bp+si]+xchg), computes dx=NOT(A AND B), cx=A OR B,
+ *      ax=A AND dx, bx=B AND dx, stores into src_word_a/b/c/d, then
+ *      calls `pal_process_loop` (105GDMCA.asm:2344-2371) four times.
+ *      pal_process_loop rotates all four src_words left through carry
+ *      twice per call (inner CX=2 loop, 8 rol+adc pairs per iteration),
+ *      accumulating bits into AX.  Each call emits one output word (AX
+ *      after xchg ah,al).  Four calls per source word-pair = 4 output
+ *      words = 8 nibble-packed output bytes per 16 source pixels.
+ *      Output-parity validated against 3_Assembly/dumps/zeliard_title_image.BIN.
  *
- *  - render_8pass_blit():  ports the 8-pass mask-table blit that
- *      compresses the 896-wide nibble-packed render buffer into the
- *      260-wide on-screen image.  Mask tables match CLAUDE.md
- *      "Exact Blit Parameters" (mask1=[80,20,08,02,40,10,04,01],
- *      mask2=[01,04,10,40,02,08,20,80]).  Canonical asm: same
- *      per-driver gfx-mode files; same output-parity gate.
+ *  - render_8pass_blit():  ports the 8-pass mask-table blit.  Canonical
+ *      asm: `run_render_passes_mcga` at 105GDMCA.asm:307-362.  That proc
+ *      runs bp=8 outer passes; each pass iterates cl blit_calls alternating
+ *      mask_tbl_a[bx&7] (even calls) and mask_tbl_b[bx&7] (odd calls) where
+ *      bx starts at cur_row_ctr and increments each call.  mask_tbl_a and
+ *      mask_tbl_b are EQU'd to cs:32B9h and cs:32C1h (105GDMCA.asm:47-48)
+ *      and contain [80,20,08,02,40,10,04,01] / [01,04,10,40,02,08,20,80]
+ *      (confirmed via Python reference + 100% parity vs golden BIN).
  */
 
 #include "grp.h"
+#include "fill_buffer.h"
 #include "../platform/platform.h"
 #include <stdlib.h>
 #include <string.h>
-
-/* ---- header strip ------------------------------------------------------- */
-
-static const u8* detect_and_strip_header(const u8 *data, size_t size, size_t *out_size) {
-    if (size < 5) { *out_size = 0; return NULL; }
-    u32 hdr = (u32)data[0] | ((u32)data[1] << 8)
-            | ((u32)data[2] << 16) | ((u32)data[3] << 24);
-    if (hdr + 4 == size) {
-        /* SAR-style header present: skip 4-byte size + 1-byte fill_buffer opcode.
-         * (For ttl3.grp the opcode is 0x00 = "raw" so the rest of the data is
-         *  the 6DE1 RLE stream verbatim.) */
-        *out_size = size - 5;
-        return data + 5;
-    }
-    /* No header — start at byte 0. */
-    *out_size = size;
-    return data;
-}
 
 /* ---- 0x6DE1 RLE decoder ------------------------------------------------- */
 /* Operates on raw chunk data (after 4-byte header + fill_buffer opcode).
@@ -111,12 +98,26 @@ static u8* decode_6de1(const u8 *src, size_t src_size, size_t *out_size) {
     return out;
 }
 
-/* ---- 4-plane interleaver (0x30FC) ---------------------------------------- */
-/* Reads 2 source words per iteration (plane A at SI, plane B at SI+BP).
- * Derives 4 logical pixel-bit values per word pair, packs as nibbles
- * (2 pixels per output byte).  See grp_view2.py interleave_4plane for the
- * shift-and-rotate magic this is faithfully porting. */
-static u8* interleave_4plane(const u8 *src, size_t src_size,
+/* ---- 4-plane interleaver (two variants) ---------------------------------- */
+/* Both variants port pal_process_loop (105GDMCA.asm:2344-2371): rotate each
+ * src_word left through carry, accumulate MSBs into output word, xchg bytes.
+ * The difference is the src_word assignment before the loop:
+ *
+ *  render_plane_abc_loop (105GDMCA.asm:234-255) — used by grp_decode,
+ *    grp_decode_planes, and ttl3.grp (validated vs golden BIN):
+ *      planes = { A|B, B&~AB, A&~AB, 0 } → nibble values 0/0xA/0xC/0x8
+ *
+ *  render_plane_a_loop (105GDMCA.asm:141-152) — used by gfx_draw_fn
+ *    (100OPDMO.asm:318, nec.grp, dmaou.grp, etc.):
+ *      planes = { B, 0, 0, A } → nibble values 0/0x1/0x8/0x9
+ */
+
+/* render_plane_abc_loop variant: planes = {A|B, B&~AB, A&~AB, 0}.
+ * Ports render_plane_abc_loop (105GDMCA.asm:234-255) + pal_process_loop
+ * (105GDMCA.asm:2344-2371).  Reads word-pairs from plane A (at SI) and
+ * plane B (at SI+BP), derives AND/OR/NOT-AND logic for the 4 src_words,
+ * then rotates them through carry to build nibble-packed output. */
+static u8* interleave_4plane_impl(const u8 *src, size_t src_size,
                              int rows, int cl, size_t *out_size) {
     int BP = rows * cl;
     if ((size_t)(BP * 2) > src_size) {
@@ -124,16 +125,15 @@ static u8* interleave_4plane(const u8 *src, size_t src_size,
         *out_size = 0;
         return NULL;
     }
-    /* Output size: one nibble-pair byte per 2 source pixels.
-     * Total source pixels = BP * 8 (bits).  Output bytes = pixels / 2. */
-    size_t cap = (size_t)BP * 4;  /* BP*8 pixels / 2 = BP*4 bytes */
+    /* BP*8 pixels / 2 = BP*4 output bytes; build whole buffer then return. */
+    size_t cap = (size_t)BP * 4;
     u8 *out = (u8*)malloc(cap);
     if (!out) { *out_size = 0; return NULL; }
     size_t out_n = 0;
 
     int si = 0;
-    int iters = BP / 2;
-    for (int it = 0; it < iters; it++) {
+    int word_pairs = BP / 2;
+    for (int it = 0; it < word_pairs; it++) {
         int bi = BP + si;
         u16 ax = ((u16)src[si] << 8) | (u16)src[si + 1];
         u16 bx = ((u16)src[bi] << 8) | (u16)src[bi + 1];
@@ -158,8 +158,54 @@ static u8* interleave_4plane(const u8 *src, size_t src_size,
                 }
             }
             for (int j = 0; j < 4; j++) planes[j] = pw[j];
-            /* Byte-swap acc (big-endian -> little-endian as the original
-             * x86 store would have done). */
+            u16 swapped = (u16)(((acc & 0xFF) << 8) | ((acc >> 8) & 0xFF));
+            out[out_n++] = (u8)(swapped & 0xFF);
+            out[out_n++] = (u8)(swapped >> 8);
+        }
+    }
+    *out_size = out_n;
+    return out;
+}
+
+/* render_plane_a_loop variant: planes = {B, 0, 0, A} → nibble values 0/1/8/9.
+ * Ports render_plane_a_loop (105GDMCA.asm:141-152) used by gfx_draw_fn. */
+static u8* interleave_gfx_draw_impl(const u8 *src, size_t src_size,
+                                    int rows, int cl, size_t *out_size) {
+    int BP = rows * cl;
+    if ((size_t)(BP * 2) > src_size) {
+        platform_log("interleave_gfx_draw: src too small (%zu < %d)", src_size, BP * 2);
+        *out_size = 0;
+        return NULL;
+    }
+    size_t cap = (size_t)BP * 4;
+    u8 *out = (u8*)malloc(cap);
+    if (!out) { *out_size = 0; return NULL; }
+    size_t out_n = 0;
+
+    int si = 0;
+    int word_pairs = BP / 2;
+    for (int it = 0; it < word_pairs; it++) {
+        int bi = BP + si;
+        u16 ax = ((u16)src[si] << 8) | (u16)src[si + 1];   /* plane A */
+        u16 bx = ((u16)src[bi] << 8) | (u16)src[bi + 1];   /* plane B */
+        si += 2;
+
+        /* src_word_d=B, src_word_c=0, src_word_b=0, src_word_a=A */
+        u16 planes[4] = { bx, 0, 0, ax };
+
+        for (int rep = 0; rep < 4; rep++) {
+            u16 pw[4] = { planes[0], planes[1], planes[2], planes[3] };
+            u16 acc = 0;
+            for (int r1 = 0; r1 < 2; r1++) {
+                for (int r2 = 0; r2 < 2; r2++) {
+                    for (int j = 0; j < 4; j++) {
+                        u16 msb = (u16)(pw[j] >> 15);
+                        pw[j] = (u16)(((pw[j] << 1) & 0xFFFF) | msb);
+                        acc = (u16)(((acc << 1) | msb) & 0xFFFF);
+                    }
+                }
+            }
+            for (int j = 0; j < 4; j++) planes[j] = pw[j];
             u16 swapped = (u16)(((acc & 0xFF) << 8) | ((acc >> 8) & 0xFF));
             out[out_n++] = (u8)(swapped & 0xFF);
             out[out_n++] = (u8)(swapped >> 8);
@@ -170,9 +216,11 @@ static u8* interleave_4plane(const u8 *src, size_t src_size,
 }
 
 /* ---- 8-pass mask blit (renders to a `call_size x blit_calls` image) ---- */
-/* Mirrors grp_view2.py render_grp().  Builds a paletted byte image where
- * each byte is a nibble-pair (e.g. 0xAA = pure yellow, 0xCC = pure blue,
- * 0x8C = mixed). */
+/* Ports run_render_passes_mcga (105GDMCA.asm:307-362).  8 outer passes (bp=8);
+ * each pass iterates blit_calls columns, alternating mask_tbl_a[k&7] for even
+ * calls and mask_tbl_b[k&7] for odd calls (EQU'd at cs:32B9h/32C1h, lines
+ * 47-48).  Within each call the mask bit selects which of the 8 mod-8
+ * positions to copy.  8 passes combined via OR reconstruct all positions. */
 static int find_set_bit_pos(u8 mask) {
     /* The original x86 code rotates left and counts shifts until carry-out.
      * Equivalent: bit position of the set bit, counting from MSB. */
@@ -185,7 +233,7 @@ static int find_set_bit_pos(u8 mask) {
     return -1;
 }
 
-static u8* render_8pass_blit(const u8 *interleaved, size_t interleaved_size,
+static u8* render_8pass_blit_impl(const u8 *interleaved, size_t interleaved_size,
                              int rows, int cl, int *out_w, int *out_h) {
     static const u8 mask1[8] = { 0x80, 0x20, 0x08, 0x02, 0x40, 0x10, 0x04, 0x01 };
     static const u8 mask2[8] = { 0x01, 0x04, 0x10, 0x40, 0x02, 0x08, 0x20, 0x80 };
@@ -225,15 +273,20 @@ static u8* render_8pass_blit(const u8 *interleaved, size_t interleaved_size,
 u8* grp_decode(const u8 *file_data, size_t file_size,
                int rows, int cl,
                int *out_w, int *out_h) {
+    /* fill_buffer_decompress handles all 8 compression methods (including
+     * method 0 = verbatim for ttl3.grp, and methods 5/6/7 for other GRPs).
+     * It strips the 4-byte SAR size header, the 1-byte flag, and the 1-byte
+     * fill_buffer method byte, returning the raw 6DE1 stream. */
     size_t payload_size = 0;
-    const u8 *payload = detect_and_strip_header(file_data, file_size, &payload_size);
+    u8 *payload = fill_buffer_decompress(file_data, file_size, &payload_size);
     if (!payload || payload_size == 0) {
-        platform_log("grp_decode: header strip failed");
+        platform_log("grp_decode: fill_buffer_decompress failed");
         return NULL;
     }
 
     size_t decoded_size = 0;
     u8 *decoded = decode_6de1(payload, payload_size, &decoded_size);
+    free(payload);
     if (!decoded) {
         platform_log("grp_decode: 6DE1 decode failed");
         return NULL;
@@ -241,7 +294,7 @@ u8* grp_decode(const u8 *file_data, size_t file_size,
     platform_log("grp_decode: payload=%zu decoded=%zu", payload_size, decoded_size);
 
     size_t interleaved_size = 0;
-    u8 *interleaved = interleave_4plane(decoded, decoded_size, rows, cl, &interleaved_size);
+    u8 *interleaved = interleave_4plane_impl(decoded, decoded_size, rows, cl, &interleaved_size);
     free(decoded);
     if (!interleaved) {
         platform_log("grp_decode: interleave failed");
@@ -250,7 +303,7 @@ u8* grp_decode(const u8 *file_data, size_t file_size,
     platform_log("grp_decode: interleaved=%zu (rows=%d cl=%d)", interleaved_size, rows, cl);
 
     int w = 0, h = 0;
-    u8 *image = render_8pass_blit(interleaved, interleaved_size, rows, cl, &w, &h);
+    u8 *image = render_8pass_blit_impl(interleaved, interleaved_size, rows, cl, &w, &h);
     free(interleaved);
     if (!image) {
         platform_log("grp_decode: blit failed");
@@ -258,6 +311,49 @@ u8* grp_decode(const u8 *file_data, size_t file_size,
     }
     platform_log("grp_decode: image %dx%d ready", w, h);
 
+    *out_w = w; *out_h = h;
+    return image;
+}
+
+/* Takes already-decompressed 2-plane 1bpp data; runs render_plane_abc_loop
+ * interleave (planes = {A|B, B&~AB, A&~AB, 0}) + 8-pass blit.
+ * Used by the opening-scene img_open pipeline (disp_narr_chap3 path). */
+u8* grp_decode_planes(const u8 *planes, size_t planes_size,
+                      int rows, int cl, int *out_w, int *out_h) {
+    size_t interleaved_size = 0;
+    u8 *interleaved = interleave_4plane_impl(planes, planes_size, rows, cl, &interleaved_size);
+    if (!interleaved) {
+        platform_log("grp_decode_planes: interleave failed");
+        return NULL;
+    }
+    int w = 0, h = 0;
+    u8 *image = render_8pass_blit_impl(interleaved, interleaved_size, rows, cl, &w, &h);
+    free(interleaved);
+    if (!image) {
+        platform_log("grp_decode_planes: blit failed");
+        return NULL;
+    }
+    *out_w = w; *out_h = h;
+    return image;
+}
+
+/* Same but uses render_plane_a_loop interleave (planes = {B, 0, 0, A}).
+ * Used by gfx_draw_fn scenes (nec.grp, dmaou.grp — 100OPDMO.asm:318). */
+u8* grp_decode_planes_gfx_draw(const u8 *planes, size_t planes_size,
+                                int rows, int cl, int *out_w, int *out_h) {
+    size_t interleaved_size = 0;
+    u8 *interleaved = interleave_gfx_draw_impl(planes, planes_size, rows, cl, &interleaved_size);
+    if (!interleaved) {
+        platform_log("grp_decode_planes_gfx_draw: interleave failed");
+        return NULL;
+    }
+    int w = 0, h = 0;
+    u8 *image = render_8pass_blit_impl(interleaved, interleaved_size, rows, cl, &w, &h);
+    free(interleaved);
+    if (!image) {
+        platform_log("grp_decode_planes_gfx_draw: blit failed");
+        return NULL;
+    }
     *out_w = w; *out_h = h;
     return image;
 }

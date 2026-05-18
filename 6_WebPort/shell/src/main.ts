@@ -10,6 +10,7 @@
 type EngineExports = {
     _zeliard_init(): void;
     _zeliard_tick(dt_ms: number): void;
+    _zeliard_key(keycode: number): void;  // ENTER=13, SPACE=32 → skip opening
     _zeliard_framebuf(): number;     // pointer (offset into HEAPU8)
     _zeliard_palette(): number;      // pointer to 256 RGB triples
     _zeliard_width(): number;
@@ -63,6 +64,14 @@ async function boot() {
     const fbPtr = Module._zeliard_framebuf();
     const palPtr = Module._zeliard_palette();
     setStatus(`engine running — ${w}×${h}, framebuf @ ${fbPtr}, palette @ ${palPtr}`);
+
+    /* Forward ENTER/SPACE to the engine so it can skip the opening cinematic. */
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            Module._zeliard_key(e.keyCode);
+        }
+    });
 
     const imageData = ctx.createImageData(w, h);
     let last = performance.now();

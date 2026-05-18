@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Copy TASM tool directory to output for self-contained deployment -->
+    <Content Include="../tool/**/*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tool/%(RecursiveDir)%(FileName)%(Extension)</Link>
+    </Content>
+
+    <!-- Copy DOSBox to output for self-contained deployment -->
+    <Content Include="../dosbox/**/*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>dosbox/%(RecursiveDir)%(FileName)%(Extension)</Link>
+    </Content>
+
+    <!-- Copy SRMACROS.INC for Sourcer-generated ASM files -->
+    <Content Include="SRMACROS.INC">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

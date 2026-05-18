@@ -1,14 +1,17 @@
 /* Zeliard web-port engine entry point.
  *
- * M1.5 scope: render the title-logo GRP (131TTL3G.grp / "ttl3.grp") into
- * the framebuffer at its canonical VGA position (col 28, row 15) so we
- * can visually verify the decode pipeline matches the original.
+ * Scene progression:
+ *   SCENE_OPENING  → run_opening_demo_main (M2: simplified slideshow)
+ *   SCENE_TITLE    → ttl3.grp logo (M1.5)
+ *
+ * ENTER or SPACE (forwarded via zeliard_key()) skips the opening.
  */
 
 #include "core/types.h"
 #include "core/framebuf.h"
 #include "render/palette.h"
 #include "load/grp.h"
+#include "game/opening.h"
 #include "platform/platform.h"
 #include <stdlib.h>
 #include <string.h>
@@ -20,81 +23,101 @@
 #  define EXPORT
 #endif
 
-/* TTL3G geometry from CLAUDE.md "VERIFIED: Zeliard Title Logo" trace:
- *   source: rows=65, cl=112 → image 896x65 in 1bpp 2-plane form
- *   output: call_size=260 (=rows*4), blit_calls=112 (=cl) → 260x112 image
- *   blit position: VGA byte offset 4828 → row 15, col 28 */
+/* ---- title logo (M1.5) -------------------------------------------------- */
+/* TTL3G geometry from CLAUDE.md "VERIFIED: Zeliard Title Logo":
+ *   rows=65, cl=112 → call_size=260, blit_calls=112 → 260×112 image
+ *   VGA byte offset 4828 → row 15, col 28 */
 static const int  TTL3_ROWS    = 65;
 static const int  TTL3_CL      = 112;
 static const int  TTL3_VGA_X   = 28;
 static const int  TTL3_VGA_Y   = 15;
 static const char TTL3_ASSET[] = "ttl3.grp";
 
-/* Decoded image cached at init.  M1.5 just blits the same frame each tick;
- * later milestones will animate the full opening cinematic. */
-static u8 *g_title_image    = NULL;
-static int g_title_image_w  = 0;
-static int g_title_image_h  = 0;
+static u8 *g_title_image   = NULL;
+static int  g_title_w      = 0;
+static int  g_title_h      = 0;
 
 static void load_title_image(void) {
     size_t file_size = 0;
     u8 *file_data = platform_load_asset(TTL3_ASSET, &file_size);
     if (!file_data) {
-        platform_log("load_title_image: asset load failed: %s", TTL3_ASSET);
+        platform_log("load_title_image: missing %s", TTL3_ASSET);
         return;
     }
     g_title_image = grp_decode(file_data, file_size, TTL3_ROWS, TTL3_CL,
-                                &g_title_image_w, &g_title_image_h);
+                                &g_title_w, &g_title_h);
     free(file_data);
-    if (!g_title_image) {
-        platform_log("load_title_image: decode failed");
-    } else {
-        platform_log("load_title_image: %s %dx%d ready", TTL3_ASSET,
-                     g_title_image_w, g_title_image_h);
-    }
+    if (g_title_image)
+        platform_log("load_title_image: %dx%d ready", g_title_w, g_title_h);
 }
 
 static void blit_title_image(void) {
     if (!g_title_image) return;
-    for (int y = 0; y < g_title_image_h; y++) {
+    for (int y = 0; y < g_title_h; y++) {
         int dy = y + TTL3_VGA_Y;
         if (dy >= ZELIARD_HEIGHT) break;
-        for (int x = 0; x < g_title_image_w; x++) {
+        for (int x = 0; x < g_title_w; x++) {
             int dx = x + TTL3_VGA_X;
             if (dx >= ZELIARD_WIDTH) break;
-            u8 v = g_title_image[y * g_title_image_w + x];
-            if (v == 0) continue;  /* black is the background — leave it */
+            u8 v = g_title_image[y * g_title_w + x];
+            if (v == 0) continue;
             g_framebuf[dy * ZELIARD_WIDTH + dx] = v;
         }
     }
 }
 
+/* ---- scene state -------------------------------------------------------- */
+typedef enum { SCENE_OPENING = 0, SCENE_TITLE = 1 } game_scene_t;
+static game_scene_t g_scene        = SCENE_OPENING;
+static int          g_skip_pending = 0;
+
+/* ---- public API --------------------------------------------------------- */
+
 EXPORT void zeliard_init(void) {
-    palette_set_scene(PALETTE_TITLE);
     framebuf_clear(0);
+    opening_init();   /* sets PALETTE_OPENING and pre-decodes opening images */
     load_title_image();
     platform_log("zeliard_init: ready (framebuffer %dx%d)", ZELIARD_WIDTH, ZELIARD_HEIGHT);
 }
 
 EXPORT void zeliard_tick(u32 dt_ms) {
-    (void)dt_ms;
-    /* For M1.5 the title scene is static — just re-blit each frame so the
-     * framebuffer stays correct even if other code clears it. */
-    framebuf_clear(0);
-    blit_title_image();
+    if (g_scene == SCENE_OPENING) {
+        if (g_skip_pending) {
+            g_skip_pending = 0;
+            opening_skip();
+        }
+        opening_tick(dt_ms);
+        if (opening_done()) {
+            g_scene = SCENE_TITLE;
+            palette_set_scene(PALETTE_TITLE);
+            framebuf_clear(0);
+            platform_log("zeliard_tick: switching to SCENE_TITLE");
+        }
+    } else {
+        framebuf_clear(0);
+        blit_title_image();
+    }
 }
 
-EXPORT u8* zeliard_framebuf(void) { return g_framebuf; }
+/* Called by the TypeScript shell on ENTER (13) or SPACE (32) keydown. */
+EXPORT void zeliard_key(int keycode) {
+    if (keycode == 13 || keycode == 32) {
+        if (g_scene == SCENE_OPENING)
+            g_skip_pending = 1;
+    }
+}
+
+EXPORT u8*             zeliard_framebuf(void) { return g_framebuf; }
 EXPORT palette_color_t* zeliard_palette(void) { return g_palette; }
-EXPORT int zeliard_width(void)  { return ZELIARD_WIDTH; }
-EXPORT int zeliard_height(void) { return ZELIARD_HEIGHT; }
+EXPORT int             zeliard_width(void)    { return ZELIARD_WIDTH; }
+EXPORT int             zeliard_height(void)   { return ZELIARD_HEIGHT; }
 
 #ifndef __EMSCRIPTEN__
 #include <stdio.h>
 int main(int argc, char **argv) {
     zeliard_init();
     zeliard_tick(0);
-    platform_log("native build: framebuffer initialised, exiting");
+    platform_log("native build: done");
     (void)argc; (void)argv;
     return 0;
 }

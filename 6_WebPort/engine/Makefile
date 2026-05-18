@@ -8,7 +8,10 @@ ENGINE_SRC := \
 	main.c \
 	core/framebuf.c \
 	render/palette.c \
-	load/grp.c
+	load/grp.c \
+	load/fill_buffer.c \
+	load/img_open.c \
+	game/opening.c
 
 WEB_SRC    := $(ENGINE_SRC) platform/platform_web.c
 NATIVE_SRC := $(ENGINE_SRC) platform/platform_sdl.c
@@ -23,7 +26,7 @@ EMCC_FLAGS  := $(CFLAGS_COMMON) \
 	-s EXPORT_ES6=1 \
 	-s ENVIRONMENT=web \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_framebuf","_zeliard_palette","_zeliard_width","_zeliard_height","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_framebuf","_zeliard_palette","_zeliard_width","_zeliard_height","_malloc","_free"]' \
 	-s EXPORTED_RUNTIME_METHODS='["HEAPU8","HEAPU32","UTF8ToString","ccall","cwrap"]' \
 	--preload-file assets@/assets \
 	-o build/zeliard.js
