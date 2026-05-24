@@ -15,6 +15,7 @@ below provide the deep walkthroughs for each subsystem.
 |---|---|
 | `ARCHITECTURE.md` | Boot order, segment layout, SAR loader, INT 60h services, chunk dispatch, main-loop structure |
 | `BOOT_FLOW.md` | Runtime-verified `zeliad.exe` → `game.bin` → `fight.bin` handoff, with DOSBox-confirmed register/memory state at each step |
+| `ZELIAD_LOADER_PASS.md` | Full-pass map for `zeliad.asm`: config parsing, load order, game-global initialization, interrupt/video contracts, and web-port oracle targets |
 | `code_chunks_overview.md` | "Which chunk should I read for X?" — chunk dictionary across core/drivers/zelres1/2/3 |
 | `SAR_DIRECTORY.md` | Canonical file_id → filename map for all 3 SARs (cross-referenced from `c:\projects\zeliard-brox\tools\MDTViewer\sar_reader.py`); map-id lookup tables for dungeon + town doors |
 

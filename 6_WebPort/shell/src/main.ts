@@ -15,6 +15,7 @@ type EngineExports = {
     _zeliard_palette(): number;      // pointer to 256 RGB triples
     _zeliard_width(): number;
     _zeliard_height(): number;
+    _zeliard_scene(): number;        // 0=title, 1=opening demo, 2=game handoff
 };
 
 type ZeliardModule = EngineExports & {
@@ -76,11 +77,27 @@ async function boot() {
     const imageData = ctx.createImageData(w, h);
     let last = performance.now();
     let frameCount = 0;
+    let lastScene = -1;
+
+    function sceneName(scene: number): string {
+        switch (scene) {
+            case 0: return 'title';
+            case 1: return 'opening demo';
+            case 2: return 'game handoff';
+            default: return `scene ${scene}`;
+        }
+    }
 
     function frame(now: number) {
         const dt = now - last;
         last = now;
         Module._zeliard_tick(dt | 0);
+
+        const scene = Module._zeliard_scene();
+        if (scene !== lastScene) {
+            lastScene = scene;
+            setStatus(`engine running - ${sceneName(scene)}`);
+        }
 
         const heap = Module.HEAPU8;
         const fb = heap.subarray(fbPtr, fbPtr + w * h);

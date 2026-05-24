@@ -4,13 +4,13 @@
  * (per feedback_port_validates_against_asm.md):
  *
  *  - decode_6de1():  line-for-line port of `decode_rle_to_es_di`
- *      at 3_Assembly/tasm/working/zelres1/code/100OPDMO.asm:1561-1595.
+ *      at 3_Assembly/masm/working/zelres1/code/100OPDMO.asm:1561-1595.
  *      Identical dispatch: bit 6 = 2-byte mode, bit 7/15 = fill, 0xFFFF
  *      = end-of-stream.  Direct asm-to-C transliteration of the body.
  *
  *  - interleave_4plane():  ports the 2-plane → nibble-packed-4-plane
  *      pipeline.  Canonical asm: `render_plane_abc_loop` at
- *      3_Assembly/tasm/working/zelres1/code/105GDMCA.asm:234-255.
+ *      3_Assembly/masm/working/zelres1/code/105GDMCA.asm:234-255.
  *      That loop loads a word from plane A (lodsw+xchg) and plane B
  *      (ds:[bp+si]+xchg), computes dx=NOT(A AND B), cx=A OR B,
  *      ax=A AND dx, bx=B AND dx, stores into src_word_a/b/c/d, then

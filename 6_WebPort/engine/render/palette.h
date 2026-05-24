@@ -9,7 +9,7 @@
  *
  * The original game switches palettes per scene via the gfx-driver
  * function-4 dispatch slot (see write_palette_byte_mcga in
- * 3_Assembly/tasm/working/zelres1/code/105GDMCA.asm:2201).  We mirror
+ * 3_Assembly/masm/working/zelres1/code/105GDMCA.asm:2201).  We mirror
  * that behaviour via palette_set_scene(); the three captured palettes
  * are embedded as static data in palettes_extracted.h.
  */

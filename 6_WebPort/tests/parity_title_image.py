@@ -28,7 +28,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / '2_SAR' / 'Tools'))
 from grp_view2 import _detect_and_strip_header, decode_6de1, interleave_4plane  # noqa: E402
 
-GRP_PATH    = REPO / '3_Assembly' / 'tasm' / 'working' / 'zelres1' / 'data' / '131TTL3G.grp'
+GRP_PATH    = REPO / '3_Assembly' / 'masm' / 'working' / 'zelres1' / 'data' / '131TTL3G.grp'
 GOLDEN_PATH = REPO / '3_Assembly' / 'dumps' / 'zeliard_title_image.BIN'
 
 W, H = 320, 200

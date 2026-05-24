@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Copies the canonical loose data files from
- *   3_Assembly/tasm/working/zelresN/data/
+ *   3_Assembly/masm/working/zelresN/data/
  * into the web-port asset tree at
  *   6_WebPort/engine/assets/   (Emscripten --preload-file source)
  *   6_WebPort/shell/public/assets/   (Vite dev-server static dir)
@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
-const SRC_BASE  = join(REPO_ROOT, '3_Assembly', 'tasm', 'working');
+const SRC_BASE  = join(REPO_ROOT, '3_Assembly', 'masm', 'working');
 const DEST_ENGINE = join(REPO_ROOT, '6_WebPort', 'engine', 'assets');
 const DEST_SHELL  = join(REPO_ROOT, '6_WebPort', 'shell', 'public', 'assets');
 
@@ -52,6 +52,10 @@ const ASSET_MAP = [
     ['zelres1/data/137YUUPG.grp', 'yuup.grp'],
 ];
 
+const EXTRA_ASSET_MAP = [
+    ['3_Assembly/dumps/zeliard_title_image.BIN', 'title_full.bin'],
+];
+
 function ensureDir(p) { mkdirSync(p, { recursive: true }); }
 
 function copyOne(rel, dst) {
@@ -76,4 +80,21 @@ let ok = 0;
 for (const [src, dst] of ASSET_MAP) {
     if (copyOne(src, dst)) ok++;
 }
-console.log(`[copy_assets] ${ok}/${ASSET_MAP.length} files copied`);
+for (const [src, dst] of EXTRA_ASSET_MAP) {
+    const fullSrc = join(REPO_ROOT, src);
+    if (!existsSync(fullSrc)) {
+        console.error(`[copy_assets] MISSING: ${fullSrc}`);
+        process.exitCode = 1;
+        continue;
+    }
+    const dstA = join(DEST_ENGINE, dst);
+    const dstB = join(DEST_SHELL, dst);
+    ensureDir(dirname(dstA));
+    ensureDir(dirname(dstB));
+    copyFileSync(fullSrc, dstA);
+    copyFileSync(fullSrc, dstB);
+    const sz = statSync(fullSrc).size;
+    console.log(`[copy_assets] ${src}  ->  ${dst}  (${sz} bytes)`);
+    ok++;
+}
+console.log(`[copy_assets] ${ok}/${ASSET_MAP.length + EXTRA_ASSET_MAP.length} files copied`);

@@ -96,6 +96,31 @@ scene_sprite_c	equ	911Eh		; scene sprite data C
 scene_sprite_d	equ	912Bh		; scene sprite data D
 char_width_tbl	equ	947Dh		; character width lookup table (offset glyph_advance_tbl)
 char_glyph_tbl	equ	94DDh		; character glyph/font table   (offset char_glyph_index)
+; Game-segment dispatch slot addresses — HARDCODED, not derived from data labels.
+; These are fixed CS addresses in the game segment (populated by stick.bin/drivers),
+; not data within the 100OPDMO chunk.  Must NOT shift with debug code.
+; narration_stone_scene binary offset = 0x201Ch; +0Eh = 0x202Ah
+; jashiin_speech_2 binary offset = 0x1F80h; +80h = 0x2000h
+; All dispatch-slot EQUs below are FIXED game-segment CS addresses.
+; They are hardcoded binary offsets — the text bytes at each position
+; happen to form valid function pointers when read as LE words at runtime.
+; Must NOT shift with debug code additions.
+narration_stone_disp_fn	equ	202Ah	; cs:[narration_stone_scene+0Eh]
+jashiin_speech_disp_fn	equ	2000h	; cs:[jashiin_speech_2+80h]
+disp_game_fn_slot	equ	1E09h	; cs:[disp_game_fn]
+disp_data_6F59_slot	equ	1585h	; cs:[disp_data_6F59]
+disp_narr_chap2_slot	equ	1697h	; cs:[disp_narr_chap2]
+disp_chap2_call_slot	equ	1142h	; cs:[disp_chap2_call]
+disp_drv_seg_3_slot	equ	10DEh	; cs:[disp_drv_seg_3]
+disp_narr_chap3_slot	equ	2425h	; cs:[disp_narr_chap3]
+disp_narr_open_slot	equ	04FBh	; cs:[disp_narr_open]
+disp_set_drv_seg_slot	equ	10C2h	; cs:[disp_set_drv_seg]
+disp_font_inv_slot	equ	108Eh	; cs:[disp_font_inv]
+disp_data_7420_slot	equ	0A97h	; cs:[disp_data_7420]
+disp_narr_chap4_slot	equ	19D2h	; cs:[disp_narr_chap4]
+anim_fn_wipe_slot	equ	1A0Dh	; cs:[anim_fn_wipe]
+anim_fn_fade_slot	equ	1CB0h	; cs:[anim_fn_fade]
+anim_fn_draw_slot	equ	300Eh	; cs:[anim_fn_draw]
 ; Resource table refs — symbolic so debug builds stay valid when inline DBGSTR code shifts offsets.
 ; DBG_CHUNK_BASE = CHUNK_LOAD_BASE - 4 = 5FFCh accounts for the 4-byte SAR size header stripped
 ; by the AL=3 loader.  In release builds these evaluate to the original hardcoded values.
@@ -268,7 +293,7 @@ BLIT_SCENE_FRAME	MACRO
 		mov	cx,4868h
 		mov	es,cs:[gvar_game_seg]
 		mov	di,scene_framebuf
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		ENDM
 
 seg_a		segment	byte public
@@ -309,17 +334,25 @@ start:
 		mov	si,vga_seg
 		mov	di,scene_framebuf
 		call	decode_rle_to_es_di
+		DBGSTR	dbg_s_a1
+		DBGNL
 		mov	ax,4
 		call	word ptr cs:[gfx_palette_fn]
+		DBGSTR	dbg_s_a2
+		DBGNL
 		xor	bx,bx			; Zero register
 		mov	cl,96h
 		mov	si,scene_data_a
-		call	word ptr cs:[narration_stone_scene]+0Eh	; ('f ')
+		call	word ptr cs:[narration_stone_disp_fn]	; ('f ') cs:[narration_stone_scene+0Eh]
+		DBGSTR	dbg_s_a3
+		DBGNL
 		mov	bx,70Fh
 		mov	cx,4170h
 		mov	es,cs:[gvar_game_seg]
 		mov	di,scene_framebuf
-		call	word ptr cs:[disp_narr_chap3]
+		call	word ptr cs:[disp_narr_chap3_slot]
+		DBGSTR	dbg_s_a4
+		DBGNL
 		DBGSTR	dbg_s_ld02
 		DBGNL
 		LOAD_DATA res_nec_grp, vga_seg
@@ -353,10 +386,10 @@ start:
 		mov	cx,1040h
 		mov	es,cs:[gvar_game_seg]
 		mov	di,ui_overlay_buf
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		mov	byte ptr cs:[gvar_volume_b],4
 		mov	si,scene_sprite_a
-		call	word ptr cs:[disp_data_6F59]
+		call	word ptr cs:[disp_data_6F59_slot]
 		DBGSTR	dbg_s_ld03
 		DBGNL
 		LOAD_DATA res_dmaou_grp, vga_seg
@@ -385,7 +418,7 @@ scene_sprite_loop:
 							push	si
 							dec	al
 							mov	bx,1720h
-							call	word ptr cs:[disp_narr_chap2]
+							call	word ptr cs:[disp_narr_chap2_slot]
 							pop	si
 							mov	al,14h
 							call	timer_wait_loop
@@ -398,16 +431,16 @@ scene_after_anim:
 		WAIT_FRAME 0F0h
 		mov	al,2
 		mov	bx,1720h
-		call	word ptr cs:[disp_narr_chap2]
+		call	word ptr cs:[disp_narr_chap2_slot]
 		WAIT_FRAME 0Fh
 		mov	al,3
 		mov	bx,1720h
-		call	word ptr cs:[disp_narr_chap2]
+		call	word ptr cs:[disp_narr_chap2_slot]
 		WAIT_FRAME 0F0h
 		xor	al,al			; Zero register
 		mov	bx,94h
 		mov	cx,501Eh
-		call	word ptr cs:[jashiin_speech_2]+80h	; ('es')
+		call	word ptr cs:[jashiin_speech_disp_fn]	; ('es') cs:[jashiin_speech_2+80h]
 		DBGSTR	dbg_s_ld04
 		DBGNL
 		LOAD_DATA res_ttl1_grp, vga_seg
@@ -443,7 +476,7 @@ scene_after_anim:
 		xor	ax,ax			; Zero register
 		int	60h			; ??INT Non-standard interrupt
 		pop	ds
-		call	word ptr cs:[disp_drv_seg_3]
+		call	word ptr cs:[disp_drv_seg_3_slot]
 		mov	al,0F0h
 		call	timer_wait_loop
 		xor	al,al			; Zero register
@@ -463,14 +496,14 @@ scene_after_anim:
 		mov	cx,4170h
 		mov	es,cs:[gvar_game_seg]
 		mov	di,scene_framebuf
-		call	word ptr cs:[disp_narr_chap3]
+		call	word ptr cs:[disp_narr_chap3_slot]
 		mov	byte ptr ds:[gvar_frame_timer],0
 		mov	es,cs:[gvar_game_seg]
 		mov	si,vga_seg
 		mov	di,scene_framebuf
 		call	decode_rle_to_es_di
 		mov	si,scene_sprite_d
-		call	word ptr cs:[disp_narr_open]
+		call	word ptr cs:[disp_narr_open_slot]
 		mov	al,0F0h
 		call	timer_wait_loop
 		mov	ax,0C7h
@@ -480,11 +513,11 @@ scene_color_rotate_loop:
 							push	cx
 							mov	byte ptr ds:[gvar_frame_timer],0
 							push	ax
-							call	word ptr cs:[disp_set_drv_seg]
+							call	word ptr cs:[disp_set_drv_seg_slot]
 							pop	ax
 							push	ax
 							mov	al,ah
-							call	word ptr cs:[disp_set_drv_seg]
+							call	word ptr cs:[disp_set_drv_seg_slot]
 							mov	al,50h			; 'P'
 							call	timer_wait_loop
 							pop	ax
@@ -523,7 +556,7 @@ anim_check_frame_opcode:
 												push	si
 												dec	al
 												mov	bx,1F70h
-												call	word ptr cs:[disp_chap2_call]
+												call	word ptr cs:[disp_chap2_call_slot]
 												pop	si
 												jmp	short anim_read_byte
 
@@ -567,12 +600,12 @@ char_render_glyph:
 		mov	cl,ds:[render_state_b]
 		add	cl,1
 		mov	ah,2
-		call	word ptr cs:[disp_narr_chap4]
+		call	word ptr cs:[disp_narr_chap4_slot]
 		pop	ax
 		mov	bx,ds:[render_state_a]
 		mov	cl,ds:[render_state_b]
 		mov	ah,7
-		call	word ptr cs:[disp_narr_chap4]
+		call	word ptr cs:[disp_narr_chap4_slot]
 		pop	si
 		add	word ptr ds:[render_state_a],8
 		pop	ax
@@ -593,11 +626,11 @@ char_render_proc		endp
 animate_scanline		proc	near
 		mov	bx,20h
 		mov	cx,5078h
-		call	word ptr cs:[anim_fn_wipe]
+		call	word ptr cs:[anim_fn_wipe_slot]
 		mov	si,6FF0h
 
 scanline_data_loop:
-							call	word ptr cs:[anim_fn_fade]
+							call	word ptr cs:[anim_fn_fade_slot]
 							push	si
 							mov	cx,0Ah
 
@@ -608,7 +641,7 @@ scanline_frame_loop:
 												add	ax,0Ah
 												mov	bx,20h
 												mov	cx,5078h
-												call	word ptr cs:[anim_fn_draw]
+												call	word ptr cs:[anim_fn_draw_slot]
 												mov	al,1Ch
 												call	timer_wait_loop
 												pop	cx
@@ -624,7 +657,7 @@ scanline_fade_loop:
 							xor	ax,ax			; Zero register
 							mov	bx,20h
 							mov	cx,5078h
-							call	word ptr cs:[anim_fn_draw]
+							call	word ptr cs:[anim_fn_draw_slot]
 							mov	al,1Ch
 							call	timer_wait_loop
 							pop	cx
@@ -729,11 +762,11 @@ trans_wait_gfx:
 credits_scroll_display	proc	near
 		mov	bx,20h
 		mov	cx,5078h
-		call	word ptr cs:[anim_fn_wipe]
+		call	word ptr cs:[anim_fn_wipe_slot]
 		mov	si,CHUNK_LOAD_BASE + offset anim_fade_tbl_credits
 
 credits_scanline_loop:
-							call	word ptr cs:[anim_fn_fade]
+							call	word ptr cs:[anim_fn_fade_slot]
 							push	si
 							mov	cx,0Ah
 
@@ -744,7 +777,7 @@ credits_frame_loop:
 												add	ax,0Ah
 												mov	bx,20h
 												mov	cx,5078h
-												call	word ptr cs:[anim_fn_draw]
+												call	word ptr cs:[anim_fn_draw_slot]
 												mov	al,1Ch
 												call	scene_transition_wait
 												pop	cx
@@ -760,7 +793,7 @@ credits_fade_loop:
 							xor	ax,ax			; Zero register
 							mov	bx,20h
 							mov	cx,5078h
-							call	word ptr cs:[anim_fn_draw]
+							call	word ptr cs:[anim_fn_draw_slot]
 							mov	al,1Ch
 							call	scene_transition_wait
 							pop	cx
@@ -802,7 +835,7 @@ post_title_story_scenes:
 		mov	cx,5088h
 		SET_ES_2000
 		mov	di,0
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		BLIT_SCENE_FRAME
 		DBGSTR	dbg_s_call01	; P6  opening_narration
 		call	run_script_interpreter
@@ -814,7 +847,7 @@ post_title_story_scenes:
 		DBGSTR	dbg_s_call02	; P9  wait+scroll
 		call	run_script_interpreter
 		xor	ax,ax			; Zero register
-		call	word ptr cs:[disp_font_inv]
+		call	word ptr cs:[disp_font_inv_slot]
 		mov	ax,6
 		call	word ptr cs:[gfx_palette_fn]
 		BLIT_SCENE_FRAME
@@ -837,7 +870,7 @@ post_title_story_scenes:
 		mov	bx,1728h
 		mov	cx,2230h
 		mov	al,7
-		call	word ptr cs:[disp_data_7420]
+		call	word ptr cs:[disp_data_7420_slot]
 		DBGSTR	dbg_s_call06	; P17 apparition
 		call	run_script_interpreter
 		DBGSTR	dbg_s_call07	; P18 guardian spirit
@@ -848,7 +881,7 @@ post_title_story_scenes:
 		mov	di,0
 		mov	bx,1728h
 		mov	cx,2230h
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		mov	byte ptr cs:[gvar_frame_timer],0
 		mov	al,0Fh
 		call	wait_story_scene_timer
@@ -858,7 +891,7 @@ post_title_story_scenes:
 		mov	di,0
 		mov	bx,1728h
 		mov	cx,2230h
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		LOAD_DATA res_isi_grp, vga_seg
 		DECOMPRESS_VGA scene_framebuf
 		mov	bx,410h
@@ -889,11 +922,11 @@ post_title_story_scenes:
 		mov	bx,1610h
 		mov	cx,2468h
 		mov	al,5
-		call	word ptr cs:[disp_data_7420]
+		call	word ptr cs:[disp_data_7420_slot]
 		DBGSTR	dbg_s_call12	; P29 duke pledge
 		call	run_script_interpreter
 		xor	ax,ax			; Zero register
-		call	word ptr cs:[disp_font_inv]
+		call	word ptr cs:[disp_font_inv_slot]
 		DBGSTR	dbg_s_call13	; P30 jashiin intro
 		call	run_script_interpreter
 		LOAD_DATA res_yuu1_grp, vga_seg
@@ -908,7 +941,7 @@ post_title_story_scenes:
 		DBGSTR	dbg_s_call15	; P34 jashiin/duke exchange
 		call	run_script_interpreter
 		xor	ax,ax			; Zero register
-		call	word ptr cs:[disp_font_inv]
+		call	word ptr cs:[disp_font_inv_slot]
 		mov	ax,6
 		call	word ptr cs:[gfx_palette_fn]
 		mov	bx,0A15h
@@ -918,7 +951,7 @@ post_title_story_scenes:
 		mov	di,scene_framebuf
 		mov	bx,0B18h
 		mov	cx,1858h
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		mov	bx,2C15h
 		mov	cx,1A5Dh
 		call	word ptr cs:[disp_load_setup]
@@ -926,7 +959,7 @@ post_title_story_scenes:
 		mov	di,screen_buf_1
 		mov	bx,2D18h
 		mov	cx,1858h
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		DBGSTR	dbg_s_call16	; P36 section 15
 		call	run_script_interpreter
 		DBGSTR	dbg_s_call17	; P36 section 16
@@ -934,7 +967,7 @@ post_title_story_scenes:
 		LOAD_DATA res_maop_grp, vga_seg
 		DECOMPRESS_VGA screen_buf_1
 		xor	ax,ax			; Zero register
-		call	word ptr cs:[disp_font_inv]
+		call	word ptr cs:[disp_font_inv_slot]
 		mov	ax,8
 		call	word ptr cs:[gfx_palette_fn]
 		mov	bx,1515h
@@ -978,7 +1011,7 @@ wait_story_scene_timer_start:
 		mov	di,scene_framebuf
 		mov	bx,0B18h
 		mov	cx,1858h
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		call	run_script_interpreter
 		call	run_script_interpreter
 		mov	bx,2C15h
@@ -1002,7 +1035,7 @@ gameplay_input_loop:
 							loop	gameplay_input_loop		; Loop if cx > 0
 
 		xor	ax,ax			; Zero register
-		call	word ptr cs:[disp_font_inv]
+		call	word ptr cs:[disp_font_inv_slot]
 		mov	ax,7
 		call	word ptr cs:[gfx_palette_fn]
 		LOAD_DATA res_yuu2_grp, vga_seg
@@ -1011,7 +1044,7 @@ gameplay_input_loop:
 		mov	di,scene_framebuf
 		mov	bx,1010h
 		mov	cx,3160h
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		DBGSTR	dbg_s_call20	; P40 final narration (yuu2 scene)
 		call	run_script_interpreter
 		LOAD_DATA res_yuu3_grp, vga_seg
@@ -1182,12 +1215,12 @@ script_render_char:
 		inc	bx
 		inc	cx
 		mov	ah,ds:[text_color_fg]
-		call	word ptr cs:[disp_narr_chap4]
+		call	word ptr cs:[disp_narr_chap4_slot]
 		pop	cx
 		pop	bx
 		pop	ax
 		mov	ah,ds:[text_color_bg]
-		call	word ptr cs:[disp_narr_chap4]
+		call	word ptr cs:[disp_narr_chap4_slot]
 		pop	ax
 		mov	bl,al
 		sub	bl,20h			; ' '
@@ -1336,7 +1369,7 @@ script_clear_screen:
 							mov	bx,8Fh
 							mov	cx,5039h
 							xor	al,al			; Zero register
-							call	word ptr cs:[jashiin_speech_2]+80h	; ('es')
+							call	word ptr cs:[jashiin_speech_disp_fn]	; ('es') cs:[jashiin_speech_2+80h]
 							xor	ah,ah			; Zero register
 							jmp	short script_reset_position
 
@@ -1371,7 +1404,7 @@ script_portrait_sm:
 		mov	di,ax
 		mov	bx,3350h
 		mov	cx,0E20h
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		jmp	script_refetch
 
 script_portrait_sm_large:
@@ -1386,7 +1419,7 @@ script_portrait_sm_large:
 		mov	di,ax
 		mov	bx,3338h
 		mov	cx,0B10h
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		jmp	script_refetch
 
 script_portrait_lg:
@@ -1405,7 +1438,7 @@ script_portrait_lg:
 		mov	di,ax
 		mov	bx,1350h
 		mov	cx,920h
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		jmp	script_refetch
 
 script_portrait_lg_large:
@@ -1420,7 +1453,7 @@ script_portrait_lg_large:
 		mov	di,ax
 		mov	bx,1238h
 		mov	cx,0B10h
-		call	word ptr cs:[disp_game_fn]
+		call	word ptr cs:[disp_game_fn_slot]
 		jmp	script_refetch
 
 run_script_interpreter		endp
@@ -1490,11 +1523,11 @@ animate_scanline_alt		proc	near
 		push	si
 		mov	bx,20h
 		mov	cx,5078h
-		call	word ptr cs:[anim_fn_wipe]
+		call	word ptr cs:[anim_fn_wipe_slot]
 		pop	si
 
 alt_scanline_loop:
-							call	word ptr cs:[anim_fn_fade]
+							call	word ptr cs:[anim_fn_fade_slot]
 							push	si
 							mov	cx,0Ah
 
@@ -1505,7 +1538,7 @@ alt_frame_loop:
 												add	ax,0Ah
 												mov	bx,14h
 												mov	cx,50A0h
-												call	word ptr cs:[anim_fn_draw]
+												call	word ptr cs:[anim_fn_draw_slot]
 												mov	al,1Ch
 												call	wait_story_scene_timer
 												pop	cx
@@ -1521,7 +1554,7 @@ alt_fade_loop:
 							xor	ax,ax			; Zero register
 							mov	bx,14h
 							mov	cx,50A0h
-							call	word ptr cs:[anim_fn_draw]
+							call	word ptr cs:[anim_fn_draw_slot]
 							mov	al,1Ch
 							call	wait_story_scene_timer
 							pop	cx
@@ -3058,6 +3091,10 @@ ENDIF
 
 IF DEBUG_BUILD
 dbg_s_opdmo_init	db	'OPDMO:INIT', 0
+dbg_s_a1		db	'A1:rle_ok', 0
+dbg_s_a2		db	'A2:pal_ok', 0
+dbg_s_a3		db	'A3:narr_ok', 0
+dbg_s_a4		db	'A4:chap3_ok', 0
 dbg_s_cs_val		db	'CS=', 0
 dbg_s_ld01		db	'LD01:ttl3 ', 0
 dbg_s_ld01_ok		db	'ok', 0

@@ -14,8 +14,60 @@ $localEmcc = Get-Command emcc -ErrorAction SilentlyContinue
 if ($localEmcc) {
     Write-Host "[build-wasm] using local emcc at $($localEmcc.Source)"
     Push-Location $engineDir
-    try { make wasm } finally { Pop-Location }
-    exit $LASTEXITCODE
+    try {
+        $make = Get-Command make -ErrorAction SilentlyContinue
+        if ($make) {
+            make wasm
+            exit $LASTEXITCODE
+        }
+
+        Write-Host "[build-wasm] GNU make not found; invoking emcc directly"
+        New-Item -ItemType Directory -Force build | Out-Null
+        New-Item -ItemType Directory -Force ..\shell\public\engine | Out-Null
+
+        $sources = @(
+            "main.c",
+            "core/framebuf.c",
+            "render/palette.c",
+            "render/font_text.c",
+            "load/grp.c",
+            "load/fill_buffer.c",
+            "load/zeliad_loader.c",
+            "load/game_loader.c",
+            "load/img_open.c",
+            "game/opening_script.c",
+            "game/opening.c",
+            "game/gameplay_state.c",
+            "platform/platform_web.c"
+        )
+        $args = @(
+            "-std=gnu11",
+            "-Wall",
+            "-Wextra",
+            "-Wno-unused-parameter",
+            "-O2",
+            "-g",
+            "-I.",
+            "-s", "WASM=1",
+            "-s", "MODULARIZE=1",
+            "-s", "EXPORT_NAME=createZeliardModule",
+            "-s", "EXPORT_ES6=1",
+            "-s", "ENVIRONMENT=web",
+            "-s", "ALLOW_MEMORY_GROWTH=1",
+            "-s", "EXPORTED_FUNCTIONS=['_zeliard_init','_zeliard_tick','_zeliard_key','_zeliard_framebuf','_zeliard_palette','_zeliard_width','_zeliard_height','_zeliard_scene','_malloc','_free']",
+            "-s", "EXPORTED_RUNTIME_METHODS=['HEAPU8','HEAPU32','UTF8ToString','ccall','cwrap']",
+            "--preload-file", "assets@/assets",
+            "-o", "build/zeliard.js"
+        ) + $sources
+
+        & $localEmcc.Source @args
+        if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+        }
+        Copy-Item build\zeliard.js,build\zeliard.wasm,build\zeliard.data ..\shell\public\engine\ -Force
+        Write-Host "  -> mirrored to shell/public/engine/"
+        exit 0
+    } finally { Pop-Location }
 }
 
 Write-Host "[build-wasm] local emcc not found, trying Docker (emscripten/emsdk)"
@@ -30,6 +82,6 @@ if ($LASTEXITCODE -ne 0) {
     Write-Error "docker is installed but the daemon isn't reachable.  Start Docker Desktop and re-run."
 }
 
-$mount = "$repo/6_WebPort"
+$mount = "$repo"
 & docker run --rm -v "${mount}:/work" -w /work/engine emscripten/emsdk:latest sh -c 'apk add --no-cache make 2>/dev/null || true; make wasm'
 exit $LASTEXITCODE

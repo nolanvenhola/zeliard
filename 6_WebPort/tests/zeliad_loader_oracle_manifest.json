@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "description": "zeliad.exe loader/config oracle scenarios mirrored from MASM-backed functest probes.",
+  "source_tests": [
+    "proc_equivalence/test_zeliad_config_parsers.py",
+    "proc_equivalence/test_zeliad_command_line.py",
+    "proc_equivalence/test_zeliad_init_game_globals.py",
+    "proc_equivalence/test_zeliad_load_order.py",
+    "proc_equivalence/test_zeliad_set_video_mode.py"
+  ],
+  "scenarios": [
+    {"name": "zeliad_psp_save_arg:empty", "proc": "parse_command_line", "input": {"command_tail": ""}, "expected": {"parsed": false, "save_filename": ""}},
+    {"name": "zeliad_psp_save_arg:spaces", "proc": "parse_command_line", "input": {"command_tail": "   "}, "expected": {"parsed": false, "save_filename": ""}},
+    {"name": "zeliad_psp_save_arg:leading_spaces", "proc": "parse_command_line", "input": {"command_tail": "  hero"}, "expected": {"parsed": true, "save_filename": "hero.USR"}},
+    {"name": "zeliad_psp_save_arg:space_compact", "proc": "parse_command_line", "input": {"command_tail": "foo bar"}, "expected": {"parsed": true, "save_filename": "foobar.USR"}},
+    {"name": "zeliad_psp_save_arg:case", "proc": "parse_command_line", "input": {"command_tail": "MiXeD"}, "expected": {"parsed": true, "save_filename": "MiXeD.USR"}},
+    {"name": "zeliad_init_game_globals:hero", "proc": "init_game_globals block", "input": {"save_filename": "hero.USR", "graphics_mode": 4, "mt32_enabled": 255, "joystick_enabled": 255}, "expected": {"chunk_load_fn": 729, "chunk_load_seg": 4096, "old_int08": [4369, 8738], "old_int09": [13107, 17476], "enable_all": 255, "key_released": 255, "save_flag": 5, "last_key": 255, "game_phase": 255, "gfx_mode": 4, "game_seg": 16384, "save_name_buf": [72, 69, 82, 79, 0, 0, 0, 0]}},
+    {"name": "zeliad_init_game_globals:mixed", "proc": "init_game_globals block", "input": {"save_filename": "MiXeD.USR", "graphics_mode": 1, "mt32_enabled": 0, "joystick_enabled": 0}, "expected": {"last_key": 0, "game_phase": 0, "gfx_mode": 1, "save_name_buf": [77, 73, 88, 69, 68, 0, 0, 0]}},
+    {"name": "zeliad_init_game_globals:clamp", "proc": "init_game_globals block", "input": {"save_filename": "abcdefghijk", "graphics_mode": 5, "mt32_enabled": 255, "joystick_enabled": 0}, "expected": {"last_key": 0, "game_phase": 255, "gfx_mode": 5, "save_name_buf": [65, 66, 67, 68, 69, 70, 71, 72]}},
+    {"name": "zeliad_load_trace:mode0", "proc": "load_driver_file call sequence", "input": {"graphics_mode": 0, "save_filename": ""}, "expected": {"events": [{"filename": "stdply.bin", "es": 12288, "di": 2138, "load_offset": 0}, {"filename": "stick.bin", "es": 12288, "di": 2054, "load_offset": 256}, {"filename": "game.bin", "es": 12288, "di": 2127, "load_offset": 40960}, {"filename": "gmega.bin", "es": 12288, "di": 2066, "load_offset": 8192}, {"filename": "mscadlib.drv", "es": 16368, "di": 2185, "load_offset": 256}, {"filename": "sndadlib.drv", "es": 16368, "di": 2203, "load_offset": 4352}]}},
+    {"name": "zeliad_load_plan:mode0", "proc": "load_driver_file call sequence derived from zeliad_load_trace", "input": {"graphics_mode": 0, "save_filename": ""}, "expected": {"files": [["stdply.bin", 12288, 2138, 0], ["stick.bin", 12288, 2054, 256], ["game.bin", 12288, 2127, 40960], ["gmega.bin", 12288, 2066, 8192], ["mscadlib.drv", 16368, 2185, 256], ["sndadlib.drv", 16368, 2203, 4352]]}},
+    {"name": "zeliad_load_plan:mode1", "proc": "load_driver_file call sequence", "input": {"graphics_mode": 1, "save_filename": ""}, "expected": {"graphics_file": "gmcga.bin"}},
+    {"name": "zeliad_load_plan:mode2", "proc": "load_driver_file call sequence", "input": {"graphics_mode": 2, "save_filename": ""}, "expected": {"graphics_file": "gmcga.bin"}},
+    {"name": "zeliad_load_plan:mode3", "proc": "load_driver_file call sequence", "input": {"graphics_mode": 3, "save_filename": ""}, "expected": {"graphics_file": "gmhgc.bin"}},
+    {"name": "zeliad_load_plan:mode4", "proc": "load_driver_file call sequence", "input": {"graphics_mode": 4, "save_filename": ""}, "expected": {"graphics_file": "gmmcga.bin"}},
+    {"name": "zeliad_load_plan:mode5", "proc": "load_driver_file call sequence", "input": {"graphics_mode": 5, "save_filename": ""}, "expected": {"graphics_file": "gmtga.bin"}},
+    {"name": "zeliad_load_plan:save", "proc": "load_driver_file call sequence", "input": {"graphics_mode": 4, "save_filename": "CUSTOM.USR"}, "expected": {"player_file": "CUSTOM.USR"}},
+    {"name": "zeliad_video_mode:mode0", "proc": "set_video_mode", "input": {"graphics_mode": 0}, "expected": {"kind": "int10", "ax": 14}},
+    {"name": "zeliad_video_mode:mode1", "proc": "set_video_mode", "input": {"graphics_mode": 1}, "expected": {"kind": "int10", "ax": 5}},
+    {"name": "zeliad_video_mode:mode2", "proc": "set_video_mode", "input": {"graphics_mode": 2}, "expected": {"kind": "int10", "ax": 6}},
+    {"name": "zeliad_video_mode:mode3", "proc": "set_video_mode", "input": {"graphics_mode": 3}, "expected": {"kind": "hgc", "clear_segment": 45056, "clear_words": 16384}},
+    {"name": "zeliad_video_mode:mode4", "proc": "set_video_mode", "input": {"graphics_mode": 4}, "expected": {"kind": "int10", "ax": 19}},
+    {"name": "zeliad_video_mode:mode5", "proc": "set_video_mode", "input": {"graphics_mode": 5}, "expected": {"kind": "int10", "ax": 9}}
+  ]
+}

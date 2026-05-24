@@ -327,7 +327,7 @@ with golden-output regression tests under `functest/regression/`.
 | [x] | 4b — flag setters/clearers | `reset_combat_state` (one proc clears 11 flags + 4 sentinels) | 1h | `test_reset_combat_state.py` PASS |
 | [x] | 4c — direction movers | inc/dec_map_pos and inc/dec_row primitives (helpers used by entity_move_* family) | 1h | 8 scenarios PASS in `test_movement_helpers.py` |
 | [x] | 4d — entity-list iterators | tick_decrement_enemy_counters, tick_increment_enemy_counters | 0.5h | 5 scenarios PASS in `test_enemy_tick_iterators.py` |
-| [x] | 4e — gate / classifier procs | gate_spell_fx_active, is_non_area7_slot_b_entity, is_unknown_or_area5_slot_{b,c}.  Combat-FSM bytes (FF45/46/47) explicitly deferred — too tightly coupled to int 61h + read_joystick to unit-test cleanly | 1h | 13 scenarios PASS in `test_gate_classifier_procs.py` |
+| [x] | 4e — gate / classifier procs | gate_spell_fx_active, is_non_area7_slot_b_entity, is_unknown_or_area5_slot_{b,c}.  Combat-FSM bytes (FF45/46/47) explicitly deferred — too tightly coupled to int 61h + read_joystick to unit-test cleanly | 1h | 14 scenarios PASS in `test_gate_classifier_procs.py` |
 
 **Result**: 41 regression scenarios in 5 test files; all green via
 `run.py --ci`.  Total functest count: 31 (30 PASS, 1 NO-VERDICT by

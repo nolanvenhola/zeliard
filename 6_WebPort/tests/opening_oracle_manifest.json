@@ -1,0 +1,319 @@
+{
+  "version": 1,
+  "description": "Opening/title oracle scenarios for the Zeliard web port.",
+  "scenarios": [
+    {
+      "name": "ttl3_logo_bbox",
+      "source": "100OPDMO title logo draw",
+      "asset": "ttl3.grp",
+      "pipeline": "grp_abc",
+      "rows": 65,
+      "cl": 112,
+      "x": 28,
+      "y": 15,
+      "width": 260,
+      "height": 112,
+      "image_sha256": "9afe6916df8a4dbbb312358bd30a22bbba823fc8b0a612e3724dfcab77f238f4",
+      "image_fnv1a64": "a2d522d659f26245",
+      "framebuffer_sha256": "fa830ab40a292d1180c5b2e1baf76b88d1fa3e17f171389555ad4674c565bcc9",
+      "framebuffer_fnv1a64": "05f15837ed2f4105"
+    },
+    {
+      "name": "nec_scene_bbox",
+      "source": "100OPDMO NEC scene draw",
+      "asset": "nec.grp",
+      "pipeline": "img_open_gfx_draw",
+      "rows": 44,
+      "cl": 104,
+      "x": 72,
+      "y": 32,
+      "width": 176,
+      "height": 104,
+      "image_sha256": "93462007d5a41bd7df31fe43f86c48f5fe18374b1d0a6a93d9adabf1a3a0b472",
+      "image_fnv1a64": "552a8dee88d1f0f0",
+      "framebuffer_sha256": "c7c3e2b435a0008dbf9a4895fbc6f686d4c72fb25a57d609fa0a9663326a4e2e",
+      "framebuffer_fnv1a64": "76a5c68141189f10"
+    },
+    {
+      "name": "hou_overlay_bbox",
+      "source": "100OPDMO HOU overlay draw",
+      "asset": "hou.grp",
+      "pipeline": "img_open_gfx_draw",
+      "rows": 16,
+      "cl": 64,
+      "x": 128,
+      "y": 72,
+      "width": 64,
+      "height": 64,
+      "image_sha256": "ff2e6eb07cd2071c09cb2de42daaed07e6b0bae211852a86343d70b41e753ecb",
+      "image_fnv1a64": "b783aef2a4a8a1db",
+      "framebuffer_sha256": "4ff6c94d611108f462b057537d0895de1fb6f95d670ca976a1c450b1b6e9eb8b",
+      "framebuffer_fnv1a64": "b66970464bb149db"
+    },
+    {
+      "name": "dmaou_scene_bbox",
+      "source": "100OPDMO DMAOU scene draw",
+      "asset": "dmaou.grp",
+      "pipeline": "img_open_gfx_draw",
+      "rows": 34,
+      "cl": 112,
+      "x": 92,
+      "y": 32,
+      "width": 136,
+      "height": 112,
+      "image_sha256": "5c90f08fbfea912316ed930de43a17022034b6a6241c2822a671f5111b469cc7",
+      "image_fnv1a64": "67b90328c77d9e4f",
+      "framebuffer_sha256": "7d72be07824d871167052d3cd4518200d0992775374208682a05dd70653e1ee7",
+      "framebuffer_fnv1a64": "5c7fa1b0aad0838f"
+    },
+    {
+      "name": "opening_nec_hou_composite",
+      "source": "100OPDMO NEC scene with HOU overlay before DMAOU",
+      "base": "nec_scene_bbox",
+      "overlay": "hou_overlay_bbox",
+      "framebuffer_sha256": "e496a217540252094159882058c99110a149075b896b1af6c9c09b226f6fc64e",
+      "framebuffer_fnv1a64": "9ef45cf29c1cd2b5"
+    },
+    {
+      "name": "opening_scene_sprite_c_events",
+      "source": "100OPDMO scene_sprite_loop over scene_sprite_c",
+      "raw_bytes": [
+        1,
+        1,
+        1,
+        2,
+        2,
+        1,
+        1,
+        2,
+        2,
+        3,
+        3,
+        5,
+        0
+      ],
+      "display_al": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        2,
+        2,
+        4
+      ],
+      "bx": "1720",
+      "delay_al": "14"
+    },
+    {
+      "name": "opening_scene_sprite_b_summary",
+      "source": "100OPDMO scene_after_anim through scene_sprite_b before Jashiin speech",
+      "script_bytes_consumed": 136,
+      "chapter2_call_count": 38,
+      "glyph_count": 88,
+      "chapter4_draw_call_count": 176,
+      "script_wait_count": 91,
+      "orchestrator_wait_al": [
+        "F0",
+        "F0",
+        "0F",
+        "F0"
+      ],
+      "explicit_chapter2_al": [
+        2,
+        3
+      ],
+      "explicit_chapter2_bx": "1720",
+      "final_si": "911E"
+    },
+    {
+      "name": "opening_title_asset_reload",
+      "source": "100OPDMO Jashiin speech and title asset reload block before int60",
+      "jashiin_speech": {
+        "al": 0,
+        "bx": "0094",
+        "cx": "501E"
+      },
+      "sar": [
+        {
+          "asset": "ttl1.grp",
+          "al": 2,
+          "di": "A000",
+          "es_delta": "0000"
+        },
+        {
+          "asset": "ttl2.grp",
+          "al": 2,
+          "di": "A000",
+          "es_delta": "0000"
+        },
+        {
+          "asset": "ttl3.grp",
+          "al": 2,
+          "di": "B000",
+          "es_delta": "0000"
+        },
+        {
+          "asset": "zopn.msd",
+          "al": 5,
+          "di": "3000",
+          "es_delta": "0000"
+        }
+      ],
+      "decode_rle_to_es_di": {
+        "si": "A000",
+        "di": "4000"
+      },
+      "gfx_mode": {
+        "bx": "1720",
+        "cx": "2270"
+      },
+      "palette_ax": 4
+    },
+    {
+      "name": "opening_title_display_handoff",
+      "source": "100OPDMO title display handoff from int60 setup through scene_sprite_d dispatch",
+      "int60_setup": {
+        "ax": 0,
+        "si": "3000",
+        "ds_delta": "0000"
+      },
+      "driver_call_count": 1,
+      "wait_al": [
+        "F0",
+        "F0",
+        "F0"
+      ],
+      "gfx_update": {
+        "al": 0,
+        "bx": "0B48",
+        "cx": "3180",
+        "di": "4000",
+        "es_delta": "0000"
+      },
+      "decode_rle_to_es_di": [
+        {
+          "si": "B000",
+          "di": "4000"
+        },
+        {
+          "si": "A000",
+          "di": "4000"
+        }
+      ],
+      "disp_narr_chap3": {
+        "bx": "070F",
+        "cx": "4170",
+        "di": "4000"
+      },
+      "disp_narr_open_si": "912B"
+    },
+    {
+      "name": "opening_title_color_exit",
+      "source": "100OPDMO color rotation loop and gfx-enabled exit poll before timer_exit_to_game",
+      "iterations": 100,
+      "disp_set_call_count": 200,
+      "wait_count": 100,
+      "wait_al": "50",
+      "first_disp_set_al": [
+        "C7",
+        "00",
+        "C5",
+        "02",
+        "C3",
+        "04"
+      ],
+      "final_disp_set_al": [
+        "05",
+        "C2",
+        "03",
+        "C4",
+        "01",
+        "C6"
+      ],
+      "interrupt_cascade_count": 1,
+      "stick_handler_call_count": 4,
+      "exits_to_game": true
+    },
+    {
+      "name": "opening_timer_exit_to_game",
+      "source": "100OPDMO timer_exit_to_game through credits_scroll_display dispatch",
+      "scene_mode": 8,
+      "gfx_mode": {
+        "al": "FF",
+        "bx": "0000",
+        "cx": "50C8"
+      },
+      "gfx_init_count": 1,
+      "sar": {
+        "asset": "zend.msd",
+        "al": 5,
+        "di": "3000",
+        "es_delta": "0000"
+      },
+      "int60_setup": {
+        "ax": 0,
+        "si": "3000",
+        "di": "3000",
+        "ds_delta": "0000"
+      },
+      "clears_input": true,
+      "palette_ax": 1,
+      "credits_call_count": 1
+    },
+    {
+      "name": "opening_trans_exit",
+      "source": "100OPDMO trans_exit handoff into post_title_story_scenes",
+      "scene_mode": 8,
+      "gfx_init_count": 1,
+      "clears_input": true,
+      "reaches_post_title_story": true
+    },
+    {
+      "name": "title_palette_state",
+      "source": "captured P2_Title DAC rows",
+      "palette": "P2_Title",
+      "bytes": 768,
+      "palette_sha256": "dadd6f0472970167caaef803fbec67eba6450e447c3ded17014fce8115b8701d",
+      "palette_fnv1a64": "d9e89a4c32254f58"
+    },
+    {
+      "name": "initial_title_screen",
+      "source": "captured full title/copyright framebuffer",
+      "expected_scene": "title",
+      "bytes": 64000,
+      "framebuffer_sha256": "853d70a43f5fa386bd4609f15eacf9b6f8fc199c36c9dcc9f0fd0c35c6976544",
+      "framebuffer_fnv1a64": "513e9ef6009064ea",
+      "palette_sha256": "dadd6f0472970167caaef803fbec67eba6450e447c3ded17014fce8115b8701d",
+      "palette_fnv1a64": "d9e89a4c32254f58"
+    },
+    {
+      "name": "title_input_starts_opening",
+      "source": "title receives ENTER/SPACE and advances into opening demo",
+      "start_scene": "title",
+      "input": "ENTER",
+      "expected_scene": "opening",
+      "framebuffer_sha256": "fa830ab40a292d1180c5b2e1baf76b88d1fa3e17f171389555ad4674c565bcc9",
+      "framebuffer_fnv1a64": "05f15837ed2f4105"
+    },
+    {
+      "name": "title_timer_starts_opening",
+      "source": "title wait expires and advances into opening demo",
+      "start_scene": "title",
+      "duration_ms": 8000,
+      "expected_scene": "opening"
+    },
+    {
+      "name": "opening_input_exit_to_game",
+      "source": "opening demo receives ENTER/SPACE and reaches game handoff",
+      "start_scene": "opening",
+      "input": "ENTER",
+      "expected_scene": "game_handoff",
+      "framebuffer_fnv1a64": "dd14fcc6528cab25"
+    }
+  ]
+}
