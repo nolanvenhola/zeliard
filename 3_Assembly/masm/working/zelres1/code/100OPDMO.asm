@@ -530,7 +530,7 @@ scene_wait_gfx_enabled:
 							call	interrupt_handler_cascade
 							test	byte ptr ds:[gvar_enable_all],0FFh
 							jz	scene_wait_gfx_enabled			; Jump if zero
-		jmp	timer_exit_to_game
+		jmp	opening_next_scene
 
 run_opening_demo_main		endp
 
@@ -675,9 +675,9 @@ timer_wait_loop		proc	near
 
 timer_check_input:
 							test	byte ptr cs:[gvar_spacebar_state],0FFh
-							jnz	timer_exit_to_game			; Jump if not zero
+							jnz	opening_next_scene			; Jump if not zero
 							cmp	byte ptr cs:[gvar_enter_key],ENTER_KEY
-							je	timer_exit_to_game			; Jump if equal
+							je	opening_next_scene			; Jump if equal
 							call	interrupt_handler_cascade
 							cmp	cs:[gvar_frame_timer],al
 							jb	timer_check_input			; Jump if below
@@ -697,7 +697,7 @@ interrupt_handler_cascade	proc	near
 
 interrupt_handler_cascade	endp
 
-timer_exit_to_game:
+opening_next_scene:
 		mov	byte ptr ds:[gvar_scene_mode],8
 		mov	al,0FFh
 		mov	bx,0

@@ -1,0 +1,494 @@
+{
+  "schema": "zeliard.opdemo.scanline_contract.v2",
+  "ancient_prologue": {
+    "source_trace_sha256": "c7ae0c74773625b816089f91af5a800ea2088f2da3b53af9ed985e4bf5ed3b08",
+    "wipe": {
+      "count": 1,
+      "bx": "0020",
+      "cx": "5078"
+    },
+    "entries": [
+      {
+        "runtime_si": "6FF0",
+        "text": "           Two thousand years, ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7010",
+        "text": "from the dark reaches of another galaxy,",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7039",
+        "text": "        a demon with not a shred",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "705A",
+        "text": "      of compassion for humankind,",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "707D",
+        "text": "         descended upon earth.",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "709C",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "709D",
+        "text": "          He defiled the land,",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "70BC",
+        "text": "  sending vile creatures to live in it,",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "70E4",
+        "text": "   and thus became ruler of the world.",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "710B",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "710C",
+        "text": "         The King of Felishika,",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "712C",
+        "text": "     appalled by what had happened,",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7150",
+        "text": "          prayed to the Spirit",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "716F",
+        "text": "      of the Holy Land of Zeliard",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7191",
+        "text": "    for help in defeating this monster.",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "71B9",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "71BA",
+        "text": "    With the help of the holy crystals",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "71E1",
+        "text": "       called Tears of Esmesanti,",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7203",
+        "text": "    the King managed to wrest power",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7227",
+        "text": "    from the fiend and seal him deep",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "724C",
+        "text": "     within the bowels of the earth.",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7271",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7272",
+        "text": "            And once again,",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "728E",
+        "text": " the light of peace came to shine upon",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "72B5",
+        "text": "              the earth.",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "72CE",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "72CF",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "72D0",
+        "text": "However, it is written in",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "72EA",
+        "text": "       the Sixth Book of Esmesanti:",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "730E",
+        "text": "                    The Age of Darkness.",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7337",
+        "text": "",
+        "terminator": "FF"
+      }
+    ],
+    "entry_count": 31,
+    "entry_draw_count": 310,
+    "entry_draw_al": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "exit_draw_count": 120,
+    "exit_draw_al_values": [
+      0
+    ],
+    "draw_bx_values": [
+      "0020"
+    ],
+    "draw_cx_values": [
+      "5078"
+    ],
+    "wait_count": 430,
+    "wait_al_values": [
+      28
+    ],
+    "entries_sha256": "8ae8f04f5d410d642942b91af73d5ee1eb01eb7cfce8d47a8a8a9c74f097eefd"
+  },
+  "staff_credits": {
+    "source_trace_sha256": "d2773e6fb7ace1b39d7c6ac9f7f1df1cded2d12fc794e7bde2f485d6d6e33f30",
+    "wipe": {
+      "count": 1,
+      "bx": "0020",
+      "cx": "5078"
+    },
+    "entries": [
+      {
+        "runtime_si": "742F",
+        "text": "          Fantasy Action Game           ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7458",
+        "text": "               ZELIARD                  ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7481",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7482",
+        "text": "             -- STAFF --                ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "74AB",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "74AC",
+        "text": "Producer -- Japanese Version",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "74C9",
+        "text": "                      Mitsuhiro Mazda   ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "74F2",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "74F3",
+        "text": "Producer -- English Version",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "750F",
+        "text": "                        Josh Mandel     ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7538",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7539",
+        "text": "Lead Programmer      Tomoyuki Shimada   ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7562",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7563",
+        "text": "Graphic Designers     Akihiko Yoshida   ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "758C",
+        "text": "                      Masatoshi Azumi   ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "75B5",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "75B6",
+        "text": "English Text Translation by",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "75D2",
+        "text": "                       Marti McKenna    ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "75FB",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "75FC",
+        "text": "Music Composers  -- MECANO ASSOCIATES --",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7625",
+        "text": "                    Fumihito Kasatani   ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "764E",
+        "text": "                    Nobuyuki Aoshima    ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7677",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7678",
+        "text": "Story Maker           Masaru Takeuchi   ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "76A1",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "76A2",
+        "text": "Sound Effects by     Tomoyuki Shimada   ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "76CB",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "76CC",
+        "text": "Advisers               Osamu Harada     ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "76F5",
+        "text": "                       Hiromi Ohba      ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "771E",
+        "text": "                       Greg Miyaji      ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7747",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7748",
+        "text": "System Designer      Rocky Cave Maker   ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7771",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7772",
+        "text": "Special Thanks to",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7784",
+        "text": "                    Toshiyuki Uchida    ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "77AD",
+        "text": "                       Yuzo Sunaga      ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "77D6",
+        "text": "                     Takeshi Miyaji     ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "77FF",
+        "text": "                     Naozumi Honma      ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7828",
+        "text": "                     Toshi Masubuchi    ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7851",
+        "text": "                     Ray E. Nakazato    ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "787A",
+        "text": "                     Hiroyuki Koyama    ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "78A3",
+        "text": "                     Satoshi Uesaka     ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "78CC",
+        "text": "              Sierra On-Line Japan, Inc.",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "78F5",
+        "text": "                    Eiji (Ed) Nagano    ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "791E",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "791F",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7920",
+        "text": "",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7921",
+        "text": "    Copyright (C)1987,1990 GAME ARTS    ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "794A",
+        "text": "    Copyright (C)1990 Sierra On-Line    ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "7973",
+        "text": "  This edition first published 1987 by  ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "799C",
+        "text": "  GAME ARTS Co.,Ltd./ Tomoyuki Shimada  ",
+        "terminator": "0D"
+      },
+      {
+        "runtime_si": "79C5",
+        "text": "",
+        "terminator": "FF"
+      }
+    ],
+    "entry_count": 52,
+    "entry_draw_count": 520,
+    "entry_draw_al": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "exit_draw_count": 120,
+    "exit_draw_al_values": [
+      0
+    ],
+    "draw_bx_values": [
+      "0020"
+    ],
+    "draw_cx_values": [
+      "5078"
+    ],
+    "wait_count": 0,
+    "wait_al_values": [],
+    "entries_sha256": "7b17d1b61a26f89474e9cc994f802543be01013b2cfe628675c45bbcbcad5721"
+  }
+}

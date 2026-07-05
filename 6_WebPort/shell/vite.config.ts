@@ -3,6 +3,10 @@ import { defineConfig } from 'vite';
 export default defineConfig({
     server: {
         port: 5173,
+        strictPort: true,
+        headers: {
+            'Cache-Control': 'no-store, max-age=0',
+        },
         fs: {
             // Allow serving the engine build output that lives outside shell/.
             allow: ['..'],

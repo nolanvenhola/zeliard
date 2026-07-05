@@ -453,7 +453,7 @@ def compute_manifest() -> dict:
     })
     scenarios.append({
         "name": "opening_title_color_exit",
-        "source": "100OPDMO color rotation loop and gfx-enabled exit poll before timer_exit_to_game",
+        "source": "100OPDMO color rotation loop and gfx-enabled exit poll before opening_next_scene",
         "iterations": 100,
         "disp_set_call_count": 200,
         "wait_count": 100,
@@ -465,8 +465,8 @@ def compute_manifest() -> dict:
         "exits_to_game": True,
     })
     scenarios.append({
-        "name": "opening_timer_exit_to_game",
-        "source": "100OPDMO timer_exit_to_game through credits_scroll_display dispatch",
+        "name": "opening_next_scene",
+        "source": "100OPDMO opening_next_scene through credits_scroll_display dispatch",
         "scene_mode": 8,
         "gfx_mode": {"al": "FF", "bx": "0000", "cx": "50C8"},
         "gfx_init_count": 1,
@@ -484,10 +484,34 @@ def compute_manifest() -> dict:
         "clears_input": True,
         "reaches_post_title_story": True,
     })
+    scenarios.extend([
+        {
+            "name": "maop_reveal_step_00",
+            "source": "100OPDMO wait_story_scene_timer_start first disp_load_setup frame",
+            "frame": "OPENING_DEBUG_LATE_MAOP_REVEAL_STEP_00",
+            "framebuffer_fnv1a64": "f367db99ee55cc05",
+        },
+        {
+            "name": "maop_reveal_step_12",
+            "source": "100OPDMO wait_story_scene_timer_start midpoint disp_load_setup frame",
+            "frame": "OPENING_DEBUG_LATE_MAOP_REVEAL_STEP_12",
+            "framebuffer_fnv1a64": "f367db99ee55cc05",
+        },
+        {
+            "name": "split_return_reveal_step_12",
+            "source": "100OPDMO gameplay_input_loop midpoint disp_load_setup frame",
+            "frame": "OPENING_DEBUG_LATE_SPLIT_RETURN_STEP_12",
+            "framebuffer_fnv1a64": "51ffa7473f81fefb",
+        },
+        {
+            "name": "final_yuu3_yuu4_composite",
+            "source": "100OPDMO yuu3/yuu4 merge_gfx_planes plus xor_mask_render final frame",
+            "frame": "OPENING_DEBUG_LATE_FINAL_YUU3_YUU4",
+            "framebuffer_fnv1a64": "92d8ad4d7c4c1f7f",
+        },
+    ])
 
     title_palette = palette_bytes("P2_Title")
-    title_image, title_w, title_h = decode_image_scenario(IMAGE_SCENARIOS[0])
-    title_logo_fb = place_in_framebuffer(title_image, title_w, title_h, 28, 15)
     title_fb = TITLE_FULL_CAPTURE.read_bytes()
     if len(title_fb) != WIDTH * HEIGHT:
         raise ValueError(f"{TITLE_FULL_CAPTURE} is {len(title_fb)} bytes, expected {WIDTH * HEIGHT}")
@@ -502,7 +526,8 @@ def compute_manifest() -> dict:
     scenarios.append({
         "name": "initial_title_screen",
         "source": "captured full title/copyright framebuffer",
-        "expected_scene": "title",
+        "expected_scene": "opening",
+        "expected_phase": "copyright_title_card",
         "bytes": len(title_fb),
         "framebuffer_sha256": sha256_hex(title_fb),
         "framebuffer_fnv1a64": fnv1a64_hex(title_fb),
@@ -510,20 +535,24 @@ def compute_manifest() -> dict:
         "palette_fnv1a64": fnv1a64_hex(title_palette),
     })
     scenarios.append({
-        "name": "title_input_starts_opening",
-        "source": "title receives ENTER/SPACE and advances into opening demo",
-        "start_scene": "title",
+        "name": "copyright_input_ignored",
+        "source": "copyright card receives ENTER/SPACE before the MASM input wait",
+        "start_scene": "opening",
+        "start_phase": "copyright_title_card",
         "input": "ENTER",
         "expected_scene": "opening",
-        "framebuffer_sha256": sha256_hex(title_logo_fb),
-        "framebuffer_fnv1a64": fnv1a64_hex(title_logo_fb),
+        "expected_phase": "copyright_title_card",
+        "framebuffer_sha256": sha256_hex(title_fb),
+        "framebuffer_fnv1a64": fnv1a64_hex(title_fb),
     })
     scenarios.append({
-        "name": "title_timer_starts_opening",
-        "source": "title wait expires and advances into opening demo",
-        "start_scene": "title",
-        "duration_ms": 8000,
+        "name": "copyright_timer_starts_prologue",
+        "source": "copyright/title card completes and advances into the amulet ancient-history prologue",
+        "start_scene": "opening",
+        "start_phase": "copyright_title_card",
+        "duration_ms": 3470,
         "expected_scene": "opening",
+        "expected_phase": "amulet_ancient_prologue_scroll",
     })
     game_handoff_fb = bytes(WIDTH * HEIGHT)
     scenarios.append({

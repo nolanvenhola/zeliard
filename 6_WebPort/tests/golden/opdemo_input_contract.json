@@ -1,0 +1,83 @@
+{
+  "schema": "zeliard.opdemo.input_contract.v1",
+  "source": "3_Assembly/masm/bin/zelres1/100OPDMO.bin",
+  "cases": [
+    {
+      "name": "timer_wait_space",
+      "outcome": "jump_63E5",
+      "instruction_count": 4,
+      "final_state": {
+        "scene_mode": "90",
+        "spacebar_state": "01",
+        "enter_key": "00",
+        "frame_timer": "90"
+      }
+    },
+    {
+      "name": "timer_wait_enter",
+      "outcome": "jump_63E5",
+      "instruction_count": 6,
+      "final_state": {
+        "scene_mode": "90",
+        "spacebar_state": "00",
+        "enter_key": "0D",
+        "frame_timer": "90"
+      }
+    },
+    {
+      "name": "timer_wait_elapsed",
+      "outcome": "return",
+      "instruction_count": 11,
+      "final_state": {
+        "scene_mode": "90",
+        "spacebar_state": "00",
+        "enter_key": "00",
+        "frame_timer": "00"
+      }
+    },
+    {
+      "name": "credits_wait_space",
+      "outcome": "jump_6477",
+      "instruction_count": 4,
+      "final_state": {
+        "scene_mode": "90",
+        "spacebar_state": "01",
+        "enter_key": "00",
+        "frame_timer": "90"
+      }
+    },
+    {
+      "name": "credits_wait_enter",
+      "outcome": "jump_6477",
+      "instruction_count": 6,
+      "final_state": {
+        "scene_mode": "90",
+        "spacebar_state": "00",
+        "enter_key": "0D",
+        "frame_timer": "90"
+      }
+    },
+    {
+      "name": "story_input_space",
+      "outcome": "jump_6A41",
+      "instruction_count": 4,
+      "final_state": {
+        "scene_mode": "90",
+        "spacebar_state": "01",
+        "enter_key": "00",
+        "frame_timer": "90"
+      }
+    },
+    {
+      "name": "story_input_enter",
+      "outcome": "jump_6A41",
+      "instruction_count": 6,
+      "final_state": {
+        "scene_mode": "90",
+        "spacebar_state": "00",
+        "enter_key": "0D",
+        "frame_timer": "90"
+      }
+    }
+  ]
+}

@@ -194,7 +194,8 @@ class TasmHarness:
               CS/DS/ES/SS are set automatically; IP is set to func_addr.
         stub_calls: dict of target_addr -> stub_dict. When execution reaches
                     one of these addresses, it RETs immediately with the
-                    given effects: {'cf': 0|1, 'ax': int (optional)}.
+                    given effects: {'cf': 0|1, 'ax': int (optional),
+                    'scan_si_until': [byte, ...] (optional)}.
         max_steps: instruction-budget safety cap.
         trace: if True, prints every instruction's address as it executes.
         watch_reads: list of DS offsets to monitor; result['reads_observed']
@@ -286,6 +287,16 @@ class TasmHarness:
                 uc.reg_write(UC_X86_REG_EFLAGS, eflags)
                 if 'ax' in stub:
                     uc.reg_write(UC_X86_REG_AX, stub['ax'] & 0xFFFF)
+                if 'scan_si_until' in stub:
+                    terminators = set(stub['scan_si_until'])
+                    scan_seg = uc.reg_read(UC_X86_REG_DS) & 0xFFFF
+                    scan_si = uc.reg_read(UC_X86_REG_SI) & 0xFFFF
+                    while True:
+                        value = uc.mem_read((scan_seg << 4) + scan_si, 1)[0]
+                        scan_si = (scan_si + 1) & 0xFFFF
+                        if value in terminators:
+                            break
+                    uc.reg_write(UC_X86_REG_SI, scan_si)
 
                 # Simulate RET: pop the return address from the stack,
                 # set IP to it, leave SP advanced.  Resume emulation.

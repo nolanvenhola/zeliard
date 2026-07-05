@@ -233,8 +233,9 @@ static int find_set_bit_pos(u8 mask) {
     return -1;
 }
 
-static u8* render_8pass_blit_impl(const u8 *interleaved, size_t interleaved_size,
-                             int rows, int cl, int *out_w, int *out_h) {
+static u8* render_8pass_blit_partial_impl(const u8 *interleaved, size_t interleaved_size,
+                                          int rows, int cl, int pass_count,
+                                          int *out_w, int *out_h) {
     static const u8 mask1[8] = { 0x80, 0x20, 0x08, 0x02, 0x40, 0x10, 0x04, 0x01 };
     static const u8 mask2[8] = { 0x01, 0x04, 0x10, 0x40, 0x02, 0x08, 0x20, 0x80 };
 
@@ -250,7 +251,10 @@ static u8* render_8pass_blit_impl(const u8 *interleaved, size_t interleaved_size
     u8 *vga = (u8*)calloc(out_n, 1);
     if (!vga) return NULL;
 
-    for (int start_k = 0; start_k < 8; start_k++) {
+    if (pass_count < 0) pass_count = 0;
+    if (pass_count > 8) pass_count = 8;
+
+    for (int start_k = 0; start_k < pass_count; start_k++) {
         int k = start_k;
         for (int n = 0; n < blit_calls; n++) {
             int wp = (n & 1) ? m2p[k & 7] : m1p[k & 7];
@@ -273,6 +277,38 @@ static u8* render_8pass_blit_impl(const u8 *interleaved, size_t interleaved_size
 u8* grp_decode(const u8 *file_data, size_t file_size,
                int rows, int cl,
                int *out_w, int *out_h) {
+    return grp_decode_partial_passes(file_data, file_size, rows, cl, 8,
+                                     out_w, out_h);
+}
+
+u8* grp_decode_6de1_planes(const u8 *file_data, size_t file_size,
+                           size_t *out_size) {
+    if (out_size)
+        *out_size = 0;
+
+    size_t payload_size = 0;
+    u8 *payload = fill_buffer_decompress(file_data, file_size, &payload_size);
+    if (!payload || payload_size == 0) {
+        platform_log("grp_decode_6de1_planes: fill_buffer_decompress failed");
+        return NULL;
+    }
+
+    size_t decoded_size = 0;
+    u8 *decoded = decode_6de1(payload, payload_size, &decoded_size);
+    free(payload);
+    if (!decoded) {
+        platform_log("grp_decode_6de1_planes: 6DE1 decode failed");
+        return NULL;
+    }
+
+    if (out_size)
+        *out_size = decoded_size;
+    return decoded;
+}
+
+u8* grp_decode_partial_passes(const u8 *file_data, size_t file_size,
+                              int rows, int cl, int pass_count,
+                              int *out_w, int *out_h) {
     /* fill_buffer_decompress handles all 8 compression methods (including
      * method 0 = verbatim for ttl3.grp, and methods 5/6/7 for other GRPs).
      * It strips the 4-byte SAR size header, the 1-byte flag, and the 1-byte
@@ -303,13 +339,14 @@ u8* grp_decode(const u8 *file_data, size_t file_size,
     platform_log("grp_decode: interleaved=%zu (rows=%d cl=%d)", interleaved_size, rows, cl);
 
     int w = 0, h = 0;
-    u8 *image = render_8pass_blit_impl(interleaved, interleaved_size, rows, cl, &w, &h);
+    u8 *image = render_8pass_blit_partial_impl(interleaved, interleaved_size,
+                                               rows, cl, pass_count, &w, &h);
     free(interleaved);
     if (!image) {
         platform_log("grp_decode: blit failed");
         return NULL;
     }
-    platform_log("grp_decode: image %dx%d ready", w, h);
+    platform_log("grp_decode: image %dx%d ready (passes=%d)", w, h, pass_count);
 
     *out_w = w; *out_h = h;
     return image;
@@ -320,6 +357,13 @@ u8* grp_decode(const u8 *file_data, size_t file_size,
  * Used by the opening-scene img_open pipeline (disp_narr_chap3 path). */
 u8* grp_decode_planes(const u8 *planes, size_t planes_size,
                       int rows, int cl, int *out_w, int *out_h) {
+    return grp_decode_planes_partial_passes(planes, planes_size, rows, cl, 8,
+                                            out_w, out_h);
+}
+
+u8* grp_decode_planes_partial_passes(const u8 *planes, size_t planes_size,
+                                     int rows, int cl, int pass_count,
+                                     int *out_w, int *out_h) {
     size_t interleaved_size = 0;
     u8 *interleaved = interleave_4plane_impl(planes, planes_size, rows, cl, &interleaved_size);
     if (!interleaved) {
@@ -327,7 +371,8 @@ u8* grp_decode_planes(const u8 *planes, size_t planes_size,
         return NULL;
     }
     int w = 0, h = 0;
-    u8 *image = render_8pass_blit_impl(interleaved, interleaved_size, rows, cl, &w, &h);
+    u8 *image = render_8pass_blit_partial_impl(interleaved, interleaved_size,
+                                               rows, cl, pass_count, &w, &h);
     free(interleaved);
     if (!image) {
         platform_log("grp_decode_planes: blit failed");
@@ -341,6 +386,13 @@ u8* grp_decode_planes(const u8 *planes, size_t planes_size,
  * Used by gfx_draw_fn scenes (nec.grp, dmaou.grp — 100OPDMO.asm:318). */
 u8* grp_decode_planes_gfx_draw(const u8 *planes, size_t planes_size,
                                 int rows, int cl, int *out_w, int *out_h) {
+    return grp_decode_planes_gfx_draw_partial_passes(planes, planes_size,
+                                                     rows, cl, 8, out_w, out_h);
+}
+
+u8* grp_decode_planes_gfx_draw_partial_passes(const u8 *planes, size_t planes_size,
+                                              int rows, int cl, int pass_count,
+                                              int *out_w, int *out_h) {
     size_t interleaved_size = 0;
     u8 *interleaved = interleave_gfx_draw_impl(planes, planes_size, rows, cl, &interleaved_size);
     if (!interleaved) {
@@ -348,7 +400,8 @@ u8* grp_decode_planes_gfx_draw(const u8 *planes, size_t planes_size,
         return NULL;
     }
     int w = 0, h = 0;
-    u8 *image = render_8pass_blit_impl(interleaved, interleaved_size, rows, cl, &w, &h);
+    u8 *image = render_8pass_blit_partial_impl(interleaved, interleaved_size,
+                                               rows, cl, pass_count, &w, &h);
     free(interleaved);
     if (!image) {
         platform_log("grp_decode_planes_gfx_draw: blit failed");

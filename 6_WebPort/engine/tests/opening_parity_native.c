@@ -1,4 +1,5 @@
 #include "../core/framebuf.h"
+#include "../core/timer.h"
 #include "../load/fill_buffer.h"
 #include "../load/grp.h"
 #include "../load/img_open.h"
@@ -7,6 +8,7 @@
 #include "../platform/platform.h"
 #include "../render/palette.h"
 #include "../render/font_text.h"
+#include "../render/mcga_render.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,10 +19,34 @@ void zeliard_tick(uint32_t dt_ms);
 void zeliard_key(int keycode);
 int zeliard_scene(void);
 
+#define OPDMO_TEST_WAIT_MS(ticks) \
+    ((uint32_t)((((uint64_t)(ticks) * (uint64_t)ZEL_GAME_TIMER_DIVISOR * 1000u) + \
+      (uint32_t)ZEL_PIT_HZ / 2u) / (uint32_t)ZEL_PIT_HZ))
+
 enum {
     ZELIARD_SCENE_TITLE = 0,
     ZELIARD_SCENE_OPENING = 1,
     ZELIARD_SCENE_GAME = 2,
+    OPENING_TITLE_FULL_SAMPLE_MS = 2100,
+    OPENING_TITLE_COMPLETE_MS = OPDMO_TEST_WAIT_MS(0x10 + 8 * 0x14 + 2 * 0xF0 + 0x1C),
+    OPENING_AMULET_AUTO_MS = OPDMO_TEST_WAIT_MS(8 * 0x14 + 31 * 10 * 0x1C + 0x78 * 0x1C),
+    OPENING_NEC_HOU_INTERLUDE_MS = OPDMO_TEST_WAIT_MS(8 * 0x14 + 2 * 0x14 + 12 * 0x1E),
+    OPENING_DMAOU_DEMON_INTRO_MS = OPDMO_TEST_WAIT_MS(8 * 0x14 + 12 * 0x14 + 0xF0 + 91 * 0x14 + 0xF0 + 0x0F + 0xF0),
+    OPENING_TITLE_LOGO_COLOR_MS = OPDMO_TEST_WAIT_MS(3 * 0xF0 + 100 * 0x50),
+    OPENING_COPYRIGHT_INPUT_SAMPLE_MS = 16,
+    OPENING_SCANLINE_SAMPLE_MS = OPDMO_TEST_WAIT_MS((0x10 + 8 * 0x14 + 2 * 0xF0 + 0x1C) + 8 * 0x14 + 95 * 0x1C),
+    OPENING_SCANLINE_EXIT_FADE_MS = OPDMO_TEST_WAIT_MS(0x78 * 0x1C),
+    OPENING_PHASE_COPYRIGHT_TITLE_CARD = 0,
+    OPENING_PHASE_AMULET_ANCIENT_PROLOGUE = 1,
+    OPENING_PHASE_STAFF_CREDITS = 2,
+    OPENING_PHASE_RAIN_PRINCESS = 3,
+    OPENING_PHASE_JASHIIN_CURSES_PRINCESS = 5,
+    OPENING_PHASE_KING_GRIEF_AND_SPIRIT = 6,
+    OPENING_PHASE_JASHIIN_CONFRONTATION = 9,
+    OPENING_PHASE_DESTINY_CARD = 11,
+    OPENING_PHASE_NEC_HOU_INTERLUDE = 20,
+    OPENING_PHASE_DMAOU_DEMON_INTRO = 21,
+    OPENING_PHASE_TITLE_LOGO_COLOR_ROTATION = 22,
 };
 
 typedef enum { PIPE_GRP_ABC, PIPE_IMG_OPEN_GFX_DRAW } pipeline_t;
@@ -43,6 +69,17 @@ static uint64_t fnv1a64(const uint8_t *data, size_t n) {
     }
     return h;
 }
+
+static size_t nonzero_count(const uint8_t *data, size_t n) {
+    size_t count = 0;
+    for (size_t i = 0; i < n; i++) {
+        if (data[i]) count++;
+    }
+    return count;
+}
+
+static int framebuffer_nonzero_count(void);
+static void framebuffer_bbox(int *min_x, int *min_y, int *max_x, int *max_y);
 
 static uint8_t *decode_case(const image_case_t *tc, int *out_w, int *out_h) {
     size_t file_size = 0;
@@ -116,17 +153,319 @@ static int run_palette_case(uint64_t expected_fnv) {
     return ok;
 }
 
+typedef struct {
+    uint16_t ax;
+    uint64_t expected_fnv;
+    uint8_t color77[3];
+    uint8_t coloraa[3];
+} opdmo_palette_case_t;
+
+static int run_opdmo_palette_case(const opdmo_palette_case_t *tc) {
+    palette_set_opdmo_mcga(tc->ax);
+    uint64_t got = fnv1a64((const uint8_t *)g_palette, sizeof(g_palette));
+    int ok = got == tc->expected_fnv &&
+             g_palette[0x77].r == tc->color77[0] &&
+             g_palette[0x77].g == tc->color77[1] &&
+             g_palette[0x77].b == tc->color77[2] &&
+             g_palette[0xaa].r == tc->coloraa[0] &&
+             g_palette[0xaa].g == tc->coloraa[1] &&
+             g_palette[0xaa].b == tc->coloraa[2];
+    printf("opdmo_mcga_palette_ax%02x: %s palette=%016llx color77=%u/%u/%u coloraa=%u/%u/%u\n",
+           tc->ax, ok ? "PASS" : "FAIL", (unsigned long long)got,
+           g_palette[0x77].r, g_palette[0x77].g, g_palette[0x77].b,
+           g_palette[0xaa].r, g_palette[0xaa].g, g_palette[0xaa].b);
+    return ok;
+}
+
+static int run_opdmo_palette_cases(void) {
+    static const opdmo_palette_case_t cases[] = {
+        {5, 0x38defd56461221b5ULL, {248, 248, 248}, {248, 0, 0}},
+        {6, 0x7976b237408c570dULL, {248, 248, 248}, {248, 0, 0}},
+        {7, 0x88d2bed500b0d64dULL, {248, 248, 248}, {248, 0, 0}},
+        {8, 0xb0bb84b7831ead05ULL, {248, 248, 248}, {248, 0, 0}},
+        {9, 0xdcb48e6e8b5412b5ULL, {248, 248, 248}, {248, 0, 0}},
+    };
+    int ok = 1;
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++)
+        ok &= run_opdmo_palette_case(&cases[i]);
+    return ok;
+}
+
 static int run_initial_title_case(uint64_t expected_fb_fnv, uint64_t expected_palette_fnv) {
     zeliard_init();
-    zeliard_tick(16);
+    zeliard_tick(OPENING_TITLE_FULL_SAMPLE_MS);
     uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
     uint64_t pal = fnv1a64((const uint8_t *)g_palette, sizeof(g_palette));
     int scene = zeliard_scene();
-    int ok = scene == ZELIARD_SCENE_TITLE &&
+    int ok = scene == ZELIARD_SCENE_OPENING &&
+             fb == expected_fb_fnv &&
+             pal == expected_palette_fnv &&
+             g_palette[0x77].r == 248 &&
+             g_palette[0x77].g == 248 &&
+             g_palette[0x77].b == 248;
+    printf("initial_title_screen: %s scene=%d framebuffer=%016llx palette=%016llx color77=%u/%u/%u\n",
+           ok ? "PASS" : "FAIL", scene, (unsigned long long)fb, (unsigned long long)pal,
+           g_palette[0x77].r, g_palette[0x77].g, g_palette[0x77].b);
+    return ok;
+}
+
+static int run_title_mcga_render_pass_case(uint64_t expected_fb_fnv,
+                                           uint64_t expected_palette_fnv) {
+    zeliard_init();
+    zeliard_tick(600);
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    uint64_t pal = fnv1a64((const uint8_t *)g_palette, sizeof(g_palette));
+    int scene = zeliard_scene();
+    int ok = scene == ZELIARD_SCENE_OPENING &&
+             opening_phase_id() == OPENING_PHASE_COPYRIGHT_TITLE_CARD &&
+             fb == expected_fb_fnv &&
+             pal == expected_palette_fnv &&
+             g_palette[0x77].r == 248 &&
+             g_palette[0x77].g == 248 &&
+             g_palette[0x77].b == 248;
+    printf("title_mcga_render_pass_midpoint: %s framebuffer=%016llx palette=%016llx color77=%u/%u/%u\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)fb,
+           (unsigned long long)pal,
+           g_palette[0x77].r, g_palette[0x77].g, g_palette[0x77].b);
+    return ok;
+}
+
+static int run_nec_mcga_render_pass_case(uint64_t expected_fb_fnv,
+                                         uint64_t expected_palette_fnv) {
+    opening_init();
+    opening_tick(OPENING_TITLE_COMPLETE_MS + 600);
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    uint64_t pal = fnv1a64((const uint8_t *)g_palette, sizeof(g_palette));
+    int ok = opening_phase_id() == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE &&
              fb == expected_fb_fnv &&
              pal == expected_palette_fnv;
-    printf("initial_title_screen: %s scene=%d framebuffer=%016llx palette=%016llx\n",
-           ok ? "PASS" : "FAIL", scene, (unsigned long long)fb, (unsigned long long)pal);
+    printf("nec_mcga_render_pass_midpoint: %s framebuffer=%016llx palette=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)fb,
+           (unsigned long long)pal);
+    return ok;
+}
+
+static void overlay_on_framebuffer(const uint8_t *image, int w, int h, int x0, int y0) {
+    for (int y = 0; y < h; y++) {
+        int dy = y0 + y;
+        if (dy < 0 || dy >= ZELIARD_HEIGHT) continue;
+        for (int x = 0; x < w; x++) {
+            int dx = x0 + x;
+            if (dx < 0 || dx >= ZELIARD_WIDTH) continue;
+            uint8_t v = image[y * w + x];
+            if (v) g_framebuf[dy * ZELIARD_WIDTH + dx] = v;
+        }
+    }
+}
+
+static int run_nec_hou_composite_case(uint64_t expected_fb_fnv) {
+    const image_case_t nec = {"nec", "nec.grp", 44, 104, 72, 32,
+                              PIPE_IMG_OPEN_GFX_DRAW, 176, 104, 0, 0};
+    const image_case_t hou = {"hou", "hou.grp", 16, 64, 128, 72,
+                              PIPE_IMG_OPEN_GFX_DRAW, 64, 64, 0, 0};
+    int nw = 0, nh = 0, hw = 0, hh = 0;
+    uint8_t *ni = decode_case(&nec, &nw, &nh);
+    uint8_t *hi = decode_case(&hou, &hw, &hh);
+    if (!ni || !hi) {
+        free(ni);
+        free(hi);
+        printf("opening_nec_hou_composite: FAIL decode failed\n");
+        return 0;
+    }
+    blit_to_framebuffer(ni, nw, nh, nec.x, nec.y);
+    overlay_on_framebuffer(hi, hw, hh, hou.x, hou.y);
+    uint64_t got = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    free(ni);
+    free(hi);
+    int ok = got == expected_fb_fnv;
+    printf("opening_nec_hou_composite: %s framebuffer=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)got);
+    return ok;
+}
+
+static uint8_t *decode_opening_planes_asset(const char *asset,
+                                            int rows, int cl,
+                                            size_t *out_size,
+                                            size_t *payload_size_out) {
+    size_t file_size = 0;
+    uint8_t *file_data = platform_load_asset(asset, &file_size);
+    if (!file_data) return NULL;
+
+    size_t payload_size = 0;
+    uint8_t *payload = fill_buffer_decompress(file_data, file_size, &payload_size);
+    free(file_data);
+    if (!payload) return NULL;
+
+    size_t planes_size = 0;
+    uint8_t *planes = img_open_decode(payload, payload_size, rows, cl, &planes_size);
+    free(payload);
+    if (!planes) return NULL;
+
+    if (payload_size_out) *payload_size_out = payload_size;
+    *out_size = planes_size;
+    return planes;
+}
+
+static int expect_mem_contract(const char *name,
+                               const uint8_t *data, size_t size,
+                               uint64_t expected_fnv,
+                               size_t expected_nonzero) {
+    uint64_t got_fnv = fnv1a64(data, size);
+    size_t got_nonzero = nonzero_count(data, size);
+    int ok = got_fnv == expected_fnv && got_nonzero == expected_nonzero;
+    printf("%s: %s fnv=%016llx nonzero=%zu\n",
+           name, ok ? "PASS" : "FAIL",
+           (unsigned long long)got_fnv, got_nonzero);
+    return ok;
+}
+
+static int run_opdemo_nec_hou_handoff_memory_case(void) {
+    uint8_t game_seg[0x10000];
+    memset(game_seg, 0, sizeof(game_seg));
+
+    size_t nec_planes_size = 0, nec_payload_size = 0;
+    uint8_t *nec_planes = decode_opening_planes_asset("nec.grp", 44, 104,
+                                                      &nec_planes_size,
+                                                      &nec_payload_size);
+    size_t hou_planes_size = 0, hou_payload_size = 0;
+    uint8_t *hou_planes = decode_opening_planes_asset("hou.grp", 16, 64,
+                                                      &hou_planes_size,
+                                                      &hou_payload_size);
+    if (!nec_planes || !hou_planes) {
+        free(nec_planes);
+        free(hou_planes);
+        printf("opdemo_nec_hou_handoff_memory: FAIL decode failed\n");
+        return 0;
+    }
+
+    if (nec_planes_size > sizeof(game_seg) - 0x4000) {
+        nec_planes_size = sizeof(game_seg) - 0x4000;
+    }
+    if (hou_planes_size > sizeof(game_seg) - 0x9000) {
+        hou_planes_size = sizeof(game_seg) - 0x9000;
+    }
+    memcpy(game_seg + 0x4000, nec_planes, nec_planes_size);
+    memcpy(game_seg + 0x9000, hou_planes, hou_planes_size);
+    free(nec_planes);
+    free(hou_planes);
+
+    int ok = 1;
+    ok &= nec_payload_size == 5786;
+    ok &= hou_payload_size == 1500;
+    ok &= nec_planes_size == 16896;
+    ok &= hou_planes_size == 2560;
+    ok &= expect_mem_contract("opdemo_nec_hou_handoff_mem_4000",
+                              game_seg + 0x4000, 44u * 104u * 2u,
+                              0x37e229a1ff0277cbULL, 1422u);
+    ok &= expect_mem_contract("opdemo_nec_hou_handoff_mem_75a0",
+                              game_seg + 0x75A0, 16u * 64u * 2u,
+                              0xe031286249ba5435ULL, 702u);
+    ok &= expect_mem_contract("opdemo_nec_hou_handoff_mem_9000",
+                              game_seg + 0x9000, 16u * 64u * 2u,
+                              0xae1c24df5911f572ULL, 1074u);
+    ok &= expect_mem_contract("opdemo_nec_hou_handoff_mem_97c0",
+                              game_seg + 0x97C0, 34u * 112u * 2u,
+                              0xb066e9e800f20da0ULL, 298u);
+    printf("opdemo_nec_hou_handoff_regs: %s bx=2048 cx=1040 di=75A0 es=game_seg\n",
+           ok ? "PASS" : "FAIL");
+    return ok;
+}
+
+static int run_opdemo_nec_hou_handoff_disp_game_rect_case(uint64_t expected_image,
+                                                          int expected_w,
+                                                          int expected_h,
+                                                          size_t expected_image_nonzero,
+                                                          uint64_t expected_fb,
+                                                          int expected_fb_nonzero,
+                                                          int expected_min_x,
+                                                          int expected_min_y,
+                                                          int expected_max_x,
+                                                          int expected_max_y) {
+    uint8_t game_seg[0x10000];
+    memset(game_seg, 0, sizeof(game_seg));
+
+    size_t nec_planes_size = 0, nec_payload_size = 0;
+    uint8_t *nec_planes = decode_opening_planes_asset("nec.grp", 44, 104,
+                                                      &nec_planes_size,
+                                                      &nec_payload_size);
+    if (!nec_planes) {
+        printf("opdemo_nec_hou_handoff_disp_game_rect: FAIL decode failed\n");
+        return 0;
+    }
+    if (nec_planes_size > sizeof(game_seg) - 0x4000) {
+        nec_planes_size = sizeof(game_seg) - 0x4000;
+    }
+    memcpy(game_seg + 0x4000, nec_planes, nec_planes_size);
+    free(nec_planes);
+
+    int w = 0;
+    int h = 0;
+    uint8_t *image = zeliard_mcga_render_three_plane_ab(
+        game_seg, 0x75A0, 0x10 * 0x40, 0x10, 0x40, &w, &h);
+    if (!image) {
+        printf("opdemo_nec_hou_handoff_disp_game_rect: FAIL render failed\n");
+        return 0;
+    }
+    uint64_t image_hash = fnv1a64(image, (size_t)w * (size_t)h);
+    size_t image_nz = nonzero_count(image, (size_t)w * (size_t)h);
+
+    framebuf_clear(0);
+    for (int y = 0; y < h; y++) {
+        int dy = 0x48 + y;
+        if (dy < 0 || dy >= ZELIARD_HEIGHT) continue;
+        for (int x = 0; x < w; x++) {
+            int dx = 0x20 * 4 + x;
+            if (dx < 0 || dx >= ZELIARD_WIDTH) continue;
+            g_framebuf[dy * ZELIARD_WIDTH + dx] = image[y * w + x];
+        }
+    }
+    free(image);
+
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    int fb_nonzero = framebuffer_nonzero_count();
+    int min_x = 0, min_y = 0, max_x = 0, max_y = 0;
+    framebuffer_bbox(&min_x, &min_y, &max_x, &max_y);
+
+    int ok = image_hash == expected_image &&
+             w == expected_w &&
+             h == expected_h &&
+             image_nz == expected_image_nonzero &&
+             fb == expected_fb &&
+             fb_nonzero == expected_fb_nonzero &&
+             min_x == expected_min_x &&
+             min_y == expected_min_y &&
+             max_x == expected_max_x &&
+             max_y == expected_max_y;
+    printf("opdemo_nec_hou_handoff_disp_game_rect: %s image=%016llx w=%d h=%d image_nonzero=%zu framebuffer=%016llx fb_nonzero=%d bbox=(%d,%d,%d,%d)\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)image_hash, w, h,
+           image_nz, (unsigned long long)fb, fb_nonzero,
+           min_x, min_y, max_x, max_y);
+    return ok;
+}
+
+static int run_opdemo_nec_hou_handoff_phase_frame_case(uint64_t expected_fb,
+                                                       int expected_nonzero,
+                                                       int expected_min_x,
+                                                       int expected_min_y,
+                                                       int expected_max_x,
+                                                       int expected_max_y) {
+    opening_init();
+    opening_render_phase_for_test(OPENING_PHASE_NEC_HOU_INTERLUDE,
+                                  OPENING_NEC_HOU_INTERLUDE_MS -
+                                  OPDMO_TEST_WAIT_MS(12 * 0x1E));
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    int nonzero = framebuffer_nonzero_count();
+    int min_x = 0, min_y = 0, max_x = 0, max_y = 0;
+    framebuffer_bbox(&min_x, &min_y, &max_x, &max_y);
+    int ok = fb == expected_fb &&
+             nonzero == expected_nonzero &&
+             min_x == expected_min_x &&
+             min_y == expected_min_y &&
+             max_x == expected_max_x &&
+             max_y == expected_max_y;
+    printf("opdemo_nec_hou_handoff_phase_frame: %s framebuffer=%016llx nonzero=%d bbox=(%d,%d,%d,%d)\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)fb, nonzero,
+           min_x, min_y, max_x, max_y);
     return ok;
 }
 
@@ -138,65 +477,257 @@ static void advance_to_opening(void) {
     zeliard_tick(16);
 }
 
-static int run_title_input_starts_opening_case(uint64_t expected_fb_fnv) {
-    advance_to_opening();
+static int run_copyright_input_ignored_case(uint64_t expected_fb_fnv) {
+    zeliard_init();
+    zeliard_tick(OPENING_COPYRIGHT_INPUT_SAMPLE_MS);
+    zeliard_key(32);
+    zeliard_tick(16);
     uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
     int scene = zeliard_scene();
     int ok = scene == ZELIARD_SCENE_OPENING &&
+             opening_phase_id() == OPENING_PHASE_COPYRIGHT_TITLE_CARD &&
              fb == expected_fb_fnv;
-    printf("title_input_starts_opening: %s scene=%d framebuffer=%016llx\n",
-           ok ? "PASS" : "FAIL", scene, (unsigned long long)fb);
+    printf("copyright_input_ignored: %s scene=%d phase=%d framebuffer=%016llx\n",
+           ok ? "PASS" : "FAIL", scene, opening_phase_id(), (unsigned long long)fb);
     return ok;
 }
 
-static int run_opening_input_exit_case(void) {
+static int run_opening_input_ignores_copyright_card_case(void) {
     advance_to_opening();
     int opening_scene = zeliard_scene();
     zeliard_key(13);
     zeliard_tick(16);
     uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
-    int game_scene = zeliard_scene();
+    int after_scene = zeliard_scene();
     int ok = opening_scene == ZELIARD_SCENE_OPENING &&
-             game_scene == ZELIARD_SCENE_GAME &&
-             fb == 0xdd14fcc6528cab25ULL;
-    printf("opening_input_exit_to_game: %s opening_scene=%d game_scene=%d framebuffer=%016llx\n",
-           ok ? "PASS" : "FAIL", opening_scene, game_scene, (unsigned long long)fb);
+             after_scene == ZELIARD_SCENE_OPENING &&
+             opening_phase_id() == OPENING_PHASE_COPYRIGHT_TITLE_CARD &&
+             fb == 0x1bd80e81a778a2caULL;
+    printf("opening_input_ignores_copyright_card: %s opening_scene=%d after_scene=%d phase=%d framebuffer=%016llx\n",
+           ok ? "PASS" : "FAIL", opening_scene, after_scene, opening_phase_id(),
+           (unsigned long long)fb);
     return ok;
 }
 
-static int run_title_timer_starts_opening_case(void) {
+static int run_opening_input_advances_to_credits_case(void) {
+    opening_init();
+    opening_tick(OPENING_TITLE_COMPLETE_MS);
+    opening_tick(4000);
+    int before_phase = opening_phase_id();
+    uint64_t before_fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    opening_key_advance();
+    int fade_phase = opening_phase_id();
+    uint64_t fade_start_fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    opening_tick(OPENING_SCANLINE_EXIT_FADE_MS);
+    int after_phase = opening_phase_id();
+    int ok = before_phase == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE &&
+             fade_phase == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE &&
+             fade_start_fb == before_fb &&
+             after_phase == OPENING_PHASE_STAFF_CREDITS &&
+             !opening_done();
+    printf("opening_input_advances_to_credits: %s before=%d fade=%d after=%d before_fb=%016llx fade_fb=%016llx done=%d\n",
+           ok ? "PASS" : "FAIL", before_phase, fade_phase, after_phase,
+           (unsigned long long)before_fb, (unsigned long long)fade_start_fb,
+           opening_done());
+    return ok;
+}
+
+static int run_opening_input_during_amulet_fade_advances_case(void) {
+    opening_init();
+    opening_tick(OPENING_TITLE_COMPLETE_MS);
+    opening_tick(4000);
+    opening_key_advance();
+
+    opening_tick(16);
+    int fade_phase = opening_phase_id();
+    opening_key_advance();
+
+    int phase = opening_phase_id();
+    int ok = fade_phase == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE &&
+             phase == OPENING_PHASE_STAFF_CREDITS &&
+             !opening_done();
+    printf("opening_input_during_amulet_fade_advances: %s fade=%d phase=%d done=%d\n",
+           ok ? "PASS" : "FAIL", fade_phase, phase, opening_done());
+    return ok;
+}
+
+static int run_opening_input_credits_to_story_case(void) {
+    opening_init();
+    opening_tick(OPENING_TITLE_COMPLETE_MS);
+    opening_key_advance();
+    opening_tick(OPENING_SCANLINE_EXIT_FADE_MS);
+    opening_set_phase_for_test(OPENING_PHASE_STAFF_CREDITS);
+    int before_phase = opening_phase_id();
+    opening_key_advance();
+    int after_phase = opening_phase_id();
+    int ok = before_phase == OPENING_PHASE_STAFF_CREDITS &&
+             after_phase == OPENING_PHASE_RAIN_PRINCESS &&
+             !opening_done();
+    printf("opening_input_credits_to_story: %s before=%d after=%d done=%d\n",
+           ok ? "PASS" : "FAIL", before_phase, after_phase, opening_done());
+    return ok;
+}
+
+static int run_opening_input_story_exits_to_game_case(void) {
+    advance_to_opening();
+    zeliard_tick(4000);
+    zeliard_key(32);
+    zeliard_tick(OPENING_SCANLINE_EXIT_FADE_MS);
+    zeliard_key(32);
+    zeliard_tick(16);
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    int scene = zeliard_scene();
+    int ok = scene == ZELIARD_SCENE_OPENING &&
+             opening_phase_id() == OPENING_PHASE_RAIN_PRINCESS &&
+             fb != 0;
+    printf("opening_input_story_phase_step_hook: %s scene=%d phase=%d framebuffer=%016llx\n",
+           ok ? "PASS" : "FAIL", scene, opening_phase_id(),
+           (unsigned long long)fb);
+    return ok;
+}
+
+static int run_opening_key_contract_case(void) {
+    const int keys[] = {32, 13};
+    int ok = 1;
+    for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
+        zeliard_init();
+        zeliard_key(keys[i]);
+        zeliard_tick(16);
+        zeliard_tick(16);
+        zeliard_key(keys[i]);
+        ok &= opening_phase_id() == OPENING_PHASE_COPYRIGHT_TITLE_CARD;
+
+        opening_tick(OPENING_TITLE_COMPLETE_MS);
+        zeliard_key(keys[i]);
+        ok &= opening_phase_id() == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE;
+        opening_tick(OPENING_SCANLINE_EXIT_FADE_MS);
+        ok &= opening_phase_id() == OPENING_PHASE_STAFF_CREDITS;
+        ok &= !opening_done();
+
+        zeliard_key(keys[i]);
+        ok &= opening_phase_id() == OPENING_PHASE_RAIN_PRINCESS;
+        ok &= !opening_done();
+    }
+    printf("opening_space_enter_routing: %s\n", ok ? "PASS" : "FAIL");
+    return ok;
+}
+
+static int run_copyright_timer_starts_prologue_case(void) {
     zeliard_init();
-    zeliard_tick(7999);
-    int still_title_scene = zeliard_scene();
+    zeliard_tick(OPENING_TITLE_COMPLETE_MS - 1);
+    int before_phase = opening_phase_id();
     zeliard_tick(1);
-    int opening_scene = zeliard_scene();
-    int ok = still_title_scene == ZELIARD_SCENE_TITLE &&
-             opening_scene == ZELIARD_SCENE_OPENING;
-    printf("title_timer_starts_opening: %s still_title=%d opening_scene=%d\n",
-           ok ? "PASS" : "FAIL", still_title_scene, opening_scene);
+    int after_phase = opening_phase_id();
+    int ok = zeliard_scene() == ZELIARD_SCENE_OPENING &&
+             before_phase == OPENING_PHASE_COPYRIGHT_TITLE_CARD &&
+             after_phase == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE;
+    printf("copyright_timer_starts_prologue: %s before=%d after=%d\n",
+           ok ? "PASS" : "FAIL", before_phase, after_phase);
     return ok;
 }
 
-static int run_opening_ame_scene_case(uint64_t expected_fb_fnv) {
+static int run_amulet_phase_starts_black_case(void) {
+    zeliard_init();
+    zeliard_tick(OPENING_TITLE_COMPLETE_MS);
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    int ok = zeliard_scene() == ZELIARD_SCENE_OPENING &&
+             opening_phase_id() == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE &&
+             opening_phase_elapsed_ms() == 0 &&
+             fb == 0xdd14fcc6528cab25ULL &&
+             g_palette[0].r == 0 &&
+             g_palette[0].g == 0 &&
+             g_palette[0].b == 0;
+    printf("amulet_phase_starts_black: %s phase=%d elapsed=%u framebuffer=%016llx color00=%u/%u/%u\n",
+           ok ? "PASS" : "FAIL",
+           opening_phase_id(), opening_phase_elapsed_ms(),
+           (unsigned long long)fb,
+           g_palette[0].r, g_palette[0].g, g_palette[0].b);
+    return ok;
+}
+
+static int run_automatic_interlude_phase_order_case(void) {
+    zeliard_init();
+    zeliard_tick(OPENING_TITLE_COMPLETE_MS + OPENING_AMULET_AUTO_MS + 10);
+    int phase_nec_hou = opening_phase_id();
+
+    zeliard_tick(OPENING_NEC_HOU_INTERLUDE_MS + 10);
+    int phase_dmaou = opening_phase_id();
+
+    zeliard_tick(OPENING_DMAOU_DEMON_INTRO_MS + 10);
+    int phase_title = opening_phase_id();
+
+    zeliard_tick(OPENING_TITLE_LOGO_COLOR_MS + 10);
+    int phase_credits = opening_phase_id();
+
+    int ok = phase_nec_hou == OPENING_PHASE_NEC_HOU_INTERLUDE &&
+             phase_dmaou == OPENING_PHASE_DMAOU_DEMON_INTRO &&
+             phase_title == OPENING_PHASE_TITLE_LOGO_COLOR_ROTATION &&
+             phase_credits == OPENING_PHASE_STAFF_CREDITS;
+    printf("automatic_interlude_phase_order: %s phases=%d,%d,%d,%d\n",
+           ok ? "PASS" : "FAIL",
+           phase_nec_hou, phase_dmaou, phase_title, phase_credits);
+    return ok;
+}
+
+static int run_title_handoff_visual_regression_case(void) {
     opening_init();
-    opening_tick(900);
+
+    opening_render_phase_for_test(OPENING_PHASE_TITLE_LOGO_COLOR_ROTATION, 0);
+    uint64_t entry_fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+
+    opening_render_phase_for_test(OPENING_PHASE_TITLE_LOGO_COLOR_ROTATION, 14000);
+    uint64_t logo_fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+
+    int ok = entry_fb == 0x5fc039a9f882ac89ULL &&
+             logo_fb == 0x4c97cd25a85accd7ULL;
+    printf("title_handoff_visual_regression: %s entry=%016llx logo=%016llx\n",
+           ok ? "PASS" : "FAIL",
+           (unsigned long long)entry_fb,
+           (unsigned long long)logo_fb);
+    return ok;
+}
+
+static int run_opening_title_card_case(uint64_t expected_fb_fnv) {
+    opening_init();
+    opening_tick(OPENING_TITLE_FULL_SAMPLE_MS);
     opening_tick(0);
     uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
     int ok = fb == expected_fb_fnv;
-    printf("opening_ame_scene: %s framebuffer=%016llx\n",
+    printf("opening_title_card: %s framebuffer=%016llx\n",
            ok ? "PASS" : "FAIL", (unsigned long long)fb);
     return ok;
 }
 
-static int run_opening_ame_scroll_case(uint64_t expected_fb_fnv) {
+static int run_opening_scanline_frame_case(uint64_t expected_fb_fnv) {
     opening_init();
-    opening_tick(900);
-    opening_tick(9000);
+    opening_tick(OPENING_SCANLINE_SAMPLE_MS);
     opening_tick(0);
     uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
     int ok = fb == expected_fb_fnv;
-    printf("opening_ame_scroll: %s framebuffer=%016llx\n",
+    printf("opening_scanline_frame: %s framebuffer=%016llx\n",
            ok ? "PASS" : "FAIL", (unsigned long long)fb);
+    return ok;
+}
+
+static int run_late_frame_case(const char *name, opening_debug_late_frame_t frame,
+                               uint64_t expected_fb_fnv) {
+    opening_debug_render_late_frame(frame);
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    int ok = fb == expected_fb_fnv;
+    printf("%s: %s framebuffer=%016llx\n",
+           name, ok ? "PASS" : "FAIL", (unsigned long long)fb);
+    return ok;
+}
+
+static int run_phase_frame_case(const char *name, int phase_id, uint32_t elapsed_ms,
+                                uint64_t expected_fb_fnv) {
+    opening_init();
+    opening_render_phase_for_test(phase_id, elapsed_ms);
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    int ok = fb == expected_fb_fnv;
+    printf("%s: %s phase=%d elapsed=%u framebuffer=%016llx\n",
+           name, ok ? "PASS" : "FAIL", phase_id, elapsed_ms,
+           (unsigned long long)fb);
     return ok;
 }
 
@@ -241,6 +772,42 @@ static void fill_script_metrics(u8 widths[96], u8 advances[96], u8 advance) {
         widths[i] = 1;
         advances[i] = advance;
     }
+}
+
+static void fill_opdmo_script_metrics(u8 widths[96], u8 advances[96]) {
+    static const u8 real_widths[96] = {
+        0, 2, 2, 3, 1, 0, 0, 2, 2, 3, 1, 1, 1, 2, 2, 0,
+        1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 3, 2, 1, 1, 2, 1,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 2, 2, 2, 1, 1,
+        1, 0, 0, 1, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 1, 1,
+        0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 2, 0, 3, 1, 0
+    };
+    static const u8 real_advances[96] = {
+        5, 4, 4, 4, 6, 8, 5, 3, 4, 4, 6, 6, 6, 5, 6, 8,
+        7, 5, 7, 7, 7, 7, 7, 7, 7, 7, 3, 4, 6, 6, 6, 7,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 5, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 7, 5, 3, 5, 6, 7,
+        7, 8, 8, 7, 8, 7, 7, 8, 8, 5, 6, 8, 5, 8, 7, 7,
+        8, 8, 8, 7, 6, 8, 8, 8, 7, 7, 7, 4, 8, 4, 7, 8
+    };
+    memcpy(widths, real_widths, sizeof(real_widths));
+    memcpy(advances, real_advances, sizeof(real_advances));
+}
+
+static int run_opdmo_script_metric_table_case(void) {
+    u8 widths[96];
+    u8 advances[96];
+    fill_opdmo_script_metrics(widths, advances);
+    uint64_t width_hash = fnv1a64(widths, sizeof(widths));
+    uint64_t advance_hash = fnv1a64(advances, sizeof(advances));
+    int ok = width_hash == 0xed77bdb2b81d208cULL &&
+             advance_hash == 0x5f47e03bf75dbdb9ULL;
+    printf("opdemo_script_metric_tables: %s widths=%016llx advances=%016llx\n",
+           ok ? "PASS" : "FAIL",
+           (unsigned long long)width_hash,
+           (unsigned long long)advance_hash);
+    return ok;
 }
 
 static int run_script_calc_width_case(void) {
@@ -361,6 +928,664 @@ static int run_scene_sprite_c_case(void) {
     }
     printf("opening_scene_sprite_c_events: %s count=%llu\n",
            ok ? "PASS" : "FAIL", (unsigned long long)count);
+    return ok;
+}
+
+static int run_scene_sprite_a_case(void) {
+    opening_sprite_a_summary_t s = opening_scene_sprite_a_summary();
+    int ok = 1;
+    ok &= s.record_count == 9;
+    ok &= s.source_bytes_consumed == 54;
+    ok &= s.frame_count == 12;
+    ok &= s.frame_wait_al == 0x1E;
+    ok &= s.dispatch_slot == 0x3012;
+    ok &= s.dispatch_target == 0x332C;
+    ok &= s.records[0].x == 0x58;
+    ok &= s.records[0].y == 0x25;
+    ok &= s.records[0].vx == -16;
+    ok &= s.records[0].vy == 0;
+    ok &= s.records[0].first_frame == 0;
+    ok &= s.records[0].last_frame == 3;
+    ok &= s.records[8].x == 0x68;
+    ok &= s.records[8].y == 0x2C;
+    ok &= s.records[8].vx == -4;
+    ok &= s.records[8].vy == 4;
+    ok &= s.records[8].first_frame == 4;
+    ok &= s.records[8].last_frame == 7;
+    printf("opening_scene_sprite_a_summary: %s bytes=%llu records=%llu frames=%llu wait=%02x target=%04x\n",
+           ok ? "PASS" : "FAIL",
+           (unsigned long long)s.source_bytes_consumed,
+           (unsigned long long)s.record_count,
+           (unsigned long long)s.frame_count,
+           s.frame_wait_al,
+           s.dispatch_target);
+    return ok;
+}
+
+static int run_scene_sprite_a_render_case(const char *name, int frame_index,
+                                          uint64_t expected_fb,
+                                          uint64_t expected_palette,
+                                          int expected_nonzero,
+                                          int expected_min_x,
+                                          int expected_min_y,
+                                          int expected_max_x,
+                                          int expected_max_y) {
+    opening_render_sprite_a_frame_for_test(frame_index);
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    uint64_t palette = fnv1a64((const uint8_t *)g_palette, sizeof(g_palette));
+    int nonzero = framebuffer_nonzero_count();
+    int min_x = 0, min_y = 0, max_x = 0, max_y = 0;
+    framebuffer_bbox(&min_x, &min_y, &max_x, &max_y);
+    int ok = fb == expected_fb &&
+             palette == expected_palette &&
+             nonzero == expected_nonzero &&
+             min_x == expected_min_x &&
+             min_y == expected_min_y &&
+             max_x == expected_max_x &&
+             max_y == expected_max_y;
+    printf("%s: %s framebuffer=%016llx palette=%016llx nonzero=%d bbox=(%d,%d,%d,%d)\n",
+           name, ok ? "PASS" : "FAIL", (unsigned long long)fb,
+           (unsigned long long)palette, nonzero, min_x, min_y, max_x, max_y);
+    return ok;
+}
+
+static int read_file_bytes_at(const char *path, long offset,
+                              uint8_t *out, size_t size) {
+    FILE *f = fopen(path, "rb");
+    if (!f)
+        return 0;
+    int ok = fseek(f, offset, SEEK_SET) == 0 &&
+             fread(out, 1, size, f) == size;
+    fclose(f);
+    return ok;
+}
+
+static int run_scene_sprite_a_frame_table_case(void) {
+    static const uint8_t expected_bytes[] = {
+        0x00, 0x90, 0x20, 0x06, 0x80, 0x91, 0x20, 0x06,
+        0x00, 0x93, 0x20, 0x06, 0x80, 0x94, 0x20, 0x06,
+        0x00, 0x96, 0x18, 0x04, 0xC0, 0x96, 0x18, 0x04,
+        0x80, 0x97, 0x18, 0x04, 0x40, 0x98, 0x18, 0x04,
+    };
+    static const uint16_t expected_ptrs[] = {
+        0x9000, 0x9180, 0x9300, 0x9480, 0x9600, 0x96C0, 0x9780, 0x9840,
+    };
+    static const uint16_t expected_cx[] = {
+        0x0620, 0x0620, 0x0620, 0x0620, 0x0418, 0x0418, 0x0418, 0x0418,
+    };
+
+    uint8_t bytes[sizeof(expected_bytes)] = {0};
+    const char *paths[] = {
+        "../../3_Assembly/masm/bin/zelres1/105GDMCA.bin",
+        "3_Assembly/masm/bin/zelres1/105GDMCA.bin",
+    };
+    int read_ok = 0;
+    for (size_t i = 0; i < sizeof(paths) / sizeof(paths[0]); i++) {
+        if (read_file_bytes_at(paths[i], 0x061B, bytes, sizeof(bytes))) {
+            read_ok = 1;
+            break;
+        }
+    }
+
+    opening_sprite_a_frame_table_entry_t table[8];
+    size_t table_count = opening_scene_sprite_a_frame_table(
+        table, sizeof(table) / sizeof(table[0]));
+    int ok = read_ok && table_count == 8 &&
+             memcmp(bytes, expected_bytes, sizeof(expected_bytes)) == 0;
+    for (size_t i = 0; i < 8; i++) {
+        ok &= table[i].frame_ptr == expected_ptrs[i];
+        ok &= table[i].cx == expected_cx[i];
+    }
+    printf("opening_scene_sprite_a_frame_table: %s count=%llu bin=%s first=%04x/%04x last=%04x/%04x\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)table_count,
+           read_ok ? "read" : "missing",
+           table[0].frame_ptr, table[0].cx,
+           table[7].frame_ptr, table[7].cx);
+    return ok;
+}
+
+static uint64_t hash_sprite_a_trace(const opening_sprite_a_frame_state_t *trace,
+                                    size_t count) {
+    uint8_t bytes[12 * (3 + 9 * 4)];
+    size_t p = 0;
+    for (size_t f = 0; f < count; f++) {
+        bytes[p++] = (uint8_t)trace[f].frame_index;
+        bytes[p++] = trace[f].active_count;
+        bytes[p++] = trace[f].final_palette_cycle;
+        for (size_t i = 0; i < 9; i++) {
+            bytes[p++] = trace[f].objects[i].active;
+            bytes[p++] = trace[f].objects[i].x;
+            bytes[p++] = trace[f].objects[i].y;
+            bytes[p++] = trace[f].objects[i].frame;
+        }
+    }
+    return fnv1a64(bytes, p);
+}
+
+static int run_scene_sprite_a_full_frame_case(void) {
+    static const uint64_t expected_fb[12] = {
+        0xf9765efa9b86befaULL,
+        0xdec807b6e4eb8879ULL,
+        0xb792b25ad795d5d3ULL,
+        0x02cf2b8cc960fff1ULL,
+        0xb5b5e96654719f35ULL,
+        0xc2018e1ad30db78cULL,
+        0x8052ab097370a3a0ULL,
+        0x0a6685aeb78b1e1dULL,
+        0x89e518aea1045740ULL,
+        0x56e3b4b21e7238b0ULL,
+        0x7938bc13df3ab7edULL,
+        0x76a5c68141189f10ULL,
+    };
+    static const uint64_t expected_palette[12] = {
+        0x8c1b5d92b515a565ULL,
+        0x4eb2a0c47ca354e5ULL,
+        0xc0ed78c2b506baddULL,
+        0x35913b1023d1e75dULL,
+        0x57244e404ecaffd5ULL,
+        0x416f780684d0b1d5ULL,
+        0x6a17ece3d98cc76dULL,
+        0xb1d5292d31db3d6dULL,
+        0x8c1b5d92b515a565ULL,
+        0x4eb2a0c47ca354e5ULL,
+        0xc0ed78c2b506baddULL,
+        0x35913b1023d1e75dULL,
+    };
+    static const int expected_nonzero[12] = {
+        3125, 3431, 3531, 3944, 3944, 4176,
+        3810, 3627, 3444, 3444, 3261, 2712,
+    };
+    static const int expected_bbox[12][4] = {
+        {73, 34, 246, 146},
+        {73, 34, 246, 149},
+        {73, 34, 246, 155},
+        {71, 24, 253, 160},
+        {55, 8, 269, 166},
+        {37, 34, 287, 174},
+        {21, 34, 303, 158},
+        {5, 34, 279, 162},
+        {33, 34, 291, 166},
+        {21, 34, 303, 170},
+        {9, 34, 311, 174},
+        {73, 34, 246, 128},
+    };
+    const uint64_t expected_trace_hash = 0x5f634151fa155c30ULL;
+
+    opening_sprite_a_frame_state_t trace[12];
+    size_t trace_count = opening_scene_sprite_a_frame_trace(
+        trace, sizeof(trace) / sizeof(trace[0]));
+    uint64_t trace_hash = hash_sprite_a_trace(trace, trace_count);
+    int ok = trace_count == 12 && trace_hash == expected_trace_hash;
+
+    printf("opening_scene_sprite_a_full_trace: %s frames=%llu hash=%016llx active=%u/%u/%u cycles=%u/%u/%u\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)trace_count,
+           (unsigned long long)trace_hash,
+           trace[0].active_count, trace[8].active_count, trace[11].active_count,
+           trace[0].final_palette_cycle, trace[8].final_palette_cycle,
+           trace[11].final_palette_cycle);
+
+    for (int frame = 0; frame < 12; frame++) {
+        opening_render_sprite_a_frame_for_test(frame);
+        uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+        uint64_t palette = fnv1a64((const uint8_t *)g_palette, sizeof(g_palette));
+        int nonzero = framebuffer_nonzero_count();
+        int min_x = 0, min_y = 0, max_x = 0, max_y = 0;
+        framebuffer_bbox(&min_x, &min_y, &max_x, &max_y);
+        int frame_ok = fb == expected_fb[frame] &&
+                       palette == expected_palette[frame] &&
+                       nonzero == expected_nonzero[frame] &&
+                       min_x == expected_bbox[frame][0] &&
+                       min_y == expected_bbox[frame][1] &&
+                       max_x == expected_bbox[frame][2] &&
+                       max_y == expected_bbox[frame][3];
+        ok &= frame_ok;
+        printf("opening_scene_sprite_a_full_frame_%02d: %s fb=%016llx pal=%016llx nonzero=%d bbox=(%d,%d,%d,%d) active=%u cycle=%u\n",
+               frame, frame_ok ? "PASS" : "FAIL",
+               (unsigned long long)fb, (unsigned long long)palette,
+               nonzero, min_x, min_y, max_x, max_y,
+               trace[frame].active_count, trace[frame].final_palette_cycle);
+    }
+
+    return ok;
+}
+
+static void blit_mcga_test_image(const uint8_t *image, int w, int h,
+                                 uint16_t bx) {
+    int x0 = ((bx >> 8) & 0xFF) * 4;
+    int y0 = bx & 0xFF;
+
+    framebuf_clear(0);
+    for (int y = 0; y < h; y++) {
+        int yy = y0 + y;
+        if (yy < 0 || yy >= ZELIARD_HEIGHT)
+            continue;
+        for (int x = 0; x < w; x++) {
+            int xx = x0 + x;
+            if (xx < 0 || xx >= ZELIARD_WIDTH)
+                continue;
+            g_framebuf[yy * ZELIARD_WIDTH + xx] = image[y * w + x];
+        }
+    }
+}
+
+static void blit_mcga_disp_game_image(const uint8_t *image, int w, int h,
+                                      uint16_t bx, uint16_t cx) {
+    uint8_t clip = (uint8_t)((bx - 0x0410u) & 0xFFu);
+    int top = clip;
+    int height = cx & 0xFF;
+    int width_groups = (cx >> 8) & 0xFF;
+    int copy_w = width_groups * 4;
+    int x0 = 16;
+    int y0 = top + 16;
+
+    framebuf_clear(0);
+    for (int y = 0; y < height; y++) {
+        int src_y = top + y;
+        int dy = y0 + y;
+        if (src_y < 0 || src_y >= h || dy < 0 || dy >= ZELIARD_HEIGHT)
+            continue;
+        for (int x = 0; x < copy_w; x++) {
+            int src_x = x;
+            int dx = x0 + x;
+            if (src_x < 0 || src_x >= w || dx < 0 || dx >= ZELIARD_WIDTH)
+                continue;
+            g_framebuf[dy * ZELIARD_WIDTH + dx] =
+                image[src_y * w + src_x];
+        }
+    }
+}
+
+static int framebuffer_nonzero_count(void) {
+    int count = 0;
+    for (size_t i = 0; i < ZELIARD_FB_SIZE; i++)
+        count += g_framebuf[i] != 0;
+    return count;
+}
+
+static void framebuffer_bbox(int *min_x, int *min_y, int *max_x, int *max_y) {
+    *min_x = ZELIARD_WIDTH;
+    *min_y = ZELIARD_HEIGHT;
+    *max_x = -1;
+    *max_y = -1;
+    for (int y = 0; y < ZELIARD_HEIGHT; y++) {
+        for (int x = 0; x < ZELIARD_WIDTH; x++) {
+            if (!g_framebuf[y * ZELIARD_WIDTH + x])
+                continue;
+            if (x < *min_x) *min_x = x;
+            if (y < *min_y) *min_y = y;
+            if (x > *max_x) *max_x = x;
+            if (y > *max_y) *max_y = y;
+        }
+    }
+}
+
+typedef struct {
+    const char *name;
+    const char *asset;
+    int rows;
+    int cl;
+    uint8_t render_mode;
+    uint64_t expected_fb;
+    int expected_nonzero;
+    int expected_min_x;
+    int expected_min_y;
+    int expected_max_x;
+    int expected_max_y;
+} mcga_asset_oracle_case_t;
+
+static int run_mcga_render_asset_oracle_case(
+    const mcga_asset_oracle_case_t *tc) {
+    size_t file_size = 0;
+    uint8_t *file_data = platform_load_asset(tc->asset, &file_size);
+    if (!file_data) {
+        printf("%s: FAIL asset unavailable\n", tc->name);
+        return 0;
+    }
+
+    size_t payload_size = 0;
+    uint8_t *payload = fill_buffer_decompress(file_data, file_size,
+                                              &payload_size);
+    free(file_data);
+    if (!payload) {
+        printf("%s: FAIL fill_buffer failed\n", tc->name);
+        return 0;
+    }
+
+    size_t planes_size = 0;
+    uint8_t *planes = img_open_decode(payload, payload_size, tc->rows, tc->cl,
+                                      &planes_size);
+    free(payload);
+    if (!planes) {
+        printf("%s: FAIL img_open failed\n", tc->name);
+        return 0;
+    }
+
+    uint8_t seg[0x10000] = {0};
+    const int base = 0x4000;
+    size_t copy_size = planes_size;
+    if (copy_size > sizeof(seg) - (size_t)base)
+        copy_size = sizeof(seg) - (size_t)base;
+    memcpy(seg + base, planes, copy_size);
+    free(planes);
+    (void)tc->render_mode;
+    int w = 0;
+    int h = 0;
+    uint8_t *image = zeliard_mcga_render_three_plane_ab(
+        seg, base, tc->rows * tc->cl, tc->rows, tc->cl, &w, &h);
+    if (!image) {
+        printf("%s: FAIL three-plane render failed\n", tc->name);
+        return 0;
+    }
+
+    uint16_t cx = (uint16_t)((tc->rows << 8) | tc->cl);
+    blit_mcga_disp_game_image(image, w, h, 0x0410, cx);
+    free(image);
+
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    int nonzero = framebuffer_nonzero_count();
+    int min_x, min_y, max_x, max_y;
+    framebuffer_bbox(&min_x, &min_y, &max_x, &max_y);
+    int ok = fb == tc->expected_fb &&
+             nonzero == tc->expected_nonzero &&
+             min_x == tc->expected_min_x &&
+             min_y == tc->expected_min_y &&
+             max_x == tc->expected_max_x &&
+             max_y == tc->expected_max_y;
+    printf("%s: %s framebuffer=%016llx nonzero=%d bbox=(%d,%d,%d,%d)\n",
+           tc->name, ok ? "PASS" : "FAIL", (unsigned long long)fb,
+           nonzero, min_x, min_y, max_x, max_y);
+    return ok;
+}
+
+static int run_mcga_render_asset_oracles_case(void) {
+    static const mcga_asset_oracle_case_t cases[] = {
+        {"mcga_hime_disp_game_al09", "hime.grp", 0x48, 0x68, 0x09,
+         0xacf935f65da3df18ULL, 29952, 16, 16, 303, 119},
+        {"mcga_hime_disp_game_al06", "hime.grp", 0x48, 0x68, 0x06,
+         0xacf935f65da3df18ULL, 29952, 16, 16, 303, 119},
+        {"mcga_isi_disp_game_al07", "isi.grp", 0x48, 0x68, 0x07,
+         0x289821951f6f5ddeULL, 10551, 16, 16, 303, 119},
+        {"mcga_sei_disp_game_al05", "sei.grp", 0x24, 0x68, 0x05,
+         0x5d95614779039634ULL, 9524, 16, 16, 159, 117},
+        {"mcga_yuu1_disp_game_al07", "yuu1.grp", 0x48, 0x68, 0x07,
+         0x6c3fdfd6ae025e9fULL, 18564, 16, 16, 303, 119},
+        {"mcga_ame_disp_game_al00", "ame.grp", 0x48, 0x68, 0x00,
+         0xa01eebd621d68a49ULL, 24663, 16, 16, 303, 119},
+    };
+    int ok = 1;
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++)
+        ok &= run_mcga_render_asset_oracle_case(&cases[i]);
+    return ok;
+}
+
+static uint8_t *load_img_open_planes_for_test(const char *asset, int rows,
+                                              int cl, size_t *out_size) {
+    size_t file_size = 0;
+    uint8_t *file_data = platform_load_asset(asset, &file_size);
+    if (!file_data) {
+        *out_size = 0;
+        return NULL;
+    }
+
+    size_t payload_size = 0;
+    uint8_t *payload = fill_buffer_decompress(file_data, file_size,
+                                              &payload_size);
+    free(file_data);
+    if (!payload) {
+        *out_size = 0;
+        return NULL;
+    }
+
+    uint8_t *planes = img_open_decode(payload, payload_size, rows, cl,
+                                      out_size);
+    free(payload);
+    return planes;
+}
+
+typedef struct {
+    const char *name;
+    uint16_t di;
+    uint16_t bx;
+    uint16_t cx;
+    uint64_t expected_fb;
+    int expected_nonzero;
+    int expected_min_x;
+    int expected_min_y;
+    int expected_max_x;
+    int expected_max_y;
+} mcga_yuu_rect_oracle_case_t;
+
+static int run_mcga_yuu_rect_oracle_case(
+    const mcga_yuu_rect_oracle_case_t *tc) {
+    uint8_t seg[0x10000] = {0};
+
+    size_t yuup_size = 0;
+    uint8_t *yuup = load_img_open_planes_for_test("yuup.grp", 0x3A, 0x80,
+                                                 &yuup_size);
+    size_t oup_size = 0;
+    uint8_t *oup = load_img_open_planes_for_test("oup.grp", 0x3F, 0x80,
+                                                &oup_size);
+    if (!yuup || !oup) {
+        free(yuup);
+        free(oup);
+        printf("%s: FAIL asset decode failed\n", tc->name);
+        return 0;
+    }
+    memcpy(seg + 0x4000, yuup, yuup_size);
+    memcpy(seg + 0x8000, oup, oup_size);
+    free(yuup);
+    free(oup);
+
+    int rows = (tc->cx >> 8) & 0xFF;
+    int cl = tc->cx & 0xFF;
+    int bp = rows * cl;
+    int w = 0;
+    int h = 0;
+    uint8_t *image = zeliard_mcga_render_three_plane_ab(
+        seg, tc->di, bp, rows, cl, &w, &h);
+    if (!image) {
+        printf("%s: FAIL render failed\n", tc->name);
+        return 0;
+    }
+
+    int dx = ((tc->bx >> 8) & 0xFF) * 4;
+    int dy = tc->bx & 0xFF;
+    blit_mcga_test_image(image, w, h, (uint16_t)((dx / 4) << 8 | dy));
+    free(image);
+
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    int nonzero = framebuffer_nonzero_count();
+    int min_x, min_y, max_x, max_y;
+    framebuffer_bbox(&min_x, &min_y, &max_x, &max_y);
+    int ok = fb == tc->expected_fb &&
+             nonzero == tc->expected_nonzero &&
+             min_x == tc->expected_min_x &&
+             min_y == tc->expected_min_y &&
+             max_x == tc->expected_max_x &&
+             max_y == tc->expected_max_y;
+    printf("%s: %s framebuffer=%016llx nonzero=%d bbox=(%d,%d,%d,%d)\n",
+           tc->name, ok ? "PASS" : "FAIL", (unsigned long long)fb,
+           nonzero, min_x, min_y, max_x, max_y);
+    return ok;
+}
+
+static int run_mcga_yuu_rect_oracles_case(void) {
+    static const mcga_yuu_rect_oracle_case_t cases[] = {
+        {"mcga_yuu_split_left_rect", 0x4000, 0x0B18, 0x1858,
+         0xe95599ea7d6b89edULL, 8448, 44, 24, 139, 111},
+        {"mcga_yuu_split_right_rect", 0x8000, 0x2D18, 0x1858,
+         0x54c8bc1f7562731fULL, 8448, 180, 24, 275, 111},
+        {"mcga_yuu_portrait_sm0_rect", 0x98C0, 0x3350, 0x0E20,
+         0x09006cc563c60c0fULL, 1792, 204, 80, 259, 111},
+        {"mcga_yuu_portrait_sm6_rect", 0xB840, 0x3338, 0x0B10,
+         0x9f51f3c7c05b4b1aULL, 704, 204, 56, 247, 71},
+        {"mcga_yuu_portrait_lg0_rect", 0x58C0, 0x1350, 0x0920,
+         0xf64f78e9a3a0de52ULL, 1152, 76, 80, 111, 111},
+        {"mcga_yuu_portrait_lg6_rect", 0x6D00, 0x1238, 0x0B10,
+         0x8cc3b7242ac94c75ULL, 704, 72, 56, 115, 71},
+    };
+    int ok = 1;
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++)
+        ok &= run_mcga_yuu_rect_oracle_case(&cases[i]);
+    return ok;
+}
+
+static int run_mcga_render_entry_oracle_case(void) {
+    enum {
+        SRC_DI = 0x4000,
+        BX = 0x0410,
+        ROWS = 0x08,
+        CL = 0x10,
+        BP = ROWS * CL,
+        SOURCE_BYTES = BP * 3
+    };
+    uint8_t seg[0x10000] = {0};
+    for (int i = 0; i < SOURCE_BYTES; i++)
+        seg[SRC_DI + i] = (uint8_t)(((i * 37) ^ (i >> 1) ^ 0x5A) & 0xFF);
+
+    int w = 0;
+    int h = 0;
+    uint8_t *image = zeliard_mcga_render_three_plane_ab(seg, SRC_DI, BP,
+                                                        ROWS, CL, &w, &h);
+    if (!image) {
+        printf("mcga_render_entry_oracle: FAIL render failed\n");
+        return 0;
+    }
+
+    blit_mcga_test_image(image, w, h, BX);
+    free(image);
+
+    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    int nonzero = framebuffer_nonzero_count();
+    int min_x, min_y, max_x, max_y;
+    framebuffer_bbox(&min_x, &min_y, &max_x, &max_y);
+    int ok = w == 32 &&
+             h == 16 &&
+             fb == 0x4d9cd38e12f64a4dULL &&
+             nonzero == 416 &&
+             min_x == 16 &&
+             min_y == 16 &&
+             max_x == 47 &&
+             max_y == 31;
+    printf("mcga_render_entry_oracle: %s w=%d h=%d framebuffer=%016llx nonzero=%d bbox=(%d,%d,%d,%d)\n",
+           ok ? "PASS" : "FAIL", w, h, (unsigned long long)fb,
+           nonzero, min_x, min_y, max_x, max_y);
+    return ok;
+}
+
+static int run_scanline_summary_case(void) {
+    opening_scanline_summary_t s = opening_scanline_summary();
+    int ok = s.entry_count == 31 &&
+             s.entry_draw_count == 310 &&
+             s.exit_draw_count == 120 &&
+             s.total_draw_count == 430 &&
+             s.exit_draw_al == 0 &&
+             s.wait_al == 0x1C &&
+             s.bx == 0x0020 &&
+             s.cx == 0x5078;
+    for (int i = 0; i < 10; i++)
+        ok &= s.entry_draw_al[i] == i;
+    printf("opening_scanline_summary: %s entries=%llu draws=%llu+%llu wait=%02x\n",
+           ok ? "PASS" : "FAIL",
+           (unsigned long long)s.entry_count,
+           (unsigned long long)s.entry_draw_count,
+           (unsigned long long)s.exit_draw_count,
+           s.wait_al);
+    return ok;
+}
+
+static int run_exact_story_script_case(const char *asset, size_t expected_size,
+                                       uint64_t expected_fnv, size_t expected_wait10,
+                                       size_t expected_pause, size_t expected_clear,
+                                       size_t expected_glyphs) {
+    size_t size = 0;
+    u8 *script = platform_load_asset(asset, &size);
+    if (!script) {
+        printf("%s: FAIL asset unavailable\n", asset);
+        return 0;
+    }
+
+    u8 widths[96];
+    u8 advances[96];
+    fill_script_metrics(widths, advances, 8);
+    zeliard_opening_script_state_t s;
+    zeliard_opening_script_init(&s, 0);
+    zeliard_script_stop_t stop =
+        zeliard_opening_script_run(&s, script, size, widths, advances, size + 1);
+    uint64_t hash = fnv1a64(script, size);
+    free(script);
+
+    int ok = 1;
+    ok &= size == expected_size;
+    ok &= hash == expected_fnv;
+    ok &= stop == ZELIARD_SCRIPT_STOP_BREAK || stop == ZELIARD_SCRIPT_STOP_END;
+    ok &= s.pc == size;
+    ok &= s.wait_10_count == expected_wait10;
+    ok &= s.pause_f0_count == expected_pause;
+    ok &= s.clear_count == expected_clear;
+    ok &= s.glyph_count == expected_glyphs;
+    ok &= s.draw_call_count == expected_glyphs * 2;
+    printf("%s: %s bytes=%llu wait=%llu pause=%llu clear=%llu glyphs=%llu\n",
+           asset, ok ? "PASS" : "FAIL",
+           (unsigned long long)size,
+           (unsigned long long)s.wait_10_count,
+           (unsigned long long)s.pause_f0_count,
+           (unsigned long long)s.clear_count,
+           (unsigned long long)s.glyph_count);
+    return ok;
+}
+
+static int run_first_story_first_draw_case(void) {
+    size_t size = 0;
+    u8 *script = platform_load_asset("opdemo_story_script_1.bin", &size);
+    if (!script) {
+        printf("opdemo_story_script_1_first_draw: FAIL asset unavailable\n");
+        return 0;
+    }
+
+    u8 widths[96];
+    u8 advances[96];
+    fill_opdmo_script_metrics(widths, advances);
+    zeliard_opening_script_state_t s;
+    zeliard_opening_script_init(&s, 0);
+    zeliard_script_stop_t stop =
+        zeliard_opening_script_run(&s, script, size, widths, advances, 5);
+    free(script);
+
+    int ok = 1;
+    ok &= stop == ZELIARD_SCRIPT_STOP_LIMIT;
+    ok &= s.pc == 5;
+    ok &= s.wait_10_count == 5;
+    ok &= s.glyph_count == 1;
+    ok &= s.draw_call_count == 2;
+    ok &= s.last_char == 'O';
+    ok &= s.last_draw_x == 4;
+    ok &= s.last_draw_y == 0x99;
+    ok &= s.text_x_pos == 8;
+    printf("opdemo_story_script_1_first_draw: %s char=%02x x=%u y=%u next_x=%u\n",
+           ok ? "PASS" : "FAIL", s.last_char, s.last_draw_x,
+           s.last_draw_y, s.text_x_pos);
+    return ok;
+}
+
+static int run_credits_summary_case(void) {
+    opening_scanline_summary_t s = opening_credits_summary();
+    int ok = s.entry_count == 52 &&
+             s.entry_draw_count == 520 &&
+             s.exit_draw_count == 120 &&
+             s.total_draw_count == 640 &&
+             s.exit_draw_al == 0 &&
+             s.wait_al == 0x1C &&
+             s.bx == 0x0020 &&
+             s.cx == 0x5078;
+    for (int i = 0; i < 10; i++)
+        ok &= s.entry_draw_al[i] == i;
+    printf("opening_credits_summary: %s entries=%llu draws=%llu+%llu wait=%02x\n",
+           ok ? "PASS" : "FAIL",
+           (unsigned long long)s.entry_count,
+           (unsigned long long)s.entry_draw_count,
+           (unsigned long long)s.exit_draw_count,
+           s.wait_al);
     return ok;
 }
 
@@ -514,7 +1739,7 @@ static int run_timer_exit_case(void) {
     ok &= s.palette_ax == 1;
     ok &= s.credits_call_count == 1;
     ok &= s.clears_input == 1;
-    printf("opening_timer_exit_to_game: %s mode=%02x sar=%s palette=%u credits=%llu\n",
+    printf("opening_next_scene: %s mode=%02x sar=%s palette=%u credits=%llu\n",
            ok ? "PASS" : "FAIL",
            s.gfx_mode_al, s.sar_asset, s.palette_ax,
            (unsigned long long)s.credits_call_count);
@@ -551,13 +1776,137 @@ int main(void) {
     for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
         ok &= run_image_case(&cases[i]);
     }
-    ok &= run_opening_ame_scene_case(0x07f4f8b3e8d8f1dfULL);
-    ok &= run_opening_ame_scroll_case(0xee3dc790268284cbULL);
+    ok &= run_opdemo_nec_hou_handoff_memory_case();
+    ok &= run_opdemo_nec_hou_handoff_disp_game_rect_case(
+        0x6c526d707a77e637ULL, 64, 64, 1923,
+        0x9cca3279aebfea37ULL, 1923, 128, 72, 191, 128);
+    ok &= run_opdemo_nec_hou_handoff_phase_frame_case(
+        0xdd9326310dfe0f52ULL, 3156, 73, 34, 246, 146);
+    ok &= run_nec_hou_composite_case(0x9ef45cf29c1cd2b5ULL);
+    ok &= run_opening_title_card_case(0x513e9ef6009064eaULL);
+    ok &= run_opening_scanline_frame_case(0x50ecb30df83f66e0ULL);
+    ok &= run_late_frame_case("maop_reveal_step_00",
+                              OPENING_DEBUG_LATE_MAOP_REVEAL_STEP_00,
+                              0x040b92fb1f2b6f7cULL);
+    ok &= run_late_frame_case("maop_reveal_step_12",
+                              OPENING_DEBUG_LATE_MAOP_REVEAL_STEP_12,
+                              0x95c15c2bbc6a26c0ULL);
+    ok &= run_late_frame_case("split_return_reveal_step_12",
+                              OPENING_DEBUG_LATE_SPLIT_RETURN_STEP_12,
+                              0xac186603a7651724ULL);
+    ok &= run_late_frame_case("final_yuu3_yuu4_composite",
+                              OPENING_DEBUG_LATE_FINAL_YUU3_YUU4,
+                              0x92d8ad4d7c4c1f7fULL);
+    ok &= run_phase_frame_case("phase5_dmaou_apparition_disp_data",
+                               OPENING_PHASE_JASHIIN_CURSES_PRINCESS, 45000,
+                               0xf0836f3f1eb959e4ULL);
+    ok &= run_phase_frame_case("phase6_guardian_sei_overlay",
+                               OPENING_PHASE_KING_GRIEF_AND_SPIRIT, 66000,
+                               0xeca47c6b6ca209a2ULL);
+    ok &= run_phase_frame_case("phase9_duke_jashiin_after_maop",
+                               OPENING_PHASE_JASHIIN_CONFRONTATION, 19000,
+                               0x7762d5b5c479c0f2ULL);
+    ok &= run_phase_frame_case("final_yuu3_yuu4_blit_start",
+                               OPENING_PHASE_DESTINY_CARD, 0,
+                               0xdd14fcc6528cab25ULL);
+    ok &= run_phase_frame_case("final_yuu3_yuu4_text_live",
+                               OPENING_PHASE_DESTINY_CARD, 8000,
+                               0x0b815e9bbc5357e8ULL);
+    ok &= run_phase_frame_case("final_yuu3_yuu4_fadeout_live",
+                               OPENING_PHASE_DESTINY_CARD, 18000,
+                               0x03deb99b0fedb048ULL);
+    ok &= run_late_frame_case("disp_load_ax0f_entry_96",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_96,
+                              0xe90b4d1e375f70f3ULL);
+    ok &= run_late_frame_case("disp_load_ax0f_entry_192",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_192,
+                              0xf367db99ee55cc05ULL);
+    ok &= run_late_frame_case("waku_ame_ax9_composite",
+                              OPENING_DEBUG_LATE_WAKU_AME_AX9,
+                              0x87930cdc61e043cfULL);
+    ok &= run_late_frame_case("waku_hime_ax9_composite",
+                              OPENING_DEBUG_LATE_WAKU_HIME_AX9,
+                              0xe4902326b0b62c7aULL);
+    ok &= run_late_frame_case("waku_hime_ax6_composite",
+                              OPENING_DEBUG_LATE_WAKU_HIME_AX6,
+                              0xe4902326b0b62c7aULL);
+    ok &= run_late_frame_case("waku_isi_ax7_composite",
+                              OPENING_DEBUG_LATE_WAKU_ISI_AX7,
+                              0x9a806ed4cade95b8ULL);
+    ok &= run_late_frame_case("maop_script_area",
+                              OPENING_DEBUG_LATE_MAOP_SCRIPT_AREA,
+                              0xaaa5e73aae0c58aaULL);
     ok &= run_font_renderer_case();
     ok &= run_script_calc_width_case();
     ok &= run_script_interpreter_control_case();
     ok &= run_script_interpreter_wrap_case();
+    ok &= run_opdmo_script_metric_table_case();
+    ok &= run_first_story_first_draw_case();
+    ok &= run_exact_story_script_case("opdemo_story_script_1.bin", 742,
+                                      0xa6ede1b282a41a9eULL, 742, 34, 9, 685);
+    ok &= run_exact_story_script_case("opdemo_story_script_2.bin", 306,
+                                      0x8a9f471b378e4a7bULL, 306, 15, 4, 281);
+    ok &= run_exact_story_script_case("opdemo_story_script_3.bin", 174,
+                                      0x46321012ab452221ULL, 174, 7, 1, 156);
+    ok &= run_exact_story_script_case("opdemo_story_script_4.bin", 235,
+                                      0x65ced3f222c259aeULL, 235, 6, 1, 223);
+    ok &= run_exact_story_script_case("opdemo_story_script_5.bin", 1,
+                                      0xaf64704c8602e808ULL, 1, 0, 0, 0);
+    ok &= run_exact_story_script_case("opdemo_story_script_6.bin", 157,
+                                      0x988b38048c42bc2cULL, 157, 2, 2, 149);
+    ok &= run_exact_story_script_case("opdemo_story_script_7.bin", 91,
+                                      0xa62417912655b0d8ULL, 91, 0, 0, 88);
+    ok &= run_exact_story_script_case("opdemo_story_script_8.bin", 4,
+                                      0xdc1dde1197dcde8aULL, 4, 2, 1, 0);
+    ok &= run_exact_story_script_case("opdemo_story_script_9.bin", 193,
+                                      0xc7f9af8cb06b6610ULL, 193, 6, 2, 182);
+    ok &= run_exact_story_script_case("opdemo_story_script_10.bin", 162,
+                                      0x0e89d0cd122e298fULL, 162, 3, 2, 150);
+    ok &= run_exact_story_script_case("opdemo_story_script_11.bin", 75,
+                                      0xb75f8f17a96cf33aULL, 75, 2, 1, 69);
+    ok &= run_exact_story_script_case("opdemo_story_script_12.bin", 1033,
+                                      0x3886477ab201f8cbULL, 1033, 22, 7, 992);
+    ok &= run_exact_story_script_case("opdemo_story_script_13.bin", 258,
+                                      0x5d0f71b5a0fe7952ULL, 258, 10, 3, 236);
+    ok &= run_exact_story_script_case("opdemo_story_script_14.bin", 173,
+                                      0x813d4d4d9467e520ULL, 173, 7, 2, 158);
+    ok &= run_exact_story_script_case("opdemo_story_script_15.bin", 97,
+                                      0xe998a3cdc7bc9ab8ULL, 97, 3, 1, 90);
+    ok &= run_exact_story_script_case("opdemo_story_script_16.bin", 872,
+                                      0xecbf9d5f63fee7d5ULL, 605, 16, 5, 571);
+    ok &= run_exact_story_script_case("opdemo_story_script_17.bin", 1,
+                                      0xaf64704c8602e808ULL, 1, 0, 0, 0);
+    ok &= run_exact_story_script_case("opdemo_story_script_18.bin", 102,
+                                      0xc0625a6800808910ULL, 102, 3, 1, 94);
+    ok &= run_exact_story_script_case("opdemo_story_script_19.bin", 69,
+                                      0x71ad183dd8147559ULL, 69, 2, 1, 63);
+    ok &= run_exact_story_script_case("opdemo_story_script_20.bin", 876,
+                                      0x430772a4e025f740ULL, 795, 22, 7, 746);
+    ok &= run_exact_story_script_case("opdemo_story_script_21.bin", 77,
+                                      0x55c23ef6288c7e74ULL, 77, 2, 1, 71);
+    ok &= run_exact_story_script_case("opdemo_story_script_22.bin", 87,
+                                      0x78bab3820e9a1dcbULL, 87, 3, 1, 78);
+    ok &= run_scanline_summary_case();
+    ok &= run_credits_summary_case();
+    ok &= run_scene_sprite_a_case();
+    ok &= run_scene_sprite_a_frame_table_case();
+    ok &= run_scene_sprite_a_render_case("opening_scene_sprite_a_frame_00",
+                                         0, 0xf9765efa9b86befaULL,
+                                         0x8c1b5d92b515a565ULL,
+                                         3125, 73, 34, 246, 146);
+    ok &= run_scene_sprite_a_render_case("opening_scene_sprite_a_frame_08",
+                                         8, 0x89e518aea1045740ULL,
+                                         0x8c1b5d92b515a565ULL,
+                                         3444, 33, 34, 291, 166);
+    ok &= run_scene_sprite_a_render_case("opening_scene_sprite_a_frame_11",
+                                         11, 0x76a5c68141189f10ULL,
+                                         0x35913b1023d1e75dULL,
+                                         2712, 73, 34, 246, 128);
+    ok &= run_scene_sprite_a_full_frame_case();
     ok &= run_scene_sprite_c_case();
+    ok &= run_mcga_render_entry_oracle_case();
+    ok &= run_mcga_render_asset_oracles_case();
+    ok &= run_mcga_yuu_rect_oracles_case();
     ok &= run_scene_sprite_b_case();
     ok &= run_title_asset_case();
     ok &= run_title_display_handoff_case();
@@ -565,10 +1914,21 @@ int main(void) {
     ok &= run_timer_exit_case();
     ok &= run_trans_exit_case();
     ok &= run_palette_case(0xd9e89a4c32254f58ULL);
-    ok &= run_initial_title_case(0x513e9ef6009064eaULL, 0xd9e89a4c32254f58ULL);
-    ok &= run_title_input_starts_opening_case(0x513e9ef6009064eaULL);
-    ok &= run_title_timer_starts_opening_case();
-    ok &= run_opening_input_exit_case();
+    ok &= run_opdmo_palette_cases();
+    ok &= run_initial_title_case(0x513e9ef6009064eaULL, 0x9897060bb7bd34b3ULL);
+    ok &= run_title_mcga_render_pass_case(0x4c71a3a942242152ULL, 0x9897060bb7bd34b3ULL);
+    ok &= run_nec_mcga_render_pass_case(0x748e5813713a97d2ULL, 0x43c888ad1017043dULL);
+    ok &= run_copyright_input_ignored_case(0x1bd80e81a778a2caULL);
+    ok &= run_copyright_timer_starts_prologue_case();
+    ok &= run_amulet_phase_starts_black_case();
+    ok &= run_automatic_interlude_phase_order_case();
+    ok &= run_title_handoff_visual_regression_case();
+    ok &= run_opening_input_ignores_copyright_card_case();
+    ok &= run_opening_input_advances_to_credits_case();
+    ok &= run_opening_input_during_amulet_fade_advances_case();
+    ok &= run_opening_input_credits_to_story_case();
+    ok &= run_opening_input_story_exits_to_game_case();
+    ok &= run_opening_key_contract_case();
     printf("VERDICT: %s: opening native parity\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

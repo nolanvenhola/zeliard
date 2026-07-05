@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "source_video": "3_Assembly/masm/bin/capture/OpeningDemo-Capture.mp4",
+  "notes": [
+    "The capture begins on a black frame immediately before the amulet/text sequence appears.",
+    "Each anchor maps one observed video timestamp to one deterministic WASM opening timeline timestamp.",
+    "MASM/oracle evidence remains authoritative for behavior; these anchors align the visual video workbench."
+  ],
+  "anchors": [
+    {
+      "id": "capture_start_amulet_black",
+      "description": "First captured frame: black screen immediately before the amulet/prologue text appears.",
+      "video_sec": 0.0,
+      "wasm_ms": 2890,
+      "phase": 1,
+      "phase_id": "amulet_ancient_prologue_scroll",
+      "confidence": "high",
+      "evidence": {
+        "video_frame": "6_WebPort/tests/artifacts/video_oracle/capture_t0000_probe.png",
+        "video_label": "OpeningDemo-Capture.mp4 t=00:00",
+        "masm_manifest": "6_WebPort/tests/opening_sequence_manifest.json#amulet_ancient_prologue_scroll"
+      },
+      "comparison_defaults": {
+        "start_ms": 2890,
+        "duration_sec": 874,
+        "fps": 0.2,
+        "max_samples": 0
+      },
+      "notes": [
+        "This is the primary capture-origin anchor.",
+        "It intentionally skips the current web-port copyright/title phase because the captured video begins just before the amulet phase."
+      ]
+    },
+    {
+      "id": "rain_princess_first_full_frame",
+      "description": "First visible princess/rain story glyph ('O') in exact MP4 extraction.",
+      "video_sec": 271.8,
+      "wasm_ms": 182462,
+      "phase": 3,
+      "phase_id": "rain_princess_story_start",
+      "confidence": "medium",
+      "evidence": {
+        "video_contact_sheet": "6_WebPort/tests/artifacts/video_phase3_anchor_fine/video_0271.800_rmse70.67.png",
+        "video_label": "OpeningDemo-Capture.mp4 t=04:31.800",
+        "still_reference": "3_Assembly/masm/bin/capture/zeliad_000.png",
+        "wasm_reference": "6_WebPort/tests/artifacts/phase3_vs_zeliad000_sweep/phase3_01500_full4.20_text7.48.png",
+        "masm_manifest": "6_WebPort/tests/opening_sequence_manifest.json#rain_princess_story_start"
+      },
+      "comparison_defaults": {
+        "start_ms": 182462,
+        "duration_sec": 12,
+        "fps": 18.2065,
+        "max_samples": 220
+      },
+      "notes": [
+        "This is a local alignment anchor, not proof the earlier phase durations are correct.",
+        "Updated to the current MASM-tick-derived C runtime timeline near phase 3 start; 182462ms is the first stable phase-3 comparison sample after the credits tail.",
+        "Use it to compare the princess/rain section and nearby rain-to-sand transition while preserving the fact that the source video starts mid-opening."
+      ]
+    }
+  ]
+}

@@ -12,23 +12,24 @@ function setStatus(msg) {
     statusEl.textContent = msg;
     console.log('[zeliard]', msg);
 }
-async function loadEngineModule() {
+async function loadEngineModule(cacheBust) {
     /* The engine .js / .wasm / .data triple lives under /engine/ in the
      * shell's public dir (mirrored there by `make wasm`).  Importing via
      * an absolute URL prevents Vite from bundling the JS and lets the
      * Emscripten runtime resolve .wasm + .data with relative URLs. */
-    const url = `${window.location.origin}/engine/zeliard.js`;
+    const url = `${window.location.origin}/engine/zeliard.js?v=${cacheBust}`;
     const mod = await import(/* @vite-ignore */ url);
     return mod.default;
 }
 async function boot() {
+    const engineCacheBust = Date.now().toString(36);
     setStatus('loading engine module…');
-    const factory = await loadEngineModule();
+    const factory = await loadEngineModule(engineCacheBust);
     setStatus('instantiating WASM…');
     const Module = await factory({
         print: (s) => console.log('[wasm]', s),
         printErr: (s) => console.error('[wasm]', s),
-        locateFile: (path) => `/engine/${path}`,
+        locateFile: (path) => `/engine/${path}?v=${engineCacheBust}`,
     });
     setStatus('initialising engine…');
     Module._zeliard_init();
@@ -37,10 +38,12 @@ async function boot() {
     const fbPtr = Module._zeliard_framebuf();
     const palPtr = Module._zeliard_palette();
     setStatus(`engine running — ${w}×${h}, framebuf @ ${fbPtr}, palette @ ${palPtr}`);
-    /* Forward ENTER/SPACE to the engine so it can skip the opening cinematic. */
+    /* Forward ENTER/SPACE to the engine so it can apply OPDMO phase-specific advance rules. */
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
+            if (e.repeat)
+                return;
             Module._zeliard_key(e.keyCode);
         }
     });
@@ -48,6 +51,8 @@ async function boot() {
     let last = performance.now();
     let frameCount = 0;
     let lastScene = -1;
+    let lastPhase = -1;
+    let lastPhaseElapsedBucket = -1;
     function sceneName(scene) {
         switch (scene) {
             case 0: return 'title';
@@ -56,14 +61,17 @@ async function boot() {
             default: return `scene ${scene}`;
         }
     }
-    function frame(now) {
-        const dt = now - last;
-        last = now;
-        Module._zeliard_tick(dt | 0);
+    function paintFrame() {
         const scene = Module._zeliard_scene();
-        if (scene !== lastScene) {
+        const phase = Module._zeliard_phase();
+        const phaseElapsed = Module._zeliard_phase_elapsed();
+        const phaseElapsedBucket = Math.floor(phaseElapsed / 1000);
+        if (scene !== lastScene || phase !== lastPhase ||
+            phaseElapsedBucket !== lastPhaseElapsedBucket) {
             lastScene = scene;
-            setStatus(`engine running - ${sceneName(scene)}`);
+            lastPhase = phase;
+            lastPhaseElapsedBucket = phaseElapsedBucket;
+            setStatus(`engine running - ${sceneName(scene)} / phase ${phase} / ${phaseElapsed}ms`);
         }
         const heap = Module.HEAPU8;
         const fb = heap.subarray(fbPtr, fbPtr + w * h);
@@ -90,6 +98,13 @@ async function boot() {
             }
             console.log(`[zeliard] first frame: ${nonzero} non-zero pixels, ${seen.size} distinct indices`);
         }
+    }
+    paintFrame();
+    function frame(now) {
+        const dt = Math.max(0, Math.min(now - last, 100));
+        last = now;
+        Module._zeliard_tick(dt | 0);
+        paintFrame();
         requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);

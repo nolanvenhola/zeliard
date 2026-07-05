@@ -23,5 +23,11 @@ typedef enum {
 } palette_scene_t;
 
 void palette_set_scene(palette_scene_t scene);
+void palette_set_opdmo_mcga(u16 ax);
+void palette_set_opdmo_mcga_with_rgb0(u16 ax, u8 r0, u8 g0, u8 b0);
+palette_color_t palette_opdmo_mcga_step_color(u16 ax, u8 step_row,
+                                               u8 color_index,
+                                               int override_rgb0,
+                                               u8 r0, u8 g0, u8 b0);
 
 #endif

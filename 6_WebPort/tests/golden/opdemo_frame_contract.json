@@ -1,0 +1,149 @@
+{
+  "schema": "zeliard.opdemo.frame_contract.v1",
+  "source_trace_sha256": "c6683de772da3a53f0d3668b2e996be51d7a5b5395607ca7b8837177cf7e0447",
+  "service_evidence": [
+    {
+      "event_index": 1,
+      "service": "sar_load",
+      "asset": "ttl3.grp",
+      "regs": {
+        "ax": "9002",
+        "bx": "0006",
+        "cx": "0000",
+        "dx": "0000",
+        "si": "957E",
+        "di": "A000",
+        "ds": "1000",
+        "es": "1000"
+      }
+    },
+    {
+      "event_index": 5,
+      "service": "disp_narr_chap3",
+      "regs": {
+        "ax": "0004",
+        "bx": "070F",
+        "cx": "4170",
+        "dx": "0000",
+        "si": "64EA",
+        "di": "4000",
+        "ds": "1000",
+        "es": "1000"
+      }
+    },
+    {
+      "event_index": 6,
+      "service": "sar_load",
+      "asset": "nec.grp",
+      "regs": {
+        "ax": "0002",
+        "bx": "070F",
+        "cx": "4170",
+        "dx": "0000",
+        "si": "953D",
+        "di": "A000",
+        "ds": "1000",
+        "es": "1000"
+      }
+    },
+    {
+      "event_index": 7,
+      "service": "sar_load",
+      "asset": "hou.grp",
+      "regs": {
+        "ax": "0002",
+        "bx": "070F",
+        "cx": "4170",
+        "dx": "0000",
+        "si": "9547",
+        "di": "B800",
+        "ds": "1000",
+        "es": "1000"
+      }
+    },
+    {
+      "event_index": 11,
+      "service": "gfx_draw",
+      "regs": {
+        "ax": "00FF",
+        "bx": "1220",
+        "cx": "2C68",
+        "dx": "0000",
+        "si": "A000",
+        "di": "4000",
+        "ds": "1000",
+        "es": "1000"
+      }
+    },
+    {
+      "event_index": 16,
+      "service": "disp_game",
+      "regs": {
+        "ax": "00FF",
+        "bx": "2048",
+        "cx": "1040",
+        "dx": "0000",
+        "si": "B800",
+        "di": "75A0",
+        "ds": "1000",
+        "es": "1000"
+      }
+    },
+    {
+      "event_index": 18,
+      "service": "sar_load",
+      "asset": "dmaou.grp",
+      "regs": {
+        "ax": "0002",
+        "bx": "2048",
+        "cx": "1040",
+        "dx": "0000",
+        "si": "9551",
+        "di": "A000",
+        "ds": "1000",
+        "es": "1000"
+      }
+    },
+    {
+      "event_index": 23,
+      "service": "gfx_update",
+      "regs": {
+        "ax": "30FF",
+        "bx": "1720",
+        "cx": "2270",
+        "dx": "0000",
+        "si": "A000",
+        "di": "0000",
+        "ds": "1000",
+        "es": "3000"
+      }
+    }
+  ],
+  "frames": [
+    {
+      "name": "ttl3_logo_bbox",
+      "framebuffer_sha256": "fa830ab40a292d1180c5b2e1baf76b88d1fa3e17f171389555ad4674c565bcc9",
+      "framebuffer_fnv1a64": "05f15837ed2f4105"
+    },
+    {
+      "name": "nec_scene_bbox",
+      "framebuffer_sha256": "c7c3e2b435a0008dbf9a4895fbc6f686d4c72fb25a57d609fa0a9663326a4e2e",
+      "framebuffer_fnv1a64": "76a5c68141189f10"
+    },
+    {
+      "name": "opening_nec_hou_composite",
+      "framebuffer_sha256": "e496a217540252094159882058c99110a149075b896b1af6c9c09b226f6fc64e",
+      "framebuffer_fnv1a64": "9ef45cf29c1cd2b5"
+    },
+    {
+      "name": "dmaou_scene_bbox",
+      "framebuffer_sha256": "7d72be07824d871167052d3cd4518200d0992775374208682a05dd70653e1ee7",
+      "framebuffer_fnv1a64": "5c7fa1b0aad0838f"
+    }
+  ],
+  "limitations": [
+    "Frame bytes are produced by the byte-exact reference decoders.",
+    "MASM execution proves asset selection, order, and draw-service arguments.",
+    "The external graphics driver is not yet executed inside Unicorn."
+  ]
+}

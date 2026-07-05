@@ -29,11 +29,27 @@ u8* grp_decode(const u8 *file_data, size_t file_size,
                int rows, int cl,
                int *out_w, int *out_h);
 
+/* Decode through fill_buffer + 6DE1 only. This mirrors 100OPDMO
+ * decode_rle_to_es_di and returns the two-plane bytes that later driver
+ * routines consume. */
+u8* grp_decode_6de1_planes(const u8 *file_data, size_t file_size,
+                           size_t *out_size);
+
+/* Same as grp_decode, but stops the MCGA render-pass blit after pass_count
+ * passes. pass_count 0 returns a black image; 8 returns the completed image. */
+u8* grp_decode_partial_passes(const u8 *file_data, size_t file_size,
+                              int rows, int cl, int pass_count,
+                              int *out_w, int *out_h);
+
 /* Same pipeline but starting from already-decompressed 2-plane 1bpp data.
  * Uses the render_plane_abc_loop interleave (planes = {A|B, B&~AB, A&~AB, 0}).
  * Returns malloc'd buffer; caller frees.  NULL on failure. */
 u8* grp_decode_planes(const u8 *planes, size_t planes_size,
                       int rows, int cl, int *out_w, int *out_h);
+
+u8* grp_decode_planes_partial_passes(const u8 *planes, size_t planes_size,
+                                     int rows, int cl, int pass_count,
+                                     int *out_w, int *out_h);
 
 /* Same pipeline using the render_plane_a_loop interleave
  * (planes = {B, 0, 0, A}, produces nibble values 0/1/8/9 instead of 0/A/C/8).
@@ -42,5 +58,9 @@ u8* grp_decode_planes(const u8 *planes, size_t planes_size,
  * Returns malloc'd buffer; caller frees.  NULL on failure. */
 u8* grp_decode_planes_gfx_draw(const u8 *planes, size_t planes_size,
                                 int rows, int cl, int *out_w, int *out_h);
+
+u8* grp_decode_planes_gfx_draw_partial_passes(const u8 *planes, size_t planes_size,
+                                              int rows, int cl, int pass_count,
+                                              int *out_w, int *out_h);
 
 #endif

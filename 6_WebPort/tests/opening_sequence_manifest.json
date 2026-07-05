@@ -1,0 +1,660 @@
+{
+  "version": 1,
+  "description": "Ordered MASM-derived opening demo flow for the Zeliard web port. This is the checklist for oracle capture and C/WASM parity work.",
+  "canonical_source": {
+    "module": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+    "caller": "3_Assembly/masm/working/core/game.asm",
+    "entry": "run_opening_demo_main",
+    "notes": [
+      "game.asm loads zelres1 ch1 opdemo.bin at CS:6000 and jumps through loaded_code_b.",
+      "MASM is the source of truth for ordering, assets, palette calls, waits, transitions, and script breaks.",
+      "Visible sequence must be verified by oracle checkpoints before additional C behavior changes are accepted."
+    ]
+  },
+  "input_rules": {
+    "skip_keys": [
+      "SPACE",
+      "ENTER"
+    ],
+    "timer_wait_loop": "SPACE or ENTER jumps to opening_next_scene during the pre/post-title wait loops.",
+    "story_scene_input_handler": "SPACE or ENTER jumps to transition_out_to_game during post-title story scenes."
+  },
+  "phases": [
+    {
+      "id": "copyright_title_card",
+      "order": 1,
+      "visible_summary": "Copyright text appears first, then the Zeliard title image fades in; after a short hold the card clears without an exit fade.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "run_opening_demo_main",
+          "scene_data_a",
+          "narration_stone_disp_fn",
+          "disp_narr_chap3_slot"
+        ],
+        "line_hints": [
+          330,
+          345,
+          351,
+          805
+        ]
+      },
+      "assets": [
+        "ttl3.grp"
+      ],
+      "palette_indices": [
+        4
+      ],
+      "transitions": [
+        "copyright text appears on black before the title image is visible",
+        "title image fades in from black after the copyright text is already present",
+        "scene_data_a is drawn through narration_stone_disp_fn",
+        "ttl3.grp is blitted through disp_narr_chap3_slot",
+        "title card clears without a visible exit fade before the necklace/amulet prologue"
+      ],
+      "script_or_text": [
+        "Copyright (C)1987,1990 GAME ARTS",
+        "Copyright (C)1990 Sierra On-Line"
+      ],
+      "existing_oracles": [
+        "initial_title_screen",
+        "copyright_input_ignored",
+        "copyright_timer_starts_prologue",
+        "title_palette_state",
+        "ttl3_logo_bbox"
+      ],
+      "oracle_status": "partial",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "amulet_ancient_prologue_scroll",
+      "order": 2,
+      "visible_summary": "Necklace/amulet image fades in, the ancient-history text scrolls upward over it, then text and image fade out.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "animate_scanline",
+          "runtime 6FF0 text stream",
+          "anim_fade_tbl_scene"
+        ],
+        "line_hints": [
+          358,
+          580,
+          1960
+        ]
+      },
+      "assets": [
+        "nec.grp",
+        "hou.grp"
+      ],
+      "palette_indices": [
+        4
+      ],
+      "transitions": [
+        "necklace/amulet image fades in before text starts scrolling",
+        "animate_scanline uses the text stream near runtime 6FF0",
+        "SPACE or ENTER during this scroll advances to staff_credits_scroll",
+        "text and image fade out when the scroll completes or is skipped"
+      ],
+      "script_or_text": [
+        "Two thousand years, from the dark reaches of another galaxy...",
+        "The King of Felishika...",
+        "The Tears of Esmesanti...",
+        "The Age of Darkness."
+      ],
+      "existing_oracles": [
+        "opening_scanline_summary",
+        "opening_scanline_frame"
+      ],
+      "oracle_status": "partial",
+      "web_port_status": "implemented_first_pass"
+    },
+    {
+      "id": "nec_hou_transition",
+      "order": 100,
+      "visible_summary": "Isolated NEC/HOU service contract retained for oracle coverage; not inserted into the first seven visible playback steps.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "run_opening_demo_main",
+          "animate_scanline"
+        ],
+        "line_hints": [
+          358,
+          360,
+          379,
+          580
+        ]
+      },
+      "assets": [
+        "nec.grp",
+        "hou.grp"
+      ],
+      "palette_indices": [
+        1,
+        2
+      ],
+      "transitions": [
+        "gfx_draw_fn draws NEC region",
+        "animate_scanline runs interlace/scanline transition",
+        "HOU overlay is decompressed to screen_buf_2 and drawn through disp_game_fn_slot"
+      ],
+      "script_or_text": [],
+      "existing_oracles": [
+        "nec_scene_bbox",
+        "hou_overlay_bbox",
+        "opening_nec_hou_composite"
+      ],
+      "oracle_status": "partial",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "dmaou_demon_intro",
+      "order": 101,
+      "visible_summary": "Isolated demon service contract retained for oracle coverage; not inserted into the first seven visible playback steps.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "scene_sprite_loop",
+          "scene_after_anim",
+          "scene_sprite_b"
+        ],
+        "line_hints": [
+          395,
+          407,
+          425
+        ]
+      },
+      "assets": [
+        "dmaou.grp"
+      ],
+      "palette_indices": [
+        3
+      ],
+      "transitions": [
+        "palette_lookup prepares sprite buffers",
+        "scene_sprite_c drives repeated disp_narr_chap2 calls",
+        "scene_sprite_b drives play_sprite_anim_script",
+        "jashiin_speech_disp_fn clears or draws speech area"
+      ],
+      "script_or_text": [
+        "Jashiin/demon pre-title animated speech data"
+      ],
+      "existing_oracles": [
+        "dmaou_scene_bbox",
+        "opening_scene_sprite_c_events",
+        "opening_scene_sprite_b_summary"
+      ],
+      "oracle_status": "partial",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "title_logo_color_rotation",
+      "order": 102,
+      "visible_summary": "Isolated title-logo/music/color-rotation service contract retained for oracle coverage; not inserted into the first seven visible playback steps.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "scene_after_anim",
+          "scene_color_rotate_loop",
+          "opening_next_scene"
+        ],
+        "line_hints": [
+          449,
+          458,
+          462,
+          504,
+          533
+        ]
+      },
+      "assets": [
+        "ttl1.grp",
+        "ttl2.grp",
+        "ttl3.grp",
+        "zopn.msd"
+      ],
+      "palette_indices": [
+        4
+      ],
+      "transitions": [
+        "jashiin_speech_disp_fn clears the speech area",
+        "ttl1.grp is decoded into scene_framebuf",
+        "ttl2.grp is loaded into vga_seg",
+        "ttl3.grp is loaded into aux_buf_seg and decoded after the first long wait",
+        "zopn.msd is loaded and started through int 60h",
+        "scene_color_rotate_loop performs 64h iterations before opening_next_scene"
+      ],
+      "script_or_text": [
+        "title logo display handoff and color rotation"
+      ],
+      "existing_oracles": [
+        "opening_title_asset_reload",
+        "opening_title_display_handoff",
+        "opening_title_color_exit"
+      ],
+      "oracle_status": "partial",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "staff_credits_scroll",
+      "order": 3,
+      "visible_summary": "Full staff credits scroll.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "opening_next_scene",
+          "credits_scroll_display",
+          "anim_fade_tbl_credits"
+        ],
+        "line_hints": [
+          700,
+          733,
+          762,
+          1976
+        ]
+      },
+      "assets": [
+        "zend.msd"
+      ],
+      "palette_indices": [
+        1
+      ],
+      "transitions": [
+        "gfx_mode_fn sets the full-screen credits mode",
+        "credits_scroll_display uses anim_fn_wipe_slot, anim_fn_fade_slot, and anim_fn_draw_slot",
+        "SPACE or ENTER during credits advances to rain_princess_story_start",
+        "credits finish/fade before trans_exit"
+      ],
+      "script_or_text": [
+        "Fantasy Action Game ZELIARD",
+        "-- STAFF --",
+        "Producer -- Japanese Version",
+        "Producer -- English Version",
+        "Lead Programmer",
+        "Graphic Designers",
+        "English Text Translation by",
+        "Music Composers",
+        "Story Maker",
+        "Sound Effects by",
+        "Advisers",
+        "System Designer",
+        "Special Thanks to",
+        "Copyright and publication text"
+      ],
+      "existing_oracles": [
+        "opening_next_scene"
+      ],
+      "oracle_status": "needs_scroll_frame_trace",
+      "web_port_status": "approximate"
+    },
+    {
+      "id": "rain_princess_story_start",
+      "order": 4,
+      "visible_summary": "Rain begins over Zeliard; Princess Felicia watches from the balcony.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "post_title_story_scenes",
+          "narration_prologue",
+          "dialogue_scene_start"
+        ],
+        "line_hints": [
+          810,
+          816,
+          821,
+          830,
+          2002,
+          2051
+        ]
+      },
+      "assets": [
+        "waku.grp",
+        "ame.grp"
+      ],
+      "palette_indices": [
+        5,
+        9
+      ],
+      "transitions": [
+        "waku is decompressed to ES:2000 overlay plane",
+        "ame is decompressed to scene_framebuf",
+        "BLIT_SCENE_FRAME draws the framed rain scene",
+        "run_script_interpreter advances through the storm narration"
+      ],
+      "script_or_text": [
+        "Once, long ago, a terrible storm came to the land of Zeliard.",
+        "On the seventh day of rain...",
+        "The girl was Princess Felicia la Felishika.",
+        "What a dreadful storm! Will it never end?"
+      ],
+      "existing_oracles": [
+        "opening_trans_exit"
+      ],
+      "oracle_status": "needs_script_checkpoint_trace",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "rain_turns_to_sand",
+      "order": 8,
+      "visible_summary": "The rain changes into sand and the kingdom becomes desert.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "dialogue_scene_start",
+          "narration_chapter_2"
+        ],
+        "line_hints": [
+          2051,
+          2163
+        ]
+      },
+      "assets": [
+        "hime.grp",
+        "dmaou.grp"
+      ],
+      "palette_indices": [
+        6
+      ],
+      "transitions": [
+        "font area is cleared with disp_font_inv_slot",
+        "dmaou.grp is decompressed to scene_data_i",
+        "busy_wait_delay and apply_palette_blend create the transformation effect"
+      ],
+      "script_or_text": [
+        "Just as the princess spoke these words, the raindrops turned to grains of sand...",
+        "As she watched, a startling transformation began...",
+        "This ever-green land was turning to desert before her very eyes."
+      ],
+      "existing_oracles": [],
+      "oracle_status": "needs_trace",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "jashiin_curses_princess",
+      "order": 9,
+      "visible_summary": "Jashiin speaks, threatens Felishika, and Princess Felicia is turned to stone.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "jashiin_speech_2",
+          "narration_stone_scene"
+        ],
+        "line_hints": [
+          2125,
+          2140
+        ]
+      },
+      "assets": [
+        "dmaou.grp"
+      ],
+      "palette_indices": [],
+      "transitions": [
+        "script speaker/color controls switch to Jashiin text",
+        "portrait/speech rendering uses 80h-9Fh script controls where present",
+        "stone narration uses shared text renderer and story script breaks"
+      ],
+      "script_or_text": [
+        "I am Jashiin, the Emperor of Chaos.",
+        "Beautiful Princess Felicia...",
+        "Princess Felicia was turned to stone."
+      ],
+      "existing_oracles": [],
+      "oracle_status": "needs_trace",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "king_grief_and_guardian_spirit",
+      "order": 10,
+      "visible_summary": "After 108 days of sand, the King grieves and the Guardian Spirit appears.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "narration_chapter_2"
+        ],
+        "line_hints": [
+          2163,
+          840,
+          854,
+          895
+        ]
+      },
+      "assets": [
+        "isi.grp"
+      ],
+      "palette_indices": [
+        7
+      ],
+      "transitions": [
+        "overlay region at BX=1728h CX=2230h is redrawn through disp_data_7420_slot and disp_game_fn_slot",
+        "wait_story_scene_timer gates the apparition timing"
+      ],
+      "script_or_text": [
+        "The rain of sand continued for 108 days...",
+        "The King wept most of all.",
+        "But the tears of the King and his people soon awakened another power.",
+        "I am the Guardian Spirit of the Holy Land of Zeliard."
+      ],
+      "existing_oracles": [],
+      "oracle_status": "needs_trace",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "duke_arrives",
+      "order": 11,
+      "visible_summary": "The Spirit vanishes and Duke Garland arrives in the kingdom.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "narration_chapter_2",
+          "narration_chapter_3"
+        ],
+        "line_hints": [
+          895,
+          907,
+          2260
+        ]
+      },
+      "assets": [
+        "isi.grp",
+        "oui.grp"
+      ],
+      "palette_indices": [
+        7
+      ],
+      "transitions": [
+        "isi.grp is displayed before Duke's arrival text",
+        "oui.grp replaces scene_framebuf for castle/throne approach"
+      ],
+      "script_or_text": [
+        "Having spoken these words, the Spirit disappeared.",
+        "But the next day, a stranger appeared in the kingdom...",
+        "What a desolate place! Why has the Spirit led me here?",
+        "Entering the castle, he was quickly escorted to the throne..."
+      ],
+      "existing_oracles": [],
+      "oracle_status": "needs_trace",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "king_pleads_duke_accepts",
+      "order": 12,
+      "visible_summary": "King Felishika begs Duke Garland for help, and Duke accepts the quest.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "narration_chapter_3"
+        ],
+        "line_hints": [
+          919,
+          932,
+          2260
+        ]
+      },
+      "assets": [
+        "sei.grp",
+        "yuu1.grp"
+      ],
+      "palette_indices": [],
+      "transitions": [
+        "sei.grp is drawn to scene_framebuf with disp_data_7420_slot",
+        "animated text bytes ANIM_80-ANIM_9F are interleaved with King and Duke speech"
+      ],
+      "script_or_text": [
+        "Duke Garland! You must be the man of destiny...",
+        "Duke Garland knelt before the King.",
+        "Your Majesty, I have followed the light of the Spirit...",
+        "I will dedicate my life to this task.",
+        "May God go with you on your quest."
+      ],
+      "existing_oracles": [],
+      "oracle_status": "needs_trace",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "jashiin_throne_room_confrontation",
+      "order": 13,
+      "visible_summary": "Black mist forms; Jashiin and Duke Garland confront each other.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "narration_chapter_4",
+          "narration_chapter_5"
+        ],
+        "line_hints": [
+          935,
+          937,
+          967,
+          2480,
+          2550
+        ]
+      },
+      "assets": [
+        "yuu1.grp",
+        "yuup.grp",
+        "oup.grp",
+        "maop.grp"
+      ],
+      "palette_indices": [
+        6,
+        8
+      ],
+      "transitions": [
+        "yuup.grp and oup.grp are drawn as paired regions",
+        "maop.grp is drawn through disp_script_area",
+        "vertical reveal loops adjust BX/DX over 18h iterations"
+      ],
+      "script_or_text": [
+        "Suddenly, the room grew cold.",
+        "Are you the fool who dares to challenge me?",
+        "And you must be the evil Jashiin!",
+        "You shall address me as the Emperor of Chaos...",
+        "Mark my words, evil one..."
+      ],
+      "existing_oracles": [],
+      "oracle_status": "needs_trace",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "jashiin_departure_and_final_vow",
+      "order": 14,
+      "visible_summary": "Jashiin threatens Duke, disappears, and Duke vows that Jashiin's reign is near its end.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "jashiin_disappear_text",
+          "disp_game_fn dual-use text table"
+        ],
+        "line_hints": [
+          1041,
+          1050,
+          2620
+        ]
+      },
+      "assets": [
+        "yuu2.grp",
+        "yuu3.grp",
+        "yuu4.grp"
+      ],
+      "palette_indices": [
+        7
+      ],
+      "transitions": [
+        "yuu2.grp is drawn for final narration",
+        "yuu3.grp and yuu4.grp are merged with merge_gfx_planes and xor_mask_render",
+        "Jashiin departing threat is embedded after the dual-use dispatch/text table"
+      ],
+      "script_or_text": [
+        "The demon laughed...",
+        "Jashiin disappeared leaving echoes of earsplitting laughter.",
+        "You haven't seen the last of me, Jashiin!",
+        "Beware, for I shall wake from my sleep of 2,000 years..."
+      ],
+      "existing_oracles": [],
+      "oracle_status": "needs_trace",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "door_of_destiny_final_card",
+      "order": 15,
+      "visible_summary": "Final narration asks whether Duke Garland will dethrone the Emperor of Chaos.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "anim_fade_tbl_scene",
+          "animate_scanline_alt"
+        ],
+        "line_hints": [
+          1083,
+          1094,
+          1969
+        ]
+      },
+      "assets": [],
+      "palette_indices": [
+        1
+      ],
+      "transitions": [
+        "animate_scanline_alt performs the final scanline/fade transition",
+        "ten long wait frames follow before transition_out_to_game"
+      ],
+      "script_or_text": [
+        "At last, the door of destiny was opened.",
+        "The labyrinths are deep, and the way is long.",
+        "Will Duke Garland be successful in dethroning the Emperor of Chaos?"
+      ],
+      "existing_oracles": [],
+      "oracle_status": "needs_trace",
+      "web_port_status": "partial"
+    },
+    {
+      "id": "handoff_to_gameplay",
+      "order": 16,
+      "visible_summary": "Opening demo exits and game.bin is loaded for actual gameplay.",
+      "masm_anchor": {
+        "file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "labels": [
+          "transition_out_to_game"
+        ],
+        "line_hints": [
+          1124
+        ]
+      },
+      "assets": [
+        "game.bin"
+      ],
+      "palette_indices": [],
+      "transitions": [
+        "gfx_mode_fn resets mode",
+        "input flags are cleared",
+        "sar_loader_fn loads game.bin with AL=3",
+        "jump through exit_jmp_target_ptr enters gameplay"
+      ],
+      "script_or_text": [],
+      "existing_oracles": [
+        "opening_input_exit_to_game"
+      ],
+      "oracle_status": "partial",
+      "web_port_status": "partial"
+    }
+  ]
+}

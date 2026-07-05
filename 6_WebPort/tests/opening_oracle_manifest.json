@@ -214,7 +214,7 @@
     },
     {
       "name": "opening_title_color_exit",
-      "source": "100OPDMO color rotation loop and gfx-enabled exit poll before timer_exit_to_game",
+      "source": "100OPDMO color rotation loop and gfx-enabled exit poll before opening_next_scene",
       "iterations": 100,
       "disp_set_call_count": 200,
       "wait_count": 100,
@@ -240,8 +240,8 @@
       "exits_to_game": true
     },
     {
-      "name": "opening_timer_exit_to_game",
-      "source": "100OPDMO timer_exit_to_game through credits_scroll_display dispatch",
+      "name": "opening_next_scene",
+      "source": "100OPDMO opening_next_scene through credits_scroll_display dispatch",
       "scene_mode": 8,
       "gfx_mode": {
         "al": "FF",
@@ -274,6 +274,30 @@
       "reaches_post_title_story": true
     },
     {
+      "name": "maop_reveal_step_00",
+      "source": "100OPDMO wait_story_scene_timer_start first disp_load_setup frame",
+      "frame": "OPENING_DEBUG_LATE_MAOP_REVEAL_STEP_00",
+      "framebuffer_fnv1a64": "f367db99ee55cc05"
+    },
+    {
+      "name": "maop_reveal_step_12",
+      "source": "100OPDMO wait_story_scene_timer_start midpoint disp_load_setup frame",
+      "frame": "OPENING_DEBUG_LATE_MAOP_REVEAL_STEP_12",
+      "framebuffer_fnv1a64": "f367db99ee55cc05"
+    },
+    {
+      "name": "split_return_reveal_step_12",
+      "source": "100OPDMO gameplay_input_loop midpoint disp_load_setup frame",
+      "frame": "OPENING_DEBUG_LATE_SPLIT_RETURN_STEP_12",
+      "framebuffer_fnv1a64": "51ffa7473f81fefb"
+    },
+    {
+      "name": "final_yuu3_yuu4_composite",
+      "source": "100OPDMO yuu3/yuu4 merge_gfx_planes plus xor_mask_render final frame",
+      "frame": "OPENING_DEBUG_LATE_FINAL_YUU3_YUU4",
+      "framebuffer_fnv1a64": "92d8ad4d7c4c1f7f"
+    },
+    {
       "name": "title_palette_state",
       "source": "captured P2_Title DAC rows",
       "palette": "P2_Title",
@@ -284,7 +308,8 @@
     {
       "name": "initial_title_screen",
       "source": "captured full title/copyright framebuffer",
-      "expected_scene": "title",
+      "expected_scene": "opening",
+      "expected_phase": "copyright_title_card",
       "bytes": 64000,
       "framebuffer_sha256": "853d70a43f5fa386bd4609f15eacf9b6f8fc199c36c9dcc9f0fd0c35c6976544",
       "framebuffer_fnv1a64": "513e9ef6009064ea",
@@ -292,20 +317,24 @@
       "palette_fnv1a64": "d9e89a4c32254f58"
     },
     {
-      "name": "title_input_starts_opening",
-      "source": "title receives ENTER/SPACE and advances into opening demo",
-      "start_scene": "title",
+      "name": "copyright_input_ignored",
+      "source": "copyright card receives ENTER/SPACE before the MASM input wait",
+      "start_scene": "opening",
+      "start_phase": "copyright_title_card",
       "input": "ENTER",
       "expected_scene": "opening",
-      "framebuffer_sha256": "fa830ab40a292d1180c5b2e1baf76b88d1fa3e17f171389555ad4674c565bcc9",
-      "framebuffer_fnv1a64": "05f15837ed2f4105"
+      "expected_phase": "copyright_title_card",
+      "framebuffer_sha256": "853d70a43f5fa386bd4609f15eacf9b6f8fc199c36c9dcc9f0fd0c35c6976544",
+      "framebuffer_fnv1a64": "513e9ef6009064ea"
     },
     {
-      "name": "title_timer_starts_opening",
-      "source": "title wait expires and advances into opening demo",
-      "start_scene": "title",
-      "duration_ms": 8000,
-      "expected_scene": "opening"
+      "name": "copyright_timer_starts_prologue",
+      "source": "copyright/title card completes and advances into the amulet ancient-history prologue",
+      "start_scene": "opening",
+      "start_phase": "copyright_title_card",
+      "duration_ms": 3470,
+      "expected_scene": "opening",
+      "expected_phase": "amulet_ancient_prologue_scroll"
     },
     {
       "name": "opening_input_exit_to_game",

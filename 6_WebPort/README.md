@@ -27,8 +27,12 @@ This is the pivot-flexibility seam.
     ```
   - **Docker** (no local install): start Docker Desktop, then use
     `scripts/build-wasm.ps1` which falls back to the `emscripten/emsdk` image.
-- **GNU make** (comes with most emsdk installs; on Windows you can also use
-  `mingw32-make` from MSYS2 or run inside Docker).
+- **WSL2 Ubuntu 24.04** for native parity on Windows. This avoids Windows Smart
+  App Control blocking freshly built test `.exe` files.
+- **GNU make + C compiler** inside WSL:
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File scripts/test-native-wsl.ps1 -BootstrapTools -BuildOnly
+  ```
 
 ## Build + run (M1)
 
@@ -77,9 +81,12 @@ py -3.13 parity_opening_oracle.py
 cd ../engine
 make test-native
 
-# Windows / Visual Studio alternative.
+# Windows recommended path: run native parity inside WSL, not as fresh .exe files.
 cd ..
-powershell -ExecutionPolicy Bypass -File scripts/test-native-vs.ps1
+powershell -ExecutionPolicy Bypass -File scripts/test-native-wsl.ps1
+
+# Visual Studio remains a compile-only fallback when needed.
+powershell -ExecutionPolicy Bypass -File scripts/test-native-vs.ps1 -BuildOnly
 ```
 
 `tests/opening_oracle_manifest.json` is the source of truth for the first
@@ -90,8 +97,8 @@ FNV hashes; the Python test keeps SHA-256 hashes for review-grade evidence.
 
 `tests/gameplay_oracle_manifest.json` tracks the first gameplay proc ports:
 HP subtraction, almas add, gold/bank arithmetic, and map/row movement helpers.
-`scripts/test-native-vs.ps1` builds and runs both the opening parity binary and
-the gameplay parity binary.
+`scripts/test-native-wsl.ps1` builds and runs native parity inside WSL so Windows
+Application Control is no longer in the test loop.
 
 ## Status
 

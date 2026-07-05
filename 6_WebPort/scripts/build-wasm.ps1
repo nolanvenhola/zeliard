@@ -11,6 +11,26 @@ $engineDir = Join-Path $repo 'engine'
 Write-Host "[build-wasm] engine dir: $engineDir"
 
 $localEmcc = Get-Command emcc -ErrorAction SilentlyContinue
+if (-not $localEmcc) {
+    $emsdkEnvCandidates = @(
+        (Join-Path $env:USERPROFILE 'emsdk\emsdk_env.bat'),
+        'C:\emsdk\emsdk_env.bat'
+    )
+    $emsdkEnv = $emsdkEnvCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($emsdkEnv) {
+        Write-Host "[build-wasm] loading Emscripten env from $emsdkEnv"
+        $envLines = cmd.exe /d /c "call `"$emsdkEnv`" >nul && set"
+        foreach ($line in $envLines) {
+            $idx = $line.IndexOf('=')
+            if ($idx -gt 0) {
+                $name = $line.Substring(0, $idx)
+                $value = $line.Substring($idx + 1)
+                [Environment]::SetEnvironmentVariable($name, $value, 'Process')
+            }
+        }
+        $localEmcc = Get-Command emcc -ErrorAction SilentlyContinue
+    }
+}
 if ($localEmcc) {
     Write-Host "[build-wasm] using local emcc at $($localEmcc.Source)"
     Push-Location $engineDir
@@ -54,7 +74,7 @@ if ($localEmcc) {
             "-s", "EXPORT_ES6=1",
             "-s", "ENVIRONMENT=web",
             "-s", "ALLOW_MEMORY_GROWTH=1",
-            "-s", "EXPORTED_FUNCTIONS=['_zeliard_init','_zeliard_tick','_zeliard_key','_zeliard_framebuf','_zeliard_palette','_zeliard_width','_zeliard_height','_zeliard_scene','_malloc','_free']",
+            "-s", "EXPORTED_FUNCTIONS=['_zeliard_init','_zeliard_tick','_zeliard_key','_zeliard_framebuf','_zeliard_rgb_framebuf','_zeliard_rgb_framebuf_active','_zeliard_palette','_zeliard_width','_zeliard_height','_zeliard_scene','_malloc','_free']",
             "-s", "EXPORTED_RUNTIME_METHODS=['HEAPU8','HEAPU32','UTF8ToString','ccall','cwrap']",
             "--preload-file", "assets@/assets",
             "-o", "build/zeliard.js"

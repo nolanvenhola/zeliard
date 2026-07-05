@@ -25,4 +25,8 @@
 u8* img_open_decode(const u8 *fb_out, size_t fb_size,
                     int rows, int cl, size_t *out_size);
 
+u8* img_open_decode_overlap(const u8 *fb_out, size_t fb_size,
+                            u16 src_offset, u16 dst_offset,
+                            int rows, int cl, size_t *out_size);
+
 #endif
