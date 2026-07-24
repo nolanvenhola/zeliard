@@ -10,6 +10,7 @@ just before the sprite animation loop.
 
 from __future__ import annotations
 
+import hashlib
 import sys
 from pathlib import Path
 
@@ -17,11 +18,15 @@ HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE.parent))
 
 from fixtures import MASM_ROOT, resolve_proc  # noqa: E402
-from harness import CODE_SEG, RET_SENTINEL, TasmHarness  # noqa: E402
+from test_mcga_render_entries_oracle import fill_buffer_decompress  # noqa: E402
+from harness import CODE_SEG, DATA_SEG, RET_SENTINEL, TasmHarness  # noqa: E402
 
 
 OPDEMO_BIN = MASM_ROOT / "bin" / "zelres1" / "100OPDMO.bin"
+GDMCA_BIN = MASM_ROOT / "bin" / "zelres1" / "105GDMCA.bin"
+WEB_ASSET_ROOT = MASM_ROOT.parent.parent / "6_WebPort" / "engine" / "assets"
 LOAD_BASE = 0x6000
+GDMCA_LOAD_BASE = 0x3000
 HEADER_SIZE = 4
 
 SAR_LOADER_SLOT = 0x010C
@@ -82,6 +87,17 @@ DISP_DATA_7420_THUNK = 0x0232
 DISP_LOAD_SETUP_THUNK = 0x0234
 DISP_SCRIPT_AREA_THUNK = 0x0236
 
+# The OPDMO `disp_font_inv_slot` is the MCGA dispatch-table entry at CS:3020.
+# With 105GDMCA loaded at CS:3000 it resolves to this frame-timed renderer.
+GDMCA_DISP_FONT_INV_TARGET = 0x38E6
+GDMCA_DISP_FONT_INV_WAIT = 0x39BA
+GDMCA_ANIM_FADE_TARGET = 0x32C9
+GDMCA_OPDMO_ANIM_TARGETS = {
+    ANIM_FN_WIPE_SLOT: 0x44CC,
+    ANIM_FN_FADE_SLOT: 0x32C9,
+    ANIM_FN_DRAW_SLOT: 0x332C,
+}
+
 OFF_GAME_SEG = 0xFF2C
 OFF_SCENE_MODE = 0xFF24
 OFF_SPACEBAR_STATE = 0xFF1D
@@ -115,6 +131,8 @@ POST_TITLE_SECOND_SCRIPT_CALL = 0x65FF
 STORY_SCRIPT_2_ENTRY = 0x7CAD
 STORY_2_TO_3_START = 0x6602
 POST_TITLE_THIRD_SCRIPT_CALL = 0x6641
+STORY_3_TO_4_START = 0x6644
+POST_TITLE_FOURTH_SCRIPT_CALL = 0x6669
 STORY_SCRIPT_3_ENTRY = 0x7DDF
 STORY_SCRIPT_4_ENTRY = 0x7E8D
 STORY_SCRIPT_5_ENTRY = 0x7F78
@@ -139,6 +157,10 @@ APPARITION_REMOVE_ISI_START = 0x668C
 POST_TITLE_EIGHTH_SCRIPT_CALL = 0x66F3
 ISI_REVEAL_START = 0x66F6
 POST_TITLE_NINTH_SCRIPT_CALL = 0x6713
+OUI_UPDATE_START = 0x6716
+POST_TITLE_TENTH_SCRIPT_CALL = 0x6748
+SEI_REVEAL_START = 0x674E
+POST_TITLE_TWELFTH_SCRIPT_CALL = 0x677B
 YUU_SETUP_START = 0x6788
 POST_TITLE_FOURTEENTH_SCRIPT_CALL = 0x67F4
 YUU_SPLIT_START = 0x67FA
@@ -150,6 +172,7 @@ POST_TITLE_TWENTIETH_SCRIPT_CALL = 0x6954
 FINAL_SCENE_START = 0x6957
 FINAL_SCENE_STOP = 0x6A05
 ANIM_FADE_TBL_CREDITS = 0x742F
+ANIM_FADE_TBL_SCENE = 0x7334
 ANIMATE_SCANLINE_START = 0x6358
 SCENE_SPRITE_C = 0x911E
 DIRECT_CALLS = {
@@ -162,6 +185,14 @@ DIRECT_CALLS = {
 
 def word_bytes(value: int) -> list[int]:
     return [value & 0xFF, (value >> 8) & 0xFF]
+
+
+def fnv1a64(data: bytes) -> int:
+    value = 0xCBF29CE484222325
+    for byte in data:
+        value ^= byte
+        value = (value * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
+    return value
 
 
 def near_jmp_bytes(from_ip: int, to_ip: int) -> list[int]:
@@ -415,6 +446,27 @@ def setup_animate_scanline_harness() -> tuple[TasmHarness, dict[int, dict]]:
     return h, stubs
 
 
+def setup_animate_scanline_alt_harness() -> tuple[TasmHarness, dict[int, dict]]:
+    h = TasmHarness(str(OPDEMO_BIN), LOAD_BASE)
+    load_opdemo_with_header_strip(h)
+    for slot, thunk in (
+        (ANIM_FN_WIPE_SLOT, ANIM_FN_WIPE_THUNK),
+        (ANIM_FN_FADE_SLOT, ANIM_FN_FADE_THUNK),
+        (ANIM_FN_DRAW_SLOT, ANIM_FN_DRAW_THUNK),
+    ):
+        h.write_code(slot, word_bytes(thunk))
+    h.write_code(OFF_FRAME_TIMER, [0xFF])
+    h.write_code(OFF_SPACEBAR_STATE, [0])
+    h.write_code(OFF_ENTER_KEY, [0])
+    stubs = {
+        ANIM_FN_WIPE_THUNK: {},
+        ANIM_FN_FADE_THUNK: {"scan_si_until": [0x0D, 0xFF]},
+        ANIM_FN_DRAW_THUNK: {},
+        LOAD_BASE + resolve_proc("opdmo", "wait_story_scene_timer") - HEADER_SIZE: {},
+    }
+    return h, stubs
+
+
 def setup_trans_exit_harness() -> tuple[TasmHarness, dict[int, dict]]:
     h = TasmHarness(str(OPDEMO_BIN), LOAD_BASE)
     load_opdemo_with_header_strip(h)
@@ -517,10 +569,52 @@ def setup_story_2_to_3_harness() -> tuple[TasmHarness, dict[int, dict]]:
     return h, stubs
 
 
+def setup_story_2_to_3_mcga_harness() -> tuple[TasmHarness, dict[int, dict]]:
+    """Run the transition with the release MCGA dispatch table installed.
+
+    The driver waits for the 18.2 Hz frame counter at 39BA.  The test supplies
+    that tick through TasmHarness's timer proxy; all driver bytes, data lookup,
+    and A000 writes remain real.
+    """
+    h, stubs = setup_story_2_to_3_harness()
+    data = GDMCA_BIN.read_bytes()
+    h.write_code(GDMCA_LOAD_BASE, data[HEADER_SIZE:])
+
+    # The driver image occupies the dispatch table.  Reinstall only the
+    # services outside this probe's MCGA renderer.
+    h.write_code(GFX_PALETTE_SLOT, word_bytes(GFX_PALETTE_THUNK))
+    h.write_code(DISP_GAME_SLOT, word_bytes(DISP_GAME_THUNK))
+    return h, stubs
+
+
+def install_font_segment(h: TasmHarness) -> None:
+    """Mirror game.asm's compressed font load and its three pointer fixups."""
+    font = bytearray(fill_buffer_decompress((WEB_ASSET_ROOT / "font.grp").read_bytes()))
+    for offset in (0, 2, 4):
+        value = font[offset] | (font[offset + 1] << 8)
+        value = (value + 0xF500) & 0xFFFF
+        font[offset] = value & 0xFF
+        font[offset + 1] = value >> 8
+    h.write_code(0xF500, font)
+
+
 def setup_third_story_script_harness() -> tuple[TasmHarness, dict[int, dict]]:
     h, stubs = setup_first_story_script_harness()
     h.write_code(OFF_SCRIPT_PC, word_bytes(STORY_SCRIPT_3_ENTRY))
     return h, stubs
+
+
+def setup_story_3_to_4_harness() -> tuple[TasmHarness, dict[int, dict]]:
+    h = TasmHarness(str(OPDEMO_BIN), LOAD_BASE)
+    load_opdemo_with_header_strip(h)
+    h.write_code(DISP_GAME_SLOT, word_bytes(DISP_GAME_THUNK))
+    h.write_code(OFF_GAME_SEG, word_bytes(CODE_SEG))
+    h.write_code(POST_TITLE_FOURTH_SCRIPT_CALL,
+                 near_jmp_bytes(POST_TITLE_FOURTH_SCRIPT_CALL, RET_SENTINEL))
+    return h, {
+        DISP_GAME_THUNK: {},
+        LOAD_BASE + resolve_proc("opdmo", "busy_wait_delay") - HEADER_SIZE: {},
+    }
 
 
 def setup_fourth_story_script_harness() -> tuple[TasmHarness, dict[int, dict]]:
@@ -668,6 +762,42 @@ def setup_isi_reveal_harness() -> tuple[TasmHarness, dict[int, dict]]:
     h.write_code(POST_TITLE_NINTH_SCRIPT_CALL,
                  near_jmp_bytes(POST_TITLE_NINTH_SCRIPT_CALL, RET_SENTINEL))
     return h, {GFX_PALETTE_THUNK: {}, GFX_UPDATE_THUNK: {}}
+
+
+def setup_oui_update_harness() -> tuple[TasmHarness, dict[int, dict]]:
+    h = TasmHarness(str(OPDEMO_BIN), LOAD_BASE)
+    load_opdemo_with_header_strip(h)
+    for slot, thunk in (
+        (SAR_LOADER_SLOT, SAR_THUNK),
+        (GFX_UPDATE_SLOT, GFX_UPDATE_THUNK),
+    ):
+        h.write_code(slot, word_bytes(thunk))
+    h.write_code(OFF_GAME_SEG, word_bytes(CODE_SEG))
+    h.write_code(POST_TITLE_TENTH_SCRIPT_CALL,
+                 near_jmp_bytes(POST_TITLE_TENTH_SCRIPT_CALL, RET_SENTINEL))
+    return h, {
+        SAR_THUNK: {},
+        GFX_UPDATE_THUNK: {},
+        LOAD_BASE + resolve_proc("opdmo", "decompress_image") - HEADER_SIZE: {},
+    }
+
+
+def setup_sei_reveal_harness() -> tuple[TasmHarness, dict[int, dict]]:
+    h = TasmHarness(str(OPDEMO_BIN), LOAD_BASE)
+    load_opdemo_with_header_strip(h)
+    for slot, thunk in (
+        (SAR_LOADER_SLOT, SAR_THUNK),
+        (DISP_DATA_7420_SLOT, DISP_DATA_7420_THUNK),
+    ):
+        h.write_code(slot, word_bytes(thunk))
+    h.write_code(OFF_GAME_SEG, word_bytes(CODE_SEG))
+    h.write_code(POST_TITLE_TWELFTH_SCRIPT_CALL,
+                 near_jmp_bytes(POST_TITLE_TWELFTH_SCRIPT_CALL, RET_SENTINEL))
+    return h, {
+        SAR_THUNK: {},
+        DISP_DATA_7420_THUNK: {},
+        LOAD_BASE + resolve_proc("opdmo", "decompress_image") - HEADER_SIZE: {},
+    }
 
 
 def setup_late_transition_harness(start: int, stop: int,
@@ -827,6 +957,38 @@ def main() -> int:
                              stub_calls=stubs, max_steps=2000)
     records = sar_records(h, result)
 
+    # This is the release-byte call order through the first scene_sprite_a
+    # dispatch.  Keep it ordered: individual call counts cannot detect a
+    # translated opening that loads/draws the right assets in the wrong phase.
+    expected_prelude_dispatches = [
+        GFX_INIT_THUNK,
+        SAR_THUNK,
+        LOAD_BASE + resolve_proc("opdmo", "decode_rle_to_es_di") - HEADER_SIZE,
+        GFX_PALETTE_THUNK,
+        NARRATION_STONE_THUNK,
+        DISP_NARR_CHAP3_THUNK,
+        SAR_THUNK,
+        SAR_THUNK,
+        LOAD_BASE + resolve_proc("opdmo", "decompress_image") - HEADER_SIZE,
+        GFX_INIT_THUNK,
+        GFX_PALETTE_THUNK,
+        GFX_DRAW_THUNK,
+        LOAD_BASE + resolve_proc("opdmo", "animate_scanline") - HEADER_SIZE,
+        GFX_PALETTE_THUNK,
+        GFX_UPDATE_THUNK,
+        LOAD_BASE + resolve_proc("opdmo", "decompress_image") - HEADER_SIZE,
+        DISP_GAME_THUNK,
+        DISP_DATA_6F59_THUNK,
+        SAR_THUNK,
+        LOAD_BASE + resolve_proc("opdmo", "decompress_image") - HEADER_SIZE,
+        LOAD_BASE + resolve_proc("opdmo", "palette_lookup") - HEADER_SIZE,
+        GFX_MODE_THUNK,
+        GFX_PALETTE_THUNK,
+        GFX_UPDATE_THUNK,
+    ]
+    expect(result.get("stubs_fired", []) == expected_prelude_dispatches,
+           failures, "opening prelude dispatch order diverged before scene_sprite_loop")
+
     expect(result["stopped_reason"] == "returned_to_sentinel", failures,
            f"opening sequence did not stop at checkpoint: {result['stopped_reason']}")
     expect(len(records) == 4, failures, f"opening first-sequence SAR calls {len(records)} != 4")
@@ -931,6 +1093,12 @@ def main() -> int:
            failures, "scene_after_anim wait sequence did not match F0 + 91*14 + F0/0F/F0")
     expect(after_result["regs_after"]["si"] == SCENE_SPRITE_C, failures,
            f"scene_sprite_b final SI {after_result['regs_after']['si']:04X} != {SCENE_SPRITE_C:04X}")
+    expect(read_code_byte(h_after, 0x653D) | (read_code_byte(h_after, 0x653E) << 8) == 0x0130,
+           failures, "scene_sprite_b final render_state_a did not match release MASM")
+    expect(read_code_byte(h_after, 0x653F) == 0xA8, failures,
+           "scene_sprite_b final render_state_b did not match release MASM")
+    expect(read_code_byte(h_after, OFF_VOLUME_B) == 0x3F, failures,
+           "scene_sprite_b final gvar_volume_b did not match release MASM")
 
     h_title, title_stubs = setup_title_asset_harness()
     title_result = h_title.call_function(TITLE_ASSET_BLOCK_START,
@@ -1217,6 +1385,188 @@ def main() -> int:
            [(0xA000, 0x97C0, CODE_SEG)],
            failures, "DMAOU story transition did not decompress to scene_data_i")
 
+    # `disp_font_inv_slot` is a misleading historical label.  The release
+    # MCGA table maps CS:3020 to a real frame-timed A000 renderer at 38E6.
+    # Exercise that exact driver path with its timer wait supplied by the
+    # deterministic harness proxy, then lock its complete visible buffer.
+    h_dmaou_mcga, dmaou_mcga_stubs = setup_story_2_to_3_mcga_harness()
+    for slot, target in GDMCA_OPDMO_ANIM_TARGETS.items():
+        expect(read_code_word(h_dmaou_mcga, slot) == target, failures,
+               f"MCGA dispatch slot {slot:04X} did not resolve to {target:04X}")
+    expect(read_code_word(h_dmaou_mcga, DISP_FONT_INV_SLOT) ==
+           GDMCA_DISP_FONT_INV_TARGET, failures,
+           "MCGA dispatch slot 3020 did not resolve to the release renderer")
+    dmaou_mcga_result = h_dmaou_mcga.call_function(
+        STORY_2_TO_3_START, regs={"ds": CODE_SEG, "es": CODE_SEG},
+        stub_calls=dmaou_mcga_stubs, max_steps=1000000,
+        timer_pulse_ips={GDMCA_DISP_FONT_INV_WAIT})
+    expect(dmaou_mcga_result["stopped_reason"] == "returned_to_sentinel", failures,
+           "MCGA dispatch-backed DMAOU transition did not complete")
+    dmaou_mcga_vga = h_dmaou_mcga.read_vga(0, 0xFA00)
+    expect(hashlib.sha256(dmaou_mcga_vga).hexdigest() ==
+           "65fe39d595e31448e555cdd4c7665696e2c6f4c8eea5e3a21ed54787d1732b95",
+           failures, "MCGA dispatch-backed DMAOU framebuffer hash changed")
+    expect(dmaou_mcga_result["timer_pulses"] == 12, failures,
+           "MCGA dispatch-backed DMAOU renderer did not consume 12 timer waits")
+
+    # The scanline transition starts by interpreting the real first fade
+    # record at 100OPDMO:6FF0 into the MCGA driver's CS workspace.  This is
+    # the actual anim_fn_fade dispatch target, not a palette fade.
+    h_scanline, scanline_stubs = setup_story_2_to_3_mcga_harness()
+    install_font_segment(h_scanline)
+    scanline_result = h_scanline.call_function(
+        GDMCA_ANIM_FADE_TARGET,
+        regs={"ds": CODE_SEG, "es": CODE_SEG, "si": 0x6FF0},
+        stub_calls=scanline_stubs, max_steps=1000000)
+    expect(scanline_result["stopped_reason"] == "returned_to_sentinel", failures,
+           "MCGA anim_fn_fade did not return for the opening scanline record")
+    scanline_workspace = bytes(h_scanline.mu.mem_read(
+        (CODE_SEG << 4) + 0x4511, 0x0C80))
+    scanline_hash = hashlib.sha256(scanline_workspace).hexdigest()
+    expect(scanline_hash ==
+           "38a6265ea6e7dd34dad38e2ee841662b9ce67d596193a410061ab181120bb8af",
+           failures, f"MCGA anim_fn_fade workspace hash {scanline_hash} changed")
+    scanline_nonzero = sum(1 for value in scanline_workspace if value)
+    expect(scanline_nonzero == 337, failures,
+           f"MCGA anim_fn_fade workspace nonzero count {scanline_nonzero} != 337")
+    expect(fnv1a64(scanline_workspace) == 0xE200DE9ED666F4A2, failures,
+           "MCGA anim_fn_fade workspace FNV changed")
+
+    # 105GDMCA:332C is the paired scanline compositor.  These are the exact
+    # ten calls made by animate_scanline's first frame loop after decoding
+    # 100OPDMO:6FF0.  Keep both stateful work-segment and A000 output hashes:
+    # a C port must reproduce the sequence, not merely the final image.
+    h_draw, draw_stubs = setup_story_2_to_3_mcga_harness()
+    install_font_segment(h_draw)
+    draw_decode = h_draw.call_function(
+        GDMCA_ANIM_FADE_TARGET,
+        regs={"ds": CODE_SEG, "es": CODE_SEG, "si": 0x6FF0},
+        stub_calls=draw_stubs, max_steps=1000000)
+    expect(draw_decode["stopped_reason"] == "returned_to_sentinel", failures,
+           "MCGA 332C fixture could not decode the first scanline record")
+    expected_draw_vga = [
+        0xDD14FCC6528CAB25, 0xFA151EAFED0E5B83,
+        0x07BC4B13B6E7F813, 0x479F0D47B74D9A23,
+        0xB82CFB9C3EAEE5A3, 0xC5B2ADE66BD56655,
+        0xECD053EDB47C1CA3, 0x13035385BDDC1803,
+        0x40823048DCEDE303, 0xB5669CFA9BF9B903,
+    ]
+    expected_draw_work = [
+        0x2B18D38AA5B9A504, 0xA0229313AB0384C2,
+        0xD24B2BA395637040, 0x0A73FBD8AE89C85C,
+        0x8BD8FDBBFBFB8969, 0xDE346A04F7EF8E74,
+        0x7F9E1C3E07EE81FE, 0xB4FC14F7C5BD8FA2,
+        0x215308F64AFEC0A2, 0xE9DEDAEA93F4F1A2,
+    ]
+    for frame in range(10):
+        draw_result = h_draw.call_function(
+            0x332C,
+            regs={"ds": CODE_SEG, "es": CODE_SEG, "ax": frame,
+                  "bx": 0x0020, "cx": 0x5078},
+            stub_calls=draw_stubs, max_steps=1000000)
+        expect(draw_result["stopped_reason"] == "returned_to_sentinel", failures,
+               f"MCGA 332C did not return at scanline frame {frame}")
+        draw_vga = h_draw.read_vga(0, 0xFA00)
+        draw_work = bytes(h_draw.mu.mem_read(
+            ((CODE_SEG + 0x2000) << 4), 0x10000))
+        expect(fnv1a64(draw_vga) == expected_draw_vga[frame], failures,
+               f"MCGA 332C A000 FNV changed at scanline frame {frame}")
+        expect(fnv1a64(draw_work) == expected_draw_work[frame], failures,
+               f"MCGA 332C work-buffer FNV changed at scanline frame {frame}")
+
+    # Run the complete 100OPDMO animate_scanline control flow with only its
+    # three driver boundaries and timer wait stubbed.  This locks the actual
+    # procedure protocol independently of any C duration constants.
+    h_full_scanline, full_scanline_stubs = setup_animate_scanline_harness()
+    full_scanline_result = h_full_scanline.call_function(
+        ANIMATE_SCANLINE_START, regs={"ds": CODE_SEG, "es": CODE_SEG},
+        stub_calls=full_scanline_stubs, max_steps=100000)
+    full_draws = stub_regs(full_scanline_result, ANIM_FN_DRAW_THUNK)
+    expect(full_scanline_result["stopped_reason"] == "returned_to_sentinel",
+           failures, "full animate_scanline did not return")
+    expect(len(stub_regs(full_scanline_result, ANIM_FN_WIPE_THUNK)) == 1,
+           failures, "animate_scanline did not clear its work buffer once")
+    expect(len(stub_regs(full_scanline_result, ANIM_FN_FADE_THUNK)) == 31,
+           failures, "animate_scanline did not decode 31 source records")
+    expect(len(full_draws) == 430,
+           failures, "animate_scanline did not emit 310 entry and 120 exit draws")
+    expect([(r["ax"] & 0xFF, r["bx"], r["cx"])
+            for r in full_draws[:10]] ==
+           [(frame, 0x0020, 0x5078) for frame in range(10)], failures,
+           "animate_scanline first record draw protocol changed")
+    expect(all((r["ax"] & 0xFF, r["bx"], r["cx"]) == (0, 0x0020, 0x5078)
+               for r in full_draws[-120:]), failures,
+           "animate_scanline exit draw protocol changed")
+    timer_wait_target = LOAD_BASE + resolve_proc("opdmo", "timer_wait_loop") - HEADER_SIZE
+    expect(len(stub_regs(full_scanline_result, timer_wait_target)) == 430,
+           failures, "animate_scanline did not wait after every draw")
+
+    # `LOAD_DATA AL=2` leaves ttl3's fill_buffer output at CS:A000.  Run the
+    # real decoder into a separate ES segment and keep its output and final
+    # pointers as the C GRP decoder's direct MASM memory oracle.
+    h_rle = TasmHarness(str(OPDEMO_BIN), LOAD_BASE)
+    load_opdemo_with_header_strip(h_rle)
+    ttl3_rle = fill_buffer_decompress((WEB_ASSET_ROOT / "ttl3.grp").read_bytes())
+    h_rle.write_code(0xA000, ttl3_rle)
+    rle_result = h_rle.call_function(
+        LOAD_BASE + resolve_proc("opdmo", "decode_rle_to_es_di") - HEADER_SIZE,
+        regs={"ds": CODE_SEG, "es": DATA_SEG, "si": 0xA000, "di": 0x4000},
+        max_steps=1000000)
+    ttl3_decoded = bytes(h_rle.mu.mem_read((DATA_SEG << 4) + 0x4000, 14578))
+    expect(rle_result["stopped_reason"] == "returned_to_sentinel", failures,
+           "ttl3 decode_rle_to_es_di did not return")
+    expect(fnv1a64(ttl3_decoded) == 0x5655BA7B7C59348F, failures,
+           "ttl3 decode_rle_to_es_di output FNV changed")
+    expect((rle_result["regs_after"]["si"], rle_result["regs_after"]["di"]) ==
+           (0xBE75, 0x78F2), failures,
+           "ttl3 decode_rle_to_es_di final SI/DI changed")
+
+    # busy_wait_delay is a palette-plane transform, despite its historical
+    # name.  Run its AL=4 call against a complete deterministic game segment.
+    h_busy = TasmHarness(str(OPDEMO_BIN), LOAD_BASE)
+    load_opdemo_with_header_strip(h_busy)
+    h_busy.write_code(OFF_GAME_SEG, word_bytes(DATA_SEG))
+    h_busy.write_data(0, bytes((i * 37 + 11) & 0xFF for i in range(0x10000)))
+    busy_result = h_busy.call_function(
+        LOAD_BASE + resolve_proc("opdmo", "busy_wait_delay") - HEADER_SIZE,
+        regs={"ds": CODE_SEG, "es": CODE_SEG, "ax": 4}, max_steps=1000000)
+    busy_output = bytes(h_busy.mu.mem_read(DATA_SEG << 4, 0x10000))
+    expect(busy_result["stopped_reason"] == "returned_to_sentinel", failures,
+           "busy_wait_delay did not return")
+    expect(fnv1a64(busy_output) == 0x9F5D86FBDEB9B585, failures,
+           "busy_wait_delay AL=4 memory output changed")
+    expect((busy_result["regs_after"]["si"], busy_result["regs_after"]["di"]) ==
+           (0xE4A0, 0x0660), failures,
+           "busy_wait_delay AL=4 final SI/DI changed")
+
+    # The late game handoff uses the alternate scanline rectangle.  Its table
+    # starts with the final 's.' CR record followed by the separate FF record,
+    # hence two ten-draw entries and a 0A0h-frame exit.
+    h_alt_scanline, alt_scanline_stubs = setup_animate_scanline_alt_harness()
+    alt_scanline_result = h_alt_scanline.call_function(
+        LOAD_BASE + resolve_proc("opdmo", "animate_scanline_alt") - HEADER_SIZE,
+        regs={"ds": CODE_SEG, "es": CODE_SEG, "si": ANIM_FADE_TBL_SCENE},
+        stub_calls=alt_scanline_stubs, max_steps=100000)
+    alt_draws = stub_regs(alt_scanline_result, ANIM_FN_DRAW_THUNK)
+    expect(alt_scanline_result["stopped_reason"] == "returned_to_sentinel",
+           failures, "animate_scanline_alt did not return")
+    expect(len(stub_regs(alt_scanline_result, ANIM_FN_WIPE_THUNK)) == 1,
+           failures, "animate_scanline_alt did not clear its work buffer once")
+    expect(len(stub_regs(alt_scanline_result, ANIM_FN_FADE_THUNK)) == 2,
+           failures, "animate_scanline_alt did not decode its CR and FF records")
+    expect(len(alt_draws) == 180,
+           failures, "animate_scanline_alt did not emit 20 entry and 160 exit draws")
+    expect([(r["ax"] & 0xFF, r["bx"], r["cx"])
+            for r in alt_draws[:20]] ==
+           [(frame, 0x0014, 0x50A0) for frame in range(10)] * 2, failures,
+           "animate_scanline_alt entry draw protocol changed")
+    expect(all((r["ax"] & 0xFF, r["bx"], r["cx"]) == (0, 0x0014, 0x50A0)
+               for r in alt_draws[-160:]), failures,
+           "animate_scanline_alt exit draw protocol changed")
+    alt_wait_target = LOAD_BASE + resolve_proc("opdmo", "wait_story_scene_timer") - HEADER_SIZE
+    expect(len(stub_regs(alt_scanline_result, alt_wait_target)) == 180,
+           failures, "animate_scanline_alt did not wait after every draw")
+
     h_script3, script3_stubs = setup_third_story_script_harness()
     script3_result = h_script3.call_function(
         LOAD_BASE + resolve_proc("opdmo", "run_script_interpreter") - HEADER_SIZE,
@@ -1242,6 +1592,22 @@ def main() -> int:
     expect(read_code_word(h_script3, OFF_SCRIPT_PC) == 0x7E8D,
            failures, f"third post-title story script final PC "
                      f"{read_code_word(h_script3, OFF_SCRIPT_PC):04X} != 7E8D")
+
+    h_blend, blend_stubs = setup_story_3_to_4_harness()
+    blend_result = h_blend.call_function(
+        STORY_3_TO_4_START, regs={"ds": CODE_SEG, "es": CODE_SEG},
+        stub_calls=blend_stubs, max_steps=500000)
+    expect(blend_result["stopped_reason"] == "returned_to_sentinel", failures,
+           f"post-title story script 3->4 blend did not stop before script 4: "
+           f"{blend_result['stopped_reason']}")
+    busy_target = LOAD_BASE + resolve_proc("opdmo", "busy_wait_delay") - HEADER_SIZE
+    expect([r["ax"] & 0xFF for r in stub_regs(blend_result, busy_target)] == [4],
+           failures, "post-title story script 3->4 busy wait was not AL=4")
+    expect([(r["ax"] & 0xFF, r["bx"], r["cx"], r["di"])
+            for r in stub_regs(blend_result, DISP_GAME_THUNK)] ==
+           [(0, 0x0410, 0x4868, 0x4000)],
+           failures, "post-title story script 3->4 blend blit did not enter "
+                     "DISP_GAME with AL=0 BX=0410 CX=4868 DI=4000")
 
     assert_story_script_protocol(failures, "sixth post-title story script",
                                  setup_sixth_story_script_harness,
@@ -1317,9 +1683,9 @@ def main() -> int:
            failures, "apparition removal busy waits were not AL=2 then AL=3")
     expect([r["ax"] & 0xFF for r in stub_regs(isi_result, story_wait_target)] == [0x0F],
            failures, "apparition removal story wait was not AL=0F")
-    expect([(r["bx"], r["cx"], r["di"], (r["es"] - CODE_SEG) & 0xFFFF)
+    expect([(r["ax"] & 0xFF, r["bx"], r["cx"], r["di"], (r["es"] - CODE_SEG) & 0xFFFF)
             for r in stub_regs(isi_result, DISP_GAME_THUNK)] ==
-           [(0x1728, 0x2230, 0, 0x2000), (0x1728, 0x2230, 0, 0x2000)],
+           [(0, 0x1728, 0x2230, 0, 0x2000), (0, 0x1728, 0x2230, 0, 0x2000)],
            failures, "apparition removal WAKU restoration calls did not match")
     isi_records = sar_records(h_isi, isi_result)
     expect(len(isi_records) == 1, failures,
@@ -1339,6 +1705,40 @@ def main() -> int:
             for r in stub_regs(reveal_result, GFX_UPDATE_THUNK)] ==
            [(0xFF, 0x0410, 0x4868, 0x4000)],
            failures, "ISI reveal gfx_update did not match")
+
+    h_oui, oui_stubs = setup_oui_update_harness()
+    oui_result = h_oui.call_function(
+        OUI_UPDATE_START, regs={"ds": CODE_SEG, "es": CODE_SEG},
+        stub_calls=oui_stubs, max_steps=1000)
+    expect(oui_result["stopped_reason"] == "returned_to_sentinel", failures,
+           f"OUI update did not reach call 10: {oui_result['stopped_reason']}")
+    oui_records = sar_records(h_oui, oui_result)
+    expect(len(oui_records) == 1, failures,
+           f"OUI update SAR calls {len(oui_records)} != 1")
+    assert_sar_record(failures, oui_records, 0, "oui.grp", 2, 0xA000, 0)
+    expect([(r["ax"] & 0xFF, r["bx"], r["cx"], r["di"],
+             (r["es"] - CODE_SEG) & 0xFFFF)
+            for r in stub_regs(oui_result, GFX_UPDATE_THUNK)] ==
+           [(0, 0x0410, 0x4868, 0x4000, 0)],
+           failures, "OUI update gfx_update did not match AL=0 "
+                     "BX=0410 CX=4868 DI=4000 ES=CS")
+
+    h_sei, sei_stubs = setup_sei_reveal_harness()
+    sei_result = h_sei.call_function(
+        SEI_REVEAL_START, regs={"ds": CODE_SEG, "es": CODE_SEG},
+        stub_calls=sei_stubs, max_steps=1000)
+    expect(sei_result["stopped_reason"] == "returned_to_sentinel", failures,
+           f"SEI reveal did not reach call 12: {sei_result['stopped_reason']}")
+    sei_records = sar_records(h_sei, sei_result)
+    expect(len(sei_records) == 1, failures,
+           f"SEI reveal SAR calls {len(sei_records)} != 1")
+    assert_sar_record(failures, sei_records, 0, "sei.grp", 2, 0xA000, 0)
+    expect([(r["ax"] & 0xFF, r["bx"], r["cx"], r["di"],
+             (r["es"] - CODE_SEG) & 0xFFFF)
+            for r in stub_regs(sei_result, DISP_DATA_7420_THUNK)] ==
+           [(5, 0x1610, 0x2468, 0x4000, 0)],
+           failures, "SEI reveal disp_data_7420 did not match AL=5 "
+                     "BX=1610 CX=2468 DI=4000 ES=CS")
 
     if failures:
         print("opdemo opening sequence oracle mismatches:")

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Behavior oracle for MCGA disp_load_setup / disp_scroll_ring.
+"""Behavior oracle for MCGA disp_font_inv / scroll-ring renderer.
 
 This executes the MASM-built 105GDMCA.bin bytes in Unicorn and captures the
 64000-byte MCGA framebuffer written through ES=A000.  It is intentionally a
 driver-level oracle: the web port should match these hashes when translating
-the opening-demo reveal/setup calls that dispatch through CS:3024.
+the opening-demo inverse-font calls that dispatch through CS:3020.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ VGA_SEG = 0xA000
 # 105GDMCA.bin includes the four-byte SAR header.  At runtime the loader strips
 # that header, so file offset N maps to CS:(0x3000 - 4 + N).
 LOAD_BASE = 0x2FFC
-DISP_LOAD_SETUP = 0x38E6
+DISP_FONT_INV = 0x38E6
 LOOKUP_PALETTE_ENTRY = 0x39C4
 RET_SENTINEL = 0x0080
 FRAME_TIMER = 0xFF1A
@@ -63,7 +63,13 @@ PARTIAL_EXPECTED = {
     # lookup_palette_entry_mcga call. These are the browser reveal animation
     # checkpoints for the AX=0F mask used late in 100OPDMO.
     (0x000F, 0): ("dd14fcc6528cab25", 0, None),
+    (0x000F, 24): ("7fe0fcd0234eeb53", 113, (16, 16, 19, 111)),
+    (0x000F, 48): ("abef20a5dcc8a033", 138, (16, 16, 27, 119)),
+    (0x000F, 72): ("abef20a5dcc8a033", 138, (16, 16, 27, 119)),
     (0x000F, 96): ("e90b4d1e375f70f3", 148, (16, 16, 299, 119)),
+    (0x000F, 120): ("6463a816dfa96235", 262, (16, 16, 303, 119)),
+    (0x000F, 144): ("45f68d2d081c1353", 287, (16, 16, 303, 119)),
+    (0x000F, 168): ("45f68d2d081c1353", 287, (16, 16, 303, 119)),
     (0x000F, 192): ("f367db99ee55cc05", 297, (16, 16, 303, 119)),
 }
 
@@ -91,7 +97,7 @@ def framebuffer_bbox(frame: bytes) -> tuple[int, int, int, int] | None:
     )
 
 
-def run_disp_load_setup(ax: int, max_entries: int | None = None) -> bytes:
+def run_disp_font_inv(ax: int, max_entries: int | None = None) -> bytes:
     data = GDMCA_BIN.read_bytes()
     mu = Uc(UC_ARCH_X86, UC_MODE_16)
     for seg in (CODE_SEG, STACK_SEG, VGA_SEG):
@@ -128,7 +134,7 @@ def run_disp_load_setup(ax: int, max_entries: int | None = None) -> bytes:
             uc.emu_stop()
 
     mu.hook_add(UC_HOOK_CODE, hook_code)
-    mu.emu_start((CODE_SEG << 4) + DISP_LOAD_SETUP,
+    mu.emu_start((CODE_SEG << 4) + DISP_FONT_INV,
                  (CODE_SEG << 4) + 0xFFFF)
     return bytes(mu.mem_read(VGA_SEG << 4, FRAMEBUFFER_BYTES))
 
@@ -136,7 +142,7 @@ def run_disp_load_setup(ax: int, max_entries: int | None = None) -> bytes:
 def main() -> int:
     failures: list[str] = []
     for ax, (expected_hash, expected_nonzero, expected_bbox) in EXPECTED.items():
-        frame = run_disp_load_setup(ax)
+        frame = run_disp_font_inv(ax)
         actual_hash = fnv1a64(frame)
         actual_nonzero = sum(1 for b in frame if b)
         actual_bbox = framebuffer_bbox(frame)
@@ -144,7 +150,7 @@ def main() -> int:
               actual_nonzero == expected_nonzero and
               actual_bbox == expected_bbox)
         print(
-            f"mcga_disp_load_setup_ax{ax:02x}: "
+            f"mcga_disp_font_inv_ax{ax:02x}: "
             f"{'PASS' if ok else 'FAIL'} "
             f"hash={actual_hash} nonzero={actual_nonzero} bbox={actual_bbox}"
         )
@@ -153,7 +159,7 @@ def main() -> int:
 
     for (ax, max_entries), (expected_hash, expected_nonzero,
                             expected_bbox) in PARTIAL_EXPECTED.items():
-        frame = run_disp_load_setup(ax, max_entries)
+        frame = run_disp_font_inv(ax, max_entries)
         actual_hash = fnv1a64(frame)
         actual_nonzero = sum(1 for b in frame if b)
         actual_bbox = framebuffer_bbox(frame)
@@ -161,7 +167,7 @@ def main() -> int:
               actual_nonzero == expected_nonzero and
               actual_bbox == expected_bbox)
         print(
-            f"mcga_disp_load_setup_ax{ax:02x}_entry{max_entries:03d}: "
+            f"mcga_disp_font_inv_ax{ax:02x}_entry{max_entries:03d}: "
             f"{'PASS' if ok else 'FAIL'} "
             f"hash={actual_hash} nonzero={actual_nonzero} bbox={actual_bbox}"
         )
@@ -169,9 +175,9 @@ def main() -> int:
             failures.append(f"AX={ax:04x}/entry={max_entries}")
 
     if failures:
-        print(f"VERDICT: FAIL: MCGA disp_load_setup mismatch for {', '.join(failures)}")
+        print(f"VERDICT: FAIL: MCGA disp_font_inv mismatch for {', '.join(failures)}")
         return 1
-    print("VERDICT: PASS: MCGA disp_load_setup oracle matches MASM bytes")
+    print("VERDICT: PASS: MCGA disp_font_inv oracle matches MASM bytes")
     return 0
 
 

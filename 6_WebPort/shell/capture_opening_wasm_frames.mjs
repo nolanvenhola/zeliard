@@ -143,18 +143,32 @@ await page.evaluate(() => window.__zeliard._zeliard_init());
 let currentMs = 0;
 const log = [];
 
-for (const sample of schedule.samples) {
-  const targetMs = Number(sample.wasm_ms);
-  if (!Number.isFinite(targetMs) || targetMs < currentMs)
-    throw new Error(`schedule must be monotonic; got ${sample.wasm_ms}`);
+async function advanceRuntime(remainingMs) {
+  if (remainingMs <= 0)
+    return;
 
-  let remaining = Math.round(targetMs - currentMs);
-  while (remaining > 0) {
-    const step = Math.min(remaining, tickStepMs);
-    await page.evaluate(dt => window.__zeliard._zeliard_tick(dt), step);
-    currentMs += step;
-    remaining -= step;
-  }
+  /* Keep the exact fixed tick quantum, but run it in one page evaluation.
+   * A 15-minute capture otherwise performs ~90,000 Playwright round trips;
+   * that made the comparison process look hung after the WASM frame was
+   * already correct. */
+  await page.evaluate(({ remaining, quantum }) => {
+    const tick = window.__zeliard._zeliard_tick;
+    while (remaining > 0) {
+      const step = Math.min(remaining, quantum);
+      tick(step);
+      remaining -= step;
+    }
+  }, { remaining: remainingMs, quantum: tickStepMs });
+}
+
+for (const sample of schedule.samples) {
+  const targetMs = Number(sample.wasm_ms ?? sample.after_mcga_ms);
+  if (!Number.isFinite(targetMs) || targetMs < currentMs)
+    throw new Error(`schedule must be monotonic; got ${sample.wasm_ms ?? sample.after_mcga_ms}`);
+
+  const remaining = Math.round(targetMs - currentMs);
+  await advanceRuntime(remaining);
+  currentMs += remaining;
 
   const state = rawPpm ? await readFramebufferPpm() : await paintCanvas();
   const file = sample.file ||

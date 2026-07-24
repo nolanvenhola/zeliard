@@ -4,4 +4,8 @@ shell/node_modules/
 shell/dist/
 shell/public/assets/
 shell/public/engine/
+shell/public/hybrid/
+shell/hybrid-*.png
+tests/artifacts/hybrid_masm_reference/
+tests/artifacts/opening_masm_wasm_latest/
 *.log

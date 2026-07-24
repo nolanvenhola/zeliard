@@ -65,6 +65,46 @@ void zeliard_font_draw_char(const zeliard_font_t *font, int x, int y, u8 ch, u8 
     }
 }
 
+void zeliard_font_draw_mcga_alt_char(const zeliard_font_t *font,
+                                     int x, int y, u8 ch, u8 color_selector,
+                                     int cinematic_active) {
+    /* GMMCGA:27E9. OPDMO runs with gvar_cinematic_active set, so the base
+     * driver's palette-table lookup is replaced by the selector replicated
+     * into both nibbles. */
+    u8 color = cinematic_active
+        ? (u8)((color_selector << 4) | color_selector)
+        : color_selector;
+    zeliard_font_draw_char(font, x, y, ch, color);
+}
+
+void zeliard_font_draw_mcga_narration_stream(const zeliard_font_t *font,
+                                             int x, int y, const u8 *stream,
+                                             size_t max_len,
+                                             int cinematic_active) {
+    u8 color_selector = cinematic_active ? 7u : 1u;
+    int col = x;
+    int row = y;
+    if (!stream)
+        return;
+    for (size_t i = 0; i < max_len; i++) {
+        u8 value = stream[i];
+        if (value == 0xffu)
+            return;
+        if (value == 0x0du) {
+            row += 8;
+            col = x;
+            continue;
+        }
+        if (value & 0x80u) {
+            color_selector = (u8)(value & 7u);
+            continue;
+        }
+        zeliard_font_draw_mcga_alt_char(font, col, row, value,
+                                        color_selector, cinematic_active);
+        col += 8;
+    }
+}
+
 void zeliard_font_draw_text(const zeliard_font_t *font, int x, int y, const char *text, u8 color) {
     if (!text) return;
     int col = x;

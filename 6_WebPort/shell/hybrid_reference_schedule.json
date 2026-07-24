@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "clock": "Milliseconds after the first v86 320x200x8 mode event, not page navigation.",
+  "samples": [
+    { "id": "mcga_mode_enter", "after_mcga_ms": 0, "comparison": "anchor" },
+    { "id": "title_probe_0100", "after_mcga_ms": 100, "comparison": "animated_window" },
+    { "id": "title_probe_0200", "after_mcga_ms": 200, "comparison": "animated_window" },
+    { "id": "title_blit_fade", "after_mcga_ms": 300, "comparison": "exact", "alignment": "frame_state" },
+    { "id": "title_probe_0400", "after_mcga_ms": 400, "comparison": "animated_window" },
+    { "id": "title_probe_0500", "after_mcga_ms": 500, "comparison": "animated_window" },
+    { "id": "title_probe_0600", "after_mcga_ms": 600, "comparison": "animated_window" },
+    { "id": "title_probe_0700", "after_mcga_ms": 700, "comparison": "animated_window" },
+    { "id": "title_composed", "after_mcga_ms": 1500, "comparison": "animated_window" },
+    { "id": "amulet_probe_2800", "after_mcga_ms": 2800, "comparison": "exact", "alignment": "frame_state" },
+    { "id": "amulet_probe_2900", "after_mcga_ms": 2900, "comparison": "exact", "alignment": "frame_state" },
+    { "id": "amulet_fade_start", "after_mcga_ms": 3000, "comparison": "exact", "alignment": "frame_state" },
+    { "id": "amulet_probe_3100", "after_mcga_ms": 3100, "comparison": "exact", "alignment": "frame_state" },
+    { "id": "amulet_probe_3200", "after_mcga_ms": 3200, "comparison": "exact", "alignment": "frame_state" },
+    { "id": "amulet_prologue_scroll_start", "after_mcga_ms": 5000, "comparison": "exact", "alignment": "frame_state" },
+    { "id": "amulet_prologue_scroll_first_lines", "after_mcga_ms": 7000, "comparison": "exact", "alignment": "frame_state" },
+    { "id": "amulet_prologue_scroll_early", "after_mcga_ms": 10000, "comparison": "exact", "alignment": "frame_state" },
+    { "id": "amulet_prologue_scroll_mid", "after_mcga_ms": 15000, "comparison": "exact", "alignment": "frame_state" },
+    { "id": "amulet_prologue_scroll_late", "after_mcga_ms": 20000, "comparison": "exact", "alignment": "frame_state" }
+  ]
+}

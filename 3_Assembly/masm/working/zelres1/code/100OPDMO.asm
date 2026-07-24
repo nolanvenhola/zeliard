@@ -107,20 +107,20 @@ char_glyph_tbl	equ	94DDh		; character glyph/font table   (offset char_glyph_inde
 ; Must NOT shift with debug code additions.
 narration_stone_disp_fn	equ	202Ah	; cs:[narration_stone_scene+0Eh]
 jashiin_speech_disp_fn	equ	2000h	; cs:[jashiin_speech_2+80h]
-disp_game_fn_slot	equ	1E09h	; cs:[disp_game_fn]
-disp_data_6F59_slot	equ	1585h	; cs:[disp_data_6F59]
-disp_narr_chap2_slot	equ	1697h	; cs:[disp_narr_chap2]
-disp_chap2_call_slot	equ	1142h	; cs:[disp_chap2_call]
-disp_drv_seg_3_slot	equ	10DEh	; cs:[disp_drv_seg_3]
-disp_narr_chap3_slot	equ	2425h	; cs:[disp_narr_chap3]
-disp_narr_open_slot	equ	04FBh	; cs:[disp_narr_open]
-disp_set_drv_seg_slot	equ	10C2h	; cs:[disp_set_drv_seg]
-disp_font_inv_slot	equ	108Eh	; cs:[disp_font_inv]
-disp_data_7420_slot	equ	0A97h	; cs:[disp_data_7420]
-disp_narr_chap4_slot	equ	19D2h	; cs:[disp_narr_chap4]
-anim_fn_wipe_slot	equ	1A0Dh	; cs:[anim_fn_wipe]
-anim_fn_fade_slot	equ	1CB0h	; cs:[anim_fn_fade]
-anim_fn_draw_slot	equ	300Eh	; cs:[anim_fn_draw]
+disp_game_fn_slot	equ	3010h	; MCGA dispatch fn 8
+disp_data_6F59_slot	equ	3012h	; MCGA dispatch fn 9
+disp_narr_chap2_slot	equ	3014h	; MCGA dispatch fn 10
+disp_chap2_call_slot	equ	3016h	; MCGA dispatch fn 11
+disp_drv_seg_3_slot	equ	3018h	; MCGA dispatch fn 12
+disp_narr_chap3_slot	equ	301Ah	; MCGA dispatch fn 13
+disp_narr_open_slot	equ	301Ch	; MCGA dispatch fn 14
+disp_set_drv_seg_slot	equ	301Eh	; MCGA dispatch fn 15
+disp_font_inv_slot	equ	3020h	; MCGA dispatch fn 16
+disp_data_7420_slot	equ	3022h	; MCGA dispatch fn 17
+disp_narr_chap4_slot	equ	3030h	; MCGA dispatch fn 24
+anim_fn_wipe_slot	equ	300Ah	; MCGA dispatch fn 5
+anim_fn_fade_slot	equ	300Ch	; MCGA dispatch fn 6
+anim_fn_draw_slot	equ	300Eh	; MCGA dispatch fn 7
 ; Resource table refs — symbolic so debug builds stay valid when inline DBGSTR code shifts offsets.
 ; DBG_CHUNK_BASE = CHUNK_LOAD_BASE - 4 = 5FFCh accounts for the 4-byte SAR size header stripped
 ; by the AL=3 loader.  In release builds these evaluate to the original hardcoded values.
@@ -508,7 +508,6 @@ scene_after_anim:
 		call	timer_wait_loop
 		mov	ax,0C7h
 		mov	cx,64h
-
 scene_color_rotate_loop:
 							push	cx
 							mov	byte ptr ds:[gvar_frame_timer],0

@@ -200,7 +200,10 @@ static const u8 OPDMO_MCGA_PALETTE_REGS_MASM[10][48] ZEL_UNUSED = {
 static u8 dac_to_rgb(u8 value) {
     if (value > 0x3F)
         value = 0x3F;
-    return (u8)(value * 4u);
+    /* The original writes six-bit values directly to VGA DAC port 3C9h.
+     * Match the reference VGA proxy's bit expansion exactly: v86 retains
+     * the low DAC bit in both newly exposed low RGB bits. */
+    return (u8)((value << 2) | ((value & 1u) ? 3u : 0u));
 }
 
 void palette_set_scene(palette_scene_t scene) {
@@ -245,15 +248,38 @@ void palette_set_opdmo_mcga_with_rgb0(u16 ax, u8 r0, u8 g0, u8 b0) {
     base_copy[0] = r0;
     base_copy[1] = g0;
     base_copy[2] = b0;
-    const u8 *base = base_copy;
+    palette_set_opdmo_mcga_from_regs(base_copy);
+}
+
+void palette_set_opdmo_mcga_from_regs_with_rgb0(const u8 regs[48],
+                                                u8 r0, u8 g0, u8 b0) {
+    if (!regs) {
+        memset(g_palette, 0, sizeof(g_palette));
+        return;
+    }
+
+    u8 regs_copy[48];
+    memcpy(regs_copy, regs, sizeof(regs_copy));
+    regs_copy[0] = r0;
+    regs_copy[1] = g0;
+    regs_copy[2] = b0;
+    palette_set_opdmo_mcga_from_regs(regs_copy);
+}
+
+void palette_set_opdmo_mcga_from_regs(const u8 regs[48]) {
+    if (!regs) {
+        memset(g_palette, 0, sizeof(g_palette));
+        return;
+    }
+
     for (int row = 0; row < 16; row++) {
-        u8 bias_r = base[row * 3 + 0];
-        u8 bias_g = base[row * 3 + 1];
-        u8 bias_b = base[row * 3 + 2];
+        u8 bias_r = regs[row * 3 + 0];
+        u8 bias_g = regs[row * 3 + 1];
+        u8 bias_b = regs[row * 3 + 2];
         for (int col = 0; col < 16; col++) {
-            u8 r = (u8)(base[col * 3 + 0] + bias_r);
-            u8 g = (u8)(base[col * 3 + 1] + bias_g);
-            u8 b = (u8)(base[col * 3 + 2] + bias_b);
+            u8 r = (u8)(regs[col * 3 + 0] + bias_r);
+            u8 g = (u8)(regs[col * 3 + 1] + bias_g);
+            u8 b = (u8)(regs[col * 3 + 2] + bias_b);
             g_palette[row * 16 + col] =
                 (palette_color_t){dac_to_rgb(r), dac_to_rgb(g), dac_to_rgb(b)};
         }

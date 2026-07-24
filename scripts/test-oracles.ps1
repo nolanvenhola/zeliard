@@ -6,6 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $RepoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
+$Python = (Get-Command python -ErrorAction Stop).Source
 
 function Invoke-Step {
     param(
@@ -29,27 +30,28 @@ function Invoke-Step {
 
 Invoke-Step "MASM behavior oracle gate" `
     (Join-Path $RepoRoot "3_Assembly\masm\functest") `
-    { py -3.13 run.py --ci }
+    { & $Python -u run.py --ci }
 
 Invoke-Step "MASM opening trace contract" `
     $RepoRoot `
     {
-        py -3.13 3_Assembly\masm\functest\opdemo_trace.py `
+        & $Python -u 3_Assembly\masm\functest\opdemo_trace.py `
             --check 6_WebPort\tests\golden\opdemo_reference_trace.json
-        py -3.13 3_Assembly\masm\functest\opdemo_input_contract.py `
+        & $Python -u 3_Assembly\masm\functest\opdemo_input_contract.py `
             --check 6_WebPort\tests\golden\opdemo_input_contract.json
-        py -3.13 6_WebPort\tests\opdemo_scanline_contract.py `
+        & $Python -u 6_WebPort\tests\opdemo_scanline_contract.py `
             --check 6_WebPort\tests\golden\opdemo_scanline_contract.json
-        py -3.13 6_WebPort\tests\opdemo_frame_contract.py `
+        & $Python -u 6_WebPort\tests\opdemo_frame_contract.py `
             --check 6_WebPort\tests\golden\opdemo_frame_contract.json
     }
 
 Invoke-Step "Web manifest JSON validation" `
     $RepoRoot `
     {
-        py -3.13 -m json.tool 6_WebPort\tests\gameplay_oracle_manifest.json > $null
-        py -3.13 -m json.tool 6_WebPort\tests\zeliad_loader_oracle_manifest.json > $null
-        py -3.13 6_WebPort\tests\parity_opening_oracle.py
+        & $Python -m json.tool 6_WebPort\tests\gameplay_oracle_manifest.json > $null
+        & $Python -m json.tool 6_WebPort\tests\zeliad_loader_oracle_manifest.json > $null
+        & $Python -u 6_WebPort\tests\parity_opening_oracle.py
+        & $Python -u 6_WebPort\tests\audit_opening_low_level_contracts.py
     }
 
 if (-not $SkipNative) {
@@ -60,7 +62,11 @@ if (-not $SkipNative) {
             if ($OpeningOnly) {
                 $nativeArgs += "-OpeningOnly"
             }
-            powershell @nativeArgs
+            # Native parity emits diagnostic warnings on stderr even when its
+            # canonical VERDICT and process exit code are PASS. Merge streams
+            # before the outer Stop policy handles them, then let Invoke-Step
+            # judge the actual child exit code.
+            & powershell @nativeArgs 2>&1 | ForEach-Object { Write-Host $_ }
         }
 }
 

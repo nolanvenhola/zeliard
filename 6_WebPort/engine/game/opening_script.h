@@ -64,4 +64,9 @@ zeliard_script_stop_t zeliard_opening_script_run(zeliard_opening_script_state_t 
                                                  const u8 advances[96],
                                                  size_t max_steps);
 
+/* Exact run_script_interpreter timer budget: every normal fetch waits AL=10h;
+ * F5/F6 add one/three AL=F0h waits; 80h/90h portrait controls refetch without
+ * the next AL=10h wait. */
+u32 zeliard_opening_script_timer_ticks(const u8 *script, size_t script_size);
+
 #endif

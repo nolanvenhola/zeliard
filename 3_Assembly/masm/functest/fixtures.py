@@ -41,6 +41,9 @@ BIN_PATHS: dict[str, tuple[Path, int]] = {
     'eai1':   (FLAT / 'ZELRES3' / 'EAI1.BIN',    0xA000),
     'gmmcga': (FLAT / 'ZELRES1' / 'gmmcga.bin',  0x2000),
     'gdmcga': (FLAT / 'ZELRES1' / 'gdmcga.bin',  0x3000),
+    # Rebuilt MCGA graphics driver.  Its SAR header is deliberately loaded
+    # at 2FFCh, so file offset 4 is CPU address 3000h.
+    'gdmca':  (BIN / 'zelres1' / '105GDMCA.bin',  0x2FFC),
     'gfmcga': (FLAT / 'ZELRES2' / 'gfmcga.bin',  0x3000),
     'gtmcga': (FLAT / 'ZELRES1' / 'gtmcga.bin',  0x3000),
     'ckpd':   (FLAT / 'ZELRES2' / 'CKPD.BIN',    0x0100),
@@ -101,6 +104,7 @@ def _lst_path_for(chunk_label: str) -> Path:
         'crab':   '309CRAB',
         'eai1':   '301EAI1',
         'gmmcga': 'gmmcga',
+        'gdmca':  '105GDMCA',
         'gmega':  'gmega',
         'gmcga':  'gmcga',
         'gmhgc':  'gmhgc',

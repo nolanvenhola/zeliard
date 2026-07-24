@@ -11,7 +11,7 @@
       "id": "capture_start_amulet_black",
       "description": "First captured frame: black screen immediately before the amulet/prologue text appears.",
       "video_sec": 0.0,
-      "wasm_ms": 2890,
+      "wasm_ms": 1360,
       "phase": 1,
       "phase_id": "amulet_ancient_prologue_scroll",
       "confidence": "high",
@@ -21,13 +21,14 @@
         "masm_manifest": "6_WebPort/tests/opening_sequence_manifest.json#amulet_ancient_prologue_scroll"
       },
       "comparison_defaults": {
-        "start_ms": 2890,
+        "start_ms": 1360,
         "duration_sec": 874,
         "fps": 0.2,
         "max_samples": 0
       },
       "notes": [
         "This is the primary capture-origin anchor.",
+        "Frame sweep against the normalized 320x200 capture matched WASM 1360-1430 ms (RMSE 6.35); 1360 ms is the first matching frame and preserves that the recording began slightly into the first MCGA pass.",
         "It intentionally skips the current web-port copyright/title phase because the captured video begins just before the amulet phase."
       ]
     },
@@ -35,7 +36,7 @@
       "id": "rain_princess_first_full_frame",
       "description": "First visible princess/rain story glyph ('O') in exact MP4 extraction.",
       "video_sec": 271.8,
-      "wasm_ms": 182462,
+      "wasm_ms": 185012,
       "phase": 3,
       "phase_id": "rain_princess_story_start",
       "confidence": "medium",
@@ -47,15 +48,186 @@
         "masm_manifest": "6_WebPort/tests/opening_sequence_manifest.json#rain_princess_story_start"
       },
       "comparison_defaults": {
-        "start_ms": 182462,
+        "start_ms": 185012,
         "duration_sec": 12,
         "fps": 18.2065,
         "max_samples": 220
       },
       "notes": [
         "This is a local alignment anchor, not proof the earlier phase durations are correct.",
-        "Updated to the current MASM-tick-derived C runtime timeline near phase 3 start; 182462ms is the first stable phase-3 comparison sample after the credits tail.",
+        "Adjusted by -450ms after the rain-to-sand boundary comparison showed the prior anchor made the MASM-timed C phase handoff appear early.",
+        "Adjusted by +3000ms after the script-1 asset was corrected to the MASM runtime 79C6h start, including the leading 'P' draw and 743 short waits.",
         "Use it to compare the princess/rain section and nearby rain-to-sand transition while preserving the fact that the source video starts mid-opening."
+      ]
+    },
+    {
+      "id": "rain_sand_text_band",
+      "description": "Rain-to-sand narration line aligned by the normalized story text band.",
+      "video_sec": 360.1,
+      "wasm_ms": 273012,
+      "phase": 4,
+      "phase_id": "rain_turns_to_sand",
+      "confidence": "medium",
+      "evidence": {
+        "comparison_summary": "6_WebPort/tests/comparison/rain_sand_text_region_probe_y150/wasm_timeline/summary.json",
+        "contact_sheet": "6_WebPort/tests/comparison/rain_sand_text_region_probe_y150/wasm_timeline/offset_probe_contact/sheet_0002_00273012_local_best.png",
+        "compare_region": "0:150:320:15",
+        "local_offset_ms": 300,
+        "masm_manifest": "6_WebPort/tests/opening_sequence_manifest.json#rain_turns_to_sand"
+      },
+      "comparison_defaults": {
+        "start_ms": 272000,
+        "duration_sec": 12,
+        "fps": 18.2065,
+        "max_samples": 220
+      },
+      "notes": [
+        "This is a local rain/sand section anchor for video workbench comparisons.",
+        "It is based on a corrected normalized 320x200 region comparison; the older --crop option only trims the DOSBox window capture.",
+        "Native parity for the underlying WAKU+AME AX=9 index framebuffer is still governed by the MASM MCGA render oracle."
+      ]
+    },
+    {
+      "id": "jashiin_apparition_face",
+      "description": "Jashiin apparition frame after MASM script-3 -> AL=4 blend delay -> disp_data_7420 AL=7 ordering.",
+      "video_sec": 436.6,
+      "wasm_ms": 348312,
+      "phase": 5,
+      "phase_id": "jashiin_curses_princess",
+      "confidence": "medium",
+      "evidence": {
+        "comparison_summary": "6_WebPort/tests/comparison/phase5_jashiin_post_blend_probe/wasm_timeline/summary.json",
+        "contact_sheet": "6_WebPort/tests/comparison/phase5_jashiin_post_blend_probe/wasm_timeline/offset_probe_contact/sheet_0004_00348312_local_best.png",
+        "local_offset_ms": 1200,
+        "masm_reference": "100OPDMO.asm: after post-title script 3, busy_wait_delay AL=4, apply_palette_blend, BLIT_SCENE_FRAME, scripts 4/5, then disp_data_7420 AL=7 BX=1728 CX=2230"
+      },
+      "comparison_defaults": {
+        "start_ms": 346000,
+        "duration_sec": 12,
+        "fps": 18.2065,
+        "max_samples": 220
+      },
+      "notes": [
+        "This is a local visual-workbench anchor. It does not override native MASM oracle hashes for phase 5.",
+        "Created after replacing the previous synthetic apparition reveal interval with the MASM AL=4 blend-delay ordering."
+      ]
+    },
+    {
+      "id": "guardian_isi_revealed",
+      "description": "King/guardian-spirit section after the MASM-ordered ISI reveal is visible.",
+      "video_sec": 459.8,
+      "wasm_ms": 371512,
+      "phase": 6,
+      "phase_id": "king_grief_and_guardian_spirit",
+      "confidence": "medium",
+      "evidence": {
+        "comparison_summary": "6_WebPort/tests/comparison/phase6_guardian_transition_after_isi_reorder/wasm_timeline/summary.json",
+        "contact_sheet": "6_WebPort/tests/comparison/phase6_guardian_transition_after_isi_reorder/wasm_timeline/contact/sheet_0009_00371512.png",
+        "masm_reference": "100OPDMO.asm: LOAD isi.grp, DECOMPRESS_VGA scene_framebuf, gfx_mode_fn BX=0410 CX=4868 before post-title script 8"
+      },
+      "comparison_defaults": {
+        "start_ms": 370000,
+        "duration_sec": 12,
+        "fps": 18.2065,
+        "max_samples": 220
+      },
+      "notes": [
+        "This anchor is local to phase 6. The preceding transition still shows capture/timeline drift, so do not propagate this backwards."
+      ]
+    },
+    {
+      "id": "duke_oui_overlay_first_glyph",
+      "description": "Duke/OUI overlay visible with the first script glyph after the MASM-timed ISI post-script8 blit.",
+      "video_sec": 481.0,
+      "wasm_ms": 392712,
+      "phase": 6,
+      "phase_id": "king_grief_and_guardian_spirit",
+      "confidence": "medium",
+      "evidence": {
+        "comparison_summary": "6_WebPort/tests/comparison/phase6_isi_to_oui_after_post_script8_blit/wasm_timeline/summary.json",
+        "contact_sheet": "6_WebPort/tests/comparison/phase6_isi_to_oui_after_post_script8_blit/wasm_timeline/contact/sheet_0008_00392712.png",
+        "masm_reference": "100OPDMO.asm: after post-title script 9, LOAD oui.grp, DECOMPRESS_VGA scene_framebuf, gfx_update_fn AL=0 BX=0410 CX=4868 DI=scene_framebuf, then post-title script 10"
+      },
+      "comparison_defaults": {
+        "start_ms": 392000,
+        "duration_sec": 12,
+        "fps": 18.2065,
+        "max_samples": 220
+      },
+      "notes": [
+        "This anchor is for visual-workbench continuity after the ISI/OUI transition. Native MASM service traces remain authoritative for the actual call order."
+      ]
+    },
+    {
+      "id": "sei_guardian_revealed",
+      "description": "SEI guardian image revealed after the MASM disp_data_7420 AL=5 call.",
+      "video_sec": 503.5,
+      "wasm_ms": 415212,
+      "phase": 6,
+      "phase_id": "king_grief_and_guardian_spirit",
+      "confidence": "medium",
+      "evidence": {
+        "comparison_summary": "6_WebPort/tests/comparison/phase6_oui_to_sei_probe/wasm_timeline/summary.json",
+        "contact_sheet": "6_WebPort/tests/comparison/phase6_oui_to_sei_probe/wasm_timeline/contact/sheet_0007_00415212.png",
+        "masm_reference": "100OPDMO.asm: LOAD sei.grp, DECOMPRESS_VGA scene_framebuf, disp_data_7420 AL=5 BX=1610 CX=2468, then post-title script 12"
+      },
+      "comparison_defaults": {
+        "start_ms": 414000,
+        "duration_sec": 12,
+        "fps": 18.2065,
+        "max_samples": 220
+      },
+      "notes": [
+        "The local video shows the striped reveal slightly earlier than the MASM-timed C path, but the revealed frame geometry and palette are structurally aligned."
+      ]
+    },
+    {
+      "id": "yuu1_labyrinth_first_glyph",
+      "description": "YUU1/labyrinth scene visible at the first text glyph.",
+      "video_sec": 625.2,
+      "wasm_ms": 534912,
+      "phase": 7,
+      "phase_id": "yuu1_jashiin_labyrinths",
+      "confidence": "medium",
+      "evidence": {
+        "comparison_summary": "6_WebPort/tests/comparison/phase7_yuu1_transition_probe/wasm_timeline/summary.json",
+        "contact_sheet": "6_WebPort/tests/comparison/phase7_yuu1_transition_probe/wasm_timeline/offset_probe_contact/sheet_0006_00534912_local_best.png",
+        "local_offset_ms": 2000,
+        "masm_reference": "100OPDMO.asm: LOAD yuu1.grp, DECOMPRESS_VGA scene_framebuf, GFX_BLIT 410h 4868h scene_framebuf, then LOAD yuup.grp/oup.grp before post-title script 14"
+      },
+      "comparison_defaults": {
+        "start_ms": 534000,
+        "duration_sec": 12,
+        "fps": 18.2065,
+        "max_samples": 220
+      },
+      "notes": [
+        "This is a local phase-7 anchor. The large offset from the SEI anchor is tracked as video-workbench drift unless contradicted by MASM oracle timing."
+      ]
+    },
+    {
+      "id": "title_handoff_full_border",
+      "description": "Title handoff frame with the decorative border substantially revealed by the GDMCGA 37B4 scanline loop.",
+      "video_sec": 112.8,
+      "wasm_ms": 105783,
+      "phase": 22,
+      "phase_id": "title_logo_color_rotation",
+      "confidence": "medium",
+      "evidence": {
+        "native_sweep": "6_WebPort/tests/comparison/title_handoff_native_sweep/sweep/summary.json",
+        "native_preview": "6_WebPort/tests/comparison/title_handoff_native_sweep/sweep/title_handoff_p22_036500.png",
+        "video_preview": "6_WebPort/tests/comparison/title_handoff_native_sweep/sweep/title_handoff_ref.png",
+        "masm_reference": "100OPDMO title handoff: three WAIT F0 spans, ttl1 MCGA update, then 100 calls through disp_set_drv_seg_slot to 105GDMCA:37B4"
+      },
+      "comparison_defaults": {
+        "start_ms": 101000,
+        "duration_sec": 12,
+        "fps": 18.2065,
+        "max_samples": 220
+      },
+      "notes": [
+        "This is a local title-window visual anchor. Do not use it as proof that earlier phase durations are correct.",
+        "The broader amulet-to-rain two-anchor scale intentionally compensates for still-imperfect earlier sections and maps this title window too early in phase 22."
       ]
     }
   ]

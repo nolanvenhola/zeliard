@@ -44,7 +44,7 @@ static int write_pgm_indices(const char *path) {
 
 int main(int argc, char **argv) {
     if (argc < 4 || argc > 12) {
-        fprintf(stderr, "usage: %s <opening_phase_id> <elapsed_ms> <out.ppm|out.pgm> [--indices] [--timeline] [--stats] [--yuu-variant N] [--dmaou-mode N] [--scene N] [--late N]\n", argv[0]);
+        fprintf(stderr, "usage: %s <opening_phase_id> <elapsed_ms> <out.ppm|out.pgm> [--indices] [--timeline] [--stats] [--yuu-variant N] [--title-variant N] [--dmaou-mode N] [--ame-mode N] [--scene N] [--late N]\n", argv[0]);
         return 2;
     }
 
@@ -53,7 +53,9 @@ int main(int argc, char **argv) {
     const char *out_path = argv[3];
     int raw_indices = 0;
     int yuu_variant = 0;
+    int title_variant = 0;
     int dmaou_mode = -1;
+    int ame_mode = -1;
     int scene_idx = -1;
     int late_idx = -1;
     int timeline = 0;
@@ -67,8 +69,12 @@ int main(int argc, char **argv) {
             stats = 1;
         } else if (strcmp(argv[i], "--yuu-variant") == 0 && i + 1 < argc) {
             yuu_variant = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--title-variant") == 0 && i + 1 < argc) {
+            title_variant = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--dmaou-mode") == 0 && i + 1 < argc) {
             dmaou_mode = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--ame-mode") == 0 && i + 1 < argc) {
+            ame_mode = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--scene") == 0 && i + 1 < argc) {
             scene_idx = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--late") == 0 && i + 1 < argc) {
@@ -80,8 +86,10 @@ int main(int argc, char **argv) {
     }
 
     opening_set_dmaou_apparition_mode_for_test(dmaou_mode);
+    opening_set_ame_render_mode_for_test(ame_mode);
     opening_init();
     opening_set_yuu_plane_variant_for_test(yuu_variant);
+    opening_set_title_tilemap_variant_for_test(title_variant);
     if (timeline) {
         u32 current_ms = 0;
         while (current_ms < elapsed_ms) {
@@ -100,8 +108,10 @@ int main(int argc, char **argv) {
     else
         opening_render_phase_for_test(phase, elapsed_ms);
     if (stats) {
+        unsigned int index_count[256] = {0};
         int nonzero = 0;
         for (int i = 0; i < ZELIARD_FB_SIZE; i++) {
+            index_count[g_framebuf[i]]++;
             if (g_framebuf[i] != 0)
                 nonzero++;
         }
@@ -109,6 +119,13 @@ int main(int argc, char **argv) {
                 "stats requested_phase=%d requested_elapsed=%u phase=%d phase_elapsed=%u rgb_active=%d nonzero=%d\n",
                 phase, elapsed_ms, opening_phase_id(), opening_phase_elapsed_ms(),
                 g_rgb_framebuf_active, nonzero);
+        for (int index = 0; index < 256; index++) {
+            if (index_count[index] == 0)
+                continue;
+            palette_color_t c = g_palette[index];
+            fprintf(stderr, "palette index=%u count=%u rgb=%u,%u,%u\n",
+                    index, index_count[index], c.r, c.g, c.b);
+        }
     }
     return (raw_indices ? write_pgm_indices(out_path) : write_ppm(out_path)) ? 0 : 1;
 }

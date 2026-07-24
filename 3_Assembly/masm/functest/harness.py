@@ -53,6 +53,7 @@ FLAG_OF = 0x0800
 CODE_SEG  = 0x1000   # linear 0x10000
 DATA_SEG  = 0x3000   # linear 0x30000
 STACK_SEG = 0x5000   # linear 0x50000
+VGA_SEG   = 0xA000   # linear 0xA0000 (mode 13h framebuffer)
 STACK_TOP = 0xFFFE   # initial SP within stack segment
 
 # Sentinel address pushed as the return address. When IP reaches this, the
@@ -75,6 +76,7 @@ class TasmHarness:
         self.mu.mem_map(CODE_SEG  << 4, 0x10000, UC_PROT_ALL)
         self.mu.mem_map(DATA_SEG  << 4, 0x10000, UC_PROT_ALL)
         self.mu.mem_map(STACK_SEG << 4, 0x10000, UC_PROT_ALL)
+        self.mu.mem_map(VGA_SEG   << 4, 0x10000, UC_PROT_ALL)
 
         # Pre-fill the entire code segment with NOPs (0x90).  This means a
         # function's RET landing on an unmapped sentinel can't walk into
@@ -94,6 +96,14 @@ class TasmHarness:
 
     def read_data(self, offset, length):
         return bytes(self.mu.mem_read((DATA_SEG << 4) + offset, length))
+
+    def write_vga(self, offset, raw_bytes):
+        """Write raw bytes to the emulated mode 13h framebuffer."""
+        self.mu.mem_write((VGA_SEG << 4) + offset, bytes(raw_bytes))
+
+    def read_vga(self, offset, length):
+        """Read raw bytes from the emulated mode 13h framebuffer."""
+        return bytes(self.mu.mem_read((VGA_SEG << 4) + offset, length))
 
     def write_code(self, offset, raw_bytes):
         """Write raw bytes to CS:offset.  Useful for installing far-call
@@ -187,7 +197,9 @@ class TasmHarness:
     # ---------- function call ------------------------------------------
     def call_function(self, func_addr, regs=None, stub_calls=None,
                       max_steps=10000, trace=False,
-                      watch_reads=None, watch_writes=None):
+                      watch_reads=None, watch_writes=None,
+                      timer_pulse_ips=None, timer_pulse_value=0x0C,
+                      watch_code_ips=None, watch_port_outs=None):
         """Call the function at CPU address `func_addr`. Returns a dict.
 
         regs: dict of register-name -> value (e.g. {'si': 0x1000, 'ax': 0}).
@@ -202,6 +214,14 @@ class TasmHarness:
                      gets a list of (offset, ip) tuples whenever code reads
                      one of these.  Used to detect 'is anyone reading [9Ch]?'
         watch_writes: same shape for write detection.
+        timer_pulse_ips: optional CS offsets where the deterministic timer
+                     proxy sets CS:FF1A.  This models a hardware tick without
+                     patching the code under test.
+        watch_code_ips: optional CS offsets whose entry registers are recorded
+                     in result['code_hits'].
+        watch_port_outs: optional iterable of I/O port numbers.  OUT
+                     instructions targeting one of them are recorded in
+                     result['port_outs'] before the instruction executes.
         """
         regs = regs or {}
         stub_calls = stub_calls or {}
@@ -244,17 +264,56 @@ class TasmHarness:
             'trace':          [] if trace else None,
             'reads_observed': [] if watch_reads is not None else None,
             'writes_observed': [] if watch_writes is not None else None,
+            'port_outs': [] if watch_port_outs is not None else None,
         }
         watch_read_set  = set(watch_reads or [])
         watch_write_set = set(watch_writes or [])
+        timer_pulse_set = set(timer_pulse_ips or [])
+        watch_code_set = set(watch_code_ips or [])
+        watch_port_out_set = set(watch_port_outs or [])
 
         def hook_code(uc, addr, size, _ud):
             state['instructions'] += 1
             state['last_ip'] = addr
+            ip_only = addr - (CODE_SEG << 4)
             if trace:
                 state['trace'].append((addr, size))
+            if watch_port_out_set:
+                op = bytes(uc.mem_read(addr, min(size, 2)))
+                dx = uc.reg_read(UC_X86_REG_DX) & 0xFFFF
+                ax = uc.reg_read(UC_X86_REG_AX) & 0xFFFF
+                port = value = width = None
+                if op[0] == 0xEE:       # OUT DX, AL
+                    port, value, width = dx, ax & 0xFF, 1
+                elif op[0] == 0xEF:     # OUT DX, AX
+                    port, value, width = dx, ax, 2
+                elif len(op) > 1 and op[0] == 0xE6:  # OUT imm8, AL
+                    port, value, width = op[1], ax & 0xFF, 1
+                elif len(op) > 1 and op[0] == 0xE7:  # OUT imm8, AX
+                    port, value, width = op[1], ax, 2
+                if port in watch_port_out_set:
+                    state['port_outs'].append({
+                        'ip': ip_only,
+                        'instruction': state['instructions'],
+                        'port': port,
+                        'value': value,
+                        'width': width,
+                    })
             # Stop if we've returned to sentinel
-            ip_only = addr - (CODE_SEG << 4)
+            if ip_only in watch_code_set:
+                state.setdefault("code_hits", []).append({
+                    "ip": ip_only,
+                    "ax": uc.reg_read(UC_X86_REG_AX) & 0xFFFF,
+                    "bx": uc.reg_read(UC_X86_REG_BX) & 0xFFFF,
+                    "cx": uc.reg_read(UC_X86_REG_CX) & 0xFFFF,
+                    "dx": uc.reg_read(UC_X86_REG_DX) & 0xFFFF,
+                    "si": uc.reg_read(UC_X86_REG_SI) & 0xFFFF,
+                    "di": uc.reg_read(UC_X86_REG_DI) & 0xFFFF,
+                })
+            if ip_only in timer_pulse_set:
+                self.mu.mem_write((CODE_SEG << 4) + 0xFF1A,
+                                  bytes([timer_pulse_value & 0xFF]))
+                state["timer_pulses"] = state.get("timer_pulses", 0) + 1
             if ip_only == RET_SENTINEL:
                 state['stopped_reason'] = 'returned_to_sentinel'
                 uc.emu_stop()
@@ -418,4 +477,7 @@ class TasmHarness:
             'writes_observed':  state['writes_observed'],
             'stubs_fired':      state.get('stubs_fired', []),
             'stub_regs':        state.get('stub_regs', []),
+            'timer_pulses':     state.get('timer_pulses', 0),
+            'code_hits':        state.get('code_hits', []),
+            'port_outs':        state['port_outs'],
         }

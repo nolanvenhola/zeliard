@@ -188,3 +188,33 @@ zeliard_script_stop_t zeliard_opening_script_run(zeliard_opening_script_state_t 
     state->stop = ZELIARD_SCRIPT_STOP_LIMIT;
     return state->stop;
 }
+
+u32 zeliard_opening_script_timer_ticks(const u8 *script, size_t script_size) {
+    u32 ticks = 0;
+    int wait_before_fetch = 1;
+
+    if (!script)
+        return 0;
+
+    for (size_t pc = 0; pc < script_size;) {
+        if (wait_before_fetch)
+            ticks += 0x10;
+        wait_before_fetch = 1;
+
+        const u8 ch = script[pc++];
+        if ((ch & 0x80u) == 0)
+            continue;
+        if (ch == ZELIARD_SCRIPT_SCR_END_SCRIPT ||
+            ch == ZELIARD_SCRIPT_SCR_BREAK)
+            break;
+        if ((ch & 0xF0u) == 0x80u || (ch & 0xF0u) == 0x90u) {
+            wait_before_fetch = 0;
+            continue;
+        }
+        if (ch == ZELIARD_SCRIPT_SCR_WAIT)
+            ticks += 0xF0;
+        else if (ch == ZELIARD_SCRIPT_SCR_WAIT3)
+            ticks += 3u * 0xF0u;
+    }
+    return ticks;
+}

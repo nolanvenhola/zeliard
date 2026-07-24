@@ -3,9 +3,12 @@
 
 #include "../core/types.h"
 #include <stddef.h>
+#include <stdint.h>
+#include <stdint.h>
 
-/* Opening cinematic state machine derived from run_opening_demo_main.
- * MASM oracle contracts define the phase order and input-routing behavior.
+/* Opening cinematic state machine mechanically derived from MASM
+ * run_opening_demo_main. MASM bytes, source, and oracle traces are the sole
+ * authority for phase order, timing, rendering, and input routing.
  */
 
 void opening_init(void);     /* pre-decode all opening images */
@@ -20,8 +23,17 @@ u32  opening_nec_hou_sprite_debug_slots(void); /* debug: eight 4-bit signed slot
 void opening_set_phase_for_test(int phase); /* native parity/debug hook */
 void opening_render_phase_for_test(int phase, u32 elapsed_ms); /* render exact phase-local time */
 void opening_set_yuu_plane_variant_for_test(int variant); /* native parity/debug hook */
+void opening_set_title_tilemap_variant_for_test(int variant); /* native parity/debug hook */
 void opening_set_dmaou_apparition_mode_for_test(int mode); /* native parity/debug hook */
+void opening_set_ame_render_mode_for_test(int mode); /* native parity/debug hook */
 void opening_render_cached_scene_for_test(int scene_idx); /* native parity/debug hook */
+uint64_t opening_debug_busy_wait_delay_fixture_hash(u8 al); /* MASM memory-fixture hook */
+uint64_t opening_debug_hime_dmaou_blend_ranges_hash(size_t *nonzero); /* MASM plane fixture */
+uint64_t opening_debug_hime_dmaou_blend_frame_hash(size_t *nonzero); /* MASM MCGA fixture */
+uint64_t opening_debug_hime_dmaou_ext_hash(size_t *nonzero); /* MASM ES scratch fixture */
+uint64_t opening_debug_dmaou_apparition_frame_hash(size_t *nonzero); /* MASM 3C1C fixture */
+uint64_t opening_debug_dmaou_post_busy_ext_hash(u8 al, size_t *nonzero);
+uint64_t opening_debug_dmaou_post_busy_frame_hash(u8 al, size_t *nonzero);
 
 typedef enum {
     OPENING_DEBUG_LATE_MAOP_REVEAL_STEP_00 = 0,
@@ -35,6 +47,26 @@ typedef enum {
     OPENING_DEBUG_LATE_WAKU_HIME_AX6 = 8,
     OPENING_DEBUG_LATE_WAKU_ISI_AX7 = 9,
     OPENING_DEBUG_LATE_MAOP_SCRIPT_AREA = 10,
+    OPENING_DEBUG_LATE_OUI_GFX_UPDATE_FULL = 11,
+    OPENING_DEBUG_LATE_SEI_3C1C_PASS_01 = 12,
+    OPENING_DEBUG_LATE_SEI_3C1C_PASS_02 = 13,
+    OPENING_DEBUG_LATE_SEI_3C1C_PASS_04 = 14,
+    OPENING_DEBUG_LATE_SEI_3C1C_PASS_08 = 15,
+    /* Direct 105GDMCA:38E6 fixtures.  Keep these independent of the
+     * scene player so the native test can compare the complete driver call
+     * against its MASM framebuffer oracle. */
+    OPENING_DEBUG_LATE_DISP_LOAD_AX06_FULL = 16,
+    OPENING_DEBUG_LATE_DISP_LOAD_AX08_FULL = 17,
+    OPENING_DEBUG_LATE_DISP_LOAD_AX0F_FULL = 18,
+    OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_24 = 19,
+    OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_48 = 20,
+    OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_72 = 21,
+    OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_120 = 22,
+    OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_144 = 23,
+    OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_168 = 24,
+    OPENING_DEBUG_DISP_LOAD_SETUP_RECT_YUU_LEFT = 25,
+    OPENING_DEBUG_DISP_LOAD_SETUP_RECT_YUU_RIGHT = 26,
+    OPENING_DEBUG_DISP_LOAD_SETUP_RECT_MAOP = 27,
 } opening_debug_late_frame_t;
 
 void opening_debug_render_late_frame(opening_debug_late_frame_t frame);
@@ -96,6 +128,15 @@ typedef struct {
 } opening_scanline_summary_t;
 
 typedef struct {
+    size_t rendered_draws;
+    size_t stream_pos;
+    u16 exit_frame;
+    u8 finished;
+    uint64_t visible_hash;
+    uint64_t work_hash;
+} opening_scanline_runtime_summary_t;
+
+typedef struct {
     size_t script_bytes_consumed;
     size_t chapter2_call_count;
     size_t glyph_count;
@@ -107,6 +148,9 @@ typedef struct {
     u8 after_explicit_calls_wait;
     u8 explicit_chapter2_al[2];
     u16 explicit_chapter2_bx;
+    u16 final_render_state_a;
+    u8 final_render_state_b;
+    u8 final_volume_b;
 } opening_sprite_b_summary_t;
 
 typedef struct {
@@ -166,6 +210,14 @@ typedef struct {
 typedef struct {
     size_t iterations;
     size_t disp_set_call_count;
+    u16 disp_sprite_slot;
+    u16 disp_sprite_target;
+    u8 disp_sprite_writes_palette;
+    u8 disp_sprite_object_count;
+    u8 disp_sprite_record_size;
+    u8 disp_sprite_scratch_size;
+    u8 disp_sprite_source_stride;
+    u8 disp_sprite_row_count;
     size_t wait_count;
     u8 wait_al;
     u8 first_disp_set_al[6];
@@ -278,12 +330,16 @@ typedef struct {
 size_t opening_scene_sprite_c_events(opening_sprite_event_t *out, size_t max_events);
 opening_sprite_a_summary_t opening_scene_sprite_a_summary(void);
 void opening_render_sprite_a_frame_for_test(int frame_index);
+size_t opening_debug_scene_sprite_a_object_table(u8 *out, size_t max_bytes);
 size_t opening_scene_sprite_a_frame_table(opening_sprite_a_frame_table_entry_t *out,
                                           size_t max_entries);
 size_t opening_scene_sprite_a_frame_trace(opening_sprite_a_frame_state_t *out,
                                           size_t max_frames);
 opening_scanline_summary_t opening_scanline_summary(void);
 opening_scanline_summary_t opening_credits_summary(void);
+opening_scanline_runtime_summary_t opening_amulet_scanline_runtime_summary(void);
+opening_scanline_runtime_summary_t opening_credits_scanline_runtime_summary(void);
+opening_scanline_runtime_summary_t opening_final_scanline_runtime_summary(void);
 opening_sprite_b_summary_t opening_scene_sprite_b_summary(void);
 size_t opening_title_asset_reload_trace(opening_title_asset_event_t *out, size_t max_events);
 opening_title_asset_summary_t opening_title_asset_summary(void);

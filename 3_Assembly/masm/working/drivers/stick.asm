@@ -1368,7 +1368,9 @@ scan_done:
 
 scan_data_lbl	label	word		; anchor for scan_buf_ptr EQU computation
 		db	51 dup (0)		; zero-initialized; written at runtime by scan_savefile_dir
-		; INT 60h sub-function dispatch body (INT 60h handler; accessed via INT 60h vector):
+		; Loader/save-service sub-function dispatch body.  This is reached through
+		; the stick service entry at CS:0A84, not through the INT 60h vector.
+		; zeliad.asm installs timer_isr_entry (CS:0103) as INT 60h.
 		cmp	al,0
 		jnz	int60_dispatch_active		; Jump if not zero (sub-fn != 0)
 		jmp	swap_overlay_blocks		; sub-fn 0: invoke the 0x7000-byte block-swap routine
@@ -1546,8 +1548,8 @@ sav_io_after_seek:
 ; Exchanges 0x7000 bytes (0x3800 words) between two segment regions:
 ;     (CS+0x2000):0x9000-0xFFFF   <->   CS:0x3000-0x9FFF
 ;
-; Two callers reach this body:
-;   1. SAR loader AL=0 dispatch (jmp from CS:0x0A88) — used by
+; The SAR loader/service AL=0 dispatch reaches this body (jmp from CS:0x0A88)
+; when a caller requests an overlay exchange.  It is used by
 ;      106TOWN's player_func_30 with bx=0x6002 to enter a cavern.
 ;      Pre-swap layout (per game.asm start_load_game):
 ;        CS:3000      = gfx driver       <-> (CS+2000):9000 = gfx tile data
@@ -1557,11 +1559,7 @@ sav_io_after_seek:
 ;      the same routine again to swap back).  After the swap the
 ;      routine tail-jumps via cs:[bx] = cs:[6002] = fight.bin's
 ;      "enter from town" entry pointer (= 0x79DC at start of session).
-;   2. INT 60h sub-fn 0 (jmp from int60_dispatch_active fall-through)
-;      — used by save/load to swap game-state buffers between the
-;      two segments before/after disk I/O.
-;
-; In both cases the caller arranges bx so that cs:[bx] is a valid
+; The caller arranges bx so that cs:[bx] is a valid
 ; far jmp target after the swap.
 ;
 ; Runtime confirmation: BP at 0BFC:0A84 fired with al=0, bx=0x6002

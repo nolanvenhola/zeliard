@@ -31,9 +31,14 @@ def normalized_regs(raw: dict[str, int]) -> dict[str, str]:
 
 
 def append_stub_events(events: list[dict], checkpoint: str, result: dict,
-                       services: dict[int, str], harness=None) -> None:
+                       services: dict[int, str], harness=None,
+                       named_only: bool = False) -> None:
     for index, raw in enumerate(result.get("stub_regs", [])):
-        service = services.get(raw["ip"], f"stub_{raw['ip']:04X}")
+        service = services.get(raw["ip"])
+        if service is None and named_only:
+            continue
+        if service is None:
+            service = f"stub_{raw['ip']:04X}"
         event = {
             "checkpoint": checkpoint,
             "index": index,
@@ -47,7 +52,7 @@ def append_stub_events(events: list[dict], checkpoint: str, result: dict,
 
 def run_segment(name: str, harness, stubs: dict[int, dict], start: int,
                 regs: dict[str, int], max_steps: int,
-                services: dict[int, str]) -> tuple[dict, list[dict]]:
+                services: dict[int, str], named_only: bool = False) -> tuple[dict, list[dict]]:
     result = harness.call_function(start, regs=regs, stub_calls=stubs,
                                    max_steps=max_steps)
     if result["stopped_reason"] != "returned_to_sentinel":
@@ -56,7 +61,7 @@ def run_segment(name: str, harness, stubs: dict[int, dict], start: int,
             f"after {result['instructions']} instructions"
         )
     events: list[dict] = []
-    append_stub_events(events, name, result, services, harness)
+    append_stub_events(events, name, result, services, harness, named_only)
     event_hash = hashlib.sha256(
         json.dumps(events, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()

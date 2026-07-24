@@ -19,7 +19,10 @@ partial summaries.
 
 The capture starts at a black screen immediately before the amulet/prologue
 sequence appears. It does not include the game startup title/copyright sequence.
-For current comparison work, use anchor `capture_start_amulet_black`.
+For current comparison work, use anchor `capture_start_amulet_black`. Its
+WASM origin is 1360 ms, established by a 10 ms C-frame sweep against captured
+video frame 0 (best RMSE 6.35 across 1360-1430 ms). The previous 2890 ms value
+was a hand-set mid-scroll anchor and must not be reused.
 
 The title/copyright sequence still exists in the WASM timeline before this
 anchor, but the video cannot be used as visual evidence for that earlier span.

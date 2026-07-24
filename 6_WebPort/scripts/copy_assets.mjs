@@ -58,12 +58,12 @@ const EXTRA_ASSET_MAP = [
 ];
 
 const BINARY_SLICES = [
-    /* Exact first visible rain/princess run_script_interpreter input:
-     * runtime 79C7h through the SCR_BREAK at 7CACh, inclusive.
-     * The preceding byte at runtime 79C6h is the 'P' page parameter after
-     * the prior SCR_END_SCRIPT, not drawable narration script.
-     * File offset includes the four-byte SAR chunk header. */
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x19CB, 0x02E6, 'opdemo_story_script_1.bin'],
+    /* Exact first rain/princess run_script_interpreter input:
+     * runtime 79C6h through the SCR_BREAK at 7CACh, inclusive.
+     * MASM oracle post_title_story_script_1 draws the leading 'P' before
+     * the visible "Once..." text, then finishes with SI=7CADh.  File offset
+     * maps through the stripped four-byte SAR chunk header. */
+    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x19CA, 0x02E7, 'opdemo_story_script_1.bin'],
     ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x1CB1, 0x0132, 'opdemo_story_script_2.bin'],
     ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x1DE3, 0x00AE, 'opdemo_story_script_3.bin'],
     ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x1E91, 0x00EB, 'opdemo_story_script_4.bin'],

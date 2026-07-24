@@ -55,12 +55,21 @@ FRAMEBUFFER_BYTES = 320 * 200
 
 ENTRY_GFX_UPDATE = 0x3088
 ENTRY_DISP_GAME = 0x33B7
+ENTRY_DISP_DATA_3C1C = 0x3C1C
 OPDMO_LOAD_BASE = 0x5FFC
 OPDMO_ENTRY_XOR_MASK_RENDER = 0x6F41
 OPDMO_ENTRY_MERGE_GFX_PLANES = 0x6FAC
+OPDMO_ENTRY_CYCLE_PALETTE_COLORS = 0x6EB0
+OPDMO_ENTRY_APPLY_PALETTE_BLEND = 0x6ED8
 OPDMO_GFX_UPDATE_FN_SLOT = 0x3004
+OPDMO_GAME_SEG_OFF = 0xFF2C
 OPDMO_FRAMEBUFFER_A = 0x4000
 OPDMO_EXT_SEGMENT = 0xD000
+OPDMO_SCENE_DATA_I = 0x97C0
+OPDMO_TEMP_DECODE_BUF = 0x46D3
+OPDMO_PLANE_DATA_A = 0x1D40
+OPDMO_PLANE_DATA_B = 0x3A80
+OPDMO_HIME_DMAOU_GAME_SEG = 0x5000
 
 SRC_DI = 0x4000
 BX = 0x0410
@@ -159,6 +168,36 @@ EXPECTED = {
         "nonzero": 24663,
         "bbox": (16, 16, 303, 119),
     },
+    "ame_disp_game_al09": {
+        "entry": ENTRY_DISP_GAME,
+        "asset": "ame.grp",
+        "rows": 0x48,
+        "cl": 0x68,
+        "ax": 0x0009,
+        "fnv": "a01eebd621d68a49",
+        "nonzero": 24663,
+        "bbox": (16, 16, 303, 119),
+    },
+    "ame_disp_game_alaa": {
+        "entry": ENTRY_DISP_GAME,
+        "asset": "ame.grp",
+        "rows": 0x48,
+        "cl": 0x68,
+        "ax": 0x00AA,
+        "fnv": "a01eebd621d68a49",
+        "nonzero": 24663,
+        "bbox": (16, 16, 303, 119),
+    },
+    "oui_gfx_update_al00": {
+        "entry": ENTRY_GFX_UPDATE,
+        "asset": "oui.grp",
+        "rows": 0x48,
+        "cl": 0x68,
+        "ax": 0x0000,
+        "fnv": "d9de4271db1e6d0f",
+        "nonzero": 11712,
+        "bbox": (16, 16, 303, 119),
+    },
 }
 
 YUU_RECT_EXPECTED = {
@@ -234,10 +273,55 @@ FINAL_COMPOSITE_EXPECTED = {
     "bbox": (32, 8, 287, 199),
 }
 
+HIME_DMAOU_BLEND_EXPECTED = {
+    "memory_fnv": "8a58f7d1074c0267",
+    "memory_nonzero": 10220,
+    "memory_len": 16896,
+    "external_fnv": "ed5007e02c13c7c9",
+    "external_nonzero": 4671,
+    "frame_fnv": "2e5390699fcd8548",
+    "frame_nonzero": 28919,
+    "frame_bbox": (16, 16, 303, 119),
+}
+
+DMAOU_APPARITION_3C1C_EXPECTED = {
+    "ax": 0x0007,
+    "bx": 0x1728,
+    "cx": 0x2230,
+    "di": 0x0000,
+    "fnv": "2b2d0236d3732ef8",
+    "nonzero": 1554,
+    "bbox": (94, 43, 226, 87),
+}
+
+DMAOU_POST_BUSY_EXPECTED = {
+    2: {
+        "external_fnv": "8c5cd5885409e794", "external_nonzero": 4643,
+        "frame_fnv": "1815cf0668c85b39", "frame_nonzero": 1512,
+        "frame_bbox": (94, 43, 226, 87),
+    },
+    3: {
+        "external_fnv": "0168a8840b8730b8", "external_nonzero": 4634,
+        "frame_fnv": "fd760b803e712fed", "frame_nonzero": 1461,
+        "frame_bbox": (94, 43, 225, 87),
+    },
+}
+
 MAOP_SCRIPT_AREA_EXPECTED = {
     "fnv": "a1dc196e7d430488",
     "nonzero": 16684,
     "bbox": (16, 16, 303, 119),
+}
+
+SEI_DISP_DATA_3C1C_EXPECTED = {
+    "asset": "sei.grp",
+    "ax": 0x0005,
+    "bx": 0x1610,
+    "cx": 0x2468,
+    "di": 0x4000,
+    "fnv": "3a8e5e1c8fdd0b3e",
+    "nonzero": 8905,
+    "bbox": (89, 18, 229, 117),
 }
 
 COMPOSED_EXPECTED = {
@@ -573,6 +657,99 @@ def final_yuu_segment_source() -> bytes:
     return bytes(mu.mem_read(DATA_SEG << 4, 0x10000))
 
 
+def hime_dmaou_blend_segment_source(
+        post_busy_al: int | None = None) -> tuple[bytes, bytes, bytes]:
+    data = OPDMO_BIN.read_bytes()
+    ext_seg = CODE_SEG + 0x2000
+    mu = Uc(UC_ARCH_X86, UC_MODE_16)
+    for seg in (CODE_SEG, ext_seg, OPDMO_HIME_DMAOU_GAME_SEG, STACK_SEG):
+        mu.mem_map(seg << 4, 0x10000, UC_PROT_ALL)
+
+    mu.mem_write(CODE_SEG << 4, bytes([0x90]) * 0x10000)
+    mu.mem_write((CODE_SEG << 4) + OPDMO_LOAD_BASE, data)
+    mu.mem_write(
+        (CODE_SEG << 4) + OPDMO_GAME_SEG_OFF,
+        bytes([
+            OPDMO_HIME_DMAOU_GAME_SEG & 0xFF,
+            OPDMO_HIME_DMAOU_GAME_SEG >> 8,
+        ]),
+    )
+
+    hime = asset_source("hime.grp")
+    dmaou = asset_source("dmaou.grp")
+    mu.mem_write(
+        (OPDMO_HIME_DMAOU_GAME_SEG << 4) + OPDMO_FRAMEBUFFER_A,
+        hime[:0x10000 - OPDMO_FRAMEBUFFER_A],
+    )
+    mu.mem_write(
+        (OPDMO_HIME_DMAOU_GAME_SEG << 4) + OPDMO_SCENE_DATA_I,
+        dmaou[:0x10000 - OPDMO_SCENE_DATA_I],
+    )
+    mu.mem_write((ext_seg << 4), dmaou[:0x10000])
+
+    def hook_code(uc, _address, _size, _user):
+        if uc.reg_read(UC_X86_REG_IP) == RET_SENTINEL:
+            uc.emu_stop()
+
+    mu.hook_add(UC_HOOK_CODE, hook_code)
+
+    for entry, ds, es, regs in (
+        (
+            OPDMO_ENTRY_CYCLE_PALETTE_COLORS,
+            OPDMO_HIME_DMAOU_GAME_SEG,
+            ext_seg,
+            {
+                UC_X86_REG_SI: 0xAB40 + 4 * 0x0CC0,
+                UC_X86_REG_DI: 0,
+            },
+        ),
+        (
+            OPDMO_ENTRY_APPLY_PALETTE_BLEND,
+            OPDMO_HIME_DMAOU_GAME_SEG,
+            ext_seg,
+            {UC_X86_REG_DI: 0},
+        ),
+    ):
+        mu.reg_write(UC_X86_REG_CS, CODE_SEG)
+        mu.reg_write(UC_X86_REG_DS, ds)
+        mu.reg_write(UC_X86_REG_ES, es)
+        mu.reg_write(UC_X86_REG_SS, STACK_SEG)
+        mu.reg_write(UC_X86_REG_SP, 0xFFFC)
+        mu.mem_write(
+            (STACK_SEG << 4) + 0xFFFC,
+            bytes([RET_SENTINEL & 0xFF, RET_SENTINEL >> 8]),
+        )
+        for reg, value in regs.items():
+            mu.reg_write(reg, value)
+        mu.emu_start((CODE_SEG << 4) + entry, (CODE_SEG << 4) + 0xFFFF)
+
+    if post_busy_al is not None:
+        mu.reg_write(UC_X86_REG_CS, CODE_SEG)
+        mu.reg_write(UC_X86_REG_DS, OPDMO_HIME_DMAOU_GAME_SEG)
+        mu.reg_write(UC_X86_REG_ES, ext_seg)
+        mu.reg_write(UC_X86_REG_SS, STACK_SEG)
+        mu.reg_write(UC_X86_REG_SP, 0xFFFC)
+        mu.mem_write(
+            (STACK_SEG << 4) + 0xFFFC,
+            bytes([RET_SENTINEL & 0xFF, RET_SENTINEL >> 8]),
+        )
+        mu.reg_write(UC_X86_REG_SI, 0xAB40 + post_busy_al * 0x0CC0)
+        mu.reg_write(UC_X86_REG_DI, 0)
+        mu.emu_start((CODE_SEG << 4) + OPDMO_ENTRY_CYCLE_PALETTE_COLORS,
+                     (CODE_SEG << 4) + 0xFFFF)
+
+    segment = bytes(mu.mem_read(OPDMO_HIME_DMAOU_GAME_SEG << 4, 0x10000))
+    ext_segment = bytes(mu.mem_read(ext_seg << 4, 0x10000))
+    blended_ranges = (
+        segment[OPDMO_TEMP_DECODE_BUF:OPDMO_TEMP_DECODE_BUF + 0x1600] +
+        segment[OPDMO_PLANE_DATA_A + OPDMO_TEMP_DECODE_BUF:
+                OPDMO_PLANE_DATA_A + OPDMO_TEMP_DECODE_BUF + 0x1600] +
+        segment[OPDMO_PLANE_DATA_B + OPDMO_TEMP_DECODE_BUF:
+                OPDMO_PLANE_DATA_B + OPDMO_TEMP_DECODE_BUF + 0x1600]
+    )
+    return segment, blended_ranges, ext_segment
+
+
 def run_entry(entry: int, ax: int, bx: int = BX, cx: int = CX,
               di: int = SRC_DI, source: bytes | None = None,
               source_is_segment: bool = False) -> bytes:
@@ -836,6 +1013,103 @@ def main() -> int:
     if not ok:
         failures.append("final_yuu3_yuu4_composite")
 
+    blend_source, blend_ranges, blend_ext = hime_dmaou_blend_segment_source()
+    actual_memory_fnv = fnv1a64(blend_ranges)
+    actual_memory_nonzero = sum(1 for b in blend_ranges if b)
+    ok = (
+        actual_memory_fnv == HIME_DMAOU_BLEND_EXPECTED["memory_fnv"] and
+        actual_memory_nonzero == HIME_DMAOU_BLEND_EXPECTED["memory_nonzero"] and
+        len(blend_ranges) == HIME_DMAOU_BLEND_EXPECTED["memory_len"]
+    )
+    print(
+        f"mcga_render_hime_dmaou_apply_palette_blend_memory: "
+        f"{'PASS' if ok else 'FAIL'} "
+        f"fnv={actual_memory_fnv} nonzero={actual_memory_nonzero} "
+        f"len={len(blend_ranges)}"
+    )
+    if not ok:
+        failures.append("hime_dmaou_apply_palette_blend_memory")
+
+    actual_external_fnv = fnv1a64(blend_ext)
+    actual_external_nonzero = sum(1 for b in blend_ext if b)
+    ok = (actual_external_fnv == HIME_DMAOU_BLEND_EXPECTED["external_fnv"] and
+          actual_external_nonzero == HIME_DMAOU_BLEND_EXPECTED["external_nonzero"])
+    print(
+        "mcga_render_hime_dmaou_external_scratch: "
+        f"{'PASS' if ok else 'FAIL'} fnv={actual_external_fnv} "
+        f"nonzero={actual_external_nonzero}"
+    )
+    if not ok:
+        failures.append("hime_dmaou_external_scratch")
+
+    frame = run_entry(
+        ENTRY_DISP_DATA_3C1C,
+        DMAOU_APPARITION_3C1C_EXPECTED["ax"],
+        bx=DMAOU_APPARITION_3C1C_EXPECTED["bx"],
+        cx=DMAOU_APPARITION_3C1C_EXPECTED["cx"],
+        di=DMAOU_APPARITION_3C1C_EXPECTED["di"],
+        source=blend_ext,
+        source_is_segment=True,
+    )
+    actual_fnv = fnv1a64(frame)
+    actual_nonzero = sum(1 for b in frame if b)
+    actual_bbox = framebuffer_bbox(frame)
+    ok = (actual_fnv == DMAOU_APPARITION_3C1C_EXPECTED["fnv"] and
+          actual_nonzero == DMAOU_APPARITION_3C1C_EXPECTED["nonzero"] and
+          actual_bbox == DMAOU_APPARITION_3C1C_EXPECTED["bbox"])
+    print(
+        "mcga_render_dmaou_apparition_3c1c_ax07: "
+        f"{'PASS' if ok else 'FAIL'} fnv={actual_fnv} "
+        f"nonzero={actual_nonzero} bbox={actual_bbox}"
+    )
+    if not ok:
+        failures.append("dmaou_apparition_3c1c_ax07")
+
+    for al, spec in DMAOU_POST_BUSY_EXPECTED.items():
+        _, _, post_busy_ext = hime_dmaou_blend_segment_source(al)
+        actual_ext_fnv = fnv1a64(post_busy_ext)
+        actual_ext_nonzero = sum(1 for b in post_busy_ext if b)
+        frame = run_entry(ENTRY_DISP_GAME, 0, bx=0x1728, cx=0x2230, di=0,
+                          source=post_busy_ext, source_is_segment=True)
+        actual_fnv = fnv1a64(frame)
+        actual_nonzero = sum(1 for b in frame if b)
+        actual_bbox = framebuffer_bbox(frame)
+        ok = (actual_ext_fnv == spec["external_fnv"] and
+              actual_ext_nonzero == spec["external_nonzero"] and
+              actual_fnv == spec["frame_fnv"] and
+              actual_nonzero == spec["frame_nonzero"] and
+              actual_bbox == spec["frame_bbox"])
+        print(
+            f"mcga_render_dmaou_post_busy_al{al}: {'PASS' if ok else 'FAIL'} "
+            f"ext={actual_ext_fnv}/{actual_ext_nonzero} "
+            f"frame={actual_fnv}/{actual_nonzero} bbox={actual_bbox}"
+        )
+        if not ok:
+            failures.append(f"dmaou_post_busy_al{al}")
+
+    frame = run_entry(
+        ENTRY_DISP_GAME,
+        0,
+        bx=0x0410,
+        cx=0x4868,
+        di=OPDMO_FRAMEBUFFER_A,
+        source=blend_source,
+        source_is_segment=True,
+    )
+    actual_fnv = fnv1a64(frame)
+    actual_nonzero = sum(1 for b in frame if b)
+    actual_bbox = framebuffer_bbox(frame)
+    ok = (actual_fnv == HIME_DMAOU_BLEND_EXPECTED["frame_fnv"] and
+          actual_nonzero == HIME_DMAOU_BLEND_EXPECTED["frame_nonzero"] and
+          actual_bbox == HIME_DMAOU_BLEND_EXPECTED["frame_bbox"])
+    print(
+        f"mcga_render_hime_dmaou_apply_palette_blend_frame: "
+        f"{'PASS' if ok else 'FAIL'} "
+        f"fnv={actual_fnv} nonzero={actual_nonzero} bbox={actual_bbox}"
+    )
+    if not ok:
+        failures.append("hime_dmaou_apply_palette_blend_frame")
+
     for name, spec in COMPOSED_EXPECTED.items():
         frame = run_disp_game_sequence(spec["calls"])
         actual_fnv = fnv1a64(frame)
@@ -864,6 +1138,27 @@ def main() -> int:
     )
     if not ok:
         failures.append("maop_script_area")
+
+    frame = run_entry(
+        ENTRY_DISP_DATA_3C1C,
+        SEI_DISP_DATA_3C1C_EXPECTED["ax"],
+        bx=SEI_DISP_DATA_3C1C_EXPECTED["bx"],
+        cx=SEI_DISP_DATA_3C1C_EXPECTED["cx"],
+        di=SEI_DISP_DATA_3C1C_EXPECTED["di"],
+        source=asset_source(SEI_DISP_DATA_3C1C_EXPECTED["asset"]),
+    )
+    actual_fnv = fnv1a64(frame)
+    actual_nonzero = sum(1 for b in frame if b)
+    actual_bbox = framebuffer_bbox(frame)
+    ok = (actual_fnv == SEI_DISP_DATA_3C1C_EXPECTED["fnv"] and
+          actual_nonzero == SEI_DISP_DATA_3C1C_EXPECTED["nonzero"] and
+          actual_bbox == SEI_DISP_DATA_3C1C_EXPECTED["bbox"])
+    print(
+        f"mcga_render_sei_disp_data_3c1c_ax05: {'PASS' if ok else 'FAIL'} "
+        f"fnv={actual_fnv} nonzero={actual_nonzero} bbox={actual_bbox}"
+    )
+    if not ok:
+        failures.append("sei_disp_data_3c1c_ax05")
 
     if failures:
         print("VERDICT: FAIL: MCGA render entry mismatch for " +

@@ -2,7 +2,8 @@
 
 This is the working control-flow map for the Zeliard opening path. It is based on
 `3_Assembly/masm/working/zelres1/code/100OPDMO.asm`, with MASM treated as the
-source of truth.
+sole source of truth. TASM, captured video, and the current C implementation
+may help diagnose discrepancies, but none of them can override MASM behavior.
 
 The operational checklist for oracle capture and web-port parity is
 `6_WebPort/tests/opening_sequence_manifest.json`. Update that manifest first
@@ -169,8 +170,11 @@ This block happens after the demon intro and before `opening_next_scene`.
   - `BX=1720h`
   - `CX=2270h`
 - Sets palette `AX=4`.
-- Starts music using `int 60h` from `gfx_plane_b`.
-- Calls `disp_drv_seg_3_slot`.
+- Clears `gvar_frame_timer`, then invokes `int 60h` with `AX=0`, `DS=game_seg`,
+  and `SI=gfx_plane_b`. `zeliad.asm` installs `stick.bin:timer_isr_entry` at
+  vector 60h, so this is a timer-service tick, not music or an overlay swap.
+- Calls `disp_drv_seg_3_slot` (`105GDMCA:3707`), which seeds A000:0000..F9FF
+  with alternating `00h/10h` scanlines.
 - Waits `F0h`.
 - Calls `gfx_update_fn`:
   - `AL=0`
@@ -210,7 +214,7 @@ Despite the old name, this path is part of the opening flow.
 - Resets stack.
 - Calls `gfx_init_fn`.
 - Loads `zend.msd` into `gfx_plane_b`.
-- Starts music through `int 60h`.
+- Invokes the installed INT 60h timer-service vector after loading `zend.msd`.
 - Clears input again.
 - Sets palette `AX=1`.
 - Calls `credits_scroll_display`.

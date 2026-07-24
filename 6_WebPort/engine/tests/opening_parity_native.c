@@ -27,22 +27,26 @@ enum {
     ZELIARD_SCENE_TITLE = 0,
     ZELIARD_SCENE_OPENING = 1,
     ZELIARD_SCENE_GAME = 2,
-    OPENING_TITLE_FULL_SAMPLE_MS = 2100,
-    OPENING_TITLE_COMPLETE_MS = OPDMO_TEST_WAIT_MS(0x10 + 8 * 0x14 + 2 * 0xF0 + 0x1C),
+    OPENING_TITLE_FULL_SAMPLE_MS = 600,
+    OPENING_TITLE_COMPLETE_MS = OPDMO_TEST_WAIT_MS(16 * 0x14),
     OPENING_AMULET_AUTO_MS = OPDMO_TEST_WAIT_MS(8 * 0x14 + 31 * 10 * 0x1C + 0x78 * 0x1C),
     OPENING_NEC_HOU_INTERLUDE_MS = OPDMO_TEST_WAIT_MS(8 * 0x14 + 2 * 0x14 + 12 * 0x1E),
     OPENING_DMAOU_DEMON_INTRO_MS = OPDMO_TEST_WAIT_MS(8 * 0x14 + 12 * 0x14 + 0xF0 + 91 * 0x14 + 0xF0 + 0x0F + 0xF0),
-    OPENING_TITLE_LOGO_COLOR_MS = OPDMO_TEST_WAIT_MS(3 * 0xF0 + 100 * 0x50),
+    OPENING_TITLE_LOGO_COLOR_MS = OPDMO_TEST_WAIT_MS(3 * 0xF0 + 16 * 0x14 + 100 * 0x50),
     OPENING_COPYRIGHT_INPUT_SAMPLE_MS = 16,
-    OPENING_SCANLINE_SAMPLE_MS = OPDMO_TEST_WAIT_MS((0x10 + 8 * 0x14 + 2 * 0xF0 + 0x1C) + 8 * 0x14 + 95 * 0x1C),
+    OPENING_SCANLINE_SAMPLE_MS = OPDMO_TEST_WAIT_MS(16 * 0x14 + 8 * 0x14 + 95 * 0x1C),
     OPENING_SCANLINE_EXIT_FADE_MS = OPDMO_TEST_WAIT_MS(0x78 * 0x1C),
     OPENING_PHASE_COPYRIGHT_TITLE_CARD = 0,
     OPENING_PHASE_AMULET_ANCIENT_PROLOGUE = 1,
     OPENING_PHASE_STAFF_CREDITS = 2,
     OPENING_PHASE_RAIN_PRINCESS = 3,
+    OPENING_PHASE_RAIN_TURNS_TO_SAND = 4,
     OPENING_PHASE_JASHIIN_CURSES_PRINCESS = 5,
     OPENING_PHASE_KING_GRIEF_AND_SPIRIT = 6,
+    OPENING_PHASE_DUKE_ARRIVES = 7,
+    OPENING_PHASE_KING_PLEADS_DUKE_ACCEPTS = 8,
     OPENING_PHASE_JASHIIN_CONFRONTATION = 9,
+    OPENING_PHASE_JASHIIN_DEPARTURE = 10,
     OPENING_PHASE_DESTINY_CARD = 11,
     OPENING_PHASE_NEC_HOU_INTERLUDE = 20,
     OPENING_PHASE_DMAOU_DEMON_INTRO = 21,
@@ -153,6 +157,86 @@ static int run_palette_case(uint64_t expected_fnv) {
     return ok;
 }
 
+static int run_ttl3_decode_rle_memory_case(void) {
+    size_t file_size = 0, planes_size = 0;
+    uint8_t *file_data = platform_load_asset("ttl3.grp", &file_size);
+    uint8_t *planes = file_data
+        ? grp_decode_6de1_planes(file_data, file_size, &planes_size) : NULL;
+    uint64_t got = planes ? fnv1a64(planes, planes_size) : 0;
+    int ok = planes && planes_size == 14578 && got == 0x5655ba7b7c59348fULL;
+    printf("ttl3_decode_rle_memory: %s bytes=%llu fnv=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)planes_size,
+           (unsigned long long)got);
+    free(file_data);
+    free(planes);
+    return ok;
+}
+
+static int run_busy_wait_delay_memory_case(void) {
+    uint64_t got = opening_debug_busy_wait_delay_fixture_hash(4);
+    int ok = got == 0x9f5d86fbdeb9b585ULL;
+    printf("busy_wait_delay_memory: %s fnv=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)got);
+    return ok;
+}
+
+static int run_hime_dmaou_blend_memory_case(void) {
+    size_t nonzero = 0;
+    uint64_t got = opening_debug_hime_dmaou_blend_ranges_hash(&nonzero);
+    int ok = got == 0x8a58f7d1074c0267ULL && nonzero == 10220;
+    printf("hime_dmaou_apply_palette_blend_memory: %s fnv=%016llx nonzero=%llu\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)got,
+           (unsigned long long)nonzero);
+    return ok;
+}
+
+static int run_hime_dmaou_blend_frame_case(void) {
+    size_t nonzero = 0;
+    uint64_t got = opening_debug_hime_dmaou_blend_frame_hash(&nonzero);
+    int ok = got == 0x2e5390699fcd8548ULL && nonzero == 28919;
+    printf("hime_dmaou_apply_palette_blend_frame: %s fnv=%016llx nonzero=%llu\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)got,
+           (unsigned long long)nonzero);
+    return ok;
+}
+
+static int run_hime_dmaou_external_scratch_case(void) {
+    size_t nonzero = 0;
+    uint64_t got = opening_debug_hime_dmaou_ext_hash(&nonzero);
+    int ok = got == 0xed5007e02c13c7c9ULL && nonzero == 4671;
+    printf("hime_dmaou_external_scratch: %s fnv=%016llx nonzero=%llu\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)got,
+           (unsigned long long)nonzero);
+    return ok;
+}
+
+static int run_dmaou_apparition_3c1c_case(void) {
+    size_t nonzero = 0;
+    uint64_t got = opening_debug_dmaou_apparition_frame_hash(&nonzero);
+    int ok = got == 0x2b2d0236d3732ef8ULL && nonzero == 1554;
+    printf("dmaou_apparition_3c1c_ax07: %s fnv=%016llx nonzero=%llu\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)got,
+           (unsigned long long)nonzero);
+    return ok;
+}
+
+static int run_dmaou_post_busy_case(u8 al, uint64_t expected_ext,
+                                    size_t expected_ext_nonzero,
+                                    uint64_t expected_frame,
+                                    size_t expected_frame_nonzero) {
+    size_t ext_nonzero = 0;
+    size_t frame_nonzero = 0;
+    uint64_t ext = opening_debug_dmaou_post_busy_ext_hash(al, &ext_nonzero);
+    uint64_t frame = opening_debug_dmaou_post_busy_frame_hash(al, &frame_nonzero);
+    int ok = ext == expected_ext && ext_nonzero == expected_ext_nonzero &&
+             frame == expected_frame && frame_nonzero == expected_frame_nonzero;
+    printf("dmaou_post_busy_al%u: %s ext=%016llx/%llu frame=%016llx/%llu\n",
+           al, ok ? "PASS" : "FAIL", (unsigned long long)ext,
+           (unsigned long long)ext_nonzero, (unsigned long long)frame,
+           (unsigned long long)frame_nonzero);
+    return ok;
+}
+
 typedef struct {
     uint16_t ax;
     uint64_t expected_fnv;
@@ -188,6 +272,31 @@ static int run_opdmo_palette_cases(void) {
     int ok = 1;
     for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++)
         ok &= run_opdmo_palette_case(&cases[i]);
+    return ok;
+}
+
+/* 100OPDMO's title tile loop uses game:4000 as scratch while 105GDMCA:3A02
+ * later reads palette registers from the loaded driver image at 4289h.
+ * Exercise both spans in one process so title work storage cannot leak into
+ * the late guardian palette service. */
+static int run_title_tile_scratch_palette_isolation_case(void) {
+    enum {
+        OPENING_PHASE_KING_GRIEF_AND_SPIRIT = 6,
+        OPENING_PHASE_TITLE_LOGO_COLOR_ROTATION = 22,
+    };
+    opening_init();
+    opening_render_phase_for_test(OPENING_PHASE_TITLE_LOGO_COLOR_ROTATION, 14000);
+    opening_render_phase_for_test(OPENING_PHASE_KING_GRIEF_AND_SPIRIT, 41526);
+    uint64_t palette = fnv1a64((const uint8_t *)g_palette, sizeof(g_palette));
+    int ok = palette == 0x88d2bed500b0d64dULL &&
+             g_palette[1].r == 0 && g_palette[1].g == 0 &&
+             g_palette[1].b == 124 &&
+             g_palette[119].r == 248 && g_palette[119].g == 248 &&
+             g_palette[119].b == 248;
+    printf("title_tile_scratch_palette_isolation: %s palette=%016llx p01=%u/%u/%u p77=%u/%u/%u\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)palette,
+           g_palette[1].r, g_palette[1].g, g_palette[1].b,
+           g_palette[119].r, g_palette[119].g, g_palette[119].b);
     return ok;
 }
 
@@ -443,32 +552,6 @@ static int run_opdemo_nec_hou_handoff_disp_game_rect_case(uint64_t expected_imag
     return ok;
 }
 
-static int run_opdemo_nec_hou_handoff_phase_frame_case(uint64_t expected_fb,
-                                                       int expected_nonzero,
-                                                       int expected_min_x,
-                                                       int expected_min_y,
-                                                       int expected_max_x,
-                                                       int expected_max_y) {
-    opening_init();
-    opening_render_phase_for_test(OPENING_PHASE_NEC_HOU_INTERLUDE,
-                                  OPENING_NEC_HOU_INTERLUDE_MS -
-                                  OPDMO_TEST_WAIT_MS(12 * 0x1E));
-    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
-    int nonzero = framebuffer_nonzero_count();
-    int min_x = 0, min_y = 0, max_x = 0, max_y = 0;
-    framebuffer_bbox(&min_x, &min_y, &max_x, &max_y);
-    int ok = fb == expected_fb &&
-             nonzero == expected_nonzero &&
-             min_x == expected_min_x &&
-             min_y == expected_min_y &&
-             max_x == expected_max_x &&
-             max_y == expected_max_y;
-    printf("opdemo_nec_hou_handoff_phase_frame: %s framebuffer=%016llx nonzero=%d bbox=(%d,%d,%d,%d)\n",
-           ok ? "PASS" : "FAIL", (unsigned long long)fb, nonzero,
-           min_x, min_y, max_x, max_y);
-    return ok;
-}
-
 static void advance_to_opening(void) {
     zeliard_init();
     zeliard_tick(16);
@@ -569,20 +652,31 @@ static int run_opening_input_credits_to_story_case(void) {
 }
 
 static int run_opening_input_story_exits_to_game_case(void) {
-    advance_to_opening();
-    zeliard_tick(4000);
-    zeliard_key(32);
-    zeliard_tick(OPENING_SCANLINE_EXIT_FADE_MS);
-    zeliard_key(32);
-    zeliard_tick(16);
-    uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
-    int scene = zeliard_scene();
-    int ok = scene == ZELIARD_SCENE_OPENING &&
-             opening_phase_id() == OPENING_PHASE_RAIN_PRINCESS &&
-             fb != 0;
-    printf("opening_input_story_phase_step_hook: %s scene=%d phase=%d framebuffer=%016llx\n",
-           ok ? "PASS" : "FAIL", scene, opening_phase_id(),
-           (unsigned long long)fb);
+    static const int story_phases[] = {
+        OPENING_PHASE_RAIN_PRINCESS,
+        OPENING_PHASE_RAIN_TURNS_TO_SAND,
+        OPENING_PHASE_JASHIIN_CURSES_PRINCESS,
+        OPENING_PHASE_KING_GRIEF_AND_SPIRIT,
+        OPENING_PHASE_DUKE_ARRIVES,
+        OPENING_PHASE_KING_PLEADS_DUKE_ACCEPTS,
+        OPENING_PHASE_JASHIIN_CONFRONTATION,
+        OPENING_PHASE_JASHIIN_DEPARTURE,
+    };
+    static const int keys[] = {32, 13};
+    int ok = 1;
+    for (size_t phase_index = 0; phase_index < sizeof(story_phases) / sizeof(story_phases[0]); phase_index++) {
+        for (size_t key_index = 0; key_index < sizeof(keys) / sizeof(keys[0]); key_index++) {
+            zeliard_init();
+            opening_set_phase_for_test(story_phases[phase_index]);
+            zeliard_key(keys[key_index]);
+            zeliard_tick(0);
+            ok &= zeliard_scene() == ZELIARD_SCENE_GAME;
+        }
+    }
+    printf("opening_input_story_exits_to_game: %s phases=%llu keys=%llu\n",
+           ok ? "PASS" : "FAIL",
+           (unsigned long long)(sizeof(story_phases) / sizeof(story_phases[0])),
+           (unsigned long long)(sizeof(keys) / sizeof(keys[0])));
     return ok;
 }
 
@@ -590,23 +684,33 @@ static int run_opening_key_contract_case(void) {
     const int keys[] = {32, 13};
     int ok = 1;
     for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
+        int initial_phase, after_title_phase, after_fade_phase, after_credits_phase;
         zeliard_init();
         zeliard_key(keys[i]);
         zeliard_tick(16);
         zeliard_tick(16);
         zeliard_key(keys[i]);
-        ok &= opening_phase_id() == OPENING_PHASE_COPYRIGHT_TITLE_CARD;
+        initial_phase = opening_phase_id();
+        ok &= initial_phase == OPENING_PHASE_COPYRIGHT_TITLE_CARD;
 
         opening_tick(OPENING_TITLE_COMPLETE_MS);
         zeliard_key(keys[i]);
-        ok &= opening_phase_id() == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE;
+        after_title_phase = opening_phase_id();
+        ok &= after_title_phase == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE;
         opening_tick(OPENING_SCANLINE_EXIT_FADE_MS);
-        ok &= opening_phase_id() == OPENING_PHASE_STAFF_CREDITS;
+        after_fade_phase = opening_phase_id();
+        ok &= after_fade_phase == OPENING_PHASE_STAFF_CREDITS;
         ok &= !opening_done();
 
         zeliard_key(keys[i]);
-        ok &= opening_phase_id() == OPENING_PHASE_RAIN_PRINCESS;
+        after_credits_phase = opening_phase_id();
+        ok &= after_credits_phase == OPENING_PHASE_RAIN_PRINCESS;
         ok &= !opening_done();
+        zeliard_key(keys[i]);
+        zeliard_tick(0);
+        ok &= zeliard_scene() == ZELIARD_SCENE_GAME;
+        printf("opening_key_route: key=%d phases=%d,%d,%d,%d\n", keys[i],
+               initial_phase, after_title_phase, after_fade_phase, after_credits_phase);
     }
     printf("opening_space_enter_routing: %s\n", ok ? "PASS" : "FAIL");
     return ok;
@@ -626,18 +730,18 @@ static int run_copyright_timer_starts_prologue_case(void) {
     return ok;
 }
 
-static int run_amulet_phase_starts_black_case(void) {
+static int run_amulet_phase_starts_first_mcga_pass_case(void) {
     zeliard_init();
     zeliard_tick(OPENING_TITLE_COMPLETE_MS);
     uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
     int ok = zeliard_scene() == ZELIARD_SCENE_OPENING &&
              opening_phase_id() == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE &&
              opening_phase_elapsed_ms() == 0 &&
-             fb == 0xdd14fcc6528cab25ULL &&
+             fb == 0xc0d7344e7c121107ULL &&
              g_palette[0].r == 0 &&
              g_palette[0].g == 0 &&
              g_palette[0].b == 0;
-    printf("amulet_phase_starts_black: %s phase=%d elapsed=%u framebuffer=%016llx color00=%u/%u/%u\n",
+    printf("amulet_phase_starts_first_mcga_pass: %s phase=%d elapsed=%u framebuffer=%016llx color00=%u/%u/%u\n",
            ok ? "PASS" : "FAIL",
            opening_phase_id(), opening_phase_elapsed_ms(),
            (unsigned long long)fb,
@@ -678,12 +782,52 @@ static int run_title_handoff_visual_regression_case(void) {
     opening_render_phase_for_test(OPENING_PHASE_TITLE_LOGO_COLOR_ROTATION, 14000);
     uint64_t logo_fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
 
-    int ok = entry_fb == 0x5fc039a9f882ac89ULL &&
-             logo_fb == 0x4c97cd25a85accd7ULL;
+    int ok = entry_fb == 0x10c1dbf72fb2ab25ULL &&
+             /* MASM 100OPDMO:510-515, pair 29 of 105GDMCA:37B4. */
+             logo_fb == 0xf84926de65a50197ULL;
     printf("title_handoff_visual_regression: %s entry=%016llx logo=%016llx\n",
            ok ? "PASS" : "FAIL",
            (unsigned long long)entry_fb,
            (unsigned long long)logo_fb);
+    return ok;
+}
+
+static int run_title_handoff_timing_boundaries_case(void) {
+    typedef struct {
+        const char *name;
+        uint32_t elapsed_ms;
+        uint64_t expected_fb;
+        size_t expected_nonzero;
+    } boundary_t;
+    const boundary_t boundaries[] = {
+        {"entry_seed", 0, 0x10c1dbf72fb2ab25ULL, 32000},
+        {"after_wait_f0", OPDMO_TEST_WAIT_MS(0xF0), 0x10c1dbf72fb2ab25ULL, 32000},
+        /* Values below come from the MASM release oracle:
+         * test_mcga_title_sweep_assets_oracle.py. */
+        {"after_ttl1_update", OPDMO_TEST_WAIT_MS(0xF0 + 16 * 0x14), 0xba926958f64c6a78ULL, 32457},
+        {"after_second_wait_f0", OPDMO_TEST_WAIT_MS(0xF0 + 16 * 0x14 + 0xF0), 0x973216d07e72267bULL, 39868},
+        {"color_loop_start", OPDMO_TEST_WAIT_MS(0xF0 + 16 * 0x14 + 0xF0 + 0xF0), 0x973216d07e72267bULL, 39868},
+        {"color_loop_after_10_waits_pair_11", OPDMO_TEST_WAIT_MS(0xF0 + 16 * 0x14 + 0xF0 + 0xF0 + 10 * 0x50), 0xad43f4e0d0b76267ULL, 39987},
+        {"visual_sample_14000ms_pair_29", 14000, 0xf84926de65a50197ULL, 40137},
+        {"color_loop_done_pair_100", OPDMO_TEST_WAIT_MS(0xF0 + 16 * 0x14 + 0xF0 + 0xF0 + 100 * 0x50), 0x23e55cde6f43c2ecULL, 40681},
+    };
+
+    int ok = 1;
+    for (size_t i = 0; i < sizeof(boundaries) / sizeof(boundaries[0]); i++) {
+        opening_init();
+        opening_render_phase_for_test(OPENING_PHASE_TITLE_LOGO_COLOR_ROTATION,
+                                      boundaries[i].elapsed_ms);
+        uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+        size_t nz = nonzero_count(g_framebuf, ZELIARD_FB_SIZE);
+        int pass = fb == boundaries[i].expected_fb &&
+                   nz == boundaries[i].expected_nonzero;
+        ok &= pass;
+        printf("title_handoff_boundary:%s: %s elapsed=%u fb=%016llx nonzero=%llu\n",
+               boundaries[i].name, pass ? "PASS" : "FAIL",
+               boundaries[i].elapsed_ms,
+               (unsigned long long)fb,
+               (unsigned long long)nz);
+    }
     return ok;
 }
 
@@ -698,14 +842,53 @@ static int run_opening_title_card_case(uint64_t expected_fb_fnv) {
     return ok;
 }
 
-static int run_opening_scanline_frame_case(uint64_t expected_fb_fnv) {
+/* This is the join between two independently checked MASM contracts: the
+ * completed NEC MCGA draw, followed by 100OPDMO:6358 using the mechanical
+ * 105GDMCA:32C9/332C runtime.  It deliberately replaced the former
+ * hand-authored render_scanline_text() checksum. */
+static int run_opening_scanline_runtime_bridge_case(uint64_t expected_fb_fnv) {
     opening_init();
     opening_tick(OPENING_SCANLINE_SAMPLE_MS);
     opening_tick(0);
     uint64_t fb = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
     int ok = fb == expected_fb_fnv;
-    printf("opening_scanline_frame: %s framebuffer=%016llx\n",
+    printf("opening_scanline_runtime_bridge: %s framebuffer=%016llx\n",
            ok ? "PASS" : "FAIL", (unsigned long long)fb);
+    return ok;
+}
+
+static int run_amulet_scanline_runtime_completion_case(void) {
+    const uint32_t elapsed_ms = OPDMO_TEST_WAIT_MS(
+        8 * 0x14 + (31 * 10 + 120 - 1) * 0x1C);
+    opening_init();
+    opening_render_phase_for_test(OPENING_PHASE_AMULET_ANCIENT_PROLOGUE,
+                                  elapsed_ms);
+    opening_scanline_runtime_summary_t s =
+        opening_amulet_scanline_runtime_summary();
+    int ok = s.rendered_draws == 430 && s.exit_frame == 0x78 &&
+             s.finished == 1;
+    printf("amulet_scanline_runtime_completion: %s draws=%llu stream=%llu exit=%u "
+           "finished=%u visible=%016llx work=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)s.rendered_draws,
+           (unsigned long long)s.stream_pos, s.exit_frame, s.finished,
+           (unsigned long long)s.visible_hash, (unsigned long long)s.work_hash);
+    return ok;
+}
+
+static int run_final_scanline_runtime_completion_case(void) {
+    /* A sufficiently late deterministic snapshot consumes the complete
+     * 7334h CR/FF stream plus its real 0A0h AX=0 exit. */
+    opening_init();
+    opening_render_phase_for_test(OPENING_PHASE_DESTINY_CARD, 1000000u);
+    opening_scanline_runtime_summary_t s =
+        opening_final_scanline_runtime_summary();
+    int ok = s.rendered_draws == 180 && s.exit_frame == 0xA0 &&
+             s.finished == 1 && s.work_hash == 0xCF6B5F693E0E3C4BULL;
+    printf("final_scanline_runtime_completion: %s draws=%llu stream=%llu exit=%u "
+           "finished=%u visible=%016llx work=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)s.rendered_draws,
+           (unsigned long long)s.stream_pos, s.exit_frame, s.finished,
+           (unsigned long long)s.visible_hash, (unsigned long long)s.work_hash);
     return ok;
 }
 
@@ -719,6 +902,63 @@ static int run_late_frame_case(const char *name, opening_debug_late_frame_t fram
     return ok;
 }
 
+static uint64_t framebuffer_rect_fnv(int x, int y, int w, int h) {
+    uint8_t row[ZELIARD_WIDTH];
+    uint64_t hval = 1469598103934665603ULL;
+    for (int yy = 0; yy < h; yy++) {
+        int sy = y + yy;
+        if (sy < 0 || sy >= ZELIARD_HEIGHT)
+            continue;
+        int copy_w = w;
+        int sx = x;
+        if (sx < 0) {
+            copy_w += sx;
+            sx = 0;
+        }
+        if (sx + copy_w > ZELIARD_WIDTH)
+            copy_w = ZELIARD_WIDTH - sx;
+        if (copy_w <= 0)
+            continue;
+        memcpy(row, &g_framebuf[sy * ZELIARD_WIDTH + sx], (size_t)copy_w);
+        for (int i = 0; i < copy_w; i++) {
+            hval ^= row[i];
+            hval *= 1099511628211ULL;
+        }
+    }
+    return hval;
+}
+
+static int framebuffer_rect_nonzero_count(int x, int y, int w, int h) {
+    int count = 0;
+    for (int yy = 0; yy < h; yy++) {
+        int sy = y + yy;
+        if (sy < 0 || sy >= ZELIARD_HEIGHT)
+            continue;
+        for (int xx = 0; xx < w; xx++) {
+            int sx = x + xx;
+            if (sx < 0 || sx >= ZELIARD_WIDTH)
+                continue;
+            count += g_framebuf[sy * ZELIARD_WIDTH + sx] != 0;
+        }
+    }
+    return count;
+}
+
+static int run_late_frame_rect_case(const char *name,
+                                    opening_debug_late_frame_t frame,
+                                    int x, int y, int w, int h,
+                                    uint64_t expected_rect_fnv,
+                                    int expected_nonzero) {
+    opening_debug_render_late_frame(frame);
+    uint64_t rect = framebuffer_rect_fnv(x, y, w, h);
+    int nonzero = framebuffer_rect_nonzero_count(x, y, w, h);
+    int ok = rect == expected_rect_fnv && nonzero == expected_nonzero;
+    printf("%s: %s rect=%d,%d,%d,%d fnv=%016llx nonzero=%d\n",
+           name, ok ? "PASS" : "FAIL", x, y, w, h,
+           (unsigned long long)rect, nonzero);
+    return ok;
+}
+
 static int run_phase_frame_case(const char *name, int phase_id, uint32_t elapsed_ms,
                                 uint64_t expected_fb_fnv) {
     opening_init();
@@ -729,6 +969,26 @@ static int run_phase_frame_case(const char *name, int phase_id, uint32_t elapsed
            name, ok ? "PASS" : "FAIL", phase_id, elapsed_ms,
            (unsigned long long)fb);
     return ok;
+}
+
+/* Build the phase-5 removal boundary from the exact extracted OPDMO streams,
+ * rather than baking a browser-observed millisecond. */
+static uint32_t phase5_apparition_remove_start_ms(void) {
+    static const char *const scripts[] = {
+        "opdemo_story_script_3.bin", "opdemo_story_script_4.bin",
+        "opdemo_story_script_5.bin", "opdemo_story_script_6.bin",
+        "opdemo_story_script_7.bin",
+    };
+    u32 ticks = 8 * 0x14 + 0x04;
+    for (size_t i = 0; i < sizeof(scripts) / sizeof(scripts[0]); i++) {
+        size_t size = 0;
+        u8 *script = platform_load_asset(scripts[i], &size);
+        if (!script)
+            return 0;
+        ticks += zeliard_opening_script_timer_ticks(script, size);
+        free(script);
+    }
+    return zel_timer_ticks_to_ms(ticks);
 }
 
 static int run_font_renderer_case(void) {
@@ -939,7 +1199,7 @@ static int run_scene_sprite_a_case(void) {
     ok &= s.frame_count == 12;
     ok &= s.frame_wait_al == 0x1E;
     ok &= s.dispatch_slot == 0x3012;
-    ok &= s.dispatch_target == 0x332C;
+    ok &= s.dispatch_target == 0x3437;
     ok &= s.records[0].x == 0x58;
     ok &= s.records[0].y == 0x25;
     ok &= s.records[0].vx == -16;
@@ -959,6 +1219,18 @@ static int run_scene_sprite_a_case(void) {
            (unsigned long long)s.frame_count,
            s.frame_wait_al,
            s.dispatch_target);
+    return ok;
+}
+
+static int run_scene_sprite_a_object_table_case(void) {
+    uint8_t objects[9 * 15] = {0};
+    size_t size = opening_debug_scene_sprite_a_object_table(objects,
+                                                             sizeof(objects));
+    uint64_t hash = fnv1a64(objects, sizeof(objects));
+    int ok = size == sizeof(objects) && hash == 0xc21fe918b5101768ULL;
+    printf("opening_scene_sprite_a_object_table: %s bytes=%llu fnv=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)size,
+           (unsigned long long)hash);
     return ok;
 }
 
@@ -1224,7 +1496,7 @@ typedef struct {
     const char *asset;
     int rows;
     int cl;
-    uint8_t render_mode;
+    uint8_t masm_ax;
     uint64_t expected_fb;
     int expected_nonzero;
     int expected_min_x;
@@ -1267,7 +1539,6 @@ static int run_mcga_render_asset_oracle_case(
         copy_size = sizeof(seg) - (size_t)base;
     memcpy(seg + base, planes, copy_size);
     free(planes);
-    (void)tc->render_mode;
     int w = 0;
     int h = 0;
     uint8_t *image = zeliard_mcga_render_three_plane_ab(
@@ -1291,9 +1562,9 @@ static int run_mcga_render_asset_oracle_case(
              min_y == tc->expected_min_y &&
              max_x == tc->expected_max_x &&
              max_y == tc->expected_max_y;
-    printf("%s: %s framebuffer=%016llx nonzero=%d bbox=(%d,%d,%d,%d)\n",
-           tc->name, ok ? "PASS" : "FAIL", (unsigned long long)fb,
-           nonzero, min_x, min_y, max_x, max_y);
+    printf("%s: %s masm_ax=%02x framebuffer=%016llx nonzero=%d bbox=(%d,%d,%d,%d)\n",
+           tc->name, ok ? "PASS" : "FAIL", tc->masm_ax,
+           (unsigned long long)fb, nonzero, min_x, min_y, max_x, max_y);
     return ok;
 }
 
@@ -1310,6 +1581,10 @@ static int run_mcga_render_asset_oracles_case(void) {
         {"mcga_yuu1_disp_game_al07", "yuu1.grp", 0x48, 0x68, 0x07,
          0x6c3fdfd6ae025e9fULL, 18564, 16, 16, 303, 119},
         {"mcga_ame_disp_game_al00", "ame.grp", 0x48, 0x68, 0x00,
+         0xa01eebd621d68a49ULL, 24663, 16, 16, 303, 119},
+        {"mcga_ame_disp_game_al09", "ame.grp", 0x48, 0x68, 0x09,
+         0xa01eebd621d68a49ULL, 24663, 16, 16, 303, 119},
+        {"mcga_ame_disp_game_alaa", "ame.grp", 0x48, 0x68, 0xAA,
          0xa01eebd621d68a49ULL, 24663, 16, 16, 303, 119},
     };
     int ok = 1;
@@ -1340,6 +1615,51 @@ static uint8_t *load_img_open_planes_for_test(const char *asset, int rows,
                                       out_size);
     free(payload);
     return planes;
+}
+
+typedef struct {
+    const char *name;
+    const char *asset;
+    int rows;
+    int cl;
+    uint8_t expected_return_al;
+    size_t expected_size;
+} img_open_return_al_case_t;
+
+static int run_img_open_return_al_oracle_case(
+    const img_open_return_al_case_t *tc) {
+    size_t planes_size = 0;
+    uint8_t *planes = load_img_open_planes_for_test(tc->asset, tc->rows,
+                                                    tc->cl, &planes_size);
+    if (!planes) {
+        printf("%s: FAIL asset decode failed\n", tc->name);
+        return 0;
+    }
+
+    uint8_t return_al = planes_size ? planes[planes_size - 1] : 0;
+    int ok = return_al == tc->expected_return_al &&
+             planes_size == tc->expected_size;
+    printf("%s: %s return_al=%02x size=%llu\n",
+           tc->name, ok ? "PASS" : "FAIL", return_al,
+           (unsigned long long)planes_size);
+    free(planes);
+    return ok;
+}
+
+static int run_img_open_return_al_oracles_case(void) {
+    static const img_open_return_al_case_t cases[] = {
+        {"img_open_waku_return_al", "waku.grp", 0x50, 0x88, 0xFE, 32640},
+        {"img_open_ame_return_al", "ame.grp", 0x48, 0x68, 0xAA, 22528},
+        {"img_open_hime_return_al", "hime.grp", 0x48, 0x68, 0xAA, 22528},
+        {"img_open_isi_return_al", "isi.grp", 0x48, 0x68, 0xAA, 22528},
+        {"img_open_sei_return_al", "sei.grp", 0x24, 0x68, 0xAA, 7680},
+        {"img_open_yuu1_return_al", "yuu1.grp", 0x48, 0x68, 0x00, 22504},
+    };
+
+    int ok = 1;
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++)
+        ok &= run_img_open_return_al_oracle_case(&cases[i]);
+    return ok;
 }
 
 typedef struct {
@@ -1513,6 +1833,7 @@ static int run_exact_story_script_case(const char *asset, size_t expected_size,
     zeliard_script_stop_t stop =
         zeliard_opening_script_run(&s, script, size, widths, advances, size + 1);
     uint64_t hash = fnv1a64(script, size);
+    u32 timer_ticks = zeliard_opening_script_timer_ticks(script, size);
     free(script);
 
     int ok = 1;
@@ -1522,14 +1843,16 @@ static int run_exact_story_script_case(const char *asset, size_t expected_size,
     ok &= s.pc == size;
     ok &= s.wait_10_count == expected_wait10;
     ok &= s.pause_f0_count == expected_pause;
+    ok &= timer_ticks == expected_wait10 * 0x10u + expected_pause * 0xF0u;
     ok &= s.clear_count == expected_clear;
     ok &= s.glyph_count == expected_glyphs;
     ok &= s.draw_call_count == expected_glyphs * 2;
-    printf("%s: %s bytes=%llu wait=%llu pause=%llu clear=%llu glyphs=%llu\n",
+    printf("%s: %s bytes=%llu wait=%llu pause=%llu ticks=%u clear=%llu glyphs=%llu\n",
            asset, ok ? "PASS" : "FAIL",
            (unsigned long long)size,
            (unsigned long long)s.wait_10_count,
            (unsigned long long)s.pause_f0_count,
+           timer_ticks,
            (unsigned long long)s.clear_count,
            (unsigned long long)s.glyph_count);
     return ok;
@@ -1548,16 +1871,30 @@ static int run_first_story_first_draw_case(void) {
     fill_opdmo_script_metrics(widths, advances);
     zeliard_opening_script_state_t s;
     zeliard_opening_script_init(&s, 0);
+    zeliard_script_stop_t first_stop =
+        zeliard_opening_script_run(&s, script, size, widths, advances, 1);
+    int first_ok = first_stop == ZELIARD_SCRIPT_STOP_LIMIT &&
+                   s.pc == 1 &&
+                   s.wait_10_count == 1 &&
+                   s.glyph_count == 1 &&
+                   s.draw_call_count == 2 &&
+                   s.last_char == 'P' &&
+                   s.last_draw_x == 4 &&
+                   s.last_draw_y == 0x8F &&
+                   s.text_x_pos == 8;
+
+    zeliard_opening_script_init(&s, 0);
     zeliard_script_stop_t stop =
-        zeliard_opening_script_run(&s, script, size, widths, advances, 5);
+        zeliard_opening_script_run(&s, script, size, widths, advances, 6);
     free(script);
 
     int ok = 1;
+    ok &= first_ok;
     ok &= stop == ZELIARD_SCRIPT_STOP_LIMIT;
-    ok &= s.pc == 5;
-    ok &= s.wait_10_count == 5;
-    ok &= s.glyph_count == 1;
-    ok &= s.draw_call_count == 2;
+    ok &= s.pc == 6;
+    ok &= s.wait_10_count == 6;
+    ok &= s.glyph_count == 2;
+    ok &= s.draw_call_count == 4;
     ok &= s.last_char == 'O';
     ok &= s.last_draw_x == 4;
     ok &= s.last_draw_y == 0x99;
@@ -1589,6 +1926,105 @@ static int run_credits_summary_case(void) {
     return ok;
 }
 
+static int run_credits_scanline_runtime_completion_case(void) {
+    const uint32_t elapsed_ms = OPDMO_TEST_WAIT_MS(
+        8 * 0x14 + (52 * 10 + 120 - 1) * 0x1C);
+    opening_init();
+    opening_render_phase_for_test(OPENING_PHASE_STAFF_CREDITS, elapsed_ms);
+    opening_scanline_runtime_summary_t s =
+        opening_credits_scanline_runtime_summary();
+    int ok = s.rendered_draws == 640 && s.exit_frame == 0x78 &&
+             s.finished == 1 &&
+             s.visible_hash == 0xDD14FCC6528CAB25ULL &&
+             s.work_hash == 0xD6C423A74583C8E0ULL;
+    printf("credits_scanline_runtime_completion: %s draws=%llu stream=%llu exit=%u "
+           "finished=%u visible=%016llx work=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)s.rendered_draws,
+           (unsigned long long)s.stream_pos, s.exit_frame, s.finished,
+           (unsigned long long)s.visible_hash, (unsigned long long)s.work_hash);
+    return ok;
+}
+
+static int run_credits_first_two_records_mcga_oracle_case(void) {
+    static const uint64_t expected_visible[20] = {
+        0xDD14FCC6528CAB25ULL, 0x8ED187DBCE325DE5ULL,
+        0xAA89D2C673E1D5F5ULL, 0xD39904DC673281E3ULL,
+        0xE7AD1871E6F07705ULL, 0xDF32DD85341A3283ULL,
+        0x5490C643A8E61F23ULL, 0xFD082378D7EBDBF5ULL,
+        0x2BE85E085AAB6833ULL, 0x5B9B26AB19E52E33ULL,
+        0x227C7FA8847CF433ULL, 0xE6D2607FE9F73895ULL,
+        0xA09CA3EC4A3B2FF5ULL, 0x4599526D6152E4D3ULL,
+        0xD0314AD8E0FDA975ULL, 0xB1D9D1AC98F9F645ULL,
+        0x8741B15435518F63ULL, 0xDEFC1C2BF57895B5ULL,
+        0xF57FC27ACE0965B5ULL, 0x00E1AF4E66AA35B5ULL,
+    };
+    static const uint64_t expected_work[20] = {
+        0xEAA64BA4798DE35FULL, 0xEC196A3C6381710BULL,
+        0x9C180A02A651E692ULL, 0xD87A68999DD94BBDULL,
+        0xEF6FD6E5B8530874ULL, 0x1F5DB548A6E3C4A0ULL,
+        0x8AE1B4E0A15995F9ULL, 0x7CEAD5602081DFC8ULL,
+        0x0C8CCA4828064EC8ULL, 0x5D9D1B8D1FF5BDC8ULL,
+        0xC68A2E759A01C007ULL, 0x359C33546C31F279ULL,
+        0x8191A96368EE451CULL, 0x24663034F9415A87ULL,
+        0xAEB577AF2D275F31ULL, 0xE4A83A99EA068036ULL,
+        0x8C89B84345D482A5ULL, 0xFD52A86D10D202A5ULL,
+        0x41A3A6056F4F82A5ULL, 0x1648880DE14D02A5ULL,
+    };
+    int ok = 1;
+
+    opening_init();
+    for (int frame = 0; frame < 20; frame++) {
+        opening_render_phase_for_test(
+            OPENING_PHASE_STAFF_CREDITS,
+            OPDMO_TEST_WAIT_MS((uint32_t)frame * 0x1C));
+        opening_scanline_runtime_summary_t s =
+            opening_credits_scanline_runtime_summary();
+        int frame_ok = s.rendered_draws == (uint64_t)frame + 1 &&
+                       s.visible_hash == expected_visible[frame] &&
+                       s.work_hash == expected_work[frame];
+        ok &= frame_ok;
+        printf("credits_mcga_record_0_frame_%02d: %s visible=%016llx work=%016llx\n",
+               frame, frame_ok ? "PASS" : "FAIL",
+               (unsigned long long)s.visible_hash,
+               (unsigned long long)s.work_hash);
+    }
+    for (int frame = 20; frame < 140; frame++) {
+        opening_render_phase_for_test(
+            OPENING_PHASE_STAFF_CREDITS,
+            OPDMO_TEST_WAIT_MS((uint32_t)frame * 0x1C));
+    }
+    {
+        opening_scanline_runtime_summary_t s =
+            opening_credits_scanline_runtime_summary();
+        int checkpoint_ok = s.rendered_draws == 140 &&
+                            s.visible_hash == 0xE9B957AA11F8ECB3ULL &&
+                            s.work_hash == 0x3BBA3D5D2B6FC1B8ULL;
+        ok &= checkpoint_ok;
+        printf("credits_mcga_record_13_frame_09: %s visible=%016llx work=%016llx\n",
+               checkpoint_ok ? "PASS" : "FAIL",
+               (unsigned long long)s.visible_hash,
+               (unsigned long long)s.work_hash);
+    }
+    for (int frame = 140; frame < 270; frame++) {
+        opening_render_phase_for_test(
+            OPENING_PHASE_STAFF_CREDITS,
+            OPDMO_TEST_WAIT_MS((uint32_t)frame * 0x1C));
+    }
+    {
+        opening_scanline_runtime_summary_t s =
+            opening_credits_scanline_runtime_summary();
+        int checkpoint_ok = s.rendered_draws == 270 &&
+                            s.visible_hash == 0x7EC968257BB31D13ULL &&
+                            s.work_hash == 0x8AE7AB4BB782BCAEULL;
+        ok &= checkpoint_ok;
+        printf("credits_mcga_record_26_frame_09: %s visible=%016llx work=%016llx\n",
+               checkpoint_ok ? "PASS" : "FAIL",
+               (unsigned long long)s.visible_hash,
+               (unsigned long long)s.work_hash);
+    }
+    return ok;
+}
+
 static int run_scene_sprite_b_case(void) {
     opening_sprite_b_summary_t s = opening_scene_sprite_b_summary();
     int ok = 1;
@@ -1604,12 +2040,93 @@ static int run_scene_sprite_b_case(void) {
     ok &= s.explicit_chapter2_al[0] == 2;
     ok &= s.explicit_chapter2_al[1] == 3;
     ok &= s.explicit_chapter2_bx == 0x1720;
-    printf("opening_scene_sprite_b_summary: %s bytes=%llu chap2=%llu glyphs=%llu waits=%llu\n",
+    ok &= s.final_render_state_a == 0x0130;
+    ok &= s.final_render_state_b == 0xA8;
+    ok &= s.final_volume_b == 0x3F;
+    printf("opening_scene_sprite_b_summary: %s bytes=%llu chap2=%llu glyphs=%llu waits=%llu state=%04x/%02x volume=%02x\n",
            ok ? "PASS" : "FAIL",
            (unsigned long long)s.script_bytes_consumed,
            (unsigned long long)s.chapter2_call_count,
            (unsigned long long)s.glyph_count,
-           (unsigned long long)s.script_wait_count);
+           (unsigned long long)s.script_wait_count,
+           s.final_render_state_a, s.final_render_state_b, s.final_volume_b);
+    return ok;
+}
+
+static int run_gmmcga_render_text_char_alt_case(void) {
+    static const uint8_t glyph[8] = {
+        0xA5, 0x3C, 0x81, 0x42, 0x18, 0xE7, 0x00, 0x7E,
+    };
+    static const uint64_t expected_hash[2] = {
+        0x09E8C98B7168FE2DULL, 0xFFD7FB96FC8CEDE3ULL,
+    };
+    uint8_t font_data[0x188];
+    uint8_t vga[0x10000];
+    zeliard_font_t font;
+    int ok = 1;
+
+    memset(font_data, 0, sizeof(font_data));
+    memcpy(font_data + 0x180, glyph, sizeof(glyph));
+    memset(&font, 0, sizeof(font));
+    font.data = font_data;
+    font.size = sizeof(font_data);
+    font.ptr_a = 0;
+
+    for (int selector = 2, test_index = 0; selector <= 7;
+         selector += 5, test_index++) {
+        framebuf_clear(0);
+        zeliard_font_draw_mcga_alt_char(&font, 4, 0x8F, 'P',
+                                        (uint8_t)selector, 1);
+        memset(vga, 0, sizeof(vga));
+        memcpy(vga, g_framebuf, ZELIARD_FB_SIZE);
+        uint64_t hash = fnv1a64(vga, sizeof(vga));
+        uint8_t pixel = g_framebuf[0x8F * ZELIARD_WIDTH + 4];
+        int case_ok = hash == expected_hash[test_index] &&
+                      pixel == (uint8_t)(selector * 0x11);
+        ok &= case_ok;
+        printf("gmmcga_render_text_char_alt_%d: %s vga=%016llx pixel=%02x\n",
+               selector, case_ok ? "PASS" : "FAIL",
+               (unsigned long long)hash, pixel);
+    }
+    return ok;
+}
+
+static int run_gmmcga_narration_stream_case(void) {
+    static const uint8_t glyph[8] = {
+        0xA5, 0x3C, 0x81, 0x42, 0x18, 0xE7, 0x00, 0x7E,
+    };
+    static const uint8_t stream[] = {'A', 0x82, 'B', 0x0d, 'C', 0xff};
+    uint8_t font_data[0x188];
+    uint8_t vga[0x10000];
+    zeliard_font_t font;
+    memset(font_data, 0, sizeof(font_data));
+    for (uint8_t ch = 'A'; ch <= 'C'; ch++)
+        memcpy(font_data + (ch - 0x20u) * 8u, glyph, sizeof(glyph));
+    memset(&font, 0, sizeof(font));
+    font.data = font_data;
+    font.size = sizeof(font_data);
+    framebuf_clear(0);
+    zeliard_font_draw_mcga_narration_stream(&font, 4, 0x8f, stream,
+                                             sizeof(stream), 1);
+    memset(vga, 0, sizeof(vga));
+    memcpy(vga, g_framebuf, ZELIARD_FB_SIZE);
+    uint64_t hash = fnv1a64(vga, sizeof(vga));
+    int ok = hash == 0x82CF53E05B4BA4F3ULL;
+    printf("gmmcga_narration_stream: %s vga=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)hash);
+    return ok;
+}
+
+static int run_gmmcga_jashiin_speech_clear_case(void) {
+    uint8_t vga[0x10000];
+    for (size_t index = 0; index < sizeof(vga); index++)
+        vga[index] = (uint8_t)((index * 17u + 3u) & 0xffu);
+    int rc = zeliard_gmmcga_jashiin_speech_clear(vga, sizeof(vga),
+                                                  0, 0x0094, 0x501e);
+    uint64_t hash = fnv1a64(vga, sizeof(vga));
+    int ok = rc == 0 && hash == 0x9A550041FF6558A5ULL;
+    printf("gmmcga_jashiin_speech_clear: %s vga=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)hash);
     return ok;
 }
 
@@ -1703,6 +2220,14 @@ static int run_title_color_exit_case(void) {
     int ok = 1;
     ok &= s.iterations == 100;
     ok &= s.disp_set_call_count == 200;
+    ok &= s.disp_sprite_slot == 0x301E;
+    ok &= s.disp_sprite_target == 0x37B4;
+    ok &= s.disp_sprite_writes_palette == 0;
+    ok &= s.disp_sprite_object_count == 9;
+    ok &= s.disp_sprite_record_size == 0x0F;
+    ok &= s.disp_sprite_scratch_size == 0x44;
+    ok &= s.disp_sprite_source_stride == 0x22;
+    ok &= s.disp_sprite_row_count == 0x11;
     ok &= s.wait_count == 100;
     ok &= s.wait_al == 0x50;
     for (size_t i = 0; i < 6; i++) {
@@ -1712,10 +2237,13 @@ static int run_title_color_exit_case(void) {
     ok &= s.interrupt_cascade_count == 1;
     ok &= s.stick_handler_call_count == 4;
     ok &= s.exits_to_game == 1;
-    printf("opening_title_color_exit: %s iterations=%llu disp_set=%llu wait=%02x exit=%u\n",
+    printf("opening_title_color_exit: %s iterations=%llu disp_set=%llu sprite=%04x->%04x objs=%u stride=%02x rows=%u wait=%02x exit=%u\n",
            ok ? "PASS" : "FAIL",
            (unsigned long long)s.iterations,
            (unsigned long long)s.disp_set_call_count,
+           s.disp_sprite_slot, s.disp_sprite_target,
+           s.disp_sprite_object_count, s.disp_sprite_source_stride,
+           s.disp_sprite_row_count,
            s.wait_al, s.exits_to_game);
     return ok;
 }
@@ -1758,6 +2286,151 @@ static int run_trans_exit_case(void) {
     return ok;
 }
 
+static int run_mcga_render_ab_gseg_case(void) {
+    uint8_t game[0x10000] = {0};
+    uint8_t work[0x10000] = {0};
+    uint8_t vga[0x10000];
+    int ok = 1;
+    for (size_t i = 0; i < 0x480u * 4u; i++)
+        game[0x97C0u + i] = (uint8_t)((i * 37u + 11u) & 0xFFu);
+    for (size_t i = 0; i < sizeof(vga); i++)
+        vga[i] = (uint8_t)((i * 19u + 7u) & 0xFFu);
+
+    static const uint64_t expected_work[4] = {
+        0xea54490a87acb88aULL, 0xb87ad8b93a57264aULL,
+        0xea54490a87acb88aULL, 0xb87ad8b93a57264aULL,
+    };
+    static const uint64_t expected_vga[4] = {
+        0xb4f706efef059ad2ULL, 0xd0cd568d834e7852ULL,
+        0xb4f706efef059ad2ULL, 0xd0cd568d834e7852ULL,
+    };
+    for (uint8_t page = 0; page < 4; page++) {
+        memset(work, 0, sizeof(work));
+        for (size_t i = 0; i < sizeof(vga); i++)
+            vga[i] = (uint8_t)((i * 19u + 7u) & 0xFFu);
+        ok &= zeliard_mcga_disp_render_ab_gseg(game, sizeof(game), work,
+                                               sizeof(work), page, 0, vga,
+                                               sizeof(vga)) == 0;
+        ok &= fnv1a64(work, sizeof(work)) == expected_work[page];
+        ok &= fnv1a64(vga, sizeof(vga)) == expected_vga[page];
+    }
+    printf("mcga_disp_render_ab_gseg: %s pages=4 bx=0000\n",
+           ok ? "PASS" : "FAIL");
+    return ok;
+}
+
+static int run_mcga_render_ab_ab40_case(void) {
+    uint8_t game[0x10000] = {0};
+    uint8_t work[0x10000] = {0};
+    uint8_t vga[0x10000];
+    static const uint64_t expected_work[5] = {
+        0x7a54e6f497d6e940ULL, 0x049b72555a9f1598ULL,
+        0x1f645ffbcc732120ULL, 0x9582ade0b3c3edd8ULL,
+        0x7a54e6f497d6e940ULL,
+    };
+    static const uint64_t expected_vga[5] = {
+        0xdc34bd70d74ef260ULL, 0x1b7024e43dadfe28ULL,
+        0x502d12c6680ebd80ULL, 0x3ab55aad4c798d48ULL,
+        0xdc34bd70d74ef260ULL,
+    };
+    int ok = 1;
+
+    for (size_t i = 0; i < 0x0cc0u * 5u; i++)
+        game[0xab40u + i] = (uint8_t)((i * 29u + 0x53u) & 0xffu);
+    for (uint8_t page = 0; page < 5; page++) {
+        memset(work, 0, sizeof(work));
+        for (size_t i = 0; i < sizeof(vga); i++)
+            vga[i] = (uint8_t)((i * 13u + 0x31u) & 0xffu);
+        ok &= zeliard_mcga_disp_render_ab_ab40(game, sizeof(game), work,
+                                               sizeof(work), page, vga,
+                                               sizeof(vga)) == 0;
+        ok &= fnv1a64(work, sizeof(work)) == expected_work[page];
+        ok &= fnv1a64(vga, sizeof(vga)) == expected_vga[page];
+    }
+    printf("mcga_disp_render_ab_ab40: %s pages=5 A000=0000\n",
+           ok ? "PASS" : "FAIL");
+    return ok;
+}
+
+static int run_mcga_disp_script_area_case(void) {
+    enum { SOURCE_DI = 0x8000, PLANE_BYTES = 0x1028 };
+    uint8_t *planes = NULL;
+    uint8_t *seg = NULL;
+    uint8_t *image = NULL;
+    uint8_t vga[0x10000];
+    size_t planes_size = 0;
+    int w = 0, h = 0;
+    int ok = 0;
+
+    planes = decode_opening_planes_asset("maop.grp", 0x30, 0x5d,
+                                         &planes_size, NULL);
+    seg = (uint8_t *)calloc(0x10000, 1);
+    if (!planes || !seg || planes_size > 0x8000u)
+        goto done;
+    memcpy(seg + SOURCE_DI, planes, planes_size);
+
+    /* 105GDMCA:3E35's 1028h-byte three-plane pixel sort. */
+    for (uint16_t i = 0; i < PLANE_BYTES; i++) {
+        uint8_t *a = &seg[SOURCE_DI + i];
+        uint8_t *b = &seg[SOURCE_DI + PLANE_BYTES + i];
+        uint8_t *c = &seg[SOURCE_DI + 2 * PLANE_BYTES + i];
+        uint8_t keep = (uint8_t)~(*a & *b & (uint8_t)~*c);
+        *a &= keep;
+        *b &= keep;
+        *c &= keep;
+        uint8_t merge = (uint8_t)(*c & (uint8_t)~*a & (uint8_t)~*b);
+        *a |= merge;
+        *b |= merge;
+        *c &= (uint8_t)~merge;
+    }
+    image = zeliard_mcga_render_three_plane_ab_direct(seg, SOURCE_DI,
+                                                       PLANE_BYTES, 0x2f, 0x58,
+                                                       &w, &h);
+    if (!image || w != 188 || h != 88)
+        goto done;
+    blit_to_framebuffer(image, w, h, 0x16 * 4, 0x18);
+    memset(vga, 0, sizeof(vga));
+    memcpy(vga, g_framebuf, ZELIARD_FB_SIZE);
+    ok = fnv1a64(vga, sizeof(vga)) == 0x61C201EF93BF9D39ULL;
+
+done:
+    printf("mcga_disp_script_area: %s vga=%016llx\n", ok ? "PASS" : "FAIL",
+           (unsigned long long)(ok ? fnv1a64(vga, sizeof(vga)) : 0));
+    free(image);
+    free(seg);
+    free(planes);
+    return ok;
+}
+
+static int run_apparition_remove_isi_case(void) {
+    opening_apparition_remove_isi_summary_t s = opening_apparition_remove_isi_summary();
+    int ok = 1;
+    ok &= s.busy_wait_al[0] == 2;
+    ok &= s.busy_wait_al[1] == 3;
+    ok &= s.disp_game_al[0] == 0;
+    ok &= s.disp_game_al[1] == 0;
+    ok &= s.disp_game_bx[0] == 0x1728;
+    ok &= s.disp_game_bx[1] == 0x1728;
+    ok &= s.disp_game_cx[0] == 0x2230;
+    ok &= s.disp_game_cx[1] == 0x2230;
+    ok &= s.disp_game_di[0] == 0;
+    ok &= s.disp_game_di[1] == 0;
+    ok &= s.story_timer_wait_al == 0x0F;
+    ok &= strcmp(s.sar_asset, "isi.grp") == 0;
+    ok &= s.sar_al == 2;
+    ok &= s.sar_di == 0xA000;
+    ok &= s.decompress_si == 0xA000;
+    ok &= s.decompress_di == 0x4000;
+    ok &= s.gfx_mode_bx == 0x0410;
+    ok &= s.gfx_mode_cx == 0x4868;
+    printf("opening_apparition_remove_isi: %s waits=%02x/%02x disp=%02x/%04x/%04x sar=%s mode=%04x/%04x\n",
+           ok ? "PASS" : "FAIL",
+           s.busy_wait_al[0], s.busy_wait_al[1],
+           s.disp_game_al[0], s.disp_game_bx[0], s.disp_game_cx[0],
+           s.sar_asset, s.gfx_mode_bx, s.gfx_mode_cx);
+    return ok;
+}
+
 int main(void) {
     const image_case_t cases[] = {
         {"ttl3_logo_bbox", "ttl3.grp", 65, 112, 28, 15, PIPE_GRP_ABC,
@@ -1773,6 +2446,16 @@ int main(void) {
     };
 
     int ok = 1;
+    ok &= run_ttl3_decode_rle_memory_case();
+    ok &= run_busy_wait_delay_memory_case();
+    ok &= run_hime_dmaou_blend_memory_case();
+    ok &= run_hime_dmaou_blend_frame_case();
+    ok &= run_hime_dmaou_external_scratch_case();
+    ok &= run_dmaou_apparition_3c1c_case();
+    ok &= run_dmaou_post_busy_case(2, 0x8c5cd5885409e794ULL, 4643,
+                                   0x1815cf0668c85b39ULL, 1512);
+    ok &= run_dmaou_post_busy_case(3, 0x0168a8840b8730b8ULL, 4634,
+                                   0xfd760b803e712fedULL, 1461);
     for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
         ok &= run_image_case(&cases[i]);
     }
@@ -1780,50 +2463,127 @@ int main(void) {
     ok &= run_opdemo_nec_hou_handoff_disp_game_rect_case(
         0x6c526d707a77e637ULL, 64, 64, 1923,
         0x9cca3279aebfea37ULL, 1923, 128, 72, 191, 128);
-    ok &= run_opdemo_nec_hou_handoff_phase_frame_case(
-        0xdd9326310dfe0f52ULL, 3156, 73, 34, 246, 146);
+    /* Retired: run_opdemo_nec_hou_handoff_phase_frame_case was sampled at
+     * the end of a synthetic two-times-14h service interval after 33B7h.
+     * Release MASM has no timer wait there, so that timestamp does not name a
+     * valid OPDMO checkpoint.  The preceding HOU memory/disp_game contracts
+     * are release-MASM-derived; sprite-A gets its own per-frame oracle. */
     ok &= run_nec_hou_composite_case(0x9ef45cf29c1cd2b5ULL);
-    ok &= run_opening_title_card_case(0x513e9ef6009064eaULL);
-    ok &= run_opening_scanline_frame_case(0x50ecb30df83f66e0ULL);
+    ok &= run_opening_title_card_case(0x519522a8f9b14d3cULL);
+    ok &= run_opening_scanline_runtime_bridge_case(0x751a6a61c6b9dd39ULL);
+    ok &= run_amulet_scanline_runtime_completion_case();
+    ok &= run_final_scanline_runtime_completion_case();
     ok &= run_late_frame_case("maop_reveal_step_00",
                               OPENING_DEBUG_LATE_MAOP_REVEAL_STEP_00,
-                              0x040b92fb1f2b6f7cULL);
+                              0x045c54146f3e47c0ULL);
     ok &= run_late_frame_case("maop_reveal_step_12",
                               OPENING_DEBUG_LATE_MAOP_REVEAL_STEP_12,
-                              0x95c15c2bbc6a26c0ULL);
+                              0x0e85b51a381f53c4ULL);
     ok &= run_late_frame_case("split_return_reveal_step_12",
                               OPENING_DEBUG_LATE_SPLIT_RETURN_STEP_12,
-                              0xac186603a7651724ULL);
+                              0x6ec3e5eb15ab8c55ULL);
     ok &= run_late_frame_case("final_yuu3_yuu4_composite",
                               OPENING_DEBUG_LATE_FINAL_YUU3_YUU4,
                               0x92d8ad4d7c4c1f7fULL);
+    /* These phase-local samples use the real accumulated gvar_frame_timer
+     * schedule of run_script_interpreter, not an independently rounded ms
+     * delay per script byte.  The wait sequences are asserted by the MASM
+     * `assert_story_script_protocol` oracle. */
+    ok &= run_phase_frame_case("phase5_post_blend_script4_live",
+                               OPENING_PHASE_JASHIIN_CURSES_PRINCESS,
+                               42500,
+                               0x927f59a12736ed3aULL);
+    ok &= run_phase_frame_case("phase5_script3_to_blend_delay",
+                               OPENING_PHASE_JASHIIN_CURSES_PRINCESS,
+                               42071,
+                               0xea9623da8322f73eULL);
     ok &= run_phase_frame_case("phase5_dmaou_apparition_disp_data",
-                               OPENING_PHASE_JASHIIN_CURSES_PRINCESS, 45000,
-                               0xf0836f3f1eb959e4ULL);
+                               OPENING_PHASE_JASHIIN_CURSES_PRINCESS,
+                               45000,
+                               0x0d211db445165fe4ULL);
+    const uint32_t apparition_remove_start = phase5_apparition_remove_start_ms();
+    ok &= run_phase_frame_case("phase5_apparition_remove_al2_complete_live",
+                               OPENING_PHASE_JASHIIN_CURSES_PRINCESS,
+                               apparition_remove_start + OPDMO_TEST_WAIT_MS(16 * 0x14),
+                               0x36e995bbd85aac02ULL);
+    ok &= run_phase_frame_case("phase5_apparition_remove_al3_complete_live",
+                               OPENING_PHASE_JASHIIN_CURSES_PRINCESS,
+                               apparition_remove_start + OPDMO_TEST_WAIT_MS(16 * 0x14) +
+                                   OPDMO_TEST_WAIT_MS(0x0F) + OPDMO_TEST_WAIT_MS(16 * 0x14) - 1,
+                               0x7a54e13ec798898fULL);
     ok &= run_phase_frame_case("phase6_guardian_sei_overlay",
                                OPENING_PHASE_KING_GRIEF_AND_SPIRIT, 66000,
-                               0xeca47c6b6ca209a2ULL);
+                               0x5198a7798d63e509ULL);
     ok &= run_phase_frame_case("phase9_duke_jashiin_after_maop",
                                OPENING_PHASE_JASHIIN_CONFRONTATION, 19000,
-                               0x7762d5b5c479c0f2ULL);
+                               0xe51f0e6bf950dae9ULL);
     ok &= run_phase_frame_case("final_yuu3_yuu4_blit_start",
                                OPENING_PHASE_DESTINY_CARD, 0,
-                               0xdd14fcc6528cab25ULL);
-    ok &= run_phase_frame_case("final_yuu3_yuu4_text_live",
-                               OPENING_PHASE_DESTINY_CARD, 8000,
-                               0x0b815e9bbc5357e8ULL);
-    ok &= run_phase_frame_case("final_yuu3_yuu4_fadeout_live",
-                               OPENING_PHASE_DESTINY_CARD, 18000,
-                               0x03deb99b0fedb048ULL);
+                               0x18f7ed5ff6c0906dULL);
+    /* 100OPDMO:1075-84 draws the final YUU surface, then runs the verified
+     * 7334 animate_scanline_alt stream.  These checkpoints replaced the old
+     * synthetic destiny-card renderer. */
+    ok &= run_phase_frame_case("final_yuu3_yuu4_alt_runtime_entry",
+                               OPENING_PHASE_DESTINY_CARD, 8676,
+                               0x3448110e89656b09ULL);
+    ok &= run_phase_frame_case("final_yuu3_yuu4_alt_runtime_exit",
+                               OPENING_PHASE_DESTINY_CARD, 18676,
+                               0xb8253d8540d730e5ULL);
     ok &= run_late_frame_case("disp_load_ax0f_entry_96",
                               OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_96,
                               0xe90b4d1e375f70f3ULL);
+    ok &= run_late_frame_case("disp_load_ax0f_entry_24",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_24,
+                              0x7fe0fcd0234eeb53ULL);
+    ok &= run_late_frame_case("disp_load_ax0f_entry_48",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_48,
+                              0xabef20a5dcc8a033ULL);
+    ok &= run_late_frame_case("disp_load_ax0f_entry_72",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_72,
+                              0xabef20a5dcc8a033ULL);
+    ok &= run_late_frame_case("disp_load_ax0f_entry_120",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_120,
+                              0x6463a816dfa96235ULL);
+    ok &= run_late_frame_case("disp_load_ax0f_entry_144",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_144,
+                              0x45f68d2d081c1353ULL);
+    ok &= run_late_frame_case("disp_load_ax0f_entry_168",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_168,
+                              0x45f68d2d081c1353ULL);
     ok &= run_late_frame_case("disp_load_ax0f_entry_192",
                               OPENING_DEBUG_LATE_DISP_LOAD_AX0F_ENTRY_192,
                               0xf367db99ee55cc05ULL);
+    /* Complete direct calls to 105GDMCA:38E6.  The values come from the
+     * Unicorn MASM oracle, not from the scene player. */
+    ok &= run_late_frame_case("disp_load_ax06_full",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX06_FULL,
+                              0x2deb8b761ec82310ULL);
+    ok &= run_late_frame_case("disp_load_ax08_full",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX08_FULL,
+                              0x8ee815ad4c559738ULL);
+    ok &= run_late_frame_case("disp_load_ax0f_full",
+                              OPENING_DEBUG_LATE_DISP_LOAD_AX0F_FULL,
+                              0xf367db99ee55cc05ULL);
+    ok &= run_late_frame_case("disp_load_setup_rect_yuu_left",
+                              OPENING_DEBUG_DISP_LOAD_SETUP_RECT_YUU_LEFT,
+                              0x82f852300d0ccbd9ULL);
+    ok &= run_late_frame_case("disp_load_setup_rect_yuu_right",
+                              OPENING_DEBUG_DISP_LOAD_SETUP_RECT_YUU_RIGHT,
+                              0xdf07fffb511e6959ULL);
+    ok &= run_late_frame_case("disp_load_setup_rect_maop",
+                              OPENING_DEBUG_DISP_LOAD_SETUP_RECT_MAOP,
+                              0xe4769151bb374b11ULL);
     ok &= run_late_frame_case("waku_ame_ax9_composite",
                               OPENING_DEBUG_LATE_WAKU_AME_AX9,
                               0x87930cdc61e043cfULL);
+    ok &= run_late_frame_rect_case("waku_ame_ax9_inner_rect",
+                                   OPENING_DEBUG_LATE_WAKU_AME_AX9,
+                                   16, 16, 288, 104,
+                                   0x603e529ec315331bULL, 24663);
+    ok &= run_late_frame_rect_case("waku_ame_ax9_sky_rect",
+                                   OPENING_DEBUG_LATE_WAKU_AME_AX9,
+                                   80, 24, 190, 56,
+                                   0x957c8e66b22faf56ULL, 9538);
     ok &= run_late_frame_case("waku_hime_ax9_composite",
                               OPENING_DEBUG_LATE_WAKU_HIME_AX9,
                               0xe4902326b0b62c7aULL);
@@ -1836,14 +2596,29 @@ int main(void) {
     ok &= run_late_frame_case("maop_script_area",
                               OPENING_DEBUG_LATE_MAOP_SCRIPT_AREA,
                               0xaaa5e73aae0c58aaULL);
+    ok &= run_late_frame_case("oui_gfx_update_full",
+                              OPENING_DEBUG_LATE_OUI_GFX_UPDATE_FULL,
+                              0xd9de4271db1e6d0fULL);
+    ok &= run_late_frame_case("sei_3c1c_pass_01",
+                              OPENING_DEBUG_LATE_SEI_3C1C_PASS_01,
+                              0xd0fa7852a4980779ULL);
+    ok &= run_late_frame_case("sei_3c1c_pass_02",
+                              OPENING_DEBUG_LATE_SEI_3C1C_PASS_02,
+                              0xfb1363653dffc072ULL);
+    ok &= run_late_frame_case("sei_3c1c_pass_04",
+                              OPENING_DEBUG_LATE_SEI_3C1C_PASS_04,
+                              0x170fa7d65e98edf7ULL);
+    ok &= run_late_frame_case("sei_3c1c_pass_08",
+                              OPENING_DEBUG_LATE_SEI_3C1C_PASS_08,
+                              0x3a8e5e1c8fdd0b3eULL);
     ok &= run_font_renderer_case();
     ok &= run_script_calc_width_case();
     ok &= run_script_interpreter_control_case();
     ok &= run_script_interpreter_wrap_case();
     ok &= run_opdmo_script_metric_table_case();
     ok &= run_first_story_first_draw_case();
-    ok &= run_exact_story_script_case("opdemo_story_script_1.bin", 742,
-                                      0xa6ede1b282a41a9eULL, 742, 34, 9, 685);
+    ok &= run_exact_story_script_case("opdemo_story_script_1.bin", 743,
+                                      0xd77e2be1f175f020ULL, 743, 34, 9, 686);
     ok &= run_exact_story_script_case("opdemo_story_script_2.bin", 306,
                                       0x8a9f471b378e4a7bULL, 306, 15, 4, 281);
     ok &= run_exact_story_script_case("opdemo_story_script_3.bin", 174,
@@ -1888,7 +2663,10 @@ int main(void) {
                                       0x78bab3820e9a1dcbULL, 87, 3, 1, 78);
     ok &= run_scanline_summary_case();
     ok &= run_credits_summary_case();
+    ok &= run_credits_scanline_runtime_completion_case();
+    ok &= run_credits_first_two_records_mcga_oracle_case();
     ok &= run_scene_sprite_a_case();
+    ok &= run_scene_sprite_a_object_table_case();
     ok &= run_scene_sprite_a_frame_table_case();
     ok &= run_scene_sprite_a_render_case("opening_scene_sprite_a_frame_00",
                                          0, 0xf9765efa9b86befaULL,
@@ -1906,21 +2684,31 @@ int main(void) {
     ok &= run_scene_sprite_c_case();
     ok &= run_mcga_render_entry_oracle_case();
     ok &= run_mcga_render_asset_oracles_case();
+    ok &= run_img_open_return_al_oracles_case();
     ok &= run_mcga_yuu_rect_oracles_case();
     ok &= run_scene_sprite_b_case();
+    ok &= run_mcga_render_ab_gseg_case();
+    ok &= run_mcga_render_ab_ab40_case();
+    ok &= run_mcga_disp_script_area_case();
+    ok &= run_gmmcga_render_text_char_alt_case();
+    ok &= run_gmmcga_narration_stream_case();
+    ok &= run_gmmcga_jashiin_speech_clear_case();
     ok &= run_title_asset_case();
     ok &= run_title_display_handoff_case();
     ok &= run_title_color_exit_case();
+    ok &= run_title_handoff_timing_boundaries_case();
     ok &= run_timer_exit_case();
     ok &= run_trans_exit_case();
+    ok &= run_apparition_remove_isi_case();
     ok &= run_palette_case(0xd9e89a4c32254f58ULL);
     ok &= run_opdmo_palette_cases();
-    ok &= run_initial_title_case(0x513e9ef6009064eaULL, 0x9897060bb7bd34b3ULL);
-    ok &= run_title_mcga_render_pass_case(0x4c71a3a942242152ULL, 0x9897060bb7bd34b3ULL);
-    ok &= run_nec_mcga_render_pass_case(0x748e5813713a97d2ULL, 0x43c888ad1017043dULL);
+    ok &= run_title_tile_scratch_palette_isolation_case();
+    ok &= run_initial_title_case(0x519522a8f9b14d3cULL, 0x798e1154d8bd010dULL);
+    ok &= run_title_mcga_render_pass_case(0x519522a8f9b14d3cULL, 0x798e1154d8bd010dULL);
+    ok &= run_nec_mcga_render_pass_case(0x76a5c68141189f10ULL, 0x43c888ad1017043dULL);
     ok &= run_copyright_input_ignored_case(0x1bd80e81a778a2caULL);
     ok &= run_copyright_timer_starts_prologue_case();
-    ok &= run_amulet_phase_starts_black_case();
+    ok &= run_amulet_phase_starts_first_mcga_pass_case();
     ok &= run_automatic_interlude_phase_order_case();
     ok &= run_title_handoff_visual_regression_case();
     ok &= run_opening_input_ignores_copyright_card_case();

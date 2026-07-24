@@ -5,6 +5,10 @@
   "type": "module",
   "scripts": {
     "assets": "node ../scripts/copy_assets.mjs",
+    "hybrid:assets": "node ../scripts/build-hybrid-dos-image.mjs",
+    "hybrid:capture": "node capture_hybrid_masm_frames.mjs",
+    "hybrid:verify": "node verify_hybrid_masm_capture.mjs",
+    "opening:compare": "node run_opening_parity_capture.mjs",
     "engine": "$(MAKE) -C ../engine wasm",
     "build:engine": "cd ../engine && make wasm",
     "dev": "vite",
@@ -15,5 +19,8 @@
     "playwright": "^1.61.0",
     "typescript": "~5.4.5",
     "vite": "~5.2.10"
+  },
+  "dependencies": {
+    "v86": "^0.5.424"
   }
 }

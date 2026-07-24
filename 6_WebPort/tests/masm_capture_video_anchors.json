@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "source_video": "artifacts/dosbox-opening/masm-20260718-201747/opening-lossless.mkv",
+  "notes": [
+    "Recorded directly from the bit-perfect MASM release build in DOSBox-X.",
+    "This file is distinct from opening_video_anchors.json, whose timestamps belong to the older hand-recorded MP4.",
+    "Anchors align the visual workbench only; MASM code and behavior oracles remain authoritative."
+  ],
+  "anchors": [
+    {
+      "id": "title_clear_exact_black",
+      "description": "Title clear interval after the palette-1 handoff; true black across the full framebuffer.",
+      "video_sec": 3.6,
+      "wasm_ms": 3500,
+      "phase": 0,
+      "phase_id": "copyright_title_card",
+      "confidence": "high",
+      "evidence": {
+        "comparison_summary": "6_WebPort/tests/comparison/masm_capture_title_clear_after_palette_fix/wasm_timeline/summary.json",
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      "comparison_defaults": {
+        "start_ms": 3500,
+        "duration_sec": 1,
+        "fps": 18.2065,
+        "max_samples": 0
+      }
+    },
+    {
+      "id": "title_necklace_exact_frame",
+      "description": "First measured near-pixel-identical title-to-necklace transition frame.",
+      "video_sec": 4.675,
+      "wasm_ms": 4500,
+      "phase": 1,
+      "phase_id": "amulet_ancient_prologue_scroll",
+      "confidence": "high",
+      "evidence": {
+        "comparison_summary": "6_WebPort/tests/comparison/masm_capture_title_anchor_probe/wasm_timeline/summary.json",
+        "reference_frame": "6_WebPort/tests/comparison/masm_capture_title_anchor_probe/wasm_timeline/offset_probe/ref_0001_+0175.ppm",
+        "rmse": 0.15375508121684955,
+        "mae": 0.012140625
+      },
+      "comparison_defaults": {
+        "start_ms": 3500,
+        "duration_sec": 2,
+        "fps": 18.2065,
+        "max_samples": 0
+      }
+    },
+    {
+      "id": "amulet_mid_scroll_quantized_match",
+      "description": "Mid-prologue scanline scroll frame; remaining RGB delta is capture quantization only.",
+      "video_sec": 30.085,
+      "wasm_ms": 30000,
+      "phase": 1,
+      "phase_id": "amulet_ancient_prologue_scroll",
+      "confidence": "high",
+      "evidence": {
+        "comparison_summary": "6_WebPort/tests/comparison/masm_capture_amulet_mid_scroll_frame_refined/wasm_timeline/summary.json",
+        "rmse": 0.8456783519755013,
+        "mae": 0.241828125,
+        "max_abs": 3
+      },
+      "comparison_defaults": {
+        "start_ms": 30000,
+        "duration_sec": 1,
+        "fps": 18.2065,
+        "max_samples": 0
+      }
+    }
+  ]
+}

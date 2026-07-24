@@ -69,16 +69,16 @@ try {
 }
 
 $buildTargets = if ($OpeningOnly) {
-    "build/opening-parity-native build/opening-service-trace-native"
+    "build/opening-parity-native build/opening-service-trace-native build/opening-live-trace-native"
 } else {
-    "build/opening-parity-native build/opening-service-trace-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native"
+    "build/opening-parity-native build/opening-service-trace-native build/opening-live-trace-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native"
 }
 $run = if ($BuildOnly) {
     "make $buildTargets"
 } elseif ($OpeningOnly) {
-    "make $buildTargets && ./build/opening-parity-native && ./build/opening-service-trace-native > build/opening_service_trace_candidate.txt"
+    "make $buildTargets && ./build/opening-parity-native && ./build/opening-live-trace-native && ./build/opening-service-trace-native > build/opening_service_trace_candidate.txt"
 } else {
-    "make test-native build/opening-service-trace-native && ./build/opening-service-trace-native > build/opening_service_trace_candidate.txt"
+    "make test-native build/opening-service-trace-native build/opening-live-trace-native && ./build/opening-live-trace-native && ./build/opening-service-trace-native > build/opening_service_trace_candidate.txt"
 }
 
 $command = @"

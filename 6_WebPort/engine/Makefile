@@ -12,12 +12,14 @@ ENGINE_SRC := \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
+	render/mcga_runtime.c \
 	load/grp.c \
 	load/fill_buffer.c \
 	load/zeliad_loader.c \
 	load/game_loader.c \
 	load/img_open.c \
 	game/opening_script.c \
+	game/opening_trace.c \
 	game/opening.c \
 	game/gameplay_state.c
 
@@ -31,10 +33,12 @@ TEST_OPENING_SRC := \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
+	render/mcga_runtime.c \
 	load/grp.c \
 	load/fill_buffer.c \
 	load/img_open.c \
 	game/opening_script.c \
+	game/opening_trace.c \
 	game/opening.c \
 	platform/platform_sdl.c
 TEST_OPENING_TRACE_SRC := \
@@ -45,10 +49,27 @@ TEST_OPENING_TRACE_SRC := \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
+	render/mcga_runtime.c \
 	load/grp.c \
 	load/fill_buffer.c \
 	load/img_open.c \
 	game/opening_script.c \
+	game/opening_trace.c \
+	game/opening.c \
+	platform/platform_sdl.c
+TEST_OPENING_LIVE_TRACE_SRC := \
+	tests/opening_live_trace_native.c \
+	core/framebuf.c \
+	core/timer.c \
+	render/palette.c \
+	render/font_text.c \
+	render/mcga_render.c \
+	render/mcga_runtime.c \
+	load/grp.c \
+	load/fill_buffer.c \
+	load/img_open.c \
+	game/opening_script.c \
+	game/opening_trace.c \
 	game/opening.c \
 	platform/platform_sdl.c
 TEST_OPENING_FRAME_DUMP_SRC := \
@@ -58,10 +79,12 @@ TEST_OPENING_FRAME_DUMP_SRC := \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
+	render/mcga_runtime.c \
 	load/grp.c \
 	load/fill_buffer.c \
 	load/img_open.c \
 	game/opening_script.c \
+	game/opening_trace.c \
 	game/opening.c \
 	platform/platform_sdl.c
 TEST_GAMEPLAY_SRC := \
@@ -78,6 +101,46 @@ TEST_RUNTIME_SRC := \
 	core/runtime.c \
 	core/framebuf.c \
 	core/timer.c \
+	render/palette.c \
+	render/font_text.c \
+	render/mcga_render.c \
+	render/mcga_runtime.c \
+	load/grp.c \
+	load/fill_buffer.c \
+	platform/platform_sdl.c
+TEST_MCGA_FONT_INV_SRC := \
+	tests/mcga_font_inv_native.c \
+	load/fill_buffer.c \
+	render/mcga_render.c
+TEST_MCGA_DRV_SEG_3_SRC := \
+	tests/mcga_disp_drv_seg_3_native.c \
+	render/mcga_render.c
+TEST_MCGA_TILE_RENDER_SRC := \
+	tests/mcga_disp_tile_render_native.c \
+	render/mcga_render.c
+TEST_MCGA_TILEMAP_RENDER_SRC := \
+	tests/mcga_disp_tilemap_render_native.c \
+	render/mcga_render.c
+TEST_MCGA_RENDER_A_FULL_SRC := \
+	tests/mcga_disp_render_a_full_native.c \
+	render/mcga_render.c
+TEST_MCGA_GFX_UPDATE_DA_SRC := \
+	tests/mcga_gfx_update_da_native.c \
+	render/mcga_render.c
+TEST_MCGA_TITLE_TILE_PIPELINE_SRC := \
+	tests/mcga_title_tile_pipeline_native.c \
+	render/mcga_render.c
+TEST_MCGA_TITLE_SWEEP_ASSETS_SRC := \
+	tests/mcga_title_sweep_assets_native.c \
+	load/grp.c load/fill_buffer.c render/mcga_render.c platform/platform_sdl.c
+TEST_MCGA_RUNTIME_SRC := \
+	tests/mcga_runtime_native.c \
+	core/timer.c \
+	load/fill_buffer.c \
+	render/mcga_render.c \
+	render/mcga_runtime.c
+TEST_MCGA_SPRITE_PALETTE_SRC := \
+	tests/mcga_sprite_palette_native.c \
 	render/palette.c \
 	platform/platform_sdl.c
 
@@ -126,12 +189,22 @@ build/zeliard-native: $(NATIVE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(NATIVE_SRC)
 
-test-native: build/opening-parity-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native
+test-native: build/opening-parity-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native
 	./build/opening-parity-native
 	./build/gameplay-parity-native
 	./build/zeliad-loader-parity-native
 	./build/game-loader-parity-native
 	./build/runtime-parity-native
+	./build/mcga-font-inv-native
+	./build/mcga-drv-seg-3-native
+	./build/mcga-tile-render-native
+	./build/mcga-tilemap-render-native
+	./build/mcga-render-a-full-native
+	./build/mcga-gfx-update-da-native
+	./build/mcga-title-tile-pipeline-native
+	./build/mcga-title-sweep-assets-native
+	./build/mcga-runtime-native
+	./build/mcga-sprite-palette-native
 
 build/opening-parity-native: $(TEST_OPENING_SRC) Makefile
 	@mkdir -p build
@@ -141,9 +214,53 @@ build/opening-service-trace-native: $(TEST_OPENING_TRACE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -DZELIARD_NO_MAIN -o $@ $(TEST_OPENING_TRACE_SRC)
 
+build/opening-live-trace-native: $(TEST_OPENING_LIVE_TRACE_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -DZELIARD_NO_MAIN -o $@ $(TEST_OPENING_LIVE_TRACE_SRC)
+
 build/opening-frame-dump-native: $(TEST_OPENING_FRAME_DUMP_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -DZELIARD_NO_MAIN -o $@ $(TEST_OPENING_FRAME_DUMP_SRC)
+
+build/mcga-font-inv-native: $(TEST_MCGA_FONT_INV_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_FONT_INV_SRC)
+
+build/mcga-drv-seg-3-native: $(TEST_MCGA_DRV_SEG_3_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_DRV_SEG_3_SRC)
+
+build/mcga-tile-render-native: $(TEST_MCGA_TILE_RENDER_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_TILE_RENDER_SRC)
+
+build/mcga-tilemap-render-native: $(TEST_MCGA_TILEMAP_RENDER_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_TILEMAP_RENDER_SRC)
+
+build/mcga-render-a-full-native: $(TEST_MCGA_RENDER_A_FULL_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_RENDER_A_FULL_SRC)
+
+build/mcga-gfx-update-da-native: $(TEST_MCGA_GFX_UPDATE_DA_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_GFX_UPDATE_DA_SRC)
+
+build/mcga-title-tile-pipeline-native: $(TEST_MCGA_TITLE_TILE_PIPELINE_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_TITLE_TILE_PIPELINE_SRC)
+
+build/mcga-title-sweep-assets-native: $(TEST_MCGA_TITLE_SWEEP_ASSETS_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_TITLE_SWEEP_ASSETS_SRC)
+
+build/mcga-runtime-native: $(TEST_MCGA_RUNTIME_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_RUNTIME_SRC)
+
+build/mcga-sprite-palette-native: $(TEST_MCGA_SPRITE_PALETTE_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_SPRITE_PALETTE_SRC)
 
 build/gameplay-parity-native: $(TEST_GAMEPLAY_SRC) Makefile
 	@mkdir -p build

@@ -116,9 +116,13 @@ Assets: `ttl2.grp` (ch31), `ttl3.grp` (ch32).
 
 **28.** `gfx_mode_fn`(BX=0x1720, CX=0x2270) — clear Jashiin region; set palette 4.
 
-**29.** Start music: INT 60h with `gfx_plane_b` as music buffer.
+**29.** Clear `gvar_frame_timer`; invoke INT 60h with `AX=0`, `DS=game_seg`,
+and `SI=gfx_plane_b`. `zeliad.asm` installs `stick.bin:timer_isr_entry` at
+vector 60h, so this is a timer-service tick rather than music playback or an
+overlay swap.
 
-**30.** `disp_drv_seg_3` call; `WAIT_FRAME 0xF0`.
+**30.** `disp_drv_seg_3` (`105GDMCA:0x3707`) writes the 320x200 alternating
+`00h/10h` MCGA interlace seed; `WAIT_FRAME 0xF0`.
 
 **31.** `gfx_update_fn`(AL=0, BX=0x0B48, CX=0x3180, DI=`scene_framebuf`) — render `ttl2.grp` (OR blit).
 - Dimensions: rows=49, cols=128
@@ -153,7 +157,8 @@ Triggered by spacebar/Enter skip OR natural end of demo loop.
 
 **T4.** Reinit graphics.
 
-**T5.** LOAD `res_zend_msd` → `game_seg:gfx_plane_b` (ch39 — ending/title music); start music via INT 60h.
+**T5.** LOAD `res_zend_msd` → `game_seg:gfx_plane_b` (ch39 — ending/title music),
+then invoke the installed INT 60h timer-service vector.
 
 **T6.** Set palette 1.
 

@@ -89,6 +89,19 @@ powershell -ExecutionPolicy Bypass -File scripts/test-native-wsl.ps1
 powershell -ExecutionPolicy Bypass -File scripts/test-native-vs.ps1 -BuildOnly
 ```
 
+Run the ordered release-MASM framebuffer gate and deterministic C/WASM capture:
+
+```powershell
+cd shell
+npm run opening:compare
+```
+
+Checkpoints marked `frame_state` wait for the executing bit-perfect MASM build
+to produce the same native 320x200 RGBA frame as C/WASM. They intentionally do
+not use v86 wall time because CPU-bound MCGA routines run at host-dependent
+speed. Real-time cadence remains a separate comparison against
+`../3_Assembly/masm/bin/capture/OpeningDemo-Capture.mp4`.
+
 `tests/opening_oracle_manifest.json` is the source of truth for the first
 opening/title contracts: `ttl3_logo_bbox`, `nec_scene_bbox`,
 `hou_overlay_bbox`, `title_palette_state`, and `skip_to_title_transition`.
@@ -99,6 +112,30 @@ FNV hashes; the Python test keeps SHA-256 hashes for review-grade evidence.
 HP subtraction, almas add, gold/bank arithmetic, and map/row movement helpers.
 `scripts/test-native-wsl.ps1` builds and runs native parity inside WSL so Windows
 Application Control is no longer in the test loop.
+
+## MASM Browser Reference
+
+`/hybrid.html` is an emulator-backed reference lane, not the C port. It boots
+FreeDOS in v86 and executes the current bit-perfect MASM release files directly.
+Use it to capture the actual visual/input/timer behavior before translating a
+routine into C.
+
+```powershell
+cd shell
+npm run hybrid:assets
+npm run dev
+# open http://localhost:5173/hybrid.html
+
+# In a second shell, capture two independent title-to-amulet runs.
+npm run hybrid:capture -- --out-dir ../tests/artifacts/hybrid_masm_reference/run_a
+npm run hybrid:capture -- --out-dir ../tests/artifacts/hybrid_masm_reference/run_b
+npm run hybrid:verify -- --first ../tests/artifacts/hybrid_masm_reference/run_a --second ../tests/artifacts/hybrid_masm_reference/run_b
+```
+
+The capture schedule is anchored to v86's first `320x200x8` mode event, not
+browser navigation time. Exact checkpoints must reproduce byte-for-byte; scrolling
+and other animated windows are intentionally recorded as sequence-alignment data
+until their game-tick boundary can be observed directly.
 
 ## Status
 

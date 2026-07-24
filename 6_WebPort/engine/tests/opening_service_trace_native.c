@@ -1,6 +1,15 @@
 #include "../game/opening.h"
 #include <stdio.h>
 
+/*
+ * Transitional semantic trace adapter.
+ *
+ * MASM's opdemo_reference_trace.json is the sole expected stream.  These
+ * summary adapters are being replaced checkpoint-by-checkpoint by events
+ * emitted from the live C runtime proxy boundaries; do not treat the values
+ * in this file as an independent specification.
+ */
+
 static void hex8(const char *name, unsigned value) {
     printf("%s=%04X", name, value & 0xFF);
 }

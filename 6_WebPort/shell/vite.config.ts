@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { resolve } from 'node:path';
 
 export default defineConfig({
     server: {
@@ -20,5 +21,11 @@ export default defineConfig({
     build: {
         target: 'es2022',
         outDir: 'dist',
+        rollupOptions: {
+            input: {
+                webport: resolve(__dirname, 'index.html'),
+                masmReference: resolve(__dirname, 'hybrid.html'),
+            },
+        },
     },
 });

@@ -22,6 +22,8 @@ async function loadEngineModule(cacheBust) {
     return mod.default;
 }
 async function boot() {
+    const params = new URLSearchParams(window.location.search);
+    const deterministicCapture = params.has('codex_capture');
     const engineCacheBust = Date.now().toString(36);
     setStatus('loading engine module…');
     const factory = await loadEngineModule(engineCacheBust);
@@ -33,9 +35,11 @@ async function boot() {
     });
     setStatus('initialising engine…');
     Module._zeliard_init();
+    window.__zeliard = Module;
     const w = Module._zeliard_width();
     const h = Module._zeliard_height();
     const fbPtr = Module._zeliard_framebuf();
+    const rgbPtr = Module._zeliard_rgb_framebuf();
     const palPtr = Module._zeliard_palette();
     setStatus(`engine running — ${w}×${h}, framebuf @ ${fbPtr}, palette @ ${palPtr}`);
     /* Forward ENTER/SPACE to the engine so it can apply OPDMO phase-specific advance rules. */
@@ -76,14 +80,28 @@ async function boot() {
         const heap = Module.HEAPU8;
         const fb = heap.subarray(fbPtr, fbPtr + w * h);
         const pal = heap.subarray(palPtr, palPtr + 256 * 3);
+        const rgbActive = Module._zeliard_rgb_framebuf_active() !== 0;
         const out = imageData.data;
-        for (let i = 0; i < fb.length; i++) {
-            const idx = fb[i] * 3;
-            const o = i * 4;
-            out[o] = pal[idx];
-            out[o + 1] = pal[idx + 1];
-            out[o + 2] = pal[idx + 2];
-            out[o + 3] = 255;
+        if (rgbActive) {
+            const rgb = heap.subarray(rgbPtr, rgbPtr + w * h * 3);
+            for (let i = 0; i < fb.length; i++) {
+                const idx = i * 3;
+                const o = i * 4;
+                out[o] = rgb[idx];
+                out[o + 1] = rgb[idx + 1];
+                out[o + 2] = rgb[idx + 2];
+                out[o + 3] = 255;
+            }
+        }
+        else {
+            for (let i = 0; i < fb.length; i++) {
+                const idx = fb[i] * 3;
+                const o = i * 4;
+                out[o] = pal[idx];
+                out[o + 1] = pal[idx + 1];
+                out[o + 2] = pal[idx + 2];
+                out[o + 3] = 255;
+            }
         }
         ctx.putImageData(imageData, 0, 0);
         if (++frameCount === 1) {
@@ -100,6 +118,10 @@ async function boot() {
         }
     }
     paintFrame();
+    if (deterministicCapture) {
+        setStatus(`engine capture-ready - ${sceneName(Module._zeliard_scene())} / phase ${Module._zeliard_phase()} / ${Module._zeliard_phase_elapsed()}ms`);
+        return;
+    }
     function frame(now) {
         const dt = Math.max(0, Math.min(now - last, 100));
         last = now;
