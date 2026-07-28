@@ -24,7 +24,7 @@ passing browser smoke test never substitutes for a MASM checkpoint.
 
 ## Gate Baseline
 
-- [x] MASM title handoff: `3707 -> 3032 -> 30FC -> 3732 -> 37B4`.
+- [x] MASM title handoff: `3707 -> 3088 -> 30FC -> 3732 -> 37B4`.
   Release oracle includes visible framebuffer checkpoints for seed, `3032`,
   `30FC`, and sweep pairs 11, 29, and 100.
 - [x] Native opening title-handoff timing and SPACE/ENTER routing.
@@ -43,9 +43,14 @@ passing browser smoke test never substitutes for a MASM checkpoint.
     credits at the same post-fade boundary.
   - Green: the C live path uses the persistent `32C9/332C` runtime through
     all 31 records, 430 draws, and the real 120-frame exit. The direct
-    release-MASM oracle hashes every A000/work-buffer pair into
-    `b4395f092ca68be0`, ending at A000 `dd14fcc6528cab25` and work
-    `b65f2bb82806e676`; the native runtime produces the same sequence.
+    release-MASM oracle now begins with the actual `gfx_init_fn` clear and
+    `105GDMCA:3032` NEC draw, then hashes every A000/work-buffer pair into
+    `71a539e6f76f2a78`. Draw 96 matches at A000
+    `99d1486b5642b42a` / work `57036e9bccfa36ce`; the completed stream ends
+    at A000 `76a5c68141189f10` / work `b65f2bb82806e676`.
+    The live C runtime matches both checkpoints. This also fixed a real C
+    ordering bug where the NEC seed had been overlaid on the prior title
+    surface without MASM's intervening framebuffer clear.
 
 - [x] **Credits live-runtime trace bridge**
   - MASM: `credits_scroll_display` at the `100OPDMO.asm` stream rooted at
@@ -105,8 +110,14 @@ passing browser smoke test never substitutes for a MASM checkpoint.
     named MASM-shaped C boundaries with direct release tests and live routing.
     The rain/sprite-A path likewise now starts from the literal 9x15-byte
     `105GDMCA:3437` object table rather than a scene-specific C initializer.
+    The title handoff now also preserves the release segment topology proven
+    by `zeliad.asm` and the MCGA bytes: decoded assets are in
+    `game_seg=CS+1000h`, `3732/37B4` use `CS+2000h` tile work, and
+    `3032/30FC` use `CS+3000h` render work. The former C/oracle shortcut
+    aliased game and tile work, producing a self-consistent but incorrect
+    reveal. The corrected release and native sweep hashes are green.
 
-- [ ] **Late-story and final-card frame trace**
+- [x] **Late-story and final-card frame trace**
   - MASM: `disp_load_setup`, `merge_gfx_planes`, `xor_mask_render`, late
     `run_script_interpreter` calls, and final-card stream.
   - C: late-scene render paths in `engine/game/opening.c`.
@@ -114,11 +125,12 @@ passing browser smoke test never substitutes for a MASM checkpoint.
     iteration number and framebuffer/work hashes.
   - Acceptance: all captured-video anchors have a corresponding MASM-backed
     C checkpoint; video is used only as a presentation cross-check.
-  - Progress: final `animate_scanline_alt` is now a full 180-draw release
-    oracle, not merely a call trace: digest `d4b76a6a3c61db6e`, final A000
-    `dd14fcc6528cab25`, and work `cf6b5f693e0e3c4b`. The live final-card
-    runtime reaches the same final work state after its real two records and
-    `A0h` exit. `disp_font_inv` (`105GDMCA:38E6`) is checked at AX=0F reveal
+  - Progress: final `animate_scanline_alt` is now a full 230-draw release
+    oracle, not merely a call trace. The bit-perfect instruction loads
+    `SI=7338h`; six centered CR lines plus FF produce 70 entry draws before
+    the `A0h` exit. Digest `89eb5e37fb8c8177`, final A000
+    `dd14fcc6528cab25`, and work `9609f325a52f2190` match the live final-card
+    runtime. `disp_font_inv` (`105GDMCA:38E6`) is checked at AX=0F reveal
     entries 24, 48, 72, 96, 120, 144, 168, and 192, alongside complete
     AX=06/08/0F calls. `disp_load_setup` (`105GDMCA:3D79`) now has direct
     full-frame C/MASM checks for the YUU-left, YUU-right, and MAOP BX/CX
@@ -162,6 +174,19 @@ passing browser smoke test never substitutes for a MASM checkpoint.
     concentrated in MCGA palette/index paths (`66->76`, `01/10->00`), not a
     browser-versus-native divergence. Do not adjust colors from the MP4
     alone; first capture the corresponding release palette/plane checkpoints.
+  - Current automated cross-check: the state-aligned MASM/WASM capture passes
+    all 11 compared states from 19 MASM reference frames. The native gate,
+    96-event semantic trace, and WASM build are green. The explicit
+    `audit_opening_video_anchor_contracts.py` gate now proves all 12 captured
+    video anchors have a one-to-one phase mapping, named MASM source point,
+    executable MASM oracle, and native C checkpoint.
+  - Lower-level dependency gate: all 53 dependencies derived from the 184
+    calls/interrupts in release `100OPDMO.asm` are now `live_parity`; there
+    are no oracle-only, adapter, or missing entries. Strict auditing is
+    mandatory in both `test-oracles.ps1` and the Ralph gate. The final
+    promotions also made `decode_rle_to_es_di` execute its real decoder in
+    the exact runtime and made timer/transition polls execute the four-call
+    input cascade before comparing the frame timer.
   - Ralph queue: complete the child slices below in order. Each needs a
     release-MASM checkpoint, a mechanical C entrypoint, a live phase check,
     and a passing full gate before its box can be checked.
@@ -200,7 +225,7 @@ passing browser smoke test never substitutes for a MASM checkpoint.
     - Green: the release `3D79` rectangle contracts match C for both YUU
       sides (`0A15h/1A5Dh` = `82f852300d0ccbd9`,
       `2C15h/1A5Dh` = `df07fffb511e6959`), and the live staged-return
-      checkpoint is `6ec3e5eb15ab8c55`. The C scene retains the MASM source
+      checkpoint is `cfcbf218074ae6c3`. The C scene retains the MASM source
       order and applies the verified twelve-wait font-invert call before the
       palette-6 split setup.
 

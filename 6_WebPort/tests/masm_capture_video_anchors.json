@@ -68,6 +68,27 @@
         "fps": 18.2065,
         "max_samples": 0
       }
+    },
+    {
+      "id": "dmaou_warning_animation_frame",
+      "description": "Unique moving frame during scene_sprite_b warning playback; use this local anchor after DOSBox capture-time drift accumulates.",
+      "video_sec": 68.033,
+      "wasm_ms": 65000,
+      "phase": 21,
+      "phase_id": "dmaou_demon_intro",
+      "confidence": "high",
+      "evidence": {
+        "comparison_summary": "6_WebPort/tests/comparison/dmaou_exact_clear_update/wasm_timeline/summary.json",
+        "local_alignment_dir": "6_WebPort/tests/comparison/dmaou_exact_clear_update/local_aligned/map",
+        "rmse": 3.88,
+        "note": "The same moving state remains aligned at +3.033 seconds through WASM 65.500 s; later static holds are not suitable timing anchors."
+      },
+      "comparison_defaults": {
+        "start_ms": 64500,
+        "duration_sec": 4,
+        "fps": 18.2065,
+        "max_samples": 0
+      }
     }
   ]
 }

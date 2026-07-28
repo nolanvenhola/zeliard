@@ -9,7 +9,7 @@ from pathlib import Path
 
 from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_MODE_16, UC_PROT_ALL, Uc
 from unicorn.x86_const import (
-    UC_X86_REG_AX, UC_X86_REG_CS, UC_X86_REG_DS, UC_X86_REG_ES,
+    UC_X86_REG_AX, UC_X86_REG_BX, UC_X86_REG_CS, UC_X86_REG_DS, UC_X86_REG_ES,
     UC_X86_REG_IP, UC_X86_REG_SP, UC_X86_REG_SS,
 )
 
@@ -29,6 +29,10 @@ EXPECTED = [
     (0x9582ADE0B3C3EDD8, 0x3AB55AAD4C798D48),
     (0x7A54E6F497D6E940, 0xDC34BD70D74EF260),
 ]
+EXPECTED_OPENING_BX1720 = [
+    (0x1F645FFBCC732120, 0x3EC8FB9DAE26AA6C),
+    (0x9582ADE0B3C3EDD8, 0x8C57CCF6305FA3A4),
+]
 
 
 def fnv1a64(data: bytes) -> int:
@@ -39,7 +43,7 @@ def fnv1a64(data: bytes) -> int:
     return value
 
 
-def run_page(page: int) -> tuple[int, int]:
+def run_page(page: int, bx: int = 0) -> tuple[int, int]:
     mu = Uc(UC_ARCH_X86, UC_MODE_16)
     for seg in (CODE_SEG, GAME_SEG, WORK_SEG, STACK_SEG, VGA_SEG):
         mu.mem_map(seg << 4, 0x10000, UC_PROT_ALL)
@@ -54,7 +58,8 @@ def run_page(page: int) -> tuple[int, int]:
     mu.mem_write(VGA_SEG << 4, bytes((i * 13 + 0x31) & 0xFF for i in range(0x10000)))
     for reg, value in ((UC_X86_REG_CS, CODE_SEG), (UC_X86_REG_DS, CODE_SEG),
                        (UC_X86_REG_ES, GAME_SEG), (UC_X86_REG_SS, STACK_SEG),
-                       (UC_X86_REG_SP, 0xFFFC), (UC_X86_REG_AX, page)):
+                       (UC_X86_REG_SP, 0xFFFC), (UC_X86_REG_AX, page),
+                       (UC_X86_REG_BX, bx)):
         mu.reg_write(reg, value)
     mu.mem_write((STACK_SEG << 4) + 0xFFFC,
                  bytes((RET_SENTINEL & 0xFF, RET_SENTINEL >> 8)))
@@ -75,14 +80,22 @@ def main() -> int:
     parser.add_argument("--capture", action="store_true")
     args = parser.parse_args()
     actual = [run_page(page) for page in range(5)]
+    opening_actual = [run_page(page, 0x1720) for page in (2, 3)]
     if args.capture:
         for page, (work, vga) in enumerate(actual):
             print(f"({work:#018x}, {vga:#018x}),  # page {page}")
+        for page, (work, vga) in zip((2, 3), opening_actual):
+            print(f"({work:#018x}, {vga:#018x}),  # page {page}, BX=1720")
         return 0
-    ok = actual == EXPECTED
+    ok = actual == EXPECTED and opening_actual == EXPECTED_OPENING_BX1720
     for page, (work, vga) in enumerate(actual):
         expected = EXPECTED[page] if page < len(EXPECTED) else (0, 0)
         print(f"mcga_disp_render_ab_ab40 page={page}: "
+           f"{'PASS' if (work, vga) == expected else 'FAIL'} "
+           f"work={work:016x} vga={vga:016x}")
+    for page, (work, vga), expected in zip(
+            (2, 3), opening_actual, EXPECTED_OPENING_BX1720):
+        print(f"mcga_disp_render_ab_ab40 page={page} bx=1720: "
               f"{'PASS' if (work, vga) == expected else 'FAIL'} "
               f"work={work:016x} vga={vga:016x}")
     print("VERDICT: " + ("PASS" if ok else "FAIL") +

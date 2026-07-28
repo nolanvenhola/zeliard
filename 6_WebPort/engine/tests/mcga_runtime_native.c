@@ -55,7 +55,7 @@ int main(void) {
     int ok = driver && font && opdmo && rt;
     const size_t stream_offset = 0x6FF0u - 0x6000u + 4u;
     const size_t credits_stream_offset = 0x742Fu - 0x6000u + 4u;
-    const size_t alt_stream_offset = 0x7334u - 0x6000u + 4u;
+    const size_t alt_stream_offset = 0x7338u - 0x6000u + 4u;
 
     if (ok) {
         u16 font_ptr_a = (u16)font[0] | ((u16)font[1] << 8);
@@ -148,9 +148,9 @@ int main(void) {
         ok &= rendered == 52u * 10u + 0x78u;
         ok &= rt->scan_exit_frame == 0x78;
 
-        /* 100OPDMO:6BEE animate_scanline_alt starts at the final 's.' table
-         * byte at CS:7334.  32C9 consumes the CR record then the distinct
-         * FF record, so MASM emits 20 entry draws before its 0A0h exit. */
+        /* 100OPDMO:69F3 loads SI=7338h, the leading space before "At last".
+         * Six CR records and the distinct FF record emit 70 entry draws
+         * before the 0A0h exit. */
         zel_mcga_runtime_init(rt);
         ok &= zel_mcga_runtime_load_driver(rt, driver, driver_size);
         ok &= opdmo_size > alt_stream_offset;
@@ -158,6 +158,16 @@ int main(void) {
             rt, font, font_size, font_ptr_a, opdmo + alt_stream_offset,
             opdmo_size - alt_stream_offset, 0x0014, 0x50A0, 0x00A0) == 0;
         rendered = 0;
+        static const unsigned alt_checkpoint_draws[] = {10, 30, 60, 70};
+        static const uint64_t alt_checkpoint_visible[] = {
+            0x84DB69BD1AF40875ULL, 0x7921BCCDD8C1E423ULL,
+            0xB2BC3E6F10A17715ULL, 0x675A3CCD9E0E5715ULL,
+        };
+        static const uint64_t alt_checkpoint_work[] = {
+            0xD4C47EF84D43FF5DULL, 0xE5D43A94A1E16B3EULL,
+            0x89CF96916920FE73ULL, 0x75B3B1D9B3713A73ULL,
+        };
+        size_t alt_checkpoint = 0;
         do {
             advance = zel_mcga_runtime_advance_scanline(rt);
             if (advance == 0) {
@@ -165,9 +175,18 @@ int main(void) {
                     (void)zel_mcga_runtime_tick(rt, 4);
             } else if (advance == 1) {
                 rendered++;
+                if (alt_checkpoint < 4 &&
+                    rendered == alt_checkpoint_draws[alt_checkpoint]) {
+                    ok &= fnv1a64(rt->vga, 0xFA00) ==
+                          alt_checkpoint_visible[alt_checkpoint];
+                    ok &= fnv1a64(rt->work, sizeof(rt->work)) ==
+                          alt_checkpoint_work[alt_checkpoint];
+                    alt_checkpoint++;
+                }
             }
         } while (advance >= 0 && advance != 2 && rendered <= 700);
-        int alt_ok = advance == 2 && rendered == 20u + 0xA0u &&
+        int alt_ok = advance == 2 && rendered == 70u + 0xA0u &&
+                     alt_checkpoint == 4 &&
                      rt->scan_exit_frame == 0xA0;
         printf("mcga_runtime_alt: %s advance=%d draws=%u exit=%u stream=%zu\n",
                alt_ok ? "PASS" : "FAIL", advance, rendered,

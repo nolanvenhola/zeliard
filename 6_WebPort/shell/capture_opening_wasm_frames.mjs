@@ -17,9 +17,12 @@ const outDir = argValue('--out-dir');
 const tickStepMs = Number(argValue('--tick-step-ms', '10'));
 const quiet = process.argv.includes('--quiet');
 const rawPpm = process.argv.includes('--raw-ppm');
+const stdoutImages = process.argv.includes('--stdout-images');
+const stdoutStates = process.argv.includes('--stdout-states');
+const stdoutOnly = stdoutImages || stdoutStates;
 
-if (!schedulePath || !outDir) {
-  console.error('usage: node capture_opening_wasm_frames.mjs --schedule schedule.json --out-dir dir [--url http://127.0.0.1:5173/] [--tick-step-ms 10] [--quiet] [--raw-ppm]');
+if (!schedulePath || (!outDir && !stdoutOnly)) {
+  console.error('usage: node capture_opening_wasm_frames.mjs --schedule schedule.json (--out-dir dir | --stdout-images | --stdout-states) [--url http://127.0.0.1:5173/] [--tick-step-ms 10] [--quiet] [--raw-ppm]');
   process.exit(2);
 }
 
@@ -28,7 +31,8 @@ if (!Number.isFinite(tickStepMs) || tickStepMs <= 0) {
 }
 
 const schedule = JSON.parse(await fs.readFile(schedulePath, 'utf8'));
-await fs.mkdir(outDir, { recursive: true });
+if (!stdoutOnly)
+  await fs.mkdir(outDir, { recursive: true });
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({
@@ -88,6 +92,10 @@ async function paintCanvas() {
       scene: Module._zeliard_scene(),
       phase: Module._zeliard_phase(),
       phase_elapsed_ms: Module._zeliard_phase_elapsed(),
+      rgb_framebuf_active: rgbActive,
+      palette_00: Array.from(pal.subarray(0, 3)),
+      palette_77: Array.from(pal.subarray(0x77 * 3, 0x77 * 3 + 3)),
+      palette_aa: Array.from(pal.subarray(0xAA * 3, 0xAA * 3 + 3)),
       nec_hou_sprite_debug_word: Module._zeliard_opening_nec_hou_sprite_debug_word
         ? Module._zeliard_opening_nec_hou_sprite_debug_word() >>> 0
         : null,
@@ -126,6 +134,10 @@ async function readFramebufferPpm() {
       scene: Module._zeliard_scene(),
       phase: Module._zeliard_phase(),
       phase_elapsed_ms: Module._zeliard_phase_elapsed(),
+      rgb_framebuf_active: rgbActive,
+      palette_00: Array.from(pal.subarray(0, 3)),
+      palette_77: Array.from(pal.subarray(0x77 * 3, 0x77 * 3 + 3)),
+      palette_aa: Array.from(pal.subarray(0xAA * 3, 0xAA * 3 + 3)),
       nec_hou_sprite_debug_word: Module._zeliard_opening_nec_hou_sprite_debug_word
         ? Module._zeliard_opening_nec_hou_sprite_debug_word() >>> 0
         : null,
@@ -170,11 +182,39 @@ for (const sample of schedule.samples) {
   await advanceRuntime(remaining);
   currentMs += remaining;
 
-  const state = rawPpm ? await readFramebufferPpm() : await paintCanvas();
+  const state = rawPpm && !stdoutOnly
+    ? await readFramebufferPpm()
+    : await paintCanvas();
   const file = sample.file ||
     `wasm_${String(Math.round(targetMs)).padStart(8, '0')}.${rawPpm ? 'ppm' : 'png'}`;
-  const outPath = path.join(outDir, file);
-  if (rawPpm) {
+  const outPath = stdoutOnly ? file : path.join(outDir, file);
+  if (stdoutImages) {
+    const png = await page.locator('#screen').screenshot();
+    console.log(`CAPTURE_IMAGE ${JSON.stringify({
+      ...sample,
+      scene: state.scene,
+      phase: state.phase,
+      phase_elapsed_ms: state.phase_elapsed_ms,
+      rgb_framebuf_active: state.rgb_framebuf_active,
+      palette_00: state.palette_00,
+      palette_77: state.palette_77,
+      palette_aa: state.palette_aa,
+      file,
+      png_base64: png.toString('base64'),
+    })}`);
+  } else if (stdoutStates) {
+    console.log(`CAPTURE_STATE ${JSON.stringify({
+      ...sample,
+      scene: state.scene,
+      phase: state.phase,
+      phase_elapsed_ms: state.phase_elapsed_ms,
+      rgb_framebuf_active: state.rgb_framebuf_active,
+      palette_00: state.palette_00,
+      palette_77: state.palette_77,
+      palette_aa: state.palette_aa,
+      file,
+    })}`);
+  } else if (rawPpm) {
     const header = Buffer.from(`P6\n${state.w} ${state.h}\n255\n`, 'ascii');
     await fs.writeFile(outPath, Buffer.concat([header, Buffer.from(state.rgb)]));
   } else {
@@ -184,6 +224,7 @@ for (const sample of schedule.samples) {
   log.push({ ...sample, ...logState, path: outPath });
 }
 
-await fs.writeFile(path.join(outDir, 'wasm_capture_log.json'),
-                   JSON.stringify(log, null, 2));
+if (!stdoutOnly)
+  await fs.writeFile(path.join(outDir, 'wasm_capture_log.json'),
+                     JSON.stringify(log, null, 2));
 await browser.close();

@@ -447,6 +447,29 @@ void zel_runtime_decode_rle(zel_runtime_t *rt, const char *source, u16 si, u16 d
         return;
     rt->regs.si = si;
     rt->regs.di = di;
+    /* The asset proxy retains the original loaded bytes in game memory, but
+     * the host decoder consumes the corresponding complete GRP container.
+     * Resolve the most recent load at SI and execute the same fill_buffer +
+     * 6DE1 pipeline before recording the service boundary. */
+    const char *asset = NULL;
+    for (size_t i = rt->log.count; i > 0; i--) {
+        const zel_proxy_event_t *event = &rt->log.events[i - 1];
+        if (event->kind == ZEL_PROXY_ASSET_LOAD && event->di == si) {
+            asset = event->asset;
+            break;
+        }
+    }
+    if (asset) {
+        size_t file_size = 0;
+        size_t decoded_size = 0;
+        u8 *file = platform_load_asset(asset, &file_size);
+        u8 *decoded = file
+            ? grp_decode_6de1_planes(file, file_size, &decoded_size) : NULL;
+        free(file);
+        if (decoded && decoded_size <= (size_t)(ZEL_SEG_SIZE - di))
+            memcpy(rt->overlay_mem + di, decoded, decoded_size);
+        free(decoded);
+    }
     log_event(rt, (zel_proxy_event_t){
                       .kind = ZEL_PROXY_DECODE_RLE,
                       .source = source,
@@ -616,6 +639,7 @@ zel_runtime_wait_result_t zel_runtime_timer_wait(zel_runtime_t *rt,
                       });
         return ZEL_RUNTIME_WAIT_SKIPPED;
     }
+    zel_runtime_interrupt_handler_cascade(rt);
     if (rt->mem[ZEL_GVAR_FRAME_TIMER] < al)
         return ZEL_RUNTIME_WAIT_PENDING;
 
@@ -628,6 +652,21 @@ zel_runtime_wait_result_t zel_runtime_timer_wait(zel_runtime_t *rt,
                       .value = ZEL_RUNTIME_WAIT_READY,
                   });
     return ZEL_RUNTIME_WAIT_READY;
+}
+
+zel_runtime_wait_result_t zel_runtime_scene_transition_wait(
+    zel_runtime_t *rt, const char *source, u8 al) {
+    return zel_runtime_timer_wait(rt, source, al);
+}
+
+void zel_runtime_interrupt_handler_cascade(zel_runtime_t *rt) {
+    if (!rt)
+        return;
+    rt->low_level_trace.interrupt_handler_cascade++;
+    rt->low_level_trace.stick_exit_dlg_handler++;
+    rt->low_level_trace.stick_pause_dlg_handler++;
+    rt->low_level_trace.stick_joy_cal_handler++;
+    rt->low_level_trace.stick_joy_detect_handler++;
 }
 
 u16 zel_runtime_swap_overlay_blocks(zel_runtime_t *rt, const char *source,

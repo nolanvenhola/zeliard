@@ -72,6 +72,14 @@ typedef struct {
 } zel_proxy_log_t;
 
 typedef struct {
+    size_t interrupt_handler_cascade;
+    size_t stick_exit_dlg_handler;
+    size_t stick_pause_dlg_handler;
+    size_t stick_joy_cal_handler;
+    size_t stick_joy_detect_handler;
+} zel_runtime_low_level_trace_t;
+
+typedef struct {
     u8 mem[ZEL_SEG_SIZE];
     /* stick.asm:swap_overlay_blocks addresses this as (CS+2000h). */
     u8 overlay_mem[ZEL_SEG_SIZE];
@@ -79,6 +87,7 @@ typedef struct {
     u8 scratch_mem[ZEL_SEG_SIZE];
     zel_regs_t regs;
     zel_proxy_log_t log;
+    zel_runtime_low_level_trace_t low_level_trace;
     zel_mcga_runtime_t mcga;
     u32 timer_ms;
     u32 timer_subtick_accum;
@@ -147,6 +156,9 @@ void zel_runtime_sound_command(zel_runtime_t *rt, const char *source, u16 ax, u1
  * after a satisfied threshold just as 100OPDMO does. */
 zel_runtime_wait_result_t zel_runtime_timer_wait(zel_runtime_t *rt,
                                                  const char *source, u8 al);
+zel_runtime_wait_result_t zel_runtime_scene_transition_wait(
+    zel_runtime_t *rt, const char *source, u8 al);
+void zel_runtime_interrupt_handler_cascade(zel_runtime_t *rt);
 
 /* stick.asm:swap_overlay_blocks, reached by the SAR-loader overlay path.
  * Exchanges CS:3000h-9FFFh with (CS+2000h):9000h-FFFFh, then returns

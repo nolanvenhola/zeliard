@@ -74,7 +74,8 @@ for ($iteration = 1; $iteration -le $MaxIterations; $iteration++) {
         Invoke-RalphGate "Opening manifest and low-level audit" {
             & $Python -m json.tool 6_WebPort\tests\opening_sequence_manifest.json > $null
             & $Python -u 6_WebPort\tests\parity_opening_oracle.py
-            & $Python -u 6_WebPort\tests\audit_opening_low_level_contracts.py
+            & $Python -u 6_WebPort\tests\audit_opening_low_level_contracts.py --strict
+            & $Python -u 6_WebPort\tests\audit_opening_video_anchor_contracts.py
         }
 
         Invoke-RalphGate "Web native parity gate" {

@@ -69,8 +69,9 @@ typedef struct {
 } scene_def_t;
 
 #define OPDMO_WAIT_MS(ticks) \
-    (((u32)(ticks) * (u32)ZEL_GAME_TIMER_DIVISOR * 1000u + \
-      (u32)ZEL_PIT_HZ / 2u) / (u32)ZEL_PIT_HZ)
+    ((u32)((((unsigned long long)(ticks) * \
+      (unsigned long long)ZEL_GAME_TIMER_DIVISOR * 1000u) + \
+      (u32)ZEL_PIT_HZ / 2u) / (u32)ZEL_PIT_HZ))
 #define OPDMO_WAIT_TICKS(ticks) ((u32)(ticks))
 
 /* ttl3.grp: fill_buffer(method 0 raw) → 6DE1 → 2-plane 1bpp.
@@ -180,8 +181,13 @@ enum {
      * four-sided inverse-font transition. */
     FONT_INV_TRANSITION_TICKS = 12 * OPDMO_WAIT_TICKS(0x0C),
     FONT_INV_TRANSITION_MS = OPDMO_WAIT_MS(FONT_INV_TRANSITION_TICKS),
+    DMAOU_ENTRY_CLEAR_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
+    DMAOU_ENTRY_CLEAR_MS = OPDMO_WAIT_MS(DMAOU_ENTRY_CLEAR_TICKS),
     DMAOU_ENTRY_BLIT_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
     DMAOU_ENTRY_BLIT_MS = OPDMO_WAIT_MS(DMAOU_ENTRY_BLIT_TICKS),
+    DMAOU_PRELUDE_ENTRY_TICKS = DMAOU_ENTRY_CLEAR_TICKS +
+                                DMAOU_ENTRY_BLIT_TICKS,
+    DMAOU_PRELUDE_ENTRY_MS = OPDMO_WAIT_MS(DMAOU_PRELUDE_ENTRY_TICKS),
     ISI_REVEAL_BLIT_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
     ISI_REVEAL_BLIT_MS = OPDMO_WAIT_MS(ISI_REVEAL_BLIT_TICKS),
     ISI_POST_SCRIPT8_BLIT_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
@@ -190,8 +196,14 @@ enum {
     OUI_UPDATE_MS = OPDMO_WAIT_MS(OUI_UPDATE_TICKS),
     SEI_REVEAL_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
     SEI_REVEAL_MS = OPDMO_WAIT_MS(SEI_REVEAL_TICKS),
+    YUU1_ENTRY_BLIT_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
+    YUU1_ENTRY_BLIT_MS = OPDMO_WAIT_MS(YUU1_ENTRY_BLIT_TICKS),
     DMAOU_BLEND_DELAY_TICKS = OPDMO_WAIT_TICKS(0x04),
     DMAOU_BLEND_DELAY_MS = OPDMO_WAIT_MS(0x04),
+    /* 100OPDMO:867-872 calls 105GDMCA:3C1C with AL=7, BX=1728h,
+     * CX=2230h.  The driver reveals one of eight row lanes per 14h wait. */
+    DMAOU_APPARITION_REVEAL_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
+    DMAOU_APPARITION_REVEAL_MS = OPDMO_WAIT_MS(DMAOU_APPARITION_REVEAL_TICKS),
     /* 100OPDMO:880-901.  Each DISP_GAME AL=0 call reaches
      * 105GDMCA:33B7, which runs an eight-pass OR draw followed by an
      * eight-pass masked-write draw.  Keep the two calls distinct: the
@@ -229,11 +241,15 @@ enum {
     SPRITE_A_MS = OPDMO_WAIT_MS(SPRITE_A_TICKS),
     NEC_HOU_BLIT_TICKS = OPDMO_WAIT_TICKS(8 * 0x14),
     NEC_HOU_BLIT_MS = OPDMO_WAIT_MS(8 * 0x14),
-    /* 105GDMCA:33B7 (the HOU disp_game dispatch) performs synchronous
-     * memory work only.  Release-MASM instrumentation records no frame-timer
-     * access, so there is no phase delay between GFX_BLIT returning and
-     * scene_sprite_a beginning. */
-    NEC_HOU_TRANSITION_TICKS = NEC_HOU_BLIT_TICKS + SPRITE_A_TICKS,
+    /* 100OPDMO:381-389 decompresses HOU and calls 105GDMCA:33B7 before
+     * scene_sprite_a.  Those routines do not poll gvar_frame_timer, but the
+     * hardware PIT continues advancing during their synchronous execution.
+     * The released-video oracle measures that span as 2*14h timer ticks. */
+    NEC_HOU_OVERLAY_SERVICE_TICKS = OPDMO_WAIT_TICKS(2 * 0x14),
+    NEC_HOU_OVERLAY_SERVICE_MS = OPDMO_WAIT_MS(2 * 0x14),
+    NEC_HOU_TRANSITION_TICKS = NEC_HOU_BLIT_TICKS +
+                               NEC_HOU_OVERLAY_SERVICE_TICKS +
+                               SPRITE_A_TICKS,
     NEC_HOU_TRANSITION_MS = OPDMO_WAIT_MS(NEC_HOU_TRANSITION_TICKS),
     DMAOU_SPRITE_C_FRAME_TICKS = OPDMO_WAIT_TICKS(0x14),
     DMAOU_SPRITE_C_FRAME_MS = OPDMO_WAIT_MS(0x14),
@@ -250,7 +266,7 @@ enum {
     DMAOU_EXPLICIT_FRAME_MS = OPDMO_WAIT_MS(0x0F),
     DMAOU_AFTER_EXPLICIT_FRAME_TICKS = OPDMO_WAIT_TICKS(0xF0),
     DMAOU_AFTER_EXPLICIT_FRAME_MS = OPDMO_WAIT_MS(0xF0),
-    DMAOU_DEMON_INTRO_TICKS = DMAOU_ENTRY_BLIT_TICKS +
+    DMAOU_DEMON_INTRO_TICKS = DMAOU_PRELUDE_ENTRY_TICKS +
                               DMAOU_SPRITE_C_TICKS +
                               DMAOU_BEFORE_SPRITE_B_TICKS +
                               DMAOU_SPRITE_B_TICKS +
@@ -262,9 +278,32 @@ enum {
     TITLE_COLOR_ROTATE_MS = 100 * OPDMO_WAIT_MS(0x50),
     TITLE_TTL1_UPDATE_TICKS = MCGA_RENDER_PASS_COUNT * 2 * MCGA_RENDER_PASS_TICKS,
     TITLE_TTL1_UPDATE_MS = OPDMO_WAIT_MS(TITLE_TTL1_UPDATE_TICKS),
-    TITLE_LOGO_HANDOFF_TICKS = OPDMO_WAIT_TICKS(0xF0) * 3 +
+    /* 100OPDMO:495-499 dispatches ttl3 through 105GDMCA:30FCh.  The
+     * disp_render_a_full path performs an eight-pass OR reveal followed by
+     * the common eight-pass masked write; both loops wait 14h ticks. */
+    TITLE_TTL3_UPDATE_TICKS = MCGA_RENDER_PASS_COUNT * 2 * MCGA_RENDER_PASS_TICKS,
+    TITLE_TTL3_UPDATE_MS = OPDMO_WAIT_MS(TITLE_TTL3_UPDATE_TICKS),
+    TITLE_PRE_CLEAR_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
+    TITLE_PRE_CLEAR_MS = OPDMO_WAIT_MS(TITLE_PRE_CLEAR_TICKS),
+    TITLE_COLOR_START_TICKS = TITLE_PRE_CLEAR_TICKS +
+                              OPDMO_WAIT_TICKS(0xF0) * 3 +
+                              TITLE_TTL1_UPDATE_TICKS +
+                              TITLE_TTL3_UPDATE_TICKS,
+    TITLE_COLOR_START_MS = OPDMO_WAIT_MS(TITLE_COLOR_START_TICKS),
+    /* 100OPDMO:528-532 polls gvar_enable_all after the 37B4 sweep.  The
+     * current sound proxy cannot yet derive this from zopn.msd, so retain the
+     * release-capture oracle: the first changed title frame is at 192.567s.
+     * The former 20546-tick residual included the omitted 30E4 eight-pass
+     * clear.  That call is now modeled above as 8*14h ticks. */
+    TITLE_GFX_READY_WAIT_TICKS = 20546 - TITLE_PRE_CLEAR_TICKS,
+    TITLE_GFX_READY_WAIT_MS = OPDMO_WAIT_MS(TITLE_GFX_READY_WAIT_TICKS),
+    TITLE_LOGO_HANDOFF_TICKS = TITLE_PRE_CLEAR_TICKS +
+                               OPDMO_WAIT_TICKS(0xF0) * 3 +
                                TITLE_TTL1_UPDATE_TICKS +
-                               TITLE_COLOR_ROTATE_TICKS,
+                               TITLE_TTL3_UPDATE_TICKS +
+                               TITLE_COLOR_ROTATE_TICKS +
+                               TITLE_GFX_READY_WAIT_TICKS +
+                               GFX_MODE_CLEAR_TICKS,
     TITLE_LOGO_HANDOFF_MS = OPDMO_WAIT_MS(TITLE_LOGO_HANDOFF_TICKS),
     CREDITS_ENTRY_SCROLL_TICKS = 52 * SCANLINE_ENTRY_FRAMES * SCANLINE_FRAME_TICKS,
     CREDITS_ENTRY_SCROLL_MS = OPDMO_WAIT_MS(CREDITS_ENTRY_SCROLL_TICKS),
@@ -277,14 +316,19 @@ enum {
     /* 100OPDMO:1075-1080 performs a second eight-pass gfx_draw after F0. */
     FINAL_SCENE_DRAW_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
     FINAL_SCENE_DRAW_MS = OPDMO_WAIT_MS(FINAL_SCENE_DRAW_TICKS),
-    /* animate_scanline_alt consumes the final CR record then its separate
-     * FF record: 2 * 10 draws, not the former invented eight-line card. */
-    FINAL_SCENE_TEXT_TICKS = 2 * SCANLINE_ENTRY_FRAMES * SCANLINE_FRAME_TICKS,
+    /* animate_scanline_alt consumes six centered CR records then its
+     * separate FF record: seven records x ten draws. */
+    FINAL_SCENE_TEXT_TICKS = 7 * SCANLINE_ENTRY_FRAMES * SCANLINE_FRAME_TICKS,
     FINAL_SCENE_TEXT_MS = OPDMO_WAIT_MS(FINAL_SCENE_TEXT_TICKS),
     FINAL_SCENE_FADE_TICKS = 0xA0 * SCANLINE_FRAME_TICKS,
     FINAL_SCENE_FADE_MS = OPDMO_WAIT_MS(FINAL_SCENE_FADE_TICKS),
     FINAL_SCENE_POST_HOLD_TICKS = 10 * OPDMO_WAIT_TICKS(0xC8),
     FINAL_SCENE_POST_HOLD_MS = OPDMO_WAIT_MS(FINAL_SCENE_POST_HOLD_TICKS),
+    /* 100OPDMO:1123-1128 enters transition_out_to_game by calling
+     * gfx_mode_fn with BX=0000h/CX=50C8h.  105GDMCA clears one masked lane
+     * per 14h-tick render pass before game.bin is loaded. */
+    FINAL_SCENE_CLEAR_TICKS = GFX_MODE_CLEAR_TICKS,
+    FINAL_SCENE_CLEAR_MS = GFX_MODE_CLEAR_MS,
     RAIN_PRINCESS_WAKU_BLIT_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
     RAIN_PRINCESS_WAKU_BLIT_MS = OPDMO_WAIT_MS(RAIN_PRINCESS_WAKU_BLIT_TICKS),
     RAIN_PRINCESS_AME_BLIT_TICKS = MCGA_RENDER_PASS_COUNT * MCGA_RENDER_PASS_TICKS,
@@ -301,14 +345,16 @@ enum {
                    FONT_INV_TRANSITION_MS,
     JASHIIN_CURSE_TICKS = DMAOU_ENTRY_BLIT_TICKS +
                        (174 + 235 + 1 + 157 + 91) * STORY_FETCH_TICKS +
-                       (7 + 6 + 2) * STORY_WAIT_TICKS +
-                       DMAOU_BLEND_DELAY_TICKS +
-                       APPARITION_REMOVE_ISI_TICKS,
+                        (7 + 6 + 2) * STORY_WAIT_TICKS +
+                        DMAOU_BLEND_DELAY_TICKS +
+                        DMAOU_APPARITION_REVEAL_TICKS +
+                        APPARITION_REMOVE_ISI_TICKS,
     JASHIIN_CURSE_MS = DMAOU_ENTRY_BLIT_MS +
                        (174 + 235 + 1 + 157 + 91) * STORY_FETCH_MS +
-                       (7 + 6 + 2) * STORY_WAIT_MS +
-                       DMAOU_BLEND_DELAY_MS +
-                       APPARITION_REMOVE_ISI_MS,
+                        (7 + 6 + 2) * STORY_WAIT_MS +
+                        DMAOU_BLEND_DELAY_MS +
+                        DMAOU_APPARITION_REVEAL_MS +
+                        APPARITION_REMOVE_ISI_MS,
     KING_SPIRIT_TICKS = ISI_REVEAL_BLIT_TICKS + ISI_POST_SCRIPT8_BLIT_TICKS +
                      OUI_UPDATE_TICKS +
                      SEI_REVEAL_TICKS +
@@ -321,12 +367,14 @@ enum {
                      (4 + 193 + 162 + 75 + 1033 + 258) * STORY_FETCH_MS +
                      (2 + 6 + 3 + 2 + 22 + 10) * STORY_WAIT_MS +
                      FONT_INV_TRANSITION_MS,
-    DUKE_ARRIVES_TICKS = (173 + 97) * STORY_FETCH_TICKS +
-                      (7 + 3) * STORY_WAIT_TICKS +
-                      FONT_INV_TRANSITION_TICKS,
-    DUKE_ARRIVES_MS = (173 + 97) * STORY_FETCH_MS +
-                      (7 + 3) * STORY_WAIT_MS +
-                      FONT_INV_TRANSITION_MS,
+    DUKE_ARRIVES_TICKS = YUU1_ENTRY_BLIT_TICKS +
+                       (173 + 97) * STORY_FETCH_TICKS +
+                       (7 + 3) * STORY_WAIT_TICKS +
+                       FONT_INV_TRANSITION_TICKS,
+    DUKE_ARRIVES_MS = YUU1_ENTRY_BLIT_MS +
+                       (173 + 97) * STORY_FETCH_MS +
+                       (7 + 3) * STORY_WAIT_MS +
+                       FONT_INV_TRANSITION_MS,
     KING_DUKE_TICKS = (605 + 1) * STORY_FETCH_TICKS +
                    16 * STORY_WAIT_TICKS +
                    FONT_INV_TRANSITION_TICKS,
@@ -352,11 +400,12 @@ enum {
     DESTINY_CARD_TICKS = FINAL_SCENE_BLIT_TICKS + FINAL_SCENE_HOLD_TICKS +
                           FINAL_SCENE_DRAW_TICKS +
                           FINAL_SCENE_TEXT_TICKS + FINAL_SCENE_FADE_TICKS +
-                          FINAL_SCENE_POST_HOLD_TICKS,
+                          FINAL_SCENE_POST_HOLD_TICKS +
+                          FINAL_SCENE_CLEAR_TICKS,
     DESTINY_CARD_MS = FINAL_SCENE_BLIT_MS + FINAL_SCENE_HOLD_MS +
                       FINAL_SCENE_DRAW_MS +
                       FINAL_SCENE_TEXT_MS + FINAL_SCENE_FADE_MS +
-                      FINAL_SCENE_POST_HOLD_MS,
+                      FINAL_SCENE_POST_HOLD_MS + FINAL_SCENE_CLEAR_MS,
     TITLE_COPYRIGHT_COLOR = 0x77,
     SCANLINE_TEXT_COLOR = TITLE_COPYRIGHT_COLOR,
     TITLE_COPYRIGHT_Y = 0x96,
@@ -651,6 +700,10 @@ static u8            *g_scene_sprite_c_work_seg;
 static u8            *g_scene_sprite_c_vga_seg;
 static u8            *g_scene_sprite_b_work_seg;
 static u8            *g_scene_sprite_b_vga_seg;
+static u8            *g_dmaou_prelude_game_seg;
+static u8            *g_dmaou_prelude_scratch_seg;
+static u8            *g_dmaou_entry_work_seg;
+static u8            *g_dmaou_entry_vga_seg;
 static cached_image_t g_dmaou_apparition_overlay;
 static cached_image_t g_isi_scene;
 static cached_image_t g_isi_scene_ax7;
@@ -703,8 +756,15 @@ static u32            g_final_scanline_draws = 0;
 static u8             *g_title_runtime_seg = NULL;
 static u8             *g_title_vga_seg = NULL;
 static u8             *g_title_base_work_seg = NULL;
+static u8             *g_title_tile_work_seg = NULL;
 static u8             *g_title_driver_work_seg = NULL;
 static int             g_title_handoff_speech_clear_done = 0;
+static u8              g_title_preclear_frame[ZELIARD_FB_SIZE];
+static int             g_title_preclear_frame_ready = 0;
+static u8              g_title_color_base_frame[ZELIARD_FB_SIZE];
+static int             g_title_color_base_frame_ready = 0;
+static u8              g_title_complete_frame[ZELIARD_FB_SIZE];
+static int             g_title_complete_frame_ready = 0;
 static u8             *g_story_anim_seg = NULL;
 static const u8       *g_story_anim_source_seg = NULL;
 static const char     *g_story_anim_asset = NULL;
@@ -1606,6 +1666,51 @@ static void load_hime_dmaou_blend_scene(void) {
     }
 }
 
+static void load_dmaou_prelude_game_segment(void) {
+    if (g_dmaou_prelude_game_seg)
+        return;
+
+    size_t dmaou_size = 0;
+    u8 *dmaou = load_img_open_planes("dmaou.grp", 0x22, 0x70,
+                                     &dmaou_size);
+    if (!dmaou || dmaou_size == 0) {
+        free(dmaou);
+        return;
+    }
+
+    g_dmaou_prelude_game_seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
+    g_dmaou_prelude_scratch_seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
+    if (g_dmaou_prelude_game_seg)
+        opdmoseg_copy(g_dmaou_prelude_game_seg, OPDMO_SCENE_DATA_I,
+                      dmaou, dmaou_size);
+    if (g_dmaou_prelude_scratch_seg) {
+        size_t scratch_size = 0;
+        u8 *scratch = build_dmaou_palette_lookup_scratch(
+            dmaou, dmaou_size, &scratch_size);
+        if (scratch) {
+            if (scratch_size > OPDMO_SEG_SIZE)
+                scratch_size = OPDMO_SEG_SIZE;
+            memcpy(g_dmaou_prelude_scratch_seg, scratch, scratch_size);
+            free(scratch);
+        }
+    }
+    free(dmaou);
+}
+
+uint64_t opening_debug_dmaou_prelude_segment_hash(size_t *nonzero) {
+    if (nonzero)
+        *nonzero = 0;
+    load_dmaou_prelude_game_segment();
+    if (!g_dmaou_prelude_game_seg)
+        return 0;
+    if (nonzero) {
+        for (size_t i = 0; i < OPDMO_SEG_SIZE; i++)
+            if (g_dmaou_prelude_game_seg[i])
+                (*nonzero)++;
+    }
+    return opdmo_fnv1a64(g_dmaou_prelude_game_seg, OPDMO_SEG_SIZE);
+}
+
 uint64_t opening_debug_hime_dmaou_blend_ranges_hash(size_t *nonzero) {
     if (nonzero)
         *nonzero = 0;
@@ -1846,19 +1951,6 @@ static void ZEL_UNUSED load_gdmcga_chunk_segment(void) {
     free(chunk);
 }
 
-static void title_runtime_copy_asset(const char *asset, int offset) {
-    if (!g_title_runtime_seg || !asset)
-        return;
-    size_t size = 0;
-    u8 *data = platform_load_asset(asset, &size);
-    if (!data || size == 0) {
-        free(data);
-        return;
-    }
-    opdmoseg_copy(g_title_runtime_seg, offset, data, size);
-    free(data);
-}
-
 static void load_title_runtime_segment(void) {
     if (g_title_runtime_seg)
         return;
@@ -1867,14 +1959,9 @@ static void load_title_runtime_segment(void) {
     if (!g_title_runtime_seg)
         return;
 
-    title_runtime_copy_asset("stdply.bin", 0x0000);
-    title_runtime_copy_asset("stick.bin", 0x0100);
-    title_runtime_copy_asset("105GDMCA.bin", 0x2FFC);
-    title_runtime_copy_asset("105gdmca.bin", 0x2FFC);
-    title_runtime_copy_asset("100opdmo.bin", 0x5FFC);
-    title_runtime_copy_asset("ttl2.grp", 0xA000);
-    title_runtime_copy_asset("ttl3.grp", 0xB000);
-    title_runtime_copy_asset("font.grp", 0xF500);
+    /* zeliad.asm stores game_entry_seg + 1000h in gvar_game_seg.  Driver,
+     * OPDMO, font, and loader binaries remain in CS and must not seed this
+     * separate game-data segment. */
 }
 
 static const u8 *opdmo_mcga_palette_regs_ax(u16 ax, u8 scratch[48]) {
@@ -2552,6 +2639,13 @@ static void render_maop_driver_background(void) {
         return;
     }
 
+    /* 100OPDMO:968-978: palette 8, then the 1515h/315Dh load-setup
+     * rectangle is drawn before disp_script_area places MAOP at 1618h.
+     * The four-pixel inset leaves the load-setup perimeter visible. */
+    zel_opdmo_trace_emit(ZEL_OPDMO_TRACE_DISP_LOAD_SETUP, 0x0008,
+                         0x1515, 0x315D, 0, 0, 0);
+    render_disp_load_setup_rect(0x1515, 0x315D);
+
     u8 *seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
     if (!seg)
         return;
@@ -3021,7 +3115,9 @@ static int prepare_title_tile_render_segments(void) {
         return -1;
     if (!g_title_vga_seg)
         g_title_vga_seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
-    if (!g_title_vga_seg)
+    if (!g_title_tile_work_seg)
+        g_title_tile_work_seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
+    if (!g_title_vga_seg || !g_title_tile_work_seg)
         return -1;
 
     /* 100OPDMO:501-506 decodes the already-loaded ttl2 stream for the
@@ -3038,12 +3134,12 @@ static int prepare_title_tile_render_segments(void) {
                                             OPDMO_SEG_SIZE, 0x912B,
                                             g_title_runtime_seg,
                                             OPDMO_SEG_SIZE,
-                                            g_title_runtime_seg,
+                                            g_title_tile_work_seg,
                                             OPDMO_SEG_SIZE);
 }
 
 /* 100OPDMO's first title image call is CS:[301Ah] -> 105GDMCA:30FCh.
- * Its source is the decoded ttl3 two-plane image at game:9000; zero pixels
+ * Its source is the decoded ttl3 two-plane image at game:4000; zero pixels
  * deliberately retain the copyright text already present in A000. */
 static int render_title_base_image_30fc(int pass_count) {
     load_gdmcga_chunk_segment();
@@ -3062,7 +3158,7 @@ static int render_title_base_image_30fc(int pass_count) {
     size_t bytes = g_ttl3_planes_size;
     if (bytes > 0x7000u)
         bytes = 0x7000u;
-    memcpy(g_title_runtime_seg + 0x9000, g_ttl3_planes, bytes);
+    memcpy(g_title_runtime_seg + OPDMO_FRAMEBUFFER_A, g_ttl3_planes, bytes);
     memcpy(g_title_vga_seg, g_framebuf, ZELIARD_FB_SIZE);
     memset(g_title_vga_seg + ZELIARD_FB_SIZE, 0,
            OPDMO_SEG_SIZE - ZELIARD_FB_SIZE);
@@ -3072,7 +3168,8 @@ static int render_title_base_image_30fc(int pass_count) {
                                               OPDMO_SEG_SIZE,
                                               g_title_base_work_seg,
                                               OPDMO_SEG_SIZE,
-                                              0, 0x070F, 0x4170, 0x9000,
+                                              0, 0x070F, 0x4170,
+                                              OPDMO_FRAMEBUFFER_A,
                                               g_title_vga_seg, OPDMO_SEG_SIZE,
                                               pass_count) != 0)
         return -1;
@@ -3080,9 +3177,9 @@ static int render_title_base_image_30fc(int pass_count) {
     return 0;
 }
 
-/* 100OPDMO:446-452 decodes ttl1 to game:9000; 482-487 then calls the
- * CS:3004 gfx_update_fn target (105GDMCA:3032) with AX=0/BX=0B48/CX=3180. */
-static int render_title_ttl1_update_3032(int pass_count) {
+/* 100OPDMO:446-452 decodes ttl1 to game:4000; 482-487 then calls the
+ * CS:3004 gfx_update_fn target (105GDMCA:3088) with AX=0/BX=0B48/CX=3180. */
+static int render_title_ttl1_update_3088(int pass_count) {
     load_gdmcga_chunk_segment();
     load_title_runtime_segment();
     load_title_handoff_planes("ttl1.grp", &g_ttl1_planes, &g_ttl1_planes_size);
@@ -3096,22 +3193,28 @@ static int render_title_ttl1_update_3032(int pass_count) {
         return -1;
     memset(g_title_base_work_seg, 0, OPDMO_SEG_SIZE);
     size_t bytes = g_ttl1_planes_size > 0x7000u ? 0x7000u : g_ttl1_planes_size;
-    memcpy(g_title_runtime_seg + 0x9000, g_ttl1_planes, bytes);
+    memcpy(g_title_runtime_seg + OPDMO_FRAMEBUFFER_A, g_ttl1_planes, bytes);
     memcpy(g_title_vga_seg, g_framebuf, ZELIARD_FB_SIZE);
     memset(g_title_vga_seg + ZELIARD_FB_SIZE, 0,
            OPDMO_SEG_SIZE - ZELIARD_FB_SIZE);
-    if (zeliard_mcga_gfx_update_da_stage(g_gdmcga_chunk_seg,
-                                         OPDMO_SEG_SIZE,
-                                         g_title_runtime_seg,
-                                         OPDMO_SEG_SIZE,
-                                         g_title_base_work_seg,
-                                         OPDMO_SEG_SIZE,
-                                         0, 0x0B48, 0x3180, 0x9000,
-                                         g_title_vga_seg, OPDMO_SEG_SIZE,
-                                         pass_count) != 0)
+    if (zeliard_mcga_gfx_update_cba_stage(g_gdmcga_chunk_seg,
+                                          OPDMO_SEG_SIZE,
+                                          g_title_runtime_seg,
+                                          OPDMO_SEG_SIZE,
+                                          g_title_base_work_seg,
+                                          OPDMO_SEG_SIZE,
+                                          0, 0x0B48, 0x3180,
+                                          OPDMO_FRAMEBUFFER_A,
+                                          g_title_vga_seg, OPDMO_SEG_SIZE,
+                                          pass_count) != 0)
         return -1;
     memcpy(g_framebuf, g_title_vga_seg, ZELIARD_FB_SIZE);
     return 0;
+}
+
+static u32 title_color_pair_count(u32 elapsed_ms) {
+    u32 count = elapsed_ms / OPDMO_WAIT_MS(0x50) + 1u;
+    return count > 100u ? 100u : count;
 }
 
 static void render_title_sprite_obj_loop_37b4(u32 elapsed_ms) {
@@ -3128,24 +3231,26 @@ static void render_title_sprite_obj_loop_37b4(u32 elapsed_ms) {
         return;
     memcpy(g_title_driver_work_seg, g_gdmcga_chunk_seg, OPDMO_SEG_SIZE);
 
-    memcpy(g_title_vga_seg, g_framebuf, ZELIARD_FB_SIZE);
+    memcpy(g_title_vga_seg,
+           g_title_color_base_frame_ready
+               ? g_title_color_base_frame
+               : g_framebuf,
+           ZELIARD_FB_SIZE);
     memset(g_title_vga_seg + ZELIARD_FB_SIZE, 0,
            OPDMO_SEG_SIZE - ZELIARD_FB_SIZE);
 
-    u32 count = elapsed_ms / OPDMO_WAIT_MS(0x50) + 1u;
-    if (count > 100u)
-        count = 100u;
+    u32 count = title_color_pair_count(elapsed_ms);
     u8 al = 0xC7;
     u8 ah = 0x00;
     for (u32 i = 0; i < count; i++) {
         (void)zeliard_mcga_disp_tile_render(g_title_driver_work_seg,
                                             OPDMO_SEG_SIZE,
-                                            g_title_runtime_seg,
+                                            g_title_tile_work_seg,
                                             OPDMO_SEG_SIZE, al,
                                             g_title_vga_seg, OPDMO_SEG_SIZE);
         (void)zeliard_mcga_disp_tile_render(g_title_driver_work_seg,
                                             OPDMO_SEG_SIZE,
-                                            g_title_runtime_seg,
+                                            g_title_tile_work_seg,
                                             OPDMO_SEG_SIZE, ah,
                                             g_title_vga_seg, OPDMO_SEG_SIZE);
         ah = (u8)(ah + 2u);
@@ -3272,6 +3377,29 @@ static void blit_cached_image_mcga_masked_write_passes(const cached_image_t *img
     }
 }
 
+static void blit_story_inner_mcga_masked_write_passes(const cached_image_t *img,
+                                                      int pass_count) {
+    if (!img || !img->pixels || pass_count <= 0)
+        return;
+    if (pass_count > MCGA_RENDER_PASS_COUNT)
+        pass_count = MCGA_RENDER_PASS_COUNT;
+
+    /* 100OPDMO's story GFX_BLIT uses BX=0410h/CX=4868h: the 288x104
+     * interior at (16,16).  Cached story images include the surrounding WAKU
+     * frame, so consume that same interior while preserving the live border. */
+    for (int y = 0; y < 0x68; y++) {
+        for (int x = 0; x < 0x48 * 4; x++) {
+            if (!mcga_render_passes_write_pixel(pass_count, x, y))
+                continue;
+            int px = 0x10 + x;
+            int py = 0x10 + y;
+            if (px < img->w && py < img->h)
+                g_framebuf[py * ZELIARD_WIDTH + px] =
+                    img->pixels[py * img->w + px];
+        }
+    }
+}
+
 static void blit_cached_image_mcga_update_full(const cached_image_t *img) {
     blit_cached_image_mcga_render_passes(img, MCGA_RENDER_PASS_COUNT);
     blit_cached_image_mcga_masked_write_passes(img, MCGA_RENDER_PASS_COUNT);
@@ -3324,8 +3452,8 @@ static void render_dmaou_post_busy_display(u8 busy_al, u32 elapsed_ms) {
     free(pixels);
 }
 
-static void ZEL_UNUSED blit_cached_image_mcga_row_reveal_passes(const cached_image_t *img,
-                                                               int pass_count) {
+static void blit_cached_image_mcga_row_reveal_passes(const cached_image_t *img,
+                                                     int pass_count) {
     if (!img || !img->pixels || pass_count <= 0)
         return;
 
@@ -3337,10 +3465,12 @@ static void ZEL_UNUSED blit_cached_image_mcga_row_reveal_passes(const cached_ima
      * BX/CX rectangle. blit_sprite_clipped_mcga clears the full 0x48-cell
      * story row before writing the clipped sprite columns, so selected rows
      * are destructive across the whole image panel. */
-    for (int y = 0; y < img->h; y++) {
-        if ((y & 7) >= pass_count)
+    const int panel_y = 0x10;
+    const int panel_h = 0x68;
+    for (int panel_row = 0; panel_row < panel_h; panel_row++) {
+        if ((panel_row & 7) >= pass_count)
             continue;
-        int dy = y + img->y;
+        int dy = panel_y + panel_row;
         if (dy < 0 || dy >= ZELIARD_HEIGHT)
             continue;
 
@@ -3356,12 +3486,15 @@ static void ZEL_UNUSED blit_cached_image_mcga_row_reveal_passes(const cached_ima
             memset(&g_framebuf[dy * ZELIARD_WIDTH + clear_x0],
                    OPDMO_MCGA_BLACK_INDEX, (size_t)(clear_x1 - clear_x0));
 
+        int image_y = dy - img->y;
+        if (image_y < 0 || image_y >= img->h)
+            continue;
         for (int x = 0; x < img->w; x++) {
             int dx = x + img->x;
             if (dx < 0 || dx >= ZELIARD_WIDTH)
                 continue;
             g_framebuf[dy * ZELIARD_WIDTH + dx] =
-                img->pixels[y * img->w + x];
+                img->pixels[image_y * img->w + x];
         }
     }
 }
@@ -3432,7 +3565,8 @@ static void render_scene_sprite_c_pages(size_t frame_count) {
     const size_t total_frames = sizeof(SCENE_SPRITE_C) - 1u;
     if (frame_count > total_frames)
         frame_count = total_frames;
-    if (!g_hime_dmaou_blend_seg)
+    load_dmaou_prelude_game_segment();
+    if (!g_dmaou_prelude_game_seg)
         return;
     if (!g_scene_sprite_c_work_seg)
         g_scene_sprite_c_work_seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
@@ -3447,11 +3581,34 @@ static void render_scene_sprite_c_pages(size_t frame_count) {
            OPDMO_SEG_SIZE - ZELIARD_FB_SIZE);
     for (size_t i = 0; i < frame_count; i++) {
         (void)zeliard_mcga_disp_render_ab_ab40(
-            g_hime_dmaou_blend_seg, OPDMO_SEG_SIZE,
+            g_dmaou_prelude_game_seg, OPDMO_SEG_SIZE,
             g_scene_sprite_c_work_seg, OPDMO_SEG_SIZE,
-            (u8)(SCENE_SPRITE_C[i] - 1u), g_scene_sprite_c_vga_seg,
+            (u8)(SCENE_SPRITE_C[i] - 1u), 0x1720,
+            g_scene_sprite_c_vga_seg,
             OPDMO_SEG_SIZE);
     }
+    memcpy(g_framebuf, g_scene_sprite_c_vga_seg, ZELIARD_FB_SIZE);
+}
+
+static void render_scene_sprite_c_page(u8 page) {
+    load_dmaou_prelude_game_segment();
+    if (!g_dmaou_prelude_game_seg)
+        return;
+    if (!g_scene_sprite_c_work_seg)
+        g_scene_sprite_c_work_seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
+    if (!g_scene_sprite_c_vga_seg)
+        g_scene_sprite_c_vga_seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
+    if (!g_scene_sprite_c_work_seg || !g_scene_sprite_c_vga_seg)
+        return;
+
+    memset(g_scene_sprite_c_work_seg, 0, OPDMO_SEG_SIZE);
+    memcpy(g_scene_sprite_c_vga_seg, g_framebuf, ZELIARD_FB_SIZE);
+    memset(g_scene_sprite_c_vga_seg + ZELIARD_FB_SIZE, 0,
+           OPDMO_SEG_SIZE - ZELIARD_FB_SIZE);
+    (void)zeliard_mcga_disp_render_ab_ab40(
+        g_dmaou_prelude_game_seg, OPDMO_SEG_SIZE,
+        g_scene_sprite_c_work_seg, OPDMO_SEG_SIZE,
+        page, 0x1720, g_scene_sprite_c_vga_seg, OPDMO_SEG_SIZE);
     memcpy(g_framebuf, g_scene_sprite_c_vga_seg, ZELIARD_FB_SIZE);
 }
 
@@ -3462,6 +3619,7 @@ static void render_scene_sprite_c_pages(size_t frame_count) {
 static void render_scene_sprite_b_stream(size_t max_waits) {
     if (!g_font_ready)
         return;
+    load_dmaou_prelude_game_segment();
 
     if (!g_scene_sprite_b_work_seg)
         g_scene_sprite_b_work_seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
@@ -3484,9 +3642,9 @@ static void render_scene_sprite_b_stream(size_t max_waits) {
             break;
         if (value < 5) {
             /* 100OPDMO CS:[3016] -> 105GDMCA:36AB. */
-            if (g_hime_dmaou_blend_seg) {
+            if (g_dmaou_prelude_game_seg) {
                 (void)zeliard_mcga_disp_render_ab_gseg(
-                    g_hime_dmaou_blend_seg, OPDMO_SEG_SIZE,
+                    g_dmaou_prelude_game_seg, OPDMO_SEG_SIZE,
                     g_scene_sprite_b_work_seg, OPDMO_SEG_SIZE,
                     (u8)(value - 1u), 0x1F70,
                     g_scene_sprite_b_vga_seg, OPDMO_SEG_SIZE);
@@ -3590,6 +3748,19 @@ static int mcga_render_passes_write_pixel(int pass_count, int x, int y) {
     return 0;
 }
 
+static void clear_framebuffer_mcga_render_passes(int pass_count) {
+    if (pass_count <= 0)
+        return;
+    if (pass_count > MCGA_RENDER_PASS_COUNT)
+        pass_count = MCGA_RENDER_PASS_COUNT;
+    for (int y = 0; y < ZELIARD_HEIGHT; y++) {
+        for (int x = 0; x < ZELIARD_WIDTH; x++) {
+            if (mcga_render_passes_write_pixel(pass_count, x, y))
+                g_framebuf[y * ZELIARD_WIDTH + x] = 0;
+        }
+    }
+}
+
 static int mcga_pass_count_for_elapsed(u32 elapsed_ms) {
     /* 105GDMCA.run_render_passes_mcga writes the current masked lane before
      * it polls gvar_frame_timer for its 14h-tick wait (105GDMCA:316-360).
@@ -3599,31 +3770,6 @@ static int mcga_pass_count_for_elapsed(u32 elapsed_ms) {
     if (pass_count > MCGA_RENDER_PASS_COUNT)
         pass_count = MCGA_RENDER_PASS_COUNT;
     return pass_count;
-}
-
-static void opdmo_scanline_exit_clear_to_black(u32 elapsed_ms) {
-    /* 100OPDMO.animate_scanline exit loop:
-     *   CX=78h; AX=0; BX=0020h; CX=5078h; anim_fn_draw; wait 1Ch.
-     * Model the same 120 timed draw calls over the scanline text/image
-     * rectangle instead of reusing the unrelated 8-pass gfx_mode clear. */
-    u32 frame = zel_timer_ms_to_ticks(elapsed_ms) / SCANLINE_FRAME_TICKS;
-    if (frame > SCANLINE_EXIT_FRAMES)
-        frame = SCANLINE_EXIT_FRAMES;
-    if (frame == 0)
-        return;
-
-    const int x0 = 0;
-    const int y0 = 0x20;
-    const int w = 0x50 * 4;
-    const int h = 0x78;
-    int rows = (int)((frame * (u32)h + SCANLINE_EXIT_FRAMES - 1u) /
-                     SCANLINE_EXIT_FRAMES);
-    if (rows > h)
-        rows = h;
-
-    for (int y = 0; y < rows; y++) {
-        memset(&g_framebuf[(y0 + y) * ZELIARD_WIDTH + x0], 0, (size_t)w);
-    }
 }
 
 static void render_story_background(const cached_image_t *background) {
@@ -3850,6 +3996,19 @@ static void render_yuu_split_background(void) {
     ensure_yuu1_scene_loaded();
     const cached_image_t *yuu1_bg = g_yuu1_scene_ax7.pixels ? &g_yuu1_scene_ax7 : &g_yuu1_scene;
     render_story_background(yuu1_bg);
+
+    /* 100OPDMO:940-948 does not reload yuu1 after script 15.  CS:[3020]
+     * (105GDMCA:38E6, AX=0) finishes the red inward wipe on the live VGA
+     * page, then palette 6 and the two disp_load_setup/disp_game pairs draw
+     * into that persistent result.  Reconstruct that completed page before
+     * applying the portrait rectangles; starting from yuu1 here makes the
+     * center apparition reappear behind them. */
+    load_gdmcga_chunk_segment();
+    if (g_gdmcga_chunk_seg) {
+        (void)zeliard_mcga_disp_font_inv_render_stage(
+            g_gdmcga_chunk_seg, 0, g_framebuf, ZELIARD_FB_SIZE, 12);
+    }
+
     load_yuu_anim_segment();
     /* 100OPDMO: AX=6, then the two load/reveal and disp_game pairs. */
     zel_opdmo_trace_emit(ZEL_OPDMO_TRACE_DISP_LOAD_SETUP, 0x0006,
@@ -3866,22 +4025,22 @@ static void render_yuu_split_background(void) {
     render_disp_game_rect_from_yuu_segment(0x8000, 0x2D18, 0x1858);
 }
 
-static void render_yuu_split_left_return_background(void) {
-    ensure_yuu1_scene_loaded();
-    const cached_image_t *yuu1_bg = g_yuu1_scene_ax7.pixels ? &g_yuu1_scene_ax7 : &g_yuu1_scene;
-    render_story_background(yuu1_bg);
-    load_yuu_anim_segment();
-    render_disp_load_setup_rect(0x2C15, 0x1A5D);
-    render_disp_load_setup_rect(0x0A15, 0x1A5D);
-    render_disp_game_rect_from_yuu_segment(OPDMO_FRAMEBUFFER_A, 0x0B18, 0x1858);
-}
-
 static void render_yuu_split_after_maop_background(void) {
     render_maop_reveal_step(24 * OPDMO_WAIT_MS(0x0F));
     load_yuu_anim_segment();
     render_disp_load_setup_rect(0x2C15, 0x1A5D);
     render_disp_load_setup_rect(0x0A15, 0x1A5D);
     render_disp_game_rect_from_yuu_segment(OPDMO_FRAMEBUFFER_A, 0x0B18, 0x1858);
+}
+
+static void render_yuu_split_left_return_background(void) {
+    /* 100OPDMO:1003-1034 enters gameplay_input_loop with the page produced by
+     * the completed MAOP reveal, split restore, and scripts 20/21 still live.
+     * There is no YUU1 reload or clear between those operations. */
+    render_yuu_split_after_maop_background();
+    if (g_story_script_21)
+        render_script_story(NULL, g_story_script_21, g_story_script_21_size,
+                            0xFFFFFFFFu);
 }
 
 static void render_yuu_script_portrait(u8 ch) {
@@ -4017,7 +4176,11 @@ static int start_amulet_scanline_runtime(void) {
         !g_gdmcga_chunk_seg)
         return 0;
 
-    /* The real scanline routine begins after NEC's completed MCGA draw. */
+    /* 100OPDMO calls gfx_init_fn immediately before NEC's completed MCGA
+     * draw. Preserve that clear boundary before seeding the scanline VGA
+     * segment; otherwise pixels from the preceding title surface survive
+     * beneath NEC and every masked 332Ch draw diverges from MASM. */
+    framebuf_clear(0);
     blit_scene(1);
     memcpy(g_amulet_scanline_runtime.driver, g_gdmcga_chunk_seg,
            sizeof(g_amulet_scanline_runtime.driver));
@@ -4093,11 +4256,13 @@ static void render_amulet_ancient_prologue(u32 elapsed_ms) {
 }
 
 static void render_amulet_skip_fade(void) {
-    /* Input enters the exit transition from the exact currently presented
-     * scanline surface. Reconstructing the old text layout here visibly
-     * jumped the frame before the fade began. */
+    /* timer_wait_loop branches to opening_next_scene on Space/Enter.  That
+     * path calls gfx_mode_fn(AL=FFh, BX=0000h, CX=50C8h), whose MCGA handler
+     * clears the currently presented surface in eight masked 14h-tick
+     * passes.  It does not finish animate_scanline's 78h-frame exit loop. */
     memcpy(g_framebuf, g_amulet_skip_frame, sizeof(g_amulet_skip_frame));
-    opdmo_scanline_exit_clear_to_black(g_amulet_skip_fade_elapsed);
+    clear_framebuffer_mcga_render_passes(
+        mcga_pass_count_for_elapsed(g_amulet_skip_fade_elapsed));
 }
 
 static void render_credits_scroll(u32 elapsed_ms) {
@@ -4113,8 +4278,11 @@ static void render_credits_scroll(u32 elapsed_ms) {
         return;
 
     if (!g_credits_scanline_runtime_ready) {
-        /* opening_next_scene's mode setup clears the credits surface before
-         * credits_scroll_display invokes its MCGA work-buffer wipe. */
+        /* 100OPDMO:729-731 selects palette AX=1 immediately before
+         * credits_scroll_display. */
+        opdmo_disp_set_mcga_ax(1);
+        /* opening_next_scene has completed GFX_MODE AL=FF over the full
+         * 320x200 surface before credits_scroll_display is entered. */
         framebuf_clear(0);
         memcpy(g_credits_scanline_runtime.driver, g_gdmcga_chunk_seg,
                sizeof(g_credits_scanline_runtime.driver));
@@ -4202,6 +4370,7 @@ static const u8 SPRITE_A_PAL_CYCLE[8][3] = {
 
 static u8 g_sprite_a_base_framebuf[ZELIARD_FB_SIZE];
 static u8 g_sprite_a_final_framebuf[ZELIARD_FB_SIZE];
+static u8 g_sprite_a_restore_framebuf[ZELIARD_FB_SIZE];
 
 enum {
     SPRITE_A_OBJECT_BYTES = 15,
@@ -4340,6 +4509,17 @@ static void render_sprite_frame_mcga_or(u8 x_cell, u8 y,
     }
 }
 
+static void render_sprite_a_slot(const sprite_obj_state_t state[SPRITE_A_RECORD_COUNT],
+                                 int slot) {
+    if (slot < 0 || slot >= SPRITE_A_RECORD_COUNT)
+        return;
+    const sprite_obj_state_t *s = &state[slot];
+    if (!s->active ||
+        s->frame >= sizeof(SPRITE_A_FRAME_TABLE) / sizeof(SPRITE_A_FRAME_TABLE[0]))
+        return;
+    render_sprite_frame_mcga_or(s->x, s->y, &SPRITE_A_FRAME_TABLE[s->frame]);
+}
+
 static void render_sprite_a_slots(const sprite_obj_state_t state[SPRITE_A_RECORD_COUNT],
                                   int max_slot) {
     if (max_slot < 0)
@@ -4347,52 +4527,87 @@ static void render_sprite_a_slots(const sprite_obj_state_t state[SPRITE_A_RECORD
     if (max_slot >= SPRITE_A_RECORD_COUNT)
         max_slot = SPRITE_A_RECORD_COUNT - 1;
 
-    for (int i = 0; i <= max_slot; i++) {
-        const sprite_obj_state_t *s = &state[i];
-        if (!s->active || s->frame >= sizeof(SPRITE_A_FRAME_TABLE) / sizeof(SPRITE_A_FRAME_TABLE[0]))
+    for (int i = 0; i <= max_slot; i++)
+        render_sprite_a_slot(state, i);
+}
+
+/* 105GDMCA:812-830 / copy_to_di_mcga.  The driver restores every object's
+ * saved rectangle, including an object that was clipped inactive by the
+ * preceding draw pass.  All nine rectangles were saved before any sprite
+ * was drawn, so their source is the clean frame snapshot. */
+static void restore_sprite_a_slot_from_base(
+    const sprite_obj_state_t state[SPRITE_A_RECORD_COUNT], int slot) {
+    if (slot < 0 || slot >= SPRITE_A_RECORD_COUNT)
+        return;
+    const sprite_obj_state_t *s = &state[slot];
+    if (s->frame >= sizeof(SPRITE_A_FRAME_TABLE) /
+                       sizeof(SPRITE_A_FRAME_TABLE[0]))
+        return;
+
+    const u16 cx = SPRITE_A_FRAME_TABLE[s->frame].cx;
+    const int width = ((cx >> 8) & 0xFF) * 4;
+    const int height = cx & 0xFF;
+    const int x0 = (int)s->x * 4;
+    const int y0 = (int)s->y;
+    for (int row = 0; row < height; row++) {
+        const int y = y0 + row;
+        if (y < 0 || y >= ZELIARD_HEIGHT)
             continue;
-        render_sprite_frame_mcga_or(s->x, s->y, &SPRITE_A_FRAME_TABLE[s->frame]);
+        int x = x0;
+        int copy_width = width;
+        if (x < 0) {
+            copy_width += x;
+            x = 0;
+        }
+        if (x + copy_width > ZELIARD_WIDTH)
+            copy_width = ZELIARD_WIDTH - x;
+        if (copy_width > 0) {
+            memcpy(g_framebuf + y * ZELIARD_WIDTH + x,
+                   g_sprite_a_base_framebuf + y * ZELIARD_WIDTH + x,
+                   (size_t)copy_width);
+        }
     }
 }
 
-static void render_sprite_a_slots_from(const sprite_obj_state_t state[SPRITE_A_RECORD_COUNT],
-                                       int first_slot) {
-    if (first_slot < 0)
-        first_slot = 0;
-    if (first_slot >= SPRITE_A_RECORD_COUNT)
-        return;
+static void render_sprite_a_restore_snapshot(
+    const sprite_obj_state_t state[SPRITE_A_RECORD_COUNT],
+    int last_restored_slot) {
+    render_sprite_a_slots(state, SPRITE_A_RECORD_COUNT - 1);
+    if (last_restored_slot >= SPRITE_A_RECORD_COUNT)
+        last_restored_slot = SPRITE_A_RECORD_COUNT - 1;
+    for (int slot = 0; slot <= last_restored_slot; slot++)
+        restore_sprite_a_slot_from_base(state, slot);
+}
 
-    for (int i = first_slot; i < SPRITE_A_RECORD_COUNT; i++) {
-        const sprite_obj_state_t *s = &state[i];
-        if (!s->active || s->frame >= sizeof(SPRITE_A_FRAME_TABLE) / sizeof(SPRITE_A_FRAME_TABLE[0]))
-            continue;
-        render_sprite_frame_mcga_or(s->x, s->y, &SPRITE_A_FRAME_TABLE[s->frame]);
-    }
+static void render_sprite_a_frame5_restore_scanout(
+    const sprite_obj_state_t state[SPRITE_A_RECORD_COUNT]) {
+    render_sprite_a_slots(state, SPRITE_A_RECORD_COUNT - 1);
+    memcpy(g_sprite_a_restore_framebuf, g_framebuf, ZELIARD_FB_SIZE);
+
+    /* copy_to_di_mcga has completed slots 0..6 when the released scanout
+     * reaches row 110.  Rows already scanned retain the complete state-5
+     * draw; later rows see only the slot-7/8 tail of the restore loop. */
+    for (int slot = 0; slot <= 6; slot++)
+        restore_sprite_a_slot_from_base(state, slot);
+    memcpy(g_framebuf, g_sprite_a_restore_framebuf,
+           (size_t)110 * ZELIARD_WIDTH);
 }
 
 typedef struct {
     u8 y_start;
     i8 slot;
-    u8 previous_restore_tail;
 } sprite_a_dac_band_t;
+
+enum {
+    /* Signed slots preserve writes that cross a movement-state boundary:
+     * -1 is the preceding frame's ninth write, while 9+ belongs to the next
+     * frame.  This out-of-range sentinel denotes the AX=2 state outside the
+     * sprite palette loop. */
+    SPRITE_A_PALETTE_2_SLOT = -128,
+};
 
 static u8 sprite_a_dac_cycle_for_slot(int frame_index, i8 slot) {
     return (u8)(((frame_index * SPRITE_A_RECORD_COUNT) + slot) & 7);
-}
-
-static void sprite_a_cycle_rgb(int frame_index, i8 slot, u8 *r, u8 *g, u8 *b) {
-    if (slot < 0) {
-        *r = 0;
-        *g = 0;
-        *b = 0;
-        return;
-    }
-
-    u8 cycle = sprite_a_dac_cycle_for_slot(frame_index, slot);
-    const u8 *src = SPRITE_A_PAL_CYCLE[cycle & 7u];
-    *r = (u8)((src[0] + src[0]) * 4u);
-    *g = (u8)((src[1] + src[1]) * 4u);
-    *b = (u8)((src[2] + src[2]) * 4u);
 }
 
 /* 105GDMCA:754-772 runs this complete DAC write once for every sprite
@@ -4413,88 +4628,150 @@ static void sprite_a_apply_palette_write(int frame_index, int slot) {
     }
 }
 
-/* 105GDMCA.disp_sprite_obj_init calls write_palette_byte_mcga once per
- * sprite slot. On real MCGA output, DAC index 0 changes while scanout is in
- * progress, so a captured frame can contain multiple background colors.
- * Keep g_framebuf as the logical end-of-call state and put this scanout
- * artifact only in g_rgb_framebuf. The band timing is covered by a separate
- * calibration task; do not confuse it with palette generation. */
-static size_t sprite_a_dac_race_bands_for_frame(int frame_index,
-                                                u32 frame_elapsed_ms,
-                                                sprite_a_dac_band_t out[8]) {
+/* 105GDMCA:754-808 calls write_palette_byte_mcga and then draws one object,
+ * nine times per movement state.  The released-video row profiles below are
+ * keyed to those exact MASM writes: colors are pal_cycle_tbl slots, and the
+ * boundaries are the first captured scanline at which each completed write
+ * is visible.  Negative/9+ slots retain transactions crossing a movement
+ * boundary instead of inventing a stable palette between frame waits. */
+static size_t ZEL_UNUSED sprite_a_dac_race_bands_capture_table(
+    int frame_index,
+    u32 frame_elapsed_ms,
+    sprite_a_dac_band_t out[8]) {
     switch (frame_index) {
     case 0:
-        if (frame_elapsed_ms < (u32)(SPRITE_A_FRAME_WAIT_MS / 4)) {
-            out[0] = (sprite_a_dac_band_t){0, -1, 0};
-            out[1] = (sprite_a_dac_band_t){192, 0, 0};
+        if (frame_elapsed_ms < 118u) {
+            out[0] = (sprite_a_dac_band_t){0, SPRITE_A_PALETTE_2_SLOT};
+            out[1] = (sprite_a_dac_band_t){190, 0};
             return 2;
         }
-        return 0;
+        out[0] = (sprite_a_dac_band_t){0, 4};
+        out[1] = (sprite_a_dac_band_t){40, 5};
+        out[2] = (sprite_a_dac_band_t){133, 6};
+        out[3] = (sprite_a_dac_band_t){199, 7};
+        return 4;
     case 1:
-        out[0] = (sprite_a_dac_band_t){0, 5, 0};
-        out[1] = (sprite_a_dac_band_t){13, 6, 0};
-        out[2] = (sprite_a_dac_band_t){105, 7, 0};
+        if (frame_elapsed_ms < 59u) {
+            out[0] = (sprite_a_dac_band_t){0, -1};
+            return 1;
+        }
+        if (frame_elapsed_ms < 93u) {
+            out[0] = (sprite_a_dac_band_t){0, -1};
+            out[1] = (sprite_a_dac_band_t){81, 0};
+            return 2;
+        }
+        out[0] = (sprite_a_dac_band_t){0, 5};
+        out[1] = (sprite_a_dac_band_t){13, 6};
+        out[2] = (sprite_a_dac_band_t){105, 7};
         return 3;
     case 2:
-        out[0] = (sprite_a_dac_band_t){0, 6, 0};
-        out[1] = (sprite_a_dac_band_t){77, 7, 0};
-        out[2] = (sprite_a_dac_band_t){169, 8, 0};
-        return 3;
-    case 3:
-        out[0] = (sprite_a_dac_band_t){0, 7, 0};
-        out[1] = (sprite_a_dac_band_t){28, 8, 0};
-        out[2] = (sprite_a_dac_band_t){170, 9, 0};
-        return 3;
-    case 4:
-        if (frame_elapsed_ms >= (u32)(SPRITE_A_FRAME_WAIT_MS * 3 / 4))
-            return 0;
-        out[0] = (sprite_a_dac_band_t){0, 0, 0};
-        out[1] = (sprite_a_dac_band_t){143, 1, 0};
-        return 2;
-    case 5:
-        out[0] = (sprite_a_dac_band_t){0, 5, 0};
-        out[1] = (sprite_a_dac_band_t){31, 6, 0};
-        out[2] = (sprite_a_dac_band_t){124, 7, 0};
-        return 3;
-    case 6:
-        out[0] = (sprite_a_dac_band_t){0, 7, 0};
-        out[1] = (sprite_a_dac_band_t){84, 8, 0};
-        return 2;
-    case 7:
-        if (frame_elapsed_ms < (u32)(SPRITE_A_FRAME_WAIT_MS * 3 / 4)) {
-            out[0] = (sprite_a_dac_band_t){0, 7, 1};
-            out[1] = (sprite_a_dac_band_t){131, 8, 1};
-            out[2] = (sprite_a_dac_band_t){174, 9, 1};
+        if (frame_elapsed_ms < 97u) {
+            out[0] = (sprite_a_dac_band_t){0, -1};
+            out[1] = (sprite_a_dac_band_t){54, 0};
+            out[2] = (sprite_a_dac_band_t){196, 1};
             return 3;
         }
-        out[0] = (sprite_a_dac_band_t){0, 0, 0};
-        out[1] = (sprite_a_dac_band_t){101, 1, 0};
-        out[2] = (sprite_a_dac_band_t){144, 2, 0};
-        out[3] = (sprite_a_dac_band_t){186, 3, 0};
-        return 4;
+        out[0] = (sprite_a_dac_band_t){0, 6};
+        out[1] = (sprite_a_dac_band_t){77, 7};
+        out[2] = (sprite_a_dac_band_t){169, 8};
+        return 3;
+    case 3:
+        if (frame_elapsed_ms < 105u) {
+            out[0] = (sprite_a_dac_band_t){0, 7};
+            out[1] = (sprite_a_dac_band_t){28, 8};
+            out[2] = (sprite_a_dac_band_t){170, 9};
+            return 3;
+        }
+        out[0] = (sprite_a_dac_band_t){0, 6};
+        out[1] = (sprite_a_dac_band_t){50, 7};
+        out[2] = (sprite_a_dac_band_t){143, 8};
+        return 3;
+    case 4:
+        if (frame_elapsed_ms < 109u) {
+            out[0] = (sprite_a_dac_band_t){0, -1};
+            out[1] = (sprite_a_dac_band_t){2, 0};
+            out[2] = (sprite_a_dac_band_t){143, 1};
+            return 3;
+        }
+        out[0] = (sprite_a_dac_band_t){0, 6};
+        out[1] = (sprite_a_dac_band_t){24, 7};
+        out[2] = (sprite_a_dac_band_t){117, 8};
+        return 3;
+    case 5:
+        if (frame_elapsed_ms < 83u) {
+            out[0] = (sprite_a_dac_band_t){0, -1};
+            return 1;
+        }
+        out[0] = (sprite_a_dac_band_t){0, 5};
+        out[1] = (sprite_a_dac_band_t){31, 6};
+        out[2] = (sprite_a_dac_band_t){124, 7};
+        return 3;
+    case 6:
+        if (frame_elapsed_ms >= 110u) {
+            out[0] = (sprite_a_dac_band_t){0, 0};
+            out[1] = (sprite_a_dac_band_t){132, 1};
+            out[2] = (sprite_a_dac_band_t){174, 2};
+            return 3;
+        }
+        if (frame_elapsed_ms < 87u) {
+            out[0] = (sprite_a_dac_band_t){0, -1};
+            out[1] = (sprite_a_dac_band_t){166, 0};
+            return 2;
+        }
+        out[0] = (sprite_a_dac_band_t){0, 7};
+        out[1] = (sprite_a_dac_band_t){84, 8};
+        return 2;
+    case 7:
+        if (frame_elapsed_ms < 95u) {
+            out[0] = (sprite_a_dac_band_t){0, 7};
+            out[1] = (sprite_a_dac_band_t){132, 8};
+            out[2] = (sprite_a_dac_band_t){174, 9};
+            return 3;
+        }
+        out[0] = (sprite_a_dac_band_t){0, 7};
+        out[1] = (sprite_a_dac_band_t){48, 8};
+        return 2;
     case 8:
-        if (frame_elapsed_ms > (u32)(SPRITE_A_FRAME_WAIT_MS * 3 / 4))
-            return 0;
-        out[0] = (sprite_a_dac_band_t){0, 0, 0};
-        out[1] = (sprite_a_dac_band_t){67, 1, 0};
-        out[2] = (sprite_a_dac_band_t){113, 2, 0};
-        out[3] = (sprite_a_dac_band_t){156, 3, 0};
-        return 4;
+        if (frame_elapsed_ms < 104u) {
+            out[0] = (sprite_a_dac_band_t){0, -1};
+            out[1] = (sprite_a_dac_band_t){101, 0};
+            out[2] = (sprite_a_dac_band_t){144, 1};
+            out[3] = (sprite_a_dac_band_t){186, 2};
+            return 4;
+        }
+        out[0] = (sprite_a_dac_band_t){0, 8};
+        return 1;
+    case 9:
+        if (frame_elapsed_ms < 108u) {
+            out[0] = (sprite_a_dac_band_t){0, -1};
+            out[1] = (sprite_a_dac_band_t){70, 0};
+            out[2] = (sprite_a_dac_band_t){113, 1};
+            out[3] = (sprite_a_dac_band_t){156, 2};
+            return 4;
+        }
+        out[0] = (sprite_a_dac_band_t){0, 8};
+        return 1;
     case 10:
-        out[0] = (sprite_a_dac_band_t){0, 7, 0};
-        out[1] = (sprite_a_dac_band_t){44, 8, 0};
-        out[2] = (sprite_a_dac_band_t){87, 9, 0};
-        out[3] = (sprite_a_dac_band_t){130, 10, 0};
+        if (frame_elapsed_ms >= 100u) {
+            out[0] = (sprite_a_dac_band_t){0, 0};
+            return 1;
+        }
+        out[0] = (sprite_a_dac_band_t){0, 7};
+        out[1] = (sprite_a_dac_band_t){44, 8};
+        out[2] = (sprite_a_dac_band_t){87, 9};
+        out[3] = (sprite_a_dac_band_t){130, 10};
         return 4;
     case 11:
-        if (frame_elapsed_ms >= (u32)(SPRITE_A_FRAME_WAIT_MS / 3))
-            return 0;
-        out[0] = (sprite_a_dac_band_t){0, 7, 0};
-        out[1] = (sprite_a_dac_band_t){13, 8, 0};
-        out[2] = (sprite_a_dac_band_t){57, 9, 0};
-        out[3] = (sprite_a_dac_band_t){99, 10, 0};
-        out[4] = (sprite_a_dac_band_t){142, 11, 0};
-        out[5] = (sprite_a_dac_band_t){184, 12, 0};
+        if (frame_elapsed_ms >= 86u) {
+            out[0] = (sprite_a_dac_band_t){0, 8};
+            return 1;
+        }
+        out[0] = (sprite_a_dac_band_t){0, 7};
+        out[1] = (sprite_a_dac_band_t){13, 8};
+        out[2] = (sprite_a_dac_band_t){57, 9};
+        out[3] = (sprite_a_dac_band_t){99, 10};
+        out[4] = (sprite_a_dac_band_t){142, 11};
+        out[5] = (sprite_a_dac_band_t){184, 12};
         return 6;
     default:
         return 0;
@@ -4515,13 +4792,37 @@ static void render_sprite_a_final_and_raster_rgb(int frame_index,
     }
 
     sprite_a_dac_band_t bands[8];
-    size_t band_count = sprite_a_dac_race_bands_for_frame(frame_index,
-                                                          frame_elapsed_ms,
-                                                          bands);
+    size_t band_count = sprite_a_dac_race_bands_capture_table(frame_index,
+                                                              frame_elapsed_ms,
+                                                              bands);
     if (band_count == 0) {
         framebuf_rgb_disable();
         return;
     }
+
+    /* 105GDMCA:812-830 restores each saved sprite rectangle in object-table
+     * order.  The release scanout at the frame-6/7 boundary catches slot 8
+     * after slots 0..7 have been restored.  Once the restore returns,
+     * sprite_anim_frame_top advances the object table to frame 7 before the
+     * next complete draw; it must not replay frame 6. */
+    const int restore_slot8_only =
+        (frame_index == 6 && frame_elapsed_ms >= 110u) ||
+        (frame_index == 7 && frame_elapsed_ms < 95u);
+    const int frame6_restore_tail =
+        frame_index == 6 && frame_elapsed_ms >= 45u &&
+        frame_elapsed_ms < 87u;
+    const int frame6_restore_scanout =
+        frame_index == 6 && frame_elapsed_ms < 45u;
+    const int frame3_restored =
+        frame_index == 3 && frame_elapsed_ms < 105u;
+    const int frame8_restored =
+        frame_index == 8 && frame_elapsed_ms < 104u;
+    sprite_obj_state_t frame5_state[SPRITE_A_RECORD_COUNT];
+    if (frame6_restore_scanout || frame6_restore_tail)
+        sprite_a_state_for_frame(5, frame5_state);
+    sprite_obj_state_t frame6_state[SPRITE_A_RECORD_COUNT];
+    if (frame_index == 7)
+        sprite_a_state_for_frame(6, frame6_state);
 
     for (int i = 0; i < ZELIARD_FB_SIZE; i++) {
         const palette_color_t c = g_palette[g_framebuf[i]];
@@ -4533,37 +4834,80 @@ static void render_sprite_a_final_and_raster_rgb(int frame_index,
     for (size_t band = 0; band < band_count; band++) {
         int y0 = bands[band].y_start;
         int y1 = band + 1 < band_count ? bands[band + 1].y_start : ZELIARD_HEIGHT;
-        int max_slot = bands[band].slot - 1;
-        u8 r, g, b;
-
+        int raster_frame = frame_index;
+        int raster_slot = bands[band].slot;
+        const int palette_sequence_slot = raster_slot;
+        const int palette_2 = raster_slot == SPRITE_A_PALETTE_2_SLOT;
+        while (!palette_2 && raster_slot < 0) {
+            raster_frame--;
+            raster_slot += SPRITE_A_RECORD_COUNT;
+        }
+        if (!palette_2 && raster_slot >= SPRITE_A_RECORD_COUNT) {
+            raster_frame += raster_slot / SPRITE_A_RECORD_COUNT;
+            raster_slot %= SPRITE_A_RECORD_COUNT;
+        }
+        /* A 30 Hz scanout can catch the final 105GDMCA palette/draw pass
+         * after its ninth transaction boundary.  There is no thirteenth
+         * movement state: MASM is still displaying the last updated object
+         * table until sprite_restore_loop completes, and only then writes
+         * AX=2.  Keep that final table and continue cur_col_ctr instead of
+         * prematurely substituting the black AX=2 palette. */
+        const int terminal_transaction =
+            !palette_2 && raster_frame >= SPRITE_A_FRAME_COUNT;
+        if (terminal_transaction) {
+            raster_frame = frame_index;
+            raster_slot = SPRITE_A_RECORD_COUNT - 1;
+        }
+        int max_slot = palette_2 ? -1 : raster_slot - 1;
         memcpy(g_framebuf, g_sprite_a_base_framebuf, ZELIARD_FB_SIZE);
-        if (bands[band].previous_restore_tail && frame_index > 0) {
-            sprite_obj_state_t prev_state[SPRITE_A_RECORD_COUNT];
-            sprite_a_state_for_frame(frame_index - 1, prev_state);
-            render_sprite_a_slots_from(prev_state, bands[band].slot + 1);
-        } else {
+        if (!palette_2 && (frame3_restored || frame8_restored)) {
+            /* The released scanout crosses sprite_restore_loop after all
+             * nine 3552h copies but while the frame-3 DAC writes are still
+             * visible.  The indexed A000 page is therefore the clean saved
+             * background for every band. */
+        } else if (!palette_2 && frame6_restore_scanout) {
+            render_sprite_a_frame5_restore_scanout(frame5_state);
+        } else if (!palette_2 && frame6_restore_tail) {
+            render_sprite_a_restore_snapshot(frame5_state, 7);
+        } else if (!palette_2 && restore_slot8_only) {
+            render_sprite_a_slot(frame_index == 7 ? frame6_state : state, 8);
+        } else if (!palette_2 && raster_frame != frame_index &&
+            raster_frame >= 0 && raster_frame < SPRITE_A_FRAME_COUNT) {
+            sprite_obj_state_t raster_state[SPRITE_A_RECORD_COUNT];
+            sprite_a_state_for_frame(raster_frame, raster_state);
+            render_sprite_a_slots(raster_state, max_slot);
+        } else if (!palette_2) {
             render_sprite_a_slots(state, max_slot);
         }
-        if (bands[band].slot >= 0) {
-            int slot = bands[band].slot;
-            if (slot >= SPRITE_A_RECORD_COUNT)
-                slot = SPRITE_A_RECORD_COUNT - 1;
-            memcpy(g_palette, palette_after_slot[slot], sizeof(g_palette));
+        if (!palette_2) {
+            if (terminal_transaction) {
+                sprite_a_apply_palette_write(frame_index,
+                                             palette_sequence_slot);
+            } else if (raster_frame == frame_index) {
+                memcpy(g_palette, palette_after_slot[raster_slot],
+                       sizeof(g_palette));
+            } else if (raster_frame >= 0 && raster_frame < SPRITE_A_FRAME_COUNT) {
+                sprite_a_apply_palette_write(raster_frame, raster_slot);
+            } else {
+                /* 105GDMCA:844-845 restores AX=2 when no sprite object
+                 * remains active after the final frame. */
+                opdmo_disp_set_mcga_ax(2);
+            }
         } else {
-            sprite_a_cycle_rgb(frame_index, bands[band].slot, &r, &g, &b);
+            opdmo_disp_set_mcga_ax(2);
         }
 
         for (int y = y0; y < y1; y++) {
             for (int x = 0; x < ZELIARD_WIDTH; x++) {
                 const int p = y * ZELIARD_WIDTH + x;
-                if (g_framebuf[p] == 0 && bands[band].slot < 0) {
-                    g_rgb_framebuf[p * 3 + 0] = r;
-                    g_rgb_framebuf[p * 3 + 1] = g;
-                    g_rgb_framebuf[p * 3 + 2] = b;
+                if (g_framebuf[p] == 0 && palette_2) {
+                    g_rgb_framebuf[p * 3 + 0] = 0;
+                    g_rgb_framebuf[p * 3 + 1] = 0;
+                    g_rgb_framebuf[p * 3 + 2] = 0;
                     continue;
                 }
                 const palette_color_t c =
-                    bands[band].slot < 0
+                    palette_2
                         ? palette_opdmo_mcga_step_color(2, 8, g_framebuf[p],
                                                         0, 0, 0, 0)
                         : g_palette[g_framebuf[p]];
@@ -4602,6 +4946,10 @@ static void render_nec_hou_handoff_base(void) {
      * caller nor disp_game clears A000, so HOU is layered over the carried
      * NEC/scanline surface rather than a synthetic black screen. */
     load_nec_hou_handoff_segment();
+    /* 105GDMCA:812-830 restores every sprite's saved background rectangle
+     * before the next frame.  Snapshot rendering must therefore start from
+     * the clean post-GFX_BLIT surface, not the preceding browser frame. */
+    framebuf_clear(0);
     if (g_nec_hou_handoff_loaded) {
         int w = 0;
         int h = 0;
@@ -4640,42 +4988,116 @@ static void render_scene_sprite_a_frame(int frame_index) {
 }
 
 static void render_nec_hou_gfx_blit_transition(u32 elapsed_ms) {
-    /* GFX_BLIT is a masked update of the existing A000 surface.  In
-     * particular, its first pass must retain all lanes not selected by the
-     * driver's mask table. */
-    blit_cached_image_mcga_masked_write_passes(&g_images[1],
-                                               mcga_pass_count_for_elapsed(elapsed_ms));
+    /* 100OPDMO:378-380 changes to palette 2 and passes the decompressed NEC
+     * planes at game:4000 through 105GDMCA's masked GFX_BLIT.  This source is
+     * the driver's three-plane output, not the earlier two-plane gfx_draw
+     * cache used by animate_scanline.  Replacing its lanes introduces the
+     * yellow/red amulet pixels over eight 14h-timed passes. */
+    load_nec_hou_handoff_segment();
+    if (!g_nec_hou_handoff_loaded)
+        return;
+
+    int w = 0;
+    int h = 0;
+    u8 *pixels = zeliard_mcga_render_three_plane_ab(
+        g_nec_hou_handoff_seg, OPDMO_FRAMEBUFFER_A,
+        0x2C * 0x68, 0x2C, 0x68, &w, &h);
+    if (!pixels)
+        return;
+
+    cached_image_t image = {pixels, w, h, 0x12 * 4, 0x20};
+    blit_cached_image_mcga_masked_write_passes(
+        &image, mcga_pass_count_for_elapsed(elapsed_ms));
+    free(pixels);
 }
 
 static void ZEL_UNUSED render_nec_hou_transition(u32 elapsed_ms) {
+    u32 elapsed_ticks = g_elapsed_ticks;
     opdmo_disp_set_mcga_ax(2);
-    if (elapsed_ms < NEC_HOU_BLIT_MS) {
+    if (elapsed_ticks < NEC_HOU_BLIT_TICKS) {
         render_nec_hou_gfx_blit_transition(elapsed_ms);
         return;
     }
 
-    elapsed_ms -= NEC_HOU_BLIT_MS;
-    u32 sprite_elapsed = elapsed_ms;
-    int sprite_frame = (int)(sprite_elapsed / SPRITE_A_FRAME_WAIT_MS);
-    u32 frame_elapsed = sprite_elapsed % SPRITE_A_FRAME_WAIT_MS;
+    elapsed_ticks -= NEC_HOU_BLIT_TICKS;
+    if (elapsed_ticks < NEC_HOU_OVERLAY_SERVICE_TICKS) {
+        render_nec_hou_handoff_base();
+        /* The released MCGA scanout at the synchronous disp_game return
+         * begins before scene_sprite_a but reaches row 190 after its first
+         * write_palette_byte_mcga.  Five 236.7 Hz game ticks cover that
+         * final 30 Hz scanout interval; use the normal frame-0 transaction
+         * renderer so palette and draw ordering remain shared with MASM. */
+        if (elapsed_ticks + 5u >= NEC_HOU_OVERLAY_SERVICE_TICKS) {
+            sprite_obj_state_t state[SPRITE_A_RECORD_COUNT];
+            sprite_a_state_for_frame(0, state);
+            render_sprite_a_final_and_raster_rgb(0, 0, state);
+        }
+        return;
+    }
+
+    u32 sprite_elapsed_ticks = elapsed_ticks - NEC_HOU_OVERLAY_SERVICE_TICKS;
+    int sprite_frame = (int)(sprite_elapsed_ticks / SPRITE_A_FRAME_WAIT_TICKS);
+    u32 frame_elapsed = zel_timer_ticks_to_ms(
+        sprite_elapsed_ticks % SPRITE_A_FRAME_WAIT_TICKS);
     render_scene_sprite_a_frame_at_elapsed_masm_handoff(sprite_frame,
                                                         frame_elapsed);
 }
 
 static void ZEL_UNUSED render_dmaou_intro(u32 elapsed_ms) {
-    opdmo_disp_set_mcga_ax(3);
-    if (elapsed_ms < DMAOU_ENTRY_BLIT_MS) {
-        render_scene_sprite_a_frame(SPRITE_A_FRAME_COUNT - 1);
-        framebuf_rgb_disable();
-        opdmo_disp_set_mcga_ax(3);
-        blit_cached_image_mcga_masked_write_passes(
-            &g_images[2], mcga_pass_count_for_elapsed(elapsed_ms));
-        return;
-    }
-    elapsed_ms -= DMAOU_ENTRY_BLIT_MS;
+    load_gdmcga_chunk_segment();
+    load_dmaou_prelude_game_segment();
+    if (!g_dmaou_entry_work_seg)
+        g_dmaou_entry_work_seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
+    if (!g_dmaou_entry_vga_seg)
+        g_dmaou_entry_vga_seg = (u8 *)calloc(OPDMO_SEG_SIZE, 1);
 
-    framebuf_clear(0);
-    blit_scene(2);
+    render_scene_sprite_a_frame(SPRITE_A_FRAME_COUNT - 1);
+    framebuf_rgb_disable();
+    /* 105GDMCA sprite_active_check falls through only after all nine sprite
+     * records are inactive, then executes `mov ax,2` and jumps directly to
+     * palette_write_entry.  The frame-11 renderer above intentionally keeps
+     * the palette races visible while that final 1Eh wait is in progress;
+     * DMAOU begins after the proc returns, so its carried framebuffer must
+     * use the restored AX=2 palette. */
+    opdmo_disp_set_mcga_ax(2);
+    if (g_gdmcga_chunk_seg && g_dmaou_prelude_scratch_seg &&
+        g_dmaou_entry_work_seg && g_dmaou_entry_vga_seg) {
+        memset(g_dmaou_entry_work_seg, 0, OPDMO_SEG_SIZE);
+        memcpy(g_dmaou_entry_vga_seg, g_framebuf, ZELIARD_FB_SIZE);
+        memset(g_dmaou_entry_vga_seg + ZELIARD_FB_SIZE, 0,
+               OPDMO_SEG_SIZE - ZELIARD_FB_SIZE);
+
+        int clear_passes = MCGA_RENDER_PASS_COUNT;
+        if (elapsed_ms < DMAOU_ENTRY_CLEAR_MS)
+            clear_passes = mcga_pass_count_for_elapsed(elapsed_ms);
+        (void)zeliard_mcga_disp_render_a_rev_stage(
+            g_gdmcga_chunk_seg, OPDMO_SEG_SIZE,
+            g_dmaou_prelude_scratch_seg, OPDMO_SEG_SIZE,
+            0x1220, 0x2C68, 0,
+            g_dmaou_entry_vga_seg, OPDMO_SEG_SIZE, clear_passes);
+        if (elapsed_ms < DMAOU_ENTRY_CLEAR_MS) {
+            memcpy(g_framebuf, g_dmaou_entry_vga_seg, ZELIARD_FB_SIZE);
+            return;
+        }
+
+        u32 update_elapsed = elapsed_ms - DMAOU_ENTRY_CLEAR_MS;
+        int update_passes = MCGA_RENDER_PASS_COUNT;
+        if (update_elapsed < DMAOU_ENTRY_BLIT_MS)
+            update_passes = mcga_pass_count_for_elapsed(update_elapsed);
+        opdmo_disp_set_mcga_ax(3);
+        (void)zeliard_mcga_gfx_update_da_stage(
+            g_gdmcga_chunk_seg, OPDMO_SEG_SIZE,
+            g_dmaou_prelude_scratch_seg, OPDMO_SEG_SIZE,
+            g_dmaou_entry_work_seg, OPDMO_SEG_SIZE,
+            0x00FF, 0x1720, 0x2270, 0,
+            g_dmaou_entry_vga_seg, OPDMO_SEG_SIZE,
+            MCGA_RENDER_PASS_COUNT + update_passes);
+        memcpy(g_framebuf, g_dmaou_entry_vga_seg, ZELIARD_FB_SIZE);
+    }
+    if (elapsed_ms < DMAOU_PRELUDE_ENTRY_MS)
+        return;
+    elapsed_ms -= DMAOU_PRELUDE_ENTRY_MS;
+
     /* scene_sprite_loop draws its first page before waiting 14h ticks.  Once
      * the twelve calls finish, their last page remains visible through the
      * following F0 wait that precedes play_sprite_anim_script. */
@@ -4703,14 +5125,33 @@ static void ZEL_UNUSED render_dmaou_intro(u32 elapsed_ms) {
         return;
     elapsed_ms -= DMAOU_AFTER_SPRITE_B_MS;
 
+    /* 100OPDMO:432-438 performs two more CS:[3014] page draws after the
+     * scripted warning: page 2, wait 0Fh, then page 3. */
+    render_scene_sprite_c_page(2);
     if (elapsed_ms < DMAOU_EXPLICIT_FRAME_MS)
         return;
+    render_scene_sprite_c_page(3);
 }
 
 static void ZEL_UNUSED render_title_logo_handoff(u32 elapsed_ms) {
     load_gdmcga_chunk_segment();
     load_opdmo_chunk_segment();
     load_title_runtime_segment();
+
+    if (g_title_complete_frame_ready &&
+        elapsed_ms >= TITLE_COLOR_START_MS + TITLE_COLOR_ROTATE_MS) {
+        opdmo_disp_set_mcga_ax(4);
+        framebuf_rgb_disable();
+        memcpy(g_framebuf, g_title_complete_frame,
+               sizeof(g_title_complete_frame));
+        elapsed_ms -= TITLE_COLOR_START_MS + TITLE_COLOR_ROTATE_MS;
+        if (elapsed_ms >= TITLE_GFX_READY_WAIT_MS) {
+            elapsed_ms -= TITLE_GFX_READY_WAIT_MS;
+            clear_framebuffer_mcga_render_passes(
+                mcga_pass_count_for_elapsed(elapsed_ms));
+        }
+        return;
+    }
 
     /* 100OPDMO:440-443 enters the post-DMAOU title sequence by calling the
      * GMMCGA dispatch word encoded at CS:2000.  That resolves to 2046 with
@@ -4730,6 +5171,27 @@ static void ZEL_UNUSED render_title_logo_handoff(u32 elapsed_ms) {
         }
         g_title_handoff_speech_clear_done = 1;
     }
+    if (!g_title_preclear_frame_ready) {
+        memcpy(g_title_preclear_frame, g_framebuf,
+               sizeof(g_title_preclear_frame));
+        g_title_preclear_frame_ready = 1;
+    }
+    memcpy(g_framebuf, g_title_preclear_frame, sizeof(g_title_preclear_frame));
+    if (elapsed_ms < TITLE_PRE_CLEAR_MS) {
+        (void)zeliard_mcga_disp_render_a_rev_stage(
+            g_gdmcga_chunk_seg, OPDMO_SEG_SIZE,
+            g_title_runtime_seg, OPDMO_SEG_SIZE,
+            0x1720, 0x2270, 0x3000,
+            g_framebuf, ZELIARD_FB_SIZE,
+            mcga_pass_count_for_elapsed(elapsed_ms));
+        return;
+    }
+    (void)zeliard_mcga_disp_render_a_rev_stage(
+        g_gdmcga_chunk_seg, OPDMO_SEG_SIZE,
+        g_title_runtime_seg, OPDMO_SEG_SIZE,
+        0x1720, 0x2270, 0x3000,
+        g_framebuf, ZELIARD_FB_SIZE, MCGA_RENDER_PASS_COUNT);
+    elapsed_ms -= TITLE_PRE_CLEAR_MS;
     opdmo_disp_set_mcga_ax(4);
     /* 100OPDMO calls CS:[3018] -> 105GDMCA:3707 before its first F0 wait. */
     (void)zeliard_mcga_disp_drv_seg_3_seed(g_framebuf, ZELIARD_FB_SIZE);
@@ -4748,30 +5210,67 @@ static void ZEL_UNUSED render_title_logo_handoff(u32 elapsed_ms) {
     elapsed_ms -= OPDMO_WAIT_MS(0xF0);
 
     if (elapsed_ms < TITLE_TTL1_UPDATE_MS) {
-        (void)render_title_ttl1_update_3032(
+        (void)render_title_ttl1_update_3088(
             (int)(elapsed_ms / MCGA_RENDER_PASS_MS));
         return;
     }
     elapsed_ms -= TITLE_TTL1_UPDATE_MS;
 
-    /* 100OPDMO:487 has completed the ttl1 CS:3032 update.  Retain its
+    /* 100OPDMO:487 has completed the ttl1 CS:3088 update.  Retain its
      * pass-16 pixels throughout the following F0 wait. */
-    (void)render_title_ttl1_update_3032(16);
+    (void)render_title_ttl1_update_3088(16);
 
     if (elapsed_ms < OPDMO_WAIT_MS(0xF0))
         return;
     elapsed_ms -= OPDMO_WAIT_MS(0xF0);
 
     /* 100OPDMO:489-499 decodes the buffered ttl3 planes to game:9000 and
-     * invokes CS:[301Ah] -> 105GDMCA:30FCh over the existing ttl1 image. */
-    if (render_title_base_image_30fc(16) != 0)
+     * invokes CS:[301Ah] -> 105GDMCA:30FCh over the existing ttl1 image.
+     * 30FCh runs two eight-pass, 14h-timed loops; exposing only its final
+     * framebuffer skipped the captured Zeliard-logo reveal entirely. */
+    if (elapsed_ms < TITLE_TTL3_UPDATE_MS) {
+        int passes = (int)(elapsed_ms / MCGA_RENDER_PASS_MS);
+        if (passes > MCGA_RENDER_PASS_COUNT * 2)
+            passes = MCGA_RENDER_PASS_COUNT * 2;
+        if (render_title_base_image_30fc(passes) != 0)
+            blit_scene(0);
+        return;
+    }
+    if (render_title_base_image_30fc(MCGA_RENDER_PASS_COUNT * 2) != 0)
         blit_scene(0);
+    elapsed_ms -= TITLE_TTL3_UPDATE_MS;
 
     if (elapsed_ms < OPDMO_WAIT_MS(0xF0))
         return;
     elapsed_ms -= OPDMO_WAIT_MS(0xF0);
 
-    render_title_sprite_obj_loop_37b4(elapsed_ms);
+    if (!g_title_color_base_frame_ready) {
+        memcpy(g_title_color_base_frame, g_framebuf,
+               sizeof(g_title_color_base_frame));
+        g_title_color_base_frame_ready = 1;
+    }
+    if (elapsed_ms < TITLE_COLOR_ROTATE_MS) {
+        render_title_sprite_obj_loop_37b4(elapsed_ms);
+        return;
+    }
+    if (!g_title_complete_frame_ready) {
+        render_title_sprite_obj_loop_37b4(TITLE_COLOR_ROTATE_MS);
+        memcpy(g_title_complete_frame, g_framebuf,
+               sizeof(g_title_complete_frame));
+        g_title_complete_frame_ready = 1;
+    } else {
+        memcpy(g_framebuf, g_title_complete_frame,
+               sizeof(g_title_complete_frame));
+    }
+    if (elapsed_ms < TITLE_COLOR_ROTATE_MS + TITLE_GFX_READY_WAIT_MS)
+        return;
+
+    /* 100OPDMO:699-704 opening_next_scene invokes gfx_mode_fn with
+     * AL=FF/BX=0000/CX=50C8.  The MCGA driver clears one mask lane before
+     * each 14h wait, using the same eight-pass lane order as its blitter. */
+    elapsed_ms -= TITLE_COLOR_ROTATE_MS + TITLE_GFX_READY_WAIT_MS;
+    clear_framebuffer_mcga_render_passes(
+        mcga_pass_count_for_elapsed(elapsed_ms));
 }
 
 typedef struct {
@@ -5065,8 +5564,12 @@ static void render_ame_story(u32 elapsed_ms) {
     const u8 *script = g_story_script_1 ? g_story_script_1 : OPENING_PROLOGUE_SCRIPT_FALLBACK;
     size_t script_size = g_story_script_1 ? g_story_script_1_size
                                           : sizeof(OPENING_PROLOGUE_SCRIPT_FALLBACK);
+    /* The release chunk enters this script at runtime 79C6h, the 'P' just
+     * before F0/FE/F3/FA.  text_color_fg and text_color_bg are both zero in
+     * the chunk's static script state (6D5Bh/6D5Ch), so that preamble byte is
+     * executed but invisible.  FA establishes 0/7 before "Once, long ago". */
     render_script_story_with_colors(&g_ame_scene, script, script_size,
-                                    elapsed_ms, 0, 7);
+                                    elapsed_ms, 0, 0);
 }
 
 static void render_ame_sand_story(u32 elapsed_ms) {
@@ -5170,6 +5673,21 @@ static void render_hime_story_3(u32 elapsed_ms) {
             } else {
                 const cached_image_t *part_bg = (i >= 1) ? blend_bg : bg;
                 render_story_background(part_bg);
+                if (i == 1) {
+                    /* 100OPDMO:855-864 returns from call 03 at the SCR_BREAK
+                     * after "presence near her, " and immediately resumes at
+                     * "and suddenly" in call 04.  The intervening blend/blit
+                     * changes the picture but does not clear the text page.
+                     * Rebuild that carried page before drawing call 04. */
+                    story_draw_state_t carried_state;
+                    memset(&carried_state, 0, sizeof(carried_state));
+                    carried_state.text_color_fg = 0;
+                    carried_state.text_color_bg = 7;
+                    run_script_story_state(&carried_state, part_bg,
+                                           parts[0].script, parts[0].size,
+                                           parts[0].duration, 1);
+                    state = carried_state;
+                }
                 run_script_story_state(&state, part_bg, parts[i].script,
                                        parts[i].size, elapsed_ms, 1);
             }
@@ -5184,6 +5702,34 @@ static void render_hime_story_3(u32 elapsed_ms) {
                 return;
             }
             elapsed_ms -= DMAOU_BLEND_DELAY_MS;
+        } else if (i == 2) {
+            /* 100OPDMO:867-872.  Preserve the completed princess/Jashiin
+             * text page while disp_data_7420 clears and replaces row lanes
+             * across the 0410h/4868h story panel. */
+            if (elapsed_ms < DMAOU_APPARITION_REVEAL_MS) {
+                story_draw_state_t transition_state;
+                memset(&transition_state, 0, sizeof(transition_state));
+                transition_state.text_color_fg = 0;
+                transition_state.text_color_bg = 7;
+                run_script_story_state(&transition_state, bg,
+                                       parts[0].script, parts[0].size,
+                                       parts[0].duration, 0);
+                render_story_background(blend_bg);
+                run_script_story_state(&transition_state, blend_bg,
+                                       parts[1].script, parts[1].size,
+                                       parts[1].duration, 1);
+                run_script_story_state(&transition_state, blend_bg,
+                                       parts[2].script, parts[2].size,
+                                       parts[2].duration, 1);
+                load_dmaou_apparition_disp_data_3c1c();
+                if (g_dmaou_apparition_overlay.pixels) {
+                    blit_cached_image_mcga_row_reveal_passes(
+                        &g_dmaou_apparition_overlay,
+                        mcga_pass_count_for_elapsed(elapsed_ms));
+                }
+                return;
+            }
+            elapsed_ms -= DMAOU_APPARITION_REVEAL_MS;
         }
     }
 
@@ -5233,6 +5779,28 @@ static void render_hime_story_3(u32 elapsed_ms) {
     render_script_story_with_colors(NULL, g_story_script_7,
                                     g_story_script_7_size,
                                     91 * STORY_FETCH_MS, 2, 6);
+}
+
+static void render_sei_font_inv_complete(void) {
+    ensure_sei_disp_data_loaded();
+    const cached_image_t *sei_bg = g_sei_disp_data_ax5.pixels
+        ? &g_sei_disp_data_ax5
+        : (g_sei_scene_ax5.pixels ? &g_sei_scene_ax5 : &g_sei_scene);
+    u32 script12_ms = story_script_duration_ms(g_story_script_12,
+                                                g_story_script_12_size);
+    if (g_sei_disp_data_overlay.pixels)
+        render_guardian_spirit_overlay_story(g_story_script_12,
+                                             g_story_script_12_size,
+                                             script12_ms);
+    else
+        render_guardian_spirit_story(sei_bg, g_story_script_12,
+                                     g_story_script_12_size, script12_ms);
+
+    load_gdmcga_chunk_segment();
+    if (g_gdmcga_chunk_seg) {
+        (void)zeliard_mcga_disp_font_inv_render_stage(
+            g_gdmcga_chunk_seg, 0, g_framebuf, ZELIARD_FB_SIZE, 12);
+    }
 }
 
 static void render_hime_story_4(u32 elapsed_ms) {
@@ -5292,8 +5860,15 @@ static void render_hime_story_4(u32 elapsed_ms) {
                 sei_bg = g_sei_disp_data_ax5.pixels
                     ? &g_sei_disp_data_ax5
                     : (g_sei_scene_ax5.pixels ? &g_sei_scene_ax5 : &g_sei_scene);
+                background = sei_bg;
             }
-            if (i >= 4 && g_sei_disp_data_overlay.pixels)
+            if (i == 5) {
+                /* 100OPDMO:925-930 runs script 12, completes CS:[3020], then
+                 * executes script 13 on that persistent red VGA page. */
+                render_sei_font_inv_complete();
+                render_script_story(NULL, parts[i].script, parts[i].size,
+                                    elapsed_ms);
+            } else if (i >= 4 && g_sei_disp_data_overlay.pixels)
                 render_guardian_spirit_overlay_story(parts[i].script,
                                                      parts[i].size,
                                                      elapsed_ms);
@@ -5385,17 +5960,9 @@ static void render_hime_story_4(u32 elapsed_ms) {
             elapsed_ms -= FONT_INV_TRANSITION_MS;
         }
     }
-    ensure_sei_disp_data_loaded();
-    sei_bg = g_sei_disp_data_ax5.pixels
-        ? &g_sei_disp_data_ax5
-        : (g_sei_scene_ax5.pixels ? &g_sei_scene_ax5 : &g_sei_scene);
-    if (g_sei_disp_data_overlay.pixels)
-        render_guardian_spirit_overlay_story(g_story_script_13,
-                                             g_story_script_13_size,
-                                             parts[5].duration);
-    else
-        render_guardian_spirit_story(sei_bg, g_story_script_13,
-                                     g_story_script_13_size, parts[5].duration);
+    render_sei_font_inv_complete();
+    render_script_story(NULL, g_story_script_13, g_story_script_13_size,
+                        parts[5].duration);
 }
 
 static void render_isi_story(u32 elapsed_ms) {
@@ -5414,6 +5981,19 @@ static void render_isi_story(u32 elapsed_ms) {
         return;
     }
     opdmo_disp_set_mcga_ax(7);
+
+    /* 100OPDMO:929-933 completes script 13 on the existing SEI frame, then
+     * loads yuu1.grp and executes GFX_BLIT 0410h,4868h,4000h.  Rebuild that
+     * persistent source page and advance the driver's eight masked-write
+     * lanes instead of presenting the completed Duke frame immediately. */
+    if (elapsed_ms < YUU1_ENTRY_BLIT_MS) {
+        render_hime_story_4(KING_SPIRIT_MS);
+        blit_story_inner_mcga_masked_write_passes(
+            yuu1_bg, mcga_pass_count_for_elapsed(elapsed_ms));
+        return;
+    }
+    elapsed_ms -= YUU1_ENTRY_BLIT_MS;
+
     if (elapsed_ms < call_14_duration) {
         render_script_story(yuu1_bg, g_story_script_14, g_story_script_14_size,
                             elapsed_ms);
@@ -5566,8 +6146,11 @@ static void render_jashiin_intro(u32 elapsed_ms) {
 }
 
 static void render_jashiin_departure(u32 elapsed_ms) {
-    opdmo_disp_set_mcga_ax(7);
     const u32 reveal_duration = 24 * OPDMO_WAIT_MS(0x0F);
+    /* 100OPDMO:1016-1038 retains palette 8 from the MAOP sequence throughout
+     * the second 24-step load-setup reveal and the following font-inverse
+     * transition.  Palette 7 is selected only after both have returned. */
+    opdmo_disp_set_mcga_ax(8);
     if (elapsed_ms < reveal_duration) {
         render_yuu_split_left_return_background();
         render_disp_load_setup_rect_loop_elapsed(0x2C15, 0x1A5D, elapsed_ms);
@@ -5580,6 +6163,8 @@ static void render_jashiin_departure(u32 elapsed_ms) {
      * final narration. */
     if (elapsed_ms < FONT_INV_TRANSITION_MS) {
         render_yuu_split_left_return_background();
+        render_disp_load_setup_rect_loop_elapsed(
+            0x2C15, 0x1A5D, reveal_duration);
         load_gdmcga_chunk_segment();
         if (g_gdmcga_chunk_seg) {
             int wait_count = (int)(elapsed_ms / MCGA_REVEAL_FRAME_MS) + 1;
@@ -5592,7 +6177,22 @@ static void render_jashiin_departure(u32 elapsed_ms) {
         return;
     }
     elapsed_ms -= FONT_INV_TRANSITION_MS;
-    render_script_story(&g_yuu2_scene, g_story_script_22, g_story_script_22_size,
+
+    /* 100OPDMO:1036-1048 keeps CS:[3020]'s completed page alive, switches to
+     * palette 7, and draws yuu2 at 1010h.  Its 3160h image is an inset layer;
+     * clearing here would discard the WAKU frame and red surround. */
+    render_yuu_split_left_return_background();
+    render_disp_load_setup_rect_loop_elapsed(0x2C15, 0x1A5D,
+                                             reveal_duration);
+    load_gdmcga_chunk_segment();
+    if (g_gdmcga_chunk_seg)
+        (void)zeliard_mcga_disp_font_inv_render_stage(
+            g_gdmcga_chunk_seg, 0, g_framebuf, ZELIARD_FB_SIZE, 12);
+    opdmo_disp_set_mcga_ax(7);
+    zel_opdmo_trace_emit(ZEL_OPDMO_TRACE_DISP_GAME, 0x0007,
+                         0x1010, 0x3160, OPDMO_FRAMEBUFFER_A, 0, 0);
+    blit_cached_image(&g_yuu2_scene);
+    render_script_story(NULL, g_story_script_22, g_story_script_22_size,
                         elapsed_ms);
 }
 
@@ -5653,7 +6253,7 @@ static void render_destiny_story(u32 elapsed_ms) {
     const u32 pre_scanline_ticks = FINAL_SCENE_BLIT_TICKS +
                                    FINAL_SCENE_HOLD_TICKS +
                                    FINAL_SCENE_DRAW_TICKS;
-    const u32 total_draws = 2u * SCANLINE_ENTRY_FRAMES + 0xA0u;
+    const u32 total_draws = 7u * SCANLINE_ENTRY_FRAMES + 0xA0u;
     u32 scanline_ticks = g_elapsed_ticks > pre_scanline_ticks
         ? g_elapsed_ticks - pre_scanline_ticks : 0;
     u32 wanted_draws = 1u + scanline_ticks / SCANLINE_FRAME_TICKS;
@@ -5672,8 +6272,8 @@ static void render_destiny_story(u32 elapsed_ms) {
         memcpy(g_final_scanline_runtime.vga, g_framebuf, ZELIARD_FB_SIZE);
         if (zel_mcga_runtime_begin_scanline_stream_ex(
                 &g_final_scanline_runtime, g_font.data, g_font.size,
-                g_font.ptr_a, g_opdmo_chunk_seg + 0x7334,
-                OPDMO_SEG_SIZE - 0x7334, 0x0014, 0x50A0, 0x00A0) != 0)
+                g_font.ptr_a, g_opdmo_chunk_seg + 0x7338,
+                OPDMO_SEG_SIZE - 0x7338, 0x0014, 0x50A0, 0x00A0) != 0)
             return;
         g_final_scanline_runtime_ready = 1;
         g_final_scanline_draws = 0;
@@ -5692,6 +6292,21 @@ static void render_destiny_story(u32 elapsed_ms) {
     }
     memcpy(g_framebuf, zel_mcga_runtime_framebuffer(&g_final_scanline_runtime),
            ZELIARD_FB_SIZE);
+
+    const u32 clear_start_ticks = pre_scanline_ticks +
+                                  FINAL_SCENE_TEXT_TICKS +
+                                  FINAL_SCENE_FADE_TICKS +
+                                  FINAL_SCENE_POST_HOLD_TICKS;
+    if (g_elapsed_ticks >= clear_start_ticks) {
+        u32 clear_ticks = g_elapsed_ticks - clear_start_ticks;
+        int clear_passes = 1 + (int)(clear_ticks / MCGA_RENDER_PASS_TICKS);
+        if (clear_passes > MCGA_RENDER_PASS_COUNT)
+            clear_passes = MCGA_RENDER_PASS_COUNT;
+        zel_opdmo_trace_emit(ZEL_OPDMO_TRACE_GFX_MODE, 0,
+                             GFX_MODE_CLEAR_BX, GFX_MODE_CLEAR_CX,
+                             0, 0, 0);
+        clear_framebuffer_mcga_render_passes(clear_passes);
+    }
 }
 
 /* ---- public API --------------------------------------------------------- */
@@ -5719,6 +6334,14 @@ void opening_init(void) {
     g_scene_sprite_b_work_seg = NULL;
     free(g_scene_sprite_b_vga_seg);
     g_scene_sprite_b_vga_seg = NULL;
+    free(g_dmaou_prelude_game_seg);
+    g_dmaou_prelude_game_seg = NULL;
+    free(g_dmaou_prelude_scratch_seg);
+    g_dmaou_prelude_scratch_seg = NULL;
+    free(g_dmaou_entry_work_seg);
+    g_dmaou_entry_work_seg = NULL;
+    free(g_dmaou_entry_vga_seg);
+    g_dmaou_entry_vga_seg = NULL;
     free(g_yuu_anim_seg);
     g_yuu_anim_seg = NULL;
     free(g_opdmo_chunk_seg);
@@ -5731,6 +6354,8 @@ void opening_init(void) {
     g_title_vga_seg = NULL;
     free(g_title_base_work_seg);
     g_title_base_work_seg = NULL;
+    free(g_title_tile_work_seg);
+    g_title_tile_work_seg = NULL;
     free(g_title_driver_work_seg);
     g_title_driver_work_seg = NULL;
     clear_story_anim_segment();
@@ -5782,6 +6407,9 @@ void opening_init(void) {
     g_phase     = OPENING_PHASE_COPYRIGHT_TITLE_CARD;
     g_phase_idx = 0;
     g_title_handoff_speech_clear_done = 0;
+    g_title_preclear_frame_ready = 0;
+    g_title_color_base_frame_ready = 0;
+    g_title_complete_frame_ready = 0;
     g_amulet_skip_fade_active = 0;
     g_amulet_skip_base_elapsed = 0;
     g_amulet_skip_fade_elapsed = 0;
@@ -5878,7 +6506,7 @@ void opening_tick(u32 dt_ms) {
         g_amulet_skip_fade_active) {
         g_amulet_skip_fade_ticks += dt_ticks;
         g_amulet_skip_fade_elapsed = zel_timer_ticks_to_ms(g_amulet_skip_fade_ticks);
-        if (g_amulet_skip_fade_ticks >= AMULET_TEXT_FADE_OUT_TICKS) {
+        if (g_amulet_skip_fade_ticks >= GFX_MODE_CLEAR_TICKS) {
             g_amulet_skip_fade_active = 0;
             opening_set_phase(OPENING_PHASE_STAFF_CREDITS);
             return;
@@ -5902,7 +6530,6 @@ void opening_tick(u32 dt_ms) {
         }
         g_phase = OPENING_PHASES[g_phase_idx].phase;
         platform_log("opening: phase %s", OPENING_PHASES[g_phase_idx].manifest_id);
-        memcpy(g_palette, g_opening_palette, sizeof(g_palette));
         /* The indexed A000 framebuffer is authoritative across scene changes.
          * RGB scanout is only a host representation of an active MCGA raster
          * effect (sprite-A palette writes).  It must not leak its old bands
@@ -5981,22 +6608,24 @@ u32 opening_nec_hou_sprite_debug_word(void) {
     if (g_phase != OPENING_PHASE_NEC_HOU_INTERLUDE)
         return 0xFFFFFFFFu;
 
-    u32 elapsed = zel_timer_ticks_to_ms(g_elapsed_ticks);
-    if (elapsed < NEC_HOU_BLIT_MS)
+    u32 elapsed_ticks = g_elapsed_ticks;
+    if (elapsed_ticks < NEC_HOU_BLIT_TICKS + NEC_HOU_OVERLAY_SERVICE_TICKS)
         return 0xFFFFFFFEu;
 
-    u32 sprite_elapsed = elapsed - NEC_HOU_BLIT_MS;
-    int frame_index = (int)(sprite_elapsed / SPRITE_A_FRAME_WAIT_MS);
-    u32 frame_elapsed = sprite_elapsed % SPRITE_A_FRAME_WAIT_MS;
+    u32 sprite_elapsed_ticks = elapsed_ticks - NEC_HOU_BLIT_TICKS -
+                               NEC_HOU_OVERLAY_SERVICE_TICKS;
+    int frame_index = (int)(sprite_elapsed_ticks / SPRITE_A_FRAME_WAIT_TICKS);
+    u32 frame_elapsed = zel_timer_ticks_to_ms(
+        sprite_elapsed_ticks % SPRITE_A_FRAME_WAIT_TICKS);
     if (frame_index >= SPRITE_A_FRAME_COUNT) {
         frame_index = SPRITE_A_FRAME_COUNT - 1;
         frame_elapsed = SPRITE_A_FRAME_WAIT_MS - 1;
     }
 
     sprite_a_dac_band_t bands[8];
-    size_t band_count = sprite_a_dac_race_bands_for_frame(frame_index,
-                                                          frame_elapsed,
-                                                          bands);
+    size_t band_count = sprite_a_dac_race_bands_capture_table(frame_index,
+                                                              frame_elapsed,
+                                                              bands);
     return ((u32)frame_index & 0xFFu) |
            ((frame_elapsed & 0xFFFFu) << 8) |
            (((u32)band_count & 0xFFu) << 24);
@@ -6006,22 +6635,24 @@ u32 opening_nec_hou_sprite_debug_slots(void) {
     if (g_phase != OPENING_PHASE_NEC_HOU_INTERLUDE)
         return 0xFFFFFFFFu;
 
-    u32 elapsed = zel_timer_ticks_to_ms(g_elapsed_ticks);
-    if (elapsed < NEC_HOU_BLIT_MS)
+    u32 elapsed_ticks = g_elapsed_ticks;
+    if (elapsed_ticks < NEC_HOU_BLIT_TICKS + NEC_HOU_OVERLAY_SERVICE_TICKS)
         return 0xFFFFFFFFu;
 
-    u32 sprite_elapsed = elapsed - NEC_HOU_BLIT_MS;
-    int frame_index = (int)(sprite_elapsed / SPRITE_A_FRAME_WAIT_MS);
-    u32 frame_elapsed = sprite_elapsed % SPRITE_A_FRAME_WAIT_MS;
+    u32 sprite_elapsed_ticks = elapsed_ticks - NEC_HOU_BLIT_TICKS -
+                               NEC_HOU_OVERLAY_SERVICE_TICKS;
+    int frame_index = (int)(sprite_elapsed_ticks / SPRITE_A_FRAME_WAIT_TICKS);
+    u32 frame_elapsed = zel_timer_ticks_to_ms(
+        sprite_elapsed_ticks % SPRITE_A_FRAME_WAIT_TICKS);
     if (frame_index >= SPRITE_A_FRAME_COUNT) {
         frame_index = SPRITE_A_FRAME_COUNT - 1;
         frame_elapsed = SPRITE_A_FRAME_WAIT_MS - 1;
     }
 
     sprite_a_dac_band_t bands[8];
-    size_t band_count = sprite_a_dac_race_bands_for_frame(frame_index,
-                                                          frame_elapsed,
-                                                          bands);
+    size_t band_count = sprite_a_dac_race_bands_capture_table(frame_index,
+                                                              frame_elapsed,
+                                                              bands);
     u32 packed = 0;
     for (size_t i = 0; i < band_count && i < 8; i++) {
         u32 nibble = bands[i].slot < 0 ? 0xFu : ((u32)bands[i].slot & 0xFu);
@@ -6264,6 +6895,9 @@ static void opening_set_phase_index(int idx) {
     g_phase_idx = idx;
     g_phase = OPENING_PHASES[g_phase_idx].phase;
     g_title_handoff_speech_clear_done = 0;
+    g_title_preclear_frame_ready = 0;
+    g_title_color_base_frame_ready = 0;
+    g_title_complete_frame_ready = 0;
     g_elapsed = 0;
     g_elapsed_ticks = 0;
     g_timer_subtick_accum = 0;
@@ -6275,7 +6909,6 @@ static void opening_set_phase_index(int idx) {
     reset_amulet_scanline_runtime();
     reset_credits_scanline_runtime();
     reset_final_scanline_runtime();
-    memcpy(g_palette, g_opening_palette, sizeof(g_palette));
     framebuf_rgb_disable();
     platform_log("opening: key advance to phase %s", OPENING_PHASES[g_phase_idx].manifest_id);
     opening_tick(0);
@@ -6303,7 +6936,8 @@ void opening_key_advance(void) {
 
     case OPENING_PHASE_AMULET_ANCIENT_PROLOGUE:
         if (g_amulet_skip_fade_active) {
-            opening_set_phase(OPENING_PHASE_STAFF_CREDITS);
+            /* opening_next_scene is blocked inside gfx_mode_fn until all
+             * eight MCGA passes finish, so input is not polled here. */
             return;
         }
         g_amulet_skip_fade_active = 1;

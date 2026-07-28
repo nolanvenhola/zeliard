@@ -1,0 +1,227 @@
+{
+  "schema": "zeliard.opening.video_anchor_contracts.v1",
+  "authority": "MASM release source and executable behavior oracles",
+  "contracts": [
+    {
+      "anchor_source": "6_WebPort/tests/opening_video_anchors.json",
+      "anchor_id": "capture_start_amulet_black",
+      "phase": 1,
+      "phase_id": "amulet_ancient_prologue_scroll",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["call\tanimate_scanline", "animate_scanline\t\tproc"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_amulet_scanline_oracle.py",
+        "oracle_needles": ["EXPECTED_NEC_VISIBLE", "EXPECTED_DRAW_96_VISIBLE"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["run_amulet_phase_starts_first_mcga_pass_case", "run_opening_scanline_runtime_bridge_case"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/opening_video_anchors.json",
+      "anchor_id": "rain_princess_first_full_frame",
+      "phase": 3,
+      "phase_id": "rain_princess_story_start",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["post_title_story_scenes:", "script_loop:"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_opdemo_char_render_proc_oracle.py",
+        "oracle_needles": ["char_render_proc", "VERDICT: PASS: release-MASM char_render_proc boundary"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["run_first_story_first_draw_case"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/opening_video_anchors.json",
+      "anchor_id": "rain_sand_text_band",
+      "phase": 4,
+      "phase_id": "rain_turns_to_sand",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["post_title_story_scenes:", "call\tword ptr cs:[gfx_palette_fn]"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_render_entries_oracle.py",
+        "oracle_needles": ["waku_ame_ax9"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["waku_ame_ax9_composite", "waku_ame_ax9_sky_rect"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/opening_video_anchors.json",
+      "anchor_id": "jashiin_apparition_face",
+      "phase": 5,
+      "phase_id": "jashiin_curses_princess",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["call\tword ptr cs:[disp_data_7420_slot]", "post_title_story_scenes:"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_render_entries_oracle.py",
+        "oracle_needles": ["dmaou_apparition_3c1c_ax07"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["phase5_dmaou_apparition_disp_data"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/opening_video_anchors.json",
+      "anchor_id": "guardian_isi_revealed",
+      "phase": 6,
+      "phase_id": "king_grief_and_guardian_spirit",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["LOAD_DATA res_isi_grp", "call\trun_script_interpreter"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_render_entries_oracle.py",
+        "oracle_needles": ["waku_isi_ax7"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["waku_isi_ax7_composite"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/opening_video_anchors.json",
+      "anchor_id": "duke_oui_overlay_first_glyph",
+      "phase": 6,
+      "phase_id": "king_grief_and_guardian_spirit",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["LOAD_DATA res_oui_grp", "call\tword ptr cs:[gfx_update_fn]"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_render_entries_oracle.py",
+        "oracle_needles": ["oui_gfx_update_al00"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["oui_gfx_update_full"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/opening_video_anchors.json",
+      "anchor_id": "sei_guardian_revealed",
+      "phase": 6,
+      "phase_id": "king_grief_and_guardian_spirit",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["LOAD_DATA res_sei_grp", "call\tword ptr cs:[disp_data_7420_slot]"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_render_entries_oracle.py",
+        "oracle_needles": ["sei_disp_data_3c1c_ax05"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["sei_3c1c_pass_08"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/opening_video_anchors.json",
+      "anchor_id": "yuu1_labyrinth_first_glyph",
+      "phase": 7,
+      "phase_id": "yuu1_jashiin_labyrinths",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["LOAD_DATA res_yuu1_grp", "call\tword ptr cs:[disp_game_fn_slot]"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_render_entries_oracle.py",
+        "oracle_needles": ["yuu1_disp_game_al07"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["mcga_yuu1_disp_game_al07"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/opening_video_anchors.json",
+      "anchor_id": "title_handoff_full_border",
+      "phase": 22,
+      "phase_id": "title_logo_color_rotation",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["call\tword ptr cs:[disp_set_drv_seg_slot]", "scene_color_rotate_loop:"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_title_sweep_assets_oracle.py",
+        "oracle_needles": ["release title handoff executes 3707/3088/30FC/3732/37B4"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["run_title_display_handoff_case", "run_title_handoff_timing_boundaries_case"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/masm_capture_video_anchors.json",
+      "anchor_id": "title_clear_exact_black",
+      "phase": 0,
+      "phase_id": "copyright_title_card",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["call\tword ptr cs:[gfx_init_fn]", "call\tword ptr cs:[gfx_palette_fn]"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_gmmcga_gfx_init_oracle.py",
+        "oracle_needles": ["gmmcga_gfx_init", "gmmcga gfx_init matches MASM bytes"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/runtime_parity_native.c",
+        "test_needles": ["run_gmmcga_gfx_init_case"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/masm_capture_video_anchors.json",
+      "anchor_id": "title_necklace_exact_frame",
+      "phase": 1,
+      "phase_id": "amulet_ancient_prologue_scroll",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["call\tanimate_scanline", "call\tword ptr cs:[gfx_draw_fn]"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_amulet_scanline_oracle.py",
+        "oracle_needles": ["EXPECTED_NEC_VISIBLE"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["run_amulet_phase_starts_first_mcga_pass_case"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/masm_capture_video_anchors.json",
+      "anchor_id": "amulet_mid_scroll_quantized_match",
+      "phase": 1,
+      "phase_id": "amulet_ancient_prologue_scroll",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["animate_scanline\t\tproc", "scanline_frame_loop:"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_amulet_scanline_oracle.py",
+        "oracle_needles": ["EXPECTED_DRAW_96_VISIBLE"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["run_opening_scanline_runtime_bridge_case"]
+      }
+    },
+    {
+      "anchor_source": "6_WebPort/tests/masm_capture_video_anchors.json",
+      "anchor_id": "dmaou_warning_animation_frame",
+      "phase": 21,
+      "phase_id": "dmaou_demon_intro",
+      "status": "live_parity",
+      "masm": {
+        "source_file": "3_Assembly/masm/working/zelres1/code/100OPDMO.asm",
+        "source_needles": ["mov\tsi,scene_sprite_c", "scene_sprite_loop:"],
+        "oracle_file": "3_Assembly/masm/functest/proc_equivalence/test_mcga_disp_render_ab_ab40_oracle.py",
+        "oracle_needles": ["EXPECTED_OPENING_BX1720", "release-MASM 364F page renderer"]
+      },
+      "c": {
+        "test_file": "6_WebPort/engine/tests/opening_parity_native.c",
+        "test_needles": ["run_scene_sprite_c_case", "run_mcga_render_ab_ab40_case"]
+      }
+    }
+  ]
+}

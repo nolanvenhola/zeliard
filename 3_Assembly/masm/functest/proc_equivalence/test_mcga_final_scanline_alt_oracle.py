@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Release-MASM oracle for OPDMO animate_scanline_alt at runtime 7334h."""
+"""Release-MASM oracle for OPDMO animate_scanline_alt at runtime 7338h."""
 
 from __future__ import annotations
 
@@ -15,10 +15,17 @@ from harness import CODE_SEG  # noqa: E402
 import test_opdemo_opening_sequence as opdmo  # noqa: E402
 
 
-RECORDS, FRAMES_PER_RECORD, EXIT_FRAMES = 2, 10, 0xA0
-EXPECTED_TRACE = 0xD4B76A6A3C61DB6E
+RECORDS, FRAMES_PER_RECORD, EXIT_FRAMES = 7, 10, 0xA0
+EXPECTED_TRACE = 0x89EB5E37FB8C8177
 EXPECTED_FINAL_VISIBLE = 0xDD14FCC6528CAB25
-EXPECTED_FINAL_WORK = 0xCF6B5F693E0E3C4B
+EXPECTED_FINAL_WORK = 0x9609F325A52F2190
+CHECKPOINT_DRAWS = (10, 30, 60, 70)
+EXPECTED_CHECKPOINTS = {
+    10: (0x84DB69BD1AF40875, 0xD4C47EF84D43FF5D),
+    30: (0x7921BCCDD8C1E423, 0xE5D43A94A1E16B3E),
+    60: (0xB2BC3E6F10A17715, 0x89CF96916920FE73),
+    70: (0x675A3CCD9E0E5715, 0x75B3B1D9B3713A73),
+}
 
 
 def fnv_update(value: int, data: bytes) -> int:
@@ -45,6 +52,7 @@ def main() -> int:
     si = opdmo.ANIM_FADE_TBL_SCENE
     digest = 0xCBF29CE484222325
     draws = 0
+    checkpoints: dict[int, tuple[int, int]] = {}
     failures: list[str] = []
 
     for record in range(RECORDS):
@@ -69,6 +77,8 @@ def main() -> int:
             digest = fnv_update(digest, visible.to_bytes(8, "little"))
             digest = fnv_update(digest, work.to_bytes(8, "little"))
             draws += 1
+            if draws in CHECKPOINT_DRAWS:
+                checkpoints[draws] = (visible, work)
         if failures:
             break
 
@@ -89,12 +99,21 @@ def main() -> int:
 
     final_visible, final_work = sample(harness)
     if args.capture:
+        for checkpoint_draws in CHECKPOINT_DRAWS:
+            visible, work = checkpoints[checkpoint_draws]
+            print(f"capture draw={checkpoint_draws} visible={visible:016x} "
+                  f"work={work:016x}")
         print(f"capture trace={digest:016x} final_visible={final_visible:016x} "
               f"final_work={final_work:016x} draws={draws}")
         return 0 if not failures else 1
 
     if draws != RECORDS * FRAMES_PER_RECORD + EXIT_FRAMES:
         failures.append(f"draw count {draws} changed")
+    for checkpoint_draws, expected in EXPECTED_CHECKPOINTS.items():
+        if checkpoints.get(checkpoint_draws) != expected:
+            failures.append(
+                f"draw {checkpoint_draws} checkpoint "
+                f"{checkpoints.get(checkpoint_draws)} changed")
     if digest != EXPECTED_TRACE:
         failures.append(f"trace {digest:016x} changed")
     if final_visible != EXPECTED_FINAL_VISIBLE:

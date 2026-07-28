@@ -21,9 +21,19 @@ function Invoke-Wsl {
     )
 
     Write-Host "[test-native-wsl] $Purpose"
-    & wsl.exe -d $Distro -- bash -lc $Command
-    if ($LASTEXITCODE -ne 0) {
-        throw "$Purpose failed with exit code $LASTEXITCODE"
+    # Windows PowerShell 5.1 wraps native stderr as ErrorRecord objects. GCC
+    # warnings must remain diagnostics, not terminating PowerShell errors.
+    $savedErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & wsl.exe -d $Distro -- bash -lc $Command 2>&1 |
+            ForEach-Object { Write-Host $_ }
+        $wslExitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $savedErrorActionPreference
+    }
+    if ($wslExitCode -ne 0) {
+        throw "$Purpose failed with exit code $wslExitCode"
     }
 }
 

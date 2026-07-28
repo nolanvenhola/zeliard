@@ -172,7 +172,7 @@ POST_TITLE_TWENTIETH_SCRIPT_CALL = 0x6954
 FINAL_SCENE_START = 0x6957
 FINAL_SCENE_STOP = 0x6A05
 ANIM_FADE_TBL_CREDITS = 0x742F
-ANIM_FADE_TBL_SCENE = 0x7334
+ANIM_FADE_TBL_SCENE = 0x7338
 ANIMATE_SCANLINE_START = 0x6358
 SCENE_SPRITE_C = 0x911E
 DIRECT_CALLS = {
@@ -1540,8 +1540,8 @@ def main() -> int:
            "busy_wait_delay AL=4 final SI/DI changed")
 
     # The late game handoff uses the alternate scanline rectangle.  Its table
-    # starts with the final 's.' CR record followed by the separate FF record,
-    # hence two ten-draw entries and a 0A0h-frame exit.
+    # starts on the leading space before "At last". Six CR records followed
+    # by the separate FF record produce seven ten-draw entries and a 0A0h exit.
     h_alt_scanline, alt_scanline_stubs = setup_animate_scanline_alt_harness()
     alt_scanline_result = h_alt_scanline.call_function(
         LOAD_BASE + resolve_proc("opdmo", "animate_scanline_alt") - HEADER_SIZE,
@@ -1552,20 +1552,37 @@ def main() -> int:
            failures, "animate_scanline_alt did not return")
     expect(len(stub_regs(alt_scanline_result, ANIM_FN_WIPE_THUNK)) == 1,
            failures, "animate_scanline_alt did not clear its work buffer once")
-    expect(len(stub_regs(alt_scanline_result, ANIM_FN_FADE_THUNK)) == 2,
-           failures, "animate_scanline_alt did not decode its CR and FF records")
-    expect(len(alt_draws) == 180,
-           failures, "animate_scanline_alt did not emit 20 entry and 160 exit draws")
+    expect(len(stub_regs(alt_scanline_result, ANIM_FN_FADE_THUNK)) == 7,
+           failures, "animate_scanline_alt did not decode six CR and one FF records")
+    expect(len(alt_draws) == 230,
+           failures, "animate_scanline_alt did not emit 70 entry and 160 exit draws")
     expect([(r["ax"] & 0xFF, r["bx"], r["cx"])
-            for r in alt_draws[:20]] ==
-           [(frame, 0x0014, 0x50A0) for frame in range(10)] * 2, failures,
+            for r in alt_draws[:70]] ==
+           [(frame, 0x0014, 0x50A0) for frame in range(10)] * 7, failures,
            "animate_scanline_alt entry draw protocol changed")
     expect(all((r["ax"] & 0xFF, r["bx"], r["cx"]) == (0, 0x0014, 0x50A0)
                for r in alt_draws[-160:]), failures,
            "animate_scanline_alt exit draw protocol changed")
     alt_wait_target = LOAD_BASE + resolve_proc("opdmo", "wait_story_scene_timer") - HEADER_SIZE
-    expect(len(stub_regs(alt_scanline_result, alt_wait_target)) == 180,
+    expect(len(stub_regs(alt_scanline_result, alt_wait_target)) == 230,
            failures, "animate_scanline_alt did not wait after every draw")
+
+    # Execute the release final-scene callsite as well as the callee.  The
+    # machine code at 69F3 must supply SI=7338h; using the old 7334h value
+    # produces only the trailing "s." from the ancient-history stream.
+    h_final_scene, final_scene_stubs = setup_final_scene_harness()
+    final_scene_result = h_final_scene.call_function(
+        FINAL_SCENE_START, regs={"ds": CODE_SEG, "es": CODE_SEG},
+        stub_calls=final_scene_stubs, max_steps=1_000_000)
+    final_alt_target = (
+        LOAD_BASE + resolve_proc("opdmo", "animate_scanline_alt") - HEADER_SIZE
+    )
+    final_alt_calls = stub_regs(final_scene_result, final_alt_target)
+    expect(final_scene_result["stopped_reason"] == "returned_to_sentinel",
+           failures, "final scene did not reach its transition handoff")
+    expect(len(final_alt_calls) == 1 and
+           final_alt_calls[0]["si"] == ANIM_FADE_TBL_SCENE,
+           failures, "final scene did not call animate_scanline_alt with SI=7338h")
 
     h_script3, script3_stubs = setup_third_story_script_harness()
     script3_result = h_script3.call_function(

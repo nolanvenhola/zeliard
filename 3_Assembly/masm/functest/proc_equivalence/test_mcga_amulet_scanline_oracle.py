@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Release-MASM oracle for the complete OPDMO ancient-prologue stream.
 
-100OPDMO:animate_scanline decodes 31 records from CS:6FF0 and renders ten
-105GDMCA:332C frames per record, followed by its 78h-frame AX=0 exit.  The
-digest covers every A000/work-buffer pair, so it detects a wrong intermediate
-frame even when the final clear happens to match.
+100OPDMO draws NEC through 105GDMCA:3032, then animate_scanline decodes 31
+records from CS:6FF0 and renders ten 105GDMCA:332C frames per record, followed
+by its 78h-frame AX=0 exit. The digest covers every A000/work-buffer pair, so
+it detects a wrong intermediate frame even when the final state matches.
 """
 
 from __future__ import annotations
@@ -19,11 +19,15 @@ sys.path.insert(0, str(HERE.parent))
 
 from harness import CODE_SEG  # noqa: E402
 import test_opdemo_opening_sequence as opdmo  # noqa: E402
+import test_mcga_render_entries_oracle as render_entries  # noqa: E402
 
 
 RECORDS, FRAMES_PER_RECORD, EXIT_FRAMES = 31, 10, 0x78
-EXPECTED_TRACE = 0xB4395F092CA68BE0
-EXPECTED_FINAL_VISIBLE = 0xDD14FCC6528CAB25
+EXPECTED_NEC_VISIBLE = 0x76A5C68141189F10
+EXPECTED_DRAW_96_VISIBLE = 0x99D1486B5642B42A
+EXPECTED_DRAW_96_WORK = 0x57036E9BCCFA36CE
+EXPECTED_TRACE = 0x71A539E6F76F2A78
+EXPECTED_FINAL_VISIBLE = 0x76A5C68141189F10
 EXPECTED_FINAL_WORK = 0xB65F2BB82806E676
 
 
@@ -50,9 +54,20 @@ def main() -> int:
     harness, stubs = opdmo.setup_story_2_to_3_mcga_harness()
     opdmo.install_font_segment(harness)
     failures: list[str] = []
+    nec_frame = render_entries.run_entry(
+        0x3032, 0x00FF, bx=0x1220, cx=0x2C68,
+        di=render_entries.OPDMO_FRAMEBUFFER_A,
+        source=render_entries.asset_source("nec.grp"))
+    nec_visible = opdmo.fnv1a64(nec_frame)
+    if nec_visible != EXPECTED_NEC_VISIBLE:
+        failures.append(f"NEC A000 seed {nec_visible:016x} changed")
+    harness.mu.mem_write(0xA0000, nec_frame)
+
     stream_digest = 0xCBF29CE484222325
     si = 0x6FF0
     draws = 0
+    draw_96_visible = 0
+    draw_96_work = 0
 
     for record in range(RECORDS):
         decoded = harness.call_function(
@@ -76,6 +91,9 @@ def main() -> int:
             stream_digest = fnv_update(stream_digest, visible.to_bytes(8, "little"))
             stream_digest = fnv_update(stream_digest, work.to_bytes(8, "little"))
             draws += 1
+            if draws == 96:
+                draw_96_visible = visible
+                draw_96_work = work
         if failures:
             break
 
@@ -104,6 +122,10 @@ def main() -> int:
         failures.append(f"draw count {draws} changed")
     if stream_digest != EXPECTED_TRACE:
         failures.append(f"trace {stream_digest:016x} changed")
+    if draw_96_visible != EXPECTED_DRAW_96_VISIBLE:
+        failures.append(f"draw 96 A000 {draw_96_visible:016x} changed")
+    if draw_96_work != EXPECTED_DRAW_96_WORK:
+        failures.append(f"draw 96 work {draw_96_work:016x} changed")
     if final_visible != EXPECTED_FINAL_VISIBLE:
         failures.append(f"final A000 {final_visible:016x} changed")
     if final_work != EXPECTED_FINAL_WORK:

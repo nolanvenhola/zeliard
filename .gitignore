@@ -50,3 +50,6 @@ __pycache__
 3_Assembly/ida/diff.txt
 .claude/scheduled_tasks.lock
 4_Resources/FAQ_files/
+6_WebPort/tests/artifacts
+artifacts
+6_WebPort/tests/comparison

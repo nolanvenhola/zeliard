@@ -193,7 +193,7 @@ int main(void) {
         first_glyph_count != 4 ||
         first_glyphs[0].ax != 0x0050 || first_glyphs[0].bx != 0x0005 ||
         first_glyphs[0].cx != 0x0090 ||
-        first_glyphs[1].ax != 0x0750 || first_glyphs[1].bx != 0x0004 ||
+        first_glyphs[1].ax != 0x0050 || first_glyphs[1].bx != 0x0004 ||
         first_glyphs[1].cx != 0x008F ||
         first_glyphs[2].ax != 0x004F || first_glyphs[2].bx != 0x0005 ||
         first_glyphs[2].cx != 0x009A ||

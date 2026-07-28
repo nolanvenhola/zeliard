@@ -21,6 +21,12 @@ static unsigned long long fnv1a64(const unsigned char *data, size_t size) {
     return hash;
 }
 
+static unsigned char dac_to_rgb(unsigned char value) {
+    if (value > 0x3F)
+        value = 0x3F;
+    return (unsigned char)((value << 2) | ((value & 1u) ? 3u : 0u));
+}
+
 static unsigned char *read_file(const char *path, size_t *size_out) {
     FILE *file = fopen(path, "rb");
     if (!file)
@@ -60,9 +66,12 @@ static int verify_palette_variant(const unsigned char *driver, int ax,
             const unsigned char *row_rgb = regs + row * 3;
             const unsigned char *col_rgb = regs + col * 3;
             palette_color_t actual = g_palette[row * 16 + col];
-            unsigned char r = (unsigned char)((row_rgb[0] + col_rgb[0]) * 4u);
-            unsigned char g = (unsigned char)((row_rgb[1] + col_rgb[1]) * 4u);
-            unsigned char b = (unsigned char)((row_rgb[2] + col_rgb[2]) * 4u);
+            unsigned char r = dac_to_rgb(
+                (unsigned char)(row_rgb[0] + col_rgb[0]));
+            unsigned char g = dac_to_rgb(
+                (unsigned char)(row_rgb[1] + col_rgb[1]));
+            unsigned char b = dac_to_rgb(
+                (unsigned char)(row_rgb[2] + col_rgb[2]));
             if (actual.r != r || actual.g != g || actual.b != b)
                 ok = 0;
         }
@@ -72,11 +81,11 @@ static int verify_palette_variant(const unsigned char *driver, int ax,
 
 int main(void) {
     static const unsigned long long expected[9] = {
-        0x8c1b5d92b515a565ULL, 0x4eb2a0c47ca354e5ULL,
-        0xc0ed78c2b506baddULL, 0x35913b1023d1e75dULL,
-        0x57244e404ecaffd5ULL, 0x416f780684d0b1d5ULL,
-        0x6a17ece3d98cc76dULL, 0xb1d5292d31db3d6dULL,
-        0x8c1b5d92b515a565ULL,
+        0x841c63875a757ce5ULL, 0x886ccbdcc20d8ae5ULL,
+        0x3898de1f9bd44db5ULL, 0xc4e6a2333b015635ULL,
+        0x4db573aeeb2a6421ULL, 0x98e57c638ee326a1ULL,
+        0xbffb21d87e8cec5dULL, 0x79a88fc0fcd94f5dULL,
+        0x841c63875a757ce5ULL,
     };
     size_t size = 0;
     unsigned char *driver = read_file("assets/105GDMCA.bin", &size);

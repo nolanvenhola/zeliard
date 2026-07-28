@@ -90,7 +90,15 @@ int zeliard_mcga_disp_render_a_full_stage(u8 *driver_seg, size_t driver_size,
                                           u8 *vga, size_t vga_size,
                                           int pass_count);
 
-/* 105GDMCA:3032, the target stored at runtime CS:3004 (gfx_update_fn).
+/* 105GDMCA:30E4, dispatch slot CS:3006.  Despite the historical source
+ * label, this selects CS:329D and clears a masked VGA rectangle. */
+int zeliard_mcga_disp_render_a_rev_stage(u8 *driver_seg, size_t driver_size,
+                                         const u8 *game_seg, size_t game_size,
+                                         u16 bx, u16 cx, u16 di,
+                                         u8 *vga, size_t vga_size,
+                                         int pass_count);
+
+/* 105GDMCA:3032, the target stored at runtime CS:3002 (gfx_draw_fn).
  * It combines source plane D and A, then performs eight OR and eight normal
  * masked-write passes. */
 int zeliard_mcga_gfx_update_da_stage(u8 *driver_seg, size_t driver_size,
@@ -148,7 +156,8 @@ int zeliard_mcga_disp_render_ab_gseg(const u8 *game_seg, size_t game_size,
  * it into CS+3000h:0000h and copies its fixed 136x48 rectangle to A000:0. */
 int zeliard_mcga_disp_render_ab_ab40(const u8 *game_seg, size_t game_size,
                                      u8 *work_seg, size_t work_size,
-                                     u8 al, u8 *vga, size_t vga_size);
+                                     u8 al, u16 bx,
+                                     u8 *vga, size_t vga_size);
 
 /* 105GDMCA dispatch table entry at runtime CS:3020 (target 38E6).
  * `driver_seg` is the original driver mapped at offset 2FFCh, and `vga` is

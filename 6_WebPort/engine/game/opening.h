@@ -31,6 +31,7 @@ uint64_t opening_debug_busy_wait_delay_fixture_hash(u8 al); /* MASM memory-fixtu
 uint64_t opening_debug_hime_dmaou_blend_ranges_hash(size_t *nonzero); /* MASM plane fixture */
 uint64_t opening_debug_hime_dmaou_blend_frame_hash(size_t *nonzero); /* MASM MCGA fixture */
 uint64_t opening_debug_hime_dmaou_ext_hash(size_t *nonzero); /* MASM ES scratch fixture */
+uint64_t opening_debug_dmaou_prelude_segment_hash(size_t *nonzero); /* raw 97C0h fixture */
 uint64_t opening_debug_dmaou_apparition_frame_hash(size_t *nonzero); /* MASM 3C1C fixture */
 uint64_t opening_debug_dmaou_post_busy_ext_hash(u8 al, size_t *nonzero);
 uint64_t opening_debug_dmaou_post_busy_frame_hash(u8 al, size_t *nonzero);

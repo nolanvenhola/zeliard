@@ -734,6 +734,55 @@ static void mcga_run_masked_blit_passes(const u8 *work_seg, u16 si,
     }
 }
 
+int zeliard_mcga_disp_render_a_rev_stage(u8 *driver_seg, size_t driver_size,
+                                         const u8 *game_seg, size_t game_size,
+                                         u16 bx, u16 cx, u16 di,
+                                         u8 *vga, size_t vga_size,
+                                         int pass_count) {
+    if (!driver_seg || !game_seg || !vga ||
+        driver_size < 0x10000u || game_size < 0x10000u ||
+        vga_size < 0x10000u)
+        return -1;
+
+    if (pass_count < 0)
+        pass_count = 0;
+    if (pass_count > 8)
+        pass_count = 8;
+
+    /* 30F0 stores 329Dh in render_fn_ptr.  329D is disp_blit_clear:
+     * complement BL, rotate one mask bit per VGA byte, and AND a CH*4-byte
+     * span for each of CL rows.  DS:SI is restored by 30E4 but never read. */
+    static const u8 mask_a[8] = {
+        0x80, 0x20, 0x08, 0x02, 0x40, 0x10, 0x04, 0x01
+    };
+    static const u8 mask_b[8] = {
+        0x01, 0x04, 0x10, 0x40, 0x02, 0x08, 0x20, 0x80
+    };
+    const u16 initial_di = mcga_compute_vram_xy_offset(bx);
+    const u16 row_bytes = (u16)((u8)(cx >> 8) * 4u);
+    const u8 rows = (u8)cx;
+    for (u8 pass = 0; pass < (u8)pass_count; pass++) {
+        u8 counter = pass;
+        u16 row_di = initial_di;
+        for (u8 row = 0; row < rows; row++) {
+            u8 mask = (u8)~((row & 1u) == 0
+                ? mask_a[counter & 7u]
+                : mask_b[counter & 7u]);
+            for (u16 byte_index = 0; byte_index < row_bytes; byte_index++) {
+                u8 carry = (u8)(mask >> 7);
+                mask = mcga_rol8(mask);
+                vga[(u16)(row_di + byte_index)] &=
+                    carry ? 0xFFu : 0x00u;
+            }
+            counter++;
+            row_di = (u16)(row_di + 0x0140u);
+        }
+    }
+    driver_seg[0x4506] = (u8)pass_count;
+    driver_seg[0x4505] = (u8)((u8)cx + (u8)pass_count - 1u);
+    return 0;
+}
+
 int zeliard_mcga_disp_render_a_full_stage(u8 *driver_seg, size_t driver_size,
                                           const u8 *game_seg, size_t game_size,
                                           u8 *work_seg, size_t work_size,
@@ -1118,7 +1167,8 @@ int zeliard_mcga_disp_render_ab_gseg(const u8 *game_seg, size_t game_size,
 
 int zeliard_mcga_disp_render_ab_ab40(const u8 *game_seg, size_t game_size,
                                      u8 *work_seg, size_t work_size,
-                                     u8 al, u8 *vga, size_t vga_size) {
+                                     u8 al, u16 bx,
+                                     u8 *vga, size_t vga_size) {
     enum { PAGE_BASE = 0xAB40, PAGE_SIZE = 0x0CC0, PLANE_SIZE = 0x0660,
            WORD_COUNT = 0x0330, BLIT_CX = 0x2230 };
     if (!game_seg || !work_seg || !vga || game_size < 0x10000u ||
@@ -1145,7 +1195,7 @@ int zeliard_mcga_disp_render_ab_ab40(const u8 *game_seg, size_t game_size,
     }
 
     u16 src = 0;
-    u16 dst = 0;
+    u16 dst = mcga_compute_vram_xy_offset(bx);
     const u16 bytes_per_row = (u16)((u8)(BLIT_CX >> 8) * 4u);
     const u8 rows = (u8)BLIT_CX;
     for (u8 row = 0; row < rows; row++) {

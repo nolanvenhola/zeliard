@@ -92,6 +92,10 @@ CHECKPOINTS = [
 
 SWEEP_TARGETS = [
     SweepTarget("title_handoff", 112.8, (22,), 0, 38193, 500),
+    SweepTarget("title_handoff_lossless_120", 120.0, (22,), 0, 38193, 500),
+    SweepTarget("title_handoff_lossless_150", 150.0, (22,), 0, 38193, 500),
+    SweepTarget("title_handoff_lossless_180", 180.0, (22,), 0, 38193, 500),
+    SweepTarget("title_handoff_lossless_190", 190.0, (22,), 0, 38193, 500),
     SweepTarget("rain_sand_transition_window", 359.8, (3, 4), 0, 190000, 1000),
     SweepTarget("rain_sand_red_shift", 359.8, (4,), 0, 12000, 250),
     SweepTarget("jashiin_eyes", 440.0, (5,), 40000, 50000, 250),

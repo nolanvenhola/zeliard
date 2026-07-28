@@ -51,7 +51,8 @@ Invoke-Step "Web manifest JSON validation" `
         & $Python -m json.tool 6_WebPort\tests\gameplay_oracle_manifest.json > $null
         & $Python -m json.tool 6_WebPort\tests\zeliad_loader_oracle_manifest.json > $null
         & $Python -u 6_WebPort\tests\parity_opening_oracle.py
-        & $Python -u 6_WebPort\tests\audit_opening_low_level_contracts.py
+        & $Python -u 6_WebPort\tests\audit_opening_low_level_contracts.py --strict
+        & $Python -u 6_WebPort\tests\audit_opening_video_anchor_contracts.py
     }
 
 if (-not $SkipNative) {

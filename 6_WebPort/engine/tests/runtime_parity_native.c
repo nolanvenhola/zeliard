@@ -79,20 +79,35 @@ static int run_timer_rate_case(void) {
     ok &= rt.mem[ZEL_GVAR_FRAME_TIMER] == 0;
     ok &= rt.mcga.frame_timer == 0;
     ok &= rt.timer_subtick_accum != 0 || subtick_before_wait == 0;
+    ok &= rt.low_level_trace.interrupt_handler_cascade == 2;
+    ok &= rt.low_level_trace.stick_exit_dlg_handler == 2;
+    ok &= rt.low_level_trace.stick_pause_dlg_handler == 2;
+    ok &= rt.low_level_trace.stick_joy_cal_handler == 2;
+    ok &= rt.low_level_trace.stick_joy_detect_handler == 2;
 
     zel_runtime_key_down(&rt, 32);
     rt.mem[ZEL_GVAR_FRAME_TIMER] = 0x7F;
     ok &= zel_runtime_timer_wait(&rt, "test", 0x1C) == ZEL_RUNTIME_WAIT_SKIPPED;
     ok &= rt.mem[ZEL_GVAR_FRAME_TIMER] == 0x7F;
+    ok &= rt.low_level_trace.interrupt_handler_cascade == 2;
 
-    printf("runtime_timer_rate: %s ms=%u/%u/%u/%u ticks1000=%u frame=%02x\n",
+    zel_runtime_t transition_rt;
+    zel_runtime_init(&transition_rt);
+    transition_rt.mem[ZEL_GVAR_FRAME_TIMER] = 0x20;
+    ok &= zel_runtime_scene_transition_wait(
+              &transition_rt, "scene_transition_wait", 0x20) ==
+          ZEL_RUNTIME_WAIT_READY;
+    ok &= transition_rt.low_level_trace.interrupt_handler_cascade == 1;
+
+    printf("runtime_timer_rate: %s ms=%u/%u/%u/%u ticks1000=%u frame=%02x cascade=%llu\n",
            ok ? "PASS" : "FAIL",
            zel_timer_ticks_to_ms(0x10),
            zel_timer_ticks_to_ms(0x1C),
            zel_timer_ticks_to_ms(0x50),
            zel_timer_ticks_to_ms(0xF0),
            zel_timer_ms_to_ticks(1000),
-           rt.mem[ZEL_GVAR_FRAME_TIMER]);
+           rt.mem[ZEL_GVAR_FRAME_TIMER],
+           (unsigned long long)rt.low_level_trace.interrupt_handler_cascade);
     return ok;
 }
 
@@ -183,7 +198,9 @@ static int run_opdmo_title_span_case(void) {
 
     uint64_t pal = fnv1a64((const uint8_t *)zel_runtime_palette(&rt),
                            sizeof(g_palette));
-    ok &= pal == 0x798e1154d8bd010dULL;
+    ok &= pal == 0x8499fcc0f156a055ULL;
+    ok &= fnv1a64(rt.overlay_mem + ZEL_FRAMEBUFFER_A, 14578) ==
+          0x5655ba7b7c59348fULL;
     printf("runtime_opdmo_title_span: %s events=%llu palette=%016llx\n",
            ok ? "PASS" : "FAIL",
            (unsigned long long)rt.log.count,
