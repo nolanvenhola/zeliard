@@ -19,9 +19,11 @@ const REPO_ROOT = resolve(__dirname, '..', '..');
 const SRC_BASE  = join(REPO_ROOT, '3_Assembly', 'masm', 'working');
 const DEST_ENGINE = join(REPO_ROOT, '6_WebPort', 'engine', 'assets');
 const DEST_SHELL  = join(REPO_ROOT, '6_WebPort', 'shell', 'public', 'assets');
+const DEST_AUDIO  = join(REPO_ROOT, '6_WebPort', 'shell', 'public', 'audio');
 const MASM_OPDMO_BIN = '3_Assembly/masm/bin/zelres1/100OPDMO.bin';
 const TRACKED_OPDMO_BIN = '3_Assembly/tasm/bin/zelres1/100OPDMO.bin';
 const OPDMO_MASM_SHA256 = '424f2acbaec8c0395e5e72562ac6f6fd8bfa6f8b5c58a867fe1c5b21a6f51548';
+const SNDADLIB_SHA256 = 'bf1c2036980f0557106ab0521be163fedb32458a187b4f49a60fee12b3b0a858';
 
 /* MASM release output is generated and ignored. CI uses the tracked TASM
  * release binary, which is byte-identical to the verified MASM build. */
@@ -33,6 +35,11 @@ const opdmoHash = createHash('sha256').update(opdmoBytes).digest('hex');
 if (opdmoHash !== OPDMO_MASM_SHA256) {
     throw new Error(`100OPDMO.bin does not match the verified MASM release: ${opdmoHash}`);
 }
+
+const sndadlibBytes = readFileSync(join(REPO_ROOT, '1_OriginalGame/sndadlib.drv'));
+const sndadlibHash = createHash('sha256').update(sndadlibBytes).digest('hex');
+if (sndadlibHash !== SNDADLIB_SHA256)
+    throw new Error(`sndadlib.drv does not match the captured DOS driver: ${sndadlibHash}`);
 
 /* Map of {source file prefix} -> {short name used by C engine}.  Add entries
  * as new assets are wired up.  The number prefix on disk is the chunk
@@ -67,9 +74,12 @@ const ASSET_MAP = [
     ['zelres1/data/135YUU3G.grp', 'yuu3.grp'],
     ['zelres1/data/136YUU4G.grp', 'yuu4.grp'],
     ['zelres1/data/137YUUPG.grp', 'yuup.grp'],
+    ['zelres1/data/138ZENDM.msd', 'zend.msd'],
+    ['zelres1/data/139ZOPNM.msd', 'zopn.msd'],
 ];
 
 const EXTRA_ASSET_MAP = [
+    ['1_OriginalGame/sndadlib.drv', 'sndadlib.drv'],
     ['3_Assembly/dumps/zeliard_title_image.BIN', 'title_full.bin'],
     [OPDMO_BIN, '100opdmo.bin'],
 ];
@@ -102,6 +112,15 @@ const BINARY_SLICES = [
     [OPDMO_BIN, 0x2C54, 0x036C, 'opdemo_story_script_20.bin'],
     [OPDMO_BIN, 0x2FC0, 0x004D, 'opdemo_story_script_21.bin'],
     [OPDMO_BIN, 0x300D, 0x0057, 'opdemo_story_script_22.bin'],
+];
+
+/* Browser-decoded score recordings. Keep these outside the Emscripten
+ * preload package so the C heap does not carry several megabytes of audio. */
+const WEB_AUDIO_MAP = [
+    ['4_Resources/Music/Zeliard01-Intro.ogg', 'zopn.ogg',
+        '92ae4d17d948bba4925a805ed375fd633450cf74435688b7931f3b0057043e77'],
+    ['4_Resources/Music/Zeliard-02-Credits.ogg', 'zend.ogg',
+        '3e08b95982436847e16d755bd95015d62ce2f2f2aeb22175189d1202f38b4e23'],
 ];
 
 function ensureDir(p) { mkdirSync(p, { recursive: true }); }
@@ -168,3 +187,24 @@ for (const [src, offset, length, dst] of BINARY_SLICES) {
     ok++;
 }
 console.log(`[copy_assets] ${ok}/${ASSET_MAP.length + EXTRA_ASSET_MAP.length + BINARY_SLICES.length} files copied`);
+
+let audioOk = 0;
+for (const [src, dst, expectedHash] of WEB_AUDIO_MAP) {
+    const fullSrc = join(REPO_ROOT, src);
+    if (!existsSync(fullSrc)) {
+        console.error(`[copy_assets] MISSING: ${fullSrc}`);
+        process.exitCode = 1;
+        continue;
+    }
+    const actualHash = createHash('sha256').update(readFileSync(fullSrc)).digest('hex');
+    if (actualHash !== expectedHash) {
+        console.error(`[copy_assets] HASH MISMATCH: ${src} (${actualHash})`);
+        process.exitCode = 1;
+        continue;
+    }
+    ensureDir(DEST_AUDIO);
+    copyFileSync(fullSrc, join(DEST_AUDIO, dst));
+    console.log(`[copy_assets] ${src}  ->  audio/${dst}  (${statSync(fullSrc).size} bytes)`);
+    audioOk++;
+}
+console.log(`[copy_assets] ${audioOk}/${WEB_AUDIO_MAP.length} web audio files copied`);

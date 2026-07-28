@@ -17,6 +17,7 @@
             align-items: center; justify-content: center;
             height: 100vh; gap: 1em;
         }
+        #screen-wrap { position: relative; }
         canvas {
             image-rendering: pixelated;
             image-rendering: crisp-edges;
@@ -24,13 +25,27 @@
             height: 600px;
             background: #000;
             border: 1px solid #333;
+            display: block;
         }
+        #start {
+            position: absolute; inset: 50% auto auto 50%;
+            width: 56px; height: 56px; padding: 0;
+            transform: translate(-50%, -50%);
+            border: 1px solid #aaa; border-radius: 50%;
+            background: #111; color: #fff;
+            font-size: 24px; line-height: 1; cursor: pointer;
+        }
+        #start:hover { background: #222; border-color: #fff; }
+        #start:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
         #status { font-size: 12px; opacity: 0.7; }
     </style>
 </head>
 <body>
     <div id="stage">
-        <canvas id="screen" width="320" height="200"></canvas>
+        <div id="screen-wrap">
+            <canvas id="screen" width="320" height="200"></canvas>
+            <button id="start" type="button" title="Start opening demo" aria-label="Start opening demo" hidden>&#9654;</button>
+        </div>
         <div id="status">loading engine&hellip;</div>
     </div>
     <script type="module" src="/src/main.ts"></script>

@@ -9,6 +9,7 @@
     "hybrid:capture": "node capture_hybrid_masm_frames.mjs",
     "hybrid:verify": "node verify_hybrid_masm_capture.mjs",
     "opening:compare": "node run_opening_parity_capture.mjs",
+    "opening:audio-test": "node test_opening_audio_browser.mjs",
     "engine": "$(MAKE) -C ../engine wasm",
     "build:engine": "cd ../engine && make wasm",
     "dev": "vite",

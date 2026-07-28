@@ -20,6 +20,8 @@ type EngineExports = {
     _zeliard_scene(): number;        // 0=title, 1=opening demo, 2=game handoff
     _zeliard_phase(): number;        // OPDMO phase while scene=opening
     _zeliard_phase_elapsed(): number;
+    _zeliard_music_track(): number;  // 0=none, 1=zopn.msd, 2=zend.msd
+    _zeliard_opening_set_phase_for_test(phase: number): void;
 };
 
 type ZeliardModule = EngineExports & {
@@ -32,10 +34,59 @@ type ZeliardModule = EngineExports & {
 type ModuleFactory = (overrides?: Partial<ZeliardModule>) => Promise<ZeliardModule>;
 
 const statusEl = document.getElementById('status')!;
+const startButton = document.getElementById('start') as HTMLButtonElement;
 const canvas = document.getElementById('screen') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d', { alpha: false })!;
 const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.href);
 const engineBaseUrl = new URL('engine/', appBaseUrl);
+const audioBaseUrl = new URL('audio/', appBaseUrl);
+
+class OpeningMusic {
+    private readonly context = new AudioContext();
+    private readonly buffers = new Map<number, AudioBuffer>();
+    private source: AudioBufferSourceNode | null = null;
+    private activeTrack = 0;
+
+    static async load(): Promise<OpeningMusic> {
+        const music = new OpeningMusic();
+        const tracks: Array<[number, string]> = [
+            [1, 'zopn.ogg'],
+            [2, 'zend.ogg'],
+        ];
+        await Promise.all(tracks.map(async ([id, name]) => {
+            const response = await fetch(new URL(name, audioBaseUrl));
+            if (!response.ok)
+                throw new Error(`audio ${name}: HTTP ${response.status}`);
+            const buffer = await music.context.decodeAudioData(await response.arrayBuffer());
+            music.buffers.set(id, buffer);
+        }));
+        return music;
+    }
+
+    async unlock(): Promise<void> {
+        await this.context.resume();
+    }
+
+    sync(track: number): void {
+        if (track === this.activeTrack)
+            return;
+        if (this.source) {
+            this.source.stop();
+            this.source.disconnect();
+            this.source = null;
+        }
+        this.activeTrack = track;
+        const buffer = this.buffers.get(track);
+        if (!buffer)
+            return;
+        const source = this.context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.context.destination);
+        source.start();
+        this.source = source;
+        console.log(`[zeliard] MASM music load: track ${track}`);
+    }
+}
 
 function setStatus(msg: string) {
     statusEl.textContent = msg;
@@ -81,16 +132,6 @@ async function boot() {
     const rgbPtr = Module._zeliard_rgb_framebuf();
     const palPtr = Module._zeliard_palette();
     setStatus(`engine running — ${w}×${h}, framebuf @ ${fbPtr}, palette @ ${palPtr}`);
-
-    /* Forward ENTER/SPACE to the engine so it can apply OPDMO phase-specific advance rules. */
-    window.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            if (e.repeat)
-                return;
-            Module._zeliard_key(e.keyCode);
-        }
-    });
 
     const imageData = ctx.createImageData(w, h);
     let last = performance.now();
@@ -169,14 +210,51 @@ async function boot() {
         return;
     }
 
+    setStatus('loading opening music...');
+    let music: OpeningMusic | null = null;
+    try {
+        music = await OpeningMusic.load();
+    } catch (err) {
+        console.error('[zeliard] audio load failed', err);
+    }
+
+    let started = false;
+    async function startPlayback() {
+        if (started)
+            return;
+        if (music)
+            await music.unlock();
+        started = true;
+        startButton.hidden = true;
+        last = performance.now();
+        music?.sync(Module._zeliard_music_track());
+        requestAnimationFrame(frame);
+    }
+
+    startButton.hidden = false;
+    startButton.addEventListener('click', () => void startPlayback());
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key !== 'Enter' && e.key !== ' ')
+            return;
+        e.preventDefault();
+        if (e.repeat)
+            return;
+        if (!started) {
+            void startPlayback();
+            return;
+        }
+        Module._zeliard_key(e.keyCode);
+    });
+    setStatus(music ? 'ready' : 'ready (audio unavailable)');
+
     function frame(now: number) {
         const dt = Math.max(0, Math.min(now - last, 100));
         last = now;
         Module._zeliard_tick(dt | 0);
+        music?.sync(Module._zeliard_music_track());
         paintFrame();
         requestAnimationFrame(frame);
     }
-    requestAnimationFrame(frame);
 }
 
 boot().catch((err) => {

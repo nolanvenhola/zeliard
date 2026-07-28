@@ -9,6 +9,8 @@ ENGINE_SRC := \
 	core/framebuf.c \
 	core/runtime.c \
 	core/timer.c \
+	audio/adlib_cue.c \
+	audio/opening_audio.c \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
@@ -30,6 +32,7 @@ TEST_OPENING_SRC := \
 	main.c \
 	core/framebuf.c \
 	core/timer.c \
+	audio/opening_audio.c \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
@@ -46,6 +49,7 @@ TEST_OPENING_TRACE_SRC := \
 	main.c \
 	core/framebuf.c \
 	core/timer.c \
+	audio/opening_audio.c \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
@@ -87,6 +91,10 @@ TEST_OPENING_FRAME_DUMP_SRC := \
 	game/opening_trace.c \
 	game/opening.c \
 	platform/platform_sdl.c
+TEST_OPENING_AUDIO_SRC := \
+	tests/opening_audio_native.c \
+	audio/adlib_cue.c \
+	audio/opening_audio.c
 TEST_GAMEPLAY_SRC := \
 	tests/gameplay_parity_native.c \
 	game/gameplay_state.c
@@ -154,7 +162,7 @@ EMCC_FLAGS  := $(CFLAGS_COMMON) \
 	-s EXPORT_ES6=1 \
 	-s ENVIRONMENT=web \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_malloc","_free"]' \
 	-s EXPORTED_RUNTIME_METHODS='["HEAPU8","HEAPU32","UTF8ToString","ccall","cwrap"]' \
 	--preload-file assets@/assets \
 	-o build/zeliard.js
@@ -189,8 +197,9 @@ build/zeliard-native: $(NATIVE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(NATIVE_SRC)
 
-test-native: build/opening-parity-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native
+test-native: build/opening-parity-native build/opening-audio-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native
 	./build/opening-parity-native
+	./build/opening-audio-native
 	./build/gameplay-parity-native
 	./build/zeliad-loader-parity-native
 	./build/game-loader-parity-native
@@ -209,6 +218,10 @@ test-native: build/opening-parity-native build/gameplay-parity-native build/zeli
 build/opening-parity-native: $(TEST_OPENING_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -DZELIARD_NO_MAIN -o $@ $(TEST_OPENING_SRC)
+
+build/opening-audio-native: $(TEST_OPENING_AUDIO_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_OPENING_AUDIO_SRC)
 
 build/opening-service-trace-native: $(TEST_OPENING_TRACE_SRC) Makefile
 	@mkdir -p build

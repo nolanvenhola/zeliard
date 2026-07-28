@@ -9,6 +9,9 @@ on:
       - 3_Assembly/masm/working/zelres1/data/**
       - 3_Assembly/masm/working/zelres1/code/105GDMCA.bin
       - 3_Assembly/tasm/bin/zelres1/100OPDMO.bin
+      - 4_Resources/Music/Zeliard01-Intro.ogg
+      - 4_Resources/Music/Zeliard-02-Credits.ogg
+      - 1_OriginalGame/sndadlib.drv
       - 6_WebPort/**
   workflow_dispatch:
 
@@ -56,7 +59,12 @@ jobs:
       - name: Verify MCGA runtime assets
         run: |
           test -f 6_WebPort/engine/assets/105GDMCA.bin
+          test -f 6_WebPort/engine/assets/sndadlib.drv
+          test -f 6_WebPort/engine/assets/zopn.msd
+          test -f 6_WebPort/engine/assets/zend.msd
           grep -a -q '105GDMCA.bin' 6_WebPort/engine/build/zeliard.js
+          test -f 6_WebPort/shell/public/audio/zopn.ogg
+          test -f 6_WebPort/shell/public/audio/zend.ogg
 
       - name: Build public demo
         working-directory: 6_WebPort/shell
