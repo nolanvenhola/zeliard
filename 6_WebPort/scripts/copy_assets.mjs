@@ -38,6 +38,8 @@ if (opdmoHash !== OPDMO_MASM_SHA256) {
  * as new assets are wired up.  The number prefix on disk is the chunk
  * index; the short name matches the asm-level resource_name_table. */
 const ASSET_MAP = [
+    /* Bit-perfect MASM MCGA driver used for palette register lookups. */
+    ['zelres1/code/105GDMCA.bin', '105GDMCA.bin'],
     /* zelres1 — opening cinematic images (resource_name_table at 100OPDMO.asm:2912) */
     ['zelres1/data/112FONTG.grp', 'font.grp'],
     ['zelres1/data/113AMEGP.grp', 'ame.grp'],

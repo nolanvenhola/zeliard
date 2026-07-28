@@ -7,6 +7,7 @@ on:
       - .github/workflows/deploy-wasm-demo.yml
       - 3_Assembly/dumps/zeliard_title_image.BIN
       - 3_Assembly/masm/working/zelres1/data/**
+      - 3_Assembly/masm/working/zelres1/code/105GDMCA.bin
       - 3_Assembly/tasm/bin/zelres1/100OPDMO.bin
       - 6_WebPort/**
   workflow_dispatch:
@@ -51,6 +52,11 @@ jobs:
 
       - name: Build WASM engine
         run: make -C 6_WebPort/engine wasm
+
+      - name: Verify MCGA runtime assets
+        run: |
+          test -f 6_WebPort/engine/assets/105GDMCA.bin
+          grep -a -q '105GDMCA.bin' 6_WebPort/engine/build/zeliard.js
 
       - name: Build public demo
         working-directory: 6_WebPort/shell

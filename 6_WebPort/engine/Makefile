@@ -159,7 +159,7 @@ EMCC_FLAGS  := $(CFLAGS_COMMON) \
 	--preload-file assets@/assets \
 	-o build/zeliard.js
 
-WASM_DEPS := $(WEB_SRC) Makefile
+WASM_DEPS := $(WEB_SRC) Makefile $(wildcard assets/*)
 
 WASM_OUT := build/zeliard.js build/zeliard.wasm build/zeliard.data
 
