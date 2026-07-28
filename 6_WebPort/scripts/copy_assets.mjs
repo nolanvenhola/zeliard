@@ -117,10 +117,27 @@ const BINARY_SLICES = [
 /* Browser-decoded score recordings. Keep these outside the Emscripten
  * preload package so the C heap does not carry several megabytes of audio. */
 const WEB_AUDIO_MAP = [
-    ['4_Resources/Music/Zeliard01-Intro.ogg', 'zopn.ogg',
-        '92ae4d17d948bba4925a805ed375fd633450cf74435688b7931f3b0057043e77'],
-    ['4_Resources/Music/Zeliard-02-Credits.ogg', 'zend.ogg',
-        '3e08b95982436847e16d755bd95015d62ce2f2f2aeb22175189d1202f38b4e23'],
+    /* Captured MSCADLIB output, bounded by the two service-0 loads in
+     * 100OPDMO.  These retain the score-authored AdLib fades and end timing;
+     * the longer soundtrack arrangements do not match DOS playback. */
+    ['4_Resources/Sound/Opening/music_zopn_adlib.ogg', 'zopn.ogg',
+        'ce4f9062a5b6446669d97568c010194f483ba599d1ad1cf0a8e654dedcb4104a'],
+    ['4_Resources/Sound/Opening/music_zend_adlib.ogg', 'zend.ogg',
+        'a8bc9522af2223ae3cb08133642b69b6ee35343330ef6d05fdea3ad4ab05d7fb'],
+    ['4_Resources/Sound/Opening/sfx_02.wav', 'sfx_02.wav',
+        'b35264b20b1a4bc3a61e09b97153c7b33d396dfb35cf8c6e56361544d159649e'],
+    ['4_Resources/Sound/Opening/sfx_04.wav', 'sfx_04.wav',
+        'a343b21a057088396fb084aee9f777fb1291eaf59edae0a42c022e1fd4d670b4'],
+    ['4_Resources/Sound/Opening/sfx_3d.wav', 'sfx_3d.wav',
+        'd94953b74253272d7cfec3525d38857c043498f786dc2c2cb28bb882fdfe82c8'],
+    ['4_Resources/Sound/Opening/sfx_3e.wav', 'sfx_3e.wav',
+        'f968ee0e3613159364cf06d2d73f526283af187aede6c9c96b9deffa8ef6aa1a'],
+    ['4_Resources/Sound/Opening/sfx_3f.wav', 'sfx_3f.wav',
+        '9932dae30c2feecf03cfcd486fb3179bba84a38c2fb2588b3306124ac89c3932'],
+    ['4_Resources/Sound/Opening/sfx_40.wav', 'sfx_40.wav',
+        '973ed8dc8c19794d858b91a8571675e2197b54775547ec45c9eb305875c67e60'],
+    ['4_Resources/Sound/Opening/sfx_41.wav', 'sfx_41.wav',
+        '70ece1311f23b50be6af7253aa741e90f1019937fe8e561f397ae70bf5eb8989'],
 ];
 
 function ensureDir(p) { mkdirSync(p, { recursive: true }); }

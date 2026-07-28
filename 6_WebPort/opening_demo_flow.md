@@ -173,6 +173,12 @@ then invoke the installed INT 60h timer-service vector.
 
 **X1.** `gvar_scene_mode` = 8; reinit graphics; wait for `gvar_enable_all`.
 
+For MSCADLIB, the same `gvar_scene_mode=8` write starts an interrupt-driven
+fade of the currently playing `zend.msd`. The driver advances 64 OPL
+total-level attenuation steps, then silences the voices and sets
+`gvar_enable_all`. Space/Enter therefore fades from the current score position;
+it does not restart, seek, or wait for the score's natural ending.
+
 **X2.** Clear `gvar_spacebar_state` / `gvar_enter_key`; jump to `post_title_story_scenes`.
 
 ---

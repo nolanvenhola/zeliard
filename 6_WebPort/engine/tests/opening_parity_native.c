@@ -690,6 +690,46 @@ static int run_sprite_completion_restores_palette_case(void) {
 
 static int run_sprite_restore_crossing_case(void) {
     opening_init();
+    opening_render_phase_for_test(OPENING_PHASE_NEC_HOU_INTERLUDE, 1529);
+    int frame5_top_pixels = 0;
+    int frame5_right_pixels = 0;
+    for (int y = 0; y < 40; y++)
+        for (int x = 140; x < 180; x++) {
+            size_t p = (size_t)(y * ZELIARD_WIDTH + x) * 3u;
+            frame5_top_pixels += g_rgb_framebuf[p + 0] < 100 &&
+                                 g_rgb_framebuf[p + 1] > 80 &&
+                                 g_rgb_framebuf[p + 2] > 150;
+        }
+    for (int y = 76; y < 108; y++)
+        for (int x = 248; x < 292; x++) {
+            size_t p = (size_t)(y * ZELIARD_WIDTH + x) * 3u;
+            frame5_right_pixels += g_rgb_framebuf[p + 0] < 100 &&
+                                   g_rgb_framebuf[p + 1] > 80 &&
+                                   g_rgb_framebuf[p + 2] > 150;
+        }
+
+    opening_init();
+    opening_render_phase_for_test(OPENING_PHASE_NEC_HOU_INTERLUDE, 1263);
+    int frame3_restored_pixels = 0;
+    for (int y = 84; y < 112; y++)
+        for (int x = 56; x < 96; x++) {
+            size_t p = (size_t)(y * ZELIARD_WIDTH + x) * 3u;
+            frame3_restored_pixels += g_rgb_framebuf[p + 0] < 100 &&
+                                      g_rgb_framebuf[p + 1] > 80 &&
+                                      g_rgb_framebuf[p + 2] > 150;
+        }
+
+    opening_render_phase_for_test(OPENING_PHASE_NEC_HOU_INTERLUDE, 1897);
+    int frame8_restored_pixels = 0;
+    for (int y = 116; y < 176; y++)
+        for (int x = 16; x < 72; x++) {
+            size_t p = (size_t)(y * ZELIARD_WIDTH + x) * 3u;
+            frame8_restored_pixels += g_rgb_framebuf[p + 0] < 100 &&
+                                      g_rgb_framebuf[p + 1] > 80 &&
+                                      g_rgb_framebuf[p + 2] > 150;
+        }
+
+    opening_init();
     opening_render_phase_for_test(OPENING_PHASE_NEC_HOU_INTERLUDE, 1728);
     int frame6 = g_rgb_framebuf_active &&
                  rgb_pixel_is(0, 0, 248, 0, 0) &&
@@ -748,13 +788,35 @@ static int run_sprite_restore_crossing_case(void) {
     opening_render_phase_for_test(OPENING_PHASE_NEC_HOU_INTERLUDE, 2231);
     int frame10 = rgb_pixel_is(0, 0, 248, 248, 248) &&
                   rgb_pixel_is(0, 100, 248, 248, 248);
+    int frame10_left_pixels = 0;
+    int frame10_right_pixels = 0;
+    for (int y = 118; y < 184; y++) {
+        for (int x = 0; x < 44; x++) {
+            size_t p = (size_t)(y * ZELIARD_WIDTH + x) * 3u;
+            frame10_left_pixels += g_rgb_framebuf[p + 0] < 100 &&
+                                   g_rgb_framebuf[p + 1] > 80 &&
+                                   g_rgb_framebuf[p + 2] > 150;
+        }
+        for (int x = 288; x < 320; x++) {
+            size_t p = (size_t)(y * ZELIARD_WIDTH + x) * 3u;
+            frame10_right_pixels += g_rgb_framebuf[p + 0] < 100 &&
+                                    g_rgb_framebuf[p + 1] > 80 &&
+                                    g_rgb_framebuf[p + 2] > 150;
+        }
+    }
+    frame10 &= frame10_left_pixels > 20 && frame10_right_pixels > 20;
 
-    int ok = frame6 && frame7 && frame10;
-    printf("sprite_restore_crossings: %s frame6=%d frame7=%d frame10=%d pixels=%d/%d,%d/%d,%d/%d blue6=%d,%d,%d,%d\n",
-           ok ? "PASS" : "FAIL", frame6, frame7, frame10,
+    int ok = frame5_top_pixels > 20 && frame5_right_pixels > 20 &&
+             frame3_restored_pixels == 0 && frame8_restored_pixels == 0 &&
+             frame6 && frame7 && frame10;
+    printf("sprite_restore_crossings: %s frame3=%d frame5=%d/%d frame6=%d frame7=%d frame8=%d frame10=%d pixels=%d/%d,%d/%d,%d/%d,%d/%d blue6=%d,%d,%d,%d\n",
+           ok ? "PASS" : "FAIL", frame3_restored_pixels,
+           frame5_top_pixels, frame5_right_pixels,
+           frame6, frame7, frame8_restored_pixels, frame10,
            frame6_left_pixels, frame6_right_pixels,
            frame7_left_pixels, frame7_right_pixels,
            frame7_lower_left_pixels, frame7_lower_right_pixels,
+           frame10_left_pixels, frame10_right_pixels,
            frame6_blue_bbox[0], frame6_blue_bbox[1],
            frame6_blue_bbox[2], frame6_blue_bbox[3]);
     return ok;

@@ -257,9 +257,20 @@ and ends with the copyright lines.
 
 - Sets `gvar_scene_mode=8`.
 - Calls `gfx_init_fn`.
-- Waits for graphics readiness.
+- Waits for `gvar_enable_all` at `FF26h`.
 - Clears input.
 - Jumps to `post_title_story_scenes`.
+
+The `gvar_scene_mode=8` write is also an MSCADLIB command. The music ISR reads
+that shared byte at `FF24h`; `sub_463` reloads its fade counter with 8 and adds
+4 to `FF25h` on each expiry. The driver applies `FF25h/4` as OPL total-level
+attenuation, so the currently playing `zend.msd` source fades through 64 steps.
+When the byte wraps, MSCADLIB silences the voices, clears `FF24h`, and writes
+`FFh` to `FF26h`. Therefore SPACE/ENTER does not restart, seek, or wait for the
+natural end of `zend.msd`: it starts this driver fade at the current score
+position, and the princess sequence remains blocked until the fade completes.
+At the 236.7 Hz game timer rate, including MSCADLIB's divide-by-two update,
+the clean-start proxy duration is 4,263 ms.
 
 ## `post_title_story_scenes`
 

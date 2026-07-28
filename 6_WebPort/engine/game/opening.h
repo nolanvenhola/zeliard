@@ -16,6 +16,11 @@ void opening_tick(u32 dt_ms); /* advance timer, blit current scene */
 int  opening_done(void);     /* returns 1 when all scenes complete */
 void opening_skip(void);     /* immediately advance past remaining scenes */
 void opening_key_advance(void); /* MASM SPACE/ENTER phase-sensitive advance */
+int  opening_credits_exit_waiting(void); /* trans_exit waits on gvar_enable_all */
+void opening_credits_exit_release(void); /* MSC driver set gvar_enable_all */
+void opening_pause_overlay_show(void); /* stick.asm pause handler, MCGA path */
+void opening_pause_overlay_hide(void); /* restore saved AX=101Eh/CX=0810h region */
+void opening_set_sound_cue_sink(void (*sink)(u8 cue));
 int  opening_phase_id(void); /* native parity/debug: current opening phase enum */
 u32  opening_phase_elapsed_ms(void); /* native parity/debug: current phase elapsed */
 u32  opening_nec_hou_sprite_debug_word(void); /* debug: frame | elapsed | band count */

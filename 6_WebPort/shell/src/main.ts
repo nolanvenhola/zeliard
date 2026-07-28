@@ -10,7 +10,7 @@
 type EngineExports = {
     _zeliard_init(): void;
     _zeliard_tick(dt_ms: number): void;
-    _zeliard_key(keycode: number): void;  // ENTER=13, SPACE=32 -> OPDMO phase advance
+    _zeliard_key(keycode: number): void;
     _zeliard_framebuf(): number;     // pointer (offset into HEAPU8)
     _zeliard_rgb_framebuf(): number; // optional RGB output for MCGA raster-DAC frames
     _zeliard_rgb_framebuf_active(): number;
@@ -21,6 +21,12 @@ type EngineExports = {
     _zeliard_phase(): number;        // OPDMO phase while scene=opening
     _zeliard_phase_elapsed(): number;
     _zeliard_music_track(): number;  // 0=none, 1=zopn.msd, 2=zend.msd
+    _zeliard_music_complete(track: number): void;
+    _zeliard_music_attenuation(): number;
+    _zeliard_paused(): number;
+    _zeliard_music_enabled(): number;
+    _zeliard_sound_enabled(): number;
+    _zeliard_sound_cue(): number;
     _zeliard_opening_set_phase_for_test(phase: number): void;
 };
 
@@ -43,9 +49,18 @@ const audioBaseUrl = new URL('audio/', appBaseUrl);
 
 class OpeningMusic {
     private readonly context = new AudioContext();
+    private readonly gain = this.context.createGain();
     private readonly buffers = new Map<number, AudioBuffer>();
     private source: AudioBufferSourceNode | null = null;
     private activeTrack = 0;
+    private playbackOffset = 0;
+    private sourceStartedAt = 0;
+    private playbackEnded = false;
+    private trackEndedSink: ((track: number) => void) | null = null;
+
+    constructor() {
+        this.gain.connect(this.context.destination);
+    }
 
     static async load(): Promise<OpeningMusic> {
         const music = new OpeningMusic();
@@ -67,24 +82,109 @@ class OpeningMusic {
         await this.context.resume();
     }
 
-    sync(track: number): void {
-        if (track === this.activeTrack)
-            return;
+    setTrackEndedSink(sink: (track: number) => void): void {
+        this.trackEndedSink = sink;
+    }
+
+    private stopSource(preserveOffset: boolean): void {
         if (this.source) {
+            if (preserveOffset) {
+                const buffer = this.buffers.get(this.activeTrack);
+                this.playbackOffset += this.context.currentTime - this.sourceStartedAt;
+                if (buffer && buffer.duration > 0)
+                    this.playbackOffset %= buffer.duration;
+            }
+            this.source.onended = null;
             this.source.stop();
             this.source.disconnect();
             this.source = null;
         }
+    }
+
+    sync(track: number, enabled: boolean, paused: boolean, attenuation: number): void {
+        /* MSCADLIB applies FF25h/4 to the OPL total-level fields. OPL total
+         * level is logarithmic in 0.75 dB steps; level 64 is followed by
+         * key-off rather than another audible level. */
+        const level = Math.max(0, Math.min(63, attenuation));
+        this.gain.gain.setValueAtTime(Math.pow(10, (-0.75 * level) / 20),
+            this.context.currentTime);
+        if (track !== this.activeTrack) {
+            this.stopSource(false);
+            this.activeTrack = track;
+            this.playbackOffset = 0;
+            this.playbackEnded = false;
+        }
+
+        const shouldRun = track !== 0 && enabled && !paused && !this.playbackEnded;
+        if (!shouldRun) {
+            this.stopSource(track !== 0);
+            return;
+        }
+        if (this.source)
+            return;
+
         this.activeTrack = track;
         const buffer = this.buffers.get(track);
         if (!buffer)
             return;
         const source = this.context.createBufferSource();
         source.buffer = buffer;
+        source.connect(this.gain);
+        this.sourceStartedAt = this.context.currentTime;
+        source.onended = () => {
+            if (this.source !== source)
+                return;
+            source.disconnect();
+            this.source = null;
+            this.playbackOffset = buffer.duration;
+            this.playbackEnded = true;
+            this.trackEndedSink?.(track);
+            console.log(`[zeliard] MASM music complete: track ${track}`);
+        };
+        source.start(0, this.playbackOffset);
+        this.source = source;
+        console.log(`[zeliard] MASM music resume: track ${track} @ ${this.playbackOffset.toFixed(3)}s`);
+    }
+}
+
+class OpeningSound {
+    private readonly context = new AudioContext();
+    private readonly buffers = new Map<number, AudioBuffer>();
+
+    static async load(): Promise<OpeningSound> {
+        const sound = new OpeningSound();
+        const cues: Array<[number, string]> = [
+            [0x02, 'sfx_02.wav'],
+            [0x04, 'sfx_04.wav'],
+            [0x3d, 'sfx_3d.wav'],
+            [0x3e, 'sfx_3e.wav'],
+            [0x3f, 'sfx_3f.wav'],
+            [0x40, 'sfx_40.wav'],
+            [0x41, 'sfx_41.wav'],
+        ];
+        await Promise.all(cues.map(async ([cue, name]) => {
+            const response = await fetch(new URL(name, audioBaseUrl));
+            if (!response.ok)
+                throw new Error(`audio ${name}: HTTP ${response.status}`);
+            const buffer = await sound.context.decodeAudioData(await response.arrayBuffer());
+            sound.buffers.set(cue, buffer);
+        }));
+        return sound;
+    }
+
+    async unlock(): Promise<void> {
+        await this.context.resume();
+    }
+
+    play(cue: number): void {
+        const buffer = this.buffers.get(cue);
+        if (!buffer)
+            return;
+        const source = this.context.createBufferSource();
+        source.buffer = buffer;
         source.connect(this.context.destination);
         source.start();
-        this.source = source;
-        console.log(`[zeliard] MASM music load: track ${track}`);
+        console.log(`[zeliard] MASM SNDADLIB cue: ${cue}`);
     }
 }
 
@@ -139,6 +239,7 @@ async function boot() {
     let lastScene = -1;
     let lastPhase = -1;
     let lastPhaseElapsedBucket = -1;
+    let lastPaused = false;
 
     function sceneName(scene: number): string {
         switch (scene) {
@@ -154,12 +255,15 @@ async function boot() {
         const phase = Module._zeliard_phase();
         const phaseElapsed = Module._zeliard_phase_elapsed();
         const phaseElapsedBucket = Math.floor(phaseElapsed / 1000);
+        const paused = Module._zeliard_paused() !== 0;
         if (scene !== lastScene || phase !== lastPhase ||
-            phaseElapsedBucket !== lastPhaseElapsedBucket) {
+            phaseElapsedBucket !== lastPhaseElapsedBucket || paused !== lastPaused) {
             lastScene = scene;
             lastPhase = phase;
             lastPhaseElapsedBucket = phaseElapsedBucket;
-            setStatus(`engine running - ${sceneName(scene)} / phase ${phase} / ${phaseElapsed}ms`);
+            lastPaused = paused;
+            setStatus(paused ? 'paused' :
+                `engine running - ${sceneName(scene)} / phase ${phase} / ${phaseElapsed}ms`);
         }
 
         const heap = Module.HEAPU8;
@@ -212,29 +316,47 @@ async function boot() {
 
     setStatus('loading opening music...');
     let music: OpeningMusic | null = null;
+    let sound: OpeningSound | null = null;
     try {
-        music = await OpeningMusic.load();
+        [music, sound] = await Promise.all([
+            OpeningMusic.load(),
+            OpeningSound.load(),
+        ]);
     } catch (err) {
         console.error('[zeliard] audio load failed', err);
     }
+    music?.setTrackEndedSink((track) => Module._zeliard_music_complete(track));
 
     let started = false;
     async function startPlayback() {
         if (started)
             return;
-        if (music)
-            await music.unlock();
+        await Promise.all([
+            music?.unlock(),
+            sound?.unlock(),
+        ]);
         started = true;
         startButton.hidden = true;
         last = performance.now();
-        music?.sync(Module._zeliard_music_track());
+        music?.sync(Module._zeliard_music_track(),
+            Module._zeliard_music_enabled() !== 0,
+            Module._zeliard_paused() !== 0,
+            Module._zeliard_music_attenuation());
         requestAnimationFrame(frame);
     }
 
     startButton.hidden = false;
     startButton.addEventListener('click', () => void startPlayback());
     window.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (e.key !== 'Enter' && e.key !== ' ')
+        const keycodes: Record<string, number> = {
+            Enter: 13,
+            ' ': 32,
+            Escape: 27,
+            F1: 112,
+            F2: 113,
+        };
+        const keycode = keycodes[e.key];
+        if (keycode === undefined)
             return;
         e.preventDefault();
         if (e.repeat)
@@ -243,7 +365,12 @@ async function boot() {
             void startPlayback();
             return;
         }
-        Module._zeliard_key(e.keyCode);
+        Module._zeliard_key(keycode);
+        music?.sync(Module._zeliard_music_track(),
+            Module._zeliard_music_enabled() !== 0,
+            Module._zeliard_paused() !== 0,
+            Module._zeliard_music_attenuation());
+        sound?.play(Module._zeliard_sound_cue());
     });
     setStatus(music ? 'ready' : 'ready (audio unavailable)');
 
@@ -251,7 +378,12 @@ async function boot() {
         const dt = Math.max(0, Math.min(now - last, 100));
         last = now;
         Module._zeliard_tick(dt | 0);
-        music?.sync(Module._zeliard_music_track());
+        music?.sync(Module._zeliard_music_track(),
+            Module._zeliard_music_enabled() !== 0,
+            Module._zeliard_paused() !== 0,
+            Module._zeliard_music_attenuation());
+        const cue = Module._zeliard_sound_cue();
+        sound?.play(cue);
         paintFrame();
         requestAnimationFrame(frame);
     }

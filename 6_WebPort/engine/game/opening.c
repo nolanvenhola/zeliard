@@ -817,6 +817,16 @@ static u8             *g_story_script_22 = NULL;
 static size_t          g_story_script_22_size = 0;
 static zeliard_font_t g_font;
 static int            g_font_ready = 0;
+enum {
+    PAUSE_X = 128,
+    PAUSE_Y = 30,
+    PAUSE_W = 64,
+    PAUSE_H = 16
+};
+static u8             g_pause_indexed_backup[PAUSE_W * PAUSE_H];
+static u8             g_pause_rgb_backup[PAUSE_W * PAUSE_H * 3];
+static int            g_pause_rgb_active;
+static int            g_pause_overlay_active;
 static palette_color_t g_opening_palette[256];
 static palette_color_t g_title_card_palette[256];
 static u32            g_elapsed   = 0;
@@ -829,7 +839,40 @@ static u32            g_amulet_skip_base_elapsed = 0;
 static u32            g_amulet_skip_fade_elapsed = 0;
 static u32            g_amulet_skip_fade_ticks = 0;
 static u8             g_amulet_skip_frame[ZELIARD_FB_SIZE];
+static int            g_credits_exit_active;
+static int            g_credits_exit_released;
+static u32            g_credits_exit_clear_ticks;
+static u8             g_credits_exit_frame[ZELIARD_FB_SIZE];
 static int            g_story_anim_source = 0;
+static void          (*g_sound_cue_sink)(u8 cue) = NULL;
+
+typedef struct {
+    const u8 *script;
+    size_t max_rendered_pc;
+} story_sound_progress_t;
+
+static story_sound_progress_t g_story_sound_progress[24];
+
+static int story_sound_is_new_glyph(const u8 *script, size_t pc) {
+    story_sound_progress_t *free_slot = NULL;
+    for (size_t i = 0; i < sizeof(g_story_sound_progress) /
+                            sizeof(g_story_sound_progress[0]); i++) {
+        story_sound_progress_t *slot = &g_story_sound_progress[i];
+        if (slot->script == script) {
+            if (pc <= slot->max_rendered_pc)
+                return 0;
+            slot->max_rendered_pc = pc;
+            return 1;
+        }
+        if (!slot->script && !free_slot)
+            free_slot = slot;
+    }
+    if (!free_slot)
+        return 0;
+    free_slot->script = script;
+    free_slot->max_rendered_pc = pc;
+    return 1;
+}
 
 typedef enum {
     OPENING_PHASE_COPYRIGHT_TITLE_CARD = 0,
@@ -4817,6 +4860,13 @@ static void render_sprite_a_final_and_raster_rgb(int frame_index,
         frame_index == 3 && frame_elapsed_ms < 105u;
     const int frame8_restored =
         frame_index == 8 && frame_elapsed_ms < 104u;
+    const int frame10_waiting =
+        frame_index == 10 && frame_elapsed_ms >= 100u;
+    const int frame5_previous_full =
+        frame_index == 5 && frame_elapsed_ms < 83u;
+    sprite_obj_state_t frame4_state[SPRITE_A_RECORD_COUNT];
+    if (frame5_previous_full)
+        sprite_a_state_for_frame(4, frame4_state);
     sprite_obj_state_t frame5_state[SPRITE_A_RECORD_COUNT];
     if (frame6_restore_scanout || frame6_restore_tail)
         sprite_a_state_for_frame(5, frame5_state);
@@ -4865,6 +4915,10 @@ static void render_sprite_a_final_and_raster_rgb(int frame_index,
              * nine 3552h copies but while the frame-3 DAC writes are still
              * visible.  The indexed A000 page is therefore the clean saved
              * background for every band. */
+        } else if (!palette_2 && frame5_previous_full) {
+            render_sprite_a_slots(frame4_state, SPRITE_A_RECORD_COUNT - 1);
+        } else if (!palette_2 && frame10_waiting) {
+            render_sprite_a_slots(state, SPRITE_A_RECORD_COUNT - 1);
         } else if (!palette_2 && frame6_restore_scanout) {
             render_sprite_a_frame5_restore_scanout(frame5_state);
         } else if (!palette_2 && frame6_restore_tail) {
@@ -5341,6 +5395,11 @@ static void draw_story_char(story_draw_state_t *state, const u8 *script,
                          0, (u16)(pc - 1));
     zeliard_font_draw_char(&g_font, draw_x, draw_y, ch,
                            story_palette_index(state->text_color_bg));
+    /* 100OPDMO:1189-1190 writes text_attr to gvar_volume_b for every
+     * non-space printable byte. Snapshot redraws must not rewrite old cues. */
+    if (story_sound_is_new_glyph(script, pc) && ch != ' ' && state->text_attr &&
+        g_sound_cue_sink)
+        g_sound_cue_sink(state->text_attr);
     state->text_x_pos = (u16)(state->text_x_pos + OPDMO_STORY_ADVANCE[index]);
 
     if (ch == ' ') {
@@ -5498,6 +5557,19 @@ static void run_script_story_state(story_draw_state_t *state,
 static void render_script_story(const cached_image_t *background,
                                 const u8 *script, size_t script_size,
                                 u32 elapsed_ms);
+
+static u8 story_initial_text_attr(const u8 *script) {
+    /* text_attr is one shared byte at 6D5Dh in 100OPDMO, not per-script
+     * state. These scripts begin after a speaker control followed by BREAK. */
+    if (script == g_story_script_14)
+        return '=';
+    if (script == g_story_script_16)
+        return '>';
+    if (script == g_story_script_19 || script == g_story_script_20)
+        return '?';
+    return 0;
+}
+
 static void render_script_story_with_colors(const cached_image_t *background,
                                             const u8 *script,
                                             size_t script_size,
@@ -5512,6 +5584,7 @@ static void render_script_story_with_colors(const cached_image_t *background,
     memset(&state, 0, sizeof(state));
     state.text_color_fg = initial_fg;
     state.text_color_bg = initial_bg;
+    state.text_attr = story_initial_text_attr(script);
     run_script_story_state(&state, background, script, script_size,
                            elapsed_ms, 1);
 }
@@ -6312,6 +6385,8 @@ static void render_destiny_story(u32 elapsed_ms) {
 /* ---- public API --------------------------------------------------------- */
 
 void opening_init(void) {
+    g_pause_overlay_active = 0;
+    g_pause_rgb_active = 0;
     memset(g_images, 0, sizeof(g_images));
     memset(&g_hou_overlay, 0, sizeof(g_hou_overlay));
     free(g_hou_planes);
@@ -6403,6 +6478,10 @@ void opening_init(void) {
     g_elapsed   = 0;
     g_elapsed_ticks = 0;
     g_timer_subtick_accum = 0;
+    g_credits_exit_active = 0;
+    g_credits_exit_released = 0;
+    g_credits_exit_clear_ticks = 0;
+    memset(g_story_sound_progress, 0, sizeof(g_story_sound_progress));
     g_done      = 0;
     g_phase     = OPENING_PHASE_COPYRIGHT_TITLE_CARD;
     g_phase_idx = 0;
@@ -6497,10 +6576,123 @@ void opening_init(void) {
     platform_log("opening_init: %d scenes ready", NUM_SCENES);
 }
 
+static void pause_overlay_set_pixel(int x, int y, u8 index) {
+    size_t pixel = (size_t)y * ZELIARD_WIDTH + (size_t)x;
+    g_framebuf[pixel] = index;
+    if (g_pause_rgb_active) {
+        g_rgb_framebuf[pixel * 3u + 0u] = g_palette[index].r;
+        g_rgb_framebuf[pixel * 3u + 1u] = g_palette[index].g;
+        g_rgb_framebuf[pixel * 3u + 2u] = g_palette[index].b;
+    }
+}
+
+static void render_credits_gfx_init_clear(void) {
+    /* GMMCGA:2C01 vga_vram_init clears scanlines in eight lane passes:
+     * 0,8,...192, then 1,9,...193, through lane 7.  Unlike the 105GDMCA
+     * masked blits this writes complete 320-byte scanlines. */
+    int passes = 1 + (int)(zel_timer_ticks_to_ms(g_credits_exit_clear_ticks) /
+                            MCGA_RENDER_PASS_MS);
+    if (passes > 8)
+        passes = 8;
+    memcpy(g_framebuf, g_credits_exit_frame, sizeof(g_credits_exit_frame));
+    for (int lane = 0; lane < passes; lane++)
+        for (int y = lane; y < ZELIARD_HEIGHT; y += 8)
+            memset(g_framebuf + y * ZELIARD_WIDTH, 0, ZELIARD_WIDTH);
+    framebuf_rgb_disable();
+}
+
+static void begin_credits_exit(void) {
+    if (g_credits_exit_active)
+        return;
+    g_credits_exit_active = 1;
+    g_credits_exit_released = 0;
+    g_credits_exit_clear_ticks = 0;
+    memcpy(g_credits_exit_frame, g_framebuf, sizeof(g_credits_exit_frame));
+    render_credits_gfx_init_clear();
+}
+
+int opening_credits_exit_waiting(void) {
+    return g_credits_exit_active;
+}
+
+void opening_credits_exit_release(void) {
+    g_credits_exit_released = 1;
+}
+
+void opening_pause_overlay_show(void) {
+    if (g_pause_overlay_active)
+        return;
+
+    g_pause_rgb_active = g_rgb_framebuf_active;
+    for (int row = 0; row < PAUSE_H; row++) {
+        size_t src = (size_t)(PAUSE_Y + row) * ZELIARD_WIDTH + PAUSE_X;
+        size_t dst = (size_t)row * PAUSE_W;
+        memcpy(g_pause_indexed_backup + dst, g_framebuf + src, PAUSE_W);
+        memcpy(g_pause_rgb_backup + dst * 3u, g_rgb_framebuf + src * 3u,
+               PAUSE_W * 3u);
+    }
+
+    /* stick.asm:984-995 calls GMMCGA fn0 with BX=201Eh/CX=1010h,
+     * then fn21 with BX=008Ch/CL=22h.  In cinematic mode fn0 emits a
+     * two-pixel FF border and fn21 renders selector 7 as index 77h. */
+    for (int row = 0; row < PAUSE_H; row++) {
+        for (int col = 0; col < PAUSE_W; col++) {
+            u8 color = (row < 2 || row >= PAUSE_H - 2 ||
+                        col < 2 || col >= PAUSE_W - 2) ? 0xFFu : 0u;
+            pause_overlay_set_pixel(PAUSE_X + col, PAUSE_Y + row, color);
+        }
+    }
+    if (g_font_ready) {
+        static const char pause_text[] = "PAUSE";
+        for (size_t i = 0; i < sizeof(pause_text) - 1u; i++) {
+            int x = 140 + (int)i * 8;
+            u8 ch = (u8)pause_text[i];
+            size_t glyph = (size_t)g_font.ptr_a + (size_t)(ch - 0x20u) * 8u;
+            if (glyph + 8u > g_font.size)
+                continue;
+            for (int row = 0; row < 8; row++) {
+                u8 bits = g_font.data[glyph + (size_t)row];
+                for (int col = 0; col < 8; col++) {
+                    if (bits & (u8)(0x80u >> col))
+                        pause_overlay_set_pixel(x + col, 34 + row, 0x77u);
+                }
+            }
+        }
+    }
+    g_pause_overlay_active = 1;
+}
+
+void opening_pause_overlay_hide(void) {
+    if (!g_pause_overlay_active)
+        return;
+    for (int row = 0; row < PAUSE_H; row++) {
+        size_t dst = (size_t)(PAUSE_Y + row) * ZELIARD_WIDTH + PAUSE_X;
+        size_t src = (size_t)row * PAUSE_W;
+        memcpy(g_framebuf + dst, g_pause_indexed_backup + src, PAUSE_W);
+        memcpy(g_rgb_framebuf + dst * 3u, g_pause_rgb_backup + src * 3u,
+               PAUSE_W * 3u);
+    }
+    g_rgb_framebuf_active = g_pause_rgb_active;
+    g_pause_overlay_active = 0;
+}
+
 void opening_tick(u32 dt_ms) {
     if (g_done) return;
 
     u32 dt_ticks = zel_timer_advance_ms(&g_timer_subtick_accum, dt_ms);
+
+    if (g_credits_exit_active) {
+        g_credits_exit_clear_ticks += dt_ticks;
+        if (g_credits_exit_clear_ticks > GFX_MODE_CLEAR_TICKS)
+            g_credits_exit_clear_ticks = GFX_MODE_CLEAR_TICKS;
+        render_credits_gfx_init_clear();
+        if (g_credits_exit_released &&
+            g_credits_exit_clear_ticks >= GFX_MODE_CLEAR_TICKS) {
+            g_credits_exit_active = 0;
+            opening_set_phase(OPENING_PHASE_RAIN_PRINCESS);
+        }
+        return;
+    }
 
     if (g_phase == OPENING_PHASE_AMULET_ANCIENT_PROLOGUE &&
         g_amulet_skip_fade_active) {
@@ -6520,6 +6712,12 @@ void opening_tick(u32 dt_ms) {
 
     while (g_phase_idx < OPENING_PHASE_COUNT &&
            g_elapsed_ticks >= OPENING_PHASES[g_phase_idx].duration_ticks) {
+        if (g_phase == OPENING_PHASE_STAFF_CREDITS) {
+            g_elapsed_ticks = OPENING_PHASES[g_phase_idx].duration_ticks;
+            g_elapsed = zel_timer_ticks_to_ms(g_elapsed_ticks);
+            begin_credits_exit();
+            return;
+        }
         g_elapsed_ticks -= OPENING_PHASES[g_phase_idx].duration_ticks;
         g_elapsed = zel_timer_ticks_to_ms(g_elapsed_ticks);
         g_phase_idx++;
@@ -6884,6 +7082,10 @@ void opening_skip(void) {
     g_done = 1;
 }
 
+void opening_set_sound_cue_sink(void (*sink)(u8 cue)) {
+    g_sound_cue_sink = sink;
+}
+
 static void opening_set_phase_index(int idx) {
     if (idx < 0)
         idx = 0;
@@ -6905,6 +7107,9 @@ static void opening_set_phase_index(int idx) {
     g_amulet_skip_base_elapsed = 0;
     g_amulet_skip_fade_elapsed = 0;
     g_amulet_skip_fade_ticks = 0;
+    g_credits_exit_active = 0;
+    g_credits_exit_released = 0;
+    g_credits_exit_clear_ticks = 0;
     memset(g_amulet_skip_frame, 0, sizeof(g_amulet_skip_frame));
     reset_amulet_scanline_runtime();
     reset_credits_scanline_runtime();
@@ -6949,7 +7154,7 @@ void opening_key_advance(void) {
         return;
 
     case OPENING_PHASE_STAFF_CREDITS:
-        opening_set_phase(OPENING_PHASE_RAIN_PRINCESS); /* trans_exit */
+        begin_credits_exit(); /* trans_exit: gfx_init, then wait FF26h */
         return;
 
     case OPENING_PHASE_NEC_HOU_INTERLUDE:
