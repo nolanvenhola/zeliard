@@ -5,6 +5,13 @@ action-RPG. Primary goal: a fully reconstructed, bit-perfect assembly
 source tree that compiles back to the original game binaries, with
 every byte and every mechanic explained.
 
+## Public Web Demo
+
+Play the current WASM opening-demo port at
+[nolanvenhola.github.io/zeliard](https://nolanvenhola.github.io/zeliard/).
+The site is built from the C engine and reconstructed MASM assets by the
+repository's GitHub Pages workflow.
+
 ## Current State
 
 - **60 ASM source files** — all compile bit-perfect to original binaries

@@ -10,6 +10,7 @@
  * to keep the C code readable.
  */
 import { copyFileSync, mkdirSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -18,6 +19,20 @@ const REPO_ROOT = resolve(__dirname, '..', '..');
 const SRC_BASE  = join(REPO_ROOT, '3_Assembly', 'masm', 'working');
 const DEST_ENGINE = join(REPO_ROOT, '6_WebPort', 'engine', 'assets');
 const DEST_SHELL  = join(REPO_ROOT, '6_WebPort', 'shell', 'public', 'assets');
+const MASM_OPDMO_BIN = '3_Assembly/masm/bin/zelres1/100OPDMO.bin';
+const TRACKED_OPDMO_BIN = '3_Assembly/tasm/bin/zelres1/100OPDMO.bin';
+const OPDMO_MASM_SHA256 = '424f2acbaec8c0395e5e72562ac6f6fd8bfa6f8b5c58a867fe1c5b21a6f51548';
+
+/* MASM release output is generated and ignored. CI uses the tracked TASM
+ * release binary, which is byte-identical to the verified MASM build. */
+const OPDMO_BIN = existsSync(join(REPO_ROOT, MASM_OPDMO_BIN))
+    ? MASM_OPDMO_BIN
+    : TRACKED_OPDMO_BIN;
+const opdmoBytes = readFileSync(join(REPO_ROOT, OPDMO_BIN));
+const opdmoHash = createHash('sha256').update(opdmoBytes).digest('hex');
+if (opdmoHash !== OPDMO_MASM_SHA256) {
+    throw new Error(`100OPDMO.bin does not match the verified MASM release: ${opdmoHash}`);
+}
 
 /* Map of {source file prefix} -> {short name used by C engine}.  Add entries
  * as new assets are wired up.  The number prefix on disk is the chunk
@@ -54,7 +69,7 @@ const ASSET_MAP = [
 
 const EXTRA_ASSET_MAP = [
     ['3_Assembly/dumps/zeliard_title_image.BIN', 'title_full.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', '100opdmo.bin'],
+    [OPDMO_BIN, '100opdmo.bin'],
 ];
 
 const BINARY_SLICES = [
@@ -63,28 +78,28 @@ const BINARY_SLICES = [
      * MASM oracle post_title_story_script_1 draws the leading 'P' before
      * the visible "Once..." text, then finishes with SI=7CADh.  File offset
      * maps through the stripped four-byte SAR chunk header. */
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x19CA, 0x02E7, 'opdemo_story_script_1.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x1CB1, 0x0132, 'opdemo_story_script_2.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x1DE3, 0x00AE, 'opdemo_story_script_3.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x1E91, 0x00EB, 'opdemo_story_script_4.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x1F7C, 0x0001, 'opdemo_story_script_5.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x1F7D, 0x009D, 'opdemo_story_script_6.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x201A, 0x005B, 'opdemo_story_script_7.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2075, 0x0004, 'opdemo_story_script_8.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2079, 0x00C1, 'opdemo_story_script_9.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x213A, 0x00A2, 'opdemo_story_script_10.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x21DC, 0x004B, 'opdemo_story_script_11.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2227, 0x0409, 'opdemo_story_script_12.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2630, 0x0102, 'opdemo_story_script_13.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2732, 0x00AD, 'opdemo_story_script_14.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x27DF, 0x0061, 'opdemo_story_script_15.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2840, 0x0368, 'opdemo_story_script_16.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2BA8, 0x0001, 'opdemo_story_script_17.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2BA9, 0x0066, 'opdemo_story_script_18.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2C0F, 0x0045, 'opdemo_story_script_19.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2C54, 0x036C, 'opdemo_story_script_20.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x2FC0, 0x004D, 'opdemo_story_script_21.bin'],
-    ['3_Assembly/masm/bin/zelres1/100OPDMO.bin', 0x300D, 0x0057, 'opdemo_story_script_22.bin'],
+    [OPDMO_BIN, 0x19CA, 0x02E7, 'opdemo_story_script_1.bin'],
+    [OPDMO_BIN, 0x1CB1, 0x0132, 'opdemo_story_script_2.bin'],
+    [OPDMO_BIN, 0x1DE3, 0x00AE, 'opdemo_story_script_3.bin'],
+    [OPDMO_BIN, 0x1E91, 0x00EB, 'opdemo_story_script_4.bin'],
+    [OPDMO_BIN, 0x1F7C, 0x0001, 'opdemo_story_script_5.bin'],
+    [OPDMO_BIN, 0x1F7D, 0x009D, 'opdemo_story_script_6.bin'],
+    [OPDMO_BIN, 0x201A, 0x005B, 'opdemo_story_script_7.bin'],
+    [OPDMO_BIN, 0x2075, 0x0004, 'opdemo_story_script_8.bin'],
+    [OPDMO_BIN, 0x2079, 0x00C1, 'opdemo_story_script_9.bin'],
+    [OPDMO_BIN, 0x213A, 0x00A2, 'opdemo_story_script_10.bin'],
+    [OPDMO_BIN, 0x21DC, 0x004B, 'opdemo_story_script_11.bin'],
+    [OPDMO_BIN, 0x2227, 0x0409, 'opdemo_story_script_12.bin'],
+    [OPDMO_BIN, 0x2630, 0x0102, 'opdemo_story_script_13.bin'],
+    [OPDMO_BIN, 0x2732, 0x00AD, 'opdemo_story_script_14.bin'],
+    [OPDMO_BIN, 0x27DF, 0x0061, 'opdemo_story_script_15.bin'],
+    [OPDMO_BIN, 0x2840, 0x0368, 'opdemo_story_script_16.bin'],
+    [OPDMO_BIN, 0x2BA8, 0x0001, 'opdemo_story_script_17.bin'],
+    [OPDMO_BIN, 0x2BA9, 0x0066, 'opdemo_story_script_18.bin'],
+    [OPDMO_BIN, 0x2C0F, 0x0045, 'opdemo_story_script_19.bin'],
+    [OPDMO_BIN, 0x2C54, 0x036C, 'opdemo_story_script_20.bin'],
+    [OPDMO_BIN, 0x2FC0, 0x004D, 'opdemo_story_script_21.bin'],
+    [OPDMO_BIN, 0x300D, 0x0057, 'opdemo_story_script_22.bin'],
 ];
 
 function ensureDir(p) { mkdirSync(p, { recursive: true }); }

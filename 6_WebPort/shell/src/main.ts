@@ -34,6 +34,8 @@ type ModuleFactory = (overrides?: Partial<ZeliardModule>) => Promise<ZeliardModu
 const statusEl = document.getElementById('status')!;
 const canvas = document.getElementById('screen') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d', { alpha: false })!;
+const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.href);
+const engineBaseUrl = new URL('engine/', appBaseUrl);
 
 function setStatus(msg: string) {
     statusEl.textContent = msg;
@@ -41,12 +43,13 @@ function setStatus(msg: string) {
 }
 
 async function loadEngineModule(cacheBust: string): Promise<ModuleFactory> {
-    /* The engine .js / .wasm / .data triple lives under /engine/ in the
+    /* The engine .js / .wasm / .data triple lives under engine/ in the
      * shell's public dir (mirrored there by `make wasm`).  Importing via
-     * an absolute URL prevents Vite from bundling the JS and lets the
-     * Emscripten runtime resolve .wasm + .data with relative URLs. */
-    const url = `${window.location.origin}/engine/zeliard.js?v=${cacheBust}`;
-    const mod = await import(/* @vite-ignore */ url);
+     * an absolute URL prevents Vite from bundling the JS while retaining
+     * the repository base path used by GitHub Pages. */
+    const moduleUrl = new URL('zeliard.js', engineBaseUrl);
+    moduleUrl.searchParams.set('v', cacheBust);
+    const mod = await import(/* @vite-ignore */ moduleUrl.href);
     return mod.default as ModuleFactory;
 }
 
@@ -61,7 +64,11 @@ async function boot() {
     const Module = await factory({
         print:    (s: string) => console.log('[wasm]', s),
         printErr: (s: string) => console.error('[wasm]', s),
-        locateFile: (path: string) => `/engine/${path}?v=${engineCacheBust}`,
+        locateFile: (path: string) => {
+            const assetUrl = new URL(path, engineBaseUrl);
+            assetUrl.searchParams.set('v', engineCacheBust);
+            return assetUrl.href;
+        },
     });
 
     setStatus('initialising engine…');

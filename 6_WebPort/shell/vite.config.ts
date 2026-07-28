@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
-import { resolve } from 'node:path';
 
 export default defineConfig({
+    base: process.env.VITE_BASE_PATH ?? '/',
     server: {
         port: 5173,
         strictPort: true,
@@ -21,11 +21,5 @@ export default defineConfig({
     build: {
         target: 'es2022',
         outDir: 'dist',
-        rollupOptions: {
-            input: {
-                webport: resolve(__dirname, 'index.html'),
-                masmReference: resolve(__dirname, 'hybrid.html'),
-            },
-        },
     },
 });

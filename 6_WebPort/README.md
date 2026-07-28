@@ -5,6 +5,15 @@ Arts / Sierra On-Line).  Built from the bit-perfect MASM source tree at
 `../3_Assembly/masm/`, with the running reconstructed bytes treated as the
 behavior oracle for porting decisions.
 
+## Public demo
+
+The latest `main` build is published at
+[nolanvenhola.github.io/zeliard](https://nolanvenhola.github.io/zeliard/).
+GitHub Actions rebuilds the Emscripten engine, prepares the reconstructed
+assets, builds the Vite shell with the repository base path, and deploys the
+static artifact to GitHub Pages. The workflow can also be run manually from
+the Actions tab.
+
 ## Stack
 
 - **Engine** in C (clang/Emscripten).  See `engine/`.
