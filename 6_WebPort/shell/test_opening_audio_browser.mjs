@@ -46,7 +46,7 @@ try {
   if (startedElapsed <= pausedElapsed)
     throw new Error(`opening did not advance after activation: ${startedElapsed}`);
 
-  const pauseRegionBefore = await page.evaluate(() => {
+  const pauseProbeBefore = await page.evaluate(() => {
     const module = window.__zeliard;
     const ptr = module._zeliard_framebuf();
     const bytes = [];
@@ -54,8 +54,9 @@ try {
       for (let x = 128; x < 192; x++)
         bytes.push(module.HEAPU8[ptr + y * 320 + x]);
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    return bytes;
+    return { bytes, oplWrites: module._zeliard_audio_opl_write_count() };
   });
+  const pauseRegionBefore = pauseProbeBefore.bytes;
   await page.waitForTimeout(100);
   const pauseStart = await page.evaluate(() => ({
     paused: window.__zeliard._zeliard_paused(),
@@ -66,6 +67,7 @@ try {
       window.__zeliard._zeliard_framebuf() + 45 * 320 + 191],
     interior: window.__zeliard.HEAPU8[
       window.__zeliard._zeliard_framebuf() + 33 * 320 + 130],
+    oplWrites: window.__zeliard._zeliard_audio_opl_write_count(),
   }));
   await page.waitForTimeout(250);
   const pauseEnd = await page.evaluate(() => ({
@@ -78,8 +80,8 @@ try {
   if (pauseStart.borderTopLeft !== 0xFF || pauseStart.borderBottomRight !== 0xFF ||
       pauseStart.interior !== 0)
     throw new Error(`MASM PAUSE box pixels mismatch: ${JSON.stringify(pauseStart)}`);
-  if (!consoleMessages.includes('[zeliard] MASM SNDADLIB cue: 2'))
-    throw new Error('ESC pause did not play MASM SNDADLIB cue 02h');
+  if (pauseStart.oplWrites <= pauseProbeBefore.oplWrites)
+    throw new Error(`ESC pause did not execute SNDADLIB cue 02h: ${JSON.stringify({ pauseProbeBefore, pauseStart })}`);
 
   const phaseBeforeUnpause = await page.evaluate(() => window.__zeliard._zeliard_phase());
   await page.keyboard.press('Space');
@@ -117,19 +119,28 @@ try {
   if (soundOff !== 0 || soundOn !== 1)
     throw new Error(`F2 sound toggle mismatch: ${soundOff}->${soundOn}`);
 
-  await page.evaluate(() =>
-    window.__zeliard._zeliard_opening_set_phase_for_test(21));
-  await page.waitForTimeout(100);
-  if (!consoleMessages.includes('[zeliard] MASM SNDADLIB cue: 4'))
-    throw new Error('DMAOU animation did not play MASM cue 04');
+  const dmaouWrites = await page.evaluate(() => {
+    const before = window.__zeliard._zeliard_audio_opl_write_count();
+    window.__zeliard._zeliard_opening_set_phase_for_test(21);
+    return before;
+  });
+  await page.waitForTimeout(250);
+  const dmaouWritesAfter = await page.evaluate(
+    () => window.__zeliard._zeliard_audio_opl_write_count());
+  if (dmaouWritesAfter <= dmaouWrites)
+    throw new Error(`DMAOU animation did not execute SNDADLIB cue 04h: ${dmaouWrites}->${dmaouWritesAfter}`);
 
-  await page.evaluate(() => {
+  const princessWrites = await page.evaluate(() => {
+    const before = window.__zeliard._zeliard_audio_opl_write_count();
     window.__zeliard._zeliard_opening_set_phase_for_test(3);
     window.__zeliard._zeliard_tick(66000);
+    return before;
   });
   await page.waitForTimeout(100);
-  if (!consoleMessages.includes('[zeliard] MASM SNDADLIB cue: 65'))
-    throw new Error('Princess text did not play MASM cue 41h');
+  const princessWritesAfter = await page.evaluate(
+    () => window.__zeliard._zeliard_audio_opl_write_count());
+  if (princessWritesAfter <= princessWrites)
+    throw new Error(`Princess text did not execute SNDADLIB cue 41h: ${princessWrites}->${princessWritesAfter}`);
 
   const tracks = [before.track];
   for (const expected of [1, 2]) {
@@ -189,10 +200,10 @@ try {
   const failedAudio = audioResponses.filter((response) => response.status !== 200);
   const recordedMusic = audioResponses.filter((response) =>
     response.url.endsWith('/zopn.ogg') || response.url.endsWith('/zend.ogg'));
-  if (audioResponses.length !== 7 || failedAudio.length !== 0 || recordedMusic.length !== 0)
+  if (audioResponses.length !== 0 || failedAudio.length !== 0 || recordedMusic.length !== 0)
     throw new Error(`audio responses: ${JSON.stringify(audioResponses)}`);
 
-  console.log(`opening_audio_browser: PASS tracks=${tracks.join('->')} exact_driver=1 sfx_http=7x200 ogg_http=0`);
+  console.log(`opening_audio_browser: PASS tracks=${tracks.join('->')} exact_drivers=1 audio_http=0`);
   console.log('VERDICT: PASS: opening audio browser parity');
 } catch (error) {
   console.error(JSON.stringify({ pageErrors, consoleMessages, audioResponses }, null, 2));

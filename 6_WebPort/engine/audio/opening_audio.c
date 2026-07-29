@@ -67,7 +67,7 @@ static void ring_sample(short left, short right) {
 
 static void generate_pcm_ms(void) {
     unsigned frames;
-    if (g_music_track == ZEL_OPENING_MUSIC_NONE)
+    if (!g_exact_driver)
         return;
     g_pcm_subframe_accum += (u32)g_audio_rate;
     frames = g_pcm_subframe_accum / 1000u;
@@ -98,8 +98,9 @@ static int load_exact_track(const char *asset) {
 }
 
 void zel_opening_audio_init(void) {
-    size_t driver_size = 0, bios_size = 0;
+    size_t driver_size = 0, sfx_driver_size = 0, bios_size = 0;
     u8 *driver;
+    u8 *sfx_driver;
     u8 *bios;
     g_music_track = ZEL_OPENING_MUSIC_NONE;
     g_cue_mailbox = 0;
@@ -118,10 +119,18 @@ void zel_opening_audio_init(void) {
     g_generated_peak = 0;
     opalInit(&g_opl, g_audio_rate);
     driver = platform_load_asset("mscadlib.drv", &driver_size);
+    sfx_driver = platform_load_asset("sndadlib.drv", &sfx_driver_size);
     bios = platform_load_asset("8086tiny-bios.bin", &bios_size);
-    g_exact_driver = driver && bios &&
-        zel_mscadlib_vm_init(&g_mscadlib, driver, driver_size, bios, bios_size);
+    g_exact_driver = driver && sfx_driver && bios &&
+        zel_mscadlib_vm_init(&g_mscadlib, driver, driver_size, bios, bios_size) &&
+        zel_mscadlib_vm_load_sfx_driver(&g_mscadlib, sfx_driver,
+                                        sfx_driver_size);
+    if (g_exact_driver) {
+        zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF27, 0);
+        zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF75, 0);
+    }
     free(driver);
+    free(sfx_driver);
     free(bios);
 }
 
@@ -260,6 +269,9 @@ void zel_opening_audio_toggle_music(void) {
 void zel_opening_audio_toggle_sound(void) {
     /* stick.asm:391-395 performs NOT gvar_sound_flag, then writes cue 1. */
     g_sound_enabled = (unsigned char)!g_sound_enabled;
+    if (g_exact_driver)
+        zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF27,
+                                   g_sound_enabled ? 0 : 0xFF);
     zel_opening_audio_write_cue(1);
 }
 
@@ -287,6 +299,8 @@ void zel_opening_audio_resume(void) {
 
 void zel_opening_audio_write_cue(u8 cue) {
     g_cue_mailbox = cue;
+    if (g_exact_driver)
+        zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF75, cue);
 }
 
 u8 zel_opening_audio_take_cue(void) {

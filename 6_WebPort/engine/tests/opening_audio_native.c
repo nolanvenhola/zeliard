@@ -41,6 +41,34 @@ static int expect_sustained_pcm(const char *name, int phase) {
     return ok;
 }
 
+static int expect_sfx_pcm(u8 cue) {
+    short pcm[480 * 2];
+    unsigned peak = 0;
+    unsigned long long sum = 0;
+    size_t samples = 0;
+
+    zel_opening_audio_init();
+    zel_opening_audio_tick(10);
+    (void)zel_opening_audio_read_pcm(pcm, 480);
+    zel_opening_audio_write_cue(cue);
+    for (int block = 0; block < 100; ++block) {
+        zel_opening_audio_tick(10);
+        size_t frames = zel_opening_audio_read_pcm(pcm, 480);
+        for (size_t i = 0; i < frames * 2; ++i) {
+            unsigned magnitude = pcm[i] < 0 ? (unsigned)-(int)pcm[i] : (unsigned)pcm[i];
+            if (magnitude > peak)
+                peak = magnitude;
+            sum += magnitude;
+        }
+        samples += frames * 2;
+    }
+    const int ok = samples == 96000 && peak > 256 && sum / samples >= 8;
+    printf("opening_audio:exact_sndadlib_cue_%02x_pcm: %s peak=%u mean=%llu writes=%u\n",
+           cue, ok ? "PASS" : "FAIL", peak, samples ? sum / samples : 0,
+           zel_opening_audio_opl_write_count());
+    return ok;
+}
+
 int main(void) {
     int ok = 1;
 
@@ -116,6 +144,9 @@ int main(void) {
     ok &= pcm_flowing;
     ok &= expect_sustained_pcm("zopn", 22);
     ok &= expect_sustained_pcm("zend", 2);
+    static const u8 sfx_pcm_cues[] = { 0x02, 0x04, 0x3D, 0x3E, 0x3F, 0x40, 0x41 };
+    for (size_t i = 0; i < sizeof(sfx_pcm_cues); ++i)
+        ok &= expect_sfx_pcm(sfx_pcm_cues[i]);
 
     zel_opening_audio_write_cue(0x3F);
     if (zel_opening_audio_take_cue() != 0x3F || zel_opening_audio_take_cue() != 0) {

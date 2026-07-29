@@ -128,25 +128,6 @@ const BINARY_SLICES = [
     [OPDMO_BIN, 0x300D, 0x0057, 'opdemo_story_script_22.bin'],
 ];
 
-/* Captured SNDADLIB effects remain outside the Emscripten preload package. */
-const WEB_AUDIO_MAP = [
-    /* Music is synthesized in WASM by the original MSCADLIB driver. */
-    ['4_Resources/Sound/Opening/sfx_02.wav', 'sfx_02.wav',
-        'b35264b20b1a4bc3a61e09b97153c7b33d396dfb35cf8c6e56361544d159649e'],
-    ['4_Resources/Sound/Opening/sfx_04.wav', 'sfx_04.wav',
-        'a343b21a057088396fb084aee9f777fb1291eaf59edae0a42c022e1fd4d670b4'],
-    ['4_Resources/Sound/Opening/sfx_3d.wav', 'sfx_3d.wav',
-        'd94953b74253272d7cfec3525d38857c043498f786dc2c2cb28bb882fdfe82c8'],
-    ['4_Resources/Sound/Opening/sfx_3e.wav', 'sfx_3e.wav',
-        'f968ee0e3613159364cf06d2d73f526283af187aede6c9c96b9deffa8ef6aa1a'],
-    ['4_Resources/Sound/Opening/sfx_3f.wav', 'sfx_3f.wav',
-        '9932dae30c2feecf03cfcd486fb3179bba84a38c2fb2588b3306124ac89c3932'],
-    ['4_Resources/Sound/Opening/sfx_40.wav', 'sfx_40.wav',
-        '973ed8dc8c19794d858b91a8571675e2197b54775547ec45c9eb305875c67e60'],
-    ['4_Resources/Sound/Opening/sfx_41.wav', 'sfx_41.wav',
-        '70ece1311f23b50be6af7253aa741e90f1019937fe8e561f397ae70bf5eb8989'],
-];
-
 function ensureDir(p) { mkdirSync(p, { recursive: true }); }
 
 function copyOne(rel, dst) {
@@ -212,25 +193,10 @@ for (const [src, offset, length, dst] of BINARY_SLICES) {
 }
 console.log(`[copy_assets] ${ok}/${ASSET_MAP.length + EXTRA_ASSET_MAP.length + BINARY_SLICES.length} files copied`);
 
-let audioOk = 0;
-for (const obsolete of ['zopn.ogg', 'zend.ogg'])
+for (const obsolete of [
+    'zopn.ogg', 'zend.ogg',
+    'sfx_02.wav', 'sfx_04.wav', 'sfx_3d.wav', 'sfx_3e.wav',
+    'sfx_3f.wav', 'sfx_40.wav', 'sfx_41.wav',
+])
     rmSync(join(DEST_AUDIO, obsolete), { force: true });
-for (const [src, dst, expectedHash] of WEB_AUDIO_MAP) {
-    const fullSrc = join(REPO_ROOT, src);
-    if (!existsSync(fullSrc)) {
-        console.error(`[copy_assets] MISSING: ${fullSrc}`);
-        process.exitCode = 1;
-        continue;
-    }
-    const actualHash = createHash('sha256').update(readFileSync(fullSrc)).digest('hex');
-    if (actualHash !== expectedHash) {
-        console.error(`[copy_assets] HASH MISMATCH: ${src} (${actualHash})`);
-        process.exitCode = 1;
-        continue;
-    }
-    ensureDir(DEST_AUDIO);
-    copyFileSync(fullSrc, join(DEST_AUDIO, dst));
-    console.log(`[copy_assets] ${src}  ->  audio/${dst}  (${statSync(fullSrc).size} bytes)`);
-    audioOk++;
-}
-console.log(`[copy_assets] ${audioOk}/${WEB_AUDIO_MAP.length} web audio files copied`);
+console.log('[copy_assets] browser audio uses exact SNDADLIB/MSCADLIB WASM output');

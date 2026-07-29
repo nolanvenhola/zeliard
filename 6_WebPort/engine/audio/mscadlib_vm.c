@@ -10,6 +10,8 @@ enum {
     DRIVER_ENTRY_TICK = 0x0100,
     DRIVER_ENTRY_SERVICE = 0x0103,
     DRIVER_LOAD_OFFSET = 0x0100,
+    SFX_DRIVER_ENTRY_TICK = 0x1100,
+    SFX_DRIVER_LOAD_OFFSET = 0x1100,
     SCORE_OFFSET = 0x3000,
     MAX_DRIVER_INSTRUCTIONS = 1000000
 };
@@ -89,9 +91,28 @@ int zel_mscadlib_vm_init(zel_mscadlib_vm_t *vm,
     if (driver_address + driver_size > zel_tiny86_memory_size())
         return 0;
     memcpy(memory + driver_address, driver, driver_size);
+    /* zeliad.asm installs INT 60h as MUSIC_SEG:0103h. SNDADLIB invokes
+     * MSCADLIB service 6 through that vector when effects start and end. */
+    write_u16(memory, 0x60u * 4u, DRIVER_ENTRY_SERVICE);
+    write_u16(memory, 0x60u * 4u + 2u, MUSIC_SEG);
     zel_tiny86_set_out_callback(on_port_write, vm);
     g_active_vm = vm;
     vm->loaded = 1;
+    return 1;
+}
+
+int zel_mscadlib_vm_load_sfx_driver(zel_mscadlib_vm_t *vm,
+                                    const u8 *driver, size_t driver_size) {
+    u8 *memory;
+    const size_t driver_address = linear(MUSIC_SEG, SFX_DRIVER_LOAD_OFFSET);
+
+    if (!vm || vm != g_active_vm || !vm->loaded || !driver || driver_size == 0)
+        return 0;
+    memory = zel_tiny86_memory();
+    if (driver_address + driver_size > zel_tiny86_memory_size())
+        return 0;
+    memcpy(memory + driver_address, driver, driver_size);
+    vm->sfx_loaded = 1;
     return 1;
 }
 
@@ -160,6 +181,14 @@ int zel_mscadlib_vm_tick(zel_mscadlib_vm_t *vm) {
         return 0;
     vm->tick++;
     regs = zel_tiny86_registers();
+    regs[ZEL_TINY86_DS] = GAME_SEG;
+    regs[ZEL_TINY86_ES] = GAME_SEG;
+    /* stick.asm timer_isr_entry calls gvar_gfx_fn (SNDADLIB:1100h) before
+     * gvar_input_fn (MSCADLIB:0100h) on every PIT interrupt. */
+    if (vm->sfx_loaded && !run_far_return(vm, SFX_DRIVER_ENTRY_TICK)) {
+        vm->failed = 1;
+        return 0;
+    }
     regs[ZEL_TINY86_DS] = GAME_SEG;
     regs[ZEL_TINY86_ES] = GAME_SEG;
     if (!run_far_return(vm, DRIVER_ENTRY_TICK)) {

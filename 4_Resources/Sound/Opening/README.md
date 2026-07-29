@@ -1,8 +1,10 @@
 # Opening AdLib Sound Oracles
 
 These PCM clips are decoded from the original DOSBox-X AdLib output in
-`3_Assembly/masm/bin/capture/OpeningDemo-Capture.mp4`. They remain the browser
-proxy for `SNDADLIB.DRV` effects while its bytecode-to-OPL renderer is ported.
+`3_Assembly/masm/bin/capture/OpeningDemo-Capture.mp4`. They are retained only
+as differential-listening oracles. The browser executes the original
+`SNDADLIB.DRV` bytes in the shared 8086 audio runtime and sends the resulting
+ports `388h/389h` writes to the Opal OPL core.
 
 The cue identities come from `100OPDMO.asm` and the verified driver table:
 
@@ -16,17 +18,18 @@ The cue identities come from `100OPDMO.asm` and the verified driver table:
 | `40h` | `text_attr = '@'` | 509.535-509.785 s |
 | `41h` | `text_attr = 'A'` | 336.171-336.421 s |
 
-The files are SHA-256 pinned by `6_WebPort/scripts/copy_assets.mjs`. Cue timing
-still comes from the translated MASM procedures; the video is only the captured
-audio oracle.
+Cue timing and mailbox writes come from the translated MASM procedures. The
+driver reads the original `FF75h` cue mailbox, uses the original INT `60h`
+service bridge, and runs before `MSCADLIB.DRV` on each timer tick as specified
+by `stick.asm`. Production asset copying removes all seven WAV files so they
+cannot become an accidental playback path.
 
 ## Opening music oracle
 
 The OGG files are retained only as captured comparison artifacts. Browser music
-now executes the original `MSCADLIB.DRV` against the original `zopn.msd` and
-`zend.msd` bytes in the WASM engine, intercepts ports `388h/389h`, and sends
-those writes to the Opal OPL core. Production asset copying explicitly removes
-the old OGG playback files.
+executes the original `MSCADLIB.DRV` against the original `zopn.msd` and
+`zend.msd` bytes in the same WASM audio runtime. Production asset copying
+explicitly removes the old OGG playback files.
 
 | File | MASM load/start | Capture interval | Duration |
 |---|---|---:|---:|

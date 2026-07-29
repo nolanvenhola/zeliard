@@ -67,6 +67,13 @@ jobs:
           grep -a -q '105GDMCA.bin' 6_WebPort/engine/build/zeliard.js
           test ! -e 6_WebPort/shell/public/audio/zopn.ogg
           test ! -e 6_WebPort/shell/public/audio/zend.ogg
+          test ! -e 6_WebPort/shell/public/audio/sfx_02.wav
+          test ! -e 6_WebPort/shell/public/audio/sfx_04.wav
+          test ! -e 6_WebPort/shell/public/audio/sfx_3d.wav
+          test ! -e 6_WebPort/shell/public/audio/sfx_3e.wav
+          test ! -e 6_WebPort/shell/public/audio/sfx_3f.wav
+          test ! -e 6_WebPort/shell/public/audio/sfx_40.wav
+          test ! -e 6_WebPort/shell/public/audio/sfx_41.wav
 
       - name: Build public demo
         working-directory: 6_WebPort/shell

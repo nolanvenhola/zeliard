@@ -38,18 +38,20 @@ static u32 hash_writes(const zel_opl_write_t *writes, size_t count) {
 int main(void) {
     zel_mscadlib_vm_t vm;
     zel_opl_write_t writes[16384];
-    size_t driver_size = 0, bios_size = 0, score_size = 0, score2_size = 0;
+    size_t driver_size = 0, sfx_driver_size = 0, bios_size = 0;
+    size_t score_size = 0, score2_size = 0;
     u8 *driver = read_file("assets/mscadlib.drv", &driver_size);
+    u8 *sfx_driver = read_file("assets/sndadlib.drv", &sfx_driver_size);
     u8 *bios = read_file("assets/8086tiny-bios.bin", &bios_size);
     u8 *score = read_file("assets/zend.msd", &score_size);
     u8 *score2 = read_file("assets/zopn.msd", &score2_size);
     size_t count;
-    int ok = driver && bios && score && score2;
+    int ok = driver && sfx_driver && bios && score && score2;
 
     if (!ok) {
         puts("mscadlib_vm:assets: INCONCLUSIVE");
         puts("VERDICT: INCONCLUSIVE");
-        free(driver); free(bios); free(score); free(score2);
+        free(driver); free(sfx_driver); free(bios); free(score); free(score2);
         return 2;
     }
     ok &= zel_mscadlib_vm_init(&vm, driver, driver_size, bios, bios_size);
@@ -94,7 +96,38 @@ int main(void) {
            zel_mscadlib_vm_global(&vm, 0xFF25),
            zel_mscadlib_vm_global(&vm, 0xFF26));
     ok &= fade_match;
+
+    static const u8 sfx_cues[] = { 0x02, 0x04, 0x3D, 0x3E, 0x3F, 0x40, 0x41 };
+    static const size_t sfx_write_counts[] = { 95, 122, 83, 83, 83, 83, 83 };
+    static const u32 sfx_write_hashes[] = {
+        0xa57a52a3u, 0xe4c9b1d6u, 0xd00c874eu, 0x7bebfd22u,
+        0x6a9f3432u, 0x28076aebu, 0xdb93e6a7u
+    };
+    for (size_t cue_index = 0; cue_index < sizeof(sfx_cues); ++cue_index) {
+        int cue_ok = zel_mscadlib_vm_init(&vm, driver, driver_size,
+                                           bios, bios_size);
+        cue_ok &= zel_mscadlib_vm_load_sfx_driver(&vm, sfx_driver,
+                                                   sfx_driver_size);
+        zel_mscadlib_vm_set_global(&vm, 0xFF27, 0);
+        cue_ok &= zel_mscadlib_vm_tick(&vm);
+        (void)zel_mscadlib_vm_take_writes(&vm, writes,
+                                          sizeof(writes) / sizeof(writes[0]));
+        zel_mscadlib_vm_set_global(&vm, 0xFF75, sfx_cues[cue_index]);
+        for (unsigned i = 0; cue_ok && i < 256; ++i)
+            cue_ok &= zel_mscadlib_vm_tick(&vm);
+        count = zel_mscadlib_vm_take_writes(&vm, writes,
+                                            sizeof(writes) / sizeof(writes[0]));
+        const u32 write_hash = hash_writes(writes, count);
+        const int cue_match = cue_ok && count == sfx_write_counts[cue_index] &&
+            write_hash == sfx_write_hashes[cue_index] &&
+            zel_mscadlib_vm_global(&vm, 0xFF75) == 0;
+        printf("sndadlib_vm:cue_%02x_256_ticks: %s writes=%zu hash=%08x mailbox=%02x disabled=%02x\n",
+               sfx_cues[cue_index], cue_match ? "PASS" : "FAIL", count, write_hash,
+               zel_mscadlib_vm_global(&vm, 0xFF75),
+               zel_mscadlib_vm_global(&vm, 0xFF27));
+        ok &= cue_match;
+    }
     puts(ok ? "VERDICT: PASS" : "VERDICT: FAIL");
-    free(driver); free(bios); free(score); free(score2);
+    free(driver); free(sfx_driver); free(bios); free(score); free(score2);
     return ok ? 0 : 1;
 }

@@ -48,8 +48,10 @@ EXPORT void zeliard_init(void) {
 }
 
 EXPORT void zeliard_tick(u32 dt_ms) {
-    if (g_paused)
+    if (g_paused) {
+        zel_opening_audio_tick(dt_ms);
         return;
+    }
     while (dt_ms > 0 || (dt_ms == 0 && g_scene == SCENE_OPENING)) {
         u32 step_ms = dt_ms > 100 ? 100 : dt_ms;
         if (g_scene == SCENE_OPENING) {

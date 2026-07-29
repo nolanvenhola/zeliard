@@ -53,7 +53,6 @@ const canvas = document.getElementById('screen') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d', { alpha: false })!;
 const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.href);
 const engineBaseUrl = new URL('engine/', appBaseUrl);
-const audioBaseUrl = new URL('audio/', appBaseUrl);
 
 class OpeningMusic {
     private readonly context = new AudioContext();
@@ -131,47 +130,6 @@ class OpeningMusic {
             this.stats.deliveredNonzero = 0;
         }
         void enabled; void paused; void attenuation;
-    }
-}
-
-class OpeningSound {
-    private readonly context = new AudioContext();
-    private readonly buffers = new Map<number, AudioBuffer>();
-
-    static async load(): Promise<OpeningSound> {
-        const sound = new OpeningSound();
-        const cues: Array<[number, string]> = [
-            [0x02, 'sfx_02.wav'],
-            [0x04, 'sfx_04.wav'],
-            [0x3d, 'sfx_3d.wav'],
-            [0x3e, 'sfx_3e.wav'],
-            [0x3f, 'sfx_3f.wav'],
-            [0x40, 'sfx_40.wav'],
-            [0x41, 'sfx_41.wav'],
-        ];
-        await Promise.all(cues.map(async ([cue, name]) => {
-            const response = await fetch(new URL(name, audioBaseUrl));
-            if (!response.ok)
-                throw new Error(`audio ${name}: HTTP ${response.status}`);
-            const buffer = await sound.context.decodeAudioData(await response.arrayBuffer());
-            sound.buffers.set(cue, buffer);
-        }));
-        return sound;
-    }
-
-    async unlock(): Promise<void> {
-        await this.context.resume();
-    }
-
-    play(cue: number): void {
-        const buffer = this.buffers.get(cue);
-        if (!buffer)
-            return;
-        const source = this.context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(this.context.destination);
-        source.start();
-        console.log(`[zeliard] MASM SNDADLIB cue: ${cue}`);
     }
 }
 
@@ -301,14 +259,10 @@ async function boot() {
         return;
     }
 
-    setStatus('loading opening music...');
+    setStatus('loading exact AdLib audio...');
     let music: OpeningMusic | null = null;
-    let sound: OpeningSound | null = null;
     try {
-        [music, sound] = await Promise.all([
-            OpeningMusic.load(Module),
-            OpeningSound.load(),
-        ]);
+        music = await OpeningMusic.load(Module);
     } catch (err) {
         console.error('[zeliard] audio load failed', err);
     }
@@ -317,10 +271,7 @@ async function boot() {
     async function startPlayback() {
         if (started)
             return;
-        await Promise.all([
-            music?.unlock(),
-            sound?.unlock(),
-        ]);
+        await music?.unlock();
         (window as any).__zeliardAudioStats = music?.stats ?? null;
         started = true;
         startButton.hidden = true;
@@ -358,7 +309,6 @@ async function boot() {
             Module._zeliard_music_enabled() !== 0,
             Module._zeliard_paused() !== 0,
             Module._zeliard_music_attenuation());
-        sound?.play(Module._zeliard_sound_cue());
     });
     setStatus(music ? 'ready' : 'ready (audio unavailable)');
 
@@ -373,8 +323,6 @@ async function boot() {
             Module._zeliard_music_enabled() !== 0,
             Module._zeliard_paused() !== 0,
             Module._zeliard_music_attenuation());
-        const cue = Module._zeliard_sound_cue();
-        sound?.play(cue);
         paintFrame();
         requestAnimationFrame(frame);
     }

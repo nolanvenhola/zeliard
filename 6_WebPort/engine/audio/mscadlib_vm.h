@@ -16,6 +16,7 @@ typedef struct {
     u8 opl_address;
     u8 opl_address_valid;
     u8 loaded;
+    u8 sfx_loaded;
     u8 failed;
     zel_opl_write_t writes[16384];
     size_t write_count;
@@ -25,6 +26,8 @@ typedef struct {
 int zel_mscadlib_vm_init(zel_mscadlib_vm_t *vm,
                          const u8 *driver, size_t driver_size,
                          const u8 *tiny86_bios, size_t bios_size);
+int zel_mscadlib_vm_load_sfx_driver(zel_mscadlib_vm_t *vm,
+                                    const u8 *driver, size_t driver_size);
 int zel_mscadlib_vm_load_score(zel_mscadlib_vm_t *vm,
                                const u8 *sar_file, size_t sar_file_size);
 int zel_mscadlib_vm_service(zel_mscadlib_vm_t *vm, u16 ax, u16 cx);
