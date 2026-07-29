@@ -27,7 +27,15 @@ type EngineExports = {
     _zeliard_music_enabled(): number;
     _zeliard_sound_enabled(): number;
     _zeliard_sound_cue(): number;
+    _zeliard_audio_pcm(stereo: number, frames: number): number;
+    _zeliard_audio_pcm_available(): number;
+    _zeliard_audio_set_sample_rate(sampleRate: number): void;
+    _zeliard_audio_opl_write_count(): number;
+    _zeliard_audio_generated_peak(): number;
+    _zeliard_exact_music_driver(): number;
     _zeliard_opening_set_phase_for_test(phase: number): void;
+    _malloc(size: number): number;
+    _free(pointer: number): void;
 };
 
 type ZeliardModule = EngineExports & {
@@ -49,101 +57,80 @@ const audioBaseUrl = new URL('audio/', appBaseUrl);
 
 class OpeningMusic {
     private readonly context = new AudioContext();
-    private readonly gain = this.context.createGain();
-    private readonly buffers = new Map<number, AudioBuffer>();
-    private source: AudioBufferSourceNode | null = null;
-    private activeTrack = 0;
-    private playbackOffset = 0;
-    private sourceStartedAt = 0;
-    private playbackEnded = false;
-    private trackEndedSink: ((track: number) => void) | null = null;
+    private readonly node: ScriptProcessorNode;
+    private readonly pcmPointer: number;
+    private activeTrack = -1;
+    private streamPrimed = false;
+    readonly stats = {
+        callbacks: 0,
+        requestedFrames: 0,
+        deliveredFrames: 0,
+        underrunFrames: 0,
+        deliveredPeak: 0,
+        deliveredNonzero: 0,
+        contextState: this.context.state,
+    };
 
-    constructor() {
-        this.gain.connect(this.context.destination);
+    constructor(private readonly module: ZeliardModule) {
+        const frames = 512;
+        this.module._zeliard_audio_set_sample_rate(this.context.sampleRate);
+        this.pcmPointer = this.module._malloc(frames * 2 * Int16Array.BYTES_PER_ELEMENT);
+        this.node = this.context.createScriptProcessor(frames, 0, 2);
+        this.node.onaudioprocess = (event) => {
+            const output = event.outputBuffer;
+            const buffered = this.module._zeliard_audio_pcm_available();
+            if (!this.streamPrimed && buffered >= 1536)
+                this.streamPrimed = true;
+            if (this.streamPrimed && buffered < output.length)
+                this.streamPrimed = false;
+            const available = this.streamPrimed
+                ? this.module._zeliard_audio_pcm(this.pcmPointer, output.length)
+                : 0;
+            const pcm = new Int16Array(this.module.HEAPU8.buffer,
+                this.pcmPointer, available * 2);
+            const left = output.getChannelData(0);
+            const right = output.getChannelData(1);
+            this.stats.callbacks++;
+            this.stats.requestedFrames += output.length;
+            this.stats.deliveredFrames += available;
+            this.stats.underrunFrames += output.length - available;
+            this.stats.contextState = this.context.state;
+            left.fill(0);
+            right.fill(0);
+            for (let i = 0; i < available; ++i) {
+                left[i] = pcm[i * 2] / 32768;
+                right[i] = pcm[i * 2 + 1] / 32768;
+                this.stats.deliveredPeak = Math.max(this.stats.deliveredPeak,
+                    Math.abs(pcm[i * 2]), Math.abs(pcm[i * 2 + 1]));
+                this.stats.deliveredNonzero +=
+                    pcm[i * 2] !== 0 || pcm[i * 2 + 1] !== 0 ? 1 : 0;
+            }
+        };
+        this.node.connect(this.context.destination);
     }
 
-    static async load(): Promise<OpeningMusic> {
-        const music = new OpeningMusic();
-        const tracks: Array<[number, string]> = [
-            [1, 'zopn.ogg'],
-            [2, 'zend.ogg'],
-        ];
-        await Promise.all(tracks.map(async ([id, name]) => {
-            const response = await fetch(new URL(name, audioBaseUrl));
-            if (!response.ok)
-                throw new Error(`audio ${name}: HTTP ${response.status}`);
-            const buffer = await music.context.decodeAudioData(await response.arrayBuffer());
-            music.buffers.set(id, buffer);
-        }));
-        return music;
+    static async load(module: ZeliardModule): Promise<OpeningMusic> {
+        if (!module._zeliard_exact_music_driver())
+            throw new Error('original MSCADLIB runtime unavailable');
+        return new OpeningMusic(module);
     }
 
     async unlock(): Promise<void> {
         await this.context.resume();
     }
 
-    setTrackEndedSink(sink: (track: number) => void): void {
-        this.trackEndedSink = sink;
-    }
-
-    private stopSource(preserveOffset: boolean): void {
-        if (this.source) {
-            if (preserveOffset) {
-                const buffer = this.buffers.get(this.activeTrack);
-                this.playbackOffset += this.context.currentTime - this.sourceStartedAt;
-                if (buffer && buffer.duration > 0)
-                    this.playbackOffset %= buffer.duration;
-            }
-            this.source.onended = null;
-            this.source.stop();
-            this.source.disconnect();
-            this.source = null;
-        }
-    }
-
     sync(track: number, enabled: boolean, paused: boolean, attenuation: number): void {
-        /* MSCADLIB applies FF25h/4 to the OPL total-level fields. OPL total
-         * level is logarithmic in 0.75 dB steps; level 64 is followed by
-         * key-off rather than another audible level. */
-        const level = Math.max(0, Math.min(63, attenuation));
-        this.gain.gain.setValueAtTime(Math.pow(10, (-0.75 * level) / 20),
-            this.context.currentTime);
         if (track !== this.activeTrack) {
-            this.stopSource(false);
             this.activeTrack = track;
-            this.playbackOffset = 0;
-            this.playbackEnded = false;
+            this.streamPrimed = false;
+            this.stats.callbacks = 0;
+            this.stats.requestedFrames = 0;
+            this.stats.deliveredFrames = 0;
+            this.stats.underrunFrames = 0;
+            this.stats.deliveredPeak = 0;
+            this.stats.deliveredNonzero = 0;
         }
-
-        const shouldRun = track !== 0 && enabled && !paused && !this.playbackEnded;
-        if (!shouldRun) {
-            this.stopSource(track !== 0);
-            return;
-        }
-        if (this.source)
-            return;
-
-        this.activeTrack = track;
-        const buffer = this.buffers.get(track);
-        if (!buffer)
-            return;
-        const source = this.context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(this.gain);
-        this.sourceStartedAt = this.context.currentTime;
-        source.onended = () => {
-            if (this.source !== source)
-                return;
-            source.disconnect();
-            this.source = null;
-            this.playbackOffset = buffer.duration;
-            this.playbackEnded = true;
-            this.trackEndedSink?.(track);
-            console.log(`[zeliard] MASM music complete: track ${track}`);
-        };
-        source.start(0, this.playbackOffset);
-        this.source = source;
-        console.log(`[zeliard] MASM music resume: track ${track} @ ${this.playbackOffset.toFixed(3)}s`);
+        void enabled; void paused; void attenuation;
     }
 }
 
@@ -319,15 +306,14 @@ async function boot() {
     let sound: OpeningSound | null = null;
     try {
         [music, sound] = await Promise.all([
-            OpeningMusic.load(),
+            OpeningMusic.load(Module),
             OpeningSound.load(),
         ]);
     } catch (err) {
         console.error('[zeliard] audio load failed', err);
     }
-    music?.setTrackEndedSink((track) => Module._zeliard_music_complete(track));
-
     let started = false;
+    let tickRemainderMs = 0;
     async function startPlayback() {
         if (started)
             return;
@@ -335,9 +321,11 @@ async function boot() {
             music?.unlock(),
             sound?.unlock(),
         ]);
+        (window as any).__zeliardAudioStats = music?.stats ?? null;
         started = true;
         startButton.hidden = true;
         last = performance.now();
+        tickRemainderMs = 0;
         music?.sync(Module._zeliard_music_track(),
             Module._zeliard_music_enabled() !== 0,
             Module._zeliard_paused() !== 0,
@@ -377,7 +365,10 @@ async function boot() {
     function frame(now: number) {
         const dt = Math.max(0, Math.min(now - last, 100));
         last = now;
-        Module._zeliard_tick(dt | 0);
+        tickRemainderMs += dt;
+        const tickMs = Math.floor(tickRemainderMs);
+        tickRemainderMs -= tickMs;
+        Module._zeliard_tick(tickMs);
         music?.sync(Module._zeliard_music_track(),
             Module._zeliard_music_enabled() !== 0,
             Module._zeliard_paused() !== 0,

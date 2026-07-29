@@ -19,6 +19,7 @@ void zeliard_init(void);
 void zeliard_tick(uint32_t dt_ms);
 void zeliard_key(int keycode);
 int zeliard_scene(void);
+void zeliard_opening_set_phase_for_test(int phase);
 
 #define OPDMO_TEST_WAIT_MS(ticks) \
     ((uint32_t)((((uint64_t)(ticks) * (uint64_t)ZEL_GAME_TIMER_DIVISOR * 1000u) + \
@@ -911,19 +912,20 @@ static int run_opening_input_during_amulet_clear_is_ignored_case(void) {
 }
 
 static int run_opening_input_credits_to_story_case(void) {
-    opening_init();
-    opening_tick(OPENING_TITLE_COMPLETE_MS);
-    opening_key_advance();
-    opening_tick(OPENING_SCANLINE_EXIT_FADE_MS);
-    opening_set_phase_for_test(OPENING_PHASE_STAFF_CREDITS);
+    zeliard_init();
+    zeliard_opening_set_phase_for_test(OPENING_PHASE_STAFF_CREDITS);
     int before_phase = opening_phase_id();
-    opening_key_advance();
+    zeliard_key(32);
+    int waiting_phase = opening_phase_id();
+    zeliard_tick(4300);
     int after_phase = opening_phase_id();
     int ok = before_phase == OPENING_PHASE_STAFF_CREDITS &&
+             waiting_phase == OPENING_PHASE_STAFF_CREDITS &&
              after_phase == OPENING_PHASE_RAIN_PRINCESS &&
              !opening_done();
-    printf("opening_input_credits_to_story: %s before=%d after=%d done=%d\n",
-           ok ? "PASS" : "FAIL", before_phase, after_phase, opening_done());
+    printf("opening_input_credits_to_story: %s before=%d waiting=%d after=%d done=%d\n",
+           ok ? "PASS" : "FAIL", before_phase, waiting_phase, after_phase,
+           opening_done());
     return ok;
 }
 
@@ -978,7 +980,11 @@ static int run_opening_key_contract_case(void) {
         ok &= after_fade_phase == OPENING_PHASE_STAFF_CREDITS;
         ok &= !opening_done();
 
+        zeliard_opening_set_phase_for_test(OPENING_PHASE_STAFF_CREDITS);
         zeliard_key(keys[i]);
+        after_credits_phase = opening_phase_id();
+        ok &= after_credits_phase == OPENING_PHASE_STAFF_CREDITS;
+        zeliard_tick(4300);
         after_credits_phase = opening_phase_id();
         ok &= after_credits_phase == OPENING_PHASE_RAIN_PRINCESS;
         ok &= !opening_done();

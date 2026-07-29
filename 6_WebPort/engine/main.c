@@ -123,6 +123,14 @@ EXPORT int              zeliard_paused(void) { return g_paused; }
 EXPORT int              zeliard_music_enabled(void) { return zel_opening_audio_music_enabled(); }
 EXPORT int              zeliard_sound_enabled(void) { return zel_opening_audio_sound_enabled(); }
 EXPORT int              zeliard_sound_cue(void) { return (int)zel_opening_audio_take_cue(); }
+EXPORT int              zeliard_audio_pcm(short *stereo, int frames) {
+    return frames > 0 ? (int)zel_opening_audio_read_pcm(stereo, (size_t)frames) : 0;
+}
+EXPORT int              zeliard_audio_pcm_available(void) { return (int)zel_opening_audio_pcm_available(); }
+EXPORT int              zeliard_exact_music_driver(void) { return zel_opening_audio_exact_driver_active(); }
+EXPORT void             zeliard_audio_set_sample_rate(int sample_rate) { zel_opening_audio_set_sample_rate(sample_rate); }
+EXPORT u32              zeliard_audio_opl_write_count(void) { return zel_opening_audio_opl_write_count(); }
+EXPORT u32              zeliard_audio_generated_peak(void) { return zel_opening_audio_generated_peak(); }
 EXPORT void             zeliard_opening_set_phase_for_test(int phase) {
     opening_set_phase_for_test(phase);
     zel_opening_audio_sync_phase(opening_phase_id());

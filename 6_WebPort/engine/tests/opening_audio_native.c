@@ -11,6 +11,36 @@ static int expect_track(const char *name, int expected) {
     return ok;
 }
 
+static int expect_sustained_pcm(const char *name, int phase) {
+    short pcm[480 * 2];
+    int ok = 1;
+
+    zel_opening_audio_init();
+    zel_opening_audio_sync_phase(phase);
+    for (int second = 0; second < 8; ++second) {
+        unsigned peak = 0;
+        unsigned long long sum = 0;
+        size_t samples = 0;
+        for (int block = 0; block < 100; ++block) {
+            zel_opening_audio_tick(10);
+            size_t frames = zel_opening_audio_read_pcm(pcm, 480);
+            for (size_t i = 0; i < frames * 2; ++i) {
+                unsigned magnitude = pcm[i] < 0 ? (unsigned)-(int)pcm[i] : (unsigned)pcm[i];
+                if (magnitude > peak)
+                    peak = magnitude;
+                sum += magnitude;
+            }
+            samples += frames * 2;
+        }
+        printf("opening_audio:%s_second_%d: peak=%u mean=%llu writes=%u\n",
+               name, second + 1, peak, samples ? sum / samples : 0,
+               zel_opening_audio_opl_write_count());
+        ok &= peak > 256 && sum / (samples ? samples : 1) > 16;
+    }
+    printf("opening_audio:%s_sustained: %s\n", name, ok ? "PASS" : "FAIL");
+    return ok;
+}
+
 int main(void) {
     int ok = 1;
 
@@ -63,6 +93,29 @@ int main(void) {
     zel_opening_audio_init();
     zel_opening_audio_sync_phase(2);
     ok &= expect_track("skip_direct_to_credits", ZEL_OPENING_MUSIC_ZEND);
+    ok &= zel_opening_audio_exact_driver_active();
+    zel_opening_audio_tick(250);
+    short pcm[4096 * 2];
+    size_t pcm_frames = zel_opening_audio_read_pcm(pcm, 4096);
+    size_t pcm_nonzero = 0;
+    unsigned pcm_peak = 0;
+    unsigned long long pcm_abs_sum = 0;
+    for (size_t i = 0; i < pcm_frames * 2; ++i) {
+        unsigned magnitude = pcm[i] < 0 ? (unsigned)-(int)pcm[i] : (unsigned)pcm[i];
+        pcm_nonzero += pcm[i] != 0;
+        if (magnitude > pcm_peak)
+            pcm_peak = magnitude;
+        pcm_abs_sum += magnitude;
+    }
+    const int pcm_flowing = pcm_frames == 4096 && pcm_nonzero > 100 &&
+                            pcm_peak > 16 && pcm_abs_sum > pcm_frames * 2;
+    printf("opening_audio:exact_mscadlib_pcm: %s frames=%zu nonzero=%zu peak=%u mean=%llu\n",
+           pcm_flowing ? "PASS" : "FAIL",
+           pcm_frames, pcm_nonzero, pcm_peak,
+           pcm_frames ? pcm_abs_sum / (pcm_frames * 2) : 0);
+    ok &= pcm_flowing;
+    ok &= expect_sustained_pcm("zopn", 22);
+    ok &= expect_sustained_pcm("zend", 2);
 
     zel_opening_audio_write_cue(0x3F);
     if (zel_opening_audio_take_cue() != 0x3F || zel_opening_audio_take_cue() != 0) {
@@ -72,33 +125,39 @@ int main(void) {
         puts("opening_audio:cue_mailbox: PASS");
     }
 
+    int control_ok = 1;
     zel_opening_audio_toggle_music();
-    ok &= !zel_opening_audio_music_enabled();
-    ok &= zel_opening_audio_take_cue() == 1;
+    control_ok &= !zel_opening_audio_music_enabled();
+    control_ok &= zel_opening_audio_take_cue() == 1;
     zel_opening_audio_toggle_music();
-    ok &= zel_opening_audio_music_enabled();
-    ok &= zel_opening_audio_take_cue() == 1;
-    puts(ok ? "opening_audio:f1_music_toggle: PASS" :
-              "opening_audio:f1_music_toggle: FAIL");
+    control_ok &= zel_opening_audio_music_enabled();
+    control_ok &= zel_opening_audio_take_cue() == 1;
+    puts(control_ok ? "opening_audio:f1_music_toggle: PASS" :
+                      "opening_audio:f1_music_toggle: FAIL");
+    ok &= control_ok;
 
+    control_ok = 1;
     zel_opening_audio_toggle_sound();
-    ok &= !zel_opening_audio_sound_enabled();
-    ok &= zel_opening_audio_take_cue() == 0;
+    control_ok &= !zel_opening_audio_sound_enabled();
+    control_ok &= zel_opening_audio_take_cue() == 0;
     zel_opening_audio_write_cue(0x3F);
-    ok &= zel_opening_audio_take_cue() == 0;
+    control_ok &= zel_opening_audio_take_cue() == 0;
     zel_opening_audio_toggle_sound();
-    ok &= zel_opening_audio_sound_enabled();
-    ok &= zel_opening_audio_take_cue() == 1;
-    puts(ok ? "opening_audio:f2_sound_toggle: PASS" :
-              "opening_audio:f2_sound_toggle: FAIL");
+    control_ok &= zel_opening_audio_sound_enabled();
+    control_ok &= zel_opening_audio_take_cue() == 1;
+    puts(control_ok ? "opening_audio:f2_sound_toggle: PASS" :
+                      "opening_audio:f2_sound_toggle: FAIL");
+    ok &= control_ok;
 
+    control_ok = 1;
     zel_opening_audio_pause();
-    ok &= zel_opening_audio_paused();
-    ok &= zel_opening_audio_take_cue() == 2;
+    control_ok &= zel_opening_audio_paused();
+    control_ok &= zel_opening_audio_take_cue() == 2;
     zel_opening_audio_resume();
-    ok &= !zel_opening_audio_paused();
-    puts(ok ? "opening_audio:pause_service: PASS" :
-              "opening_audio:pause_service: FAIL");
+    control_ok &= !zel_opening_audio_paused();
+    puts(control_ok ? "opening_audio:pause_service: PASS" :
+                      "opening_audio:pause_service: FAIL");
+    ok &= control_ok;
 
     FILE *driver_file = fopen("assets/sndadlib.drv", "rb");
     if (!driver_file) {

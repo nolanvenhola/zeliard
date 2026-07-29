@@ -9,7 +9,7 @@
  * Renames each file to a short canonical name (e.g. 131TTL3G.grp -> ttl3.grp)
  * to keep the C code readable.
  */
-import { copyFileSync, mkdirSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +24,8 @@ const MASM_OPDMO_BIN = '3_Assembly/masm/bin/zelres1/100OPDMO.bin';
 const TRACKED_OPDMO_BIN = '3_Assembly/tasm/bin/zelres1/100OPDMO.bin';
 const OPDMO_MASM_SHA256 = '424f2acbaec8c0395e5e72562ac6f6fd8bfa6f8b5c58a867fe1c5b21a6f51548';
 const SNDADLIB_SHA256 = 'bf1c2036980f0557106ab0521be163fedb32458a187b4f49a60fee12b3b0a858';
+const MSCADLIB_SHA256 = '3d972d619e94071c38c4b810f17054957aff46ad21b25a65f519a43f16158d4d';
+const TINY86_BIOS_SHA256 = 'ba4b2e62246aaadeda8d90bc0928d4f00242c16039982163d7e82740dceb5e31';
 
 /* MASM release output is generated and ignored. CI uses the tracked TASM
  * release binary, which is byte-identical to the verified MASM build. */
@@ -40,6 +42,16 @@ const sndadlibBytes = readFileSync(join(REPO_ROOT, '1_OriginalGame/sndadlib.drv'
 const sndadlibHash = createHash('sha256').update(sndadlibBytes).digest('hex');
 if (sndadlibHash !== SNDADLIB_SHA256)
     throw new Error(`sndadlib.drv does not match the captured DOS driver: ${sndadlibHash}`);
+
+const mscadlibBytes = readFileSync(join(REPO_ROOT, '1_OriginalGame/mscadlib.drv'));
+const mscadlibHash = createHash('sha256').update(mscadlibBytes).digest('hex');
+if (mscadlibHash !== MSCADLIB_SHA256)
+    throw new Error(`mscadlib.drv does not match the original DOS driver: ${mscadlibHash}`);
+
+const tiny86Bios = readFileSync(join(REPO_ROOT, '6_WebPort/engine/third_party/8086tiny/bios.bin'));
+const tiny86BiosHash = createHash('sha256').update(tiny86Bios).digest('hex');
+if (tiny86BiosHash !== TINY86_BIOS_SHA256)
+    throw new Error(`8086tiny BIOS hash mismatch: ${tiny86BiosHash}`);
 
 /* Map of {source file prefix} -> {short name used by C engine}.  Add entries
  * as new assets are wired up.  The number prefix on disk is the chunk
@@ -80,6 +92,8 @@ const ASSET_MAP = [
 
 const EXTRA_ASSET_MAP = [
     ['1_OriginalGame/sndadlib.drv', 'sndadlib.drv'],
+    ['1_OriginalGame/mscadlib.drv', 'mscadlib.drv'],
+    ['6_WebPort/engine/third_party/8086tiny/bios.bin', '8086tiny-bios.bin'],
     ['3_Assembly/dumps/zeliard_title_image.BIN', 'title_full.bin'],
     [OPDMO_BIN, '100opdmo.bin'],
 ];
@@ -114,16 +128,9 @@ const BINARY_SLICES = [
     [OPDMO_BIN, 0x300D, 0x0057, 'opdemo_story_script_22.bin'],
 ];
 
-/* Browser-decoded score recordings. Keep these outside the Emscripten
- * preload package so the C heap does not carry several megabytes of audio. */
+/* Captured SNDADLIB effects remain outside the Emscripten preload package. */
 const WEB_AUDIO_MAP = [
-    /* Captured MSCADLIB output, bounded by the two service-0 loads in
-     * 100OPDMO.  These retain the score-authored AdLib fades and end timing;
-     * the longer soundtrack arrangements do not match DOS playback. */
-    ['4_Resources/Sound/Opening/music_zopn_adlib.ogg', 'zopn.ogg',
-        'ce4f9062a5b6446669d97568c010194f483ba599d1ad1cf0a8e654dedcb4104a'],
-    ['4_Resources/Sound/Opening/music_zend_adlib.ogg', 'zend.ogg',
-        'a8bc9522af2223ae3cb08133642b69b6ee35343330ef6d05fdea3ad4ab05d7fb'],
+    /* Music is synthesized in WASM by the original MSCADLIB driver. */
     ['4_Resources/Sound/Opening/sfx_02.wav', 'sfx_02.wav',
         'b35264b20b1a4bc3a61e09b97153c7b33d396dfb35cf8c6e56361544d159649e'],
     ['4_Resources/Sound/Opening/sfx_04.wav', 'sfx_04.wav',
@@ -206,6 +213,8 @@ for (const [src, offset, length, dst] of BINARY_SLICES) {
 console.log(`[copy_assets] ${ok}/${ASSET_MAP.length + EXTRA_ASSET_MAP.length + BINARY_SLICES.length} files copied`);
 
 let audioOk = 0;
+for (const obsolete of ['zopn.ogg', 'zend.ogg'])
+    rmSync(join(DEST_AUDIO, obsolete), { force: true });
 for (const [src, dst, expectedHash] of WEB_AUDIO_MAP) {
     const fullSrc = join(REPO_ROOT, src);
     if (!existsSync(fullSrc)) {

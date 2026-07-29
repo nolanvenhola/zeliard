@@ -2,6 +2,7 @@
 #define ZELIARD_OPENING_AUDIO_H
 
 #include "../core/types.h"
+#include <stddef.h>
 
 typedef enum {
     ZEL_OPENING_MUSIC_NONE = 0,
@@ -27,5 +28,11 @@ void zel_opening_audio_pause(void);
 void zel_opening_audio_resume(void);
 void zel_opening_audio_write_cue(u8 cue);
 u8 zel_opening_audio_take_cue(void);
+size_t zel_opening_audio_read_pcm(short *stereo, size_t frames);
+size_t zel_opening_audio_pcm_available(void);
+int zel_opening_audio_exact_driver_active(void);
+void zel_opening_audio_set_sample_rate(int sample_rate);
+u32 zel_opening_audio_opl_write_count(void);
+u32 zel_opening_audio_generated_peak(void);
 
 #endif

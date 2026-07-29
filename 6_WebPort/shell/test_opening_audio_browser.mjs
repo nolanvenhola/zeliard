@@ -19,6 +19,10 @@ try {
   console.log('opening_audio_browser: DOM ready');
   await page.waitForFunction(() => window.__zeliard !== undefined, null, { timeout: 120000 });
   console.log('opening_audio_browser: WASM ready');
+  const exactDriver = await page.evaluate(
+    () => window.__zeliard._zeliard_exact_music_driver());
+  if (exactDriver !== 1)
+    throw new Error(`original MSCADLIB runtime unavailable: ${exactDriver}`);
   await page.waitForSelector('#start:not([hidden])', { timeout: 120000 });
   console.log('opening_audio_browser: audio assets ready');
 
@@ -49,9 +53,9 @@ try {
     for (let y = 30; y < 46; y++)
       for (let x = 128; x < 192; x++)
         bytes.push(module.HEAPU8[ptr + y * 320 + x]);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     return bytes;
   });
-  await page.keyboard.press('Escape');
   await page.waitForTimeout(100);
   const pauseStart = await page.evaluate(() => ({
     paused: window.__zeliard._zeliard_paused(),
@@ -138,11 +142,27 @@ try {
       throw new Error(`MASM phase ${phase} selected music track ${actual}, expected ${expected}`);
     tracks.push(expected);
     console.log(`opening_audio_browser: selected track ${expected}`);
-    await page.waitForTimeout(50);
+    await page.waitForTimeout(2000);
+    const stream = await page.evaluate(() => ({
+      ...window.__zeliardAudioStats,
+      exactDriver: window.__zeliard._zeliard_exact_music_driver(),
+      track: window.__zeliard._zeliard_music_track(),
+      oplWrites: window.__zeliard._zeliard_audio_opl_write_count(),
+      generatedPeak: window.__zeliard._zeliard_audio_generated_peak(),
+    }));
+    const underrunRate = stream.underrunFrames / stream.requestedFrames;
+    if (stream.contextState !== 'running' || stream.callbacks < 20 ||
+        stream.deliveredPeak <= 256 || stream.deliveredNonzero <= 100 ||
+        underrunRate >= 0.03 ||
+        stream.exactDriver !== 1 || stream.track !== expected)
+      throw new Error(`live WebAudio stream stopped: ${JSON.stringify(stream)}`);
+    console.log(`opening_audio_browser: track ${expected} stream ${JSON.stringify(stream)}`);
+    await page.waitForTimeout(3000);
+    const steadyStream = await page.evaluate(() => ({ ...window.__zeliardAudioStats }));
+    if (steadyStream.underrunFrames !== stream.underrunFrames)
+      throw new Error(`live WebAudio stream underrun after priming: ${JSON.stringify({ stream, steadyStream })}`);
   }
 
-  const track2StartsBefore = consoleMessages.filter((message) =>
-    message.startsWith('[zeliard] MASM music resume: track 2 @ ')).length;
   await page.keyboard.press('Enter');
   await page.waitForTimeout(100);
   const creditsWait = await page.evaluate(() => ({
@@ -152,11 +172,6 @@ try {
   }));
   if (creditsWait.track !== 2 || creditsWait.phase !== 2)
     throw new Error(`credits Enter skip did not wait for zend completion: ${JSON.stringify(creditsWait)}`);
-  const track2StartsAfter = consoleMessages.filter((message) =>
-    message.startsWith('[zeliard] MASM music resume: track 2 @ ')).length;
-  if (track2StartsAfter !== track2StartsBefore)
-    throw new Error('credits Enter skip restarted zend playback');
-
   await page.waitForFunction(
     () => window.__zeliard._zeliard_music_attenuation() > 0 &&
           window.__zeliard._zeliard_music_attenuation() < 64,
@@ -172,16 +187,12 @@ try {
     throw new Error(`zend completion did not release princess setup: ${JSON.stringify(princessHandoff)}`);
 
   const failedAudio = audioResponses.filter((response) => response.status !== 200);
-  if (audioResponses.length !== 9 || failedAudio.length !== 0)
+  const recordedMusic = audioResponses.filter((response) =>
+    response.url.endsWith('/zopn.ogg') || response.url.endsWith('/zend.ogg'));
+  if (audioResponses.length !== 7 || failedAudio.length !== 0 || recordedMusic.length !== 0)
     throw new Error(`audio responses: ${JSON.stringify(audioResponses)}`);
 
-  for (const track of [1, 2]) {
-    if (!consoleMessages.some((message) =>
-      message.startsWith(`[zeliard] MASM music resume: track ${track} @ `)))
-      throw new Error(`browser audio proxy did not start track ${track}`);
-  }
-
-  console.log(`opening_audio_browser: PASS tracks=${tracks.join('->')} audio_http=9x200`);
+  console.log(`opening_audio_browser: PASS tracks=${tracks.join('->')} exact_driver=1 sfx_http=7x200 ogg_http=0`);
   console.log('VERDICT: PASS: opening audio browser parity');
 } catch (error) {
   console.error(JSON.stringify({ pageErrors, consoleMessages, audioResponses }, null, 2));

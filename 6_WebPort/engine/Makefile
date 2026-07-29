@@ -11,6 +11,9 @@ ENGINE_SRC := \
 	core/timer.c \
 	audio/adlib_cue.c \
 	audio/opening_audio.c \
+	audio/mscadlib_vm.c \
+	third_party/8086tiny/8086tiny.c \
+	third_party/opal/src/opal.c \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
@@ -33,6 +36,9 @@ TEST_OPENING_SRC := \
 	core/framebuf.c \
 	core/timer.c \
 	audio/opening_audio.c \
+	audio/mscadlib_vm.c \
+	third_party/8086tiny/8086tiny.c \
+	third_party/opal/src/opal.c \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
@@ -50,6 +56,9 @@ TEST_OPENING_TRACE_SRC := \
 	core/framebuf.c \
 	core/timer.c \
 	audio/opening_audio.c \
+	audio/mscadlib_vm.c \
+	third_party/8086tiny/8086tiny.c \
+	third_party/opal/src/opal.c \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
@@ -95,13 +104,24 @@ TEST_OPENING_AUDIO_SRC := \
 	tests/opening_audio_native.c \
 	audio/adlib_cue.c \
 	audio/opening_audio.c \
-	core/timer.c
+	audio/mscadlib_vm.c \
+	third_party/8086tiny/8086tiny.c \
+	third_party/opal/src/opal.c \
+	core/timer.c \
+	platform/platform_sdl.c
+TEST_MSCADLIB_VM_SRC := \
+	tests/mscadlib_vm_native.c \
+	audio/mscadlib_vm.c \
+	third_party/8086tiny/8086tiny.c
 TEST_MAIN_CONTROLS_SRC := \
 	tests/main_controls_native.c \
 	main.c \
 	core/framebuf.c \
 	core/timer.c \
 	audio/opening_audio.c \
+	audio/mscadlib_vm.c \
+	third_party/8086tiny/8086tiny.c \
+	third_party/opal/src/opal.c \
 	render/palette.c \
 	render/font_text.c \
 	render/mcga_render.c \
@@ -170,7 +190,7 @@ TEST_MCGA_SPRITE_PALETTE_SRC := \
 	render/palette.c \
 	platform/platform_sdl.c
 
-CFLAGS_COMMON := -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O2 -I.
+CFLAGS_COMMON := -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O2 -fno-strict-aliasing -I. -Ithird_party/opal/include
 
 EMCC        := emcc
 EMCC_FLAGS  := $(CFLAGS_COMMON) \
@@ -180,7 +200,7 @@ EMCC_FLAGS  := $(CFLAGS_COMMON) \
 	-s EXPORT_ES6=1 \
 	-s ENVIRONMENT=web \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_malloc","_free"]' \
 	-s EXPORTED_RUNTIME_METHODS='["HEAPU8","HEAPU32","UTF8ToString","ccall","cwrap"]' \
 	--preload-file assets@/assets \
 	-o build/zeliard.js
@@ -215,9 +235,10 @@ build/zeliard-native: $(NATIVE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(NATIVE_SRC)
 
-test-native: build/opening-parity-native build/opening-audio-native build/main-controls-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native
+test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native
 	./build/opening-parity-native
 	./build/opening-audio-native
+	./build/mscadlib-vm-native
 	./build/main-controls-native
 	./build/gameplay-parity-native
 	./build/zeliad-loader-parity-native
@@ -241,6 +262,10 @@ build/opening-parity-native: $(TEST_OPENING_SRC) Makefile
 build/opening-audio-native: $(TEST_OPENING_AUDIO_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_OPENING_AUDIO_SRC)
+
+build/mscadlib-vm-native: $(TEST_MSCADLIB_VM_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -Wno-parentheses -Wno-sign-compare -Wno-unused-value -Wno-implicit-fallthrough -Wno-deprecated-declarations -o $@ $(TEST_MSCADLIB_VM_SRC)
 
 build/main-controls-native: $(TEST_MAIN_CONTROLS_SRC) Makefile
 	@mkdir -p build
