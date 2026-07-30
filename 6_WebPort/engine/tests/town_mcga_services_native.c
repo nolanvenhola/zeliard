@@ -73,10 +73,154 @@ int main(void) {
     ok &= zeliard_gmmcga_draw_status_line(vga, 0x10000, 1, 0x0204,
                                            0x2100) == -1;
 
-    printf("town_mcga_services: %s vga=%016llx packed=%016llx masks=%016llx\n",
+    u8 life_seg[0x10000] = {0};
+    life_seg[0x0090] = 0x45;
+    life_seg[0x0091] = 0x02;
+    life_seg[0x00B2] = 0x20;
+    life_seg[0x00B3] = 0x03;
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 13 + 5);
+    ok &= zeliard_gmmcga_draw_life_scale(vga, 0x10000, 0x0500) == 0;
+    ok &= fnv1a64(vga, 0x10000) == 0xCC1710A9629B2445ULL;
+    ok &= zeliard_gmmcga_draw_life_max(vga, 0x10000, life_seg,
+                                        sizeof(life_seg)) == 0;
+    ok &= fnv1a64(vga, 0x10000) == 0x8922D9FFA5978415ULL;
+    ok &= zeliard_gmmcga_draw_life_current(vga, 0x10000, life_seg,
+                                            sizeof(life_seg)) == 0;
+    ok &= fnv1a64(vga, 0x10000) == 0xB98E2BD56673813DULL;
+    ok &= zeliard_gmmcga_draw_life_max(vga, 0x10000, life_seg, 0x00B3) == -1;
+
+    for (size_t i = 0; i < 0x10000; ++i) {
+        life_seg[i] = 0;
+        vga[i] = (u8)(i * 11 + 9);
+    }
+    life_seg[0xF504] = 0x00;
+    life_seg[0xF505] = 0x80;
+    for (size_t character = 0; character < 96; ++character) {
+        for (size_t row = 0; row < 8; ++row)
+            life_seg[0x8000 + character * 8 + row] =
+                (u8)(character * 37 + row * 19 + 0x53);
+    }
+    static const u8 life_record[] = {0x0E, 0xA3, 0x00, 0x05,
+                                     'L', 'I', 'F', 'E', '!'};
+    memcpy(life_seg + 0x9000, life_record, sizeof(life_record));
+    ok &= zeliard_gmmcga_draw_town_text_record(vga, 0x10000, life_seg,
+                                                sizeof(life_seg), 0x9000) == 0;
+    ok &= fnv1a64(vga, 0x10000) == 0x9ECCC715238D7787ULL;
+    ok &= life_seg[0x2CBD] == 0x09 && life_seg[0x2CBE] == 0x2D;
+
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 11 + 9);
+    life_seg[0x9003] = 0x04;
+    ok &= zeliard_gmmcga_draw_hud_label(vga, 0x10000, life_seg,
+                                         sizeof(life_seg), 0x9000) == 0;
+    ok &= fnv1a64(vga, 0x10000) == 0x887B657AB4281BB6ULL;
+    ok &= life_seg[0x2CBD] == 0x1B && life_seg[0x2CBE] == 0x12;
+
+    memset(life_seg, 0, sizeof(life_seg));
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 7 + 3);
+    life_seg[0xF502] = 0x00;
+    life_seg[0xF503] = 0x80;
+    for (size_t digit = 0; digit < 16; ++digit) {
+        for (size_t row = 0; row < 8; ++row)
+            life_seg[0x8000 + digit * 8 + row] =
+                (u8)(digit * 31 + row * 23 + 0x41);
+    }
+    life_seg[0x24EB] = 0x2A;
+    life_seg[0x008B] = 0x39; life_seg[0x008C] = 0x30;
+    life_seg[0x0085] = 0x12; life_seg[0x0086] = 0x56; life_seg[0x0087] = 0x34;
+    life_seg[0x0093] = 0x03; life_seg[0x0094] = 0xE1; life_seg[0x0095] = 0x10;
+    life_seg[0x009D] = 0x03; life_seg[0x00AD] = 0x4D;
+    ok &= zeliard_gmmcga_draw_almas(vga, 0x10000, life_seg,
+                                     sizeof(life_seg)) == 0;
+    unsigned long long almas_hash = fnv1a64(vga, 0x10000);
+    ok &= almas_hash == 0x493B33F0AD38F70DULL;
+    ok &= zeliard_gmmcga_draw_gold(vga, 0x10000, life_seg,
+                                    sizeof(life_seg)) == 0;
+    unsigned long long gold_hash = fnv1a64(vga, 0x10000);
+    ok &= gold_hash == 0xF361E65421F56679ULL;
+    ok &= zeliard_gmmcga_draw_spell_charge(vga, 0x10000, life_seg,
+                                            sizeof(life_seg)) == 0;
+    unsigned long long spell_hash = fnv1a64(vga, 0x10000);
+    ok &= spell_hash == 0x34E71A370A27FF42ULL;
+    ok &= zeliard_gmmcga_draw_shield_hp(vga, 0x10000, life_seg,
+                                         sizeof(life_seg)) == 0;
+    unsigned long long shield_hash = fnv1a64(vga, 0x10000);
+    ok &= shield_hash == 0xFEF9AC4EA582B005ULL;
+    printf("town_mcga_numeric: almas=%016llx gold=%016llx spell=%016llx shield=%016llx\n",
+           almas_hash, gold_hash, spell_hash, shield_hash);
+    life_seg[0x009D] = 0;
+    life_seg[0x01AA] = 0x58;
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 7 + 3);
+    ok &= zeliard_gmmcga_draw_spell_charge(vga, 0x10000, life_seg,
+                                            sizeof(life_seg)) == 0;
+    ok &= fnv1a64(vga, 0x10000) == 0x5CA562D8E09D063EULL;
+    life_seg[0x0093] = 0;
+    unsigned long long no_shield_before = fnv1a64(vga, 0x10000);
+    ok &= zeliard_gmmcga_draw_shield_hp(vga, 0x10000, life_seg,
+                                         sizeof(life_seg)) == 0;
+    ok &= fnv1a64(vga, 0x10000) == no_shield_before;
+
+    memset(life_seg, 0, sizeof(life_seg));
+    life_seg[0xF502] = 0x00; life_seg[0xF503] = 0x80;
+    life_seg[0xF504] = 0x00; life_seg[0xF505] = 0x90;
+    for (size_t digit = 0; digit < 16; ++digit) {
+        for (size_t row = 0; row < 8; ++row)
+            life_seg[0x8000 + digit * 8 + row] =
+                (u8)(digit * 31 + row * 23 + 0x80);
+    }
+    for (size_t character = 0; character < 96; ++character) {
+        for (size_t row = 0; row < 8; ++row)
+            life_seg[0x9000 + character * 8 + row] =
+                (u8)(character * 31 + row * 23 + 0x90);
+    }
+    static const u8 first_frame_records[] = {
+        0x0E, 0xA3, 0x00, 0x04, 'L', 'I', 'F', 'E',
+        0x1E, 0xBB, 0x03, 0x05, 'A', 'L', 'M', 'A', 'S',
+        0x0D, 0xBB, 0x01, 0x04, 'G', 'O', 'L', 'D',
+        0x0D, 0xAF, 0x01, 0x05, 'P', 'L', 'A', 'C', 'E',
+    };
+    memcpy(life_seg + 0x6C93, first_frame_records, sizeof(first_frame_records));
+    static const u8 castle_record[] = {
+        0x08, 0xAF, 0x02, 0x06, 'C', 'A', 'S', 'T', 'L', 'E'
+    };
+    memcpy(life_seg + 0x9800, castle_record, sizeof(castle_record));
+    life_seg[0x24EB] = 0x2A;
+    life_seg[0x008B] = 0x39; life_seg[0x008C] = 0x30;
+    life_seg[0x0085] = 0x12; life_seg[0x0086] = 0x56; life_seg[0x0087] = 0x34;
+    life_seg[0x0090] = 0x45; life_seg[0x0091] = 0x02;
+    life_seg[0x0093] = 0x03; life_seg[0x0094] = 0xE1; life_seg[0x0095] = 0x10;
+    life_seg[0x009D] = 0x03; life_seg[0x00AD] = 0x4D;
+    life_seg[0x00B2] = 0x20; life_seg[0x00B3] = 0x03;
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 13 + 5);
+    ok &= zeliard_gmmcga_draw_first_frame_hud(vga, 0x10000, life_seg,
+                                               sizeof(life_seg), 0x9800) == 0;
+    ok &= fnv1a64(vga, 0x10000) == 0xA4388787A04C4E76ULL;
+    u8 combined_state[9];
+    memcpy(combined_state, life_seg + 0x2433, 7);
+    memcpy(combined_state + 7, life_seg + 0x2CBD, 2);
+    ok &= fnv1a64(combined_state, sizeof(combined_state)) ==
+          0x36F73C3154C60582ULL;
+
+    u8 game_seg[0x10000];
+    for (size_t i = 0; i < sizeof(game_seg); ++i)
+        game_seg[i] = (u8)(i * 29 + 7);
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 17 + 3);
+    ok &= zeliard_gtmcga_capture_playfield(vga, 0x10000, game_seg,
+                                            sizeof(game_seg)) == 0;
+    ok &= fnv1a64(game_seg + 0xA000, 0x1500) == 0xE6CF3F9146BCEB25ULL;
+    ok &= zeliard_gtmcga_capture_playfield(vga, 0xFFFF, game_seg,
+                                            sizeof(game_seg)) == -1;
+
+    printf("town_mcga_services: %s vga=%016llx packed=%016llx masks=%016llx capture=%016llx\n",
            ok ? "PASS" : "FAIL",
            fnv1a64(vga, 0x10000), fnv1a64(ds + 0x4100, 144),
-           fnv1a64(es + 0x7000, 24));
+           fnv1a64(es + 0x7000, 24),
+           fnv1a64(game_seg + 0xA000, 0x1500));
     printf("VERDICT: %s: town MCGA services match MASM oracles\n",
            ok ? "PASS" : "FAIL");
     free(vga);
