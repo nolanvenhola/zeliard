@@ -53,3 +53,18 @@ __pycache__
 6_WebPort/tests/artifacts
 artifacts
 6_WebPort/tests/comparison
+
+# Local agent configuration (project guidance lives in AGENTS.md/.agents/).
+.agents/
+.codex/
+
+# Generated behavior-oracle and verification output.
+*.log
+3_Assembly/masm/verify_artifacts/
+
+# Native/WebAssembly intermediate objects and accidental CLI output.
+6_WebPort/engine/*.obj
+6_WebPort/engine/--*
+
+# Browser comparison output accidentally rooted under the Vite shell.
+6_WebPort/shell/6_WebPort/
