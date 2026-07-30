@@ -1892,6 +1892,7 @@ static int run_scene_sprite_a_frame_table_case(void) {
 
     uint8_t bytes[sizeof(expected_bytes)] = {0};
     const char *paths[] = {
+        "assets/105GDMCA.bin",
         "../../3_Assembly/masm/bin/zelres1/105GDMCA.bin",
         "3_Assembly/masm/bin/zelres1/105GDMCA.bin",
     };
