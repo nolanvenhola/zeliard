@@ -35,6 +35,7 @@
     "proc_equivalence/test_game_bootstrap_sequence.py",
     "proc_equivalence/test_game_load_music_tracks.py",
     "proc_equivalence/test_game_set_vga_palette.py",
+    "proc_equivalence/test_stick_continuous_input_oracle.py",
     "proc_equivalence/test_gmmcga_town_clear_playfield_oracle.py",
     "proc_equivalence/test_gmmcga_town_status_lines_oracle.py",
     "proc_equivalence/test_gmmcga_town_life_hud_oracle.py",
@@ -74,6 +75,9 @@
     "placeholder_id/test_fight_state_byte_C017.py"
   ],
   "scenarios": [
+    {"name": "stick_process_scancode", "proc": "process_scancode", "input": {"sequence": [224, 77, 224, 205, 28, 156]}, "expected": {"direction_make": 8, "direction_break": 0, "enter_ascii": 13, "timer_after_enter_break": 0}},
+    {"name": "stick_space_sample", "proc": "handle_pause_key", "input": {"released_sample": true, "space_make": 57}, "expected": {"pause_latch_armed": 255, "space_action": 255, "skip_flag": 1}},
+    {"name": "stick_special_key_sample", "proc": "handle_special_keys", "input": {"f1_timer_bit": 4096, "f2_timer_bit": 8192}, "expected": {"music_int": 96, "music_latch": 0, "sound_flag_after_toggle": 0, "volume_b": 1}},
     {"name": "gmmcga_town_life_hud", "proc": "GMMCGA:2385/2227/2256", "input": {"player_hp": 581, "player_hp_max": 800, "vga_fixture": "index*13+5"}, "expected": {"stage_fnv64": ["cc1710a9629b2445", "8922d9ffa5978415", "b98e2bd56673813d"]}},
     {"name": "gmmcga_town_hud_label", "proc": "GMMCGA:22BF", "input": {"record": [14, 163, 0, 4, 76, 73, 70, 69]}, "expected": {"vga_fnv64": "887b657ab4281bb6", "color_state": [27, 18]}},
     {"name": "gmmcga_town_text_record", "proc": "GMMCGA:22CD", "input": {"record": [14, 163, 0, 5, 76, 73, 70, 69, 33]}, "expected": {"vga_fnv64": "9eccc715238d7787", "color_state": [9, 45]}},

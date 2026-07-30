@@ -32,10 +32,16 @@ static int event_matches(const zel_proxy_event_t *e, zel_proxy_event_kind_t kind
 static int run_runtime_input_case(void) {
     zel_runtime_t rt;
     zel_runtime_init(&rt);
+    zel_runtime_tick(&rt, 43);
     zel_runtime_key_down(&rt, 32);
     zel_runtime_key_down(&rt, 13);
+    zel_runtime_tick(&rt, 22);
     int ok = rt.mem[ZEL_GVAR_SPACEBAR_STATE] == 0xFF &&
              rt.mem[ZEL_GVAR_ENTER_KEY] == ZEL_ENTER_KEY;
+    zel_runtime_key_up(&rt, 32);
+    zel_runtime_key_up(&rt, 13);
+    ok &= rt.mem[ZEL_GVAR_SPACEBAR_STATE] == 0xFF &&
+          rt.mem[ZEL_GVAR_ENTER_KEY] == ZEL_ENTER_KEY;
     zel_runtime_keyboard_clear_opening_skip(&rt, "test");
     ok &= rt.mem[ZEL_GVAR_SPACEBAR_STATE] == 0 &&
           rt.mem[ZEL_GVAR_ENTER_KEY] == 0;
@@ -86,6 +92,7 @@ static int run_timer_rate_case(void) {
     ok &= rt.low_level_trace.stick_joy_detect_handler == 2;
 
     zel_runtime_key_down(&rt, 32);
+    zel_runtime_tick(&rt, 22);
     rt.mem[ZEL_GVAR_FRAME_TIMER] = 0x7F;
     ok &= zel_runtime_timer_wait(&rt, "test", 0x1C) == ZEL_RUNTIME_WAIT_SKIPPED;
     ok &= rt.mem[ZEL_GVAR_FRAME_TIMER] == 0x7F;

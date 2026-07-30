@@ -195,6 +195,7 @@ void zel_runtime_init(zel_runtime_t *rt) {
     rt->regs.ss = 0;
     rt->regs.sp = 0x2000;
     mem_write_u16(rt->mem, ZEL_GVAR_GAME_SEG, 0);
+    zel_input_init(&rt->input, rt->mem);
     zel_mcga_runtime_init(&rt->mcga);
     framebuf_clear(0);
     palette_set_scene(PALETTE_OPENING);
@@ -247,6 +248,7 @@ void zel_runtime_tick(zel_runtime_t *rt, u32 dt_ms) {
     if (!rt)
         return;
     const u32 ticks = zel_timer_advance_ms(&rt->timer_subtick_accum, dt_ms);
+    (void)zel_input_advance_pit(&rt->input, rt->mem, ticks);
     rt->mem[ZEL_GVAR_FRAME_TIMER] =
         (u8)(rt->mem[ZEL_GVAR_FRAME_TIMER] + (u8)ticks);
     const u16 anim_timer = (u16)(rt->mem[ZEL_GVAR_ANIM_TIMER] |
@@ -266,10 +268,7 @@ void zel_runtime_tick(zel_runtime_t *rt, u32 dt_ms) {
 void zel_runtime_key_down(zel_runtime_t *rt, int keycode) {
     if (!rt)
         return;
-    if (keycode == 32)
-        rt->mem[ZEL_GVAR_SPACEBAR_STATE] = 0xFF;
-    if (keycode == ZEL_ENTER_KEY)
-        rt->mem[ZEL_GVAR_ENTER_KEY] = ZEL_ENTER_KEY;
+    (void)zel_input_key_down(&rt->input, rt->mem, keycode);
     log_event(rt, (zel_proxy_event_t){
                       .kind = ZEL_PROXY_KEYBOARD_KEY_DOWN,
                       .source = "zel_runtime_key_down",
@@ -280,15 +279,18 @@ void zel_runtime_key_down(zel_runtime_t *rt, int keycode) {
 void zel_runtime_key_up(zel_runtime_t *rt, int keycode) {
     if (!rt)
         return;
-    if (keycode == 32)
-        rt->mem[ZEL_GVAR_SPACEBAR_STATE] = 0;
-    if (keycode == ZEL_ENTER_KEY)
-        rt->mem[ZEL_GVAR_ENTER_KEY] = 0;
+    zel_input_key_up(&rt->input, rt->mem, keycode);
     log_event(rt, (zel_proxy_event_t){
                       .kind = ZEL_PROXY_KEYBOARD_KEY_UP,
                       .source = "zel_runtime_key_up",
                       .value = (u32)keycode,
                   });
+}
+
+void zel_runtime_release_all_keys(zel_runtime_t *rt) {
+    if (!rt)
+        return;
+    zel_input_release_all(&rt->input, rt->mem, 1);
 }
 
 u8 *zel_runtime_framebuffer(zel_runtime_t *rt) {

@@ -6,6 +6,8 @@
 
 #include "core/types.h"
 #include "core/framebuf.h"
+#include "core/input.h"
+#include "core/timer.h"
 #include "render/palette.h"
 #include "game/opening.h"
 #include "game/town_runtime.h"
@@ -35,6 +37,8 @@ static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE]
 static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static zeliard_game_exec_state_t g_game_exec;
 static zeliard_town_runtime_t g_town_runtime;
+static zel_input_state_t g_input;
+static u32 g_input_subtick_accum;
 
 static bool game_fetch_asset(void *context, const char *name,
                              u8 **data, size_t *size) {
@@ -79,6 +83,42 @@ static void game_memory_init(void) {
     }
     if (!game_load_direct("gmmcga.bin", 0x2000)) {
         platform_log("game bootstrap: gmmcga.bin load failed");
+    }
+    zel_input_init(&g_input, g_game_segments[0]);
+}
+
+static void consume_opening_advance(void) {
+    if (g_scene != SCENE_OPENING)
+        return;
+    opening_key_advance();
+    if (opening_credits_exit_waiting())
+        zel_opening_audio_begin_transition_fade();
+    zel_opening_audio_sync_phase(opening_phase_id());
+}
+
+static void apply_input_actions(u32 actions) {
+    if (actions & ZEL_INPUT_ACTION_TOGGLE_MUSIC)
+        zel_opening_audio_toggle_music();
+    if (actions & ZEL_INPUT_ACTION_TOGGLE_SOUND)
+        zel_opening_audio_toggle_sound();
+    if ((actions & ZEL_INPUT_ACTION_ESCAPE) && !g_paused) {
+        opening_pause_overlay_show();
+        g_paused = 1;
+        zel_opening_audio_pause();
+    }
+    if (actions & ZEL_INPUT_ACTION_SPACE) {
+        g_game_segments[0][0xFF1D] = 0;
+        if (g_paused) {
+            opening_pause_overlay_hide();
+            g_paused = 0;
+            zel_opening_audio_resume();
+        } else {
+            consume_opening_advance();
+        }
+    }
+    if ((actions & ZEL_INPUT_ACTION_ENTER) && !g_paused) {
+        g_game_segments[0][0xFF29] = 0;
+        consume_opening_advance();
     }
 }
 
@@ -129,6 +169,7 @@ EXPORT void zeliard_init(void) {
     game_memory_init();
     g_scene = SCENE_OPENING;
     g_paused = 0;
+    g_input_subtick_accum = 0;
     zel_opening_audio_init();
     opening_set_sound_cue_sink(zel_opening_audio_write_cue);
     opening_init();
@@ -138,6 +179,16 @@ EXPORT void zeliard_init(void) {
 }
 
 EXPORT void zeliard_tick(u32 dt_ms) {
+    const int was_paused = g_paused;
+    const u32 input_ticks =
+        zel_timer_advance_ms(&g_input_subtick_accum, dt_ms);
+    apply_input_actions(zel_input_advance_pit(
+        &g_input, g_game_segments[0], input_ticks));
+    if (was_paused) {
+        if (g_paused)
+            zel_opening_audio_tick(dt_ms);
+        return;
+    }
     if (g_paused) {
         zel_opening_audio_tick(dt_ms);
         return;
@@ -162,39 +213,28 @@ EXPORT void zeliard_tick(u32 dt_ms) {
     }
 }
 
-/* Browser keycodes map to the scan-code actions in stick.asm:654-710. */
+/* Browser keycodes enter the same make/break state machine as stick.asm. */
+EXPORT void zeliard_key_down(int keycode) {
+    apply_input_actions(zel_input_key_down(
+        &g_input, g_game_segments[0], keycode));
+}
+
+EXPORT void zeliard_key_up(int keycode) {
+    zel_input_key_up(&g_input, g_game_segments[0], keycode);
+}
+
+EXPORT void zeliard_release_all_keys(void) {
+    zel_input_release_all(&g_input, g_game_segments[0], 1);
+}
+
+/* Compatibility pulse for older native callers. Browser code uses down/up. */
 EXPORT void zeliard_key(int keycode) {
-    if (keycode == 112) { /* F1 -> gvar_timer_counter bit 1000h */
-        zel_opening_audio_toggle_music();
-        return;
-    }
-    if (keycode == 113) { /* F2 -> gvar_timer_counter bit 2000h */
-        zel_opening_audio_toggle_sound();
-        return;
-    }
-    if (keycode == 27) { /* ESC -> gvar_timer_counter bit 0008h */
-        if (!g_paused) {
-            opening_pause_overlay_show();
-            g_paused = 1;
-            zel_opening_audio_pause();
-        }
-        return;
-    }
-    if (g_paused) {
-        /* The blocking pause loop exits on gvar_spacebar_state, then clears it. */
-        if (keycode == 32) {
-            opening_pause_overlay_hide();
-            g_paused = 0;
-            zel_opening_audio_resume();
-        }
-        return;
-    }
-    if ((keycode == 13 || keycode == 32) && g_scene == SCENE_OPENING) {
-        opening_key_advance();
-        if (opening_credits_exit_waiting())
-            zel_opening_audio_begin_transition_fade();
-        zel_opening_audio_sync_phase(opening_phase_id());
-    }
+    u32 actions = zel_input_key_down(&g_input, g_game_segments[0], keycode);
+    actions |= zel_input_advance_pit(&g_input, g_game_segments[0], 5);
+    apply_input_actions(actions);
+    zel_input_key_up(&g_input, g_game_segments[0], keycode);
+    apply_input_actions(zel_input_advance_pit(
+        &g_input, g_game_segments[0], 5));
 }
 
 EXPORT u8*              zeliard_framebuf(void) { return g_framebuf; }

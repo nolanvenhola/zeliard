@@ -2,6 +2,7 @@
 #define ZELIARD_RUNTIME_H
 
 #include "types.h"
+#include "input.h"
 #include "../render/palette.h"
 #include "../render/mcga_runtime.h"
 #include "../render/font_text.h"
@@ -91,6 +92,7 @@ typedef struct {
     zel_mcga_runtime_t mcga;
     u32 timer_ms;
     u32 timer_subtick_accum;
+    zel_input_state_t input;
     u8 opdmo_prelude_step;
     u8 opdmo_scanline_started;
     u8 opdmo_sprite_a_started;
@@ -117,6 +119,7 @@ int  zel_runtime_load_chunk(zel_runtime_t *rt, const char *asset, u8 al, u16 des
 void zel_runtime_tick(zel_runtime_t *rt, u32 dt_ms);
 void zel_runtime_key_down(zel_runtime_t *rt, int keycode);
 void zel_runtime_key_up(zel_runtime_t *rt, int keycode);
+void zel_runtime_release_all_keys(zel_runtime_t *rt);
 u8  *zel_runtime_framebuffer(zel_runtime_t *rt);
 palette_color_t *zel_runtime_palette(zel_runtime_t *rt);
 
