@@ -43,7 +43,7 @@ This is the pivot-flexibility seam.
   powershell -ExecutionPolicy Bypass -File scripts/test-native-wsl.ps1 -BootstrapTools -BuildOnly
   ```
 
-## Build + run (M1)
+## Build + run
 
 ```powershell
 # 1. Copy canonical loose data files into asset trees
@@ -150,8 +150,12 @@ until their game-tick boundary can be observed directly.
 
 Milestone | What works
 ---|---
-**M1** | _IN PROGRESS_ — WASM-JS pipeline + test pattern + palette plumbing
-M2     | Opening cinematic, gated by oracle scenarios before broadening
-M3     | Felishika town + dialog + save/load
+M1     | **COMPLETE** - WASM/TypeScript shell, MCGA framebuffer, palette, input, and deployment pipeline
+M2     | **COMPLETE** - opening cinematic, pause/input, exact MSCADLIB music, and exact SNDADLIB effects
+**M3** | _ACTIVE_ - executable `game.asm` handoff and first playable Felishika castle
 M4     | Muralla cavern + Cangrejo boss
 M5     | Remaining content + MT-32 audio
+
+The frozen M2 production and oracle contract is recorded in
+[`OPENING_REGRESSION_BASELINE.md`](OPENING_REGRESSION_BASELINE.md). Gameplay
+work must preserve that baseline while extending the same MASM-shaped runtime.

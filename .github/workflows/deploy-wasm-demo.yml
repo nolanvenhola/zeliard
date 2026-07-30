@@ -8,10 +8,10 @@ on:
       - 3_Assembly/dumps/zeliard_title_image.BIN
       - 3_Assembly/masm/working/zelres1/data/**
       - 3_Assembly/masm/working/zelres1/code/105GDMCA.bin
-      - 3_Assembly/tasm/bin/zelres1/100OPDMO.bin
-      - 4_Resources/Music/Zeliard01-Intro.ogg
-      - 4_Resources/Music/Zeliard-02-Credits.ogg
+      - 3_Assembly/masm/bin/zelres1/100OPDMO.bin
       - 1_OriginalGame/sndadlib.drv
+      - 1_OriginalGame/mscadlib.drv
+      - 6_WebPort/engine/third_party/8086tiny/**
       - 6_WebPort/**
   workflow_dispatch:
 
@@ -53,6 +53,9 @@ jobs:
       - name: Prepare reconstructed assets
         run: node 6_WebPort/scripts/copy_assets.mjs
 
+      - name: Run native parity suite
+        run: make -C 6_WebPort/engine test-native
+
       - name: Build WASM engine
         run: make -C 6_WebPort/engine wasm
 
@@ -78,6 +81,25 @@ jobs:
       - name: Build public demo
         working-directory: 6_WebPort/shell
         run: npm run build
+
+      - name: Install browser parity runtime
+        working-directory: 6_WebPort/shell
+        run: npx playwright install --with-deps chromium
+
+      - name: Run opening browser parity gate
+        working-directory: 6_WebPort/shell
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/zeliard-vite.log 2>&1 &
+          preview_pid=$!
+          trap 'kill $preview_pid' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/${{ github.event.repository.name }}/ > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:4173/${{ github.event.repository.name }}/ > /dev/null
+          node test_opening_audio_browser.mjs http://127.0.0.1:4173/${{ github.event.repository.name }}/
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
