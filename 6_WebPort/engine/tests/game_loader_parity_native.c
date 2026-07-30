@@ -1,5 +1,6 @@
 #include "../load/game_loader.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static int expect_bool(const char *label, bool got, bool want) {
@@ -788,6 +789,175 @@ static int run_invalid_bootstrap_case(void) {
     return ok;
 }
 
+typedef struct {
+    size_t special_call_count;
+    zeliard_game_bootstrap_call_t special_calls[4];
+} exec_fixture_t;
+
+static u8 *make_raw_chunk(const u8 *payload, size_t payload_size, size_t *size) {
+    u8 *chunk = (u8 *)malloc(payload_size + 4);
+    if (!chunk) {
+        return NULL;
+    }
+    chunk[0] = (u8)payload_size;
+    chunk[1] = (u8)(payload_size >> 8);
+    chunk[2] = (u8)(payload_size >> 16);
+    chunk[3] = (u8)(payload_size >> 24);
+    memcpy(chunk + 4, payload, payload_size);
+    *size = payload_size + 4;
+    return chunk;
+}
+
+static u8 *make_fill_chunk(const u8 *payload, size_t payload_size, size_t *size) {
+    /* SAR header, flag=0, fill_buffer opcode 0, then verbatim payload. */
+    const size_t chunk_data_size = payload_size + 2;
+    u8 *chunk = (u8 *)malloc(payload_size + 6);
+    if (!chunk) {
+        return NULL;
+    }
+    chunk[0] = (u8)chunk_data_size;
+    chunk[1] = (u8)(chunk_data_size >> 8);
+    chunk[2] = (u8)(chunk_data_size >> 16);
+    chunk[3] = (u8)(chunk_data_size >> 24);
+    chunk[4] = 0;
+    chunk[5] = 0;
+    memcpy(chunk + 6, payload, payload_size);
+    *size = payload_size + 6;
+    return chunk;
+}
+
+static bool exec_fetch_asset(void *context, const char *name,
+                             u8 **data, size_t *size) {
+    (void)context;
+    static const u8 font[] = {1, 0, 2, 0, 3, 0};
+    static const u8 itemp[] = {
+        1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0,
+    };
+    static const u8 sword[] = {8, 0, 9, 0, 10, 0};
+    static const u8 raw[] = {0xA5, 0x5A, 0xC3};
+    if (strcmp(name, "font.grp") == 0) {
+        *data = make_fill_chunk(font, sizeof(font), size);
+    } else if (strcmp(name, "itemp.grp") == 0) {
+        *data = make_fill_chunk(itemp, sizeof(itemp), size);
+    } else if (strcmp(name, "sword.grp") == 0) {
+        *data = make_fill_chunk(sword, sizeof(sword), size);
+    } else if (strcmp(name, "magic.grp") == 0 ||
+               strcmp(name, "level_map") == 0) {
+        *data = make_fill_chunk(raw, sizeof(raw), size);
+    } else {
+        *data = make_raw_chunk(raw, sizeof(raw), size);
+    }
+    return *data != NULL;
+}
+
+static bool exec_loader_service(void *context,
+                                const zeliard_game_bootstrap_call_t *call,
+                                zeliard_game_exec_state_t *state) {
+    exec_fixture_t *fixture = (exec_fixture_t *)context;
+    if (fixture->special_call_count >= 4) {
+        return false;
+    }
+    fixture->special_calls[fixture->special_call_count++] = *call;
+    if (call->kind == ZELIARD_GAME_BOOT_LOAD_CHUNK && call->al == 5) {
+        state->segment[1][call->dest_offset] = 0x5A;
+    } else if (call->kind == ZELIARD_GAME_BOOT_LOAD_CHUNK && call->al == 2) {
+        state->segment[1][call->dest_offset] = 0xA5;
+    }
+    return true;
+}
+
+static void init_exec_state(zeliard_game_exec_state_t *state,
+                            u8 segments[ZELIARD_GAME_SEGMENT_COUNT]
+                                       [ZELIARD_GAME_SEGMENT_SIZE]) {
+    memset(state, 0, sizeof(*state));
+    memset(segments, 0xCC, ZELIARD_GAME_SEGMENT_COUNT * ZELIARD_GAME_SEGMENT_SIZE);
+    for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
+        state->segment[i] = segments[i];
+        state->segment_size[i] = ZELIARD_GAME_SEGMENT_SIZE;
+    }
+    /* game.bin:game_init_fn at CS:A470 is 0000:3000 before start_load_game. */
+    segments[0][0xA470] = 0;
+    segments[0][0xA471] = 0;
+    segments[0][0xA472] = 0;
+    segments[0][0xA473] = 0x30;
+}
+
+static int run_execute_new_game_case(void) {
+    static u8 segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
+    zeliard_game_exec_state_t state;
+    exec_fixture_t fixture = {0};
+    const zeliard_game_exec_services_t services = {
+        .context = &fixture,
+        .fetch_asset = exec_fetch_asset,
+        .loader_service = exec_loader_service,
+    };
+    const zeliard_game_bootstrap_input_t input = {
+        .load_saved_game = false,
+        .gfx_mode = 4,
+    };
+    init_exec_state(&state, segments);
+    int ok = expect_bool("game_exec:new:execute",
+                         zeliard_game_execute_bootstrap(&state, &input, &services), true);
+    ok &= expect_u16("game_exec:new:font_ptr0",
+                     (u16)(segments[0][0xF500] | segments[0][0xF501] << 8), 0xF501);
+    ok &= expect_u16("game_exec:new:font_ptr1",
+                     (u16)(segments[0][0xF502] | segments[0][0xF503] << 8), 0xF502);
+    ok &= expect_u16("game_exec:new:font_ptr2",
+                     (u16)(segments[0][0xF504] | segments[0][0xF505] << 8), 0xF503);
+    ok &= expect_u8("game_exec:new:gd_header_stripped", segments[0][0x3000], 0xA5);
+    ok &= expect_u8("game_exec:new:opdemo_header_stripped", segments[0][0x6000], 0xA5);
+    ok &= expect_u8("game_exec:new:cinematic", segments[0][0xFF77], 0xFF);
+    ok &= expect_size("game_exec:new:event_count", state.event_count, 23);
+    ok &= expect_bool("game_exec:new:branched", state.branched, true);
+    ok &= expect_u8("game_exec:new:branch", (u8)state.branch_target,
+                    ZELIARD_GAME_BOOT_BRANCH_OPDEMO);
+    ok &= expect_size("game_exec:new:special_count", fixture.special_call_count, 0);
+    return ok;
+}
+
+static int run_execute_post_opening_case(void) {
+    static u8 segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
+    zeliard_game_exec_state_t state;
+    exec_fixture_t fixture = {0};
+    const zeliard_game_exec_services_t services = {
+        .context = &fixture,
+        .fetch_asset = exec_fetch_asset,
+        .loader_service = exec_loader_service,
+    };
+    const zeliard_game_bootstrap_input_t input = {
+        /* 100OPDMO:transition_out_to_game sets AX=FFFFh before jmp CS:[6A73]. */
+        .load_saved_game = true,
+        .gfx_mode = 4,
+        .current_area_id = 0,
+        .save_tileset_source = 0x0A,
+        .save_map_source = 0x03,
+    };
+    init_exec_state(&state, segments);
+    int ok = expect_bool("game_exec:post_opening:execute",
+                         zeliard_game_execute_bootstrap(&state, &input, &services), true);
+    ok &= expect_u8("game_exec:post_opening:town", segments[0][0x6000], 0xA5);
+    ok &= expect_u8("game_exec:post_opening:gf", segments[2][0x9000], 0xA5);
+    ok &= expect_u8("game_exec:post_opening:fight", segments[2][0xC000], 0xA5);
+    ok &= expect_u8("game_exec:post_opening:select", segments[1][0xC000], 0xA5);
+    ok &= expect_u16("game_exec:post_opening:itemp_ptr0",
+                     (u16)(segments[1][0xE200] | segments[1][0xE201] << 8), 0xE201);
+    ok &= expect_u16("game_exec:post_opening:itemp_ptr6",
+                     (u16)(segments[1][0xE20C] | segments[1][0xE20D] << 8), 0xE207);
+    ok &= expect_u16("game_exec:post_opening:sword_ptr0",
+                     (u16)(segments[2][0x1800] | segments[2][0x1801] << 8), 0x1808);
+    ok &= expect_u16("game_exec:post_opening:game_init_segment",
+                     (u16)(segments[0][0xA472] | segments[0][0xA473] << 8), 0x4000);
+    ok &= expect_u8("game_exec:post_opening:tileset_service", segments[1][0x3000], 0x5A);
+    ok &= expect_u8("game_exec:post_opening:map", segments[1][0x4000], 0xA5);
+    ok &= expect_size("game_exec:post_opening:special_count",
+                      fixture.special_call_count, 4);
+    ok &= expect_size("game_exec:post_opening:event_count", state.event_count, 38);
+    ok &= expect_bool("game_exec:post_opening:branched", state.branched, true);
+    ok &= expect_u8("game_exec:post_opening:branch", (u8)state.branch_target,
+                    ZELIARD_GAME_BOOT_BRANCH_GAME_LOOP);
+    return ok;
+}
+
 int main(void) {
     int ok = 1;
     ok &= run_zero_case();
@@ -804,6 +974,8 @@ int main(void) {
     ok &= run_bootstrap_saved_optional_case();
     ok &= run_bootstrap_driver_table_cases();
     ok &= run_invalid_bootstrap_case();
+    ok &= run_execute_new_game_case();
+    ok &= run_execute_post_opening_case();
     printf("VERDICT: %s: game loader native parity\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

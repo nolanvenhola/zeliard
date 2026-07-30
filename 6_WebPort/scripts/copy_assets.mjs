@@ -27,6 +27,16 @@ const SNDADLIB_SHA256 = 'bf1c2036980f0557106ab0521be163fedb32458a187b4f49a60fee1
 const MSCADLIB_SHA256 = '3d972d619e94071c38c4b810f17054957aff46ad21b25a65f519a43f16158d4d';
 const TINY86_BIOS_SHA256 = 'ba4b2e62246aaadeda8d90bc0928d4f00242c16039982163d7e82740dceb5e31';
 
+function verifiedMasmOutput(relativePath, expectedHash) {
+    const masm = join(REPO_ROOT, '3_Assembly', 'masm', 'bin', relativePath);
+    const fallback = join(REPO_ROOT, '3_Assembly', 'tasm', 'bin', relativePath);
+    const source = existsSync(masm) ? masm : fallback;
+    const hash = createHash('sha256').update(readFileSync(source)).digest('hex');
+    if (hash !== expectedHash)
+        throw new Error(`${relativePath} does not match verified MASM release: ${hash}`);
+    return source;
+}
+
 /* MASM release output is generated and ignored. CI uses the tracked TASM
  * release binary, which is byte-identical to the verified MASM build. */
 const OPDMO_BIN = existsSync(join(REPO_ROOT, MASM_OPDMO_BIN))
@@ -96,6 +106,21 @@ const EXTRA_ASSET_MAP = [
     ['6_WebPort/engine/third_party/8086tiny/bios.bin', '8086tiny-bios.bin'],
     ['3_Assembly/dumps/zeliard_title_image.BIN', 'title_full.bin'],
     [OPDMO_BIN, '100opdmo.bin'],
+];
+
+const GAME_BINARY_MAP = [
+    [verifiedMasmOutput('stdply.bin', 'c2312fb031230d2cab839ee9f62cca415fbcd414011d884a30a38b66aae44fb8'), 'stdply.bin'],
+    [verifiedMasmOutput('game.bin', '15b0f46e8113e6f8937d65df6c94358016fcd56c8de281506cb73c830978dc4c'), 'game.bin'],
+    [verifiedMasmOutput('zelres1/105GDMCA.bin', '38b7b37bb040fd5d06c8be16017961a09b14a603d063c1841720d4f5771e8e0a'), 'gdmcga.bin'],
+    [verifiedMasmOutput('zelres1/111GTMCA.bin', '1a3384ae85db5476165d09149bc12a31ae71d7c1f0a77a78e560ff0502a0e9c8'), 'gtmcga.bin'],
+    [verifiedMasmOutput('zelres1/106TOWN.bin', 'bce0f4832d434867f17df2c5c416d3ece7b69bda78063c1b33d80f56dc6c942b'), 'town.bin'],
+    [verifiedMasmOutput('zelres2/206GFMCA.bin', 'f30b5029001a3fa0b718608fcb99a4f9aa384fe5d447e5a234fe3a01298f56dd'), 'gfmcga.bin'],
+    [verifiedMasmOutput('zelres2/200FIGHT.bin', 'cfb5c91d14c816e966f2c335c8e85a8c0baf60ca7cc9831b24a5088c99d40a77'), 'fight.bin'],
+    [verifiedMasmOutput('zelres2/201SELCT.bin', '1814d4a7aa8ac97a913b339e55f95dbac32d7eeb069219a6f76e47fc3f3770a9'), 'select.bin'],
+    [verifiedMasmOutput('zelres2/227ITMSG.grp', '6c46ca4c8af264c2c3dd5b286586efbff839a7c64f3d4c8714aead92d693ec28'), 'itemp.grp'],
+    [verifiedMasmOutput('zelres2/228MAGCG.grp', '4d5f347dd02ce2b9f9dc33f12011bc99d2fd157de955fa17d938da3f75419628'), 'magic.grp'],
+    [verifiedMasmOutput('zelres2/226SWRDG.grp', '761177e84da136124236b6e5c7f0622ba4f997506ad9f2327d97da86b8dcd73d'), 'sword.grp'],
+    [verifiedMasmOutput('zelres2/207MOLE.bin', 'fa945314a8fd95b0ff6bb158f4fecf58c52ff05204e2e17b0de39c348f49a9bd'), 'mole.bin'],
 ];
 
 const BINARY_SLICES = [
@@ -169,6 +194,14 @@ for (const [src, dst] of EXTRA_ASSET_MAP) {
     console.log(`[copy_assets] ${src}  ->  ${dst}  (${sz} bytes)`);
     ok++;
 }
+for (const [fullSrc, dst] of GAME_BINARY_MAP) {
+    for (const base of [DEST_ENGINE, DEST_SHELL]) {
+        ensureDir(base);
+        copyFileSync(fullSrc, join(base, dst));
+    }
+    console.log(`[copy_assets] verified MASM ${basename(fullSrc)}  ->  ${dst}`);
+    ok++;
+}
 for (const [src, offset, length, dst] of BINARY_SLICES) {
     const fullSrc = join(REPO_ROOT, src);
     if (!existsSync(fullSrc)) {
@@ -191,7 +224,7 @@ for (const [src, offset, length, dst] of BINARY_SLICES) {
     console.log(`[copy_assets] ${src}[0x${offset.toString(16)}..+0x${length.toString(16)}]  ->  ${dst}  (${length} bytes)`);
     ok++;
 }
-console.log(`[copy_assets] ${ok}/${ASSET_MAP.length + EXTRA_ASSET_MAP.length + BINARY_SLICES.length} files copied`);
+console.log(`[copy_assets] ${ok}/${ASSET_MAP.length + EXTRA_ASSET_MAP.length + GAME_BINARY_MAP.length + BINARY_SLICES.length} files copied`);
 
 for (const obsolete of [
     'zopn.ogg', 'zend.ogg',

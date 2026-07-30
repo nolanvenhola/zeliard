@@ -45,6 +45,7 @@ TEST_OPENING_SRC := \
 	render/mcga_runtime.c \
 	load/grp.c \
 	load/fill_buffer.c \
+	load/game_loader.c \
 	load/img_open.c \
 	game/opening_script.c \
 	game/opening_trace.c \
@@ -65,6 +66,7 @@ TEST_OPENING_TRACE_SRC := \
 	render/mcga_runtime.c \
 	load/grp.c \
 	load/fill_buffer.c \
+	load/game_loader.c \
 	load/img_open.c \
 	game/opening_script.c \
 	game/opening_trace.c \
@@ -128,6 +130,7 @@ TEST_MAIN_CONTROLS_SRC := \
 	render/mcga_runtime.c \
 	load/grp.c \
 	load/fill_buffer.c \
+	load/game_loader.c \
 	load/img_open.c \
 	game/opening_script.c \
 	game/opening_trace.c \
@@ -141,7 +144,8 @@ TEST_ZELIAD_LOADER_SRC := \
 	load/zeliad_loader.c
 TEST_GAME_LOADER_SRC := \
 	tests/game_loader_parity_native.c \
-	load/game_loader.c
+	load/game_loader.c \
+	load/fill_buffer.c
 TEST_RUNTIME_SRC := \
 	tests/runtime_parity_native.c \
 	core/runtime.c \
