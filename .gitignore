@@ -61,6 +61,7 @@ artifacts
 # Generated behavior-oracle and verification output.
 *.log
 3_Assembly/masm/verify_artifacts/
+3_Assembly/masm/functest/build/
 
 # Native/WebAssembly intermediate objects and accidental CLI output.
 6_WebPort/engine/*.obj

@@ -23,6 +23,8 @@ typedef enum {
 } palette_scene_t;
 
 void palette_set_scene(palette_scene_t scene);
+/* game.asm:mcga_palette_handler, the 8x8 additive gameplay DAC. */
+void palette_set_game_mcga(void);
 void palette_set_opdmo_mcga(u16 ax);
 void palette_set_opdmo_mcga_with_rgb0(u16 ax, u8 r0, u8 g0, u8 b0);
 void palette_set_opdmo_mcga_from_regs_with_rgb0(const u8 regs[48],

@@ -132,7 +132,7 @@ def _lst_path_for(chunk_label: str) -> Path:
 
 
 def _parse_lst_proc_addresses(lst_path: Path) -> dict[str, int]:
-    """Parse a TASM .LST file and return {proc_name: hex_offset}.
+    """Parse a MASM or TASM .LST file and return {proc_name: hex_offset}.
 
     LST line format (TASM 2.01):
         <linenum> <offset>  <opcode-bytes>+  <source>
@@ -147,8 +147,12 @@ def _parse_lst_proc_addresses(lst_path: Path) -> dict[str, int]:
         r'^\s*\d+\s+([0-9A-Fa-f]+)\s.*?\b(\w+)\s+proc\s+(?:near|far)\b',
         re.IGNORECASE,
     )
+    masm_proc_re = re.compile(
+        r'^\s*([0-9A-Fa-f]{4,8})\s+(\w+)\s+proc\s+(?:near|far)\b',
+        re.IGNORECASE,
+    )
     for line in text.splitlines():
-        m = proc_re.match(line)
+        m = proc_re.match(line) or masm_proc_re.match(line)
         if m:
             offset = int(m.group(1), 16)
             name = m.group(2)

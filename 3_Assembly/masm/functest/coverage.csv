@@ -145,7 +145,7 @@ draw_and_pump_input,106TOWN,,66,estimated,7,3,7,0,0,1,0,False,D,driver_or_dos,no
 run_town_input_frame,106TOWN,,51,estimated,1,4,4,0,0,3,0,False,D,driver_or_dos,no
 player_process_loop,106TOWN,,30,estimated,2,0,0,0,0,0,1,False,A,trivial_regression,partial
 mark_player_col_in_cursor_buf,106TOWN,,69,estimated,1,0,0,0,0,0,0,False,C,mid_complex,no
-render_town_actors,106TOWN,,273,estimated,1,3,4,0,0,0,1,False,D,driver_or_dos,no
+render_town_actors,106TOWN,,273,estimated,1,3,4,0,0,0,1,False,D,driver_or_dos,yes
 find_npc_col_slot,106TOWN,,48,estimated,1,0,0,0,0,0,1,False,A,trivial_regression,no
 find_npc_dx,106TOWN,,3,estimated,5,0,0,0,0,0,0,False,A,trivial_regression,no
 find_npc_dx_inner,106TOWN,,21,estimated,1,0,0,0,0,0,0,False,A,trivial_regression,no

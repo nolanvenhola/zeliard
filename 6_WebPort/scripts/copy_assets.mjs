@@ -110,10 +110,16 @@ const EXTRA_ASSET_MAP = [
 
 const GAME_BINARY_MAP = [
     [verifiedMasmOutput('stdply.bin', 'c2312fb031230d2cab839ee9f62cca415fbcd414011d884a30a38b66aae44fb8'), 'stdply.bin'],
+    [verifiedMasmOutput('gmmcga.bin', '95aafd24d1300e8cb7fd66fc651839a968da1bdc7616c0ddf71d1337056b7579'), 'gmmcga.bin'],
     [verifiedMasmOutput('game.bin', '15b0f46e8113e6f8937d65df6c94358016fcd56c8de281506cb73c830978dc4c'), 'game.bin'],
     [verifiedMasmOutput('zelres1/105GDMCA.bin', '38b7b37bb040fd5d06c8be16017961a09b14a603d063c1841720d4f5771e8e0a'), 'gdmcga.bin'],
     [verifiedMasmOutput('zelres1/111GTMCA.bin', '1a3384ae85db5476165d09149bc12a31ae71d7c1f0a77a78e560ff0502a0e9c8'), 'gtmcga.bin'],
     [verifiedMasmOutput('zelres1/106TOWN.bin', 'bce0f4832d434867f17df2c5c416d3ece7b69bda78063c1b33d80f56dc6c942b'), 'town.bin'],
+    [verifiedMasmOutput('zelres2/208YMPD.bin', '00fc13d63b6ef310bb10096581337ca5498b1342cf3806c04b77315c1c937342'), 'ympd.bin'],
+    [verifiedMasmOutput('zelres2/233CPATG.grp', 'e6355b4a8f2fc6c0cd2bca33ac0add875f20e1b994e71b5ea9a1b32c8e2a8cf8'), 'cpat.grp'],
+    [verifiedMasmOutput('zelres2/229MMANG.grp', '99743acf6fc08f80fd6c286a17c71872c84c878d93fde4f85cd66640c62eec87'), 'mman.grp'],
+    [verifiedMasmOutput('zelres2/231TMANG.grp', '193abe062dd5cfc11d9c37a1522d1947753de36e844e75e07f95c45cb3cc0e26'), 'tman.grp'],
+    [verifiedMasmOutput('zelres2/236CMAP.mdt', 'b17a070dcd246f37a12f4299cb9a9cd53901e753647bfe6f7773144875bb986b'), 'cmap.mdt'],
     [verifiedMasmOutput('zelres2/206GFMCA.bin', 'f30b5029001a3fa0b718608fcb99a4f9aa384fe5d447e5a234fe3a01298f56dd'), 'gfmcga.bin'],
     [verifiedMasmOutput('zelres2/200FIGHT.bin', 'cfb5c91d14c816e966f2c335c8e85a8c0baf60ca7cc9831b24a5088c99d40a77'), 'fight.bin'],
     [verifiedMasmOutput('zelres2/201SELCT.bin', '1814d4a7aa8ac97a913b339e55f95dbac32d7eeb069219a6f76e47fc3f3770a9'), 'select.bin'],

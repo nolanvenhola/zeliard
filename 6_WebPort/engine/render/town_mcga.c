@@ -417,3 +417,259 @@ int zeliard_gtmcga_capture_playfield(const u8 *vga, size_t vga_size,
     }
     return 0;
 }
+
+static void unpack_mcga_triplet(const u8 *source, u8 *destination,
+                                int combine) {
+    const u16 word = read_u16_le(source);
+    u16 dx = word;
+    const u8 third = source[2];
+    u16 bx = (u16)(((u16)(u8)word << 8) | third);
+    dx >>= 2;
+    const u8 pixels[4] = {
+        (u8)(dx >> 8),
+        (u8)((u8)dx >> 2),
+        (u8)(((bx << 2) >> 8) & 0x3F),
+        (u8)(third & 0x3F),
+    };
+    for (u8 i = 0; i < 4; ++i) {
+        if (combine) destination[i] |= pixels[i];
+        else destination[i] = pixels[i];
+    }
+}
+
+int zeliard_gtmcga_draw_npc_tiles(const u8 *tile_ids, size_t tile_id_size,
+                                  const u8 *game_data, size_t game_data_size,
+                                  u8 *vga, size_t vga_size) {
+    if (!tile_ids || tile_id_size < 6 || !game_data ||
+        game_data_size < 0x10000 || !vga || vga_size < 0x10000)
+        return -1;
+    size_t destination = 0xFA00;
+    for (u8 tile = 0; tile < 6; ++tile) {
+        size_t source = 0x8100u + (size_t)tile_ids[tile] * 0x30u;
+        if (source + 0x30 > game_data_size) return -1;
+        for (u8 group = 0; group < 0x10; ++group) {
+            unpack_mcga_triplet(game_data + source, vga + destination, 0);
+            source += 3;
+            destination += 4;
+        }
+    }
+    return 0;
+}
+
+int zeliard_gtmcga_draw_player_tiles(const u8 *tile_ids, size_t tile_id_size,
+                                     const u8 *game_data, size_t game_data_size,
+                                     const u8 *mask_data, size_t mask_data_size,
+                                     u8 *vga, size_t vga_size) {
+    if (!tile_ids || tile_id_size < 6 || !game_data ||
+        game_data_size < 0x10000 || !mask_data ||
+        mask_data_size < 0x10000 || !vga || vga_size < 0x10000)
+        return -1;
+    size_t destination = 0xFA00;
+    for (u8 tile = 0; tile < 6; ++tile) {
+        const u8 tile_id = tile_ids[tile];
+        size_t source = 0x6000u + (size_t)tile_id * 0x30u;
+        size_t mask = 0x8000u + (size_t)tile_id * 8u;
+        if (source + 0x30 > game_data_size || mask + 8 > mask_data_size)
+            return -1;
+        for (u8 row = 0; row < 8; ++row) {
+            u8 bits = mask_data[mask++];
+            for (u8 pixel = 0; pixel < 8; ++pixel) {
+                const u8 keep = (bits & 0x80) ? 0xFF : 0x00;
+                vga[destination + pixel] &= keep;
+                bits <<= 1;
+            }
+            for (u8 half = 0; half < 2; ++half) {
+                unpack_mcga_triplet(game_data + source,
+                                    vga + destination + half * 4, 1);
+                source += 3;
+            }
+            destination += 8;
+        }
+    }
+    return 0;
+}
+
+static u16 read_at(const u8 *memory, u16 offset) {
+    return (u16)(memory[offset] | ((u16)memory[(u16)(offset + 1)] << 8));
+}
+
+static u8 *find_npc(u8 *game_seg, u16 position) {
+    u16 at = read_at(game_seg, 0xC00F);
+    while (at <= 0xFFF7 && read_at(game_seg, at) != 0xFFFF) {
+        if (read_at(game_seg, at) == position) return game_seg + at;
+        at = (u16)(at + 8);
+    }
+    return NULL;
+}
+
+static int draw_masked_actor_tile(u8 tile_id, const u8 *game_data,
+                                  const u8 *mask_data, u16 source_base,
+                                  u16 mask_base, u8 *vga, size_t destination) {
+    size_t source = (size_t)source_base + (size_t)tile_id * 0x30u;
+    size_t mask = (size_t)mask_base + (size_t)tile_id * 8u;
+    for (u8 row = 0; row < 8; ++row) {
+        u8 bits = mask_data[mask++];
+        for (u8 pixel = 0; pixel < 8; ++pixel) {
+            vga[destination + pixel] &= (bits & 0x80) ? 0xFF : 0x00;
+            bits <<= 1;
+        }
+        for (u8 half = 0; half < 2; ++half) {
+            unpack_mcga_triplet(game_data + source,
+                                vga + destination + half * 4, 1);
+            source += 3;
+        }
+        destination += 8;
+    }
+    return 0;
+}
+
+static int compose_npc_slot(u8 slot, u8 *ids, const u8 *npc,
+                            const u8 *game_data, const u8 *mask_data,
+                            u8 *vga) {
+    const u8 entity = npc[2];
+    const u8 side = (entity & 0x80) ? 0 : 4;
+    u16 pattern = (u16)(0x4000u + (u16)(entity & 0x7F) * 0x30u +
+                        (u16)((npc[4] & 3) + side) * 6u);
+    u8 first = 0, count = 3;
+    size_t destination = 0xFA00;
+    if (slot == 2) count = 6;
+    else if (slot == 1) {
+        first = 3;
+        destination = 0xFAC0;
+    } else {
+        pattern = (u16)(pattern + 3);
+    }
+    for (u8 index = first; index < (u8)(first + count); ++index) {
+        ids[index] = 0xFF;
+        const u8 tile = (u8)(game_data[pattern++] - 1);
+        draw_masked_actor_tile(tile, game_data, mask_data, 0x4100, 0x7000,
+                               vga, destination);
+        destination += 0x40;
+    }
+    return 0;
+}
+
+int zeliard_gtmcga_render_town_actors(u8 *game_seg, size_t game_size,
+                                      u8 *game_data, size_t game_data_size,
+                                      const u8 *mask_data, size_t mask_data_size,
+                                      u8 *vga, size_t vga_size) {
+    if (!game_seg || game_size < 0x10000 || !game_data ||
+        game_data_size < 0x10000 || !mask_data ||
+        mask_data_size < 0x10000 || !vga || vga_size < 0x10000)
+        return -1;
+
+    u16 npc_at = read_at(game_seg, 0xC00F);
+    while (npc_at <= 0xFFF7 && read_at(game_seg, npc_at) != 0xFFFF) {
+        const u16 column = read_at(game_seg, npc_at);
+        const u16 map_at = (u16)(0xC01C + column * 8u);
+        game_seg[npc_at + 3] = game_seg[map_at];
+        game_seg[map_at] = 0xFD;
+        npc_at = (u16)(npc_at + 8);
+    }
+
+    const u8 player_col = game_seg[0x0083];
+    const u16 tile_ptr = read_at(game_seg, 0xFF2A);
+    const u16 tile_at = (u16)(tile_ptr + (u16)(player_col + 4) * 8u + 5u);
+    u8 ids[6];
+    memcpy(ids, game_seg + tile_at, 3);
+    memcpy(ids + 3, game_seg + (u16)(tile_at + 8), 3);
+    u16 position = (u16)(read_at(game_seg, 0x0080) + player_col + 4);
+    for (u8 group = 0; group < 2; ++group) {
+        u8 *id = ids + group * 3;
+        if (*id == 0xFD) {
+            u8 *npc = find_npc(game_seg, position);
+            if (!npc) return -2;
+            u8 value = npc[3];
+            while (value == 0xFD) {
+                npc = find_npc(game_seg, position);
+                if (!npc) return -2;
+                do npc += 8; while (read_at(npc, 0) != position);
+                value = npc[3];
+            }
+            *id = value;
+        }
+        ++position;
+    }
+    if (zeliard_gtmcga_draw_npc_tiles(ids, sizeof(ids), game_data,
+                                       game_data_size, vga, vga_size))
+        return -3;
+
+    const u16 npc_column = (u16)(read_at(game_seg, 0x0080) + player_col + 3);
+    const u8 column_ids[3] = {
+        game_seg[(u16)(tile_at - 8)], game_seg[tile_at],
+        game_seg[(u16)(tile_at + 8)],
+    };
+    npc_at = read_at(game_seg, 0xC00F);
+    while (npc_at <= 0xFFF7 && read_at(game_seg, npc_at) != 0xFFFF) {
+        for (u8 index = 0; index < 3; ++index) {
+            if (column_ids[index] == 0xFD &&
+                read_at(game_seg, npc_at) == (u16)(npc_column + index)) {
+                compose_npc_slot((u8)(3 - index), ids, game_seg + npc_at,
+                                 game_data, mask_data, vga);
+                break;
+            }
+        }
+        npc_at = (u16)(npc_at + 8);
+    }
+
+    const u16 walk = (game_seg[0x00C2] & 1) ? 0x6A3B : 0x6A59;
+    const u16 player_ids = (u16)(walk + (u16)game_seg[0x00E7] * 6u);
+    return zeliard_gtmcga_draw_player_tiles(game_seg + player_ids, 6,
+                                             game_data, game_data_size,
+                                             mask_data, mask_data_size,
+                                             vga, vga_size);
+}
+
+static void draw_town_map_tile(const u8 *game_data, u8 tile_id,
+                               u8 *vga, u16 destination) {
+    size_t source = 0x8100u + (size_t)tile_id * 0x30u;
+    for (u8 row = 0; row < 8; ++row) {
+        unpack_mcga_triplet(game_data + source, vga + destination, 0);
+        unpack_mcga_triplet(game_data + source + 3, vga + destination + 4, 0);
+        source += 6;
+        destination = (u16)(destination + 320);
+    }
+}
+
+int zeliard_gtmcga_update_town_frame(u8 *game_seg, size_t game_size,
+                                     const u8 *game_data, size_t game_data_size,
+                                     u8 *vga, size_t vga_size) {
+    if (!game_seg || game_size < 0x10000 || !game_data ||
+        game_data_size < 0x10000 || !vga || vga_size < 0x10000)
+        return -1;
+    memset(game_seg + 0x42EF, 0, 0x200);
+    const u8 player_col = game_seg[0x0083];
+    u16 map = (u16)(read_at(game_seg, 0xFF2A) + 0x20);
+    u16 tile_vga = 0x61B0;
+    for (u8 column = 0; column < 0x1C; ++column) {
+        if (column == player_col && column != 0x1B) {
+            size_t source = 0xFA00;
+            u16 destination = (u16)(0x93B0 + (u16)player_col * 8u);
+            for (u8 side = 0; side < 2; ++side) {
+                u16 row_at = (u16)(destination + side * 8u);
+                for (u8 row = 0; row < 24; ++row) {
+                    memcpy(vga + row_at, vga + source, 8);
+                    source += 8;
+                    row_at = (u16)(row_at + 320);
+                }
+            }
+        }
+        for (u8 row = 0; row < 8; ++row) {
+            const u16 cursor = (u16)(0xE000 + (u16)column * 8u + row);
+            const u8 tile = game_seg[map++];
+            if (game_seg[cursor] != tile) {
+                const u8 previous = game_seg[cursor];
+                game_seg[cursor] = 0xFE;
+                if (previous == 0xFF) continue;
+                game_seg[cursor] = tile;
+                if (tile != 0xFF) {
+                    const u16 destination =
+                        (u16)(tile_vga + (u16)row * 8u * 320u);
+                    draw_town_map_tile(game_data, tile, vga, destination);
+                }
+            }
+        }
+        tile_vga = (u16)(tile_vga + 8);
+    }
+    return 0;
+}

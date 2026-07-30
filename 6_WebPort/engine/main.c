@@ -8,6 +8,7 @@
 #include "core/framebuf.h"
 #include "render/palette.h"
 #include "game/opening.h"
+#include "game/town_runtime.h"
 #include "audio/opening_audio.h"
 #include "load/game_loader.h"
 #include "platform/platform.h"
@@ -31,7 +32,9 @@ typedef enum {
 static game_scene_t g_scene = SCENE_OPENING;
 static int g_paused;
 static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
+static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static zeliard_game_exec_state_t g_game_exec;
+static zeliard_town_runtime_t g_town_runtime;
 
 static bool game_fetch_asset(void *context, const char *name,
                              u8 **data, size_t *size) {
@@ -65,6 +68,7 @@ static bool game_load_direct(const char *name, u16 destination) {
 
 static void game_memory_init(void) {
     memset(g_game_segments, 0, sizeof(g_game_segments));
+    memset(g_game_vga, 0, sizeof(g_game_vga));
     memset(&g_game_exec, 0, sizeof(g_game_exec));
     for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
         g_game_exec.segment[i] = g_game_segments[i];
@@ -72,6 +76,9 @@ static void game_memory_init(void) {
     }
     if (!game_load_direct("stdply.bin", 0)) {
         platform_log("game bootstrap: stdply.bin load failed");
+    }
+    if (!game_load_direct("gmmcga.bin", 0x2000)) {
+        platform_log("game bootstrap: gmmcga.bin load failed");
     }
 }
 
@@ -103,10 +110,17 @@ static bool enter_game_scene(void) {
         platform_log("game bootstrap: game.asm execution failed");
         return false;
     }
+    if (zeliard_town_enter_first_frame(&g_town_runtime, &g_game_exec,
+                                        g_game_vga, sizeof(g_game_vga)) != 0) {
+        platform_log("game bootstrap: first 106TOWN castle frame failed");
+        return false;
+    }
+    memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
     g_scene = SCENE_GAME;
     zel_opening_audio_stop();
-    platform_log("zeliard_tick: game.asm reached loaded town branch (%u events)",
-                 (unsigned)g_game_exec.event_count);
+    platform_log("zeliard_tick: first castle frame ready (%u boot, %u town events)",
+                 (unsigned)g_game_exec.event_count,
+                 (unsigned)g_town_runtime.event_count);
     return true;
 }
 
