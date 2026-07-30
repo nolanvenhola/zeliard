@@ -74,4 +74,26 @@ int zeliard_gmmcga_draw_first_frame_hud(u8 *vga, size_t vga_size,
 int zeliard_gtmcga_capture_playfield(const u8 *vga, size_t vga_size,
                                      u8 *game_seg, size_t game_size);
 
+/* GTMCGA:32FC, loaded dispatch slot CS:300E. */
+int zeliard_gtmcga_draw_npc_tiles(const u8 *tile_ids, size_t tile_id_size,
+                                  const u8 *game_data, size_t game_data_size,
+                                  u8 *vga, size_t vga_size);
+
+/* GTMCGA:359A, loaded dispatch slot CS:3012. */
+int zeliard_gtmcga_draw_player_tiles(const u8 *tile_ids, size_t tile_id_size,
+                                     const u8 *game_data, size_t game_data_size,
+                                     const u8 *mask_data, size_t mask_data_size,
+                                     u8 *vga, size_t vga_size);
+
+/* 106TOWN:stamp_npcs_save_tiles/render_town_actors through GTMCGA:3012. */
+int zeliard_gtmcga_render_town_actors(u8 *game_seg, size_t game_size,
+                                      u8 *game_data, size_t game_data_size,
+                                      const u8 *mask_data, size_t mask_data_size,
+                                      u8 *vga, size_t vga_size);
+
+/* GTMCGA:3051, loaded dispatch slot CS:3004. */
+int zeliard_gtmcga_update_town_frame(u8 *game_seg, size_t game_size,
+                                     const u8 *game_data, size_t game_data_size,
+                                     u8 *vga, size_t vga_size);
+
 #endif

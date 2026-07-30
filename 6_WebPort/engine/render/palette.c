@@ -25,6 +25,27 @@
 #endif
 
 palette_color_t g_palette[256];
+static u8 dac_to_rgb(u8 value);
+
+void palette_set_game_mcga(void) {
+    static const u8 base[8][3] = {
+        {0x00, 0x00, 0x00}, {0x1F, 0x1F, 0x1F},
+        {0x1F, 0x00, 0x00}, {0x00, 0x1F, 0x00},
+        {0x00, 0x1F, 0x1F}, {0x00, 0x00, 0x1F},
+        {0x1F, 0x1F, 0x00}, {0x1F, 0x00, 0x1F},
+    };
+    memset(g_palette, 0, sizeof(g_palette));
+    for (u8 color = 0; color < 8; ++color) {
+        for (u8 shade = 0; shade < 8; ++shade) {
+            const u8 index = (u8)(color * 8 + shade);
+            g_palette[index] = (palette_color_t){
+                dac_to_rgb((u8)(base[color][0] + base[shade][0])),
+                dac_to_rgb((u8)(base[color][1] + base[shade][1])),
+                dac_to_rgb((u8)(base[color][2] + base[shade][2])),
+            };
+        }
+    }
+}
 
 static const u8 OPDMO_MCGA_PALETTE_BASE[10][48] ZEL_UNUSED = {
     {

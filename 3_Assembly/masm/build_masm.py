@@ -151,6 +151,10 @@ def compile_one_masm(asm, dest_dir):
             dest = dest_dir / (stem + out_ext)
 
         dest.write_bytes(data)
+        lst = tmp_path / (dos_stem + '.LST')
+        is_release_output = dest_dir == BIN or BIN in dest_dir.parents
+        if is_release_output and lst.exists():
+            shutil.copy2(lst, asm.with_suffix('.LST'))
         return (asm, True, masm_out[:200], dest)
 
 
