@@ -18,6 +18,7 @@ ENGINE_SRC := \
 	render/font_text.c \
 	render/mcga_render.c \
 	render/mcga_runtime.c \
+	render/town_mcga.c \
 	load/grp.c \
 	load/fill_buffer.c \
 	load/zeliad_loader.c \
@@ -193,6 +194,12 @@ TEST_MCGA_SPRITE_PALETTE_SRC := \
 	tests/mcga_sprite_palette_native.c \
 	render/palette.c \
 	platform/platform_sdl.c
+TEST_TOWN_MCGA_DISPATCH_SRC := \
+	tests/town_mcga_dispatch_native.c \
+	render/town_mcga.c
+TEST_TOWN_MCGA_SERVICES_SRC := \
+	tests/town_mcga_services_native.c \
+	render/town_mcga.c
 
 CFLAGS_COMMON := -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O2 -fno-strict-aliasing -I. -Ithird_party/opal/include
 
@@ -239,7 +246,7 @@ build/zeliard-native: $(NATIVE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(NATIVE_SRC)
 
-test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native
+test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native
 	./build/opening-parity-native
 	./build/opening-audio-native
 	./build/mscadlib-vm-native
@@ -258,6 +265,8 @@ test-native: build/opening-parity-native build/opening-audio-native build/mscadl
 	./build/mcga-title-sweep-assets-native
 	./build/mcga-runtime-native
 	./build/mcga-sprite-palette-native
+	./build/town-mcga-dispatch-native
+	./build/town-mcga-services-native
 
 build/opening-parity-native: $(TEST_OPENING_SRC) Makefile
 	@mkdir -p build
@@ -326,6 +335,14 @@ build/mcga-runtime-native: $(TEST_MCGA_RUNTIME_SRC) Makefile
 build/mcga-sprite-palette-native: $(TEST_MCGA_SPRITE_PALETTE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_MCGA_SPRITE_PALETTE_SRC)
+
+build/town-mcga-dispatch-native: $(TEST_TOWN_MCGA_DISPATCH_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_TOWN_MCGA_DISPATCH_SRC)
+
+build/town-mcga-services-native: $(TEST_TOWN_MCGA_SERVICES_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_TOWN_MCGA_SERVICES_SRC)
 
 build/gameplay-parity-native: $(TEST_GAMEPLAY_SRC) Makefile
 	@mkdir -p build
