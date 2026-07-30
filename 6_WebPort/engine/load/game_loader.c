@@ -1,5 +1,10 @@
 #include "game_loader.h"
 
+#include "fill_buffer.h"
+
+#include <stdlib.h>
+#include <string.h>
+
 enum {
     GAME_REF_LEVEL_TILESET_BASE = 0xA363,
     GAME_REF_LEVEL_MAP_BASE = 0xA38F,
@@ -676,4 +681,245 @@ bool zeliard_game_resolve_bootstrap_plan(zeliard_game_bootstrap_plan_t *plan,
     }
 
     return true;
+}
+
+static u16 game_read_u16(const u8 *mem, u16 offset) {
+    return (u16)(mem[offset] | ((u16)mem[(u16)(offset + 1)] << 8));
+}
+
+static void game_write_u16(u8 *mem, u16 offset, u16 value) {
+    mem[offset] = (u8)value;
+    mem[(u16)(offset + 1)] = (u8)(value >> 8);
+}
+
+static bool game_exec_log(zeliard_game_exec_state_t *state,
+                          zeliard_game_exec_event_t event) {
+    if (state->event_count >= ZELIARD_GAME_EXEC_EVENT_CAP) {
+        return false;
+    }
+    state->events[state->event_count++] = event;
+    return true;
+}
+
+static u8 *game_exec_segment(zeliard_game_exec_state_t *state, u16 es_delta,
+                             size_t *size) {
+    if ((es_delta & 0x0FFF) != 0 || es_delta > 0x3000) {
+        return NULL;
+    }
+    const size_t index = es_delta >> 12;
+    if (!state->segment[index] || state->segment_size[index] < ZELIARD_GAME_SEGMENT_SIZE) {
+        return NULL;
+    }
+    if (size) {
+        *size = state->segment_size[index];
+    }
+    return state->segment[index];
+}
+
+static bool game_exec_load(zeliard_game_exec_state_t *state,
+                           const zeliard_game_bootstrap_call_t *call,
+                           const zeliard_game_exec_services_t *services) {
+    if (call->kind != ZELIARD_GAME_BOOT_LOAD_CHUNK || call->ref_offset != 0 ||
+        (call->al != 2 && call->al != 3)) {
+        if (!services->loader_service ||
+            !services->loader_service(services->context, call, state)) {
+            return false;
+        }
+        return game_exec_log(state, (zeliard_game_exec_event_t){
+            .kind = ZELIARD_GAME_EXEC_LOAD,
+            .call = *call,
+        });
+    }
+
+    if (!services->fetch_asset || !call->name) {
+        return false;
+    }
+    u8 *file_data = NULL;
+    size_t file_size = 0;
+    if (!services->fetch_asset(services->context, call->name,
+                               &file_data, &file_size) || !file_data) {
+        return false;
+    }
+
+    u8 *payload = NULL;
+    size_t payload_size = 0;
+    if (call->al == 2) {
+        payload = fill_buffer_decompress(file_data, file_size, &payload_size);
+    } else if (file_size >= 4) {
+        const size_t declared = (size_t)file_data[0] |
+            ((size_t)file_data[1] << 8) | ((size_t)file_data[2] << 16) |
+            ((size_t)file_data[3] << 24);
+        if (declared <= file_size - 4) {
+            payload_size = declared;
+            payload = (u8 *)malloc(payload_size ? payload_size : 1);
+            if (payload && payload_size) {
+                memcpy(payload, file_data + 4, payload_size);
+            }
+        }
+    }
+    free(file_data);
+
+    size_t segment_size = 0;
+    u8 *segment = game_exec_segment(state, call->es_delta, &segment_size);
+    const bool fits = segment && payload &&
+        payload_size <= segment_size - call->dest_offset;
+    if (fits && payload_size) {
+        memcpy(segment + call->dest_offset, payload, payload_size);
+    }
+    free(payload);
+    if (!fits) {
+        return false;
+    }
+    return game_exec_log(state, (zeliard_game_exec_event_t){
+        .kind = ZELIARD_GAME_EXEC_LOAD,
+        .call = *call,
+    });
+}
+
+static bool game_exec_state_write(zeliard_game_exec_state_t *state,
+                                  u16 offset, u8 value) {
+    u8 *cs = game_exec_segment(state, 0, NULL);
+    if (!cs) {
+        return false;
+    }
+    cs[offset] = value;
+    return game_exec_log(state, (zeliard_game_exec_event_t){
+        .kind = ZELIARD_GAME_EXEC_STATE_WRITE,
+        .effect = {
+            .kind = ZELIARD_GAME_BOOT_EFFECT_STATE_WRITE,
+            .offset = offset,
+            .value = value,
+        },
+    });
+}
+
+static bool game_exec_relocate(zeliard_game_exec_state_t *state,
+                               zeliard_game_bootstrap_relocation_t relocation) {
+    u8 *segment = game_exec_segment(state, relocation.es_delta, NULL);
+    if (!segment || (u32)relocation.offset + relocation.word_count * 2u >
+                        ZELIARD_GAME_SEGMENT_SIZE) {
+        return false;
+    }
+    for (u8 i = 0; i < relocation.word_count; ++i) {
+        const u16 offset = (u16)(relocation.offset + i * 2);
+        game_write_u16(segment, offset,
+                       (u16)(game_read_u16(segment, offset) + relocation.addend));
+    }
+    return game_exec_log(state, (zeliard_game_exec_event_t){
+        .kind = ZELIARD_GAME_EXEC_RELOCATION,
+        .effect = {
+            .kind = ZELIARD_GAME_BOOT_EFFECT_RELOCATION,
+            .es_delta = relocation.es_delta,
+            .offset = relocation.offset,
+            .word_count = relocation.word_count,
+            .addend = relocation.addend,
+        },
+    });
+}
+
+static bool game_exec_simple_effect(zeliard_game_exec_state_t *state,
+                                    zeliard_game_exec_event_kind_t kind,
+                                    zeliard_game_bootstrap_effect_event_t effect) {
+    return game_exec_log(state, (zeliard_game_exec_event_t){
+        .kind = kind,
+        .effect = effect,
+    });
+}
+
+bool zeliard_game_execute_bootstrap(zeliard_game_exec_state_t *state,
+                                    const zeliard_game_bootstrap_input_t *input,
+                                    const zeliard_game_exec_services_t *services) {
+    zeliard_game_bootstrap_plan_t plan;
+    if (!state || !input || !services ||
+        !zeliard_game_resolve_bootstrap_plan(&plan, input)) {
+        return false;
+    }
+    state->event_count = 0;
+    state->branched = false;
+
+    /* game.asm:start: font load/fixup, joystick poll, state zero pass, GD
+     * load/init. The poll has no memory output in this contract. */
+    if (!game_exec_load(state, &plan.calls[0], services) ||
+        !game_exec_relocate(state, plan.relocations[0])) {
+        return false;
+    }
+    for (size_t i = 0; i < plan.state_clear_count; ++i) {
+        if (!game_exec_state_write(state, plan.state_clears[i].offset,
+                                   plan.state_clears[i].value)) {
+            return false;
+        }
+    }
+    if (!game_exec_load(state, &plan.calls[1], services) ||
+        !game_exec_simple_effect(state, ZELIARD_GAME_EXEC_GFX_INIT,
+                                 (zeliard_game_bootstrap_effect_event_t){0})) {
+        return false;
+    }
+
+    if (!input->load_saved_game) {
+        if (!game_exec_state_write(state, 0xFF77, 0xFF) ||
+            !game_exec_load(state, &plan.calls[2], services)) {
+            return false;
+        }
+    } else {
+        if (!game_exec_simple_effect(state, ZELIARD_GAME_EXEC_PALETTE,
+                                     (zeliard_game_bootstrap_effect_event_t){0})) {
+            return false;
+        }
+        for (size_t i = 2; i < plan.call_count; ++i) {
+            if (!game_exec_load(state, &plan.calls[i], services)) {
+                return false;
+            }
+            if (i == 7 && !game_exec_relocate(state, plan.relocations[1])) {
+                return false;
+            }
+            if (i == 9 && !game_exec_relocate(state, plan.relocations[2])) {
+                return false;
+            }
+            if (i == 11) {
+                u8 *cs = game_exec_segment(state, 0, NULL);
+                game_write_u16(cs, 0xA472, plan.game_init_fn_segment);
+                if (!game_exec_simple_effect(state, ZELIARD_GAME_EXEC_GAME_INIT,
+                        (zeliard_game_bootstrap_effect_event_t){
+                            .kind = ZELIARD_GAME_BOOT_EFFECT_GAME_INIT_CALL,
+                            .segment = plan.game_init_fn_segment,
+                        })) {
+                    return false;
+                }
+                for (size_t m = 0; m < plan.music_plan.load_count; ++m) {
+                    const zeliard_game_music_track_load_t *music = &plan.music_plan.loads[m];
+                    if (!game_exec_simple_effect(state, ZELIARD_GAME_EXEC_MUSIC_LOAD,
+                            (zeliard_game_bootstrap_effect_event_t){
+                                .kind = ZELIARD_GAME_BOOT_EFFECT_MUSIC_LOAD,
+                                .track_index = music->track_index,
+                                .track_ref = music->track_ref,
+                                .background_flag = music->background_flag,
+                            })) {
+                        return false;
+                    }
+                }
+                for (size_t d = 0; d < plan.driver_call_count; ++d) {
+                    const zeliard_game_bootstrap_driver_call_t *driver = &plan.driver_calls[d];
+                    if (!game_exec_simple_effect(state, ZELIARD_GAME_EXEC_DRIVER_CALL,
+                            (zeliard_game_bootstrap_effect_event_t){
+                                .kind = ZELIARD_GAME_BOOT_EFFECT_DRIVER_CALL,
+                                .driver_slot = driver->slot,
+                                .al = driver->al,
+                                .bx = driver->bx,
+                            })) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+
+    state->branch_target = input->load_saved_game
+        ? ZELIARD_GAME_BOOT_BRANCH_GAME_LOOP
+        : ZELIARD_GAME_BOOT_BRANCH_OPDEMO;
+    state->branched = true;
+    return game_exec_simple_effect(state, ZELIARD_GAME_EXEC_BRANCH,
+        (zeliard_game_bootstrap_effect_event_t){
+            .kind = ZELIARD_GAME_BOOT_EFFECT_BRANCH,
+            .branch_target = state->branch_target,
+        });
 }

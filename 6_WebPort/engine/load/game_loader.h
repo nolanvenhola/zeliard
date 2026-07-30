@@ -186,6 +186,53 @@ typedef struct {
     u8 player_tileset;
 } zeliard_game_bootstrap_plan_t;
 
+enum {
+    ZELIARD_GAME_SEGMENT_SIZE = 0x10000,
+    ZELIARD_GAME_SEGMENT_COUNT = 4,
+    ZELIARD_GAME_EXEC_EVENT_CAP = 64,
+};
+
+typedef enum {
+    ZELIARD_GAME_EXEC_LOAD = 0,
+    ZELIARD_GAME_EXEC_STATE_WRITE,
+    ZELIARD_GAME_EXEC_RELOCATION,
+    ZELIARD_GAME_EXEC_GFX_INIT,
+    ZELIARD_GAME_EXEC_PALETTE,
+    ZELIARD_GAME_EXEC_GAME_INIT,
+    ZELIARD_GAME_EXEC_MUSIC_LOAD,
+    ZELIARD_GAME_EXEC_DRIVER_CALL,
+    ZELIARD_GAME_EXEC_BRANCH,
+} zeliard_game_exec_event_kind_t;
+
+typedef struct {
+    zeliard_game_exec_event_kind_t kind;
+    zeliard_game_bootstrap_call_t call;
+    zeliard_game_bootstrap_effect_event_t effect;
+} zeliard_game_exec_event_t;
+
+/* CS is segment[0]; the other pointers model CS+1000h, CS+2000h and
+ * CS+3000h. They are separate 64 KiB 8086 segments, not flattened offsets. */
+typedef struct {
+    u8 *segment[ZELIARD_GAME_SEGMENT_COUNT];
+    size_t segment_size[ZELIARD_GAME_SEGMENT_COUNT];
+    zeliard_game_exec_event_t events[ZELIARD_GAME_EXEC_EVENT_CAP];
+    size_t event_count;
+    zeliard_game_bootstrap_branch_target_t branch_target;
+    bool branched;
+} zeliard_game_exec_state_t;
+
+typedef bool (*zeliard_game_asset_fetch_fn)(void *context, const char *name,
+                                            u8 **data, size_t *size);
+typedef bool (*zeliard_game_loader_service_fn)(
+    void *context, const zeliard_game_bootstrap_call_t *call,
+    zeliard_game_exec_state_t *state);
+
+typedef struct {
+    void *context;
+    zeliard_game_asset_fetch_fn fetch_asset;
+    zeliard_game_loader_service_fn loader_service;
+} zeliard_game_exec_services_t;
+
 bool zeliard_game_resolve_music_plan(zeliard_game_music_plan_t *plan,
                                      u8 music_track_count);
 size_t zeliard_game_resolve_music_trace(zeliard_game_music_trace_event_t *out,
@@ -209,5 +256,8 @@ size_t zeliard_game_resolve_bootstrap_effect_trace(
     const zeliard_game_bootstrap_input_t *input);
 bool zeliard_game_resolve_bootstrap_plan(zeliard_game_bootstrap_plan_t *plan,
                                          const zeliard_game_bootstrap_input_t *input);
+bool zeliard_game_execute_bootstrap(zeliard_game_exec_state_t *state,
+                                    const zeliard_game_bootstrap_input_t *input,
+                                    const zeliard_game_exec_services_t *services);
 
 #endif

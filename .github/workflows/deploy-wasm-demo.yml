@@ -59,7 +59,7 @@ jobs:
       - name: Build WASM engine
         run: make -C 6_WebPort/engine wasm
 
-      - name: Verify MCGA and exact AdLib runtime assets
+      - name: Verify exact runtime assets
         run: |
           test -f 6_WebPort/engine/assets/105GDMCA.bin
           test -f 6_WebPort/engine/assets/sndadlib.drv
@@ -67,7 +67,21 @@ jobs:
           test -f 6_WebPort/engine/assets/8086tiny-bios.bin
           test -f 6_WebPort/engine/assets/zopn.msd
           test -f 6_WebPort/engine/assets/zend.msd
+          test -f 6_WebPort/engine/assets/stdply.bin
+          test -f 6_WebPort/engine/assets/game.bin
+          test -f 6_WebPort/engine/assets/gdmcga.bin
+          test -f 6_WebPort/engine/assets/gtmcga.bin
+          test -f 6_WebPort/engine/assets/town.bin
+          test -f 6_WebPort/engine/assets/gfmcga.bin
+          test -f 6_WebPort/engine/assets/fight.bin
+          test -f 6_WebPort/engine/assets/select.bin
+          test -f 6_WebPort/engine/assets/itemp.grp
+          test -f 6_WebPort/engine/assets/magic.grp
+          test -f 6_WebPort/engine/assets/sword.grp
+          test -f 6_WebPort/engine/assets/mole.bin
           grep -a -q '105GDMCA.bin' 6_WebPort/engine/build/zeliard.js
+          grep -a -q '/assets/game.bin' 6_WebPort/engine/build/zeliard.js
+          grep -a -q '/assets/town.bin' 6_WebPort/engine/build/zeliard.js
           test ! -e 6_WebPort/shell/public/audio/zopn.ogg
           test ! -e 6_WebPort/shell/public/audio/zend.ogg
           test ! -e 6_WebPort/shell/public/audio/sfx_02.wav

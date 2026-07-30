@@ -77,10 +77,13 @@ Game-loader orchestration covered outside `gameplay_state.c`:
 | C primitive | Status | MASM oracle |
 | --- | --- | --- |
 | `zeliard_game_resolve_bootstrap_plan` | Oracle-backed | `proc_equivalence/test_game_bootstrap_sequence.py`; includes bootstrap state clear list, all-mode GD/GT/GF driver tables, compressed-table relocations, `game_init_fn` segment patch, new/saved load order, optional equipment driver calls, and music init |
+| `zeliard_game_execute_bootstrap` | Oracle-backed | `game_loader_parity_native`: executes both `AX=0` and OPDMO `AX=FFFFh` paths against four real-mode segments; verifies SAR-header stripping, fill-buffer loads, memory writes, relocations, `CS:A472` patch, service calls, event order, and final branch |
 | `zeliard_game_resolve_music_plan` | Oracle-backed | `proc_equivalence/test_game_load_music_tracks.py` |
 | `zeliard_game_resolve_palette_plan` | Oracle-backed | `proc_equivalence/test_game_set_vga_palette.py` |
 
 Next gaps to close:
 
+- Implement the stateful `AL=1/4/5` level/archive loader proxy and render the
+  first Felishika castle frame from the loaded town/GT/GF data.
 - Extend the dialog/menu cluster from movement decisions into full
   spacebar/skip result handling.

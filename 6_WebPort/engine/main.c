@@ -9,7 +9,11 @@
 #include "render/palette.h"
 #include "game/opening.h"
 #include "audio/opening_audio.h"
+#include "load/game_loader.h"
 #include "platform/platform.h"
+
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef __EMSCRIPTEN__
 #  include <emscripten.h>
@@ -26,17 +30,89 @@ typedef enum {
 
 static game_scene_t g_scene = SCENE_OPENING;
 static int g_paused;
+static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
+static zeliard_game_exec_state_t g_game_exec;
 
-static void enter_game_scene(void) {
+static bool game_fetch_asset(void *context, const char *name,
+                             u8 **data, size_t *size) {
+    (void)context;
+    *data = platform_load_asset(name, size);
+    return *data != NULL;
+}
+
+static bool game_loader_service(void *context,
+                                const zeliard_game_bootstrap_call_t *call,
+                                zeliard_game_exec_state_t *state) {
+    (void)context;
+    (void)state;
+    platform_log("game loader service: kind=%u AL=%u AH=%u ref=%04X ES=CS+%04X DI=%04X",
+                 (unsigned)call->kind, call->al, call->ah, call->ref_offset,
+                 call->es_delta, call->dest_offset);
+    return true;
+}
+
+static bool game_load_direct(const char *name, u16 destination) {
+    size_t size = 0;
+    u8 *data = platform_load_asset(name, &size);
+    if (!data || size > (size_t)ZELIARD_GAME_SEGMENT_SIZE - destination) {
+        free(data);
+        return false;
+    }
+    memcpy(g_game_segments[0] + destination, data, size);
+    free(data);
+    return true;
+}
+
+static void game_memory_init(void) {
+    memset(g_game_segments, 0, sizeof(g_game_segments));
+    memset(&g_game_exec, 0, sizeof(g_game_exec));
+    for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
+        g_game_exec.segment[i] = g_game_segments[i];
+        g_game_exec.segment_size[i] = ZELIARD_GAME_SEGMENT_SIZE;
+    }
+    if (!game_load_direct("stdply.bin", 0)) {
+        platform_log("game bootstrap: stdply.bin load failed");
+    }
+}
+
+static bool enter_game_scene(void) {
+    const zeliard_game_exec_services_t services = {
+        .fetch_asset = game_fetch_asset,
+        .loader_service = game_loader_service,
+    };
+    /* 100OPDMO:transition_out_to_game loads the ordinary DOS file game.bin
+     * at CS:A000, sets AX=FFFFh, then jumps through CS:[6A73] = A000h. */
+    if (!game_load_direct("game.bin", 0xA000)) {
+        platform_log("game bootstrap: game.bin load failed");
+        return false;
+    }
+    const zeliard_game_bootstrap_input_t input = {
+        .load_saved_game = true,
+        .gfx_mode = 4,
+        .sword = g_game_segments[0][0x92],
+        .shield = g_game_segments[0][0x93],
+        .selected_spell = g_game_segments[0][0x9D],
+        .music_track_count = g_game_segments[0][0xA0],
+        .current_area_id = g_game_segments[0][0xC4],
+        .save_tileset_source = g_game_segments[0][0xC000],
+        .save_map_source = g_game_segments[0][0xC001],
+    };
+    if (!zeliard_game_execute_bootstrap(&g_game_exec, &input, &services) ||
+        !g_game_exec.branched ||
+        g_game_exec.branch_target != ZELIARD_GAME_BOOT_BRANCH_GAME_LOOP) {
+        platform_log("game bootstrap: game.asm execution failed");
+        return false;
+    }
     g_scene = SCENE_GAME;
     zel_opening_audio_stop();
-    palette_set_scene(PALETTE_OPENING);
-    framebuf_clear(0);
-    platform_log("zeliard_tick: switching to SCENE_GAME");
+    platform_log("zeliard_tick: game.asm reached loaded town branch (%u events)",
+                 (unsigned)g_game_exec.event_count);
+    return true;
 }
 
 EXPORT void zeliard_init(void) {
     framebuf_clear(0);
+    game_memory_init();
     g_scene = SCENE_OPENING;
     g_paused = 0;
     zel_opening_audio_init();
@@ -63,10 +139,8 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 opening_credits_exit_release();
             opening_tick(step_ms);
             zel_opening_audio_sync_phase(opening_phase_id());
-            if (opening_done())
-                enter_game_scene();
-        } else {
-            framebuf_clear(0);
+            if (opening_done() && !enter_game_scene())
+                break;
         }
         if (dt_ms <= step_ms)
             break;
