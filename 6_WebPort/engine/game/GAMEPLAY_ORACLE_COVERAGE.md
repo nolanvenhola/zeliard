@@ -81,6 +81,16 @@ Game-loader orchestration covered outside `gameplay_state.c`:
 | `zeliard_game_resolve_music_plan` | Oracle-backed | `proc_equivalence/test_game_load_music_tracks.py` |
 | `zeliard_game_resolve_palette_plan` | Oracle-backed | `proc_equivalence/test_game_set_vga_palette.py` |
 
+Town MCGA dispatch coverage:
+
+| C primitive | Status | MASM oracle |
+| --- | --- | --- |
+| `zeliard_gmmcga_resolve_town_dispatch` | Release-byte backed | `town_mcga_dispatch_native`; all 20 live `106TOWN` resident slots checked against `gmmcga.bin` |
+| `zeliard_gtmcga_resolve_town_dispatch` | Release-byte backed | `town_mcga_dispatch_native`; all 17 live `106TOWN` slots checked against `111GTMCA.bin` |
+| `zeliard_gmmcga_clear_playfield` | Oracle-backed | `proc_equivalence/test_gmmcga_town_clear_playfield_oracle.py`; full VGA and visible framebuffer hashes |
+| `zeliard_gmmcga_draw_status_line` | Oracle-backed | `proc_equivalence/test_gmmcga_town_status_lines_oracle.py`; exact initial three-call register sequence and framebuffer hashes |
+| `zeliard_gtmcga_encode_tile_block` | Oracle-backed | `proc_equivalence/test_gtmcga_encode_tile_block_oracle.py`; packed source, alpha masks, and scratch hashes |
+
 Next gaps to close:
 
 - Implement the stateful `AL=1/4/5` level/archive loader proxy and render the
