@@ -37,4 +37,41 @@ int zeliard_gtmcga_encode_tile_block(u8 *ds, size_t ds_size, u16 si,
 int zeliard_gmmcga_draw_status_line(u8 *vga, size_t vga_size,
                                     u16 ax, u16 bx, u16 cx);
 
+/* GMMCGA:2385, resident dispatch slot CS:2012. */
+int zeliard_gmmcga_draw_life_scale(u8 *vga, size_t vga_size, u16 ax);
+
+/* GMMCGA:2227/2256, resident dispatch slots CS:2006/2008. */
+int zeliard_gmmcga_draw_life_max(u8 *vga, size_t vga_size,
+                                 const u8 *game_seg, size_t game_size);
+int zeliard_gmmcga_draw_life_current(u8 *vga, size_t vga_size,
+                                     const u8 *game_seg, size_t game_size);
+
+/* GMMCGA:22CD, resident dispatch slot CS:2010. */
+int zeliard_gmmcga_draw_town_text_record(u8 *vga, size_t vga_size,
+                                         u8 *game_seg, size_t game_size,
+                                         u16 si);
+
+/* GMMCGA:22BF, resident dispatch slot CS:200E. */
+int zeliard_gmmcga_draw_hud_label(u8 *vga, size_t vga_size,
+                                  u8 *game_seg, size_t game_size, u16 si);
+
+/* GMMCGA:238F/23AC/23CC/23F5, slots CS:2014..201A. */
+int zeliard_gmmcga_draw_almas(u8 *vga, size_t vga_size,
+                              u8 *game_seg, size_t game_size);
+int zeliard_gmmcga_draw_gold(u8 *vga, size_t vga_size,
+                             u8 *game_seg, size_t game_size);
+int zeliard_gmmcga_draw_spell_charge(u8 *vga, size_t vga_size,
+                                     u8 *game_seg, size_t game_size);
+int zeliard_gmmcga_draw_shield_hp(u8 *vga, size_t vga_size,
+                                  u8 *game_seg, size_t game_size);
+
+/* Combined initial 106TOWN frame_update HUD call span. */
+int zeliard_gmmcga_draw_first_frame_hud(u8 *vga, size_t vga_size,
+                                        u8 *game_seg, size_t game_size,
+                                        u16 town_text_si);
+
+/* GTMCGA:3028, loaded dispatch slot CS:3002. */
+int zeliard_gtmcga_capture_playfield(const u8 *vga, size_t vga_size,
+                                     u8 *game_seg, size_t game_size);
+
 #endif

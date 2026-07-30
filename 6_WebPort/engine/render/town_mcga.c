@@ -185,10 +185,9 @@ int zeliard_gmmcga_draw_status_line(u8 *vga, size_t vga_size,
                                     u16 ax, u16 bx, u16 cx) {
     if (!vga || vga_size < 0x10000 || (u8)ax != 0) return -1;
 
-    const u8 input_ah = (u8)(ax >> 8);
     const u8 input_bh = (u8)(bx >> 8);
-    const u16 position = (u16)(((u16)input_ah << 8) | (u8)bx);
-    const u16 saved_ax = (u16)(((u16)input_ah << 8) | input_bh);
+    const u16 position = (u8)bx;
+    const u16 saved_ax = input_bh;
     u16 di = (u16)((u16)(320u * (u16)(position + 0x009E)) +
                    saved_ax + 0x0030);
     plot_status_column(vga, di, 0, 0);
@@ -196,6 +195,225 @@ int zeliard_gmmcga_draw_status_line(u8 *vga, size_t vga_size,
     for (u16 column = 0; column < (u8)(cx >> 8); ++column) {
         plot_status_column(vga, di, 0x05, 0x2D);
         di = (u16)(di + 1);
+    }
+    return 0;
+}
+
+int zeliard_gmmcga_draw_life_scale(u8 *vga, size_t vga_size, u16 ax) {
+    (void)ax;
+    return zeliard_gmmcga_draw_status_line(vga, vga_size, 0, 0x0210, 0x8800);
+}
+
+static u16 life_width(u16 value) {
+    return value > 0x0320 ? 0x0064 : (u16)(value >> 3);
+}
+
+static void fill_life_columns(u8 *vga, u16 di, u16 count,
+                              u8 rows, u8 and_mask, u8 or_mask) {
+    for (u16 column = 0; column < count; ++column) {
+        u16 at = (u16)(di + column);
+        for (u8 row = 0; row < rows; ++row) {
+            vga[at] = (u8)((vga[at] & and_mask) | or_mask);
+            at = (u16)(at + 320);
+        }
+    }
+}
+
+int zeliard_gmmcga_draw_life_max(u8 *vga, size_t vga_size,
+                                 const u8 *game_seg, size_t game_size) {
+    if (!vga || vga_size < 0x10000 || !game_seg || game_size < 0x00B4)
+        return -1;
+    const u16 width = life_width(read_u16_le(game_seg + 0x00B2));
+    fill_life_columns(vga, 0xCC14, width, 6, 0x2D, 0x12);
+    return 0;
+}
+
+int zeliard_gmmcga_draw_life_current(u8 *vga, size_t vga_size,
+                                     const u8 *game_seg, size_t game_size) {
+    if (!vga || vga_size < 0x10000 || !game_seg || game_size < 0x0092)
+        return -1;
+    const u16 width = life_width(read_u16_le(game_seg + 0x0090));
+    fill_life_columns(vga, 0xCC14, width, 5, 0x12, 0x09);
+    fill_life_columns(vga, (u16)(0xCC14 + width), (u16)(100 - width),
+                      5, 0x12, 0x00);
+    return 0;
+}
+
+static int draw_text_record(u8 *vga, size_t vga_size,
+                            u8 *game_seg, size_t game_size, u16 si,
+                            u8 color, u8 paired_color) {
+    if (!vga || vga_size < 0x10000 || !game_seg || game_size < 0x10000 ||
+        (size_t)si + 4 > game_size)
+        return -1;
+
+    game_seg[0x2CBD] = color;
+    game_seg[0x2CBE] = paired_color;
+    const u8 x = game_seg[si++];
+    const u8 y = game_seg[si++];
+    const u8 x_offset = game_seg[si++];
+    const u8 count = game_seg[si++];
+    if ((size_t)si + count > game_size) return -1;
+
+    u16 di = (u16)((u16)y * 320u + (u16)x * 4u + x_offset);
+    const u16 font = read_u16_le(game_seg + 0xF504);
+    for (u8 index = 0; index < count; ++index) {
+        const u8 character = game_seg[si++];
+        const u16 glyph = (u16)(font + (u16)(u8)(character - 0x20) * 8u);
+        const u16 char_di = di;
+        for (u8 row = 0; row < 8; ++row) {
+            u8 bits = game_seg[(u16)(glyph + row)];
+            u16 pixel = (u16)(char_di + (u16)row * 320u);
+            for (u8 column = 0; column < 4; ++column) {
+                const u8 set = (u8)(bits >> 7);
+                bits <<= 1;
+                if (set) {
+                    vga[pixel] = game_seg[0x2CBD];
+                    vga[(u16)(pixel + 1)] = game_seg[0x2CBE];
+                }
+                pixel = (u16)(pixel + 1);
+            }
+        }
+        di = (u16)(di + 5);
+    }
+    return 0;
+}
+
+int zeliard_gmmcga_draw_town_text_record(u8 *vga, size_t vga_size,
+                                         u8 *game_seg, size_t game_size,
+                                         u16 si) {
+    return draw_text_record(vga, vga_size, game_seg, game_size, si,
+                            0x09, 0x2D);
+}
+
+int zeliard_gmmcga_draw_hud_label(u8 *vga, size_t vga_size,
+                                  u8 *game_seg, size_t game_size, u16 si) {
+    return draw_text_record(vga, vga_size, game_seg, game_size, si,
+                            0x1B, 0x12);
+}
+
+static void format_hud_digits(u8 *game_seg, u32 value) {
+    u32 divisor = 1000000;
+    for (u8 index = 0; index < 7; ++index) {
+        game_seg[0x2433 + index] = (u8)(value / divisor);
+        value %= divisor;
+        divisor /= 10;
+    }
+    for (u8 index = 0; index < 6 && game_seg[0x2433 + index] == 0; ++index)
+        game_seg[0x2433 + index] = 0xFF;
+}
+
+static void render_hud_digits(u8 *vga, u8 *game_seg, u16 digit_ptr,
+                              u8 x, u8 y, u8 count, int half_pixel) {
+    const u16 font = read_u16_le(game_seg + 0xF502);
+    const u8 color = game_seg[0x24EB];
+    u16 destination = (u16)((u16)y * 320u + (u16)x * 4u +
+                            (half_pixel ? 2u : 0u));
+    for (u8 digit_index = 0; digit_index < count; ++digit_index) {
+        const u8 digit = game_seg[(u16)(digit_ptr + digit_index)];
+        for (u8 row = 0; row < 7; ++row)
+            memset(vga + (u16)(destination + (u16)row * 320u), 0x05, 6);
+        if (digit != 0xFF) {
+            const u16 glyph = (u16)(font + (u16)digit * 8u);
+            for (u8 row = 0; row < 7; ++row) {
+                const u8 bits = game_seg[(u16)(glyph + row)];
+                u16 pixel = (u16)(destination + (u16)row * 320u);
+                for (u8 column = 0; column < 6; ++column) {
+                    if (bits & (u8)(0x20u >> column)) vga[pixel] = color;
+                    pixel = (u16)(pixel + 1);
+                }
+            }
+        }
+        destination = (u16)(destination + 6);
+    }
+}
+
+static int draw_hud_number(u8 *vga, size_t vga_size,
+                           u8 *game_seg, size_t game_size, u32 value,
+                           u16 digit_ptr, u8 x, u8 y, u8 count,
+                           int half_pixel) {
+    if (!vga || vga_size < 0x10000 || !game_seg || game_size < 0x10000)
+        return -1;
+    format_hud_digits(game_seg, value);
+    render_hud_digits(vga, game_seg, digit_ptr, x, y, count, half_pixel);
+    return 0;
+}
+
+int zeliard_gmmcga_draw_almas(u8 *vga, size_t vga_size,
+                              u8 *game_seg, size_t game_size) {
+    if (!game_seg || game_size < 0x008D) return -1;
+    return draw_hud_number(vga, vga_size, game_seg, game_size,
+                           read_u16_le(game_seg + 0x008B), 0x2435,
+                           0x26, 0xBB, 5, 1);
+}
+
+int zeliard_gmmcga_draw_gold(u8 *vga, size_t vga_size,
+                             u8 *game_seg, size_t game_size) {
+    if (!game_seg || game_size < 0x0088) return -1;
+    const u32 value = ((u32)game_seg[0x0085] << 16) |
+                      read_u16_le(game_seg + 0x0086);
+    return draw_hud_number(vga, vga_size, game_seg, game_size, value,
+                           0x2434, 0x13, 0xBB, 6, 1);
+}
+
+int zeliard_gmmcga_draw_spell_charge(u8 *vga, size_t vga_size,
+                                     u8 *game_seg, size_t game_size) {
+    if (!game_seg || game_size < 0x01AB) return -1;
+    const u8 selected = game_seg[0x009D];
+    const u16 charge_address = (u16)(0x00AB + (u8)(selected - 1));
+    return draw_hud_number(vga, vga_size, game_seg, game_size,
+                           game_seg[charge_address], 0x2437,
+                           0x37, 0xBB, 3, 1);
+}
+
+int zeliard_gmmcga_draw_shield_hp(u8 *vga, size_t vga_size,
+                                  u8 *game_seg, size_t game_size) {
+    if (!game_seg || game_size < 0x0096) return -1;
+    if (game_seg[0x0093] == 0) return 0;
+    return draw_hud_number(vga, vga_size, game_seg, game_size,
+                           read_u16_le(game_seg + 0x0094), 0x2437,
+                           0x3E, 0xBB, 3, 1);
+}
+
+int zeliard_gmmcga_draw_first_frame_hud(u8 *vga, size_t vga_size,
+                                        u8 *game_seg, size_t game_size,
+                                        u16 town_text_si) {
+    if (!vga || vga_size < 0x10000 || !game_seg || game_size < 0x10000)
+        return -1;
+    if (zeliard_gmmcga_draw_status_line(vga, vga_size, 0, 0x0204, 0x2100) ||
+        zeliard_gmmcga_draw_status_line(vga, vga_size, 0, 0x021C, 0x4200) ||
+        zeliard_gmmcga_draw_status_line(vga, vga_size, 0, 0x481C, 0x4200) ||
+        zeliard_gmmcga_draw_life_scale(vga, vga_size, 0))
+        return -1;
+    static const u16 label_addresses[] = {0x6C93, 0x6C9B, 0x6CA4, 0x6CAC};
+    for (size_t i = 0; i < sizeof(label_addresses) / sizeof(label_addresses[0]); ++i) {
+        if (zeliard_gmmcga_draw_hud_label(vga, vga_size, game_seg,
+                                          game_size, label_addresses[i]))
+            return -1;
+    }
+    if (zeliard_gmmcga_draw_life_max(vga, vga_size, game_seg, game_size) ||
+        zeliard_gmmcga_draw_life_current(vga, vga_size, game_seg, game_size) ||
+        zeliard_gmmcga_draw_almas(vga, vga_size, game_seg, game_size) ||
+        zeliard_gmmcga_draw_gold(vga, vga_size, game_seg, game_size) ||
+        zeliard_gmmcga_draw_spell_charge(vga, vga_size, game_seg, game_size) ||
+        zeliard_gmmcga_draw_shield_hp(vga, vga_size, game_seg, game_size))
+        return -1;
+    return zeliard_gmmcga_draw_town_text_record(vga, vga_size, game_seg,
+                                                 game_size, town_text_si);
+}
+
+int zeliard_gtmcga_capture_playfield(const u8 *vga, size_t vga_size,
+                                     u8 *game_seg, size_t game_size) {
+    if (!vga || vga_size < 0x10000 || !game_seg || game_size < 0x10000)
+        return -1;
+
+    size_t out = 0xA000;
+    for (u16 block = 0; block < 0x1C; ++block) {
+        size_t source = 0x61B0 + block * 8;
+        for (u16 row = 0; row < 0x18; ++row) {
+            memcpy(game_seg + out, vga + source, 8);
+            out += 8;
+            source += 320;
+        }
     }
     return 0;
 }
