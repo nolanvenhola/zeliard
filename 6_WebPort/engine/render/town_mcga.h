@@ -96,4 +96,8 @@ int zeliard_gtmcga_update_town_frame(u8 *game_seg, size_t game_size,
                                      const u8 *game_data, size_t game_data_size,
                                      u8 *vga, size_t vga_size);
 
+/* GTMCGA:scroll_left/scroll_right, dispatch slots CS:3006/300Ah. */
+int zeliard_gtmcga_scroll_view_left(u8 *vga, size_t vga_size);
+int zeliard_gtmcga_scroll_view_right(u8 *vga, size_t vga_size);
+
 #endif

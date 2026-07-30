@@ -107,12 +107,13 @@ static void apply_input_actions(u32 actions) {
         zel_opening_audio_pause();
     }
     if (actions & ZEL_INPUT_ACTION_SPACE) {
-        g_game_segments[0][0xFF1D] = 0;
         if (g_paused) {
+            g_game_segments[0][0xFF1D] = 0;
             opening_pause_overlay_hide();
             g_paused = 0;
             zel_opening_audio_resume();
-        } else {
+        } else if (g_scene == SCENE_OPENING) {
+            g_game_segments[0][0xFF1D] = 0;
             consume_opening_advance();
         }
     }
@@ -191,6 +192,17 @@ EXPORT void zeliard_tick(u32 dt_ms) {
     }
     if (g_paused) {
         zel_opening_audio_tick(dt_ms);
+        return;
+    }
+    if (g_scene == SCENE_GAME) {
+        const int frames = zeliard_town_advance_pit(
+            &g_town_runtime, &g_game_exec, g_game_vga, sizeof(g_game_vga),
+            input_ticks, g_game_segments[0][0xFF17]);
+        if (frames < 0) {
+            platform_log("zeliard_tick: 106TOWN live frame failed (%d)", frames);
+        } else if (frames > 0) {
+            memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+        }
         return;
     }
     while (dt_ms > 0 || (dt_ms == 0 && g_scene == SCENE_OPENING)) {

@@ -81,6 +81,14 @@ Game-loader orchestration covered outside `gameplay_state.c`:
 | `zeliard_game_resolve_music_plan` | Oracle-backed | `proc_equivalence/test_game_load_music_tracks.py` |
 | `zeliard_game_resolve_palette_plan` | Oracle-backed | `proc_equivalence/test_game_set_vga_palette.py` |
 
+Town live-runtime coverage:
+
+| C primitive | Status | MASM oracle |
+| --- | --- | --- |
+| `zeliard_town_advance_pit` | Oracle-backed composition | `proc_equivalence/test_town_live_loop_primitives.py`, walk-left/right oracles, `town_runtime_native` scripted frame hashes |
+| `zeliard_town_detect_facing_targets` | Oracle-backed | `106TOWN` target-scan branches mirrored by `town_facing_targets:right` native fixture |
+| `process_town_event_table` / `tick_npcs_dispatch` | Oracle-backed | `proc_equivalence/test_town_live_loop_primitives.py`; release-byte memory diffs over active/inactive events and two NPC ticks |
+
 Town MCGA dispatch coverage:
 
 | C primitive | Status | MASM oracle |
@@ -96,10 +104,9 @@ Town MCGA dispatch coverage:
 | `zeliard_gmmcga_draw_first_frame_hud` | Oracle-backed | `proc_equivalence/test_gmmcga_town_first_frame_hud_oracle.py`; exact initial `frame_update` HUD order and combined state/VGA hash |
 | `zeliard_gtmcga_encode_tile_block` | Oracle-backed | `proc_equivalence/test_gtmcga_encode_tile_block_oracle.py`; packed source, alpha masks, and scratch hashes |
 | `zeliard_gtmcga_capture_playfield` | Oracle-backed | `proc_equivalence/test_gtmcga_capture_playfield_oracle.py`; captured segment and exit registers |
+| `zeliard_gtmcga_scroll_view_left` / `scroll_view_right` | Oracle-backed | `proc_equivalence/test_gtmcga_town_scroll.py`; full 64K VGA hashes from release `111GTMCA.bin` |
 
 Next gaps to close:
 
-- Implement the stateful `AL=1/4/5` level/archive loader proxy and render the
-  first Felishika castle frame from the loaded town/GT/GF data.
-- Extend the dialog/menu cluster from movement decisions into full
-  spacebar/skip result handling.
+- Execute item/NPC dialog bodies after the now-oracle-backed facing scans.
+- Execute door/shop transitions after the now-oracle-backed door detection.

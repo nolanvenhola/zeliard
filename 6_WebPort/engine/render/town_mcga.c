@@ -673,3 +673,53 @@ int zeliard_gtmcga_update_town_frame(u8 *game_seg, size_t game_size,
     }
     return 0;
 }
+
+static void copy_words_direction(u8 *vga, u16 *source, u16 *destination,
+                                 u16 count, int reverse) {
+    while (count--) {
+        const u8 lo = vga[*source];
+        const u8 hi = vga[(u16)(*source + 1)];
+        vga[*destination] = lo;
+        vga[(u16)(*destination + 1)] = hi;
+        *source = (u16)(*source + (reverse ? -2 : 2));
+        *destination = (u16)(*destination + (reverse ? -2 : 2));
+    }
+}
+
+int zeliard_gtmcga_scroll_view_left(u8 *vga, size_t vga_size) {
+    if (!vga || vga_size < 0x10000) return -1;
+    u16 row_end = 0xB28E;
+    for (u8 row = 0; row < 8; ++row, row_end = (u16)(row_end + 0x140)) {
+        u16 source = (u16)(row_end - 8), destination = row_end;
+        copy_words_direction(vga, &source, &destination, 0x6C, 1);
+        source = (u16)(source + 0x78);
+        copy_words_direction(vga, &source, &destination, 4, 1);
+    }
+    row_end = 0xBC8E;
+    for (u8 row = 0; row < 8; ++row, row_end = (u16)(row_end + 0x140)) {
+        u16 source = (u16)(row_end - 0x10), destination = row_end;
+        copy_words_direction(vga, &source, &destination, 0x68, 1);
+        source = (u16)(source + 0x80);
+        copy_words_direction(vga, &source, &destination, 8, 1);
+    }
+    return 0;
+}
+
+int zeliard_gtmcga_scroll_view_right(u8 *vga, size_t vga_size) {
+    if (!vga || vga_size < 0x10000) return -1;
+    u16 row_start = 0xB1B0;
+    for (u8 row = 0; row < 8; ++row, row_start = (u16)(row_start + 0x140)) {
+        u16 source = (u16)(row_start + 8), destination = row_start;
+        copy_words_direction(vga, &source, &destination, 0x6C, 0);
+        source = (u16)(source - 0x78);
+        copy_words_direction(vga, &source, &destination, 4, 0);
+    }
+    row_start = 0xBBB0;
+    for (u8 row = 0; row < 8; ++row, row_start = (u16)(row_start + 0x140)) {
+        u16 source = (u16)(row_start + 0x10), destination = row_start;
+        copy_words_direction(vga, &source, &destination, 0x68, 0);
+        source = (u16)(source - 0x80);
+        copy_words_direction(vga, &source, &destination, 8, 0);
+    }
+    return 0;
+}
