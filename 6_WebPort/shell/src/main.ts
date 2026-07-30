@@ -1,8 +1,8 @@
 /*
  * Zeliard web shell — boots the Emscripten engine, copies the 320x200
  * paletted framebuffer into a Canvas2D ImageData each frame, and drives
- * the engine tick at ~60Hz (the engine itself maintains its own 18.2Hz
- * game-tick internally; the host just calls _zeliard_tick() per requestAnimationFrame).
+ * the engine tick at ~60Hz. The engine converts elapsed milliseconds into
+ * the original 236.7 Hz PIT cadence used by stick.asm.
  */
 
 /* Emscripten exports C functions with a leading underscore (it preserves
@@ -11,6 +11,9 @@ type EngineExports = {
     _zeliard_init(): void;
     _zeliard_tick(dt_ms: number): void;
     _zeliard_key(keycode: number): void;
+    _zeliard_key_down(keycode: number): void;
+    _zeliard_key_up(keycode: number): void;
+    _zeliard_release_all_keys(): void;
     _zeliard_framebuf(): number;     // pointer (offset into HEAPU8)
     _zeliard_rgb_framebuf(): number; // optional RGB output for MCGA raster-DAC frames
     _zeliard_rgb_framebuf_active(): number;
@@ -290,6 +293,10 @@ async function boot() {
         const keycodes: Record<string, number> = {
             Enter: 13,
             ' ': 32,
+            ArrowLeft: 37,
+            ArrowUp: 38,
+            ArrowRight: 39,
+            ArrowDown: 40,
             Escape: 27,
             F1: 112,
             F2: 113,
@@ -304,11 +311,35 @@ async function boot() {
             void startPlayback();
             return;
         }
-        Module._zeliard_key(keycode);
+        Module._zeliard_key_down(keycode);
         music?.sync(Module._zeliard_music_track(),
             Module._zeliard_music_enabled() !== 0,
             Module._zeliard_paused() !== 0,
             Module._zeliard_music_attenuation());
+    });
+    window.addEventListener('keyup', (e: KeyboardEvent) => {
+        const keycodes: Record<string, number> = {
+            Enter: 13,
+            ' ': 32,
+            ArrowLeft: 37,
+            ArrowUp: 38,
+            ArrowRight: 39,
+            ArrowDown: 40,
+            Escape: 27,
+            F1: 112,
+            F2: 113,
+        };
+        const keycode = keycodes[e.key];
+        if (keycode === undefined)
+            return;
+        e.preventDefault();
+        Module._zeliard_key_up(keycode);
+    });
+    const releaseHeldKeys = () => Module._zeliard_release_all_keys();
+    window.addEventListener('blur', releaseHeldKeys);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden)
+            releaseHeldKeys();
     });
     setStatus(music ? 'ready' : 'ready (audio unavailable)');
 
