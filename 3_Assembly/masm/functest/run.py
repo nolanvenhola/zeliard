@@ -148,8 +148,9 @@ def main() -> int:
                 for line in r['stderr'].splitlines():
                     print(f'      {line}')
 
-    status_path = write_status(results)
-    print(f'\nStatus table written to {status_path.relative_to(HERE.parent)}')
+    if not args.ci:
+        status_path = write_status(results)
+        print(f'\nStatus table written to {status_path.relative_to(HERE.parent)}')
 
     # Exit code
     bad = {'FAIL'}
