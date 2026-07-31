@@ -12,21 +12,21 @@ loaded GTMCGA chunk. These targets are decoded directly from release bytes.
 | Slot | Target | 106TOWN name | Calls | First-frame role |
 | --- | --- | --- | ---: | --- |
 | `3002` | `3028` | `gfx_draw_fn` | 3 | Initial map draw |
-| `3004` | `3051` | `gfx_update_fn` | 1 | Movement loop |
+| `3004` | `3051` | `gfx_update_fn` | 1 | Dirty tile, overlay, animation, and actor-column update |
 | `3006` | `3628` | `gfx_scroll_left_fn` | 1 | Scrolling |
 | `3008` | `3677` | `gfx_scroll_right_fn` | 1 | Scrolling |
 | `300A` | `36A4` | `gfx_scroll_right2_fn` | 1 | Scrolling |
 | `300C` | `36F1` | `gfx_scroll_left2_fn` | 1 | Scrolling |
 | `300E` | `32FC` | `gfx_npc_draw_fn` | 1 | NPC loop |
-| `3010` | `3526` | `gfx_npc_update_fn` | 1 | NPC loop |
-| `3012` | `359A` | `gfx_fn_3012` | 1 | NPC loop; semantic pending oracle |
-| `3014` | `34EC` | `gfx_fn_3014` | 1 | NPC loop; semantic pending oracle |
+| `3010` | `3526` | `gfx_npc_update_fn` | 1 | Masked NPC pattern composition |
+| `3012` | `359A` | `gfx_fn_3012` | 1 | Masked player pattern composition |
+| `3014` | `34EC` | `gfx_fn_3014` | 1 | NPC frame lookup and pattern decode |
 | `3018` | `3785` | `gfx_cursor_fn` | 3 | Menu/dialog |
 | `301A` | `3805` | `gfx_sel_init_fn` | 6 | Menu/dialog |
 | `301C` | `37CC` | `gfx_sel_draw_fn` | 2 | Menu/dialog |
 | `301E` | `3999` | `gfx_sel_scroll_up_fn` | 2 | Menu/dialog |
 | `3020` | `39EF` | `gfx_sel_scroll_dn_fn` | 2 | Menu/dialog |
-| `3024` | `3AF9` | `gfx_ret_fn` | 1 | Resource-return path |
+| `3024` | `3AF9` | `gfx_ret_fn` | 1 | CPAT planar-to-packed conversion and alpha-bank build |
 | `3026` | `3A71` | `gfx_copy_fn` | 3 | Tile encoder: packed pixels plus alpha masks |
 
 `town_mcga_dispatch_native` verifies all 17 slot words and 31 static calls.
@@ -81,8 +81,13 @@ calls directly against the raw MASM `gmmcga.bin` driver image.
 | `GMMCGA:238F/23AC/23CC/23F5` | `zeliard_gmmcga_draw_almas/gold/spell_charge/shield_hp` | Decimal slots, leading-zero suppression, font pixels, and staged VGA hashes | Green |
 | Initial `106TOWN frame_update` HUD span | `zeliard_gmmcga_draw_first_frame_hud` | Exact call order, real label addresses, combined VGA/state hash | Green |
 | `GTMCGA:3A71` | `zeliard_gtmcga_encode_tile_block` | Three planar tiles; packed bytes, transparency masks, and scratch hashes | Green |
+| `GTMCGA:3AF9` | `zeliard_gtmcga_process_pattern_tiles` | All 250 release CPAT tiles; full packed-pixel and alpha-bank hashes | Green |
 | `GTMCGA:3028` | `zeliard_gtmcga_capture_playfield` | Exact 224x24 VGA capture order, segment hash, and exit registers | Green |
+| `GTMCGA:3051/3350` | `zeliard_gtmcga_update_town_frame` | Release first frame plus two consecutive idle VGA and NPC-state hashes | Green |
+| `GTMCGA:34EC/3526/359A` | `zeliard_gtmcga_render_town_actors` | Exact actor scratch, composed frame, cursor, and persistent idle-frame hashes | Green |
+| Initial `106TOWN` castle span | `zeliard_town_enter_first_frame` | Release archive assets, initial framebuffer, capture buffer, state, and two idle frames | Green |
 
-The real castle composition and full-frame checkpoint require the stateful
-town/archive loading span and are tracked by issue #17. Movement/NPC/scroll
-GTMCGA targets remain explicit rows above and are not represented as green.
+The initial Felishika castle composition, CPAT conversion, actor composition,
+and idle persistence now match release-MASM checkpoints. Horizontal movement
+and scroll retain native regression coverage; extending release-MASM frame
+oracles across those paths remains separate from the fixed initial scene.

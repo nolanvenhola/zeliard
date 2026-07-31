@@ -46,6 +46,10 @@ int zeliard_gtmcga_encode_tile_block(u8 *ds, size_t ds_size, u16 si,
                                      u8 *es, size_t es_size, u16 di,
                                      u16 tile_count);
 
+/* GTMCGA:3AF9, loaded dispatch slot CS:3024. */
+int zeliard_gtmcga_process_pattern_tiles(u8 *game_data,
+                                         size_t game_data_size);
+
 /* GMMCGA:2195, resident dispatch slot CS:2004, normal (AL=0) path. */
 int zeliard_gmmcga_draw_status_line(u8 *vga, size_t vga_size,
                                     u16 ax, u16 bx, u16 cx);
@@ -107,6 +111,7 @@ int zeliard_gtmcga_render_town_actors(u8 *game_seg, size_t game_size,
 /* GTMCGA:3051, loaded dispatch slot CS:3004. */
 int zeliard_gtmcga_update_town_frame(u8 *game_seg, size_t game_size,
                                      const u8 *game_data, size_t game_data_size,
+                                     const u8 *mask_data, size_t mask_data_size,
                                      u8 *vga, size_t vga_size);
 
 /* GTMCGA:scroll_left/scroll_right, dispatch slots CS:3006/300Ah. */

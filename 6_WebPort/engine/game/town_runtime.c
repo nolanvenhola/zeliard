@@ -318,6 +318,8 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
         cs_1000[TOWN_PATTERN_DEST + offset + 1] =
             (u8)((value + TOWN_PATTERN_DEST) >> 8);
     }
+    if (zeliard_gtmcga_process_pattern_tiles(cs_1000, 0x10000))
+        return -4;
     if (!append_event(town, (zeliard_town_event_t){
             ZEL_TOWN_EVENT_LOAD_CPAT, "106TOWN:load_town_pattern_chunk",
             "cpat.grp", 0x1000, TOWN_PATTERN_DEST, 2}))
@@ -366,6 +368,10 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
         return -10;
 
     memset(cs + 0xE000, 0xFE, 0xE0);
+    /* 106TOWN initial frame calls stamp_npcs_save_tiles once before the
+     * actor renderer. Live frames perform the same stamp at the end of
+     * tick_npcs_dispatch; render_town_actors itself never owns this state. */
+    stamp_npcs_save_tiles(cs);
     if (zeliard_gtmcga_render_town_actors(cs, 0x10000, cs_1000, 0x10000,
                                           cs_2000, 0x10000, vga, vga_size) ||
         !append_event(town, (zeliard_town_event_t){
@@ -379,7 +385,7 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
         memset(cs + cursor + 8, 0xFF, 3);
     }
     if (zeliard_gtmcga_update_town_frame(cs, 0x10000, cs_1000, 0x10000,
-                                          vga, vga_size) ||
+                                          cs_2000, 0x10000, vga, vga_size) ||
         !append_event(town, (zeliard_town_event_t){
             ZEL_TOWN_EVENT_UPDATE_FRAME, "106TOWN:gfx_update_fn", NULL,
             0, 0x3051, 0}))
@@ -519,7 +525,7 @@ static int run_live_frame(zeliard_town_runtime_t *town,
         return -1;
     mark_player_col_in_cursor_buf(cs);
     if (zeliard_gtmcga_update_town_frame(cs, 0x10000, game_data, 0x10000,
-                                          vga, vga_size))
+                                          mask_data, 0x10000, vga, vga_size))
         return -2;
     zeliard_town_detect_facing_targets(town, cs, input_direction);
     if (town->facing_item_position != 0xFFFF) {

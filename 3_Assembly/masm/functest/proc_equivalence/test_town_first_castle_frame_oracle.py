@@ -23,13 +23,17 @@ MOLE_SEG = 0x4000
 STACK_SEG = 0x8000
 VGA_SEG = 0xA000
 RETURN_IP = 0x0080
-EXPECTED_FRAME_FNV = 0x5FFA5500A462B8EF
+EXPECTED_FRAME_FNV = 0x31AC617B72AB84C6
 EXPECTED_CAPTURE_FNV = 0x437AEC553ACB4725
 EXPECTED_STATE_FNV = 0xE79422416064A11C
 EXPECTED_BACKGROUND_FNV = 0x14093BAEA087B3AD
-EXPECTED_ACTOR_FNV = 0xF5ED4A7A119DE3EC
+EXPECTED_ACTOR_FNV = 0x9BFF78E51CBA1C2C
 EXPECTED_CURSOR_FNV = 0x5808FD95919F54F5
-EXPECTED_ACTOR_FRAME_FNV = 0x1476E8D95B30E751
+EXPECTED_ACTOR_FRAME_FNV = 0x359C52446E4FF435
+EXPECTED_CPAT_PIXEL_FNV = 0x639503FA794A154F
+EXPECTED_CPAT_ALPHA_FNV = 0x2AE75F00707E7659
+EXPECTED_IDLE_FRAME_FNVS = (0xC0C9840DECF6B4E2, 0x915FB25F67D35E76)
+EXPECTED_IDLE_NPC_FNVS = (0x7AEF6E1921E0C970, 0x04FCC161ECC110A0)
 
 
 def fnv1a64(data: bytes) -> int:
@@ -101,6 +105,19 @@ def selected_state(mu: Uc) -> bytes:
                     for offset, size in ranges)
 
 
+def npc_state(mu: Uc) -> bytes:
+    base = GAME_SEG << 4
+    start = int.from_bytes(bytes(mu.mem_read(base + 0xC00F, 2)), "little")
+    size = 2
+    while start + size + 8 <= 0x10000:
+        position = int.from_bytes(
+            bytes(mu.mem_read(base + start + size - 2, 2)), "little")
+        if position == 0xFFFF:
+            break
+        size += 8
+    return bytes(mu.mem_read(base + start, size))
+
+
 def main() -> int:
     paths = {
         "stdply": MASM_ROOT / "bin" / "stdply.bin",
@@ -140,6 +157,13 @@ def main() -> int:
         value = int.from_bytes(bytes(mu.mem_read(
             (0x2000 << 4) + 0x8000 + offset, 2)), "little")
         write_u16(mu, 0x2000, 0x8000 + offset, (value + 0x8000) & 0xFFFF)
+    # 106TOWN:load_town_pattern_chunk tail-jumps through CS:[3024], whose
+    # release-MCGA target is GTMCGA:3AF9. This converts all 250 CPAT tiles
+    # in place and builds the alpha bank at gvar_game_seg:D000.
+    write_u16(mu, GAME_SEG, 0xFF2C, 0x2000)
+    call_near(mu, 0x3AF9)
+    cpat_pixels = bytes(mu.mem_read((0x2000 << 4) + 0x8100, 0x2EE0))
+    cpat_alpha = bytes(mu.mem_read((0x2000 << 4) + 0xD000, 0x07D0))
     mman = bytes(decompress_sar_chunk(paths["mman"].read_bytes()))
     mu.mem_write((0x2000 << 4) + 0x4000, mman)
     call_near(mu, 0x3A71, cx=0xA4, si=0x4100, di=0x7000,
@@ -184,6 +208,31 @@ def main() -> int:
     frame = bytes(mu.mem_read(VGA_SEG << 4, 0x10000))
     capture = bytes(mu.mem_read(game_base + 0xA000, 0x1500))
     state = selected_state(mu)
+
+    # First two idle iterations of 106TOWN:draw_and_pump_input. The release
+    # addresses below retain the real call order: events, NPC tick, actor
+    # composition, cursor marking, then GTMCGA:3051 dirty update.
+    write_u16(mu, GAME_SEG, 0xFF2A, 0xC107)
+    idle_hashes = []
+    idle_npc_hashes = []
+    idle_frames = []
+    idle_states = []
+    for _ in range(2):
+        call_near(mu, 0x6AED)
+        call_near(mu, 0x6B1C)
+        call_near(mu, 0x6975)
+        call_near(mu, 0x6950)
+        call_near(mu, 0x3051)
+        idle_frame = bytes(mu.mem_read(VGA_SEG << 4, 0x10000))
+        idle_frames.append(idle_frame)
+        idle_states.append(bytes(mu.mem_read(game_base, 0x10000)))
+        idle_hashes.append(fnv1a64(idle_frame))
+        idle_npc_hashes.append(fnv1a64(npc_state(mu)))
+        # 106TOWN:dispatch_right is the no-horizontal-input return path.
+        # It marks the standing pose after the completed draw, affecting the
+        # next frame but not the checkpoint just captured.
+        pose = bytes(mu.mem_read(game_base + 0x00E7, 1))[0]
+        mu.mem_write(game_base + 0x00E7, bytes((pose | 1,)))
     frame_hash = fnv1a64(frame)
     capture_hash = fnv1a64(capture)
     state_hash = fnv1a64(state)
@@ -193,17 +242,35 @@ def main() -> int:
         dump_dir.mkdir(exist_ok=True)
         (dump_dir / "town-background-cleared-frame.bin").write_bytes(background)
         (dump_dir / "town-first-frame.bin").write_bytes(frame)
+        for index, idle_frame in enumerate(idle_frames, 1):
+            (dump_dir / f"town-idle-frame-{index}.bin").write_bytes(idle_frame)
+            (dump_dir / f"town-idle-state-{index}.bin").write_bytes(
+                idle_states[index - 1])
     ok = (frame_hash, capture_hash, state_hash, background_hash,
           fnv1a64(actor_tiles), fnv1a64(cursor), fnv1a64(actor_frame)) == (
         EXPECTED_FRAME_FNV, EXPECTED_CAPTURE_FNV, EXPECTED_STATE_FNV,
         EXPECTED_BACKGROUND_FNV, EXPECTED_ACTOR_FNV, EXPECTED_CURSOR_FNV,
-        EXPECTED_ACTOR_FRAME_FNV)
+        EXPECTED_ACTOR_FRAME_FNV) and \
+        fnv1a64(cpat_pixels) == EXPECTED_CPAT_PIXEL_FNV and \
+        fnv1a64(cpat_alpha) == EXPECTED_CPAT_ALPHA_FNV and \
+        tuple(idle_hashes) == EXPECTED_IDLE_FRAME_FNVS and \
+        tuple(idle_npc_hashes) == EXPECTED_IDLE_NPC_FNVS
     print(f"town_first_castle_frame: {'PASS' if ok else 'FAIL'} "
           f"background={background_hash:016x} frame={frame_hash:016x} "
           f"capture={capture_hash:016x} "
           f"actor={fnv1a64(actor_tiles):016x} cursor={fnv1a64(cursor):016x} "
           f"actor_frame={fnv1a64(actor_frame):016x} "
           f"state={state.hex()}:{state_hash:016x}")
+    print("town_castle_idle_frames: " + " ".join(
+        f"frame{i + 1}={frame_hash:016x}/npc={npc_hash:016x}"
+        for i, (frame_hash, npc_hash) in
+        enumerate(zip(idle_hashes, idle_npc_hashes))))
+    print("town_mman_banks: "
+          f"pixels={fnv1a64(bytes(mu.mem_read((0x2000 << 4) + 0x4100, 0x1EC0))):016x} "
+          f"masks={fnv1a64(bytes(mu.mem_read((0x3000 << 4) + 0x7000, 0x0520))):016x}")
+    print("town_cpat_banks: "
+          f"pixels={fnv1a64(cpat_pixels):016x} "
+          f"alpha={fnv1a64(cpat_alpha):016x}")
     print("VERDICT: " + ("PASS" if ok else "FAIL") +
           ": release-MASM first stable Felishika castle frame")
     return 0 if ok else 1

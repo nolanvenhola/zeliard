@@ -187,6 +187,15 @@ int main(void) {
     const unsigned long long capture_hash = fnv1a64(segments[0] + 0xA000, 0x1500);
     const unsigned long long palette_hash = fnv1a64((const u8 *)g_palette,
                                                     sizeof(g_palette));
+    printf("town_mman_banks: pixels=%016llx masks=%016llx\n",
+           fnv1a64(segments[1] + 0x4100, 0x1EC0),
+           fnv1a64(segments[2] + 0x7000, 0x0520));
+    const unsigned long long cpat_pixel_hash =
+        fnv1a64(segments[1] + 0x8100, 0x2EE0);
+    const unsigned long long cpat_alpha_hash =
+        fnv1a64(segments[1] + 0xD000, 0x07D0);
+    printf("town_cpat_banks: pixels=%016llx alpha=%016llx\n",
+           cpat_pixel_hash, cpat_alpha_hash);
     if (getenv("ZELIARD_DUMP")) {
         FILE *dump = fopen("build/town-first-frame.bin", "wb");
         if (dump) {
@@ -199,11 +208,65 @@ int main(void) {
     ok &= town.map_side == 0 && town.palette_index == 0;
     ok &= segments[0][0xC3AC] == 0x00;
     ok &= segments[0][0xC3AD] == 0xFF;
-    ok &= frame_hash == 0x5FFA5500A462B8EFULL;
+    ok &= frame_hash == 0x31AC617B72AB84C6ULL;
     ok &= state_hash == 0xE75DC3416036703FULL;
     ok &= capture_hash == 0x437AEC553ACB4725ULL;
     ok &= palette_hash == 0xF0597D78ABA0CC75ULL;
-    ok &= fnv1a64(vga + 0xFA00, 0x180) == 0xF5ED4A7A119DE3ECULL;
+    ok &= cpat_pixel_hash == 0x639503FA794A154FULL;
+    ok &= cpat_alpha_hash == 0x2AE75F00707E7659ULL;
+    ok &= fnv1a64(vga + 0xFA00, 0x180) == 0x9BFF78E51CBA1C2CULL;
+
+    static u8 idle_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                           [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 idle_vga[0x10000];
+    memcpy(idle_segments, segments, sizeof(idle_segments));
+    memcpy(idle_vga, vga, sizeof(idle_vga));
+    const zeliard_town_runtime_t initial_town = town;
+    segments[0][0xFF33] = 5;
+    const int idle_frames_1 = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 0);
+    const unsigned long long idle_frame_hash_1 = fnv1a64(vga, sizeof(vga));
+    const unsigned long long idle_npc_hash_1 = npc_state_hash(segments[0]);
+    if (getenv("ZELIARD_DUMP")) {
+        FILE *idle_dump = fopen("build/town-idle-frame-1.bin", "wb");
+        if (idle_dump) {
+            fwrite(vga, 1, sizeof(vga), idle_dump);
+            fclose(idle_dump);
+        }
+        idle_dump = fopen("build/town-idle-state-1.bin", "wb");
+        if (idle_dump) {
+            fwrite(segments[0], 1, sizeof(segments[0]), idle_dump);
+            fclose(idle_dump);
+        }
+    }
+    const int idle_frames_2 = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 0);
+    const unsigned long long idle_frame_hash_2 = fnv1a64(vga, sizeof(vga));
+    const unsigned long long idle_npc_hash_2 = npc_state_hash(segments[0]);
+    if (getenv("ZELIARD_DUMP")) {
+        FILE *idle_dump = fopen("build/town-idle-frame-2.bin", "wb");
+        if (idle_dump) {
+            fwrite(vga, 1, sizeof(vga), idle_dump);
+            fclose(idle_dump);
+        }
+        idle_dump = fopen("build/town-idle-state-2.bin", "wb");
+        if (idle_dump) {
+            fwrite(segments[0], 1, sizeof(segments[0]), idle_dump);
+            fclose(idle_dump);
+        }
+    }
+    ok &= idle_frames_1 == 1 && idle_frames_2 == 1;
+    ok &= idle_frame_hash_1 == 0xC0C9840DECF6B4E2ULL;
+    ok &= idle_npc_hash_1 == 0x7AEF6E1921E0C970ULL;
+    ok &= idle_frame_hash_2 == 0x915FB25F67D35E76ULL;
+    ok &= idle_npc_hash_2 == 0x04FCC161ECC110A0ULL;
+    printf("town_idle_oracle: frame1=%016llx/npc=%016llx "
+           "frame2=%016llx/npc=%016llx\n",
+           idle_frame_hash_1, idle_npc_hash_1,
+           idle_frame_hash_2, idle_npc_hash_2);
+    memcpy(segments, idle_segments, sizeof(idle_segments));
+    memcpy(vga, idle_vga, sizeof(idle_vga));
+    town = initial_town;
     const u8 initial_column = segments[0][0x0083];
     const u16 initial_start = (u16)(segments[0][0x0080] |
                                     ((u16)segments[0][0x0081] << 8));
@@ -222,8 +285,8 @@ int main(void) {
     ok &= segments[0][0x0083] == (u8)(initial_column + 1);
     ok &= live_start == initial_start;
     ok &= (segments[0][0x00C2] & 1) == 0;
-    ok &= live_frame_hash == 0x41036EECF5271A4EULL;
-    ok &= live_npc_hash == 0x653529AFD9704EF2ULL;
+    ok &= live_frame_hash == 0xA41C77D62B549C32ULL;
+    ok &= live_npc_hash == 0x04FCC161ECC110A0ULL;
     const int scroll_walk_frames = zeliard_town_advance_pit(
         &town, &game, vga, sizeof(vga), 140, 8);
     const int scroll_settle_frames = zeliard_town_advance_pit(
@@ -235,7 +298,7 @@ int main(void) {
     ok &= town.frame_count == 10;
     ok &= segments[0][0x0083] == 0x10;
     ok &= scrolled_start == (u16)(initial_start + 2);
-    ok &= scrolled_frame_hash == 0x7BC69366414A1955ULL;
+    ok &= scrolled_frame_hash == 0x5E2BD29E1044B73CULL;
     printf("town_runtime: %s rc=%d frame=%016llx state=%016llx "
            "capture=%016llx palette=%016llx events=%u text=%04x\n",
            ok ? "PASS" : "FAIL", result, frame_hash, state_hash, capture_hash,

@@ -281,6 +281,94 @@ int zeliard_gtmcga_encode_tile_block(u8 *ds, size_t ds_size, u16 si,
     return 0;
 }
 
+static void pack_pattern_row(u16 p0, u16 p1, u16 p2, u16 accumulator,
+                             u8 *destination) {
+    size_t out = 0;
+    for (u16 half = 0; half < 2; ++half) {
+        for (u16 pixel = 0; pixel < 5; ++pixel)
+            append_three_planes(&p0, &p1, &p2, &accumulator);
+        (void)rotate_append(&p2, &accumulator);
+        destination[out++] = (u8)accumulator;
+        destination[out++] = (u8)(accumulator >> 8);
+        (void)rotate_append(&p1, &accumulator);
+        (void)rotate_append(&p0, &accumulator);
+        append_three_planes(&p0, &p1, &p2, &accumulator);
+        append_three_planes(&p0, &p1, &p2, &accumulator);
+        destination[out++] = (u8)accumulator;
+    }
+}
+
+static u8 pattern_alpha_mask(u16 alpha) {
+    u8 result = 0;
+    for (u8 pair = 0; pair < 8; ++pair) {
+        const u8 first = (u8)(alpha >> 15);
+        alpha = (u16)((alpha << 1) | first);
+        const u8 second = (u8)(alpha >> 15);
+        alpha = (u16)((alpha << 1) | second);
+        result = (u8)((result << 1) | (first & second));
+    }
+    return result;
+}
+
+int zeliard_gtmcga_process_pattern_tiles(u8 *game_data,
+                                         size_t game_data_size) {
+    if (!game_data || game_data_size < 0x10000) return -1;
+    const u16 type_table = read_u16_le(game_data + 0x8000);
+    if (type_table > 0xFF05) return -1;
+
+    u8 *scratch = malloc(0x2EE0);
+    if (!scratch) return -1;
+    memcpy(scratch, game_data + 0x8100, 0x2EE0);
+
+    size_t source = 0;
+    size_t destination = 0x8100;
+    size_t alpha_destination = 0xD000;
+    for (u16 tile = 0; tile < 0xFA; ++tile) {
+        u8 type = game_data[(u16)(type_table + tile)];
+        if (type >= 5) type = 0;
+        for (u8 row = 0; row < 8; ++row) {
+            const u16 first = byte_swap_u16(read_u16_le(scratch + source));
+            const u16 second =
+                byte_swap_u16(read_u16_le(scratch + source + 2));
+            const u16 third =
+                byte_swap_u16(read_u16_le(scratch + source + 4));
+            source += 6;
+
+            u16 p0 = first, p1 = second, p2 = third, alpha = 0;
+            u8 mask = 0;
+            switch (type) {
+            case 1:
+                p2 = 0;
+                alpha = third;
+                mask = pattern_alpha_mask(alpha);
+                break;
+            case 2:
+                p1 = 0;
+                alpha = second;
+                mask = pattern_alpha_mask(alpha);
+                break;
+            case 3:
+                p0 = 0;
+                alpha = first;
+                mask = pattern_alpha_mask(alpha);
+                break;
+            case 4:
+                mask = 0xFF;
+                break;
+            default:
+                mask = 0;
+                break;
+            }
+            pack_pattern_row(p0, p1, p2, third,
+                             game_data + destination);
+            destination += 6;
+            game_data[alpha_destination++] = mask;
+        }
+    }
+    free(scratch);
+    return 0;
+}
+
 static void plot_status_column(u8 *vga, u16 di, u8 middle, u8 bottom) {
     vga[di] = 0;
     for (u16 row = 0; row < 8; ++row) {
@@ -668,15 +756,6 @@ int zeliard_gtmcga_render_town_actors(u8 *game_seg, size_t game_size,
         mask_data_size < 0x10000 || !vga || vga_size < 0x10000)
         return -1;
 
-    u16 npc_at = read_at(game_seg, 0xC00F);
-    while (npc_at <= 0xFFF7 && read_at(game_seg, npc_at) != 0xFFFF) {
-        const u16 column = read_at(game_seg, npc_at);
-        const u16 map_at = (u16)(0xC01C + column * 8u);
-        game_seg[npc_at + 3] = game_seg[map_at];
-        game_seg[map_at] = 0xFD;
-        npc_at = (u16)(npc_at + 8);
-    }
-
     const u8 player_col = game_seg[0x0083];
     const u16 tile_ptr = read_at(game_seg, 0xFF2A);
     const u16 tile_at = (u16)(tile_ptr + (u16)(player_col + 4) * 8u + 5u);
@@ -709,7 +788,7 @@ int zeliard_gtmcga_render_town_actors(u8 *game_seg, size_t game_size,
         game_seg[(u16)(tile_at - 8)], game_seg[tile_at],
         game_seg[(u16)(tile_at + 8)],
     };
-    npc_at = read_at(game_seg, 0xC00F);
+    u16 npc_at = read_at(game_seg, 0xC00F);
     while (npc_at <= 0xFFF7 && read_at(game_seg, npc_at) != 0xFFFF) {
         for (u8 index = 0; index < 3; ++index) {
             if (column_ids[index] == 0xFD &&
@@ -741,13 +820,154 @@ static void draw_town_map_tile(const u8 *game_data, u8 tile_id,
     }
 }
 
+static u8 npc_under_tile(u8 *game_seg, u16 position) {
+    u8 *npc = find_npc(game_seg, position);
+    while (npc && npc[3] == 0xFD) {
+        npc += 8;
+        while (read_at(npc, 0) != position) {
+            if (read_at(npc, 0) == 0xFFFF) return 0xFF;
+            npc += 8;
+        }
+    }
+    return npc ? npc[3] : 0xFF;
+}
+
+static void draw_npc_base_tiles(const u8 ids[6], const u8 *game_data,
+                                u8 *vga, u16 destination) {
+    for (u8 index = 0; index < 6; ++index) {
+        size_t source = 0x8100u + (size_t)ids[index] * 0x30u;
+        for (u8 group = 0; group < 0x10; ++group) {
+            unpack_mcga_triplet(game_data + source, vga + destination, 0);
+            source += 3;
+            destination = (u16)(destination + 4);
+        }
+    }
+}
+
+static void compose_npc_pattern(u8 *ids, u8 first, u8 count,
+                                u16 destination, const u8 *npc,
+                                const u8 *game_data, const u8 *mask_data,
+                                u8 *vga) {
+    const u8 entity = npc[2];
+    const u8 side = (entity & 0x80) ? 0 : 4;
+    u16 pattern = (u16)(0x4000u + (u16)(entity & 0x7F) * 0x30u +
+                        (u16)((npc[4] & 3) + side) * 6u);
+    for (u8 index = first; index < (u8)(first + count); ++index) {
+        ids[index] = 0xFF;
+        const u8 tile = (u8)(game_data[pattern++] - 1);
+        draw_masked_actor_tile(tile, game_data, mask_data, 0x4100, 0x7000,
+                               vga, destination);
+        destination = (u16)(destination + 0x40);
+    }
+}
+
+/* GTMCGA:3350. A 0xFD map cell is an actor marker, not a drawable tile. */
+static void update_actor_columns(u8 *game_seg, const u8 *game_data,
+                                 const u8 *mask_data, u8 *vga,
+                                 u8 column, u16 map_after_row5,
+                                 u16 cursor_after_row5) {
+    const u16 world = (u16)(read_at(game_seg, 0x0080) + column + 4u);
+    u8 ids[6];
+    ids[0] = npc_under_tile(game_seg, world);
+    ids[1] = game_seg[map_after_row5];
+    ids[2] = game_seg[(u16)(map_after_row5 + 1)];
+    ids[3] = game_seg[(u16)(map_after_row5 + 7)];
+    ids[4] = game_seg[(u16)(map_after_row5 + 8)];
+    ids[5] = game_seg[(u16)(map_after_row5 + 9)];
+    if (ids[3] == 0xFD) ids[3] = npc_under_tile(game_seg, (u16)(world + 1));
+    draw_npc_base_tiles(ids, game_data, vga, 0xFB80);
+
+    u16 npc_at = read_at(game_seg, 0xC00F);
+    while (npc_at <= 0xFFF7 && read_at(game_seg, npc_at) != 0xFFFF) {
+        const u16 position = read_at(game_seg, npc_at);
+        if (position == world) {
+            compose_npc_pattern(ids, 0, 6, 0xFB80, game_seg + npc_at,
+                                game_data, mask_data, vga);
+        } else if (position == (u16)(world + 1)) {
+            compose_npc_pattern(ids, 3, 3, 0xFC40, game_seg + npc_at,
+                                game_data, mask_data, vga);
+        }
+        npc_at = (u16)(npc_at + 8);
+    }
+
+    const u16 destination = (u16)(0x93B0u + (u16)column * 8u);
+    if (game_seg[(u16)(cursor_after_row5 - 1)] != 0xFF) {
+        u16 source = 0xFB80;
+        u16 out = destination;
+        for (u8 row = 0; row < 24; ++row) {
+            memcpy(vga + out, vga + source, 8);
+            source = (u16)(source + 8);
+            out = (u16)(out + 320);
+        }
+    }
+    if (column != 0x1B && game_seg[(u16)(cursor_after_row5 + 7)] != 0xFF) {
+        u16 source = 0xFC40;
+        u16 out = (u16)(destination + 8);
+        for (u8 row = 0; row < 24; ++row) {
+            memcpy(vga + out, vga + source, 8);
+            source = (u16)(source + 8);
+            out = (u16)(out + 320);
+        }
+    }
+
+    game_seg[(u16)(cursor_after_row5 - 1)] = 0xFE;
+    game_seg[cursor_after_row5] = 0xFF;
+    game_seg[(u16)(cursor_after_row5 + 1)] = 0xFF;
+    game_seg[(u16)(cursor_after_row5 + 7)] = 0xFF;
+    game_seg[(u16)(cursor_after_row5 + 8)] = 0xFF;
+    game_seg[(u16)(cursor_after_row5 + 9)] = 0xFF;
+}
+
+static void draw_overlay_tile(u8 *game_seg, const u8 *game_data,
+                              u8 tile, u8 column, u8 row,
+                              u8 *vga, u16 destination) {
+    size_t source = 0x8100u + (size_t)tile * 0x30u;
+    size_t alpha = 0xD000u + (size_t)tile * 8u;
+    size_t background = 0xA000u + (size_t)column * 0xC0u +
+                        (size_t)row * 8u;
+    for (u8 y = 0; y < 8; ++y) {
+        u8 mask = game_data[alpha++];
+        u16 out = destination;
+        for (u8 half = 0; half < 2; ++half) {
+            u8 pixels[4];
+            unpack_mcga_triplet(game_data + source, pixels, 0);
+            source += 3;
+            for (u8 x = 0; x < 4; ++x) {
+                vga[out++] = (mask & 0x80) ? game_seg[background] : pixels[x];
+                mask <<= 1;
+                ++background;
+            }
+        }
+        destination = (u16)(destination + 320);
+    }
+}
+
+static void update_animation_tile(u8 *game_seg, const u8 *game_data,
+                                  u16 map_at, u8 tile) {
+    if (tile == 0 || tile >= 0x19) return;
+    u16 at = read_at(game_data, 0x8004);
+    u8 count = game_data[at++];
+    while (count--) {
+        const u8 source = game_data[at++];
+        const u8 replacement = game_data[at++];
+        if (source == 0xFF) return;
+        if (source == tile) {
+            game_seg[map_at] = replacement;
+            return;
+        }
+    }
+}
+
 int zeliard_gtmcga_update_town_frame(u8 *game_seg, size_t game_size,
                                      const u8 *game_data, size_t game_data_size,
+                                     const u8 *mask_data, size_t mask_data_size,
                                      u8 *vga, size_t vga_size) {
     if (!game_seg || game_size < 0x10000 || !game_data ||
-        game_data_size < 0x10000 || !vga || vga_size < 0x10000)
+        game_data_size < 0x10000 || !mask_data ||
+        mask_data_size < 0x10000 || !vga || vga_size < 0x10000)
         return -1;
     memset(game_seg + 0x42EF, 0, 0x200);
+    u16 tile_cache[256] = {0};
     const u8 player_col = game_seg[0x0083];
     u16 map = (u16)(read_at(game_seg, 0xFF2A) + 0x20);
     u16 tile_vga = 0x61B0;
@@ -766,17 +986,35 @@ int zeliard_gtmcga_update_town_frame(u8 *game_seg, size_t game_size,
         }
         for (u8 row = 0; row < 8; ++row) {
             const u16 cursor = (u16)(0xE000 + (u16)column * 8u + row);
-            const u8 tile = game_seg[map++];
-            if (game_seg[cursor] != tile) {
-                const u8 previous = game_seg[cursor];
-                game_seg[cursor] = 0xFE;
-                if (previous == 0xFF) continue;
-                game_seg[cursor] = tile;
-                if (tile != 0xFF) {
-                    const u16 destination =
-                        (u16)(tile_vga + (u16)row * 8u * 320u);
-                    draw_town_map_tile(game_data, tile, vga, destination);
+            const u16 map_at = map++;
+            const u8 tile = game_seg[map_at];
+            if (game_seg[cursor] == tile) continue;
+            const u8 previous = game_seg[cursor];
+            game_seg[cursor] = 0xFE;
+            if (previous == 0xFF) continue;
+            if (row == 5 && tile == 0xFD) {
+                update_actor_columns(game_seg, game_data, mask_data, vga,
+                                     column, map, (u16)(cursor + 1));
+                continue;
+            }
+            game_seg[cursor] = tile;
+            const u16 destination =
+                (u16)(tile_vga + (u16)row * 8u * 320u);
+            if (row < 3 && game_data[0x8000u + tile] != 0) {
+                draw_overlay_tile(game_seg, game_data, tile, column, row,
+                                  vga, destination);
+                update_animation_tile(game_seg, game_data, map_at, tile);
+            } else if (tile_cache[tile]) {
+                u16 source = tile_cache[tile];
+                u16 out = destination;
+                for (u8 y = 0; y < 8; ++y) {
+                    memcpy(vga + out, vga + source, 8);
+                    source = (u16)(source + 320);
+                    out = (u16)(out + 320);
                 }
+            } else {
+                tile_cache[tile] = destination;
+                draw_town_map_tile(game_data, tile, vga, destination);
             }
         }
         tile_vga = (u16)(tile_vga + 8);
