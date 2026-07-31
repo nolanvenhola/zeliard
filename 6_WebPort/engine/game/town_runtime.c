@@ -357,8 +357,7 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
     cs[0xFF1E] = 0;
     cs[0x00E4] = 0;
     cs[0x009F] = 0;
-    cs[0xFF2A] = 0x17;
-    cs[0xFF2B] = 0xC0;
+    write_u16(cs, GVAR_TILE_POINTER, 0xC017);
     if (zeliard_gmmcga_draw_first_frame_hud(vga, vga_size, cs, 0x10000,
                                              town->town_text_record) ||
         !append_event(town, (zeliard_town_event_t){
@@ -385,6 +384,12 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             ZEL_TOWN_EVENT_UPDATE_FRAME, "106TOWN:gfx_update_fn", NULL,
             0, 0x3051, 0}))
         return -12;
+
+    /* 106TOWN:frame_update derives the live map window from the low byte of
+     * starting_position_in_town.  The initial-frame oracle above remains at
+     * its existing pre-window checkpoint until GTMCGA:3418 is ported. */
+    write_u16(cs, GVAR_TILE_POINTER,
+              (u16)(0xC017u + (u16)(u8)read_u16(cs, TOWN_START_POSITION) * 8u));
 
     palette_set_game_mcga();
     return 0;
@@ -499,6 +504,14 @@ static int run_live_frame(zeliard_town_runtime_t *town,
     u8 *cs = game->segment[0];
     u8 *game_data = game->segment[1];
     u8 *mask_data = game->segment[2];
+    if (town->dialog.active) {
+        const int continued = zeliard_town_dialog_continue(
+            &town->dialog, cs, game->segment[3], vga, vga_size);
+        if (continued < 0) return -3;
+        cs[GVAR_FRAME_TIMER] = 0;
+        town->frame_count++;
+        return 0;
+    }
     process_town_event_table(cs);
     zeliard_town_tick_npcs(cs);
     if (zeliard_gtmcga_render_town_actors(cs, 0x10000, game_data, 0x10000,
@@ -509,6 +522,12 @@ static int run_live_frame(zeliard_town_runtime_t *town,
                                           vga, vga_size))
         return -2;
     zeliard_town_detect_facing_targets(town, cs, input_direction);
+    if (town->facing_item_position != 0xFFFF) {
+        const int result = zeliard_town_dialog_begin(
+            &town->dialog, cs, game->segment[3], vga, vga_size,
+            town->facing_item_position);
+        if (result) return -3;
+    }
     move_player(cs, game_data, vga, vga_size, input_direction);
     cs[GVAR_FRAME_TIMER] = 0;
     town->frame_count++;
