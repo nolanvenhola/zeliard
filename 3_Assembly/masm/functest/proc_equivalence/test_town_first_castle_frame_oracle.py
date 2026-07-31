@@ -23,16 +23,16 @@ MOLE_SEG = 0x4000
 STACK_SEG = 0x8000
 VGA_SEG = 0xA000
 RETURN_IP = 0x0080
-EXPECTED_FRAME_FNV = 0x31AC617B72AB84C6
-EXPECTED_CAPTURE_FNV = 0x437AEC553ACB4725
-EXPECTED_STATE_FNV = 0xE79422416064A11C
+EXPECTED_FRAME_FNV = 0x1FA483016782AFEC
+EXPECTED_CAPTURE_FNV = 0xF2C3F82A0F93D06D
+EXPECTED_STATE_FNV = 0xE75DC3416036703F
 EXPECTED_BACKGROUND_FNV = 0x14093BAEA087B3AD
-EXPECTED_ACTOR_FNV = 0x9BFF78E51CBA1C2C
+EXPECTED_ACTOR_FNV = 0x14D37DE120D41703
 EXPECTED_CURSOR_FNV = 0x5808FD95919F54F5
-EXPECTED_ACTOR_FRAME_FNV = 0x359C52446E4FF435
+EXPECTED_ACTOR_FRAME_FNV = 0xE0E164284EA685FA
 EXPECTED_CPAT_PIXEL_FNV = 0x639503FA794A154F
 EXPECTED_CPAT_ALPHA_FNV = 0x2AE75F00707E7659
-EXPECTED_IDLE_FRAME_FNVS = (0xC0C9840DECF6B4E2, 0x915FB25F67D35E76)
+EXPECTED_IDLE_FRAME_FNVS = (0x26D0E4434D4F9C14, 0xE3CDA193615CB7A5)
 EXPECTED_IDLE_NPC_FNVS = (0x7AEF6E1921E0C970, 0x04FCC161ECC110A0)
 
 
@@ -177,15 +177,20 @@ def main() -> int:
 
     call_far(mu, MOLE_SEG, 0, 4)
     call_near(mu, 0x2106)
-    call_near(mu, 0x3028)
     call_far(mu, YMPD_SEG, 0x3300, 4)
+    # GTMCGA:3028 snapshots the completed YMPD scenery for the transparent
+    # pixels in the upper CPAT rows.
+    call_near(mu, 0x3028)
     background = bytes(mu.mem_read(VGA_SEG << 4, 0x10000))
 
     mu.mem_write(game_base + 0x7C45, b"\x00\x00")
     mu.mem_write(game_base + 0xFF1D, b"\x00\x00")
     mu.mem_write(game_base + 0x00E4, b"\x00")
     mu.mem_write(game_base + 0x009F, b"\x00")
-    write_u16(mu, GAME_SEG, 0xFF2A, 0xC017)
+    start_position = int.from_bytes(
+        bytes(mu.mem_read(game_base + 0x0080, 2)), "little")
+    write_u16(mu, GAME_SEG, 0xFF2A,
+              (0xC017 + ((start_position & 0xFF) << 3)) & 0xFFFF)
     for bx, ch in ((0x0204, 0x21), (0x021C, 0x42), (0x481C, 0x42)):
         call_near(mu, 0x2195, bx=bx, cx=ch << 8)
     call_near(mu, 0x2385)
@@ -212,7 +217,6 @@ def main() -> int:
     # First two idle iterations of 106TOWN:draw_and_pump_input. The release
     # addresses below retain the real call order: events, NPC tick, actor
     # composition, cursor marking, then GTMCGA:3051 dirty update.
-    write_u16(mu, GAME_SEG, 0xFF2A, 0xC107)
     idle_hashes = []
     idle_npc_hashes = []
     idle_frames = []
@@ -242,6 +246,8 @@ def main() -> int:
         dump_dir.mkdir(exist_ok=True)
         (dump_dir / "town-background-cleared-frame.bin").write_bytes(background)
         (dump_dir / "town-first-frame.bin").write_bytes(frame)
+        (dump_dir / "town-game-data.bin").write_bytes(
+            bytes(mu.mem_read(0x2000 << 4, 0x10000)))
         for index, idle_frame in enumerate(idle_frames, 1):
             (dump_dir / f"town-idle-frame-{index}.bin").write_bytes(idle_frame)
             (dump_dir / f"town-idle-state-{index}.bin").write_bytes(
