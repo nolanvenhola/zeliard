@@ -97,20 +97,88 @@ static unsigned long long selected_state_hash(const u8 *segment) {
     return hash;
 }
 
+static unsigned long long npc_state_hash(const u8 *segment) {
+    u16 at = (u16)(segment[0xC00F] | ((u16)segment[0xC010] << 8));
+    size_t size = 2;
+    while (at + size + 8 <= 0x10000) {
+        const u16 position = (u16)(segment[at + size - 2] |
+                                   ((u16)segment[at + size - 1] << 8));
+        if (position == 0xFFFF) break;
+        size += 8;
+    }
+    return fnv1a64(segment + at, size);
+}
+
 int main(void) {
     u8 segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE] = {{0}};
     u8 vga[0x10000] = {0};
     zeliard_game_exec_state_t game = {0};
     zeliard_town_runtime_t town;
+    int ok = 1;
+    u8 facing_fixture[0x10000] = {0};
+    zeliard_town_runtime_t facing_town = {0};
+    facing_fixture[0x0080] = 0x20;
+    facing_fixture[0x0083] = 0x0A;
+    facing_fixture[0xFF2A] = 0x00;
+    facing_fixture[0xFF2B] = 0x50;
+    facing_fixture[0xC00F] = 0x00;
+    facing_fixture[0xC010] = 0x60;
+    facing_fixture[0xC009] = 0x00;
+    facing_fixture[0xC00A] = 0x61;
+    facing_fixture[0xFF1D] = 0xFF;
+    facing_fixture[0x507D] = 0xFD;
+    facing_fixture[0x5085] = 0xFD;
+    static const u8 facing_npcs[] = {
+        0x2F, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00,
+        0x30, 0x00, 0x80, 0x00, 0x00, 0x07, 0x80, 0x00,
+        0xFF, 0xFF,
+    };
+    static const u8 facing_doors[] = {0x2E, 0x00, 0x07, 0xFF, 0xFF};
+    memcpy(facing_fixture + 0x6000, facing_npcs, sizeof(facing_npcs));
+    memcpy(facing_fixture + 0x6100, facing_doors, sizeof(facing_doors));
+    zeliard_town_detect_facing_targets(&facing_town, facing_fixture, 1);
+    static const u8 npc_seed_anim[8] = {0x30, 0x10, 0x30, 0x55,
+                                        0x30, 0x10, 0x30, 0x55};
+    static const u16 npc_expected_position[8] = {
+        0x20, 0x1F, 0x1F, 0x20, 0x20, 0x1F, 0x1F, 0x20};
+    static const u8 npc_expected_anim[8] = {
+        0x01, 0x01, 0x01, 0x55, 0x01, 0x01, 0x01, 0x55};
+    for (u8 type = 0; type < 8; ++type) {
+        memset(facing_fixture, 0, sizeof(facing_fixture));
+        facing_fixture[0x0083] = 0x0A;
+        facing_fixture[0xC00F] = 0x00;
+        facing_fixture[0xC010] = 0x60;
+        facing_fixture[0xC011] = 0x00;
+        facing_fixture[0xC012] = 0x62;
+        facing_fixture[0x6202] = 0x40;
+        facing_fixture[0x6000] = 0x20;
+        facing_fixture[0x6002] = 0x80;
+        facing_fixture[0x6003] = 0x22;
+        facing_fixture[0x6004] = npc_seed_anim[type];
+        facing_fixture[0x6005] = type;
+        facing_fixture[0x6008] = 0xFF;
+        facing_fixture[0x6009] = 0xFF;
+        facing_fixture[0xC01C + 0x20 * 8] = 0xFD;
+        facing_fixture[0xC01C + 0x1F * 8] = 0x33;
+        zeliard_town_tick_npcs(facing_fixture);
+        const u16 position = (u16)(facing_fixture[0x6000] |
+                                   ((u16)facing_fixture[0x6001] << 8));
+        ok &= position == npc_expected_position[type];
+        ok &= facing_fixture[0x6004] == npc_expected_anim[type];
+    }
     for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
         game.segment[i] = segments[i];
         game.segment_size[i] = sizeof(segments[i]);
     }
-    int ok = load_direct(segments[0], sizeof(segments[0]), "assets/stdply.bin") &&
+    ok &= load_direct(segments[0], sizeof(segments[0]), "assets/stdply.bin") &&
         load_direct(segments[0] + 0x2000, 0xE000, "assets/gmmcga.bin") &&
         load_raw(segments[0] + 0x6000, 0xA000, "assets/town.bin") &&
         load_raw(segments[3], sizeof(segments[3]), "assets/mole.bin") &&
         load_font(segments[0]);
+    ok &= facing_town.facing_item_position == 0x002F;
+    ok &= facing_town.facing_npc_position == 0x0030;
+    ok &= facing_town.facing_door_type == 0x07;
+    ok &= facing_fixture[0xFF1D] == 0;
     const int result = ok ? zeliard_town_enter_first_frame(
         &town, &game, vga, sizeof(vga)) : -99;
     ok &= result == 0;
@@ -136,10 +204,50 @@ int main(void) {
     ok &= capture_hash == 0x437AEC553ACB4725ULL;
     ok &= palette_hash == 0xF0597D78ABA0CC75ULL;
     ok &= fnv1a64(vga + 0xFA00, 0x180) == 0xF5ED4A7A119DE3ECULL;
+    const u8 initial_column = segments[0][0x0083];
+    const u16 initial_start = (u16)(segments[0][0x0080] |
+                                    ((u16)segments[0][0x0081] << 8));
+    segments[0][0xFF33] = 5;
+    const int right_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 8);
+    const int settle_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 0);
+    const unsigned long long live_frame_hash = fnv1a64(vga, sizeof(vga));
+    const unsigned long long live_npc_hash = npc_state_hash(segments[0]);
+    const u32 live_frame_count = town.frame_count;
+    const u16 live_start = (u16)(segments[0][0x0080] |
+                                 ((u16)segments[0][0x0081] << 8));
+    ok &= right_frames == 1 && settle_frames == 1;
+    ok &= town.frame_count == 2;
+    ok &= segments[0][0x0083] == (u8)(initial_column + 1);
+    ok &= live_start == initial_start;
+    ok &= (segments[0][0x00C2] & 1) == 0;
+    ok &= live_frame_hash == 0x0711CC9604513081ULL;
+    ok &= live_npc_hash == 0x653529AFD9704EF2ULL;
+    const int scroll_walk_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 140, 8);
+    const int scroll_settle_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 0);
+    const u16 scrolled_start = (u16)(segments[0][0x0080] |
+                                     ((u16)segments[0][0x0081] << 8));
+    const unsigned long long scrolled_frame_hash = fnv1a64(vga, sizeof(vga));
+    ok &= scroll_walk_frames == 7 && scroll_settle_frames == 1;
+    ok &= town.frame_count == 10;
+    ok &= segments[0][0x0083] == 0x10;
+    ok &= scrolled_start == (u16)(initial_start + 2);
+    ok &= scrolled_frame_hash == 0xDC2FED8396064996ULL;
     printf("town_runtime: %s rc=%d frame=%016llx state=%016llx "
            "capture=%016llx palette=%016llx events=%u text=%04x\n",
            ok ? "PASS" : "FAIL", result, frame_hash, state_hash, capture_hash,
            palette_hash, (unsigned)town.event_count, town.town_text_record);
+    printf("town_live_loop: frames=%u col=%02x start=%04x frame=%016llx "
+           "npc_state=%016llx item=%04x npc=%04x door=%02x\n",
+           (unsigned)live_frame_count, (u8)(initial_column + 1), live_start,
+           live_frame_hash, live_npc_hash, town.facing_item_position,
+           town.facing_npc_position, town.facing_door_type);
+    printf("town_live_scroll: frames=%u col=%02x start=%04x frame=%016llx\n",
+           (unsigned)town.frame_count, segments[0][0x0083], scrolled_start,
+           scrolled_frame_hash);
     printf("VERDICT: %s: first 106TOWN castle frame service span\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

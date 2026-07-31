@@ -216,11 +216,25 @@ int main(void) {
     ok &= zeliard_gtmcga_capture_playfield(vga, 0xFFFF, game_seg,
                                             sizeof(game_seg)) == -1;
 
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 37 + 11);
+    ok &= zeliard_gtmcga_scroll_view_left(vga, 0x10000) == 0;
+    const unsigned long long scroll_left_hash = fnv1a64(vga, 0x10000);
+    ok &= scroll_left_hash == 0x3FC2021C15FF0B25ULL;
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 37 + 11);
+    ok &= zeliard_gtmcga_scroll_view_right(vga, 0x10000) == 0;
+    const unsigned long long scroll_right_hash = fnv1a64(vga, 0x10000);
+    ok &= scroll_right_hash == 0x402C490240B31725ULL;
+    ok &= zeliard_gtmcga_scroll_view_left(vga, 0xFFFF) == -1;
+
     printf("town_mcga_services: %s vga=%016llx packed=%016llx masks=%016llx capture=%016llx\n",
            ok ? "PASS" : "FAIL",
            fnv1a64(vga, 0x10000), fnv1a64(ds + 0x4100, 144),
            fnv1a64(es + 0x7000, 24),
            fnv1a64(game_seg + 0xA000, 0x1500));
+    printf("town_mcga_scroll: left=%016llx right=%016llx\n",
+           scroll_left_hash, scroll_right_hash);
     printf("VERDICT: %s: town MCGA services match MASM oracles\n",
            ok ? "PASS" : "FAIL");
     free(vga);
