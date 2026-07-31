@@ -84,6 +84,8 @@ static void game_memory_init(void) {
     if (!game_load_direct("gmmcga.bin", 0x2000)) {
         platform_log("game bootstrap: gmmcga.bin load failed");
     }
+    /* zeliad.asm:init_game_globals stores the default F9 speed at FF33. */
+    g_game_segments[0][0xFF33] = 5;
     zel_input_init(&g_input, g_game_segments[0]);
 }
 
@@ -118,8 +120,10 @@ static void apply_input_actions(u32 actions) {
         }
     }
     if ((actions & ZEL_INPUT_ACTION_ENTER) && !g_paused) {
-        g_game_segments[0][0xFF29] = 0;
-        consume_opening_advance();
+        if (g_scene == SCENE_OPENING) {
+            g_game_segments[0][0xFF29] = 0;
+            consume_opening_advance();
+        }
     }
 }
 
@@ -203,6 +207,12 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         } else if (frames > 0) {
             memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
         }
+        if (g_town_runtime.dialog.pending_sound_cue) {
+            zel_opening_audio_write_cue(
+                g_town_runtime.dialog.pending_sound_cue);
+            g_town_runtime.dialog.pending_sound_cue = 0;
+        }
+        zel_opening_audio_tick(dt_ms);
         return;
     }
     while (dt_ms > 0 || (dt_ms == 0 && g_scene == SCENE_OPENING)) {
@@ -241,6 +251,9 @@ EXPORT void zeliard_release_all_keys(void) {
 
 /* Compatibility pulse for older native callers. Browser code uses down/up. */
 EXPORT void zeliard_key(int keycode) {
+    /* Arm stick.asm's make-edge latch during an idle sample first. */
+    apply_input_actions(zel_input_advance_pit(
+        &g_input, g_game_segments[0], 10));
     u32 actions = zel_input_key_down(&g_input, g_game_segments[0], keycode);
     actions |= zel_input_advance_pit(&g_input, g_game_segments[0], 5);
     apply_input_actions(actions);
@@ -278,6 +291,9 @@ EXPORT void             zeliard_opening_set_phase_for_test(int phase) {
     zel_opening_audio_sync_phase(opening_phase_id());
 }
 EXPORT u32              zeliard_opening_nec_hou_sprite_debug_word(void) { return opening_nec_hou_sprite_debug_word(); }
+#ifndef __EMSCRIPTEN__
+int zeliard_test_town_dialog_active(void) { return g_town_runtime.dialog.active; }
+#endif
 EXPORT u32              zeliard_opening_nec_hou_sprite_debug_slots(void) { return opening_nec_hou_sprite_debug_slots(); }
 
 #if !defined(__EMSCRIPTEN__) && !defined(ZELIARD_NO_MAIN)

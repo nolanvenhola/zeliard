@@ -29,6 +29,7 @@ ENGINE_SRC := \
 	game/opening_script.c \
 	game/opening_trace.c \
 	game/opening.c \
+	game/town_dialog.c \
 	game/town_runtime.c \
 	game/gameplay_state.c
 
@@ -55,6 +56,7 @@ TEST_OPENING_SRC := \
 	game/opening_script.c \
 	game/opening_trace.c \
 	game/opening.c \
+	game/town_dialog.c \
 	game/town_runtime.c \
 	render/town_background.c \
 	render/town_mcga.c \
@@ -80,6 +82,7 @@ TEST_OPENING_TRACE_SRC := \
 	game/opening_script.c \
 	game/opening_trace.c \
 	game/opening.c \
+	game/town_dialog.c \
 	game/town_runtime.c \
 	render/town_background.c \
 	render/town_mcga.c \
@@ -148,6 +151,7 @@ TEST_MAIN_CONTROLS_SRC := \
 	game/opening_script.c \
 	game/opening_trace.c \
 	game/opening.c \
+	game/town_dialog.c \
 	game/town_runtime.c \
 	render/town_background.c \
 	render/town_mcga.c \
@@ -228,12 +232,18 @@ TEST_TOWN_ACTOR_SRC := \
 	load/fill_buffer.c
 TEST_TOWN_RUNTIME_SRC := \
 	tests/town_runtime_native.c \
+	game/town_dialog.c \
 	game/town_runtime.c \
 	render/town_background.c \
 	render/town_mcga.c \
 	render/palette.c \
 	load/fill_buffer.c \
 	platform/platform_sdl.c
+TEST_TOWN_FIRST_DIALOG_SRC := \
+	tests/town_first_dialog_native.c \
+	game/town_dialog.c \
+	render/town_mcga.c \
+	load/fill_buffer.c
 
 CFLAGS_COMMON := -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O2 -fno-strict-aliasing -I. -Ithird_party/opal/include
 
@@ -280,7 +290,7 @@ build/zeliard-native: $(NATIVE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(NATIVE_SRC)
 
-test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/continuous-input-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native build/town-background-native build/town-actor-native build/town-runtime-native
+test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/continuous-input-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native build/town-background-native build/town-actor-native build/town-runtime-native build/town-first-dialog-native
 	./build/opening-parity-native
 	./build/opening-audio-native
 	./build/mscadlib-vm-native
@@ -305,6 +315,7 @@ test-native: build/opening-parity-native build/opening-audio-native build/mscadl
 	./build/town-background-native
 	./build/town-actor-native
 	./build/town-runtime-native
+	./build/town-first-dialog-native
 
 build/opening-parity-native: $(TEST_OPENING_SRC) Makefile
 	@mkdir -p build
@@ -397,6 +408,10 @@ build/town-actor-native: $(TEST_TOWN_ACTOR_SRC) Makefile
 build/town-runtime-native: $(TEST_TOWN_RUNTIME_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_TOWN_RUNTIME_SRC)
+
+build/town-first-dialog-native: $(TEST_TOWN_FIRST_DIALOG_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_TOWN_FIRST_DIALOG_SRC)
 
 build/gameplay-parity-native: $(TEST_GAMEPLAY_SRC) Makefile
 	@mkdir -p build

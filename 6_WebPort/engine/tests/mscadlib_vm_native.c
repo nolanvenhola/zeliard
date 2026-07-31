@@ -97,10 +97,10 @@ int main(void) {
            zel_mscadlib_vm_global(&vm, 0xFF26));
     ok &= fade_match;
 
-    static const u8 sfx_cues[] = { 0x02, 0x04, 0x3D, 0x3E, 0x3F, 0x40, 0x41 };
-    static const size_t sfx_write_counts[] = { 95, 122, 83, 83, 83, 83, 83 };
+    static const u8 sfx_cues[] = { 0x02, 0x04, 0x1E, 0x3D, 0x3E, 0x3F, 0x40, 0x41 };
+    static const size_t sfx_write_counts[] = { 95, 122, 180, 83, 83, 83, 83, 83 };
     static const u32 sfx_write_hashes[] = {
-        0xa57a52a3u, 0xe4c9b1d6u, 0xd00c874eu, 0x7bebfd22u,
+        0xa57a52a3u, 0xe4c9b1d6u, 0x8dbf3599u, 0xd00c874eu, 0x7bebfd22u,
         0x6a9f3432u, 0x28076aebu, 0xdb93e6a7u
     };
     for (size_t cue_index = 0; cue_index < sizeof(sfx_cues); ++cue_index) {

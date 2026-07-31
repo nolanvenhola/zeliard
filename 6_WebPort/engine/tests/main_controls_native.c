@@ -6,6 +6,10 @@
 void zeliard_init(void);
 void zeliard_tick(u32 dt_ms);
 void zeliard_key(int keycode);
+void zeliard_key_down(int keycode);
+void zeliard_key_up(int keycode);
+int zeliard_scene(void);
+int zeliard_test_town_dialog_active(void);
 int zeliard_phase(void);
 u32 zeliard_phase_elapsed(void);
 int zeliard_paused(void);
@@ -16,6 +20,15 @@ int zeliard_music_enabled(void);
 int zeliard_sound_enabled(void);
 int zeliard_sound_cue(void);
 void zeliard_opening_set_phase_for_test(int phase);
+
+static unsigned long long fnv1a64(const u8 *data, size_t size) {
+    unsigned long long hash = 0xCBF29CE484222325ULL;
+    for (size_t i = 0; i < size; ++i) {
+        hash ^= data[i];
+        hash *= 0x100000001B3ULL;
+    }
+    return hash;
+}
 
 int main(void) {
     int ok = 1;
@@ -96,6 +109,35 @@ int main(void) {
     ok &= princess_cue == 0x41;
     printf("main_controls:princess_text_cue_41: %s cue=%02X\n",
            princess_cue == 0x41 ? "PASS" : "FAIL", princess_cue);
+
+    zeliard_init();
+    zeliard_opening_set_phase_for_test(3);
+    zeliard_key(13);
+    zeliard_tick(0);
+    ok &= zeliard_scene() == 2;
+    zeliard_key_down(39);
+    zeliard_tick(90);
+    zeliard_key_up(39);
+    zeliard_tick(90);
+    zeliard_key_down(32);
+    zeliard_tick(90);
+    zeliard_key_up(32);
+    zeliard_tick(90);
+    const unsigned long long dialog_hash = fnv1a64(g_framebuf,
+                                                    ZELIARD_FB_SIZE);
+    const int dialog_cue = zeliard_sound_cue();
+    const int dialog_active = zeliard_test_town_dialog_active();
+    zeliard_key_down(13);
+    zeliard_tick(90);
+    zeliard_key_up(13);
+    zeliard_tick(90);
+    const int dialog_dismissed = !zeliard_test_town_dialog_active();
+    printf("main_controls:first_castle_dialog: %s frame=%016llx cue=%02X "
+           "active=%d dismissed=%d\n",
+           dialog_cue == 0x1E && dialog_active && dialog_dismissed ?
+               "PASS" : "FAIL",
+           dialog_hash, dialog_cue, dialog_active, dialog_dismissed);
+    ok &= dialog_cue == 0x1E && dialog_active && dialog_dismissed;
 
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

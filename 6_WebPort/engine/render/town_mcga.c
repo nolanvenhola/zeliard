@@ -89,6 +89,116 @@ int zeliard_gmmcga_clear_playfield(u8 *vga, size_t vga_size) {
     return 0;
 }
 
+static void write_u16_le(u8 *data, size_t offset, u16 value) {
+    data[offset] = (u8)value;
+    data[offset + 1] = (u8)(value >> 8);
+}
+
+static u16 read_u16_at(const u8 *data, size_t offset) {
+    return (u16)(data[offset] | ((u16)data[offset + 1] << 8));
+}
+
+static void gmmcga_fill_horizontal(u8 *vga, u16 *di, u8 width_quads,
+                                   u16 ax, u16 bx, u16 dx) {
+    u16 value = read_u16_at(vga, *di);
+    value = (u16)((value & (u16)~ax) | (ax & dx));
+    write_u16_le(vga, *di, value);
+    u16 at = (u16)(*di + 2);
+    const u16 middle = (u16)(width_quads * 4u - 4u);
+    for (u16 i = 0; i < middle; ++i) vga[(u16)(at + i)] = (u8)dx;
+    at = (u16)(at + middle);
+    value = read_u16_at(vga, at);
+    value = (u16)((value & (u16)~bx) | (bx & dx));
+    write_u16_le(vga, at, value);
+    *di = (u16)(*di + 320);
+}
+
+int zeliard_gmmcga_fill_frame(u8 *vga, size_t vga_size,
+                              u16 bx, u16 cx, u8 cinematic) {
+    if (!vga || vga_size < 0x10000) return -1;
+    /* GMMCGA:2046 moves input BH into AL before multiplying input BL by
+     * 320: BH is the horizontal quarter-pixel coordinate, BL is the row. */
+    const u8 x_quad = (u8)(bx >> 8);
+    const u8 y = (u8)bx;
+    const u8 width_quads = (u8)(cx >> 8);
+    const u8 height = (u8)cx;
+    if (width_quads == 0 || height < 4) return -1;
+    const u16 x = (u16)x_quad * 4u;
+    const u16 width = (u16)width_quads * 4u;
+    if (x + width > 320 || (u16)y + height > 200) return -1;
+
+    const u16 dx = cinematic ? 0xFFFF : 0x0909;
+    u16 di = (u16)((u16)y * 320u + x);
+    for (u8 row = 0; row < (u8)(height - 4); ++row)
+        memset(vga + di + 640u + (u16)row * 320u, 0, width);
+    gmmcga_fill_horizontal(vga, &di, width_quads, 0x0000, 0x0000, dx);
+    gmmcga_fill_horizontal(vga, &di, width_quads, 0xFF00, 0x00FF, dx);
+    const u16 side_offset = (u16)((width_quads - 1u) * 4u + 2u);
+    for (u8 row = 0; row < (u8)(height - 4); ++row) {
+        write_u16_le(vga, di, dx);
+        write_u16_le(vga, (u16)(di + side_offset), dx);
+        di = (u16)(di + 320);
+    }
+    gmmcga_fill_horizontal(vga, &di, width_quads, 0xFF00, 0x00FF, dx);
+    gmmcga_fill_horizontal(vga, &di, width_quads, 0x0000, 0x0000, dx);
+    return 0;
+}
+
+int zeliard_gmmcga_draw_text_char(u8 *vga, size_t vga_size,
+                                  const u8 *cs, size_t cs_size,
+                                  u8 character, u8 selector, u16 bx, u8 y) {
+    if (!vga || !cs || vga_size < 0x10000 || cs_size < 0x10000 ||
+        character < 0x20 || character >= 0x80 || bx + 8 > 320 || y + 8 > 200)
+        return -1;
+    const u8 color = cs[0xFF77] ? (u8)(selector * 0x11u)
+                                      : cs[(u16)(0x24EA + selector)];
+    const u16 font = read_u16_at(cs, 0xF500);
+    const u16 source = (u16)(font + (u16)(character - 0x20) * 8u);
+    for (u8 row = 0; row < 8; ++row) {
+        u8 bits = cs[(u16)(source + row)];
+        const u16 dest = (u16)((u16)(y + row) * 320u + bx);
+        for (u8 pixel = 0; pixel < 8; ++pixel) {
+            if (bits & 0x80) vga[(u16)(dest + pixel)] = color;
+            bits <<= 1;
+        }
+    }
+    return 0;
+}
+
+static int gmmcga_copy_rect(u8 *vga, size_t vga_size, u8 *scratch,
+                            size_t scratch_size, u16 ax, u16 cx, u16 di,
+                            int restore) {
+    const u16 x = (u16)(ax >> 8) * 8u;
+    const u16 y = (u8)ax;
+    const u16 width = (u16)(cx >> 8) * 8u;
+    const u16 height = (u8)cx;
+    const size_t bytes = (size_t)width * height;
+    if (!vga || !scratch || vga_size < 0x10000 || x + width > 320 ||
+        y + height > 200 || (size_t)di + bytes > scratch_size)
+        return -1;
+    for (u16 row = 0; row < height; ++row) {
+        u8 *screen = vga + (size_t)(y + row) * 320u + x;
+        u8 *saved = scratch + di + (size_t)row * width;
+        if (restore) memcpy(screen, saved, width);
+        else memcpy(saved, screen, width);
+    }
+    return 0;
+}
+
+int zeliard_gmmcga_save_rect(const u8 *vga, size_t vga_size,
+                             u8 *scratch, size_t scratch_size,
+                             u16 ax, u16 cx, u16 di) {
+    return gmmcga_copy_rect((u8 *)vga, vga_size, scratch, scratch_size,
+                            ax, cx, di, 0);
+}
+
+int zeliard_gmmcga_restore_rect(u8 *vga, size_t vga_size,
+                                const u8 *scratch, size_t scratch_size,
+                                u16 ax, u16 cx, u16 di) {
+    return gmmcga_copy_rect(vga, vga_size, (u8 *)scratch, scratch_size,
+                            ax, cx, di, 1);
+}
+
 static u16 read_u16_le(const u8 *data) {
     return (u16)(data[0] | ((u16)data[1] << 8));
 }

@@ -200,7 +200,7 @@ int main(void) {
     ok &= segments[0][0xC3AC] == 0x00;
     ok &= segments[0][0xC3AD] == 0xFF;
     ok &= frame_hash == 0x5FFA5500A462B8EFULL;
-    ok &= state_hash == 0xE79422416064A11CULL;
+    ok &= state_hash == 0xE75DC3416036703FULL;
     ok &= capture_hash == 0x437AEC553ACB4725ULL;
     ok &= palette_hash == 0xF0597D78ABA0CC75ULL;
     ok &= fnv1a64(vga + 0xFA00, 0x180) == 0xF5ED4A7A119DE3ECULL;
@@ -222,7 +222,7 @@ int main(void) {
     ok &= segments[0][0x0083] == (u8)(initial_column + 1);
     ok &= live_start == initial_start;
     ok &= (segments[0][0x00C2] & 1) == 0;
-    ok &= live_frame_hash == 0x0711CC9604513081ULL;
+    ok &= live_frame_hash == 0x41036EECF5271A4EULL;
     ok &= live_npc_hash == 0x653529AFD9704EF2ULL;
     const int scroll_walk_frames = zeliard_town_advance_pit(
         &town, &game, vga, sizeof(vga), 140, 8);
@@ -235,7 +235,7 @@ int main(void) {
     ok &= town.frame_count == 10;
     ok &= segments[0][0x0083] == 0x10;
     ok &= scrolled_start == (u16)(initial_start + 2);
-    ok &= scrolled_frame_hash == 0xDC2FED8396064996ULL;
+    ok &= scrolled_frame_hash == 0x7BC69366414A1955ULL;
     printf("town_runtime: %s rc=%d frame=%016llx state=%016llx "
            "capture=%016llx palette=%016llx events=%u text=%04x\n",
            ok ? "PASS" : "FAIL", result, frame_hash, state_hash, capture_hash,
