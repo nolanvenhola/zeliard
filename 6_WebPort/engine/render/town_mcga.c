@@ -990,13 +990,13 @@ int zeliard_gtmcga_update_town_frame(u8 *game_seg, size_t game_size,
             const u8 tile = game_seg[map_at];
             if (game_seg[cursor] == tile) continue;
             const u8 previous = game_seg[cursor];
-            game_seg[cursor] = 0xFE;
-            if (previous == 0xFF) continue;
             if (row == 5 && tile == 0xFD) {
                 update_actor_columns(game_seg, game_data, mask_data, vga,
                                      column, map, (u16)(cursor + 1));
                 continue;
             }
+            game_seg[cursor] = 0xFE;
+            if (previous == 0xFF) continue;
             game_seg[cursor] = tile;
             const u16 destination =
                 (u16)(tile_vga + (u16)row * 8u * 320u);

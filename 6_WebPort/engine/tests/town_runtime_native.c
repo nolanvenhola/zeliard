@@ -216,6 +216,50 @@ int main(void) {
     ok &= cpat_alpha_hash == 0x2AE75F00707E7659ULL;
     ok &= fnv1a64(vga + 0xFA00, 0x180) == 0x14D37DE120D41703ULL;
 
+    static u8 overlap_segment[ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 overlap_vga[0x10000];
+    memcpy(overlap_segment, segments[0], sizeof(overlap_segment));
+    memcpy(overlap_vga, vga, sizeof(overlap_vga));
+    unsigned long long overlap_hashes[4] = {0};
+    for (u8 column = 0x0C; column < 0x10; ++column) {
+        memcpy(segments[0], overlap_segment, sizeof(overlap_segment));
+        memcpy(vga, overlap_vga, sizeof(overlap_vga));
+        segments[0][0x0083] = column;
+        memset(segments[0] + 0xE000, 0xFE, 0xE0);
+        ok &= zeliard_gtmcga_render_town_actors(
+            segments[0], 0x10000, segments[1], 0x10000,
+            segments[2], 0x10000, vga, sizeof(vga)) == 0;
+        const u16 cursor = (u16)(0xE000 + (u16)column * 8u + 5u);
+        memset(segments[0] + cursor, 0xFF, 3);
+        memset(segments[0] + cursor + 8, 0xFF, 3);
+        ok &= zeliard_gtmcga_update_town_frame(
+            segments[0], 0x10000, segments[1], 0x10000,
+            segments[2], 0x10000, vga, sizeof(vga)) == 0;
+        overlap_hashes[column - 0x0C] = fnv1a64(vga, sizeof(vga));
+        if (getenv("ZELIARD_DUMP")) {
+            char path[64];
+            snprintf(path, sizeof(path), "build/town-overlap-col%02x.bin",
+                     column);
+            FILE *dump = fopen(path, "wb");
+            if (dump) {
+                fwrite(vga, 1, sizeof(vga), dump);
+                fclose(dump);
+            }
+        }
+    }
+    memcpy(segments[0], overlap_segment, sizeof(overlap_segment));
+    memcpy(vga, overlap_vga, sizeof(overlap_vga));
+    printf("town_castle_actor_overlap: col0c=%016llx col0d=%016llx "
+           "col0e=%016llx col0f=%016llx\n",
+           overlap_hashes[0], overlap_hashes[1], overlap_hashes[2],
+           overlap_hashes[3]);
+    static const unsigned long long expected_overlap_hashes[4] = {
+        0xC7A9AAD199FEB82EULL, 0x2DF829B1230E73A3ULL,
+        0x312DDFEB392959C3ULL, 0xC2202A1FE9149790ULL,
+    };
+    for (size_t index = 0; index < 4; ++index)
+        ok &= overlap_hashes[index] == expected_overlap_hashes[index];
+
     static u8 idle_segments[ZELIARD_GAME_SEGMENT_COUNT]
                            [ZELIARD_GAME_SEGMENT_SIZE];
     static u8 idle_vga[0x10000];

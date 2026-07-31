@@ -34,6 +34,10 @@ EXPECTED_CPAT_PIXEL_FNV = 0x639503FA794A154F
 EXPECTED_CPAT_ALPHA_FNV = 0x2AE75F00707E7659
 EXPECTED_IDLE_FRAME_FNVS = (0x26D0E4434D4F9C14, 0xE3CDA193615CB7A5)
 EXPECTED_IDLE_NPC_FNVS = (0x7AEF6E1921E0C970, 0x04FCC161ECC110A0)
+EXPECTED_OVERLAP_FRAME_FNVS = (
+    0xC7A9AAD199FEB82E, 0x2DF829B1230E73A3,
+    0x312DDFEB392959C3, 0xC2202A1FE9149790,
+)
 
 
 def fnv1a64(data: bytes) -> int:
@@ -214,6 +218,27 @@ def main() -> int:
     capture = bytes(mu.mem_read(game_base + 0xA000, 0x1500))
     state = selected_state(mu)
 
+    # Hold the NPC state fixed and move Duke across the first castle NPC's
+    # three-column compositor span. This isolates GTMCGA's overlap behavior
+    # from 106TOWN's NPC movement tick.
+    overlap_base_state = bytes(mu.mem_read(game_base, 0x10000))
+    overlap_base_vga = bytes(mu.mem_read(VGA_SEG << 4, 0x10000))
+    overlap_hashes = []
+    overlap_frames = []
+    for column in range(0x0C, 0x10):
+        mu.mem_write(game_base, overlap_base_state)
+        mu.mem_write(VGA_SEG << 4, overlap_base_vga)
+        mu.mem_write(game_base + 0x0083, bytes((column,)))
+        mu.mem_write(game_base + 0xE000, b"\xfe" * 0xE0)
+        call_near(mu, 0x6975)
+        call_near(mu, 0x6950)
+        call_near(mu, 0x3051)
+        overlap_frame = bytes(mu.mem_read(VGA_SEG << 4, 0x10000))
+        overlap_frames.append(overlap_frame)
+        overlap_hashes.append(fnv1a64(overlap_frame))
+    mu.mem_write(game_base, overlap_base_state)
+    mu.mem_write(VGA_SEG << 4, overlap_base_vga)
+
     # First two idle iterations of 106TOWN:draw_and_pump_input. The release
     # addresses below retain the real call order: events, NPC tick, actor
     # composition, cursor marking, then GTMCGA:3051 dirty update.
@@ -252,6 +277,9 @@ def main() -> int:
             (dump_dir / f"town-idle-frame-{index}.bin").write_bytes(idle_frame)
             (dump_dir / f"town-idle-state-{index}.bin").write_bytes(
                 idle_states[index - 1])
+        for column, overlap_frame in zip(range(0x0C, 0x10), overlap_frames):
+            (dump_dir / f"town-overlap-col{column:02x}.bin").write_bytes(
+                overlap_frame)
     ok = (frame_hash, capture_hash, state_hash, background_hash,
           fnv1a64(actor_tiles), fnv1a64(cursor), fnv1a64(actor_frame)) == (
         EXPECTED_FRAME_FNV, EXPECTED_CAPTURE_FNV, EXPECTED_STATE_FNV,
@@ -260,7 +288,8 @@ def main() -> int:
         fnv1a64(cpat_pixels) == EXPECTED_CPAT_PIXEL_FNV and \
         fnv1a64(cpat_alpha) == EXPECTED_CPAT_ALPHA_FNV and \
         tuple(idle_hashes) == EXPECTED_IDLE_FRAME_FNVS and \
-        tuple(idle_npc_hashes) == EXPECTED_IDLE_NPC_FNVS
+        tuple(idle_npc_hashes) == EXPECTED_IDLE_NPC_FNVS and \
+        tuple(overlap_hashes) == EXPECTED_OVERLAP_FRAME_FNVS
     print(f"town_first_castle_frame: {'PASS' if ok else 'FAIL'} "
           f"background={background_hash:016x} frame={frame_hash:016x} "
           f"capture={capture_hash:016x} "
@@ -271,6 +300,9 @@ def main() -> int:
         f"frame{i + 1}={frame_hash:016x}/npc={npc_hash:016x}"
         for i, (frame_hash, npc_hash) in
         enumerate(zip(idle_hashes, idle_npc_hashes))))
+    print("town_castle_actor_overlap: " + " ".join(
+        f"col{column:02x}={frame_hash:016x}"
+        for column, frame_hash in zip(range(0x0C, 0x10), overlap_hashes)))
     print("town_mman_banks: "
           f"pixels={fnv1a64(bytes(mu.mem_read((0x2000 << 4) + 0x4100, 0x1EC0))):016x} "
           f"masks={fnv1a64(bytes(mu.mem_read((0x3000 << 4) + 0x7000, 0x0520))):016x}")
