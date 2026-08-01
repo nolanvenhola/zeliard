@@ -195,7 +195,7 @@ script_run_loop:
 			jmp	short script_run_loop
 
 kenja_exit:
-		jmp	word ptr cs:[drv_return_to_caller]
+		jmp	word ptr cs:[drv_fade_to_black]
 
 run_kenja_main		endp
 

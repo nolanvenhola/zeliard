@@ -28,6 +28,15 @@ size_t zeliard_gmmcga_resolve_town_dispatch(
 /* GMMCGA:2106, resident dispatch slot CS:2002. */
 int zeliard_gmmcga_clear_playfield(u8 *vga, size_t vga_size);
 
+/* GMMCGA:2130, resident dispatch slot CS:2040.  Applies one of the eight
+ * progressive 01h..FFh black-wipe masks used around every town building. */
+int zeliard_gmmcga_building_blit_pass(u8 *vga, size_t vga_size,
+                                      u8 pass_index);
+
+/* GMMCGA:2130, resident dispatch slot CS:2040. One of eight masks in the
+ * building-entry/exit framebuffer fade to black. */
+int zeliard_gmmcga_building_fade_pass(u8 *vga, size_t vga_size, u8 pass);
+
 /* GMMCGA:2046, 27E9, 289A, and 28D9 dialog primitives. */
 int zeliard_gmmcga_fill_frame(u8 *vga, size_t vga_size,
                               u16 bx, u16 cx, u8 cinematic);

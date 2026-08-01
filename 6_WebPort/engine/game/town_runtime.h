@@ -34,6 +34,12 @@ typedef struct {
     u8 al;
 } zeliard_town_event_t;
 
+typedef enum {
+    ZEL_TOWN_BUILDING_TRANSITION_NONE = 0,
+    ZEL_TOWN_BUILDING_TRANSITION_ENTER,
+    ZEL_TOWN_BUILDING_TRANSITION_LEAVE,
+} zeliard_town_building_transition_t;
+
 typedef struct {
     zeliard_town_event_t events[32];
     size_t event_count;
@@ -44,6 +50,10 @@ typedef struct {
     u16 facing_item_position;
     u16 facing_npc_position;
     u8 facing_door_type;
+    zeliard_town_building_transition_t building_transition;
+    zeliard_room_kind_t pending_room_kind;
+    u8 building_transition_pass;
+    u8 building_transition_ticks;
     zeliard_town_dialog_t dialog;
     zeliard_room_runtime_t room;
 } zeliard_town_runtime_t;
@@ -51,6 +61,10 @@ typedef struct {
 int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
                                    zeliard_game_exec_state_t *game,
                                    u8 *vga, size_t vga_size);
+
+int zeliard_town_begin_room_transition(zeliard_town_runtime_t *town,
+                                       zeliard_room_kind_t kind,
+                                       u8 *vga, size_t vga_size);
 
 /* Advance the 106TOWN loop by raw stick.asm PIT ticks (236.7 Hz). */
 int zeliard_town_advance_pit(zeliard_town_runtime_t *town,

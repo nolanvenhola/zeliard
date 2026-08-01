@@ -124,7 +124,7 @@ drv_fn_22                equ     202Ch         ; fn 16: (TBD)
 ; data slot) are avoided.  Only the most-shared canonical is exposed
 ; here for chunks that don't carry a local name.
 drv_render_char          equ     2022h         ; fn 11h: render text char / dialog box (5+ chunks)
-drv_return_to_caller     equ     2040h         ; fn 20h: exit / far return
+drv_fade_to_black        equ     2040h         ; fn 20h: GMMCGA:2130 eight-pass framebuffer mask clear
 drv_ds_copy              equ     2044h         ; fn 22h: ds copy (cx bytes from si)
 ; Second driver dispatch table (3000-30xx range)
 drv2_fn_2                equ     3004h         ; (TBD — second dispatch table fn 2)

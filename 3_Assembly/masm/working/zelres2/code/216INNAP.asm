@@ -17,7 +17,7 @@ PAGE  59,132
 ;                  with AL=2 (fill_buffer decode) into game_seg:8000h.
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
 ;                  drv_frame_commit, drv_palette_push, drv_anim_step,
-;                  drv_draw_glyph, drv_ds_copy, drv_return_to_caller
+;                  drv_draw_glyph, drv_ds_copy, drv_fade_to_black
 ;                    (graphics driver dispatch slots, cs:[2000h..30xxh])
 ;                  script_step (cs:[6004h]) -- script bytecode advancer
 ;                  opcode_dispatch_tbl (DS-resident, A080h) -- script opcode
@@ -102,7 +102,7 @@ inn_main_loop:
 					jmp	short inn_main_loop
 
 inn_main_exit:
-		jmp	word ptr cs:[drv_return_to_caller]
+		jmp	word ptr cs:[drv_fade_to_black]
 
 run_inn_main	endp
 
@@ -239,7 +239,7 @@ rest_loop:
 
 inn_cleanup_and_return:					;* dispatch table target (reachable via DS opcode_dispatch_tbl)
 		call	inn_wait_long
-		call	word ptr cs:[drv_return_to_caller]
+		call	word ptr cs:[drv_fade_to_black]
 		call	inn_wait_long
 		call	inn_wait_long
 		mov	ax,inn_patch_word_6

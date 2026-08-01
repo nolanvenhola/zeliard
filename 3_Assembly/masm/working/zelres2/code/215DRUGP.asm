@@ -19,7 +19,7 @@ PAGE  59,132
 ;    Loads:        DRUG.GRP (zelres2 chunk 18h) via cs:[sar_loader_fn] SAR loader
 ;                  with AL=2 (fill_buffer decode) into game_seg:8000h.
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
-;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller
+;                  drv_frame_commit, drv_ds_copy, drv_fade_to_black
 ;                    (graphics driver dispatch slots, cs:[2000h..])
 ;                  script_step (cs:[6004h]), script_format_num (cs:[6006h]),
 ;                  script_display_page (cs:[6008h]), script_take_item
@@ -149,12 +149,12 @@ start:
 drv_script_step:
 			call	word ptr cs:[script_step]
 			cmp	al,0FFh
-			je	chain_to_drv_return_to_caller			; Jump if equal
+			je	chain_to_drv_fade_to_black			; Jump if equal
 			call	dispatch_shop_cmd
 			jmp	short drv_script_step
 
-chain_to_drv_return_to_caller:
-		jmp	word ptr cs:[drv_return_to_caller]
+chain_to_drv_fade_to_black:
+		jmp	word ptr cs:[drv_fade_to_black]
 
 run_drugstore_main		endp
 

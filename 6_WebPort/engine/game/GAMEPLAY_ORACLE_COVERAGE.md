@@ -88,7 +88,7 @@ Town live-runtime coverage:
 | `zeliard_town_advance_pit` | Oracle-backed composition | `proc_equivalence/test_town_live_loop_primitives.py`, walk-left/right oracles, `town_runtime_native` scripted frame hashes |
 | `zeliard_town_detect_facing_targets` | Oracle-backed | `106TOWN` target-scan branches mirrored by `town_facing_targets:right` native fixture |
 | `process_town_event_table` / `tick_npcs_dispatch` | Oracle-backed | `proc_equivalence/test_town_live_loop_primitives.py`; release-byte memory diffs over active/inactive events and two NPC ticks |
-| `zeliard_room_enter` / `zeliard_room_leave` | Oracle-backed stable frames | `proc_equivalence/test_felishika_room_frames_oracle.py`; release `210KINGP`/`211OMOYP`/`217KENJP` prologues, room state, full VGA hashes, and native scratch/VGA round trip |
+| `zeliard_room_enter` / `zeliard_room_leave` | Oracle-backed stable frames and transitions | `proc_equivalence/test_felishika_room_frames_oracle.py`, `test_gmmcga_building_fade_oracle.py`; release `210KINGP`/`211OMOYP`/`217KENJP` prologues plus both `106TOWN` building-boundary fades |
 
 Town MCGA dispatch coverage:
 
@@ -97,6 +97,7 @@ Town MCGA dispatch coverage:
 | `zeliard_gmmcga_resolve_town_dispatch` | Release-byte backed | `town_mcga_dispatch_native`; all 20 live `106TOWN` resident slots checked against `gmmcga.bin` |
 | `zeliard_gtmcga_resolve_town_dispatch` | Release-byte backed | `town_mcga_dispatch_native`; all 17 live `106TOWN` slots checked against `111GTMCA.bin` |
 | `zeliard_gmmcga_clear_playfield` | Oracle-backed | `proc_equivalence/test_gmmcga_town_clear_playfield_oracle.py`; full VGA and visible framebuffer hashes |
+| `zeliard_gmmcga_building_fade_pass` | Oracle-backed | `proc_equivalence/test_gmmcga_building_fade_oracle.py`; all eight GMMCGA:2130 framebuffer masks and full VGA hash |
 | `zeliard_gmmcga_draw_status_line` | Oracle-backed | `proc_equivalence/test_gmmcga_town_status_lines_oracle.py`; exact initial three-call register sequence and framebuffer hashes |
 | `zeliard_gmmcga_draw_life_scale` / `draw_life_max` / `draw_life_current` | Oracle-backed | `proc_equivalence/test_gmmcga_town_life_hud_oracle.py`; staged full-VGA hashes from `2385/2227/2256` |
 | `zeliard_gmmcga_draw_hud_label` | Oracle-backed | `proc_equivalence/test_gmmcga_town_hud_label_oracle.py`; `22BF` record and color-state hash |

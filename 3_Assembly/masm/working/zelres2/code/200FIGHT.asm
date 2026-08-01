@@ -8391,7 +8391,7 @@ fade_step_loop:
 
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
-		call	word ptr cs:[drv_return_to_caller]
+		call	word ptr cs:[drv_fade_to_black]
 		test	byte ptr ds:[captured_flag],0FFh
 		jz	player_not_captured			; Jump if zero
 		mov	byte ptr ds:[stat_XC5],80h

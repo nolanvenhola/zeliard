@@ -13,7 +13,7 @@ PAGE  59,132
 ;    Loads:        none directly -- inventory data already resident in
 ;                  game-segment DS (chr_/weap_/magic_/item_ flag arrays).
 ;    Calls into:   drv_fill_rect, drv_palette_push, drv_anim_step,
-;                  drv_render_char, drv_return_to_caller, drv_fn_sprite,
+;                  drv_render_char, drv_fade_to_black, drv_fn_sprite,
 ;                  drv_fn_render_bg, drv_fn_num_fmt
 ;                    (graphics-driver dispatch slots, cs:[2000h..203Ch],
 ;                    populated by the active GFxxx driver).
@@ -859,7 +859,7 @@ use_kioku_feather:			; item 7: use Kioku Feather (memory feather / save game)
 wait_timer_done:
 						cmp	byte ptr ds:[gvar_frame_timer],timer_wait_feather	; 'x'
 						jb	wait_timer_done			; Jump if below
-		call	word ptr cs:[drv_return_to_caller]
+		call	word ptr cs:[drv_fade_to_black]
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
 		retn

@@ -502,6 +502,20 @@ static int move_player(u8 *cs, const u8 *game_data, u8 *vga,
     return 2;
 }
 
+int zeliard_town_begin_room_transition(zeliard_town_runtime_t *town,
+                                       zeliard_room_kind_t kind,
+                                       u8 *vga, size_t vga_size) {
+    if (!town || kind == ZEL_ROOM_NONE ||
+        town->building_transition != ZEL_TOWN_BUILDING_TRANSITION_NONE)
+        return -1;
+    if (zeliard_room_prepare_enter(&town->room, vga, vga_size)) return -1;
+    town->building_transition = ZEL_TOWN_BUILDING_TRANSITION_ENTER;
+    town->pending_room_kind = kind;
+    town->building_transition_pass = 0;
+    town->building_transition_ticks = 0;
+    return 0;
+}
+
 static int run_live_frame(zeliard_town_runtime_t *town,
                           zeliard_game_exec_state_t *game,
                           u8 *vga, size_t vga_size, u8 input_direction) {
@@ -517,8 +531,9 @@ static int run_live_frame(zeliard_town_runtime_t *town,
         if (cs[GVAR_SPACEBAR_STATE] || cs[0xFF1E]) {
             cs[GVAR_SPACEBAR_STATE] = 0;
             cs[0xFF1E] = 0;
-            if (zeliard_room_leave(&town->room, cs, 0x10000,
-                                   vga, vga_size)) return -4;
+            town->building_transition = ZEL_TOWN_BUILDING_TRANSITION_LEAVE;
+            town->building_transition_pass = 0;
+            town->building_transition_ticks = 0;
         }
         cs[GVAR_FRAME_TIMER] = 0;
         town->frame_count++;
@@ -546,8 +561,8 @@ static int run_live_frame(zeliard_town_runtime_t *town,
         const zeliard_room_kind_t kind = town->facing_door_type == 0
             ? ZEL_ROOM_KING : town->facing_door_type == 1
             ? ZEL_ROOM_VIEWING : ZEL_ROOM_SAGE;
-        if (zeliard_room_enter(&town->room, kind, cs, 0x10000,
-                               vga, vga_size)) return -4;
+        if (zeliard_town_begin_room_transition(
+                town, kind, vga, vga_size)) return -4;
         cs[GVAR_FRAME_TIMER] = 0;
         town->frame_count++;
         return 0;
@@ -564,6 +579,32 @@ static int run_live_frame(zeliard_town_runtime_t *town,
     return 0;
 }
 
+static int advance_building_transition(zeliard_town_runtime_t *town,
+                                       zeliard_game_exec_state_t *game,
+                                       u8 *vga, size_t vga_size) {
+    /* GMMCGA:2184 runs LOOP 1F40h between masks. At the reference DOSBox-X
+     * rate of 3000 cycles/ms, the 8086 LOOP timing maps to 11 PIT ticks. */
+    enum { PASS_PIT_TICKS = 11 };
+    if (++town->building_transition_ticks < PASS_PIT_TICKS) return 0;
+    town->building_transition_ticks = 0;
+    if (zeliard_gmmcga_building_fade_pass(
+            vga, vga_size, town->building_transition_pass)) return -4;
+    if (++town->building_transition_pass < 8) return 1;
+
+    u8 *cs = game->segment[0];
+    if (town->building_transition == ZEL_TOWN_BUILDING_TRANSITION_ENTER) {
+        if (zeliard_room_enter(&town->room, town->pending_room_kind,
+                               cs, 0x10000, vga, vga_size)) return -4;
+    } else if (town->building_transition == ZEL_TOWN_BUILDING_TRANSITION_LEAVE) {
+        if (zeliard_room_leave(&town->room, cs, 0x10000,
+                               vga, vga_size)) return -4;
+    }
+    town->building_transition = ZEL_TOWN_BUILDING_TRANSITION_NONE;
+    town->pending_room_kind = ZEL_ROOM_NONE;
+    town->building_transition_pass = 0;
+    return 1;
+}
+
 int zeliard_town_advance_pit(zeliard_town_runtime_t *town,
                              zeliard_game_exec_state_t *game,
                              u8 *vga, size_t vga_size,
@@ -575,6 +616,13 @@ int zeliard_town_advance_pit(zeliard_town_runtime_t *town,
     cs[GVAR_INPUT_DIRECTION] = input_direction;
     int frames = 0;
     while (pit_ticks--) {
+        if (town->building_transition != ZEL_TOWN_BUILDING_TRANSITION_NONE) {
+            const int result = advance_building_transition(
+                town, game, vga, vga_size);
+            if (result < 0) return result;
+            frames += result;
+            continue;
+        }
         cs[GVAR_FRAME_TIMER]++;
         const u8 threshold = (u8)(4u * cs[GVAR_ANIM_SPEED]);
         if (cs[GVAR_FRAME_TIMER] < threshold) continue;
