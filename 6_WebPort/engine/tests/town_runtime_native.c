@@ -208,13 +208,57 @@ int main(void) {
     ok &= town.map_side == 0 && town.palette_index == 0;
     ok &= segments[0][0xC3AC] == 0x00;
     ok &= segments[0][0xC3AD] == 0xFF;
-    ok &= frame_hash == 0x31AC617B72AB84C6ULL;
+    ok &= frame_hash == 0x1FA483016782AFECULL;
     ok &= state_hash == 0xE75DC3416036703FULL;
-    ok &= capture_hash == 0x437AEC553ACB4725ULL;
+    ok &= capture_hash == 0xF2C3F82A0F93D06DULL;
     ok &= palette_hash == 0xF0597D78ABA0CC75ULL;
     ok &= cpat_pixel_hash == 0x639503FA794A154FULL;
     ok &= cpat_alpha_hash == 0x2AE75F00707E7659ULL;
-    ok &= fnv1a64(vga + 0xFA00, 0x180) == 0x9BFF78E51CBA1C2CULL;
+    ok &= fnv1a64(vga + 0xFA00, 0x180) == 0x14D37DE120D41703ULL;
+
+    static u8 overlap_segment[ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 overlap_vga[0x10000];
+    memcpy(overlap_segment, segments[0], sizeof(overlap_segment));
+    memcpy(overlap_vga, vga, sizeof(overlap_vga));
+    unsigned long long overlap_hashes[4] = {0};
+    for (u8 column = 0x0C; column < 0x10; ++column) {
+        memcpy(segments[0], overlap_segment, sizeof(overlap_segment));
+        memcpy(vga, overlap_vga, sizeof(overlap_vga));
+        segments[0][0x0083] = column;
+        memset(segments[0] + 0xE000, 0xFE, 0xE0);
+        ok &= zeliard_gtmcga_render_town_actors(
+            segments[0], 0x10000, segments[1], 0x10000,
+            segments[2], 0x10000, vga, sizeof(vga)) == 0;
+        const u16 cursor = (u16)(0xE000 + (u16)column * 8u + 5u);
+        memset(segments[0] + cursor, 0xFF, 3);
+        memset(segments[0] + cursor + 8, 0xFF, 3);
+        ok &= zeliard_gtmcga_update_town_frame(
+            segments[0], 0x10000, segments[1], 0x10000,
+            segments[2], 0x10000, vga, sizeof(vga)) == 0;
+        overlap_hashes[column - 0x0C] = fnv1a64(vga, sizeof(vga));
+        if (getenv("ZELIARD_DUMP")) {
+            char path[64];
+            snprintf(path, sizeof(path), "build/town-overlap-col%02x.bin",
+                     column);
+            FILE *dump = fopen(path, "wb");
+            if (dump) {
+                fwrite(vga, 1, sizeof(vga), dump);
+                fclose(dump);
+            }
+        }
+    }
+    memcpy(segments[0], overlap_segment, sizeof(overlap_segment));
+    memcpy(vga, overlap_vga, sizeof(overlap_vga));
+    printf("town_castle_actor_overlap: col0c=%016llx col0d=%016llx "
+           "col0e=%016llx col0f=%016llx\n",
+           overlap_hashes[0], overlap_hashes[1], overlap_hashes[2],
+           overlap_hashes[3]);
+    static const unsigned long long expected_overlap_hashes[4] = {
+        0xC7A9AAD199FEB82EULL, 0x2DF829B1230E73A3ULL,
+        0x312DDFEB392959C3ULL, 0xC2202A1FE9149790ULL,
+    };
+    for (size_t index = 0; index < 4; ++index)
+        ok &= overlap_hashes[index] == expected_overlap_hashes[index];
 
     static u8 idle_segments[ZELIARD_GAME_SEGMENT_COUNT]
                            [ZELIARD_GAME_SEGMENT_SIZE];
@@ -256,9 +300,9 @@ int main(void) {
         }
     }
     ok &= idle_frames_1 == 1 && idle_frames_2 == 1;
-    ok &= idle_frame_hash_1 == 0xC0C9840DECF6B4E2ULL;
+    ok &= idle_frame_hash_1 == 0x26D0E4434D4F9C14ULL;
     ok &= idle_npc_hash_1 == 0x7AEF6E1921E0C970ULL;
-    ok &= idle_frame_hash_2 == 0x915FB25F67D35E76ULL;
+    ok &= idle_frame_hash_2 == 0xE3CDA193615CB7A5ULL;
     ok &= idle_npc_hash_2 == 0x04FCC161ECC110A0ULL;
     printf("town_idle_oracle: frame1=%016llx/npc=%016llx "
            "frame2=%016llx/npc=%016llx\n",
@@ -285,7 +329,7 @@ int main(void) {
     ok &= segments[0][0x0083] == (u8)(initial_column + 1);
     ok &= live_start == initial_start;
     ok &= (segments[0][0x00C2] & 1) == 0;
-    ok &= live_frame_hash == 0xA41C77D62B549C32ULL;
+    ok &= live_frame_hash == 0xDC19F817A64D52F1ULL;
     ok &= live_npc_hash == 0x04FCC161ECC110A0ULL;
     const int scroll_walk_frames = zeliard_town_advance_pit(
         &town, &game, vga, sizeof(vga), 140, 8);
@@ -298,7 +342,7 @@ int main(void) {
     ok &= town.frame_count == 10;
     ok &= segments[0][0x0083] == 0x10;
     ok &= scrolled_start == (u16)(initial_start + 2);
-    ok &= scrolled_frame_hash == 0x5E2BD29E1044B73CULL;
+    ok &= scrolled_frame_hash == 0x09576E5990854B01ULL;
     printf("town_runtime: %s rc=%d frame=%016llx state=%016llx "
            "capture=%016llx palette=%016llx events=%u text=%04x\n",
            ok ? "PASS" : "FAIL", result, frame_hash, state_hash, capture_hash,

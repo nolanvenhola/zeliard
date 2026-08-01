@@ -924,7 +924,7 @@ static void draw_overlay_tile(u8 *game_seg, const u8 *game_data,
     size_t source = 0x8100u + (size_t)tile * 0x30u;
     size_t alpha = 0xD000u + (size_t)tile * 8u;
     size_t background = 0xA000u + (size_t)column * 0xC0u +
-                        (size_t)row * 8u;
+                        (size_t)row * 0x40u;
     for (u8 y = 0; y < 8; ++y) {
         u8 mask = game_data[alpha++];
         u16 out = destination;
@@ -990,17 +990,18 @@ int zeliard_gtmcga_update_town_frame(u8 *game_seg, size_t game_size,
             const u8 tile = game_seg[map_at];
             if (game_seg[cursor] == tile) continue;
             const u8 previous = game_seg[cursor];
-            game_seg[cursor] = 0xFE;
-            if (previous == 0xFF) continue;
             if (row == 5 && tile == 0xFD) {
                 update_actor_columns(game_seg, game_data, mask_data, vga,
                                      column, map, (u16)(cursor + 1));
                 continue;
             }
+            game_seg[cursor] = 0xFE;
+            if (previous == 0xFF) continue;
             game_seg[cursor] = tile;
             const u16 destination =
                 (u16)(tile_vga + (u16)row * 8u * 320u);
-            if (row < 3 && game_data[0x8000u + tile] != 0) {
+            const u16 type_table = read_at(game_data, 0x8000);
+            if (row < 3 && game_data[(u16)(type_table + tile)] != 0) {
                 draw_overlay_tile(game_seg, game_data, tile, column, row,
                                   vga, destination);
                 update_animation_tile(game_seg, game_data, map_at, tile);

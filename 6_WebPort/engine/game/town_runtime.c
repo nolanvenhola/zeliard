@@ -335,12 +335,6 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             ZEL_TOWN_EVENT_CLEAR_PLAYFIELD, "106TOWN:gfx_clear_fn", NULL,
             0, 0, 0}))
         return -6;
-    if (zeliard_gtmcga_capture_playfield(vga, vga_size, cs, 0x10000) ||
-        !append_event(town, (zeliard_town_event_t){
-            ZEL_TOWN_EVENT_CAPTURE_PLAYFIELD, "106TOWN:gfx_draw_fn", NULL,
-            0, 0xA000, 0}))
-        return -7;
-
     /* 106TOWN:player_load_chunk loads YMPD at (CS+2000h):3300h. */
     if (!load_raw_chunk("ympd.bin", cs_2000 + TOWN_YMPD_DEST,
                         0x10000 - TOWN_YMPD_DEST, &loaded_size) ||
@@ -349,17 +343,27 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             0x2000, TOWN_YMPD_DEST, 3}))
         return -8;
     if (zeliard_ympd_render_mcga(cs_2000 + TOWN_YMPD_DEST, loaded_size,
-                                 cs_3000, 0x10000, vga, vga_size) ||
+                                  cs_3000, 0x10000, vga, vga_size) ||
         !append_event(town, (zeliard_town_event_t){
             ZEL_TOWN_EVENT_RUN_208YMPD, "106TOWN:int60", "ympd.bin",
             0x2000, TOWN_YMPD_DEST, 4}))
         return -9;
 
+    /* GTMCGA:3028 saves the rendered scenery strip used by the transparent
+     * pixels in the first three CPAT rows. */
+    if (zeliard_gtmcga_capture_playfield(vga, vga_size, cs, 0x10000) ||
+        !append_event(town, (zeliard_town_event_t){
+            ZEL_TOWN_EVENT_CAPTURE_PLAYFIELD, "106TOWN:gfx_draw_fn", NULL,
+            0, 0xA000, 0}))
+        return -7;
+
     cs[0xFF1D] = 0;
     cs[0xFF1E] = 0;
     cs[0x00E4] = 0;
     cs[0x009F] = 0;
-    write_u16(cs, GVAR_TILE_POINTER, 0xC017);
+    write_u16(cs, GVAR_TILE_POINTER,
+              (u16)(0xC017u + (u16)(u8)read_u16(cs,
+                                                TOWN_START_POSITION) * 8u));
     if (zeliard_gmmcga_draw_first_frame_hud(vga, vga_size, cs, 0x10000,
                                              town->town_text_record) ||
         !append_event(town, (zeliard_town_event_t){
@@ -390,12 +394,6 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             ZEL_TOWN_EVENT_UPDATE_FRAME, "106TOWN:gfx_update_fn", NULL,
             0, 0x3051, 0}))
         return -12;
-
-    /* 106TOWN:frame_update derives the live map window from the low byte of
-     * starting_position_in_town.  The initial-frame oracle above remains at
-     * its existing pre-window checkpoint until GTMCGA:3418 is ported. */
-    write_u16(cs, GVAR_TILE_POINTER,
-              (u16)(0xC017u + (u16)(u8)read_u16(cs, TOWN_START_POSITION) * 8u));
 
     palette_set_game_mcga();
     return 0;
