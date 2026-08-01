@@ -87,18 +87,28 @@ int zeliard_gtmcga_draw_room_glyph(const u8 *tiles, size_t tiles_size,
     return 0;
 }
 
-int zeliard_gtmcga_draw_room_grid(const u8 *tile_ids, size_t tile_id_size,
-                                  const u8 *tiles, size_t tiles_size,
-                                  u8 *vga, size_t vga_size, u16 bx) {
-    if (!tile_ids || tile_id_size < 96) return -1;
-    for (u8 row = 0; row < 8; ++row) {
-        for (u8 col = 0; col < 12; ++col) {
+int zeliard_gtmcga_draw_room_tile_grid(
+    const u8 *tile_ids, size_t tile_id_size, u8 rows, u8 columns,
+    const u8 *tiles, size_t tiles_size,
+    u8 *vga, size_t vga_size, u16 bx) {
+    if (!tile_ids || !rows || !columns ||
+        tile_id_size < (size_t)rows * columns) return -1;
+    for (u8 row = 0; row < rows; ++row) {
+        for (u8 col = 0; col < columns; ++col) {
             const u16 position = (u16)(bx + ((u16)col << 8) + row * 8u);
             if (zeliard_gtmcga_draw_room_glyph(
                     tiles, tiles_size, vga, vga_size,
-                    tile_ids[(size_t)row * 12u + col], position))
+                    tile_ids[(size_t)row * columns + col], position))
                 return -2;
         }
     }
     return 0;
+}
+
+int zeliard_gtmcga_draw_room_grid(const u8 *tile_ids, size_t tile_id_size,
+                                  const u8 *tiles, size_t tiles_size,
+                                  u8 *vga, size_t vga_size, u16 bx) {
+    return zeliard_gtmcga_draw_room_tile_grid(
+        tile_ids, tile_id_size, 8, 12, tiles, tiles_size,
+        vga, vga_size, bx);
 }

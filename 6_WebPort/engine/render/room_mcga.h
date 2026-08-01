@@ -13,6 +13,11 @@ int zeliard_gtmcga_draw_room_glyph(const u8 *tiles, size_t tiles_size,
                                    u8 *vga, size_t vga_size,
                                    u8 glyph, u16 bx);
 
+int zeliard_gtmcga_draw_room_tile_grid(
+    const u8 *tile_ids, size_t tile_id_size, u8 rows, u8 columns,
+    const u8 *tiles, size_t tiles_size,
+    u8 *vga, size_t vga_size, u16 bx);
+
 /* Mechanical form of the 8-row by 12-column loops shared by KINGP/KENJP. */
 int zeliard_gtmcga_draw_room_grid(const u8 *tile_ids, size_t tile_id_size,
                                   const u8 *tiles, size_t tiles_size,

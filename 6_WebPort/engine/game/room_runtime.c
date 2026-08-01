@@ -42,9 +42,11 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
     if (!room || !game_seg || !vga || game_size < 0x10000 ||
         vga_size < 0x10000 || room->active) return -1;
     const char *program = kind == ZEL_ROOM_KING ? "kingpro.bin" :
-                          kind == ZEL_ROOM_SAGE ? "kenjpro.bin" : NULL;
+                          kind == ZEL_ROOM_SAGE ? "kenjpro.bin" :
+                          kind == ZEL_ROOM_VIEWING ? "omoypro.bin" : NULL;
     const char *graphic = kind == ZEL_ROOM_KING ? "king.grp" :
-                          kind == ZEL_ROOM_SAGE ? "kenja.grp" : NULL;
+                          kind == ZEL_ROOM_SAGE ? "kenja.grp" :
+                          kind == ZEL_ROOM_VIEWING ? "omoya.grp" : NULL;
     if (!program || !graphic) return -2;
 
     memcpy(room->saved_code, game_seg + 0xA000, sizeof(room->saved_code));
@@ -71,7 +73,7 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
         zeliard_gtmcga_draw_room_grid(
             game_seg + 0xA16E, 96, tiles, 0x3000,
             vga, vga_size, 0x0E17);
-    } else {
+    } else if (kind == ZEL_ROOM_SAGE) {
         game_seg[0xC006] = 1;
         game_seg[0xBB12] = 0x17;
         game_seg[0xBB13] = 0x07;
@@ -82,13 +84,24 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
         zeliard_gtmcga_draw_room_grid(
             game_seg + 0xA9B6, 96, tiles, 0x3000,
             vga, vga_size, 0x0717);
+    } else {
+        zeliard_gmmcga_draw_town_text_record(
+            vga, vga_size, game_seg, game_size, 0xA245);
+        zeliard_gtmcga_draw_room_tile_grid(
+            game_seg + 0xA129, 16u * 17u, 16, 17,
+            tiles, 0x3000, vga, vga_size, 0x0C1E);
     }
     free(tiles);
-    zeliard_gmmcga_fill_frame(
-        vga, vga_size, 0x0D60, 0x3637, game_seg[0xFF77]);
+    if (kind != ZEL_ROOM_VIEWING)
+        zeliard_gmmcga_fill_frame(
+            vga, vga_size, 0x0D60, 0x3637, game_seg[0xFF77]);
     palette_set_game_mcga();
     room->kind = kind;
     room->active = 1;
+    /* 211OMOYP:A041 tests player offset 49h after drawing the room and
+     * branches to end_demo_transition when it is nonzero. */
+    room->alternate_transition_requested =
+        kind == ZEL_ROOM_VIEWING && game_seg[0x0049] != 0;
     return 0;
 }
 
@@ -100,6 +113,7 @@ int zeliard_room_leave(zeliard_room_runtime_t *room,
     memcpy(game_seg + 0xA000, room->saved_code, sizeof(room->saved_code));
     memcpy(vga, room->saved_vga, sizeof(room->saved_vga));
     room->active = 0;
+    room->alternate_transition_requested = 0;
     room->kind = ZEL_ROOM_NONE;
     return 0;
 }

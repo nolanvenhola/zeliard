@@ -24,6 +24,9 @@ EXPECTED_KING_FRAME = 0xC3F7143FE6C981F1
 EXPECTED_KING_STATE = 0xE7DDFAC9C8C12A2C
 EXPECTED_SAGE_FRAME = 0xA6873B3AD33ACEC7
 EXPECTED_SAGE_STATE = 0x567C3F23BB5AFFE0
+EXPECTED_OMOYA_FRAME = 0x1C86E94322A50C57
+EXPECTED_OMOYA_STATE = 0x68BB9C561C4E851E
+EXPECTED_OMOYA_ARTWORK = 0x33207D5A3E0A63EF
 
 
 def fnv1a64(data: bytes) -> int:
@@ -32,6 +35,11 @@ def fnv1a64(data: bytes) -> int:
         value ^= byte
         value = (value * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
     return value
+
+
+def frame_rect(data: bytes, x: int, y: int, width: int, height: int) -> bytes:
+    return b"".join(data[(y + row) * 320 + x:(y + row) * 320 + x + width]
+                    for row in range(height))
 
 
 def payload(path: Path) -> bytes:
@@ -135,6 +143,25 @@ def main() -> int:
     print(f"felishika_king_room: frame={fnv1a64(king_frame):016x} "
           f"state={king_state.hex()}:{fnv1a64(king_state):016x}")
 
+    omoya_program = MASM_ROOT / "bin" / "zelres2" / "211OMOYP.bin"
+    omoya_graphic = MASM_ROOT / "bin" / "zelres2" / "219OMOYG.grp"
+    if not omoya_program.exists() or not omoya_graphic.exists():
+        print("VERDICT: INCONCLUSIVE: Felishika viewing-room release asset missing")
+        return 0
+    omoya = build_machine(omoya_program, omoya_graphic)
+    # Raw-file offsets 09h and 4Dh land at runtime A005h and A049h after the
+    # SAR loader strips the four-byte chunk header. Stop immediately before
+    # the first shared 106TOWN script-service call.
+    run_until_boundary(omoya, 0xA005, 0xA049)
+    omoya_frame = bytes(omoya.mem_read(VGA_SEG << 4, 0x10000))
+    omoya_state = bytes(omoya.mem_read(base + 0xFF1D, 2)) + bytes(
+        omoya.mem_read(base + 0xFF4C, 4)) + bytes(
+        omoya.mem_read((DATA_SEG << 4) + 0x8000, 0x100))
+    omoya_artwork = frame_rect(omoya_frame, 96, 30, 136, 128)
+    print(f"felishika_omoya_room: frame={fnv1a64(omoya_frame):016x} "
+          f"state={fnv1a64(omoya_state):016x} "
+          f"artwork={fnv1a64(omoya_artwork):016x}")
+
     sage_program = MASM_ROOT / "bin" / "zelres2" / "217KENJP.bin"
     sage_graphic = MASM_ROOT / "bin" / "zelres2" / "225KNJYG.grp"
     if not sage_program.exists() or not sage_graphic.exists():
@@ -152,6 +179,9 @@ def main() -> int:
           f"state={sage_state.hex()}:{fnv1a64(sage_state):016x}")
     ok = fnv1a64(king_frame) == EXPECTED_KING_FRAME and \
         fnv1a64(king_state) == EXPECTED_KING_STATE and \
+        fnv1a64(omoya_frame) == EXPECTED_OMOYA_FRAME and \
+        fnv1a64(omoya_state) == EXPECTED_OMOYA_STATE and \
+        fnv1a64(omoya_artwork) == EXPECTED_OMOYA_ARTWORK and \
         fnv1a64(sage_frame) == EXPECTED_SAGE_FRAME and \
         fnv1a64(sage_state) == EXPECTED_SAGE_STATE
     print(f"VERDICT: {'PASS' if ok else 'FAIL'}: "
