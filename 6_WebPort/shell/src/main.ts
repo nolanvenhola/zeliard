@@ -35,6 +35,7 @@ type EngineExports = {
     _zeliard_audio_set_sample_rate(sampleRate: number): void;
     _zeliard_audio_opl_write_count(): number;
     _zeliard_audio_generated_peak(): number;
+    _zeliard_audio_cue_serial(): number;
     _zeliard_exact_music_driver(): number;
     _zeliard_opening_set_phase_for_test(phase: number): void;
     _zeliard_room_kind(): number;
@@ -65,6 +66,7 @@ class OpeningMusic {
     private readonly pcmPointer: number;
     private activeTrack = -1;
     private streamPrimed = false;
+    private cueSerial = 0;
     readonly stats = {
         callbacks: 0,
         requestedFrames: 0,
@@ -72,17 +74,31 @@ class OpeningMusic {
         underrunFrames: 0,
         deliveredPeak: 0,
         deliveredNonzero: 0,
+        cueSerial: 0,
+        cueBypassCount: 0,
+        bufferedFrames: 0,
         contextState: this.context.state,
     };
 
     constructor(private readonly module: ZeliardModule) {
         const frames = 512;
         this.module._zeliard_audio_set_sample_rate(this.context.sampleRate);
+        this.cueSerial = this.module._zeliard_audio_cue_serial();
         this.pcmPointer = this.module._malloc(frames * 2 * Int16Array.BYTES_PER_ELEMENT);
         this.node = this.context.createScriptProcessor(frames, 0, 2);
         this.node.onaudioprocess = (event) => {
             const output = event.outputBuffer;
             const buffered = this.module._zeliard_audio_pcm_available();
+            const cueSerial = this.module._zeliard_audio_cue_serial();
+            this.stats.bufferedFrames = buffered;
+            if (cueSerial !== this.cueSerial) {
+                this.cueSerial = cueSerial;
+                this.stats.cueSerial = cueSerial;
+                this.stats.cueBypassCount++;
+                /* Cue writes discard pre-cue PCM in the engine. Do not add
+                 * the normal music startup cushion back in front of an SFX. */
+                this.streamPrimed = buffered > 0;
+            }
             if (!this.streamPrimed && buffered >= 1536)
                 this.streamPrimed = true;
             if (this.streamPrimed && buffered < output.length)

@@ -34,5 +34,6 @@ int zel_opening_audio_exact_driver_active(void);
 void zel_opening_audio_set_sample_rate(int sample_rate);
 u32 zel_opening_audio_opl_write_count(void);
 u32 zel_opening_audio_generated_peak(void);
+u32 zel_opening_audio_cue_serial(void);
 
 #endif
