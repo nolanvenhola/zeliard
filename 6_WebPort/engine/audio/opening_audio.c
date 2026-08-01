@@ -342,14 +342,11 @@ void zel_opening_audio_resume(void) {
 
 void zel_opening_audio_write_cue(u8 cue) {
     g_cue_mailbox = cue;
-    if (cue && g_sound_enabled) {
-        /* SNDADLIB consumes FF75h on the next PIT service. PCM already in
-         * this ring predates that write; retaining it makes a real-time
-         * command audibly late in the browser. Drop only the host-side
-         * look-ahead, leaving the emulated OPL and driver state untouched. */
-        g_pcm_read = g_pcm_write;
+    if (cue && g_sound_enabled)
+        /* Keep the host PCM continuous. SNDADLIB consumes FF75h on the next
+         * original PIT service, and the bounded ring limits audible latency
+         * without deleting music that the OPL has already rendered. */
         g_cue_serial++;
-    }
     if (g_exact_driver)
         zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF75, cue);
 }

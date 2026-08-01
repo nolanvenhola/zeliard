@@ -118,7 +118,7 @@ static int expect_sfx_pcm(u8 cue) {
     return ok;
 }
 
-static int expect_dialog_sfx_latency(void) {
+static int expect_dialog_sfx_continuity(void) {
     short pcm[512 * 2];
     zel_opening_audio_init();
     zel_opening_audio_tick(100);
@@ -132,16 +132,16 @@ static int expect_dialog_sfx_latency(void) {
         zel_opening_audio_tick(1);
         service_ms++;
     }
-    const size_t fresh_frames = zel_opening_audio_pcm_available();
+    const size_t buffered_frames = zel_opening_audio_pcm_available();
     const size_t delivered = zel_opening_audio_read_pcm(pcm, 512);
     const int ok = stale_frames == 1536 &&
         zel_opening_audio_cue_serial() == serial + 1 &&
         service_ms > 0 && service_ms <= 5 &&
         zel_opening_audio_opl_write_count() > writes &&
-        fresh_frames <= 240 && delivered == fresh_frames;
-    printf("opening_audio:dialog_sfx_latency: %s stale=%zu fresh=%zu "
+        buffered_frames == 1536 && delivered == 512;
+    printf("opening_audio:dialog_sfx_continuity: %s before=%zu after=%zu "
            "service=%dms serial=%u\n", ok ? "PASS" : "FAIL",
-           stale_frames, fresh_frames, service_ms,
+           stale_frames, buffered_frames, service_ms,
            zel_opening_audio_cue_serial());
     return ok;
 }
@@ -227,7 +227,7 @@ int main(void) {
     static const u8 sfx_pcm_cues[] = { 0x02, 0x04, 0x1E, 0x3D, 0x3E, 0x3F, 0x40, 0x41 };
     for (size_t i = 0; i < sizeof(sfx_pcm_cues); ++i)
         ok &= expect_sfx_pcm(sfx_pcm_cues[i]);
-    ok &= expect_dialog_sfx_latency();
+    ok &= expect_dialog_sfx_continuity();
 
     zel_opening_audio_write_cue(0x3F);
     if (zel_opening_audio_take_cue() != 0x3F || zel_opening_audio_take_cue() != 0) {

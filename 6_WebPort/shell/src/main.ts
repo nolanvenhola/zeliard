@@ -95,9 +95,6 @@ class OpeningMusic {
                 this.cueSerial = cueSerial;
                 this.stats.cueSerial = cueSerial;
                 this.stats.cueBypassCount++;
-                /* Cue writes discard pre-cue PCM in the engine. Do not add
-                 * the normal music startup cushion back in front of an SFX. */
-                this.streamPrimed = buffered > 0;
             }
             if (!this.streamPrimed && buffered >= 1536)
                 this.streamPrimed = true;
