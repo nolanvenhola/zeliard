@@ -91,11 +91,7 @@ $run = if ($BuildOnly) {
     "make test-native build/opening-service-trace-native build/opening-live-trace-native && ./build/opening-live-trace-native && ./build/opening-service-trace-native > build/opening_service_trace_candidate.txt"
 }
 
-$command = @"
-set -e
-cd '$wslRepo/engine'
-$run
-"@
+$command = "set -e; cd '$wslRepo/engine'; $run"
 
 Invoke-Wsl -Command $command -Purpose "running native parity in WSL"
 

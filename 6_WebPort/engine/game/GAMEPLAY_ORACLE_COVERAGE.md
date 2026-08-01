@@ -88,6 +88,7 @@ Town live-runtime coverage:
 | `zeliard_town_advance_pit` | Oracle-backed composition | `proc_equivalence/test_town_live_loop_primitives.py`, walk-left/right oracles, `town_runtime_native` scripted frame hashes |
 | `zeliard_town_detect_facing_targets` | Oracle-backed | `106TOWN` target-scan branches mirrored by `town_facing_targets:right` native fixture |
 | `process_town_event_table` / `tick_npcs_dispatch` | Oracle-backed | `proc_equivalence/test_town_live_loop_primitives.py`; release-byte memory diffs over active/inactive events and two NPC ticks |
+| `zeliard_room_enter` / `zeliard_room_leave` | Oracle-backed stable frames | `proc_equivalence/test_felishika_room_frames_oracle.py`; release `210KINGP`/`217KENJP` prologues, room state, full VGA hashes, and native scratch/VGA round trip |
 
 Town MCGA dispatch coverage:
 
@@ -105,8 +106,10 @@ Town MCGA dispatch coverage:
 | `zeliard_gtmcga_encode_tile_block` | Oracle-backed | `proc_equivalence/test_gtmcga_encode_tile_block_oracle.py`; packed source, alpha masks, and scratch hashes |
 | `zeliard_gtmcga_capture_playfield` | Oracle-backed | `proc_equivalence/test_gtmcga_capture_playfield_oracle.py`; captured segment and exit registers |
 | `zeliard_gtmcga_scroll_view_left` / `scroll_view_right` | Oracle-backed | `proc_equivalence/test_gtmcga_town_scroll.py`; full 64K VGA hashes from release `111GTMCA.bin` |
+| `zeliard_gmmcga_prepare_room_tiles` | Oracle-backed | `proc_equivalence/test_felishika_room_frames_oracle.py`; exact GMMCGA:2C2A 256-tile banks for King and Sage assets |
+| `zeliard_gtmcga_draw_room_glyph` / `draw_room_grid` | Oracle-backed | `proc_equivalence/test_felishika_room_frames_oracle.py`; exact GTMCGA:371C room frame composition |
 
 Next gaps to close:
 
 - Execute item/NPC dialog bodies after the now-oracle-backed facing scans.
-- Execute door/shop transitions after the now-oracle-backed door detection.
+- Execute building-specific script command dispatch and animated dialogue after the now-oracle-backed King/Sage room prologues.

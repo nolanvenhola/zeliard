@@ -4,6 +4,7 @@
 #include "../core/types.h"
 #include "../load/game_loader.h"
 #include "town_dialog.h"
+#include "room_runtime.h"
 
 typedef enum {
     ZEL_TOWN_EVENT_LOAD_CMAP = 0,
@@ -44,6 +45,7 @@ typedef struct {
     u16 facing_npc_position;
     u8 facing_door_type;
     zeliard_town_dialog_t dialog;
+    zeliard_room_runtime_t room;
 } zeliard_town_runtime_t;
 
 int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,

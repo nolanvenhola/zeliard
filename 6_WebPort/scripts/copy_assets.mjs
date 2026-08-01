@@ -127,6 +127,10 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres2/228MAGCG.grp', '4d5f347dd02ce2b9f9dc33f12011bc99d2fd157de955fa17d938da3f75419628'), 'magic.grp'],
     [verifiedMasmOutput('zelres2/226SWRDG.grp', '761177e84da136124236b6e5c7f0622ba4f997506ad9f2327d97da86b8dcd73d'), 'sword.grp'],
     [verifiedMasmOutput('zelres2/207MOLE.bin', 'fa945314a8fd95b0ff6bb158f4fecf58c52ff05204e2e17b0de39c348f49a9bd'), 'mole.bin'],
+    [verifiedMasmOutput('zelres2/210KINGP.bin', '617676335275adcfd98ed7bc0ed28b43ca92a4330eb65d7e4749332703a77e44'), 'kingpro.bin'],
+    [verifiedMasmOutput('zelres2/218KINGG.grp', 'a824f647653146eacfcbfb91a609f5f329be86aad78cbfd88218337c9ba34290'), 'king.grp'],
+    [verifiedMasmOutput('zelres2/217KENJP.bin', '47acc800138d8b89c39344a51aeef6f34a6ad6a376b76f38838f3fcdb422eac0'), 'kenjpro.bin'],
+    [verifiedMasmOutput('zelres2/225KNJYG.grp', 'b25caf982062f1026e0ead3fd3a355b9762bb4d8fd8d00746b885a7ca2a78cbe'), 'kenja.grp'],
 ];
 
 const BINARY_SLICES = [

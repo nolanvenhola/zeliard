@@ -20,6 +20,7 @@ ENGINE_SRC := \
 	render/mcga_render.c \
 	render/mcga_runtime.c \
 	render/town_mcga.c \
+	render/room_mcga.c \
 	render/town_background.c \
 	load/grp.c \
 	load/fill_buffer.c \
@@ -30,6 +31,7 @@ ENGINE_SRC := \
 	game/opening_trace.c \
 	game/opening.c \
 	game/town_dialog.c \
+	game/room_runtime.c \
 	game/town_runtime.c \
 	game/gameplay_state.c
 
@@ -57,7 +59,9 @@ TEST_OPENING_SRC := \
 	game/opening_trace.c \
 	game/opening.c \
 	game/town_dialog.c \
+	game/room_runtime.c \
 	game/town_runtime.c \
+	render/room_mcga.c \
 	render/town_background.c \
 	render/town_mcga.c \
 	platform/platform_sdl.c
@@ -83,7 +87,9 @@ TEST_OPENING_TRACE_SRC := \
 	game/opening_trace.c \
 	game/opening.c \
 	game/town_dialog.c \
+	game/room_runtime.c \
 	game/town_runtime.c \
+	render/room_mcga.c \
 	render/town_background.c \
 	render/town_mcga.c \
 	platform/platform_sdl.c
@@ -152,7 +158,9 @@ TEST_MAIN_CONTROLS_SRC := \
 	game/opening_trace.c \
 	game/opening.c \
 	game/town_dialog.c \
+	game/room_runtime.c \
 	game/town_runtime.c \
+	render/room_mcga.c \
 	render/town_background.c \
 	render/town_mcga.c \
 	platform/platform_sdl.c
@@ -233,7 +241,9 @@ TEST_TOWN_ACTOR_SRC := \
 TEST_TOWN_RUNTIME_SRC := \
 	tests/town_runtime_native.c \
 	game/town_dialog.c \
+	game/room_runtime.c \
 	game/town_runtime.c \
+	render/room_mcga.c \
 	render/town_background.c \
 	render/town_mcga.c \
 	render/palette.c \
@@ -244,6 +254,14 @@ TEST_TOWN_FIRST_DIALOG_SRC := \
 	game/town_dialog.c \
 	render/town_mcga.c \
 	load/fill_buffer.c
+TEST_FELISHIKA_ROOMS_SRC := \
+	tests/felishika_rooms_native.c \
+	game/room_runtime.c \
+	render/room_mcga.c \
+	render/town_mcga.c \
+	render/palette.c \
+	load/fill_buffer.c \
+	platform/platform_sdl.c
 
 CFLAGS_COMMON := -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O2 -fno-strict-aliasing -I. -Ithird_party/opal/include
 
@@ -255,7 +273,7 @@ EMCC_FLAGS  := $(CFLAGS_COMMON) \
 	-s EXPORT_ES6=1 \
 	-s ENVIRONMENT=web \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_test_enter_room","_malloc","_free"]' \
 	-s EXPORTED_RUNTIME_METHODS='["HEAPU8","HEAPU32","UTF8ToString","ccall","cwrap"]' \
 	--preload-file assets@/assets \
 	-o build/zeliard.js
@@ -290,7 +308,7 @@ build/zeliard-native: $(NATIVE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(NATIVE_SRC)
 
-test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/continuous-input-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native build/town-background-native build/town-actor-native build/town-runtime-native build/town-first-dialog-native
+test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/continuous-input-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native build/town-background-native build/town-actor-native build/town-runtime-native build/town-first-dialog-native build/felishika-rooms-native
 	./build/opening-parity-native
 	./build/opening-audio-native
 	./build/mscadlib-vm-native
@@ -316,6 +334,7 @@ test-native: build/opening-parity-native build/opening-audio-native build/mscadl
 	./build/town-actor-native
 	./build/town-runtime-native
 	./build/town-first-dialog-native
+	./build/felishika-rooms-native
 
 build/opening-parity-native: $(TEST_OPENING_SRC) Makefile
 	@mkdir -p build
@@ -412,6 +431,10 @@ build/town-runtime-native: $(TEST_TOWN_RUNTIME_SRC) Makefile
 build/town-first-dialog-native: $(TEST_TOWN_FIRST_DIALOG_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_TOWN_FIRST_DIALOG_SRC)
+
+build/felishika-rooms-native: $(TEST_FELISHIKA_ROOMS_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_FELISHIKA_ROOMS_SRC)
 
 build/gameplay-parity-native: $(TEST_GAMEPLAY_SRC) Makefile
 	@mkdir -p build
