@@ -111,6 +111,44 @@ static int load_exact_track(const char *asset) {
     return ok;
 }
 
+static const char *music_asset(zel_music_track_t track) {
+    switch (track) {
+    case ZEL_MUSIC_ZOPN: return "zopn.msd";
+    case ZEL_MUSIC_ZEND: return "zend.msd";
+    case ZEL_MUSIC_MGT1: return "mgt1.msd";
+    case ZEL_MUSIC_MGT2: return "mgt2.msd";
+    case ZEL_MUSIC_UGM1: return "ugm1.msd";
+    case ZEL_MUSIC_UGM2: return "ugm2.msd";
+    default: return NULL;
+    }
+}
+
+int zel_audio_play_music(zel_music_track_t track) {
+    const char *asset = music_asset(track);
+    if (!asset) {
+        if (track == ZEL_MUSIC_NONE) {
+            zel_opening_audio_stop();
+            return 1;
+        }
+        return 0;
+    }
+
+    g_music_track = track;
+    g_music_complete = 0;
+    g_transition_fade = 0;
+    g_attenuation = 0;
+    g_driver_tick_divider = 1;
+    g_fade_interval_counter = 1;
+    g_timer_subtick_accum = 0;
+    if (!g_exact_driver || !load_exact_track(asset)) {
+        g_music_track = ZEL_MUSIC_NONE;
+        g_music_complete = 1;
+        g_exact_driver = 0;
+        return 0;
+    }
+    return 1;
+}
+
 void zel_opening_audio_init(void) {
     size_t driver_size = 0, sfx_driver_size = 0, bios_size = 0;
     u8 *driver;
@@ -158,20 +196,10 @@ void zel_opening_audio_sync_phase(int phase) {
         g_music_track == ZEL_OPENING_MUSIC_ZEND && g_music_complete)
         g_music_track = ZEL_OPENING_MUSIC_NONE;
     if (phase == OPDMO_PHASE_TITLE_LOGO_COLOR_ROTATION && phase != g_last_phase) {
-        g_music_track = ZEL_OPENING_MUSIC_ZOPN;
-        if (g_exact_driver && !load_exact_track("zopn.msd"))
-            g_exact_driver = 0;
+        zel_audio_play_music(ZEL_MUSIC_ZOPN);
     }
     else if (phase == OPDMO_PHASE_STAFF_CREDITS && phase != g_last_phase) {
-        g_music_track = ZEL_OPENING_MUSIC_ZEND;
-        g_music_complete = 0;
-        g_transition_fade = 0;
-        g_attenuation = 0;
-        g_driver_tick_divider = 1;
-        g_fade_interval_counter = 1;
-        g_timer_subtick_accum = 0;
-        if (g_exact_driver && !load_exact_track("zend.msd"))
-            g_exact_driver = 0;
+        zel_audio_play_music(ZEL_MUSIC_ZEND);
     }
     g_last_phase = phase;
 }

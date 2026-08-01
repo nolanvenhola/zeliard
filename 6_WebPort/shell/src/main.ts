@@ -23,7 +23,7 @@ type EngineExports = {
     _zeliard_scene(): number;        // 0=title, 1=opening demo, 2=game handoff
     _zeliard_phase(): number;        // OPDMO phase while scene=opening
     _zeliard_phase_elapsed(): number;
-    _zeliard_music_track(): number;  // 0=none, 1=zopn.msd, 2=zend.msd
+    _zeliard_music_track(): number;  // zel_music_track_t from the exact runtime
     _zeliard_music_complete(track: number): void;
     _zeliard_music_attenuation(): number;
     _zeliard_paused(): number;

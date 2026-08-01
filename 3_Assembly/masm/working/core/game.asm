@@ -62,7 +62,7 @@ weapon_tier_max	equ	9Dh			; alias — earlier (wrong) name
 cur_weapon_idx	equ	9Dh			; alias — earlier (wrong) name
 current_area_id	equ	0C4h			; current area (high bit=in-town, low 7=town/sage idx); Kioku Feather destination
 player_level	equ	0C4h			; alias — earlier name (was misnomer; not character level)
-player_tileset	equ	0C8h			; level tileset index (canonical in stdply.inc)
+current_level_idx equ	0C8h			; level/music selector (canonical in stdply.inc)
 gvar_pose_idx	equ	0E7h			; player pose state (canonical in stdply.inc)
 ; Game state variables (0xFF00+ range, shared with zeliad.exe).
 ; Names below are synced to zeliard.inc canonical where one exists; game.asm
@@ -138,10 +138,10 @@ font_grp_dest	equ	0F500h			; FONT.GRP chunk load destination (CS:F500h)
 ; first 2 bytes (archive_index, chunk_index_1based).  The named offsets
 ; below correspond to specific runtime indexing arithmetic in this file.
 chunk_ref_tbl_base	equ	0A21Dh		; base of chunk-ref records (cs:0A21Dh)
-level_tileset_ref_tbl	equ	0A363h		; chunk_ref_tbl_base + 326
-						; indexed by [current_level_idx]*11 (game.asm:413)
-level_map_ref_tbl	equ	0A38Fh		; chunk_ref_tbl_base + 370
-						; indexed by [current_level_idx]*11 (game.asm:424)
+level_music_ref_tbl	equ	0A363h		; four MGT/UGM score path records
+						; indexed by [current_level_idx]*11
+town_sprite_ref_tbl	equ	0A38Fh		; MMAN/CMAN town actor graphics records
+						; indexed by the second town descriptor byte
 ; zeliad loads game.bin at this offset in the game segment.
 ; Using GAME_CODE_BASE + (offset label) makes these auto-update
 ; when code is added or removed above each label.
@@ -445,7 +445,8 @@ gfx_init_after_tile:
 		mov	al,1			; Function 1 = load level
 		call	word ptr cs:[sar_loader_fn]
 
-		; Set up level rendering
+		; Resolve the initial score and town actor graphics from the two
+		; selector bytes at the level descriptor pointer in CS:C000.
 		mov	ax,cs
 		mov	ds,ax
 		add	ax,1000h
@@ -455,25 +456,25 @@ gfx_init_after_tile:
 		push	si
 		shr	al,1
 		and	al,1Fh
-		mov	byte ptr cs:[player_tileset],al	; Store level tileset index
+		mov	byte ptr cs:[current_level_idx],al
 		mov	cl,0Bh
 		mul	cl			; Calculate chunk ref offset
 		mov	si,ax
-		add	si,level_tileset_ref_tbl	; Level tileset chunk refs
+		add	si,level_music_ref_tbl	; MGT1/UGM1/MGT2/UGM2 path
 		mov	di,3000h
-		mov	al,5			; Archive 5?
-		call	word ptr cs:[sar_loader_fn]	; Load tileset
+		mov	al,5			; Loader mode 5: MSD path record
+		call	word ptr cs:[sar_loader_fn]	; Load score at game_seg:3000
 
-		; Load level map data
+		; Load the selected MMAN/CMAN town actor graphics bank
 		pop	si
 		lodsb
 		mov	cl,0Bh
 		mul	cl
 		mov	si,ax
-		add	si,level_map_ref_tbl	; Level map chunk refs
+		add	si,town_sprite_ref_tbl
 		mov	di,4000h
-		mov	al,2			; Archive 2
-		call	word ptr cs:[sar_loader_fn]	; Load level map
+		mov	al,2			; Loader mode 2: fill-buffer compressed chunk
+		call	word ptr cs:[sar_loader_fn]	; Load actor graphics at game_seg:4000
 
 		; Jump to main game loop!
 		jmp	word ptr ds:[loaded_code_b_fn]
@@ -550,12 +551,12 @@ gfx_mode_tbl_all_lbl	label	word
 		ref_gdhgc	db	00h, 04h, 'gdhgc.bin', 0	; zelres1 ch4:  HGC graphics driver
 		ref_gdmcga	db	00h, 06h, 'gdmcga.bin', 0	; zelres1 ch6:  MCGA graphics driver
 		ref_gdtga	db	00h, 05h, 'gdtga.bin', 0	; zelres1 ch5:  TGA graphics driver
-		db	01h, '/MGT1.MSD', 0		; MT-32 music track 1
-		db	01h, '1UGM1.MSD', 0		; General MIDI music track 1
-		db	01h, '0MGT2.MSD', 0		; MT-32 music track 2
-		db	01h, '2UGM2.MSD', 0		; General MIDI music track 2
-		db	01h, 1Eh, 'MMAN.GRP', 0	; zelres2 ch30: manual graphics (mono)
-		db	01h, 1Fh, 'CMAN.GRP', 0	; zelres2 ch31: manual graphics (color)
+		db	01h, '/MGT1.MSD', 0		; gameplay score index 0
+		db	01h, '1UGM1.MSD', 0		; gameplay score index 1
+		db	01h, '0MGT2.MSD', 0		; gameplay score index 2
+		db	01h, '2UGM2.MSD', 0		; gameplay score index 3
+		db	01h, 1Eh, 'MMAN.GRP', 0	; town actor graphics bank 0
+		db	01h, 1Fh, 'CMAN.GRP', 0	; town actor graphics bank 1
 
 run_game_main		endp
 

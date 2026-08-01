@@ -48,7 +48,7 @@ OFF_SHIELD = 0x0093
 OFF_SELECTED_SPELL = 0x009D
 OFF_MUSIC_TRACK_COUNT = 0x00A0
 OFF_CURRENT_AREA = 0x00C4
-OFF_PLAYER_TILESET = 0x00C8
+OFF_CURRENT_LEVEL_IDX = 0x00C8
 OFF_CINEMATIC_ACTIVE = 0xFF77
 OFF_SAVE_DATA_PTR = 0xC000
 OFF_GAME_INIT_FN = 0xA470
@@ -201,7 +201,8 @@ def run_bootstrap(ax: int, gfx_mode: int, *, saved_fixture: bool,
     h.write_code(OFF_CURRENT_AREA, [3])
     if saved_fixture:
         h.write_code(OFF_SAVE_DATA_PTR, word_bytes(SAVE_RECORD_FIXTURE))
-        # First byte -> tileset index after SHR/AND.  Second byte -> map index.
+        # First byte -> score/current-level index after SHR/AND.
+        # Second byte -> MMAN/CMAN town sprite-bank index.
         h.write_code(SAVE_RECORD_FIXTURE, [0x0A, 0x03])
 
     proc = resolve_proc("game", "run_game_main") + LOAD_BASE
@@ -321,15 +322,15 @@ def main() -> int:
         expect(rec["al"] == 1 and rec["ah"] == 3, failures,
                f"level-load call AX {rec['ah']:02X}{rec['al']:02X} != 0301")
     if len(saved_records) > 14:
-        tileset = saved_records[13]
-        level_map = saved_records[14]
-        expect(tileset["al"] == 5 and tileset["di"] == 0x3000 and tileset["es_delta"] == 0x1000,
-               failures, "tileset load did not use AL=5, DI=3000, ES=CS+1000")
-        expect(level_map["al"] == 2 and level_map["di"] == 0x4000 and level_map["es_delta"] == 0x1000,
-               failures, "level-map load did not use AL=2, DI=4000, ES=CS+1000")
+        level_music = saved_records[13]
+        town_sprite = saved_records[14]
+        expect(level_music["al"] == 5 and level_music["di"] == 0x3000 and level_music["es_delta"] == 0x1000,
+               failures, "level-music load did not use AL=5, DI=3000, ES=CS+1000")
+        expect(town_sprite["al"] == 2 and town_sprite["di"] == 0x4000 and town_sprite["es_delta"] == 0x1000,
+               failures, "town-sprite load did not use AL=2, DI=4000, ES=CS+1000")
 
-    expect(read_code_byte(saved_h, OFF_PLAYER_TILESET) == 5, failures,
-           f"player_tileset {read_code_byte(saved_h, OFF_PLAYER_TILESET):02X} != 05")
+    expect(read_code_byte(saved_h, OFF_CURRENT_LEVEL_IDX) == 5, failures,
+           f"current_level_idx {read_code_byte(saved_h, OFF_CURRENT_LEVEL_IDX):02X} != 05")
     expect(read_code_byte(saved_h, OFF_CINEMATIC_ACTIVE) == 0, failures,
            "saved-game cinematic flag was not cleared")
     assert_boot_clear_block(failures, saved_h, new_game=False)

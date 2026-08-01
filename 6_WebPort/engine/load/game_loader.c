@@ -6,8 +6,8 @@
 #include <string.h>
 
 enum {
-    GAME_REF_LEVEL_TILESET_BASE = 0xA363,
-    GAME_REF_LEVEL_MAP_BASE = 0xA38F,
+    GAME_REF_LEVEL_MUSIC_BASE = 0xA363,
+    GAME_REF_TOWN_SPRITE_BASE = 0xA38F,
     GAME_MUSIC_PLAYER_FN = 0x18AB,
     GAME_GFX_CALL_A_SLOT = 0,
     GAME_GFX_CALL_B_SLOT = 1,
@@ -328,7 +328,7 @@ size_t zeliard_game_resolve_level_load_trace(
         return 0;
     }
 
-    const u8 player_tileset = (u8)((input->save_tileset_source >> 1) & 0x1F);
+    const u8 current_level_idx = (u8)((input->level_music_source >> 1) & 0x1F);
     size_t count = 0;
     if (!append_level_load_trace_event(out, max_events, &count,
                                        ZELIARD_GAME_BOOT_LOAD_LEVEL, NULL,
@@ -336,16 +336,16 @@ size_t zeliard_game_resolve_level_load_trace(
                                        input->current_area_id, 0) ||
         !append_level_load_trace_event(out, max_events, &count,
                                        ZELIARD_GAME_BOOT_LOAD_CHUNK,
-                                       "level_tileset",
+                                       "level_music",
                                        0x1000, 0x3000, 5, 0,
-                                       (u16)(GAME_REF_LEVEL_TILESET_BASE +
-                                             player_tileset * 11)) ||
+                                       (u16)(GAME_REF_LEVEL_MUSIC_BASE +
+                                             current_level_idx * 11)) ||
         !append_level_load_trace_event(out, max_events, &count,
                                        ZELIARD_GAME_BOOT_LOAD_CHUNK,
-                                       "level_map",
+                                       "town_sprite",
                                        0x1000, 0x4000, 2, 0,
-                                       (u16)(GAME_REF_LEVEL_MAP_BASE +
-                                             input->save_map_source * 11))) {
+                                       (u16)(GAME_REF_TOWN_SPRITE_BASE +
+                                             input->town_sprite_source * 11))) {
         return 0;
     }
     return count;
@@ -427,8 +427,8 @@ size_t zeliard_game_resolve_bootstrap_trace(zeliard_game_bootstrap_trace_event_t
     zeliard_game_level_load_trace_event_t level_trace[3];
     const zeliard_game_level_load_input_t level_input = {
         .current_area_id = input->current_area_id,
-        .save_tileset_source = input->save_tileset_source,
-        .save_map_source = input->save_map_source,
+        .level_music_source = input->level_music_source,
+        .town_sprite_source = input->town_sprite_source,
     };
     const size_t level_count = zeliard_game_resolve_level_load_trace(
         level_trace, sizeof(level_trace) / sizeof(level_trace[0]), &level_input);
@@ -631,7 +631,7 @@ bool zeliard_game_resolve_bootstrap_plan(zeliard_game_bootstrap_plan_t *plan,
         return false;
     }
 
-    plan->player_tileset = (u8)((input->save_tileset_source >> 1) & 0x1F);
+    plan->current_level_idx = (u8)((input->level_music_source >> 1) & 0x1F);
     for (size_t i = 0; i < effect_count; ++i) {
         const zeliard_game_bootstrap_effect_event_t *effect = &effects[i];
         switch (effect->kind) {

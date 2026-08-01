@@ -80,14 +80,14 @@ typedef struct {
     u8 selected_spell;
     u8 music_track_count;
     u8 current_area_id;
-    u8 save_tileset_source;
-    u8 save_map_source;
+    u8 level_music_source;
+    u8 town_sprite_source;
 } zeliard_game_bootstrap_input_t;
 
 typedef struct {
     u8 current_area_id;
-    u8 save_tileset_source;
-    u8 save_map_source;
+    u8 level_music_source;
+    u8 town_sprite_source;
 } zeliard_game_level_load_input_t;
 
 typedef struct {
@@ -183,7 +183,7 @@ typedef struct {
     bool jumps_to_opdemo;
     bool jumps_to_game_loop;
     u8 cinematic_active;
-    u8 player_tileset;
+    u8 current_level_idx;
 } zeliard_game_bootstrap_plan_t;
 
 enum {

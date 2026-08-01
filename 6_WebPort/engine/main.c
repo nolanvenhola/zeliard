@@ -146,8 +146,8 @@ static bool enter_game_scene(void) {
         .selected_spell = g_game_segments[0][0x9D],
         .music_track_count = g_game_segments[0][0xA0],
         .current_area_id = g_game_segments[0][0xC4],
-        .save_tileset_source = g_game_segments[0][0xC000],
-        .save_map_source = g_game_segments[0][0xC001],
+        .level_music_source = g_game_segments[0][0xC000],
+        .town_sprite_source = g_game_segments[0][0xC001],
     };
     if (!zeliard_game_execute_bootstrap(&g_game_exec, &input, &services) ||
         !g_game_exec.branched ||
@@ -161,8 +161,14 @@ static bool enter_game_scene(void) {
         return false;
     }
     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    /* game.asm:A1E0 resolves CMAP's descriptor byte 00 to record 0 at
+     * A363 (MGT1.MSD). 106TOWN:60A9 starts that game_seg:3000 score with
+     * INT 60h AX=0 immediately after the initial town draw. */
+    if (!zel_audio_play_music(ZEL_MUSIC_MGT1)) {
+        platform_log("game bootstrap: MGT1.MSD exact music start failed");
+        return false;
+    }
     g_scene = SCENE_GAME;
-    zel_opening_audio_stop();
     platform_log("zeliard_tick: first castle frame ready (%u boot, %u town events)",
                  (unsigned)g_game_exec.event_count,
                  (unsigned)g_town_runtime.event_count);

@@ -152,7 +152,7 @@ Milestone | What works
 ---|---
 M1     | **COMPLETE** - WASM/TypeScript shell, MCGA framebuffer, palette, input, and deployment pipeline
 M2     | **COMPLETE** - opening cinematic, pause/input, exact MSCADLIB music, and exact SNDADLIB effects
-**M3** | _ACTIVE_ - executable `game.asm` handoff and first playable Felishika castle
+**M3** | _ACTIVE_ - executable `game.asm` handoff, first playable Felishika castle, and exact MSCADLIB castle music
 M4     | Muralla cavern + Cangrejo boss
 M5     | Remaining content + MT-32 audio
 
