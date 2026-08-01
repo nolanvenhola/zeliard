@@ -113,6 +113,7 @@ def main() -> int:
     page_hashes: list[int] = []
     glyphs: list[tuple[int, int, int, int]] = []
     cues: list[int] = []
+    cue_order: list[tuple[int, int]] = []
 
     def code_hook(uc: Uc, address: int, _size: int, _user: object) -> None:
         ip = address - base
@@ -137,6 +138,7 @@ def main() -> int:
                    value: int, _user: object) -> None:
         if address == base + 0xFF75:
             cues.append(value & 0xFF)
+            cue_order.append((len(glyphs), len(page_hashes)))
 
     mu.hook_add(UC_HOOK_CODE, code_hook)
     mu.hook_add(UC_HOOK_MEM_WRITE, write_hook)
@@ -153,12 +155,14 @@ def main() -> int:
         and npc == bytes.fromhex("3000811801000000")
         and text_pc == 0xC4AC
         and cues == [0x1E]
+        and cue_order == [(0, 0)]
         and len(glyphs) == expected_glyph_count
         and page_hashes == expected_page_hashes
     )
     print(f"town_first_dialog: pages={[f'{value:016x}' for value in page_hashes]} "
           f"glyphs={len(glyphs)} text_pc={text_pc:04x} cues="
           f"{','.join(f'{value:02x}' for value in cues)} "
+          f"cue_order={cue_order} "
           f"final={fnv1a64(final_vga):016x}")
     print("VERDICT: " + ("PASS" if ok else "FAIL"))
     return 0 if ok else 1

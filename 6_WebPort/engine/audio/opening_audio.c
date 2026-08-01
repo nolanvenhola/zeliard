@@ -31,12 +31,18 @@ static Opal g_opl;
 static unsigned char g_exact_driver;
 static u32 g_pcm_subframe_accum;
 static int g_audio_rate = 48000;
-enum { PCM_RING_FRAMES = 65536 };
+enum {
+    PCM_RING_FRAMES = 65536,
+    /* Two 60 Hz producer intervals at 48 kHz, matching the shell's proven
+     * startup cushion without allowing latency to grow indefinitely. */
+    PCM_MAX_BUFFERED_FRAMES = 1536
+};
 static short g_pcm_ring[PCM_RING_FRAMES * 2];
 static size_t g_pcm_read;
 static size_t g_pcm_write;
 static u32 g_opl_write_count;
 static u32 g_generated_peak;
+static u32 g_cue_serial;
 
 static void clear_pcm_ring(void) {
     g_pcm_read = g_pcm_write = 0;
@@ -56,7 +62,15 @@ static void apply_driver_writes(void) {
     } while (count == sizeof(writes) / sizeof(writes[0]));
 }
 
+static size_t pcm_available(void) {
+    if (g_pcm_write >= g_pcm_read)
+        return g_pcm_write - g_pcm_read;
+    return PCM_RING_FRAMES - g_pcm_read + g_pcm_write;
+}
+
 static void ring_sample(short left, short right) {
+    if (pcm_available() >= PCM_MAX_BUFFERED_FRAMES)
+        g_pcm_read = (g_pcm_read + 1) % PCM_RING_FRAMES;
     size_t next = (g_pcm_write + 1) % PCM_RING_FRAMES;
     if (next == g_pcm_read)
         g_pcm_read = (g_pcm_read + 1) % PCM_RING_FRAMES;
@@ -117,6 +131,7 @@ void zel_opening_audio_init(void) {
     clear_pcm_ring();
     g_opl_write_count = 0;
     g_generated_peak = 0;
+    g_cue_serial = 0;
     opalInit(&g_opl, g_audio_rate);
     driver = platform_load_asset("mscadlib.drv", &driver_size);
     sfx_driver = platform_load_asset("sndadlib.drv", &sfx_driver_size);
@@ -299,6 +314,14 @@ void zel_opening_audio_resume(void) {
 
 void zel_opening_audio_write_cue(u8 cue) {
     g_cue_mailbox = cue;
+    if (cue && g_sound_enabled) {
+        /* SNDADLIB consumes FF75h on the next PIT service. PCM already in
+         * this ring predates that write; retaining it makes a real-time
+         * command audibly late in the browser. Drop only the host-side
+         * look-ahead, leaving the emulated OPL and driver state untouched. */
+        g_pcm_read = g_pcm_write;
+        g_cue_serial++;
+    }
     if (g_exact_driver)
         zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF75, cue);
 }
@@ -324,9 +347,7 @@ size_t zel_opening_audio_read_pcm(short *stereo, size_t frames) {
 }
 
 size_t zel_opening_audio_pcm_available(void) {
-    if (g_pcm_write >= g_pcm_read)
-        return g_pcm_write - g_pcm_read;
-    return PCM_RING_FRAMES - g_pcm_read + g_pcm_write;
+    return pcm_available();
 }
 
 int zel_opening_audio_exact_driver_active(void) {
@@ -347,4 +368,8 @@ u32 zel_opening_audio_opl_write_count(void) {
 
 u32 zel_opening_audio_generated_peak(void) {
     return g_generated_peak;
+}
+
+u32 zel_opening_audio_cue_serial(void) {
+    return g_cue_serial;
 }

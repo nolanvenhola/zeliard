@@ -286,6 +286,7 @@ EXPORT int              zeliard_exact_music_driver(void) { return zel_opening_au
 EXPORT void             zeliard_audio_set_sample_rate(int sample_rate) { zel_opening_audio_set_sample_rate(sample_rate); }
 EXPORT u32              zeliard_audio_opl_write_count(void) { return zel_opening_audio_opl_write_count(); }
 EXPORT u32              zeliard_audio_generated_peak(void) { return zel_opening_audio_generated_peak(); }
+EXPORT u32              zeliard_audio_cue_serial(void) { return zel_opening_audio_cue_serial(); }
 EXPORT void             zeliard_opening_set_phase_for_test(int phase) {
     opening_set_phase_for_test(phase);
     zel_opening_audio_sync_phase(opening_phase_id());

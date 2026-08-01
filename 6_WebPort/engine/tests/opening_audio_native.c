@@ -69,6 +69,34 @@ static int expect_sfx_pcm(u8 cue) {
     return ok;
 }
 
+static int expect_dialog_sfx_latency(void) {
+    short pcm[512 * 2];
+    zel_opening_audio_init();
+    zel_opening_audio_tick(100);
+    const size_t stale_frames = zel_opening_audio_pcm_available();
+    const u32 serial = zel_opening_audio_cue_serial();
+    const u32 writes = zel_opening_audio_opl_write_count();
+    zel_opening_audio_write_cue(0x1E);
+
+    int service_ms = 0;
+    while (zel_opening_audio_opl_write_count() == writes && service_ms < 5) {
+        zel_opening_audio_tick(1);
+        service_ms++;
+    }
+    const size_t fresh_frames = zel_opening_audio_pcm_available();
+    const size_t delivered = zel_opening_audio_read_pcm(pcm, 512);
+    const int ok = stale_frames == 1536 &&
+        zel_opening_audio_cue_serial() == serial + 1 &&
+        service_ms > 0 && service_ms <= 5 &&
+        zel_opening_audio_opl_write_count() > writes &&
+        fresh_frames <= 240 && delivered == fresh_frames;
+    printf("opening_audio:dialog_sfx_latency: %s stale=%zu fresh=%zu "
+           "service=%dms serial=%u\n", ok ? "PASS" : "FAIL",
+           stale_frames, fresh_frames, service_ms,
+           zel_opening_audio_cue_serial());
+    return ok;
+}
+
 int main(void) {
     int ok = 1;
 
@@ -135,7 +163,7 @@ int main(void) {
             pcm_peak = magnitude;
         pcm_abs_sum += magnitude;
     }
-    const int pcm_flowing = pcm_frames == 4096 && pcm_nonzero > 100 &&
+    const int pcm_flowing = pcm_frames == 1536 && pcm_nonzero > 100 &&
                             pcm_peak > 16 && pcm_abs_sum > pcm_frames * 2;
     printf("opening_audio:exact_mscadlib_pcm: %s frames=%zu nonzero=%zu peak=%u mean=%llu\n",
            pcm_flowing ? "PASS" : "FAIL",
@@ -144,9 +172,10 @@ int main(void) {
     ok &= pcm_flowing;
     ok &= expect_sustained_pcm("zopn", 22);
     ok &= expect_sustained_pcm("zend", 2);
-    static const u8 sfx_pcm_cues[] = { 0x02, 0x04, 0x3D, 0x3E, 0x3F, 0x40, 0x41 };
+    static const u8 sfx_pcm_cues[] = { 0x02, 0x04, 0x1E, 0x3D, 0x3E, 0x3F, 0x40, 0x41 };
     for (size_t i = 0; i < sizeof(sfx_pcm_cues); ++i)
         ok &= expect_sfx_pcm(sfx_pcm_cues[i]);
+    ok &= expect_dialog_sfx_latency();
 
     zel_opening_audio_write_cue(0x3F);
     if (zel_opening_audio_take_cue() != 0x3F || zel_opening_audio_take_cue() != 0) {
