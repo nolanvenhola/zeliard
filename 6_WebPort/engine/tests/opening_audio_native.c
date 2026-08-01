@@ -41,6 +41,55 @@ static int expect_sustained_pcm(const char *name, int phase) {
     return ok;
 }
 
+static int expect_sustained_track_pcm(const char *name,
+                                      zel_music_track_t track) {
+    short pcm[480 * 2];
+    unsigned peak = 0;
+    unsigned long long sum = 0;
+    size_t samples = 0;
+
+    zel_opening_audio_init();
+    int ok = zel_audio_play_music(track);
+    for (int block = 0; block < 200; ++block) {
+        zel_opening_audio_tick(10);
+        size_t frames = zel_opening_audio_read_pcm(pcm, 480);
+        for (size_t i = 0; i < frames * 2; ++i) {
+            unsigned magnitude = pcm[i] < 0 ?
+                (unsigned)-(int)pcm[i] : (unsigned)pcm[i];
+            if (magnitude > peak)
+                peak = magnitude;
+            sum += magnitude;
+        }
+        samples += frames * 2;
+    }
+    ok &= zel_opening_audio_music_track() == (int)track;
+    ok &= samples > 0 && peak > 256 && sum / samples > 16;
+    printf("opening_audio:%s_gameplay_pcm: %s frames=%zu peak=%u mean=%llu writes=%u\n",
+           name, ok ? "PASS" : "FAIL", samples / 2, peak,
+           samples ? sum / samples : 0, zel_opening_audio_opl_write_count());
+    return ok;
+}
+
+static int expect_gameplay_track_load(const char *name,
+                                      zel_music_track_t track) {
+    short pcm[1536 * 2];
+    zel_opening_audio_init();
+    int ok = zel_audio_play_music(track);
+    const u32 writes_before = zel_opening_audio_opl_write_count();
+    zel_opening_audio_tick(250);
+    const size_t frames = zel_opening_audio_read_pcm(pcm, 1536);
+    size_t nonzero = 0;
+    for (size_t i = 0; i < frames * 2; ++i)
+        nonzero += pcm[i] != 0;
+    ok &= zel_opening_audio_music_track() == (int)track;
+    ok &= zel_opening_audio_opl_write_count() > writes_before;
+    ok &= frames == 1536 && nonzero > 100;
+    printf("opening_audio:%s_load: %s track=%d frames=%zu nonzero=%zu writes=%u\n",
+           name, ok ? "PASS" : "FAIL", (int)track, frames, nonzero,
+           zel_opening_audio_opl_write_count());
+    return ok;
+}
+
 static int expect_sfx_pcm(u8 cue) {
     short pcm[480 * 2];
     unsigned peak = 0;
@@ -143,8 +192,7 @@ int main(void) {
            first_step_ms, fade_ms);
     ok &= first_step_ms <= 5 && fade_ms >= 4200 && fade_ms <= 4300;
 
-    zel_opening_audio_stop();
-    ok &= expect_track("game_handoff_stops", ZEL_OPENING_MUSIC_NONE);
+    ok &= expect_sustained_track_pcm("mgt1_castle", ZEL_MUSIC_MGT1);
 
     zel_opening_audio_init();
     zel_opening_audio_sync_phase(2);
@@ -172,6 +220,10 @@ int main(void) {
     ok &= pcm_flowing;
     ok &= expect_sustained_pcm("zopn", 22);
     ok &= expect_sustained_pcm("zend", 2);
+    ok &= expect_gameplay_track_load("mgt1", ZEL_MUSIC_MGT1);
+    ok &= expect_gameplay_track_load("mgt2", ZEL_MUSIC_MGT2);
+    ok &= expect_gameplay_track_load("ugm1", ZEL_MUSIC_UGM1);
+    ok &= expect_gameplay_track_load("ugm2", ZEL_MUSIC_UGM2);
     static const u8 sfx_pcm_cues[] = { 0x02, 0x04, 0x1E, 0x3D, 0x3E, 0x3F, 0x40, 0x41 };
     for (size_t i = 0; i < sizeof(sfx_pcm_cues); ++i)
         ok &= expect_sfx_pcm(sfx_pcm_cues[i]);

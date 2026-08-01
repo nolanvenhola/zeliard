@@ -26,6 +26,12 @@ const OPDMO_MASM_SHA256 = '424f2acbaec8c0395e5e72562ac6f6fd8bfa6f8b5c58a867fe1c5
 const SNDADLIB_SHA256 = 'bf1c2036980f0557106ab0521be163fedb32458a187b4f49a60fee12b3b0a858';
 const MSCADLIB_SHA256 = '3d972d619e94071c38c4b810f17054957aff46ad21b25a65f519a43f16158d4d';
 const TINY86_BIOS_SHA256 = 'ba4b2e62246aaadeda8d90bc0928d4f00242c16039982163d7e82740dceb5e31';
+const VERIFIED_DATA_HASHES = new Map([
+    ['zelres2/data/246MGT1S.msd', '40836c6321800fb3b6821d358a08eb4c4168fd317a7c0101279b176aa3647ed7'],
+    ['zelres2/data/247MGT2S.msd', '80fbf9d10f5fe1e51c04393f30235db551f16e584ac7ca693abe7bd9c77441f5'],
+    ['zelres2/data/248UGM1S.msd', 'cdc86b6f8cc2ef02f2f7395e29be7aabc73810276850d371020352c159d4c5de'],
+    ['zelres2/data/249UGM2S.msd', '6743ee4a9bcd6a6fd2a4717712c2d0767dfdff1e3650d30910d2df81aa3ab9f0'],
+]);
 
 function verifiedMasmOutput(relativePath, expectedHash) {
     const masm = join(REPO_ROOT, '3_Assembly', 'masm', 'bin', relativePath);
@@ -98,6 +104,11 @@ const ASSET_MAP = [
     ['zelres1/data/137YUUPG.grp', 'yuup.grp'],
     ['zelres1/data/138ZENDM.msd', 'zend.msd'],
     ['zelres1/data/139ZOPNM.msd', 'zopn.msd'],
+    /* Gameplay scores loaded through the same MSCADLIB INT 60h service. */
+    ['zelres2/data/246MGT1S.msd', 'mgt1.msd'],
+    ['zelres2/data/247MGT2S.msd', 'mgt2.msd'],
+    ['zelres2/data/248UGM1S.msd', 'ugm1.msd'],
+    ['zelres2/data/249UGM2S.msd', 'ugm2.msd'],
 ];
 
 const EXTRA_ASSET_MAP = [
@@ -171,6 +182,12 @@ function copyOne(rel, dst) {
         console.error(`[copy_assets] MISSING: ${src}`);
         process.exitCode = 1;
         return false;
+    }
+    const expectedHash = VERIFIED_DATA_HASHES.get(rel);
+    if (expectedHash) {
+        const actualHash = createHash('sha256').update(readFileSync(src)).digest('hex');
+        if (actualHash !== expectedHash)
+            throw new Error(`${rel} does not match verified MASM data: ${actualHash}`);
     }
     const dstA = join(DEST_ENGINE, dst);
     const dstB = join(DEST_SHELL,  dst);

@@ -12,6 +12,7 @@ int zeliard_scene(void);
 int zeliard_test_town_dialog_active(void);
 int zeliard_phase(void);
 u32 zeliard_phase_elapsed(void);
+u32 zeliard_audio_opl_write_count(void);
 int zeliard_paused(void);
 int zeliard_music_track(void);
 void zeliard_music_complete(int track);
@@ -115,6 +116,18 @@ int main(void) {
     zeliard_key(13);
     zeliard_tick(0);
     ok &= zeliard_scene() == 2;
+    ok &= zeliard_music_track() == 3;
+    const u32 castle_writes = zeliard_audio_opl_write_count();
+    zeliard_tick(250);
+    ok &= zeliard_audio_opl_write_count() > castle_writes;
+    zeliard_key(112);
+    ok &= zeliard_music_enabled() == 0 && zeliard_music_track() == 3;
+    zeliard_key(112);
+    ok &= zeliard_music_enabled() == 1 && zeliard_music_track() == 3;
+    zeliard_key(27);
+    ok &= zeliard_paused() == 1 && zeliard_music_track() == 3;
+    zeliard_key(32);
+    ok &= zeliard_paused() == 0 && zeliard_music_track() == 3;
     zeliard_key_down(39);
     zeliard_tick(90);
     zeliard_key_up(39);
@@ -133,11 +146,14 @@ int main(void) {
     zeliard_tick(90);
     const int dialog_dismissed = !zeliard_test_town_dialog_active();
     printf("main_controls:first_castle_dialog: %s frame=%016llx cue=%02X "
-           "active=%d dismissed=%d\n",
-           dialog_cue == 0x1E && dialog_active && dialog_dismissed ?
+           "music=%d active=%d dismissed=%d\n",
+           dialog_cue == 0x1E && zeliard_music_track() == 3 &&
+               dialog_active && dialog_dismissed ?
                "PASS" : "FAIL",
-           dialog_hash, dialog_cue, dialog_active, dialog_dismissed);
-    ok &= dialog_cue == 0x1E && dialog_active && dialog_dismissed;
+           dialog_hash, dialog_cue, zeliard_music_track(), dialog_active,
+           dialog_dismissed);
+    ok &= dialog_cue == 0x1E && zeliard_music_track() == 3 &&
+          dialog_active && dialog_dismissed;
 
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

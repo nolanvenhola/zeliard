@@ -5,13 +5,23 @@
 #include <stddef.h>
 
 typedef enum {
-    ZEL_OPENING_MUSIC_NONE = 0,
-    ZEL_OPENING_MUSIC_ZOPN = 1,
-    ZEL_OPENING_MUSIC_ZEND = 2
-} zel_opening_music_track_t;
+    ZEL_MUSIC_NONE = 0,
+    ZEL_MUSIC_ZOPN = 1,
+    ZEL_MUSIC_ZEND = 2,
+    ZEL_MUSIC_MGT1 = 3,
+    ZEL_MUSIC_MGT2 = 4,
+    ZEL_MUSIC_UGM1 = 5,
+    ZEL_MUSIC_UGM2 = 6
+} zel_music_track_t;
+
+typedef zel_music_track_t zel_opening_music_track_t;
+#define ZEL_OPENING_MUSIC_NONE ZEL_MUSIC_NONE
+#define ZEL_OPENING_MUSIC_ZOPN ZEL_MUSIC_ZOPN
+#define ZEL_OPENING_MUSIC_ZEND ZEL_MUSIC_ZEND
 
 void zel_opening_audio_init(void);
 void zel_opening_audio_sync_phase(int phase);
+int zel_audio_play_music(zel_music_track_t track);
 void zel_opening_audio_stop(void);
 int zel_opening_audio_music_track(void);
 void zel_opening_audio_music_complete(int track);

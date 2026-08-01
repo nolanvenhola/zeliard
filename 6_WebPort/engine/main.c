@@ -161,8 +161,14 @@ static bool enter_game_scene(void) {
         return false;
     }
     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    /* game.asm:A1E0 resolves CMAP's descriptor byte 00 to record 0 at
+     * A363 (MGT1.MSD). 106TOWN:60A9 starts that game_seg:3000 score with
+     * INT 60h AX=0 immediately after the initial town draw. */
+    if (!zel_audio_play_music(ZEL_MUSIC_MGT1)) {
+        platform_log("game bootstrap: MGT1.MSD exact music start failed");
+        return false;
+    }
     g_scene = SCENE_GAME;
-    zel_opening_audio_stop();
     platform_log("zeliard_tick: first castle frame ready (%u boot, %u town events)",
                  (unsigned)g_game_exec.event_count,
                  (unsigned)g_town_runtime.event_count);
