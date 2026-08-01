@@ -706,7 +706,7 @@ save_game_load:
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
 		mov	byte ptr ds:[loading_flag],0FFh
-		mov	al,byte ptr ds:[player_tileset]
+		mov	al,byte ptr ds:[current_level_idx]
 		mov	bl,0Bh
 		mul	bl			; ax = reg * al
 		LOAD_CHUNK_REF music_ref_tbl, 3000h, 5
@@ -4313,7 +4313,7 @@ boss_state_init:
 		call	word ptr cs:[game_fn_vtable]
 		mov	byte ptr ds:[prev_spr_id],0FFh
 		mov	byte ptr ds:[prev_chr_id],0FFh
-		mov	al,byte ptr ds:[player_tileset]
+		mov	al,byte ptr ds:[current_level_idx]
 		mov	ds:[music_track_id],al
 		mov	byte ptr ds:[loading_flag],0FFh
 		call	refresh_scene_assets
@@ -4449,7 +4449,7 @@ level_start:
 		lodsb				; String [si] to al
 		shr	al,1			; Shift w/zeros fill
 		and	al,1Fh
-		mov	byte ptr ds:[player_tileset],al
+		mov	byte ptr ds:[current_level_idx],al
 		mov	bl,0Bh
 		mul	bl			; ax = reg * al
 		LOAD_CHUNK_REF music_ref_tbl, 3000h, 5
@@ -4574,10 +4574,10 @@ copy_combat_flags_and_tileset		proc	near
 		and	al,0Fh
 		mov	ah,al
 		mov	al,0FFh
-		cmp	ah,byte ptr ds:[player_tileset]
+		cmp	ah,byte ptr ds:[current_level_idx]
 		je	same_chr			; Jump if equal
 		mov	byte ptr ds:[gvar_scene_mode],0Ah
-		mov	byte ptr ds:[player_tileset],ah
+		mov	byte ptr ds:[current_level_idx],ah
 		mov	al,ah
 
 same_chr:

@@ -70,7 +70,7 @@ boss_intro_flag         equ     0C3h    ; boss intro-side flag (canonical in std
 current_area_id         equ     0C4h    ; current area (high bit=in-town, low 7=town/sage idx 1..8); Kioku Feather destination
 player_level            equ     0C4h    ; alias — earlier name (was misnomer)
 heal_pulse_count        equ     0C6h    ; HP heal-pulse counter, 16-bit (canonical in stdply.inc)
-player_tileset          equ     0C8h    ; level tileset index
+player_tileset          equ     0C8h    ; legacy alias; use current_level_idx
 key_count               equ     0E4h    ; player's collected-key count
 scene_trans_request     equ     0E6h    ; scene-transition request (canonical in stdply.inc)
 gvar_pose_idx           equ     0E7h    ; player pose state (canonical in stdply.inc)

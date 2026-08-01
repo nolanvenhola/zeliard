@@ -59,7 +59,7 @@ facing_direction           equ     0C2h    ; facing/anim flag bits (canonical in
 current_area_id         equ     0C4h    ; current area (high bit=in-town, low 7=town/sage idx); Kioku Feather destination
 player_level            equ     0C4h    ; alias — earlier name (was misnomer; not character level)
 stat_XC5                equ     0C5h    ; placeholder — byte field used by 200FIGHT (set 0x80, read as ah)
-player_tileset          equ     0C8h    ; level tileset index (canonical in stdply.inc)
+player_tileset          equ     0C8h    ; legacy alias; use current_level_idx
 key_count               equ     0E4h    ; player's collected-key count (canonical in stdply.inc)
 
 ; ----------------------------------------------------------------------

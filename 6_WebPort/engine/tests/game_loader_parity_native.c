@@ -425,8 +425,8 @@ static int run_level_load_trace_cases(void) {
     zeliard_game_level_load_trace_event_t trace[3] = {0};
     zeliard_game_level_load_input_t input = {
         .current_area_id = 3,
-        .save_tileset_source = 0x0A,
-        .save_map_source = 0x03,
+        .level_music_source = 0x0A,
+        .town_sprite_source = 0x03,
     };
     int ok = expect_size("game_level_load_trace:saved:count",
                          zeliard_game_resolve_level_load_trace(trace, 3, &input),
@@ -436,18 +436,18 @@ static int run_level_load_trace_cases(void) {
                                    0x3000, 0x0000, 1, 3, 0);
     ok &= expect_level_trace_event("game_level_load_trace:saved:1", &trace[1],
                                    ZELIARD_GAME_BOOT_LOAD_CHUNK,
-                                   "level_tileset",
+                                   "level_music",
                                    0x1000, 0x3000, 5, 0, 0xA39A);
     ok &= expect_level_trace_event("game_level_load_trace:saved:2", &trace[2],
                                    ZELIARD_GAME_BOOT_LOAD_CHUNK,
-                                   "level_map",
+                                   "town_sprite",
                                    0x1000, 0x4000, 2, 0, 0xA3B0);
 
     memset(trace, 0, sizeof(trace));
     input = (zeliard_game_level_load_input_t){
         .current_area_id = 7,
-        .save_tileset_source = 0x3E,
-        .save_map_source = 0xFF,
+        .level_music_source = 0x3E,
+        .town_sprite_source = 0xFF,
     };
     ok &= expect_size("game_level_load_trace:edge:count",
                       zeliard_game_resolve_level_load_trace(trace, 3, &input),
@@ -457,11 +457,11 @@ static int run_level_load_trace_cases(void) {
                                    0x3000, 0x0000, 1, 7, 0);
     ok &= expect_level_trace_event("game_level_load_trace:edge:1", &trace[1],
                                    ZELIARD_GAME_BOOT_LOAD_CHUNK,
-                                   "level_tileset",
+                                   "level_music",
                                    0x1000, 0x3000, 5, 0, 0xA4B8);
     ok &= expect_level_trace_event("game_level_load_trace:edge:2", &trace[2],
                                    ZELIARD_GAME_BOOT_LOAD_CHUNK,
-                                   "level_map",
+                                   "town_sprite",
                                    0x1000, 0x4000, 2, 0, 0xAE84);
     ok &= expect_size("game_level_load_trace:null",
                       zeliard_game_resolve_level_load_trace(trace, 3, NULL),
@@ -567,8 +567,8 @@ static int run_bootstrap_saved_game_case(void) {
         .gfx_mode = 1,
         .sword = 0,
         .current_area_id = 3,
-        .save_tileset_source = 0x0A,
-        .save_map_source = 0x03,
+        .level_music_source = 0x0A,
+        .town_sprite_source = 0x03,
     };
     zeliard_game_bootstrap_trace_event_t trace[15] = {0};
     zeliard_game_bootstrap_effect_event_t effects[40] = {0};
@@ -638,12 +638,12 @@ static int run_bootstrap_saved_game_case(void) {
     ok &= expect_boot_call("game_boot:saved:12", &plan.calls[12],
                            ZELIARD_GAME_BOOT_LOAD_LEVEL, NULL, 0x3000, 0x0000, 1, 3);
     ok &= expect_boot_call("game_boot:saved:13", &plan.calls[13],
-                           ZELIARD_GAME_BOOT_LOAD_CHUNK, "level_tileset", 0x1000, 0x3000, 5, 0);
+                           ZELIARD_GAME_BOOT_LOAD_CHUNK, "level_music", 0x1000, 0x3000, 5, 0);
     ok &= expect_u16("game_boot:saved:13:ref", plan.calls[13].ref_offset, 0xA39A);
     ok &= expect_boot_call("game_boot:saved:14", &plan.calls[14],
-                           ZELIARD_GAME_BOOT_LOAD_CHUNK, "level_map", 0x1000, 0x4000, 2, 0);
+                           ZELIARD_GAME_BOOT_LOAD_CHUNK, "town_sprite", 0x1000, 0x4000, 2, 0);
     ok &= expect_u16("game_boot:saved:14:ref", plan.calls[14].ref_offset, 0xA3B0);
-    ok &= expect_u8("game_boot:saved:tileset", plan.player_tileset, 5);
+    ok &= expect_u8("game_boot:saved:level_idx", plan.current_level_idx, 5);
     ok &= expect_size("game_boot:saved:music_count", plan.music_plan.load_count, 0);
     ok &= expect_size("game_boot:saved:driver_count", plan.driver_call_count, 0);
     ok &= expect_boot_clears("game_boot:saved", &plan);
@@ -672,8 +672,8 @@ static int run_bootstrap_saved_optional_case(void) {
         .selected_spell = 0x56,
         .music_track_count = 3,
         .current_area_id = 3,
-        .save_tileset_source = 0x0A,
-        .save_map_source = 0x03,
+        .level_music_source = 0x0A,
+        .town_sprite_source = 0x03,
     };
     zeliard_game_bootstrap_trace_event_t trace[15] = {0};
     zeliard_game_bootstrap_effect_event_t effects[40] = {0};
@@ -756,8 +756,8 @@ static int run_bootstrap_driver_table_cases(void) {
             .load_saved_game = true,
             .gfx_mode = mode,
             .current_area_id = 3,
-            .save_tileset_source = 0x0A,
-            .save_map_source = 0x03,
+            .level_music_source = 0x0A,
+            .town_sprite_source = 0x03,
         };
         snprintf(label, sizeof(label), "game_boot:driver_tables:%u:saved_resolved", mode);
         ok &= expect_bool(label, zeliard_game_resolve_bootstrap_plan(&plan, &input), true);
@@ -842,7 +842,7 @@ static bool exec_fetch_asset(void *context, const char *name,
     } else if (strcmp(name, "sword.grp") == 0) {
         *data = make_fill_chunk(sword, sizeof(sword), size);
     } else if (strcmp(name, "magic.grp") == 0 ||
-               strcmp(name, "level_map") == 0) {
+               strcmp(name, "town_sprite") == 0) {
         *data = make_fill_chunk(raw, sizeof(raw), size);
     } else {
         *data = make_raw_chunk(raw, sizeof(raw), size);
@@ -929,8 +929,8 @@ static int run_execute_post_opening_case(void) {
         .load_saved_game = true,
         .gfx_mode = 4,
         .current_area_id = 0,
-        .save_tileset_source = 0x0A,
-        .save_map_source = 0x03,
+        .level_music_source = 0x0A,
+        .town_sprite_source = 0x03,
     };
     init_exec_state(&state, segments);
     int ok = expect_bool("game_exec:post_opening:execute",
@@ -947,8 +947,8 @@ static int run_execute_post_opening_case(void) {
                      (u16)(segments[2][0x1800] | segments[2][0x1801] << 8), 0x1808);
     ok &= expect_u16("game_exec:post_opening:game_init_segment",
                      (u16)(segments[0][0xA472] | segments[0][0xA473] << 8), 0x4000);
-    ok &= expect_u8("game_exec:post_opening:tileset_service", segments[1][0x3000], 0x5A);
-    ok &= expect_u8("game_exec:post_opening:map", segments[1][0x4000], 0xA5);
+    ok &= expect_u8("game_exec:post_opening:level_music_service", segments[1][0x3000], 0x5A);
+    ok &= expect_u8("game_exec:post_opening:town_sprite", segments[1][0x4000], 0xA5);
     ok &= expect_size("game_exec:post_opening:special_count",
                       fixture.special_call_count, 4);
     ok &= expect_size("game_exec:post_opening:event_count", state.event_count, 38);

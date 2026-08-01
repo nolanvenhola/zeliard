@@ -146,8 +146,8 @@ static bool enter_game_scene(void) {
         .selected_spell = g_game_segments[0][0x9D],
         .music_track_count = g_game_segments[0][0xA0],
         .current_area_id = g_game_segments[0][0xC4],
-        .save_tileset_source = g_game_segments[0][0xC000],
-        .save_map_source = g_game_segments[0][0xC001],
+        .level_music_source = g_game_segments[0][0xC000],
+        .town_sprite_source = g_game_segments[0][0xC001],
     };
     if (!zeliard_game_execute_bootstrap(&g_game_exec, &input, &services) ||
         !g_game_exec.branched ||
