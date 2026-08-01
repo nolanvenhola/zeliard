@@ -37,6 +37,8 @@ type EngineExports = {
     _zeliard_audio_generated_peak(): number;
     _zeliard_exact_music_driver(): number;
     _zeliard_opening_set_phase_for_test(phase: number): void;
+    _zeliard_room_kind(): number;
+    _zeliard_test_enter_room(kind: number): number;
     _malloc(size: number): number;
     _free(pointer: number): void;
 };

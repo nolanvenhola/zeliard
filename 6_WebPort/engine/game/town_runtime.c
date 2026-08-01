@@ -508,6 +508,17 @@ static int run_live_frame(zeliard_town_runtime_t *town,
     u8 *cs = game->segment[0];
     u8 *game_data = game->segment[1];
     u8 *mask_data = game->segment[2];
+    if (town->room.active) {
+        if (cs[GVAR_SPACEBAR_STATE] || cs[0xFF1E]) {
+            cs[GVAR_SPACEBAR_STATE] = 0;
+            cs[0xFF1E] = 0;
+            if (zeliard_room_leave(&town->room, cs, 0x10000,
+                                   vga, vga_size)) return -4;
+        }
+        cs[GVAR_FRAME_TIMER] = 0;
+        town->frame_count++;
+        return 0;
+    }
     if (town->dialog.active) {
         const int continued = zeliard_town_dialog_continue(
             &town->dialog, cs, game->segment[3], vga, vga_size);
@@ -526,6 +537,15 @@ static int run_live_frame(zeliard_town_runtime_t *town,
                                           mask_data, 0x10000, vga, vga_size))
         return -2;
     zeliard_town_detect_facing_targets(town, cs, input_direction);
+    if (town->facing_door_type == 0 || town->facing_door_type == 2) {
+        const zeliard_room_kind_t kind = town->facing_door_type == 0
+            ? ZEL_ROOM_KING : ZEL_ROOM_SAGE;
+        if (zeliard_room_enter(&town->room, kind, cs, 0x10000,
+                               vga, vga_size)) return -4;
+        cs[GVAR_FRAME_TIMER] = 0;
+        town->frame_count++;
+        return 0;
+    }
     if (town->facing_item_position != 0xFFFF) {
         const int result = zeliard_town_dialog_begin(
             &town->dialog, cs, game->segment[3], vga, vga_size,

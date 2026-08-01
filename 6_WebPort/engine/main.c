@@ -295,6 +295,17 @@ EXPORT u32              zeliard_opening_nec_hou_sprite_debug_word(void) { return
 int zeliard_test_town_dialog_active(void) { return g_town_runtime.dialog.active; }
 #endif
 EXPORT u32              zeliard_opening_nec_hou_sprite_debug_slots(void) { return opening_nec_hou_sprite_debug_slots(); }
+EXPORT int              zeliard_room_kind(void) { return (int)g_town_runtime.room.kind; }
+EXPORT int              zeliard_test_enter_room(int kind) {
+    if (g_scene != SCENE_GAME || g_town_runtime.room.active ||
+        (kind != ZEL_ROOM_KING && kind != ZEL_ROOM_SAGE)) return -1;
+    const int result = zeliard_room_enter(
+        &g_town_runtime.room, (zeliard_room_kind_t)kind,
+        g_game_segments[0], sizeof(g_game_segments[0]),
+        g_game_vga, sizeof(g_game_vga));
+    if (!result) memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    return result;
+}
 
 #if !defined(__EMSCRIPTEN__) && !defined(ZELIARD_NO_MAIN)
 int main(void) {
