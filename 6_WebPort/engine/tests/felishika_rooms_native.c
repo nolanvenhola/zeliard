@@ -110,6 +110,21 @@ static unsigned long long render_sage(void) {
     return fnv1a64(vga, sizeof(vga));
 }
 
+static unsigned long long render_omoya(void) {
+    u8 cs[0x10000] = {0}, tiles[0x3000] = {0}, vga[0x10000] = {0};
+    if (load_raw(cs, 0, "assets/stdply.bin") ||
+        load_payload(cs, 0xA000, "assets/omoypro.bin") || load_font(cs) ||
+        load_tiles("assets/omoya.grp", tiles)) return 0;
+    zeliard_gmmcga_clear_playfield(vga, sizeof(vga));
+    zeliard_gmmcga_draw_life_scale(vga, sizeof(vga), 0);
+    zeliard_gmmcga_draw_town_text_record(
+        vga, sizeof(vga), cs, sizeof(cs), 0xA245);
+    zeliard_gtmcga_draw_room_tile_grid(
+        cs + 0xA129, 16u * 17u, 16, 17, tiles, sizeof(tiles),
+        vga, sizeof(vga), 0x0C1E);
+    return fnv1a64(vga, sizeof(vga));
+}
+
 static int runtime_round_trip(void) {
     u8 *cs = calloc(1, 0x10000);
     u8 *vga = calloc(1, 0x10000);
@@ -128,6 +143,16 @@ static int runtime_round_trip(void) {
                              vga, 0x10000) == 0;
     ok &= fnv1a64(vga, 0x10000) == 0xA6873B3AD33ACEC7ULL;
     ok &= zeliard_room_leave(room, cs, 0x10000, vga, 0x10000) == 0;
+    ok &= zeliard_room_enter(room, ZEL_ROOM_VIEWING, cs, 0x10000,
+                             vga, 0x10000) == 0;
+    ok &= fnv1a64(vga, 0x10000) == 0x1C86E94322A50C57ULL;
+    ok &= !room->alternate_transition_requested;
+    ok &= zeliard_room_leave(room, cs, 0x10000, vga, 0x10000) == 0;
+    cs[0x0049] = 0xFF;
+    ok &= zeliard_room_enter(room, ZEL_ROOM_VIEWING, cs, 0x10000,
+                             vga, 0x10000) == 0;
+    ok &= room->alternate_transition_requested;
+    ok &= zeliard_room_leave(room, cs, 0x10000, vga, 0x10000) == 0;
     free(cs); free(vga); free(room);
     return ok;
 }
@@ -135,9 +160,12 @@ static int runtime_round_trip(void) {
 int main(void) {
     const unsigned long long king = render_king();
     const unsigned long long sage = render_sage();
+    const unsigned long long omoya = render_omoya();
     const int ok = king == 0xC3F7143FE6C981F1ULL &&
-                   sage == 0xA6873B3AD33ACEC7ULL && runtime_round_trip();
-    printf("felishika_rooms: king=%016llx sage=%016llx\n", king, sage);
+                   sage == 0xA6873B3AD33ACEC7ULL &&
+                   omoya == 0x1C86E94322A50C57ULL && runtime_round_trip();
+    printf("felishika_rooms: king=%016llx sage=%016llx omoya=%016llx\n",
+           king, sage, omoya);
     printf("VERDICT: %s: C room frames match release MASM\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

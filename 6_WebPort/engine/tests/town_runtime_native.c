@@ -1,6 +1,7 @@
 #include "../game/town_runtime.h"
 #include "../load/fill_buffer.h"
 #include "../render/palette.h"
+#include "../render/town_mcga.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +12,19 @@ static unsigned long long fnv1a64(const u8 *data, size_t size) {
     for (size_t i = 0; i < size; ++i) {
         hash ^= data[i];
         hash *= 0x100000001B3ULL;
+    }
+    return hash;
+}
+
+static unsigned long long frame_rect_hash(const u8 *vga, u16 x, u16 y,
+                                          u16 width, u16 height) {
+    unsigned long long hash = 0xCBF29CE484222325ULL;
+    for (u16 row = 0; row < height; ++row) {
+        const u8 *pixel = vga + (size_t)(y + row) * 320u + x;
+        for (u16 column = 0; column < width; ++column) {
+            hash ^= pixel[column];
+            hash *= 0x100000001B3ULL;
+        }
     }
     return hash;
 }
@@ -215,6 +229,71 @@ int main(void) {
     ok &= cpat_pixel_hash == 0x639503FA794A154FULL;
     ok &= cpat_alpha_hash == 0x2AE75F00707E7659ULL;
     ok &= fnv1a64(vga + 0xFA00, 0x180) == 0x14D37DE120D41703ULL;
+
+    static u8 door_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                           [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 door_vga[0x10000];
+    memcpy(door_segments, segments, sizeof(door_segments));
+    memcpy(door_vga, vga, sizeof(door_vga));
+    zeliard_town_runtime_t *door_town = malloc(sizeof(*door_town));
+    if (!door_town) return 1;
+    *door_town = town;
+    u16 door_at = (u16)(segments[0][0xC009] |
+                        ((u16)segments[0][0xC00A] << 8));
+    u16 viewing_position = 0xFFFF;
+    while (door_at <= 0xFFFC) {
+        const u16 position = (u16)(segments[0][door_at] |
+            ((u16)segments[0][(u16)(door_at + 1)] << 8));
+        if (position == 0xFFFF) break;
+        if (segments[0][(u16)(door_at + 2)] == 1) {
+            viewing_position = position;
+            break;
+        }
+        door_at = (u16)(door_at + 3);
+    }
+    const u8 door_column = 0x0E;
+    const u16 door_start = (u16)(viewing_position - door_column - 4u);
+    segments[0][0x0080] = (u8)door_start;
+    segments[0][0x0081] = (u8)(door_start >> 8);
+    segments[0][0x0083] = door_column;
+    const u16 door_tile_ptr = (u16)(0xC017u + (u16)(u8)door_start * 8u);
+    segments[0][0xFF2A] = (u8)door_tile_ptr;
+    segments[0][0xFF2B] = (u8)(door_tile_ptr >> 8);
+    segments[0][0xFF33] = 5;
+    const int viewing_enter_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 1);
+    const unsigned long long viewing_frame_hash = fnv1a64(vga, sizeof(vga));
+    const unsigned long long viewing_artwork_hash =
+        frame_rect_hash(vga, 96, 30, 136, 128);
+    ok &= viewing_position != 0xFFFF && viewing_enter_frames == 1;
+    ok &= town.room.active && town.room.kind == ZEL_ROOM_VIEWING;
+    ok &= viewing_artwork_hash == 0x33207D5A3E0A63EFULL;
+    segments[0][0xFF1D] = 0xFF;
+    ok &= zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 0) == 1;
+    ok &= !town.room.active && town.room.kind == ZEL_ROOM_NONE;
+    printf("town_viewing_room: position=%04x frame=%016llx "
+           "artwork=%016llx entered=%d\n", viewing_position,
+           viewing_frame_hash, viewing_artwork_hash, viewing_enter_frames);
+    memcpy(segments, door_segments, sizeof(door_segments));
+    memcpy(vga, door_vga, sizeof(door_vga));
+    town = *door_town;
+
+    segments[0][0x0049] = 0xFF;
+    ok &= zeliard_room_enter(&town.room, ZEL_ROOM_VIEWING,
+                             segments[0], sizeof(segments[0]),
+                             vga, sizeof(vga)) == 0;
+    ok &= town.room.alternate_transition_requested;
+    segments[0][0xFF1D] = 0xFF;
+    ok &= zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 0) > 0;
+    ok &= town.room.active;
+    ok &= zeliard_room_leave(&town.room, segments[0], sizeof(segments[0]),
+                             vga, sizeof(vga)) == 0;
+    memcpy(segments, door_segments, sizeof(door_segments));
+    memcpy(vga, door_vga, sizeof(door_vga));
+    town = *door_town;
+    free(door_town);
 
     static u8 overlap_segment[ZELIARD_GAME_SEGMENT_SIZE];
     static u8 overlap_vga[0x10000];
