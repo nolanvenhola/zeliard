@@ -21,9 +21,16 @@ try {
   await page.waitForFunction(() => window.__zeliard._zeliard_scene() === 2,
     null, { timeout: 5000 });
 
+  const entryStart = await page.evaluate(() => ({
+    result: window.__zeliard._zeliard_test_enter_room(3),
+    kind: window.__zeliard._zeliard_room_kind(),
+  }));
+  if (entryStart.result !== 0 || entryStart.kind !== 0)
+    throw new Error(`viewing-room transition failed: ${JSON.stringify(entryStart)}`);
+  await page.waitForFunction(() => window.__zeliard._zeliard_room_kind() === 3,
+    null, { timeout: 5000 });
   const entered = await page.evaluate(() => {
     const module = window.__zeliard;
-    const result = module._zeliard_test_enter_room(3);
     const framebuffer = module._zeliard_framebuf();
     let hash = 0xCBF29CE484222325n;
     for (let row = 0; row < 128; ++row) {
@@ -33,18 +40,20 @@ try {
         hash = BigInt.asUintN(64, hash * 0x100000001B3n);
       }
     }
-    return { result, kind: module._zeliard_room_kind(),
+    return { kind: module._zeliard_room_kind(),
       artwork: hash.toString(16).padStart(16, '0') };
   });
-  if (entered.result !== 0 || entered.kind !== 3 ||
-      entered.artwork !== '33207d5a3e0a63ef')
+  if (entered.kind !== 3 || entered.artwork !== '33207d5a3e0a63ef')
     throw new Error(`viewing-room entry mismatch: ${JSON.stringify(entered)}`);
 
-  await page.evaluate(() => {
+  const exitStartKind = await page.evaluate(() => {
     const module = window.__zeliard;
     module._zeliard_key(32);
     module._zeliard_tick(100);
+    return module._zeliard_room_kind();
   });
+  if (exitStartKind !== 3)
+    throw new Error(`viewing-room exit skipped fade: kind=${exitStartKind}`);
   await page.waitForFunction(() => window.__zeliard._zeliard_room_kind() === 0,
     null, { timeout: 1000 });
   if (pageErrors.length)

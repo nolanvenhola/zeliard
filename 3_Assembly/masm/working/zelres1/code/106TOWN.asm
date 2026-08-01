@@ -104,7 +104,7 @@ gfx_text_layout_a_fn	equ	2026h			;*
 gfx_text_layout_b_fn	equ	2028h			;*
 gfx_draw_str_fn	equ	202Ah			;*
 gfx_clear_row_fn	equ	2038h			;*
-gfx_blit_fn	equ	2040h			;*
+gfx_fade_to_black_fn	equ	2040h		;* GMMCGA:2130 eight-pass framebuffer mask clear
 gfx_refresh_fn	equ	2042h			;*
 ui_str_tbl	equ	278Bh			;*
 gfx_draw_fn	equ	3002h			;*
@@ -398,7 +398,7 @@ walk_skip_loop2:
 		mov	di,0A000h
 		mov	al,3
 		call	word ptr cs:[sar_loader_fn]
-		call	word ptr cs:[gfx_blit_fn]
+		call	word ptr cs:[gfx_fade_to_black_fn]
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
 		mov	byte ptr ds:[town_scene_flag],0FFh
@@ -2111,7 +2111,7 @@ door_type_shop:
 		mov	di,0A000h
 		mov	al,3
 		call	word ptr cs:[sar_loader_fn]
-		call	word ptr cs:[gfx_blit_fn]
+		call	word ptr cs:[gfx_fade_to_black_fn]
 		mov	ax,1
 		int	60h			; ??INT Non-standard interrupt
 		mov	byte ptr ds:[town_scene_flag],0FFh
@@ -2196,7 +2196,7 @@ special_door_wait:
 		call	word ptr cs:[sar_loader_fn]
 		mov	word ptr ds:[starting_position_in_town],84h
 		mov	byte ptr ds:[town_town_player_col],0Dh
-		call	word ptr cs:[gfx_blit_fn]
+		call	word ptr cs:[gfx_fade_to_black_fn]
 ;*		jmp	loc_2			;*
 				db 0E9h, 31h, 0F0h		; jmp near -0xFCF (unaligned target 36h)
 			                        ;* No entry point to code  (data: UGM2.MSD music filename + pf30_exec)
@@ -2240,7 +2240,7 @@ pf30_exec:
 dlg_char_fetch:
 		mov	word ptr ds:[starting_position_in_town],ax
 		mov	hw_probe_pushds_byte,0FFh
-		call	word ptr cs:[gfx_blit_fn]
+		call	word ptr cs:[gfx_fade_to_black_fn]
 		mov	bx,6002h
 		xor	al,al			; Zero register
 		jmp	word ptr cs:[sar_loader_fn]

@@ -15,7 +15,7 @@ PAGE  59,132
 ;    Loads:        BANK.GRP (zelres2 chunk 16h) via cs:sar_loader_fn SAR loader
 ;                  with AL=2 (fill_buffer decode) into game_seg:8000h.
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
-;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller,
+;                  drv_frame_commit, drv_ds_copy, drv_fade_to_black,
 ;                  drv_draw_string (cs:drv2_fn_15h), drv_set_text_pos
 ;                  (cs:drv2_fn_18h), bank_drv_2014 (cs:drv_fn_10)
 ;                    (graphics driver dispatch slots)
@@ -173,12 +173,12 @@ call_anim_scroll_step:
 drv_script_step:
 			call	word ptr cs:[script_step]
 			cmp	al,0FFh
-			je	chain_to_drv_return_to_caller			; Jump if equal
+			je	chain_to_drv_fade_to_black			; Jump if equal
 			call	script_opcode_dispatch
 			jmp	short drv_script_step
 
-chain_to_drv_return_to_caller:
-		jmp	word ptr cs:[drv_return_to_caller]
+chain_to_drv_fade_to_black:
+		jmp	word ptr cs:[drv_fade_to_black]
 
 run_bank_main		endp
 

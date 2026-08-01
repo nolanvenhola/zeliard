@@ -11,7 +11,7 @@ PAGE  59,132
 ;  enters the hut. Displays the OMOYA.GRP graphic and a dialog banner.
 ;
 ;  The module also contains a secondary entry point (end_demo_transition)
-;  reached via the DS dispatch table at drv_return_to_caller (2040h). This
+;  reached via the DS dispatch table at drv_fade_to_black (2040h). This
 ;  entry loads enddemo.bin and the currently-selected mode-specific
 ;  graphics driver (gdega/gdcga/gdhgc/gdmcga/gdtga) keyed off
 ;  gvar_gfx_mode (0FF14h), then jumps into the loaded demo.
@@ -32,14 +32,14 @@ PAGE  59,132
 ;                    gdega.bin / gdcga.bin / gdhgc.bin / gdmcga.bin /
 ;                    gdtga.bin -- selected by gvar_gfx_mode (0FF14h).
 ;    Calls into:   drv_screen_init_a/b, drv_load_msg_header, drv_ds_copy,
-;                  drv_return_to_caller, drv_draw_glyph
+;                  drv_fade_to_black, drv_draw_glyph
 ;                    (graphics driver dispatch slots cs:[2000h..30xxh])
 ;                  omoyp_script_6016 (cs:[6016h]) -- script step
 ;                  cs:[loaded_gfx_dispatch_fn] -- gfx-driver fn after end-demo load
 ;                  ds:[game_data_base] -- jmp into loaded enddemo (after end_demo)
 ;    Called by:    106TOWN building dispatch when player enters the Hut
 ;                    (loaded as loaded_code_a at game_seg:3000h)
-;                  drv_return_to_caller DS-dispatch slot (end_demo path,
+;                  drv_fade_to_black DS-dispatch slot (end_demo path,
 ;                    triggered when game finishes / credits roll begins).
 ;    Reads/writes: gvar_gfx_mode (DS:0FF14h)  -- selects gfx driver chunk
 ;                  gvar_timer_word (CS:0FF50h) -- 300-tick wait after load
@@ -127,17 +127,17 @@ omoya_main_loop:
 				call	word ptr cs:[omoyp_script_6016]
 				test	byte ptr ds:[gvar_script_skip],0FFh
 				jz	omoya_main_loop			; Jump if zero
-		jmp	word ptr cs:[drv_return_to_caller]
+		jmp	word ptr cs:[drv_fade_to_black]
 
 ;--------------------------------------------------------------------------
 ; end_demo_transition - secondary entry point.
-; Reached via the DS-resident dispatch table at drv_return_to_caller. Loads
+; Reached via the DS-resident dispatch table at drv_fade_to_black. Loads
 ; enddemo.bin into CS:6000h and the mode-specific graphics driver keyed
 ; off gvar_gfx_mode into CS:3000h, waits 300 timer ticks, then jumps
 ; into the loaded enddemo.
 ;--------------------------------------------------------------------------
 
-end_demo_transition:				; dispatch target (via drv_return_to_caller)
+end_demo_transition:				; dispatch target (via drv_fade_to_black)
 		pop	ax				; discard caller return addr
 		mov	ax,cs
 		mov	ds,ax

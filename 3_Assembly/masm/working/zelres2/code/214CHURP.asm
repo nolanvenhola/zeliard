@@ -23,7 +23,7 @@ PAGE  59,132
 ;                  (game_seg:8000h).
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
 ;                  drv_palette_push, drv_anim_step, drv_draw_glyph,
-;                  drv_ds_copy, drv_return_to_caller
+;                  drv_ds_copy, drv_fade_to_black
 ;                    (graphics driver dispatch slots, cs:[2000h..30xxh])
 ;                  script_step (cs:[6004h]) -- script bytecode advancer
 ;                  opcode_dispatch_tbl (DS-resident, A078h) -- script
@@ -112,12 +112,12 @@ chunk_init_stub:
 drv_script_step:
 				call	word ptr cs:[script_step]
 				cmp	al,0FFh
-				je	chain_to_drv_return_to_caller			; Jump if equal
+				je	chain_to_drv_fade_to_black			; Jump if equal
 				call	script_opcode_dispatch
 				jmp	short drv_script_step
 
-chain_to_drv_return_to_caller:
-		jmp	word ptr cs:[drv_return_to_caller]
+chain_to_drv_fade_to_black:
+		jmp	word ptr cs:[drv_fade_to_black]
 
 run_church_main	endp
 
