@@ -46,6 +46,35 @@ try {
       running.deliveredNonzero <= 100)
     throw new Error(`castle MGT1 stream did not run: ${JSON.stringify(running)}`);
 
+  const beforeCue = await page.evaluate(() => ({
+    underruns: window.__zeliardAudioStats.underrunFrames,
+    serial: window.__zeliardAudioStats.cueSerial,
+  }));
+  const dialogCue = await page.evaluate(() => {
+    const module = window.__zeliard;
+    module._zeliard_key_down(39);
+    module._zeliard_tick(90);
+    module._zeliard_key_up(39);
+    module._zeliard_tick(90);
+    module._zeliard_key_down(32);
+    module._zeliard_tick(90);
+    module._zeliard_key_up(32);
+    module._zeliard_tick(90);
+    return module._zeliard_sound_cue();
+  });
+  await page.waitForFunction((serial) =>
+    window.__zeliardAudioStats.cueSerial > serial,
+  beforeCue.serial, { timeout: 1000 });
+  await page.waitForTimeout(250);
+  const afterCue = await page.evaluate(() => ({
+    underruns: window.__zeliardAudioStats.underrunFrames,
+    serial: window.__zeliardAudioStats.cueSerial,
+  }));
+  if (dialogCue !== 0x1E || afterCue.underruns !== beforeCue.underruns)
+    throw new Error(`dialog SFX interrupted castle music: ${JSON.stringify({
+      dialogCue, beforeCue, afterCue,
+    })}`);
+
   await page.evaluate(() => window.__zeliard._zeliard_key(112));
   const muted = await page.evaluate(() => ({
     enabled: window.__zeliard._zeliard_music_enabled(),
@@ -62,7 +91,7 @@ try {
 
   if (pageErrors.length || recordedAudio.length)
     throw new Error(`browser errors or recorded audio fallback: ${JSON.stringify({ pageErrors, recordedAudio })}`);
-  console.log(`castle_audio_browser: PASS track=3 writes=${running.oplWrites} peak=${running.deliveredPeak}`);
+  console.log(`castle_audio_browser: PASS track=3 writes=${running.oplWrites} peak=${running.deliveredPeak} cue=1e underruns=${afterCue.underruns}`);
   console.log('VERDICT: PASS: exact MSCADLIB castle browser audio');
 } finally {
   await browser.close();
