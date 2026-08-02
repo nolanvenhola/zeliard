@@ -591,9 +591,12 @@ int zeliard_gmmcga_draw_first_frame_hud(u8 *vga, size_t vga_size,
     if (zeliard_gmmcga_draw_life_max(vga, vga_size, game_seg, game_size) ||
         zeliard_gmmcga_draw_life_current(vga, vga_size, game_seg, game_size) ||
         zeliard_gmmcga_draw_almas(vga, vga_size, game_seg, game_size) ||
-        zeliard_gmmcga_draw_gold(vga, vga_size, game_seg, game_size) ||
-        zeliard_gmmcga_draw_spell_charge(vga, vga_size, game_seg, game_size) ||
-        zeliard_gmmcga_draw_shield_hp(vga, vga_size, game_seg, game_size))
+        zeliard_gmmcga_draw_gold(vga, vga_size, game_seg, game_size))
+        return -1;
+    if (game_seg[0x009D] != 0 &&
+        zeliard_gmmcga_draw_spell_charge(vga, vga_size, game_seg, game_size))
+        return -1;
+    if (zeliard_gmmcga_draw_shield_hp(vga, vga_size, game_seg, game_size))
         return -1;
     return zeliard_gmmcga_draw_town_text_record(vga, vga_size, game_seg,
                                                  game_size, town_text_si);

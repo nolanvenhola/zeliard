@@ -205,6 +205,15 @@ int main(void) {
     ok &= fnv1a64(combined_state, sizeof(combined_state)) ==
           0x36F73C3154C60582ULL;
 
+    life_seg[0x0093] = 0;
+    life_seg[0x009D] = 0;
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 13 + 5);
+    ok &= zeliard_gmmcga_draw_first_frame_hud(vga, 0x10000, life_seg,
+                                               sizeof(life_seg), 0x9800) == 0;
+    const unsigned long long no_spell_hud_hash = fnv1a64(vga, 0x10000);
+    ok &= no_spell_hud_hash == 0xA998CB84F538F027ULL;
+
     u8 game_seg[0x10000];
     for (size_t i = 0; i < sizeof(game_seg); ++i)
         game_seg[i] = (u8)(i * 29 + 7);
@@ -235,6 +244,7 @@ int main(void) {
            fnv1a64(game_seg + 0xA000, 0x1500));
     printf("town_mcga_scroll: left=%016llx right=%016llx\n",
            scroll_left_hash, scroll_right_hash);
+    printf("town_mcga_first_frame_no_spell: %016llx\n", no_spell_hud_hash);
     printf("VERDICT: %s: town MCGA services match MASM oracles\n",
            ok ? "PASS" : "FAIL");
     free(vga);
