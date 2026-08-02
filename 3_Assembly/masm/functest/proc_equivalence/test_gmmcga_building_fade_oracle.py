@@ -17,6 +17,8 @@ sys.path.insert(0, str(HERE.parent))
 from fixtures import MASM_ROOT  # noqa: E402
 
 BIN = MASM_ROOT / "bin" / "gmmcga.bin"
+if not BIN.exists():
+    BIN = MASM_ROOT / "working" / "drivers" / "gmmcga.bin"
 CODE_SEG, STACK_SEG, VGA_SEG = 0x1000, 0x5000, 0xA000
 ENTRY, PASS_CHECKPOINT, RET_SENTINEL = 0x2130, 0x2187, 0x0080
 EXPECTED_PASSES = (
