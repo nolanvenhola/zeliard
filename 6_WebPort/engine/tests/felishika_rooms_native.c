@@ -1,4 +1,5 @@
 #include "../load/fill_buffer.h"
+#include "../core/input.h"
 #include "../core/player_state.h"
 #include "../game/room_runtime.h"
 #include "../game/room_masm_vm.h"
@@ -347,9 +348,9 @@ static int muralla_release_vm_menu_frames(void) {
         unsigned long long frame;
         unsigned long long invariant_frame;
     } cases[] = {
-        {ZEL_ROOM_ARMORY, 0xD4A92FBE8A86E12AULL, 0},
-        {ZEL_ROOM_DRUGSTORE, 0, 0xDF46F0EFAE53496DULL},
-        {ZEL_ROOM_BANK, 0x7B7375C7253142E3ULL, 0},
+        {ZEL_ROOM_ARMORY, 0xF3074246AE808D8CULL, 0},
+        {ZEL_ROOM_DRUGSTORE, 0, 0x5B1F8B094F9EF6FBULL},
+        {ZEL_ROOM_BANK, 0xC2530EBABD5407A1ULL, 0},
     };
     int ok = 1;
     for (size_t index = 0; index < sizeof(cases) / sizeof(cases[0]); ++index) {
@@ -383,6 +384,46 @@ static int muralla_release_vm_menu_frames(void) {
         ok &= case_ok;
         free(cs); free(vga);
     }
+    return ok;
+}
+
+static int muralla_release_vm_browser_space(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    zel_input_state_t input;
+    zel_input_init(&input, cs);
+    zel_input_advance_pit(&input, cs, 10);
+    cs[0xC006] = 1;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_ARMORY, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    const u16 menu_ip = zeliard_room_masm_vm_ip();
+    const unsigned long long menu_frame = fnv1a64(vga, 0x10000);
+    u8 menu_layout[6];
+    memcpy(menu_layout, cs + 0xFF52, sizeof(menu_layout));
+    zel_input_key_down(&input, cs, ZEL_INPUT_KEY_SPACE);
+    u8 saw_space = 0;
+    for (u8 tick = 0; ok && tick < 10; ++tick) {
+        zel_input_advance_pit(&input, cs, 1);
+        saw_space |= cs[0xFF1D];
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, cs[0xFF1D], 0);
+    }
+    const unsigned long long selected_frame = fnv1a64(vga, 0x10000);
+    ok &= saw_space && (selected_frame != menu_frame ||
+          memcmp(menu_layout, cs + 0xFF52, sizeof(menu_layout)) != 0);
+    printf("muralla_release_vm_browser_space: ticks=%u ip=%04x>%04x "
+           "kind=%d space=%02x frame=%016llx>%016llx "
+           "layout=%02x/%02x>%02x/%02x edge=%02x\n", ticks, menu_ip,
+           zeliard_room_masm_vm_ip(), zeliard_room_masm_vm_input_kind(),
+           cs[0xFF1D], menu_frame, selected_frame,
+           menu_layout[0], menu_layout[1], cs[0xFF52], cs[0xFF53],
+           saw_space);
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
     return ok;
 }
 
@@ -720,6 +761,7 @@ int main(void) {
                    muralla_shop_menu_frames() &&
                    muralla_shop_main_menu_routes() &&
                    muralla_release_vm_menu_frames() &&
+                   muralla_release_vm_browser_space() &&
                    muralla_release_vm_armory_exit() &&
                    muralla_release_vm_armory_buy() &&
                    muralla_release_vm_church_heal() &&
