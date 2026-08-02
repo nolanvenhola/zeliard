@@ -276,6 +276,7 @@ TEST_TOWN_FIRST_DIALOG_SRC := \
 	load/fill_buffer.c
 TEST_FELISHIKA_ROOMS_SRC := \
 	tests/felishika_rooms_native.c \
+	core/input.c \
 	core/player_state.c \
 	game/room_runtime.c \
 	game/room_masm_vm.c \

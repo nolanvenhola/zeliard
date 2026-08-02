@@ -24,8 +24,6 @@ enum {
     STACK_SEG = 0x8000,
     VGA_SEG = 0xA000,
     SAR_STUB = 0x0500,
-    TOWN_POLL_MENU_INPUT = 0x7344,
-    TOWN_POLL_MENU_REPEAT = 0x7353,
     TOWN_POLL_AFTER_TICK = 0x735D,
     TOWN_TEXT_WAIT_INPUT = 0x71DF,
     TOWN_TEXT_WAIT_REPEAT = 0x71E9,
@@ -38,7 +36,6 @@ typedef struct {
     u8 at_input_poll;
     u8 input_kind;
     u8 allow_poll_once;
-    u8 skip_repeat_once;
     u8 skip_text_repeat_once;
     u8 direction;
     u8 pending_space;
@@ -127,27 +124,16 @@ static int room_step(void *context, u16 cs, u16 ip) {
             return 1;
         }
     }
-    if (cs == GAME_SEG && ip == TOWN_POLL_MENU_INPUT) {
-        if (state->allow_poll_once) {
-            state->allow_poll_once = 0;
-            state->skip_repeat_once = 1;
-            state->at_input_poll = 0;
-            state->input_kind = ZEL_ROOM_VM_INPUT_NONE;
-            return 0;
-        }
-        state->at_input_poll = 1;
-        state->input_kind = ZEL_ROOM_VM_INPUT_MENU;
-        return 1;
-    }
-    if (cs == GAME_SEG && ip == TOWN_POLL_MENU_REPEAT) {
-        if (state->skip_repeat_once) {
-            state->skip_repeat_once = 0;
-            return 0;
-        }
+    if (cs == GAME_SEG && ip == TOWN_POLL_AFTER_TICK) {
         if (state->allow_poll_once) {
             state->allow_poll_once = 0;
             state->at_input_poll = 0;
             state->input_kind = ZEL_ROOM_VM_INPUT_NONE;
+            const size_t base = linear(GAME_SEG, 0);
+            if (state->pending_space) memory[base + 0xFF1D] = 0xFF;
+            if (state->pending_enter) memory[base + 0xFF1E] = 0xFF;
+            state->pending_space = 0;
+            state->pending_enter = 0;
             return 0;
         }
         state->at_input_poll = 1;
@@ -181,8 +167,7 @@ static int room_step(void *context, u16 cs, u16 ip) {
         state->input_kind = ZEL_ROOM_VM_INPUT_TEXT;
         return 1;
     }
-    if (cs == GAME_SEG &&
-        (ip == TOWN_POLL_AFTER_TICK || ip == TOWN_TEXT_WAIT_AFTER_TICK)) {
+    if (cs == GAME_SEG && ip == TOWN_TEXT_WAIT_AFTER_TICK) {
         const size_t base = linear(GAME_SEG, 0);
         if (state->pending_space) memory[base + 0xFF1D] = 0xFF;
         if (state->pending_enter) memory[base + 0xFF1E] = 0xFF;
@@ -274,6 +259,11 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
         !vga || vga_size < 0x10000) return 0;
     u8 *memory = zel_room86_memory();
     const size_t base = linear(GAME_SEG, 0);
+    /* Browser input owns the stick.asm timer latches and raw key masks.
+     * Keep those host-updated bytes in the exact room VM's shared segment. */
+    memcpy(memory + base + 0x02BC, game_seg + 0x02BC, 9);
+    memcpy(memory + base + 0x05C1, game_seg + 0x05C1, 5);
+    memcpy(memory + base + 0xFF16, game_seg + 0xFF16, 4);
     memory[base + 0xFF17] = direction;
     g_room_vm.direction = direction;
     if (space) memory[base + 0xFF1D] = 0xFF;
