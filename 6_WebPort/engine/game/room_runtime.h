@@ -14,9 +14,13 @@ typedef struct {
     zeliard_room_kind_t kind;
     u8 active;
     u8 alternate_transition_requested;
+    u8 entry_frame_prepared;
     u8 saved_code[0x1C00];
     u8 saved_vga[0x10000];
 } zeliard_room_runtime_t;
+
+int zeliard_room_prepare_enter(zeliard_room_runtime_t *room,
+                               const u8 *vga, size_t vga_size);
 
 int zeliard_room_enter(zeliard_room_runtime_t *room,
                        zeliard_room_kind_t kind,

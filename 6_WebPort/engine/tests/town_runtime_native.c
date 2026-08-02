@@ -260,21 +260,32 @@ int main(void) {
     segments[0][0xFF2A] = (u8)door_tile_ptr;
     segments[0][0xFF2B] = (u8)(door_tile_ptr >> 8);
     segments[0][0xFF33] = 5;
-    const int viewing_enter_frames = zeliard_town_advance_pit(
+    const int viewing_trigger_frames = zeliard_town_advance_pit(
         &town, &game, vga, sizeof(vga), 20, 1);
+    ok &= viewing_trigger_frames == 1 && !town.room.active;
+    ok &= town.building_transition == ZEL_TOWN_BUILDING_TRANSITION_ENTER;
+    ok &= town.pending_room_kind == ZEL_ROOM_VIEWING;
+    ok &= memcmp(town.room.saved_vga, vga, sizeof(vga)) == 0;
+    const int viewing_fade_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 88, 0);
     const unsigned long long viewing_frame_hash = fnv1a64(vga, sizeof(vga));
     const unsigned long long viewing_artwork_hash =
         frame_rect_hash(vga, 96, 30, 136, 128);
-    ok &= viewing_position != 0xFFFF && viewing_enter_frames == 1;
+    ok &= viewing_position != 0xFFFF && viewing_fade_frames == 8;
     ok &= town.room.active && town.room.kind == ZEL_ROOM_VIEWING;
+    ok &= town.building_transition == ZEL_TOWN_BUILDING_TRANSITION_NONE;
     ok &= viewing_artwork_hash == 0x33207D5A3E0A63EFULL;
     segments[0][0xFF1D] = 0xFF;
     ok &= zeliard_town_advance_pit(
         &town, &game, vga, sizeof(vga), 20, 0) == 1;
+    ok &= town.room.active;
+    ok &= town.building_transition == ZEL_TOWN_BUILDING_TRANSITION_LEAVE;
+    ok &= zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 88, 0) == 8;
     ok &= !town.room.active && town.room.kind == ZEL_ROOM_NONE;
     printf("town_viewing_room: position=%04x frame=%016llx "
            "artwork=%016llx entered=%d\n", viewing_position,
-           viewing_frame_hash, viewing_artwork_hash, viewing_enter_frames);
+           viewing_frame_hash, viewing_artwork_hash, viewing_fade_frames);
     memcpy(segments, door_segments, sizeof(door_segments));
     memcpy(vga, door_vga, sizeof(door_vga));
     town = *door_town;

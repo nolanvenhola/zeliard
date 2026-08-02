@@ -31,7 +31,7 @@ static const town_slot_spec_t TOWN_GM_SLOTS[] = {
     {0x2022, "gfx_draw_char_fn", 5}, {0x2024, "gfx_scroll_row_fn", 2},
     {0x2026, "gfx_text_layout_a_fn", 1}, {0x2028, "gfx_text_layout_b_fn", 1},
     {0x202A, "gfx_draw_str_fn", 3}, {0x2038, "gfx_clear_row_fn", 1},
-    {0x2040, "gfx_blit_fn", 4}, {0x2042, "gfx_refresh_fn", 1},
+    {0x2040, "gfx_fade_to_black_fn", 4}, {0x2042, "gfx_refresh_fn", 1},
 };
 
 size_t zeliard_gtmcga_resolve_town_dispatch(
@@ -85,6 +85,44 @@ int zeliard_gmmcga_clear_playfield(u8 *vga, size_t vga_size) {
             row = (u16)(row + 0x0A00);
         }
         di = (u16)(di + 0x0140);
+    }
+    return 0;
+}
+
+static u8 rol8(u8 value, u8 count) {
+    count &= 7;
+    return (u8)((value << count) | (value >> ((8 - count) & 7)));
+}
+
+static u8 ror8(u8 value, u8 count) {
+    count &= 7;
+    return (u8)((value >> count) | (value << ((8 - count) & 7)));
+}
+
+int zeliard_gmmcga_building_fade_pass(u8 *vga, size_t vga_size, u8 pass) {
+    static const u8 masks[8] = {0x01, 0x03, 0x07, 0x0F,
+                                0x1F, 0x3F, 0x7F, 0xFF};
+    if (!vga || vga_size < 0x10000 || pass >= 8) return -1;
+
+    u8 mask = masks[pass];
+    u16 row = 0x11B0;
+    for (u8 y = 0; y < 0x48; ++y) {
+        for (u16 x = 0; x < 0xE0; ++x) {
+            mask = rol8(mask, 1);
+            if (mask & 1) vga[(u16)(row + x)] = 0;
+        }
+        mask = ror8(mask, 3);
+        row = (u16)(row + 0x0280);
+    }
+    row = 0x12F0;
+    for (u8 y = 0; y < 0x48; ++y) {
+        for (u16 x = 0; x < 0xE0; ++x) {
+            const u8 carry = mask & 1;
+            mask = ror8(mask, 1);
+            if (carry) vga[(u16)(row + x)] = 0;
+        }
+        mask = rol8(mask, 3);
+        row = (u16)(row + 0x0280);
     }
     return 0;
 }

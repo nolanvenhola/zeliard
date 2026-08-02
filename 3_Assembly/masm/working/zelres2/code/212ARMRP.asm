@@ -16,7 +16,7 @@ PAGE  59,132
 ;                  with AL=2 (fill_buffer decode) into chunk_load_buf
 ;                  (game_seg:8000h).
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
-;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller,
+;                  drv_frame_commit, drv_ds_copy, drv_fade_to_black,
 ;                  gfx_set_color_fn (cs:[2004h]), gfx_present_fn (cs:[201Ah]),
 ;                  gfx_render_scene_fn (cs:[201Ch]), gfx_draw_hud_fn
 ;                  (cs:[2020h])
@@ -210,7 +210,7 @@ script_loop:
 			jmp	short script_loop
 
 shop_exit:
-		jmp	word ptr cs:[drv_return_to_caller]
+		jmp	word ptr cs:[drv_fade_to_black]
 
 run_armrp_main		endp
 
@@ -776,7 +776,7 @@ explain_char_no_pre:
 		db	72h, 0F6h		; jb (rel8; absolute target, TASM won't compile as mnemonic)
 		retn
 			                        ;* No entry point to code
-		call	word ptr cs:[drv_return_to_caller]
+		call	word ptr cs:[drv_fade_to_black]
 		mov	word ptr ds:[gvar_menu_step],0
 
 wait_menu_exit:

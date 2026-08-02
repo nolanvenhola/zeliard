@@ -31,6 +31,22 @@ int main(void) {
     }
     ok &= zeliard_gmmcga_clear_playfield(vga, 0xFFFF) == -1;
 
+    static const unsigned long long fade_hashes[8] = {
+        0x72AEEC8CE08F84E5ULL, 0x5EFAA6927F6A62E5ULL,
+        0x07D8F5540EA329C5ULL, 0x977857E682AAD705ULL,
+        0xDAEABA86ED6BA7E5ULL, 0x146EB61A440439A5ULL,
+        0xC54918C143A086A5ULL, 0x4B4535E7677CB325ULL,
+    };
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 29 + 7);
+    for (u8 pass = 0; pass < 8; ++pass) {
+        ok &= zeliard_gmmcga_building_fade_pass(
+            vga, 0x10000, pass) == 0;
+        ok &= fnv1a64(vga, 320 * 200) == fade_hashes[pass];
+    }
+    ok &= fnv1a64(vga, 0x10000) == 0xDBAAD528760DFB25ULL;
+    ok &= zeliard_gmmcga_building_fade_pass(vga, 0x10000, 8) == -1;
+
     u8 ds[0x10000] = {0};
     u8 es[0x10000] = {0};
     for (size_t i = 0; i < 48; ++i)

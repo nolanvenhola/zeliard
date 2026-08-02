@@ -15,7 +15,7 @@ PAGE  59,132
 ;  Uses the standard town-building dispatch: chunk loader fills scratch
 ;  buffer, graphics driver renders the portrait tile-grid, and the game
 ;  script interpreter at cs:[6004] walks the dialog bytestream. Returns
-;  to town via jmp cs:[2040] (drv_return_to_caller).
+;  to town via jmp cs:[2040] (drv_fade_to_black).
 ;
 ;  Module loads at game_seg:0A000h (CS=DS).
 ;
@@ -24,7 +24,7 @@ PAGE  59,132
 ;                  with AL=2 (fill_buffer decode) into game_seg:8000h
 ;                  (chunk-ref record at module offset 0x40Fh).
 ;    Calls into:   drv_fill_rect, drv_screen_init_a/b, drv_load_msg_header,
-;                  drv_frame_commit, drv_ds_copy, drv_return_to_caller,
+;                  drv_frame_commit, drv_ds_copy, drv_fade_to_black,
 ;                  drv_draw_glyph
 ;                    (graphics driver dispatch slots, cs:[2000h..30xxh])
 ;                  cs:[stick_subsample_tick_handler]  -- driver fn: check input / next page
@@ -129,7 +129,7 @@ script_loop:
 				jmp	short script_loop
 
 script_exit:
-		jmp	word ptr cs:[drv_return_to_caller]
+		jmp	word ptr cs:[drv_fade_to_black]
 
 run_kingp_main	endp
 

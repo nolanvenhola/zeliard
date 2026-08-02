@@ -9,6 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+int zeliard_room_prepare_enter(zeliard_room_runtime_t *room,
+                               const u8 *vga, size_t vga_size) {
+    if (!room || !vga || vga_size < 0x10000 || room->active) return -1;
+    memcpy(room->saved_vga, vga, sizeof(room->saved_vga));
+    room->entry_frame_prepared = 1;
+    return 0;
+}
+
 static int load_room_program(u8 *game_seg, const char *asset) {
     size_t size = 0;
     u8 *file = platform_load_asset(asset, &size);
@@ -50,7 +58,9 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
     if (!program || !graphic) return -2;
 
     memcpy(room->saved_code, game_seg + 0xA000, sizeof(room->saved_code));
-    memcpy(room->saved_vga, vga, sizeof(room->saved_vga));
+    if (!room->entry_frame_prepared)
+        memcpy(room->saved_vga, vga, sizeof(room->saved_vga));
+    room->entry_frame_prepared = 0;
     if (load_room_program(game_seg, program)) return -3;
 
     u8 *tiles = malloc(0x3000);
@@ -114,6 +124,7 @@ int zeliard_room_leave(zeliard_room_runtime_t *room,
     memcpy(vga, room->saved_vga, sizeof(room->saved_vga));
     room->active = 0;
     room->alternate_transition_requested = 0;
+    room->entry_frame_prepared = 0;
     room->kind = ZEL_ROOM_NONE;
     return 0;
 }
