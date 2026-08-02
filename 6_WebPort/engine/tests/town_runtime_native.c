@@ -505,15 +505,40 @@ int main(void) {
     }
     const u16 muralla_npc_list = (u16)(segments[0][0xC00F] |
         ((u16)segments[0][0xC010] << 8));
-    const u16 muralla_first_npc = (u16)(segments[0][muralla_npc_list] |
-        ((u16)segments[0][(u16)(muralla_npc_list + 1)] << 8));
-    const u8 muralla_dialog_id = segments[0][(u16)(muralla_npc_list + 7)];
+    const u16 muralla_talk_npc = (u16)(muralla_npc_list + 8);
+    const u16 muralla_talk_position = (u16)(segments[0][muralla_talk_npc] |
+        ((u16)segments[0][(u16)(muralla_talk_npc + 1)] << 8));
+    const u8 muralla_dialog_id = segments[0][(u16)(muralla_talk_npc + 7)];
+    const u8 muralla_npc_direction = segments[0][(u16)(muralla_talk_npc + 2)];
+    const u8 muralla_npc_type = segments[0][(u16)(muralla_talk_npc + 5)];
+    const u8 muralla_saved_player_col = segments[0][0x0083];
+    segments[0][0x0083] = 5;
+    ok &= zeliard_gtmcga_render_town_actors(
+        segments[0], sizeof(segments[0]), segments[1], sizeof(segments[1]),
+        segments[2], sizeof(segments[2]), vga, sizeof(vga)) == 0;
+    memset(segments[0] + 0xE02D, 0xFF, 3);
+    memset(segments[0] + 0xE035, 0xFF, 3);
+    ok &= zeliard_gtmcga_update_town_frame(
+        segments[0], sizeof(segments[0]), segments[1], sizeof(segments[1]),
+        segments[2], sizeof(segments[2]), vga, sizeof(vga)) == 0;
+    u8 *muralla_dialog_base = malloc(sizeof(vga));
+    ok &= muralla_dialog_base != NULL;
+    if (muralla_dialog_base) memcpy(muralla_dialog_base, vga, sizeof(vga));
     const unsigned long long muralla_pre_dialog = fnv1a64(vga, sizeof(vga));
-    ok &= zeliard_town_dialog_begin(
-        &town.dialog, segments[0], segments[3], vga, sizeof(vga),
-        muralla_first_npc) == 0;
+    const unsigned long long muralla_pre_npc =
+        frame_rect_hash(vga, 72, 112, 40, 36);
+    ok &= zeliard_town_dialog_begin_live(
+        &town.dialog, segments[0], segments[3],
+        segments[1], sizeof(segments[1]),
+        segments[2], sizeof(segments[2]), vga, sizeof(vga),
+        muralla_talk_position) == 0;
     const unsigned long long muralla_dialog_frame = fnv1a64(vga, sizeof(vga));
+    const unsigned long long muralla_talking_npc =
+        frame_rect_hash(vga, 72, 112, 40, 36);
     const u16 muralla_first_page_glyphs = town.dialog.glyph_count;
+    const u8 muralla_talking_direction =
+        segments[0][(u16)(muralla_talk_npc + 2)];
+    const u8 muralla_talking_type = segments[0][(u16)(muralla_talk_npc + 5)];
     unsigned muralla_dialog_pages = 0;
     while (town.dialog.active && muralla_dialog_pages++ < 8) {
         segments[0][0xFF1D] = 0xFF;
@@ -521,6 +546,9 @@ int main(void) {
             &town.dialog, segments[0], segments[3], vga, sizeof(vga)) >= 0;
     }
     const u16 muralla_dialog_glyphs = town.dialog.glyph_count;
+    const u8 muralla_restored_direction =
+        segments[0][(u16)(muralla_talk_npc + 2)];
+    const u8 muralla_restored_type = segments[0][(u16)(muralla_talk_npc + 5)];
     const unsigned long long muralla_dialog_restored = fnv1a64(vga, sizeof(vga));
     u16 dialog_min_x = 320, dialog_min_y = 200, dialog_max_x = 0, dialog_max_y = 0;
     if (muralla_snapshot) {
@@ -534,15 +562,34 @@ int main(void) {
             if (y > dialog_max_y) dialog_max_y = y;
         }
     }
-    ok &= muralla_first_npc == 0x0082 && muralla_dialog_id == 6;
-    ok &= muralla_dialog_glyphs == 206 && muralla_dialog_pages > 1;
-    ok &= muralla_dialog_restored == muralla_pre_dialog;
+    ok &= muralla_talk_position == 0x0009 && muralla_dialog_id == 0;
+    ok &= muralla_dialog_glyphs > 0 && muralla_dialog_pages > 0;
+    ok &= muralla_talking_type == 7;
+    ok &= muralla_talking_direction ==
+          ((segments[0][0x00C2] & 1) ?
+              (u8)(muralla_npc_direction & 0x7F) :
+              (u8)(muralla_npc_direction | 0x80));
+    ok &= muralla_restored_direction == muralla_npc_direction;
+    ok &= muralla_restored_type == muralla_npc_type;
+    ok &= muralla_talking_npc != muralla_pre_npc;
     printf("town_muralla_dialog: npc=%04x id=%u pages=%u glyphs=%u/%u "
-           "pre=%016llx frame=%016llx restored=%016llx diff=%u,%u-%u,%u\n",
-           muralla_first_npc, muralla_dialog_id, muralla_dialog_pages,
-           muralla_first_page_glyphs, muralla_dialog_glyphs, muralla_pre_dialog,
+           "facing=%02x>%02x>%02x type=%u>%u>%u pre=%016llx "
+           "frame=%016llx restored=%016llx npc=%016llx>%016llx "
+           "diff=%u,%u-%u,%u\n",
+           muralla_talk_position, muralla_dialog_id, muralla_dialog_pages,
+           muralla_first_page_glyphs, muralla_dialog_glyphs,
+           muralla_npc_direction, muralla_talking_direction,
+           muralla_restored_direction, muralla_npc_type, muralla_talking_type,
+           muralla_restored_type, muralla_pre_dialog,
            muralla_dialog_frame, muralla_dialog_restored,
+           muralla_pre_npc, muralla_talking_npc,
            dialog_min_x, dialog_min_y, dialog_max_x, dialog_max_y);
+    if (muralla_dialog_base) {
+        free(muralla_dialog_base);
+    }
+    segments[0][0x0083] = muralla_saved_player_col;
+    if (muralla_snapshot)
+        memcpy(vga, muralla_snapshot + sizeof(segments), sizeof(vga));
     ok &= zeliard_town_begin_room_transition(
         &town, ZEL_ROOM_ARMORY, vga, sizeof(vga)) == 0;
     const int armory_enter_frames = zeliard_town_advance_pit(

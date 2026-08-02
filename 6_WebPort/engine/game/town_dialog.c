@@ -75,16 +75,27 @@ static u8 count_wrapped_lines(const u8 *cs, u16 si) {
     }
 }
 
-static void scroll_dialog_rows(u8 *vga, u16 packed) {
-    const u16 x = (u16)((u8)(packed >> 8) * 8u + 4u);
+static void scroll_dialog_rows(zeliard_town_dialog_t *dialog, u8 *vga,
+                               u16 packed, u16 layout) {
+    const u16 x = (u16)((u8)(packed >> 8) * 8u);
     const u16 y = (u16)((u8)packed + 4u);
-    enum { WIDTH = 168, ROW_HEIGHT = 10, VISIBLE_ROWS = 8 };
-    for (u16 row = 0; row < (VISIBLE_ROWS - 1) * ROW_HEIGHT; ++row)
-        memmove(vga + (size_t)(y + row) * 320u + x,
-                vga + (size_t)(y + row + ROW_HEIGHT) * 320u + x, WIDTH);
-    for (u16 row = (VISIBLE_ROWS - 1) * ROW_HEIGHT;
-         row < VISIBLE_ROWS * ROW_HEIGHT; ++row)
-        memset(vga + (size_t)(y + row) * 320u + x, 0, WIDTH);
+    /* GMMCGA doubles CH twice, then uses that value as REP MOVSW count. */
+    const u16 width = (u16)(((u8)(layout >> 8) >> 1) * 8u);
+    const u16 height = (u16)((u8)layout - 8u);
+    /* 106TOWN calls GMMCGA:2857 ten times. Each call copies the next
+     * scanline over the current one; it does not clear the final row. */
+    for (u8 pass = 0; pass < 10; ++pass)
+        for (u16 row = 0; row < height; ++row)
+            memmove(vga + (size_t)(y + row) * 320u + x,
+                    vga + (size_t)(y + row + 1u) * 320u + x, width);
+    ++dialog->scroll_count;
+}
+
+static void clear_page_prompt(u8 *vga, u16 packed) {
+    const u16 x = (u16)((u8)(packed >> 8) * 8u + 84u);
+    const u16 y = (u16)((u8)packed + 74u);
+    for (u16 row = 0; row < 8; ++row)
+        memset(vga + (size_t)(y + row) * 320u + x, 0, 8);
 }
 
 static int render_dialog_chars(zeliard_town_dialog_t *dialog, u8 *cs,
@@ -101,7 +112,8 @@ static int render_dialog_chars(zeliard_town_dialog_t *dialog, u8 *cs,
             cs[TEXT_COL_POS] = 0;
             if (++cs[TEXT_BOX_COLS] == 8) {
                 --cs[TEXT_BOX_COLS];
-                scroll_dialog_rows(vga, read_u16(cs, TEXT_DRAW_X));
+                scroll_dialog_rows(dialog, vga, read_u16(cs, TEXT_DRAW_X),
+                                   read_u16(cs, TEXT_LAYOUT_CX));
             }
             if (++cs[TEXT_ROW_FLAG] >= 7 && cs[TEXT_ANIM_STEP] != 8) {
                 cs[TEXT_ANIM_STEP] = (u8)(cs[TEXT_ANIM_STEP] - 7u);
@@ -131,7 +143,8 @@ static int render_dialog_chars(zeliard_town_dialog_t *dialog, u8 *cs,
             cs[TEXT_COL_POS] = 0;
             if (++cs[TEXT_BOX_COLS] == 8) {
                 --cs[TEXT_BOX_COLS];
-                scroll_dialog_rows(vga, packed);
+                scroll_dialog_rows(dialog, vga, packed,
+                                   read_u16(cs, TEXT_LAYOUT_CX));
             }
             if (++cs[TEXT_ROW_FLAG] >= 7 && cs[TEXT_ANIM_STEP] != 8) {
                 cs[TEXT_ANIM_STEP] = (u8)(cs[TEXT_ANIM_STEP] - 7u);
@@ -176,9 +189,11 @@ static int render_dialog(zeliard_town_dialog_t *dialog, u8 *cs,
     return render_dialog_chars(dialog, cs, vga, vga_size);
 }
 
-int zeliard_town_dialog_begin(zeliard_town_dialog_t *dialog,
-                              u8 *cs, u8 *scratch,
-                              u8 *vga, size_t vga_size, u16 npc_position) {
+static int begin_dialog(zeliard_town_dialog_t *dialog,
+                        u8 *cs, u8 *scratch,
+                        u8 *tile_data, size_t tile_data_size,
+                        const u8 *mask_data, size_t mask_data_size,
+                        u8 *vga, size_t vga_size, u16 npc_position) {
     if (!dialog || !cs || !scratch || !vga || dialog->active) return -1;
     const u16 npc = find_npc_offset(cs, npc_position);
     if (npc == 0xFFFF || (cs[(u16)(npc + 6)] & 0xC0)) return -2;
@@ -191,6 +206,20 @@ int zeliard_town_dialog_begin(zeliard_town_dialog_t *dialog,
     if (cs[TOWN_FACING] & 1) cs[(u16)(npc + 2)] &= 0x7F;
     else cs[(u16)(npc + 2)] |= 0x80;
     cs[(u16)(npc + 4)] |= 1;
+    if (tile_data && mask_data) {
+        if (zeliard_gtmcga_render_town_actors(
+                cs, 0x10000, tile_data, tile_data_size,
+                mask_data, mask_data_size, vga, vga_size)) return -3;
+        const u8 column = cs[0x0083];
+        if (column < 0x1B) {
+            const u16 cursor = (u16)(0xE000u + (u16)column * 8u + 5u);
+            memset(cs + cursor, 0xFF, 3);
+            memset(cs + cursor + 8u, 0xFF, 3);
+        }
+        if (zeliard_gtmcga_update_town_frame(
+                cs, 0x10000, tile_data, tile_data_size,
+                mask_data, mask_data_size, vga, vga_size)) return -3;
+    }
     dialog->panel_ax = (cs[TOWN_FACING] & 1) ? 0x0718 : 0x0B18;
     dialog->panel_cx = 0x1658;
     if (zeliard_gmmcga_save_rect(vga, vga_size, scratch, 0x10000,
@@ -205,6 +234,24 @@ int zeliard_town_dialog_begin(zeliard_town_dialog_t *dialog,
     return result;
 }
 
+int zeliard_town_dialog_begin(zeliard_town_dialog_t *dialog,
+                              u8 *cs, u8 *scratch,
+                              u8 *vga, size_t vga_size, u16 npc_position) {
+    return begin_dialog(dialog, cs, scratch, NULL, 0, NULL, 0,
+                        vga, vga_size, npc_position);
+}
+
+int zeliard_town_dialog_begin_live(zeliard_town_dialog_t *dialog,
+                                   u8 *cs, u8 *scratch,
+                                   u8 *tile_data, size_t tile_data_size,
+                                   const u8 *mask_data, size_t mask_data_size,
+                                   u8 *vga, size_t vga_size,
+                                   u16 npc_position) {
+    return begin_dialog(dialog, cs, scratch, tile_data, tile_data_size,
+                        mask_data, mask_data_size, vga, vga_size,
+                        npc_position);
+}
+
 int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
                                  u8 *cs, const u8 *scratch,
                                  u8 *vga, size_t vga_size) {
@@ -213,7 +260,10 @@ int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
     cs[GVAR_SPACE] = cs[GVAR_ENTER] = cs[GVAR_SKIP] = 0;
     if (dialog->page_wait) {
         dialog->waiting = dialog->page_wait = 0;
+        clear_page_prompt(vga, read_u16(cs, TEXT_DRAW_X));
         cs[TEXT_ROW_FLAG] = 0;
+        cs[GVAR_SOUND] = 0x1D;
+        dialog->pending_sound_cue = 0x1D;
         const int result = render_dialog_chars(dialog, cs, vga, vga_size);
         return result ? result : 0;
     }

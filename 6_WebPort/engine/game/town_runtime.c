@@ -742,9 +742,10 @@ static int run_live_frame(zeliard_town_runtime_t *town,
         return 0;
     }
     if (town->facing_item_position != 0xFFFF) {
-        const int result = zeliard_town_dialog_begin(
-            &town->dialog, cs, game->segment[3], vga, vga_size,
-            town->facing_item_position);
+        const int result = zeliard_town_dialog_begin_live(
+            &town->dialog, cs, game->segment[3],
+            game_data, 0x10000, mask_data, 0x10000,
+            vga, vga_size, town->facing_item_position);
         if (result) return -3;
     }
     move_player(cs, game_data, vga, vga_size, input_direction);

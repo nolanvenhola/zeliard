@@ -63,6 +63,61 @@ static int load_font(u8 *segment) {
     return 1;
 }
 
+static int test_muralla_multipage_dialog(void) {
+    u8 segment[0x10000] = {0};
+    u8 scratch[0x10000] = {0};
+    u8 vga[0x10000];
+    u8 background[0x10000];
+    zeliard_town_dialog_t dialog = {0};
+    for (size_t i = 0; i < sizeof(vga); ++i)
+        vga[i] = background[i] = (u8)(i * 13u + 7u);
+    size_t driver_size = 0;
+    u8 *driver = read_file("assets/gmmcga.bin", &driver_size);
+    int ok = driver && driver_size <= 0xE000;
+    if (ok) memcpy(segment + 0x2000, driver, driver_size);
+    free(driver);
+    ok &= load_raw(segment + 0x6000, 0xA000, "assets/town.bin") &&
+             load_raw(segment + 0xC000, 0x4000, "assets/mrmp.mdt") &&
+             load_font(segment);
+    segment[0x0080] = 0x70;
+    segment[0x0083] = 0x0B;
+    segment[0x00C2] = 0;
+    const int begin = ok ? zeliard_town_dialog_begin(
+        &dialog, segment, scratch, vga, sizeof(vga), 0x0082) : -99;
+    const unsigned long long first = fnv1a64(vga, sizeof(vga));
+    u8 first_frame[0x10000];
+    memcpy(first_frame, vga, sizeof(first_frame));
+    const u16 first_glyphs = dialog.glyph_count;
+    const u16 first_draw = (u16)(segment[0x7C4E] |
+        ((u16)segment[0x7C4F] << 8));
+    ok &= begin == 0 && dialog.active && dialog.page_wait;
+    ok &= first == 0x2CE6A7710F269E11ULL;
+
+    segment[0xFF1D] = 0xFF;
+    ok &= zeliard_town_dialog_continue(
+        &dialog, segment, scratch, vga, sizeof(vga)) == 0;
+    const unsigned long long second = fnv1a64(vga, sizeof(vga));
+    size_t page_diff = 0;
+    for (size_t i = 0; i < sizeof(vga); ++i)
+        page_diff += first_frame[i] != vga[i];
+    ok &= dialog.active && dialog.final_wait && !dialog.page_wait;
+    ok &= second == 0xB95556613E17D5DAULL;
+    ok &= dialog.pending_sound_cue == 0x1D && segment[0xFF75] == 0x1D;
+
+    segment[0xFF1D] = 0xFF;
+    ok &= zeliard_town_dialog_continue(
+        &dialog, segment, scratch, vga, sizeof(vga)) == 1;
+    ok &= !dialog.active && dialog.glyph_count == 206;
+    ok &= memcmp(vga, background, sizeof(vga)) == 0;
+    printf("town_muralla_dialog_pages: %s first=%016llx second=%016llx "
+           "glyphs=%u/%u diff=%zu scroll=%u cue=%02x draw=%04x cols=%u row=%u\n",
+           ok ? "PASS" : "FAIL",
+           first, second, first_glyphs, dialog.glyph_count, page_diff,
+           dialog.scroll_count, dialog.pending_sound_cue, first_draw, segment[0x7C54],
+           segment[0x7C57]);
+    return ok;
+}
+
 int main(void) {
     u8 segment[0x10000] = {0};
     u8 scratch[0x10000] = {0};
@@ -110,7 +165,8 @@ int main(void) {
            "cue=%02x restore=%016llx\n", ok ? "PASS" : "FAIL", page_hash,
            dialog.glyph_count, text_pc, dialog.pending_sound_cue,
            fnv1a64(vga, sizeof(vga)));
-    printf("VERDICT: %s: first Felishika castle dialog MASM parity\n",
+    ok &= test_muralla_multipage_dialog();
+    printf("VERDICT: %s: Felishika and Muralla dialog MASM parity\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }
