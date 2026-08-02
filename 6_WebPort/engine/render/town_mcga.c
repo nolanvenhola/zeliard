@@ -258,6 +258,56 @@ static void append_three_planes(u16 *p0, u16 *p1, u16 *p2, u16 *ax) {
     (void)rotate_append(p0, ax);
 }
 
+static void draw_equipment_four_pixels(u8 *vga, size_t *destination,
+                                       u16 *p0, u16 *p1, u16 *p2) {
+    for (u8 pixel = 0; pixel < 4; ++pixel) {
+        u16 ax = 0;
+        append_three_planes(p0, p1, p2, &ax);
+        append_three_planes(p0, p1, p2, &ax);
+        vga[(*destination)++] = (u8)ax;
+    }
+}
+
+int zeliard_gmmcga_draw_equipped_sword(u8 *vga, size_t vga_size,
+                                       const u8 *item_seg, size_t item_size,
+                                       u8 sword, u16 bx) {
+    if (!vga || vga_size < 0x10000 || !item_seg || item_size < 0xE20E ||
+        sword == 0)
+        return -1;
+
+    const u16 pointer_offset = (u16)(0xE200 + (u16)(sword - 1) * 2u);
+    if ((size_t)pointer_offset + 2 > item_size) return -1;
+    size_t source = read_u16_le(item_seg + pointer_offset);
+    const u16 x = (u16)((bx >> 8) * 8u);
+    const u16 y = (u8)bx;
+    if (source + 18u * 15u > item_size || x + 20u > 320u || y + 18u > 200u)
+        return -1;
+
+    size_t destination = (size_t)y * 320u + x;
+    for (u8 row = 0; row < 18; ++row) {
+        u16 p0 = byte_swap_u16(read_u16_le(item_seg + source));
+        u16 p1 = read_u16_le(item_seg + source + 8);
+        u16 p2 = byte_swap_u16(read_u16_le(item_seg + source + 10));
+        draw_equipment_four_pixels(vga, &destination, &p0, &p1, &p2);
+        draw_equipment_four_pixels(vga, &destination, &p0, &p1, &p2);
+
+        p0 = byte_swap_u16(read_u16_le(item_seg + source + 2));
+        p1 = read_u16_le(item_seg + source + 6);
+        p2 = byte_swap_u16(read_u16_le(item_seg + source + 12));
+        draw_equipment_four_pixels(vga, &destination, &p0, &p1, &p2);
+        draw_equipment_four_pixels(vga, &destination, &p0, &p1, &p2);
+
+        p0 = (u16)item_seg[source + 4] << 8;
+        p1 = (u16)item_seg[source + 5] << 8;
+        p2 = (u16)item_seg[source + 14] << 8;
+        draw_equipment_four_pixels(vga, &destination, &p0, &p1, &p2);
+
+        source += 15;
+        destination += 300;
+    }
+    return 0;
+}
+
 int zeliard_gtmcga_encode_tile_block(u8 *ds, size_t ds_size, u16 si,
                                      u8 *es, size_t es_size, u16 di,
                                      u16 tile_count) {

@@ -96,6 +96,27 @@ static int load_font(u8 *segment) {
     return 1;
 }
 
+static int load_item_panel(u8 *segment) {
+    size_t size = 0, decoded_size = 0;
+    u8 *data = read_file("assets/itemp.grp", &size);
+    u8 *decoded = data ? fill_buffer_decompress(data, size, &decoded_size) : NULL;
+    free(data);
+    if (!decoded || decoded_size > 0x1E00) {
+        free(decoded);
+        return 0;
+    }
+    memcpy(segment + 0xE200, decoded, decoded_size);
+    free(decoded);
+    for (u16 offset = 0; offset < 14; offset += 2) {
+        const u16 value = (u16)(segment[0xE200 + offset] |
+                                ((u16)segment[0xE201 + offset] << 8));
+        const u16 relocated = (u16)(value + 0xE200);
+        segment[0xE200 + offset] = (u8)relocated;
+        segment[0xE201 + offset] = (u8)(relocated >> 8);
+    }
+    return 1;
+}
+
 static unsigned long long selected_state_hash(const u8 *segment) {
     static const struct { u16 offset; u8 size; } ranges[] = {
         {0x009F, 1}, {0x00E4, 1}, {0x2433, 7}, {0x2CBD, 2},
@@ -188,7 +209,7 @@ int main(void) {
         load_direct(segments[0] + 0x2000, 0xE000, "assets/gmmcga.bin") &&
         load_raw(segments[0] + 0x6000, 0xA000, "assets/town.bin") &&
         load_raw(segments[3], sizeof(segments[3]), "assets/mole.bin") &&
-        load_font(segments[0]);
+        load_font(segments[0]) && load_item_panel(segments[1]);
     ok &= facing_town.facing_item_position == 0x002F;
     ok &= facing_town.facing_npc_position == 0x0030;
     ok &= facing_town.facing_door_type == 0x07;
@@ -197,6 +218,8 @@ int main(void) {
         &town, &game, vga, sizeof(vga)) : -99;
     ok &= result == 0;
     const unsigned long long frame_hash = fnv1a64(vga, sizeof(vga));
+    const unsigned long long sword_hash =
+        frame_rect_hash(vga, 192, 171, 20, 18);
     const unsigned long long state_hash = selected_state_hash(segments[0]);
     const unsigned long long capture_hash = fnv1a64(segments[0] + 0xA000, 0x1500);
     const unsigned long long palette_hash = fnv1a64((const u8 *)g_palette,
@@ -222,7 +245,8 @@ int main(void) {
     ok &= town.map_side == 0 && town.palette_index == 0;
     ok &= segments[0][0xC3AC] == 0x00;
     ok &= segments[0][0xC3AD] == 0xFF;
-    ok &= frame_hash == 0x6FA6E2DDCD810606ULL;
+    ok &= frame_hash == 0xC2F2C7571B84C55DULL;
+    ok &= sword_hash == 0xACE1EEC895369B0AULL;
     ok &= state_hash == 0xE75DC3416036703FULL;
     ok &= capture_hash == 0xF2C3F82A0F93D06DULL;
     ok &= palette_hash == 0xF0597D78ABA0CC75ULL;
@@ -344,8 +368,8 @@ int main(void) {
            overlap_hashes[0], overlap_hashes[1], overlap_hashes[2],
            overlap_hashes[3]);
     static const unsigned long long expected_overlap_hashes[4] = {
-        0x1C11242427327C38ULL, 0xE71E06F47DE2A32DULL,
-        0xD8B259521A4B03C5ULL, 0xA63CAC020C12D1BEULL,
+        0x6333D093FCA2C433ULL, 0x1D5A1101EDF5C98AULL,
+        0x2F929C9CEA3C7BDAULL, 0x272B599A04C3F1F5ULL,
     };
     for (size_t index = 0; index < 4; ++index)
         ok &= overlap_hashes[index] == expected_overlap_hashes[index];
@@ -390,9 +414,9 @@ int main(void) {
         }
     }
     ok &= idle_frames_1 == 1 && idle_frames_2 == 1;
-    ok &= idle_frame_hash_1 == 0x5F4255EB52D80D5EULL;
+    ok &= idle_frame_hash_1 == 0x29B8C02DC02C4CF5ULL;
     ok &= idle_npc_hash_1 == 0x7AEF6E1921E0C970ULL;
-    ok &= idle_frame_hash_2 == 0x2A67C460DC0FEC9FULL;
+    ok &= idle_frame_hash_2 == 0xD78AC5FEC4195764ULL;
     ok &= idle_npc_hash_2 == 0x04FCC161ECC110A0ULL;
     printf("town_idle_oracle: frame1=%016llx/npc=%016llx "
            "frame2=%016llx/npc=%016llx\n",
@@ -419,7 +443,7 @@ int main(void) {
     ok &= segments[0][0x0083] == (u8)(initial_column + 1);
     ok &= live_start == initial_start;
     ok &= (segments[0][0x00C2] & 1) == 0;
-    ok &= live_frame_hash == 0xF95B36569A1D60E3ULL;
+    ok &= live_frame_hash == 0xEE82A668ED2EE7ACULL;
     ok &= live_npc_hash == 0x04FCC161ECC110A0ULL;
     const int scroll_walk_frames = zeliard_town_advance_pit(
         &town, &game, vga, sizeof(vga), 140, 8);
@@ -432,10 +456,11 @@ int main(void) {
     ok &= town.frame_count == 10;
     ok &= segments[0][0x0083] == 0x10;
     ok &= scrolled_start == (u16)(initial_start + 2);
-    ok &= scrolled_frame_hash == 0x8BDCD5999CB7EFD7ULL;
-    printf("town_runtime: %s rc=%d frame=%016llx state=%016llx "
-           "capture=%016llx palette=%016llx events=%u text=%04x\n",
-           ok ? "PASS" : "FAIL", result, frame_hash, state_hash, capture_hash,
+    ok &= scrolled_frame_hash == 0x36B79FA14F9B7C34ULL;
+    printf("town_runtime: %s rc=%d frame=%016llx sword=%016llx "
+           "state=%016llx capture=%016llx palette=%016llx events=%u text=%04x\n",
+           ok ? "PASS" : "FAIL", result, frame_hash, sword_hash, state_hash,
+           capture_hash,
            palette_hash, (unsigned)town.event_count, town.town_text_record);
     printf("town_live_loop: frames=%u col=%02x start=%04x frame=%016llx "
            "npc_state=%016llx item=%04x npc=%04x door=%02x\n",

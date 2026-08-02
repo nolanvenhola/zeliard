@@ -11,6 +11,7 @@
     "opening:compare": "node run_opening_parity_capture.mjs",
     "opening:audio-test": "node test_opening_audio_browser.mjs",
     "castle:audio-test": "node test_castle_audio_browser.mjs",
+    "castle:inventory-test": "node test_castle_inventory_browser.mjs",
     "rooms:browser-test": "node test_felishika_rooms_browser.mjs",
     "engine": "$(MAKE) -C ../engine wasm",
     "build:engine": "cd ../engine && make wasm",
