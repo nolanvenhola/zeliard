@@ -167,6 +167,8 @@ static time_t clock_buf;
 static struct timeb ms_clock;
 static zel_tiny86_out_fn out_callback;
 static void *out_callback_context;
+static zel_tiny86_step_fn step_callback;
+static void *step_callback_context;
 
 #ifndef NO_GRAPHICS
 SDL_AudioSpec sdl_audio = {44100, AUDIO_U8, 1, 0, 128};
@@ -290,6 +292,12 @@ void zel_tiny86_set_out_callback(zel_tiny86_out_fn callback, void *context)
     out_callback_context = context;
 }
 
+void zel_tiny86_set_step_callback(zel_tiny86_step_fn callback, void *context)
+{
+    step_callback = callback;
+    step_callback_context = context;
+}
+
 int zel_tiny86_run(unsigned max_instructions)
 {
     const unsigned first_instruction = inst_counter;
@@ -298,6 +306,9 @@ int zel_tiny86_run(unsigned max_instructions)
     for (; opcode_stream = mem + 16 * regs16[REG_CS] + reg_ip,
            opcode_stream != mem && inst_counter - first_instruction < max_instructions;)
 	{
+		if (step_callback && step_callback(step_callback_context,
+				regs16[REG_CS], reg_ip))
+			return ZEL_TINY86_YIELDED;
 		// Set up variables to prepare for decoding an opcode
 		set_opcode(*opcode_stream);
 

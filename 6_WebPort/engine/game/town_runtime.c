@@ -1,4 +1,5 @@
 #include "town_runtime.h"
+#include "room_masm_vm.h"
 
 #include "../core/player_state.h"
 #include "../load/fill_buffer.h"
@@ -25,11 +26,24 @@ enum {
     TOWN_MAP_LIMIT_POINTER = 0xC011,
     TOWN_KEY_EVENT_POINTER = 0xC015,
     TOWN_TILE_COLLISION_MAP = 0xC01C,
+    PLAYER_CURRENT_AREA = ZEL_PLAYER_SAVE_SAGE,
     GVAR_INPUT_DIRECTION = 0xFF17,
     GVAR_FRAME_TIMER = 0xFF1A,
     GVAR_SPACEBAR_STATE = 0xFF1D,
     GVAR_TILE_POINTER = 0xFF2A,
     GVAR_ANIM_SPEED = 0xFF33,
+};
+
+typedef struct {
+    zeliard_town_area_t area;
+    u8 area_id;
+    const char *map_asset;
+    const char *pattern_asset;
+} town_area_asset_t;
+
+static const town_area_asset_t TOWN_AREA_ASSETS[] = {
+    {ZEL_TOWN_AREA_FELISHIKA, 0x80, "cmap.mdt", "cpat.grp"},
+    {ZEL_TOWN_AREA_MURALLA, 0x81, "mrmp.mdt", "mpat.grp"},
 };
 
 static u16 read_u16(const u8 *memory, u16 offset) {
@@ -259,6 +273,22 @@ static int decode_town_header(u8 *cs, zeliard_town_runtime_t *town) {
     return 1;
 }
 
+static int load_pattern_bank(zeliard_game_exec_state_t *game,
+                             const char *asset) {
+    u8 *game_data = game->segment[1];
+    size_t loaded_size = 0;
+    if (!load_fill_chunk(asset, game_data + TOWN_PATTERN_DEST,
+                         0x10000 - TOWN_PATTERN_DEST, &loaded_size))
+        return -1;
+    for (u16 offset = 0; offset < 6; offset += 2) {
+        const u16 value = read_u16(game_data,
+                                   (u16)(TOWN_PATTERN_DEST + offset));
+        write_u16(game_data, (u16)(TOWN_PATTERN_DEST + offset),
+                  (u16)(value + TOWN_PATTERN_DEST));
+    }
+    return zeliard_gtmcga_process_pattern_tiles(game_data, 0x10000);
+}
+
 int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
                                    zeliard_game_exec_state_t *game,
                                    u8 *vga, size_t vga_size) {
@@ -269,6 +299,7 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             return -1;
     }
     memset(town, 0, sizeof(*town));
+    town->area = ZEL_TOWN_AREA_FELISHIKA;
     town->facing_item_position = 0xFFFF;
     town->facing_npc_position = 0xFFFF;
     town->facing_door_type = 0xFF;
@@ -313,16 +344,7 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
     if (!decode_town_header(cs, town)) return -3;
 
     /* 106TOWN:load_town_pattern_chunk, palette index zero -> CPAT.GRP. */
-    if (!load_fill_chunk("cpat.grp", cs_1000 + TOWN_PATTERN_DEST,
-                         0x10000 - TOWN_PATTERN_DEST, &loaded_size))
-        return -4;
-    for (u16 offset = 0; offset < 6; offset += 2) {
-        const u16 value = read_u16(cs_1000, (u16)(TOWN_PATTERN_DEST + offset));
-        cs_1000[TOWN_PATTERN_DEST + offset] = (u8)(value + TOWN_PATTERN_DEST);
-        cs_1000[TOWN_PATTERN_DEST + offset + 1] =
-            (u8)((value + TOWN_PATTERN_DEST) >> 8);
-    }
-    if (zeliard_gtmcga_process_pattern_tiles(cs_1000, 0x10000))
+    if (load_pattern_bank(game, "cpat.grp"))
         return -4;
     if (!append_event(town, (zeliard_town_event_t){
             ZEL_TOWN_EVENT_LOAD_CPAT, "106TOWN:load_town_pattern_chunk",
@@ -550,6 +572,86 @@ int zeliard_town_begin_room_transition(zeliard_town_runtime_t *town,
     return 0;
 }
 
+static int enter_adjacent_town(zeliard_town_runtime_t *town,
+                               zeliard_game_exec_state_t *game,
+                               u8 *vga, size_t vga_size,
+                               zeliard_town_area_t area) {
+    if ((size_t)area >= sizeof(TOWN_AREA_ASSETS) / sizeof(TOWN_AREA_ASSETS[0]))
+        return -1;
+    const town_area_asset_t *assets = &TOWN_AREA_ASSETS[area];
+    u8 *cs = game->segment[0];
+    u8 *game_data = game->segment[1];
+    u8 *mask_data = game->segment[2];
+    zeliard_player_state_t player = {.bytes = cs};
+
+    /* 106TOWN:try_door_transition restores the descriptor-backed collision
+     * bytes before loader mode 1 replaces the active MDT at CS:C000. */
+    restore_tiles_under_npcs(cs);
+    if (!load_raw_chunk(assets->map_asset, cs + TOWN_DESCRIPTOR,
+                        0x10000 - TOWN_DESCRIPTOR, NULL) ||
+        !decode_town_header(cs, town) ||
+        load_pattern_bank(game, assets->pattern_asset))
+        return -2;
+
+    town->area = area;
+    zeliard_player_write_u8(&player, PLAYER_CURRENT_AREA, assets->area_id);
+    if (area == ZEL_TOWN_AREA_MURALLA) {
+        zeliard_player_write_u16(&player, ZEL_PLAYER_START_POSITION, 0);
+        zeliard_player_write_u8(&player, ZEL_PLAYER_SCREEN_POSITION, 0);
+    } else {
+        zeliard_player_write_u16(
+            &player, ZEL_PLAYER_START_POSITION,
+            (u16)(read_u16(cs, 0xC002) - 0x24));
+        zeliard_player_write_u8(&player, ZEL_PLAYER_SCREEN_POSITION, 0x1A);
+    }
+    const u16 start = zeliard_player_read_u16(
+        &player, ZEL_PLAYER_START_POSITION);
+    write_u16(cs, GVAR_TILE_POINTER,
+              (u16)(0xC017u + (u16)(u8)start * 8u));
+    cs[GVAR_SPACEBAR_STATE] = 0;
+    cs[0xFF1E] = 0;
+    zeliard_player_write_u8(&player, ZEL_PLAYER_KEY_COUNT, 0);
+    zeliard_player_write_u8(&player, ZEL_PLAYER_FRAME_SCRATCH, 0);
+
+    if (zeliard_gmmcga_draw_first_frame_hud(
+            vga, vga_size, cs, 0x10000, town->town_text_record))
+        return -3;
+    memset(cs + 0xE000, 0xFE, 0xE0);
+    stamp_npcs_save_tiles(cs);
+    if (zeliard_gtmcga_render_town_actors(
+            cs, 0x10000, game_data, 0x10000,
+            mask_data, 0x10000, vga, vga_size))
+        return -4;
+    mark_player_col_in_cursor_buf(cs);
+    if (zeliard_gtmcga_update_town_frame(
+            cs, 0x10000, game_data, 0x10000,
+            mask_data, 0x10000, vga, vga_size))
+        return -5;
+    palette_set_game_mcga();
+    append_event(town, (zeliard_town_event_t){
+        ZEL_TOWN_EVENT_LOAD_AREA, "106TOWN:load_area_assets",
+        assets->map_asset, 0, TOWN_DESCRIPTOR, 1});
+    append_event(town, (zeliard_town_event_t){
+        ZEL_TOWN_EVENT_LOAD_PATTERN, "106TOWN:load_town_pattern_chunk",
+        assets->pattern_asset, 0x1000, TOWN_PATTERN_DEST, 2});
+    return 0;
+}
+
+static int try_adjacent_town_transition(zeliard_town_runtime_t *town,
+                                        zeliard_game_exec_state_t *game,
+                                        u8 *vga, size_t vga_size) {
+    zeliard_player_state_t player = {.bytes = game->segment[0]};
+    const u8 column = zeliard_player_read_u8(
+        &player, ZEL_PLAYER_SCREEN_POSITION);
+    if (town->area == ZEL_TOWN_AREA_FELISHIKA && column == 0x1C)
+        return enter_adjacent_town(town, game, vga, vga_size,
+                                   ZEL_TOWN_AREA_MURALLA) ? -1 : 1;
+    if (town->area == ZEL_TOWN_AREA_MURALLA && column == 0xFF)
+        return enter_adjacent_town(town, game, vga, vga_size,
+                                   ZEL_TOWN_AREA_FELISHIKA) ? -1 : 1;
+    return 0;
+}
+
 static int run_live_frame(zeliard_town_runtime_t *town,
                           zeliard_game_exec_state_t *game,
                           u8 *vga, size_t vga_size, u8 input_direction) {
@@ -563,7 +665,8 @@ static int run_live_frame(zeliard_town_runtime_t *town,
             return 0;
         }
         if (town->room.exit_requested ||
-            (town->room.kind != ZEL_ROOM_KING &&
+            ((town->room.kind == ZEL_ROOM_SAGE ||
+              town->room.kind == ZEL_ROOM_VIEWING) &&
              (cs[GVAR_SPACEBAR_STATE] || cs[0xFF1E]))) {
             cs[GVAR_SPACEBAR_STATE] = 0;
             cs[0xFF1E] = 0;
@@ -592,21 +695,57 @@ static int run_live_frame(zeliard_town_runtime_t *town,
     if (zeliard_gtmcga_update_town_frame(cs, 0x10000, game_data, 0x10000,
                                           mask_data, 0x10000, vga, vga_size))
         return -2;
+    const int adjacent = try_adjacent_town_transition(
+        town, game, vga, vga_size);
+    if (adjacent < 0) return -5;
+    if (adjacent > 0) {
+        cs[GVAR_FRAME_TIMER] = 0;
+        town->frame_count++;
+        return 0;
+    }
     zeliard_town_detect_facing_targets(town, cs, input_direction);
-    if (town->facing_door_type <= 2) {
+    if (town->facing_door_type <= 6) {
         const zeliard_room_kind_t kind = town->facing_door_type == 0
             ? ZEL_ROOM_KING : town->facing_door_type == 1
-            ? ZEL_ROOM_VIEWING : ZEL_ROOM_SAGE;
+            ? ZEL_ROOM_VIEWING : town->facing_door_type == 2
+            ? ZEL_ROOM_SAGE : town->facing_door_type == 3
+            ? ZEL_ROOM_ARMORY : town->facing_door_type == 4
+            ? ZEL_ROOM_DRUGSTORE : town->facing_door_type == 5
+            ? ZEL_ROOM_CHURCH : ZEL_ROOM_BANK;
         if (zeliard_town_begin_room_transition(
                 town, kind, vga, vga_size)) return -4;
         cs[GVAR_FRAME_TIMER] = 0;
         town->frame_count++;
         return 0;
     }
+    if (town->facing_door_type == 8) {
+        zeliard_player_state_t player = {.bytes = cs};
+        /* MRMP:C700 is the first five-byte pf30 destination record:
+         * start 003Dh, row byte 07h, boss byte 00h, area 00h. pf30_exec
+         * applies start-10h and (row-0Ah)&3Fh before loading FIGHT. */
+        const u16 destination = read_u16(cs, read_u16(cs, 0xC00B));
+        const u16 record = read_u16(cs, 0xC00B);
+        zeliard_player_write_u16(
+            &player, ZEL_PLAYER_START_POSITION,
+            (u16)(destination - 0x10u));
+        zeliard_player_write_u8(
+            &player, ZEL_PLAYER_MAP_SCROLL_ROW,
+            (u8)((cs[(u16)(record + 2)] - 0x0Au) & 0x3Fu));
+        zeliard_player_write_u8(
+            &player, ZEL_PLAYER_BOSS_INTRO_FLAG,
+            (u8)((cs[(u16)(record + 3)] & 1u) ? 0xFF : 0));
+        zeliard_player_write_u8(
+            &player, PLAYER_CURRENT_AREA, cs[(u16)(record + 4)]);
+        town->cavern_exit_requested = 1;
+        cs[GVAR_FRAME_TIMER] = 0;
+        town->frame_count++;
+        return 0;
+    }
     if (town->facing_item_position != 0xFFFF) {
-        const int result = zeliard_town_dialog_begin(
-            &town->dialog, cs, game->segment[3], vga, vga_size,
-            town->facing_item_position);
+        const int result = zeliard_town_dialog_begin_live(
+            &town->dialog, cs, game->segment[3],
+            game_data, 0x10000, mask_data, 0x10000,
+            vga, vga_size, town->facing_item_position);
         if (result) return -3;
     }
     move_player(cs, game_data, vga, vga_size, input_direction);
@@ -631,6 +770,15 @@ static int advance_building_transition(zeliard_town_runtime_t *town,
     if (town->building_transition == ZEL_TOWN_BUILDING_TRANSITION_ENTER) {
         if (zeliard_room_enter(&town->room, town->pending_room_kind,
                                cs, 0x10000, vga, vga_size)) return -4;
+        if (town->area == ZEL_TOWN_AREA_MURALLA &&
+            (town->room.kind == ZEL_ROOM_ARMORY ||
+             town->room.kind == ZEL_ROOM_DRUGSTORE ||
+             town->room.kind == ZEL_ROOM_CHURCH ||
+             town->room.kind == ZEL_ROOM_BANK)) {
+            if (!zeliard_room_masm_vm_start(
+                    town->room.kind, cs, 0x10000, vga, vga_size)) return -5;
+            town->room.exact_vm_active = 1;
+        }
     } else if (town->building_transition == ZEL_TOWN_BUILDING_TRANSITION_LEAVE) {
         if (zeliard_room_leave(&town->room, cs, 0x10000,
                                vga, vga_size)) return -4;
@@ -662,7 +810,12 @@ int zeliard_town_advance_pit(zeliard_town_runtime_t *town,
         cs[GVAR_FRAME_TIMER]++;
         write_u16(cs, 0xFF1B, (u16)(read_u16(cs, 0xFF1B) + 1));
         write_u16(cs, 0xFF50, (u16)(read_u16(cs, 0xFF50) + 1));
-        if (town->room.active && town->room.kind == ZEL_ROOM_KING) {
+        if (town->room.active &&
+            (town->room.kind == ZEL_ROOM_KING ||
+             town->room.kind == ZEL_ROOM_CHURCH ||
+             town->room.kind == ZEL_ROOM_ARMORY ||
+             town->room.kind == ZEL_ROOM_DRUGSTORE ||
+             town->room.kind == ZEL_ROOM_BANK)) {
             const int result = zeliard_room_advance_pit(
                 &town->room, cs, 0x10000, vga, vga_size);
             if (result < 0) return result;

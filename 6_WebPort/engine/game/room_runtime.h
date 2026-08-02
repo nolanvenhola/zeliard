@@ -8,6 +8,10 @@ typedef enum {
     ZEL_ROOM_KING = 1,
     ZEL_ROOM_SAGE = 2,
     ZEL_ROOM_VIEWING = 3,
+    ZEL_ROOM_ARMORY = 4,
+    ZEL_ROOM_DRUGSTORE = 5,
+    ZEL_ROOM_CHURCH = 6,
+    ZEL_ROOM_BANK = 7,
 } zeliard_room_kind_t;
 
 typedef struct {
@@ -25,6 +29,13 @@ typedef struct {
     u8 script_prompt_after_scroll;
     u8 script_word_check_pending;
     u8 pending_sound_cue;
+    u8 exact_vm_active;
+    u8 menu_active;
+    u8 menu_selection;
+    u8 menu_count;
+    u8 menu_direction_latch;
+    u8 menu_action;
+    u8 menu_item_ids[12];
     u16 script_ip;
     u16 script_wait_ticks;
     u32 king_entry_gold;

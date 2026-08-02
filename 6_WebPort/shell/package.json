@@ -13,6 +13,7 @@
     "castle:audio-test": "node test_castle_audio_browser.mjs",
     "castle:inventory-test": "node test_castle_inventory_browser.mjs",
     "rooms:browser-test": "node test_felishika_rooms_browser.mjs",
+    "muralla:browser-test": "node test_muralla_browser.mjs",
     "engine": "$(MAKE) -C ../engine wasm",
     "build:engine": "cd ../engine && make wasm",
     "dev": "vite",
