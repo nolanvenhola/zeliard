@@ -1,4 +1,5 @@
 #include "../game/town_runtime.h"
+#include "../game/room_masm_vm.h"
 #include "../load/fill_buffer.h"
 #include "../render/palette.h"
 #include "../render/town_mcga.h"
@@ -457,6 +458,179 @@ int main(void) {
     ok &= segments[0][0x0083] == 0x10;
     ok &= scrolled_start == (u16)(initial_start + 2);
     ok &= scrolled_frame_hash == 0x36B79FA14F9B7C34ULL;
+
+    memcpy(segments, idle_segments, sizeof(idle_segments));
+    memcpy(vga, idle_vga, sizeof(idle_vga));
+    town = initial_town;
+    segments[0][0x0080] = 0x4E;
+    segments[0][0x0081] = 0;
+    segments[0][0x0083] = 0x1C;
+    segments[0][0xFF2A] = 0x87;
+    segments[0][0xFF2B] = 0xC2;
+    segments[0][0xFF33] = 5;
+    const int muralla_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 0);
+    const unsigned long long muralla_frame_hash = fnv1a64(vga, sizeof(vga));
+    const unsigned long long muralla_playfield_hash = fnv1a64(vga, 160u * 320u);
+    const unsigned long long muralla_state_hash = selected_state_hash(segments[0]);
+    const unsigned long long muralla_npc_hash = npc_state_hash(segments[0]);
+    const unsigned long long mpat_pixel_hash =
+        fnv1a64(segments[1] + 0x8100, 0x2EE0);
+    const unsigned long long mpat_alpha_hash =
+        fnv1a64(segments[1] + 0xD000, 0x07D0);
+    if (getenv("ZELIARD_DUMP")) {
+        FILE *dump = fopen("build/town-muralla-c-frame.bin", "wb");
+        if (dump) {
+            fwrite(vga, 1, sizeof(vga), dump);
+            fclose(dump);
+        }
+    }
+    ok &= muralla_frames == 1;
+    ok &= town.area == ZEL_TOWN_AREA_MURALLA;
+    ok &= town.map_side == 0 && town.palette_index == 1;
+    ok &= town.town_text_record == 0xC6D8;
+    ok &= segments[0][0x00C4] == 0x81;
+    ok &= segments[0][0x0080] == 0 && segments[0][0x0081] == 0;
+    ok &= segments[0][0x0083] == 0;
+    ok &= segments[0][0xC002] == 0xD7 && segments[0][0xC003] == 0;
+    ok &= mpat_pixel_hash == 0x057549E40BE35E14ULL;
+    ok &= mpat_alpha_hash == 0x68EDAA05B46B4C6EULL;
+    ok &= muralla_playfield_hash == 0x2DF9ABEBE695245FULL;
+    u8 *muralla_snapshot = malloc(sizeof(segments) + sizeof(vga));
+    zeliard_town_runtime_t muralla_town_snapshot = town;
+    ok &= muralla_snapshot != NULL;
+    if (muralla_snapshot) {
+        memcpy(muralla_snapshot, segments, sizeof(segments));
+        memcpy(muralla_snapshot + sizeof(segments), vga, sizeof(vga));
+    }
+    const u16 muralla_npc_list = (u16)(segments[0][0xC00F] |
+        ((u16)segments[0][0xC010] << 8));
+    const u16 muralla_first_npc = (u16)(segments[0][muralla_npc_list] |
+        ((u16)segments[0][(u16)(muralla_npc_list + 1)] << 8));
+    const u8 muralla_dialog_id = segments[0][(u16)(muralla_npc_list + 7)];
+    const unsigned long long muralla_pre_dialog = fnv1a64(vga, sizeof(vga));
+    ok &= zeliard_town_dialog_begin(
+        &town.dialog, segments[0], segments[3], vga, sizeof(vga),
+        muralla_first_npc) == 0;
+    const unsigned long long muralla_dialog_frame = fnv1a64(vga, sizeof(vga));
+    const u16 muralla_first_page_glyphs = town.dialog.glyph_count;
+    unsigned muralla_dialog_pages = 0;
+    while (town.dialog.active && muralla_dialog_pages++ < 8) {
+        segments[0][0xFF1D] = 0xFF;
+        ok &= zeliard_town_dialog_continue(
+            &town.dialog, segments[0], segments[3], vga, sizeof(vga)) >= 0;
+    }
+    const u16 muralla_dialog_glyphs = town.dialog.glyph_count;
+    const unsigned long long muralla_dialog_restored = fnv1a64(vga, sizeof(vga));
+    u16 dialog_min_x = 320, dialog_min_y = 200, dialog_max_x = 0, dialog_max_y = 0;
+    if (muralla_snapshot) {
+        const u8 *before_dialog = muralla_snapshot + sizeof(segments);
+        for (u16 y = 0; y < 200; ++y) for (u16 x = 0; x < 320; ++x) {
+            const size_t at = (size_t)y * 320u + x;
+            if (vga[at] == before_dialog[at]) continue;
+            if (x < dialog_min_x) dialog_min_x = x;
+            if (x > dialog_max_x) dialog_max_x = x;
+            if (y < dialog_min_y) dialog_min_y = y;
+            if (y > dialog_max_y) dialog_max_y = y;
+        }
+    }
+    ok &= muralla_first_npc == 0x0082 && muralla_dialog_id == 6;
+    ok &= muralla_dialog_glyphs == 206 && muralla_dialog_pages > 1;
+    ok &= muralla_dialog_restored == muralla_pre_dialog;
+    printf("town_muralla_dialog: npc=%04x id=%u pages=%u glyphs=%u/%u "
+           "pre=%016llx frame=%016llx restored=%016llx diff=%u,%u-%u,%u\n",
+           muralla_first_npc, muralla_dialog_id, muralla_dialog_pages,
+           muralla_first_page_glyphs, muralla_dialog_glyphs, muralla_pre_dialog,
+           muralla_dialog_frame, muralla_dialog_restored,
+           dialog_min_x, dialog_min_y, dialog_max_x, dialog_max_y);
+    ok &= zeliard_town_begin_room_transition(
+        &town, ZEL_ROOM_ARMORY, vga, sizeof(vga)) == 0;
+    const int armory_enter_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 88, 0);
+    unsigned armory_ticks = 0;
+    while (town.room.active && !zeliard_room_masm_vm_at_input_poll() &&
+           armory_ticks++ < 2000)
+        ok &= zeliard_town_advance_pit(
+            &town, &game, vga, sizeof(vga), 1, 0) >= 0;
+    ok &= town.room.active && town.room.exact_vm_active;
+    ok &= zeliard_room_masm_vm_at_input_poll();
+    segments[0][0xFF1D] = 0xFF;
+    ok &= zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 1, 0) >= 0;
+    while (town.building_transition != ZEL_TOWN_BUILDING_TRANSITION_LEAVE &&
+           armory_ticks++ < 4000) {
+        if (zeliard_room_masm_vm_at_input_poll())
+            segments[0][0xFF1D] = 0xFF;
+        ok &= zeliard_town_advance_pit(
+            &town, &game, vga, sizeof(vga), 1, 0) >= 0;
+    }
+    const int armory_leave_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 88, 0);
+    const unsigned long long armory_return_playfield =
+        fnv1a64(vga, 160u * 320u);
+    ok &= armory_enter_frames == 8 && armory_leave_frames == 8;
+    ok &= !town.room.active &&
+          town.building_transition == ZEL_TOWN_BUILDING_TRANSITION_NONE;
+    ok &= armory_return_playfield == 0x2DF9ABEBE695245FULL;
+    printf("town_muralla_armory_round_trip: ticks=%u enter=%d leave=%d "
+           "playfield=%016llx\n", armory_ticks, armory_enter_frames,
+           armory_leave_frames, armory_return_playfield);
+    segments[0][0x0080] = 0xB9;
+    segments[0][0x0081] = 0;
+    segments[0][0x0083] = 0x10;
+    segments[0][0xFF2A] = 0xDF;
+    segments[0][0xFF2B] = 0xC5;
+    const int cavern_exit_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 1);
+    const int cavern_requested = town.cavern_exit_requested;
+    const u16 cavern_start = (u16)(segments[0][0x0080] |
+                                   ((u16)segments[0][0x0081] << 8));
+    const u8 cavern_row = segments[0][0x0082];
+    const u8 cavern_boss = segments[0][0x00C3];
+    const u8 cavern_area = segments[0][0x00C4];
+    ok &= cavern_exit_frames == 1 && cavern_requested;
+    ok &= cavern_start == 0x2D;
+    ok &= cavern_row == 0x3D;
+    ok &= cavern_boss == 0 && cavern_area == 0;
+    if (muralla_snapshot) {
+        memcpy(segments, muralla_snapshot, sizeof(segments));
+        memcpy(vga, muralla_snapshot + sizeof(segments), sizeof(vga));
+        town = muralla_town_snapshot;
+        free(muralla_snapshot);
+    }
+    segments[0][0x0083] = 0xFF;
+    const int castle_return_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 0);
+    const unsigned long long castle_return_playfield =
+        fnv1a64(vga, 160u * 320u);
+    const unsigned long long return_cpat_pixels =
+        fnv1a64(segments[1] + 0x8100, 0x2EE0);
+    const unsigned long long return_cpat_alpha =
+        fnv1a64(segments[1] + 0xD000, 0x07D0);
+    ok &= castle_return_frames == 1;
+    ok &= town.area == ZEL_TOWN_AREA_FELISHIKA;
+    ok &= segments[0][0x00C4] == 0x80;
+    ok &= segments[0][0x0080] == 0x4E && segments[0][0x0081] == 0;
+    ok &= segments[0][0x0083] == 0x1A;
+    ok &= segments[0][0xC002] == 0x72 && segments[0][0xC003] == 0;
+    ok &= castle_return_playfield == 0x254DCDB105A9AE44ULL;
+    ok &= return_cpat_pixels == 0x3E695EED8F9A92ECULL;
+    ok &= return_cpat_alpha == 0x2AE75F00707E7659ULL;
+    printf("town_muralla_entry: frames=%d frame=%016llx playfield=%016llx state=%016llx "
+           "npc=%016llx mpat=%016llx/%016llx area=%02x text=%04x\n",
+           muralla_frames, muralla_frame_hash, muralla_playfield_hash,
+           muralla_state_hash,
+           muralla_npc_hash, mpat_pixel_hash, mpat_alpha_hash,
+           segments[0][0x00C4], town.town_text_record);
+    printf("town_castle_return: frames=%d playfield=%016llx cpat=%016llx/%016llx "
+           "area=%02x col=%02x start=%02x%02x\n",
+           castle_return_frames, castle_return_playfield,
+           return_cpat_pixels, return_cpat_alpha, segments[0][0x00C4],
+           segments[0][0x0083], segments[0][0x0081], segments[0][0x0080]);
+    printf("town_muralla_cavern_exit: frames=%d requested=%d start=%04x "
+           "row=%02x boss=%02x area=%02x\n",
+           cavern_exit_frames, cavern_requested, cavern_start,
+           cavern_row, cavern_boss, cavern_area);
     printf("town_runtime: %s rc=%d frame=%016llx sword=%016llx "
            "state=%016llx capture=%016llx palette=%016llx events=%u text=%04x\n",
            ok ? "PASS" : "FAIL", result, frame_hash, sword_hash, state_hash,

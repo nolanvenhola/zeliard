@@ -23,7 +23,14 @@ typedef enum {
     ZEL_TOWN_EVENT_TICK_NPCS,
     ZEL_TOWN_EVENT_MOVE_PLAYER,
     ZEL_TOWN_EVENT_SCROLL_VIEW,
+    ZEL_TOWN_EVENT_LOAD_AREA,
+    ZEL_TOWN_EVENT_LOAD_PATTERN,
 } zeliard_town_event_kind_t;
+
+typedef enum {
+    ZEL_TOWN_AREA_FELISHIKA = 0,
+    ZEL_TOWN_AREA_MURALLA = 1,
+} zeliard_town_area_t;
 
 typedef struct {
     zeliard_town_event_kind_t kind;
@@ -46,10 +53,12 @@ typedef struct {
     u16 town_text_record;
     u8 map_side;
     u8 palette_index;
+    zeliard_town_area_t area;
     u32 frame_count;
     u16 facing_item_position;
     u16 facing_npc_position;
     u8 facing_door_type;
+    u8 cavern_exit_requested;
     zeliard_town_building_transition_t building_transition;
     zeliard_room_kind_t pending_room_kind;
     u8 building_transition_pass;

@@ -6,6 +6,8 @@
 typedef struct {
     u8 active;
     u8 waiting;
+    u8 page_wait;
+    u8 final_wait;
     u8 pending_sound_cue;
     u8 original_npc_direction;
     u8 original_npc_type;

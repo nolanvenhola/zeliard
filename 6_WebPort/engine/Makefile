@@ -33,6 +33,8 @@ ENGINE_SRC := \
 	game/opening.c \
 	game/town_dialog.c \
 	game/room_runtime.c \
+	game/room_masm_vm.c \
+	third_party/8086tiny/room_8086tiny.c \
 	game/town_runtime.c \
 	game/gameplay_state.c
 
@@ -62,6 +64,8 @@ TEST_OPENING_SRC := \
 	game/opening.c \
 	game/town_dialog.c \
 	game/room_runtime.c \
+	game/room_masm_vm.c \
+	third_party/8086tiny/room_8086tiny.c \
 	game/town_runtime.c \
 	render/room_mcga.c \
 	render/town_background.c \
@@ -91,6 +95,8 @@ TEST_OPENING_TRACE_SRC := \
 	game/opening.c \
 	game/town_dialog.c \
 	game/room_runtime.c \
+	game/room_masm_vm.c \
+	third_party/8086tiny/room_8086tiny.c \
 	game/town_runtime.c \
 	render/room_mcga.c \
 	render/town_background.c \
@@ -163,6 +169,8 @@ TEST_MAIN_CONTROLS_SRC := \
 	game/opening.c \
 	game/town_dialog.c \
 	game/room_runtime.c \
+	game/room_masm_vm.c \
+	third_party/8086tiny/room_8086tiny.c \
 	game/town_runtime.c \
 	render/room_mcga.c \
 	render/town_background.c \
@@ -251,6 +259,8 @@ TEST_TOWN_RUNTIME_SRC := \
 	core/player_state.c \
 	game/town_dialog.c \
 	game/room_runtime.c \
+	game/room_masm_vm.c \
+	third_party/8086tiny/room_8086tiny.c \
 	game/town_runtime.c \
 	render/room_mcga.c \
 	render/town_background.c \
@@ -268,6 +278,8 @@ TEST_FELISHIKA_ROOMS_SRC := \
 	tests/felishika_rooms_native.c \
 	core/player_state.c \
 	game/room_runtime.c \
+	game/room_masm_vm.c \
+	third_party/8086tiny/room_8086tiny.c \
 	render/room_mcga.c \
 	render/town_mcga.c \
 	render/palette.c \
@@ -284,7 +296,7 @@ EMCC_FLAGS  := $(CFLAGS_COMMON) \
 	-s EXPORT_ES6=1 \
 	-s ENVIRONMENT=web \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_audio_cue_serial","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_test_enter_room","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_audio_cue_serial","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_room_input_kind","_zeliard_town_dialog_active","_zeliard_town_area","_zeliard_town_cavern_exit_requested","_zeliard_test_enter_room","_malloc","_free"]' \
 	-s EXPORTED_RUNTIME_METHODS='["HEAPU8","HEAPU32","UTF8ToString","ccall","cwrap"]' \
 	--preload-file assets@/assets \
 	-o build/zeliard.js

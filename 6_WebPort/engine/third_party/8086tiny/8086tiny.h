@@ -25,9 +25,12 @@ enum {
 
 typedef void (*zel_tiny86_out_fn)(void *context, unsigned short port,
                                   unsigned char value);
+typedef int (*zel_tiny86_step_fn)(void *context, unsigned short cs,
+                                  unsigned short ip);
 
 void zel_tiny86_reset(const unsigned char *bios, unsigned bios_size);
 void zel_tiny86_set_out_callback(zel_tiny86_out_fn callback, void *context);
+void zel_tiny86_set_step_callback(zel_tiny86_step_fn callback, void *context);
 int zel_tiny86_run(unsigned max_instructions);
 unsigned char *zel_tiny86_memory(void);
 unsigned zel_tiny86_memory_size(void);
