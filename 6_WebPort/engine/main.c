@@ -12,6 +12,7 @@
 #include "render/palette.h"
 #include "game/opening.h"
 #include "game/town_runtime.h"
+#include "game/room_masm_vm.h"
 #include "audio/opening_audio.h"
 #include "load/game_loader.h"
 #include "platform/platform.h"
@@ -325,10 +326,20 @@ int zeliard_test_town_dialog_active(void) { return g_town_runtime.dialog.active;
 #endif
 EXPORT u32              zeliard_opening_nec_hou_sprite_debug_slots(void) { return opening_nec_hou_sprite_debug_slots(); }
 EXPORT int              zeliard_room_kind(void) { return (int)g_town_runtime.room.kind; }
+EXPORT int              zeliard_room_input_kind(void) {
+    return zeliard_room_masm_vm_input_kind();
+}
+EXPORT int              zeliard_town_dialog_active(void) {
+    return g_town_runtime.dialog.active != 0;
+}
+EXPORT int              zeliard_town_area(void) { return (int)g_town_runtime.area; }
+EXPORT int              zeliard_town_cavern_exit_requested(void) { return g_town_runtime.cavern_exit_requested; }
 EXPORT int              zeliard_test_enter_room(int kind) {
     if (g_scene != SCENE_GAME || g_town_runtime.room.active ||
         (kind != ZEL_ROOM_KING && kind != ZEL_ROOM_SAGE &&
-         kind != ZEL_ROOM_VIEWING)) return -1;
+         kind != ZEL_ROOM_VIEWING && kind != ZEL_ROOM_ARMORY &&
+         kind != ZEL_ROOM_DRUGSTORE && kind != ZEL_ROOM_CHURCH &&
+         kind != ZEL_ROOM_BANK)) return -1;
     return zeliard_town_begin_room_transition(
         &g_town_runtime, (zeliard_room_kind_t)kind,
         g_game_vga, sizeof(g_game_vga));

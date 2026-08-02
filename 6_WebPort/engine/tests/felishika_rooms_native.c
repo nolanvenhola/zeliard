@@ -1,5 +1,7 @@
 #include "../load/fill_buffer.h"
+#include "../core/player_state.h"
 #include "../game/room_runtime.h"
+#include "../game/room_masm_vm.h"
 #include "../render/room_mcga.h"
 #include "../render/town_mcga.h"
 
@@ -155,7 +157,392 @@ static int runtime_round_trip(void) {
                              vga, 0x10000) == 0;
     ok &= room->alternate_transition_requested;
     ok &= zeliard_room_leave(room, cs, 0x10000, vga, 0x10000) == 0;
+    const struct {
+        zeliard_room_kind_t kind;
+        unsigned long long frame;
+    } muralla_rooms[] = {
+        {ZEL_ROOM_ARMORY, 0x12FD1F3947E28290ULL},
+        {ZEL_ROOM_DRUGSTORE, 0xDD94A39161EEBD55ULL},
+        {ZEL_ROOM_CHURCH, 0xBCD1421EFFE2E1B8ULL},
+        {ZEL_ROOM_BANK, 0x41FC80F26CEF61FBULL},
+    };
+    cs[0xC006] = 1;
+    for (size_t index = 0;
+         index < sizeof(muralla_rooms) / sizeof(muralla_rooms[0]); ++index) {
+        ok &= zeliard_room_enter(room, muralla_rooms[index].kind,
+                                 cs, 0x10000, vga, 0x10000) == 0;
+        const unsigned long long frame = fnv1a64(vga, 0x10000);
+        printf("muralla_room_%u: frame=%016llx\n",
+               (unsigned)muralla_rooms[index].kind, frame);
+        ok &= frame == muralla_rooms[index].frame;
+        ok &= zeliard_room_leave(room, cs, 0x10000, vga, 0x10000) == 0;
+    }
     free(cs); free(vga); free(room);
+    return ok;
+}
+
+static unsigned long long frame_hash_without_rect(const u8 *frame,
+                                                   u16 x, u16 y,
+                                                   u16 width, u16 height) {
+    u8 copy[0x10000];
+    memcpy(copy, frame, sizeof(copy));
+    for (u16 row = 0; row < height; ++row)
+        memset(copy + (size_t)(y + row) * 320u + x, 0, width);
+    return fnv1a64(copy, sizeof(copy));
+}
+
+static int church_script_flow(void) {
+    u8 *cs = calloc(1, 0x10000);
+    u8 *vga = calloc(1, 0x10000);
+    zeliard_room_runtime_t *room = calloc(1, sizeof(*room));
+    if (!cs || !vga || !room || load_raw(cs, 0, "assets/stdply.bin") ||
+        load_raw(cs, 0x2000, "assets/gmmcga.bin") ||
+        load_payload(cs, 0x6000, "assets/town.bin") || load_font(cs)) {
+        free(cs); free(vga); free(room); return 0;
+    }
+    cs[ZEL_PLAYER_HP] = 8;
+    cs[ZEL_PLAYER_HP + 1] = 0;
+    cs[ZEL_PLAYER_HP_MAX] = 0x50;
+    cs[ZEL_PLAYER_HP_MAX + 1] = 0;
+    cs[0xC006] = 1;
+    for (u8 index = 0; index < 7; ++index) {
+        cs[ZEL_PLAYER_SPELL_CHARGES + index] = 0;
+        cs[ZEL_PLAYER_SPELL_CHARGES_MAX + index] = (u8)(index + 2);
+    }
+    int ok = zeliard_room_enter(room, ZEL_ROOM_CHURCH, cs, 0x10000,
+                                vga, 0x10000) == 0;
+    unsigned ticks = 0;
+    while (ok && !room->exit_requested && ticks++ < 20000) {
+        if ((ticks % 400u) == 0) cs[0xFF1D] = 1;
+        if (zeliard_room_advance_pit(room, cs, 0x10000, vga, 0x10000) < 0)
+            ok = 0;
+    }
+    ok &= room->exit_requested && ticks < 20000;
+    ok &= (u16)(cs[ZEL_PLAYER_HP] | ((u16)cs[ZEL_PLAYER_HP + 1] << 8)) == 0x50;
+    printf("muralla_church_script: ticks=%u hp=%u exit=%u ip=%04x\n",
+           ticks, (unsigned)(cs[ZEL_PLAYER_HP] |
+           ((u16)cs[ZEL_PLAYER_HP + 1] << 8)), room->exit_requested,
+           room->script_ip);
+    free(cs); free(vga); free(room);
+    return ok;
+}
+
+static int muralla_shop_menu_frames(void) {
+    static const struct {
+        zeliard_room_kind_t kind;
+        unsigned long long frame;
+    } cases[] = {
+        {ZEL_ROOM_ARMORY, 0xD4A92FBE8A86E12AULL},
+        {ZEL_ROOM_DRUGSTORE, 0xFCE58574B14C00FDULL},
+        {ZEL_ROOM_BANK, 0x7B7375C7253142E3ULL},
+    };
+    int ok = 1;
+    for (size_t index = 0; index < sizeof(cases) / sizeof(cases[0]); ++index) {
+        u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+        zeliard_room_runtime_t *room = calloc(1, sizeof(*room));
+        if (!cs || !vga || !room || load_raw(cs, 0, "assets/stdply.bin") ||
+            load_raw(cs, 0x2000, "assets/gmmcga.bin") ||
+            load_payload(cs, 0x6000, "assets/town.bin") || load_font(cs)) {
+            free(cs); free(vga); free(room); return 0;
+        }
+        cs[0xC006] = 1;
+        int case_ok = zeliard_room_enter(
+            room, cases[index].kind, cs, 0x10000, vga, 0x10000) == 0;
+        unsigned ticks = 0;
+        while (case_ok && !room->menu_active && !room->exit_requested &&
+               ticks++ < 10000) {
+            ++cs[0xFF1A];
+            u16 timer = (u16)(cs[0xFF1B] | ((u16)cs[0xFF1C] << 8));
+            ++timer; cs[0xFF1B] = (u8)timer; cs[0xFF1C] = (u8)(timer >> 8);
+            zeliard_room_advance_pit(room, cs, 0x10000, vga, 0x10000);
+        }
+        const unsigned long long frame = fnv1a64(vga, 0x10000);
+        printf("muralla_shop_menu_%u: ticks=%u active=%u frame=%016llx\n",
+               (unsigned)cases[index].kind, ticks, room->menu_active, frame);
+        if (getenv("ZELIARD_DUMP")) {
+            char path[64];
+            snprintf(path, sizeof(path), "build/shop-menu-c-%u.bin",
+                     (unsigned)cases[index].kind);
+            FILE *dump = fopen(path, "wb");
+            if (dump) { fwrite(vga, 1, 0x10000, dump); fclose(dump); }
+        }
+        case_ok &= room->menu_active && frame == cases[index].frame;
+        ok &= case_ok;
+        free(cs); free(vga); free(room);
+    }
+    return ok;
+}
+
+static int muralla_shop_main_menu_routes(void) {
+    static const struct {
+        zeliard_room_kind_t kind;
+        u8 selection;
+        u16 script_ip;
+    } cases[] = {
+        {ZEL_ROOM_ARMORY, 0, 0xB1DE},
+        {ZEL_ROOM_ARMORY, 1, 0xAE4A},
+        {ZEL_ROOM_ARMORY, 2, 0xB026},
+        {ZEL_ROOM_ARMORY, 3, 0xB081},
+        {ZEL_ROOM_ARMORY, 4, 0xB11F},
+        {ZEL_ROOM_DRUGSTORE, 0, 0xAB0E},
+        {ZEL_ROOM_DRUGSTORE, 1, 0xA88C},
+        {ZEL_ROOM_DRUGSTORE, 2, 0xAA79},
+        {ZEL_ROOM_DRUGSTORE, 3, 0xAAA6},
+        {ZEL_ROOM_BANK, 0, 0xAC5A},
+        {ZEL_ROOM_BANK, 1, 0xA9B2},
+        {ZEL_ROOM_BANK, 2, 0xAAA1},
+        {ZEL_ROOM_BANK, 3, 0xAB32},
+        {ZEL_ROOM_BANK, 4, 0xABF7},
+    };
+    int ok = 1;
+    for (size_t index = 0; index < sizeof(cases) / sizeof(cases[0]); ++index) {
+        u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+        zeliard_room_runtime_t *room = calloc(1, sizeof(*room));
+        if (!cs || !vga || !room || load_raw(cs, 0, "assets/stdply.bin") ||
+            load_raw(cs, 0x2000, "assets/gmmcga.bin") ||
+            load_payload(cs, 0x6000, "assets/town.bin") || load_font(cs)) {
+            free(cs); free(vga); free(room); return 0;
+        }
+        cs[0xC006] = 1;
+        int case_ok = zeliard_room_enter(
+            room, cases[index].kind, cs, 0x10000, vga, 0x10000) == 0;
+        unsigned ticks = 0;
+        while (case_ok && !room->menu_active && !room->exit_requested &&
+               ticks++ < 10000) {
+            ++cs[0xFF1A];
+            u16 timer = (u16)(cs[0xFF1B] | ((u16)cs[0xFF1C] << 8));
+            ++timer; cs[0xFF1B] = (u8)timer; cs[0xFF1C] = (u8)(timer >> 8);
+            case_ok &= zeliard_room_advance_pit(
+                room, cs, 0x10000, vga, 0x10000) >= 0;
+        }
+        room->menu_selection = cases[index].selection;
+        cs[0xFF1D] = 1;
+        case_ok &= zeliard_room_advance_pit(
+            room, cs, 0x10000, vga, 0x10000) >= 0;
+        case_ok &= !room->menu_active && room->script_ip == cases[index].script_ip;
+        printf("muralla_shop_route_%u_%u: ip=%04x expected=%04x\n",
+               (unsigned)cases[index].kind, cases[index].selection,
+               room->script_ip, cases[index].script_ip);
+        ok &= case_ok;
+        free(cs); free(vga); free(room);
+    }
+    return ok;
+}
+
+static int vm_reach_menu(u8 *cs, u8 *vga, unsigned *ticks) {
+    while (zeliard_room_masm_vm_active() &&
+           zeliard_room_masm_vm_input_kind() != ZEL_ROOM_VM_INPUT_MENU &&
+           (*ticks)++ < 6000) {
+        const u8 acknowledge = zeliard_room_masm_vm_input_kind() ==
+            ZEL_ROOM_VM_INPUT_TEXT;
+        if (!zeliard_room_masm_vm_advance(
+                cs, 0x10000, vga, 0x10000, 1, 0, acknowledge, 0)) return 0;
+    }
+    return zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
+}
+
+static int muralla_release_vm_menu_frames(void) {
+    static const struct {
+        zeliard_room_kind_t kind;
+        unsigned long long frame;
+        unsigned long long invariant_frame;
+    } cases[] = {
+        {ZEL_ROOM_ARMORY, 0xD4A92FBE8A86E12AULL, 0},
+        {ZEL_ROOM_DRUGSTORE, 0, 0xDF46F0EFAE53496DULL},
+        {ZEL_ROOM_BANK, 0x7B7375C7253142E3ULL, 0},
+    };
+    int ok = 1;
+    for (size_t index = 0; index < sizeof(cases) / sizeof(cases[0]); ++index) {
+        u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+        if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+            free(cs); free(vga); return 0;
+        }
+        cs[0xC006] = 1;
+        int case_ok = zeliard_room_masm_vm_start(
+            cases[index].kind, cs, 0x10000, vga, 0x10000);
+        unsigned ticks = 0;
+        case_ok &= vm_reach_menu(cs, vga, &ticks);
+        const unsigned long long frame = fnv1a64(vga, 0x10000);
+        const unsigned long long invariant = cases[index].invariant_frame ?
+            frame_hash_without_rect(vga, 104, 24, 47, 47) : frame;
+        if (getenv("ZELIARD_DUMP")) {
+            char path[64];
+            snprintf(path, sizeof(path), "build/shop-menu-vm-%u.bin",
+                     (unsigned)cases[index].kind);
+            FILE *dump = fopen(path, "wb");
+            if (dump) { fwrite(vga, 1, 0x10000, dump); fclose(dump); }
+        }
+        printf("muralla_release_vm_menu_%u: ticks=%u ip=%04x "
+               "frame=%016llx invariant=%016llx\n",
+               (unsigned)cases[index].kind, ticks,
+               zeliard_room_masm_vm_ip(), frame, invariant);
+        case_ok &= zeliard_room_masm_vm_input_kind() ==
+                       ZEL_ROOM_VM_INPUT_MENU &&
+                   invariant == (cases[index].invariant_frame ?
+                       cases[index].invariant_frame : cases[index].frame);
+        ok &= case_ok;
+        free(cs); free(vga);
+    }
+    return ok;
+}
+
+static int muralla_release_vm_armory_exit(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 1;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_ARMORY, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    const u8 greeting_cue = zeliard_room_masm_vm_take_sound_cue();
+    printf("muralla_release_vm_armory_audio: cue=%02x\n", greeting_cue);
+    ok &= greeting_cue == 0x05;
+    ok &= zeliard_room_masm_vm_advance(
+        cs, 0x10000, vga, 0x10000, 1, 0, 1, 0);
+    while (ok && zeliard_room_masm_vm_active() && ticks++ < 4000) {
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0,
+            zeliard_room_masm_vm_at_input_poll(), 0);
+    }
+    ok &= !zeliard_room_masm_vm_active();
+    printf("muralla_release_vm_armory_exit: ticks=%u active=%d\n",
+           ticks, zeliard_room_masm_vm_active());
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int vm_run_to_next_poll(u8 *cs, u8 *vga, u8 direction, u8 space,
+                               unsigned *ticks) {
+    if (!zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, direction, space, 0)) return 0;
+    while (zeliard_room_masm_vm_active() &&
+           !zeliard_room_masm_vm_at_input_poll() && (*ticks)++ < 6000)
+        if (!zeliard_room_masm_vm_advance(
+                cs, 0x10000, vga, 0x10000, 1, 0, 0, 0)) return 0;
+    return 1;
+}
+
+static int muralla_release_vm_armory_buy(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 1;
+    cs[0x85] = 0; cs[0x86] = 0xE8; cs[0x87] = 0x03;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_ARMORY, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    printf("muralla_release_vm_armory_buy: ticks=%u gold=%u sword=%u "
+           "inventory=%02x\n", ticks, gold, cs[0x92], cs[0xD2]);
+    ok &= cs[0x92] == 1 && gold == 800 && cs[0xD2] == 0xC0;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int muralla_release_vm_church_heal(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[ZEL_PLAYER_HP] = 8;
+    cs[ZEL_PLAYER_HP + 1] = 0;
+    cs[ZEL_PLAYER_HP_MAX] = 0x50;
+    cs[ZEL_PLAYER_HP_MAX + 1] = 0;
+    cs[0xC006] = 1;
+    for (u8 index = 0; index < 7; ++index) {
+        cs[ZEL_PLAYER_SPELL_CHARGES + index] = 0;
+        cs[ZEL_PLAYER_SPELL_CHARGES_MAX + index] = (u8)(index + 2);
+    }
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_CHURCH, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    while (ok && zeliard_room_masm_vm_active() && ticks++ < 12000)
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0,
+            zeliard_room_masm_vm_at_input_poll(), 0);
+    const u16 hp = (u16)(cs[ZEL_PLAYER_HP] |
+                         ((u16)cs[ZEL_PLAYER_HP + 1] << 8));
+    int charges = 1;
+    for (u8 index = 0; index < 7; ++index)
+        charges &= cs[ZEL_PLAYER_SPELL_CHARGES + index] ==
+                   cs[ZEL_PLAYER_SPELL_CHARGES_MAX + index];
+    ok &= !zeliard_room_masm_vm_active() && hp == 0x50 && charges;
+    printf("muralla_release_vm_church: ticks=%u hp=%u charges=%d active=%d\n",
+           ticks, hp, charges, zeliard_room_masm_vm_active());
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int muralla_release_vm_drug_buy(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0x85] = 0; cs[0x86] = 0xE8; cs[0x87] = 0x03;
+    cs[0xC006] = 1;
+    u8 before[0x20];
+    memcpy(before, cs + ZEL_PLAYER_ITEM_SLOTS, sizeof(before));
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_DRUGSTORE, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    const int inventory_changed =
+        memcmp(before, cs + ZEL_PLAYER_ITEM_SLOTS, sizeof(before)) != 0;
+    printf("muralla_release_vm_drug_buy: ticks=%u gold=%06x "
+           "inventory_changed=%d script=%04x kind=%d\n", ticks, gold,
+           inventory_changed,
+           (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)),
+           zeliard_room_masm_vm_input_kind());
+    ok &= gold == 950 && inventory_changed;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int muralla_release_vm_bank_exchange(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0x8B] = 10; cs[0x8C] = 0; cs[0xC006] = 1;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_BANK, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    const u16 almas = (u16)(cs[0x8B] | ((u16)cs[0x8C] << 8));
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    printf("muralla_release_vm_bank_exchange: ticks=%u almas=%u "
+           "gold=%06x script=%04x kind=%d\n", ticks, almas, gold,
+           (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)),
+           zeliard_room_masm_vm_input_kind());
+    ok &= almas == 0 && gold == 60;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
     return ok;
 }
 
@@ -329,6 +716,15 @@ int main(void) {
                    sage == 0xA6873B3AD33ACEC7ULL &&
                    omoya == 0x1C86E94322A50C57ULL && runtime_round_trip() &&
                    king_branch_selection() && prompt_clear_service() &&
+                   church_script_flow() &&
+                   muralla_shop_menu_frames() &&
+                   muralla_shop_main_menu_routes() &&
+                   muralla_release_vm_menu_frames() &&
+                   muralla_release_vm_armory_exit() &&
+                   muralla_release_vm_armory_buy() &&
+                   muralla_release_vm_church_heal() &&
+                   muralla_release_vm_drug_buy() &&
+                   muralla_release_vm_bank_exchange() &&
                    king_first_visit_script() &&
                    king_followup_scripts();
     printf("felishika_rooms: king=%016llx sage=%016llx omoya=%016llx\n",
