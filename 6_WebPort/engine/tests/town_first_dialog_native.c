@@ -110,11 +110,13 @@ static int test_muralla_multipage_dialog(void) {
         &dialog, segment, scratch, vga, sizeof(vga)) == 0;
     unsigned long long scroll_steps[20] = {0};
     size_t scroll_step_count = 0;
+    unsigned scroll_ticks = 0;
     u16 previous_steps = dialog.scroll_step_count;
     for (unsigned tick = 0;
          tick < 1000 && (!dialog.final_wait || dialog.scroll_active ||
                          dialog.scroll_resume_pending);
          ++tick) {
+        ++scroll_ticks;
         const int advanced = zeliard_town_dialog_advance_pit(
             &dialog, segment, vga, sizeof(vga));
         ok &= advanced >= 0;
@@ -131,6 +133,8 @@ static int test_muralla_multipage_dialog(void) {
         page_diff += first_frame[i] != vga[i];
     ok &= dialog.active && dialog.final_wait && !dialog.page_wait;
     ok &= scroll_step_count == 20;
+    /* Twenty MASM GMMCGA calls plus one parser-resume tick per scroll. */
+    ok &= scroll_ticks == 22;
     ok &= memcmp(scroll_steps, expected_scroll_steps,
                  sizeof(expected_scroll_steps)) == 0;
     ok &= second == 0xB95556613E17D5DAULL;

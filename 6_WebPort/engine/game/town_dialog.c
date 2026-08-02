@@ -76,10 +76,9 @@ static u8 count_wrapped_lines(const u8 *cs, u16 si) {
 }
 
 enum {
-    /* GMMCGA:2857 copies 6,864 words for this dialog geometry. Its REP
-     * MOVSW and row-loop cost rounds to ten 236.7 Hz ticks at the reference
-     * DOSBox-X rate of 3000 cycles/ms. */
-    SCROLL_PASS_PIT_TICKS = 10,
+    /* 106TOWN:render_scroll_loop calls GMMCGA:2857 ten times without a
+     * timer wait. Preserve each visible result on consecutive runtime ticks. */
+    SCROLL_PASS_PIT_TICKS = 1,
 };
 
 static void scroll_dialog_one_row(u8 *vga, u16 packed, u16 layout) {
